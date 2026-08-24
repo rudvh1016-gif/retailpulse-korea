@@ -1,5 +1,3 @@
-@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css");
-@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -16,7 +14,7 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; background: var(--paper); }
-body { margin: 0; overflow-x: hidden; background: var(--paper); color: var(--ink); font-family: "Pretendard Variable", "Pretendard", "Noto Sans JP", "Noto Sans SC", system-ui, sans-serif; font-weight: 420; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+body { margin: 0; overflow-x: hidden; background: var(--paper); color: var(--ink); font-family: "Pretendard Variable", "Pretendard", "Noto Sans JP Variable", "Noto Sans SC Variable", system-ui, sans-serif; font-weight: 420; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 button, input, select { font: inherit; }
 button, select { color: inherit; }
 button { cursor: pointer; }
@@ -497,9 +495,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .site-footer p { margin: 0 0 4px; }
 .site-footer span { display: block; margin-top: 15px; font-size: 8px; font-weight: 800; letter-spacing: .1em; }
 .bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; min-height: 68px; padding: 0 max(20px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(20px, env(safe-area-inset-left)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid rgba(17,18,23,.18); background: rgba(245,243,237,.94); backdrop-filter: blur(16px); }
-.bottom-nav button { position: relative; min-height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border: 0; background: transparent; color: #8b8a86; }
-.bottom-nav button.active { color: var(--ink); }
-.bottom-nav button.active::before { content: ""; position: absolute; top: -1px; width: 32px; height: 2px; background: var(--blue); }
+.bottom-nav button, .bottom-nav a { position: relative; min-height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border: 0; background: transparent; color: #8b8a86; text-decoration: none; }
+.bottom-nav button.active, .bottom-nav a.active { color: var(--ink); }
+.bottom-nav button.active::before, .bottom-nav a.active::before { content: ""; position: absolute; top: -1px; width: 32px; height: 2px; background: var(--blue); }
 .bottom-nav svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .bottom-nav span { font-size: 8px; font-weight: 800; letter-spacing: .07em; white-space: nowrap; }
 .hero h1, .view-intro h1, .seoul-layers h2 { word-break: keep-all; overflow-wrap: break-word; }
@@ -721,7 +719,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 
   .site-footer { margin-top: 64px; }
   .bottom-nav { min-height: 64px; padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); }
-  .bottom-nav button { min-height: 64px; }
+  .bottom-nav button, .bottom-nav a { min-height: 64px; }
   .bottom-nav span { max-width: 64px; overflow: hidden; text-overflow: ellipsis; font-size: 7px; }
 }
 
@@ -951,6 +949,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 
 @media (max-width: 365px) {
   .page-shell { padding-left: 14px; padding-right: 14px; }
+  .airport-context-nav, .insight-map, .business-reading-map { margin-left: -14px; margin-right: -14px; padding-left: 14px; padding-right: 14px; }
   .hero h1 { font-size: 34px; }
   .day-switch { gap: 14px; }
   .rank-name strong { font-size: 12px; }
@@ -966,9 +965,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 }
 
 /* V5 editorial system: fewer UI containers, calmer type, one restrained accent. */
-.app { font-family: "Pretendard Variable", "Pretendard", "Noto Sans JP", "Noto Sans SC", system-ui, sans-serif; }
-.lang-ja { font-family: "Noto Sans JP", "Pretendard Variable", "Pretendard", "Noto Sans SC", system-ui, sans-serif; line-break: strict; }
-.lang-zh { font-family: "Noto Sans SC", "Pretendard Variable", "Pretendard", "Noto Sans JP", system-ui, sans-serif; }
+.app { font-family: "Pretendard Variable", "Pretendard", "Noto Sans JP Variable", "Noto Sans SC Variable", system-ui, sans-serif; }
+.lang-ja { font-family: "Noto Sans JP Variable", "Pretendard Variable", "Pretendard", "Noto Sans SC Variable", system-ui, sans-serif; line-break: strict; }
+.lang-zh { font-family: "Noto Sans SC Variable", "Pretendard Variable", "Pretendard", "Noto Sans JP Variable", system-ui, sans-serif; }
 h1, h2, h3, strong, b { font-weight: 600; }
 .brand { font-weight: 650; }
 .eyebrow, .demo-label, .official-label, .rank-status, .day-switch button, .area-tabs button, .terminal-selector button, .history-controls button, .business-mode button, .source-filters button, .bottom-nav span { font-weight: 600; }

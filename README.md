@@ -29,7 +29,13 @@ Requires Node.js `>=22.13.0`.
 ```bash
 npm run install:ci
 npm run lint
+npm run typecheck
+npm run test:unit
+npm run build
 npm test
+npm run e2e:install
+npm run test:e2e
+npm run secret:scan
 ```
 
 The project targets zero paid runtime API/data/LLM cost beyond a separately approved domain. Secrets must remain in production secret stores and never enter frontend code or Git history.
@@ -38,14 +44,18 @@ The project targets zero paid runtime API/data/LLM cost beyond a separately appr
 
 Start with:
 
-- [`public/production-handoff.md`](public/production-handoff.md)
-- [`public/data-source-matrix.md`](public/data-source-matrix.md)
-- [`public/forecast-target-registry.md`](public/forecast-target-registry.md)
-- [`public/forecast-contract.md`](public/forecast-contract.md)
-- [`public/outcome-contract.md`](public/outcome-contract.md)
-- [`public/no-leakage-policy.md`](public/no-leakage-policy.md)
-- [`public/zero-cost-policy.md`](public/zero-cost-policy.md)
-- [`public/30-60-90-plan.md`](public/30-60-90-plan.md)
-- [`public/qa-report.md`](public/qa-report.md)
+- [`docs/PRODUCTION.md`](docs/PRODUCTION.md)
+- [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md)
+- [`docs/FORECAST.md`](docs/FORECAST.md)
+- [`docs/OUTCOMES.md`](docs/OUTCOMES.md)
+- [`docs/SECURITY.md`](docs/SECURITY.md)
+- [`docs/SEO.md`](docs/SEO.md)
+- [`docs/ZERO_COST.md`](docs/ZERO_COST.md)
+- [`docs/RUNBOOK.md`](docs/RUNBOOK.md)
+- [`docs/PRODUCTION_AUDIT.md`](docs/PRODUCTION_AUDIT.md)
+
+Legacy Work/Sites specifications are retained under [`docs/archive/work-v6.1`](docs/archive/work-v6.1) for traceability, but are no longer public website routes.
+
+Independent production uses `wrangler.production.jsonc`, a real D1 binding, and server-side secret stores. `.openai/hosting.json` remains only so the existing ChatGPT Sites checkpoint can still be built and compared; it is not the independent production authority.
 
 No licence is granted for third-party data or images merely because the repository is public. Verify source terms before reusing any bundled data or asset.

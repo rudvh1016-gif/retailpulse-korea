@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import RetailPulseApp from "../../page";
+import RetailPulseApp from "../../retailpulse-app";
 import { buildMetadata, seoLocales, seoSlugs, type SeoLocale, type SeoSlug } from "../../seo-config";
 
 const areaSlugs = ["myeongdong", "hongdae", "seongsu"] as const;
@@ -23,4 +23,3 @@ export default async function LocalePage({ params }: { params: Promise<{ locale:
   const area = isArea ? slug as typeof areaSlugs[number] : "myeongdong";
   return <RetailPulseApp initialLang={locale as SeoLocale} initialView={view} initialArea={area} initialRoute />;
 }
-

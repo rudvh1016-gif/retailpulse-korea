@@ -1,0 +1,95 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { assertFeatureAvailableAtCutoff, assertTargetMatch, type ForecastFeature, type PredictionInput } from "../lib/contracts";
+import { createImmutablePrediction, fourWeekAverageBaseline, sameWeekdayBaseline, seasonalNaiveBaseline } from "../lib/forecast";
+import { fetchOfficialJson, normalizeAirportFlight, SourceFetchError } from "../lib/source-adapters";
+
+const feature: ForecastFeature = {
+  sourceId: "TEST",
+  eventAt: "2026-08-23T00:00:00.000Z",
+  availableAt: "2026-08-23T01:00:00.000Z",
+  ingestionAt: "2026-08-23T01:01:00.000Z",
+  value: 10,
+  recordOrigin: "LIVE",
+};
+
+const prediction: PredictionInput = {
+  predictionId: "pred-1",
+  createdAt: "2026-08-23T09:00:00.000Z",
+  targetAt: "2026-08-24T09:00:00.000Z",
+  dataCutoff: "2026-08-23T08:59:59.000Z",
+  targetId: "AREA_ACTIVITY",
+  area: "myeongdong",
+  value: 82,
+  forecastClass: "HIGH",
+  confidence: "MODERATE",
+  modelVersion: "BASELINE_V1",
+  proxyVersion: "FRP_V1",
+  featureVersion: "FEATURE_V1",
+  sourceVersions: { TEST: "v1" },
+  inputHash: "input-hash",
+  recordOrigin: "FORECAST",
+};
+
+test("rejects future data and backfill from prospective features", () => {
+  assert.throws(() => assertFeatureAvailableAtCutoff({ ...feature, availableAt: "2026-08-24T00:00:00.000Z" }, prediction.dataCutoff), /future_leakage/);
+  assert.throws(() => assertFeatureAvailableAtCutoff({ ...feature, recordOrigin: "BACKFILLED" }, prediction.dataCutoff), /backfill_not_prospective/);
+});
+
+test("requires like-for-like target matching", () => {
+  assert.doesNotThrow(() => assertTargetMatch("AREA_ACTIVITY", "AREA_ACTIVITY"));
+  assert.throws(() => assertTargetMatch("AREA_ACTIVITY", "FOREIGN_RETAIL_PROXY"), /target_mismatch/);
+});
+
+test("creates a frozen, hashed prediction without mutating its evidence", async () => {
+  const result = await createImmutablePrediction(prediction, [feature]);
+  assert.equal(result.predictionHash.length, 64);
+  assert.equal(Object.isFrozen(result), true);
+  assert.equal(result.predictionId, "pred-1");
+});
+
+test("calculates simple baselines only from supplied history", () => {
+  assert.equal(sameWeekdayBaseline([10, 20]), 20);
+  assert.equal(fourWeekAverageBaseline([10, 20, 30, 40, 50]), 35);
+  assert.equal(seasonalNaiveBaseline([1, 2, 3, 4, 5, 6, 7, 8], 7), 2);
+  assert.equal(seasonalNaiveBaseline([1, 2], 7), null);
+});
+
+test("normalizes official airport flight fields without inferring terminals", async () => {
+  const record = await normalizeAirportFlight({ flightId: "KE703", scheduleDateTime: "2026-08-24T09:20:00+09:00", terminalId: "2", gate: "249", chkinrange: "D01-D10", status: "ON TIME" }, "departure", "2026-08-24T00:00:00.000Z");
+  assert.equal(record.terminal, "T2");
+  assert.equal(record.gate, "249");
+  assert.equal(record.checkinCounter, "D01-D10");
+  assert.equal(record.status, "on_time");
+  const noTerminal = await normalizeAirportFlight({ flightId: "OZ101", scheduleDateTime: "2026-08-24T10:20:00+09:00" }, "departure", "2026-08-24T00:00:00.000Z");
+  assert.equal(noTerminal.terminal, null);
+  assert.equal(noTerminal.qualityStatus, "PARTIAL");
+});
+
+test("normalizes compact KST timestamps and official lowercase gate fields", async () => {
+  const record = await normalizeAirportFlight({
+    flightId: "KE703",
+    airline: "Korean Air",
+    airport: "NRT",
+    scheduleDateTime: "202608251430",
+    estimatedDateTime: "202608251445",
+    gatenumber: "231",
+    chkinrange: "A01-A12",
+    remark: "지연",
+    terminalid: "2",
+  }, "departure", "2026-08-25T04:00:00.000Z");
+  assert.equal(record.scheduledAt, "2026-08-25T14:30:00+09:00");
+  assert.equal(record.changedAt, "2026-08-25T14:45:00+09:00");
+  assert.equal(record.gate, "231");
+  assert.equal(record.status, "delayed");
+  assert.equal(record.terminal, "T2");
+});
+
+test("classifies malformed and HTTP source responses", async (context) => {
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; });
+  globalThis.fetch = async () => new Response("bad", { status: 500 });
+  await assert.rejects(fetchOfficialJson(new URL("https://example.invalid"), { retries: 0 }), (error: unknown) => error instanceof SourceFetchError && error.code === "HTTP" && error.status === 500);
+  globalThis.fetch = async () => new Response("not-json", { status: 200 });
+  await assert.rejects(fetchOfficialJson(new URL("https://example.invalid"), { retries: 0 }), (error: unknown) => error instanceof SourceFetchError && error.code === "MALFORMED_JSON");
+});
