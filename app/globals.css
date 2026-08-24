@@ -1,5 +1,47 @@
 @import "tailwindcss";
 
+/* Project-local OFL subsets keep fonts out of the Worker bundle. The source
+   glyph set is generated from the four localized production surfaces. */
+@font-face {
+  font-family: "Pretendard Variable";
+  src: url("/fonts/pretendard-variable.woff2") format("woff2-variations");
+  font-style: normal;
+  font-weight: 45 920;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans JP Variable";
+  src: url("/fonts/noto-sans-jp-400.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans JP Variable";
+  src: url("/fonts/noto-sans-jp-600.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans SC Variable";
+  src: url("/fonts/noto-sans-sc-400.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans SC Variable";
+  src: url("/fonts/noto-sans-sc-600.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
 :root {
   --ink: #111217;
   --muted: #686970;

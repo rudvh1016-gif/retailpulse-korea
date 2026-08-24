@@ -59,3 +59,5 @@ Legacy Work/Sites specifications are retained under [`docs/archive/work-v6.1`](d
 Independent production uses `wrangler.production.jsonc`, a real D1 binding, and server-side secret stores. `.openai/hosting.json` remains only so the existing ChatGPT Sites checkpoint can still be built and compared; it is not the independent production authority.
 
 No licence is granted for third-party data or images merely because the repository is public. Verify source terms before reusing any bundled data or asset.
+
+Project-local Pretendard and Noto Sans font subsets remain under the SIL Open Font License 1.1. The license texts are retained in [`docs/licenses`](docs/licenses).

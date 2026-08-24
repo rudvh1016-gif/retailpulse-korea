@@ -16,6 +16,20 @@ for (const [locale, htmlLang] of locales) {
   });
 }
 
+test("project-local Korean, Japanese and Chinese fonts load", async ({ page }) => {
+  await page.goto("/ja");
+  await page.evaluate(async () => document.fonts.ready);
+  expect(await page.evaluate(() => document.fonts.check('400 16px "Noto Sans JP Variable"', "日本語 ページ"))).toBe(true);
+
+  await page.goto("/zh");
+  await page.evaluate(async () => document.fonts.ready);
+  expect(await page.evaluate(() => document.fonts.check('400 16px "Noto Sans SC Variable"', "简体中文 签到"))).toBe(true);
+
+  await page.goto("/ko");
+  await page.evaluate(async () => document.fonts.ready);
+  expect(await page.evaluate(() => document.fonts.check('420 16px "Pretendard Variable"', "리테일펄스 특별"))).toBe(true);
+});
+
 for (const width of [320, 375, 390, 430]) {
   test(`mobile ${width}px has no page-level horizontal overflow`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
