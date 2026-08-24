@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import RetailPulseApp from "../page";
+import RetailPulseApp from "../retailpulse-app";
 import { buildMetadata, seoLocales, type SeoLocale } from "../seo-config";
 
 export function generateStaticParams() { return seoLocales.map((locale) => ({ locale })); }
@@ -16,4 +16,3 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
   if (!seoLocales.includes(locale as SeoLocale)) notFound();
   return <RetailPulseApp initialLang={locale as SeoLocale} initialRoute />;
 }
-

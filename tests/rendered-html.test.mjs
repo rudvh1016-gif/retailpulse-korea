@@ -7,7 +7,7 @@ async function renderHome() {
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}-${Math.random()}`);
   const { default: worker } = await import(workerUrl.href);
   return worker.fetch(
-    new Request("http://localhost/", { headers: { accept: "text/html" } }),
+    new Request("http://localhost/ko", { headers: { accept: "text/html", "x-rpk-document-language": "ko" } }),
     { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
     { waitUntil() {}, passThroughOnException() {} },
   );
@@ -25,7 +25,7 @@ test("renders the RetailPulse production shell", async () => {
 });
 
 test("keeps both user-provided Seoul visuals and their accessible descriptions", async () => {
-  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   assert.match(page, /\/assets\/seoul-hangang\.jpeg/);
   assert.match(page, /\/assets\/seoul-hanok\.jpeg/);
   assert.match(page, /석양 아래 한강과 남산서울타워가 보이는 서울 전경/);
@@ -33,7 +33,7 @@ test("keeps both user-provided Seoul visuals and their accessible descriptions",
 });
 
 test("includes all MVP surfaces without a runtime LLM dependency", async () => {
-  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   const data = await readFile(new URL("../app/retailpulse-data.ts", import.meta.url), "utf8");
   const product = `${page}\n${data}`;
   for (const required of [
@@ -85,7 +85,7 @@ test("keeps official airport totals exact and does not invent terminal shares", 
 });
 
 test("keeps gate and duty-free intelligence within official data boundaries", async () => {
-  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   const data = await readFile(new URL("../app/retailpulse-data.ts", import.meta.url), "utf8");
   assert.match(page, /flight\.status === "cancelled"/);
   assert.match(page, /windowHours === 24 \? true/);
@@ -122,16 +122,16 @@ test("ships the V5 operational, SEO, roadmap, and QA documents", async () => {
     "forecast-validation-plan.md",
     "30-60-90-plan.md",
   ]) {
-    const body = await readFile(new URL(`../public/${file}`, import.meta.url), "utf8");
+    const body = await readFile(new URL(`../docs/archive/work-v6.1/${file}`, import.meta.url), "utf8");
     assert.ok(body.length > 500, `${file} should contain a substantive handoff`);
   }
 });
 
 test("locks V6.1 positioning and an honest prospective track record", async () => {
-  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
-  const registry = await readFile(new URL("../public/forecast-target-registry.md", import.meta.url), "utf8");
-  const leakage = await readFile(new URL("../public/no-leakage-policy.md", import.meta.url), "utf8");
-  const cost = await readFile(new URL("../public/zero-cost-policy.md", import.meta.url), "utf8");
+  const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
+  const registry = await readFile(new URL("../docs/archive/work-v6.1/forecast-target-registry.md", import.meta.url), "utf8");
+  const leakage = await readFile(new URL("../docs/archive/work-v6.1/no-leakage-policy.md", import.meta.url), "utf8");
+  const cost = await readFile(new URL("../docs/archive/work-v6.1/zero-cost-policy.md", import.meta.url), "utf8");
   assert.match(page, /FOREIGN VISITOR RETAIL INTELLIGENCE · SEOUL/);
   assert.match(page, /function ForecastLab/);
   assert.match(page, /FORWARD PREDICTIONS/);
@@ -146,28 +146,28 @@ test("locks V6.1 positioning and an honest prospective track record", async () =
 });
 
 test("ships localized indexable routes and technical SEO files", async () => {
-  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   const seo = await readFile(new URL("../app/seo-config.ts", import.meta.url), "utf8");
   const localePage = await readFile(new URL("../app/[locale]/page.tsx", import.meta.url), "utf8");
   const localizedRoute = await readFile(new URL("../app/[locale]/[slug]/page.tsx", import.meta.url), "utf8");
-  const robots = await readFile(new URL("../public/robots.txt", import.meta.url), "utf8");
-  const sitemap = await readFile(new URL("../public/sitemap.xml", import.meta.url), "utf8");
+  const robots = await readFile(new URL("../app/robots.ts", import.meta.url), "utf8");
+  const sitemap = await readFile(new URL("../app/sitemap.ts", import.meta.url), "utf8");
   for (const locale of ["ko", "en", "zh", "ja"]) assert.match(seo, new RegExp(`\\b${locale}\\b`));
   for (const slug of ["myeongdong", "hongdae", "seongsu", "airport", "business", "history", "more"]) {
     assert.match(seo, new RegExp(slug));
   }
   assert.match(localePage, /generateMetadata/);
   assert.match(localizedRoute, /generateStaticParams/);
-  assert.match(robots, /Sitemap:/);
-  assert.match(sitemap, /<urlset/);
-  assert.match(sitemap, /\/ja\/airport/);
+  assert.match(robots, /sitemap:/);
+  assert.match(sitemap, /seoLocales\.flatMap/);
+  assert.match(sitemap, /seoSlugs\.map/);
   assert.match(page, /document\.title = title/);
   assert.match(page, /link\[rel="canonical"\]/);
   assert.match(page, /hreflang="x-default"/);
 });
 
 test("ships the V5.5 command center and progressive information architecture", async () => {
-  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   for (const surface of [
     "HomeRankings",
@@ -179,7 +179,7 @@ test("ships the V5.5 command center and progressive information architecture", a
     "business-reading-map",
     "historical-highlights",
     "RetailPulse에서 할 수 있는 것",
-  ]) assert.match(`${page}\n${await readFile(new URL("../public/feature-map-v5-5.md", import.meta.url), "utf8")}`, new RegExp(surface.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  ]) assert.match(`${page}\n${await readFile(new URL("../docs/archive/work-v6.1/feature-map-v5-5.md", import.meta.url), "utf8")}`, new RegExp(surface.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(page, /\["today", "airport", "business", "forecast", "more"\]/);
   assert.match(page, /\["now", "next", "flights", "history", "airlines"\]/);
   assert.match(page, /현재 \$\{terminal\} 실시간 출국 수치는 공식 연결 전/);
@@ -188,7 +188,7 @@ test("ships the V5.5 command center and progressive information architecture", a
 });
 
 test("keeps V5.5 expanded copy available in all four languages", async () => {
-  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   for (const phrase of [
     "서울 지역 비교",
     "SEOUL AREA PULSE",
@@ -204,7 +204,7 @@ test("keeps V5.5 expanded copy available in all four languages", async () => {
 });
 
 test("applies a user-defined month range to airport and business history", async () => {
-  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(page, /function MonthRangePicker/);
   assert.match(page, /name="startMonth"/);
@@ -225,8 +225,8 @@ test("applies a user-defined month range to airport and business history", async
 });
 
 test("states the current runtime API truth without counting font assets as data APIs", async () => {
-  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
-  const matrix = await readFile(new URL("../public/data-source-matrix.md", import.meta.url), "utf8");
+  const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
+  const matrix = await readFile(new URL("../docs/archive/work-v6.1/data-source-matrix.md", import.meta.url), "utf8");
   assert.match(page, /LIVE RUNTIME DATA API/);
   assert.match(page, /현재 직접 호출 0개/);
   assert.match(page, /웹폰트 요청은 화면 자산이며 관광·공항 데이터 API가 아닙니다/);
@@ -237,8 +237,8 @@ test("states the current runtime API truth without counting font assets as data 
 });
 
 test("removes fabricated forecast performance and requires prospective evidence", async () => {
-  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
-  const plan = await readFile(new URL("../public/growth-validation-plan.md", import.meta.url), "utf8");
+  const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
+  const plan = await readFile(new URL("../docs/archive/work-v6.1/growth-validation-plan.md", import.meta.url), "utf8");
   assert.match(page, /function ForecastVerification/);
   assert.match(page, /공개할 예측 정확도가 아직 없습니다/);
   assert.match(page, /30 .*결과일 \+ 연속 4주/);
@@ -251,7 +251,7 @@ test("removes fabricated forecast performance and requires prospective evidence"
 });
 
 test("persists consented beta interest in D1 without a public list endpoint", async () => {
-  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   const route = await readFile(new URL("../app/api/beta-signups/route.ts", import.meta.url), "utf8");
   const schema = await readFile(new URL("../db/schema.ts", import.meta.url), "utf8");
   const hosting = JSON.parse(await readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"));
@@ -269,9 +269,9 @@ test("persists consented beta interest in D1 without a public list endpoint", as
 });
 
 test("separates the number of secrets from API applications and removes fake freshness", async () => {
-  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   const data = await readFile(new URL("../app/retailpulse-data.ts", import.meta.url), "utf8");
-  const audit = await readFile(new URL("../public/api-key-audit.md", import.meta.url), "utf8");
+  const audit = await readFile(new URL("../docs/archive/work-v6.1/api-key-audit.md", import.meta.url), "utf8");
   assert.match(page, /세 개의 별도 키가 아닙니다/);
   assert.match(page, /API APPLICATIONS<\/span><strong>3/);
   assert.match(page, /가짜 업데이트 시각을 표시하지 않습니다/);

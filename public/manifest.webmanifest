@@ -2,9 +2,19 @@
   "name": "RetailPulse Korea · Seoul",
   "short_name": "RPK Seoul",
   "description": "오늘과 내일의 서울 쇼핑·관광 수요를 한눈에.",
-  "start_url": "/",
+  "id": "/",
+  "start_url": "/ko",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#f5f3ed",
   "theme_color": "#f5f3ed",
-  "lang": "ko"
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
 }

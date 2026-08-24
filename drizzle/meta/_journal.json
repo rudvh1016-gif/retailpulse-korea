@@ -8,6 +8,13 @@
       "when": 1787482781087,
       "tag": "0000_daffy_tempest",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1787583117361,
+      "tag": "0001_crazy_nekra",
+      "breakpoints": true
     }
   ]
 }

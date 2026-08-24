@@ -1,6 +1,23 @@
 import type { Metadata } from "next";
 
-export const siteOrigin = "https://retailpulse-seoul.rudvh1016.chatgpt.site";
+const configuredOrigin = process.env.NEXT_PUBLIC_SITE_ORIGIN?.trim();
+
+function normalizeOrigin(value: string | undefined): string {
+  if (!value) return "http://localhost:3000";
+  const url = new URL(value);
+  const isLoopback = url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "[::1]";
+  if (url.protocol !== "https:" && !isLoopback) {
+    throw new Error("NEXT_PUBLIC_SITE_ORIGIN must use HTTPS outside localhost.");
+  }
+  return url.origin;
+}
+
+/**
+ * Canonical origin for independently deployed production builds.
+ * Production deployment is blocked by scripts/validate-production-env.mjs
+ * when NEXT_PUBLIC_SITE_ORIGIN is missing or not HTTPS.
+ */
+export const siteOrigin = normalizeOrigin(configuredOrigin);
 export const seoLocales = ["ko", "en", "zh", "ja"] as const;
 export type SeoLocale = typeof seoLocales[number];
 export const seoSlugs = ["myeongdong", "hongdae", "seongsu", "airport", "forecast", "business", "more"] as const;
@@ -76,8 +93,8 @@ export function buildMetadata(locale: SeoLocale, slug?: SeoSlug): Metadata {
     openGraph: {
       title, description, url: path, siteName: "RetailPulse Korea", type: "website",
       locale: locale === "ko" ? "ko_KR" : locale === "zh" ? "zh_CN" : locale === "ja" ? "ja_JP" : "en_US",
-      images: [{ url: "/assets/seoul-hangang.jpeg", width: 1200, height: 1800, alt: `${localeName[locale]} · RetailPulse Korea Seoul` }],
+      images: [{ url: "/assets/retailpulse-korea-og.jpg", width: 1200, height: 630, alt: `${localeName[locale]} · RetailPulse Korea Seoul` }],
     },
-    twitter: { card: "summary_large_image", title, description, images: ["/assets/seoul-hangang.jpeg"] },
+    twitter: { card: "summary_large_image", title, description, images: ["/assets/retailpulse-korea-og.jpg"] },
   };
 }

@@ -7,7 +7,16 @@ const validSegments = new Set(["visitor", "airport", "store", "research"]);
 const validLocales = new Set(["ko", "en", "zh", "ja"]);
 
 export async function POST(request: Request) {
+  if (process.env.ENABLE_BETA_SIGNUPS !== "true") {
+    return Response.json({ error: "signup_disabled" }, { status: 404 });
+  }
   try {
+    const contentLength = Number(request.headers.get("content-length") ?? "0");
+    if (contentLength > 4096) return Response.json({ error: "payload_too_large" }, { status: 413 });
+    const origin = request.headers.get("origin");
+    if (origin && origin !== new URL(request.url).origin) {
+      return Response.json({ error: "invalid_origin" }, { status: 403 });
+    }
     const payload = (await request.json()) as {
       email?: unknown;
       segment?: unknown;
@@ -57,7 +66,16 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  if (process.env.ENABLE_BETA_SIGNUPS !== "true") {
+    return Response.json({ error: "signup_disabled" }, { status: 404 });
+  }
   try {
+    const contentLength = Number(request.headers.get("content-length") ?? "0");
+    if (contentLength > 2048) return Response.json({ error: "payload_too_large" }, { status: 413 });
+    const origin = request.headers.get("origin");
+    if (origin && origin !== new URL(request.url).origin) {
+      return Response.json({ error: "invalid_origin" }, { status: 403 });
+    }
     const payload = (await request.json()) as { email?: unknown };
     const email = typeof payload.email === "string" ? payload.email.trim().toLowerCase() : "";
     if (!emailPattern.test(email) || email.length > 254) return Response.json({ error: "invalid_email" }, { status: 400 });
