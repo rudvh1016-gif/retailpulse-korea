@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 
 async function renderHome() {
@@ -30,6 +30,22 @@ test("keeps both user-provided Seoul visuals and their accessible descriptions",
   assert.match(page, /\/assets\/seoul-hanok\.jpeg/);
   assert.match(page, /석양 아래 한강과 남산서울타워가 보이는 서울 전경/);
   assert.match(page, /한옥 지붕 너머로 남산서울타워가 보이는 서울 풍경/);
+});
+
+test("keeps the four-language fonts as bounded static assets", async () => {
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  for (const file of [
+    "pretendard-variable.woff2",
+    "noto-sans-jp-400.woff2",
+    "noto-sans-jp-600.woff2",
+    "noto-sans-sc-400.woff2",
+    "noto-sans-sc-600.woff2",
+  ]) {
+    assert.match(css, new RegExp(`/fonts/${file.replaceAll(".", "\\.")}`));
+    const asset = await stat(new URL(`../public/fonts/${file}`, import.meta.url));
+    assert.ok(asset.size > 20_000, `${file} should contain real glyph data`);
+    assert.ok(asset.size < 200_000, `${file} should stay outside the Worker and below 200 KB`);
+  }
 });
 
 test("includes all MVP surfaces without a runtime LLM dependency", async () => {

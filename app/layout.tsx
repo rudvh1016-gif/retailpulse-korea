@@ -1,8 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
-import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
-import "@fontsource-variable/noto-sans-jp/wght.css";
-import "@fontsource-variable/noto-sans-sc/wght.css";
 import "./globals.css";
 import { siteOrigin } from "./seo-config";
 
