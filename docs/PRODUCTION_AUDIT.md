@@ -11,12 +11,12 @@ Status values are evidence-based. `BLOCKED` means an external account, domain, k
 | 5 | Lint | PASS | ESLint completed without errors. |
 | 6 | Typecheck | PASS | `tsc --noEmit` completed without errors. |
 | 7 | Unit tests | PASS | 13/13, including leakage, target matching, source errors, D1 migrations, immutable predictions and idempotent collector writes. |
-| 8 | Browser E2E | BLOCKED | The previous UI revision passed 13/13. After the security upgrade, this environment cannot download Chromium because its future-dated clock makes the CDN certificate “not yet valid”. GitHub CI must rerun the same suite with a valid clock. |
-| 9 | Mobile overflow | BLOCKED | 320/375/390/430 passed before the security-only dependency update; current-version rerun awaits GitHub CI. |
-| 10 | KO | BLOCKED | Server HTML check passes; final browser rerun awaits CI. |
-| 11 | EN | BLOCKED | Server HTML check passes; final browser rerun awaits CI. |
-| 12 | ZH | BLOCKED | Server HTML check passes; final browser rerun awaits CI. |
-| 13 | JA | BLOCKED | Server HTML check passes; final browser rerun awaits CI. |
+| 8 | Browser E2E | PASS | GitHub Actions CI run `32749205707` passed the 14-case Chromium suite, including project-local font loading. |
+| 9 | Mobile overflow | PASS | Chromium verified 320/375/390/430px Airport pages without page-level horizontal overflow. |
+| 10 | KO | PASS | Server-rendered locale, hydration, navigation and Pretendard loading passed. |
+| 11 | EN | PASS | Server-rendered locale and hydration passed. |
+| 12 | ZH | PASS | Server-rendered `zh-CN`, long-copy containment and Noto Sans SC loading passed. |
+| 13 | JA | PASS | Server-rendered `ja`, long-copy containment and Noto Sans JP loading passed. |
 | 14 | Server `html lang` | PASS | Direct server responses: `ko`, `en`, `zh-CN`, `ja`. |
 | 15 | Anonymous access | BLOCKED | Independent Cloudflare staging has not been deployed; the existing Work Site is owner-only. |
 | 16 | HTTPS | BLOCKED | Requires Cloudflare staging/custom domain. |
@@ -38,8 +38,8 @@ Status values are evidence-based. `BLOCKED` means an external account, domain, k
 ## Current measured test totals
 
 - Unit/contract/migration/collector: 13/13 PASS.
-- Rendered product assertions: 15/15 PASS.
+- Rendered product assertions: 16/16 PASS.
 - Production dependency audit: 0 vulnerabilities.
-- Browser suite: 13 cases defined; latest local run blocked before browser launch by the execution environment clock/certificate mismatch. This is not counted as PASS.
+- Browser suite: 14/14 PASS in GitHub Actions CI run `32749205707` using Chromium.
 
 The exact release commit SHA belongs in the release report and GitHub deployment record; the document intentionally avoids a self-referential SHA that would change with every documentation commit.
