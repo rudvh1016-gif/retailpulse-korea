@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin),
   title: "서울 외국인 쇼핑수요 신호 | RetailPulse Korea",
   description: "명동·홍대·성수의 오늘과 내일 외국인 쇼핑수요 신호, 매장 오픈 브리프, 인천공항 T1·T2 흐름을 확인하세요.",
+  icons: { icon: [{ url: "/favicon.svg", type: "image/svg+xml" }], shortcut: "/favicon.svg" },
   manifest: "/manifest.webmanifest",
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } },
   alternates: { canonical: "/ko", languages: { "ko-KR": "/ko", en: "/en", "zh-CN": "/zh", "ja-JP": "/ja", "x-default": "/en" } },

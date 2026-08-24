@@ -105,7 +105,7 @@ Date: 2026-08-24 KST. `BLOCKED` means production evidence, key, approval or back
 | 57 | Competitor Audit complete | PASS | official-service comparison |
 | 58 | Production Handoff complete | PASS | product lock and P0–P3 order |
 | 59 | Mobile + 4 languages + build | PASS | lint/build/render tests and responsive CSS review |
-| 60 | Final publish | PASS | Sites version 17 verified after final checkpoint |
+| 60 | Final publish | PASS | Sites version 18 verified after favicon correction |
 
 ## Pessimistic conclusion
 
