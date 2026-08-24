@@ -4,7 +4,7 @@ Status values are evidence-based. `BLOCKED` means an external account, domain, k
 
 | # | Gate | Status | Evidence / blocker |
 |---:|---|---|---|
-| 1 | Git clean / HEAD confirmation | PASS | Started from fetched `origin/main` `94cabdd6a1ef0becca0cc8d61b43b337c5b8e0ad`; production work is isolated on `production-v1` and safety tag `rpk-work-v6.1-final` exists locally. Final commit must be recorded below. |
+| 1 | Git clean / HEAD confirmation | PASS | Started from fetched `94cabdd6a1ef0becca0cc8d61b43b337c5b8e0ad`; safety tag `rpk-work-v6.1-final` was retained and the verified production tree was merged to GitHub `main`. Final commit is recorded in the release report. |
 | 2 | Secret scan | PASS | Working tree and reachable Git history scanner found no high-confidence credentials. |
 | 3 | Work runtime decoupling | PASS | Independent config, origin validation and public routes do not use ChatGPT authenticated-user headers; `.openai` remains only for the separate Work checkpoint. |
 | 4 | Production build | PASS | `NEXT_PUBLIC_SITE_ORIGIN=https://rpk-ci.invalid npm run build`. |
@@ -18,8 +18,8 @@ Status values are evidence-based. `BLOCKED` means an external account, domain, k
 | 12 | ZH | PASS | Server-rendered `zh-CN`, long-copy containment and Noto Sans SC loading passed. |
 | 13 | JA | PASS | Server-rendered `ja`, long-copy containment and Noto Sans JP loading passed. |
 | 14 | Server `html lang` | PASS | Direct server responses: `ko`, `en`, `zh-CN`, `ja`. |
-| 15 | Anonymous access | BLOCKED | Independent Cloudflare staging has not been deployed; the existing Work Site is owner-only. |
-| 16 | HTTPS | BLOCKED | Requires Cloudflare staging/custom domain. |
+| 15 | Anonymous access | PASS | The current Sites deployment access policy is `public`; independent Cloudflare `.com` deployment remains separate and blocked. |
+| 16 | HTTPS | PASS | The public Sites deployment is served over HTTPS; the user-owned `.com` certificate remains blocked with domain connection. |
 | 17 | Custom domain | BLOCKED | User-owned `.com` has not been supplied/connected. |
 | 18 | Canonical | PASS | Generated solely from validated `NEXT_PUBLIC_SITE_ORIGIN`; production build rejects chatgpt.site/localhost. Final `.com` curl remains blocked by domain. |
 | 19 | Hreflang | PASS | Four locales plus x-default are generated from the configured production origin. Final `.com` curl remains blocked by domain. |
