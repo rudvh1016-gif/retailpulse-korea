@@ -2,29 +2,56 @@
 
 ## Current boundary
 
-The independently deployable runtime is a Cloudflare Worker with static assets and an optional D1 binding. `.openai/hosting.json` remains only so the existing owner-only Work Site can be maintained; the independent production deployment uses `wrangler.production.jsonc` and does not use ChatGPT authentication headers.
+The independently deployable runtime is a Cloudflare Worker with static assets and an optional D1 binding. `.openai/hosting.json` remains only so the existing Work Site checkpoint can be maintained; independent production uses `wrangler.production.jsonc` and does not use ChatGPT authentication headers.
+
+Canonical engineering guidance:
+
+- `docs/ENGINEERING_DIRECTION.md`
+- `docs/ZERO_COST_HYBRID_AUDIT.md`
 
 ## Release order
 
 1. Run CI: secret scan, lint, typecheck, unit, build, rendered HTML, production dependency audit and browser E2E.
-2. Set `NEXT_PUBLIC_SITE_ORIGIN` to the final HTTPS apex or `www` origin.
-3. Deploy to `workers.dev` and complete signed-out smoke tests.
-4. Create D1, apply migrations, add the `DB` binding, and verify `/api/health`.
-5. Add only approved source keys as Cloudflare secrets.
-6. Connect the custom domain, redirect the non-canonical hostname, and verify SEO output.
-7. Enable each source as LIVE only after contract, timestamp, quota, fallback and terms checks pass.
+2. Confirm current official Cloudflare/GitHub free-tier limits and complete the applicable pessimistic audit gates.
+3. Reserve/configure the final domain/Cloudflare zone, but do not rush final traffic cutover.
+4. Deploy to `workers.dev` and complete signed-out smoke tests.
+5. Create Production D1, apply migrations, add the `DB` binding, and verify `/api/health`.
+6. Add only approved source keys to appropriate server-side secret stores.
+7. Implement/verify the hybrid production collector path: heavy scheduled work in GitHub Actions by default; lightweight Worker serving/read APIs; no duplicate authoritative scheduler for the same source.
+8. Enable each source as LIVE only after contract, timestamp, quota, parser, changed-only D1 write, fallback/stale/error, redaction and staging checks pass.
+9. Start immutable prospective Forecast archive, later Outcomes and exact-target baselines.
+10. After operational observation, connect/cut over the custom `.com`, redirect the non-canonical hostname, and verify SEO/HTTPS output.
 
 ## Required production variables
 
-- `NEXT_PUBLIC_SITE_ORIGIN`: public HTTPS origin. Deployment validation rejects localhost and chatgpt.site.
+- `NEXT_PUBLIC_SITE_ORIGIN`: public HTTPS origin. Deployment validation rejects localhost and chatgpt.site for final independent production.
 - `CLOUDFLARE_ACCOUNT_ID`: GitHub production environment secret.
-- `CLOUDFLARE_API_TOKEN`: least-privilege Worker/D1 deploy token.
+- `CLOUDFLARE_API_TOKEN`: least-privilege Worker/D1 deploy or approved D1-access token.
 - `DATA_GO_KR_SERVICE_KEY`: server-side only; never in query logs or frontend code.
 - `SEOUL_OPEN_DATA_KEY`: server-side only.
-- `KMA_SERVICE_KEY`: server-side only.
+- KMA credential only according to the actual approved account/key model; do not duplicate secrets unnecessarily.
 
 Beta signup is disabled by default. Do not enable it until retention, deletion, rate limiting and a real communication workflow are approved.
 
 ## Scheduler choice
 
-P0 uses one Cloudflare Cron Trigger every 30 minutes. This keeps D1 access and source secrets in the same runtime and avoids duplicated GitHub schedules. If a later source needs Python or bulk file backfill, use a manually triggered GitHub workflow rather than creating a second live scheduler.
+The previous assumption that P0 should use one heavy Cloudflare Cron Trigger every 30 minutes is no longer authoritative.
+
+Default production policy:
+
+- heavy API collection / normalization / hashing / Forecast / Outcome orchestration → **GitHub Actions first**;
+- Cloudflare Worker → lightweight site/API serving and indexed D1 reads;
+- Cloudflare Cron → only small tasks that are explicitly benchmarked safe under the current Free CPU limit;
+- never keep GitHub Actions and Worker Cron simultaneously authoritative for the same live source.
+
+GitHub `schedule` is not real-time. Record actual run/retrieval timestamps, design for delay/drop/retry/idempotency, and prefer off-minute schedules when source semantics permit.
+
+## D1 write policy
+
+Do not blindly UPSERT unchanged source rows every collection cycle.
+
+Use source-specific semantic changed-only decisions and test that volatile collection fields such as `retrievedAt` do not cause false changes. Account for index write amplification, rows-read trade-offs and storage growth. Preserve immutable Forecast/Outcome integrity while limiting repeated raw snapshots.
+
+## Free-tier protection
+
+Use the per-resource 70% NOTICE / 85% PROTECT / 95% EMERGENCY policy defined in `docs/ZERO_COST.md` and `docs/ZERO_COST_HYBRID_AUDIT.md`. Distinguish official provider usage from internal estimates. No code or workflow may automatically upgrade to a paid plan.
