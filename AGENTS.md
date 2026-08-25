@@ -9,29 +9,36 @@ Before changing anything:
 3. read this file
 4. read `CLAUDE.md`
 5. read `docs/ENGINEERING_DIRECTION.md`
-6. read relevant production/data/forecast/security docs
-7. audit any commits newer than the SHA mentioned in the prompt
+6. read `docs/ZERO_COST_HYBRID_AUDIT.md`
+7. read relevant production/data/forecast/security docs
+8. audit any commits newer than the SHA mentioned in the prompt
 
 Canonical engineering direction:
 
 - `docs/ENGINEERING_DIRECTION.md`
+- `docs/ZERO_COST_HYBRID_AUDIT.md` is the mandatory pessimistic audit gate before architecture-changing implementation.
 
 Hard rules:
 
 - Never assume the prompt's SHA is latest.
 - Preserve the zero-paid-runtime policy except for an explicitly approved domain.
-- Prefer the hybrid architecture documented in `docs/ENGINEERING_DIRECTION.md`: GitHub Actions for heavier scheduled collection/forecast/outcome work, Cloudflare Worker for lightweight serving/read APIs, Cloudflare D1 for persistent canonical storage.
+- Prefer the benchmark-gated hybrid architecture: GitHub Actions for heavier scheduled collection/forecast/outcome work, Cloudflare Worker for lightweight serving/read APIs, Cloudflare D1 for persistent canonical storage.
+- Heavy Worker Cron work is not authoritative by default; benchmark first.
 - Do not enable duplicate live schedulers for the same source.
-- Do not claim `LIVE`, `PASS`, or bug-free without evidence.
+- D1 collectors must not blindly rewrite unchanged rows; semantic changed-only writes must be measured and tested.
+- Do not keep unlimited repeated raw snapshots; use explicit current/change-history/aggregate/retention classes while preserving audit evidence.
+- Free-tier guardrails are 70% NOTICE / 85% PROTECT / 95% EMERGENCY per resource, and must distinguish official usage from internal estimates.
+- Do not claim `LIVE`, `PASS`, free-tier safety, traffic capacity, or bug-free without evidence.
 - Do not expose API keys or credentials in code, Git history, frontend bundles, logs, screenshots, or AI messages.
 - Preserve truth boundaries: visitor != tourist; foreign presence != purchase; proxy != sales; flight != passenger nationality; forecast != actual; backfill != prospective.
 - Predictions are immutable/append-only and outcomes remain separate.
 - Activate sources one at a time after terms, HTTP contract, timestamps, quotas, parser, D1 write, stale/error, and redaction checks pass.
-- If current code conflicts with `docs/ENGINEERING_DIRECTION.md`, report the conflict and resolve it deliberately rather than silently following an older note.
+- If current code conflicts with canonical docs, report and resolve the conflict deliberately rather than silently following an older note.
 - Preserve the existing product/UI direction unless the owner explicitly asks for redesign.
 
 Before push:
 
 - run applicable lint/typecheck/unit/build/render/E2E/secret checks;
+- run the applicable items in `docs/ZERO_COST_HYBRID_AUDIT.md`;
 - commit and push;
 - report exact commit SHA, changed files, tests run, remaining blockers, and any owner action required.
