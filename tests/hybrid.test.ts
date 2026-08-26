@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { CloudflareD1RestDatabase } from "../lib/d1-rest";
 import { evaluateQuotaUsage } from "../lib/quota-guard";
 import { normalizeAirportFlight } from "../lib/source-adapters";
+import { readCloudflareConfig, validateCloudflareEnvironment } from "../scripts/validate-cloudflare-environment.mjs";
 
 test("semantic flight hash ignores retrieval time and unknown volatile fields", async () => {
   const base = { flightId: "KE703", scheduleDateTime: "202608251430", terminalid: "2", gate: "231", remark: "정상" };
@@ -46,4 +48,43 @@ test("quota guardrails distinguish estimates and apply 70/85/95 levels", () => {
   assert.equal(emergency.allowOptionalWrites, false);
   assert.equal(emergency.allowCriticalWrites, true);
   assert.equal(evaluateQuotaUsage(100, 100, "OFFICIAL_USAGE").allowCriticalWrites, false);
+});
+
+test("Wrangler environments isolate Worker names and D1 databases", async () => {
+  const config = await readCloudflareConfig();
+  assert.equal(config.env.staging.name, "retailpulse-korea-staging");
+  assert.equal(config.env.production.name, "retailpulse-korea-production");
+  assert.notEqual(config.env.staging.name, config.env.production.name);
+
+  const stagingDb = config.env.staging.d1_databases[0];
+  const productionDb = config.env.production.d1_databases[0];
+  assert.equal(stagingDb.binding, "DB");
+  assert.equal(productionDb.binding, "DB");
+  assert.notEqual(stagingDb.database_name, productionDb.database_name);
+  assert.equal(config.triggers, undefined);
+});
+
+test("Cloudflare deploy gate rejects unresolved D1 resources", async () => {
+  const config = await readCloudflareConfig();
+  assert.throws(() => validateCloudflareEnvironment(config, "staging"), /Staging D1 is not created/i);
+  assert.throws(() => validateCloudflareEnvironment(config, "production"), /Production D1 is not created/i);
+});
+
+test("deploy workflow maps one stage to matching GitHub and Wrangler environments", async () => {
+  const workflow = await readFile(new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url), "utf8");
+  const deployScript = await readFile(new URL("../scripts/deploy-cloudflare.mjs", import.meta.url), "utf8");
+  assert.match(workflow, /environment: \$\{\{ inputs\.stage \}\}/);
+  assert.match(workflow, /RPK_DEPLOYMENT_STAGE: \$\{\{ inputs\.stage \}\}/);
+  assert.match(workflow, /npm run deploy:cloudflare/);
+  assert.match(deployScript, /CLOUDFLARE_ENV: stage/);
+  assert.match(deployScript, /"--env", stage/);
+});
+
+test("production collector remains gated and Worker Cron remains absent", async () => {
+  const workflow = await readFile(new URL("../.github/workflows/collect-production.yml", import.meta.url), "utf8");
+  const config = await readCloudflareConfig();
+  assert.match(workflow, /vars\.ENABLE_PRODUCTION_COLLECTOR == 'true'/);
+  assert.equal(config.triggers, undefined);
+  assert.equal(config.env.staging.triggers, undefined);
+  assert.equal(config.env.production.triggers, undefined);
 });

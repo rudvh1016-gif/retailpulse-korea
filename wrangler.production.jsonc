@@ -11,7 +11,41 @@
   },
   "observability": { "enabled": true },
   "vars": {
-    "APP_ENV": "production",
+    "APP_ENV": "development",
     "ENABLE_BETA_SIGNUPS": "false"
+  },
+  "env": {
+    "staging": {
+      "name": "retailpulse-korea-staging",
+      "workers_dev": true,
+      "vars": {
+        "APP_ENV": "staging",
+        "ENABLE_BETA_SIGNUPS": "false"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "retailpulse-korea-staging",
+          "database_id": "00000000-0000-4000-8000-000000000001",
+          "migrations_dir": "drizzle"
+        }
+      ]
+    },
+    "production": {
+      "name": "retailpulse-korea-production",
+      "workers_dev": true,
+      "vars": {
+        "APP_ENV": "production",
+        "ENABLE_BETA_SIGNUPS": "false"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "retailpulse-korea-production",
+          "database_id": "00000000-0000-4000-8000-000000000002",
+          "migrations_dir": "drizzle"
+        }
+      ]
+    }
   }
 }

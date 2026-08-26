@@ -8,6 +8,13 @@ Canonical engineering guidance:
 
 - `docs/ENGINEERING_DIRECTION.md`
 - `docs/ZERO_COST_HYBRID_AUDIT.md`
+- `docs/CLOUDFLARE_ENVIRONMENTS.md`
+
+## Environment boundary
+
+The repository has one codebase and one `wrangler.production.jsonc`, with named `staging` and `production` Wrangler environments. They deploy as separate Workers and bind the same application name `DB` to different D1 databases. The deployment workflow must use the selected stage for both the Vite build (`CLOUDFLARE_ENV`) and Wrangler deploy (`--env`).
+
+Committed D1 IDs are non-resource placeholders and the deploy preflight intentionally fails until the owner has authenticated Cloudflare, created the selected D1 database, and replaced only that environment's ID. Do not enable Wrangler automatic D1 provisioning for this repository.
 
 ## Release order
 
@@ -15,7 +22,7 @@ Canonical engineering guidance:
 2. Confirm current official Cloudflare/GitHub free-tier limits and complete the applicable pessimistic audit gates.
 3. Reserve/configure the final domain/Cloudflare zone, but do not rush final traffic cutover.
 4. Deploy to `workers.dev` and complete signed-out smoke tests.
-5. Create Production D1, apply migrations, add the `DB` binding, and verify `/api/health`.
+5. Create and verify staging D1 first; only after staging passes create Production D1, apply migrations, add the separate `DB` binding, and verify `/api/health`.
 6. Add only approved source keys to appropriate server-side secret stores.
 7. Verify the prepared Hybrid collector path: disabled-by-default two-hour GitHub Actions orchestration, direct parameterized D1 REST batches using a D1-write-only token, lightweight Worker serving/read APIs, and no Worker Cron duplicate.
 8. Enable each source as LIVE only after contract, timestamp, quota, parser, changed-only D1 write, fallback/stale/error, redaction and staging checks pass.
