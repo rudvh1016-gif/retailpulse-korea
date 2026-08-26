@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 const configuredOrigin = process.env.NEXT_PUBLIC_SITE_ORIGIN?.trim();
+export const isStagingDeployment = process.env.RPK_DEPLOYMENT_STAGE === "staging";
 
 function normalizeOrigin(value: string | undefined): string {
   if (!value) return "http://localhost:3000";

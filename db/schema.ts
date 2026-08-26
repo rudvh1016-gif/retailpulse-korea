@@ -38,6 +38,29 @@ export const airportFlights = sqliteTable("airport_flights", {
   uniqueIndex("airport_flights_source_event_unique").on(table.sourceId, table.flightNumber, table.direction, table.scheduledAt),
 ]);
 
+export const airportFlightChanges = sqliteTable("airport_flight_changes", {
+  id: text("id").primaryKey(),
+  sourceId: text("source_id").notNull(),
+  direction: text("direction").notNull(),
+  flightNumber: text("flight_number").notNull(),
+  scheduledAt: text("scheduled_at").notNull(),
+  changedAt: text("changed_at"),
+  terminal: text("terminal"),
+  gate: text("gate"),
+  checkinCounter: text("checkin_counter"),
+  status: text("status").notNull(),
+  semanticHash: text("semantic_hash").notNull(),
+  observedAt: text("observed_at").notNull(),
+}, (table) => [
+  uniqueIndex("airport_flight_changes_semantic_unique").on(
+    table.sourceId,
+    table.flightNumber,
+    table.direction,
+    table.scheduledAt,
+    table.semanticHash,
+  ),
+]);
+
 export const airportFlow = sqliteTable("airport_flow", {
   id: text("id").primaryKey(),
   sourceId: text("source_id").notNull(),

@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isStagingDeployment = process.env.RPK_DEPLOYMENT_STAGE === "staging";
+
 const nextConfig: NextConfig = {
   async headers() {
     return [{
@@ -10,6 +12,7 @@ const nextConfig: NextConfig = {
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
         { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
         { key: "X-Frame-Options", value: "DENY" },
+        ...(isStagingDeployment ? [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }] : []),
       ],
     }];
   },

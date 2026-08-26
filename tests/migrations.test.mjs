@@ -8,6 +8,7 @@ import { DatabaseSync } from "node:sqlite";
 const migrations = [
   "drizzle/0000_daffy_tempest.sql",
   "drizzle/0001_crazy_nekra.sql",
+  "drizzle/0002_reflective_martin_li.sql",
 ];
 
 function applyMigrations(database) {
@@ -33,6 +34,7 @@ test("D1 migrations apply and prediction rows remain immutable", () => {
 
     for (const table of [
       "airport_flights",
+      "airport_flight_changes",
       "airport_flow",
       "foreign_presence",
       "predictions",
@@ -43,6 +45,16 @@ test("D1 migrations apply and prediction rows remain immutable", () => {
     ]) {
       assert.ok(tables.includes(table), `missing table: ${table}`);
     }
+
+    const currentPlan = database.prepare(`EXPLAIN QUERY PLAN
+      SELECT source_hash FROM airport_flights
+      WHERE source_id = ? AND flight_number = ? AND direction = ? AND scheduled_at = ?`).all("S", "F", "departure", "2026-08-25T00:00:00Z");
+    assert.match(currentPlan.map((row) => String(row.detail)).join("\n"), /airport_flights_source_event_unique/);
+
+    const changePlan = database.prepare(`EXPLAIN QUERY PLAN
+      SELECT 1 FROM airport_flight_changes
+      WHERE source_id = ? AND flight_number = ? AND direction = ? AND scheduled_at = ? AND semantic_hash = ?`).all("S", "F", "departure", "2026-08-25T00:00:00Z", "H");
+    assert.match(changePlan.map((row) => String(row.detail)).join("\n"), /airport_flight_changes_semantic_unique/);
 
     database
       .prepare(

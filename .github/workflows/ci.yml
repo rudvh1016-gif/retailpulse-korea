@@ -18,6 +18,7 @@ jobs:
     timeout-minutes: 20
     env:
       NEXT_PUBLIC_SITE_ORIGIN: https://rpk-ci.invalid
+      RPK_DEPLOYMENT_STAGE: staging
       NEXT_PUBLIC_ENABLE_BETA_SIGNUP: "false"
     steps:
       - uses: actions/checkout@v4

@@ -6,6 +6,7 @@ export interface CollectorEnv {
   DATA_GO_KR_SERVICE_KEY?: string;
   SEOUL_OPEN_DATA_KEY?: string;
   KMA_SERVICE_KEY?: string;
+  retainChangeHistory?: boolean;
 }
 
 function nowIso(): string {
@@ -62,7 +63,7 @@ async function writeSourceHealth(
     .run();
 }
 
-async function persistAirportFlights(db: D1Database | undefined, records: CanonicalAirportFlight[]): Promise<number> {
+async function persistAirportFlights(db: D1Database | undefined, records: CanonicalAirportFlight[], retainChangeHistory: boolean): Promise<number> {
   if (!db || !records.length) return 0;
   const statements: D1PreparedStatement[] = [];
   for (const record of records) {
@@ -72,6 +73,35 @@ async function persistAirportFlights(db: D1Database | undefined, records: Canoni
       direction: record.direction,
       scheduledAt: record.scheduledAt,
     });
+    if (retainChangeHistory) statements.push(db.prepare(`INSERT INTO airport_flight_changes (
+        id, source_id, direction, flight_number, scheduled_at, changed_at,
+        terminal, gate, checkin_counter, status, semantic_hash, observed_at
+      ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+      WHERE NOT EXISTS (
+        SELECT 1 FROM airport_flights
+        WHERE source_id = ? AND flight_number = ? AND direction = ? AND scheduled_at = ?
+          AND source_hash = ?
+      )
+      ON CONFLICT(source_id, flight_number, direction, scheduled_at, semantic_hash) DO NOTHING`)
+      .bind(
+        crypto.randomUUID(),
+        record.sourceId,
+        record.direction,
+        record.flightNumber,
+        record.scheduledAt,
+        record.changedAt,
+        record.terminal,
+        record.gate,
+        record.checkinCounter,
+        record.status,
+        record.sourceHash,
+        record.retrievedAt,
+        record.sourceId,
+        record.flightNumber,
+        record.direction,
+        record.scheduledAt,
+        record.sourceHash,
+      ));
     statements.push(db.prepare(`INSERT INTO airport_flights (
         id, source_id, record_origin, direction, flight_number, airline_code,
         airport_code, terminal, gate, checkin_counter, status, scheduled_at,
@@ -92,7 +122,8 @@ async function persistAirportFlights(db: D1Database | undefined, records: Canoni
         freshness = excluded.freshness,
         schema_version = excluded.schema_version,
         quality_status = excluded.quality_status,
-        source_hash = excluded.source_hash`)
+        source_hash = excluded.source_hash
+      WHERE airport_flights.source_hash <> excluded.source_hash`)
       .bind(
         id,
         record.sourceId,
@@ -117,10 +148,12 @@ async function persistAirportFlights(db: D1Database | undefined, records: Canoni
       ));
   }
 
-  for (let offset = 0; offset < statements.length; offset += 50) {
-    await db.batch(statements.slice(offset, offset + 50));
+  let rowsWritten = 0;
+  for (let offset = 0; offset < statements.length; offset += 40) {
+    const results = await db.batch(statements.slice(offset, offset + 40));
+    rowsWritten += results.reduce((sum, result) => sum + Number(result.meta?.rows_written ?? 0), 0);
   }
-  return statements.length;
+  return rowsWritten;
 }
 
 export async function collectAirportFlights(env: CollectorEnv): Promise<{ status: string; records: number }> {
@@ -145,9 +178,9 @@ export async function collectAirportFlights(env: CollectorEnv): Promise<{ status
     const items = Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
     const retrievedAt = nowIso();
     const normalized = await Promise.all(items.map((item) => normalizeAirportFlight(item, "departure", retrievedAt)));
-    const written = await persistAirportFlights(env.DB, normalized);
-    await writeSourceHealth(env.DB, "INCHEON_FLIGHT_DETAIL", "LIVE", `stored ${written} normalized records`, normalized.at(-1));
-    await writeCollectorStatus(env.DB, "INCHEON_FLIGHT_DETAIL", "SUCCESS", `normalized ${normalized.length}; stored ${written}`, items.length, written);
+    const written = await persistAirportFlights(env.DB, normalized, env.retainChangeHistory === true);
+    await writeSourceHealth(env.DB, "INCHEON_FLIGHT_DETAIL", "LIVE", `normalized ${normalized.length}; changed writes ${written}`, normalized.at(-1));
+    await writeCollectorStatus(env.DB, "INCHEON_FLIGHT_DETAIL", "SUCCESS", `normalized ${normalized.length}; changed writes ${written}`, items.length, written);
     return { status: "SUCCESS", records: written };
   } catch (error) {
     const detail = error instanceof Error ? error.message : "collector_error";
@@ -162,4 +195,19 @@ export async function runScheduledCollectors(env: CollectorEnv): Promise<void> {
   await collectAirportFlights(env);
   if (!env.SEOUL_OPEN_DATA_KEY) await writeCollectorStatus(env.DB, "SEOUL_OPEN_DATA", "NEEDS_KEY", "SEOUL_OPEN_DATA_KEY is not configured");
   if (!env.KMA_SERVICE_KEY) await writeCollectorStatus(env.DB, "KMA_WEATHER", "NEEDS_KEY", "KMA_SERVICE_KEY is not configured");
+}
+
+export async function pruneOperationalHistory(db: D1Database | undefined, now = new Date()): Promise<number> {
+  if (!db) return 0;
+  const flightCutoff = new Date(now.getTime() - 30 * 86_400_000).toISOString();
+  const runCutoff = new Date(now.getTime() - 90 * 86_400_000).toISOString();
+  const results = await db.batch([
+    db.prepare(`DELETE FROM airport_flight_changes WHERE id IN (
+      SELECT id FROM airport_flight_changes WHERE observed_at < ? ORDER BY observed_at LIMIT 1500
+    )`).bind(flightCutoff),
+    db.prepare(`DELETE FROM collector_runs WHERE run_id IN (
+      SELECT run_id FROM collector_runs WHERE started_at < ? ORDER BY started_at LIMIT 100
+    )`).bind(runCutoff),
+  ]);
+  return results.reduce((sum, result) => sum + Number(result.meta?.rows_written ?? 0), 0);
 }

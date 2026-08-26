@@ -11,7 +11,7 @@
     "build": "bash scripts/build-verified.sh",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "test": "npm run build && node --test tests/*.test.mjs",
-    "test:unit": "node --experimental-sqlite --import tsx --test tests/contracts.test.ts tests/security.test.ts tests/migrations.test.mjs tests/collector.test.mjs",
+    "test:unit": "node --experimental-sqlite --import tsx --test tests/contracts.test.ts tests/security.test.ts tests/migrations.test.mjs tests/collector.test.mjs tests/hybrid.test.ts",
     "e2e:install": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright install --with-deps chromium",
     "test:e2e": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright test",
     "test:e2e:list": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright test --list",
@@ -22,6 +22,7 @@
     "validate:production-env": "node scripts/validate-production-env.mjs",
     "build:production": "npm run validate:production-env && npm run build",
     "deploy:production": "npm run build:production && wrangler deploy --config wrangler.production.jsonc",
+    "collect:production": "tsx scripts/collect-production.ts",
     "cf:typegen": "wrangler types --config wrangler.production.jsonc"
   },
   "dependencies": {

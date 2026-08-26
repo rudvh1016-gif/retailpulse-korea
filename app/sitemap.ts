@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
-import { seoLocales, seoSlugs, siteOrigin } from "./seo-config";
+import { isStagingDeployment, seoLocales, seoSlugs, siteOrigin } from "./seo-config";
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  if (isStagingDeployment) return [];
   const now = new Date();
   return seoLocales.flatMap((locale) => [
     {

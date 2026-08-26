@@ -7,15 +7,26 @@ export class SourceFetchError extends Error {
   }
 }
 
-export async function fetchOfficialJson(url: URL, options: { timeoutMs?: number; retries?: number } = {}): Promise<unknown> {
+export async function fetchOfficialJson(url: URL, options: { timeoutMs?: number; retries?: number; retryDelayMs?: number } = {}): Promise<unknown> {
   const timeoutMs = options.timeoutMs ?? 8_000;
   const retries = Math.min(options.retries ?? 1, 2);
+  const retryDelayMs = Math.max(0, Math.min(options.retryDelayMs ?? 250, 2_000));
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const response = await fetch(url, { signal: controller.signal, headers: { accept: "application/json" } });
-      if (!response.ok) throw new SourceFetchError("HTTP", response.status);
+      if (!response.ok) {
+        if (attempt < retries && (response.status === 429 || response.status >= 500)) {
+          const retryAfterSeconds = Number(response.headers.get("retry-after"));
+          const delay = Number.isFinite(retryAfterSeconds)
+            ? Math.min(retryAfterSeconds * 1_000, 2_000)
+            : retryDelayMs * (2 ** attempt);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+        throw new SourceFetchError("HTTP", response.status);
+      }
       try {
         return await response.json();
       } catch {
@@ -24,6 +35,7 @@ export async function fetchOfficialJson(url: URL, options: { timeoutMs?: number;
     } catch (error) {
       const normalized = error instanceof SourceFetchError ? error : new SourceFetchError("TIMEOUT");
       if (attempt === retries || (normalized.status && normalized.status < 500 && normalized.status !== 429)) throw normalized;
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs * (2 ** attempt)));
     } finally {
       clearTimeout(timer);
     }
@@ -89,9 +101,8 @@ export async function normalizeAirportFlight(raw: unknown, direction: "departure
   const changedAt = changedValue ? normalizeKstTimestamp(changedValue) : null;
   const qualityStatus: QualityStatus = terminal ? "VALID" : "PARTIAL";
   const freshness: SourceStatus = "LIVE";
-  return {
+  const semanticRecord = {
     sourceId: "INCHEON_FLIGHT_DETAIL",
-    recordOrigin: "LIVE",
     direction,
     flightNumber,
     airlineCode: optionalString(record, ["airline", "airlineCode"]),
@@ -102,13 +113,29 @@ export async function normalizeAirportFlight(raw: unknown, direction: "departure
     status,
     scheduledAt,
     changedAt,
+  } as const;
+  return {
+    sourceId: "INCHEON_FLIGHT_DETAIL",
+    recordOrigin: "LIVE",
+    direction,
+    flightNumber,
+    airlineCode: semanticRecord.airlineCode,
+    airportCode: semanticRecord.airportCode,
+    terminal,
+    gate: semanticRecord.gate,
+    checkinCounter: semanticRecord.checkinCounter,
+    status,
+    scheduledAt,
+    changedAt,
     eventAt: changedAt ?? scheduledAt,
     publishedAt: null,
     retrievedAt,
     freshness,
     schemaVersion: "airport-flight-v1",
     qualityStatus,
-    sourceHash: await sha256(raw),
+    // Collection timestamps and unknown upstream fields must not turn an
+    // unchanged flight into a new semantic version.
+    sourceHash: await sha256(semanticRecord),
   };
 }
 
