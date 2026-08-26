@@ -1,7 +1,7 @@
 {
-  "name": "RetailPulse Korea · Seoul",
-  "short_name": "RPK Seoul",
-  "description": "오늘과 내일의 서울 쇼핑·관광 수요를 한눈에.",
+  "name": "KORETAIL",
+  "short_name": "KORETAIL",
+  "description": "Retail Demand Signals for Korea — 오늘과 내일의 서울 쇼핑·관광 수요를 한눈에.",
   "id": "/",
   "start_url": "/ko",
   "scope": "/",
