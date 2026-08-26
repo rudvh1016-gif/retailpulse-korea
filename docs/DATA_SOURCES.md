@@ -1,10 +1,10 @@
 # Data Sources
 
-Last verified: 2026-08-25 KST. Recheck official terms immediately before activating Production.
+Last verified: 2026-08-26 KST. Recheck official terms immediately before activating Production.
 
 | Source | Status | Cost | Key/approval | Production role | Truth boundary |
 |---|---|---:|---|---|---|
-| [Incheon Airport detailed flight status](https://www.data.go.kr/data/15140153/openapi.do) | `GREEN_FREE_APPROVAL` | Free | data.go.kr key; production increase requires operating case approval | Flight, terminal, gate, check-in and status context | Flights are not passengers; gate flow is not store footfall |
+| [Incheon Airport detailed flight status](https://www.data.go.kr/data/15140153/openapi.do) | `GREEN_FREE_APPROVAL` | Free | development 500 calls/day; operating increase requires reviewed use case | Flight, terminal, gate, check-in and status context | Flights are not passengers; gate flow is not store footfall |
 | [Seoul real-time city data](https://data.seoul.go.kr/dataList/OA-21285/F/1/datasetView.do) | `GREEN_FREE_APPROVAL` | Free | Seoul Open Data key | Area activity actual/context | Total area population is not foreign tourists or shoppers |
 | [Seoul short-stay foreign living population](https://data.seoul.go.kr/dataList/OA-15441/S/1/datasetView.do) | `CONDITIONAL` | Free public data | The former administrative-dong dataset ended after July 2026; new 250 m grid/API mapping and reuse terms must be rechecked | Delayed foreign-presence outcome/history | D-4 or later; presence is not tourism or purchase |
 | [KMA village forecast](https://www.data.go.kr/data/15084084/openapi.do) and observed weather | `GREEN_FREE_APPROVAL` | Free | data.go.kr/KMA application and attribution | Forecast feature and later weather actual | Forecast and observation remain separate records |
@@ -21,3 +21,5 @@ Raw adapter → schema validation → canonical normalizer → D1 → internal A
 ## Failure behavior
 
 `LIVE`, `STALE`, `MISSING`, `DEGRADED`, `ERROR`, `OFFICIAL_HISTORICAL`, and `DEMO` are distinct. A last-good record may remain visible only with its original timestamp and a STALE label. Missing terminal data is N/A; it is never copied from the all-airport value.
+
+The prepared airport schedule is 12 calls/day and at most 24 with its single retry, below the listed 500-call development quota. This is a quota calculation, not proof of a successful approved-key response.

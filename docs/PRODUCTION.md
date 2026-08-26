@@ -17,7 +17,7 @@ Canonical engineering guidance:
 4. Deploy to `workers.dev` and complete signed-out smoke tests.
 5. Create Production D1, apply migrations, add the `DB` binding, and verify `/api/health`.
 6. Add only approved source keys to appropriate server-side secret stores.
-7. Implement/verify the hybrid production collector path: heavy scheduled work in GitHub Actions by default; lightweight Worker serving/read APIs; no duplicate authoritative scheduler for the same source.
+7. Verify the prepared Hybrid collector path: disabled-by-default two-hour GitHub Actions orchestration, direct parameterized D1 REST batches using a D1-write-only token, lightweight Worker serving/read APIs, and no Worker Cron duplicate.
 8. Enable each source as LIVE only after contract, timestamp, quota, parser, changed-only D1 write, fallback/stale/error, redaction and staging checks pass.
 9. Start immutable prospective Forecast archive, later Outcomes and exact-target baselines.
 10. After operational observation, connect/cut over the custom `.com`, redirect the non-canonical hostname, and verify SEO/HTTPS output.
@@ -27,6 +27,8 @@ Canonical engineering guidance:
 - `NEXT_PUBLIC_SITE_ORIGIN`: public HTTPS origin. Deployment validation rejects localhost and chatgpt.site for final independent production.
 - `CLOUDFLARE_ACCOUNT_ID`: GitHub production environment secret.
 - `CLOUDFLARE_API_TOKEN`: least-privilege Worker/D1 deploy or approved D1-access token.
+- `CLOUDFLARE_D1_DATABASE_ID`: Production D1 identifier.
+- `CLOUDFLARE_D1_WRITE_TOKEN`: separate least-privilege D1 Write token for the collector; do not reuse a broad deploy token.
 - `DATA_GO_KR_SERVICE_KEY`: server-side only; never in query logs or frontend code.
 - `SEOUL_OPEN_DATA_KEY`: server-side only.
 - KMA credential only according to the actual approved account/key model; do not duplicate secrets unnecessarily.
@@ -43,6 +45,14 @@ Default production policy:
 - Cloudflare Worker → lightweight site/API serving and indexed D1 reads;
 - Cloudflare Cron → only small tasks that are explicitly benchmarked safe under the current Free CPU limit;
 - never keep GitHub Actions and Worker Cron simultaneously authoritative for the same live source.
+
+Current prepared state:
+
+- Production Worker Cron is removed.
+- `.github/workflows/collect-production.yml` is the only collector scheduler.
+- It remains disabled unless `ENABLE_PRODUCTION_COLLECTOR=true` after all source gates pass.
+- Initial cadence is every two hours at minute 07: 12 calls/day, at most 24 with one retry.
+- Change history is separately disabled unless `RPK_RETAIN_FLIGHT_CHANGE_HISTORY=true`; enable only after real D1 write/storage measurement.
 
 GitHub `schedule` is not real-time. Record actual run/retrieval timestamps, design for delay/drop/retry/idempotency, and prefer off-minute schedules when source semantics permit.
 

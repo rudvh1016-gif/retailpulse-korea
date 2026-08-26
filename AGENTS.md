@@ -26,6 +26,7 @@ Hard rules:
 - Heavy Worker Cron work is not authoritative by default; benchmark first.
 - Do not enable duplicate live schedulers for the same source.
 - D1 collectors must not blindly rewrite unchanged rows; semantic changed-only writes must be measured and tested.
+- The only prepared authoritative collector scheduler is `.github/workflows/collect-production.yml`; keep it disabled until account/key/source gates pass. Do not restore Worker Cron in parallel.
 - Do not keep unlimited repeated raw snapshots; use explicit current/change-history/aggregate/retention classes while preserving audit evidence.
 - Free-tier guardrails are 70% NOTICE / 85% PROTECT / 95% EMERGENCY per resource, and must distinguish official usage from internal estimates.
 - Do not claim `LIVE`, `PASS`, free-tier safety, traffic capacity, or bug-free without evidence.

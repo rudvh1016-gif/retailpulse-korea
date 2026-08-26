@@ -19,6 +19,8 @@
 1. Open the failed job and first red step.
 2. CI failure means code is not released. Fix it on a branch and rerun.
 3. Deploy failure with green CI usually means Cloudflare token, account ID, origin or permissions.
+4. For collection, use **Collect Production Data → Run workflow** only after `ENABLE_PRODUCTION_COLLECTOR=true` and all collector secrets exist.
+5. If the repository has had no activity for 60 days, confirm scheduled workflows are still enabled. Never backdate `retrievedAt` to a missed nominal schedule.
 
 ## D1 quota or migration issue
 
@@ -26,6 +28,8 @@
 2. At high usage, reduce collector frequency and stop nonessential collection.
 3. Before a migration, confirm the Free plan Time Travel window; restore if the migration damages data.
 4. Never delete the database to fix a schema problem without an export/recovery check.
+5. At 70% record NOTICE. At 85% disable change history/optional backfills. At 95% stop noncritical collection and show DEGRADED/PAUSED.
+6. Never delete immutable prediction or outcome rows to recover space.
 
 ## Domain fails
 

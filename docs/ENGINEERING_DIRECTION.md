@@ -253,12 +253,14 @@ So **domain ownership can happen early; final traffic cutover happens late**.
 
 ## 10. Implementation migration from the current tree
 
-At the reviewed baseline, production structure exists but live production is incomplete:
+At the reviewed baseline, production structure exists but live production is incomplete. The 2026-08-26 Hybrid audit then removed the duplicate-risk Worker Cron and prepared the disabled GitHub scheduler:
 
 - independent Cloudflare Worker config exists
 - D1 schema/migrations exist locally
 - immutable prediction/outcome/baseline contracts exist
-- the Worker has a 30-minute scheduled collector hook
+- the Worker no longer has the 30-minute collector hook or trigger
+- `.github/workflows/collect-production.yml` is the single disabled-by-default authoritative scheduler candidate
+- D1 current writes use semantic conditional UPSERT; optional semantic change history is separately gated
 - airport departure collection is the most implemented live collector path
 - Seoul/KMA collection paths are not yet complete live collectors
 - Production D1 is not yet created/connected
@@ -270,11 +272,11 @@ Next architecture work should therefore be incremental, not a rewrite.
 ### Required migration tasks
 
 1. Preserve the existing frontend/product design and production contracts.
-2. Extract collector/forecast logic so it can run from a standard Node/GitHub Actions environment without duplicating business rules.
-3. Add one scheduled GitHub Actions workflow for production collection/orchestration. Prefer one orchestrator over many overlapping schedules.
+2. Keep collector/forecast logic runnable from standard Node/GitHub Actions without duplicating business rules.
+3. Activate the existing single GitHub Actions orchestration only after its Cloudflare/API secrets and source gates pass.
 4. Write to Production D1 through a secure, least-privilege Cloudflare mechanism (for example approved Wrangler/Cloudflare API use). Never expose D1 write credentials to frontend code.
 5. Keep writes idempotent and bounded; batch where possible.
-6. Disable or neutralize duplicate heavy Worker Cron collection when the GitHub schedule becomes authoritative.
+6. Do not restore duplicate heavy Worker Cron collection while GitHub Actions is authoritative.
 7. Benchmark Worker request CPU with production-shaped routes. Push pages toward static/pre-rendered delivery where possible; keep dynamic APIs small.
 8. Add usage telemetry/guard checks for Worker requests, D1 rows read/written, storage growth, API quotas, and Action failures.
 9. Fail closed on missing secrets and fail visibly/degraded on source outages; never fabricate data.
