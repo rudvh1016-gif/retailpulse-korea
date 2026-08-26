@@ -20,8 +20,12 @@
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate",
     "secret:scan": "node scripts/secret-scan.mjs",
     "validate:production-env": "node scripts/validate-production-env.mjs",
+    "validate:cloudflare-env": "node scripts/validate-cloudflare-environment.mjs",
     "build:production": "npm run validate:production-env && npm run build",
-    "deploy:production": "npm run build:production && wrangler deploy --config wrangler.production.jsonc",
+    "deploy:cloudflare": "node scripts/deploy-cloudflare.mjs",
+    "deploy:production": "npm run deploy:cloudflare",
+    "db:migrate:staging": "wrangler d1 migrations apply DB --remote --env staging --config wrangler.production.jsonc",
+    "db:migrate:production": "wrangler d1 migrations apply DB --remote --env production --config wrangler.production.jsonc",
     "collect:production": "tsx scripts/collect-production.ts",
     "cf:typegen": "wrangler types --config wrangler.production.jsonc"
   },

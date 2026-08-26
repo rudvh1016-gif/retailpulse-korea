@@ -2,7 +2,7 @@
 
 **Status:** Canonical engineering direction for Codex + Claude Code  
 **Decision date:** 2026-08-26 KST  
-**Reviewed baseline:** `8c738802211c20c5707a3612c8d61a1658043fb5`  
+**Reviewed baseline:** `2ed9133f77db057c61cc1eb5c74ea45cccbf32d8`
 **Scope:** Production architecture, zero-cost operating policy, data collection, forecast/outcome validation, deployment order, and AI handoff rules.
 
 > This document is the source of truth when an implementation prompt conflicts with an older production note. Do not silently change this direction. If a real test proves part of it wrong, document the evidence first and update this file in the same change.
@@ -72,6 +72,8 @@ Cloudflare Worker / static assets (small read APIs + site delivery)
         ↓
 retailpulsekorea.com or final approved .com
 ```
+
+Staging and production share this codebase but use named Wrangler environments and separate D1 databases. See `docs/CLOUDFLARE_ENVIRONMENTS.md`. Never bind staging and production to the same D1 database.
 
 ### Why this split
 

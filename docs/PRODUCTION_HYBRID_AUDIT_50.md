@@ -82,6 +82,12 @@ The Worker Free CPU budget is too small to assume that 1,000-record parsing/hash
 
 **Result:** 44 PASS / 0 FAIL / 6 BLOCKED. “Production ready” is not supported until the blocked gates are resolved.
 
+### Cloudflare environment bridge review — 2026-08-26 KST
+
+The deploy workflow previously accepted `staging`/`production` but invoked the same default Wrangler deployment for both. The environment bridge now selects matching Vite and Wrangler named environments, assigns distinct Worker/database names, and refuses unresolved D1 placeholder IDs. Production Worker Cron and the disabled-by-default collector policy are unchanged.
+
+This configuration correction does **not** change the audit total. Gates 13, 15, 20, 35, 46 and 50 remain BLOCKED until actual Cloudflare/D1/domain/source evidence exists.
+
 ## Traffic model — assumptions, not measurements
 
 `Best=1`, `Expected=5`, `Worst=20` dynamic Worker requests/user. Expected LIVE reads are 4 rows/user; worst is 80 rows/user.

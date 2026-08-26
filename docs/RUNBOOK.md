@@ -1,5 +1,14 @@
 # RPK Runbook
 
+## Cloudflare staging connection
+
+1. Never paste a Cloudflare token into chat or a repository file.
+2. Use the GitHub `staging` Environment for staging secrets and variables; use the separate `production` Environment for production.
+3. Create the staging D1 first and replace only the staging placeholder ID in `wrangler.production.jsonc`.
+4. Apply `npm run db:migrate:staging`, then manually run **Deploy Cloudflare → staging**.
+5. Do not create or touch production data until staging health, locale, noindex, API contract and repeated semantic-write checks pass.
+6. `ENABLE_PRODUCTION_COLLECTOR` must remain absent or `false`; `RPK_RETAIN_FLIGHT_CHANGE_HISTORY` must remain absent or `false`.
+
 ## Site does not open
 
 1. Open GitHub → Actions → latest CI and Deploy Cloudflare runs.

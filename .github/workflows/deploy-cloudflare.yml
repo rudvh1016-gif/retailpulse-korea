@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: production
+  group: cloudflare-deploy-${{ inputs.stage }}
   cancel-in-progress: false
 
 jobs:
@@ -33,7 +33,7 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test:unit
-      - run: npm run deploy:production
+      - run: npm run deploy:cloudflare
         env:
           NEXT_PUBLIC_SITE_ORIGIN: ${{ vars.NEXT_PUBLIC_SITE_ORIGIN }}
           RPK_DEPLOYMENT_STAGE: ${{ inputs.stage }}
