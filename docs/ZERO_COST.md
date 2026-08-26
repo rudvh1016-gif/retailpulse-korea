@@ -1,6 +1,6 @@
 # Zero-Cost Runtime Policy
 
-RetailPulse Korea targets zero paid runtime API, data and LLM cost beyond a separately approved domain.
+KORETAIL targets zero paid runtime API, data and LLM cost beyond a separately approved domain.
 
 Canonical implementation guidance:
 

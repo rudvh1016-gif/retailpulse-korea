@@ -66,6 +66,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .topbar { height: 76px; max-width: 1280px; padding: 0 28px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
 .brand { color: var(--ink); text-decoration: none; font-size: 13px; font-weight: 850; line-height: .92; letter-spacing: -.04em; }
 .brand span { display: block; }
+.brand .brand-descriptor { margin-top: 4px; color: var(--muted); font-size: 8px; font-weight: 500; line-height: 1.15; letter-spacing: .02em; }
 .brand-button { padding: 0; border: 0; background: transparent; text-align: left; }
 .header-meta { display: flex; align-items: center; gap: 18px; }
 .kst-chip { color: var(--muted); font-size: 9px; font-weight: 750; letter-spacing: .09em; }
@@ -1197,6 +1198,7 @@ h1, h2, h3, strong, b { font-weight: 600; }
 
 @media (max-width: 365px) {
   .brand { font-size: 12px; }
+  .brand .brand-descriptor { display: none; }
   .language-control select { max-width: 82px; font-size: 10px; }
   .header-meta { gap: 4px; }
   .share-pulse { align-items: stretch; flex-direction: column; }

@@ -197,7 +197,7 @@ Preferred descriptor:
 
 `Retail Demand Signals for Korea`
 
-`RetailPulse Korea` is now a legacy name to migrate out of public-facing surfaces when safe.
+`RetailPulse Korea` is the legacy former public name. Current public UI, SEO, PWA, share, accessibility and 404 surfaces use `KORETAIL`; remaining occurrences are historical records or compatibility-sensitive technical identifiers.
 
 `Korea Retail Signal` is **not** the final brand and should not be introduced as such.
 

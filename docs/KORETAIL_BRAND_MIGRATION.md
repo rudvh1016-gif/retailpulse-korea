@@ -29,13 +29,13 @@ At the time this checklist was written, the following public-facing surfaces wer
 - `public/manifest.webmanifest`
 - rendered HTML title test
 
-## Remaining P0 public UI migration
+## Completed P0 public UI migration
 
 ### `app/retailpulse-app.tsx`
 
 This is a large file and must be edited with a minimal diff, not replaced from a stale copy.
 
-Known public-facing legacy strings that must become KORETAIL equivalents include at least:
+The public-facing legacy strings below were migrated to KORETAIL equivalents on the dedicated brand branch:
 
 - `RetailPulse Pro 미리보기` -> `KORETAIL Pro 미리보기`
 - `RetailPulse Pro preview` -> `KORETAIL Pro preview`
@@ -55,7 +55,7 @@ Known public-facing legacy strings that must become KORETAIL equivalents include
 - methodology paragraph beginning with `RetailPulse` -> `KORETAIL`
 - `MY RETAILPULSE` -> `MY KORETAIL`
 
-Do not mechanically rename TypeScript type names, CSS class names, file names or internal IDs unless there is a clear reason. Public text and accessibility labels are the P0 target.
+TypeScript type names, CSS class names, file names, storage keys and internal IDs remain unchanged for compatibility. Public text and accessibility labels were the P0 target.
 
 ## Tests that must be synchronized
 
@@ -74,9 +74,9 @@ Inspect public assets for old visible branding:
 - favicon / PWA assets
 - any social preview or screenshot containing `RetailPulse`
 
-The existing `favicon.svg` currently has no visible text and may remain temporarily if it still fits the KORETAIL visual direction.
+The existing `favicon.svg` has no visible text and remains compatible with the KORETAIL visual direction.
 
-The old OG filename may remain temporarily as a technical path, but if the image itself contains the old wordmark, replace the image and then migrate metadata references safely.
+The old OG filename remains as a technical path. The 1200×630 image was inspected and contains only the Seoul photograph, with no old wordmark.
 
 ## Legacy technical identifiers — DO NOT blindly rename
 
@@ -186,3 +186,12 @@ Classify every remaining occurrence as either:
 3. technical identifier -> may remain temporarily with compatibility rationale
 
 Do not claim migration complete until this classification is reported.
+
+## Current source result
+
+The current brand branch has no legacy public-brand literal in application or public asset source. Remaining matches are limited to:
+
+- historical brand decision, research, audit and archived Work documents that explicitly describe the former name;
+- technical identifiers such as repository/package/Worker/D1 names, file and import names, local-storage keys, asset paths and tests that protect compatibility or assert the former public strings stay absent.
+
+Final completion still requires the branch test suite, pull-request CI and post-merge `main` verification.

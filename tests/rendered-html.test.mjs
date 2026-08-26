@@ -24,6 +24,36 @@ test("renders the KORETAIL production shell", async () => {
   assert.match(html, /데모 데이터/);
 });
 
+test("uses KORETAIL across the public brand surfaces", async () => {
+  const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
+  const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
+  const seo = await readFile(new URL("../app/seo-config.ts", import.meta.url), "utf8");
+  const manifest = await readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8");
+  const publicBrand = `${page}\n${layout}\n${seo}\n${manifest}`;
+
+  for (const required of [
+    "KORETAIL",
+    "Retail Demand Signals for Korea",
+    "KORETAIL에서 할 수 있는 것",
+    "WHAT YOU CAN DO WITH KORETAIL",
+    "KORETAIL可以做什么",
+    "KORETAILでできること",
+    "MY KORETAIL",
+    "KORETAIL PRO",
+  ]) assert.match(publicBrand, new RegExp(required));
+
+  for (const formerPublicBrand of [
+    "RETAILPULSE KOREA",
+    "RetailPulse Pro",
+    "MY RETAILPULSE",
+    "RetailPulse에서 할 수 있는 것",
+    "WHAT YOU CAN DO WITH RETAILPULSE",
+    "RetailPulse可以做什么",
+    "RetailPulseでできること",
+    "RetailPulse Seoul",
+  ]) assert.doesNotMatch(publicBrand, new RegExp(formerPublicBrand, "i"));
+});
+
 test("keeps both user-provided Seoul visuals and their accessible descriptions", async () => {
   const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   assert.match(page, /\/assets\/seoul-hangang\.jpeg/);
@@ -194,7 +224,7 @@ test("ships the V5.5 command center and progressive information architecture", a
     "airport-context-nav",
     "business-reading-map",
     "historical-highlights",
-    "RetailPulse에서 할 수 있는 것",
+    "KORETAIL에서 할 수 있는 것",
   ]) assert.match(`${page}\n${await readFile(new URL("../docs/archive/work-v6.1/feature-map-v5-5.md", import.meta.url), "utf8")}`, new RegExp(surface.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(page, /\["today", "airport", "business", "forecast", "more"\]/);
   assert.match(page, /\["now", "next", "flights", "history", "airlines"\]/);

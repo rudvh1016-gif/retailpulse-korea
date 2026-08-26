@@ -1,4 +1,4 @@
-# RetailPulse Korea — Engineering Direction
+# KORETAIL — Engineering Direction
 
 **Status:** Canonical engineering direction for Codex + Claude Code  
 **Decision date:** 2026-08-26 KST  
@@ -9,7 +9,7 @@
 
 ## 1. Product truth that engineering must preserve
 
-RetailPulse Korea (RPK) is a **Foreign Visitor Retail Intelligence** product, initially for Myeongdong, Hongdae, and Seongsu.
+KORETAIL is a **Foreign Visitor Retail Intelligence** product, initially for Myeongdong, Hongdae, and Seongsu. Legacy `RPK_` configuration names remain internal compatibility identifiers.
 
 Never blur these boundaries:
 

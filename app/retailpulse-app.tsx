@@ -89,7 +89,7 @@ const copy = {
     forecastConfidence: "예측 검증",
     bestDay: "가장 강한 날",
     compare: "지역 비교",
-    pro: "RetailPulse Pro 미리보기",
+    pro: "KORETAIL Pro 미리보기",
     proSub: "더 긴 예측과 상세 근거를 한곳에서.",
     openPreview: "미리보기 열기",
     close: "닫기",
@@ -140,7 +140,7 @@ const copy = {
     forecastConfidence: "Forecast validation",
     bestDay: "Best day",
     compare: "Area comparison",
-    pro: "RetailPulse Pro preview",
+    pro: "KORETAIL Pro preview",
     proSub: "Longer forecasts and deeper signals in one place.",
     openPreview: "Open preview",
     close: "Close",
@@ -191,7 +191,7 @@ const copy = {
     forecastConfidence: "预测验证",
     bestDay: "最佳日期",
     compare: "地区比较",
-    pro: "RetailPulse Pro 预览",
+    pro: "KORETAIL Pro 预览",
     proSub: "更长周期预测与更详细的信号。",
     openPreview: "打开预览",
     close: "关闭",
@@ -242,7 +242,7 @@ const copy = {
     forecastConfidence: "予測検証",
     bestDay: "最も強い日",
     compare: "エリア比較",
-    pro: "RetailPulse Pro プレビュー",
+    pro: "KORETAIL Pro プレビュー",
     proSub: "より長い予測と詳しい根拠をひとつに。",
     openPreview: "プレビューを見る",
     close: "閉じる",
@@ -527,7 +527,7 @@ function QuickActions({ lang, onArea, onAirport, onBusiness, onInsights, onMore 
     ["T1 / T2", localText(lang, { ko: "터미널 비교", en: "TERMINAL COMPARE", zh: "航站楼比较", ja: "ターミナル比較" }), () => onAirport("history")],
     [localText(lang, { ko: "매장 준비", en: "STORE PREP", zh: "门店准备", ja: "店舗準備" }), localText(lang, { ko: "업종별 오픈 브리프", en: "OPENING BRIEF", zh: "分行业开店简报", ja: "業種別ブリーフ" }), onBusiness],
     [localText(lang, { ko: "과거와 비교", en: "COMPARE HISTORY", zh: "对比历史", ja: "過去と比較" }), localText(lang, { ko: "7일·월별 흐름", en: "7-DAY + MONTHLY", zh: "7日与月度趋势", ja: "7日・月次推移" }), onInsights],
-    ["MY RETAILPULSE", localText(lang, { ko: "선호 설정 확인", en: "SAVED PREFERENCES", zh: "查看偏好设置", ja: "保存設定を確認" }), onMore],
+    ["MY KORETAIL", localText(lang, { ko: "선호 설정 확인", en: "SAVED PREFERENCES", zh: "查看偏好设置", ja: "保存設定を確認" }), onMore],
   ] as const;
   return <section className="quick-actions" aria-labelledby="quick-actions-title"><div className="section-head"><div><p className="eyebrow">START HERE</p><h2 id="quick-actions-title">{localText(lang, { ko: "빠른 실행", en: "QUICK ACTIONS", zh: "快捷入口", ja: "クイック操作" })}</h2></div></div><div>{actions.map(([label, note, action], index) => <button key={label} onClick={action}><span>0{index + 1}</span><strong>{label}</strong><small>{note}</small><b>↗</b></button>)}</div></section>;
 }
@@ -541,7 +541,7 @@ function FeatureDiscovery({ lang, onAirport, onBusiness, onInsights, onMore }: {
     [localText(lang, { ko: "과거 분석", en: "HISTORICAL ANALYSIS", zh: "历史分析", ja: "過去分析" }), localText(lang, { ko: "최근 7일에서 12개월 이상 흐름을 읽습니다.", en: "Read changes from seven days to twelve months and beyond.", zh: "查看最近7日至12个月以上的变化。", ja: "直近7日から12か月以上の推移を読みます。" }), onInsights],
     [localText(lang, { ko: "개인화", en: "PERSONALISE", zh: "个性化", ja: "パーソナライズ" }), localText(lang, { ko: "선호 지역·터미널·항공사·업종을 저장합니다.", en: "Save your area, terminal, airline and business.", zh: "保存偏好地区、航站楼、航司与行业。", ja: "エリア・ターミナル・航空会社・業種を保存します。" }), onMore],
   ] as const;
-  return <section className="feature-discovery" aria-labelledby="feature-discovery-title"><div className="section-head"><div><p className="eyebrow">PRODUCT MAP</p><h2 id="feature-discovery-title">{localText(lang, { ko: "RetailPulse에서 할 수 있는 것", en: "WHAT YOU CAN DO WITH RETAILPULSE", zh: "RetailPulse可以做什么", ja: "RetailPulseでできること" })}</h2></div></div><div>{features.map(([label, note, action], index) => <button key={label} onClick={action}><span>0{index + 1}</span><p><strong>{label}</strong><small>{note}</small></p><b>↗</b></button>)}</div></section>;
+  return <section className="feature-discovery" aria-labelledby="feature-discovery-title"><div className="section-head"><div><p className="eyebrow">PRODUCT MAP</p><h2 id="feature-discovery-title">{localText(lang, { ko: "KORETAIL에서 할 수 있는 것", en: "WHAT YOU CAN DO WITH KORETAIL", zh: "KORETAIL可以做什么", ja: "KORETAILでできること" })}</h2></div></div><div>{features.map(([label, note, action], index) => <button key={label} onClick={action}><span>0{index + 1}</span><p><strong>{label}</strong><small>{note}</small></p><b>↗</b></button>)}</div></section>;
 }
 
 type SignupSegment = "visitor" | "airport" | "store" | "research";
@@ -598,7 +598,7 @@ function BetaSignup({ lang }: { lang: Lang }) {
       })}</p>
       <ol>
         <li><span>01</span><strong>WHAT CHANGED</strong><small>{localText(lang, { ko: "어제와 달라진 핵심", en: "What changed since yesterday", zh: "与昨天相比的变化", ja: "昨日からの変化" })}</small></li>
-        <li><span>02</span><strong>MY RETAILPULSE</strong><small>{localText(lang, { ko: "선호 지역·터미널 저장", en: "Saved area and terminal", zh: "保存地区与航站楼", ja: "エリア・ターミナル保存" })}</small></li>
+        <li><span>02</span><strong>MY KORETAIL</strong><small>{localText(lang, { ko: "선호 지역·터미널 저장", en: "Saved area and terminal", zh: "保存地区与航站楼", ja: "エリア・ターミナル保存" })}</small></li>
         <li><span>03</span><strong>VERIFICATION</strong><small>{localText(lang, { ko: "실제 결과가 쌓인 뒤 공개", en: "Published only after outcomes exist", zh: "有实际结果后才公开", ja: "実績蓄積後に公開" })}</small></li>
       </ol>
     </div>
@@ -842,8 +842,8 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   return (
     <div className={"app lang-" + lang} data-hydrated={preferencesReady ? "true" : "false"}>
       <header className="topbar">
-        <button className="brand brand-button" onClick={() => navigate("today")} aria-label="RetailPulse Korea Seoul home">
-          <span>RETAILPULSE KOREA</span><span>SEOUL · RPK</span>
+        <button className="brand brand-button" onClick={() => navigate("today")} aria-label="KORETAIL home">
+          <span>KORETAIL</span><span className="brand-descriptor">Retail Demand Signals for Korea</span>
         </button>
         <div className="header-meta">
           <span className="kst-chip">KST · AUG 23</span>
@@ -883,7 +883,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
               </figure>
             </section>
 
-            <section className="audience-rail" aria-label={lang === "zh" ? "使用目的" : lang === "ja" ? "利用目的" : lang === "en" ? "Choose how to use RetailPulse" : "RetailPulse 사용 목적"}>
+            <section className="audience-rail" aria-label={lang === "zh" ? "使用目的" : lang === "ja" ? "利用目的" : lang === "en" ? "Choose how to use KORETAIL" : "KORETAIL 사용 목적"}>
               <div>
                 <p className="eyebrow">FOR VISITORS</p>
                 <strong>{lang === "zh" ? "今天去哪儿、几点去？" : lang === "ja" ? "今日はどこへ、何時に行く？" : lang === "en" ? "Where should I go, and when?" : "오늘 어디를, 몇 시에 갈까?"}</strong>
@@ -939,14 +939,14 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
         <footer className="site-footer">
           <p>{t.demoNote}</p><p>{t.kst}</p>
-          <nav className="footer-links" aria-label="RetailPulse sections">
+          <nav className="footer-links" aria-label="KORETAIL sections">
             <a href={`/${lang}`}>HOME</a>
             {(Object.keys(areaInfo) as AreaId[]).map((id) => <a key={id} href={routeFor(lang, "today", id)}>{areaLocalName(id, lang)}</a>)}
             <a href={routeFor(lang, "airport", selected)}>{t.airport}</a>
             <a href={routeFor(lang, "business", selected)}>{t.business}</a>
             <a href={routeFor(lang, "forecast", selected)}>{t.forecast}</a>
           </nav>
-          <span>RETAILPULSE KOREA · SEOUL · V6.1 WORK SITE</span>
+          <span>KORETAIL · RETAIL DEMAND SIGNALS FOR KOREA</span>
         </footer>
       </main>
 
@@ -990,7 +990,7 @@ function GlobalSearch({
   ].filter((item) => includes(item.code, item.label, ...item.keywords));
   const hasResults = areaRows.length + airlineRows.length + flightRows.length + industryRows.length + terminalRows.length + sectionRows.length > 0;
   const labels = {
-    title: localText(lang, { ko: "RetailPulse 전체 검색", en: "Search RetailPulse", zh: "搜索 RetailPulse", ja: "RetailPulseを検索" }),
+    title: localText(lang, { ko: "KORETAIL 전체 검색", en: "Search KORETAIL", zh: "搜索 KORETAIL", ja: "KORETAILを検索" }),
     placeholder: localText(lang, { ko: "지역, 항공편, 항공사, 업종 검색", en: "Area, flight, airline or business", zh: "搜索地区、航班、航司或行业", ja: "エリア・便名・航空会社・業種を検索" }),
     area: localText(lang, { ko: "지역", en: "AREA", zh: "地区", ja: "エリア" }),
     airport: localText(lang, { ko: "공항", en: "AIRPORT", zh: "机场", ja: "空港" }),
@@ -1081,7 +1081,7 @@ function AreaDetail({ lang, day, selected }: { lang: Lang; day: Day; selected: A
       <section className="area-history-summary" aria-labelledby="area-history-title"><div className="section-head"><div><p className="eyebrow">HISTORY · 4-WEEK COMPARISON</p><h2 id="area-history-title">{localText(lang, { ko: "최근 흐름과 비교", en: "COMPARE WITH RECENT HISTORY", zh: "与近期趋势比较", ja: "最近の推移と比較" })}</h2></div><DemoLabel lang={lang} /></div><div className="area-history-numbers"><p><span>{localText(lang, { ko: "최근 4주 평균", en: "4-WEEK AVERAGE", zh: "近4周平均", ja: "直近4週平均" })}</span><strong>{average4w}</strong></p><p><span>{day === "tomorrow" ? t.tomorrow : t.today}</span><strong>{score}</strong></p><p><span>{localText(lang, { ko: "차이", en: "DIFFERENCE", zh: "差值", ja: "差" })}</span><strong>{averageDelta >= 0 ? "+" : ""}{averageDelta}</strong></p></div><p className="deterministic-sentence">{localText(lang, { ko: `최근 4주 평균보다 ${Math.abs(averageDelta)}점 ${averageDelta >= 0 ? "높은" : "낮은"} 수준입니다.`, en: `This is ${Math.abs(averageDelta)} points ${averageDelta >= 0 ? "above" : "below"} the recent four-week average.`, zh: `比近4周平均${averageDelta >= 0 ? "高" : "低"}${Math.abs(averageDelta)}分。`, ja: `直近4週平均を${Math.abs(averageDelta)}ポイント${averageDelta >= 0 ? "上回る" : "下回る"}水準です。` })}</p></section>
       <section className="area-good-to-know" aria-labelledby="good-to-know-title"><div className="section-head"><div><p className="eyebrow">GOOD TO KNOW</p><h2 id="good-to-know-title">{t.know}</h2></div></div><div>{tips.map((tip, index) => <p key={tip}><span>0{index + 1}</span><strong>{tip}</strong></p>)}</div></section>
       <details className="area-data"><summary><span>DATA</span><strong>{localText(lang, { ko: "이 숫자의 종류와 기준", en: "DATA TYPE & BASIS", zh: "数据类型与基准", ja: "データ種別と基準" })}</strong><b>↘</b></summary><div><p><strong>DEMO DATA</strong><span>{localText(lang, { ko: "화면과 기능을 검증하기 위한 예시값입니다.", en: "Sample values used to validate the interface and functions.", zh: "用于验证画面与功能的示例值。", ja: "画面と機能を検証するためのサンプル値です。" })}</span></p><p><strong>OFFICIAL HISTORICAL</strong><span>{localText(lang, { ko: "공식 공개자료에서 확인한 과거 실제값은 History에서 별도로 표시합니다.", en: "Past actuals verified in official public data are labeled separately in History.", zh: "官方公开资料中的历史实际值会在History中单独标注。", ja: "公式公開資料で確認した過去の実績値は、Historyで別に表示します。" })}</span></p></div></details>
-      <div className="share-pulse"><p><span>{area.en}</span><strong>{day === "tomorrow" ? t.tomorrow : t.today} · {score}</strong><small>{t.bestTime} · {area.best}</small></p><button onClick={async () => { const text = `${area.en} · ${day === "tomorrow" ? t.tomorrow : t.today} ${score} · ${t.bestTime} ${area.best} · RetailPulse Seoul`; try { if (navigator.share) await navigator.share({ title: "RetailPulse Seoul", text }); else await navigator.clipboard.writeText(text); setShareState(localText(lang, { ko: "복사됨", en: "COPIED", zh: "已复制", ja: "コピー済み" })); } catch { setShareState(localText(lang, { ko: "공유 취소", en: "CANCELLED", zh: "已取消", ja: "キャンセル" })); } }}>{shareState || localText(lang, { ko: "펄스 공유", en: "SHARE PULSE", zh: "分享指数", ja: "指数を共有" })}</button></div>
+      <div className="share-pulse"><p><span>{area.en}</span><strong>{day === "tomorrow" ? t.tomorrow : t.today} · {score}</strong><small>{t.bestTime} · {area.best}</small></p><button onClick={async () => { const text = `${area.en} · ${day === "tomorrow" ? t.tomorrow : t.today} ${score} · ${t.bestTime} ${area.best} · KORETAIL`; try { if (navigator.share) await navigator.share({ title: "KORETAIL", text }); else await navigator.clipboard.writeText(text); setShareState(localText(lang, { ko: "복사됨", en: "COPIED", zh: "已复制", ja: "コピー済み" })); } catch { setShareState(localText(lang, { ko: "공유 취소", en: "CANCELLED", zh: "已取消", ja: "キャンセル" })); } }}>{shareState || localText(lang, { ko: "펄스 공유", en: "SHARE PULSE", zh: "分享指数", ja: "指数を共有" })}</button></div>
     </section>
   );
 }
@@ -1446,7 +1446,7 @@ function BusinessView({
     <section className="view-section business-view">
       <div className="view-intro">
         <div>
-          <p className="eyebrow">RETAILPULSE FOR BUSINESS · AUG 24</p>
+          <p className="eyebrow">KORETAIL FOR BUSINESS · AUG 24</p>
           <h1>{localText(lang, { ko: "내일 손님이 얼마나 올까,\n무엇을 준비할까?", en: "How much demand tomorrow,\nand what should you prepare?", zh: "明天会来多少客人，\n要准备什么？", ja: "明日の需要はどのくらい？\n何を準備する？" })}</h1>
           <p>{localText(lang, { ko: "공공데이터를 인력·재고·프로모션 준비로 바꿉니다.", en: "Turn public signals into staffing, stock and promotion actions.", zh: "把公共数据转化为人员、库存与促销行动。", ja: "公共データをスタッフ・在庫・販促の準備に変換します。" })}</p>
         </div>
@@ -1496,7 +1496,7 @@ function BusinessView({
         </section>
 
         <section className="business-pro">
-          <div><p className="eyebrow">RETAILPULSE PRO · PREVIEW</p><h2>{localText(lang, { ko: "매일 문 열기 전, 한 장으로 받으세요.", en: "One page before you open.", zh: "每天开店前收到一页简报。", ja: "開店前に、一枚のブリーフを。" })}</h2><p>{localText(lang, { ko: "업종별 7일 예측·알림·지역 비교·과거 정확도·CSV.", en: "7-day industry forecast, alerts, comparisons, accuracy and CSV.", zh: "7日行业预测、提醒、区域比较、历史准确率与CSV。", ja: "業種別7日予測・通知・エリア比較・過去精度・CSV。" })}</p></div>
+          <div><p className="eyebrow">KORETAIL PRO · PREVIEW</p><h2>{localText(lang, { ko: "매일 문 열기 전, 한 장으로 받으세요.", en: "One page before you open.", zh: "每天开店前收到一页简报。", ja: "開店前に、一枚のブリーフを。" })}</h2><p>{localText(lang, { ko: "업종별 7일 예측·알림·지역 비교·과거 정확도·CSV.", en: "7-day industry forecast, alerts, comparisons, accuracy and CSV.", zh: "7日行业预测、提醒、区域比较、历史准确率与CSV。", ja: "業種別7日予測・通知・エリア比較・過去精度・CSV。" })}</p></div>
           <button onClick={() => setProOpen(true)}>{copy[lang].openPreview} ↗</button>
         </section>
       </div>}
@@ -1557,7 +1557,7 @@ function HistoryView({ lang, embedded = false }: { lang: Lang; embedded?: boolea
         <div className="benchmark-row unavailable"><span>{localText(lang, { ko: "지난주 같은 요일", en: "SAME WEEKDAY LAST WEEK", zh: "上周同星期", ja: "前週同曜日" })}<small>BASELINE 01</small></span><strong>—</strong></div>
         <div className="benchmark-row unavailable"><span>{localText(lang, { ko: "최근 4주 같은 요일 평균", en: "RECENT 4-WEEK WEEKDAY AVERAGE", zh: "近4周同星期平均", ja: "直近4週の同曜日平均" })}<small>BASELINE 02</small></span><strong>—</strong></div>
         <div className="benchmark-row unavailable"><span>{localText(lang, { ko: "계절 평균", en: "SEASONAL AVERAGE", zh: "季节平均", ja: "季節平均" })}<small>BASELINE 03</small></span><strong>—</strong></div>
-        <div className="benchmark-row unavailable"><span>RETAILPULSE CHAMPION<small>{localText(lang, { ko: "Production 예측기록 전에는 없음", en: "Unavailable before production captures", zh: "Production开始保存前不可用", ja: "Production予測保存前は未設定" })}</small></span><strong>—</strong></div>
+        <div className="benchmark-row unavailable"><span>KORETAIL CHAMPION<small>{localText(lang, { ko: "Production 예측기록 전에는 없음", en: "Unavailable before production captures", zh: "Production开始保存前不可用", ja: "Production予測保存前は未設定" })}</small></span><strong>—</strong></div>
       </div>
       <div className="harness-note"><p className="eyebrow">EVOLUTION HARNESS · NOT PROMOTING</p><div><span>CAPTURE</span><b>→</b><span>RESOLVE</span><b>→</b><span>COMPARE</span><b>→</b><span>REVIEW</span></div><p>{localText(lang, { ko: "오프라인 Backfill은 연구에는 쓸 수 있지만 Production 승격 증거가 아닙니다. 최소 90일의 Prospective 결과와 기준모델 우위가 없으면 자동승격하지 않습니다.", en: "Backfill can support research but cannot justify production promotion. No automatic promotion occurs without at least 90 days of prospective outcomes and baseline advantage.", zh: "回填数据可用于研究，但不能作为Production晋级证据。没有至少90天的前瞻结果且未优于基线，不自动晋级。", ja: "Backfillは研究には使えますがProduction昇格の根拠にはなりません。少なくとも90日の前向き実績とベースライン優位がなければ自動昇格しません。" })}</p></div>
     </section>
@@ -1576,7 +1576,7 @@ function MoreView({
   const [sourceFilter, setSourceFilter] = useState<"all" | "ready" | "key" | "conditional">("all");
   const visibleSources = sourceCatalog.filter((item) => sourceFilter === "all" || item.tier === sourceFilter);
   const faq = [
-    [localText(lang, { ko: "RetailPulse 점수는 무엇인가요?", en: "What is the RetailPulse score?", zh: "RetailPulse指数是什么？", ja: "RetailPulse指数とは？" }), localText(lang, { ko: "공항·외국인 생활인구·관광·날씨 등 여러 신호를 0~100으로 합성한 수요지표입니다. 현재 화면의 예측점수는 Demo입니다.", en: "It combines airport, foreign-population, tourism and weather signals into a 0–100 demand index. Forecast scores on this Work site are Demo.", zh: "它把机场、外国人生活人口、旅游与天气等信号合成为0到100的需求指数。本Work站点的预测指数为演示值。", ja: "空港・外国人生活人口・観光・天気などのシグナルを0〜100に統合した需要指数です。このWorkサイトの予測指数はデモです。" })],
+    [localText(lang, { ko: "KORETAIL 점수는 무엇인가요?", en: "What is the KORETAIL score?", zh: "KORETAIL指数是什么？", ja: "KORETAIL指数とは？" }), localText(lang, { ko: "공항·외국인 생활인구·관광·날씨 등 여러 신호를 0~100으로 합성한 수요지표입니다. 현재 화면의 예측점수는 Demo입니다.", en: "It combines airport, foreign-population, tourism and weather signals into a 0–100 demand index. Forecast scores on this Work site are Demo.", zh: "它把机场、外国人生活人口、旅游与天气等信号合成为0到100的需求指数。本Work站点的预测指数为演示值。", ja: "空港・外国人生活人口・観光・天気などのシグナルを0〜100に統合した需要指数です。このWorkサイトの予測指数はデモです。" })],
     [localText(lang, { ko: "공항 승객 수는 외국인 관광객 수인가요?", en: "Are airport passengers foreign tourists?", zh: "机场旅客数等于外国游客数吗？", ja: "空港旅客数は外国人観光客数ですか？" }), localText(lang, { ko: "아닙니다. 공항 승객에는 내국인과 환승객 등이 포함되며 외국인 쇼핑수요의 보조 신호로만 사용합니다.", en: "No. Passenger totals include Korean travelers and other groups; they are only a supporting signal for foreign shopping demand.", zh: "不是。机场旅客包含韩国旅客与其他群体，只作为外国游客购物需求的辅助信号。", ja: "いいえ。空港旅客には韓国人旅行者なども含まれ、外国人買い物需要の補助シグナルとしてのみ使います。" })],
     [localText(lang, { ko: "T1과 T2는 어떻게 구분하나요?", en: "How are T1 and T2 separated?", zh: "T1和T2如何区分？", ja: "T1とT2はどう分けますか？" }), localText(lang, { ko: "공식 데이터에 터미널 필드가 있을 때만 구분합니다. 전체값을 임의 비율로 나누지 않습니다.", en: "Only official terminal fields are used. All-airport totals are never split by assumed ratios.", zh: "仅在官方数据提供航站楼字段时区分，不会按假设比例拆分整体值。", ja: "公式データにターミナル項目がある場合のみ区分し、全体値を推定比率で分割しません。" })],
     [localText(lang, { ko: "예측값과 실제값은 어떻게 다른가요?", en: "How do forecasts differ from actuals?", zh: "预测值与实际值有何不同？", ja: "予測値と実績値の違いは？" }), localText(lang, { ko: "예측은 미래 대상값이고 실제값은 이후 확정된 결과입니다. 공식 과거 실적을 당시 예측처럼 표시하지 않습니다.", en: "A forecast targets the future; an actual is resolved later. Official history is never relabeled as a forecast captured at the time.", zh: "预测面向未来，实际值是事后确认的结果。官方历史实绩不会被标成当时的预测。", ja: "予測は未来の対象値、実績は後日確定した結果です。公式の過去実績を当時の予測として表示しません。" })],
@@ -1662,12 +1662,12 @@ function MoreView({
       </section>
       <section className="methodology" aria-labelledby="methodology-title">
         <div className="section-head"><div><p className="eyebrow">ABOUT · METHODOLOGY · DATA TRUTH</p><h2 id="methodology-title">{localText(lang, { ko: "무엇을 보여주고, 어떻게 판단하나요?", en: "WHAT WE SHOW & HOW IT WORKS", zh: "展示什么，如何判断？", ja: "何を示し、どう判断する？" })}</h2></div><span>UPDATED · 2026.08.23 KST</span></div>
-        <p className="methodology-intro">{localText(lang, { ko: "RetailPulse는 서울의 현재 신호, 내일 수요예측, 공식 과거실적을 분리해 보여주는 관광·리테일 데이터 제품입니다. 예측은 확정이 아니며 매장 권고는 운영 참고자료입니다.", en: "RetailPulse separates current signals, tomorrow's forecast and official history. Forecasts are not guarantees; business guidance is operational reference material.", zh: "RetailPulse分开展示首尔当前信号、明日预测与官方历史。预测并非保证，门店建议仅供运营参考。", ja: "RetailPulseはソウルの現在シグナル、明日の予測、公式の過去実績を分けて表示します。予測は確約ではなく、店舗向け提案は運営の参考情報です。" })}</p>
+        <p className="methodology-intro">{localText(lang, { ko: "KORETAIL은 서울의 현재 신호, 내일 수요예측, 공식 과거실적을 분리해 보여주는 관광·리테일 데이터 제품입니다. 예측은 확정이 아니며 매장 권고는 운영 참고자료입니다.", en: "KORETAIL separates current signals, tomorrow's forecast and official history. Forecasts are not guarantees; business guidance is operational reference material.", zh: "KORETAIL分开展示首尔当前信号、明日预测与官方历史。预测并非保证，门店建议仅供运营参考。", ja: "KORETAILはソウルの現在シグナル、明日の予測、公式の過去実績を分けて表示します。予測は確約ではなく、店舗向け提案は運営の参考情報です。" })}</p>
         <div className="methodology-steps"><p><span>01</span><strong>CURRENT SIGNALS</strong><small>{localText(lang, { ko: "현재 또는 최신 공개 데이터", en: "Current or latest public data", zh: "当前或最新公开数据", ja: "現在または最新の公開データ" })}</small></p><p><span>02</span><strong>FORECAST</strong><small>{localText(lang, { ko: "오늘·내일·7일 수요 판단", en: "Today, tomorrow and seven-day view", zh: "今日、明日与7日需求判断", ja: "今日・明日・7日間の需要判断" })}</small></p><p><span>03</span><strong>OUTCOME</strong><small>{localText(lang, { ko: "이후 확정된 실제 결과", en: "Actual outcome resolved later", zh: "事后确认的实际结果", ja: "後日確定した実績" })}</small></p><p><span>04</span><strong>SCOREBOARD</strong><small>{localText(lang, { ko: "동일 기준으로 성능 검증", en: "Like-for-like performance check", zh: "按同一口径验证表现", ja: "同じ基準で性能を検証" })}</small></p></div>
         <div className="faq-list">{faq.map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</div>
       </section>
       <section className="my-retailpulse" id="my-retailpulse" aria-labelledby="my-retailpulse-title">
-        <div className="section-head"><div><p className="eyebrow">LOCAL PREFERENCES · NO ACCOUNT</p><h2 id="my-retailpulse-title">MY RETAILPULSE</h2></div><span className="official-label">THIS DEVICE</span></div>
+        <div className="section-head"><div><p className="eyebrow">LOCAL PREFERENCES · NO ACCOUNT</p><h2 id="my-retailpulse-title">MY KORETAIL</h2></div><span className="official-label">THIS DEVICE</span></div>
         <dl>
           <div><dt>{localText(lang, { ko: "지역", en: "AREA", zh: "地区", ja: "エリア" })}</dt><dd>{areaInfo[selected].en}<small>{areaLocalName(selected, lang)}</small></dd></div>
           <div><dt>{localText(lang, { ko: "터미널", en: "TERMINAL", zh: "航站楼", ja: "ターミナル" })}</dt><dd>{terminal === "all" ? localText(lang, { ko: "전체", en: "ALL", zh: "全部", ja: "全体" }) : terminal}</dd></div>
@@ -1688,7 +1688,7 @@ function MoreView({
         </div>
       </div>
       <div className="pro-banner">
-        <div><p className="eyebrow">RETAILPULSE PRO · PREVIEW</p><h2>{t.pro}</h2><p>{t.proSub}</p></div>
+        <div><p className="eyebrow">KORETAIL PRO · PREVIEW</p><h2>{t.pro}</h2><p>{t.proSub}</p></div>
         <button onClick={() => setProOpen(true)}>{t.openPreview} ↗</button>
       </div>
       <div className="more-section compact state-lab">
@@ -1731,7 +1731,7 @@ function ProModal({ lang, onClose }: { lang: Lang; onClose: () => void }) {
       <section className="pro-modal" role="dialog" aria-modal="true" aria-labelledby="pro-title" onMouseDown={(event) => event.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label={t.close}>×</button>
         <p className="eyebrow">PREVIEW · NO PAYMENT</p>
-        <h2 id="pro-title">RETAILPULSE<br />PRO</h2>
+        <h2 id="pro-title">KORETAIL<br />PRO</h2>
         <p>{t.proSub}</p>
         <div className="pro-features">{features.map((feature, index) => <div key={feature}><span>0{index + 1}</span><strong>{feature}</strong></div>)}</div>
         <div className="pro-price"><span>PREVIEW PRICING<small>{localText(lang, { ko: "실제 확정 가격 아님", en: "Not final pricing", zh: "尚未最终确定", ja: "確定価格ではありません" })}</small></span><strong>₩4,900<small>/ MONTH</small></strong></div>
