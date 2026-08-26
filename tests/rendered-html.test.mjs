@@ -13,12 +13,12 @@ async function renderHome() {
   );
 }
 
-test("renders the RetailPulse production shell", async () => {
+test("renders the KORETAIL production shell", async () => {
   const response = await renderHome();
   const html = await response.text();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
-  assert.match(html, /<title>서울 외국인 쇼핑수요 신호 \| RetailPulse Korea<\/title>/i);
+  assert.match(html, /<title>서울 외국인 쇼핑수요 신호 \| KORETAIL<\/title>/i);
   assert.doesNotMatch(html, /codex-preview/i);
   assert.match(html, /내일 서울은/);
   assert.match(html, /데모 데이터/);
