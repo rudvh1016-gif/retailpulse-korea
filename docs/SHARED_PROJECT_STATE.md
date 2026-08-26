@@ -1,6 +1,6 @@
 # KORETAIL — Shared Project State
 
-**Last synchronized:** 2026-08-26 KST  
+**Last synchronized:** 2026-08-27 KST  
 **Audience:** Codex, Claude Code, future coding agents  
 **Purpose:** one shared snapshot of product intent, current production state, safety rules, next step, and brand-name status.
 
