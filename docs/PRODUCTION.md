@@ -1,4 +1,4 @@
-# RetailPulse Korea Production
+# KORETAIL Production
 
 ## Current boundary
 

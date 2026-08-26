@@ -1,4 +1,4 @@
-# RPK Runbook
+# KORETAIL Runbook
 
 ## Cloudflare staging connection
 
@@ -13,7 +13,7 @@
 
 1. Open GitHub → Actions → latest CI and Deploy Cloudflare runs.
 2. If CI is red, open the first failed step; do not rerun deployment until CI is green.
-3. In Cloudflare → Workers & Pages → retailpulse-korea, check the latest deployment and logs.
+3. In Cloudflare → Workers & Pages → `retailpulse-korea-production`, check the latest deployment and logs. This is a legacy-compatible technical resource name, not the public brand.
 4. If only the domain fails but `workers.dev` works, check the custom domain DNS/SSL state.
 
 ## API data does not arrive

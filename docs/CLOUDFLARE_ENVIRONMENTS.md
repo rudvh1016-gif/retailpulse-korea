@@ -2,7 +2,7 @@
 
 **Status:** code prepared; Cloudflare resources not created
 
-**Reviewed:** 2026-08-26 KST
+**Reviewed:** 2026-08-27 KST
 
 **Collector:** OFF
 
@@ -28,6 +28,61 @@ The committed D1 IDs are deliberate non-resource placeholders. `npm run deploy:c
 5. Deploy staging with the GitHub **staging** environment and test `/api/health`, signed-out access, four locales, staging `noindex`, one manual source response, and repeated semantic writes.
 6. Only after staging evidence, create and migrate the production D1 and prepare the production Worker.
 7. Keep scheduled collection disabled until source terms, real API contracts, D1 metrics, error handling, and redaction pass.
+
+## Claude staging handoff — account-authorized next step
+
+This repository is ready for an agent that already has the owner's Cloudflare authorization. Codex did not create a token or make any remote Cloudflare change during the KORETAIL brand migration.
+
+Run these steps from a fresh checkout of the latest `main`:
+
+1. Confirm the repository and Cloudflare identity:
+
+   ```bash
+   git fetch origin
+   git status --short
+   git rev-parse HEAD
+   git rev-parse origin/main
+   npx --no-install wrangler whoami
+   npx --no-install wrangler d1 list --json
+   ```
+
+2. If and only if `retailpulse-korea-staging` is absent, create that staging database only:
+
+   ```bash
+   npx --no-install wrangler d1 create retailpulse-korea-staging --location apac
+   ```
+
+   Do not let Wrangler rewrite unrelated environments. Copy the returned database ID and replace only `env.staging.d1_databases[0].database_id` in `wrangler.production.jsonc`. Leave the production placeholder unchanged.
+
+3. Validate the selected environment and rerun the local release gates:
+
+   ```bash
+   RPK_DEPLOYMENT_STAGE=staging npm run validate:cloudflare-env
+   npm run secret:scan
+   npm run lint
+   npm run typecheck
+   npm run test:unit
+   ```
+
+4. Apply migrations to staging only:
+
+   ```bash
+   npm run db:migrate:staging
+   ```
+
+5. Set the staging origin to its HTTPS `workers.dev` origin, then deploy staging only. The repository deploy wrapper validates the D1 ID, builds with `CLOUDFLARE_ENV=staging`, and passes `--env staging` to Wrangler:
+
+   ```bash
+   NEXT_PUBLIC_SITE_ORIGIN="https://<staging-worker-host>" \
+   RPK_DEPLOYMENT_STAGE=staging \
+   npm run deploy:cloudflare
+   ```
+
+6. Verify `/api/health`, `/ko`, `/en`, `/zh`, `/ja`, `robots.txt`, the `X-Robots-Tag` header, and an empty staging sitemap. Do not connect an external source key yet.
+
+7. Commit only the staging database ID/config change after the checks pass. Do not replace the production placeholder, create production resources, enable `ENABLE_PRODUCTION_COLLECTOR`, or enable `RPK_RETAIN_FLIGHT_CHANGE_HISTORY` in this handoff.
+
+These commands match the checked-in Wrangler `4.92.0`, `wrangler.production.jsonc`, and current package scripts. Re-read current Cloudflare documentation before execution because CLI behavior can change.
 
 Do not paste API tokens or database credentials into chat, issues, code, logs, or documentation. GitHub environment secrets hold deployment credentials. D1 database IDs are resource identifiers rather than secret keys, but they must refer to the correct account resource.
 

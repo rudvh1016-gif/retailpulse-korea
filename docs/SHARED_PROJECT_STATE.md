@@ -1,6 +1,6 @@
 # KORETAIL — Shared Project State
 
-**Last synchronized:** 2026-08-26 KST  
+**Last synchronized:** 2026-08-27 KST  
 **Audience:** Codex, Claude Code, future coding agents  
 **Purpose:** one shared snapshot of product intent, current production state, safety rules, next step, and brand-name status.
 
@@ -197,7 +197,7 @@ Preferred descriptor:
 
 `Retail Demand Signals for Korea`
 
-`RetailPulse Korea` is now a legacy name to migrate out of public-facing surfaces when safe.
+`RetailPulse Korea` is the legacy former public name. Current public UI, SEO, PWA, share, accessibility and 404 surfaces use `KORETAIL`; remaining occurrences are historical records or compatibility-sensitive technical identifiers.
 
 `Korea Retail Signal` is **not** the final brand and should not be introduced as such.
 

@@ -13,6 +13,8 @@ for (const [locale, htmlLang] of locales) {
     expect(response?.status()).toBe(200);
     await expect(page.locator("html")).toHaveAttribute("lang", htmlLang);
     await expect(page.locator("h1")).toBeVisible();
+    await expect(page.locator(".brand")).toContainText("KORETAIL");
+    await expect(page.locator(".brand")).not.toContainText(/RetailPulse/i);
   });
 }
 
@@ -37,6 +39,7 @@ for (const width of [320, 375, 390, 430]) {
     await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
+    await expect(page.locator(".brand")).toContainText("KORETAIL");
     await expect(page.locator("nav.bottom-nav")).toBeVisible();
   });
 }
