@@ -6,9 +6,36 @@
 
 > This document is a shared handoff, not a substitute for current Git state. Always fetch `origin/main` first and audit anything newer than the reference SHA below.
 
-## 1. Product purpose
+## 1. Canonical brand decision
 
-RetailPulse Korea is a Seoul-first retail/tourism demand intelligence product.
+**Canonical product brand is now `KORETAIL`.**
+
+This is an owner-approved decision as of 2026-08-26 KST.
+
+Brand meaning:
+
+`KORETAIL` = **Korea + Retail**
+
+Preferred descriptive line:
+
+`Retail Demand Signals for Korea`
+
+Legacy public brand:
+
+`RetailPulse Korea`
+
+From this point onward, new public-facing product/marketing/SEO copy should use `KORETAIL` unless a compatibility reason temporarily requires the legacy name.
+
+Read the canonical brand decision before any naming/branding work:
+
+- `docs/BRAND_DECISION_KORETAIL.md`
+- `docs/BRAND_RESEARCH.md`
+
+Technical identifiers such as repository name, Cloudflare Worker/D1 names, environment variables, secret names or deployment IDs must **not** be renamed blindly. Migrate them only when it is safe and will not break Cloudflare/GitHub Actions/D1/DNS work in progress.
+
+## 2. Product purpose
+
+KORETAIL is a Seoul-first retail/tourism demand intelligence product.
 
 Initial focus:
 
@@ -22,7 +49,7 @@ Initial focus:
 
 Long-term intent is to combine official/public signals such as airport, tourism, weather, population and commercial-district data into a useful demand signal while keeping strict truth boundaries between proxies, forecasts and actual outcomes.
 
-## 2. Current Git / audit reference
+## 3. Current Git / audit reference
 
 Reference merged main SHA at the end of the 50-GATE pessimistic production audit:
 
@@ -38,7 +65,7 @@ Audit result:
 
 Do not assume this SHA remains latest. Fetch and inspect the actual current `origin/main` before every task.
 
-## 3. Confirmed production architecture direction
+## 4. Confirmed production architecture direction
 
 Preferred zero-fixed-runtime architecture:
 
@@ -62,7 +89,7 @@ Hard architectural decisions already made:
 - prediction records are immutable / append-only; outcomes remain separate.
 - raw repeated snapshots must not grow without an explicit retention policy.
 
-## 4. Zero-cost policy
+## 5. Zero-cost policy
 
 Default policy is zero paid runtime unless the owner explicitly approves a final custom domain or another cost.
 
@@ -83,7 +110,7 @@ At pressure points, prefer:
 
 Never delete immutable forecast/outcome evidence just to recover free-tier space.
 
-## 5. Current production boundary
+## 6. Current production boundary
 
 The codebase has passed local/CI evidence for the completed gates, but LIVE Production is not yet proven.
 
@@ -98,7 +125,7 @@ Current known blockers from the 50-GATE audit:
 
 Do not convert these to PASS merely because a Cloudflare account becomes connected.
 
-## 6. Current next phase: Cloudflare bridge
+## 7. Current next phase: Cloudflare bridge
 
 The owner has already sent Codex a Cloudflare-safe-connection prompt.
 
@@ -119,28 +146,25 @@ The intended next phase is:
 
 The staging environment is an internal safety layer, not a second product the owner should have to manage manually.
 
-## 7. Recommended environment shape
+## 8. Recommended environment shape
 
 Prefer one repository / one codebase with lightweight Cloudflare environment separation.
 
 Conceptual target:
 
 ```text
-RetailPulse Korea codebase
+KORETAIL codebase
   -> staging Worker -> staging D1
   -> production Worker -> production D1
 ```
 
-Suggested D1 naming:
-
-- `retailpulse-korea-staging`
-- `retailpulse-korea-production`
+Suggested D1 naming may remain legacy/internal during the transition if Cloudflare work is already in progress. Do not rename active resources just for cosmetic consistency.
 
 Application binding can remain `DB` in both environments while binding to different actual databases.
 
 Do not let staging overwrite production resources or share the production database without an explicit, evidence-based decision.
 
-## 8. Collector safety
+## 9. Collector safety
 
 Until the real environment is verified:
 
@@ -151,7 +175,7 @@ Until the real environment is verified:
 
 Never request that the owner paste secrets into AI chat.
 
-## 9. Main-branch safety
+## 10. Main-branch safety
 
 At the audit reference state, `main` branch protection was not enabled.
 
@@ -163,53 +187,31 @@ Before full production operation, evaluate a minimal safe policy such as:
 
 Do not apply a disruptive repository policy without understanding the owner's current workflow.
 
-## 10. Brand-name status
+## 11. Brand-name status
 
-Current code/UI brand remains:
+Final brand decision:
 
-`RetailPulse Korea`
+`KORETAIL`
 
-Detailed naming and competitor research is stored in:
+Preferred descriptor:
+
+`Retail Demand Signals for Korea`
+
+`RetailPulse Korea` is now a legacy name to migrate out of public-facing surfaces when safe.
+
+`Korea Retail Signal` is **not** the final brand and should not be introduced as such.
+
+Brand research remains documented in:
 
 - `docs/BRAND_RESEARCH.md`
 
-Read that document before any branding, domain, repository rename, metadata rename, or naming recommendation task.
+Canonical decision is documented in:
 
-Do not rename repository, Worker, package, UI, metadata or infrastructure during Cloudflare work unless the owner explicitly approves the final brand.
+- `docs/BRAND_DECISION_KORETAIL.md`
 
-### Preferred candidate under review
+## 12. Competitive landscape snapshot
 
-`Korea Retail Signal`
-
-Meaning:
-
-- Korea = market scope / future national expansion
-- Retail = shopping / physical commerce / store demand
-- Signal = multiple real-world indicators combined into a useful leading signal
-
-The phrase fits the product concept well, but **it is not yet approved as the final brand**.
-
-### Important collision finding
-
-The exact phrase `Korea Retail Signal` did not surface as an obvious established product in broad public-web checks performed on 2026-08-26.
-
-However, the core phrase `Retail Signal` is already used in adjacent markets, including:
-
-- a New York retail intelligence / lease / site-selection advisory business named **Retail Signal** (`retailsignal.co`)
-- Propheus content/product positioning under **Retail Signal**, including 14-day store outlooks using local events, competitor promotions, weather and demand signals
-
-This creates meaningful SEO / distinctiveness / naming risk even though the full `Korea Retail Signal` phrase appears more specific.
-
-Therefore:
-
-- do not rename yet
-- do not buy a final domain yet solely on the assumption the name is clear
-- before final naming, perform a dedicated domain + Korean trademark + international trademark + search-engine collision audit
-- prefer a name that keeps the useful `Signal` concept while improving distinctiveness if a stronger candidate is found
-
-## 11. Competitive landscape snapshot
-
-RetailPulse is not entering an empty market.
+KORETAIL is not entering an empty market.
 
 Relevant adjacent/direct competitors or substitutes include:
 
@@ -227,12 +229,12 @@ Relevant adjacent/direct competitors or substitutes include:
 ### Global / adjacent signal products
 
 - Retail Signal (NYC): retail market intelligence, site selection, corridor analysis and lease advisory
-- Propheus Retail Signal: store-level forward outlook using events, competitor promotions, weather and local demand signals
+- Propheus Retail Signal: store-level forward outlook using events, competitor promotions, weather and demand signals
 - Placer.ai and other location-intelligence products: foot traffic / trade-area / retail location analytics
 
 ### Current differentiation target
 
-RetailPulse should not try to beat every commercial-district dashboard on raw data volume.
+KORETAIL should not try to beat every commercial-district dashboard on raw data volume.
 
 Its useful wedge is:
 
@@ -245,7 +247,7 @@ Its useful wedge is:
 
 This differentiation is a product hypothesis and must be validated with users and measured forecast quality; do not present it as proven market leadership.
 
-## 12. AI-agent coordination rules
+## 13. AI-agent coordination rules
 
 Codex and Claude Code must both:
 
@@ -254,14 +256,14 @@ Codex and Claude Code must both:
 3. read `AGENTS.md`
 4. read `CLAUDE.md`
 5. read this file: `docs/SHARED_PROJECT_STATE.md`
-6. read `docs/BRAND_RESEARCH.md` when the task touches naming/branding/domain/competitive positioning
+6. read `docs/BRAND_DECISION_KORETAIL.md` for any branding/naming work
 7. read canonical engineering / zero-cost / production documents relevant to the task
 8. inspect commits newer than any prompt reference SHA
 9. avoid overwriting work from another agent
 
 Do not treat a prompt's stale snapshot as current truth.
 
-## 13. Owner communication
+## 14. Owner communication
 
 The owner is non-developer and should not be asked to reason through implementation details unnecessarily.
 
@@ -273,7 +275,7 @@ and provide one simple action at a time.
 
 Do not ask the owner to paste secret/API token values into chat.
 
-## 14. Final truth rule
+## 15. Final truth rule
 
 Do not claim any of the following without evidence:
 
