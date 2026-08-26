@@ -1,4 +1,4 @@
-# RetailPulse Korea — Shared Project State
+# KORETAIL — Shared Project State
 
 **Last synchronized:** 2026-08-26 KST  
 **Audience:** Codex, Claude Code, future coding agents  
