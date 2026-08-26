@@ -125,24 +125,20 @@ Current known blockers from the 50-GATE audit:
 
 Do not convert these to PASS merely because a Cloudflare account becomes connected.
 
-## 7. Current next phase: Cloudflare bridge
+## 7. Owner-approved next major order
 
-The owner has already sent Codex a Cloudflare-safe-connection prompt.
+The current owner-approved order supersedes earlier plans that connected or tested live source APIs before the final public domain. Do not change this order unless the owner explicitly decides otherwise.
 
-The intended next phase is:
+1. complete the KORETAIL public brand migration
+2. prepare only the minimum Cloudflare Worker/D1 hosting infrastructure required to publish the site
+3. connect the final `.com`
+4. verify HTTPS, apex/`www` redirect, canonical, hreflang, robots, sitemap, SEO and mobile access
+5. only after the `.com` verification, begin source API integration one source at a time
+6. validate actual API response -> contract/schema -> normalization -> D1 -> UI
+7. begin immutable prospective Forecast and later Actual evidence collection
+8. consider enabling the Production Collector only after sufficient validation and separate owner approval
 
-1. re-fetch and audit current `origin/main`
-2. keep one codebase
-3. use the simplest supported Cloudflare environment separation for staging vs production
-4. keep staging and production D1 data physically separate
-5. keep the production collector OFF
-6. connect Cloudflare only when real owner authentication is available
-7. validate staging first
-8. test real API contract and remote D1 writes manually
-9. verify identical semantic payload => zero second current-state semantic writes
-10. only then prepare production infrastructure
-11. keep scheduled production collection OFF until evidence gates pass
-12. connect the final custom domain only as a later explicit step
+Creating the minimum Worker/D1 resources needed to host the site is a hosting prerequisite, not API integration. During the hosting/domain phase, external source keys, live source collection and scheduled collection remain OFF.
 
 The staging environment is an internal safety layer, not a second product the owner should have to manage manually.
 
