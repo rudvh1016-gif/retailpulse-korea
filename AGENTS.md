@@ -8,10 +8,15 @@ Before changing anything:
 2. inspect actual `origin/main` HEAD
 3. read this file
 4. read `CLAUDE.md`
-5. read `docs/ENGINEERING_DIRECTION.md`
-6. read `docs/ZERO_COST_HYBRID_AUDIT.md`
-7. read relevant production/data/forecast/security docs
-8. audit any commits newer than the SHA mentioned in the prompt
+5. read `docs/SHARED_PROJECT_STATE.md`
+6. read `docs/ENGINEERING_DIRECTION.md`
+7. read `docs/ZERO_COST_HYBRID_AUDIT.md`
+8. read relevant production/data/forecast/security docs
+9. audit any commits newer than the SHA mentioned in the prompt
+
+Canonical shared project handoff:
+
+- `docs/SHARED_PROJECT_STATE.md`
 
 Canonical engineering direction:
 
@@ -36,6 +41,7 @@ Hard rules:
 - Activate sources one at a time after terms, HTTP contract, timestamps, quotas, parser, D1 write, stale/error, and redaction checks pass.
 - If current code conflicts with canonical docs, report and resolve the conflict deliberately rather than silently following an older note.
 - Preserve the existing product/UI direction unless the owner explicitly asks for redesign.
+- Do not rename the product, repository, Worker, package, metadata, or infrastructure during Cloudflare work unless the owner explicitly approves the final brand. Current brand is `RetailPulse Korea`; `Korea Retail Signal` is only a candidate under review.
 
 Before push:
 
