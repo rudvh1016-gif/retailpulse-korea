@@ -6,6 +6,8 @@
 
 This file supplements `docs/ENGINEERING_DIRECTION.md`. It exists to prevent a coding agent from treating the hybrid direction as already proven. The architecture remains **benchmark-gated and evidence-gated**.
 
+Implementation evidence and the current 50-gate result live in `docs/PRODUCTION_HYBRID_AUDIT_50.md`. Real Cloudflare CPU/D1/domain/true-E2E gates remain blocked there.
+
 ## A. Five non-negotiable operating rules
 
 1. **Heavy collection / normalization / Forecast / Outcome work → GitHub Actions first.**

@@ -1,5 +1,7 @@
 # Production Audit — 2026-08-25
 
+This earlier 30-gate release audit is retained for traceability. The current Hybrid architecture/code audit is `docs/PRODUCTION_HYBRID_AUDIT_50.md`; where statuses differ, the newer 50-gate audit controls.
+
 Status values are evidence-based. `BLOCKED` means an external account, domain, key, deployment, or local infrastructure condition prevents a valid pass. It does not mean the item was silently accepted.
 
 | # | Gate | Status | Evidence / blocker |

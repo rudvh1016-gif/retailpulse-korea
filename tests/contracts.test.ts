@@ -93,3 +93,35 @@ test("classifies malformed and HTTP source responses", async (context) => {
   globalThis.fetch = async () => new Response("not-json", { status: 200 });
   await assert.rejects(fetchOfficialJson(new URL("https://example.invalid"), { retries: 0 }), (error: unknown) => error instanceof SourceFetchError && error.code === "MALFORMED_JSON");
 });
+
+test("handles the production source error matrix with bounded retries", async (context) => {
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; });
+
+  for (const status of [400, 401, 403]) {
+    let calls = 0;
+    globalThis.fetch = async () => { calls += 1; return new Response("denied", { status }); };
+    await assert.rejects(fetchOfficialJson(new URL("https://example.invalid"), { retries: 2, retryDelayMs: 0 }), (error: unknown) => error instanceof SourceFetchError && error.status === status);
+    assert.equal(calls, 1);
+  }
+
+  globalThis.fetch = async () => new Response(null, { status: 204 });
+  await assert.rejects(fetchOfficialJson(new URL("https://example.invalid"), { retries: 0 }), (error: unknown) => error instanceof SourceFetchError && error.code === "MALFORMED_JSON");
+
+  for (const retryStatus of [429, 500]) {
+    let calls = 0;
+    globalThis.fetch = async () => {
+      calls += 1;
+      return calls === 1 ? new Response("retry", { status: retryStatus }) : Response.json({ ok: true });
+    };
+    assert.deepEqual(await fetchOfficialJson(new URL("https://example.invalid"), { retries: 1, retryDelayMs: 0 }), { ok: true });
+    assert.equal(calls, 2);
+  }
+
+  globalThis.fetch = async (_input, init) => new Promise<Response>((_resolve, reject) => {
+    init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
+  });
+  await assert.rejects(fetchOfficialJson(new URL("https://example.invalid"), { timeoutMs: 5, retries: 0 }), (error: unknown) => error instanceof SourceFetchError && error.code === "TIMEOUT");
+
+  await assert.rejects(normalizeAirportFlight({ flightId: "KE703" }, "departure", "2026-08-25T00:00:00Z"), (error: unknown) => error instanceof SourceFetchError && error.code === "SCHEMA");
+});

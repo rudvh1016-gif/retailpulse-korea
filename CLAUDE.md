@@ -23,6 +23,7 @@ Current architectural intent:
 - free-tier guardrails: 70% NOTICE / 85% PROTECT / 95% EMERGENCY per resource, with `OFFICIAL_USAGE` distinguished from `INTERNAL_ESTIMATE`
 - no paid API/data/runtime LLM unless owner explicitly approves
 - no duplicate live schedulers for the same source
+- current prepared scheduler is disabled-by-default `.github/workflows/collect-production.yml`; Worker Cron has been removed
 - activate P0 sources one at a time with real contract/timestamp/quota/error verification
 - preserve immutable prospective prediction archive and separate later outcomes
 - preserve truth labels and never relabel proxy as actual foreign sales

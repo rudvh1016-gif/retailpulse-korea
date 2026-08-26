@@ -28,3 +28,14 @@ test("production headers include clickjacking, sniffing and privacy protections"
   const config = await readFile(new URL("../next.config.ts", import.meta.url), "utf8");
   for (const header of ["Content-Security-Policy", "X-Content-Type-Options", "Referrer-Policy", "Permissions-Policy", "X-Frame-Options"]) assert.match(config, new RegExp(header));
 });
+
+test("staging deployments are explicitly noindex", async () => {
+  const config = await readFile(new URL("../next.config.ts", import.meta.url), "utf8");
+  const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
+  const robots = await readFile(new URL("../app/robots.ts", import.meta.url), "utf8");
+  const sitemap = await readFile(new URL("../app/sitemap.ts", import.meta.url), "utf8");
+  assert.match(config, /X-Robots-Tag/);
+  assert.match(layout, /isStagingDeployment/);
+  assert.match(robots, /disallow: "\/"/);
+  assert.match(sitemap, /return \[\]/);
+});

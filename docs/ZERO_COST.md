@@ -58,4 +58,6 @@ Thresholds are per resource, not one global percentage:
 
 Usage values must be labelled `OFFICIAL_USAGE` when obtained from an official Cloudflare/API usage source and `INTERNAL_ESTIMATE` when calculated internally. Never present an estimate as a precise official quota percentage.
 
+The executable threshold contract is `lib/quota-guard.ts`. It does not collect official usage. Until Dashboard/GraphQL/query `meta` integration exists, its inputs remain `INTERNAL_ESTIMATE`.
+
 Enabling any paid Cloudflare plan requires a separate explicit user decision.

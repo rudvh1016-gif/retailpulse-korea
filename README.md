@@ -53,10 +53,13 @@ Start with:
 - [`docs/ZERO_COST.md`](docs/ZERO_COST.md)
 - [`docs/RUNBOOK.md`](docs/RUNBOOK.md)
 - [`docs/PRODUCTION_AUDIT.md`](docs/PRODUCTION_AUDIT.md)
+- [`docs/PRODUCTION_HYBRID_AUDIT_50.md`](docs/PRODUCTION_HYBRID_AUDIT_50.md)
 
 Legacy Work/Sites specifications are retained under [`docs/archive/work-v6.1`](docs/archive/work-v6.1) for traceability, but are no longer public website routes.
 
 Independent production uses `wrangler.production.jsonc`, a real D1 binding, and server-side secret stores. `.openai/hosting.json` remains only so the existing ChatGPT Sites checkpoint can still be built and compared; it is not the independent production authority.
+
+The prepared production collector is `.github/workflows/collect-production.yml`. It is disabled until the owner supplies the Cloudflare/D1/API secrets and explicitly sets `ENABLE_PRODUCTION_COLLECTOR=true`. Heavy Worker Cron collection is intentionally absent.
 
 No licence is granted for third-party data or images merely because the repository is public. Verify source terms before reusing any bundled data or asset.
 
