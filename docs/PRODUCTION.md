@@ -20,14 +20,16 @@ Committed D1 IDs are non-resource placeholders and the deploy preflight intentio
 
 1. Run CI: secret scan, lint, typecheck, unit, build, rendered HTML, production dependency audit and browser E2E.
 2. Confirm current official Cloudflare/GitHub free-tier limits and complete the applicable pessimistic audit gates.
-3. Reserve/configure the final domain/Cloudflare zone, but do not rush final traffic cutover.
-4. Deploy to `workers.dev` and complete signed-out smoke tests.
-5. Create and verify staging D1 first; only after staging passes create Production D1, apply migrations, add the separate `DB` binding, and verify `/api/health`.
-6. Add only approved source keys to appropriate server-side secret stores.
-7. Verify the prepared Hybrid collector path: disabled-by-default two-hour GitHub Actions orchestration, direct parameterized D1 REST batches using a D1-write-only token, lightweight Worker serving/read APIs, and no Worker Cron duplicate.
-8. Enable each source as LIVE only after contract, timestamp, quota, parser, changed-only D1 write, fallback/stale/error, redaction and staging checks pass.
-9. Start immutable prospective Forecast archive, later Outcomes and exact-target baselines.
-10. After operational observation, connect/cut over the custom `.com`, redirect the non-canonical hostname, and verify SEO/HTTPS output.
+3. Prepare only the minimum staging/production Worker and separate D1 infrastructure required to host the existing site. Keep source keys and all collectors OFF.
+4. Deploy the site to staging, verify signed-out health, locale routing and noindex, then prepare the production hosting target without source integration.
+5. Connect/cut over the final `.com`, select the canonical apex or `www` host, redirect the other, and verify HTTPS, canonical, hreflang, robots, sitemap, SEO and mobile access.
+6. Only after the `.com` verification, add one approved source key at a time to the appropriate server-side secret store.
+7. For each source, validate the real response, contract/schema, timestamps, quota, normalization, changed-only D1 write, fallback/stale/error behavior, redaction and UI output before marking it LIVE.
+8. Verify the prepared Hybrid collector path while scheduled production collection remains OFF: GitHub Actions orchestration, parameterized D1 writes, lightweight Worker serving/read APIs and no Worker Cron duplicate.
+9. Start immutable prospective Forecast records and later Outcomes/exact-target baselines only after actual source data is stable.
+10. Consider setting `ENABLE_PRODUCTION_COLLECTOR=true` only after sufficient evidence and separate owner approval.
+
+This owner-approved order supersedes earlier API-first sequencing. Minimum Worker/D1 creation for hosting is not API integration and does not authorize live data collection.
 
 ## Required production variables
 

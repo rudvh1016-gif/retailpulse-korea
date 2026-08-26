@@ -6,8 +6,9 @@
 2. Use the GitHub `staging` Environment for staging secrets and variables; use the separate `production` Environment for production.
 3. Create the staging D1 first and replace only the staging placeholder ID in `wrangler.production.jsonc`.
 4. Apply `npm run db:migrate:staging`, then manually run **Deploy Cloudflare → staging**.
-5. Do not create or touch production data until staging health, locale, noindex, API contract and repeated semantic-write checks pass.
+5. During this hosting phase, verify only site health, locale routing and staging noindex behavior. Do not connect external source API keys yet.
 6. `ENABLE_PRODUCTION_COLLECTOR` must remain absent or `false`; `RPK_RETAIN_FLIGHT_CHANGE_HISTORY` must remain absent or `false`.
+7. Connect and verify the final `.com` before starting source API integration. Hosting Worker/D1 preparation is not permission to start data collection.
 
 ## Site does not open
 
