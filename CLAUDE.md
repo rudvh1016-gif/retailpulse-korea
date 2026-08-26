@@ -1,6 +1,27 @@
-# RetailPulse Korea — Claude Code Handoff
+# KORETAIL — Claude Code Handoff
 
-Claude Code must treat `docs/SHARED_PROJECT_STATE.md` as the shared cross-agent project handoff, `docs/ENGINEERING_DIRECTION.md` as the canonical cross-agent engineering direction, and `docs/ZERO_COST_HYBRID_AUDIT.md` as the mandatory pessimistic audit gate.
+## Canonical brand
+
+The owner approved the final public brand on 2026-08-26 KST:
+
+`KORETAIL`
+
+Meaning: **Korea + Retail**
+
+Preferred descriptor:
+
+`Retail Demand Signals for Korea`
+
+`RetailPulse Korea` is now a legacy public name. New public-facing UI, SEO, marketing copy and documentation should use `KORETAIL` unless a compatibility reason temporarily requires the legacy identifier.
+
+For branding/naming work, read:
+
+- `docs/BRAND_DECISION_KORETAIL.md`
+- `docs/BRAND_RESEARCH.md`
+
+Do not blindly rename active technical identifiers such as repository slug, Cloudflare Worker/D1 IDs, environment variables, secret names or deployment bindings. Migrate them only with a compatibility-safe plan.
+
+Claude Code must treat `docs/ENGINEERING_DIRECTION.md` as the canonical cross-agent engineering direction and `docs/ZERO_COST_HYBRID_AUDIT.md` as the mandatory pessimistic audit gate.
 
 At the start of every session:
 
@@ -9,10 +30,11 @@ At the start of every session:
 3. read `AGENTS.md`
 4. read this file
 5. read `docs/SHARED_PROJECT_STATE.md`
-6. read `docs/ENGINEERING_DIRECTION.md`
-7. read `docs/ZERO_COST_HYBRID_AUDIT.md`
-8. read relevant `docs/PRODUCTION.md`, `docs/DATA_SOURCES.md`, `docs/FORECAST.md`, `docs/OUTCOMES.md`, `docs/SECURITY.md`, `docs/ZERO_COST.md`, and `docs/RUNBOOK.md`
-9. if another agent pushed newer commits, audit that diff before editing
+6. read `docs/BRAND_DECISION_KORETAIL.md` when branding/naming is involved
+7. read `docs/ENGINEERING_DIRECTION.md`
+8. read `docs/ZERO_COST_HYBRID_AUDIT.md`
+9. read relevant `docs/PRODUCTION.md`, `docs/DATA_SOURCES.md`, `docs/FORECAST.md`, `docs/OUTCOMES.md`, `docs/SECURITY.md`, `docs/ZERO_COST.md`, and `docs/RUNBOOK.md`
+10. if another agent pushed newer commits, audit that diff before editing
 
 Current architectural intent:
 
@@ -28,7 +50,6 @@ Current architectural intent:
 - activate P0 sources one at a time with real contract/timestamp/quota/error verification
 - preserve immutable prospective prediction archive and separate later outcomes
 - preserve truth labels and never relabel proxy as actual foreign sales
-- current product brand remains `RetailPulse Korea`; `Korea Retail Signal` is a candidate under review, not an approved rename
 
 Do not claim that the hybrid model, a traffic level, or the Free tier is safe merely because it is documented. Complete the applicable evidence checks in `docs/ZERO_COST_HYBRID_AUDIT.md`.
 
