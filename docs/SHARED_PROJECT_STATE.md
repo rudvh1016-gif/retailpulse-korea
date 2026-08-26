@@ -169,6 +169,12 @@ Current code/UI brand remains:
 
 `RetailPulse Korea`
 
+Detailed naming and competitor research is stored in:
+
+- `docs/BRAND_RESEARCH.md`
+
+Read that document before any branding, domain, repository rename, metadata rename, or naming recommendation task.
+
 Do not rename repository, Worker, package, UI, metadata or infrastructure during Cloudflare work unless the owner explicitly approves the final brand.
 
 ### Preferred candidate under review
@@ -248,9 +254,10 @@ Codex and Claude Code must both:
 3. read `AGENTS.md`
 4. read `CLAUDE.md`
 5. read this file: `docs/SHARED_PROJECT_STATE.md`
-6. read canonical engineering / zero-cost / production documents relevant to the task
-7. inspect commits newer than any prompt reference SHA
-8. avoid overwriting work from another agent
+6. read `docs/BRAND_RESEARCH.md` when the task touches naming/branding/domain/competitive positioning
+7. read canonical engineering / zero-cost / production documents relevant to the task
+8. inspect commits newer than any prompt reference SHA
+9. avoid overwriting work from another agent
 
 Do not treat a prompt's stale snapshot as current truth.
 
