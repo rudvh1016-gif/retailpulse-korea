@@ -1,6 +1,27 @@
-# RetailPulse Korea — Shared AI Instructions
+# KORETAIL — Shared AI Instructions
 
 This repository is worked on by multiple coding agents, including Codex and Claude Code.
+
+## Canonical brand
+
+The owner approved the final public brand on 2026-08-26 KST:
+
+`KORETAIL`
+
+Meaning: **Korea + Retail**
+
+Preferred descriptor:
+
+`Retail Demand Signals for Korea`
+
+`RetailPulse Korea` is now a legacy public name. New public-facing UI, SEO, marketing copy and documentation should use `KORETAIL` unless a compatibility reason temporarily requires the legacy identifier.
+
+For any branding/naming task, read:
+
+- `docs/BRAND_DECISION_KORETAIL.md`
+- `docs/BRAND_RESEARCH.md`
+
+Do **not** blindly rename active technical identifiers such as repository slug, Cloudflare Worker/D1 IDs, environment variables, secret names or deployment bindings. Migrate them only with a compatibility-safe plan.
 
 Before changing anything:
 
@@ -9,14 +30,11 @@ Before changing anything:
 3. read this file
 4. read `CLAUDE.md`
 5. read `docs/SHARED_PROJECT_STATE.md`
-6. read `docs/ENGINEERING_DIRECTION.md`
-7. read `docs/ZERO_COST_HYBRID_AUDIT.md`
-8. read relevant production/data/forecast/security docs
-9. audit any commits newer than the SHA mentioned in the prompt
-
-Canonical shared project handoff:
-
-- `docs/SHARED_PROJECT_STATE.md`
+6. read `docs/BRAND_DECISION_KORETAIL.md` when branding/naming is involved
+7. read `docs/ENGINEERING_DIRECTION.md`
+8. read `docs/ZERO_COST_HYBRID_AUDIT.md`
+9. read relevant production/data/forecast/security docs
+10. audit any commits newer than the SHA mentioned in the prompt
 
 Canonical engineering direction:
 
@@ -41,7 +59,6 @@ Hard rules:
 - Activate sources one at a time after terms, HTTP contract, timestamps, quotas, parser, D1 write, stale/error, and redaction checks pass.
 - If current code conflicts with canonical docs, report and resolve the conflict deliberately rather than silently following an older note.
 - Preserve the existing product/UI direction unless the owner explicitly asks for redesign.
-- Do not rename the product, repository, Worker, package, metadata, or infrastructure during Cloudflare work unless the owner explicitly approves the final brand. Current brand is `RetailPulse Korea`; `Korea Retail Signal` is only a candidate under review.
 
 Before push:
 
