@@ -327,7 +327,14 @@ function recentQuarterCandidates(now: Date): string[] {
   return candidates;
 }
 
-// S3 — quarterly estimated sales for each area's primary trade area.
+// S3 — quarterly estimated sales. Live verification (2026-08-27) showed the
+// OpenAPI applies only the quarter positional filter and silently ignores the
+// trade-area segments, so one bounded page sweep per quarter collects all
+// target trade areas and filters client-side. Quarterly cadence keeps the
+// page budget (~22 requests of 1000 rows) trivial against the daily quota.
+const SALES_PAGE_SIZE = 1_000;
+const SALES_MAX_PAGES = 25;
+
 export async function collectEstimatedSales(env: CollectorEnv, now = new Date()): Promise<CollectorResult> {
   const sourceId = "SEOUL_ESTIMATED_SALES";
   if (!env.SEOUL_OPEN_DATA_KEY) {
@@ -335,35 +342,49 @@ export async function collectEstimatedSales(env: CollectorEnv, now = new Date())
     await writeSourceHealth(env.DB, sourceId, "MISSING", "SEOUL_OPEN_DATA_KEY is not configured");
     return { status: "NEEDS_KEY", records: 0 };
   }
+  const codeToArea = new Map(allAreaIds.map((areaId) => [areaMappings[areaId].salesTradeArea.code, areaId]));
   const statements: D1PreparedStatement[] = [];
-  const failures: string[] = [];
   let lastRecord: CanonicalEstimatedSales | undefined;
+  const matchedAreas = new Set<string>();
   let written = 0;
-  for (const areaId of allAreaIds) {
-    const mapping = areaMappings[areaId];
-    try {
-      let matched: Record<string, unknown>[] = [];
-      for (const quarterCode of recentQuarterCandidates(now)) {
-        const url = new URL(`http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/VwsmTrdarSelngQq/1/200/${quarterCode}/${mapping.salesTradeArea.seCd}/${mapping.salesTradeArea.code}`);
-        const payload = await fetchOfficialJson(url, { timeoutMs: 10_000, retries: 0 });
-        let rows: Record<string, unknown>[] = [];
-        try {
-          rows = seoulEnvelopeRows(payload, "VwsmTrdarSelngQq");
-        } catch (error) {
-          // INFO-200 (no data) for an unpublished quarter is expected; other
-          // result codes are real failures.
-          if (!(error instanceof Error && error.message.includes("INFO-200"))) throw error;
-        }
-        // The positional filters must be verified against the response: keep
-        // only rows that actually match the requested quarter and trade area.
-        matched = rows.filter((row) => row.STDR_YYQU_CD === quarterCode && row.TRDAR_CD === mapping.salesTradeArea.code);
-        if (matched.length) break;
+  try {
+    const fetchQuarterPage = async (quarterCode: string, start: number, end: number): Promise<Record<string, unknown>[]> => {
+      const url = new URL(`http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/VwsmTrdarSelngQq/${start}/${end}/${quarterCode}`);
+      const payload = await fetchOfficialJson(url, { timeoutMs: 10_000, retries: 1 });
+      try {
+        return seoulEnvelopeRows(payload, "VwsmTrdarSelngQq");
+      } catch (error) {
+        // INFO-200 (no data) marks an unpublished quarter or the end of the
+        // result set; other result codes are real failures.
+        if (error instanceof Error && error.message.includes("INFO-200")) return [];
+        throw error;
       }
-      if (!matched.length) throw new Error("estimated_sales_no_matching_rows");
-      const retrievedAt = nowIso();
-      for (const row of matched) {
+    };
+
+    // Find the latest published quarter with a single-row probe per candidate.
+    let quarterCode = "";
+    for (const candidate of recentQuarterCandidates(now)) {
+      const probe = await fetchQuarterPage(candidate, 1, 1);
+      if (probe.some((row) => row.STDR_YYQU_CD === candidate)) {
+        quarterCode = candidate;
+        break;
+      }
+    }
+    if (!quarterCode) throw new Error("estimated_sales_no_published_quarter");
+
+    const retrievedAt = nowIso();
+    let pagesRead = 0;
+    for (let page = 0; page < SALES_MAX_PAGES; page += 1) {
+      const start = page * SALES_PAGE_SIZE + 1;
+      const rows = await fetchQuarterPage(quarterCode, start, start + SALES_PAGE_SIZE - 1);
+      pagesRead += 1;
+      for (const row of rows) {
+        if (row.STDR_YYQU_CD !== quarterCode) continue;
+        const areaId = codeToArea.get(String(row.TRDAR_CD));
+        if (!areaId) continue;
         const record = await normalizeEstimatedSales(row, areaId, retrievedAt);
         lastRecord = record;
+        matchedAreas.add(areaId);
         if (!env.DB) continue;
         statements.push(env.DB.prepare(`INSERT INTO seoul_estimated_sales (
             id, source_id, record_origin, area, quarter_code, trade_area_code, trade_area_name,
@@ -385,21 +406,22 @@ export async function collectEstimatedSales(env: CollectorEnv, now = new Date())
             record.freshness, record.schemaVersion, record.qualityStatus, record.sourceHash,
           ));
       }
-    } catch (error) {
-      failures.push(`${areaId}: ${error instanceof Error ? redactSeoulUrl(error.message) : "collector_error"}`);
+      if (rows.length < SALES_PAGE_SIZE) break;
     }
-  }
-  if (env.DB && statements.length) written = await runBatches(env.DB, statements);
-  const okCount = allAreaIds.length - failures.length;
-  const detail = `areas ok ${okCount}/${allAreaIds.length}; changed writes ${written}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
-  if (okCount === 0) {
+    if (!matchedAreas.size) throw new Error("estimated_sales_no_matching_rows");
+
+    if (env.DB && statements.length) written = await runBatches(env.DB, statements);
+    const detail = `quarter ${quarterCode}; pages ${pagesRead}; areas ok ${matchedAreas.size}/${allAreaIds.length}; changed writes ${written}`;
+    const partial = matchedAreas.size < allAreaIds.length;
+    await writeCollectorStatus(env.DB, sourceId, partial ? "PARTIAL" : "SUCCESS", detail, matchedAreas.size, written);
+    await writeSourceHealth(env.DB, sourceId, "OFFICIAL_HISTORICAL", detail, lastRecord ? { retrievedAt: lastRecord.retrievedAt, schemaVersion: lastRecord.schemaVersion } : undefined);
+    return { status: partial ? "PARTIAL" : "SUCCESS", records: written };
+  } catch (error) {
+    const detail = error instanceof Error ? redactSeoulUrl(error.message) : "collector_error";
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
     return { status: "ERROR", records: 0 };
   }
-  await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, okCount, written);
-  await writeSourceHealth(env.DB, sourceId, "OFFICIAL_HISTORICAL", detail, lastRecord ? { retrievedAt: lastRecord.retrievedAt, schemaVersion: lastRecord.schemaVersion } : undefined);
-  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written };
 }
 
 /** Latest KMA 단기예보 issuance available at `now` (KST slots + 30min buffer). */
