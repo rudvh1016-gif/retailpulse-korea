@@ -180,9 +180,11 @@ const seoulSources = [
     pathTail: "POI003",
   },
   {
+    // 추정매출-상권 (OA-15572). Positional filters: /{STDR_YYQU_CD}/{TRDAR_CD}.
+    // 3001492 = 명동 남대문 북창동 다동 무교동 관광특구 (current 3-prefixed codes).
     id: "S3_seoul_estimated_sales",
     service: "VwsmTrdarSelngQq",
-    pathTail: "",
+    pathTail: "20261/3001492",
   },
 ];
 
