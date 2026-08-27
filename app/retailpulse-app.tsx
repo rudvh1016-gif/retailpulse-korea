@@ -17,6 +17,7 @@ import {
   type Terminal,
 } from "./retailpulse-data";
 import { pageDescription, pageTitle, seoLocales, seoSlugs, siteOrigin, type SeoSlug } from "./seo-config";
+import LiveSignals from "./live-signals";
 
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
 
@@ -897,6 +898,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             </section>
 
             <TodayBrief lang={lang} selected={selected} />
+            <LiveSignals lang={lang} area={selected} />
             <HomeRankings lang={lang} selected={selected} onSelect={(nextDay, area) => { setDay(nextDay); selectArea(area); }} />
             <HomeAirportNow lang={lang} onOpen={openAirport} />
             <WhatChanged lang={lang} selected={selected} />

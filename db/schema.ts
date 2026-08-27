@@ -78,6 +78,104 @@ export const airportFlow = sqliteTable("airport_flow", {
   sourceHash: text("source_hash").notNull(),
 }, (table) => [uniqueIndex("airport_flow_source_event_unique").on(table.sourceId, table.terminal, table.direction, table.eventAt)]);
 
+// S1 — Seoul real-time city data (citydata_ppltn): observed area status.
+export const seoulRealtimeArea = sqliteTable("seoul_realtime_area", {
+  id: text("id").primaryKey(),
+  sourceId: text("source_id").notNull(),
+  recordOrigin: text("record_origin").notNull(),
+  area: text("area").notNull(),
+  areaCode: text("area_code").notNull(),
+  areaName: text("area_name").notNull(),
+  congestionLevel: integer("congestion_level").notNull(),
+  congestionLabel: text("congestion_label").notNull(),
+  populationMin: integer("population_min").notNull(),
+  populationMax: integer("population_max").notNull(),
+  observedAt: text("observed_at").notNull(),
+  retrievedAt: text("retrieved_at").notNull(),
+  freshness: text("freshness").notNull(),
+  schemaVersion: text("schema_version").notNull(),
+  qualityStatus: text("quality_status").notNull(),
+  sourceHash: text("source_hash").notNull(),
+}, (table) => [uniqueIndex("seoul_realtime_area_observed_unique").on(table.sourceId, table.area, table.observedAt)]);
+
+// S1 — official Seoul-published 12-hour population forecast. This is Seoul's
+// own forecast (recordOrigin FORECAST), never mixed with observed rows.
+export const seoulRealtimeForecast = sqliteTable("seoul_realtime_forecast", {
+  id: text("id").primaryKey(),
+  sourceId: text("source_id").notNull(),
+  area: text("area").notNull(),
+  issuedAt: text("issued_at").notNull(),
+  targetAt: text("target_at").notNull(),
+  congestionLevel: integer("congestion_level").notNull(),
+  congestionLabel: text("congestion_label").notNull(),
+  populationMin: integer("population_min").notNull(),
+  populationMax: integer("population_max").notNull(),
+  retrievedAt: text("retrieved_at").notNull(),
+  schemaVersion: text("schema_version").notNull(),
+  qualityStatus: text("quality_status").notNull(),
+  sourceHash: text("source_hash").notNull(),
+}, (table) => [uniqueIndex("seoul_realtime_forecast_unique").on(table.sourceId, table.area, table.issuedAt, table.targetAt)]);
+
+// S3 — Seoul commercial-district estimated sales (quarterly modelled values,
+// never POS sales, never foreign spend).
+export const seoulEstimatedSales = sqliteTable("seoul_estimated_sales", {
+  id: text("id").primaryKey(),
+  sourceId: text("source_id").notNull(),
+  recordOrigin: text("record_origin").notNull(),
+  area: text("area").notNull(),
+  quarterCode: text("quarter_code").notNull(),
+  tradeAreaCode: text("trade_area_code").notNull(),
+  tradeAreaName: text("trade_area_name"),
+  industryCode: text("industry_code").notNull(),
+  industryName: text("industry_name"),
+  salesAmount: integer("sales_amount").notNull(),
+  salesCount: integer("sales_count"),
+  retrievedAt: text("retrieved_at").notNull(),
+  freshness: text("freshness").notNull(),
+  schemaVersion: text("schema_version").notNull(),
+  qualityStatus: text("quality_status").notNull(),
+  sourceHash: text("source_hash").notNull(),
+}, (table) => [uniqueIndex("seoul_estimated_sales_unique").on(table.sourceId, table.quarterCode, table.tradeAreaCode, table.industryCode)]);
+
+// T1 — official tourism events mapped to a target area by distance search.
+export const tourismEvents = sqliteTable("tourism_events", {
+  id: text("id").primaryKey(),
+  sourceId: text("source_id").notNull(),
+  recordOrigin: text("record_origin").notNull(),
+  area: text("area").notNull(),
+  contentId: text("content_id").notNull(),
+  title: text("title").notNull(),
+  address: text("address"),
+  lat: text("lat"),
+  lng: text("lng"),
+  distanceM: integer("distance_m"),
+  eventStart: text("event_start").notNull(),
+  eventEnd: text("event_end"),
+  publishedAt: text("published_at"),
+  retrievedAt: text("retrieved_at").notNull(),
+  freshness: text("freshness").notNull(),
+  schemaVersion: text("schema_version").notNull(),
+  qualityStatus: text("quality_status").notNull(),
+  sourceHash: text("source_hash").notNull(),
+}, (table) => [uniqueIndex("tourism_events_area_content_unique").on(table.sourceId, table.area, table.contentId)]);
+
+// A4 — departure-hall checkpoint congestion (flow proxy, not store traffic).
+export const airportCongestion = sqliteTable("airport_congestion", {
+  id: text("id").primaryKey(),
+  sourceId: text("source_id").notNull(),
+  recordOrigin: text("record_origin").notNull(),
+  terminal: text("terminal").notNull(),
+  zone: text("zone").notNull(),
+  waitTimeMinutes: integer("wait_time_minutes"),
+  waitingCount: integer("waiting_count").notNull(),
+  observedAt: text("observed_at").notNull(),
+  retrievedAt: text("retrieved_at").notNull(),
+  freshness: text("freshness").notNull(),
+  schemaVersion: text("schema_version").notNull(),
+  qualityStatus: text("quality_status").notNull(),
+  sourceHash: text("source_hash").notNull(),
+}, (table) => [uniqueIndex("airport_congestion_observed_unique").on(table.sourceId, table.terminal, table.zone, table.observedAt)]);
+
 export const foreignPresence = sqliteTable("foreign_presence", {
   id: text("id").primaryKey(),
   sourceId: text("source_id").notNull(),

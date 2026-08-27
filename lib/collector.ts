@@ -1,4 +1,21 @@
-import { normalizeAirportFlight, fetchOfficialJson, redactServiceKey, type CanonicalAirportFlight } from "./source-adapters";
+import {
+  fetchOfficialJson,
+  normalizeAirportCongestion,
+  normalizeAirportFlight,
+  normalizeEstimatedSales,
+  normalizeSeoulRealtime,
+  normalizeTourismEvent,
+  normalizeWeatherForecast,
+  redactSeoulUrl,
+  redactServiceKey,
+  type CanonicalAirportCongestion,
+  type CanonicalAirportFlight,
+  type CanonicalEstimatedSales,
+  type CanonicalSeoulRealtime,
+  type CanonicalTourismEvent,
+  type CanonicalWeatherForecast,
+} from "./source-adapters";
+import { allAreaIds, areaMappings, distanceMeters, uniqueKmaGrids } from "./areas";
 import { sha256 } from "./hash";
 
 export interface CollectorEnv {
@@ -28,12 +45,19 @@ async function writeCollectorStatus(
     .run();
 }
 
+interface HealthSnapshot {
+  eventAt?: string | null;
+  publishedAt?: string | null;
+  retrievedAt: string;
+  schemaVersion: string;
+}
+
 async function writeSourceHealth(
   db: D1Database | undefined,
   sourceId: string,
-  status: "LIVE" | "MISSING" | "ERROR",
+  status: "LIVE" | "MISSING" | "ERROR" | "OFFICIAL_HISTORICAL",
   detail: string,
-  record?: CanonicalAirportFlight,
+  record?: HealthSnapshot,
 ): Promise<void> {
   if (!db) return;
   await db.prepare(`INSERT INTO source_health (
@@ -189,6 +213,428 @@ export async function collectAirportFlights(env: CollectorEnv): Promise<{ status
     await writeSourceHealth(env.DB, "INCHEON_FLIGHT_DETAIL", "ERROR", detail);
     return { status: "ERROR", records: 0 };
   }
+}
+
+async function runBatches(db: D1Database, statements: D1PreparedStatement[]): Promise<number> {
+  let rowsWritten = 0;
+  for (let offset = 0; offset < statements.length; offset += 40) {
+    const results = await db.batch(statements.slice(offset, offset + 40));
+    rowsWritten += results.reduce((sum, result) => sum + Number(result.meta?.rows_written ?? 0), 0);
+  }
+  return rowsWritten;
+}
+
+export interface CollectorResult {
+  status: "SUCCESS" | "PARTIAL" | "ERROR" | "NEEDS_KEY" | "NO_DATA";
+  records: number;
+}
+
+function seoulEnvelopeRows(payload: unknown, serviceName: string): Record<string, unknown>[] {
+  const root = payload as Record<string, unknown> | null;
+  const service = root?.[serviceName] as Record<string, unknown> | undefined;
+  const resultBlock = (service?.RESULT ?? root?.RESULT ?? {}) as Record<string, unknown>;
+  const code = resultBlock.CODE ?? resultBlock["RESULT.CODE"];
+  if (code !== "INFO-000") throw new Error(`seoul_result_${String(code ?? "missing")}`);
+  const rows = service?.row ?? root?.[serviceName];
+  return Array.isArray(rows) ? (rows as Record<string, unknown>[]) : [];
+}
+
+// S1 — Seoul real-time city data, one bounded call per target area.
+export async function collectSeoulRealtime(env: CollectorEnv): Promise<CollectorResult> {
+  const sourceId = "SEOUL_CITYDATA_PPLTN";
+  if (!env.SEOUL_OPEN_DATA_KEY) {
+    await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "SEOUL_OPEN_DATA_KEY is not configured");
+    await writeSourceHealth(env.DB, sourceId, "MISSING", "SEOUL_OPEN_DATA_KEY is not configured");
+    return { status: "NEEDS_KEY", records: 0 };
+  }
+  const statements: D1PreparedStatement[] = [];
+  let lastObserved: CanonicalSeoulRealtime | undefined;
+  const failures: string[] = [];
+  let written = 0;
+  for (const areaId of allAreaIds) {
+    const mapping = areaMappings[areaId];
+    const url = new URL(`http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/citydata_ppltn/1/5/${mapping.seoulPoiCode}`);
+    try {
+      const payload = await fetchOfficialJson(url, { timeoutMs: 8_000, retries: 1 });
+      const record = seoulEnvelopeRows(payload, "SeoulRtd.citydata_ppltn")[0];
+      if (!record) throw new Error("seoul_realtime_empty");
+      const retrievedAt = nowIso();
+      const { observed, forecasts } = await normalizeSeoulRealtime(record, areaId, retrievedAt);
+      lastObserved = observed;
+      if (env.DB) {
+        statements.push(env.DB.prepare(`INSERT INTO seoul_realtime_area (
+            id, source_id, record_origin, area, area_code, area_name,
+            congestion_level, congestion_label, population_min, population_max,
+            observed_at, retrieved_at, freshness, schema_version, quality_status, source_hash
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(source_id, area, observed_at) DO UPDATE SET
+            congestion_level = excluded.congestion_level,
+            congestion_label = excluded.congestion_label,
+            population_min = excluded.population_min,
+            population_max = excluded.population_max,
+            retrieved_at = excluded.retrieved_at,
+            quality_status = excluded.quality_status,
+            source_hash = excluded.source_hash
+          WHERE seoul_realtime_area.source_hash <> excluded.source_hash`)
+          .bind(
+            await sha256({ sourceId, area: areaId, observedAt: observed.observedAt }),
+            sourceId, observed.recordOrigin, areaId, observed.areaCode, observed.areaName,
+            observed.congestionLevel, observed.congestionLabel, observed.populationMin, observed.populationMax,
+            observed.observedAt, observed.retrievedAt, observed.freshness, observed.schemaVersion,
+            observed.qualityStatus, observed.sourceHash,
+          ));
+        for (const forecast of forecasts) {
+          statements.push(env.DB.prepare(`INSERT INTO seoul_realtime_forecast (
+              id, source_id, area, issued_at, target_at, congestion_level, congestion_label,
+              population_min, population_max, retrieved_at, schema_version, quality_status, source_hash
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(source_id, area, issued_at, target_at) DO NOTHING`)
+            .bind(
+              await sha256({ sourceId, area: areaId, issuedAt: forecast.issuedAt, targetAt: forecast.targetAt }),
+              sourceId, areaId, forecast.issuedAt, forecast.targetAt, forecast.congestionLevel, forecast.congestionLabel,
+              forecast.populationMin, forecast.populationMax, forecast.retrievedAt, forecast.schemaVersion,
+              forecast.qualityStatus, forecast.sourceHash,
+            ));
+        }
+      }
+    } catch (error) {
+      failures.push(`${areaId}: ${error instanceof Error ? redactSeoulUrl(error.message) : "collector_error"}`);
+    }
+  }
+  if (env.DB && statements.length) written = await runBatches(env.DB, statements);
+  const okCount = allAreaIds.length - failures.length;
+  const detail = `areas ok ${okCount}/${allAreaIds.length}; changed writes ${written}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
+  if (okCount === 0) {
+    await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
+    await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
+    return { status: "ERROR", records: 0 };
+  }
+  await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, okCount, written);
+  await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastObserved);
+  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written };
+}
+
+function recentQuarterCandidates(now: Date): string[] {
+  const kst = new Date(now.getTime() + 9 * 3_600_000);
+  let year = kst.getUTCFullYear();
+  let quarter = Math.floor(kst.getUTCMonth() / 3) + 1;
+  const candidates: string[] = [];
+  for (let i = 0; i < 5; i += 1) {
+    candidates.push(`${year}${quarter}`);
+    quarter -= 1;
+    if (quarter === 0) { quarter = 4; year -= 1; }
+  }
+  return candidates;
+}
+
+// S3 — quarterly estimated sales for each area's primary trade area.
+export async function collectEstimatedSales(env: CollectorEnv, now = new Date()): Promise<CollectorResult> {
+  const sourceId = "SEOUL_ESTIMATED_SALES";
+  if (!env.SEOUL_OPEN_DATA_KEY) {
+    await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "SEOUL_OPEN_DATA_KEY is not configured");
+    await writeSourceHealth(env.DB, sourceId, "MISSING", "SEOUL_OPEN_DATA_KEY is not configured");
+    return { status: "NEEDS_KEY", records: 0 };
+  }
+  const statements: D1PreparedStatement[] = [];
+  const failures: string[] = [];
+  let lastRecord: CanonicalEstimatedSales | undefined;
+  let written = 0;
+  for (const areaId of allAreaIds) {
+    const mapping = areaMappings[areaId];
+    try {
+      let matched: Record<string, unknown>[] = [];
+      for (const quarterCode of recentQuarterCandidates(now)) {
+        const url = new URL(`http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/VwsmTrdarSelngQq/1/200/${quarterCode}/${mapping.salesTradeArea.code}`);
+        const payload = await fetchOfficialJson(url, { timeoutMs: 10_000, retries: 0 });
+        let rows: Record<string, unknown>[] = [];
+        try {
+          rows = seoulEnvelopeRows(payload, "VwsmTrdarSelngQq");
+        } catch (error) {
+          // INFO-200 (no data) for an unpublished quarter is expected; other
+          // result codes are real failures.
+          if (!(error instanceof Error && error.message.includes("INFO-200"))) throw error;
+        }
+        // The positional filters must be verified against the response: keep
+        // only rows that actually match the requested quarter and trade area.
+        matched = rows.filter((row) => row.STDR_YYQU_CD === quarterCode && row.TRDAR_CD === mapping.salesTradeArea.code);
+        if (matched.length) break;
+      }
+      if (!matched.length) throw new Error("estimated_sales_no_matching_rows");
+      const retrievedAt = nowIso();
+      for (const row of matched) {
+        const record = await normalizeEstimatedSales(row, areaId, retrievedAt);
+        lastRecord = record;
+        if (!env.DB) continue;
+        statements.push(env.DB.prepare(`INSERT INTO seoul_estimated_sales (
+            id, source_id, record_origin, area, quarter_code, trade_area_code, trade_area_name,
+            industry_code, industry_name, sales_amount, sales_count, retrieved_at,
+            freshness, schema_version, quality_status, source_hash
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(source_id, quarter_code, trade_area_code, industry_code) DO UPDATE SET
+            industry_name = excluded.industry_name,
+            sales_amount = excluded.sales_amount,
+            sales_count = excluded.sales_count,
+            retrieved_at = excluded.retrieved_at,
+            quality_status = excluded.quality_status,
+            source_hash = excluded.source_hash
+          WHERE seoul_estimated_sales.source_hash <> excluded.source_hash`)
+          .bind(
+            await sha256({ sourceId, quarterCode: record.quarterCode, tradeAreaCode: record.tradeAreaCode, industryCode: record.industryCode }),
+            sourceId, record.recordOrigin, areaId, record.quarterCode, record.tradeAreaCode, record.tradeAreaName,
+            record.industryCode, record.industryName, record.salesAmount, record.salesCount, record.retrievedAt,
+            record.freshness, record.schemaVersion, record.qualityStatus, record.sourceHash,
+          ));
+      }
+    } catch (error) {
+      failures.push(`${areaId}: ${error instanceof Error ? redactSeoulUrl(error.message) : "collector_error"}`);
+    }
+  }
+  if (env.DB && statements.length) written = await runBatches(env.DB, statements);
+  const okCount = allAreaIds.length - failures.length;
+  const detail = `areas ok ${okCount}/${allAreaIds.length}; changed writes ${written}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
+  if (okCount === 0) {
+    await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
+    await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
+    return { status: "ERROR", records: 0 };
+  }
+  await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, okCount, written);
+  await writeSourceHealth(env.DB, sourceId, "OFFICIAL_HISTORICAL", detail, lastRecord ? { retrievedAt: lastRecord.retrievedAt, schemaVersion: lastRecord.schemaVersion } : undefined);
+  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written };
+}
+
+/** Latest KMA 단기예보 issuance available at `now` (KST slots + 30min buffer). */
+export function latestKmaIssuance(now = new Date()): { baseDate: string; baseTime: string } {
+  const slots = [2, 5, 8, 11, 14, 17, 20, 23];
+  const kst = new Date(now.getTime() + 9 * 3_600_000);
+  const minutes = kst.getUTCHours() * 60 + kst.getUTCMinutes();
+  let chosen: number | null = null;
+  for (const slot of slots) {
+    if (slot * 60 + 30 <= minutes) chosen = slot;
+  }
+  let date = kst;
+  if (chosen === null) {
+    chosen = 23;
+    date = new Date(kst.getTime() - 86_400_000);
+  }
+  return { baseDate: date.toISOString().slice(0, 10).replaceAll("-", ""), baseTime: `${String(chosen).padStart(2, "0")}00` };
+}
+
+// W1 — KMA short-term forecast per unique grid cell, bounded to 48h targets.
+export async function collectWeatherForecasts(env: CollectorEnv, now = new Date()): Promise<CollectorResult> {
+  const sourceId = "KMA_VILAGE_FCST";
+  const serviceKey = env.KMA_SERVICE_KEY ?? env.DATA_GO_KR_SERVICE_KEY;
+  if (!serviceKey) {
+    await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "DATA_GO_KR_SERVICE_KEY is not configured");
+    await writeSourceHealth(env.DB, sourceId, "MISSING", "DATA_GO_KR_SERVICE_KEY is not configured");
+    return { status: "NEEDS_KEY", records: 0 };
+  }
+  const { baseDate, baseTime } = latestKmaIssuance(now);
+  const horizon = new Date(now.getTime() + 48 * 3_600_000).toISOString();
+  const statements: D1PreparedStatement[] = [];
+  const failures: string[] = [];
+  let lastForecast: CanonicalWeatherForecast | undefined;
+  let written = 0;
+  for (const grid of uniqueKmaGrids()) {
+    const url = new URL("https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst");
+    url.searchParams.set("serviceKey", serviceKey);
+    url.searchParams.set("pageNo", "1");
+    url.searchParams.set("numOfRows", "1000");
+    url.searchParams.set("dataType", "JSON");
+    url.searchParams.set("base_date", baseDate);
+    url.searchParams.set("base_time", baseTime);
+    url.searchParams.set("nx", String(grid.nx));
+    url.searchParams.set("ny", String(grid.ny));
+    try {
+      const payload = await fetchOfficialJson(url, { timeoutMs: 10_000, retries: 1 });
+      const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] } } } };
+      const resultCode = root?.response?.header?.resultCode;
+      if (resultCode !== "00") throw new Error(`kma_result_${String(resultCode ?? "missing")}`);
+      const items = Array.isArray(root?.response?.body?.items?.item) ? root.response.body.items.item : [];
+      const retrievedAt = nowIso();
+      for (const areaId of grid.areas) {
+        const rows = (await normalizeWeatherForecast(items, areaId, retrievedAt)).filter((row) => row.targetAt <= horizon);
+        for (const row of rows) {
+          lastForecast = row;
+          if (!env.DB) continue;
+          statements.push(env.DB.prepare(`INSERT INTO weather_forecast (
+              id, source_id, area, issued_at, target_at, retrieved_at,
+              precipitation_probability, temperature_tenth_c, condition_code,
+              schema_version, quality_status, source_hash
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(source_id, area, issued_at, target_at) DO NOTHING`)
+            .bind(
+              await sha256({ sourceId, area: areaId, issuedAt: row.issuedAt, targetAt: row.targetAt }),
+              sourceId, areaId, row.issuedAt, row.targetAt, row.retrievedAt,
+              row.precipitationProbability, row.temperatureTenthC, row.conditionCode,
+              row.schemaVersion, row.qualityStatus, row.sourceHash,
+            ));
+        }
+      }
+    } catch (error) {
+      failures.push(`grid ${grid.nx},${grid.ny}: ${error instanceof Error ? redactServiceKey(error.message) : "collector_error"}`);
+    }
+  }
+  if (env.DB && statements.length) written = await runBatches(env.DB, statements);
+  const gridCount = uniqueKmaGrids().length;
+  const okCount = gridCount - failures.length;
+  const detail = `grids ok ${okCount}/${gridCount}; base ${baseDate}${baseTime}; changed writes ${written}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
+  if (okCount === 0) {
+    await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
+    await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
+    return { status: "ERROR", records: 0 };
+  }
+  await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, okCount, written);
+  await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastForecast ? { retrievedAt: lastForecast.retrievedAt, schemaVersion: lastForecast.schemaVersion } : undefined);
+  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written };
+}
+
+// T1 — one bounded Seoul festival query, mapped to areas by verified distance.
+export async function collectTourismEvents(env: CollectorEnv, now = new Date()): Promise<CollectorResult> {
+  const sourceId = "KTO_TOURAPI_EVENT";
+  if (!env.DATA_GO_KR_SERVICE_KEY) {
+    await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "DATA_GO_KR_SERVICE_KEY is not configured");
+    await writeSourceHealth(env.DB, sourceId, "MISSING", "DATA_GO_KR_SERVICE_KEY is not configured");
+    return { status: "NEEDS_KEY", records: 0 };
+  }
+  const kstToday = new Date(now.getTime() + 9 * 3_600_000).toISOString().slice(0, 10);
+  const windowStart = new Date(now.getTime() + 9 * 3_600_000 - 60 * 86_400_000).toISOString().slice(0, 10).replaceAll("-", "");
+  const windowEnd = new Date(now.getTime() + 9 * 3_600_000 + 30 * 86_400_000).toISOString().slice(0, 10);
+  const url = new URL("https://apis.data.go.kr/B551011/KorService2/searchFestival2");
+  url.searchParams.set("serviceKey", env.DATA_GO_KR_SERVICE_KEY);
+  url.searchParams.set("MobileOS", "ETC");
+  url.searchParams.set("MobileApp", "KORETAIL");
+  url.searchParams.set("_type", "json");
+  url.searchParams.set("numOfRows", "100");
+  url.searchParams.set("pageNo", "1");
+  url.searchParams.set("eventStartDate", windowStart);
+  url.searchParams.set("lDongRegnCd", "11");
+  try {
+    const payload = await fetchOfficialJson(url, { timeoutMs: 10_000, retries: 1 });
+    const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] | unknown } } } };
+    const resultCode = root?.response?.header?.resultCode;
+    if (resultCode !== "0000") throw new Error(`tourapi_result_${String(resultCode ?? "missing")}`);
+    const rawItems = root?.response?.body?.items?.item;
+    const items = Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
+    const retrievedAt = nowIso();
+    const statements: D1PreparedStatement[] = [];
+    let lastEvent: CanonicalTourismEvent | undefined;
+    let mappedCount = 0;
+    for (const item of items) {
+      if (!item || typeof item !== "object") continue;
+      const record = item as Record<string, unknown>;
+      const lat = Number(record.mapy);
+      const lng = Number(record.mapx);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+      for (const areaId of allAreaIds) {
+        const mapping = areaMappings[areaId];
+        const distance = distanceMeters(mapping.center, { lat, lng });
+        if (distance > mapping.eventRadiusM) continue;
+        const canonical = await normalizeTourismEvent({ ...record, dist: String(distance) }, areaId, retrievedAt);
+        // Keep only events overlapping today .. +30d; existence ≠ attendance.
+        if ((canonical.eventEnd ?? canonical.eventStart) < kstToday || canonical.eventStart > windowEnd) continue;
+        lastEvent = canonical;
+        mappedCount += 1;
+        if (!env.DB) continue;
+        statements.push(env.DB.prepare(`INSERT INTO tourism_events (
+            id, source_id, record_origin, area, content_id, title, address, lat, lng, distance_m,
+            event_start, event_end, published_at, retrieved_at, freshness, schema_version, quality_status, source_hash
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(source_id, area, content_id) DO UPDATE SET
+            title = excluded.title,
+            address = excluded.address,
+            lat = excluded.lat,
+            lng = excluded.lng,
+            distance_m = excluded.distance_m,
+            event_start = excluded.event_start,
+            event_end = excluded.event_end,
+            published_at = excluded.published_at,
+            retrieved_at = excluded.retrieved_at,
+            quality_status = excluded.quality_status,
+            source_hash = excluded.source_hash
+          WHERE tourism_events.source_hash <> excluded.source_hash`)
+          .bind(
+            await sha256({ sourceId, area: areaId, contentId: canonical.contentId }),
+            sourceId, canonical.recordOrigin, areaId, canonical.contentId, canonical.title, canonical.address,
+            canonical.lat, canonical.lng, canonical.distanceM, canonical.eventStart, canonical.eventEnd,
+            canonical.publishedAt, canonical.retrievedAt, canonical.freshness, canonical.schemaVersion,
+            canonical.qualityStatus, canonical.sourceHash,
+          ));
+      }
+    }
+    let written = 0;
+    if (env.DB && statements.length) written = await runBatches(env.DB, statements);
+    const detail = `seoul events ${items.length}; mapped ${mappedCount}; changed writes ${written}`;
+    await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, items.length, written);
+    await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastEvent ? { publishedAt: lastEvent.publishedAt, retrievedAt: lastEvent.retrievedAt, schemaVersion: lastEvent.schemaVersion } : undefined);
+    return { status: "SUCCESS", records: written };
+  } catch (error) {
+    const detail = error instanceof Error ? redactServiceKey(error.message) : "collector_error";
+    await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
+    await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
+    return { status: "ERROR", records: 0 };
+  }
+}
+
+// A4 — departure-hall congestion; T2 stays N/A unless officially returned.
+export async function collectAirportCongestion(env: CollectorEnv): Promise<CollectorResult> {
+  const sourceId = "INCHEON_DEPARTURE_CONGESTION";
+  if (!env.DATA_GO_KR_SERVICE_KEY) {
+    await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "DATA_GO_KR_SERVICE_KEY is not configured");
+    await writeSourceHealth(env.DB, sourceId, "MISSING", "DATA_GO_KR_SERVICE_KEY is not configured");
+    return { status: "NEEDS_KEY", records: 0 };
+  }
+  const statements: D1PreparedStatement[] = [];
+  const failures: string[] = [];
+  const terminalCounts: string[] = [];
+  let lastRow: CanonicalAirportCongestion | undefined;
+  let written = 0;
+  for (const terminalId of ["P01", "P03"]) {
+    const url = new URL("https://apis.data.go.kr/B551177/statusOfDepartureCongestion/getDepartureCongestion");
+    url.searchParams.set("serviceKey", env.DATA_GO_KR_SERVICE_KEY);
+    url.searchParams.set("pageNo", "1");
+    url.searchParams.set("numOfRows", "50");
+    url.searchParams.set("type", "json");
+    url.searchParams.set("terminalId", terminalId);
+    try {
+      const payload = await fetchOfficialJson(url, { timeoutMs: 8_000, retries: 1 });
+      const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown } } } };
+      const resultCode = root?.response?.header?.resultCode;
+      if (resultCode !== "00") throw new Error(`congestion_result_${String(resultCode ?? "missing")}`);
+      const bodyItems = root?.response?.body?.items;
+      const rawItems = Array.isArray(bodyItems) ? bodyItems : bodyItems?.item;
+      const items = Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
+      terminalCounts.push(`${terminalId}:${items.length}`);
+      const retrievedAt = nowIso();
+      for (const item of items) {
+        const canonical = await normalizeAirportCongestion(item, retrievedAt);
+        lastRow = canonical;
+        if (!env.DB) continue;
+        statements.push(env.DB.prepare(`INSERT INTO airport_congestion (
+            id, source_id, record_origin, terminal, zone, wait_time_minutes, waiting_count,
+            observed_at, retrieved_at, freshness, schema_version, quality_status, source_hash
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(source_id, terminal, zone, observed_at) DO NOTHING`)
+          .bind(
+            await sha256({ sourceId, terminal: canonical.terminal, zone: canonical.zone, observedAt: canonical.observedAt }),
+            sourceId, canonical.recordOrigin, canonical.terminal, canonical.zone, canonical.waitTimeMinutes,
+            canonical.waitingCount, canonical.observedAt, canonical.retrievedAt, canonical.freshness,
+            canonical.schemaVersion, canonical.qualityStatus, canonical.sourceHash,
+          ));
+      }
+    } catch (error) {
+      failures.push(`${terminalId}: ${error instanceof Error ? redactServiceKey(error.message) : "collector_error"}`);
+    }
+  }
+  if (env.DB && statements.length) written = await runBatches(env.DB, statements);
+  const detail = `terminals ${terminalCounts.join(", ") || "none"}; changed writes ${written}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
+  if (failures.length === 2) {
+    await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
+    await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
+    return { status: "ERROR", records: 0 };
+  }
+  await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, terminalCounts.length, written);
+  await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastRow ? { eventAt: lastRow.observedAt, retrievedAt: lastRow.retrievedAt, schemaVersion: lastRow.schemaVersion } : undefined);
+  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written };
 }
 
 export async function runScheduledCollectors(env: CollectorEnv): Promise<void> {

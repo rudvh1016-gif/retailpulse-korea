@@ -9,6 +9,7 @@ const migrations = [
   "drizzle/0000_daffy_tempest.sql",
   "drizzle/0001_crazy_nekra.sql",
   "drizzle/0002_reflective_martin_li.sql",
+  "drizzle/0003_minor_network.sql",
 ];
 
 function applyMigrations(database) {
