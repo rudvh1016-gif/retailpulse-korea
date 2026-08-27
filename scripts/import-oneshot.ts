@@ -38,8 +38,11 @@ if (!databaseId || databaseId.startsWith("00000000")) throw new Error(`oneshot_s
 const apiToken = process.env.CLOUDFLARE_D1_WRITE_TOKEN?.trim() || process.env.CLOUDFLARE_API_TOKEN?.trim();
 if (!apiToken) throw new Error("missing_cloudflare_api_token");
 
+// The account is always the pinned wrangler config value: the historical
+// CLOUDFLARE_ACCOUNT_ID secret pointed at the wrong account (see PR #12),
+// which surfaces here as d1_http_403.
 const database = new CloudflareD1RestDatabase(
-  process.env.CLOUDFLARE_ACCOUNT_ID?.trim() || wranglerConfig.account_id,
+  wranglerConfig.account_id,
   databaseId,
   apiToken,
 ) as unknown as D1Database;
@@ -70,8 +73,15 @@ if (!requested.length) throw new Error("no_sources_selected");
 
 let failures = 0;
 for (const name of requested) {
-  const result = await collectors[name]();
-  console.log(JSON.stringify({ oneshot: name, stage, status: result.status, changedRows: result.records }));
-  if (result.status === "ERROR" || result.status === "NEEDS_KEY") failures += 1;
+  try {
+    const result = await collectors[name]();
+    console.log(JSON.stringify({ oneshot: name, stage, status: result.status, changedRows: result.records }));
+    if (result.status === "ERROR" || result.status === "NEEDS_KEY") failures += 1;
+  } catch (error) {
+    // One failing source (for example a D1 auth problem surfacing on write)
+    // must not abort the remaining selected sources.
+    console.log(JSON.stringify({ oneshot: name, stage, status: "ERROR", detail: error instanceof Error ? error.message.slice(0, 200) : "collector_error" }));
+    failures += 1;
+  }
 }
 if (failures === requested.length) process.exitCode = 1;
