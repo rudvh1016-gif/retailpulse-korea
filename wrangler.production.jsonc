@@ -42,7 +42,7 @@
         {
           "binding": "DB",
           "database_name": "retailpulse-korea-production",
-          "database_id": "00000000-0000-4000-8000-000000000002",
+          "database_id": "a86b7e71-ddd8-4677-a65d-aa11490c578c",
           "migrations_dir": "drizzle"
         }
       ]

@@ -64,10 +64,13 @@ test("Wrangler environments isolate Worker names and D1 databases", async () => 
   assert.equal(config.triggers, undefined);
 });
 
-test("Cloudflare deploy gate rejects unresolved D1 resources", async () => {
+test("Cloudflare deploy gate accepts production and rejects unresolved staging D1", async () => {
   const config = await readCloudflareConfig();
   assert.throws(() => validateCloudflareEnvironment(config, "staging"), /Staging D1 is not created/i);
-  assert.throws(() => validateCloudflareEnvironment(config, "production"), /Production D1 is not created/i);
+  assert.deepEqual(validateCloudflareEnvironment(config, "production"), {
+    workerName: "retailpulse-korea-production",
+    databaseName: "retailpulse-korea-production",
+  });
 });
 
 test("deploy workflow maps one stage to matching GitHub and Wrangler environments", async () => {
