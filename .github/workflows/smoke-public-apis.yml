@@ -1,4 +1,4 @@
-name: Smoke Public Airport APIs
+name: Smoke Public APIs
 
 on:
   workflow_dispatch:
@@ -9,67 +9,12 @@ permissions:
 jobs:
   smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 5
     environment: production
     steps:
-      - name: Request each approved API once without persistence
+      - uses: actions/checkout@v4
+      - name: Request each source once without persistence
         env:
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
-        run: |
-          node <<'NODE'
-          const sources = [
-            { id: "flight_detail", endpoint: "https://apis.data.go.kr/B551177/statusOfAllFltDeOdp/getFltDeparturesDeOdp" },
-            { id: "duty_free_actual", endpoint: "https://apis.data.go.kr/B551177/statusOfAPaxFlt4DutyFree/getAPaxFlt4DutyFreeDepartures" },
-            { id: "duty_free_schedule", endpoint: "https://apis.data.go.kr/B551177/statusOfSPaxFlt4DutyFree/getSPaxFlt4DutyFreeDepartures" },
-          ];
-
-          for (const source of sources) {
-            const url = new URL(source.endpoint);
-            url.searchParams.set("serviceKey", process.env.DATA_GO_KR_SERVICE_KEY);
-            url.searchParams.set("pageNo", "1");
-            url.searchParams.set("numOfRows", "1");
-            url.searchParams.set("type", "json");
-
-            const response = await fetch(url, {
-              headers: { accept: "application/json" },
-              signal: AbortSignal.timeout(8_000),
-            });
-            const text = await response.text();
-            let payload;
-            try {
-              payload = JSON.parse(text);
-            } catch {
-              console.log(JSON.stringify({ source: source.id, httpStatus: response.status, format: "non-json" }));
-              process.exitCode = 1;
-              continue;
-            }
-
-            const envelope = payload?.response ?? payload;
-            const header = envelope?.header ?? {};
-            const body = envelope?.body ?? {};
-            const gatewayHeader = payload?.OpenAPI_ServiceResponse?.cmmMsgHeader ?? {};
-            const safeText = (value) => {
-              if (typeof value !== "string") return null;
-              const secret = process.env.DATA_GO_KR_SERVICE_KEY;
-              return (secret ? value.replaceAll(secret, "[REDACTED]") : value).slice(0, 160);
-            };
-            const rawItems = body?.items?.item;
-            const items = Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
-            const result = {
-              source: source.id,
-              httpStatus: response.status,
-              format: "json",
-              envelopeKeys: Object.keys(payload ?? {}).sort(),
-              resultCode: header.resultCode ?? null,
-              resultMsg: header.resultMsg ?? null,
-              gatewayErrorCode: safeText(gatewayHeader.returnReasonCode),
-              gatewayAuthMessage: safeText(gatewayHeader.returnAuthMsg),
-              gatewayErrorMessage: safeText(gatewayHeader.errMsg),
-              recordCount: items.length,
-              totalCount: body.totalCount ?? null,
-              fieldNames: Object.keys(items[0] ?? {}).sort(),
-            };
-            console.log(JSON.stringify(result));
-            if (!response.ok || !["00", "0000", "0"].includes(String(result.resultCode))) process.exitCode = 1;
-          }
-          NODE
+          SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
+        run: node scripts/smoke-public-apis.mjs
