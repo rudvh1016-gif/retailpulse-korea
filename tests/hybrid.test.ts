@@ -52,9 +52,13 @@ test("quota guardrails distinguish estimates and apply 70/85/95 levels", () => {
 
 test("Wrangler environments isolate Worker names and D1 databases", async () => {
   const config = await readCloudflareConfig();
+  assert.equal(config.account_id, "2848bf4ae7af3c6fde4e26b55b19d0c2");
+  assert.match(config.account_id, /^[a-f0-9]{32}$/);
   assert.equal(config.env.staging.name, "retailpulse-korea-staging");
   assert.equal(config.env.production.name, "retailpulse-korea-production");
   assert.notEqual(config.env.staging.name, config.env.production.name);
+  assert.equal(config.env.staging.account_id, undefined);
+  assert.equal(config.env.production.account_id, undefined);
 
   const stagingDb = config.env.staging.d1_databases[0];
   const productionDb = config.env.production.d1_databases[0];
@@ -66,6 +70,10 @@ test("Wrangler environments isolate Worker names and D1 databases", async () => 
 
 test("Cloudflare deploy gate accepts production and rejects unresolved staging D1", async () => {
   const config = await readCloudflareConfig();
+  assert.throws(
+    () => validateCloudflareEnvironment({ ...config, account_id: "invalid" }, "production"),
+    /32-character hexadecimal account_id/i,
+  );
   assert.throws(() => validateCloudflareEnvironment(config, "staging"), /Staging D1 is not created/i);
   assert.deepEqual(validateCloudflareEnvironment(config, "production"), {
     workerName: "retailpulse-korea-production",
@@ -96,7 +104,7 @@ test("production deployment applies D1 migrations before Worker deploy", async (
   assert.ok(migrationIndex < deployIndex);
   assert.match(steps[migrationIndex], /if: inputs\.stage == 'production'/);
   assert.match(steps[migrationIndex], /CLOUDFLARE_API_TOKEN: \$\{\{ secrets\.CLOUDFLARE_API_TOKEN \}\}/);
-  assert.match(steps[migrationIndex], /CLOUDFLARE_ACCOUNT_ID: \$\{\{ secrets\.CLOUDFLARE_ACCOUNT_ID \}\}/);
+  assert.doesNotMatch(workflow, /CLOUDFLARE_ACCOUNT_ID/);
 });
 
 test("production collector remains gated and Worker Cron remains absent", async () => {
