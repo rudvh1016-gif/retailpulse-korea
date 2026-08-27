@@ -47,6 +47,12 @@ jobs:
             const envelope = payload?.response ?? payload;
             const header = envelope?.header ?? {};
             const body = envelope?.body ?? {};
+            const gatewayHeader = payload?.OpenAPI_ServiceResponse?.cmmMsgHeader ?? {};
+            const safeText = (value) => {
+              if (typeof value !== "string") return null;
+              const secret = process.env.DATA_GO_KR_SERVICE_KEY;
+              return (secret ? value.replaceAll(secret, "[REDACTED]") : value).slice(0, 160);
+            };
             const rawItems = body?.items?.item;
             const items = Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
             const result = {
@@ -56,6 +62,9 @@ jobs:
               envelopeKeys: Object.keys(payload ?? {}).sort(),
               resultCode: header.resultCode ?? null,
               resultMsg: header.resultMsg ?? null,
+              gatewayErrorCode: safeText(gatewayHeader.returnReasonCode),
+              gatewayAuthMessage: safeText(gatewayHeader.returnAuthMsg),
+              gatewayErrorMessage: safeText(gatewayHeader.errMsg),
               recordCount: items.length,
               totalCount: body.totalCount ?? null,
               fieldNames: Object.keys(items[0] ?? {}).sort(),
