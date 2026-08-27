@@ -149,7 +149,7 @@ test("estimated sales collector falls back across quarters and verifies the posi
   const requestedQuarters = [];
   globalThis.fetch = async (input) => {
     const url = String(input);
-    const match = url.match(/VwsmTrdarSelngQq\/1\/200\/(\d{5})\/(\w+)/);
+    const match = url.match(/VwsmTrdarSelngQq\/1\/200\/(\d{5})\/([ADRU])\/(\w+)/);
     requestedQuarters.push(match[1]);
     if (match[1] !== "20261") {
       return Response.json({ RESULT: { CODE: "INFO-200", MESSAGE: "해당하는 데이터가 없습니다." } });
@@ -161,8 +161,8 @@ test("estimated sales collector falls back across quarters and verifies the posi
         list_total_count: 3,
         RESULT: { CODE: "INFO-000", MESSAGE: "정상 처리되었습니다" },
         row: [
-          estimatedSalesRow({ TRDAR_CD: match[2] }),
-          estimatedSalesRow({ TRDAR_CD: match[2], SVC_INDUTY_CD: "CS100002", SVC_INDUTY_CD_NM: "중식음식점", THSMON_SELNG_AMT: "1000000" }),
+          estimatedSalesRow({ TRDAR_CD: match[3] }),
+          estimatedSalesRow({ TRDAR_CD: match[3], SVC_INDUTY_CD: "CS100002", SVC_INDUTY_CD_NM: "중식음식점", THSMON_SELNG_AMT: "1000000" }),
           estimatedSalesRow({ TRDAR_CD: "9999999", SVC_INDUTY_CD: "CS100009" }),
         ],
       },

@@ -344,7 +344,7 @@ export async function collectEstimatedSales(env: CollectorEnv, now = new Date())
     try {
       let matched: Record<string, unknown>[] = [];
       for (const quarterCode of recentQuarterCandidates(now)) {
-        const url = new URL(`http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/VwsmTrdarSelngQq/1/200/${quarterCode}/${mapping.salesTradeArea.code}`);
+        const url = new URL(`http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/VwsmTrdarSelngQq/1/200/${quarterCode}/${mapping.salesTradeArea.seCd}/${mapping.salesTradeArea.code}`);
         const payload = await fetchOfficialJson(url, { timeoutMs: 10_000, retries: 0 });
         let rows: Record<string, unknown>[] = [];
         try {
