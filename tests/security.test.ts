@@ -1,6 +1,24 @@
 import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
+import { redirectHttpToHttps } from "../worker/https-redirect";
+
+test("Worker redirects HTTP requests to the same HTTPS URL", () => {
+  const response = redirectHttpToHttps(new Request("http://koretaildata.com/ko?source=domain-check"));
+
+  assert.equal(response?.status, 308);
+  assert.equal(response?.headers.get("location"), "https://koretaildata.com/ko?source=domain-check");
+});
+
+test("Worker leaves HTTPS requests unchanged", () => {
+  assert.equal(redirectHttpToHttps(new Request("https://koretaildata.com/ko")), undefined);
+});
+
+test("Worker leaves loopback HTTP requests available for local rendering", () => {
+  for (const host of ["localhost", "127.0.0.1", "[::1]"]) {
+    assert.equal(redirectHttpToHttps(new Request(`http://${host}/ko`)), undefined);
+  }
+});
 
 test("production-facing source contains no chatgpt.site canonical", async () => {
   const files = ["app/layout.tsx", "app/seo-config.ts", "app/sitemap.ts", "app/robots.ts", "next.config.ts", "wrangler.production.jsonc"];
