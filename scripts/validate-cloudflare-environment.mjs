@@ -14,6 +14,9 @@ export function validateCloudflareEnvironment(config, stage) {
   if (stage !== "staging" && stage !== "production") {
     throw new Error("RPK_DEPLOYMENT_STAGE must be staging or production.");
   }
+  if (!/^[a-f0-9]{32}$/.test(config.account_id ?? "")) {
+    throw new Error("Wrangler account_id must be a 32-character hexadecimal account_id.");
+  }
 
   const staging = config.env?.staging;
   const production = config.env?.production;
