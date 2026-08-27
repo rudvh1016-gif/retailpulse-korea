@@ -29,8 +29,10 @@ export interface AreaMapping {
    * Primary 서울시 상권분석서비스 trade area (current 3-prefixed code scheme).
    * One defensible primary geography per product area; alternates are
    * documented in docs/DATA_SOURCES.md rather than collected in parallel.
+   * seCd is the 상권구분코드 (A 골목, D 발달, R 전통시장, U 관광특구): the
+   * OpenAPI's positional filters run STDR_YYQU_CD → TRDAR_SE_CD → TRDAR_CD.
    */
-  salesTradeArea: { code: string; name: string };
+  salesTradeArea: { code: string; name: string; seCd: "A" | "D" | "R" | "U" };
 }
 
 export const areaMappings: Record<AreaId, AreaMapping> = {
@@ -41,7 +43,7 @@ export const areaMappings: Record<AreaId, AreaMapping> = {
     kmaGrid: { nx: 60, ny: 127 },
     center: { lat: 37.5636, lng: 126.9838 },
     eventRadiusM: 1500,
-    salesTradeArea: { code: "3001492", name: "명동 남대문 북창동 다동 무교동 관광특구" },
+    salesTradeArea: { code: "3001492", name: "명동 남대문 북창동 다동 무교동 관광특구", seCd: "U" },
   },
   hongdae: {
     id: "hongdae",
@@ -50,7 +52,7 @@ export const areaMappings: Record<AreaId, AreaMapping> = {
     kmaGrid: { nx: 59, ny: 126 },
     center: { lat: 37.5563, lng: 126.9236 },
     eventRadiusM: 1500,
-    salesTradeArea: { code: "3120103", name: "홍대입구역(홍대)" },
+    salesTradeArea: { code: "3120103", name: "홍대입구역(홍대)", seCd: "D" },
   },
   seongsu: {
     id: "seongsu",
@@ -59,7 +61,7 @@ export const areaMappings: Record<AreaId, AreaMapping> = {
     kmaGrid: { nx: 61, ny: 126 },
     center: { lat: 37.5447, lng: 127.0557 },
     eventRadiusM: 1500,
-    salesTradeArea: { code: "3110131", name: "성수동카페거리" },
+    salesTradeArea: { code: "3110131", name: "성수동카페거리", seCd: "A" },
   },
 };
 
