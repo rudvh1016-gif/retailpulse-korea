@@ -141,30 +141,36 @@ test("seoul realtime collector is idempotent and isolates a failing area", async
   assert.doesNotMatch(health.detail, /fixture/);
 });
 
-test("estimated sales collector falls back across quarters and verifies the positional filter", async (context) => {
+test("estimated sales collector probes quarters, sweeps pages and filters client-side", async (context) => {
   const { database, databasePath } = openDatabase("sales");
   const originalFetch = globalThis.fetch;
   context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
 
-  const requestedQuarters = [];
+  const requests = [];
   globalThis.fetch = async (input) => {
     const url = String(input);
-    const match = url.match(/VwsmTrdarSelngQq\/1\/200\/(\d{5})\/([ADRU])\/(\w+)/);
-    requestedQuarters.push(match[1]);
-    if (match[1] !== "20261") {
+    const match = url.match(/VwsmTrdarSelngQq\/(\d+)\/(\d+)\/(\d{5})/);
+    requests.push({ start: Number(match[1]), end: Number(match[2]), quarter: match[3] });
+    if (match[3] !== "20261") {
       return Response.json({ RESULT: { CODE: "INFO-200", MESSAGE: "해당하는 데이터가 없습니다." } });
     }
-    // Simulate the observed behavior where the trade-area positional filter is
-    // not applied: rows for other areas come back too and must be dropped.
+    // The live service applies only the quarter filter, so pages mix all
+    // 1,650 trade areas; the collector must filter client-side.
+    const rows = match[2] - match[1] === 0
+      ? [estimatedSalesRow({ TRDAR_CD: "3110001" })]
+      : [
+        estimatedSalesRow({ TRDAR_CD: "3110001", SVC_INDUTY_CD: "CS100009" }),
+        estimatedSalesRow({ TRDAR_CD: "3001492" }),
+        estimatedSalesRow({ TRDAR_CD: "3001492", SVC_INDUTY_CD: "CS100002", SVC_INDUTY_CD_NM: "중식음식점", THSMON_SELNG_AMT: "1000000" }),
+        estimatedSalesRow({ TRDAR_CD: "3120103", SVC_INDUTY_CD: "CS100003" }),
+        estimatedSalesRow({ TRDAR_CD: "3110131", SVC_INDUTY_CD: "CS100004" }),
+        estimatedSalesRow({ TRDAR_CD: "9999999", SVC_INDUTY_CD: "CS100005" }),
+      ];
     return Response.json({
       VwsmTrdarSelngQq: {
-        list_total_count: 3,
+        list_total_count: 21188,
         RESULT: { CODE: "INFO-000", MESSAGE: "정상 처리되었습니다" },
-        row: [
-          estimatedSalesRow({ TRDAR_CD: match[3] }),
-          estimatedSalesRow({ TRDAR_CD: match[3], SVC_INDUTY_CD: "CS100002", SVC_INDUTY_CD_NM: "중식음식점", THSMON_SELNG_AMT: "1000000" }),
-          estimatedSalesRow({ TRDAR_CD: "9999999", SVC_INDUTY_CD: "CS100009" }),
-        ],
+        row: rows,
       },
     });
   };
@@ -173,9 +179,13 @@ test("estimated sales collector falls back across quarters and verifies the posi
   const now = new Date("2026-08-27T15:00:00Z");
   const first = await collectEstimatedSales(env, now);
   assert.equal(first.status, "SUCCESS");
-  assert.ok(requestedQuarters.includes("20263"));
-  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_estimated_sales").get().count, 6);
-  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_estimated_sales WHERE trade_area_code = '9999999'").get().count, 0);
+  assert.ok(first.records > 0);
+  // Probes 20263 → 20262 → 20261, then sweeps one short page and stops.
+  assert.ok(requests.some((request) => request.quarter === "20263"));
+  assert.equal(requests.filter((request) => request.quarter === "20261" && request.end - request.start > 0).length, 1);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_estimated_sales").get().count, 4);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_estimated_sales WHERE trade_area_code IN ('9999999','3110001')").get().count, 0);
+  assert.equal(database.prepare("SELECT area FROM seoul_estimated_sales WHERE trade_area_code = '3120103'").get().area, "hongdae");
 
   const second = await collectEstimatedSales(env, now);
   assert.equal(second.records, 0);
