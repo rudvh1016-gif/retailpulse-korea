@@ -127,6 +127,10 @@ function summarizeSeoul(result) {
     listTotalCount: service?.list_total_count ?? null,
     recordCount: rows.length,
     firstRecordFieldNames: Object.keys(rows[0] ?? {}).sort().slice(0, 40),
+    // Non-sensitive identifying values only, to verify positional filters.
+    firstRecordSample: rows[0]
+      ? { STDR_YYQU_CD: rows[0].STDR_YYQU_CD ?? null, TRDAR_SE_CD: rows[0].TRDAR_SE_CD ?? null, TRDAR_CD: rows[0].TRDAR_CD ?? null }
+      : null,
     authStatus: ok ? "PASS" : "BLOCKED",
     nonJsonSnippet: result.textSnippet,
   };
@@ -180,11 +184,17 @@ const seoulSources = [
     pathTail: "POI003",
   },
   {
-    // 추정매출-상권 (OA-15572). Positional filters: /{STDR_YYQU_CD}/{TRDAR_CD}.
-    // 3001492 = 명동 남대문 북창동 다동 무교동 관광특구 (current 3-prefixed codes).
-    id: "S3_seoul_estimated_sales",
+    // 추정매출-상권 (OA-15572). Positional filter diagnosis: the same quarter
+    // requested via two-arg and three-arg forms; firstRecordSample shows
+    // which construction the server actually applies.
+    id: "S3_sales_filter_2arg",
     service: "VwsmTrdarSelngQq",
     pathTail: "20261/3001492",
+  },
+  {
+    id: "S3_sales_filter_3arg",
+    service: "VwsmTrdarSelngQq",
+    pathTail: "20261/U/3001492",
   },
 ];
 
