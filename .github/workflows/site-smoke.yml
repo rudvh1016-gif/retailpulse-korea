@@ -36,6 +36,7 @@ jobs:
           const summary = await fetch(`${origin}/api/live/summary`, { signal: AbortSignal.timeout(15000) });
           const summaryBody = await summary.json().catch(() => null);
           check("api /api/live/summary", summary.status === 200 && Boolean(summaryBody?.mode), `status ${summary.status}; mode ${summaryBody?.mode}`);
+          for (const source of summaryBody?.sources ?? []) console.log(JSON.stringify({ source }));
           if (summaryBody?.mode === "live-summary") {
             const areas = summaryBody.areas ?? {};
             for (const area of ["myeongdong", "hongdae", "seongsu"]) {
