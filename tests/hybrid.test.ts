@@ -83,6 +83,22 @@ test("deploy workflow maps one stage to matching GitHub and Wrangler environment
   assert.match(deployScript, /"--env", stage/);
 });
 
+test("production deployment applies D1 migrations before Worker deploy", async () => {
+  const workflow = await readFile(new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url), "utf8");
+  const steps = workflow
+    .split(/\r?\n(?=      - )/)
+    .filter((block) => block.startsWith("      - "));
+  const migrationIndex = steps.findIndex((step) => step.includes("run: npm run db:migrate:production"));
+  const deployIndex = steps.findIndex((step) => step.includes("run: npm run deploy:cloudflare"));
+
+  assert.notEqual(migrationIndex, -1);
+  assert.notEqual(deployIndex, -1);
+  assert.ok(migrationIndex < deployIndex);
+  assert.match(steps[migrationIndex], /if: inputs\.stage == 'production'/);
+  assert.match(steps[migrationIndex], /CLOUDFLARE_API_TOKEN: \$\{\{ secrets\.CLOUDFLARE_API_TOKEN \}\}/);
+  assert.match(steps[migrationIndex], /CLOUDFLARE_ACCOUNT_ID: \$\{\{ secrets\.CLOUDFLARE_ACCOUNT_ID \}\}/);
+});
+
 test("production collector remains gated and Worker Cron remains absent", async () => {
   const workflow = await readFile(new URL("../.github/workflows/collect-production.yml", import.meta.url), "utf8");
   const config = await readCloudflareConfig();
