@@ -1,0 +1,57 @@
+name: Production Site Smoke
+
+# Read-only, secret-free checks against the public production site.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check public pages and internal APIs
+        run: |
+          node <<'NODE'
+          const origin = "https://koretaildata.com";
+          let failed = false;
+          const check = (name, ok, detail) => {
+            console.log(JSON.stringify({ check: name, ok, detail }));
+            if (!ok) failed = true;
+          };
+
+          for (const locale of ["ko", "en", "zh", "ja"]) {
+            const response = await fetch(`${origin}/${locale}`, { redirect: "follow", signal: AbortSignal.timeout(15000) });
+            const html = await response.text();
+            check(`page /${locale}`, response.status === 200 && html.includes("KORETAIL"), `status ${response.status}`);
+          }
+
+          const health = await fetch(`${origin}/api/health`, { signal: AbortSignal.timeout(15000) });
+          const healthBody = await health.json().catch(() => null);
+          check("api /api/health", health.status === 200 && healthBody?.app === "ok", `status ${health.status}; db ${healthBody?.database}`);
+          console.log(JSON.stringify({ healthSources: healthBody?.sources ?? [] }));
+
+          const summary = await fetch(`${origin}/api/live/summary`, { signal: AbortSignal.timeout(15000) });
+          const summaryBody = await summary.json().catch(() => null);
+          check("api /api/live/summary", summary.status === 200 && Boolean(summaryBody?.mode), `status ${summary.status}; mode ${summaryBody?.mode}`);
+          if (summaryBody?.mode === "live-summary") {
+            const areas = summaryBody.areas ?? {};
+            for (const area of ["myeongdong", "hongdae", "seongsu"]) {
+              const block = areas[area] ?? {};
+              console.log(JSON.stringify({
+                area,
+                realtime: block.realtime ? { congestionLabel: block.realtime.congestionLabel, observedAt: block.realtime.observedAt, freshness: block.realtime.freshness } : null,
+                weatherRows: block.weather?.length ?? 0,
+                eventRows: block.events?.length ?? 0,
+                sales: block.sales ? { quarterCode: block.sales.quarterCode, industryCount: block.sales.industryCount } : null,
+              }));
+            }
+          }
+
+          const redirect = await fetch(`http://koretaildata.com/ko`, { redirect: "manual", signal: AbortSignal.timeout(15000) });
+          check("http->https redirect", [301, 308].includes(redirect.status), `status ${redirect.status}`);
+
+          if (failed) process.exitCode = 1;
+          NODE

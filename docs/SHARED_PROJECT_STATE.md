@@ -205,6 +205,15 @@ Canonical decision is documented in:
 
 - `docs/BRAND_DECISION_KORETAIL.md`
 
+## 11.5 Official-source integration status (2026-08-27)
+
+Authoritative per-source contract matrix: `docs/DATA_SOURCES.md`.
+
+- `S1` Seoul real-time city data and `S3` Seoul estimated sales passed authenticated verification (INFO-000) and are fully integrated: adapters → D1 (`drizzle/0003`) → `/api/live/summary` → the "오늘 수요를 움직이는 신호" UI section (4 locales; renders only when official data exists).
+- All six `apis.data.go.kr` sources (A1–A4, W1 KMA, T1 TourAPI) returned gateway code 30 during the KST evening and gateway timeouts during the KST overnight window on 2026-08-27, despite the owner-confirmed approved utilization applications and a raw (non-percent-encoded, whitespace-free) stored key. Classification: `DATA_GO_KR_AUTH_PROPAGATION_OR_REGISTRATION_BLOCKED`. Their collectors and tables are implemented and gated; do not mark them LIVE until an authenticated response exists.
+- `S2` short-stay foreign population: the dong-level series ended (2026-06-09 portal notice); the 250m-grid successor's exact dataset ID/API service name still needs one portal check. Legacy dong history stays bundled as OFFICIAL_HISTORICAL.
+- Manual bounded one-shot import: **One-shot Data Import** workflow (workflow_dispatch + literal `IMPORT`). The recurring collector remains OFF behind `ENABLE_PRODUCTION_COLLECTOR`.
+
 ## 12. Competitive landscape snapshot
 
 KORETAIL is not entering an empty market.
