@@ -14,6 +14,12 @@ test("Worker leaves HTTPS requests unchanged", () => {
   assert.equal(redirectHttpToHttps(new Request("https://koretaildata.com/ko")), undefined);
 });
 
+test("Worker leaves loopback HTTP requests available for local rendering", () => {
+  for (const host of ["localhost", "127.0.0.1", "[::1]"]) {
+    assert.equal(redirectHttpToHttps(new Request(`http://${host}/ko`)), undefined);
+  }
+});
+
 test("production-facing source contains no chatgpt.site canonical", async () => {
   const files = ["app/layout.tsx", "app/seo-config.ts", "app/sitemap.ts", "app/robots.ts", "next.config.ts", "wrangler.production.jsonc"];
   for (const file of files) {
