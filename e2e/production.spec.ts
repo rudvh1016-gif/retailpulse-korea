@@ -81,14 +81,15 @@ test("sample demand and airport unavailable states are explicit and accessible",
 
 test("new demand and airport truth labels are complete in all four locales", async ({ page }) => {
   const labels = {
-    ko: ["예시 수요지수", "실시간 공항 데이터 연결 준비 중"],
-    en: ["DEMO INDEX", "Live airport data is being prepared"],
-    zh: ["演示指数", "实时机场数据正在准备接入"],
-    ja: ["デモ指数", "空港リアルタイムデータを準備中"],
+    ko: ["예시 수요지수", "실시간 공항 데이터 연결 준비 중", "예시 날짜 · 8월 23일 · KST"],
+    en: ["DEMO INDEX", "Live airport data is being prepared", "SAMPLE DATE · AUG 23 · KST"],
+    zh: ["演示指数", "实时机场数据正在准备接入", "示例日期 · 8月23日 · KST"],
+    ja: ["デモ指数", "空港リアルタイムデータを準備中", "サンプル日付 · 8月23日 · KST"],
   } as const;
   for (const locale of Object.keys(labels) as Array<keyof typeof labels>) {
     await page.goto(`/${locale}`);
     await expect(page.getByText(labels[locale][0], { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(labels[locale][2], { exact: true })).toBeVisible();
     await page.goto(`/${locale}/airport`);
     await expect(page.getByText(labels[locale][1], { exact: true })).toBeVisible();
   }
