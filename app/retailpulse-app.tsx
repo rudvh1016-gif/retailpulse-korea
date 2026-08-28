@@ -6,7 +6,7 @@ import {
   airportAnnual,
   airportMonthly,
   airportValue,
-  flights,
+  demoFlights,
   foreignJulyDetail,
   foreignMonthly,
   formatCount,
@@ -18,6 +18,7 @@ import {
 } from "./retailpulse-data";
 import { pageDescription, pageTitle, seoLocales, seoSlugs, siteOrigin, type SeoSlug } from "./seo-config";
 import LiveSignals from "./live-signals";
+import { classifyDemoDemand } from "../lib/demand-index";
 
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
 
@@ -38,6 +39,8 @@ const scores: Record<Day, Record<AreaId, number>> = {
   tomorrow: { myeongdong: 86, hongdae: 74, seongsu: 69 },
 };
 
+const demoDemandCohort = Object.values(scores).flatMap((period) => Object.values(period));
+
 const forecast = {
   myeongdong: [82, 86, 78, 74, 88, 91, 94],
   hongdae: [77, 74, 81, 83, 85, 90, 92],
@@ -45,10 +48,10 @@ const forecast = {
 };
 
 const dates = {
-  ko: { today: "8월 23일 (일)", tomorrow: "8월 24일 (월)" },
-  en: { today: "Aug 23 · Sun", tomorrow: "Aug 24 · Mon" },
-  zh: { today: "8月23日·周日", tomorrow: "8月24日·周一" },
-  ja: { today: "8月23日（日）", tomorrow: "8月24日（月）" },
+  ko: { today: "예시 오늘", tomorrow: "예시 내일" },
+  en: { today: "SAMPLE TODAY", tomorrow: "SAMPLE TOMORROW" },
+  zh: { today: "示例今天", tomorrow: "示例明天" },
+  ja: { today: "サンプル今日", tomorrow: "サンプル明日" },
 };
 
 const copy = {
@@ -267,7 +270,7 @@ function areaLocalName(id: AreaId, lang: Lang) {
   return lang === "en" ? area.en : area[lang];
 }
 
-function airlineLocalName(flight: typeof flights[number], lang: Lang) {
+function airlineLocalName(flight: typeof demoFlights[number], lang: Lang) {
   if (lang === "ko") return flight.airlineKo;
   if (lang === "ja") return flight.airlineJa;
   return flight.airlineEn;
@@ -392,9 +395,13 @@ const industryProfiles: Record<IndustryId, {
 };
 
 function statusLabel(lang: Lang, score: number) {
-  if (score >= 80) return copy[lang].high;
-  if (score >= 70) return copy[lang].good;
-  return copy[lang].moderate;
+  const level = classifyDemoDemand(score, demoDemandCohort);
+  const labels: Record<typeof level, Record<Lang, string>> = {
+    low: { ko: "낮음", en: "Low", zh: "较低", ja: "低め" },
+    normal: { ko: "보통", en: "Normal", zh: "一般", ja: "普通" },
+    high: { ko: "높음", en: "High", zh: "较高", ja: "高め" },
+  };
+  return labels[level][lang];
 }
 
 function Icon({ name }: { name: View }) {
@@ -471,18 +478,19 @@ function HomeRankings({ lang, selected, onSelect }: { lang: Lang; selected: Area
   return <section className="command-rankings" id="area-compare" aria-labelledby="command-ranking-title">
     <div className="section-head"><div><p className="eyebrow">TODAY + TOMORROW · KST</p><h2 id="command-ranking-title">{localText(lang, { ko: "서울 지역 비교", en: "SEOUL AREA PULSE", zh: "首尔地区比较", ja: "ソウルのエリア比較" })}</h2></div><DemoLabel lang={lang} /></div>
     <p className="section-intro">{localText(lang, {
-      ko: "오늘과 내일을 같은 화면에서 비교하고, 지역을 누르면 추천시간과 근거를 확인할 수 있습니다.",
-      en: "Compare today and tomorrow together, then open an area for its best time and supporting signals.",
-      zh: "在同一画面比较今天与明天，选择地区后查看推荐时间与判断依据。",
-      ja: "今日と明日を同じ画面で比べ、エリアを選ぶとおすすめ時間と根拠を確認できます。",
+      ko: "예시 수요지수는 화면 구조를 시험하는 0~100 샘플값입니다. 확률이나 실시간 수요가 아니며, 같은 예시값 분포 안에서 낮음·보통·높음으로 나눕니다.",
+      en: "The Demo Demand Index is a 0–100 sample used to test the interface. It is not a probability or live demand; Low, Normal and High are relative to this sample cohort.",
+      zh: "演示需求指数是用于验证界面的0–100示例值，并非概率或实时需求；低、一般、较高仅表示该组示例值中的相对位置。",
+      ja: "デモ需要指数は画面検証用の0〜100サンプル値です。確率やリアルタイム需要ではなく、低め・普通・高めは同じサンプル内での相対区分です。",
     })}</p>
+    <details className="index-method" suppressHydrationWarning><summary>{localText(lang, { ko: "지수 기준 보기", en: "How the sample bands work", zh: "查看指数标准", ja: "指数の基準を見る" })}</summary><p>{localText(lang, { ko: "오늘·내일에 표시된 여섯 예시값의 아래 1/3은 낮음, 가운데 1/3은 보통, 위 1/3은 높음입니다. 실제 모델이 검증되면 공식 신호 기반 기준으로 교체됩니다.", en: "The lower, middle and upper thirds of the six displayed sample values are labelled Low, Normal and High. A verified official-signal model will replace this sample method.", zh: "当前六个示例值按下、中、上三分位标为较低、一般、较高。模型验证后将改用官方信号标准。", ja: "表示中の6つのサンプル値を下位・中位・上位の3分の1に分けています。検証済みモデル完成後は公式シグナル基準に置き換えます。" })}</p></details>
     <div className="ranking-pair">
       {(["today", "tomorrow"] as Day[]).map((period) => {
         const ordered = (Object.keys(areaInfo) as AreaId[]).sort((a, b) => scores[period][b] - scores[period][a]);
         return <section className="compact-ranking" key={period} aria-label={period}>
           <div className="compact-ranking-head"><p>{period === "today" ? t.today.toUpperCase() : t.tomorrow.toUpperCase()}</p><span>{dates[lang][period]}</span></div>
           {ordered.map((id, index) => <button key={id} className={selected === id ? "selected" : ""} onClick={() => onSelect(period, id)}>
-            <span>0{index + 1}</span><strong>{areaInfo[id].en}<small>{areaLocalName(id, lang)}</small></strong><b>{scores[period][id]}</b><i>{areaInfo[id].best.replace(" — ", "–")}</i>
+            <span>0{index + 1}</span><strong>{areaInfo[id].en}<small>{areaLocalName(id, lang)}</small></strong><b><small>{localText(lang, { ko: "예시 수요지수", en: "DEMO INDEX", zh: "演示指数", ja: "デモ指数" })}</small>{scores[period][id]} · {statusLabel(lang, scores[period][id])}</b><i>{localText(lang, { ko: "예시 추천", en: "SAMPLE TIME", zh: "示例推荐", ja: "サンプル時間" })} {areaInfo[id].best.replace(" — ", "–")}</i>
           </button>)}
         </section>;
       })}
@@ -491,32 +499,12 @@ function HomeRankings({ lang, selected, onSelect }: { lang: Lang; selected: Area
 }
 
 function HomeAirportNow({ lang, onOpen }: { lang: Lang; onOpen: (section: AirportSection, terminal?: Terminal) => void }) {
-  const wave = flights.filter((flight) => {
-    if (flight.kind !== "departures" || flight.status === "cancelled") return false;
-    const [hour, minute] = flight.time.split(":").map(Number);
-    const delta = hour * 60 + minute - 8 * 60;
-    return delta >= 0 && delta <= 180;
-  });
-  const airlineCounts = Object.entries(wave.reduce<Record<string, number>>((acc, flight) => {
-    acc[flight.airline] = (acc[flight.airline] ?? 0) + 1;
-    return acc;
-  }, {})).sort((a, b) => b[1] - a[1]).slice(0, 3);
-  const routeCounts = Object.entries(wave.reduce<Record<string, number>>((acc, flight) => {
-    acc[flight.region] = (acc[flight.region] ?? 0) + 1;
-    return acc;
-  }, {})).sort((a, b) => b[1] - a[1]).slice(0, 2);
   return <section className="home-airport" aria-labelledby="home-airport-title">
-    <div className="section-head"><div><p className="eyebrow">AIRPORT NOW · DEMO · KST</p><h2 id="home-airport-title">{localText(lang, { ko: "인천공항 지금", en: "INCHEON AIRPORT NOW", zh: "仁川机场现在", ja: "仁川空港の現在" })}</h2></div><button className="text-link" onClick={() => onOpen("now")}>{localText(lang, { ko: "공항 자세히", en: "OPEN AIRPORT", zh: "查看机场", ja: "空港を見る" })} ↗</button></div>
-    <div className="airport-command-grid">
-      <div className="airport-command-main"><span>{localText(lang, { ko: "오늘 예상 출국객", en: "EXPECTED DEPARTURES", zh: "今日预计出境人数", ja: "本日の出国者予測" })}</span><strong>{formatCount(lang, 58430)}</strong><small>{localText(lang, { ko: "전체 공항 Demo · T1/T2 임의배분 없음", en: "ALL-AIRPORT DEMO · NO ASSUMED T1/T2 SPLIT", zh: "机场整体演示值 · 不推算T1/T2", ja: "空港全体のデモ · T1/T2への推定配分なし" })}</small></div>
-      <button onClick={() => onOpen("now", "T1")}><span>T1</span><strong>{localText(lang, { ko: "실시간 수치 미연결", en: "LIVE VALUE NOT CONNECTED", zh: "实时数值未接入", ja: "リアルタイム値は未接続" })}</strong><small>{localText(lang, { ko: "공식 월별 실적은 확인 가능", en: "OFFICIAL MONTHLY HISTORY AVAILABLE", zh: "可查看官方月度实绩", ja: "公式月次実績は確認可能" })}</small></button>
-      <button onClick={() => onOpen("now", "T2")}><span>T2</span><strong>{localText(lang, { ko: "실시간 수치 미연결", en: "LIVE VALUE NOT CONNECTED", zh: "实时数值未接入", ja: "リアルタイム値は未接続" })}</strong><small>{localText(lang, { ko: "공식 월별 실적은 확인 가능", en: "OFFICIAL MONTHLY HISTORY AVAILABLE", zh: "可查看官方月度实绩", ja: "公式月次実績は確認可能" })}</small></button>
-      <div><span>{localText(lang, { ko: "혼잡 피크", en: "BUSIEST", zh: "高峰时段", ja: "混雑ピーク" })}</span><strong>07:00—09:00</strong><small>DEMO WINDOW</small></div>
-    </div>
-    <div className="home-wave">
-      <div><p className="eyebrow">NEXT 3 HOURS · DEMO FLIGHTS</p><h3>{localText(lang, { ko: "어떤 항공편이 몰리나요?", en: "WHAT IS CONCENTRATING?", zh: "哪些航班正在集中？", ja: "どの便が集中する？" })}</h3><p>{localText(lang, { ko: "향후 3시간 출발편의 항공사·노선 집중을 보여줍니다. 편수는 승객 수가 아닙니다.", en: "Shows airline and route concentration in the next three hours. Flight count is not passenger count.", zh: "显示未来3小时出发航班的航司与航线集中度。航班数不等于旅客数。", ja: "今後3時間の出発便が集中する航空会社と路線を示します。便数は旅客数ではありません。" })}</p></div>
-      <div className="home-wave-list">{airlineCounts.map(([code, count]) => <p key={code}><span>{code}</span><strong>{formatCount(lang, count, "flights")}</strong></p>)}{routeCounts.map(([route, count]) => <p key={route}><span>{route}</span><strong>{formatCount(lang, count, "flights")}</strong></p>)}</div>
-      <button className="text-link" onClick={() => onOpen("next")}>{localText(lang, { ko: "다음 흐름 보기", en: "OPEN NEXT FLOW", zh: "查看后续客流", ja: "次の流れを見る" })} ↗</button>
+    <div className="section-head"><div><p className="eyebrow">AIRPORT PRESSURE · UNAVAILABLE</p><h2 id="home-airport-title">{localText(lang, { ko: "인천공항 운항 집중", en: "INCHEON AIRPORT PRESSURE", zh: "仁川机场航班集中度", ja: "仁川空港の運航集中" })}</h2></div><button className="text-link" onClick={() => onOpen("now")}>{localText(lang, { ko: "공항 자세히", en: "OPEN AIRPORT", zh: "查看机场", ja: "空港を見る" })} ↗</button></div>
+    <div className="airport-unavailable" role="status">
+      <strong>{localText(lang, { ko: "실시간 공항 데이터 연결 준비 중", en: "Live airport data is being prepared", zh: "实时机场数据正在准备接入", ja: "空港リアルタイムデータを準備中" })}</strong>
+      <p>{localText(lang, { ko: "공식 운항·게이트 인증 전에는 사람 수나 게이트 혼잡을 추정해 표시하지 않습니다. 공식 월별 실적은 공항의 ‘과거’에서 볼 수 있습니다.", en: "We do not estimate people counts or gate pressure before official flight and gate authentication. Official monthly actuals remain available under Airport History.", zh: "在官方航班与登机口完成认证前，不推算旅客人数或登机口拥挤度。机场‘历史’中仍可查看官方月度实绩。", ja: "公式の運航・搭乗口データの認証前は、人数や搭乗口混雑を推定表示しません。空港の「履歴」では公式月次実績を確認できます。" })}</p>
+      <button onClick={() => onOpen("history")}>{localText(lang, { ko: "공식 과거 실적 보기", en: "VIEW OFFICIAL HISTORY", zh: "查看官方历史实绩", ja: "公式の過去実績を見る" })} ↗</button>
     </div>
   </section>;
 }
@@ -728,7 +716,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
   const filteredFlights = useMemo(() => {
     const query = search.trim().toUpperCase();
-    return flights.filter((flight) => {
+    return demoFlights.filter((flight) => {
       const matchesText = !query || [flight.code, flight.city, flight.airline, flight.airlineKo, flight.airlineEn, flight.airlineJa]
         .some((value) => value.toUpperCase().includes(query));
       const matchesKind = flight.kind === flightKind;
@@ -897,11 +885,9 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
               </button>
             </section>
 
-            <TodayBrief lang={lang} selected={selected} />
             <LiveSignals lang={lang} area={selected} />
             <HomeRankings lang={lang} selected={selected} onSelect={(nextDay, area) => { setDay(nextDay); selectArea(area); }} />
             <HomeAirportNow lang={lang} onOpen={openAirport} />
-            <WhatChanged lang={lang} selected={selected} />
             <QuickActions lang={lang} onArea={() => document.getElementById("area-compare")?.scrollIntoView({ behavior: "smooth", block: "start" })} onAirport={openAirport} onBusiness={() => navigate("business")} onInsights={() => navigate("forecast")} onMore={() => navigate("more")} />
             {betaSignupEnabled && <BetaSignup lang={lang} />}
             <AreaDetail lang={lang} day={day} selected={selected} />
@@ -981,8 +967,8 @@ function GlobalSearch({
   const normalized = query.trim().toLocaleLowerCase();
   const includes = (...values: string[]) => !normalized || values.some((value) => value.toLocaleLowerCase().includes(normalized));
   const areaRows = (Object.keys(areaInfo) as AreaId[]).filter((id) => includes(id, areaInfo[id].ko, areaInfo[id].en, areaInfo[id].zh, areaInfo[id].ja));
-  const airlineRows = Array.from(new Map(flights.map((flight) => [flight.airline, flight])).values()).filter((flight) => includes(flight.airline, flight.airlineKo, flight.airlineEn, flight.airlineJa));
-  const flightRows = flights.filter((flight) => includes(flight.code, flight.city, flight.airline, flight.airlineKo, flight.airlineEn, flight.airlineJa));
+  const airlineRows = Array.from(new Map(demoFlights.map((flight) => [flight.airline, flight])).values()).filter((flight) => includes(flight.airline, flight.airlineKo, flight.airlineEn, flight.airlineJa));
+  const flightRows = demoFlights.filter((flight) => includes(flight.code, flight.city, flight.airline, flight.airlineKo, flight.airlineEn, flight.airlineJa));
   const industryRows = (Object.keys(industryProfiles) as IndustryId[]).filter((id) => includes(id, ...Object.values(industryProfiles[id].label)));
   const terminalRows = (["T1", "T2"] as const).filter((item) => includes(item, `${item} terminal`, `${item} 터미널`, `${item} 航站楼`, `${item} ターミナル`));
   const sectionRows = [
@@ -1015,45 +1001,15 @@ function GlobalSearch({
   </section>;
 }
 
-function TodayBrief({ lang, selected }: { lang: Lang; selected: AreaId }) {
-  const area = areaLocalName(selected, lang);
-  const time = areaInfo[selected].best;
-  const score = scores.today[selected];
-  const title = localText(lang, { ko: "오늘 브리프", en: "TODAY BRIEF", zh: "今日简报", ja: "本日のブリーフ" });
-  const rows = [
-    localText(lang, { ko: `${area} 쇼핑수요는 ${score}점으로 높은 편입니다.`, en: `${area} shopping demand is elevated at ${score}.`, zh: `${area}购物需求指数为${score}，处于较高水平。`, ja: `${area}のショッピング需要は${score}で、高めです。` }),
-    localText(lang, { ko: `${time.replace(" — ", "~")}에 수요가 집중될 전망입니다.`, en: `Demand is expected to concentrate around ${time}.`, zh: `预计需求集中在${time}。`, ja: `${time.replace(" — ", "〜")}ごろに需要が集中する見込みです。` }),
-    localText(lang, { ko: "T2 오전 출발편이 상대적으로 몰리는 데모 신호가 있습니다.", en: "A demo signal shows a morning T2 departure wave.", zh: "演示信号显示T2上午出发航班较集中。", ja: "デモシグナルでは、T2の午前出発便が比較的集中しています。" }),
-    localText(lang, { ko: "오후 약한 비 가능성을 실내 동선에 반영했습니다.", en: "Light afternoon rain is reflected in the indoor-route guidance.", zh: "建议已考虑下午小雨与室内动线。", ja: "午後の弱い雨を想定し、屋内動線を案内に反映しています。" }),
-  ];
-  return <section className="daily-brief command-brief" aria-labelledby="today-brief-title"><div className="section-head"><div><p className="eyebrow">COMMAND CENTER · TODAY · KST</p><h2 id="today-brief-title">{title}</h2></div><DemoLabel lang={lang} /></div><p className="section-intro">{localText(lang, { ko: "서울 쇼핑수요·공항·날씨에서 오늘 먼저 볼 변화만 모았습니다.", en: "The first changes to check today across shopping demand, airport flow and weather.", zh: "汇总今天在购物需求、机场客流与天气中最值得先看的变化。", ja: "買い物需要・空港・天気から、本日まず確認したい変化をまとめました。" })}</p><div className="brief-lines">{rows.map((row, index) => <p key={row}><span>0{index + 1}</span><strong>{row}</strong></p>)}</div></section>;
-}
-
-function WhatChanged({ lang, selected }: { lang: Lang; selected: AreaId }) {
-  const title = localText(lang, { ko: "어제와 달라진 점", en: "WHAT CHANGED?", zh: "与昨天相比", ja: "昨日からの変化" });
-  const rows = [
-    [areaLocalName(selected, lang), "+4", localText(lang, { ko: "펄스", en: "PULSE", zh: "指数", ja: "指数" })],
-    ["T2", "+4%", localText(lang, { ko: "예상 출국", en: "EXPECTED DEPARTURES", zh: "预计出境", ja: "予測出国者" })],
-    [localText(lang, { ko: "비 가능성", en: "RAIN CHANCE", zh: "降雨可能", ja: "雨の可能性" }), localText(lang, { ko: "신규", en: "NEW", zh: "新增", ja: "新規" }), "WEATHER"],
-    [localText(lang, { ko: "지연편", en: "DELAYED FLIGHTS", zh: "延误航班", ja: "遅延便" }), "+3", localText(lang, { ko: "편", en: "FLIGHTS", zh: "班", ja: "便" })],
-  ];
-  return <section className="what-changed" aria-labelledby="what-changed-title"><div className="section-head"><div><p className="eyebrow">DEMO COMPARISON · SAME BASIS</p><h2 id="what-changed-title">{title}</h2></div><DemoLabel lang={lang} /></div><div>{rows.map(([label, value, note], index) => <p key={label}><span>0{index + 1}</span><strong>{label}</strong><b>{value}</b><small>{note}</small></p>)}</div></section>;
-}
-
 function AreaDetail({ lang, day, selected }: { lang: Lang; day: Day; selected: AreaId }) {
   const [shareState, setShareState] = useState("");
   const t = copy[lang];
   const area = areaInfo[selected];
   const score = scores[day][selected];
-  const currentAreaPulse = { myeongdong: 87, hongdae: 81, seongsu: 76 }[selected];
-  const average4w = { myeongdong: 78, hongdae: 72, seongsu: 67 }[selected];
-  const averageDelta = score - average4w;
-  const activeLabel = localText(lang, { ko: "매우 활발", en: "VERY ACTIVE", zh: "非常活跃", ja: "とても活発" });
   const why = [
-    [localText(lang, { ko: "공항 입국 흐름", en: "Airport arrival flow", zh: "机场入境客流", ja: "空港の入国フロー" }), "+12%", localText(lang, { ko: "전체 공항 입국 흐름이 비교 기준보다 높은 Demo 신호입니다. 공항 승객을 외국인 수로 해석하지 않습니다.", en: "An all-airport demo signal is above its comparison basis. Airport passengers are not treated as foreign visitors.", zh: "机场整体入境流量的演示信号高于比较基准，但机场旅客不等同于外国游客。", ja: "空港全体の入国フローを示すデモシグナルが比較基準を上回っています。空港旅客を外国人数とは扱いません。" })],
-    [localText(lang, { ko: "외국인 생활인구", en: "Foreign living population", zh: "外国人生活人口", ja: "外国人生活人口" }), localText(lang, { ko: "높음", en: "HIGH", zh: "较高", ja: "高め" }), localText(lang, { ko: "최근 4주 평균보다 높은 수준으로 설정된 Demo 수요신호입니다. 방문자 수나 매출은 아닙니다.", en: "A demo demand signal set above its recent four-week average. It is not visits or sales.", zh: "演示需求信号高于近4周平均，但并非访问人数或销售额。", ja: "直近4週平均を上回る設定のデモ需要シグナルです。訪問者数や売上ではありません。" })],
-    [localText(lang, { ko: "관광 수요", en: "Tourism demand", zh: "旅游需求", ja: "観光需要" }), localText(lang, { ko: "강함", en: "STRONG", zh: "较强", ja: "強め" }), localText(lang, { ko: "지역 관광·체류 신호가 현재 점수를 올리는 방향으로 반영됐습니다.", en: "Area tourism and stay signals contribute positively to the current score.", zh: "地区旅游与停留信号对当前指数形成正向影响。", ja: "エリアの観光・滞在シグナルが現在の指数を押し上げる方向に反映されています。" })],
-    [localText(lang, { ko: "날씨", en: "Weather", zh: "天气", ja: "天気" }), localText(lang, { ko: "약한 비", en: "LIGHT RAIN", zh: "小雨", ja: "弱い雨" }), localText(lang, { ko: "야외 이동에는 약한 부정요인이지만 실내 쇼핑에는 영향이 제한적일 수 있습니다.", en: "A mild negative for outdoor movement, while its effect on indoor shopping may be limited.", zh: "对户外移动略有负面影响，但对室内购物的影响可能有限。", ja: "屋外移動にはややマイナスですが、屋内の買い物への影響は限定的な可能性があります。" })],
+    [localText(lang, { ko: "지역 활동", en: "Area activity", zh: "地区活动", ja: "エリア活動" }), localText(lang, { ko: "예시 입력", en: "SAMPLE INPUT", zh: "示例输入", ja: "サンプル入力" }), localText(lang, { ko: "화면 구조를 검증하기 위해 설정한 예시 입력입니다. 현재 공식 실시간 활동값과 연결해 계산하지 않습니다.", en: "A sample input used to test the interface. It is not currently calculated from the official live activity value.", zh: "这是用于验证界面的示例输入，目前未与官方实时活动值连接计算。", ja: "画面検証用のサンプル入力で、現在の公式リアルタイム活動値からは計算していません。" })],
+    [localText(lang, { ko: "방문·관광 관심", en: "Visit and tourism interest", zh: "到访与旅游关注", ja: "訪問・観光関心" }), localText(lang, { ko: "예시 입력", en: "SAMPLE INPUT", zh: "示例输入", ja: "サンプル入力" }), localText(lang, { ko: "실제 방문자 수나 매출이 아닌 제품 설명용 가정입니다.", en: "A product-explanation assumption, not observed visits or sales.", zh: "这是产品说明用假设，并非实际访客数或销售额。", ja: "実際の来訪者数や売上ではなく、製品説明用の仮定です。" })],
+    [localText(lang, { ko: "시간대", en: "Time window", zh: "时间段", ja: "時間帯" }), area.best, localText(lang, { ko: "추천 시간 역시 실제 예측 결과가 아닌 화면 검증용 예시입니다.", en: "The recommended time is also an interface sample, not a live forecast result.", zh: "推荐时间同样是界面验证示例，并非实时预测结果。", ja: "おすすめ時間も実際の予測結果ではなく、画面検証用のサンプルです。" })],
   ];
   const tips = lang === "zh"
     ? ["希望相对宽松时，可优先考虑上午。", "下午可优先选择室内购物动线。", "14点后需求可能上升，请预留移动与排队时间。"]
@@ -1067,21 +1023,18 @@ function AreaDetail({ lang, day, selected }: { lang: Lang; day: Day; selected: A
       <div className="area-summary-grid">
         <div className="pulse-panel">
           <div className="pulse-heading"><div><p className="eyebrow">SUMMARY · {day.toUpperCase()}</p><h2>{area.en}<small>{areaLocalName(selected, lang)}</small></h2></div><DemoLabel lang={lang} /></div>
-          <div className="pulse-line"><strong>{score}</strong><span>{statusLabel(lang, score).toUpperCase()}<small>{t.foreignPulse.toUpperCase()}</small></span></div>
-          <div className="pulse-meta"><div><p>{t.areaPulse.toUpperCase()} · {localText(lang, { ko: "현재", en: "CURRENT", zh: "当前", ja: "現在" })}</p><strong>{currentAreaPulse}</strong><small>{activeLabel}</small></div><div><p>{t.bestTime.toUpperCase()}</p><strong>{area.best}</strong><small>{day === "tomorrow" ? dates[lang].tomorrow : dates[lang].today}</small></div></div>
+          <div className="pulse-line"><strong>{score}</strong><span>{statusLabel(lang, score).toUpperCase()}<small>{localText(lang, { ko: "예시 수요지수", en: "DEMO DEMAND INDEX", zh: "演示需求指数", ja: "デモ需要指数" })}</small></span></div>
+          <div className="pulse-meta"><div><p>{localText(lang, { ko: "예시 추천 시간", en: "SAMPLE RECOMMENDED TIME", zh: "示例推荐时间", ja: "サンプル推奨時間" })}</p><strong>{area.best}</strong><small>{day === "tomorrow" ? dates[lang].tomorrow : dates[lang].today}</small></div></div>
         </div>
         <div className="area-summary-copy"><p className="eyebrow">ONE-LINE READING</p><h3>{localText(lang, {
-          ko: `${day === "tomorrow" ? "내일" : "오늘"} ${area.ko}은 오후 쇼핑수요가 오전보다 높은 수준으로 예상됩니다.`,
-          en: `${area.en} shopping demand is expected to be stronger in the afternoon than in the morning.`,
-          zh: `预计${day === "tomorrow" ? "明天" : "今天"}${area.zh}下午购物需求高于上午。`,
-          ja: `${day === "tomorrow" ? "明日" : "本日"}の${area.ja}は、午前より午後の買い物需要が高い見込みです。`,
-        })}</h3><p>{localText(lang, { ko: "점수만 보지 않고 추천시간·비교 기준·근거를 함께 확인하세요.", en: "Use the score together with its best time, comparison basis and supporting signals.", zh: "请结合推荐时间、比较基准与判断依据理解指数。", ja: "指数だけでなく、おすすめ時間・比較基準・根拠を合わせて確認してください。" })}</p></div>
+          ko: `${area.ko}은 여섯 예시값 가운데 ${statusLabel(lang, score)} 구간입니다.`,
+          en: `${area.en} sits in the ${statusLabel(lang, score)} band of the six sample values.`,
+          zh: `${area.zh}在六个示例值中属于${statusLabel(lang, score)}区间。`,
+          ja: `${area.ja}は6つのサンプル値のうち「${statusLabel(lang, score)}」区分です。`,
+        })}</h3><p>{localText(lang, { ko: "확률·실시간 수요·매출이 아닙니다. 공식 신호 기반 모델이 검증될 때까지 예시로만 봐주세요.", en: "It is not a probability, live demand or sales. Treat it only as a sample until an official-signal model is validated.", zh: "这不是概率、实时需求或销售额；在官方信号模型验证前仅作为示例。", ja: "確率・リアルタイム需要・売上ではありません。公式シグナルモデルの検証まではサンプルとしてご覧ください。" })}</p></div>
       </div>
-      <section className="area-why" aria-labelledby="area-why-title"><div className="section-head"><div><p className="eyebrow">WHY</p><h2 id="area-why-title">{t.why}</h2></div></div><div className="area-why-list">{why.map(([label, value, detail], index) => <details key={label} open={index === 0}><summary><span>0{index + 1}</span><strong>{label}</strong><b>{value}</b></summary><p>{detail}</p></details>)}</div>
-        <details className="why-number"><summary><span>{localText(lang, { ko: `왜 ${score}점인가요?`, en: `WHY ${score}?`, zh: `为什么是${score}？`, ja: `なぜ${score}？` })}</span><b>{t.detail} ↘</b></summary><div className="why-number-grid">{why.map(([label, value]) => <p key={label}><span>{label}</span><strong>{value}</strong></p>)}</div><div className="why-number-meta"><span>FORECAST EVIDENCE <strong>NOT VERIFIED</strong></span><span>DATA HEALTH <strong>DEMO ONLY</strong></span><DemoLabel lang={lang} /></div></details>
-      </section>
-      <section className="area-history-summary" aria-labelledby="area-history-title"><div className="section-head"><div><p className="eyebrow">HISTORY · 4-WEEK COMPARISON</p><h2 id="area-history-title">{localText(lang, { ko: "최근 흐름과 비교", en: "COMPARE WITH RECENT HISTORY", zh: "与近期趋势比较", ja: "最近の推移と比較" })}</h2></div><DemoLabel lang={lang} /></div><div className="area-history-numbers"><p><span>{localText(lang, { ko: "최근 4주 평균", en: "4-WEEK AVERAGE", zh: "近4周平均", ja: "直近4週平均" })}</span><strong>{average4w}</strong></p><p><span>{day === "tomorrow" ? t.tomorrow : t.today}</span><strong>{score}</strong></p><p><span>{localText(lang, { ko: "차이", en: "DIFFERENCE", zh: "差值", ja: "差" })}</span><strong>{averageDelta >= 0 ? "+" : ""}{averageDelta}</strong></p></div><p className="deterministic-sentence">{localText(lang, { ko: `최근 4주 평균보다 ${Math.abs(averageDelta)}점 ${averageDelta >= 0 ? "높은" : "낮은"} 수준입니다.`, en: `This is ${Math.abs(averageDelta)} points ${averageDelta >= 0 ? "above" : "below"} the recent four-week average.`, zh: `比近4周平均${averageDelta >= 0 ? "高" : "低"}${Math.abs(averageDelta)}分。`, ja: `直近4週平均を${Math.abs(averageDelta)}ポイント${averageDelta >= 0 ? "上回る" : "下回る"}水準です。` })}</p></section>
-      <section className="area-good-to-know" aria-labelledby="good-to-know-title"><div className="section-head"><div><p className="eyebrow">GOOD TO KNOW</p><h2 id="good-to-know-title">{t.know}</h2></div></div><div>{tips.map((tip, index) => <p key={tip}><span>0{index + 1}</span><strong>{tip}</strong></p>)}</div></section>
+      <section className="area-why" aria-labelledby="area-why-title"><div className="section-head"><div><p className="eyebrow">TOP 3 · DEMO ASSUMPTIONS</p><h2 id="area-why-title">{t.why}</h2></div></div><div className="area-why-list">{why.map(([label, value, detail], index) => <details key={label}><summary><span>0{index + 1}</span><strong>{label}</strong><b>{value}</b></summary><p>{detail}</p></details>)}</div></section>
+      <details className="area-tips"><summary>{t.know}</summary><div>{tips.map((tip, index) => <p key={tip}><span>0{index + 1}</span><strong>{tip}</strong></p>)}</div></details>
       <details className="area-data"><summary><span>DATA</span><strong>{localText(lang, { ko: "이 숫자의 종류와 기준", en: "DATA TYPE & BASIS", zh: "数据类型与基准", ja: "データ種別と基準" })}</strong><b>↘</b></summary><div><p><strong>DEMO DATA</strong><span>{localText(lang, { ko: "화면과 기능을 검증하기 위한 예시값입니다.", en: "Sample values used to validate the interface and functions.", zh: "用于验证画面与功能的示例值。", ja: "画面と機能を検証するためのサンプル値です。" })}</span></p><p><strong>OFFICIAL HISTORICAL</strong><span>{localText(lang, { ko: "공식 공개자료에서 확인한 과거 실제값은 History에서 별도로 표시합니다.", en: "Past actuals verified in official public data are labeled separately in History.", zh: "官方公开资料中的历史实际值会在History中单独标注。", ja: "公式公開資料で確認した過去の実績値は、Historyで別に表示します。" })}</span></p></div></details>
       <div className="share-pulse"><p><span>{area.en}</span><strong>{day === "tomorrow" ? t.tomorrow : t.today} · {score}</strong><small>{t.bestTime} · {area.best}</small></p><button onClick={async () => { const text = `${area.en} · ${day === "tomorrow" ? t.tomorrow : t.today} ${score} · ${t.bestTime} ${area.best} · KORETAIL`; try { if (navigator.share) await navigator.share({ title: "KORETAIL", text }); else await navigator.clipboard.writeText(text); setShareState(localText(lang, { ko: "복사됨", en: "COPIED", zh: "已复制", ja: "コピー済み" })); } catch { setShareState(localText(lang, { ko: "공유 취소", en: "CANCELLED", zh: "已取消", ja: "キャンセル" })); } }}>{shareState || localText(lang, { ko: "펄스 공유", en: "SHARE PULSE", zh: "分享指数", ja: "指数を共有" })}</button></div>
     </section>
@@ -1142,7 +1095,6 @@ function ForecastView({ lang, selected, setSelected }: { lang: Lang; selected: A
         ))}
         <p className="truth-note">{localText(lang, { ko: "지역 비교는 예측 예시이며 실시간 추천이 아닙니다.", en: "Area comparisons are forecast samples, not live recommendations.", zh: "地区说明为预测示例，不代表实时推荐。", ja: "エリア比較は予測サンプルで、リアルタイムのおすすめではありません。" })}</p>
       </div>
-      <WhatChanged lang={lang} selected={selected} />
       <section className="insight-terminal" id="terminal-insight" aria-labelledby="terminal-insight-title"><div className="section-head"><div><p className="eyebrow">T1 VS T2 · OFFICIAL HISTORICAL</p><h2 id="terminal-insight-title">{localText(lang, { ko: "터미널 흐름 한눈에", en: "TERMINAL FLOW AT A GLANCE", zh: "航站楼客流概览", ja: "ターミナルの流れを比較" })}</h2></div><span className="official-label">OFFICIAL HISTORICAL</span></div><p className="section-intro">{localText(lang, { ko: "최근 3개월 공식 월별 실적을 이전 3개월과 같은 기준으로 비교합니다.", en: "Compares the latest three official monthly results with the previous three on the same basis.", zh: "以相同口径比较最近3个月与此前3个月的官方月度实绩。", ja: "直近3か月の公式月次実績を、その前の3か月と同じ基準で比較します。" })}</p><div className="terminal-insight-grid"><p><span>T1</span><strong>{(100 - recentT2Share).toFixed(1)}%</strong><small>2026.05—07 · {localText(lang, { ko: "출국", en: "DEPARTURES", zh: "出境", ja: "出国" })}</small></p><p><span>T2</span><strong>{recentT2Share.toFixed(1)}%</strong><small>2026.05—07 · {localText(lang, { ko: "출국", en: "DEPARTURES", zh: "出境", ja: "出国" })}</small></p><p><span>{localText(lang, { ko: "이전 3개월 대비 T2", en: "T2 VS PRIOR 3 MONTHS", zh: "T2较前3个月", ja: "前3か月比 T2" })}</span><strong>{recentT2Share - priorT2Share >= 0 ? "+" : ""}{(recentT2Share - priorT2Share).toFixed(1)}%p</strong><small>{localText(lang, { ko: "같은 월별 기준", en: "SAME MONTHLY BASIS", zh: "同一月度口径", ja: "同じ月次基準" })}</small></p></div></section>
       <section className="historical-highlights" id="historical-highlights" aria-labelledby="historical-highlights-title"><div className="section-head"><div><p className="eyebrow">HISTORICAL HIGHLIGHTS</p><h2 id="historical-highlights-title">{localText(lang, { ko: "지금 판단에 도움 되는 과거 흐름", en: "HISTORY THAT HELPS NOW", zh: "有助于当前判断的历史趋势", ja: "今の判断に役立つ過去の流れ" })}</h2></div></div><div><p><span>01 · AIRPORT</span><strong>{localText(lang, { ko: "2026년 7월 전체 공항 출국객은 3,364,748명이었습니다.", en: "All-airport departures reached 3,364,748 in July 2026.", zh: "2026年7月全机场出境旅客为3,364,748人。", ja: "2026年7月の空港全体の出国者は3,364,748人でした。" })}</strong><small>OFFICIAL HISTORICAL · PUBLISHED / FINAL</small></p><p><span>02 · AREA</span><strong>{localText(lang, { ko: `${areaLocalName(selected, lang)}의 7월 외국인 생활인구는 6월과 비교해 변화했습니다. Business History에서 정확한 수치를 확인할 수 있습니다.`, en: `${areaLocalName(selected, lang)}'s July foreign living population changed from June; the exact value is available in Business History.`, zh: `${areaLocalName(selected, lang)}7月外国人生活人口较6月发生变化，准确数值可在Business History查看。`, ja: `${areaLocalName(selected, lang)}の7月の外国人生活人口は6月から変化しました。正確な値はBusiness Historyで確認できます。` })}</strong><small>OFFICIAL HISTORICAL · NOT SALES OR VISITS</small></p></div></section>
     </section>
@@ -1155,7 +1107,7 @@ function AirportView({
   lang: Lang; search: string; setSearch: (value: string) => void;
   flightKind: "departures" | "arrivals"; setFlightKind: (value: "departures" | "arrivals") => void;
   terminal: Terminal; setTerminal: (value: Terminal) => void;
-  section: AirportSection; setSection: (value: AirportSection) => void; rows: typeof flights;
+  section: AirportSection; setSection: (value: AirportSection) => void; rows: typeof demoFlights;
   watchedAirlines: string[]; setWatchedAirlines: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
   const t = copy[lang];
@@ -1205,7 +1157,7 @@ function AirportView({
   const previousRangeT2Share = previousRangeAll ? previousRangeT2 / previousRangeAll * 100 : null;
   const rangeT2Share = rangeAllTotal ? rangeT2Total / rangeAllTotal * 100 : 0;
   const t2ShareDelta = previousRangeT2Share === null ? null : rangeT2Share - previousRangeT2Share;
-  const allAirlines = Array.from(new Map(flights.map((flight) => [flight.airline, { code: flight.airline, flight }])).values());
+  const allAirlines = Array.from(new Map(demoFlights.map((flight) => [flight.airline, { code: flight.airline, flight }])).values());
   const visibleFlights = rows.filter((flight) => {
     const [hour, minute] = flight.time.split(":").map(Number);
     const delta = hour * 60 + minute - 8 * 60;
@@ -1221,7 +1173,7 @@ function AirportView({
   }
 
   const referenceMinutes = 8 * 60;
-  const concentratedFlights = flights.filter((flight) => {
+  const concentratedFlights = demoFlights.filter((flight) => {
     if (flight.kind !== "departures" || flight.status === "cancelled" || (terminal !== "all" && flight.terminal !== terminal)) return false;
     const [hour, minute] = flight.time.split(":").map(Number);
     const delta = hour * 60 + minute - referenceMinutes;
@@ -1235,27 +1187,7 @@ function AirportView({
     acc[flight.region] = (acc[flight.region] ?? 0) + 1;
     return acc;
   }, {})).sort((a, b) => b[1] - a[1]);
-  const gateZones = [
-    { terminal: "T1" as const, min: 1, max: 19, vicinity: localText(lang, { ko: "10~16번 게이트 인근 면세·식음 시설", en: "Duty-free and dining near gates 10–16", zh: "10至16号登机口附近免税与餐饮设施", ja: "10〜16番搭乗口付近の免税・飲食施設" }) },
-    { terminal: "T1" as const, min: 20, max: 34, vicinity: localText(lang, { ko: "25~31번 게이트 인근 면세시설 밀집", en: "Duty-free cluster near gates 25–31", zh: "25至31号登机口附近免税设施集中", ja: "25〜31番搭乗口付近の免税施設エリア" }) },
-    { terminal: "T1" as const, min: 35, max: 50, vicinity: localText(lang, { ko: "35~43번 게이트 인근 면세·식음 시설", en: "Duty-free and dining near gates 35–43", zh: "35至43号登机口附近免税与餐饮设施", ja: "35〜43番搭乗口付近の免税・飲食施設" }) },
-    { terminal: "T2" as const, min: 220, max: 239, vicinity: localText(lang, { ko: "227~230번 게이트 인근 면세품 인도장", en: "Duty-free pickup near gates 227–230", zh: "227至230号登机口附近免税品提货点", ja: "227〜230番搭乗口付近の免税品受取所" }) },
-    { terminal: "T2" as const, min: 240, max: 259, vicinity: localText(lang, { ko: "243~254번 게이트 인근 면세시설", en: "Duty-free facilities near gates 243–254", zh: "243至254号登机口附近免税设施", ja: "243〜254番搭乗口付近の免税施設" }) },
-    { terminal: "T2" as const, min: 260, max: 281, vicinity: localText(lang, { ko: "267~281번 게이트 인근 면세·인도장", en: "Duty-free and pickup near gates 267–281", zh: "267至281号登机口附近免税与提货设施", ja: "267〜281番搭乗口付近の免税・受取施設" }) },
-  ];
-  const gateZoneCounts = gateZones
-    .filter((zone) => terminal === "all" || zone.terminal === terminal)
-    .map((zone) => ({
-      ...zone,
-      count: concentratedFlights.filter((flight) => {
-        const gate = Number(flight.gate);
-        return flight.terminal === zone.terminal && gate >= zone.min && gate <= zone.max;
-      }).length,
-    }));
-  const busiestGateZone = [...gateZoneCounts].sort((a, b) => b.count - a.count)[0];
-  const quieterGateZone = [...gateZoneCounts].sort((a, b) => a.count - b.count)[0];
-  const hasGateWave = gateZoneCounts.some((zone) => zone.count > 0);
-  const demoNowAvailable = terminal === "all";
+  const demoNowAvailable = false;
   const noTerminalDemo = localText(lang, { ko: "터미널별 Demo 수치 미제공", en: "No terminal-level demo value", zh: "未提供分航站楼演示值", ja: "ターミナル別のデモ値は未提供" });
   const directionLabels = {
     departure: localText(lang, { ko: "출국", en: "DEPARTURES", zh: "出境", ja: "出国" }),
@@ -1275,7 +1207,8 @@ function AirportView({
       <nav className="airport-context-nav" aria-label={localText(lang, { ko: "공항 정보 구분", en: "Airport sections", zh: "机场信息分类", ja: "空港情報の分類" })}>
         {(["now", "next", "flights", "history", "airlines"] as AirportSection[]).map((item) => <button key={item} className={section === item ? "active" : ""} onClick={() => setSection(item)} aria-current={section === item ? "page" : undefined}>{item === "now" ? localText(lang, { ko: "지금", en: "NOW", zh: "现在", ja: "現在" }) : item === "next" ? localText(lang, { ko: "다음 흐름", en: "NEXT", zh: "后续客流", ja: "次の流れ" }) : item === "flights" ? localText(lang, { ko: "항공편", en: "FLIGHTS", zh: "航班", ja: "フライト" }) : item === "history" ? localText(lang, { ko: "과거", en: "HISTORY", zh: "历史", ja: "履歴" }) : localText(lang, { ko: "항공사", en: "AIRLINES", zh: "航司", ja: "航空会社" })}</button>)}
       </nav>
-      {section === "now" && <>
+      {section === "now" && <div className="airport-unavailable" role="status"><strong>{localText(lang, { ko: "실시간 공항 데이터 연결 준비 중", en: "Live airport data is being prepared", zh: "实时机场数据正在准备接入", ja: "空港リアルタイムデータを準備中" })}</strong><p>{localText(lang, { ko: "공식 운항·게이트 인증 전에는 예상 승객 수, 혼잡 시간, 게이트 압력을 표시하지 않습니다. 터미널을 선택해도 같은 원칙을 지킵니다.", en: "Expected passenger counts, busy windows and gate pressure stay hidden until official flight and gate authentication. The same rule applies to every terminal.", zh: "官方航班与登机口完成认证前，不显示预计旅客数、拥挤时段或登机口压力；所有航站楼均遵循同一原则。", ja: "公式の運航・搭乗口データの認証前は、予想旅客数・混雑時間・搭乗口圧力を表示しません。すべてのターミナルで同じ原則を守ります。" })}</p><button onClick={() => setSection("history")}>{localText(lang, { ko: "공식 과거 실적 보기", en: "VIEW OFFICIAL HISTORY", zh: "查看官方历史实绩", ja: "公式の過去実績を見る" })} ↗</button></div>}
+      {section === "now" && demoNowAvailable && <>
       <div className="airport-pulse">
         <div className={"airport-score " + (demoNowAvailable ? "" : "unavailable")}><strong>{demoNowAvailable ? "74" : "N/A"}</strong><span>DEPARTURE PULSE · {terminalLabel}<small>{demoNowAvailable ? t.moderatelyBusy : noTerminalDemo}</small></span></div>
         <div className="airport-times"><div><p>{t.busiest.toUpperCase()}</p><strong>{demoNowAvailable ? "07:00 — 09:00" : "—"}</strong><small>{demoNowAvailable ? "DEMO" : noTerminalDemo}</small></div><div><p>{t.quieter.toUpperCase()}</p><strong>{demoNowAvailable ? "13:00 — 15:00" : "—"}</strong><small>{demoNowAvailable ? "DEMO" : noTerminalDemo}</small></div></div>
@@ -1366,32 +1299,9 @@ function AirportView({
         <p className="deterministic-sentence">{airlineCounts.length ? localText(lang, { ko: `선택한 시간에는 ${airlineCounts[0][0]} 출발편이 가장 많이 잡혀 있습니다. 항공편 수는 승객 수가 아닙니다.`, en: `${airlineCounts[0][0]} has the most scheduled departures in this window. Flight count is not passenger count.`, zh: `所选时段内${airlineCounts[0][0]}出发航班最多。航班数不等于旅客数。`, ja: `選択した時間帯では${airlineCounts[0][0]}の出発便が最も多くなっています。便数は旅客数ではありません。` }) : localText(lang, { ko: "선택한 시간과 터미널에 Demo 출발편이 없습니다.", en: "No demo departures match this window and terminal.", zh: "所选时段与航站楼没有演示出发航班。", ja: "選択した時間帯・ターミナルに該当するデモ出発便はありません。" })}</p>
       </section>
       <section className="gate-retail-intelligence" aria-labelledby="gate-retail-title">
-        <div className="section-head"><div><p className="eyebrow">CHECKPOINT + GATE + RETAIL VICINITY</p><h2 id="gate-retail-title">{localText(lang, { ko: "게이트·면세구역 흐름", en: "GATE & DUTY-FREE FLOW", zh: "登机口与免税区客流", ja: "搭乗口・免税エリアの流れ" })}</h2></div><DemoLabel lang={lang} /></div>
-        <p className="volume-explainer">{localText(lang, {
-          ko: "공식 API로 T1 출국장 1~6번 대기인원과 항공편별 게이트·체크인·상태를 받을 수 있습니다. 면세점별 실제 방문객·매출은 공개되지 않아, 아래는 Demo 항공편 집중도와 공식 시설 위치를 결합한 제품 예시입니다.",
-          en: "Official APIs provide T1 checkpoint 1–6 waiting counts and each flight’s gate, check-in and status. Public data does not provide store-level footfall or sales, so the view below combines demo flight concentration with the official facility directory.",
-          zh: "官方API可提供T1出境安检区1至6号等候人数，以及各航班的登机口、值机柜台和状态。公开数据不提供单店客流或销售额，以下仅结合演示航班集中度与官方设施位置。",
-          ja: "公式APIではT1出国審査場1〜6の待機人数と、便ごとの搭乗口・チェックイン・運航状況を取得できます。店舗別の来店者数や売上は公開されていないため、以下はデモ便の集中度と公式施設案内を組み合わせた表示例です。",
-        })}</p>
-        <div className="gate-capabilities" aria-label="Official airport data capability">
-          <p><span>{localText(lang, { ko: "실시간 출국장", en: "LIVE CHECKPOINT", zh: "实时出境安检", ja: "リアルタイム出国審査場" })}</span><strong>T1 · 1—6 · 1 MIN</strong><small>KEY REQUIRED · T2 {localText(lang, { ko: "추후 제공", en: "PLANNED", zh: "计划提供", ja: "提供予定" })}</small></p>
-          <p><span>{localText(lang, { ko: "운항 상세", en: "FLIGHT DETAIL", zh: "航班详情", ja: "運航詳細" })}</span><strong>GATE · CHECK-IN · STATUS</strong><small>D-3 — D+6 · KEY REQUIRED</small></p>
-          <p><span>{localText(lang, { ko: "면세시설 안내", en: "DUTY-FREE DIRECTORY", zh: "免税设施目录", ja: "免税施設案内" })}</span><strong>STORE · HOURS · VICINITY</strong><small>{localText(lang, { ko: "매장별 유동인구 미제공", en: "NO STORE-LEVEL FOOTFALL", zh: "不提供单店客流", ja: "店舗別の来店者数は未提供" })}</small></p>
-        </div>
-        <div className="concentration-controls" aria-label="Gate flow window">{([1, 3, 6, 24] as const).map((item) => <button key={item} className={windowHours === item ? "active" : ""} onClick={() => setWindowHours(item)}>{item === 24 ? "TODAY" : `NEXT ${item}H`}</button>)}</div>
-        <div className="gate-zone-board">
-          {gateZoneCounts.map((zone, index) => <div key={`${zone.terminal}-${zone.min}`}><span>{String(index + 1).padStart(2, "0")}</span><p><strong>{zone.terminal} · GATES {zone.min}—{zone.max}</strong><small>{zone.vicinity} · OFFICIAL DIRECTORY</small></p><b>{formatCount(lang, zone.count, "flights")}</b></div>)}
-        </div>
-        {hasGateWave ? <div className="gate-wave-summary">
-          <p><span>{localText(lang, { ko: "가장 집중된 Demo 구역", en: "BUSIEST DEMO ZONE", zh: "演示中最集中区域", ja: "デモで最も集中するエリア" })}</span><strong>{busiestGateZone.terminal} · {busiestGateZone.min}—{busiestGateZone.max}</strong><small>{formatCount(lang, busiestGateZone.count, "flights")} · {windowHours === 24 ? "TODAY" : `NEXT ${windowHours}H`}</small></p>
-          <p><span>{localText(lang, { ko: "상대적으로 적은 Demo 구역", en: "QUIETER DEMO ZONE", zh: "演示中相对较少区域", ja: "デモで比較的少ないエリア" })}</span><strong>{quieterGateZone.terminal} · {quieterGateZone.min}—{quieterGateZone.max}</strong><small>{formatCount(lang, quieterGateZone.count, "flights")} · {windowHours === 24 ? "TODAY" : `NEXT ${windowHours}H`}</small></p>
-        </div> : <div className="history-gap"><strong>NO GATE WAVE</strong><p>{localText(lang, { ko: "선택한 터미널과 시간대에 Demo 출발편이 없습니다.", en: "No demo departures match this terminal and time window.", zh: "所选航站楼与时段没有演示出发航班。", ja: "選択したターミナル・時間帯に該当するデモ出発便はありません。" })}</p></div>}
-        <p className="gate-truth-note">{localText(lang, {
-          ko: "주의 · 이 값은 면세점 방문객이나 매출이 아닙니다. Production에서는 공식 게이트 배정 + T1 출국장 대기 + 시설 위치로 ‘구역 흐름 신호’를 계산하며, T2 출국장 실시간 값과 매장별 혼잡도는 제공되지 않으면 N/A로 둡니다.",
-          en: "Important · This is not duty-free footfall or sales. Production may calculate a zone-flow signal from official gate assignments, T1 checkpoint waits and facility locations; T2 live checkpoint and store-level crowding remain N/A unless officially supplied.",
-          zh: "注意：该数值并非免税店客流或销售额。Production可根据官方登机口分配、T1安检等候与设施位置计算“区域流量信号”；若无官方数据，T2实时安检与单店拥挤度保持N/A。",
-          ja: "注意：免税店の来店者数や売上ではありません。Productionでは公式の搭乗口割当、T1出国審査場の待機人数、施設位置から「エリアフロー指標」を算出できます。T2のリアルタイム審査場情報と店舗別混雑は、公式提供がない限りN/Aとします。",
-        })}</p>
+        <div className="section-head"><div><p className="eyebrow">GATE-AREA PRESSURE · UNAVAILABLE</p><h2 id="gate-retail-title">{localText(lang, { ko: "게이트 주변 예상 혼잡", en: "GATE-AREA PRESSURE", zh: "登机口周边预计拥挤", ja: "搭乗口周辺の予想混雑" })}</h2></div><span className="unverified-label">NOT LIVE</span></div>
+        <div className="airport-unavailable" role="status"><strong>{localText(lang, { ko: "공식 운항·게이트 인증을 기다리고 있습니다", en: "Waiting for official flight and gate authentication", zh: "正在等待官方航班与登机口认证", ja: "公式の運航・搭乗口認証を待っています" })}</strong><p>{localText(lang, { ko: "지금은 가짜 게이트 범위나 사람 수를 표시하지 않습니다. 연결 후에는 60분 단위로 시간·터미널·검증된 위치·운항 집중도를 보여주며, 게이트 근거가 약하면 터미널까지만 표시합니다.", en: "No fabricated gate range or people count is shown. Once connected, hourly rows will show time, terminal, verified location and flight concentration; weak gate evidence degrades to terminal only.", zh: "当前不显示虚构的登机口范围或人数。接入后将按60分钟显示时间、航站楼、已验证位置与航班集中度；登机口依据不足时仅显示航站楼。", ja: "架空の搭乗口範囲や人数は表示しません。接続後は60分単位で時間・ターミナル・検証済み位置・運航集中度を表示し、搭乗口の根拠が弱い場合はターミナルまでに留めます。" })}</p></div>
+        <details className="airport-pressure-method"><summary>{localText(lang, { ko: "계산 원칙 보기", en: "VIEW CALCULATION RULES", zh: "查看计算原则", ja: "計算原則を見る" })}</summary><ul><li>A1/A2 · {localText(lang, { ko: "실제 운항은 공동운항편을 같은 항공기로 중복 계산하지 않음", en: "actual operations deduplicate codeshares into one physical flight", zh: "实际航班按同一实体航班去除代码共享重复", ja: "実運航はコードシェアを同一の物理便として重複排除" })}</li><li>A3 · {localText(lang, { ko: "예정 운항은 미래 게이트를 추측하지 않고 터미널·시간만 표시", en: "scheduled service never invents a future gate", zh: "计划航班不推测未来登机口", ja: "予定便では将来の搭乗口を推測しない" })}</li><li>A4 · {localText(lang, { ko: "현재 제공 범위인 T1 출국장 혼잡만 보조 근거로 사용", en: "only the currently supplied T1 checkpoint scope may be supporting evidence", zh: "仅将当前提供范围内的T1出境安检拥挤作为辅助依据", ja: "現在提供範囲のT1出国審査場混雑のみ補助根拠に使用" })}</li></ul></details>
       </section></>}
 
       {section === "flights" && <div className="flight-search">

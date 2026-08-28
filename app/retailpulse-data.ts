@@ -74,7 +74,8 @@ export const foreignJulyDetail = {
   seongsu: { average: 4443, china: 1983, chinaShare: 44.6, peakHour: "16:00", peakWeekday: 6 },
 };
 
-export const flights = [
+/** Presentation fixtures only. Never use these rows as live or official operational data. */
+export const demoFlights = [
   { time: "07:35", code: "KE901", airline: "KE", airlineKo: "대한항공", airlineEn: "Korean Air", airlineJa: "大韓航空", city: "PARIS / CDG", region: "EUROPE", terminal: "T2", gate: "248", checkin: "E", kind: "departures", status: "onTime" },
   { time: "08:10", code: "OZ102", airline: "OZ", airlineKo: "아시아나항공", airlineEn: "Asiana Airlines", airlineJa: "アシアナ航空", city: "TOKYO / NRT", region: "JAPAN", terminal: "T1", gate: "31", checkin: "C", kind: "departures", status: "onTime" },
   { time: "08:25", code: "LJ201", airline: "LJ", airlineKo: "진에어", airlineEn: "Jin Air", airlineJa: "ジンエアー", city: "OSAKA / KIX", region: "JAPAN", terminal: "T2", gate: "234", checkin: "G", kind: "departures", status: "delayed" },
