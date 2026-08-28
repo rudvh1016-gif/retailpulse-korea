@@ -71,7 +71,7 @@ Established by probe, useful for any future dataset:
 | `/dataList/{OA-id}/S/1/datasetView.do` | GET | dataset page; related-dataset IDs and titles only |
 | `/dataList/openApiView.do` | **POST** `infId,srvType,serviceKind` | the OpenAPI tab (path form `/dataList/{id}/S/1/openApiView.do` 404s) |
 | `/together/mypage/getReqParam.do` | **POST** `infId` | JSON parameter spec — the one endpoint that reliably answers |
-| `/dataList/getOpenApiSample.do` | POST/GET | 980-byte error page in every parameter shape tried |
+| `/dataList/getOpenApiSample.do` | POST/GET | 980-byte error page (POST, 4 parameter shapes) / 1-byte body (GET) — needs a session or token this probe cannot supply |
 
 ### Authenticated probe status (2026-08-28)
 
