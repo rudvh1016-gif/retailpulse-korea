@@ -307,6 +307,8 @@ test("makes sample demand and unavailable airport pressure impossible to mistake
   for (const phrase of ["예시 수요지수", "DEMO DEMAND INDEX", "演示需求指数", "デモ需要指数"]) assert.match(page, new RegExp(phrase));
   assert.match(page, /같은 예시값 분포 안에서 낮음·보통·높음/);
   assert.match(page, /실시간 공항 데이터 연결 준비 중/);
+  for (const label of ["예시 날짜", "SAMPLE DATE", "示例日期", "サンプル日付"]) assert.match(page, new RegExp(label));
+  assert.doesNotMatch(page, /<span className="kst-chip">KST · AUG 23<\/span>/);
   assert.match(page, /가짜 게이트 범위나 사람 수를 표시하지 않습니다/);
   assert.doesNotMatch(page, /<WhatChanged/);
   assert.doesNotMatch(page, /HISTORY · 4-WEEK COMPARISON/);

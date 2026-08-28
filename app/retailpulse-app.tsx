@@ -835,7 +835,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           <span>KORETAIL</span><span className="brand-descriptor">Retail Demand Signals for Korea</span>
         </button>
         <div className="header-meta">
-          <span className="kst-chip">KST · AUG 23</span>
+          <span className="kst-chip">{localText(lang, { ko: "예시 날짜 · 8월 23일 · KST", en: "SAMPLE DATE · AUG 23 · KST", zh: "示例日期 · 8月23日 · KST", ja: "サンプル日付 · 8月23日 · KST" })}</span>
           <button className="global-search-trigger" onClick={() => setGlobalSearchOpen((open) => !open)} aria-expanded={globalSearchOpen} aria-controls="global-search">
             <span aria-hidden="true">⌕</span><span>{lang === "ko" ? "검색" : lang === "zh" ? "搜索" : lang === "ja" ? "検索" : "Search"}</span>
           </button>
@@ -1197,7 +1197,7 @@ function AirportView({
   return (
     <section className="view-section airport-view">
       <div className="view-intro">
-        <div><p className="eyebrow">INCHEON AIRPORT · AUG 23 · KST</p><h1>{t.airportTitle}</h1><p>{t.airportSub}</p></div>
+        <div><p className="eyebrow">{localText(lang, { ko: "INCHEON AIRPORT · 예시 날짜 · 8월 23일 · KST", en: "INCHEON AIRPORT · SAMPLE DATE · AUG 23 · KST", zh: "INCHEON AIRPORT · 示例日期 · 8月23日 · KST", ja: "INCHEON AIRPORT · サンプル日付 · 8月23日 · KST" })}</p><h1>{t.airportTitle}</h1><p>{t.airportSub}</p></div>
         <DemoLabel lang={lang} />
       </div>
       <div className="terminal-selector" role="tablist" aria-label="Terminal">
