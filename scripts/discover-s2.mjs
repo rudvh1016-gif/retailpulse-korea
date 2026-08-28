@@ -27,7 +27,7 @@
 
 const SEOUL_KEY = process.env.SEOUL_OPEN_DATA_KEY ?? "";
 const MAX_CANDIDATES = 8;
-const MAX_AUTH_CALLS = 14;
+const MAX_AUTH_CALLS = 22;
 
 const SECRETS = [SEOUL_KEY].filter(Boolean);
 
@@ -261,11 +261,29 @@ for (const probe of transportCandidates) {
   }
 }
 
+// Run 2 already resolved these titles from the portal, and the transport that
+// surfaced them is incidental (a related-dataset block), so re-deriving them
+// each run is unstable — run 3 ranked two unrelated ids instead. Seed the
+// confirmed ids directly and let discovery only add to them.
+const CONFIRMED = [
+  { datasetId: "OA-22786", title: "[단기외국인] 서울 생활인구(250m)" },
+  { datasetId: "OA-23018", title: "[단기외국인] 행정동별 서울 생활인구(250m)" },
+  { datasetId: "OA-22894", title: "[단기외국인] 서울 체류인구(250m)" },
+  { datasetId: "OA-22785", title: "[장기외국인] 서울 생활인구(250m)" },
+];
+
+for (const entry of CONFIRMED) {
+  if (!candidates.get(entry.datasetId)) candidates.set(entry.datasetId, entry.title);
+}
+
 // Prefer titles that actually mention short-stay foreigners.
-const ranked = [...candidates.entries()]
-  .map(([datasetId, title]) => ({ datasetId, title }))
-  .sort((a, b) => Number(looksLikeShortStayForeign(b.title)) - Number(looksLikeShortStayForeign(a.title)))
-  .slice(0, MAX_CANDIDATES);
+const ranked = [
+  ...CONFIRMED,
+  ...[...candidates.entries()]
+    .map(([datasetId, title]) => ({ datasetId, title }))
+    .filter((entry) => !CONFIRMED.some((seed) => seed.datasetId === entry.datasetId))
+    .sort((a, b) => Number(looksLikeShortStayForeign(b.title)) - Number(looksLikeShortStayForeign(a.title))),
+].slice(0, MAX_CANDIDATES);
 
 log({ step: "candidates_ranked", total: candidates.size, inspecting: ranked });
 
@@ -305,6 +323,55 @@ for (const candidate of ranked) {
   }
 }
 
+// ---------------------------------------------------------- openApiView.do
+// Run 3 dumped the endpoints the dataset page calls. `/dataList/openApiView.do`
+// is the OpenAPI tab renderer — the one place the portal publishes the sample
+// URL, and therefore the service name. The parameter form is unknown, so try
+// the documented shapes and let the response adjudicate.
+for (const candidate of ranked.slice(0, 4)) {
+  const forms = [
+    { method: "GET", url: `https://data.seoul.go.kr/dataList/openApiView.do?infId=${candidate.datasetId}` },
+    { method: "GET", url: `https://data.seoul.go.kr/dataList/${candidate.datasetId}/S/1/openApiView.do` },
+    { method: "POST", url: "https://data.seoul.go.kr/dataList/openApiView.do", body: `infId=${candidate.datasetId}&srvType=S&serviceKind=1` },
+  ];
+  for (const form of forms) {
+    try {
+      const response = await fetch(form.url, {
+        method: form.method,
+        headers: {
+          accept: "text/html,application/json",
+          "x-requested-with": "XMLHttpRequest",
+          "user-agent": "KORETAIL-source-verification/1.0 (+https://koretaildata.com)",
+          ...(form.body ? { "content-type": "application/x-www-form-urlencoded; charset=UTF-8" } : {}),
+        },
+        body: form.body,
+        signal: AbortSignal.timeout(15_000),
+      });
+      const text = await response.text();
+      const names = extractServiceNames(text);
+      const tokens = extractUppercaseTokens(text);
+      log({
+        step: "open_api_view",
+        datasetId: candidate.datasetId,
+        method: form.method,
+        url: form.url,
+        httpStatus: response.status,
+        bytes: text.length,
+        serviceNames: names,
+        uppercaseTokens: tokens,
+        mentionsSampleUrl: /openapi\.seoul\.go\.kr/i.test(text),
+        excerpt: redact(stripTags(text).slice(0, 800)),
+      });
+      for (const name of names) if (!serviceNames.has(name)) serviceNames.set(name, candidate.datasetId);
+      // A token that appears on the OpenAPI tab and nowhere in the site chrome
+      // is the strongest available service-name signal; probe it for real.
+      for (const { token } of tokens) if (!serviceNames.has(token)) serviceNames.set(token, candidate.datasetId);
+    } catch (error) {
+      log({ step: "open_api_view", datasetId: candidate.datasetId, method: form.method, url: form.url, error: redact(error instanceof Error ? error.message : "fetch_failed") });
+    }
+  }
+}
+
 log({ step: "service_names_discovered", serviceNames: [...serviceNames.entries()].map(([name, datasetId]) => ({ name, datasetId })) });
 
 // -------------------------------------------------------- authenticated probe
@@ -332,9 +399,14 @@ const nameCandidates = [
   "KORETAIL_CONTROL_NO_SUCH_SERVICE",
 ];
 
+// Discovered names go first (they carry actual portal evidence), but the
+// budget must never starve the control — its answer is what makes every other
+// ERROR-500 in this run interpretable.
+const CONTROL = "KORETAIL_CONTROL_NO_SUCH_SERVICE";
 const probeTargets = [
-  ...[...serviceNames.entries()].map(([name, datasetId]) => ({ name, datasetId, origin: "discovered" })),
-  ...nameCandidates.map((name) => ({ name, datasetId: null, origin: "candidate" })),
+  ...[...serviceNames.entries()].slice(0, 10).map(([name, datasetId]) => ({ name, datasetId, origin: "discovered" })),
+  ...nameCandidates.filter((name) => name !== CONTROL).map((name) => ({ name, datasetId: null, origin: "candidate" })),
+  { name: CONTROL, datasetId: null, origin: "control" },
 ];
 
 const keyDiag = keyDiagnostics(SEOUL_KEY);

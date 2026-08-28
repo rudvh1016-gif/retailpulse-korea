@@ -56,8 +56,10 @@ The discovery probe (`scripts/discover-s2.mjs`, smoke run 9) resolved these titl
 
 ### Authenticated probe status (2026-08-28)
 
-- `SPOP_LOCAL_RESD_DONG` returned `INFO-000` with 630,988 rows and `STDR_DE_ID=20260731`, so the **domestic** dong living-population service is still live and publishing at D-28ish. This is the naming convention anchor.
+- `SPOP_LOCAL_RESD_DONG` returned `INFO-000` with 630,988 rows and `STDR_DE_ID=20260731`, so the **domestic** dong living-population service is live and publishing. This is the naming-convention anchor.
 - Every guessed foreign variant (`SPOP_FORN_RESD_DONG`, `SPOP_TEMP_FORN_RESD_DONG`, `SPOP_LONG_FORN_RESD_DONG`, and the four `_GRID` forms) returned `ERROR-500 서버 오류입니다`.
-- `ERROR-500` is **not yet evidence of discontinuation**: the Seoul gateway is not known to distinguish a retired service from an unknown service name. The next run carries a deliberate nonsense control name to calibrate that code before any conclusion is recorded here.
+- **`ERROR-500` carries no information about discontinuation.** Smoke run 10 probed a deliberately nonexistent control name (`KORETAIL_CONTROL_NO_SUCH_SERVICE`) and got the identical `ERROR-500`. The Seoul gateway does not distinguish a retired service from an unknown service name, so the run reports `foreignCodeInterpretation=INDISTINGUISHABLE_FROM_UNKNOWN_SERVICE_NAME`. Every one of those seven names is simply **not a known service name**; none of them is evidence that a series ended.
+- Consequence: the "the dong-level foreign series stopped updating" claim rests on the 2026-06-09 portal notice **alone**, not on any probe result. Do not cite the ERROR-500 responses as corroboration.
+- Transport located: the dataset page calls `/dataList/openApiView.do` to render its OpenAPI tab. That endpoint, not `datasetView.do`, is where the portal publishes the sample URL and therefore the service name. It is the next probe target.
 
 The prepared airport schedule is 12 calls/day and at most 24 with its single retry, below the listed 500-call development quota. This is a quota calculation, not proof of a successful approved-key response.
