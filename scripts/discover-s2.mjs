@@ -424,6 +424,42 @@ for (const candidate of ranked.slice(0, 4)) {
   }
 }
 
+// ------------------------------------------------------- template trace
+// Run 5 separated the products: OA-23018 (dong-aggregated short-stay foreign)
+// returns a real parameter list — YMD, TT, H_DNG_CD — while the three pure
+// 250m-grid ids return {paramList:[],filterList:[]}, i.e. no OpenAPI at all.
+// So OA-23018 is the one service worth naming. Its tab ships the name as the
+// literal API_SERVICE_NAME placeholder, so read what surrounds that token to
+// find whatever fills it.
+try {
+  const response = await fetch("https://data.seoul.go.kr/dataList/openApiView.do", {
+    method: "POST",
+    headers: {
+      accept: "text/html,application/json",
+      "x-requested-with": "XMLHttpRequest",
+      "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+      referer: "https://data.seoul.go.kr/dataList/OA-23018/S/1/datasetView.do",
+      "user-agent": "KORETAIL-source-verification/1.0 (+https://koretaildata.com)",
+    },
+    body: "infId=OA-23018&srvType=S&serviceKind=1",
+    signal: AbortSignal.timeout(15_000),
+  });
+  const text = await response.text();
+  const at = text.indexOf("API_SERVICE_NAME");
+  log({
+    step: "template_trace",
+    datasetId: "OA-23018",
+    httpStatus: response.status,
+    bytes: text.length,
+    placeholderIndex: at,
+    doEndpoints: extractDoEndpoints(text),
+    // The raw window around the placeholder names whatever substitutes it.
+    around: at >= 0 ? redact(text.slice(Math.max(0, at - 700), at + 700)) : null,
+  });
+} catch (error) {
+  log({ step: "template_trace", datasetId: "OA-23018", error: redact(error instanceof Error ? error.message : "fetch_failed") });
+}
+
 log({ step: "service_names_discovered", serviceNames: [...serviceNames.entries()].map(([name, datasetId]) => ({ name, datasetId })) });
 
 // -------------------------------------------------------- authenticated probe
@@ -507,6 +543,7 @@ console.log(JSON.stringify({
   controlResultCode: control?.officialResultCode ?? null,
   // Printed last and compactly on purpose: the dataset_view excerpts dominate
   // this log, and the parameter spec is the part worth reading each run.
+  templateTrace: out.find((entry) => entry.step === "template_trace") ?? null,
   reqParamDigest: out
     .filter((entry) => entry.step === "req_param")
     .map((entry) => ({
