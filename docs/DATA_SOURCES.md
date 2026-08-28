@@ -41,4 +41,23 @@ A2 exists to let duty-free operators cross-check customer-entered flight info. A
 
 The dong-level 단기체류외국인 생활인구 series (OA-14993 family) stopped being updated after the 2026-06-09 portal reorganization notice; the successor is the 250M-grid product. The bundled UI history (2025-01 – 2026-07 monthly dong aggregates) remains labelled `OFFICIAL_HISTORICAL` with its original scope note. New grid data must be stored as a separate series with its own spatial unit; never splice it into the legacy dong series.
 
+### Successor dataset IDs (read from the official catalog 2026-08-28)
+
+The discovery probe (`scripts/discover-s2.mjs`, smoke run 9) resolved these titles from `data.seoul.go.kr` dataset pages, so the IDs are CONFIRMED. The OpenAPI **service names are still UNVERIFIED**: the dataset view renders its sample URL client-side, so no service name reaches the server response.
+
+| Dataset | Title | Relevance |
+|---|---|---|
+| `OA-22786` | [단기외국인] 서울 생활인구(250m) | direct S2 successor |
+| `OA-23018` | [단기외국인] 행정동별 서울 생활인구(250m) | dong-aggregated grid — closest to the legacy spatial unit |
+| `OA-22894` | [단기외국인] 서울 체류인구(250m) | 체류 (stay) variant; different definition from 생활 (living) |
+| `OA-22785` / `OA-23017` / `OA-22893` | 장기외국인 equivalents | long-stay, not the short-stay truth boundary |
+
+`생활인구` and `체류인구` are different official measures. Do not treat them as one series.
+
+### Authenticated probe status (2026-08-28)
+
+- `SPOP_LOCAL_RESD_DONG` returned `INFO-000` with 630,988 rows and `STDR_DE_ID=20260731`, so the **domestic** dong living-population service is still live and publishing at D-28ish. This is the naming convention anchor.
+- Every guessed foreign variant (`SPOP_FORN_RESD_DONG`, `SPOP_TEMP_FORN_RESD_DONG`, `SPOP_LONG_FORN_RESD_DONG`, and the four `_GRID` forms) returned `ERROR-500 서버 오류입니다`.
+- `ERROR-500` is **not yet evidence of discontinuation**: the Seoul gateway is not known to distinguish a retired service from an unknown service name. The next run carries a deliberate nonsense control name to calibrate that code before any conclusion is recorded here.
+
 The prepared airport schedule is 12 calls/day and at most 24 with its single retry, below the listed 500-call development quota. This is a quota calculation, not proof of a successful approved-key response.

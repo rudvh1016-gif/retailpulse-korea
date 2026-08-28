@@ -121,6 +121,34 @@ function looksLikeShortStayForeign(title) {
   return /단기|외국인/.test(title);
 }
 
+/**
+ * Seoul service names are SCREAMING_SNAKE (e.g. SPOP_LOCAL_RESD_DONG). Run 2
+ * showed the dataset page renders its sample URL client-side, so the visible
+ * table is empty server-side — but the name may still ship inside inline JS.
+ * Collect the shape directly and drop known HTML/JS/analytics noise.
+ */
+const TOKEN_NOISE =
+  /^(DOCTYPE|UTF|GET|POST|XMLHTTPREQUEST|OPEN|API|JSON|XML|CSV|HTML|HEAD|BODY|SCRIPT|STYLE|CDATA|FALSE|TRUE|NULL|UNDEFINED|FUNCTION|RETURN|WINDOW|DOCUMENT|CONTENT|CHARSET|VIEWPORT|KEYWORDS|DESCRIPTION|GOOGLE|ANALYTICS|GTAG|DATALAYER|JQUERY|BOOTSTRAP|CONTAINER|WRAPPER|SEOUL|DATASET|DATALIST|DEFAULT|OPTIONS|REQUIRED)$/;
+
+function extractUppercaseTokens(html) {
+  const counts = new Map();
+  for (const match of html.matchAll(/\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+){2,}\b/g)) {
+    const token = match[0];
+    if (TOKEN_NOISE.test(token)) continue;
+    counts.set(token, (counts.get(token) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 25).map(([token, count]) => ({ token, count }));
+}
+
+/** The `.do` endpoints a client-rendered page calls are the real transport. */
+function extractDoEndpoints(html) {
+  const found = new Set();
+  for (const match of html.matchAll(/["'`]([^"'`\s]*\/[A-Za-z0-9_]+\.do)(?:[?"'`])/g)) {
+    found.add(match[1]);
+  }
+  return [...found].slice(0, 30);
+}
+
 function listify(value) {
   if (Array.isArray(value)) return value;
   return value === undefined || value === null || value === "" ? [] : [value];
@@ -262,6 +290,10 @@ for (const candidate of ranked) {
       mentionsShortStay: /단기/.test(text),
       mentionsOpenApi: /OPEN\s*API|오픈\s*API/i.test(text),
       mentionsFile: /파일|FILE|CSV/i.test(text),
+      // Run 2: the rendered table is empty server-side, so read the raw HTML
+      // for the service-name shape and for the transport the page calls.
+      uppercaseTokens: extractUppercaseTokens(page.text),
+      doEndpoints: extractDoEndpoints(page.text),
       // Portal metadata rows worth reading verbatim in the log.
       excerpt: redact(text.slice(0, 1200)),
     });
@@ -293,6 +325,11 @@ const nameCandidates = [
   "SPOP_FORN_RESD_GRID",
   "SPOP_TEMP_FORN_RESD_GRID",
   "SPOP_LONG_FORN_RESD_GRID",
+  // Negative control. Run 2 returned ERROR-500 for every foreign variant, but
+  // that code is only evidence of discontinuation if a name that certainly
+  // never existed returns something else. Without this the run cannot tell
+  // "service retired" from "service name wrong".
+  "KORETAIL_CONTROL_NO_SUCH_SERVICE",
 ];
 
 const probeTargets = [
@@ -329,11 +366,27 @@ if (!keyDiag.present) {
 }
 
 for (const line of out) console.log(JSON.stringify(line));
+
+const probes = out.filter((entry) => entry.step === "auth_probe" && entry.service);
+const control = probes.find((entry) => entry.service === "KORETAIL_CONTROL_NO_SUCH_SERVICE");
+const foreignCodes = probes
+  .filter((entry) => /FORN/.test(entry.service))
+  .map((entry) => entry.officialResultCode);
+
 console.log(JSON.stringify({
   summary: true,
   seoulKey: keyDiag,
   dataGoKrCalls: 0,
   candidatesFound: candidates.size,
   serviceNamesDiscovered: [...serviceNames.keys()],
-  passingServices: out.filter((entry) => entry.step === "auth_probe" && entry.authStatus === "PASS").map((entry) => entry.service),
+  passingServices: probes.filter((entry) => entry.authStatus === "PASS").map((entry) => entry.service),
+  controlResultCode: control?.officialResultCode ?? null,
+  // If the control returns the same code as every foreign name, that code means
+  // "no such service" and proves nothing about discontinuation.
+  foreignCodeInterpretation:
+    control && foreignCodes.length > 0 && foreignCodes.every((code) => code === control.officialResultCode)
+      ? "INDISTINGUISHABLE_FROM_UNKNOWN_SERVICE_NAME"
+      : control
+        ? "DISTINCT_FROM_UNKNOWN_SERVICE_NAME"
+        : "CONTROL_MISSING",
 }));
