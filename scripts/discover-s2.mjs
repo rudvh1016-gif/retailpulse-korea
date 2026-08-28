@@ -505,6 +505,21 @@ console.log(JSON.stringify({
   serviceNamesDiscovered: [...serviceNames.keys()],
   passingServices: probes.filter((entry) => entry.authStatus === "PASS").map((entry) => entry.service),
   controlResultCode: control?.officialResultCode ?? null,
+  // Printed last and compactly on purpose: the dataset_view excerpts dominate
+  // this log, and the parameter spec is the part worth reading each run.
+  reqParamDigest: out
+    .filter((entry) => entry.step === "req_param")
+    .map((entry) => ({
+      datasetId: entry.datasetId,
+      httpStatus: entry.httpStatus,
+      isJson: entry.isJson,
+      bytes: entry.bytes,
+      topLevelKeys: entry.topLevelKeys,
+      serviceNames: entry.serviceNames,
+      tokens: (entry.uppercaseTokens ?? []).map((t) => t.token),
+      body: typeof entry.body === "string" ? entry.body.slice(0, 500) : null,
+      error: entry.error ?? null,
+    })),
   // If the control returns the same code as every foreign name, that code means
   // "no such service" and proves nothing about discontinuation.
   foreignCodeInterpretation:
