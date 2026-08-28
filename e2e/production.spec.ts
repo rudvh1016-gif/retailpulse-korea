@@ -58,6 +58,42 @@ test("primary navigation, terminal filter, flight search, back and refresh work"
   await expect(page.locator("h1")).toBeVisible();
 });
 
+test("sample demand and airport unavailable states are explicit and accessible", async ({ page }) => {
+  const consoleErrors: string[] = [];
+  page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(message.text()); });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ko");
+  await expect(page.getByText("예시 수요지수", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText(/확률이나 실시간 수요가 아니며/)).toBeVisible();
+  await page.getByText("지수 기준 보기").click();
+  await expect(page.getByText(/아래 1\/3은 낮음/)).toBeVisible();
+  await page.reload();
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+  expect(consoleErrors.join("\n")).not.toMatch(/hydrated|hydration/i);
+  await expect(page.getByText(/최근 4주 평균/)).toHaveCount(0);
+  await page.locator("nav.bottom-nav a").filter({ hasText: "공항" }).click();
+  await expect(page.getByText(/공식 운항·게이트 인증 전에는 예상 승객 수/)).toBeVisible();
+  await page.getByRole("button", { name: "다음 흐름" }).click();
+  await expect(page.getByText("게이트 주변 예상 혼잡")).toBeVisible();
+  await expect(page.getByText(/가짜 게이트 범위나 사람 수를 표시하지 않습니다/)).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+});
+
+test("new demand and airport truth labels are complete in all four locales", async ({ page }) => {
+  const labels = {
+    ko: ["예시 수요지수", "실시간 공항 데이터 연결 준비 중"],
+    en: ["DEMO INDEX", "Live airport data is being prepared"],
+    zh: ["演示指数", "实时机场数据正在准备接入"],
+    ja: ["デモ指数", "空港リアルタイムデータを準備中"],
+  } as const;
+  for (const locale of Object.keys(labels) as Array<keyof typeof labels>) {
+    await page.goto(`/${locale}`);
+    await expect(page.getByText(labels[locale][0], { exact: true }).first()).toBeVisible();
+    await page.goto(`/${locale}/airport`);
+    await expect(page.getByText(labels[locale][1], { exact: true })).toBeVisible();
+  }
+});
+
 test("blocked localStorage does not break the application", async ({ context, page }) => {
   await context.addInitScript(() => {
     Object.defineProperty(window, "localStorage", { get() { throw new Error("blocked"); } });

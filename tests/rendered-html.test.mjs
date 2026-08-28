@@ -93,10 +93,10 @@ test("includes all MVP surfaces without a runtime LLM dependency", async () => {
     "StatePreview",
     "简体中文",
     "日本語",
-    "TodayBrief",
-    "WhatChanged",
+    "HomeRankings",
+    "HomeAirportNow",
     "GlobalSearch",
-    "why-number",
+    "area-why",
   ]) assert.match(page, new RegExp(required));
   for (const businessFeature of [
     "오늘 예상 출국객",
@@ -104,7 +104,7 @@ test("includes all MVP surfaces without a runtime LLM dependency", async () => {
     "공항 과거 흐름",
     "OFFICIAL HISTORICAL",
     "AIRLINE INTELLIGENCE",
-    "게이트·면세구역 흐름",
+    "게이트 주변 예상 혼잡",
     "INCHEON DEPARTURE HALL CONGESTION",
     "INCHEON ARRIVAL HALL STATUS",
     "INCHEON DUTY-FREE FACILITIES",
@@ -133,10 +133,13 @@ test("keeps official airport totals exact and does not invent terminal shares", 
 test("keeps gate and duty-free intelligence within official data boundaries", async () => {
   const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   const data = await readFile(new URL("../app/retailpulse-data.ts", import.meta.url), "utf8");
-  assert.match(page, /flight\.status === "cancelled"/);
-  assert.match(page, /windowHours === 24 \? true/);
-  assert.match(page, /매장별 유동인구 미제공/);
-  assert.match(page, /T2 출국장 실시간 값과 매장별 혼잡도는 제공되지 않으면 N\/A/);
+  const pressure = await readFile(new URL("../lib/airport-pressure.ts", import.meta.url), "utf8");
+  assert.match(pressure, /flight\.status === "cancelled"/);
+  assert.match(pressure, /physicalFlightId/);
+  assert.match(pressure, /gateFreshnessMinutes/);
+  assert.match(pressure, /options\.gateZones \?\? \[\]/);
+  assert.match(page, /가짜 게이트 범위나 사람 수를 표시하지 않습니다/);
+  assert.match(page, /A4.*T1 출국장 혼잡만 보조 근거/s);
   assert.match(data, /T1 checkpoints 1–6 · T2 planned/);
   assert.match(data, /not store footfall/i);
 });
@@ -294,6 +297,25 @@ test("removes fabricated forecast performance and requires prospective evidence"
   assert.doesNotMatch(page, /MAE · LAST 30/);
   assert.doesNotMatch(page, /CONFIDENCE <strong>74%/);
   assert.doesNotMatch(page, /<strong>71%<\/strong>/);
+});
+
+test("makes sample demand and unavailable airport pressure impossible to mistake for live data", async () => {
+  const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
+  const live = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  const data = await readFile(new URL("../app/retailpulse-data.ts", import.meta.url), "utf8");
+  const pressure = await readFile(new URL("../lib/airport-pressure.ts", import.meta.url), "utf8");
+  for (const phrase of ["예시 수요지수", "DEMO DEMAND INDEX", "演示需求指数", "デモ需要指数"]) assert.match(page, new RegExp(phrase));
+  assert.match(page, /같은 예시값 분포 안에서 낮음·보통·높음/);
+  assert.match(page, /실시간 공항 데이터 연결 준비 중/);
+  assert.match(page, /가짜 게이트 범위나 사람 수를 표시하지 않습니다/);
+  assert.doesNotMatch(page, /<WhatChanged/);
+  assert.doesNotMatch(page, /HISTORY · 4-WEEK COMPARISON/);
+  assert.match(live, /현재 예시 수요지수 계산에는 포함되지 않으며/);
+  assert.match(data, /export const demoFlights/);
+  assert.doesNotMatch(data, /export const flights/);
+  assert.match(pressure, /physicalFlightId/);
+  assert.match(pressure, /flight\.status === "cancelled"/);
+  assert.match(pressure, /kind: "exactGate" \| "gateZone" \| "terminal"/);
 });
 
 test("persists consented beta interest in D1 without a public list endpoint", async () => {

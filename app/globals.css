@@ -990,6 +990,37 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   .area-summary-copy h3 { font-size: 26px; }
 }
 
+/* Demand-index truth and airport-pressure readiness */
+.index-method { margin: 18px 0 8px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.index-method summary, .area-tips summary, .airport-pressure-method summary { padding: 14px 0; cursor: pointer; font-size: 11px; font-weight: 650; letter-spacing: .04em; }
+.index-method p, .airport-pressure-method li { color: var(--muted); font-size: 11px; line-height: 1.65; }
+.index-method p { max-width: 720px; margin: 0; padding: 0 0 16px; }
+.compact-ranking button { grid-template-columns: 32px minmax(0, 1fr) minmax(150px, auto) minmax(140px, auto); }
+.compact-ranking button > b { font-size: 13px; letter-spacing: 0; white-space: nowrap; }
+.compact-ranking button > b small { display: block; margin-bottom: 5px; color: var(--muted); font-size: 8px; font-weight: 500; letter-spacing: .06em; }
+.compact-ranking button > i { font-size: 8px; white-space: nowrap; }
+.airport-unavailable { margin-top: 22px; padding: 28px 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--line); }
+.airport-unavailable strong { display: block; font-size: clamp(18px, 2.5vw, 27px); letter-spacing: -.03em; }
+.airport-unavailable p { max-width: 720px; margin: 12px 0 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.airport-unavailable button { margin-top: 18px; padding: 0 0 5px; border: 0; border-bottom: 1px solid var(--ink); background: transparent; font-size: 10px; font-weight: 650; }
+.area-tips { margin-top: 24px; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--line); }
+.area-tips > div { padding-bottom: 16px; }
+.area-tips p { display: grid; grid-template-columns: 28px 1fr; gap: 10px; margin: 8px 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.area-tips p span { color: #999; font-size: 9px; }
+.airport-pressure-method { margin-top: 20px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.airport-pressure-method ul { margin: 0; padding: 0 0 18px 18px; }
+.airport-pressure-method li + li { margin-top: 8px; }
+
+@media (max-width: 820px) {
+  .compact-ranking button { min-height: 88px; grid-template-columns: 24px minmax(0, 1fr); grid-template-rows: auto auto auto; padding: 10px 0; }
+  .compact-ranking button > span { grid-row: 1 / 4; }
+  .compact-ranking button > strong, .compact-ranking button > b, .compact-ranking button > i { grid-column: 2; text-align: left; }
+  .compact-ranking button > b { font-size: 12px; }
+  .compact-ranking button > b small { display: inline; margin: 0 8px 0 0; }
+  .compact-ranking button > i { display: block; font-size: 8px; }
+  .airport-unavailable { padding: 22px 0; }
+}
+
 @media (max-width: 365px) {
   .page-shell { padding-left: 14px; padding-right: 14px; }
   .airport-context-nav, .insight-map, .business-reading-map { margin-left: -14px; margin-right: -14px; padding-left: 14px; padding-right: 14px; }
