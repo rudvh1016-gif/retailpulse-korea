@@ -27,7 +27,7 @@
 
 const SEOUL_KEY = process.env.SEOUL_OPEN_DATA_KEY ?? "";
 const MAX_CANDIDATES = 8;
-const MAX_AUTH_CALLS = 4;
+const MAX_AUTH_CALLS = 14;
 
 const SECRETS = [SEOUL_KEY].filter(Boolean);
 
@@ -159,27 +159,64 @@ function summarizeSeoul(status, payload, textSnippet) {
 const out = [];
 const log = (line) => out.push(line);
 
-// ---------------------------------------------------------------- catalog
-const searchTerms = [
-  "생활인구 250",
-  "단기외국인 생활인구",
-  "단기체류외국인",
+// ------------------------------------------------------- catalog transport
+// Run 1 (2026-08-28) proved datasetList.do is a client-rendered shell: three
+// different search terms all returned byte-identical HTML, so the query never
+// reached the server. Locate the JSON transport the page actually uses before
+// trying to read the catalog again.
+const TERM = "단기외국인 생활인구";
+const encoded = encodeURIComponent(TERM);
+
+const transportCandidates = [
+  { method: "GET", url: `https://data.seoul.go.kr/dataList/datasetList.do?srchWord=${encoded}` },
+  { method: "GET", url: `https://data.seoul.go.kr/dataList/datasetListAjax.do?srchWord=${encoded}` },
+  { method: "POST", url: "https://data.seoul.go.kr/dataList/datasetListAjax.do", body: `srchWord=${encoded}` },
+  { method: "POST", url: "https://data.seoul.go.kr/dataList/datasetList.do", body: `srchWord=${encoded}` },
+  { method: "GET", url: `https://data.seoul.go.kr/dataList/selectDatasetList.do?srchWord=${encoded}` },
+  { method: "GET", url: `https://data.seoul.go.kr/together/aiSearch/searchList.do?srchWord=${encoded}` },
+  { method: "GET", url: `https://data.seoul.go.kr/dataList/dataListSearch.do?srchWord=${encoded}` },
+  // The OpenAPI tab of a dataset page; /A/ is the API view of the 250m
+  // 내국인 grid product recorded in docs/DATA_SOURCES.md as OA-22784.
+  { method: "GET", url: "https://data.seoul.go.kr/dataList/OA-22784/A/1/datasetView.do" },
+  { method: "GET", url: "https://data.seoul.go.kr/dataList/OA-22784/S/1/datasetView.do" },
 ];
 
 const candidates = new Map();
 
-for (const term of searchTerms) {
-  const url = `https://data.seoul.go.kr/dataList/datasetList.do?srchWord=${encodeURIComponent(term)}&srchDataGubun=&srchOrgId=&srchDetailWord=`;
+for (const probe of transportCandidates) {
   try {
-    const page = await fetchText(url, term);
-    const found = extractCandidates(page.text);
+    const response = await fetch(probe.url, {
+      method: probe.method,
+      headers: {
+        accept: "application/json, text/javascript, text/html;q=0.8",
+        "x-requested-with": "XMLHttpRequest",
+        "user-agent": "KORETAIL-source-verification/1.0 (+https://koretaildata.com)",
+        ...(probe.body ? { "content-type": "application/x-www-form-urlencoded; charset=UTF-8" } : {}),
+      },
+      body: probe.body,
+      signal: AbortSignal.timeout(15_000),
+    });
+    const text = await response.text();
+    const found = extractCandidates(text);
+    let isJson = false;
+    try {
+      JSON.parse(text);
+      isJson = true;
+    } catch {
+      isJson = false;
+    }
     log({
-      step: "catalog_search",
-      term,
-      httpStatus: page.status,
-      htmlBytes: page.text.length,
+      step: "transport_probe",
+      method: probe.method,
+      url: probe.url.replace(encoded, "<TERM>"),
+      httpStatus: response.status,
+      contentType: response.headers.get("content-type"),
+      bytes: text.length,
+      isJson,
+      mentionsTerm: text.includes("단기") || text.includes("생활인구"),
       candidateCount: found.length,
-      candidates: found.slice(0, 20),
+      candidates: found.slice(0, 15),
+      head: redact(text.slice(0, 300)),
     });
     for (const entry of found) {
       if (!candidates.has(entry.datasetId) || (entry.title && !candidates.get(entry.datasetId))) {
@@ -187,7 +224,12 @@ for (const term of searchTerms) {
       }
     }
   } catch (error) {
-    log({ step: "catalog_search", term, error: redact(error instanceof Error ? error.message : "fetch_failed") });
+    log({
+      step: "transport_probe",
+      method: probe.method,
+      url: probe.url.replace(encoded, "<TERM>"),
+      error: redact(error instanceof Error ? error.message : "fetch_failed"),
+    });
   }
 }
 
@@ -234,12 +276,36 @@ for (const candidate of ranked) {
 log({ step: "service_names_discovered", serviceNames: [...serviceNames.entries()].map(([name, datasetId]) => ({ name, datasetId })) });
 
 // -------------------------------------------------------- authenticated probe
+// Service names read from the catalog are authoritative. When the catalog is
+// unreadable, the official OpenAPI is itself the authority on whether a
+// service name exists: a wrong name returns a distinct official error code,
+// and only an INFO-000 response with a real schema is treated as verified.
+// Nothing here is assumed correct without that response.
+const nameCandidates = [
+  // Documented dong-level living-population family, to confirm the naming
+  // convention and to read the legacy series' last published period.
+  "SPOP_LOCAL_RESD_DONG",
+  "SPOP_FORN_RESD_DONG",
+  "SPOP_TEMP_FORN_RESD_DONG",
+  "SPOP_LONG_FORN_RESD_DONG",
+  // Plausible 250m-grid successors following the same convention.
+  "SPOP_LOCAL_RESD_GRID",
+  "SPOP_FORN_RESD_GRID",
+  "SPOP_TEMP_FORN_RESD_GRID",
+  "SPOP_LONG_FORN_RESD_GRID",
+];
+
+const probeTargets = [
+  ...[...serviceNames.entries()].map(([name, datasetId]) => ({ name, datasetId, origin: "discovered" })),
+  ...nameCandidates.map((name) => ({ name, datasetId: null, origin: "candidate" })),
+];
+
 const keyDiag = keyDiagnostics(SEOUL_KEY);
 if (!keyDiag.present) {
   log({ step: "auth_probe", authStatus: "BLOCKED", reason: "SEOUL_OPEN_DATA_KEY missing" });
 } else {
   let calls = 0;
-  for (const [name, datasetId] of serviceNames) {
+  for (const { name, datasetId, origin } of probeTargets) {
     if (calls >= MAX_AUTH_CALLS) {
       log({ step: "auth_probe", skipped: name, reason: "MAX_AUTH_CALLS reached" });
       continue;
@@ -255,9 +321,9 @@ if (!keyDiag.present) {
       } catch {
         payload = null;
       }
-      log({ step: "auth_probe", service: name, datasetId, ...summarizeSeoul(response.status, payload, payload ? null : redact(text)) });
+      log({ step: "auth_probe", service: name, datasetId, origin, ...summarizeSeoul(response.status, payload, payload ? null : redact(text)) });
     } catch (error) {
-      log({ step: "auth_probe", service: name, datasetId, authStatus: "ERROR", reason: redact(error instanceof Error ? error.message : "fetch_failed") });
+      log({ step: "auth_probe", service: name, datasetId, origin, authStatus: "ERROR", reason: redact(error instanceof Error ? error.message : "fetch_failed") });
     }
   }
 }
