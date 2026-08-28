@@ -104,15 +104,21 @@ function extractCandidates(html) {
   return [...found.entries()].map(([datasetId, title]) => ({ datasetId, title }));
 }
 
+/** Template ids the portal ships unfilled; never real service names. */
+const TEMPLATE_PLACEHOLDER = /^(API_SERVICE_NAME|REQ_PRM_EXP|RES_PRM_EXP|SAMPLE_URL|SERVICE_NAME|DATA_SET)$/;
+
 /** The portal prints a sample call containing the official service name. */
 function extractServiceNames(html) {
   const names = new Set();
   for (const m of html.matchAll(/openapi\.seoul\.go\.kr:8088\/[^/\s"'<]+\/(?:xml|json)\/([A-Za-z0-9_]+)/gi)) {
     names.add(m[1]);
   }
-  for (const m of html.matchAll(/(?:서비스명|SERVICE\s*NAME|샘플\s*URL)[\s\S]{0,200}?([A-Za-z][A-Za-z0-9_]{5,40})/g)) {
-    const value = m[1];
-    if (!/^(openapi|seoul|http|https|sample|json|xml|KEY)$/i.test(value)) names.add(value);
+  // Run 4 showed this proximity match harvests markup and template ids
+  // (defaultUrl, caption, strong, Bypass, API_SERVICE_NAME, REQ_PRM_EXP) and
+  // then burns one authenticated call on each. A real Seoul service name is
+  // SCREAMING_SNAKE with at least one underscore, so require that shape.
+  for (const m of html.matchAll(/(?:서비스명|SERVICE\s*NAME|샘플\s*URL)[\s\S]{0,200}?\b([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)\b/g)) {
+    if (!TEMPLATE_PLACEHOLDER.test(m[1])) names.add(m[1]);
   }
   return [...names];
 }
@@ -360,7 +366,8 @@ for (const candidate of ranked.slice(0, 4)) {
         serviceNames: names,
         uppercaseTokens: tokens,
         mentionsSampleUrl: /openapi\.seoul\.go\.kr/i.test(text),
-        excerpt: redact(stripTags(text).slice(0, 800)),
+        doEndpoints: extractDoEndpoints(text),
+        excerpt: redact(stripTags(text).slice(0, 1500)),
       });
       for (const name of names) if (!serviceNames.has(name)) serviceNames.set(name, candidate.datasetId);
       // A token that appears on the OpenAPI tab and nowhere in the site chrome
@@ -369,6 +376,51 @@ for (const candidate of ranked.slice(0, 4)) {
     } catch (error) {
       log({ step: "open_api_view", datasetId: candidate.datasetId, method: form.method, url: form.url, error: redact(error instanceof Error ? error.message : "fetch_failed") });
     }
+  }
+}
+
+// -------------------------------------------------------- getReqParam.do
+// Run 4 read the OpenAPI tab's own script: it fills the spec by POSTing
+// {infId} to /together/mypage/getReqParam.do and expects JSON back. That is
+// the endpoint holding the real parameter list, and plausibly the service
+// name the template leaves as API_SERVICE_NAME.
+for (const candidate of ranked.slice(0, 4)) {
+  try {
+    const response = await fetch("https://data.seoul.go.kr/together/mypage/getReqParam.do", {
+      method: "POST",
+      headers: {
+        accept: "application/json, text/javascript",
+        "x-requested-with": "XMLHttpRequest",
+        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+        referer: `https://data.seoul.go.kr/dataList/${candidate.datasetId}/S/1/datasetView.do`,
+        "user-agent": "KORETAIL-source-verification/1.0 (+https://koretaildata.com)",
+      },
+      body: `infId=${candidate.datasetId}`,
+      signal: AbortSignal.timeout(15_000),
+    });
+    const text = await response.text();
+    let payload = null;
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      payload = null;
+    }
+    const names = extractServiceNames(text);
+    log({
+      step: "req_param",
+      datasetId: candidate.datasetId,
+      httpStatus: response.status,
+      isJson: payload !== null,
+      bytes: text.length,
+      topLevelKeys: payload && typeof payload === "object" ? Object.keys(payload).slice(0, 20) : null,
+      serviceNames: names,
+      uppercaseTokens: extractUppercaseTokens(text),
+      // The parameter spec is small; log enough of it to read field semantics.
+      body: redact(payload ? JSON.stringify(payload) : stripTags(text).slice(0, 1200)),
+    });
+    for (const name of names) if (!serviceNames.has(name)) serviceNames.set(name, candidate.datasetId);
+  } catch (error) {
+    log({ step: "req_param", datasetId: candidate.datasetId, error: redact(error instanceof Error ? error.message : "fetch_failed") });
   }
 }
 
