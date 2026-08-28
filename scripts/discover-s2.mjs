@@ -465,19 +465,30 @@ try {
 // /dataList/getOpenApiSample.do. That is where the portal finally emits the
 // real service name, so ask it for every confirmed id — including the three
 // grid ids, to confirm from the portal itself that they publish no service.
-for (const candidate of ranked.slice(0, 4)) {
-  for (const body of [`infId=${candidate.datasetId}`, `infId=${candidate.datasetId}&srvType=S&serviceKind=1&reqType=json`]) {
+for (const candidate of ranked.filter((entry) => entry.datasetId === "OA-23018")) {
+  // Run 7: both POST shapes returned the portal's 980-byte error page, so the
+  // parameter names are wrong rather than the endpoint. Widen once — GET with
+  // a query string, and the field names the tab's other calls use.
+  const sampleBodies = [
+    `infId=${candidate.datasetId}`,
+    `infId=${candidate.datasetId}&srvType=S&serviceKind=1&reqType=json`,
+    `infId=${candidate.datasetId}&type=json&startIndex=1&endIndex=5`,
+    `infId=${candidate.datasetId}&srvcName=&reqType=json&viewType=S`,
+    `GET:https://data.seoul.go.kr/dataList/getOpenApiSample.do?infId=${candidate.datasetId}`,
+  ];
+  for (const body of sampleBodies) {
     try {
-      const response = await fetch("https://data.seoul.go.kr/dataList/getOpenApiSample.do", {
-        method: "POST",
+      const isGet = body.startsWith("GET:");
+      const response = await fetch(isGet ? body.slice(4) : "https://data.seoul.go.kr/dataList/getOpenApiSample.do", {
+        method: isGet ? "GET" : "POST",
         headers: {
           accept: "application/json, text/javascript, text/html",
           "x-requested-with": "XMLHttpRequest",
-          "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+          ...(isGet ? {} : { "content-type": "application/x-www-form-urlencoded; charset=UTF-8" }),
           referer: `https://data.seoul.go.kr/dataList/${candidate.datasetId}/S/1/datasetView.do`,
           "user-agent": "KORETAIL-source-verification/1.0 (+https://koretaildata.com)",
         },
-        body,
+        body: isGet ? undefined : body,
         signal: AbortSignal.timeout(15_000),
       });
       const text = await response.text();
@@ -485,7 +496,7 @@ for (const candidate of ranked.slice(0, 4)) {
       log({
         step: "open_api_sample",
         datasetId: candidate.datasetId,
-        bodyShape: body.includes("srvType") ? "full" : "infId-only",
+        bodyShape: body.startsWith("GET:") ? "GET" : body.replace(`infId=${candidate.datasetId}`, "infId") ,
         httpStatus: response.status,
         bytes: text.length,
         serviceNames: names,

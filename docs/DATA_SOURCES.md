@@ -43,23 +43,46 @@ The dong-level 단기체류외국인 생활인구 series (OA-14993 family) stopp
 
 ### Successor dataset IDs (read from the official catalog 2026-08-28)
 
-The discovery probe (`scripts/discover-s2.mjs`, smoke run 9) resolved these titles from `data.seoul.go.kr` dataset pages, so the IDs are CONFIRMED. The OpenAPI **service names are still UNVERIFIED**: the dataset view renders its sample URL client-side, so no service name reaches the server response.
+Resolved from `data.seoul.go.kr` dataset pages by `scripts/discover-s2.mjs`. The IDs and titles are CONFIRMED.
 
-| Dataset | Title | Relevance |
+| Dataset | Title | Publishes an OpenAPI? |
 |---|---|---|
-| `OA-22786` | [단기외국인] 서울 생활인구(250m) | direct S2 successor |
-| `OA-23018` | [단기외국인] 행정동별 서울 생활인구(250m) | dong-aggregated grid — closest to the legacy spatial unit |
-| `OA-22894` | [단기외국인] 서울 체류인구(250m) | 체류 (stay) variant; different definition from 생활 (living) |
-| `OA-22785` / `OA-23017` / `OA-22893` | 장기외국인 equivalents | long-stay, not the short-stay truth boundary |
+| `OA-23018` | [단기외국인] 행정동별 서울 생활인구(250m) | **Yes** — real parameter list |
+| `OA-22786` | [단기외국인] 서울 생활인구(250m) | No |
+| `OA-22894` | [단기외국인] 서울 체류인구(250m) | No |
+| `OA-22785` | [장기외국인] 서울 생활인구(250m) | No |
+| `OA-23017` / `OA-22893` | 장기외국인 equivalents | not probed |
+
+Evidence: `POST /together/mypage/getReqParam.do {infId}` returns `{"paramList":[…],"filterList":[]}` for `OA-23018` and `{"paramList":[],"filterList":[]}` for the other three. So the pure 250m-grid products are file/sheet distributions, and the **dong-aggregated `OA-23018` is the only short-stay foreign successor with an API** — which also happens to be the spatial unit the legacy series used and the one the three target areas need.
+
+`OA-23018` request parameters (official, from that response): `YMD` (일자), `TT` (시간), `H_DNG_CD` (행정동코드) — all `STRING(선택)`, base URL `http://openAPI.seoul.go.kr:8088`. Note these differ from the legacy column names (`STDR_DE_ID` / `TMZON_PD_SE` / `ADSTRD_CODE_SE`), so this is a new service family, not a renamed old one.
 
 `생활인구` and `체류인구` are different official measures. Do not treat them as one series.
 
+**Still UNVERIFIED: the `OA-23018` OpenAPI service name.** The portal never emits it in any server response reached so far — the dataset page and its OpenAPI tab both ship the name as a literal `API_SERVICE_NAME` placeholder filled client-side. Do not guess it; see the handoff note below.
+
+### Portal transport map (2026-08-28)
+
+Established by probe, useful for any future dataset:
+
+| Endpoint | Method | Returns |
+|---|---|---|
+| `/dataList/datasetList.do` | GET/POST | client-rendered shell; search term never reaches the server |
+| `/dataList/{OA-id}/S/1/datasetView.do` | GET | dataset page; related-dataset IDs and titles only |
+| `/dataList/openApiView.do` | **POST** `infId,srvType,serviceKind` | the OpenAPI tab (path form `/dataList/{id}/S/1/openApiView.do` 404s) |
+| `/together/mypage/getReqParam.do` | **POST** `infId` | JSON parameter spec — the one endpoint that reliably answers |
+| `/dataList/getOpenApiSample.do` | POST/GET | 980-byte error page in every parameter shape tried |
+
 ### Authenticated probe status (2026-08-28)
 
-- `SPOP_LOCAL_RESD_DONG` returned `INFO-000` with 630,988 rows and `STDR_DE_ID=20260731`, so the **domestic** dong living-population service is live and publishing. This is the naming-convention anchor.
-- Every guessed foreign variant (`SPOP_FORN_RESD_DONG`, `SPOP_TEMP_FORN_RESD_DONG`, `SPOP_LONG_FORN_RESD_DONG`, and the four `_GRID` forms) returned `ERROR-500 서버 오류입니다`.
-- **`ERROR-500` carries no information about discontinuation.** Smoke run 10 probed a deliberately nonexistent control name (`KORETAIL_CONTROL_NO_SUCH_SERVICE`) and got the identical `ERROR-500`. The Seoul gateway does not distinguish a retired service from an unknown service name, so the run reports `foreignCodeInterpretation=INDISTINGUISHABLE_FROM_UNKNOWN_SERVICE_NAME`. Every one of those seven names is simply **not a known service name**; none of them is evidence that a series ended.
-- Consequence: the "the dong-level foreign series stopped updating" claim rests on the 2026-06-09 portal notice **alone**, not on any probe result. Do not cite the ERROR-500 responses as corroboration.
-- Transport located: the dataset page calls `/dataList/openApiView.do` to render its OpenAPI tab. That endpoint, not `datasetView.do`, is where the portal publishes the sample URL and therefore the service name. It is the next probe target.
+- `SPOP_LOCAL_RESD_DONG` returned `INFO-000`, 630,988 rows, `STDR_DE_ID=20260731` — the **domestic** dong living-population service is live.
+- Every guessed foreign variant (`SPOP_FORN_RESD_DONG`, `SPOP_TEMP_FORN_RESD_DONG`, `SPOP_LONG_FORN_RESD_DONG`, four `_GRID` forms) returned `ERROR-500 서버 오류입니다`.
+- **`ERROR-500` carries no information about discontinuation.** A deliberately nonexistent control name (`KORETAIL_CONTROL_NO_SUCH_SERVICE`) returns the identical `ERROR-500`; the run reports `foreignCodeInterpretation=INDISTINGUISHABLE_FROM_UNKNOWN_SERVICE_NAME`. Those seven names are simply not known service names — none of it is evidence that a series ended.
+- Consequence: the "dong-level foreign series stopped updating" claim rests on the 2026-06-09 portal notice **alone**. Do not cite the ERROR-500 responses as corroboration.
+
+### Owner handoff for S2
+
+One manual step unblocks this, and it is faster for a person than for any probe: open
+`https://data.seoul.go.kr/dataList/OA-23018/S/1/datasetView.do`, read the **샘플 URL** on the OpenAPI tab, and copy the segment after `/json/`. That is the service name. With it, S2 becomes a normal adapter: parameters `YMD`, `TT`, `H_DNG_CD` are already confirmed, and the three target areas map to 행정동 codes.
 
 The prepared airport schedule is 12 calls/day and at most 24 with its single retry, below the listed 500-call development quota. This is a quota calculation, not proof of a successful approved-key response.
