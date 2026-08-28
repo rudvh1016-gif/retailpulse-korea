@@ -17,4 +17,13 @@ jobs:
         env:
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
           SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
+          # The owner's data.go.kr account currently shows no approved
+          # utilization applications and no issued key, so A1-A4/W1/T1 are
+          # externally blocked. Contact Seoul hosts only until the owner
+          # reports the account restored, then drop this to re-enable `all`.
+          SMOKE_SCOPE: seoul
         run: node scripts/smoke-public-apis.mjs
+      - name: Discover the current official S2 foreign-presence product
+        env:
+          SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
+        run: node scripts/discover-s2.mjs
