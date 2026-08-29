@@ -11,7 +11,7 @@ Last verified: 2026-08-27 KST. Recheck official terms immediately before activat
 | A3 | Duty-free scheduled flights | data.go.kr 15134281 | `apis.data.go.kr/B551177/statusOfSPaxFlt4DutyFree/…` (path UNVERIFIED) | same | Scheduled ≠ actual observed flight |
 | A4 | Departure-hall congestion | data.go.kr 15148225 | `apis.data.go.kr/B551177/statusOfDepartureCongestion/getDepartureCongestion` (CONFIRMED) · `terminalId` P01=T1 / P03=T2 (T2 row presence unproven) · fields `gateId(DG1_E…DG6_W)`, `waitTime`(min), `waitLength`(persons), `occurtime`(YYYYMMDDHHMM), `operatingTime` · 1-minute cadence | same | Checkpoint waits ≠ duty-free visitors ≠ sales |
 | S1 | Seoul real-time city data | 서울 열린데이터광장 OA-21285/OA-21778 | `openapi.seoul.go.kr:8088/{KEY}/json/citydata_ppltn/1/5/{POI}` (CONFIRMED) · POI003 명동 관광특구 · POI007 홍대 관광특구 · POI068 성수카페거리 · success key `"SeoulRtd.citydata_ppltn"` + `RESULT["RESULT.CODE"]="INFO-000"` (error envelope uses undotted `RESULT.CODE`) · congestion labels 여유/보통/약간 붐빔/붐빔 · `FCST_PPLTN` = 12 hourly forecasts · ~5-min updates · assume ~1,000 calls/day-class quota | `SEOUL_OPEN_DATA_KEY` | Live population ≠ foreign tourists ≠ shoppers |
-| S2 | Short-stay foreign living population | 서울 OA-23018 `[단기외국인] 행정동별 서울 생활인구(250m)` | `openapi.seoul.go.kr:8088/{KEY}/{format}/Spop250mFornTempDong/1/5/` (service name CONFIRMED from the official portal sample URL; authenticated response contract pending) · optional filters `YMD`, `TT`, `H_DNG_CD` | `SEOUL_OPEN_DATA_KEY` | Short-stay foreign living population ≠ stay population ≠ tourist ≠ shopper ≠ sales; never splice it into the legacy series |
+| S2 | Short-stay foreign living population | 서울 OA-23018 `[단기외국인] 행정동별 서울 생활인구(250m)` | `openapi.seoul.go.kr:8088/{KEY}/json/Spop250mFornTempDong/1/5/` (authenticated `INFO-000`, 5 rows, 2026-08-29) · optional filters `YMD`, `TT`, `H_DNG_CD` | `SEOUL_OPEN_DATA_KEY` | `SPOP` is the total; nationality columns are dimensions and must not be added to it. Short-stay foreign living population ≠ stay population ≠ tourist ≠ shopper ≠ sales |
 | S3 | Estimated commercial sales | 서울시 상권분석서비스(추정매출-상권) OA-15572 | `openapi.seoul.go.kr:8088/{KEY}/json/VwsmTrdarSelngQq/{start}/{end}/{STDR_YYQU_CD}` (CONFIRMED; live verification 2026-08-27 showed only the quarter positional filter applies — trade-area segments are ignored, so the collector sweeps the quarter in 1000-row pages and filters client-side) · quarterly 20211–20261 · fields `THSMON_SELNG_AMT/CO` + weekday/time/gender/age splits · trade areas: 명동 3001492(관광특구)·3120028(명동거리)·3120027(명동역), 홍대 3120103(홍대입구역)·3120102(서교동)·3120104(연남동), 성수 3110131(성수동카페거리)·3120052(성수역) | same Seoul key | 추정매출 = modelled estimate, NOT live POS sales, NOT foreign spend |
 | W1 | KMA short-term forecast | 기상청 · data.go.kr 15084084 | `apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst` (CONFIRMED) · issued 02/05/08/11/14/17/20/23 KST (+~10min) · grids: 명동 (60,127) · 홍대/서교동 (59,126) · 성수 (61,126) · 인천공항/운서동 (51,125) · categories POP/PTY/PCP/REH/SKY/TMP/TMN/TMX/WSD… · `PCP`/`SNO` are strings ("강수없음", "1.0mm 미만") · SKY 1=맑음 3=구름많음 4=흐림 · resultCode "00"=OK, "03"=NO_DATA · 10,000 calls/day dev | `DATA_GO_KR_SERVICE_KEY` | Forecast ≠ observation; issue time ≠ target time |
 | T1 | Tourism events (TourAPI) | 한국관광공사 B551011 · KorService2 (KorService1 shut off ~2025-08) | `apis.data.go.kr/B551011/KorService2/searchFestival2` (CONFIRMED) · `eventStartDate` required · `locationBasedList2` (mapX/mapY/radius≤20000, contentTypeId=15, `dist` in response) for area mapping · success resultCode "0000" · v4.4 deprecates `areaCode`/`sigunguCode` in favor of `lDongRegnCd=11`(서울)/`lDongSignguCd` · 1,000 calls/day dev | same data.go.kr key | Event existence ≠ attendance ≠ demand ≠ sales |
@@ -80,8 +80,22 @@ Established by probe, useful for any future dataset:
 - **`ERROR-500` carries no information about discontinuation.** A deliberately nonexistent control name (`KORETAIL_CONTROL_NO_SUCH_SERVICE`) returns the identical `ERROR-500`; the run reports `foreignCodeInterpretation=INDISTINGUISHABLE_FROM_UNKNOWN_SERVICE_NAME`. Those seven names are simply not known service names — none of it is evidence that a series ended.
 - Consequence: the "dong-level foreign series stopped updating" claim rests on the 2026-06-09 portal notice **alone**. Do not cite the ERROR-500 responses as corroboration.
 
+### Authenticated S2 contract and area mapping (2026-08-29)
+
+One bounded GitHub Actions smoke run returned JSON, `INFO-000`, five rows. The exact row fields are `YMD`, `TT`, `H_DNG_CD`, `SPOP`, `CAN`, `CHN`, `ETC`, `FRA`, `IDN`, `IND`, `JPN`, `KAZ`, `KHM`, `LKA`, `MNG`, `NPL`, `PAK`, `PHL`, `RUS`, `THA`, `USA`, `UZB`, and `VNM`. The response does not contain a dong name, gender, or age. Record identity is `YMD + TT + H_DNG_CD`; `SPOP` is the official total, while nationality fields are retained as nullable dimensions and are never summed back into that total.
+
+The mapping source is the official data.go.kr file dataset [15136368 법정동 연계정보](https://www.data.go.kr/data/15136368/fileData.do), dated 2025-06-02. Its 10-digit `행정동코드` is converted to the eight-digit S2 `H_DNG_CD` by removing the final two zeros. Mapping version: `official-admin-dong-2025-06-02-v1`.
+
+| KORETAIL area | Official administrative dong | S2 `H_DNG_CD` | Scope note |
+|---|---|---:|---|
+| myeongdong | 명동 | `11140550` | Canonical 명동 area |
+| hongdae | 서교동 | `11440660` | Canonical 홍대 center |
+| seongsu | 성수2가3동 | `11200690` | Representative dong containing the configured 성수카페거리 center; no claim that this covers all of 성수 |
+
+These are representative product-area mappings, not interchangeable polygons. The product does not broaden or merge them without new authoritative spatial evidence.
+
 ### S2 activation gate
 
-The service-name gate is complete. Activation still requires one bounded authenticated response, exact response-field semantics, authoritative `H_DNG_CD` mappings for all three KORETAIL areas, idempotent D1 persistence, and internal API/UI verification.
+The service name, authenticated response contract, and the three representative administrative-dong mappings are complete. Activation still requires idempotent D1 persistence and internal API/UI verification.
 
 The prepared airport schedule is 12 calls/day and at most 24 with its single retry, below the listed 500-call development quota. This is a quota calculation, not proof of a successful approved-key response.

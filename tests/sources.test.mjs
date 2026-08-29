@@ -6,6 +6,10 @@ import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 import { runSeoulS2Smoke } from "../scripts/smoke-public-apis-lib.mjs";
 import {
+  aggregateSeoulForeignByArea,
+  normalizeSeoulForeignRows,
+} from "../lib/seoul-foreign.ts";
+import {
   normalizeAirportCongestion,
   normalizeEstimatedSales,
   normalizeSeoulRealtime,
@@ -81,6 +85,77 @@ test("S2 smoke reports the real response shape without exposing its key or reque
   });
   assert.equal(JSON.stringify(result).includes(key), false);
   assert.equal(JSON.stringify(result).includes("openapi.seoul.go.kr"), false);
+});
+
+const seoulForeignRow = (overrides = {}) => ({
+  YMD: "20260828",
+  TT: "14",
+  H_DNG_CD: "11140550",
+  SPOP: "10000.5",
+  CHN: "4000.2",
+  JPN: "2000.1",
+  USA: "500.0",
+  ETC: "3500.2",
+  CAN: null,
+  FRA: "0",
+  IDN: "0",
+  IND: "0",
+  KAZ: "0",
+  KHM: "0",
+  LKA: "0",
+  MNG: "0",
+  NPL: "0",
+  PAK: "0",
+  PHL: "0",
+  RUS: "0",
+  THA: "0",
+  UZB: "0",
+  VNM: "0",
+  ...overrides,
+});
+
+test("S2 normalizer uses SPOP as the total and preserves nationality dimensions without double counting", async () => {
+  const [first] = await normalizeSeoulForeignRows([seoulForeignRow()], "2026-08-29T07:00:00Z");
+  const [retrievedLater] = await normalizeSeoulForeignRows([seoulForeignRow()], "2026-08-29T08:00:00Z");
+
+  assert.equal(first.administrativeDongCode, "11140550");
+  assert.equal(first.referenceAt, "2026-08-28T14:00:00+09:00");
+  assert.equal(first.value, 10000.5);
+  assert.equal(first.nationalityValues.CHN, 4000.2);
+  assert.equal(first.nationalityValues.CAN, null);
+  assert.equal(first.sourceHash, retrievedLater.sourceHash);
+
+  const aggregates = await aggregateSeoulForeignByArea([first], {
+    myeongdong: ["11140550"],
+    hongdae: [],
+    seongsu: [],
+  });
+  assert.equal(aggregates[0].value, 10000.5);
+});
+
+test("S2 aggregation combines mapped dongs once and ignores an unmapped dong", async () => {
+  const rows = await normalizeSeoulForeignRows([
+    seoulForeignRow({ H_DNG_CD: "11140550", SPOP: "100" }),
+    seoulForeignRow({ H_DNG_CD: "11140560", SPOP: "80" }),
+    seoulForeignRow({ H_DNG_CD: "99999999", SPOP: "900" }),
+  ], "2026-08-29T07:00:00Z");
+  const aggregates = await aggregateSeoulForeignByArea(rows, {
+    myeongdong: ["11140550", "11140560"],
+    hongdae: [],
+    seongsu: [],
+  });
+
+  assert.equal(aggregates.length, 1);
+  assert.equal(aggregates[0].area, "myeongdong");
+  assert.deepEqual(aggregates[0].administrativeDongCodes, ["11140550", "11140560"]);
+  assert.equal(aggregates[0].value, 180);
+});
+
+test("S2 normalizer rejects a missing total instead of summing nationality columns", async () => {
+  await assert.rejects(
+    normalizeSeoulForeignRows([seoulForeignRow({ SPOP: null })], "2026-08-29T07:00:00Z"),
+    /invalid_SPOP/,
+  );
 });
 
 // Sanitized fixture using the exact field names returned by the authenticated
