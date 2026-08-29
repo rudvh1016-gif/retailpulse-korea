@@ -14,6 +14,7 @@ import {
   collectAirportCongestion,
   collectAirportFlights,
   collectEstimatedSales,
+  collectSeoulForeignPresence,
   collectSeoulRealtime,
   collectTourismEvents,
   collectWeatherForecasts,
@@ -55,6 +56,7 @@ const env = {
 
 const collectors: Record<string, () => Promise<{ status: string; records: number }>> = {
   seoul_realtime: () => collectSeoulRealtime(env),
+  seoul_foreign: () => collectSeoulForeignPresence(env),
   seoul_sales: () => collectEstimatedSales(env),
   weather: () => collectWeatherForecasts(env),
   events: () => collectTourismEvents(env),

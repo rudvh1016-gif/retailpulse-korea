@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
 import { redirectHttpToHttps } from "../worker/https-redirect";
@@ -56,4 +57,27 @@ test("staging deployments are explicitly noindex", async () => {
   assert.match(layout, /isStagingDeployment/);
   assert.match(robots, /disallow: "\/"/);
   assert.match(sitemap, /return \[\]/);
+});
+
+test("manual S2 import stays confirmed, bounded, isolated, and unscheduled", async () => {
+  const script = await readFile(new URL("../scripts/import-oneshot.ts", import.meta.url), "utf8");
+  const collector = await readFile(new URL("../lib/collector.ts", import.meta.url), "utf8");
+  const workflow = await readFile(new URL("../.github/workflows/import-oneshot.yml", import.meta.url), "utf8");
+
+  assert.match(script, /RPK_ONESHOT_CONFIRM !== "IMPORT"/);
+  assert.ok(script.indexOf("RPK_ONESHOT_CONFIRM") < script.indexOf("new CloudflareD1RestDatabase"));
+  assert.match(script, /seoul_foreign:\s*\(\)\s*=>\s*collectSeoulForeignPresence\(env\)/);
+  assert.match(collector, /configuredCodes.*new Set/);
+  assert.match(collector, /1\/1\//);
+  assert.match(collector, /1\/1000\/\$\{ymd\}\/\$\{tt\}\/\$\{code\}/);
+  assert.match(workflow, /seoul_foreign/);
+  assert.doesNotMatch(workflow, /^\s*schedule:/m);
+
+  const rejected = spawnSync(process.execPath, ["--import", "tsx", "scripts/import-oneshot.ts"], {
+    cwd: new URL("..", import.meta.url),
+    env: { ...process.env, RPK_ONESHOT_CONFIRM: "NO" },
+    encoding: "utf8",
+  });
+  assert.notEqual(rejected.status, 0);
+  assert.match(`${rejected.stdout}${rejected.stderr}`, /oneshot_not_confirmed/);
 });
