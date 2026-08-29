@@ -15,7 +15,7 @@ function freshnessOf(observedAt: unknown, staleMinutes: number, now: number): "L
   return now - observed <= staleMinutes * 60_000 ? "LIVE" : "STALE";
 }
 
-async function safeAll<T>(run: () => Promise<T[]>): Promise<T[]> {
+export async function safeAll<T>(run: () => Promise<T[]>): Promise<T[]> {
   // Each source block fails independently: one broken table or query must
   // never take down the whole summary response.
   try {
@@ -84,6 +84,21 @@ export async function GET() {
       ORDER BY sales_amount DESC`,
     ).all<Row>()).results ?? []);
 
+    const foreignPresenceRows = await safeAll<Row>(async () => (await client.prepare(
+      `SELECT area, product_version AS productVersion, record_origin AS freshness, value, unit,
+        reference_at AS referenceAt, retrieved_at AS retrievedAt,
+        quality_status AS qualityStatus
+      FROM seoul_foreign_presence_area a
+      WHERE a.source_id = 'SEOUL_SHORT_STAY_FOREIGN_LIVING_POPULATION'
+        AND a.record_origin = 'OFFICIAL_HISTORICAL' AND a.quality_status = 'VALID'
+        AND reference_at = (
+        SELECT MAX(reference_at) FROM seoul_foreign_presence_area b
+        WHERE b.area = a.area
+          AND b.source_id = 'SEOUL_SHORT_STAY_FOREIGN_LIVING_POPULATION'
+          AND b.record_origin = 'OFFICIAL_HISTORICAL' AND b.quality_status = 'VALID'
+      )`,
+    ).all<Row>()).results ?? []);
+
     const congestionRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT terminal, zone, wait_time_minutes AS waitTimeMinutes, waiting_count AS waitingCount,
         observed_at AS observedAt
@@ -101,6 +116,7 @@ export async function GET() {
 
     const areas = Object.fromEntries(AREAS.map((area) => {
       const realtime = realtimeRows.find((row) => row.area === area) ?? null;
+      const foreignPresence = foreignPresenceRows.find((row) => row.area === area) ?? null;
       const salesForArea = salesRows.filter((row) => row.area === area);
       const salesTotal = salesForArea.reduce((sum, row) => sum + Number(row.salesAmount ?? 0), 0);
       return [area, {
@@ -115,6 +131,7 @@ export async function GET() {
           industryCount: salesForArea.length,
           topIndustries: salesForArea.slice(0, 3).map((row) => ({ industryName: row.industryName, salesAmount: row.salesAmount })),
         } : null,
+        foreignPresence,
       }];
     }));
 

@@ -1101,6 +1101,7 @@ h1, h2, h3, strong, b { font-weight: 600; }
 .live-signal-rows span { color: #999; font-size: 9px; }
 .live-signal-rows strong { font-size: 12px; letter-spacing: .04em; }
 .live-signal-rows b { font-size: 15px; font-weight: 550; }
+.live-signal-rows strong, .live-signal-rows b, .live-signal-rows small { min-width: 0; overflow-wrap: anywhere; }
 .live-signal-rows small { color: var(--muted); font-size: 8px; letter-spacing: .06em; text-align: right; }
 
 .why-number { grid-column: 1 / -1; border-bottom: 1px solid var(--ink); }

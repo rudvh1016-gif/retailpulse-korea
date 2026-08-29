@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { classifyDemoDemand, demoDemandThresholds } from "../lib/demand-index";
 import { buildAirportPressure } from "../lib/airport-pressure";
+import { safeAll } from "../app/api/live/summary/route";
 
 test("demo demand levels use cohort thirds instead of absolute magic numbers", () => {
   const cohort = [82, 77, 71, 86, 74, 69];
@@ -50,4 +51,9 @@ test("a zone is used only when an authoritative mapping is supplied", () => {
   assert.equal(rows[0].where.kind, "gateZone");
   assert.equal(rows[0].where.label, "27–32");
   assert.equal(rows[0].delayedFlightCount, 1);
+});
+
+test("live summary isolates an unavailable official source", async () => {
+  assert.deepEqual(await safeAll(async () => { throw new Error("missing table"); }), []);
+  assert.deepEqual(await safeAll(async () => [{ area: "myeongdong" }]), [{ area: "myeongdong" }]);
 });

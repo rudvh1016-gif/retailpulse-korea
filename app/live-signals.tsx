@@ -35,11 +35,22 @@ interface LiveSales {
   industryCount: number;
 }
 
+interface LiveForeignPresence {
+  value: number;
+  unit: "people";
+  referenceAt: string;
+  retrievedAt: string;
+  productVersion: string;
+  freshness: "OFFICIAL_HISTORICAL";
+  qualityStatus: string;
+}
+
 interface LiveAreaBlock {
   realtime: LiveRealtime | null;
   weather: LiveWeatherRow[];
   events: LiveEventRow[];
   sales: LiveSales | null;
+  foreignPresence: LiveForeignPresence | null;
 }
 
 interface LiveCongestionRow {
@@ -88,7 +99,7 @@ export function useLiveSummary(): LiveSummary | null {
 }
 
 const text = {
-  eyebrow: "OFFICIAL LIVE SIGNALS · KST",
+  eyebrow: "OFFICIAL DATA SIGNALS · KST",
   title: { ko: "오늘 수요를 움직이는 신호", en: "Signals moving demand today", zh: "今日影响需求的信号", ja: "今日の需要を動かすシグナル" },
   intro: {
     ko: "공식 데이터로 확인된 참고 신호입니다. 현재 예시 수요지수 계산에는 포함되지 않으며, 신호는 매출이나 방문자 수가 아닙니다.",
@@ -105,6 +116,14 @@ const text = {
   noEvents: { ko: "확인된 행사 없음", en: "No events found", zh: "暂无确认活动", ja: "確認済みイベントなし" },
   sales: { ko: "상권 과거 흐름", en: "Commercial history", zh: "商圈历史", ja: "商圏の過去推移" },
   salesNote: { ko: "분기 추정매출 · 실매출 아님", en: "Quarterly estimate · not POS sales", zh: "季度推算 · 非实际销售", ja: "四半期推定 · 実売上ではない" },
+  foreignPresence: { ko: "단기외국인 생활인구", en: "Short-stay foreign living population", zh: "短期停留外国人生活人口", ja: "短期滞在外国人生活人口" },
+  foreignPeople: { ko: "명", en: "people", zh: "人", ja: "人" },
+  foreignNote: {
+    ko: "서울시 공식자료 · 지연 공개 · 실시간 아님",
+    en: "Official Seoul data · delayed publication · not real-time",
+    zh: "首尔市官方数据 · 延迟发布 · 非实时",
+    ja: "ソウル市公式データ · 遅延公開 · リアルタイムではありません",
+  },
   airport: { ko: "공항 출국 대기", en: "Airport checkpoint waits", zh: "机场出境等候", ja: "空港出国待ち" },
   airportPeople: { ko: "명 대기 중", en: "people waiting", zh: "人等候中", ja: "人待機中" },
   basis: { ko: "기준", en: "as of", zh: "截至", ja: "基準" },
@@ -146,6 +165,11 @@ function formatPeopleRange(lang: Lang, min: number, max: number): string {
   return `${min.toLocaleString(locale)}–${max.toLocaleString(locale)}`;
 }
 
+function formatPeopleValue(lang: Lang, value: number): string {
+  const locale = lang === "ko" ? "ko-KR" : lang === "zh" ? "zh-CN" : lang === "ja" ? "ja-JP" : "en-US";
+  return value.toLocaleString(locale, { maximumFractionDigits: 1 });
+}
+
 function formatKrwCompact(lang: Lang, amount: number): string {
   const eok = amount / 100_000_000;
   if (lang === "en") {
@@ -164,7 +188,7 @@ export default function LiveSignals({ lang, area }: { lang: Lang; area: AreaId }
   const block = summary.areas[area];
   const congestion = summary.airport.congestion;
   const totalWaiting = congestion.reduce((sum, row) => sum + row.waitingCount, 0);
-  const hasArea = Boolean(block && (block.realtime || block.weather.length || block.events.length || block.sales));
+  const hasArea = Boolean(block && (block.realtime || block.foreignPresence || block.weather.length || block.events.length || block.sales));
   if (!hasArea && !congestion.length) return null;
 
   const rows: Array<{ key: string; label: string; value: string; note: string; state?: "LIVE" | "STALE" }> = [];
@@ -177,6 +201,16 @@ export default function LiveSignals({ lang, area }: { lang: Lang; area: AreaId }
       value: `${level} · ${formatPeopleRange(lang, block.realtime.populationMin, block.realtime.populationMax)}`,
       note: `${text.sourceSeoul[lang]} · ${text.basis[lang]} ${formatKstClock(block.realtime.observedAt, lang)}`,
       state: block.realtime.freshness,
+    });
+  }
+
+  if (block?.foreignPresence) {
+    const productId = block.foreignPresence.productVersion.split(":", 1)[0] || "OA-23018";
+    rows.push({
+      key: "foreign_presence",
+      label: text.foreignPresence[lang],
+      value: `${formatPeopleValue(lang, block.foreignPresence.value)} ${text.foreignPeople[lang]}`,
+      note: `${text.foreignNote[lang]} · ${text.basis[lang]} ${formatKstClock(block.foreignPresence.referenceAt, lang)} · ${productId}`,
     });
   }
 
