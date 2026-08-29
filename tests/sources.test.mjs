@@ -45,6 +45,7 @@ const migrations = [
   "drizzle/0001_crazy_nekra.sql",
   "drizzle/0002_reflective_martin_li.sql",
   "drizzle/0003_minor_network.sql",
+  "drizzle/0004_s2_foreign_presence.sql",
 ];
 
 function openDatabase(name) {
@@ -67,7 +68,12 @@ test("S2 smoke reports the real response shape without exposing its key or reque
         Spop250mFornTempDong: {
           list_total_count: 1,
           RESULT: { CODE: "INFO-000", MESSAGE: "정상 처리되었습니다" },
-          row: [{ YMD: "20260828", TT: "14", H_DNG_CD: "11140550", H_DNG_NM: "명동", FORN_LVPOP_CO: "15200" }],
+          row: [{
+            YMD: "20260828", TT: "14", H_DNG_CD: "11140550", SPOP: "15200",
+            CAN: null, CHN: "6000", ETC: "3000", FRA: "0", IDN: "0", IND: "0",
+            JPN: "2000", KAZ: "0", KHM: "0", LKA: "0", MNG: "0", NPL: "0",
+            PAK: "0", PHL: "0", RUS: "0", THA: "0", USA: "1000", UZB: "0", VNM: "0",
+          }],
         },
       });
     },
@@ -81,7 +87,10 @@ test("S2 smoke reports the real response shape without exposing its key or reque
     format: "json",
     officialResultCode: "INFO-000",
     recordCount: 1,
-    firstRecordFieldNames: ["FORN_LVPOP_CO", "H_DNG_CD", "H_DNG_NM", "TT", "YMD"],
+    firstRecordFieldNames: [
+      "CAN", "CHN", "ETC", "FRA", "H_DNG_CD", "IDN", "IND", "JPN", "KAZ", "KHM",
+      "LKA", "MNG", "NPL", "PAK", "PHL", "RUS", "SPOP", "THA", "TT", "USA", "UZB", "VNM", "YMD",
+    ],
   });
   assert.equal(JSON.stringify(result).includes(key), false);
   assert.equal(JSON.stringify(result).includes("openapi.seoul.go.kr"), false);

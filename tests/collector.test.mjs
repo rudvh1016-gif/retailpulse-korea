@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
-import { collectAirportFlights, pruneOperationalHistory } from "../lib/collector.ts";
+import { collectAirportFlights, collectSeoulForeignPresence, pruneOperationalHistory } from "../lib/collector.ts";
 
 class LocalD1Statement {
   values = [];
@@ -39,10 +39,62 @@ class LocalD1Database {
 }
 
 function applyMigrations(database) {
-  for (const file of ["drizzle/0000_daffy_tempest.sql", "drizzle/0001_crazy_nekra.sql", "drizzle/0002_reflective_martin_li.sql", "drizzle/0003_minor_network.sql"]) {
+  for (const file of ["drizzle/0000_daffy_tempest.sql", "drizzle/0001_crazy_nekra.sql", "drizzle/0002_reflective_martin_li.sql", "drizzle/0003_minor_network.sql", "drizzle/0004_s2_foreign_presence.sql"]) {
     database.exec(readFileSync(file, "utf8").replaceAll("--> statement-breakpoint", ""));
   }
 }
+
+const s2Row = (dongCode, value) => ({
+  YMD: "20260828", TT: "14", H_DNG_CD: dongCode, SPOP: String(value),
+  CAN: null, CHN: "1", ETC: "1", FRA: "0", IDN: "0", IND: "0", JPN: "0",
+  KAZ: "0", KHM: "0", LKA: "0", MNG: "0", NPL: "0", PAK: "0", PHL: "0",
+  RUS: "0", THA: "0", USA: "0", UZB: "0", VNM: "0",
+});
+
+test("S2 collector persists one raw and area row per mapping idempotently", async (context) => {
+  const databasePath = join(tmpdir(), `rpk-s2-${process.pid}.db`);
+  const database = new DatabaseSync(databasePath);
+  const originalFetch = globalThis.fetch;
+  context.after(() => {
+    globalThis.fetch = originalFetch;
+    database.close();
+    unlinkSync(databasePath);
+  });
+  applyMigrations(database);
+
+  const byDong = {
+    11140550: s2Row("11140550", 100),
+    11440660: s2Row("11440660", 200),
+    11200690: s2Row("11200690", 300),
+  };
+  const requests = [];
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    requests.push(url.replace("fixture", "[REDACTED]"));
+    const code = Object.keys(byDong).find((dong) => url.endsWith(`/${dong}`));
+    const row = code ? byDong[code] : byDong[11140550];
+    return Response.json({
+      Spop250mFornTempDong: {
+        list_total_count: 1,
+        RESULT: { CODE: "INFO-000", MESSAGE: "정상 처리되었습니다" },
+        row: [row],
+      },
+    });
+  };
+
+  const env = { DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: "fixture" };
+  const first = await collectSeoulForeignPresence(env);
+  const second = await collectSeoulForeignPresence(env);
+
+  assert.deepEqual(first, { status: "SUCCESS", records: 6 });
+  assert.deepEqual(second, { status: "SUCCESS", records: 0 });
+  assert.equal(requests.length, 8);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_dong").get().count, 3);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_area").get().count, 3);
+  assert.equal(database.prepare("SELECT value FROM seoul_foreign_presence_area WHERE area = 'seongsu'").get().value, 300);
+  assert.equal(database.prepare("SELECT status FROM source_health WHERE source_id = ?").get("SEOUL_SHORT_STAY_FOREIGN_LIVING_POPULATION").status, "OFFICIAL_HISTORICAL");
+  assert.equal(JSON.stringify(requests).includes("fixture"), false);
+});
 
 test("airport collector stores idempotent canonical rows and source health", async (context) => {
   const databasePath = join(tmpdir(), `rpk-collector-${process.pid}.db`);

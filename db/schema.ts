@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const sourceHealth = sqliteTable("source_health", {
   sourceId: text("source_id").primaryKey(),
@@ -191,6 +191,49 @@ export const foreignPresence = sqliteTable("foreign_presence", {
   qualityStatus: text("quality_status").notNull(),
   sourceHash: text("source_hash").notNull(),
 }, (table) => [uniqueIndex("foreign_presence_area_event_unique").on(table.sourceId, table.area, table.eventAt)]);
+
+// S2 — OA-23018 raw administrative-dong rows. Nationality values remain a
+// dimension payload; `value` is the provider's SPOP total.
+export const seoulForeignPresenceDong = sqliteTable("seoul_foreign_presence_dong", {
+  id: text("id").primaryKey(),
+  sourceId: text("source_id").notNull(),
+  productVersion: text("product_version").notNull(),
+  recordOrigin: text("record_origin").notNull(),
+  administrativeDongCode: text("administrative_dong_code").notNull(),
+  referenceAt: text("reference_at").notNull(),
+  availableAt: text("available_at"),
+  retrievedAt: text("retrieved_at").notNull(),
+  value: real("value").notNull(),
+  unit: text("unit").notNull(),
+  nationalityJson: text("nationality_json").notNull(),
+  schemaVersion: text("schema_version").notNull(),
+  qualityStatus: text("quality_status").notNull(),
+  sourceHash: text("source_hash").notNull(),
+}, (table) => [uniqueIndex("seoul_foreign_presence_dong_unique").on(
+  table.sourceId, table.productVersion, table.administrativeDongCode, table.referenceAt,
+)]);
+
+// S2 product-area aggregates are kept separate from raw dong provenance and
+// from the legacy `foreign_presence` series.
+export const seoulForeignPresenceArea = sqliteTable("seoul_foreign_presence_area", {
+  id: text("id").primaryKey(),
+  sourceId: text("source_id").notNull(),
+  productVersion: text("product_version").notNull(),
+  recordOrigin: text("record_origin").notNull(),
+  area: text("area").notNull(),
+  referenceAt: text("reference_at").notNull(),
+  availableAt: text("available_at"),
+  retrievedAt: text("retrieved_at").notNull(),
+  value: real("value").notNull(),
+  unit: text("unit").notNull(),
+  administrativeDongCodesJson: text("administrative_dong_codes_json").notNull(),
+  mappingVersion: text("mapping_version").notNull(),
+  schemaVersion: text("schema_version").notNull(),
+  qualityStatus: text("quality_status").notNull(),
+  sourceHash: text("source_hash").notNull(),
+}, (table) => [uniqueIndex("seoul_foreign_presence_area_unique").on(
+  table.sourceId, table.productVersion, table.area, table.referenceAt,
+)]);
 
 export const weatherForecast = sqliteTable("weather_forecast", {
   id: text("id").primaryKey(),

@@ -17,6 +17,13 @@ import {
 } from "./source-adapters";
 import { allAreaIds, areaMappings, distanceMeters, uniqueKmaGrids } from "./areas";
 import { sha256 } from "./hash";
+import {
+  aggregateSeoulForeignByArea,
+  normalizeSeoulForeignRows,
+  SEOUL_FOREIGN_SOURCE_ID,
+  type CanonicalSeoulForeignArea,
+  type CanonicalSeoulForeignDong,
+} from "./seoul-foreign";
 
 export interface CollectorEnv {
   DB?: D1Database;
@@ -312,6 +319,111 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
   await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, okCount, written);
   await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastObserved);
   return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written };
+}
+
+async function persistSeoulForeignPresence(
+  db: D1Database | undefined,
+  dongRows: readonly CanonicalSeoulForeignDong[],
+  areaRows: readonly CanonicalSeoulForeignArea[],
+): Promise<number> {
+  if (!db) return 0;
+  const statements: D1PreparedStatement[] = [];
+  for (const record of dongRows) {
+    statements.push(db.prepare(`INSERT INTO seoul_foreign_presence_dong (
+        id, source_id, product_version, record_origin, administrative_dong_code,
+        reference_at, available_at, retrieved_at, value, unit, nationality_json,
+        schema_version, quality_status, source_hash
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(source_id, product_version, administrative_dong_code, reference_at) DO UPDATE SET
+        retrieved_at = excluded.retrieved_at,
+        value = excluded.value,
+        nationality_json = excluded.nationality_json,
+        schema_version = excluded.schema_version,
+        quality_status = excluded.quality_status,
+        source_hash = excluded.source_hash
+      WHERE seoul_foreign_presence_dong.source_hash <> excluded.source_hash`)
+      .bind(
+        await sha256({ sourceId: record.sourceId, productVersion: record.productVersion, dong: record.administrativeDongCode, referenceAt: record.referenceAt }),
+        record.sourceId, record.productVersion, "OFFICIAL_HISTORICAL", record.administrativeDongCode,
+        record.referenceAt, null, record.retrievedAt, record.value, record.unit,
+        JSON.stringify(record.nationalityValues), record.schemaVersion, "VALID", record.sourceHash,
+      ));
+  }
+  for (const record of areaRows) {
+    statements.push(db.prepare(`INSERT INTO seoul_foreign_presence_area (
+        id, source_id, product_version, record_origin, area, reference_at,
+        available_at, retrieved_at, value, unit, administrative_dong_codes_json,
+        mapping_version, schema_version, quality_status, source_hash
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(source_id, product_version, area, reference_at) DO UPDATE SET
+        retrieved_at = excluded.retrieved_at,
+        value = excluded.value,
+        administrative_dong_codes_json = excluded.administrative_dong_codes_json,
+        mapping_version = excluded.mapping_version,
+        schema_version = excluded.schema_version,
+        quality_status = excluded.quality_status,
+        source_hash = excluded.source_hash
+      WHERE seoul_foreign_presence_area.source_hash <> excluded.source_hash`)
+      .bind(
+        await sha256({ sourceId: record.sourceId, productVersion: record.productVersion, area: record.area, referenceAt: record.referenceAt }),
+        record.sourceId, record.productVersion, "OFFICIAL_HISTORICAL", record.area, record.referenceAt,
+        null, record.retrievedAt, record.value, record.unit, JSON.stringify(record.administrativeDongCodes),
+        record.mappingVersion, record.schemaVersion, "VALID", record.sourceHash,
+      ));
+  }
+  return statements.length ? runBatches(db, statements) : 0;
+}
+
+// S2 — find the newest published period with one row, then request exactly
+// the configured representative dongs for that period. This keeps a manual
+// import bounded to 1 + N dong calls and never sweeps the full Seoul dataset.
+export async function collectSeoulForeignPresence(env: CollectorEnv): Promise<CollectorResult> {
+  const sourceId = SEOUL_FOREIGN_SOURCE_ID;
+  if (!env.SEOUL_OPEN_DATA_KEY) {
+    await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "SEOUL_OPEN_DATA_KEY is not configured");
+    await writeSourceHealth(env.DB, sourceId, "MISSING", "SEOUL_OPEN_DATA_KEY is not configured");
+    return { status: "NEEDS_KEY", records: 0 };
+  }
+  try {
+    const base = `http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/Spop250mFornTempDong`;
+    const latestPayload = await fetchOfficialJson(new URL(`${base}/1/1/`), { timeoutMs: 8_000, retries: 1 });
+    const latest = seoulEnvelopeRows(latestPayload, "Spop250mFornTempDong")[0];
+    if (!latest) throw new Error("seoul_foreign_empty");
+    const ymd = String(latest.YMD ?? "");
+    const tt = String(latest.TT ?? "");
+    if (!/^\d{8}$/.test(ymd) || !/^\d{1,4}$/.test(tt)) throw new Error("seoul_foreign_invalid_period");
+
+    const configuredCodes = [...new Set(allAreaIds.flatMap((area) => areaMappings[area].seoulAdministrativeDongCodes))];
+    const rawRows: Record<string, unknown>[] = [];
+    for (const code of configuredCodes) {
+      const payload = await fetchOfficialJson(new URL(`${base}/1/1000/${ymd}/${tt}/${code}`), { timeoutMs: 8_000, retries: 1 });
+      const rows = seoulEnvelopeRows(payload, "Spop250mFornTempDong")
+        .filter((row) => String(row.YMD) === ymd && String(row.TT) === tt && String(row.H_DNG_CD) === code);
+      if (!rows.length) throw new Error(`seoul_foreign_missing_dong_${code}`);
+      rawRows.push(...rows);
+    }
+
+    const retrievedAt = nowIso();
+    const dongRows = await normalizeSeoulForeignRows(rawRows, retrievedAt);
+    const mapping = Object.fromEntries(allAreaIds.map((area) => [area, areaMappings[area].seoulAdministrativeDongCodes])) as Record<(typeof allAreaIds)[number], readonly string[]>;
+    const areaRows = await aggregateSeoulForeignByArea(dongRows, mapping);
+    const written = await persistSeoulForeignPresence(env.DB, dongRows, areaRows);
+    const lastRecord = areaRows.at(-1);
+    const detail = `period ${ymd}/${tt}; dongs ${dongRows.length}/${configuredCodes.length}; areas ${areaRows.length}/${allAreaIds.length}; changed writes ${written}`;
+    await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, rawRows.length, written);
+    await writeSourceHealth(env.DB, sourceId, "OFFICIAL_HISTORICAL", detail, lastRecord ? {
+      eventAt: lastRecord.referenceAt,
+      publishedAt: null,
+      retrievedAt: lastRecord.retrievedAt,
+      schemaVersion: lastRecord.schemaVersion,
+    } : undefined);
+    return { status: "SUCCESS", records: written };
+  } catch (error) {
+    const detail = error instanceof Error ? redactSeoulUrl(error.message) : "collector_error";
+    await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
+    await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
+    return { status: "ERROR", records: 0 };
+  }
 }
 
 function recentQuarterCandidates(now: Date): string[] {
