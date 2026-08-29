@@ -66,7 +66,7 @@ export const areaMappings: Record<AreaId, AreaMapping> = {
     center: { lat: 37.5447, lng: 127.0557 },
     eventRadiusM: 1500,
     salesTradeArea: { code: "3110131", name: "성수동카페거리", seCd: "A" },
-    seoulAdministrativeDongCodes: ["11200690"],
+    seoulAdministrativeDongCodes: ["11200670"],
   },
 };
 

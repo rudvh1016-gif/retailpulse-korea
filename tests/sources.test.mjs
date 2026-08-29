@@ -5,6 +5,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 import { runSeoulS2Smoke } from "../scripts/smoke-public-apis-lib.mjs";
+import { areaMappings } from "../lib/areas.ts";
 import {
   aggregateSeoulForeignByArea,
   normalizeSeoulForeignRows,
@@ -121,6 +122,12 @@ const seoulForeignRow = (overrides = {}) => ({
   UZB: "0",
   VNM: "0",
   ...overrides,
+});
+
+test("S2 representative areas use the official administrative-dong codes", () => {
+  assert.deepEqual(areaMappings.myeongdong.seoulAdministrativeDongCodes, ["11140550"]);
+  assert.deepEqual(areaMappings.hongdae.seoulAdministrativeDongCodes, ["11440660"]);
+  assert.deepEqual(areaMappings.seongsu.seoulAdministrativeDongCodes, ["11200670"]);
 });
 
 test("S2 normalizer uses SPOP as the total and preserves nationality dimensions without double counting", async () => {

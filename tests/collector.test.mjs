@@ -65,7 +65,7 @@ test("S2 collector persists one raw and area row per mapping idempotently", asyn
   const byDong = {
     11140550: s2Row("11140550", 100),
     11440660: s2Row("11440660", 200),
-    11200690: s2Row("11200690", 300),
+    11200670: s2Row("11200670", 300),
   };
   const requests = [];
   globalThis.fetch = async (input) => {

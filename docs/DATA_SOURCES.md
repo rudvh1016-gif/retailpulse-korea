@@ -84,13 +84,13 @@ Established by probe, useful for any future dataset:
 
 One bounded GitHub Actions smoke run returned JSON, `INFO-000`, five rows. The exact row fields are `YMD`, `TT`, `H_DNG_CD`, `SPOP`, `CAN`, `CHN`, `ETC`, `FRA`, `IDN`, `IND`, `JPN`, `KAZ`, `KHM`, `LKA`, `MNG`, `NPL`, `PAK`, `PHL`, `RUS`, `THA`, `USA`, `UZB`, and `VNM`. The response does not contain a dong name, gender, or age. Record identity is `YMD + TT + H_DNG_CD`; `SPOP` is the official total, while nationality fields are retained as nullable dimensions and are never summed back into that total.
 
-The mapping source is the official data.go.kr file dataset [15136368 법정동 연계정보](https://www.data.go.kr/data/15136368/fileData.do), dated 2025-06-02. Its 10-digit `행정동코드` is converted to the eight-digit S2 `H_DNG_CD` by removing the final two zeros. Mapping version: `official-admin-dong-2025-06-02-v1`.
+The code source is the official data.go.kr file dataset [15136368 법정동 연계정보](https://www.data.go.kr/data/15136368/fileData.do), dated 2025-06-02. Its 10-digit `행정동코드` is converted to the eight-digit S2 `H_DNG_CD` by removing the final two zeros. The product-area choice is cross-checked against the Seoul commercial-area documents: the official [trade-area list](https://golmok.seoul.go.kr/images/seoul_v4.pdf) assigns `3110131 성수동카페거리` to 성수2가1동, and the official [administrative-dong code list](https://golmok.seoul.go.kr/images/adstrd_code.pdf) identifies that dong as `11200670`. Mapping version: `official-admin-dong-2025-06-02-v1`.
 
 | KORETAIL area | Official administrative dong | S2 `H_DNG_CD` | Scope note |
 |---|---|---:|---|
 | myeongdong | 명동 | `11140550` | Canonical 명동 area |
 | hongdae | 서교동 | `11440660` | Canonical 홍대 center |
-| seongsu | 성수2가3동 | `11200690` | Representative dong containing the configured 성수카페거리 center; no claim that this covers all of 성수 |
+| seongsu | 성수2가1동 | `11200670` | Official dong assigned to the configured `3110131 성수동카페거리` trade area; no claim that this covers all of 성수 |
 
 These are representative product-area mappings, not interchangeable polygons. The product does not broaden or merge them without new authoritative spatial evidence.
 
