@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
+import { runSeoulS2Smoke } from "../scripts/smoke-public-apis-lib.mjs";
 import {
   normalizeAirportCongestion,
   normalizeEstimatedSales,
@@ -50,6 +51,37 @@ function openDatabase(name) {
   }
   return { database, databasePath };
 }
+
+test("S2 smoke reports the real response shape without exposing its key or request URL", async () => {
+  const calls = [];
+  const key = "fixture-key";
+  const result = await runSeoulS2Smoke({
+    key,
+    fetcher: async (url) => {
+      calls.push(String(url));
+      return Response.json({
+        Spop250mFornTempDong: {
+          list_total_count: 1,
+          RESULT: { CODE: "INFO-000", MESSAGE: "정상 처리되었습니다" },
+          row: [{ YMD: "20260828", TT: "14", H_DNG_CD: "11140550", H_DNG_NM: "명동", FORN_LVPOP_CO: "15200" }],
+        },
+      });
+    },
+  });
+
+  assert.equal(calls.length, 1);
+  assert.match(calls[0], /\/json\/Spop250mFornTempDong\/1\/5\/$/);
+  assert.deepEqual(result, {
+    sourceId: "S2_SEOUL_FOREIGN_LIVING_POPULATION",
+    authStatus: "PASS",
+    format: "json",
+    officialResultCode: "INFO-000",
+    recordCount: 1,
+    firstRecordFieldNames: ["FORN_LVPOP_CO", "H_DNG_CD", "H_DNG_NM", "TT", "YMD"],
+  });
+  assert.equal(JSON.stringify(result).includes(key), false);
+  assert.equal(JSON.stringify(result).includes("openapi.seoul.go.kr"), false);
+});
 
 // Sanitized fixture using the exact field names returned by the authenticated
 // 2026-08-27 smoke run against citydata_ppltn (INFO-000, POI003).

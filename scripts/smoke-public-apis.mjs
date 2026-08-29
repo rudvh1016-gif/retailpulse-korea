@@ -1,3 +1,5 @@
+import { runSeoulS2Smoke } from "./smoke-public-apis-lib.mjs";
+
 /**
  * Read-only smoke verification for KORETAIL official data sources.
  *
@@ -259,6 +261,7 @@ async function runSeoul() {
       results.push({ sourceId: source.id, authStatus: "ERROR", reason: redact(error instanceof Error ? error.message : "fetch_failed") });
     }
   }
+  results.push(await runSeoulS2Smoke({ key: SEOUL_KEY }));
   return { diag };
 }
 
