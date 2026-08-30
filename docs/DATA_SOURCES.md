@@ -86,6 +86,8 @@ One bounded GitHub Actions smoke run returned JSON, `INFO-000`, five rows. The e
 
 The code source is the official data.go.kr file dataset [15136368 법정동 연계정보](https://www.data.go.kr/data/15136368/fileData.do), dated 2025-06-02. Its 10-digit `행정동코드` is converted to the eight-digit S2 `H_DNG_CD` by removing the final two zeros. The product-area choice is cross-checked against the Seoul commercial-area documents: the official [trade-area list](https://golmok.seoul.go.kr/images/seoul_v4.pdf) assigns `3110131 성수동카페거리` to 성수2가1동, and the official [administrative-dong code list](https://golmok.seoul.go.kr/images/adstrd_code.pdf) identifies that dong as `11200670`. Mapping version: `official-admin-dong-2025-06-02-v1`.
 
+The one-shot collector does not assume that an unfiltered API row is newest. OA-23018 documents a daily refresh but not a guaranteed row order or exact availability lag, so the collector checks `23:00` for the previous seven completed KST days, newest first, and accepts only a period containing exactly one row for every configured dong.
+
 | KORETAIL area | Official administrative dong | S2 `H_DNG_CD` | Scope note |
 |---|---|---:|---|
 | myeongdong | 명동 | `11140550` | Canonical 명동 area |

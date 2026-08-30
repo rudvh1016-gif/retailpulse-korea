@@ -232,7 +232,7 @@ export const seoulForeignPresenceArea = sqliteTable("seoul_foreign_presence_area
   qualityStatus: text("quality_status").notNull(),
   sourceHash: text("source_hash").notNull(),
 }, (table) => [uniqueIndex("seoul_foreign_presence_area_unique").on(
-  table.sourceId, table.productVersion, table.area, table.referenceAt,
+  table.sourceId, table.productVersion, table.mappingVersion, table.area, table.referenceAt,
 )]);
 
 export const weatherForecast = sqliteTable("weather_forecast", {

@@ -4,7 +4,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
-import { collectAirportFlights, collectSeoulForeignPresence, pruneOperationalHistory } from "../lib/collector.ts";
+import { sha256 } from "../lib/hash.ts";
+import {
+  collectAirportFlights,
+  collectSeoulForeignPresence,
+  pruneOperationalHistory,
+  seoulForeignPeriodCandidates,
+} from "../lib/collector.ts";
+import {
+  SEOUL_FOREIGN_MAPPING_VERSION,
+  SEOUL_FOREIGN_PRODUCT_VERSION,
+  SEOUL_FOREIGN_SOURCE_ID,
+} from "../lib/seoul-foreign.ts";
 
 class LocalD1Statement {
   values = [];
@@ -44,11 +55,24 @@ function applyMigrations(database) {
   }
 }
 
-const s2Row = (dongCode, value) => ({
+const s2Row = (dongCode, value, overrides = {}) => ({
   YMD: "20260828", TT: "14", H_DNG_CD: dongCode, SPOP: String(value),
   CAN: null, CHN: "1", ETC: "1", FRA: "0", IDN: "0", IND: "0", JPN: "0",
   KAZ: "0", KHM: "0", LKA: "0", MNG: "0", NPL: "0", PAK: "0", PHL: "0",
   RUS: "0", THA: "0", USA: "0", UZB: "0", VNM: "0",
+  ...overrides,
+});
+
+test("S2 period candidates start at the most recent completed KST day and stay bounded", () => {
+  assert.deepEqual(seoulForeignPeriodCandidates(new Date("2026-08-30T03:00:00Z")), [
+    { ymd: "20260829", tt: "23" },
+    { ymd: "20260828", tt: "23" },
+    { ymd: "20260827", tt: "23" },
+    { ymd: "20260826", tt: "23" },
+    { ymd: "20260825", tt: "23" },
+    { ymd: "20260824", tt: "23" },
+    { ymd: "20260823", tt: "23" },
+  ]);
 });
 
 test("S2 collector persists one raw and area row per mapping idempotently", async (context) => {
@@ -62,38 +86,170 @@ test("S2 collector persists one raw and area row per mapping idempotently", asyn
   });
   applyMigrations(database);
 
+  const testNow = new Date("2026-08-30T03:00:00Z");
+  const [{ ymd, tt }] = seoulForeignPeriodCandidates(testNow);
   const byDong = {
-    11140550: s2Row("11140550", 100),
-    11440660: s2Row("11440660", 200),
-    11200670: s2Row("11200670", 300),
+    11140550: s2Row("11140550", 100, { YMD: ymd, TT: tt }),
+    11440660: s2Row("11440660", 200, { YMD: ymd, TT: tt }),
+    11200670: s2Row("11200670", 300, { YMD: ymd, TT: tt }),
   };
   const requests = [];
   globalThis.fetch = async (input) => {
     const url = String(input);
     requests.push(url.replace("fixture", "[REDACTED]"));
+    if (url.endsWith("/1/1/")) {
+      return Response.json({
+        Spop250mFornTempDong: {
+          list_total_count: 1,
+          RESULT: { CODE: "INFO-000", MESSAGE: "stale unordered fixture" },
+          row: [s2Row("11140550", 999, { YMD: "20200101", TT: "00" })],
+        },
+      });
+    }
     const code = Object.keys(byDong).find((dong) => url.endsWith(`/${dong}`));
-    const row = code ? byDong[code] : byDong[11140550];
+    const row = code ? byDong[code] : null;
     return Response.json({
       Spop250mFornTempDong: {
-        list_total_count: 1,
-        RESULT: { CODE: "INFO-000", MESSAGE: "정상 처리되었습니다" },
-        row: [row],
+        list_total_count: row ? 1 : 0,
+        RESULT: { CODE: row ? "INFO-000" : "INFO-200", MESSAGE: row ? "정상 처리되었습니다" : "해당하는 데이터가 없습니다" },
+        row: row ? [row] : [],
       },
     });
   };
 
   const env = { DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: "fixture" };
-  const first = await collectSeoulForeignPresence(env);
-  const second = await collectSeoulForeignPresence(env);
+  const referenceAt = `${ymd.slice(0, 4)}-${ymd.slice(4, 6)}-${ymd.slice(6, 8)}T${tt}:00:00+09:00`;
+  const legacyMappingVersion = "legacy-mapping-v0";
+  database.prepare(`INSERT INTO seoul_foreign_presence_area (
+    id, source_id, product_version, record_origin, area, reference_at,
+    available_at, retrieved_at, value, unit, administrative_dong_codes_json,
+    mapping_version, schema_version, quality_status, source_hash
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    await sha256({ sourceId: SEOUL_FOREIGN_SOURCE_ID, productVersion: SEOUL_FOREIGN_PRODUCT_VERSION, area: "seongsu", referenceAt }),
+    SEOUL_FOREIGN_SOURCE_ID, SEOUL_FOREIGN_PRODUCT_VERSION, "OFFICIAL_HISTORICAL", "seongsu", referenceAt,
+    null, "2026-08-29T00:00:00Z", 999, "people", '["legacy"]', legacyMappingVersion,
+    "legacy-schema", "VALID", "legacy-hash",
+  );
+  const first = await collectSeoulForeignPresence(env, testNow);
+  const second = await collectSeoulForeignPresence(env, testNow);
 
   assert.deepEqual(first, { status: "SUCCESS", records: 6 });
   assert.deepEqual(second, { status: "SUCCESS", records: 0 });
-  assert.equal(requests.length, 8);
+  assert.equal(requests.length, 6);
+  assert.equal(requests.some((url) => url.endsWith("/1/1/")), false);
+  assert.equal(requests.every((url) => url.includes(`/${ymd}/${tt}/`)), true);
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_dong").get().count, 3);
-  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_area").get().count, 3);
-  assert.equal(database.prepare("SELECT value FROM seoul_foreign_presence_area WHERE area = 'seongsu'").get().value, 300);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_area").get().count, 4);
+  assert.equal(database.prepare("SELECT value FROM seoul_foreign_presence_area WHERE area = 'seongsu' AND mapping_version = ?").get(SEOUL_FOREIGN_MAPPING_VERSION).value, 300);
+  assert.equal(database.prepare("SELECT value FROM seoul_foreign_presence_area WHERE area = 'seongsu' AND mapping_version = ?").get(legacyMappingVersion).value, 999);
   assert.equal(database.prepare("SELECT status FROM source_health WHERE source_id = ?").get("SEOUL_SHORT_STAY_FOREIGN_LIVING_POPULATION").status, "OFFICIAL_HISTORICAL");
   assert.equal(JSON.stringify(requests).includes("fixture"), false);
+});
+
+test("S2 collector skips an incomplete newest period and imports the next complete period", async (context) => {
+  const databasePath = join(tmpdir(), `rpk-s2-fallback-${process.pid}.db`);
+  const database = new DatabaseSync(databasePath);
+  const originalFetch = globalThis.fetch;
+  context.after(() => {
+    globalThis.fetch = originalFetch;
+    database.close();
+    unlinkSync(databasePath);
+  });
+  applyMigrations(database);
+
+  const testNow = new Date("2026-08-30T03:00:00Z");
+  const [newest, previous] = seoulForeignPeriodCandidates(testNow);
+  const requests = [];
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    requests.push(url.replace("fixture", "[REDACTED]"));
+    const code = ["11140550", "11440660", "11200670"].find((dong) => url.endsWith(`/${dong}`));
+    const isNewest = url.includes(`/${newest.ymd}/${newest.tt}/`);
+    const complete = !isNewest || code !== "11440660";
+    return Response.json({
+      Spop250mFornTempDong: {
+        list_total_count: complete ? 1 : 0,
+        RESULT: { CODE: complete ? "INFO-000" : "INFO-200", MESSAGE: complete ? "정상 처리되었습니다" : "해당하는 데이터가 없습니다" },
+        row: complete && code ? [s2Row(code, code === "11140550" ? 100 : code === "11440660" ? 200 : 300, {
+          YMD: isNewest ? newest.ymd : previous.ymd,
+          TT: isNewest ? newest.tt : previous.tt,
+        })] : [],
+      },
+    });
+  };
+
+  const result = await collectSeoulForeignPresence({ DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: "fixture" }, testNow);
+
+  assert.deepEqual(result, { status: "SUCCESS", records: 6 });
+  assert.equal(requests.length, 5);
+  assert.equal(database.prepare("SELECT MIN(reference_at) AS referenceAt FROM seoul_foreign_presence_area").get().referenceAt.startsWith(`${previous.ymd.slice(0, 4)}-${previous.ymd.slice(4, 6)}-${previous.ymd.slice(6, 8)}`), true);
+});
+
+test("S2 collector rejects duplicate provider rows instead of double counting", async (context) => {
+  const databasePath = join(tmpdir(), `rpk-s2-duplicate-${process.pid}.db`);
+  const database = new DatabaseSync(databasePath);
+  const originalFetch = globalThis.fetch;
+  context.after(() => {
+    globalThis.fetch = originalFetch;
+    database.close();
+    unlinkSync(databasePath);
+  });
+  applyMigrations(database);
+
+  const testNow = new Date("2026-08-30T03:00:00Z");
+  const [period] = seoulForeignPeriodCandidates(testNow);
+  let requests = 0;
+  globalThis.fetch = async () => {
+    requests += 1;
+    const row = s2Row("11140550", 100, { YMD: period.ymd, TT: period.tt });
+    return Response.json({
+      Spop250mFornTempDong: {
+        list_total_count: 2,
+        RESULT: { CODE: "INFO-000", MESSAGE: "정상 처리되었습니다" },
+        row: [row, row],
+      },
+    });
+  };
+
+  const result = await collectSeoulForeignPresence({ DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: "fixture" }, testNow);
+
+  assert.deepEqual(result, { status: "ERROR", records: 0 });
+  assert.equal(requests, 1);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_area").get().count, 0);
+});
+
+test("S2 collector stops after seven no-data candidates without writing", async (context) => {
+  const databasePath = join(tmpdir(), `rpk-s2-empty-${process.pid}.db`);
+  const database = new DatabaseSync(databasePath);
+  const originalFetch = globalThis.fetch;
+  context.after(() => {
+    globalThis.fetch = originalFetch;
+    database.close();
+    unlinkSync(databasePath);
+  });
+  applyMigrations(database);
+
+  let requests = 0;
+  globalThis.fetch = async () => {
+    requests += 1;
+    return Response.json({
+      Spop250mFornTempDong: {
+        list_total_count: 0,
+        RESULT: { CODE: "INFO-200", MESSAGE: "해당하는 데이터가 없습니다" },
+        row: [],
+      },
+    });
+  };
+
+  const result = await collectSeoulForeignPresence(
+    { DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: "fixture" },
+    new Date("2026-08-30T03:00:00Z"),
+  );
+
+  assert.deepEqual(result, { status: "ERROR", records: 0 });
+  assert.equal(requests, 7);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_dong").get().count, 0);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_area").get().count, 0);
 });
 
 test("airport collector stores idempotent canonical rows and source health", async (context) => {

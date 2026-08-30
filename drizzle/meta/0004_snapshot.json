@@ -1401,6 +1401,7 @@
           "columns": [
             "source_id",
             "product_version",
+            "mapping_version",
             "area",
             "reference_at"
           ],

@@ -276,7 +276,12 @@ test("labels the S2 signal as delayed official data in all four languages", asyn
   assert.match(route, /foreignPresenceRows = await safeAll[\s\S]*FROM seoul_foreign_presence_area/);
   assert.match(route, /record_origin AS freshness/);
   assert.match(route, /quality_status AS qualityStatus/);
-  assert.ok((route.match(/source_id = 'SEOUL_SHORT_STAY_FOREIGN_LIVING_POPULATION'/g) ?? []).length >= 2);
+  assert.ok((route.match(/source_id = \?/g) ?? []).length >= 2);
+  assert.ok((route.match(/product_version = \?/g) ?? []).length >= 2);
+  assert.ok((route.match(/mapping_version = \?/g) ?? []).length >= 2);
+  assert.match(route, /SEOUL_FOREIGN_PRODUCT_VERSION/);
+  assert.match(route, /SEOUL_FOREIGN_MAPPING_VERSION/);
+  assert.match(route, /\.bind\([\s\S]*SEOUL_FOREIGN_SOURCE_ID[\s\S]*SEOUL_FOREIGN_MAPPING_VERSION[\s\S]*SEOUL_FOREIGN_SOURCE_ID[\s\S]*SEOUL_FOREIGN_MAPPING_VERSION[\s\S]*\)\.all<Row>/);
   assert.match(route, /record_origin = 'OFFICIAL_HISTORICAL'/);
   assert.match(route, /quality_status = 'VALID'/);
   assert.doesNotMatch(route, /freshness: "OFFICIAL_HISTORICAL"/);

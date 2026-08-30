@@ -16,7 +16,7 @@ CREATE TABLE `seoul_foreign_presence_area` (
 	`source_hash` text NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `seoul_foreign_presence_area_unique` ON `seoul_foreign_presence_area` (`source_id`,`product_version`,`area`,`reference_at`);--> statement-breakpoint
+CREATE UNIQUE INDEX `seoul_foreign_presence_area_unique` ON `seoul_foreign_presence_area` (`source_id`,`product_version`,`mapping_version`,`area`,`reference_at`);--> statement-breakpoint
 CREATE TABLE `seoul_foreign_presence_dong` (
 	`id` text PRIMARY KEY NOT NULL,
 	`source_id` text NOT NULL,

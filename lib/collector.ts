@@ -321,6 +321,26 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
   return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written };
 }
 
+const SEOUL_FOREIGN_PERIOD_LOOKBACK_DAYS = 7;
+
+export interface SeoulForeignPeriod {
+  ymd: string;
+  tt: "23";
+}
+
+// OA-23018 is published daily but does not guarantee response ordering or an
+// exact availability lag. Probe only the last completed hour of the previous
+// seven KST days, newest first, so selection is both bounded and evidenced.
+export function seoulForeignPeriodCandidates(now: Date = new Date()): SeoulForeignPeriod[] {
+  if (!Number.isFinite(now.getTime())) throw new Error("invalid_seoul_foreign_candidate_time");
+  const kst = new Date(now.getTime() + 9 * 3_600_000);
+  const kstDay = Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate());
+  return Array.from({ length: SEOUL_FOREIGN_PERIOD_LOOKBACK_DAYS }, (_, index) => {
+    const candidate = new Date(kstDay - (index + 1) * 86_400_000);
+    return { ymd: candidate.toISOString().slice(0, 10).replaceAll("-", ""), tt: "23" as const };
+  });
+}
+
 async function persistSeoulForeignPresence(
   db: D1Database | undefined,
   dongRows: readonly CanonicalSeoulForeignDong[],
@@ -355,17 +375,16 @@ async function persistSeoulForeignPresence(
         available_at, retrieved_at, value, unit, administrative_dong_codes_json,
         mapping_version, schema_version, quality_status, source_hash
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(source_id, product_version, area, reference_at) DO UPDATE SET
+      ON CONFLICT(source_id, product_version, mapping_version, area, reference_at) DO UPDATE SET
         retrieved_at = excluded.retrieved_at,
         value = excluded.value,
         administrative_dong_codes_json = excluded.administrative_dong_codes_json,
-        mapping_version = excluded.mapping_version,
         schema_version = excluded.schema_version,
         quality_status = excluded.quality_status,
         source_hash = excluded.source_hash
       WHERE seoul_foreign_presence_area.source_hash <> excluded.source_hash`)
       .bind(
-        await sha256({ sourceId: record.sourceId, productVersion: record.productVersion, area: record.area, referenceAt: record.referenceAt }),
+        await sha256({ sourceId: record.sourceId, productVersion: record.productVersion, mappingVersion: record.mappingVersion, area: record.area, referenceAt: record.referenceAt }),
         record.sourceId, record.productVersion, "OFFICIAL_HISTORICAL", record.area, record.referenceAt,
         null, record.retrievedAt, record.value, record.unit, JSON.stringify(record.administrativeDongCodes),
         record.mappingVersion, record.schemaVersion, "VALID", record.sourceHash,
@@ -374,10 +393,10 @@ async function persistSeoulForeignPresence(
   return statements.length ? runBatches(db, statements) : 0;
 }
 
-// S2 — find the newest published period with one row, then request exactly
-// the configured representative dongs for that period. This keeps a manual
-// import bounded to 1 + N dong calls and never sweeps the full Seoul dataset.
-export async function collectSeoulForeignPresence(env: CollectorEnv): Promise<CollectorResult> {
+// S2 — probe a maximum of seven completed-day candidates and require every
+// configured representative dong for one period. This is bounded to 7 * N
+// targeted calls and never sweeps or trusts the ordering of the full dataset.
+export async function collectSeoulForeignPresence(env: CollectorEnv, now: Date = new Date()): Promise<CollectorResult> {
   const sourceId = SEOUL_FOREIGN_SOURCE_ID;
   if (!env.SEOUL_OPEN_DATA_KEY) {
     await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "SEOUL_OPEN_DATA_KEY is not configured");
@@ -386,22 +405,40 @@ export async function collectSeoulForeignPresence(env: CollectorEnv): Promise<Co
   }
   try {
     const base = `http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/Spop250mFornTempDong`;
-    const latestPayload = await fetchOfficialJson(new URL(`${base}/1/1/`), { timeoutMs: 8_000, retries: 1 });
-    const latest = seoulEnvelopeRows(latestPayload, "Spop250mFornTempDong")[0];
-    if (!latest) throw new Error("seoul_foreign_empty");
-    const ymd = String(latest.YMD ?? "");
-    const tt = String(latest.TT ?? "");
-    if (!/^\d{8}$/.test(ymd) || !/^\d{1,4}$/.test(tt)) throw new Error("seoul_foreign_invalid_period");
-
     const configuredCodes = [...new Set(allAreaIds.flatMap((area) => areaMappings[area].seoulAdministrativeDongCodes))];
-    const rawRows: Record<string, unknown>[] = [];
-    for (const code of configuredCodes) {
-      const payload = await fetchOfficialJson(new URL(`${base}/1/1000/${ymd}/${tt}/${code}`), { timeoutMs: 8_000, retries: 1 });
-      const rows = seoulEnvelopeRows(payload, "Spop250mFornTempDong")
-        .filter((row) => String(row.YMD) === ymd && String(row.TT) === tt && String(row.H_DNG_CD) === code);
-      if (!rows.length) throw new Error(`seoul_foreign_missing_dong_${code}`);
-      rawRows.push(...rows);
+    let selectedPeriod: SeoulForeignPeriod | undefined;
+    let rawRows: Record<string, unknown>[] = [];
+    for (const candidate of seoulForeignPeriodCandidates(now)) {
+      const candidateRows: Record<string, unknown>[] = [];
+      let complete = true;
+      for (const code of configuredCodes) {
+        const payload = await fetchOfficialJson(new URL(`${base}/1/1000/${candidate.ymd}/${candidate.tt}/${code}`), { timeoutMs: 8_000, retries: 1 });
+        let rows: Record<string, unknown>[];
+        try {
+          rows = seoulEnvelopeRows(payload, "Spop250mFornTempDong")
+            .filter((row) => String(row.YMD) === candidate.ymd && String(row.TT) === candidate.tt && String(row.H_DNG_CD) === code);
+        } catch (error) {
+          if (error instanceof Error && error.message.includes("INFO-200")) {
+            complete = false;
+            break;
+          }
+          throw error;
+        }
+        if (rows.length > 1) throw new Error(`seoul_foreign_duplicate_dong_${code}`);
+        if (rows.length === 0) {
+          complete = false;
+          break;
+        }
+        candidateRows.push(rows[0]);
+      }
+      if (complete && candidateRows.length === configuredCodes.length) {
+        selectedPeriod = candidate;
+        rawRows = candidateRows;
+        break;
+      }
     }
+    if (!selectedPeriod) throw new Error("seoul_foreign_no_complete_period");
+    const { ymd, tt } = selectedPeriod;
 
     const retrievedAt = nowIso();
     const dongRows = await normalizeSeoulForeignRows(rawRows, retrievedAt);

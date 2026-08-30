@@ -68,8 +68,9 @@ test("manual S2 import stays confirmed, bounded, isolated, and unscheduled", asy
   assert.ok(script.indexOf("RPK_ONESHOT_CONFIRM") < script.indexOf("new CloudflareD1RestDatabase"));
   assert.match(script, /seoul_foreign:\s*\(\)\s*=>\s*collectSeoulForeignPresence\(env\)/);
   assert.match(collector, /configuredCodes.*new Set/);
-  assert.match(collector, /1\/1\//);
-  assert.match(collector, /1\/1000\/\$\{ymd\}\/\$\{tt\}\/\$\{code\}/);
+  assert.doesNotMatch(collector, /1\/1\//);
+  assert.match(collector, /SEOUL_FOREIGN_PERIOD_LOOKBACK_DAYS = 7/);
+  assert.match(collector, /1\/1000\/\$\{candidate\.ymd\}\/\$\{candidate\.tt\}\/\$\{code\}/);
   assert.match(workflow, /seoul_foreign/);
   assert.doesNotMatch(workflow, /^\s*schedule:/m);
 

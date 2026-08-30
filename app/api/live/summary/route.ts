@@ -1,4 +1,9 @@
 import { getDb } from "../../../../db";
+import {
+  SEOUL_FOREIGN_MAPPING_VERSION,
+  SEOUL_FOREIGN_PRODUCT_VERSION,
+  SEOUL_FOREIGN_SOURCE_ID,
+} from "../../../../lib/seoul-foreign";
 
 export const dynamic = "force-dynamic";
 
@@ -89,14 +94,21 @@ export async function GET() {
         reference_at AS referenceAt, retrieved_at AS retrievedAt,
         quality_status AS qualityStatus
       FROM seoul_foreign_presence_area a
-      WHERE a.source_id = 'SEOUL_SHORT_STAY_FOREIGN_LIVING_POPULATION'
+      WHERE a.source_id = ? AND a.product_version = ? AND a.mapping_version = ?
         AND a.record_origin = 'OFFICIAL_HISTORICAL' AND a.quality_status = 'VALID'
         AND reference_at = (
         SELECT MAX(reference_at) FROM seoul_foreign_presence_area b
         WHERE b.area = a.area
-          AND b.source_id = 'SEOUL_SHORT_STAY_FOREIGN_LIVING_POPULATION'
+          AND b.source_id = ? AND b.product_version = ? AND b.mapping_version = ?
           AND b.record_origin = 'OFFICIAL_HISTORICAL' AND b.quality_status = 'VALID'
       )`,
+    ).bind(
+      SEOUL_FOREIGN_SOURCE_ID,
+      SEOUL_FOREIGN_PRODUCT_VERSION,
+      SEOUL_FOREIGN_MAPPING_VERSION,
+      SEOUL_FOREIGN_SOURCE_ID,
+      SEOUL_FOREIGN_PRODUCT_VERSION,
+      SEOUL_FOREIGN_MAPPING_VERSION,
     ).all<Row>()).results ?? []);
 
     const congestionRows = await safeAll<Row>(async () => (await client.prepare(
