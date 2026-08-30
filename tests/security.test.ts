@@ -2,7 +2,23 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
+import { redactDataGoKrSecrets } from "../lib/data-go-kr.mjs";
 import { redirectHttpToHttps } from "../worker/https-redirect";
+
+test("data.go.kr diagnostics redact decoded, encoded, and keyed URL forms", () => {
+  const decoded = "sample+/key==";
+  const encoded = "sample%2B%2Fkey%3D%3D";
+  const diagnostic = [
+    decoded,
+    encoded,
+    `https://apis.data.go.kr/example?serviceKey=${encoded}&pageNo=1`,
+  ].join(" | ");
+  const redacted = redactDataGoKrSecrets(diagnostic, encoded);
+
+  assert.doesNotMatch(redacted, /sample/);
+  assert.doesNotMatch(redacted, /serviceKey=(?!\[REDACTED\])/);
+  assert.match(redacted, /\[REDACTED\]/);
+});
 
 test("Worker redirects HTTP requests to the same HTTPS URL", () => {
   const response = redirectHttpToHttps(new Request("http://koretaildata.com/ko?source=domain-check"));

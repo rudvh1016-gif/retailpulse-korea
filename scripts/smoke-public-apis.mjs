@@ -1,4 +1,5 @@
 import { runSeoulS2Smoke } from "./smoke-public-apis-lib.mjs";
+import { buildDataGoKrUrl, redactDataGoKrSecrets } from "../lib/data-go-kr.mjs";
 
 /**
  * Read-only smoke verification for KORETAIL official data sources.
@@ -38,7 +39,7 @@ const SECRETS = [DATA_KEY, SEOUL_KEY].filter(Boolean);
 
 function redact(value) {
   if (typeof value !== "string") return null;
-  let out = value;
+  let out = DATA_KEY ? redactDataGoKrSecrets(value, DATA_KEY) : value;
   for (const secret of SECRETS) {
     out = out.replaceAll(secret, "[REDACTED]");
     out = out.replaceAll(encodeURIComponent(secret), "[REDACTED]");
@@ -54,19 +55,6 @@ function redact(value) {
 function kstDate(offsetDays = 0) {
   const now = new Date(Date.now() + 9 * 3_600_000 + offsetDays * 86_400_000);
   return now.toISOString().slice(0, 10).replaceAll("-", "");
-}
-
-/** Append an already-encoded serviceKey without re-encoding it. */
-function withRawServiceKey(endpoint, key, params) {
-  const query = new URLSearchParams(params).toString();
-  return `${endpoint}?serviceKey=${key}${query ? `&${query}` : ""}`;
-}
-
-function withEncodedServiceKey(endpoint, key, params) {
-  const url = new URL(endpoint);
-  url.searchParams.set("serviceKey", key);
-  for (const [name, value] of Object.entries(params)) url.searchParams.set(name, value);
-  return url.toString();
 }
 
 async function fetchOnce(url) {
@@ -212,31 +200,18 @@ async function runDataGoKr() {
     return { construction: null, diag };
   }
 
-  let construction = "encoded";
+  const construction = "normalized-single-encoding";
   const [first, ...rest] = dataGoKrSources;
 
   try {
-    let firstResult = summarizeDataGoKr(await fetchOnce(withEncodedServiceKey(first.endpoint, DATA_KEY, first.params)));
-    let alternateTried = false;
-    if (firstResult.officialResultCode === "30" && diag.looksPercentEncoded) {
-      // The stored key already contains percent sequences; URLSearchParams would
-      // double-encode it. One structurally justified alternate call.
-      alternateTried = true;
-      const alternate = summarizeDataGoKr(await fetchOnce(withRawServiceKey(first.endpoint, DATA_KEY, first.params)));
-      if (alternate.authStatus === "PASS" || alternate.officialResultCode !== "30") {
-        construction = "raw";
-        firstResult = alternate;
-      }
-    }
-    results.push({ sourceId: first.id, construction, alternateTried, ...firstResult });
+    const firstResult = summarizeDataGoKr(await fetchOnce(buildDataGoKrUrl(first.endpoint, DATA_KEY, first.params)));
+    results.push({ sourceId: first.id, construction, ...firstResult });
   } catch (error) {
     results.push({ sourceId: first.id, authStatus: "ERROR", reason: redact(error instanceof Error ? error.message : "fetch_failed") });
   }
 
   for (const source of rest) {
-    const url = construction === "raw"
-      ? withRawServiceKey(source.endpoint, DATA_KEY, source.params)
-      : withEncodedServiceKey(source.endpoint, DATA_KEY, source.params);
+    const url = buildDataGoKrUrl(source.endpoint, DATA_KEY, source.params);
     try {
       results.push({ sourceId: source.id, construction, ...summarizeDataGoKr(await fetchOnce(url)) });
     } catch (error) {

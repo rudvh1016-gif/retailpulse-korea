@@ -5,6 +5,10 @@ import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 import { runSeoulS2Smoke } from "../scripts/smoke-public-apis-lib.mjs";
+import {
+  buildDataGoKrUrl,
+  normalizeDataGoKrServiceKey,
+} from "../lib/data-go-kr.mjs";
 import { areaMappings } from "../lib/areas.ts";
 import {
   aggregateSeoulForeignByArea,
@@ -48,6 +52,28 @@ const migrations = [
   "drizzle/0003_minor_network.sql",
   "drizzle/0004_s2_foreign_presence.sql",
 ];
+
+test("data.go.kr encoded and decoded service keys produce one identical transport encoding", () => {
+  const decoded = "sample+/key==";
+  const encoded = "sample%2B%2Fkey%3D%3D";
+  const endpoint = "https://apis.data.go.kr/example";
+
+  assert.equal(normalizeDataGoKrServiceKey(decoded), decoded);
+  assert.equal(normalizeDataGoKrServiceKey(encoded), decoded);
+  assert.equal(
+    buildDataGoKrUrl(endpoint, decoded, { pageNo: "1" }).toString(),
+    buildDataGoKrUrl(endpoint, encoded, { pageNo: "1" }).toString(),
+  );
+  assert.equal(
+    buildDataGoKrUrl(endpoint, encoded, {}).searchParams.get("serviceKey"),
+    decoded,
+  );
+});
+
+test("data.go.kr service keys are decoded at most once", () => {
+  assert.equal(normalizeDataGoKrServiceKey("value%252Bstill-encoded"), "value%2Bstill-encoded");
+  assert.equal(normalizeDataGoKrServiceKey("value%2Gmalformed"), "value%2Gmalformed");
+});
 
 function openDatabase(name) {
   const databasePath = join(tmpdir(), `rpk-${name}-${process.pid}.db`);
