@@ -1,8 +1,19 @@
 name: Collect Production Data
 
+# DAILY GROUP — once/day, sequential/staggered (never a provider burst):
+#   airport_recent (A1)      D-3..today bounded scan; same-day guard makes
+#                             any extra invocation the same KST day free.
+#   airport_enrichment (A2)  runs after A1 so same-day A1 rows exist to match.
+#   airport_scheduled (A3)   future schedule refresh; independent model.
+#   events (T1)               daily festival/event refresh.
+#   seoul_foreign (S2)       delayed official short-stay foreign presence;
+#                             daily catches newly published data quickly.
+# Cron is 06:07 KST (= 21:07 UTC previous day; KST is UTC+9 with no DST).
+# :07 is an off-minute offset per docs/ENGINEERING_DIRECTION.md to avoid
+# GitHub's top-of-hour scheduling congestion.
 on:
   schedule:
-    - cron: "7 */2 * * *"
+    - cron: "7 21 * * *"
   workflow_dispatch:
 
 permissions:
@@ -16,7 +27,9 @@ jobs:
   collect:
     if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # A1's bounded scan can read up to 150 sequential pages; generous margin
+    # keeps a slow provider day from false-failing the whole daily group.
+    timeout-minutes: 30
     environment: production
     steps:
       - uses: actions/checkout@v4
@@ -28,8 +41,8 @@ jobs:
       - run: npm run collect:production
         env:
           ENABLE_PRODUCTION_COLLECTOR: "true"
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_D1_DATABASE_ID: ${{ secrets.CLOUDFLARE_D1_DATABASE_ID }}
+          RPK_PRODUCTION_SOURCES: airport_recent,airport_enrichment,airport_scheduled,events,seoul_foreign
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
+          SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
           RPK_RETAIN_FLIGHT_CHANGE_HISTORY: ${{ vars.RPK_RETAIN_FLIGHT_CHANGE_HISTORY }}

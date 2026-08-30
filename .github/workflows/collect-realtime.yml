@@ -1,0 +1,54 @@
+name: Collect Realtime Signals
+
+# REALTIME GROUP — the only sources whose product value depends on a short
+# lag, run together every ~15 minutes (never a provider burst; both sources
+# run sequentially within one job):
+#   airport_congestion (A4)  1 call/run (terminal P01 only). 96 runs/day =
+#                             96 calls/day, ~10% of the 1,000/day dev quota
+#                             (data.go.kr 15148225). Provider updates about
+#                             once a minute; 15 minutes stays well under.
+#   seoul_realtime (S1)      1 call per target area (3 areas) = 3 calls/run,
+#                             up to 6 with one retry per area. 96 runs/day =
+#                             288 typical / 576 worst-case calls/day. Seoul
+#                             Open Data does not publish one official
+#                             cross-API quota number for this key; this cadence
+#                             is sized against the conservative ~1,000/day-class
+#                             assumption documented in docs/DATA_SOURCES.md
+#                             (INTERNAL_ESTIMATE, not OFFICIAL_USAGE). Source
+#                             data itself refreshes about every 5 minutes.
+# Cron uses :07/:22/:37/:52 (off the exact quarter-hour marks) per
+# docs/ENGINEERING_DIRECTION.md to avoid GitHub's scheduling congestion
+# points. KST is UTC+9 with no DST, so a fixed-interval cadence is identical
+# in both clocks.
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-collector-realtime
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run collect:production
+        env:
+          ENABLE_PRODUCTION_COLLECTOR: "true"
+          RPK_PRODUCTION_SOURCES: airport_congestion,seoul_realtime
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+          DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
+          SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
