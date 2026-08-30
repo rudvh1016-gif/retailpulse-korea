@@ -258,7 +258,10 @@ test("airport collector stores idempotent canonical rows and source health", asy
   });
   applyMigrations(database);
 
-  globalThis.fetch = async () => Response.json({
+  let requestedUrl;
+  globalThis.fetch = async (url) => {
+    requestedUrl = new URL(url);
+    return Response.json({
     response: {
       header: { resultCode: "00" },
       body: {
@@ -275,7 +278,8 @@ test("airport collector stores idempotent canonical rows and source health", asy
           }],
       },
     },
-  });
+    });
+  };
 
   const env = { DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture", retainChangeHistory: true };
   const first = await collectAirportFlights(env);
@@ -283,6 +287,7 @@ test("airport collector stores idempotent canonical rows and source health", asy
   assert.equal(first.status, "SUCCESS");
   assert.ok(first.records > 0);
   assert.deepEqual(second, { status: "SUCCESS", records: 0 });
+  assert.equal(requestedUrl.searchParams.get("numOfRows"), "100");
 
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM airport_flights").get().count, 1);
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM airport_flight_changes").get().count, 1);

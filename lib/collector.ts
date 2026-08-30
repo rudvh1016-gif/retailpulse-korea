@@ -40,6 +40,14 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+let lastCollectorStartedAtMs = 0;
+
+function uniqueCollectorStartedAt(): string {
+  const timestamp = Math.max(Date.now(), lastCollectorStartedAtMs + 1);
+  lastCollectorStartedAtMs = timestamp;
+  return new Date(timestamp).toISOString();
+}
+
 async function writeCollectorStatus(
   db: D1Database | undefined,
   sourceId: string,
@@ -51,7 +59,7 @@ async function writeCollectorStatus(
   if (!db) return;
   await db.prepare(`INSERT INTO collector_runs (run_id, source_id, started_at, finished_at, status, records_read, records_written, detail)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(crypto.randomUUID(), sourceId, nowIso(), nowIso(), status, recordsRead, recordsWritten, detail.slice(0, 500))
+    .bind(crypto.randomUUID(), sourceId, uniqueCollectorStartedAt(), nowIso(), status, recordsRead, recordsWritten, detail.slice(0, 500))
     .run();
 }
 
@@ -203,7 +211,10 @@ export async function collectAirportFlights(env: CollectorEnv): Promise<{ status
   const url = buildDataGoKrUrl(
     "https://apis.data.go.kr/B551177/statusOfAllFltDeOdp/getFltDeparturesDeOdp",
     env.DATA_GO_KR_SERVICE_KEY,
-    { type: "json", numOfRows: "1000", pageNo: "1" },
+    // The official gateway returns the 11k-row D-3..D+6 population when the
+    // request is unfiltered. A 1,000-row page repeatedly hit its ~10s upstream
+    // timeout in GitHub Actions, while bounded samples returned normally.
+    { type: "json", numOfRows: "100", pageNo: "1" },
   );
 
   try {
@@ -238,7 +249,7 @@ export async function collectAirportFlightEnrichment(env: CollectorEnv): Promise
   const url = buildDataGoKrUrl(
     "https://apis.data.go.kr/B551177/statusOfAPaxFlt4DutyFree/getAPaxFlt4DutyFreeDepartures",
     env.DATA_GO_KR_SERVICE_KEY,
-    { type: "json", numOfRows: "1000", pageNo: "1" },
+    { type: "json", numOfRows: "100", pageNo: "1" },
   );
   try {
     const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
@@ -283,7 +294,7 @@ export async function collectScheduledAirportFlights(env: CollectorEnv): Promise
   const url = buildDataGoKrUrl(
     "https://apis.data.go.kr/B551177/statusOfSPaxFlt4DutyFree/getSPaxFlt4DutyFreeDepartures",
     env.DATA_GO_KR_SERVICE_KEY,
-    { type: "json", numOfRows: "1000", pageNo: "1" },
+    { type: "json", numOfRows: "100", pageNo: "1" },
   );
   try {
     const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
