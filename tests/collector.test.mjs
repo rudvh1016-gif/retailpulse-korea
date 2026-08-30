@@ -262,8 +262,7 @@ test("airport collector stores idempotent canonical rows and source health", asy
     response: {
       header: { resultCode: "00" },
       body: {
-        items: {
-          item: {
+        items: [{
             flightId: "KE703",
             airline: "Korean Air",
             airport: "NRT",
@@ -273,8 +272,7 @@ test("airport collector stores idempotent canonical rows and source health", asy
             chkinrange: "A01-A12",
             remark: "지연",
             terminalid: "2",
-          },
-        },
+          }],
       },
     },
   });
