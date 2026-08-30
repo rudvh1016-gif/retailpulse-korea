@@ -45,11 +45,12 @@ if (!apiToken) throw new Error("missing_cloudflare_api_token");
 // The account is always the pinned wrangler config value: the historical
 // CLOUDFLARE_ACCOUNT_ID secret pointed at the wrong account (see PR #12),
 // which surfaces here as d1_http_403.
-const database = new CloudflareD1RestDatabase(
+const restDatabase = new CloudflareD1RestDatabase(
   wranglerConfig.account_id,
   databaseId,
   apiToken,
-) as unknown as D1Database;
+);
+const database = restDatabase as unknown as D1Database;
 
 const env = {
   DB: database,
@@ -63,6 +64,68 @@ type OneShotResult = {
   trackedToday?: number;
   pagesFetched?: number;
 };
+
+type A1VerificationSnapshot = {
+  targetDateKst: string;
+  windowStartKst: string;
+  counts: Record<string, number>;
+  duplicateGroups: number;
+  futureFlights: number;
+};
+
+function shiftIsoDate(isoDate: string, days: number): string {
+  const date = new Date(`${isoDate}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function targetDateKst(now = new Date()): string {
+  return new Date(now.getTime() + 9 * 3_600_000).toISOString().slice(0, 10);
+}
+
+async function readA1VerificationSnapshot(targetDate: string): Promise<A1VerificationSnapshot> {
+  const windowStart = shiftIsoDate(targetDate, -3);
+  const [countsResult, duplicatesResult, futureResult] = await restDatabase.execute([
+    {
+      sql: `SELECT substr(scheduled_at, 1, 10) AS service_date,
+                   COUNT(DISTINCT physical_flight_id) AS physical_flights
+            FROM airport_flights
+            WHERE source_id = ? AND direction = 'departure'
+              AND substr(scheduled_at, 1, 10) BETWEEN ? AND ?
+            GROUP BY substr(scheduled_at, 1, 10)
+            ORDER BY service_date`,
+      params: ["INCHEON_FLIGHT_DETAIL", windowStart, targetDate],
+    },
+    {
+      sql: `SELECT COUNT(*) AS duplicate_groups FROM (
+              SELECT physical_flight_id
+              FROM airport_flights
+              WHERE source_id = ? AND direction = 'departure'
+                AND substr(scheduled_at, 1, 10) BETWEEN ? AND ?
+              GROUP BY physical_flight_id
+              HAVING COUNT(*) > 1
+            )`,
+      params: ["INCHEON_FLIGHT_DETAIL", windowStart, targetDate],
+    },
+    {
+      sql: `SELECT COUNT(DISTINCT physical_flight_id) AS future_flights
+            FROM airport_flights
+            WHERE source_id = ? AND direction = 'departure'
+              AND substr(scheduled_at, 1, 10) > ?`,
+      params: ["INCHEON_FLIGHT_DETAIL", targetDate],
+    },
+  ]);
+  const countRows = (countsResult.results ?? []) as Array<{ service_date?: unknown; physical_flights?: unknown }>;
+  const duplicateRow = (duplicatesResult.results?.[0] ?? {}) as { duplicate_groups?: unknown };
+  const futureRow = (futureResult.results?.[0] ?? {}) as { future_flights?: unknown };
+  return {
+    targetDateKst: targetDate,
+    windowStartKst: windowStart,
+    counts: Object.fromEntries(countRows.map((row) => [String(row.service_date), Number(row.physical_flights ?? 0)])),
+    duplicateGroups: Number(duplicateRow.duplicate_groups ?? 0),
+    futureFlights: Number(futureRow.future_flights ?? 0),
+  };
+}
 
 const collectors: Record<string, () => Promise<OneShotResult>> = {
   seoul_realtime: () => collectSeoulRealtime(env),
@@ -89,6 +152,9 @@ if (!requested.length) throw new Error("no_sources_selected");
 let failures = 0;
 for (const name of requested) {
   try {
+    const a1TargetDate = name === "airport_flights_today" ? targetDateKst() : null;
+    const a1Before = a1TargetDate ? await readA1VerificationSnapshot(a1TargetDate) : null;
+    if (a1Before) console.log(JSON.stringify({ a1Verification: "before", ...a1Before }));
     const result = await collectors[name]();
     console.log(JSON.stringify({
       oneshot: name,
@@ -98,6 +164,15 @@ for (const name of requested) {
       ...(result.trackedToday === undefined ? {} : { trackedToday: result.trackedToday }),
       ...(result.pagesFetched === undefined ? {} : { pagesFetched: result.pagesFetched }),
     }));
+    if (a1TargetDate && a1Before) {
+      const a1After = await readA1VerificationSnapshot(a1TargetDate);
+      console.log(JSON.stringify({
+        a1Verification: "after",
+        ...a1After,
+        previousCounts: a1Before.counts,
+        futureFlightsDelta: a1After.futureFlights - a1Before.futureFlights,
+      }));
+    }
     if (result.status === "ERROR" || result.status === "NEEDS_KEY") failures += 1;
   } catch (error) {
     // One failing source (for example a D1 auth problem surfacing on write)
