@@ -2,9 +2,6 @@ name: Smoke Public APIs
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - feat/complete-official-data-integration
 
 permissions:
   contents: read
