@@ -1,6 +1,6 @@
 # Data Sources
 
-Last verified: 2026-08-27 KST. Recheck official terms immediately before activating Production. The contract details below were verified against official portal documentation snippets and cross-checked working integrations on 2026-08-27; anything marked `UNVERIFIED` still needs one authenticated response before activation.
+Last verified: 2026-08-30 KST. Recheck official terms immediately before activating Production. The contract details below were verified against official portal documentation snippets and cross-checked working integrations; anything marked `UNVERIFIED` still needs one authenticated response before activation.
 
 ## Nine-source integration matrix
 
@@ -21,9 +21,15 @@ No paid API, paid data, paid fallback or runtime LLM is approved. A source witho
 ## Authentication notes
 
 - data.go.kr issues one 일반 인증키 per account; utilization applications are per-API. Do not tell the owner a second "Decoding key" exists when the account screen shows one key.
-- Gateway error code 30 (`SERVICE_KEY_IS_NOT_REGISTERED_ERROR`) can mean an unregistered/malformed key **or** an approved-but-not-yet-propagated utilization application. The smoke check reports boolean-only diagnostics (`present` / `looksPercentEncoded` / `hasWhitespace`) and tries at most one alternate query construction against A1 when the stored value already looks percent-encoded (double-encoding an encoded key reproduces code 30).
+- Gateway error code 30 (`SERVICE_KEY_IS_NOT_REGISTERED_ERROR`) can mean an unregistered/malformed key **or** an approved-but-not-yet-propagated utilization application. The shared request builder accepts either portal representation, normalizes it once, and lets `URLSearchParams` perform exactly one transport encoding. It does not try random raw/encoded variants.
 - Seoul keys ride in the URL path; smoke/collector code must never log Seoul request URLs.
 - TourAPI success code is `"0000"`; KMA/airport success is `"00"` — never share one success check.
+
+### Phase B authentication smoke (2026-08-30 KST)
+
+Workflow run `Smoke Public APIs #18` used commit `9c4cb78ccd8743977a8e240b3512b830b32cf460` and the configured Production Environment secret. It made one read-only request to each of A1, A2, A3, A4, W1, and T1, persisted nothing, and completed without exposing a request URL or credential representation.
+
+All six requests reached the 10-second client bound and were classified `REQUEST_ERROR` with an abort timeout. This is not evidence of `AUTH_BLOCKED`, `VALID_NO_DATA`, or a valid provider schema. Earlier runs alternated between the same gateway timeouts and code 30 across all three provider families, so downstream Phase B implementation that requires real authenticated field evidence remains externally blocked. Do not invent fixtures or mark any of these sources connected from documentation alone.
 
 ## Source lifecycle
 

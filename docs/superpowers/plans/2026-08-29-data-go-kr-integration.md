@@ -31,12 +31,12 @@
 - Produces: `normalizeDataGoKrServiceKey(value: string): string`.
 - Produces: `buildDataGoKrUrl(endpoint: string, serviceKey: string, params: Record<string,string>): URL`.
 
-- [ ] Add failing literal tests proving decoded and percent-encoded inputs produce the same single-encoded outgoing `serviceKey`, and malformed percent input is not double-decoded.
-- [ ] Add a failing redaction test proving neither representation nor keyed URL reaches diagnostics.
-- [ ] Run targeted tests and confirm failures.
-- [ ] Implement one-time percent decoding and a shared URL builder; remove raw/encoded retry construction.
-- [ ] Run targeted tests and confirm passes.
-- [ ] Commit with `fix: normalize data go kr service keys`.
+- [x] Add failing literal tests proving decoded and percent-encoded inputs produce the same single-encoded outgoing `serviceKey`, and malformed percent input is not double-decoded.
+- [x] Add a failing redaction test proving neither representation nor keyed URL reaches diagnostics.
+- [x] Run targeted tests and confirm failures.
+- [x] Implement one-time percent decoding and a shared URL builder; remove raw/encoded retry construction.
+- [x] Run targeted tests and confirm passes.
+- [x] Commit with `fix: normalize data go kr service keys` (`4741755`).
 
 ### Task 2: Restore and run the full read-only authentication smoke
 
@@ -48,12 +48,12 @@
 **Interfaces:**
 - Produces per source: `PASS | VALID_NO_DATA | AUTH_BLOCKED | REQUEST_ERROR | SCHEMA_ERROR`, record count, and field names only.
 
-- [ ] Remove `SMOKE_SCOPE=seoul` and keep `workflow_dispatch`, bounded rows, no persistence, and redaction.
-- [ ] Push the request-layer commit and dispatch one production Environment smoke on the branch.
-- [ ] Record sanitized formats, result codes, field names, and no-data semantics for A1/A2/A3/A4/W1/T1.
-- [ ] If and only if code 30 exposes one request-construction defect, write a failing regression test, fix it, and dispatch one final smoke.
-- [ ] If code 30 persists across providers, mark those sources externally blocked and continue only successful sources.
-- [ ] Commit with `docs: record verified public api contracts`.
+- [x] Remove `SMOKE_SCOPE=seoul` and keep `workflow_dispatch`, bounded rows, no persistence, and redaction.
+- [x] Push the request-layer commit and dispatch one production Environment smoke on the branch.
+- [x] Record the sanitized outcome for A1/A2/A3/A4/W1/T1. Run #18 returned six bounded `REQUEST_ERROR` timeouts, so no authenticated formats or field names were claimed.
+- [x] No second smoke was dispatched: run #18 returned transport timeouts rather than code 30, so there was no evidence-backed request-construction defect to fix.
+- [x] Mark all six sources externally blocked because no source produced an authenticated response; do not continue schema-dependent implementation without successful evidence.
+- [x] Commit with `docs: record verified public api contracts`.
 
 ### Task 3: Canonicalize A1 actual flights and A2 enrichment
 
