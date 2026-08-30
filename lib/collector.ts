@@ -208,10 +208,10 @@ export async function collectAirportFlights(env: CollectorEnv): Promise<{ status
 
   try {
     const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
-    const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] | unknown } } } };
+    const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown } } } };
     if (root?.response?.header?.resultCode !== "00") throw new Error(`airport_result_${String(root?.response?.header?.resultCode ?? "missing")}`);
-    const rawItems = root?.response?.body?.items?.item;
-    const items = Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
+    const items = dataGoKrItems(root?.response?.body);
+    if (!items.length) throw new Error("airport_no_data");
     const retrievedAt = nowIso();
     const normalized = await Promise.all(items.map((item) => normalizeAirportFlight(item, "departure", retrievedAt)));
     const written = await persistAirportFlights(env.DB, normalized, env.retainChangeHistory === true);
@@ -242,10 +242,10 @@ export async function collectAirportFlightEnrichment(env: CollectorEnv): Promise
   );
   try {
     const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
-    const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] | unknown } } } };
+    const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown } } } };
     if (root?.response?.header?.resultCode !== "00") throw new Error(`airport_a2_result_${String(root?.response?.header?.resultCode ?? "missing")}`);
-    const raw = root?.response?.body?.items?.item;
-    const items = Array.isArray(raw) ? raw : raw ? [raw] : [];
+    const items = dataGoKrItems(root?.response?.body);
+    if (!items.length) throw new Error("airport_a2_no_data");
     const retrievedAt = nowIso();
     const normalized = await Promise.all(items.map((item) => normalizeAirportFlight(item, "departure", retrievedAt, sourceId)));
     const statements = normalized.map((record) => env.DB?.prepare(`UPDATE airport_flights SET
@@ -287,10 +287,10 @@ export async function collectScheduledAirportFlights(env: CollectorEnv): Promise
   );
   try {
     const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
-    const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] | unknown } } } };
+    const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown } } } };
     if (root?.response?.header?.resultCode !== "00") throw new Error(`airport_a3_result_${String(root?.response?.header?.resultCode ?? "missing")}`);
-    const raw = root?.response?.body?.items?.item;
-    const items = Array.isArray(raw) ? raw : raw ? [raw] : [];
+    const items = dataGoKrItems(root?.response?.body);
+    if (!items.length) throw new Error("airport_a3_no_data");
     const retrievedAt = nowIso();
     const normalized: CanonicalScheduledAirportFlight[] = await Promise.all(items.map((item) => normalizeScheduledAirportFlight(item, retrievedAt)));
     const statements = normalized.map((record) => env.DB?.prepare(`INSERT INTO airport_scheduled_flights (
@@ -334,6 +334,11 @@ async function runBatches(db: D1Database, statements: D1PreparedStatement[]): Pr
 export interface CollectorResult {
   status: "SUCCESS" | "PARTIAL" | "ERROR" | "NEEDS_KEY" | "NO_DATA";
   records: number;
+}
+
+function dataGoKrItems(body: { items?: unknown[] | { item?: unknown[] | unknown } } | undefined): unknown[] {
+  const raw = Array.isArray(body?.items) ? body.items : body?.items?.item;
+  return Array.isArray(raw) ? raw : raw ? [raw] : [];
 }
 
 function seoulEnvelopeRows(payload: unknown, serviceName: string): Record<string, unknown>[] {
