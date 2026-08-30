@@ -2,10 +2,27 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { collectAirportFlightsToday, hasCompleteA1RecentHistoryToday } from "../lib/airport-today.ts";
 import {
+  hasProductionSourceFailure,
   PRODUCTION_SOURCE_NAMES,
   SKIPPED_ALREADY_COMPLETE_TODAY,
   runSelectedProductionSources,
 } from "../lib/production-runner.ts";
+
+test("job failure classification surfaces any ERROR or NEEDS_KEY after isolated execution", () => {
+  assert.equal(hasProductionSourceFailure([
+    { source: "airport_recent", status: SKIPPED_ALREADY_COMPLETE_TODAY, records: 0 },
+    { source: "seoul_foreign", status: "SUCCESS", records: 18 },
+  ]), false);
+  assert.equal(hasProductionSourceFailure([
+    { source: "airport_recent", status: SKIPPED_ALREADY_COMPLETE_TODAY, records: 0 },
+    { source: "airport_enrichment", status: "ERROR", records: 0 },
+    { source: "seoul_foreign", status: "SUCCESS", records: 18 },
+  ]), true);
+  assert.equal(hasProductionSourceFailure([
+    { source: "seoul_realtime", status: "PARTIAL", records: 2 },
+    { source: "events", status: "NEEDS_KEY", records: 0 },
+  ]), true);
+});
 
 /**
  * Minimal fake D1 that actually understands collector_runs (unlike the
