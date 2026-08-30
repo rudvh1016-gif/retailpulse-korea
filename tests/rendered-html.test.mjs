@@ -311,6 +311,36 @@ test("shows T1/T2 airport congestion as separate rows instead of one unlabeled c
   ]) assert.match(signals, new RegExp(phrase));
 });
 
+test("A5 passenger forecast is worded as an official forecast, never as current/actual queue data", async () => {
+  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  const route = await readFile(new URL("../app/api/live/summary/route.ts", import.meta.url), "utf8");
+
+  // API: FORECAST rows come from a distinct, clearly-named block and are
+  // never merged into the congestion array.
+  assert.match(route, /passengerForecastRows/);
+  assert.match(route, /passengerForecast: passengerForecastRows/);
+  assert.match(route, /is_aggregate = 1/);
+  assert.match(route, /direction = 'departure'/);
+
+  // UI: distinct row loop, distinct key prefix, official-forecast wording.
+  assert.match(signals, /passengerForecast/);
+  assert.match(signals, /key: `forecast_\$\{forecast\.terminal\}`/);
+  assert.match(signals, /text\.passengerForecastLabel\[lang\]\(forecast\.terminal\)/);
+  for (const phrase of [
+    "다음 시간대 예상 출국 승객",
+    "next-hour expected departures",
+    "下一时段预计出境人数",
+    "次の時間帯の予想出国者数",
+    "인천공항 공식 예고",
+    "실제 대기인원 아님",
+  ]) assert.match(signals, new RegExp(phrase));
+
+  // The forecast block must never borrow A4's current/actual wording.
+  const forecastBlock = signals.match(/for \(const forecast of passengerForecast\) \{([\s\S]*?)\n  \}/)?.[1] ?? "";
+  assert.ok(forecastBlock.length > 0);
+  assert.doesNotMatch(forecastBlock, /실시간 승객|현재 대기인원|확정 승객/);
+});
+
 test("applies a user-defined month range to airport and business history", async () => {
   const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
