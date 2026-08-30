@@ -118,7 +118,7 @@ test("production collector remains gated and Worker Cron remains absent", async 
 });
 
 test("every cadence-group collector workflow is gated behind the same owner-approved switch and actually scheduled", async () => {
-  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml"];
+  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml", "collect-forecast.yml"];
   for (const file of groupFiles) {
     const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
     assert.match(workflow, /vars\.ENABLE_PRODUCTION_COLLECTOR == 'true'/, `${file} must reuse the single production-collector gate`);
@@ -129,7 +129,7 @@ test("every cadence-group collector workflow is gated behind the same owner-appr
 });
 
 test("A1 (airport_recent) is scheduled by exactly one collector workflow group", async () => {
-  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml"];
+  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml", "collect-forecast.yml"];
   const owners: string[] = [];
   for (const file of groupFiles) {
     const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
@@ -140,7 +140,7 @@ test("A1 (airport_recent) is scheduled by exactly one collector workflow group",
 });
 
 test("every production source is scheduled by exactly one cadence-group workflow", async () => {
-  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml"];
+  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml", "collect-forecast.yml"];
   const scheduledSources: string[] = [];
   for (const file of groupFiles) {
     const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
