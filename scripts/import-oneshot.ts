@@ -10,6 +10,7 @@
  * gated behind ENABLE_PRODUCTION_COLLECTOR and separate owner approval.
  */
 import { readFileSync } from "node:fs";
+import { collectAirportFlightsToday } from "../lib/airport-today";
 import {
   collectAirportCongestion,
   collectAirportFlightEnrichment,
@@ -56,7 +57,14 @@ const env = {
   SEOUL_OPEN_DATA_KEY: process.env.SEOUL_OPEN_DATA_KEY?.trim() || undefined,
 };
 
-const collectors: Record<string, () => Promise<{ status: string; records: number }>> = {
+type OneShotResult = {
+  status: string;
+  records: number;
+  trackedToday?: number;
+  pagesFetched?: number;
+};
+
+const collectors: Record<string, () => Promise<OneShotResult>> = {
   seoul_realtime: () => collectSeoulRealtime(env),
   seoul_foreign: () => collectSeoulForeignPresence(env),
   seoul_sales: () => collectEstimatedSales(env),
@@ -64,6 +72,7 @@ const collectors: Record<string, () => Promise<{ status: string; records: number
   events: () => collectTourismEvents(env),
   airport_congestion: () => collectAirportCongestion(env),
   airport_flights: () => collectAirportFlights(env),
+  airport_flights_today: () => collectAirportFlightsToday(env),
   airport_flight_enrichment: () => collectAirportFlightEnrichment(env),
   airport_scheduled: () => collectScheduledAirportFlights(env),
 };
@@ -81,7 +90,14 @@ let failures = 0;
 for (const name of requested) {
   try {
     const result = await collectors[name]();
-    console.log(JSON.stringify({ oneshot: name, stage, status: result.status, changedRows: result.records }));
+    console.log(JSON.stringify({
+      oneshot: name,
+      stage,
+      status: result.status,
+      changedRows: result.records,
+      ...(result.trackedToday === undefined ? {} : { trackedToday: result.trackedToday }),
+      ...(result.pagesFetched === undefined ? {} : { pagesFetched: result.pagesFetched }),
+    }));
     if (result.status === "ERROR" || result.status === "NEEDS_KEY") failures += 1;
   } catch (error) {
     // One failing source (for example a D1 auth problem surfacing on write)
