@@ -88,6 +88,8 @@ The code source is the official data.go.kr file dataset [15136368 법정동 연�
 
 The one-shot collector does not assume that an unfiltered API row is newest. OA-23018 documents a daily refresh, hourly `00`–`23` rows in the official file, and a recent-two-month OpenAPI window, but not a guaranteed row order or exact availability lag. The collector therefore checks `23:00` newest-first across a bounded 62 completed KST days and accepts only a period containing exactly one row for every configured dong.
 
+OA-23018 masks nationality counts of three people or fewer as `*`. KORETAIL preserves those masked optional dimensions as `null`; it does not coerce them to zero or add them back into the official `SPOP` total.
+
 | KORETAIL area | Official administrative dong | S2 `H_DNG_CD` | Scope note |
 |---|---|---:|---|
 | myeongdong | 명동 | `11140550` | Canonical 명동 area |

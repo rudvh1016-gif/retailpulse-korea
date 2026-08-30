@@ -131,14 +131,16 @@ test("S2 representative areas use the official administrative-dong codes", () =>
 });
 
 test("S2 normalizer uses SPOP as the total and preserves nationality dimensions without double counting", async () => {
-  const [first] = await normalizeSeoulForeignRows([seoulForeignRow()], "2026-08-29T07:00:00Z");
-  const [retrievedLater] = await normalizeSeoulForeignRows([seoulForeignRow()], "2026-08-29T08:00:00Z");
+  const maskedRow = seoulForeignRow({ KHM: "*" });
+  const [first] = await normalizeSeoulForeignRows([maskedRow], "2026-08-29T07:00:00Z");
+  const [retrievedLater] = await normalizeSeoulForeignRows([maskedRow], "2026-08-29T08:00:00Z");
 
   assert.equal(first.administrativeDongCode, "11140550");
   assert.equal(first.referenceAt, "2026-08-28T14:00:00+09:00");
   assert.equal(first.value, 10000.5);
   assert.equal(first.nationalityValues.CHN, 4000.2);
   assert.equal(first.nationalityValues.CAN, null);
+  assert.equal(first.nationalityValues.KHM, null);
   assert.equal(first.sourceHash, retrievedLater.sourceHash);
 
   const aggregates = await aggregateSeoulForeignByArea([first], {
