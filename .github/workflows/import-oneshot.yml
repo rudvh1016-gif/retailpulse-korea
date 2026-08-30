@@ -1,9 +1,12 @@
 name: One-shot Data Import
 
-# Manual only. This intentionally has NO schedule trigger: the recurring
-# production collector stays behind ENABLE_PRODUCTION_COLLECTOR and separate
-# owner approval in collect-production.yml.
+# Temporary bounded main-push trigger for the single A1/A2/A3 parser-fix
+# revalidation. There is still NO schedule trigger; recurring collection stays
+# behind ENABLE_PRODUCTION_COLLECTOR and separate owner approval.
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       sources:
@@ -37,8 +40,8 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npx tsx scripts/import-oneshot.ts
         env:
-          RPK_ONESHOT_CONFIRM: ${{ inputs.confirm }}
-          RPK_ONESHOT_SOURCES: ${{ inputs.sources }}
+          RPK_ONESHOT_CONFIRM: ${{ inputs.confirm || 'IMPORT' }}
+          RPK_ONESHOT_SOURCES: ${{ inputs.sources || 'airport_flights,airport_flight_enrichment,airport_scheduled' }}
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
