@@ -80,6 +80,10 @@ export interface ProductionSourceResult extends ProductionSourceOutcome {
   detail?: string;
 }
 
+export function hasProductionSourceFailure(results: readonly ProductionSourceResult[]): boolean {
+  return results.some((result) => result.status === "ERROR" || result.status === "NEEDS_KEY");
+}
+
 /**
  * Runs exactly the selected sources, once each, in the given order.
  *

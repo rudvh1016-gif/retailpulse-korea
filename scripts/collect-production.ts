@@ -17,7 +17,12 @@
  */
 import { pruneOperationalHistory } from "../lib/collector";
 import { CloudflareD1RestDatabase } from "../lib/d1-rest";
-import { PRODUCTION_SOURCE_NAMES, runSelectedProductionSources, type ProductionSourceName } from "../lib/production-runner";
+import {
+  hasProductionSourceFailure,
+  PRODUCTION_SOURCE_NAMES,
+  runSelectedProductionSources,
+  type ProductionSourceName,
+} from "../lib/production-runner";
 import { resolveProductionDatabaseConfig } from "./production-database";
 
 if (process.env.ENABLE_PRODUCTION_COLLECTOR !== "true") {
@@ -60,10 +65,10 @@ for (const result of results) {
 }
 
 // A source is only a real failure at ERROR/NEEDS_KEY; SKIPPED_* is an
-// intentional, healthy outcome. The whole run only fails closed when every
-// requested source failed — one bad source must never mask the others.
-const failed = results.filter((result) => result.status === "ERROR" || result.status === "NEEDS_KEY");
-if (failed.length === results.length) process.exitCode = 1;
+// intentional, healthy outcome. Every selected source has already attempted
+// collection above, so failing the job here preserves source isolation while
+// making any partial outage visible to GitHub Actions monitoring.
+if (hasProductionSourceFailure(results)) process.exitCode = 1;
 
 // Bounded maintenance, decoupled from which sources ran this invocation.
 // This only prunes the optional flight change-history log (empty unless
