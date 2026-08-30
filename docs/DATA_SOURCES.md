@@ -18,6 +18,38 @@ Last verified: 2026-08-30 KST. Recheck official terms immediately before activat
 
 No paid API, paid data, paid fallback or runtime LLM is approved. A source without verified commercial and automated-use terms remains disabled.
 
+## A4-T2 and A5 — approved but contract-unverified (2026-08-30)
+
+The owner approved two additional official Incheon Airport Corporation utilization requests:
+
+| # | Source | Official title | Dataset | Meaning |
+|---|---|---|---|---|
+| A4-T2 | T2 departure-hall congestion | 인천국제공항공사_출국장 혼잡도_제2여객터미널 조회 | `15161098` (`https://www.data.go.kr/data/15161098/openapi.do`) | Current/observed T2 departure-hall waiting, separate from A4-T1's existing `15148225` |
+| A5 | T1/T2 passenger forecast | 인천국제공항공사_승객예고-출·입국장별 | `15095066` (`https://www.data.go.kr/data/15095066/openapi.do`) | Official expected-passenger counts by hour for today/tomorrow, T1+T2, arrival/departure halls |
+
+**A4-T2 is a genuinely separate dataset from A4-T1**, not a `terminalId` value on the existing `15148225` endpoint. Do not query `terminalId=P03` against the A4-T1 endpoint as a substitute; the older T1 page's "T2 will be provided later" wording does not apply once this separate dataset is integrated.
+
+### Dataset-ID verification (CONFIRMED, independent corroboration)
+
+`www.data.go.kr` cannot be reached from the Claude Code sandbox that did this work: `WebFetch` returns `EGRESS_BLOCKED`, and a direct `curl` through the configured egress proxy fails with `CONNECT tunnel failed, response 403` / `connect_rejected (organization policy)`. The same block applies to `odp.airport.kr` (Incheon Airport Corporation's own API portal) and `velog.io`. This is an environment-level network policy, not a provider outage.
+
+Because the primary source could not be read directly, the dataset ID `15161098` for A4-T2 was cross-checked against an independent, recently-crawled public catalog: `JunsikChoi/korea-cli` (`docs/api-catalog/by-org/인천국제공항공사.md`, committed 2026-08-29) lists an entry titled exactly `인천국제공항공사_출국장 혼잡도_제2여객터미널 조회` at `data.go.kr/data/15161098/openapi.do`, with a Korean description matching the A4-T1 shape (gate number grouped A/B/C/D, checkpoint 1–2, occurrence time, waiting-person count, terminal fixed to T2). This is treated as **CONFIRMED** dataset-ID evidence (independent source, exact title match, freshly crawled), not as a REST contract.
+
+### REST contract — BLOCKED, not guessed
+
+The exact operation path (e.g. `apis.data.go.kr/B551177/.../getXxx`), request parameter names, and JSON response field names for both A4-T2 and A5 remain **UNVERIFIED**. Neither WebSearch, GitHub code search, nor the two independent repositories found while researching this (`JunsikChoi/korea-cli`, `DongsooJung/dongsoojung.github.io`) publish the actual data.go.kr operation contract:
+
+- `DongsooJung/dongsoojung.github.io` (`scripts/update-airport-congestion.mjs`) calls the airport's own public website (`www.airport.kr/pgn/ap_ko/passengerNoticeApiData.do`, `.../ap_ko/883/subview.do`) with an HTML/JSON scrape, not the authenticated `apis.data.go.kr` gateway. It corroborates that T1/T2 checkpoint waiting and T1/T2 hourly forecast data both exist as distinct queryable dimensions, but it is not the official contract and must not be transplanted into the collector per the owner's explicit instruction not to invent an endpoint.
+
+Per `docs/ENGINEERING_DIRECTION.md` §6 ("real HTTP contract check" before implementation) and the owner's explicit instruction not to invent a dataset ID or REST endpoint, **no A4-T2 or A5 collector was implemented** in this work. This is a genuine external blocker, not a skipped step.
+
+**Owner action required to unblock:** open each page's "Open API" tab while signed in —
+
+- `https://www.data.go.kr/data/15161098/openapi.do`
+- `https://www.data.go.kr/data/15095066/openapi.do`
+
+— and paste the exact 요청주소 (request URL / operation name), the full request-parameter table (name, required/optional, sample value), and one sample response JSON block for each. Once that is available, the collector, schema, tests, schedule and UI work in this document's plan can proceed using the same pattern as A1–A4/S1–S3/W1/T1.
+
 ## Authentication notes
 
 - data.go.kr issues one 일반 인증키 per account; utilization applications are per-API. Do not tell the owner a second "Decoding key" exists when the account screen shows one key.

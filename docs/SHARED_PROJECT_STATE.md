@@ -213,6 +213,7 @@ Authoritative per-source contract matrix: `docs/DATA_SOURCES.md`.
 - On 2026-08-30, bounded GitHub Actions run #19 proved shared-gateway reachability and authenticated all six `apis.data.go.kr` sources: A1/A2/A3/A4/W1/T1 returned HTTP 200 and official success codes within 2.5 seconds. The older 10-second aborts remain historical `REQUEST_ERROR` evidence, not authentication failures. See `docs/DATA_SOURCES.md` for the exact field contracts and A1-primary/A2-enrichment decision.
 - `S2` short-stay foreign population: the dong-level series ended (2026-06-09 portal notice); the 250m-grid successor's exact dataset ID/API service name still needs one portal check. Legacy dong history stays bundled as OFFICIAL_HISTORICAL.
 - Manual bounded one-shot import: **One-shot Data Import** workflow (workflow_dispatch + literal `IMPORT`). The recurring collector remains OFF behind `ENABLE_PRODUCTION_COLLECTOR`.
+- Two additional owner-approved sources — A4-T2 (T2 departure-hall congestion, `15161098`) and A5 (T1/T2 passenger forecast, `15095066`) — have confirmed dataset IDs (cross-checked against an independent public catalog since `www.data.go.kr` is unreachable from the Claude Code sandbox) but **no verified REST contract and no collector code**. See `docs/DATA_SOURCES.md` §"A4-T2 and A5 — approved but contract-unverified" for the exact evidence trail and the one owner action that unblocks implementation. Do not report these as CODED, SCHEDULED, ENABLED, or VERIFIED AUTO.
 
 ## 12. Competitive landscape snapshot
 

@@ -58,8 +58,9 @@ Default production policy:
 Current prepared state:
 
 - Production Worker Cron is removed.
-- `.github/workflows/collect-production.yml` is the only collector scheduler.
-- It remains disabled unless `ENABLE_PRODUCTION_COLLECTOR=true` after all source gates pass.
+- `.github/workflows/collect-production.yml` and its sibling scheduled workflows are the only collector schedulers.
+- Each remains disabled unless `ENABLE_PRODUCTION_COLLECTOR=true` after all source gates pass.
+- **Set `ENABLE_PRODUCTION_COLLECTOR` as a repository-level Actions variable** (Settings → Secrets and variables → Actions → Variables tab), not as a variable scoped to the `production` Environment. Every collection workflow gates on it with a **job-level** `if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'` while also declaring `environment: production` on that same job. GitHub Actions evaluates a job-level `if:` before the job's environment is resolved, so an environment-scoped variable is invisible at that point and the job will silently stay skipped even when the Environment's variable list shows it as `true`. Confirm the value in the **repository** Variables tab, not only inside the Environment's own variable list.
 - Initial cadence is every two hours at minute 07: 12 calls/day, at most 24 with one retry.
 - Change history is separately disabled unless `RPK_RETAIN_FLIGHT_CHANGE_HISTORY=true`; enable only after real D1 write/storage measurement.
 
