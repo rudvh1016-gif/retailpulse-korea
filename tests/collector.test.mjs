@@ -64,15 +64,10 @@ const s2Row = (dongCode, value, overrides = {}) => ({
 });
 
 test("S2 period candidates start at the most recent completed KST day and stay bounded", () => {
-  assert.deepEqual(seoulForeignPeriodCandidates(new Date("2026-08-30T03:00:00Z")), [
-    { ymd: "20260829", tt: "23" },
-    { ymd: "20260828", tt: "23" },
-    { ymd: "20260827", tt: "23" },
-    { ymd: "20260826", tt: "23" },
-    { ymd: "20260825", tt: "23" },
-    { ymd: "20260824", tt: "23" },
-    { ymd: "20260823", tt: "23" },
-  ]);
+  const periods = seoulForeignPeriodCandidates(new Date("2026-08-30T03:00:00Z"));
+  assert.equal(periods.length, 62);
+  assert.deepEqual(periods[0], { ymd: "20260829", tt: "23" });
+  assert.deepEqual(periods.at(-1), { ymd: "20260629", tt: "23" });
 });
 
 test("S2 collector persists one raw and area row per mapping idempotently", async (context) => {
@@ -218,7 +213,7 @@ test("S2 collector rejects duplicate provider rows instead of double counting", 
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_area").get().count, 0);
 });
 
-test("S2 collector stops after seven no-data candidates without writing", async (context) => {
+test("S2 collector stops at the official recent-two-month bound without writing", async (context) => {
   const databasePath = join(tmpdir(), `rpk-s2-empty-${process.pid}.db`);
   const database = new DatabaseSync(databasePath);
   const originalFetch = globalThis.fetch;
@@ -247,7 +242,7 @@ test("S2 collector stops after seven no-data candidates without writing", async 
   );
 
   assert.deepEqual(result, { status: "ERROR", records: 0 });
-  assert.equal(requests, 7);
+  assert.equal(requests, 62);
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_dong").get().count, 0);
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_area").get().count, 0);
 });
