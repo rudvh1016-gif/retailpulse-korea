@@ -70,7 +70,7 @@ test("A1 today fallback scans every bounded 100-row page, filters KST date, and 
     assert.equal(url.searchParams.get("type"), "json");
     assert.equal(url.searchParams.get("serviceKey"), "fixture-key");
     assert.deepEqual([...url.searchParams.keys()].sort(), ["numOfRows", "pageNo", "serviceKey", "type"]);
-    assert.deepEqual(options, { timeoutMs: 30_000, retries: 0 });
+    assert.deepEqual(options, { timeoutMs: 30_000, retries: 1, retryDelayMs: 750 });
   }
 });
 
