@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       sources:
-        description: Comma list (seoul_realtime, seoul_sales, weather, events, airport_congestion, airport_flights)
+        description: Comma list (seoul_realtime, seoul_foreign, seoul_sales, weather, events, airport_congestion, airport_flights)
         required: true
         default: seoul_realtime,seoul_sales
         type: string

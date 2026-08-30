@@ -1,5 +1,13 @@
+import { runSeoulS2Smoke } from "./smoke-public-apis-lib.mjs";
+
 /**
  * Read-only smoke verification for KORETAIL official data sources.
+ *
+ * `SMOKE_SCOPE` selects which providers are contacted: `all` (default) or
+ * `seoul` to contact Seoul hosts only. Use `seoul` while the owner's
+ * data.go.kr account is externally blocked, so a Seoul-side check never
+ * spends calls against — or reports noise from — a provider that is known
+ * to be unreachable for account reasons.
  *
  * Safety contract:
  * - one normal request per source, plus at most ONE structurally justified
@@ -15,6 +23,8 @@
 
 const DATA_KEY = process.env.DATA_GO_KR_SERVICE_KEY ?? "";
 const SEOUL_KEY = process.env.SEOUL_OPEN_DATA_KEY ?? "";
+const SCOPE = (process.env.SMOKE_SCOPE ?? "all").trim().toLowerCase();
+const SEOUL_ONLY = SCOPE === "seoul";
 
 function keyDiagnostics(value) {
   return {
@@ -193,6 +203,10 @@ const results = [];
 
 async function runDataGoKr() {
   const diag = keyDiagnostics(DATA_KEY);
+  if (SEOUL_ONLY) {
+    for (const source of dataGoKrSources) results.push({ sourceId: source.id, authStatus: "SKIPPED", reason: "SMOKE_SCOPE=seoul" });
+    return { construction: null, diag, skipped: true };
+  }
   if (!diag.present) {
     for (const source of dataGoKrSources) results.push({ sourceId: source.id, authStatus: "BLOCKED", reason: "DATA_GO_KR_SERVICE_KEY missing" });
     return { construction: null, diag };
@@ -247,6 +261,7 @@ async function runSeoul() {
       results.push({ sourceId: source.id, authStatus: "ERROR", reason: redact(error instanceof Error ? error.message : "fetch_failed") });
     }
   }
+  results.push(await runSeoulS2Smoke({ key: SEOUL_KEY }));
   return { diag };
 }
 
@@ -263,10 +278,11 @@ for (const line of results) console.log(JSON.stringify(line));
 const dataGoKrBlocked = results.filter((entry) => /^(A|W|T)/.test(entry.sourceId) && entry.authStatus === "BLOCKED").length;
 console.log(JSON.stringify({
   summary: true,
+  scope: SCOPE,
   dataGoKrKey: dataGoKrRun.diag,
   seoulKey: seoulRun.diag,
   construction: dataGoKrRun.construction,
-  classification: dataGoKrBlocked === dataGoKrSources.length && dataGoKrRun.diag.present
+  classification: !dataGoKrRun.skipped && dataGoKrBlocked === dataGoKrSources.length && dataGoKrRun.diag.present
     ? "DATA_GO_KR_AUTH_PROPAGATION_OR_REGISTRATION_BLOCKED"
     : null,
   sources: results.map((entry) => ({ sourceId: entry.sourceId, authStatus: entry.authStatus ?? "UNKNOWN" })),

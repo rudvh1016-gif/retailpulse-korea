@@ -4,6 +4,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
+import { runSeoulS2Smoke } from "../scripts/smoke-public-apis-lib.mjs";
+import { areaMappings } from "../lib/areas.ts";
+import {
+  aggregateSeoulForeignByArea,
+  normalizeSeoulForeignRows,
+} from "../lib/seoul-foreign.ts";
 import {
   normalizeAirportCongestion,
   normalizeEstimatedSales,
@@ -40,6 +46,7 @@ const migrations = [
   "drizzle/0001_crazy_nekra.sql",
   "drizzle/0002_reflective_martin_li.sql",
   "drizzle/0003_minor_network.sql",
+  "drizzle/0004_s2_foreign_presence.sql",
 ];
 
 function openDatabase(name) {
@@ -50,6 +57,122 @@ function openDatabase(name) {
   }
   return { database, databasePath };
 }
+
+test("S2 smoke reports the real response shape without exposing its key or request URL", async () => {
+  const calls = [];
+  const key = "fixture-key";
+  const result = await runSeoulS2Smoke({
+    key,
+    fetcher: async (url) => {
+      calls.push(String(url));
+      return Response.json({
+        Spop250mFornTempDong: {
+          list_total_count: 1,
+          RESULT: { CODE: "INFO-000", MESSAGE: "정상 처리되었습니다" },
+          row: [{
+            YMD: "20260828", TT: "14", H_DNG_CD: "11140550", SPOP: "15200",
+            CAN: null, CHN: "6000", ETC: "3000", FRA: "0", IDN: "0", IND: "0",
+            JPN: "2000", KAZ: "0", KHM: "0", LKA: "0", MNG: "0", NPL: "0",
+            PAK: "0", PHL: "0", RUS: "0", THA: "0", USA: "1000", UZB: "0", VNM: "0",
+          }],
+        },
+      });
+    },
+  });
+
+  assert.equal(calls.length, 1);
+  assert.match(calls[0], /\/json\/Spop250mFornTempDong\/1\/5\/$/);
+  assert.deepEqual(result, {
+    sourceId: "S2_SEOUL_FOREIGN_LIVING_POPULATION",
+    authStatus: "PASS",
+    format: "json",
+    officialResultCode: "INFO-000",
+    recordCount: 1,
+    firstRecordFieldNames: [
+      "CAN", "CHN", "ETC", "FRA", "H_DNG_CD", "IDN", "IND", "JPN", "KAZ", "KHM",
+      "LKA", "MNG", "NPL", "PAK", "PHL", "RUS", "SPOP", "THA", "TT", "USA", "UZB", "VNM", "YMD",
+    ],
+  });
+  assert.equal(JSON.stringify(result).includes(key), false);
+  assert.equal(JSON.stringify(result).includes("openapi.seoul.go.kr"), false);
+});
+
+const seoulForeignRow = (overrides = {}) => ({
+  YMD: "20260828",
+  TT: "14",
+  H_DNG_CD: "11140550",
+  SPOP: "10000.5",
+  CHN: "4000.2",
+  JPN: "2000.1",
+  USA: "500.0",
+  ETC: "3500.2",
+  CAN: null,
+  FRA: "0",
+  IDN: "0",
+  IND: "0",
+  KAZ: "0",
+  KHM: "0",
+  LKA: "0",
+  MNG: "0",
+  NPL: "0",
+  PAK: "0",
+  PHL: "0",
+  RUS: "0",
+  THA: "0",
+  UZB: "0",
+  VNM: "0",
+  ...overrides,
+});
+
+test("S2 representative areas use the official administrative-dong codes", () => {
+  assert.deepEqual(areaMappings.myeongdong.seoulAdministrativeDongCodes, ["11140550"]);
+  assert.deepEqual(areaMappings.hongdae.seoulAdministrativeDongCodes, ["11440660"]);
+  assert.deepEqual(areaMappings.seongsu.seoulAdministrativeDongCodes, ["11200670"]);
+});
+
+test("S2 normalizer uses SPOP as the total and preserves nationality dimensions without double counting", async () => {
+  const [first] = await normalizeSeoulForeignRows([seoulForeignRow()], "2026-08-29T07:00:00Z");
+  const [retrievedLater] = await normalizeSeoulForeignRows([seoulForeignRow()], "2026-08-29T08:00:00Z");
+
+  assert.equal(first.administrativeDongCode, "11140550");
+  assert.equal(first.referenceAt, "2026-08-28T14:00:00+09:00");
+  assert.equal(first.value, 10000.5);
+  assert.equal(first.nationalityValues.CHN, 4000.2);
+  assert.equal(first.nationalityValues.CAN, null);
+  assert.equal(first.sourceHash, retrievedLater.sourceHash);
+
+  const aggregates = await aggregateSeoulForeignByArea([first], {
+    myeongdong: ["11140550"],
+    hongdae: [],
+    seongsu: [],
+  });
+  assert.equal(aggregates[0].value, 10000.5);
+});
+
+test("S2 aggregation combines mapped dongs once and ignores an unmapped dong", async () => {
+  const rows = await normalizeSeoulForeignRows([
+    seoulForeignRow({ H_DNG_CD: "11140550", SPOP: "100" }),
+    seoulForeignRow({ H_DNG_CD: "11140560", SPOP: "80" }),
+    seoulForeignRow({ H_DNG_CD: "99999999", SPOP: "900" }),
+  ], "2026-08-29T07:00:00Z");
+  const aggregates = await aggregateSeoulForeignByArea(rows, {
+    myeongdong: ["11140550", "11140560"],
+    hongdae: [],
+    seongsu: [],
+  });
+
+  assert.equal(aggregates.length, 1);
+  assert.equal(aggregates[0].area, "myeongdong");
+  assert.deepEqual(aggregates[0].administrativeDongCodes, ["11140550", "11140560"]);
+  assert.equal(aggregates[0].value, 180);
+});
+
+test("S2 normalizer rejects a missing total instead of summing nationality columns", async () => {
+  await assert.rejects(
+    normalizeSeoulForeignRows([seoulForeignRow({ SPOP: null })], "2026-08-29T07:00:00Z"),
+    /invalid_SPOP/,
+  );
+});
 
 // Sanitized fixture using the exact field names returned by the authenticated
 // 2026-08-27 smoke run against citydata_ppltn (INFO-000, POI003).

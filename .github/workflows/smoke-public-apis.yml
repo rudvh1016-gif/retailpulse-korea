@@ -2,6 +2,13 @@ name: Smoke Public APIs
 
 on:
   workflow_dispatch:
+    inputs:
+      scope:
+        description: Providers to contact
+        required: true
+        default: all
+        type: choice
+        options: [all, seoul]
 
 permissions:
   contents: read
@@ -17,4 +24,5 @@ jobs:
         env:
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
           SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
+          SMOKE_SCOPE: ${{ inputs.scope }}
         run: node scripts/smoke-public-apis.mjs

@@ -252,6 +252,46 @@ test("keeps V5.5 expanded copy available in all four languages", async () => {
   assert.doesNotMatch(page, /多语种 안내/);
 });
 
+test("labels the S2 signal as delayed official data in all four languages", async () => {
+  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  const route = await readFile(new URL("../app/api/live/summary/route.ts", import.meta.url), "utf8");
+  for (const phrase of [
+    "단기외국인 생활인구",
+    "Short-stay foreign living population",
+    "短期停留外国人生活人口",
+    "短期滞在外国人生活人口",
+    "지연 공개",
+    "delayed publication",
+    "延迟发布",
+    "遅延公開",
+    "실시간 아님",
+    "not real-time",
+    "非实时",
+    "リアルタイムではありません",
+  ]) assert.match(signals, new RegExp(phrase));
+  assert.match(signals, /OFFICIAL DATA SIGNALS · KST/);
+  assert.doesNotMatch(signals, /OFFICIAL LIVE SIGNALS/);
+  assert.match(route, /FROM seoul_foreign_presence_area/);
+  assert.match(route, /product_version AS productVersion/);
+  assert.match(route, /foreignPresenceRows = await safeAll[\s\S]*FROM seoul_foreign_presence_area/);
+  assert.match(route, /record_origin AS freshness/);
+  assert.match(route, /quality_status AS qualityStatus/);
+  assert.ok((route.match(/source_id = \?/g) ?? []).length >= 2);
+  assert.ok((route.match(/product_version = \?/g) ?? []).length >= 2);
+  assert.ok((route.match(/mapping_version = \?/g) ?? []).length >= 2);
+  assert.match(route, /SEOUL_FOREIGN_PRODUCT_VERSION/);
+  assert.match(route, /SEOUL_FOREIGN_MAPPING_VERSION/);
+  assert.match(route, /\.bind\([\s\S]*SEOUL_FOREIGN_SOURCE_ID[\s\S]*SEOUL_FOREIGN_MAPPING_VERSION[\s\S]*SEOUL_FOREIGN_SOURCE_ID[\s\S]*SEOUL_FOREIGN_MAPPING_VERSION[\s\S]*\)\.all<Row>/);
+  assert.match(route, /record_origin = 'OFFICIAL_HISTORICAL'/);
+  assert.match(route, /quality_status = 'VALID'/);
+  assert.doesNotMatch(route, /freshness: "OFFICIAL_HISTORICAL"/);
+  assert.match(signals, /if \(block\?\.foreignPresence\)/);
+  const foreignBlock = signals.match(/if \(block\?\.foreignPresence\) \{([\s\S]*?)\n  \}/)?.[1] ?? "";
+  assert.ok(foreignBlock.length > 0);
+  assert.doesNotMatch(foreignBlock, /trend|delta|arrow|DEMO|↑|↓|%/i);
+  assert.match(signals, /maximumFractionDigits: 1/);
+});
+
 test("applies a user-defined month range to airport and business history", async () => {
   const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");

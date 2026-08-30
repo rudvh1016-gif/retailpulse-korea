@@ -10,6 +10,7 @@ const migrations = [
   "drizzle/0001_crazy_nekra.sql",
   "drizzle/0002_reflective_martin_li.sql",
   "drizzle/0003_minor_network.sql",
+  "drizzle/0004_s2_foreign_presence.sql",
 ];
 
 function applyMigrations(database) {
@@ -38,6 +39,8 @@ test("D1 migrations apply and prediction rows remain immutable", () => {
       "airport_flight_changes",
       "airport_flow",
       "foreign_presence",
+      "seoul_foreign_presence_dong",
+      "seoul_foreign_presence_area",
       "predictions",
       "outcomes",
       "baseline_predictions",
@@ -46,6 +49,39 @@ test("D1 migrations apply and prediction rows remain immutable", () => {
     ]) {
       assert.ok(tables.includes(table), `missing table: ${table}`);
     }
+
+    const columns = (table) => database.prepare(`PRAGMA table_info(${table})`).all().map(({ name }) => name);
+    assert.deepEqual(columns("seoul_foreign_presence_dong"), [
+      "id", "source_id", "product_version", "record_origin", "administrative_dong_code",
+      "reference_at", "available_at", "retrieved_at", "value", "unit", "nationality_json",
+      "schema_version", "quality_status", "source_hash",
+    ]);
+    assert.deepEqual(columns("seoul_foreign_presence_area"), [
+      "id", "source_id", "product_version", "record_origin", "area", "reference_at",
+      "available_at", "retrieved_at", "value", "unit", "administrative_dong_codes_json",
+      "mapping_version", "schema_version", "quality_status", "source_hash",
+    ]);
+    assert.deepEqual(
+      database.prepare("PRAGMA index_info(seoul_foreign_presence_area_unique)").all().map(({ name }) => name),
+      ["source_id", "product_version", "mapping_version", "area", "reference_at"],
+    );
+
+    const insertMappedArea = database.prepare(`INSERT INTO seoul_foreign_presence_area (
+      id, source_id, product_version, record_origin, area, reference_at,
+      available_at, retrieved_at, value, unit, administrative_dong_codes_json,
+      mapping_version, schema_version, quality_status, source_hash
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+    for (const mappingVersion of ["mapping-v1", "mapping-v2"]) {
+      insertMappedArea.run(
+        `mapped-${mappingVersion}`, "S", "P", "OFFICIAL_HISTORICAL", "myeongdong",
+        "2026-08-26T23:00:00+09:00", null, "2026-08-30T00:00:00Z", 100,
+        "people", '["11140550"]', mappingVersion, "schema-v1", "VALID", `hash-${mappingVersion}`,
+      );
+    }
+    assert.equal(
+      database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_area").get().count,
+      2,
+    );
 
     const currentPlan = database.prepare(`EXPLAIN QUERY PLAN
       SELECT source_hash FROM airport_flights

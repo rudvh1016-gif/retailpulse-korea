@@ -128,3 +128,70 @@ test("health endpoints degrade without exposing internal errors", async ({ reque
   expect(body.app).toBe("ok");
   expect(JSON.stringify(body)).not.toMatch(/stack|serviceKey|token/i);
 });
+
+test("official S2 signal fits a 390px landing page without implying a trend", async ({ page }) => {
+  await page.route("**/api/live/summary", async (route) => route.fulfill({
+    contentType: "application/json",
+    body: JSON.stringify({
+      mode: "live-summary",
+      generatedAt: "2026-08-30T00:00:00Z",
+      areas: {
+        myeongdong: {
+          realtime: null,
+          weather: [],
+          events: [],
+          sales: null,
+          foreignPresence: {
+            value: 15200.5,
+            unit: "people",
+            referenceAt: "2026-08-28T14:00:00+09:00",
+            retrievedAt: "2026-08-30T00:00:00Z",
+            productVersion: "OA-23018:Spop250mFornTempDong",
+            freshness: "OFFICIAL_HISTORICAL",
+            qualityStatus: "VALID",
+          },
+        },
+      },
+      airport: { congestion: [], departuresTrackedToday: null },
+    }),
+  }));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ko");
+  await expect(page.getByText("단기외국인 생활인구", { exact: true })).toBeVisible();
+  const koreanRow = page.locator(".live-signal-rows p").filter({ hasText: "단기외국인 생활인구" });
+  await expect(koreanRow).toContainText("15,200.5 명");
+  await expect(koreanRow).toContainText(/지연 공개.*실시간 아님/);
+  await expect(koreanRow).not.toContainText(/↑|↓|DEMO|데모|%/);
+  expect(await koreanRow.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+
+  for (const [locale, label, delayed, notRealtime, demo] of [
+    ["en", "Short-stay foreign living population", "delayed publication", "not real-time", "Demo"],
+    ["zh", "短期停留外国人生活人口", "延迟发布", "非实时", "演示"],
+    ["ja", "短期滞在外国人生活人口", "遅延公開", "リアルタイムではありません", "デモ"],
+  ] as const) {
+    await page.goto(`/${locale}`);
+    await expect(page.getByText(label, { exact: true })).toBeVisible();
+    const row = page.locator(".live-signal-rows p").filter({ hasText: label });
+    await expect(row).toContainText("15,200.5");
+    await expect(row).toContainText(delayed);
+    await expect(row).toContainText(notRealtime);
+    await expect(row).not.toContainText(new RegExp(`↑|↓|${demo}|%`, "i"));
+    expect(await row.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+  }
+});
+
+test("missing S2 data is omitted instead of showing a zero or Demo value", async ({ page }) => {
+  await page.route("**/api/live/summary", async (route) => route.fulfill({
+    contentType: "application/json",
+    body: JSON.stringify({
+      mode: "live-summary",
+      generatedAt: "2026-08-30T00:00:00Z",
+      areas: { myeongdong: { realtime: null, weather: [], events: [], sales: null, foreignPresence: null } },
+      airport: { congestion: [], departuresTrackedToday: null },
+    }),
+  }));
+  await page.goto("/ko");
+  await expect(page.getByText("단기외국인 생활인구", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".live-signals")).toHaveCount(0);
+});

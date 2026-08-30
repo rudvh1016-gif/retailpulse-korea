@@ -33,6 +33,8 @@ export interface AreaMapping {
    * OpenAPI's positional filters run STDR_YYQU_CD → TRDAR_SE_CD → TRDAR_CD.
    */
   salesTradeArea: { code: string; name: string; seCd: "A" | "D" | "R" | "U" };
+  /** Official 8-digit administrative-dong codes used by Seoul OA-23018 S2. */
+  seoulAdministrativeDongCodes: readonly string[];
 }
 
 export const areaMappings: Record<AreaId, AreaMapping> = {
@@ -44,6 +46,7 @@ export const areaMappings: Record<AreaId, AreaMapping> = {
     center: { lat: 37.5636, lng: 126.9838 },
     eventRadiusM: 1500,
     salesTradeArea: { code: "3001492", name: "명동 남대문 북창동 다동 무교동 관광특구", seCd: "U" },
+    seoulAdministrativeDongCodes: ["11140550"],
   },
   hongdae: {
     id: "hongdae",
@@ -53,6 +56,7 @@ export const areaMappings: Record<AreaId, AreaMapping> = {
     center: { lat: 37.5563, lng: 126.9236 },
     eventRadiusM: 1500,
     salesTradeArea: { code: "3120103", name: "홍대입구역(홍대)", seCd: "D" },
+    seoulAdministrativeDongCodes: ["11440660"],
   },
   seongsu: {
     id: "seongsu",
@@ -62,6 +66,7 @@ export const areaMappings: Record<AreaId, AreaMapping> = {
     center: { lat: 37.5447, lng: 127.0557 },
     eventRadiusM: 1500,
     salesTradeArea: { code: "3110131", name: "성수동카페거리", seCd: "A" },
+    seoulAdministrativeDongCodes: ["11200670"],
   },
 };
 
