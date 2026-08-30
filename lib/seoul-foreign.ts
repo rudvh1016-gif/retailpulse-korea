@@ -49,6 +49,7 @@ function requiredNumber(value: unknown, field: string): number {
 
 function optionalNumber(value: unknown, field: string): number | null {
   if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "string" && value.trim() === "*") return null;
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed < 0) throw new Error(`invalid_${field}`);
   return parsed;
