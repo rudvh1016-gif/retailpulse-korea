@@ -122,9 +122,17 @@ export async function GET() {
     // Flight schedule timestamps carry +09:00; compare against the KST date.
     const kstToday = new Date(now + 9 * 3_600_000).toISOString().slice(0, 10);
     const flightRows = await safeAll<Row>(async () => (await client.prepare(
-      `SELECT COUNT(*) AS flights, MAX(retrieved_at) AS retrievedAt FROM airport_flights
+      `SELECT COUNT(DISTINCT physical_flight_id) AS flights, MAX(retrieved_at) AS retrievedAt FROM airport_flights
       WHERE direction = 'departure' AND substr(scheduled_at, 1, 10) = ?`,
     ).bind(kstToday).all<Row>()).results ?? []);
+
+    const scheduledRows = await safeAll<Row>(async () => (await client.prepare(
+      `SELECT terminal, COUNT(*) AS flights, MIN(scheduled_time) AS firstTime, MAX(scheduled_time) AS lastTime,
+        MAX(retrieved_at) AS retrievedAt
+      FROM airport_scheduled_flights
+      WHERE valid_from <= ? AND valid_to >= ?
+      GROUP BY terminal ORDER BY terminal`,
+    ).bind(kstToday, kstToday).all<Row>()).results ?? []);
 
     const areas = Object.fromEntries(AREAS.map((area) => {
       const realtime = realtimeRows.find((row) => row.area === area) ?? null;
@@ -156,6 +164,7 @@ export async function GET() {
       airport: {
         congestion: congestionRows.map((row) => ({ ...row, freshness: freshnessOf(row.observedAt, 20, now) })),
         departuresTrackedToday: flightsToday > 0 ? flightsToday : null,
+        scheduled: scheduledRows,
       },
     }, {
       headers: { "cache-control": "public, max-age=60, stale-while-revalidate=300" },
@@ -166,7 +175,7 @@ export async function GET() {
       generatedAt,
       sources: [],
       areas: {},
-      airport: { congestion: [], departuresTrackedToday: null },
+      airport: { congestion: [], departuresTrackedToday: null, scheduled: [] },
       message: "Live sources are not connected. Official historical and Demo-labelled views remain available.",
     }, { status: 200, headers: { "cache-control": "no-store" } });
   }

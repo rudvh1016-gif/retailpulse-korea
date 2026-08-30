@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { assertFeatureAvailableAtCutoff, assertTargetMatch, type ForecastFeature, type PredictionInput } from "../lib/contracts";
 import { createImmutablePrediction, fourWeekAverageBaseline, sameWeekdayBaseline, seasonalNaiveBaseline } from "../lib/forecast";
-import { fetchOfficialJson, normalizeAirportFlight, SourceFetchError } from "../lib/source-adapters";
+import { fetchOfficialJson, normalizeAirportCongestion, normalizeAirportFlight, normalizeScheduledAirportFlight, SourceFetchError } from "../lib/source-adapters";
 
 const feature: ForecastFeature = {
   sourceId: "TEST",
@@ -83,6 +83,33 @@ test("normalizes compact KST timestamps and official lowercase gate fields", asy
   assert.equal(record.gate, "231");
   assert.equal(record.status, "delayed");
   assert.equal(record.terminal, "T2");
+});
+
+test("physical flight identity deduplicates codeshares and survives changed time", async () => {
+  const base = { scheduleDateTime: "202608301430", masterFlightId: "KE703", terminalId: "P01" };
+  const operating = await normalizeAirportFlight({ ...base, flightId: "KE703", codeshare: "N", estimatedDateTime: "202608301430" }, "departure", "2026-08-30T00:00:00Z");
+  const codeshare = await normalizeAirportFlight({ ...base, flightId: "DL9001", codeshare: "Y", estimatedDateTime: "202608301500" }, "departure", "2026-08-30T00:01:00Z");
+  const nextDate = await normalizeAirportFlight({ ...base, scheduleDateTime: "202608311430", flightId: "KE703" }, "departure", "2026-08-30T00:00:00Z");
+  assert.equal(operating.physicalFlightId, codeshare.physicalFlightId);
+  assert.equal(codeshare.flightNumber, "KE703");
+  assert.notEqual(operating.physicalFlightId, nextDate.physicalFlightId);
+});
+
+test("A3 schedule has no actual gate and stays a separate contract", async () => {
+  const row = await normalizeScheduledAirportFlight({
+    fid: "F1", season: "S26", firstdate: "20260801", lastdate: "20261031", st: "1430",
+    flightId: "KE703", masterFlightId: "KE703", terminalId: "P01", ynMon: "Y", ynTue: "N",
+  }, "2026-08-30T00:00:00Z");
+  assert.equal(row.terminal, "T1");
+  assert.equal(row.scheduledTime, "14:30");
+  assert.deepEqual(row.weekdays, ["MON"]);
+  assert.equal("gate" in row, false);
+});
+
+test("A4 accepts the official P01/T1 scope and rejects invented P03/T2", async () => {
+  const base = { gateId: "DG3_E", waitLength: "245", occurtime: "202608272355" };
+  assert.equal((await normalizeAirportCongestion({ ...base, terminalId: "P01" }, "2026-08-27T15:00:00Z")).terminal, "T1");
+  await assert.rejects(normalizeAirportCongestion({ ...base, terminalId: "P03" }, "2026-08-27T15:00:00Z"), (error: unknown) => error instanceof SourceFetchError && error.code === "SCHEMA");
 });
 
 test("classifies malformed and HTTP source responses", async (context) => {

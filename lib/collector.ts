@@ -2,6 +2,7 @@ import {
   fetchOfficialJson,
   normalizeAirportCongestion,
   normalizeAirportFlight,
+  normalizeScheduledAirportFlight,
   normalizeEstimatedSales,
   normalizeSeoulRealtime,
   normalizeTourismEvent,
@@ -10,6 +11,7 @@ import {
   redactServiceKey,
   type CanonicalAirportCongestion,
   type CanonicalAirportFlight,
+  type CanonicalScheduledAirportFlight,
   type CanonicalEstimatedSales,
   type CanonicalSeoulRealtime,
   type CanonicalTourismEvent,
@@ -99,12 +101,7 @@ async function persistAirportFlights(db: D1Database | undefined, records: Canoni
   if (!db || !records.length) return 0;
   const statements: D1PreparedStatement[] = [];
   for (const record of records) {
-    const id = await sha256({
-      sourceId: record.sourceId,
-      flightNumber: record.flightNumber,
-      direction: record.direction,
-      scheduledAt: record.scheduledAt,
-    });
+    const id = record.physicalFlightId;
     if (retainChangeHistory) statements.push(db.prepare(`INSERT INTO airport_flight_changes (
         id, source_id, direction, flight_number, scheduled_at, changed_at,
         terminal, gate, checkin_counter, status, semantic_hash, observed_at
@@ -138,9 +135,10 @@ async function persistAirportFlights(db: D1Database | undefined, records: Canoni
         id, source_id, record_origin, direction, flight_number, airline_code,
         airport_code, terminal, gate, checkin_counter, status, scheduled_at,
         changed_at, event_at, published_at, retrieved_at, freshness,
-        schema_version, quality_status, source_hash
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(source_id, flight_number, direction, scheduled_at) DO UPDATE SET
+        schema_version, quality_status, source_hash, physical_flight_id,
+        upstream_fid, master_flight_number, codeshare
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(physical_flight_id) DO UPDATE SET
         airline_code = excluded.airline_code,
         airport_code = excluded.airport_code,
         terminal = excluded.terminal,
@@ -154,7 +152,10 @@ async function persistAirportFlights(db: D1Database | undefined, records: Canoni
         freshness = excluded.freshness,
         schema_version = excluded.schema_version,
         quality_status = excluded.quality_status,
-        source_hash = excluded.source_hash
+        source_hash = excluded.source_hash,
+        upstream_fid = excluded.upstream_fid,
+        master_flight_number = excluded.master_flight_number,
+        codeshare = excluded.codeshare
       WHERE airport_flights.source_hash <> excluded.source_hash`)
       .bind(
         id,
@@ -177,6 +178,10 @@ async function persistAirportFlights(db: D1Database | undefined, records: Canoni
         record.schemaVersion,
         record.qualityStatus,
         record.sourceHash,
+        record.physicalFlightId,
+        record.upstreamFid,
+        record.masterFlightNumber,
+        record.codeshare,
       ));
   }
 
@@ -195,8 +200,6 @@ export async function collectAirportFlights(env: CollectorEnv): Promise<{ status
     return { status: "NEEDS_KEY", records: 0 };
   }
 
-  // Endpoint and operation are official. Query semantics must be rechecked
-  // against the approved account guide before this collector is enabled LIVE.
   const url = buildDataGoKrUrl(
     "https://apis.data.go.kr/B551177/statusOfAllFltDeOdp/getFltDeparturesDeOdp",
     env.DATA_GO_KR_SERVICE_KEY,
@@ -204,8 +207,9 @@ export async function collectAirportFlights(env: CollectorEnv): Promise<{ status
   );
 
   try {
-    const payload = await fetchOfficialJson(url, { timeoutMs: 8_000, retries: 1 });
-    const root = payload as { response?: { body?: { items?: { item?: unknown[] | unknown } } } };
+    const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
+    const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] | unknown } } } };
+    if (root?.response?.header?.resultCode !== "00") throw new Error(`airport_result_${String(root?.response?.header?.resultCode ?? "missing")}`);
     const rawItems = root?.response?.body?.items?.item;
     const items = Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
     const retrievedAt = nowIso();
@@ -216,9 +220,104 @@ export async function collectAirportFlights(env: CollectorEnv): Promise<{ status
     return { status: "SUCCESS", records: written };
   } catch (error) {
     const detail = error instanceof Error ? error.message : "collector_error";
-    console.error("airport_collector_failed", { endpoint: redactServiceKey(url.toString()), error: detail });
+    console.error("airport_collector_failed", { sourceId: "INCHEON_FLIGHT_DETAIL", error: detail });
     await writeCollectorStatus(env.DB, "INCHEON_FLIGHT_DETAIL", "ERROR", detail);
     await writeSourceHealth(env.DB, "INCHEON_FLIGHT_DETAIL", "ERROR", detail);
+    return { status: "ERROR", records: 0 };
+  }
+}
+
+/** A2 validates and enriches A1 rows; it never inserts a second physical flight. */
+export async function collectAirportFlightEnrichment(env: CollectorEnv): Promise<CollectorResult> {
+  const sourceId = "INCHEON_DUTY_FREE_ACTUAL";
+  if (!env.DATA_GO_KR_SERVICE_KEY) {
+    await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "DATA_GO_KR_SERVICE_KEY is not configured");
+    await writeSourceHealth(env.DB, sourceId, "MISSING", "DATA_GO_KR_SERVICE_KEY is not configured");
+    return { status: "NEEDS_KEY", records: 0 };
+  }
+  const url = buildDataGoKrUrl(
+    "https://apis.data.go.kr/B551177/statusOfAPaxFlt4DutyFree/getAPaxFlt4DutyFreeDepartures",
+    env.DATA_GO_KR_SERVICE_KEY,
+    { type: "json", numOfRows: "1000", pageNo: "1" },
+  );
+  try {
+    const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
+    const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] | unknown } } } };
+    if (root?.response?.header?.resultCode !== "00") throw new Error(`airport_a2_result_${String(root?.response?.header?.resultCode ?? "missing")}`);
+    const raw = root?.response?.body?.items?.item;
+    const items = Array.isArray(raw) ? raw : raw ? [raw] : [];
+    const retrievedAt = nowIso();
+    const normalized = await Promise.all(items.map((item) => normalizeAirportFlight(item, "departure", retrievedAt, sourceId)));
+    const statements = normalized.map((record) => env.DB?.prepare(`UPDATE airport_flights SET
+        upstream_fid = COALESCE(upstream_fid, ?),
+        master_flight_number = COALESCE(master_flight_number, ?),
+        codeshare = COALESCE(codeshare, ?),
+        airline_code = COALESCE(airline_code, ?),
+        airport_code = COALESCE(airport_code, ?),
+        terminal = COALESCE(terminal, ?),
+        a2_source_hash = ?
+      WHERE physical_flight_id = ? AND COALESCE(a2_source_hash, '') <> ?`)
+      .bind(record.upstreamFid, record.masterFlightNumber, record.codeshare, record.airlineCode, record.airportCode, record.terminal, record.sourceHash, record.physicalFlightId, record.sourceHash))
+      .filter((statement): statement is D1PreparedStatement => Boolean(statement));
+    const matched = env.DB && statements.length ? await runBatches(env.DB, statements) : 0;
+    const detail = `A1_PRIMARY_A2_ENRICHMENT; compared ${normalized.length}; matched writes ${matched}`;
+    await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, normalized.length, matched);
+    await writeSourceHealth(env.DB, sourceId, "LIVE", detail, { retrievedAt, schemaVersion: "airport-a2-enrichment-v1" });
+    return { status: "SUCCESS", records: matched };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "collector_error";
+    await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
+    await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
+    return { status: "ERROR", records: 0 };
+  }
+}
+
+/** A3 is future schedule data and has its own table/model. */
+export async function collectScheduledAirportFlights(env: CollectorEnv): Promise<CollectorResult> {
+  const sourceId = "INCHEON_SCHEDULED_DUTY_FREE";
+  if (!env.DATA_GO_KR_SERVICE_KEY) {
+    await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "DATA_GO_KR_SERVICE_KEY is not configured");
+    await writeSourceHealth(env.DB, sourceId, "MISSING", "DATA_GO_KR_SERVICE_KEY is not configured");
+    return { status: "NEEDS_KEY", records: 0 };
+  }
+  const url = buildDataGoKrUrl(
+    "https://apis.data.go.kr/B551177/statusOfSPaxFlt4DutyFree/getSPaxFlt4DutyFreeDepartures",
+    env.DATA_GO_KR_SERVICE_KEY,
+    { type: "json", numOfRows: "1000", pageNo: "1" },
+  );
+  try {
+    const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
+    const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] | unknown } } } };
+    if (root?.response?.header?.resultCode !== "00") throw new Error(`airport_a3_result_${String(root?.response?.header?.resultCode ?? "missing")}`);
+    const raw = root?.response?.body?.items?.item;
+    const items = Array.isArray(raw) ? raw : raw ? [raw] : [];
+    const retrievedAt = nowIso();
+    const normalized: CanonicalScheduledAirportFlight[] = await Promise.all(items.map((item) => normalizeScheduledAirportFlight(item, retrievedAt)));
+    const statements = normalized.map((record) => env.DB?.prepare(`INSERT INTO airport_scheduled_flights (
+        physical_schedule_id, source_id, upstream_fid, season, valid_from, valid_to, weekdays,
+        flight_number, master_flight_number, codeshare, airline, airline_code, airport, airport_code,
+        terminal, scheduled_time, retrieved_at, schema_version, quality_status, source_hash
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(physical_schedule_id) DO UPDATE SET
+        valid_from = excluded.valid_from, valid_to = excluded.valid_to, weekdays = excluded.weekdays,
+        airline = excluded.airline, airline_code = excluded.airline_code, airport = excluded.airport,
+        airport_code = excluded.airport_code, terminal = excluded.terminal, retrieved_at = excluded.retrieved_at,
+        quality_status = excluded.quality_status, source_hash = excluded.source_hash
+      WHERE airport_scheduled_flights.source_hash <> excluded.source_hash`)
+      .bind(record.physicalScheduleId, sourceId, record.upstreamFid, record.season, record.validFrom, record.validTo,
+        JSON.stringify(record.weekdays), record.flightNumber, record.masterFlightNumber, record.codeshare,
+        record.airline, record.airlineCode, record.airport, record.airportCode, record.terminal,
+        record.scheduledTime, record.retrievedAt, record.schemaVersion, record.qualityStatus, record.sourceHash))
+      .filter((statement): statement is D1PreparedStatement => Boolean(statement));
+    const written = env.DB && statements.length ? await runBatches(env.DB, statements) : 0;
+    const detail = `future schedule ${normalized.length}; changed writes ${written}`;
+    await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, normalized.length, written);
+    await writeSourceHealth(env.DB, sourceId, "LIVE", detail, { retrievedAt, schemaVersion: "airport-schedule-v1" });
+    return { status: "SUCCESS", records: written };
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "collector_error";
+    await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
+    await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
     return { status: "ERROR", records: 0 };
   }
 }
@@ -500,7 +599,7 @@ export async function collectEstimatedSales(env: CollectorEnv, now = new Date())
   try {
     const fetchQuarterPage = async (quarterCode: string, start: number, end: number): Promise<Record<string, unknown>[]> => {
       const url = new URL(`http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/VwsmTrdarSelngQq/${start}/${end}/${quarterCode}`);
-      const payload = await fetchOfficialJson(url, { timeoutMs: 10_000, retries: 1 });
+      const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
       try {
         return seoulEnvelopeRows(payload, "VwsmTrdarSelngQq");
       } catch (error) {
@@ -673,7 +772,7 @@ export async function collectTourismEvents(env: CollectorEnv, now = new Date()):
     { MobileOS: "ETC", MobileApp: "KORETAIL", _type: "json", numOfRows: "100", pageNo: "1", eventStartDate: windowStart, lDongRegnCd: "11" },
   );
   try {
-    const payload = await fetchOfficialJson(url, { timeoutMs: 10_000, retries: 1 });
+    const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
     const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] | unknown } } } };
     const resultCode = root?.response?.header?.resultCode;
     if (resultCode !== "0000") throw new Error(`tourapi_result_${String(resultCode ?? "missing")}`);
@@ -752,14 +851,14 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
   const terminalCounts: string[] = [];
   let lastRow: CanonicalAirportCongestion | undefined;
   let written = 0;
-  for (const terminalId of ["P01", "P03"]) {
+  for (const terminalId of ["P01"]) {
     const url = buildDataGoKrUrl(
       "https://apis.data.go.kr/B551177/statusOfDepartureCongestion/getDepartureCongestion",
       env.DATA_GO_KR_SERVICE_KEY,
       { pageNo: "1", numOfRows: "50", type: "json", terminalId },
     );
     try {
-      const payload = await fetchOfficialJson(url, { timeoutMs: 8_000, retries: 1 });
+      const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
       const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown } } } };
       const resultCode = root?.response?.header?.resultCode;
       if (resultCode !== "00") throw new Error(`congestion_result_${String(resultCode ?? "missing")}`);
@@ -790,7 +889,7 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
   const detail = `terminals ${terminalCounts.join(", ") || "none"}; changed writes ${written}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
-  if (failures.length === 2) {
+  if (failures.length === 1) {
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
     return { status: "ERROR", records: 0 };

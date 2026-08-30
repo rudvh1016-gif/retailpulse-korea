@@ -7,9 +7,9 @@ Last verified: 2026-08-30 KST. Recheck official terms immediately before activat
 | # | Source | Provider / dataset | Endpoint (verified level) | Key | Truth boundary |
 |---|---|---|---|---|---|
 | A1 | Airport detailed flight status | 인천국제공항공사 · data.go.kr 15140153 | `apis.data.go.kr/B551177/statusOfAllFltDeOdp/getFltDeparturesDeOdp` (CONFIRMED; arrivals operation name UNVERIFIED) | `DATA_GO_KR_SERVICE_KEY` | Flights ≠ passengers ≠ shoppers |
-| A2 | Duty-free actual flights | data.go.kr 15134279 | `apis.data.go.kr/B551177/statusOfAPaxFlt4DutyFree/…` (path UNVERIFIED — needs authenticated probe) | same | Same as A1; candidate duplicate of A1 |
-| A3 | Duty-free scheduled flights | data.go.kr 15134281 | `apis.data.go.kr/B551177/statusOfSPaxFlt4DutyFree/…` (path UNVERIFIED) | same | Scheduled ≠ actual observed flight |
-| A4 | Departure-hall congestion | data.go.kr 15148225 | `apis.data.go.kr/B551177/statusOfDepartureCongestion/getDepartureCongestion` (CONFIRMED) · `terminalId` P01=T1 / P03=T2 (T2 row presence unproven) · fields `gateId(DG1_E…DG6_W)`, `waitTime`(min), `waitLength`(persons), `occurtime`(YYYYMMDDHHMM), `operatingTime` · 1-minute cadence | same | Checkpoint waits ≠ duty-free visitors ≠ sales |
+| A2 | Duty-free actual flights | data.go.kr 15134279 | `apis.data.go.kr/B551177/statusOfAPaxFlt4DutyFree/getAPaxFlt4DutyFreeDepartures` (AUTHENTICATED) | same | Same physical-flight population as A1 in the bounded check; A1 primary, A2 enrichment/validation only |
+| A3 | Duty-free scheduled flights | data.go.kr 15134281 | `apis.data.go.kr/B551177/statusOfSPaxFlt4DutyFree/getSPaxFlt4DutyFreeDepartures` (AUTHENTICATED) | same | Scheduled ≠ actual observed flight; separate D1 model |
+| A4 | Departure-hall congestion | data.go.kr 15148225 | `apis.data.go.kr/B551177/statusOfDepartureCongestion/getDepartureCongestion` (AUTHENTICATED) · `terminalId` P01=T1 only; provider says T2 is future work · fields `gateId`, `waitTime`, `waitLength`, `occurtime`, `operatingTime` | same | Checkpoint waits ≠ duty-free visitors ≠ sales |
 | S1 | Seoul real-time city data | 서울 열린데이터광장 OA-21285/OA-21778 | `openapi.seoul.go.kr:8088/{KEY}/json/citydata_ppltn/1/5/{POI}` (CONFIRMED) · POI003 명동 관광특구 · POI007 홍대 관광특구 · POI068 성수카페거리 · success key `"SeoulRtd.citydata_ppltn"` + `RESULT["RESULT.CODE"]="INFO-000"` (error envelope uses undotted `RESULT.CODE`) · congestion labels 여유/보통/약간 붐빔/붐빔 · `FCST_PPLTN` = 12 hourly forecasts · ~5-min updates · assume ~1,000 calls/day-class quota | `SEOUL_OPEN_DATA_KEY` | Live population ≠ foreign tourists ≠ shoppers |
 | S2 | Short-stay foreign living population | 서울 OA-23018 `[단기외국인] 행정동별 서울 생활인구(250m)` | `openapi.seoul.go.kr:8088/{KEY}/json/Spop250mFornTempDong/1/5/` (authenticated `INFO-000`, 5 rows, 2026-08-29) · optional filters `YMD`, `TT`, `H_DNG_CD` | `SEOUL_OPEN_DATA_KEY` | `SPOP` is the total; nationality columns are dimensions and must not be added to it. Short-stay foreign living population ≠ stay population ≠ tourist ≠ shopper ≠ sales |
 | S3 | Estimated commercial sales | 서울시 상권분석서비스(추정매출-상권) OA-15572 | `openapi.seoul.go.kr:8088/{KEY}/json/VwsmTrdarSelngQq/{start}/{end}/{STDR_YYQU_CD}` (CONFIRMED; live verification 2026-08-27 showed only the quarter positional filter applies — trade-area segments are ignored, so the collector sweeps the quarter in 1000-row pages and filters client-side) · quarterly 20211–20261 · fields `THSMON_SELNG_AMT/CO` + weekday/time/gender/age splits · trade areas: 명동 3001492(관광특구)·3120028(명동거리)·3120027(명동역), 홍대 3120103(홍대입구역)·3120102(서교동)·3120104(연남동), 성수 3110131(성수동카페거리)·3120052(성수역) | same Seoul key | 추정매출 = modelled estimate, NOT live POS sales, NOT foreign spend |
@@ -27,9 +27,9 @@ No paid API, paid data, paid fallback or runtime LLM is approved. A source witho
 
 ### Phase B authentication smoke (2026-08-30 KST)
 
-Workflow run `Smoke Public APIs #18` used commit `9c4cb78ccd8743977a8e240b3512b830b32cf460` and the configured Production Environment secret. It made one read-only request to each of A1, A2, A3, A4, W1, and T1, persisted nothing, and completed without exposing a request URL or credential representation.
+Workflow run `Smoke Public APIs #19` (`33301206353`, commit `94d00b6`) made one read-only request to each source with a 30-second ceiling and persisted nothing. Shared-gateway diagnostics passed: DNS 991ms, TLS 835ms, and secret-free HTTP TTFB 519ms. All six authenticated requests returned HTTP 200 and their official success codes. Elapsed times were A1 2452ms, A2 2468ms, A3 606ms, A4 1169ms, W1 204ms, and T1 568ms. The prior 10-second aborts were request errors, never authentication failures; the current evidence does not show a gateway or provider outage.
 
-All six requests reached the 10-second client bound and were classified `REQUEST_ERROR` with an abort timeout. This is not evidence of `AUTH_BLOCKED`, `VALID_NO_DATA`, or a valid provider schema. Earlier runs alternated between the same gateway timeouts and code 30 across all three provider families, so downstream Phase B implementation that requires real authenticated field evidence remains externally blocked. Do not invent fixtures or mark any of these sources connected from documentation alone.
+Verified first-record contracts: A1 includes `fid`, `flightId`, `masterFlightId`, `codeshare`, `scheduleDatetime`, `estimatedDatetime`, `terminalId`, `gateNumber`, `chkinRange`, and `remark`; A2 exposes the overlapping flight identity/timing/terminal fields; A3 exposes `season`, `firstdate`, `lastdate`, `st`, weekday flags, flight/master/codeshare, airline, airport and terminal; A4 exposes `gateId`, `occurtime`, `operatingTime`, `terminalId`, `waitLength`, and `waitTime`; W1 and T1 match the documented contracts above. No full payload or credential representation was logged.
 
 ## Source lifecycle
 
@@ -41,7 +41,7 @@ Raw adapter → schema validation → canonical normalizer → D1 → internal A
 
 ## Deduplication rule (A1 vs A2)
 
-A2 exists to let duty-free operators cross-check customer-entered flight info. After both return authenticated responses, run a field-level comparison; keep A2 only if it adds fields or freshness A1 lacks. Do not store two parallel copies of the same flight rows. Record the decision here.
+A1 and A2 returned the same total count (`11,745`) in the same bounded run and share `fid`, `flightId`, `masterFlightId`, `codeshare`, scheduled/estimated time, airport and terminal fields. Decision: **A1_PRIMARY_A2_ENRICHMENT**. A1 owns current physical-flight rows. A2 may fill missing shared metadata and records independent source health, but never inserts a parallel flight row. Physical identity uses direction + service date + master/operating flight + scheduled time; changed time and retrieval time do not create a second aircraft.
 
 ## S2 series transition
 
@@ -106,6 +106,6 @@ These are representative product-area mappings, not interchangeable polygons. Th
 
 ### S2 activation gate
 
-The service name, authenticated response contract, and the three representative administrative-dong mappings are complete. Activation still requires idempotent D1 persistence and internal API/UI verification.
+The service name, authenticated response contract, mappings, idempotent D1 persistence, internal API and four-locale UI are complete. Production one-shot `seoul_foreign` succeeded with 18 changed rows; it remains delayed official data, not real-time tourism counts.
 
 The prepared airport schedule is 12 calls/day and at most 24 with its single retry, below the listed 500-call development quota. This is a quota calculation, not proof of a successful approved-key response.

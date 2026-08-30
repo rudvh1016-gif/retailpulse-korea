@@ -8,6 +8,8 @@ import { runSeoulS2Smoke } from "../scripts/smoke-public-apis-lib.mjs";
 import {
   buildDataGoKrUrl,
   normalizeDataGoKrServiceKey,
+  requestDataGoKrOnce,
+  runDataGoKrSmoke,
   summarizeDataGoKrResponse,
 } from "../lib/data-go-kr.mjs";
 import { areaMappings } from "../lib/areas.ts";
@@ -52,6 +54,7 @@ const migrations = [
   "drizzle/0002_reflective_martin_li.sql",
   "drizzle/0003_minor_network.sql",
   "drizzle/0004_s2_foreign_presence.sql",
+  "drizzle/0005_airport_official_contracts.sql",
 ];
 
 test("data.go.kr encoded and decoded service keys produce one identical transport encoding", () => {
@@ -93,6 +96,82 @@ test("data.go.kr smoke classifies auth, request, schema, pass, and valid no-data
   }, "00", "fixture").authStatus, "AUTH_BLOCKED");
   assert.equal(summarizeDataGoKrResponse({ status: 503, payload: null, textSnippet: "unavailable" }, "00", "fixture").authStatus, "REQUEST_ERROR");
   assert.equal(summarizeDataGoKrResponse({ status: 200, payload: { response: {} }, textSnippet: null }, "00", "fixture").authStatus, "SCHEMA_ERROR");
+});
+
+test("data.go.kr 10s client timeout remains REQUEST_ERROR and never AUTH_BLOCKED", async () => {
+  const result = await requestDataGoKrOnce({
+    url: new URL("https://apis.data.go.kr/example?serviceKey=fixture"),
+    expectedSuccessCode: "00",
+    serviceKey: "fixture",
+    timeoutMs: 10,
+    fetcher: (_url, { signal }) => new Promise((_, reject) => {
+      signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")), { once: true });
+    }),
+  });
+  assert.equal(result.authStatus, "REQUEST_ERROR");
+  assert.equal(result.reason, "client_timeout");
+});
+
+test("data.go.kr delayed response within the 30s policy becomes PASS", async () => {
+  let calls = 0;
+  const result = await requestDataGoKrOnce({
+    url: new URL("https://apis.data.go.kr/example?serviceKey=fixture"),
+    expectedSuccessCode: "00",
+    serviceKey: "fixture",
+    timeoutMs: 30_000,
+    fetcher: async () => {
+      calls += 1;
+      await new Promise((resolve) => setTimeout(resolve, 15));
+      return Response.json({ response: { header: { resultCode: "00", resultMsg: "NORMAL SERVICE" }, body: { items: { item: [{ id: "1" }] }, totalCount: 1 } } });
+    },
+  });
+  assert.equal(calls, 1);
+  assert.equal(result.authStatus, "PASS");
+});
+
+test("data.go.kr network error is REQUEST_ERROR, secret-safe, and requested once", async () => {
+  let calls = 0;
+  const secret = "secret+/value==";
+  const result = await requestDataGoKrOnce({
+    url: buildDataGoKrUrl("https://apis.data.go.kr/example", secret, {}),
+    expectedSuccessCode: "00",
+    serviceKey: secret,
+    fetcher: async () => {
+      calls += 1;
+      throw new TypeError(`fetch failed for https://apis.data.go.kr/example?serviceKey=${secret}`);
+    },
+  });
+  assert.equal(calls, 1);
+  assert.equal(result.authStatus, "REQUEST_ERROR");
+  assert.equal(result.reason, "network_connection_error");
+  assert.equal(JSON.stringify(result).includes(secret), false);
+  assert.equal(JSON.stringify(result).includes("https://"), false);
+});
+
+test("data.go.kr request always clears its timeout", async () => {
+  let cleared = false;
+  const timer = { id: 1 };
+  const result = await requestDataGoKrOnce({
+    url: new URL("https://apis.data.go.kr/example?serviceKey=fixture"),
+    expectedSuccessCode: "00",
+    serviceKey: "fixture",
+    setTimer: () => timer,
+    clearTimer: (value) => { cleared = value === timer; },
+    fetcher: async () => Response.json({ response: { header: { resultCode: "03", resultMsg: "NO DATA" }, body: { items: {}, totalCount: 0 } } }),
+  });
+  assert.equal(result.authStatus, "VALID_NO_DATA");
+  assert.equal(cleared, true);
+});
+
+test("one data.go.kr source timeout does not fail the remaining sources", async () => {
+  const results = await runDataGoKrSmoke([{ sourceId: "A1" }, { sourceId: "W1" }], async ({ sourceId }) => {
+    if (sourceId === "A1") throw new Error("timeout");
+    return { authStatus: "PASS", elapsedMs: 20 };
+  });
+  assert.deepEqual(results.map(({ sourceId, authStatus }) => ({ sourceId, authStatus })), [
+    { sourceId: "A1", authStatus: "REQUEST_ERROR" },
+    { sourceId: "W1", authStatus: "PASS" },
+  ]);
 });
 
 function openDatabase(name) {

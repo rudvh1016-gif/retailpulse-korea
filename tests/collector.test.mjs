@@ -50,7 +50,7 @@ class LocalD1Database {
 }
 
 function applyMigrations(database) {
-  for (const file of ["drizzle/0000_daffy_tempest.sql", "drizzle/0001_crazy_nekra.sql", "drizzle/0002_reflective_martin_li.sql", "drizzle/0003_minor_network.sql", "drizzle/0004_s2_foreign_presence.sql"]) {
+  for (const file of ["drizzle/0000_daffy_tempest.sql", "drizzle/0001_crazy_nekra.sql", "drizzle/0002_reflective_martin_li.sql", "drizzle/0003_minor_network.sql", "drizzle/0004_s2_foreign_presence.sql", "drizzle/0005_airport_official_contracts.sql"]) {
     database.exec(readFileSync(file, "utf8").replaceAll("--> statement-breakpoint", ""));
   }
 }
@@ -260,6 +260,7 @@ test("airport collector stores idempotent canonical rows and source health", asy
 
   globalThis.fetch = async () => Response.json({
     response: {
+      header: { resultCode: "00" },
       body: {
         items: {
           item: {
@@ -303,7 +304,7 @@ test("retrieval time alone does not create a write, while a semantic change does
   applyMigrations(database);
 
   let gate = "231";
-  globalThis.fetch = async () => Response.json({ response: { body: { items: { item: {
+  globalThis.fetch = async () => Response.json({ response: { header: { resultCode: "00" }, body: { items: { item: {
     flightId: "KE703", scheduleDateTime: "202608251430", gatenumber: gate,
     terminalid: "2", remark: "정상",
   } } } } });
@@ -331,7 +332,7 @@ test("overlapping collector runs keep one current row and one semantic version",
     unlinkSync(databasePath);
   });
   applyMigrations(database);
-  globalThis.fetch = async () => Response.json({ response: { body: { items: { item: {
+  globalThis.fetch = async () => Response.json({ response: { header: { resultCode: "00" }, body: { items: { item: {
     flightId: "OZ101", scheduleDateTime: "202608251500", gatenumber: "12",
     terminalid: "1", remark: "정상",
   } } } } });

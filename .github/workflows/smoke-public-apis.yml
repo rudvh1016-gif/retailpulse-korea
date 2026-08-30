@@ -13,6 +13,8 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v4
+      - name: Diagnose shared gateway without credentials
+        run: node scripts/diagnose-data-go-kr-network.mjs
       - name: Request each source once without persistence
         env:
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}

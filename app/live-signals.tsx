@@ -62,11 +62,18 @@ interface LiveCongestionRow {
   freshness: "LIVE" | "STALE";
 }
 
+interface LiveScheduledRow {
+  terminal: string | null;
+  flights: number;
+  firstTime: string;
+  lastTime: string;
+}
+
 export interface LiveSummary {
   mode: string;
   generatedAt: string;
   areas: Partial<Record<AreaId, LiveAreaBlock>>;
-  airport: { congestion: LiveCongestionRow[]; departuresTrackedToday: number | null };
+  airport: { congestion: LiveCongestionRow[]; departuresTrackedToday: number | null; scheduled: LiveScheduledRow[] };
 }
 
 let cachedSummary: LiveSummary | null | undefined;
@@ -126,6 +133,9 @@ const text = {
   },
   airport: { ko: "공항 출국 대기", en: "Airport checkpoint waits", zh: "机场出境等候", ja: "空港出国待ち" },
   airportPeople: { ko: "명 대기 중", en: "people waiting", zh: "人等候中", ja: "人待機中" },
+  airportFlights: { ko: "오늘 출발 운항", en: "departures today", zh: "今日出发航班", ja: "本日の出発便" },
+  airportScheduled: { ko: "정기운항 편성", en: "scheduled service", zh: "定期航班", ja: "定期運航" },
+  flightUnit: { ko: "편", en: " flights", zh: "班", ja: "便" },
   basis: { ko: "기준", en: "as of", zh: "截至", ja: "基準" },
   stale: { ko: "지연됨", en: "STALE", zh: "已延迟", ja: "遅延" },
   sourceSeoul: { ko: "서울 실시간 도시데이터", en: "Seoul real-time city data", zh: "首尔实时城市数据", ja: "ソウルリアルタイム都市データ" },
@@ -188,8 +198,10 @@ export default function LiveSignals({ lang, area }: { lang: Lang; area: AreaId }
   const block = summary.areas[area];
   const congestion = summary.airport.congestion;
   const totalWaiting = congestion.reduce((sum, row) => sum + row.waitingCount, 0);
+  const trackedFlights = summary.airport.departuresTrackedToday;
+  const scheduled = summary.airport.scheduled ?? [];
   const hasArea = Boolean(block && (block.realtime || block.foreignPresence || block.weather.length || block.events.length || block.sales));
-  if (!hasArea && !congestion.length) return null;
+  if (!hasArea && !congestion.length && !trackedFlights && !scheduled.length) return null;
 
   const rows: Array<{ key: string; label: string; value: string; note: string; state?: "LIVE" | "STALE" }> = [];
 
@@ -260,6 +272,27 @@ export default function LiveSignals({ lang, area }: { lang: Lang; area: AreaId }
     });
   }
 
+
+  if (trackedFlights) {
+    rows.push({
+      key: "airport_flights",
+      label: text.airportFlights[lang],
+      value: `${trackedFlights.toLocaleString()}${text.flightUnit[lang]}`,
+      note: localTextAirport(lang, "실제 운항편 수 · 승객 수 아님", "Actual flights · not passenger count", "实际航班数 · 非旅客人数", "実運航便数 · 旅客数ではありません"),
+    });
+  }
+
+  if (scheduled.length) {
+    const total = scheduled.reduce((sum, row) => sum + Number(row.flights), 0);
+    const terminals = scheduled.map((row) => row.terminal).filter(Boolean).join(" · ");
+    rows.push({
+      key: "airport_scheduled",
+      label: text.airportScheduled[lang],
+      value: `${terminals} · ${total.toLocaleString()}${text.flightUnit[lang]}`,
+      note: localTextAirport(lang, "미래 정기운항 · 실제 당일 운항과 별도", "Future schedule · separate from actual operations", "未来定期航班 · 与当日实际航班分开", "将来の定期運航 · 当日の実運航とは別"),
+    });
+  }
+
   if (!rows.length) return null;
 
   return (
@@ -284,4 +317,8 @@ export default function LiveSignals({ lang, area }: { lang: Lang; area: AreaId }
       </div>
     </section>
   );
+}
+
+function localTextAirport(lang: Lang, ko: string, en: string, zh: string, ja: string): string {
+  return { ko, en, zh, ja }[lang];
 }
