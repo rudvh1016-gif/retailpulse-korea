@@ -131,7 +131,12 @@ const text = {
     zh: "首尔市官方数据 · 延迟发布 · 非实时",
     ja: "ソウル市公式データ · 遅延公開 · リアルタイムではありません",
   },
-  airport: { ko: "공항 출국 대기", en: "Airport checkpoint waits", zh: "机场出境等候", ja: "空港出国待ち" },
+  airportTerminal: {
+    ko: (terminal: string) => `${terminal} 현재 출국장 대기`,
+    en: (terminal: string) => `${terminal} departure-hall wait now`,
+    zh: (terminal: string) => `${terminal} 出境区现时等候`,
+    ja: (terminal: string) => `${terminal} 出国場の現在の待ち`,
+  },
   airportPeople: { ko: "명 대기 중", en: "people waiting", zh: "人等候中", ja: "人待機中" },
   airportFlights: { ko: "오늘 출발 운항", en: "departures today", zh: "今日出发航班", ja: "本日の出発便" },
   airportScheduled: { ko: "정기운항 편성", en: "scheduled service", zh: "定期航班", ja: "定期運航" },
@@ -197,7 +202,15 @@ export default function LiveSignals({ lang, area }: { lang: Lang; area: AreaId }
   if (!summary) return null;
   const block = summary.areas[area];
   const congestion = summary.airport.congestion;
-  const totalWaiting = congestion.reduce((sum, row) => sum + row.waitingCount, 0);
+  // T1 and T2 are separate official sources with separate observation times;
+  // they are never combined into one unlabeled total (see docs/DATA_SOURCES.md).
+  const congestionByTerminal = new Map<string, LiveCongestionRow[]>();
+  for (const row of congestion) {
+    const rows = congestionByTerminal.get(row.terminal) ?? [];
+    rows.push(row);
+    congestionByTerminal.set(row.terminal, rows);
+  }
+  const terminalOrder = [...congestionByTerminal.keys()].sort();
   const trackedFlights = summary.airport.departuresTrackedToday;
   const scheduled = summary.airport.scheduled ?? [];
   const hasArea = Boolean(block && (block.realtime || block.foreignPresence || block.weather.length || block.events.length || block.sales));
@@ -261,12 +274,16 @@ export default function LiveSignals({ lang, area }: { lang: Lang; area: AreaId }
     });
   }
 
-  if (congestion.length) {
-    const latest = congestion[0];
+  // One row per terminal — a T1+T2 combined figure would blur two
+  // independently observed official sources into one misleading number.
+  for (const terminal of terminalOrder) {
+    const rows_ = congestionByTerminal.get(terminal)!;
+    const terminalWaiting = rows_.reduce((sum, row) => sum + row.waitingCount, 0);
+    const latest = rows_.reduce((newest, row) => (row.observedAt > newest.observedAt ? row : newest), rows_[0]);
     rows.push({
-      key: "airport",
-      label: text.airport[lang],
-      value: `${totalWaiting.toLocaleString(lang === "ko" ? "ko-KR" : lang === "zh" ? "zh-CN" : lang === "ja" ? "ja-JP" : "en-US")} ${text.airportPeople[lang]}`,
+      key: `airport_${terminal}`,
+      label: text.airportTerminal[lang](terminal),
+      value: `${terminalWaiting.toLocaleString(lang === "ko" ? "ko-KR" : lang === "zh" ? "zh-CN" : lang === "ja" ? "ja-JP" : "en-US")} ${text.airportPeople[lang]}`,
       note: `${text.sourceAirport[lang]} · ${text.basis[lang]} ${formatKstClock(latest.observedAt, lang)}`,
       state: latest.freshness,
     });

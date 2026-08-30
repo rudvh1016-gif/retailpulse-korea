@@ -292,6 +292,25 @@ test("labels the S2 signal as delayed official data in all four languages", asyn
   assert.match(signals, /maximumFractionDigits: 1/);
 });
 
+test("shows T1/T2 airport congestion as separate rows instead of one unlabeled combined total", async () => {
+  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  // The old bug: summing every congestion row (any terminal) into one
+  // opaque "airport" total before T2 data could ever exist.
+  assert.doesNotMatch(signals, /congestion\.reduce\(\(sum, row\) => sum \+ row\.waitingCount/);
+  assert.doesNotMatch(signals, /key:\s*"airport",/);
+  // The fix: group by terminal and render one row per terminal actually present.
+  assert.match(signals, /congestionByTerminal/);
+  assert.match(signals, /for \(const terminal of terminalOrder\)/);
+  assert.match(signals, /key: `airport_\$\{terminal\}`/);
+  assert.match(signals, /label: text\.airportTerminal\[lang\]\(terminal\)/);
+  for (const phrase of [
+    "현재 출국장 대기",
+    "departure-hall wait now",
+    "出境区现时等候",
+    "出国場の現在の待ち",
+  ]) assert.match(signals, new RegExp(phrase));
+});
+
 test("applies a user-defined month range to airport and business history", async () => {
   const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
