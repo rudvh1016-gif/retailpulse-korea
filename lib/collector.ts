@@ -15,6 +15,7 @@ import {
   type CanonicalTourismEvent,
   type CanonicalWeatherForecast,
 } from "./source-adapters";
+import { buildDataGoKrUrl } from "./data-go-kr.mjs";
 import { allAreaIds, areaMappings, distanceMeters, uniqueKmaGrids } from "./areas";
 import { sha256 } from "./hash";
 import {
@@ -196,11 +197,11 @@ export async function collectAirportFlights(env: CollectorEnv): Promise<{ status
 
   // Endpoint and operation are official. Query semantics must be rechecked
   // against the approved account guide before this collector is enabled LIVE.
-  const url = new URL("https://apis.data.go.kr/B551177/statusOfAllFltDeOdp/getFltDeparturesDeOdp");
-  url.searchParams.set("serviceKey", env.DATA_GO_KR_SERVICE_KEY);
-  url.searchParams.set("type", "json");
-  url.searchParams.set("numOfRows", "1000");
-  url.searchParams.set("pageNo", "1");
+  const url = buildDataGoKrUrl(
+    "https://apis.data.go.kr/B551177/statusOfAllFltDeOdp/getFltDeparturesDeOdp",
+    env.DATA_GO_KR_SERVICE_KEY,
+    { type: "json", numOfRows: "1000", pageNo: "1" },
+  );
 
   try {
     const payload = await fetchOfficialJson(url, { timeoutMs: 8_000, retries: 1 });
@@ -606,15 +607,11 @@ export async function collectWeatherForecasts(env: CollectorEnv, now = new Date(
   let lastForecast: CanonicalWeatherForecast | undefined;
   let written = 0;
   for (const grid of uniqueKmaGrids()) {
-    const url = new URL("https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst");
-    url.searchParams.set("serviceKey", serviceKey);
-    url.searchParams.set("pageNo", "1");
-    url.searchParams.set("numOfRows", "1000");
-    url.searchParams.set("dataType", "JSON");
-    url.searchParams.set("base_date", baseDate);
-    url.searchParams.set("base_time", baseTime);
-    url.searchParams.set("nx", String(grid.nx));
-    url.searchParams.set("ny", String(grid.ny));
+    const url = buildDataGoKrUrl(
+      "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst",
+      serviceKey,
+      { pageNo: "1", numOfRows: "1000", dataType: "JSON", base_date: baseDate, base_time: baseTime, nx: String(grid.nx), ny: String(grid.ny) },
+    );
     try {
       const payload = await fetchOfficialJson(url, { timeoutMs: 10_000, retries: 1 });
       const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] } } } };
@@ -670,15 +667,11 @@ export async function collectTourismEvents(env: CollectorEnv, now = new Date()):
   const kstToday = new Date(now.getTime() + 9 * 3_600_000).toISOString().slice(0, 10);
   const windowStart = new Date(now.getTime() + 9 * 3_600_000 - 60 * 86_400_000).toISOString().slice(0, 10).replaceAll("-", "");
   const windowEnd = new Date(now.getTime() + 9 * 3_600_000 + 30 * 86_400_000).toISOString().slice(0, 10);
-  const url = new URL("https://apis.data.go.kr/B551011/KorService2/searchFestival2");
-  url.searchParams.set("serviceKey", env.DATA_GO_KR_SERVICE_KEY);
-  url.searchParams.set("MobileOS", "ETC");
-  url.searchParams.set("MobileApp", "KORETAIL");
-  url.searchParams.set("_type", "json");
-  url.searchParams.set("numOfRows", "100");
-  url.searchParams.set("pageNo", "1");
-  url.searchParams.set("eventStartDate", windowStart);
-  url.searchParams.set("lDongRegnCd", "11");
+  const url = buildDataGoKrUrl(
+    "https://apis.data.go.kr/B551011/KorService2/searchFestival2",
+    env.DATA_GO_KR_SERVICE_KEY,
+    { MobileOS: "ETC", MobileApp: "KORETAIL", _type: "json", numOfRows: "100", pageNo: "1", eventStartDate: windowStart, lDongRegnCd: "11" },
+  );
   try {
     const payload = await fetchOfficialJson(url, { timeoutMs: 10_000, retries: 1 });
     const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] | unknown } } } };
@@ -760,12 +753,11 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
   let lastRow: CanonicalAirportCongestion | undefined;
   let written = 0;
   for (const terminalId of ["P01", "P03"]) {
-    const url = new URL("https://apis.data.go.kr/B551177/statusOfDepartureCongestion/getDepartureCongestion");
-    url.searchParams.set("serviceKey", env.DATA_GO_KR_SERVICE_KEY);
-    url.searchParams.set("pageNo", "1");
-    url.searchParams.set("numOfRows", "50");
-    url.searchParams.set("type", "json");
-    url.searchParams.set("terminalId", terminalId);
+    const url = buildDataGoKrUrl(
+      "https://apis.data.go.kr/B551177/statusOfDepartureCongestion/getDepartureCongestion",
+      env.DATA_GO_KR_SERVICE_KEY,
+      { pageNo: "1", numOfRows: "50", type: "json", terminalId },
+    );
     try {
       const payload = await fetchOfficialJson(url, { timeoutMs: 8_000, retries: 1 });
       const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown } } } };
