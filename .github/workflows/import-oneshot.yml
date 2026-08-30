@@ -1,13 +1,19 @@
 name: One-shot Data Import
 
-# Manual only. This intentionally has NO schedule trigger: the recurring
-# production collector stays behind ENABLE_PRODUCTION_COLLECTOR and separate
-# owner approval in collect-production.yml.
+# TEMPORARY one-time push trigger for the evidence-backed A1 current-date
+# import. Remove immediately after the production result is verified. This is
+# not the recurring collector and adds no schedule or Worker Cron.
 on:
+  push:
+    branches: [main]
+    paths:
+      - "lib/airport-today.ts"
+      - "scripts/import-oneshot.ts"
+      - ".github/workflows/import-oneshot.yml"
   workflow_dispatch:
     inputs:
       sources:
-        description: Comma list (seoul_realtime, seoul_foreign, seoul_sales, weather, events, airport_congestion, airport_flights, airport_flight_enrichment, airport_scheduled)
+        description: Comma list (seoul_realtime, seoul_foreign, seoul_sales, weather, events, airport_congestion, airport_flights, airport_flights_today, airport_flight_enrichment, airport_scheduled)
         required: true
         default: seoul_realtime,seoul_sales
         type: string
@@ -26,7 +32,7 @@ concurrency:
 jobs:
   import:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     environment: production
     steps:
       - uses: actions/checkout@v4
@@ -37,8 +43,8 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npx tsx scripts/import-oneshot.ts
         env:
-          RPK_ONESHOT_CONFIRM: ${{ inputs.confirm }}
-          RPK_ONESHOT_SOURCES: ${{ inputs.sources }}
+          RPK_ONESHOT_CONFIRM: ${{ github.event_name == 'push' && 'IMPORT' || inputs.confirm }}
+          RPK_ONESHOT_SOURCES: ${{ github.event_name == 'push' && 'airport_flights_today' || inputs.sources }}
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
