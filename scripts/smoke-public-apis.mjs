@@ -1,7 +1,7 @@
 import {
   buildDataGoKrUrl,
-  redactDataGoKrSecrets,
-  summarizeDataGoKrResponse,
+  requestDataGoKrOnce,
+  runDataGoKrSmoke,
 } from "../lib/data-go-kr.mjs";
 
 /**
@@ -17,26 +17,7 @@ function kstDate(offsetDays = 0) {
   return now.toISOString().slice(0, 10).replaceAll("-", "");
 }
 
-async function fetchOnce(url) {
-  const response = await fetch(url, {
-    headers: { accept: "application/json" },
-    signal: AbortSignal.timeout(10_000),
-  });
-  const text = await response.text();
-  let payload = null;
-  try {
-    payload = JSON.parse(text);
-  } catch {
-    // The classifier reports non-JSON as a schema error without printing it raw.
-  }
-  return {
-    status: response.status,
-    payload,
-    textSnippet: payload ? null : redactDataGoKrSecrets(text, serviceKey).slice(0, 200),
-  };
-}
-
-const sources = [
+export const sources = [
   {
     sourceId: "A1_flight_detail",
     endpoint: "https://apis.data.go.kr/B551177/statusOfAllFltDeOdp/getFltDeparturesDeOdp",
@@ -81,21 +62,12 @@ if (!serviceKey) {
     results.push({ sourceId: source.sourceId, authStatus: "AUTH_BLOCKED", reason: "DATA_GO_KR_SERVICE_KEY missing" });
   }
 } else {
-  for (const source of sources) {
-    try {
-      const result = await fetchOnce(buildDataGoKrUrl(source.endpoint, serviceKey, source.params));
-      results.push({
-        sourceId: source.sourceId,
-        ...summarizeDataGoKrResponse(result, source.successCode, serviceKey),
-      });
-    } catch (error) {
-      results.push({
-        sourceId: source.sourceId,
-        authStatus: "REQUEST_ERROR",
-        reason: redactDataGoKrSecrets(error instanceof Error ? error.message : "fetch_failed", serviceKey).slice(0, 200),
-      });
-    }
-  }
+  results.push(...await runDataGoKrSmoke(sources, (source) => requestDataGoKrOnce({
+    url: buildDataGoKrUrl(source.endpoint, serviceKey, source.params),
+    expectedSuccessCode: source.successCode,
+    serviceKey,
+    timeoutMs: 30_000,
+  })));
 }
 
 for (const result of results) console.log(JSON.stringify(result));
