@@ -1,15 +1,9 @@
 name: One-shot Data Import
 
-# TEMPORARY one-time push trigger for the evidence-backed A1 current-date
-# import. Remove immediately after the production result is verified. This is
-# not the recurring collector and adds no schedule or Worker Cron.
+# Manual only. This intentionally has NO schedule trigger: the recurring
+# production collector stays behind ENABLE_PRODUCTION_COLLECTOR and separate
+# owner approval in collect-production.yml.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "lib/airport-today.ts"
-      - "scripts/import-oneshot.ts"
-      - ".github/workflows/import-oneshot.yml"
   workflow_dispatch:
     inputs:
       sources:
@@ -43,8 +37,8 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npx tsx scripts/import-oneshot.ts
         env:
-          RPK_ONESHOT_CONFIRM: ${{ github.event_name == 'push' && 'IMPORT' || inputs.confirm }}
-          RPK_ONESHOT_SOURCES: ${{ github.event_name == 'push' && 'airport_flights_today' || inputs.sources }}
+          RPK_ONESHOT_CONFIRM: ${{ inputs.confirm }}
+          RPK_ONESHOT_SOURCES: ${{ inputs.sources }}
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
