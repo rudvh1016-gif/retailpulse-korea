@@ -12,7 +12,9 @@
 import { readFileSync } from "node:fs";
 import {
   collectAirportCongestion,
+  collectAirportFlightEnrichment,
   collectAirportFlights,
+  collectScheduledAirportFlights,
   collectEstimatedSales,
   collectSeoulForeignPresence,
   collectSeoulRealtime,
@@ -62,6 +64,8 @@ const collectors: Record<string, () => Promise<{ status: string; records: number
   events: () => collectTourismEvents(env),
   airport_congestion: () => collectAirportCongestion(env),
   airport_flights: () => collectAirportFlights(env),
+  airport_flight_enrichment: () => collectAirportFlightEnrichment(env),
+  airport_scheduled: () => collectScheduledAirportFlights(env),
 };
 
 const requested = (process.env.RPK_ONESHOT_SOURCES ?? "seoul_realtime,seoul_sales")

@@ -54,6 +54,7 @@ const migrations = [
   "drizzle/0002_reflective_martin_li.sql",
   "drizzle/0003_minor_network.sql",
   "drizzle/0004_s2_foreign_presence.sql",
+  "drizzle/0005_airport_official_contracts.sql",
 ];
 
 test("data.go.kr encoded and decoded service keys produce one identical transport encoding", () => {

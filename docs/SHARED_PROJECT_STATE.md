@@ -210,7 +210,7 @@ Canonical decision is documented in:
 Authoritative per-source contract matrix: `docs/DATA_SOURCES.md`.
 
 - `S1` Seoul real-time city data and `S3` Seoul estimated sales passed authenticated verification (INFO-000) and are fully integrated: adapters → D1 (`drizzle/0003`) → `/api/live/summary` → the "오늘 수요를 움직이는 신호" UI section (4 locales; renders only when official data exists).
-- All six `apis.data.go.kr` sources (A1–A4, W1 KMA, T1 TourAPI) returned gateway code 30 during the KST evening and gateway timeouts during the KST overnight window on 2026-08-27, despite the owner-confirmed approved utilization applications and a raw (non-percent-encoded, whitespace-free) stored key. Classification: `DATA_GO_KR_AUTH_PROPAGATION_OR_REGISTRATION_BLOCKED`. Their collectors and tables are implemented and gated; do not mark them LIVE until an authenticated response exists.
+- On 2026-08-30, bounded GitHub Actions run #19 proved shared-gateway reachability and authenticated all six `apis.data.go.kr` sources: A1/A2/A3/A4/W1/T1 returned HTTP 200 and official success codes within 2.5 seconds. The older 10-second aborts remain historical `REQUEST_ERROR` evidence, not authentication failures. See `docs/DATA_SOURCES.md` for the exact field contracts and A1-primary/A2-enrichment decision.
 - `S2` short-stay foreign population: the dong-level series ended (2026-06-09 portal notice); the 250m-grid successor's exact dataset ID/API service name still needs one portal check. Legacy dong history stays bundled as OFFICIAL_HISTORICAL.
 - Manual bounded one-shot import: **One-shot Data Import** workflow (workflow_dispatch + literal `IMPORT`). The recurring collector remains OFF behind `ENABLE_PRODUCTION_COLLECTOR`.
 

@@ -76,8 +76,12 @@ function normalizeKstTimestamp(value: string): string {
 }
 
 export interface CanonicalAirportFlight extends CanonicalRecord {
+  physicalFlightId: string;
+  upstreamFid: string | null;
   direction: "departure" | "arrival";
   flightNumber: string;
+  masterFlightNumber: string | null;
+  codeshare: string | null;
   airlineCode: string | null;
   airportCode: string | null;
   terminal: "T1" | "T2" | null;
@@ -88,37 +92,53 @@ export interface CanonicalAirportFlight extends CanonicalRecord {
   changedAt: string | null;
 }
 
-export async function normalizeAirportFlight(raw: unknown, direction: "departure" | "arrival", retrievedAt: string): Promise<CanonicalAirportFlight> {
+export async function normalizeAirportFlight(raw: unknown, direction: "departure" | "arrival", retrievedAt: string, sourceId = "INCHEON_FLIGHT_DETAIL"): Promise<CanonicalAirportFlight> {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new SourceFetchError("SCHEMA");
   const record = raw as Record<string, unknown>;
-  const flightNumber = requiredString(record, ["flightId", "flight_id", "fltNo"]);
+  const marketingFlightNumber = requiredString(record, ["flightId", "flight_id", "fltNo"]);
   const scheduledAt = normalizeKstTimestamp(requiredString(record, ["scheduleDateTime", "scheduleDatetime", "scheduledAt"]));
+  const masterFlightNumber = optionalString(record, ["masterFlightId"]);
+  const flightNumber = masterFlightNumber ?? marketingFlightNumber;
   const rawTerminal = optionalString(record, ["terminalId", "terminalid", "terminal", "terminalNo"]);
-  const terminal = rawTerminal === "T1" || rawTerminal === "1" ? "T1" : rawTerminal === "T2" || rawTerminal === "2" ? "T2" : null;
+  const terminal: "T1" | "T2" | null = ["P01", "T1", "1"].includes(rawTerminal ?? "") ? "T1" : ["P03", "T2", "2"].includes(rawTerminal ?? "") ? "T2" : null;
   const rawStatus = optionalString(record, ["remark", "status", "flightStatus"])?.toLowerCase() ?? "";
   const status = rawStatus.includes("cancel") || rawStatus.includes("결항") ? "cancelled" : rawStatus.includes("delay") || rawStatus.includes("지연") ? "delayed" : rawStatus.includes("on time") || rawStatus.includes("정상") ? "on_time" : rawStatus ? "scheduled" : "unknown";
   const changedValue = optionalString(record, ["estimatedDateTime", "changedDateTime", "changedAt"]);
   const changedAt = changedValue ? normalizeKstTimestamp(changedValue) : null;
   const qualityStatus: QualityStatus = terminal ? "VALID" : "PARTIAL";
   const freshness: SourceStatus = "LIVE";
+  const physicalFlightId = await sha256({
+    direction,
+    serviceDate: scheduledAt.slice(0, 10),
+    operatingFlight: masterFlightNumber ?? flightNumber,
+    scheduledTime: scheduledAt.slice(11, 16),
+  });
   const semanticRecord = {
-    sourceId: "INCHEON_FLIGHT_DETAIL",
+    sourceId,
+    physicalFlightId,
+    upstreamFid: optionalString(record, ["fid"]),
     direction,
     flightNumber,
+    masterFlightNumber,
+    codeshare: optionalString(record, ["codeshare"]),
     airlineCode: optionalString(record, ["airline", "airlineCode"]),
     airportCode: optionalString(record, ["airport", "airportCode", "airportcode"]),
     terminal,
-    gate: optionalString(record, ["gate", "gateNo", "gatenumber"]),
-    checkinCounter: optionalString(record, ["chkinrange", "checkinCounter"]),
+    gate: optionalString(record, ["gateNumber", "gate", "gateNo", "gatenumber"]),
+    checkinCounter: optionalString(record, ["chkinRange", "chkinrange", "checkinCounter"]),
     status,
     scheduledAt,
     changedAt,
   } as const;
   return {
-    sourceId: "INCHEON_FLIGHT_DETAIL",
+    sourceId,
     recordOrigin: "LIVE",
+    physicalFlightId,
+    upstreamFid: semanticRecord.upstreamFid,
     direction,
     flightNumber,
+    masterFlightNumber,
+    codeshare: semanticRecord.codeshare,
     airlineCode: semanticRecord.airlineCode,
     airportCode: semanticRecord.airportCode,
     terminal,
@@ -136,6 +156,67 @@ export async function normalizeAirportFlight(raw: unknown, direction: "departure
     // Collection timestamps and unknown upstream fields must not turn an
     // unchanged flight into a new semantic version.
     sourceHash: await sha256(semanticRecord),
+  };
+}
+
+export interface CanonicalScheduledAirportFlight {
+  sourceId: string;
+  physicalScheduleId: string;
+  upstreamFid: string | null;
+  season: string;
+  validFrom: string;
+  validTo: string;
+  weekdays: string[];
+  flightNumber: string;
+  masterFlightNumber: string | null;
+  codeshare: string | null;
+  airline: string | null;
+  airlineCode: string | null;
+  airport: string | null;
+  airportCode: string | null;
+  terminal: "T1" | "T2" | null;
+  scheduledTime: string;
+  retrievedAt: string;
+  schemaVersion: string;
+  qualityStatus: QualityStatus;
+  sourceHash: string;
+}
+
+/** A3 schedule rows are kept separate from actual/current operations. */
+export async function normalizeScheduledAirportFlight(raw: unknown, retrievedAt: string): Promise<CanonicalScheduledAirportFlight> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new SourceFetchError("SCHEMA");
+  const record = raw as Record<string, unknown>;
+  const flightNumber = requiredString(record, ["flightId"]);
+  const rawTerminal = optionalString(record, ["terminalId"]);
+  const terminal: "T1" | "T2" | null = ["P01", "T1", "1"].includes(rawTerminal ?? "") ? "T1" : ["P03", "T2", "2"].includes(rawTerminal ?? "") ? "T2" : null;
+  const time = requiredString(record, ["st"]).replace(/\D/g, "").padStart(4, "0");
+  if (!/^\d{4}$/.test(time)) throw new SourceFetchError("SCHEMA");
+  const weekdayFields = [["ynMon", "MON"], ["ynTue", "TUE"], ["ynWed", "WED"], ["ynThu", "THU"], ["ynFri", "FRI"], ["ynSat", "SAT"], ["ynSun", "SUN"]] as const;
+  const weekdays = weekdayFields.filter(([key]) => optionalString(record, [key]) === "Y").map(([, day]) => day);
+  const semantic = {
+    sourceId: "INCHEON_SCHEDULED_DUTY_FREE",
+    season: requiredString(record, ["season"]),
+    validFrom: normalizeYyyymmdd(requiredString(record, ["firstdate"])),
+    validTo: normalizeYyyymmdd(requiredString(record, ["lastdate"])),
+    weekdays,
+    flightNumber,
+    masterFlightNumber: optionalString(record, ["masterFlightId"]),
+    codeshare: optionalString(record, ["codeshare"]),
+    airline: optionalString(record, ["airline"]),
+    airlineCode: optionalString(record, ["airlineCode"]),
+    airport: optionalString(record, ["airport"]),
+    airportCode: optionalString(record, ["airportCode"]),
+    terminal,
+    scheduledTime: `${time.slice(0, 2)}:${time.slice(2)}`,
+  };
+  return {
+    ...semantic,
+    physicalScheduleId: await sha256({ season: semantic.season, operatingFlight: semantic.masterFlightNumber ?? flightNumber, terminal, scheduledTime: semantic.scheduledTime }),
+    upstreamFid: optionalString(record, ["fid"]),
+    retrievedAt,
+    schemaVersion: "airport-schedule-v1",
+    qualityStatus: terminal && weekdays.length ? "VALID" : "PARTIAL",
+    sourceHash: await sha256(semantic),
   };
 }
 
@@ -495,7 +576,7 @@ export async function normalizeAirportCongestion(raw: unknown, retrievedAt: stri
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new SourceFetchError("SCHEMA");
   const record = raw as Record<string, unknown>;
   const rawTerminal = requiredString(record, ["terminalId", "terminalid"]);
-  const terminal = rawTerminal === "P01" || rawTerminal === "T1" ? "T1" : rawTerminal === "P03" || rawTerminal === "T2" ? "T2" : null;
+  const terminal = rawTerminal === "P01" || rawTerminal === "T1" ? "T1" : null;
   if (!terminal) throw new SourceFetchError("SCHEMA");
   const rawWait = optionalString(record, ["waitTime", "waittime"]);
   const semanticRecord = {

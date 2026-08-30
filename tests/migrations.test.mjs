@@ -11,6 +11,7 @@ const migrations = [
   "drizzle/0002_reflective_martin_li.sql",
   "drizzle/0003_minor_network.sql",
   "drizzle/0004_s2_foreign_presence.sql",
+  "drizzle/0005_airport_official_contracts.sql",
 ];
 
 function applyMigrations(database) {
@@ -37,6 +38,7 @@ test("D1 migrations apply and prediction rows remain immutable", () => {
     for (const table of [
       "airport_flights",
       "airport_flight_changes",
+      "airport_scheduled_flights",
       "airport_flow",
       "foreign_presence",
       "seoul_foreign_presence_dong",
