@@ -13,7 +13,9 @@ const ENDPOINT = "https://apis.data.go.kr/B551177/statusOfAllFltDeOdp/getFltDepa
  * filters. The portal confirms date/time filtering exists, but the exact
  * parameter names are not present in the public metadata we have verified.
  * Until those names are verified, do not guess them: scan bounded 100-row
- * pages and persist only the requested KST service date.
+ * pages and persist the official recent-history window from D-3 through the
+ * requested KST service date. Future A1 rows remain excluded because A3 owns
+ * future schedule semantics.
  *
  * 150 pages = at most 15,000 source rows. Each sequential page may be retried
  * once only after a timeout/5xx, so one manual run has a strict worst-case
@@ -43,9 +45,12 @@ interface A1Envelope {
 
 export interface A1TodayFetchResult {
   targetDate: string;
+  windowStartDate: string;
   pagesFetched: number;
   totalCount: number;
+  sourceRowsInRange: number;
   sourceRowsForDate: number;
+  trackedToday: number;
   records: CanonicalAirportFlight[];
 }
 
@@ -57,6 +62,12 @@ export function kstDate(now = new Date()): string {
 
 function compactDate(isoDate: string): string {
   return isoDate.replaceAll("-", "");
+}
+
+function shiftIsoDate(isoDate: string, days: number): string {
+  const date = new Date(`${isoDate}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
 }
 
 function pageItems(body: A1Body | undefined): unknown[] {
@@ -91,7 +102,7 @@ function assertSuccess(payload: unknown, pageNo: number): A1Body {
 
 /**
  * Read the complete bounded A1 D-3..D+6 population in provider-safe pages,
- * then retain only the requested KST service date. This deliberately scans
+ * then retain D-3 through the requested KST service date. This deliberately scans
  * every declared page so correctness does not depend on undocumented sort
  * order. Calls are sequential to avoid a provider request burst. A page gets
  * at most one retry because the provider has shown intermittent ~10s aborts.
@@ -103,9 +114,12 @@ export async function fetchA1DeparturesForDate(
 ): Promise<A1TodayFetchResult> {
   const targetYmd = compactDate(targetDate);
   if (!/^\d{8}$/.test(targetYmd)) throw new Error("a1_today_invalid_target_date");
+  const windowStartDate = shiftIsoDate(targetDate, -3);
+  const windowStartYmd = compactDate(windowStartDate);
 
   let declaredTotal = 0;
   let totalPages = 0;
+  let sourceRowsInRange = 0;
   let sourceRowsForDate = 0;
   const unique = new Map<string, CanonicalAirportFlight>();
   const retrievedAt = new Date().toISOString();
@@ -137,8 +151,9 @@ export async function fetchA1DeparturesForDate(
     for (const item of items) {
       const serviceDate = scheduledDateOf(item);
       if (!serviceDate) throw new Error(`a1_today_missing_schedule_date_page_${pageNo}`);
-      if (serviceDate !== targetYmd) continue;
-      sourceRowsForDate += 1;
+      if (serviceDate < windowStartYmd || serviceDate > targetYmd) continue;
+      sourceRowsInRange += 1;
+      if (serviceDate === targetYmd) sourceRowsForDate += 1;
       const record = await normalizeAirportFlight(item, "departure", retrievedAt);
       unique.set(record.physicalFlightId, record);
     }
@@ -146,12 +161,16 @@ export async function fetchA1DeparturesForDate(
     if (pageNo >= totalPages) break;
   }
 
+  const records = [...unique.values()];
   return {
     targetDate,
+    windowStartDate,
     pagesFetched: totalPages,
     totalCount: declaredTotal,
+    sourceRowsInRange,
     sourceRowsForDate,
-    records: [...unique.values()],
+    trackedToday: records.filter((record) => record.scheduledAt.slice(0, 10) === targetDate).length,
+    records,
   };
 }
 
@@ -230,7 +249,7 @@ async function recordSuccess(
     return latest;
   }, null);
   const retrievedAt = fetched.records[0]?.retrievedAt ?? finishedAt;
-  const detail = `today ${fetched.targetDate}; pages ${fetched.pagesFetched}; population ${fetched.totalCount}; source rows ${fetched.sourceRowsForDate}; unique physical ${fetched.records.length}; changed writes ${changedRows}`;
+  const detail = `recent ${fetched.windowStartDate}..${fetched.targetDate}; pages ${fetched.pagesFetched}; population ${fetched.totalCount}; range rows ${fetched.sourceRowsInRange}; today source rows ${fetched.sourceRowsForDate}; today unique physical ${fetched.trackedToday}; range unique physical ${fetched.records.length}; changed writes ${changedRows}`;
 
   await db.prepare(`INSERT INTO source_health (
       source_id, status, last_event_at, last_published_at, last_retrieved_at,
@@ -266,6 +285,7 @@ async function recordSuccess(
 export async function collectAirportFlightsToday(
   env: AirportTodayEnv,
   now = new Date(),
+  fetcher: OfficialFetcher = fetchOfficialJson,
 ): Promise<{ status: string; records: number; trackedToday: number; pagesFetched: number }> {
   if (!env.DATA_GO_KR_SERVICE_KEY) {
     return { status: "NEEDS_KEY", records: 0, trackedToday: 0, pagesFetched: 0 };
@@ -273,14 +293,15 @@ export async function collectAirportFlightsToday(
 
   const targetDate = kstDate(now);
   try {
-    const fetched = await fetchA1DeparturesForDate(env.DATA_GO_KR_SERVICE_KEY, targetDate);
+    const fetched = await fetchA1DeparturesForDate(env.DATA_GO_KR_SERVICE_KEY, targetDate, fetcher);
     if (!fetched.records.length) throw new Error(`a1_today_no_rows_${targetDate}`);
+    if (!fetched.trackedToday) throw new Error(`a1_today_no_current_rows_${targetDate}`);
     const changedRows = await persistTodayFlights(env.DB, fetched.records);
     await recordSuccess(env.DB, fetched, changedRows);
     return {
       status: "SUCCESS",
       records: changedRows,
-      trackedToday: fetched.records.length,
+      trackedToday: fetched.trackedToday,
       pagesFetched: fetched.pagesFetched,
     };
   } catch (error) {
