@@ -15,10 +15,11 @@ const ENDPOINT = "https://apis.data.go.kr/B551177/statusOfAllFltDeOdp/getFltDepa
  * Until those names are verified, do not guess them: scan bounded 100-row
  * pages and persist only the requested KST service date.
  *
- * 150 pages = at most 15,000 source rows / 150 calls for one manual run,
- * below A1's documented 500-call development quota. The recurring collector
- * remains disabled and must not use this fallback without a separate cadence
- * and quota review.
+ * 150 pages = at most 15,000 source rows. Each sequential page may be retried
+ * once only after a timeout/5xx, so one manual run has a strict worst-case
+ * ceiling of 300 A1 calls, below A1's documented 500-call development quota.
+ * The recurring collector remains disabled and must not use this fallback
+ * without a separate cadence and quota review.
  */
 export const A1_TODAY_PAGE_SIZE = 100;
 export const A1_TODAY_MAX_PAGES = 150;
@@ -48,7 +49,7 @@ export interface A1TodayFetchResult {
   records: CanonicalAirportFlight[];
 }
 
-type OfficialFetcher = (url: URL, options?: { timeoutMs?: number; retries?: number }) => Promise<unknown>;
+type OfficialFetcher = (url: URL, options?: { timeoutMs?: number; retries?: number; retryDelayMs?: number }) => Promise<unknown>;
 
 export function kstDate(now = new Date()): string {
   return new Date(now.getTime() + 9 * 3_600_000).toISOString().slice(0, 10);
@@ -92,7 +93,8 @@ function assertSuccess(payload: unknown, pageNo: number): A1Body {
  * Read the complete bounded A1 D-3..D+6 population in provider-safe pages,
  * then retain only the requested KST service date. This deliberately scans
  * every declared page so correctness does not depend on undocumented sort
- * order. Calls are sequential to avoid a provider request burst.
+ * order. Calls are sequential to avoid a provider request burst. A page gets
+ * at most one retry because the provider has shown intermittent ~10s aborts.
  */
 export async function fetchA1DeparturesForDate(
   serviceKey: string,
@@ -115,7 +117,7 @@ export async function fetchA1DeparturesForDate(
       numOfRows: String(A1_TODAY_PAGE_SIZE),
       pageNo: String(pageNo),
     });
-    const payload = await fetcher(url, { timeoutMs: 30_000, retries: 0 });
+    const payload = await fetcher(url, { timeoutMs: 30_000, retries: 1, retryDelayMs: 750 });
     const body = assertSuccess(payload, pageNo);
     const items = pageItems(body);
 
@@ -254,7 +256,7 @@ async function recordSuccess(
       SOURCE_ID,
       retrievedAt,
       finishedAt,
-      fetched.sourceRowsForDate,
+      fetched.totalCount,
       changedRows,
       detail.slice(0, 500),
     )
