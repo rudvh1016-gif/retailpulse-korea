@@ -9,7 +9,6 @@
  * The recurring scheduler (.github/workflows/collect-production.yml) stays
  * gated behind ENABLE_PRODUCTION_COLLECTOR and separate owner approval.
  */
-import { readFileSync } from "node:fs";
 import { collectAirportFlightsToday } from "../lib/airport-today";
 import {
   collectAirportCongestion,
@@ -23,30 +22,19 @@ import {
   collectWeatherForecasts,
 } from "../lib/collector";
 import { CloudflareD1RestDatabase } from "../lib/d1-rest";
+import { resolveProductionDatabaseConfig } from "./production-database";
 
 if (process.env.RPK_ONESHOT_CONFIRM !== "IMPORT") {
   throw new Error("oneshot_not_confirmed: set the confirm input to IMPORT");
 }
 
-const wranglerConfig = JSON.parse(readFileSync(new URL("../wrangler.production.jsonc", import.meta.url), "utf8")) as {
-  account_id: string;
-  env: Record<string, { d1_databases: Array<{ database_id: string }> }>;
-};
-
-const stage = process.env.RPK_ONESHOT_STAGE?.trim() || "production";
-const databaseId = wranglerConfig.env[stage]?.d1_databases?.[0]?.database_id;
-if (!databaseId || databaseId.startsWith("00000000")) throw new Error(`oneshot_stage_unavailable_${stage}`);
-
-// Prefer the least-privilege dedicated write token when configured; the
-// deploy token already carries D1 edit rights as a fallback.
-const apiToken = process.env.CLOUDFLARE_D1_WRITE_TOKEN?.trim() || process.env.CLOUDFLARE_API_TOKEN?.trim();
-if (!apiToken) throw new Error("missing_cloudflare_api_token");
-
 // The account is always the pinned wrangler config value: the historical
 // CLOUDFLARE_ACCOUNT_ID secret pointed at the wrong account (see PR #12),
-// which surfaces here as d1_http_403.
+// which surfaces here as d1_http_403. See scripts/production-database.ts.
+const stage = process.env.RPK_ONESHOT_STAGE?.trim() || "production";
+const { accountId, databaseId, apiToken } = resolveProductionDatabaseConfig(stage);
 const restDatabase = new CloudflareD1RestDatabase(
-  wranglerConfig.account_id,
+  accountId,
   databaseId,
   apiToken,
 );

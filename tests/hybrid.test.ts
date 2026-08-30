@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { CloudflareD1RestDatabase } from "../lib/d1-rest";
+import { PRODUCTION_SOURCE_NAMES } from "../lib/production-runner";
 import { evaluateQuotaUsage } from "../lib/quota-guard";
 import { normalizeAirportFlight } from "../lib/source-adapters";
 import { readCloudflareConfig, validateCloudflareEnvironment } from "../scripts/validate-cloudflare-environment.mjs";
@@ -114,4 +115,38 @@ test("production collector remains gated and Worker Cron remains absent", async 
   assert.equal(config.triggers, undefined);
   assert.equal(config.env.staging.triggers, undefined);
   assert.equal(config.env.production.triggers, undefined);
+});
+
+test("every cadence-group collector workflow is gated behind the same owner-approved switch and actually scheduled", async () => {
+  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml"];
+  for (const file of groupFiles) {
+    const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
+    assert.match(workflow, /vars\.ENABLE_PRODUCTION_COLLECTOR == 'true'/, `${file} must reuse the single production-collector gate`);
+    assert.match(workflow, /^\s*schedule:/m, `${file} must carry a real schedule, not workflow_dispatch-only`);
+    assert.match(workflow, /RPK_PRODUCTION_SOURCES: /, `${file} must select sources explicitly`);
+    assert.doesNotMatch(workflow, /CLOUDFLARE_ACCOUNT_ID/, `${file} must resolve the account id from wrangler.production.jsonc, never a secret`);
+  }
+});
+
+test("A1 (airport_recent) is scheduled by exactly one collector workflow group", async () => {
+  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml"];
+  const owners: string[] = [];
+  for (const file of groupFiles) {
+    const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
+    const sourcesLine = workflow.match(/RPK_PRODUCTION_SOURCES: (.+)/)?.[1] ?? "";
+    if (sourcesLine.split(",").map((value) => value.trim()).includes("airport_recent")) owners.push(file);
+  }
+  assert.deepEqual(owners, ["collect-production.yml"], "there must not be two competing scheduled A1 collectors");
+});
+
+test("every production source is scheduled by exactly one cadence-group workflow", async () => {
+  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml"];
+  const scheduledSources: string[] = [];
+  for (const file of groupFiles) {
+    const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
+    const sourcesLine = workflow.match(/RPK_PRODUCTION_SOURCES: (.+)/)?.[1] ?? "";
+    scheduledSources.push(...sourcesLine.split(",").map((value) => value.trim()).filter(Boolean));
+  }
+  assert.deepEqual([...scheduledSources].sort(), [...PRODUCTION_SOURCE_NAMES].sort(), "every known source should be scheduled exactly once, with none forgotten or duplicated");
+  assert.equal(new Set(scheduledSources).size, scheduledSources.length, "no source may be scheduled by two workflow groups at once");
 });

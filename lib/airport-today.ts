@@ -282,6 +282,42 @@ async function recordSuccess(
     .run();
 }
 
+const RECENT_HISTORY_DETAIL_PREFIX = "recent ";
+const RECENT_HISTORY_TARGET_DATE_PATTERN = /^recent \d{4}-\d{2}-\d{2}\.\.(\d{4}-\d{2}-\d{2});/;
+
+interface CollectorRunDetailRow {
+  detail?: unknown;
+}
+
+/**
+ * A1 same-day quota guard. Returns true only when a previously SUCCESSFUL
+ * run of this verified bounded recent-history scan (`collectAirportFlightsToday`,
+ * via `recordSuccess` below) already covered the given KST target date.
+ *
+ * `recordSuccess` always writes a `collector_runs.detail` starting with
+ * "recent {windowStart}..{targetDate};". The legacy first-page-only path
+ * (`collectAirportFlights` in lib/collector.ts) writes a differently shaped
+ * "normalized N; changed writes N" detail and therefore never matches this
+ * pattern — a shallow legacy success can never satisfy this guard. Reads
+ * the most recent successful runs only, so this stays a small bounded query.
+ */
+export async function hasCompleteA1RecentHistoryToday(
+  db: D1Database | undefined,
+  targetDate: string,
+): Promise<boolean> {
+  if (!db) return false;
+  const result = (await db
+    .prepare(`SELECT detail FROM collector_runs WHERE source_id = ? AND status = 'SUCCESS' ORDER BY started_at DESC LIMIT 10`)
+    .bind(SOURCE_ID)
+    .run()) as unknown as { results?: CollectorRunDetailRow[] };
+  const rows = result.results ?? [];
+  return rows.some((row) => {
+    const detail = typeof row.detail === "string" ? row.detail : "";
+    if (!detail.startsWith(RECENT_HISTORY_DETAIL_PREFIX)) return false;
+    return RECENT_HISTORY_TARGET_DATE_PATTERN.exec(detail)?.[1] === targetDate;
+  });
+}
+
 export async function collectAirportFlightsToday(
   env: AirportTodayEnv,
   now = new Date(),
