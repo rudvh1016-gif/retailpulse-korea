@@ -1,0 +1,47 @@
+name: Collect Airport Passenger Forecast
+
+# FORECAST GROUP — A5 (airport_passenger_forecast, dataset 15095066, V5.0
+# passgrAnncmt) is official T1/T2 arrival/departure passenger FORECAST data,
+# refreshed by the provider about every 5 minutes. KORETAIL does not need to
+# poll that often: Phase-1 cadence is once/hour. Each normal cycle queries
+# BOTH selectdate=0 (today) and selectdate=1 (tomorrow) = ~2 provider
+# requests, with bounded pagination only if a day's totalCount ever exceeds
+# one page. 24 runs/day x ~2 requests = ~48 requests/day, far under any
+# plausible data.go.kr quota for this dataset.
+#
+# Cron minute :42 is deliberately off every other collector group's minute
+# marks (:07/:22/:37/:52 realtime, :07 daily/sales, :10 weather) so this
+# workflow never contends with them for the same GitHub Actions scheduling
+# window. KST is UTC+9 with no DST, so "every hour at :42" is identical in
+# both clocks.
+on:
+  schedule:
+    - cron: "42 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-collector-forecast
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run collect:production
+        env:
+          ENABLE_PRODUCTION_COLLECTOR: "true"
+          RPK_PRODUCTION_SOURCES: airport_passenger_forecast
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+          DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}

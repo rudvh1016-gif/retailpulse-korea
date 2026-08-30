@@ -58,6 +58,7 @@ interface LiveCongestionRow {
   zone: string;
   waitingCount: number;
   waitTimeMinutes: number | null;
+  waitTimeRaw?: string | null;
   observedAt: string;
   freshness: "LIVE" | "STALE";
 }
@@ -69,11 +70,27 @@ interface LiveScheduledRow {
   lastTime: string;
 }
 
+/** A5 — official FORECAST/EXPECTED departure passengers. Never an actual observed queue. */
+interface LivePassengerForecastRow {
+  terminal: string;
+  targetDate: string;
+  timeBandRaw: string;
+  targetStartAt: string;
+  targetEndAt: string;
+  expectedPassengers: number;
+  retrievedAt: string;
+}
+
 export interface LiveSummary {
   mode: string;
   generatedAt: string;
   areas: Partial<Record<AreaId, LiveAreaBlock>>;
-  airport: { congestion: LiveCongestionRow[]; departuresTrackedToday: number | null; scheduled: LiveScheduledRow[] };
+  airport: {
+    congestion: LiveCongestionRow[];
+    departuresTrackedToday: number | null;
+    scheduled: LiveScheduledRow[];
+    passengerForecast: LivePassengerForecastRow[];
+  };
 }
 
 let cachedSummary: LiveSummary | null | undefined;
@@ -138,6 +155,18 @@ const text = {
     ja: (terminal: string) => `${terminal} 出国場の現在の待ち`,
   },
   airportPeople: { ko: "명 대기 중", en: "people waiting", zh: "人等候中", ja: "人待機中" },
+  // A5 — official FORECAST/EXPECTED passengers. Wording must stay clearly
+  // distinct from A4's CURRENT/OBSERVED wording above (see docs/DATA_SOURCES.md).
+  // Never "실시간 승객" / "현재 대기인원" / "확정 승객" for this block.
+  passengerForecastLabel: {
+    ko: (terminal: string) => `${terminal} 다음 시간대 예상 출국 승객`,
+    en: (terminal: string) => `${terminal} next-hour expected departures`,
+    zh: (terminal: string) => `${terminal} 下一时段预计出境人数`,
+    ja: (terminal: string) => `${terminal} 次の時間帯の予想出国者数`,
+  },
+  passengerForecastUnit: { ko: "명", en: " expected", zh: "人", ja: "人" },
+  passengerForecastSource: { ko: "인천공항 공식 예고", en: "Incheon Airport official forecast", zh: "仁川机场官方预告", ja: "仁川空港公式予告" },
+  passengerForecastNotice: { ko: "실제 대기인원 아님", en: "not actual waiting count", zh: "非实际等候人数", ja: "実際の待機人数ではありません" },
   airportFlights: { ko: "오늘 출발 운항", en: "departures today", zh: "今日出发航班", ja: "本日の出発便" },
   airportScheduled: { ko: "정기운항 편성", en: "scheduled service", zh: "定期航班", ja: "定期運航" },
   flightUnit: { ko: "편", en: " flights", zh: "班", ja: "便" },
@@ -213,8 +242,9 @@ export default function LiveSignals({ lang, area }: { lang: Lang; area: AreaId }
   const terminalOrder = [...congestionByTerminal.keys()].sort();
   const trackedFlights = summary.airport.departuresTrackedToday;
   const scheduled = summary.airport.scheduled ?? [];
+  const passengerForecast = summary.airport.passengerForecast ?? [];
   const hasArea = Boolean(block && (block.realtime || block.foreignPresence || block.weather.length || block.events.length || block.sales));
-  if (!hasArea && !congestion.length && !trackedFlights && !scheduled.length) return null;
+  if (!hasArea && !congestion.length && !trackedFlights && !scheduled.length && !passengerForecast.length) return null;
 
   const rows: Array<{ key: string; label: string; value: string; note: string; state?: "LIVE" | "STALE" }> = [];
 
@@ -289,6 +319,19 @@ export default function LiveSignals({ lang, area }: { lang: Lang; area: AreaId }
     });
   }
 
+  // A5 — official FORECAST/EXPECTED departure passengers, one row per
+  // terminal actually returned. Semantically separate from the A4
+  // CURRENT/OBSERVED rows above: never merged into the same number, and the
+  // wording/notice always makes clear this is an official forecast, not an
+  // actual waiting count.
+  for (const forecast of passengerForecast) {
+    rows.push({
+      key: `forecast_${forecast.terminal}`,
+      label: text.passengerForecastLabel[lang](forecast.terminal),
+      value: `${Math.round(forecast.expectedPassengers).toLocaleString(lang === "ko" ? "ko-KR" : lang === "zh" ? "zh-CN" : lang === "ja" ? "ja-JP" : "en-US")}${text.passengerForecastUnit[lang]}`,
+      note: `${text.passengerForecastSource[lang]} · ${text.passengerForecastNotice[lang]} · ${text.basis[lang]} ${formatKstClock(forecast.targetStartAt, lang)}`,
+    });
+  }
 
   if (trackedFlights) {
     rows.push({

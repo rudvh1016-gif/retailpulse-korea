@@ -12,8 +12,10 @@
 import { collectAirportFlightsToday } from "../lib/airport-today";
 import {
   collectAirportCongestion,
+  collectAirportCongestionT2,
   collectAirportFlightEnrichment,
   collectAirportFlights,
+  collectAirportPassengerForecast,
   collectScheduledAirportFlights,
   collectEstimatedSales,
   collectSeoulForeignPresence,
@@ -122,6 +124,8 @@ const collectors: Record<string, () => Promise<OneShotResult>> = {
   weather: () => collectWeatherForecasts(env),
   events: () => collectTourismEvents(env),
   airport_congestion: () => collectAirportCongestion(env),
+  airport_congestion_t2: () => collectAirportCongestionT2(env),
+  airport_passenger_forecast: () => collectAirportPassengerForecast(env),
   airport_flights: () => collectAirportFlights(env),
   airport_flights_today: () => collectAirportFlightsToday(env),
   airport_flight_enrichment: () => collectAirportFlightEnrichment(env),

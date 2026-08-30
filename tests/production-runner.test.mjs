@@ -131,10 +131,12 @@ test("selectable runner isolates a throwing source and reports unknown sources w
   assert.equal(results[2].records, 3);
 });
 
-test("all nine production sources are named exactly as the runner selects them", () => {
+test("all eleven production sources are named exactly as the runner selects them", () => {
   assert.deepEqual([...PRODUCTION_SOURCE_NAMES].sort(), [
     "airport_congestion",
+    "airport_congestion_t2",
     "airport_enrichment",
+    "airport_passenger_forecast",
     "airport_recent",
     "airport_scheduled",
     "events",

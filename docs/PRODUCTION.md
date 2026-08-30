@@ -61,7 +61,12 @@ Current prepared state:
 - `.github/workflows/collect-production.yml` and its sibling scheduled workflows are the only collector schedulers.
 - Each remains disabled unless `ENABLE_PRODUCTION_COLLECTOR=true` after all source gates pass.
 - **Set `ENABLE_PRODUCTION_COLLECTOR` as a repository-level Actions variable** (Settings → Secrets and variables → Actions → Variables tab), not as a variable scoped to the `production` Environment. Every collection workflow gates on it with a **job-level** `if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'` while also declaring `environment: production` on that same job. GitHub Actions evaluates a job-level `if:` before the job's environment is resolved, so an environment-scoped variable is invisible at that point and the job will silently stay skipped even when the Environment's variable list shows it as `true`. Confirm the value in the **repository** Variables tab, not only inside the Environment's own variable list.
-- Initial cadence is every two hours at minute 07: 12 calls/day, at most 24 with one retry.
+- Cadence is split into five independently scheduled groups, each its own workflow file, all gated behind the same repository-level `ENABLE_PRODUCTION_COLLECTOR` switch and never overlapping on the same source (see `docs/DATA_SOURCES.md` and `tests/hybrid.test.ts` for the enforced one-owner-per-source coverage check):
+  - **DAILY** (`collect-production.yml`, `07 21 * * *` = 06:07 KST): `airport_recent` (A1, same-day guarded), `airport_enrichment` (A2), `airport_scheduled` (A3), `events` (T1), `seoul_foreign` (S2).
+  - **REALTIME** (`collect-realtime.yml`, `:07/:22/:37/:52`, ~15 min): `airport_congestion` (A4-T1), `airport_congestion_t2` (A4-T2), `seoul_realtime` (S1).
+  - **WEATHER** (`collect-weather.yml`, aligned to the 02/05/08/11/14/17/20/23 KST KMA issuance): `weather` (W1).
+  - **FORECAST** (`collect-forecast.yml`, `:42` hourly): `airport_passenger_forecast` (A5).
+  - **SLOW** (`collect-sales.yml`, weekly Sunday 07:07 KST): `seoul_sales` (S3).
 - Change history is separately disabled unless `RPK_RETAIN_FLIGHT_CHANGE_HISTORY=true`; enable only after real D1 write/storage measurement.
 
 GitHub `schedule` is not real-time. Record actual run/retrieval timestamps, design for delay/drop/retry/idempotency, and prefer off-minute schedules when source semantics permit.

@@ -8,20 +8,24 @@
  * the remaining selected sources from running.
  *
  * Source name -> KORETAIL internal source mapping:
- *   airport_recent       A1  collectAirportFlightsToday (verified D-3..today scan)
- *   airport_enrichment   A2  collectAirportFlightEnrichment
- *   airport_scheduled    A3  collectScheduledAirportFlights
- *   airport_congestion   A4  collectAirportCongestion
- *   seoul_realtime       S1  collectSeoulRealtime
- *   seoul_foreign        S2  collectSeoulForeignPresence
- *   seoul_sales          S3  collectEstimatedSales
- *   weather              W1  collectWeatherForecasts
- *   events               T1  collectTourismEvents
+ *   airport_recent              A1     collectAirportFlightsToday (verified D-3..today scan)
+ *   airport_enrichment          A2     collectAirportFlightEnrichment
+ *   airport_scheduled           A3     collectScheduledAirportFlights
+ *   airport_congestion          A4-T1  collectAirportCongestion
+ *   airport_congestion_t2       A4-T2  collectAirportCongestionT2
+ *   airport_passenger_forecast  A5     collectAirportPassengerForecast
+ *   seoul_realtime               S1    collectSeoulRealtime
+ *   seoul_foreign                 S2   collectSeoulForeignPresence
+ *   seoul_sales                   S3   collectEstimatedSales
+ *   weather                       W1   collectWeatherForecasts
+ *   events                        T1   collectTourismEvents
  */
 import { collectAirportFlightsToday, hasCompleteA1RecentHistoryToday, kstDate } from "./airport-today";
 import {
   collectAirportCongestion,
+  collectAirportCongestionT2,
   collectAirportFlightEnrichment,
+  collectAirportPassengerForecast,
   collectEstimatedSales,
   collectScheduledAirportFlights,
   collectSeoulForeignPresence,
@@ -54,6 +58,8 @@ const DEFAULT_RUNNERS = {
   airport_enrichment: (env: CollectorEnv) => collectAirportFlightEnrichment(env),
   airport_scheduled: (env: CollectorEnv) => collectScheduledAirportFlights(env),
   airport_congestion: (env: CollectorEnv) => collectAirportCongestion(env),
+  airport_congestion_t2: (env: CollectorEnv) => collectAirportCongestionT2(env),
+  airport_passenger_forecast: (env: CollectorEnv) => collectAirportPassengerForecast(env),
   seoul_realtime: (env: CollectorEnv) => collectSeoulRealtime(env),
   seoul_foreign: (env: CollectorEnv, now: Date) => collectSeoulForeignPresence(env, now),
   seoul_sales: (env: CollectorEnv, now: Date) => collectEstimatedSales(env, now),

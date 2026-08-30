@@ -160,6 +160,11 @@ export const tourismEvents = sqliteTable("tourism_events", {
 }, (table) => [uniqueIndex("tourism_events_area_content_unique").on(table.sourceId, table.area, table.contentId)]);
 
 // A4 — departure-hall checkpoint congestion (flow proxy, not store traffic).
+// waitTimeMinutes stays an exact numeric value only; the provider's "60+"
+// (or any other non-exact form) is preserved honestly in waitTimeRaw instead
+// of being silently rounded down to a false-exact 60. T1 (A4-T1) and T2
+// (A4-T2) share this table via distinct sourceId + terminal values and are
+// never overwritten by each other (see docs/DATA_SOURCES.md).
 export const airportCongestion = sqliteTable("airport_congestion", {
   id: text("id").primaryKey(),
   sourceId: text("source_id").notNull(),
@@ -167,6 +172,7 @@ export const airportCongestion = sqliteTable("airport_congestion", {
   terminal: text("terminal").notNull(),
   zone: text("zone").notNull(),
   waitTimeMinutes: integer("wait_time_minutes"),
+  waitTimeRaw: text("wait_time_raw"),
   waitingCount: integer("waiting_count").notNull(),
   observedAt: text("observed_at").notNull(),
   retrievedAt: text("retrieved_at").notNull(),
@@ -175,6 +181,36 @@ export const airportCongestion = sqliteTable("airport_congestion", {
   qualityStatus: text("quality_status").notNull(),
   sourceHash: text("source_hash").notNull(),
 }, (table) => [uniqueIndex("airport_congestion_observed_unique").on(table.sourceId, table.terminal, table.zone, table.observedAt)]);
+
+// A5 — official T1/T2 arrival/departure passenger forecast (today + tomorrow,
+// hourly bands). This is FORECAST/EXPECTED data and must never be written to
+// airportCongestion or treated as an actual observed queue. Component rows
+// (isAggregate=0, e.g. t1dg1) and the provider's own official total row
+// (isAggregate=1, e.g. t1dgsum1) are stored as distinct rows so downstream
+// summation logic can pick one or the other and never double-count by
+// accidentally summing both (see docs/DATA_SOURCES.md).
+export const airportPassengerForecast = sqliteTable("airport_passenger_forecast", {
+  id: text("id").primaryKey(),
+  sourceId: text("source_id").notNull(),
+  recordOrigin: text("record_origin").notNull(),
+  terminal: text("terminal").notNull(),
+  direction: text("direction").notNull(),
+  zone: text("zone").notNull(),
+  isAggregate: integer("is_aggregate").notNull(),
+  targetDate: text("target_date").notNull(),
+  timeBandRaw: text("time_band_raw").notNull(),
+  targetStartAt: text("target_start_at").notNull(),
+  targetEndAt: text("target_end_at").notNull(),
+  expectedPassengers: real("expected_passengers").notNull(),
+  retrievedAt: text("retrieved_at").notNull(),
+  schemaVersion: text("schema_version").notNull(),
+  qualityStatus: text("quality_status").notNull(),
+  sourceHash: text("source_hash").notNull(),
+}, (table) => [
+  uniqueIndex("airport_passenger_forecast_unique").on(
+    table.sourceId, table.terminal, table.direction, table.zone, table.targetDate, table.timeBandRaw,
+  ),
+]);
 
 export const foreignPresence = sqliteTable("foreign_presence", {
   id: text("id").primaryKey(),
