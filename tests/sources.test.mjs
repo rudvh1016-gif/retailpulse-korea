@@ -8,6 +8,7 @@ import { runSeoulS2Smoke } from "../scripts/smoke-public-apis-lib.mjs";
 import {
   buildDataGoKrUrl,
   normalizeDataGoKrServiceKey,
+  summarizeDataGoKrResponse,
 } from "../lib/data-go-kr.mjs";
 import { areaMappings } from "../lib/areas.ts";
 import {
@@ -73,6 +74,25 @@ test("data.go.kr encoded and decoded service keys produce one identical transpor
 test("data.go.kr service keys are decoded at most once", () => {
   assert.equal(normalizeDataGoKrServiceKey("value%252Bstill-encoded"), "value%2Bstill-encoded");
   assert.equal(normalizeDataGoKrServiceKey("value%2Gmalformed"), "value%2Gmalformed");
+});
+
+test("data.go.kr smoke classifies auth, request, schema, pass, and valid no-data separately", () => {
+  const response = (resultCode, items = [], totalCount = items.length) => ({
+    status: 200,
+    payload: { response: { header: { resultCode, resultMsg: "NORMAL SERVICE" }, body: { items: { item: items }, totalCount } } },
+    textSnippet: null,
+  });
+
+  assert.equal(summarizeDataGoKrResponse(response("00", [{ flightId: "KE1" }]), "00", "fixture").authStatus, "PASS");
+  assert.equal(summarizeDataGoKrResponse(response("00", [], 0), "00", "fixture").authStatus, "VALID_NO_DATA");
+  assert.equal(summarizeDataGoKrResponse(response("03", [], 0), "00", "fixture").authStatus, "VALID_NO_DATA");
+  assert.equal(summarizeDataGoKrResponse({
+    status: 200,
+    payload: { OpenAPI_ServiceResponse: { cmmMsgHeader: { returnReasonCode: "30", returnAuthMsg: "SERVICE KEY ERROR" } } },
+    textSnippet: null,
+  }, "00", "fixture").authStatus, "AUTH_BLOCKED");
+  assert.equal(summarizeDataGoKrResponse({ status: 503, payload: null, textSnippet: "unavailable" }, "00", "fixture").authStatus, "REQUEST_ERROR");
+  assert.equal(summarizeDataGoKrResponse({ status: 200, payload: { response: {} }, textSnippet: null }, "00", "fixture").authStatus, "SCHEMA_ERROR");
 });
 
 function openDatabase(name) {
