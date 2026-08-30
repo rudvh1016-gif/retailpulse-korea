@@ -7,6 +7,7 @@ import {
   SKIPPED_ALREADY_COMPLETE_TODAY,
   runSelectedProductionSources,
 } from "../lib/production-runner.ts";
+import { sanitizeProductionDetail } from "../lib/production-diagnostics.ts";
 
 test("job failure classification surfaces any ERROR or NEEDS_KEY after isolated execution", () => {
   assert.equal(hasProductionSourceFailure([
@@ -22,6 +23,16 @@ test("job failure classification surfaces any ERROR or NEEDS_KEY after isolated 
     { source: "seoul_realtime", status: "PARTIAL", records: 2 },
     { source: "events", status: "NEEDS_KEY", records: 0 },
   ]), true);
+});
+
+test("production diagnostics redact authenticated URLs and bearer tokens", () => {
+  const detail = "failed https://apis.data.go.kr/path?serviceKey=secret-value&pageNo=1 Bearer token-value";
+  const sanitized = sanitizeProductionDetail(detail);
+  assert.equal(sanitized.includes("secret-value"), false);
+  assert.equal(sanitized.includes("token-value"), false);
+  assert.equal(sanitized.includes("https://"), false);
+  assert.match(sanitized, /\[REDACTED_URL\]/);
+  assert.match(sanitized, /Bearer \[REDACTED\]/);
 });
 
 /**

@@ -1,0 +1,29 @@
+name: Inspect Production Operations
+
+on:
+  workflow_dispatch:
+    inputs:
+      since:
+        description: ISO timestamp lower bound for operational metadata
+        required: true
+        default: "2026-08-30T23:20:00Z"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Read safe Production operational metadata
+        run: npx tsx scripts/inspect-production-operations.ts
+        env:
+          RPK_DIAGNOSTIC_SINCE: ${{ inputs.since }}
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
