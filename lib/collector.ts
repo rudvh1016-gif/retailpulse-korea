@@ -321,7 +321,7 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
   return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written };
 }
 
-const SEOUL_FOREIGN_PERIOD_LOOKBACK_DAYS = 7;
+const SEOUL_FOREIGN_PERIOD_LOOKBACK_DAYS = 62;
 
 export interface SeoulForeignPeriod {
   ymd: string;
@@ -329,8 +329,8 @@ export interface SeoulForeignPeriod {
 }
 
 // OA-23018 is published daily but does not guarantee response ordering or an
-// exact availability lag. Probe only the last completed hour of the previous
-// seven KST days, newest first, so selection is both bounded and evidenced.
+// exact availability lag. Probe the last completed hour newest-first across
+// the documented recent-two-month OpenAPI window, bounded to 62 KST days.
 export function seoulForeignPeriodCandidates(now: Date = new Date()): SeoulForeignPeriod[] {
   if (!Number.isFinite(now.getTime())) throw new Error("invalid_seoul_foreign_candidate_time");
   const kst = new Date(now.getTime() + 9 * 3_600_000);
@@ -393,8 +393,8 @@ async function persistSeoulForeignPresence(
   return statements.length ? runBatches(db, statements) : 0;
 }
 
-// S2 — probe a maximum of seven completed-day candidates and require every
-// configured representative dong for one period. This is bounded to 7 * N
+// S2 — probe a maximum of 62 completed-day candidates and require every
+// configured representative dong for one period. This is bounded to 62 * N
 // targeted calls and never sweeps or trusts the ordering of the full dataset.
 export async function collectSeoulForeignPresence(env: CollectorEnv, now: Date = new Date()): Promise<CollectorResult> {
   const sourceId = SEOUL_FOREIGN_SOURCE_ID;
