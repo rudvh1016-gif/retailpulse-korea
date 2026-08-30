@@ -1,7 +1,9 @@
 import {
   fetchOfficialJson,
   normalizeAirportCongestion,
+  normalizeAirportCongestionT2,
   normalizeAirportFlight,
+  normalizeAirportPassengerForecastRow,
   normalizeScheduledAirportFlight,
   normalizeEstimatedSales,
   normalizeSeoulRealtime,
@@ -11,6 +13,7 @@ import {
   redactServiceKey,
   type CanonicalAirportCongestion,
   type CanonicalAirportFlight,
+  type CanonicalAirportPassengerForecastRow,
   type CanonicalScheduledAirportFlight,
   type CanonicalEstimatedSales,
   type CanonicalSeoulRealtime,
@@ -888,13 +891,13 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
         lastRow = canonical;
         if (!env.DB) continue;
         statements.push(env.DB.prepare(`INSERT INTO airport_congestion (
-            id, source_id, record_origin, terminal, zone, wait_time_minutes, waiting_count,
+            id, source_id, record_origin, terminal, zone, wait_time_minutes, wait_time_raw, waiting_count,
             observed_at, retrieved_at, freshness, schema_version, quality_status, source_hash
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(source_id, terminal, zone, observed_at) DO NOTHING`)
           .bind(
             await sha256({ sourceId, terminal: canonical.terminal, zone: canonical.zone, observedAt: canonical.observedAt }),
-            sourceId, canonical.recordOrigin, canonical.terminal, canonical.zone, canonical.waitTimeMinutes,
+            sourceId, canonical.recordOrigin, canonical.terminal, canonical.zone, canonical.waitTimeMinutes, canonical.waitTimeRaw,
             canonical.waitingCount, canonical.observedAt, canonical.retrievedAt, canonical.freshness,
             canonical.schemaVersion, canonical.qualityStatus, canonical.sourceHash,
           ));
@@ -913,6 +916,189 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
   await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, terminalCounts.length, written);
   await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastRow ? { eventAt: lastRow.observedAt, retrievedAt: lastRow.retrievedAt, schemaVersion: lastRow.schemaVersion } : undefined);
   return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written };
+}
+
+const A4_T2_PAGE_SIZE = 20;
+const A4_T2_MAX_PAGES = 3;
+
+/**
+ * A4-T2 — 출국장 혼잡도 제2여객터미널 (dataset 15161098). One all-gates
+ * request per collection (gateId intentionally omitted — the official
+ * guide's own "gateId=P03" sample is wrong; P03 is the response's
+ * terminalId meaning T2, not a valid gateId). Bounded pagination only
+ * triggers if totalCount ever exceeds one page. A row that fails to
+ * normalize (malformed gate/time/count) is skipped rather than aborting the
+ * whole run or being fabricated. Shares the airport_congestion table with
+ * A4-T1 via a distinct sourceId + terminal='T2'; they can never overwrite
+ * each other because both are part of the table's unique key.
+ */
+export async function collectAirportCongestionT2(env: CollectorEnv): Promise<CollectorResult> {
+  const sourceId = "INCHEON_DEPARTURE_CONGESTION_T2";
+  if (!env.DATA_GO_KR_SERVICE_KEY) {
+    await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "DATA_GO_KR_SERVICE_KEY is not configured");
+    await writeSourceHealth(env.DB, sourceId, "MISSING", "DATA_GO_KR_SERVICE_KEY is not configured");
+    return { status: "NEEDS_KEY", records: 0 };
+  }
+  const statements: D1PreparedStatement[] = [];
+  const rowFailures: string[] = [];
+  let lastRow: CanonicalAirportCongestion | undefined;
+  let written = 0;
+  let pagesFetched = 0;
+  let normalizedCount = 0;
+  let totalCount: number | null = null;
+  const retrievedAt = nowIso();
+  try {
+    for (let pageNo = 1; pageNo <= A4_T2_MAX_PAGES; pageNo += 1) {
+      const url = buildDataGoKrUrl(
+        "https://apis.data.go.kr/B551177/statusOfDepartureCongestionT2/getDepartureCongestionT2",
+        env.DATA_GO_KR_SERVICE_KEY,
+        { pageNo: String(pageNo), numOfRows: String(A4_T2_PAGE_SIZE), type: "json" },
+      );
+      const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
+      const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown }; totalCount?: number } } };
+      const resultCode = root?.response?.header?.resultCode;
+      if (resultCode !== "00") throw new Error(`congestion_t2_result_${String(resultCode ?? "missing")}`);
+      const bodyItems = root?.response?.body?.items;
+      const rawItems = Array.isArray(bodyItems) ? bodyItems : bodyItems?.item;
+      const items = Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
+      pagesFetched += 1;
+      totalCount = typeof root?.response?.body?.totalCount === "number" ? root.response.body.totalCount : totalCount;
+      for (const item of items) {
+        try {
+          const canonical = await normalizeAirportCongestionT2(item, retrievedAt);
+          normalizedCount += 1;
+          lastRow = canonical;
+          if (!env.DB) continue;
+          statements.push(env.DB.prepare(`INSERT INTO airport_congestion (
+              id, source_id, record_origin, terminal, zone, wait_time_minutes, wait_time_raw, waiting_count,
+              observed_at, retrieved_at, freshness, schema_version, quality_status, source_hash
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(source_id, terminal, zone, observed_at) DO NOTHING`)
+            .bind(
+              await sha256({ sourceId, terminal: canonical.terminal, zone: canonical.zone, observedAt: canonical.observedAt }),
+              sourceId, canonical.recordOrigin, canonical.terminal, canonical.zone, canonical.waitTimeMinutes, canonical.waitTimeRaw,
+              canonical.waitingCount, canonical.observedAt, canonical.retrievedAt, canonical.freshness,
+              canonical.schemaVersion, canonical.qualityStatus, canonical.sourceHash,
+            ));
+        } catch (error) {
+          rowFailures.push(error instanceof Error ? error.message : "row_error");
+        }
+      }
+      if (totalCount === null || pageNo * A4_T2_PAGE_SIZE >= totalCount || items.length < A4_T2_PAGE_SIZE) break;
+    }
+  } catch (error) {
+    const detail = error instanceof Error ? redactServiceKey(error.message) : "collector_error";
+    // A provider ERROR here must never touch existing T1/T2 rows already in
+    // D1 — only source_health/collector_runs are written, so the last-good
+    // congestion rows remain exactly as they were.
+    await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
+    await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
+    return { status: "ERROR", records: 0 };
+  }
+  if (env.DB && statements.length) written = await runBatches(env.DB, statements);
+  const detail = `pages ${pagesFetched}; totalCount ${totalCount ?? "unknown"}; normalized ${normalizedCount}; changed writes ${written}${rowFailures.length ? `; row failures ${rowFailures.length}` : ""}`;
+  if (normalizedCount === 0) {
+    await writeCollectorStatus(env.DB, sourceId, "ERROR", "congestion_t2_no_data");
+    await writeSourceHealth(env.DB, sourceId, "ERROR", "congestion_t2_no_data");
+    return { status: "ERROR", records: 0 };
+  }
+  await writeCollectorStatus(env.DB, sourceId, rowFailures.length ? "PARTIAL" : "SUCCESS", detail, normalizedCount, written);
+  await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastRow ? { eventAt: lastRow.observedAt, retrievedAt: lastRow.retrievedAt, schemaVersion: lastRow.schemaVersion } : undefined);
+  return { status: rowFailures.length ? "PARTIAL" : "SUCCESS", records: written };
+}
+
+const A5_PAGE_SIZE = 50;
+const A5_MAX_PAGES = 3;
+
+/**
+ * A5 — 승객예고-출·입국장별 (dataset 15095066, V5.0, passgrAnncmt). Queries
+ * BOTH selectdate=0 (today) and selectdate=1 (tomorrow) every cycle — the
+ * normal cost is ~2 provider requests/cycle, with bounded pagination only if
+ * a day's totalCount ever exceeds one page. This is FORECAST data and never
+ * writes to airport_congestion or any A4 table; A4 source health is never
+ * touched by this collector, so an A5 failure cannot alter A4 status.
+ */
+export async function collectAirportPassengerForecast(env: CollectorEnv): Promise<CollectorResult> {
+  const sourceId = "INCHEON_PASSENGER_FORECAST";
+  if (!env.DATA_GO_KR_SERVICE_KEY) {
+    await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "DATA_GO_KR_SERVICE_KEY is not configured");
+    await writeSourceHealth(env.DB, sourceId, "MISSING", "DATA_GO_KR_SERVICE_KEY is not configured");
+    return { status: "NEEDS_KEY", records: 0 };
+  }
+  const statements: D1PreparedStatement[] = [];
+  const dayFailures: string[] = [];
+  let lastRow: CanonicalAirportPassengerForecastRow | undefined;
+  let written = 0;
+  let normalizedRowGroups = 0;
+  let requestCount = 0;
+  const retrievedAt = nowIso();
+  for (const selectdate of ["0", "1"] as const) {
+    try {
+      let totalCount: number | null = null;
+      for (let pageNo = 1; pageNo <= A5_MAX_PAGES; pageNo += 1) {
+        const url = buildDataGoKrUrl(
+          "https://apis.data.go.kr/B551177/passgrAnncmt/getPassgrAnncmt",
+          env.DATA_GO_KR_SERVICE_KEY,
+          { pageNo: String(pageNo), numOfRows: String(A5_PAGE_SIZE), type: "json", selectdate },
+        );
+        const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
+        requestCount += 1;
+        const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown }; totalCount?: number } } };
+        const resultCode = root?.response?.header?.resultCode;
+        if (resultCode !== "00") throw new Error(`forecast_result_${String(resultCode ?? "missing")}`);
+        const bodyItems = root?.response?.body?.items;
+        const rawItems = Array.isArray(bodyItems) ? bodyItems : bodyItems?.item;
+        const items = Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
+        totalCount = typeof root?.response?.body?.totalCount === "number" ? root.response.body.totalCount : totalCount;
+        for (const item of items) {
+          let rows: CanonicalAirportPassengerForecastRow[];
+          try {
+            rows = await normalizeAirportPassengerForecastRow(item, retrievedAt);
+          } catch (error) {
+            dayFailures.push(`row: ${error instanceof Error ? error.message : "row_error"}`);
+            continue;
+          }
+          normalizedRowGroups += 1;
+          for (const rowRecord of rows) {
+            lastRow = rowRecord;
+            if (!env.DB) continue;
+            statements.push(env.DB.prepare(`INSERT INTO airport_passenger_forecast (
+                id, source_id, record_origin, terminal, direction, zone, is_aggregate,
+                target_date, time_band_raw, target_start_at, target_end_at, expected_passengers,
+                retrieved_at, schema_version, quality_status, source_hash
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              ON CONFLICT(source_id, terminal, direction, zone, target_date, time_band_raw) DO UPDATE SET
+                target_start_at = excluded.target_start_at,
+                target_end_at = excluded.target_end_at,
+                expected_passengers = excluded.expected_passengers,
+                retrieved_at = excluded.retrieved_at,
+                quality_status = excluded.quality_status,
+                source_hash = excluded.source_hash
+              WHERE airport_passenger_forecast.source_hash <> excluded.source_hash`)
+              .bind(
+                await sha256({ sourceId, terminal: rowRecord.terminal, direction: rowRecord.direction, zone: rowRecord.zone, targetDate: rowRecord.targetDate, timeBandRaw: rowRecord.timeBandRaw }),
+                sourceId, rowRecord.recordOrigin, rowRecord.terminal, rowRecord.direction, rowRecord.zone, rowRecord.isAggregate ? 1 : 0,
+                rowRecord.targetDate, rowRecord.timeBandRaw, rowRecord.targetStartAt, rowRecord.targetEndAt, rowRecord.expectedPassengers,
+                rowRecord.retrievedAt, rowRecord.schemaVersion, rowRecord.qualityStatus, rowRecord.sourceHash,
+              ));
+          }
+        }
+        if (totalCount === null || pageNo * A5_PAGE_SIZE >= totalCount || items.length < A5_PAGE_SIZE) break;
+      }
+    } catch (error) {
+      dayFailures.push(`selectdate=${selectdate}: ${error instanceof Error ? redactServiceKey(error.message) : "collector_error"}`);
+    }
+  }
+  if (env.DB && statements.length) written = await runBatches(env.DB, statements);
+  const detail = `requests ${requestCount}; normalized rows ${normalizedRowGroups}; changed writes ${written}${dayFailures.length ? `; failed ${dayFailures.join(" | ")}` : ""}`;
+  if (normalizedRowGroups === 0) {
+    await writeCollectorStatus(env.DB, sourceId, "ERROR", detail || "forecast_no_data");
+    await writeSourceHealth(env.DB, sourceId, "ERROR", detail || "forecast_no_data");
+    return { status: "ERROR", records: 0 };
+  }
+  await writeCollectorStatus(env.DB, sourceId, dayFailures.length ? "PARTIAL" : "SUCCESS", detail, normalizedRowGroups, written);
+  await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastRow ? { eventAt: lastRow.targetStartAt, retrievedAt: lastRow.retrievedAt, schemaVersion: lastRow.schemaVersion } : undefined);
+  return { status: dayFailures.length ? "PARTIAL" : "SUCCESS", records: written };
 }
 
 export async function runScheduledCollectors(env: CollectorEnv): Promise<void> {

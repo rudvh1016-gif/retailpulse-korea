@@ -559,6 +559,14 @@ export interface CanonicalAirportCongestion {
   terminal: "T1" | "T2";
   zone: string;
   waitTimeMinutes: number | null;
+  /**
+   * Raw provider wait-time string. The provider can return a lower-bound form
+   * such as "60+" (60 minutes or more, A4-T2's official 매우혼잡 case); that
+   * value is preserved here and NEVER coerced into a false-exact
+   * `waitTimeMinutes`. Only a plain non-negative integer string becomes an
+   * exact `waitTimeMinutes`.
+   */
+  waitTimeRaw: string | null;
   waitingCount: number;
   observedAt: string;
   retrievedAt: string;
@@ -568,9 +576,17 @@ export interface CanonicalAirportCongestion {
   sourceHash: string;
 }
 
+/** Shared by A4-T1 and A4-T2: only an exact integer string becomes a numeric wait time. */
+function parseWaitTime(rawWait: string | null): { minutes: number | null; raw: string | null } {
+  if (rawWait === null) return { minutes: null, raw: null };
+  const minutes = /^\d+$/.test(rawWait) ? Number(rawWait) : null;
+  return { minutes, raw: rawWait };
+}
+
 /**
- * A4 — departure-hall checkpoint congestion. Checkpoint waiting counts are a
- * demand-flow proxy only; they are never duty-free visitors or store traffic.
+ * A4-T1 — departure-hall checkpoint congestion (제1여객터미널, `15148225`).
+ * Checkpoint waiting counts are a demand-flow proxy only; they are never
+ * duty-free visitors or store traffic.
  */
 export async function normalizeAirportCongestion(raw: unknown, retrievedAt: string): Promise<CanonicalAirportCongestion> {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new SourceFetchError("SCHEMA");
@@ -578,12 +594,13 @@ export async function normalizeAirportCongestion(raw: unknown, retrievedAt: stri
   const rawTerminal = requiredString(record, ["terminalId", "terminalid"]);
   const terminal = rawTerminal === "P01" || rawTerminal === "T1" ? "T1" : null;
   if (!terminal) throw new SourceFetchError("SCHEMA");
-  const rawWait = optionalString(record, ["waitTime", "waittime"]);
+  const { minutes: waitTimeMinutes, raw: waitTimeRaw } = parseWaitTime(optionalString(record, ["waitTime", "waittime"]));
   const semanticRecord = {
     sourceId: "INCHEON_DEPARTURE_CONGESTION",
     terminal,
     zone: requiredString(record, ["gateId", "gateid"]),
-    waitTimeMinutes: rawWait !== null && Number.isFinite(Number(rawWait)) ? Number(rawWait) : null,
+    waitTimeMinutes,
+    waitTimeRaw,
     waitingCount: requiredNumericString(record, ["waitLength", "waitlength"]),
     observedAt: normalizeKstTimestamp(requiredString(record, ["occurtime", "occurTime"])),
   } as const;
@@ -596,4 +613,172 @@ export async function normalizeAirportCongestion(raw: unknown, retrievedAt: stri
     qualityStatus: "VALID",
     sourceHash: await sha256(semanticRecord),
   };
+}
+
+/** Official documented A4-T2 gate IDs (departure-gate checkpoint groups). */
+const A4_T2_GATE_IDS = new Set(["DG1_A", "DG1_B", "DG1_C", "DG1_D", "DG2_A", "DG2_B", "DG2_C", "DG2_D"]);
+
+/**
+ * A4-T2 — 출국장 혼잡도 제2여객터미널 조회 (`15161098`,
+ * statusOfDepartureCongestionT2/getDepartureCongestionT2). This is a
+ * genuinely separate dataset from A4-T1 (`15148225`), not a `terminalId`
+ * value on the T1 endpoint. The official response's `terminalId` is always
+ * `"P03"` meaning Terminal 2 — it is NOT a `gateId`. The guide's own sample
+ * request using `gateId=P03` is a documented inconsistency in the official
+ * doc and must never be copied; valid `gateId` values are `DG1_A..DG1_D` /
+ * `DG2_A..DG2_D` (see docs/DATA_SOURCES.md). `waitTime` can be a "60+"
+ * lower-bound string; see `parseWaitTime`.
+ */
+export async function normalizeAirportCongestionT2(raw: unknown, retrievedAt: string): Promise<CanonicalAirportCongestion> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new SourceFetchError("SCHEMA");
+  const record = raw as Record<string, unknown>;
+  const rawTerminal = requiredString(record, ["terminalId", "terminalid"]);
+  if (rawTerminal !== "P03") throw new SourceFetchError("SCHEMA");
+  const zone = requiredString(record, ["gateId", "gateid"]);
+  const { minutes: waitTimeMinutes, raw: waitTimeRaw } = parseWaitTime(optionalString(record, ["waitTime", "waittime"]));
+  const semanticRecord = {
+    sourceId: "INCHEON_DEPARTURE_CONGESTION_T2",
+    terminal: "T2" as const,
+    zone,
+    waitTimeMinutes,
+    waitTimeRaw,
+    waitingCount: requiredNumericString(record, ["waitLength", "waitlength"]),
+    observedAt: normalizeKstTimestamp(requiredString(record, ["occurtime", "occurTime"])),
+  } as const;
+  return {
+    ...semanticRecord,
+    recordOrigin: "LIVE",
+    retrievedAt,
+    freshness: "LIVE",
+    schemaVersion: "airport-congestion-t2-v1",
+    // An undocumented gateId is stored honestly rather than dropped, but
+    // flagged PARTIAL so it is never silently treated as fully verified.
+    qualityStatus: A4_T2_GATE_IDS.has(zone) ? "VALID" : "PARTIAL",
+    sourceHash: await sha256(semanticRecord),
+  };
+}
+
+/** Official A5 field -> (terminal, direction, zone, isAggregate) map. V5.0 field names only; never the pre-V5.0 aliases. */
+const A5_FIELDS = [
+  { key: "t1dg1", terminal: "T1", direction: "departure", isAggregate: false },
+  { key: "t1dg2", terminal: "T1", direction: "departure", isAggregate: false },
+  { key: "t1dg3", terminal: "T1", direction: "departure", isAggregate: false },
+  { key: "t1dg4", terminal: "T1", direction: "departure", isAggregate: false },
+  { key: "t1dg5", terminal: "T1", direction: "departure", isAggregate: false },
+  { key: "t1dg6", terminal: "T1", direction: "departure", isAggregate: false },
+  { key: "t1dgsum1", terminal: "T1", direction: "departure", isAggregate: true },
+  { key: "t1eg1", terminal: "T1", direction: "arrival", isAggregate: false },
+  { key: "t1eg2", terminal: "T1", direction: "arrival", isAggregate: false },
+  { key: "t1eg3", terminal: "T1", direction: "arrival", isAggregate: false },
+  { key: "t1eg4", terminal: "T1", direction: "arrival", isAggregate: false },
+  { key: "t1egsum1", terminal: "T1", direction: "arrival", isAggregate: true },
+  { key: "t2dg1", terminal: "T2", direction: "departure", isAggregate: false },
+  { key: "t2dg2", terminal: "T2", direction: "departure", isAggregate: false },
+  // Official field is t2dgsum2 (not t2dgsum1) — do not "correct" it to look symmetrical with t1dgsum1.
+  { key: "t2dgsum2", terminal: "T2", direction: "departure", isAggregate: true },
+  { key: "t2eg1", terminal: "T2", direction: "arrival", isAggregate: false },
+  { key: "t2eg2", terminal: "T2", direction: "arrival", isAggregate: false },
+  { key: "t2egsum1", terminal: "T2", direction: "arrival", isAggregate: true },
+] as const satisfies ReadonlyArray<{ key: string; terminal: "T1" | "T2"; direction: "departure" | "arrival"; isAggregate: boolean }>;
+
+/** A finite, non-negative official numeric value; missing/negative/NaN is dropped, never coerced to 0. Explicit 0/0.0 is preserved. */
+function parseA5Count(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const num = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN;
+  if (!Number.isFinite(num) || num < 0) return null;
+  return num;
+}
+
+/**
+ * A5 `atime` is an hourly interval such as "09_10" or "23_24", not an
+ * instantaneous observation. "23_24" must resolve to next-day 00:00, never
+ * an invalid same-day "24:00".
+ */
+function parseA5TimeBand(adate: string, atime: string): { targetDate: string; targetStartAt: string; targetEndAt: string } {
+  const dateMatch = /^(\d{4})(\d{2})(\d{2})$/.exec(adate.trim());
+  if (!dateMatch) throw new SourceFetchError("SCHEMA");
+  const targetDate = `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`;
+  const bandMatch = /^(\d{2})_(\d{2})$/.exec(atime.trim());
+  if (!bandMatch) throw new SourceFetchError("SCHEMA");
+  const startHour = Number(bandMatch[1]);
+  const endHour = Number(bandMatch[2]);
+  if (!Number.isInteger(startHour) || startHour < 0 || startHour > 23) throw new SourceFetchError("SCHEMA");
+  if (!Number.isInteger(endHour) || endHour < 1 || endHour > 24) throw new SourceFetchError("SCHEMA");
+  const targetStartAt = `${targetDate}T${String(startHour).padStart(2, "0")}:00:00+09:00`;
+  let targetEndAt: string;
+  if (endHour === 24) {
+    // Pure KST calendar-date arithmetic (never through a UTC instant, which
+    // would silently pick the wrong calendar day near a +09:00 boundary).
+    const nextDay = new Date(Date.UTC(Number(dateMatch[1]), Number(dateMatch[2]) - 1, Number(dateMatch[3]) + 1)).toISOString().slice(0, 10);
+    targetEndAt = `${nextDay}T00:00:00+09:00`;
+  } else {
+    targetEndAt = `${targetDate}T${String(endHour).padStart(2, "0")}:00:00+09:00`;
+  }
+  if (Number.isNaN(Date.parse(targetStartAt)) || Number.isNaN(Date.parse(targetEndAt))) throw new SourceFetchError("SCHEMA");
+  return { targetDate, targetStartAt, targetEndAt };
+}
+
+export interface CanonicalAirportPassengerForecastRow {
+  sourceId: string;
+  recordOrigin: "FORECAST";
+  terminal: "T1" | "T2";
+  direction: "departure" | "arrival";
+  zone: string;
+  isAggregate: boolean;
+  targetDate: string;
+  timeBandRaw: string;
+  targetStartAt: string;
+  targetEndAt: string;
+  expectedPassengers: number;
+  retrievedAt: string;
+  schemaVersion: string;
+  qualityStatus: QualityStatus;
+  sourceHash: string;
+}
+
+/**
+ * A5 — 승객예고-출·입국장별 (`15095066`, OpenAPI 활용가이드 V5.0,
+ * passgrAnncmt/getPassgrAnncmt). This is FORECAST/EXPECTED passenger data,
+ * never an actual observed queue — it must never be written into
+ * `airport_congestion`. One provider row bundles every T1/T2
+ * departure/arrival field for one hourly `atime` band; this expands that row
+ * into one canonical row per official field, tagging the provider's own
+ * total fields (`t1dgsum1`, `t1egsum1`, `t2dgsum2`, `t2egsum1`) with
+ * `isAggregate=true` so downstream summation can use the official total OR
+ * sum components, but never both (double-count prevention).
+ */
+export async function normalizeAirportPassengerForecastRow(raw: unknown, retrievedAt: string): Promise<CanonicalAirportPassengerForecastRow[]> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new SourceFetchError("SCHEMA");
+  const record = raw as Record<string, unknown>;
+  const adate = requiredString(record, ["adate"]);
+  const atimeRaw = requiredString(record, ["atime"]);
+  const { targetDate, targetStartAt, targetEndAt } = parseA5TimeBand(adate, atimeRaw);
+  const results: CanonicalAirportPassengerForecastRow[] = [];
+  for (const field of A5_FIELDS) {
+    const expectedPassengers = parseA5Count(record[field.key]);
+    // Missing or malformed/negative individual fields are dropped, not
+    // fabricated as zero and not allowed to abort the whole time band.
+    if (expectedPassengers === null) continue;
+    const semanticRecord = {
+      sourceId: "INCHEON_PASSENGER_FORECAST",
+      terminal: field.terminal,
+      direction: field.direction,
+      zone: field.key,
+      isAggregate: field.isAggregate,
+      targetDate,
+      timeBandRaw: atimeRaw,
+      targetStartAt,
+      targetEndAt,
+      expectedPassengers,
+    } as const;
+    results.push({
+      ...semanticRecord,
+      recordOrigin: "FORECAST",
+      retrievedAt,
+      schemaVersion: "airport-passenger-forecast-v1",
+      qualityStatus: "VALID",
+      sourceHash: await sha256(semanticRecord),
+    });
+  }
+  return results;
 }

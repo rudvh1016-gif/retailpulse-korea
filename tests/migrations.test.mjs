@@ -12,6 +12,7 @@ const migrations = [
   "drizzle/0003_minor_network.sql",
   "drizzle/0004_s2_foreign_presence.sql",
   "drizzle/0005_airport_official_contracts.sql",
+  "drizzle/0006_airport_t2_and_passenger_forecast.sql",
 ];
 
 function applyMigrations(database) {
@@ -43,6 +44,8 @@ test("D1 migrations apply and prediction rows remain immutable", () => {
       "foreign_presence",
       "seoul_foreign_presence_dong",
       "seoul_foreign_presence_area",
+      "airport_congestion",
+      "airport_passenger_forecast",
       "predictions",
       "outcomes",
       "baseline_predictions",
@@ -66,6 +69,20 @@ test("D1 migrations apply and prediction rows remain immutable", () => {
     assert.deepEqual(
       database.prepare("PRAGMA index_info(seoul_foreign_presence_area_unique)").all().map(({ name }) => name),
       ["source_id", "product_version", "mapping_version", "area", "reference_at"],
+    );
+
+    // A4-T2 additive column: existing airport_congestion rows/queries must
+    // keep working unchanged, with wait_time_raw only appended at the end.
+    assert.ok(columns("airport_congestion").includes("wait_time_raw"));
+
+    assert.deepEqual(columns("airport_passenger_forecast"), [
+      "id", "source_id", "record_origin", "terminal", "direction", "zone", "is_aggregate",
+      "target_date", "time_band_raw", "target_start_at", "target_end_at", "expected_passengers",
+      "retrieved_at", "schema_version", "quality_status", "source_hash",
+    ]);
+    assert.deepEqual(
+      database.prepare("PRAGMA index_info(airport_passenger_forecast_unique)").all().map(({ name }) => name),
+      ["source_id", "terminal", "direction", "zone", "target_date", "time_band_raw"],
     );
 
     const insertMappedArea = database.prepare(`INSERT INTO seoul_foreign_presence_area (
