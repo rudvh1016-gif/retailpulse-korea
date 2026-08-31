@@ -209,6 +209,17 @@ export async function GET(request: Request) {
       GROUP BY terminal`,
     ).bind(serviceDate).all<Row>()).results ?? []);
 
+    // Real flights for the selected KST day, for the flight lookup. One row
+    // per physical flight as the provider published it — never a fixture.
+    const flightBoardRows = await safeAll<Row>(async () => (await client.prepare(
+      `SELECT flight_number AS flightNumber, airline_code AS airlineCode,
+        airport_code AS airportCode, direction, terminal, gate,
+        checkin_counter AS checkinCounter, status, scheduled_at AS scheduledAt
+      FROM airport_flights
+      WHERE substr(scheduled_at, 1, 10) = ?
+      ORDER BY scheduled_at, flight_number LIMIT 1200`,
+    ).bind(serviceDate).all<Row>()).results ?? []);
+
     const scheduledRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT terminal, COUNT(*) AS flights, MIN(scheduled_time) AS firstTime, MAX(scheduled_time) AS lastTime,
         MAX(retrieved_at) AS retrievedAt
@@ -374,6 +385,7 @@ export async function GET(request: Request) {
         passengerForecastTimelineByTerminal: passengerToday.timelineByTerminal,
         forecastCoverage: passengerToday.coverage,
         scheduled: scheduledRows,
+        flights: flightBoardRows,
         // FORECAST/EXPECTED passengers — semantically separate from
         // `congestion` (CURRENT/OBSERVED). Never merge these two arrays.
         passengerForecast: upcomingForecast,
@@ -406,7 +418,7 @@ export async function GET(request: Request) {
         peakExpectedPassengers: null, peakExpectedPassengersByTerminal: {},
         passengerForecastTimeline: [], passengerForecastTimelineByTerminal: {},
         forecastCoverage: { all: "UNAVAILABLE", byTerminal: {} },
-        scheduled: [], passengerForecast: [],
+        scheduled: [], flights: [], passengerForecast: [],
       },
       message: "Live sources are not connected. Official historical views remain available.",
     }, { status: 200, headers: { "cache-control": "no-store" } });

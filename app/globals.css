@@ -1567,3 +1567,168 @@ h1, h2, h3, strong, b { font-weight: 600; }
   .hero h1, .lang-ja .hero h1, .lang-zh .hero h1 { font-size: 33px; }
   .view-intro h1 { font-size: 29px; }
 }
+
+/* ============================================================================
+   Date navigation, briefs, insights, flights and About.
+
+   Editorial rules followed throughout this section: rows and rules instead of
+   stacked cards, one thin divider rather than a border box, type carrying the
+   hierarchy, and brand blue reserved for the current selection and the single
+   most important value on a screen. No gradients, no badge rows, no repeated
+   oversized KPIs.
+   ========================================================================== */
+
+.date-nav { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin: 20px 0 0; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.date-nav-shortcuts { display: flex; gap: 2px; }
+.date-nav-shortcuts button { padding: 7px 14px; border: 0; border-radius: 0; background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: -.01em; border-bottom: 2px solid transparent; }
+.date-nav-shortcuts button:hover { color: var(--ink); }
+.date-nav-shortcuts button.active { color: var(--blue); border-bottom-color: var(--blue); }
+.date-nav-picker { display: flex; align-items: center; gap: 8px; }
+.date-nav-picker span { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.date-nav-picker input { padding: 6px 8px; border: 1px solid var(--line); background: transparent; font-size: 12px; font-weight: 600; color: var(--ink); }
+.date-scope-note { margin: 10px 0 0; color: var(--amber); font-size: 11px; font-weight: 650; letter-spacing: -.005em; }
+
+/* Metric explanation: a definition list, so "what / high / source / why" reads
+   as one paragraph of prose rather than four decorative tiles. */
+.metric-explainer { margin: 14px 0 0; padding: 0; display: grid; gap: 0; border-top: 1px solid var(--line); }
+.metric-explainer div { display: grid; grid-template-columns: 92px 1fr; gap: 14px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.metric-explainer dt { margin: 0; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding-top: 2px; }
+.metric-explainer dd { margin: 0; font-size: 13px; font-weight: 500; line-height: 1.55; color: var(--ink); }
+
+/* Insights */
+.insights-view .insight-block { margin: 34px 0 0; padding-top: 22px; border-top: 1px solid var(--line); }
+.insights-view .insight-block:first-of-type { border-top: 0; padding-top: 0; }
+.compare-bars { margin: 16px 0 0; display: grid; gap: 8px; }
+.compare-bars div { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 12px; }
+.compare-bars span { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .04em; }
+.compare-bars i { display: block; height: 8px; background: var(--blue); opacity: .82; }
+.compare-bars div:last-child i { opacity: .34; }
+.compare-bars b { font-size: 15px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.reading-notes { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 0; }
+.reading-notes li { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+.reading-notes span { color: var(--muted); font-weight: 650; }
+.reading-notes b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat-rows { margin: 16px 0 0; display: grid; gap: 0; }
+.stat-rows div { display: grid; grid-template-columns: 1fr auto; align-items: baseline; column-gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.stat-rows span { color: var(--muted); font-size: 11px; font-weight: 700; }
+.stat-rows b { font-size: 19px; font-weight: 750; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.stat-rows i { grid-column: 1 / -1; margin-top: 3px; color: var(--muted); font-size: 11px; font-style: normal; font-weight: 500; }
+
+/* Airport: remaining-departures cell, gate ranking, checkpoint footnote */
+.airport-period-label { color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .04em; white-space: nowrap; }
+.airport-today-grid article.airport-remaining strong { color: var(--blue); }
+.airport-detail-foot { margin: 12px 0 0; color: var(--muted); font-size: 11px; font-weight: 500; line-height: 1.5; }
+.airport-gate-list { margin: 14px 0 0; padding: 0; list-style: none; }
+.airport-gate-head { display: grid; grid-template-columns: 30px 1fr; gap: 12px; padding: 0 0 7px; border-bottom: 1px solid var(--line); }
+.airport-gate-head span, .airport-gate-head strong { color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.airport-gate-row { display: grid; grid-template-columns: 30px 1fr auto; align-items: baseline; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.airport-gate-row > span { color: var(--muted); font-size: 11px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.airport-gate-row strong { font-size: 14px; font-weight: 700; letter-spacing: -.01em; }
+.airport-gate-row strong i { display: inline-block; margin-right: 7px; color: var(--muted); font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: .05em; }
+.airport-gate-row b { font-size: 14px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.airport-checkpoint-terminal article b i,
+.airport-checkpoint-terminal article p i { display: block; margin-bottom: 2px; color: var(--muted); font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+
+/* Flight board */
+.flight-board { margin: 26px 0 0; }
+.flight-board-controls { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px; margin: 14px 0 0; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.flight-direction { display: flex; gap: 2px; }
+.flight-direction button { padding: 7px 14px; border: 0; background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; border-bottom: 2px solid transparent; }
+.flight-direction button.active { color: var(--blue); border-bottom-color: var(--blue); }
+.flight-search-field { display: flex; flex-direction: column; gap: 5px; min-width: 220px; flex: 1 1 220px; }
+.flight-search-field span { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.flight-search-field input { padding: 8px 10px; border: 1px solid var(--line); background: transparent; font-size: 13px; font-weight: 500; }
+.flight-rows { margin: 0; padding: 0; list-style: none; }
+.flight-rows li { display: grid; grid-template-columns: 58px 78px 1fr auto; align-items: baseline; column-gap: 14px; row-gap: 2px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.flight-rows b { font-size: 14px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.flight-rows strong { font-size: 14px; font-weight: 700; letter-spacing: -.01em; }
+.flight-rows > span { color: var(--muted); font-size: 12px; font-weight: 600; }
+.flight-rows i { grid-column: 3 / -1; color: var(--muted); font-style: normal; font-size: 11px; font-weight: 500; }
+.flight-rows small { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.flight-board-foot { margin: 12px 0 0; color: var(--muted); font-size: 11px; font-weight: 600; }
+
+/* Business checklist */
+.industry-section { margin: 30px 0 0; padding-top: 22px; border-top: 1px solid var(--line); }
+.checklist-rows { margin: 16px 0 0; padding: 0; list-style: none; }
+.checklist-rows li { display: grid; grid-template-columns: 30px 84px 1fr; align-items: baseline; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.checklist-rows span { color: var(--muted); font-size: 11px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.checklist-rows strong { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.checklist-rows p { margin: 0; font-size: 13px; font-weight: 500; line-height: 1.55; }
+
+/* Official history: horizontal bars read as a table, not as a decorative chart */
+.history-bars { margin: 18px 0 0; padding: 0; list-style: none; }
+.history-bars li { display: grid; grid-template-columns: 72px 1fr auto; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.history-bars span { color: var(--muted); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.history-bars i { display: block; height: 7px; background: var(--ink); opacity: .18; }
+.history-bars li.peak i { background: var(--blue); opacity: .8; }
+.history-bars b { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.annual-strip { margin: 26px 0 0; padding-top: 18px; border-top: 1px solid var(--line); }
+.annual-strip ol { margin: 12px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0 18px; }
+.annual-strip li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+.annual-strip span { color: var(--muted); font-weight: 700; }
+.annual-strip b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.detail-strip { margin: 24px 0 0; padding-top: 16px; border-top: 1px solid var(--line); }
+.detail-strip ol { margin: 10px 0 0; padding: 0; list-style: none; }
+.detail-strip li { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+.detail-strip span { color: var(--muted); font-weight: 650; }
+.detail-strip b { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Settings and sources */
+.preference-block, .source-block { margin: 30px 0 0; padding-top: 22px; border-top: 1px solid var(--line); }
+.preference-rows { margin: 14px 0 0; padding: 0; list-style: none; }
+.preference-rows li { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.preference-rows span { color: var(--muted); font-weight: 650; }
+.preference-rows b { font-weight: 700; }
+.language-choices { margin: 16px 0 0; display: flex; flex-wrap: wrap; gap: 2px; }
+.language-choices button { padding: 7px 14px; border: 1px solid var(--line); background: transparent; font-size: 12px; font-weight: 650; }
+.language-choices button.active { border-color: var(--blue); color: var(--blue); }
+.about-link-block { margin: 30px 0 0; padding-top: 22px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.about-link-block h2 { margin: 6px 0 4px; font-size: var(--type-section); font-weight: 780; letter-spacing: -.025em; }
+.about-link-block p { margin: 0; max-width: 52ch; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.about-link-block button, .business-pro button { padding: 10px 18px; border: 1px solid var(--ink); background: transparent; font-size: 12px; font-weight: 750; white-space: nowrap; }
+.source-toggle { padding: 6px 12px; border: 1px solid var(--line); background: transparent; font-size: 10px; font-weight: 800; letter-spacing: .08em; }
+.source-rows { margin: 14px 0 0; padding: 0; list-style: none; }
+.source-rows li { display: grid; grid-template-columns: 30px minmax(160px, 1fr) 2fr; align-items: baseline; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.source-rows > li > span { color: var(--muted); font-size: 11px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.source-rows strong { display: block; font-size: 12px; font-weight: 750; letter-spacing: -.005em; }
+.source-rows small { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; font-weight: 600; }
+.source-rows p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+/* About */
+.about-sections { margin: 26px 0 0; }
+.about-section { padding: 22px 0; border-top: 1px solid var(--line); }
+.about-section h2 { margin: 8px 0 8px; font-size: var(--type-section); font-weight: 780; letter-spacing: -.025em; }
+.about-section p { margin: 0; max-width: 68ch; font-size: 14px; font-weight: 450; line-height: 1.72; }
+.about-visual { margin: 30px 0 0; position: relative; }
+.about-visual img { display: block; width: 100%; height: clamp(220px, 34vw, 380px); object-fit: cover; }
+.about-visual figcaption { position: absolute; left: 14px; bottom: 12px; color: #fff; font-size: 10px; font-weight: 850; letter-spacing: .18em; }
+.about-actions { margin: 26px 0 0; display: flex; flex-wrap: wrap; gap: 10px; }
+.about-actions button { padding: 11px 20px; border: 1px solid var(--ink); background: transparent; font-size: 12px; font-weight: 750; }
+
+/* Preparation preview modal */
+.modal-backdrop { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(17, 18, 23, .52); }
+.modal { width: min(460px, 100%); padding: 26px; background: var(--paper); border: 1px solid var(--ink); }
+.modal h2 { margin: 8px 0 14px; font-size: var(--type-section); font-weight: 780; letter-spacing: -.025em; }
+.modal ul { margin: 0 0 14px; padding: 0; list-style: none; }
+.modal li { padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 550; }
+.modal p { margin: 0 0 18px; color: var(--muted); font-size: 12px; }
+.modal button { padding: 10px 18px; border: 1px solid var(--ink); background: transparent; font-size: 12px; font-weight: 750; }
+
+@media (max-width: 820px) {
+  .metric-explainer div { grid-template-columns: 1fr; gap: 3px; }
+  .source-rows li { grid-template-columns: 26px 1fr; }
+  .source-rows p { grid-column: 2 / -1; }
+  .checklist-rows li { grid-template-columns: 26px 1fr; }
+  .checklist-rows p { grid-column: 2 / -1; }
+  .flight-rows li { grid-template-columns: 52px 1fr auto; }
+  .flight-rows i { grid-column: 2 / -1; }
+  .date-nav { gap: 10px; }
+  .history-bars li { grid-template-columns: 62px 1fr; }
+  .history-bars b { grid-column: 2 / -1; text-align: right; }
+}
+
+@media (max-width: 365px) {
+  .date-nav-shortcuts button { padding: 7px 10px; font-size: 11px; }
+  .flight-rows li { grid-template-columns: 48px 1fr; }
+  .flight-rows small { grid-column: 2 / -1; text-align: right; }
+}
