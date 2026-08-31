@@ -50,7 +50,7 @@ export function pageTitle(locale: SeoLocale, slug?: SeoSlug) {
   }
   const titles: Record<Exclude<SeoSlug, keyof typeof names>, Record<SeoLocale, string>> = {
     airport: { ko: "인천공항 T1·T2 출국객·항공편·혼잡도 | KORETAIL", en: "Incheon Airport T1·T2 Passengers & Flights | KORETAIL", zh: "仁川机场T1·T2出境旅客与航班 | KORETAIL", ja: "仁川空港T1・T2 出国者・フライト・混雑 | KORETAIL" },
-    forecast: { ko: "서울·인천공항 공식 데이터 인사이트 | KORETAIL", en: "Seoul & Incheon Official Data Insights | KORETAIL", zh: "首尔与仁川机场官方数据洞察 | KORETAIL", ja: "ソウル・仁川空港の公式データインサイト | KORETAIL" },
+    forecast: { ko: "서울·인천공항 공식 기록과 숫자 설명 | KORETAIL", en: "Seoul & Incheon Official Records Explained | KORETAIL", zh: "首尔与仁川机场官方记录与数据说明 | KORETAIL", ja: "ソウル・仁川空港の公式記録と数値の説明 | KORETAIL" },
     business: { ko: "서울 매장 운영 브리핑과 점검 목록 | KORETAIL", en: "Seoul Store Briefing & Checklist | KORETAIL", zh: "首尔门店运营简报与检查清单 | KORETAIL", ja: "ソウル店舗の運営ブリーフとチェックリスト | KORETAIL" },
     about: { ko: "KORETAIL 소개 — 무엇을 어떻게 보여주나요", en: "About KORETAIL — What It Shows and How", zh: "关于 KORETAIL — 展示什么、如何呈现", ja: "KORETAIL について — 何をどう表示するか" },
     more: { ko: "KORETAIL 데이터 출처·방법론", en: "KORETAIL Data Sources & Methodology", zh: "KORETAIL 数据来源与方法", ja: "KORETAIL データ出典・方法論" },

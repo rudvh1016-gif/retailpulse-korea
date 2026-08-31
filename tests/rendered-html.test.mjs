@@ -491,3 +491,45 @@ test("the About page explains the product without developer jargon", async () =>
     assert.doesNotMatch(about, new RegExp(jargon), `About must not expose "${jargon}"`);
   }
 });
+
+/**
+ * Reader-facing copy stays in plain language.
+ *
+ * The product used to label whole screens "펄스" / "PULSE" and "인사이트" —
+ * loanwords a first-time visitor has to decode before they can read a single
+ * number. Screens are named for what they actually hold instead.
+ */
+test("no loanword jargon is used as reader-facing copy", async () => {
+  const page = await read("../app/retailpulse-app.tsx");
+  const live = await read("../app/live-signals.tsx");
+  const seo = await read("../app/seo-config.ts");
+  // Only quoted copy is checked. Internal identifiers such as RetailPulseProps
+  // are technical names the brand decision deliberately leaves in place.
+  const copy = [page, live, seo]
+    .flatMap((source) => source.match(/"[^"\n]*"/g) ?? [])
+    .join("\n");
+  for (const jargon of [
+    "펄스", "PULSE", "Pulse",
+    "인사이트", "インサイト", "洞察",
+    "시그널", "메트릭", "스코어", "인덱스", "대시보드",
+  ]) {
+    assert.doesNotMatch(copy, new RegExp(jargon), `"${jargon}" must not appear in reader-facing copy`);
+  }
+  // The screen it replaced is still reachable and named plainly.
+  for (const label of ['forecast: "기록"', 'forecast: "Records"', 'forecast: "记录"', 'forecast: "記録"']) {
+    assert.ok(page.includes(label), `${label} should name the records screen`);
+  }
+});
+
+/** Styles for deleted components must not linger as dead payload. */
+test("no stylesheet rules survive for components that no longer exist", async () => {
+  const css = await read("../app/globals.css");
+  for (const dead of [
+    ".pulse-panel", ".pulse-line", ".pulse-meta", ".airport-pulse", ".business-pulse",
+    ".share-pulse", ".demo-label", ".day-switch", ".compact-ranking", ".quick-actions",
+    ".feature-discovery", ".forecast-lab", ".verification-counts", ".confidence-strip",
+    ".decision-grid", ".target-registry", ".airline-intelligence",
+  ]) {
+    assert.doesNotMatch(css, new RegExp(dead.replace(".", "\\.")), `${dead} styles a component that was removed`);
+  }
+});

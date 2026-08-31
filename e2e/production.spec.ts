@@ -29,7 +29,7 @@ test("project-local Korean, Japanese and Chinese fonts load", async ({ page }) =
 
   await page.goto("/ko");
   await page.evaluate(async () => document.fonts.ready);
-  expect(await page.evaluate(() => document.fonts.check('420 16px "Pretendard Variable"', "리테일펄스 특별"))).toBe(true);
+  expect(await page.evaluate(() => document.fonts.check('420 16px "Pretendard Variable"', "명동 혼잡 예측 특별"))).toBe(true);
 });
 
 for (const width of [320, 375, 390, 430, 768]) {

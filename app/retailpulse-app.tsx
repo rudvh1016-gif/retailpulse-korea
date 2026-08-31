@@ -53,28 +53,28 @@ const copy = {
   ko: {
     hero: "지금 서울은\n어떻게 움직이고 있나요?",
     sub: "공식 데이터만 모아 명동·홍대·성수와 인천공항의 지금과 다음을 보여줍니다.",
-    today: "서울", airport: "공항", business: "매장", forecast: "인사이트", about: "소개", more: "더보기",
+    today: "서울", airport: "공항", business: "매장", forecast: "기록", about: "소개", more: "더보기",
     kst: "모든 시간은 한국 표준시(KST)입니다.",
     truth: "표시되는 값은 모두 공식 기관이 발표한 데이터이며, 확인되지 않은 값은 만들어 채우지 않습니다.",
   },
   en: {
     hero: "How is Seoul\nmoving right now?",
     sub: "Official data only, showing what Myeongdong, Hongdae, Seongsu and Incheon Airport look like now and next.",
-    today: "Seoul", airport: "Airport", business: "Business", forecast: "Insights", about: "About", more: "More",
+    today: "Seoul", airport: "Airport", business: "Business", forecast: "Records", about: "About", more: "More",
     kst: "All times are Korea Standard Time (KST).",
     truth: "Every value shown is published by an official body. Nothing unverified is filled in.",
   },
   zh: {
     hero: "此刻的首尔\n正在如何流动？",
     sub: "仅汇总官方数据，呈现明洞、弘大、圣水与仁川机场的当前与接下来。",
-    today: "首尔", airport: "机场", business: "门店", forecast: "洞察", about: "关于", more: "更多",
+    today: "首尔", airport: "机场", business: "门店", forecast: "记录", about: "关于", more: "更多",
     kst: "所有时间均为韩国标准时间（KST）。",
     truth: "所显示的数值均由官方机构发布，未经确认的数值不会被填充。",
   },
   ja: {
     hero: "いまソウルは\nどう動いていますか？",
     sub: "公式データだけを集め、明洞・弘大・聖水と仁川空港の現在とこれからを表示します。",
-    today: "ソウル", airport: "空港", business: "店舗", forecast: "インサイト", about: "紹介", more: "その他",
+    today: "ソウル", airport: "空港", business: "店舗", forecast: "記録", about: "紹介", more: "その他",
     kst: "すべての時刻は韓国標準時（KST）です。",
     truth: "表示される値はすべて公式機関が発表したものです。確認できない値は作って埋めません。",
   },
@@ -781,7 +781,7 @@ function InsightsView({ lang, selected, setSelected, date }: { lang: Lang; selec
     <section className="view-section insights-view">
       <div className="view-intro">
         <div>
-          <p className="eyebrow">INSIGHTS · OFFICIAL RECORDS</p>
+          <p className="eyebrow">OFFICIAL RECORDS</p>
           <h1>{localText(lang, { ko: "숫자 하나가\n무슨 뜻인지부터.", en: "Start with what\nthe number means.", zh: "先弄清一个\n数字的含义。", ja: "その数字が\n何を意味するかから。" })}</h1>
           <p>{localText(lang, {
             ko: "각 지표마다 무엇을 뜻하는지, 높으면 어떤 상황인지, 어떤 공식 자료에서 왔는지를 함께 적었습니다.",
