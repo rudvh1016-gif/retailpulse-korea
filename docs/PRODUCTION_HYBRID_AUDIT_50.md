@@ -42,13 +42,13 @@ The Worker Free CPU budget is too small to assume that 1,000-record parsing/hash
 | 11 | Actions to D1 method | PASS | Parameterized D1 REST batch adapter; 50-statement bound and retry. |
 | 12 | Token permissions | PASS | Dedicated `CLOUDFLARE_D1_WRITE_TOKEN`; no Global API Key/frontend use. |
 | 13 | Worker HTTP CPU | BLOCKED | Only real Cloudflare production-shaped CPU metrics can prove 10 ms margin. |
-| 14 | Worker Cron CPU | PASS | No Production Worker Cron is enabled. |
+| 14 | Worker Cron CPU | PASS | No Production Worker Cron is enabled. The REALTIME group was benchmarked against the 10 ms Cron budget and FAILED at ~414% warm (43.6 ms of it SHA-256 alone); migration rejected. See `docs/REALTIME_SCHEDULER_AUDIT.md`. |
 | 15 | Worker requests/user | BLOCKED | Scenarios exist below; real Cloudflare request telemetry is absent. |
 | 16 | Static/dynamic boundary | PASS | Static assets binding retained; collectors are absent from visitor requests. |
 | 17 | Cache | PASS | Source-health response uses 30s cache + 120s stale revalidation; health is no-store. |
 | 18 | D1 reads | PASS | Local query plans use unique indexes; read APIs scan only small `source_health`. |
 | 19 | D1 indexes | PASS | One semantic lookup index per table; trade-off model below. |
-| 20 | Index amplification measurement | BLOCKED | Conservative model exists; real D1 `meta.rows_written` unavailable. |
+| 20 | Index amplification measurement | PASS | Real D1 `meta.rows_written` now recorded per run (PR #47). Model validated in Production: `airport_passenger_forecast` predicted 4 writes/row, measured 4.0 (3312/828, A5 run 33344958504); `weather_forecast` predicted 3, measured 3.0 (369/123, W1 run 33347340557). See `docs/REALTIME_SCHEDULER_AUDIT.md` §5. |
 | 21 | Blind D1 writes | PASS | Conditional UPSERT writes current flight only when hash differs. |
 | 22 | Changed-only hash | PASS | Canonical semantic field hash implemented/tested. |
 | 23 | Volatile hash bug | PASS | Retrieval/run/retry/unknown fields excluded; test proves write 0. |
