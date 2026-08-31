@@ -271,6 +271,11 @@ budget; runs `33439665144` and `33443484282` on either side succeeded for
 both sources, with S1 continuing in the failed run. The daily A2, A3 and
 TourAPI calls failed together against the same `apis.data.go.kr` gateway in
 run `33341744568`, while S2 succeeded. Existing last-good D1 rows were not
-deleted. Classification: `PROVIDER_SIDE_TRANSIENT`. There is no evidence for
-increasing cadence or adding an automatic retry, so the existing bounded
-single 30-second attempt remains unchanged.
+deleted. Read-only D1 run `33445714333` identified the current connection
+class as `NETWORK_UND_ERR_CONNECT_TIMEOUT`; earlier rows recorded the same
+pre-classification failure as `TIMEOUT`. Classification:
+`PROVIDER_SIDE_TRANSIENT`. A2, A3, TourAPI, A4-T1 and A4-T2 now get one
+bounded retry after 750 ms only when the shared fetch policy classifies a
+transient network/5xx response. Normal calls remain one. A4 worst case is 192
+calls/day per dataset, still below the conservative 1,000/day-class budget;
+there is no cadence increase and no unlimited retry.

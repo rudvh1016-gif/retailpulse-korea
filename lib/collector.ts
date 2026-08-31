@@ -251,7 +251,7 @@ export async function collectAirportFlightEnrichment(env: CollectorEnv): Promise
     { type: "json", numOfRows: "100", pageNo: "1" },
   );
   try {
-    const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
+    const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 1, retryDelayMs: 750 });
     const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown } } } };
     if (root?.response?.header?.resultCode !== "00") throw new Error(`airport_a2_result_${String(root?.response?.header?.resultCode ?? "missing")}`);
     const items = dataGoKrItems(root?.response?.body);
@@ -296,7 +296,7 @@ export async function collectScheduledAirportFlights(env: CollectorEnv): Promise
     { type: "json", numOfRows: "100", pageNo: "1" },
   );
   try {
-    const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
+    const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 1, retryDelayMs: 750 });
     const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown } } } };
     if (root?.response?.header?.resultCode !== "00") throw new Error(`airport_a3_result_${String(root?.response?.header?.resultCode ?? "missing")}`);
     const items = dataGoKrItems(root?.response?.body);
@@ -780,7 +780,7 @@ export async function collectTourismEvents(env: CollectorEnv, now = new Date()):
     { MobileOS: "ETC", MobileApp: "KORETAIL", _type: "json", numOfRows: "100", pageNo: "1", eventStartDate: windowStart, lDongRegnCd: "11" },
   );
   try {
-    const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
+    const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 1, retryDelayMs: 750 });
     const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] | unknown } } } };
     const resultCode = root?.response?.header?.resultCode;
     if (resultCode !== "0000") throw new Error(`tourapi_result_${String(resultCode ?? "missing")}`);
@@ -866,7 +866,7 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
       { pageNo: "1", numOfRows: "50", type: "json", terminalId },
     );
     try {
-      const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
+      const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 1, retryDelayMs: 750 });
       const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown } } } };
       const resultCode = root?.response?.header?.resultCode;
       if (resultCode !== "00") throw new Error(`congestion_result_${String(resultCode ?? "missing")}`);
@@ -943,7 +943,7 @@ export async function collectAirportCongestionT2(env: CollectorEnv): Promise<Col
         env.DATA_GO_KR_SERVICE_KEY,
         { pageNo: String(pageNo), numOfRows: String(A4_T2_PAGE_SIZE), type: "json" },
       );
-      const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
+      const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 1, retryDelayMs: 750 });
       const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown }; totalCount?: number } } };
       const resultCode = root?.response?.header?.resultCode;
       if (resultCode !== "00") throw new Error(`congestion_t2_result_${String(resultCode ?? "missing")}`);

@@ -171,6 +171,26 @@ test("A4-T2 collector: one all-gates request omits gateId, no per-gate explosion
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM airport_congestion WHERE source_id = 'INCHEON_DEPARTURE_CONGESTION_T2'").get().count, 3);
 });
 
+test("A4-T2 collector: one transient connect failure gets exactly one bounded retry", async (context) => {
+  const { database, databasePath } = freshDatabase("t2-transient-retry");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+
+  let requests = 0;
+  globalThis.fetch = async () => {
+    requests += 1;
+    if (requests === 1) {
+      const cause = Object.assign(new Error("connect timeout"), { code: "UND_ERR_CONNECT_TIMEOUT" });
+      throw new TypeError("fetch failed", { cause });
+    }
+    return Response.json(t2Page([t2Item()], 1));
+  };
+
+  const result = await collectAirportCongestionT2({ DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture" });
+  assert.equal(result.status, "SUCCESS");
+  assert.equal(requests, 2, "transient failure may add one request, never an unbounded retry loop");
+});
+
 test("A4-T2 collector: bounded pagination respects totalCount beyond one page", async (context) => {
   const { database, databasePath } = freshDatabase("t2-paginate");
   const originalFetch = globalThis.fetch;
