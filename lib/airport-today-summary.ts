@@ -225,6 +225,7 @@ export interface GateSummaryForScope {
   departuresTrackedToday: number | null;
   gateCoverageRatio: number;
   topDepartureGate: { terminal: string | null; gate: string; flights: number } | null;
+  busyDepartureGates: Array<{ terminal: string | null; gate: string; flights: number }>;
   retrievedAt: string | null;
 }
 
@@ -246,12 +247,14 @@ function computeGateSummary(rows: AirportTodayFlightRow[], minimumCoverage: numb
     current.flights += 1;
     counts.set(key, current);
   }
-  const top = [...counts.values()].sort((a, b) => b.flights - a.flights || `${a.terminal}${a.gate}`.localeCompare(`${b.terminal}${b.gate}`))[0] ?? null;
+  const ranked = [...counts.values()].sort((a, b) => b.flights - a.flights || `${a.terminal}${a.gate}`.localeCompare(`${b.terminal}${b.gate}`));
+  const top = ranked[0] ?? null;
   const retrievedAt = rows.reduce<string | null>((latest, row) => (!latest || row.retrievedAt > latest ? row.retrievedAt : latest), null);
   return {
     departuresTrackedToday: total || null,
     gateCoverageRatio: coverage,
     topDepartureGate: top && coverage >= minimumCoverage ? top : null,
+    busyDepartureGates: coverage >= minimumCoverage ? ranked.slice(0, 5) : [],
     retrievedAt,
   };
 }
@@ -338,4 +341,53 @@ export function summarizeCurrentBusiestDepartureHalls(rows: AirportCongestionSum
     result[terminal] = winner.row;
   }
   return Object.fromEntries(Object.entries(result).sort());
+}
+
+/**
+ * Sorts current checkpoints inside each terminal using the same honest
+ * comparison rule as the busiest-checkpoint summary. Minutes always win when
+ * that terminal has any comparable wait-time data; people are only the
+ * fallback when the whole terminal has no usable wait time.
+ */
+export function rankCurrentDepartureHallCheckpoints(rows: AirportCongestionSummaryRow[]) {
+  const rowsByTerminal = new Map<string, AirportCongestionSummaryRow[]>();
+  for (const row of rows) {
+    const list = rowsByTerminal.get(row.terminal) ?? [];
+    list.push(row);
+    rowsByTerminal.set(row.terminal, list);
+  }
+  const ranked: Record<string, AirportCongestionSummaryRow[]> = {};
+  for (const [terminal, terminalRows] of rowsByTerminal) {
+    const terminalHasWaitTime = terminalRows.some((row) => comparableWaitTime(row) !== null);
+    ranked[terminal] = [...terminalRows].sort((a, b) => {
+      if (terminalHasWaitTime) {
+        const waitDiff = (comparableWaitTime(b) ?? -1) - (comparableWaitTime(a) ?? -1);
+        if (waitDiff !== 0) return waitDiff;
+      } else {
+        const countDiff = (b.waitingCount ?? -1) - (a.waitingCount ?? -1);
+        if (countDiff !== 0) return countDiff;
+      }
+      const secondaryCountDiff = (b.waitingCount ?? -1) - (a.waitingCount ?? -1);
+      if (secondaryCountDiff !== 0) return secondaryCountDiff;
+      return a.zone.localeCompare(b.zone);
+    });
+  }
+  return Object.fromEntries(Object.entries(ranked).sort());
+}
+
+export type AirportDisplayLang = "ko" | "en" | "zh" | "ja";
+
+/** Provider-safe display mapping. Only identifiers with a proven structural pattern are expanded. */
+export function friendlyCheckpointName(zone: string, lang: AirportDisplayLang): string {
+  const dg = zone.match(/^DG(\d+)_([A-Z0-9]+)$/i);
+  if (dg) {
+    const name = `${dg[1]}${dg[2].toUpperCase()}`;
+    return lang === "ko" ? `출국장 ${name}` : lang === "en" ? `Departure hall ${name}` : lang === "zh" ? `出境区 ${name}` : `出国場 ${name}`;
+  }
+  const p = zone.match(/^P(\d+)$/i);
+  if (p) {
+    const name = `P${p[1].padStart(2, "0")}`;
+    return lang === "ko" ? `출국장 ${name}` : lang === "en" ? `Departure hall ${name}` : lang === "zh" ? `出境区 ${name}` : `出国場 ${name}`;
+  }
+  return zone;
 }

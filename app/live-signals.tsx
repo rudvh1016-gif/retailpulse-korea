@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Lang } from "./retailpulse-data";
+import { friendlyCheckpointName, rankCurrentDepartureHallCheckpoints } from "../lib/airport-today-summary";
 
 type AreaId = "myeongdong" | "hongdae" | "seongsu";
 
@@ -86,6 +87,7 @@ interface LivePassengerForecastRow {
 type ForecastCoverageStatus = "COMPLETE" | "PARTIAL" | "UNAVAILABLE";
 type ForecastBand = { targetStartAt: string; targetEndAt: string; expectedPassengers: number };
 type TerminalGate = { gate: string; flights: number } | null;
+type RankedGate = { terminal: string | null; gate: string; flights: number };
 
 export interface LiveSummary {
   mode: string;
@@ -101,6 +103,8 @@ export interface LiveSummary {
     topDepartureGateTerminal: string | null;
     topDepartureGateFlights: number | null;
     topDepartureGateByTerminal: Record<string, TerminalGate>;
+    busyDepartureGates: RankedGate[];
+    busyDepartureGatesByTerminal: Record<string, RankedGate[]>;
     topDepartureGateRetrievedAt: string | null;
     topDepartureGateRetrievedAtByTerminal: Record<string, string | null>;
     gateCoverageRatio: number;
@@ -284,6 +288,23 @@ const airportTodayText = {
   timeline: { ko: "오늘 예상 출국객 시간대", en: "Today's expected passenger bands", zh: "今日预计出境时段", ja: "本日の予想出国者時間帯" },
   forecastOnly: { ko: "공식 예상 승객 · 실제 대기인원 아님", en: "Official expected passengers · not actual waiting", zh: "官方预计旅客 · 非实际等候人数", ja: "公式予想旅客 · 実際の待機人数ではありません" },
   timelinePartial: { ko: "일부 시간대만 확인되어 시간대 그래프를 표시하지 않습니다", en: "Only partial bands are confirmed, so the full-day chart is hidden", zh: "仅确认部分时段，故不显示全天图表", ja: "一部の時間帯のみ確認できたため、全日グラフは表示しません" },
+  scope: {
+    ko: { all: "전체 공항", T1: "제1터미널", T2: "제2터미널" },
+    en: { all: "All terminals", T1: "Terminal 1", T2: "Terminal 2" },
+    zh: { all: "全部航站楼", T1: "1号航站楼", T2: "2号航站楼" },
+    ja: { all: "全ターミナル", T1: "第1ターミナル", T2: "第2ターミナル" },
+  },
+  gatesTitle: { ko: "오늘 운항 집중 게이트", en: "Today's busiest departure gates", zh: "今日航班集中登机口", ja: "本日の運航集中ゲート" },
+  gatesNote: { ko: "오늘 출발편이 많이 배정된 게이트입니다. 출국장 대기시간과는 다른 정보입니다.", en: "Gates with the most tracked departures today. This is separate from checkpoint waiting time.", zh: "今日出发航班分配较多的登机口，与出境区等候时间不同。", ja: "本日の出発便が多く割り当てられたゲートです。出国場の待ち時間とは別の情報です。" },
+  noGateList: { ko: "게이트 정보 범위가 충분하지 않아 순위를 표시하지 않습니다.", en: "Gate coverage is insufficient to show a reliable ranking.", zh: "登机口数据覆盖不足，暂不显示排名。", ja: "ゲート情報の範囲が十分でないため、順位を表示しません。" },
+  longest: { ko: "현재 가장 긴 대기", en: "Longest current wait", zh: "当前最长等候", ja: "現在最も長い待ち" },
+  observed: { ko: "관측", en: "Observed", zh: "观测", ja: "観測" },
+  forecastTitle: { ko: "공식 예상 출국객 흐름", en: "Official expected passenger flow", zh: "官方预计出境客流", ja: "公式予想出国者の流れ" },
+  partialBody: { ko: "공식 예상 데이터의 일부 시간대가 누락되어 하루 전체 합계와 피크는 표시하지 않습니다.", en: "Some official time bands are missing, so the full-day total and peak are not shown.", zh: "部分官方时段数据缺失，因此不显示全天合计与高峰。", ja: "公式予測の一部時間帯が欠けているため、1日全体の合計とピークは表示しません。" },
+  unavailableBody: { ko: "현재 확인된 공식 예상 시간대가 없습니다. 실제 출발 운항과 현재 출국장 정보는 계속 확인할 수 있습니다.", en: "No official forecast bands are currently available. Physical departures and current checkpoints remain available.", zh: "目前没有可确认的官方预计时段，仍可查看实际出发航班和当前出境区信息。", ja: "現在確認できる公式予測時間帯はありません。実出発便と現在の出国場情報は引き続き確認できます。" },
+  guidanceTitle: { ko: "이 정보는 이렇게 보세요", en: "How to use this information", zh: "如何查看这些信息", ja: "この情報の見方" },
+  guidanceForecast: { ko: "예상 승객 데이터가 일부 누락되면 현재 출국장 관측을 우선 참고하세요.", en: "When forecast bands are incomplete, refer first to current checkpoint observations.", zh: "预计旅客数据不完整时，请优先参考当前出境区观测。", ja: "予想旅客データが一部欠ける場合は、現在の出国場観測を先に確認してください。" },
+  guidanceGate: { ko: "운항 집중 게이트는 출발편 배정 현황이며, 출국장 대기시간과는 별개의 지표입니다.", en: "Busy gates describe flight assignment, not departure-checkpoint waiting time.", zh: "航班集中登机口反映航班分配，与出境区等候时间是不同指标。", ja: "運航集中ゲートは出発便の割り当て状況で、出国場の待ち時間とは別の指標です。" },
 } as const;
 
 export function AirportTodaySummary({ lang, terminal = "all" }: { lang: Lang; terminal?: "all" | "T1" | "T2" }) {
@@ -317,20 +338,46 @@ export function AirportTodaySummary({ lang, terminal = "all" }: { lang: Lang; te
   const flightsCollected = collectedText(flightsRetrievedAt);
   const gateCollected = collectedText(gateRetrievedAt);
 
-  const halls = Object.entries(airport.currentBusiestDepartureHallByTerminal ?? {}).filter(([key]) => isAll || key === terminal);
+  const scopeLabel = airportTodayText.scope[lang][terminal];
+  const gateList = isAll ? airport.busyDepartureGates ?? [] : airport.busyDepartureGatesByTerminal?.[terminal] ?? [];
+  const rankedCheckpoints = rankCurrentDepartureHallCheckpoints(
+    (airport.congestion ?? []).map((row) => ({ ...row, waitTimeRaw: row.waitTimeRaw ?? null })),
+  ) as Record<string, LiveCongestionRow[]>;
+  const checkpointTerminals = Object.keys(rankedCheckpoints).filter((key) => isAll || key === terminal);
   const maxBand = Math.max(1, ...timeline.map((row) => row.expectedPassengers));
+  const waitUnit = { ko: "분", en: " min", zh: "分钟", ja: "分" }[lang];
+  const waitText = (row: LiveCongestionRow) => {
+    if (row.waitTimeRaw) return /분|min|分钟|分/i.test(row.waitTimeRaw) ? row.waitTimeRaw : `${row.waitTimeRaw}${waitUnit}`;
+    return row.waitTimeMinutes !== null ? `${row.waitTimeMinutes}${waitUnit}` : airportTodayText.unavailable[lang];
+  };
   return <section className="airport-today" aria-labelledby="airport-today-title">
-    <div className="airport-period"><p><span>{airportTodayText.period[lang]}</span><strong>{airport.serviceDateKst ? formatKstServicePeriod(airport.serviceDateKst, lang) : airportTodayText.unavailable[lang]}</strong></p><p><span>{airportTodayText.retrieved[lang]}</span><strong>{airport.latestRetrievedAt ? `${formatKstClock(airport.latestRetrievedAt, lang)} KST` : airportTodayText.unavailable[lang]}</strong></p></div>
-    <div className="section-head"><div><p className="eyebrow">OFFICIAL TODAY · KST</p><h2 id="airport-today-title">{airportTodayText.title[lang]}</h2></div><span className="official-label">OFFICIAL DATA</span></div>
+    <div className="airport-period"><p><span>{scopeLabel}</span><strong>{airport.serviceDateKst ? formatKstServicePeriod(airport.serviceDateKst, lang) : airportTodayText.unavailable[lang]}</strong></p><p><span>{airportTodayText.retrieved[lang]}</span><strong>{airport.latestRetrievedAt ? `${formatKstClock(airport.latestRetrievedAt, lang)} KST` : airportTodayText.unavailable[lang]}</strong></p></div>
+    <div className="section-head"><div><p className="eyebrow">OFFICIAL TODAY · {scopeLabel} · KST</p><h2 id="airport-today-title">{airportTodayText.title[lang]}</h2></div><span className="airport-scope-label">{scopeLabel}</span></div>
     <div className="airport-today-grid">
       <article><span>{airportTodayText.expected[lang]}</span><strong>{expectedTotal === null ? (isForecastPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]) : `${Math.round(expectedTotal).toLocaleString(numberLocale)}${peopleUnit}`}</strong><small>{isForecastPartial ? airportTodayText.forecastPartialNote[lang] : airportTodayText.expectedNote[lang]}</small>{passengerCollected && <small>{passengerCollected}</small>}</article>
       <article><span>{airportTodayText.flights[lang]}</span><strong>{flightsCount === null ? airportTodayText.unavailable[lang] : `${flightsCount.toLocaleString(numberLocale)}${flightUnit}`}</strong><small>{airportTodayText.flightsNote[lang]}</small>{flightsCollected && <small>{flightsCollected}</small>}</article>
-      <article><span>{airportTodayText.peak[lang]}</span><strong>{peak ? formatKstBand(peak.targetStartAt, peak.targetEndAt) : (isForecastPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang])}</strong><small>{peak ? `${airportTodayText.peakNote[lang]} · ${Math.round(peak.expectedPassengers).toLocaleString(numberLocale)}${peopleUnit}` : (isForecastPartial ? airportTodayText.forecastPartialNote[lang] : airportTodayText.peakNote[lang])}</small>{passengerCollected && <small>{passengerCollected}</small>}</article>
+      <article><span>{airportTodayText.peak[lang]}</span><strong>{peak ? formatKstBand(peak.targetStartAt, peak.targetEndAt) : airportTodayText.unavailable[lang]}</strong><small>{peak ? `${airportTodayText.peakNote[lang]} · ${Math.round(peak.expectedPassengers).toLocaleString(numberLocale)}${peopleUnit}` : (isForecastPartial ? airportTodayText.forecastPartialNote[lang] : airportTodayText.peakNote[lang])}</small>{passengerCollected && <small>{passengerCollected}</small>}</article>
       <article><span>{airportTodayText.gate[lang]}</span><strong>{topGate ? `${topGate.terminal ? `${topGate.terminal} · ` : ""}Gate ${topGate.gate} · ${topGate.flights.toLocaleString(numberLocale)}${flightUnit}` : airportTodayText.unavailable[lang]}</strong><small>{airportTodayText.gateNote[lang]}</small>{gateCollected && <small>{gateCollected}</small>}</article>
     </div>
-    <div className="airport-current"><div className="airport-current-head"><div><h3>{airportTodayText.current[lang]}</h3><p>{airportTodayText.currentNote[lang]}</p></div></div>{halls.length ? halls.map(([terminalId, row]) => <article key={terminalId}><span>{terminalId}</span><strong>{row.zone}</strong><b>{row.waitTimeRaw || (row.waitTimeMinutes !== null ? `${row.waitTimeMinutes}${lang === "en" ? " min" : "분"}` : airportTodayText.unavailable[lang])}</b><small>{row.waitingCount === null ? airportTodayText.unavailable[lang] : `${row.waitingCount.toLocaleString(numberLocale)}${airportTodayText.waiting[lang]}`} · {formatKstClock(row.observedAt, lang)} KST{row.freshness === "STALE" ? " · STALE" : ""}</small></article>) : <p className="airport-empty-line">{airportTodayText.unavailable[lang]}</p>}</div>
-    {forecastStatus === "COMPLETE" && timeline.length > 0 && <div className="airport-timeline" role="img" aria-label={`${airportTodayText.timeline[lang]}. ${airportTodayText.forecastOnly[lang]}`}><div><h3>{airportTodayText.timeline[lang]}</h3><p>{airportTodayText.forecastOnly[lang]}</p></div><div className="airport-timeline-bars">{timeline.map((row) => <p key={row.targetStartAt} className={peak?.targetStartAt === row.targetStartAt ? "peak" : ""}><i style={{ height: `${Math.max(6, row.expectedPassengers / maxBand * 100)}%` }} /><span>{formatKstBand(row.targetStartAt, row.targetEndAt).replace(" KST", "")}</span><b>{Math.round(row.expectedPassengers).toLocaleString(numberLocale)}</b></p>)}</div></div>}
-    {isForecastPartial && <p className="airport-timeline-partial-note">{airportTodayText.timelinePartial[lang]}</p>}
+    <section className="airport-detail-section airport-checkpoints" aria-labelledby="airport-checkpoints-title">
+      <div className="airport-detail-head"><div><p className="eyebrow">CURRENT OBSERVATION · {scopeLabel}</p><h3 id="airport-checkpoints-title">{airportTodayText.current[lang]}</h3></div><p>{airportTodayText.currentNote[lang]}</p></div>
+      {checkpointTerminals.length ? <div className="airport-checkpoint-groups">{checkpointTerminals.map((terminalId) => {
+        const busiest = airport.currentBusiestDepartureHallByTerminal?.[terminalId];
+        return <div className="airport-checkpoint-terminal" key={terminalId}><h4><span>{terminalId}</span>{airportTodayText.scope[lang][terminalId as "T1" | "T2"] ?? terminalId}</h4><div>{rankedCheckpoints[terminalId].map((row, index) => {
+          const isBusiest = busiest?.zone === row.zone;
+          return <article className={isBusiest ? "is-busiest" : ""} key={`${terminalId}-${row.zone}`}><span className="checkpoint-rank">{String(index + 1).padStart(2, "0")}</span><div><strong>{friendlyCheckpointName(row.zone, lang)}</strong>{isBusiest && <small>{airportTodayText.longest[lang]}</small>}</div><b>{waitText(row)}</b><p>{row.waitingCount === null ? airportTodayText.unavailable[lang] : `${row.waitingCount.toLocaleString(numberLocale)}${airportTodayText.waiting[lang]}`}<small>{airportTodayText.observed[lang]} {formatKstClock(row.observedAt, lang)} KST{row.freshness === "STALE" ? " · STALE" : ""}</small></p></article>;
+        })}</div></div>;
+      })}</div> : <p className="airport-empty-line">{airportTodayText.unavailable[lang]}</p>}
+    </section>
+    <section className="airport-detail-section airport-gates" aria-labelledby="airport-gates-title">
+      <div className="airport-detail-head"><div><p className="eyebrow">PHYSICAL DEPARTURES · {scopeLabel}</p><h3 id="airport-gates-title">{airportTodayText.gatesTitle[lang]}</h3></div><p>{airportTodayText.gatesNote[lang]}</p></div>
+      {gateList.length ? <ol>{gateList.map((row, index) => <li className="airport-gate-row" key={`${row.terminal ?? "unknown"}-${row.gate}`}><span>{String(index + 1).padStart(2, "0")}</span><strong>{isAll && row.terminal ? `${row.terminal} · ` : ""}Gate {row.gate}</strong><b>{row.flights.toLocaleString(numberLocale)}{flightUnit}</b></li>)}</ol> : <p className="airport-empty-line">{airportTodayText.noGateList[lang]}</p>}
+    </section>
+    <section className="airport-detail-section airport-forecast" aria-labelledby="airport-forecast-title">
+      <div className="airport-detail-head"><div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-forecast-title">{airportTodayText.forecastTitle[lang]}</h3></div><p>{airportTodayText.forecastOnly[lang]}</p></div>
+      {forecastStatus === "COMPLETE" && timeline.length > 0 ? <div className="airport-timeline" role="img" aria-label={`${airportTodayText.timeline[lang]}. ${airportTodayText.forecastOnly[lang]}`}><div><strong>{peak ? formatKstBand(peak.targetStartAt, peak.targetEndAt) : ""}</strong><p>{airportTodayText.peak[lang]}</p></div><div className="airport-timeline-bars">{timeline.map((row) => <p key={row.targetStartAt} className={peak?.targetStartAt === row.targetStartAt ? "peak" : ""}><i style={{ height: `${Math.max(6, row.expectedPassengers / maxBand * 100)}%` }} /><span>{formatKstBand(row.targetStartAt, row.targetEndAt).replace(" KST", "")}</span><b>{Math.round(row.expectedPassengers).toLocaleString(numberLocale)}</b></p>)}</div></div> : <div className={`airport-forecast-state ${isForecastPartial ? "partial" : "unavailable"}`}><strong>{isForecastPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]}</strong><p>{isForecastPartial ? airportTodayText.partialBody[lang] : airportTodayText.unavailableBody[lang]}</p>{passengerCollected && <small>{passengerCollected}</small>}</div>}
+    </section>
+    <aside className="airport-guidance" aria-labelledby="airport-guidance-title"><h3 id="airport-guidance-title">{airportTodayText.guidanceTitle[lang]}</h3><p>{isForecastPartial ? airportTodayText.guidanceForecast[lang] : airportTodayText.guidanceGate[lang]}</p>{isForecastPartial && <p>{airportTodayText.guidanceGate[lang]}</p>}</aside>
   </section>;
 }
 

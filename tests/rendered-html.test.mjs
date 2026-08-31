@@ -342,6 +342,20 @@ test("A5 passenger forecast is worded as an official forecast, never as current/
   assert.doesNotMatch(forecastBlock, /실시간 승객|현재 대기인원|확정 승객/);
 });
 
+test("airport detail UI uses editorial rows, friendly checkpoints and honest partial-state copy", async () => {
+  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(signals, /busyDepartureGatesByTerminal/);
+  assert.match(signals, /friendlyCheckpointName\(row\.zone, lang\)/);
+  assert.match(signals, /rankCurrentDepartureHallCheckpoints/);
+  assert.match(signals, /일부 시간대가 누락되어 하루 전체 합계와 피크는 표시하지 않습니다/);
+  assert.match(signals, /출국장 대기시간과는 다른 정보입니다/);
+  assert.match(css, /\.airport-checkpoint-row|\.airport-checkpoint-terminal article/);
+  assert.match(signals, /className="airport-gate-row"/);
+  assert.match(css, /\.airport-gates li/);
+  assert.doesNotMatch(css, /\.airport-gates li[^}]*box-shadow/);
+});
+
 test("applies a user-defined month range to airport and business history", async () => {
   const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");

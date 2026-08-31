@@ -230,6 +230,9 @@ export async function GET() {
         summary.topDepartureGate ? { gate: summary.topDepartureGate.gate, flights: summary.topDepartureGate.flights } : null,
       ]),
     );
+    const busyDepartureGatesByTerminal = Object.fromEntries(
+      Object.entries(flightsTodayByTerminal).map(([terminal, summary]) => [terminal, summary.busyDepartureGates]),
+    );
     const departuresTrackedTodayByTerminal = Object.fromEntries(
       Object.entries(flightsTodayByTerminal).map(([terminal, summary]) => [terminal, summary.departuresTrackedToday]),
     );
@@ -258,6 +261,8 @@ export async function GET() {
         topDepartureGateTerminal: flightsToday.topDepartureGate?.terminal ?? null,
         topDepartureGateFlights: flightsToday.topDepartureGate?.flights ?? null,
         topDepartureGateByTerminal,
+        busyDepartureGates: flightsToday.busyDepartureGates,
+        busyDepartureGatesByTerminal,
         topDepartureGateRetrievedAt: flightsToday.retrievedAt,
         topDepartureGateRetrievedAtByTerminal: departureGateRetrievedAtByTerminal,
         gateCoverageRatio: flightsToday.gateCoverageRatio,
@@ -296,6 +301,7 @@ export async function GET() {
         departuresTrackedTodayByTerminal: {}, departuresTrackedTodayRetrievedAt: null,
         topDepartureGate: null, topDepartureGateTerminal: null, topDepartureGateFlights: null,
         topDepartureGateByTerminal: {}, topDepartureGateRetrievedAt: null, topDepartureGateRetrievedAtByTerminal: {},
+        busyDepartureGates: [], busyDepartureGatesByTerminal: {},
         gateCoverageRatio: 0, gateCoverageRatioByTerminal: {}, serviceDateKst: null,
         periodStartAt: null, periodEndAt: null, latestRetrievedAt: null,
         todayExpectedPassengersTotal: null, todayExpectedPassengersByTerminal: {},
