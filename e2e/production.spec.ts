@@ -173,7 +173,7 @@ test("airport today summary keeps forecast, flights, gate and checkpoints truthf
   await expect(page.getByText(/실제 운항편 기준 · 승객 수 아님/)).toBeVisible();
   await expect(page.getByText(/T1 · Gate 27 · 18편/)).toBeVisible();
   await expect(page.getByText(/출국장 체크포인트 관측 · 탑승 게이트 아님/)).toBeVisible();
-  await expect(page.getByText("60+", { exact: true })).toBeVisible();
+  await expect(page.getByText("60+분", { exact: true })).toBeVisible();
   await expect(page.getByText("출국장 1B", { exact: true })).toBeVisible();
   await expect(page.getByText("오늘 운항 집중 게이트", { exact: true })).toBeVisible();
   await expect(page.locator(".airport-gate-row")).toHaveCount(3);
