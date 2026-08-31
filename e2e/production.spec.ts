@@ -72,7 +72,8 @@ test("sample demand and airport unavailable states are explicit and accessible",
   expect(consoleErrors.join("\n")).not.toMatch(/hydrated|hydration/i);
   await expect(page.getByText(/최근 4주 평균/)).toHaveCount(0);
   await page.locator("nav.bottom-nav a").filter({ hasText: "공항" }).click();
-  await expect(page.getByText(/공식 운항·게이트 인증 전에는 예상 승객 수/)).toBeVisible();
+  await expect(page.getByText("확인 불가", { exact: true })).toBeVisible();
+  await expect(page.getByText(/오늘 예상 출국객·실제 출발 운항·현재 출국장 흐름을 구분/)).toBeVisible();
   await page.getByRole("button", { name: "다음 흐름" }).click();
   await expect(page.getByText("게이트 주변 예상 혼잡")).toBeVisible();
   await expect(page.getByText(/가짜 게이트 범위나 사람 수를 표시하지 않습니다/)).toBeVisible();
@@ -82,9 +83,9 @@ test("sample demand and airport unavailable states are explicit and accessible",
 test("new demand and airport truth labels are complete in all four locales", async ({ page }) => {
   const labels = {
     ko: ["예시 수요지수", "오늘 예상 출국객·실제 출발 운항·현재 출국장 흐름을 구분해 보여줍니다.", "예시 날짜 · 8월 23일 · KST"],
-    en: ["DEMO INDEX", "Official expected passengers, physical departures and current hall conditions—kept distinct.", "SAMPLE DATE · AUG 23 · KST"],
-    zh: ["演示指数", "清晰区分今日预计出境旅客、实际出发航班与当前出境区情况。", "示例日期 · 8月23日 · KST"],
-    ja: ["デモ指数", "本日の予想出国者・実運航の出発便・現在の出国場状況を分けて表示します。", "サンプル日付 · 8月23日 · KST"],
+    en: ["DEMO INDEX", "Official expected passengers, physical departing flights and current departure-hall conditions—kept clearly separate.", "SAMPLE DATE · AUG 23 · KST"],
+    zh: ["演示指数", "清楚区分今日预计出境人数、实际出发航班与当前出境区状况。", "示例日期 · 8月23日 · KST"],
+    ja: ["デモ指数", "本日の予想出国者・実出発便・現在の出国場状況を明確に分けて表示します。", "サンプル日付 · 8月23日 · KST"],
   } as const;
   for (const locale of Object.keys(labels) as Array<keyof typeof labels>) {
     await page.goto(`/${locale}`);
