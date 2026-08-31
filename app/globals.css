@@ -799,25 +799,46 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .airport-today-grid strong { margin-top: 20px; font-size: clamp(21px, 2.2vw, 31px); line-height: 1.05; letter-spacing: -.035em; overflow-wrap: anywhere; }
 .airport-today-grid small { margin-top: 12px; color: var(--muted); font-size: 9px; line-height: 1.45; }
 .airport-today-grid small + small { margin-top: 4px; opacity: .75; }
-.airport-timeline-partial-note { margin: 14px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
-.airport-current { margin-top: 46px; display: grid; grid-template-columns: minmax(210px, .7fr) repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
-.airport-current-head { padding: 25px 24px 22px 0; border-right: 1px solid var(--line); }
-.airport-current h3, .airport-timeline h3 { margin: 0; font-size: 17px; letter-spacing: -.02em; }
-.airport-current-head p, .airport-timeline > div:first-child p { margin: 12px 0 0; color: var(--muted); font-size: 9px; line-height: 1.5; }
-.airport-current article { min-height: 125px; padding: 24px; border-right: 1px solid var(--line); display: grid; grid-template-columns: auto 1fr auto; gap: 9px 14px; align-content: start; }
-.airport-current article:last-child { border-right: 0; }
-.airport-current article span { color: var(--muted); font-size: 10px; }
-.airport-current article strong { font-size: 13px; }
-.airport-current article b { font-size: 19px; text-align: right; }
-.airport-current article small { grid-column: 1 / -1; color: var(--muted); font-size: 9px; line-height: 1.45; }
+.airport-scope-label { align-self: flex-end; padding-bottom: 2px; color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .02em; }
 .airport-empty-line { margin: 0; padding: 25px; color: var(--muted); }
-.airport-timeline { margin-top: 46px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 30px; padding: 25px 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+.airport-detail-section { margin-top: 48px; border-top: 1px solid var(--ink); }
+.airport-detail-head { min-height: 96px; display: grid; grid-template-columns: minmax(220px, .8fr) minmax(280px, 1fr); gap: 32px; align-items: center; border-bottom: 1px solid var(--line); }
+.airport-detail-head h3, .airport-guidance h3 { margin: 5px 0 0; font-size: 18px; letter-spacing: -.025em; }
+.airport-detail-head > p { max-width: 520px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.airport-checkpoint-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.airport-checkpoint-terminal + .airport-checkpoint-terminal { border-left: 1px solid var(--line); }
+.airport-checkpoint-terminal h4 { min-height: 52px; margin: 0; padding: 0 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); font-size: 12px; font-weight: 550; }
+.airport-checkpoint-terminal h4 span { color: var(--muted); font-size: 9px; letter-spacing: .06em; }
+.airport-checkpoint-terminal article { min-height: 70px; padding: 13px 20px; display: grid; grid-template-columns: 28px minmax(110px, 1fr) minmax(62px, auto) minmax(120px, auto); gap: 12px; align-items: center; border-bottom: 1px solid var(--line); }
+.airport-checkpoint-terminal article:last-child { border-bottom: 0; }
+.airport-checkpoint-terminal .checkpoint-rank { color: #aaa; font-size: 9px; }
+.airport-checkpoint-terminal article strong { display: block; font-size: 13px; font-weight: 550; }
+.airport-checkpoint-terminal article div small { display: block; margin-top: 4px; color: var(--green); font-size: 8px; font-weight: 600; letter-spacing: .02em; }
+.airport-checkpoint-terminal article b { font-size: 16px; font-weight: 600; text-align: right; white-space: nowrap; }
+.airport-checkpoint-terminal article > p { margin: 0; font-size: 10px; text-align: right; white-space: nowrap; }
+.airport-checkpoint-terminal article > p small { display: block; margin-top: 4px; color: var(--muted); font-size: 8px; }
+.airport-checkpoint-terminal article.is-busiest { box-shadow: inset 2px 0 0 var(--ink); }
+.airport-gates ol { margin: 0; padding: 0; list-style: none; }
+.airport-gates li { min-height: 58px; padding: 0 4px; display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; gap: 16px; align-items: center; border-bottom: 1px solid var(--line); }
+.airport-gates li > span { color: #aaa; font-size: 9px; }
+.airport-gates li strong { font-size: 14px; font-weight: 550; }
+.airport-gates li b { font-size: 13px; font-weight: 600; }
+.airport-timeline { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 30px; padding: 28px 0; border-bottom: 1px solid var(--ink); }
+.airport-timeline > div:first-child { align-self: center; }
+.airport-timeline > div:first-child strong { font-size: 18px; }
+.airport-timeline > div:first-child p { margin: 6px 0 0; color: var(--muted); font-size: 9px; }
 .airport-timeline-bars { min-width: 0; height: 158px; display: flex; align-items: stretch; gap: 5px; overflow-x: auto; }
 .airport-timeline-bars p { min-width: 42px; flex: 1 0 42px; height: 100%; margin: 0; display: grid; grid-template-rows: 1fr auto auto; gap: 5px; align-items: end; text-align: center; }
 .airport-timeline-bars i { width: 100%; max-width: 48px; min-height: 2px; justify-self: center; display: block; background: #cfcdc6; border-top: 1px solid var(--muted); }
 .airport-timeline-bars .peak i { background: var(--ink); border-color: var(--ink); }
 .airport-timeline-bars span { color: var(--muted); font-size: 7px; white-space: nowrap; }
 .airport-timeline-bars b { font-size: 8px; font-weight: 550; }
+.airport-forecast-state { min-height: 150px; padding: 30px 0; display: grid; grid-template-columns: minmax(210px, .7fr) minmax(280px, 1fr); gap: 12px 32px; align-content: center; border-bottom: 1px solid var(--ink); }
+.airport-forecast-state strong { font-size: 20px; letter-spacing: -.025em; }
+.airport-forecast-state p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.airport-forecast-state small { grid-column: 2; color: var(--muted); font-size: 9px; }
+.airport-guidance { margin-top: 48px; padding: 26px 0; display: grid; grid-template-columns: minmax(220px, .7fr) 1fr 1fr; gap: 30px; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+.airport-guidance p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.65; }
 
 @media (max-width: 820px) {
   :root { --type-display: 35px; --type-view: 31px; --type-section: 18px; --type-body: 13px; }
@@ -836,17 +857,29 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   .airport-today-grid article:nth-child(3), .airport-today-grid article:nth-child(4) { border-bottom: 0; }
   .airport-today-grid article:nth-child(3) { padding-left: 0; }
   .airport-today-grid strong { font-size: 21px; }
-  .airport-current { grid-template-columns: 1fr; margin-top: 34px; }
-  .airport-current-head, .airport-current article { padding: 20px 0; border-right: 0; border-bottom: 1px solid var(--line); }
-  .airport-current article:last-child { border-bottom: 0; }
-  .airport-timeline { margin-top: 34px; grid-template-columns: 1fr; gap: 20px; }
+  .airport-detail-section { margin-top: 36px; }
+  .airport-detail-head { min-height: 0; padding: 20px 0; grid-template-columns: 1fr; gap: 8px; }
+  .airport-checkpoint-groups { grid-template-columns: 1fr; }
+  .airport-checkpoint-terminal + .airport-checkpoint-terminal { border-left: 0; border-top: 1px solid var(--ink); }
+  .airport-checkpoint-terminal h4 { padding: 0; }
+  .airport-checkpoint-terminal article { padding: 13px 0; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 10px; }
+  .airport-checkpoint-terminal article > p { grid-column: 2 / -1; text-align: left; }
+  .airport-gates li { padding: 0; }
+  .airport-timeline { grid-template-columns: 1fr; gap: 20px; }
   .airport-timeline-bars { height: 145px; }
+  .airport-forecast-state { min-height: 0; padding: 24px 0; grid-template-columns: 1fr; gap: 10px; }
+  .airport-forecast-state strong { font-size: 17px; }
+  .airport-forecast-state small { grid-column: 1; }
+  .airport-guidance { margin-top: 36px; grid-template-columns: 1fr; gap: 12px; }
 }
 
 @media (max-width: 430px) {
   .airport-today-grid span { min-height: 38px; font-size: 9px; }
   .airport-today-grid strong { margin-top: 14px; font-size: 19px; }
+  .airport-today-grid article:first-child strong, .airport-today-grid article:nth-child(3) strong { font-size: 17px; line-height: 1.18; }
   .airport-today-grid small { font-size: 8px; }
+  .airport-checkpoint-terminal article b { font-size: 14px; }
+  .airport-checkpoint-terminal article > p { white-space: normal; }
 }
 
 /* V5.5 information architecture: summary first, explanation second, detail on demand. */

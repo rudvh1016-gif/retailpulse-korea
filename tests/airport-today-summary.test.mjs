@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
+  friendlyCheckpointName,
+  rankCurrentDepartureHallCheckpoints,
   summarizeCurrentBusiestDepartureHalls,
   summarizeTodayPassengerForecast,
   summarizeTodayTopGate,
@@ -188,6 +190,31 @@ test("sparse gate coverage yields unavailable instead of a fabricated top gate",
     { physicalFlightId: "C", terminal: "T2", gate: null, retrievedAt: "2026-08-31T01:00:00Z" },
   ], 0.5);
   assert.equal(summary.topDepartureGate, null);
+  assert.deepEqual(summary.busyDepartureGates, []);
+});
+
+test("A1 busy-gate list ranks at most five gates with distinct physical flights and keeps terminal context", () => {
+  const rows = [
+    { physicalFlightId: "A", terminal: "T1", gate: "27", retrievedAt: "2026-08-31T01:00:00Z" },
+    { physicalFlightId: "A", terminal: "T1", gate: "27", retrievedAt: "2026-08-31T01:01:00Z" },
+    { physicalFlightId: "B", terminal: "T1", gate: "27", retrievedAt: "2026-08-31T01:00:00Z" },
+    { physicalFlightId: "C", terminal: "T2", gate: "5", retrievedAt: "2026-08-31T01:00:00Z" },
+    { physicalFlightId: "D", terminal: "T2", gate: "5", retrievedAt: "2026-08-31T01:00:00Z" },
+    ...["E", "F", "G", "H", "I"].map((physicalFlightId, index) => ({ physicalFlightId, terminal: "T1", gate: String(40 + index), retrievedAt: "2026-08-31T01:00:00Z" })),
+  ];
+  const summary = summarizeTodayTopGate(rows, 0.5);
+  assert.equal(summary.busyDepartureGates.length, 5);
+  assert.deepEqual(summary.busyDepartureGates[0], { terminal: "T1", gate: "27", flights: 2 });
+  assert.deepEqual(summary.busyDepartureGates[1], { terminal: "T2", gate: "5", flights: 2 });
+});
+
+test("A1 busy-gate list stays isolated by selected terminal", () => {
+  const byTerminal = summarizeTodayTopGateByTerminal([
+    { physicalFlightId: "A", terminal: "T1", gate: "27", retrievedAt: "2026-08-31T01:00:00Z" },
+    { physicalFlightId: "B", terminal: "T2", gate: "5", retrievedAt: "2026-08-31T01:00:00Z" },
+  ], 0.5);
+  assert.deepEqual(byTerminal.T1.busyDepartureGates.map((row) => row.terminal), ["T1"]);
+  assert.deepEqual(byTerminal.T2.busyDepartureGates.map((row) => row.terminal), ["T2"]);
 });
 
 test("A5 peak/timeline are available per selected terminal independently of the other terminal", () => {
@@ -240,6 +267,25 @@ test("A4: T1 and T2 comparisons stay fully independent", () => {
   assert.equal(result.T1.zone, "P01");
   assert.equal(result.T2.zone, "DG2_1"); // the 200-person zone with no wait time never wins over a usable wait time
   assert.equal(result.T2.waitTimeRaw, "60+");
+});
+
+test("A4 checkpoint labels translate proven provider identifiers without guessing unknown values", () => {
+  assert.equal(friendlyCheckpointName("DG1_B", "ko"), "출국장 1B");
+  assert.equal(friendlyCheckpointName("DG2_A", "en"), "Departure hall 2A");
+  assert.equal(friendlyCheckpointName("P01", "zh"), "出境区 P01");
+  assert.equal(friendlyCheckpointName("UNKNOWN_ZONE", "ja"), "UNKNOWN_ZONE");
+});
+
+test("A4 checkpoint rows rank by minutes when available and use people only as terminal-wide fallback", () => {
+  const ranked = rankCurrentDepartureHallCheckpoints([
+    { terminal: "T2", zone: "DG1_A", waitTimeMinutes: 11, waitTimeRaw: "11", waitingCount: 40, observedAt: "2026-08-31T14:00:00+09:00" },
+    { terminal: "T2", zone: "DG1_B", waitTimeMinutes: 15, waitTimeRaw: "15", waitingCount: 20, observedAt: "2026-08-31T14:00:00+09:00" },
+    { terminal: "T2", zone: "DG2_B", waitTimeMinutes: null, waitTimeRaw: null, waitingCount: 999, observedAt: "2026-08-31T14:00:00+09:00" },
+    { terminal: "T1", zone: "P01", waitTimeMinutes: null, waitTimeRaw: null, waitingCount: 30, observedAt: "2026-08-31T14:00:00+09:00" },
+    { terminal: "T1", zone: "P02", waitTimeMinutes: null, waitTimeRaw: null, waitingCount: 80, observedAt: "2026-08-31T14:00:00+09:00" },
+  ]);
+  assert.deepEqual(ranked.T2.map((row) => row.zone), ["DG1_B", "DG1_A", "DG2_B"]);
+  assert.deepEqual(ranked.T1.map((row) => row.zone), ["P02", "P01"]);
 });
 
 // ---------------------------------------------------------------------------

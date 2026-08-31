@@ -101,10 +101,15 @@ const AIRPORT_TODAY_SUMMARY_FIXTURE = {
   generatedAt: "2026-08-31T05:10:00Z",
   areas: {},
   airport: {
-    congestion: [],
+    congestion: [
+      { terminal: "T1", zone: "P01", waitTimeMinutes: 24, waitTimeRaw: "24", waitingCount: 81, observedAt: "2026-08-31T14:07:00+09:00", freshness: "LIVE" },
+      { terminal: "T1", zone: "P02", waitTimeMinutes: 10, waitTimeRaw: "10", waitingCount: 42, observedAt: "2026-08-31T14:07:00+09:00", freshness: "LIVE" },
+      { terminal: "T2", zone: "DG1_B", waitTimeMinutes: 61, waitTimeRaw: "60+", waitingCount: 43, observedAt: "2026-08-31T14:06:00+09:00", freshness: "LIVE" },
+      { terminal: "T2", zone: "DG1_A", waitTimeMinutes: 11, waitTimeRaw: "11", waitingCount: 35, observedAt: "2026-08-31T14:06:00+09:00", freshness: "LIVE" },
+    ],
     currentBusiestDepartureHallByTerminal: {
       T1: { terminal: "T1", zone: "P01", waitTimeMinutes: 24, waitTimeRaw: "24", waitingCount: 81, observedAt: "2026-08-31T14:07:00+09:00", freshness: "LIVE" },
-      T2: { terminal: "T2", zone: "DG2_03", waitTimeMinutes: 61, waitTimeRaw: "60+", waitingCount: 43, observedAt: "2026-08-31T14:06:00+09:00", freshness: "LIVE" },
+      T2: { terminal: "T2", zone: "DG1_B", waitTimeMinutes: 61, waitTimeRaw: "60+", waitingCount: 43, observedAt: "2026-08-31T14:06:00+09:00", freshness: "LIVE" },
     },
     departuresTrackedToday: 561,
     departuresTrackedTodayByTerminal: { T1: 300, T2: 261 },
@@ -113,6 +118,15 @@ const AIRPORT_TODAY_SUMMARY_FIXTURE = {
     topDepartureGateTerminal: "T1",
     topDepartureGateFlights: 18,
     topDepartureGateByTerminal: { T1: { gate: "27", flights: 18 }, T2: { gate: "5", flights: 12 } },
+    busyDepartureGates: [
+      { terminal: "T1", gate: "27", flights: 18 },
+      { terminal: "T2", gate: "5", flights: 12 },
+      { terminal: "T1", gate: "31", flights: 10 },
+    ],
+    busyDepartureGatesByTerminal: {
+      T1: [{ terminal: "T1", gate: "27", flights: 18 }, { terminal: "T1", gate: "31", flights: 10 }],
+      T2: [{ terminal: "T2", gate: "5", flights: 12 }],
+    },
     topDepartureGateRetrievedAt: "2026-08-31T12:00:00+09:00",
     topDepartureGateRetrievedAtByTerminal: { T1: "2026-08-31T12:00:00+09:00", T2: "2026-08-31T12:05:00+09:00" },
     gateCoverageRatio: 0.76,
@@ -159,7 +173,10 @@ test("airport today summary keeps forecast, flights, gate and checkpoints truthf
   await expect(page.getByText(/실제 운항편 기준 · 승객 수 아님/)).toBeVisible();
   await expect(page.getByText(/T1 · Gate 27 · 18편/)).toBeVisible();
   await expect(page.getByText(/출국장 체크포인트 관측 · 탑승 게이트 아님/)).toBeVisible();
-  await expect(page.getByText("60+", { exact: true })).toBeVisible();
+  await expect(page.getByText("60+분", { exact: true })).toBeVisible();
+  await expect(page.getByText("출국장 1B", { exact: true })).toBeVisible();
+  await expect(page.getByText("오늘 운항 집중 게이트", { exact: true })).toBeVisible();
+  await expect(page.locator(".airport-gate-row")).toHaveCount(3);
   await expect(page.locator(".airport-period")).toContainText(/2026.*08.*31/);
   // Fix 4: the overall label is scoped to "among airport datasets", and each
   // top metric also carries its own collection time.
@@ -185,6 +202,8 @@ test("Fix 1: selecting T1 or T2 changes all four top metrics, not just the curre
   await expect(page.getByText("47,320명", { exact: true })).toHaveCount(0);
   await expect(page.getByText("561편", { exact: true })).toHaveCount(0);
   await expect(page.getByText(/Gate 5 · 12편/)).toHaveCount(0);
+  await expect(page.locator(".airport-gate-row")).toHaveCount(2);
+  await expect(page.getByText("출국장 1B", { exact: true })).toHaveCount(0);
 
   await page.getByRole("tab", { name: "T2" }).click();
   await expect(page.getByText("17,220명", { exact: true })).toBeVisible();
@@ -192,6 +211,8 @@ test("Fix 1: selecting T1 or T2 changes all four top metrics, not just the curre
   await expect(page.getByText(/T2 · Gate 5 · 12편/)).toBeVisible();
   await expect(page.getByText("30,100명", { exact: true })).toHaveCount(0);
   await expect(page.getByText(/Gate 27 · 18편/)).toHaveCount(0);
+  await expect(page.locator(".airport-gate-row")).toHaveCount(1);
+  await expect(page.getByText("출국장 1B", { exact: true })).toBeVisible();
 
   await page.getByRole("tab", { name: "전체" }).click();
   await expect(page.getByText("47,320명", { exact: true })).toBeVisible();
@@ -213,6 +234,8 @@ test("Fix 2: incomplete A5 daily coverage never renders as a full-day total or p
   await page.goto("/ko/airport");
   await expect(page.locator(".airport-today-grid article").filter({ hasText: "오늘 공식 예상 출국객" }).getByText("오늘 전체 시간대 확인 불가", { exact: true })).toBeVisible();
   await expect(page.getByText("공식 예상 데이터 일부 누락").first()).toBeVisible();
+  await expect(page.getByText(/일부 시간대가 누락되어 하루 전체 합계와 피크는 표시하지 않습니다/)).toBeVisible();
+  await expect(page.locator(".airport-timeline")).toHaveCount(0);
   await expect(page.getByText("47,320명", { exact: true })).toHaveCount(0);
 
   await page.getByRole("tab", { name: "T1" }).click();
