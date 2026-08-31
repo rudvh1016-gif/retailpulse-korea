@@ -28,6 +28,19 @@ jobs:
             check(`page /${locale}`, response.status === 200 && html.includes("KORETAIL"), `status ${response.status}`);
           }
 
+          // Build freshness. "KORETAIL" alone cannot tell a current deployment
+          // from a stale one, so a deploy that silently kept serving the old
+          // bundle would still pass. These markers only exist in the build that
+          // removed the fabricated demand index, so a stale edge fails loudly
+          // instead of being explained away as caching.
+          const korean = await (await fetch(`${origin}/ko`, { redirect: "follow", signal: AbortSignal.timeout(15000) })).text();
+          check("serves the current build", korean.includes("지금 서울은"), "expected the current hero copy");
+          check("no placeholder demand index", !/예시 수요지수|DEMO DEMAND INDEX/.test(korean), "sample index must not be served");
+
+          const about = await fetch(`${origin}/ko/about`, { redirect: "follow", signal: AbortSignal.timeout(15000) });
+          const aboutHtml = await about.text();
+          check("about page is live", about.status === 200 && aboutHtml.includes("KORETAIL은 무엇인가요"), `status ${about.status}`);
+
           const health = await fetch(`${origin}/api/health`, { signal: AbortSignal.timeout(15000) });
           const healthBody = await health.json().catch(() => null);
           check("api /api/health", health.status === 200 && healthBody?.app === "ok", `status ${health.status}; db ${healthBody?.database}`);
