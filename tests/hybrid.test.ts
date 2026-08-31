@@ -164,9 +164,18 @@ test("no Cloudflare Cron Trigger is configured in any wrangler config", () => {
   }
 });
 
-test("the Worker exposes no scheduled handler, so no Cron work can run yet", () => {
+/**
+ * The owner approved the trigger-only design, so a scheduled() handler may
+ * now exist — but it stays inert while no Cron Trigger is configured, and it
+ * must never grow into Cron-executed collection work.
+ */
+test("any Worker scheduled handler stays trigger-only and inert", () => {
   const worker = readFileSync("worker/index.ts", "utf8");
-  assert.equal(/\bscheduled\s*[(:]/.test(worker), false, "a scheduled() handler would be live Cron work");
+  if (!/\bscheduled\s*[(:]/.test(worker)) return;
+  assert.match(worker, /dispatchRealtimeCollection/, "the only permitted Cron work is the GitHub dispatch");
+  for (const forbidden of ["collectAirport", "collectSeoul", "collectWeather", "collectTourism", "sha256", "env.DB", "runD1Batches"]) {
+    assert.equal(worker.includes(forbidden), false, `Cron work must not include ${forbidden}`);
+  }
 });
 
 test("GitHub remains the single authoritative REALTIME scheduler during preparation", () => {
