@@ -214,7 +214,7 @@ test("home gives deterministic current briefs for all three Seoul areas without 
   await expect(briefs.getByRole("button", { name: /명동/ })).toContainText("17:00–18:00");
   await expect(briefs.getByRole("button", { name: /명동/ })).toContainText("비 가능성 60%");
   await expect(briefs.getByRole("button", { name: /홍대/ })).toContainText("오늘 인근 행사 1건 예정");
-  await expect(page.getByRole("button", { name: /성수/ })).toContainText("최근 관측 지연");
+  await expect(briefs.getByRole("button", { name: /성수/ })).toContainText("최근 관측 지연");
   await expect(page.getByText(/20:42 KST|예시 날짜/)).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
