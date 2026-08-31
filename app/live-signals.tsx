@@ -384,7 +384,8 @@ function localizeAirportBrief(brief: AirportCurrentBrief, lang: Lang): string[] 
     const checkpoint = friendlyCheckpointName(brief.checkpoint.zone, lang);
     if (brief.checkpointBasis === "WAIT_TIME") {
       const raw = brief.checkpoint.waitTimeRaw ?? (brief.checkpoint.waitTimeMinutes === null ? null : String(brief.checkpoint.waitTimeMinutes));
-      const wait = raw ? `${raw}${{ ko: "분", en: " min", zh: "分钟", ja: "分" }[lang]}` : "";
+      const unit = { ko: "분", en: " min", zh: "分钟", ja: "分" }[lang];
+      const wait = raw ? (/분|min|分钟|分/i.test(raw) ? raw : `${raw}${unit}`) : "";
       lines.push(lang === "ko" ? `현재 ${scopeName}에서는 ${brief.scope === "all" ? `${brief.checkpoint.terminal} ` : ""}${checkpoint}의 대기가 ${wait}으로 가장 깁니다`
         : lang === "en" ? `${brief.scope === "all" ? `${brief.checkpoint.terminal} ` : ""}${checkpoint} currently has the longest ${scopeName} wait at ${wait}`
         : lang === "zh" ? `当前${brief.scope === "all" ? `${brief.checkpoint.terminal} ` : ""}${checkpoint}以${wait}成为${scopeName}最长等候`

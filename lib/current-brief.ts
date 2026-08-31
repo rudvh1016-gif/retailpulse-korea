@@ -52,12 +52,20 @@ export function buildAreaCurrentBrief(input: {
   nowIso: string;
 }): AreaCurrentBrief {
   const now = Date.parse(input.nowIso);
+  const kstDay = (value: string) => {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(parsed);
+  };
+  const todayKst = kstDay(input.nowIso);
   const isCurrentOrFuture = (value: string) => {
     const parsed = Date.parse(value);
     return Number.isFinite(parsed) && (!Number.isFinite(now) || parsed >= now);
   };
   const upcomingPeak = input.realtimeForecast
-    .filter((row) => isCurrentOrFuture(row.targetAt))
+    .filter((row) => isCurrentOrFuture(row.targetAt) && kstDay(row.targetAt) === todayKst)
     .sort((a, b) => b.congestionLevel - a.congestionLevel
       || b.populationMax - a.populationMax
       || a.targetAt.localeCompare(b.targetAt))[0] ?? null;

@@ -40,6 +40,17 @@ test("area brief ignores past forecasts and never invents a future peak", () => 
   assert.equal(result.upcomingPeak, null);
 });
 
+test("area brief never calls a next-day forecast today's remaining peak", () => {
+  const brief = buildAreaCurrentBrief({
+    realtime: null,
+    realtimeForecast: [{ targetAt: "2026-09-01T00:00:00+09:00", congestionLevel: 4, populationMin: 38_000, populationMax: 40_000 }],
+    weather: [],
+    eventCount: 0,
+    nowIso: "2026-08-31T23:30:00+09:00",
+  });
+  assert.equal(brief.upcomingPeak, null);
+});
+
 test("weather advice uses explicit rain thresholds and chooses only one action", () => {
   assert.equal(WEATHER_THRESHOLDS.umbrellaProbability, 50);
   const umbrella = buildAreaCurrentBrief({ realtime: null, realtimeForecast: [], eventCount: 0, nowIso: NOW, weather: [
