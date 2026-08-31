@@ -431,15 +431,19 @@ test("date navigation offers yesterday, today, tomorrow and a bounded picker", a
 });
 
 /** The flight board must be the official record, not a fixture. */
-test("the flight board renders stored official flight rows", async () => {
+test("the flight board renders stored official flight rows from its own endpoint", async () => {
   const signals = await read("../app/live-signals.tsx");
-  const route = await read("../app/api/live/summary/route.ts");
+  const flightsRoute = await read("../app/api/live/flights/route.ts");
+  const summaryRoute = await read("../app/api/live/summary/route.ts");
   assert.match(signals, /export function FlightBoard/);
-  assert.match(signals, /summary\?\.airport\.flights/);
-  assert.match(route, /FROM airport_flights/);
-  assert.match(route, /flight_number AS flightNumber/);
-  assert.match(route, /checkin_counter AS checkinCounter/);
-  assert.match(route, /flights: flightBoardRows/);
+  assert.match(signals, /fetch\(url, \{ headers: \{ accept: "application\/json" \} \}\)/);
+  assert.match(signals, /\/api\/live\/flights/);
+  assert.match(flightsRoute, /FROM airport_flights/);
+  assert.match(flightsRoute, /flight_number AS flightNumber/);
+  assert.match(flightsRoute, /checkin_counter AS checkinCounter/);
+  // The board reads far more rows than anything else, so it must never be
+  // folded back into the summary every visitor loads.
+  assert.doesNotMatch(summaryRoute, /flight_number AS flightNumber/);
   // No hardcoded flight identity anywhere in the client.
   assert.doesNotMatch(signals, /KE901|OZ102|LJ201|7C1101/);
 });

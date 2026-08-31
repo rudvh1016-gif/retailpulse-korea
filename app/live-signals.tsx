@@ -178,7 +178,6 @@ export interface LiveSummary {
     passengerForecastTimelineByTerminal: Record<string, ForecastBand[]>;
     forecastCoverage: { all: ForecastCoverageStatus; byTerminal: Record<string, ForecastCoverageStatus> };
     scheduled: LiveScheduledRow[];
-    flights: LiveFlightRow[];
     passengerForecast: LivePassengerForecastRow[];
   };
 }
@@ -1010,20 +1009,34 @@ const flightBoardText = {
  * gate, counter, status, time — is what the provider published for that flight.
  */
 export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; terminal: "all" | "T1" | "T2"; date?: string | null }) {
-  const summary = useLiveSummary(date);
   const [direction, setDirection] = useState<"departure" | "arrival">("departure");
   const [query, setQuery] = useState("");
-  const flights = useMemo(() => summary?.airport.flights ?? [], [summary]);
+  const [loaded, setLoaded] = useState<{ date: string | null; rows: LiveFlightRow[] } | null>(null);
+  // Changing the date must not leave the previous day's flights on screen, so
+  // the loaded date is tracked alongside the rows and compared during render
+  // rather than cleared from inside the effect.
+  const flights = loaded && loaded.date === date ? loaded.rows : null;
+  // Loaded here rather than with the summary: the board reads far more rows
+  // than the rest of the product, so it is fetched only once this tab opens.
+  useEffect(() => {
+    let active = true;
+    const url = date ? `/api/live/flights?date=${encodeURIComponent(date)}` : "/api/live/flights";
+    fetch(url, { headers: { accept: "application/json" } })
+      .then(async (response) => (response.ok ? (await response.json() as { flights?: LiveFlightRow[] }).flights ?? [] : []))
+      .catch(() => [])
+      .then((rows) => { if (active) setLoaded({ date, rows }); });
+    return () => { active = false; };
+  }, [date]);
   const scoped = useMemo(() => {
     const needle = query.trim().toUpperCase();
-    return flights.filter((flight) => {
+    return (flights ?? []).filter((flight) => {
       if (flight.direction !== direction) return false;
       if (terminal !== "all" && flight.terminal !== terminal) return false;
       if (!needle) return true;
       return `${flight.flightNumber} ${flight.airlineCode ?? ""} ${flight.airportCode ?? ""}`.toUpperCase().includes(needle);
     });
   }, [flights, direction, terminal, query]);
-  if (!summary) return null;
+  if (flights === null) return null;
   const visible = scoped.slice(0, 80);
   const directionCount = flights.filter((flight) => flight.direction === direction).length;
 

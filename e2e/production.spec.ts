@@ -182,14 +182,15 @@ const SUMMARY_FIXTURE = {
     },
     forecastCoverage: { all: "COMPLETE", byTerminal: { T1: "COMPLETE", T2: "COMPLETE" } },
     scheduled: [],
-    flights: [
-      { flightNumber: "KE703", airlineCode: "KE", airportCode: "NRT", direction: "departure", terminal: "T2", gate: "252", checkinCounter: "E", status: "출발", scheduledAt: "2026-08-31T09:20:00+09:00" },
-      { flightNumber: "OZ102", airlineCode: "OZ", airportCode: "NRT", direction: "departure", terminal: "T1", gate: "31", checkinCounter: "C", status: "출발", scheduledAt: "2026-08-31T08:10:00+09:00" },
-      { flightNumber: "KE704", airlineCode: "KE", airportCode: "NRT", direction: "arrival", terminal: "T2", gate: "251", checkinCounter: null, status: "도착", scheduledAt: "2026-08-31T13:30:00+09:00" },
-    ],
     passengerForecast: [],
   },
 };
+
+const FLIGHT_ROWS = [
+  { flightNumber: "KE703", airlineCode: "KE", airportCode: "NRT", direction: "departure", terminal: "T2", gate: "252", checkinCounter: "E", status: "출발", scheduledAt: "2026-08-31T09:20:00+09:00" },
+  { flightNumber: "OZ102", airlineCode: "OZ", airportCode: "NRT", direction: "departure", terminal: "T1", gate: "31", checkinCounter: "C", status: "출발", scheduledAt: "2026-08-31T08:10:00+09:00" },
+  { flightNumber: "KE704", airlineCode: "KE", airportCode: "NRT", direction: "arrival", terminal: "T2", gate: "251", checkinCounter: null, status: "도착", scheduledAt: "2026-08-31T13:30:00+09:00" },
+];
 
 const routeSummary = (payload: unknown) => async (route: { fulfill: (options: { contentType: string; body: string }) => Promise<void> }) =>
   route.fulfill({ contentType: "application/json", body: JSON.stringify(payload) });
@@ -404,6 +405,12 @@ test("date navigation switches the service date and explains what a date cannot 
 
 test("the flight board lists official flight rows and filters by search and terminal", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.route("**/api/live/flights*", routeSummary({
+    mode: "live-flights",
+    generatedAt: "2026-08-31T05:10:00Z",
+    serviceDateKst: "2026-08-31",
+    flights: FLIGHT_ROWS,
+  }));
   await page.goto("/ko/airport");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await page.locator(".airport-context-nav").getByRole("button", { name: "항공편" }).click();

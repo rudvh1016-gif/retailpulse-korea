@@ -72,7 +72,7 @@ export async function GET(request: Request) {
   })();
   const serviceDate = isValidKstDay(requestedDateRaw) ? requestedDateRaw : kstToday;
   const dayRelation = relateKstDay(serviceDate, kstToday);
-  const { startAt: dayStartAt, endAt: dayEndAt } = kstDayBounds(serviceDate);
+  const { startAt: dayStartAt } = kstDayBounds(serviceDate);
 
   try {
     const db = await getDb();
@@ -154,18 +154,6 @@ export async function GET(request: Request) {
       SEOUL_FOREIGN_MAPPING_VERSION,
     ).all<Row>()).results ?? []);
 
-    // Recorded Seoul observations for the SELECTED day. These are measurements
-    // that were stored as the day happened — never a back-filled estimate — so
-    // a past day shows only the hours that were actually observed.
-    const observedSeriesRows = await safeAll<Row>(async () => (await client.prepare(
-      `SELECT area, observed_at AS observedAt, congestion_level AS congestionLevel,
-        congestion_label AS congestionLabel, population_min AS populationMin,
-        population_max AS populationMax
-      FROM seoul_realtime_area
-      WHERE observed_at >= ? AND observed_at < ?
-      ORDER BY area, observed_at LIMIT 400`,
-    ).bind(dayStartAt, dayEndAt).all<Row>()).results ?? []);
-
     const congestionRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT terminal, zone, wait_time_minutes AS waitTimeMinutes, wait_time_raw AS waitTimeRaw,
         waiting_count AS waitingCount, observed_at AS observedAt, retrieved_at AS retrievedAt
@@ -209,17 +197,6 @@ export async function GET(request: Request) {
       GROUP BY terminal`,
     ).bind(serviceDate).all<Row>()).results ?? []);
 
-    // Real flights for the selected KST day, for the flight lookup. One row
-    // per physical flight as the provider published it — never a fixture.
-    const flightBoardRows = await safeAll<Row>(async () => (await client.prepare(
-      `SELECT flight_number AS flightNumber, airline_code AS airlineCode,
-        airport_code AS airportCode, direction, terminal, gate,
-        checkin_counter AS checkinCounter, status, scheduled_at AS scheduledAt
-      FROM airport_flights
-      WHERE substr(scheduled_at, 1, 10) = ?
-      ORDER BY scheduled_at, flight_number LIMIT 1200`,
-    ).bind(serviceDate).all<Row>()).results ?? []);
-
     const scheduledRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT terminal, COUNT(*) AS flights, MIN(scheduled_time) AS firstTime, MAX(scheduled_time) AS lastTime,
         MAX(retrieved_at) AS retrievedAt
@@ -260,7 +237,6 @@ export async function GET(request: Request) {
         weather: weatherRows.filter((row) => row.area === area).slice(0, 24),
         events: eventsForArea.slice(0, 3),
         eventCount: eventsForArea.length,
-        observedSeries: observedSeriesRows.filter((row) => row.area === area),
         sales: salesForArea.length ? {
           quarterCode: salesForArea[0].quarterCode,
           tradeAreaName: salesForArea[0].tradeAreaName,
@@ -385,7 +361,6 @@ export async function GET(request: Request) {
         passengerForecastTimelineByTerminal: passengerToday.timelineByTerminal,
         forecastCoverage: passengerToday.coverage,
         scheduled: scheduledRows,
-        flights: flightBoardRows,
         // FORECAST/EXPECTED passengers — semantically separate from
         // `congestion` (CURRENT/OBSERVED). Never merge these two arrays.
         passengerForecast: upcomingForecast,
@@ -418,7 +393,7 @@ export async function GET(request: Request) {
         peakExpectedPassengers: null, peakExpectedPassengersByTerminal: {},
         passengerForecastTimeline: [], passengerForecastTimelineByTerminal: {},
         forecastCoverage: { all: "UNAVAILABLE", byTerminal: {} },
-        scheduled: [], flights: [], passengerForecast: [],
+        scheduled: [], passengerForecast: [],
       },
       message: "Live sources are not connected. Official historical views remain available.",
     }, { status: 200, headers: { "cache-control": "no-store" } });
