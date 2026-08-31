@@ -55,6 +55,25 @@ rejected rather than being given an invented meaning.
 The fix cannot fabricate coverage: if the label were something else, the band
 still would not parse and the screen would still say 확인 불가.
 
+**Confirmed against the provider** (collector run 33410264971 on the fixed
+code, coverage probe 33410430817, both 2026-08-31T15:45–15:47Z):
+
+| targetDate | terminal | bands | lastBandEnd | retrievedAt |
+| --- | --- | --- | --- | --- |
+| 2026-09-01 | T1 / T2 | **24** | 2026-09-02T00:00:00+09:00 | 15:45:54Z (fixed parser) |
+| 2026-09-02 | T1 / T2 | **24** | 2026-09-03T00:00:00+09:00 | 15:45:54Z (fixed parser) |
+| 2026-08-31 | T1 / T2 | 23 | 2026-08-31T23:00:00+09:00 | 14:23:00Z (old parser) |
+
+24 hourly bands anchored 00:00 → next-day 00:00 is exactly what
+`evaluateTerminalCoverage` requires, so those days report COMPLETE and the
+daily total, peak, timeline and remaining-departures figure all render real
+numbers.
+
+2026-08-31 stays at 23 bands permanently. It was collected before the fix,
+and by the time the fix shipped the KST day had rolled over, so the collector
+no longer requests it. That is the intended behaviour of an immutable archive:
+a past day is not rewritten to look better than it was recorded.
+
 ## Bug 2 — Seoul's forecast was thrown away every evening
 
 Seoul publishes a rolling 12-hour forecast. At the moment of the diagnostic
