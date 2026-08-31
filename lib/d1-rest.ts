@@ -1,5 +1,7 @@
 type D1Query = { sql: string; params?: unknown[] };
-type D1Meta = { rows_read?: number; rows_written?: number; duration?: number };
+// `changes` is SQLite changes(): logical rows the statement altered.
+// `rows_written` is D1's storage counter and includes index writes.
+type D1Meta = { rows_read?: number; rows_written?: number; changes?: number; duration?: number };
 type D1QueryResult = { success: boolean; meta?: D1Meta; results?: unknown[] };
 
 interface D1ApiResponse {
