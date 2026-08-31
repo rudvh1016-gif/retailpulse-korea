@@ -8,6 +8,7 @@ import {
   summarizeCurrentBusiestDepartureHalls,
   summarizeTodayPassengerForecast,
   summarizeTodayTopGate,
+  summarizeTodayTopGateByTerminal,
   type AirportCongestionSummaryRow,
   type AirportForecastAggregateRow,
   type AirportTodayFlightRow,
@@ -154,6 +155,16 @@ export async function GET() {
       WHERE direction = 'departure' AND substr(scheduled_at, 1, 10) = ?`,
     ).bind(kstToday).all<Row>()).results ?? []);
 
+    // A1 terminal-scoped distinct physical-flight counts. A null-terminal
+    // row is never guessed into T1 or T2 — it only ever counts toward the
+    // all-airport total above.
+    const flightCountByTerminalRows = await safeAll<Row>(async () => (await client.prepare(
+      `SELECT terminal, COUNT(DISTINCT physical_flight_id) AS flights
+      FROM airport_flights
+      WHERE direction = 'departure' AND substr(scheduled_at, 1, 10) = ? AND terminal IS NOT NULL
+      GROUP BY terminal`,
+    ).bind(kstToday).all<Row>()).results ?? []);
+
     const scheduledRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT terminal, COUNT(*) AS flights, MIN(scheduled_time) AS firstTime, MAX(scheduled_time) AS lastTime,
         MAX(retrieved_at) AS retrievedAt
@@ -183,12 +194,20 @@ export async function GET() {
       }];
     }));
 
-    const passengerToday = summarizeTodayPassengerForecast(passengerForecastRows as unknown as AirportForecastAggregateRow[]);
+    const passengerToday = summarizeTodayPassengerForecast(passengerForecastRows as unknown as AirportForecastAggregateRow[], kstToday);
     const distinctFlightsToday = Number(flightCountRows[0]?.flights ?? 0);
+    const distinctFlightsByTerminal: Record<string, number> = Object.fromEntries(
+      flightCountByTerminalRows.filter((row) => row.terminal).map((row) => [String(row.terminal), Number(row.flights)]),
+    );
     const flightsToday = summarizeTodayTopGate(
       flightRows as unknown as AirportTodayFlightRow[],
       0.5,
       distinctFlightsToday,
+    );
+    const flightsTodayByTerminal = summarizeTodayTopGateByTerminal(
+      flightRows as unknown as AirportTodayFlightRow[],
+      0.5,
+      distinctFlightsByTerminal,
     );
     const currentBusiest = summarizeCurrentBusiestDepartureHalls(
       congestionRows.map((row) => ({ ...row, freshness: freshnessOf(row.observedAt, 20, now) })) as unknown as AirportCongestionSummaryRow[],
@@ -197,10 +216,33 @@ export async function GET() {
       const value = typeof row.retrievedAt === "string" ? row.retrievedAt : null;
       return value && (!latest || value > latest) ? value : latest;
     }, null);
+    // `latestRetrievedAt` means "the latest retrieval among airport
+    // datasets" — it never implies every metric below shares that
+    // freshness. Each metric also carries its own retrieval timestamp.
     const latestAirportRetrieval = [passengerToday.retrievedAt, flightsToday.retrievedAt, latestCongestionRetrieval]
       .filter((value): value is string => Boolean(value)).sort().at(-1) ?? null;
     const upcomingForecast = passengerForecastRows.filter((row) => String(row.targetEndAt ?? "") >= kstNowIso)
       .filter((row, index, all) => all.findIndex((candidate) => candidate.terminal === row.terminal) === index);
+
+    const topDepartureGateByTerminal = Object.fromEntries(
+      Object.entries(flightsTodayByTerminal).map(([terminal, summary]) => [
+        terminal,
+        summary.topDepartureGate ? { gate: summary.topDepartureGate.gate, flights: summary.topDepartureGate.flights } : null,
+      ]),
+    );
+    const departuresTrackedTodayByTerminal = Object.fromEntries(
+      Object.entries(flightsTodayByTerminal).map(([terminal, summary]) => [terminal, summary.departuresTrackedToday]),
+    );
+    const gateCoverageRatioByTerminal = Object.fromEntries(
+      Object.entries(flightsTodayByTerminal).map(([terminal, summary]) => [terminal, summary.gateCoverageRatio]),
+    );
+    const departureGateRetrievedAtByTerminal = Object.fromEntries(
+      Object.entries(flightsTodayByTerminal).map(([terminal, summary]) => [terminal, summary.retrievedAt]),
+    );
+    const peakExpectedPassengersByTerminal = Object.fromEntries(
+      Object.entries(passengerToday.peakByTerminal).map(([terminal, band]) => [terminal, band?.expectedPassengers ?? null]),
+    );
+
     return Response.json({
       mode: "live-summary",
       generatedAt,
@@ -210,19 +252,31 @@ export async function GET() {
         congestion: congestionRows.map((row) => ({ ...row, freshness: freshnessOf(row.observedAt, 20, now) })),
         currentBusiestDepartureHallByTerminal: currentBusiest,
         departuresTrackedToday: flightsToday.departuresTrackedToday,
+        departuresTrackedTodayByTerminal,
+        departuresTrackedTodayRetrievedAt: flightsToday.retrievedAt,
         topDepartureGate: flightsToday.topDepartureGate?.gate ?? null,
         topDepartureGateTerminal: flightsToday.topDepartureGate?.terminal ?? null,
         topDepartureGateFlights: flightsToday.topDepartureGate?.flights ?? null,
+        topDepartureGateByTerminal,
+        topDepartureGateRetrievedAt: flightsToday.retrievedAt,
+        topDepartureGateRetrievedAtByTerminal: departureGateRetrievedAtByTerminal,
         gateCoverageRatio: flightsToday.gateCoverageRatio,
+        gateCoverageRatioByTerminal,
         serviceDateKst: kstToday,
         periodStartAt: `${kstToday}T00:00:00+09:00`,
         periodEndAt: `${kstToday}T23:59:59+09:00`,
         latestRetrievedAt: latestAirportRetrieval,
         todayExpectedPassengersTotal: passengerToday.total,
-        todayExpectedPassengersByTerminal: passengerToday.byTerminal,
+        todayExpectedPassengersByTerminal: passengerToday.totalByTerminal,
+        passengerForecastRetrievedAt: passengerToday.retrievedAt,
+        passengerForecastRetrievedAtByTerminal: passengerToday.retrievedAtByTerminal,
         peakExpectedTimeBand: passengerToday.peak,
+        peakExpectedTimeBandByTerminal: passengerToday.peakByTerminal,
         peakExpectedPassengers: passengerToday.peak?.expectedPassengers ?? null,
+        peakExpectedPassengersByTerminal,
         passengerForecastTimeline: passengerToday.timeline,
+        passengerForecastTimelineByTerminal: passengerToday.timelineByTerminal,
+        forecastCoverage: passengerToday.coverage,
         scheduled: scheduledRows,
         // FORECAST/EXPECTED passengers — semantically separate from
         // `congestion` (CURRENT/OBSERVED). Never merge these two arrays.
@@ -239,12 +293,18 @@ export async function GET() {
       areas: {},
       airport: {
         congestion: [], currentBusiestDepartureHallByTerminal: {}, departuresTrackedToday: null,
+        departuresTrackedTodayByTerminal: {}, departuresTrackedTodayRetrievedAt: null,
         topDepartureGate: null, topDepartureGateTerminal: null, topDepartureGateFlights: null,
-        gateCoverageRatio: 0, serviceDateKst: null,
+        topDepartureGateByTerminal: {}, topDepartureGateRetrievedAt: null, topDepartureGateRetrievedAtByTerminal: {},
+        gateCoverageRatio: 0, gateCoverageRatioByTerminal: {}, serviceDateKst: null,
         periodStartAt: null, periodEndAt: null, latestRetrievedAt: null,
         todayExpectedPassengersTotal: null, todayExpectedPassengersByTerminal: {},
-        peakExpectedTimeBand: null, peakExpectedPassengers: null,
-        passengerForecastTimeline: [], scheduled: [], passengerForecast: [],
+        passengerForecastRetrievedAt: null, passengerForecastRetrievedAtByTerminal: {},
+        peakExpectedTimeBand: null, peakExpectedTimeBandByTerminal: {},
+        peakExpectedPassengers: null, peakExpectedPassengersByTerminal: {},
+        passengerForecastTimeline: [], passengerForecastTimelineByTerminal: {},
+        forecastCoverage: { all: "UNAVAILABLE", byTerminal: {} },
+        scheduled: [], passengerForecast: [],
       },
       message: "Live sources are not connected. Official historical and Demo-labelled views remain available.",
     }, { status: 200, headers: { "cache-control": "no-store" } });

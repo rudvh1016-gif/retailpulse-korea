@@ -27,31 +27,208 @@ export interface AirportCongestionSummaryRow {
   freshness?: "LIVE" | "STALE";
 }
 
-export function summarizeTodayPassengerForecast(rows: AirportForecastAggregateRow[]) {
-  const official = rows.filter((row) => row.direction === "departure" && row.isAggregate === 1);
-  const terminalTotals = new Map<string, number>();
-  const bands = new Map<string, { targetStartAt: string; targetEndAt: string; expectedPassengers: number }>();
+export interface ForecastBand {
+  targetStartAt: string;
+  targetEndAt: string;
+  expectedPassengers: number;
+}
+
+/**
+ * A5 daily-total/peak honesty gate (see docs/DATA_SOURCES.md):
+ * - COMPLETE: the terminal's official aggregate bands cover the full KST
+ *   service day with no gap, overlap, or duplicate — a daily total/peak is
+ *   safe to present as the whole day.
+ * - PARTIAL: at least one official band exists, but coverage cannot be
+ *   proven for the full day — a missing band could hide the true peak, so a
+ *   daily total/peak must not be shown.
+ * - UNAVAILABLE: no official aggregate band exists at all.
+ */
+export type ForecastCoverageStatus = "COMPLETE" | "PARTIAL" | "UNAVAILABLE";
+
+export interface ForecastCoverage {
+  all: ForecastCoverageStatus;
+  byTerminal: Record<string, ForecastCoverageStatus>;
+}
+
+export interface TodayPassengerForecastSummary {
+  /** All-airport daily total. Only non-null when `coverage.all` is COMPLETE. */
+  total: number | null;
+  /** Per-terminal daily total. Only non-null when that terminal is COMPLETE. */
+  totalByTerminal: Record<string, number | null>;
+  /** All-airport peak band. Only non-null when `coverage.all` is COMPLETE. */
+  peak: ForecastBand | null;
+  peakByTerminal: Record<string, ForecastBand | null>;
+  /** All-airport timeline. Empty unless `coverage.all` is COMPLETE. */
+  timeline: ForecastBand[];
+  timelineByTerminal: Record<string, ForecastBand[]>;
+  retrievedAt: string | null;
+  retrievedAtByTerminal: Record<string, string | null>;
+  coverage: ForecastCoverage;
+}
+
+function nextKstDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
+}
+
+interface TerminalCoverageResult {
+  status: ForecastCoverageStatus;
+  intervals: ForecastBand[];
+  retrievedAt: string | null;
+}
+
+/**
+ * Validates one terminal's official aggregate bands against the KST service
+ * day. Never trusts raw provider row count alone — every interval must be
+ * distinct, positive-duration, gapless, and anchored to the 00:00-00:00 KST
+ * boundary before the terminal is COMPLETE.
+ */
+function evaluateTerminalCoverage(rows: AirportForecastAggregateRow[], serviceDateKst: string): TerminalCoverageResult {
+  const byKey = new Map<string, ForecastBand>();
+  let hadDuplicate = false;
   let retrievedAt: string | null = null;
-  for (const row of official) {
-    terminalTotals.set(row.terminal, (terminalTotals.get(row.terminal) ?? 0) + Number(row.expectedPassengers));
+  for (const row of rows) {
     const key = `${row.targetStartAt}|${row.targetEndAt}`;
-    const band = bands.get(key) ?? { targetStartAt: row.targetStartAt, targetEndAt: row.targetEndAt, expectedPassengers: 0 };
-    band.expectedPassengers += Number(row.expectedPassengers);
-    bands.set(key, band);
+    // A duplicate interval is never summed twice — only its first occurrence
+    // is kept, and the duplicate itself disqualifies COMPLETE status below.
+    if (byKey.has(key)) {
+      hadDuplicate = true;
+    } else {
+      byKey.set(key, { targetStartAt: row.targetStartAt, targetEndAt: row.targetEndAt, expectedPassengers: Number(row.expectedPassengers) });
+    }
     if (!retrievedAt || row.retrievedAt > retrievedAt) retrievedAt = row.retrievedAt;
   }
-  const timeline = [...bands.values()].sort((a, b) => a.targetStartAt.localeCompare(b.targetStartAt));
-  const peak = timeline.reduce<(typeof timeline)[number] | null>((best, row) => !best || row.expectedPassengers > best.expectedPassengers ? row : best, null);
+  const intervals = [...byKey.values()].sort((a, b) => a.targetStartAt.localeCompare(b.targetStartAt));
+  if (intervals.length === 0) return { status: "UNAVAILABLE", intervals, retrievedAt };
+
+  const dayStart = `${serviceDateKst}T00:00:00+09:00`;
+  const dayEnd = `${nextKstDate(serviceDateKst)}T00:00:00+09:00`;
+  let valid = !hadDuplicate;
+  for (const interval of intervals) {
+    const startMs = Date.parse(interval.targetStartAt);
+    const endMs = Date.parse(interval.targetEndAt);
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) valid = false;
+  }
+  for (let i = 1; i < intervals.length; i += 1) {
+    if (intervals[i - 1].targetEndAt !== intervals[i].targetStartAt) valid = false;
+  }
+  if (intervals[0].targetStartAt !== dayStart) valid = false;
+  if (intervals.at(-1)!.targetEndAt !== dayEnd) valid = false;
+
+  return { status: valid ? "COMPLETE" : "PARTIAL", intervals, retrievedAt };
+}
+
+/**
+ * Summarizes A5 official departure forecast rows. `serviceDateKst` anchors
+ * the full-day boundary check; when omitted it falls back to the first
+ * row's own targetDate (rows are expected to already be scoped to one day).
+ * A daily total/peak/timeline is produced only for terminals (and, for the
+ * all-airport figure, only when both T1 and T2) prove full-day coverage —
+ * see `evaluateTerminalCoverage`. Component rows (isAggregate=0) never enter
+ * this calculation, preventing provider-total double count.
+ */
+export function summarizeTodayPassengerForecast(
+  rows: AirportForecastAggregateRow[],
+  serviceDateKst?: string,
+): TodayPassengerForecastSummary {
+  const official = rows.filter((row) => row.direction === "departure" && row.isAggregate === 1);
+  const effectiveDate = serviceDateKst ?? official[0]?.targetDate ?? null;
+
+  const rowsByTerminal = new Map<string, AirportForecastAggregateRow[]>();
+  for (const row of official) {
+    const list = rowsByTerminal.get(row.terminal) ?? [];
+    list.push(row);
+    rowsByTerminal.set(row.terminal, list);
+  }
+  const terminals = [...rowsByTerminal.keys()].sort();
+
+  const coverageByTerminal: Record<string, ForecastCoverageStatus> = {};
+  const totalByTerminal: Record<string, number | null> = {};
+  const peakByTerminal: Record<string, ForecastBand | null> = {};
+  const timelineByTerminal: Record<string, ForecastBand[]> = {};
+  const retrievedAtByTerminal: Record<string, string | null> = {};
+  const intervalsByTerminal = new Map<string, ForecastBand[]>();
+
+  for (const terminal of terminals) {
+    const evaluated = effectiveDate
+      ? evaluateTerminalCoverage(rowsByTerminal.get(terminal)!, effectiveDate)
+      : { status: "UNAVAILABLE" as const, intervals: [], retrievedAt: null };
+    coverageByTerminal[terminal] = evaluated.status;
+    intervalsByTerminal.set(terminal, evaluated.intervals);
+    retrievedAtByTerminal[terminal] = evaluated.retrievedAt;
+    if (evaluated.status === "COMPLETE") {
+      totalByTerminal[terminal] = evaluated.intervals.reduce((sum, band) => sum + band.expectedPassengers, 0);
+      peakByTerminal[terminal] = evaluated.intervals.reduce<ForecastBand | null>(
+        (best, band) => (!best || band.expectedPassengers > best.expectedPassengers ? band : best),
+        null,
+      );
+      timelineByTerminal[terminal] = evaluated.intervals.map((band) => ({ ...band }));
+    } else {
+      totalByTerminal[terminal] = null;
+      peakByTerminal[terminal] = null;
+      timelineByTerminal[terminal] = [];
+    }
+  }
+
+  // All-airport figures require BOTH T1 and T2 to be COMPLETE with matching
+  // band grids, so combining them never allocates or assumes a split.
+  const t1Intervals = intervalsByTerminal.get("T1") ?? [];
+  const t2Intervals = intervalsByTerminal.get("T2") ?? [];
+  const t1Status = coverageByTerminal.T1 ?? "UNAVAILABLE";
+  const t2Status = coverageByTerminal.T2 ?? "UNAVAILABLE";
+  const bothComplete = t1Status === "COMPLETE" && t2Status === "COMPLETE";
+  const gridsMatch = bothComplete
+    && t1Intervals.length === t2Intervals.length
+    && t1Intervals.every((band, index) => band.targetStartAt === t2Intervals[index].targetStartAt && band.targetEndAt === t2Intervals[index].targetEndAt);
+
+  let allStatus: ForecastCoverageStatus;
+  if (terminals.length === 0) allStatus = "UNAVAILABLE";
+  else if (bothComplete && gridsMatch) allStatus = "COMPLETE";
+  else if (t1Status === "UNAVAILABLE" && t2Status === "UNAVAILABLE") allStatus = "UNAVAILABLE";
+  else allStatus = "PARTIAL";
+
+  let total: number | null = null;
+  let peak: ForecastBand | null = null;
+  let timeline: ForecastBand[] = [];
+  if (allStatus === "COMPLETE") {
+    timeline = t1Intervals.map((band, index) => ({
+      targetStartAt: band.targetStartAt,
+      targetEndAt: band.targetEndAt,
+      expectedPassengers: band.expectedPassengers + t2Intervals[index].expectedPassengers,
+    }));
+    total = timeline.reduce((sum, band) => sum + band.expectedPassengers, 0);
+    peak = timeline.reduce<ForecastBand | null>(
+      (best, band) => (!best || band.expectedPassengers > best.expectedPassengers ? band : best),
+      null,
+    );
+  }
+
+  const retrievedAt = Object.values(retrievedAtByTerminal)
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .at(-1) ?? null;
+
   return {
-    total: official.length ? [...terminalTotals.values()].reduce((sum, value) => sum + value, 0) : null,
-    byTerminal: Object.fromEntries([...terminalTotals.entries()].sort()),
+    total,
+    totalByTerminal,
+    peak,
+    peakByTerminal,
     timeline,
-    peak: peak ? { ...peak } : null,
+    timelineByTerminal,
     retrievedAt,
+    retrievedAtByTerminal,
+    coverage: { all: allStatus, byTerminal: coverageByTerminal },
   };
 }
 
-export function summarizeTodayTopGate(rows: AirportTodayFlightRow[], minimumCoverage = 0.5, totalDistinctFlights?: number) {
+export interface GateSummaryForScope {
+  departuresTrackedToday: number | null;
+  gateCoverageRatio: number;
+  topDepartureGate: { terminal: string | null; gate: string; flights: number } | null;
+  retrievedAt: string | null;
+}
+
+function computeGateSummary(rows: AirportTodayFlightRow[], minimumCoverage: number, totalOverride?: number): GateSummaryForScope {
   const physical = new Map<string, AirportTodayFlightRow>();
   for (const row of rows) {
     const current = physical.get(row.physicalFlightId);
@@ -59,7 +236,7 @@ export function summarizeTodayTopGate(rows: AirportTodayFlightRow[], minimumCove
   }
   const flights = [...physical.values()];
   const withGate = flights.filter((row) => row.gate?.trim());
-  const total = totalDistinctFlights ?? flights.length;
+  const total = totalOverride ?? flights.length;
   const coverage = total ? withGate.length / total : 0;
   const counts = new Map<string, { terminal: string | null; gate: string; flights: number }>();
   for (const row of withGate) {
@@ -70,7 +247,7 @@ export function summarizeTodayTopGate(rows: AirportTodayFlightRow[], minimumCove
     counts.set(key, current);
   }
   const top = [...counts.values()].sort((a, b) => b.flights - a.flights || `${a.terminal}${a.gate}`.localeCompare(`${b.terminal}${b.gate}`))[0] ?? null;
-  const retrievedAt = rows.reduce<string | null>((latest, row) => !latest || row.retrievedAt > latest ? row.retrievedAt : latest, null);
+  const retrievedAt = rows.reduce<string | null>((latest, row) => (!latest || row.retrievedAt > latest ? row.retrievedAt : latest), null);
   return {
     departuresTrackedToday: total || null,
     gateCoverageRatio: coverage,
@@ -79,13 +256,86 @@ export function summarizeTodayTopGate(rows: AirportTodayFlightRow[], minimumCove
   };
 }
 
-export function summarizeCurrentBusiestDepartureHalls(rows: AirportCongestionSummaryRow[]) {
-  const byTerminal = new Map<string, AirportCongestionSummaryRow>();
+/** All-airport departures-tracked/top-gate summary (unchanged behavior). */
+export function summarizeTodayTopGate(rows: AirportTodayFlightRow[], minimumCoverage = 0.5, totalDistinctFlights?: number): GateSummaryForScope {
+  return computeGateSummary(rows, minimumCoverage, totalDistinctFlights);
+}
+
+/**
+ * Per-terminal departures-tracked/top-gate summary. Each terminal's gate
+ * coverage ratio and top gate are computed against ONLY that terminal's
+ * flights — a T1 selection can never be won by a T2 gate, and the coverage
+ * denominator is the T1 flight count, not the all-airport count. Rows with
+ * a null/unknown terminal are excluded rather than guessed at.
+ */
+export function summarizeTodayTopGateByTerminal(
+  rows: AirportTodayFlightRow[],
+  minimumCoverage = 0.5,
+  totalDistinctFlightsByTerminal?: Record<string, number>,
+): Record<string, GateSummaryForScope> {
+  const rowsByTerminal = new Map<string, AirportTodayFlightRow[]>();
   for (const row of rows) {
-    const current = byTerminal.get(row.terminal);
-    const score = row.waitTimeMinutes ?? row.waitingCount ?? -1;
-    const currentScore = current ? current.waitTimeMinutes ?? current.waitingCount ?? -1 : -1;
-    if (!current || score > currentScore) byTerminal.set(row.terminal, row);
+    if (!row.terminal) continue;
+    const list = rowsByTerminal.get(row.terminal) ?? [];
+    list.push(row);
+    rowsByTerminal.set(row.terminal, list);
   }
-  return Object.fromEntries([...byTerminal.entries()].sort());
+  const result: Record<string, GateSummaryForScope> = {};
+  for (const [terminal, terminalRows] of rowsByTerminal) {
+    result[terminal] = computeGateSummary(terminalRows, minimumCoverage, totalDistinctFlightsByTerminal?.[terminal]);
+  }
+  return Object.fromEntries(Object.entries(result).sort());
+}
+
+/** Parses a non-exact wait-time string into a comparable lower-bound minute value, e.g. "60+" -> 60, "24" -> 24. */
+function parseWaitTimeRaw(raw: string | null | undefined): number | null {
+  if (!raw) return null;
+  const match = raw.match(/\d+/);
+  if (!match) return null;
+  const value = Number(match[0]);
+  return Number.isFinite(value) ? value : null;
+}
+
+/** A comparable wait-time metric: exact minutes first, then a safely parsed raw string. Never derived from waitingCount. */
+function comparableWaitTime(row: AirportCongestionSummaryRow): number | null {
+  if (typeof row.waitTimeMinutes === "number" && Number.isFinite(row.waitTimeMinutes)) return row.waitTimeMinutes;
+  return parseWaitTimeRaw(row.waitTimeRaw);
+}
+
+/**
+ * Picks the busiest current departure-hall checkpoint per terminal.
+ *
+ * Minutes and people are never compared to each other. Within a terminal, if
+ * ANY checkpoint has a comparable wait-time value, the winner is chosen only
+ * among checkpoints that have one (a waitingCount-only row cannot win just
+ * because its people count is numerically larger). Only when NO checkpoint
+ * in the terminal has any usable wait-time metric does the comparison fall
+ * back to waitingCount. Ties break deterministically: wait time, then
+ * waiting count, then zone name — never randomly.
+ */
+export function summarizeCurrentBusiestDepartureHalls(rows: AirportCongestionSummaryRow[]) {
+  const rowsByTerminal = new Map<string, AirportCongestionSummaryRow[]>();
+  for (const row of rows) {
+    const list = rowsByTerminal.get(row.terminal) ?? [];
+    list.push(row);
+    rowsByTerminal.set(row.terminal, list);
+  }
+  const result: Record<string, AirportCongestionSummaryRow> = {};
+  for (const [terminal, terminalRows] of rowsByTerminal) {
+    const withWaitTime = terminalRows
+      .map((row) => ({ row, waitTime: comparableWaitTime(row) }))
+      .filter((entry): entry is { row: AirportCongestionSummaryRow; waitTime: number } => entry.waitTime !== null);
+    const candidates = withWaitTime.length > 0
+      ? withWaitTime
+      : terminalRows.map((row) => ({ row, waitTime: null as number | null }));
+    const winner = [...candidates].sort((a, b) => {
+      const waitDiff = (b.waitTime ?? -1) - (a.waitTime ?? -1);
+      if (waitDiff !== 0) return waitDiff;
+      const countDiff = (b.row.waitingCount ?? -1) - (a.row.waitingCount ?? -1);
+      if (countDiff !== 0) return countDiff;
+      return a.row.zone.localeCompare(b.row.zone);
+    })[0];
+    result[terminal] = winner.row;
+  }
+  return Object.fromEntries(Object.entries(result).sort());
 }
