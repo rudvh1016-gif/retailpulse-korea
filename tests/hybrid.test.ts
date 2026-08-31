@@ -1,3 +1,4 @@
+import { readdirSync, readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
@@ -149,4 +150,49 @@ test("every production source is scheduled by exactly one cadence-group workflow
   }
   assert.deepEqual([...scheduledSources].sort(), [...PRODUCTION_SOURCE_NAMES].sort(), "every known source should be scheduled exactly once, with none forgotten or duplicated");
   assert.equal(new Set(scheduledSources).size, scheduledSources.length, "no source may be scheduled by two workflow groups at once");
+});
+
+// ---------------------------------------------------------------------------
+// REALTIME Worker Cron migration guardrails (docs/ZERO_COST_HYBRID_AUDIT.md D.3/D.5)
+// ---------------------------------------------------------------------------
+
+test("no Cloudflare Cron Trigger is configured in any wrangler config", () => {
+  for (const file of readdirSync(".").filter((name) => /^wrangler.*\.jsonc?$/.test(name))) {
+    const config = readFileSync(file, "utf8");
+    assert.equal(/"triggers"\s*:/.test(config), false, `${file} must not declare Cron triggers before owner activation approval`);
+    assert.equal(/"crons"\s*:/.test(config), false, `${file} must not declare crons before owner activation approval`);
+  }
+});
+
+test("the Worker exposes no scheduled handler, so no Cron work can run yet", () => {
+  const worker = readFileSync("worker/index.ts", "utf8");
+  assert.equal(/\bscheduled\s*[(:]/.test(worker), false, "a scheduled() handler would be live Cron work");
+});
+
+test("GitHub remains the single authoritative REALTIME scheduler during preparation", () => {
+  const realtime = readFileSync(".github/workflows/collect-realtime.yml", "utf8");
+  // The GitHub schedule must stay present: removing it before Worker Cron is
+  // approved would leave the realtime group with no scheduler at all.
+  assert.match(realtime, /schedule:\s*\n\s*- cron: "7,22,37,52 \* \* \* \*"/);
+  assert.match(realtime, /RPK_PRODUCTION_SOURCES: airport_congestion,airport_congestion_t2,seoul_realtime/);
+});
+
+test("the CPU benchmark measures the real collectors and makes no provider or D1 write call", () => {
+  const benchmark = readFileSync("scripts/benchmark-realtime-collectors.ts", "utf8");
+  // It must import the production collectors, not a reimplementation.
+  assert.match(benchmark, /from "\.\.\/lib\/collector"/);
+  for (const source of ["collectAirportCongestion", "collectAirportCongestionT2", "collectSeoulRealtime"]) {
+    assert.ok(benchmark.includes(source), `benchmark must exercise ${source}`);
+  }
+  // Only the three approved realtime sources — never A1/A2/A3/A5/S2/S3/W1/T1.
+  for (const forbidden of [
+    "collectAirportFlightsToday", "collectAirportFlightEnrichment", "collectScheduledAirportFlights",
+    "collectAirportPassengerForecast", "collectSeoulForeignPresence", "collectEstimatedSales",
+    "collectWeatherForecasts", "collectTourismEvents",
+  ]) {
+    assert.equal(benchmark.includes(forbidden), false, `benchmark must never invoke ${forbidden}`);
+  }
+  // fetch is stubbed and the D1 double never writes.
+  assert.match(benchmark, /globalThis\.fetch = /);
+  assert.ok(benchmark.includes("CountingD1"), "benchmark must use the counting no-op D1");
 });
