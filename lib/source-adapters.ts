@@ -729,20 +729,40 @@ function parseA5Count(value: unknown): number | null {
 }
 
 /**
+ * A5 rows carry a reason code instead of a bare SCHEMA label.
+ *
+ * Production run 33344958504 normalized 46 of 50 provider rows and rejected
+ * 4 with an indistinguishable "SCHEMA", which cannot say which field failed
+ * or why. Reasons are fixed uppercase constants derived from the field name
+ * only — provider content is never echoed — and MISSING is kept distinct
+ * from TYPE so a numeric `adate`/`atime` is diagnosable without another
+ * provider call. Acceptance is unchanged: exactly the non-empty strings
+ * requiredString already accepted.
+ */
+function requiredA5String(record: Record<string, unknown>, key: "adate" | "atime"): string {
+  const value = record[key];
+  const field = key.toUpperCase();
+  if (value === undefined || value === null) throw new SourceFetchError("SCHEMA", undefined, `A5_${field}_MISSING`);
+  if (typeof value !== "string") throw new SourceFetchError("SCHEMA", undefined, `A5_${field}_TYPE`);
+  if (!value.trim()) throw new SourceFetchError("SCHEMA", undefined, `A5_${field}_MISSING`);
+  return value.trim();
+}
+
+/**
  * A5 `atime` is an hourly interval such as "09_10" or "23_24", not an
  * instantaneous observation. "23_24" must resolve to next-day 00:00, never
  * an invalid same-day "24:00".
  */
 function parseA5TimeBand(adate: string, atime: string): { targetDate: string; targetStartAt: string; targetEndAt: string } {
   const dateMatch = /^(\d{4})(\d{2})(\d{2})$/.exec(adate.trim());
-  if (!dateMatch) throw new SourceFetchError("SCHEMA");
+  if (!dateMatch) throw new SourceFetchError("SCHEMA", undefined, "A5_ADATE_FORMAT");
   const targetDate = `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`;
   const bandMatch = /^(\d{2})_(\d{2})$/.exec(atime.trim());
-  if (!bandMatch) throw new SourceFetchError("SCHEMA");
+  if (!bandMatch) throw new SourceFetchError("SCHEMA", undefined, "A5_ATIME_FORMAT");
   const startHour = Number(bandMatch[1]);
   const endHour = Number(bandMatch[2]);
-  if (!Number.isInteger(startHour) || startHour < 0 || startHour > 23) throw new SourceFetchError("SCHEMA");
-  if (!Number.isInteger(endHour) || endHour < 1 || endHour > 24) throw new SourceFetchError("SCHEMA");
+  if (!Number.isInteger(startHour) || startHour < 0 || startHour > 23) throw new SourceFetchError("SCHEMA", undefined, "A5_ATIME_START_HOUR");
+  if (!Number.isInteger(endHour) || endHour < 1 || endHour > 24) throw new SourceFetchError("SCHEMA", undefined, "A5_ATIME_END_HOUR");
   const targetStartAt = `${targetDate}T${String(startHour).padStart(2, "0")}:00:00+09:00`;
   let targetEndAt: string;
   if (endHour === 24) {
@@ -753,7 +773,7 @@ function parseA5TimeBand(adate: string, atime: string): { targetDate: string; ta
   } else {
     targetEndAt = `${targetDate}T${String(endHour).padStart(2, "0")}:00:00+09:00`;
   }
-  if (Number.isNaN(Date.parse(targetStartAt)) || Number.isNaN(Date.parse(targetEndAt))) throw new SourceFetchError("SCHEMA");
+  if (Number.isNaN(Date.parse(targetStartAt)) || Number.isNaN(Date.parse(targetEndAt))) throw new SourceFetchError("SCHEMA", undefined, "A5_TIME_BAND_UNPARSEABLE");
   return { targetDate, targetStartAt, targetEndAt };
 }
 
@@ -787,10 +807,10 @@ export interface CanonicalAirportPassengerForecastRow {
  * sum components, but never both (double-count prevention).
  */
 export async function normalizeAirportPassengerForecastRow(raw: unknown, retrievedAt: string): Promise<CanonicalAirportPassengerForecastRow[]> {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new SourceFetchError("SCHEMA");
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new SourceFetchError("SCHEMA", undefined, "A5_ROW_NOT_OBJECT");
   const record = raw as Record<string, unknown>;
-  const adate = requiredString(record, ["adate"]);
-  const atimeRaw = requiredString(record, ["atime"]);
+  const adate = requiredA5String(record, "adate");
+  const atimeRaw = requiredA5String(record, "atime");
   const { targetDate, targetStartAt, targetEndAt } = parseA5TimeBand(adate, atimeRaw);
   const results: CanonicalAirportPassengerForecastRow[] = [];
   for (const field of A5_FIELDS) {

@@ -444,3 +444,66 @@ test("A5 collector: no secret ever reaches collector_runs/source_health detail",
   const detail = database.prepare("SELECT detail FROM collector_runs WHERE source_id = 'INCHEON_PASSENGER_FORECAST' ORDER BY started_at DESC LIMIT 1").get().detail;
   assert.doesNotMatch(detail, /SUPER-SECRET-VALUE/);
 });
+
+// ---------------------------------------------------------------------------
+// A5 SCHEMA reason codes — Production rejected 4 of 50 rows with an
+// indistinguishable "SCHEMA"; each rejection must now name its own cause.
+// ---------------------------------------------------------------------------
+
+async function a5Reason(row) {
+  try {
+    await normalizeAirportPassengerForecastRow(row, "2026-08-30T00:00:00Z");
+  } catch (error) {
+    return { code: error.code, message: error.message };
+  }
+  throw new Error("expected the row to be rejected");
+}
+
+test("A5: every rejection reports a distinct SCHEMA reason code", async () => {
+  assert.deepEqual(await a5Reason(a5Row({ adate: "not-a-date" })), { code: "SCHEMA", message: "SCHEMA_A5_ADATE_FORMAT" });
+  assert.deepEqual(await a5Reason(a5Row({ atime: "garbage" })), { code: "SCHEMA", message: "SCHEMA_A5_ATIME_FORMAT" });
+  assert.deepEqual(await a5Reason(a5Row({ atime: "99_10" })), { code: "SCHEMA", message: "SCHEMA_A5_ATIME_START_HOUR" });
+  assert.deepEqual(await a5Reason(a5Row({ atime: "09_99" })), { code: "SCHEMA", message: "SCHEMA_A5_ATIME_END_HOUR" });
+  assert.deepEqual(await a5Reason(a5Row({ adate: undefined })), { code: "SCHEMA", message: "SCHEMA_A5_ADATE_MISSING" });
+  assert.deepEqual(await a5Reason(a5Row({ atime: undefined })), { code: "SCHEMA", message: "SCHEMA_A5_ATIME_MISSING" });
+  assert.deepEqual(await a5Reason(a5Row({ atime: "   " })), { code: "SCHEMA", message: "SCHEMA_A5_ATIME_MISSING" });
+  assert.deepEqual(await a5Reason(a5Row({ adate: null })), { code: "SCHEMA", message: "SCHEMA_A5_ADATE_MISSING" });
+  // A numeric adate/atime is a plausible cause of the Production rejections,
+  // so it must be distinguishable from an absent field rather than merged.
+  assert.deepEqual(await a5Reason(a5Row({ adate: 20260830 })), { code: "SCHEMA", message: "SCHEMA_A5_ADATE_TYPE" });
+  assert.deepEqual(await a5Reason(a5Row({ atime: 910 })), { code: "SCHEMA", message: "SCHEMA_A5_ATIME_TYPE" });
+  assert.deepEqual(await a5Reason([]), { code: "SCHEMA", message: "SCHEMA_A5_ROW_NOT_OBJECT" });
+  assert.deepEqual(await a5Reason("row"), { code: "SCHEMA", message: "SCHEMA_A5_ROW_NOT_OBJECT" });
+});
+
+test("A5: reason codes change no acceptance behaviour and echo no provider content", async () => {
+  // Rows that were valid before stay valid, including the 23_24 boundary.
+  assert.equal((await normalizeAirportPassengerForecastRow(a5Row(), "2026-08-30T00:00:00Z")).length, 18);
+  assert.equal((await normalizeAirportPassengerForecastRow(a5Row({ atime: "23_24" }), "2026-08-30T00:00:00Z"))[0].targetEndAt, "2026-08-31T00:00:00+09:00");
+  assert.equal((await normalizeAirportPassengerForecastRow(a5Row({ atime: "00_24" }), "2026-08-30T00:00:00Z")).length, 18);
+
+  // A reason is a fixed uppercase constant, never provider text.
+  for (const bad of ["https://apis.data.go.kr/x?serviceKey=SUPER-SECRET", "<script>", "합계"]) {
+    const { message } = await a5Reason(a5Row({ atime: bad }));
+    assert.equal(message, "SCHEMA_A5_ATIME_FORMAT");
+    assert.match(message, /^SCHEMA_[A-Z0-9_]+$/);
+  }
+});
+
+test("A5 collector: a rejected row records its reason code in D1 without aborting the band", async (context) => {
+  const { database, databasePath } = freshDatabase("a5-schema-reason");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+
+  // One good row and one row whose atime the official contract does not match.
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    response: { header: { resultCode: "00" }, body: { totalCount: 2, items: [a5Row(), a5Row({ atime: "0910" })] } },
+  }), { status: 200, headers: { "content-type": "application/json" } });
+
+  const result = await collectAirportPassengerForecast({ DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "SUPER-SECRET-VALUE" });
+  assert.equal(result.status, "PARTIAL");
+
+  const detail = database.prepare("SELECT detail FROM collector_runs WHERE source_id = 'INCHEON_PASSENGER_FORECAST' ORDER BY started_at DESC LIMIT 1").get().detail;
+  assert.match(detail, /row: SCHEMA_A5_ATIME_FORMAT/);
+  assert.doesNotMatch(detail, /SUPER-SECRET-VALUE/);
+});
