@@ -96,40 +96,60 @@ test("new demand and airport truth labels are complete in all four locales", asy
   }
 });
 
+const AIRPORT_TODAY_SUMMARY_FIXTURE = {
+  mode: "live-summary",
+  generatedAt: "2026-08-31T05:10:00Z",
+  areas: {},
+  airport: {
+    congestion: [],
+    currentBusiestDepartureHallByTerminal: {
+      T1: { terminal: "T1", zone: "P01", waitTimeMinutes: 24, waitTimeRaw: "24", waitingCount: 81, observedAt: "2026-08-31T14:07:00+09:00", freshness: "LIVE" },
+      T2: { terminal: "T2", zone: "DG2_03", waitTimeMinutes: 61, waitTimeRaw: "60+", waitingCount: 43, observedAt: "2026-08-31T14:06:00+09:00", freshness: "LIVE" },
+    },
+    departuresTrackedToday: 561,
+    departuresTrackedTodayByTerminal: { T1: 300, T2: 261 },
+    departuresTrackedTodayRetrievedAt: "2026-08-31T12:00:00+09:00",
+    topDepartureGate: "27",
+    topDepartureGateTerminal: "T1",
+    topDepartureGateFlights: 18,
+    topDepartureGateByTerminal: { T1: { gate: "27", flights: 18 }, T2: { gate: "5", flights: 12 } },
+    topDepartureGateRetrievedAt: "2026-08-31T12:00:00+09:00",
+    topDepartureGateRetrievedAtByTerminal: { T1: "2026-08-31T12:00:00+09:00", T2: "2026-08-31T12:05:00+09:00" },
+    gateCoverageRatio: 0.76,
+    gateCoverageRatioByTerminal: { T1: 0.8, T2: 0.7 },
+    serviceDateKst: "2026-08-31",
+    periodStartAt: "2026-08-31T00:00:00+09:00",
+    periodEndAt: "2026-08-31T23:59:59+09:00",
+    latestRetrievedAt: "2026-08-31T14:08:00+09:00",
+    todayExpectedPassengersTotal: 47320,
+    todayExpectedPassengersByTerminal: { T1: 30100, T2: 17220 },
+    passengerForecastRetrievedAt: "2026-08-31T09:05:00+09:00",
+    passengerForecastRetrievedAtByTerminal: { T1: "2026-08-31T09:00:00+09:00", T2: "2026-08-31T09:05:00+09:00" },
+    peakExpectedTimeBand: { targetStartAt: "2026-08-31T15:00:00+09:00", targetEndAt: "2026-08-31T16:00:00+09:00", expectedPassengers: 6320 },
+    peakExpectedTimeBandByTerminal: {
+      T1: { targetStartAt: "2026-08-31T15:00:00+09:00", targetEndAt: "2026-08-31T16:00:00+09:00", expectedPassengers: 3500 },
+      T2: { targetStartAt: "2026-08-31T16:00:00+09:00", targetEndAt: "2026-08-31T17:00:00+09:00", expectedPassengers: 2900 },
+    },
+    peakExpectedPassengers: 6320,
+    peakExpectedPassengersByTerminal: { T1: 3500, T2: 2900 },
+    passengerForecastTimeline: [
+      { targetStartAt: "2026-08-31T14:00:00+09:00", targetEndAt: "2026-08-31T15:00:00+09:00", expectedPassengers: 5110 },
+      { targetStartAt: "2026-08-31T15:00:00+09:00", targetEndAt: "2026-08-31T16:00:00+09:00", expectedPassengers: 6320 },
+    ],
+    passengerForecastTimelineByTerminal: {
+      T1: [{ targetStartAt: "2026-08-31T15:00:00+09:00", targetEndAt: "2026-08-31T16:00:00+09:00", expectedPassengers: 3500 }],
+      T2: [{ targetStartAt: "2026-08-31T16:00:00+09:00", targetEndAt: "2026-08-31T17:00:00+09:00", expectedPassengers: 2900 }],
+    },
+    forecastCoverage: { all: "COMPLETE", byTerminal: { T1: "COMPLETE", T2: "COMPLETE" } },
+    scheduled: [],
+    passengerForecast: [],
+  },
+};
+
 test("airport today summary keeps forecast, flights, gate and checkpoints truthful on mobile", async ({ page }) => {
   await page.route("**/api/live/summary", async (route) => route.fulfill({
     contentType: "application/json",
-    body: JSON.stringify({
-      mode: "live-summary",
-      generatedAt: "2026-08-31T05:10:00Z",
-      areas: {},
-      airport: {
-        congestion: [],
-        currentBusiestDepartureHallByTerminal: {
-          T1: { terminal: "T1", zone: "P01", waitTimeMinutes: 24, waitTimeRaw: "24", waitingCount: 81, observedAt: "2026-08-31T14:07:00+09:00", freshness: "LIVE" },
-          T2: { terminal: "T2", zone: "DG2_03", waitTimeMinutes: 61, waitTimeRaw: "60+", waitingCount: 43, observedAt: "2026-08-31T14:06:00+09:00", freshness: "LIVE" },
-        },
-        departuresTrackedToday: 561,
-        topDepartureGate: "27",
-        topDepartureGateTerminal: "T1",
-        topDepartureGateFlights: 18,
-        gateCoverageRatio: 0.76,
-        serviceDateKst: "2026-08-31",
-        periodStartAt: "2026-08-31T00:00:00+09:00",
-        periodEndAt: "2026-08-31T23:59:59+09:00",
-        latestRetrievedAt: "2026-08-31T14:08:00+09:00",
-        todayExpectedPassengersTotal: 47320,
-        todayExpectedPassengersByTerminal: { T1: 30100, T2: 17220 },
-        peakExpectedTimeBand: { targetStartAt: "2026-08-31T15:00:00+09:00", targetEndAt: "2026-08-31T16:00:00+09:00", expectedPassengers: 6320 },
-        peakExpectedPassengers: 6320,
-        passengerForecastTimeline: [
-          { targetStartAt: "2026-08-31T14:00:00+09:00", targetEndAt: "2026-08-31T15:00:00+09:00", expectedPassengers: 5110 },
-          { targetStartAt: "2026-08-31T15:00:00+09:00", targetEndAt: "2026-08-31T16:00:00+09:00", expectedPassengers: 6320 },
-        ],
-        scheduled: [],
-        passengerForecast: [],
-      },
-    }),
+    body: JSON.stringify(AIRPORT_TODAY_SUMMARY_FIXTURE),
   }));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko/airport");
@@ -141,7 +161,65 @@ test("airport today summary keeps forecast, flights, gate and checkpoints truthf
   await expect(page.getByText(/출국장 체크포인트 관측 · 탑승 게이트 아님/)).toBeVisible();
   await expect(page.getByText("60+", { exact: true })).toBeVisible();
   await expect(page.locator(".airport-period")).toContainText(/2026.*08.*31/);
+  // Fix 4: the overall label is scoped to "among airport datasets", and each
+  // top metric also carries its own collection time.
+  await expect(page.getByText(/공항 데이터 중 최근 수집/)).toBeVisible();
+  await expect(page.locator(".airport-today-grid article").filter({ hasText: "오늘 공식 예상 출국객" }).getByText(/수집 .*KST/)).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+});
+
+test("Fix 1: selecting T1 or T2 changes all four top metrics, not just the current departure hall", async ({ page }) => {
+  await page.route("**/api/live/summary", async (route) => route.fulfill({
+    contentType: "application/json",
+    body: JSON.stringify(AIRPORT_TODAY_SUMMARY_FIXTURE),
+  }));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ko/airport");
+  await expect(page.getByText("47,320명", { exact: true })).toBeVisible();
+  await expect(page.getByText("561편", { exact: true })).toBeVisible();
+
+  await page.getByRole("tab", { name: "T1" }).click();
+  await expect(page.getByText("30,100명", { exact: true })).toBeVisible();
+  await expect(page.getByText("300편", { exact: true })).toBeVisible();
+  await expect(page.getByText(/T1 · Gate 27 · 18편/)).toBeVisible();
+  await expect(page.getByText("47,320명", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("561편", { exact: true })).toHaveCount(0);
+  await expect(page.getByText(/Gate 5 · 12편/)).toHaveCount(0);
+
+  await page.getByRole("tab", { name: "T2" }).click();
+  await expect(page.getByText("17,220명", { exact: true })).toBeVisible();
+  await expect(page.getByText("261편", { exact: true })).toBeVisible();
+  await expect(page.getByText(/T2 · Gate 5 · 12편/)).toBeVisible();
+  await expect(page.getByText("30,100명", { exact: true })).toHaveCount(0);
+  await expect(page.getByText(/Gate 27 · 18편/)).toHaveCount(0);
+
+  await page.getByRole("tab", { name: "전체" }).click();
+  await expect(page.getByText("47,320명", { exact: true })).toBeVisible();
+});
+
+test("Fix 2: incomplete A5 daily coverage never renders as a full-day total or peak", async ({ page }) => {
+  const partial = JSON.parse(JSON.stringify(AIRPORT_TODAY_SUMMARY_FIXTURE));
+  partial.airport.todayExpectedPassengersTotal = null;
+  partial.airport.todayExpectedPassengersByTerminal = { T1: null, T2: 17220 };
+  partial.airport.peakExpectedTimeBand = null;
+  partial.airport.peakExpectedTimeBandByTerminal.T1 = null;
+  partial.airport.passengerForecastTimelineByTerminal.T1 = [];
+  partial.airport.forecastCoverage = { all: "PARTIAL", byTerminal: { T1: "PARTIAL", T2: "COMPLETE" } };
+  await page.route("**/api/live/summary", async (route) => route.fulfill({
+    contentType: "application/json",
+    body: JSON.stringify(partial),
+  }));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ko/airport");
+  await expect(page.locator(".airport-today-grid article").filter({ hasText: "오늘 공식 예상 출국객" }).getByText("오늘 전체 시간대 확인 불가", { exact: true })).toBeVisible();
+  await expect(page.getByText("공식 예상 데이터 일부 누락").first()).toBeVisible();
+  await expect(page.getByText("47,320명", { exact: true })).toHaveCount(0);
+
+  await page.getByRole("tab", { name: "T1" }).click();
+  await expect(page.locator(".airport-today-grid article").filter({ hasText: "오늘 공식 예상 출국객" }).getByText("오늘 전체 시간대 확인 불가", { exact: true })).toBeVisible();
+
+  await page.getByRole("tab", { name: "T2" }).click();
+  await expect(page.getByText("17,220명", { exact: true })).toBeVisible();
 });
 
 test("blocked localStorage does not break the application", async ({ context, page }) => {
