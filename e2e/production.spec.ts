@@ -82,15 +82,15 @@ test("sample demand and airport unavailable states are explicit and accessible",
 
 test("new demand and airport truth labels are complete in all four locales", async ({ page }) => {
   const labels = {
-    ko: ["예시 수요지수", "오늘 예상 출국객·실제 출발 운항·현재 출국장 흐름을 구분해 보여줍니다.", "예시 날짜 · 8월 23일 · KST"],
-    en: ["DEMO INDEX", "Official expected passengers, physical departing flights and current departure-hall conditions—kept clearly separate.", "SAMPLE DATE · AUG 23 · KST"],
-    zh: ["演示指数", "清楚区分今日预计出境人数、实际出发航班与当前出境区状况。", "示例日期 · 8月23日 · KST"],
-    ja: ["デモ指数", "本日の予想出国者・実出発便・現在の出国場状況を明確に分けて表示します。", "サンプル日付 · 8月23日 · KST"],
+    ko: ["예시 수요지수", "오늘 예상 출국객·실제 출발 운항·현재 출국장 흐름을 구분해 보여줍니다."],
+    en: ["DEMO INDEX", "Official expected passengers, physical departing flights and current departure-hall conditions—kept clearly separate."],
+    zh: ["演示指数", "清楚区分今日预计出境人数、实际出发航班与当前出境区状况。"],
+    ja: ["デモ指数", "本日の予想出国者・実出発便・現在の出国場状況を明確に分けて表示します。"],
   } as const;
   for (const locale of Object.keys(labels) as Array<keyof typeof labels>) {
     await page.goto(`/${locale}`);
     await expect(page.getByText(labels[locale][0], { exact: true }).first()).toBeVisible();
-    await expect(page.getByText(labels[locale][2], { exact: true })).toBeVisible();
+    await expect(page.getByText(/SAMPLE DATE|예시 날짜|示例日期|サンプル日付/)).toHaveCount(0);
     await page.goto(`/${locale}/airport`);
     await expect(page.getByText(labels[locale][1], { exact: true })).toBeVisible();
   }
@@ -99,7 +99,22 @@ test("new demand and airport truth labels are complete in all four locales", asy
 const AIRPORT_TODAY_SUMMARY_FIXTURE = {
   mode: "live-summary",
   generatedAt: "2026-08-31T05:10:00Z",
-  areas: {},
+  areas: {
+    myeongdong: {
+      realtime: { congestionLevel: 3, congestionLabel: "약간 붐빔", populationMin: 23000, populationMax: 25000, observedAt: "2026-08-31T14:07:00+09:00", freshness: "LIVE" },
+      realtimeForecast: [{ targetAt: "2026-08-31T17:00:00+09:00", congestionLevel: 4, congestionLabel: "붐빔", populationMin: 27000, populationMax: 29000, issuedAt: "2026-08-31T14:00:00+09:00", retrievedAt: "2026-08-31T14:05:00+09:00" }],
+      weather: [{ targetAt: "2026-08-31T18:00:00+09:00", precipitationProbability: 60, temperatureTenthC: 270, conditionCode: "rain" }], events: [], sales: null, foreignPresence: null,
+    },
+    hongdae: {
+      realtime: { congestionLevel: 2, congestionLabel: "보통", populationMin: 18000, populationMax: 20000, observedAt: "2026-08-31T14:06:00+09:00", freshness: "LIVE" },
+      realtimeForecast: [{ targetAt: "2026-08-31T19:00:00+09:00", congestionLevel: 3, congestionLabel: "약간 붐빔", populationMin: 22000, populationMax: 24000, issuedAt: "2026-08-31T14:00:00+09:00", retrievedAt: "2026-08-31T14:05:00+09:00" }],
+      weather: [{ targetAt: "2026-08-31T18:00:00+09:00", precipitationProbability: 20, temperatureTenthC: 260, conditionCode: "cloudy" }], events: [{ title: "행사", eventStart: "2026-08-31", eventEnd: null, distanceM: 300 }], sales: null, foreignPresence: null,
+    },
+    seongsu: {
+      realtime: { congestionLevel: 1, congestionLabel: "여유", populationMin: 12000, populationMax: 14000, observedAt: "2026-08-31T14:05:00+09:00", freshness: "STALE" },
+      realtimeForecast: [], weather: [{ targetAt: "2026-08-31T15:00:00+09:00", precipitationProbability: 10, temperatureTenthC: 310, conditionCode: "clear" }], events: [], sales: null, foreignPresence: null,
+    },
+  },
   airport: {
     congestion: [
       { terminal: "T1", zone: "P01", waitTimeMinutes: 24, waitTimeRaw: "24", waitingCount: 81, observedAt: "2026-08-31T14:07:00+09:00", freshness: "LIVE" },
@@ -167,6 +182,9 @@ test("airport today summary keeps forecast, flights, gate and checkpoints truthf
   }));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko/airport");
+  await expect(page.locator(".airport-current-brief")).toContainText("현재 전체 공항에서는 T2 출국장 1B의 대기가 60+분으로 가장 깁니다");
+  await expect(page.locator(".airport-current-brief")).toContainText("15:00–16:00가 오늘 가장 붐빌 전망");
+  await expect(page.locator(".airport-current-brief")).toContainText("오늘 561편 출발");
   await expect(page.getByText("오늘 공식 예상 출국객", { exact: true })).toBeVisible();
   await expect(page.getByText("47,320명", { exact: true })).toBeVisible();
   await expect(page.getByText("561편", { exact: true })).toBeVisible();
@@ -179,9 +197,37 @@ test("airport today summary keeps forecast, flights, gate and checkpoints truthf
   await expect(page.locator(".airport-gate-row")).toHaveCount(3);
   await expect(page.locator(".airport-period")).toContainText(/2026.*08.*31/);
   // Fix 4: the overall label is scoped to "among airport datasets", and each
-  // top metric also carries its own collection time.
+  // top metric carries its own basis time when the datasets differ.
   await expect(page.getByText(/공항 데이터 중 최근 수집/)).toBeVisible();
-  await expect(page.locator(".airport-today-grid article").filter({ hasText: "오늘 공식 예상 출국객" }).getByText(/수집 .*KST/)).toBeVisible();
+  // This fixture collects the passenger forecast and the flight/gate data at
+  // different times, so the freshness must stay on each card: one shared
+  // section line would hide which number came from which moment.
+  const metricFreshness = page.locator(".airport-today-grid .metric-freshness");
+  await expect(metricFreshness).toHaveCount(4);
+  await expect(metricFreshness.first()).toContainText(/기준/);
+  await expect(page.locator(".airport-section-freshness")).toHaveCount(0);
+  // A status sentence must not be rendered at the KPI number size.
+  const statusStrong = page.locator('.airport-today-grid strong[data-kind="status"]').first();
+  if (await statusStrong.count()) {
+    const size = await statusStrong.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    expect(size).toBeLessThanOrEqual(15);
+  }
+  await expect(page.getByText(/수집 8\.31|8\.31 .*KST/)).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+});
+
+test("home gives deterministic current briefs for all three Seoul areas without a photo timestamp", async ({ page }) => {
+  await page.route("**/api/live/summary", async (route) => route.fulfill({ contentType: "application/json", body: JSON.stringify(AIRPORT_TODAY_SUMMARY_FIXTURE) }));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ko");
+  await expect(page.getByRole("heading", { name: "서울 오늘 브리핑" })).toBeVisible();
+  const briefs = page.locator(".home-area-briefs");
+  await expect(briefs.getByRole("button", { name: /명동/ })).toContainText("약간 붐빔 · 23,000–25,000명");
+  await expect(briefs.getByRole("button", { name: /명동/ })).toContainText("17:00–18:00");
+  await expect(briefs.getByRole("button", { name: /명동/ })).toContainText("비 가능성 60%");
+  await expect(briefs.getByRole("button", { name: /홍대/ })).toContainText("오늘 인근 행사 1건 예정");
+  await expect(briefs.getByRole("button", { name: /성수/ })).toContainText("최근 관측 지연");
+  await expect(page.getByText(/20:42 KST|예시 날짜/)).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
 
@@ -196,6 +242,7 @@ test("Fix 1: selecting T1 or T2 changes all four top metrics, not just the curre
   await expect(page.getByText("561편", { exact: true })).toBeVisible();
 
   await page.getByRole("tab", { name: "T1" }).click();
+  await expect(page.locator(".airport-current-brief")).toContainText("현재 제1터미널에서는 출국장 P01의 대기가 24분으로 가장 깁니다");
   await expect(page.getByText("30,100명", { exact: true })).toBeVisible();
   await expect(page.getByText("300편", { exact: true })).toBeVisible();
   await expect(page.getByText(/T1 · Gate 27 · 18편/)).toBeVisible();
@@ -206,6 +253,7 @@ test("Fix 1: selecting T1 or T2 changes all four top metrics, not just the curre
   await expect(page.getByText("출국장 1B", { exact: true })).toHaveCount(0);
 
   await page.getByRole("tab", { name: "T2" }).click();
+  await expect(page.locator(".airport-current-brief")).toContainText("현재 제2터미널에서는 출국장 1B의 대기가 60+분으로 가장 깁니다");
   await expect(page.getByText("17,220명", { exact: true })).toBeVisible();
   await expect(page.getByText("261편", { exact: true })).toBeVisible();
   await expect(page.getByText(/T2 · Gate 5 · 12편/)).toBeVisible();
@@ -234,6 +282,7 @@ test("Fix 2: incomplete A5 daily coverage never renders as a full-day total or p
   await page.goto("/ko/airport");
   await expect(page.locator(".airport-today-grid article").filter({ hasText: "오늘 공식 예상 출국객" }).getByText("오늘 전체 시간대 확인 불가", { exact: true })).toBeVisible();
   await expect(page.getByText("공식 예상 데이터 일부 누락").first()).toBeVisible();
+  await expect(page.locator(".airport-current-brief")).toContainText("오늘 피크는 판단하지 않습니다");
   await expect(page.getByText(/일부 시간대가 누락되어 하루 전체 합계와 피크는 표시하지 않습니다/)).toBeVisible();
   await expect(page.locator(".airport-timeline")).toHaveCount(0);
   await expect(page.getByText("47,320명", { exact: true })).toHaveCount(0);
@@ -344,4 +393,39 @@ test("missing S2 data is omitted instead of showing a zero or Demo value", async
   await page.goto("/ko");
   await expect(page.getByText("단기외국인 생활인구", { exact: true })).toHaveCount(0);
   await expect(page.locator(".live-signals")).toHaveCount(0);
+});
+
+test("opening a Seoul area leads with its own brief and keeps the same reading across widths", async ({ page }) => {
+  await page.route("**/api/live/summary", async (route) => route.fulfill({ contentType: "application/json", body: JSON.stringify(AIRPORT_TODAY_SUMMARY_FIXTURE) }));
+  await page.goto("/ko");
+
+  const areaBrief = page.locator(".area-current-brief");
+  // Myeongdong is the default area, so the detail brief must already be there.
+  await expect(areaBrief).toBeVisible();
+  await expect(areaBrief).toContainText("약간 붐빔 · 23,000–25,000명");
+  await expect(areaBrief).toContainText("17:00–18:00");
+  await expect(areaBrief).toContainText("비 가능성 60%");
+  // The brief is an interpretation, so it sits above the raw signal rows.
+  const briefBox = await areaBrief.boundingBox();
+  const rowsBox = await page.locator(".live-signal-rows").boundingBox();
+  expect(briefBox && rowsBox && briefBox.y).toBeLessThan(rowsBox?.y ?? Infinity);
+
+  // Switching areas from the home rows must move the detail brief with it.
+  await page.locator(".home-area-briefs").getByRole("button", { name: /성수/ }).click();
+  await expect(areaBrief).toContainText("최근 관측 지연");
+  await expect(areaBrief).toContainText("오늘 남은 시간 혼잡 예측은 현재 확인할 수 없습니다");
+  await expect(areaBrief).not.toContainText("17:00–18:00");
+
+  await page.locator(".home-area-briefs").getByRole("button", { name: /홍대/ }).click();
+  await expect(areaBrief).toContainText("보통 · 18,000–20,000명");
+  await expect(areaBrief).toContainText("19:00–20:00");
+
+  // No database-style retrieval stamps survive anywhere on the page.
+  await expect(page.getByText(/수집 8\.31|8\.31 .*KST/)).toHaveCount(0);
+
+  for (const width of [320, 375, 390, 430, 768]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect(areaBrief).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  }
 });

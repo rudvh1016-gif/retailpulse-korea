@@ -356,6 +356,81 @@ test("airport detail UI uses editorial rows, friendly checkpoints and honest par
   assert.doesNotMatch(css, /\.airport-gates li[^}]*box-shadow/);
 });
 
+test("current briefs use existing official forecasts and deterministic editorial copy without runtime AI", async () => {
+  const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
+  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  const route = await readFile(new URL("../app/api/live/summary/route.ts", import.meta.url), "utf8");
+  const brief = await readFile(new URL("../lib/current-brief.ts", import.meta.url), "utf8");
+  assert.match(signals, /buildAreaCurrentBrief/);
+  assert.match(signals, /buildAirportCurrentBrief/);
+  assert.match(signals, /home-area-brief-rows/);
+  assert.match(route, /seoul_realtime_forecast/);
+  assert.match(route, /realtimeForecast:/);
+  assert.match(brief, /umbrellaProbability: 50/);
+  assert.match(brief, /checkRainProbability: 30/);
+  assert.doesNotMatch(brief, /OpenAI|Anthropic|Gemini|Cloudflare AI/);
+  assert.doesNotMatch(page, /20:42 KST|예시 날짜|SAMPLE DATE|示例日期|サンプル日付/);
+});
+
+test("each Seoul area view opens with its own current brief built from the same deterministic builder", async () => {
+  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  // The area detail screen must lead with an interpretation, not with the raw
+  // signal rows. It reuses buildAreaCurrentBrief so the home row and the area
+  // page can never disagree about the same area on the same data.
+  assert.match(signals, /className="current-brief area-current-brief"/);
+  assert.match(signals, /const areaBrief = buildAreaCurrentBrief\(/);
+  assert.match(signals, /const areaBriefCopy = localizeAreaBrief\(areaBrief, lang\)/);
+  // The brief renders before the section heading, so it is the first thing read.
+  assert.ok(
+    signals.indexOf('className="current-brief area-current-brief"')
+      < signals.indexOf('id="live-signals-title"'),
+    "area brief must render above the live-signals heading",
+  );
+  // It stays silent rather than printing an empty shell when nothing is known.
+  assert.match(signals, /areaBrief\.evidenceTypes\.length > 0 &&/);
+  assert.match(css, /\.area-current-brief \{/);
+});
+
+test("the header date comes from the data on screen and long status text never uses the number size", async () => {
+  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  // The chip is derived from summary.generatedAt and stays silent without data,
+  // so the page can never claim a date it did not receive.
+  assert.match(signals, /export function KstTodayChip/);
+  assert.match(signals, /if \(!summary\?\.generatedAt\) return null;/);
+  assert.match(signals, /timeZone: "Asia\/Seoul", month: "long", day: "numeric", weekday: "short"/);
+
+  // A status sentence is not a number. Rendering it at the KPI number size
+  // pushed "오늘 전체 시간대 확인 불가" onto a second line and into the next block.
+  assert.match(signals, /data-kind=\{expectedTotal === null \? "status" : "value"\}/);
+  assert.match(signals, /data-kind=\{peak \? "value" : "status"\}/);
+  assert.match(css, /\.airport-today-grid strong\[data-kind="status"\]/);
+  const statusRule = css.match(/\.airport-today-grid strong\[data-kind="status"\] \{([^}]*)\}/)?.[1] ?? "";
+  assert.match(statusRule, /word-break: keep-all/);
+  assert.match(statusRule, /line-height: 1\.4/);
+
+  // Each metric keeps its own retrieval time when they differ, at the smallest
+  // size on the card; identical times collapse to one section line instead.
+  assert.match(signals, /const sharesOneFreshness = distinctFreshness\.length <= 1;/);
+  assert.match(signals, /className="metric-freshness"/);
+  assert.match(css, /\.airport-today-grid small\.metric-freshness \{[^}]*font-size: 8px/);
+});
+
+test("remaining timestamps state what they mean and never reuse the collected-at wording", async () => {
+  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  // Foreign presence carries an OBSERVATION time published with delay, so it
+  // goes through the same human freshness formatter (today / yesterday / older).
+  assert.match(signals, /formatHumanFreshness\(block\.foreignPresence\.referenceAt/);
+  // The passenger forecast row describes a TARGET band, not a retrieval moment,
+  // so it renders as a band and must not borrow the "as of" wording.
+  assert.match(signals, /formatKstBand\(forecast\.targetStartAt, forecast\.targetEndAt\)/);
+  assert.doesNotMatch(signals, /basis\[lang\]\} \$\{formatKstClock/);
+  // The old month.day clock helper is gone entirely once nothing needs it.
+  assert.doesNotMatch(signals, /function formatKstClock/);
+  assert.doesNotMatch(signals, /formatKstClock\(/);
+});
+
 test("applies a user-defined month range to airport and business history", async () => {
   const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
@@ -416,8 +491,11 @@ test("makes sample demand and unavailable airport pressure impossible to mistake
   assert.match(page, /오늘 예상 출국객·실제 출발 운항·현재 출국장 흐름을 구분해 보여줍니다/);
   assert.match(live, /인천공항 공식 예상 · 실제 출국객 집계 아님/);
   assert.match(live, /실제 운항편 기준 · 승객 수 아님/);
-  for (const label of ["예시 날짜", "SAMPLE DATE", "示例日期", "サンプル日付"]) assert.match(page, new RegExp(label));
-  assert.doesNotMatch(page, /<span className="kst-chip">KST · AUG 23<\/span>/);
+  for (const label of ["예시 날짜", "SAMPLE DATE", "示例日期", "サンプル日付", "20:42 KST"]) assert.doesNotMatch(page, new RegExp(label));
+  // The header date is no longer a hardcoded sample: it renders the KST day of
+  // the data that is actually on screen, and disappears when there is no data.
+  assert.match(page, /<KstTodayChip lang=\{lang\} \/>/);
+  assert.match(page, /<figcaption>SEOUL<\/figcaption>/);
   assert.match(page, /가짜 게이트 범위나 사람 수를 표시하지 않습니다/);
   assert.doesNotMatch(page, /<WhatChanged/);
   assert.doesNotMatch(page, /HISTORY · 4-WEEK COMPARISON/);
