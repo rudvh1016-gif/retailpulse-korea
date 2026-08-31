@@ -6,6 +6,7 @@ import {
 } from "../../../../lib/seoul-foreign";
 import {
   summarizeCurrentBusiestDepartureHalls,
+  summarizeRemainingPassengerForecast,
   summarizeTodayPassengerForecast,
   summarizeTodayTopGate,
   summarizeTodayTopGateByTerminal,
@@ -13,6 +14,14 @@ import {
   type AirportForecastAggregateRow,
   type AirportTodayFlightRow,
 } from "../../../../lib/airport-today-summary";
+import {
+  isValidKstDay,
+  kstDayBounds,
+  kstDayOf,
+  kstHourStartIsoOf,
+  kstNowIsoOf,
+  relateKstDay,
+} from "../../../../lib/kst";
 
 export const dynamic = "force-dynamic";
 
@@ -39,12 +48,32 @@ export async function safeAll<T>(run: () => Promise<T[]>): Promise<T[]> {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const generatedAt = new Date().toISOString();
   const now = Date.parse(generatedAt);
   // Canonical KST-sourced rows store +09:00 offsets; compare lexicographically
   // in the same offset space rather than against the UTC string.
-  const kstNowIso = `${new Date(now + 9 * 3_600_000).toISOString().slice(0, 19)}+09:00`;
+  const kstNowIso = kstNowIsoOf(generatedAt);
+  const kstToday = kstDayOf(generatedAt);
+  // Hourly bands are keyed by their start, so the band the reader is standing
+  // in must be kept — filtering at the exact instant would drop it.
+  const kstHourStart = kstHourStartIsoOf(generatedAt);
+
+  // An explicit ?date= selects a KST service day for the day-scoped blocks
+  // (airport forecast, flights, recorded Seoul observations). Anything that is
+  // not a real calendar day falls back to today rather than erroring, so a
+  // hand-edited URL can never blank the page.
+  const requestedDateRaw = (() => {
+    try {
+      return new URL(request.url).searchParams.get("date");
+    } catch {
+      return null;
+    }
+  })();
+  const serviceDate = isValidKstDay(requestedDateRaw) ? requestedDateRaw : kstToday;
+  const dayRelation = relateKstDay(serviceDate, kstToday);
+  const { startAt: dayStartAt } = kstDayBounds(serviceDate);
+
   try {
     const db = await getDb();
     const client = db.$client;
@@ -62,25 +91,29 @@ export async function GET() {
       WHERE observed_at = (SELECT MAX(observed_at) FROM seoul_realtime_area b WHERE b.area = a.area)`,
     ).all<Row>()).results ?? []);
 
+    // Seoul publishes a rolling 12-hour forecast, so from mid-evening onward
+    // every band it publishes falls on the next calendar day. The horizon is
+    // therefore taken as-is and each band's own day is reported, instead of
+    // clipping to "today" and reporting a live forecast as unavailable.
     const realtimeForecastRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT area, issued_at AS issuedAt, target_at AS targetAt, congestion_level AS congestionLevel,
         congestion_label AS congestionLabel, population_min AS populationMin, population_max AS populationMax,
         retrieved_at AS retrievedAt
       FROM seoul_realtime_forecast f
-      WHERE issued_at = (SELECT MAX(issued_at) FROM seoul_realtime_forecast g WHERE g.area = f.area)
-        AND target_at >= ?
-      ORDER BY target_at LIMIT 36`,
-    ).bind(kstNowIso).all<Row>()).results ?? []);
+      WHERE f.issued_at = (SELECT MAX(g.issued_at) FROM seoul_realtime_forecast g WHERE g.area = f.area)
+        AND f.target_at >= ?
+      ORDER BY f.area, f.target_at LIMIT 120`,
+    ).bind(kstHourStart).all<Row>()).results ?? []);
 
     const weatherRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT area, issued_at AS issuedAt, target_at AS targetAt,
         precipitation_probability AS precipitationProbability,
         temperature_tenth_c AS temperatureTenthC, condition_code AS conditionCode
       FROM weather_forecast w
-      WHERE issued_at = (SELECT MAX(issued_at) FROM weather_forecast x WHERE x.area = w.area)
-        AND target_at >= ?
-      ORDER BY target_at LIMIT 72`,
-    ).bind(kstNowIso).all<Row>()).results ?? []);
+      WHERE w.issued_at = (SELECT MAX(x.issued_at) FROM weather_forecast x WHERE x.area = w.area)
+        AND w.target_at >= ?
+      ORDER BY w.area, w.target_at LIMIT 180`,
+    ).bind(kstHourStart).all<Row>()).results ?? []);
 
     const eventRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT area, content_id AS contentId, title, event_start AS eventStart,
@@ -88,7 +121,7 @@ export async function GET() {
       FROM tourism_events
       WHERE COALESCE(event_end, event_start) >= ?
       ORDER BY event_start LIMIT 30`,
-    ).bind(kstNowIso.slice(0, 10)).all<Row>()).results ?? []);
+    ).bind(serviceDate).all<Row>()).results ?? []);
 
     const salesRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT area, quarter_code AS quarterCode, trade_area_code AS tradeAreaCode,
@@ -129,10 +162,8 @@ export async function GET() {
       ORDER BY terminal, zone LIMIT 24`,
     ).all<Row>()).results ?? []);
 
-    const kstToday = new Date(now + 9 * 3_600_000).toISOString().slice(0, 10);
-
     // A5 official aggregate departure rows only. Component rows never enter
-    // today's total or peak calculation, preventing provider-total double count.
+    // the total or peak calculation, preventing provider-total double count.
     const passengerForecastRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT terminal, direction, is_aggregate AS isAggregate,
         target_date AS targetDate, time_band_raw AS timeBandRaw,
@@ -141,20 +172,20 @@ export async function GET() {
       FROM airport_passenger_forecast f
       WHERE f.direction = 'departure' AND f.is_aggregate = 1 AND f.target_date = ?
       ORDER BY target_start_at, terminal LIMIT 96`,
-    ).bind(kstToday).all<Row>()).results ?? []);
+    ).bind(serviceDate).all<Row>()).results ?? []);
 
     const flightRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT physical_flight_id AS physicalFlightId, terminal, gate, retrieved_at AS retrievedAt
       FROM airport_flights
       WHERE direction = 'departure' AND substr(scheduled_at, 1, 10) = ?
       LIMIT 2000`,
-    ).bind(kstToday).all<Row>()).results ?? []);
+    ).bind(serviceDate).all<Row>()).results ?? []);
 
     const flightCountRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT COUNT(DISTINCT physical_flight_id) AS flights
       FROM airport_flights
       WHERE direction = 'departure' AND substr(scheduled_at, 1, 10) = ?`,
-    ).bind(kstToday).all<Row>()).results ?? []);
+    ).bind(serviceDate).all<Row>()).results ?? []);
 
     // A1 terminal-scoped distinct physical-flight counts. A null-terminal
     // row is never guessed into T1 or T2 — it only ever counts toward the
@@ -164,7 +195,7 @@ export async function GET() {
       FROM airport_flights
       WHERE direction = 'departure' AND substr(scheduled_at, 1, 10) = ? AND terminal IS NOT NULL
       GROUP BY terminal`,
-    ).bind(kstToday).all<Row>()).results ?? []);
+    ).bind(serviceDate).all<Row>()).results ?? []);
 
     const scheduledRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT terminal, COUNT(*) AS flights, MIN(scheduled_time) AS firstTime, MAX(scheduled_time) AS lastTime,
@@ -172,18 +203,40 @@ export async function GET() {
       FROM airport_scheduled_flights
       WHERE valid_from <= ? AND valid_to >= ?
       GROUP BY terminal ORDER BY terminal`,
-    ).bind(kstToday, kstToday).all<Row>()).results ?? []);
+    ).bind(serviceDate, serviceDate).all<Row>()).results ?? []);
+
+    // Which KST days actually hold data, so the date picker can offer only
+    // days that exist instead of inviting the reader into an empty screen.
+    const flightDateRows = await safeAll<Row>(async () => (await client.prepare(
+      `SELECT DISTINCT substr(scheduled_at, 1, 10) AS day FROM airport_flights
+      WHERE direction = 'departure' ORDER BY day DESC LIMIT 21`,
+    ).all<Row>()).results ?? []);
+    const forecastDateRows = await safeAll<Row>(async () => (await client.prepare(
+      `SELECT DISTINCT target_date AS day FROM airport_passenger_forecast
+      WHERE direction = 'departure' AND is_aggregate = 1 ORDER BY day DESC LIMIT 21`,
+    ).all<Row>()).results ?? []);
+    const observedDateRows = await safeAll<Row>(async () => (await client.prepare(
+      `SELECT DISTINCT substr(observed_at, 1, 10) AS day FROM seoul_realtime_area
+      ORDER BY day DESC LIMIT 21`,
+    ).all<Row>()).results ?? []);
+    const dayList = (rows: Row[]) => rows
+      .map((row) => String(row.day ?? ""))
+      .filter((day) => isValidKstDay(day))
+      .sort();
 
     const areas = Object.fromEntries(AREAS.map((area) => {
       const realtime = realtimeRows.find((row) => row.area === area) ?? null;
       const foreignPresence = foreignPresenceRows.find((row) => row.area === area) ?? null;
       const salesForArea = salesRows.filter((row) => row.area === area);
       const salesTotal = salesForArea.reduce((sum, row) => sum + Number(row.salesAmount ?? 0), 0);
+      const eventsForArea = eventRows.filter((row) => row.area === area);
       return [area, {
         realtime: realtime ? { ...realtime, freshness: freshnessOf(realtime.observedAt, REALTIME_STALE_MINUTES, now) } : null,
-        realtimeForecast: realtimeForecastRows.filter((row) => row.area === area).slice(0, 6),
-        weather: weatherRows.filter((row) => row.area === area).slice(0, 12),
-        events: eventRows.filter((row) => row.area === area).slice(0, 3),
+        // The whole published horizon, not a "today" slice — see the query note.
+        realtimeForecast: realtimeForecastRows.filter((row) => row.area === area).slice(0, 12),
+        weather: weatherRows.filter((row) => row.area === area).slice(0, 24),
+        events: eventsForArea.slice(0, 3),
+        eventCount: eventsForArea.length,
         sales: salesForArea.length ? {
           quarterCode: salesForArea[0].quarterCode,
           tradeAreaName: salesForArea[0].tradeAreaName,
@@ -195,7 +248,7 @@ export async function GET() {
       }];
     }));
 
-    const passengerToday = summarizeTodayPassengerForecast(passengerForecastRows as unknown as AirportForecastAggregateRow[], kstToday);
+    const passengerToday = summarizeTodayPassengerForecast(passengerForecastRows as unknown as AirportForecastAggregateRow[], serviceDate);
     const distinctFlightsToday = Number(flightCountRows[0]?.flights ?? 0);
     const distinctFlightsByTerminal: Record<string, number> = Object.fromEntries(
       flightCountByTerminalRows.filter((row) => row.terminal).map((row) => [String(row.terminal), Number(row.flights)]),
@@ -225,6 +278,20 @@ export async function GET() {
     const upcomingForecast = passengerForecastRows.filter((row) => String(row.targetEndAt ?? "") >= kstNowIso)
       .filter((row, index, all) => all.findIndex((candidate) => candidate.terminal === row.terminal) === index);
 
+    // "From this hour to the end of the day" is only meaningful for a day that
+    // is still running, and only when full-day coverage is proven.
+    const remainingAll = dayRelation === "TODAY"
+      ? summarizeRemainingPassengerForecast(passengerToday.timeline, passengerToday.coverage.all, generatedAt)
+      : null;
+    const remainingByTerminal = Object.fromEntries(
+      Object.entries(passengerToday.timelineByTerminal).map(([terminal, timeline]) => [
+        terminal,
+        dayRelation === "TODAY"
+          ? summarizeRemainingPassengerForecast(timeline, passengerToday.coverage.byTerminal[terminal] ?? "UNAVAILABLE", generatedAt)
+          : null,
+      ]),
+    );
+
     const topDepartureGateByTerminal = Object.fromEntries(
       Object.entries(flightsTodayByTerminal).map(([terminal, summary]) => [
         terminal,
@@ -250,6 +317,14 @@ export async function GET() {
     return Response.json({
       mode: "live-summary",
       generatedAt,
+      todayKst: kstToday,
+      serviceDateKst: serviceDate,
+      dayRelation,
+      dateAvailability: {
+        airportFlights: dayList(flightDateRows),
+        airportPassengerForecast: dayList(forecastDateRows),
+        seoulObserved: dayList(observedDateRows),
+      },
       sources,
       areas,
       airport: {
@@ -268,12 +343,14 @@ export async function GET() {
         topDepartureGateRetrievedAtByTerminal: departureGateRetrievedAtByTerminal,
         gateCoverageRatio: flightsToday.gateCoverageRatio,
         gateCoverageRatioByTerminal,
-        serviceDateKst: kstToday,
-        periodStartAt: `${kstToday}T00:00:00+09:00`,
-        periodEndAt: `${kstToday}T23:59:59+09:00`,
+        serviceDateKst: serviceDate,
+        periodStartAt: dayStartAt,
+        periodEndAt: `${serviceDate}T23:59:59+09:00`,
         latestRetrievedAt: latestAirportRetrieval,
         todayExpectedPassengersTotal: passengerToday.total,
         todayExpectedPassengersByTerminal: passengerToday.totalByTerminal,
+        remainingExpectedPassengers: remainingAll,
+        remainingExpectedPassengersByTerminal: remainingByTerminal,
         passengerForecastRetrievedAt: passengerToday.retrievedAt,
         passengerForecastRetrievedAtByTerminal: passengerToday.retrievedAtByTerminal,
         peakExpectedTimeBand: passengerToday.peak,
@@ -295,6 +372,10 @@ export async function GET() {
     return Response.json({
       mode: "degraded",
       generatedAt,
+      todayKst: kstToday,
+      serviceDateKst: serviceDate,
+      dayRelation,
+      dateAvailability: { airportFlights: [], airportPassengerForecast: [], seoulObserved: [] },
       sources: [],
       areas: {},
       airport: {
@@ -303,9 +384,10 @@ export async function GET() {
         topDepartureGate: null, topDepartureGateTerminal: null, topDepartureGateFlights: null,
         topDepartureGateByTerminal: {}, topDepartureGateRetrievedAt: null, topDepartureGateRetrievedAtByTerminal: {},
         busyDepartureGates: [], busyDepartureGatesByTerminal: {},
-        gateCoverageRatio: 0, gateCoverageRatioByTerminal: {}, serviceDateKst: null,
+        gateCoverageRatio: 0, gateCoverageRatioByTerminal: {}, serviceDateKst: serviceDate,
         periodStartAt: null, periodEndAt: null, latestRetrievedAt: null,
         todayExpectedPassengersTotal: null, todayExpectedPassengersByTerminal: {},
+        remainingExpectedPassengers: null, remainingExpectedPassengersByTerminal: {},
         passengerForecastRetrievedAt: null, passengerForecastRetrievedAtByTerminal: {},
         peakExpectedTimeBand: null, peakExpectedTimeBandByTerminal: {},
         peakExpectedPassengers: null, peakExpectedPassengersByTerminal: {},
@@ -313,7 +395,7 @@ export async function GET() {
         forecastCoverage: { all: "UNAVAILABLE", byTerminal: {} },
         scheduled: [], passengerForecast: [],
       },
-      message: "Live sources are not connected. Official historical and Demo-labelled views remain available.",
+      message: "Live sources are not connected. Official historical views remain available.",
     }, { status: 200, headers: { "cache-control": "no-store" } });
   }
 }

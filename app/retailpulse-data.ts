@@ -74,23 +74,6 @@ export const foreignJulyDetail = {
   seongsu: { average: 4443, china: 1983, chinaShare: 44.6, peakHour: "16:00", peakWeekday: 6 },
 };
 
-/** Presentation fixtures only. Never use these rows as live or official operational data. */
-export const demoFlights = [
-  { time: "07:35", code: "KE901", airline: "KE", airlineKo: "대한항공", airlineEn: "Korean Air", airlineJa: "大韓航空", city: "PARIS / CDG", region: "EUROPE", terminal: "T2", gate: "248", checkin: "E", kind: "departures", status: "onTime" },
-  { time: "08:10", code: "OZ102", airline: "OZ", airlineKo: "아시아나항공", airlineEn: "Asiana Airlines", airlineJa: "アシアナ航空", city: "TOKYO / NRT", region: "JAPAN", terminal: "T1", gate: "31", checkin: "C", kind: "departures", status: "onTime" },
-  { time: "08:25", code: "LJ201", airline: "LJ", airlineKo: "진에어", airlineEn: "Jin Air", airlineJa: "ジンエアー", city: "OSAKA / KIX", region: "JAPAN", terminal: "T2", gate: "234", checkin: "G", kind: "departures", status: "delayed" },
-  { time: "09:20", code: "KE703", airline: "KE", airlineKo: "대한항공", airlineEn: "Korean Air", airlineJa: "大韓航空", city: "TOKYO / NRT", region: "JAPAN", terminal: "T2", gate: "252", checkin: "E", kind: "departures", status: "onTime" },
-  { time: "09:45", code: "7C1101", airline: "7C", airlineKo: "제주항공", airlineEn: "Jeju Air", airlineJa: "チェジュ航空", city: "TOKYO / NRT", region: "JAPAN", terminal: "T1", gate: "16", checkin: "L", kind: "departures", status: "onTime" },
-  { time: "10:05", code: "OZ361", airline: "OZ", airlineKo: "아시아나항공", airlineEn: "Asiana Airlines", airlineJa: "アシアナ航空", city: "SHANGHAI / PVG", region: "CHINA", terminal: "T1", gate: "29", checkin: "C", kind: "departures", status: "delayed" },
-  { time: "10:35", code: "TW281", airline: "TW", airlineKo: "티웨이항공", airlineEn: "T'way Air", airlineJa: "ティーウェイ航空", city: "OSAKA / KIX", region: "JAPAN", terminal: "T1", gate: "12", checkin: "H", kind: "departures", status: "onTime" },
-  { time: "11:10", code: "CA124", airline: "CA", airlineKo: "중국국제항공", airlineEn: "Air China", airlineJa: "中国国際航空", city: "BEIJING / PEK", region: "CHINA", terminal: "T1", gate: "46", checkin: "J", kind: "departures", status: "cancelled" },
-  { time: "11:40", code: "KE657", airline: "KE", airlineKo: "대한항공", airlineEn: "Korean Air", airlineJa: "大韓航空", city: "BANGKOK / BKK", region: "SOUTHEAST ASIA", terminal: "T2", gate: "246", checkin: "E", kind: "departures", status: "onTime" },
-  { time: "12:25", code: "LJ031", airline: "LJ", airlineKo: "진에어", airlineEn: "Jin Air", airlineJa: "ジンエアー", city: "CEBU / CEB", region: "SOUTHEAST ASIA", terminal: "T2", gate: "228", checkin: "G", kind: "departures", status: "onTime" },
-  { time: "13:30", code: "KE704", airline: "KE", airlineKo: "대한항공", airlineEn: "Korean Air", airlineJa: "大韓航空", city: "TOKYO / NRT", region: "JAPAN", terminal: "T2", gate: "251", checkin: "—", kind: "arrivals", status: "onTime" },
-  { time: "14:10", code: "OZ362", airline: "OZ", airlineKo: "아시아나항공", airlineEn: "Asiana Airlines", airlineJa: "アシアナ航空", city: "SHANGHAI / PVG", region: "CHINA", terminal: "T1", gate: "30", checkin: "—", kind: "arrivals", status: "delayed" },
-  { time: "15:05", code: "7C1102", airline: "7C", airlineKo: "제주항공", airlineEn: "Jeju Air", airlineJa: "チェジュ航空", city: "TOKYO / NRT", region: "JAPAN", terminal: "T1", gate: "15", checkin: "—", kind: "arrivals", status: "onTime" },
-];
-
 export const sourceCatalog = [
   { source: "INCHEON AIRPORT FORECAST", provider: "Incheon Airport", use: { ko: "D+1/D+2 여객예고·시간대 혼잡", en: "D+1/D+2 passenger outlook and hourly crowding", zh: "D+1/D+2客流预告与分时拥挤" }, status: "AUTOMATION_REVIEW", realtime: "Official web / Excel", history: "Capture after launch", coverage: "Departure D+2 · arrival/transfer D+1", lag: "Daily 17:00", geo: "ALL / T1 / T2", key: "No key shown on public page", free: "Public viewing / Excel", commercial: "Automation terms not verified", redistribution: "Derived summaries after review", priority: "P0", tier: "conditional" },
   { source: "INCHEON AIRPORT STATISTICS", provider: "Incheon Airport", use: { ko: "공식 월·연·터미널·항공사 실적", en: "Official monthly, annual, terminal and airline results", zh: "官方月度、年度、航站楼与航司实绩" }, status: "BACKFILL_AVAILABLE", realtime: "No", history: "Official download", coverage: "2010.01 — 2026.07", lag: "Next month · 5 business days", geo: "ALL / T1 / T2", key: "No", free: "Public download", commercial: "Source attribution", redistribution: "Aggregates only", priority: "P0", tier: "ready" },

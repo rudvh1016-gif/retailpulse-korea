@@ -750,8 +750,21 @@ function requiredA5String(record: Record<string, unknown>, key: "adate" | "atime
 
 /**
  * A5 `atime` is an hourly interval such as "09_10" or "23_24", not an
- * instantaneous observation. "23_24" must resolve to next-day 00:00, never
- * an invalid same-day "24:00".
+ * instantaneous observation. The final band of a KST day must resolve to
+ * next-day 00:00, never an invalid same-day "24:00".
+ *
+ * The provider writes that final band as `"23_00"` — the clock wrapping past
+ * midnight — as well as `"23_24"`. Production evidence (2026-08-31 diagnostic):
+ * every day stored exactly 23 of 24 bands, ending at 23:00, while the
+ * collector reported one `SCHEMA_A5_ATIME_END_HOUR` rejection per request.
+ * Rejecting the wrap form cost the last band of every single day, which in
+ * turn made `evaluateTerminalCoverage` permanently PARTIAL and hid the daily
+ * total, the peak and the timeline behind "확인 불가".
+ *
+ * `23_00` is accepted because it is unambiguous: a band that starts at 23:00
+ * and ends at hour 00 can only end at the following midnight. A `00` end hour
+ * after any other start (`05_00`) stays rejected — that would be a backwards
+ * or day-long interval, and inventing a meaning for it would fabricate data.
  */
 function parseA5TimeBand(adate: string, atime: string): { targetDate: string; targetStartAt: string; targetEndAt: string } {
   const dateMatch = /^(\d{4})(\d{2})(\d{2})$/.exec(adate.trim());
@@ -760,8 +773,11 @@ function parseA5TimeBand(adate: string, atime: string): { targetDate: string; ta
   const bandMatch = /^(\d{2})_(\d{2})$/.exec(atime.trim());
   if (!bandMatch) throw new SourceFetchError("SCHEMA", undefined, "A5_ATIME_FORMAT");
   const startHour = Number(bandMatch[1]);
-  const endHour = Number(bandMatch[2]);
+  const rawEndHour = Number(bandMatch[2]);
   if (!Number.isInteger(startHour) || startHour < 0 || startHour > 23) throw new SourceFetchError("SCHEMA", undefined, "A5_ATIME_START_HOUR");
+  // Normalize the midnight wrap before range-checking, so the day's last band
+  // is kept instead of being discarded as an out-of-range end hour.
+  const endHour = rawEndHour === 0 && startHour === 23 ? 24 : rawEndHour;
   if (!Number.isInteger(endHour) || endHour < 1 || endHour > 24) throw new SourceFetchError("SCHEMA", undefined, "A5_ATIME_END_HOUR");
   const targetStartAt = `${targetDate}T${String(startHour).padStart(2, "0")}:00:00+09:00`;
   let targetEndAt: string;

@@ -40,7 +40,12 @@ test("area brief ignores past forecasts and never invents a future peak", () => 
   assert.equal(result.upcomingPeak, null);
 });
 
-test("area brief never calls a next-day forecast today's remaining peak", () => {
+// Seoul publishes a rolling 12-hour forecast, so late in the evening every
+// band it publishes falls on the next day. Discarding those bands reported a
+// live official forecast as unavailable (production diagnostic, 2026-08-31).
+// The guarantee that matters is that a next-day peak is never PRESENTED as
+// today's — which `dayOffset` states outright — not that it is thrown away.
+test("area brief surfaces a next-day peak but never labels it today", () => {
   const brief = buildAreaCurrentBrief({
     realtime: null,
     realtimeForecast: [{ targetAt: "2026-09-01T00:00:00+09:00", congestionLevel: 4, populationMin: 38_000, populationMax: 40_000 }],
@@ -48,7 +53,9 @@ test("area brief never calls a next-day forecast today's remaining peak", () => 
     eventCount: 0,
     nowIso: "2026-08-31T23:30:00+09:00",
   });
-  assert.equal(brief.upcomingPeak, null);
+  assert.equal(brief.upcomingPeak?.targetAt, "2026-09-01T00:00:00+09:00");
+  assert.equal(brief.upcomingPeak?.dayOffset, "TOMORROW");
+  assert.notEqual(brief.upcomingPeak?.dayOffset, "TODAY");
 });
 
 test("weather advice uses explicit rain thresholds and chooses only one action", () => {

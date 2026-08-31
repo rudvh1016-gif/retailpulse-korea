@@ -12,6 +12,7 @@
  * source is inspected. See lib/production-diagnostics.ts.
  */
 import { CloudflareD1RestDatabase } from "../lib/d1-rest";
+import { COVERAGE_PROBES, buildCoverageContext, isReadOnlyProbe } from "../lib/data-coverage";
 import { resolveDiagnosticSourceIds, sanitizeProductionDetail } from "../lib/production-diagnostics";
 import { resolveProductionDatabaseConfig } from "./production-database";
 
@@ -49,10 +50,31 @@ function safeRows(rows: unknown[] | undefined): Array<Record<string, unknown>> {
   });
 }
 
+// Data coverage: what the UI can actually render right now, which
+// source_health alone cannot prove. Read-only by construction — a probe that
+// is not a bare SELECT is refused rather than executed.
+const coverageContext = buildCoverageContext(new Date().toISOString());
+const coverage: Array<Record<string, unknown>> = [];
+for (const probe of COVERAGE_PROBES) {
+  if (!isReadOnlyProbe(probe)) throw new Error(`coverage_probe_not_read_only_${probe.name}`);
+  try {
+    const result = await database.prepare(probe.sql).bind(...probe.params(coverageContext)).run();
+    coverage.push({ probe: probe.name, meaning: probe.meaning, rows: result.results ?? [] });
+  } catch (error) {
+    coverage.push({
+      probe: probe.name,
+      meaning: probe.meaning,
+      error: sanitizeProductionDetail(error instanceof Error ? error.message : error),
+    });
+  }
+}
+
 console.log(JSON.stringify({
   diagnostic: "production-operations-read-only",
   since,
   inspectedSourceIds: sourceIds,
+  coverageContext,
   collectorRuns: safeRows(runs.results),
   sourceHealth: safeRows(health.results),
+  dataCoverage: coverage,
 }, null, 2));

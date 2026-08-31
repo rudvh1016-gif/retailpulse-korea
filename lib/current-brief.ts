@@ -29,11 +29,22 @@ export type WeatherAdvice =
   | { kind: "HOT"; temperatureC: number; targetAt: string }
   | { kind: "COLD"; temperatureC: number; targetAt: string };
 
+/** Which KST day a forecast target falls on, relative to the reader's "now". */
+export type ForecastDayOffset = "TODAY" | "TOMORROW" | "LATER";
+
+export interface AreaUpcomingPeak extends AreaBriefForecast {
+  /** Says the day out loud so "03:00" can never read as three hours ago. */
+  dayOffset: ForecastDayOffset;
+}
+
 export interface AreaCurrentBrief {
   current: AreaBriefRealtime | null;
-  upcomingPeak: AreaBriefForecast | null;
+  upcomingPeak: AreaUpcomingPeak | null;
+  /** How far ahead the official forecast actually reaches, for honest labelling. */
+  forecastHorizonEndAt: string | null;
   weatherAdvice: WeatherAdvice | null;
   eventCount: number;
+  nextEventTitle: string | null;
   evidenceTypes: Array<"REALTIME" | "SEOUL_FORECAST" | "WEATHER" | "EVENTS">;
 }
 
@@ -44,11 +55,26 @@ export const WEATHER_THRESHOLDS = {
   coldTenthC: 50,
 } as const;
 
+/**
+ * Builds one area's "right now" brief from official rows only.
+ *
+ * The upcoming peak deliberately spans Seoul's whole published horizon rather
+ * than being clipped to the current calendar day. Seoul publishes a rolling
+ * 12-hour forecast, so from mid-evening onward every band it publishes falls
+ * on tomorrow: the 2026-08-31 production diagnostic caught the latest issue
+ * (22:55 KST) covering 00:00–11:00 the next day, which a "today only" filter
+ * threw away entirely and reported as "no forecast available" — while twelve
+ * perfectly good official bands sat in D1.
+ *
+ * The day is carried on `dayOffset` instead, so the caller states it in words
+ * and a 03:00 peak can never be mistaken for one that already passed.
+ */
 export function buildAreaCurrentBrief(input: {
   realtime: AreaBriefRealtime | null;
   realtimeForecast: AreaBriefForecast[];
   weather: AreaBriefWeather[];
   eventCount: number;
+  nextEventTitle?: string | null;
   nowIso: string;
 }): AreaCurrentBrief {
   const now = Date.parse(input.nowIso);
@@ -60,15 +86,27 @@ export function buildAreaCurrentBrief(input: {
     }).format(parsed);
   };
   const todayKst = kstDay(input.nowIso);
+  const tomorrowKst = Number.isFinite(now) ? kstDay(new Date(now + 86_400_000).toISOString()) : null;
   const isCurrentOrFuture = (value: string) => {
     const parsed = Date.parse(value);
     return Number.isFinite(parsed) && (!Number.isFinite(now) || parsed >= now);
   };
-  const upcomingPeak = input.realtimeForecast
-    .filter((row) => isCurrentOrFuture(row.targetAt) && kstDay(row.targetAt) === todayKst)
-    .sort((a, b) => b.congestionLevel - a.congestionLevel
-      || b.populationMax - a.populationMax
-      || a.targetAt.localeCompare(b.targetAt))[0] ?? null;
+  const dayOffsetOf = (value: string): ForecastDayOffset => {
+    const day = kstDay(value);
+    if (day && day === todayKst) return "TODAY";
+    if (day && day === tomorrowKst) return "TOMORROW";
+    return "LATER";
+  };
+  const ahead = input.realtimeForecast.filter((row) => isCurrentOrFuture(row.targetAt));
+  const peakRow = [...ahead].sort((a, b) => b.congestionLevel - a.congestionLevel
+    || b.populationMax - a.populationMax
+    || a.targetAt.localeCompare(b.targetAt))[0] ?? null;
+  const upcomingPeak: AreaUpcomingPeak | null = peakRow
+    ? { ...peakRow, dayOffset: dayOffsetOf(peakRow.targetAt) }
+    : null;
+  const forecastHorizonEndAt = ahead.length
+    ? [...ahead].sort((a, b) => a.targetAt.localeCompare(b.targetAt)).at(-1)!.targetAt
+    : null;
 
   const weather = input.weather.filter((row) => isCurrentOrFuture(row.targetAt)).slice(0, 12);
   const wettest = [...weather]
@@ -97,7 +135,15 @@ export function buildAreaCurrentBrief(input: {
   if (upcomingPeak) evidenceTypes.push("SEOUL_FORECAST");
   if (weatherAdvice) evidenceTypes.push("WEATHER");
   if (input.eventCount > 0) evidenceTypes.push("EVENTS");
-  return { current: input.realtime, upcomingPeak, weatherAdvice, eventCount: input.eventCount, evidenceTypes };
+  return {
+    current: input.realtime,
+    upcomingPeak,
+    forecastHorizonEndAt,
+    weatherAdvice,
+    eventCount: input.eventCount,
+    nextEventTitle: input.nextEventTitle ?? null,
+    evidenceTypes,
+  };
 }
 
 export interface AirportBriefCheckpoint {
