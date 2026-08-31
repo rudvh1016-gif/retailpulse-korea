@@ -146,3 +146,23 @@ test("the token never appears in the log record on any path", async () => {
   assert.equal(headers.authorization, `Bearer ${TOKEN}`);
   assert.equal(realtimeDispatchUrl().includes(TOKEN), false, "the URL must never carry the token");
 });
+
+test("the dispatch benchmark measures only the trigger path", () => {
+  const benchmark = readFileSync(new URL("../scripts/benchmark-realtime-dispatch.ts", import.meta.url), "utf8");
+  assert.match(benchmark, /dispatchRealtimeCollection/);
+  assert.match(benchmark, /MEASURED_LOCAL/);
+  // It must never import or invoke a collector, hash or D1 in the measured
+  // path. The `excluded` array names them as documentation, so assert on
+  // imports and call sites rather than on any occurrence of the words.
+  assert.equal(/from "\.\.\/lib\/collector"/.test(benchmark), false, "must not import the collectors");
+  assert.equal(/\bcollect[A-Z]\w*\(/.test(benchmark), false, "must not invoke a collector");
+  assert.equal(/\bsha256\(/.test(benchmark), false, "must not hash");
+  assert.equal(/\.(prepare|batch)\(/.test(benchmark), false, "must not touch D1");
+  assert.equal(benchmark.includes("import { dispatchRealtimeCollection }"), true, "only the dispatch is imported");
+  // fetch is stubbed, so no real GitHub request is ever made.
+  assert.match(benchmark, /stubFetch/);
+  // The emitted class must be MEASURED_LOCAL. The word MEASURED_CLOUDFLARE
+  // may appear in prose explaining what this is NOT, but never as the value.
+  assert.match(benchmark, /measurementClass: "MEASURED_LOCAL"/);
+  assert.equal(/measurementClass:\s*"MEASURED_CLOUDFLARE"/.test(benchmark), false, "local CPU must never be reported as Cloudflare-measured");
+});

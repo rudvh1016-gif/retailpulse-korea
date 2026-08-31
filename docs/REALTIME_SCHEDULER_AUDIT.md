@@ -111,7 +111,7 @@ A Cron Trigger whose handler makes exactly one `fetch` to the GitHub API to disp
 - Caveat: dispatched runs carry `event=workflow_dispatch`, not `event=schedule`, so the `VERIFIED_AUTO_SUCCESS` definition in the status model would need restating for the realtime group.
 - Rollback: delete the Cron Trigger and restore the `schedule:` block. No schema change, so no data rollback.
 
-This alternative is **proposed only**. It is not implemented, and it requires its own benchmark plus separate owner approval.
+This alternative was subsequently **approved for implementation and built** — see §8. Activation still requires separate owner approval.
 
 ## 7. Current state
 
@@ -125,3 +125,119 @@ This alternative is **proposed only**. It is not implemented, and it requires it
 | A1/A2/A3/A5/S2/S3/W1/T1 | unchanged, remain GitHub Actions collectors |
 
 Guardrails asserting this state live in `tests/hybrid.test.ts`.
+
+## 8. Trigger-only implementation (built, benchmarked, NOT activated)
+
+The owner approved implementing the §6 alternative. It is merged and inert.
+
+### Design
+
+```
+Cloudflare Cron (NOT configured)
+  -> one authenticated GitHub API request
+  -> dispatch collect-realtime.yml on main
+  -> GitHub Actions runs the unchanged A4-T1 / A4-T2 / S1 collectors
+  -> unchanged normalization, hashing, changed-only D1 persistence
+```
+
+`lib/realtime-dispatch.ts` performs no provider call, no parsing, no
+normalization, no hashing and no D1 read or write. `worker/index.ts` exposes
+`scheduled()`, which is unreachable while no Cron Trigger exists.
+
+### CPU benchmark — PASS (local)
+
+`scripts/benchmark-realtime-dispatch.ts`, 200 iterations after 20 warm-ups,
+`fetch` stubbed (zero GitHub calls, zero provider calls). Path measured:
+request construction, authorization header, single fetch dispatch, response
+handling. Collectors excluded by construction.
+
+| | CPU/invocation | % of 10 ms Cron budget |
+| --- | --- | --- |
+| median | **0.015 ms** | 0.15% |
+| p95 | **0.030 ms** | 0.30% |
+| max | 0.077 ms | 0.77% |
+
+Headroom at p95: **9.97 ms**. Compare the rejected design at 41.4 ms (414%).
+
+**Measurement class: `MEASURED_LOCAL`.** True Cloudflare Worker CPU stays
+**BLOCKED** — `api.cloudflare.com` is unreachable from the audit environment,
+so no Worker could be deployed or metered. The margin is ~330x, so the
+verdict does not hinge on that gap, but it must not be reported as
+`MEASURED_CLOUDFLARE`.
+
+### Call model
+
+| metric | value |
+| --- | --- |
+| external subrequests / invocation | 1 (limit 50) |
+| Worker Cron invocations / day | 96 (limit 100,000 requests/day) |
+| GitHub dispatches / day | 96 |
+| worst case GitHub requests / day | 192 (one bounded retry) |
+| provider calls made by the Worker | **0** |
+| D1 reads/writes made by the Worker | **0** |
+
+Provider quota is untouched: the Actions run makes exactly the same calls it
+makes today, at the same unchanged cadence.
+
+### Failure handling
+
+| condition | outcome | retried |
+| --- | --- | --- |
+| 204 | `dispatch_success` | — |
+| 401 / 403 | `dispatch_auth_failed` | **no** |
+| 404 | `dispatch_not_found` | **no** |
+| 422 | `dispatch_invalid_request` | **no** |
+| 429 | `dispatch_rate_limited` | **no** — adding load to a rate-limited endpoint is wrong |
+| 5xx | `dispatch_upstream_error` | once |
+| network / timeout | `dispatch_network_error` | once |
+| secret absent | `dispatch_missing_token` | no request at all |
+
+The handler returns a log record rather than throwing, so no path can leak
+the token through an error message. The record carries only
+`event`, `workflow`, `ref`, `status`, `attempts`, `at` — never a header,
+token or authenticated URL.
+
+### Owner action required before activation
+
+Create a **fine-grained** GitHub personal access token:
+
+- repository access: **only** `rudvh1016-gif/retailpulse-korea`
+- repository permission: **Actions: write** (nothing else)
+- store it as a Cloudflare Worker secret named `GITHUB_DISPATCH_TOKEN`,
+  via the Cloudflare dashboard or `wrangler secret put`
+
+Never paste the value into chat, a commit, `wrangler.production.jsonc`, or
+this document. The code references only the binding name.
+
+### Activation change (single atomic PR, not yet written)
+
+1. remove the `schedule:` block from `.github/workflows/collect-realtime.yml`
+   — `workflow_dispatch` stays so the Cron can trigger it
+2. add the Cron Trigger `"7,22,37,52 * * * *"` to `wrangler.production.jsonc`
+3. deploy, then confirm exactly one authoritative scheduler exists
+
+Both steps ship together so GitHub `schedule:` and Worker Cron are never
+simultaneously authoritative.
+
+### Rollback
+
+1. delete the Cron Trigger from `wrangler.production.jsonc` and deploy
+2. restore the `schedule:` block in `collect-realtime.yml`
+3. confirm a natural `event=schedule` run appears
+
+No migration, no schema change, no data rollback. The `GITHUB_DISPATCH_TOKEN`
+secret can be left in place or revoked independently.
+
+### Terminology
+
+Cloudflare-triggered runs carry **`event=workflow_dispatch`**, not
+`event=schedule`. They must not be described as schedule runs. Use
+**`VERIFIED_AUTO_TRIGGER_SUCCESS`** for an automated Cloudflare-triggered run
+that succeeded, keeping `VERIFIED_AUTO_SUCCESS` for genuine
+`event=schedule` runs.
+
+### Current state
+
+Worker Cron: **NONE**. GitHub realtime `schedule:`: **ON**. The scheduled
+handler exists but is unreachable. Guardrails in `tests/hybrid.test.ts` and
+`tests/realtime-dispatch.test.ts` assert all of this.
