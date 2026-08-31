@@ -221,6 +221,46 @@ export function summarizeTodayPassengerForecast(
   };
 }
 
+export interface RemainingForecast {
+  /** Official expected departures from the current hour band through the end of the KST day. */
+  expectedPassengers: number;
+  /** First band counted — always a whole band start, never a pro-rated partial hour. */
+  fromAt: string;
+  /** End of the KST service day. */
+  toAt: string;
+  bands: number;
+}
+
+/**
+ * "From the current hour to the end of today, how many departures does the
+ * official forecast still expect?"
+ *
+ * Only whole official bands are summed. The in-progress hour is counted in
+ * full and the returned `fromAt` says so, because pro-rating it by the
+ * minutes already elapsed would invent a number the provider never published.
+ *
+ * Returns null unless the day's coverage is COMPLETE. With a missing band the
+ * remainder would silently understate the true figure, and a number that is
+ * quietly too low is worse than no number at all.
+ */
+export function summarizeRemainingPassengerForecast(
+  timeline: ForecastBand[],
+  coverage: ForecastCoverageStatus,
+  nowIso: string,
+): RemainingForecast | null {
+  if (coverage !== "COMPLETE" || timeline.length === 0) return null;
+  const now = Date.parse(nowIso);
+  if (!Number.isFinite(now)) return null;
+  const remaining = timeline.filter((band) => Date.parse(band.targetEndAt) > now);
+  if (remaining.length === 0) return null;
+  return {
+    expectedPassengers: remaining.reduce((sum, band) => sum + band.expectedPassengers, 0),
+    fromAt: remaining[0].targetStartAt,
+    toAt: remaining.at(-1)!.targetEndAt,
+    bands: remaining.length,
+  };
+}
+
 export interface GateSummaryForScope {
   departuresTrackedToday: number | null;
   gateCoverageRatio: number;
