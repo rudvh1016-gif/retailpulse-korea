@@ -35,6 +35,9 @@
     "production": {
       "name": "retailpulse-korea-production",
       "workers_dev": true,
+      "triggers": {
+        "crons": ["7,22,37,52 * * * *"]
+      },
       "vars": {
         "APP_ENV": "production",
         "ENABLE_BETA_SIGNUPS": "false"

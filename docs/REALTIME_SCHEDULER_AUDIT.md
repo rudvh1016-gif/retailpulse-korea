@@ -1,11 +1,11 @@
 # REALTIME Scheduler Migration Audit (A4-T1 / A4-T2 / S1)
 
-**Status:** Benchmark gate **FAIL** — Worker Cron migration of the realtime collectors is **rejected**.
-**Worker Cron:** NONE / INACTIVE. No Cron Trigger created.
-**GitHub REALTIME schedule:** unchanged and still authoritative.
-**Measured:** 2026-08-31 KST, against `085338d`.
+**Status:** Benchmark gate **FAIL** — Worker Cron *execution* of the realtime collectors is **rejected** and stays rejected. The **trigger-only** alternative (§6) was built, benchmarked separately, and **activated** on owner approval.
+**Worker Cron:** **ACTIVE, trigger-only** — `7,22,37,52 * * * *` on `retailpulse-korea-production`; it dispatches `collect-realtime.yml` and does nothing else.
+**GitHub REALTIME schedule:** **REMOVED** at activation; `workflow_dispatch` retained so the Cron can start it. GitHub Actions still performs all collection.
+**Measured:** 2026-08-31 KST, against `085338d`. **Activated:** 2026-08-31 KST.
 
-Owner approval covered investigation, measurement and preparation only. It never authorized activation, and the benchmark result means no activation should be proposed for this design.
+Owner approval originally covered investigation, measurement and preparation only; the benchmark result permanently rejects running collectors inside Worker Cron. Activation approval, granted separately, applies **only** to the trigger-only architecture in §6 — never to Cron-executed collection.
 
 ## 1. Why the migration was investigated
 
@@ -117,8 +117,11 @@ This alternative was subsequently **approved for implementation and built** — 
 
 | item | state |
 | --- | --- |
-| Worker Cron | **NONE / INACTIVE** (no `triggers`/`crons` in any wrangler config; no `scheduled()` handler) |
-| GitHub REALTIME cron | **ON**, unchanged (`7,22,37,52 * * * *`) |
+| Worker Cron | **ACTIVE, trigger-only** — exactly one Cron `7,22,37,52 * * * *` under `env.production` in `wrangler.production.jsonc`; staging and the default environment stay Cron-free |
+| Worker Cron work performed | one authenticated GitHub `workflow_dispatch` call; **no** provider call, parsing, normalization, hashing, D1 read or D1 write |
+| GitHub REALTIME cron | **OFF** — the `schedule:` block was removed at activation so only one scheduler is ever authoritative |
+| GitHub REALTIME `workflow_dispatch` | **ON** — this is how the Cloudflare Cron starts the run |
+| Collection engine | unchanged: GitHub Actions runs the same A4-T1/A4-T2/S1 collectors, hashing and changed-only D1 writes |
 | A4-T1 collector | runtime healthy; last natural attempt ERROR `NETWORK_UND_ERR_CONNECT_TIMEOUT` during the 22:42–00:26Z outage |
 | A4-T2 collector | runtime healthy; same outage; no successful run yet (`last_retrieved_at` null) |
 | S1 collector | **VERIFIED_AUTO_SUCCESS** — `areas ok 3/3; changed writes 117` on run `33344541618` |
@@ -238,6 +241,13 @@ that succeeded, keeping `VERIFIED_AUTO_SUCCESS` for genuine
 
 ### Current state
 
-Worker Cron: **NONE**. GitHub realtime `schedule:`: **ON**. The scheduled
-handler exists but is unreachable. Guardrails in `tests/hybrid.test.ts` and
-`tests/realtime-dispatch.test.ts` assert all of this.
+Worker Cron: **ACTIVE (trigger-only)**, `7,22,37,52 * * * *`, production
+environment only. GitHub realtime `schedule:`: **OFF**;
+`workflow_dispatch`: **ON**. The scheduled handler is now reachable and is
+the sole authoritative realtime scheduler. Guardrails in
+`tests/hybrid.test.ts` and `tests/realtime-dispatch.test.ts` assert all of
+this, including that exactly one Cron expression exists, that staging has
+none, and that the handler never grows past the single dispatch call.
+
+A Cloudflare-triggered run appears in Actions with `event=workflow_dispatch`,
+never `event=schedule`; see "Terminology" above.
