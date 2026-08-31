@@ -109,21 +109,33 @@ test("production deployment applies D1 migrations before Worker deploy", async (
   assert.doesNotMatch(workflow, /CLOUDFLARE_ACCOUNT_ID/);
 });
 
-test("production collector remains gated and Worker Cron remains absent", async () => {
+test("production collector remains gated and only production carries a Worker Cron", async () => {
   const workflow = await readFile(new URL("../.github/workflows/collect-production.yml", import.meta.url), "utf8");
   const config = await readCloudflareConfig();
   assert.match(workflow, /vars\.ENABLE_PRODUCTION_COLLECTOR == 'true'/);
-  assert.equal(config.triggers, undefined);
-  assert.equal(config.env.staging.triggers, undefined);
-  assert.equal(config.env.production.triggers, undefined);
+  assert.equal(config.triggers, undefined, "the default environment must never carry a Cron Trigger");
+  assert.equal(config.env.staging.triggers, undefined, "staging must never carry a Cron Trigger");
+  assert.deepEqual(config.env.production.triggers?.crons, ["7,22,37,52 * * * *"]);
 });
 
+/**
+ * The REALTIME group is the one exception: since activation its cadence is
+ * owned by the Cloudflare trigger-only Cron, so it is dispatch-driven here
+ * rather than GitHub-scheduled. Every other cadence group must still carry
+ * its own real `schedule:`.
+ */
 test("every cadence-group collector workflow is gated behind the same owner-approved switch and actually scheduled", async () => {
   const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml", "collect-forecast.yml"];
+  const cloudflareScheduled = new Set(["collect-realtime.yml"]);
   for (const file of groupFiles) {
     const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
     assert.match(workflow, /vars\.ENABLE_PRODUCTION_COLLECTOR == 'true'/, `${file} must reuse the single production-collector gate`);
-    assert.match(workflow, /^\s*schedule:/m, `${file} must carry a real schedule, not workflow_dispatch-only`);
+    if (cloudflareScheduled.has(file)) {
+      assert.doesNotMatch(workflow, /^\s*schedule:/m, `${file} is scheduled by the Cloudflare Cron; a GitHub schedule would duplicate it`);
+      assert.match(workflow, /^\s*workflow_dispatch:/m, `${file} must stay dispatchable so the Cloudflare trigger can start it`);
+    } else {
+      assert.match(workflow, /^\s*schedule:/m, `${file} must carry a real schedule, not workflow_dispatch-only`);
+    }
     assert.match(workflow, /RPK_PRODUCTION_SOURCES: /, `${file} must select sources explicitly`);
     assert.doesNotMatch(workflow, /CLOUDFLARE_ACCOUNT_ID/, `${file} must resolve the account id from wrangler.production.jsonc, never a secret`);
   }
@@ -153,37 +165,65 @@ test("every production source is scheduled by exactly one cadence-group workflow
 });
 
 // ---------------------------------------------------------------------------
-// REALTIME Worker Cron migration guardrails (docs/ZERO_COST_HYBRID_AUDIT.md D.3/D.5)
+// REALTIME trigger-only scheduler guardrails, POST-ACTIVATION
+// (docs/ZERO_COST_HYBRID_AUDIT.md D.3/D.5, docs/REALTIME_SCHEDULER_AUDIT.md)
+//
+// Activated state: Cloudflare Production Cron is the single authoritative
+// realtime scheduler and only rings the alarm; GitHub Actions still performs
+// every provider call, hash and D1 write.
 // ---------------------------------------------------------------------------
 
-test("no Cloudflare Cron Trigger is configured in any wrangler config", () => {
-  for (const file of readdirSync(".").filter((name) => /^wrangler.*\.jsonc?$/.test(name))) {
-    const config = readFileSync(file, "utf8");
-    assert.equal(/"triggers"\s*:/.test(config), false, `${file} must not declare Cron triggers before owner activation approval`);
-    assert.equal(/"crons"\s*:/.test(config), false, `${file} must not declare crons before owner activation approval`);
-  }
+/** Exactly one Cron expression exists, on production only, at the audited cadence. */
+test("exactly one Cloudflare Cron Trigger exists and it is the production realtime trigger", () => {
+  const files = readdirSync(".").filter((name) => /^wrangler.*\.jsonc?$/.test(name));
+  assert.deepEqual(files, ["wrangler.production.jsonc"], "an unexpected wrangler config could hide a second Cron");
+  const config = JSON.parse(readFileSync("wrangler.production.jsonc", "utf8"));
+  assert.equal(config.triggers, undefined, "the default environment must stay Cron-free");
+  assert.equal(config.env.staging.triggers, undefined, "staging must stay Cron-free");
+  const crons = config.env.production.triggers?.crons;
+  assert.deepEqual(crons, ["7,22,37,52 * * * *"], "production must carry exactly one Cron at the audited cadence");
+  assert.equal(crons.length, 1, "a second production Cron would double the provider call budget");
 });
 
 /**
- * The owner approved the trigger-only design, so a scheduled() handler may
- * now exist — but it stays inert while no Cron Trigger is configured, and it
- * must never grow into Cron-executed collection work.
+ * The Cron is now live, so this guardrail is what keeps it an alarm clock:
+ * the handler may only dispatch, never grow into Cron-executed collection.
+ * docs/REALTIME_SCHEDULER_AUDIT.md measured that design at 414% of the Free
+ * 10 ms Cron CPU budget.
  */
-test("any Worker scheduled handler stays trigger-only and inert", () => {
+test("the live Worker scheduled handler stays trigger-only", () => {
   const worker = readFileSync("worker/index.ts", "utf8");
-  if (!/\bscheduled\s*[(:]/.test(worker)) return;
+  assert.match(worker, /\bscheduled\s*\(/, "the Cron Trigger requires a scheduled handler to reach");
   assert.match(worker, /dispatchRealtimeCollection/, "the only permitted Cron work is the GitHub dispatch");
   for (const forbidden of ["collectAirport", "collectSeoul", "collectWeather", "collectTourism", "sha256", "env.DB", "runD1Batches"]) {
     assert.equal(worker.includes(forbidden), false, `Cron work must not include ${forbidden}`);
   }
+  // No provider endpoint may ever be called from the Worker's Cron path.
+  for (const forbidden of ["apis.data.go.kr", "openapi.seoul.go.kr", "apihub.kma.go.kr"]) {
+    assert.equal(worker.includes(forbidden), false, `Cron work must not call the provider ${forbidden}`);
+  }
 });
 
-test("GitHub remains the single authoritative REALTIME scheduler during preparation", () => {
+test("Cloudflare is the single authoritative REALTIME scheduler and GitHub stays dispatchable", () => {
   const realtime = readFileSync(".github/workflows/collect-realtime.yml", "utf8");
-  // The GitHub schedule must stay present: removing it before Worker Cron is
-  // approved would leave the realtime group with no scheduler at all.
-  assert.match(realtime, /schedule:\s*\n\s*- cron: "7,22,37,52 \* \* \* \*"/);
+  // A GitHub schedule here would run alongside the live Cloudflare Cron and
+  // double the realtime provider call budget. It returns only via rollback,
+  // together with removing the Worker Cron.
+  assert.doesNotMatch(realtime, /^\s*schedule:/m, "the GitHub realtime schedule must stay off while the Worker Cron is live");
+  assert.doesNotMatch(realtime, /- cron:/, "no GitHub cron expression may remain in the realtime workflow");
+  assert.match(realtime, /^\s*workflow_dispatch:/m, "the Cloudflare trigger dispatches this workflow, so it must stay dispatchable");
+  // Collection semantics are untouched by activation: same three sources.
   assert.match(realtime, /RPK_PRODUCTION_SOURCES: airport_congestion,airport_congestion_t2,seoul_realtime/);
+});
+
+/** The dispatch target and the live Cron must name the same workflow file. */
+test("the production Cron and the dispatch target describe one scheduler path", () => {
+  const config = JSON.parse(readFileSync("wrangler.production.jsonc", "utf8"));
+  const dispatch = readFileSync("lib/realtime-dispatch.ts", "utf8");
+  assert.deepEqual(config.env.production.triggers.crons, ["7,22,37,52 * * * *"]);
+  assert.match(dispatch, /REALTIME_WORKFLOW_FILE = "collect-realtime\.yml"/);
+  assert.match(dispatch, /DISPATCH_REF = "main"/);
+  assert.equal(config.env.production.name, "retailpulse-korea-production");
 });
 
 test("the CPU benchmark measures the real collectors and makes no provider or D1 write call", () => {

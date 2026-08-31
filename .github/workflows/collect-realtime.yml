@@ -24,13 +24,18 @@ name: Collect Realtime Signals
 #                             assumption documented in docs/DATA_SOURCES.md
 #                             (INTERNAL_ESTIMATE, not OFFICIAL_USAGE). Source
 #                             data itself refreshes about every 5 minutes.
-# Cron uses :07/:22/:37/:52 (off the exact quarter-hour marks) per
-# docs/ENGINEERING_DIRECTION.md to avoid GitHub's scheduling congestion
-# points. KST is UTC+9 with no DST, so a fixed-interval cadence is identical
-# in both clocks.
+# SCHEDULER OWNERSHIP — this workflow deliberately has no `schedule:` block.
+# The authoritative realtime scheduler is the Cloudflare Production Worker's
+# trigger-only Cron (`"7,22,37,52 * * * *"` in wrangler.production.jsonc),
+# which makes one authenticated workflow_dispatch call per firing and does no
+# collection itself (see docs/REALTIME_SCHEDULER_AUDIT.md). The cadence is
+# unchanged; the :07/:22/:37/:52 offsets stay off the exact quarter-hour
+# marks per docs/ENGINEERING_DIRECTION.md, and KST is UTC+9 with no DST so a
+# fixed-interval cadence is identical in both clocks. Restoring `schedule:`
+# here while that Cron is live would create two authoritative schedulers and
+# double the provider call budget above — it is only the documented rollback
+# path, taken together with removing the Worker Cron.
 on:
-  schedule:
-    - cron: "7,22,37,52 * * * *"
   workflow_dispatch:
 
 permissions:
