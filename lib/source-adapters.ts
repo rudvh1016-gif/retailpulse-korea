@@ -2,9 +2,48 @@ import type { CanonicalRecord, QualityStatus, SourceStatus } from "./contracts";
 import { sha256 } from "./hash";
 
 export class SourceFetchError extends Error {
-  constructor(public readonly code: "TIMEOUT" | "HTTP" | "MALFORMED_JSON" | "SCHEMA", public readonly status?: number) {
-    super(code);
+  constructor(
+    public readonly code: "TIMEOUT" | "HTTP" | "MALFORMED_JSON" | "SCHEMA" | "NETWORK",
+    public readonly status?: number,
+    /** Connection-layer cause (ENOTFOUND, ECONNRESET, ...) when the platform reports one. */
+    public readonly causeCode?: string,
+  ) {
+    super(causeCode ? `${code}_${causeCode}` : code);
   }
+}
+
+/** Platform error codes are uppercase identifiers; anything else is not echoed. */
+const NETWORK_CAUSE_CODE = /^[A-Z][A-Z0-9_]{1,39}$/;
+
+/**
+ * Walks the error's cause chain for the platform's own code so operational
+ * detail records the real reason (ENOTFOUND, ECONNRESET, UND_ERR_CONNECT_TIMEOUT)
+ * instead of a generic label.
+ */
+function networkCauseCode(error: unknown): string | undefined {
+  const seen = new Set<unknown>();
+  let current: unknown = error;
+  while (current && typeof current === "object" && !seen.has(current)) {
+    seen.add(current);
+    const code = (current as { code?: unknown }).code;
+    if (typeof code === "string" && NETWORK_CAUSE_CODE.test(code)) return code;
+    current = (current as { cause?: unknown }).cause;
+  }
+  return undefined;
+}
+
+/**
+ * Only a real client-side abort is a TIMEOUT. Every other fetch rejection is
+ * a connection-layer failure, which previously reported the same "TIMEOUT"
+ * label — that made a DNS/TCP/TLS failure indistinguishable from a slow
+ * provider and pointed diagnosis at the timeout budget instead of the
+ * network. Classification only; retry behaviour is unchanged, because
+ * NETWORK carries no HTTP status and so takes the same branch TIMEOUT did.
+ */
+export function classifySourceFetchFailure(error: unknown): SourceFetchError {
+  if (error instanceof SourceFetchError) return error;
+  if (error instanceof Error && error.name === "AbortError") return new SourceFetchError("TIMEOUT");
+  return new SourceFetchError("NETWORK", undefined, networkCauseCode(error));
 }
 
 export async function fetchOfficialJson(url: URL, options: { timeoutMs?: number; retries?: number; retryDelayMs?: number } = {}): Promise<unknown> {
@@ -33,7 +72,7 @@ export async function fetchOfficialJson(url: URL, options: { timeoutMs?: number;
         throw new SourceFetchError("MALFORMED_JSON");
       }
     } catch (error) {
-      const normalized = error instanceof SourceFetchError ? error : new SourceFetchError("TIMEOUT");
+      const normalized = classifySourceFetchFailure(error);
       if (attempt === retries || (normalized.status && normalized.status < 500 && normalized.status !== 429)) throw normalized;
       await new Promise((resolve) => setTimeout(resolve, retryDelayMs * (2 ** attempt)));
     } finally {

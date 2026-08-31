@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { assertFeatureAvailableAtCutoff, assertTargetMatch, type ForecastFeature, type PredictionInput } from "../lib/contracts";
 import { createImmutablePrediction, fourWeekAverageBaseline, sameWeekdayBaseline, seasonalNaiveBaseline } from "../lib/forecast";
-import { fetchOfficialJson, normalizeAirportCongestion, normalizeAirportFlight, normalizeScheduledAirportFlight, SourceFetchError } from "../lib/source-adapters";
+import { classifySourceFetchFailure, fetchOfficialJson, normalizeAirportCongestion, normalizeAirportFlight, normalizeScheduledAirportFlight, SourceFetchError } from "../lib/source-adapters";
 
 const feature: ForecastFeature = {
   sourceId: "TEST",
@@ -151,4 +151,70 @@ test("handles the production source error matrix with bounded retries", async (c
   await assert.rejects(fetchOfficialJson(new URL("https://example.invalid"), { timeoutMs: 5, retries: 0 }), (error: unknown) => error instanceof SourceFetchError && error.code === "TIMEOUT");
 
   await assert.rejects(normalizeAirportFlight({ flightId: "KE703" }, "departure", "2026-08-25T00:00:00Z"), (error: unknown) => error instanceof SourceFetchError && error.code === "SCHEMA");
+});
+
+test("a real client abort is still classified TIMEOUT", () => {
+  const abort = new Error("The operation was aborted");
+  abort.name = "AbortError";
+  const classified = classifySourceFetchFailure(abort);
+  assert.equal(classified.code, "TIMEOUT");
+  assert.equal(classified.message, "TIMEOUT");
+  assert.equal(classified.causeCode, undefined);
+});
+
+test("connection-layer failures are classified NETWORK with the platform cause", () => {
+  // Node models a failed fetch as a TypeError wrapping the real cause.
+  const dnsFailure = new TypeError("fetch failed", { cause: Object.assign(new Error("getaddrinfo ENOTFOUND"), { code: "ENOTFOUND" }) });
+  const classified = classifySourceFetchFailure(dnsFailure);
+  assert.equal(classified.code, "NETWORK");
+  assert.equal(classified.causeCode, "ENOTFOUND");
+  // The operational detail now names the real reason instead of "TIMEOUT".
+  assert.equal(classified.message, "NETWORK_ENOTFOUND");
+
+  const reset = new TypeError("fetch failed", { cause: Object.assign(new Error("socket hang up"), { code: "ECONNRESET" }) });
+  assert.equal(classifySourceFetchFailure(reset).message, "NETWORK_ECONNRESET");
+
+  // An unknown-shaped failure stays NETWORK without inventing a cause.
+  const bare = classifySourceFetchFailure(new Error("something odd"));
+  assert.equal(bare.code, "NETWORK");
+  assert.equal(bare.message, "NETWORK");
+});
+
+test("classification never echoes a non-code value and survives a cause cycle", () => {
+  const lower = new TypeError("fetch failed", { cause: Object.assign(new Error("x"), { code: "not a code" }) });
+  assert.equal(classifySourceFetchFailure(lower).message, "NETWORK");
+
+  const leaky = new TypeError("fetch failed", { cause: Object.assign(new Error("x"), { code: "https://apis.data.go.kr/x?serviceKey=secret" }) });
+  assert.equal(classifySourceFetchFailure(leaky).message, "NETWORK");
+
+  const cyclic = new Error("a");
+  cyclic.cause = cyclic;
+  assert.equal(classifySourceFetchFailure(cyclic).code, "NETWORK");
+
+  // An already-classified error is returned untouched.
+  const existing = new SourceFetchError("HTTP", 503);
+  assert.equal(classifySourceFetchFailure(existing), existing);
+});
+
+test("network classification does not change how many requests a source makes", async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    throw new TypeError("fetch failed", { cause: Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" }) });
+  };
+  try {
+    // retries: 0 is what every data.go.kr collector uses — exactly one request.
+    await assert.rejects(
+      fetchOfficialJson(new URL("https://example.invalid"), { retries: 0 }),
+      (error: unknown) => error instanceof SourceFetchError && error.code === "NETWORK" && error.causeCode === "ECONNREFUSED",
+    );
+    assert.equal(calls, 1, "retries:0 must stay one request per call");
+
+    calls = 0;
+    await assert.rejects(fetchOfficialJson(new URL("https://example.invalid"), { retries: 1, retryDelayMs: 0 }), SourceFetchError);
+    assert.equal(calls, 2, "retries:1 must stay the pre-existing two requests");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
