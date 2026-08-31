@@ -1,7 +1,7 @@
 # REALTIME Scheduler Migration Audit (A4-T1 / A4-T2 / S1)
 
 **Status:** Benchmark gate **FAIL** — Worker Cron *execution* of the realtime collectors is **rejected** and stays rejected. The **trigger-only** alternative (§6) was built, benchmarked separately, and **activated** on owner approval.
-**Worker Cron:** **ACTIVE, trigger-only** — `7,22,37,52 * * * *` on `retailpulse-korea-production`; it dispatches `collect-realtime.yml` and does nothing else.
+**Worker Cron:** **ACTIVE, trigger-only** — `7,22,37,52 * * * *` dispatches `collect-realtime.yml`; `42 * * * *` dispatches `collect-forecast.yml`. Both run on `retailpulse-korea-production` and do nothing else.
 **GitHub REALTIME schedule:** **REMOVED** at activation; `workflow_dispatch` retained so the Cron can start it. GitHub Actions still performs all collection.
 **Measured:** 2026-08-31 KST, against `085338d`. **Activated:** 2026-08-31 KST.
 
@@ -117,7 +117,7 @@ This alternative was subsequently **approved for implementation and built** — 
 
 | item | state |
 | --- | --- |
-| Worker Cron | **ACTIVE, trigger-only** — exactly one Cron `7,22,37,52 * * * *` under `env.production` in `wrangler.production.jsonc`; staging and the default environment stay Cron-free |
+| Worker Cron | **ACTIVE, trigger-only** — exactly two Crons (`7,22,37,52 * * * *`, `42 * * * *`) under `env.production` in `wrangler.production.jsonc`; staging and the default environment stay Cron-free |
 | Worker Cron work performed | one authenticated GitHub `workflow_dispatch` call; **no** provider call, parsing, normalization, hashing, D1 read or D1 write |
 | GitHub REALTIME cron | **OFF** — the `schedule:` block was removed at activation so only one scheduler is ever authoritative |
 | GitHub REALTIME `workflow_dispatch` | **ON** — this is how the Cloudflare Cron starts the run |
@@ -173,14 +173,17 @@ verdict does not hinge on that gap, but it must not be reported as
 | metric | value |
 | --- | --- |
 | external subrequests / invocation | 1 (limit 50) |
-| Worker Cron invocations / day | 96 (limit 100,000 requests/day) |
-| GitHub dispatches / day | 96 |
-| worst case GitHub requests / day | 192 (one bounded retry) |
+| Worker Cron invocations / day | 120: realtime 96 + forecast 24 (limit 100,000 requests/day) |
+| GitHub dispatches / day | 120 |
+| worst case GitHub requests / day | 240 (one bounded retry) |
 | provider calls made by the Worker | **0** |
 | D1 reads/writes made by the Worker | **0** |
 
-Provider quota is untouched: the Actions run makes exactly the same calls it
-makes today, at the same unchanged cadence.
+Provider quota is untouched: the Actions runs make exactly the same calls at
+the same cadences. A5 remains about 48 provider calls/day (today + tomorrow
+per hourly cycle). Two Cron expressions are below the Workers Free account
+limit of five, and one external request per invocation is below the limit of
+50.
 
 ### Failure handling
 
@@ -241,13 +244,33 @@ that succeeded, keeping `VERIFIED_AUTO_SUCCESS` for genuine
 
 ### Current state
 
-Worker Cron: **ACTIVE (trigger-only)**, `7,22,37,52 * * * *`, production
-environment only. GitHub realtime `schedule:`: **OFF**;
-`workflow_dispatch`: **ON**. The scheduled handler is now reachable and is
-the sole authoritative realtime scheduler. Guardrails in
-`tests/hybrid.test.ts` and `tests/realtime-dispatch.test.ts` assert all of
-this, including that exactly one Cron expression exists, that staging has
-none, and that the handler never grows past the single dispatch call.
+Worker Cron: **ACTIVE (trigger-only)**, `7,22,37,52 * * * *` for realtime
+and `42 * * * *` for forecast, production environment only. Both GitHub
+workflows have `schedule:` **OFF** and `workflow_dispatch` **ON**. The
+scheduled handler routes only those exact Cron strings through a two-entry
+allowlist; an unknown Cron is inert. Guardrails in `tests/hybrid.test.ts` and
+`tests/realtime-dispatch.test.ts` assert exactly two production expressions,
+none in staging/default, and no provider, hash or D1 work in the handler.
 
 A Cloudflare-triggered run appears in Actions with `event=workflow_dispatch`,
 never `event=schedule`; see "Terminology" above.
+
+### 2026-09-01 forecast delivery and provider timeout evidence
+
+GitHub's native hourly A5 schedule was not reliable enough for this product:
+only a few `event=schedule` runs appeared across the observed day and they
+arrived at irregular times (for example run `33435544601` at 20:21 UTC for a
+`:42` schedule). Realtime Cloudflare-triggered runs, by contrast, repeatedly
+appeared about eight seconds after `:07/:22/:37/:52`. That evidence justifies
+moving A5's alarm only; collector semantics and provider volume do not move.
+
+The same audit found intermittent provider-side/network stalls, not a
+scheduler or D1-write failure. Realtime run `33440984511` reached Actions but
+both airport congestion sources returned ERROR after the 30-second request
+budget; runs `33439665144` and `33443484282` on either side succeeded for
+both sources, with S1 continuing in the failed run. The daily A2, A3 and
+TourAPI calls failed together against the same `apis.data.go.kr` gateway in
+run `33341744568`, while S2 succeeded. Existing last-good D1 rows were not
+deleted. Classification: `PROVIDER_SIDE_TRANSIENT`. There is no evidence for
+increasing cadence or adding an automatic retry, so the existing bounded
+single 30-second attempt remains unchanged.
