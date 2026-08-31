@@ -392,6 +392,31 @@ test("each Seoul area view opens with its own current brief built from the same 
   assert.match(css, /\.area-current-brief \{/);
 });
 
+test("the header date comes from the data on screen and long status text never uses the number size", async () => {
+  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  // The chip is derived from summary.generatedAt and stays silent without data,
+  // so the page can never claim a date it did not receive.
+  assert.match(signals, /export function KstTodayChip/);
+  assert.match(signals, /if \(!summary\?\.generatedAt\) return null;/);
+  assert.match(signals, /timeZone: "Asia\/Seoul", month: "long", day: "numeric", weekday: "short"/);
+
+  // A status sentence is not a number. Rendering it at the KPI number size
+  // pushed "오늘 전체 시간대 확인 불가" onto a second line and into the next block.
+  assert.match(signals, /data-kind=\{expectedTotal === null \? "status" : "value"\}/);
+  assert.match(signals, /data-kind=\{peak \? "value" : "status"\}/);
+  assert.match(css, /\.airport-today-grid strong\[data-kind="status"\]/);
+  const statusRule = css.match(/\.airport-today-grid strong\[data-kind="status"\] \{([^}]*)\}/)?.[1] ?? "";
+  assert.match(statusRule, /word-break: keep-all/);
+  assert.match(statusRule, /line-height: 1\.4/);
+
+  // Each metric keeps its own retrieval time when they differ, at the smallest
+  // size on the card; identical times collapse to one section line instead.
+  assert.match(signals, /const sharesOneFreshness = distinctFreshness\.length <= 1;/);
+  assert.match(signals, /className="metric-freshness"/);
+  assert.match(css, /\.airport-today-grid small\.metric-freshness \{[^}]*font-size: 8px/);
+});
+
 test("remaining timestamps state what they mean and never reuse the collected-at wording", async () => {
   const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
   // Foreign presence carries an OBSERVATION time published with delay, so it
@@ -467,7 +492,9 @@ test("makes sample demand and unavailable airport pressure impossible to mistake
   assert.match(live, /인천공항 공식 예상 · 실제 출국객 집계 아님/);
   assert.match(live, /실제 운항편 기준 · 승객 수 아님/);
   for (const label of ["예시 날짜", "SAMPLE DATE", "示例日期", "サンプル日付", "20:42 KST"]) assert.doesNotMatch(page, new RegExp(label));
-  assert.doesNotMatch(page, /className="kst-chip"/);
+  // The header date is no longer a hardcoded sample: it renders the KST day of
+  // the data that is actually on screen, and disappears when there is no data.
+  assert.match(page, /<KstTodayChip lang=\{lang\} \/>/);
   assert.match(page, /<figcaption>SEOUL<\/figcaption>/);
   assert.match(page, /가짜 게이트 범위나 사람 수를 표시하지 않습니다/);
   assert.doesNotMatch(page, /<WhatChanged/);

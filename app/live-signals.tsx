@@ -405,6 +405,23 @@ function localizeAirportBrief(brief: AirportCurrentBrief, lang: Lang): string[] 
   return lines.slice(0, 3);
 }
 
+// 헤더의 날짜. 예전에는 "예시 날짜 · 8월 23일"이라는 가짜 값이 박혀 있었다.
+// 이제는 실제 데이터가 만들어진 시각(summary.generatedAt)의 KST 날짜를 쓴다.
+// 데이터가 아직 없으면 아무 것도 쓰지 않는다 — 날짜를 지어내지 않는다.
+export function KstTodayChip({ lang }: { lang: Lang }) {
+  const summary = useLiveSummary();
+  if (!summary?.generatedAt) return null;
+  const parsed = new Date(summary.generatedAt);
+  if (Number.isNaN(parsed.getTime())) return null;
+  const locale = airportLocale(lang);
+  const label = new Intl.DateTimeFormat(locale, {
+    timeZone: "Asia/Seoul", month: "long", day: "numeric", weekday: "short",
+  }).format(parsed);
+  return <span className="kst-chip" title={`${summary.generatedAt} (Asia/Seoul)`}>
+    {lang === "ko" ? `${label} · KST` : lang === "ja" ? `${label} · KST` : `${label} · KST`}
+  </span>;
+}
+
 export function AirportTodaySummary({ lang, terminal = "all" }: { lang: Lang; terminal?: "all" | "T1" | "T2" }) {
   const summary = useLiveSummary();
   const airport = summary?.airport;
@@ -458,18 +475,23 @@ export function AirportTodaySummary({ lang, terminal = "all" }: { lang: Lang; te
     topGate,
   });
   const airportBriefLines = localizeAirportBrief(airportBrief, lang);
+  // 지표마다 수집 시각이 다르면(예: 예상승객 09:34 vs 운항 00:03) 어느 숫자가
+  // 언제 것인지 알 수 없으므로 각 칸에 아주 작게 붙인다. 네 값이 전부 같을 때만
+  // 반복을 피해 섹션에서 한 번만 보여준다.
   const distinctFreshness = [...new Set([passengerCollected, flightsCollected, gateCollected].filter((value): value is string => Boolean(value)))];
+  const sharesOneFreshness = distinctFreshness.length <= 1;
+  const perMetric = (value: string | null) => (sharesOneFreshness ? null : value);
   return <section className="airport-today" aria-labelledby="airport-today-title">
     <section className="current-brief airport-current-brief" aria-label={`${scopeLabel} current brief`}><p className="eyebrow">{scopeLabel} · NOW</p>{airportBriefLines.map((line, index) => index === 0 ? <strong key={line}>{line}</strong> : <p key={line}>{line}</p>)}</section>
     <div className="airport-period"><p><span>{scopeLabel}</span><strong>{airport.serviceDateKst ? formatKstServicePeriod(airport.serviceDateKst, lang) : airportTodayText.unavailable[lang]}</strong></p><p><span>{airportTodayText.retrieved[lang]}</span><strong>{airport.latestRetrievedAt ? formatHumanFreshness(airport.latestRetrievedAt, nowIso, lang) : airportTodayText.unavailable[lang]}</strong></p></div>
     <div className="section-head"><div><p className="eyebrow">OFFICIAL TODAY · {scopeLabel} · KST</p><h2 id="airport-today-title">{airportTodayText.title[lang]}</h2></div><span className="airport-scope-label">{scopeLabel}</span></div>
     <div className="airport-today-grid">
-      <article><span>{airportTodayText.expected[lang]}</span><strong>{expectedTotal === null ? (isForecastPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]) : `${Math.round(expectedTotal).toLocaleString(numberLocale)}${peopleUnit}`}</strong><small>{isForecastPartial ? airportTodayText.forecastPartialNote[lang] : airportTodayText.expectedNote[lang]}</small></article>
-      <article><span>{airportTodayText.flights[lang]}</span><strong>{flightsCount === null ? airportTodayText.unavailable[lang] : `${flightsCount.toLocaleString(numberLocale)}${flightUnit}`}</strong><small>{airportTodayText.flightsNote[lang]}</small></article>
-      <article><span>{airportTodayText.peak[lang]}</span><strong>{peak ? formatKstBand(peak.targetStartAt, peak.targetEndAt) : airportTodayText.unavailable[lang]}</strong><small>{peak ? `${airportTodayText.peakNote[lang]} · ${Math.round(peak.expectedPassengers).toLocaleString(numberLocale)}${peopleUnit}` : (isForecastPartial ? airportTodayText.forecastPartialNote[lang] : airportTodayText.peakNote[lang])}</small></article>
-      <article><span>{airportTodayText.gate[lang]}</span><strong>{topGate ? `${topGate.terminal ? `${topGate.terminal} · ` : ""}Gate ${topGate.gate} · ${topGate.flights.toLocaleString(numberLocale)}${flightUnit}` : airportTodayText.unavailable[lang]}</strong><small>{airportTodayText.gateNote[lang]}</small></article>
+      <article><span>{airportTodayText.expected[lang]}</span><strong data-kind={expectedTotal === null ? "status" : "value"}>{expectedTotal === null ? (isForecastPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]) : `${Math.round(expectedTotal).toLocaleString(numberLocale)}${peopleUnit}`}</strong><small>{isForecastPartial ? airportTodayText.forecastPartialNote[lang] : airportTodayText.expectedNote[lang]}</small>{perMetric(passengerCollected) && <small className="metric-freshness">{passengerCollected}</small>}</article>
+      <article><span>{airportTodayText.flights[lang]}</span><strong data-kind={flightsCount === null ? "status" : "value"}>{flightsCount === null ? airportTodayText.unavailable[lang] : `${flightsCount.toLocaleString(numberLocale)}${flightUnit}`}</strong><small>{airportTodayText.flightsNote[lang]}</small>{perMetric(flightsCollected) && <small className="metric-freshness">{flightsCollected}</small>}</article>
+      <article><span>{airportTodayText.peak[lang]}</span><strong data-kind={peak ? "value" : "status"}>{peak ? formatKstBand(peak.targetStartAt, peak.targetEndAt) : airportTodayText.unavailable[lang]}</strong><small>{peak ? `${airportTodayText.peakNote[lang]} · ${Math.round(peak.expectedPassengers).toLocaleString(numberLocale)}${peopleUnit}` : (isForecastPartial ? airportTodayText.forecastPartialNote[lang] : airportTodayText.peakNote[lang])}</small>{perMetric(passengerCollected) && <small className="metric-freshness">{passengerCollected}</small>}</article>
+      <article><span>{airportTodayText.gate[lang]}</span><strong data-kind={topGate ? "value" : "status"}>{topGate ? `${topGate.terminal ? `${topGate.terminal} · ` : ""}Gate ${topGate.gate} · ${topGate.flights.toLocaleString(numberLocale)}${flightUnit}` : airportTodayText.unavailable[lang]}</strong><small>{airportTodayText.gateNote[lang]}</small>{perMetric(gateCollected) && <small className="metric-freshness">{gateCollected}</small>}</article>
     </div>
-    {distinctFreshness.length > 0 && <p className="airport-section-freshness">{distinctFreshness.join(" · ")}</p>}
+    {sharesOneFreshness && distinctFreshness.length > 0 && <p className="airport-section-freshness">{distinctFreshness[0]}</p>}
     <section className="airport-detail-section airport-checkpoints" aria-labelledby="airport-checkpoints-title">
       <div className="airport-detail-head"><div><p className="eyebrow">CURRENT OBSERVATION · {scopeLabel}</p><h3 id="airport-checkpoints-title">{airportTodayText.current[lang]}</h3></div><p>{airportTodayText.currentNote[lang]}</p></div>
       {checkpointTerminals.length ? <div className="airport-checkpoint-groups">{checkpointTerminals.map((terminalId) => {

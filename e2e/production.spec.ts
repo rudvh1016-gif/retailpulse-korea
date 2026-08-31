@@ -197,9 +197,21 @@ test("airport today summary keeps forecast, flights, gate and checkpoints truthf
   await expect(page.locator(".airport-gate-row")).toHaveCount(3);
   await expect(page.locator(".airport-period")).toContainText(/2026.*08.*31/);
   // Fix 4: the overall label is scoped to "among airport datasets", and each
-  // top metric also carries its own collection time.
+  // top metric carries its own basis time when the datasets differ.
   await expect(page.getByText(/공항 데이터 중 최근 수집/)).toBeVisible();
-  await expect(page.locator(".airport-section-freshness")).toContainText(/기준/);
+  // This fixture collects the passenger forecast and the flight/gate data at
+  // different times, so the freshness must stay on each card: one shared
+  // section line would hide which number came from which moment.
+  const metricFreshness = page.locator(".airport-today-grid .metric-freshness");
+  await expect(metricFreshness).toHaveCount(4);
+  await expect(metricFreshness.first()).toContainText(/기준/);
+  await expect(page.locator(".airport-section-freshness")).toHaveCount(0);
+  // A status sentence must not be rendered at the KPI number size.
+  const statusStrong = page.locator('.airport-today-grid strong[data-kind="status"]').first();
+  if (await statusStrong.count()) {
+    const size = await statusStrong.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    expect(size).toBeLessThanOrEqual(15);
+  }
   await expect(page.getByText(/수집 8\.31|8\.31 .*KST/)).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });

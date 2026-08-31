@@ -17,7 +17,7 @@ import {
   type Terminal,
 } from "./retailpulse-data";
 import { pageDescription, pageTitle, seoLocales, seoSlugs, siteOrigin, type SeoSlug } from "./seo-config";
-import LiveSignals, { AirportTodaySummary, HomeTodayBrief } from "./live-signals";
+import LiveSignals, { AirportTodaySummary, HomeTodayBrief, KstTodayChip } from "./live-signals";
 import { classifyDemoDemand } from "../lib/demand-index";
 
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
@@ -797,6 +797,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           <span>KORETAIL</span><span className="brand-descriptor">Retail Demand Signals for Korea</span>
         </button>
         <div className="header-meta">
+          <KstTodayChip lang={lang} />
           <button className="global-search-trigger" onClick={() => setGlobalSearchOpen((open) => !open)} aria-expanded={globalSearchOpen} aria-controls="global-search">
             <span aria-hidden="true">⌕</span><span>{lang === "ko" ? "검색" : lang === "zh" ? "搜索" : lang === "ja" ? "検索" : "Search"}</span>
           </button>
