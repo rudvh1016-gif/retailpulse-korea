@@ -7,7 +7,12 @@ import {
   SKIPPED_ALREADY_COMPLETE_TODAY,
   runSelectedProductionSources,
 } from "../lib/production-runner.ts";
-import { sanitizeProductionDetail } from "../lib/production-diagnostics.ts";
+import {
+  DIAGNOSTIC_SOURCE_IDS,
+  resolveDiagnosticSourceIds,
+  sanitizeProductionDetail,
+} from "../lib/production-diagnostics.ts";
+import { readFileSync } from "node:fs";
 
 test("job failure classification surfaces any ERROR or NEEDS_KEY after isolated execution", () => {
   assert.equal(hasProductionSourceFailure([
@@ -196,4 +201,80 @@ test("runner keeps sources sequential, never concurrent, so provider calls stay 
     },
   );
   assert.deepEqual(order, ["weather:start", "weather:end", "events:start", "events:end"]);
+});
+
+/**
+ * The diagnostic source table must stay a mirror of the ids the collectors
+ * actually write, never a hand-guessed list. Asserting each id is a literal
+ * in collector code makes a silent drift fail here instead of quietly
+ * returning "no rows" for a live source.
+ */
+test("diagnostic source ids are the literal ids collector code writes", () => {
+  const collectorSource = [
+    "lib/collector.ts",
+    "lib/airport-today.ts",
+    "lib/seoul-foreign.ts",
+  ].map((file) => readFileSync(new URL(`../${file}`, import.meta.url), "utf8")).join("\n");
+
+  const names = Object.keys(DIAGNOSTIC_SOURCE_IDS);
+  assert.equal(names.length, 11, "every KORETAIL source needs a diagnostic id");
+  for (const name of names) {
+    assert.ok(
+      collectorSource.includes(`"${DIAGNOSTIC_SOURCE_IDS[name]}"`),
+      `${name} -> ${DIAGNOSTIC_SOURCE_IDS[name]} is not a literal source id in collector code`,
+    );
+  }
+  assert.equal(new Set(Object.values(DIAGNOSTIC_SOURCE_IDS)).size, names.length);
+});
+
+test("realtime and forecast sources are selectable for diagnostics", () => {
+  assert.deepEqual(
+    resolveDiagnosticSourceIds("airport_congestion,airport_congestion_t2,airport_passenger_forecast,seoul_realtime"),
+    [
+      "INCHEON_DEPARTURE_CONGESTION",
+      "INCHEON_DEPARTURE_CONGESTION_T2",
+      "INCHEON_PASSENGER_FORECAST",
+      "SEOUL_CITYDATA_PPLTN",
+    ],
+  );
+  // A4-T1 and A4-T2 must never collapse into one id.
+  assert.notEqual(DIAGNOSTIC_SOURCE_IDS.airport_congestion, DIAGNOSTIC_SOURCE_IDS.airport_congestion_t2);
+});
+
+test("previously supported A2/A3/T1 selection still resolves", () => {
+  assert.deepEqual(
+    resolveDiagnosticSourceIds("airport_enrichment,airport_scheduled,events"),
+    ["INCHEON_DUTY_FREE_ACTUAL", "INCHEON_SCHEDULED_DUTY_FREE", "KTO_TOURAPI_EVENT"],
+  );
+  // Raw canonical ids stay accepted so an operator can paste an id verbatim.
+  assert.deepEqual(
+    resolveDiagnosticSourceIds("INCHEON_DUTY_FREE_ACTUAL, INCHEON_SCHEDULED_DUTY_FREE , KTO_TOURAPI_EVENT"),
+    ["INCHEON_DUTY_FREE_ACTUAL", "INCHEON_SCHEDULED_DUTY_FREE", "KTO_TOURAPI_EVENT"],
+  );
+});
+
+test("diagnostic selection defaults to every source and rejects typos", () => {
+  assert.equal(resolveDiagnosticSourceIds(undefined).length, 11);
+  assert.equal(resolveDiagnosticSourceIds("   ").length, 11);
+  // Deduplicates rather than binding the same id twice.
+  assert.deepEqual(resolveDiagnosticSourceIds("seoul_realtime,SEOUL_CITYDATA_PPLTN"), ["SEOUL_CITYDATA_PPLTN"]);
+  // A typo must fail loudly, never look like "this source has no rows".
+  assert.throws(() => resolveDiagnosticSourceIds("airport_congestion_T2"), /unknown_diagnostic_sources_airport_congestion_T2/);
+});
+
+test("production operations diagnostic stays read-only and calls no provider", () => {
+  const script = readFileSync(new URL("../scripts/inspect-production-operations.ts", import.meta.url), "utf8");
+  const sql = script.match(/`SELECT[\s\S]*?`/g) ?? [];
+  assert.equal(sql.length, 2, "diagnostic should issue exactly the collector_runs and source_health SELECTs");
+
+  for (const verb of ["INSERT", "UPDATE", "DELETE", "UPSERT", "REPLACE", "DROP", "CREATE", "ALTER"]) {
+    assert.equal(new RegExp(`\\b${verb}\\b`).test(script), false, `diagnostic must not contain a ${verb} statement`);
+  }
+  // No provider adapter or collector is imported, and the script never fetches.
+  assert.equal(/from "\.\.\/lib\/collector"/.test(script), false);
+  assert.equal(/\bcollect[A-Z]\w*\(/.test(script), false);
+  assert.equal(/\bfetch\s*\(/.test(script), false);
+  // Source ids are bound as parameters, never interpolated into SQL text.
+  assert.match(script, /sourceIds\.map\(\(\) => "\?"\)/);
+  assert.equal(/\$\{sourceIds\}/.test(script), false);
 });
