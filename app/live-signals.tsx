@@ -562,7 +562,7 @@ export default function LiveSignals({ lang, area }: { lang: Lang; area: AreaId }
   const trackedFlights = summary.airport.departuresTrackedToday;
   const scheduled = summary.airport.scheduled ?? [];
   const passengerForecast = summary.airport.passengerForecast ?? [];
-  const hasArea = Boolean(block && (block.realtime || block.realtimeForecast.length || block.foreignPresence || block.weather.length || block.events.length || block.sales));
+  const hasArea = Boolean(block && (block.realtime || block.realtimeForecast?.length || block.foreignPresence || block.weather.length || block.events.length || block.sales));
   if (!hasArea && !congestion.length && !trackedFlights && !scheduled.length && !passengerForecast.length) return null;
 
   const rows: Array<{ key: string; label: string; value: string; note: string; state?: "LIVE" | "STALE" }> = [];

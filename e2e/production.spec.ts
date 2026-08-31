@@ -209,10 +209,11 @@ test("home gives deterministic current briefs for all three Seoul areas without 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko");
   await expect(page.getByRole("heading", { name: "서울 오늘 브리핑" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /명동/ })).toContainText("약간 붐빔 · 23,000–25,000명");
-  await expect(page.getByRole("button", { name: /명동/ })).toContainText("17:00–18:00");
-  await expect(page.getByRole("button", { name: /명동/ })).toContainText("비 가능성 60%");
-  await expect(page.getByRole("button", { name: /홍대/ })).toContainText("오늘 인근 행사 1건 예정");
+  const briefs = page.locator(".home-area-briefs");
+  await expect(briefs.getByRole("button", { name: /명동/ })).toContainText("약간 붐빔 · 23,000–25,000명");
+  await expect(briefs.getByRole("button", { name: /명동/ })).toContainText("17:00–18:00");
+  await expect(briefs.getByRole("button", { name: /명동/ })).toContainText("비 가능성 60%");
+  await expect(briefs.getByRole("button", { name: /홍대/ })).toContainText("오늘 인근 행사 1건 예정");
   await expect(page.getByRole("button", { name: /성수/ })).toContainText("최근 관측 지연");
   await expect(page.getByText(/20:42 KST|예시 날짜/)).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
