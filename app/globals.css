@@ -777,14 +777,26 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .view-intro h1 { margin-top: 20px; font-size: var(--type-view); line-height: 1.03; letter-spacing: -.042em; font-weight: 650; text-transform: none; }
 .section-head h2 { font-size: var(--type-section); letter-spacing: -.025em; text-transform: none; }
 
-.home-today-brief { min-height: 64px; display: grid; grid-template-columns: 150px minmax(0, 1fr); align-items: center; gap: 24px; border-bottom: 1px solid var(--ink); }
-.home-today-brief > span { color: var(--green); font-size: 9px; font-weight: 650; letter-spacing: .08em; }
-.home-today-brief p { margin: 0; font-size: 14px; font-weight: 500; line-height: 1.5; }
+.home-area-briefs { margin-top: 34px; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+.home-area-briefs-head { min-height: 96px; display: grid; grid-template-columns: 180px minmax(220px, .65fr) minmax(300px, 1fr); gap: 28px; align-items: center; border-bottom: 1px solid var(--line); }
+.home-area-briefs-head h2 { margin: 0; font-size: 19px; letter-spacing: -.025em; }
+.home-area-briefs-head > p:last-child { max-width: 520px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.home-area-brief-rows button { width: 100%; min-height: 104px; padding: 18px 0; display: grid; grid-template-columns: 150px minmax(0, 1fr) 110px; gap: 28px; align-items: start; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; text-align: left; }
+.home-area-brief-rows button:last-child { border-bottom: 0; }
+.home-area-brief-rows button:hover, .home-area-brief-rows button.selected { background: rgba(255,255,255,.34); }
+.home-area-brief-rows button.selected { box-shadow: inset 2px 0 0 var(--ink); padding-left: 14px; padding-right: 14px; }
+.home-area-brief-rows button > span { padding-top: 2px; font-size: 14px; font-weight: 650; }
+.home-area-brief-rows button strong { display: block; font-size: 15px; font-weight: 600; letter-spacing: -.015em; }
+.home-area-brief-rows button p { margin: 6px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+.home-area-brief-rows button small { justify-self: end; padding-top: 3px; color: var(--muted); font-size: 9px; white-space: nowrap; }
 
 .airport-view .view-intro { min-height: 168px; }
 .airport-view .terminal-selector, .airport-view .airport-context-nav { min-height: 54px; }
 .airport-view .terminal-selector button, .airport-view .airport-context-nav button { min-height: 44px; padding-top: 14px; padding-bottom: 14px; }
 .airport-today { padding-top: 26px; }
+.current-brief { padding: 26px 0 28px; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+.current-brief > strong { display: block; max-width: 980px; margin-top: 15px; font-size: clamp(20px, 2.15vw, 29px); font-weight: 620; line-height: 1.25; letter-spacing: -.03em; }
+.current-brief > p:not(.eyebrow) { max-width: 980px; margin: 9px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
 .airport-period { min-height: 48px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 34px; border-top: 1px solid var(--ink); }
 .airport-period p { margin: 0; display: flex; gap: 9px; font-size: 10px; }
 .airport-period span { color: var(--muted); }
@@ -799,6 +811,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .airport-today-grid strong { margin-top: 20px; font-size: clamp(21px, 2.2vw, 31px); line-height: 1.05; letter-spacing: -.035em; overflow-wrap: anywhere; }
 .airport-today-grid small { margin-top: 12px; color: var(--muted); font-size: 9px; line-height: 1.45; }
 .airport-today-grid small + small { margin-top: 4px; opacity: .75; }
+.airport-section-freshness { margin: 10px 0 0; color: var(--muted); font-size: 9px; text-align: right; }
 .airport-scope-label { align-self: flex-end; padding-bottom: 2px; color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .02em; }
 .airport-empty-line { margin: 0; padding: 25px; color: var(--muted); }
 .airport-detail-section { margin-top: 48px; border-top: 1px solid var(--ink); }
@@ -845,10 +858,20 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   .hero { min-height: 0; }
   .hero-copy { padding-top: 28px; }
   .hero h1 { margin-top: 22px; line-height: 1.06; letter-spacing: -.035em; }
-  .home-today-brief { grid-template-columns: 1fr; gap: 7px; padding: 16px 0; }
-  .home-today-brief p { font-size: 13px; }
+  .home-area-briefs { margin-top: 24px; }
+  .home-area-briefs-head { min-height: 0; padding: 19px 0; grid-template-columns: 1fr; gap: 6px; }
+  .home-area-briefs-head > p:last-child { font-size: 10px; }
+  .home-area-brief-rows button { min-height: 0; padding: 16px 0; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; }
+  .home-area-brief-rows button.selected { padding-left: 10px; padding-right: 8px; }
+  .home-area-brief-rows button > span { font-size: 12px; }
+  .home-area-brief-rows button strong { font-size: 13px; }
+  .home-area-brief-rows button p { font-size: 10px; }
+  .home-area-brief-rows button small { grid-column: 2; justify-self: start; padding: 0; }
   .airport-view .view-intro { min-height: 145px; }
   .airport-today { padding-top: 18px; }
+  .current-brief { padding: 21px 0 22px; }
+  .current-brief > strong { margin-top: 11px; font-size: 19px; }
+  .current-brief > p:not(.eyebrow) { margin-top: 7px; font-size: 11px; }
   .airport-period { padding: 9px 0; align-items: flex-start; flex-direction: column; gap: 5px; }
   .airport-today-grid { grid-template-columns: 1fr 1fr; }
   .airport-today-grid article { min-height: 140px; padding: 20px 14px 17px 0; border-bottom: 1px solid var(--line); }

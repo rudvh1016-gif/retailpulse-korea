@@ -797,7 +797,6 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           <span>KORETAIL</span><span className="brand-descriptor">Retail Demand Signals for Korea</span>
         </button>
         <div className="header-meta">
-          <span className="kst-chip">{localText(lang, { ko: "예시 날짜 · 8월 23일 · KST", en: "SAMPLE DATE · AUG 23 · KST", zh: "示例日期 · 8月23日 · KST", ja: "サンプル日付 · 8月23日 · KST" })}</span>
           <button className="global-search-trigger" onClick={() => setGlobalSearchOpen((open) => !open)} aria-expanded={globalSearchOpen} aria-controls="global-search">
             <span aria-hidden="true">⌕</span><span>{lang === "ko" ? "검색" : lang === "zh" ? "搜索" : lang === "ja" ? "検索" : "Search"}</span>
           </button>
@@ -830,11 +829,11 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
               </div>
               <figure className="hero-visual">
                 <img src="/assets/seoul-hangang.jpeg" alt={lang === "zh" ? "夕阳下可见汉江与南山首尔塔的首尔全景" : lang === "ja" ? "夕暮れの漢江と南山ソウルタワーを望むソウルの風景" : lang === "en" ? "Seoul skyline with the Han River and N Seoul Tower at sunset" : "석양 아래 한강과 남산서울타워가 보이는 서울 전경"} width="1200" height="1800" fetchPriority="high" />
-                <figcaption>SEOUL · 20:42 KST</figcaption>
+                <figcaption>SEOUL</figcaption>
               </figure>
             </section>
 
-            <HomeTodayBrief lang={lang} />
+            <HomeTodayBrief lang={lang} selected={selected} onSelect={selectArea} />
             <section className="audience-rail" aria-label={lang === "zh" ? "使用目的" : lang === "ja" ? "利用目的" : lang === "en" ? "Choose how to use KORETAIL" : "KORETAIL 사용 목적"}>
               <div>
                 <p className="eyebrow">FOR VISITORS</p>

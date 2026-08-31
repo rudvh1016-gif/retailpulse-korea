@@ -63,8 +63,9 @@ export async function GET() {
     ).all<Row>()).results ?? []);
 
     const realtimeForecastRows = await safeAll<Row>(async () => (await client.prepare(
-      `SELECT area, target_at AS targetAt, congestion_level AS congestionLevel,
-        congestion_label AS congestionLabel, population_min AS populationMin, population_max AS populationMax
+      `SELECT area, issued_at AS issuedAt, target_at AS targetAt, congestion_level AS congestionLevel,
+        congestion_label AS congestionLabel, population_min AS populationMin, population_max AS populationMax,
+        retrieved_at AS retrievedAt
       FROM seoul_realtime_forecast f
       WHERE issued_at = (SELECT MAX(issued_at) FROM seoul_realtime_forecast g WHERE g.area = f.area)
         AND target_at >= ?

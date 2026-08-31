@@ -356,6 +356,22 @@ test("airport detail UI uses editorial rows, friendly checkpoints and honest par
   assert.doesNotMatch(css, /\.airport-gates li[^}]*box-shadow/);
 });
 
+test("current briefs use existing official forecasts and deterministic editorial copy without runtime AI", async () => {
+  const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
+  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  const route = await readFile(new URL("../app/api/live/summary/route.ts", import.meta.url), "utf8");
+  const brief = await readFile(new URL("../lib/current-brief.ts", import.meta.url), "utf8");
+  assert.match(signals, /buildAreaCurrentBrief/);
+  assert.match(signals, /buildAirportCurrentBrief/);
+  assert.match(signals, /home-area-brief-rows/);
+  assert.match(route, /seoul_realtime_forecast/);
+  assert.match(route, /realtimeForecast:/);
+  assert.match(brief, /umbrellaProbability: 50/);
+  assert.match(brief, /checkRainProbability: 30/);
+  assert.doesNotMatch(brief, /OpenAI|Anthropic|Gemini|Cloudflare AI/);
+  assert.doesNotMatch(page, /20:42 KST|예시 날짜|SAMPLE DATE|示例日期|サンプル日付/);
+});
+
 test("applies a user-defined month range to airport and business history", async () => {
   const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
@@ -416,8 +432,9 @@ test("makes sample demand and unavailable airport pressure impossible to mistake
   assert.match(page, /오늘 예상 출국객·실제 출발 운항·현재 출국장 흐름을 구분해 보여줍니다/);
   assert.match(live, /인천공항 공식 예상 · 실제 출국객 집계 아님/);
   assert.match(live, /실제 운항편 기준 · 승객 수 아님/);
-  for (const label of ["예시 날짜", "SAMPLE DATE", "示例日期", "サンプル日付"]) assert.match(page, new RegExp(label));
-  assert.doesNotMatch(page, /<span className="kst-chip">KST · AUG 23<\/span>/);
+  for (const label of ["예시 날짜", "SAMPLE DATE", "示例日期", "サンプル日付", "20:42 KST"]) assert.doesNotMatch(page, new RegExp(label));
+  assert.doesNotMatch(page, /className="kst-chip"/);
+  assert.match(page, /<figcaption>SEOUL<\/figcaption>/);
   assert.match(page, /가짜 게이트 범위나 사람 수를 표시하지 않습니다/);
   assert.doesNotMatch(page, /<WhatChanged/);
   assert.doesNotMatch(page, /HISTORY · 4-WEEK COMPARISON/);
