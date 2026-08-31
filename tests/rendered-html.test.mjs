@@ -94,7 +94,8 @@ test("includes all MVP surfaces without a runtime LLM dependency", async () => {
     "简体中文",
     "日本語",
     "HomeRankings",
-    "HomeAirportNow",
+    "AirportTodaySummary",
+    "HomeTodayBrief",
     "GlobalSearch",
     "area-why",
   ]) assert.match(page, new RegExp(required));
@@ -220,7 +221,7 @@ test("ships the V5.5 command center and progressive information architecture", a
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   for (const surface of [
     "HomeRankings",
-    "HomeAirportNow",
+    "AirportTodaySummary",
     "QuickActions",
     "FeatureDiscovery",
     "SUMMARY / WHY / HISTORY / GOOD TO KNOW / DATA",
@@ -231,7 +232,7 @@ test("ships the V5.5 command center and progressive information architecture", a
   ]) assert.match(`${page}\n${await readFile(new URL("../docs/archive/work-v6.1/feature-map-v5-5.md", import.meta.url), "utf8")}`, new RegExp(surface.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(page, /\["today", "airport", "business", "forecast", "more"\]/);
   assert.match(page, /\["now", "next", "flights", "history", "airlines"\]/);
-  assert.match(page, /현재 \$\{terminal\} 실시간 출국 수치는 공식 연결 전/);
+  assert.match(page, /오늘 예상 출국객·실제 출발 운항·현재 출국장 흐름을 구분해 보여줍니다/);
   assert.match(css, /@media \(max-width: 820px\)/);
   assert.match(css, /@media \(max-width: 365px\)/);
 });
@@ -318,7 +319,7 @@ test("A5 passenger forecast is worded as an official forecast, never as current/
   // API: FORECAST rows come from a distinct, clearly-named block and are
   // never merged into the congestion array.
   assert.match(route, /passengerForecastRows/);
-  assert.match(route, /passengerForecast: passengerForecastRows/);
+  assert.match(route, /passengerForecast: upcomingForecast/);
   assert.match(route, /is_aggregate = 1/);
   assert.match(route, /direction = 'departure'/);
 
@@ -362,13 +363,15 @@ test("applies a user-defined month range to airport and business history", async
   assert.match(css, /overflow-x: auto/);
 });
 
-test("states the current runtime API truth without counting font assets as data APIs", async () => {
+test("keeps developer readiness history out of the public product", async () => {
   const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
+  const live = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
   const matrix = await readFile(new URL("../docs/archive/work-v6.1/data-source-matrix.md", import.meta.url), "utf8");
-  assert.match(page, /LIVE RUNTIME DATA API/);
-  assert.match(page, /현재 직접 호출 0개/);
-  assert.match(page, /웹폰트 요청은 화면 자산이며 관광·공항 데이터 API가 아닙니다/);
+  assert.doesNotMatch(page, /LIVE RUNTIME DATA API/);
+  assert.doesNotMatch(page, /현재 직접 호출 0개/);
+  assert.doesNotMatch(page, /웹폰트 요청은 화면 자산이며 관광·공항 데이터 API가 아닙니다/);
   assert.match(page, /fetch\("\/api\/beta-signups"/);
+  assert.match(live, /fetch\("\/api\/live\/summary"/);
   assert.doesNotMatch(page, /fetch\(\s*["']https?:/i);
   assert.match(matrix, /방문 시 직접 호출하는 외부 관광·공항·서울 데이터 API \| \*\*0개\*\*/);
   assert.match(matrix, /공식 Historical 집계 \| \*\*2개 Source\*\*/);
@@ -395,7 +398,10 @@ test("makes sample demand and unavailable airport pressure impossible to mistake
   const pressure = await readFile(new URL("../lib/airport-pressure.ts", import.meta.url), "utf8");
   for (const phrase of ["예시 수요지수", "DEMO DEMAND INDEX", "演示需求指数", "デモ需要指数"]) assert.match(page, new RegExp(phrase));
   assert.match(page, /같은 예시값 분포 안에서 낮음·보통·높음/);
-  assert.match(page, /실시간 공항 데이터 연결 준비 중/);
+  assert.doesNotMatch(page, /실시간 공항 데이터 연결 준비 중/);
+  assert.match(page, /오늘 예상 출국객·실제 출발 운항·현재 출국장 흐름을 구분해 보여줍니다/);
+  assert.match(live, /인천공항 공식 예상 · 실제 출국객 집계 아님/);
+  assert.match(live, /실제 운항편 기준 · 승객 수 아님/);
   for (const label of ["예시 날짜", "SAMPLE DATE", "示例日期", "サンプル日付"]) assert.match(page, new RegExp(label));
   assert.doesNotMatch(page, /<span className="kst-chip">KST · AUG 23<\/span>/);
   assert.match(page, /가짜 게이트 범위나 사람 수를 표시하지 않습니다/);
@@ -427,13 +433,11 @@ test("persists consented beta interest in D1 without a public list endpoint", as
   assert.equal(hosting.d1, "DB");
 });
 
-test("separates the number of secrets from API applications and removes fake freshness", async () => {
+test("keeps obsolete key-audit UI out of the visitor experience and removes fake freshness", async () => {
   const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   const data = await readFile(new URL("../app/retailpulse-data.ts", import.meta.url), "utf8");
   const audit = await readFile(new URL("../docs/archive/work-v6.1/api-key-audit.md", import.meta.url), "utf8");
-  assert.match(page, /세 개의 별도 키가 아닙니다/);
-  assert.match(page, /API APPLICATIONS<\/span><strong>3/);
-  assert.match(page, /가짜 업데이트 시각을 표시하지 않습니다/);
+  assert.match(page, /\{false && <section className="source-directory"/);
   assert.doesNotMatch(page, /Updated 12m ago|Updated 35m ago|Updated 3h ago|Updated 8m ago/);
   assert.match(data, /INCHEON ARRIVAL HALL STATUS/);
   assert.match(data, /status: "AUTOMATION_REVIEW"/);

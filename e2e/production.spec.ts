@@ -32,7 +32,7 @@ test("project-local Korean, Japanese and Chinese fonts load", async ({ page }) =
   expect(await page.evaluate(() => document.fonts.check('420 16px "Pretendard Variable"', "리테일펄스 특별"))).toBe(true);
 });
 
-for (const width of [320, 375, 390, 430]) {
+for (const width of [320, 375, 390, 430, 768]) {
   test(`mobile ${width}px has no page-level horizontal overflow`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.goto("/ko/airport");
@@ -81,10 +81,10 @@ test("sample demand and airport unavailable states are explicit and accessible",
 
 test("new demand and airport truth labels are complete in all four locales", async ({ page }) => {
   const labels = {
-    ko: ["예시 수요지수", "실시간 공항 데이터 연결 준비 중", "예시 날짜 · 8월 23일 · KST"],
-    en: ["DEMO INDEX", "Live airport data is being prepared", "SAMPLE DATE · AUG 23 · KST"],
-    zh: ["演示指数", "实时机场数据正在准备接入", "示例日期 · 8月23日 · KST"],
-    ja: ["デモ指数", "空港リアルタイムデータを準備中", "サンプル日付 · 8月23日 · KST"],
+    ko: ["예시 수요지수", "오늘 예상 출국객·실제 출발 운항·현재 출국장 흐름을 구분해 보여줍니다.", "예시 날짜 · 8월 23일 · KST"],
+    en: ["DEMO INDEX", "Official expected passengers, physical departures and current hall conditions—kept distinct.", "SAMPLE DATE · AUG 23 · KST"],
+    zh: ["演示指数", "清晰区分今日预计出境旅客、实际出发航班与当前出境区情况。", "示例日期 · 8月23日 · KST"],
+    ja: ["デモ指数", "本日の予想出国者・実運航の出発便・現在の出国場状況を分けて表示します。", "サンプル日付 · 8月23日 · KST"],
   } as const;
   for (const locale of Object.keys(labels) as Array<keyof typeof labels>) {
     await page.goto(`/${locale}`);
@@ -93,6 +93,54 @@ test("new demand and airport truth labels are complete in all four locales", asy
     await page.goto(`/${locale}/airport`);
     await expect(page.getByText(labels[locale][1], { exact: true })).toBeVisible();
   }
+});
+
+test("airport today summary keeps forecast, flights, gate and checkpoints truthful on mobile", async ({ page }) => {
+  await page.route("**/api/live/summary", async (route) => route.fulfill({
+    contentType: "application/json",
+    body: JSON.stringify({
+      mode: "live-summary",
+      generatedAt: "2026-08-31T05:10:00Z",
+      areas: {},
+      airport: {
+        congestion: [],
+        currentBusiestDepartureHallByTerminal: {
+          T1: { terminal: "T1", zone: "P01", waitTimeMinutes: 24, waitTimeRaw: "24", waitingCount: 81, observedAt: "2026-08-31T14:07:00+09:00", freshness: "LIVE" },
+          T2: { terminal: "T2", zone: "DG2_03", waitTimeMinutes: 61, waitTimeRaw: "60+", waitingCount: 43, observedAt: "2026-08-31T14:06:00+09:00", freshness: "LIVE" },
+        },
+        departuresTrackedToday: 561,
+        topDepartureGate: "27",
+        topDepartureGateTerminal: "T1",
+        topDepartureGateFlights: 18,
+        gateCoverageRatio: 0.76,
+        serviceDateKst: "2026-08-31",
+        periodStartAt: "2026-08-31T00:00:00+09:00",
+        periodEndAt: "2026-08-31T23:59:59+09:00",
+        latestRetrievedAt: "2026-08-31T14:08:00+09:00",
+        todayExpectedPassengersTotal: 47320,
+        todayExpectedPassengersByTerminal: { T1: 30100, T2: 17220 },
+        peakExpectedTimeBand: { targetStartAt: "2026-08-31T15:00:00+09:00", targetEndAt: "2026-08-31T16:00:00+09:00", expectedPassengers: 6320 },
+        peakExpectedPassengers: 6320,
+        passengerForecastTimeline: [
+          { targetStartAt: "2026-08-31T14:00:00+09:00", targetEndAt: "2026-08-31T15:00:00+09:00", expectedPassengers: 5110 },
+          { targetStartAt: "2026-08-31T15:00:00+09:00", targetEndAt: "2026-08-31T16:00:00+09:00", expectedPassengers: 6320 },
+        ],
+        scheduled: [],
+        passengerForecast: [],
+      },
+    }),
+  }));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ko/airport");
+  await expect(page.getByText("오늘 공식 예상 출국객", { exact: true })).toBeVisible();
+  await expect(page.getByText("47,320명", { exact: true })).toBeVisible();
+  await expect(page.getByText("561편", { exact: true })).toBeVisible();
+  await expect(page.getByText(/실제 운항편 기준 · 승객 수 아님/)).toBeVisible();
+  await expect(page.getByText(/T1 · Gate 27 · 18편/)).toBeVisible();
+  await expect(page.getByText(/출국장 체크포인트 관측 · 탑승 게이트 아님/)).toBeVisible();
+  await expect(page.getByText("60+", { exact: true })).toBeVisible();
+  await expect(page.locator(".airport-period")).toContainText(/2026.*08.*31/);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
 
 test("blocked localStorage does not break the application", async ({ context, page }) => {
