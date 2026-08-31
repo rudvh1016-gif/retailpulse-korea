@@ -372,6 +372,40 @@ test("current briefs use existing official forecasts and deterministic editorial
   assert.doesNotMatch(page, /20:42 KST|예시 날짜|SAMPLE DATE|示例日期|サンプル日付/);
 });
 
+test("each Seoul area view opens with its own current brief built from the same deterministic builder", async () => {
+  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  // The area detail screen must lead with an interpretation, not with the raw
+  // signal rows. It reuses buildAreaCurrentBrief so the home row and the area
+  // page can never disagree about the same area on the same data.
+  assert.match(signals, /className="current-brief area-current-brief"/);
+  assert.match(signals, /const areaBrief = buildAreaCurrentBrief\(/);
+  assert.match(signals, /const areaBriefCopy = localizeAreaBrief\(areaBrief, lang\)/);
+  // The brief renders before the section heading, so it is the first thing read.
+  assert.ok(
+    signals.indexOf('className="current-brief area-current-brief"')
+      < signals.indexOf('id="live-signals-title"'),
+    "area brief must render above the live-signals heading",
+  );
+  // It stays silent rather than printing an empty shell when nothing is known.
+  assert.match(signals, /areaBrief\.evidenceTypes\.length > 0 &&/);
+  assert.match(css, /\.area-current-brief \{/);
+});
+
+test("remaining timestamps state what they mean and never reuse the collected-at wording", async () => {
+  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  // Foreign presence carries an OBSERVATION time published with delay, so it
+  // goes through the same human freshness formatter (today / yesterday / older).
+  assert.match(signals, /formatHumanFreshness\(block\.foreignPresence\.referenceAt/);
+  // The passenger forecast row describes a TARGET band, not a retrieval moment,
+  // so it renders as a band and must not borrow the "as of" wording.
+  assert.match(signals, /formatKstBand\(forecast\.targetStartAt, forecast\.targetEndAt\)/);
+  assert.doesNotMatch(signals, /basis\[lang\]\} \$\{formatKstClock/);
+  // The old month.day clock helper is gone entirely once nothing needs it.
+  assert.doesNotMatch(signals, /function formatKstClock/);
+  assert.doesNotMatch(signals, /formatKstClock\(/);
+});
+
 test("applies a user-defined month range to airport and business history", async () => {
   const page = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");

@@ -250,15 +250,6 @@ const conditionLabels: Record<string, Record<Lang, string>> = {
   snow: { ko: "눈", en: "Snow", zh: "雪", ja: "雪" },
 };
 
-function formatKstClock(value: string, lang: Lang): string {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "";
-  const formatter = new Intl.DateTimeFormat(lang === "ko" ? "ko-KR" : lang === "zh" ? "zh-CN" : lang === "ja" ? "ja-JP" : "en-GB", {
-    timeZone: "Asia/Seoul", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false,
-  });
-  return formatter.format(parsed);
-}
-
 function airportLocale(lang: Lang): string {
   return lang === "ko" ? "ko-KR" : lang === "zh" ? "zh-CN" : lang === "ja" ? "ja-JP" : "en-GB";
 }
@@ -330,6 +321,7 @@ const areaBriefText = {
   unavailableNow: { ko: "현재 공식 활동 상태를 확인할 수 없습니다", en: "Current official activity is unavailable", zh: "当前官方活动状态暂不可用", ja: "現在の公式活動状況を確認できません" },
   noForecast: { ko: "오늘 남은 시간 혼잡 예측은 현재 확인할 수 없습니다", en: "No official crowd forecast is available for the rest of today", zh: "目前无法确认今天剩余时段的拥挤预测", ja: "本日これからの混雑予測は現在確認できません" },
   stale: { ko: "최근 관측 지연", en: "Latest observation delayed", zh: "最新观测延迟", ja: "最新観測に遅れ" },
+  nowLabel: { ko: "지금", en: "now", zh: "当前", ja: "現在" },
   event: { ko: (count: number) => `오늘 인근 행사 ${count}건 예정`, en: (count: number) => `${count} nearby event${count === 1 ? "" : "s"} today`, zh: (count: number) => `今日附近有${count}项活动`, ja: (count: number) => `本日周辺イベント${count}件` },
 } as const;
 
@@ -565,6 +557,17 @@ export default function LiveSignals({ lang, area }: { lang: Lang; area: AreaId }
   const hasArea = Boolean(block && (block.realtime || block.realtimeForecast?.length || block.foreignPresence || block.weather.length || block.events.length || block.sales));
   if (!hasArea && !congestion.length && !trackedFlights && !scheduled.length && !passengerForecast.length) return null;
 
+  // 지역 상세 화면의 첫 화면 브리핑. 홈의 3지역 행과 같은 결정론적 builder를
+  // 재사용하므로, 같은 데이터에서 같은 문장이 나온다(해석이 화면마다 갈리지 않는다).
+  const areaBrief = buildAreaCurrentBrief({
+    realtime: block?.realtime ?? null,
+    realtimeForecast: block?.realtimeForecast ?? [],
+    weather: block?.weather ?? [],
+    eventCount: block?.events?.length ?? 0,
+    nowIso: summary.generatedAt,
+  });
+  const areaBriefCopy = localizeAreaBrief(areaBrief, lang);
+
   const rows: Array<{ key: string; label: string; value: string; note: string; state?: "LIVE" | "STALE" }> = [];
 
   if (block?.realtime) {
@@ -584,7 +587,7 @@ export default function LiveSignals({ lang, area }: { lang: Lang; area: AreaId }
       key: "foreign_presence",
       label: text.foreignPresence[lang],
       value: `${formatPeopleValue(lang, block.foreignPresence.value)} ${text.foreignPeople[lang]}`,
-      note: `${text.foreignNote[lang]} · ${text.basis[lang]} ${formatKstClock(block.foreignPresence.referenceAt, lang)} · ${productId}`,
+      note: `${text.foreignNote[lang]} · ${formatHumanFreshness(block.foreignPresence.referenceAt, summary.generatedAt, lang)} · ${productId}`,
     });
   }
 
@@ -648,7 +651,7 @@ export default function LiveSignals({ lang, area }: { lang: Lang; area: AreaId }
       key: `forecast_${forecast.terminal}`,
       label: text.passengerForecastLabel[lang](forecast.terminal),
       value: `${Math.round(forecast.expectedPassengers).toLocaleString(lang === "ko" ? "ko-KR" : lang === "zh" ? "zh-CN" : lang === "ja" ? "ja-JP" : "en-US")}${text.passengerForecastUnit[lang]}`,
-      note: `${text.passengerForecastSource[lang]} · ${text.passengerForecastNotice[lang]} · ${text.basis[lang]} ${formatKstClock(forecast.targetStartAt, lang)}`,
+      note: `${text.passengerForecastSource[lang]} · ${text.passengerForecastNotice[lang]} · ${formatKstBand(forecast.targetStartAt, forecast.targetEndAt).replace(" KST", "")}`,
     });
   }
 
@@ -676,6 +679,14 @@ export default function LiveSignals({ lang, area }: { lang: Lang; area: AreaId }
 
   return (
     <section className="live-signals" aria-labelledby="live-signals-title">
+      {areaBrief.evidenceTypes.length > 0 && (
+        <section className="current-brief area-current-brief" aria-label={`${areaNames[area][lang]} ${areaBriefText.nowLabel[lang]}`}>
+          <p className="eyebrow">{areaNames[area][lang]} · NOW</p>
+          <strong>{areaBriefCopy.headline}</strong>
+          {areaBriefCopy.lines.map((line) => <p key={line}>{line}</p>)}
+          {areaBriefCopy.freshness && <small>{formatHumanFreshness(areaBriefCopy.freshness, summary.generatedAt, lang)}</small>}
+        </section>
+      )}
       <div className="section-head">
         <div>
           <p className="eyebrow">{text.eyebrow}</p>

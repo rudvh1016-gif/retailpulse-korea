@@ -382,3 +382,38 @@ test("missing S2 data is omitted instead of showing a zero or Demo value", async
   await expect(page.getByText("단기외국인 생활인구", { exact: true })).toHaveCount(0);
   await expect(page.locator(".live-signals")).toHaveCount(0);
 });
+
+test("opening a Seoul area leads with its own brief and keeps the same reading across widths", async ({ page }) => {
+  await page.route("**/api/live/summary", async (route) => route.fulfill({ contentType: "application/json", body: JSON.stringify(AIRPORT_TODAY_SUMMARY_FIXTURE) }));
+  await page.goto("/ko");
+
+  const areaBrief = page.locator(".area-current-brief");
+  // Myeongdong is the default area, so the detail brief must already be there.
+  await expect(areaBrief).toBeVisible();
+  await expect(areaBrief).toContainText("약간 붐빔 · 23,000–25,000명");
+  await expect(areaBrief).toContainText("17:00–18:00");
+  await expect(areaBrief).toContainText("비 가능성 60%");
+  // The brief is an interpretation, so it sits above the raw signal rows.
+  const briefBox = await areaBrief.boundingBox();
+  const rowsBox = await page.locator(".live-signal-rows").boundingBox();
+  expect(briefBox && rowsBox && briefBox.y).toBeLessThan(rowsBox?.y ?? Infinity);
+
+  // Switching areas from the home rows must move the detail brief with it.
+  await page.locator(".home-area-briefs").getByRole("button", { name: /성수/ }).click();
+  await expect(areaBrief).toContainText("최근 관측 지연");
+  await expect(areaBrief).toContainText("오늘 남은 시간 혼잡 예측은 현재 확인할 수 없습니다");
+  await expect(areaBrief).not.toContainText("17:00–18:00");
+
+  await page.locator(".home-area-briefs").getByRole("button", { name: /홍대/ }).click();
+  await expect(areaBrief).toContainText("보통 · 18,000–20,000명");
+  await expect(areaBrief).toContainText("19:00–20:00");
+
+  // No database-style retrieval stamps survive anywhere on the page.
+  await expect(page.getByText(/수집 8\.31|8\.31 .*KST/)).toHaveCount(0);
+
+  for (const width of [320, 375, 390, 430, 768]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect(areaBrief).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  }
+});
