@@ -3,12 +3,18 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   classifyDispatchStatus,
+  dispatchScheduledCollection,
   dispatchRealtimeCollection,
+  dispatchUrl,
   DISPATCH_OWNER,
   DISPATCH_REF,
   DISPATCH_REPO,
+  FORECAST_CRON,
+  FORECAST_WORKFLOW_FILE,
+  REALTIME_CRON,
   REALTIME_WORKFLOW_FILE,
   realtimeDispatchUrl,
+  workflowForCron,
 } from "../lib/realtime-dispatch";
 
 const TOKEN = "ghp-SUPER-SECRET-DISPATCH-TOKEN";
@@ -47,10 +53,39 @@ test("dispatch targets exactly the realtime workflow on the right repo and ref",
   });
 });
 
-test("the trigger can never dispatch any other collector workflow", async () => {
+test("each known cron dispatches only its explicitly allowlisted workflow", async () => {
+  assert.equal(workflowForCron(REALTIME_CRON), REALTIME_WORKFLOW_FILE);
+  assert.equal(workflowForCron(FORECAST_CRON), FORECAST_WORKFLOW_FILE);
+  assert.equal(dispatchUrl(FORECAST_WORKFLOW_FILE),
+    "https://api.github.com/repos/rudvh1016-gif/retailpulse-korea/actions/workflows/collect-forecast.yml/dispatches");
+
+  for (const [cron, workflow] of [
+    [REALTIME_CRON, REALTIME_WORKFLOW_FILE],
+    [FORECAST_CRON, FORECAST_WORKFLOW_FILE],
+  ] as const) {
+    const { calls, impl } = recordingFetch(() => new Response(null, { status: 204 }));
+    const log = await dispatchScheduledCollection(cron, { GITHUB_DISPATCH_TOKEN: TOKEN }, impl, at);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].url, dispatchUrl(workflow));
+    assert.equal(log.workflow, workflow);
+    assert.equal(log.event, "dispatch_success");
+  }
+});
+
+test("unknown cron is ignored without token lookup or dispatch", async () => {
+  const { calls, impl } = recordingFetch(() => new Response(null, { status: 204 }));
+  const log = await dispatchScheduledCollection("0 0 * * *", { GITHUB_DISPATCH_TOKEN: TOKEN }, impl, at);
+  assert.equal(calls.length, 0);
+  assert.deepEqual(log, {
+    event: "dispatch_ignored_cron", workflow: null, ref: "main",
+    status: null, attempts: 0, at: "2026-08-31T02:30:00.000Z",
+  });
+});
+
+test("the trigger can never dispatch a workflow outside the allowlist", async () => {
   const source = readFileSync(new URL("../lib/realtime-dispatch.ts", import.meta.url), "utf8");
   for (const other of [
-    "collect-production.yml", "collect-forecast.yml", "collect-weather.yml",
+    "collect-production.yml", "collect-weather.yml",
     "collect-sales.yml", "import-oneshot.yml", "deploy-cloudflare.yml",
   ]) {
     assert.equal(source.includes(other), false, `trigger must never reference ${other}`);
@@ -67,7 +102,7 @@ test("the trigger can never dispatch any other collector workflow", async () => 
 test("the Worker scheduled handler stays trigger-only", () => {
   const worker = readFileSync(new URL("../worker/index.ts", import.meta.url), "utf8");
   assert.match(worker, /async scheduled\(/);
-  assert.match(worker, /dispatchRealtimeCollection\(env\)/);
+  assert.match(worker, /dispatchScheduledCollection\(event\.cron, env\)/);
   for (const forbidden of ["collectAirport", "collectSeoul", "sha256", "env.DB", "runD1Batches", "apis.data.go.kr"]) {
     assert.equal(worker.includes(forbidden), false, `scheduled handler must not contain ${forbidden}`);
   }

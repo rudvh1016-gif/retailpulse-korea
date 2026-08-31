@@ -9,14 +9,13 @@ name: Collect Airport Passenger Forecast
 # one page. 24 runs/day x ~2 requests = ~48 requests/day, far under any
 # plausible data.go.kr quota for this dataset.
 #
-# Cron minute :42 is deliberately off every other collector group's minute
-# marks (:07/:22/:37/:52 realtime, :07 daily/sales, :10 weather) so this
-# workflow never contends with them for the same GitHub Actions scheduling
-# window. KST is UTC+9 with no DST, so "every hour at :42" is identical in
-# both clocks.
+# SCHEDULER OWNERSHIP — this workflow deliberately has no `schedule:` block.
+# The authoritative forecast scheduler is the Cloudflare Production Worker's
+# trigger-only Cron (`"42 * * * *"` in wrangler.production.jsonc). It makes
+# one authenticated workflow_dispatch call and performs no provider work or
+# D1 access. Restoring a GitHub schedule while that Cron is live would create
+# duplicate A5 provider calls.
 on:
-  schedule:
-    - cron: "42 * * * *"
   workflow_dispatch:
 
 permissions:

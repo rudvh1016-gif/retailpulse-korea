@@ -1,7 +1,7 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
-import { dispatchRealtimeCollection } from "../lib/realtime-dispatch";
+import { dispatchScheduledCollection } from "../lib/realtime-dispatch";
 import { redirectHttpToHttps } from "./https-redirect";
 
 interface Env {
@@ -28,6 +28,10 @@ interface Env {
 interface ExecutionContext {
   waitUntil(promise: Promise<unknown>): void;
   passThroughOnException(): void;
+}
+
+interface ScheduledEvent {
+  cron: string;
 }
 
 // Image security config. SVG sources with .svg extension auto-skip the
@@ -58,17 +62,16 @@ const worker = {
   },
 
   /**
-   * Trigger-only realtime scheduler.
+   * Trigger-only scheduled dispatcher.
    *
-   * This is INERT until a Cron Trigger is configured, and no wrangler config
-   * declares one — activation needs separate owner approval. It never calls a
-   * provider, parses a payload, hashes anything or touches D1; it makes one
-   * authenticated GitHub request that dispatches collect-realtime.yml, and
-   * GitHub Actions runs the unchanged A4-T1/A4-T2/S1 collectors.
+   * It never calls a provider, parses a payload, hashes anything or touches
+   * D1; each authorized Production Cron makes one
+   * authenticated GitHub request to an allowlisted workflow, and GitHub
+   * Actions runs the unchanged collectors.
    * See docs/REALTIME_SCHEDULER_AUDIT.md.
    */
-  async scheduled(_event: unknown, env: Env, ctx: ExecutionContext): Promise<void> {
-    ctx.waitUntil(dispatchRealtimeCollection(env).then((log) => {
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil(dispatchScheduledCollection(event.cron, env).then((log) => {
       // The log record carries no header, token or authenticated URL.
       console.log(JSON.stringify(log));
     }));
