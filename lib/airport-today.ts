@@ -1,4 +1,5 @@
 import { buildDataGoKrUrl } from "./data-go-kr.mjs";
+import { describeWrites, NO_D1_WRITES, runD1Batches, type D1WriteCounts } from "./d1-write-counts";
 import {
   fetchOfficialJson,
   normalizeAirportFlight,
@@ -174,8 +175,8 @@ export async function fetchA1DeparturesForDate(
   };
 }
 
-async function persistTodayFlights(db: D1Database | undefined, records: CanonicalAirportFlight[]): Promise<number> {
-  if (!db || !records.length) return 0;
+async function persistTodayFlights(db: D1Database | undefined, records: CanonicalAirportFlight[]): Promise<D1WriteCounts> {
+  if (!db || !records.length) return NO_D1_WRITES;
   const statements = records.map((record) => db.prepare(`INSERT INTO airport_flights (
       id, source_id, record_origin, direction, flight_number, airline_code,
       airport_code, terminal, gate, checkin_counter, status, scheduled_at,
@@ -229,18 +230,13 @@ async function persistTodayFlights(db: D1Database | undefined, records: Canonica
       record.codeshare,
     ));
 
-  let rowsWritten = 0;
-  for (let offset = 0; offset < statements.length; offset += 40) {
-    const results = await db.batch(statements.slice(offset, offset + 40));
-    rowsWritten += results.reduce((sum, result) => sum + Number(result.meta?.rows_written ?? 0), 0);
-  }
-  return rowsWritten;
+  return runD1Batches(db, statements);
 }
 
 async function recordSuccess(
   db: D1Database | undefined,
   fetched: A1TodayFetchResult,
-  changedRows: number,
+  changedRows: D1WriteCounts,
 ): Promise<void> {
   if (!db) return;
   const finishedAt = new Date().toISOString();
@@ -249,7 +245,7 @@ async function recordSuccess(
     return latest;
   }, null);
   const retrievedAt = fetched.records[0]?.retrievedAt ?? finishedAt;
-  const detail = `recent ${fetched.windowStartDate}..${fetched.targetDate}; pages ${fetched.pagesFetched}; population ${fetched.totalCount}; range rows ${fetched.sourceRowsInRange}; today source rows ${fetched.sourceRowsForDate}; today unique physical ${fetched.trackedToday}; range unique physical ${fetched.records.length}; changed writes ${changedRows}`;
+  const detail = `recent ${fetched.windowStartDate}..${fetched.targetDate}; pages ${fetched.pagesFetched}; population ${fetched.totalCount}; range rows ${fetched.sourceRowsInRange}; today source rows ${fetched.sourceRowsForDate}; today unique physical ${fetched.trackedToday}; range unique physical ${fetched.records.length}; ${describeWrites(changedRows)}`;
 
   await db.prepare(`INSERT INTO source_health (
       source_id, status, last_event_at, last_published_at, last_retrieved_at,
@@ -276,7 +272,7 @@ async function recordSuccess(
       retrievedAt,
       finishedAt,
       fetched.totalCount,
-      changedRows,
+      changedRows.changedRows,
       detail.slice(0, 500),
     )
     .run();
@@ -297,7 +293,8 @@ interface CollectorRunDetailRow {
  * `recordSuccess` always writes a `collector_runs.detail` starting with
  * "recent {windowStart}..{targetDate};". The legacy first-page-only path
  * (`collectAirportFlights` in lib/collector.ts) writes a differently shaped
- * "normalized N; changed writes N" detail and therefore never matches this
+ * "normalized N; changed rows N; storage writes N" detail and therefore
+ * never matches this
  * pattern — a shallow legacy success can never satisfy this guard. Reads
  * the most recent successful runs only, so this stays a small bounded query.
  */
@@ -336,7 +333,7 @@ export async function collectAirportFlightsToday(
     await recordSuccess(env.DB, fetched, changedRows);
     return {
       status: "SUCCESS",
-      records: changedRows,
+      records: changedRows.changedRows,
       trackedToday: fetched.trackedToday,
       pagesFetched: fetched.pagesFetched,
     };

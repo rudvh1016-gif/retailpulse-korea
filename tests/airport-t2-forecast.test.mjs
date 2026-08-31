@@ -20,7 +20,11 @@ class LocalD1Statement {
   bind(...values) { this.values = values; return this; }
   async run() {
     const result = this.statement.run(...this.values);
-    return { success: true, meta: { rows_written: Number(result.changes) } };
+    // SQLite changes() is the logical row count, which is what D1 reports as
+    // meta.changes. D1's meta.rows_written additionally counts index writes;
+    // node:sqlite cannot report that, so the double mirrors changes here and
+    // storageWrites assertions are left to Production evidence.
+    return { success: true, meta: { changes: Number(result.changes), rows_written: Number(result.changes) } };
   }
 }
 

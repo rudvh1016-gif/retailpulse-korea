@@ -21,6 +21,7 @@ import {
   type CanonicalWeatherForecast,
 } from "./source-adapters";
 import { buildDataGoKrUrl } from "./data-go-kr.mjs";
+import { describeWrites, NO_D1_WRITES, runD1Batches, type D1WriteCounts } from "./d1-write-counts";
 import { allAreaIds, areaMappings, distanceMeters, uniqueKmaGrids } from "./areas";
 import { sha256 } from "./hash";
 import {
@@ -108,8 +109,8 @@ async function writeSourceHealth(
     .run();
 }
 
-async function persistAirportFlights(db: D1Database | undefined, records: CanonicalAirportFlight[], retainChangeHistory: boolean): Promise<number> {
-  if (!db || !records.length) return 0;
+async function persistAirportFlights(db: D1Database | undefined, records: CanonicalAirportFlight[], retainChangeHistory: boolean): Promise<D1WriteCounts> {
+  if (!db || !records.length) return NO_D1_WRITES;
   const statements: D1PreparedStatement[] = [];
   for (const record of records) {
     const id = record.physicalFlightId;
@@ -196,12 +197,7 @@ async function persistAirportFlights(db: D1Database | undefined, records: Canoni
       ));
   }
 
-  let rowsWritten = 0;
-  for (let offset = 0; offset < statements.length; offset += 40) {
-    const results = await db.batch(statements.slice(offset, offset + 40));
-    rowsWritten += results.reduce((sum, result) => sum + Number(result.meta?.rows_written ?? 0), 0);
-  }
-  return rowsWritten;
+  return runD1Batches(db, statements);
 }
 
 export async function collectAirportFlights(env: CollectorEnv): Promise<{ status: string; records: number }> {
@@ -229,9 +225,9 @@ export async function collectAirportFlights(env: CollectorEnv): Promise<{ status
     const retrievedAt = nowIso();
     const normalized = await Promise.all(items.map((item) => normalizeAirportFlight(item, "departure", retrievedAt)));
     const written = await persistAirportFlights(env.DB, normalized, env.retainChangeHistory === true);
-    await writeSourceHealth(env.DB, "INCHEON_FLIGHT_DETAIL", "LIVE", `normalized ${normalized.length}; changed writes ${written}`, normalized.at(-1));
-    await writeCollectorStatus(env.DB, "INCHEON_FLIGHT_DETAIL", "SUCCESS", `normalized ${normalized.length}; changed writes ${written}`, items.length, written);
-    return { status: "SUCCESS", records: written };
+    await writeSourceHealth(env.DB, "INCHEON_FLIGHT_DETAIL", "LIVE", `normalized ${normalized.length}; ${describeWrites(written)}`, normalized.at(-1));
+    await writeCollectorStatus(env.DB, "INCHEON_FLIGHT_DETAIL", "SUCCESS", `normalized ${normalized.length}; ${describeWrites(written)}`, items.length, written.changedRows);
+    return { status: "SUCCESS", records: written.changedRows };
   } catch (error) {
     const detail = error instanceof Error ? error.message : "collector_error";
     console.error("airport_collector_failed", { sourceId: "INCHEON_FLIGHT_DETAIL", error: detail });
@@ -273,11 +269,11 @@ export async function collectAirportFlightEnrichment(env: CollectorEnv): Promise
       WHERE physical_flight_id = ? AND COALESCE(a2_source_hash, '') <> ?`)
       .bind(record.upstreamFid, record.masterFlightNumber, record.codeshare, record.airlineCode, record.airportCode, record.terminal, record.sourceHash, record.physicalFlightId, record.sourceHash))
       .filter((statement): statement is D1PreparedStatement => Boolean(statement));
-    const matched = env.DB && statements.length ? await runBatches(env.DB, statements) : 0;
+    const matched = env.DB && statements.length ? await runBatches(env.DB, statements) : NO_D1_WRITES;
     const detail = `A1_PRIMARY_A2_ENRICHMENT; compared ${normalized.length}; matched writes ${matched}`;
-    await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, normalized.length, matched);
+    await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, normalized.length, matched.changedRows);
     await writeSourceHealth(env.DB, sourceId, "LIVE", detail, { retrievedAt, schemaVersion: "airport-a2-enrichment-v1" });
-    return { status: "SUCCESS", records: matched };
+    return { status: "SUCCESS", records: matched.changedRows };
   } catch (error) {
     const detail = error instanceof Error ? error.message : "collector_error";
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
@@ -323,11 +319,11 @@ export async function collectScheduledAirportFlights(env: CollectorEnv): Promise
         record.airline, record.airlineCode, record.airport, record.airportCode, record.terminal,
         record.scheduledTime, record.retrievedAt, record.schemaVersion, record.qualityStatus, record.sourceHash))
       .filter((statement): statement is D1PreparedStatement => Boolean(statement));
-    const written = env.DB && statements.length ? await runBatches(env.DB, statements) : 0;
-    const detail = `future schedule ${normalized.length}; changed writes ${written}`;
-    await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, normalized.length, written);
+    const written = env.DB && statements.length ? await runBatches(env.DB, statements) : NO_D1_WRITES;
+    const detail = `future schedule ${normalized.length}; ${describeWrites(written)}`;
+    await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, normalized.length, written.changedRows);
     await writeSourceHealth(env.DB, sourceId, "LIVE", detail, { retrievedAt, schemaVersion: "airport-schedule-v1" });
-    return { status: "SUCCESS", records: written };
+    return { status: "SUCCESS", records: written.changedRows };
   } catch (error) {
     const detail = error instanceof Error ? error.message : "collector_error";
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
@@ -336,14 +332,7 @@ export async function collectScheduledAirportFlights(env: CollectorEnv): Promise
   }
 }
 
-async function runBatches(db: D1Database, statements: D1PreparedStatement[]): Promise<number> {
-  let rowsWritten = 0;
-  for (let offset = 0; offset < statements.length; offset += 40) {
-    const results = await db.batch(statements.slice(offset, offset + 40));
-    rowsWritten += results.reduce((sum, result) => sum + Number(result.meta?.rows_written ?? 0), 0);
-  }
-  return rowsWritten;
-}
+const runBatches = runD1Batches;
 
 export interface CollectorResult {
   status: "SUCCESS" | "PARTIAL" | "ERROR" | "NEEDS_KEY" | "NO_DATA";
@@ -376,7 +365,7 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
   const statements: D1PreparedStatement[] = [];
   let lastObserved: CanonicalSeoulRealtime | undefined;
   const failures: string[] = [];
-  let written = 0;
+  let written: D1WriteCounts = NO_D1_WRITES;
   for (const areaId of allAreaIds) {
     const mapping = areaMappings[areaId];
     const url = new URL(`http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/citydata_ppltn/1/5/${mapping.seoulPoiCode}`);
@@ -429,15 +418,15 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
   const okCount = allAreaIds.length - failures.length;
-  const detail = `areas ok ${okCount}/${allAreaIds.length}; changed writes ${written}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
+  const detail = `areas ok ${okCount}/${allAreaIds.length}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
   if (okCount === 0) {
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
     return { status: "ERROR", records: 0 };
   }
-  await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, okCount, written);
+  await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, okCount, written.changedRows);
   await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastObserved);
-  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written };
+  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows };
 }
 
 const SEOUL_FOREIGN_PERIOD_LOOKBACK_DAYS = 62;
@@ -464,8 +453,8 @@ async function persistSeoulForeignPresence(
   db: D1Database | undefined,
   dongRows: readonly CanonicalSeoulForeignDong[],
   areaRows: readonly CanonicalSeoulForeignArea[],
-): Promise<number> {
-  if (!db) return 0;
+): Promise<D1WriteCounts> {
+  if (!db) return NO_D1_WRITES;
   const statements: D1PreparedStatement[] = [];
   for (const record of dongRows) {
     statements.push(db.prepare(`INSERT INTO seoul_foreign_presence_dong (
@@ -509,7 +498,7 @@ async function persistSeoulForeignPresence(
         record.mappingVersion, record.schemaVersion, "VALID", record.sourceHash,
       ));
   }
-  return statements.length ? runBatches(db, statements) : 0;
+  return statements.length ? runBatches(db, statements) : NO_D1_WRITES;
 }
 
 // S2 — probe a maximum of 62 completed-day candidates and require every
@@ -565,15 +554,15 @@ export async function collectSeoulForeignPresence(env: CollectorEnv, now: Date =
     const areaRows = await aggregateSeoulForeignByArea(dongRows, mapping);
     const written = await persistSeoulForeignPresence(env.DB, dongRows, areaRows);
     const lastRecord = areaRows.at(-1);
-    const detail = `period ${ymd}/${tt}; dongs ${dongRows.length}/${configuredCodes.length}; areas ${areaRows.length}/${allAreaIds.length}; changed writes ${written}`;
-    await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, rawRows.length, written);
+    const detail = `period ${ymd}/${tt}; dongs ${dongRows.length}/${configuredCodes.length}; areas ${areaRows.length}/${allAreaIds.length}; ${describeWrites(written)}`;
+    await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, rawRows.length, written.changedRows);
     await writeSourceHealth(env.DB, sourceId, "OFFICIAL_HISTORICAL", detail, lastRecord ? {
       eventAt: lastRecord.referenceAt,
       publishedAt: null,
       retrievedAt: lastRecord.retrievedAt,
       schemaVersion: lastRecord.schemaVersion,
     } : undefined);
-    return { status: "SUCCESS", records: written };
+    return { status: "SUCCESS", records: written.changedRows };
   } catch (error) {
     const detail = error instanceof Error ? redactSeoulUrl(error.message) : "collector_error";
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
@@ -614,7 +603,7 @@ export async function collectEstimatedSales(env: CollectorEnv, now = new Date())
   const statements: D1PreparedStatement[] = [];
   let lastRecord: CanonicalEstimatedSales | undefined;
   const matchedAreas = new Set<string>();
-  let written = 0;
+  let written: D1WriteCounts = NO_D1_WRITES;
   try {
     const fetchQuarterPage = async (quarterCode: string, start: number, end: number): Promise<Record<string, unknown>[]> => {
       const url = new URL(`http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/VwsmTrdarSelngQq/${start}/${end}/${quarterCode}`);
@@ -679,11 +668,11 @@ export async function collectEstimatedSales(env: CollectorEnv, now = new Date())
     if (!matchedAreas.size) throw new Error("estimated_sales_no_matching_rows");
 
     if (env.DB && statements.length) written = await runBatches(env.DB, statements);
-    const detail = `quarter ${quarterCode}; pages ${pagesRead}; areas ok ${matchedAreas.size}/${allAreaIds.length}; changed writes ${written}`;
+    const detail = `quarter ${quarterCode}; pages ${pagesRead}; areas ok ${matchedAreas.size}/${allAreaIds.length}; ${describeWrites(written)}`;
     const partial = matchedAreas.size < allAreaIds.length;
-    await writeCollectorStatus(env.DB, sourceId, partial ? "PARTIAL" : "SUCCESS", detail, matchedAreas.size, written);
+    await writeCollectorStatus(env.DB, sourceId, partial ? "PARTIAL" : "SUCCESS", detail, matchedAreas.size, written.changedRows);
     await writeSourceHealth(env.DB, sourceId, "OFFICIAL_HISTORICAL", detail, lastRecord ? { retrievedAt: lastRecord.retrievedAt, schemaVersion: lastRecord.schemaVersion } : undefined);
-    return { status: partial ? "PARTIAL" : "SUCCESS", records: written };
+    return { status: partial ? "PARTIAL" : "SUCCESS", records: written.changedRows };
   } catch (error) {
     const detail = error instanceof Error ? redactSeoulUrl(error.message) : "collector_error";
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
@@ -723,7 +712,7 @@ export async function collectWeatherForecasts(env: CollectorEnv, now = new Date(
   const statements: D1PreparedStatement[] = [];
   const failures: string[] = [];
   let lastForecast: CanonicalWeatherForecast | undefined;
-  let written = 0;
+  let written: D1WriteCounts = NO_D1_WRITES;
   for (const grid of uniqueKmaGrids()) {
     const url = buildDataGoKrUrl(
       "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst",
@@ -763,15 +752,15 @@ export async function collectWeatherForecasts(env: CollectorEnv, now = new Date(
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
   const gridCount = uniqueKmaGrids().length;
   const okCount = gridCount - failures.length;
-  const detail = `grids ok ${okCount}/${gridCount}; base ${baseDate}${baseTime}; changed writes ${written}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
+  const detail = `grids ok ${okCount}/${gridCount}; base ${baseDate}${baseTime}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
   if (okCount === 0) {
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
     return { status: "ERROR", records: 0 };
   }
-  await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, okCount, written);
+  await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, okCount, written.changedRows);
   await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastForecast ? { retrievedAt: lastForecast.retrievedAt, schemaVersion: lastForecast.schemaVersion } : undefined);
-  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written };
+  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows };
 }
 
 // T1 — one bounded Seoul festival query, mapped to areas by verified distance.
@@ -843,12 +832,12 @@ export async function collectTourismEvents(env: CollectorEnv, now = new Date()):
           ));
       }
     }
-    let written = 0;
+    let written: D1WriteCounts = NO_D1_WRITES;
     if (env.DB && statements.length) written = await runBatches(env.DB, statements);
-    const detail = `seoul events ${items.length}; mapped ${mappedCount}; changed writes ${written}`;
-    await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, items.length, written);
+    const detail = `seoul events ${items.length}; mapped ${mappedCount}; ${describeWrites(written)}`;
+    await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, items.length, written.changedRows);
     await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastEvent ? { publishedAt: lastEvent.publishedAt, retrievedAt: lastEvent.retrievedAt, schemaVersion: lastEvent.schemaVersion } : undefined);
-    return { status: "SUCCESS", records: written };
+    return { status: "SUCCESS", records: written.changedRows };
   } catch (error) {
     const detail = error instanceof Error ? redactServiceKey(error.message) : "collector_error";
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
@@ -869,7 +858,7 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
   const failures: string[] = [];
   const terminalCounts: string[] = [];
   let lastRow: CanonicalAirportCongestion | undefined;
-  let written = 0;
+  let written: D1WriteCounts = NO_D1_WRITES;
   for (const terminalId of ["P01"]) {
     const url = buildDataGoKrUrl(
       "https://apis.data.go.kr/B551177/statusOfDepartureCongestion/getDepartureCongestion",
@@ -907,15 +896,15 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
     }
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
-  const detail = `terminals ${terminalCounts.join(", ") || "none"}; changed writes ${written}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
+  const detail = `terminals ${terminalCounts.join(", ") || "none"}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
   if (failures.length === 1) {
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
     return { status: "ERROR", records: 0 };
   }
-  await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, terminalCounts.length, written);
+  await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, terminalCounts.length, written.changedRows);
   await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastRow ? { eventAt: lastRow.observedAt, retrievedAt: lastRow.retrievedAt, schemaVersion: lastRow.schemaVersion } : undefined);
-  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written };
+  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows };
 }
 
 const A4_T2_PAGE_SIZE = 20;
@@ -942,7 +931,7 @@ export async function collectAirportCongestionT2(env: CollectorEnv): Promise<Col
   const statements: D1PreparedStatement[] = [];
   const rowFailures: string[] = [];
   let lastRow: CanonicalAirportCongestion | undefined;
-  let written = 0;
+  let written: D1WriteCounts = NO_D1_WRITES;
   let pagesFetched = 0;
   let normalizedCount = 0;
   let totalCount: number | null = null;
@@ -996,15 +985,15 @@ export async function collectAirportCongestionT2(env: CollectorEnv): Promise<Col
     return { status: "ERROR", records: 0 };
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
-  const detail = `pages ${pagesFetched}; totalCount ${totalCount ?? "unknown"}; normalized ${normalizedCount}; changed writes ${written}${rowFailures.length ? `; row failures ${rowFailures.length}` : ""}`;
+  const detail = `pages ${pagesFetched}; totalCount ${totalCount ?? "unknown"}; normalized ${normalizedCount}; ${describeWrites(written)}${rowFailures.length ? `; row failures ${rowFailures.length}` : ""}`;
   if (normalizedCount === 0) {
     await writeCollectorStatus(env.DB, sourceId, "ERROR", "congestion_t2_no_data");
     await writeSourceHealth(env.DB, sourceId, "ERROR", "congestion_t2_no_data");
     return { status: "ERROR", records: 0 };
   }
-  await writeCollectorStatus(env.DB, sourceId, rowFailures.length ? "PARTIAL" : "SUCCESS", detail, normalizedCount, written);
+  await writeCollectorStatus(env.DB, sourceId, rowFailures.length ? "PARTIAL" : "SUCCESS", detail, normalizedCount, written.changedRows);
   await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastRow ? { eventAt: lastRow.observedAt, retrievedAt: lastRow.retrievedAt, schemaVersion: lastRow.schemaVersion } : undefined);
-  return { status: rowFailures.length ? "PARTIAL" : "SUCCESS", records: written };
+  return { status: rowFailures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows };
 }
 
 const A5_PAGE_SIZE = 50;
@@ -1028,7 +1017,7 @@ export async function collectAirportPassengerForecast(env: CollectorEnv): Promis
   const statements: D1PreparedStatement[] = [];
   const dayFailures: string[] = [];
   let lastRow: CanonicalAirportPassengerForecastRow | undefined;
-  let written = 0;
+  let written: D1WriteCounts = NO_D1_WRITES;
   let normalizedRowGroups = 0;
   let requestCount = 0;
   const retrievedAt = nowIso();
@@ -1090,15 +1079,15 @@ export async function collectAirportPassengerForecast(env: CollectorEnv): Promis
     }
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
-  const detail = `requests ${requestCount}; normalized rows ${normalizedRowGroups}; changed writes ${written}${dayFailures.length ? `; failed ${dayFailures.join(" | ")}` : ""}`;
+  const detail = `requests ${requestCount}; normalized rows ${normalizedRowGroups}; ${describeWrites(written)}${dayFailures.length ? `; failed ${dayFailures.join(" | ")}` : ""}`;
   if (normalizedRowGroups === 0) {
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail || "forecast_no_data");
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail || "forecast_no_data");
     return { status: "ERROR", records: 0 };
   }
-  await writeCollectorStatus(env.DB, sourceId, dayFailures.length ? "PARTIAL" : "SUCCESS", detail, normalizedRowGroups, written);
+  await writeCollectorStatus(env.DB, sourceId, dayFailures.length ? "PARTIAL" : "SUCCESS", detail, normalizedRowGroups, written.changedRows);
   await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastRow ? { eventAt: lastRow.targetStartAt, retrievedAt: lastRow.retrievedAt, schemaVersion: lastRow.schemaVersion } : undefined);
-  return { status: dayFailures.length ? "PARTIAL" : "SUCCESS", records: written };
+  return { status: dayFailures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows };
 }
 
 export async function runScheduledCollectors(env: CollectorEnv): Promise<void> {

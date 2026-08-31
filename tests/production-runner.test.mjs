@@ -278,3 +278,44 @@ test("production operations diagnostic stays read-only and calls no provider", (
   assert.match(script, /sourceIds\.map\(\(\) => "\?"\)/);
   assert.equal(/\$\{sourceIds\}/.test(script), false);
 });
+
+/**
+ * Regression: "changed writes" used to report D1's meta.rows_written, which
+ * counts the table row AND every index write. Production A5 run 33344958504
+ * reported 3312 for 828 logical rows because airport_passenger_forecast
+ * carries a primary key plus two indexes. Both numbers must now be kept,
+ * and the semantic one must be meta.changes.
+ */
+test("D1 write counting separates logical changes from index-inflated storage writes", async () => {
+  const { describeWrites, NO_D1_WRITES, runD1Batches } = await import("../lib/d1-write-counts.ts");
+
+  assert.deepEqual(NO_D1_WRITES, { changedRows: 0, storageWrites: 0 });
+  assert.equal(describeWrites({ changedRows: 828, storageWrites: 3312 }), "changed rows 828; storage writes 3312");
+
+  // One logical row per statement, four storage writes each (table + 3 indexes).
+  const statements = Array.from({ length: 828 }, (_, index) => ({ index }));
+  const batched = [];
+  const db = {
+    batch: async (slice) => {
+      batched.push(slice.length);
+      return slice.map(() => ({ success: true, meta: { changes: 1, rows_written: 4 } }));
+    },
+  };
+
+  const counts = await runD1Batches(db, statements);
+  assert.deepEqual(counts, { changedRows: 828, storageWrites: 3312 });
+  // Batching stays bounded at 40 statements per D1 call.
+  assert.ok(batched.every((size) => size <= 40), "no batch may exceed 40 statements");
+  assert.equal(batched.reduce((sum, size) => sum + size, 0), 828);
+});
+
+test("an UPSERT suppressed by its source_hash guard counts as zero changed rows", async () => {
+  const { runD1Batches } = await import("../lib/d1-write-counts.ts");
+  // D1 reports changes 0 when the ON CONFLICT ... WHERE guard rejects the update.
+  const db = { batch: async (slice) => slice.map(() => ({ success: true, meta: { changes: 0, rows_written: 0 } })) };
+  assert.deepEqual(await runD1Batches(db, [{}, {}, {}]), { changedRows: 0, storageWrites: 0 });
+
+  // A missing meta must never be counted as a write.
+  const bare = { batch: async (slice) => slice.map(() => ({ success: true })) };
+  assert.deepEqual(await runD1Batches(bare, [{}, {}]), { changedRows: 0, storageWrites: 0 });
+});

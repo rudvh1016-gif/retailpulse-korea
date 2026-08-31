@@ -13,7 +13,7 @@ interface Fetcher {
 interface D1Result<T = unknown> {
   success: boolean;
   results?: T[];
-  meta?: { rows_read?: number; rows_written?: number };
+  meta?: { rows_read?: number; rows_written?: number; changes?: number };
 }
 
 interface D1PreparedStatement {
