@@ -32,7 +32,7 @@ test("Worker leaves HTTPS requests unchanged", () => {
 });
 
 test("Worker leaves loopback HTTP requests available for local rendering", () => {
-  for (const host of ["localhost", "127.0.0.1", "[::1]"]) {
+  for (const host of ["localhost", "127.0.0.1", "[::1]", "terminal.local"]) {
     assert.equal(redirectHttpToHttps(new Request(`http://${host}/ko`)), undefined);
   }
 });

@@ -4,6 +4,14 @@ import {
   SEOUL_FOREIGN_PRODUCT_VERSION,
   SEOUL_FOREIGN_SOURCE_ID,
 } from "../../../../lib/seoul-foreign";
+import {
+  summarizeCurrentBusiestDepartureHalls,
+  summarizeTodayPassengerForecast,
+  summarizeTodayTopGate,
+  type AirportCongestionSummaryRow,
+  type AirportForecastAggregateRow,
+  type AirportTodayFlightRow,
+} from "../../../../lib/airport-today-summary";
 
 export const dynamic = "force-dynamic";
 
@@ -113,34 +121,36 @@ export async function GET() {
 
     const congestionRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT terminal, zone, wait_time_minutes AS waitTimeMinutes, wait_time_raw AS waitTimeRaw,
-        waiting_count AS waitingCount, observed_at AS observedAt
+        waiting_count AS waitingCount, observed_at AS observedAt, retrieved_at AS retrievedAt
       FROM airport_congestion c
       WHERE observed_at = (SELECT MAX(observed_at) FROM airport_congestion d WHERE d.terminal = c.terminal)
       ORDER BY terminal, zone LIMIT 24`,
     ).all<Row>()).results ?? []);
 
-    // A5 — official FORECAST/EXPECTED departure passengers, never an actual
-    // observed queue. One upcoming time-band aggregate row per terminal; the
-    // official total field is used directly rather than summed from
-    // components (see docs/DATA_SOURCES.md double-count prevention).
+    const kstToday = new Date(now + 9 * 3_600_000).toISOString().slice(0, 10);
+
+    // A5 official aggregate departure rows only. Component rows never enter
+    // today's total or peak calculation, preventing provider-total double count.
     const passengerForecastRows = await safeAll<Row>(async () => (await client.prepare(
-      `SELECT terminal, target_date AS targetDate, time_band_raw AS timeBandRaw,
+      `SELECT terminal, direction, is_aggregate AS isAggregate,
+        target_date AS targetDate, time_band_raw AS timeBandRaw,
         target_start_at AS targetStartAt, target_end_at AS targetEndAt,
         expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
       FROM airport_passenger_forecast f
-      WHERE f.direction = 'departure' AND f.is_aggregate = 1
-        AND f.target_start_at = (
-          SELECT MIN(g.target_start_at) FROM airport_passenger_forecast g
-          WHERE g.terminal = f.terminal AND g.direction = 'departure' AND g.is_aggregate = 1
-            AND g.target_start_at >= ?
-        )
-      ORDER BY terminal LIMIT 4`,
-    ).bind(kstNowIso).all<Row>()).results ?? []);
+      WHERE f.direction = 'departure' AND f.is_aggregate = 1 AND f.target_date = ?
+      ORDER BY target_start_at, terminal LIMIT 96`,
+    ).bind(kstToday).all<Row>()).results ?? []);
 
-    // Flight schedule timestamps carry +09:00; compare against the KST date.
-    const kstToday = new Date(now + 9 * 3_600_000).toISOString().slice(0, 10);
     const flightRows = await safeAll<Row>(async () => (await client.prepare(
-      `SELECT COUNT(DISTINCT physical_flight_id) AS flights, MAX(retrieved_at) AS retrievedAt FROM airport_flights
+      `SELECT physical_flight_id AS physicalFlightId, terminal, gate, retrieved_at AS retrievedAt
+      FROM airport_flights
+      WHERE direction = 'departure' AND substr(scheduled_at, 1, 10) = ?
+      LIMIT 2000`,
+    ).bind(kstToday).all<Row>()).results ?? []);
+
+    const flightCountRows = await safeAll<Row>(async () => (await client.prepare(
+      `SELECT COUNT(DISTINCT physical_flight_id) AS flights
+      FROM airport_flights
       WHERE direction = 'departure' AND substr(scheduled_at, 1, 10) = ?`,
     ).bind(kstToday).all<Row>()).results ?? []);
 
@@ -173,7 +183,24 @@ export async function GET() {
       }];
     }));
 
-    const flightsToday = Number(flightRows[0]?.flights ?? 0);
+    const passengerToday = summarizeTodayPassengerForecast(passengerForecastRows as unknown as AirportForecastAggregateRow[]);
+    const distinctFlightsToday = Number(flightCountRows[0]?.flights ?? 0);
+    const flightsToday = summarizeTodayTopGate(
+      flightRows as unknown as AirportTodayFlightRow[],
+      0.5,
+      distinctFlightsToday,
+    );
+    const currentBusiest = summarizeCurrentBusiestDepartureHalls(
+      congestionRows.map((row) => ({ ...row, freshness: freshnessOf(row.observedAt, 20, now) })) as unknown as AirportCongestionSummaryRow[],
+    );
+    const latestCongestionRetrieval = congestionRows.reduce<string | null>((latest, row) => {
+      const value = typeof row.retrievedAt === "string" ? row.retrievedAt : null;
+      return value && (!latest || value > latest) ? value : latest;
+    }, null);
+    const latestAirportRetrieval = [passengerToday.retrievedAt, flightsToday.retrievedAt, latestCongestionRetrieval]
+      .filter((value): value is string => Boolean(value)).sort().at(-1) ?? null;
+    const upcomingForecast = passengerForecastRows.filter((row) => String(row.targetEndAt ?? "") >= kstNowIso)
+      .filter((row, index, all) => all.findIndex((candidate) => candidate.terminal === row.terminal) === index);
     return Response.json({
       mode: "live-summary",
       generatedAt,
@@ -181,11 +208,25 @@ export async function GET() {
       areas,
       airport: {
         congestion: congestionRows.map((row) => ({ ...row, freshness: freshnessOf(row.observedAt, 20, now) })),
-        departuresTrackedToday: flightsToday > 0 ? flightsToday : null,
+        currentBusiestDepartureHallByTerminal: currentBusiest,
+        departuresTrackedToday: flightsToday.departuresTrackedToday,
+        topDepartureGate: flightsToday.topDepartureGate?.gate ?? null,
+        topDepartureGateTerminal: flightsToday.topDepartureGate?.terminal ?? null,
+        topDepartureGateFlights: flightsToday.topDepartureGate?.flights ?? null,
+        gateCoverageRatio: flightsToday.gateCoverageRatio,
+        serviceDateKst: kstToday,
+        periodStartAt: `${kstToday}T00:00:00+09:00`,
+        periodEndAt: `${kstToday}T23:59:59+09:00`,
+        latestRetrievedAt: latestAirportRetrieval,
+        todayExpectedPassengersTotal: passengerToday.total,
+        todayExpectedPassengersByTerminal: passengerToday.byTerminal,
+        peakExpectedTimeBand: passengerToday.peak,
+        peakExpectedPassengers: passengerToday.peak?.expectedPassengers ?? null,
+        passengerForecastTimeline: passengerToday.timeline,
         scheduled: scheduledRows,
         // FORECAST/EXPECTED passengers — semantically separate from
         // `congestion` (CURRENT/OBSERVED). Never merge these two arrays.
-        passengerForecast: passengerForecastRows,
+        passengerForecast: upcomingForecast,
       },
     }, {
       headers: { "cache-control": "public, max-age=60, stale-while-revalidate=300" },
@@ -196,7 +237,15 @@ export async function GET() {
       generatedAt,
       sources: [],
       areas: {},
-      airport: { congestion: [], departuresTrackedToday: null, scheduled: [], passengerForecast: [] },
+      airport: {
+        congestion: [], currentBusiestDepartureHallByTerminal: {}, departuresTrackedToday: null,
+        topDepartureGate: null, topDepartureGateTerminal: null, topDepartureGateFlights: null,
+        gateCoverageRatio: 0, serviceDateKst: null,
+        periodStartAt: null, periodEndAt: null, latestRetrievedAt: null,
+        todayExpectedPassengersTotal: null, todayExpectedPassengersByTerminal: {},
+        peakExpectedTimeBand: null, peakExpectedPassengers: null,
+        passengerForecastTimeline: [], scheduled: [], passengerForecast: [],
+      },
       message: "Live sources are not connected. Official historical and Demo-labelled views remain available.",
     }, { status: 200, headers: { "cache-control": "no-store" } });
   }

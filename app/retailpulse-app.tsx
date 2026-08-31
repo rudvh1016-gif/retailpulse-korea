@@ -17,7 +17,7 @@ import {
   type Terminal,
 } from "./retailpulse-data";
 import { pageDescription, pageTitle, seoLocales, seoSlugs, siteOrigin, type SeoSlug } from "./seo-config";
-import LiveSignals from "./live-signals";
+import LiveSignals, { AirportTodaySummary, HomeTodayBrief } from "./live-signals";
 import { classifyDemoDemand } from "../lib/demand-index";
 
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
@@ -297,33 +297,6 @@ const sourceUseJa: Record<string, string> = {
   "KT PLIP / BIGSIGHT": "別途契約が必要な移動データ候補",
 };
 
-const readinessSources: {
-  label: Record<Lang, string>;
-  state: Record<Lang, string>;
-  tone: "ok" | "warn" | "off";
-}[] = [
-  {
-    label: { ko: "인천공항 월별 실적", en: "Airport monthly history", zh: "机场月度实绩", ja: "空港月次実績" },
-    state: { ko: "공식 과거값 사용 중", en: "OFFICIAL HISTORY BUNDLED", zh: "已内置官方历史", ja: "公式履歴を内蔵" },
-    tone: "ok",
-  },
-  {
-    label: { ko: "외국인 생활인구 월별", en: "Foreign-population history", zh: "外国人生活人口月度", ja: "外国人生活人口の月次履歴" },
-    state: { ko: "공식 과거값 사용 중", en: "OFFICIAL HISTORY BUNDLED", zh: "已内置官方历史", ja: "公式履歴を内蔵" },
-    tone: "ok",
-  },
-  {
-    label: { ko: "공항 실시간·항공편", en: "Airport live feeds and flights", zh: "机场实时与航班", ja: "空港Live・フライト" },
-    state: { ko: "미연결 · 활용신청 필요", en: "NOT CONNECTED · APPLICATIONS REQUIRED", zh: "未接入 · 需要申请", ja: "未接続・利用申請が必要" },
-    tone: "off",
-  },
-  {
-    label: { ko: "기상·서울 실시간", en: "Weather and Seoul live data", zh: "天气与首尔实时数据", ja: "天気・ソウルLiveデータ" },
-    state: { ko: "미연결 · 키 필요", en: "NOT CONNECTED · KEY REQUIRED", zh: "未接入 · 需要密钥", ja: "未接続・キーが必要" },
-    tone: "off",
-  },
-];
-
 const industryProfiles: Record<IndustryId, {
   label: Record<Lang, string>;
   short: string;
@@ -494,17 +467,6 @@ function HomeRankings({ lang, selected, onSelect }: { lang: Lang; selected: Area
           </button>)}
         </section>;
       })}
-    </div>
-  </section>;
-}
-
-function HomeAirportNow({ lang, onOpen }: { lang: Lang; onOpen: (section: AirportSection, terminal?: Terminal) => void }) {
-  return <section className="home-airport" aria-labelledby="home-airport-title">
-    <div className="section-head"><div><p className="eyebrow">AIRPORT PRESSURE · UNAVAILABLE</p><h2 id="home-airport-title">{localText(lang, { ko: "인천공항 운항 집중", en: "INCHEON AIRPORT PRESSURE", zh: "仁川机场航班集中度", ja: "仁川空港の運航集中" })}</h2></div><button className="text-link" onClick={() => onOpen("now")}>{localText(lang, { ko: "공항 자세히", en: "OPEN AIRPORT", zh: "查看机场", ja: "空港を見る" })} ↗</button></div>
-    <div className="airport-unavailable" role="status">
-      <strong>{localText(lang, { ko: "실시간 공항 데이터 연결 준비 중", en: "Live airport data is being prepared", zh: "实时机场数据正在准备接入", ja: "空港リアルタイムデータを準備中" })}</strong>
-      <p>{localText(lang, { ko: "공식 운항·게이트 인증 전에는 사람 수나 게이트 혼잡을 추정해 표시하지 않습니다. 공식 월별 실적은 공항의 ‘과거’에서 볼 수 있습니다.", en: "We do not estimate people counts or gate pressure before official flight and gate authentication. Official monthly actuals remain available under Airport History.", zh: "在官方航班与登机口完成认证前，不推算旅客人数或登机口拥挤度。机场‘历史’中仍可查看官方月度实绩。", ja: "公式の運航・搭乗口データの認証前は、人数や搭乗口混雑を推定表示しません。空港の「履歴」では公式月次実績を確認できます。" })}</p>
-      <button onClick={() => onOpen("history")}>{localText(lang, { ko: "공식 과거 실적 보기", en: "VIEW OFFICIAL HISTORY", zh: "查看官方历史实绩", ja: "公式の過去実績を見る" })} ↗</button>
     </div>
   </section>;
 }
@@ -872,6 +834,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
               </figure>
             </section>
 
+            <HomeTodayBrief lang={lang} />
             <section className="audience-rail" aria-label={lang === "zh" ? "使用目的" : lang === "ja" ? "利用目的" : lang === "en" ? "Choose how to use KORETAIL" : "KORETAIL 사용 목적"}>
               <div>
                 <p className="eyebrow">FOR VISITORS</p>
@@ -887,7 +850,6 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
             <LiveSignals lang={lang} area={selected} />
             <HomeRankings lang={lang} selected={selected} onSelect={(nextDay, area) => { setDay(nextDay); selectArea(area); }} />
-            <HomeAirportNow lang={lang} onOpen={openAirport} />
             <QuickActions lang={lang} onArea={() => document.getElementById("area-compare")?.scrollIntoView({ behavior: "smooth", block: "start" })} onAirport={openAirport} onBusiness={() => navigate("business")} onInsights={() => navigate("forecast")} onMore={() => navigate("more")} />
             {betaSignupEnabled && <BetaSignup lang={lang} />}
             <AreaDetail lang={lang} day={day} selected={selected} />
@@ -1197,8 +1159,7 @@ function AirportView({
   return (
     <section className="view-section airport-view">
       <div className="view-intro">
-        <div><p className="eyebrow">{localText(lang, { ko: "INCHEON AIRPORT · 예시 날짜 · 8월 23일 · KST", en: "INCHEON AIRPORT · SAMPLE DATE · AUG 23 · KST", zh: "INCHEON AIRPORT · 示例日期 · 8月23日 · KST", ja: "INCHEON AIRPORT · サンプル日付 · 8月23日 · KST" })}</p><h1>{t.airportTitle}</h1><p>{t.airportSub}</p></div>
-        <DemoLabel lang={lang} />
+        <div><p className="eyebrow">INCHEON AIRPORT · OFFICIAL TODAY · KST</p><h1>{localText(lang, { ko: "인천공항", en: "Incheon Airport", zh: "仁川机场", ja: "仁川空港" })}</h1><p>{localText(lang, { ko: "오늘 예상 출국객·실제 출발 운항·현재 출국장 흐름을 구분해 보여줍니다.", en: "Official expected passengers, physical departing flights and current departure-hall conditions—kept clearly separate.", zh: "清楚区分今日预计出境人数、实际出发航班与当前出境区状况。", ja: "本日の予想出国者・実出発便・現在の出国場状況を明確に分けて表示します。" })}</p></div>
       </div>
       <div className="terminal-selector" role="tablist" aria-label="Terminal">
         {(["all", "T1", "T2"] as Terminal[]).map((item) => <button key={item} className={terminal === item ? "active" : ""} onClick={() => setTerminal(item)} role="tab" aria-selected={terminal === item}>{item === "all" ? localText(lang, { ko: "전체", en: "ALL", zh: "全部", ja: "全体" }) : item}</button>)}
@@ -1207,7 +1168,7 @@ function AirportView({
       <nav className="airport-context-nav" aria-label={localText(lang, { ko: "공항 정보 구분", en: "Airport sections", zh: "机场信息分类", ja: "空港情報の分類" })}>
         {(["now", "next", "flights", "history", "airlines"] as AirportSection[]).map((item) => <button key={item} className={section === item ? "active" : ""} onClick={() => setSection(item)} aria-current={section === item ? "page" : undefined}>{item === "now" ? localText(lang, { ko: "지금", en: "NOW", zh: "现在", ja: "現在" }) : item === "next" ? localText(lang, { ko: "다음 흐름", en: "NEXT", zh: "后续客流", ja: "次の流れ" }) : item === "flights" ? localText(lang, { ko: "항공편", en: "FLIGHTS", zh: "航班", ja: "フライト" }) : item === "history" ? localText(lang, { ko: "과거", en: "HISTORY", zh: "历史", ja: "履歴" }) : localText(lang, { ko: "항공사", en: "AIRLINES", zh: "航司", ja: "航空会社" })}</button>)}
       </nav>
-      {section === "now" && <div className="airport-unavailable" role="status"><strong>{localText(lang, { ko: "실시간 공항 데이터 연결 준비 중", en: "Live airport data is being prepared", zh: "实时机场数据正在准备接入", ja: "空港リアルタイムデータを準備中" })}</strong><p>{localText(lang, { ko: "공식 운항·게이트 인증 전에는 예상 승객 수, 혼잡 시간, 게이트 압력을 표시하지 않습니다. 터미널을 선택해도 같은 원칙을 지킵니다.", en: "Expected passenger counts, busy windows and gate pressure stay hidden until official flight and gate authentication. The same rule applies to every terminal.", zh: "官方航班与登机口完成认证前，不显示预计旅客数、拥挤时段或登机口压力；所有航站楼均遵循同一原则。", ja: "公式の運航・搭乗口データの認証前は、予想旅客数・混雑時間・搭乗口圧力を表示しません。すべてのターミナルで同じ原則を守ります。" })}</p><button onClick={() => setSection("history")}>{localText(lang, { ko: "공식 과거 실적 보기", en: "VIEW OFFICIAL HISTORY", zh: "查看官方历史实绩", ja: "公式の過去実績を見る" })} ↗</button></div>}
+      {section === "now" && <AirportTodaySummary lang={lang} terminal={terminal} />}
       {section === "now" && demoNowAvailable && <>
       <div className="airport-pulse">
         <div className={"airport-score " + (demoNowAvailable ? "" : "unavailable")}><strong>{demoNowAvailable ? "74" : "N/A"}</strong><span>DEPARTURE PULSE · {terminalLabel}<small>{demoNowAvailable ? t.moderatelyBusy : noTerminalDemo}</small></span></div>
@@ -1220,7 +1181,7 @@ function AirportView({
           <div><p className="eyebrow">NOW &amp; TOMORROW · {terminalLabel} · KST</p><h2 id="airport-volume-title">{localText(lang, { ko: "오늘과 내일 공항 흐름", en: "TODAY & TOMORROW", zh: "今天与明天的机场客流", ja: "本日と明日の空港利用" })}</h2></div>
           <DemoLabel lang={lang} />
         </div>
-        <p className="volume-explainer">{localText(lang, { ko: "실시간 API가 아직 연결되지 않았습니다. 아래 값은 전체 공항 Demo이며, T1/T2로 임의 배분하지 않습니다.", en: "The live API is not connected. Values below are all-airport demos; T1/T2 are never allocated by assumption.", zh: "实时API尚未连接。以下数值均为整体机场演示值，T1/T2不会被任意分配。", ja: "リアルタイムAPIは未接続です。以下は空港全体のデモ値で、T1/T2へ推定配分しません。" })}</p>
+        <p className="volume-explainer">DEMO PREVIEW · NOT PART OF THE OFFICIAL TODAY SUMMARY</p>
         <div className="volume-primary">
           <div className="volume-main">
             <p>{localText(lang, { ko: "오늘 예상 출국객", en: "TODAY EXPECTED DEPARTURES", zh: "今日预计出境人数", ja: "本日の出国者予測" })}</p>
@@ -1498,38 +1459,12 @@ function MoreView({
     <section className="view-section more-view">
       <div className="view-intro"><div><p className="eyebrow">SYSTEM &amp; PRODUCT</p><h1>{t.more}</h1></div></div>
       <FeatureDiscovery lang={lang} onAirport={onAirport} onBusiness={onBusiness} onInsights={onInsights} onMore={() => document.getElementById("my-retailpulse")?.scrollIntoView({ behavior: "smooth", block: "start" })} />
-      <div className="more-section">
-        <div className="section-head"><div><p className="eyebrow">LIVE READINESS · CURRENT BUILD</p><h2>{localText(lang, { ko: "연결 준비 상태", en: "LIVE CONNECTION READINESS", zh: "实时接入准备状态", ja: "Live接続の準備状況" })}</h2></div><strong className="health-score">2 / 4</strong></div>
-        <p className="delay-note">{localText(lang, {
-          ko: "공식 과거 데이터 2개는 사용 중이지만, 방문 시 호출되는 Live 데이터 API는 아직 0개입니다. 가짜 업데이트 시각을 표시하지 않습니다.",
-          en: "Two official historical sources are bundled, but the site still calls zero live data APIs. No simulated update timestamps are shown.",
-          zh: "已内置2个官方历史来源，但网站目前调用的实时数据API仍为0，不显示模拟更新时间。",
-          ja: "公式履歴2件は内蔵済みですが、閲覧時に呼び出すLiveデータAPIはまだ0件です。架空の更新時刻は表示しません。",
-        })}</p>
-        <div className="health-list">
-          {readinessSources.map((item) => <div key={item.label.en}><span><i className={item.tone} />{item.label[lang]}</span><strong>{item.state[lang]}</strong></div>)}
-        </div>
-      </div>
-      <section className="source-directory" aria-labelledby="source-directory-title">
+      {false && <section className="source-directory" aria-labelledby="source-directory-title">
         <div className="section-head">
           <div><p className="eyebrow">FREE &amp; CONDITIONAL DATA MAP</p><h2 id="source-directory-title">{localText(lang, { ko: "데이터 출처와 연동 조건", en: "DATA SOURCES & ACCESS", zh: "数据来源与接入条件", ja: "データ出典と接続条件" })}</h2></div>
           <strong>{visibleSources.length} / {sourceCatalog.length}</strong>
         </div>
         <p className="source-note">{localText(lang, { ko: "무료 조회와 무료 상업용 API는 다릅니다. 관광데이터랩 화면을 스크래핑하지 않고, KT·SKT 데이터를 무조건 무료라고 표시하지 않습니다.", en: "Free viewing is not the same as a free commercial API. We do not scrape Tourism Data Lab or treat KT/SKT data as unrestricted.", zh: "‘可免费查看’不等于‘可免费用于商业API’。不会抓取韩国观光数据实验室页面，也不会把KT、SKT数据标成无条件免费。", ja: "無料閲覧と無料の商用APIは同じではありません。観光データラボ画面をスクレイピングせず、KT・SKTデータを無条件の無料とは表示しません。" })}</p>
-        <section className="runtime-api-audit" aria-labelledby="runtime-api-audit-title">
-          <div><p className="eyebrow">CURRENT SITE RUNTIME AUDIT</p><h3 id="runtime-api-audit-title">{localText(lang, { ko: "현재 실제 API 연결 상태", en: "CURRENT API CONNECTION STATUS", zh: "当前实际API连接状态", ja: "現在のAPI接続状況" })}</h3><p>{localText(lang, {
-            ko: "지금 공개 Site는 방문할 때 외부 공공데이터 API를 직접 호출하지 않습니다. 공항과 외국인 생활인구 과거값은 검증 후 코드에 넣은 정적 집계값이고, 오늘·내일·항공편·게이트·매장 신호는 Live 연결 전 Demo입니다.",
-            en: "The public Work site does not call an external public-data API when a visitor opens it. Airport and foreign-population history are verified static aggregates; today, tomorrow, flight, gate and business signals remain Demo until live connections are added.",
-            zh: "当前公开站点在访问时不会直接调用外部公共数据API。机场与外国人生活人口历史值为核验后内置的静态汇总；今天、明天、航班、登机口与门店信号在实时接入前均为演示数据。",
-            ja: "現在の公開Workサイトは、閲覧時に外部の公共データAPIを直接呼び出していません。空港と外国人生活人口の履歴は検証済みの静的集計値で、今日・明日・便・搭乗口・店舗シグナルはLive接続前のデモです。",
-          })}</p></div>
-          <dl>
-            <div><dt>LIVE RUNTIME DATA API</dt><dd>0</dd><small>{localText(lang, { ko: "현재 직접 호출 0개", en: "NO DIRECT CALLS", zh: "当前无直接调用", ja: "現在の直接呼出しなし" })}</small></div>
-            <div><dt>OFFICIAL HISTORY BUNDLED</dt><dd>2</dd><small>{localText(lang, { ko: "공항 · 외국인 생활인구", en: "AIRPORT · FOREIGN POPULATION", zh: "机场 · 外国人生活人口", ja: "空港 · 外国人生活人口" })}</small></div>
-            <div><dt>AUDITED SOURCE CANDIDATES</dt><dd>{sourceCatalog.length}</dd><small>{localText(lang, { ko: "아래 연동 후보 전체", en: "ALL CANDIDATES BELOW", zh: "以下全部候选来源", ja: "以下の接続候補" })}</small></div>
-          </dl>
-          <p className="runtime-font-note">{localText(lang, { ko: "Pretendard·Noto 웹폰트 요청은 화면 자산이며 관광·공항 데이터 API가 아닙니다.", en: "Pretendard and Noto web-font requests are presentation assets, not tourism or airport data APIs.", zh: "Pretendard与Noto网页字体请求属于界面资源，并非旅游或机场数据API。", ja: "Pretendard・NotoのWebフォント取得は表示用アセットで、観光・空港データAPIではありません。" })}</p>
-        </section>
         <section className="credential-audit" aria-labelledby="credential-audit-title">
           <div className="section-head"><div><p className="eyebrow">KEY COUNT · OFFICIAL TERMS AUDIT</p><h3 id="credential-audit-title">{localText(lang, { ko: "공항용 키는 몇 개 필요한가요?", en: "HOW MANY AIRPORT KEYS ARE NEEDED?", zh: "机场数据需要几个密钥？", ja: "空港用キーはいくつ必要？" })}</h3></div><span className="official-label">AUDITED · 2026.08.23</span></div>
           <p className="credential-answer">{localText(lang, {
@@ -1571,7 +1506,7 @@ function MoreView({
           </details>)}
         </div>
         <p className="signal-truth">{localText(lang, { ko: "서울 상권 추정매출은 외국인 소비 데이터가 아니므로 보조 기준으로만 씁니다.", en: "Seoul estimated commercial sales are not foreign-spend data; they remain a supporting baseline only.", zh: "首尔商圈推算销售额主要不是外国人消费；只作为辅助基准。", ja: "ソウル商圏の推定売上は外国人消費データではないため、補助基準としてのみ使用します。" })}</p>
-      </section>
+      </section>}
       <section className="methodology" aria-labelledby="methodology-title">
         <div className="section-head"><div><p className="eyebrow">ABOUT · METHODOLOGY · DATA TRUTH</p><h2 id="methodology-title">{localText(lang, { ko: "무엇을 보여주고, 어떻게 판단하나요?", en: "WHAT WE SHOW & HOW IT WORKS", zh: "展示什么，如何判断？", ja: "何を示し、どう判断する？" })}</h2></div><span>UPDATED · 2026.08.23 KST</span></div>
         <p className="methodology-intro">{localText(lang, { ko: "KORETAIL은 서울의 현재 신호, 내일 수요예측, 공식 과거실적을 분리해 보여주는 관광·리테일 데이터 제품입니다. 예측은 확정이 아니며 매장 권고는 운영 참고자료입니다.", en: "KORETAIL separates current signals, tomorrow's forecast and official history. Forecasts are not guarantees; business guidance is operational reference material.", zh: "KORETAIL分开展示首尔当前信号、明日预测与官方历史。预测并非保证，门店建议仅供运营参考。", ja: "KORETAILはソウルの現在シグナル、明日の予測、公式の過去実績を分けて表示します。予測は確約ではなく、店舗向け提案は運営の参考情報です。" })}</p>
