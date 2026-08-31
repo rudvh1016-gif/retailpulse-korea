@@ -72,7 +72,7 @@ test("sample demand and airport unavailable states are explicit and accessible",
   expect(consoleErrors.join("\n")).not.toMatch(/hydrated|hydration/i);
   await expect(page.getByText(/최근 4주 평균/)).toHaveCount(0);
   await page.locator("nav.bottom-nav a").filter({ hasText: "공항" }).click();
-  await expect(page.getByText("확인 불가", { exact: true })).toBeVisible();
+  await expect(page.locator(".airport-today-grid article").filter({ hasText: "오늘 공식 예상 출국객" }).getByText("확인 불가", { exact: true })).toBeVisible();
   await expect(page.getByText(/오늘 예상 출국객·실제 출발 운항·현재 출국장 흐름을 구분/)).toBeVisible();
   await page.getByRole("button", { name: "다음 흐름" }).click();
   await expect(page.getByText("게이트 주변 예상 혼잡")).toBeVisible();
