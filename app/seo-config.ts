@@ -21,7 +21,7 @@ function normalizeOrigin(value: string | undefined): string {
 export const siteOrigin = normalizeOrigin(configuredOrigin);
 export const seoLocales = ["ko", "en", "zh", "ja"] as const;
 export type SeoLocale = typeof seoLocales[number];
-export const seoSlugs = ["myeongdong", "hongdae", "seongsu", "airport", "forecast", "business", "more"] as const;
+export const seoSlugs = ["myeongdong", "hongdae", "seongsu", "airport", "forecast", "business", "about", "more"] as const;
 export type SeoSlug = typeof seoSlugs[number];
 
 const names = {
@@ -42,16 +42,17 @@ export function pageTitle(locale: SeoLocale, slug?: SeoSlug) {
   if (slug in names) {
     const name = names[slug as keyof typeof names][locale];
     return {
-      ko: `${name} 오늘·내일 쇼핑 수요 및 추천시간 | KORETAIL`,
-      en: `${name} Shopping Demand & Best Time | KORETAIL`,
-      zh: `${name}今日明日购物需求与推荐时间 | KORETAIL`,
-      ja: `${name}の混雑・買い物需要とおすすめ時間 | KORETAIL`,
+      ko: `${name} 실시간 혼잡과 공식 혼잡 예측 | KORETAIL`,
+      en: `${name} Live Crowding & Official Forecast | KORETAIL`,
+      zh: `${name}实时拥挤与官方预测 | KORETAIL`,
+      ja: `${name}のリアルタイム混雑と公式予測 | KORETAIL`,
     }[locale];
   }
   const titles: Record<Exclude<SeoSlug, keyof typeof names>, Record<SeoLocale, string>> = {
     airport: { ko: "인천공항 T1·T2 출국객·항공편·혼잡도 | KORETAIL", en: "Incheon Airport T1·T2 Passengers & Flights | KORETAIL", zh: "仁川机场T1·T2出境旅客与航班 | KORETAIL", ja: "仁川空港T1・T2 出国者・フライト・混雑 | KORETAIL" },
-    forecast: { ko: "서울 7일 수요·지역·과거 인사이트 | KORETAIL", en: "Seoul Demand, Area & History Insights | KORETAIL", zh: "首尔需求、地区与历史洞察 | KORETAIL", ja: "ソウル需要・エリア・過去インサイト | KORETAIL" },
-    business: { ko: "서울 매장 업종별 오픈 브리프 | KORETAIL", en: "Seoul Store Opening Brief by Industry | KORETAIL", zh: "首尔门店分行业开店简报 | KORETAIL", ja: "ソウル店舗の業種別開店ブリーフ | KORETAIL" },
+    forecast: { ko: "서울·인천공항 공식 데이터 인사이트 | KORETAIL", en: "Seoul & Incheon Official Data Insights | KORETAIL", zh: "首尔与仁川机场官方数据洞察 | KORETAIL", ja: "ソウル・仁川空港の公式データインサイト | KORETAIL" },
+    business: { ko: "서울 매장 운영 브리핑과 점검 목록 | KORETAIL", en: "Seoul Store Briefing & Checklist | KORETAIL", zh: "首尔门店运营简报与检查清单 | KORETAIL", ja: "ソウル店舗の運営ブリーフとチェックリスト | KORETAIL" },
+    about: { ko: "KORETAIL 소개 — 무엇을 어떻게 보여주나요", en: "About KORETAIL — What It Shows and How", zh: "关于 KORETAIL — 展示什么、如何呈现", ja: "KORETAIL について — 何をどう表示するか" },
     more: { ko: "KORETAIL 데이터 출처·방법론", en: "KORETAIL Data Sources & Methodology", zh: "KORETAIL 数据来源与方法", ja: "KORETAIL データ出典・方法論" },
   };
   return titles[slug as Exclude<SeoSlug, keyof typeof names>][locale];
@@ -67,16 +68,17 @@ export function pageDescription(locale: SeoLocale, slug?: SeoSlug) {
   if (slug in names) {
     const name = names[slug as keyof typeof names][locale];
     return {
-      ko: `${name}의 오늘·내일 쇼핑 수요 점수, 추천 방문시간, 7일 흐름과 예측 근거를 확인하세요. 수치는 Demo 여부와 출처를 구분합니다.`,
-      en: `See ${name}'s today/tomorrow shopping demand, best time, seven-day trend and the signals behind the forecast, with clear data labels.`,
-      zh: `查看${name}今日明日购物指数、推荐到访时间、7日趋势和预测依据，并明确区分演示与官方数据。`,
-      ja: `${name}の今日・明日の買い物需要、おすすめ時間、7日推移、予測の根拠を確認できます。デモと公式データを明確に区別します。`,
+      ko: `${name}의 지금 혼잡 상태와 인원 범위, 서울시 공식 예측 기준 가장 붐빌 시간, 날씨와 인근 행사를 확인하세요. 모두 공식 데이터입니다.`,
+      en: `See ${name}'s current crowding and headcount range, the busiest hour ahead in Seoul's official forecast, the weather and nearby events — all official data.`,
+      zh: `查看${name}当前拥挤状况与人数区间、首尔市官方预测中最拥挤的时段、天气与附近活动，全部为官方数据。`,
+      ja: `${name}の現在の混雑と人数レンジ、ソウル市公式予測で最も混雑する時間、天気と周辺イベントを確認できます。すべて公式データです。`,
     }[locale];
   }
   const descriptions: Record<Exclude<SeoSlug, keyof typeof names>, Record<SeoLocale, string>> = {
-    airport: { ko: "인천공항 전체·T1·T2 출국·입국 흐름, 월별 공식 실적, 항공사별 시간대 집중과 항공편 검색을 제공합니다.", en: "View Incheon Airport all/T1/T2 passenger flow, official monthly history, airline waves and searchable departure/arrival demo flights.", zh: "查看仁川机场整体、T1、T2出入境客流、官方月度历史、航司时段集中度与航班搜索。", ja: "仁川空港全体・T1・T2の出入国フロー、公式月次実績、航空会社別の時間帯集中、便検索を確認できます。" },
-    forecast: { ko: "명동·홍대·성수의 7일 쇼핑 수요, 지역 비교, 어제와 달라진 점, T1·T2 공식 과거 흐름을 함께 확인하세요.", en: "Compare seven-day shopping demand, what changed, area signals and official T1/T2 history for Seoul.", zh: "查看明洞、弘大、圣水7日购物需求、昨日变化、地区比较与T1/T2官方历史趋势。", ja: "明洞・弘大・聖水の7日需要、昨日からの変化、エリア比較、T1・T2の公式履歴を確認できます。" },
-    business: { ko: "뷰티·패션·식음료 등 6개 업종의 내일 수요신호와 오픈 전 인력·재고·프로모션 준비사항을 확인하세요.", en: "Turn tomorrow's demand signals into opening briefs for six retail industries, including staffing, stock and promotion guidance.", zh: "为美妆、时尚、餐饮等6个行业提供明日需求信号及开店前人员、库存与促销建议。", ja: "ビューティー・ファッション・飲食など6業種の明日需要と、開店前のスタッフ・在庫・販促準備を確認できます。" },
+    airport: { ko: "인천공항 전체·T1·T2의 공식 예상 출국객과 피크, 실제 출발 운항과 집중 게이트, 현재 출국장 대기, 월별 공식 실적을 확인하세요.", en: "Official expected departures and peak, physical departing flights and busiest gates, current departure-hall waits and official monthly history for all terminals, T1 and T2.", zh: "查看仁川机场整体、T1、T2的官方预计出境人数与高峰、实际出发航班与集中登机口、当前出境区等候，以及月度官方实绩。", ja: "仁川空港全体・T1・T2の公式予想出国者とピーク、実出発便と集中ゲート、現在の出国場待ち、月次公式実績を確認できます。" },
+    forecast: { ko: "각 지표가 무엇을 뜻하는지, 높으면 어떤 상황인지, 어떤 공식 자료에서 왔는지를 설명과 함께 확인하세요. T1·T2 비중과 지역 외국인 생활인구 흐름을 포함합니다.", en: "Every figure with what it means, what a high value indicates and which official record it came from — including T1/T2 share and area foreign-population history.", zh: "每个指标都附含义、数值偏高时的情况与官方出处说明，包含T1/T2占比与各地区外国人生活人口趋势。", ja: "各指標の意味・高いときの状況・出典を説明付きで確認できます。T1・T2の比率とエリア別外国人生活人口の推移を含みます。" },
+    business: { ko: "지금의 공식 혼잡·예측·날씨를 매장 준비 관점으로 읽고, 뷰티·패션·식음료 등 6개 업종별 점검 목록을 확인하세요.", en: "Read the current official crowding, forecast and weather for store preparation, with checklists for six retail business types.", zh: "以门店准备视角解读当前官方拥挤、预测与天气，并查看美妆、时尚、餐饮等6个业态的检查清单。", ja: "現在の公式混雑・予測・天気を店舗準備の視点で読み、ビューティー・ファッション・飲食など6業種のチェックリストを確認できます。" },
+    about: { ko: "KORETAIL이 무엇인지, 누구를 위한 서비스인지, 어떤 공식 데이터를 쓰는지, 실시간·예상·과거 데이터가 어떻게 다른지 설명합니다.", en: "What KORETAIL is, who it is for, which official data it uses, and how live, forecast and past data differ.", zh: "介绍 KORETAIL 是什么、面向哪些人、使用哪些官方数据，以及实时、预测与历史数据的区别。", ja: "KORETAIL とは何か、誰のためのサービスか、どの公式データを使うか、リアルタイム・予測・過去データの違いを説明します。" },
     more: { ko: "KORETAIL의 데이터 출처, 무료·키 필요 여부, Demo·공식 이력 구분, 예측 방법론과 데이터 상태를 확인하세요.", en: "Review KORETAIL data sources, access conditions, Demo/official-history labels, methodology and data health.", zh: "查看KORETAIL数据来源、接入条件、演示与官方历史区分、方法和数据状态。", ja: "KORETAILのデータ出典、接続条件、デモ・公式履歴の区別、方法論、データ状況を確認できます。" },
   };
   return descriptions[slug as Exclude<SeoSlug, keyof typeof names>][locale];

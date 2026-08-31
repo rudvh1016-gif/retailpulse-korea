@@ -19,7 +19,7 @@ export default async function LocalePage({ params }: { params: Promise<{ locale:
   const { locale, slug } = await params;
   if (!seoLocales.includes(locale as SeoLocale) || !seoSlugs.includes(slug as SeoSlug)) notFound();
   const isArea = areaSlugs.includes(slug as typeof areaSlugs[number]);
-  const view = isArea ? "today" : slug as "forecast" | "airport" | "business" | "more";
+  const view = isArea ? "today" : slug as "forecast" | "airport" | "business" | "about" | "more";
   const area = isArea ? slug as typeof areaSlugs[number] : "myeongdong";
   return <RetailPulseApp initialLang={locale as SeoLocale} initialView={view} initialArea={area} initialRoute />;
 }
