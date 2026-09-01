@@ -130,6 +130,31 @@ is permanent (auth/schema). A partial collection is never written as `LIVE`.
 Each run logs `mode`, `providerRequests`, the missing targets, the resulting
 `sourceHealth` and `lastGoodPreserved`, all secret-free.
 
+**Health is read back, not inferred (2026-09-01).** It used to be derived from
+whether a day's request threw, which is a different question from whether today
+and tomorrow are actually covered: production run 33478751045 collected 48 row
+groups, reported `PARTIAL`, and still wrote `LIVE`. `readRequiredForecastCoverage`
+now re-reads the stored rows after writing and judges them by the same
+completeness contract the product uses, so `LIVE` means the required coverage
+exists.
+
+**"Current" comes from `source_health.last_retrieved_at`, never from row
+`retrieved_at`.** A5 writes are changed-only, so re-collecting an unchanged
+forecast leaves every row stamped with the moment the value last moved. Judging
+freshness from rows made a successful re-collection look permanently stale, and
+that is why the `:53` window re-requested both days every hour instead of
+skipping. The source-level stamp advances on every successful collection, so
+one rule now serves both the collector and the recovery planner.
+
+**The one non-band row A5 always returns is a drop, not a failure.** The
+provider returns exactly one row per request whose `adate` is not a date
+(`SCHEMA_A5_ADATE_FORMAT`); it is not an hourly band and rejecting it is
+correct, so validation is unchanged. Counting it as a collection failure is
+what made every run `PARTIAL` forever. One such drop per request is expected;
+anything beyond that still surfaces. The rejected field is logged as a bounded
+shape (`adate string:hangul:len1_4`) so it stays diagnosable without printing a
+payload.
+
 A5 recovery fires at `:53`, not the `:52` first proposed, because the realtime
 cadence already fires at `:52` and two trigger expressions matching one minute
 is a routing ambiguity; the realtime cadence itself is unchanged.

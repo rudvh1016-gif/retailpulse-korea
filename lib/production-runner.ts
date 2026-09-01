@@ -86,7 +86,18 @@ const DEFAULT_RUNNERS = {
   airport_scheduled: (env: CollectorEnv) => collectScheduledAirportFlights(env),
   airport_congestion: (env: CollectorEnv) => collectAirportCongestion(env),
   airport_congestion_t2: (env: CollectorEnv) => collectAirportCongestionT2(env),
-  airport_passenger_forecast: (env: CollectorEnv) => collectAirportPassengerForecast(env),
+  airport_passenger_forecast: async (env: CollectorEnv, now: Date): Promise<ProductionSourceOutcome> => {
+    const result = await collectAirportPassengerForecast(env, { now });
+    return {
+      status: result.status,
+      records: result.records,
+      mode: "PRIMARY",
+      providerRequests: result.providerRequests ?? 0,
+      sourceHealth: result.sourceHealth,
+      lastGoodPreserved: result.lastGoodPreserved,
+      detail: result.detail,
+    };
+  },
   /**
    * A5 repair window. Reads D1 first: a day that is COMPLETE and was collected
    * within this hour is not re-requested, so a recovery after a healthy
@@ -105,6 +116,7 @@ const DEFAULT_RUNNERS = {
       selectdates: plan.missingSelectdates,
       mode: "RECOVERY",
       hasUsableLastGood: plan.hasUsableLastGood,
+      now,
     });
     return {
       status: result.status,
@@ -112,7 +124,9 @@ const DEFAULT_RUNNERS = {
       mode: "RECOVERY",
       providerRequests: result.providerRequests ?? 0,
       sourceHealth: result.sourceHealth,
-      lastGoodPreserved: plan.hasUsableLastGood,
+      // The collector re-reads storage after writing, so its answer is the
+      // one that reflects reality at the end of the run.
+      lastGoodPreserved: result.lastGoodPreserved ?? plan.hasUsableLastGood,
       detail: `${planned}; ${result.detail ?? ""}`.trim(),
     };
   },

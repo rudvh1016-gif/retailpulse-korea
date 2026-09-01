@@ -26,6 +26,13 @@ class LocalD1Statement {
     // storageWrites assertions are left to Production evidence.
     return { success: true, meta: { changes: Number(result.changes), rows_written: Number(result.changes) } };
   }
+
+  // The real Workers binding and CloudflareD1RestDatabase both expose all().
+  // A double that omits it hides read paths from every test — that is exactly
+  // how the missing REST all() reached Production unnoticed.
+  async all() {
+    return { results: this.statement.all(...this.values), success: true };
+  }
 }
 
 class LocalD1Database {
@@ -370,7 +377,12 @@ test("A5 collector: queries both selectdate=0 (today) and selectdate=1 (tomorrow
   };
 
   const result = await collectAirportPassengerForecast({ DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture" });
-  assert.equal(result.status, "SUCCESS");
+  // One hour band is not a day's coverage, so this fixture is PARTIAL by
+  // contract: status now reflects whether today+tomorrow are actually covered,
+  // not merely whether the requests went out. Request shape is what this test
+  // is about.
+  assert.equal(result.status, "PARTIAL");
+  assert.equal(result.sourceHealth, "STALE");
   assert.deepEqual(seenSelectdates.sort(), ["0", "1"]);
   assert.equal(seenSelectdates.length, 2, "a normal cycle must cost exactly two provider requests");
 });
@@ -391,7 +403,8 @@ test("A5 collector: bounded pagination respects totalCount beyond one page", asy
   };
 
   const result = await collectAirportPassengerForecast({ DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture" });
-  assert.equal(result.status, "SUCCESS");
+  // Partial-day fixture, so PARTIAL is correct; pagination is what is asserted.
+  assert.equal(result.status, "PARTIAL");
   const todayRequests = requests.filter((url) => url.searchParams.get("selectdate") === "0");
   assert.equal(todayRequests.length, 2, "totalCount above one page must trigger bounded pagination");
 });
@@ -404,8 +417,9 @@ test("A5 collector: unchanged rerun is idempotent; a changed official value upda
   const env = { DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture" };
   globalThis.fetch = async () => Response.json(a5Page([a5Row()], 1));
   const first = await collectAirportPassengerForecast(env);
-  assert.equal(first.status, "SUCCESS");
-  assert.ok(first.records > 0);
+  // Idempotency, not coverage, is under test; a single band stays PARTIAL.
+  assert.equal(first.status, "PARTIAL");
+  assert.ok(first.records > 0, "a first write must store rows even when the day is not fully covered");
 
   const second = await collectAirportPassengerForecast(env);
   assert.equal(second.records, 0, "an unchanged rerun must write zero rows");
