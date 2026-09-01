@@ -19,6 +19,13 @@
  *   seoul_sales                   S3   collectEstimatedSales
  *   weather                       W1   collectWeatherForecasts
  *   events                        T1   collectTourismEvents
+ *
+ * Two sources are RECOVERY variants of an existing source rather than new
+ * sources: `airport_passenger_forecast_recovery` and `weather_recovery`. They
+ * read Production D1 first, make ZERO provider requests when the required
+ * coverage is already healthy, and otherwise re-request only what is missing.
+ * See lib/collection-recovery.ts for why the repair is a second short window
+ * instead of a longer retry loop inside the primary job.
  */
 import { collectAirportFlightsToday, hasCompleteA1RecentHistoryToday, kstDate } from "./airport-today";
 import {
@@ -34,6 +41,14 @@ import {
   collectWeatherForecasts,
   type CollectorEnv,
 } from "./collector";
+import {
+  describeForecastPlan,
+  describeWeatherPlan,
+  planForecastRecovery,
+  planWeatherRecovery,
+  SKIPPED_ALREADY_HEALTHY,
+  type CollectionMode,
+} from "./collection-recovery";
 import { safeSourceFailureDetail } from "./source-adapters";
 
 export interface ProductionSourceOutcome {
@@ -42,12 +57,22 @@ export interface ProductionSourceOutcome {
   detail?: string;
   trackedToday?: number;
   pagesFetched?: number;
+  /** PRIMARY or RECOVERY, so a log line states which window produced it. */
+  mode?: CollectionMode;
+  /** Requests that actually reached the provider. 0 proves a free skip. */
+  providerRequests?: number;
+  /** What the run set source_health to. */
+  sourceHealth?: string;
+  /** True when stored rows were left intact by a failed attempt. */
+  lastGoodPreserved?: boolean;
 }
 
 export type ProductionRunner = (env: CollectorEnv, now: Date) => Promise<ProductionSourceOutcome>;
 
 /** Explicit status reported when the A1 same-day guard skips a run without any provider calls. */
 export const SKIPPED_ALREADY_COMPLETE_TODAY = "SKIPPED_ALREADY_COMPLETE_TODAY";
+
+export { SKIPPED_ALREADY_HEALTHY } from "./collection-recovery";
 
 const DEFAULT_RUNNERS = {
   airport_recent: async (env: CollectorEnv, now: Date): Promise<ProductionSourceOutcome> => {
@@ -62,10 +87,68 @@ const DEFAULT_RUNNERS = {
   airport_congestion: (env: CollectorEnv) => collectAirportCongestion(env),
   airport_congestion_t2: (env: CollectorEnv) => collectAirportCongestionT2(env),
   airport_passenger_forecast: (env: CollectorEnv) => collectAirportPassengerForecast(env),
+  /**
+   * A5 repair window. Reads D1 first: a day that is COMPLETE and was collected
+   * within this hour is not re-requested, so a recovery after a healthy
+   * primary makes no provider request at all.
+   */
+  airport_passenger_forecast_recovery: async (env: CollectorEnv, now: Date): Promise<ProductionSourceOutcome> => {
+    const plan = await planForecastRecovery(env.DB, now);
+    const planned = describeForecastPlan(plan);
+    if (!plan.missingSelectdates.length) {
+      return {
+        status: SKIPPED_ALREADY_HEALTHY, records: 0, mode: "RECOVERY", providerRequests: 0,
+        lastGoodPreserved: plan.hasUsableLastGood, detail: `mode=RECOVERY; ${planned}`,
+      };
+    }
+    const result = await collectAirportPassengerForecast(env, {
+      selectdates: plan.missingSelectdates,
+      mode: "RECOVERY",
+      hasUsableLastGood: plan.hasUsableLastGood,
+    });
+    return {
+      status: result.status,
+      records: result.records,
+      mode: "RECOVERY",
+      providerRequests: result.providerRequests ?? 0,
+      sourceHealth: result.sourceHealth,
+      lastGoodPreserved: plan.hasUsableLastGood,
+      detail: `${planned}; ${result.detail ?? ""}`.trim(),
+    };
+  },
   seoul_realtime: (env: CollectorEnv) => collectSeoulRealtime(env),
   seoul_foreign: (env: CollectorEnv, now: Date) => collectSeoulForeignPresence(env, now),
   seoul_sales: (env: CollectorEnv, now: Date) => collectEstimatedSales(env, now),
   weather: (env: CollectorEnv, now: Date) => collectWeatherForecasts(env, now),
+  /**
+   * W1 repair window. A grid whose areas already hold the expected KMA
+   * issuance is not re-requested, so a recovery after a healthy primary makes
+   * no provider request at all.
+   */
+  weather_recovery: async (env: CollectorEnv, now: Date): Promise<ProductionSourceOutcome> => {
+    const plan = await planWeatherRecovery(env.DB, now);
+    const planned = describeWeatherPlan(plan);
+    if (!plan.missingGrids.length) {
+      return {
+        status: SKIPPED_ALREADY_HEALTHY, records: 0, mode: "RECOVERY", providerRequests: 0,
+        lastGoodPreserved: plan.hasUsableLastGood, detail: `mode=RECOVERY; ${planned}`,
+      };
+    }
+    const result = await collectWeatherForecasts(env, now, {
+      grids: plan.missingGrids,
+      mode: "RECOVERY",
+      hasUsableLastGood: plan.hasUsableLastGood,
+    });
+    return {
+      status: result.status,
+      records: result.records,
+      mode: "RECOVERY",
+      providerRequests: result.providerRequests ?? 0,
+      sourceHealth: result.sourceHealth,
+      lastGoodPreserved: plan.hasUsableLastGood,
+      detail: `${planned}; ${result.detail ?? ""}`.trim(),
+    };
+  },
   events: (env: CollectorEnv, now: Date) => collectTourismEvents(env, now),
 } as const satisfies Record<string, ProductionRunner>;
 

@@ -119,6 +119,9 @@ test("production collector remains gated and only production carries a Worker Cr
     "7,22,37,52 * * * *",
     "42 * * * *",
     "10 2,5,8,11,14,17,20,23 * * *",
+    "53 * * * *",
+    "25 2,5,8,11,14,17,20,23 * * *",
+    "40 2,5,8,11,14,17,20,23 * * *",
   ]);
 });
 
@@ -128,8 +131,8 @@ test("production collector remains gated and only production carries a Worker Cr
  * native GitHub `schedule:`.
  */
 test("every cadence-group collector workflow is gated behind the same owner-approved switch and actually scheduled", async () => {
-  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml", "collect-forecast.yml"];
-  const cloudflareScheduled = new Set(["collect-realtime.yml", "collect-forecast.yml", "collect-weather.yml"]);
+  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml", "collect-forecast.yml", "collect-forecast-recovery.yml", "collect-weather-recovery.yml"];
+  const cloudflareScheduled = new Set(["collect-realtime.yml", "collect-forecast.yml", "collect-weather.yml", "collect-forecast-recovery.yml", "collect-weather-recovery.yml"]);
   for (const file of groupFiles) {
     const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
     assert.match(workflow, /vars\.ENABLE_PRODUCTION_COLLECTOR == 'true'/, `${file} must reuse the single production-collector gate`);
@@ -145,7 +148,7 @@ test("every cadence-group collector workflow is gated behind the same owner-appr
 });
 
 test("A1 (airport_recent) is scheduled by exactly one collector workflow group", async () => {
-  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml", "collect-forecast.yml"];
+  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml", "collect-forecast.yml", "collect-forecast-recovery.yml", "collect-weather-recovery.yml"];
   const owners: string[] = [];
   for (const file of groupFiles) {
     const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
@@ -156,7 +159,7 @@ test("A1 (airport_recent) is scheduled by exactly one collector workflow group",
 });
 
 test("every production source is scheduled by exactly one cadence-group workflow", async () => {
-  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml", "collect-forecast.yml"];
+  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml", "collect-forecast.yml", "collect-forecast-recovery.yml", "collect-weather-recovery.yml"];
   const scheduledSources: string[] = [];
   for (const file of groupFiles) {
     const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
@@ -176,8 +179,16 @@ test("every production source is scheduled by exactly one cadence-group workflow
 // every provider call, hash and D1 write.
 // ---------------------------------------------------------------------------
 
-/** Exactly three authorized trigger-only Crons exist, on production only. */
-test("exactly three Cloudflare Cron Triggers exist for realtime, forecast and weather", () => {
+/**
+ * Exactly six authorized trigger-only Crons exist, on production only.
+ *
+ * Three are the primary cadences; three are the A5/weather recovery windows
+ * added for temporal self-healing. A5 recovery is :53 rather than the :52 the
+ * spec suggested, because realtime already owns a trigger firing at :52 and
+ * two expressions on the same minute is the routing ambiguity that must be
+ * avoided — realtime cadence is the thing that may not change.
+ */
+test("exactly six Cloudflare Cron Triggers exist for the three cadences and their recovery windows", () => {
   const files = readdirSync(".").filter((name) => /^wrangler.*\.jsonc?$/.test(name));
   assert.deepEqual(files, ["wrangler.production.jsonc"], "an unexpected wrangler config could hide a second Cron");
   const config = JSON.parse(readFileSync("wrangler.production.jsonc", "utf8"));
@@ -188,8 +199,15 @@ test("exactly three Cloudflare Cron Triggers exist for realtime, forecast and we
     "7,22,37,52 * * * *",
     "42 * * * *",
     "10 2,5,8,11,14,17,20,23 * * *",
+    "53 * * * *",
+    "25 2,5,8,11,14,17,20,23 * * *",
+    "40 2,5,8,11,14,17,20,23 * * *",
   ]);
-  assert.equal(crons.length, 3, "only the three audited trigger-only cadences are authorized");
+  assert.equal(crons.length, 6, "only the audited trigger-only cadences and their recovery windows are authorized");
+  assert.equal(new Set(crons).size, crons.length, "a duplicated expression would dispatch the same workflow twice");
+  // The realtime cadence is non-negotiable and must survive every change here.
+  assert.ok(crons.includes("7,22,37,52 * * * *"), "the realtime cadence must stay exactly as audited");
+  assert.equal(crons.filter((cron: string) => cron.startsWith("7,22,37,52")).length, 1);
 });
 
 /**
@@ -247,10 +265,16 @@ test("the production Cron and the dispatch target describe one scheduler path", 
     "7,22,37,52 * * * *",
     "42 * * * *",
     "10 2,5,8,11,14,17,20,23 * * *",
+    "53 * * * *",
+    "25 2,5,8,11,14,17,20,23 * * *",
+    "40 2,5,8,11,14,17,20,23 * * *",
   ]);
   assert.match(dispatch, /REALTIME_WORKFLOW_FILE = "collect-realtime\.yml"/);
   assert.match(dispatch, /FORECAST_WORKFLOW_FILE = "collect-forecast\.yml"/);
   assert.match(dispatch, /WEATHER_WORKFLOW_FILE = "collect-weather\.yml"/);
+  assert.match(dispatch, /FORECAST_RECOVERY_WORKFLOW_FILE = "collect-forecast-recovery\.yml"/);
+  assert.match(dispatch, /WEATHER_RECOVERY_WORKFLOW_FILE = "collect-weather-recovery\.yml"/);
+  assert.match(dispatch, /FORECAST_RECOVERY_CRON = "53 \* \* \* \*"/);
   assert.match(dispatch, /DISPATCH_REF = "main"/);
   assert.equal(config.env.production.name, "retailpulse-korea-production");
 });

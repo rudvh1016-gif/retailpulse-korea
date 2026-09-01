@@ -1,0 +1,63 @@
+name: Collect Weather Forecasts (Recovery)
+
+# W1 RECOVERY WINDOWS — the temporal half of collector self-healing.
+#
+# KMA publishes 단기예보 eight times a day, and the primary collection runs
+# once per issuance at :10. A provider timeout there loses that issuance for
+# up to three hours. These two windows give it a second and third chance
+# inside the same issuance: :10 primary, :25 recovery #1, :40 recovery #2.
+#
+# This is NOT a blind repeat. The run reads Production D1 first
+# (lib/collection-recovery.ts:planWeatherRecovery) and requests ONLY the grid
+# cells that still lack the expected issuance:
+#   · all three grids already stored -> ZERO provider requests, status
+#     SKIPPED_ALREADY_HEALTHY
+#   · one grid missing -> ONE request
+#   · all three missing -> three requests, one primary cycle's cost
+#
+# QUOTA — typical day: the primary's 3 calls, both recoveries skipping, so 24
+# calls/day unchanged. Absolute worst case (every issuance fully failing, both
+# recoveries firing, each grid taking its two spaced retries): 8 issuances x 3
+# windows x 3 grids x 3 attempts = 216 calls/day, against the 10,000/day dev
+# quota for data.go.kr 15084084. The added windows cost nothing when healthy.
+#
+# A failed recovery never deletes or zeroes stored rows; last-good weather is
+# preserved and source_health becomes STALE rather than ERROR.
+#
+# SCHEDULER OWNERSHIP — Cloudflare Production Crons
+# `25 2,5,8,11,14,17,20,23 * * *` and `40 2,5,8,11,14,17,20,23 * * *` are the
+# only automatic alarms. Each performs one allowlisted workflow_dispatch and
+# no provider or D1 work.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Shares the primary's group on purpose: a recovery queues behind the :10 run
+# instead of calling KMA alongside it.
+concurrency:
+  group: production-collector-weather
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
+    runs-on: ubuntu-latest
+    # Same bound as the primary: three grids x (3 x 10s requests + spaced
+    # waits) plus setup/D1 margin. A recovery requests a subset, never more.
+    timeout-minutes: 7
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run collect:production
+        env:
+          ENABLE_PRODUCTION_COLLECTOR: "true"
+          RPK_PRODUCTION_SOURCES: weather_recovery
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+          DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}

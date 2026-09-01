@@ -47,6 +47,7 @@ No paid API, paid data, paid fallback or runtime LLM is approved. A source witho
 - **V5.0 field names only.** The guide's own revision history states T1 departure forecast data — previously combined — was split, with response parameter names changed. KORETAIL uses only the V5.0 names supplied by the owner; it does not use any older blog/V4 field names, and does not "correct" a V5.0 name to look more symmetrical (see `t2dgsum2` below).
 - **Request fields**: `serviceKey` (required), `numOfRows` (required), `pageNo` (required), `selectdate` (optional — `0`=TODAY, `1`=TOMORROW, default `0`), `type` (optional, xml/json, default xml). KORETAIL queries **both** `selectdate=0` and `selectdate=1` every collection cycle.
 - Official data refresh: ~5 minutes. KORETAIL polls once/hour: Cloudflare Cron `42 * * * *` dispatches `.github/workflows/collect-forecast.yml`, which has no competing GitHub schedule. Normal cost ≈2 requests/cycle (today + tomorrow, each usually fitting in one page against the official sample `totalCount=25`) × 24 runs/day ≈ 48 requests/day, with bounded per-day pagination if `totalCount` ever exceeds one page.
+- **Recovery window (`53 * * * *` → `collect-forecast-recovery.yml`).** Because the primary runs only once an hour, a provider timeout at `:42` costs the whole hour — on 2026-09-01 the page served a forecast collected at 08:42 at 14:33. The recovery run reads D1 first (`lib/collection-recovery.ts`): a day that is `COMPLETE` across T1+T2 **and** was collected within the last hour is not re-requested, so a recovery after a healthy primary makes **zero** provider requests and reports `SKIPPED_ALREADY_HEALTHY`. Only the missing `selectdate` is fetched, so worst case adds ≤48 requests/day.
 - **Response time dimensions**: `adate` (`YYYYMMDD`) and `atime` (hourly interval, e.g. `"09_10"`, `"23_24"`) — an **hour band**, not an instantaneous observation. KORETAIL stores `adate`/`atime` raw plus derived `target_start_at`/`target_end_at` in KST. `"23_24"` resolves to next-day `00:00`, computed via pure KST calendar-date arithmetic (never through a UTC-instant detour, which can silently pick the wrong calendar day) — never an invalid same-day `"24:00"`.
 - **T1 departure fields**: `t1dg1`..`t1dg6` (gates 1–6; gate 6 is a mobility-priority exit and is officially excluded from the airport's own expected-congestion target, but KORETAIL still stores it because the API returns it) and `t1dgsum1` (official T1 departure total). KORETAIL never recomputes a "total" by blindly summing every returned field; it prefers the provider's own aggregate field for a terminal total.
 - **T1 arrival fields**: `t1eg1` (arrival hall A/B), `t1eg2` (E/F), `t1eg3` (C), `t1eg4` (D), `t1egsum1` (official T1 arrival total). Stored because the API returns them, but the departure-facing product UI does not mix arrival and departure passengers.
@@ -85,7 +86,7 @@ authentication or scheduler classification.
 | T1 TourAPI | 1/day | 4 | same | 4 |
 | A4-T1 | 96/day | 4 | same | 384 |
 | A4-T2 | ~96/day, normally one page; max 3 pages | 3/request | 5s, 30s (+≤0.5s jitter) | 288 normally; 864 absolute bounded maximum |
-| W1 | 3 grids × 8 cycles = 24/day | 3/grid | 5s, 30s (+≤0.5s jitter) | 72 |
+| W1 | 3 grids × 8 cycles = 24/day (recovery windows add 0 when healthy) | 3/grid | 5s, 30s (+≤0.5s jitter) | 72 normally; 216 absolute bounded maximum with both recovery windows firing |
 
 A4 datasets remain under the project's conservative 1,000/day-class separate
 dataset budget. W1 remains far below its documented 10,000/day quota. A1's
@@ -97,6 +98,36 @@ errors do not retry.
 Normal healthy provider volume is unchanged. A failed refresh never deletes
 or zeroes last-good rows; only source health and collector-run metadata record
 the truthful failure and its original data timestamp remains unchanged.
+
+### Temporal self-healing (2026-09-01)
+
+A4 realtime survives a short provider outage because its own next 15-minute
+cycle collects again. A5 (hourly) and W1 (once per KMA issuance) have no such
+second chance, so a timeout lasting minutes used to cost a whole collection
+opportunity. Three recovery windows close that gap:
+
+| source | primary | recovery | dispatches |
+| --- | --- | --- | --- |
+| A5 | `42 * * * *` | `53 * * * *` | `collect-forecast-recovery.yml` |
+| W1 | `10 2,5,8,11,14,17,20,23 * * *` | `25 …`, `40 …` | `collect-weather-recovery.yml` |
+
+A recovery run is not a repeat of the primary. It reads Production D1 first
+(`lib/collection-recovery.ts`) and then:
+
+- **already healthy** → zero provider requests, status `SKIPPED_ALREADY_HEALTHY`
+- **partly missing** → only the missing A5 `selectdate` / the missing KMA grid
+- **fully missing** → the same cost as one primary cycle, never more
+
+Health semantics are correspondingly truthful: `LIVE` when the required
+coverage was collected, `STALE` when this attempt failed or was incomplete but
+usable stored rows remain, `ERROR` when nothing usable is stored or the failure
+is permanent (auth/schema). A partial collection is never written as `LIVE`.
+Each run logs `mode`, `providerRequests`, the missing targets, the resulting
+`sourceHealth` and `lastGoodPreserved`, all secret-free.
+
+A5 recovery fires at `:53`, not the `:52` first proposed, because the realtime
+cadence already fires at `:52` and two trigger expressions matching one minute
+is a routing ambiguity; the realtime cadence itself is unchanged.
 
 ## Source lifecycle
 

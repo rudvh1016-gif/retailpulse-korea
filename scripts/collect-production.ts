@@ -54,10 +54,17 @@ const env = {
 
 const results = await runSelectedProductionSources(env, requested);
 for (const result of results) {
+  // One structured, secret-free line per source. `providerRequests: 0` beside
+  // SKIPPED_ALREADY_HEALTHY is the proof that a recovery window cost nothing;
+  // `lastGoodPreserved` is the proof that a failed attempt destroyed nothing.
   console.log(JSON.stringify({
     source: result.source,
+    mode: result.mode ?? "PRIMARY",
     status: result.status,
     changedRows: result.records,
+    ...(result.providerRequests === undefined ? {} : { providerRequests: result.providerRequests }),
+    ...(result.sourceHealth === undefined ? {} : { sourceHealth: result.sourceHealth }),
+    ...(result.lastGoodPreserved === undefined ? {} : { lastGoodPreserved: result.lastGoodPreserved }),
     ...(result.trackedToday === undefined ? {} : { trackedToday: result.trackedToday }),
     ...(result.pagesFetched === undefined ? {} : { pagesFetched: result.pagesFetched }),
     ...(result.detail ? { detail: result.detail } : {}),

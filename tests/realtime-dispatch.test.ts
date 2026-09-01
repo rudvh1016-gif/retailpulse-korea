@@ -17,6 +17,12 @@ import {
   WEATHER_WORKFLOW_FILE,
   realtimeDispatchUrl,
   workflowForCron,
+  FORECAST_RECOVERY_CRON,
+  FORECAST_RECOVERY_WORKFLOW_FILE,
+  PRODUCTION_CRONS,
+  WEATHER_RECOVERY_CRON_EARLY,
+  WEATHER_RECOVERY_CRON_LATE,
+  WEATHER_RECOVERY_WORKFLOW_FILE,
 } from "../lib/realtime-dispatch";
 
 const TOKEN = "ghp-SUPER-SECRET-DISPATCH-TOKEN";
@@ -62,10 +68,19 @@ test("each known cron dispatches only its explicitly allowlisted workflow", asyn
   assert.equal(dispatchUrl(FORECAST_WORKFLOW_FILE),
     "https://api.github.com/repos/rudvh1016-gif/retailpulse-korea/actions/workflows/collect-forecast.yml/dispatches");
 
+  // Both weather recovery windows route to one workflow; the run itself
+  // decides whether there is anything to repair.
+  assert.equal(workflowForCron(FORECAST_RECOVERY_CRON), FORECAST_RECOVERY_WORKFLOW_FILE);
+  assert.equal(workflowForCron(WEATHER_RECOVERY_CRON_EARLY), WEATHER_RECOVERY_WORKFLOW_FILE);
+  assert.equal(workflowForCron(WEATHER_RECOVERY_CRON_LATE), WEATHER_RECOVERY_WORKFLOW_FILE);
+
   for (const [cron, workflow] of [
     [REALTIME_CRON, REALTIME_WORKFLOW_FILE],
     [FORECAST_CRON, FORECAST_WORKFLOW_FILE],
     [WEATHER_CRON, WEATHER_WORKFLOW_FILE],
+    [FORECAST_RECOVERY_CRON, FORECAST_RECOVERY_WORKFLOW_FILE],
+    [WEATHER_RECOVERY_CRON_EARLY, WEATHER_RECOVERY_WORKFLOW_FILE],
+    [WEATHER_RECOVERY_CRON_LATE, WEATHER_RECOVERY_WORKFLOW_FILE],
   ] as const) {
     const { calls, impl } = recordingFetch(() => new Response(null, { status: 204 }));
     const log = await dispatchScheduledCollection(cron, { GITHUB_DISPATCH_TOKEN: TOKEN }, impl, at);
@@ -74,6 +89,41 @@ test("each known cron dispatches only its explicitly allowlisted workflow", asyn
     assert.equal(log.workflow, workflow);
     assert.equal(log.event, "dispatch_success");
   }
+});
+
+/**
+ * Two triggers firing on the same minute is the one routing ambiguity that
+ * must not exist: Cloudflare passes the matching expression, and a shared
+ * minute makes it unclear which alarm actually rang. Realtime already owns
+ * :52, which is why the A5 repair window is :53.
+ */
+test("no two production crons can fire on the same minute of the same hour", () => {
+  assert.equal(new Set(PRODUCTION_CRONS).size, PRODUCTION_CRONS.length, "a duplicated expression would dispatch twice");
+  const slots = new Set<string>();
+  for (const cron of PRODUCTION_CRONS) {
+    const [minutes, hours] = cron.split(" ");
+    for (const minute of minutes.split(",")) {
+      for (const hour of hours === "*" ? ["*"] : hours.split(",")) {
+        const slot = `${minute}:${hour}`;
+        const wildcardClash = hour !== "*" && slots.has(`${minute}:*`);
+        assert.equal(slots.has(slot) || wildcardClash, false, `two triggers fire at minute ${minute} of hour ${hour}`);
+        slots.add(slot);
+      }
+    }
+  }
+  // The realtime cadence is the thing that may never move.
+  assert.ok(PRODUCTION_CRONS.includes(REALTIME_CRON));
+  assert.equal(REALTIME_CRON, "7,22,37,52 * * * *");
+});
+
+test("every production cron routes to exactly one allowlisted workflow", () => {
+  for (const cron of PRODUCTION_CRONS) {
+    assert.notEqual(workflowForCron(cron), null, `${cron} must route somewhere`);
+  }
+  // A recovery window is a repair, never a second authoritative scheduler:
+  // the primary cadences keep their own workflows untouched.
+  assert.notEqual(workflowForCron(FORECAST_CRON), workflowForCron(FORECAST_RECOVERY_CRON));
+  assert.notEqual(workflowForCron(WEATHER_CRON), workflowForCron(WEATHER_RECOVERY_CRON_EARLY));
 });
 
 test("unknown cron is ignored without token lookup or dispatch", async () => {
