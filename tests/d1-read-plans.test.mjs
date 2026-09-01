@@ -67,6 +67,23 @@ test("no hot read-path query scans a growing table", (context) => {
   }
 });
 
+test("the recovery planners look up D1 without scanning either table", (context) => {
+  // D1-first recovery only earns its keep if the lookup is cheap. These run on
+  // every A5 and weather recovery window - 48 times a day between them - so a
+  // scan here would undo the saving the recovery design exists to make.
+  const { db, path } = freshDatabase("recovery");
+  context.after(() => { db.close(); rmSync(path); });
+  const queries = {
+    "recovery.weatherCoverage": ["SELECT area, COUNT(*) AS rowCount FROM weather_forecast WHERE issued_at = ? GROUP BY area", ["2026-09-01T14:00:00+09:00"]],
+    "recovery.a5Bands": ["SELECT terminal FROM airport_passenger_forecast WHERE direction = 'departure' AND is_aggregate = 1 AND target_date = ? ORDER BY target_start_at, terminal LIMIT 96", ["2026-09-01"]],
+    "recovery.sourceHealth": ["SELECT last_retrieved_at FROM source_health WHERE source_id = ?", ["INCHEON_PASSENGER_FORECAST"]],
+  };
+  for (const [label, [sql, binds]] of Object.entries(queries)) {
+    const scans = tableScans(db, sql, binds);
+    assert.deepEqual(scans, [], `${label} scans a table: ${scans.join(" | ")}`);
+  }
+});
+
 test("the read-path indexes the queries depend on exist in a migration", (context) => {
   const { db, path } = freshDatabase("indexes");
   context.after(() => { db.close(); rmSync(path); });
@@ -75,7 +92,7 @@ test("the read-path indexes the queries depend on exist in a migration", (contex
     "seoul_realtime_area_area_observed_idx", "seoul_realtime_area_observed_idx",
     "seoul_realtime_forecast_area_issue_idx", "weather_forecast_area_issue_idx",
     "seoul_estimated_sales_area_quarter_idx", "airport_congestion_terminal_observed_idx",
-    "airport_flights_direction_scheduled_idx",
+    "airport_flights_direction_scheduled_idx", "weather_forecast_issued_area_idx",
   ]) assert.ok(present.has(index), `${index} is missing; the read path would scan again`);
 });
 

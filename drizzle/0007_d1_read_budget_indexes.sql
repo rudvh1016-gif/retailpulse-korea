@@ -22,3 +22,10 @@ CREATE INDEX IF NOT EXISTS `airport_flights_direction_scheduled_idx` ON `airport
 -- needs observed_at as the leading column; the (area, observed_at) index above
 -- serves the per-area latest lookup instead.
 CREATE INDEX IF NOT EXISTS `seoul_realtime_area_observed_idx` ON `seoul_realtime_area` (`observed_at`);
+--> statement-breakpoint
+-- The weather recovery planner asks "which areas already hold this issuance?"
+-- filtering on issued_at alone, so it needs issued_at as the leading column.
+-- It runs on every recovery window, and D1-first recovery is only cheap if the
+-- lookup itself is: without this it scanned the whole forecast table 24 times a
+-- day, which is the opposite of what the recovery design is for.
+CREATE INDEX IF NOT EXISTS `weather_forecast_issued_area_idx` ON `weather_forecast` (`issued_at`,`area`);
