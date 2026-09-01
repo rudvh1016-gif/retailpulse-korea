@@ -34,11 +34,24 @@ function freshDatabase(name) {
   return { db, path };
 }
 
-/** Table access must be a SEARCH; `SCAN (subquery-N)` is a one-row co-routine, not a table. */
+/**
+ * Scans of real tables only.
+ *
+ * SQLite says SCAN for things that are not tables at all — `SCAN (subquery-N)`
+ * for a one-row co-routine, `SCAN CONSTANT ROW` for a bare `SELECT ? AS day` —
+ * and the exact wording moves between SQLite versions, so an earlier version of
+ * this guard passed locally and failed on CI over `SCAN CONSTANT ROW`. Matching
+ * against the schema's actual table names is what the guard means and does not
+ * depend on how a given SQLite build phrases the rest.
+ */
 function tableScans(db, sql, binds) {
+  const tables = new Set(db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map((row) => String(row.name)));
   return db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all(...binds)
     .map((row) => String(row.detail))
-    .filter((detail) => /^SCAN /.test(detail) && !/^SCAN \(subquery/.test(detail));
+    .filter((detail) => {
+      const scanned = /^SCAN (\w+)/.exec(detail);
+      return Boolean(scanned) && tables.has(scanned[1]);
+    });
 }
 
 const AREAS = ["myeongdong", "hongdae", "seongsu"];
