@@ -323,6 +323,18 @@ function formatKstBand(start: string, end: string): string {
   return `${clock(start)}–${clock(end)} KST`;
 }
 
+/**
+ * The window a "rest of today" sum actually covers, e.g. "14:00–24:00 KST".
+ *
+ * The last band ends at midnight, which formats as 00:00 and reads like the
+ * START of a day. The end of today is written 24:00 here for the same reason
+ * the copy says "오늘 끝까지".
+ */
+function formatRemainingWindow(remaining: NonNullable<RemainingForecast>): string {
+  const end = formatKstClock(remaining.toAt);
+  return `${formatKstClock(remaining.fromAt)}–${end === "00:00" ? "24:00" : end} KST`;
+}
+
 function formatKstClock(value: string): string {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "";
@@ -345,11 +357,14 @@ const airportTodayText = {
   expected: { ko: "공식 예상 출국객", en: "Official expected departures", zh: "官方预计出境人数", ja: "公式予想出国者数" },
   expectedNote: { ko: "인천공항 공식 예상 · 실제 출국객 집계 아님", en: "Official Incheon forecast · not an actual passenger count", zh: "仁川机场官方预测 · 非实际出境人数", ja: "仁川空港公式予測 · 実際の出国者集計ではありません" },
   remaining: { ko: "지금부터 오늘 끝까지", en: "From this hour to end of day", zh: "从此刻到今日结束", ja: "今の時間帯から今日終わりまで" },
+  // Deliberately carries the summed BAND (14:00–24:00 KST), not a clock: the
+  // card sits beside a retrieval stamp, and a bare time there read as if the
+  // two numbers disagreed. A range cannot be mistaken for a retrieval moment.
   remainingNote: {
-    ko: "현재 시간대부터 24:00까지 공식 예상 승객 합계",
-    en: "Official expected passengers from the current hour band to 24:00",
-    zh: "从当前时段到24:00的官方预计旅客合计",
-    ja: "現在の時間帯から24:00までの公式予想旅客合計",
+    ko: (band: string) => `${band} 공식 예상 승객 합계`,
+    en: (band: string) => `Official expected passengers, ${band}`,
+    zh: (band: string) => `${band} 官方预计旅客合计`,
+    ja: (band: string) => `${band} 公式予想旅客合計`,
   },
   flights: { ko: "출발 운항", en: "Departing flights", zh: "出发航班", ja: "出発便" },
   flightsNote: { ko: "실제 운항편 기준 · 승객 수 아님", en: "Physical flights · not passengers", zh: "实际航班口径 · 非旅客人数", ja: "実運航便基準 · 旅客数ではありません" },
@@ -676,7 +691,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   const flightsRetrievedAt = isAll ? airport.departuresTrackedTodayRetrievedAt : airport.topDepartureGateRetrievedAtByTerminal?.[terminal] ?? null;
   const gateRetrievedAt = isAll ? airport.topDepartureGateRetrievedAt : airport.topDepartureGateRetrievedAtByTerminal?.[terminal] ?? null;
   const nowIso = summary?.generatedAt ?? new Date().toISOString();
-  const collectedText = (value: string | null) => value ? formatHumanFreshness(value, nowIso, lang) : null;
+  const collectedText = (value: string | null) => value ? formatHumanFreshness(value, nowIso, lang, "collected") : null;
   const passengerCollected = collectedText(passengerRetrievedAt);
   const flightsCollected = collectedText(flightsRetrievedAt);
   const gateCollected = collectedText(gateRetrievedAt);
@@ -707,6 +722,10 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   // section states it once instead of repeating it.
   const distinctFreshness = [...new Set([passengerCollected, flightsCollected, gateCollected].filter((value): value is string => Boolean(value)))];
   const sharesOneFreshness = distinctFreshness.length <= 1;
+  // The shared line already carries the word "collected" in its own label, so
+  // its stamp is the clock alone instead of saying "collected" twice.
+  const plainText = (value: string | null) => value ? formatHumanFreshness(value, nowIso, lang, "plain") : null;
+  const distinctSectionFreshness = [...new Set([passengerRetrievedAt, flightsRetrievedAt, gateRetrievedAt].map(plainText).filter((value): value is string => Boolean(value)))];
   const perMetric = (value: string | null) => (sharesOneFreshness ? null : value);
 
   return <section className="airport-today" aria-labelledby="airport-today-title">
@@ -724,9 +743,26 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
       <article><span>{airportTodayText.expected[lang]}</span><strong data-kind={expectedTotal === null ? "status" : "value"}>{expectedTotal === null ? (isForecastPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]) : `${Math.round(expectedTotal).toLocaleString(numberLocale)}${peopleUnit}`}</strong><small>{isForecastPartial ? airportTodayText.forecastPartialNote[lang] : airportTodayText.expectedNote[lang]}</small>{perMetric(passengerCollected) && <small className="metric-freshness">{passengerCollected}</small>}</article>
       <article><span>{airportTodayText.peak[lang]}</span><strong data-kind={peak ? "value" : "status"}>{peak ? formatKstBand(peak.targetStartAt, peak.targetEndAt) : airportTodayText.unavailable[lang]}</strong><small>{peak ? `${airportTodayText.peakNote[lang]} · ${Math.round(peak.expectedPassengers).toLocaleString(numberLocale)}${peopleUnit}` : (isForecastPartial ? airportTodayText.forecastPartialNote[lang] : airportTodayText.peakNote[lang])}</small>{perMetric(passengerCollected) && <small className="metric-freshness">{passengerCollected}</small>}</article>
       <article><span>{airportTodayText.flights[lang]}</span><strong data-kind={flightsCount === null ? "status" : "value"}>{flightsCount === null ? airportTodayText.unavailable[lang] : `${flightsCount.toLocaleString(numberLocale)}${flightUnit}`}</strong><small>{airportTodayText.flightsNote[lang]}</small>{perMetric(flightsCollected) && <small className="metric-freshness">{flightsCollected}</small>}</article>
-      {remaining && <article className="airport-remaining"><span>{airportTodayText.remaining[lang]}</span><strong data-kind="value">{Math.round(remaining.expectedPassengers).toLocaleString(numberLocale)}{peopleUnit}</strong><small>{airportTodayText.remainingNote[lang]}</small>{perMetric(passengerCollected) && <small className="metric-freshness">{passengerCollected}</small>}</article>}
+      {remaining && <article className="airport-remaining"><span>{airportTodayText.remaining[lang]}</span><strong data-kind="value">{Math.round(remaining.expectedPassengers).toLocaleString(numberLocale)}{peopleUnit}</strong><small>{airportTodayText.remainingNote[lang](formatRemainingWindow(remaining))}</small>{perMetric(passengerCollected) && <small className="metric-freshness">{passengerCollected}</small>}</article>}
     </div>
-    {sharesOneFreshness && distinctFreshness.length > 0 && <p className="airport-section-freshness">{airportTodayText.retrieved[lang]} · {distinctFreshness[0]}</p>}
+    {sharesOneFreshness && distinctSectionFreshness.length > 0 && <p className="airport-section-freshness">{airportTodayText.retrieved[lang]} · {distinctSectionFreshness[0]}</p>}
+
+    <section className="airport-detail-section airport-forecast" aria-labelledby="airport-forecast-title">
+      <div className="airport-detail-head"><div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-forecast-title">{airportTodayText.forecastTitle[lang]}</h3></div><p>{airportTodayText.forecastOnly[lang]}</p></div>
+      {forecastStatus === "COMPLETE" && timeline.length > 0
+        ? <div className="airport-timeline" role="img" aria-label={`${airportTodayText.forecastTitle[lang]}. ${airportTodayText.forecastOnly[lang]}`}>
+          <div className="airport-timeline-bars">{timeline.map((row) => <p key={row.targetStartAt} className={peak?.targetStartAt === row.targetStartAt ? "peak" : ""}>
+            <i style={{ height: `${Math.max(4, row.expectedPassengers / maxBand * 100)}%` }} />
+            <span>{formatKstClock(row.targetStartAt)}</span>
+            <b>{Math.round(row.expectedPassengers).toLocaleString(numberLocale)}</b>
+          </p>)}</div>
+        </div>
+        : <div className={`airport-forecast-state ${isForecastPartial ? "partial" : "unavailable"}`}>
+          <strong>{isForecastPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]}</strong>
+          <p>{isForecastPartial ? airportTodayText.partialBody[lang] : airportTodayText.unavailableBody[lang]}</p>
+          {passengerCollected && <small>{passengerCollected}</small>}
+        </div>}
+    </section>
 
     <section className="airport-detail-section airport-checkpoints" aria-labelledby="airport-checkpoints-title">
       <div className="airport-detail-head"><div><p className="eyebrow">CURRENT OBSERVATION · {scopeLabel}</p><h3 id="airport-checkpoints-title">{airportTodayText.current[lang]}</h3></div><p>{airportTodayText.currentNote[lang]}</p></div>
@@ -740,7 +776,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
               <span className="checkpoint-rank">{String(index + 1).padStart(2, "0")}</span>
               <div><strong>{friendlyCheckpointName(row.zone, lang)}</strong>{isBusiest && <small>{airportTodayText.longest[lang]}</small>}</div>
               <b><i>{airportTodayText.waitLabel[lang]}</i>{waitText(row)}</b>
-              <p><i>{airportTodayText.peopleLabel[lang]}</i>{row.waitingCount === null ? airportTodayText.unavailable[lang] : `${row.waitingCount.toLocaleString(numberLocale)}${airportTodayText.waiting[lang]}`}<small>{formatHumanFreshness(row.observedAt, nowIso, lang)}{row.freshness === "STALE" ? ` · ${text.stale[lang]}` : ""}</small></p>
+              <p><i>{airportTodayText.peopleLabel[lang]}</i>{row.waitingCount === null ? airportTodayText.unavailable[lang] : `${row.waitingCount.toLocaleString(numberLocale)}${airportTodayText.waiting[lang]}`}<small>{formatHumanFreshness(row.observedAt, nowIso, lang, "observed")}{row.freshness === "STALE" ? ` · ${text.stale[lang]}` : ""}</small></p>
             </article>;
           })}</div>
         </div>;
@@ -758,23 +794,6 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
           <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}</b>
         </li>)}
       </ol> : <p className="airport-empty-line">{airportTodayText.noGateList[lang]}</p>}
-    </section>
-
-    <section className="airport-detail-section airport-forecast" aria-labelledby="airport-forecast-title">
-      <div className="airport-detail-head"><div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-forecast-title">{airportTodayText.forecastTitle[lang]}</h3></div><p>{airportTodayText.forecastOnly[lang]}</p></div>
-      {forecastStatus === "COMPLETE" && timeline.length > 0
-        ? <div className="airport-timeline" role="img" aria-label={`${airportTodayText.forecastTitle[lang]}. ${airportTodayText.forecastOnly[lang]}`}>
-          <div className="airport-timeline-bars">{timeline.map((row) => <p key={row.targetStartAt} className={peak?.targetStartAt === row.targetStartAt ? "peak" : ""}>
-            <i style={{ height: `${Math.max(4, row.expectedPassengers / maxBand * 100)}%` }} />
-            <span>{formatKstClock(row.targetStartAt)}</span>
-            <b>{Math.round(row.expectedPassengers).toLocaleString(numberLocale)}</b>
-          </p>)}</div>
-        </div>
-        : <div className={`airport-forecast-state ${isForecastPartial ? "partial" : "unavailable"}`}>
-          <strong>{isForecastPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]}</strong>
-          <p>{isForecastPartial ? airportTodayText.partialBody[lang] : airportTodayText.unavailableBody[lang]}</p>
-          {passengerCollected && <small>{passengerCollected}</small>}
-        </div>}
     </section>
   </section>;
 }
@@ -810,7 +829,7 @@ export function HomeTodayBrief({ lang, selected, onSelect, date = null }: { lang
     >
       <span>{areaNames[area][lang]}</span>
       <div><strong>{copy.headline}</strong>{copy.lines.map((line) => <p key={line}>{line}</p>)}</div>
-      {copy.freshness && <small>{formatHumanFreshness(copy.freshness, summary.generatedAt, lang)}</small>}
+      {copy.freshness && <small>{formatHumanFreshness(copy.freshness, summary.generatedAt, lang, "observed")}</small>}
     </button>)}</div>
   </section>;
 }
@@ -876,7 +895,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       key: "realtime",
       label: text.realtime[lang],
       value: `${level} · ${formatPeopleRange(lang, block.realtime.populationMin, block.realtime.populationMax)}`,
-      note: `${text.sourceSeoul[lang]} · ${formatHumanFreshness(block.realtime.observedAt, summary.generatedAt, lang)}`,
+      note: `${text.sourceSeoul[lang]} · ${formatHumanFreshness(block.realtime.observedAt, summary.generatedAt, lang, "observed")}`,
       state: block.realtime.freshness,
     });
   }
@@ -931,7 +950,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       key: `airport_${terminal}`,
       label: text.airportTerminal[lang](terminal),
       value: `${terminalWaiting.toLocaleString(airportLocale(lang))} ${text.airportPeople[lang]}`,
-      note: `${text.sourceAirport[lang]} · ${formatHumanFreshness(latest.observedAt, summary.generatedAt, lang)}`,
+      note: `${text.sourceAirport[lang]} · ${formatHumanFreshness(latest.observedAt, summary.generatedAt, lang, "observed")}`,
       state: latest.freshness,
     });
   }
@@ -967,7 +986,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
           <p className="eyebrow">{areaNames[area][lang]} · {areaBriefText.nowLabel[lang].toUpperCase()}</p>
           <strong>{areaBriefCopy.headline}</strong>
           {areaBriefCopy.lines.map((line) => <p key={line}>{line}</p>)}
-          {areaBriefCopy.freshness && <small>{formatHumanFreshness(areaBriefCopy.freshness, summary.generatedAt, lang)}</small>}
+          {areaBriefCopy.freshness && <small>{formatHumanFreshness(areaBriefCopy.freshness, summary.generatedAt, lang, "observed")}</small>}
         </section>
       )}
       <div className="section-head">

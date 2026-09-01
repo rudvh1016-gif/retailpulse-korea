@@ -229,7 +229,7 @@ test("airport summary keeps forecast, flights, gate and checkpoints truthful on 
   // A single shared section line would hide which number came from which
   // moment, so it must be absent exactly when the times disagree.
   const metricFreshness = page.locator(".airport-today-grid .metric-freshness");
-  await expect(metricFreshness.first()).toContainText(/기준/);
+  await expect(metricFreshness.first()).toContainText(/수집/);
   await expect(page.locator(".airport-today-grid article").nth(0)).toContainText("09:05");
   await expect(page.locator(".airport-today-grid article").nth(2)).toContainText("12:00");
   await expect(page.locator(".airport-section-freshness")).toHaveCount(0);
@@ -244,6 +244,30 @@ test("airport summary keeps forecast, flights, gate and checkpoints truthful on 
 });
 
 /**
+ * The official forecast chart explains the four numbers directly above it, so
+ * it reads immediately after "한눈에 보기" — ahead of the live checkpoint and
+ * gate detail, which answer a different question.
+ */
+test("the official passenger-flow chart follows the at-a-glance grid directly", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ko/airport");
+  const top = async (selector: string) => {
+    const box = await page.locator(selector).first().boundingBox();
+    if (!box) throw new Error(`${selector} is not rendered`);
+    return box.y;
+  };
+  const grid = await top(".airport-today-grid");
+  const forecast = await top(".airport-forecast");
+  const checkpoints = await top(".airport-checkpoints");
+  const gates = await top(".airport-gates");
+  expect(grid).toBeLessThan(forecast);
+  expect(forecast).toBeLessThan(checkpoints);
+  expect(checkpoints).toBeLessThan(gates);
+  await expect(page.getByRole("heading", { name: "공식 예상 출국객 흐름" })).toBeVisible();
+});
+
+/**
  * "From this hour to the end of today" is only shown when the day's official
  * bands are provably complete, and it must be stated as whole bands.
  */
@@ -254,7 +278,16 @@ test("remaining expected departures is shown for a complete day and withheld for
   await expect(page.getByText("지금부터 오늘 끝까지", { exact: true })).toBeVisible();
   await expect(page.getByText("11,430명", { exact: true })).toBeVisible();
   await expect(page.locator(".airport-current-brief")).toContainText("14:00부터 오늘 끝까지 예상 11,430명");
-  await expect(page.getByText(/현재 시간대부터 24:00까지 공식 예상 승객 합계/)).toBeVisible();
+
+  // Two different times sit on this one card: the window the sum covers
+  // (14:00–24:00) and the moment the forecast was fetched (09:05). Both used
+  // to read as "기준", so the same number appeared to be dated twice.
+  const remainingCard = page.locator(".airport-remaining");
+  await expect(remainingCard).toContainText("14:00–24:00 KST 공식 예상 승객 합계");
+  await expect(remainingCard).toContainText("09:05 수집");
+  await expect(remainingCard).not.toContainText("09:05 기준");
+  // Midnight closes today, so it is written 24:00 and never 00:00.
+  await expect(remainingCard).not.toContainText("00:00");
 
   const partial = JSON.parse(JSON.stringify(SUMMARY_FIXTURE));
   partial.airport.forecastCoverage = { all: "PARTIAL", byTerminal: { T1: "PARTIAL", T2: "PARTIAL" } };

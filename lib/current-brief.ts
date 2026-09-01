@@ -233,7 +233,31 @@ export function buildAirportCurrentBrief(input: {
 
 export type BriefLang = "ko" | "en" | "zh" | "ja";
 
-export function formatHumanFreshness(value: string, nowIso: string, lang: BriefLang): string {
+/**
+ * What a timestamp on screen MEANS, not just when it was.
+ *
+ * The same clock face can answer two different questions, and mixing them up
+ * is what made the airport cards unreadable: "지금부터 오늘 끝까지 12,933명"
+ * was stamped "08:42 기준" while the sentence above it said the sum started
+ * at 14:00. Both were true — 08:42 was when the forecast was COLLECTED, 14:00
+ * was where the SUM starts — but one word ("기준") was doing both jobs.
+ *
+ *  · "collected" — when we fetched this from the provider (A5/A1 retrievedAt)
+ *  · "observed"  — when the provider itself measured it (checkpoint observedAt)
+ *  · "basis"     — generic "as of", for values that are neither
+ *  · "plain"     — the clock alone, when the surrounding copy already says what it is
+ *
+ * A summed window (14:00–24:00) is never any of these; it is a range, and it
+ * is rendered as a range so it can never be mistaken for a retrieval moment.
+ */
+export type FreshnessKind = "basis" | "collected" | "observed" | "plain";
+
+export function formatHumanFreshness(
+  value: string,
+  nowIso: string,
+  lang: BriefLang,
+  kind: FreshnessKind = "basis",
+): string {
   const valueDate = new Date(value);
   const nowDate = new Date(nowIso);
   if (Number.isNaN(valueDate.getTime()) || Number.isNaN(nowDate.getTime())) return "";
@@ -247,8 +271,24 @@ export function formatHumanFreshness(value: string, nowIso: string, lang: BriefL
   const valueDay = dateParts(valueDate);
   const today = dateParts(nowDate);
   const yesterday = dateParts(new Date(nowDate.getTime() - 86_400_000));
-  if (valueDay === today) return lang === "ko" ? `${clock} 기준` : lang === "en" ? `As of ${clock}` : lang === "zh" ? `截至 ${clock}` : `${clock} 時点`;
-  if (valueDay === yesterday) return lang === "ko" ? `어제 ${clock} 기준` : lang === "en" ? `Yesterday ${clock}` : lang === "zh" ? `昨天 ${clock}` : `昨日 ${clock} 時点`;
-  const day = new Intl.DateTimeFormat(locale, { timeZone: "Asia/Seoul", month: "short", day: "numeric" }).format(valueDate);
-  return lang === "ko" ? `${day} ${clock} 기준` : lang === "en" ? `${day}, ${clock}` : lang === "zh" ? `${day} ${clock}` : `${day} ${clock} 時点`;
+
+  // The "when" half: today needs no date, yesterday says so in words, and
+  // anything older carries its own date so it can never read as today.
+  let stamp: string;
+  if (valueDay === today) stamp = clock;
+  else if (valueDay === yesterday) {
+    stamp = lang === "ko" ? `어제 ${clock}` : lang === "en" ? `yesterday ${clock}` : lang === "zh" ? `昨天 ${clock}` : `昨日 ${clock}`;
+  } else {
+    const day = new Intl.DateTimeFormat(locale, { timeZone: "Asia/Seoul", month: "short", day: "numeric" }).format(valueDate);
+    stamp = lang === "en" ? `${day}, ${clock}` : `${day} ${clock}`;
+  }
+  if (kind === "plain") return stamp;
+
+  // The "what" half. Korean/Chinese/Japanese suffix it, English prefixes it.
+  const word = {
+    basis: { ko: "기준", en: "As of", zh: "截至", ja: "時点" },
+    collected: { ko: "수집", en: "Collected", zh: "采集", ja: "取得" },
+    observed: { ko: "관측", en: "Observed", zh: "观测", ja: "観測" },
+  }[kind][lang];
+  return lang === "en" ? `${word} ${stamp}` : `${stamp} ${word}`;
 }
