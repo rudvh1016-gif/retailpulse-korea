@@ -21,6 +21,7 @@ import {
   kstHourStartIsoOf,
   kstNowIsoOf,
   relateKstDay,
+  shiftKstDay,
 } from "../../../../lib/kst";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +29,49 @@ export const dynamic = "force-dynamic";
 type Row = Record<string, unknown>;
 
 const AREAS = ["myeongdong", "hongdae", "seongsu"] as const;
+/** Incheon's two passenger terminals; congestion is only ever published for these. */
+const CONGESTION_TERMINALS = ["T1", "T2"] as const;
+/** The date picker never offers more than this many days. */
+const DATE_PICKER_DAYS = 21;
+
+/**
+ * "Which of the last N days hold data?" as N bounded existence probes.
+ *
+ * The old form was `SELECT DISTINCT substr(col, 1, 10) … ORDER BY day DESC
+ * LIMIT 21`, which had to visit every historical row to learn the distinct
+ * days — a full scan of a forever-growing table, on every request, just to
+ * populate a picker. Asking each candidate day whether any row exists is the
+ * same answer for a fixed cost: N index seeks that stop at the first match.
+ *
+ * The window is the 21 days the picker can show, so a day older than that is
+ * no longer offered. For a source that collects continuously these are the
+ * same set; the difference only appears after a gap longer than the window,
+ * where the old form would have offered a stale day the product cannot render
+ * meaningfully anyway.
+ */
+function existingDaysSql(table: string, column: string, days: readonly string[], filter = ""): string {
+  // `filter` supplies the index's leading column so each probe is a range seek
+  // that stops at the first row, rather than a scan of the whole index.
+  const where = filter ? `${filter} AND ` : "";
+  return days
+    .map(() => `SELECT ? AS day WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${where}${column} >= ? AND ${column} < ?)`)
+    .join(" UNION ALL ");
+}
+
+/**
+ * Latest-row-per-key without scanning the table.
+ *
+ * `WHERE col = (SELECT MAX(col) … WHERE b.key = a.key)` reads well but forces
+ * SQLite to SCAN the outer table: it cannot know a row's key without visiting
+ * it. On D1 that scan is billed as rows read, and these tables grow forever —
+ * which is how one uncached request came to read six figures of rows.
+ *
+ * One seek per known key is the same answer for a bounded, tiny cost, because
+ * the key set (3 areas, 2 terminals) is fixed by the product.
+ */
+function latestPerKey(keys: readonly string[], build: (placeholder: string) => string): string {
+  return keys.map(() => `SELECT * FROM (${build("?")})`).join(" UNION ALL ");
+}
 
 /** Minutes after which a real-time observation is labelled STALE, not LIVE. */
 const REALTIME_STALE_MINUTES = 40;
@@ -84,36 +128,35 @@ export async function GET(request: Request) {
     ).all<Row>()).results ?? []);
 
     const realtimeRows = await safeAll<Row>(async () => (await client.prepare(
-      `SELECT area, congestion_level AS congestionLevel, congestion_label AS congestionLabel,
+      latestPerKey(AREAS, () => `SELECT area, congestion_level AS congestionLevel, congestion_label AS congestionLabel,
         population_min AS populationMin, population_max AS populationMax,
         observed_at AS observedAt, retrieved_at AS retrievedAt
-      FROM seoul_realtime_area a
-      WHERE observed_at = (SELECT MAX(observed_at) FROM seoul_realtime_area b WHERE b.area = a.area)`,
-    ).all<Row>()).results ?? []);
+      FROM seoul_realtime_area WHERE area = ? ORDER BY observed_at DESC LIMIT 1`),
+    ).bind(...AREAS).all<Row>()).results ?? []);
 
     // Seoul publishes a rolling 12-hour forecast, so from mid-evening onward
     // every band it publishes falls on the next calendar day. The horizon is
     // therefore taken as-is and each band's own day is reported, instead of
     // clipping to "today" and reporting a live forecast as unavailable.
     const realtimeForecastRows = await safeAll<Row>(async () => (await client.prepare(
-      `SELECT area, issued_at AS issuedAt, target_at AS targetAt, congestion_level AS congestionLevel,
+      latestPerKey(AREAS, () => `SELECT area, issued_at AS issuedAt, target_at AS targetAt, congestion_level AS congestionLevel,
         congestion_label AS congestionLabel, population_min AS populationMin, population_max AS populationMax,
         retrieved_at AS retrievedAt
-      FROM seoul_realtime_forecast f
-      WHERE f.issued_at = (SELECT MAX(g.issued_at) FROM seoul_realtime_forecast g WHERE g.area = f.area)
-        AND f.target_at >= ?
-      ORDER BY f.area, f.target_at LIMIT 120`,
-    ).bind(kstHourStart).all<Row>()).results ?? []);
+      FROM seoul_realtime_forecast
+      WHERE area = ? AND issued_at = (SELECT MAX(issued_at) FROM seoul_realtime_forecast WHERE area = ?)
+        AND target_at >= ?
+      ORDER BY target_at LIMIT 40`),
+    ).bind(...AREAS.flatMap((area) => [area, area, kstHourStart])).all<Row>()).results ?? []);
 
     const weatherRows = await safeAll<Row>(async () => (await client.prepare(
-      `SELECT area, issued_at AS issuedAt, target_at AS targetAt,
+      latestPerKey(AREAS, () => `SELECT area, issued_at AS issuedAt, target_at AS targetAt,
         precipitation_probability AS precipitationProbability,
         temperature_tenth_c AS temperatureTenthC, condition_code AS conditionCode
-      FROM weather_forecast w
-      WHERE w.issued_at = (SELECT MAX(x.issued_at) FROM weather_forecast x WHERE x.area = w.area)
-        AND w.target_at >= ?
-      ORDER BY w.area, w.target_at LIMIT 180`,
-    ).bind(kstHourStart).all<Row>()).results ?? []);
+      FROM weather_forecast
+      WHERE area = ? AND issued_at = (SELECT MAX(issued_at) FROM weather_forecast WHERE area = ?)
+        AND target_at >= ?
+      ORDER BY target_at LIMIT 60`),
+    ).bind(...AREAS.flatMap((area) => [area, area, kstHourStart])).all<Row>()).results ?? []);
 
     const eventRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT area, content_id AS contentId, title, event_start AS eventStart,
@@ -124,13 +167,13 @@ export async function GET(request: Request) {
     ).bind(serviceDate).all<Row>()).results ?? []);
 
     const salesRows = await safeAll<Row>(async () => (await client.prepare(
-      `SELECT area, quarter_code AS quarterCode, trade_area_code AS tradeAreaCode,
+      latestPerKey(AREAS, () => `SELECT area, quarter_code AS quarterCode, trade_area_code AS tradeAreaCode,
         trade_area_name AS tradeAreaName, industry_name AS industryName,
         sales_amount AS salesAmount, retrieved_at AS retrievedAt
-      FROM seoul_estimated_sales s
-      WHERE quarter_code = (SELECT MAX(quarter_code) FROM seoul_estimated_sales t WHERE t.area = s.area)
-      ORDER BY sales_amount DESC`,
-    ).all<Row>()).results ?? []);
+      FROM seoul_estimated_sales
+      WHERE area = ? AND quarter_code = (SELECT MAX(quarter_code) FROM seoul_estimated_sales WHERE area = ?)
+      ORDER BY sales_amount DESC`),
+    ).bind(...AREAS.flatMap((area) => [area, area])).all<Row>()).results ?? []);
 
     const foreignPresenceRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT area, product_version AS productVersion, record_origin AS freshness, value, unit,
@@ -155,12 +198,12 @@ export async function GET(request: Request) {
     ).all<Row>()).results ?? []);
 
     const congestionRows = await safeAll<Row>(async () => (await client.prepare(
-      `SELECT terminal, zone, wait_time_minutes AS waitTimeMinutes, wait_time_raw AS waitTimeRaw,
+      latestPerKey(CONGESTION_TERMINALS, () => `SELECT terminal, zone, wait_time_minutes AS waitTimeMinutes, wait_time_raw AS waitTimeRaw,
         waiting_count AS waitingCount, observed_at AS observedAt, retrieved_at AS retrievedAt
-      FROM airport_congestion c
-      WHERE observed_at = (SELECT MAX(observed_at) FROM airport_congestion d WHERE d.terminal = c.terminal)
-      ORDER BY terminal, zone LIMIT 24`,
-    ).all<Row>()).results ?? []);
+      FROM airport_congestion
+      WHERE terminal = ? AND observed_at = (SELECT MAX(observed_at) FROM airport_congestion WHERE terminal = ?)
+      ORDER BY zone LIMIT 12`),
+    ).bind(...CONGESTION_TERMINALS.flatMap((terminal) => [terminal, terminal])).all<Row>()).results ?? []);
 
     // A5 official aggregate departure rows only. Component rows never enter
     // the total or peak calculation, preventing provider-total double count.
@@ -174,28 +217,23 @@ export async function GET(request: Request) {
       ORDER BY target_start_at, terminal LIMIT 96`,
     ).bind(serviceDate).all<Row>()).results ?? []);
 
+    // One read of the day's departures serves the rows, the all-airport count
+    // and the per-terminal counts.
+    //
+    // These were three separate statements, each re-deriving the same set with
+    // `substr(scheduled_at, 1, 10) = ?`. Wrapping the column in a function
+    // makes every index on it unusable, so all three fully scanned a table that
+    // grows by ~1,100 rows a day. A bare-date range is exactly equivalent —
+    // `x >= '2026-08-31' AND x < '2026-09-01'` selects precisely the strings
+    // whose first ten characters are that day, whatever the suffix — and it
+    // seeks. Deriving the counts from the rows already fetched also makes the
+    // payload self-consistent: the counts can no longer disagree with the rows.
     const flightRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT physical_flight_id AS physicalFlightId, terminal, gate, retrieved_at AS retrievedAt
       FROM airport_flights
-      WHERE direction = 'departure' AND substr(scheduled_at, 1, 10) = ?
+      WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ?
       LIMIT 2000`,
-    ).bind(serviceDate).all<Row>()).results ?? []);
-
-    const flightCountRows = await safeAll<Row>(async () => (await client.prepare(
-      `SELECT COUNT(DISTINCT physical_flight_id) AS flights
-      FROM airport_flights
-      WHERE direction = 'departure' AND substr(scheduled_at, 1, 10) = ?`,
-    ).bind(serviceDate).all<Row>()).results ?? []);
-
-    // A1 terminal-scoped distinct physical-flight counts. A null-terminal
-    // row is never guessed into T1 or T2 — it only ever counts toward the
-    // all-airport total above.
-    const flightCountByTerminalRows = await safeAll<Row>(async () => (await client.prepare(
-      `SELECT terminal, COUNT(DISTINCT physical_flight_id) AS flights
-      FROM airport_flights
-      WHERE direction = 'departure' AND substr(scheduled_at, 1, 10) = ? AND terminal IS NOT NULL
-      GROUP BY terminal`,
-    ).bind(serviceDate).all<Row>()).results ?? []);
+    ).bind(serviceDate, shiftKstDay(serviceDate, 1)).all<Row>()).results ?? []);
 
     const scheduledRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT terminal, COUNT(*) AS flights, MIN(scheduled_time) AS firstTime, MAX(scheduled_time) AS lastTime,
@@ -207,18 +245,18 @@ export async function GET(request: Request) {
 
     // Which KST days actually hold data, so the date picker can offer only
     // days that exist instead of inviting the reader into an empty screen.
+    const pickerDays = Array.from({ length: DATE_PICKER_DAYS }, (_, index) => shiftKstDay(kstToday, -index));
+    const dayProbeBinds = pickerDays.flatMap((day) => [day, day, shiftKstDay(day, 1)]);
     const flightDateRows = await safeAll<Row>(async () => (await client.prepare(
-      `SELECT DISTINCT substr(scheduled_at, 1, 10) AS day FROM airport_flights
-      WHERE direction = 'departure' ORDER BY day DESC LIMIT 21`,
-    ).all<Row>()).results ?? []);
+      existingDaysSql("airport_flights", "scheduled_at", pickerDays, "direction = 'departure'"),
+    ).bind(...dayProbeBinds).all<Row>()).results ?? []);
     const forecastDateRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT DISTINCT target_date AS day FROM airport_passenger_forecast
       WHERE direction = 'departure' AND is_aggregate = 1 ORDER BY day DESC LIMIT 21`,
     ).all<Row>()).results ?? []);
     const observedDateRows = await safeAll<Row>(async () => (await client.prepare(
-      `SELECT DISTINCT substr(observed_at, 1, 10) AS day FROM seoul_realtime_area
-      ORDER BY day DESC LIMIT 21`,
-    ).all<Row>()).results ?? []);
+      existingDaysSql("seoul_realtime_area", "observed_at", pickerDays),
+    ).bind(...dayProbeBinds).all<Row>()).results ?? []);
     const dayList = (rows: Row[]) => rows
       .map((row) => String(row.day ?? ""))
       .filter((day) => isValidKstDay(day))
@@ -249,10 +287,19 @@ export async function GET(request: Request) {
     }));
 
     const passengerToday = summarizeTodayPassengerForecast(passengerForecastRows as unknown as AirportForecastAggregateRow[], serviceDate);
-    const distinctFlightsToday = Number(flightCountRows[0]?.flights ?? 0);
-    const distinctFlightsByTerminal: Record<string, number> = Object.fromEntries(
-      flightCountByTerminalRows.filter((row) => row.terminal).map((row) => [String(row.terminal), Number(row.flights)]),
-    );
+    // Physical-flight de-duplication, unchanged: a codeshare pair shares one
+    // physicalFlightId and is counted once.
+    const distinctFlightsToday = new Set(flightRows.map((row) => String(row.physicalFlightId ?? ""))).size;
+    const distinctFlightsByTerminal: Record<string, number> = {};
+    const seenPerTerminal = new Map<string, Set<string>>();
+    for (const row of flightRows) {
+      const terminal = row.terminal ? String(row.terminal) : null;
+      if (!terminal) continue;
+      const seen = seenPerTerminal.get(terminal) ?? new Set<string>();
+      seen.add(String(row.physicalFlightId ?? ""));
+      seenPerTerminal.set(terminal, seen);
+    }
+    for (const [terminal, seen] of seenPerTerminal) distinctFlightsByTerminal[terminal] = seen.size;
     const flightsToday = summarizeTodayTopGate(
       flightRows as unknown as AirportTodayFlightRow[],
       0.5,
