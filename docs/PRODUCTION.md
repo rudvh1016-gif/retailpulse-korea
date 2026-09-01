@@ -57,7 +57,9 @@ Default production policy:
 
 Current prepared state:
 
-- Production Worker Cron carries **no collector work**. Since 2026-09-01 it holds exactly three **trigger-only** Crons (`7,22,37,52 * * * *`, `42 * * * *`, `10 2,5,8,11,14,17,20,23 * * *`) whose handler makes a single authenticated GitHub `workflow_dispatch` call to an allowlisted workflow; heavy Cron execution of collectors stays rejected by the benchmark in `docs/REALTIME_SCHEDULER_AUDIT.md`.
+- Production Worker Cron carries **no collector work**. Since 2026-09-01 it holds exactly six **trigger-only** Crons whose handler makes a single authenticated GitHub `workflow_dispatch` call to an allowlisted workflow; heavy Cron execution of collectors stays rejected by the benchmark in `docs/REALTIME_SCHEDULER_AUDIT.md`.
+  - Primary cadences: `7,22,37,52 * * * *` (realtime), `42 * * * *` (A5), `10 2,5,8,11,14,17,20,23 * * *` (weather).
+  - Recovery windows: `53 * * * *` (A5), `25 …` and `40 …` (weather). Each reads Production D1 first and makes **zero** provider requests when the required coverage is already healthy — see “Temporal self-healing” below.
 - `.github/workflows/collect-production.yml` and its sibling scheduled workflows are the only collector schedulers.
 - Each remains disabled unless `ENABLE_PRODUCTION_COLLECTOR=true` after all source gates pass.
 - **Set `ENABLE_PRODUCTION_COLLECTOR` as a repository-level Actions variable** (Settings → Secrets and variables → Actions → Variables tab), not as a variable scoped to the `production` Environment. Every collection workflow gates on it with a **job-level** `if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'` while also declaring `environment: production` on that same job. GitHub Actions evaluates a job-level `if:` before the job's environment is resolved, so an environment-scoped variable is invisible at that point and the job will silently stay skipped even when the Environment's variable list shows it as `true`. Confirm the value in the **repository** Variables tab, not only inside the Environment's own variable list.

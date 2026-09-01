@@ -15,6 +15,49 @@ async function renderHome() {
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
+/**
+ * One unavailable upstream must never take the public API down with it.
+ *
+ * The collectors write to D1 and the API reads from D1, so a provider outage
+ * can only ever mean "some rows are older", never an HTTP 500. This exercises
+ * the worst case the request path can reach — no database binding at all —
+ * and requires a 200 with honest nulls rather than fabricated zeros.
+ */
+test("public endpoints stay available and never fabricate zeros when a source is down", async () => {
+  const call = async (path) => {
+    const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+    workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}-${Math.random()}`);
+    const { default: worker } = await import(workerUrl.href);
+    return worker.fetch(
+      new Request(`http://localhost${path}`, { headers: { accept: "application/json" } }),
+      { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
+      { waitUntil() {}, passThroughOnException() {} },
+    );
+  };
+
+  const healthResponse = await call("/api/health");
+  assert.equal(healthResponse.status, 200, "a degraded source must never turn /api/health into a 500");
+  const healthBody = await healthResponse.json();
+  assert.equal(healthBody.app, "ok");
+  assert.ok(Array.isArray(healthBody.sources));
+
+  const summaryResponse = await call("/api/live/summary");
+  assert.equal(summaryResponse.status, 200, "a degraded source must never turn the live summary into a 500");
+  const summary = await summaryResponse.json();
+  // Honest absence, never a zero that would read as a real measurement.
+  assert.equal(summary.airport.todayExpectedPassengersTotal, null);
+  assert.equal(summary.airport.departuresTrackedToday, null);
+  assert.equal(summary.airport.remainingExpectedPassengers, null);
+  assert.equal(summary.airport.forecastCoverage.all, "UNAVAILABLE");
+
+  // STALE is a real source status, so the health contract must allow it.
+  const contracts = await read("../lib/contracts.ts");
+  assert.match(contracts, /"LIVE", "STALE"/);
+  const collector = await read("../lib/collector.ts");
+  assert.match(collector, /export type SourceHealthStatus = "LIVE" \| "STALE" \| "MISSING" \| "ERROR" \| "OFFICIAL_HISTORICAL";/);
+  assert.match(collector, /consecutive_failures = CASE WHEN excluded\.status IN \('ERROR', 'STALE'\)/);
+});
+
 test("renders the KORETAIL production shell", async () => {
   const response = await renderHome();
   const html = await response.text();

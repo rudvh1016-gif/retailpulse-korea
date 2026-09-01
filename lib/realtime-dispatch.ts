@@ -19,10 +19,38 @@
 export const REALTIME_WORKFLOW_FILE = "collect-realtime.yml";
 export const FORECAST_WORKFLOW_FILE = "collect-forecast.yml";
 export const WEATHER_WORKFLOW_FILE = "collect-weather.yml";
+export const FORECAST_RECOVERY_WORKFLOW_FILE = "collect-forecast-recovery.yml";
+export const WEATHER_RECOVERY_WORKFLOW_FILE = "collect-weather-recovery.yml";
 export const REALTIME_CRON = "7,22,37,52 * * * *";
 export const FORECAST_CRON = "42 * * * *";
 export const WEATHER_CRON = "10 2,5,8,11,14,17,20,23 * * *";
-export type AllowedWorkflowFile = typeof REALTIME_WORKFLOW_FILE | typeof FORECAST_WORKFLOW_FILE | typeof WEATHER_WORKFLOW_FILE;
+
+/**
+ * Recovery alarms — the temporal half of collector self-healing.
+ *
+ * Realtime needs none: its own next 15-minute cycle IS the recovery window.
+ * A5 (hourly) and weather (once per KMA issuance) have no such second chance,
+ * so a provider timeout costs a whole collection opportunity. These alarms
+ * give each one a short repair window that reads D1 first and requests only
+ * what is missing (lib/collection-recovery.ts).
+ *
+ * A5 recovery deliberately fires at :53 and not :52. The spec suggested :52,
+ * but the realtime alarm already owns "7,22,37,52 * * * *". Two trigger
+ * expressions matching the same minute is exactly the routing ambiguity the
+ * spec says to avoid, and realtime cadence is non-negotiable — so the repair
+ * moves one minute rather than risking the cycle that must not change. It is
+ * still ~11 minutes after the :42 primary.
+ */
+export const FORECAST_RECOVERY_CRON = "53 * * * *";
+export const WEATHER_RECOVERY_CRON_EARLY = "25 2,5,8,11,14,17,20,23 * * *";
+export const WEATHER_RECOVERY_CRON_LATE = "40 2,5,8,11,14,17,20,23 * * *";
+
+export type AllowedWorkflowFile =
+  | typeof REALTIME_WORKFLOW_FILE
+  | typeof FORECAST_WORKFLOW_FILE
+  | typeof WEATHER_WORKFLOW_FILE
+  | typeof FORECAST_RECOVERY_WORKFLOW_FILE
+  | typeof WEATHER_RECOVERY_WORKFLOW_FILE;
 export const DISPATCH_OWNER = "rudvh1016-gif";
 export const DISPATCH_REPO = "retailpulse-korea";
 /** Scheduled workflows run from the default branch; keep dispatch identical. */
@@ -85,12 +113,29 @@ export interface DispatchEnv {
   GITHUB_DISPATCH_TOKEN?: string;
 }
 
+/**
+ * Exact-string routing. Every production trigger maps to exactly one
+ * workflow, and an expression that is not listed here dispatches nothing —
+ * so a stray Cron can never start a collector.
+ */
 export function workflowForCron(cron: string): AllowedWorkflowFile | null {
   if (cron === REALTIME_CRON) return REALTIME_WORKFLOW_FILE;
   if (cron === FORECAST_CRON) return FORECAST_WORKFLOW_FILE;
   if (cron === WEATHER_CRON) return WEATHER_WORKFLOW_FILE;
+  if (cron === FORECAST_RECOVERY_CRON) return FORECAST_RECOVERY_WORKFLOW_FILE;
+  if (cron === WEATHER_RECOVERY_CRON_EARLY || cron === WEATHER_RECOVERY_CRON_LATE) return WEATHER_RECOVERY_WORKFLOW_FILE;
   return null;
 }
+
+/** Every Cron expression the production Worker is configured to fire. */
+export const PRODUCTION_CRONS = [
+  REALTIME_CRON,
+  FORECAST_CRON,
+  WEATHER_CRON,
+  FORECAST_RECOVERY_CRON,
+  WEATHER_RECOVERY_CRON_EARLY,
+  WEATHER_RECOVERY_CRON_LATE,
+] as const;
 
 export function dispatchUrl(workflow: AllowedWorkflowFile): string {
   return `https://api.github.com/repos/${DISPATCH_OWNER}/${DISPATCH_REPO}/actions/workflows/${workflow}/dispatches`;

@@ -26,7 +26,7 @@ import {
 } from "./source-adapters";
 import { buildDataGoKrUrl } from "./data-go-kr.mjs";
 import { describeWrites, NO_D1_WRITES, runD1Batches, type D1WriteCounts } from "./d1-write-counts";
-import { allAreaIds, areaMappings, distanceMeters, uniqueKmaGrids } from "./areas";
+import { allAreaIds, areaMappings, distanceMeters, uniqueKmaGrids, type AreaId } from "./areas";
 import { sha256 } from "./hash";
 import {
   aggregateSeoulForeignByArea,
@@ -81,7 +81,7 @@ interface HealthSnapshot {
 async function writeSourceHealth(
   db: D1Database | undefined,
   sourceId: string,
-  status: "LIVE" | "MISSING" | "ERROR" | "OFFICIAL_HISTORICAL",
+  status: SourceHealthStatus,
   detail: string,
   record?: HealthSnapshot,
 ): Promise<void> {
@@ -95,7 +95,7 @@ async function writeSourceHealth(
       last_event_at = COALESCE(excluded.last_event_at, source_health.last_event_at),
       last_published_at = COALESCE(excluded.last_published_at, source_health.last_published_at),
       last_retrieved_at = COALESCE(excluded.last_retrieved_at, source_health.last_retrieved_at),
-      consecutive_failures = CASE WHEN excluded.status = 'ERROR' THEN source_health.consecutive_failures + 1 ELSE 0 END,
+      consecutive_failures = CASE WHEN excluded.status IN ('ERROR', 'STALE') THEN source_health.consecutive_failures + 1 ELSE 0 END,
       schema_version = excluded.schema_version,
       detail = excluded.detail,
       updated_at = excluded.updated_at`)
@@ -343,6 +343,46 @@ export interface CollectorResult {
   records: number;
   /** Secret-free operational detail safe for collector_runs and Actions logs. */
   detail?: string;
+  /** How many requests actually reached the provider. 0 proves a run was free. */
+  providerRequests?: number;
+  /** What source_health was set to, so a run's log states it without a re-read. */
+  sourceHealth?: SourceHealthStatus;
+}
+
+/**
+ * Whether a targeted (recovery) collection ran, and what it may assume.
+ *
+ * `hasUsableLastGood` is supplied by a recovery runner that has already read
+ * D1, so the collector does not repeat that read. When it is absent the
+ * collector checks for itself, but only on the failure path.
+ */
+export interface TargetedCollectionOptions {
+  mode?: "PRIMARY" | "RECOVERY";
+  hasUsableLastGood?: boolean;
+}
+
+/**
+ * Source health answers "is the data usable right now", which is a different
+ * question from "did this run succeed" (that is collector_runs).
+ *
+ *  LIVE  — the required coverage was collected successfully.
+ *  STALE — this attempt failed or was incomplete, but stored data is usable.
+ *  ERROR — nothing usable is stored either, or the failure is permanent.
+ *
+ * Writing LIVE after a partial collection is what let a half-collected day
+ * look healthy, so a known-incomplete run is never LIVE.
+ */
+export type SourceHealthStatus = "LIVE" | "STALE" | "MISSING" | "ERROR" | "OFFICIAL_HISTORICAL";
+
+/** True when the table already holds at least one row. Failure path only. */
+async function hasStoredRow(db: D1Database | undefined, sql: string): Promise<boolean> {
+  if (!db) return false;
+  try {
+    const result = await db.prepare(sql).all<Record<string, unknown>>();
+    return (result.results ?? []).length > 0;
+  } catch {
+    return false;
+  }
 }
 
 function dataGoKrItems(body: { items?: unknown[] | { item?: unknown[] | unknown } } | undefined): unknown[] {
@@ -705,8 +745,19 @@ export function latestKmaIssuance(now = new Date()): { baseDate: string; baseTim
 }
 
 // W1 — KMA short-term forecast per unique grid cell, bounded to 48h targets.
-export async function collectWeatherForecasts(env: CollectorEnv, now = new Date()): Promise<CollectorResult> {
+export interface WeatherCollectionOptions extends TargetedCollectionOptions {
+  /** Restricts the run to these grid cells. Defaults to all three. */
+  grids?: ReadonlyArray<{ nx: number; ny: number; areas: readonly string[] }>;
+}
+
+export async function collectWeatherForecasts(
+  env: CollectorEnv,
+  now = new Date(),
+  options: WeatherCollectionOptions = {},
+): Promise<CollectorResult> {
   const sourceId = "KMA_VILAGE_FCST";
+  const grids = options.grids ?? uniqueKmaGrids();
+  const mode = options.mode ?? "PRIMARY";
   const serviceKey = env.KMA_SERVICE_KEY ?? env.DATA_GO_KR_SERVICE_KEY;
   if (!serviceKey) {
     await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "DATA_GO_KR_SERVICE_KEY is not configured");
@@ -719,20 +770,22 @@ export async function collectWeatherForecasts(env: CollectorEnv, now = new Date(
   const failures: string[] = [];
   let lastForecast: CanonicalWeatherForecast | undefined;
   let written: D1WriteCounts = NO_D1_WRITES;
-  for (const grid of uniqueKmaGrids()) {
+  let requestCount = 0;
+  for (const grid of grids) {
     const url = buildDataGoKrUrl(
       "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst",
       serviceKey,
       { pageNo: "1", numOfRows: "1000", dataType: "JSON", base_date: baseDate, base_time: baseTime, nx: String(grid.nx), ny: String(grid.ny) },
     );
     try {
+      requestCount += 1;
       const payload = await fetchOfficialJson(url, KMA_GRID_RETRY_POLICY);
       const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] } } } };
       const resultCode = root?.response?.header?.resultCode;
       if (resultCode !== "00") throw new Error(`kma_result_${String(resultCode ?? "missing")}`);
       const items = Array.isArray(root?.response?.body?.items?.item) ? root.response.body.items.item : [];
       const retrievedAt = nowIso();
-      for (const areaId of grid.areas) {
+      for (const areaId of grid.areas as readonly AreaId[]) {
         const rows = (await normalizeWeatherForecast(items, areaId, retrievedAt)).filter((row) => row.targetAt <= horizon);
         for (const row of rows) {
           lastForecast = row;
@@ -756,17 +809,25 @@ export async function collectWeatherForecasts(env: CollectorEnv, now = new Date(
     }
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
-  const gridCount = uniqueKmaGrids().length;
+  const gridCount = grids.length;
   const okCount = gridCount - failures.length;
-  const detail = `grids ok ${okCount}/${gridCount}; base ${baseDate}${baseTime}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
+  const detail = `mode=${mode}; grids ok ${okCount}/${gridCount}; requests ${requestCount}; base ${baseDate}${baseTime}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
   if (okCount === 0) {
+    // Every requested grid failed. Stored forecasts are untouched, so the
+    // source is STALE rather than ERROR whenever they exist.
+    const lastGood = options.hasUsableLastGood
+      ?? await hasStoredRow(env.DB, `SELECT 1 AS present FROM weather_forecast LIMIT 1`);
+    const health: SourceHealthStatus = lastGood ? "STALE" : "ERROR";
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
-    await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
-    return { status: "ERROR", records: 0, detail };
+    await writeSourceHealth(env.DB, sourceId, health, detail);
+    return { status: "ERROR", records: 0, detail, providerRequests: requestCount, sourceHealth: health };
   }
+  // A grid that was requested and failed leaves one product area without this
+  // issuance, so the source is not LIVE even though other grids succeeded.
+  const health: SourceHealthStatus = failures.length ? "STALE" : "LIVE";
   await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, okCount, written.changedRows);
-  await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastForecast ? { retrievedAt: lastForecast.retrievedAt, schemaVersion: lastForecast.schemaVersion } : undefined);
-  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows, detail };
+  await writeSourceHealth(env.DB, sourceId, health, detail, lastForecast ? { retrievedAt: lastForecast.retrievedAt, schemaVersion: lastForecast.schemaVersion } : undefined);
+  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows, detail, providerRequests: requestCount, sourceHealth: health };
 }
 
 // T1 — one bounded Seoul festival query, mapped to areas by verified distance.
@@ -1013,21 +1074,35 @@ const A5_MAX_PAGES = 3;
  * writes to airport_congestion or any A4 table; A4 source health is never
  * touched by this collector, so an A5 failure cannot alter A4 status.
  */
-export async function collectAirportPassengerForecast(env: CollectorEnv): Promise<CollectorResult> {
+export interface ForecastCollectionOptions extends TargetedCollectionOptions {
+  /** Restricts the run to these days. Defaults to both, as the primary does. */
+  selectdates?: readonly ("0" | "1")[];
+}
+
+export async function collectAirportPassengerForecast(
+  env: CollectorEnv,
+  options: ForecastCollectionOptions = {},
+): Promise<CollectorResult> {
   const sourceId = "INCHEON_PASSENGER_FORECAST";
+  const selectdates = options.selectdates ?? (["0", "1"] as const);
+  const mode = options.mode ?? "PRIMARY";
   if (!env.DATA_GO_KR_SERVICE_KEY) {
     await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "DATA_GO_KR_SERVICE_KEY is not configured");
     await writeSourceHealth(env.DB, sourceId, "MISSING", "DATA_GO_KR_SERVICE_KEY is not configured");
     return { status: "NEEDS_KEY", records: 0 };
   }
   const statements: D1PreparedStatement[] = [];
+  // A failed DAY means a requested day was not collected at all; a failed ROW
+  // is one malformed record inside an otherwise collected day. Only the first
+  // means the required coverage is incomplete.
   const dayFailures: string[] = [];
+  const rowFailures: string[] = [];
   let lastRow: CanonicalAirportPassengerForecastRow | undefined;
   let written: D1WriteCounts = NO_D1_WRITES;
   let normalizedRowGroups = 0;
   let requestCount = 0;
   const retrievedAt = nowIso();
-  for (const selectdate of ["0", "1"] as const) {
+  for (const selectdate of selectdates) {
     try {
       let totalCount: number | null = null;
       for (let pageNo = 1; pageNo <= A5_MAX_PAGES; pageNo += 1) {
@@ -1050,7 +1125,7 @@ export async function collectAirportPassengerForecast(env: CollectorEnv): Promis
           try {
             rows = await normalizeAirportPassengerForecastRow(item, retrievedAt);
           } catch (error) {
-            dayFailures.push(`row: ${error instanceof Error ? error.message : "row_error"}`);
+            rowFailures.push(`row: ${error instanceof Error ? error.message : "row_error"}`);
             continue;
           }
           normalizedRowGroups += 1;
@@ -1085,15 +1160,25 @@ export async function collectAirportPassengerForecast(env: CollectorEnv): Promis
     }
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
-  const detail = `requests ${requestCount}; normalized rows ${normalizedRowGroups}; ${describeWrites(written)}${dayFailures.length ? `; failed ${dayFailures.join(" | ")}` : ""}`;
+  const failures = [...dayFailures, ...rowFailures];
+  const detail = `mode=${mode}; selectdates ${selectdates.join(",")}; requests ${requestCount}; normalized rows ${normalizedRowGroups}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
   if (normalizedRowGroups === 0) {
+    // Nothing was collected. Whether that is ERROR or STALE depends on
+    // whether anything usable is still stored — a timeout must never erase
+    // a good forecast by relabelling the source as having no data.
+    const lastGood = options.hasUsableLastGood
+      ?? await hasStoredRow(env.DB, `SELECT 1 AS present FROM airport_passenger_forecast LIMIT 1`);
+    const health: SourceHealthStatus = lastGood ? "STALE" : "ERROR";
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail || "forecast_no_data");
-    await writeSourceHealth(env.DB, sourceId, "ERROR", detail || "forecast_no_data");
-    return { status: "ERROR", records: 0 };
+    await writeSourceHealth(env.DB, sourceId, health, detail || "forecast_no_data");
+    return { status: "ERROR", records: 0, detail, providerRequests: requestCount, sourceHealth: health };
   }
-  await writeCollectorStatus(env.DB, sourceId, dayFailures.length ? "PARTIAL" : "SUCCESS", detail, normalizedRowGroups, written.changedRows);
-  await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastRow ? { eventAt: lastRow.targetStartAt, retrievedAt: lastRow.retrievedAt, schemaVersion: lastRow.schemaVersion } : undefined);
-  return { status: dayFailures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows };
+  // A day that was requested and not collected leaves the required coverage
+  // incomplete, so the source is STALE even though rows were written.
+  const health: SourceHealthStatus = dayFailures.length ? "STALE" : "LIVE";
+  await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, normalizedRowGroups, written.changedRows);
+  await writeSourceHealth(env.DB, sourceId, health, detail, lastRow ? { eventAt: lastRow.targetStartAt, retrievedAt: lastRow.retrievedAt, schemaVersion: lastRow.schemaVersion } : undefined);
+  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows, detail, providerRequests: requestCount, sourceHealth: health };
 }
 
 export async function runScheduledCollectors(env: CollectorEnv): Promise<void> {

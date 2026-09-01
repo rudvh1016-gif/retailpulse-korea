@@ -164,12 +164,15 @@ test("selectable runner isolates a throwing source and reports unknown sources w
   assert.equal(results[2].records, 3);
 });
 
-test("all eleven production sources are named exactly as the runner selects them", () => {
+test("all thirteen production sources are named exactly as the runner selects them", () => {
+  // The two `_recovery` entries are repair windows for an existing source,
+  // not new data: each reads D1 first and re-requests only what is missing.
   assert.deepEqual([...PRODUCTION_SOURCE_NAMES].sort(), [
     "airport_congestion",
     "airport_congestion_t2",
     "airport_enrichment",
     "airport_passenger_forecast",
+    "airport_passenger_forecast_recovery",
     "airport_recent",
     "airport_scheduled",
     "events",
@@ -177,6 +180,7 @@ test("all eleven production sources are named exactly as the runner selects them
     "seoul_realtime",
     "seoul_sales",
     "weather",
+    "weather_recovery",
   ]);
 });
 

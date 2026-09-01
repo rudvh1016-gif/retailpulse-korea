@@ -1,7 +1,9 @@
 # REALTIME Scheduler Migration Audit (A4-T1 / A4-T2 / S1)
 
 **Status:** Benchmark gate **FAIL** — Worker Cron *execution* of the realtime collectors is **rejected** and stays rejected. The **trigger-only** alternative (§6) was built, benchmarked separately, and **activated** on owner approval.
-**Worker Cron:** **ACTIVE, trigger-only** — `7,22,37,52 * * * *` dispatches `collect-realtime.yml`; `42 * * * *` dispatches `collect-forecast.yml`; `10 2,5,8,11,14,17,20,23 * * *` dispatches `collect-weather.yml`. All run on `retailpulse-korea-production` and do nothing else.
+**Worker Cron:** **ACTIVE, trigger-only** — `7,22,37,52 * * * *` dispatches `collect-realtime.yml`; `42 * * * *` dispatches `collect-forecast.yml`; `10 2,5,8,11,14,17,20,23 * * *` dispatches `collect-weather.yml`. Since 2026-09-01 three recovery windows join them: `53 * * * *` dispatches `collect-forecast-recovery.yml`, and `25 2,5,8,11,14,17,20,23 * * *` / `40 2,5,8,11,14,17,20,23 * * *` dispatch `collect-weather-recovery.yml`. All run on `retailpulse-korea-production` and do nothing else.
+
+Adding the recovery windows changes only how often the handler is invoked (96 → 168 invocations/day), never what one invocation does. Re-benchmarked at p95 **0.14 %** of the Workers Free 10 ms Cron CPU budget (9.986 ms headroom), verdict `PASS_LOCAL` — `scripts/benchmark-realtime-dispatch.ts`.
 **GitHub REALTIME schedule:** **REMOVED** at activation; `workflow_dispatch` retained so the Cron can start it. GitHub Actions still performs all collection.
 **Measured:** 2026-08-31 KST, against `085338d`. **Activated:** 2026-08-31 KST.
 
@@ -117,7 +119,7 @@ This alternative was subsequently **approved for implementation and built** — 
 
 | item | state |
 | --- | --- |
-| Worker Cron | **ACTIVE, trigger-only** — exactly three Crons (`7,22,37,52 * * * *`, `42 * * * *`, `10 2,5,8,11,14,17,20,23 * * *`) under `env.production` in `wrangler.production.jsonc`; staging and the default environment stay Cron-free |
+| Worker Cron | **ACTIVE, trigger-only** — exactly six Crons under `env.production` in `wrangler.production.jsonc`: three primary (`7,22,37,52 * * * *`, `42 * * * *`, `10 2,5,8,11,14,17,20,23 * * *`) and three recovery (`53 * * * *`, `25 2,5,8,11,14,17,20,23 * * *`, `40 2,5,8,11,14,17,20,23 * * *`); staging and the default environment stay Cron-free |
 | Worker Cron work performed | one authenticated GitHub `workflow_dispatch` call; **no** provider call, parsing, normalization, hashing, D1 read or D1 write |
 | GitHub REALTIME cron | **OFF** — the `schedule:` block was removed at activation so only one scheduler is ever authoritative |
 | GitHub REALTIME `workflow_dispatch` | **ON** — this is how the Cloudflare Cron starts the run |

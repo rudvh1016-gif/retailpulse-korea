@@ -60,11 +60,24 @@ console.log(JSON.stringify({
     p95PercentOfCronBudget: round((p95 / OFFICIAL_CRON_CPU_LIMIT_MS) * 100),
     headroomMsAtP95: round(OFFICIAL_CRON_CPU_LIMIT_MS - p95),
   },
+  // Every Cron expression the production Worker fires, and how many
+  // invocations each contributes per day. Adding the A5/weather recovery
+  // windows changes only how OFTEN the handler runs, never what it does in
+  // one invocation, so the per-invocation CPU figures above are unaffected.
   callModel: {
     externalSubrequestsPerInvocation: 1,
-    workerCronInvocationsPerDay: 96,
-    githubDispatchesPerDay: 96,
-    worstCaseGithubRequestsPerDay: 192,
+    invocationsPerDayByCron: {
+      "7,22,37,52 * * * *": 96,
+      "42 * * * *": 24,
+      "10 2,5,8,11,14,17,20,23 * * *": 8,
+      "53 * * * *": 24,
+      "25 2,5,8,11,14,17,20,23 * * *": 8,
+      "40 2,5,8,11,14,17,20,23 * * *": 8,
+    },
+    workerCronInvocationsPerDay: 168,
+    githubDispatchesPerDay: 168,
+    // One bounded transient retry per dispatch, against 5,000/hour authenticated.
+    worstCaseGithubRequestsPerDay: 336,
     githubApiCallsMadeByThisBenchmark: 0,
     providerCallsMadeByThisBenchmark: 0,
   },

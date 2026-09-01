@@ -1,0 +1,57 @@
+name: Collect Airport Passenger Forecast (Recovery)
+
+# A5 RECOVERY WINDOW — the temporal half of collector self-healing.
+#
+# The primary A5 collection runs once an hour at :42. A provider timeout there
+# (UND_ERR_CONNECT_TIMEOUT on data.go.kr is intermittent) costs an ENTIRE
+# hourly opportunity even when the provider recovers minutes later: that is
+# how production served a forecast collected at 08:42 at 14:33. A4 realtime
+# never had this problem because its own next 15-minute cycle repairs it.
+#
+# This is NOT a blind repeat of the primary. The run reads Production D1
+# first (lib/collection-recovery.ts:planForecastRecovery):
+#   · both days COMPLETE and collected within the hour -> ZERO provider
+#     requests, status SKIPPED_ALREADY_HEALTHY
+#   · only tomorrow missing -> ONE request (selectdate=1)
+#   · both missing -> two requests, the same cost as one primary cycle
+# Worst case therefore adds at most 24 x 2 = 48 requests/day on top of the
+# primary's ~48, and the normal case adds zero.
+#
+# A failed recovery never deletes or zeroes stored rows; last-good A5 data is
+# preserved and source_health becomes STALE rather than ERROR.
+#
+# SCHEDULER OWNERSHIP — Cloudflare Production Cron `53 * * * *` is the only
+# automatic alarm. It performs one allowlisted workflow_dispatch and no
+# provider or D1 work. Keeping a native GitHub schedule here would duplicate
+# A5 provider calls.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Shares the primary's group on purpose: a recovery can never overlap the
+# :42 run, so the two can never call the provider at the same time.
+concurrency:
+  group: production-collector-forecast
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run collect:production
+        env:
+          ENABLE_PRODUCTION_COLLECTOR: "true"
+          RPK_PRODUCTION_SOURCES: airport_passenger_forecast_recovery
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+          DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
