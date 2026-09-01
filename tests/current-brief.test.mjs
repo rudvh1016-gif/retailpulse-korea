@@ -138,4 +138,19 @@ test("human freshness renders today, yesterday and older KST dates without repea
   assert.equal(formatHumanFreshness("2026-08-31T09:34:00+09:00", "2026-08-31T12:00:00+09:00", "ko"), "09:34 기준");
   assert.equal(formatHumanFreshness("2026-08-30T23:40:00+09:00", "2026-08-31T12:00:00+09:00", "ko"), "어제 23:40 기준");
   assert.match(formatHumanFreshness("2026-08-28T09:10:00+09:00", "2026-08-31T12:00:00+09:00", "ko"), /8월 28일 09:10 기준/);
+
+  // A clock face alone cannot say WHICH question it answers. The airport cards
+  // showed a forecast collected at 08:42 next to a sum starting at 14:00, and
+  // both read as "기준" — so the same number looked dated twice.
+  const now = "2026-09-01T14:33:00+09:00";
+  const collected = "2026-09-01T08:42:00+09:00";
+  assert.equal(formatHumanFreshness(collected, now, "ko"), "08:42 기준");
+  assert.equal(formatHumanFreshness(collected, now, "ko", "collected"), "08:42 수집");
+  assert.equal(formatHumanFreshness(collected, now, "ko", "observed"), "08:42 관측");
+  assert.equal(formatHumanFreshness(collected, now, "ko", "plain"), "08:42");
+  assert.equal(formatHumanFreshness("2026-08-31T23:40:00+09:00", now, "ko", "collected"), "어제 23:40 수집");
+  assert.equal(formatHumanFreshness(collected, now, "en", "collected"), "Collected 08:42");
+  assert.equal(formatHumanFreshness(collected, now, "en", "observed"), "Observed 08:42");
+  assert.equal(formatHumanFreshness(collected, now, "ja", "collected"), "08:42 取得");
+  assert.equal(formatHumanFreshness(collected, now, "zh", "observed"), "08:42 观测");
 });

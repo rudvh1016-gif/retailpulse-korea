@@ -336,6 +336,50 @@ test("the header date comes from the data on screen and long status text never u
   assert.match(css, /\.airport-today-grid small\.metric-freshness \{[^}]*font-size: 8px/);
 });
 
+/**
+ * A retrieval moment and a summed window are different questions.
+ *
+ * Production showed "지금부터 오늘 끝까지 12,933명" stamped "08:42 기준" while
+ * the sentence above it said the sum began at 14:00. Both times were true —
+ * 08:42 was when the official forecast was fetched, 14:00 was where the sum
+ * started — but one word was carrying both meanings, so the card read as a
+ * contradiction. Each stamp now names its own kind, and a window is a range.
+ */
+test("a collection time and a summed window are never worded as the same thing", async () => {
+  const signals = await read("../app/live-signals.tsx");
+  const brief = await read("../lib/current-brief.ts");
+
+  assert.match(brief, /export type FreshnessKind = "basis" \| "collected" \| "observed" \| "plain";/);
+  // Retrievals say retrieval; provider observations say observation.
+  assert.match(signals, /formatHumanFreshness\(value, nowIso, lang, "collected"\)/);
+  assert.match(signals, /formatHumanFreshness\(row\.observedAt, nowIso, lang, "observed"\)/);
+
+  // The remaining card states the band it actually summed.
+  assert.match(signals, /function formatRemainingWindow/);
+  assert.match(signals, /airportTodayText\.remainingNote\[lang\]\(formatRemainingWindow\(remaining\)\)/);
+  // Midnight ends today; rendering it as 00:00 reads like a day starting.
+  assert.match(signals, /end === "00:00" \? "24:00" : end/);
+  assert.doesNotMatch(signals, /현재 시간대부터 24:00까지/,
+    "the window must be the real band, not a phrase the reader has to resolve");
+});
+
+/**
+ * The official forecast chart explains the four numbers immediately above it,
+ * so it belongs directly under "한눈에 보기" rather than below the live
+ * checkpoint and gate sections, which answer a different question.
+ */
+test("the official passenger-flow section is rendered directly under the at-a-glance grid", async () => {
+  const signals = await read("../app/live-signals.tsx");
+  const grid = signals.indexOf('className="airport-today-grid"');
+  const forecast = signals.indexOf('className="airport-detail-section airport-forecast"');
+  const checkpoints = signals.indexOf('className="airport-detail-section airport-checkpoints"');
+  const gates = signals.indexOf('className="airport-detail-section airport-gates"');
+  assert.ok(grid > 0 && forecast > 0 && checkpoints > 0 && gates > 0);
+  assert.ok(grid < forecast, "the forecast chart must follow the at-a-glance grid");
+  assert.ok(forecast < checkpoints, "the forecast chart must precede current checkpoints");
+  assert.ok(checkpoints < gates, "checkpoints keep their place ahead of the gate ranking");
+});
+
 test("timestamps state what they mean and a forecast band never borrows observation wording", async () => {
   const signals = await read("../app/live-signals.tsx");
   // Foreign presence carries an OBSERVATION time published with delay, so it
