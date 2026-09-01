@@ -22,11 +22,14 @@ import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 import { uniqueKmaGrids } from "../lib/areas.ts";
 import {
+  describeForecastPlan,
+  describeWeatherPlan,
   expectedWeatherIssuedAt,
   planForecastRecovery,
   planWeatherRecovery,
   SKIPPED_ALREADY_HEALTHY,
 } from "../lib/collection-recovery.ts";
+import { CloudflareD1RestDatabase } from "../lib/d1-rest.ts";
 import { runSelectedProductionSources } from "../lib/production-runner.ts";
 
 class LocalD1Statement {
@@ -149,6 +152,94 @@ const runRecovery = (database, source, now = NOW) => runSelectedProductionSource
   [source],
   now,
 );
+
+// ---------------------------------------------------------------------------
+// The adapter the recovery planner actually runs against
+// ---------------------------------------------------------------------------
+
+/**
+ * The planner's D1 surface must exist on the REAL adapter, not just on the
+ * fakes in this file.
+ *
+ * The first production recovery run (33479570166) requested a full cycle
+ * while reporting every day UNAVAILABLE, on a database that held the data.
+ * `CloudflareD1RestDatabase` — the adapter GitHub Actions uses — had no
+ * `all()`; the planner's call threw, the throw was swallowed as "nothing
+ * stored", and the window spent 2 provider requests instead of 0. Every unit
+ * test passed, because LocalD1Database here implements `all()`.
+ *
+ * So this asserts against the production class directly. A test double may
+ * never be more capable than the thing it stands in for.
+ */
+test("the production D1 adapter implements every method the recovery planner calls", async () => {
+  const calls = [];
+  const fetchImpl = async (_url, init) => {
+    calls.push(JSON.parse(String(init.body)));
+    return Response.json({
+      success: true,
+      result: [{ success: true, meta: { rows_read: 2 }, results: [{ area: "myeongdong", rowCount: 3 }] }],
+    });
+  };
+  const database = new CloudflareD1RestDatabase("account", "db", "token", fetchImpl);
+  const statement = database.prepare("SELECT area, COUNT(*) AS rowCount FROM weather_forecast WHERE issued_at = ?");
+
+  for (const method of ["bind", "run", "all"]) {
+    assert.equal(typeof statement[method], "function", `RestPreparedStatement must implement ${method}()`);
+  }
+  assert.equal(typeof database.batch, "function");
+
+  const result = await statement.bind("2026-09-01T14:00:00+09:00").all();
+  assert.deepEqual(result.results, [{ area: "myeongdong", rowCount: 3 }]);
+  assert.equal(result.success, true);
+  assert.deepEqual(calls, [{ batch: [{
+    sql: "SELECT area, COUNT(*) AS rowCount FROM weather_forecast WHERE issued_at = ?",
+    params: ["2026-09-01T14:00:00+09:00"],
+  }] }]);
+});
+
+test("a healthy plan reads correctly through the production adapter, costing zero provider requests", async () => {
+  // The exact shape the planner asks for, answered the way D1 answers it.
+  const dayStart = `${TODAY}T00:00:00+09:00`;
+  const dayEnd = `${TOMORROW}T00:00:00+09:00`;
+  const band = (terminal, targetDate) => ({
+    terminal, direction: "departure", isAggregate: 1, targetDate,
+    timeBandRaw: "00_24", targetStartAt: `${targetDate}T00:00:00+09:00`,
+    targetEndAt: targetDate === TODAY ? dayEnd : `${kstDayAfter(targetDate)}T00:00:00+09:00`,
+    expectedPassengers: 20000, retrievedAt: `${TODAY}T14:42:00+09:00`,
+  });
+  assert.equal(dayStart, `${TODAY}T00:00:00+09:00`);
+
+  const fetchImpl = async (_url, init) => {
+    const { batch } = JSON.parse(String(init.body));
+    const targetDate = batch[0].params?.[0];
+    return Response.json({
+      success: true,
+      result: [{ success: true, results: [band("T1", targetDate), band("T2", targetDate)] }],
+    });
+  };
+  const database = new CloudflareD1RestDatabase("account", "db", "token", fetchImpl);
+  const plan = await planForecastRecovery(database, NOW);
+
+  assert.equal(plan.d1ReadFailed, false);
+  assert.deepEqual(plan.missingSelectdates, [], "a readable, complete, fresh day needs no provider request");
+  assert.equal(plan.hasUsableLastGood, true);
+});
+
+test("a failed D1 read is reported as unverified, never as proof the data is gone", async () => {
+  const database = new CloudflareD1RestDatabase("account", "db", "token", async () => new Response("nope", { status: 500 }));
+  const plan = await planForecastRecovery(database, NOW);
+
+  assert.equal(plan.d1ReadFailed, true, "the run must say the read failed");
+  assert.equal(plan.hasUsableLastGood, false);
+  // The repair still proceeds, bounded to one primary cycle — but the log
+  // names the read failure instead of claiming the forecast is missing.
+  assert.deepEqual(plan.missingSelectdates, ["0", "1"]);
+  assert.match(describeForecastPlan(plan), /d1ReadFailed=true/);
+
+  const weather = await planWeatherRecovery(database, NOW);
+  assert.equal(weather.d1ReadFailed, true);
+  assert.match(describeWeatherPlan(weather), /d1ReadFailed=true/);
+});
 
 // ---------------------------------------------------------------------------
 // A5 — the hourly forecast
