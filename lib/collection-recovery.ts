@@ -64,6 +64,8 @@ export interface ForecastRecoveryPlan {
   days: ForecastDayHealth[];
   /** True when D1 already holds usable rows, so a failed repair loses nothing. */
   hasUsableLastGood: boolean;
+  /** True when a D1 read threw, so "missing" is unverified rather than known. */
+  d1ReadFailed: boolean;
 }
 
 export interface WeatherGrid {
@@ -79,20 +81,35 @@ export interface WeatherRecoveryPlan {
   baseDate: string;
   baseTime: string;
   hasUsableLastGood: boolean;
+  /** True when a D1 read threw, so "missing" is unverified rather than known. */
+  d1ReadFailed: boolean;
 }
 
 type Row = Record<string, unknown>;
 
-async function allRows(db: D1Database | undefined, sql: string, binds: unknown[]): Promise<Row[]> {
-  if (!db) return [];
+/**
+ * A read result that says whether it actually read.
+ *
+ * An empty list and a failed read look identical to a caller, and treating
+ * the second as the first is what made every recovery window request a full
+ * cycle: `all()` was missing from the REST adapter, the throw was swallowed,
+ * and "nothing stored" was inferred from a method that never ran. The repair
+ * still proceeds on a failed read — bounded to one primary cycle, because
+ * unverifiable coverage is safer to refresh than to assume — but the run says
+ * so in its log instead of claiming the data is gone.
+ */
+interface ReadResult {
+  rows: Row[];
+  failed: boolean;
+}
+
+async function allRows(db: D1Database | undefined, sql: string, binds: unknown[]): Promise<ReadResult> {
+  if (!db) return { rows: [], failed: false };
   try {
     const result = await db.prepare(sql).bind(...binds).all<Row>();
-    return result.results ?? [];
+    return { rows: result.results ?? [], failed: false };
   } catch {
-    // A read failure must never be mistaken for "nothing is stored" — that
-    // would make a recovery run request everything. The callers treat an
-    // empty read as unhealthy, so the recovery still runs, but bounded.
-    return [];
+    return { rows: [], failed: true };
   }
 }
 
@@ -122,10 +139,11 @@ export async function planForecastRecovery(db: D1Database | undefined, now: Date
   const freshFrom = now.getTime() - FORECAST_FRESH_WITHIN_MS;
   const days: ForecastDayHealth[] = [];
   let anyStoredRow = false;
+  let readFailed = false;
 
   for (const selectdate of ["0", "1"] as const) {
     const targetDate = kstDayFrom(now, selectdate === "0" ? 0 : 1);
-    const rows = await allRows(
+    const read = await allRows(
       db,
       `SELECT terminal, direction, is_aggregate AS isAggregate, target_date AS targetDate,
          time_band_raw AS timeBandRaw, target_start_at AS targetStartAt,
@@ -136,8 +154,9 @@ export async function planForecastRecovery(db: D1Database | undefined, now: Date
        ORDER BY target_start_at, terminal LIMIT 96`,
       [targetDate],
     );
-    if (rows.length) anyStoredRow = true;
-    const summary = summarizeTodayPassengerForecast(rows as unknown as AirportForecastAggregateRow[], targetDate);
+    if (read.failed) readFailed = true;
+    if (read.rows.length) anyStoredRow = true;
+    const summary = summarizeTodayPassengerForecast(read.rows as unknown as AirportForecastAggregateRow[], targetDate);
     const retrievedAt = summary.retrievedAt;
     const fresh = Boolean(retrievedAt) && Date.parse(retrievedAt!) >= freshFrom;
     days.push({
@@ -153,6 +172,7 @@ export async function planForecastRecovery(db: D1Database | undefined, now: Date
     missingSelectdates: days.filter((day) => !day.healthy).map((day) => day.selectdate),
     days,
     hasUsableLastGood: anyStoredRow,
+    d1ReadFailed: readFailed,
   };
 }
 
@@ -166,13 +186,13 @@ export async function planForecastRecovery(db: D1Database | undefined, now: Date
  */
 export async function planWeatherRecovery(db: D1Database | undefined, now: Date): Promise<WeatherRecoveryPlan> {
   const { issuedAt, baseDate, baseTime } = expectedWeatherIssuedAt(now);
-  const rows = await allRows(
+  const read = await allRows(
     db,
     `SELECT area, COUNT(*) AS rowCount FROM weather_forecast WHERE issued_at = ? GROUP BY area`,
     [issuedAt],
   );
   const storedAreas = new Set(
-    rows.filter((row) => Number(row.rowCount ?? 0) > 0).map((row) => String(row.area ?? "")),
+    read.rows.filter((row) => Number(row.rowCount ?? 0) > 0).map((row) => String(row.area ?? "")),
   );
   const anyStored = await allRows(db, `SELECT 1 AS present FROM weather_forecast LIMIT 1`, []);
 
@@ -182,7 +202,8 @@ export async function planWeatherRecovery(db: D1Database | undefined, now: Date)
     issuedAt,
     baseDate,
     baseTime,
-    hasUsableLastGood: anyStored.length > 0,
+    hasUsableLastGood: anyStored.rows.length > 0,
+    d1ReadFailed: read.failed || anyStored.failed,
   };
 }
 
@@ -191,10 +212,10 @@ export function describeForecastPlan(plan: ForecastRecoveryPlan): string {
   const days = plan.days
     .map((day) => `${day.targetDate}=${day.coverage}${day.healthy ? "/fresh" : "/stale"}`)
     .join(" ");
-  return `missingSelectdates=${plan.missingSelectdates.join(",") || "none"}; ${days}`;
+  return `missingSelectdates=${plan.missingSelectdates.join(",") || "none"}; ${days}${plan.d1ReadFailed ? "; d1ReadFailed=true" : ""}`;
 }
 
 export function describeWeatherPlan(plan: WeatherRecoveryPlan): string {
   const grids = plan.missingGrids.map((grid) => `${grid.nx},${grid.ny}`).join(" ") || "none";
-  return `issuance=${plan.baseDate}${plan.baseTime}; missingGrids=${grids}`;
+  return `issuance=${plan.baseDate}${plan.baseTime}; missingGrids=${grids}${plan.d1ReadFailed ? "; d1ReadFailed=true" : ""}`;
 }

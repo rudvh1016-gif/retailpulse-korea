@@ -27,11 +27,35 @@ class RestPreparedStatement {
   async run(): Promise<D1QueryResult> {
     return (await this.database.execute([this.query()]))[0];
   }
+
+  /**
+   * Reads rows back, shaped like the Workers D1 binding's `all()`.
+   *
+   * This existed on the Workers binding and on every test double, but NOT on
+   * this REST adapter, which is what Actions actually uses. The recovery
+   * planner (lib/collection-recovery.ts) reads D1 before deciding whether to
+   * call a provider, so the missing method threw, the read was reported as
+   * "nothing stored", and every recovery window spent a full cycle of
+   * provider requests instead of the zero a healthy window should cost
+   * (production run 33479570166, 2026-09-01).
+   */
+  async all<T = Record<string, unknown>>(): Promise<{ results: T[]; success: boolean; meta?: D1Meta }> {
+    const result = (await this.database.execute([this.query()]))[0];
+    return {
+      results: (result?.results ?? []) as T[],
+      success: result?.success ?? false,
+      meta: result?.meta,
+    };
+  }
 }
 
 /**
  * Small D1 REST adapter for trusted GitHub Actions only.
- * It intentionally exposes only the prepare/run/batch surface used by collectors.
+ *
+ * It exposes prepare/bind/run/all/batch — the surface the collectors and the
+ * recovery planner use. Anything a caller needs must exist HERE, not only on
+ * the Workers binding and the test doubles: a method missing from this class
+ * fails silently in Actions while every unit test passes.
  */
 export class CloudflareD1RestDatabase {
   private readonly endpoint: string;
