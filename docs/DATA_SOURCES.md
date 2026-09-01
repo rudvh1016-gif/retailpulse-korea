@@ -120,6 +120,22 @@ syntax gives the minute field as 0-59 with `* , - /`, so
 minutes. Healthy issuances still cost zero extra provider requests, because
 each window reads D1 before it decides to call KMA.
 
+Recomputed for the second window, from `KMA_GRID_RETRY_POLICY` (`maxAttempts:
+3`) and `uniqueKmaGrids()` (3 cells) rather than from the old two-window math:
+
+| | |
+| --- | --- |
+| KMA issuances/day | 8 (`2,5,8,11,14,17,20,23` UTC) |
+| Grids per issuance | 3 |
+| Healthy provider requests/day | **24** — the :10 primary only; both recovery windows return `SKIPPED_ALREADY_HEALTHY` with `providerRequests=0` |
+| Recovery dispatches/day | 16 (8 issuances × 2 minutes), all GitHub, none reaching KMA when healthy |
+| Worst-case provider requests/day | **216** — 3 grids × 3 attempts × 3 windows × 8 issuances, every attempt failing |
+| Share of the documented 10,000/day quota | 0.24 % healthy, 2.16 % worst case |
+
+Adding :40 therefore does not multiply provider load. It changes only the
+worst case, from 144 to 216, and only on a day where KMA is failing every
+attempt in every window — which is the day the extra window exists for.
+
 A recovery run is not a repeat of the primary. It reads Production D1 first
 (`lib/collection-recovery.ts`) and then:
 

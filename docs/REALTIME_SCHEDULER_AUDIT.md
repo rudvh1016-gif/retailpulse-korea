@@ -121,7 +121,7 @@ This alternative was subsequently **approved for implementation and built** — 
 
 | item | state |
 | --- | --- |
-| Worker Cron | **ACTIVE, trigger-only** — exactly five Crons under `env.production` in `wrangler.production.jsonc` (the Workers Free per-account maximum): three primary (`7,22,37,52 * * * *`, `42 * * * *`, `10 2,5,8,11,14,17,20,23 * * *`) and two recovery (`53 * * * *`, `25 2,5,8,11,14,17,20,23 * * *`); staging and the default environment stay Cron-free |
+| Worker Cron | **ACTIVE, trigger-only** — exactly five Crons under `env.production` in `wrangler.production.jsonc` (the Workers Free per-account maximum): three primary (`7,22,37,52 * * * *`, `42 * * * *`, `10 2,5,8,11,14,17,20,23 * * *`) and two recovery (`53 * * * *`, `25,40 2,5,8,11,14,17,20,23 * * *` — the weather one firing at both :25 and :40 from that single expression); staging and the default environment stay Cron-free |
 | Worker Cron work performed | one authenticated GitHub `workflow_dispatch` call; **no** provider call, parsing, normalization, hashing, D1 read or D1 write |
 | GitHub REALTIME cron | **OFF** — the `schedule:` block was removed at activation so only one scheduler is ever authoritative |
 | GitHub REALTIME `workflow_dispatch` | **ON** — this is how the Cloudflare Cron starts the run |
