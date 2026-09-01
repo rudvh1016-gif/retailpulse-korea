@@ -514,3 +514,57 @@ test("unknown routes return a useful 404", async ({ page }) => {
   expect(response?.status()).toBe(404);
   await expect(page.locator("body")).toContainText(/찾지 못|찾을 수|not found|ページ|未找到/i);
 });
+
+test("the business-type checklist is readable, filled in and switches with the tab", async ({ page }) => {
+  await page.goto("/ko/business");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+  await page.evaluate(async () => document.fonts.ready);
+  const section = page.locator(".industry-section");
+  await section.scrollIntoViewIfNeeded();
+
+  // The selected tab used to be painted white on the paper background, which
+  // made it vanish, and each label was squeezed into a 32px grid column so a
+  // six-character Korean name wrapped one character per line.
+  const tabs = await page.evaluate(() => {
+    const paper = getComputedStyle(document.body).backgroundColor;
+    return [...document.querySelectorAll<HTMLElement>(".industry-tabs button")].map((button) => {
+      const style = getComputedStyle(button);
+      return { text: button.textContent ?? "", color: style.color, paper, height: Math.round(button.getBoundingClientRect().height), active: button.classList.contains("active") };
+    });
+  });
+  expect(tabs).toHaveLength(6);
+  for (const tab of tabs) {
+    expect(tab.color).not.toBe(tab.paper);
+    expect(tab.color).not.toBe("rgb(255, 255, 255)");
+    // Two lines at most: per-character wrapping produced a six-line label.
+    expect(tab.height).toBeLessThan(64);
+  }
+  expect(tabs.filter((tab) => tab.active)).toHaveLength(1);
+
+  // Three phase columns, each with rows, rather than one sparse list.
+  await expect(page.locator(".checklist-phase")).toHaveCount(3);
+  await expect(page.locator(".checklist-rows li")).toHaveCount(6);
+  await expect(page.locator(".industry-watch b")).not.toBeEmpty();
+
+  const beauty = await page.locator(".checklist-rows p").first().textContent();
+  await page.getByRole("tab", { name: "관광·숙박" }).click();
+  await expect(page.locator(".checklist-rows p").first()).not.toHaveText(beauty ?? "");
+  await expect(page.locator(".checklist-rows li")).toHaveCount(6);
+
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+});
+
+test("the checklist stacks without overflow on a narrow phone", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.goto("/ja/business");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+  await page.evaluate(async () => document.fonts.ready);
+  await page.locator(".industry-section").scrollIntoViewIfNeeded();
+  await expect(page.locator(".checklist-phase")).toHaveCount(3);
+  // Every row has to fit inside its own box: a label that paints wider than the
+  // element it sits in is the readability defect this layout replaced.
+  const overflowing = await page.evaluate(() => [...document.querySelectorAll(".industry-tabs button, .checklist-rows p, .checklist-rows strong")]
+    .filter((el) => el.scrollWidth > Math.ceil(el.getBoundingClientRect().width) + 1).length);
+  expect(overflowing).toBe(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+});

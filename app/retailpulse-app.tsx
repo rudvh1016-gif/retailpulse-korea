@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- Editorial photography is served directly from the Worker asset bundle; no image CDN is provisioned. */
 
 import { useEffect, useMemo, useState } from "react";
+import { checklistPhaseLabels, checklistPhaseOrder, type IndustryId, industryProfiles } from "../lib/industry-guidance";
 import {
   airportAnnual,
   airportMonthly,
@@ -30,7 +31,6 @@ const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
 type View = "today" | "airport" | "business" | "forecast" | "about" | "more";
 type AirportSection = "now" | "flights" | "history";
 type AreaId = "myeongdong" | "hongdae" | "seongsu";
-type IndustryId = "beauty" | "fashion" | "food" | "convenience" | "popup" | "tourism";
 
 // Area identity only. There is deliberately no "best time" here: a recommended
 // hour would be a claim about demand, and the only hour KORETAIL can stand
@@ -80,62 +80,6 @@ const copy = {
   },
 } as const;
 
-const industryProfiles: Record<IndustryId, { label: Record<Lang, string>; short: string; checklist: Record<Lang, [string, string][]> }> = {
-  beauty: {
-    label: { ko: "뷰티·화장품", en: "Beauty & cosmetics", zh: "美妆·化妆品", ja: "ビューティー・化粧品" }, short: "BEAUTY",
-    checklist: {
-      ko: [["응대", "다국어 응대 가능 인력을 혼잡 시간대 앞에 배치"], ["재고", "선케어·마스크팩·미니세트 접근성과 품절 위험 점검"], ["안내", "가격·성분 안내를 영문·중문으로 함께 노출"]],
-      en: [["STAFF", "Place multilingual coverage ahead of the busy band"], ["STOCK", "Check access and stock-out risk for sun care, masks, mini sets"], ["SIGNAGE", "Show price and ingredient guidance in English and Chinese"]],
-      zh: [["接待", "在拥挤时段前安排多语种接待人员"], ["库存", "检查防晒、面膜、旅行装的可取性与缺货风险"], ["标识", "同时以英文与中文展示价格与成分说明"]],
-      ja: [["接客", "混雑時間帯の前に多言語対応の人員を配置"], ["在庫", "日焼け止め・マスク・ミニセットの取りやすさと欠品リスクを確認"], ["案内", "価格・成分案内を英語と中国語で併記"]],
-    },
-  },
-  fashion: {
-    label: { ko: "패션·잡화", en: "Fashion & goods", zh: "时尚·杂货", ja: "ファッション・雑貨" }, short: "FASHION",
-    checklist: {
-      ko: [["동선", "혼잡 시간대에는 피팅과 결제 동선을 분리"], ["재고", "인기 사이즈 회전과 보충 주기를 미리 확인"], ["안내", "사이즈 표기 차이를 다국어로 안내"]],
-      en: [["FLOW", "Separate fitting and checkout during the busy band"], ["STOCK", "Check turnover and replenishment for popular sizes"], ["SIGNAGE", "Explain sizing differences in multiple languages"]],
-      zh: [["动线", "拥挤时段分开试衣与结账动线"], ["库存", "提前确认热门尺码的周转与补货节奏"], ["标识", "以多语种说明尺码差异"]],
-      ja: [["動線", "混雑時間帯は試着と会計の導線を分ける"], ["在庫", "人気サイズの回転と補充サイクルを事前確認"], ["案内", "サイズ表記の違いを多言語で案内"]],
-    },
-  },
-  food: {
-    label: { ko: "식음료·카페", en: "Food & café", zh: "餐饮·咖啡", ja: "飲食・カフェ" }, short: "F&B",
-    checklist: {
-      ko: [["회전", "혼잡 시간대 좌석 회전과 대기 안내 기준을 정해두기"], ["준비", "인기 메뉴 사전 준비량과 재료 소진 시점 점검"], ["안내", "알레르기·원산지 정보를 다국어로 비치"]],
-      en: [["TURNOVER", "Set seat-turnover and queue guidance for the busy band"], ["PREP", "Check prep volume and run-out timing for popular items"], ["INFO", "Keep allergen and origin information in multiple languages"]],
-      zh: [["翻台", "为拥挤时段设定翻台与排队引导标准"], ["备料", "检查热门菜品备料量与耗尽时点"], ["信息", "以多语种提供过敏原与原产地信息"]],
-      ja: [["回転", "混雑時間帯の席回転と待ち案内の基準を決める"], ["仕込み", "人気メニューの仕込み量と品切れ時点を確認"], ["表示", "アレルギー・原産地情報を多言語で用意"]],
-    },
-  },
-  convenience: {
-    label: { ko: "편의·약국", en: "Convenience & pharmacy", zh: "便利店·药店", ja: "コンビニ・薬局" }, short: "ESSENTIALS",
-    checklist: {
-      ko: [["재고", "여행용 상비품과 생활용품 진열 위치 점검"], ["결제", "해외카드·간편결제 동작을 사전 확인"], ["안내", "복용·사용 안내를 다국어로 준비"]],
-      en: [["STOCK", "Check placement of travel essentials and daily goods"], ["PAYMENT", "Verify foreign card and mobile payment ahead of time"], ["INFO", "Prepare dosage and usage guidance in multiple languages"]],
-      zh: [["库存", "检查旅行常备品与生活用品的陈列位置"], ["支付", "提前确认境外卡与移动支付可用"], ["说明", "以多语种准备服用与使用说明"]],
-      ja: [["在庫", "旅行常備品と日用品の陳列位置を確認"], ["決済", "海外カード・モバイル決済の動作を事前確認"], ["案内", "服用・使用方法を多言語で用意"]],
-    },
-  },
-  popup: {
-    label: { ko: "팝업·체험", en: "Pop-up & experience", zh: "快闪·体验", ja: "ポップアップ・体験" }, short: "POP-UP",
-    checklist: {
-      ko: [["대기", "혼잡 시간대 입장 대기 방식과 안내 문구를 정리"], ["운영", "체험 회차당 인원과 소요 시간을 미리 고정"], ["안내", "예약·입장 규칙을 다국어로 게시"]],
-      en: [["QUEUE", "Decide entry queueing and wording for the busy band"], ["OPS", "Fix headcount and duration per session in advance"], ["SIGNAGE", "Post booking and entry rules in multiple languages"]],
-      zh: [["排队", "确定拥挤时段的入场排队方式与提示文案"], ["运营", "提前固定每场体验人数与时长"], ["标识", "以多语种张贴预约与入场规则"]],
-      ja: [["待機", "混雑時間帯の入場待ち方法と案内文を整理"], ["運営", "1回あたりの人数と所要時間を事前に決める"], ["掲示", "予約・入場ルールを多言語で掲示"]],
-    },
-  },
-  tourism: {
-    label: { ko: "관광·숙박", en: "Tourism & stay", zh: "旅游·住宿", ja: "観光・宿泊" }, short: "TOURISM",
-    checklist: {
-      ko: [["체크인", "공항 혼잡 시간대와 체크인 시간이 겹치는지 확인"], ["짐", "짐 보관 수요가 몰리는 시간대를 대비"], ["안내", "교통·환승 안내를 다국어로 준비"]],
-      en: [["CHECK-IN", "Check whether airport busy bands overlap your check-in window"], ["LUGGAGE", "Prepare for concentrated luggage-storage demand"], ["INFO", "Prepare transit guidance in multiple languages"]],
-      zh: [["入住", "确认机场拥挤时段是否与入住时间重叠"], ["行李", "为行李寄存需求集中的时段做准备"], ["信息", "以多语种准备交通与换乘说明"]],
-      ja: [["チェックイン", "空港の混雑時間帯とチェックイン時間の重なりを確認"], ["荷物", "荷物предポーター需要が集中する時間帯に備える"], ["案内", "交通・乗り換え案内を多言語で用意"]],
-    },
-  },
-};
 
 function Icon({ name }: { name: View }) {
   const paths: Record<View, string> = {
@@ -656,16 +600,35 @@ function BusinessView({
           <div className="section-head">
             <div><p className="eyebrow">OPERATING CHECKLIST · {profile.short}</p><h2 id="industry-title">{localText(lang, { ko: "업종별 점검 목록", en: "Checklist by business type", zh: "分业态检查清单", ja: "業種別チェックリスト" })}</h2></div>
           </div>
-          <div className="industry-picker" role="tablist">
+          <div className="industry-tabs" role="tablist" aria-label={localText(lang, { ko: "업종 선택", en: "Select a business type", zh: "选择业态", ja: "業種を選択" })}>
             {(Object.keys(industryProfiles) as IndustryId[]).map((id) => <button key={id} className={industry === id ? "active" : ""} onClick={() => setIndustry(id)} role="tab" aria-selected={industry === id}>{industryProfiles[id].label[lang]}</button>)}
           </div>
-          <ol className="checklist-rows">
-            {profile.checklist[lang].map(([label, action], index) => <li key={label}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <strong>{label}</strong>
-              <p>{action}</p>
-            </li>)}
-          </ol>
+          <p className="industry-watch">
+            <span>{localText(lang, { ko: "먼저 볼 신호", en: "READ FIRST", zh: "优先查看", ja: "先に見る指標" })}</span>
+            <b>{profile.watch[lang]}</b>
+          </p>
+          {/* Grouped by when the work happens, so the operator reads only the
+              block for the moment they are in rather than scanning one long list. */}
+          <div className="checklist-groups">
+            {checklistPhaseOrder.map((phase) => {
+              const rows = profile.checklist[lang]
+                .map((row, index) => ({ row, index }))
+                .filter(({ row }) => row[0] === phase);
+              if (!rows.length) return null;
+              return (
+                <section key={phase} className="checklist-phase">
+                  <h3>{checklistPhaseLabels[phase][lang]}</h3>
+                  <ol className="checklist-rows">
+                    {rows.map(({ row: [, label, action], index }) => <li key={`${phase}-${label}`}>
+                      <span>{String(index + 1).padStart(2, "0")}</span>
+                      <strong>{label}</strong>
+                      <p>{action}</p>
+                    </li>)}
+                  </ol>
+                </section>
+              );
+            })}
+          </div>
           <p className="truth-note">{localText(lang, {
             ko: "이 목록은 위의 공식 혼잡 시간대와 함께 보도록 만든 일반 가이드입니다. 매출이나 방문자 수를 예측하지 않습니다.",
             en: "This list is general guidance meant to be read alongside the official busy band above. It does not predict sales or visitor counts.",
