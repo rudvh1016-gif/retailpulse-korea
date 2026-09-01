@@ -7,7 +7,7 @@ import { PRODUCTION_SOURCE_NAMES } from "../lib/production-runner";
 import { evaluateQuotaUsage } from "../lib/quota-guard";
 import { normalizeAirportFlight } from "../lib/source-adapters";
 import { readCloudflareConfig, validateCloudflareEnvironment } from "../scripts/validate-cloudflare-environment.mjs";
-import { WORKERS_FREE_CRON_TRIGGER_LIMIT } from "../lib/realtime-dispatch";
+import { PRODUCTION_CRONS, WORKERS_FREE_CRON_TRIGGER_LIMIT } from "../lib/realtime-dispatch";
 
 test("semantic flight hash ignores retrieval time and unknown volatile fields", async () => {
   const base = { flightId: "KE703", scheduleDateTime: "202608251430", terminalid: "2", gate: "231", remark: "정상" };
@@ -121,7 +121,7 @@ test("production collector remains gated and only production carries a Worker Cr
     "42 * * * *",
     "10 2,5,8,11,14,17,20,23 * * *",
     "53 * * * *",
-    "25 2,5,8,11,14,17,20,23 * * *",
+    "25,40 2,5,8,11,14,17,20,23 * * *",
   ]);
 });
 
@@ -206,7 +206,7 @@ test("exactly five Cloudflare Cron Triggers exist, within the Workers Free per-a
     "42 * * * *",
     "10 2,5,8,11,14,17,20,23 * * *",
     "53 * * * *",
-    "25 2,5,8,11,14,17,20,23 * * *",
+    "25,40 2,5,8,11,14,17,20,23 * * *",
   ]);
   assert.equal(crons.length, 5, "only the audited trigger-only cadences and their recovery windows are authorized");
   // The hard platform ceiling. Exceeding it does not degrade gracefully — the
@@ -218,6 +218,18 @@ test("exactly five Cloudflare Cron Triggers exist, within the Workers Free per-a
   // The realtime cadence is non-negotiable and must survive every change here.
   assert.ok(crons.includes("7,22,37,52 * * * *"), "the realtime cadence must stay exactly as audited");
   assert.equal(crons.filter((cron: string) => cron.startsWith("7,22,37,52")).length, 1);
+
+  // Weather recovery covers :25 and :40 from ONE expression. Splitting it into
+  // two would be a sixth trigger, which the API rejects outright, so the shape
+  // of this entry is what keeps the account on Workers Free.
+  assert.ok(crons.includes("25,40 2,5,8,11,14,17,20,23 * * *"), "weather recovery must name both minutes in one expression");
+  assert.equal(crons.filter((cron: string) => /^40[ ,]/.test(cron)).length, 0, "a standalone :40 expression would be a sixth trigger");
+  assert.equal(crons.filter((cron: string) => /^25 /.test(cron)).length, 0, "the single-minute weather recovery expression must be gone");
+
+  // The Wrangler config and the scheduler constant must not drift: the handler
+  // routes by exact string, so a mismatch would leave the trigger firing into
+  // an expression the code does not recognize, dispatching nothing.
+  assert.deepEqual(crons, [...PRODUCTION_CRONS], "wrangler.production.jsonc and PRODUCTION_CRONS must stay identical");
 });
 
 /**
@@ -276,7 +288,7 @@ test("the production Cron and the dispatch target describe one scheduler path", 
     "42 * * * *",
     "10 2,5,8,11,14,17,20,23 * * *",
     "53 * * * *",
-    "25 2,5,8,11,14,17,20,23 * * *",
+    "25,40 2,5,8,11,14,17,20,23 * * *",
   ]);
   assert.match(dispatch, /REALTIME_WORKFLOW_FILE = "collect-realtime\.yml"/);
   assert.match(dispatch, /FORECAST_WORKFLOW_FILE = "collect-forecast\.yml"/);
@@ -284,6 +296,7 @@ test("the production Cron and the dispatch target describe one scheduler path", 
   assert.match(dispatch, /FORECAST_RECOVERY_WORKFLOW_FILE = "collect-forecast-recovery\.yml"/);
   assert.match(dispatch, /WEATHER_RECOVERY_WORKFLOW_FILE = "collect-weather-recovery\.yml"/);
   assert.match(dispatch, /FORECAST_RECOVERY_CRON = "53 \* \* \* \*"/);
+  assert.match(dispatch, /WEATHER_RECOVERY_CRON = "25,40 2,5,8,11,14,17,20,23 \* \* \*"/);
   assert.match(dispatch, /DISPATCH_REF = "main"/);
   assert.equal(config.env.production.name, "retailpulse-korea-production");
 });

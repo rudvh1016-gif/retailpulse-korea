@@ -71,16 +71,16 @@ console.log(JSON.stringify({
       "42 * * * *": 24,
       "10 2,5,8,11,14,17,20,23 * * *": 8,
       "53 * * * *": 24,
-      "25 2,5,8,11,14,17,20,23 * * *": 8,
+      "25,40 2,5,8,11,14,17,20,23 * * *": 16,
     },
     // Five is the Workers Free per-account Cron Trigger ceiling; a sixth
     // fails the deploy outright (Cloudflare code 10072).
     cronTriggersConfigured: 5,
     workersFreeCronTriggerLimit: 5,
-    workerCronInvocationsPerDay: 160,
-    githubDispatchesPerDay: 160,
+    workerCronInvocationsPerDay: 168,
+    githubDispatchesPerDay: 168,
     // One bounded transient retry per dispatch, against 5,000/hour authenticated.
-    worstCaseGithubRequestsPerDay: 320,
+    worstCaseGithubRequestsPerDay: 336,
     githubApiCallsMadeByThisBenchmark: 0,
     providerCallsMadeByThisBenchmark: 0,
   },

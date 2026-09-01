@@ -86,7 +86,7 @@ authentication or scheduler classification.
 | T1 TourAPI | 1/day | 4 | same | 4 |
 | A4-T1 | 96/day | 4 | same | 384 |
 | A4-T2 | ~96/day, normally one page; max 3 pages | 3/request | 5s, 30s (+≤0.5s jitter) | 288 normally; 864 absolute bounded maximum |
-| W1 | 3 grids × 8 cycles = 24/day (the recovery window adds 0 when healthy) | 3/grid | 5s, 30s (+≤0.5s jitter) | 72 normally; 144 absolute bounded maximum with the recovery window firing |
+| W1 | 3 grids × 8 cycles = 24/day (both recovery windows add 0 when healthy) | 3/grid | 5s, 30s (+≤0.5s jitter) | 72 normally; 216 absolute bounded maximum with both recovery windows firing every attempt |
 
 A4 datasets remain under the project's conservative 1,000/day-class separate
 dataset budget. W1 remains far below its documented 10,000/day quota. A1's
@@ -109,12 +109,32 @@ opportunity. Three recovery windows close that gap:
 | source | primary | recovery | dispatches |
 | --- | --- | --- | --- |
 | A5 | `42 * * * *` | `53 * * * *` | `collect-forecast-recovery.yml` |
-| W1 | `10 2,5,8,11,14,17,20,23 * * *` | `25 2,5,8,11,14,17,20,23 * * *` | `collect-weather-recovery.yml` |
+| W1 | `10 2,5,8,11,14,17,20,23 * * *` | `25,40 2,5,8,11,14,17,20,23 * * *` | `collect-weather-recovery.yml` |
 
-W1 gets one recovery window rather than the two first sketched: Workers Free
-caps Cron Triggers at **5 per account** and these five fill it. A sixth is
-rejected by the Cloudflare API (code 10072) and fails the deploy, so the only
-conditional window in the plan is the one that goes.
+W1 gets both recovery windows first sketched, :25 and :40, without a sixth
+trigger. Workers Free caps Cron Triggers at **5 per account** and these five
+fill it — a sixth is rejected by the Cloudflare API (code 10072) and fails the
+deploy. What the cap counts is *configured expressions*, and Cloudflare's cron
+syntax gives the minute field as 0-59 with `* , - /`, so
+`25,40 2,5,8,11,14,17,20,23 * * *` is one expression that fires at both
+minutes. Healthy issuances still cost zero extra provider requests, because
+each window reads D1 before it decides to call KMA.
+
+Recomputed for the second window, from `KMA_GRID_RETRY_POLICY` (`maxAttempts:
+3`) and `uniqueKmaGrids()` (3 cells) rather than from the old two-window math:
+
+| | |
+| --- | --- |
+| KMA issuances/day | 8 (`2,5,8,11,14,17,20,23` UTC) |
+| Grids per issuance | 3 |
+| Healthy provider requests/day | **24** — the :10 primary only; both recovery windows return `SKIPPED_ALREADY_HEALTHY` with `providerRequests=0` |
+| Recovery dispatches/day | 16 (8 issuances × 2 minutes), all GitHub, none reaching KMA when healthy |
+| Worst-case provider requests/day | **216** — 3 grids × 3 attempts × 3 windows × 8 issuances, every attempt failing |
+| Share of the documented 10,000/day quota | 0.24 % healthy, 2.16 % worst case |
+
+Adding :40 therefore does not multiply provider load. It changes only the
+worst case, from 144 to 216, and only on a day where KMA is failing every
+attempt in every window — which is the day the extra window exists for.
 
 A recovery run is not a repeat of the primary. It reads Production D1 first
 (`lib/collection-recovery.ts`) and then:

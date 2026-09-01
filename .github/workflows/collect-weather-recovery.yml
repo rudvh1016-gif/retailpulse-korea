@@ -5,12 +5,13 @@ name: Collect Weather Forecasts (Recovery)
 # KMA publishes 단기예보 eight times a day, and the primary collection runs
 # once per issuance at :10. A provider timeout there loses that issuance for
 # up to three hours. This window gives it a second chance inside the same
-# issuance: :10 primary, :25 recovery.
+# issuance: :10 primary, :25 recovery, :40 recovery.
 #
-# Only ONE recovery window, not the two originally sketched. The account is on
-# Workers Free, which caps Cron Triggers at 5 PER ACCOUNT; a sixth is rejected
-# outright (Cloudflare code 10072) and fails the deploy. The second weather
-# window was the only conditional one in the plan, so it is the one that goes.
+# BOTH recovery windows run without a sixth Cron Trigger. Workers Free caps
+# triggers at 5 PER ACCOUNT and a sixth is rejected outright (Cloudflare code
+# 10072, which failed a deploy on 2026-09-01) — but the cap counts CONFIGURED
+# EXPRESSIONS, and the cron minute field takes a comma list, so `25,40 ...` is
+# one trigger that fires twice. The account stays at five, on the free plan.
 #
 # This is NOT a blind repeat. The run reads Production D1 first
 # (lib/collection-recovery.ts:planWeatherRecovery) and requests ONLY the grid
@@ -20,18 +21,22 @@ name: Collect Weather Forecasts (Recovery)
 #   · one grid missing -> ONE request
 #   · all three missing -> three requests, one primary cycle's cost
 #
-# QUOTA — typical day: the primary's 3 calls, the recovery skipping, so 24
-# calls/day unchanged. Absolute worst case (every issuance fully failing, the
-# recovery firing, each grid taking its two spaced retries): 8 issuances x 2
-# windows x 3 grids x 3 attempts = 144 calls/day, against the 10,000/day dev
-# quota for data.go.kr 15084084. The added window costs nothing when healthy.
+# QUOTA — typical day: the primary's 3 calls, both recovery windows skipping,
+# so 24 calls/day unchanged. Absolute worst case (every issuance fully failing,
+# both recovery windows firing, each grid taking its two spaced retries):
+# 8 issuances x 3 windows x 3 grids x 3 attempts = 216 calls/day, against the
+# 10,000/day dev quota for data.go.kr 15084084 (2.16 %). The second window
+# costs nothing when healthy: recovery reads D1 before it decides to call.
 #
 # A failed recovery never deletes or zeroes stored rows; last-good weather is
 # preserved and source_health becomes STALE rather than ERROR.
 #
 # SCHEDULER OWNERSHIP — Cloudflare Production Cron
-# `25 2,5,8,11,14,17,20,23 * * *` is the only automatic alarm. It performs one
-# allowlisted workflow_dispatch and no provider or D1 work.
+# `25,40 2,5,8,11,14,17,20,23 * * *` is the only automatic alarm, and it
+# fires at both :25 and :40. Each firing performs one allowlisted
+# workflow_dispatch and no provider or D1 work. Both firings deliver the same
+# configured expression to the handler, so both route through the one
+# allowlist entry in lib/realtime-dispatch.ts.
 on:
   workflow_dispatch:
 
