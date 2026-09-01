@@ -136,6 +136,47 @@ test("the production cron list stays within the Workers Free per-account limit",
     `${PRODUCTION_CRONS.length} triggers exceeds the Workers Free limit of ${WORKERS_FREE_CRON_TRIGGER_LIMIT}; the deploy would fail`);
 });
 
+/**
+ * The combined weather recovery expression.
+ *
+ * Cloudflare counts CONFIGURED EXPRESSIONS against the Workers Free cap of 5,
+ * and its cron syntax gives the minute field as 0-59 with `* , - /`. The
+ * second recovery window at :40 therefore costs no trigger: it is one more
+ * minute inside an expression that already exists. `controller.cron` hands the
+ * handler "the value of the Cron Trigger that started the ScheduledEvent" —
+ * the configured string verbatim — so both firings arrive as the same string
+ * and resolve through the one allowlist entry. Nothing here parses minutes.
+ */
+test("weather recovery names both minutes in one expression and routes only to weather recovery", () => {
+  assert.equal(WEATHER_RECOVERY_CRON, "25,40 2,5,8,11,14,17,20,23 * * *");
+  assert.equal(workflowForCron(WEATHER_RECOVERY_CRON), WEATHER_RECOVERY_WORKFLOW_FILE);
+  assert.equal(PRODUCTION_CRONS.filter((cron) => cron === WEATHER_RECOVERY_CRON).length, 1);
+  assert.equal(PRODUCTION_CRONS.length, 5, "the second window must not have added a trigger");
+
+  // A separate :40 expression is exactly what must never appear: it would be a
+  // sixth trigger and fail the deploy after the Worker had uploaded.
+  for (const cron of PRODUCTION_CRONS) assert.equal(/^40[ ,]/.test(cron), false, `${cron} is a standalone :40 trigger`);
+
+  // Each firing minute still belongs to weather recovery alone.
+  const [minutes, hours] = WEATHER_RECOVERY_CRON.split(" ");
+  assert.deepEqual(minutes.split(","), ["25", "40"]);
+  for (const other of PRODUCTION_CRONS) {
+    if (other === WEATHER_RECOVERY_CRON) continue;
+    const [otherMinutes, otherHours] = other.split(" ");
+    for (const minute of minutes.split(",")) {
+      const sharesMinute = otherMinutes.split(",").includes(minute);
+      const sharesHour = otherHours === "*" || hours.split(",").some((hour) => otherHours.split(",").includes(hour));
+      assert.equal(sharesMinute && sharesHour, false, `${other} collides with weather recovery at :${minute}`);
+    }
+  }
+
+  // Near-miss forms must stay inert: routing is exact-string, never fuzzy, and
+  // the old single-minute expression must no longer resolve to anything.
+  for (const near of ["25 2,5,8,11,14,17,20,23 * * *", "40 2,5,8,11,14,17,20,23 * * *", "25,40 * * * *", "25, 40 2,5,8,11,14,17,20,23 * * *"]) {
+    assert.equal(workflowForCron(near), null, `${near} must not route anywhere`);
+  }
+});
+
 test("unknown cron is ignored without token lookup or dispatch", async () => {
   const { calls, impl } = recordingFetch(() => new Response(null, { status: 204 }));
   const log = await dispatchScheduledCollection("0 0 * * *", { GITHUB_DISPATCH_TOKEN: TOKEN }, impl, at);

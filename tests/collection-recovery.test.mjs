@@ -640,6 +640,51 @@ test("weather recovery requests ONLY the grid that is missing", async (context) 
   assert.equal(result.providerRequests, 1);
 });
 
+/**
+ * Why a SECOND weather recovery window is safe to add.
+ *
+ * `25,40 ...` fires twice per issuance from one configured trigger. That is
+ * only acceptable if a window that finds nothing to do costs nothing, so this
+ * walks the real sequence: a grid is missing, :25 repairs exactly it, and the
+ * :40 window that follows reads the repaired state and makes no provider call
+ * at all. Recovery being D1-first is what makes repeating it free.
+ */
+test("a second weather recovery after a successful repair is a no-op", async (context) => {
+  const { database, databasePath } = freshDatabase("w1-second-window");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+
+  const grids = uniqueKmaGrids();
+  const { issuedAt } = expectedWeatherIssuedAt(NOW);
+  // The :10 primary landed every grid but one.
+  seedWeatherIssuance(database, grids.slice(1).flatMap((grid) => grid.areas), issuedAt, `${TODAY}T14:11:00+09:00`);
+
+  let requests = 0;
+  globalThis.fetch = async () => { requests += 1; return Response.json(kmaPage()); };
+
+  const [first] = await runRecovery(database, "weather_recovery");
+  assert.equal(first.status, "SUCCESS");
+  assert.equal(first.providerRequests, 1, ":25 must request only the one missing grid");
+  assert.equal(first.lastGoodPreserved, true);
+  const afterRepair = requests;
+
+  const [second] = await runRecovery(database, "weather_recovery");
+  assert.equal(second.status, SKIPPED_ALREADY_HEALTHY, ":40 must see the repaired issuance and skip");
+  assert.equal(second.providerRequests, 0);
+  assert.equal(requests, afterRepair, ":40 must not reach KMA after :25 already repaired the issuance");
+  assert.equal(second.lastGoodPreserved, true);
+
+  // Repeating again stays free: the window is idempotent, not merely once-safe.
+  const [third] = await runRecovery(database, "weather_recovery");
+  assert.equal(third.status, SKIPPED_ALREADY_HEALTHY);
+  assert.equal(requests, afterRepair, "repeated recovery must never re-request a healthy issuance");
+
+  // The repair must not have duplicated rows for the grid it fixed.
+  const rows = database.prepare("SELECT area, COUNT(*) AS n FROM weather_forecast WHERE issued_at = ? GROUP BY area").all(issuedAt);
+  const counts = new Set(rows.map((row) => row.n));
+  assert.equal(counts.size, 1, `repair duplicated rows: ${JSON.stringify(rows)}`);
+});
+
 test("weather recovery with every grid missing stays bounded to one grid per cell", async (context) => {
   const { database, databasePath } = freshDatabase("w1-all-grids");
   const originalFetch = globalThis.fetch;
