@@ -37,6 +37,13 @@ jobs:
           check("serves the current build", korean.includes("지금 서울은"), "expected the current hero copy");
           check("no placeholder demand index", !/예시 수요지수|DEMO DEMAND INDEX/.test(korean), "sample index must not be served");
 
+          // The business screen's operating checklist is server-rendered, so a
+          // deploy that did not reach the edge shows up here as missing copy
+          // rather than as a page that merely looks fine.
+          const business = await fetch(`${origin}/ko/business`, { redirect: "follow", signal: AbortSignal.timeout(15000) });
+          const businessHtml = await business.text();
+          check("business checklist is served", business.status === 200 && businessHtml.includes("먼저 볼 신호") && businessHtml.includes("혼잡 시간대"), `status ${business.status}`);
+
           const about = await fetch(`${origin}/ko/about`, { redirect: "follow", signal: AbortSignal.timeout(15000) });
           const aboutHtml = await about.text();
           check("about page is live", about.status === 200 && aboutHtml.includes("KORETAIL은 무엇인가요"), `status ${about.status}`);
