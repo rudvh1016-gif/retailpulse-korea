@@ -34,10 +34,12 @@ import {
   collectWeatherForecasts,
   type CollectorEnv,
 } from "./collector";
+import { safeSourceFailureDetail } from "./source-adapters";
 
 export interface ProductionSourceOutcome {
   status: string;
   records: number;
+  detail?: string;
   trackedToday?: number;
   pagesFetched?: number;
 }
@@ -112,7 +114,7 @@ export async function runSelectedProductionSources(
         source,
         status: "ERROR",
         records: 0,
-        detail: error instanceof Error ? error.message.slice(0, 200) : "collector_error",
+        detail: safeSourceFailureDetail(error),
       });
     }
   }

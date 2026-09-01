@@ -493,6 +493,40 @@ test("weather collector writes forecast rows for every area sharing a grid", asy
   assert.equal(second.records, 0);
 });
 
+test("weather partial-grid failure preserves last-good area data and never inserts fake zero", async (context) => {
+  const { database, databasePath } = openDatabase("weather-partial-last-good");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+
+  const payload = (temperature) => Response.json({ response: { header: { resultCode: "00" }, body: { items: { item: [
+    { category: "TMP", fcstDate: "20260828", fcstTime: "0900", fcstValue: String(temperature), baseDate: "20260827", baseTime: "2300" },
+    { category: "POP", fcstDate: "20260828", fcstTime: "0900", fcstValue: "30", baseDate: "20260827", baseTime: "2300" },
+  ] } } } });
+  globalThis.fetch = async () => payload(27);
+
+  const env = { DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture" };
+  assert.equal((await collectWeatherForecasts(env, new Date("2026-08-27T15:00:00Z"))).status, "SUCCESS");
+  const before = database.prepare("SELECT temperature_tenth_c FROM weather_forecast WHERE area = 'myeongdong'").get();
+  assert.equal(before.temperature_tenth_c, 270);
+
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    if (url.searchParams.get("nx") === "60" && url.searchParams.get("ny") === "127") {
+      return new Response("permanent fixture failure", { status: 403 });
+    }
+    return payload(28);
+  };
+  const partial = await collectWeatherForecasts(env, new Date("2026-08-27T15:00:00Z"));
+  assert.equal(partial.status, "PARTIAL");
+  assert.match(partial.detail, /grids ok 2\/3/);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM weather_forecast").get().count, 3);
+  assert.equal(
+    database.prepare("SELECT temperature_tenth_c FROM weather_forecast WHERE area = 'myeongdong'").get().temperature_tenth_c,
+    270,
+    "the failed grid must keep its last official value and must not become zero",
+  );
+});
+
 test("latest KMA issuance respects slots, buffer and midnight fallback", () => {
   assert.deepEqual(latestKmaIssuance(new Date("2026-08-27T15:00:00Z")), { baseDate: "20260827", baseTime: "2300" });
   assert.deepEqual(latestKmaIssuance(new Date("2026-08-27T14:10:00Z")), { baseDate: "20260827", baseTime: "2000" });

@@ -129,6 +129,19 @@ Before enabling any Worker Cron job:
 
 Cloudflare Cron may remain for very small health/housekeeping work if measured safe. Do not keep duplicate live schedulers for the same collector.
 
+Current approved exception: Cloudflare may act as a **trigger-only alarm
+clock** for Realtime, A5 and Weather. Each Cron invocation makes one
+allowlisted GitHub `workflow_dispatch` request and performs no provider call,
+parsing, normalization, hashing or D1 access. GitHub Actions remains the
+collector engine. Each trigger-only workflow must have no competing GitHub
+`schedule:` block.
+
+Official-source transient recovery is centralized and bounded. Network/
+connect/TLS/DNS, real client timeout, HTTP 429 and HTTP 5xx may retry with a
+source-specific spaced window. Authentication, permanent 4xx, schema and
+validation failures stay visible and are never converted to success. Failed
+refreshes preserve last-good canonical rows and their original timestamps.
+
 ## 4. Runtime rule: collect first, serve second
 
 Visitor requests must normally read previously collected data.

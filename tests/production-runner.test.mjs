@@ -159,7 +159,7 @@ test("selectable runner isolates a throwing source and reports unknown sources w
   assert.deepEqual(calls, ["airport_congestion", "seoul_realtime"]);
   assert.deepEqual(results.map((result) => result.source), ["airport_congestion", "not_a_real_source", "seoul_realtime"]);
   assert.deepEqual(results.map((result) => result.status), ["ERROR", "ERROR", "SUCCESS"]);
-  assert.equal(results[0].detail, "boom");
+  assert.equal(results[0].detail, "failureClass=VALIDATION causeCode=BOOM attempts=1 elapsedMs=0 retryExhausted=false");
   assert.equal(results[1].detail, "unknown_source");
   assert.equal(results[2].records, 3);
 });

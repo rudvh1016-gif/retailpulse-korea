@@ -13,6 +13,8 @@ import {
   FORECAST_WORKFLOW_FILE,
   REALTIME_CRON,
   REALTIME_WORKFLOW_FILE,
+  WEATHER_CRON,
+  WEATHER_WORKFLOW_FILE,
   realtimeDispatchUrl,
   workflowForCron,
 } from "../lib/realtime-dispatch";
@@ -56,12 +58,14 @@ test("dispatch targets exactly the realtime workflow on the right repo and ref",
 test("each known cron dispatches only its explicitly allowlisted workflow", async () => {
   assert.equal(workflowForCron(REALTIME_CRON), REALTIME_WORKFLOW_FILE);
   assert.equal(workflowForCron(FORECAST_CRON), FORECAST_WORKFLOW_FILE);
+  assert.equal(workflowForCron(WEATHER_CRON), WEATHER_WORKFLOW_FILE);
   assert.equal(dispatchUrl(FORECAST_WORKFLOW_FILE),
     "https://api.github.com/repos/rudvh1016-gif/retailpulse-korea/actions/workflows/collect-forecast.yml/dispatches");
 
   for (const [cron, workflow] of [
     [REALTIME_CRON, REALTIME_WORKFLOW_FILE],
     [FORECAST_CRON, FORECAST_WORKFLOW_FILE],
+    [WEATHER_CRON, WEATHER_WORKFLOW_FILE],
   ] as const) {
     const { calls, impl } = recordingFetch(() => new Response(null, { status: 204 }));
     const log = await dispatchScheduledCollection(cron, { GITHUB_DISPATCH_TOKEN: TOKEN }, impl, at);
@@ -85,7 +89,7 @@ test("unknown cron is ignored without token lookup or dispatch", async () => {
 test("the trigger can never dispatch a workflow outside the allowlist", async () => {
   const source = readFileSync(new URL("../lib/realtime-dispatch.ts", import.meta.url), "utf8");
   for (const other of [
-    "collect-production.yml", "collect-weather.yml",
+    "collect-production.yml",
     "collect-sales.yml", "import-oneshot.yml", "deploy-cloudflare.yml",
   ]) {
     assert.equal(source.includes(other), false, `trigger must never reference ${other}`);

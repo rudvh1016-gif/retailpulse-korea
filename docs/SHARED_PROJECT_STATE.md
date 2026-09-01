@@ -215,6 +215,20 @@ Authoritative per-source contract matrix: `docs/DATA_SOURCES.md`.
 - Manual bounded one-shot import: **One-shot Data Import** workflow (workflow_dispatch + literal `IMPORT`). The recurring collector remains OFF behind `ENABLE_PRODUCTION_COLLECTOR`.
 - Two additional owner-approved sources — A4-T2 (T2 departure-hall congestion, `15161098`) and A5 (T1/T2 passenger forecast, `15095066`) — had their earlier "dataset ID confirmed, REST contract blocked" status **resolved on 2026-08-30**: the owner read the official Incheon International Airport Corporation OpenAPI 활용가이드 documents directly and supplied the exact operation URLs/request/response contracts. Both are now CODED (adapters, collectors, migration `drizzle/0006`, 29 dedicated tests) and SCHEDULED (A4-T2 folded into the existing REALTIME group in `collect-realtime.yml`; A5 in a new hourly `collect-forecast.yml` at `:42`). See `docs/DATA_SOURCES.md` §"A4-T2 and A5 — verified contracts" for the full contract reference. Do not re-open the data.go.kr portal for these two datasets or ask the owner to re-supply the contract. ENABLED and VERIFIED_AUTO status depend on the repository-level `ENABLE_PRODUCTION_COLLECTOR` variable and an actual observed `event=schedule` run — check current evidence rather than assuming either state from this note alone.
 
+## 11.6 Production collection reliability (2026-09-01)
+
+- Cloudflare is the trigger-only alarm for Realtime, A5 and Weather; GitHub
+  Actions remains the collector engine. Production has exactly three approved
+  Cron expressions and staging/default have none.
+- A2/A3/A4-T1/A4-T2/TourAPI use four total attempts across a spaced bounded
+  recovery window. W1 uses three attempts per grid. A1/A5/S1 behavior is not
+  broadened.
+- Permanent/auth/schema failures are not retried or hidden. Transient
+  exhaustion remains `ERROR`, makes the workflow fail after independent
+  sources run, and preserves last-good canonical rows/timestamps.
+- Operational failure detail is structured and secret-free. See
+  `docs/REALTIME_SCHEDULER_AUDIT.md` for policy, quota math and rollback.
+
 ## 12. Competitive landscape snapshot
 
 KORETAIL is not entering an empty market.

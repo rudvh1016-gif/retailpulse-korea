@@ -3,18 +3,16 @@ name: Collect Weather Forecasts
 # WEATHER GROUP — W1 (KMA short-term forecast) aligned to the official
 # 단기예보 issuance cycle (02/05/08/11/14/17/20/23 KST, +~10min provider
 # publish buffer per docs/DATA_SOURCES.md), not a continuous poll. 3 unique
-# KMA grid cells cover the 3 product areas = 3 calls/run, up to 6 with one
-# retry per grid. 8 runs/day = 24 typical / 48 worst-case calls/day, well
+# KMA grid cells cover the 3 product areas = 3 calls/run, up to 9 with two
+# spaced transient retries per grid. 8 runs/day = 24 typical / 72 worst-case
+# calls/day, well
 # under the 10,000/day dev quota (data.go.kr 15084084).
 #
-# KST is UTC+9 and the issuance slots are spaced exactly 3 hours apart (a
-# multiple of 9), so the UTC cron hours are numerically the same set
-# {2,5,8,11,14,17,20,23} — verified by direct KST->UTC conversion, not
-# assumed. :10 gives the +10min publish buffer and is already off the
-# top of the hour.
+# SCHEDULER OWNERSHIP — Cloudflare Production Cron
+# `10 2,5,8,11,14,17,20,23 * * *` is the only automatic alarm. It performs
+# one allowlisted workflow_dispatch and no provider/D1 work. Keeping a native
+# GitHub schedule here would duplicate W1 provider calls.
 on:
-  schedule:
-    - cron: "10 2,5,8,11,14,17,20,23 * * *"
   workflow_dispatch:
 
 permissions:
@@ -28,7 +26,9 @@ jobs:
   collect:
     if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # Three grids × (3 × 10s requests + 5s/30s waits + bounded jitter) ≤198s
+    # provider-path maximum, plus setup/D1 margin. The job remains bounded.
+    timeout-minutes: 7
     environment: production
     steps:
       - uses: actions/checkout@v4

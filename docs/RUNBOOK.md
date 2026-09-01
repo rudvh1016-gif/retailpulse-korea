@@ -32,6 +32,12 @@
 2. In Cloudflare Worker logs, look for the source ID and error category, not the secret URL.
 3. Check that the source key exists in Worker Settings → Variables and Secrets.
 4. Confirm official quota/maintenance. Keep the UI STALE or MISSING; never type in replacement numbers.
+5. For collector failures, read only the bounded fields `failureClass`,
+   `causeCode`, `httpStatus`, `attempts`, `elapsedMs`, and `retryExhausted`.
+   Never copy an authenticated URL into an issue or chat.
+6. `retryExhausted=true` means the current natural run failed after the
+   bounded recovery window. Do not rerun A1; keep last-good data and let the
+   next authoritative schedule recover automatically.
 
 ## GitHub Action fails
 
@@ -60,3 +66,11 @@
 ## Recovery rule
 
 Do not change production data manually to make a chart look normal. If live collection fails, show the last timestamp as STALE and keep official historical data available.
+
+## Trigger-only scheduler rollback
+
+Realtime, Forecast and Weather each have one authoritative Cloudflare alarm.
+Rollback is atomic: remove that exact Cron from `wrangler.production.jsonc`
+and restore the matching GitHub `schedule:` block in the same Green PR/deploy.
+Never operate both paths together. No D1 migration or data rollback is part of
+this procedure.

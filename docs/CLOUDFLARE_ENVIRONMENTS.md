@@ -101,7 +101,7 @@ The 70% NOTICE / 85% PROTECT / 95% EMERGENCY policy remains a conservative inter
 
 - The deployment workflow maps its `staging` or `production` choice to the same-named GitHub Environment and Wrangler environment.
 - `CLOUDFLARE_ENV` is set during the Vite build, then Wrangler receives the same explicit `--env`. This follows Cloudflare's Vite environment guidance and prevents cross-environment builds.
-- Production carries exactly two Cron Triggers, `7,22,37,52 * * * *` and `42 * * * *`, and both are **trigger-only**: the handler routes the exact Cron expression to `collect-realtime.yml` or `collect-forecast.yml`, then makes one authenticated GitHub `workflow_dispatch` call. It performs no provider call, hashing or D1 access (`docs/REALTIME_SCHEDULER_AUDIT.md`). Staging and the default environment remain Cron-free.
+- Production carries exactly three Cron Triggers — `7,22,37,52 * * * *`, `42 * * * *`, and `10 2,5,8,11,14,17,20,23 * * *` — and all are **trigger-only**. The handler routes the exact Cron expression to `collect-realtime.yml`, `collect-forecast.yml`, or `collect-weather.yml`, then makes one authenticated GitHub `workflow_dispatch` call. It performs no provider call, hashing or D1 access (`docs/REALTIME_SCHEDULER_AUDIT.md`). Staging and the default environment remain Cron-free.
 - `.github/workflows/collect-production.yml` remains the only prepared scheduled collector and its job does not run unless repository variable `ENABLE_PRODUCTION_COLLECTOR` is exactly `true`.
 - `RPK_RETAIN_FLIGHT_CHANGE_HISTORY` remains false/unset until real remote D1 measurements exist.
 

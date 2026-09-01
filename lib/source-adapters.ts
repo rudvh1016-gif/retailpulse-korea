@@ -2,13 +2,22 @@ import type { CanonicalRecord, QualityStatus, SourceStatus } from "./contracts";
 import { sha256 } from "./hash";
 
 export class SourceFetchError extends Error {
+  public readonly attempts: number;
+  public readonly elapsedMs: number;
+  public readonly retryExhausted: boolean;
+
   constructor(
     public readonly code: "TIMEOUT" | "HTTP" | "MALFORMED_JSON" | "SCHEMA" | "NETWORK",
     public readonly status?: number,
     /** Connection-layer cause (ENOTFOUND, ECONNRESET, ...) when the platform reports one. */
     public readonly causeCode?: string,
+    context: { attempts?: number; elapsedMs?: number; retryExhausted?: boolean } = {},
   ) {
     super(causeCode ? `${code}_${causeCode}` : code);
+    this.name = "SourceFetchError";
+    this.attempts = Math.max(1, Math.trunc(context.attempts ?? 1));
+    this.elapsedMs = Math.max(0, Math.trunc(context.elapsedMs ?? 0));
+    this.retryExhausted = context.retryExhausted === true;
   }
 }
 
@@ -46,24 +55,122 @@ export function classifySourceFetchFailure(error: unknown): SourceFetchError {
   return new SourceFetchError("NETWORK", undefined, networkCauseCode(error));
 }
 
-export async function fetchOfficialJson(url: URL, options: { timeoutMs?: number; retries?: number; retryDelayMs?: number } = {}): Promise<unknown> {
-  const timeoutMs = options.timeoutMs ?? 8_000;
-  const retries = Math.min(options.retries ?? 1, 2);
-  const retryDelayMs = Math.max(0, Math.min(options.retryDelayMs ?? 250, 2_000));
-  for (let attempt = 0; attempt <= retries; attempt += 1) {
+export interface FetchOfficialJsonOptions {
+  timeoutMs?: number;
+  /** Backwards-compatible number of retries. Prefer maxAttempts for new policies. */
+  retries?: number;
+  maxAttempts?: number;
+  retryDelayMs?: number;
+  retryDelaysMs?: readonly number[];
+  jitterMs?: number;
+  maxRetryAfterMs?: number;
+  /** Test seams; Production callers use the platform defaults. */
+  fetchImpl?: typeof fetch;
+  sleep?: (delayMs: number) => Promise<void>;
+  random?: () => number;
+  nowMs?: () => number;
+}
+
+/**
+ * Low-call data.go.kr sources get a recovery window long enough to outlive a
+ * short shared-gateway incident. Healthy calls still make exactly one
+ * request. Four total attempts span roughly 57 seconds before jitter, while
+ * remaining strictly bounded.
+ */
+export const DATA_GO_KR_LOW_CALL_POLICY = Object.freeze({
+  timeoutMs: 30_000,
+  maxAttempts: 4,
+  retryDelaysMs: [2_000, 10_000, 45_000] as const,
+  jitterMs: 500,
+  maxRetryAfterMs: 60_000,
+});
+
+/**
+ * A4-T2 can legitimately page up to three times. Three attempts per page keep
+ * its absolute 96-runs/day ceiling at 864 calls while still spanning a
+ * tens-of-seconds gateway incident.
+ */
+export const DATA_GO_KR_PAGED_POLICY = Object.freeze({
+  timeoutMs: 30_000,
+  maxAttempts: 3,
+  retryDelaysMs: [5_000, 30_000] as const,
+  jitterMs: 500,
+  maxRetryAfterMs: 60_000,
+});
+
+/** W1 has three sequential grid calls, so it uses a smaller per-grid budget. */
+export const KMA_GRID_RETRY_POLICY = Object.freeze({
+  timeoutMs: 10_000,
+  maxAttempts: 3,
+  retryDelaysMs: [5_000, 30_000] as const,
+  jitterMs: 500,
+  maxRetryAfterMs: 60_000,
+});
+
+const MAX_SOURCE_ATTEMPTS = 4;
+const MAX_RETRY_DELAY_MS = 60_000;
+
+export function isTransientSourceFailure(error: SourceFetchError): boolean {
+  if (error.code === "NETWORK" || error.code === "TIMEOUT") return true;
+  return error.code === "HTTP" && (error.status === 429 || (error.status !== undefined && error.status >= 500));
+}
+
+function retryAfterDelayMs(value: string | null, nowMs: number): number | null {
+  if (!value?.trim()) return null;
+  const seconds = Number(value.trim());
+  if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1_000;
+  const at = Date.parse(value);
+  if (!Number.isFinite(at)) return null;
+  return Math.max(0, at - nowMs);
+}
+
+export function boundedRetryDelayMs(
+  baseDelayMs: number,
+  options: { retryAfter?: string | null; jitterMs?: number; maxRetryAfterMs?: number; random?: () => number; nowMs?: number } = {},
+): number {
+  const retryAfter = retryAfterDelayMs(options.retryAfter ?? null, options.nowMs ?? Date.now());
+  const boundedBase = Math.max(0, retryAfter ?? baseDelayMs);
+  const maxDelay = Math.max(0, Math.min(options.maxRetryAfterMs ?? MAX_RETRY_DELAY_MS, MAX_RETRY_DELAY_MS));
+  const jitterLimit = Math.max(0, Math.min(options.jitterMs ?? 0, 1_000));
+  const random = Math.max(0, Math.min((options.random ?? Math.random)(), 0.999999));
+  const jitter = Math.floor(random * (jitterLimit + 1));
+  return Math.min(boundedBase + jitter, maxDelay);
+}
+
+function withFetchContext(
+  error: SourceFetchError,
+  attempts: number,
+  elapsedMs: number,
+  retryExhausted: boolean,
+): SourceFetchError {
+  return new SourceFetchError(error.code, error.status, error.causeCode, { attempts, elapsedMs, retryExhausted });
+}
+
+/**
+ * Secret-safe bounded JSON request policy shared by official providers.
+ * Only connection/timeout, HTTP 429 and HTTP 5xx are retryable. Successful
+ * malformed JSON and deterministic schema/auth failures never retry.
+ */
+export async function fetchOfficialJson(url: URL, options: FetchOfficialJsonOptions = {}): Promise<unknown> {
+  const timeoutMs = Math.max(1, Math.min(options.timeoutMs ?? 8_000, 60_000));
+  const requestedAttempts = options.maxAttempts ?? ((options.retries ?? 1) + 1);
+  const maxAttempts = Math.max(1, Math.min(Math.trunc(requestedAttempts), MAX_SOURCE_ATTEMPTS));
+  const legacyDelayMs = Math.max(0, Math.min(options.retryDelayMs ?? 250, 2_000));
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const sleep = options.sleep ?? ((delayMs: number) => new Promise<void>((resolve) => setTimeout(resolve, delayMs)));
+  const random = options.random ?? Math.random;
+  const nowMs = options.nowMs ?? Date.now;
+  const startedAt = nowMs();
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let failure: SourceFetchError | null = null;
+    let retryAfter: string | null = null;
     try {
-      const response = await fetch(url, { signal: controller.signal, headers: { accept: "application/json" } });
+      const response = await fetchImpl(url, { signal: controller.signal, headers: { accept: "application/json" } });
       if (!response.ok) {
-        if (attempt < retries && (response.status === 429 || response.status >= 500)) {
-          const retryAfterSeconds = Number(response.headers.get("retry-after"));
-          const delay = Number.isFinite(retryAfterSeconds)
-            ? Math.min(retryAfterSeconds * 1_000, 2_000)
-            : retryDelayMs * (2 ** attempt);
-          await new Promise((resolve) => setTimeout(resolve, delay));
-          continue;
-        }
+        retryAfter = response.headers.get("retry-after");
         throw new SourceFetchError("HTTP", response.status);
       }
       try {
@@ -72,14 +179,55 @@ export async function fetchOfficialJson(url: URL, options: { timeoutMs?: number;
         throw new SourceFetchError("MALFORMED_JSON");
       }
     } catch (error) {
-      const normalized = classifySourceFetchFailure(error);
-      if (attempt === retries || (normalized.status && normalized.status < 500 && normalized.status !== 429)) throw normalized;
-      await new Promise((resolve) => setTimeout(resolve, retryDelayMs * (2 ** attempt)));
+      failure = classifySourceFetchFailure(error);
     } finally {
       clearTimeout(timer);
     }
+
+    const retryable = isTransientSourceFailure(failure!);
+    const exhausted = retryable && attempt === maxAttempts - 1;
+    if (!retryable || exhausted) {
+      throw withFetchContext(failure!, attempt + 1, nowMs() - startedAt, exhausted);
+    }
+
+    const baseDelay = options.retryDelaysMs?.[attempt] ?? (legacyDelayMs * (2 ** attempt));
+    const delay = boundedRetryDelayMs(baseDelay, {
+      retryAfter,
+      jitterMs: options.jitterMs,
+      maxRetryAfterMs: options.maxRetryAfterMs,
+      random,
+      nowMs: nowMs(),
+    });
+    await sleep(delay);
   }
-  throw new SourceFetchError("HTTP");
+  throw new SourceFetchError("HTTP", undefined, undefined, { attempts: maxAttempts, elapsedMs: nowMs() - startedAt, retryExhausted: true });
+}
+
+const SAFE_INTERNAL_CAUSE_CODE = /^[A-Za-z][A-Za-z0-9_.:-]{0,79}$/;
+
+/** Converts an exception to bounded operational detail without echoing URLs or secrets. */
+export function safeSourceFailureDetail(error: unknown): string {
+  if (error instanceof SourceFetchError) {
+    const parts = [
+      `failureClass=${error.code}`,
+      ...(error.causeCode ? [`causeCode=${error.causeCode}`] : []),
+      ...(error.status === undefined ? [] : [`httpStatus=${error.status}`]),
+      `attempts=${error.attempts}`,
+      `elapsedMs=${Math.min(error.elapsedMs, 3_600_000)}`,
+      `retryExhausted=${error.retryExhausted}`,
+    ];
+    return parts.join(" ");
+  }
+  const raw = error instanceof Error ? error.message : "collector_error";
+  const causeCode = SAFE_INTERNAL_CAUSE_CODE.test(raw)
+    ? raw.toUpperCase().replace(/[.:-]/g, "_")
+    : "COLLECTOR_ERROR";
+  const failureClass = /(?:^|_)RESULT_30$|SERVICE_KEY/.test(causeCode)
+    ? "AUTH"
+    : causeCode.includes("SCHEMA")
+      ? "SCHEMA"
+      : "VALIDATION";
+  return `failureClass=${failureClass} causeCode=${causeCode} attempts=1 elapsedMs=0 retryExhausted=false`;
 }
 
 function requiredString(record: Record<string, unknown>, keys: string[]): string {
