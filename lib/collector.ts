@@ -27,6 +27,7 @@ import {
 import { buildDataGoKrUrl } from "./data-go-kr.mjs";
 import { describeWrites, NO_D1_WRITES, runD1Batches, type D1WriteCounts } from "./d1-write-counts";
 import { allAreaIds, areaMappings, distanceMeters, uniqueKmaGrids, type AreaId } from "./areas";
+import { summarizeTodayPassengerForecast, type AirportForecastAggregateRow } from "./airport-today-summary";
 import { sha256 } from "./hash";
 import {
   aggregateSeoulForeignByArea,
@@ -347,6 +348,8 @@ export interface CollectorResult {
   providerRequests?: number;
   /** What source_health was set to, so a run's log states it without a re-read. */
   sourceHealth?: SourceHealthStatus;
+  /** True when usable stored rows survived this run. Never guessed. */
+  lastGoodPreserved?: boolean;
 }
 
 /**
@@ -1067,6 +1070,153 @@ const A5_PAGE_SIZE = 50;
 const A5_MAX_PAGES = 3;
 
 /**
+ * How recently A5 must have been fetched to count as the current cycle's.
+ *
+ * The primary runs hourly, so anything retrieved inside the last hour came
+ * from this cycle. Declared here because the collector needs it to decide
+ * whether "complete" is also "current"; lib/collection-recovery.ts re-exports
+ * it as FORECAST_FRESH_WITHIN_MS so both sides use one number.
+ */
+export const A5_FRESH_WITHIN_MS = 60 * 60_000;
+
+/** The two KST days A5 must always cover: today and tomorrow. */
+function a5RequiredDays(now: Date): [string, string] {
+  const kstDay = (offsetDays: number) =>
+    new Date(now.getTime() + 9 * 3_600_000 + offsetDays * 86_400_000).toISOString().slice(0, 10);
+  return [kstDay(0), kstDay(1)];
+}
+
+export interface RequiredForecastCoverage {
+  days: Array<{ targetDate: string; coverage: string; retrievedAt: string | null; completeAndCurrent: boolean }>;
+  /** When A5 was last collected successfully, from source_health. */
+  lastCollectedAt: string | null;
+  /** Both required days COMPLETE across T1+T2 and collected within the hour. */
+  completeAndCurrent: boolean;
+  /**
+   * Any stored A5 row at all, table-wide.
+   *
+   * Deliberately NOT "rows for the two required days": the question this
+   * answers is whether a failed refresh destroyed anything, and the honest
+   * answer is no as long as the dataset still holds rows. Completeness of the
+   * required days is tracked separately in `days`.
+   */
+  anyStoredRow: boolean;
+  /** A D1 read threw, so the answer is unverified rather than known. */
+  readFailed: boolean;
+}
+
+/**
+ * Reads back what A5 coverage actually EXISTS after a collection.
+ *
+ * Source health used to be derived from whether a whole day's request threw,
+ * which is not the same question. Production run 33478751045 collected 48 row
+ * groups, reported PARTIAL, and still wrote LIVE — "some rows parsed" is not
+ * evidence that today and tomorrow are covered. The only honest answer comes
+ * from the stored rows, judged by the same completeness contract the product
+ * uses (summarizeTodayPassengerForecast: COMPLETE requires both terminals on
+ * a matching full-day band grid).
+ */
+export async function readRequiredForecastCoverage(
+  db: D1Database | undefined,
+  now: Date,
+  confirmedAt?: string,
+): Promise<RequiredForecastCoverage> {
+  const freshFrom = now.getTime() - A5_FRESH_WITHIN_MS;
+  const days: RequiredForecastCoverage["days"] = [];
+  let readFailed = false;
+  let anyStoredRow = false;
+  try {
+    anyStoredRow = await hasStoredRow(db, `SELECT 1 AS present FROM airport_passenger_forecast LIMIT 1`);
+  } catch {
+    readFailed = true;
+  }
+
+  // WHEN A5 was last collected cannot be read from the rows. Writes are
+  // changed-only by design, so an unchanged forecast leaves every row's
+  // retrieved_at at the moment the VALUE last moved, not the moment we last
+  // confirmed it. Judging freshness from rows therefore made a successful
+  // re-collection look stale forever, which is why the :53 window re-requested
+  // both days every hour. source_health.last_retrieved_at advances on every
+  // successful collection, so that is the honest source for "current".
+  let lastCollectedAt: string | null = confirmedAt ?? null;
+  if (!lastCollectedAt) {
+    try {
+      const stored = db
+        ? (await db.prepare(
+            `SELECT last_retrieved_at AS lastRetrievedAt FROM source_health WHERE source_id = ?`,
+          ).bind("INCHEON_PASSENGER_FORECAST").all<{ lastRetrievedAt?: string | null }>()).results ?? []
+        : [];
+      const value = stored[0]?.lastRetrievedAt;
+      lastCollectedAt = typeof value === "string" && value ? value : null;
+    } catch {
+      readFailed = true;
+    }
+  }
+  const collectionIsCurrent = Boolean(lastCollectedAt) && Date.parse(lastCollectedAt!) >= freshFrom;
+
+  for (const targetDate of a5RequiredDays(now)) {
+    let rows: Array<Record<string, unknown>> = [];
+    try {
+      if (db) {
+        const result = await db.prepare(
+          `SELECT terminal, direction, is_aggregate AS isAggregate, target_date AS targetDate,
+             time_band_raw AS timeBandRaw, target_start_at AS targetStartAt,
+             target_end_at AS targetEndAt, expected_passengers AS expectedPassengers,
+             retrieved_at AS retrievedAt
+           FROM airport_passenger_forecast
+           WHERE direction = 'departure' AND is_aggregate = 1 AND target_date = ?
+           ORDER BY target_start_at, terminal LIMIT 96`,
+        ).bind(targetDate).all<Record<string, unknown>>();
+        rows = result.results ?? [];
+      }
+    } catch {
+      readFailed = true;
+    }
+    const summary = summarizeTodayPassengerForecast(rows as unknown as AirportForecastAggregateRow[], targetDate);
+    days.push({
+      targetDate,
+      coverage: summary.coverage.all,
+      retrievedAt: summary.retrievedAt,
+      completeAndCurrent: summary.coverage.all === "COMPLETE" && collectionIsCurrent,
+    });
+  }
+
+  return {
+    days,
+    lastCollectedAt,
+    completeAndCurrent: days.every((day) => day.completeAndCurrent),
+    anyStoredRow,
+    readFailed,
+  };
+}
+
+/**
+ * A bounded, content-free description of a rejected provider field.
+ *
+ * The brief allows a redacted representation of the offending field so the
+ * next natural run can confirm what is being dropped without anyone printing
+ * a payload. This emits only a type, a coarse length bucket and a character
+ * class from a fixed vocabulary, so it can never carry a value, a key or a
+ * URL no matter what the provider sends.
+ */
+export function describeA5FieldShape(value: unknown): string {
+  if (value === undefined) return "undefined";
+  if (value === null) return "null";
+  if (typeof value === "number") return "number";
+  if (typeof value !== "string") return typeof value;
+  const trimmed = value.trim();
+  if (!trimmed) return "string:empty";
+  const length = trimmed.length <= 4 ? "len1_4" : trimmed.length <= 8 ? "len5_8" : trimmed.length <= 16 ? "len9_16" : "len17plus";
+  const cls = /^[0-9]+$/.test(trimmed) ? "digits"
+    : /^[A-Za-z]+$/.test(trimmed) ? "alpha"
+    : /^[\uAC00-\uD7A3]+$/.test(trimmed) ? "hangul"
+    : /[\uAC00-\uD7A3]/.test(trimmed) ? "hangul_mixed"
+    : /^[0-9A-Za-z]+$/.test(trimmed) ? "alnum"
+    : "other";
+  return `string:${cls}:${length}`;
+}
+
+/**
  * A5 — 승객예고-출·입국장별 (dataset 15095066, V5.0, passgrAnncmt). Queries
  * BOTH selectdate=0 (today) and selectdate=1 (tomorrow) every cycle — the
  * normal cost is ~2 provider requests/cycle, with bounded pagination only if
@@ -1077,6 +1227,13 @@ const A5_MAX_PAGES = 3;
 export interface ForecastCollectionOptions extends TargetedCollectionOptions {
   /** Restricts the run to these days. Defaults to both, as the primary does. */
   selectdates?: readonly ("0" | "1")[];
+  /**
+   * The moment this collection represents. The runner threads one `now`
+   * through every source; A5 used wall-clock time instead, so its stored
+   * retrievedAt and its freshness judgement could disagree with the rest of
+   * the cycle and could not be pinned in a test.
+   */
+  now?: Date;
 }
 
 export async function collectAirportPassengerForecast(
@@ -1101,7 +1258,8 @@ export async function collectAirportPassengerForecast(
   let written: D1WriteCounts = NO_D1_WRITES;
   let normalizedRowGroups = 0;
   let requestCount = 0;
-  const retrievedAt = nowIso();
+  const collectedAt = options.now ?? new Date();
+  const retrievedAt = collectedAt.toISOString();
   for (const selectdate of selectdates) {
     try {
       let totalCount: number | null = null;
@@ -1125,7 +1283,10 @@ export async function collectAirportPassengerForecast(
           try {
             rows = await normalizeAirportPassengerForecastRow(item, retrievedAt);
           } catch (error) {
-            rowFailures.push(`row: ${error instanceof Error ? error.message : "row_error"}`);
+            const reason = error instanceof Error ? error.message : "row_error";
+            // Content-free: type + length bucket + character class only.
+            const shape = describeA5FieldShape((item as { adate?: unknown })?.adate);
+            rowFailures.push(`row: ${reason} (adate ${shape})`);
             continue;
           }
           normalizedRowGroups += 1;
@@ -1160,25 +1321,42 @@ export async function collectAirportPassengerForecast(
     }
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
+
+  // The provider returns exactly one NON-BAND row per request whose `adate` is
+  // not a date (docs/DATA_TRUTH_AUDIT_2026-08-31.md). Rejecting it is correct
+  // and must stay — validation is not weakened here. What was wrong is
+  // counting that expected structural drop as a collection failure, which made
+  // every single run PARTIAL forever. Anything BEYOND one per request is not
+  // structural, so it still counts.
+  const expectedNonBandDrops = requestCount;
+  const unexpectedRowFailures = Math.max(0, rowFailures.length - expectedNonBandDrops);
+
+  // Health answers "is the required coverage there", so it is read back from
+  // the stored rows rather than inferred from how the requests went.
+  const confirmedNow = normalizedRowGroups > 0 && dayFailures.length === 0 ? retrievedAt : undefined;
+  const coverage = await readRequiredForecastCoverage(env.DB, collectedAt, confirmedNow);
+  const coverageNote = coverage.days.map((day) => `${day.targetDate}=${day.coverage}${day.completeAndCurrent ? "/current" : "/stale"}`).join(" ")
+    + `; lastCollectedAt=${coverage.lastCollectedAt ?? "none"}`;
+  const lastGoodPreserved = options.hasUsableLastGood ?? coverage.anyStoredRow;
+
   const failures = [...dayFailures, ...rowFailures];
-  const detail = `mode=${mode}; selectdates ${selectdates.join(",")}; requests ${requestCount}; normalized rows ${normalizedRowGroups}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
-  if (normalizedRowGroups === 0) {
-    // Nothing was collected. Whether that is ERROR or STALE depends on
-    // whether anything usable is still stored — a timeout must never erase
-    // a good forecast by relabelling the source as having no data.
-    const lastGood = options.hasUsableLastGood
-      ?? await hasStoredRow(env.DB, `SELECT 1 AS present FROM airport_passenger_forecast LIMIT 1`);
-    const health: SourceHealthStatus = lastGood ? "STALE" : "ERROR";
-    await writeCollectorStatus(env.DB, sourceId, "ERROR", detail || "forecast_no_data");
-    await writeSourceHealth(env.DB, sourceId, health, detail || "forecast_no_data");
-    return { status: "ERROR", records: 0, detail, providerRequests: requestCount, sourceHealth: health };
+  const detail = `mode=${mode}; selectdates ${selectdates.join(",")}; requests ${requestCount}; normalized rows ${normalizedRowGroups}; ${describeWrites(written)}; coverage ${coverageNote}${coverage.readFailed ? " d1ReadFailed=true" : ""}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
+
+  // Required coverage present and collected this cycle: the only state that
+  // may be called LIVE. A PARTIAL collection never reaches this branch.
+  if (coverage.completeAndCurrent && dayFailures.length === 0 && unexpectedRowFailures === 0) {
+    await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, normalizedRowGroups, written.changedRows);
+    await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastRow ? { eventAt: lastRow.targetStartAt, retrievedAt: lastRow.retrievedAt, schemaVersion: lastRow.schemaVersion } : undefined);
+    return { status: "SUCCESS", records: written.changedRows, detail, providerRequests: requestCount, sourceHealth: "LIVE", lastGoodPreserved };
   }
-  // A day that was requested and not collected leaves the required coverage
-  // incomplete, so the source is STALE even though rows were written.
-  const health: SourceHealthStatus = dayFailures.length ? "STALE" : "LIVE";
-  await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, normalizedRowGroups, written.changedRows);
-  await writeSourceHealth(env.DB, sourceId, health, detail, lastRow ? { eventAt: lastRow.targetStartAt, retrievedAt: lastRow.retrievedAt, schemaVersion: lastRow.schemaVersion } : undefined);
-  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows, detail, providerRequests: requestCount, sourceHealth: health };
+
+  // Coverage is not proven. Usable stored rows make this STALE; nothing usable
+  // makes it ERROR. Either way nothing stored was deleted, zeroed or faked.
+  const health: SourceHealthStatus = lastGoodPreserved ? "STALE" : "ERROR";
+  const status = normalizedRowGroups === 0 ? "ERROR" : "PARTIAL";
+  await writeCollectorStatus(env.DB, sourceId, status, detail || "forecast_no_data");
+  await writeSourceHealth(env.DB, sourceId, health, detail || "forecast_no_data");
+  return { status, records: written.changedRows, detail, providerRequests: requestCount, sourceHealth: health, lastGoodPreserved };
 }
 
 export async function runScheduledCollectors(env: CollectorEnv): Promise<void> {

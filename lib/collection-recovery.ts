@@ -27,8 +27,7 @@
  * the decision is unit-testable against a fake D1 without a network.
  */
 import { uniqueKmaGrids } from "./areas";
-import { latestKmaIssuance } from "./collector";
-import { summarizeTodayPassengerForecast, type AirportForecastAggregateRow } from "./airport-today-summary";
+import { A5_FRESH_WITHIN_MS, latestKmaIssuance, readRequiredForecastCoverage } from "./collector";
 
 /** Reported when a recovery run finds nothing to repair. Never a failure. */
 export const SKIPPED_ALREADY_HEALTHY = "SKIPPED_ALREADY_HEALTHY";
@@ -48,7 +47,7 @@ export type ForecastSelectdate = "0" | "1";
  * Coverage alone is not enough: a full-day forecast collected six hours ago
  * is COMPLETE and still stale, and the provider revises its numbers.
  */
-export const FORECAST_FRESH_WITHIN_MS = 60 * 60_000;
+export const FORECAST_FRESH_WITHIN_MS = A5_FRESH_WITHIN_MS;
 
 export interface ForecastDayHealth {
   selectdate: ForecastSelectdate;
@@ -136,43 +135,22 @@ export function expectedWeatherIssuedAt(now: Date): { issuedAt: string; baseDate
  * that should have refreshed it did not happen.
  */
 export async function planForecastRecovery(db: D1Database | undefined, now: Date): Promise<ForecastRecoveryPlan> {
-  const freshFrom = now.getTime() - FORECAST_FRESH_WITHIN_MS;
-  const days: ForecastDayHealth[] = [];
-  let anyStoredRow = false;
-  let readFailed = false;
-
-  for (const selectdate of ["0", "1"] as const) {
-    const targetDate = kstDayFrom(now, selectdate === "0" ? 0 : 1);
-    const read = await allRows(
-      db,
-      `SELECT terminal, direction, is_aggregate AS isAggregate, target_date AS targetDate,
-         time_band_raw AS timeBandRaw, target_start_at AS targetStartAt,
-         target_end_at AS targetEndAt, expected_passengers AS expectedPassengers,
-         retrieved_at AS retrievedAt
-       FROM airport_passenger_forecast
-       WHERE direction = 'departure' AND is_aggregate = 1 AND target_date = ?
-       ORDER BY target_start_at, terminal LIMIT 96`,
-      [targetDate],
-    );
-    if (read.failed) readFailed = true;
-    if (read.rows.length) anyStoredRow = true;
-    const summary = summarizeTodayPassengerForecast(read.rows as unknown as AirportForecastAggregateRow[], targetDate);
-    const retrievedAt = summary.retrievedAt;
-    const fresh = Boolean(retrievedAt) && Date.parse(retrievedAt!) >= freshFrom;
-    days.push({
-      selectdate,
-      targetDate,
-      coverage: summary.coverage.all,
-      retrievedAt,
-      healthy: summary.coverage.all === "COMPLETE" && fresh,
-    });
-  }
+  // Exactly the rule the collector applies at the end of a run, so the :42
+  // primary and the :53 repair can never disagree about what "healthy" means.
+  const coverage = await readRequiredForecastCoverage(db, now);
+  const days: ForecastDayHealth[] = coverage.days.map((day, index) => ({
+    selectdate: (index === 0 ? "0" : "1") as ForecastSelectdate,
+    targetDate: day.targetDate,
+    coverage: day.coverage,
+    retrievedAt: day.retrievedAt,
+    healthy: day.completeAndCurrent,
+  }));
 
   return {
     missingSelectdates: days.filter((day) => !day.healthy).map((day) => day.selectdate),
     days,
-    hasUsableLastGood: anyStoredRow,
-    d1ReadFailed: readFailed,
+    hasUsableLastGood: coverage.anyStoredRow,
+    d1ReadFailed: coverage.readFailed,
   };
 }
 

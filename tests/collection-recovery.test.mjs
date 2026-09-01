@@ -97,6 +97,23 @@ function seedCompleteForecastDay(database, targetDate, retrievedAt) {
   }
 }
 
+/**
+ * Records that A5 was collected successfully at `at`.
+ *
+ * Freshness cannot come from row `retrieved_at`: writes are changed-only, so
+ * re-collecting an unchanged forecast leaves every row stamped with the moment
+ * the VALUE last moved. source_health.last_retrieved_at is what advances on a
+ * successful collection, so that is what these fixtures set.
+ */
+function seedLastCollectedAt(database, at) {
+  database.prepare(`INSERT INTO source_health (
+    source_id, status, last_retrieved_at, consecutive_failures, schema_version, detail, updated_at
+  ) VALUES (?, ?, ?, 0, ?, ?, ?)
+  ON CONFLICT(source_id) DO UPDATE SET last_retrieved_at = excluded.last_retrieved_at`).run(
+    "INCHEON_PASSENGER_FORECAST", "LIVE", at, "A5-v5.0", "fixture", at,
+  );
+}
+
 function seedWeatherIssuance(database, areas, issuedAt, retrievedAt) {
   for (const area of areas) {
     database.prepare(`INSERT INTO weather_forecast (
@@ -211,7 +228,19 @@ test("a healthy plan reads correctly through the production adapter, costing zer
 
   const fetchImpl = async (_url, init) => {
     const { batch } = JSON.parse(String(init.body));
-    const targetDate = batch[0].params?.[0];
+    const { sql, params } = batch[0];
+    // The planner asks two different questions through the same adapter:
+    // when A5 was last collected, and which bands are stored.
+    if (sql.includes("source_health")) {
+      return Response.json({
+        success: true,
+        result: [{ success: true, results: [{ lastRetrievedAt: `${TODAY}T14:42:00+09:00` }] }],
+      });
+    }
+    if (sql.includes("LIMIT 1")) {
+      return Response.json({ success: true, result: [{ success: true, results: [{ present: 1 }] }] });
+    }
+    const targetDate = params?.[0];
     return Response.json({
       success: true,
       result: [{ success: true, results: [band("T1", targetDate), band("T2", targetDate)] }],
@@ -253,6 +282,7 @@ test("A5 recovery makes ZERO provider requests when both days are already comple
   // Collected at 14:42 — this hour's primary run succeeded.
   seedCompleteForecastDay(database, TODAY, `${TODAY}T14:42:00+09:00`);
   seedCompleteForecastDay(database, TOMORROW, `${TODAY}T14:42:00+09:00`);
+  seedLastCollectedAt(database, `${TODAY}T14:42:00+09:00`);
 
   let requests = 0;
   globalThis.fetch = async () => { requests += 1; return Response.json(a5Page([], 0)); };
@@ -270,6 +300,7 @@ test("A5 recovery requests ONLY the missing day when today is healthy and tomorr
   context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
 
   seedCompleteForecastDay(database, TODAY, `${TODAY}T14:42:00+09:00`);
+  seedLastCollectedAt(database, `${TODAY}T14:42:00+09:00`);
 
   const seen = [];
   globalThis.fetch = async (input) => {
@@ -293,6 +324,7 @@ test("A5 recovery treats a complete but hours-old day as missing, because the ho
   // The production symptom exactly: complete data, collected at 08:42.
   seedCompleteForecastDay(database, TODAY, `${TODAY}T08:42:00+09:00`);
   seedCompleteForecastDay(database, TOMORROW, `${TODAY}T08:42:00+09:00`);
+  seedLastCollectedAt(database, `${TODAY}T08:42:00+09:00`);
 
   const plan = await planForecastRecovery(new LocalD1Database(database), NOW);
   assert.deepEqual(plan.missingSelectdates, ["0", "1"]);
@@ -316,6 +348,7 @@ test("A failed A5 repair preserves last-good rows and reports STALE, not ERROR a
 
   seedCompleteForecastDay(database, TODAY, `${TODAY}T08:42:00+09:00`);
   seedCompleteForecastDay(database, TOMORROW, `${TODAY}T08:42:00+09:00`);
+  seedLastCollectedAt(database, `${TODAY}T08:42:00+09:00`);
   const before = database.prepare("SELECT id, expected_passengers AS expected, retrieved_at AS retrievedAt FROM airport_passenger_forecast ORDER BY id").all();
 
   globalThis.fetch = async () => { throw new Error("UND_ERR_CONNECT_TIMEOUT"); };
@@ -360,7 +393,7 @@ test("A5 health walks LIVE -> STALE -> LIVE as the provider fails and recovers",
   //    down when the recovery window fires. Ageing the stored rows is what
   //    makes the repair necessary — a recovery with nothing to repair would
   //    correctly skip and leave health untouched.
-  database.prepare("UPDATE airport_passenger_forecast SET retrieved_at = ?").run(`${TODAY}T08:42:00+09:00`);
+  seedLastCollectedAt(database, `${TODAY}T08:42:00+09:00`);
   globalThis.fetch = async () => { throw new Error("UND_ERR_CONNECT_TIMEOUT"); };
   await runRecovery(database, "airport_passenger_forecast_recovery");
   assert.equal(health(database).get("INCHEON_PASSENGER_FORECAST").status, "STALE");
@@ -396,6 +429,169 @@ test("A permanent A5 auth failure stays visible instead of being softened", asyn
   const [result] = await runSelectedProductionSources({ DB: new LocalD1Database(database) }, ["airport_passenger_forecast_recovery"], NOW);
   assert.equal(result.status, "NEEDS_KEY", "a missing key is a permanent failure, not a transient one");
   assert.equal(health(database).get("INCHEON_PASSENGER_FORECAST").status, "MISSING");
+});
+
+// ---------------------------------------------------------------------------
+// The exact shape Production returns, reproduced
+// ---------------------------------------------------------------------------
+
+/** One hourly band, the way the provider publishes 24 of them per day. */
+const a5Band = (adate, hour) => ({
+  adate,
+  atime: `${String(hour).padStart(2, "0")}_${String(hour + 1).padStart(2, "0")}`,
+  t1dg1: "100.0", t1dg2: "50.0", t1dg3: "0.0", t1dg4: "10", t1dg5: "5", t1dg6: "3", t1dgsum1: "168.0",
+  t1eg1: "40", t1eg2: "20", t1eg3: "10", t1eg4: "5", t1egsum1: "75",
+  t2dg1: "30", t2dg2: "20", t2dgsum2: "50",
+  t2eg1: "12", t2eg2: "8", t2egsum1: "20",
+});
+
+/**
+ * A full provider page: 24 hourly bands plus the ONE non-band row.
+ *
+ * docs/DATA_TRUTH_AUDIT_2026-08-31.md recorded that A5 returns one row per
+ * request whose `adate` is not a date, that it is not an hourly band, and that
+ * dropping it is correct. Production runs 33478751045 (PRIMARY) and
+ * 33479570166 (RECOVERY) both logged exactly one SCHEMA_A5_ADATE_FORMAT per
+ * request against 48 normalized row groups, which matches that shape.
+ */
+const a5FullDayPage = (adate, nonBandAdate = "합계") => ({
+  response: {
+    header: { resultCode: "00", resultMsg: "NORMAL SERVICE" },
+    body: {
+      items: [
+        ...Array.from({ length: 24 }, (_, hour) => a5Band(adate, hour)),
+        { ...a5Band(adate, 0), adate: nonBandAdate },
+      ],
+      totalCount: 25,
+    },
+  },
+});
+
+const collectPrimary = (database, now = NOW) => runSelectedProductionSources(
+  { DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture-key" },
+  ["airport_passenger_forecast"],
+  now,
+);
+
+test("the one non-band row Production always drops does not make a healthy cycle PARTIAL", async (context) => {
+  const { database, databasePath } = freshDatabase("a5-nonband");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+
+  let requests = 0;
+  globalThis.fetch = async (input) => {
+    requests += 1;
+    const selectdate = new URL(String(input)).searchParams.get("selectdate");
+    return Response.json(a5FullDayPage(selectdate === "1" ? "20260902" : "20260901"));
+  };
+
+  const [result] = await collectPrimary(database);
+  // Production reported PARTIAL forever because this expected structural drop
+  // was counted as a collection failure. Coverage is what decides now.
+  assert.equal(result.status, "SUCCESS");
+  assert.equal(result.sourceHealth, "LIVE");
+  assert.equal(result.providerRequests, 2);
+  assert.equal(requests, 2);
+  assert.match(result.detail, /2026-09-01=COMPLETE\/current/);
+  assert.match(result.detail, /2026-09-02=COMPLETE\/current/);
+  // The drop is still a rejection: it is reported, never stored, never parsed.
+  assert.match(result.detail, /SCHEMA_A5_ADATE_FORMAT/);
+  const stored = database.prepare("SELECT COUNT(*) AS count FROM airport_passenger_forecast").get().count;
+  assert.equal(stored, 24 * 18 * 2, "24 bands x 18 zone rows x 2 days, and nothing from the non-band row");
+});
+
+test("a rejected field is described by shape only, never by its value", async (context) => {
+  const { database, databasePath } = freshDatabase("a5-shape");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+
+  const secretish = "20260901-LEAKME-SERVICEKEY";
+  globalThis.fetch = async (input) => {
+    const selectdate = new URL(String(input)).searchParams.get("selectdate");
+    return Response.json(a5FullDayPage(selectdate === "1" ? "20260902" : "20260901", secretish));
+  };
+
+  const [result] = await collectPrimary(database);
+  assert.equal(result.detail.includes(secretish), false, "the offending value must never be echoed");
+  assert.match(result.detail, /adate string:(digits|alpha|alnum|hangul|hangul_mixed|other):len/);
+  const health = database.prepare("SELECT detail FROM source_health WHERE source_id = ?").get("INCHEON_PASSENGER_FORECAST");
+  assert.equal(String(health?.detail ?? "").includes(secretish), false);
+});
+
+test("more rejections than the known structural drop are NOT excused", async (context) => {
+  const { database, databasePath } = freshDatabase("a5-extra-drops");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+
+  globalThis.fetch = async (input) => {
+    const selectdate = new URL(String(input)).searchParams.get("selectdate");
+    const adate = selectdate === "1" ? "20260902" : "20260901";
+    const page = a5FullDayPage(adate);
+    // A second malformed row per request is not the documented structural one.
+    page.response.body.items.push({ ...a5Band(adate, 5), adate: "not-a-date" });
+    return Response.json(page);
+  };
+
+  const [result] = await collectPrimary(database);
+  assert.equal(result.status, "PARTIAL", "an unexplained rejection must still surface");
+  assert.equal(result.sourceHealth, "STALE");
+});
+
+test("PARTIAL coverage is never written as LIVE, and last-good survives", async (context) => {
+  const { database, databasePath } = freshDatabase("a5-partial-not-live");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+
+  // Today collects fully; tomorrow's request fails outright.
+  globalThis.fetch = async (input) => {
+    const selectdate = new URL(String(input)).searchParams.get("selectdate");
+    if (selectdate === "1") throw new Error("UND_ERR_CONNECT_TIMEOUT");
+    return Response.json(a5FullDayPage("20260901"));
+  };
+
+  const [result] = await collectPrimary(database);
+  assert.equal(result.status, "PARTIAL");
+  assert.equal(result.sourceHealth, "STALE", "required coverage is incomplete, so this is not LIVE");
+  assert.equal(result.lastGoodPreserved, true, "today's rows were stored and must be reported as preserved");
+  assert.equal(database.prepare("SELECT status FROM source_health WHERE source_id = ?").get("INCHEON_PASSENGER_FORECAST").status, "STALE");
+});
+
+test("an unchanged re-collection stays LIVE, and the :53 window then costs nothing", async (context) => {
+  const { database, databasePath } = freshDatabase("a5-unchanged-live");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+
+  let requests = 0;
+  globalThis.fetch = async (input) => {
+    requests += 1;
+    const selectdate = new URL(String(input)).searchParams.get("selectdate");
+    return Response.json(a5FullDayPage(selectdate === "1" ? "20260902" : "20260901"));
+  };
+
+  // :42 primary, first time. Rows are written.
+  const [first] = await collectPrimary(database, new Date("2026-09-01T05:42:00.000Z"));
+  assert.equal(first.status, "SUCCESS");
+  assert.ok(first.records > 0);
+
+  // :42 an hour later, provider returns exactly the same forecast. Writes are
+  // changed-only, so nothing is restamped. This is the production case that
+  // used to look permanently stale and re-request every hour.
+  const [second] = await collectPrimary(database, new Date("2026-09-01T06:42:00.000Z"));
+  assert.equal(second.records, 0, "an unchanged forecast must not rewrite rows");
+  assert.equal(second.status, "SUCCESS");
+  assert.equal(second.sourceHealth, "LIVE", "re-collecting unchanged data still confirms coverage");
+  assert.equal(second.lastGoodPreserved, true);
+
+  // :53 recovery, eleven minutes later. Acceptance criterion A.
+  const requestsBeforeRecovery = requests;
+  const [recovery] = await runSelectedProductionSources(
+    { DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture-key" },
+    ["airport_passenger_forecast_recovery"],
+    new Date("2026-09-01T06:53:00.000Z"),
+  );
+  assert.equal(recovery.status, SKIPPED_ALREADY_HEALTHY);
+  assert.equal(recovery.providerRequests, 0);
+  assert.equal(requests, requestsBeforeRecovery, "a healthy recovery window must not reach the provider");
 });
 
 // ---------------------------------------------------------------------------
