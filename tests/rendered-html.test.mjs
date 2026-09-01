@@ -145,7 +145,10 @@ test("keeps the four-language fonts as bounded static assets", async () => {
 test("ships every product surface in four languages without a runtime LLM dependency", async () => {
   const page = await read("../app/retailpulse-app.tsx");
   const data = await read("../app/retailpulse-data.ts");
-  const product = `${page}\n${data}`;
+  // Business-type copy lives beside the other domain data rather than in the
+  // client component, so the four-language surface spans all three files.
+  const guidance = await read("../lib/industry-guidance.ts");
+  const product = `${page}\n${data}\n${guidance}`;
   for (const required of [
     "InsightsView", "AirportView", "BusinessView", "BusinessHistoryView",
     "AboutView", "MoreView", "ProModal", "MetricExplainer",
