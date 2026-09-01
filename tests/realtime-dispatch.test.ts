@@ -20,9 +20,9 @@ import {
   FORECAST_RECOVERY_CRON,
   FORECAST_RECOVERY_WORKFLOW_FILE,
   PRODUCTION_CRONS,
-  WEATHER_RECOVERY_CRON_EARLY,
-  WEATHER_RECOVERY_CRON_LATE,
+  WEATHER_RECOVERY_CRON,
   WEATHER_RECOVERY_WORKFLOW_FILE,
+  WORKERS_FREE_CRON_TRIGGER_LIMIT,
 } from "../lib/realtime-dispatch";
 
 const TOKEN = "ghp-SUPER-SECRET-DISPATCH-TOKEN";
@@ -68,19 +68,15 @@ test("each known cron dispatches only its explicitly allowlisted workflow", asyn
   assert.equal(dispatchUrl(FORECAST_WORKFLOW_FILE),
     "https://api.github.com/repos/rudvh1016-gif/retailpulse-korea/actions/workflows/collect-forecast.yml/dispatches");
 
-  // Both weather recovery windows route to one workflow; the run itself
-  // decides whether there is anything to repair.
   assert.equal(workflowForCron(FORECAST_RECOVERY_CRON), FORECAST_RECOVERY_WORKFLOW_FILE);
-  assert.equal(workflowForCron(WEATHER_RECOVERY_CRON_EARLY), WEATHER_RECOVERY_WORKFLOW_FILE);
-  assert.equal(workflowForCron(WEATHER_RECOVERY_CRON_LATE), WEATHER_RECOVERY_WORKFLOW_FILE);
+  assert.equal(workflowForCron(WEATHER_RECOVERY_CRON), WEATHER_RECOVERY_WORKFLOW_FILE);
 
   for (const [cron, workflow] of [
     [REALTIME_CRON, REALTIME_WORKFLOW_FILE],
     [FORECAST_CRON, FORECAST_WORKFLOW_FILE],
     [WEATHER_CRON, WEATHER_WORKFLOW_FILE],
     [FORECAST_RECOVERY_CRON, FORECAST_RECOVERY_WORKFLOW_FILE],
-    [WEATHER_RECOVERY_CRON_EARLY, WEATHER_RECOVERY_WORKFLOW_FILE],
-    [WEATHER_RECOVERY_CRON_LATE, WEATHER_RECOVERY_WORKFLOW_FILE],
+    [WEATHER_RECOVERY_CRON, WEATHER_RECOVERY_WORKFLOW_FILE],
   ] as const) {
     const { calls, impl } = recordingFetch(() => new Response(null, { status: 204 }));
     const log = await dispatchScheduledCollection(cron, { GITHUB_DISPATCH_TOKEN: TOKEN }, impl, at);
@@ -123,7 +119,21 @@ test("every production cron routes to exactly one allowlisted workflow", () => {
   // A recovery window is a repair, never a second authoritative scheduler:
   // the primary cadences keep their own workflows untouched.
   assert.notEqual(workflowForCron(FORECAST_CRON), workflowForCron(FORECAST_RECOVERY_CRON));
-  assert.notEqual(workflowForCron(WEATHER_CRON), workflowForCron(WEATHER_RECOVERY_CRON_EARLY));
+  assert.notEqual(workflowForCron(WEATHER_CRON), workflowForCron(WEATHER_RECOVERY_CRON));
+});
+
+/**
+ * The Workers Free per-account ceiling, encoded where the crons are declared.
+ *
+ * A 2026-09-01 production deploy configured a sixth trigger. Cloudflare did
+ * not drop the extra one — it rejected the entire schedules update (code
+ * 10072) after the Worker had already uploaded, so the new code went live
+ * against the previous schedule. Adding a cron is therefore never free.
+ */
+test("the production cron list stays within the Workers Free per-account limit", () => {
+  assert.equal(WORKERS_FREE_CRON_TRIGGER_LIMIT, 5);
+  assert.ok(PRODUCTION_CRONS.length <= WORKERS_FREE_CRON_TRIGGER_LIMIT,
+    `${PRODUCTION_CRONS.length} triggers exceeds the Workers Free limit of ${WORKERS_FREE_CRON_TRIGGER_LIMIT}; the deploy would fail`);
 });
 
 test("unknown cron is ignored without token lookup or dispatch", async () => {

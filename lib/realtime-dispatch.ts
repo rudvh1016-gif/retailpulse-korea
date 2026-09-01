@@ -40,10 +40,17 @@ export const WEATHER_CRON = "10 2,5,8,11,14,17,20,23 * * *";
  * spec says to avoid, and realtime cadence is non-negotiable — so the repair
  * moves one minute rather than risking the cycle that must not change. It is
  * still ~11 minutes after the :42 primary.
+ *
+ * Weather gets ONE recovery window, not the two originally sketched. The
+ * account is on Workers Free, which caps Cron Triggers at 5 PER ACCOUNT — a
+ * sixth was rejected outright by the Cloudflare API (code 10072) and failed a
+ * production deploy. The second weather window was the only conditional one
+ * ("if safely justified"), and a hard platform limit is the justification
+ * against it: :10 primary + :25 recovery still doubles weather's chances
+ * within every issuance. Raising this needs Workers Paid, not more code.
  */
 export const FORECAST_RECOVERY_CRON = "53 * * * *";
-export const WEATHER_RECOVERY_CRON_EARLY = "25 2,5,8,11,14,17,20,23 * * *";
-export const WEATHER_RECOVERY_CRON_LATE = "40 2,5,8,11,14,17,20,23 * * *";
+export const WEATHER_RECOVERY_CRON = "25 2,5,8,11,14,17,20,23 * * *";
 
 export type AllowedWorkflowFile =
   | typeof REALTIME_WORKFLOW_FILE
@@ -123,9 +130,16 @@ export function workflowForCron(cron: string): AllowedWorkflowFile | null {
   if (cron === FORECAST_CRON) return FORECAST_WORKFLOW_FILE;
   if (cron === WEATHER_CRON) return WEATHER_WORKFLOW_FILE;
   if (cron === FORECAST_RECOVERY_CRON) return FORECAST_RECOVERY_WORKFLOW_FILE;
-  if (cron === WEATHER_RECOVERY_CRON_EARLY || cron === WEATHER_RECOVERY_CRON_LATE) return WEATHER_RECOVERY_WORKFLOW_FILE;
+  if (cron === WEATHER_RECOVERY_CRON) return WEATHER_RECOVERY_WORKFLOW_FILE;
   return null;
 }
+
+/**
+ * Cloudflare Workers Free allows at most this many Cron Triggers PER ACCOUNT.
+ * The 6th is not queued or ignored — the API rejects the whole schedules
+ * update (code 10072) and the deploy fails after the Worker itself uploaded.
+ */
+export const WORKERS_FREE_CRON_TRIGGER_LIMIT = 5;
 
 /** Every Cron expression the production Worker is configured to fire. */
 export const PRODUCTION_CRONS = [
@@ -133,8 +147,7 @@ export const PRODUCTION_CRONS = [
   FORECAST_CRON,
   WEATHER_CRON,
   FORECAST_RECOVERY_CRON,
-  WEATHER_RECOVERY_CRON_EARLY,
-  WEATHER_RECOVERY_CRON_LATE,
+  WEATHER_RECOVERY_CRON,
 ] as const;
 
 export function dispatchUrl(workflow: AllowedWorkflowFile): string {

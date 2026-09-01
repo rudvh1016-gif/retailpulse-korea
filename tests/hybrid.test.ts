@@ -7,6 +7,7 @@ import { PRODUCTION_SOURCE_NAMES } from "../lib/production-runner";
 import { evaluateQuotaUsage } from "../lib/quota-guard";
 import { normalizeAirportFlight } from "../lib/source-adapters";
 import { readCloudflareConfig, validateCloudflareEnvironment } from "../scripts/validate-cloudflare-environment.mjs";
+import { WORKERS_FREE_CRON_TRIGGER_LIMIT } from "../lib/realtime-dispatch";
 
 test("semantic flight hash ignores retrieval time and unknown volatile fields", async () => {
   const base = { flightId: "KE703", scheduleDateTime: "202608251430", terminalid: "2", gate: "231", remark: "정상" };
@@ -121,7 +122,6 @@ test("production collector remains gated and only production carries a Worker Cr
     "10 2,5,8,11,14,17,20,23 * * *",
     "53 * * * *",
     "25 2,5,8,11,14,17,20,23 * * *",
-    "40 2,5,8,11,14,17,20,23 * * *",
   ]);
 });
 
@@ -180,15 +180,21 @@ test("every production source is scheduled by exactly one cadence-group workflow
 // ---------------------------------------------------------------------------
 
 /**
- * Exactly six authorized trigger-only Crons exist, on production only.
+ * Exactly five authorized trigger-only Crons exist, on production only.
  *
- * Three are the primary cadences; three are the A5/weather recovery windows
- * added for temporal self-healing. A5 recovery is :53 rather than the :52 the
- * spec suggested, because realtime already owns a trigger firing at :52 and
+ * Three are the primary cadences; two are the A5/weather recovery windows
+ * added for temporal self-healing. A5 recovery is :53 rather than the :52
+ * first proposed, because realtime already owns a trigger firing at :52 and
  * two expressions on the same minute is the routing ambiguity that must be
  * avoided — realtime cadence is the thing that may not change.
+ *
+ * Five is not a preference, it is the Workers Free ceiling. A 2026-09-01
+ * production deploy configured six and the Cloudflare API rejected the whole
+ * schedules update (code 10072) AFTER the Worker had uploaded, leaving the
+ * new code live with the old schedule. Nothing in CI knew about that limit,
+ * so the assertion below now encodes it.
  */
-test("exactly six Cloudflare Cron Triggers exist for the three cadences and their recovery windows", () => {
+test("exactly five Cloudflare Cron Triggers exist, within the Workers Free per-account limit", () => {
   const files = readdirSync(".").filter((name) => /^wrangler.*\.jsonc?$/.test(name));
   assert.deepEqual(files, ["wrangler.production.jsonc"], "an unexpected wrangler config could hide a second Cron");
   const config = JSON.parse(readFileSync("wrangler.production.jsonc", "utf8"));
@@ -201,9 +207,13 @@ test("exactly six Cloudflare Cron Triggers exist for the three cadences and thei
     "10 2,5,8,11,14,17,20,23 * * *",
     "53 * * * *",
     "25 2,5,8,11,14,17,20,23 * * *",
-    "40 2,5,8,11,14,17,20,23 * * *",
   ]);
-  assert.equal(crons.length, 6, "only the audited trigger-only cadences and their recovery windows are authorized");
+  assert.equal(crons.length, 5, "only the audited trigger-only cadences and their recovery windows are authorized");
+  // The hard platform ceiling. Exceeding it does not degrade gracefully — the
+  // deploy fails with the Worker already uploaded and the schedule unchanged.
+  assert.ok(crons.length <= WORKERS_FREE_CRON_TRIGGER_LIMIT,
+    `Workers Free allows at most ${WORKERS_FREE_CRON_TRIGGER_LIMIT} Cron Triggers per account; a 6th fails the deploy (code 10072)`);
+  assert.equal(WORKERS_FREE_CRON_TRIGGER_LIMIT, 5);
   assert.equal(new Set(crons).size, crons.length, "a duplicated expression would dispatch the same workflow twice");
   // The realtime cadence is non-negotiable and must survive every change here.
   assert.ok(crons.includes("7,22,37,52 * * * *"), "the realtime cadence must stay exactly as audited");
@@ -267,7 +277,6 @@ test("the production Cron and the dispatch target describe one scheduler path", 
     "10 2,5,8,11,14,17,20,23 * * *",
     "53 * * * *",
     "25 2,5,8,11,14,17,20,23 * * *",
-    "40 2,5,8,11,14,17,20,23 * * *",
   ]);
   assert.match(dispatch, /REALTIME_WORKFLOW_FILE = "collect-realtime\.yml"/);
   assert.match(dispatch, /FORECAST_WORKFLOW_FILE = "collect-forecast\.yml"/);
