@@ -41,16 +41,27 @@ export const WEATHER_CRON = "10 2,5,8,11,14,17,20,23 * * *";
  * moves one minute rather than risking the cycle that must not change. It is
  * still ~11 minutes after the :42 primary.
  *
- * Weather gets ONE recovery window, not the two originally sketched. The
- * account is on Workers Free, which caps Cron Triggers at 5 PER ACCOUNT — a
- * sixth was rejected outright by the Cloudflare API (code 10072) and failed a
- * production deploy. The second weather window was the only conditional one
- * ("if safely justified"), and a hard platform limit is the justification
- * against it: :10 primary + :25 recovery still doubles weather's chances
- * within every issuance. Raising this needs Workers Paid, not more code.
+ * Weather gets TWO recovery windows, :25 and :40, from ONE Cron expression.
+ * The Workers Free cap is 5 Cron Triggers per account and a sixth is rejected
+ * outright (Cloudflare code 10072, which failed a deploy on 2026-09-01), so
+ * the earlier conclusion was that :40 needed Workers Paid. That conclusion was
+ * wrong about the mechanism: the cap counts CONFIGURED EXPRESSIONS, and the
+ * minute field takes a comma list (Cloudflare's cron-trigger docs give the
+ * minute field as 0-59 with `* , - /`). `25,40 ...` is therefore one
+ * configured trigger that fires twice per issuance, and the account stays at
+ * five.
+ *
+ * Exact-string routing survives this because `controller.cron` carries "the
+ * value of the Cron Trigger that started the ScheduledEvent" — the configured
+ * expression verbatim. Both the :25 and the :40 firing deliver the identical
+ * string, so both map through the single allowlist entry below. No minute
+ * parsing, no fuzzy match, no second workflow.
+ *
+ * Two windows cost nothing when the data is healthy: recovery reads D1 first
+ * and makes zero provider requests unless a grid is actually missing.
  */
 export const FORECAST_RECOVERY_CRON = "53 * * * *";
-export const WEATHER_RECOVERY_CRON = "25 2,5,8,11,14,17,20,23 * * *";
+export const WEATHER_RECOVERY_CRON = "25,40 2,5,8,11,14,17,20,23 * * *";
 
 export type AllowedWorkflowFile =
   | typeof REALTIME_WORKFLOW_FILE
@@ -65,9 +76,11 @@ export const DISPATCH_REF = "main";
 
 const DISPATCH_TIMEOUT_MS = 10_000;
 /**
- * One bounded retry, transient failures only. Across realtime (96/day),
- * forecast (24/day) and weather (8/day), this is at most 128 x 2 = 256
- * GitHub API requests/day against an authenticated limit of 5,000/hour.
+ * One bounded retry, transient failures only. Across the five production
+ * expressions — realtime 96/day, A5 primary 24/day, weather primary 8/day,
+ * A5 recovery 24/day, weather recovery 16/day (8 issuances x 2 minutes) —
+ * that is 168 invocations/day and at most 336 GitHub API requests/day against
+ * an authenticated limit of 5,000/hour.
  */
 const TRANSIENT_RETRY_DELAY_MS = 500;
 
