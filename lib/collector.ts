@@ -1,4 +1,7 @@
 import {
+  DATA_GO_KR_LOW_CALL_POLICY,
+  DATA_GO_KR_PAGED_POLICY,
+  KMA_GRID_RETRY_POLICY,
   fetchOfficialJson,
   normalizeAirportCongestion,
   normalizeAirportCongestionT2,
@@ -11,6 +14,7 @@ import {
   normalizeWeatherForecast,
   redactSeoulUrl,
   redactServiceKey,
+  safeSourceFailureDetail,
   type CanonicalAirportCongestion,
   type CanonicalAirportFlight,
   type CanonicalAirportPassengerForecastRow,
@@ -251,7 +255,7 @@ export async function collectAirportFlightEnrichment(env: CollectorEnv): Promise
     { type: "json", numOfRows: "100", pageNo: "1" },
   );
   try {
-    const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 1, retryDelayMs: 750 });
+    const payload = await fetchOfficialJson(url, DATA_GO_KR_LOW_CALL_POLICY);
     const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown } } } };
     if (root?.response?.header?.resultCode !== "00") throw new Error(`airport_a2_result_${String(root?.response?.header?.resultCode ?? "missing")}`);
     const items = dataGoKrItems(root?.response?.body);
@@ -273,12 +277,12 @@ export async function collectAirportFlightEnrichment(env: CollectorEnv): Promise
     const detail = `A1_PRIMARY_A2_ENRICHMENT; compared ${normalized.length}; matched writes ${matched}`;
     await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, normalized.length, matched.changedRows);
     await writeSourceHealth(env.DB, sourceId, "LIVE", detail, { retrievedAt, schemaVersion: "airport-a2-enrichment-v1" });
-    return { status: "SUCCESS", records: matched.changedRows };
+    return { status: "SUCCESS", records: matched.changedRows, detail };
   } catch (error) {
-    const detail = error instanceof Error ? error.message : "collector_error";
+    const detail = safeSourceFailureDetail(error);
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
-    return { status: "ERROR", records: 0 };
+    return { status: "ERROR", records: 0, detail };
   }
 }
 
@@ -296,7 +300,7 @@ export async function collectScheduledAirportFlights(env: CollectorEnv): Promise
     { type: "json", numOfRows: "100", pageNo: "1" },
   );
   try {
-    const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 1, retryDelayMs: 750 });
+    const payload = await fetchOfficialJson(url, DATA_GO_KR_LOW_CALL_POLICY);
     const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown } } } };
     if (root?.response?.header?.resultCode !== "00") throw new Error(`airport_a3_result_${String(root?.response?.header?.resultCode ?? "missing")}`);
     const items = dataGoKrItems(root?.response?.body);
@@ -323,12 +327,12 @@ export async function collectScheduledAirportFlights(env: CollectorEnv): Promise
     const detail = `future schedule ${normalized.length}; ${describeWrites(written)}`;
     await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, normalized.length, written.changedRows);
     await writeSourceHealth(env.DB, sourceId, "LIVE", detail, { retrievedAt, schemaVersion: "airport-schedule-v1" });
-    return { status: "SUCCESS", records: written.changedRows };
+    return { status: "SUCCESS", records: written.changedRows, detail };
   } catch (error) {
-    const detail = error instanceof Error ? error.message : "collector_error";
+    const detail = safeSourceFailureDetail(error);
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
-    return { status: "ERROR", records: 0 };
+    return { status: "ERROR", records: 0, detail };
   }
 }
 
@@ -337,6 +341,8 @@ const runBatches = runD1Batches;
 export interface CollectorResult {
   status: "SUCCESS" | "PARTIAL" | "ERROR" | "NEEDS_KEY" | "NO_DATA";
   records: number;
+  /** Secret-free operational detail safe for collector_runs and Actions logs. */
+  detail?: string;
 }
 
 function dataGoKrItems(body: { items?: unknown[] | { item?: unknown[] | unknown } } | undefined): unknown[] {
@@ -720,7 +726,7 @@ export async function collectWeatherForecasts(env: CollectorEnv, now = new Date(
       { pageNo: "1", numOfRows: "1000", dataType: "JSON", base_date: baseDate, base_time: baseTime, nx: String(grid.nx), ny: String(grid.ny) },
     );
     try {
-      const payload = await fetchOfficialJson(url, { timeoutMs: 10_000, retries: 1 });
+      const payload = await fetchOfficialJson(url, KMA_GRID_RETRY_POLICY);
       const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] } } } };
       const resultCode = root?.response?.header?.resultCode;
       if (resultCode !== "00") throw new Error(`kma_result_${String(resultCode ?? "missing")}`);
@@ -746,7 +752,7 @@ export async function collectWeatherForecasts(env: CollectorEnv, now = new Date(
         }
       }
     } catch (error) {
-      failures.push(`grid ${grid.nx},${grid.ny}: ${error instanceof Error ? redactServiceKey(error.message) : "collector_error"}`);
+      failures.push(`grid ${grid.nx},${grid.ny}: ${safeSourceFailureDetail(error)}`);
     }
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
@@ -756,11 +762,11 @@ export async function collectWeatherForecasts(env: CollectorEnv, now = new Date(
   if (okCount === 0) {
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
-    return { status: "ERROR", records: 0 };
+    return { status: "ERROR", records: 0, detail };
   }
   await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, okCount, written.changedRows);
   await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastForecast ? { retrievedAt: lastForecast.retrievedAt, schemaVersion: lastForecast.schemaVersion } : undefined);
-  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows };
+  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows, detail };
 }
 
 // T1 — one bounded Seoul festival query, mapped to areas by verified distance.
@@ -780,7 +786,7 @@ export async function collectTourismEvents(env: CollectorEnv, now = new Date()):
     { MobileOS: "ETC", MobileApp: "KORETAIL", _type: "json", numOfRows: "100", pageNo: "1", eventStartDate: windowStart, lDongRegnCd: "11" },
   );
   try {
-    const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 1, retryDelayMs: 750 });
+    const payload = await fetchOfficialJson(url, DATA_GO_KR_LOW_CALL_POLICY);
     const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] | unknown } } } };
     const resultCode = root?.response?.header?.resultCode;
     if (resultCode !== "0000") throw new Error(`tourapi_result_${String(resultCode ?? "missing")}`);
@@ -837,12 +843,12 @@ export async function collectTourismEvents(env: CollectorEnv, now = new Date()):
     const detail = `seoul events ${items.length}; mapped ${mappedCount}; ${describeWrites(written)}`;
     await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, items.length, written.changedRows);
     await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastEvent ? { publishedAt: lastEvent.publishedAt, retrievedAt: lastEvent.retrievedAt, schemaVersion: lastEvent.schemaVersion } : undefined);
-    return { status: "SUCCESS", records: written.changedRows };
+    return { status: "SUCCESS", records: written.changedRows, detail };
   } catch (error) {
-    const detail = error instanceof Error ? redactServiceKey(error.message) : "collector_error";
+    const detail = safeSourceFailureDetail(error);
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
-    return { status: "ERROR", records: 0 };
+    return { status: "ERROR", records: 0, detail };
   }
 }
 
@@ -866,7 +872,7 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
       { pageNo: "1", numOfRows: "50", type: "json", terminalId },
     );
     try {
-      const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 1, retryDelayMs: 750 });
+      const payload = await fetchOfficialJson(url, DATA_GO_KR_LOW_CALL_POLICY);
       const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown } } } };
       const resultCode = root?.response?.header?.resultCode;
       if (resultCode !== "00") throw new Error(`congestion_result_${String(resultCode ?? "missing")}`);
@@ -892,7 +898,7 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
           ));
       }
     } catch (error) {
-      failures.push(`${terminalId}: ${error instanceof Error ? redactServiceKey(error.message) : "collector_error"}`);
+      failures.push(`${terminalId}: ${safeSourceFailureDetail(error)}`);
     }
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
@@ -900,11 +906,11 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
   if (failures.length === 1) {
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
-    return { status: "ERROR", records: 0 };
+    return { status: "ERROR", records: 0, detail };
   }
   await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, terminalCounts.length, written.changedRows);
   await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastRow ? { eventAt: lastRow.observedAt, retrievedAt: lastRow.retrievedAt, schemaVersion: lastRow.schemaVersion } : undefined);
-  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows };
+  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows, detail };
 }
 
 const A4_T2_PAGE_SIZE = 20;
@@ -943,7 +949,7 @@ export async function collectAirportCongestionT2(env: CollectorEnv): Promise<Col
         env.DATA_GO_KR_SERVICE_KEY,
         { pageNo: String(pageNo), numOfRows: String(A4_T2_PAGE_SIZE), type: "json" },
       );
-      const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 1, retryDelayMs: 750 });
+      const payload = await fetchOfficialJson(url, DATA_GO_KR_PAGED_POLICY);
       const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown }; totalCount?: number } } };
       const resultCode = root?.response?.header?.resultCode;
       if (resultCode !== "00") throw new Error(`congestion_t2_result_${String(resultCode ?? "missing")}`);
@@ -970,30 +976,30 @@ export async function collectAirportCongestionT2(env: CollectorEnv): Promise<Col
               canonical.schemaVersion, canonical.qualityStatus, canonical.sourceHash,
             ));
         } catch (error) {
-          rowFailures.push(error instanceof Error ? error.message : "row_error");
+          rowFailures.push(safeSourceFailureDetail(error));
         }
       }
       if (totalCount === null || pageNo * A4_T2_PAGE_SIZE >= totalCount || items.length < A4_T2_PAGE_SIZE) break;
     }
   } catch (error) {
-    const detail = error instanceof Error ? redactServiceKey(error.message) : "collector_error";
+    const detail = safeSourceFailureDetail(error);
     // A provider ERROR here must never touch existing T1/T2 rows already in
     // D1 — only source_health/collector_runs are written, so the last-good
     // congestion rows remain exactly as they were.
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
-    return { status: "ERROR", records: 0 };
+    return { status: "ERROR", records: 0, detail };
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
   const detail = `pages ${pagesFetched}; totalCount ${totalCount ?? "unknown"}; normalized ${normalizedCount}; ${describeWrites(written)}${rowFailures.length ? `; row failures ${rowFailures.length}` : ""}`;
   if (normalizedCount === 0) {
     await writeCollectorStatus(env.DB, sourceId, "ERROR", "congestion_t2_no_data");
     await writeSourceHealth(env.DB, sourceId, "ERROR", "congestion_t2_no_data");
-    return { status: "ERROR", records: 0 };
+    return { status: "ERROR", records: 0, detail: "congestion_t2_no_data" };
   }
   await writeCollectorStatus(env.DB, sourceId, rowFailures.length ? "PARTIAL" : "SUCCESS", detail, normalizedCount, written.changedRows);
   await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastRow ? { eventAt: lastRow.observedAt, retrievedAt: lastRow.retrievedAt, schemaVersion: lastRow.schemaVersion } : undefined);
-  return { status: rowFailures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows };
+  return { status: rowFailures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows, detail };
 }
 
 const A5_PAGE_SIZE = 50;

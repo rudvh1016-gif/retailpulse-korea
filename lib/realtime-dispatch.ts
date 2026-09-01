@@ -18,9 +18,11 @@
 /** The only workflows this trigger may ever dispatch. */
 export const REALTIME_WORKFLOW_FILE = "collect-realtime.yml";
 export const FORECAST_WORKFLOW_FILE = "collect-forecast.yml";
+export const WEATHER_WORKFLOW_FILE = "collect-weather.yml";
 export const REALTIME_CRON = "7,22,37,52 * * * *";
 export const FORECAST_CRON = "42 * * * *";
-export type AllowedWorkflowFile = typeof REALTIME_WORKFLOW_FILE | typeof FORECAST_WORKFLOW_FILE;
+export const WEATHER_CRON = "10 2,5,8,11,14,17,20,23 * * *";
+export type AllowedWorkflowFile = typeof REALTIME_WORKFLOW_FILE | typeof FORECAST_WORKFLOW_FILE | typeof WEATHER_WORKFLOW_FILE;
 export const DISPATCH_OWNER = "rudvh1016-gif";
 export const DISPATCH_REPO = "retailpulse-korea";
 /** Scheduled workflows run from the default branch; keep dispatch identical. */
@@ -28,9 +30,9 @@ export const DISPATCH_REF = "main";
 
 const DISPATCH_TIMEOUT_MS = 10_000;
 /**
- * One bounded retry, transient failures only. At the unchanged 15-minute
- * cadence this is at most 96 x 2 = 192 GitHub API requests/day against an
- * authenticated limit of 5,000/hour, so the rate-limit impact is negligible.
+ * One bounded retry, transient failures only. Across realtime (96/day),
+ * forecast (24/day) and weather (8/day), this is at most 128 x 2 = 256
+ * GitHub API requests/day against an authenticated limit of 5,000/hour.
  */
 const TRANSIENT_RETRY_DELAY_MS = 500;
 
@@ -86,6 +88,7 @@ export interface DispatchEnv {
 export function workflowForCron(cron: string): AllowedWorkflowFile | null {
   if (cron === REALTIME_CRON) return REALTIME_WORKFLOW_FILE;
   if (cron === FORECAST_CRON) return FORECAST_WORKFLOW_FILE;
+  if (cron === WEATHER_CRON) return WEATHER_WORKFLOW_FILE;
   return null;
 }
 
@@ -154,7 +157,7 @@ async function dispatchAllowedWorkflow(
 }
 
 
-/** Routes only the two production Cron expressions; unknown values are inert. */
+/** Routes only the three production Cron expressions; unknown values are inert. */
 export async function dispatchScheduledCollection(
   cron: string,
   env: DispatchEnv,

@@ -115,17 +115,21 @@ test("production collector remains gated and only production carries a Worker Cr
   assert.match(workflow, /vars\.ENABLE_PRODUCTION_COLLECTOR == 'true'/);
   assert.equal(config.triggers, undefined, "the default environment must never carry a Cron Trigger");
   assert.equal(config.env.staging.triggers, undefined, "staging must never carry a Cron Trigger");
-  assert.deepEqual(config.env.production.triggers?.crons, ["7,22,37,52 * * * *", "42 * * * *"]);
+  assert.deepEqual(config.env.production.triggers?.crons, [
+    "7,22,37,52 * * * *",
+    "42 * * * *",
+    "10 2,5,8,11,14,17,20,23 * * *",
+  ]);
 });
 
 /**
- * REALTIME and FORECAST are the two audited exceptions: their cadences are
+ * REALTIME, FORECAST and WEATHER are the audited exceptions: their cadences are
  * owned by Cloudflare trigger-only Crons. Every other cadence group keeps a
  * native GitHub `schedule:`.
  */
 test("every cadence-group collector workflow is gated behind the same owner-approved switch and actually scheduled", async () => {
   const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml", "collect-forecast.yml"];
-  const cloudflareScheduled = new Set(["collect-realtime.yml", "collect-forecast.yml"]);
+  const cloudflareScheduled = new Set(["collect-realtime.yml", "collect-forecast.yml", "collect-weather.yml"]);
   for (const file of groupFiles) {
     const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
     assert.match(workflow, /vars\.ENABLE_PRODUCTION_COLLECTOR == 'true'/, `${file} must reuse the single production-collector gate`);
@@ -172,16 +176,20 @@ test("every production source is scheduled by exactly one cadence-group workflow
 // every provider call, hash and D1 write.
 // ---------------------------------------------------------------------------
 
-/** Exactly two authorized trigger-only Crons exist, on production only. */
-test("exactly two Cloudflare Cron Triggers exist for realtime and forecast", () => {
+/** Exactly three authorized trigger-only Crons exist, on production only. */
+test("exactly three Cloudflare Cron Triggers exist for realtime, forecast and weather", () => {
   const files = readdirSync(".").filter((name) => /^wrangler.*\.jsonc?$/.test(name));
   assert.deepEqual(files, ["wrangler.production.jsonc"], "an unexpected wrangler config could hide a second Cron");
   const config = JSON.parse(readFileSync("wrangler.production.jsonc", "utf8"));
   assert.equal(config.triggers, undefined, "the default environment must stay Cron-free");
   assert.equal(config.env.staging.triggers, undefined, "staging must stay Cron-free");
   const crons = config.env.production.triggers?.crons;
-  assert.deepEqual(crons, ["7,22,37,52 * * * *", "42 * * * *"]);
-  assert.equal(crons.length, 2, "only the two audited trigger-only cadences are authorized");
+  assert.deepEqual(crons, [
+    "7,22,37,52 * * * *",
+    "42 * * * *",
+    "10 2,5,8,11,14,17,20,23 * * *",
+  ]);
+  assert.equal(crons.length, 3, "only the three audited trigger-only cadences are authorized");
 });
 
 /**
@@ -223,13 +231,26 @@ test("Cloudflare is the single authoritative FORECAST scheduler and GitHub stays
   assert.match(forecast, /RPK_PRODUCTION_SOURCES: airport_passenger_forecast/);
 });
 
+test("Cloudflare is the single authoritative WEATHER scheduler and GitHub stays dispatchable", () => {
+  const weather = readFileSync(".github/workflows/collect-weather.yml", "utf8");
+  assert.doesNotMatch(weather, /^\s*schedule:/m);
+  assert.doesNotMatch(weather, /- cron:/);
+  assert.match(weather, /^\s*workflow_dispatch:/m);
+  assert.match(weather, /RPK_PRODUCTION_SOURCES: weather/);
+});
+
 /** The dispatch target and the live Cron must name the same workflow file. */
 test("the production Cron and the dispatch target describe one scheduler path", () => {
   const config = JSON.parse(readFileSync("wrangler.production.jsonc", "utf8"));
   const dispatch = readFileSync("lib/realtime-dispatch.ts", "utf8");
-  assert.deepEqual(config.env.production.triggers.crons, ["7,22,37,52 * * * *", "42 * * * *"]);
+  assert.deepEqual(config.env.production.triggers.crons, [
+    "7,22,37,52 * * * *",
+    "42 * * * *",
+    "10 2,5,8,11,14,17,20,23 * * *",
+  ]);
   assert.match(dispatch, /REALTIME_WORKFLOW_FILE = "collect-realtime\.yml"/);
   assert.match(dispatch, /FORECAST_WORKFLOW_FILE = "collect-forecast\.yml"/);
+  assert.match(dispatch, /WEATHER_WORKFLOW_FILE = "collect-weather\.yml"/);
   assert.match(dispatch, /DISPATCH_REF = "main"/);
   assert.equal(config.env.production.name, "retailpulse-korea-production");
 });

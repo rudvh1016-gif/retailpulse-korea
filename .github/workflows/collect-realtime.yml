@@ -49,7 +49,9 @@ jobs:
   collect:
     if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # A shared gateway outage can consume ~178s for T1 and at most ~377s for
+    # T2's three bounded pages. Twelve minutes leaves setup/D1/S1 margin.
+    timeout-minutes: 12
     environment: production
     steps:
       - uses: actions/checkout@v4

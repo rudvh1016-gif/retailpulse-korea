@@ -1,7 +1,7 @@
 # REALTIME Scheduler Migration Audit (A4-T1 / A4-T2 / S1)
 
 **Status:** Benchmark gate **FAIL** — Worker Cron *execution* of the realtime collectors is **rejected** and stays rejected. The **trigger-only** alternative (§6) was built, benchmarked separately, and **activated** on owner approval.
-**Worker Cron:** **ACTIVE, trigger-only** — `7,22,37,52 * * * *` dispatches `collect-realtime.yml`; `42 * * * *` dispatches `collect-forecast.yml`. Both run on `retailpulse-korea-production` and do nothing else.
+**Worker Cron:** **ACTIVE, trigger-only** — `7,22,37,52 * * * *` dispatches `collect-realtime.yml`; `42 * * * *` dispatches `collect-forecast.yml`; `10 2,5,8,11,14,17,20,23 * * *` dispatches `collect-weather.yml`. All run on `retailpulse-korea-production` and do nothing else.
 **GitHub REALTIME schedule:** **REMOVED** at activation; `workflow_dispatch` retained so the Cron can start it. GitHub Actions still performs all collection.
 **Measured:** 2026-08-31 KST, against `085338d`. **Activated:** 2026-08-31 KST.
 
@@ -117,7 +117,7 @@ This alternative was subsequently **approved for implementation and built** — 
 
 | item | state |
 | --- | --- |
-| Worker Cron | **ACTIVE, trigger-only** — exactly two Crons (`7,22,37,52 * * * *`, `42 * * * *`) under `env.production` in `wrangler.production.jsonc`; staging and the default environment stay Cron-free |
+| Worker Cron | **ACTIVE, trigger-only** — exactly three Crons (`7,22,37,52 * * * *`, `42 * * * *`, `10 2,5,8,11,14,17,20,23 * * *`) under `env.production` in `wrangler.production.jsonc`; staging and the default environment stay Cron-free |
 | Worker Cron work performed | one authenticated GitHub `workflow_dispatch` call; **no** provider call, parsing, normalization, hashing, D1 read or D1 write |
 | GitHub REALTIME cron | **OFF** — the `schedule:` block was removed at activation so only one scheduler is ever authoritative |
 | GitHub REALTIME `workflow_dispatch` | **ON** — this is how the Cloudflare Cron starts the run |
@@ -173,15 +173,15 @@ verdict does not hinge on that gap, but it must not be reported as
 | metric | value |
 | --- | --- |
 | external subrequests / invocation | 1 (limit 50) |
-| Worker Cron invocations / day | 120: realtime 96 + forecast 24 (limit 100,000 requests/day) |
-| GitHub dispatches / day | 120 |
-| worst case GitHub requests / day | 240 (one bounded retry) |
+| Worker Cron invocations / day | 128: realtime 96 + forecast 24 + weather 8 (limit 100,000 requests/day) |
+| GitHub dispatches / day | 128 |
+| worst case GitHub requests / day | 256 (one bounded dispatch retry) |
 | provider calls made by the Worker | **0** |
 | D1 reads/writes made by the Worker | **0** |
 
-Provider quota is untouched: the Actions runs make exactly the same calls at
-the same cadences. A5 remains about 48 provider calls/day (today + tomorrow
-per hourly cycle). Two Cron expressions are below the Workers Free account
+Provider quota is untouched by dispatch: the Actions runs make calls at the
+same cadences. A5 remains about 48 provider calls/day (today + tomorrow per
+hourly cycle). Three Cron expressions are below the Workers Free account
 limit of five, and one external request per invocation is below the limit of
 50.
 
@@ -244,13 +244,13 @@ that succeeded, keeping `VERIFIED_AUTO_SUCCESS` for genuine
 
 ### Current state
 
-Worker Cron: **ACTIVE (trigger-only)**, `7,22,37,52 * * * *` for realtime
-and `42 * * * *` for forecast, production environment only. Both GitHub
-workflows have `schedule:` **OFF** and `workflow_dispatch` **ON**. The
-scheduled handler routes only those exact Cron strings through a two-entry
-allowlist; an unknown Cron is inert. Guardrails in `tests/hybrid.test.ts` and
-`tests/realtime-dispatch.test.ts` assert exactly two production expressions,
-none in staging/default, and no provider, hash or D1 work in the handler.
+Worker Cron: **ACTIVE (trigger-only)** for realtime, forecast and weather in
+production only. Their GitHub workflows have `schedule:` **OFF** and
+`workflow_dispatch` **ON**. The scheduled handler routes only the three exact
+Cron strings through a three-entry allowlist; an unknown Cron is inert.
+Guardrails in `tests/hybrid.test.ts` and `tests/realtime-dispatch.test.ts`
+assert exactly three production expressions, none in staging/default, and no
+provider, hash or D1 work in the handler.
 
 A Cloudflare-triggered run appears in Actions with `event=workflow_dispatch`,
 never `event=schedule`; see "Terminology" above.
@@ -279,3 +279,33 @@ bounded retry after 750 ms only when the shared fetch policy classifies a
 transient network/5xx response. Normal calls remain one. A4 worst case is 192
 calls/day per dataset, still below the conservative 1,000/day-class budget;
 there is no cadence increase and no unlimited retry.
+
+### 2026-09-01 final collection recovery hardening
+
+Production evidence after PR #60 showed that a retry only 750 ms after the
+first attempt could fall inside the same tens-of-seconds data.go.kr gateway
+incident. The shared request helper now owns one explicit transient policy:
+
+- retryable: network/DNS/TCP/TLS, `UND_ERR_CONNECT_TIMEOUT`, real client
+  `AbortError`, HTTP 429 and HTTP 5xx;
+- permanent: HTTP 400/401/403/404/422, provider authentication result codes,
+  successful malformed JSON, schema and validation failures;
+- A2/A3/A4-T1/TourAPI: four total attempts with bounded delays of
+  2 s, 10 s and 45 s plus at most 500 ms jitter;
+- A4-T2: three total attempts per page with 5 s and 30 s delays, so its
+  three-page absolute bound stays at 864 calls/day rather than 1,152;
+- W1: three total attempts per grid with 5 s and 30 s bounded delays;
+- `Retry-After` is honored up to 60 s;
+- A1, A5 and S1 request policies are unchanged.
+
+Weather moved from GitHub native schedule to the same trigger-only alarm
+model. The GitHub Weather `schedule:` was removed in the same change, so there
+is never a duplicate authoritative scheduler. Normal healthy provider calls
+remain one request; retries happen only after a classified transient failure.
+
+Failure details reaching `collector_runs`, `source_health` and Actions contain
+only bounded fields such as `failureClass`, `causeCode`, `httpStatus`,
+`attempts`, `elapsedMs` and `retryExhausted`. They never include a provider
+URL, query string, key or authorization header. A failed refresh only updates
+operational health metadata: previous official rows and their real timestamps
+remain intact for truthful stale display.

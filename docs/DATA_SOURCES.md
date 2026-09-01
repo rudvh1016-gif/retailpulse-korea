@@ -72,6 +72,32 @@ Workflow run `Smoke Public APIs #19` (`33301206353`, commit `94d00b6`) made one 
 
 Verified first-record contracts: A1 includes `fid`, `flightId`, `masterFlightId`, `codeshare`, `scheduleDatetime`, `estimatedDatetime`, `terminalId`, `gateNumber`, `chkinRange`, and `remark`; A2 exposes the overlapping flight identity/timing/terminal fields; A3 exposes `season`, `firstdate`, `lastdate`, `st`, weekday flags, flight/master/codeshare, airline, airport and terminal; A4 exposes `gateId`, `occurtime`, `operatingTime`, `terminalId`, `waitLength`, and `waitTime`; W1 and T1 match the documented contracts above. No full payload or credential representation was logged.
 
+### Production transient recovery policy (2026-09-01 KST)
+
+Recent Production runs proved intermittent shared-gateway connection stalls
+(`NETWORK_UND_ERR_CONNECT_TIMEOUT`) between successful runs. This is not an
+authentication or scheduler classification.
+
+| Source | Healthy calls | Total attempts after transient failure | Delays | Exact worst-case provider calls/day |
+|---|---:|---:|---|---:|
+| A2 | 1/day | 4 | 2s, 10s, 45s (+≤0.5s jitter) | 4 |
+| A3 | 1/day | 4 | same | 4 |
+| T1 TourAPI | 1/day | 4 | same | 4 |
+| A4-T1 | 96/day | 4 | same | 384 |
+| A4-T2 | ~96/day, normally one page; max 3 pages | 3/request | 5s, 30s (+≤0.5s jitter) | 288 normally; 864 absolute bounded maximum |
+| W1 | 3 grids × 8 cycles = 24/day | 3/grid | 5s, 30s (+≤0.5s jitter) | 72 |
+
+A4 datasets remain under the project's conservative 1,000/day-class separate
+dataset budget. W1 remains far below its documented 10,000/day quota. A1's
+bounded paged scan, A5, and S1 keep their existing request policies. HTTP 429
+`Retry-After` is honored up to 60 seconds. HTTP 400/401/403/404/422, provider
+auth codes, successful malformed JSON, schema and deterministic validation
+errors do not retry.
+
+Normal healthy provider volume is unchanged. A failed refresh never deletes
+or zeroes last-good rows; only source health and collector-run metadata record
+the truthful failure and its original data timestamp remains unchanged.
+
 ## Source lifecycle
 
 Raw adapter → schema validation → canonical normalizer → D1 → internal API → UI. Canonical records store source, record origin, event time, publication/availability time, retrieval time, freshness, schema version, quality status and a source hash. The frontend never receives an official service key and never calls a government API directly.
