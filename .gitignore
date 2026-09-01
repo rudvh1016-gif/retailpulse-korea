@@ -39,3 +39,6 @@ npm-debug.log*
 test-results/
 yarn-debug.log*
 yarn-error.log*
+measure-d1-read-plans.db
+d1-plan-*.db
+tests/.d1-plan-*.db

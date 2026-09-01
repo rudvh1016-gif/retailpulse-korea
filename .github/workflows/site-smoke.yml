@@ -48,15 +48,35 @@ jobs:
           const aboutHtml = await about.text();
           check("about page is live", about.status === 200 && aboutHtml.includes("KORETAIL은 무엇인가요"), `status ${about.status}`);
 
+          // "HTTP 200 with no data" must never read as healthy. On 2026-09-01 the
+          // D1 free daily row-read allowance ran out: every page still answered
+          // 200, /api/health said database "unavailable" with an empty source
+          // list, every area came back null, and this smoke passed. These checks
+          // are the semantic ones that would have caught it.
           const health = await fetch(`${origin}/api/health`, { signal: AbortSignal.timeout(15000) });
           const healthBody = await health.json().catch(() => null);
           check("api /api/health", health.status === 200 && healthBody?.app === "ok", `status ${health.status}; db ${healthBody?.database}`);
+          check("health reports a usable database", healthBody?.database === "ok", `database is ${healthBody?.database ?? "missing"}`);
+          check("health lists source status", Array.isArray(healthBody?.sources) && healthBody.sources.length > 0, `${healthBody?.sources?.length ?? 0} sources`);
           console.log(JSON.stringify({ healthSources: healthBody?.sources ?? [] }));
 
           const summary = await fetch(`${origin}/api/live/summary`, { signal: AbortSignal.timeout(15000) });
           const summaryBody = await summary.json().catch(() => null);
           check("api /api/live/summary", summary.status === 200 && Boolean(summaryBody?.mode), `status ${summary.status}; mode ${summaryBody?.mode}`);
           for (const source of summaryBody?.sources ?? []) console.log(JSON.stringify({ source }));
+          check("summary is in live mode", summaryBody?.mode === "live-summary", `mode ${summaryBody?.mode ?? "missing"}`);
+          check("summary carries the core areas", Boolean(summaryBody?.areas) && ["myeongdong", "hongdae", "seongsu"].every((area) => area in (summaryBody.areas ?? {})), "areas object incomplete");
+          // A legitimately quiet day has no events and may have no sales, so
+          // neither of those alone fails. Every area losing BOTH its realtime
+          // reading and its weather rows at once is not a quiet day - that is
+          // the database being unreadable.
+          const coreAreas = ["myeongdong", "hongdae", "seongsu"];
+          const areasWithCoreData = coreAreas.filter((area) => {
+            const block = summaryBody?.areas?.[area] ?? {};
+            return Boolean(block.realtime) || (block.weather?.length ?? 0) > 0;
+          });
+          check("core live data is present", areasWithCoreData.length > 0, `${areasWithCoreData.length}/${coreAreas.length} areas have realtime or weather`);
+
           if (summaryBody?.mode === "live-summary") {
             const areas = summaryBody.areas ?? {};
             for (const area of ["myeongdong", "hongdae", "seongsu"]) {

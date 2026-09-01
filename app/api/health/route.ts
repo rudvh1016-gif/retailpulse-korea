@@ -15,9 +15,16 @@ export async function GET() {
       checkedAt,
     }, { headers: { "cache-control": "no-store" } });
   } catch {
+    // A health endpoint that answers 200 while the database is unreachable is
+    // how the 2026-09-01 D1 quota outage passed every check: the site served
+    // pages with no data and the smoke called it healthy. 503 is the truthful
+    // answer and the one standard monitoring already understands. This is
+    // reserved for the database being unreachable — a merely degraded source
+    // still returns 200, because the product is still serving real last-good
+    // data in that case.
     return Response.json({ app: "ok", database: "unavailable", sources: [], checkedAt }, {
-      status: 200,
-      headers: { "cache-control": "no-store" },
+      status: 503,
+      headers: { "cache-control": "no-store", "retry-after": "60" },
     });
   }
 }

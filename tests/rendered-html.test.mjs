@@ -35,10 +35,16 @@ test("public endpoints stay available and never fabricate zeros when a source is
     );
   };
 
+  // This harness runs the Worker with no D1 binding at all, which is the
+  // "database unreachable" case rather than the "a source is degraded" one.
+  // Health must say so over HTTP: answering 200 here is exactly what let the
+  // 2026-09-01 quota outage look healthy while the site served no data.
   const healthResponse = await call("/api/health");
-  assert.equal(healthResponse.status, 200, "a degraded source must never turn /api/health into a 500");
+  assert.equal(healthResponse.status, 503, "an unreachable database must not be reported as healthy");
+  assert.notEqual(healthResponse.status, 500, "it is unavailable, not a crash");
   const healthBody = await healthResponse.json();
   assert.equal(healthBody.app, "ok");
+  assert.equal(healthBody.database, "unavailable");
   assert.ok(Array.isArray(healthBody.sources));
 
   const summaryResponse = await call("/api/live/summary");
