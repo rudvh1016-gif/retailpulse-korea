@@ -70,7 +70,6 @@ const kstToday = kstDayOf(generatedAt);
 const kstHourStart = kstHourStartIsoOf(generatedAt);
 const serviceDate = kstToday;
 const pickerDays = Array.from({ length: DATE_PICKER_DAYS }, (_, index) => shiftKstDay(kstToday, -index));
-const dayProbeBinds = pickerDays.flatMap((day) => [day, day, shiftKstDay(day, 1)]);
 
 type HotQuery = {
   /** The block of the response this statement fills. */
@@ -84,7 +83,23 @@ type HotQuery = {
   guard: string;
   /** Table whose full size was the pre-0007 cost of this statement. */
   table: string | null;
+  /**
+   * Run this statement once per bind set and sum the rows read.
+   *
+   * The route sends the date-picker probes as one 21-way UNION ALL with 63
+   * bound parameters. The Worker's native D1 binding runs that; the REST
+   * endpoint this diagnostic must use answers HTTP 400 to it, which would
+   * leave two of fourteen statements unmeasured and the total understated.
+   * Measuring the same probes one at a time is the identical work in the
+   * identical order, so the sum is the real cost either way.
+   */
+  repeatBinds?: unknown[][];
 };
+
+/** One day's existence probe, exactly as the route's builder emits it. */
+function oneDaySql(table: string, column: string, filter = ""): string {
+  return existingDaysSql(table, column, ["day"], filter);
+}
 
 const HOT_QUERIES: HotQuery[] = [
   {
@@ -226,8 +241,9 @@ const HOT_QUERIES: HotQuery[] = [
   },
   {
     name: "flightDates",
-    sql: existingDaysSql("airport_flights", "scheduled_at", pickerDays, "direction = 'departure'"),
-    binds: dayProbeBinds,
+    sql: oneDaySql("airport_flights", "scheduled_at", "direction = 'departure'"),
+    binds: [pickerDays[0], pickerDays[0], shiftKstDay(pickerDays[0], 1)],
+    repeatBinds: pickerDays.map((day) => [day, day, shiftKstDay(day, 1)]),
     guard: `existingDaysSql("airport_flights", "scheduled_at", pickerDays, "direction = 'departure'")`,
     table: null,
   },
@@ -241,8 +257,9 @@ const HOT_QUERIES: HotQuery[] = [
   },
   {
     name: "observedDates",
-    sql: existingDaysSql("seoul_realtime_area", "observed_at", pickerDays),
-    binds: dayProbeBinds,
+    sql: oneDaySql("seoul_realtime_area", "observed_at"),
+    binds: [pickerDays[0], pickerDays[0], shiftKstDay(pickerDays[0], 1)],
+    repeatBinds: pickerDays.map((day) => [day, day, shiftKstDay(day, 1)]),
     guard: `existingDaysSql("seoul_realtime_area", "observed_at", pickerDays)`,
     table: null,
   },
@@ -301,10 +318,17 @@ for (const query of HOT_QUERIES) {
   }
   try {
     const plan = await explain(query.sql, query.binds);
-    const { rowsRead, rowCount } = await measure(query.sql, query.binds);
+    let rowsRead = 0;
+    let rowCount = 0;
+    for (const binds of query.repeatBinds ?? [query.binds]) {
+      const once = await measure(query.sql, binds);
+      rowsRead += once.rowsRead;
+      rowCount += once.rowCount;
+    }
     perQuery.push({
       name: query.name,
       table: query.table,
+      statementsRun: (query.repeatBinds ?? [query.binds]).length,
       rowsRead,
       rowsReturned: rowCount,
       // A plan line naming one of our tables with SCAN is the regression the
