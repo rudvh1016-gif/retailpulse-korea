@@ -123,6 +123,19 @@ test("a summary carrying real data is admitted to the edge cache", () => {
   }), SUMMARY_CACHE_CONTROL);
 });
 
+test("an official realtime commercial observation is independently cacheable area data", () => {
+  assert.equal(isCacheableSummary({
+    sources: [{ sourceId: "SEOUL_CITYDATA_CMRCL", status: "LIVE" }],
+    areas: {
+      myeongdong: {
+        realtime: null,
+        weather: [],
+        commercial: { commercialLevel: "활발", observedAt: "2026-09-02T12:05:00+09:00" },
+      },
+    },
+  }), true);
+});
+
 /**
  * `safeAll` turns a failing statement into an empty list so one broken query
  * cannot take the page down. The cost is that a partly dead D1 still answers

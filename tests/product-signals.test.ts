@@ -4,6 +4,7 @@ import test from "node:test";
 import { classifyDemoDemand, demoDemandThresholds } from "../lib/demand-index";
 import { buildAirportPressure } from "../lib/airport-pressure";
 import { safeAll } from "../app/api/live/summary/route";
+import { buildCommercialSignalRow } from "../app/live-signals";
 import { probeSeoulCitydataContracts } from "../scripts/probe-seoul-citydata-contract";
 
 test("demo demand levels use cohort thirds instead of absolute magic numbers", () => {
@@ -115,4 +116,50 @@ test("Seoul integrated contract probe fails closed on an unauthorized official r
     /seoul_contract_probe_failed_POI003_INFO-300/,
   );
   assert.equal(output.some((line) => line.includes("INFO-300")), true);
+});
+
+test("realtime commercial signal tells all four locales it is domestic-card activity, not total sales", () => {
+  const commercial = {
+    commercialLevel: "활발",
+    paymentCount: 12345,
+    paymentAmountMin: 123456,
+    paymentAmountMax: 234567,
+    observedAt: "2026-09-02T12:05:00+09:00",
+    retrievedAt: "2026-09-02T03:06:00Z",
+    qualityStatus: "VALID",
+    freshness: "LIVE" as const,
+  };
+  const expected = {
+    ko: "신한카드 내국인 소비 기준 · 전수 매출 아님",
+    en: "Shinhan Card domestic-consumer activity · not total sales",
+    zh: "基于新韩卡韩国境内消费者活动 · 非全量销售额",
+    ja: "新韓カードの国内消費者活動基準 · 売上全数ではありません",
+  } as const;
+
+  for (const lang of ["ko", "en", "zh", "ja"] as const) {
+    const row = buildCommercialSignalRow(lang, commercial, "2026-09-02T03:10:00Z");
+    assert.ok(row);
+    assert.equal(row.key, "commercial");
+    assert.match(row.value, /활발/);
+    assert.ok(row.note.includes(expected[lang]));
+    assert.equal(row.state, "LIVE");
+  }
+});
+
+test("suppressed commercial payment values stay absent and never render as zero", () => {
+  const row = buildCommercialSignalRow("ko", {
+    commercialLevel: "보통",
+    paymentCount: null,
+    paymentAmountMin: null,
+    paymentAmountMax: null,
+    observedAt: "2026-09-02T12:05:00+09:00",
+    retrievedAt: "2026-09-02T03:06:00Z",
+    qualityStatus: "PARTIAL",
+    freshness: "STALE",
+  }, "2026-09-02T04:00:00Z");
+
+  assert.ok(row);
+  assert.equal(row.value, "보통");
+  assert.doesNotMatch(`${row.value} ${row.note}`, /₩0|0원|payment count 0/i);
+  assert.equal(buildCommercialSignalRow("ko", null, "2026-09-02T04:00:00Z"), null);
 });

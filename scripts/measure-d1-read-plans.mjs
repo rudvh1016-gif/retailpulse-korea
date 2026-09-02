@@ -25,7 +25,7 @@ for (const extra of (process.env.EXTRA_INDEXES ?? "").split(";;").filter(Boolean
 // Volumes from the real production collector log of 2026-09-01:
 // airport_flights "population 11733" (~1,100 rows/day), weather 24 bands x 3
 // areas x 8 issuances/day, realtime 3 areas x 96 cycles/day.
-const N = { airport_flights: 12000, seoul_realtime_area: 5000, seoul_realtime_forecast: 20000,
+const N = { airport_flights: 12000, seoul_realtime_area: 5000, seoul_realtime_commercial: 5000, seoul_realtime_forecast: 20000,
   weather_forecast: 4000, airport_congestion: 6000, seoul_estimated_sales: 400 };
 
 const BASE = Date.UTC(2026, 7, 21);
@@ -57,6 +57,8 @@ seed("airport_flights", N.airport_flights, (i) => ({
   physical_flight_id: `p${i}`, scheduled_at: kst(i, 1100), gate: `${i % 60}`, retrieved_at: "2026-09-01T00:00:00Z" }));
 seed("seoul_realtime_area", N.seoul_realtime_area, (i) => ({
   source_id: "SEOUL_CITYDATA_PPLTN", area: areas[i % 3], observed_at: kst(i, 288) }));
+seed("seoul_realtime_commercial", N.seoul_realtime_commercial, (i) => ({
+  source_id: "SEOUL_CITYDATA_CMRCL", area: areas[i % 3], observed_at: kst(i, 288) }));
 seed("seoul_realtime_forecast", N.seoul_realtime_forecast, (i) => ({
   source_id: "SEOUL_CITYDATA_PPLTN", area: areas[i % 3], issued_at: kst(i, 1152), target_at: kst(i + 1, 1152) }));
 seed("weather_forecast", N.weather_forecast, (i) => ({
@@ -81,6 +83,7 @@ const probeBinds = () => DAYS.flatMap((d) => [d, d, new Date(Date.parse(`${d}T00
 const per = (keys, sql) => keys.map(() => `SELECT * FROM (${sql})`).join(" UNION ALL ");
 const QUERIES = AFTER ? {
   "summary.latestRealtime": [per(areas, `SELECT area, observed_at FROM seoul_realtime_area WHERE area = ? ORDER BY observed_at DESC LIMIT 1`), [...areas]],
+  "summary.latestCommercial": [per(areas, `SELECT area, observed_at FROM seoul_realtime_commercial WHERE area = ? ORDER BY observed_at DESC LIMIT 1`), [...areas]],
   "summary.latestForecast": [per(areas, `SELECT area, issued_at FROM seoul_realtime_forecast WHERE area = ? AND issued_at = (SELECT MAX(issued_at) FROM seoul_realtime_forecast WHERE area = ?) ORDER BY target_at LIMIT 40`), areas.flatMap((a) => [a, a])],
   "summary.latestWeather": [per(areas, `SELECT area, issued_at FROM weather_forecast WHERE area = ? AND issued_at = (SELECT MAX(issued_at) FROM weather_forecast WHERE area = ?) ORDER BY target_at LIMIT 60`), areas.flatMap((a) => [a, a])],
   "summary.latestSales": [per(areas, `SELECT area, quarter_code FROM seoul_estimated_sales WHERE area = ? AND quarter_code = (SELECT MAX(quarter_code) FROM seoul_estimated_sales WHERE area = ?) ORDER BY sales_amount DESC`), areas.flatMap((a) => [a, a])],
@@ -90,6 +93,7 @@ const QUERIES = AFTER ? {
   "summary.availableRealtimeDates": [probe("seoul_realtime_area", "observed_at"), probeBinds()],
 } : {
   "summary.latestRealtime": [`SELECT area, observed_at FROM seoul_realtime_area a WHERE observed_at = (SELECT MAX(observed_at) FROM seoul_realtime_area b WHERE b.area = a.area)`, []],
+  "summary.latestCommercial": [per(areas, `SELECT area, observed_at FROM seoul_realtime_commercial WHERE area = ? ORDER BY observed_at DESC LIMIT 1`), [...areas]],
   "summary.latestForecast": [`SELECT area, issued_at FROM seoul_realtime_forecast f WHERE f.issued_at = (SELECT MAX(g.issued_at) FROM seoul_realtime_forecast g WHERE g.area = f.area) ORDER BY f.area, f.target_at LIMIT 120`, []],
   "summary.latestWeather": [`SELECT area, issued_at FROM weather_forecast w WHERE w.issued_at = (SELECT MAX(x.issued_at) FROM weather_forecast x WHERE x.area = w.area) ORDER BY w.area, w.target_at LIMIT 180`, []],
   "summary.latestSales": [`SELECT area, quarter_code FROM seoul_estimated_sales s WHERE quarter_code = (SELECT MAX(quarter_code) FROM seoul_estimated_sales t WHERE t.area = s.area)`, []],

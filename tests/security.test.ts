@@ -90,6 +90,14 @@ test("manual S2 import stays confirmed, bounded, isolated, and unscheduled", asy
   assert.match(workflow, /seoul_foreign/);
   assert.doesNotMatch(workflow, /^\s*schedule:/m);
 
+  const probeStep = workflow.split("- name: Probe integrated Seoul city-data contract (read only)")[1]
+    ?.split("- name: Run bounded one-shot import")[0] ?? "";
+  assert.match(probeStep, /inputs\.sources == 'probe_seoul_citydata_contract' && inputs\.confirm == 'PROBE'/);
+  assert.match(probeStep, /scripts\/probe-seoul-citydata-contract\.ts/);
+  assert.match(probeStep, /SEOUL_OPEN_DATA_KEY/);
+  assert.doesNotMatch(probeStep, /CLOUDFLARE|D1|DATA_GO_KR_SERVICE_KEY/,
+    "the read-only contract probe must never receive a database or unrelated provider credential");
+
   const rejected = spawnSync(process.execPath, ["--import", "tsx", "scripts/import-oneshot.ts"], {
     cwd: new URL("..", import.meta.url),
     env: { ...process.env, RPK_ONESHOT_CONFIRM: "NO" },

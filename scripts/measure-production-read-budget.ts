@@ -118,6 +118,17 @@ const HOT_QUERIES: HotQuery[] = [
     table: "seoul_realtime_area",
   },
   {
+    name: "commercial",
+    sql: latestPerKey(AREAS, () => `SELECT area, commercial_level AS commercialLevel,
+        payment_count AS paymentCount, payment_amount_min AS paymentAmountMin,
+        payment_amount_max AS paymentAmountMax, observed_at AS observedAt,
+        retrieved_at AS retrievedAt, quality_status AS qualityStatus
+      FROM seoul_realtime_commercial WHERE area = ? ORDER BY observed_at DESC LIMIT 1`),
+    binds: [...AREAS],
+    guard: "FROM seoul_realtime_commercial WHERE area = ? ORDER BY observed_at DESC LIMIT 1",
+    table: "seoul_realtime_commercial",
+  },
+  {
     name: "realtimeForecast",
     sql: latestPerKey(AREAS, () => `SELECT area, issued_at AS issuedAt, target_at AS targetAt, congestion_level AS congestionLevel,
         congestion_label AS congestionLabel, population_min AS populationMin, population_max AS populationMax,
@@ -270,6 +281,7 @@ if (drifted.length) {
 const EXPECTED_INDEXES = [
   "seoul_realtime_area_area_observed_idx",
   "seoul_realtime_area_observed_idx",
+  "seoul_realtime_commercial_area_observed_idx",
   "seoul_realtime_forecast_area_issue_idx",
   "weather_forecast_area_issue_idx",
   "weather_forecast_issued_area_idx",

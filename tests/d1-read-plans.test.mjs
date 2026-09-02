@@ -64,6 +64,7 @@ const probeBinds = () => Array.from({ length: 21 }, (_, i) => [`2026-08-${10 + i
 
 const HOT_QUERIES = {
   "summary.latestRealtime": [perKey(AREAS, "SELECT area, observed_at FROM seoul_realtime_area WHERE area = ? ORDER BY observed_at DESC LIMIT 1"), [...AREAS]],
+  "summary.latestCommercial": [perKey(AREAS, "SELECT area, observed_at FROM seoul_realtime_commercial WHERE area = ? ORDER BY observed_at DESC LIMIT 1"), [...AREAS]],
   "summary.latestForecast": [perKey(AREAS, "SELECT area FROM seoul_realtime_forecast WHERE area = ? AND issued_at = (SELECT MAX(issued_at) FROM seoul_realtime_forecast WHERE area = ?) AND target_at >= ? ORDER BY target_at LIMIT 40"), AREAS.flatMap((a) => [a, a, "2026-08-31T00:00:00+09:00"])],
   "summary.latestWeather": [perKey(AREAS, "SELECT area FROM weather_forecast WHERE area = ? AND issued_at = (SELECT MAX(issued_at) FROM weather_forecast WHERE area = ?) AND target_at >= ? ORDER BY target_at LIMIT 60"), AREAS.flatMap((a) => [a, a, "2026-08-31T00:00:00+09:00"])],
   "summary.latestSales": [perKey(AREAS, "SELECT area FROM seoul_estimated_sales WHERE area = ? AND quarter_code = (SELECT MAX(quarter_code) FROM seoul_estimated_sales WHERE area = ?) ORDER BY sales_amount DESC"), AREAS.flatMap((a) => [a, a])],
@@ -107,6 +108,7 @@ test("the read-path indexes the queries depend on exist in a migration", (contex
   const present = new Set(db.prepare("SELECT name FROM sqlite_master WHERE type = 'index'").all().map((row) => String(row.name)));
   for (const index of [
     "seoul_realtime_area_area_observed_idx", "seoul_realtime_area_observed_idx",
+    "seoul_realtime_commercial_area_observed_idx",
     "seoul_realtime_forecast_area_issue_idx", "weather_forecast_area_issue_idx",
     "seoul_estimated_sales_area_quarter_idx", "airport_congestion_terminal_observed_idx",
     "airport_flights_direction_scheduled_idx", "airport_passenger_forecast_target_idx",
@@ -185,6 +187,13 @@ test("the live summary reads both A5 directions once while the Airport date pick
     "the Airport detail date picker remains departure-scoped");
 });
 
+test("the live summary exposes one indexed latest commercial observation per known area", () => {
+  assert.match(route, /const commercialRows = await safeAll<Row>/);
+  assert.match(route, /FROM seoul_realtime_commercial WHERE area = \? ORDER BY observed_at DESC LIMIT 1/);
+  assert.match(route, /const commercial = commercialRows\.find\(\(row\) => row\.area === area\) \?\? null/);
+  assert.match(route, /commercial: commercial \? \{ \.\.\.commercial, freshness:/);
+});
+
 /**
  * The Production read-budget measurement must measure the query the site
  * actually runs.
@@ -202,7 +211,7 @@ test("every measured hot-path statement still exists in the live route", () => {
   const routeText = readFileSync("app/api/live/summary/route.ts", "utf8").replace(/\r\n/g, "\n");
   const guards = [...measureSource.matchAll(/^ {4}guard: (`[^`]*`|"(?:[^"\\]|\\.)*"),$/gm)]
     .map((match) => (match[1].startsWith("`") ? match[1].slice(1, -1) : JSON.parse(match[1])));
-  assert.equal(guards.length, 14, "expected one guard per measured statement");
+  assert.equal(guards.length, 15, "expected one guard per measured statement");
   for (const guard of guards) {
     assert.ok(routeText.includes(guard), `the live route no longer contains: ${guard.slice(0, 80)}`);
   }

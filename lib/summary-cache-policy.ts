@@ -27,6 +27,7 @@ export const SUMMARY_NO_STORE = "no-store";
 /** The subset of an area object the admission rule needs to see. */
 export interface AdmissionArea {
   realtime?: unknown;
+  commercial?: unknown;
   weather?: unknown;
 }
 
@@ -55,7 +56,7 @@ export function isCacheableSummary(input: SummaryAdmissionInput): boolean {
   if (!areas) return false;
   return Object.values(areas).some((area) => {
     if (!area) return false;
-    return area.realtime != null || hasRows(area.weather);
+    return area.realtime != null || area.commercial != null || hasRows(area.weather);
   });
 }
 

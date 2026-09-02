@@ -1,6 +1,6 @@
 # Data Sources
 
-Last verified: 2026-08-30 KST. Recheck official terms immediately before activating Production. The contract details below were verified against official portal documentation snippets and cross-checked working integrations; anything marked `UNVERIFIED` still needs one authenticated response before activation. A4-T2 and A5 were verified 2026-08-30 KST directly from the owner-supplied official Incheon International Airport Corporation OpenAPI 활용가이드 (not re-derived or guessed by an agent) — see §"A4-T2 and A5 — verified contracts" below.
+Last verified: 2026-09-02 KST. Recheck official terms immediately before activating Production. The contract details below were verified against official portal documentation snippets and cross-checked working integrations; anything marked `UNVERIFIED` still needs one authenticated response before activation. A4-T2 and A5 were verified 2026-08-30 KST directly from the owner-supplied official Incheon International Airport Corporation OpenAPI 활용가이드 (not re-derived or guessed by an agent) — see §"A4-T2 and A5 — verified contracts" below.
 
 ## Eleven-source integration matrix
 
@@ -12,7 +12,7 @@ Last verified: 2026-08-30 KST. Recheck official terms immediately before activat
 | A4-T1 | Departure-hall congestion, T1 | data.go.kr 15148225 | `apis.data.go.kr/B551177/statusOfDepartureCongestion/getDepartureCongestion` (AUTHENTICATED) · `terminalId` P01=T1 only · fields `gateId`, `waitTime`, `waitLength`, `occurtime`, `operatingTime` | same | Checkpoint waits ≠ duty-free visitors ≠ sales |
 | A4-T2 | Departure-hall congestion, T2 | 인천국제공항공사 · data.go.kr 15161098 | `apis.data.go.kr/B551177/statusOfDepartureCongestionT2/getDepartureCongestionT2` (VERIFIED, owner-supplied official guide) · see contract detail below | `DATA_GO_KR_SERVICE_KEY` | Checkpoint waits ≠ duty-free visitors ≠ sales; genuinely separate dataset from A4-T1, never a `terminalId` value on it |
 | A5 | T1/T2 arrival/departure passenger forecast | 인천국제공항공사 · data.go.kr 15095066 (OpenAPI 활용가이드 V5.0) | `apis.data.go.kr/B551177/passgrAnncmt/getPassgrAnncmt` (VERIFIED, owner-supplied official guide) · see contract detail below | `DATA_GO_KR_SERVICE_KEY` | FORECAST/EXPECTED passengers ≠ actual observed queue; never written to `airport_congestion` |
-| S1 | Seoul real-time city data | 서울 열린데이터광장 OA-21285/OA-21778 | `openapi.seoul.go.kr:8088/{KEY}/json/citydata_ppltn/1/5/{POI}` (CONFIRMED) · POI003 명동 관광특구 · POI007 홍대 관광특구 · POI068 성수카페거리 · success key `"SeoulRtd.citydata_ppltn"` + `RESULT["RESULT.CODE"]="INFO-000"` (error envelope uses undotted `RESULT.CODE`) · congestion labels 여유/보통/약간 붐빔/붐빔 · `FCST_PPLTN` = 12 hourly forecasts · ~5-min updates · assume ~1,000 calls/day-class quota | `SEOUL_OPEN_DATA_KEY` | Live population ≠ foreign tourists ≠ shoppers |
+| S1 | Seoul integrated real-time city data | 서울 열린데이터광장 OA-21285 | `openapi.seoul.go.kr:8088/{KEY}/json/citydata/1/5/{POI}` (AUTHENTICATED 2026-09-02) · POI003 명동 관광특구 · POI007 홍대 관광특구 · POI068 성수카페거리 · root `RESULT["RESULT.CODE"]="INFO-000"` + `CITYDATA.LIVE_PPLTN_STTS[]` + `CITYDATA.LIVE_CMRCL_STTS` · one integrated request/area retains the former 3 calls/run · population `FCST_PPLTN` horizon retained · commercial `AREA_CMRCL_LVL`, nullable Shinhan payment count/range, `CMRCL_TIME`, category array | `SEOUL_OPEN_DATA_KEY` | Live population ≠ shoppers; Shinhan domestic-consumer activity ≠ total/POS/foreign/tourist sales |
 | S2 | Short-stay foreign living population | 서울 OA-23018 `[단기외국인] 행정동별 서울 생활인구(250m)` | `openapi.seoul.go.kr:8088/{KEY}/json/Spop250mFornTempDong/1/5/` (authenticated `INFO-000`, 5 rows, 2026-08-29) · optional filters `YMD`, `TT`, `H_DNG_CD` | `SEOUL_OPEN_DATA_KEY` | `SPOP` is the total; nationality columns are dimensions and must not be added to it. Short-stay foreign living population ≠ stay population ≠ tourist ≠ shopper ≠ sales |
 | S3 | Estimated commercial sales | 서울시 상권분석서비스(추정매출-상권) OA-15572 | `openapi.seoul.go.kr:8088/{KEY}/json/VwsmTrdarSelngQq/{start}/{end}/{STDR_YYQU_CD}` (CONFIRMED; live verification 2026-08-27 showed only the quarter positional filter applies — trade-area segments are ignored, so the collector sweeps the quarter in 1000-row pages and filters client-side) · quarterly 20211–20261 · fields `THSMON_SELNG_AMT/CO` + weekday/time/gender/age splits · trade areas: 명동 3001492(관광특구)·3120028(명동거리)·3120027(명동역), 홍대 3120103(홍대입구역)·3120102(서교동)·3120104(연남동), 성수 3110131(성수동카페거리)·3120052(성수역) | same Seoul key | 추정매출 = modelled estimate, NOT live POS sales, NOT foreign spend |
 | W1 | KMA short-term forecast | 기상청 · data.go.kr 15084084 | `apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst` (CONFIRMED) · issued 02/05/08/11/14/17/20/23 KST (+~10min) · grids: 명동 (60,127) · 홍대/서교동 (59,126) · 성수 (61,126) · 인천공항/운서동 (51,125) · categories POP/PTY/PCP/REH/SKY/TMP/TMN/TMX/WSD… · `PCP`/`SNO` are strings ("강수없음", "1.0mm 미만") · SKY 1=맑음 3=구름많음 4=흐림 · resultCode "00"=OK, "03"=NO_DATA · 10,000 calls/day dev | `DATA_GO_KR_SERVICE_KEY` | Forecast ≠ observation; issue time ≠ target time |
@@ -20,6 +20,32 @@ Last verified: 2026-08-30 KST. Recheck official terms immediately before activat
 | T1-detail | Official event category name + description | same KorService2 | `categoryCode2` (contentTypeId=15, cat1, cat2 → `{code,name}`; cached in `tourapi_category_codes`, one lookup per unresolved cat2 group, ≤3/run) · `detailCommon2` (contentId → `overview`, `homepage` anchor HTML, addr1/addr2, tel; fetched ONCE per contentId by the daily collector, marked by `detail_retrieved_at`, ≤12/run) · list fields cat1/cat2/cat3, addr2, tel stored from the same `searchFestival2` response at zero extra calls · worst case 1+3+12 = 16 calls/day | same data.go.kr key | Only the provider's own words are shown (deterministic HTML strip + word-boundary excerpt); no description is ever generated or guessed; the browser and `/api/live/summary` never call TourAPI |
 
 No paid API, paid data, paid fallback or runtime LLM is approved. A source without verified commercial and automated-use terms remains disabled.
+
+## S1 integrated population + realtime commercial contract (2026-09-02)
+
+GitHub Actions run `33622942959` executed the manual read-only `PROBE` path
+against the Production Seoul secret. It made exactly one request for each of
+`POI003`, `POI007`, and `POI068`; all three returned HTTP success,
+`INFO-000`, a population array, a commercial object, the required commercial
+level/time fields, the category array, and published payment count/range
+fields. The probe printed structural booleans only. It received no D1 token,
+persisted nothing, and did not print an authenticated URL or any commercial
+value.
+
+The recurring collector now uses the same integrated `citydata` response for
+both products, so normal request volume remains three calls/run (288/day at 96
+runs, up to 576/day with the existing one retry per failed area). Population
+keeps source ID `SEOUL_CITYDATA_PPLTN`; domestic-card commercial activity uses
+the independent source ID `SEOUL_CITYDATA_CMRCL`. Their parser, changed-only
+table, collector run, source health, and partial-failure status are independent
+even though they share one transport request.
+
+`LIVE_CMRCL_STTS` is Seoul-published Shinhan Card domestic-consumer activity.
+KORETAIL does not label it total sales, POS sales, foreign spend, tourist
+spend, or store revenue. Provider-suppressed payment values remain `null`, are
+never converted to zero, and do not delete last-good data. Category and
+demographic arrays are contract-checked but not retained because this product
+slice does not consume them.
 
 ## A4-T2 and A5 — verified contracts (2026-08-30)
 

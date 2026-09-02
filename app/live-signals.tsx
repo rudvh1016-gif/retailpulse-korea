@@ -23,6 +23,17 @@ interface LiveRealtime {
   freshness: "LIVE" | "STALE";
 }
 
+export interface LiveCommercial {
+  commercialLevel: string;
+  paymentCount: number | null;
+  paymentAmountMin: number | null;
+  paymentAmountMax: number | null;
+  observedAt: string;
+  retrievedAt: string;
+  qualityStatus: string;
+  freshness: "LIVE" | "STALE";
+}
+
 interface LiveWeatherRow {
   targetAt: string;
   precipitationProbability: number | null;
@@ -87,6 +98,7 @@ export interface LiveObservedPoint {
 
 interface LiveAreaBlock {
   realtime: LiveRealtime | null;
+  commercial: LiveCommercial | null;
   realtimeForecast: LiveRealtimeForecast[];
   weather: LiveWeatherRow[];
   events: LiveEventRow[];
@@ -269,6 +281,13 @@ const text = {
   // estimate of how many people are in the area right now.
   currentPopulation: { ko: "현재 추정 인구", en: "Estimated population now", zh: "当前推定人口", ja: "現在の推定人口" },
   notCumulative: { ko: "현재 시점 추정 범위 · 오늘 누적 방문객 아님", en: "estimated range at this moment, not today's cumulative visitors", zh: "当前时点推定范围 · 非今日累计访客", ja: "現時点の推定範囲 · 本日の累計来訪者ではありません" },
+  commercial: { ko: "현재 소비 분위기", en: "Current spending activity", zh: "当前消费活跃度", ja: "現在の消費動向" },
+  commercialDisclaimer: {
+    ko: "신한카드 내국인 소비 기준 · 전수 매출 아님",
+    en: "Shinhan Card domestic-consumer activity · not total sales",
+    zh: "基于新韩卡韩国境内消费者活动 · 非全量销售额",
+    ja: "新韓カードの国内消費者活動基準 · 売上全数ではありません",
+  },
   weather: { ko: "날씨", en: "Weather", zh: "天气", ja: "天気" },
   rainChance: { ko: "강수확률 최대", en: "max rain chance", zh: "最大降水概率", ja: "降水確率 最大" },
   humidity: { ko: "습도", en: "humidity", zh: "湿度", ja: "湿度" },
@@ -942,6 +961,37 @@ function formatKrwCompact(lang: Lang, amount: number): string {
   return `${Math.round(eok).toLocaleString(airportLocale(lang))}${unit}`;
 }
 
+export interface CommercialSignalRow {
+  key: "commercial";
+  label: string;
+  value: string;
+  note: string;
+  state: "LIVE" | "STALE";
+}
+
+/** Truthful OA-21285 row; suppressed amounts are omitted, never zero-filled. */
+export function buildCommercialSignalRow(
+  lang: Lang,
+  commercial: LiveCommercial | null | undefined,
+  generatedAt: string,
+): CommercialSignalRow | null {
+  if (!commercial?.commercialLevel.trim()) return null;
+  const hasRange = commercial.paymentAmountMin !== null
+    && commercial.paymentAmountMax !== null
+    && Number.isFinite(commercial.paymentAmountMin)
+    && Number.isFinite(commercial.paymentAmountMax);
+  const range = hasRange
+    ? ` · ₩${commercial.paymentAmountMin!.toLocaleString(airportLocale(lang))}–₩${commercial.paymentAmountMax!.toLocaleString(airportLocale(lang))}`
+    : "";
+  return {
+    key: "commercial",
+    label: text.commercial[lang],
+    value: `${commercial.commercialLevel}${range}`,
+    note: `${text.sourceSeoul[lang]} · ${formatHumanFreshness(commercial.observedAt, generatedAt, lang, "observed")} · ${text.commercialDisclaimer[lang]}`,
+    state: commercial.freshness,
+  };
+}
+
 export default function LiveSignals({ lang, area, date = null }: { lang: Lang; area: AreaId; date?: string | null }) {
   const summary = useLiveSummary(date);
   if (!summary) return null;
@@ -954,7 +1004,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     passengerForecastRetrievedAt: null,
     forecastCoverage: { all: "UNAVAILABLE" as const, byTerminal: {} },
   };
-  const hasArea = Boolean(block && (block.realtime || block.realtimeForecast?.length || block.foreignPresence || block.weather.length || block.events.length || block.sales));
+  const hasArea = Boolean(block && (block.realtime || block.commercial || block.realtimeForecast?.length || block.foreignPresence || block.weather.length || block.events.length || block.sales));
   const hasArrival = arrival.todayExpectedPassengersTotal !== null
     || arrival.nextExpectedTimeBand !== null
     || arrival.peakExpectedTimeBand !== null;
@@ -985,6 +1035,9 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       state: block.realtime.freshness,
     });
   }
+
+  const commercialRow = buildCommercialSignalRow(lang, block?.commercial, summary.generatedAt);
+  if (commercialRow) rows.push(commercialRow);
 
   if (block?.foreignPresence) {
     const productId = block.foreignPresence.productVersion.split(":", 1)[0] || "OA-23018";

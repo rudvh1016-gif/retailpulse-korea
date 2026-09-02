@@ -15,7 +15,9 @@ name: Collect Realtime Signals
 #                                   every 1-2 minutes; 15 minutes is a
 #                                   deliberately lighter Phase-1 cadence, not
 #                                   an attempt to match that refresh rate.
-#   seoul_realtime (S1)      1 call per target area (3 areas) = 3 calls/run,
+#   seoul_realtime (S1)      Integrated citydata population + Shinhan domestic-
+#                             consumer commercial activity from the SAME call:
+#                             1 call per target area (3 areas) = 3 calls/run,
 #                             up to 6 with one retry per area. 96 runs/day =
 #                             288 typical / 576 worst-case calls/day. Seoul
 #                             Open Data does not publish one official
