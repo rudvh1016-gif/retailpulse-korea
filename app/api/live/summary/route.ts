@@ -35,27 +35,29 @@ const CONGESTION_TERMINALS = ["T1", "T2"] as const;
 const DATE_PICKER_DAYS = 21;
 
 /**
- * "Which of the last N days hold data?" as N bounded existence probes.
+ * "Does this one day hold data?" as a single bounded existence probe.
  *
  * The old form was `SELECT DISTINCT substr(col, 1, 10) … ORDER BY day DESC
  * LIMIT 21`, which had to visit every historical row to learn the distinct
  * days — a full scan of a forever-growing table, on every request, just to
- * populate a picker. Asking each candidate day whether any row exists is the
- * same answer for a fixed cost: N index seeks that stop at the first match.
+ * populate a picker. Asking whether any row exists in one day's range is the
+ * same answer for a fixed cost: an index seek that stops at the first match,
+ * measured at exactly one row read per day on Production.
  *
- * The window is the 21 days the picker can show, so a day older than that is
- * no longer offered. For a source that collects continuously these are the
- * same set; the difference only appears after a gap longer than the window,
- * where the old form would have offered a stale day the product cannot render
- * meaningfully anyway.
+ * One statement per day, not one statement for all of them. Joining the 21
+ * probes with UNION ALL into a single 63-parameter statement is what shipped
+ * first, and D1 rejects that statement outright — on the Workers binding and
+ * on the REST endpoint alike. Because safeAll turns a failing statement into
+ * an empty list, the failure was invisible: every day list came back empty and
+ * the date picker silently offered nothing while the endpoint answered 200.
+ * The probes are therefore sent as a batch of single-day statements, which is
+ * one round trip and the same total rows read.
  */
-function existingDaysSql(table: string, column: string, days: readonly string[], filter = ""): string {
-  // `filter` supplies the index's leading column so each probe is a range seek
+function dayExistsSql(table: string, column: string, filter = ""): string {
+  // `filter` supplies the index's leading column so the probe is a range seek
   // that stops at the first row, rather than a scan of the whole index.
   const where = filter ? `${filter} AND ` : "";
-  return days
-    .map(() => `SELECT ? AS day WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${where}${column} >= ? AND ${column} < ?)`)
-    .join(" UNION ALL ");
+  return `SELECT ? AS day WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${where}${column} >= ? AND ${column} < ?)`;
 }
 
 /**
@@ -246,17 +248,19 @@ export async function GET(request: Request) {
     // Which KST days actually hold data, so the date picker can offer only
     // days that exist instead of inviting the reader into an empty screen.
     const pickerDays = Array.from({ length: DATE_PICKER_DAYS }, (_, index) => shiftKstDay(kstToday, -index));
-    const dayProbeBinds = pickerDays.flatMap((day) => [day, day, shiftKstDay(day, 1)]);
-    const flightDateRows = await safeAll<Row>(async () => (await client.prepare(
-      existingDaysSql("airport_flights", "scheduled_at", pickerDays, "direction = 'departure'"),
-    ).bind(...dayProbeBinds).all<Row>()).results ?? []);
+    const probeDays = async (table: string, column: string, filter = "") => {
+      const sql = dayExistsSql(table, column, filter);
+      const results = await client.batch<Row>(
+        pickerDays.map((day) => client.prepare(sql).bind(day, day, shiftKstDay(day, 1))),
+      );
+      return results.flatMap((result) => result.results ?? []);
+    };
+    const flightDateRows = await safeAll<Row>(() => probeDays("airport_flights", "scheduled_at", "direction = 'departure'"));
     const forecastDateRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT DISTINCT target_date AS day FROM airport_passenger_forecast
       WHERE direction = 'departure' AND is_aggregate = 1 ORDER BY day DESC LIMIT 21`,
     ).all<Row>()).results ?? []);
-    const observedDateRows = await safeAll<Row>(async () => (await client.prepare(
-      existingDaysSql("seoul_realtime_area", "observed_at", pickerDays),
-    ).bind(...dayProbeBinds).all<Row>()).results ?? []);
+    const observedDateRows = await safeAll<Row>(() => probeDays("seoul_realtime_area", "observed_at"));
     const dayList = (rows: Row[]) => rows
       .map((row) => String(row.day ?? ""))
       .filter((day) => isValidKstDay(day))

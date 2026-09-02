@@ -184,3 +184,35 @@ test("the read-budget measurement only ever reads", () => {
     );
   }
 });
+
+/**
+ * The date-picker probes must stay one statement per day.
+ *
+ * Production, 2026-09-02: the probes shipped as one 21-way UNION ALL carrying
+ * 63 bound parameters. D1 rejects that statement — on the Workers binding and
+ * on the REST endpoint alike — and because safeAll turns a failing statement
+ * into an empty list, nothing surfaced: /api/live/summary answered 200 while
+ * dateAvailability.airportFlights and .seoulObserved were both empty and the
+ * date picker silently offered no days. Sent as a batch of single-day
+ * statements the same probes cost exactly one row read each.
+ *
+ * This test fails if the probes are ever recombined into one statement.
+ */
+test("the date-picker probes are one statement per day, sent as a batch", () => {
+  const source = readFileSync("app/api/live/summary/route.ts", "utf8");
+  const builder = /function dayExistsSql\([^)]*\): string \{[\s\S]*?\n\}/.exec(source);
+  assert.ok(builder, "expected a dayExistsSql builder");
+  assert.ok(
+    !/UNION ALL/.test(builder[0]),
+    "the day probe must be a single statement; joining days with UNION ALL is what D1 rejects",
+  );
+  assert.equal(
+    (builder[0].match(/SELECT \? AS day/g) ?? []).length,
+    1,
+    "the builder must emit exactly one probe",
+  );
+  assert.ok(
+    /client\.batch<Row>\(\s*pickerDays\.map\(/.test(source),
+    "the per-day probes must be sent through client.batch, not one statement at a time",
+  );
+});
