@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable @next/next/no-img-element -- Editorial photography is served directly from the Worker asset bundle; no image CDN is provisioned. */
 
 import { useEffect, useMemo, useState } from "react";
 import { checklistPhaseLabels, checklistPhaseOrder, type IndustryId, industryProfiles } from "../lib/industry-guidance";
@@ -379,9 +378,6 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
                 <h1 id="hero-title">{t.hero.split("\n").map((line) => <span key={line}>{line}</span>)}</h1>
                 <p className="hero-line">{t.sub}</p>
               </div>
-              <figure className="hero-visual">
-                <img src="/assets/seoul-hangang.jpeg" alt={localText(lang, { ko: "석양 아래 한강과 남산서울타워가 보이는 서울 전경", en: "Seoul skyline with the Han River and N Seoul Tower at sunset", zh: "夕阳下可见汉江与南山首尔塔的首尔全景", ja: "夕暮れの漢江と南山ソウルタワーを望むソウルの風景" })} width="1200" height="1800" fetchPriority="high" />
-              </figure>
             </section>
 
             <DateNavigator lang={lang} date={serviceDate} onChange={setServiceDate} />
@@ -933,11 +929,6 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
           <p>{section.body}</p>
         </section>)}
       </div>
-
-      <figure className="about-visual">
-        <img src="/assets/seoul-hanok.jpeg" alt={localText(lang, { ko: "한옥 지붕 너머로 남산서울타워가 보이는 서울 풍경", en: "N Seoul Tower seen beyond traditional hanok rooftops", zh: "韩屋屋顶后方可见南山首尔塔的首尔风景", ja: "韓屋の屋根越しに南山ソウルタワーを望むソウルの風景" })} width="1080" height="1920" loading="lazy" />
-        <figcaption>SEOUL</figcaption>
-      </figure>
 
       <div className="about-actions">
         <button onClick={onSeoul}>{localText(lang, { ko: "서울 화면 보기", en: "Open Seoul", zh: "查看首尔页面", ja: "ソウル画面を見る" })} ↗</button>

@@ -30,7 +30,6 @@ const names = {
   seongsu: { ko: "성수", en: "Seongsu", zh: "圣水", ja: "聖水" },
 } as const;
 
-const localeName: Record<SeoLocale, string> = { ko: "한국어", en: "English", zh: "简体中文", ja: "日本語" };
 
 export function pageTitle(locale: SeoLocale, slug?: SeoSlug) {
   if (!slug) return {
@@ -96,8 +95,7 @@ export function buildMetadata(locale: SeoLocale, slug?: SeoSlug): Metadata {
     openGraph: {
       title, description, url: path, siteName: "KORETAIL", type: "website",
       locale: locale === "ko" ? "ko_KR" : locale === "zh" ? "zh_CN" : locale === "ja" ? "ja_JP" : "en_US",
-      images: [{ url: "/assets/retailpulse-korea-og.jpg", width: 1200, height: 630, alt: `${localeName[locale]} · KORETAIL` }],
     },
-    twitter: { card: "summary_large_image", title, description, images: ["/assets/retailpulse-korea-og.jpg"] },
+    twitter: { card: "summary", title, description },
   };
 }

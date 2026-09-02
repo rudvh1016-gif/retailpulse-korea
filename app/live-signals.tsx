@@ -250,6 +250,11 @@ const text = {
     ja: "すべて公式機関が発表した値です。シグナルは売上や来訪者数ではなく、各行に出典と基準時刻を併記しています。",
   },
   realtime: { ko: "실시간 활동", en: "Live activity", zh: "实时活动", ja: "リアルタイム活動" },
+  // The metric has to name itself. "96,000–98,000명" beside a bare "실시간 활동"
+  // reads to most people as today's visitor count; it is the provider's
+  // estimate of how many people are in the area right now.
+  currentPopulation: { ko: "현재 추정 인구", en: "Estimated population now", zh: "当前推定人口", ja: "現在の推定人口" },
+  notCumulative: { ko: "현재 시점 추정 범위 · 오늘 누적 방문객 아님", en: "estimated range at this moment, not today's cumulative visitors", zh: "当前时点推定范围 · 非今日累计访客", ja: "現時点の推定範囲 · 本日の累計来訪者ではありません" },
   weather: { ko: "날씨", en: "Weather", zh: "天气", ja: "天気" },
   rainChance: { ko: "강수확률 최대", en: "max rain chance", zh: "最大降水概率", ja: "降水確率 最大" },
   humidity: { ko: "습도", en: "humidity", zh: "湿度", ja: "湿度" },
@@ -404,6 +409,8 @@ const airportTodayText = {
   gatesNote: { ko: "출발편이 많이 배정된 게이트 순위입니다. 출국장 대기시간과는 다른 정보입니다.", en: "Gates ranked by tracked departures. This is separate from checkpoint waiting time.", zh: "按出发航班数排名的登机口，与出境区等候时间不同。", ja: "出発便数で並べたゲートです。出国場の待ち時間とは別の情報です。" },
   noGateList: { ko: "게이트 정보 범위가 충분하지 않아 순위를 표시하지 않습니다.", en: "Gate coverage is insufficient to show a reliable ranking.", zh: "登机口数据覆盖不足，暂不显示排名。", ja: "ゲート情報の範囲が十分でないため、順位を表示しません。" },
   longest: { ko: "현재 가장 긴 대기", en: "Longest current wait", zh: "当前最长等候", ja: "現在最も長い待ち" },
+  showAllCheckpoints: { ko: "전체 출국장 보기", en: "Show all checkpoints", zh: "查看全部出境检查口", ja: "すべての出国場を表示" },
+  showLongestOnly: { ko: "가장 긴 대기만 보기", en: "Show longest wait only", zh: "仅显示最长等候", ja: "最も長い待ちのみ表示" },
   forecastTitle: { ko: "공식 예상 출국객 흐름", en: "Official expected passenger flow", zh: "官方预计出境客流", ja: "公式予想出国者の流れ" },
   partialBody: { ko: "공식 예상 데이터의 일부 시간대가 누락되어 하루 전체 합계와 피크는 표시하지 않습니다.", en: "Some official time bands are missing, so the full-day total and peak are not shown.", zh: "部分官方时段数据缺失，因此不显示全天合计与高峰。", ja: "公式予測の一部時間帯が欠けているため、1日全体の合計とピークは表示しません。" },
   unavailableBody: { ko: "이 날짜의 공식 예상 시간대가 없습니다. 실제 출발 운항과 현재 출국장 정보는 계속 확인할 수 있습니다.", en: "No official forecast bands exist for this date. Physical departures and current checkpoints remain available.", zh: "该日期没有官方预计时段数据，仍可查看实际出发航班和当前出境区信息。", ja: "この日付の公式予測時間帯はありません。実出発便と現在の出国場情報は引き続き確認できます。" },
@@ -457,7 +464,12 @@ function localizeAreaBrief(brief: AreaCurrentBrief, lang: Lang): { headline: str
     const level = congestionLabels[brief.current.congestionLevel]?.[lang] ?? String(brief.current.congestionLevel);
     const range = `${brief.current.populationMin.toLocaleString(locale)}–${brief.current.populationMax.toLocaleString(locale)}`;
     const people = lang === "en" ? " people" : lang === "ko" ? "명" : "人";
-    headline = brief.current.freshness === "STALE" ? `${areaBriefText.stale[lang]} · ${level} · ${range}${people}` : `${level} · ${range}${people}`;
+    // The metric is named before the number here too: a bare range next to a
+    // congestion word is the exact ambiguity this phase set out to remove.
+    const metric = lang === "ko" ? "현재 추정 인구" : lang === "en" ? "Estimated population now"
+      : lang === "zh" ? "当前推定人口" : "現在の推定人口";
+    const measured = `${metric} ${range}${people} · ${level}`;
+    headline = brief.current.freshness === "STALE" ? `${areaBriefText.stale[lang]} · ${measured}` : measured;
     freshness = brief.current.observedAt;
   }
 
@@ -677,6 +689,10 @@ export function DateScopeNote({ lang, date }: { lang: Lang; date: string | null 
 }
 
 export function AirportTodaySummary({ lang, terminal = "all", date = null }: { lang: Lang; terminal?: "all" | "T1" | "T2"; date?: string | null }) {
+  // Eight full-height checkpoint rows per terminal cost more vertical space
+  // than they earn: what a reader needs first is the one queue that is longest
+  // right now. The rest stay one keystroke away rather than always on screen.
+  const [showAllCheckpoints, setShowAllCheckpoints] = useState(false);
   const summary = useLiveSummary(date);
   const airport = summary?.airport;
   if (!airport) return <div className="airport-unavailable" role="status"><strong>{airportTodayText.unavailable[lang]}</strong></div>;
@@ -782,7 +798,12 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         const busiest = airport.currentBusiestDepartureHallByTerminal?.[terminalId];
         return <div className="airport-checkpoint-terminal" key={terminalId}>
           <h4><span>{terminalId}</span>{airportTodayText.scope[lang][terminalId as "T1" | "T2"] ?? terminalId}</h4>
-          <div>{rankedCheckpoints[terminalId].map((row, index) => {
+          <div>{(showAllCheckpoints
+            ? rankedCheckpoints[terminalId]
+            : rankedCheckpoints[terminalId].filter((row) => (busiest ? busiest.zone === row.zone : false))
+                .concat(busiest ? [] : rankedCheckpoints[terminalId].slice(0, 1))
+          ).map((row) => {
+            const index = rankedCheckpoints[terminalId].indexOf(row);
             const isBusiest = busiest?.zone === row.zone;
             return <article className={isBusiest ? "is-busiest" : ""} key={`${terminalId}-${row.zone}`}>
               <span className="checkpoint-rank">{String(index + 1).padStart(2, "0")}</span>
@@ -793,6 +814,13 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
           })}</div>
         </div>;
       })}</div> : <p className="airport-empty-line">{airportTodayText.unavailable[lang]}</p>}
+      {checkpointTerminals.length > 0 && <button
+        type="button"
+        className="airport-checkpoint-toggle"
+        aria-expanded={showAllCheckpoints}
+        aria-controls="airport-checkpoints-title"
+        onClick={() => setShowAllCheckpoints((open) => !open)}
+      >{showAllCheckpoints ? airportTodayText.showLongestOnly[lang] : airportTodayText.showAllCheckpoints[lang]}</button>}
       <p className="airport-detail-foot">{airportTodayText.nowOnly[lang]}</p>
     </section>
 
@@ -844,6 +872,26 @@ export function HomeTodayBrief({ lang, selected, onSelect, date = null }: { lang
       {copy.freshness && <small>{formatHumanFreshness(copy.freshness, summary.generatedAt, lang, "observed")}</small>}
     </button>)}</div>
   </section>;
+}
+
+/** `9/1–9/30` from the official start and end dates; start alone when there is no end. */
+function formatEventPeriod(event: { eventStart: string; eventEnd: string | null }): string {
+  const short = (value: string) => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+    return match ? `${Number(match[2])}/${Number(match[3])}` : "";
+  };
+  const start = short(event.eventStart);
+  if (!start) return "";
+  const end = event.eventEnd ? short(event.eventEnd) : "";
+  return end && end !== start ? `${start}\u2013${end}` : start;
+}
+
+/** Official distance from the area centre, rounded to a unit a reader can use. */
+function formatEventDistance(lang: Lang, event: { distanceM: number | null }): string {
+  if (event.distanceM === null || !Number.isFinite(event.distanceM)) return "";
+  const metres = Math.round(event.distanceM);
+  if (metres >= 1000) return `${(metres / 1000).toFixed(1)}km`;
+  return `${metres}m`;
 }
 
 function formatPeopleRange(lang: Lang, min: number, max: number): string {
@@ -905,9 +953,9 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     const level = congestionLabels[block.realtime.congestionLevel]?.[lang] ?? block.realtime.congestionLabel;
     rows.push({
       key: "realtime",
-      label: text.realtime[lang],
-      value: `${level} · ${formatPeopleRange(lang, block.realtime.populationMin, block.realtime.populationMax)}`,
-      note: `${text.sourceSeoul[lang]} · ${formatHumanFreshness(block.realtime.observedAt, summary.generatedAt, lang, "observed")}`,
+      label: text.currentPopulation[lang],
+      value: `${formatPeopleRange(lang, block.realtime.populationMin, block.realtime.populationMax)}${text.foreignPeople[lang]} · ${level}`,
+      note: `${text.sourceSeoul[lang]} · ${formatHumanFreshness(block.realtime.observedAt, summary.generatedAt, lang, "observed")} · ${text.notCumulative[lang]}`,
       state: block.realtime.freshness,
     });
   }
@@ -960,7 +1008,11 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       key: "events",
       label: text.events[lang],
       value: `${block.eventCount ?? block.events.length}${lang === "en" ? " " : ""}${text.eventCount[lang]} · ${block.events[0].title}`,
-      note: text.sourceKto[lang],
+      // A title alone does not say when the event runs or how far away it is,
+      // and both are already collected. Nothing here is derived or guessed:
+      // an absent field is simply left out rather than filled in.
+      note: [formatEventPeriod(block.events[0]), formatEventDistance(lang, block.events[0]), text.sourceKto[lang]]
+        .filter(Boolean).join(" · "),
     });
   }
 
