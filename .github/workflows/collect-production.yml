@@ -7,6 +7,7 @@ name: Collect Production Data
 #   airport_scheduled (A3)   future schedule refresh; independent model.
 #   events (T1)               daily festival/event refresh.
 #   seoul_foreign (S2)       delayed official short-stay foreign presence;
+#   subway_ridership (S5)    official daily station boarding/alighting totals;
 #                             daily catches newly published data quickly.
 # Cron is 06:07 KST (= 21:07 UTC previous day; KST is UTC+9 with no DST).
 # :07 is an off-minute offset per docs/ENGINEERING_DIRECTION.md to avoid
@@ -41,7 +42,7 @@ jobs:
       - run: npm run collect:production
         env:
           ENABLE_PRODUCTION_COLLECTOR: "true"
-          RPK_PRODUCTION_SOURCES: airport_recent,airport_enrichment,airport_scheduled,events,seoul_foreign,foreign_purpose_mobility
+          RPK_PRODUCTION_SOURCES: airport_recent,airport_enrichment,airport_scheduled,events,seoul_foreign,foreign_purpose_mobility,subway_ridership
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
           SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}

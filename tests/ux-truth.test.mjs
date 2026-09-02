@@ -71,6 +71,21 @@ test("foreign purpose mobility is historical, dated, and never presented as visi
   assert.doesNotMatch(mobilityBlock, /LIVE|today|오늘|visitor count|매출액/);
 });
 
+test("subway signal preserves boarding/alighting truth in all four languages", () => {
+  for (const phrase of [
+    "최근 역 승하차 흐름", "Recent station boarding and alighting",
+    "近期地铁站进出站客流", "最近の駅乗降動向",
+    "실시간·고유 방문객·상권 방문객 수 아님",
+    "not real-time, unique people, or commercial-area visitors",
+  ]) assert.ok(signals.includes(phrase), `${phrase} must remain visible`);
+  const areaSignals = signals.match(/export default function LiveSignals[\s\S]*?\nconst flightBoardText/)?.[0] ?? "";
+  const subwayBlock = areaSignals.match(/if \(block\?\.subwayRidership\) \{([\s\S]*?)\n  \}/)?.[1] ?? "";
+  assert.match(subwayBlock, /subway\.referenceDate/);
+  assert.match(subwayBlock, /subway\.alightingCount/);
+  assert.match(subwayBlock, /subway\.boardingCount/);
+  assert.doesNotMatch(subwayBlock, /visitor count|방문객 수.*\$\{|LIVE|realtime/i);
+});
+
 /**
  * A4 is an observation of one checkpoint. A5 is an official forecast. The
  * product must never let one read as the other.
