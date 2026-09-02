@@ -317,6 +317,7 @@ test("A5 arrival forecast replaces Seoul departure rows with compact, coverage-s
     "서울 소비 수요의 선행 참고 신호", "실제 서울 방문객 수 아님",
   ]) assert.match(signals, new RegExp(phrase));
   assert.doesNotMatch(areaSignals, /실시간 입국객|현재 입국객|실제 입국객|실측 입국객/);
+  assert.doesNotMatch(route, /\bfetch\(/, "the summary must reuse D1 and never add an airport provider call");
 });
 
 test("airport detail UI uses editorial rows, friendly checkpoints and honest partial-state copy", async () => {
