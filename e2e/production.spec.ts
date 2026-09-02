@@ -185,6 +185,14 @@ const SUMMARY_FIXTURE = {
       T2: [{ targetStartAt: "2026-08-31T16:00:00+09:00", targetEndAt: "2026-08-31T17:00:00+09:00", expectedPassengers: 2900 }],
     },
     forecastCoverage: { all: "COMPLETE", byTerminal: { T1: "COMPLETE", T2: "COMPLETE" } },
+    arrivalForecast: {
+      todayExpectedPassengersTotal: 41300,
+      todayExpectedPassengersByTerminal: { T1: 25700, T2: 15600 },
+      nextExpectedTimeBand: { targetStartAt: "2026-08-31T14:00:00+09:00", targetEndAt: "2026-08-31T15:00:00+09:00", expectedPassengers: 3250 },
+      peakExpectedTimeBand: { targetStartAt: "2026-08-31T18:00:00+09:00", targetEndAt: "2026-08-31T19:00:00+09:00", expectedPassengers: 4500 },
+      passengerForecastRetrievedAt: "2026-08-31T09:05:00+09:00",
+      forecastCoverage: { all: "COMPLETE", byTerminal: { T1: "COMPLETE", T2: "COMPLETE" } },
+    },
     scheduled: [],
     passengerForecast: [],
   },
@@ -321,6 +329,46 @@ test("home gives deterministic current briefs for all three Seoul areas", async 
   await expect(briefs.getByRole("button", { name: /홍대/ })).toContainText("인근 행사 1건 · 일반축제 · 홍대 거리공연");
   await expect(briefs.getByRole("button", { name: /성수/ })).toContainText("최근 관측 지연");
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+});
+
+test("Seoul renders compact arrival forecasts in four languages and no departure rows", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  const expected = {
+    ko: ["오늘 예상 입국객", "다음 시간대 예상 입국객", "오늘 예상 입국 피크"],
+    en: ["Expected arrivals today", "Next-band expected arrivals", "Expected arrival peak today"],
+    zh: ["今日预计入境旅客", "下一时段预计入境旅客", "今日预计入境高峰"],
+    ja: ["今日の予想入国者数", "次の時間帯の予想入国者数", "今日の予想入国ピーク"],
+  } as const;
+
+  for (const [locale, labels] of Object.entries(expected)) {
+    await page.goto(`/${locale}`);
+    await page.locator(".home-area-briefs button").first().click();
+    const rows = page.locator(".live-signal-rows");
+    for (const label of labels) await expect(rows.getByText(label, { exact: true })).toBeVisible();
+    await expect(rows).toContainText(locale === "ko" ? "41,300명" : "41,300");
+  }
+
+  await page.goto("/ko");
+  await page.locator(".home-area-briefs button").first().click();
+  const rows = page.locator(".live-signal-rows");
+  await expect(rows).toContainText("서울 소비 수요의 선행 참고 신호");
+  await expect(rows).toContainText("실제 서울 방문객 수 아님");
+  await expect(rows).not.toContainText("현재 출국장 대기");
+  await expect(rows).not.toContainText("예상 출국 승객");
+});
+
+test("partial arrival coverage hides the whole-day total and peak", async ({ page }) => {
+  const partial = JSON.parse(JSON.stringify(SUMMARY_FIXTURE));
+  partial.airport.arrivalForecast.todayExpectedPassengersTotal = null;
+  partial.airport.arrivalForecast.peakExpectedTimeBand = null;
+  partial.airport.arrivalForecast.forecastCoverage = { all: "PARTIAL", byTerminal: { T1: "PARTIAL", T2: "COMPLETE" } };
+  await page.route("**/api/live/summary*", routeSummary(partial));
+  await page.goto("/ko");
+  await page.locator(".home-area-briefs button").first().click();
+  const rows = page.locator(".live-signal-rows");
+  await expect(rows.getByText("오늘 예상 입국객", { exact: true })).toHaveCount(0);
+  await expect(rows.getByText("오늘 예상 입국 피크", { exact: true })).toHaveCount(0);
+  await expect(rows.getByText("다음 시간대 예상 입국객", { exact: true })).toBeVisible();
 });
 
 /**

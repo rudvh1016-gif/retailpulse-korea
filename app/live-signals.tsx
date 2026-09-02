@@ -1076,8 +1076,10 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       key: "arrival_today",
       label: text.arrivalToday[lang],
       value: `${Math.round(arrival.todayExpectedPassengersTotal).toLocaleString(airportLocale(lang))}${text.arrivalUnit[lang]}`,
-      note: arrivalNote,
-      detail: terminalBreakdown ? `${text.arrivalTerminalBreakdown[lang]} · ${terminalBreakdown}` : undefined,
+      note: [
+        arrivalNote,
+        terminalBreakdown ? `${text.arrivalTerminalBreakdown[lang]} · ${terminalBreakdown}` : null,
+      ].filter(Boolean).join(" · "),
     });
   }
 
