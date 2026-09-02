@@ -10,7 +10,15 @@ export interface SeoulCitydataContractProbeResult {
   categoryArray: boolean;
   paymentCountPublished: boolean;
   paymentAmountRangePublished: boolean;
+  areaIdentityFields: boolean;
+  commercialTimeFormat: boolean;
+  paymentCountShape: NumericFieldShape;
+  paymentAmountMinShape: NumericFieldShape;
+  paymentAmountMaxShape: NumericFieldShape;
+  paymentRangeOrdered: boolean;
 }
+
+type NumericFieldShape = "number" | "numeric-string" | "suppressed" | "other";
 
 interface ProbeOptions {
   apiKey: string;
@@ -29,6 +37,28 @@ function objectRecord(value: unknown): Record<string, unknown> | null {
 
 function present(value: unknown): boolean {
   return value !== null && value !== undefined && String(value).trim() !== "" && String(value).trim() !== "*";
+}
+
+function numericFieldShape(value: unknown): NumericFieldShape {
+  if (value === null || value === undefined) return "suppressed";
+  if (typeof value === "string" && (!value.trim() || value.trim() === "*")) return "suppressed";
+  if (typeof value === "number") return Number.isFinite(value) && value >= 0 ? "number" : "other";
+  if (typeof value !== "string") return "other";
+  const parsed = Number(value.replaceAll(",", "").trim());
+  return Number.isFinite(parsed) && parsed >= 0 ? "numeric-string" : "other";
+}
+
+function numericFieldValue(value: unknown): number | null {
+  const shape = numericFieldShape(value);
+  if (shape !== "number" && shape !== "numeric-string") return null;
+  return Number(typeof value === "string" ? value.replaceAll(",", "").trim() : value);
+}
+
+function kstMinuteFormat(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/);
+  if (!match) return false;
+  return !Number.isNaN(Date.parse(`${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6] ?? "00"}+09:00`));
 }
 
 /**
@@ -60,6 +90,12 @@ export async function probeSeoulCitydataContracts(options: ProbeOptions): Promis
         categoryArray: false,
         paymentCountPublished: false,
         paymentAmountRangePublished: false,
+        areaIdentityFields: false,
+        commercialTimeFormat: false,
+        paymentCountShape: "other",
+        paymentAmountMinShape: "other",
+        paymentAmountMaxShape: "other",
+        paymentRangeOrdered: false,
       };
       write(JSON.stringify(failed));
       throw new Error(`seoul_contract_probe_failed_${poiCode}_REQUEST_ERROR`);
@@ -71,6 +107,8 @@ export async function probeSeoulCitydataContracts(options: ProbeOptions): Promis
     const citydata = objectRecord(root?.CITYDATA);
     const population = Array.isArray(citydata?.LIVE_PPLTN_STTS) ? citydata.LIVE_PPLTN_STTS : [];
     const commercial = objectRecord(citydata?.LIVE_CMRCL_STTS);
+    const paymentAmountMin = numericFieldValue(commercial?.AREA_SH_PAYMENT_AMT_MIN);
+    const paymentAmountMax = numericFieldValue(commercial?.AREA_SH_PAYMENT_AMT_MAX);
     const result: SeoulCitydataContractProbeResult = {
       poiCode,
       httpOk: response.ok,
@@ -86,6 +124,12 @@ export async function probeSeoulCitydataContracts(options: ProbeOptions): Promis
       paymentCountPublished: present(commercial?.AREA_SH_PAYMENT_CNT),
       paymentAmountRangePublished: present(commercial?.AREA_SH_PAYMENT_AMT_MIN)
         && present(commercial?.AREA_SH_PAYMENT_AMT_MAX),
+      areaIdentityFields: Boolean(citydata && present(citydata.AREA_CD) && present(citydata.AREA_NM)),
+      commercialTimeFormat: kstMinuteFormat(commercial?.CMRCL_TIME),
+      paymentCountShape: numericFieldShape(commercial?.AREA_SH_PAYMENT_CNT),
+      paymentAmountMinShape: numericFieldShape(commercial?.AREA_SH_PAYMENT_AMT_MIN),
+      paymentAmountMaxShape: numericFieldShape(commercial?.AREA_SH_PAYMENT_AMT_MAX),
+      paymentRangeOrdered: paymentAmountMin !== null && paymentAmountMax !== null && paymentAmountMin <= paymentAmountMax,
     };
     results.push(result);
     write(JSON.stringify(result));

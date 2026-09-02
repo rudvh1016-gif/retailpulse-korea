@@ -95,10 +95,16 @@ test("Seoul integrated contract probe reports structure without leaking keys or 
   assert.deepEqual(result.map((entry) => entry.poiCode), ["POI003", "POI007", "POI068"]);
   assert.equal(result.every((entry) => entry.officialCode === "INFO-000" && entry.populationBlock && entry.commercialBlock), true);
   assert.equal(result.every((entry) => entry.commercialRequiredFields && entry.categoryArray), true);
+  assert.equal(result.every((entry) => entry.areaIdentityFields && entry.commercialTimeFormat), true);
+  assert.equal(result.every((entry) => entry.paymentCountShape === "numeric-string"), true);
+  assert.equal(result.every((entry) => entry.paymentAmountMinShape === "numeric-string"), true);
+  assert.equal(result.every((entry) => entry.paymentAmountMaxShape === "numeric-string"), true);
+  assert.equal(result.every((entry) => entry.paymentRangeOrdered), true);
 
   const diagnostic = output.join("\n");
   assert.match(diagnostic, /POI003/);
   assert.match(diagnostic, /commercialRequiredFields/);
+  assert.match(diagnostic, /paymentCountShape/);
   assert.doesNotMatch(diagnostic, new RegExp(secret));
   for (const sensitive of sensitiveValues) assert.doesNotMatch(diagnostic, new RegExp(sensitive));
   assert.doesNotMatch(diagnostic, /openapi\.seoul\.go\.kr|CITYDATA|AREA_CMRCL_LVL/);
