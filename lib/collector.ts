@@ -796,13 +796,23 @@ export async function collectWeatherForecasts(
           statements.push(env.DB.prepare(`INSERT INTO weather_forecast (
               id, source_id, area, issued_at, target_at, retrieved_at,
               precipitation_probability, temperature_tenth_c, condition_code,
+              humidity_percent, wind_speed_tenth_mps,
+              daily_min_temperature_tenth_c, daily_max_temperature_tenth_c,
+              precipitation_amount_raw, precipitation_amount_kind, precipitation_amount_tenth_mm,
+              snow_amount_raw, snow_amount_kind, snow_amount_tenth_cm,
+              sky_code, precipitation_type_code,
               schema_version, quality_status, source_hash
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(source_id, area, issued_at, target_at) DO NOTHING`)
             .bind(
               await sha256({ sourceId, area: areaId, issuedAt: row.issuedAt, targetAt: row.targetAt }),
               sourceId, areaId, row.issuedAt, row.targetAt, row.retrievedAt,
               row.precipitationProbability, row.temperatureTenthC, row.conditionCode,
+              row.humidityPercent, row.windSpeedTenthMps,
+              row.dailyMinTemperatureTenthC, row.dailyMaxTemperatureTenthC,
+              row.precipitationAmountRaw, row.precipitationAmountKind, row.precipitationAmountTenthMm,
+              row.snowAmountRaw, row.snowAmountKind, row.snowAmountTenthCm,
+              row.skyCode, row.precipitationTypeCode,
               row.schemaVersion, row.qualityStatus, row.sourceHash,
             ));
         }

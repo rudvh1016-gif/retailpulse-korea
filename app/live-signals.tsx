@@ -28,6 +28,13 @@ interface LiveWeatherRow {
   precipitationProbability: number | null;
   temperatureTenthC: number | null;
   conditionCode: string | null;
+  humidityPercent?: number | null;
+  windSpeedTenthMps?: number | null;
+  dailyMinTemperatureTenthC?: number | null;
+  dailyMaxTemperatureTenthC?: number | null;
+  /** Only ever set when KMA gave an exact amount; a bound stays null here. */
+  precipitationAmountTenthMm?: number | null;
+  precipitationAmountKind?: string | null;
 }
 
 interface LiveRealtimeForecast {
@@ -245,6 +252,11 @@ const text = {
   realtime: { ko: "실시간 활동", en: "Live activity", zh: "实时活动", ja: "リアルタイム活動" },
   weather: { ko: "날씨", en: "Weather", zh: "天气", ja: "天気" },
   rainChance: { ko: "강수확률 최대", en: "max rain chance", zh: "最大降水概率", ja: "降水確率 最大" },
+  humidity: { ko: "습도", en: "humidity", zh: "湿度", ja: "湿度" },
+  wind: { ko: "바람", en: "wind", zh: "风速", ja: "風速" },
+  rainfall: { ko: "강수량", en: "rainfall", zh: "降水量", ja: "降水量" },
+  dayLow: { ko: "최저", en: "low", zh: "最低", ja: "最低" },
+  dayHigh: { ko: "최고", en: "high", zh: "最高", ja: "最高" },
   events: { ko: "주변 행사", en: "Nearby events", zh: "周边活动", ja: "周辺イベント" },
   eventCount: { ko: "건 진행·예정", en: "running or upcoming", zh: "项进行或即将举行", ja: "件 開催・予定" },
   sales: { ko: "상권 과거 흐름", en: "Commercial history", zh: "商圈历史", ja: "商圏の過去推移" },
@@ -919,6 +931,27 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     if (condition && conditionLabels[condition]) parts.push(conditionLabels[condition][lang]);
     if (firstTemp !== null && firstTemp !== undefined) parts.push(`${(firstTemp / 10).toFixed(0)}°C`);
     parts.push(`${text.rainChance[lang]} ${maxPop}%`);
+
+    // Richer categories from the same KMA response. Each is shown only where
+    // the provider actually published it: a missing category is left out
+    // rather than rendered as a zero, and an amount appears only when KMA gave
+    // an exact one — "1.0mm 미만" is a bound, so it stays out of the reader's
+    // numbers and remains in D1 as the raw official record.
+    const firstOf = (pick: (row: LiveWeatherRow) => number | null | undefined) =>
+      next12.map(pick).find((value) => value !== null && value !== undefined);
+    const humidity = firstOf((row) => row.humidityPercent);
+    const wind = firstOf((row) => row.windSpeedTenthMps);
+    const rainfall = next12.find((row) => row.precipitationAmountKind === "EXACT"
+      && row.precipitationAmountTenthMm !== null && row.precipitationAmountTenthMm !== undefined);
+    const dayLow = firstOf((row) => row.dailyMinTemperatureTenthC);
+    const dayHigh = firstOf((row) => row.dailyMaxTemperatureTenthC);
+
+    if (humidity !== undefined) parts.push(`${text.humidity[lang]} ${humidity}%`);
+    if (wind !== undefined) parts.push(`${text.wind[lang]} ${(wind / 10).toFixed(1)}m/s`);
+    if (rainfall) parts.push(`${text.rainfall[lang]} ${(rainfall.precipitationAmountTenthMm! / 10).toFixed(1)}mm`);
+    if (dayLow !== undefined) parts.push(`${text.dayLow[lang]} ${(dayLow / 10).toFixed(0)}°C`);
+    if (dayHigh !== undefined) parts.push(`${text.dayHigh[lang]} ${(dayHigh / 10).toFixed(0)}°C`);
+
     rows.push({ key: "weather", label: text.weather[lang], value: parts.join(" · "), note: text.sourceKma[lang] });
   }
 

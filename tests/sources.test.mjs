@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync, unlinkSync } from "node:fs";
+import { readdirSync, readFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -52,14 +52,13 @@ class LocalD1Database {
   async batch(statements) { return Promise.all(statements.map((statement) => statement.run())); }
 }
 
-const migrations = [
-  "drizzle/0000_daffy_tempest.sql",
-  "drizzle/0001_crazy_nekra.sql",
-  "drizzle/0002_reflective_martin_li.sql",
-  "drizzle/0003_minor_network.sql",
-  "drizzle/0004_s2_foreign_presence.sql",
-  "drizzle/0005_airport_official_contracts.sql",
-];
+// Read the directory rather than a hardcoded list: a list drifts silently
+// the moment a migration is added, and the tables under test then lack the
+// newest columns while the collector inserts them.
+const migrations = readdirSync("drizzle")
+  .filter((file) => file.endsWith(".sql"))
+  .sort()
+  .map((file) => `drizzle/${file}`);
 
 test("data.go.kr encoded and decoded service keys produce one identical transport encoding", () => {
   const decoded = "sample+/key==";

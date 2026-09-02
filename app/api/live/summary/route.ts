@@ -160,7 +160,15 @@ export async function GET(request: Request) {
     const weatherRows = await safeAll<Row>(async () => (await client.prepare(
       latestPerKey(AREAS, () => `SELECT area, issued_at AS issuedAt, target_at AS targetAt,
         precipitation_probability AS precipitationProbability,
-        temperature_tenth_c AS temperatureTenthC, condition_code AS conditionCode
+        temperature_tenth_c AS temperatureTenthC, condition_code AS conditionCode,
+        humidity_percent AS humidityPercent, wind_speed_tenth_mps AS windSpeedTenthMps,
+        daily_min_temperature_tenth_c AS dailyMinTemperatureTenthC,
+        daily_max_temperature_tenth_c AS dailyMaxTemperatureTenthC,
+        precipitation_amount_raw AS precipitationAmountRaw,
+        precipitation_amount_kind AS precipitationAmountKind,
+        precipitation_amount_tenth_mm AS precipitationAmountTenthMm,
+        snow_amount_raw AS snowAmountRaw, snow_amount_kind AS snowAmountKind,
+        snow_amount_tenth_cm AS snowAmountTenthCm
       FROM weather_forecast
       WHERE area = ? AND issued_at = (SELECT MAX(issued_at) FROM weather_forecast WHERE area = ?)
         AND target_at >= ?
