@@ -36,6 +36,7 @@ import {
   SEOUL_FOREIGN_PRODUCT_VERSION,
   SEOUL_FOREIGN_SOURCE_ID,
 } from "../lib/seoul-foreign";
+import { FOREIGN_PURPOSE_MAPPING_VERSION, FOREIGN_PURPOSE_SOURCE_ID } from "../lib/foreign-purpose-mobility";
 import { resolveProductionDatabaseConfig } from "./production-database";
 
 /** Cloudflare's documented D1 Free daily allowance (rows read). */
@@ -203,6 +204,28 @@ const HOT_QUERIES: HotQuery[] = [
     table: "seoul_foreign_presence_area",
   },
   {
+    name: "foreignPurposeMobility",
+    sql: latestPerKey(AREAS, () => `SELECT area, purpose, movement_value AS movementValue,
+        reference_date AS referenceDate, retrieved_at AS retrievedAt,
+        dataset_id AS datasetId, mapping_version AS mappingVersion,
+        quality_status AS qualityStatus
+      FROM seoul_foreign_purpose_mobility
+      WHERE area = ? AND source_id = ? AND mapping_version = ?
+        AND record_origin = 'OFFICIAL_HISTORICAL' AND quality_status = 'VALID'
+        AND reference_date = (
+          SELECT MAX(reference_date) FROM seoul_foreign_purpose_mobility
+          WHERE area = ? AND source_id = ? AND mapping_version = ?
+            AND record_origin = 'OFFICIAL_HISTORICAL' AND quality_status = 'VALID'
+        )
+      ORDER BY purpose LIMIT 2`),
+    binds: AREAS.flatMap((area) => [
+      area, FOREIGN_PURPOSE_SOURCE_ID, FOREIGN_PURPOSE_MAPPING_VERSION,
+      area, FOREIGN_PURPOSE_SOURCE_ID, FOREIGN_PURPOSE_MAPPING_VERSION,
+    ]),
+    guard: "FROM seoul_foreign_purpose_mobility",
+    table: "seoul_foreign_purpose_mobility",
+  },
+  {
     name: "congestion",
     sql: latestPerKey(CONGESTION_TERMINALS, () => `SELECT terminal, zone, wait_time_minutes AS waitTimeMinutes, wait_time_raw AS waitTimeRaw,
         waiting_count AS waitingCount, observed_at AS observedAt, retrieved_at AS retrievedAt
@@ -282,6 +305,7 @@ const EXPECTED_INDEXES = [
   "seoul_realtime_area_area_observed_idx",
   "seoul_realtime_area_observed_idx",
   "seoul_realtime_commercial_area_observed_idx",
+  "seoul_foreign_purpose_mobility_area_reference_idx",
   "seoul_realtime_forecast_area_issue_idx",
   "weather_forecast_area_issue_idx",
   "weather_forecast_issued_area_idx",

@@ -16,6 +16,7 @@
  *   airport_passenger_forecast  A5     collectAirportPassengerForecast
  *   seoul_realtime               S1    collectSeoulRealtime
  *   seoul_foreign                 S2   collectSeoulForeignPresence
+ *   foreign_purpose_mobility      S4   collectForeignPurposeMobility
  *   seoul_sales                   S3   collectEstimatedSales
  *   weather                       W1   collectWeatherForecasts
  *   events                        T1   collectTourismEvents
@@ -34,6 +35,7 @@ import {
   collectAirportFlightEnrichment,
   collectAirportPassengerForecast,
   collectEstimatedSales,
+  collectForeignPurposeMobility,
   collectScheduledAirportFlights,
   collectSeoulForeignPresence,
   collectSeoulRealtime,
@@ -132,6 +134,7 @@ const DEFAULT_RUNNERS = {
   },
   seoul_realtime: (env: CollectorEnv) => collectSeoulRealtime(env),
   seoul_foreign: (env: CollectorEnv, now: Date) => collectSeoulForeignPresence(env, now),
+  foreign_purpose_mobility: (env: CollectorEnv, now: Date) => collectForeignPurposeMobility(env, now),
   seoul_sales: (env: CollectorEnv, now: Date) => collectEstimatedSales(env, now),
   weather: (env: CollectorEnv, now: Date) => collectWeatherForecasts(env, now),
   /**

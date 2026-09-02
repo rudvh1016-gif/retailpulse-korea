@@ -136,6 +136,19 @@ test("an official realtime commercial observation is independently cacheable are
   }), true);
 });
 
+test("an official historical mobility aggregate is independently cacheable area data", () => {
+  assert.equal(isCacheableSummary({
+    sources: [{ sourceId: "SEOUL_FOREIGN_PURPOSE_MOBILITY", status: "OFFICIAL_HISTORICAL" }],
+    areas: {
+      myeongdong: {
+        realtime: null,
+        weather: [],
+        foreignPurposeMobility: { referenceDate: "2026-07-31", shopping: 2772, tourism: 388.5 },
+      },
+    },
+  }), true);
+});
+
 /**
  * `safeAll` turns a failing statement into an empty list so one broken query
  * cannot take the page down. The cost is that a partly dead D1 still answers

@@ -28,6 +28,7 @@ export const DIAGNOSTIC_SOURCE_IDS = {
   airport_passenger_forecast: "INCHEON_PASSENGER_FORECAST",
   seoul_realtime: "SEOUL_CITYDATA_PPLTN",
   seoul_foreign: "SEOUL_SHORT_STAY_FOREIGN_LIVING_POPULATION",
+  foreign_purpose_mobility: "SEOUL_FOREIGN_PURPOSE_MOBILITY",
   seoul_sales: "SEOUL_ESTIMATED_SALES",
   weather: "KMA_VILAGE_FCST",
   events: "KTO_TOURAPI_EVENT",

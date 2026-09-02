@@ -41,7 +41,7 @@ jobs:
       - run: npm run collect:production
         env:
           ENABLE_PRODUCTION_COLLECTOR: "true"
-          RPK_PRODUCTION_SOURCES: airport_recent,airport_enrichment,airport_scheduled,events,seoul_foreign
+          RPK_PRODUCTION_SOURCES: airport_recent,airport_enrichment,airport_scheduled,events,seoul_foreign,foreign_purpose_mobility
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
           SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
