@@ -67,24 +67,43 @@ test("airport current observation and official forecast stay separately named", 
  * scrollbar that forced ate into the fixed height and produced a second,
  * vertical scrollbar; the bars were clipped between them.
  */
-test("the hourly chart cannot reintroduce a minimum width it must overflow", () => {
-  const bars = styles.slice(styles.indexOf(".airport-timeline-bars {"));
-  assert.doesNotMatch(bars.slice(0, 400), /flex: 1 0 42px|min-width: 42px/,
-    "a rigid per-band basis is what overflowed the column");
-  assert.match(bars.slice(0, 400), /grid-auto-columns: minmax\(0, 1fr\)/,
-    "shrinkable columns have no minimum width to overflow");
+test("the chart row is laid out flat in its own single-column container", () => {
+  // The chart markup has one child, the band row. A two-column template with
+  // a fixed 190px first track put that row into the 190px track: 24 bands in a
+  // strip the width of a label. The container must never regain a fixed
+  // first track it has no occupant for.
+  const timeline = styles.split("\n").find((line) => line.startsWith(".airport-timeline {"));
+  assert.ok(timeline, "the timeline container rule must exist");
+  assert.doesNotMatch(timeline, /grid-template-columns: *190px/, "no fixed label track for a child that does not exist");
+  assert.doesNotMatch(styles, /\.airport-timeline \{[^}]*grid-template-columns: 190px/);
+});
+
+test("bands keep a readable minimum width and the row scrolls sideways instead of squeezing", () => {
+  const bars = styles.split("\n").find((line) => line.startsWith(".airport-timeline-bars {"));
+  assert.ok(bars);
+  assert.match(bars, /grid-auto-columns: minmax\(44px, 1fr\)/, "a band narrower than its own value label is unreadable");
+  assert.match(bars, /overflow-x: auto/, "24 official bands are kept; a narrow viewport scrolls, never drops or squeezes them");
+  assert.doesNotMatch(bars, /flex: 1 0 42px/);
 });
 
 test("a fixed height is never combined with horizontal scrolling", () => {
   // This pairing is the exact cause of the nested vertical scrollbar: the
   // scrollbar consumes height the box was not given room for.
-  const mobileRule = styles.split("\n").find((line) => line.includes("grid-auto-columns: minmax(38px, 1fr)"));
-  assert.ok(mobileRule, "the mobile chart rule must exist");
-  assert.match(mobileRule, /overflow-x: auto/);
-  assert.match(mobileRule, /height: auto/,
-    "the scrollable mobile chart must not also have a fixed height");
-  assert.match(styles, /\.airport-timeline-bars p \{ height: 145px; \}/,
-    "the band height moves onto the bands themselves instead");
+  const bars = styles.split("\n").find((line) => line.startsWith(".airport-timeline-bars {"));
+  assert.match(bars, /height: auto/, "the scrolling row must not also have a fixed height");
+  assert.match(styles, /\.airport-timeline-bars p \{ position: relative; min-width: 0; height: 158px/,
+    "the band height lives on the bands themselves instead");
+});
+
+test("the current-time marker is drawn for today only and never rewrites past bands", () => {
+  assert.match(signals, /summary\?\.dayRelation === "TODAY"/, "a past or future date has no 'now' inside it");
+  assert.match(signals, /nowBandStart === row\.targetStartAt \? "now" : ""/);
+  assert.match(signals, /data-now-label=/);
+  for (const label of ["현재 시각", "当前时间", "現在時刻"]) assert.ok(signals.includes(label), `${label} must exist`);
+  // The marker is a class and a pseudo-element; the bar itself is untouched,
+  // so a band behind the marker keeps its forecast styling.
+  assert.match(styles, /\.airport-timeline-bars p\.now::before/);
+  assert.doesNotMatch(styles, /p\.now i \{/, "past bars must not be restyled as observations");
 });
 
 test("the content width system exists and is used rather than one page-wide cap", () => {

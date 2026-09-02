@@ -315,10 +315,14 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .airport-gates li > span { color: #aaa; font-size: 9px; }
 .airport-gates li strong { font-size: 14px; font-weight: 550; }
 .airport-gates li b { font-size: 13px; font-weight: 600; }
-.airport-timeline { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 30px; padding: 28px 0; border-bottom: 1px solid var(--ink); }
-.airport-timeline > div:first-child { align-self: center; }
-.airport-timeline > div:first-child strong { font-size: 18px; }
-.airport-timeline > div:first-child p { margin: 6px 0 0; color: var(--muted); font-size: 9px; }
+/*
+ * One column. The chart markup has a single child — the band row — and a
+ * two-column template with a fixed 190px first track put that whole row into
+ * the 190px track: 24 bands squeezed into a strip the width of a label,
+ * every hour and value overprinting the next. The label track had no
+ * occupant, so it is gone.
+ */
+.airport-timeline { display: block; min-width: 0; padding: 28px 0; border-bottom: 1px solid var(--ink); }
 /*
  * The 24 hourly bands used to be laid out as `flex: 1 0 42px` with a 5px gap
  * inside a fixed 158px box with `overflow-x: auto`. That needs at least
@@ -331,14 +335,19 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
  * the chart simply fits whatever column it is given, and the box grows with
  * its content rather than trapping it.
  */
-.airport-timeline-bars { min-width: 0; height: 158px; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); align-items: stretch; gap: 5px; }
-.airport-timeline-bars p { min-width: 0; height: 100%; margin: 0; display: grid; grid-template-rows: 1fr auto auto; gap: 5px; align-items: end; text-align: center; }
+.airport-timeline-bars { position: relative; min-width: 0; height: auto; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(44px, 1fr); align-items: stretch; gap: 5px; overflow-x: auto; overscroll-behavior-x: contain; padding: 14px 0 6px; }
+.airport-timeline-bars p { position: relative; min-width: 0; height: 158px; margin: 0; display: grid; grid-template-rows: 1fr auto auto; gap: 5px; align-items: end; text-align: center; }
+/*
+ * Current-time marker, today only. A thin rule on the left edge of the band
+ * the clock is inside, with a small label above it, so the reader sees which
+ * bands are already behind them. Past bands keep their forecast styling: they
+ * remain forecasts, not observations.
+ */
+.airport-timeline-bars p.now::before { content: ""; position: absolute; left: -3px; top: -8px; bottom: 0; border-left: 1.5px dashed var(--ink); pointer-events: none; }
+.airport-timeline-bars p.now::after { content: attr(data-now-label); position: absolute; left: -3px; top: -14px; padding: 1px 5px; background: var(--ink); color: var(--paper); font-size: 7px; font-weight: 650; letter-spacing: .04em; white-space: nowrap; border-radius: 2px; pointer-events: none; }
 .airport-timeline-bars i { width: 100%; max-width: 48px; min-height: 2px; justify-self: center; display: block; background: #cfcdc6; border-top: 1px solid var(--muted); }
 .airport-timeline-bars .peak i { background: var(--ink); border-color: var(--ink); }
-/* An hour label that refuses to wrap would reintroduce the minimum width the
- * grid was chosen to avoid, so only every third tick is drawn on narrow
- * viewports; the value stays available on the band itself. */
-.airport-timeline-bars span { color: var(--muted); font-size: 7px; white-space: nowrap; overflow: hidden; }
+.airport-timeline-bars span { color: var(--muted); font-size: 7px; white-space: nowrap; }
 .airport-timeline-bars b { font-size: 8px; font-weight: 550; }
 .airport-forecast-state { min-height: 150px; padding: 30px 0; display: grid; grid-template-columns: minmax(210px, .7fr) minmax(280px, 1fr); gap: 12px 32px; align-content: center; border-bottom: 1px solid var(--ink); }
 .airport-forecast-state strong { font-size: 20px; letter-spacing: -.025em; }
@@ -380,15 +389,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .airport-checkpoint-terminal article { padding: 13px 0; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 10px; }
 .airport-checkpoint-terminal article > p { grid-column: 2 / -1; text-align: left; }
 .airport-gates li { padding: 0; }
-.airport-timeline { grid-template-columns: 1fr; gap: 20px; }
-/*
- * Mobile keeps all 24 official bands rather than dropping any, so the row is
- * deliberately scrollable sideways. The height must stay auto here: a fixed
- * height plus a horizontal scrollbar is exactly what produced the nested
- * vertical scrollbar this change removes, so the bar height lives on the
- * bands themselves.
- */
-.airport-timeline-bars { height: auto; overflow-x: auto; overscroll-behavior-x: contain; grid-auto-columns: minmax(38px, 1fr); padding-bottom: 6px; }
 .airport-timeline-bars p { height: 145px; }
 .airport-forecast-state { min-height: 0; padding: 24px 0; grid-template-columns: 1fr; gap: 10px; }
 .airport-forecast-state strong { font-size: 17px; }

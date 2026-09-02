@@ -405,6 +405,7 @@ const airportTodayText = {
   waitLabel: { ko: "대기시간", en: "Wait", zh: "等候时间", ja: "待ち時間" },
   peopleLabel: { ko: "대기인원", en: "People", zh: "等候人数", ja: "待機人数" },
   forecastOnly: { ko: "공식 예상 승객 · 실제 대기인원 아님", en: "Official expected passengers · not actual waiting", zh: "官方预计旅客 · 非实际等候人数", ja: "公式予想旅客 · 実際の待機人数ではありません" },
+  nowMarker: { ko: "현재 시각", en: "Now", zh: "当前时间", ja: "現在時刻" },
   scope: {
     ko: { all: "전체 공항", T1: "제1터미널", T2: "제2터미널" },
     en: { all: "All terminals", T1: "Terminal 1", T2: "Terminal 2" },
@@ -739,6 +740,13 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   ) as Record<string, LiveCongestionRow[]>;
   const checkpointTerminals = Object.keys(rankedCheckpoints).filter((key) => isAll || key === terminal);
   const maxBand = Math.max(1, ...timeline.map((row) => row.expectedPassengers));
+  // The current-time marker exists only for TODAY. A past or future service
+  // date has no "now" inside it, and drawing one would invent a moment in a
+  // day the clock is not in. Bands the marker has passed stay forecasts.
+  const nowBandStart = summary?.dayRelation === "TODAY"
+    ? timeline.find((row) => Date.parse(row.targetStartAt) <= Date.parse(nowIso) && Date.parse(nowIso) < Date.parse(row.targetEndAt))?.targetStartAt ?? null
+    : null;
+  const nowLabel = `${airportTodayText.nowMarker[lang]} ${formatKstClock(nowIso)}`;
   const waitUnit = { ko: "분", en: " min", zh: "分钟", ja: "分" }[lang];
   const waitText = (row: LiveCongestionRow) => {
     if (row.waitTimeRaw) return /분|min|分钟|分/i.test(row.waitTimeRaw) ? row.waitTimeRaw : `${row.waitTimeRaw}${waitUnit}`;
@@ -786,8 +794,12 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     <section className="airport-detail-section airport-forecast" aria-labelledby="airport-forecast-title">
       <div className="airport-detail-head"><div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-forecast-title">{airportTodayText.forecastTitle[lang]}</h3></div><p>{airportTodayText.forecastOnly[lang]}</p></div>
       {forecastStatus === "COMPLETE" && timeline.length > 0
-        ? <div className="airport-timeline" role="img" aria-label={`${airportTodayText.forecastTitle[lang]}. ${airportTodayText.forecastOnly[lang]}`}>
-          <div className="airport-timeline-bars">{timeline.map((row) => <p key={row.targetStartAt} className={peak?.targetStartAt === row.targetStartAt ? "peak" : ""}>
+        ? <div className="airport-timeline" role="img" aria-label={`${airportTodayText.forecastTitle[lang]}. ${airportTodayText.forecastOnly[lang]}${nowBandStart ? `. ${nowLabel}` : ""}`}>
+          <div className="airport-timeline-bars">{timeline.map((row) => <p
+            key={row.targetStartAt}
+            className={[peak?.targetStartAt === row.targetStartAt ? "peak" : "", nowBandStart === row.targetStartAt ? "now" : ""].filter(Boolean).join(" ")}
+            data-now-label={nowBandStart === row.targetStartAt ? nowLabel : undefined}
+          >
             <i style={{ height: `${Math.max(4, row.expectedPassengers / maxBand * 100)}%` }} />
             <span>{formatKstClock(row.targetStartAt)}</span>
             <b>{Math.round(row.expectedPassengers).toLocaleString(numberLocale)}</b>
