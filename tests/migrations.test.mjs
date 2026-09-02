@@ -16,6 +16,7 @@ const migrations = [
   "drizzle/0007_d1_read_budget_indexes.sql",
   "drizzle/0008_weather_enrichment.sql",
   "drizzle/0009_event_official_detail.sql",
+  "drizzle/0010_seoul_realtime_commercial.sql",
 ];
 
 function applyMigrations(database) {
@@ -47,6 +48,7 @@ test("D1 migrations apply and prediction rows remain immutable", () => {
       "foreign_presence",
       "seoul_foreign_presence_dong",
       "seoul_foreign_presence_area",
+      "seoul_realtime_commercial",
       "airport_congestion",
       "airport_passenger_forecast",
       "predictions",
@@ -72,6 +74,20 @@ test("D1 migrations apply and prediction rows remain immutable", () => {
     assert.deepEqual(
       database.prepare("PRAGMA index_info(seoul_foreign_presence_area_unique)").all().map(({ name }) => name),
       ["source_id", "product_version", "mapping_version", "area", "reference_at"],
+    );
+
+    assert.deepEqual(columns("seoul_realtime_commercial"), [
+      "id", "source_id", "record_origin", "area", "area_code", "area_name",
+      "commercial_level", "payment_count", "payment_amount_min", "payment_amount_max",
+      "observed_at", "retrieved_at", "freshness", "schema_version", "quality_status", "source_hash",
+    ]);
+    assert.deepEqual(
+      database.prepare("PRAGMA index_info(seoul_realtime_commercial_unique)").all().map(({ name }) => name),
+      ["source_id", "area", "observed_at"],
+    );
+    assert.deepEqual(
+      database.prepare("PRAGMA index_info(seoul_realtime_commercial_area_observed_idx)").all().map(({ name }) => name),
+      ["area", "observed_at"],
     );
 
     // A4-T2 additive column: existing airport_congestion rows/queries must

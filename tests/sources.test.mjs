@@ -21,6 +21,7 @@ import {
   normalizeAirportCongestion,
   normalizeEstimatedSales,
   normalizeSeoulRealtime,
+  normalizeSeoulRealtimeCommercial,
   normalizeTourismEvent,
   normalizeWeatherForecast,
 } from "../lib/source-adapters.ts";
@@ -333,6 +334,31 @@ const seoulRealtimeFixture = (overrides = {}) => ({
   RESULT: { "RESULT.CODE": "INFO-000", "RESULT.MESSAGE": "정상 처리되었습니다." },
 });
 
+// Sanitized integrated OA-21285 CITYDATA structure verified by the bounded
+// 2026-09-02 Production-secret contract probe (INFO-000 for all three POIs).
+const seoulIntegratedFixture = (commercialOverrides = {}) => ({
+  RESULT: { "RESULT.CODE": "INFO-000", "RESULT.MESSAGE": "정상 처리되었습니다." },
+  CITYDATA: {
+    AREA_NM: "명동 관광특구",
+    AREA_CD: "POI003",
+    LIVE_PPLTN_STTS: [seoulRealtimeFixture()["SeoulRtd.citydata_ppltn"][0]],
+    LIVE_CMRCL_STTS: {
+      AREA_CMRCL_LVL: "활발",
+      AREA_SH_PAYMENT_CNT: "12,345",
+      AREA_SH_PAYMENT_AMT_MIN: 123456,
+      AREA_SH_PAYMENT_AMT_MAX: 234567,
+      CMRCL_RSB: [{ CMRCL_NM: "패션", CMRCL_SH_PAYMENT_CNT: "123" }],
+      CMRCL_MALE_RATE: 43.2,
+      CMRCL_FEMALE_RATE: 56.8,
+      CMRCL_10_RATE: 5.1,
+      CMRCL_PERSONAL_RATE: 96.4,
+      CMRCL_CORPORATION_RATE: 3.6,
+      CMRCL_TIME: "2026-09-02 12:05",
+      ...commercialOverrides,
+    },
+  },
+});
+
 // Sanitized fixture using the exact field names returned by the authenticated
 // 2026-08-27 smoke run against VwsmTrdarSelngQq (INFO-000).
 const estimatedSalesRow = (overrides = {}) => ({
@@ -369,32 +395,111 @@ test("seoul realtime adapter separates observation from published forecast", asy
   assert.notEqual(changed.observed.sourceHash, first.observed.sourceHash);
 });
 
-test("seoul realtime collector is idempotent and isolates a failing area", async (context) => {
+test("Seoul realtime commercial adapter preserves official values and semantic time", async () => {
+  const citydata = seoulIntegratedFixture().CITYDATA;
+  const first = await normalizeSeoulRealtimeCommercial(citydata, "myeongdong", "2026-09-02T03:06:00Z");
+  const second = await normalizeSeoulRealtimeCommercial(citydata, "myeongdong", "2026-09-02T03:36:00Z");
+
+  assert.equal(first.sourceId, "SEOUL_CITYDATA_CMRCL");
+  assert.equal(first.recordOrigin, "LIVE");
+  assert.equal(first.areaCode, "POI003");
+  assert.equal(first.areaName, "명동 관광특구");
+  assert.equal(first.commercialLevel, "활발");
+  assert.equal(first.paymentCount, 12345);
+  assert.equal(first.paymentAmountMin, 123456);
+  assert.equal(first.paymentAmountMax, 234567);
+  assert.equal(first.observedAt, "2026-09-02T12:05:00+09:00");
+  assert.equal(first.qualityStatus, "VALID");
+  assert.equal(first.sourceHash, second.sourceHash, "retrieval time must not create a semantic change");
+
+  const changed = await normalizeSeoulRealtimeCommercial(
+    seoulIntegratedFixture({ AREA_CMRCL_LVL: "한산" }).CITYDATA,
+    "myeongdong",
+    "2026-09-02T03:06:00Z",
+  );
+  assert.notEqual(changed.sourceHash, first.sourceHash);
+});
+
+test("Seoul realtime commercial adapter preserves suppressed optional payments as null", async () => {
+  const record = await normalizeSeoulRealtimeCommercial(
+    seoulIntegratedFixture({
+      AREA_SH_PAYMENT_CNT: "*",
+      AREA_SH_PAYMENT_AMT_MIN: null,
+      AREA_SH_PAYMENT_AMT_MAX: "",
+    }).CITYDATA,
+    "myeongdong",
+    "2026-09-02T03:06:00Z",
+  );
+
+  assert.equal(record.paymentCount, null);
+  assert.equal(record.paymentAmountMin, null);
+  assert.equal(record.paymentAmountMax, null);
+  assert.equal(record.qualityStatus, "PARTIAL");
+});
+
+test("Seoul realtime commercial adapter rejects missing required level or time", async () => {
+  await assert.rejects(
+    normalizeSeoulRealtimeCommercial(
+      seoulIntegratedFixture({ AREA_CMRCL_LVL: "" }).CITYDATA,
+      "myeongdong",
+      "2026-09-02T03:06:00Z",
+    ),
+    /SCHEMA/,
+  );
+  await assert.rejects(
+    normalizeSeoulRealtimeCommercial(
+      seoulIntegratedFixture({ CMRCL_TIME: null }).CITYDATA,
+      "myeongdong",
+      "2026-09-02T03:06:00Z",
+    ),
+    /SCHEMA/,
+  );
+});
+
+test("Seoul realtime collector uses one integrated request per area and isolates commercial failure", async (context) => {
   const { database, databasePath } = openDatabase("seoul-realtime");
   const originalFetch = globalThis.fetch;
   context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
 
+  const requests = [];
   globalThis.fetch = async (input) => {
     const url = String(input);
-    if (url.includes("POI007")) return new Response("gateway error", { status: 500 });
-    const poi = url.includes("POI003") ? "POI003" : "POI068";
-    return Response.json(seoulRealtimeFixture({ AREA_CD: poi, AREA_NM: poi === "POI003" ? "명동 관광특구" : "성수카페거리" }));
+    requests.push(url);
+    const poi = url.includes("POI003") ? "POI003" : url.includes("POI007") ? "POI007" : "POI068";
+    const fixture = seoulIntegratedFixture();
+    fixture.CITYDATA.AREA_CD = poi;
+    fixture.CITYDATA.AREA_NM = poi === "POI003" ? "명동 관광특구" : poi === "POI007" ? "홍대 관광특구" : "성수카페거리";
+    fixture.CITYDATA.LIVE_PPLTN_STTS[0] = {
+      ...fixture.CITYDATA.LIVE_PPLTN_STTS[0],
+      AREA_CD: poi,
+      AREA_NM: fixture.CITYDATA.AREA_NM,
+    };
+    if (poi === "POI007") fixture.CITYDATA.LIVE_CMRCL_STTS = null;
+    return Response.json(fixture);
   };
 
   const env = { DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: "fixture" };
   const first = await collectSeoulRealtime(env);
   assert.equal(first.status, "PARTIAL");
   assert.ok(first.records > 0);
-  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_realtime_area").get().count, 2);
-  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_realtime_forecast").get().count, 4);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_realtime_area").get().count, 3);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_realtime_forecast").get().count, 6);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_realtime_commercial").get().count, 2);
+  assert.equal(requests.length, 3);
+  assert.equal(requests.every((url) => url.includes("/json/citydata/1/5/") && !url.includes("citydata_ppltn")), true);
 
   const second = await collectSeoulRealtime(env);
   assert.equal(second.records, 0);
+  assert.equal(requests.length, 6, "each run remains one integrated request per area");
 
-  const health = database.prepare("SELECT status, detail FROM source_health WHERE source_id = ?").get("SEOUL_CITYDATA_PPLTN");
-  assert.equal(health.status, "LIVE");
-  assert.match(health.detail, /hongdae/);
-  assert.doesNotMatch(health.detail, /fixture/);
+  const populationHealth = database.prepare("SELECT status, detail FROM source_health WHERE source_id = ?").get("SEOUL_CITYDATA_PPLTN");
+  assert.equal(populationHealth.status, "LIVE");
+  assert.match(populationHealth.detail, /areas ok 3\/3/);
+
+  const commercialHealth = database.prepare("SELECT status, detail FROM source_health WHERE source_id = ?").get("SEOUL_CITYDATA_CMRCL");
+  assert.equal(commercialHealth.status, "STALE");
+  assert.match(commercialHealth.detail, /hongdae/);
+  assert.doesNotMatch(commercialHealth.detail, /fixture/);
 });
 
 test("estimated sales collector probes quarters, sweeps pages and filters client-side", async (context) => {

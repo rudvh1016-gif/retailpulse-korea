@@ -10,6 +10,7 @@ import {
   normalizeScheduledAirportFlight,
   normalizeEstimatedSales,
   normalizeSeoulRealtime,
+  normalizeSeoulRealtimeCommercial,
   normalizeTourismEvent,
   normalizeTourismEventDetail,
   normalizeWeatherForecast,
@@ -22,6 +23,7 @@ import {
   type CanonicalScheduledAirportFlight,
   type CanonicalEstimatedSales,
   type CanonicalSeoulRealtime,
+  type CanonicalSeoulRealtimeCommercial,
   type CanonicalTourismEvent,
   type CanonicalWeatherForecast,
   type TourismEventDetail,
@@ -405,30 +407,73 @@ function seoulEnvelopeRows(payload: unknown, serviceName: string): Record<string
   return Array.isArray(rows) ? (rows as Record<string, unknown>[]) : [];
 }
 
-// S1 — Seoul real-time city data, one bounded call per target area.
+function seoulIntegratedCitydata(payload: unknown): Record<string, unknown> {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new Error("seoul_citydata_schema");
+  const root = payload as Record<string, unknown>;
+  const result = root.RESULT && typeof root.RESULT === "object" && !Array.isArray(root.RESULT)
+    ? root.RESULT as Record<string, unknown>
+    : {};
+  const code = result["RESULT.CODE"] ?? result.CODE;
+  if (code !== "INFO-000") throw new Error(`seoul_result_${String(code ?? "missing")}`);
+  if (!root.CITYDATA || typeof root.CITYDATA !== "object" || Array.isArray(root.CITYDATA)) {
+    throw new Error("seoul_citydata_schema");
+  }
+  return root.CITYDATA as Record<string, unknown>;
+}
+
+function integratedPopulationRecord(citydata: Record<string, unknown>): Record<string, unknown> {
+  const rows = citydata.LIVE_PPLTN_STTS;
+  if (!Array.isArray(rows) || !rows[0] || typeof rows[0] !== "object" || Array.isArray(rows[0])) {
+    throw new Error("seoul_population_empty");
+  }
+  return {
+    ...(rows[0] as Record<string, unknown>),
+    AREA_CD: citydata.AREA_CD,
+    AREA_NM: citydata.AREA_NM,
+  };
+}
+
+// OA-21285 integrated city data: one bounded call per target area fans out to
+// independently healthy population and domestic-card commercial records.
 export async function collectSeoulRealtime(env: CollectorEnv): Promise<CollectorResult> {
-  const sourceId = "SEOUL_CITYDATA_PPLTN";
+  const populationSourceId = "SEOUL_CITYDATA_PPLTN";
+  const commercialSourceId = "SEOUL_CITYDATA_CMRCL";
   if (!env.SEOUL_OPEN_DATA_KEY) {
-    await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "SEOUL_OPEN_DATA_KEY is not configured");
-    await writeSourceHealth(env.DB, sourceId, "MISSING", "SEOUL_OPEN_DATA_KEY is not configured");
+    for (const sourceId of [populationSourceId, commercialSourceId]) {
+      await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "SEOUL_OPEN_DATA_KEY is not configured");
+      await writeSourceHealth(env.DB, sourceId, "MISSING", "SEOUL_OPEN_DATA_KEY is not configured");
+    }
     return { status: "NEEDS_KEY", records: 0 };
   }
-  const statements: D1PreparedStatement[] = [];
-  let lastObserved: CanonicalSeoulRealtime | undefined;
-  const failures: string[] = [];
-  let written: D1WriteCounts = NO_D1_WRITES;
+
+  const populationStatements: D1PreparedStatement[] = [];
+  const commercialStatements: D1PreparedStatement[] = [];
+  const populationFailures: string[] = [];
+  const commercialFailures: string[] = [];
+  let lastPopulation: CanonicalSeoulRealtime | undefined;
+  let lastCommercial: CanonicalSeoulRealtimeCommercial | undefined;
+
+  const failureDetail = (areaId: AreaId, error: unknown) => `${areaId}: ${safeSourceFailureDetail(error)}`;
   for (const areaId of allAreaIds) {
     const mapping = areaMappings[areaId];
-    const url = new URL(`http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/citydata_ppltn/1/5/${mapping.seoulPoiCode}`);
+    const url = new URL(`http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/citydata/1/5/${mapping.seoulPoiCode}`);
+    let citydata: Record<string, unknown>;
     try {
       const payload = await fetchOfficialJson(url, { timeoutMs: 8_000, retries: 1 });
-      const record = seoulEnvelopeRows(payload, "SeoulRtd.citydata_ppltn")[0];
-      if (!record) throw new Error("seoul_realtime_empty");
-      const retrievedAt = nowIso();
-      const { observed, forecasts } = await normalizeSeoulRealtime(record, areaId, retrievedAt);
-      lastObserved = observed;
+      citydata = seoulIntegratedCitydata(payload);
+    } catch (error) {
+      const detail = failureDetail(areaId, error);
+      populationFailures.push(detail);
+      commercialFailures.push(detail);
+      continue;
+    }
+
+    const retrievedAt = nowIso();
+    try {
+      const { observed, forecasts } = await normalizeSeoulRealtime(integratedPopulationRecord(citydata), areaId, retrievedAt);
+      lastPopulation = observed;
       if (env.DB) {
-        statements.push(env.DB.prepare(`INSERT INTO seoul_realtime_area (
+        populationStatements.push(env.DB.prepare(`INSERT INTO seoul_realtime_area (
             id, source_id, record_origin, area, area_code, area_name,
             congestion_level, congestion_label, population_min, population_max,
             observed_at, retrieved_at, freshness, schema_version, quality_status, source_hash
@@ -443,41 +488,87 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
             source_hash = excluded.source_hash
           WHERE seoul_realtime_area.source_hash <> excluded.source_hash`)
           .bind(
-            await sha256({ sourceId, area: areaId, observedAt: observed.observedAt }),
-            sourceId, observed.recordOrigin, areaId, observed.areaCode, observed.areaName,
+            await sha256({ sourceId: populationSourceId, area: areaId, observedAt: observed.observedAt }),
+            populationSourceId, observed.recordOrigin, areaId, observed.areaCode, observed.areaName,
             observed.congestionLevel, observed.congestionLabel, observed.populationMin, observed.populationMax,
             observed.observedAt, observed.retrievedAt, observed.freshness, observed.schemaVersion,
             observed.qualityStatus, observed.sourceHash,
           ));
         for (const forecast of forecasts) {
-          statements.push(env.DB.prepare(`INSERT INTO seoul_realtime_forecast (
+          populationStatements.push(env.DB.prepare(`INSERT INTO seoul_realtime_forecast (
               id, source_id, area, issued_at, target_at, congestion_level, congestion_label,
               population_min, population_max, retrieved_at, schema_version, quality_status, source_hash
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(source_id, area, issued_at, target_at) DO NOTHING`)
             .bind(
-              await sha256({ sourceId, area: areaId, issuedAt: forecast.issuedAt, targetAt: forecast.targetAt }),
-              sourceId, areaId, forecast.issuedAt, forecast.targetAt, forecast.congestionLevel, forecast.congestionLabel,
+              await sha256({ sourceId: populationSourceId, area: areaId, issuedAt: forecast.issuedAt, targetAt: forecast.targetAt }),
+              populationSourceId, areaId, forecast.issuedAt, forecast.targetAt, forecast.congestionLevel, forecast.congestionLabel,
               forecast.populationMin, forecast.populationMax, forecast.retrievedAt, forecast.schemaVersion,
               forecast.qualityStatus, forecast.sourceHash,
             ));
         }
       }
     } catch (error) {
-      failures.push(`${areaId}: ${error instanceof Error ? redactSeoulUrl(error.message) : "collector_error"}`);
+      populationFailures.push(failureDetail(areaId, error));
+    }
+
+    try {
+      const commercial = await normalizeSeoulRealtimeCommercial(citydata, areaId, retrievedAt);
+      lastCommercial = commercial;
+      if (env.DB) {
+        commercialStatements.push(env.DB.prepare(`INSERT INTO seoul_realtime_commercial (
+            id, source_id, record_origin, area, area_code, area_name,
+            commercial_level, payment_count, payment_amount_min, payment_amount_max,
+            observed_at, retrieved_at, freshness, schema_version, quality_status, source_hash
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(source_id, area, observed_at) DO UPDATE SET
+            commercial_level = excluded.commercial_level,
+            payment_count = excluded.payment_count,
+            payment_amount_min = excluded.payment_amount_min,
+            payment_amount_max = excluded.payment_amount_max,
+            retrieved_at = excluded.retrieved_at,
+            quality_status = excluded.quality_status,
+            source_hash = excluded.source_hash
+          WHERE seoul_realtime_commercial.source_hash <> excluded.source_hash`)
+          .bind(
+            await sha256({ sourceId: commercialSourceId, area: areaId, observedAt: commercial.observedAt }),
+            commercialSourceId, commercial.recordOrigin, areaId, commercial.areaCode, commercial.areaName,
+            commercial.commercialLevel, commercial.paymentCount, commercial.paymentAmountMin, commercial.paymentAmountMax,
+            commercial.observedAt, commercial.retrievedAt, commercial.freshness, commercial.schemaVersion,
+            commercial.qualityStatus, commercial.sourceHash,
+          ));
+      }
+    } catch (error) {
+      commercialFailures.push(failureDetail(areaId, error));
     }
   }
-  if (env.DB && statements.length) written = await runBatches(env.DB, statements);
-  const okCount = allAreaIds.length - failures.length;
-  const detail = `areas ok ${okCount}/${allAreaIds.length}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
-  if (okCount === 0) {
-    await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
-    await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
-    return { status: "ERROR", records: 0 };
-  }
-  await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, okCount, written.changedRows);
-  await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastObserved);
-  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows };
+
+  const populationWritten = env.DB && populationStatements.length ? await runBatches(env.DB, populationStatements) : NO_D1_WRITES;
+  const commercialWritten = env.DB && commercialStatements.length ? await runBatches(env.DB, commercialStatements) : NO_D1_WRITES;
+
+  const finalize = async (
+    sourceId: string,
+    table: string,
+    failures: string[],
+    written: D1WriteCounts,
+    lastRecord: HealthSnapshot | undefined,
+  ): Promise<"SUCCESS" | "PARTIAL" | "ERROR"> => {
+    const okCount = allAreaIds.length - failures.length;
+    const detail = `areas ok ${okCount}/${allAreaIds.length}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
+    const collectorStatus = okCount === allAreaIds.length ? "SUCCESS" : okCount > 0 ? "PARTIAL" : "ERROR";
+    const hasUsable = okCount > 0 || await hasStoredRow(env.DB, `SELECT 1 FROM ${table} LIMIT 1`);
+    const health: SourceHealthStatus = okCount === allAreaIds.length ? "LIVE" : hasUsable ? "STALE" : "ERROR";
+    await writeCollectorStatus(env.DB, sourceId, collectorStatus, detail, okCount, written.changedRows);
+    await writeSourceHealth(env.DB, sourceId, health, detail, lastRecord);
+    return collectorStatus;
+  };
+
+  const populationStatus = await finalize(populationSourceId, "seoul_realtime_area", populationFailures, populationWritten, lastPopulation);
+  const commercialStatus = await finalize(commercialSourceId, "seoul_realtime_commercial", commercialFailures, commercialWritten, lastCommercial);
+  const status = populationStatus === "SUCCESS" && commercialStatus === "SUCCESS"
+    ? "SUCCESS"
+    : populationStatus === "ERROR" && commercialStatus === "ERROR" ? "ERROR" : "PARTIAL";
+  return { status, records: populationWritten.changedRows + commercialWritten.changedRows };
 }
 
 const SEOUL_FOREIGN_PERIOD_LOOKBACK_DAYS = 62;

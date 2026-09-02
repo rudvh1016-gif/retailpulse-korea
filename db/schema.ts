@@ -116,6 +116,28 @@ export const seoulRealtimeForecast = sqliteTable("seoul_realtime_forecast", {
   sourceHash: text("source_hash").notNull(),
 }, (table) => [uniqueIndex("seoul_realtime_forecast_unique").on(table.sourceId, table.area, table.issuedAt, table.targetAt)]);
 
+// OA-21285 — realtime Shinhan Card domestic-consumer activity. This stays
+// separate from population and quarterly modelled sales because suppression,
+// timestamps and truth labels have independent lifecycles.
+export const seoulRealtimeCommercial = sqliteTable("seoul_realtime_commercial", {
+  id: text("id").primaryKey(),
+  sourceId: text("source_id").notNull(),
+  recordOrigin: text("record_origin").notNull(),
+  area: text("area").notNull(),
+  areaCode: text("area_code").notNull(),
+  areaName: text("area_name").notNull(),
+  commercialLevel: text("commercial_level").notNull(),
+  paymentCount: integer("payment_count"),
+  paymentAmountMin: integer("payment_amount_min"),
+  paymentAmountMax: integer("payment_amount_max"),
+  observedAt: text("observed_at").notNull(),
+  retrievedAt: text("retrieved_at").notNull(),
+  freshness: text("freshness").notNull(),
+  schemaVersion: text("schema_version").notNull(),
+  qualityStatus: text("quality_status").notNull(),
+  sourceHash: text("source_hash").notNull(),
+}, (table) => [uniqueIndex("seoul_realtime_commercial_unique").on(table.sourceId, table.area, table.observedAt)]);
+
 // S3 — Seoul commercial-district estimated sales (quarterly modelled values,
 // never POS sales, never foreign spend).
 export const seoulEstimatedSales = sqliteTable("seoul_estimated_sales", {
