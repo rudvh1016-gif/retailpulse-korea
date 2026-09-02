@@ -140,3 +140,47 @@ test("a bare-date range selects exactly the rows the old substr predicate did", 
   assert.deepEqual(byRange, bySubstr, "the range must select exactly the old day set, including the sub-second stamp");
   assert.equal(byRange.length, 3);
 });
+
+/**
+ * The Production read-budget measurement must measure the query the site
+ * actually runs.
+ *
+ * scripts/measure-production-read-budget.ts replays the hot path against
+ * Production D1 and reports each statement's real rows_read. That evidence is
+ * only worth anything while its SQL matches the live route, so every measured
+ * statement carries a `guard` fragment that has to appear verbatim in
+ * app/api/live/summary/route.ts. This test enforces the same contract in CI,
+ * so a route change that leaves the diagnostic behind fails here rather than
+ * producing a confident measurement of a query nobody serves.
+ */
+test("every measured hot-path statement still exists in the live route", () => {
+  const measureSource = readFileSync("scripts/measure-production-read-budget.ts", "utf8");
+  const routeText = readFileSync("app/api/live/summary/route.ts", "utf8");
+  const guards = [...measureSource.matchAll(/^ {4}guard: (`[^`]*`|"(?:[^"\\]|\\.)*"),$/gm)]
+    .map((match) => (match[1].startsWith("`") ? match[1].slice(1, -1) : JSON.parse(match[1])));
+  assert.equal(guards.length, 14, "expected one guard per measured statement");
+  for (const guard of guards) {
+    assert.ok(routeText.includes(guard), `the live route no longer contains: ${guard.slice(0, 80)}`);
+  }
+});
+
+test("the read-budget measurement only ever reads", () => {
+  const measureSource = readFileSync("scripts/measure-production-read-budget.ts", "utf8");
+  // Statement text lives in `sql:` entries and in the two literal statements
+  // the script builds itself; none of them may mutate Production.
+  const statements = [
+    ...[...measureSource.matchAll(/prepare\(\s*`([^`]*)`/g)].map((match) => match[1]),
+    ...[...measureSource.matchAll(/^ {4}sql: `([^`]*)`/gm)].map((match) => match[1]),
+  ];
+  assert.ok(statements.length > 0, "expected to find the statements the script runs");
+  for (const statement of statements) {
+    assert.ok(
+      /^\s*(SELECT|EXPLAIN)/i.test(statement.replace(/^\s*\$\{[^}]*\}/, "SELECT")),
+      `not a read-only statement: ${statement.slice(0, 60)}`,
+    );
+    assert.ok(
+      !/\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|REPLACE|PRAGMA)\b/i.test(statement),
+      `mutating keyword in a diagnostic statement: ${statement.slice(0, 60)}`,
+    );
+  }
+});
