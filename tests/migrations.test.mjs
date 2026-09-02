@@ -17,6 +17,7 @@ const migrations = [
   "drizzle/0008_weather_enrichment.sql",
   "drizzle/0009_event_official_detail.sql",
   "drizzle/0010_seoul_realtime_commercial.sql",
+  "drizzle/0011_seoul_foreign_purpose_mobility.sql",
 ];
 
 function applyMigrations(database) {
@@ -49,6 +50,8 @@ test("D1 migrations apply and prediction rows remain immutable", () => {
       "seoul_foreign_presence_dong",
       "seoul_foreign_presence_area",
       "seoul_realtime_commercial",
+      "seoul_foreign_purpose_mobility",
+      "seoul_foreign_purpose_publications",
       "airport_congestion",
       "airport_passenger_forecast",
       "predictions",
@@ -88,6 +91,28 @@ test("D1 migrations apply and prediction rows remain immutable", () => {
     assert.deepEqual(
       database.prepare("PRAGMA index_info(seoul_realtime_commercial_area_observed_idx)").all().map(({ name }) => name),
       ["area", "observed_at"],
+    );
+
+    assert.deepEqual(columns("seoul_foreign_purpose_mobility"), [
+      "id", "source_id", "dataset_id", "publication_id", "record_origin", "area",
+      "reference_date", "purpose", "movement_value", "unit", "destination_codes_json",
+      "mapping_version", "retrieved_at", "schema_version", "quality_status", "source_hash",
+    ]);
+    assert.deepEqual(
+      database.prepare("PRAGMA index_info(seoul_foreign_purpose_mobility_unique)").all().map(({ name }) => name),
+      ["source_id", "mapping_version", "area", "reference_date", "purpose"],
+    );
+    assert.deepEqual(
+      database.prepare("PRAGMA index_info(seoul_foreign_purpose_mobility_area_reference_idx)").all().map(({ name }) => name),
+      ["area", "reference_date", "purpose"],
+    );
+    assert.deepEqual(columns("seoul_foreign_purpose_publications"), [
+      "id", "source_id", "dataset_id", "publication_id", "file_name", "reference_date",
+      "aggregate_rows", "source_rows_read", "retrieved_at", "schema_version", "source_hash",
+    ]);
+    assert.deepEqual(
+      database.prepare("PRAGMA index_info(seoul_foreign_purpose_publications_unique)").all().map(({ name }) => name),
+      ["source_id", "dataset_id", "publication_id"],
     );
 
     // A4-T2 additive column: existing airport_congestion rows/queries must

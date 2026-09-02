@@ -88,6 +88,15 @@ interface LiveForeignPresence {
   qualityStatus: string;
 }
 
+interface LiveForeignPurposeMobility {
+  referenceDate: string;
+  retrievedAt: string;
+  datasetId: "OA-22378";
+  mappingVersion: string;
+  shopping: number | null;
+  tourism: number | null;
+}
+
 export interface LiveObservedPoint {
   observedAt: string;
   congestionLevel: number;
@@ -106,6 +115,7 @@ interface LiveAreaBlock {
   observedSeries: LiveObservedPoint[];
   sales: LiveSales | null;
   foreignPresence: LiveForeignPresence | null;
+  foreignPurposeMobility: LiveForeignPurposeMobility | null;
 }
 
 interface LiveCongestionRow {
@@ -306,6 +316,16 @@ const text = {
     en: "Official Seoul data · delayed publication · not real-time",
     zh: "首尔市官方数据 · 延迟发布 · 非实时",
     ja: "ソウル市公式データ · 遅延公開 · リアルタイムではありません",
+  },
+  foreignPurpose: { ko: "최근 공개 외국인 이동 패턴", en: "Latest published foreign mobility pattern", zh: "最新公开外国人移动模式", ja: "最新公開の外国人移動傾向" },
+  shoppingPurpose: { ko: "쇼핑 목적", en: "shopping purpose", zh: "购物目的", ja: "買い物目的" },
+  tourismPurpose: { ko: "관광 목적", en: "tourism purpose", zh: "观光目的", ja: "観光目的" },
+  movementUnit: { ko: "추정 이동", en: "estimated movements", zh: "推算移动", ja: "推定移動" },
+  foreignPurposeNote: {
+    ko: "서울시 월간 통계 추정치 · 실시간·방문객·구매·매출 아님",
+    en: "Monthly Seoul statistical estimate · not real-time activity, visitors, purchases, or sales",
+    zh: "首尔市月度统计推算 · 非实时活动、访客数、购买或销售额",
+    ja: "ソウル市の月次統計推定 · リアルタイム・来訪者数・購入・売上ではありません",
   },
   arrivalToday: { ko: "오늘 예상 입국객", en: "Expected arrivals today", zh: "今日预计入境旅客", ja: "今日の予想入国者数" },
   arrivalNext: { ko: "다음 시간대 예상 입국객", en: "Next-band expected arrivals", zh: "下一时段预计入境旅客", ja: "次の時間帯の予想入国者数" },
@@ -1004,7 +1024,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     passengerForecastRetrievedAt: null,
     forecastCoverage: { all: "UNAVAILABLE" as const, byTerminal: {} },
   };
-  const hasArea = Boolean(block && (block.realtime || block.commercial || block.realtimeForecast?.length || block.foreignPresence || block.weather.length || block.events.length || block.sales));
+  const hasArea = Boolean(block && (block.realtime || block.commercial || block.realtimeForecast?.length || block.foreignPresence || block.foreignPurposeMobility || block.weather.length || block.events.length || block.sales));
   const hasArrival = arrival.todayExpectedPassengersTotal !== null
     || arrival.nextExpectedTimeBand !== null
     || arrival.peakExpectedTimeBand !== null;
@@ -1046,6 +1066,19 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       label: text.foreignPresence[lang],
       value: `${formatPeopleValue(lang, block.foreignPresence.value)} ${text.foreignPeople[lang]}`,
       note: `${text.foreignNote[lang]} · ${formatHumanFreshness(block.foreignPresence.referenceAt, summary.generatedAt, lang)} · ${productId}`,
+    });
+  }
+
+  if (block?.foreignPurposeMobility) {
+    const mobility = block.foreignPurposeMobility;
+    const parts: string[] = [];
+    if (mobility.shopping !== null) parts.push(`${text.shoppingPurpose[lang]} ${formatPeopleValue(lang, mobility.shopping)}`);
+    if (mobility.tourism !== null) parts.push(`${text.tourismPurpose[lang]} ${formatPeopleValue(lang, mobility.tourism)}`);
+    if (parts.length) rows.push({
+      key: "foreign_purpose_mobility",
+      label: text.foreignPurpose[lang],
+      value: `${parts.join(" · ")} ${text.movementUnit[lang]}`,
+      note: `${mobility.referenceDate} · ${text.foreignPurposeNote[lang]} · ${mobility.datasetId}`,
     });
   }
 

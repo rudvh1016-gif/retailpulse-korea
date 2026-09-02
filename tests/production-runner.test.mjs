@@ -164,7 +164,7 @@ test("selectable runner isolates a throwing source and reports unknown sources w
   assert.equal(results[2].records, 3);
 });
 
-test("all thirteen production sources are named exactly as the runner selects them", () => {
+test("all fourteen production source runners are named exactly", () => {
   // The two `_recovery` entries are repair windows for an existing source,
   // not new data: each reads D1 first and re-requests only what is missing.
   assert.deepEqual([...PRODUCTION_SOURCE_NAMES].sort(), [
@@ -176,6 +176,7 @@ test("all thirteen production sources are named exactly as the runner selects th
     "airport_recent",
     "airport_scheduled",
     "events",
+    "foreign_purpose_mobility",
     "seoul_foreign",
     "seoul_realtime",
     "seoul_sales",
@@ -218,10 +219,11 @@ test("diagnostic source ids are the literal ids collector code writes", () => {
     "lib/collector.ts",
     "lib/airport-today.ts",
     "lib/seoul-foreign.ts",
+    "lib/foreign-purpose-mobility.ts",
   ].map((file) => readFileSync(new URL(`../${file}`, import.meta.url), "utf8")).join("\n");
 
   const names = Object.keys(DIAGNOSTIC_SOURCE_IDS);
-  assert.equal(names.length, 11, "every KORETAIL source needs a diagnostic id");
+  assert.equal(names.length, 12, "every KORETAIL source needs a diagnostic id");
   for (const name of names) {
     assert.ok(
       collectorSource.includes(`"${DIAGNOSTIC_SOURCE_IDS[name]}"`),
@@ -259,8 +261,8 @@ test("previously supported A2/A3/T1 selection still resolves", () => {
 });
 
 test("diagnostic selection defaults to every source and rejects typos", () => {
-  assert.equal(resolveDiagnosticSourceIds(undefined).length, 12);
-  assert.equal(resolveDiagnosticSourceIds("   ").length, 12);
+  assert.equal(resolveDiagnosticSourceIds(undefined).length, 13);
+  assert.equal(resolveDiagnosticSourceIds("   ").length, 13);
   // Deduplicates rather than binding the same id twice.
   assert.deepEqual(resolveDiagnosticSourceIds("seoul_realtime,SEOUL_CITYDATA_PPLTN,SEOUL_CITYDATA_CMRCL"), [
     "SEOUL_CITYDATA_PPLTN",

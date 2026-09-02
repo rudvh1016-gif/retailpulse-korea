@@ -5,6 +5,10 @@ import {
   SEOUL_FOREIGN_SOURCE_ID,
 } from "../../../../lib/seoul-foreign";
 import {
+  FOREIGN_PURPOSE_MAPPING_VERSION,
+  FOREIGN_PURPOSE_SOURCE_ID,
+} from "../../../../lib/foreign-purpose-mobility";
+import {
   summarizeCurrentBusiestDepartureHalls,
   summarizeNextPassengerForecastBand,
   summarizePassengerForecast,
@@ -235,6 +239,25 @@ export async function GET(request: Request) {
       SEOUL_FOREIGN_MAPPING_VERSION,
     ).all<Row>()).results ?? []);
 
+    const foreignPurposeRows = await safeAll<Row>(async () => (await client.prepare(
+      latestPerKey(AREAS, () => `SELECT area, purpose, movement_value AS movementValue,
+        reference_date AS referenceDate, retrieved_at AS retrievedAt,
+        dataset_id AS datasetId, mapping_version AS mappingVersion,
+        quality_status AS qualityStatus
+      FROM seoul_foreign_purpose_mobility
+      WHERE area = ? AND source_id = ? AND mapping_version = ?
+        AND record_origin = 'OFFICIAL_HISTORICAL' AND quality_status = 'VALID'
+        AND reference_date = (
+          SELECT MAX(reference_date) FROM seoul_foreign_purpose_mobility
+          WHERE area = ? AND source_id = ? AND mapping_version = ?
+            AND record_origin = 'OFFICIAL_HISTORICAL' AND quality_status = 'VALID'
+        )
+      ORDER BY purpose LIMIT 2`),
+    ).bind(...AREAS.flatMap((area) => [
+      area, FOREIGN_PURPOSE_SOURCE_ID, FOREIGN_PURPOSE_MAPPING_VERSION,
+      area, FOREIGN_PURPOSE_SOURCE_ID, FOREIGN_PURPOSE_MAPPING_VERSION,
+    ])).all<Row>()).results ?? []);
+
     const congestionRows = await safeAll<Row>(async () => (await client.prepare(
       latestPerKey(CONGESTION_TERMINALS, () => `SELECT terminal, zone, wait_time_minutes AS waitTimeMinutes, wait_time_raw AS waitTimeRaw,
         waiting_count AS waitingCount, observed_at AS observedAt, retrieved_at AS retrievedAt
@@ -311,6 +334,7 @@ export async function GET(request: Request) {
       const realtime = realtimeRows.find((row) => row.area === area) ?? null;
       const commercial = commercialRows.find((row) => row.area === area) ?? null;
       const foreignPresence = foreignPresenceRows.find((row) => row.area === area) ?? null;
+      const purposeRows = foreignPurposeRows.filter((row) => row.area === area);
       const salesForArea = salesRows.filter((row) => row.area === area);
       const salesTotal = salesForArea.reduce((sum, row) => sum + Number(row.salesAmount ?? 0), 0);
       const eventsForArea = eventRows.filter((row) => row.area === area);
@@ -330,6 +354,14 @@ export async function GET(request: Request) {
           topIndustries: salesForArea.slice(0, 3).map((row) => ({ industryName: row.industryName, salesAmount: row.salesAmount })),
         } : null,
         foreignPresence,
+        foreignPurposeMobility: purposeRows.length ? {
+          referenceDate: purposeRows[0].referenceDate,
+          retrievedAt: purposeRows[0].retrievedAt,
+          datasetId: purposeRows[0].datasetId,
+          mappingVersion: purposeRows[0].mappingVersion,
+          shopping: purposeRows.find((row) => row.purpose === "shopping")?.movementValue ?? null,
+          tourism: purposeRows.find((row) => row.purpose === "tourism")?.movementValue ?? null,
+        } : null,
       }];
     }));
 

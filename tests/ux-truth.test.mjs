@@ -57,6 +57,20 @@ test("realtime commercial activity appears immediately after population with tru
   assert.doesNotMatch(areaSignals, /foreign spend|tourist spend|외국인 매출|관광객 매출/i);
 });
 
+test("foreign purpose mobility is historical, dated, and never presented as visitors or sales", () => {
+  for (const phrase of [
+    "최근 공개 외국인 이동 패턴", "Latest published foreign mobility pattern",
+    "最新公开外国人移动模式", "最新公開の外国人移動傾向",
+    "실시간·방문객·구매·매출 아님",
+    "not real-time activity, visitors, purchases, or sales",
+  ]) assert.ok(signals.includes(phrase), `${phrase} must remain visible`);
+  const areaSignals = signals.match(/export default function LiveSignals[\s\S]*?\nconst flightBoardText/)?.[0] ?? "";
+  assert.ok(areaSignals.indexOf("block?.foreignPresence") < areaSignals.indexOf("block?.foreignPurposeMobility"));
+  const mobilityBlock = areaSignals.match(/if \(block\?\.foreignPurposeMobility\) \{([\s\S]*?)\n  \}/)?.[1] ?? "";
+  assert.match(mobilityBlock, /mobility\.referenceDate/);
+  assert.doesNotMatch(mobilityBlock, /LIVE|today|오늘|visitor count|매출액/);
+});
+
 /**
  * A4 is an observation of one checkpoint. A5 is an official forecast. The
  * product must never let one read as the other.

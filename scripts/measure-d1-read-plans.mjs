@@ -26,7 +26,8 @@ for (const extra of (process.env.EXTRA_INDEXES ?? "").split(";;").filter(Boolean
 // airport_flights "population 11733" (~1,100 rows/day), weather 24 bands x 3
 // areas x 8 issuances/day, realtime 3 areas x 96 cycles/day.
 const N = { airport_flights: 12000, seoul_realtime_area: 5000, seoul_realtime_commercial: 5000, seoul_realtime_forecast: 20000,
-  weather_forecast: 4000, airport_congestion: 6000, seoul_estimated_sales: 400 };
+  weather_forecast: 4000, airport_congestion: 6000, seoul_estimated_sales: 400,
+  seoul_foreign_purpose_mobility: 120 };
 
 const BASE = Date.UTC(2026, 7, 21);
 const areas = ["myeongdong", "hongdae", "seongsu"];
@@ -68,6 +69,13 @@ seed("airport_congestion", N.airport_congestion, (i) => ({
 seed("seoul_estimated_sales", N.seoul_estimated_sales, (i) => ({
   source_id: "SEOUL_ESTIMATED_SALES", area: areas[i % 3], quarter_code: `2026${1 + (i % 2)}`,
   trade_area_code: `t${i}`, industry_code: `i${i}` }));
+seed("seoul_foreign_purpose_mobility", N.seoul_foreign_purpose_mobility, (i) => ({
+  source_id: "SEOUL_FOREIGN_PURPOSE_MOBILITY", dataset_id: "OA-22378",
+  publication_id: `2026${String(1 + (i % 8)).padStart(2, "0")}`,
+  record_origin: "OFFICIAL_HISTORICAL", area: areas[i % 3],
+  reference_date: `2026-${String(1 + (i % 8)).padStart(2, "0")}-28`,
+  purpose: i % 2 ? "shopping" : "tourism", mapping_version: "official-admin-dong-2025-06-02-v1",
+  quality_status: "VALID" }));
 db.exec("COMMIT");
 
 const DAY = db.prepare("SELECT substr(scheduled_at,1,10) AS d FROM airport_flights ORDER BY scheduled_at DESC LIMIT 1").get().d;
@@ -87,6 +95,7 @@ const QUERIES = AFTER ? {
   "summary.latestForecast": [per(areas, `SELECT area, issued_at FROM seoul_realtime_forecast WHERE area = ? AND issued_at = (SELECT MAX(issued_at) FROM seoul_realtime_forecast WHERE area = ?) ORDER BY target_at LIMIT 40`), areas.flatMap((a) => [a, a])],
   "summary.latestWeather": [per(areas, `SELECT area, issued_at FROM weather_forecast WHERE area = ? AND issued_at = (SELECT MAX(issued_at) FROM weather_forecast WHERE area = ?) ORDER BY target_at LIMIT 60`), areas.flatMap((a) => [a, a])],
   "summary.latestSales": [per(areas, `SELECT area, quarter_code FROM seoul_estimated_sales WHERE area = ? AND quarter_code = (SELECT MAX(quarter_code) FROM seoul_estimated_sales WHERE area = ?) ORDER BY sales_amount DESC`), areas.flatMap((a) => [a, a])],
+  "summary.latestForeignPurpose": [per(areas, `SELECT area, purpose FROM seoul_foreign_purpose_mobility WHERE area = ? AND source_id = ? AND mapping_version = ? AND reference_date = (SELECT MAX(reference_date) FROM seoul_foreign_purpose_mobility WHERE area = ? AND source_id = ? AND mapping_version = ?) ORDER BY purpose LIMIT 2`), areas.flatMap((a) => [a, "SEOUL_FOREIGN_PURPOSE_MOBILITY", "official-admin-dong-2025-06-02-v1", a, "SEOUL_FOREIGN_PURPOSE_MOBILITY", "official-admin-dong-2025-06-02-v1"])],
   "summary.latestCongestion": [per(["T1", "T2"], `SELECT terminal, zone FROM airport_congestion WHERE terminal = ? AND observed_at = (SELECT MAX(observed_at) FROM airport_congestion WHERE terminal = ?) ORDER BY zone LIMIT 12`), ["T1", "T1", "T2", "T2"]],
   "summary.flightsForDay": [`SELECT physical_flight_id, terminal, gate FROM airport_flights WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ? LIMIT 2000`, [DAY, NEXT]],
   "summary.availableFlightDates": [probe("airport_flights", "scheduled_at", "direction = 'departure'"), probeBinds()],

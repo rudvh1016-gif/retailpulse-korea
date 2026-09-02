@@ -40,12 +40,21 @@ import {
   type CanonicalSeoulForeignArea,
   type CanonicalSeoulForeignDong,
 } from "./seoul-foreign";
+import {
+  aggregateForeignPurposeMobility,
+  FOREIGN_PURPOSE_DATASET_ID,
+  FOREIGN_PURPOSE_MAPPING_VERSION,
+  FOREIGN_PURPOSE_SCHEMA_VERSION,
+  FOREIGN_PURPOSE_SOURCE_ID,
+  type ForeignPurposeMobilitySource,
+} from "./foreign-purpose-mobility";
 
 export interface CollectorEnv {
   DB?: D1Database;
   DATA_GO_KR_SERVICE_KEY?: string;
   SEOUL_OPEN_DATA_KEY?: string;
   KMA_SERVICE_KEY?: string;
+  FOREIGN_PURPOSE_SOURCE?: ForeignPurposeMobilitySource;
   retainChangeHistory?: boolean;
 }
 
@@ -344,7 +353,7 @@ export async function collectScheduledAirportFlights(env: CollectorEnv): Promise
 const runBatches = runD1Batches;
 
 export interface CollectorResult {
-  status: "SUCCESS" | "PARTIAL" | "ERROR" | "NEEDS_KEY" | "NO_DATA";
+  status: "SUCCESS" | "PARTIAL" | "ERROR" | "NEEDS_KEY" | "NO_DATA" | "SKIPPED_NO_NEW_PUBLICATION";
   records: number;
   /** Secret-free operational detail safe for collector_runs and Actions logs. */
   detail?: string;
@@ -710,6 +719,163 @@ export async function collectSeoulForeignPresence(env: CollectorEnv, now: Date =
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
     return { status: "ERROR", records: 0 };
+  }
+}
+
+export const SKIPPED_NO_NEW_PUBLICATION = "SKIPPED_NO_NEW_PUBLICATION" as const;
+
+/**
+ * S4 — monthly official destination mobility by foreigner movement purpose.
+ *
+ * Metadata discovery is the only call on a normal daily run. The large ZIP is
+ * downloaded only when its publication id is not already present in D1; all
+ * archive work is supplied by the Node-only Actions adapter, never a Worker.
+ */
+export async function collectForeignPurposeMobility(
+  env: CollectorEnv,
+  now: Date = new Date(),
+): Promise<CollectorResult> {
+  const sourceId = FOREIGN_PURPOSE_SOURCE_ID;
+  if (!env.FOREIGN_PURPOSE_SOURCE) {
+    const detail = "foreign_purpose_source_adapter_not_configured";
+    await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
+    await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
+    return { status: "ERROR", records: 0, detail, providerRequests: 0 };
+  }
+  let providerRequests = 0;
+  try {
+    const publication = await env.FOREIGN_PURPOSE_SOURCE.discoverLatest();
+    providerRequests += 1;
+    if (publication.datasetId !== FOREIGN_PURPOSE_DATASET_ID) {
+      throw new Error(`unexpected_dataset:${publication.datasetId}`);
+    }
+    if (env.DB) {
+      const existing = await env.DB.prepare(`SELECT publication_id AS publicationId, aggregate_rows AS aggregateRows
+        FROM seoul_foreign_purpose_publications
+        WHERE source_id = ? AND dataset_id = ? AND publication_id = ? LIMIT 1`)
+        .bind(sourceId, FOREIGN_PURPOSE_DATASET_ID, publication.publicationId)
+        .all<{ publicationId: string; aggregateRows: number }>();
+      if ((existing.results ?? []).length > 0) {
+        const detail = `publication ${publication.publicationId}; metadata only; archive download 0`;
+        await writeCollectorStatus(env.DB, sourceId, SKIPPED_NO_NEW_PUBLICATION, detail);
+        const lastGoodPreserved = Number(existing.results?.[0]?.aggregateRows ?? 0) > 0
+          || await hasStoredRow(env.DB, `SELECT 1 FROM seoul_foreign_purpose_mobility LIMIT 1`);
+        return {
+          status: SKIPPED_NO_NEW_PUBLICATION,
+          records: 0,
+          detail,
+          providerRequests,
+          sourceHealth: "OFFICIAL_HISTORICAL",
+          lastGoodPreserved,
+        };
+      }
+    }
+
+    const csv = await env.FOREIGN_PURPOSE_SOURCE.loadLatestCsv(publication);
+    providerRequests += 1;
+    const aggregated = aggregateForeignPurposeMobility(csv);
+    const retrievedAt = now.toISOString();
+    const statements: D1PreparedStatement[] = [];
+    for (const row of aggregated.rows) {
+      const identity = {
+        sourceId,
+        mappingVersion: FOREIGN_PURPOSE_MAPPING_VERSION,
+        area: row.area,
+        referenceDate: aggregated.referenceDate,
+        purpose: row.purpose,
+      };
+      const semantic = {
+        ...identity,
+        datasetId: FOREIGN_PURPOSE_DATASET_ID,
+        publicationId: publication.publicationId,
+        movementValue: row.movementValue,
+        unit: row.unit,
+        destinationCodes: row.destinationCodes,
+      };
+      if (env.DB) statements.push(env.DB.prepare(`INSERT INTO seoul_foreign_purpose_mobility (
+          id, source_id, dataset_id, publication_id, record_origin, area,
+          reference_date, purpose, movement_value, unit, destination_codes_json,
+          mapping_version, retrieved_at, schema_version, quality_status, source_hash
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(source_id, mapping_version, area, reference_date, purpose) DO UPDATE SET
+          dataset_id = excluded.dataset_id,
+          publication_id = excluded.publication_id,
+          movement_value = excluded.movement_value,
+          unit = excluded.unit,
+          destination_codes_json = excluded.destination_codes_json,
+          retrieved_at = excluded.retrieved_at,
+          schema_version = excluded.schema_version,
+          quality_status = excluded.quality_status,
+          source_hash = excluded.source_hash
+        WHERE seoul_foreign_purpose_mobility.source_hash <> excluded.source_hash`)
+        .bind(
+          await sha256(identity), sourceId, FOREIGN_PURPOSE_DATASET_ID, publication.publicationId,
+          "OFFICIAL_HISTORICAL", row.area, aggregated.referenceDate, row.purpose,
+          row.movementValue, row.unit, JSON.stringify(row.destinationCodes),
+          FOREIGN_PURPOSE_MAPPING_VERSION, retrievedAt, FOREIGN_PURPOSE_SCHEMA_VERSION,
+          "VALID", await sha256(semantic),
+        ));
+    }
+    if (env.DB) {
+      const publicationIdentity = {
+        sourceId,
+        datasetId: FOREIGN_PURPOSE_DATASET_ID,
+        publicationId: publication.publicationId,
+      };
+      statements.push(env.DB.prepare(`INSERT INTO seoul_foreign_purpose_publications (
+          id, source_id, dataset_id, publication_id, file_name, reference_date,
+          aggregate_rows, source_rows_read, retrieved_at, schema_version, source_hash
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(source_id, dataset_id, publication_id) DO UPDATE SET
+          file_name = excluded.file_name,
+          reference_date = excluded.reference_date,
+          aggregate_rows = excluded.aggregate_rows,
+          source_rows_read = excluded.source_rows_read,
+          retrieved_at = excluded.retrieved_at,
+          schema_version = excluded.schema_version,
+          source_hash = excluded.source_hash
+        WHERE seoul_foreign_purpose_publications.source_hash <> excluded.source_hash`)
+        .bind(
+          await sha256(publicationIdentity), sourceId, FOREIGN_PURPOSE_DATASET_ID,
+          publication.publicationId, publication.fileName, aggregated.referenceDate,
+          aggregated.rows.length, aggregated.sourceRowsRead, retrievedAt,
+          FOREIGN_PURPOSE_SCHEMA_VERSION,
+          await sha256({
+            ...publicationIdentity,
+            fileName: publication.fileName,
+            referenceDate: aggregated.referenceDate,
+            aggregateRows: aggregated.rows.length,
+            sourceRowsRead: aggregated.sourceRowsRead,
+          }),
+        ));
+    }
+    const written = env.DB && statements.length ? await runBatches(env.DB, statements) : NO_D1_WRITES;
+    const representedAreas = new Set(aggregated.rows.map((row) => row.area));
+    const detail = `publication ${publication.publicationId}; reference ${aggregated.referenceDate}; source rows ${aggregated.sourceRowsRead}; aggregate pairs ${aggregated.rows.length}/6; areas ${representedAreas.size}/3; unavailable pairs ${6 - aggregated.rows.length}; invalid or suppressed ${aggregated.suppressedOrInvalidRows}; ${describeWrites(written)}`;
+    await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, aggregated.sourceRowsRead, written.changedRows);
+    await writeSourceHealth(env.DB, sourceId, "OFFICIAL_HISTORICAL", detail, {
+      eventAt: `${aggregated.referenceDate}T00:00:00+09:00`,
+      publishedAt: null,
+      retrievedAt,
+      schemaVersion: FOREIGN_PURPOSE_SCHEMA_VERSION,
+    });
+    const lastGoodPreserved = aggregated.rows.length > 0
+      || await hasStoredRow(env.DB, `SELECT 1 FROM seoul_foreign_purpose_mobility LIMIT 1`);
+    return {
+      status: "SUCCESS",
+      records: written.changedRows,
+      detail,
+      providerRequests,
+      sourceHealth: "OFFICIAL_HISTORICAL",
+      lastGoodPreserved,
+    };
+  } catch (error) {
+    const detail = safeSourceFailureDetail(error);
+    const lastGoodPreserved = await hasStoredRow(env.DB, `SELECT 1 FROM seoul_foreign_purpose_mobility LIMIT 1`);
+    const health: SourceHealthStatus = lastGoodPreserved ? "STALE" : "ERROR";
+    await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
+    await writeSourceHealth(env.DB, sourceId, health, detail);
+    return { status: "ERROR", records: 0, detail, providerRequests, sourceHealth: health, lastGoodPreserved };
   }
 }
 

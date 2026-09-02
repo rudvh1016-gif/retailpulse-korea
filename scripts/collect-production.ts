@@ -24,6 +24,7 @@ import {
   type ProductionSourceName,
 } from "../lib/production-runner";
 import { resolveProductionDatabaseConfig } from "./production-database";
+import { createForeignPurposeMobilitySource } from "./foreign-purpose-mobility-source";
 
 if (process.env.ENABLE_PRODUCTION_COLLECTOR !== "true") {
   throw new Error("production_collector_not_enabled");
@@ -49,6 +50,7 @@ const env = {
   // is absent; a source that does not need a given key must still run.
   DATA_GO_KR_SERVICE_KEY: process.env.DATA_GO_KR_SERVICE_KEY?.trim() || undefined,
   SEOUL_OPEN_DATA_KEY: process.env.SEOUL_OPEN_DATA_KEY?.trim() || undefined,
+  FOREIGN_PURPOSE_SOURCE: createForeignPurposeMobilitySource(),
   retainChangeHistory: process.env.RPK_RETAIN_FLIGHT_CHANGE_HISTORY === "true",
 };
 
