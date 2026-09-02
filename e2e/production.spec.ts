@@ -309,7 +309,9 @@ test("home gives deterministic current briefs for all three Seoul areas", async 
   await page.goto("/ko");
   await expect(page.getByRole("heading", { name: "서울 지금" })).toBeVisible();
   const briefs = page.locator(".home-area-briefs");
-  await expect(briefs.getByRole("button", { name: /명동/ })).toContainText("약간 붐빔 · 23,000–25,000명");
+  // The metric is named before the number: a bare range beside a congestion
+  // word reads as today's visitor count, which is not what this value is.
+  await expect(briefs.getByRole("button", { name: /명동/ })).toContainText("현재 추정 인구 23,000–25,000명 · 약간 붐빔");
   await expect(briefs.getByRole("button", { name: /명동/ })).toContainText("오늘 17:00–18:00");
   await expect(briefs.getByRole("button", { name: /명동/ })).toContainText("비 가능성 60%");
   await expect(briefs.getByRole("button", { name: /홍대/ })).toContainText("인근 행사 1건 · 홍대 거리공연");

@@ -17,9 +17,8 @@ export const metadata: Metadata = {
     title: "서울 외국인 쇼핑수요 신호 | KORETAIL",
     description: "오늘과 내일의 서울 외국인 쇼핑수요 신호, 매장 준비와 인천공항 T1·T2 흐름을 한눈에.",
     url: "/ko", siteName: "KORETAIL", type: "website", locale: "ko_KR",
-    images: [{ url: "/assets/retailpulse-korea-og.jpg", width: 1200, height: 630, alt: "석양의 한강과 남산서울타워가 보이는 서울 전경" }],
   },
-  twitter: { card: "summary_large_image", title: "KORETAIL", description: "Retail Demand Signals for Korea — 서울의 외국인 쇼핑수요 신호를 오늘과 내일 관점에서 읽습니다.", images: ["/assets/retailpulse-korea-og.jpg"] },
+  twitter: { card: "summary", title: "KORETAIL", description: "Retail Demand Signals for Korea — 서울의 외국인 쇼핑수요 신호를 오늘과 내일 관점에서 읽습니다." },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#f5f3ed" };

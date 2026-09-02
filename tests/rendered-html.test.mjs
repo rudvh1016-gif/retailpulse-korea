@@ -124,12 +124,32 @@ test("uses KORETAIL across the public brand surfaces", async () => {
   ]) assert.doesNotMatch(publicBrand, new RegExp(formerPublicBrand, "i"));
 });
 
-test("keeps both user-provided Seoul visuals and their accessible descriptions", async () => {
+/**
+ * The two decorative Seoul photographs were removed at the owner's request:
+ * no licence or provenance record existed for either, and an unverified
+ * third-party photo is product risk for no informational gain. The social
+ * card image was derived from the same photograph, so it went with them.
+ *
+ * This guard is the reason they cannot quietly come back — a decorative photo
+ * is easy to re-add and hard to notice in review.
+ */
+test("no decorative photograph of unverified origin is served", async () => {
   const page = await read("../app/retailpulse-app.tsx");
-  assert.match(page, /\/assets\/seoul-hangang\.jpeg/);
-  assert.match(page, /\/assets\/seoul-hanok\.jpeg/);
-  assert.match(page, /석양 아래 한강과 남산서울타워가 보이는 서울 전경/);
-  assert.match(page, /한옥 지붕 너머로 남산서울타워가 보이는 서울 풍경/);
+  const seo = await read("../app/seo-config.ts");
+  const layout = await read("../app/layout.tsx");
+  const styles = await read("../app/globals.css");
+
+  for (const source of [page, seo, layout, styles]) {
+    for (const asset of ["seoul-hangang", "seoul-hanok", "retailpulse-korea-og"]) {
+      assert.doesNotMatch(source, new RegExp(asset));
+    }
+    assert.doesNotMatch(source, /pinterest|pinimg/i, "no third-party image host may be referenced");
+  }
+
+  // Dead layout left behind by a removed image is its own defect: a fixed
+  // height around nothing renders as an unexplained gap.
+  assert.doesNotMatch(styles, /hero-visual|about-visual/,
+    "the containers that only existed to hold those photos must be gone too");
 });
 
 test("keeps the four-language fonts as bounded static assets", async () => {
