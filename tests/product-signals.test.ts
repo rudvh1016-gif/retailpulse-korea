@@ -96,6 +96,7 @@ test("Seoul integrated contract probe reports structure without leaking keys or 
   assert.equal(result.every((entry) => entry.officialCode === "INFO-000" && entry.populationBlock && entry.commercialBlock), true);
   assert.equal(result.every((entry) => entry.commercialRequiredFields && entry.categoryArray), true);
   assert.equal(result.every((entry) => entry.areaIdentityFields && entry.commercialTimeFormat), true);
+  assert.equal(result.every((entry) => entry.commercialTimeShape === "kst-minute"), true);
   assert.equal(result.every((entry) => entry.paymentCountShape === "numeric-string"), true);
   assert.equal(result.every((entry) => entry.paymentAmountMinShape === "numeric-string"), true);
   assert.equal(result.every((entry) => entry.paymentAmountMaxShape === "numeric-string"), true);
