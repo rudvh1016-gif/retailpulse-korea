@@ -127,17 +127,27 @@ jobs:
           // affordable uncached anyway.
           const cacheProbe = async () => {
             const response = await fetch(`${origin}/api/live/summary`, { signal: AbortSignal.timeout(15000) });
-            await response.arrayBuffer();
+            const body = await response.json().catch(() => null);
             return {
               status: response.status,
               cfCacheStatus: response.headers.get("cf-cache-status"),
               age: response.headers.get("age"),
               cacheControl: response.headers.get("cache-control"),
+              // An identical generatedAt across two reads is the body itself
+              // proving it was reused, independently of any header.
+              generatedAt: body?.generatedAt ?? null,
+              mode: body?.mode ?? null,
             };
           };
           const firstRead = await cacheProbe();
           const secondRead = await cacheProbe();
-          console.log(JSON.stringify({ edgeCache: { firstRead, secondRead } }));
+          const thirdRead = await cacheProbe();
+          console.log(JSON.stringify({
+            edgeCache: {
+              firstRead, secondRead, thirdRead,
+              bodyReused: Boolean(firstRead.generatedAt) && firstRead.generatedAt === secondRead.generatedAt,
+            },
+          }));
 
           // A ?date= day the picker offers must still render live, not fall back
           // to an empty shell. Yesterday in KST is always one of those days.
