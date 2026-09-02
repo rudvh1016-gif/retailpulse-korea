@@ -15,6 +15,7 @@ const migrations = [
   "drizzle/0006_airport_t2_and_passenger_forecast.sql",
   "drizzle/0007_d1_read_budget_indexes.sql",
   "drizzle/0008_weather_enrichment.sql",
+  "drizzle/0009_event_official_detail.sql",
 ];
 
 function applyMigrations(database) {

@@ -44,6 +44,9 @@ class LocalD1Statement {
     // storageWrites assertions are left to Production evidence.
     return { success: true, meta: { changes: Number(result.changes), rows_written: Number(result.changes) } };
   }
+  async all() {
+    return { success: true, results: this.statement.all(...this.values), meta: {} };
+  }
 }
 
 class LocalD1Database {

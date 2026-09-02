@@ -157,7 +157,25 @@ export const tourismEvents = sqliteTable("tourism_events", {
   schemaVersion: text("schema_version").notNull(),
   qualityStatus: text("quality_status").notNull(),
   sourceHash: text("source_hash").notNull(),
+  // Official list fields the collector used to discard (zero extra calls).
+  categoryCode: text("category_code"),
+  categoryGroupCode: text("category_group_code"),
+  categoryName: text("category_name"),
+  addressDetail: text("address_detail"),
+  tel: text("tel"),
+  // Official detailCommon2 fields, fetched once per contentId by the collector.
+  overview: text("overview"),
+  homepage: text("homepage"),
+  detailRetrievedAt: text("detail_retrieved_at"),
 }, (table) => [uniqueIndex("tourism_events_area_content_unique").on(table.sourceId, table.area, table.contentId)]);
+
+/** Official TourAPI category code names (categoryCode2), cached so a code is looked up once. */
+export const tourapiCategoryCodes = sqliteTable("tourapi_category_codes", {
+  code: text("code").primaryKey(),
+  parentCode: text("parent_code"),
+  name: text("name").notNull(),
+  retrievedAt: text("retrieved_at").notNull(),
+});
 
 // A4 — departure-hall checkpoint congestion (flow proxy, not store traffic).
 // waitTimeMinutes stays an exact numeric value only; the provider's "60+"

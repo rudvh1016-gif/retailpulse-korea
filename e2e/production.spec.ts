@@ -113,7 +113,11 @@ const SUMMARY_FIXTURE = {
       realtime: { congestionLevel: 2, congestionLabel: "보통", populationMin: 18000, populationMax: 20000, observedAt: "2026-08-31T14:06:00+09:00", freshness: "LIVE" },
       realtimeForecast: [{ targetAt: "2026-08-31T19:00:00+09:00", congestionLevel: 3, congestionLabel: "약간 붐빔", populationMin: 22000, populationMax: 24000, issuedAt: "2026-08-31T14:00:00+09:00", retrievedAt: "2026-08-31T14:05:00+09:00" }],
       weather: [{ targetAt: "2026-08-31T18:00:00+09:00", precipitationProbability: 20, temperatureTenthC: 260, conditionCode: "cloudy" }],
-      events: [{ title: "홍대 거리공연", eventStart: "2026-08-31", eventEnd: null, distanceM: 300 }],
+      events: [{
+        title: "홍대 거리공연", eventStart: "2026-08-31", eventEnd: null, distanceM: 300,
+        categoryName: "일반축제", address: "서울특별시 마포구 홍익로 3", addressDetail: null,
+        overview: "홍대 걷고싶은거리 일대에서 열리는 버스킹 공연. 매일 저녁 거리 무대가 이어집니다.", homepage: null,
+      }],
       eventCount: 1,
     }),
     seongsu: AREA_BLOCK({
@@ -314,7 +318,7 @@ test("home gives deterministic current briefs for all three Seoul areas", async 
   await expect(briefs.getByRole("button", { name: /명동/ })).toContainText("현재 추정 인구 23,000–25,000명 · 약간 붐빔");
   await expect(briefs.getByRole("button", { name: /명동/ })).toContainText("오늘 17:00–18:00");
   await expect(briefs.getByRole("button", { name: /명동/ })).toContainText("비 가능성 60%");
-  await expect(briefs.getByRole("button", { name: /홍대/ })).toContainText("인근 행사 1건 · 홍대 거리공연");
+  await expect(briefs.getByRole("button", { name: /홍대/ })).toContainText("인근 행사 1건 · 일반축제 · 홍대 거리공연");
   await expect(briefs.getByRole("button", { name: /성수/ })).toContainText("최근 관측 지연");
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
@@ -569,6 +573,24 @@ test("the checklist stacks without overflow on a narrow phone", async ({ page })
     .filter((el) => el.scrollWidth > Math.ceil(el.getBoundingClientRect().width) + 1).length);
   expect(overflowing).toBe(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+});
+
+test("the event card shows the official category, place and a clamped official description", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.goto("/ko");
+  const briefs = page.locator(".home-area-briefs");
+  await briefs.getByRole("button", { name: /홍대/ }).click();
+  const row = page.locator(".live-signal-rows p", { hasText: "주변 행사" });
+  await expect(row.locator("b")).toHaveText("1건 진행·예정 · 일반축제 · 홍대 거리공연");
+  await expect(row.locator("small")).toContainText("8/31 · 마포구 홍익로 3 · 300m · 한국관광공사 TourAPI");
+  const detail = row.locator(".live-signal-detail");
+  await expect(detail).toHaveText("홍대 걷고싶은거리 일대에서 열리는 버스킹 공연. 매일 저녁 거리 무대가 이어집니다.");
+  const clamp = await detail.evaluate((element) => getComputedStyle(element).webkitLineClamp);
+  expect(clamp).toBe("2");
+  // An area whose event has no stored detail shows no description line at all.
+  await briefs.getByRole("button", { name: /명동/ }).click();
+  await expect(page.locator(".live-signal-rows p", { hasText: "주변 행사" })).toHaveCount(0);
+  await expect(page.locator(".live-signal-detail")).toHaveCount(0);
 });
 
 /**
