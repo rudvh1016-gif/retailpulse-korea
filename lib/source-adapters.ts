@@ -544,6 +544,78 @@ export async function normalizeSeoulRealtime(
   };
 }
 
+export interface CanonicalSeoulRealtimeCommercial extends CanonicalRecord {
+  area: string;
+  areaCode: string;
+  areaName: string;
+  commercialLevel: string;
+  paymentCount: number | null;
+  paymentAmountMin: number | null;
+  paymentAmountMax: number | null;
+  observedAt: string;
+}
+
+function optionalCommercialNumber(record: Record<string, unknown>, key: string): number | null {
+  const raw = record[key];
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw === "string" && (!raw.trim() || raw.trim() === "*")) return null;
+  if (typeof raw !== "string" && typeof raw !== "number") throw new SourceFetchError("SCHEMA");
+  const value = Number(typeof raw === "string" ? raw.replaceAll(",", "").trim() : raw);
+  if (!Number.isFinite(value) || value < 0) throw new SourceFetchError("SCHEMA");
+  return value;
+}
+
+/**
+ * OA-21285 LIVE_CMRCL_STTS — Shinhan Card domestic-consumer payment activity.
+ * Optional payment fields may be suppressed; null means unavailable, never 0.
+ */
+export async function normalizeSeoulRealtimeCommercial(
+  rawCitydata: unknown,
+  area: string,
+  retrievedAt: string,
+): Promise<CanonicalSeoulRealtimeCommercial> {
+  if (!rawCitydata || typeof rawCitydata !== "object" || Array.isArray(rawCitydata)) throw new SourceFetchError("SCHEMA");
+  const citydata = rawCitydata as Record<string, unknown>;
+  const rawCommercial = citydata.LIVE_CMRCL_STTS;
+  if (!rawCommercial || typeof rawCommercial !== "object" || Array.isArray(rawCommercial)) throw new SourceFetchError("SCHEMA");
+  const commercial = rawCommercial as Record<string, unknown>;
+  if (!Array.isArray(commercial.CMRCL_RSB)) throw new SourceFetchError("SCHEMA");
+
+  const paymentCount = optionalCommercialNumber(commercial, "AREA_SH_PAYMENT_CNT");
+  const paymentAmountMin = optionalCommercialNumber(commercial, "AREA_SH_PAYMENT_AMT_MIN");
+  const paymentAmountMax = optionalCommercialNumber(commercial, "AREA_SH_PAYMENT_AMT_MAX");
+  if (paymentAmountMin !== null && paymentAmountMax !== null && paymentAmountMin > paymentAmountMax) {
+    throw new SourceFetchError("SCHEMA");
+  }
+  const observedAt = normalizeKstMinuteTime(requiredString(commercial, ["CMRCL_TIME"]));
+  const semanticRecord = {
+    sourceId: "SEOUL_CITYDATA_CMRCL",
+    area,
+    areaCode: requiredString(citydata, ["AREA_CD"]),
+    areaName: requiredString(citydata, ["AREA_NM"]),
+    commercialLevel: requiredString(commercial, ["AREA_CMRCL_LVL"]),
+    paymentCount,
+    paymentAmountMin,
+    paymentAmountMax,
+    observedAt,
+  } as const;
+  const qualityStatus: QualityStatus = paymentCount === null || paymentAmountMin === null || paymentAmountMax === null
+    ? "PARTIAL"
+    : "VALID";
+
+  return {
+    ...semanticRecord,
+    recordOrigin: "LIVE",
+    eventAt: observedAt,
+    publishedAt: observedAt,
+    retrievedAt,
+    freshness: "LIVE",
+    schemaVersion: "seoul-realtime-commercial-v1",
+    qualityStatus,
+    sourceHash: await sha256(semanticRecord),
+  };
+}
+
 export interface CanonicalEstimatedSales {
   sourceId: string;
   recordOrigin: "OFFICIAL_HISTORICAL";

@@ -239,6 +239,7 @@ test("realtime and forecast sources are selectable for diagnostics", () => {
       "INCHEON_DEPARTURE_CONGESTION_T2",
       "INCHEON_PASSENGER_FORECAST",
       "SEOUL_CITYDATA_PPLTN",
+      "SEOUL_CITYDATA_CMRCL",
     ],
   );
   // A4-T1 and A4-T2 must never collapse into one id.
@@ -258,10 +259,13 @@ test("previously supported A2/A3/T1 selection still resolves", () => {
 });
 
 test("diagnostic selection defaults to every source and rejects typos", () => {
-  assert.equal(resolveDiagnosticSourceIds(undefined).length, 11);
-  assert.equal(resolveDiagnosticSourceIds("   ").length, 11);
+  assert.equal(resolveDiagnosticSourceIds(undefined).length, 12);
+  assert.equal(resolveDiagnosticSourceIds("   ").length, 12);
   // Deduplicates rather than binding the same id twice.
-  assert.deepEqual(resolveDiagnosticSourceIds("seoul_realtime,SEOUL_CITYDATA_PPLTN"), ["SEOUL_CITYDATA_PPLTN"]);
+  assert.deepEqual(resolveDiagnosticSourceIds("seoul_realtime,SEOUL_CITYDATA_PPLTN,SEOUL_CITYDATA_CMRCL"), [
+    "SEOUL_CITYDATA_PPLTN",
+    "SEOUL_CITYDATA_CMRCL",
+  ]);
   // A typo must fail loudly, never look like "this source has no rows".
   assert.throws(() => resolveDiagnosticSourceIds("airport_congestion_T2"), /unknown_diagnostic_sources_airport_congestion_T2/);
 });

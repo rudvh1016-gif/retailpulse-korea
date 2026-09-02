@@ -33,9 +33,20 @@ export const DIAGNOSTIC_SOURCE_IDS = {
   events: "KTO_TOURAPI_EVENT",
 } as const satisfies Record<string, string>;
 
+// One integrated `seoul_realtime` request writes two independently healthy
+// canonical sources. Operational inspection must always include both even
+// though the production runner correctly keeps one selectable request name.
+const DIAGNOSTIC_COMPANION_SOURCE_IDS: Partial<Record<keyof typeof DIAGNOSTIC_SOURCE_IDS, readonly string[]>> = {
+  seoul_realtime: ["SEOUL_CITYDATA_CMRCL"],
+};
+
 export type DiagnosticSourceName = keyof typeof DIAGNOSTIC_SOURCE_IDS;
 
 export const DIAGNOSTIC_SOURCE_NAMES = Object.keys(DIAGNOSTIC_SOURCE_IDS) as DiagnosticSourceName[];
+
+function idsForDiagnosticName(name: DiagnosticSourceName): string[] {
+  return [DIAGNOSTIC_SOURCE_IDS[name], ...(DIAGNOSTIC_COMPANION_SOURCE_IDS[name] ?? [])];
+}
 
 /**
  * Resolves a comma-separated selection into canonical source ids.
@@ -51,19 +62,19 @@ export function resolveDiagnosticSourceIds(selection?: string): string[] {
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
-  if (!requested.length) return DIAGNOSTIC_SOURCE_NAMES.map((name) => DIAGNOSTIC_SOURCE_IDS[name]);
+  if (!requested.length) return DIAGNOSTIC_SOURCE_NAMES.flatMap(idsForDiagnosticName);
 
-  const known = new Set<string>(Object.values(DIAGNOSTIC_SOURCE_IDS));
+  const known = new Set<string>(DIAGNOSTIC_SOURCE_NAMES.flatMap(idsForDiagnosticName));
   const resolved: string[] = [];
   const unknown: string[] = [];
   for (const value of requested) {
-    const id = Object.prototype.hasOwnProperty.call(DIAGNOSTIC_SOURCE_IDS, value)
-      ? DIAGNOSTIC_SOURCE_IDS[value as DiagnosticSourceName]
+    const ids = Object.prototype.hasOwnProperty.call(DIAGNOSTIC_SOURCE_IDS, value)
+      ? idsForDiagnosticName(value as DiagnosticSourceName)
       : known.has(value)
-        ? value
-        : undefined;
-    if (!id) unknown.push(value);
-    else if (!resolved.includes(id)) resolved.push(id);
+        ? [value]
+        : [];
+    if (!ids.length) unknown.push(value);
+    for (const id of ids) if (!resolved.includes(id)) resolved.push(id);
   }
   if (unknown.length) throw new Error(`unknown_diagnostic_sources_${unknown.join("_")}`);
   return resolved;

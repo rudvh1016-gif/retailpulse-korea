@@ -13,10 +13,10 @@
 ## Manual one-shot data import
 
 1. **One-shot Data Import → Run workflow** performs a single bounded import of the selected verified sources into Production D1. It has no schedule and is not the recurring collector.
-2. Type `IMPORT` in the confirm input; without it the run refuses to write.
+2. Type `IMPORT` in the confirm input; without it the run refuses to write. The exact source `probe_seoul_citydata_contract` with confirmation `PROBE` is the read-only S1 structure check: it receives no D1 token and never imports.
 3. Choose sources from `seoul_realtime,seoul_sales,weather,events,airport_congestion,airport_congestion_t2,airport_passenger_forecast,airport_flights`. Sources whose keys are still blocked report `NEEDS_KEY`/`ERROR` and write nothing except their source-health status.
 4. Writes are changed-only idempotent upserts against unique semantic keys; re-running the same import produces zero changed rows.
-5. Verify afterwards with `/api/health` and `/api/live/summary` (source statuses, latest timestamps) — never by editing data.
+5. Verify afterwards with `/api/health` and `/api/live/summary` (source statuses, latest timestamps) — never by editing data. `seoul_realtime` must show both `SEOUL_CITYDATA_PPLTN` and `SEOUL_CITYDATA_CMRCL`; one being healthy never hides failure in the other.
 6. The recurring scheduler stays gated behind `ENABLE_PRODUCTION_COLLECTOR` and separate owner approval.
 
 ## Site does not open

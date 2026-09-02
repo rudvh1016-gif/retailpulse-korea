@@ -149,6 +149,14 @@ export async function GET(request: Request) {
       FROM seoul_realtime_area WHERE area = ? ORDER BY observed_at DESC LIMIT 1`),
     ).bind(...AREAS).all<Row>()).results ?? []);
 
+    const commercialRows = await safeAll<Row>(async () => (await client.prepare(
+      latestPerKey(AREAS, () => `SELECT area, commercial_level AS commercialLevel,
+        payment_count AS paymentCount, payment_amount_min AS paymentAmountMin,
+        payment_amount_max AS paymentAmountMax, observed_at AS observedAt,
+        retrieved_at AS retrievedAt, quality_status AS qualityStatus
+      FROM seoul_realtime_commercial WHERE area = ? ORDER BY observed_at DESC LIMIT 1`),
+    ).bind(...AREAS).all<Row>()).results ?? []);
+
     // Seoul publishes a rolling 12-hour forecast, so from mid-evening onward
     // every band it publishes falls on the next calendar day. The horizon is
     // therefore taken as-is and each band's own day is reported, instead of
@@ -301,12 +309,14 @@ export async function GET(request: Request) {
 
     const areas = Object.fromEntries(AREAS.map((area) => {
       const realtime = realtimeRows.find((row) => row.area === area) ?? null;
+      const commercial = commercialRows.find((row) => row.area === area) ?? null;
       const foreignPresence = foreignPresenceRows.find((row) => row.area === area) ?? null;
       const salesForArea = salesRows.filter((row) => row.area === area);
       const salesTotal = salesForArea.reduce((sum, row) => sum + Number(row.salesAmount ?? 0), 0);
       const eventsForArea = eventRows.filter((row) => row.area === area);
       return [area, {
         realtime: realtime ? { ...realtime, freshness: freshnessOf(realtime.observedAt, REALTIME_STALE_MINUTES, now) } : null,
+        commercial: commercial ? { ...commercial, freshness: freshnessOf(commercial.observedAt, REALTIME_STALE_MINUTES, now) } : null,
         // The whole published horizon, not a "today" slice — see the query note.
         realtimeForecast: realtimeForecastRows.filter((row) => row.area === area).slice(0, 12),
         weather: weatherRows.filter((row) => row.area === area).slice(0, 24),

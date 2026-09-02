@@ -44,6 +44,19 @@ test("the observation time and the not-cumulative note travel with the number", 
     "the reader must be able to see which moment was observed");
 });
 
+test("realtime commercial activity appears immediately after population with truthful scope", () => {
+  for (const phrase of [
+    "신한카드 내국인 소비 기준 · 전수 매출 아님",
+    "Shinhan Card domestic-consumer activity · not total sales",
+    "基于新韩卡韩国境内消费者活动 · 非全量销售额",
+    "新韓カードの国内消費者活動基準 · 売上全数ではありません",
+  ]) assert.ok(signals.includes(phrase), `${phrase} must remain visible`);
+  const areaSignals = signals.match(/export default function LiveSignals[\s\S]*?\nconst flightBoardText/)?.[0] ?? "";
+  assert.ok(areaSignals.indexOf('key: "realtime"') < areaSignals.indexOf("buildCommercialSignalRow"));
+  assert.ok(areaSignals.indexOf("buildCommercialSignalRow") < areaSignals.indexOf("block?.foreignPresence"));
+  assert.doesNotMatch(areaSignals, /foreign spend|tourist spend|외국인 매출|관광객 매출/i);
+});
+
 /**
  * A4 is an observation of one checkpoint. A5 is an official forecast. The
  * product must never let one read as the other.
