@@ -91,6 +91,35 @@ jobs:
             }
           }
 
+          // Does the edge actually serve a shared cached copy? The success path
+          // asks for it (`public, max-age=60, stale-while-revalidate=300`), but a
+          // Worker response is not cached just because it says so, and on D1 Free
+          // every uncached request is billed rows. Two identical back-to-back
+          // requests answer it: CF-Cache-Status HIT with a non-zero Age means the
+          // second reader cost no database reads at all. This is reported, never
+          // failed - caching is an optimisation, and the read path has to be
+          // affordable uncached anyway.
+          const cacheProbe = async () => {
+            const response = await fetch(`${origin}/api/live/summary`, { signal: AbortSignal.timeout(15000) });
+            await response.arrayBuffer();
+            return {
+              status: response.status,
+              cfCacheStatus: response.headers.get("cf-cache-status"),
+              age: response.headers.get("age"),
+              cacheControl: response.headers.get("cache-control"),
+            };
+          };
+          const firstRead = await cacheProbe();
+          const secondRead = await cacheProbe();
+          console.log(JSON.stringify({ edgeCache: { firstRead, secondRead } }));
+
+          // A ?date= day the picker offers must still render live, not fall back
+          // to an empty shell. Yesterday in KST is always one of those days.
+          const kstYesterday = new Date(Date.now() + 9 * 3600 * 1000 - 86400 * 1000).toISOString().slice(0, 10);
+          const dated = await fetch(`${origin}/api/live/summary?date=${kstYesterday}`, { signal: AbortSignal.timeout(15000) });
+          const datedBody = await dated.json().catch(() => null);
+          check("dated summary answers live", dated.status === 200 && datedBody?.mode === "live-summary", `date ${kstYesterday}; status ${dated.status}; mode ${datedBody?.mode}`);
+
           const redirect = await fetch(`http://koretaildata.com/ko`, { redirect: "manual", signal: AbortSignal.timeout(15000) });
           check("http->https redirect", [301, 308].includes(redirect.status), `status ${redirect.status}`);
 
