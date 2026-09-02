@@ -11,6 +11,7 @@ import {
   type AirportCurrentBrief,
   type ForecastDayOffset,
 } from "../lib/current-brief";
+import { eventPreview, eventStatusForDate, safeOfficialEventHomepage } from "../lib/event-presentation";
 
 type AreaId = "myeongdong" | "hongdae" | "seongsu";
 
@@ -59,6 +60,7 @@ interface LiveRealtimeForecast {
 }
 
 interface LiveEventRow {
+  contentId?: string | null;
   title: string;
   eventStart: string;
   eventEnd: string | null;
@@ -69,6 +71,7 @@ interface LiveEventRow {
   addressDetail?: string | null;
   overview?: string | null;
   homepage?: string | null;
+  status?: "RUNNING" | "UPCOMING";
 }
 
 interface LiveSales {
@@ -303,12 +306,12 @@ const text = {
   // estimate of how many people are in the area right now.
   currentPopulation: { ko: "현재 추정 인구", en: "Estimated population now", zh: "当前推定人口", ja: "現在の推定人口" },
   notCumulative: { ko: "현재 시점 추정 범위 · 오늘 누적 방문객 아님", en: "estimated range at this moment, not today's cumulative visitors", zh: "当前时点推定范围 · 非今日累计访客", ja: "現時点の推定範囲 · 本日の累計来訪者ではありません" },
-  commercial: { ko: "현재 소비 분위기", en: "Current spending activity", zh: "当前消费活跃度", ja: "現在の消費動向" },
+  commercial: { ko: "최근 10분 내국인 카드 소비", en: "Recent 10-minute domestic-card activity", zh: "最近10分钟境内消费者银行卡支付", ja: "直近10分の国内消費者カード決済" },
   commercialDisclaimer: {
-    ko: "신한카드 내국인 소비 기준 · 전수 매출 아님",
-    en: "Shinhan Card domestic-consumer activity · not total sales",
-    zh: "基于新韩卡韩国境内消费者活动 · 非全量销售额",
-    ja: "新韓カードの国内消費者活動基準 · 売上全数ではありません",
+    ko: "신한카드 내국인 결제 기반 · 전수 매출 아님 · 외국인 소비 아님",
+    en: "Based on Shinhan Card domestic-consumer payments · not total sales · not foreign-consumer spending",
+    zh: "基于新韩卡韩国境内消费者支付 · 非全量销售额 · 非外国消费者支出",
+    ja: "新韓カードの国内消費者決済に基づく · 売上全数ではありません · 外国人消費ではありません",
   },
   weather: { ko: "날씨", en: "Weather", zh: "天气", ja: "天気" },
   rainChance: { ko: "강수확률 최대", en: "max rain chance", zh: "最大降水概率", ja: "降水確率 最大" },
@@ -319,6 +322,12 @@ const text = {
   dayHigh: { ko: "최고", en: "high", zh: "最高", ja: "最高" },
   events: { ko: "주변 행사", en: "Nearby events", zh: "周边活动", ja: "周辺イベント" },
   eventCount: { ko: "건 진행·예정", en: "running or upcoming", zh: "项进行或即将举行", ja: "件 開催・予定" },
+  eventRepresentative: { ko: "대표 행사", en: "Representative events", zh: "代表活动", ja: "代表イベント" },
+  eventDetails: { ko: "자세히 보기", en: "View details", zh: "查看详情", ja: "詳細を見る" },
+  eventOfficialPage: { ko: "공식 행사 페이지", en: "Official event page", zh: "官方活动页面", ja: "公式イベントページ" },
+  eventRunning: { ko: "진행 중", en: "Running", zh: "进行中", ja: "開催中" },
+  eventUpcoming: { ko: "예정", en: "Upcoming", zh: "即将举行", ja: "開催予定" },
+  eventDistanceBasis: { ko: "선택 지역 기준", en: "from selected area", zh: "距所选区域", ja: "選択エリア基準" },
   sales: { ko: "상권 과거 흐름", en: "Commercial history", zh: "商圈历史", ja: "商圏の過去推移" },
   salesNote: { ko: "분기 추정매출 · 실매출 아님", en: "Quarterly estimate · not POS sales", zh: "季度推算 · 非实际销售", ja: "四半期推定 · 実売上ではない" },
   foreignPresence: { ko: "단기외국인 생활인구", en: "Short-stay foreign living population", zh: "短期停留外国人生活人口", ja: "短期滞在外国人生活人口" },
@@ -1005,9 +1014,63 @@ function formatKrwCompact(lang: Lang, amount: number): string {
 export interface CommercialSignalRow {
   key: "commercial";
   label: string;
+  statusLabel: string;
+  statusValue: string;
+  amountLabel: string;
+  amountValue: string | null;
+  countLabel: string;
+  countValue: string | null;
+  referenceLabel: string;
+  referenceValue: string;
+  retrievalLabel: string;
+  retrievalValue: string;
+  attribution: string;
+  privacyMessage: string | null;
+  staleAge: string | null;
+  /** Kept until the structured card consumes this builder directly. */
   value: string;
   note: string;
   state: "LIVE" | "STALE";
+}
+
+const commercialFieldText = {
+  status: { ko: "상태", en: "Status", zh: "状态", ja: "状態" },
+  amount: { ko: "결제금액", en: "Payment amount", zh: "支付金额", ja: "決済金額" },
+  count: { ko: "결제 건수", en: "Payment count", zh: "支付笔数", ja: "決済件数" },
+  reference: { ko: "관측 기준", en: "Reference window", zh: "基准时间", ja: "観測基準" },
+  retrieval: { ko: "KORETAIL 수집", en: "KORETAIL retrieval", zh: "KORETAIL采集", ja: "KORETAIL取得" },
+  privacy: {
+    ko: "표본 보호로 금액 비공개",
+    en: "Amount withheld for sample privacy",
+    zh: "为保护样本隐私，金额未公开",
+    ja: "サンプル保護のため金額非公開",
+  },
+} as const;
+
+function formatCommercialReference(lang: Lang, observedAt: string): string {
+  const clock = formatKstClock(observedAt);
+  if (!clock) return lang === "ko" ? "최근 10분" : lang === "en" ? "Recent 10 minutes" : lang === "zh" ? "最近10分钟" : "直近10分";
+  return lang === "ko" ? `${clock} 기준 최근 10분`
+    : lang === "en" ? `Recent 10 minutes as of ${clock} KST`
+      : lang === "zh" ? `截至${clock} KST的最近10分钟`
+        : `${clock} KST時点の直近10分`;
+}
+
+function formatCommercialRetrieval(lang: Lang, retrievedAt: string): string {
+  const clock = formatKstClock(retrievedAt);
+  if (!clock) return "";
+  return lang === "ko" ? `${clock} 수집`
+    : lang === "en" ? `Collected ${clock} KST`
+      : lang === "zh" ? `${clock} KST采集`
+        : `${clock} KST取得`;
+}
+
+function formatCommercialAge(lang: Lang, observedAt: string, generatedAt: string): string | null {
+  const ageMinutes = Math.max(0, Math.floor((Date.parse(generatedAt) - Date.parse(observedAt)) / 60_000));
+  if (!Number.isFinite(ageMinutes)) return null;
+  if (ageMinutes < 60) return lang === "ko" ? `${ageMinutes}분 전` : lang === "en" ? `${ageMinutes} min old` : lang === "zh" ? `${ageMinutes}分钟前` : `${ageMinutes}分前`;
+  const hours = Math.floor(ageMinutes / 60);
+  return lang === "ko" ? `${hours}시간 전` : lang === "en" ? `${hours} hr old` : lang === "zh" ? `${hours}小时前` : `${hours}時間前`;
 }
 
 /** Truthful OA-21285 row; suppressed amounts are omitted, never zero-filled. */
@@ -1020,17 +1083,185 @@ export function buildCommercialSignalRow(
   const hasRange = commercial.paymentAmountMin !== null
     && commercial.paymentAmountMax !== null
     && Number.isFinite(commercial.paymentAmountMin)
-    && Number.isFinite(commercial.paymentAmountMax);
-  const range = hasRange
-    ? ` · ₩${commercial.paymentAmountMin!.toLocaleString(airportLocale(lang))}–₩${commercial.paymentAmountMax!.toLocaleString(airportLocale(lang))}`
-    : "";
+    && Number.isFinite(commercial.paymentAmountMax)
+    && commercial.paymentAmountMin >= 0
+    && commercial.paymentAmountMax >= 0;
+  const hasCount = commercial.paymentCount !== null && Number.isFinite(commercial.paymentCount) && commercial.paymentCount >= 0;
+  const amountValue = hasRange
+    ? `₩${commercial.paymentAmountMin!.toLocaleString(airportLocale(lang))}–₩${commercial.paymentAmountMax!.toLocaleString(airportLocale(lang))}`
+    : null;
+  const countValue = hasCount
+    ? `${commercial.paymentCount!.toLocaleString(airportLocale(lang))}${lang === "ko" ? "건" : lang === "en" ? " payments" : lang === "zh" ? "笔" : "件"}`
+    : null;
+  const referenceValue = formatCommercialReference(lang, commercial.observedAt);
+  const retrievalValue = formatCommercialRetrieval(lang, commercial.retrievedAt);
+  const staleAge = commercial.freshness === "STALE" ? formatCommercialAge(lang, commercial.observedAt, generatedAt) : null;
   return {
     key: "commercial",
     label: text.commercial[lang],
-    value: `${commercial.commercialLevel}${range}`,
-    note: `${text.sourceSeoul[lang]} · ${formatHumanFreshness(commercial.observedAt, generatedAt, lang, "observed")} · ${text.commercialDisclaimer[lang]}`,
+    statusLabel: commercialFieldText.status[lang],
+    statusValue: commercial.commercialLevel.trim(),
+    amountLabel: commercialFieldText.amount[lang],
+    amountValue,
+    countLabel: commercialFieldText.count[lang],
+    countValue,
+    referenceLabel: commercialFieldText.reference[lang],
+    referenceValue,
+    retrievalLabel: commercialFieldText.retrieval[lang],
+    retrievalValue,
+    attribution: text.commercialDisclaimer[lang],
+    privacyMessage: hasRange ? null : commercialFieldText.privacy[lang],
+    staleAge,
+    value: commercial.commercialLevel.trim(),
+    note: [referenceValue, retrievalValue, text.commercialDisclaimer[lang], staleAge].filter(Boolean).join(" · "),
     state: commercial.freshness,
   };
+}
+
+type SignalGroupId = "now" | "movement" | "today-next" | "past";
+
+interface SignalRow {
+  key: string;
+  group: SignalGroupId;
+  timeState: string;
+  label: string;
+  value: string;
+  note: string;
+  detail?: string;
+  state?: "LIVE" | "STALE";
+}
+
+const signalStructureText = {
+  groups: {
+    now: {
+      title: { ko: "지금", en: "Now", zh: "现在", ja: "現在" },
+      state: { ko: "실시간/최근", en: "Live / recent", zh: "实时/近期", ja: "リアルタイム/直近" },
+    },
+    movement: {
+      title: { ko: "이동과 외국인 흐름", en: "Movement and foreign flow", zh: "移动与外国人流动", ja: "移動と外国人動向" },
+      state: { ko: "최근·지연 공개", en: "Recent / delayed release", zh: "近期/延迟发布", ja: "直近/遅延公開" },
+    },
+    "today-next": {
+      title: { ko: "오늘과 다음", en: "Today and next", zh: "今天与接下来", ja: "今日と次" },
+      state: { ko: "공식 일정·예상", en: "Official schedule / forecast", zh: "官方日程/预测", ja: "公式日程/予想" },
+    },
+    past: {
+      title: { ko: "과거 상권 정보", en: "Past commercial-area information", zh: "历史商圈信息", ja: "過去の商圏情報" },
+      state: { ko: "과거 자료", en: "Historical", zh: "历史资料", ja: "過去資料" },
+    },
+  },
+  timeState: {
+    recent: { ko: "실시간/최근", en: "Live / recent", zh: "实时/近期", ja: "リアルタイム/直近" },
+    forecast: { ko: "공식 예상", en: "Official forecast", zh: "官方预测", ja: "公式予想" },
+    delayed: { ko: "지연 공개", en: "Delayed release", zh: "延迟发布", ja: "遅延公開" },
+    historical: { ko: "과거 자료", en: "Historical", zh: "历史资料", ja: "過去資料" },
+    schedule: { ko: "공식 일정", en: "Official schedule", zh: "官方日程", ja: "公式日程" },
+  },
+  eventAll: {
+    ko: (count: number) => `전체 ${count.toLocaleString("ko-KR")}건 보기`,
+    en: (count: number) => `View all ${count.toLocaleString("en-GB")} events`,
+    zh: (count: number) => `查看全部${count.toLocaleString("zh-CN")}项活动`,
+    ja: (count: number) => `全${count.toLocaleString("ja-JP")}件を見る`,
+  },
+  eventRepresentativesOnly: {
+    ko: "대표 행사만 보기", en: "Show representative events", zh: "仅显示代表活动", ja: "代表イベントのみ表示",
+  },
+} as const;
+
+function SignalRowCard({ row, lang }: { row: SignalRow; lang: Lang }) {
+  return <article className="signal-row" data-signal-key={row.key}>
+    <div className="signal-row-label">
+      <span className="signal-time-state">{row.timeState}</span>
+      <h4>{row.label}</h4>
+    </div>
+    <div className="signal-row-content">
+      <b className="signal-row-value">{row.value}</b>
+      {row.detail && <p className="signal-row-detail">{row.detail}</p>}
+      <small className="signal-row-source">{row.note}{row.state === "STALE" ? ` · ${text.stale[lang]}` : ""}</small>
+    </div>
+  </article>;
+}
+
+function CommercialSignalCard({ signal, lang }: { signal: CommercialSignalRow; lang: Lang }) {
+  const metrics = [
+    { label: signal.statusLabel, value: signal.statusValue },
+    { label: signal.amountLabel, value: signal.amountValue ?? signal.privacyMessage },
+    ...(signal.countValue ? [{ label: signal.countLabel, value: signal.countValue }] : []),
+  ];
+  return <article className="commercial-signal-card">
+    <div className="commercial-signal-label">
+      <span className="signal-time-state">{signalStructureText.timeState.recent[lang]}</span>
+      <h4>{signal.label}</h4>
+      {signal.state === "STALE" && <small className="signal-stale">{text.stale[lang]}{signal.staleAge ? ` · ${signal.staleAge}` : ""}</small>}
+    </div>
+    <div className="commercial-signal-content">
+      <dl className="commercial-metrics">
+        {metrics.map((metric) => <div key={metric.label}><dt>{metric.label}</dt><dd>{metric.value}</dd></div>)}
+      </dl>
+      <dl className="commercial-times">
+        <div><dt>{signal.referenceLabel}</dt><dd>{signal.referenceValue}</dd></div>
+        <div><dt>{signal.retrievalLabel}</dt><dd>{signal.retrievalValue}</dd></div>
+      </dl>
+      <p className="commercial-attribution">{text.sourceSeoul[lang]} · {signal.attribution}</p>
+    </div>
+  </article>;
+}
+
+function EventCard({ event, lang, serviceDate }: { event: LiveEventRow; lang: Lang; serviceDate: string }) {
+  const status = event.status ?? eventStatusForDate(event, serviceDate);
+  const preview = eventPreview(event.overview);
+  const homepage = safeOfficialEventHomepage(event.homepage);
+  const place = [formatEventPlace(event), event.addressDetail?.trim()].filter(Boolean).join(" · ");
+  const distance = formatEventDistance(lang, event);
+  return <li className="event-card">
+    <article>
+      <header>
+        <span className={`event-status ${status.toLowerCase()}`}>{status === "RUNNING" ? text.eventRunning[lang] : text.eventUpcoming[lang]}</span>
+        <h4>{[event.categoryName, event.title].filter(Boolean).join(" · ")}</h4>
+      </header>
+      <p className="event-meta">{[formatEventPeriod(event), place].filter(Boolean).join(" · ")}</p>
+      {distance && <p className="event-distance">{text.eventDistanceBasis[lang]} {distance}</p>}
+      {preview && <p className="event-preview">{preview}</p>}
+      <div className="event-actions">
+        {event.overview && <details>
+          <summary>{text.eventDetails[lang]}</summary>
+          <p className="event-overview">{event.overview}</p>
+        </details>}
+        {homepage && <a href={homepage} target="_blank" rel="noopener noreferrer">{text.eventOfficialPage[lang]} <span aria-hidden="true">↗</span></a>}
+      </div>
+    </article>
+  </li>;
+}
+
+function EventSignalPanel({ lang, events, eventCount, serviceDate }: { lang: Lang; events: LiveEventRow[]; eventCount: number; serviceDate: string }) {
+  const [showAll, setShowAll] = useState(false);
+  const visibleEvents = showAll ? events : events.slice(0, 3);
+  const listId = `event-list-${serviceDate}`;
+  if (!events.length) return null;
+  return <section className="event-signal-panel" aria-labelledby={`${listId}-title`}>
+    <header className="event-panel-head">
+      <div>
+        <span className="signal-time-state">{signalStructureText.timeState.schedule[lang]}</span>
+        <h4 id={`${listId}-title`}>{text.events[lang]}</h4>
+      </div>
+      <p><strong>{eventCount.toLocaleString(airportLocale(lang))}</strong>{lang === "en" ? " " : ""}{text.eventCount[lang]} · {text.eventRepresentative[lang]} {Math.min(3, events.length)}</p>
+    </header>
+    <ol className="event-card-list" id={listId}>
+      {visibleEvents.map((event, index) => <EventCard
+        key={event.contentId ?? `${event.title}-${event.eventStart}-${index}`}
+        event={event}
+        lang={lang}
+        serviceDate={serviceDate}
+      />)}
+    </ol>
+    {events.length > 3 && <button
+      type="button"
+      className="event-list-toggle"
+      aria-expanded={showAll}
+      aria-controls={listId}
+      onClick={() => setShowAll((value) => !value)}
+    >{showAll ? signalStructureText.eventRepresentativesOnly[lang] : signalStructureText.eventAll[lang](events.length)}</button>}
+  </section>;
 }
 
 export default function LiveSignals({ lang, area, date = null }: { lang: Lang; area: AreaId; date?: string | null }) {
@@ -1064,12 +1295,14 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
   });
   const areaBriefCopy = localizeAreaBrief(areaBrief, lang);
 
-  const rows: Array<{ key: string; label: string; value: string; note: string; detail?: string; state?: "LIVE" | "STALE" }> = [];
+  const rows: SignalRow[] = [];
 
   if (block?.realtime) {
     const level = congestionLabels[block.realtime.congestionLevel]?.[lang] ?? block.realtime.congestionLabel;
     rows.push({
       key: "realtime",
+      group: "now",
+      timeState: signalStructureText.timeState.recent[lang],
       label: text.currentPopulation[lang],
       value: `${formatPeopleRange(lang, block.realtime.populationMin, block.realtime.populationMax)}${text.foreignPeople[lang]} · ${level}`,
       note: `${text.sourceSeoul[lang]} · ${formatHumanFreshness(block.realtime.observedAt, summary.generatedAt, lang, "observed")} · ${text.notCumulative[lang]}`,
@@ -1078,12 +1311,13 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
   }
 
   const commercialRow = buildCommercialSignalRow(lang, block?.commercial, summary.generatedAt);
-  if (commercialRow) rows.push(commercialRow);
 
   if (block?.subwayRidership) {
     const subway = block.subwayRidership;
     rows.push({
       key: "subway_ridership",
+      group: "movement",
+      timeState: signalStructureText.timeState.recent[lang],
       label: text.subwayRidership[lang],
       value: `${text.subwayAlighting[lang]} ${formatPeopleValue(lang, subway.alightingCount)} ${text.foreignPeople[lang]}`,
       detail: `${text.subwayBoarding[lang]} ${formatPeopleValue(lang, subway.boardingCount)} ${text.foreignPeople[lang]}`,
@@ -1095,6 +1329,8 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     const productId = block.foreignPresence.productVersion.split(":", 1)[0] || "OA-23018";
     rows.push({
       key: "foreign_presence",
+      group: "movement",
+      timeState: signalStructureText.timeState.delayed[lang],
       label: text.foreignPresence[lang],
       value: `${formatPeopleValue(lang, block.foreignPresence.value)} ${text.foreignPeople[lang]}`,
       note: `${text.foreignNote[lang]} · ${formatHumanFreshness(block.foreignPresence.referenceAt, summary.generatedAt, lang)} · ${productId}`,
@@ -1108,6 +1344,8 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     if (mobility.tourism !== null) parts.push(`${text.tourismPurpose[lang]} ${formatPeopleValue(lang, mobility.tourism)}`);
     if (parts.length) rows.push({
       key: "foreign_purpose_mobility",
+      group: "movement",
+      timeState: signalStructureText.timeState.delayed[lang],
       label: text.foreignPurpose[lang],
       value: `${parts.join(" · ")} ${text.movementUnit[lang]}`,
       note: `${mobility.referenceDate} · ${text.foreignPurposeNote[lang]} · ${mobility.datasetId}`,
@@ -1144,29 +1382,21 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     if (dayLow !== undefined) parts.push(`${text.dayLow[lang]} ${(dayLow / 10).toFixed(0)}°C`);
     if (dayHigh !== undefined) parts.push(`${text.dayHigh[lang]} ${(dayHigh / 10).toFixed(0)}°C`);
 
-    rows.push({ key: "weather", label: text.weather[lang], value: parts.join(" · "), note: text.sourceKma[lang] });
-  }
-
-  if (block?.events.length) {
-    const nextEvent = block.events[0];
     rows.push({
-      key: "events",
-      label: text.events[lang],
-      // Official category name, then title — "축제 · 명동 페스티벌". A title
-      // alone does not say what kind of event it is, when it runs, where, or
-      // how far away; all of that is collected from the provider. Nothing here
-      // is derived or guessed: an absent field is simply left out.
-      value: `${block.eventCount ?? block.events.length}${lang === "en" ? " " : ""}${text.eventCount[lang]} · ${[nextEvent.categoryName, nextEvent.title].filter(Boolean).join(" · ")}`,
-      note: [formatEventPeriod(nextEvent), formatEventPlace(nextEvent), formatEventDistance(lang, nextEvent), text.sourceKto[lang]]
-        .filter(Boolean).join(" · "),
-      // The provider's own description, already cut to an excerpt server-side.
-      detail: nextEvent.overview ?? undefined,
+      key: "weather",
+      group: "now",
+      timeState: signalStructureText.timeState.forecast[lang],
+      label: text.weather[lang],
+      value: parts.join(" · "),
+      note: text.sourceKma[lang],
     });
   }
 
   if (block?.sales) {
     rows.push({
       key: "sales",
+      group: "past",
+      timeState: signalStructureText.timeState.historical[lang],
       label: text.sales[lang],
       value: `${formatKrwCompact(lang, block.sales.totalAmount)} · ${block.sales.quarterCode.slice(0, 4)}Q${block.sales.quarterCode.slice(4)}`,
       note: `${text.sourceSales[lang]} · ${text.salesNote[lang]}`,
@@ -1192,6 +1422,8 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       .join(" · ");
     rows.push({
       key: "arrival_today",
+      group: "today-next",
+      timeState: signalStructureText.timeState.forecast[lang],
       label: text.arrivalToday[lang],
       value: `${Math.round(arrival.todayExpectedPassengersTotal).toLocaleString(airportLocale(lang))}${text.arrivalUnit[lang]}`,
       note: [
@@ -1205,6 +1437,8 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     const band = arrival.nextExpectedTimeBand;
     rows.push({
       key: "arrival_next",
+      group: "today-next",
+      timeState: signalStructureText.timeState.forecast[lang],
       label: text.arrivalNext[lang],
       value: `${Math.round(band.expectedPassengers).toLocaleString(airportLocale(lang))}${text.arrivalUnit[lang]} · ${formatKstBand(band.targetStartAt, band.targetEndAt).replace(" KST", "")}`,
       note: arrivalNote,
@@ -1215,13 +1449,17 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     const band = arrival.peakExpectedTimeBand;
     rows.push({
       key: "arrival_peak",
+      group: "today-next",
+      timeState: signalStructureText.timeState.forecast[lang],
       label: text.arrivalPeak[lang],
       value: `${formatKstBand(band.targetStartAt, band.targetEndAt).replace(" KST", "")} · ${Math.round(band.expectedPassengers).toLocaleString(airportLocale(lang))}${text.arrivalUnit[lang]}`,
       note: arrivalNote,
     });
   }
 
-  if (!rows.length) return null;
+  const events = block?.events ?? [];
+  if (!rows.length && !commercialRow && !events.length) return null;
+  const groupIds: SignalGroupId[] = ["now", "movement", "today-next", "past"];
 
   return (
     <section className="live-signals" aria-labelledby="live-signals-title">
@@ -1240,16 +1478,35 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
         </div>
       </div>
       <p className="section-intro">{text.intro[lang]}</p>
-      <div className="live-signal-rows">
-        {rows.map((row, index) => (
-          <p key={row.key}>
-            <span>{String(index + 1).padStart(2, "0")}</span>
-            <strong>{row.label}</strong>
-            <b>{row.value}</b>
-            <small>{row.note}{row.state === "STALE" ? ` · ${text.stale[lang]}` : ""}</small>
-            {row.detail && <em className="live-signal-detail">{row.detail}</em>}
-          </p>
-        ))}
+      <div className="signal-groups">
+        {groupIds.map((groupId) => {
+          const groupRows = rows.filter((row) => row.group === groupId);
+          const hasSpecial = (groupId === "now" && commercialRow) || (groupId === "today-next" && events.length);
+          if (!groupRows.length && !hasSpecial) return null;
+          const groupCopy = signalStructureText.groups[groupId];
+          const firstNow = groupId === "now" ? groupRows.filter((row) => row.key === "realtime") : [];
+          const remainingNow = groupId === "now" ? groupRows.filter((row) => row.key !== "realtime") : [];
+          return <section className={`signal-group signal-group-${groupId}`} key={groupId}>
+            <header className="signal-group-head">
+              <h3 className="signal-group-title">{groupCopy.title[lang]}</h3>
+              <span>{groupCopy.state[lang]}</span>
+            </header>
+            <div className="signal-group-body">
+              {groupId === "now" ? <>
+                {firstNow.map((row) => <SignalRowCard key={row.key} row={row} lang={lang} />)}
+                {commercialRow && <CommercialSignalCard signal={commercialRow} lang={lang} />}
+                {remainingNow.map((row) => <SignalRowCard key={row.key} row={row} lang={lang} />)}
+              </> : null}
+              {groupId === "today-next" && events.length > 0 && <EventSignalPanel
+                lang={lang}
+                events={events}
+                eventCount={block?.eventCount ?? events.length}
+                serviceDate={summary.serviceDateKst}
+              />}
+              {groupId !== "now" && groupRows.map((row) => <SignalRowCard key={row.key} row={row} lang={lang} />)}
+            </div>
+          </section>;
+        })}
       </div>
     </section>
   );

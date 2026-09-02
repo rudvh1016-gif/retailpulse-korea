@@ -126,7 +126,7 @@ test("Seoul integrated contract probe fails closed on an unauthorized official r
   assert.equal(output.some((line) => line.includes("INFO-300")), true);
 });
 
-test("realtime commercial signal tells all four locales it is domestic-card activity, not total sales", () => {
+test("realtime commercial signal separates status, amount, reference and retrieval in all four locales", () => {
   const commercial = {
     commercialLevel: "활발",
     paymentCount: 12345,
@@ -138,23 +138,44 @@ test("realtime commercial signal tells all four locales it is domestic-card acti
     freshness: "LIVE" as const,
   };
   const expected = {
-    ko: "신한카드 내국인 소비 기준 · 전수 매출 아님",
-    en: "Shinhan Card domestic-consumer activity · not total sales",
-    zh: "基于新韩卡韩国境内消费者活动 · 非全量销售额",
-    ja: "新韓カードの国内消費者活動基準 · 売上全数ではありません",
+    ko: {
+      label: "최근 10분 내국인 카드 소비", reference: "12:05 기준 최근 10분", retrieval: "12:06 수집",
+      attribution: "신한카드 내국인 결제 기반 · 전수 매출 아님 · 외국인 소비 아님",
+    },
+    en: {
+      label: "Recent 10-minute domestic-card activity", reference: "Recent 10 minutes as of 12:05 KST", retrieval: "Collected 12:06 KST",
+      attribution: "Based on Shinhan Card domestic-consumer payments · not total sales · not foreign-consumer spending",
+    },
+    zh: {
+      label: "最近10分钟境内消费者银行卡支付", reference: "截至12:05 KST的最近10分钟", retrieval: "12:06 KST采集",
+      attribution: "基于新韩卡韩国境内消费者支付 · 非全量销售额 · 非外国消费者支出",
+    },
+    ja: {
+      label: "直近10分の国内消費者カード決済", reference: "12:05 KST時点の直近10分", retrieval: "12:06 KST取得",
+      attribution: "新韓カードの国内消費者決済に基づく · 売上全数ではありません · 外国人消費ではありません",
+    },
   } as const;
 
   for (const lang of ["ko", "en", "zh", "ja"] as const) {
     const row = buildCommercialSignalRow(lang, commercial, "2026-09-02T03:10:00Z");
     assert.ok(row);
     assert.equal(row.key, "commercial");
-    assert.match(row.value, /활발/);
-    assert.ok(row.note.includes(expected[lang]));
+    assert.equal(row.label, expected[lang].label);
+    assert.equal(row.statusValue, "활발");
+    assert.match(row.amountValue ?? "", /₩123,456.*₩234,567/);
+    assert.match(row.countValue ?? "", /12,345/);
+    assert.equal(row.referenceValue, expected[lang].reference);
+    assert.equal(row.retrievalValue, expected[lang].retrieval);
+    assert.equal(row.attribution, expected[lang].attribution);
+    assert.equal(row.privacyMessage, null);
+    assert.equal(row.staleAge, null);
     assert.equal(row.state, "LIVE");
+    assert.doesNotMatch(JSON.stringify(row), /11:55.*12:05|12:05.*11:55/,
+      "the provider did not publish a calculated interval start");
   }
 });
 
-test("suppressed commercial payment values stay absent and never render as zero", () => {
+test("suppressed commercial payment values show privacy protection and never render as zero", () => {
   const row = buildCommercialSignalRow("ko", {
     commercialLevel: "보통",
     paymentCount: null,
@@ -167,7 +188,30 @@ test("suppressed commercial payment values stay absent and never render as zero"
   }, "2026-09-02T04:00:00Z");
 
   assert.ok(row);
-  assert.equal(row.value, "보통");
-  assert.doesNotMatch(`${row.value} ${row.note}`, /₩0|0원|payment count 0/i);
+  assert.equal(row.statusValue, "보통", "the explicit provider status remains available");
+  assert.equal(row.amountValue, null);
+  assert.equal(row.countValue, null);
+  assert.equal(row.privacyMessage, "표본 보호로 금액 비공개");
+  assert.equal(row.staleAge, "55분 전");
+  assert.doesNotMatch(JSON.stringify(row), /₩0|0원|0건|payment count 0/i);
   assert.equal(buildCommercialSignalRow("ko", null, "2026-09-02T04:00:00Z"), null);
+});
+
+test("an explicitly valid zero commercial value is preserved rather than treated as suppression", () => {
+  const row = buildCommercialSignalRow("ko", {
+    commercialLevel: "한산",
+    paymentCount: 0,
+    paymentAmountMin: 0,
+    paymentAmountMax: 0,
+    observedAt: "2026-09-02T12:05:00+09:00",
+    retrievedAt: "2026-09-02T03:06:00Z",
+    qualityStatus: "VALID",
+    freshness: "LIVE",
+  }, "2026-09-02T03:10:00Z");
+
+  assert.ok(row);
+  assert.equal(row.statusValue, "한산");
+  assert.match(row.amountValue ?? "", /₩0/);
+  assert.match(row.countValue ?? "", /0건/);
+  assert.equal(row.privacyMessage, null);
 });

@@ -19,7 +19,7 @@ Last verified: 2026-09-02 KST. Recheck official terms immediately before activat
 | S5 | Seoul station daily boarding/alighting | 서울교통공사 OA-22723 `서울시 교통공사 지하철역 역별승하차인원 현황` | `openapi.seoul.go.kr:8088/{KEY}/json/getStnPsgr/1/1000/{YYYYMMDD}/{stnCd}`; date required, station code exact filter; official portal says recent seven-day window and daily refresh; current sample envelope `response.header.resultCode=00` + `response.body.items.item[]`; fields `pasngDe`, `pasngHr`, `stnCd`, `stnNo`, `stnNm`, `lineNm`, `rideNope`, `gffNope` | `SEOUL_OPEN_DATA_KEY` | Station gate boardings/alightings ≠ unique people ≠ area visitors ≠ shoppers ≠ foreign visitors ≠ sales ≠ real-time population |
 | W1 | KMA short-term forecast | 기상청 · data.go.kr 15084084 | `apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst` (CONFIRMED) · issued 02/05/08/11/14/17/20/23 KST (+~10min) · grids: 명동 (60,127) · 홍대/서교동 (59,126) · 성수 (61,126) · 인천공항/운서동 (51,125) · categories POP/PTY/PCP/REH/SKY/TMP/TMN/TMX/WSD… · `PCP`/`SNO` are strings ("강수없음", "1.0mm 미만") · SKY 1=맑음 3=구름많음 4=흐림 · resultCode "00"=OK, "03"=NO_DATA · 10,000 calls/day dev | `DATA_GO_KR_SERVICE_KEY` | Forecast ≠ observation; issue time ≠ target time |
 | T1 | Tourism events (TourAPI) | 한국관광공사 B551011 · KorService2 (KorService1 shut off ~2025-08) | `apis.data.go.kr/B551011/KorService2/searchFestival2` (CONFIRMED) · `eventStartDate` required · `locationBasedList2` (mapX/mapY/radius≤20000, contentTypeId=15, `dist` in response) for area mapping · success resultCode "0000" · v4.4 deprecates `areaCode`/`sigunguCode` in favor of `lDongRegnCd=11`(서울)/`lDongSignguCd` · 1,000 calls/day dev | same data.go.kr key | Event existence ≠ attendance ≠ demand ≠ sales |
-| T1-detail | Official event category name + description | same KorService2 | `categoryCode2` (contentTypeId=15, cat1, cat2 → `{code,name}`; cached in `tourapi_category_codes`, one lookup per unresolved cat2 group, ≤3/run) · `detailCommon2` (contentId → `overview`, `homepage` anchor HTML, addr1/addr2, tel; fetched ONCE per contentId by the daily collector, marked by `detail_retrieved_at`, ≤12/run) · list fields cat1/cat2/cat3, addr2, tel stored from the same `searchFestival2` response at zero extra calls · worst case 1+3+12 = 16 calls/day | same data.go.kr key | Only the provider's own words are shown (deterministic HTML strip + word-boundary excerpt); no description is ever generated or guessed; the browser and `/api/live/summary` never call TourAPI |
+| T1-detail | Official event category name + description | same KorService2 | `categoryCode2` (contentTypeId=15, cat1, cat2 → `{code,name}`; cached in `tourapi_category_codes`, one lookup per unresolved cat2 group, ≤3/run) · `detailCommon2` (contentId → `overview`, `homepage` anchor HTML, addr1/addr2, tel; fetched ONCE per contentId by the daily collector, marked by `detail_retrieved_at`, ≤12/run) · list fields cat1/cat2/cat3, addr2, tel stored from the same `searchFestival2` response at zero extra calls · worst case 1+3+12 = 16 calls/day | same data.go.kr key | Only the provider's own words are shown (deterministic HTML strip + first-complete-sentence preview, with the complete stored overview expandable); no description is ever generated or guessed; the browser and `/api/live/summary` never call TourAPI |
 
 No paid API, paid data, paid fallback or runtime LLM is approved. A source without verified commercial and automated-use terms remains disabled.
 
@@ -101,6 +101,13 @@ spend, or store revenue. Provider-suppressed payment values remain `null`, are
 never converted to zero, and do not delete last-good data. Category and
 demographic arrays are contract-checked but not retained because this product
 slice does not consume them.
+
+`CMRCL_TIME` proves the KST reference minute, not a separately published
+interval-start field. The reader-facing card therefore says “reference time +
+recent 10 minutes” and never subtracts ten minutes to manufacture an exact
+start/end range. Provider status, nullable payment range/count, reference time,
+KORETAIL retrieval time, freshness, and domestic-consumer/not-total-sales
+attribution remain visually separate in all four locales.
 
 ## A4-T2 and A5 — verified contracts (2026-08-30)
 

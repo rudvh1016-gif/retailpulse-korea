@@ -46,10 +46,10 @@ test("the observation time and the not-cumulative note travel with the number", 
 
 test("realtime commercial activity appears immediately after population with truthful scope", () => {
   for (const phrase of [
-    "신한카드 내국인 소비 기준 · 전수 매출 아님",
-    "Shinhan Card domestic-consumer activity · not total sales",
-    "基于新韩卡韩国境内消费者活动 · 非全量销售额",
-    "新韓カードの国内消費者活動基準 · 売上全数ではありません",
+    "신한카드 내국인 결제 기반 · 전수 매출 아님 · 외국인 소비 아님",
+    "Based on Shinhan Card domestic-consumer payments · not total sales · not foreign-consumer spending",
+    "基于新韩卡韩国境内消费者支付 · 非全量销售额 · 非外国消费者支出",
+    "新韓カードの国内消費者決済に基づく · 売上全数ではありません · 外国人消費ではありません",
   ]) assert.ok(signals.includes(phrase), `${phrase} must remain visible`);
   const areaSignals = signals.match(/export default function LiveSignals[\s\S]*?\nconst flightBoardText/)?.[0] ?? "";
   assert.ok(areaSignals.indexOf('key: "realtime"') < areaSignals.indexOf("buildCommercialSignalRow"));
@@ -205,16 +205,21 @@ test("event wording stays neutral about cause", () => {
 
 /**
  * The event card shows the provider's category name, period, place, distance
- * and at most two lines of the provider's own description — and nothing the
- * product made up.
+ * and an accessible complete stored description — and nothing the product
+ * made up.
  */
-test("the event card leads with the official category and clamps the official description", () => {
-  assert.match(signals, /\[nextEvent\.categoryName, nextEvent\.title\]\.filter\(Boolean\)\.join\(" · "\)/,
+test("the event card leads with official fields and exposes the complete description", () => {
+  assert.match(signals, /\[event\.categoryName, event\.title\]\.filter\(Boolean\)\.join\(" · "\)/,
     "category then title, and no category means no placeholder");
-  assert.match(signals, /formatEventPlace\(nextEvent\)/, "the place line is the official address");
-  assert.match(signals, /detail: nextEvent\.overview \?\? undefined/, "the description is the stored official overview or nothing");
-  assert.match(signals, /\{row\.detail && <em className="live-signal-detail">\{row\.detail\}<\/em>\}/);
-  assert.match(styles, /\.live-signal-rows \.live-signal-detail \{[^\n]*-webkit-line-clamp: 2/, "two lines, never a wall of text");
+  assert.match(signals, /formatEventPlace\(event\)/, "the place line is the official address");
+  assert.match(signals, /<details>/, "the complete stored overview is available on demand");
+  assert.match(signals, /<p className="event-overview">\{event\.overview\}<\/p>/);
+  assert.match(signals, /safeOfficialEventHomepage\(event\.homepage\)/);
+  assert.match(signals, /target="_blank" rel="noopener noreferrer"/);
+  assert.doesNotMatch(styles, /-webkit-line-clamp:\s*[1-9]/,
+    "a line clamp must not be the only path to official event text");
+  assert.match(signals, /signalStructureText\.eventAll\[lang\]\(events\.length\)/,
+    "the disclosure promises exactly the event cards present in the payload");
   assert.match(signals, /nextEventCategory: block\?\.events\?\.\[0\]\?\.categoryName \?\? null/,
     "the brief names the category from the same stored field");
 });

@@ -23,6 +23,7 @@
 .yarn/*
 /.next/
 /.playwright-browsers/
+/.claude/tmp/
 /.pnp
 /.sites-runtime/
 /.wrangler/
