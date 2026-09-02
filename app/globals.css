@@ -1,10 +1,24 @@
 @import "tailwindcss";
 
 /* Project-local OFL subsets keep fonts out of the Worker bundle. The source
-   glyph set is generated from the four localized production surfaces. */
+   glyph set is generated from the four localized production surfaces.
+
+   The variable weight axis (45–920) is declared on the plain "woff2" format,
+   not "woff2-variations": that suffixed hint is a non-standard legacy alias,
+   and WebKit — the engine behind every iOS browser, including in-app browsers
+   such as KakaoTalk's and Naver's, which is how most Korean readers open this
+   site from a shared link — has rejected it outright on some versions. When
+   the @font-face src is rejected the whole rule is skipped, not just the
+   weight axis: the page falls back through "Pretendard" (never declared) to
+   system-ui, and headline text at a non-standard weight (620/650/760/850) is
+   then synthetically bolded by the fallback font instead of drawn from a
+   real weight — which is what makes a heading look like a different, larger
+   font next to body text that a lucky weight (400/700) rendered normally.
+   "woff2" alone is understood by every engine that also understands
+   "woff2-variations", so this loses no browser support. */
 @font-face {
   font-family: "Pretendard Variable";
-  src: url("/fonts/pretendard-variable.woff2") format("woff2-variations");
+  src: url("/fonts/pretendard-variable.woff2") format("woff2");
   font-style: normal;
   font-weight: 45 920;
   font-display: swap;
