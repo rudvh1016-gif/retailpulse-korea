@@ -35,6 +35,11 @@
     "production": {
       "name": "retailpulse-korea-production",
       "workers_dev": true,
+      "cache": { "enabled": false },
+      "exports": {
+        "default": { "type": "worker", "cache": { "enabled": false } },
+        "SummaryCache": { "type": "worker", "cache": { "enabled": true } }
+      },
       "triggers": {
         "crons": ["7,22,37,52 * * * *", "42 * * * *", "10 2,5,8,11,14,17,20,23 * * *", "53 * * * *", "25,40 2,5,8,11,14,17,20,23 * * *"]
       },

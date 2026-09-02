@@ -127,17 +127,27 @@ jobs:
           // affordable uncached anyway.
           const cacheProbe = async () => {
             const response = await fetch(`${origin}/api/live/summary`, { signal: AbortSignal.timeout(15000) });
-            await response.arrayBuffer();
+            const body = await response.json().catch(() => null);
             return {
               status: response.status,
               cfCacheStatus: response.headers.get("cf-cache-status"),
               age: response.headers.get("age"),
               cacheControl: response.headers.get("cache-control"),
+              // An identical generatedAt across two reads is the body itself
+              // proving it was reused, independently of any header.
+              generatedAt: body?.generatedAt ?? null,
+              mode: body?.mode ?? null,
             };
           };
           const firstRead = await cacheProbe();
           const secondRead = await cacheProbe();
-          console.log(JSON.stringify({ edgeCache: { firstRead, secondRead } }));
+          const thirdRead = await cacheProbe();
+          console.log(JSON.stringify({
+            edgeCache: {
+              firstRead, secondRead, thirdRead,
+              bodyReused: Boolean(firstRead.generatedAt) && firstRead.generatedAt === secondRead.generatedAt,
+            },
+          }));
 
           // A ?date= day the picker offers must still render live, not fall back
           // to an empty shell. Yesterday in KST is always one of those days.
@@ -145,6 +155,40 @@ jobs:
           const dated = await fetch(`${origin}/api/live/summary?date=${kstYesterday}`, { signal: AbortSignal.timeout(15000) });
           const datedBody = await dated.json().catch(() => null);
           check("dated summary answers live", dated.status === 200 && datedBody?.mode === "live-summary", `date ${kstYesterday}; status ${dated.status}; mode ${datedBody?.mode}`);
+
+          // The summary is now served through a cached entrypoint, so two
+          // different ?date= values sharing one cached body would present one
+          // day's numbers under another day's label - silently wrong data for
+          // every reader. Cloudflare's default cache key includes the query
+          // string, which is exactly the kind of assumption that has to be
+          // checked against the real edge rather than trusted.
+          const datedRead = async (day) => {
+            const response = await fetch(`${origin}/api/live/summary?date=${day}`, { signal: AbortSignal.timeout(15000) });
+            const body = await response.json().catch(() => null);
+            return {
+              day,
+              status: response.status,
+              serviceDateKst: body?.serviceDateKst ?? null,
+              generatedAt: body?.generatedAt ?? null,
+              cfCacheStatus: response.headers.get("cf-cache-status"),
+              age: response.headers.get("age"),
+            };
+          };
+          const kstDayBefore = new Date(Date.now() + 9 * 3600 * 1000 - 2 * 86400 * 1000).toISOString().slice(0, 10);
+          const dayOne = await datedRead(kstYesterday);
+          const dayTwo = await datedRead(kstDayBefore);
+          const dayOneRepeat = await datedRead(kstYesterday);
+          console.log(JSON.stringify({ dateIsolation: { dayOne, dayTwo, dayOneRepeat } }));
+          check(
+            "each dated summary answers for the date it was asked for",
+            dayOne.serviceDateKst === kstYesterday && dayTwo.serviceDateKst === kstDayBefore,
+            `${kstYesterday} -> ${dayOne.serviceDateKst}; ${kstDayBefore} -> ${dayTwo.serviceDateKst}`,
+          );
+          check(
+            "a repeated date is still that date, cached or not",
+            dayOneRepeat.serviceDateKst === kstYesterday,
+            `${kstYesterday} -> ${dayOneRepeat.serviceDateKst}; cf ${dayOneRepeat.cfCacheStatus}; age ${dayOneRepeat.age}`,
+          );
 
           const redirect = await fetch(`http://koretaildata.com/ko`, { redirect: "manual", signal: AbortSignal.timeout(15000) });
           check("http->https redirect", [301, 308].includes(redirect.status), `status ${redirect.status}`);
