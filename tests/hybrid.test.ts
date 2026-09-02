@@ -279,6 +279,17 @@ test("Cloudflare is the single authoritative WEATHER scheduler and GitHub stays 
   assert.match(weather, /RPK_PRODUCTION_SOURCES: weather/);
 });
 
+test("production smoke requires A5 picker dates whenever A5 reports LIVE", () => {
+  const smoke = readFileSync(".github/workflows/site-smoke.yml", "utf8");
+  assert.match(smoke, /source\.sourceId === "INCHEON_PASSENGER_FORECAST"/);
+  assert.match(smoke, /a5Health\?\.status === "LIVE"/);
+  assert.match(
+    smoke,
+    /date picker offers A5 forecast days when A5 is live/,
+    "a silently empty A5 picker must fail smoke while the source claims LIVE",
+  );
+});
+
 /** The dispatch target and the live Cron must name the same workflow file. */
 test("the production Cron and the dispatch target describe one scheduler path", () => {
   const config = JSON.parse(readFileSync("wrangler.production.jsonc", "utf8"));
