@@ -30,18 +30,6 @@ interface D1Database {
 }
 
 declare module "cloudflare:workers" {
-  /**
-   * Base class for a named entrypoint. Only the members this project actually
-   * uses are declared; `wrangler types` would generate the full surface.
-   */
-  export abstract class WorkerEntrypoint<Env = unknown> {
-    protected readonly env: Env;
-    protected readonly ctx: {
-      waitUntil(promise: Promise<unknown>): void;
-      passThroughOnException(): void;
-    };
-  }
-
   export const env: {
     DB?: D1Database;
     APP_ENV?: string;

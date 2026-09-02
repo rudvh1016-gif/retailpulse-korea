@@ -57,8 +57,12 @@ test("the built Worker still exports the entrypoint the cache is bound to", () =
   // named export, the deployment would reference an entrypoint that does not
   // exist — so this asserts the source contract the build must preserve.
   const source = readFileSync("worker/index.ts", "utf8");
-  assert.match(source, /export class SummaryCache extends WorkerEntrypoint/,
+  assert.match(source, /export const SummaryCache = \{/,
     "the cached entrypoint must stay a named export of the Worker entry module");
+  // A static `cloudflare:workers` import resolves only inside workerd, so it
+  // would break every Node test that loads this module.
+  assert.doesNotMatch(source, /^import .*"cloudflare:workers"/m,
+    "the Worker entry must not statically import a workerd-only module");
 });
 
 test("only safe methods on the exact summary path reach the cached entrypoint", () => {

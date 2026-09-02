@@ -1,5 +1,4 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
-import { WorkerEntrypoint } from "cloudflare:workers";
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 import { dispatchScheduledCollection } from "../lib/realtime-dispatch";
@@ -102,17 +101,24 @@ export default worker;
  *
  * Workers Caching is configured per entrypoint in `wrangler.production.jsonc`:
  * `default` stays uncached so the gateway keeps running on every request, and
- * only this class opts in. A cache hit is served without invoking this class
- * at all, which is precisely the point — the expensive D1-backed summary work
+ * only this export opts in. A cache hit is served without invoking it at
+ * all, which is precisely the point — the expensive D1-backed summary work
  * lives behind it, so a hit costs zero rows read.
  *
  * Whether a given response is actually storable is not decided here. It is
  * decided by the `cache-control` header the summary route emits, via
  * `lib/summary-cache-policy.ts`: a degraded or outer-failure payload carries
  * `no-store` and Cloudflare declines to cache it.
+ *
+ * Deliberately a plain fetch handler rather than a `WorkerEntrypoint`
+ * subclass. `extends` would need a static `cloudflare:workers` import, and
+ * that module exists only inside workerd, so every Node test that loads this
+ * file would fail to resolve it — `db/index.ts` dodges the same edge with a
+ * dynamic import. Cloudflare treats any export implementing `fetch` as an
+ * entrypoint, so the narrower form costs nothing.
  */
-export class SummaryCache extends WorkerEntrypoint<Env> {
-  async fetch(request: Request): Promise<Response> {
-    return handler.fetch(request, this.env, this.ctx);
-  }
-}
+export const SummaryCache = {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    return handler.fetch(request, env, ctx);
+  },
+};
