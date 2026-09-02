@@ -60,6 +60,12 @@ function dayExistsSql(table: string, column: string, filter = ""): string {
   return `SELECT ? AS day WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${where}${column} >= ? AND ${column} < ?)`;
 }
 
+/** Exact-value variant for columns already stored as a canonical KST day. */
+function dayValueExistsSql(table: string, column: string, filter = ""): string {
+  const where = filter ? `${filter} AND ` : "";
+  return `SELECT ? AS day WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${where}${column} = ?)`;
+}
+
 /**
  * Latest-row-per-key without scanning the table.
  *
@@ -248,19 +254,24 @@ export async function GET(request: Request) {
     // Which KST days actually hold data, so the date picker can offer only
     // days that exist instead of inviting the reader into an empty screen.
     const pickerDays = Array.from({ length: DATE_PICKER_DAYS }, (_, index) => shiftKstDay(kstToday, -index));
-    const probeDays = async (table: string, column: string, filter = "") => {
-      const sql = dayExistsSql(table, column, filter);
+    const probeDays = async (sql: string, bindsForDay: (day: string) => unknown[]) => {
       const results = await client.batch<Row>(
-        pickerDays.map((day) => client.prepare(sql).bind(day, day, shiftKstDay(day, 1))),
+        pickerDays.map((day) => client.prepare(sql).bind(...bindsForDay(day))),
       );
       return results.flatMap((result) => result.results ?? []);
     };
-    const flightDateRows = await safeAll<Row>(() => probeDays("airport_flights", "scheduled_at", "direction = 'departure'"));
-    const forecastDateRows = await safeAll<Row>(async () => (await client.prepare(
-      `SELECT DISTINCT target_date AS day FROM airport_passenger_forecast
-      WHERE direction = 'departure' AND is_aggregate = 1 ORDER BY day DESC LIMIT 21`,
-    ).all<Row>()).results ?? []);
-    const observedDateRows = await safeAll<Row>(() => probeDays("seoul_realtime_area", "observed_at"));
+    const flightDateRows = await safeAll<Row>(() => probeDays(
+      dayExistsSql("airport_flights", "scheduled_at", "direction = 'departure'"),
+      (day) => [day, day, shiftKstDay(day, 1)],
+    ));
+    const forecastDateRows = await safeAll<Row>(() => probeDays(
+      dayValueExistsSql("airport_passenger_forecast", "target_date", "direction = 'departure' AND is_aggregate = 1"),
+      (day) => [day, day],
+    ));
+    const observedDateRows = await safeAll<Row>(() => probeDays(
+      dayExistsSql("seoul_realtime_area", "observed_at"),
+      (day) => [day, day, shiftKstDay(day, 1)],
+    ));
     const dayList = (rows: Row[]) => rows
       .map((row) => String(row.day ?? ""))
       .filter((day) => isValidKstDay(day))
