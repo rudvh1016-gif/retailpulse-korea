@@ -91,6 +91,24 @@ export const COVERAGE_PROBES: CoverageProbe[] = [
     params: ({ kstHourStartIso }) => [kstHourStartIso],
   },
   {
+    // W1 (migration 0008) reads more of the same getVilageFcst response but
+    // costs no extra request; this is the read-only check that those columns
+    // actually landed in Production, not just that the migration applied.
+    name: "weather_forecast_w1_sample",
+    meaning: "the earliest target hour of the latest KMA issuance per area, to confirm W1 humidity/wind/amount columns are actually populated and not just added by the migration",
+    sql: `SELECT w.area, w.issued_at AS issuedAt, w.target_at AS targetAt,
+        w.humidity_percent AS humidityPercent, w.wind_speed_tenth_mps AS windSpeedTenthMps,
+        w.daily_min_temperature_tenth_c AS dailyMinTemperatureTenthC,
+        w.daily_max_temperature_tenth_c AS dailyMaxTemperatureTenthC,
+        w.precipitation_amount_raw AS precipitationAmountRaw, w.precipitation_amount_kind AS precipitationAmountKind,
+        w.sky_code AS skyCode, w.precipitation_type_code AS precipitationTypeCode
+      FROM weather_forecast w
+      WHERE w.issued_at = (SELECT MAX(x.issued_at) FROM weather_forecast x WHERE x.area = w.area)
+        AND w.target_at = (SELECT MIN(y.target_at) FROM weather_forecast y WHERE y.area = w.area AND y.issued_at = w.issued_at)
+      ORDER BY w.area`,
+    params: () => [],
+  },
+  {
     name: "tourism_events_upcoming",
     meaning: "events per area still running or upcoming as of the current KST day",
     sql: `SELECT area, COUNT(*) AS upcomingEvents, MIN(event_start) AS nextStart, MAX(retrieved_at) AS retrievedAt
