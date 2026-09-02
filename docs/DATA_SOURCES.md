@@ -41,6 +41,9 @@ table, collector run, source health, and partial-failure status are independent
 even though they share one transport request.
 
 `LIVE_CMRCL_STTS` is Seoul-published Shinhan Card domestic-consumer activity.
+The authenticated response publishes `CMRCL_TIME` as `YYYYMMDD HHmm` in KST;
+it is normalized to an explicit `+09:00` timestamp without browser/runtime
+timezone inference.
 KORETAIL does not label it total sales, POS sales, foreign spend, tourist
 spend, or store revenue. Provider-suppressed payment values remain `null`, are
 never converted to zero, and do not delete last-good data. Category and
