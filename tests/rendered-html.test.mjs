@@ -49,12 +49,21 @@ test("public endpoints stay available and never fabricate zeros when a source is
 
   const summaryResponse = await call("/api/live/summary");
   assert.equal(summaryResponse.status, 200, "a degraded source must never turn the live summary into a 500");
+  assert.equal(summaryResponse.headers.get("cache-control"), "no-store", "an outer D1 failure must never enter the edge cache");
   const summary = await summaryResponse.json();
   // Honest absence, never a zero that would read as a real measurement.
   assert.equal(summary.airport.todayExpectedPassengersTotal, null);
   assert.equal(summary.airport.departuresTrackedToday, null);
   assert.equal(summary.airport.remainingExpectedPassengers, null);
   assert.equal(summary.airport.forecastCoverage.all, "UNAVAILABLE");
+  assert.deepEqual(summary.airport.arrivalForecast, {
+    todayExpectedPassengersTotal: null,
+    todayExpectedPassengersByTerminal: {},
+    nextExpectedTimeBand: null,
+    peakExpectedTimeBand: null,
+    passengerForecastRetrievedAt: null,
+    forecastCoverage: { all: "UNAVAILABLE", byTerminal: {} },
+  });
 
   // STALE is a real source status, so the health contract must allow it.
   const contracts = await read("../lib/contracts.ts");

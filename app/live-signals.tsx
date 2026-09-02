@@ -190,6 +190,14 @@ export interface LiveSummary {
     passengerForecastTimeline: ForecastBand[];
     passengerForecastTimelineByTerminal: Record<string, ForecastBand[]>;
     forecastCoverage: { all: ForecastCoverageStatus; byTerminal: Record<string, ForecastCoverageStatus> };
+    arrivalForecast: {
+      todayExpectedPassengersTotal: number | null;
+      todayExpectedPassengersByTerminal: Record<string, number | null>;
+      nextExpectedTimeBand: ForecastBand | null;
+      peakExpectedTimeBand: ForecastBand | null;
+      passengerForecastRetrievedAt: string | null;
+      forecastCoverage: { all: ForecastCoverageStatus; byTerminal: Record<string, ForecastCoverageStatus> };
+    };
     scheduled: LiveScheduledRow[];
     passengerForecast: LivePassengerForecastRow[];
   };

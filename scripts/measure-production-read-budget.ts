@@ -209,10 +209,10 @@ const HOT_QUERIES: HotQuery[] = [
         target_start_at AS targetStartAt, target_end_at AS targetEndAt,
         expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
       FROM airport_passenger_forecast f
-      WHERE f.direction = 'departure' AND f.is_aggregate = 1 AND f.target_date = ?
-      ORDER BY target_start_at, terminal LIMIT 96`,
+      WHERE f.direction IN ('departure', 'arrival') AND f.is_aggregate = 1 AND f.target_date = ?
+      ORDER BY direction, target_start_at, terminal LIMIT 96`,
     binds: [serviceDate],
-    guard: "WHERE f.direction = 'departure' AND f.is_aggregate = 1 AND f.target_date = ?",
+    guard: "WHERE f.direction IN ('departure', 'arrival') AND f.is_aggregate = 1 AND f.target_date = ?",
     table: "airport_passenger_forecast",
   },
   {
