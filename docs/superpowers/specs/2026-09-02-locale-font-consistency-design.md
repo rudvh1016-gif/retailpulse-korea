@@ -1,7 +1,7 @@
 # Locale Font Consistency Design
 
-Date: 2026-09-02  
-Starting SHA: `afa9cfc7678e1b577b73b5bbad275765cdac764b`  
+Date: 2026-09-02
+Starting SHA: `afa9cfc7678e1b577b73b5bbad275765cdac764b`
 Branch: `fix/locale-font-consistency`
 
 ## Objective
