@@ -581,7 +581,7 @@ test("the About page explains the product without developer jargon", async () =>
     "어떤 데이터를 쓰나요", "실시간·예상·과거는 어떻게 다른가요",
     "무엇을 주의해야 하나요",
   ]) assert.match(page, new RegExp(question));
-  const about = page.match(/function AboutView[\s\S]*?\n\}\n/)?.[0] ?? "";
+  const about = page.match(/function AboutView[\s\S]*?\r?\n\}\r?\n/)?.[0] ?? "";
   assert.ok(about.length > 1000);
   for (const jargon of ["modelVersion", "featureVersion", "predictionHash", "recordOrigin", "dataCutoff", "isAggregate"]) {
     assert.doesNotMatch(about, new RegExp(jargon), `About must not expose "${jargon}"`);
