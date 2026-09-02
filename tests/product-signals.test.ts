@@ -4,6 +4,7 @@ import test from "node:test";
 import { classifyDemoDemand, demoDemandThresholds } from "../lib/demand-index";
 import { buildAirportPressure } from "../lib/airport-pressure";
 import { safeAll } from "../app/api/live/summary/route";
+import { probeSeoulCitydataContracts } from "../scripts/probe-seoul-citydata-contract";
 
 test("demo demand levels use cohort thirds instead of absolute magic numbers", () => {
   const cohort = [82, 77, 71, 86, 74, 69];
@@ -56,4 +57,62 @@ test("a zone is used only when an authoritative mapping is supplied", () => {
 test("live summary isolates an unavailable official source", async () => {
   assert.deepEqual(await safeAll(async () => { throw new Error("missing table"); }), []);
   assert.deepEqual(await safeAll(async () => [{ area: "myeongdong" }]), [{ area: "myeongdong" }]);
+});
+
+test("Seoul integrated contract probe reports structure without leaking keys or commercial values", async () => {
+  const secret = "SENTINEL-SEOUL-KEY-DO-NOT-PRINT";
+  const sensitiveValues = ["987654321", "123456789", "명동 관광특구"];
+  const output: string[] = [];
+  const requested: string[] = [];
+
+  const result = await probeSeoulCitydataContracts({
+    apiKey: secret,
+    poiCodes: ["POI003", "POI007", "POI068"],
+    fetchImpl: async (input) => {
+      requested.push(String(input));
+      return Response.json({
+        RESULT: { "RESULT.CODE": "INFO-000", "RESULT.MESSAGE": "정상 처리되었습니다." },
+        CITYDATA: {
+          AREA_NM: sensitiveValues[2],
+          AREA_CD: "POI003",
+          LIVE_PPLTN_STTS: [{ AREA_CONGEST_LVL: "보통", PPLTN_TIME: "2026-09-02 12:00" }],
+          LIVE_CMRCL_STTS: {
+            AREA_CMRCL_LVL: "활발",
+            AREA_SH_PAYMENT_CNT: sensitiveValues[0],
+            AREA_SH_PAYMENT_AMT_MIN: sensitiveValues[1],
+            AREA_SH_PAYMENT_AMT_MAX: "999999999",
+            CMRCL_RSB: [{ CMRCL_NM: "패션" }],
+            CMRCL_TIME: "2026-09-02 12:00",
+          },
+        },
+      });
+    },
+    write: (line) => output.push(line),
+  });
+
+  assert.equal(requested.length, 3, "one integrated request is allowed per configured POI");
+  assert.deepEqual(result.map((entry) => entry.poiCode), ["POI003", "POI007", "POI068"]);
+  assert.equal(result.every((entry) => entry.officialCode === "INFO-000" && entry.populationBlock && entry.commercialBlock), true);
+  assert.equal(result.every((entry) => entry.commercialRequiredFields && entry.categoryArray), true);
+
+  const diagnostic = output.join("\n");
+  assert.match(diagnostic, /POI003/);
+  assert.match(diagnostic, /commercialRequiredFields/);
+  assert.doesNotMatch(diagnostic, new RegExp(secret));
+  for (const sensitive of sensitiveValues) assert.doesNotMatch(diagnostic, new RegExp(sensitive));
+  assert.doesNotMatch(diagnostic, /openapi\.seoul\.go\.kr|CITYDATA|AREA_CMRCL_LVL/);
+});
+
+test("Seoul integrated contract probe fails closed on an unauthorized official response", async () => {
+  const output: string[] = [];
+  await assert.rejects(
+    probeSeoulCitydataContracts({
+      apiKey: "fixture-key",
+      poiCodes: ["POI003"],
+      fetchImpl: async () => Response.json({ RESULT: { "RESULT.CODE": "INFO-300" } }),
+      write: (line) => output.push(line),
+    }),
+    /seoul_contract_probe_failed_POI003_INFO-300/,
+  );
+  assert.equal(output.some((line) => line.includes("INFO-300")), true);
 });

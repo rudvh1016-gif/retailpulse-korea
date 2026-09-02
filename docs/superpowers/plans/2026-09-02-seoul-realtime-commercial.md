@@ -11,7 +11,7 @@
 **Files:**
 
 - Create: `scripts/probe-seoul-citydata-contract.ts`
-- Create: `.github/workflows/probe-seoul-citydata.yml`
+- Modify: `.github/workflows/import-oneshot.yml`
 - Test: `tests/product-signals.test.ts`
 
 1. Add a behavior test that runs the probe against a complete sanitized
@@ -23,8 +23,9 @@
    `SEOUL_OPEN_DATA_KEY`, makes one request per configured POI, uses no retry,
    never prints values/raw payload/URL, and exits non-zero on authorization or
    required-shape failure.
-5. Add a manual-only workflow with read-only repository permissions and no D1
-   credentials or schedule.
+5. Add a separately gated `PROBE` path to the existing manual-only workflow.
+   The probe step receives no D1 credentials and has no schedule; the existing
+   `IMPORT` path remains unchanged.
 6. Re-run the focused test, typecheck, secret scan, and workflow safety tests.
 7. Commit the probe gate, push the feature branch, dispatch it once, and record
    the three-area structural result before continuing.
@@ -150,4 +151,3 @@
    - actual uncached summary `rows_read` remains within the documented Free
      guardrails.
 7. Do not start Phase 3 until every Phase 2 Production gate above is proven.
-

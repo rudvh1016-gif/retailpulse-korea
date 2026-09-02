@@ -39,9 +39,10 @@ Rejected alternatives:
 
 ## Contract gate
 
-Before Production collection is changed, a workflow-dispatch-only, read-only
-probe will make exactly one authenticated integrated-city-data request for each
-configured POI (`POI003`, `POI007`, `POI068`). It prints only:
+Before Production collection is changed, the existing workflow-dispatch-only
+one-shot workflow gains a separately gated read-only `PROBE` mode. It makes
+exactly one authenticated integrated-city-data request for each configured POI
+(`POI003`, `POI007`, `POI068`). It prints only:
 
 - the POI code;
 - HTTP and official result status;
@@ -50,8 +51,9 @@ configured POI (`POI003`, `POI007`, `POI068`). It prints only:
 - whether optional payment values are published or suppressed.
 
 It never prints the key, authenticated URL, area values, payment values, or raw
-payload. It writes nothing to D1 and has no schedule. Failure at this gate stops
-Phase 2 activation rather than guessing a contract.
+payload. The probe step receives no D1 credentials, writes nothing to D1, and
+has no schedule. Failure at this gate stops Phase 2 activation rather than
+guessing a contract.
 
 ## Canonical commercial record
 
@@ -140,4 +142,3 @@ Tests first cover the independent failures this change could introduce:
 - four-locale truthful UI rendering and omission when absent;
 - no new schedule/Cron and no secret/raw-value output in the probe;
 - full unit/build/render/browser/secret checks before push.
-

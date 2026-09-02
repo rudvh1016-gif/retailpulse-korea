@@ -7,12 +7,12 @@ on:
   workflow_dispatch:
     inputs:
       sources:
-        description: Comma list (seoul_realtime, seoul_foreign, seoul_sales, weather, events, airport_congestion, airport_flights, airport_flights_today, airport_flight_enrichment, airport_scheduled)
+        description: Comma list for IMPORT, or probe_seoul_citydata_contract for the read-only contract probe
         required: true
         default: seoul_realtime,seoul_sales
         type: string
       confirm:
-        description: Type IMPORT to confirm this bounded one-shot write
+        description: Type IMPORT for a bounded write, or PROBE for the read-only Seoul contract check
         required: true
         type: string
 
@@ -35,7 +35,14 @@ jobs:
           node-version: 22.13.1
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: npx tsx scripts/import-oneshot.ts
+      - name: Probe integrated Seoul city-data contract (read only)
+        if: inputs.sources == 'probe_seoul_citydata_contract' && inputs.confirm == 'PROBE'
+        run: npx tsx scripts/probe-seoul-citydata-contract.ts
+        env:
+          SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
+      - name: Run bounded one-shot import
+        if: inputs.sources != 'probe_seoul_citydata_contract'
+        run: npx tsx scripts/import-oneshot.ts
         env:
           RPK_ONESHOT_CONFIRM: ${{ inputs.confirm }}
           RPK_ONESHOT_SOURCES: ${{ inputs.sources }}
@@ -43,3 +50,6 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
           SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
+      - name: Reject an invalid Seoul contract-probe confirmation
+        if: inputs.sources == 'probe_seoul_citydata_contract' && inputs.confirm != 'PROBE'
+        run: exit 1
