@@ -1,7 +1,9 @@
 # A5 Arrival Signals Design
 
-**Status:** Owner-approved design for PR 1 only  
-**Starting point:** `origin/main` at `e3065350c5bc0318c4c88bd32e7c2a063662bfe4`  
+**Status:** Owner-approved design for PR 1 only
+
+**Starting point:** `origin/main` at `e3065350c5bc0318c4c88bd32e7c2a063662bfe4`
+
 **Branch:** `feat/a5-arrival-signals`
 
 ## Objective
