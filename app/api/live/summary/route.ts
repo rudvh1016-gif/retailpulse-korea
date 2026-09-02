@@ -14,6 +14,7 @@ import {
   type AirportForecastAggregateRow,
   type AirportTodayFlightRow,
 } from "../../../../lib/airport-today-summary";
+import { summaryCacheControl, SUMMARY_NO_STORE } from "../../../../lib/summary-cache-policy";
 import {
   isValidKstDay,
   kstDayBounds,
@@ -428,7 +429,10 @@ export async function GET(request: Request) {
         passengerForecast: upcomingForecast,
       },
     }, {
-      headers: { "cache-control": "public, max-age=60, stale-while-revalidate=300" },
+      // Decided by the payload, not the status code: a 200 that carries no
+      // sources or no area data is an outage in disguise and must never be
+      // admitted to the shared edge cache.
+      headers: { "cache-control": summaryCacheControl({ sources, areas }) },
     });
   } catch {
     return Response.json({
@@ -458,6 +462,6 @@ export async function GET(request: Request) {
         scheduled: [], passengerForecast: [],
       },
       message: "Live sources are not connected. Official historical views remain available.",
-    }, { status: 200, headers: { "cache-control": "no-store" } });
+    }, { status: 200, headers: { "cache-control": SUMMARY_NO_STORE } });
   }
 }
