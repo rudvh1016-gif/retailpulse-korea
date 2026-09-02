@@ -488,7 +488,7 @@ test("timestamps state what they mean and a forecast band never borrows observat
   // The arrival forecast describes a TARGET band and separately labels when
   // the official forecast was collected; neither is called an observation.
   assert.match(signals, /formatKstBand\(band\.targetStartAt, band\.targetEndAt\)/);
-  const arrivalBlock = signals.match(/const arrivalNote = \[([\s\S]*?)\n  if \(!rows\.length\)/)?.[1] ?? "";
+  const arrivalBlock = signals.match(/const arrivalNote = \[([\s\S]*?)\n  const events =/)?.[1] ?? "";
   assert.ok(arrivalBlock.length > 0);
   assert.match(arrivalBlock, /"collected"/);
   assert.doesNotMatch(arrivalBlock, /"observed"/, "a forecast must not borrow observation wording");

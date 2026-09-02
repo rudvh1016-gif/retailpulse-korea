@@ -109,7 +109,8 @@ test("airport truth labels are complete in all four locales", async ({ page }) =
 
 const AREA_BLOCK = (overrides: Record<string, unknown> = {}) => ({
   realtimeForecast: [], weather: [], events: [], eventCount: 0,
-  observedSeries: [], sales: null, foreignPresence: null, realtime: null,
+  observedSeries: [], sales: null, foreignPresence: null, foreignPurposeMobility: null,
+  subwayRidership: null, realtime: null, commercial: null,
   ...overrides,
 });
 
@@ -128,8 +129,39 @@ const SUMMARY_FIXTURE = {
   areas: {
     myeongdong: AREA_BLOCK({
       realtime: { congestionLevel: 3, congestionLabel: "약간 붐빔", populationMin: 23000, populationMax: 25000, observedAt: "2026-08-31T14:07:00+09:00", freshness: "LIVE" },
+      commercial: {
+        commercialLevel: "보통", paymentCount: 12345, paymentAmountMin: 1000000, paymentAmountMax: 1100000,
+        observedAt: "2026-08-31T14:05:00+09:00", retrievedAt: "2026-08-31T05:07:00Z", qualityStatus: "VALID", freshness: "LIVE",
+      },
       realtimeForecast: [{ targetAt: "2026-08-31T17:00:00+09:00", congestionLevel: 4, congestionLabel: "붐빔", populationMin: 27000, populationMax: 29000, issuedAt: "2026-08-31T14:00:00+09:00", retrievedAt: "2026-08-31T14:05:00+09:00" }],
       weather: [{ targetAt: "2026-08-31T18:00:00+09:00", precipitationProbability: 60, temperatureTenthC: 270, conditionCode: "rain" }],
+      subwayRidership: { referenceDate: "2026-08-30", boardingCount: 20000, alightingCount: 21000, selectedStationCount: 1, selectedStations: "명동(4호선)", retrievedAt: "2026-08-31T01:00:00Z", datasetId: "OA-22723", mappingVersion: "fixture" },
+      foreignPresence: { value: 825.5, unit: "people", referenceAt: "2026-07-31T23:00:00+09:00", retrievedAt: "2026-08-29T01:00:00Z", productVersion: "OA-23018:fixture", freshness: "OFFICIAL_HISTORICAL", qualityStatus: "VALID" },
+      foreignPurposeMobility: { referenceDate: "2026-07-31", retrievedAt: "2026-08-29T01:00:00Z", datasetId: "OA-22378", mappingVersion: "fixture", shopping: 520.5, tourism: 310.25 },
+      events: [
+        {
+          contentId: "event-running-1", title: "명동 공연 예술제", eventStart: "2026-08-20", eventEnd: "2026-09-10", distanceM: 320,
+          categoryName: "공연", address: "서울특별시 중구 명동길 14", addressDetail: "1층",
+          overview: "관객과 소통하는 공연형 미술 콘텐츠입니다. 두 번째 공식 문장도 끝까지 읽을 수 있어야 합니다.", homepage: "https://example.org/event-one",
+        },
+        {
+          contentId: "event-running-2", title: "도심 전시", eventStart: "2026-08-25", eventEnd: "2026-09-02", distanceM: 510,
+          categoryName: "전시", address: "서울특별시 중구 을지로 1", addressDetail: null,
+          overview: "도심의 공공 공간을 다루는 전시입니다. 공식 설명의 나머지 문장입니다.", homepage: "javascript:alert(1)",
+        },
+        {
+          contentId: "event-upcoming-1", title: "거리 문화 주간", eventStart: "2026-09-01", eventEnd: "2026-09-03", distanceM: 220,
+          categoryName: null, address: "서울특별시 중구 남대문로 2", addressDetail: null,
+          overview: "거리 문화 프로그램이 열립니다. 공식 일정에 따라 운영됩니다.", homepage: null,
+        },
+        {
+          contentId: "event-upcoming-2", title: "가을 디자인 마켓", eventStart: "2026-09-04", eventEnd: "2026-09-05", distanceM: 640,
+          categoryName: "문화", address: "서울특별시 중구 세종대로 1", addressDetail: null,
+          overview: "디자인 창작물을 소개하는 마켓입니다. 참여 정보는 공식 페이지를 따릅니다.", homepage: "https://example.org/event-four",
+        },
+      ],
+      eventCount: 4,
+      sales: { quarterCode: "20262", tradeAreaName: "명동", totalAmount: 1230000000, industryCount: 4 },
     }),
     hongdae: AREA_BLOCK({
       realtime: { congestionLevel: 2, congestionLabel: "보통", populationMin: 18000, populationMax: 20000, observedAt: "2026-08-31T14:06:00+09:00", freshness: "LIVE" },
@@ -365,14 +397,14 @@ test("Seoul renders compact arrival forecasts in four languages and no departure
   for (const [locale, labels] of Object.entries(expected)) {
     await page.goto(`/${locale}`);
     await page.locator(".home-area-briefs button").first().click();
-    const rows = page.locator(".live-signal-rows");
+    const rows = page.locator(".signal-groups");
     for (const label of labels) await expect(rows.getByText(label, { exact: true })).toBeVisible();
     await expect(rows).toContainText(locale === "ko" ? "41,300명" : "41,300");
   }
 
   await page.goto("/ko");
   await page.locator(".home-area-briefs button").first().click();
-  const rows = page.locator(".live-signal-rows");
+  const rows = page.locator(".signal-groups");
   await expect(rows).toContainText("서울 소비 수요의 선행 참고 신호");
   await expect(rows).toContainText("실제 서울 방문객 수 아님");
   await expect(rows).not.toContainText("현재 출국장 대기");
@@ -387,7 +419,7 @@ test("partial arrival coverage hides the whole-day total and peak", async ({ pag
   await page.route("**/api/live/summary*", routeSummary(partial));
   await page.goto("/ko");
   await page.locator(".home-area-briefs button").first().click();
-  const rows = page.locator(".live-signal-rows");
+  const rows = page.locator(".signal-groups");
   await expect(rows.getByText("오늘 예상 입국객", { exact: true })).toHaveCount(0);
   await expect(rows.getByText("오늘 예상 입국 피크", { exact: true })).toHaveCount(0);
   await expect(rows.getByText("다음 시간대 예상 입국객", { exact: true })).toBeVisible();
@@ -645,22 +677,113 @@ test("the checklist stacks without overflow on a narrow phone", async ({ page })
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
 
-test("the event card shows the official category, place and a clamped official description", async ({ page }) => {
+test("commercial activity and events expose their complete truth without a flat clamped row", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.goto("/ko");
-  const briefs = page.locator(".home-area-briefs");
-  await briefs.getByRole("button", { name: /홍대/ }).click();
-  const row = page.locator(".live-signal-rows p", { hasText: "주변 행사" });
-  await expect(row.locator("b")).toHaveText("1건 진행·예정 · 일반축제 · 홍대 거리공연");
-  await expect(row.locator("small")).toContainText("8/31 · 마포구 홍익로 3 · 300m · 한국관광공사 TourAPI");
-  const detail = row.locator(".live-signal-detail");
-  await expect(detail).toHaveText("홍대 걷고싶은거리 일대에서 열리는 버스킹 공연. 매일 저녁 거리 무대가 이어집니다.");
-  const clamp = await detail.evaluate((element) => getComputedStyle(element).webkitLineClamp);
-  expect(clamp).toBe("2");
-  // An area whose event has no stored detail shows no description line at all.
-  await briefs.getByRole("button", { name: /명동/ }).click();
-  await expect(page.locator(".live-signal-rows p", { hasText: "주변 행사" })).toHaveCount(0);
-  await expect(page.locator(".live-signal-detail")).toHaveCount(0);
+  const commercial = page.locator(".commercial-signal-card");
+  await expect(commercial).toContainText("최근 10분 내국인 카드 소비");
+  await expect(commercial).toContainText("상태");
+  await expect(commercial).toContainText("보통");
+  await expect(commercial).toContainText("결제금액");
+  await expect(commercial).toContainText("₩1,000,000–₩1,100,000");
+  await expect(commercial).toContainText("14:05 기준 최근 10분");
+  await expect(commercial).toContainText("14:07 수집");
+  await expect(commercial).toContainText("신한카드 내국인 결제 기반 · 전수 매출 아님 · 외국인 소비 아님");
+  await expect(commercial).not.toContainText(/오늘 누적 매출|외국인 매출|명동 전체 매출/);
+
+  const panel = page.locator(".event-signal-panel");
+  await expect(panel).toContainText("4건 진행·예정");
+  await expect(panel.locator(".event-card")).toHaveCount(3);
+  await expect(panel.getByRole("button", { name: "전체 4건 보기" })).toHaveAttribute("aria-expanded", "false");
+  await expect(
+    panel.getByRole("link", { name: "공식 행사 페이지" }),
+    "the representative valid URL is shown while javascript: is rejected",
+  ).toHaveCount(1);
+
+  const firstCard = panel.locator(".event-card").first();
+  await expect(firstCard).toContainText("진행 중");
+  await expect(firstCard).toContainText("8/20–9/10");
+  await expect(firstCard).toContainText("중구 명동길 14");
+  await expect(firstCard).toContainText("320m");
+  await expect(firstCard.locator(".event-preview")).toHaveText("관객과 소통하는 공연형 미술 콘텐츠입니다.");
+  const officialLink = firstCard.getByRole("link", { name: "공식 행사 페이지" });
+  await expect(officialLink).toHaveAttribute("target", "_blank");
+  await expect(officialLink).toHaveAttribute("rel", "noopener noreferrer");
+  const details = firstCard.locator("details");
+  await expect(details.locator(".event-overview")).not.toBeVisible();
+  await details.locator("summary").click();
+  await expect(details.locator(".event-overview")).toBeVisible();
+  await expect(details.locator(".event-overview")).toHaveText("관객과 소통하는 공연형 미술 콘텐츠입니다. 두 번째 공식 문장도 끝까지 읽을 수 있어야 합니다.");
+  expect(await details.locator(".event-overview").evaluate((element) => getComputedStyle(element).webkitLineClamp)).toBe("none");
+
+  await panel.getByRole("button", { name: "전체 4건 보기" }).click();
+  await expect(panel.locator(".event-card")).toHaveCount(4);
+  await expect(panel.getByRole("button", { name: "대표 행사만 보기" })).toHaveAttribute("aria-expanded", "true");
+  await expect(panel.getByRole("link", { name: "공식 행사 페이지" })).toHaveCount(2);
+});
+
+test("a transitional cached payload never promises event cards it did not include", async ({ page }) => {
+  const transitional = structuredClone(SUMMARY_FIXTURE);
+  transitional.areas.myeongdong.eventCount = 13;
+  transitional.areas.myeongdong.events = transitional.areas.myeongdong.events.slice(0, 3);
+  await page.route("**/api/live/summary*", routeSummary(transitional));
+  await page.goto("/ko");
+
+  const panel = page.locator(".event-signal-panel");
+  await expect(panel).toContainText("13건 진행·예정");
+  await expect(panel.locator(".event-card")).toHaveCount(3);
+  await expect(panel.locator(".event-list-toggle")).toHaveCount(0);
+});
+
+test("signal groups keep time meaning and value-source geometry at every required width", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  for (const width of [1280, 1440, 1920]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto("/ko");
+    await expect(page.locator(".signal-group-title")).toHaveText(["지금", "이동과 외국인 흐름", "오늘과 다음", "과거 상권 정보"]);
+    for (const state of ["실시간/최근", "공식 예상", "지연 공개", "과거 자료"]) {
+      await expect(page.getByText(state, { exact: true }).first()).toBeVisible();
+    }
+    const geometry = await page.locator(".signal-row").first().evaluate((row) => {
+      const value = row.querySelector<HTMLElement>(".signal-row-value")?.getBoundingClientRect();
+      const source = row.querySelector<HTMLElement>(".signal-row-source")?.getBoundingClientRect();
+      const content = row.querySelector<HTMLElement>(".signal-row-content")?.getBoundingClientRect();
+      return { valueLeft: value?.left ?? -1, sourceLeft: source?.left ?? -2, contentWidth: content?.width ?? 9999 };
+    });
+    expect(Math.abs(geometry.valueLeft - geometry.sourceLeft)).toBeLessThanOrEqual(2);
+    expect(geometry.contentWidth).toBeLessThanOrEqual(820);
+    const eventHeading = await page.locator(".event-panel-head").evaluate((head) => {
+      const title = head.querySelector<HTMLElement>("h4")?.getBoundingClientRect();
+      const count = head.querySelector<HTMLElement>("p")?.getBoundingClientRect();
+      return { titleLeft: title?.left ?? -1, countLeft: count?.left ?? 9999 };
+    });
+    expect(eventHeading.countLeft - eventHeading.titleLeft).toBeLessThanOrEqual(820);
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ko");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  const panelWidth = await page.locator(".event-signal-panel").evaluate((element) => element.getBoundingClientRect().width);
+  const cardWidth = await page.locator(".event-card").first().evaluate((element) => element.getBoundingClientRect().width);
+  expect(cardWidth).toBeGreaterThanOrEqual(panelWidth - 2);
+  for (const control of await page.locator(".event-card summary, .event-list-toggle").all()) {
+    expect((await control.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+  }
+});
+
+test("commercial and event controls preserve their meaning in KO EN ZH JA", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  const expected = {
+    ko: ["최근 10분 내국인 카드 소비", "전체 4건 보기", "자세히 보기", "공식 행사 페이지"],
+    en: ["Recent 10-minute domestic-card activity", "View all 4 events", "View details", "Official event page"],
+    zh: ["最近10分钟境内消费者银行卡支付", "查看全部4项活动", "查看详情", "官方活动页面"],
+    ja: ["直近10分の国内消費者カード決済", "全4件を見る", "詳細を見る", "公式イベントページ"],
+  } as const;
+  for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
+    await page.goto(`/${locale}`);
+    for (const phrase of expected[locale].slice(0, 3)) await expect(page.getByText(phrase, { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: expected[locale][3] }).first()).toBeVisible();
+  }
 });
 
 /**

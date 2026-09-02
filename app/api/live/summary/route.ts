@@ -24,7 +24,7 @@ import {
   type AirportForecastAggregateRow,
   type AirportTodayFlightRow,
 } from "../../../../lib/airport-today-summary";
-import { cleanOfficialText } from "../../../../lib/source-adapters";
+import { prepareEventsForPresentation } from "../../../../lib/event-presentation";
 import { summaryCacheControl, SUMMARY_NO_STORE } from "../../../../lib/summary-cache-policy";
 import {
   isValidKstDay,
@@ -39,9 +39,6 @@ import {
 export const dynamic = "force-dynamic";
 
 type Row = Record<string, unknown>;
-
-/** Two lines of official description on a card; the full text stays in D1. */
-const EVENT_OVERVIEW_EXCERPT_CHARS = 220;
 
 const AREAS = ["myeongdong", "hongdae", "seongsu"] as const;
 /** Incheon's two passenger terminals; congestion is only ever published for these. */
@@ -205,12 +202,7 @@ export async function GET(request: Request) {
       FROM tourism_events
       WHERE COALESCE(event_end, event_start) >= ?
       ORDER BY event_start LIMIT 30`,
-    ).bind(serviceDate).all<Row>()).results ?? []).then((rows) => rows.map((row): Row => ({
-      // The stored overview is the provider's full text (≤800 chars); the card
-      // shows an excerpt cut at a word boundary. Same official words, shorter.
-      ...row,
-      overview: cleanOfficialText(row.overview, EVENT_OVERVIEW_EXCERPT_CHARS),
-    })));
+    ).bind(serviceDate).all<Row>()).results ?? []);
 
     const salesRows = await safeAll<Row>(async () => (await client.prepare(
       latestPerKey(AREAS, () => `SELECT area, quarter_code AS quarterCode, trade_area_code AS tradeAreaCode,
@@ -363,14 +355,27 @@ export async function GET(request: Request) {
       const subwayRidership = subwayRows.find((row) => row.area === area) ?? null;
       const salesForArea = salesRows.filter((row) => row.area === area);
       const salesTotal = salesForArea.reduce((sum, row) => sum + Number(row.salesAmount ?? 0), 0);
-      const eventsForArea = eventRows.filter((row) => row.area === area);
+      const eventsForArea = prepareEventsForPresentation(
+        eventRows.filter((row) => row.area === area).map((row) => ({
+          ...row,
+          title: String(row.title ?? ""),
+          eventStart: String(row.eventStart ?? ""),
+          eventEnd: row.eventEnd ? String(row.eventEnd) : null,
+          distanceM: row.distanceM === null || row.distanceM === undefined ? null : Number(row.distanceM),
+          contentId: row.contentId ? String(row.contentId) : null,
+          address: row.address ? String(row.address) : null,
+          overview: row.overview ? String(row.overview) : null,
+          homepage: row.homepage ? String(row.homepage) : null,
+        })),
+        serviceDate,
+      );
       return [area, {
         realtime: realtime ? { ...realtime, freshness: freshnessOf(realtime.observedAt, REALTIME_STALE_MINUTES, now) } : null,
         commercial: commercial ? { ...commercial, freshness: freshnessOf(commercial.observedAt, REALTIME_STALE_MINUTES, now) } : null,
         // The whole published horizon, not a "today" slice — see the query note.
         realtimeForecast: realtimeForecastRows.filter((row) => row.area === area).slice(0, 12),
         weather: weatherRows.filter((row) => row.area === area).slice(0, 24),
-        events: eventsForArea.slice(0, 3),
+        events: eventsForArea,
         eventCount: eventsForArea.length,
         sales: salesForArea.length ? {
           quarterCode: salesForArea[0].quarterCode,
