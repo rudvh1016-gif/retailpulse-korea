@@ -7,9 +7,10 @@
  * sanitizeProductionDetail so authenticated URLs, service keys and bearer
  * tokens can never be printed.
  *
- * RPK_DIAGNOSTIC_SOURCES optionally narrows the inspection to a comma list
- * of production source names (or canonical source ids); absent, every known
- * source is inspected. See lib/production-diagnostics.ts.
+ * RPK_DIAGNOSTIC_SOURCES is required and narrows the inspection to a comma
+ * list of production source names (or canonical source ids). An implicit
+ * all-source coverage sweep is refused because several legacy coverage
+ * probes are not bounded. See lib/production-diagnostics.ts.
  */
 import { CloudflareD1RestDatabase } from "../lib/d1-rest";
 import { COVERAGE_PROBES, buildCoverageContext, isReadOnlyProbe } from "../lib/data-coverage";
@@ -19,7 +20,9 @@ import { resolveProductionDatabaseConfig } from "./production-database";
 const since = process.env.RPK_DIAGNOSTIC_SINCE?.trim();
 if (!since || Number.isNaN(Date.parse(since))) throw new Error("invalid_diagnostic_since");
 
-const sourceIds = resolveDiagnosticSourceIds(process.env.RPK_DIAGNOSTIC_SOURCES);
+const sourceSelection = process.env.RPK_DIAGNOSTIC_SOURCES?.trim();
+if (!sourceSelection) throw new Error("diagnostic_sources_required");
+const sourceIds = resolveDiagnosticSourceIds(sourceSelection);
 const placeholders = sourceIds.map(() => "?").join(", ");
 
 const { accountId, databaseId, apiToken } = resolveProductionDatabaseConfig("production");

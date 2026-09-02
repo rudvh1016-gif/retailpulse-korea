@@ -296,6 +296,8 @@ test("production operations diagnostic stays read-only and calls no provider", (
   // Source ids are bound as parameters, never interpolated into SQL text.
   assert.match(script, /sourceIds\.map\(\(\) => "\?"\)/);
   assert.equal(/\$\{sourceIds\}/.test(script), false);
+  assert.match(script, /if \(!sourceSelection\) throw new Error\("diagnostic_sources_required"\)/,
+    "an implicit all-source coverage sweep is not a bounded Production diagnostic");
   assert.match(script, /selectedCoverageProbes = COVERAGE_PROBES\.filter/,
     "a store-only diagnostic must not execute unrelated legacy coverage probes");
   assert.match(script, /probe\.sourceIds\.some/);

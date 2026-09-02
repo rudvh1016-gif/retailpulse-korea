@@ -327,6 +327,8 @@ test("read-budget evidence fails closed on missing indexes, scans, errors, or an
   assert.match(measure, /measuredSafeRowsRead: measuredSummaryRowsRead/);
   assert.match(measure, /if \(!preflightPassed \|\| !measurementComplete\) process\.exitCode = 1/);
   assert.match(measure, /requireRowsReadMetadata/);
+  assert.doesNotMatch(measure, /!\/\\bUSING \(\?:COVERING \)\?INDEX/,
+    "a full index SCAN is still proportional to a growing table");
   assert.doesNotMatch(measure, /rows_read \?\? 0/,
     "missing D1 measurement metadata must never be reported as zero");
   assert.doesNotMatch(measure, /SELECT COUNT\(\*\) AS rows FROM \$\{table\}/,

@@ -429,9 +429,9 @@ for (const query of HOT_QUERIES) {
       ? []
       : plan.filter((line) => {
         const scanned = /^SCAN\s+([A-Za-z_][A-Za-z0-9_]*)\b/i.exec(line)?.[1];
-        return Boolean(scanned)
-          && scanTargets.has(scanned as string)
-          && !/\bUSING (?:COVERING )?INDEX\b/i.test(line);
+        // A full index scan is still proportional to a growing table and is
+        // therefore not a bounded hot-path plan. Only SEARCH qualifies.
+        return Boolean(scanned) && scanTargets.has(scanned as string);
       });
     planChecks.push({ name: query.name, table: query.table, plan, unindexedTableScans });
   } catch (error) {

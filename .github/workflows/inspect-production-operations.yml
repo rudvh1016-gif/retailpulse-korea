@@ -8,9 +8,9 @@ on:
         required: true
         default: "2026-08-30T23:20:00Z"
       sources:
-        description: Optional comma list of production source names to inspect (blank = all)
-        required: false
-        default: ""
+        description: Required comma list of production source names to inspect
+        required: true
+        default: "store_dynamics"
 
 permissions:
   contents: read
