@@ -127,3 +127,19 @@ test("event wording stays neutral about cause", () => {
     assert.ok(!signals.includes(causal), `${causal} would claim causality the data cannot support`);
   }
 });
+
+/**
+ * The event card shows the provider's category name, period, place, distance
+ * and at most two lines of the provider's own description — and nothing the
+ * product made up.
+ */
+test("the event card leads with the official category and clamps the official description", () => {
+  assert.match(signals, /\[nextEvent\.categoryName, nextEvent\.title\]\.filter\(Boolean\)\.join\(" · "\)/,
+    "category then title, and no category means no placeholder");
+  assert.match(signals, /formatEventPlace\(nextEvent\)/, "the place line is the official address");
+  assert.match(signals, /detail: nextEvent\.overview \?\? undefined/, "the description is the stored official overview or nothing");
+  assert.match(signals, /\{row\.detail && <em className="live-signal-detail">\{row\.detail\}<\/em>\}/);
+  assert.match(styles, /\.live-signal-rows \.live-signal-detail \{[^\n]*-webkit-line-clamp: 2/, "two lines, never a wall of text");
+  assert.match(signals, /nextEventCategory: block\?\.events\?\.\[0\]\?\.categoryName \?\? null/,
+    "the brief names the category from the same stored field");
+});

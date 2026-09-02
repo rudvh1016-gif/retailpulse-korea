@@ -730,12 +730,82 @@ export interface CanonicalTourismEvent {
   distanceM: number | null;
   eventStart: string;
   eventEnd: string | null;
+  /** Official service classification codes as sent (cat1 > cat2 > cat3). */
+  categoryTopCode: string | null;
+  categoryGroupCode: string | null;
+  categoryCode: string | null;
+  addressDetail: string | null;
+  tel: string | null;
   publishedAt: string | null;
   retrievedAt: string;
   freshness: SourceStatus;
   schemaVersion: string;
   qualityStatus: QualityStatus;
   sourceHash: string;
+}
+
+/** Official detailCommon2 fields for one contentId. Nothing here is derived. */
+export interface TourismEventDetail {
+  overview: string | null;
+  homepage: string | null;
+  address: string | null;
+  addressDetail: string | null;
+  tel: string | null;
+  categoryCode: string | null;
+}
+
+const OVERVIEW_MAX_CHARS = 800;
+
+/**
+ * Deterministic cleanup of an official HTML-ish text field: tags become
+ * spaces, a handful of entities are decoded, whitespace collapses, and the
+ * result is cut at a word boundary. Nothing is added or rephrased.
+ */
+export function cleanOfficialText(value: unknown, maxChars = OVERVIEW_MAX_CHARS): string | null {
+  if (typeof value !== "string") return null;
+  let text = value
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, "\"")
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return null;
+  if (text.length > maxChars) {
+    const cut = text.slice(0, maxChars);
+    const boundary = cut.lastIndexOf(" ");
+    text = `${(boundary > maxChars * 0.6 ? cut.slice(0, boundary) : cut).trim()}…`;
+  }
+  return text;
+}
+
+/** TourAPI sends the homepage as an anchor tag; keep only the URL it points at. */
+function officialHomepageUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const href = /href\s*=\s*["']([^"']+)["']/i.exec(value)?.[1] ?? value.trim();
+  return /^https?:\/\//i.test(href) ? href : null;
+}
+
+/**
+ * detailCommon2 item → the fields the product may show. A payload that is not
+ * a detail item (or has none of the fields) yields null rather than a guess.
+ */
+export function normalizeTourismEventDetail(raw: unknown): TourismEventDetail | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const record = raw as Record<string, unknown>;
+  const detail: TourismEventDetail = {
+    overview: cleanOfficialText(record.overview),
+    homepage: officialHomepageUrl(record.homepage),
+    address: optionalString(record, ["addr1"]),
+    addressDetail: optionalString(record, ["addr2"]),
+    tel: optionalString(record, ["tel"]),
+    categoryCode: optionalString(record, ["cat3"]),
+  };
+  return Object.values(detail).some((value) => value !== null) ? detail : null;
 }
 
 function normalizeYyyymmdd(value: string): string {
@@ -769,6 +839,12 @@ export async function normalizeTourismEvent(raw: unknown, area: string, retrieve
     distanceM,
     eventStart: eventStart ? normalizeYyyymmdd(eventStart) : null,
     eventEnd: eventEnd ? normalizeYyyymmdd(eventEnd) : null,
+    // Already in the list response; storing them costs no request.
+    categoryTopCode: optionalString(record, ["cat1"]),
+    categoryGroupCode: optionalString(record, ["cat2"]),
+    categoryCode: optionalString(record, ["cat3"]),
+    addressDetail: optionalString(record, ["addr2"]),
+    tel: optionalString(record, ["tel"]),
   } as const;
   if (!semanticRecord.eventStart) throw new SourceFetchError("SCHEMA");
   return {

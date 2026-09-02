@@ -45,6 +45,8 @@ export interface AreaCurrentBrief {
   weatherAdvice: WeatherAdvice | null;
   eventCount: number;
   nextEventTitle: string | null;
+  /** Official TourAPI category name of the next event, when the provider gave one. */
+  nextEventCategory: string | null;
   evidenceTypes: Array<"REALTIME" | "SEOUL_FORECAST" | "WEATHER" | "EVENTS">;
 }
 
@@ -75,6 +77,7 @@ export function buildAreaCurrentBrief(input: {
   weather: AreaBriefWeather[];
   eventCount: number;
   nextEventTitle?: string | null;
+  nextEventCategory?: string | null;
   nowIso: string;
 }): AreaCurrentBrief {
   const now = Date.parse(input.nowIso);
@@ -142,6 +145,7 @@ export function buildAreaCurrentBrief(input: {
     weatherAdvice,
     eventCount: input.eventCount,
     nextEventTitle: input.nextEventTitle ?? null,
+    nextEventCategory: input.nextEventCategory ?? null,
     evidenceTypes,
   };
 }

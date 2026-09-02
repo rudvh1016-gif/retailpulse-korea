@@ -14,6 +14,7 @@ import {
   type AirportForecastAggregateRow,
   type AirportTodayFlightRow,
 } from "../../../../lib/airport-today-summary";
+import { cleanOfficialText } from "../../../../lib/source-adapters";
 import { summaryCacheControl, SUMMARY_NO_STORE } from "../../../../lib/summary-cache-policy";
 import {
   isValidKstDay,
@@ -28,6 +29,9 @@ import {
 export const dynamic = "force-dynamic";
 
 type Row = Record<string, unknown>;
+
+/** Two lines of official description on a card; the full text stays in D1. */
+const EVENT_OVERVIEW_EXCERPT_CHARS = 220;
 
 const AREAS = ["myeongdong", "hongdae", "seongsu"] as const;
 /** Incheon's two passenger terminals; congestion is only ever published for these. */
@@ -177,11 +181,18 @@ export async function GET(request: Request) {
 
     const eventRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT area, content_id AS contentId, title, event_start AS eventStart,
-        event_end AS eventEnd, distance_m AS distanceM, retrieved_at AS retrievedAt
+        event_end AS eventEnd, distance_m AS distanceM, retrieved_at AS retrievedAt,
+        category_name AS categoryName, address, address_detail AS addressDetail,
+        overview, homepage
       FROM tourism_events
       WHERE COALESCE(event_end, event_start) >= ?
       ORDER BY event_start LIMIT 30`,
-    ).bind(serviceDate).all<Row>()).results ?? []);
+    ).bind(serviceDate).all<Row>()).results ?? []).then((rows) => rows.map((row): Row => ({
+      // The stored overview is the provider's full text (≤800 chars); the card
+      // shows an excerpt cut at a word boundary. Same official words, shorter.
+      ...row,
+      overview: cleanOfficialText(row.overview, EVENT_OVERVIEW_EXCERPT_CHARS),
+    })));
 
     const salesRows = await safeAll<Row>(async () => (await client.prepare(
       latestPerKey(AREAS, () => `SELECT area, quarter_code AS quarterCode, trade_area_code AS tradeAreaCode,

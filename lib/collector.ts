@@ -11,6 +11,7 @@ import {
   normalizeEstimatedSales,
   normalizeSeoulRealtime,
   normalizeTourismEvent,
+  normalizeTourismEventDetail,
   normalizeWeatherForecast,
   redactSeoulUrl,
   redactServiceKey,
@@ -23,6 +24,7 @@ import {
   type CanonicalSeoulRealtime,
   type CanonicalTourismEvent,
   type CanonicalWeatherForecast,
+  type TourismEventDetail,
 } from "./source-adapters";
 import { buildDataGoKrUrl } from "./data-go-kr.mjs";
 import { describeWrites, NO_D1_WRITES, runD1Batches, type D1WriteCounts } from "./d1-write-counts";
@@ -843,6 +845,148 @@ export async function collectWeatherForecasts(
   return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows, detail, providerRequests: requestCount, sourceHealth: health };
 }
 
+/** Per-run caps on the two official follow-up operations, on top of the one list call. */
+export const TOURAPI_DETAIL_POLICY = Object.freeze({
+  /** categoryCode2 lookups per run — one per unresolved cat2 group. */
+  maxCategoryLookups: 3,
+  /** detailCommon2 fetches per run — one per contentId that has never been fetched. */
+  maxDetailFetches: 12,
+});
+
+interface EventEnrichmentCounts {
+  providerRequests: number;
+  changedRows: number;
+  categoryLookups: number;
+  categoriesNamed: number;
+  detailPending: number;
+  detailFetched: number;
+  detailFailed: number;
+  failure: string | null;
+}
+
+const NO_EVENT_ENRICHMENT: EventEnrichmentCounts = Object.freeze({
+  providerRequests: 0, changedRows: 0, categoryLookups: 0, categoriesNamed: 0,
+  detailPending: 0, detailFetched: 0, detailFailed: 0, failure: null,
+});
+
+function describeEventEnrichment(counts: EventEnrichmentCounts): string {
+  const parts = [
+    `category lookups ${counts.categoryLookups}`,
+    `categories named ${counts.categoriesNamed}`,
+    `detail fetched ${counts.detailFetched}/${counts.detailPending}`,
+  ];
+  if (counts.detailFailed) parts.push(`detail failed ${counts.detailFailed}`);
+  if (counts.failure) parts.push(`enrichment error ${counts.failure}`);
+  return parts.join("; ");
+}
+
+function tourapiResultItems(payload: unknown): unknown[] {
+  const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] | unknown } | string } } };
+  const resultCode = root?.response?.header?.resultCode;
+  if (resultCode !== "0000") throw new Error(`tourapi_result_${String(resultCode ?? "missing")}`);
+  const body = root?.response?.body;
+  // An empty result arrives as `items: ""` rather than an empty array.
+  const rawItems = body && typeof body.items === "object" && body.items ? body.items.item : undefined;
+  return Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
+}
+
+/**
+ * The page shows only what the official provider says about an event: its
+ * category name (categoryCode2) and its own overview/homepage (detailCommon2).
+ *
+ * Both are fetched by this daily collector, never by the browser and never
+ * per page view. A category code is resolved once and cached in
+ * `tourapi_category_codes`; a contentId's detail is fetched once, marked by
+ * `detail_retrieved_at`, and re-read from D1 after that. A description the
+ * provider does not have is simply absent — nothing is generated or guessed.
+ */
+async function enrichTourismEventsFromOfficialDetail(
+  db: D1Database,
+  serviceKey: string,
+  categoryGroups: Map<string, string>,
+  kstToday: string,
+): Promise<EventEnrichmentCounts> {
+  const counts: EventEnrichmentCounts = { ...NO_EVENT_ENRICHMENT };
+  try {
+    // 1. Category names: only groups with no cached code at all are looked up.
+    for (const [groupCode, topCode] of categoryGroups) {
+      if (counts.categoryLookups >= TOURAPI_DETAIL_POLICY.maxCategoryLookups) break;
+      const cached = (await db.prepare(`SELECT code FROM tourapi_category_codes WHERE parent_code = ? LIMIT 1`)
+        .bind(groupCode).all<{ code: string }>()).results ?? [];
+      if (cached.length) continue;
+      const url = buildDataGoKrUrl(
+        "https://apis.data.go.kr/B551011/KorService2/categoryCode2",
+        serviceKey,
+        { MobileOS: "ETC", MobileApp: "KORETAIL", _type: "json", numOfRows: "100", pageNo: "1", contentTypeId: "15", cat1: topCode, cat2: groupCode },
+      );
+      counts.categoryLookups += 1;
+      counts.providerRequests += 1;
+      const codes = tourapiResultItems(await fetchOfficialJson(url, DATA_GO_KR_LOW_CALL_POLICY));
+      const retrievedAt = nowIso();
+      const statements: D1PreparedStatement[] = [];
+      for (const item of codes) {
+        const record = item as Record<string, unknown>;
+        const code = typeof record?.code === "string" ? record.code.trim() : "";
+        const name = typeof record?.name === "string" ? record.name.trim() : "";
+        if (!code || !name) continue;
+        statements.push(db.prepare(`INSERT INTO tourapi_category_codes (code, parent_code, name, retrieved_at)
+          VALUES (?, ?, ?, ?)
+          ON CONFLICT(code) DO UPDATE SET name = excluded.name, retrieved_at = excluded.retrieved_at
+          WHERE tourapi_category_codes.name <> excluded.name`).bind(code, groupCode, name, retrievedAt));
+      }
+      if (statements.length) counts.changedRows += (await runBatches(db, statements)).changedRows;
+    }
+    // One bounded statement names every event whose code is now known.
+    const named = await db.prepare(`UPDATE tourism_events
+      SET category_name = (SELECT c.name FROM tourapi_category_codes c WHERE c.code = tourism_events.category_code)
+      WHERE category_name IS NULL AND category_code IS NOT NULL
+        AND category_code IN (SELECT code FROM tourapi_category_codes)`).run();
+    counts.categoriesNamed = Number(named.meta?.changes ?? 0);
+    counts.changedRows += counts.categoriesNamed;
+
+    // 2. Official detail, once per contentId, for events that have not ended.
+    const pending = (await db.prepare(`SELECT DISTINCT content_id AS contentId FROM tourism_events
+      WHERE detail_retrieved_at IS NULL AND COALESCE(event_end, event_start) >= ?
+      ORDER BY event_start, content_id LIMIT ?`)
+      .bind(kstToday, TOURAPI_DETAIL_POLICY.maxDetailFetches).all<{ contentId: string }>()).results ?? [];
+    counts.detailPending = pending.length;
+    for (const { contentId } of pending) {
+      const url = buildDataGoKrUrl(
+        "https://apis.data.go.kr/B551011/KorService2/detailCommon2",
+        serviceKey,
+        { MobileOS: "ETC", MobileApp: "KORETAIL", _type: "json", numOfRows: "1", pageNo: "1", contentId },
+      );
+      counts.providerRequests += 1;
+      let detail: TourismEventDetail | null = null;
+      try {
+        detail = normalizeTourismEventDetail(tourapiResultItems(await fetchOfficialJson(url, DATA_GO_KR_LOW_CALL_POLICY))[0]);
+      } catch {
+        // Left unmarked so the next daily run retries it, within the same cap.
+        counts.detailFailed += 1;
+        // Two failures in one run mean the provider is unwell right now;
+        // stop spending the retry policy's time budget on it today.
+        if (counts.detailFailed >= 2) break;
+        continue;
+      }
+      // A successful answer with nothing in it is still an answer: mark it so
+      // the same contentId is not asked about every day.
+      const result = await db.prepare(`UPDATE tourism_events SET
+          overview = ?, homepage = ?,
+          address_detail = COALESCE(address_detail, ?), tel = COALESCE(tel, ?),
+          category_code = COALESCE(category_code, ?),
+          detail_retrieved_at = ?
+        WHERE content_id = ? AND detail_retrieved_at IS NULL`)
+        .bind(detail?.overview ?? null, detail?.homepage ?? null, detail?.addressDetail ?? null, detail?.tel ?? null,
+          detail?.categoryCode ?? null, nowIso(), contentId).run();
+      counts.detailFetched += 1;
+      counts.changedRows += Number(result.meta?.changes ?? 0);
+    }
+  } catch (error) {
+    counts.failure = safeSourceFailureDetail(error);
+  }
+  return counts;
+}
+
 // T1 — one bounded Seoul festival query, mapped to areas by verified distance.
 export async function collectTourismEvents(env: CollectorEnv, now = new Date()): Promise<CollectorResult> {
   const sourceId = "KTO_TOURAPI_EVENT";
@@ -870,6 +1014,8 @@ export async function collectTourismEvents(env: CollectorEnv, now = new Date()):
     const statements: D1PreparedStatement[] = [];
     let lastEvent: CanonicalTourismEvent | undefined;
     let mappedCount = 0;
+    /** cat2 → cat1 for every mapped event; each group is one categoryCode2 lookup at most, once ever. */
+    const categoryGroups = new Map<string, string>();
     for (const item of items) {
       if (!item || typeof item !== "object") continue;
       const record = item as Record<string, unknown>;
@@ -886,10 +1032,13 @@ export async function collectTourismEvents(env: CollectorEnv, now = new Date()):
         lastEvent = canonical;
         mappedCount += 1;
         if (!env.DB) continue;
+        // The list fields cat1/cat2/cat3, addr2 and tel were already in this
+        // response and used to be discarded; storing them costs no request.
         statements.push(env.DB.prepare(`INSERT INTO tourism_events (
             id, source_id, record_origin, area, content_id, title, address, lat, lng, distance_m,
-            event_start, event_end, published_at, retrieved_at, freshness, schema_version, quality_status, source_hash
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            event_start, event_end, published_at, retrieved_at, freshness, schema_version, quality_status, source_hash,
+            category_code, category_group_code, address_detail, tel
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(source_id, area, content_id) DO UPDATE SET
             title = excluded.title,
             address = excluded.address,
@@ -901,7 +1050,11 @@ export async function collectTourismEvents(env: CollectorEnv, now = new Date()):
             published_at = excluded.published_at,
             retrieved_at = excluded.retrieved_at,
             quality_status = excluded.quality_status,
-            source_hash = excluded.source_hash
+            source_hash = excluded.source_hash,
+            category_code = excluded.category_code,
+            category_group_code = excluded.category_group_code,
+            address_detail = COALESCE(excluded.address_detail, tourism_events.address_detail),
+            tel = COALESCE(excluded.tel, tourism_events.tel)
           WHERE tourism_events.source_hash <> excluded.source_hash`)
           .bind(
             await sha256({ sourceId, area: areaId, contentId: canonical.contentId }),
@@ -909,15 +1062,25 @@ export async function collectTourismEvents(env: CollectorEnv, now = new Date()):
             canonical.lat, canonical.lng, canonical.distanceM, canonical.eventStart, canonical.eventEnd,
             canonical.publishedAt, canonical.retrievedAt, canonical.freshness, canonical.schemaVersion,
             canonical.qualityStatus, canonical.sourceHash,
+            canonical.categoryCode, canonical.categoryGroupCode, canonical.addressDetail, canonical.tel,
           ));
+        if (canonical.categoryTopCode && canonical.categoryGroupCode) {
+          categoryGroups.set(canonical.categoryGroupCode, canonical.categoryTopCode);
+        }
       }
     }
     let written: D1WriteCounts = NO_D1_WRITES;
     if (env.DB && statements.length) written = await runBatches(env.DB, statements);
-    const detail = `seoul events ${items.length}; mapped ${mappedCount}; ${describeWrites(written)}`;
-    await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, items.length, written.changedRows);
+    // Official names and descriptions, each looked up once and then read from
+    // D1 forever after. A failure here leaves the list collection intact.
+    const enrichment = env.DB
+      ? await enrichTourismEventsFromOfficialDetail(env.DB, env.DATA_GO_KR_SERVICE_KEY, categoryGroups, kstToday)
+      : NO_EVENT_ENRICHMENT;
+    const detail = `seoul events ${items.length}; mapped ${mappedCount}; ${describeWrites(written)}; ${describeEventEnrichment(enrichment)}`;
+    const changedRows = written.changedRows + enrichment.changedRows;
+    await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, items.length, changedRows);
     await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastEvent ? { publishedAt: lastEvent.publishedAt, retrievedAt: lastEvent.retrievedAt, schemaVersion: lastEvent.schemaVersion } : undefined);
-    return { status: "SUCCESS", records: written.changedRows, detail };
+    return { status: "SUCCESS", records: changedRows, detail, providerRequests: 1 + enrichment.providerRequests };
   } catch (error) {
     const detail = safeSourceFailureDetail(error);
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);

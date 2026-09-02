@@ -52,6 +52,12 @@ interface LiveEventRow {
   eventStart: string;
   eventEnd: string | null;
   distanceM: number | null;
+  /** Official TourAPI fields stored by the collector; absent means the provider gave none. */
+  categoryName?: string | null;
+  address?: string | null;
+  addressDetail?: string | null;
+  overview?: string | null;
+  homepage?: string | null;
 }
 
 interface LiveSales {
@@ -498,11 +504,13 @@ function localizeAreaBrief(brief: AreaCurrentBrief, lang: Lang): { headline: str
   // The events line is reference material, so it only appears when there is
   // something to reference — never as filler to reach a line count.
   if (brief.eventCount > 0) {
-    const label = brief.nextEventTitle
-      ? (lang === "ko" ? `인근 행사 ${brief.eventCount}건 · ${brief.nextEventTitle}`
-        : lang === "en" ? `${brief.eventCount} nearby event${brief.eventCount === 1 ? "" : "s"} · ${brief.nextEventTitle}`
-        : lang === "zh" ? `附近${brief.eventCount}项活动 · ${brief.nextEventTitle}`
-        : `周辺イベント${brief.eventCount}件 · ${brief.nextEventTitle}`)
+    // Official category name first, then the title: "축제 · 명동 페스티벌".
+    const nextEvent = [brief.nextEventCategory, brief.nextEventTitle].filter(Boolean).join(" · ");
+    const label = nextEvent
+      ? (lang === "ko" ? `인근 행사 ${brief.eventCount}건 · ${nextEvent}`
+        : lang === "en" ? `${brief.eventCount} nearby event${brief.eventCount === 1 ? "" : "s"} · ${nextEvent}`
+        : lang === "zh" ? `附近${brief.eventCount}项活动 · ${nextEvent}`
+        : `周辺イベント${brief.eventCount}件 · ${nextEvent}`)
       : (lang === "ko" ? `인근 행사 ${brief.eventCount}건` : lang === "en" ? `${brief.eventCount} nearby events` : lang === "zh" ? `附近${brief.eventCount}项活动` : `周辺イベント${brief.eventCount}件`);
     lines.push(label);
   }
@@ -850,6 +858,7 @@ export function HomeTodayBrief({ lang, selected, onSelect, date = null }: { lang
       weather: block?.weather ?? [],
       eventCount: block?.eventCount ?? block?.events?.length ?? 0,
       nextEventTitle: block?.events?.[0]?.title ?? null,
+      nextEventCategory: block?.events?.[0]?.categoryName ?? null,
       nowIso: summary.generatedAt,
     });
     return { area, brief, copy: localizeAreaBrief(brief, lang) };
@@ -884,6 +893,15 @@ function formatEventPeriod(event: { eventStart: string; eventEnd: string | null 
   if (!start) return "";
   const end = event.eventEnd ? short(event.eventEnd) : "";
   return end && end !== start ? `${start}\u2013${end}` : start;
+}
+
+/**
+ * The official address as the place line. The city prefix says nothing on a
+ * page that is only about Seoul, so it is dropped; nothing else is altered.
+ */
+function formatEventPlace(event: { address?: string | null }): string {
+  const address = event.address?.trim() ?? "";
+  return address.replace(/^서울특별시\s*|^서울시\s*|^서울\s+/, "").trim();
 }
 
 /** Official distance from the area centre, rounded to a unit a reader can use. */
@@ -943,11 +961,12 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     weather: block?.weather ?? [],
     eventCount: block?.eventCount ?? block?.events?.length ?? 0,
     nextEventTitle: block?.events?.[0]?.title ?? null,
+    nextEventCategory: block?.events?.[0]?.categoryName ?? null,
     nowIso: summary.generatedAt,
   });
   const areaBriefCopy = localizeAreaBrief(areaBrief, lang);
 
-  const rows: Array<{ key: string; label: string; value: string; note: string; state?: "LIVE" | "STALE" }> = [];
+  const rows: Array<{ key: string; label: string; value: string; note: string; detail?: string; state?: "LIVE" | "STALE" }> = [];
 
   if (block?.realtime) {
     const level = congestionLabels[block.realtime.congestionLevel]?.[lang] ?? block.realtime.congestionLabel;
@@ -1004,15 +1023,19 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
   }
 
   if (block?.events.length) {
+    const nextEvent = block.events[0];
     rows.push({
       key: "events",
       label: text.events[lang],
-      value: `${block.eventCount ?? block.events.length}${lang === "en" ? " " : ""}${text.eventCount[lang]} · ${block.events[0].title}`,
-      // A title alone does not say when the event runs or how far away it is,
-      // and both are already collected. Nothing here is derived or guessed:
-      // an absent field is simply left out rather than filled in.
-      note: [formatEventPeriod(block.events[0]), formatEventDistance(lang, block.events[0]), text.sourceKto[lang]]
+      // Official category name, then title — "축제 · 명동 페스티벌". A title
+      // alone does not say what kind of event it is, when it runs, where, or
+      // how far away; all of that is collected from the provider. Nothing here
+      // is derived or guessed: an absent field is simply left out.
+      value: `${block.eventCount ?? block.events.length}${lang === "en" ? " " : ""}${text.eventCount[lang]} · ${[nextEvent.categoryName, nextEvent.title].filter(Boolean).join(" · ")}`,
+      note: [formatEventPeriod(nextEvent), formatEventPlace(nextEvent), formatEventDistance(lang, nextEvent), text.sourceKto[lang]]
         .filter(Boolean).join(" · "),
+      // The provider's own description, already cut to an excerpt server-side.
+      detail: nextEvent.overview ?? undefined,
     });
   }
 
@@ -1088,6 +1111,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
             <strong>{row.label}</strong>
             <b>{row.value}</b>
             <small>{row.note}{row.state === "STALE" ? ` · ${text.stale[lang]}` : ""}</small>
+            {row.detail && <em className="live-signal-detail">{row.detail}</em>}
           </p>
         ))}
       </div>
