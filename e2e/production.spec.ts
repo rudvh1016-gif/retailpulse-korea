@@ -18,18 +18,40 @@ for (const [locale, htmlLang] of locales) {
   });
 }
 
-test("project-local Korean, Japanese and Chinese fonts load", async ({ page }) => {
-  await page.goto("/ja");
-  await page.evaluate(async () => document.fonts.ready);
-  expect(await page.evaluate(() => document.fonts.check('400 16px "Noto Sans JP Variable"', "日本語 ページ"))).toBe(true);
+const localeFonts = [
+  ["ko", "Pretendard Variable"],
+  ["en", "Pretendard Variable"],
+  ["zh", "Noto Sans SC Variable"],
+  ["ja", "Noto Sans JP Variable"],
+] as const;
 
-  await page.goto("/zh");
-  await page.evaluate(async () => document.fonts.ready);
-  expect(await page.evaluate(() => document.fonts.check('400 16px "Noto Sans SC Variable"', "简体中文 签到"))).toBe(true);
+for (const [locale, primaryFamily] of localeFonts) {
+  test(`${locale} uses its primary UI font with supported weights`, async ({ page }) => {
+    await page.goto(`/${locale}/business`);
+    await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+    await page.evaluate(async () => document.fonts.ready);
 
-  await page.goto("/ko");
-  await page.evaluate(async () => document.fonts.ready);
-  expect(await page.evaluate(() => document.fonts.check('420 16px "Pretendard Variable"', "명동 혼잡 예측 특별"))).toBe(true);
+    const family = await page.locator(".app").evaluate((element) =>
+      getComputedStyle(element).fontFamily,
+    );
+    expect(family.split(",")[0]).toContain(primaryFamily);
+
+    const weights = await page.locator("body *").evaluateAll((elements) =>
+      [...new Set(elements
+        .filter((element) => element.childElementCount === 0 && element.textContent?.trim())
+        .map((element) => getComputedStyle(element).fontWeight))]
+        .sort(),
+    );
+    expect(weights).toEqual(["400", "600"]);
+  });
+}
+
+test("business checklist uses one regular and one strong weight", async ({ page }) => {
+  await page.goto("/ko/business");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+  await expect(page.locator(".industry-tabs button").first()).toHaveCSS("font-weight", "600");
+  await expect(page.locator(".checklist-rows p").first()).toHaveCSS("font-weight", "400");
+  await expect(page.locator(".checklist-rows strong").first()).toHaveCSS("font-weight", "600");
 });
 
 for (const width of [320, 375, 390, 430, 768]) {

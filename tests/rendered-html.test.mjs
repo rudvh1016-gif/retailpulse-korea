@@ -177,6 +177,24 @@ test("keeps the four-language fonts as bounded static assets", async () => {
   }
 });
 
+test("uses one locale-aware font family and only supported UI weights", async () => {
+  const css = await read("../app/globals.css");
+  assert.match(css, /--font-ui:\s*"Pretendard Variable"/);
+  assert.match(css, /\.app\.lang-ja\s*{[^}]*--font-ui:\s*"Noto Sans JP Variable"/s);
+  assert.match(css, /\.app\.lang-zh\s*{[^}]*--font-ui:\s*"Noto Sans SC Variable"/s);
+  assert.match(css, /--weight-regular:\s*400/);
+  assert.match(css, /--weight-strong:\s*600/);
+
+  const uiCss = css.replace(/@font-face\s*{[^}]*}/gs, "");
+  const declarations = [...uiCss.matchAll(/font-weight:\s*([^;]+);/g)]
+    .map((match) => match[1].trim());
+  assert.ok(declarations.length > 20, "the guard must inspect the real UI stylesheet");
+  assert.deepEqual(
+    [...new Set(declarations)].sort(),
+    ["var(--weight-regular)", "var(--weight-strong)"],
+  );
+});
+
 test("ships every product surface in four languages without a runtime LLM dependency", async () => {
   const page = await read("../app/retailpulse-app.tsx");
   const data = await read("../app/retailpulse-data.ts");
