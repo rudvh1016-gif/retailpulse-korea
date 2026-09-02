@@ -33,6 +33,8 @@ export interface ForecastBand {
   expectedPassengers: number;
 }
 
+export type PassengerForecastDirection = "departure" | "arrival";
+
 /**
  * A5 daily-total/peak honesty gate (see docs/DATA_SOURCES.md):
  * - COMPLETE: the terminal's official aggregate bands cover the full KST
@@ -119,7 +121,7 @@ function evaluateTerminalCoverage(rows: AirportForecastAggregateRow[], serviceDa
 }
 
 /**
- * Summarizes A5 official departure forecast rows. `serviceDateKst` anchors
+ * Summarizes A5 official aggregate rows for one direction. `serviceDateKst` anchors
  * the full-day boundary check; when omitted it falls back to the first
  * row's own targetDate (rows are expected to already be scoped to one day).
  * A daily total/peak/timeline is produced only for terminals (and, for the
@@ -127,11 +129,12 @@ function evaluateTerminalCoverage(rows: AirportForecastAggregateRow[], serviceDa
  * see `evaluateTerminalCoverage`. Component rows (isAggregate=0) never enter
  * this calculation, preventing provider-total double count.
  */
-export function summarizeTodayPassengerForecast(
+export function summarizePassengerForecast(
   rows: AirportForecastAggregateRow[],
   serviceDateKst?: string,
+  direction: PassengerForecastDirection = "departure",
 ): TodayPassengerForecastSummary {
-  const official = rows.filter((row) => row.direction === "departure" && row.isAggregate === 1);
+  const official = rows.filter((row) => row.direction === direction && row.isAggregate === 1);
   const effectiveDate = serviceDateKst ?? official[0]?.targetDate ?? null;
 
   const rowsByTerminal = new Map<string, AirportForecastAggregateRow[]>();
@@ -219,6 +222,56 @@ export function summarizeTodayPassengerForecast(
     retrievedAtByTerminal,
     coverage: { all: allStatus, byTerminal: coverageByTerminal },
   };
+}
+
+/** Existing Airport contract: its A5 view remains departure-specific. */
+export function summarizeTodayPassengerForecast(
+  rows: AirportForecastAggregateRow[],
+  serviceDateKst?: string,
+): TodayPassengerForecastSummary {
+  return summarizePassengerForecast(rows, serviceDateKst, "departure");
+}
+
+/**
+ * The first official, non-ended whole-airport band for one A5 direction.
+ *
+ * Unlike a full-day total, this local band does not require every hour of the
+ * day to be present. It does require one and only one official aggregate row
+ * from both T1 and T2 on the exact same interval. A missing, duplicate or
+ * mismatched terminal row fails closed instead of creating a partial airport
+ * number.
+ */
+export function summarizeNextPassengerForecastBand(
+  rows: AirportForecastAggregateRow[],
+  direction: PassengerForecastDirection,
+  nowIso: string,
+): ForecastBand | null {
+  const now = Date.parse(nowIso);
+  if (!Number.isFinite(now)) return null;
+
+  const intervals = new Map<string, Map<string, number[]>>();
+  for (const row of rows) {
+    if (row.direction !== direction || row.isAggregate !== 1) continue;
+    if (row.terminal !== "T1" && row.terminal !== "T2") continue;
+    const start = Date.parse(row.targetStartAt);
+    const end = Date.parse(row.targetEndAt);
+    const passengers = Number(row.expectedPassengers);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || end <= now) continue;
+    if (!Number.isFinite(passengers) || passengers < 0) continue;
+    const key = `${row.targetStartAt}|${row.targetEndAt}`;
+    const byTerminal = intervals.get(key) ?? new Map<string, number[]>();
+    byTerminal.set(row.terminal, [...(byTerminal.get(row.terminal) ?? []), passengers]);
+    intervals.set(key, byTerminal);
+  }
+
+  for (const [key, byTerminal] of [...intervals.entries()].sort(([left], [right]) => left.localeCompare(right))) {
+    const t1 = byTerminal.get("T1") ?? [];
+    const t2 = byTerminal.get("T2") ?? [];
+    if (t1.length !== 1 || t2.length !== 1) continue;
+    const [targetStartAt, targetEndAt] = key.split("|");
+    return { targetStartAt, targetEndAt, expectedPassengers: t1[0] + t2[0] };
+  }
+  return null;
 }
 
 export interface RemainingForecast {

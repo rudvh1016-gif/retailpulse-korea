@@ -6,6 +6,8 @@ import {
   friendlyCheckpointName,
   rankCurrentDepartureHallCheckpoints,
   summarizeCurrentBusiestDepartureHalls,
+  summarizeNextPassengerForecastBand,
+  summarizePassengerForecast,
   summarizeTodayPassengerForecast,
   summarizeTodayTopGate,
   summarizeTodayTopGateByTerminal,
@@ -31,6 +33,10 @@ function fullDayBands(terminal, passengersPerBand, retrievedAt = "2026-08-31T10:
     bands.push(forecast({ terminal, timeBandRaw: `${hour}_${endHour}`, targetStartAt: start, targetEndAt: end, expectedPassengers: passengersPerBand, retrievedAt }));
   }
   return bands;
+}
+
+function arrivalDayBands(terminal, passengersPerBand) {
+  return fullDayBands(terminal, passengersPerBand).map((row) => ({ ...row, direction: "arrival" }));
 }
 
 // ---------------------------------------------------------------------------
@@ -113,6 +119,58 @@ test("A5 today totals use only official aggregate rows and keep terminals separa
   ], SERVICE_DATE);
   assert.equal(summary.totalByTerminal.T1, null); // only one band each -> PARTIAL, not a fabricated full-day total
   assert.equal(summary.coverage.byTerminal.T1, "PARTIAL");
+});
+
+test("A5 arrival: complete T1 and T2 official aggregate bands yield one whole-airport total", () => {
+  const rows = [
+    ...arrivalDayBands("T1", 100),
+    ...arrivalDayBands("T2", 50),
+    ...fullDayBands("T1", 900),
+    forecast({ terminal: "T1", direction: "arrival", isAggregate: 0, expectedPassengers: 9999 }),
+  ];
+  const summary = summarizePassengerForecast(rows, SERVICE_DATE, "arrival");
+  assert.equal(summary.coverage.all, "COMPLETE");
+  assert.equal(summary.total, 3600);
+  assert.equal(summary.totalByTerminal.T1, 2400);
+  assert.equal(summary.totalByTerminal.T2, 1200);
+  assert.equal(summary.peak.expectedPassengers, 150);
+});
+
+test("A5 arrival: PARTIAL coverage never produces a confident daily total or peak", () => {
+  const t1 = arrivalDayBands("T1", 100).filter((row) => row.timeBandRaw !== "12_13");
+  const summary = summarizePassengerForecast([...t1, ...arrivalDayBands("T2", 50)], SERVICE_DATE, "arrival");
+  assert.equal(summary.coverage.all, "PARTIAL");
+  assert.equal(summary.total, null);
+  assert.equal(summary.peak, null);
+});
+
+test("A5 arrival: the next non-ended band combines matching T1 and T2 aggregates once", () => {
+  const rows = [
+    forecast({ terminal: "T1", direction: "arrival", expectedPassengers: 100 }),
+    forecast({ terminal: "T2", direction: "arrival", expectedPassengers: 50 }),
+    forecast({ terminal: "T1", direction: "arrival", isAggregate: 0, expectedPassengers: 9999 }),
+    forecast({ terminal: "T1", direction: "departure", expectedPassengers: 8888 }),
+  ];
+  assert.deepEqual(
+    summarizeNextPassengerForecastBand(rows, "arrival", "2026-08-31T15:30:00+09:00"),
+    {
+      targetStartAt: "2026-08-31T15:00:00+09:00",
+      targetEndAt: "2026-08-31T16:00:00+09:00",
+      expectedPassengers: 150,
+    },
+  );
+});
+
+test("A5 arrival: mismatched terminal intervals never become a combined next band", () => {
+  const rows = [
+    forecast({ terminal: "T1", direction: "arrival", expectedPassengers: 100 }),
+    forecast({
+      terminal: "T2", direction: "arrival", timeBandRaw: "16_17",
+      targetStartAt: "2026-08-31T16:00:00+09:00", targetEndAt: "2026-08-31T17:00:00+09:00",
+      expectedPassengers: 50,
+    }),
+  ];
+  assert.equal(summarizeNextPassengerForecastBand(rows, "arrival", "2026-08-31T15:30:00+09:00"), null);
 });
 
 // ---------------------------------------------------------------------------

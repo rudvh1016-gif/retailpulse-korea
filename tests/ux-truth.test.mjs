@@ -60,6 +60,20 @@ test("airport current observation and official forecast stay separately named", 
   assert.deepEqual(claims, [], "a forecast must never be worded as a measurement");
 });
 
+test("Seoul uses airport arrivals only as a leading reference signal", () => {
+  for (const wording of ["예상 입국객", "입국 예상", "공식 예상"]) {
+    assert.ok(signals.includes(wording), `${wording} must exist as forecast wording`);
+  }
+  assert.match(signals, /서울 소비 수요의 선행 참고 신호/);
+  assert.match(signals, /실제 서울 방문객 수 아님/);
+  const claims = signals.split("\n").filter((line) =>
+    /실제 입국객|현재 입국객|실측 입국객/.test(line)
+    && !/아님|ではありません|not actual|非实际/.test(line));
+  assert.deepEqual(claims, [], "airport arrival forecasts must never read as observed arrivals");
+  assert.doesNotMatch(signals, /입국객[^\n]*명동에 유입/,
+    "airport arrivals must never be asserted as Myeongdong visitors");
+});
+
 /**
  * The chart used to be laid out as 24 bands of `flex: 1 0 42px` with a 5px
  * gap — at least 24*42 + 23*5 = 1123px — inside a chart column of roughly

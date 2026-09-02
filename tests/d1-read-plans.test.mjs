@@ -68,6 +68,7 @@ const HOT_QUERIES = {
   "summary.latestWeather": [perKey(AREAS, "SELECT area FROM weather_forecast WHERE area = ? AND issued_at = (SELECT MAX(issued_at) FROM weather_forecast WHERE area = ?) AND target_at >= ? ORDER BY target_at LIMIT 60"), AREAS.flatMap((a) => [a, a, "2026-08-31T00:00:00+09:00"])],
   "summary.latestSales": [perKey(AREAS, "SELECT area FROM seoul_estimated_sales WHERE area = ? AND quarter_code = (SELECT MAX(quarter_code) FROM seoul_estimated_sales WHERE area = ?) ORDER BY sales_amount DESC"), AREAS.flatMap((a) => [a, a])],
   "summary.latestCongestion": [perKey(["T1", "T2"], "SELECT terminal FROM airport_congestion WHERE terminal = ? AND observed_at = (SELECT MAX(observed_at) FROM airport_congestion WHERE terminal = ?) ORDER BY zone LIMIT 12"), ["T1", "T1", "T2", "T2"]],
+  "summary.passengerForecast": ["SELECT terminal, direction FROM airport_passenger_forecast WHERE direction IN ('departure', 'arrival') AND is_aggregate = 1 AND target_date = ? ORDER BY direction, target_start_at, terminal LIMIT 96", ["2026-08-31"]],
   "summary.flightsForDay": ["SELECT physical_flight_id, terminal, gate FROM airport_flights WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ? LIMIT 2000", ["2026-08-31", "2026-09-01"]],
   "summary.availableFlightDates": [probe("airport_flights", "scheduled_at", "direction = 'departure'"), probeBinds()],
   "summary.availableForecastDates": [exactDayProbe("airport_passenger_forecast", "target_date", "direction = 'departure' AND is_aggregate = 1"), ["2026-08-31", "2026-08-31"]],
@@ -108,7 +109,8 @@ test("the read-path indexes the queries depend on exist in a migration", (contex
     "seoul_realtime_area_area_observed_idx", "seoul_realtime_area_observed_idx",
     "seoul_realtime_forecast_area_issue_idx", "weather_forecast_area_issue_idx",
     "seoul_estimated_sales_area_quarter_idx", "airport_congestion_terminal_observed_idx",
-    "airport_flights_direction_scheduled_idx", "weather_forecast_issued_area_idx",
+    "airport_flights_direction_scheduled_idx", "airport_passenger_forecast_target_idx",
+    "weather_forecast_issued_area_idx",
   ]) assert.ok(present.has(index), `${index} is missing; the read path would scan again`);
 });
 
@@ -170,6 +172,17 @@ test("bounded forecast date probes preserve the aggregate-departure picker contr
   const pickerDays = ["2026-08-31", "2026-08-30", "2026-08-29"];
   const available = pickerDays.flatMap((day) => db.prepare(sql).all(day, day)).map((row) => row.day);
   assert.deepEqual(available, ["2026-08-31"]);
+});
+
+test("the live summary reads both A5 directions once while the Airport date picker stays departure-only", () => {
+  assert.equal((route.match(/FROM airport_passenger_forecast f/g) ?? []).length, 1,
+    "one bounded D1 statement must serve both departure and arrival summaries");
+  assert.match(route, /WHERE f\.direction IN \('departure', 'arrival'\) AND f\.is_aggregate = 1 AND f\.target_date = \?/);
+  assert.match(route, /ORDER BY direction, target_start_at, terminal LIMIT 96/);
+  assert.match(route, /passengerForecastRows\.filter\(\(row\) => row\.direction === "departure"\)/);
+  assert.match(route, /passengerForecastRows\.filter\(\(row\) => row\.direction === "arrival"\)/);
+  assert.match(route, /dayValueExistsSql\("airport_passenger_forecast", "target_date", "direction = 'departure' AND is_aggregate = 1"\)/,
+    "the Airport detail date picker remains departure-scoped");
 });
 
 /**

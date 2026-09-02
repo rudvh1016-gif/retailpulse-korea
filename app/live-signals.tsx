@@ -190,6 +190,14 @@ export interface LiveSummary {
     passengerForecastTimeline: ForecastBand[];
     passengerForecastTimelineByTerminal: Record<string, ForecastBand[]>;
     forecastCoverage: { all: ForecastCoverageStatus; byTerminal: Record<string, ForecastCoverageStatus> };
+    arrivalForecast: {
+      todayExpectedPassengersTotal: number | null;
+      todayExpectedPassengersByTerminal: Record<string, number | null>;
+      nextExpectedTimeBand: ForecastBand | null;
+      peakExpectedTimeBand: ForecastBand | null;
+      passengerForecastRetrievedAt: string | null;
+      forecastCoverage: { all: ForecastCoverageStatus; byTerminal: Record<string, ForecastCoverageStatus> };
+    };
     scheduled: LiveScheduledRow[];
     passengerForecast: LivePassengerForecastRow[];
   };
@@ -280,34 +288,22 @@ const text = {
     zh: "首尔市官方数据 · 延迟发布 · 非实时",
     ja: "ソウル市公式データ · 遅延公開 · リアルタイムではありません",
   },
-  airportTerminal: {
-    ko: (terminal: string) => `${terminal} 현재 출국장 대기`,
-    en: (terminal: string) => `${terminal} departure-hall wait now`,
-    zh: (terminal: string) => `${terminal} 出境区现时等候`,
-    ja: (terminal: string) => `${terminal} 出国場の現在の待ち`,
+  arrivalToday: { ko: "오늘 예상 입국객", en: "Expected arrivals today", zh: "今日预计入境旅客", ja: "今日の予想入国者数" },
+  arrivalNext: { ko: "다음 시간대 예상 입국객", en: "Next-band expected arrivals", zh: "下一时段预计入境旅客", ja: "次の時間帯の予想入国者数" },
+  arrivalPeak: { ko: "오늘 예상 입국 피크", en: "Expected arrival peak today", zh: "今日预计入境高峰", ja: "今日の予想入国ピーク" },
+  arrivalUnit: { ko: "명", en: " people", zh: "人", ja: "人" },
+  arrivalSource: {
+    ko: "인천공항 공식 입국 예상 · 서울 소비 수요의 선행 참고 신호 · 실제 서울 방문객 수 아님",
+    en: "Official Incheon arrival forecast · leading reference signal for Seoul consumer demand · not an actual Seoul visitor count",
+    zh: "仁川机场官方入境预测 · 首尔消费需求的先行参考信号 · 非首尔实际访客数",
+    ja: "仁川空港公式入国予測 · ソウル消費需要の先行参考シグナル · ソウルの実来訪者数ではありません",
   },
-  airportPeople: { ko: "명 대기 중", en: "people waiting", zh: "人等候中", ja: "人待機中" },
-  // A5 — official FORECAST/EXPECTED passengers. Wording must stay clearly
-  // distinct from A4's CURRENT/OBSERVED wording above (see docs/DATA_SOURCES.md).
-  // Never "실시간 승객" / "현재 대기인원" / "확정 승객" for this block.
-  passengerForecastLabel: {
-    ko: (terminal: string) => `${terminal} 다음 시간대 예상 출국 승객`,
-    en: (terminal: string) => `${terminal} next-hour expected departures`,
-    zh: (terminal: string) => `${terminal} 下一时段预计出境人数`,
-    ja: (terminal: string) => `${terminal} 次の時間帯の予想出国者数`,
-  },
-  passengerForecastUnit: { ko: "명", en: " expected", zh: "人", ja: "人" },
-  passengerForecastSource: { ko: "인천공항 공식 예고", en: "Incheon Airport official forecast", zh: "仁川机场官方预告", ja: "仁川空港公式予告" },
-  passengerForecastNotice: { ko: "실제 대기인원 아님", en: "not actual waiting count", zh: "非实际等候人数", ja: "実際の待機人数ではありません" },
-  airportFlights: { ko: "출발 운항", en: "Departing flights", zh: "出发航班", ja: "出発便" },
-  airportScheduled: { ko: "정기운항 편성", en: "scheduled service", zh: "定期航班", ja: "定期運航" },
-  flightUnit: { ko: "편", en: " flights", zh: "班", ja: "便" },
+  arrivalTerminalBreakdown: { ko: "터미널별", en: "By terminal", zh: "按航站楼", ja: "ターミナル別" },
   stale: { ko: "지연됨", en: "STALE", zh: "已延迟", ja: "遅延" },
   sourceSeoul: { ko: "서울 실시간 도시데이터", en: "Seoul real-time city data", zh: "首尔实时城市数据", ja: "ソウルリアルタイム都市データ" },
   sourceKma: { ko: "기상청 단기예보", en: "KMA short-term forecast", zh: "气象厅短期预报", ja: "気象庁短期予報" },
   sourceKto: { ko: "한국관광공사 TourAPI", en: "KTO TourAPI", zh: "韩国观光公社 TourAPI", ja: "韓国観光公社 TourAPI" },
   sourceSales: { ko: "서울시 상권분석서비스", en: "Seoul commercial-district analysis", zh: "首尔商圈分析服务", ja: "ソウル商圏分析サービス" },
-  sourceAirport: { ko: "인천공항 출국장 혼잡도", en: "Incheon departure-hall congestion", zh: "仁川机场出境区拥挤度", ja: "仁川空港出国場混雑度" },
 } as const;
 
 const congestionLabels: Record<number, Record<Lang, string>> = {
@@ -950,20 +946,19 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
   const summary = useLiveSummary(date);
   if (!summary) return null;
   const block = summary.areas[area];
-  const congestion = summary.airport.congestion;
-  // T1 and T2 are separate official sources with separate observation times;
-  // they are never combined into one unlabeled total (see docs/DATA_SOURCES.md).
-  const congestionByTerminal = new Map<string, LiveCongestionRow[]>();
-  for (const row of congestion) {
-    const rows = congestionByTerminal.get(row.terminal) ?? [];
-    rows.push(row);
-    congestionByTerminal.set(row.terminal, rows);
-  }
-  const terminalOrder = [...congestionByTerminal.keys()].sort();
-  const trackedFlights = summary.airport.departuresTrackedToday;
-  const passengerForecast = summary.airport.passengerForecast ?? [];
+  const arrival = summary.airport.arrivalForecast ?? {
+    todayExpectedPassengersTotal: null,
+    todayExpectedPassengersByTerminal: {},
+    nextExpectedTimeBand: null,
+    peakExpectedTimeBand: null,
+    passengerForecastRetrievedAt: null,
+    forecastCoverage: { all: "UNAVAILABLE" as const, byTerminal: {} },
+  };
   const hasArea = Boolean(block && (block.realtime || block.realtimeForecast?.length || block.foreignPresence || block.weather.length || block.events.length || block.sales));
-  if (!hasArea && !congestion.length && !trackedFlights && !passengerForecast.length) return null;
+  const hasArrival = arrival.todayExpectedPassengersTotal !== null
+    || arrival.nextExpectedTimeBand !== null
+    || arrival.peakExpectedTimeBand !== null;
+  if (!hasArea && !hasArrival) return null;
 
   // The detail screen reuses the same deterministic builder as the home rows,
   // so the same data can never produce two different sentences.
@@ -1060,40 +1055,51 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     });
   }
 
-  // One row per terminal — a T1+T2 combined figure would blur two
-  // independently observed official sources into one misleading number.
-  for (const terminal of terminalOrder) {
-    const terminalRows = congestionByTerminal.get(terminal)!;
-    const terminalWaiting = terminalRows.reduce((sum, row) => sum + (row.waitingCount ?? 0), 0);
-    const latest = terminalRows.reduce((newest, row) => (row.observedAt > newest.observedAt ? row : newest), terminalRows[0]);
+  // A5 ARRIVAL is a forecast and only a leading reference for Seoul demand.
+  // It is never presented as observed airport arrivals or as Seoul visitors.
+  // Whole-day total and peak stay hidden unless all aggregate T1/T2 bands prove
+  // COMPLETE coverage; the next band is independently safe only when both
+  // terminals have the exact same active interval.
+  const arrivalNote = [
+    text.arrivalSource[lang],
+    arrival.passengerForecastRetrievedAt
+      ? formatHumanFreshness(arrival.passengerForecastRetrievedAt, summary.generatedAt, lang, "collected")
+      : null,
+  ].filter(Boolean).join(" · ");
+  if (arrival.forecastCoverage.all === "COMPLETE" && arrival.todayExpectedPassengersTotal !== null) {
+    const terminalBreakdown = Object.entries(arrival.todayExpectedPassengersByTerminal)
+      .filter((entry): entry is [string, number] => entry[1] !== null)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([terminal, value]) => `${terminal} ${Math.round(value).toLocaleString(airportLocale(lang))}${text.arrivalUnit[lang]}`)
+      .join(" · ");
     rows.push({
-      key: `airport_${terminal}`,
-      label: text.airportTerminal[lang](terminal),
-      value: `${terminalWaiting.toLocaleString(airportLocale(lang))} ${text.airportPeople[lang]}`,
-      note: `${text.sourceAirport[lang]} · ${formatHumanFreshness(latest.observedAt, summary.generatedAt, lang, "observed")}`,
-      state: latest.freshness,
+      key: "arrival_today",
+      label: text.arrivalToday[lang],
+      value: `${Math.round(arrival.todayExpectedPassengersTotal).toLocaleString(airportLocale(lang))}${text.arrivalUnit[lang]}`,
+      note: [
+        arrivalNote,
+        terminalBreakdown ? `${text.arrivalTerminalBreakdown[lang]} · ${terminalBreakdown}` : null,
+      ].filter(Boolean).join(" · "),
     });
   }
 
-  // A5 — official FORECAST/EXPECTED departure passengers, one row per terminal
-  // actually returned. Semantically separate from the A4 CURRENT/OBSERVED rows
-  // above: never merged into the same number, and the wording always makes
-  // clear this is an official forecast, not an actual waiting count.
-  for (const forecast of passengerForecast) {
+  if (arrival.nextExpectedTimeBand) {
+    const band = arrival.nextExpectedTimeBand;
     rows.push({
-      key: `forecast_${forecast.terminal}`,
-      label: text.passengerForecastLabel[lang](forecast.terminal),
-      value: `${Math.round(forecast.expectedPassengers).toLocaleString(airportLocale(lang))}${text.passengerForecastUnit[lang]}`,
-      note: `${text.passengerForecastSource[lang]} · ${text.passengerForecastNotice[lang]} · ${formatKstBand(forecast.targetStartAt, forecast.targetEndAt).replace(" KST", "")}`,
+      key: "arrival_next",
+      label: text.arrivalNext[lang],
+      value: `${Math.round(band.expectedPassengers).toLocaleString(airportLocale(lang))}${text.arrivalUnit[lang]} · ${formatKstBand(band.targetStartAt, band.targetEndAt).replace(" KST", "")}`,
+      note: arrivalNote,
     });
   }
 
-  if (trackedFlights) {
+  if (arrival.forecastCoverage.all === "COMPLETE" && arrival.peakExpectedTimeBand) {
+    const band = arrival.peakExpectedTimeBand;
     rows.push({
-      key: "airport_flights",
-      label: text.airportFlights[lang],
-      value: `${trackedFlights.toLocaleString(airportLocale(lang))}${text.flightUnit[lang]}`,
-      note: { ko: "실제 운항편 수 · 승객 수 아님", en: "Actual flights · not passenger count", zh: "实际航班数 · 非旅客人数", ja: "実運航便数 · 旅客数ではありません" }[lang],
+      key: "arrival_peak",
+      label: text.arrivalPeak[lang],
+      value: `${formatKstBand(band.targetStartAt, band.targetEndAt).replace(" KST", "")} · ${Math.round(band.expectedPassengers).toLocaleString(airportLocale(lang))}${text.arrivalUnit[lang]}`,
+      note: arrivalNote,
     });
   }
 

@@ -49,12 +49,21 @@ test("public endpoints stay available and never fabricate zeros when a source is
 
   const summaryResponse = await call("/api/live/summary");
   assert.equal(summaryResponse.status, 200, "a degraded source must never turn the live summary into a 500");
+  assert.equal(summaryResponse.headers.get("cache-control"), "no-store", "an outer D1 failure must never enter the edge cache");
   const summary = await summaryResponse.json();
   // Honest absence, never a zero that would read as a real measurement.
   assert.equal(summary.airport.todayExpectedPassengersTotal, null);
   assert.equal(summary.airport.departuresTrackedToday, null);
   assert.equal(summary.airport.remainingExpectedPassengers, null);
   assert.equal(summary.airport.forecastCoverage.all, "UNAVAILABLE");
+  assert.deepEqual(summary.airport.arrivalForecast, {
+    todayExpectedPassengersTotal: null,
+    todayExpectedPassengersByTerminal: {},
+    nextExpectedTimeBand: null,
+    peakExpectedTimeBand: null,
+    passengerForecastRetrievedAt: null,
+    forecastCoverage: { all: "UNAVAILABLE", byTerminal: {} },
+  });
 
   // STALE is a real source status, so the health contract must allow it.
   const contracts = await read("../lib/contracts.ts");
@@ -277,37 +286,38 @@ test("labels the S2 signal as delayed official data in all four languages", asyn
   assert.match(signals, /maximumFractionDigits: 1/);
 });
 
-test("shows T1/T2 airport congestion as separate rows instead of one unlabeled combined total", async () => {
+test("keeps departure congestion in Airport detail and removes it from Seoul demand signals", async () => {
   const signals = await read("../app/live-signals.tsx");
-  // The old bug: summing every congestion row (any terminal) into one opaque
-  // "airport" total before T2 data could ever exist.
-  assert.doesNotMatch(signals, /congestion\.reduce\(\(sum, row\) => sum \+ row\.waitingCount/);
-  assert.doesNotMatch(signals, /key:\s*"airport",/);
-  assert.match(signals, /congestionByTerminal/);
-  assert.match(signals, /for \(const terminal of terminalOrder\)/);
-  assert.match(signals, /key: `airport_\$\{terminal\}`/);
-  for (const phrase of [
-    "현재 출국장 대기", "departure-hall wait now", "出境区现时等候", "出国場の現在の待ち",
-  ]) assert.match(signals, new RegExp(phrase));
+  const areaSignals = signals.match(/export default function LiveSignals[\s\S]*?\nconst flightBoardText/)?.[0] ?? "";
+  assert.ok(areaSignals.length > 0);
+  assert.doesNotMatch(areaSignals, /congestionByTerminal|terminalOrder|key: `airport_|key: `forecast_|key: "airport_flights"/);
+  assert.match(signals, /rankCurrentDepartureHallCheckpoints/,
+    "Airport detail must retain its observed departure-checkpoint data");
+  assert.match(signals, /airportTodayText\.current\[lang\]/,
+    "Airport detail must retain its departure-hall label");
 });
 
-test("A5 passenger forecast is worded as an official forecast, never as current/actual queue data", async () => {
+test("A5 arrival forecast replaces Seoul departure rows with compact, coverage-safe inbound signals", async () => {
   const signals = await read("../app/live-signals.tsx");
   const route = await read("../app/api/live/summary/route.ts");
-  assert.match(route, /passengerForecastRows/);
+  const areaSignals = signals.match(/export default function LiveSignals[\s\S]*?\nconst flightBoardText/)?.[0] ?? "";
+  assert.ok(areaSignals.length > 0);
+  assert.match(route, /arrivalForecast/);
   assert.match(route, /passengerForecast: upcomingForecast/);
   assert.match(route, /is_aggregate = 1/);
-  assert.match(route, /direction = 'departure'/);
-  assert.match(signals, /key: `forecast_\$\{forecast\.terminal\}`/);
-  assert.match(signals, /text\.passengerForecastLabel\[lang\]\(forecast\.terminal\)/);
+  assert.match(route, /direction IN \('departure', 'arrival'\)/);
+  assert.match(areaSignals, /key: "arrival_today"/);
+  assert.match(areaSignals, /key: "arrival_next"/);
+  assert.match(areaSignals, /key: "arrival_peak"/);
+  assert.match(areaSignals, /arrival\.forecastCoverage\.all === "COMPLETE"/);
   for (const phrase of [
-    "다음 시간대 예상 출국 승객", "next-hour expected departures",
-    "下一时段预计出境人数", "次の時間帯の予想出国者数",
-    "인천공항 공식 예고", "실제 대기인원 아님",
+    "오늘 예상 입국객", "Expected arrivals today", "今日预计入境旅客", "今日の予想入国者数",
+    "다음 시간대 예상 입국객", "Next-band expected arrivals", "下一时段预计入境旅客", "次の時間帯の予想入国者数",
+    "오늘 예상 입국 피크", "Expected arrival peak today", "今日预计入境高峰", "今日の予想入国ピーク",
+    "서울 소비 수요의 선행 참고 신호", "실제 서울 방문객 수 아님",
   ]) assert.match(signals, new RegExp(phrase));
-  const forecastBlock = signals.match(/for \(const forecast of passengerForecast\) \{([\s\S]*?)\n  \}/)?.[1] ?? "";
-  assert.ok(forecastBlock.length > 0);
-  assert.doesNotMatch(forecastBlock, /실시간 승객|현재 대기인원|확정 승객/);
+  assert.doesNotMatch(areaSignals, /실시간 입국객|현재 입국객|실제 입국객|실측 입국객/);
+  assert.doesNotMatch(route, /\bfetch\(/, "the summary must reuse D1 and never add an airport provider call");
 });
 
 test("airport detail UI uses editorial rows, friendly checkpoints and honest partial-state copy", async () => {
@@ -457,10 +467,13 @@ test("timestamps state what they mean and a forecast band never borrows observat
   // Foreign presence carries an OBSERVATION time published with delay, so it
   // goes through the human freshness formatter (today / yesterday / older).
   assert.match(signals, /formatHumanFreshness\(block\.foreignPresence\.referenceAt/);
-  // The passenger forecast row describes a TARGET band, not a retrieval moment.
-  assert.match(signals, /formatKstBand\(forecast\.targetStartAt, forecast\.targetEndAt\)/);
-  const forecastBlock = signals.match(/for \(const forecast of passengerForecast\) \{([\s\S]*?)\n  \}/)?.[1] ?? "";
-  assert.doesNotMatch(forecastBlock, /formatHumanFreshness/, "a target band is not an 'as of' moment");
+  // The arrival forecast describes a TARGET band and separately labels when
+  // the official forecast was collected; neither is called an observation.
+  assert.match(signals, /formatKstBand\(band\.targetStartAt, band\.targetEndAt\)/);
+  const arrivalBlock = signals.match(/const arrivalNote = \[([\s\S]*?)\n  if \(!rows\.length\)/)?.[1] ?? "";
+  assert.ok(arrivalBlock.length > 0);
+  assert.match(arrivalBlock, /"collected"/);
+  assert.doesNotMatch(arrivalBlock, /"observed"/, "a forecast must not borrow observation wording");
 });
 
 test("applies a user-defined month range to airport and business history", async () => {
