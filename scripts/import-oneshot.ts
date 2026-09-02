@@ -21,6 +21,7 @@ import {
   collectSeoulForeignPresence,
   collectSeoulRealtime,
   collectSeoulSubwayRidership,
+  collectStoreDynamics,
   collectTourismEvents,
   collectWeatherForecasts,
 } from "../lib/collector";
@@ -54,6 +55,10 @@ type OneShotResult = {
   records: number;
   trackedToday?: number;
   pagesFetched?: number;
+  providerRequests?: number;
+  sourceHealth?: string;
+  lastGoodPreserved?: boolean;
+  detail?: string;
 };
 
 type A1VerificationSnapshot = {
@@ -123,6 +128,7 @@ const collectors: Record<string, () => Promise<OneShotResult>> = {
   seoul_foreign: () => collectSeoulForeignPresence(env),
   subway_ridership: () => collectSeoulSubwayRidership(env),
   seoul_sales: () => collectEstimatedSales(env),
+  store_dynamics: () => collectStoreDynamics(env),
   weather: () => collectWeatherForecasts(env),
   events: () => collectTourismEvents(env),
   airport_congestion: () => collectAirportCongestion(env),
@@ -157,6 +163,10 @@ for (const name of requested) {
       changedRows: result.records,
       ...(result.trackedToday === undefined ? {} : { trackedToday: result.trackedToday }),
       ...(result.pagesFetched === undefined ? {} : { pagesFetched: result.pagesFetched }),
+      ...(result.providerRequests === undefined ? {} : { providerRequests: result.providerRequests }),
+      ...(result.sourceHealth === undefined ? {} : { sourceHealth: result.sourceHealth }),
+      ...(result.lastGoodPreserved === undefined ? {} : { lastGoodPreserved: result.lastGoodPreserved }),
+      ...(result.detail === undefined ? {} : { detail: result.detail.slice(0, 500) }),
     }));
     if (a1TargetDate && a1Before) {
       const a1After = await readA1VerificationSnapshot(a1TargetDate);
@@ -175,4 +185,7 @@ for (const name of requested) {
     failures += 1;
   }
 }
-if (failures === requested.length) process.exitCode = 1;
+// Initial-import evidence is only green when every explicitly selected source
+// completed. A successful companion source must never mask Store Dynamics
+// ERROR/NEEDS_KEY in a combined slow-source run.
+if (failures > 0) process.exitCode = 1;

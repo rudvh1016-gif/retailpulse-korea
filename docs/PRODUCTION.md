@@ -69,7 +69,7 @@ Current prepared state:
   - **REALTIME** (`collect-realtime.yml`, `:07/:22/:37/:52`, ~15 min): `airport_congestion` (A4-T1), `airport_congestion_t2` (A4-T2), `seoul_realtime` (S1 integrated population + domestic-card commercial activity). S1 still makes one request per area, three/run; its two canonical source-health IDs are `SEOUL_CITYDATA_PPLTN` and `SEOUL_CITYDATA_CMRCL`. Cloudflare owns the alarm; the workflow keeps `workflow_dispatch` and no GitHub `schedule:`.
   - **WEATHER** (`collect-weather.yml`, aligned to the 02/05/08/11/14/17/20/23 KST KMA issuance): `weather` (W1). Cloudflare owns the alarm; the workflow keeps `workflow_dispatch` and no GitHub `schedule:`.
   - **FORECAST** (`collect-forecast.yml`, `:42` hourly): `airport_passenger_forecast` (A5). Cloudflare owns this alarm too; its native GitHub `schedule:` was removed after observed hourly deliveries were repeatedly dropped or delayed.
-  - **SLOW** (`collect-sales.yml`, weekly Sunday 07:07 KST): `seoul_sales` (S3).
+  - **SLOW** (`collect-sales.yml`, weekly Sunday 07:07 KST): `seoul_sales` (S3) and `store_dynamics` (S6). Store Dynamics uses at most five latest-quarter probes and three pages per exact mapped area, writes only validated compact aggregates, and reports `OFFICIAL_HISTORICAL` rather than `LIVE`.
 - Change history is separately disabled unless `RPK_RETAIN_FLIGHT_CHANGE_HISTORY=true`; enable only after real D1 write/storage measurement.
 
 GitHub `schedule` is not real-time. Record actual run/retrieval timestamps, design for delay/drop/retry/idempotency, and prefer off-minute schedules when source semantics permit.

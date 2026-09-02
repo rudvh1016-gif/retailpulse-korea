@@ -1,13 +1,9 @@
 name: Collect Estimated Sales
 
-# SLOW GROUP — S3 (Seoul estimated commercial sales) is a quarterly/
-# historical modelled series (never POS sales, never foreign spend), so it
-# is polled weekly to safely detect a newly published quarter rather than
-# swept on every collection cycle. Cost per run: up to 5 single-row quarter
-# probes + a bounded quarter sweep of up to 25 pages of 1,000 rows
-# (~22 requests typical per the verified quarter shape), all with no retry
-# (retries: 0 in the collector) — about 30 calls on the one day/week it
-# runs, far under any plausible Seoul key budget.
+# SLOW GROUP — S3 estimated sales and OA-15577 Store Dynamics are quarterly
+# historical sources, so both are polled weekly to detect a newly published
+# quarter rather than swept on every collection cycle. Store Dynamics adds at
+# most 14 bounded requests (five probes plus three pages for each exact area).
 # Cron is Sunday 07:07 KST (= Saturday 22:07 UTC previous day; KST is
 # UTC+9 with no DST), deliberately offset from the DAILY group's 06:07 KST
 # window so this key's weekly sweep never overlaps that run.
@@ -27,7 +23,7 @@ jobs:
   collect:
     if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     environment: production
     steps:
       - uses: actions/checkout@v4
@@ -39,6 +35,6 @@ jobs:
       - run: npm run collect:production
         env:
           ENABLE_PRODUCTION_COLLECTOR: "true"
-          RPK_PRODUCTION_SOURCES: seoul_sales
+          RPK_PRODUCTION_SOURCES: seoul_sales,store_dynamics
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
           SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}

@@ -221,6 +221,8 @@ test("only real calendar days are accepted as a service date", () => {
 test("every data-coverage probe is a bare SELECT and can never write to Production", () => {
   assert.ok(COVERAGE_PROBES.length > 0);
   for (const probe of COVERAGE_PROBES) {
+    assert.ok(Array.isArray(probe.sourceIds) && probe.sourceIds.length > 0,
+      `${probe.name} must declare which source selection enables it`);
     assert.equal(isReadOnlyProbe(probe), true, `${probe.name} must be read-only`);
     assert.match(probe.sql.trim(), /^SELECT/i);
   }
@@ -233,4 +235,22 @@ test("coverage probe parameters are built in the KST offset space", () => {
   assert.equal(context.kstToday, "2026-08-31");
   assert.equal(context.kstNowIso, "2026-08-31T23:23:35+09:00");
   assert.equal(context.kstHourStartIso, "2026-08-31T23:00:00+09:00");
+});
+
+test("Store Dynamics coverage checks three exact mapped areas with bounded latest-row seeks", () => {
+  const probe = COVERAGE_PROBES.find((candidate) => candidate.name === "seoul_store_dynamics_latest");
+  assert.ok(probe);
+  assert.equal((probe.sql.match(/LIMIT 1/g) ?? []).length, 3);
+  assert.match(probe.sql, /source_id = \? AND mapping_version = \?/);
+  assert.match(probe.sql, /record_origin = 'OFFICIAL_HISTORICAL' AND quality_status = 'VALID'/);
+  for (const field of [
+    "datasetId", "tradeAreaCode", "tradeAreaName", "tradeAreaTypeCode",
+    "tradeAreaTypeName", "mappingVersion", "qualityStatus", "industryCount", "retrievedAt", "schemaVersion",
+  ]) assert.match(probe.sql, new RegExp(`\\b${field}\\b`), `${field} must be visible in read-only Production evidence`);
+  assert.doesNotMatch(probe.sql, /GROUP BY|SELECT \*/i);
+  assert.deepEqual(probe.params(buildCoverageContext("2026-09-03T01:00:00.000Z")), [
+    "myeongdong", "SEOUL_STORE_DYNAMICS", "oa-15577-standard-area-2026-09-03-v1",
+    "hongdae", "SEOUL_STORE_DYNAMICS", "oa-15577-standard-area-2026-09-03-v1",
+    "seongsu", "SEOUL_STORE_DYNAMICS", "oa-15577-standard-area-2026-09-03-v1",
+  ]);
 });

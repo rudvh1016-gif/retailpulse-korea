@@ -30,6 +30,7 @@ export interface AdmissionArea {
   commercial?: unknown;
   foreignPurposeMobility?: unknown;
   subwayRidership?: unknown;
+  storeDynamics?: unknown;
   weather?: unknown;
 }
 
@@ -58,7 +59,8 @@ export function isCacheableSummary(input: SummaryAdmissionInput): boolean {
   if (!areas) return false;
   return Object.values(areas).some((area) => {
     if (!area) return false;
-    return area.realtime != null || area.commercial != null || area.foreignPurposeMobility != null || area.subwayRidership != null || hasRows(area.weather);
+    return area.realtime != null || area.commercial != null || area.foreignPurposeMobility != null
+      || area.subwayRidership != null || area.storeDynamics != null || hasRows(area.weather);
   });
 }
 

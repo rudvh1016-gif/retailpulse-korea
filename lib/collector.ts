@@ -59,6 +59,19 @@ import {
   subwayBackfillDates,
   type SubwayRidershipSource,
 } from "./subway-ridership";
+import {
+  STORE_DYNAMICS_DATASET_ID,
+  STORE_DYNAMICS_MAPPING_VERSION,
+  STORE_DYNAMICS_SCHEMA_VERSION,
+  STORE_DYNAMICS_SOURCE_ID,
+  aggregateStoreDynamicsRows,
+  isValidStoredStoreDynamicsRow,
+  normalizeStoreDynamicsRow,
+  parseStoreDynamicsResponse,
+  storeDynamicsMappings,
+  storeDynamicsQuarterCandidates,
+  type CanonicalStoreDynamicsAggregate,
+} from "./store-dynamics";
 import { kstDayOf, shiftKstDay } from "./kst";
 
 export interface CollectorEnv {
@@ -123,7 +136,7 @@ async function writeSourceHealth(
       last_published_at = COALESCE(excluded.last_published_at, source_health.last_published_at),
       last_retrieved_at = COALESCE(excluded.last_retrieved_at, source_health.last_retrieved_at),
       consecutive_failures = CASE WHEN excluded.status IN ('ERROR', 'STALE') THEN source_health.consecutive_failures + 1 ELSE 0 END,
-      schema_version = excluded.schema_version,
+      schema_version = CASE WHEN excluded.schema_version = 'unavailable' THEN source_health.schema_version ELSE excluded.schema_version END,
       detail = excluded.detail,
       updated_at = excluded.updated_at`)
     .bind(
@@ -1170,6 +1183,213 @@ export async function collectEstimatedSales(env: CollectorEnv, now = new Date())
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
     return { status: "ERROR", records: 0 };
+  }
+}
+
+const STORE_DYNAMICS_PAGE_SIZE = 1_000;
+const STORE_DYNAMICS_MAX_PAGES = 3;
+
+async function hasCompleteStoreDynamicsLastGood(db: D1Database | undefined): Promise<boolean> {
+  if (!db) return false;
+  const latestForArea = `SELECT source_id AS sourceId, dataset_id AS datasetId,
+      record_origin AS recordOrigin, area, quarter_code AS quarterCode,
+      trade_area_code AS tradeAreaCode, trade_area_name AS tradeAreaName,
+      trade_area_type_code AS tradeAreaTypeCode, trade_area_type_name AS tradeAreaTypeName,
+      overall_store_count AS totalStoreCount, ordinary_store_count AS ordinaryStoreCount,
+      franchise_store_count AS franchiseStoreCount, opening_store_count AS openingCount,
+      opening_rate_tenths_percent AS openingRateTenthsPercent,
+      closure_store_count AS closureCount, closure_rate_tenths_percent AS closureRateTenthsPercent,
+      industry_count AS industryCount,
+      mapping_version AS mappingVersion, retrieved_at AS retrievedAt,
+      schema_version AS schemaVersion, quality_status AS qualityStatus
+    FROM seoul_store_dynamics
+    WHERE source_id = ? AND mapping_version = ? AND record_origin = 'OFFICIAL_HISTORICAL'
+      AND quality_status = 'VALID' AND area = ?
+    ORDER BY quarter_code DESC LIMIT 1`;
+  try {
+    const result = await db.prepare(`SELECT * FROM (${latestForArea})
+      UNION ALL SELECT * FROM (${latestForArea})
+      UNION ALL SELECT * FROM (${latestForArea})`)
+      .bind(
+        STORE_DYNAMICS_SOURCE_ID, STORE_DYNAMICS_MAPPING_VERSION, "myeongdong",
+        STORE_DYNAMICS_SOURCE_ID, STORE_DYNAMICS_MAPPING_VERSION, "hongdae",
+        STORE_DYNAMICS_SOURCE_ID, STORE_DYNAMICS_MAPPING_VERSION, "seongsu",
+      )
+      .all<Record<string, unknown>>();
+    const rows = result.results ?? [];
+    const areas = new Set(rows.map((row) => row.area));
+    const quarters = new Set(rows.map((row) => row.quarterCode));
+    return rows.length === 3
+      && areas.size === 3
+      && Object.keys(storeDynamicsMappings).every((area) => areas.has(area))
+      && quarters.size === 1
+      && Object.keys(storeDynamicsMappings).every((area) =>
+        isValidStoredStoreDynamicsRow(area as AreaId, rows.find((row) => row.area === area)));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * OA-15577 is a slow official quarterly source. One probe area finds the
+ * newest published quarter, then each exact representative area is read in
+ * at most three pages. All areas validate before any fact row is written.
+ */
+export async function collectStoreDynamics(
+  env: CollectorEnv,
+  now: Date = new Date(),
+): Promise<CollectorResult> {
+  const sourceId = STORE_DYNAMICS_SOURCE_ID;
+  if (!env.SEOUL_OPEN_DATA_KEY) {
+    const detail = "SEOUL_OPEN_DATA_KEY is not configured";
+    const lastGoodPreserved = await hasCompleteStoreDynamicsLastGood(env.DB);
+    const health: SourceHealthStatus = lastGoodPreserved ? "STALE" : "ERROR";
+    await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", detail);
+    await writeSourceHealth(env.DB, sourceId, health, detail);
+    return {
+      status: "NEEDS_KEY",
+      records: 0,
+      detail,
+      providerRequests: 0,
+      sourceHealth: health,
+      lastGoodPreserved,
+    };
+  }
+
+  const retrievedAt = now.toISOString();
+  const mappings = Object.values(storeDynamicsMappings);
+  const probeMapping = storeDynamicsMappings.myeongdong;
+  let providerRequests = 0;
+  const fetchPage = async (quarterCode: string, tradeAreaCode: string, start: number, end: number) => {
+    providerRequests += 1;
+    const url = new URL(`http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/VwsmTrdarStorQq/${start}/${end}/${quarterCode}/${tradeAreaCode}`);
+    const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
+    return parseStoreDynamicsResponse(payload);
+  };
+
+  try {
+    let quarterCode: string | null = null;
+    for (const candidate of storeDynamicsQuarterCandidates(now)) {
+      const probe = await fetchPage(candidate, probeMapping.tradeAreaCode, 1, 1);
+      if (probe.noData || probe.rows.length === 0) continue;
+      normalizeStoreDynamicsRow(probe.rows[0], { ...probeMapping, quarterCode: candidate }, retrievedAt);
+      quarterCode = candidate;
+      break;
+    }
+    if (!quarterCode) throw new Error("store_dynamics_no_published_quarter");
+
+    const aggregates: CanonicalStoreDynamicsAggregate[] = [];
+    let sourceRowsRead = 0;
+    let pagesRead = 0;
+    for (const mapping of mappings) {
+      const expected = { ...mapping, quarterCode };
+      const normalizedRows = [];
+      let expectedTotal: number | null = null;
+      for (let page = 0; page < STORE_DYNAMICS_MAX_PAGES; page += 1) {
+        const start = page * STORE_DYNAMICS_PAGE_SIZE + 1;
+        const end = start + STORE_DYNAMICS_PAGE_SIZE - 1;
+        const response = await fetchPage(quarterCode, mapping.tradeAreaCode, start, end);
+        pagesRead += 1;
+        if (response.noData || response.totalCount === 0 || response.rows.length === 0) {
+          throw new Error("store_dynamics_empty_area");
+        }
+        if (response.totalCount > STORE_DYNAMICS_PAGE_SIZE * STORE_DYNAMICS_MAX_PAGES) {
+          throw new Error("store_dynamics_page_limit");
+        }
+        if (expectedTotal === null) expectedTotal = response.totalCount;
+        if (expectedTotal !== response.totalCount) throw new Error("store_dynamics_total_count_drift");
+        for (const row of response.rows) {
+          normalizedRows.push(normalizeStoreDynamicsRow(row, expected, retrievedAt));
+        }
+        sourceRowsRead += response.rows.length;
+        if (normalizedRows.length >= expectedTotal) break;
+        if (response.rows.length < STORE_DYNAMICS_PAGE_SIZE) {
+          throw new Error("store_dynamics_incomplete_area");
+        }
+      }
+      if (expectedTotal === null || normalizedRows.length !== expectedTotal) {
+        throw new Error("store_dynamics_incomplete_area");
+      }
+      aggregates.push(await aggregateStoreDynamicsRows(normalizedRows, expected, retrievedAt));
+    }
+    if (aggregates.length !== mappings.length) throw new Error("store_dynamics_incomplete_area_set");
+
+    const statements: D1PreparedStatement[] = [];
+    if (env.DB) {
+      for (const aggregate of aggregates) {
+        const identity = {
+          sourceId: aggregate.sourceId,
+          mappingVersion: aggregate.mappingVersion,
+          area: aggregate.area,
+          quarterCode: aggregate.quarterCode,
+        };
+        statements.push(env.DB.prepare(`INSERT INTO seoul_store_dynamics (
+            id, source_id, dataset_id, record_origin, area, quarter_code,
+            trade_area_code, trade_area_name, trade_area_type_code, trade_area_type_name,
+            overall_store_count, ordinary_store_count, franchise_store_count,
+            opening_store_count, opening_rate_tenths_percent,
+            closure_store_count, closure_rate_tenths_percent, industry_count,
+            mapping_version, source_updated_at, retrieved_at, schema_version,
+            quality_status, source_hash
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(source_id, mapping_version, area, quarter_code) DO UPDATE SET
+            dataset_id = excluded.dataset_id,
+            record_origin = excluded.record_origin,
+            trade_area_code = excluded.trade_area_code,
+            trade_area_name = excluded.trade_area_name,
+            trade_area_type_code = excluded.trade_area_type_code,
+            trade_area_type_name = excluded.trade_area_type_name,
+            overall_store_count = excluded.overall_store_count,
+            ordinary_store_count = excluded.ordinary_store_count,
+            franchise_store_count = excluded.franchise_store_count,
+            opening_store_count = excluded.opening_store_count,
+            opening_rate_tenths_percent = excluded.opening_rate_tenths_percent,
+            closure_store_count = excluded.closure_store_count,
+            closure_rate_tenths_percent = excluded.closure_rate_tenths_percent,
+            industry_count = excluded.industry_count,
+            source_updated_at = excluded.source_updated_at,
+            retrieved_at = excluded.retrieved_at,
+            schema_version = excluded.schema_version,
+            quality_status = excluded.quality_status,
+            source_hash = excluded.source_hash
+          WHERE seoul_store_dynamics.source_hash <> excluded.source_hash`)
+          .bind(
+            await sha256(identity), aggregate.sourceId, STORE_DYNAMICS_DATASET_ID,
+            aggregate.recordOrigin, aggregate.area, aggregate.quarterCode,
+            aggregate.tradeAreaCode, aggregate.tradeAreaName,
+            aggregate.tradeAreaTypeCode, aggregate.tradeAreaTypeName,
+            aggregate.totalStoreCount, aggregate.ordinaryStoreCount,
+            aggregate.franchiseStoreCount, aggregate.openingCount,
+            aggregate.openingRateTenthsPercent, aggregate.closureCount,
+            aggregate.closureRateTenthsPercent, aggregate.industryCount,
+            STORE_DYNAMICS_MAPPING_VERSION, null, aggregate.retrievedAt,
+            STORE_DYNAMICS_SCHEMA_VERSION, aggregate.qualityStatus, aggregate.sourceHash,
+          ));
+      }
+    }
+    const written = env.DB && statements.length ? await runBatches(env.DB, statements) : NO_D1_WRITES;
+    const detail = `quarter ${quarterCode}; areas ${aggregates.length}/${mappings.length}; pages ${pagesRead}; source rows ${sourceRowsRead}; provider requests ${providerRequests}; ${describeWrites(written)}`;
+    await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, sourceRowsRead, written.changedRows);
+    await writeSourceHealth(env.DB, sourceId, "OFFICIAL_HISTORICAL", detail, {
+      publishedAt: null,
+      retrievedAt,
+      schemaVersion: STORE_DYNAMICS_SCHEMA_VERSION,
+    });
+    return {
+      status: "SUCCESS",
+      records: written.changedRows,
+      detail,
+      providerRequests,
+      sourceHealth: "OFFICIAL_HISTORICAL",
+      lastGoodPreserved: Boolean(env.DB && aggregates.length > 0),
+    };
+  } catch (error) {
+    const detail = safeSourceFailureDetail(error);
+    const lastGoodPreserved = await hasCompleteStoreDynamicsLastGood(env.DB);
+    const health: SourceHealthStatus = lastGoodPreserved ? "STALE" : "ERROR";
+    await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
+    await writeSourceHealth(env.DB, sourceId, health, detail);
+    return { status: "ERROR", records: 0, detail, providerRequests, sourceHealth: health, lastGoodPreserved };
   }
 }
 

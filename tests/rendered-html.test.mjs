@@ -73,6 +73,26 @@ test("public endpoints stay available and never fabricate zeros when a source is
   assert.match(collector, /consecutive_failures = CASE WHEN excluded\.status IN \('ERROR', 'STALE'\)/);
 });
 
+test("Store Dynamics ships as a stored, compact, four-language historical block", async () => {
+  const route = await read("../app/api/live/summary/route.ts");
+  const live = await read("../app/live-signals.tsx");
+  for (const field of [
+    "overall_store_count AS totalStoreCount", "ordinary_store_count AS ordinaryStoreCount",
+    "franchise_store_count AS franchiseStoreCount", "opening_store_count AS openingCount",
+    "opening_rate_tenths_percent AS openingRateTenthsPercent", "closure_store_count AS closureCount",
+    "closure_rate_tenths_percent AS closureRateTenthsPercent", "trade_area_name AS tradeAreaName",
+  ]) assert.ok(route.includes(field), field);
+  assert.match(route, /FROM seoul_store_dynamics/);
+  assert.match(route, /ORDER BY quarter_code DESC LIMIT 1/);
+  assert.doesNotMatch(route, /openapi\.seoul\.go\.kr|VwsmTrdarStorQq/,
+    "a public page request must read D1 only, never the official provider");
+  for (const wording of [
+    "점포 현황", "Store openings and closures", "店铺开业与歇业", "店舗の開業・廃業",
+    "서울시 상권분석서비스 OA-15577", "Official quarterly historical data",
+  ]) assert.ok(live.includes(wording), wording);
+  assert.match(live, /data-signal-key="store-dynamics"/);
+});
+
 test("renders the KORETAIL production shell", async () => {
   const response = await renderHome();
   const html = await response.text();

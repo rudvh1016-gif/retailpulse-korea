@@ -110,7 +110,7 @@ test("airport truth labels are complete in all four locales", async ({ page }) =
 const AREA_BLOCK = (overrides: Record<string, unknown> = {}) => ({
   realtimeForecast: [], weather: [], events: [], eventCount: 0,
   observedSeries: [], sales: null, foreignPresence: null, foreignPurposeMobility: null,
-  subwayRidership: null, realtime: null, commercial: null,
+  subwayRidership: null, storeDynamics: null, realtime: null, commercial: null,
   ...overrides,
 });
 
@@ -162,6 +162,13 @@ const SUMMARY_FIXTURE = {
       ],
       eventCount: 4,
       sales: { quarterCode: "20262", tradeAreaName: "명동", totalAmount: 1230000000, industryCount: 4 },
+      storeDynamics: {
+        datasetId: "OA-15577", quarterCode: "20262", tradeAreaCode: "3001492",
+        tradeAreaName: "명동 남대문 북창동 다동 무교동 관광특구", tradeAreaTypeCode: "U", tradeAreaTypeName: "관광특구",
+        totalStoreCount: 174, ordinaryStoreCount: 160, franchiseStoreCount: 14,
+        openingCount: 10, openingRateTenthsPercent: 57, closureCount: 5, closureRateTenthsPercent: 29,
+        mappingVersion: "oa-15577-standard-area-2026-09-03-v1", retrievedAt: "2026-08-31T05:08:00Z",
+      },
     }),
     hongdae: AREA_BLOCK({
       realtime: { congestionLevel: 2, congestionLabel: "보통", populationMin: 18000, populationMax: 20000, observedAt: "2026-08-31T14:06:00+09:00", freshness: "LIVE" },
@@ -260,6 +267,55 @@ const FLIGHT_ROWS = [
 
 const routeSummary = (payload: unknown) => async (route: { fulfill: (options: { contentType: string; body: string }) => Promise<void> }) =>
   route.fulfill({ contentType: "application/json", body: JSON.stringify(payload) });
+
+test("Store Dynamics is truthful and localized in all four languages", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  const expected = {
+    ko: ["점포 현황", "과거 자료", "총 점포", "174개", "일반 점포", "160개", "프랜차이즈", "14개", "개업", "10개 · 5.7%", "폐업", "5개 · 2.9%", "2026년 2분기", "분기 기준 공식 과거 자료이며, 현재 영업 중인 점포의 실시간 수가 아닙니다."],
+    en: ["Store openings and closures", "Historical", "Total stores", "174 stores", "Non-franchise stores", "160 stores", "Franchise stores", "14 stores", "Openings", "10 stores · 5.7%", "Closures", "5 stores · 2.9%", "Q2 2026", "Official quarterly historical data, not a real-time count of stores currently operating."],
+    zh: ["店铺开业与歇业", "历史资料", "店铺总数", "174家", "非加盟店", "160家", "加盟店", "14家", "开业", "10家 · 5.7%", "歇业", "5家 · 2.9%", "2026年第2季度", "官方季度历史资料，并非当前营业店铺的实时数量。"],
+    ja: ["店舗の開業・廃業", "過去資料", "総店舗数", "174店", "非フランチャイズ店舗", "160店", "フランチャイズ店舗", "14店", "開業", "10店 · 5.7%", "廃業", "5店 · 2.9%", "2026年第2四半期", "四半期基準の公式過去資料であり、現在営業中の店舗のリアルタイム件数ではありません。"],
+  } as const;
+  for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
+    await page.goto(`/${locale}/myeongdong`);
+    const card = page.locator('[data-signal-key="store-dynamics"]');
+    await expect(card).toBeVisible();
+    for (const phrase of expected[locale]) await expect(card).toContainText(phrase);
+    await expect(card).toContainText("명동 남대문 북창동 다동 무교동 관광특구");
+    await expect(card).toContainText("OA-15577");
+    await expect(card.locator(".store-dynamics-context dd").nth(1)).toHaveAttribute("lang", "ko");
+  }
+});
+
+test("Store Dynamics stays grouped, ordered after sales, and unclipped at every required width", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  for (const width of [390, 768, 1280, 1440, 1920]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto("/ko/myeongdong");
+    const sales = page.locator('[data-signal-key="sales"]');
+    const card = page.locator('[data-signal-key="store-dynamics"]');
+    await expect(sales).toBeVisible();
+    await expect(card).toBeVisible();
+    const order = await page.locator("[data-signal-key]").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-signal-key")));
+    expect(order.indexOf("store-dynamics")).toBeGreaterThan(order.indexOf("sales"));
+    const bounds = await card.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width + 1);
+    await expect(card.locator(".store-dynamics-source")).toBeVisible();
+    await expect(card.locator(".store-dynamics-limitation")).toBeVisible();
+    for (const selector of [
+      ".store-dynamics-content",
+      ".store-dynamics-context dd",
+      ".store-dynamics-source",
+      ".store-dynamics-limitation",
+    ]) {
+      const clipped = await card.locator(selector).evaluateAll((nodes) => nodes.some((node) => node.scrollWidth > node.clientWidth + 1));
+      expect(clipped, `${selector} must not clip horizontally at ${width}px`).toBe(false);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  }
+});
 
 test("airport summary keeps forecast, flights, gate and checkpoints truthful on mobile", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));

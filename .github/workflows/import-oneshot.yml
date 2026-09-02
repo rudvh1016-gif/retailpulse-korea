@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       sources:
-        description: Import list including seoul_realtime, seoul_foreign, subway_ridership, seoul_sales, weather, events, or airport sources; probe_seoul_citydata_contract is read-only
+        description: Import list including seoul_realtime, seoul_foreign, subway_ridership, seoul_sales, store_dynamics, weather, events, or airport sources; probe_seoul_citydata_contract is read-only
         required: true
         default: seoul_realtime,seoul_sales
         type: string

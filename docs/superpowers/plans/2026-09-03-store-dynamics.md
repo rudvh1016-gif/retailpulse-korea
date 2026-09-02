@@ -107,8 +107,8 @@ Run the Task 2 command and require all tests to pass.
 Exercise the real collector with only `fetch` and D1 transport substituted.
 Assert one latest-quarter probe, one exact-code page per area, bounded paging,
 three stored aggregates, changed-only second run, wrong-code rejection,
-partial-area failure, and provider failure preserving a pre-existing row with
-`sourceHealth: "STALE"`.
+partial-area failure, and provider failure preserving a complete, semantically
+valid three-area Last-good set from one quarter with `sourceHealth: "STALE"`.
 
 - [ ] **Step 2: Run RED**
 
@@ -235,4 +235,3 @@ Run authenticated bounded collection, repeat it for idempotency, inspect all
 three stored rows, confirm Source Health/Last-good, four locales, responsive
 layout, Edge Cache MISS/HIT and isolation, actual summary rows_read, D1 Free
 impact, and exactly five deployed Cron expressions.
-

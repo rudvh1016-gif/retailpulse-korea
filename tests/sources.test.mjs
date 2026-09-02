@@ -28,6 +28,7 @@ import {
 import {
   collectEstimatedSales,
   collectSeoulRealtime,
+  collectStoreDynamics,
   collectTourismEvents,
   collectWeatherForecasts,
   latestKmaIssuance,
@@ -374,6 +375,34 @@ const estimatedSalesRow = (overrides = {}) => ({
   ...overrides,
 });
 
+const storeDynamicsAreas = {
+  "3001492": { name: "명동 남대문 북창동 다동 무교동 관광특구", type: "U", typeName: "관광특구" },
+  "3120103": { name: "홍대입구역(홍대)", type: "D", typeName: "발달상권" },
+  "3110131": { name: "성수동카페거리", type: "A", typeName: "골목상권" },
+};
+
+const storeDynamicsRow = (tradeAreaCode, overrides = {}) => {
+  const area = storeDynamicsAreas[tradeAreaCode];
+  if (!area) throw new Error("unknown_store_dynamics_fixture_area");
+  return {
+    STDR_YYQU_CD: "20262",
+    TRDAR_SE_CD: area.type,
+    TRDAR_SE_CD_NM: area.typeName,
+    TRDAR_CD: tradeAreaCode,
+    TRDAR_CD_NM: area.name,
+    SVC_INDUTY_CD: "CS100001",
+    SVC_INDUTY_CD_NM: "한식음식점",
+    SIMILR_INDUTY_STOR_CO: 10,
+    STOR_CO: 8,
+    FRC_STOR_CO: 2,
+    OPBIZ_RT: 10,
+    OPBIZ_STOR_CO: 1,
+    CLSBIZ_RT: 10,
+    CLSBIZ_STOR_CO: 1,
+    ...overrides,
+  };
+};
+
 test("seoul realtime adapter separates observation from published forecast", async () => {
   const record = seoulRealtimeFixture()["SeoulRtd.citydata_ppltn"][0];
   const first = await normalizeSeoulRealtime(record, "myeongdong", "2026-08-27T15:00:00Z");
@@ -561,6 +590,195 @@ test("estimated sales collector probes quarters, sweeps pages and filters client
   const second = await collectEstimatedSales(env, now);
   assert.equal(second.records, 0);
   assert.equal(database.prepare("SELECT record_origin FROM seoul_estimated_sales LIMIT 1").get().record_origin, "OFFICIAL_HISTORICAL");
+});
+
+test("store dynamics collector finds the newest quarter, writes all exact areas once, and preserves Last-good", async (context) => {
+  const { database, databasePath } = openDatabase("store-dynamics");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+
+  const requests = [];
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    const match = url.match(/VwsmTrdarStorQq\/(\d+)\/(\d+)\/(\d{5})\/(\d+)/);
+    assert.ok(match, "collector uses the exact OA-15577 path");
+    requests.push({ start: Number(match[1]), end: Number(match[2]), quarter: match[3], area: match[4] });
+    if (match[3] !== "20262") {
+      return Response.json({ RESULT: { CODE: "INFO-200", MESSAGE: "해당하는 데이터가 없습니다." } });
+    }
+    const row = storeDynamicsRow(match[4]);
+    return Response.json({
+      VwsmTrdarStorQq: {
+        list_total_count: 1,
+        RESULT: { CODE: "INFO-000", MESSAGE: "정상 처리되었습니다" },
+        row: [row],
+      },
+    });
+  };
+
+  const env = { DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: "fixture-secret" };
+  const first = await collectStoreDynamics(env, new Date("2026-09-03T01:00:00.000Z"));
+  assert.deepEqual(
+    { status: first.status, records: first.records, providerRequests: first.providerRequests, sourceHealth: first.sourceHealth, lastGoodPreserved: first.lastGoodPreserved },
+    { status: "SUCCESS", records: 3, providerRequests: 5, sourceHealth: "OFFICIAL_HISTORICAL", lastGoodPreserved: true },
+  );
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_store_dynamics").get().count, 3);
+  assert.equal(database.prepare("SELECT COUNT(DISTINCT area) AS count FROM seoul_store_dynamics WHERE quarter_code = '20262'").get().count, 3);
+  assert.equal(requests.filter((request) => request.quarter === "20263").length, 1);
+  assert.equal(requests.filter((request) => request.quarter === "20262").length, 4);
+  assert.equal(requests.filter((request) => request.quarter === "20262" && request.start === 1 && request.end === 1).length, 1);
+  const firstRetrievedAt = database.prepare("SELECT retrieved_at AS retrievedAt FROM seoul_store_dynamics WHERE area = 'myeongdong'").get().retrievedAt;
+
+  const second = await collectStoreDynamics(env, new Date("2026-09-03T02:00:00.000Z"));
+  assert.equal(second.status, "SUCCESS");
+  assert.equal(second.records, 0, "same semantic provider data changes no rows");
+  assert.equal(database.prepare("SELECT retrieved_at AS retrievedAt FROM seoul_store_dynamics WHERE area = 'myeongdong'").get().retrievedAt, firstRetrievedAt);
+
+  const missingKey = await collectStoreDynamics({ DB: env.DB }, new Date("2026-09-03T02:30:00.000Z"));
+  assert.deepEqual(
+    { status: missingKey.status, sourceHealth: missingKey.sourceHealth, lastGoodPreserved: missingKey.lastGoodPreserved, providerRequests: missingKey.providerRequests },
+    { status: "NEEDS_KEY", sourceHealth: "STALE", lastGoodPreserved: true, providerRequests: 0 },
+    "a missing key stays visible while accurately reporting complete stored Last-good",
+  );
+
+  globalThis.fetch = async () => { throw new TypeError("network failed at provider URL with fixture-secret"); };
+  const failed = await collectStoreDynamics(env, new Date("2026-09-03T03:00:00.000Z"));
+  assert.equal(failed.status, "ERROR");
+  assert.equal(failed.records, 0);
+  assert.equal(failed.sourceHealth, "STALE");
+  assert.equal(failed.lastGoodPreserved, true);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_store_dynamics").get().count, 3);
+  const health = database.prepare("SELECT status, detail, schema_version AS schemaVersion FROM source_health WHERE source_id = 'SEOUL_STORE_DYNAMICS'").get();
+  assert.equal(health.status, "STALE");
+  assert.equal(health.detail.includes("fixture-secret"), false);
+  assert.equal(health.schemaVersion, "store-dynamics-v1", "a failure preserves Last-good schema provenance");
+
+  database.exec("UPDATE seoul_store_dynamics SET ordinary_store_count = ordinary_store_count + 1 WHERE area = 'hongdae'");
+  const corruptLastGood = await collectStoreDynamics({ DB: env.DB }, new Date("2026-09-03T03:30:00.000Z"));
+  assert.equal(corruptLastGood.sourceHealth, "ERROR");
+  assert.equal(corruptLastGood.lastGoodPreserved, false,
+    "three labelled rows are not Last-good unless every stored identity and arithmetic field is valid");
+  database.exec("UPDATE seoul_store_dynamics SET ordinary_store_count = ordinary_store_count - 1 WHERE area = 'hongdae'");
+
+  database.exec("DELETE FROM seoul_store_dynamics WHERE area <> 'myeongdong'");
+  const incompleteLastGood = await collectStoreDynamics({ DB: env.DB }, new Date("2026-09-03T04:00:00.000Z"));
+  assert.equal(incompleteLastGood.status, "NEEDS_KEY");
+  assert.equal(incompleteLastGood.sourceHealth, "ERROR");
+  assert.equal(incompleteLastGood.lastGoodPreserved, false, "one orphan row is not complete three-area Last-good");
+});
+
+test("store dynamics collector rejects identity drift or a missing area before any fact write", async (context) => {
+  const { database, databasePath } = openDatabase("store-dynamics-atomic-validation");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+
+  let mode = "wrong-type";
+  globalThis.fetch = async (input) => {
+    const match = String(input).match(/VwsmTrdarStorQq\/(\d+)\/(\d+)\/(\d{5})\/(\d+)/);
+    if (match[3] !== "20262") return Response.json({ RESULT: { CODE: "INFO-200" } });
+    if (mode === "missing-area" && match[4] === "3120103" && match[2] !== "1") {
+      return Response.json({ RESULT: { CODE: "INFO-200" } });
+    }
+    const overrides = mode === "wrong-type" && match[2] === "1" ? { TRDAR_SE_CD: "D" } : {};
+    return Response.json({
+      VwsmTrdarStorQq: {
+        list_total_count: 1,
+        RESULT: { CODE: "INFO-000" },
+        row: [storeDynamicsRow(match[4], overrides)],
+      },
+    });
+  };
+
+  const env = { DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: "fixture" };
+  const wrongType = await collectStoreDynamics(env, new Date("2026-09-03T01:00:00.000Z"));
+  assert.equal(wrongType.status, "ERROR");
+  assert.match(wrongType.detail, /STORE_DYNAMICS_IDENTITY/);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_store_dynamics").get().count, 0);
+
+  mode = "missing-area";
+  const missingArea = await collectStoreDynamics(env, new Date("2026-09-03T01:00:00.000Z"));
+  assert.equal(missingArea.status, "ERROR");
+  assert.equal(missingArea.lastGoodPreserved, false);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_store_dynamics").get().count, 0,
+    "all three areas validate before any fact row is written");
+});
+
+test("store dynamics collector completes bounded multi-page areas without duplicate industries", async (context) => {
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; });
+  const requests = [];
+  globalThis.fetch = async (input) => {
+    const match = String(input).match(/VwsmTrdarStorQq\/(\d+)\/(\d+)\/(\d{5})\/(\d+)/);
+    const start = Number(match[1]);
+    const end = Number(match[2]);
+    const quarter = match[3];
+    const area = match[4];
+    requests.push({ start, end, quarter, area });
+    if (quarter !== "20262") return Response.json({ RESULT: { CODE: "INFO-200" } });
+    if (end === 1) {
+      return Response.json({
+        VwsmTrdarStorQq: { list_total_count: 1, RESULT: { CODE: "INFO-000" }, row: [storeDynamicsRow(area)] },
+      });
+    }
+    const total = area === "3001492" ? 1001 : 1;
+    const pageLength = area === "3001492" ? Math.min(1000, total - start + 1) : 1;
+    const rows = Array.from({ length: pageLength }, (_, index) => storeDynamicsRow(area, {
+      SVC_INDUTY_CD: `CS${String(start + index).padStart(6, "0")}`,
+      SVC_INDUTY_CD_NM: `업종 ${start + index}`,
+    }));
+    return Response.json({
+      VwsmTrdarStorQq: { list_total_count: total, RESULT: { CODE: "INFO-000" }, row: rows },
+    });
+  };
+
+  const result = await collectStoreDynamics({ SEOUL_OPEN_DATA_KEY: "fixture" }, new Date("2026-09-03T01:00:00.000Z"));
+  assert.equal(result.status, "SUCCESS");
+  assert.equal(result.providerRequests, 6);
+  assert.equal(requests.filter((request) => request.area === "3001492" && request.end > 1).length, 2);
+  assert.equal(requests.every((request) => request.end <= 3000), true);
+});
+
+test("store dynamics collector probes no more than five quarters and never saves empty data as zero", async (context) => {
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; });
+  let requests = 0;
+  globalThis.fetch = async () => {
+    requests += 1;
+    return Response.json({ RESULT: { CODE: "INFO-200", MESSAGE: "해당하는 데이터가 없습니다." } });
+  };
+
+  const result = await collectStoreDynamics({ SEOUL_OPEN_DATA_KEY: "fixture" }, new Date("2026-09-03T01:00:00.000Z"));
+  assert.equal(requests, 5);
+  assert.equal(result.providerRequests, 5);
+  assert.equal(result.status, "ERROR");
+  assert.equal(result.records, 0);
+  assert.equal(result.sourceHealth, "ERROR");
+  assert.equal(result.lastGoodPreserved, false);
+});
+
+test("store dynamics collector refuses a response that would require more than three pages", async (context) => {
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; });
+  const requests = [];
+  globalThis.fetch = async (input) => {
+    const match = String(input).match(/VwsmTrdarStorQq\/(\d+)\/(\d+)\/(\d{5})\/(\d+)/);
+    requests.push({ start: Number(match[1]), end: Number(match[2]), quarter: match[3], area: match[4] });
+    if (match[3] !== "20262") return Response.json({ RESULT: { CODE: "INFO-200" } });
+    const row = storeDynamicsRow(match[4]);
+    return Response.json({
+      VwsmTrdarStorQq: {
+        list_total_count: match[1] === "1" && match[2] === "1" ? 1 : 3001,
+        RESULT: { CODE: "INFO-000" },
+        row: [row],
+      },
+    });
+  };
+
+  const result = await collectStoreDynamics({ SEOUL_OPEN_DATA_KEY: "fixture" }, new Date("2026-09-03T01:00:00.000Z"));
+  assert.equal(result.status, "ERROR");
+  assert.equal(result.records, 0);
+  assert.equal(requests.filter((request) => request.area === "3001492" && request.end > 1).length <= 3, true);
+  assert.equal(requests.every((request) => request.end <= 3000), true);
 });
 
 test("weather adapter groups categories per target hour and keeps issue time", async () => {

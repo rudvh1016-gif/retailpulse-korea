@@ -81,6 +81,24 @@ interface LiveSales {
   industryCount: number;
 }
 
+export interface LiveStoreDynamics {
+  datasetId: "OA-15577";
+  quarterCode: string;
+  tradeAreaCode: string;
+  tradeAreaName: string;
+  tradeAreaTypeCode: string;
+  tradeAreaTypeName: string;
+  totalStoreCount: number;
+  ordinaryStoreCount: number;
+  franchiseStoreCount: number;
+  openingCount: number;
+  openingRateTenthsPercent: number;
+  closureCount: number;
+  closureRateTenthsPercent: number;
+  mappingVersion: string;
+  retrievedAt: string;
+}
+
 interface LiveForeignPresence {
   value: number;
   unit: "people";
@@ -128,6 +146,7 @@ interface LiveAreaBlock {
   eventCount: number;
   observedSeries: LiveObservedPoint[];
   sales: LiveSales | null;
+  storeDynamics: LiveStoreDynamics | null;
   foreignPresence: LiveForeignPresence | null;
   foreignPurposeMobility: LiveForeignPurposeMobility | null;
   subwayRidership: LiveSubwayRidership | null;
@@ -1118,6 +1137,122 @@ export function buildCommercialSignalRow(
   };
 }
 
+const storeDynamicsText = {
+  title: { ko: "점포 현황", en: "Store openings and closures", zh: "店铺开业与歇业", ja: "店舗の開業・廃業" },
+  total: { ko: "총 점포", en: "Total stores", zh: "店铺总数", ja: "総店舗数" },
+  ordinary: { ko: "일반 점포", en: "Non-franchise stores", zh: "非加盟店", ja: "非フランチャイズ店舗" },
+  franchise: { ko: "프랜차이즈", en: "Franchise stores", zh: "加盟店", ja: "フランチャイズ店舗" },
+  opening: { ko: "개업", en: "Openings", zh: "开业", ja: "開業" },
+  closure: { ko: "폐업", en: "Closures", zh: "歇业", ja: "廃業" },
+  reference: { ko: "공식 기준", en: "Official reference", zh: "官方基准", ja: "公式基準" },
+  area: { ko: "공식 상권", en: "Official commercial area", zh: "官方商圈", ja: "公式商圏" },
+  retrieval: { ko: "KORETAIL 수집", en: "KORETAIL retrieval", zh: "KORETAIL采集", ja: "KORETAIL取得" },
+  source: {
+    ko: "서울시 상권분석서비스 OA-15577",
+    en: "Seoul Commercial District Analysis Service OA-15577",
+    zh: "首尔市商圈分析服务 OA-15577",
+    ja: "ソウル市商圏分析サービス OA-15577",
+  },
+  limitation: {
+    ko: "분기 기준 공식 과거 자료이며, 현재 영업 중인 점포의 실시간 수가 아닙니다.",
+    en: "Official quarterly historical data, not a real-time count of stores currently operating.",
+    zh: "官方季度历史资料，并非当前营业店铺的实时数量。",
+    ja: "四半期基準の公式過去資料であり、現在営業中の店舗のリアルタイム件数ではありません。",
+  },
+} as const;
+
+interface StoreDynamicsMetric {
+  key: "total" | "ordinary" | "franchise" | "opening" | "closure";
+  label: string;
+  value: string;
+}
+
+export interface StoreDynamicsPresentation {
+  title: string;
+  timeState: string;
+  storeMetrics: StoreDynamicsMetric[];
+  changeMetrics: StoreDynamicsMetric[];
+  referenceLabel: string;
+  referenceValue: string;
+  areaLabel: string;
+  areaValue: string;
+  retrievalLabel: string;
+  retrievalValue: string;
+  source: string;
+  limitation: string;
+}
+
+function formatStoreDynamicsQuarter(lang: Lang, quarterCode: string): string | null {
+  const match = /^(\d{4})([1-4])$/.exec(quarterCode);
+  if (!match) return null;
+  const [, year, quarter] = match;
+  return lang === "ko" ? `${year}년 ${quarter}분기`
+    : lang === "en" ? `Q${quarter} ${year}`
+      : lang === "zh" ? `${year}年第${quarter}季度`
+        : `${year}年第${quarter}四半期`;
+}
+
+function formatStoreDynamicsRetrieval(value: string): string | null {
+  const parsed = new Date(value);
+  if (!Number.isFinite(parsed.getTime())) return null;
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(parsed).map((part) => [part.type, part.value]));
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute} KST`;
+}
+
+/** UI projection of one already validated compact OA-15577 area aggregate. */
+export function buildStoreDynamicsPresentation(
+  lang: Lang,
+  row: LiveStoreDynamics | null | undefined,
+): StoreDynamicsPresentation | null {
+  if (!row || row.datasetId !== "OA-15577") return null;
+  const counts = [row.totalStoreCount, row.ordinaryStoreCount, row.franchiseStoreCount, row.openingCount, row.closureCount];
+  const rates = [row.openingRateTenthsPercent, row.closureRateTenthsPercent];
+  if (counts.some((value) => !Number.isSafeInteger(value) || value < 0)
+    || rates.some((value) => !Number.isSafeInteger(value) || value < 0 || value > 1_000)
+    || row.totalStoreCount !== row.ordinaryStoreCount + row.franchiseStoreCount
+    || row.totalStoreCount === 0
+    || row.openingRateTenthsPercent !== Math.round((row.openingCount * 1_000) / row.totalStoreCount)
+    || row.closureRateTenthsPercent !== Math.round((row.closureCount * 1_000) / row.totalStoreCount)
+    || !row.tradeAreaName.trim() || !row.tradeAreaTypeName.trim()) return null;
+  const referenceValue = formatStoreDynamicsQuarter(lang, row.quarterCode);
+  const retrievalValue = formatStoreDynamicsRetrieval(row.retrievedAt);
+  if (!referenceValue || !retrievalValue) return null;
+  const locale = airportLocale(lang);
+  const countValue = (value: number) => `${value.toLocaleString(locale)}${lang === "ko" ? "개" : lang === "en" ? " stores" : lang === "zh" ? "家" : "店"}`;
+  const changeValue = (count: number, tenths: number) => `${countValue(count)} · ${(tenths / 10).toFixed(1)}%`;
+  return {
+    title: storeDynamicsText.title[lang],
+    timeState: signalStructureText.timeState.historical[lang],
+    storeMetrics: [
+      { key: "total", label: storeDynamicsText.total[lang], value: countValue(row.totalStoreCount) },
+      { key: "ordinary", label: storeDynamicsText.ordinary[lang], value: countValue(row.ordinaryStoreCount) },
+      { key: "franchise", label: storeDynamicsText.franchise[lang], value: countValue(row.franchiseStoreCount) },
+    ],
+    changeMetrics: [
+      { key: "opening", label: storeDynamicsText.opening[lang], value: changeValue(row.openingCount, row.openingRateTenthsPercent) },
+      { key: "closure", label: storeDynamicsText.closure[lang], value: changeValue(row.closureCount, row.closureRateTenthsPercent) },
+    ],
+    referenceLabel: storeDynamicsText.reference[lang],
+    referenceValue,
+    areaLabel: storeDynamicsText.area[lang],
+    areaValue: row.tradeAreaName.endsWith(row.tradeAreaTypeName)
+      ? row.tradeAreaName
+      : `${row.tradeAreaName} · ${row.tradeAreaTypeName}`,
+    retrievalLabel: storeDynamicsText.retrieval[lang],
+    retrievalValue,
+    source: storeDynamicsText.source[lang],
+    limitation: storeDynamicsText.limitation[lang],
+  };
+}
+
 type SignalGroupId = "now" | "movement" | "today-next" | "past";
 
 interface SignalRow {
@@ -1207,6 +1342,30 @@ function CommercialSignalCard({ signal, lang }: { signal: CommercialSignalRow; l
   </article>;
 }
 
+function StoreDynamicsCard({ presentation }: { presentation: StoreDynamicsPresentation }) {
+  return <article className="store-dynamics-card" data-signal-key="store-dynamics">
+    <div className="store-dynamics-label">
+      <span className="signal-time-state">{presentation.timeState}</span>
+      <h4>{presentation.title}</h4>
+    </div>
+    <div className="store-dynamics-content">
+      <dl className="store-dynamics-counts">
+        {presentation.storeMetrics.map((metric) => <div key={metric.key}><dt>{metric.label}</dt><dd>{metric.value}</dd></div>)}
+      </dl>
+      <dl className="store-dynamics-changes">
+        {presentation.changeMetrics.map((metric) => <div key={metric.key}><dt>{metric.label}</dt><dd>{metric.value}</dd></div>)}
+      </dl>
+      <dl className="store-dynamics-context">
+        <div><dt>{presentation.referenceLabel}</dt><dd>{presentation.referenceValue}</dd></div>
+        <div><dt>{presentation.areaLabel}</dt><dd lang="ko">{presentation.areaValue}</dd></div>
+        <div><dt>{presentation.retrievalLabel}</dt><dd>{presentation.retrievalValue}</dd></div>
+      </dl>
+      <p className="store-dynamics-source">{presentation.source}</p>
+      <p className="store-dynamics-limitation">{presentation.limitation}</p>
+    </div>
+  </article>;
+}
+
 function EventCard({ event, lang, serviceDate }: { event: LiveEventRow; lang: Lang; serviceDate: string }) {
   const status = event.status ?? eventStatusForDate(event, serviceDate);
   const preview = eventPreview(event.overview);
@@ -1276,7 +1435,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     passengerForecastRetrievedAt: null,
     forecastCoverage: { all: "UNAVAILABLE" as const, byTerminal: {} },
   };
-  const hasArea = Boolean(block && (block.realtime || block.commercial || block.realtimeForecast?.length || block.subwayRidership || block.foreignPresence || block.foreignPurposeMobility || block.weather.length || block.events.length || block.sales));
+  const hasArea = Boolean(block && (block.realtime || block.commercial || block.realtimeForecast?.length || block.subwayRidership || block.foreignPresence || block.foreignPurposeMobility || block.weather.length || block.events.length || block.sales || block.storeDynamics));
   const hasArrival = arrival.todayExpectedPassengersTotal !== null
     || arrival.nextExpectedTimeBand !== null
     || arrival.peakExpectedTimeBand !== null;
@@ -1311,6 +1470,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
   }
 
   const commercialRow = buildCommercialSignalRow(lang, block?.commercial, summary.generatedAt);
+  const storeDynamicsPresentation = buildStoreDynamicsPresentation(lang, block?.storeDynamics);
 
   if (block?.subwayRidership) {
     const subway = block.subwayRidership;
@@ -1458,7 +1618,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
   }
 
   const events = block?.events ?? [];
-  if (!rows.length && !commercialRow && !events.length) return null;
+  if (!rows.length && !commercialRow && !storeDynamicsPresentation && !events.length) return null;
   const groupIds: SignalGroupId[] = ["now", "movement", "today-next", "past"];
 
   return (
@@ -1481,7 +1641,9 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       <div className="signal-groups">
         {groupIds.map((groupId) => {
           const groupRows = rows.filter((row) => row.group === groupId);
-          const hasSpecial = (groupId === "now" && commercialRow) || (groupId === "today-next" && events.length);
+          const hasSpecial = (groupId === "now" && commercialRow)
+            || (groupId === "today-next" && events.length)
+            || (groupId === "past" && storeDynamicsPresentation);
           if (!groupRows.length && !hasSpecial) return null;
           const groupCopy = signalStructureText.groups[groupId];
           const firstNow = groupId === "now" ? groupRows.filter((row) => row.key === "realtime") : [];
@@ -1504,6 +1666,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
                 serviceDate={summary.serviceDateKst}
               />}
               {groupId !== "now" && groupRows.map((row) => <SignalRowCard key={row.key} row={row} lang={lang} />)}
+              {groupId === "past" && storeDynamicsPresentation && <StoreDynamicsCard presentation={storeDynamicsPresentation} />}
             </div>
           </section>;
         })}

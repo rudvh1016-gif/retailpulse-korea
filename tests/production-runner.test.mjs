@@ -164,7 +164,7 @@ test("selectable runner isolates a throwing source and reports unknown sources w
   assert.equal(results[2].records, 3);
 });
 
-test("all fifteen production source runners are named exactly", () => {
+test("all sixteen production source runners are named exactly", () => {
   // The two `_recovery` entries are repair windows for an existing source,
   // not new data: each reads D1 first and re-requests only what is missing.
   assert.deepEqual([...PRODUCTION_SOURCE_NAMES].sort(), [
@@ -180,6 +180,7 @@ test("all fifteen production source runners are named exactly", () => {
     "seoul_foreign",
     "seoul_realtime",
     "seoul_sales",
+    "store_dynamics",
     "subway_ridership",
     "weather",
     "weather_recovery",
@@ -222,10 +223,11 @@ test("diagnostic source ids are the literal ids collector code writes", () => {
     "lib/seoul-foreign.ts",
     "lib/foreign-purpose-mobility.ts",
     "lib/subway-ridership.ts",
+    "lib/store-dynamics.ts",
   ].map((file) => readFileSync(new URL(`../${file}`, import.meta.url), "utf8")).join("\n");
 
   const names = Object.keys(DIAGNOSTIC_SOURCE_IDS);
-  assert.equal(names.length, 13, "every KORETAIL source needs a diagnostic id");
+  assert.equal(names.length, 14, "every KORETAIL source needs a diagnostic id");
   for (const name of names) {
     assert.ok(
       collectorSource.includes(`"${DIAGNOSTIC_SOURCE_IDS[name]}"`),
@@ -262,9 +264,14 @@ test("previously supported A2/A3/T1 selection still resolves", () => {
   );
 });
 
+test("store dynamics is independently selectable for source diagnostics", () => {
+  assert.deepEqual(resolveDiagnosticSourceIds("store_dynamics"), ["SEOUL_STORE_DYNAMICS"]);
+  assert.deepEqual(resolveDiagnosticSourceIds("SEOUL_STORE_DYNAMICS"), ["SEOUL_STORE_DYNAMICS"]);
+});
+
 test("diagnostic selection defaults to every source and rejects typos", () => {
-  assert.equal(resolveDiagnosticSourceIds(undefined).length, 14);
-  assert.equal(resolveDiagnosticSourceIds("   ").length, 14);
+  assert.equal(resolveDiagnosticSourceIds(undefined).length, 15);
+  assert.equal(resolveDiagnosticSourceIds("   ").length, 15);
   // Deduplicates rather than binding the same id twice.
   assert.deepEqual(resolveDiagnosticSourceIds("seoul_realtime,SEOUL_CITYDATA_PPLTN,SEOUL_CITYDATA_CMRCL"), [
     "SEOUL_CITYDATA_PPLTN",
@@ -289,6 +296,11 @@ test("production operations diagnostic stays read-only and calls no provider", (
   // Source ids are bound as parameters, never interpolated into SQL text.
   assert.match(script, /sourceIds\.map\(\(\) => "\?"\)/);
   assert.equal(/\$\{sourceIds\}/.test(script), false);
+  assert.match(script, /selectedCoverageProbes = COVERAGE_PROBES\.filter/,
+    "a store-only diagnostic must not execute unrelated legacy coverage probes");
+  assert.match(script, /probe\.sourceIds\.some/);
+  assert.match(script, /coverage\.some\(\(entry\) => "error" in entry\).*process\.exitCode = 1/,
+    "a failed selected coverage probe must make the diagnostic workflow fail");
 });
 
 /**

@@ -1,8 +1,8 @@
 # Data Sources
 
-Last verified: 2026-09-02 KST. Recheck official terms immediately before activating Production. The contract details below were verified against official portal documentation snippets and cross-checked working integrations; anything marked `UNVERIFIED` still needs one authenticated response before activation. A4-T2 and A5 were verified 2026-08-30 KST directly from the owner-supplied official Incheon International Airport Corporation OpenAPI 활용가이드 (not re-derived or guessed by an agent) — see §"A4-T2 and A5 — verified contracts" below.
+Last verified: 2026-09-03 KST. Recheck official terms immediately before activating Production. The contract details below were verified against official portal documentation snippets and cross-checked working integrations; anything marked `UNVERIFIED` still needs one authenticated response before activation. A4-T2 and A5 were verified 2026-08-30 KST directly from the owner-supplied official Incheon International Airport Corporation OpenAPI 활용가이드 (not re-derived or guessed by an agent) — see §"A4-T2 and A5 — verified contracts" below.
 
-## Thirteen-source integration matrix
+## Fourteen-source integration matrix
 
 | # | Source | Provider / dataset | Endpoint (verified level) | Key | Truth boundary |
 |---|---|---|---|---|---|
@@ -17,11 +17,53 @@ Last verified: 2026-09-02 KST. Recheck official terms immediately before activat
 | S3 | Estimated commercial sales | 서울시 상권분석서비스(추정매출-상권) OA-15572 | `openapi.seoul.go.kr:8088/{KEY}/json/VwsmTrdarSelngQq/{start}/{end}/{STDR_YYQU_CD}` (CONFIRMED; live verification 2026-08-27 showed only the quarter positional filter applies — trade-area segments are ignored, so the collector sweeps the quarter in 1000-row pages and filters client-side) · quarterly 20211–20261 · fields `THSMON_SELNG_AMT/CO` + weekday/time/gender/age splits · trade areas: 명동 3001492(관광특구)·3120028(명동거리)·3120027(명동역), 홍대 3120103(홍대입구역)·3120102(서교동)·3120104(연남동), 성수 3110131(성수동카페거리)·3120052(성수역) | same Seoul key | 추정매출 = modelled estimate, NOT live POS sales, NOT foreign spend |
 | S4 | Foreign shopping/tourism-purpose destination mobility | 서울 수도권 생활이동 OA-22378 `[도착지 기준]-외국인` | monthly ZIP via official dataset page + documented `nio_download.do` form; latest daily `seoul_purpose_admdong1_forn_YYYYMMDD.csv`; `d_admdong_cd`, `move_purpose`, `total_cnt`, `etl_ymd`; official purpose 4=shopping, 5=tourism | none | Monthly statistical estimated movements ≠ visitors ≠ purchases ≠ sales ≠ real-time activity |
 | S5 | Seoul station daily boarding/alighting | 서울교통공사 OA-22723 `서울시 교통공사 지하철역 역별승하차인원 현황` | `openapi.seoul.go.kr:8088/{KEY}/json/getStnPsgr/1/1000/{YYYYMMDD}/{stnCd}`; date required, station code exact filter; official portal says recent seven-day window and daily refresh; current sample envelope `response.header.resultCode=00` + `response.body.items.item[]`; fields `pasngDe`, `pasngHr`, `stnCd`, `stnNo`, `stnNm`, `lineNm`, `rideNope`, `gffNope` | `SEOUL_OPEN_DATA_KEY` | Station gate boardings/alightings ≠ unique people ≠ area visitors ≠ shoppers ≠ foreign visitors ≠ sales ≠ real-time population |
+| S6 | Quarterly Store Dynamics | 서울시 상권분석서비스(점포-상권) OA-15577 | `openapi.seoul.go.kr:8088/{KEY}/json/VwsmTrdarStorQq/{start}/{end}/{STDR_YYQU_CD}/{TRDAR_CD}` (public sample contract reverified 2026-09-03; latest published `20262`, `20263` returned official no-data) · exact fields and mapping below | `SEOUL_OPEN_DATA_KEY` | Official quarterly historical store stock/opening/closure facts ≠ current operating-store count ≠ area quality, survival, risk, success, or prediction |
 | W1 | KMA short-term forecast | 기상청 · data.go.kr 15084084 | `apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst` (CONFIRMED) · issued 02/05/08/11/14/17/20/23 KST (+~10min) · grids: 명동 (60,127) · 홍대/서교동 (59,126) · 성수 (61,126) · 인천공항/운서동 (51,125) · categories POP/PTY/PCP/REH/SKY/TMP/TMN/TMX/WSD… · `PCP`/`SNO` are strings ("강수없음", "1.0mm 미만") · SKY 1=맑음 3=구름많음 4=흐림 · resultCode "00"=OK, "03"=NO_DATA · 10,000 calls/day dev | `DATA_GO_KR_SERVICE_KEY` | Forecast ≠ observation; issue time ≠ target time |
 | T1 | Tourism events (TourAPI) | 한국관광공사 B551011 · KorService2 (KorService1 shut off ~2025-08) | `apis.data.go.kr/B551011/KorService2/searchFestival2` (CONFIRMED) · `eventStartDate` required · `locationBasedList2` (mapX/mapY/radius≤20000, contentTypeId=15, `dist` in response) for area mapping · success resultCode "0000" · v4.4 deprecates `areaCode`/`sigunguCode` in favor of `lDongRegnCd=11`(서울)/`lDongSignguCd` · 1,000 calls/day dev | same data.go.kr key | Event existence ≠ attendance ≠ demand ≠ sales |
 | T1-detail | Official event category name + description | same KorService2 | `categoryCode2` (contentTypeId=15, cat1, cat2 → `{code,name}`; cached in `tourapi_category_codes`, one lookup per unresolved cat2 group, ≤3/run) · `detailCommon2` (contentId → `overview`, `homepage` anchor HTML, addr1/addr2, tel; fetched ONCE per contentId by the daily collector, marked by `detail_retrieved_at`, ≤12/run) · list fields cat1/cat2/cat3, addr2, tel stored from the same `searchFestival2` response at zero extra calls · worst case 1+3+12 = 16 calls/day | same data.go.kr key | Only the provider's own words are shown (deterministic HTML strip + first-complete-sentence preview, with the complete stored overview expandable); no description is ever generated or guessed; the browser and `/api/live/summary` never call TourAPI |
 
 No paid API, paid data, paid fallback or runtime LLM is approved. A source without verified commercial and automated-use terms remains disabled.
+
+## S6 Store Dynamics official contract (2026-09-03)
+
+OA-15577 service `VwsmTrdarStorQq` exposes quarterly industry rows. A bounded
+public sample check found `20262` as the latest published quarter (`20263`
+returned official `INFO-200`) and verified these fields exactly:
+`STDR_YYQU_CD`, `TRDAR_SE_CD`, `TRDAR_SE_CD_NM`, `TRDAR_CD`, `TRDAR_CD_NM`,
+`SVC_INDUTY_CD`, `SVC_INDUTY_CD_NM`, `SIMILR_INDUTY_STOR_CO`, `STOR_CO`,
+`FRC_STOR_CO`, `OPBIZ_RT`, `OPBIZ_STOR_CO`, `CLSBIZ_RT`, and
+`CLSBIZ_STOR_CO`. The response does not publish a source-update timestamp.
+
+Mapping version `oa-15577-standard-area-2026-09-03-v1` uses exactly one
+official area per product area: Myeongdong `3001492` / `U` /
+`명동 남대문 북창동 다동 무교동 관광특구`, Hongdae `3120103` / `D` /
+`홍대입구역(홍대)`, and Seongsu `3110131` / `A` / `성수동카페거리`. No nearby
+or overlapping trade area is added. The latest sample envelope reported 88,
+90, and 68 industry rows respectively. Only the first five rows per area were
+read during the public sample verification; authenticated Production
+collection must still validate every row before writing any area aggregate.
+
+Every count is a non-negative integer; total stores must equal ordinary plus
+franchise stores. Opening and closure rates must match the provider's official
+count / total × 100 definition. The bounded sample verified 30 published rate
+values with zero mismatches against integer rounding. Duplicate industries,
+wrong geography, wrong quarter, malformed values, incomplete pagination, and
+empty results fail closed. The collector probes at most five quarters and at
+most three 1,000-row pages per area, validates all three areas in memory, then
+writes one compact changed-only row per area/quarter. Retrieval time is not
+part of the semantic hash. Failure preserves stored rows and reports `STALE`
+only when one semantically valid, same-quarter Last-good row exists for all
+three exact mappings; otherwise it reports `ERROR`. Valid data reports
+`OFFICIAL_HISTORICAL`, never `LIVE`.
+
+The public area figures are KORETAIL-derived sums of the unique official
+industry rows, not a provider-published single area-total row and not a claim
+to enumerate every legal business. The aggregate rates are recomputed from
+the summed official counts with the official formula. `source_updated_at` is
+stored as `null` because OA-15577 does not publish it. Transport is HTTP per
+the official Seoul endpoint; authenticated URLs and keys are never logged.
+The collector deliberately uses one transport attempt per bounded page so a
+run cannot silently exceed its five-probe/three-pages-per-area ceiling.
 
 ## S4 source correction and contract (2026-09-02)
 

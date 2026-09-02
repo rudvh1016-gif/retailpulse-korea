@@ -55,7 +55,10 @@ function safeRows(rows: unknown[] | undefined): Array<Record<string, unknown>> {
 // is not a bare SELECT is refused rather than executed.
 const coverageContext = buildCoverageContext(new Date().toISOString());
 const coverage: Array<Record<string, unknown>> = [];
-for (const probe of COVERAGE_PROBES) {
+const selectedSourceIds = new Set(sourceIds);
+const selectedCoverageProbes = COVERAGE_PROBES.filter((probe) =>
+  probe.sourceIds.some((sourceId) => selectedSourceIds.has(sourceId)));
+for (const probe of selectedCoverageProbes) {
   if (!isReadOnlyProbe(probe)) throw new Error(`coverage_probe_not_read_only_${probe.name}`);
   try {
     const result = await database.prepare(probe.sql).bind(...probe.params(coverageContext)).run();
@@ -73,8 +76,14 @@ console.log(JSON.stringify({
   diagnostic: "production-operations-read-only",
   since,
   inspectedSourceIds: sourceIds,
+  inspectedCoverageProbes: selectedCoverageProbes.map((probe) => probe.name),
   coverageContext,
   collectorRuns: safeRows(runs.results),
   sourceHealth: safeRows(health.results),
   dataCoverage: coverage,
 }, null, 2));
+
+// An explicit source-scoped verification is evidence only when its bounded
+// coverage query actually succeeded. Keep the safe JSON output, then fail the
+// workflow so an absent migration/query error cannot be mistaken for proof.
+if (coverage.some((entry) => "error" in entry)) process.exitCode = 1;

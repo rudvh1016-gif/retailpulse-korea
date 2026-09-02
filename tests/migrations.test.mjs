@@ -19,6 +19,7 @@ const migrations = [
   "drizzle/0010_seoul_realtime_commercial.sql",
   "drizzle/0011_seoul_foreign_purpose_mobility.sql",
   "drizzle/0012_seoul_subway_ridership.sql",
+  "drizzle/0013_seoul_store_dynamics.sql",
 ];
 
 function applyMigrations(database) {
@@ -55,6 +56,7 @@ test("D1 migrations apply and prediction rows remain immutable", () => {
       "seoul_foreign_purpose_publications",
       "seoul_subway_ridership",
       "seoul_subway_collection_checkpoint",
+      "seoul_store_dynamics",
       "airport_congestion",
       "airport_passenger_forecast",
       "predictions",
@@ -135,6 +137,46 @@ test("D1 migrations apply and prediction rows remain immutable", () => {
     assert.deepEqual(columns("seoul_subway_collection_checkpoint"), [
       "source_id", "last_checked_kst_date", "latest_reference_date", "retrieved_at", "schema_version",
     ]);
+
+    assert.deepEqual(columns("seoul_store_dynamics"), [
+      "id", "source_id", "dataset_id", "record_origin", "area", "quarter_code",
+      "trade_area_code", "trade_area_name", "trade_area_type_code", "trade_area_type_name",
+      "overall_store_count", "ordinary_store_count", "franchise_store_count",
+      "opening_store_count", "opening_rate_tenths_percent", "closure_store_count",
+      "closure_rate_tenths_percent", "industry_count", "mapping_version", "source_updated_at",
+      "retrieved_at", "schema_version", "quality_status", "source_hash",
+    ]);
+    assert.deepEqual(
+      database.prepare("PRAGMA index_info(seoul_store_dynamics_unique)").all().map(({ name }) => name),
+      ["source_id", "mapping_version", "area", "quarter_code"],
+    );
+    assert.deepEqual(
+      database.prepare("PRAGMA index_info(seoul_store_dynamics_area_quarter_idx)").all().map(({ name }) => name),
+      ["area", "quarter_code"],
+    );
+
+    const insertStoreDynamics = database.prepare(`INSERT INTO seoul_store_dynamics (
+      id, source_id, dataset_id, record_origin, area, quarter_code, trade_area_code,
+      trade_area_name, trade_area_type_code, trade_area_type_name, overall_store_count,
+      ordinary_store_count, franchise_store_count, opening_store_count,
+      opening_rate_tenths_percent, closure_store_count, closure_rate_tenths_percent,
+      industry_count, mapping_version, retrieved_at, schema_version, quality_status, source_hash
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+    for (const mappingVersion of ["mapping-v1", "mapping-v2"]) {
+      insertStoreDynamics.run(
+        `store-${mappingVersion}`, "SEOUL_STORE_DYNAMICS", "OA-15577", "OFFICIAL_HISTORICAL",
+        "myeongdong", "20261", "3001492", "명동 남대문 북창동 다동 무교동 관광특구",
+        "U", "관광특구", 174, 160, 14, 10, 57, 5, 29, 2, mappingVersion,
+        "2026-09-03T01:00:00.000Z", "store-dynamics-v1", "VALID", `hash-${mappingVersion}`,
+      );
+    }
+    assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_store_dynamics").get().count, 2);
+    assert.throws(() => insertStoreDynamics.run(
+      "store-duplicate", "SEOUL_STORE_DYNAMICS", "OA-15577", "OFFICIAL_HISTORICAL",
+      "myeongdong", "20261", "3001492", "명동 남대문 북창동 다동 무교동 관광특구",
+      "U", "관광특구", 174, 160, 14, 10, 57, 5, 29, 2, "mapping-v1",
+      "2026-09-03T02:00:00.000Z", "store-dynamics-v1", "VALID", "hash-duplicate",
+    ), /UNIQUE constraint failed/);
 
     // A4-T2 additive column: existing airport_congestion rows/queries must
     // keep working unchanged, with wait_time_raw only appended at the end.
