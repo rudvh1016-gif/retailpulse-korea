@@ -15,7 +15,7 @@
  *   · repaired later    -> health returns to LIVE on its own
  */
 import assert from "node:assert/strict";
-import { readFileSync, unlinkSync } from "node:fs";
+import { readdirSync, readFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -51,15 +51,13 @@ class LocalD1Database {
   async batch(statements) { return Promise.all(statements.map((statement) => statement.run())); }
 }
 
-const MIGRATIONS = [
-  "drizzle/0000_daffy_tempest.sql",
-  "drizzle/0001_crazy_nekra.sql",
-  "drizzle/0002_reflective_martin_li.sql",
-  "drizzle/0003_minor_network.sql",
-  "drizzle/0004_s2_foreign_presence.sql",
-  "drizzle/0005_airport_official_contracts.sql",
-  "drizzle/0006_airport_t2_and_passenger_forecast.sql",
-];
+// Read the directory rather than a hardcoded list: a list drifts silently the
+// moment a migration is added, and the tables under test then lack the newest
+// columns while the collector inserts them.
+const MIGRATIONS = readdirSync("drizzle")
+  .filter((file) => file.endsWith(".sql"))
+  .sort()
+  .map((file) => `drizzle/${file}`);
 
 function freshDatabase(name) {
   const databasePath = join(tmpdir(), `rpk-${name}-${process.pid}-${Math.random().toString(36).slice(2)}.db`);

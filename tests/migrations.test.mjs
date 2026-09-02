@@ -13,6 +13,8 @@ const migrations = [
   "drizzle/0004_s2_foreign_presence.sql",
   "drizzle/0005_airport_official_contracts.sql",
   "drizzle/0006_airport_t2_and_passenger_forecast.sql",
+  "drizzle/0007_d1_read_budget_indexes.sql",
+  "drizzle/0008_weather_enrichment.sql",
 ];
 
 function applyMigrations(database) {

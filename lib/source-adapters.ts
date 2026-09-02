@@ -1,5 +1,12 @@
 import type { CanonicalRecord, QualityStatus, SourceStatus } from "./contracts";
 import { sha256 } from "./hash";
+import {
+  parseKmaAmount,
+  parseKmaInteger,
+  parseKmaTenths,
+  parsePrecipitationTypeCode,
+  parseSkyCode,
+} from "./kma-categories";
 
 export class SourceFetchError extends Error {
   public readonly attempts: number;
@@ -605,6 +612,18 @@ export interface CanonicalWeatherForecast {
   precipitationProbability: number | null;
   temperatureTenthC: number | null;
   conditionCode: string | null;
+  humidityPercent: number | null;
+  windSpeedTenthMps: number | null;
+  dailyMinTemperatureTenthC: number | null;
+  dailyMaxTemperatureTenthC: number | null;
+  precipitationAmountRaw: string | null;
+  precipitationAmountKind: string | null;
+  precipitationAmountTenthMm: number | null;
+  snowAmountRaw: string | null;
+  snowAmountKind: string | null;
+  snowAmountTenthCm: number | null;
+  skyCode: string | null;
+  precipitationTypeCode: string | null;
   retrievedAt: string;
   schemaVersion: string;
   qualityStatus: QualityStatus;
@@ -654,6 +673,11 @@ export async function normalizeWeatherForecast(items: unknown[], area: string, r
     const targetAt = normalizeKstTimestamp(key);
     const pop = values.POP !== undefined && Number.isFinite(Number(values.POP)) ? Number(values.POP) : null;
     const temp = values.TMP !== undefined && Number.isFinite(Number(values.TMP)) ? Math.round(Number(values.TMP) * 10) : null;
+    // Every field below is read out of the SAME response. No category here
+    // triggers another provider request; the collector's request count is
+    // decided by the grid loop, not by how much of each payload is used.
+    const precipitation = parseKmaAmount(values.PCP ?? null);
+    const snow = parseKmaAmount(values.SNO ?? null);
     const semanticRecord = {
       sourceId: "KMA_VILAGE_FCST",
       area,
@@ -662,11 +686,31 @@ export async function normalizeWeatherForecast(items: unknown[], area: string, r
       precipitationProbability: pop,
       temperatureTenthC: temp,
       conditionCode: kmaConditionCode(values.SKY ?? null, values.PTY ?? null),
+      humidityPercent: parseKmaInteger(values.REH ?? null),
+      windSpeedTenthMps: parseKmaTenths(values.WSD ?? null),
+      // TMN and TMX are published only at the hours KMA states them, so most
+      // target hours legitimately carry neither.
+      dailyMinTemperatureTenthC: parseKmaTenths(values.TMN ?? null),
+      dailyMaxTemperatureTenthC: parseKmaTenths(values.TMX ?? null),
+      precipitationAmountRaw: precipitation?.raw ?? null,
+      precipitationAmountKind: precipitation?.kind ?? null,
+      precipitationAmountTenthMm: precipitation?.exact === null || precipitation === null
+        ? null
+        : Math.round(precipitation.exact * 10),
+      snowAmountRaw: snow?.raw ?? null,
+      snowAmountKind: snow?.kind ?? null,
+      snowAmountTenthCm: snow?.exact === null || snow === null ? null : Math.round(snow.exact * 10),
+      skyCode: parseSkyCode(values.SKY ?? null),
+      precipitationTypeCode: parsePrecipitationTypeCode(values.PTY ?? null),
     } as const;
     results.push({
       ...semanticRecord,
       retrievedAt,
-      schemaVersion: "kma-vilage-fcst-v1",
+      // v2 records that the richer categories are now read. The hash covers
+      // them, but the weather insert is ON CONFLICT DO NOTHING, so an already
+      // stored forecast target is never rewritten and the write budget is
+      // unchanged.
+      schemaVersion: "kma-vilage-fcst-v2",
       qualityStatus: pop === null && temp === null ? "PARTIAL" : "VALID",
       sourceHash: await sha256(semanticRecord),
     });

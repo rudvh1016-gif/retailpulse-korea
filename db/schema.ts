@@ -281,6 +281,24 @@ export const weatherForecast = sqliteTable("weather_forecast", {
   precipitationProbability: integer("precipitation_probability"),
   temperatureTenthC: integer("temperature_tenth_c"),
   conditionCode: text("condition_code"),
+  // W1 enrichment. Every field below comes from the same getVilageFcst
+  // response the collector already fetches; none of them costs a request.
+  humidityPercent: integer("humidity_percent"),
+  windSpeedTenthMps: integer("wind_speed_tenth_mps"),
+  dailyMinTemperatureTenthC: integer("daily_min_temperature_tenth_c"),
+  dailyMaxTemperatureTenthC: integer("daily_max_temperature_tenth_c"),
+  // PCP and SNO are qualitative: the provider's own string is the record, and
+  // the tenths column is filled only when that string is an exact amount.
+  precipitationAmountRaw: text("precipitation_amount_raw"),
+  precipitationAmountKind: text("precipitation_amount_kind"),
+  precipitationAmountTenthMm: integer("precipitation_amount_tenth_mm"),
+  snowAmountRaw: text("snow_amount_raw"),
+  snowAmountKind: text("snow_amount_kind"),
+  snowAmountTenthCm: integer("snow_amount_tenth_cm"),
+  // Official codes kept alongside the derived conditionCode, so a later
+  // reading is never limited by today's mapping.
+  skyCode: text("sky_code"),
+  precipitationTypeCode: text("precipitation_type_code"),
   schemaVersion: text("schema_version").notNull(),
   qualityStatus: text("quality_status").notNull(),
   sourceHash: text("source_hash").notNull(),
