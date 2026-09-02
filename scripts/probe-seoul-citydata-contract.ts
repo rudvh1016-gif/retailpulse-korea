@@ -70,8 +70,8 @@ function commercialTimeShape(value: unknown): CommercialTimeShape {
 function maskedTimeShape(value: unknown): string {
   if (typeof value !== "string") return "non-string";
   return value.trim().slice(0, 64)
-    .replace(/[0-9]/g, "D")
     .replace(/[A-Za-z]/g, "L")
+    .replace(/[0-9]/g, "D")
     .replace(/[가-힣]/g, "H");
 }
 
