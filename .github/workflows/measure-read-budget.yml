@@ -1,0 +1,33 @@
+name: Measure Production Read Budget
+
+# Read-only D1 diagnostic. Runs no collectors and calls no provider, so it can
+# never manufacture collection evidence; it replays the public read path and
+# reports each statement's real rows_read, bounded by an explicit ceiling.
+on:
+  workflow_dispatch:
+    inputs:
+      ceiling:
+        description: Maximum rows this diagnostic may read before it stops early
+        required: false
+        default: "100000"
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Measure the live read path against Production D1
+        run: npx tsx scripts/measure-production-read-budget.ts
+        env:
+          RPK_READ_BUDGET_CEILING: ${{ inputs.ceiling }}
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
