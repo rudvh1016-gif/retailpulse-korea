@@ -13,6 +13,7 @@ export interface SeoulCitydataContractProbeResult {
   areaIdentityFields: boolean;
   commercialTimeFormat: boolean;
   commercialTimeShape: CommercialTimeShape;
+  commercialTimeMask: string;
   paymentCountShape: NumericFieldShape;
   paymentAmountMinShape: NumericFieldShape;
   paymentAmountMaxShape: NumericFieldShape;
@@ -66,6 +67,14 @@ function commercialTimeShape(value: unknown): CommercialTimeShape {
   return "other";
 }
 
+function maskedTimeShape(value: unknown): string {
+  if (typeof value !== "string") return "non-string";
+  return value.trim().slice(0, 64)
+    .replace(/[0-9]/g, "D")
+    .replace(/[A-Za-z]/g, "L")
+    .replace(/[가-힣]/g, "H");
+}
+
 /**
  * Reads only the OA-21285 integrated response contract. Diagnostics contain
  * booleans and official status codes, never the authenticated URL or values.
@@ -98,6 +107,7 @@ export async function probeSeoulCitydataContracts(options: ProbeOptions): Promis
         areaIdentityFields: false,
         commercialTimeFormat: false,
         commercialTimeShape: "other",
+        commercialTimeMask: "non-string",
         paymentCountShape: "other",
         paymentAmountMinShape: "other",
         paymentAmountMaxShape: "other",
@@ -133,6 +143,7 @@ export async function probeSeoulCitydataContracts(options: ProbeOptions): Promis
       areaIdentityFields: Boolean(citydata && present(citydata.AREA_CD) && present(citydata.AREA_NM)),
       commercialTimeFormat: commercialTimeShape(commercial?.CMRCL_TIME) === "kst-minute",
       commercialTimeShape: commercialTimeShape(commercial?.CMRCL_TIME),
+      commercialTimeMask: maskedTimeShape(commercial?.CMRCL_TIME),
       paymentCountShape: numericFieldShape(commercial?.AREA_SH_PAYMENT_CNT),
       paymentAmountMinShape: numericFieldShape(commercial?.AREA_SH_PAYMENT_AMT_MIN),
       paymentAmountMaxShape: numericFieldShape(commercial?.AREA_SH_PAYMENT_AMT_MAX),
