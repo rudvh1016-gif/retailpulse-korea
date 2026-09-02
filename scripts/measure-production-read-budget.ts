@@ -37,6 +37,7 @@ import {
   SEOUL_FOREIGN_SOURCE_ID,
 } from "../lib/seoul-foreign";
 import { FOREIGN_PURPOSE_MAPPING_VERSION, FOREIGN_PURPOSE_SOURCE_ID } from "../lib/foreign-purpose-mobility";
+import { SEOUL_SUBWAY_MAPPING_VERSION, SEOUL_SUBWAY_SOURCE_ID } from "../lib/subway-ridership";
 import { resolveProductionDatabaseConfig } from "./production-database";
 
 /** Cloudflare's documented D1 Free daily allowance (rows read). */
@@ -226,6 +227,30 @@ const HOT_QUERIES: HotQuery[] = [
     table: "seoul_foreign_purpose_mobility",
   },
   {
+    name: "subwayRidership",
+    sql: latestPerKey(AREAS, () => `SELECT area, reference_date AS referenceDate,
+        SUM(boarding_count) AS boardingCount, SUM(alighting_count) AS alightingCount,
+        COUNT(*) AS selectedStationCount,
+        GROUP_CONCAT(station_name || ' ' || line_name, ', ') AS selectedStations,
+        MAX(retrieved_at) AS retrievedAt, dataset_id AS datasetId,
+        mapping_version AS mappingVersion
+      FROM seoul_subway_ridership
+      WHERE area = ? AND source_id = ? AND mapping_version = ?
+        AND record_origin = 'OFFICIAL_DAILY' AND quality_status = 'VALID'
+        AND reference_date = (
+          SELECT MAX(reference_date) FROM seoul_subway_ridership
+          WHERE area = ? AND source_id = ? AND mapping_version = ?
+            AND record_origin = 'OFFICIAL_DAILY' AND quality_status = 'VALID'
+        )
+      GROUP BY area, reference_date, dataset_id, mapping_version LIMIT 1`),
+    binds: AREAS.flatMap((area) => [
+      area, SEOUL_SUBWAY_SOURCE_ID, SEOUL_SUBWAY_MAPPING_VERSION,
+      area, SEOUL_SUBWAY_SOURCE_ID, SEOUL_SUBWAY_MAPPING_VERSION,
+    ]),
+    guard: "FROM seoul_subway_ridership",
+    table: "seoul_subway_ridership",
+  },
+  {
     name: "congestion",
     sql: latestPerKey(CONGESTION_TERMINALS, () => `SELECT terminal, zone, wait_time_minutes AS waitTimeMinutes, wait_time_raw AS waitTimeRaw,
         waiting_count AS waitingCount, observed_at AS observedAt, retrieved_at AS retrievedAt
@@ -306,6 +331,7 @@ const EXPECTED_INDEXES = [
   "seoul_realtime_area_observed_idx",
   "seoul_realtime_commercial_area_observed_idx",
   "seoul_foreign_purpose_mobility_area_reference_idx",
+  "seoul_subway_ridership_area_reference_idx",
   "seoul_realtime_forecast_area_issue_idx",
   "weather_forecast_area_issue_idx",
   "weather_forecast_issued_area_idx",

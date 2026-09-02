@@ -18,6 +18,7 @@ const migrations = [
   "drizzle/0009_event_official_detail.sql",
   "drizzle/0010_seoul_realtime_commercial.sql",
   "drizzle/0011_seoul_foreign_purpose_mobility.sql",
+  "drizzle/0012_seoul_subway_ridership.sql",
 ];
 
 function applyMigrations(database) {
@@ -52,6 +53,8 @@ test("D1 migrations apply and prediction rows remain immutable", () => {
       "seoul_realtime_commercial",
       "seoul_foreign_purpose_mobility",
       "seoul_foreign_purpose_publications",
+      "seoul_subway_ridership",
+      "seoul_subway_collection_checkpoint",
       "airport_congestion",
       "airport_passenger_forecast",
       "predictions",
@@ -114,6 +117,24 @@ test("D1 migrations apply and prediction rows remain immutable", () => {
       database.prepare("PRAGMA index_info(seoul_foreign_purpose_publications_unique)").all().map(({ name }) => name),
       ["source_id", "dataset_id", "publication_id"],
     );
+
+    assert.deepEqual(columns("seoul_subway_ridership"), [
+      "id", "source_id", "dataset_id", "record_origin", "area", "reference_date",
+      "station_code", "station_number", "station_name", "line_name", "boarding_count",
+      "alighting_count", "mapping_version", "retrieved_at", "schema_version",
+      "quality_status", "source_hash",
+    ]);
+    assert.deepEqual(
+      database.prepare("PRAGMA index_info(seoul_subway_ridership_unique)").all().map(({ name }) => name),
+      ["source_id", "mapping_version", "area", "reference_date", "station_code"],
+    );
+    assert.deepEqual(
+      database.prepare("PRAGMA index_info(seoul_subway_ridership_area_reference_idx)").all().map(({ name }) => name),
+      ["area", "mapping_version", "reference_date", "station_code"],
+    );
+    assert.deepEqual(columns("seoul_subway_collection_checkpoint"), [
+      "source_id", "last_checked_kst_date", "latest_reference_date", "retrieved_at", "schema_version",
+    ]);
 
     // A4-T2 additive column: existing airport_congestion rows/queries must
     // keep working unchanged, with wait_time_raw only appended at the end.

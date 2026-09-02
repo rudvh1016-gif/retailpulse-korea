@@ -2,7 +2,7 @@
 
 Last verified: 2026-09-02 KST. Recheck official terms immediately before activating Production. The contract details below were verified against official portal documentation snippets and cross-checked working integrations; anything marked `UNVERIFIED` still needs one authenticated response before activation. A4-T2 and A5 were verified 2026-08-30 KST directly from the owner-supplied official Incheon International Airport Corporation OpenAPI 활용가이드 (not re-derived or guessed by an agent) — see §"A4-T2 and A5 — verified contracts" below.
 
-## Twelve-source integration matrix
+## Thirteen-source integration matrix
 
 | # | Source | Provider / dataset | Endpoint (verified level) | Key | Truth boundary |
 |---|---|---|---|---|---|
@@ -16,6 +16,7 @@ Last verified: 2026-09-02 KST. Recheck official terms immediately before activat
 | S2 | Short-stay foreign living population | 서울 OA-23018 `[단기외국인] 행정동별 서울 생활인구(250m)` | `openapi.seoul.go.kr:8088/{KEY}/json/Spop250mFornTempDong/1/5/` (authenticated `INFO-000`, 5 rows, 2026-08-29) · optional filters `YMD`, `TT`, `H_DNG_CD` | `SEOUL_OPEN_DATA_KEY` | `SPOP` is the total; nationality columns are dimensions and must not be added to it. Short-stay foreign living population ≠ stay population ≠ tourist ≠ shopper ≠ sales |
 | S3 | Estimated commercial sales | 서울시 상권분석서비스(추정매출-상권) OA-15572 | `openapi.seoul.go.kr:8088/{KEY}/json/VwsmTrdarSelngQq/{start}/{end}/{STDR_YYQU_CD}` (CONFIRMED; live verification 2026-08-27 showed only the quarter positional filter applies — trade-area segments are ignored, so the collector sweeps the quarter in 1000-row pages and filters client-side) · quarterly 20211–20261 · fields `THSMON_SELNG_AMT/CO` + weekday/time/gender/age splits · trade areas: 명동 3001492(관광특구)·3120028(명동거리)·3120027(명동역), 홍대 3120103(홍대입구역)·3120102(서교동)·3120104(연남동), 성수 3110131(성수동카페거리)·3120052(성수역) | same Seoul key | 추정매출 = modelled estimate, NOT live POS sales, NOT foreign spend |
 | S4 | Foreign shopping/tourism-purpose destination mobility | 서울 수도권 생활이동 OA-22378 `[도착지 기준]-외국인` | monthly ZIP via official dataset page + documented `nio_download.do` form; latest daily `seoul_purpose_admdong1_forn_YYYYMMDD.csv`; `d_admdong_cd`, `move_purpose`, `total_cnt`, `etl_ymd`; official purpose 4=shopping, 5=tourism | none | Monthly statistical estimated movements ≠ visitors ≠ purchases ≠ sales ≠ real-time activity |
+| S5 | Seoul station daily boarding/alighting | 서울교통공사 OA-22723 `서울시 교통공사 지하철역 역별승하차인원 현황` | `openapi.seoul.go.kr:8088/{KEY}/json/getStnPsgr/1/1000/{YYYYMMDD}/{stnCd}`; date required, station code exact filter; official portal says recent seven-day window and daily refresh; current sample envelope `response.header.resultCode=00` + `response.body.items.item[]`; fields `pasngDe`, `pasngHr`, `stnCd`, `stnNo`, `stnNm`, `lineNm`, `rideNope`, `gffNope` | `SEOUL_OPEN_DATA_KEY` | Station gate boardings/alightings ≠ unique people ≠ area visitors ≠ shoppers ≠ foreign visitors ≠ sales ≠ real-time population |
 | W1 | KMA short-term forecast | 기상청 · data.go.kr 15084084 | `apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst` (CONFIRMED) · issued 02/05/08/11/14/17/20/23 KST (+~10min) · grids: 명동 (60,127) · 홍대/서교동 (59,126) · 성수 (61,126) · 인천공항/운서동 (51,125) · categories POP/PTY/PCP/REH/SKY/TMP/TMN/TMX/WSD… · `PCP`/`SNO` are strings ("강수없음", "1.0mm 미만") · SKY 1=맑음 3=구름많음 4=흐림 · resultCode "00"=OK, "03"=NO_DATA · 10,000 calls/day dev | `DATA_GO_KR_SERVICE_KEY` | Forecast ≠ observation; issue time ≠ target time |
 | T1 | Tourism events (TourAPI) | 한국관광공사 B551011 · KorService2 (KorService1 shut off ~2025-08) | `apis.data.go.kr/B551011/KorService2/searchFestival2` (CONFIRMED) · `eventStartDate` required · `locationBasedList2` (mapX/mapY/radius≤20000, contentTypeId=15, `dist` in response) for area mapping · success resultCode "0000" · v4.4 deprecates `areaCode`/`sigunguCode` in favor of `lDongRegnCd=11`(서울)/`lDongSignguCd` · 1,000 calls/day dev | same data.go.kr key | Event existence ≠ attendance ≠ demand ≠ sales |
 | T1-detail | Official event category name + description | same KorService2 | `categoryCode2` (contentTypeId=15, cat1, cat2 → `{code,name}`; cached in `tourapi_category_codes`, one lookup per unresolved cat2 group, ≤3/run) · `detailCommon2` (contentId → `overview`, `homepage` anchor HTML, addr1/addr2, tel; fetched ONCE per contentId by the daily collector, marked by `detail_retrieved_at`, ≤12/run) · list fields cat1/cat2/cat3, addr2, tel stored from the same `searchFestival2` response at zero extra calls · worst case 1+3+12 = 16 calls/day | same data.go.kr key | Only the provider's own words are shown (deterministic HTML strip + word-boundary excerpt); no description is ever generated or guessed; the browser and `/api/live/summary` never call TourAPI |
@@ -45,6 +46,32 @@ Missing area/purpose pairs remain unavailable rather than becoming zero.
 Every UI occurrence carries the reference date and calls the values monthly
 statistical estimates, never live activity, visitor counts, purchases or
 sales. The source uses no secret and adds no Worker Cron.
+
+## S5 station mapping and daily-history contract (2026-09-02)
+
+OA-22723 exposes only the recent seven-day window. KORETAIL therefore performs
+one bounded initial backfill of the seven completed KST days, then requests
+only the newly completed day. A same-KST-day checkpoint makes a repeated run
+zero-call. The initial ceiling is 21 successful provider calls (7 days × 3
+selected station codes); a normal daily run is three. Each station/date result
+must fit the documented 1,000-row page and match the requested date, exact
+station code, station number, station name and line. Hour/card/user rows are
+summed outside D1, then discarded. D1 retains only one compact station/day row.
+
+Mapping version: `oa-22723-area-stations-2026-09-02-v1`.
+
+| Area | Included station | OA-22723 code / station no. / line | Why included | Researched candidates not included |
+|---|---|---|---|---|
+| myeongdong | 명동 | `0424` / `424` / 4호선 | Eponymous station at the conservative product-area centre | 을지로입구 `0202` / `202` / 2호선 is a nearby edge candidate; excluded to avoid silently widening the catchment |
+| hongdae | 홍대입구 | `0239` / `239` / 2호선 | Eponymous central station in OA-22723 | 합정 2호선 `0238`, 합정 6호선 `2623`, 상수 `2624` are separate nearby station/line codes; excluded to avoid transfer/edge double counting |
+| seongsu | 성수 | `0211` / `211` / 2호선 | Eponymous station in OA-22723 | 서울숲 returned no OA-22723 rows because it is not in this Seoul Metro service coverage; it is never fabricated or substituted |
+
+The official code-filtered sample contract on 2026-09-02 returned the exact
+station/name/line combinations above. Transfer-line codes are never merged by
+name. The public summary labels the metric as selected-station boarding and
+alighting counts, shows the exact reference date and station set, and explicitly
+denies real-time, unique-person and commercial-area-visitor interpretations.
+An authenticated Production response is the final activation gate.
 
 ## S1 integrated population + realtime commercial contract (2026-09-02)
 

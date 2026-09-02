@@ -20,6 +20,7 @@ import {
   collectEstimatedSales,
   collectSeoulForeignPresence,
   collectSeoulRealtime,
+  collectSeoulSubwayRidership,
   collectTourismEvents,
   collectWeatherForecasts,
 } from "../lib/collector";
@@ -120,6 +121,7 @@ async function readA1VerificationSnapshot(targetDate: string): Promise<A1Verific
 const collectors: Record<string, () => Promise<OneShotResult>> = {
   seoul_realtime: () => collectSeoulRealtime(env),
   seoul_foreign: () => collectSeoulForeignPresence(env),
+  subway_ridership: () => collectSeoulSubwayRidership(env),
   seoul_sales: () => collectEstimatedSales(env),
   weather: () => collectWeatherForecasts(env),
   events: () => collectTourismEvents(env),

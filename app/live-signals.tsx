@@ -97,6 +97,17 @@ interface LiveForeignPurposeMobility {
   tourism: number | null;
 }
 
+interface LiveSubwayRidership {
+  referenceDate: string;
+  boardingCount: number;
+  alightingCount: number;
+  selectedStationCount: number;
+  selectedStations: string;
+  retrievedAt: string;
+  datasetId: "OA-22723";
+  mappingVersion: string;
+}
+
 export interface LiveObservedPoint {
   observedAt: string;
   congestionLevel: number;
@@ -116,6 +127,7 @@ interface LiveAreaBlock {
   sales: LiveSales | null;
   foreignPresence: LiveForeignPresence | null;
   foreignPurposeMobility: LiveForeignPurposeMobility | null;
+  subwayRidership: LiveSubwayRidership | null;
 }
 
 interface LiveCongestionRow {
@@ -326,6 +338,15 @@ const text = {
     en: "Monthly Seoul statistical estimate · not real-time activity, visitors, purchases, or sales",
     zh: "首尔市月度统计推算 · 非实时活动、访客数、购买或销售额",
     ja: "ソウル市の月次統計推定 · リアルタイム・来訪者数・購入・売上ではありません",
+  },
+  subwayRidership: { ko: "최근 역 승하차 흐름", en: "Recent station boarding and alighting", zh: "近期地铁站进出站客流", ja: "最近の駅乗降動向" },
+  subwayAlighting: { ko: "선정 역 하차 합계", en: "Selected-station alightings", zh: "所选车站出站合计", ja: "選定駅の降車合計" },
+  subwayBoarding: { ko: "선정 역 승차 합계", en: "Selected-station boardings", zh: "所选车站进站合计", ja: "選定駅の乗車合計" },
+  subwayNote: {
+    ko: "서울교통공사 일별 집계 · 실시간·고유 방문객·상권 방문객 수 아님",
+    en: "Daily Seoul Metro counts · not real-time, unique people, or commercial-area visitors",
+    zh: "首尔交通公社每日统计 · 非实时、独立访客或商圈访客数",
+    ja: "ソウル交通公社の日次集計 · リアルタイム・ユニーク人数・商圏来訪者数ではありません",
   },
   arrivalToday: { ko: "오늘 예상 입국객", en: "Expected arrivals today", zh: "今日预计入境旅客", ja: "今日の予想入国者数" },
   arrivalNext: { ko: "다음 시간대 예상 입국객", en: "Next-band expected arrivals", zh: "下一时段预计入境旅客", ja: "次の時間帯の予想入国者数" },
@@ -1024,7 +1045,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     passengerForecastRetrievedAt: null,
     forecastCoverage: { all: "UNAVAILABLE" as const, byTerminal: {} },
   };
-  const hasArea = Boolean(block && (block.realtime || block.commercial || block.realtimeForecast?.length || block.foreignPresence || block.foreignPurposeMobility || block.weather.length || block.events.length || block.sales));
+  const hasArea = Boolean(block && (block.realtime || block.commercial || block.realtimeForecast?.length || block.subwayRidership || block.foreignPresence || block.foreignPurposeMobility || block.weather.length || block.events.length || block.sales));
   const hasArrival = arrival.todayExpectedPassengersTotal !== null
     || arrival.nextExpectedTimeBand !== null
     || arrival.peakExpectedTimeBand !== null;
@@ -1058,6 +1079,17 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
 
   const commercialRow = buildCommercialSignalRow(lang, block?.commercial, summary.generatedAt);
   if (commercialRow) rows.push(commercialRow);
+
+  if (block?.subwayRidership) {
+    const subway = block.subwayRidership;
+    rows.push({
+      key: "subway_ridership",
+      label: text.subwayRidership[lang],
+      value: `${text.subwayAlighting[lang]} ${formatPeopleValue(lang, subway.alightingCount)} ${text.foreignPeople[lang]}`,
+      detail: `${text.subwayBoarding[lang]} ${formatPeopleValue(lang, subway.boardingCount)} ${text.foreignPeople[lang]}`,
+      note: `${subway.referenceDate} · ${subway.selectedStations} · ${text.subwayNote[lang]} · ${subway.datasetId}`,
+    });
+  }
 
   if (block?.foreignPresence) {
     const productId = block.foreignPresence.productVersion.split(":", 1)[0] || "OA-23018";

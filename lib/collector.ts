@@ -48,6 +48,18 @@ import {
   FOREIGN_PURPOSE_SOURCE_ID,
   type ForeignPurposeMobilitySource,
 } from "./foreign-purpose-mobility";
+import {
+  createSeoulSubwayRidershipSource,
+  normalizeSubwayRidershipPayload,
+  SEOUL_SUBWAY_DATASET_ID,
+  SEOUL_SUBWAY_MAPPING_VERSION,
+  SEOUL_SUBWAY_SCHEMA_VERSION,
+  SEOUL_SUBWAY_SOURCE_ID,
+  SUBWAY_STATION_REQUESTS,
+  subwayBackfillDates,
+  type SubwayRidershipSource,
+} from "./subway-ridership";
+import { kstDayOf, shiftKstDay } from "./kst";
 
 export interface CollectorEnv {
   DB?: D1Database;
@@ -55,6 +67,7 @@ export interface CollectorEnv {
   SEOUL_OPEN_DATA_KEY?: string;
   KMA_SERVICE_KEY?: string;
   FOREIGN_PURPOSE_SOURCE?: ForeignPurposeMobilitySource;
+  SUBWAY_RIDERSHIP_SOURCE?: SubwayRidershipSource;
   retainChangeHistory?: boolean;
 }
 
@@ -872,6 +885,177 @@ export async function collectForeignPurposeMobility(
   } catch (error) {
     const detail = safeSourceFailureDetail(error);
     const lastGoodPreserved = await hasStoredRow(env.DB, `SELECT 1 FROM seoul_foreign_purpose_mobility LIMIT 1`);
+    const health: SourceHealthStatus = lastGoodPreserved ? "STALE" : "ERROR";
+    await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
+    await writeSourceHealth(env.DB, sourceId, health, detail);
+    return { status: "ERROR", records: 0, detail, providerRequests, sourceHealth: health, lastGoodPreserved };
+  }
+}
+
+/**
+ * S5 — official daily station entries/exits from OA-22723.
+ *
+ * The first successful run backfills only the provider's seven completed KST
+ * days. Later runs skip stored days and a same-KST-day checkpoint prevents a
+ * manual rerun from spending provider calls. Only compact station/day totals
+ * enter D1; the card/user/hour rows are discarded after aggregation.
+ */
+export async function collectSeoulSubwayRidership(
+  env: CollectorEnv,
+  now: Date = new Date(),
+): Promise<CollectorResult> {
+  const sourceId = SEOUL_SUBWAY_SOURCE_ID;
+  const source = env.SUBWAY_RIDERSHIP_SOURCE
+    ?? (env.SEOUL_OPEN_DATA_KEY ? createSeoulSubwayRidershipSource(env.SEOUL_OPEN_DATA_KEY) : null);
+  if (!source) {
+    const detail = "SEOUL_OPEN_DATA_KEY is not configured";
+    await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", detail);
+    await writeSourceHealth(env.DB, sourceId, "MISSING", detail);
+    return { status: "NEEDS_KEY", records: 0, detail, providerRequests: 0, sourceHealth: "MISSING", lastGoodPreserved: false };
+  }
+
+  const retrievedAt = now.toISOString();
+  const checkedKstDate = kstDayOf(retrievedAt);
+  const candidateDates = subwayBackfillDates(now);
+  let providerRequests = 0;
+  try {
+    if (env.DB) {
+      const checkpoint = await env.DB.prepare(`SELECT last_checked_kst_date AS checkedDate,
+          latest_reference_date AS latestReferenceDate
+        FROM seoul_subway_collection_checkpoint WHERE source_id = ? LIMIT 1`)
+        .bind(sourceId).all<{ checkedDate: string; latestReferenceDate: string | null }>();
+      const row = checkpoint.results?.[0];
+      if (row?.checkedDate === checkedKstDate) {
+        const lastGoodPreserved = await hasStoredRow(env.DB, `SELECT 1 FROM seoul_subway_ridership LIMIT 1`);
+        const health: SourceHealthStatus = row.latestReferenceDate
+          ? (row.latestReferenceDate >= shiftKstDay(checkedKstDate, -2) ? "LIVE" : "STALE")
+          : (lastGoodPreserved ? "STALE" : "MISSING");
+        const detail = `checked ${checkedKstDate}; provider requests 0; same-day idempotent skip; latest ${row.latestReferenceDate ?? "none"}`;
+        await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail);
+        return { status: "SUCCESS", records: 0, detail, providerRequests: 0, sourceHealth: health, lastGoodPreserved };
+      }
+    }
+
+    const storedDates = new Set<string>();
+    if (env.DB) {
+      const placeholders = candidateDates.map(() => "?").join(",");
+      const stored = await env.DB.prepare(`SELECT DISTINCT reference_date AS referenceDate
+        FROM seoul_subway_ridership
+        WHERE source_id = ? AND mapping_version = ? AND reference_date IN (${placeholders})
+        GROUP BY reference_date HAVING COUNT(*) = ?`)
+        .bind(sourceId, SEOUL_SUBWAY_MAPPING_VERSION, ...candidateDates, SUBWAY_STATION_REQUESTS.length)
+        .all<{ referenceDate: string }>();
+      for (const row of stored.results ?? []) storedDates.add(row.referenceDate);
+    }
+
+    const collected: Array<{ area: AreaId; result: ReturnType<typeof normalizeSubwayRidershipPayload> }> = [];
+    let sourceRowsRead = 0;
+    let unavailableDates = 0;
+    for (const referenceDate of candidateDates.filter((day) => !storedDates.has(day))) {
+      const dateRows: typeof collected = [];
+      let unavailable = false;
+      for (const request of SUBWAY_STATION_REQUESTS) {
+        providerRequests += 1;
+        const payload = await source.fetchStationDay(referenceDate, request.station);
+        try {
+          const result = normalizeSubwayRidershipPayload(payload, referenceDate, request.station);
+          sourceRowsRead += result.sourceRowsRead;
+          dateRows.push({ area: request.area, result });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "subway_schema_error";
+          if (message === "subway_no_data" || /^subway_provider_03_/.test(message)) {
+            unavailable = true;
+            break;
+          }
+          throw error;
+        }
+      }
+      if (unavailable) {
+        unavailableDates += 1;
+        continue;
+      }
+      if (dateRows.length !== SUBWAY_STATION_REQUESTS.length) throw new Error("subway_incomplete_station_set");
+      collected.push(...dateRows);
+      storedDates.add(referenceDate);
+    }
+
+    const statements: D1PreparedStatement[] = [];
+    for (const { area, result } of collected) {
+      const identity = {
+        sourceId,
+        mappingVersion: SEOUL_SUBWAY_MAPPING_VERSION,
+        area,
+        referenceDate: result.referenceDate,
+        stationCode: result.station.stationCode,
+      };
+      const semantic = {
+        ...identity,
+        datasetId: SEOUL_SUBWAY_DATASET_ID,
+        stationNumber: result.station.stationNumber,
+        stationName: result.station.stationName,
+        lineName: result.station.lineName,
+        boardingCount: result.boardingCount,
+        alightingCount: result.alightingCount,
+      };
+      if (env.DB) statements.push(env.DB.prepare(`INSERT INTO seoul_subway_ridership (
+          id, source_id, dataset_id, record_origin, area, reference_date,
+          station_code, station_number, station_name, line_name,
+          boarding_count, alighting_count, mapping_version, retrieved_at,
+          schema_version, quality_status, source_hash
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(source_id, mapping_version, area, reference_date, station_code) DO UPDATE SET
+          dataset_id = excluded.dataset_id,
+          station_number = excluded.station_number,
+          station_name = excluded.station_name,
+          line_name = excluded.line_name,
+          boarding_count = excluded.boarding_count,
+          alighting_count = excluded.alighting_count,
+          retrieved_at = excluded.retrieved_at,
+          schema_version = excluded.schema_version,
+          quality_status = excluded.quality_status,
+          source_hash = excluded.source_hash
+        WHERE seoul_subway_ridership.source_hash <> excluded.source_hash`)
+        .bind(
+          await sha256(identity), sourceId, SEOUL_SUBWAY_DATASET_ID, "OFFICIAL_DAILY",
+          area, result.referenceDate, result.station.stationCode, result.station.stationNumber,
+          result.station.stationName, result.station.lineName, result.boardingCount,
+          result.alightingCount, SEOUL_SUBWAY_MAPPING_VERSION, retrievedAt,
+          SEOUL_SUBWAY_SCHEMA_VERSION, "VALID", await sha256(semantic),
+        ));
+    }
+    const written = env.DB && statements.length ? await runBatches(env.DB, statements) : NO_D1_WRITES;
+    const latestReferenceDate = [...storedDates].sort().at(-1) ?? null;
+    if (env.DB && latestReferenceDate) {
+      await env.DB.prepare(`INSERT INTO seoul_subway_collection_checkpoint (
+          source_id, last_checked_kst_date, latest_reference_date, retrieved_at, schema_version
+        ) VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(source_id) DO UPDATE SET
+          last_checked_kst_date = excluded.last_checked_kst_date,
+          latest_reference_date = excluded.latest_reference_date,
+          retrieved_at = excluded.retrieved_at,
+          schema_version = excluded.schema_version`)
+        .bind(sourceId, checkedKstDate, latestReferenceDate, retrievedAt, SEOUL_SUBWAY_SCHEMA_VERSION).run();
+    }
+
+    const lastGoodPreserved = Boolean(latestReferenceDate)
+      || await hasStoredRow(env.DB, `SELECT 1 FROM seoul_subway_ridership LIMIT 1`);
+    const freshThrough = shiftKstDay(checkedKstDate, -2);
+    const health: SourceHealthStatus = latestReferenceDate
+      ? (latestReferenceDate >= freshThrough ? "LIVE" : "STALE")
+      : (lastGoodPreserved ? "STALE" : "MISSING");
+    const status: CollectorResult["status"] = latestReferenceDate ? "SUCCESS" : "NO_DATA";
+    const detail = `window ${candidateDates.at(-1)}..${candidateDates[0]}; complete dates ${storedDates.size}/7; new station-days ${collected.length}; unavailable dates ${unavailableDates}; source rows ${sourceRowsRead}; provider requests ${providerRequests}; latest ${latestReferenceDate ?? "none"}; ${describeWrites(written)}`;
+    await writeCollectorStatus(env.DB, sourceId, status, detail, sourceRowsRead, written.changedRows);
+    await writeSourceHealth(env.DB, sourceId, health, detail, latestReferenceDate ? {
+      eventAt: `${latestReferenceDate}T00:00:00+09:00`,
+      publishedAt: null,
+      retrievedAt,
+      schemaVersion: SEOUL_SUBWAY_SCHEMA_VERSION,
+    } : undefined);
+    return { status, records: written.changedRows, detail, providerRequests, sourceHealth: health, lastGoodPreserved };
+  } catch (error) {
+    const detail = safeSourceFailureDetail(error);
+    const lastGoodPreserved = await hasStoredRow(env.DB, `SELECT 1 FROM seoul_subway_ridership LIMIT 1`);
     const health: SourceHealthStatus = lastGoodPreserved ? "STALE" : "ERROR";
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, health, detail);
