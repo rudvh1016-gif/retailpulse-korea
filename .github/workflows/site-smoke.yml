@@ -91,6 +91,22 @@ jobs:
             }
           }
 
+          // The date picker's day lists come from three probe statements the
+          // route runs through the Worker's D1 binding. safeAll swallows a
+          // failing statement into an empty list, so a broken probe would show
+          // up as a picker offering nothing rather than as an error - the same
+          // silent-empty failure mode the row-read incident hid behind. The
+          // database demonstrably holds many days of both flights and Seoul
+          // observations, so empty lists here mean the statement failed.
+          const availability = summaryBody?.dateAvailability ?? {};
+          console.log(JSON.stringify({ dateAvailability: {
+            airportFlights: availability.airportFlights?.length ?? null,
+            airportPassengerForecast: availability.airportPassengerForecast?.length ?? null,
+            seoulObserved: availability.seoulObserved?.length ?? null,
+          } }));
+          check("date picker offers airport flight days", (availability.airportFlights?.length ?? 0) > 0, `${availability.airportFlights?.length ?? 0} days`);
+          check("date picker offers Seoul observation days", (availability.seoulObserved?.length ?? 0) > 0, `${availability.seoulObserved?.length ?? 0} days`);
+
           // Does the edge actually serve a shared cached copy? The success path
           // asks for it (`public, max-age=60, stale-while-revalidate=300`), but a
           // Worker response is not cached just because it says so, and on D1 Free
