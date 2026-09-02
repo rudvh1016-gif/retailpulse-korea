@@ -21,7 +21,7 @@ export interface SeoulCitydataContractProbeResult {
 }
 
 type NumericFieldShape = "number" | "numeric-string" | "suppressed" | "other";
-type CommercialTimeShape = "kst-minute" | "kst-minute-fraction" | "compact-minute" | "time-only" | "other";
+type CommercialTimeShape = "kst-minute" | "kst-minute-fraction" | "compact-kst-minute" | "compact-minute" | "time-only" | "other";
 
 interface ProbeOptions {
   apiKey: string;
@@ -62,6 +62,7 @@ function commercialTimeShape(value: unknown): CommercialTimeShape {
   const trimmed = value.trim();
   if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2})?$/.test(trimmed)) return "kst-minute";
   if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}\.\d+$/.test(trimmed)) return "kst-minute-fraction";
+  if (/^\d{8} \d{4}$/.test(trimmed)) return "compact-kst-minute";
   if (/^\d{12}(?:\d{2})?$/.test(trimmed)) return "compact-minute";
   if (/^\d{2}:\d{2}(?::\d{2})?$/.test(trimmed)) return "time-only";
   return "other";
@@ -141,7 +142,7 @@ export async function probeSeoulCitydataContracts(options: ProbeOptions): Promis
       paymentAmountRangePublished: present(commercial?.AREA_SH_PAYMENT_AMT_MIN)
         && present(commercial?.AREA_SH_PAYMENT_AMT_MAX),
       areaIdentityFields: Boolean(citydata && present(citydata.AREA_CD) && present(citydata.AREA_NM)),
-      commercialTimeFormat: commercialTimeShape(commercial?.CMRCL_TIME) === "kst-minute",
+      commercialTimeFormat: ["kst-minute", "compact-kst-minute"].includes(commercialTimeShape(commercial?.CMRCL_TIME)),
       commercialTimeShape: commercialTimeShape(commercial?.CMRCL_TIME),
       commercialTimeMask: maskedTimeShape(commercial?.CMRCL_TIME),
       paymentCountShape: numericFieldShape(commercial?.AREA_SH_PAYMENT_CNT),

@@ -420,6 +420,16 @@ test("Seoul realtime commercial adapter preserves official values and semantic t
   assert.notEqual(changed.sourceHash, first.sourceHash);
 });
 
+test("Seoul realtime commercial adapter parses the authenticated YYYYMMDD HHmm KST timestamp", async () => {
+  const record = await normalizeSeoulRealtimeCommercial(
+    seoulIntegratedFixture({ CMRCL_TIME: "20260902 1205" }).CITYDATA,
+    "myeongdong",
+    "2026-09-02T03:06:00Z",
+  );
+
+  assert.equal(record.observedAt, "2026-09-02T12:05:00+09:00");
+});
+
 test("Seoul realtime commercial adapter preserves suppressed optional payments as null", async () => {
   const record = await normalizeSeoulRealtimeCommercial(
     seoulIntegratedFixture({

@@ -429,9 +429,11 @@ function requiredNumericString(record: Record<string, unknown>, keys: string[]):
   return value;
 }
 
-/** "YYYY-MM-DD HH:MM" (KST, Seoul citydata) → ISO string. */
+/** Seoul citydata KST minute timestamps → explicit-offset ISO string. */
 function normalizeKstMinuteTime(value: string): string {
-  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/);
+  const trimmed = value.trim();
+  const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/)
+    ?? trimmed.match(/^(\d{4})(\d{2})(\d{2}) (\d{2})(\d{2})$/);
   if (!match) throw new SourceFetchError("SCHEMA");
   const normalized = `${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6] ?? "00"}+09:00`;
   if (Number.isNaN(Date.parse(normalized))) throw new SourceFetchError("SCHEMA");
