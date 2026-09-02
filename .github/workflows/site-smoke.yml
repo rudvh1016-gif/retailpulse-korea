@@ -106,6 +106,16 @@ jobs:
           } }));
           check("date picker offers airport flight days", (availability.airportFlights?.length ?? 0) > 0, `${availability.airportFlights?.length ?? 0} days`);
           check("date picker offers Seoul observation days", (availability.seoulObserved?.length ?? 0) > 0, `${availability.seoulObserved?.length ?? 0} days`);
+          const a5Health = (healthBody?.sources ?? []).find(
+            (source) => source.sourceId === "INCHEON_PASSENGER_FORECAST",
+          );
+          if (a5Health?.status === "LIVE") {
+            check(
+              "date picker offers A5 forecast days when A5 is live",
+              (availability.airportPassengerForecast?.length ?? 0) > 0,
+              `${availability.airportPassengerForecast?.length ?? 0} days; source ${a5Health.status}`,
+            );
+          }
 
           // Does the edge actually serve a shared cached copy? The success path
           // asks for it (`public, max-age=60, stale-while-revalidate=300`), but a

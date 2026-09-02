@@ -58,6 +58,8 @@ const AREAS = ["myeongdong", "hongdae", "seongsu"];
 const perKey = (keys, sql) => keys.map(() => `SELECT * FROM (${sql})`).join(" UNION ALL ");
 const probe = (table, column, filter) => Array.from({ length: 21 }, () =>
   `SELECT ? AS day WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${filter ? `${filter} AND ` : ""}${column} >= ? AND ${column} < ?)`).join(" UNION ALL ");
+const exactDayProbe = (table, column, filter) =>
+  `SELECT ? AS day WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${filter ? `${filter} AND ` : ""}${column} = ?)`;
 const probeBinds = () => Array.from({ length: 21 }, (_, i) => [`2026-08-${10 + i}`, `2026-08-${10 + i}`, `2026-08-${11 + i}`]).flat();
 
 const HOT_QUERIES = {
@@ -68,6 +70,7 @@ const HOT_QUERIES = {
   "summary.latestCongestion": [perKey(["T1", "T2"], "SELECT terminal FROM airport_congestion WHERE terminal = ? AND observed_at = (SELECT MAX(observed_at) FROM airport_congestion WHERE terminal = ?) ORDER BY zone LIMIT 12"), ["T1", "T1", "T2", "T2"]],
   "summary.flightsForDay": ["SELECT physical_flight_id, terminal, gate FROM airport_flights WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ? LIMIT 2000", ["2026-08-31", "2026-09-01"]],
   "summary.availableFlightDates": [probe("airport_flights", "scheduled_at", "direction = 'departure'"), probeBinds()],
+  "summary.availableForecastDates": [exactDayProbe("airport_passenger_forecast", "target_date", "direction = 'departure' AND is_aggregate = 1"), ["2026-08-31", "2026-08-31"]],
   "summary.availableRealtimeDates": [probe("seoul_realtime_area", "observed_at", ""), probeBinds()],
 };
 
@@ -141,6 +144,34 @@ test("a bare-date range selects exactly the rows the old substr predicate did", 
   assert.equal(byRange.length, 3);
 });
 
+test("bounded forecast date probes preserve the aggregate-departure picker contract", (context) => {
+  const { db, path } = freshDatabase("forecast-date-equivalence");
+  context.after(() => { db.close(); rmSync(path); });
+  const columns = db.prepare("PRAGMA table_info(airport_passenger_forecast)").all();
+  const insert = db.prepare(`INSERT INTO airport_passenger_forecast (${columns.map((column) => column.name).join(",")}) VALUES (${columns.map(() => "?").join(",")})`);
+  const rows = [
+    { id: "included", target_date: "2026-08-31", direction: "departure", is_aggregate: 1 },
+    { id: "arrival", target_date: "2026-08-30", direction: "arrival", is_aggregate: 1 },
+    { id: "component", target_date: "2026-08-29", direction: "departure", is_aggregate: 0 },
+    { id: "outside-window", target_date: "2026-08-08", direction: "departure", is_aggregate: 1 },
+  ];
+  for (const row of rows) {
+    insert.run(...columns.map((column) => {
+      if (column.name in row) return row[column.name];
+      return /INT|REAL|NUM/i.test(column.type) ? 0 : `${column.name}`;
+    }));
+  }
+
+  const sql = exactDayProbe(
+    "airport_passenger_forecast",
+    "target_date",
+    "direction = 'departure' AND is_aggregate = 1",
+  );
+  const pickerDays = ["2026-08-31", "2026-08-30", "2026-08-29"];
+  const available = pickerDays.flatMap((day) => db.prepare(sql).all(day, day)).map((row) => row.day);
+  assert.deepEqual(available, ["2026-08-31"]);
+});
+
 /**
  * The Production read-budget measurement must measure the query the site
  * actually runs.
@@ -154,8 +185,8 @@ test("a bare-date range selects exactly the rows the old substr predicate did", 
  * producing a confident measurement of a query nobody serves.
  */
 test("every measured hot-path statement still exists in the live route", () => {
-  const measureSource = readFileSync("scripts/measure-production-read-budget.ts", "utf8");
-  const routeText = readFileSync("app/api/live/summary/route.ts", "utf8");
+  const measureSource = readFileSync("scripts/measure-production-read-budget.ts", "utf8").replace(/\r\n/g, "\n");
+  const routeText = readFileSync("app/api/live/summary/route.ts", "utf8").replace(/\r\n/g, "\n");
   const guards = [...measureSource.matchAll(/^ {4}guard: (`[^`]*`|"(?:[^"\\]|\\.)*"),$/gm)]
     .map((match) => (match[1].startsWith("`") ? match[1].slice(1, -1) : JSON.parse(match[1])));
   assert.equal(guards.length, 14, "expected one guard per measured statement");
@@ -214,5 +245,14 @@ test("the date-picker probes are one statement per day, sent as a batch", () => 
   assert.ok(
     /client\.batch<Row>\(\s*pickerDays\.map\(/.test(source),
     "the per-day probes must be sent through client.batch, not one statement at a time",
+  );
+  assert.equal(
+    /SELECT DISTINCT target_date AS day FROM airport_passenger_forecast/.test(source),
+    false,
+    "the A5 picker must not scan all historical forecast dates",
+  );
+  assert.ok(
+    /probeDays\(\s*dayValueExistsSql\("airport_passenger_forecast", "target_date", "direction = 'departure' AND is_aggregate = 1"\)/.test(source),
+    "the A5 picker must use bounded exact-day existence probes",
   );
 });

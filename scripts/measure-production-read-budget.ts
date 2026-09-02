@@ -59,6 +59,11 @@ function dayExistsSql(table: string, column: string, filter = ""): string {
   return `SELECT ? AS day WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${where}${column} >= ? AND ${column} < ?)`;
 }
 
+function dayValueExistsSql(table: string, column: string, filter = ""): string {
+  const where = filter ? `${filter} AND ` : "";
+  return `SELECT ? AS day WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${where}${column} = ?)`;
+}
+
 function latestPerKey(keys: readonly string[], build: (placeholder: string) => string): string {
   return keys.map(() => `SELECT * FROM (${build("?")})`).join(" UNION ALL ");
 }
@@ -236,15 +241,15 @@ const HOT_QUERIES: HotQuery[] = [
     sql: dayExistsSql("airport_flights", "scheduled_at", "direction = 'departure'"),
     binds: [pickerDays[0], pickerDays[0], shiftKstDay(pickerDays[0], 1)],
     repeatBinds: pickerDays.map((day) => [day, day, shiftKstDay(day, 1)]),
-    guard: `probeDays("airport_flights", "scheduled_at", "direction = 'departure'")`,
+    guard: `dayExistsSql("airport_flights", "scheduled_at", "direction = 'departure'")`,
     table: null,
   },
   {
     name: "forecastDates",
-    sql: `SELECT DISTINCT target_date AS day FROM airport_passenger_forecast
-      WHERE direction = 'departure' AND is_aggregate = 1 ORDER BY day DESC LIMIT 21`,
-    binds: [],
-    guard: "SELECT DISTINCT target_date AS day FROM airport_passenger_forecast",
+    sql: dayValueExistsSql("airport_passenger_forecast", "target_date", "direction = 'departure' AND is_aggregate = 1"),
+    binds: [pickerDays[0], pickerDays[0]],
+    repeatBinds: pickerDays.map((day) => [day, day]),
+    guard: `dayValueExistsSql("airport_passenger_forecast", "target_date", "direction = 'departure' AND is_aggregate = 1")`,
     table: null,
   },
   {
@@ -252,7 +257,7 @@ const HOT_QUERIES: HotQuery[] = [
     sql: dayExistsSql("seoul_realtime_area", "observed_at"),
     binds: [pickerDays[0], pickerDays[0], shiftKstDay(pickerDays[0], 1)],
     repeatBinds: pickerDays.map((day) => [day, day, shiftKstDay(day, 1)]),
-    guard: `probeDays("seoul_realtime_area", "observed_at")`,
+    guard: `dayExistsSql("seoul_realtime_area", "observed_at")`,
     table: null,
   },
 ];
