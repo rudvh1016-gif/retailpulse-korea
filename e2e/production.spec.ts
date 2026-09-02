@@ -570,3 +570,73 @@ test("the checklist stacks without overflow on a narrow phone", async ({ page })
   expect(overflowing).toBe(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
+
+/**
+ * The chart once collapsed into a 190px strip on Production because its
+ * container template had a fixed first track for a label that is not in the
+ * markup. That bug was invisible to a probe that injected its own two-child
+ * markup, so this measures the REAL rendered DOM.
+ */
+test("the passenger-flow chart uses the section width on desktop and never scrolls vertically", async ({ page }) => {
+  const wide = JSON.parse(JSON.stringify(SUMMARY_FIXTURE));
+  wide.airport.passengerForecastTimeline = Array.from({ length: 24 }, (_, hour) => ({
+    targetStartAt: `2026-08-31T${String(hour).padStart(2, "0")}:00:00+09:00`,
+    targetEndAt: hour === 23 ? "2026-09-01T00:00:00+09:00" : `2026-08-31T${String(hour + 1).padStart(2, "0")}:00:00+09:00`,
+    expectedPassengers: 1000 + hour * 100,
+  }));
+  await page.route("**/api/live/summary*", routeSummary(wide));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/ko/airport");
+  const bars = page.locator(".airport-timeline-bars");
+  await expect(bars).toBeVisible();
+  const metrics = await bars.evaluate((el) => ({
+    width: el.getBoundingClientRect().width,
+    vertical: el.scrollHeight > el.clientHeight + 1,
+    bands: el.children.length,
+  }));
+  expect(metrics.bands).toBe(24);
+  expect(metrics.width).toBeGreaterThan(900);
+  expect(metrics.vertical).toBe(false);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
+  const mobile = await page.locator(".airport-timeline-bars").evaluate((el) => ({
+    horizontal: el.scrollWidth > el.clientWidth + 1,
+    vertical: el.scrollHeight > el.clientHeight + 1,
+    pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  }));
+  expect(mobile.horizontal).toBe(true);
+  expect(mobile.vertical).toBe(false);
+  expect(mobile.pageOverflow).toBeLessThanOrEqual(1);
+});
+
+/**
+ * The fixture's clock is 05:10Z = 14:10 KST, inside the 14:00–15:00 band.
+ * Today shows a marker there; a past or future service date shows none,
+ * because no "now" exists inside a day the clock is not in.
+ */
+test("the current-time marker appears on today's chart only", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.goto("/ko/airport");
+  const now = page.locator(".airport-timeline-bars p.now");
+  await expect(now).toHaveCount(1);
+  await expect(now).toHaveAttribute("data-now-label", "현재 시각 14:10");
+  await expect(now.locator("span")).toHaveText("14:00");
+  await expect(page.locator(".airport-timeline")).toHaveAttribute("aria-label", /현재 시각 14:10/);
+
+  for (const [date, relation] of [["2026-08-30", "PAST"], ["2026-09-01", "FUTURE"]] as const) {
+    const other = JSON.parse(JSON.stringify(SUMMARY_FIXTURE));
+    other.serviceDateKst = date;
+    other.dayRelation = relation;
+    other.airport.serviceDateKst = date;
+    other.airport.passengerForecastTimeline = SUMMARY_FIXTURE.airport.passengerForecastTimeline.map((band) => ({
+      ...band,
+      targetStartAt: band.targetStartAt.replace("2026-08-31", date),
+      targetEndAt: band.targetEndAt.replace("2026-08-31", date),
+    }));
+    await page.route("**/api/live/summary*", routeSummary(other));
+    await page.goto(`/ko/airport?date=${date}`);
+    await expect(page.locator(".airport-timeline-bars")).toBeVisible();
+    await expect(page.locator(".airport-timeline-bars p.now")).toHaveCount(0);
+  }
+});
