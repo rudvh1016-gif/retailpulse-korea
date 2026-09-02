@@ -54,11 +54,9 @@ const DATE_PICKER_DAYS = 21;
 // Mirrors of the route's two SQL builders. The `guard` fragment on every
 // statement below is what keeps these honest: if the route stops shaping its
 // SQL this way, the guard fails instead of the measurement silently drifting.
-function existingDaysSql(table: string, column: string, days: readonly string[], filter = ""): string {
+function dayExistsSql(table: string, column: string, filter = ""): string {
   const where = filter ? `${filter} AND ` : "";
-  return days
-    .map(() => `SELECT ? AS day WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${where}${column} >= ? AND ${column} < ?)`)
-    .join(" UNION ALL ");
+  return `SELECT ? AS day WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${where}${column} >= ? AND ${column} < ?)`;
 }
 
 function latestPerKey(keys: readonly string[], build: (placeholder: string) => string): string {
@@ -86,20 +84,14 @@ type HotQuery = {
   /**
    * Run this statement once per bind set and sum the rows read.
    *
-   * The route sends the date-picker probes as one 21-way UNION ALL with 63
-   * bound parameters. The Worker's native D1 binding runs that; the REST
-   * endpoint this diagnostic must use answers HTTP 400 to it, which would
-   * leave two of fourteen statements unmeasured and the total understated.
-   * Measuring the same probes one at a time is the identical work in the
-   * identical order, so the sum is the real cost either way.
+   * The route sends the date-picker probes as one statement per day in a
+   * single D1 batch, so the diagnostic runs them the same way and sums the
+   * rows read. Measuring them as one 21-way UNION ALL is what this script
+   * tried first; D1 rejects that statement, which is exactly how the live
+   * bug it was hiding came to light.
    */
   repeatBinds?: unknown[][];
 };
-
-/** One day's existence probe, exactly as the route's builder emits it. */
-function oneDaySql(table: string, column: string, filter = ""): string {
-  return existingDaysSql(table, column, ["day"], filter);
-}
 
 const HOT_QUERIES: HotQuery[] = [
   {
@@ -241,10 +233,10 @@ const HOT_QUERIES: HotQuery[] = [
   },
   {
     name: "flightDates",
-    sql: oneDaySql("airport_flights", "scheduled_at", "direction = 'departure'"),
+    sql: dayExistsSql("airport_flights", "scheduled_at", "direction = 'departure'"),
     binds: [pickerDays[0], pickerDays[0], shiftKstDay(pickerDays[0], 1)],
     repeatBinds: pickerDays.map((day) => [day, day, shiftKstDay(day, 1)]),
-    guard: `existingDaysSql("airport_flights", "scheduled_at", pickerDays, "direction = 'departure'")`,
+    guard: `probeDays("airport_flights", "scheduled_at", "direction = 'departure'")`,
     table: null,
   },
   {
@@ -257,10 +249,10 @@ const HOT_QUERIES: HotQuery[] = [
   },
   {
     name: "observedDates",
-    sql: oneDaySql("seoul_realtime_area", "observed_at"),
+    sql: dayExistsSql("seoul_realtime_area", "observed_at"),
     binds: [pickerDays[0], pickerDays[0], shiftKstDay(pickerDays[0], 1)],
     repeatBinds: pickerDays.map((day) => [day, day, shiftKstDay(day, 1)]),
-    guard: `existingDaysSql("seoul_realtime_area", "observed_at", pickerDays)`,
+    guard: `probeDays("seoul_realtime_area", "observed_at")`,
     table: null,
   },
 ];
