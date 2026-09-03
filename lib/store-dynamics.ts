@@ -234,6 +234,9 @@ function verifyPublishedRate(count: number, total: number, rate: { value: number
   const scale = 10 ** rate.decimalPlaces;
   const expected = Math.round(exact * scale) / scale;
   if (Math.abs(rate.value - expected) > Number.EPSILON * Math.max(1, scale)) {
+    // TEMP diagnostic (no secrets, business counts only): capture the real
+    // official values so the mismatch can be root-caused, then remove.
+    console.error(`store_dynamics_rate_formula_diagnostic count=${count} total=${total} publishedRate=${rate.value} decimalPlaces=${rate.decimalPlaces} expectedRate=${expected}`);
     fail("store_dynamics_rate_formula");
   }
 }
