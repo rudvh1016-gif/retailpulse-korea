@@ -49,6 +49,15 @@ export const sources = [
     params: { pageNo: "1", numOfRows: "12", dataType: "JSON", base_date: kstDate(-1), base_time: "2300", nx: "60", ny: "127" },
   },
   {
+    // Airport Retail A2 — 인천국제공항공사_여객터미널 시설정보 현황 (data.go.kr 15095064).
+    // The official operation name really is spelled "getFacilitesInfo".
+    // Bounded contract probe only: five Korean rows, nothing persisted.
+    sourceId: "A2_facility_directory",
+    endpoint: "https://apis.data.go.kr/B551177/FacilitiesInformation/getFacilitesInfo",
+    successCode: "00",
+    params: { pageNo: "1", numOfRows: "5", type: "json", lang: "K" },
+  },
+  {
     sourceId: "T1_tourapi_festival",
     endpoint: "https://apis.data.go.kr/B551011/KorService2/searchFestival2",
     successCode: "0000",

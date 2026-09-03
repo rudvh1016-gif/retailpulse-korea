@@ -524,6 +524,7 @@ const airportTodayText = {
   // coverage line, which would blame gate data that was never collected.
   noFlightsToday: { ko: "오늘 출발편 데이터가 아직 수집되지 않았습니다. 06:07 / 10:07 KST 수집 후 표시됩니다.", en: "Today's departures have not been collected yet. They appear after the 06:07 / 10:07 KST collection.", zh: "今日出发航班数据尚未采集，将在 06:07 / 10:07 KST 采集后显示。", ja: "本日の出発便データはまだ収集されていません。06:07 / 10:07 KST の収集後に表示されます。" },
   noFlightsForDate: { ko: "이 날짜의 출발편 데이터가 없습니다.", en: "No departure data is stored for this date.", zh: "该日期没有出发航班数据。", ja: "この日付の出発便データはありません。" },
+  airlinesJump: { ko: "오늘 출발편 기준 항공사·국적 분포 보기", en: "See today's airline and country breakdown", zh: "查看今日出发航班的航空公司·国籍分布", ja: "本日の出発便の航空会社・国籍分布を見る" },
   airlinesTitle: { ko: "항공사별 운항 순위", en: "Airlines by departures", zh: "航空公司出发航班排名", ja: "航空会社別運航ランキング" },
   airlinesNote: { ko: "오늘 실제 출발편을 운항 항공사 기준으로 집계한 순위입니다. 공동운항편은 운항사 1편으로만 셉니다.", en: "Today's physical departures counted by operating airline. A codeshare counts once, for its operator.", zh: "按实际执飞航空公司统计的今日出发航班排名，共享航班仅按执飞方计 1 班。", ja: "本日の実運航出発便を運航会社ごとに集計した順位です。コードシェア便は運航会社の1便としてのみ数えます。" },
   airlineRankHead: { ko: "순위 · 항공사 · 국적 · 출발편", en: "Rank · Airline · Country · Departures", zh: "排名 · 航空公司 · 国籍 · 出发航班", ja: "順位 · 航空会社 · 国籍 · 出発便" },
@@ -1087,6 +1088,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
           <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}</b>
         </li>)}
       </ol> : <p className="airport-empty-line">{flightsCount === null ? noFlightsText : airportTodayText.noGateList[lang]}</p>}
+      <p className="airport-detail-foot"><a className="airport-jump-link" href="#airport-airlines-title">{airportTodayText.airlinesJump[lang]} ↓</a></p>
     </section>
 
     <section className="airport-detail-section airport-airlines" aria-labelledby="airport-airlines-title">

@@ -43,3 +43,7 @@ yarn-error.log*
 measure-d1-read-plans.db
 d1-plan-*.db
 tests/.d1-plan-*.db
+
+# Production visual check outputs
+production-visual-report/
+production-visual-results/
