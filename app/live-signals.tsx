@@ -1150,6 +1150,9 @@ function formatShare(share: number): string {
 /* ── A2 · Official passenger-terminal facility directory ─────────────── */
 
 type FacilityRow = {
+  /** A3: how firmly the location is known, and the zones the official text proved. */
+  mappingMethod?: "OFFICIAL_DIRECT" | "OFFICIAL_MAP_REVIEW" | "AMBIGUOUS";
+  gate?: string | null; gateGroup?: string | null; checkpointId?: string | null;
   facilityId: string; nameKo: string | null; nameEn: string | null; nameZh: string | null; nameJa: string | null;
   facilityItem: string | null; largeCategory: string | null; mediumCategory: string | null; smallCategory: string | null;
   categoryGroup: string; terminal: string | null; floor: string | null; dutyArea: string | null;
@@ -1196,6 +1199,16 @@ const facilityText = {
   more: { ko: "더 보기", en: "Show more", zh: "查看更多", ja: "もっと見る" },
   count: { ko: (n: number) => `${n}곳 표시`, en: (n: number) => `${n} shown`, zh: (n: number) => `显示 ${n} 处`, ja: (n: number) => `${n}件を表示` },
   unknown: { ko: "확인 불가", en: "Unavailable", zh: "暂无法确认", ja: "確認不可" },
+  locationVerified: { ko: "위치 확인됨", en: "Location verified", zh: "位置已确认", ja: "位置確認済み" },
+  locationAmbiguous: { ko: "정확한 위치 미확인", en: "Exact location unconfirmed", zh: "确切位置未确认", ja: "正確な位置は未確認" },
+  nearGate: { ko: "게이트", en: "Gate", zh: "登机口", ja: "ゲート" },
+  nearCheckpoint: { ko: "출국장", en: "Checkpoint", zh: "出境区", ja: "出国場" },
+  mappingBasis: {
+    ko: "게이트·출국장은 공식 위치 표기에 직접 적혀 있는 경우에만 표시합니다",
+    en: "A gate or checkpoint is shown only where the official location text itself names one",
+    zh: "仅在官方位置说明本身写明登机口或出境区时显示",
+    ja: "ゲート・出国場は公式の位置表記に直接記載されている場合のみ表示します",
+  },
   source: {
     ko: "출처: 인천국제공항공사 여객터미널 시설정보 현황 (공공데이터포털 15095064)",
     en: "Source: Incheon International Airport Corporation passenger-terminal facility information (Public Data Portal 15095064)",
@@ -1213,6 +1226,29 @@ function facilityName(row: FacilityRow, lang: Lang): string {
       : lang === "zh" ? [row.nameZh, row.nameKo]
         : [row.nameKo, row.nameEn];
   return preferred.find((value): value is string => Boolean(value)) ?? facilityText.unknown[lang];
+}
+
+/**
+ * A3 location status, stated on every card.
+ *
+ * A facility whose official location text names a gate says so and shows it.
+ * A facility whose text does not is told plainly that its exact position is
+ * unconfirmed — it keeps the terminal, floor and area the provider published,
+ * and is never given a nearby gate. Uncertainty is shown, not hidden: a shop
+ * with no proven position must never look like one with a proven position.
+ */
+function FacilityLocationStatus({ row, lang }: { row: FacilityRow; lang: Lang }) {
+  if (!row.mappingMethod) return null;
+  const verified = row.mappingMethod !== "AMBIGUOUS";
+  const zones = verified ? [
+    row.gate ? `${facilityText.nearGate[lang]} ${row.gate}` : null,
+    row.gateGroup ? `${facilityText.nearGate[lang]} ${row.gateGroup}` : null,
+    row.checkpointId ? `${facilityText.nearCheckpoint[lang]} ${row.checkpointId}` : null,
+  ].filter(Boolean) : [];
+  return <p className={`facility-location-status${verified ? " verified" : ""}`}>
+    <span>{verified ? facilityText.locationVerified[lang] : facilityText.locationAmbiguous[lang]}</span>
+    {zones.map((zone) => <span key={zone}>{zone}</span>)}
+  </p>;
 }
 
 /**
@@ -1323,10 +1359,12 @@ export function FacilityDirectory({ lang, terminal }: { lang: Lang; terminal: "a
               {row.goodsBrands && <div><dt>{facilityText.brands[lang]}</dt><dd>{row.goodsBrands}</dd></div>}
               {row.phone && <div><dt>{facilityText.phone[lang]}</dt><dd>{row.phone}</dd></div>}
             </dl>
+            <FacilityLocationStatus row={row} lang={lang} />
           </li>)}
         </ul>}
 
     {state?.hasMore && <button type="button" className="event-list-toggle" onClick={() => setLimit((value) => Math.min(120, value + 60))}>{facilityText.more[lang]}</button>}
+    <p className="airport-detail-foot">{facilityText.mappingBasis[lang]}</p>
     <p className="airport-detail-foot">{facilityText.source[lang]}</p>
   </section>;
 }
