@@ -1094,7 +1094,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
       {ranking && ranking.airlines.length ? <>
         <ol className="airport-gate-list airport-airline-list">
           <li className="airport-gate-head" aria-hidden="true"><span>#</span><strong>{airportTodayText.airlineRankHead[lang]}</strong></li>
-          {ranking.airlines.map((row, index) => <li className="airport-gate-row airport-airline-row" key={row.iata ?? `label-${row.providerName ?? index}`}>
+          {ranking.airlines.map((row, index) => <li className="airport-rank-row airport-airline-row" key={row.iata ?? `label-${row.providerName ?? index}`}>
             <span>{String(index + 1).padStart(2, "0")}</span>
             <strong>{row.iata ? <i>{row.iata}</i> : null}{airlineDisplayName(row, lang)}<em>{row.country ? regionName(row.country, lang) : airportTodayText.countryUnverified[lang]}</em></strong>
             <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}<small>{formatShare(row.share)}</small></b>
@@ -1103,7 +1103,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         <h4 className="airport-subhead">{airportTodayText.countriesTitle[lang]}</h4>
         <ol className="airport-gate-list airport-country-list">
           <li className="airport-gate-head" aria-hidden="true"><span>#</span><strong>{airportTodayText.countryRankHead[lang]}</strong></li>
-          {ranking.countries.map((row, index) => <li className="airport-gate-row airport-country-row" key={row.country ?? "unverified"}>
+          {ranking.countries.map((row, index) => <li className="airport-rank-row airport-country-row" key={row.country ?? "unverified"}>
             <span>{String(index + 1).padStart(2, "0")}</span>
             <strong>{row.country ? <i>{row.country}</i> : null}{row.country ? regionName(row.country, lang) : airportTodayText.countryUnverified[lang]}<em>{row.airlines.toLocaleString(numberLocale)}{airportTodayText.airlinesUnit[lang]}</em></strong>
             <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}<small>{formatShare(row.share)}</small></b>

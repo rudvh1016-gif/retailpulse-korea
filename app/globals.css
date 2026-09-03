@@ -750,11 +750,11 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .airport-gate-list { margin: 14px 0 0; padding: 0; list-style: none; }
 .airport-gate-head { display: grid; grid-template-columns: 30px 1fr; gap: 12px; padding: 0 0 7px; border-bottom: 1px solid var(--line); }
 .airport-gate-head span, .airport-gate-head strong { color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .08em; text-transform: uppercase; }
-.airport-gate-row { display: grid; grid-template-columns: 30px 1fr auto; align-items: baseline; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
-.airport-gate-row > span { color: var(--muted); font-size: 11px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
-.airport-gate-row strong { font-size: 14px; font-weight: var(--weight-strong); letter-spacing: -.01em; }
-.airport-gate-row strong i { display: inline-block; margin-right: 7px; color: var(--muted); font-style: normal; font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .05em; }
-.airport-gate-row b { font-size: 14px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
+.airport-gate-row, .airport-rank-row { display: grid; grid-template-columns: 30px 1fr auto; align-items: baseline; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.airport-gate-row > span, .airport-rank-row > span { color: var(--muted); font-size: 11px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
+.airport-gate-row strong, .airport-rank-row strong { font-size: 14px; font-weight: var(--weight-strong); letter-spacing: -.01em; }
+.airport-gate-row strong i, .airport-rank-row strong i { display: inline-block; margin-right: 7px; color: var(--muted); font-style: normal; font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .05em; }
+.airport-gate-row b, .airport-rank-row b { font-size: 14px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
 .airport-airline-row strong, .airport-country-row strong { min-width: 0; overflow-wrap: anywhere; }
 .airport-airline-row strong em, .airport-country-row strong em { display: block; margin-top: 3px; color: var(--muted); font-style: normal; font-size: 11px; font-weight: var(--weight-regular); letter-spacing: 0; }
 .airport-airline-row b, .airport-country-row b { text-align: right; }
