@@ -287,9 +287,45 @@ export function normalizeStoreDynamicsRow(
   const ordinaryStoreCount = requireCount(record.STOR_CO);
   const franchiseStoreCount = requireCount(record.FRC_STOR_CO);
   const openingCount = requireCount(record.OPBIZ_STOR_CO);
-  const openingRate = requireRate(record.OPBIZ_RT);
+  let openingRate: { value: number; decimalPlaces: number };
+  try {
+    openingRate = requireRate(record.OPBIZ_RT);
+  } catch (error) {
+    console.error(
+      "store_dynamics_rate_range_diagnostic",
+      JSON.stringify({
+        field: "OPBIZ_RT",
+        raw: record.OPBIZ_RT,
+        rawType: typeof record.OPBIZ_RT,
+        area: expected.area,
+        industryCode: record.SVC_INDUTY_CD,
+        totalStoreCount: record.SIMILR_INDUTY_STOR_CO,
+        openingCount: record.OPBIZ_STOR_CO,
+        error: error instanceof Error ? error.message : String(error),
+      }),
+    );
+    throw error;
+  }
   const closureCount = requireCount(record.CLSBIZ_STOR_CO);
-  const closureRate = requireRate(record.CLSBIZ_RT);
+  let closureRate: { value: number; decimalPlaces: number };
+  try {
+    closureRate = requireRate(record.CLSBIZ_RT);
+  } catch (error) {
+    console.error(
+      "store_dynamics_rate_range_diagnostic",
+      JSON.stringify({
+        field: "CLSBIZ_RT",
+        raw: record.CLSBIZ_RT,
+        rawType: typeof record.CLSBIZ_RT,
+        area: expected.area,
+        industryCode: record.SVC_INDUTY_CD,
+        totalStoreCount: record.SIMILR_INDUTY_STOR_CO,
+        closureCount: record.CLSBIZ_STOR_CO,
+        error: error instanceof Error ? error.message : String(error),
+      }),
+    );
+    throw error;
+  }
 
   if (totalStoreCount !== ordinaryStoreCount + franchiseStoreCount) {
     fail("store_dynamics_total_breakdown");
