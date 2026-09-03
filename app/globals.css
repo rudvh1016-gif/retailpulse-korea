@@ -193,11 +193,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .industry-tabs button:hover { color: var(--ink); }
 .industry-tabs button.active { color: var(--ink); font-weight: var(--weight-strong); }
 .industry-tabs button.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--blue); }
-.business-pro { min-height: 250px; margin-top: 74px; padding: 36px; display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; background: var(--blue); color: white; }
-.business-pro .eyebrow { color: #bec7ff; }
+/* Pure-white rule: no large decorative colour panel. The promo block is
+   white paper with a top rule; blue lives only in the eyebrow and button. */
+.business-pro { min-height: 250px; margin-top: 74px; padding: 36px 0; display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--line); background-color: #FFFFFF; color: var(--ink); }
+.business-pro .eyebrow { color: var(--blue); }
 .business-pro h2 { max-width: 720px; margin: 24px 0 0; font-size: clamp(32px, 4.5vw, 58px); line-height: 1; letter-spacing: -.065em; }
-.business-pro p:not(.eyebrow) { color: #ccd3ff; font-size: 12px; }
-.business-pro button { padding: 13px 17px; border: 1px solid rgba(255,255,255,.55); border-radius: 3px; background: transparent; color: white; font-size: 11px; font-weight: var(--weight-strong); white-space: nowrap; }
+.business-pro p:not(.eyebrow) { color: var(--muted); font-size: 12px; }
+.business-pro button { padding: 13px 17px; border: 1px solid var(--blue); border-radius: 3px; background-color: #FFFFFF; color: var(--blue); font-size: 11px; font-weight: var(--weight-strong); white-space: nowrap; }
 .business-history { padding-top: 44px; }
 .business-history > .section-head { margin-top: 42px; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -229,7 +231,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 nav.bottom-nav { display: none; }
 .page-shell { padding-bottom: 72px; }
 }
-.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; min-height: 68px; padding: 0 max(20px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(20px, env(safe-area-inset-left)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--line); background: rgba(255,255,255,.96); backdrop-filter: blur(16px); }
+.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; min-height: 68px; padding: 0 max(20px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(20px, env(safe-area-inset-left)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--line); background-color: #FFFFFF; }
 .bottom-nav button, .bottom-nav a { position: relative; min-height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border: 0; background: transparent; color: #8b8a86; text-decoration: none; }
 .bottom-nav button.active, .bottom-nav a.active { color: var(--ink); }
 .bottom-nav button.active::before, .bottom-nav a.active::before { content: ""; position: absolute; top: -1px; width: 32px; height: 2px; background: var(--blue); }
@@ -482,7 +484,7 @@ nav.bottom-nav { display: none; }
 /* V5.5 information architecture: summary first, explanation second, detail on demand. */
 .section-intro { max-width: 760px; margin: 18px 0 25px; color: var(--muted); font-size: 13px; line-height: 1.7; }
 
-.airport-context-nav { position: sticky; top: 0; z-index: 12; min-height: 58px; display: flex; align-items: stretch; gap: 30px; overflow-x: auto; border-bottom: 1px solid var(--ink); background: rgba(255,255,255,.96); backdrop-filter: blur(12px); }
+.airport-context-nav { position: sticky; top: 0; z-index: 12; min-height: 58px; display: flex; align-items: stretch; gap: 30px; overflow-x: auto; border-bottom: 1px solid var(--ink); background-color: #FFFFFF; }
 .airport-context-nav { scrollbar-width: none; }
 .airport-context-nav::-webkit-scrollbar { display: none; }
 .airport-context-nav button { position: relative; flex: 0 0 auto; min-height: 58px; padding: 0; border: 0; background: transparent; color: #858585; font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .07em; }
@@ -760,6 +762,8 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .airport-airline-row strong em, .airport-country-row strong em { display: block; margin-top: 3px; color: var(--muted); font-style: normal; font-size: 11px; font-weight: var(--weight-regular); letter-spacing: 0; }
 .airport-airline-row b, .airport-country-row b { text-align: right; }
 .airport-airline-row b small, .airport-country-row b small { display: block; color: var(--muted); font-size: 10px; font-weight: var(--weight-regular); }
+.airport-jump-link { color: var(--blue); font-weight: var(--weight-strong); text-decoration: none; }
+.airport-jump-link:hover { text-decoration: underline; }
 .airport-subhead { margin: 30px 0 0; color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .08em; text-transform: uppercase; }
 .airport-checkpoint-terminal article b i, .airport-checkpoint-terminal article p i { display: block; margin-bottom: 2px; color: var(--muted); font-style: normal; font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .06em; text-transform: uppercase; }
 
