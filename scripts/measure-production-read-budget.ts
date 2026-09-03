@@ -47,7 +47,10 @@ const CEILING = Number(process.env.RPK_READ_BUDGET_CEILING ?? 100_000);
 if (!Number.isFinite(CEILING) || CEILING <= 0) throw new Error("invalid_read_budget_ceiling");
 
 const ROUTE_PATH = new URL("../app/api/live/summary/route.ts", import.meta.url);
-const routeSource = readFileSync(ROUTE_PATH, "utf8");
+// Both public read paths are guarded: the summary route and the A2 facility
+// directory endpoint, which is measured here too even though it is separate.
+const FACILITY_ROUTE_PATH = new URL("../app/api/airport/facilities/route.ts", import.meta.url);
+const routeSource = `${readFileSync(ROUTE_PATH, "utf8")}\n${readFileSync(FACILITY_ROUTE_PATH, "utf8")}`;
 
 const AREAS = ["myeongdong", "hongdae", "seongsu"] as const;
 const CONGESTION_TERMINALS = ["T1", "T2"] as const;
@@ -327,6 +330,29 @@ const HOT_QUERIES: HotQuery[] = [
     table: "airport_scheduled_flights",
   },
   {
+    // A2 facility directory. Not part of the summary — it is its own
+    // endpoint — but it is a public read path, so its cost is measured here
+    // too. Both shapes carry a leading equality and must seek an index.
+    name: "facilitiesTerminalCategory",
+    sql: `SELECT facility_id AS facilityId, name_ko AS nameKo, category_group AS categoryGroup, terminal, floor
+      FROM airport_facility
+      WHERE terminal = ? AND category_group = ?
+      ORDER BY name_ko LIMIT 61 OFFSET 0`,
+    binds: ["T1", "DUTY_FREE"],
+    guard: "FROM airport_facility\n      WHERE ${where.join(\" AND \")}",
+    table: "airport_facility",
+  },
+  {
+    name: "facilitiesCategoryOnly",
+    sql: `SELECT facility_id AS facilityId, name_ko AS nameKo, category_group AS categoryGroup, terminal, floor
+      FROM airport_facility
+      WHERE category_group = ?
+      ORDER BY name_ko LIMIT 61 OFFSET 0`,
+    binds: ["PHARMACY"],
+    guard: "ORDER BY name_ko LIMIT ? OFFSET ?",
+    table: "airport_facility",
+  },
+  {
     name: "flightDates",
     sql: dayExistsSql("airport_flights", "scheduled_at", "direction = 'departure'"),
     binds: [pickerDays[0], pickerDays[0], shiftKstDay(pickerDays[0], 1)],
@@ -372,6 +398,8 @@ const EXPECTED_INDEXES = [
   "seoul_store_dynamics_unique",
   "airport_congestion_terminal_observed_idx",
   "airport_passenger_forecast_target_idx",
+  "airport_facility_terminal_category_idx",
+  "airport_facility_category_terminal_idx",
   "airport_flights_direction_scheduled_idx",
 ];
 

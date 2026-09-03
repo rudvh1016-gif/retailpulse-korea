@@ -854,3 +854,42 @@ test("the current-time marker appears on today's chart only", async ({ page }) =
     await expect(page.locator(".airport-timeline-bars p.now")).toHaveCount(0);
   }
 });
+
+test("the facility directory browses official stores and never claims a store is open now", async ({ page }) => {
+  const facilities = [
+    { facilityId: "1", nameKo: "신라면세점", nameEn: "Shilla Duty Free", nameZh: "新罗免税店", nameJa: "新羅免税店", facilityItem: "화장품", largeCategory: "면세점", mediumCategory: "화장품", smallCategory: "향수", categoryGroup: "DUTY_FREE", terminal: "T1", floor: "3층", dutyArea: "DUTY_FREE", arrivalDeparture: "DEPARTURE", locationRaw: "제1여객터미널 3층 면세지역 27번 게이트 부근", locationEn: "T1 3F airside near Gate 27", businessHoursRaw: "07:00~21:00", goodsBrands: "화장품/향수", phone: "032-000-0000", retrievedAt: "2026-09-03T00:00:00.000Z" },
+    { facilityId: "2", nameKo: "온누리약국", nameEn: "Onnuri Pharmacy", nameZh: null, nameJa: null, facilityItem: "의약품", largeCategory: "약국", mediumCategory: null, smallCategory: null, categoryGroup: "PHARMACY", terminal: "T1", floor: "1층", dutyArea: "GENERAL", arrivalDeparture: "ARRIVAL", locationRaw: "제1여객터미널 1층 입국장", locationEn: null, businessHoursRaw: null, goodsBrands: null, phone: null, retrievedAt: "2026-09-03T00:00:00.000Z" },
+  ];
+  await page.route("**/api/airport/facilities*", async (route) => {
+    const url = new URL(route.request().url());
+    const category = url.searchParams.get("category");
+    const rows = category ? facilities.filter((row) => row.categoryGroup === category) : facilities;
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify({ mode: "airport-facilities", facilities: rows, hasMore: false, basis: "OFFICIAL_PUBLISHED_HOURS" }) });
+  });
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.goto("/ko/airport");
+  // The tab only switches once React has taken over the server-rendered page.
+  await expect(page.locator(".app[data-hydrated='true']")).toBeVisible();
+  await page.locator(".airport-context-nav button").filter({ hasText: "매장·시설" }).click();
+  const directory = page.locator(".airport-facilities");
+  await expect(directory).toBeVisible();
+  await expect(directory.locator(".facility-card")).toHaveCount(1);
+  await expect(directory.locator(".facility-card").first()).toContainText("신라면세점");
+  await expect(directory.locator(".facility-card").first()).toContainText("제1여객터미널 3층 면세지역 27번 게이트 부근");
+  await expect(directory.locator(".facility-card").first()).toContainText("07:00~21:00");
+  // Published hours, never a real-time "open now" claim.
+  await expect(directory).toContainText("공식 영업시간 기준");
+  await expect(directory).not.toContainText(/지금 영업|영업 중|OPEN NOW/i);
+  await expect(directory).toContainText("15095064");
+  // Switching category re-queries and a facility with no published hours says so.
+  await directory.locator(".facility-filter-row button").filter({ hasText: "약국" }).click();
+  await expect(directory.locator(".facility-card")).toHaveCount(1);
+  await expect(directory.locator(".facility-card").first()).toContainText("온누리약국");
+  await expect(directory.locator(".facility-card").first()).toContainText("확인 불가");
+  // English readers get the official English name and location.
+  await page.goto("/en/airport");
+  await expect(page.locator(".app[data-hydrated='true']")).toBeVisible();
+  await page.locator(".airport-context-nav button").filter({ hasText: "STORES" }).click();
+  await expect(page.locator(".facility-card").first()).toContainText("Shilla Duty Free");
+  await expect(page.locator(".facility-card").first()).toContainText("T1 3F airside near Gate 27");
+});

@@ -627,6 +627,8 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .signal-row-value { font-size: 15px; }
 .signal-row-source, .commercial-attribution, .store-dynamics-source, .store-dynamics-limitation { font-size: 11px; }
 .commercial-metrics > div, .commercial-times > div { padding: 11px 0; }
+.facility-details { grid-template-columns: 1fr; }
+.facility-filter-row { gap: 0 16px; }
 .store-dynamics-counts, .store-dynamics-changes, .store-dynamics-context { grid-template-columns: 1fr; }
 .store-dynamics-counts > div, .store-dynamics-changes > div, .store-dynamics-context > div { padding: 12px 0; }
 .event-panel-head { display: flex; align-items: start; flex-direction: column; gap: 8px; }
@@ -762,6 +764,28 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .airport-airline-row strong em, .airport-country-row strong em { display: block; margin-top: 3px; color: var(--muted); font-style: normal; font-size: 11px; font-weight: var(--weight-regular); letter-spacing: 0; }
 .airport-airline-row b, .airport-country-row b { text-align: right; }
 .airport-airline-row b small, .airport-country-row b small { display: block; color: var(--muted); font-size: 10px; font-weight: var(--weight-regular); }
+/* A2 facility directory. Same white-paper grammar as the rest of the page:
+   thin rules, no filled panels, blue only on the active filter. */
+.airport-facilities { margin-top: 34px; }
+.facility-filters { margin-top: 18px; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--line); }
+.facility-filter-row { display: flex; flex-wrap: wrap; gap: 0 22px; padding: 4px 0; border-bottom: 1px solid var(--line); }
+.facility-filter-row:last-of-type { border-bottom: 0; }
+.facility-filter-row button { position: relative; min-height: 42px; padding: 0; border: 0; background-color: #FFFFFF; color: var(--muted); font-size: 11px; font-weight: var(--weight-strong); letter-spacing: -.005em; white-space: nowrap; }
+.facility-filter-row button:hover { color: var(--ink); }
+.facility-filter-row button.active { color: var(--ink); }
+.facility-filter-row button.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: 6px; height: 2px; background: var(--blue); }
+.facility-search { display: block; padding: 10px 0; border-top: 1px solid var(--line); }
+.facility-search input { width: 100%; min-height: 42px; padding: 0; border: 0; background-color: #FFFFFF; color: var(--ink); font-size: 13px; }
+.facility-search input::placeholder { color: var(--muted); }
+.facility-list { margin: 0; padding: 0; list-style: none; }
+.facility-card { padding: 18px 0; border-bottom: 1px solid var(--line); background-color: #FFFFFF; }
+.facility-card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 18px; }
+.facility-card h3 { margin: 0; font-size: 15px; font-weight: var(--weight-strong); letter-spacing: -.015em; overflow-wrap: anywhere; }
+.facility-badges { display: flex; flex-wrap: wrap; gap: 0 12px; margin: 0; color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .04em; }
+.facility-details { margin: 10px 0 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 26px; }
+.facility-details > div { min-width: 0; }
+.facility-details dt { color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .04em; }
+.facility-details dd { margin: 4px 0 0; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
 .airport-jump-link { color: var(--blue); font-weight: var(--weight-strong); text-decoration: none; }
 .airport-jump-link:hover { text-decoration: underline; }
 .airport-subhead { margin: 30px 0 0; color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .08em; text-transform: uppercase; }

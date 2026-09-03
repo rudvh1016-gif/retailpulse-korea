@@ -98,7 +98,7 @@ function uniqueCollectorStartedAt(): string {
   return new Date(timestamp).toISOString();
 }
 
-async function writeCollectorStatus(
+export async function writeCollectorStatus(
   db: D1Database | undefined,
   sourceId: string,
   status: string,
@@ -120,7 +120,7 @@ interface HealthSnapshot {
   schemaVersion: string;
 }
 
-async function writeSourceHealth(
+export async function writeSourceHealth(
   db: D1Database | undefined,
   sourceId: string,
   status: SourceHealthStatus,

@@ -287,6 +287,42 @@ export const airportPassengerForecast = sqliteTable("airport_passenger_forecast"
   ),
 ]);
 
+// A2 — official passenger-terminal facility directory (인천국제공항공사
+// 여객터미널 시설정보 현황, data.go.kr 15095064). Reference data, not an
+// event stream: one row per official `sn`, with the four official language
+// names side by side. `category_group` is KORETAIL's own grouping of the
+// provider's category strings, which are kept beside it unchanged.
+export const airportFacility = sqliteTable("airport_facility", {
+  facilityId: text("facility_id").primaryKey(),
+  sourceId: text("source_id").notNull(),
+  nameKo: text("name_ko"),
+  nameEn: text("name_en"),
+  nameZh: text("name_zh"),
+  nameJa: text("name_ja"),
+  facilityItem: text("facility_item"),
+  largeCategory: text("large_category"),
+  mediumCategory: text("medium_category"),
+  smallCategory: text("small_category"),
+  categoryGroup: text("category_group").notNull(),
+  terminalCode: text("terminal_code"),
+  terminal: text("terminal"),
+  floor: text("floor"),
+  dutyArea: text("duty_area"),
+  arrivalDeparture: text("arrival_departure"),
+  locationRaw: text("location_raw"),
+  locationEn: text("location_en"),
+  businessHoursRaw: text("business_hours_raw"),
+  goodsBrands: text("goods_brands"),
+  phone: text("phone"),
+  retrievedAt: text("retrieved_at").notNull(),
+  schemaVersion: text("schema_version").notNull(),
+  qualityStatus: text("quality_status").notNull(),
+  sourceHash: text("source_hash").notNull(),
+}, (table) => [
+  index("airport_facility_terminal_category_idx").on(table.terminal, table.categoryGroup, table.nameKo),
+  index("airport_facility_category_terminal_idx").on(table.categoryGroup, table.terminal, table.nameKo),
+]);
+
 export const foreignPresence = sqliteTable("foreign_presence", {
   id: text("id").primaryKey(),
   sourceId: text("source_id").notNull(),

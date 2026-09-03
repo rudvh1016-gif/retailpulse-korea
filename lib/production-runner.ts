@@ -10,6 +10,7 @@
  * Source name -> KORETAIL internal source mapping:
  *   airport_recent              A1     collectAirportFlightsToday (verified D-3..today scan)
  *   airport_enrichment          A2     collectAirportFlightEnrichment
+ *   airport_facilities          A2-F   collectAirportFacilities (terminal facility directory)
  *   airport_scheduled           A3     collectScheduledAirportFlights
  *   airport_congestion          A4-T1  collectAirportCongestion
  *   airport_congestion_t2       A4-T2  collectAirportCongestionT2
@@ -30,6 +31,7 @@
  * See lib/collection-recovery.ts for why the repair is a second short window
  * instead of a longer retry loop inside the primary job.
  */
+import { collectAirportFacilities } from "./airport-facilities";
 import { collectAirportFlightsToday, hasCompleteA1RecentHistoryToday, kstDate } from "./airport-today";
 import {
   collectAirportCongestion,
@@ -89,6 +91,21 @@ const DEFAULT_RUNNERS = {
     return collectAirportFlightsToday(env, now);
   },
   airport_enrichment: (env: CollectorEnv) => collectAirportFlightEnrichment(env),
+  /**
+   * A2 facility directory. Reference data that changes slowly, so the
+   * collector itself skips without a provider request when a successful run
+   * is recent enough; a daily selection therefore costs nothing on most days.
+   */
+  airport_facilities: async (env: CollectorEnv, now: Date): Promise<ProductionSourceOutcome> => {
+    const result = await collectAirportFacilities(env, now);
+    return {
+      status: result.status,
+      records: result.records,
+      detail: result.detail,
+      providerRequests: result.providerRequests ?? 0,
+      lastGoodPreserved: true,
+    };
+  },
   airport_scheduled: (env: CollectorEnv) => collectScheduledAirportFlights(env),
   airport_congestion: (env: CollectorEnv) => collectAirportCongestion(env),
   airport_congestion_t2: (env: CollectorEnv) => collectAirportCongestionT2(env),

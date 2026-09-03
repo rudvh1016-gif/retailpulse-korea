@@ -60,6 +60,7 @@ const probe = (table, column, filter) => Array.from({ length: 21 }, () =>
   `SELECT ? AS day WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${filter ? `${filter} AND ` : ""}${column} >= ? AND ${column} < ?)`).join(" UNION ALL ");
 const exactDayProbe = (table, column, filter) =>
   `SELECT ? AS day WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${filter ? `${filter} AND ` : ""}${column} = ?)`;
+const FACILITY_SELECT = `SELECT facility_id, name_ko, name_en, category_group, terminal, floor, duty_area, arrival_departure, location_raw, business_hours_raw FROM airport_facility`;
 const probeBinds = () => Array.from({ length: 21 }, (_, i) => [`2026-08-${10 + i}`, `2026-08-${10 + i}`, `2026-08-${11 + i}`]).flat();
 
 const HOT_QUERIES = {
@@ -78,6 +79,13 @@ const HOT_QUERIES = {
   "summary.availableFlightDates": [probe("airport_flights", "scheduled_at", "direction = 'departure'"), probeBinds()],
   "summary.availableForecastDates": [exactDayProbe("airport_passenger_forecast", "target_date", "direction = 'departure' AND is_aggregate = 1"), ["2026-08-31", "2026-08-31"]],
   "summary.availableRealtimeDates": [probe("seoul_realtime_area", "observed_at", ""), probeBinds()],
+  // A2 facility directory. The endpoint always carries a leading equality on
+  // terminal or category_group (it defaults the terminal when the caller
+  // gives neither), so every shape below seeks an index.
+  "facilities.terminalAndCategory": [`${FACILITY_SELECT} WHERE terminal = ? AND category_group = ? ORDER BY name_ko LIMIT ? OFFSET ?`, ["T1", "DUTY_FREE", 61, 0]],
+  "facilities.terminalOnly": [`${FACILITY_SELECT} WHERE terminal = ? ORDER BY name_ko LIMIT ? OFFSET ?`, ["T2", 61, 0]],
+  "facilities.categoryOnly": [`${FACILITY_SELECT} WHERE category_group = ? ORDER BY name_ko LIMIT ? OFFSET ?`, ["PHARMACY", 61, 0]],
+  "facilities.filteredAndSearched": [`${FACILITY_SELECT} WHERE terminal = ? AND category_group = ? AND floor = ? AND duty_area = ? AND arrival_departure = ? AND (name_ko LIKE ? OR name_en LIKE ? OR goods_brands LIKE ? OR facility_item LIKE ?) ORDER BY name_ko LIMIT ? OFFSET ?`, ["T1", "FOOD", "3층", "DUTY_FREE", "DEPARTURE", "%cafe%", "%cafe%", "%cafe%", "%cafe%", 61, 0]],
 };
 
 test("no hot read-path query scans a growing table", (context) => {
@@ -222,17 +230,21 @@ test("the live summary exposes one compact indexed Store Dynamics row per exact 
  * scripts/measure-production-read-budget.ts replays the hot path against
  * Production D1 and reports each statement's real rows_read. That evidence is
  * only worth anything while its SQL matches the live route, so every measured
- * statement carries a `guard` fragment that has to appear verbatim in
- * app/api/live/summary/route.ts. This test enforces the same contract in CI,
+ * statement carries a `guard` fragment that has to appear verbatim in one of
+ * the two public read paths — the summary route or the A2 facility directory
+ * endpoint. This test enforces the same contract in CI,
  * so a route change that leaves the diagnostic behind fails here rather than
  * producing a confident measurement of a query nobody serves.
  */
 test("every measured hot-path statement still exists in the live route", () => {
   const measureSource = readFileSync("scripts/measure-production-read-budget.ts", "utf8").replace(/\r\n/g, "\n");
-  const routeText = readFileSync("app/api/live/summary/route.ts", "utf8").replace(/\r\n/g, "\n");
+  const routeText = [
+    readFileSync("app/api/live/summary/route.ts", "utf8"),
+    readFileSync("app/api/airport/facilities/route.ts", "utf8"),
+  ].join("\n").replace(/\r\n/g, "\n");
   const guards = [...measureSource.matchAll(/^ {4}guard: (`[^`]*`|"(?:[^"\\]|\\.)*"),$/gm)]
     .map((match) => (match[1].startsWith("`") ? match[1].slice(1, -1) : JSON.parse(match[1])));
-  assert.equal(guards.length, 18, "expected one guard per measured statement");
+  assert.equal(guards.length, 20, "expected one guard per measured statement");
   for (const guard of guards) {
     assert.ok(routeText.includes(guard), `the live route no longer contains: ${guard.slice(0, 80)}`);
   }

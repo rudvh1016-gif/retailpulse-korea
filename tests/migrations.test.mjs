@@ -21,6 +21,7 @@ const migrations = [
   "drizzle/0012_seoul_subway_ridership.sql",
   "drizzle/0013_seoul_store_dynamics.sql",
   "drizzle/0014_tourism_events_window_idx.sql",
+  "drizzle/0015_airport_facility.sql",
 ];
 
 function applyMigrations(database) {
