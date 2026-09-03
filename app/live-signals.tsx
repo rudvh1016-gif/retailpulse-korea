@@ -12,6 +12,7 @@ import {
   type ForecastDayOffset,
 } from "../lib/current-brief";
 import { eventPreview, eventStatusForDate, safeOfficialEventHomepage } from "../lib/event-presentation";
+import { buildTerminalBriefings, type TerminalBriefing } from "../lib/terminal-briefing";
 
 type AreaId = "myeongdong" | "hongdae" | "seongsu";
 
@@ -521,6 +522,38 @@ const airportTodayText = {
   },
 } as const;
 
+/**
+ * Terminal briefing copy. Every label names the KIND of the value beside it
+ * (observed queue, official forecast, counted flights) so a card never reads
+ * as one blended "busyness" number.
+ */
+const terminalBriefText = {
+  title: { ko: "지금 주목할 곳", en: "Where to watch now", zh: "现在值得关注的地方", ja: "いま注目する場所" },
+  intro: {
+    ko: "터미널별로 현재 관측된 대기, 공식 예상 시간대, 집계된 출발편을 각각의 기준으로 나눠 보여줍니다.",
+    en: "Per terminal: the observed queue, the official forecast bands and the counted departures, each on its own basis.",
+    zh: "按航站楼分别显示当前观测等候、官方预计时段与统计出发航班，各自标注口径。",
+    ja: "ターミナル別に、観測された待ち・公式予想時間帯・集計した出発便を、それぞれの基準で分けて示します。",
+  },
+  attentionObserved: { ko: "관측된 대기가 가장 긴 터미널", en: "Longest observed wait", zh: "观测等候最长的航站楼", ja: "観測された待ちが最も長いターミナル" },
+  attentionForecast: { ko: "다음 시간대 공식 예상이 더 많은 터미널", en: "Larger official forecast for the next band", zh: "下一时段官方预计更多的航站楼", ja: "次の時間帯の公式予想が多いターミナル" },
+  noAttention: { ko: "터미널 간 차이가 없어 지목하지 않습니다", en: "No terminal singled out: no difference to report", zh: "航站楼之间无差异，不作指定", ja: "ターミナル間に差がないため指定しません" },
+  queue: { ko: "현재 가장 긴 대기 · 관측", en: "Longest wait now · observed", zh: "当前最长等候 · 观测", ja: "現在最も長い待ち · 観測" },
+  queueCount: { ko: "현재 대기 인원 · 관측", en: "People waiting now · observed", zh: "当前等候人数 · 观测", ja: "現在の待機人数 · 観測" },
+  next: { ko: "다음 시간대 · 공식 예상", en: "Next band · official forecast", zh: "下一时段 · 官方预计", ja: "次の時間帯 · 公式予想" },
+  peak: { ko: "오늘 피크 · 공식 예상", en: "Today's peak · official forecast", zh: "今日高峰 · 官方预计", ja: "本日のピーク · 公式予想" },
+  remaining: { ko: "남은 시간대 합계 · 공식 예상", en: "Rest of day · official forecast", zh: "剩余时段合计 · 官方预计", ja: "残り時間帯の合計 · 公式予想" },
+  flights: { ko: "오늘 출발 운항 · 집계", en: "Departures today · counted", zh: "今日出发航班 · 统计", ja: "本日の出発便 · 集計" },
+  gate: { ko: "가장 몰린 게이트", en: "Busiest gate", zh: "最集中的登机口", ja: "最も集中するゲート" },
+  unavailable: { ko: "확인 불가", en: "Unavailable", zh: "暂无法确认", ja: "確認不可" },
+  limitation: {
+    ko: "대기는 출국장 관측값, 예상은 인천공항 공식 예고, 운항은 실제 편수입니다. 매장 방문객이나 매출을 뜻하지 않습니다.",
+    en: "Waits are departure-hall observations, forecasts are Incheon's official announcements, flights are physical counts. None of this is store footfall or sales.",
+    zh: "等候为出境区观测值，预计为仁川机场官方预告，航班为实际班次。均不代表门店客流或销售额。",
+    ja: "待ちは出国場の観測値、予想は仁川空港の公式予告、運航は実便数です。店舗の来客や売上を意味しません。",
+  },
+} as const;
+
 const areaBriefText = {
   title: { ko: "서울 지금", en: "Seoul now", zh: "首尔当前", ja: "ソウル現在" },
   unavailableNow: { ko: "현재 공식 활동 상태를 확인할 수 없습니다", en: "Current official activity is unavailable", zh: "当前官方活动状态暂不可用", ja: "現在の公式活動状況を確認できません" },
@@ -788,6 +821,87 @@ export function DateScopeNote({ lang, date }: { lang: Lang; date: string | null 
   return <p className="date-scope-note" role="status">{parts.join(" · ")}</p>;
 }
 
+/**
+ * One card per terminal, from the summary the page already holds. Shown in the
+ * all-terminals scope only: a single-terminal scope already focuses the
+ * at-a-glance grid on that terminal, so the cards would repeat it.
+ */
+function TerminalBriefingCards({ lang, airport, nowIso, dayRelation }: {
+  lang: Lang;
+  airport: LiveSummary["airport"];
+  nowIso: string;
+  dayRelation: LiveSummary["dayRelation"];
+}) {
+  const locale = airportLocale(lang);
+  const peopleUnit = { ko: "명", en: " people", zh: "人", ja: "人" }[lang];
+  const flightUnit = { ko: "편", en: " flights", zh: "班", ja: "便" }[lang];
+  const waitUnit = { ko: "분", en: " min", zh: "分钟", ja: "分" }[lang];
+  const terminals = ["T1", "T2"];
+  const set = buildTerminalBriefings({
+    terminals,
+    congestion: airport.congestion ?? [],
+    timelineByTerminal: Object.fromEntries(terminals.map((id) => [id, airport.passengerForecastTimelineByTerminal?.[id] ?? []])),
+    coverageByTerminal: Object.fromEntries(terminals.map((id) => [id, airport.forecastCoverage?.byTerminal?.[id] ?? "UNAVAILABLE"])),
+    peakByTerminal: Object.fromEntries(terminals.map((id) => [id, airport.peakExpectedTimeBandByTerminal?.[id] ?? null])),
+    remainingByTerminal: Object.fromEntries(terminals.map((id) => [id, airport.remainingExpectedPassengersByTerminal?.[id] ?? null])),
+    departuresByTerminal: Object.fromEntries(terminals.map((id) => [id, airport.departuresTrackedTodayByTerminal?.[id] ?? null])),
+    topGateByTerminal: Object.fromEntries(terminals.map((id) => {
+      const gate = airport.topDepartureGateByTerminal?.[id];
+      return [id, gate ? { terminal: id, gate: gate.gate, flights: gate.flights } : null];
+    })),
+    dayRelation,
+    nowIso,
+  });
+  if (!set.terminals.some((row) => row.evidenceTypes.length)) return null;
+  const waitText = (row: TerminalBriefing) => {
+    const checkpoint = row.checkpoint;
+    if (!checkpoint) return null;
+    if (row.checkpointBasis === "WAIT_TIME") {
+      const raw = checkpoint.waitTimeRaw ?? (checkpoint.waitTimeMinutes === null ? null : String(checkpoint.waitTimeMinutes));
+      const wait = raw ? (/분|min|分钟|分/i.test(raw) ? raw : `${raw}${waitUnit}`) : terminalBriefText.unavailable[lang];
+      return { label: terminalBriefText.queue[lang], value: `${friendlyCheckpointName(checkpoint.zone, lang)} · ${wait}` };
+    }
+    if (checkpoint.waitingCount !== null) {
+      return { label: terminalBriefText.queueCount[lang], value: `${friendlyCheckpointName(checkpoint.zone, lang)} · ${checkpoint.waitingCount.toLocaleString(locale)}${peopleUnit}` };
+    }
+    return null;
+  };
+  const bandText = (band: { targetStartAt: string; targetEndAt: string; expectedPassengers: number } | null) => band
+    ? `${formatKstBand(band.targetStartAt, band.targetEndAt).replace(" KST", "")} · ${Math.round(band.expectedPassengers).toLocaleString(locale)}${peopleUnit}`
+    : null;
+  const attention = set.attention
+    ? `${set.attention.terminal} · ${set.attention.basis === "OBSERVED_WAIT" ? terminalBriefText.attentionObserved[lang] : terminalBriefText.attentionForecast[lang]}`
+    : terminalBriefText.noAttention[lang];
+  return <section className="terminal-briefing" data-signal-key="terminal-briefing" aria-labelledby="terminal-briefing-title">
+    <div className="terminal-briefing-head">
+      <div><p className="eyebrow">TERMINAL BRIEFING · OFFICIAL</p><h3 id="terminal-briefing-title">{terminalBriefText.title[lang]}</h3></div>
+      <p>{terminalBriefText.intro[lang]}</p>
+    </div>
+    <p className="terminal-attention" data-attention-terminal={set.attention?.terminal ?? ""}><strong>{attention}</strong></p>
+    <div className="terminal-brief-grid">
+      {set.terminals.map((row) => {
+        const queue = waitText(row);
+        const cells: Array<{ key: string; label: string; value: string }> = [];
+        if (queue) cells.push({ key: "queue", ...queue });
+        const next = bandText(row.nextBand);
+        if (next) cells.push({ key: "next", label: terminalBriefText.next[lang], value: next });
+        const peak = bandText(row.peak);
+        if (peak) cells.push({ key: "peak", label: terminalBriefText.peak[lang], value: peak });
+        if (row.remaining) cells.push({ key: "remaining", label: terminalBriefText.remaining[lang], value: `${Math.round(row.remaining.expectedPassengers).toLocaleString(locale)}${peopleUnit}` });
+        if (row.departures !== null) cells.push({ key: "flights", label: terminalBriefText.flights[lang], value: `${row.departures.toLocaleString(locale)}${flightUnit}` });
+        if (row.topGate) cells.push({ key: "gate", label: terminalBriefText.gate[lang], value: `Gate ${row.topGate.gate} · ${row.topGate.flights.toLocaleString(locale)}${flightUnit}` });
+        return <article key={row.terminal} className={`terminal-brief-card${set.attention?.terminal === row.terminal ? " is-attention" : ""}`} data-terminal={row.terminal}>
+          <h4>{row.terminal}</h4>
+          {cells.length
+            ? <dl>{cells.map((cell) => <div key={cell.key}><dt>{cell.label}</dt><dd>{cell.value}</dd></div>)}</dl>
+            : <p className="terminal-brief-empty">{terminalBriefText.unavailable[lang]}</p>}
+        </article>;
+      })}
+    </div>
+    <p className="terminal-brief-limitation">{terminalBriefText.limitation[lang]}</p>
+  </section>;
+}
+
 export function AirportTodaySummary({ lang, terminal = "all", date = null }: { lang: Lang; terminal?: "all" | "T1" | "T2"; date?: string | null }) {
   // Eight full-height checkpoint rows per terminal cost more vertical space
   // than they earn: what a reader needs first is the one queue that is longest
@@ -868,6 +982,8 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
       <p className="eyebrow">{scopeLabel} · {areaBriefText.nowLabel[lang].toUpperCase()}</p>
       {airportBriefLines.map((line, index) => index === 0 ? <strong key={line}>{line}</strong> : <p key={line}>{line}</p>)}
     </section>
+
+    {isAll && <TerminalBriefingCards lang={lang} airport={airport} nowIso={nowIso} dayRelation={summary?.dayRelation ?? "TODAY"} />}
 
     <div className="section-head">
       <div><p className="eyebrow">OFFICIAL · {scopeLabel} · KST</p><h2 id="airport-today-title">{airportTodayText.title[lang]}</h2></div>
