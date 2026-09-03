@@ -60,7 +60,10 @@ jobs:
           check("health lists source status", Array.isArray(healthBody?.sources) && healthBody.sources.length > 0, `${healthBody?.sources?.length ?? 0} sources`);
           console.log(JSON.stringify({ healthSources: healthBody?.sources ?? [] }));
 
-          const summary = await fetch(`${origin}/api/live/summary`, { signal: AbortSignal.timeout(15000) });
+          // A unique cache key prevents a pre-import null response from making
+          // the post-import Store Dynamics acceptance check read stale edge data.
+          const cacheProbeKey = `site-smoke-${Date.now()}`;
+          const summary = await fetch(`${origin}/api/live/summary?cacheProbe=${cacheProbeKey}`, { signal: AbortSignal.timeout(15000) });
           const summaryBody = await summary.json().catch(() => null);
           check("api /api/live/summary", summary.status === 200 && Boolean(summaryBody?.mode), `status ${summary.status}; mode ${summaryBody?.mode}`);
           for (const source of summaryBody?.sources ?? []) console.log(JSON.stringify({ source }));
@@ -76,6 +79,52 @@ jobs:
             return Boolean(block.realtime) || (block.weather?.length ?? 0) > 0;
           });
           check("core live data is present", areasWithCoreData.length > 0, `${areasWithCoreData.length}/${coreAreas.length} areas have realtime or weather`);
+
+          const expectedStoreDynamics = {
+            myeongdong: { code: "3001492", name: "명동 남대문 북창동 다동 무교동 관광특구", type: "U", typeName: "관광특구" },
+            hongdae: { code: "3120103", name: "홍대입구역(홍대)", type: "D", typeName: "발달상권" },
+            seongsu: { code: "3110131", name: "성수동카페거리", type: "A", typeName: "골목상권" },
+          };
+          const storeDynamics = coreAreas.map((area) => ({
+            area,
+            row: summaryBody?.areas?.[area]?.storeDynamics ?? null,
+          }));
+          const storeDynamicsValid = storeDynamics.every(({ area, row }) => {
+            const expected = expectedStoreDynamics[area];
+            const counts = [row?.totalStoreCount, row?.ordinaryStoreCount, row?.franchiseStoreCount, row?.openingCount, row?.closureCount];
+            const rates = [row?.openingRateTenthsPercent, row?.closureRateTenthsPercent];
+            return row
+              && /^\d{4}[1-4]$/.test(String(row.quarterCode ?? ""))
+              && counts.every((value) => Number.isSafeInteger(value) && value >= 0)
+              && rates.every((value) => Number.isSafeInteger(value) && value >= 0 && value <= 1000)
+              && row.totalStoreCount > 0
+              && row.totalStoreCount === row.ordinaryStoreCount + row.franchiseStoreCount
+              && row.datasetId === "OA-15577"
+              && row.mappingVersion === "oa-15577-standard-area-2026-09-03-v1"
+              && row.tradeAreaCode === expected.code
+              && row.tradeAreaName === expected.name
+              && row.tradeAreaTypeCode === expected.type
+              && row.tradeAreaTypeName === expected.typeName
+              && row.openingRateTenthsPercent === Math.round((row.openingCount * 1000) / row.totalStoreCount)
+              && row.closureRateTenthsPercent === Math.round((row.closureCount * 1000) / row.totalStoreCount)
+              && Number.isFinite(Date.parse(row.retrievedAt));
+          });
+          const storeDynamicsQuarters = new Set(storeDynamics.map(({ row }) => row?.quarterCode).filter(Boolean));
+          check(
+            "Store Dynamics covers all three exact areas",
+            storeDynamicsValid && storeDynamicsQuarters.size === 1,
+            `${storeDynamics.filter(({ row }) => Boolean(row)).length}/${coreAreas.length} areas`,
+          );
+          console.log(JSON.stringify({ storeDynamics }));
+          const storeDynamicsHealth = (healthBody?.sources ?? []).find(
+            (source) => source.sourceId === "SEOUL_STORE_DYNAMICS",
+          );
+          check(
+            "Store Dynamics Source Health is historical or preserved stale",
+            storeDynamicsHealth?.status === "OFFICIAL_HISTORICAL"
+              || (storeDynamicsHealth?.status === "STALE" && storeDynamicsValid && storeDynamicsQuarters.size === 1),
+            `status ${storeDynamicsHealth?.status ?? "missing"}`,
+          );
 
           if (summaryBody?.mode === "live-summary") {
             const areas = summaryBody.areas ?? {};
@@ -126,7 +175,7 @@ jobs:
           // failed - caching is an optimisation, and the read path has to be
           // affordable uncached anyway.
           const cacheProbe = async () => {
-            const response = await fetch(`${origin}/api/live/summary`, { signal: AbortSignal.timeout(15000) });
+            const response = await fetch(`${origin}/api/live/summary?cacheProbe=${cacheProbeKey}`, { signal: AbortSignal.timeout(15000) });
             const body = await response.json().catch(() => null);
             return {
               status: response.status,
@@ -139,15 +188,35 @@ jobs:
               mode: body?.mode ?? null,
             };
           };
-          const firstRead = await cacheProbe();
+          const firstRead = {
+            status: summary.status,
+            cfCacheStatus: summary.headers.get("cf-cache-status"),
+            age: summary.headers.get("age"),
+            cacheControl: summary.headers.get("cache-control"),
+            generatedAt: summaryBody?.generatedAt ?? null,
+            mode: summaryBody?.mode ?? null,
+          };
+          await new Promise((resolve) => setTimeout(resolve, 1200));
           const secondRead = await cacheProbe();
           const thirdRead = await cacheProbe();
+          const hitRead = [secondRead, thirdRead].find((read) => read.cfCacheStatus === "HIT");
+          const bodyReused = Boolean(firstRead.generatedAt)
+            && [secondRead, thirdRead].some((read) => read.generatedAt === firstRead.generatedAt);
           console.log(JSON.stringify({
             edgeCache: {
               firstRead, secondRead, thirdRead,
-              bodyReused: Boolean(firstRead.generatedAt) && firstRead.generatedAt === secondRead.generatedAt,
+              bodyReused,
             },
           }));
+          check(
+            "summary Edge Cache moves from cold to HIT",
+            ["MISS", "EXPIRED"].includes(firstRead.cfCacheStatus)
+              && Boolean(hitRead)
+              && bodyReused
+              && [firstRead, secondRead, thirdRead].every((read) => read.status === 200 && read.mode === "live-summary")
+              && String(firstRead.cacheControl ?? "").includes("public"),
+            `${firstRead.cfCacheStatus ?? "missing"} -> ${hitRead?.cfCacheStatus ?? "no-hit"}; age ${hitRead?.age ?? "missing"}; reused ${bodyReused}`,
+          );
 
           // A ?date= day the picker offers must still render live, not fall back
           // to an empty shell. Yesterday in KST is always one of those days.

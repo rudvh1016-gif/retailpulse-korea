@@ -7,9 +7,10 @@
  * sanitizeProductionDetail so authenticated URLs, service keys and bearer
  * tokens can never be printed.
  *
- * RPK_DIAGNOSTIC_SOURCES optionally narrows the inspection to a comma list
- * of production source names (or canonical source ids); absent, every known
- * source is inspected. See lib/production-diagnostics.ts.
+ * RPK_DIAGNOSTIC_SOURCES is required and narrows the inspection to a comma
+ * list of production source names (or canonical source ids). An implicit
+ * all-source coverage sweep is refused because several legacy coverage
+ * probes are not bounded. See lib/production-diagnostics.ts.
  */
 import { CloudflareD1RestDatabase } from "../lib/d1-rest";
 import { COVERAGE_PROBES, buildCoverageContext, isReadOnlyProbe } from "../lib/data-coverage";
@@ -19,7 +20,9 @@ import { resolveProductionDatabaseConfig } from "./production-database";
 const since = process.env.RPK_DIAGNOSTIC_SINCE?.trim();
 if (!since || Number.isNaN(Date.parse(since))) throw new Error("invalid_diagnostic_since");
 
-const sourceIds = resolveDiagnosticSourceIds(process.env.RPK_DIAGNOSTIC_SOURCES);
+const sourceSelection = process.env.RPK_DIAGNOSTIC_SOURCES?.trim();
+if (!sourceSelection) throw new Error("diagnostic_sources_required");
+const sourceIds = resolveDiagnosticSourceIds(sourceSelection);
 const placeholders = sourceIds.map(() => "?").join(", ");
 
 const { accountId, databaseId, apiToken } = resolveProductionDatabaseConfig("production");
@@ -55,7 +58,10 @@ function safeRows(rows: unknown[] | undefined): Array<Record<string, unknown>> {
 // is not a bare SELECT is refused rather than executed.
 const coverageContext = buildCoverageContext(new Date().toISOString());
 const coverage: Array<Record<string, unknown>> = [];
-for (const probe of COVERAGE_PROBES) {
+const selectedSourceIds = new Set(sourceIds);
+const selectedCoverageProbes = COVERAGE_PROBES.filter((probe) =>
+  probe.sourceIds.some((sourceId) => selectedSourceIds.has(sourceId)));
+for (const probe of selectedCoverageProbes) {
   if (!isReadOnlyProbe(probe)) throw new Error(`coverage_probe_not_read_only_${probe.name}`);
   try {
     const result = await database.prepare(probe.sql).bind(...probe.params(coverageContext)).run();
@@ -73,8 +79,14 @@ console.log(JSON.stringify({
   diagnostic: "production-operations-read-only",
   since,
   inspectedSourceIds: sourceIds,
+  inspectedCoverageProbes: selectedCoverageProbes.map((probe) => probe.name),
   coverageContext,
   collectorRuns: safeRows(runs.results),
   sourceHealth: safeRows(health.results),
   dataCoverage: coverage,
 }, null, 2));
+
+// An explicit source-scoped verification is evidence only when its bounded
+// coverage query actually succeeded. Keep the safe JSON output, then fail the
+// workflow so an absent migration/query error cannot be mistaken for proof.
+if (coverage.some((entry) => "error" in entry)) process.exitCode = 1;

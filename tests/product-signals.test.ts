@@ -3,8 +3,8 @@ import test from "node:test";
 
 import { classifyDemoDemand, demoDemandThresholds } from "../lib/demand-index";
 import { buildAirportPressure } from "../lib/airport-pressure";
-import { safeAll } from "../app/api/live/summary/route";
-import { buildCommercialSignalRow } from "../app/live-signals";
+import { isValidStoredStoreDynamics, safeAll } from "../app/api/live/summary/route";
+import { buildCommercialSignalRow, buildStoreDynamicsPresentation } from "../app/live-signals";
 import { probeSeoulCitydataContracts } from "../scripts/probe-seoul-citydata-contract";
 
 test("demo demand levels use cohort thirds instead of absolute magic numbers", () => {
@@ -58,6 +58,59 @@ test("a zone is used only when an authoritative mapping is supplied", () => {
 test("live summary isolates an unavailable official source", async () => {
   assert.deepEqual(await safeAll(async () => { throw new Error("missing table"); }), []);
   assert.deepEqual(await safeAll(async () => [{ area: "myeongdong" }]), [{ area: "myeongdong" }]);
+});
+
+test("live summary isolates invalid Store Dynamics identity or arithmetic per area", () => {
+  const row = {
+    sourceId: "SEOUL_STORE_DYNAMICS",
+    datasetId: "OA-15577",
+    recordOrigin: "OFFICIAL_HISTORICAL",
+    area: "myeongdong",
+    mappingVersion: "oa-15577-standard-area-2026-09-03-v1",
+    schemaVersion: "store-dynamics-v1",
+    qualityStatus: "VALID",
+    tradeAreaCode: "3001492",
+    tradeAreaName: "명동 남대문 북창동 다동 무교동 관광특구",
+    tradeAreaTypeCode: "U",
+    tradeAreaTypeName: "관광특구",
+    quarterCode: "20262",
+    totalStoreCount: 174,
+    ordinaryStoreCount: 160,
+    franchiseStoreCount: 14,
+    openingCount: 10,
+    openingRateTenthsPercent: 57,
+    closureCount: 5,
+    closureRateTenthsPercent: 29,
+    industryCount: 88,
+    retrievedAt: "2026-09-03T01:00:00.000Z",
+  };
+  assert.equal(isValidStoredStoreDynamics("myeongdong", row), true);
+  assert.equal(isValidStoredStoreDynamics("myeongdong", { ...row, schemaVersion: "legacy" }), false);
+  assert.equal(isValidStoredStoreDynamics("myeongdong", { ...row, recordOrigin: "LIVE" }), false);
+  assert.equal(isValidStoredStoreDynamics("myeongdong", { ...row, tradeAreaCode: "3120103" }), false);
+  assert.equal(isValidStoredStoreDynamics("myeongdong", { ...row, openingRateTenthsPercent: 58 }), false);
+  assert.equal(isValidStoredStoreDynamics("myeongdong", {
+    ...row,
+    totalStoreCount: 10_000,
+    ordinaryStoreCount: 9_000,
+    franchiseStoreCount: 1_000,
+    openingCount: 10_001,
+    openingRateTenthsPercent: 1_000,
+    closureCount: 0,
+    closureRateTenthsPercent: 0,
+  }), false, "a count just over total cannot hide behind a rounded 100.0% rate");
+  assert.equal(isValidStoredStoreDynamics("myeongdong", {
+    ...row,
+    totalStoreCount: 10_000,
+    ordinaryStoreCount: 9_000,
+    franchiseStoreCount: 1_000,
+    openingCount: 0,
+    openingRateTenthsPercent: 0,
+    closureCount: 10_001,
+    closureRateTenthsPercent: 1_000,
+  }), false, "closure count uses the same strict upper bound");
+  assert.equal(isValidStoredStoreDynamics("myeongdong", { ...row, industryCount: 0 }), false);
+  assert.equal(isValidStoredStoreDynamics("myeongdong", { ...row, totalStoreCount: 0, ordinaryStoreCount: 0, franchiseStoreCount: 0 }), false);
 });
 
 test("Seoul integrated contract probe reports structure without leaking keys or commercial values", async () => {
@@ -214,4 +267,47 @@ test("an explicitly valid zero commercial value is preserved rather than treated
   assert.match(row.amountValue ?? "", /₩0/);
   assert.match(row.countValue ?? "", /0건/);
   assert.equal(row.privacyMessage, null);
+});
+
+test("Store Dynamics presents stored official counts and rates neutrally in all four languages", () => {
+  const row = {
+    datasetId: "OA-15577" as const,
+    quarterCode: "20261",
+    tradeAreaCode: "3001492",
+    tradeAreaName: "명동 남대문 북창동 다동 무교동 관광특구",
+    tradeAreaTypeCode: "U",
+    tradeAreaTypeName: "관광특구",
+    totalStoreCount: 174,
+    ordinaryStoreCount: 160,
+    franchiseStoreCount: 14,
+    openingCount: 10,
+    openingRateTenthsPercent: 57,
+    closureCount: 5,
+    closureRateTenthsPercent: 29,
+    mappingVersion: "oa-15577-standard-area-2026-09-03-v1",
+    retrievedAt: "2026-09-03T01:00:00.000Z",
+  };
+  const expected = {
+    ko: ["점포 현황", "2026년 1분기", "총 점포", "174개", "개업", "10개 · 5.7%", "분기 기준 공식 과거 자료이며, 현재 영업 중인 점포의 실시간 수가 아닙니다."],
+    en: ["Store openings and closures", "Q1 2026", "Total stores", "174 stores", "Openings", "10 stores · 5.7%", "Official quarterly historical data, not a real-time count of stores currently operating."],
+    zh: ["店铺开业与歇业", "2026年第1季度", "店铺总数", "174家", "开业", "10家 · 5.7%", "官方季度历史资料，并非当前营业店铺的实时数量。"],
+    ja: ["店舗の開業・廃業", "2026年第1四半期", "総店舗数", "174店", "開業", "10店 · 5.7%", "四半期基準の公式過去資料であり、現在営業中の店舗のリアルタイム件数ではありません。"],
+  } as const;
+
+  for (const lang of ["ko", "en", "zh", "ja"] as const) {
+    const presentation = buildStoreDynamicsPresentation(lang, row);
+    assert.ok(presentation);
+    const rendered = JSON.stringify(presentation);
+    for (const fragment of expected[lang]) assert.ok(rendered.includes(fragment), `${lang}: ${fragment}`);
+    assert.match(rendered, /명동 남대문 북창동 다동 무교동 관광특구/);
+    assert.match(rendered, /OA-15577/);
+    assert.match(rendered, /2026-09-03 10:00 KST/);
+    assert.match(rendered, /5개 · 2\.9%|5 stores · 2\.9%|5家 · 2\.9%|5店 · 2\.9%/);
+    assert.equal(presentation.timeState, { ko: "과거 자료", en: "Historical", zh: "历史资料", ja: "過去資料" }[lang]);
+    assert.equal(presentation.areaValue, "명동 남대문 북창동 다동 무교동 관광특구",
+      "do not repeat an official type already present in the official name");
+  }
+
+  assert.equal(buildStoreDynamicsPresentation("ko", { ...row, totalStoreCount: -1 }), null);
+  assert.equal(buildStoreDynamicsPresentation("ko", { ...row, quarterCode: "2026-Q1" }), null);
 });

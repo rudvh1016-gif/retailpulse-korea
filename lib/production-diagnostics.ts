@@ -31,6 +31,7 @@ export const DIAGNOSTIC_SOURCE_IDS = {
   foreign_purpose_mobility: "SEOUL_FOREIGN_PURPOSE_MOBILITY",
   subway_ridership: "SEOUL_SUBWAY_RIDERSHIP",
   seoul_sales: "SEOUL_ESTIMATED_SALES",
+  store_dynamics: "SEOUL_STORE_DYNAMICS",
   weather: "KMA_VILAGE_FCST",
   events: "KTO_TOURAPI_EVENT",
 } as const satisfies Record<string, string>;

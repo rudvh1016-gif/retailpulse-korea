@@ -1,5 +1,5 @@
-import { sql } from "drizzle-orm";
-import { integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { desc, sql } from "drizzle-orm";
+import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const sourceHealth = sqliteTable("source_health", {
   sourceId: text("source_id").primaryKey(),
@@ -158,6 +158,41 @@ export const seoulEstimatedSales = sqliteTable("seoul_estimated_sales", {
   qualityStatus: text("quality_status").notNull(),
   sourceHash: text("source_hash").notNull(),
 }, (table) => [uniqueIndex("seoul_estimated_sales_unique").on(table.sourceId, table.quarterCode, table.tradeAreaCode, table.industryCode)]);
+
+// OA-15577 — quarterly official store stock/opening/closure context. One
+// aggregate row represents one versioned official trade area and quarter;
+// industry rows are validated and compacted before D1 persistence.
+export const seoulStoreDynamics = sqliteTable("seoul_store_dynamics", {
+  id: text("id").primaryKey(),
+  sourceId: text("source_id").notNull(),
+  datasetId: text("dataset_id").notNull(),
+  recordOrigin: text("record_origin").notNull(),
+  area: text("area").notNull(),
+  quarterCode: text("quarter_code").notNull(),
+  tradeAreaCode: text("trade_area_code").notNull(),
+  tradeAreaName: text("trade_area_name").notNull(),
+  tradeAreaTypeCode: text("trade_area_type_code").notNull(),
+  tradeAreaTypeName: text("trade_area_type_name").notNull(),
+  overallStoreCount: integer("overall_store_count").notNull(),
+  ordinaryStoreCount: integer("ordinary_store_count").notNull(),
+  franchiseStoreCount: integer("franchise_store_count").notNull(),
+  openingStoreCount: integer("opening_store_count").notNull(),
+  openingRateTenthsPercent: integer("opening_rate_tenths_percent").notNull(),
+  closureStoreCount: integer("closure_store_count").notNull(),
+  closureRateTenthsPercent: integer("closure_rate_tenths_percent").notNull(),
+  industryCount: integer("industry_count").notNull(),
+  mappingVersion: text("mapping_version").notNull(),
+  sourceUpdatedAt: text("source_updated_at"),
+  retrievedAt: text("retrieved_at").notNull(),
+  schemaVersion: text("schema_version").notNull(),
+  qualityStatus: text("quality_status").notNull(),
+  sourceHash: text("source_hash").notNull(),
+}, (table) => [
+  uniqueIndex("seoul_store_dynamics_unique").on(
+    table.sourceId, table.mappingVersion, table.area, table.quarterCode,
+  ),
+  index("seoul_store_dynamics_area_quarter_idx").on(table.area, desc(table.quarterCode)),
+]);
 
 // T1 — official tourism events mapped to a target area by distance search.
 export const tourismEvents = sqliteTable("tourism_events", {

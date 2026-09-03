@@ -19,6 +19,7 @@
  *   foreign_purpose_mobility      S4   collectForeignPurposeMobility
  *   subway_ridership              S5   collectSeoulSubwayRidership
  *   seoul_sales                   S3   collectEstimatedSales
+ *   store_dynamics                B1   collectStoreDynamics
  *   weather                       W1   collectWeatherForecasts
  *   events                        T1   collectTourismEvents
  *
@@ -41,6 +42,7 @@ import {
   collectSeoulForeignPresence,
   collectSeoulRealtime,
   collectSeoulSubwayRidership,
+  collectStoreDynamics,
   collectTourismEvents,
   collectWeatherForecasts,
   type CollectorEnv,
@@ -139,6 +141,7 @@ const DEFAULT_RUNNERS = {
   foreign_purpose_mobility: (env: CollectorEnv, now: Date) => collectForeignPurposeMobility(env, now),
   subway_ridership: (env: CollectorEnv, now: Date) => collectSeoulSubwayRidership(env, now),
   seoul_sales: (env: CollectorEnv, now: Date) => collectEstimatedSales(env, now),
+  store_dynamics: (env: CollectorEnv, now: Date) => collectStoreDynamics(env, now),
   weather: (env: CollectorEnv, now: Date) => collectWeatherForecasts(env, now),
   /**
    * W1 repair window. A grid whose areas already hold the expected KMA

@@ -13,6 +13,11 @@ import {
   SEOUL_SUBWAY_SOURCE_ID,
 } from "../../../../lib/subway-ridership";
 import {
+  STORE_DYNAMICS_MAPPING_VERSION,
+  STORE_DYNAMICS_SOURCE_ID,
+  isValidStoredStoreDynamicsRow,
+} from "../../../../lib/store-dynamics";
+import {
   summarizeCurrentBusiestDepartureHalls,
   summarizeNextPassengerForecastBand,
   summarizePassengerForecast,
@@ -45,6 +50,11 @@ const AREAS = ["myeongdong", "hongdae", "seongsu"] as const;
 const CONGESTION_TERMINALS = ["T1", "T2"] as const;
 /** The date picker never offers more than this many days. */
 const DATE_PICKER_DAYS = 21;
+
+/** A corrupt row is isolated to its area instead of entering the public payload. */
+export function isValidStoredStoreDynamics(area: (typeof AREAS)[number], row: Row | undefined): boolean {
+  return isValidStoredStoreDynamicsRow(area, row);
+}
 
 /**
  * "Does this one day hold data?" as a single bounded existence probe.
@@ -212,6 +222,28 @@ export async function GET(request: Request) {
       WHERE area = ? AND quarter_code = (SELECT MAX(quarter_code) FROM seoul_estimated_sales WHERE area = ?)
       ORDER BY sales_amount DESC`),
     ).bind(...AREAS.flatMap((area) => [area, area])).all<Row>()).results ?? []);
+
+    const storeDynamicsRows = await safeAll<Row>(async () => (await client.prepare(
+      latestPerKey(AREAS, () => `SELECT source_id AS sourceId, dataset_id AS datasetId,
+        record_origin AS recordOrigin, area,
+        quarter_code AS quarterCode, trade_area_code AS tradeAreaCode,
+        trade_area_name AS tradeAreaName, trade_area_type_code AS tradeAreaTypeCode,
+        trade_area_type_name AS tradeAreaTypeName,
+        overall_store_count AS totalStoreCount, ordinary_store_count AS ordinaryStoreCount,
+        franchise_store_count AS franchiseStoreCount, opening_store_count AS openingCount,
+        opening_rate_tenths_percent AS openingRateTenthsPercent,
+        closure_store_count AS closureCount,
+        closure_rate_tenths_percent AS closureRateTenthsPercent,
+        industry_count AS industryCount,
+        mapping_version AS mappingVersion, retrieved_at AS retrievedAt,
+        schema_version AS schemaVersion, quality_status AS qualityStatus
+      FROM seoul_store_dynamics
+      WHERE area = ? AND source_id = ? AND mapping_version = ?
+        AND record_origin = 'OFFICIAL_HISTORICAL' AND quality_status = 'VALID'
+      ORDER BY quarter_code DESC LIMIT 1`),
+    ).bind(...AREAS.flatMap((area) => [
+      area, STORE_DYNAMICS_SOURCE_ID, STORE_DYNAMICS_MAPPING_VERSION,
+    ])).all<Row>()).results ?? []);
 
     const foreignPresenceRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT area, product_version AS productVersion, record_origin AS freshness, value, unit,
@@ -384,6 +416,27 @@ export async function GET(request: Request) {
           industryCount: salesForArea.length,
           topIndustries: salesForArea.slice(0, 3).map((row) => ({ industryName: row.industryName, salesAmount: row.salesAmount })),
         } : null,
+        storeDynamics: (() => {
+          const row = storeDynamicsRows.find((candidate) => candidate.area === area);
+          if (!isValidStoredStoreDynamics(area, row)) return null;
+          return {
+            datasetId: row?.datasetId,
+            quarterCode: row?.quarterCode,
+            tradeAreaCode: row?.tradeAreaCode,
+            tradeAreaName: row?.tradeAreaName,
+            tradeAreaTypeCode: row?.tradeAreaTypeCode,
+            tradeAreaTypeName: row?.tradeAreaTypeName,
+            totalStoreCount: row?.totalStoreCount,
+            ordinaryStoreCount: row?.ordinaryStoreCount,
+            franchiseStoreCount: row?.franchiseStoreCount,
+            openingCount: row?.openingCount,
+            openingRateTenthsPercent: row?.openingRateTenthsPercent,
+            closureCount: row?.closureCount,
+            closureRateTenthsPercent: row?.closureRateTenthsPercent,
+            mappingVersion: row?.mappingVersion,
+            retrievedAt: row?.retrievedAt,
+          };
+        })(),
         foreignPresence,
         foreignPurposeMobility: purposeRows.length ? {
           referenceDate: purposeRows[0].referenceDate,

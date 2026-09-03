@@ -68,6 +68,8 @@ const HOT_QUERIES = {
   "summary.latestForecast": [perKey(AREAS, "SELECT area FROM seoul_realtime_forecast WHERE area = ? AND issued_at = (SELECT MAX(issued_at) FROM seoul_realtime_forecast WHERE area = ?) AND target_at >= ? ORDER BY target_at LIMIT 40"), AREAS.flatMap((a) => [a, a, "2026-08-31T00:00:00+09:00"])],
   "summary.latestWeather": [perKey(AREAS, "SELECT area FROM weather_forecast WHERE area = ? AND issued_at = (SELECT MAX(issued_at) FROM weather_forecast WHERE area = ?) AND target_at >= ? ORDER BY target_at LIMIT 60"), AREAS.flatMap((a) => [a, a, "2026-08-31T00:00:00+09:00"])],
   "summary.latestSales": [perKey(AREAS, "SELECT area FROM seoul_estimated_sales WHERE area = ? AND quarter_code = (SELECT MAX(quarter_code) FROM seoul_estimated_sales WHERE area = ?) ORDER BY sales_amount DESC"), AREAS.flatMap((a) => [a, a])],
+  "summary.latestStoreDynamics": [perKey(AREAS, "SELECT area FROM seoul_store_dynamics WHERE area = ? AND source_id = ? AND mapping_version = ? AND record_origin = 'OFFICIAL_HISTORICAL' AND quality_status = 'VALID' ORDER BY quarter_code DESC LIMIT 1"), AREAS.flatMap((a) => [a, "SEOUL_STORE_DYNAMICS", "oa-15577-standard-area-2026-09-03-v1"])],
+  "collector.storeDynamicsLastGood": [perKey(AREAS, "SELECT source_id, dataset_id, record_origin, area, quarter_code, trade_area_code, trade_area_name, trade_area_type_code, trade_area_type_name, overall_store_count, ordinary_store_count, franchise_store_count, opening_store_count, opening_rate_tenths_percent, closure_store_count, closure_rate_tenths_percent, mapping_version, retrieved_at, schema_version, quality_status FROM seoul_store_dynamics WHERE source_id = ? AND mapping_version = ? AND record_origin = 'OFFICIAL_HISTORICAL' AND quality_status = 'VALID' AND area = ? ORDER BY quarter_code DESC LIMIT 1"), AREAS.flatMap((a) => ["SEOUL_STORE_DYNAMICS", "oa-15577-standard-area-2026-09-03-v1", a])],
   "summary.latestForeignPurpose": [perKey(AREAS, "SELECT area, purpose FROM seoul_foreign_purpose_mobility WHERE area = ? AND source_id = ? AND mapping_version = ? AND reference_date = (SELECT MAX(reference_date) FROM seoul_foreign_purpose_mobility WHERE area = ? AND source_id = ? AND mapping_version = ?) ORDER BY purpose LIMIT 2"), AREAS.flatMap((a) => [a, "SEOUL_FOREIGN_PURPOSE_MOBILITY", "official-admin-dong-2025-06-02-v1", a, "SEOUL_FOREIGN_PURPOSE_MOBILITY", "official-admin-dong-2025-06-02-v1"])],
   "summary.latestSubway": [perKey(AREAS, "SELECT area, SUM(boarding_count), SUM(alighting_count) FROM seoul_subway_ridership WHERE area = ? AND source_id = ? AND mapping_version = ? AND reference_date = (SELECT MAX(reference_date) FROM seoul_subway_ridership WHERE area = ? AND source_id = ? AND mapping_version = ?) GROUP BY area, reference_date LIMIT 1"), AREAS.flatMap((a) => [a, "SEOUL_SUBWAY_RIDERSHIP", "oa-22723-area-stations-2026-09-02-v1", a, "SEOUL_SUBWAY_RIDERSHIP", "oa-22723-area-stations-2026-09-02-v1"])],
   "summary.latestCongestion": [perKey(["T1", "T2"], "SELECT terminal FROM airport_congestion WHERE terminal = ? AND observed_at = (SELECT MAX(observed_at) FROM airport_congestion WHERE terminal = ?) ORDER BY zone LIMIT 12"), ["T1", "T1", "T2", "T2"]],
@@ -114,7 +116,8 @@ test("the read-path indexes the queries depend on exist in a migration", (contex
     "seoul_foreign_purpose_mobility_area_reference_idx",
     "seoul_subway_ridership_area_reference_idx",
     "seoul_realtime_forecast_area_issue_idx", "weather_forecast_area_issue_idx",
-    "seoul_estimated_sales_area_quarter_idx", "airport_congestion_terminal_observed_idx",
+    "seoul_estimated_sales_area_quarter_idx", "seoul_store_dynamics_area_quarter_idx",
+    "seoul_store_dynamics_unique", "airport_congestion_terminal_observed_idx",
     "airport_flights_direction_scheduled_idx", "airport_passenger_forecast_target_idx",
     "weather_forecast_issued_area_idx",
   ]) assert.ok(present.has(index), `${index} is missing; the read path would scan again`);
@@ -198,6 +201,20 @@ test("the live summary exposes one indexed latest commercial observation per kno
   assert.match(route, /commercial: commercial \? \{ \.\.\.commercial, freshness:/);
 });
 
+test("the live summary exposes one compact indexed Store Dynamics row per exact current mapping", () => {
+  assert.match(route, /const storeDynamicsRows = await safeAll<Row>/);
+  assert.match(route, /FROM seoul_store_dynamics\s+WHERE area = \? AND source_id = \? AND mapping_version = \?/);
+  assert.match(route, /record_origin = 'OFFICIAL_HISTORICAL' AND quality_status = 'VALID'/);
+  assert.match(route, /ORDER BY quarter_code DESC LIMIT 1/);
+  assert.match(route, /if \(!isValidStoredStoreDynamics\(area, row\)\) return null/);
+  const publicBlock = route.match(/storeDynamics: \(\(\) => \{[\s\S]*?\n        \}\)\(\),/)?.[0] ?? "";
+  assert.doesNotMatch(publicBlock, /sourceId:|recordOrigin:|schemaVersion:|qualityStatus:|industryCount:/,
+    "validation-only metadata must not leak into the compact public area block");
+  const block = route.match(/const storeDynamicsRows = await safeAll<Row>[\s\S]*?\.results \?\? \[\]\);/)?.[0] ?? "";
+  assert.doesNotMatch(block, /SVC_INDUTY|industry_name|raw_payload/,
+    "the summary must not expose industry rows or provider payload fields");
+});
+
 /**
  * The Production read-budget measurement must measure the query the site
  * actually runs.
@@ -215,7 +232,7 @@ test("every measured hot-path statement still exists in the live route", () => {
   const routeText = readFileSync("app/api/live/summary/route.ts", "utf8").replace(/\r\n/g, "\n");
   const guards = [...measureSource.matchAll(/^ {4}guard: (`[^`]*`|"(?:[^"\\]|\\.)*"),$/gm)]
     .map((match) => (match[1].startsWith("`") ? match[1].slice(1, -1) : JSON.parse(match[1])));
-  assert.equal(guards.length, 17, "expected one guard per measured statement");
+  assert.equal(guards.length, 18, "expected one guard per measured statement");
   for (const guard of guards) {
     assert.ok(routeText.includes(guard), `the live route no longer contains: ${guard.slice(0, 80)}`);
   }

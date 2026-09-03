@@ -4,15 +4,15 @@
  * Answers, with real Production numbers rather than a local model, the three
  * questions the 2026-09-01 row-read incident left open:
  *
- *   1. Did migration 0007 actually reach Production? (the indexes are read
- *      back out of sqlite_master, not inferred from a green deploy step)
+ *   1. Did every index the current hot path requires actually reach
+ *      Production? (the names are read back out of sqlite_master, not inferred
+ *      from a green deploy step)
  *   2. What does one uncached /api/live/summary really cost in rows read?
  *      (every hot-path statement is replayed and its `meta.rows_read` is
  *      reported, so the total is measured, not estimated)
- *   3. What did it cost before? (each table's real Production row count is
- *      the denominator, because the pre-0007 plans provably scanned those
- *      tables end to end — the EXPLAIN output below shows which plans seek
- *      now and which still scan)
+ *   3. Does EXPLAIN still prove bounded index access before any measured query
+ *      executes? A missing index, plan regression, query error, or ceiling
+ *      stop fails closed instead of being reported as a deceptively cheap run.
  *
  * Safety properties, all load-bearing:
  *
@@ -20,10 +20,9 @@
  *   - Zero provider calls. No KMA, A1, A4, A5, TourAPI or Seoul request is
  *     made, so this can never manufacture collection evidence.
  *   - The run is bounded. Cumulative rows read are tracked against
- *     RPK_READ_BUDGET_CEILING (default 100,000) and the remaining phases are
- *     skipped rather than allowed to eat the daily allowance. The expensive
- *     phase runs last precisely so a ceiling stop still leaves the important
- *     measurement in hand.
+ *     RPK_READ_BUDGET_CEILING (default 100,000). Unbounded table-count scans
+ *     are deliberately excluded; this diagnostic measures only the same
+ *     bounded statements the route serves.
  *   - The SQL is drift-guarded. Each measured statement must still be present
  *     in app/api/live/summary/route.ts or the script fails, so this can never
  *     quietly measure a query the live route no longer runs.
@@ -38,6 +37,7 @@ import {
 } from "../lib/seoul-foreign";
 import { FOREIGN_PURPOSE_MAPPING_VERSION, FOREIGN_PURPOSE_SOURCE_ID } from "../lib/foreign-purpose-mobility";
 import { SEOUL_SUBWAY_MAPPING_VERSION, SEOUL_SUBWAY_SOURCE_ID } from "../lib/subway-ridership";
+import { STORE_DYNAMICS_MAPPING_VERSION, STORE_DYNAMICS_SOURCE_ID } from "../lib/store-dynamics";
 import { resolveProductionDatabaseConfig } from "./production-database";
 
 /** Cloudflare's documented D1 Free daily allowance (rows read). */
@@ -86,8 +86,12 @@ type HotQuery = {
    * the live route, so the measurement provably tracks the shipped query.
    */
   guard: string;
-  /** Table whose full size was the pre-0007 cost of this statement. */
-  table: string | null;
+  /** Table whose full size would determine the cost of an unindexed plan. */
+  table: string;
+  /** SQL aliases which EXPLAIN may use instead of the physical table name. */
+  scanTargets?: readonly string[];
+  /** Only fixed-cardinality operational tables may explicitly allow a scan. */
+  allowUnindexedScan?: boolean;
   /**
    * Run this statement once per bind set and sum the rows read.
    *
@@ -108,6 +112,7 @@ const HOT_QUERIES: HotQuery[] = [
     binds: [],
     guard: "FROM source_health ORDER BY source_id",
     table: "source_health",
+    allowUnindexedScan: true,
   },
   {
     name: "realtime",
@@ -180,6 +185,29 @@ const HOT_QUERIES: HotQuery[] = [
     table: "seoul_estimated_sales",
   },
   {
+    name: "storeDynamics",
+    sql: latestPerKey(AREAS, () => `SELECT source_id AS sourceId, dataset_id AS datasetId,
+        record_origin AS recordOrigin, area,
+        quarter_code AS quarterCode, trade_area_code AS tradeAreaCode,
+        trade_area_name AS tradeAreaName, trade_area_type_code AS tradeAreaTypeCode,
+        trade_area_type_name AS tradeAreaTypeName,
+        overall_store_count AS totalStoreCount, ordinary_store_count AS ordinaryStoreCount,
+        franchise_store_count AS franchiseStoreCount, opening_store_count AS openingCount,
+        opening_rate_tenths_percent AS openingRateTenthsPercent,
+        closure_store_count AS closureCount,
+        closure_rate_tenths_percent AS closureRateTenthsPercent,
+        industry_count AS industryCount,
+        mapping_version AS mappingVersion, retrieved_at AS retrievedAt,
+        schema_version AS schemaVersion, quality_status AS qualityStatus
+      FROM seoul_store_dynamics
+      WHERE area = ? AND source_id = ? AND mapping_version = ?
+        AND record_origin = 'OFFICIAL_HISTORICAL' AND quality_status = 'VALID'
+      ORDER BY quarter_code DESC LIMIT 1`),
+    binds: AREAS.flatMap((area) => [area, STORE_DYNAMICS_SOURCE_ID, STORE_DYNAMICS_MAPPING_VERSION]),
+    guard: "FROM seoul_store_dynamics\n      WHERE area = ? AND source_id = ? AND mapping_version = ?",
+    table: "seoul_store_dynamics",
+  },
+  {
     name: "foreignPresence",
     sql: `SELECT area, product_version AS productVersion, record_origin AS freshness, value, unit,
         reference_at AS referenceAt, retrieved_at AS retrievedAt,
@@ -203,6 +231,7 @@ const HOT_QUERIES: HotQuery[] = [
     ],
     guard: "FROM seoul_foreign_presence_area a",
     table: "seoul_foreign_presence_area",
+    scanTargets: ["seoul_foreign_presence_area", "a", "b"],
   },
   {
     name: "foreignPurposeMobility",
@@ -273,6 +302,7 @@ const HOT_QUERIES: HotQuery[] = [
     binds: [serviceDate],
     guard: "WHERE f.direction IN ('departure', 'arrival') AND f.is_aggregate = 1 AND f.target_date = ?",
     table: "airport_passenger_forecast",
+    scanTargets: ["airport_passenger_forecast", "f"],
   },
   {
     name: "flights",
@@ -301,7 +331,7 @@ const HOT_QUERIES: HotQuery[] = [
     binds: [pickerDays[0], pickerDays[0], shiftKstDay(pickerDays[0], 1)],
     repeatBinds: pickerDays.map((day) => [day, day, shiftKstDay(day, 1)]),
     guard: `dayExistsSql("airport_flights", "scheduled_at", "direction = 'departure'")`,
-    table: null,
+    table: "airport_flights",
   },
   {
     name: "forecastDates",
@@ -309,7 +339,7 @@ const HOT_QUERIES: HotQuery[] = [
     binds: [pickerDays[0], pickerDays[0]],
     repeatBinds: pickerDays.map((day) => [day, day]),
     guard: `dayValueExistsSql("airport_passenger_forecast", "target_date", "direction = 'departure' AND is_aggregate = 1")`,
-    table: null,
+    table: "airport_passenger_forecast",
   },
   {
     name: "observedDates",
@@ -317,7 +347,7 @@ const HOT_QUERIES: HotQuery[] = [
     binds: [pickerDays[0], pickerDays[0], shiftKstDay(pickerDays[0], 1)],
     repeatBinds: pickerDays.map((day) => [day, day, shiftKstDay(day, 1)]),
     guard: `dayExistsSql("seoul_realtime_area", "observed_at")`,
-    table: null,
+    table: "seoul_realtime_area",
   },
 ];
 
@@ -336,7 +366,10 @@ const EXPECTED_INDEXES = [
   "weather_forecast_area_issue_idx",
   "weather_forecast_issued_area_idx",
   "seoul_estimated_sales_area_quarter_idx",
+  "seoul_store_dynamics_area_quarter_idx",
+  "seoul_store_dynamics_unique",
   "airport_congestion_terminal_observed_idx",
+  "airport_passenger_forecast_target_idx",
   "airport_flights_direction_scheduled_idx",
 ];
 
@@ -346,10 +379,23 @@ const database = new CloudflareD1RestDatabase(accountId, databaseId, apiToken);
 let rowsReadSoFar = 0;
 let stoppedAtCeiling = false;
 
+function requireRowsReadMetadata(meta: { rows_read?: unknown } | undefined): number {
+  const rowsRead = meta?.rows_read;
+  if (typeof rowsRead !== "number" || !Number.isSafeInteger(rowsRead) || rowsRead < 0) {
+    throw new Error("invalid_rows_read_metadata");
+  }
+  return rowsRead;
+}
+
 async function measure(sql: string, binds: unknown[]): Promise<{ rowsRead: number; rowCount: number }> {
+  if (rowsReadSoFar >= CEILING) {
+    stoppedAtCeiling = true;
+    throw new Error("read_budget_ceiling");
+  }
   const result = await database.prepare(sql).bind(...binds).all();
-  const rowsRead = Number(result.meta?.rows_read ?? 0);
+  const rowsRead = requireRowsReadMetadata(result.meta);
   rowsReadSoFar += rowsRead;
+  if (rowsReadSoFar > CEILING) stoppedAtCeiling = true;
   return { rowsRead, rowCount: result.results.length };
 }
 
@@ -360,93 +406,133 @@ async function explain(sql: string, binds: unknown[]): Promise<string[]> {
   return result.results.map((row) => String(row.detail ?? ""));
 }
 
-// Phase 1 — did migration 0007 actually land? Read the index names back.
+// Phase 1 — prove every currently required index actually landed.
 const indexRows = await database.prepare(
   `SELECT name, tbl_name AS tableName FROM sqlite_master WHERE type = 'index' AND name IN (${EXPECTED_INDEXES.map(() => "?").join(", ")}) ORDER BY name`,
 ).bind(...EXPECTED_INDEXES).all<{ name?: unknown; tableName?: unknown }>();
+rowsReadSoFar += requireRowsReadMetadata(indexRows.meta);
+if (rowsReadSoFar > CEILING) stoppedAtCeiling = true;
 const presentIndexes = indexRows.results.map((row) => String(row.name ?? ""));
 const missingIndexes = EXPECTED_INDEXES.filter((name) => !presentIndexes.includes(name));
 
-// Phase 2 — the measurement that matters: what one uncached summary costs now.
+// Phase 2 — inspect every plan before executing any hot-path query. A bare
+// SCAN of a growing source table is both a release failure and unsafe to run
+// as a supposedly bounded diagnostic. It is reported and only that statement
+// is skipped; safe statements (including Store Dynamics) can still provide
+// real rows_read evidence without spending through an unrelated legacy scan.
+const planChecks: Array<Record<string, unknown>> = [];
+for (const query of HOT_QUERIES) {
+  try {
+    const plan = await explain(query.sql, query.binds);
+    const scanTargets = new Set(query.scanTargets ?? [query.table]);
+    const unindexedTableScans = query.allowUnindexedScan
+      ? []
+      : plan.filter((line) => {
+        const scanned = /^SCAN\s+([A-Za-z_][A-Za-z0-9_]*)\b/i.exec(line)?.[1];
+        // A full index scan is still proportional to a growing table and is
+        // therefore not a bounded hot-path plan. Only SEARCH qualifies.
+        return Boolean(scanned) && scanTargets.has(scanned as string);
+      });
+    planChecks.push({ name: query.name, table: query.table, plan, unindexedTableScans });
+  } catch (error) {
+    planChecks.push({ name: query.name, table: query.table, error: error instanceof Error ? error.message : String(error) });
+  }
+}
+const planErrors = planChecks.filter((entry) => entry.error);
+const scanRegressions = planChecks.filter((entry) => Array.isArray(entry.unindexedTableScans) && entry.unindexedTableScans.length > 0);
+const preflightPassed = missingIndexes.length === 0 && planErrors.length === 0 && scanRegressions.length === 0;
+
+// Phase 3 — measure every statement proven safe. If one statement has an
+// unindexed scan, the complete summary number stays null and the workflow
+// fails, but bounded statements retain their actual per-query evidence.
 const perQuery: Array<Record<string, unknown>> = [];
 for (const query of HOT_QUERIES) {
-  if (rowsReadSoFar >= CEILING) {
+  const planCheck = planChecks.find((entry) => entry.name === query.name);
+  if (missingIndexes.length > 0) {
+    perQuery.push({ name: query.name, skipped: "missing_required_index" });
+    continue;
+  }
+  if (planCheck?.error) {
+    perQuery.push({ name: query.name, skipped: "plan_error" });
+    continue;
+  }
+  if (Array.isArray(planCheck?.unindexedTableScans) && planCheck.unindexedTableScans.length > 0) {
+    perQuery.push({
+      name: query.name,
+      table: query.table,
+      skipped: "unindexed_scan",
+      plan: planCheck.plan,
+    });
+    continue;
+  }
+  if (rowsReadSoFar >= CEILING || stoppedAtCeiling) {
     stoppedAtCeiling = true;
     perQuery.push({ name: query.name, skipped: "read_budget_ceiling" });
     continue;
   }
   try {
-    const plan = await explain(query.sql, query.binds);
     let rowsRead = 0;
     let rowCount = 0;
+    let statementsRun = 0;
     for (const binds of query.repeatBinds ?? [query.binds]) {
       const once = await measure(query.sql, binds);
       rowsRead += once.rowsRead;
       rowCount += once.rowCount;
+      statementsRun += 1;
+      if (stoppedAtCeiling) break;
     }
     perQuery.push({
       name: query.name,
       table: query.table,
-      statementsRun: (query.repeatBinds ?? [query.binds]).length,
+      statementsRun,
       rowsRead,
       rowsReturned: rowCount,
-      // A plan line naming one of our tables with SCAN is the regression the
-      // indexes exist to prevent; SEARCH means the seek is being used.
-      scans: plan.filter((line) => /^SCAN [a-z_]+/i.test(line)),
-      plan,
+      plan: planChecks.find((entry) => entry.name === query.name)?.plan,
+      incomplete: stoppedAtCeiling,
     });
   } catch (error) {
     perQuery.push({ name: query.name, error: error instanceof Error ? error.message : String(error) });
   }
 }
 
-const summaryRowsRead = perQuery.reduce((total, entry) => total + Number(entry.rowsRead ?? 0), 0);
-
-// Phase 3 — the "before" denominator, last because it is the expensive part.
-// Every pre-0007 plan on these tables was a full SCAN, so the table's real row
-// count is what that statement read per request.
-const tableCounts: Array<Record<string, unknown>> = [];
-const countedTables = [...new Set(HOT_QUERIES.map((query) => query.table).filter((table): table is string => Boolean(table)))];
-for (const table of countedTables) {
-  if (rowsReadSoFar >= CEILING) {
-    stoppedAtCeiling = true;
-    tableCounts.push({ table, skipped: "read_budget_ceiling" });
-    continue;
-  }
-  try {
-    const result = await database.prepare(`SELECT COUNT(*) AS rows FROM ${table}`).all<{ rows?: unknown }>();
-    rowsReadSoFar += Number(result.meta?.rows_read ?? 0);
-    tableCounts.push({ table, rows: Number(result.results[0]?.rows ?? 0) });
-  } catch (error) {
-    tableCounts.push({ table, error: error instanceof Error ? error.message : String(error) });
-  }
-}
-
-const measuredTableRows = tableCounts.reduce((total, entry) => total + Number(entry.rows ?? 0), 0);
+const queryErrors = perQuery.filter((entry) => entry.error);
+const skippedQueries = perQuery.filter((entry) => entry.skipped || entry.incomplete);
+const measurementComplete = preflightPassed
+  && !stoppedAtCeiling
+  && queryErrors.length === 0
+  && skippedQueries.length === 0
+  && perQuery.length === HOT_QUERIES.length;
+const measuredSummaryRowsRead = perQuery.reduce((total, entry) => total + Number(entry.rowsRead ?? 0), 0);
+const summaryRowsRead = measurementComplete ? measuredSummaryRowsRead : null;
 
 console.log(JSON.stringify({
   diagnostic: "production-read-budget",
   generatedAt,
   serviceDate,
-  migration0007: {
+  requiredIndexes: {
     expected: EXPECTED_INDEXES.length,
     present: presentIndexes.length,
     missing: missingIndexes,
     applied: missingIndexes.length === 0,
   },
+  preflight: {
+    passed: preflightPassed,
+    planErrors,
+    scanRegressions,
+    plans: planChecks,
+  },
   liveSummary: {
     statements: perQuery.length,
+    complete: measurementComplete,
     rowsReadPerUncachedRequest: summaryRowsRead,
-    percentOfFreeDailyAllowance: Number(((summaryRowsRead / D1_FREE_DAILY_ROWS_READ) * 100).toFixed(6)),
-    uncachedRequestsPerDayWithinAllowance: summaryRowsRead > 0
+    measuredSafeRowsRead: measuredSummaryRowsRead,
+    percentOfFreeDailyAllowance: summaryRowsRead === null
+      ? null
+      : Number(((summaryRowsRead / D1_FREE_DAILY_ROWS_READ) * 100).toFixed(6)),
+    uncachedRequestsPerDayWithinAllowance: summaryRowsRead !== null && summaryRowsRead > 0
       ? Math.floor(D1_FREE_DAILY_ROWS_READ / summaryRowsRead)
       : null,
     perQuery,
-  },
-  preIndexBaseline: {
-    note: "Pre-0007 plans scanned these tables end to end, so each table's real row count was that statement's per-request cost.",
-    tableCounts,
-    scannedRowsPerRequest: measuredTableRows,
   },
   budget: {
     freeDailyRowsRead: D1_FREE_DAILY_ROWS_READ,
@@ -455,3 +541,5 @@ console.log(JSON.stringify({
     stoppedAtCeiling,
   },
 }, null, 2));
+
+if (!preflightPassed || !measurementComplete) process.exitCode = 1;

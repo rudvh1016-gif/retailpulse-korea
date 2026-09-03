@@ -13,10 +13,39 @@
  * write here would be a write against Production with no confirmation gate.
  * tests/data-coverage.test.mjs asserts the SELECT-only shape.
  */
+import {
+  STORE_DYNAMICS_MAPPING_VERSION,
+  STORE_DYNAMICS_SOURCE_ID,
+} from "./store-dynamics";
+
+const STORE_DYNAMICS_AREAS = ["myeongdong", "hongdae", "seongsu"] as const;
+
+function storeDynamicsCoverageSql(): string {
+  return STORE_DYNAMICS_AREAS.map(() => `SELECT sourceId, datasetId, recordOrigin, area, quarterCode,
+      tradeAreaCode, tradeAreaName, tradeAreaTypeCode, tradeAreaTypeName, mappingVersion, qualityStatus,
+      totalStoreCount, ordinaryStoreCount, franchiseStoreCount, openingCount,
+      openingRateTenthsPercent, closureCount, closureRateTenthsPercent, industryCount, retrievedAt, schemaVersion
+    FROM (SELECT source_id AS sourceId, dataset_id AS datasetId, record_origin AS recordOrigin,
+        area, quarter_code AS quarterCode, trade_area_code AS tradeAreaCode,
+        trade_area_name AS tradeAreaName, trade_area_type_code AS tradeAreaTypeCode,
+        trade_area_type_name AS tradeAreaTypeName, mapping_version AS mappingVersion,
+        quality_status AS qualityStatus, overall_store_count AS totalStoreCount,
+        ordinary_store_count AS ordinaryStoreCount, franchise_store_count AS franchiseStoreCount,
+        opening_store_count AS openingCount, opening_rate_tenths_percent AS openingRateTenthsPercent,
+        closure_store_count AS closureCount, closure_rate_tenths_percent AS closureRateTenthsPercent,
+        industry_count AS industryCount,
+        retrieved_at AS retrievedAt, schema_version AS schemaVersion
+      FROM seoul_store_dynamics
+      WHERE area = ? AND source_id = ? AND mapping_version = ?
+        AND record_origin = 'OFFICIAL_HISTORICAL' AND quality_status = 'VALID'
+      ORDER BY quarter_code DESC LIMIT 1)`).join(" UNION ALL ");
+}
 
 export interface CoverageProbe {
   /** Stable name printed in the diagnostic output. */
   name: string;
+  /** Canonical source-health ids whose data this probe inspects. */
+  sourceIds: readonly string[];
   /** What the row counts mean, so a reader never has to guess the semantics. */
   meaning: string;
   sql: string;
@@ -55,6 +84,7 @@ export function buildCoverageContext(nowIso: string): CoverageContext {
 export const COVERAGE_PROBES: CoverageProbe[] = [
   {
     name: "seoul_realtime_area",
+    sourceIds: ["SEOUL_CITYDATA_PPLTN"],
     meaning: "latest observation per area",
     sql: `SELECT area, MAX(observed_at) AS latestObservedAt, COUNT(*) AS rows
       FROM seoul_realtime_area GROUP BY area ORDER BY area`,
@@ -62,6 +92,7 @@ export const COVERAGE_PROBES: CoverageProbe[] = [
   },
   {
     name: "seoul_realtime_forecast_latest_issue",
+    sourceIds: ["SEOUL_CITYDATA_PPLTN"],
     meaning: "latest published 12-hour forecast per area, and how much of it is still ahead of now",
     sql: `SELECT f.area,
         MAX(f.issued_at) AS latestIssuedAt,
@@ -81,6 +112,7 @@ export const COVERAGE_PROBES: CoverageProbe[] = [
   },
   {
     name: "weather_forecast_latest_issue",
+    sourceIds: ["KMA_VILAGE_FCST"],
     meaning: "latest KMA issuance per area and how many target hours remain ahead",
     sql: `SELECT w.area, MAX(w.issued_at) AS latestIssuedAt, COUNT(*) AS bands,
         MIN(w.target_at) AS firstTargetAt, MAX(w.target_at) AS lastTargetAt,
@@ -95,6 +127,7 @@ export const COVERAGE_PROBES: CoverageProbe[] = [
     // costs no extra request; this is the read-only check that those columns
     // actually landed in Production, not just that the migration applied.
     name: "weather_forecast_w1_sample",
+    sourceIds: ["KMA_VILAGE_FCST"],
     meaning: "the earliest target hour of the latest KMA issuance per area, to confirm W1 humidity/wind/amount columns are actually populated and not just added by the migration",
     sql: `SELECT w.area, w.issued_at AS issuedAt, w.target_at AS targetAt,
         w.humidity_percent AS humidityPercent, w.wind_speed_tenth_mps AS windSpeedTenthMps,
@@ -110,6 +143,7 @@ export const COVERAGE_PROBES: CoverageProbe[] = [
   },
   {
     name: "tourism_events_upcoming",
+    sourceIds: ["KTO_TOURAPI_EVENT"],
     meaning: "events per area still running or upcoming as of the current KST day",
     sql: `SELECT area, COUNT(*) AS upcomingEvents, MIN(event_start) AS nextStart, MAX(retrieved_at) AS retrievedAt
       FROM tourism_events WHERE COALESCE(event_end, event_start) >= ?
@@ -118,13 +152,24 @@ export const COVERAGE_PROBES: CoverageProbe[] = [
   },
   {
     name: "seoul_estimated_sales_latest",
+    sourceIds: ["SEOUL_ESTIMATED_SALES"],
     meaning: "latest stored quarter per area",
     sql: `SELECT area, MAX(quarter_code) AS latestQuarter, COUNT(*) AS rows, MAX(retrieved_at) AS retrievedAt
       FROM seoul_estimated_sales GROUP BY area ORDER BY area`,
     params: () => [],
   },
   {
+    name: "seoul_store_dynamics_latest",
+    sourceIds: [STORE_DYNAMICS_SOURCE_ID],
+    meaning: "latest valid OA-15577 compact row for each exact current area mapping",
+    sql: storeDynamicsCoverageSql(),
+    params: () => STORE_DYNAMICS_AREAS.flatMap((area) => [
+      area, STORE_DYNAMICS_SOURCE_ID, STORE_DYNAMICS_MAPPING_VERSION,
+    ]),
+  },
+  {
     name: "seoul_foreign_presence_latest",
+    sourceIds: ["SEOUL_SHORT_STAY_FOREIGN_LIVING_POPULATION"],
     meaning: "latest valid official-historical reference per area",
     sql: `SELECT area, MAX(reference_at) AS latestReferenceAt, COUNT(*) AS rows
       FROM seoul_foreign_presence_area
@@ -134,6 +179,7 @@ export const COVERAGE_PROBES: CoverageProbe[] = [
   },
   {
     name: "airport_congestion_latest",
+    sourceIds: ["INCHEON_DEPARTURE_CONGESTION", "INCHEON_DEPARTURE_CONGESTION_T2"],
     meaning: "latest departure-hall observation per terminal, with checkpoint count",
     sql: `SELECT terminal, MAX(observed_at) AS latestObservedAt,
         COUNT(DISTINCT zone) AS zones, MAX(retrieved_at) AS retrievedAt
@@ -142,6 +188,7 @@ export const COVERAGE_PROBES: CoverageProbe[] = [
   },
   {
     name: "airport_passenger_forecast_days",
+    sourceIds: ["INCHEON_PASSENGER_FORECAST"],
     meaning: "official A5 aggregate departure bands per stored target date and terminal",
     sql: `SELECT target_date AS targetDate, terminal, COUNT(*) AS bands,
         MIN(target_start_at) AS firstBandStart, MAX(target_end_at) AS lastBandEnd,
@@ -153,6 +200,7 @@ export const COVERAGE_PROBES: CoverageProbe[] = [
   },
   {
     name: "airport_flights_days",
+    sourceIds: ["INCHEON_FLIGHT_DETAIL", "INCHEON_DUTY_FREE_ACTUAL"],
     meaning: "distinct physical departures per stored KST service date, with gate coverage",
     sql: `SELECT substr(scheduled_at, 1, 10) AS serviceDate,
         COUNT(DISTINCT physical_flight_id) AS departures,

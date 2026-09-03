@@ -203,6 +203,37 @@ test("event wording stays neutral about cause", () => {
   }
 });
 
+test("Store Dynamics is a dedicated historical block with four-language limitations", () => {
+  assert.match(signals, /data-signal-key="store-dynamics"/);
+  assert.match(signals, /groupId === "past" && storeDynamicsPresentation/);
+  for (const label of ["점포 현황", "Store openings and closures", "店铺开业与歇业", "店舗の開業・廃業"]) {
+    assert.ok(signals.includes(label), `${label} must exist`);
+  }
+  for (const limitation of [
+    "분기 기준 공식 과거 자료이며, 현재 영업 중인 점포의 실시간 수가 아닙니다.",
+    "Official quarterly historical data, not a real-time count of stores currently operating.",
+    "官方季度历史资料，并非当前营业店铺的实时数量。",
+    "四半期基準の公式過去資料であり、現在営業中の店舗のリアルタイム件数ではありません。",
+  ]) assert.ok(signals.includes(limitation), `${limitation} must exist`);
+
+  const block = signals.match(/const storeDynamicsText = \{[\s\S]*?\n\} as const;/)?.[0] ?? "";
+  for (const unsupported of [
+    "좋은 상권", "나쁜 상권", "생존율", "폐업 위험", "성공 점수", "점포 품질", "미래 예측",
+    "good area", "bad area", "survival rate", "closure risk", "success score", "store quality", "future prediction",
+    "优质商圈", "劣质商圈", "存活率", "歇业风险", "成功评分", "店铺质量", "未来预测",
+    "良い商圏", "悪い商圏", "生存率", "廃業リスク", "成功スコア", "店舗品質", "将来予測",
+  ]) {
+    assert.equal(block.includes(unsupported), false, `${unsupported} is unsupported judgement`);
+  }
+  for (const realtimeTerm of ["실시간", "real-time", "实时", "リアルタイム"]) {
+    assert.equal(block.split(realtimeTerm).length - 1, 1,
+      `${realtimeTerm} must appear only in the exact negative limitation`);
+  }
+  assert.match(signals, /timeState: signalStructureText\.timeState\.historical\[lang\]/);
+  assert.match(signals, /<dd lang="ko">\{presentation\.areaValue\}<\/dd>/,
+    "official Korean geography keeps its source language for assistive technology");
+});
+
 /**
  * The event card shows the provider's category name, period, place, distance
  * and an accessible complete stored description — and nothing the product

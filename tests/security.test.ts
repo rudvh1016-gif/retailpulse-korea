@@ -83,6 +83,12 @@ test("manual S2 import stays confirmed, bounded, isolated, and unscheduled", asy
   assert.match(script, /RPK_ONESHOT_CONFIRM !== "IMPORT"/);
   assert.ok(script.indexOf("RPK_ONESHOT_CONFIRM") < script.indexOf("new CloudflareD1RestDatabase"));
   assert.match(script, /seoul_foreign:\s*\(\)\s*=>\s*collectSeoulForeignPresence\(env\)/);
+  assert.match(script, /store_dynamics:\s*\(\)\s*=>\s*collectStoreDynamics\(env\)/);
+  for (const evidence of ["providerRequests", "sourceHealth", "lastGoodPreserved"]) {
+    assert.match(script, new RegExp(evidence), `one-shot output must retain ${evidence} evidence`);
+  }
+  assert.match(script, /if \(failures > 0\) process\.exitCode = 1/,
+    "one successful companion source must never mask a failed selected import");
   assert.match(collector, /configuredCodes.*new Set/);
   assert.doesNotMatch(collector, /1\/1\//);
   assert.match(collector, /SEOUL_FOREIGN_PERIOD_LOOKBACK_DAYS = 62/);

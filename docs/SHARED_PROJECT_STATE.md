@@ -210,6 +210,7 @@ Canonical decision is documented in:
 Authoritative per-source contract matrix: `docs/DATA_SOURCES.md`.
 
 - `S1` Seoul real-time city data and `S3` Seoul estimated sales passed authenticated verification (INFO-000) and are fully integrated. On 2026-09-02 S1 moved from `citydata_ppltn` to the OA-21285 integrated `citydata` response without adding calls: population remains `SEOUL_CITYDATA_PPLTN`, while Shinhan domestic-consumer commercial activity is independently stored/health-checked as `SEOUL_CITYDATA_CMRCL` (`drizzle/0010`) and shown in four locales with the permanent “not total sales” boundary. Read-only contract run `33622942959` passed all three POIs.
+- `S6` Store Dynamics uses OA-15577 `VwsmTrdarStorQq` and the versioned one-code-per-area mapping `oa-15577-standard-area-2026-09-03-v1`. A bounded 2026-09-03 public sample check found `20262` latest and verified all three exact code/name/type identities plus 30 published opening/closure rate values with zero formula-rounding mismatches. The implementation is quarterly historical context only, joins the existing weekly SLOW workflow, adds no Cron, and still requires an authenticated Production import before it can be marked deployed.
 - On 2026-08-30, bounded GitHub Actions run #19 proved shared-gateway reachability and authenticated all six `apis.data.go.kr` sources: A1/A2/A3/A4/W1/T1 returned HTTP 200 and official success codes within 2.5 seconds. The older 10-second aborts remain historical `REQUEST_ERROR` evidence, not authentication failures. See `docs/DATA_SOURCES.md` for the exact field contracts and A1-primary/A2-enrichment decision.
 - `S2` short-stay foreign population: the dong-level series ended (2026-06-09 portal notice); the 250m-grid successor's exact dataset ID/API service name still needs one portal check. Legacy dong history stays bundled as OFFICIAL_HISTORICAL.
 - Manual bounded one-shot import: **One-shot Data Import** workflow (workflow_dispatch + literal `IMPORT`). The recurring collector remains OFF behind `ENABLE_PRODUCTION_COLLECTOR`.
@@ -218,8 +219,9 @@ Authoritative per-source contract matrix: `docs/DATA_SOURCES.md`.
 ## 11.6 Production collection reliability (2026-09-01)
 
 - Cloudflare is the trigger-only alarm for Realtime, A5 and Weather; GitHub
-  Actions remains the collector engine. Production has exactly three approved
-  Cron expressions and staging/default have none.
+  Actions remains the collector engine. Production has exactly five approved
+  trigger-only Cron expressions (three primary cadence expressions plus two
+  recovery expressions), and staging/default have none.
 - A2/A3/A4-T1/A4-T2/TourAPI use four total attempts across a spaced bounded
   recovery window. W1 uses three attempts per grid. A1/A5/S1 behavior is not
   broadened.

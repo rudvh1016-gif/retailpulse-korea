@@ -231,7 +231,9 @@ export function safeSourceFailureDetail(error: unknown): string {
     : "COLLECTOR_ERROR";
   const failureClass = /(?:^|_)RESULT_30$|SERVICE_KEY/.test(causeCode)
     ? "AUTH"
-    : causeCode.includes("SCHEMA")
+    : causeCode.includes("PROVIDER")
+      ? "PROVIDER"
+      : causeCode.includes("SCHEMA") || causeCode.includes("CONTRACT")
       ? "SCHEMA"
       : "VALIDATION";
   return `failureClass=${failureClass} causeCode=${causeCode} attempts=1 elapsedMs=0 retryExhausted=false`;

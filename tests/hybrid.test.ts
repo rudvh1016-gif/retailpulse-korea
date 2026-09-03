@@ -158,6 +158,17 @@ test("A1 (airport_recent) is scheduled by exactly one collector workflow group",
   assert.deepEqual(owners, ["collect-production.yml"], "there must not be two competing scheduled A1 collectors");
 });
 
+test("Store Dynamics is owned only by the existing weekly slow workflow", async () => {
+  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml", "collect-forecast.yml", "collect-forecast-recovery.yml", "collect-weather-recovery.yml"];
+  const owners: string[] = [];
+  for (const file of groupFiles) {
+    const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
+    const sourcesLine = workflow.match(/RPK_PRODUCTION_SOURCES: (.+)/)?.[1] ?? "";
+    if (sourcesLine.split(",").map((value) => value.trim()).includes("store_dynamics")) owners.push(file);
+  }
+  assert.deepEqual(owners, ["collect-sales.yml"]);
+});
+
 test("every production source is scheduled by exactly one cadence-group workflow", async () => {
   const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml", "collect-forecast.yml", "collect-forecast-recovery.yml", "collect-weather-recovery.yml"];
   const scheduledSources: string[] = [];
@@ -288,6 +299,40 @@ test("production smoke requires A5 picker dates whenever A5 reports LIVE", () =>
     /date picker offers A5 forecast days when A5 is live/,
     "a silently empty A5 picker must fail smoke while the source claims LIVE",
   );
+});
+
+test("production smoke verifies Store Dynamics coverage, health, and one isolated cache key", () => {
+  const smoke = readFileSync(".github/workflows/site-smoke.yml", "utf8");
+  assert.match(smoke, /Store Dynamics covers all three exact areas/);
+  assert.match(smoke, /row\.datasetId === "OA-15577"/);
+  assert.match(smoke, /row\.mappingVersion === "oa-15577-standard-area-2026-09-03-v1"/);
+  assert.match(smoke, /row\.tradeAreaCode === expected\.code/);
+  assert.match(smoke, /row\.tradeAreaTypeCode === expected\.type/);
+  assert.match(smoke, /storeDynamicsQuarters\.size === 1/);
+  assert.match(smoke, /SEOUL_STORE_DYNAMICS/);
+  assert.match(smoke, /OFFICIAL_HISTORICAL/);
+  assert.match(smoke, /cacheProbe=\$\{cacheProbeKey\}/);
+  assert.match(smoke, /summary Edge Cache moves from cold to HIT/);
+  assert.match(smoke, /cfCacheStatus === "HIT"/);
+});
+
+test("read-budget evidence fails closed on missing indexes, scans, errors, or an incomplete run", () => {
+  const measure = readFileSync("scripts/measure-production-read-budget.ts", "utf8");
+  assert.match(measure, /airport_passenger_forecast_target_idx/);
+  assert.match(measure, /const preflightPassed = missingIndexes\.length === 0/);
+  assert.match(measure, /scanRegressions\.length === 0/);
+  assert.match(measure, /const measurementComplete = preflightPassed/);
+  assert.match(measure, /rowsReadPerUncachedRequest: summaryRowsRead/);
+  assert.match(measure, /skipped: "unindexed_scan"/);
+  assert.match(measure, /measuredSafeRowsRead: measuredSummaryRowsRead/);
+  assert.match(measure, /if \(!preflightPassed \|\| !measurementComplete\) process\.exitCode = 1/);
+  assert.match(measure, /requireRowsReadMetadata/);
+  assert.doesNotMatch(measure, /!\/\\bUSING \(\?:COVERING \)\?INDEX/,
+    "a full index SCAN is still proportional to a growing table");
+  assert.doesNotMatch(measure, /rows_read \?\? 0/,
+    "missing D1 measurement metadata must never be reported as zero");
+  assert.doesNotMatch(measure, /SELECT COUNT\(\*\) AS rows FROM \$\{table\}/,
+    "the diagnostic must not perform an unbounded baseline count");
 });
 
 /** The dispatch target and the live Cron must name the same workflow file. */
