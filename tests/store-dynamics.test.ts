@@ -134,6 +134,10 @@ test("published rates are trusted as the provider sent them, never recomputed fr
     [21, 21, 0, 0, 0, 2, 10],
     [67, 67, 0, 1, 2, 0, 0],
     [6, 6, 0, 0, 0, 1, 14],
+    // total=0: this industry's very last store in the trade area closed
+    // this quarter, so the closure count (1) legitimately exceeds what
+    // remains (0). closureCount is not bounded by totalStoreCount.
+    [0, 0, 0, 0, 0, 1, 0],
   ] as const;
   for (const [total, stor, frc, openingCount, openingRate, closureCount, closureRate] of real) {
     assert.doesNotThrow(() => normalizeStoreDynamicsRow(officialRow({
@@ -144,22 +148,25 @@ test("published rates are trusted as the provider sent them, never recomputed fr
   }
 });
 
-test("normalizer still rejects a structurally impossible count, even without a rate formula to check", () => {
+test("an opening or closure count is not bounded by the row's own total, and an arbitrary rate is trusted", () => {
   const expected = { ...storeDynamicsMappings.myeongdong, quarterCode: "20261" };
-  assert.throws(() => normalizeStoreDynamicsRow(officialRow({
+  // A first validator attempt rejected this as "impossible" before a real
+  // Production row (total=0, closureCount=1: the industry's last store)
+  // proved a count can legitimately exceed the row's own total.
+  assert.doesNotThrow(() => normalizeStoreDynamicsRow(officialRow({
     SIMILR_INDUTY_STOR_CO: 1_000,
     STOR_CO: 1_000,
     FRC_STOR_CO: 0,
     OPBIZ_STOR_CO: 1_004,
     OPBIZ_RT: 100,
-  }), expected, retrievedAt), /store_dynamics_count_bound/, "opening count may never exceed the row's own total");
-  assert.throws(() => normalizeStoreDynamicsRow(officialRow({
+  }), expected, retrievedAt));
+  assert.doesNotThrow(() => normalizeStoreDynamicsRow(officialRow({
     SIMILR_INDUTY_STOR_CO: 1_000,
     STOR_CO: 1_000,
     FRC_STOR_CO: 0,
     CLSBIZ_STOR_CO: 1_004,
     CLSBIZ_RT: 100,
-  }), expected, retrievedAt), /store_dynamics_count_bound/, "closure count may never exceed the row's own total");
+  }), expected, retrievedAt));
   assert.doesNotThrow(() => normalizeStoreDynamicsRow(officialRow({ OPBIZ_RT: 20 }), expected, retrievedAt),
     "an arbitrary but validly-shaped published rate is trusted, not recomputed");
 });
