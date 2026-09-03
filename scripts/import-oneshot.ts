@@ -146,7 +146,13 @@ const collectors: Record<string, () => Promise<OneShotResult>> = {
   // A2 facility directory. The collector is self-bounding: it skips without a
   // provider request when a SUCCESS run is inside its refresh window, so a
   // repeated dispatch cannot burn the daily development quota.
-  airport_facilities: () => collectAirportFacilities(env),
+  // RPK_FACILITY_FORCE_REFRESH exists for one purpose: proving in Production
+  // that re-collecting an unchanged directory produces zero changed rows. The
+  // refresh-window skip would otherwise return SKIPPED without ever reaching
+  // the changed-only write path, so the evidence could not be produced at all.
+  airport_facilities: () => collectAirportFacilities(env, new Date(), undefined, {
+    forceRefresh: process.env.RPK_FACILITY_FORCE_REFRESH === "true",
+  }),
 };
 
 const requested = (process.env.RPK_ONESHOT_SOURCES ?? "seoul_realtime,seoul_sales")

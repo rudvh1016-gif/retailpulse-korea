@@ -410,6 +410,55 @@ neither), so it always seeks `airport_facility_terminal_category_idx` or
 "open now" signal. The UI labels them 공식 영업시간 기준 and shows 확인 불가
 where the provider published nothing.
 
+**First real Production import (2026-09-04 KST, run 33809979088, manual
+one-shot, `confirm=IMPORT`):** SUCCESS, 52 provider requests, **1,221
+facilities stored**, 4,884 D1 storage writes, 0 unmatched translation rows.
+
+The stored total is **1,221, not the provider's `totalCount` of 1,232**, and
+the difference is not a loss. All three translation passes matched
+**1,232/1,232** rows against the Korean pass, which is only possible if every
+translation row's `sn` already existed — so the Korean response ships 1,232
+rows carrying 1,221 distinct `sn` values, and the eleven repeats collapse onto
+the facility they share an `sn` with. `sn` is the provider's own primary key
+and the table's primary key, so keeping one row per `sn` is the correct
+reading of the source, not a filter KORETAIL applied. Nothing is dropped for
+failing validation: a row with no Korean name or no recognised terminal is
+stored as `PARTIAL`, never discarded.
+
+**Coverage as stored:** T1 556 · T2 584 · terminal unrecognised 81. Duty-free
+area 595 / general area 626. Arrival side 62 / departure side 1,159.
+Category groups: 면세점 165 · 식당·카페 234 · 편의점 15 · 약국 8 ·
+환전·통신 119 · 여객 서비스 680. Names: Korean, English, Japanese and Chinese
+all 1,221 (complete). Missing official hours 154 · missing phone 436 ·
+missing location text 48 · missing terminal 81. Quality: 1,140 VALID / 81
+PARTIAL, and the PARTIAL set is exactly the 81 rows with no recognised
+terminal. Every stored row has both a duty/general area and an
+arrival/departure side — neither is ever unknown.
+
+Verified read-only from D1 by the `airport_facility_totals` and
+`airport_facility_by_terminal_category` coverage probes (run 33810252481),
+which report the same numbers the collector logged, so the evidence is
+storage, not a log line. `collector_runs.records_read` is **1,232** against
+`records_written` **1,221**, which is the duplicate-`sn` arithmetic above
+measured rather than assumed. Source health: **LIVE**, `consecutive_failures`
+0.
+
+**The 81 unrecognised terminals are a real gap, not noise.** Zero rows mapped
+to `CONCOURSE`, `T1_TRANSPORT` or `T2_TRANSPORT`, so the documented
+`G01`/`G02`/`G03` codes did not appear in the response at all; those 81 rows
+carry a `terminalid` outside the documented set (or none). They are stored
+honestly as `PARTIAL` with `terminal` NULL and are simply absent from the
+terminal filters, which is preferable to guessing a terminal for them. The
+raw `terminal_code` is retained, so the codes can be identified and mapped
+without re-collecting.
+
+**Refresh window and the force waiver:** the collector skips with zero
+provider requests when a SUCCESS run is inside `FACILITY_REFRESH_DAYS`. That
+skip would also hide the changed-only write path, so re-collection can be
+forced from the manual one-shot only, via the `force_facility_refresh`
+dispatch input (`RPK_FACILITY_FORCE_REFRESH`). The recurring scheduler never
+sets it, and a test asserts that.
+
 ## Airline ranking and airline country reference (2026-09-03)
 
 The airline ranking on the airport page is derived from the same A1

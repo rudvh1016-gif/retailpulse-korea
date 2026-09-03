@@ -184,6 +184,32 @@ test("a successful run within the refresh window makes zero provider requests", 
   assert.match(result.detail, new RegExp(`${FACILITY_REFRESH_DAYS} days`));
 });
 
+test("forceRefresh is the only way past the window, and the scheduler never sets it", async () => {
+  const { client } = fakeDb({ runs: [{ started_at: "2026-09-01T00:00:00.000Z" }] });
+  const page = (items, totalCount) => ({ response: { header: { resultCode: "00" }, body: { items: { item: items }, totalCount } } });
+  let calls = 0;
+  const result = await collectAirportFacilities(
+    { DB: client, DATA_GO_KR_SERVICE_KEY: "fixture" },
+    fixedNow,
+    async (url) => {
+      calls += 1;
+      return url.searchParams.get("lang") === "K" ? page([officialRow({ sn: "1" })], 1) : page([], 0);
+    },
+    { forceRefresh: true },
+  );
+  assert.equal(result.status, "SUCCESS", "a forced run must actually collect");
+  assert.equal(calls, 4, "a forced run costs the same bounded per-language passes");
+
+  // The recurring scheduler must never carry the flag: the refresh window is
+  // what keeps a daily selection free, and only the manual one-shot may waive it.
+  const runner = await readFile(new URL("../lib/production-runner.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(runner, /forceRefresh/,
+    "the production scheduler must never bypass the facility refresh window");
+  const oneshot = await readFile(new URL("../scripts/import-oneshot.ts", import.meta.url), "utf8");
+  assert.match(oneshot, /RPK_FACILITY_FORCE_REFRESH === "true"/,
+    "the waiver must be an explicit opt-in, never the default");
+});
+
 test("one collection reads every language once and writes changed rows only", async () => {
   const { client, written } = fakeDb();
   const page = (items, totalCount) => ({ response: { header: { resultCode: "00" }, body: { items: { item: items }, totalCount } } });
@@ -245,7 +271,7 @@ test("the collection is bounded so one run can never approach the daily quota", 
 
 test("the one-shot import can run the A2 directory, so Production has a path that is not the disabled scheduler", async () => {
   const script = await readFile(new URL("../scripts/import-oneshot.ts", import.meta.url), "utf8");
-  assert.match(script, /airport_facilities:\s*\(\)\s*=>\s*collectAirportFacilities\(env\)/,
+  assert.match(script, /airport_facilities:\s*\(\)\s*=>\s*collectAirportFacilities\(env,/,
     "the A2 collector must be selectable from the manual bounded import");
   assert.match(script, /import \{ collectAirportFacilities \} from "\.\.\/lib\/airport-facilities"/);
   // Coverage is the whole point of the A2 closure evidence, and `detail` is
