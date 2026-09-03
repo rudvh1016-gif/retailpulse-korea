@@ -47,15 +47,34 @@ class RestPreparedStatement {
       meta: result?.meta,
     };
   }
+
+  /**
+   * Reads the first row back, shaped like the Workers D1 binding's `first()`.
+   *
+   * Same class of gap as `all()` above, and it bit in exactly the same way.
+   * A2's last-good check counts stored facilities to decide whether a failed
+   * run means STALE (a directory exists) or ERROR (nothing is stored). Its
+   * `catch` turns any throw into a count of zero, so the missing method made
+   * a healthy 1,221-row directory report ERROR after a transient provider
+   * timeout (production run 33810820692, 2026-09-04). The rows were never at
+   * risk; the status was simply wrong about them.
+   */
+  async first<T = Record<string, unknown>>(): Promise<T | null> {
+    const { results } = await this.all<T>();
+    return results[0] ?? null;
+  }
 }
 
 /**
  * Small D1 REST adapter for trusted GitHub Actions only.
  *
- * It exposes prepare/bind/run/all/batch — the surface the collectors and the
- * recovery planner use. Anything a caller needs must exist HERE, not only on
- * the Workers binding and the test doubles: a method missing from this class
- * fails silently in Actions while every unit test passes.
+ * It exposes prepare/bind/run/all/first/batch — the surface the collectors and
+ * the recovery planner use. Anything a caller needs must exist HERE, not only
+ * on the Workers binding and the test doubles: a method missing from this
+ * class fails silently in Actions while every unit test passes. That has now
+ * happened twice, so tests/d1-rest-surface.test.mjs scans the source for every
+ * `.method()` the collectors call on a prepared statement and fails if this
+ * adapter does not implement it.
  */
 export class CloudflareD1RestDatabase {
   private readonly endpoint: string;
