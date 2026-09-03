@@ -301,11 +301,14 @@ export function normalizeStoreDynamicsRow(
   // others — eight real rows, no consistent arithmetic relationship. The
   // provider evidently derives the published rate from something this
   // table does not carry (very plausibly a different, undocumented
-  // denominator). requireRate() already bounds each value to 0-100; only
-  // the structural count relationship below stays enforced, because that
-  // one held for every real row observed.
-  if (openingCount > totalStoreCount) fail("store_dynamics_count_bound");
-  if (closureCount > totalStoreCount) fail("store_dynamics_count_bound");
+  // denominator). requireRate() already bounds each value to 0-100.
+  //
+  // openingCount/closureCount are not bounded by totalStoreCount either: a
+  // real Production row had total=0, closureCount=1 — the industry's very
+  // last store in that trade area closed this quarter, so this quarter's
+  // closures legitimately exceed what remains. The only count relationship
+  // that has held for every real row observed is the breakdown checked
+  // above.
 
   return {
     area: expected.area,
