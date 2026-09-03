@@ -48,6 +48,17 @@ function isNonNegativeSafeInteger(value: unknown): value is number {
  * Validates the complete stored-row contract used by both Last-good health
  * and the public summary. Keeping this in the source module prevents those
  * two truth surfaces from disagreeing about whether a row is usable.
+ *
+ * Only structural facts that held for every real Production row are
+ * enforced: identity, non-negative integer counts, and the provider's own
+ * `total = ordinary + franchise` breakdown. Deliberately NOT enforced, each
+ * disproven by a real OA-15577 row: `openingCount <= totalStoreCount`,
+ * `closureCount <= totalStoreCount` (an industry's last stores closing
+ * legitimately leaves closures above what remains), and any rate ceiling
+ * (a real row published `CLSBIZ_RT = 200`). The two `*RateTenthsPercent`
+ * columns are a KORETAIL-derived ratio kept for schema stability only; they
+ * are never surfaced as an official rate, so a good row of counts is not
+ * invalidated by them beyond being non-negative integers.
  */
 export function isValidStoredStoreDynamicsRow(
   area: AreaId,
@@ -71,14 +82,10 @@ export function isValidStoredStoreDynamicsRow(
     && row.tradeAreaTypeName === mapping.tradeAreaTypeName
     && typeof row.quarterCode === "string" && /^\d{4}[1-4]$/.test(row.quarterCode)
     && counts.every(isNonNegativeSafeInteger)
-    && rates.every((value) => isNonNegativeSafeInteger(value) && value <= 1_000)
+    && rates.every(isNonNegativeSafeInteger)
     && (row.totalStoreCount as number) > 0
     && isNonNegativeSafeInteger(row.industryCount) && row.industryCount > 0
     && row.totalStoreCount === (row.ordinaryStoreCount as number) + (row.franchiseStoreCount as number)
-    && (row.openingCount as number) <= (row.totalStoreCount as number)
-    && (row.closureCount as number) <= (row.totalStoreCount as number)
-    && row.openingRateTenthsPercent === Math.round(((row.openingCount as number) * 1_000) / (row.totalStoreCount as number))
-    && row.closureRateTenthsPercent === Math.round(((row.closureCount as number) * 1_000) / (row.totalStoreCount as number))
     && typeof row.retrievedAt === "string" && Number.isFinite(Date.parse(row.retrievedAt));
 }
 
@@ -210,6 +217,18 @@ function requireCount(value: unknown): number {
   return parsed;
 }
 
+/**
+ * A provider-published percentage: finite, non-negative, sanely represented.
+ *
+ * There is deliberately no upper bound. The official 서울시 상권분석서비스
+ * methodology (golmok.seoul.go.kr) defines 개/폐업률 as
+ * `당기 개·폐업신고점포수 / 전체점포수 × 100` and nowhere restricts it to
+ * 0–100; a percentage exceeds 100 whenever the event count exceeds its
+ * denominator. A real Production row (seongsu, CS200015, total=1,
+ * closureCount=2) published `CLSBIZ_RT = 200`, so an earlier `<= 100` check
+ * was rejecting valid official data. No replacement ceiling (200, 500,
+ * 1000…) is introduced: none is stated by the provider.
+ */
 function requireRate(value: unknown): { value: number; decimalPlaces: number } {
   let raw: string;
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -221,7 +240,7 @@ function requireRate(value: unknown): { value: number; decimalPlaces: number } {
   }
   const parsed = Number(raw);
   if (!Number.isFinite(parsed)) fail("store_dynamics_number");
-  if (parsed < 0 || parsed > 100) fail("store_dynamics_rate");
+  if (parsed < 0) fail("store_dynamics_rate");
   const decimalPlaces = raw.includes(".") ? raw.length - raw.indexOf(".") - 1 : 0;
   if (decimalPlaces > 6) fail("store_dynamics_number");
   return { value: parsed, decimalPlaces };
@@ -295,13 +314,15 @@ export function normalizeStoreDynamicsRow(
     fail("store_dynamics_total_breakdown");
   }
   // OPBIZ_RT/CLSBIZ_RT are trusted as the provider published them, not
-  // recomputed from this row's own counts. Two attempts at reconstructing
-  // the formula (base = ending total; base = total with the event backed
-  // out/added back) each fit some real Production rows and contradicted
-  // others — eight real rows, no consistent arithmetic relationship. The
-  // provider evidently derives the published rate from something this
-  // table does not carry (very plausibly a different, undocumented
-  // denominator). requireRate() already bounds each value to 0-100.
+  // recomputed from this row's own counts. The official methodology
+  // (golmok.seoul.go.kr) publishes the formula — 당기 개·폐업신고점포수 /
+  // 전체점포수 × 100 — but two attempts at reconstructing its denominator
+  // from this row's fields (base = ending total; base = total with the
+  // event backed out/added back) each fit some real Production rows and
+  // contradicted others: eight real rows, no consistent relationship. The
+  // "전체점포수" the provider divides by is evidently not carried by this
+  // table for every row. requireRate() bounds each value below by 0 only;
+  // a real row published CLSBIZ_RT = 200, so there is no ceiling.
   //
   // openingCount/closureCount are not bounded by totalStoreCount either: a
   // real Production row had total=0, closureCount=1 — the industry's very
@@ -402,9 +423,15 @@ export async function aggregateStoreDynamicsRows(
     ordinaryStoreCount,
     franchiseStoreCount,
     openingCount,
-    openingRateTenthsPercent: totalStoreCount === 0 ? 0 : Math.round((openingCount * 1_000) / totalStoreCount),
+    // KORETAIL-derived ratio, sum(count) / sum(ending total), kept only so
+    // the existing NOT NULL columns stay populated without a destructive
+    // migration. It is NOT the official 서울시 개/폐업률: the provider's
+    // per-row rates cannot be reconstructed from these fields for every real
+    // row, so no area-wide official rate exists to publish. Nothing public
+    // surfaces these two values (see app/live-signals.tsx).
+    openingRateTenthsPercent: Math.round((openingCount * 1_000) / totalStoreCount),
     closureCount,
-    closureRateTenthsPercent: totalStoreCount === 0 ? 0 : Math.round((closureCount * 1_000) / totalStoreCount),
+    closureRateTenthsPercent: Math.round((closureCount * 1_000) / totalStoreCount),
     industryCount: industries.size,
     mappingVersion: STORE_DYNAMICS_MAPPING_VERSION,
     schemaVersion: STORE_DYNAMICS_SCHEMA_VERSION,

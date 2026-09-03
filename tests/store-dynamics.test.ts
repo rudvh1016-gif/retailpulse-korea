@@ -107,8 +107,80 @@ test("normalizer fails closed on identity drift, missing fields, or impossible c
   assert.throws(() => normalizeStoreDynamicsRow(officialRow({ SIMILR_INDUTY_STOR_CO: 155 }), expected, retrievedAt), /store_dynamics_total_breakdown/);
   assert.throws(() => normalizeStoreDynamicsRow(officialRow({ STOR_CO: -1, SIMILR_INDUTY_STOR_CO: 12 }), expected, retrievedAt), /store_dynamics_count/);
   assert.throws(() => normalizeStoreDynamicsRow(officialRow({ FRC_STOR_CO: 13.5, SIMILR_INDUTY_STOR_CO: 156.5 }), expected, retrievedAt), /store_dynamics_count/);
-  assert.throws(() => normalizeStoreDynamicsRow(officialRow({ CLSBIZ_RT: 101 }), expected, retrievedAt), /store_dynamics_rate/);
+  assert.throws(() => normalizeStoreDynamicsRow(officialRow({ CLSBIZ_RT: -1 }), expected, retrievedAt), /store_dynamics_rate/);
   assert.throws(() => normalizeStoreDynamicsRow(officialRow({ OPBIZ_RT: "3.0000000" }), expected, retrievedAt), /store_dynamics_number/);
+});
+
+/**
+ * The official 서울시 상권분석서비스 methodology (golmok.seoul.go.kr) defines
+ * 개/폐업률 as 당기 개·폐업신고점포수 / 전체점포수 × 100 and never restricts
+ * it to 0–100. A percentage exceeds 100 whenever the event count exceeds its
+ * denominator, and Production proved it: seongsu / CS200015 / total=1 /
+ * closureCount=2 published CLSBIZ_RT = 200. An earlier `<= 100` validator
+ * rejected that valid official row and blocked the whole collection.
+ */
+test("a published rate above 100 is valid official data: the real 200% Production row", () => {
+  const expected = { ...storeDynamicsMappings.seongsu, quarterCode: "20262" };
+  const row = normalizeStoreDynamicsRow({
+    STDR_YYQU_CD: "20262",
+    TRDAR_SE_CD: "A",
+    TRDAR_SE_CD_NM: "골목상권",
+    TRDAR_CD: "3110131",
+    TRDAR_CD_NM: "성수동카페거리",
+    SVC_INDUTY_CD: "CS200015",
+    // The Production diagnostic logged the code only; the official name was
+    // not captured and is not guessed here.
+    SVC_INDUTY_CD_NM: "업종명 확인 못 함",
+    SIMILR_INDUTY_STOR_CO: 1,
+    STOR_CO: 1,
+    FRC_STOR_CO: 0,
+    OPBIZ_RT: 0,
+    OPBIZ_STOR_CO: 0,
+    CLSBIZ_RT: 200,
+    CLSBIZ_STOR_CO: 2,
+  }, expected, retrievedAt);
+  assert.equal(row.closureRatePercent, 200, "the provider's value is preserved, not clamped or rejected");
+  assert.equal(row.closureCount, 2);
+  assert.equal(row.totalStoreCount, 1);
+});
+
+test("rate validation requires only a finite, non-negative, sanely represented number — no invented ceiling", () => {
+  const expected = { ...storeDynamicsMappings.myeongdong, quarterCode: "20261" };
+  const accepted: unknown[] = [0, 2, 14, 25, 100, 200, 1_000, 12.5, "0", "2", "100", "200", "0.5", "33.333333"];
+  for (const value of accepted) {
+    for (const field of ["OPBIZ_RT", "CLSBIZ_RT"]) {
+      const row = normalizeStoreDynamicsRow(officialRow({ [field]: value }), expected, retrievedAt);
+      const stored = field === "OPBIZ_RT" ? row.openingRatePercent : row.closureRatePercent;
+      assert.equal(stored, Number(value), `${field}=${JSON.stringify(value)} must be accepted and preserved`);
+    }
+  }
+  const rejected: Array<[unknown, RegExp]> = [
+    [-1, /store_dynamics_rate/],
+    [-0.5, /store_dynamics_rate/],
+    [Number.NaN, /store_dynamics_number/],
+    [Number.POSITIVE_INFINITY, /store_dynamics_number/],
+    [Number.NEGATIVE_INFINITY, /store_dynamics_number/],
+    ["-1", /store_dynamics_number/],
+    ["1e3", /store_dynamics_number/],
+    ["12%", /store_dynamics_number/],
+    ["abc", /store_dynamics_number/],
+    ["", /store_dynamics_number/],
+    [" 3", /store_dynamics_number/],
+    ["3.", /store_dynamics_number/],
+    [".5", /store_dynamics_number/],
+    ["03", /store_dynamics_number/],
+    ["3.0000000", /store_dynamics_number/],
+    [null, /store_dynamics_number/],
+    [undefined, /store_dynamics_number/],
+    [true, /store_dynamics_number/],
+    [{}, /store_dynamics_number/],
+  ];
+  for (const [value, code] of rejected) {
+    for (const field of ["OPBIZ_RT", "CLSBIZ_RT"]) {
+      assert.throws(() => normalizeStoreDynamicsRow(officialRow({ [field]: value }), expected, retrievedAt), code,
+        `${field}=${String(value)} must be rejected with ${code}`);
+    }
+  }
 });
 
 /**
@@ -237,10 +309,13 @@ test("aggregator creates one compact area fact without duplicate-industry inflat
   assert.equal(aggregate.ordinaryStoreCount, 603);
   assert.equal(aggregate.franchiseStoreCount, 86);
   assert.equal(aggregate.openingCount, 20);
-  assert.equal(aggregate.openingRateTenthsPercent, 29);
   assert.equal(aggregate.closureCount, 23);
-  assert.equal(aggregate.closureRateTenthsPercent, 33);
   assert.equal(aggregate.industryCount, 2);
+  // The two tenths columns are a KORETAIL-derived ratio over the summed
+  // counts, kept only to populate the existing NOT NULL columns. They are not
+  // the official area-wide 개/폐업률 and nothing public surfaces them.
+  assert.equal(aggregate.openingRateTenthsPercent, 29);
+  assert.equal(aggregate.closureRateTenthsPercent, 33);
   assert.equal(aggregate.qualityStatus, "VALID");
   assert.match(aggregate.sourceHash, /^[a-f0-9]{64}$/);
 

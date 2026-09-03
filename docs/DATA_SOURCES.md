@@ -44,11 +44,50 @@ read during the public sample verification; authenticated Production
 collection must still validate every row before writing any area aggregate.
 
 Every count is a non-negative integer; total stores must equal ordinary plus
-franchise stores. Opening and closure rates must match the provider's official
-count / total × 100 definition. The bounded sample verified 30 published rate
-values with zero mismatches against integer rounding. Duplicate industries,
-wrong geography, wrong quarter, malformed values, incomplete pagination, and
-empty results fail closed. The collector probes at most five quarters and at
+franchise stores. Duplicate industries, wrong geography, wrong quarter,
+malformed values, incomplete pagination, and empty results fail closed.
+
+### Rate semantics: what is official, what is not (2026-09-03)
+
+OA-15577 publishes, per industry row: `SIMILR_INDUTY_STOR_CO`, `STOR_CO`,
+`FRC_STOR_CO`, `OPBIZ_STOR_CO`, `OPBIZ_RT`, `CLSBIZ_STOR_CO`, `CLSBIZ_RT`.
+The separate official 서울시 상권분석서비스 methodology
+(https://golmok.seoul.go.kr/smallRegionStatistics.do and
+https://golmok.seoul.go.kr/source.do) defines 점포수 as 사업자등록번호-based
+Seoul businesses, 점포수 산식 as `당기 운영 점포수 + 폐업 점포수`, and 개/폐업률
+as `(당기 개/폐업신고점포수 / 전체점포수) × 100`. It does not restrict the rate
+to 0–100.
+
+The first authenticated Production collections established, with real rows,
+that the denominator the provider divides by is **not** reconstructible from
+the OA-15577 row fields for every row: two candidate reconstructions
+(`SIMILR_INDUTY_STOR_CO`; that total with the event backed out or added back)
+each matched some real rows and contradicted others across eight captured
+rows, and a ninth (`hongdae`, `CS200046`, total 0, closure count 1) proved a
+count can exceed the row's ending total. A tenth (`seongsu`, `CS200015`,
+total 1, closure count 2) published `CLSBIZ_RT = 200`: a percentage exceeds
+100 whenever the event count exceeds its denominator. An earlier
+`<= 100` validator, a count-bound validator, and two recomputation formulas
+were each disproven by this evidence and removed (PRs #90–#92 and the
+official-contract fix).
+
+KORETAIL therefore:
+
+- preserves each provider-published row rate when it is a finite,
+  non-negative, sanely represented number, and applies **no** upper bound
+  (no 100, 200, 500, or 1000 ceiling: the provider states none);
+- never recomputes a row rate from that row's counts;
+- never manufactures an area-wide official percentage: the stored
+  `opening_rate_tenths_percent` / `closure_rate_tenths_percent` columns hold a
+  documented KORETAIL-derived ratio (`round(Σcount × 1000 / Σending total)`)
+  solely so the existing `NOT NULL` columns stay populated without a
+  destructive migration, and neither `/api/live/summary` nor the UI exposes
+  them;
+- exposes, for Phase B v1, only the area aggregates whose meaning is
+  unambiguous: total, ordinary, franchise, opening, and closure counts,
+  industry count, the official reference quarter, and the official trade-area
+  name. A deliberately omitted ambiguous percentage is preferable to an
+  invented one. The collector probes at most five quarters and at
 most three 1,000-row pages per area, validates all three areas in memory, then
 writes one compact changed-only row per area/quarter. Retrieval time is not
 part of the semantic hash. Failure preserves stored rows and reports `STALE`
@@ -58,9 +97,9 @@ three exact mappings; otherwise it reports `ERROR`. Valid data reports
 
 The public area figures are KORETAIL-derived sums of the unique official
 industry rows, not a provider-published single area-total row and not a claim
-to enumerate every legal business. The aggregate rates are recomputed from
-the summed official counts with the official formula. `source_updated_at` is
-stored as `null` because OA-15577 does not publish it. Transport is HTTP per
+to enumerate every legal business. No area-wide rate is published (see "Rate
+semantics" above). `source_updated_at` is stored as `null` because OA-15577
+does not publish it. Transport is HTTP per
 the official Seoul endpoint; authenticated URLs and keys are never logged.
 The collector deliberately uses one transport attempt per bounded page so a
 run cannot silently exceed its five-probe/three-pages-per-area ceiling.
