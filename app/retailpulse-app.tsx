@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { checklistPhaseLabels, checklistPhaseOrder, type IndustryId, industryProfiles } from "../lib/industry-guidance";
 import {
   airportAnnual,
@@ -18,6 +18,7 @@ import {
 import { pageDescription, pageTitle, seoLocales, seoSlugs, siteOrigin, type SeoSlug } from "./seo-config";
 import LiveSignals, {
   AirportTodaySummary,
+  AreaCurrentBrief,
   DateNavigator,
   DateScopeNote,
   FlightBoard,
@@ -229,6 +230,22 @@ type RetailPulseProps = {
   initialView?: View;
   initialArea?: AreaId;
   initialRoute?: boolean;
+  /**
+   * "home" is `/{lang}`: the Seoul overview with the three-area brief list.
+   * "area" is `/{lang}/{area}`: that area's own page, with its own H1 and
+   * without the overview list, so the two routes are no longer the same page
+   * under two URLs.
+   */
+  initialScope?: "home" | "area";
+};
+
+const areaHeadline: Record<Lang, (name: string) => string> = {
+  ko: (name) => `${name}, 지금`,
+  // areaInfo keeps the English name upper-case for the tab strip; a heading
+  // is a sentence, so it is title-cased here ("Myeongdong, now").
+  en: (name) => `${name.charAt(0)}${name.slice(1).toLowerCase()}, now`,
+  zh: (name) => `${name}，现在`,
+  ja: (name) => `${name}、いま`,
 };
 
 const htmlLang: Record<Lang, string> = { ko: "ko", en: "en", zh: "zh-CN", ja: "ja" };
@@ -239,7 +256,7 @@ function routeFor(lang: Lang, view: View, area: AreaId) {
   return `${base}/${view}`;
 }
 
-export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false }: RetailPulseProps = {}) {
+export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false, initialScope = "home" }: RetailPulseProps = {}) {
   const [lang, setLang] = useState<Lang>(initialLang);
   const [view, setView] = useState<View>(initialView);
   const [selected, setSelected] = useState<AreaId>(initialArea);
@@ -355,6 +372,11 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         <button className="brand brand-button" onClick={() => navigate("today")} aria-label="KORETAIL home">
           <span>KORETAIL</span><span className="brand-descriptor">Retail Demand Signals for Korea</span>
         </button>
+        <nav className="top-nav" aria-label="Primary">
+          {(["today", "airport", "business", "forecast", "about", "more"] as View[]).map((item) => (
+            <a key={item} href={routeFor(lang, item, selected)} className={view === item ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} aria-current={view === item ? "page" : undefined}>{t[item]}</a>
+          ))}
+        </nav>
         <div className="header-meta">
           <KstTodayChip lang={lang} date={serviceDate} />
           <label className="language-control">
@@ -375,14 +397,24 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             <section className="hero" aria-labelledby="hero-title">
               <div className="hero-copy">
                 <p className="eyebrow">OFFICIAL DEMAND SIGNALS · SEOUL</p>
-                <h1 id="hero-title">{t.hero.split("\n").map((line) => <span key={line}>{line}</span>)}</h1>
+                {/* The line break is a real <br>, not a block span: a span per
+                    line left the accessible name and crawled text as one run
+                    ("How is Seoulmoving right now?"). */}
+                <h1 id="hero-title">{initialScope === "area"
+                  ? areaHeadline[lang](areaLocalName(selected, lang))
+                  : t.hero.split("\n").map((line, index) => <Fragment key={line}>{index > 0 && " "}{index > 0 && <br />}{line}</Fragment>)}</h1>
                 <p className="hero-line">{t.sub}</p>
               </div>
             </section>
 
+            {initialScope === "area" && (
+              <div className="area-tabs" role="tablist" aria-label={localText(lang, { ko: "지역 선택", en: "Select an area", zh: "选择地区", ja: "エリアを選択" })}>
+                {(Object.keys(areaInfo) as AreaId[]).map((id) => <button key={id} className={selected === id ? "active" : ""} onClick={() => selectArea(id)} role="tab" aria-selected={selected === id}>{areaLocalName(id, lang)}</button>)}
+              </div>
+            )}
             <DateNavigator lang={lang} date={serviceDate} onChange={setServiceDate} />
             <DateScopeNote lang={lang} date={serviceDate} />
-            <HomeTodayBrief lang={lang} selected={selected} onSelect={selectArea} date={serviceDate} />
+            {initialScope === "home" && <HomeTodayBrief lang={lang} selected={selected} onSelect={selectArea} date={serviceDate} />}
             <LiveSignals lang={lang} area={selected} date={serviceDate} />
             {betaSignupEnabled && <BetaSignup lang={lang} />}
           </>
@@ -590,7 +622,17 @@ function BusinessView({
           {(Object.keys(areaInfo) as AreaId[]).map((id) => <button key={id} className={selected === id ? "active" : ""} onClick={() => setSelected(id)} role="tab" aria-selected={selected === id}>{areaLocalName(id, lang)}</button>)}
         </div>
         <DateNavigator lang={lang} date={date} onChange={setDate} />
-        <LiveSignals lang={lang} area={selected} date={date} />
+        {/* The store screen used to repeat the whole Seoul signal page above
+            the checklist, pushing the one thing this screen is for about
+            3,000px down. It now shows the area's short current brief and
+            links to the full area page. */}
+        <AreaCurrentBrief
+          lang={lang}
+          area={selected}
+          date={date}
+          linkHref={routeFor(lang, "today", selected)}
+          linkLabel={localText(lang, { ko: `${areaLocalName(selected, lang)} 전체 신호 보기`, en: `All ${areaLocalName(selected, lang)} signals`, zh: `查看${areaLocalName(selected, lang)}全部信号`, ja: `${areaLocalName(selected, lang)}の全シグナルを見る` })}
+        />
 
         <section className="industry-section" aria-labelledby="industry-title">
           <div className="section-head">

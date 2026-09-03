@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
-import { isStagingDeployment, siteOrigin } from "./seo-config";
+import { isStagingDeployment, siteOrigin, socialImage } from "./seo-config";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin),
@@ -17,11 +17,14 @@ export const metadata: Metadata = {
     title: "서울 외국인 쇼핑수요 신호 | KORETAIL",
     description: "오늘과 내일의 서울 외국인 쇼핑수요 신호, 매장 준비와 인천공항 T1·T2 흐름을 한눈에.",
     url: "/ko", siteName: "KORETAIL", type: "website", locale: "ko_KR",
+    images: [socialImage],
   },
-  twitter: { card: "summary", title: "KORETAIL", description: "Retail Demand Signals for Korea — 서울의 외국인 쇼핑수요 신호를 오늘과 내일 관점에서 읽습니다." },
+  twitter: { card: "summary_large_image", title: "KORETAIL", description: "Retail Demand Signals for Korea — 서울의 외국인 쇼핑수요 신호를 오늘과 내일 관점에서 읽습니다.", images: [socialImage.url] },
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#f5f3ed" };
+// White-first: the browser chrome and PWA splash match the page, which is
+// pure white. A tinted theme colour would read as a different site.
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#FFFFFF" };
 
 const supportedDocumentLanguages = new Set(["ko", "en", "zh-CN", "ja"]);
 

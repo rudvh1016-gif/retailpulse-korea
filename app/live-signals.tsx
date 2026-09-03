@@ -324,6 +324,15 @@ const text = {
   currentPopulation: { ko: "현재 추정 인구", en: "Estimated population now", zh: "当前推定人口", ja: "現在の推定人口" },
   notCumulative: { ko: "현재 시점 추정 범위 · 오늘 누적 방문객 아님", en: "estimated range at this moment, not today's cumulative visitors", zh: "当前时点推定范围 · 非今日累计访客", ja: "現時点の推定範囲 · 本日の累計来訪者ではありません" },
   commercial: { ko: "최근 10분 내국인 카드 소비", en: "Recent 10-minute domestic-card activity", zh: "最近10分钟境内消费者银行卡支付", ja: "直近10分の国内消費者カード決済" },
+  // The first line of the card states the time basis and the population
+  // before any number, so "결제금액 ₩1,000,000–₩1,100,000" is never read as
+  // today's total or as all shoppers.
+  commercialBasis: {
+    ko: "신한카드 내국인 결제 추정 · 최근 10분 기준 · 오늘 누적 아님",
+    en: "Shinhan Card domestic-consumer payment estimate · recent 10-minute window · not a daily total",
+    zh: "新韩卡韩国境内消费者支付推算 · 最近10分钟窗口 · 非当日累计",
+    ja: "新韓カード国内消費者決済の推定 · 直近10分基準 · 本日累計ではありません",
+  },
   commercialDisclaimer: {
     ko: "신한카드 내국인 결제 기반 · 전수 매출 아님 · 외국인 소비 아님",
     en: "Based on Shinhan Card domestic-consumer payments · not total sales · not foreign-consumer spending",
@@ -1331,6 +1340,7 @@ function CommercialSignalCard({ signal, lang }: { signal: CommercialSignalRow; l
       {signal.state === "STALE" && <small className="signal-stale">{text.stale[lang]}{signal.staleAge ? ` · ${signal.staleAge}` : ""}</small>}
     </div>
     <div className="commercial-signal-content">
+      <p className="commercial-basis">{text.commercialBasis[lang]}</p>
       <dl className="commercial-metrics">
         {metrics.map((metric) => <div key={metric.label}><dt>{metric.label}</dt><dd>{metric.value}</dd></div>)}
       </dl>
@@ -1421,6 +1431,37 @@ function EventSignalPanel({ lang, events, eventCount, serviceDate }: { lang: Lan
       aria-controls={listId}
       onClick={() => setShowAll((value) => !value)}
     >{showAll ? signalStructureText.eventRepresentativesOnly[lang] : signalStructureText.eventAll[lang](events.length)}</button>}
+  </section>;
+}
+
+/**
+ * One area's short current brief on its own, for screens that need the
+ * "where · now · next peak" sentence without the full signal page (the store
+ * screen). Same deterministic builder as the home rows and the area page.
+ */
+export function AreaCurrentBrief({ lang, area, date = null, linkHref, linkLabel }: {
+  lang: Lang; area: AreaId; date?: string | null; linkHref?: string; linkLabel?: string;
+}) {
+  const summary = useLiveSummary(date);
+  if (!summary) return null;
+  const block = summary.areas[area];
+  const brief = buildAreaCurrentBrief({
+    realtime: block?.realtime ?? null,
+    realtimeForecast: block?.realtimeForecast ?? [],
+    weather: block?.weather ?? [],
+    eventCount: block?.eventCount ?? block?.events?.length ?? 0,
+    nextEventTitle: block?.events?.[0]?.title ?? null,
+    nextEventCategory: block?.events?.[0]?.categoryName ?? null,
+    nowIso: summary.generatedAt,
+  });
+  if (!brief.evidenceTypes.length) return null;
+  const copy = localizeAreaBrief(brief, lang);
+  return <section className="current-brief area-current-brief" aria-label={`${areaNames[area][lang]} ${areaBriefText.nowLabel[lang]}`}>
+    <p className="eyebrow">{areaNames[area][lang]} · {areaBriefText.nowLabel[lang].toUpperCase()}</p>
+    <strong>{copy.headline}</strong>
+    {copy.lines.map((line) => <p key={line}>{line}</p>)}
+    {copy.freshness && <small>{formatHumanFreshness(copy.freshness, summary.generatedAt, lang, "observed")}</small>}
+    {linkHref && linkLabel && <a className="current-brief-link" href={linkHref}>{linkLabel} ↗</a>}
   </section>;
 }
 
