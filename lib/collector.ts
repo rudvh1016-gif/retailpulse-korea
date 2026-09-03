@@ -1299,7 +1299,19 @@ export async function collectStoreDynamics(
         if (expectedTotal === null) expectedTotal = response.totalCount;
         if (expectedTotal !== response.totalCount) throw new Error("store_dynamics_total_count_drift");
         for (const row of response.rows) {
-          normalizedRows.push(normalizeStoreDynamicsRow(row, expected, retrievedAt));
+          try {
+            normalizedRows.push(normalizeStoreDynamicsRow(row, expected, retrievedAt));
+          } catch (rowError) {
+            // TEMP diagnostic (no secrets, business counts only): log every
+            // mismatch across the whole run instead of stopping at the
+            // first one, then still fail closed below.
+            const r = row as Record<string, unknown>;
+            console.error(`store_dynamics_row_diagnostic area=${mapping.area} industry=${r.SVC_INDUTY_CD} error=${(rowError as Error).message} total=${r.SIMILR_INDUTY_STOR_CO} stor=${r.STOR_CO} frc=${r.FRC_STOR_CO} opb_co=${r.OPBIZ_STOR_CO} opb_rt=${r.OPBIZ_RT} cls_co=${r.CLSBIZ_STOR_CO} cls_rt=${r.CLSBIZ_RT}`);
+            // Skipping the row (not pushing it) means normalizedRows.length
+            // can never reach expectedTotal, so the existing
+            // store_dynamics_incomplete_area check below still fails the
+            // whole run closed — nothing gets written even in this mode.
+          }
         }
         sourceRowsRead += response.rows.length;
         if (normalizedRows.length >= expectedTotal) break;
