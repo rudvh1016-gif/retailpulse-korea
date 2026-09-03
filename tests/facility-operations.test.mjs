@@ -244,8 +244,14 @@ test("the printed briefing keeps the boundary and drops the navigation", async (
   assert.ok(print.length > 0, "there must be a print stylesheet");
   // Pure white on paper, and the browser's own print — no paid PDF service.
   assert.match(print, /background: #ffffff !important/);
-  assert.match(print, /\.my-store-brief, \.my-store-brief \* \{ visibility: visible; \}/);
-  assert.match(print, /\.no-print[^{]*\{ display: none !important; \}/);
+  assert.match(print, /body:has\(\.my-store-brief\) \.my-store-brief \* \{ visibility: visible; \}/);
+  assert.match(print, /\.no-print \{ display: none !important; \}/);
+  // The blanking rule must be scoped. Unscoped, `body * { visibility: hidden }`
+  // makes every OTHER page in the product print as a blank sheet, because
+  // nothing is then there to make visible again.
+  assert.doesNotMatch(print, /(^|[^)])\s\bbody \* \{ visibility: hidden/m,
+    "the print blanking rule must not apply to pages without the briefing");
+  assert.match(print, /body:has\(\.my-store-brief\) \* \{ visibility: hidden; \}/);
   // The disclaimer is inside .my-store-brief, so it prints with the numbers.
   const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
   const article = signals.match(/<article className="my-store-brief">[\s\S]*?\n  <\/article>/)?.[0] ?? "";

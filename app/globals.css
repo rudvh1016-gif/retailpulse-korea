@@ -939,10 +939,17 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 @media print {
   :root { --paper: #ffffff; --surface: #ffffff; }
   html, body { background: #ffffff !important; }
-  body * { visibility: hidden; }
-  .my-store-brief, .my-store-brief * { visibility: visible; }
-  .my-store-brief { position: absolute; inset: 0 auto auto 0; width: 100%; padding: 0; background: #ffffff !important; }
-  .no-print, .my-store-brief .no-print { display: none !important; }
+  /*
+   * Scoped with :has() on purpose. An unscoped `body * { visibility: hidden }`
+   * would blank every OTHER page in the product when someone hits Ctrl+P,
+   * because nothing would then be there to make visible again. Where :has() is
+   * unsupported the briefing simply prints inside the whole page — a graceful
+   * loss, not a blank sheet.
+   */
+  body:has(.my-store-brief) * { visibility: hidden; }
+  body:has(.my-store-brief) .my-store-brief, body:has(.my-store-brief) .my-store-brief * { visibility: visible; }
+  body:has(.my-store-brief) .my-store-brief { position: absolute; inset: 0 auto auto 0; width: 100%; padding: 0; background: #ffffff !important; }
+  .no-print { display: none !important; }
   .my-store-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .my-store-brief h3 { font-size: 18pt; }
   .my-store-disclaimer { font-size: 9pt; }
