@@ -1,5 +1,19 @@
 import { getDb } from "../../../../db";
 import { FACILITY_CATEGORY_GROUPS, FACILITY_TERMINALS } from "../../../../lib/airport-facilities";
+import zoneMapFile from "../../../../config/airport-zone-map.v1.json";
+import { buildZoneMapIndex, resolveZoneMapping, type AirportZoneMapFile } from "../../../../lib/airport-zone-map";
+
+/**
+ * A3 mapping, resolved from the committed record rather than from D1.
+ *
+ * The record holds only facilities whose official location text actually
+ * proves a gate or checkpoint, so a facility it does not list resolves to
+ * AMBIGUOUS by construction. That is what makes a false proximity claim
+ * impossible here rather than merely unlikely — this endpoint has nothing to
+ * render a gate from unless the mapping carries one. It costs no extra D1
+ * read: the index is built once per isolate from a file in the bundle.
+ */
+const zoneMap = buildZoneMapIndex(zoneMapFile as AirportZoneMapFile);
 
 export const dynamic = "force-dynamic";
 
@@ -78,12 +92,34 @@ export async function GET(request: Request) {
     ).bind(...binds, limit + 1, offset).all<Record<string, unknown>>()).results ?? [];
 
     const hasMore = rows.length > limit;
+    const facilities = rows.slice(0, limit).map((row) => {
+      const mapping = resolveZoneMapping(zoneMap, {
+        facilityId: String(row.facilityId),
+        terminal: (row.terminal ?? null) as never,
+        floor: (row.floor ?? null) as string | null,
+        dutyArea: (row.dutyArea ?? null) as never,
+        arrivalDeparture: (row.arrivalDeparture ?? null) as never,
+        locationRaw: (row.locationRaw ?? null) as string | null,
+      });
+      return {
+        ...row,
+        mappingMethod: mapping.mappingMethod,
+        mappingVersion: mapping.mappingVersion,
+        // Null for an ambiguous facility, always. The reader is told the
+        // location is uncertain rather than shown a gate nobody proved.
+        gate: mapping.gate,
+        gateGroup: mapping.gateGroup,
+        checkpointId: mapping.checkpointId,
+        mappingEvidence: mapping.evidenceText,
+      };
+    });
     return Response.json({
       mode: "airport-facilities",
       generatedAt,
       scope: { terminal: seekTerminal, category, floor, dutyArea, side, query, limit, offset },
       hasMore,
-      facilities: rows.slice(0, limit),
+      facilities,
+      mappingVersion: zoneMapFile.mappingVersion,
       // Nothing here is real-time: hours are the provider's published hours.
       basis: "OFFICIAL_PUBLISHED_HOURS",
     }, { headers: { "cache-control": "public, max-age=600, stale-while-revalidate=3600" } });

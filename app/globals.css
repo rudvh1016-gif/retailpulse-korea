@@ -898,3 +898,11 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .flight-rows li { grid-template-columns: 48px 1fr; }
 .flight-rows small { grid-column: 2 / -1; text-align: right; }
 }
+
+/*
+ * A3 location status. Neutral by default and neutral when verified: a proven
+ * gate is a fact, not a reward, and an unconfirmed location is a limitation,
+ * not an alarm. Weight separates them, hue does not.
+ */
+.facility-location-status { margin: 10px 0 0; display: flex; flex-wrap: wrap; gap: 2px 12px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.facility-location-status.verified > span:first-child { color: var(--ink); font-weight: var(--weight-strong); }
