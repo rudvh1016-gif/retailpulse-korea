@@ -395,9 +395,12 @@ const storeDynamicsRow = (tradeAreaCode, overrides = {}) => {
     SIMILR_INDUTY_STOR_CO: 10,
     STOR_CO: 8,
     FRC_STOR_CO: 2,
-    OPBIZ_RT: 10,
+    // Both rates divide by the store base before the event they measure:
+    // opening by 10 - 1 = 9 (1/9 = 11.1% -> 11%), closure by 10 + 1 = 11
+    // (1/11 = 9.09% -> 9%) — never by this quarter's ending total of 10.
+    OPBIZ_RT: 11,
     OPBIZ_STOR_CO: 1,
-    CLSBIZ_RT: 10,
+    CLSBIZ_RT: 9,
     CLSBIZ_STOR_CO: 1,
     ...overrides,
   };

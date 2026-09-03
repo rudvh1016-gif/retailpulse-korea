@@ -124,6 +124,41 @@ test("normalizer verifies the provider's published count/rate relationship", () 
   assert.doesNotThrow(() => normalizeStoreDynamicsRow(officialRow({ OPBIZ_RT: "3", CLSBIZ_RT: "3" }), expected, retrievedAt));
 });
 
+/**
+ * Both rates are published against the store base at the START of the
+ * quarter, before the event they measure — never against this quarter's
+ * ending total. These two cases are real Production rows (D1 write rejected
+ * by the pre-fix validator, so nothing was written) and are the actual
+ * evidence the formula below is built from, not invented numbers.
+ */
+test("published rates divide by the store base before the event they measure, confirmed against real Production rows", () => {
+  const expected = { ...storeDynamicsMappings.myeongdong, quarterCode: "20261" };
+  // Opening: 1 new store against a base of 67 - 1 = 66 stores that existed
+  // before it opened → 1/66 = 1.515% → 2%, not 1/67 = 1.49% → 1%.
+  assert.doesNotThrow(() => normalizeStoreDynamicsRow(officialRow({
+    SIMILR_INDUTY_STOR_CO: 67, STOR_CO: 67, FRC_STOR_CO: 0,
+    OPBIZ_STOR_CO: 1, OPBIZ_RT: 2,
+    CLSBIZ_STOR_CO: 0, CLSBIZ_RT: 0,
+  }), expected, retrievedAt));
+  assert.throws(() => normalizeStoreDynamicsRow(officialRow({
+    SIMILR_INDUTY_STOR_CO: 67, STOR_CO: 67, FRC_STOR_CO: 0,
+    OPBIZ_STOR_CO: 1, OPBIZ_RT: 1,
+    CLSBIZ_STOR_CO: 0, CLSBIZ_RT: 0,
+  }), expected, retrievedAt), /store_dynamics_rate_formula/, "dividing by this quarter's ending total instead must not validate");
+  // Closure: 1 closed store against a base of 6 + 1 = 7 stores that existed
+  // before it closed → 1/7 = 14.28% → 14%, not 1/6 = 16.67% → 17%.
+  assert.doesNotThrow(() => normalizeStoreDynamicsRow(officialRow({
+    SIMILR_INDUTY_STOR_CO: 6, STOR_CO: 6, FRC_STOR_CO: 0,
+    OPBIZ_STOR_CO: 0, OPBIZ_RT: 0,
+    CLSBIZ_STOR_CO: 1, CLSBIZ_RT: 14,
+  }), expected, retrievedAt));
+  assert.throws(() => normalizeStoreDynamicsRow(officialRow({
+    SIMILR_INDUTY_STOR_CO: 6, STOR_CO: 6, FRC_STOR_CO: 0,
+    OPBIZ_STOR_CO: 0, OPBIZ_RT: 0,
+    CLSBIZ_STOR_CO: 1, CLSBIZ_RT: 17,
+  }), expected, retrievedAt), /store_dynamics_rate_formula/, "dividing by this quarter's ending total instead must not validate");
+});
+
 test("official response validation distinguishes valid rows from an official no-data result", () => {
   assert.deepEqual(parseStoreDynamicsResponse({
     VwsmTrdarStorQq: {
@@ -176,7 +211,7 @@ test("aggregator creates one compact area fact without duplicate-industry inflat
       FRC_STOR_CO: 1,
       OPBIZ_RT: 0,
       OPBIZ_STOR_CO: 0,
-      CLSBIZ_RT: 6,
+      CLSBIZ_RT: 5, // 1 / (18 + 1) = 5.26% -> 5%, the base before this closure.
       CLSBIZ_STOR_CO: 1,
     }), expected, retrievedAt),
   ];
