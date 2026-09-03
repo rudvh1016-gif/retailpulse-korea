@@ -52,6 +52,11 @@ const env = {
   SEOUL_OPEN_DATA_KEY: process.env.SEOUL_OPEN_DATA_KEY?.trim() || undefined,
   FOREIGN_PURPOSE_SOURCE: createForeignPurposeMobilitySource(),
   retainChangeHistory: process.env.RPK_RETAIN_FLIGHT_CHANGE_HISTORY === "true",
+  // A1 request budget for this invocation. The recovery window sets 200 so
+  // primary (≤300) + recovery (≤200) can never exceed A1's 500/day quota.
+  A1_MAX_REQUESTS: Number.isSafeInteger(Number(process.env.RPK_A1_MAX_REQUESTS)) && Number(process.env.RPK_A1_MAX_REQUESTS) > 0
+    ? Number(process.env.RPK_A1_MAX_REQUESTS)
+    : undefined,
 };
 
 const results = await runSelectedProductionSources(env, requested);

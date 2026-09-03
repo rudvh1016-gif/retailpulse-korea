@@ -44,8 +44,13 @@ treated as zero stores.
    `causeCode`, `httpStatus`, `attempts`, `elapsedMs`, and `retryExhausted`.
    Never copy an authenticated URL into an issue or chat.
 6. `retryExhausted=true` means the current natural run failed after the
-   bounded recovery window. Do not rerun A1; keep last-good data and let the
-   next authoritative schedule recover automatically.
+   bounded recovery window. Do not rerun A1 by hand; keep last-good data and
+   let the next authoritative schedule recover automatically. For the daily
+   A1 scan that schedule is the 10:07 KST recovery window
+   (`collect-airport-recovery.yml`), which costs nothing when the 06:07 run
+   already succeeded. A manual `Collect Production Data` run is a third scan
+   and can exceed A1's 500 calls/day quota together with the two scheduled
+   ones; use it only when both scheduled windows failed.
 
 ## GitHub Action fails
 

@@ -82,6 +82,8 @@ export interface CollectorEnv {
   FOREIGN_PURPOSE_SOURCE?: ForeignPurposeMobilitySource;
   SUBWAY_RIDERSHIP_SOURCE?: SubwayRidershipSource;
   retainChangeHistory?: boolean;
+  /** Hard request budget for one A1 scan (recovery windows use a smaller one). */
+  A1_MAX_REQUESTS?: number;
 }
 
 function nowIso(): string {
@@ -314,7 +316,7 @@ export async function collectAirportFlightEnrichment(env: CollectorEnv): Promise
       .bind(record.upstreamFid, record.masterFlightNumber, record.codeshare, record.airlineCode, record.airportCode, record.terminal, record.sourceHash, record.physicalFlightId, record.sourceHash))
       .filter((statement): statement is D1PreparedStatement => Boolean(statement));
     const matched = env.DB && statements.length ? await runBatches(env.DB, statements) : NO_D1_WRITES;
-    const detail = `A1_PRIMARY_A2_ENRICHMENT; compared ${normalized.length}; matched writes ${matched}`;
+    const detail = `A1_PRIMARY_A2_ENRICHMENT; compared ${normalized.length}; ${describeWrites(matched)}`;
     await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, normalized.length, matched.changedRows);
     await writeSourceHealth(env.DB, sourceId, "LIVE", detail, { retrievedAt, schemaVersion: "airport-a2-enrichment-v1" });
     return { status: "SUCCESS", records: matched.changedRows, detail };

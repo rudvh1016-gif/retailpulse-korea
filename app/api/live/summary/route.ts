@@ -30,6 +30,8 @@ import {
   type AirportTodayFlightRow,
 } from "../../../../lib/airport-today-summary";
 import { prepareEventsForPresentation } from "../../../../lib/event-presentation";
+import { summarizeAirlineRanking, type AirlineRankingFlightRow } from "../../../../lib/airline-ranking";
+import { AIRLINE_COUNTRY_SOURCE, lookupAirline } from "../../../../lib/airline-country";
 import { summaryCacheControl, SUMMARY_NO_STORE } from "../../../../lib/summary-cache-policy";
 import {
   isValidKstDay,
@@ -339,7 +341,8 @@ export async function GET(request: Request) {
     // seeks. Deriving the counts from the rows already fetched also makes the
     // payload self-consistent: the counts can no longer disagree with the rows.
     const flightRows = await safeAll<Row>(async () => (await client.prepare(
-      `SELECT physical_flight_id AS physicalFlightId, terminal, gate, retrieved_at AS retrievedAt
+      `SELECT physical_flight_id AS physicalFlightId, terminal, gate, retrieved_at AS retrievedAt,
+        flight_number AS operatingFlight, airline_code AS airlineLabel, codeshare
       FROM airport_flights
       WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ?
       LIMIT 2000`,
@@ -486,6 +489,10 @@ export async function GET(request: Request) {
       0.5,
       distinctFlightsToday,
     );
+    // Airline ranking from the same de-duplicated physical rows. The
+    // country comes from a reference table, never from the provider, and is
+    // reported as UNVERIFIED whenever the table cannot vouch for it.
+    const airlineRanking = summarizeAirlineRanking(flightRows as unknown as AirlineRankingFlightRow[], lookupAirline);
     const flightsTodayByTerminal = summarizeTodayTopGateByTerminal(
       flightRows as unknown as AirportTodayFlightRow[],
       0.5,
@@ -571,6 +578,7 @@ export async function GET(request: Request) {
         topDepartureGateRetrievedAtByTerminal: departureGateRetrievedAtByTerminal,
         gateCoverageRatio: flightsToday.gateCoverageRatio,
         gateCoverageRatioByTerminal,
+        airlineRanking: { ...airlineRanking, countrySource: AIRLINE_COUNTRY_SOURCE },
         serviceDateKst: serviceDate,
         periodStartAt: dayStartAt,
         periodEndAt: `${serviceDate}T23:59:59+09:00`,
@@ -623,7 +631,9 @@ export async function GET(request: Request) {
         topDepartureGate: null, topDepartureGateTerminal: null, topDepartureGateFlights: null,
         topDepartureGateByTerminal: {}, topDepartureGateRetrievedAt: null, topDepartureGateRetrievedAtByTerminal: {},
         busyDepartureGates: [], busyDepartureGatesByTerminal: {},
-        gateCoverageRatio: 0, gateCoverageRatioByTerminal: {}, serviceDateKst: serviceDate,
+        gateCoverageRatio: 0, gateCoverageRatioByTerminal: {},
+        airlineRanking: { all: { totalFlights: 0, airlines: [], countries: [], retrievedAt: null }, byTerminal: {}, countrySource: AIRLINE_COUNTRY_SOURCE },
+        serviceDateKst: serviceDate,
         periodStartAt: null, periodEndAt: null, latestRetrievedAt: null,
         todayExpectedPassengersTotal: null, todayExpectedPassengersByTerminal: {},
         remainingExpectedPassengers: null, remainingExpectedPassengersByTerminal: {},

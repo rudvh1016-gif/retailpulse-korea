@@ -1,0 +1,64 @@
+name: Collect Airport Departures (Recovery)
+
+# A1 RECOVERY WINDOW — the daily counterpart of the A5 recovery window.
+#
+# The daily group (collect-production.yml, 06:07 KST) is the only primary
+# run of the A1 D-3..today departures scan. When data.go.kr times out there
+# (UND_ERR_CONNECT_TIMEOUT is intermittent — it hit every data.go.kr source
+# on 2026-09-03 while the Seoul sources succeeded), the site has NO rows for
+# the current service day until the next morning: departures tracked, the
+# busiest-gate ranking and the airline ranking all show "unavailable" for a
+# whole day even though the provider recovered minutes later.
+#
+# This is NOT a blind repeat. `airport_recent` reads collector_runs first
+# (lib/airport-today.ts:hasCompleteA1RecentHistoryToday): a COMPLETE scan
+# for today's KST date already recorded → SKIPPED_ALREADY_COMPLETE_TODAY and
+# ZERO provider requests. Only a day whose primary failed pays for a scan.
+#
+# QUOTA (A1 documents 500 development calls/day):
+#   primary scan   ≤ 300 requests (150 pages × 1 retry, the documented ceiling)
+#   this window    ≤ 200 requests (RPK_A1_MAX_REQUESTS; the run aborts, rows
+#                    untouched, if the budget would be exceeded)
+#   worst case     500/day — never above the documented quota.
+#   normal day     0 extra requests.
+# `airport_enrichment` (A2) runs after A1 as in the daily group so today's
+# rows can be matched; its single-page call is the same cost as the primary.
+#
+# Cron is 10:07 KST (= 01:07 UTC). Off-minute per docs/ENGINEERING_DIRECTION.md.
+# Scheduler ownership: A1's primary lives in GitHub Actions, so its recovery
+# does too — no Worker Cron is added (the five Production crons are unchanged).
+on:
+  schedule:
+    - cron: "7 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Shares the daily group's concurrency group on purpose: a recovery can never
+# overlap the 06:07 run, so the two never call the provider at the same time.
+concurrency:
+  group: production-collector
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run collect:production
+        env:
+          ENABLE_PRODUCTION_COLLECTOR: "true"
+          RPK_PRODUCTION_SOURCES: airport_recent,airport_enrichment
+          RPK_A1_MAX_REQUESTS: "200"
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+          DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
+          RPK_RETAIN_FLIGHT_CHANGE_HISTORY: ${{ vars.RPK_RETAIN_FLIGHT_CHANGE_HISTORY }}
