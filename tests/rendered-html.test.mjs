@@ -91,6 +91,13 @@ test("Store Dynamics ships as a stored, compact, four-language historical block"
     "서울시 상권분석서비스 OA-15577", "Official quarterly historical data",
   ]) assert.ok(live.includes(wording), wording);
   assert.match(live, /data-signal-key="store-dynamics"/);
+  // Phase B v1 publishes counts only. The stored *_rate_tenths_percent columns
+  // are a KORETAIL-derived ratio, never an official area-wide 개/폐업률, so
+  // neither the public API projection nor the UI may carry them.
+  assert.doesNotMatch(live, /RateTenthsPercent/, "the UI must not receive or render an area-wide rate");
+  const projection = route.slice(route.indexOf("isValidStoredStoreDynamics(area, row)"));
+  assert.doesNotMatch(projection.slice(0, projection.indexOf("foreignPresence,")), /RateTenthsPercent/,
+    "the public summary projection must not expose the derived ratio");
 });
 
 test("renders the KORETAIL production shell", async () => {

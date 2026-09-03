@@ -88,29 +88,32 @@ test("live summary isolates invalid Store Dynamics identity or arithmetic per ar
   assert.equal(isValidStoredStoreDynamics("myeongdong", { ...row, schemaVersion: "legacy" }), false);
   assert.equal(isValidStoredStoreDynamics("myeongdong", { ...row, recordOrigin: "LIVE" }), false);
   assert.equal(isValidStoredStoreDynamics("myeongdong", { ...row, tradeAreaCode: "3120103" }), false);
-  assert.equal(isValidStoredStoreDynamics("myeongdong", { ...row, openingRateTenthsPercent: 58 }), false);
-  assert.equal(isValidStoredStoreDynamics("myeongdong", {
-    ...row,
-    totalStoreCount: 10_000,
-    ordinaryStoreCount: 9_000,
-    franchiseStoreCount: 1_000,
-    openingCount: 10_001,
-    openingRateTenthsPercent: 1_000,
-    closureCount: 0,
-    closureRateTenthsPercent: 0,
-  }), false, "a count just over total cannot hide behind a rounded 100.0% rate");
-  assert.equal(isValidStoredStoreDynamics("myeongdong", {
-    ...row,
-    totalStoreCount: 10_000,
-    ordinaryStoreCount: 9_000,
-    franchiseStoreCount: 1_000,
-    openingCount: 0,
-    openingRateTenthsPercent: 0,
-    closureCount: 10_001,
-    closureRateTenthsPercent: 1_000,
-  }), false, "closure count uses the same strict upper bound");
+  assert.equal(isValidStoredStoreDynamics("myeongdong", { ...row, ordinaryStoreCount: 161 }), false,
+    "total = ordinary + franchise is the provider's own breakdown and still fails closed");
+  assert.equal(isValidStoredStoreDynamics("myeongdong", { ...row, openingCount: -1 }), false);
+  assert.equal(isValidStoredStoreDynamics("myeongdong", { ...row, openingRateTenthsPercent: -1 }), false);
+  assert.equal(isValidStoredStoreDynamics("myeongdong", { ...row, closureRateTenthsPercent: 2.5 }), false);
   assert.equal(isValidStoredStoreDynamics("myeongdong", { ...row, industryCount: 0 }), false);
   assert.equal(isValidStoredStoreDynamics("myeongdong", { ...row, totalStoreCount: 0, ordinaryStoreCount: 0, franchiseStoreCount: 0 }), false);
+
+  // Disproven by real OA-15577 rows and therefore deliberately NOT enforced:
+  // a rate ceiling (a real row published CLSBIZ_RT = 200), a count bounded by
+  // the ending total (an industry's last stores closing leaves closures above
+  // what remains), and any equality with a guessed provider formula. The
+  // stored tenths columns are a KORETAIL-derived ratio nothing public shows,
+  // so a good row of counts is not invalidated by them.
+  assert.equal(isValidStoredStoreDynamics("myeongdong", { ...row, openingRateTenthsPercent: 58 }), true,
+    "a derived ratio that does not match a recomputation must not hide valid official counts");
+  assert.equal(isValidStoredStoreDynamics("myeongdong", { ...row, closureRateTenthsPercent: 2_000 }), true,
+    "no rate ceiling: 200.0% is real published data");
+  assert.equal(isValidStoredStoreDynamics("myeongdong", {
+    ...row,
+    totalStoreCount: 10_000,
+    ordinaryStoreCount: 9_000,
+    franchiseStoreCount: 1_000,
+    closureCount: 10_001,
+    closureRateTenthsPercent: 1_000,
+  }), true, "a closure count above the ending total is legitimate");
 });
 
 test("Seoul integrated contract probe reports structure without leaking keys or commercial values", async () => {
@@ -269,7 +272,7 @@ test("an explicitly valid zero commercial value is preserved rather than treated
   assert.equal(row.privacyMessage, null);
 });
 
-test("Store Dynamics presents stored official counts and rates neutrally in all four languages", () => {
+test("Store Dynamics presents stored official counts only, never an area-wide rate, in all four languages", () => {
   const row = {
     datasetId: "OA-15577" as const,
     quarterCode: "20261",
@@ -281,17 +284,15 @@ test("Store Dynamics presents stored official counts and rates neutrally in all 
     ordinaryStoreCount: 160,
     franchiseStoreCount: 14,
     openingCount: 10,
-    openingRateTenthsPercent: 57,
     closureCount: 5,
-    closureRateTenthsPercent: 29,
     mappingVersion: "oa-15577-standard-area-2026-09-03-v1",
     retrievedAt: "2026-09-03T01:00:00.000Z",
   };
   const expected = {
-    ko: ["점포 현황", "2026년 1분기", "총 점포", "174개", "개업", "10개 · 5.7%", "분기 기준 공식 과거 자료이며, 현재 영업 중인 점포의 실시간 수가 아닙니다."],
-    en: ["Store openings and closures", "Q1 2026", "Total stores", "174 stores", "Openings", "10 stores · 5.7%", "Official quarterly historical data, not a real-time count of stores currently operating."],
-    zh: ["店铺开业与歇业", "2026年第1季度", "店铺总数", "174家", "开业", "10家 · 5.7%", "官方季度历史资料，并非当前营业店铺的实时数量。"],
-    ja: ["店舗の開業・廃業", "2026年第1四半期", "総店舗数", "174店", "開業", "10店 · 5.7%", "四半期基準の公式過去資料であり、現在営業中の店舗のリアルタイム件数ではありません。"],
+    ko: ["점포 현황", "2026년 1분기", "총 점포", "174개", "일반 점포", "160개", "프랜차이즈", "14개", "이번 기준분기 개업", "10개", "이번 기준분기 폐업", "5개", "공식 기준", "공식 상권", "분기 기준 공식 과거 자료이며, 현재 영업 중인 점포의 실시간 수가 아닙니다."],
+    en: ["Store openings and closures", "Q1 2026", "Total stores", "174 stores", "Openings this reference quarter", "10 stores", "Closures this reference quarter", "5 stores", "Official quarterly historical data, not a real-time count of stores currently operating."],
+    zh: ["店铺开业与歇业", "2026年第1季度", "店铺总数", "174家", "本基准季度开业", "10家", "本基准季度歇业", "5家", "官方季度历史资料，并非当前营业店铺的实时数量。"],
+    ja: ["店舗の開業・廃業", "2026年第1四半期", "総店舗数", "174店", "基準四半期の開業", "10店", "基準四半期の廃業", "5店", "四半期基準の公式過去資料であり、現在営業中の店舗のリアルタイム件数ではありません。"],
   } as const;
 
   for (const lang of ["ko", "en", "zh", "ja"] as const) {
@@ -302,12 +303,19 @@ test("Store Dynamics presents stored official counts and rates neutrally in all 
     assert.match(rendered, /명동 남대문 북창동 다동 무교동 관광특구/);
     assert.match(rendered, /OA-15577/);
     assert.match(rendered, /2026-09-03 10:00 KST/);
-    assert.match(rendered, /5개 · 2\.9%|5 stores · 2\.9%|5家 · 2\.9%|5店 · 2\.9%/);
+    // The provider's per-industry rates cannot be reconstructed from the row
+    // fields for every real row, so no area-wide 개업률/폐업률 is invented.
+    assert.doesNotMatch(rendered, /%/, `${lang}: no percentage may be presented as an area-wide official rate`);
+    assert.doesNotMatch(rendered, /개업률|폐업률|opening rate|closure rate|开业率|歇业率|開業率|廃業率/i, lang);
     assert.equal(presentation.timeState, { ko: "과거 자료", en: "Historical", zh: "历史资料", ja: "過去資料" }[lang]);
     assert.equal(presentation.areaValue, "명동 남대문 북창동 다동 무교동 관광특구",
       "do not repeat an official type already present in the official name");
   }
 
   assert.equal(buildStoreDynamicsPresentation("ko", { ...row, totalStoreCount: -1 }), null);
+  assert.equal(buildStoreDynamicsPresentation("ko", { ...row, ordinaryStoreCount: 161 }), null);
   assert.equal(buildStoreDynamicsPresentation("ko", { ...row, quarterCode: "2026-Q1" }), null);
+  const lastStoresClosed = buildStoreDynamicsPresentation("ko", { ...row, closureCount: 200 });
+  assert.ok(lastStoresClosed, "a closure count above the ending total is real data, not an error");
+  assert.ok(JSON.stringify(lastStoresClosed).includes("200개"));
 });

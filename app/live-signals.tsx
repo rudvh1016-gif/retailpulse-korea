@@ -92,9 +92,7 @@ export interface LiveStoreDynamics {
   ordinaryStoreCount: number;
   franchiseStoreCount: number;
   openingCount: number;
-  openingRateTenthsPercent: number;
   closureCount: number;
-  closureRateTenthsPercent: number;
   mappingVersion: string;
   retrievedAt: string;
 }
@@ -1142,8 +1140,8 @@ const storeDynamicsText = {
   total: { ko: "총 점포", en: "Total stores", zh: "店铺总数", ja: "総店舗数" },
   ordinary: { ko: "일반 점포", en: "Non-franchise stores", zh: "非加盟店", ja: "非フランチャイズ店舗" },
   franchise: { ko: "프랜차이즈", en: "Franchise stores", zh: "加盟店", ja: "フランチャイズ店舗" },
-  opening: { ko: "개업", en: "Openings", zh: "开业", ja: "開業" },
-  closure: { ko: "폐업", en: "Closures", zh: "歇业", ja: "廃業" },
+  opening: { ko: "이번 기준분기 개업", en: "Openings this reference quarter", zh: "本基准季度开业", ja: "基準四半期の開業" },
+  closure: { ko: "이번 기준분기 폐업", en: "Closures this reference quarter", zh: "本基准季度歇业", ja: "基準四半期の廃業" },
   reference: { ko: "공식 기준", en: "Official reference", zh: "官方基准", ja: "公式基準" },
   area: { ko: "공식 상권", en: "Official commercial area", zh: "官方商圈", ja: "公式商圏" },
   retrieval: { ko: "KORETAIL 수집", en: "KORETAIL retrieval", zh: "KORETAIL采集", ja: "KORETAIL取得" },
@@ -1207,27 +1205,30 @@ function formatStoreDynamicsRetrieval(value: string): string | null {
   return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute} KST`;
 }
 
-/** UI projection of one already validated compact OA-15577 area aggregate. */
+/**
+ * UI projection of one already validated compact OA-15577 area aggregate.
+ *
+ * Counts only. No area-wide 개업률/폐업률 is shown: the provider publishes
+ * those rates per industry row and they cannot be reconstructed from the
+ * row fields for every real row, so any area-level percentage KORETAIL
+ * computed would be an invented figure dressed as an official one. A
+ * deliberately omitted ambiguous percentage beats a fabricated one.
+ */
 export function buildStoreDynamicsPresentation(
   lang: Lang,
   row: LiveStoreDynamics | null | undefined,
 ): StoreDynamicsPresentation | null {
   if (!row || row.datasetId !== "OA-15577") return null;
   const counts = [row.totalStoreCount, row.ordinaryStoreCount, row.franchiseStoreCount, row.openingCount, row.closureCount];
-  const rates = [row.openingRateTenthsPercent, row.closureRateTenthsPercent];
   if (counts.some((value) => !Number.isSafeInteger(value) || value < 0)
-    || rates.some((value) => !Number.isSafeInteger(value) || value < 0 || value > 1_000)
     || row.totalStoreCount !== row.ordinaryStoreCount + row.franchiseStoreCount
     || row.totalStoreCount === 0
-    || row.openingRateTenthsPercent !== Math.round((row.openingCount * 1_000) / row.totalStoreCount)
-    || row.closureRateTenthsPercent !== Math.round((row.closureCount * 1_000) / row.totalStoreCount)
     || !row.tradeAreaName.trim() || !row.tradeAreaTypeName.trim()) return null;
   const referenceValue = formatStoreDynamicsQuarter(lang, row.quarterCode);
   const retrievalValue = formatStoreDynamicsRetrieval(row.retrievedAt);
   if (!referenceValue || !retrievalValue) return null;
   const locale = airportLocale(lang);
   const countValue = (value: number) => `${value.toLocaleString(locale)}${lang === "ko" ? "개" : lang === "en" ? " stores" : lang === "zh" ? "家" : "店"}`;
-  const changeValue = (count: number, tenths: number) => `${countValue(count)} · ${(tenths / 10).toFixed(1)}%`;
   return {
     title: storeDynamicsText.title[lang],
     timeState: signalStructureText.timeState.historical[lang],
@@ -1237,8 +1238,8 @@ export function buildStoreDynamicsPresentation(
       { key: "franchise", label: storeDynamicsText.franchise[lang], value: countValue(row.franchiseStoreCount) },
     ],
     changeMetrics: [
-      { key: "opening", label: storeDynamicsText.opening[lang], value: changeValue(row.openingCount, row.openingRateTenthsPercent) },
-      { key: "closure", label: storeDynamicsText.closure[lang], value: changeValue(row.closureCount, row.closureRateTenthsPercent) },
+      { key: "opening", label: storeDynamicsText.opening[lang], value: countValue(row.openingCount) },
+      { key: "closure", label: storeDynamicsText.closure[lang], value: countValue(row.closureCount) },
     ],
     referenceLabel: storeDynamicsText.reference[lang],
     referenceValue,

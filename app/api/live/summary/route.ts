@@ -430,9 +430,9 @@ export async function GET(request: Request) {
             ordinaryStoreCount: row?.ordinaryStoreCount,
             franchiseStoreCount: row?.franchiseStoreCount,
             openingCount: row?.openingCount,
-            openingRateTenthsPercent: row?.openingRateTenthsPercent,
             closureCount: row?.closureCount,
-            closureRateTenthsPercent: row?.closureRateTenthsPercent,
+            // The stored *_rate_tenths_percent columns are a KORETAIL-derived
+            // ratio, not an official area-wide 개/폐업률; they stay private.
             mappingVersion: row?.mappingVersion,
             retrievedAt: row?.retrievedAt,
           };

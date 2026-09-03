@@ -166,7 +166,7 @@ const SUMMARY_FIXTURE = {
         datasetId: "OA-15577", quarterCode: "20262", tradeAreaCode: "3001492",
         tradeAreaName: "명동 남대문 북창동 다동 무교동 관광특구", tradeAreaTypeCode: "U", tradeAreaTypeName: "관광특구",
         totalStoreCount: 174, ordinaryStoreCount: 160, franchiseStoreCount: 14,
-        openingCount: 10, openingRateTenthsPercent: 57, closureCount: 5, closureRateTenthsPercent: 29,
+        openingCount: 10, closureCount: 5,
         mappingVersion: "oa-15577-standard-area-2026-09-03-v1", retrievedAt: "2026-08-31T05:08:00Z",
       },
     }),
@@ -271,10 +271,10 @@ const routeSummary = (payload: unknown) => async (route: { fulfill: (options: { 
 test("Store Dynamics is truthful and localized in all four languages", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   const expected = {
-    ko: ["점포 현황", "과거 자료", "총 점포", "174개", "일반 점포", "160개", "프랜차이즈", "14개", "개업", "10개 · 5.7%", "폐업", "5개 · 2.9%", "2026년 2분기", "분기 기준 공식 과거 자료이며, 현재 영업 중인 점포의 실시간 수가 아닙니다."],
-    en: ["Store openings and closures", "Historical", "Total stores", "174 stores", "Non-franchise stores", "160 stores", "Franchise stores", "14 stores", "Openings", "10 stores · 5.7%", "Closures", "5 stores · 2.9%", "Q2 2026", "Official quarterly historical data, not a real-time count of stores currently operating."],
-    zh: ["店铺开业与歇业", "历史资料", "店铺总数", "174家", "非加盟店", "160家", "加盟店", "14家", "开业", "10家 · 5.7%", "歇业", "5家 · 2.9%", "2026年第2季度", "官方季度历史资料，并非当前营业店铺的实时数量。"],
-    ja: ["店舗の開業・廃業", "過去資料", "総店舗数", "174店", "非フランチャイズ店舗", "160店", "フランチャイズ店舗", "14店", "開業", "10店 · 5.7%", "廃業", "5店 · 2.9%", "2026年第2四半期", "四半期基準の公式過去資料であり、現在営業中の店舗のリアルタイム件数ではありません。"],
+    ko: ["점포 현황", "과거 자료", "총 점포", "174개", "일반 점포", "160개", "프랜차이즈", "14개", "이번 기준분기 개업", "10개", "이번 기준분기 폐업", "5개", "공식 기준", "2026년 2분기", "공식 상권", "분기 기준 공식 과거 자료이며, 현재 영업 중인 점포의 실시간 수가 아닙니다."],
+    en: ["Store openings and closures", "Historical", "Total stores", "174 stores", "Non-franchise stores", "160 stores", "Franchise stores", "14 stores", "Openings this reference quarter", "10 stores", "Closures this reference quarter", "5 stores", "Q2 2026", "Official quarterly historical data, not a real-time count of stores currently operating."],
+    zh: ["店铺开业与歇业", "历史资料", "店铺总数", "174家", "非加盟店", "160家", "加盟店", "14家", "本基准季度开业", "10家", "本基准季度歇业", "5家", "2026年第2季度", "官方季度历史资料，并非当前营业店铺的实时数量。"],
+    ja: ["店舗の開業・廃業", "過去資料", "総店舗数", "174店", "非フランチャイズ店舗", "160店", "フランチャイズ店舗", "14店", "基準四半期の開業", "10店", "基準四半期の廃業", "5店", "2026年第2四半期", "四半期基準の公式過去資料であり、現在営業中の店舗のリアルタイム件数ではありません。"],
   } as const;
   for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
     await page.goto(`/${locale}/myeongdong`);
@@ -283,6 +283,9 @@ test("Store Dynamics is truthful and localized in all four languages", async ({ 
     for (const phrase of expected[locale]) await expect(card).toContainText(phrase);
     await expect(card).toContainText("명동 남대문 북창동 다동 무교동 관광특구");
     await expect(card).toContainText("OA-15577");
+    // Phase B v1 is counts only: no area-wide 개업률/폐업률 may be invented
+    // from the summed counts and shown as if it were the official rate.
+    await expect(card).not.toContainText("%");
     await expect(card.locator(".store-dynamics-context dd").nth(1)).toHaveAttribute("lang", "ko");
   }
 });
