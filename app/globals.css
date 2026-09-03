@@ -563,10 +563,13 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
  * a stacked grid overlaps the previous one by 1px so the seam stays 1px.
  */
 .commercial-basis { margin: 0 0 10px; font-size: 13px; font-weight: var(--weight-strong); line-height: 1.5; color: var(--ink); overflow-wrap: anywhere; }
-.commercial-metrics, .commercial-times { margin: 0; padding: 1px; display: grid; gap: 1px; background: var(--line); }
-.commercial-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.commercial-times { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: -1px; }
-.commercial-metrics > div, .commercial-times > div { min-width: 0; padding: 14px 16px; background: var(--paper); }
+/* A plain stacked list, not the tile-card grammar: this is one flowing set
+   of facts about one reading, not a grid of separate cards, so a hairline
+   box around each field read as clutter. A bottom border between rows is
+   enough to separate them. */
+.commercial-metrics, .commercial-times { margin: 0; padding: 0; }
+.commercial-metrics > div, .commercial-times > div { min-width: 0; padding: 13px 0; border-bottom: 1px solid var(--line); }
+.commercial-metrics > div:last-child, .commercial-times > div:last-child { border-bottom: 0; }
 .commercial-metrics dt, .commercial-times dt { color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .04em; }
 .commercial-metrics dd, .commercial-times dd { margin: 7px 0 0; font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; }
 .commercial-metrics > div:first-child dd { font-weight: var(--weight-strong); }
@@ -621,9 +624,7 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .signal-row, .commercial-signal-card, .store-dynamics-card { grid-template-columns: 1fr; gap: 10px; padding: 18px 0; }
 .signal-row-value { font-size: 15px; }
 .signal-row-source, .commercial-attribution, .store-dynamics-source, .store-dynamics-limitation { font-size: 11px; }
-.commercial-metrics { grid-template-columns: 1fr; }
-.commercial-times { grid-template-columns: 1fr; }
-.commercial-metrics > div, .commercial-times > div { padding: 12px 0; }
+.commercial-metrics > div, .commercial-times > div { padding: 11px 0; }
 .store-dynamics-counts, .store-dynamics-changes, .store-dynamics-context { grid-template-columns: 1fr; }
 .store-dynamics-counts > div, .store-dynamics-changes > div, .store-dynamics-context > div { padding: 12px 0; }
 .event-panel-head { display: flex; align-items: start; flex-direction: column; gap: 8px; }

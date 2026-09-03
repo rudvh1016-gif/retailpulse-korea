@@ -7,29 +7,34 @@
  *     numbers — the row set is de-duplicated by physicalFlightId first.
  *   · The operating airline is the two-character designator at the start of
  *     the OPERATING flight number (the provider's master flight number when
- *     the row is a codeshare), never the marketing partner's.
- *   · The provider's own airline name is preferred for the label; it comes
- *     from the row whose codeshare flag is not "Y", i.e. the operator's row.
- *   · Country comes only from the caller-supplied lookup; when it answers
- *     null the airline is reported with countryBasis "UNVERIFIED".
+ *     the row is a codeshare), never a marketing partner's.
+ *   · The airline's display name and country come ONLY from the caller-
+ *     supplied lookup (the verified registry, keyed by that designator) —
+ *     never from a raw per-row provider field. `airport_flights` keeps one
+ *     row per physical flight (unique index on physical_flight_id); when a
+ *     provider page lists a codeshare pair under the same master flight,
+ *     persistence keeps whichever marketing row it saw last, including that
+ *     row's OWN "airline" text — so the stored name can belong to the
+ *     codeshare PARTNER, not the operator the flight number actually names.
+ *     Investigated 2026-09-03 after production data showed exactly that:
+ *     KE-numbered flights labelled "아시아나항공", OZ-numbered flights
+ *     labelled "대한항공", their countries both still correct because
+ *     country was already registry-only. The name is now registry-only too.
+ *   · When the lookup answers null the airline is reported with
+ *     countryBasis "UNVERIFIED" and no name — never a guess.
  */
 export interface AirlineRankingFlightRow {
   physicalFlightId: string;
   terminal: string | null;
   /** Operating (master) flight number, e.g. "KE703"; the marketing number for a non-codeshare row. */
   operatingFlight: string | null;
-  /** Provider airline label as stored (A1 `airline`), for this marketing row. */
-  airlineLabel: string | null;
-  codeshare: string | null;
   retrievedAt: string;
 }
 
 export interface RankedAirline {
   /** Operating designator, e.g. "KE"; null when the flight number has none. */
   iata: string | null;
-  /** Provider's official airline name for the operator, when stored. */
-  providerName: string | null;
-  /** Registry name when the lookup has a trustworthy one. */
+  /** Registry name, only when the lookup has a trustworthy one. */
   registryName: string | null;
   /** ISO 3166-1 alpha-2 country, or null. */
   country: string | null;
@@ -67,23 +72,12 @@ export function operatingDesignator(flightNumber: string | null | undefined): st
 
 interface Bucket {
   iata: string | null;
-  labels: Map<string, number>;
-  operatorLabels: Map<string, number>;
   flights: number;
 }
 
-function mostFrequent(counts: Map<string, number>): string | null {
-  let best: string | null = null;
-  let bestCount = 0;
-  for (const [label, count] of counts) {
-    if (count > bestCount || (count === bestCount && best !== null && label < best)) { best = label; bestCount = count; }
-  }
-  return best;
-}
-
 function rank(rows: AirlineRankingFlightRow[], lookup: AirlineLookupFn, limit: number): AirlineRankingForScope {
-  // Group every marketing row under its physical flight so a codeshare pair
-  // is one flight with (possibly) several labels.
+  // One row per physical flight already (the table's own unique index), so
+  // this groups only to find each flight's own operating number once.
   const byPhysical = new Map<string, AirlineRankingFlightRow[]>();
   for (const row of rows) {
     const list = byPhysical.get(row.physicalFlightId) ?? [];
@@ -96,17 +90,12 @@ function rank(rows: AirlineRankingFlightRow[], lookup: AirlineLookupFn, limit: n
     const operatingFlight = group.find((row) => row.operatingFlight)?.operatingFlight ?? null;
     const iata = operatingDesignator(operatingFlight);
     const key = iata ?? "";
-    const bucket = buckets.get(key) ?? { iata, labels: new Map(), operatorLabels: new Map(), flights: 0 };
+    const bucket = buckets.get(key) ?? { iata, flights: 0 };
     bucket.flights += 1;
+    buckets.set(key, bucket);
     for (const row of group) {
-      const label = row.airlineLabel?.trim();
-      if (label) {
-        bucket.labels.set(label, (bucket.labels.get(label) ?? 0) + 1);
-        if ((row.codeshare ?? "").trim().toUpperCase() !== "Y") bucket.operatorLabels.set(label, (bucket.operatorLabels.get(label) ?? 0) + 1);
-      }
       if (!retrievedAt || row.retrievedAt > retrievedAt) retrievedAt = row.retrievedAt;
     }
-    buckets.set(key, bucket);
   }
   const totalFlights = byPhysical.size;
   const airlines: RankedAirline[] = [...buckets.values()]
@@ -114,7 +103,6 @@ function rank(rows: AirlineRankingFlightRow[], lookup: AirlineLookupFn, limit: n
       const found = bucket.iata ? lookup(bucket.iata) : null;
       return {
         iata: bucket.iata,
-        providerName: mostFrequent(bucket.operatorLabels) ?? mostFrequent(bucket.labels),
         registryName: found?.name ?? null,
         country: found?.country ?? null,
         countryBasis: found?.country ? "REGISTRY" as const : "UNVERIFIED" as const,

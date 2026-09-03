@@ -342,7 +342,7 @@ export async function GET(request: Request) {
     // payload self-consistent: the counts can no longer disagree with the rows.
     const flightRows = await safeAll<Row>(async () => (await client.prepare(
       `SELECT physical_flight_id AS physicalFlightId, terminal, gate, retrieved_at AS retrievedAt,
-        flight_number AS operatingFlight, airline_code AS airlineLabel, codeshare
+        flight_number AS operatingFlight
       FROM airport_flights
       WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ?
       LIMIT 2000`,
