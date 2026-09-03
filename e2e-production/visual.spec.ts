@@ -43,13 +43,35 @@ async function samplePixel(page: import("@playwright/test").Page, x: number, y: 
   return rgb as [number, number, number];
 }
 
+
+/**
+ * Opens a live route and waits for the rendered shell.
+ *
+ * Deliberately not `networkidle`: the page keeps polling official data, so
+ * the network is never idle for 500ms and the wait times out on a page that
+ * is in fact fully painted. One retry covers a transient connection close
+ * from the edge, which is a transport hiccup rather than a page fault.
+ */
+async function openRoute(page: import("@playwright/test").Page, path: string) {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      await page.goto(path, { waitUntil: "domcontentloaded" });
+      await expect(page.locator("main.page-shell")).toBeVisible();
+      // Let the first paint settle so a sampled pixel is the final colour.
+      await page.waitForTimeout(400);
+      return;
+    } catch (error) {
+      if (attempt >= 1) throw error;
+    }
+  }
+}
+
 for (const locale of locales) {
   for (const width of viewports) {
     test(`production pure white · ${locale} · ${width}px`, async ({ page }, testInfo) => {
       await page.setViewportSize({ width, height: 900 });
       for (const route of routes) {
-        await page.goto(`/${locale}${route}`, { waitUntil: "networkidle" });
-        await expect(page.locator("main.page-shell")).toBeVisible();
+        await openRoute(page, `/${locale}${route}`);
         for (const selector of surfaces) {
           for (const colour of await paintedBackground(page, selector)) {
             expect(colour, `${locale}${route} @${width}px ${selector}`).toBe(WHITE);
@@ -71,7 +93,7 @@ for (const locale of locales) {
 
 test("production airport page: gate → airline ranking → country roll-up, with provenance", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 900 });
-  await page.goto("/ko/airport", { waitUntil: "networkidle" });
+  await openRoute(page, "/ko/airport");
   const gates = page.locator(".airport-gates");
   const airlines = page.locator(".airport-airlines");
   await expect(gates).toBeVisible();
@@ -92,7 +114,9 @@ test("production airport page: gate → airline ranking → country roll-up, wit
       source: r?.countrySource ?? null,
     };
   });
-  await testInfo.attach("airline-ranking-summary.json", { body: JSON.stringify(summary, null, 2), contentType: "application/json" });
+  const summaryJson = JSON.stringify(summary, null, 2);
+  console.log(`AIRLINE_RANKING_SUMMARY ${summaryJson}`);
+  await testInfo.attach("airline-ranking-summary.json", { body: summaryJson, contentType: "application/json" });
   if (summary.all && summary.all.airlines > 0) {
     await expect(airlines.locator(".airport-airline-row").first()).toBeVisible();
     await expect(airlines).toContainText("국적별 운항편");
