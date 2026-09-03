@@ -289,10 +289,10 @@ test("Store Dynamics presents stored official counts only, never an area-wide ra
     retrievedAt: "2026-09-03T01:00:00.000Z",
   };
   const expected = {
-    ko: ["점포 현황", "2026년 1분기", "총 점포", "174개", "일반 점포", "160개", "프랜차이즈", "14개", "이번 기준분기 개업", "10개", "이번 기준분기 폐업", "5개", "공식 기준", "공식 상권", "분기 기준 공식 과거 자료이며, 현재 영업 중인 점포의 실시간 수가 아닙니다."],
-    en: ["Store openings and closures", "Q1 2026", "Total stores", "174 stores", "Openings this reference quarter", "10 stores", "Closures this reference quarter", "5 stores", "Official quarterly historical data, not a real-time count of stores currently operating."],
-    zh: ["店铺开业与歇业", "2026年第1季度", "店铺总数", "174家", "本基准季度开业", "10家", "本基准季度歇业", "5家", "官方季度历史资料，并非当前营业店铺的实时数量。"],
-    ja: ["店舗の開業・廃業", "2026年第1四半期", "総店舗数", "174店", "基準四半期の開業", "10店", "基準四半期の廃業", "5店", "四半期基準の公式過去資料であり、現在営業中の店舗のリアルタイム件数ではありません。"],
+    ko: ["점포 현황", "2026년 1분기", "총 점포", "174개", "일반 점포 160개", "프랜차이즈 14개", "이번 분기 변화", "개업 10개", "폐업 5개", "공식 과거자료", "KORETAIL 수집", "분기 기준 공식 과거 자료이며, 현재 영업 중인 점포의 실시간 수가 아닙니다."],
+    en: ["Store openings and closures", "Q1 2026", "Total stores", "174 stores", "Non-franchise stores 160 stores", "Franchise stores 14 stores", "Change this quarter", "Opened 10 stores", "Closed 5 stores", "official historical record", "KORETAIL retrieval", "Official quarterly historical data, not a real-time count of stores currently operating."],
+    zh: ["店铺开业与歇业", "2026年第1季度", "店铺总数", "174家", "非加盟店 160家", "加盟店 14家", "本季度变化", "开业 10家", "歇业 5家", "官方历史资料", "KORETAIL采集", "官方季度历史资料，并非当前营业店铺的实时数量。"],
+    ja: ["店舗の開業・廃業", "2026年第1四半期", "総店舗数", "174店", "非フランチャイズ店舗 160店", "フランチャイズ店舗 14店", "今四半期の変化", "開業 10店", "廃業 5店", "公式過去資料", "KORETAIL取得", "四半期基準の公式過去資料であり、現在営業中の店舗のリアルタイム件数ではありません。"],
   } as const;
 
   for (const lang of ["ko", "en", "zh", "ja"] as const) {

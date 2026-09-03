@@ -1534,10 +1534,10 @@ const storeDynamicsText = {
   total: { ko: "총 점포", en: "Total stores", zh: "店铺总数", ja: "総店舗数" },
   ordinary: { ko: "일반 점포", en: "Non-franchise stores", zh: "非加盟店", ja: "非フランチャイズ店舗" },
   franchise: { ko: "프랜차이즈", en: "Franchise stores", zh: "加盟店", ja: "フランチャイズ店舗" },
-  opening: { ko: "이번 기준분기 개업", en: "Openings this reference quarter", zh: "本基准季度开业", ja: "基準四半期の開業" },
-  closure: { ko: "이번 기준분기 폐업", en: "Closures this reference quarter", zh: "本基准季度歇业", ja: "基準四半期の廃業" },
-  reference: { ko: "공식 기준", en: "Official reference", zh: "官方基准", ja: "公式基準" },
-  area: { ko: "공식 상권", en: "Official commercial area", zh: "官方商圈", ja: "公式商圏" },
+  opening: { ko: "개업", en: "Opened", zh: "开业", ja: "開業" },
+  closure: { ko: "폐업", en: "Closed", zh: "歇业", ja: "廃業" },
+  changeTitle: { ko: "이번 분기 변화", en: "Change this quarter", zh: "本季度变化", ja: "今四半期の変化" },
+  basis: { ko: "공식 과거자료", en: "official historical record", zh: "官方历史资料", ja: "公式過去資料" },
   retrieval: { ko: "KORETAIL 수집", en: "KORETAIL retrieval", zh: "KORETAIL采集", ja: "KORETAIL取得" },
   source: {
     ko: "서울시 상권분석서비스 OA-15577",
@@ -1553,25 +1553,29 @@ const storeDynamicsText = {
   },
 } as const;
 
-interface StoreDynamicsMetric {
-  key: "total" | "ordinary" | "franchise" | "opening" | "closure";
-  label: string;
-  value: string;
-}
-
+/**
+ * Store Dynamics, shaped as a short piece of writing rather than a table.
+ *
+ * The previous layout put every field in its own bordered cell, which made a
+ * spreadsheet out of five numbers and gave the incidental ones the same weight
+ * as the headline. This shape says the same facts in reading order: what
+ * period and area they describe, the one number that matters, what it is made
+ * of, then what changed — with the provenance underneath where it belongs.
+ */
 export interface StoreDynamicsPresentation {
   title: string;
   timeState: string;
-  storeMetrics: StoreDynamicsMetric[];
-  changeMetrics: StoreDynamicsMetric[];
-  referenceLabel: string;
-  referenceValue: string;
-  areaLabel: string;
+  /** Quarter and official trade area: the scope every number below inherits. */
+  periodValue: string;
   areaValue: string;
-  retrievalLabel: string;
-  retrievalValue: string;
-  source: string;
-  limitation: string;
+  totalLabel: string;
+  totalValue: string;
+  /** 일반 / 프랜차이즈 — a breakdown of the total, never peers of it. */
+  composition: string[];
+  changeTitle: string;
+  change: string[];
+  /** Source, basis, limitation and retrieval time, in that reading order. */
+  meta: string[];
 }
 
 function formatStoreDynamicsQuarter(lang: Lang, quarterCode: string): string | null {
@@ -1623,28 +1627,34 @@ export function buildStoreDynamicsPresentation(
   if (!referenceValue || !retrievalValue) return null;
   const locale = airportLocale(lang);
   const countValue = (value: number) => `${value.toLocaleString(locale)}${lang === "ko" ? "개" : lang === "en" ? " stores" : lang === "zh" ? "家" : "店"}`;
+  const labelled = (label: string, value: number) => `${label} ${countValue(value)}`;
   return {
     title: storeDynamicsText.title[lang],
     timeState: signalStructureText.timeState.historical[lang],
-    storeMetrics: [
-      { key: "total", label: storeDynamicsText.total[lang], value: countValue(row.totalStoreCount) },
-      { key: "ordinary", label: storeDynamicsText.ordinary[lang], value: countValue(row.ordinaryStoreCount) },
-      { key: "franchise", label: storeDynamicsText.franchise[lang], value: countValue(row.franchiseStoreCount) },
-    ],
-    changeMetrics: [
-      { key: "opening", label: storeDynamicsText.opening[lang], value: countValue(row.openingCount) },
-      { key: "closure", label: storeDynamicsText.closure[lang], value: countValue(row.closureCount) },
-    ],
-    referenceLabel: storeDynamicsText.reference[lang],
-    referenceValue,
-    areaLabel: storeDynamicsText.area[lang],
+    periodValue: referenceValue,
     areaValue: row.tradeAreaName.endsWith(row.tradeAreaTypeName)
       ? row.tradeAreaName
       : `${row.tradeAreaName} · ${row.tradeAreaTypeName}`,
-    retrievalLabel: storeDynamicsText.retrieval[lang],
-    retrievalValue,
-    source: storeDynamicsText.source[lang],
-    limitation: storeDynamicsText.limitation[lang],
+    totalLabel: storeDynamicsText.total[lang],
+    totalValue: countValue(row.totalStoreCount),
+    composition: [
+      labelled(storeDynamicsText.ordinary[lang], row.ordinaryStoreCount),
+      labelled(storeDynamicsText.franchise[lang], row.franchiseStoreCount),
+    ],
+    changeTitle: storeDynamicsText.changeTitle[lang],
+    change: [
+      labelled(storeDynamicsText.opening[lang], row.openingCount),
+      labelled(storeDynamicsText.closure[lang], row.closureCount),
+    ],
+    // Provenance in reading order: where it came from, what kind of record it
+    // is, what it is not, and when KORETAIL fetched it. The limitation keeps
+    // its full sentence — a disclaimer is the one line not to trim.
+    meta: [
+      storeDynamicsText.source[lang],
+      `${referenceValue} ${storeDynamicsText.basis[lang]}`,
+      storeDynamicsText.limitation[lang],
+      `${storeDynamicsText.retrieval[lang]} ${retrievalValue}`,
+    ],
   };
 }
 
@@ -1745,19 +1755,24 @@ function StoreDynamicsCard({ presentation }: { presentation: StoreDynamicsPresen
       <h4>{presentation.title}</h4>
     </div>
     <div className="store-dynamics-content">
-      <dl className="store-dynamics-counts">
-        {presentation.storeMetrics.map((metric) => <div key={metric.key}><dt>{metric.label}</dt><dd>{metric.value}</dd></div>)}
-      </dl>
-      <dl className="store-dynamics-changes">
-        {presentation.changeMetrics.map((metric) => <div key={metric.key}><dt>{metric.label}</dt><dd>{metric.value}</dd></div>)}
-      </dl>
-      <dl className="store-dynamics-context">
-        <div><dt>{presentation.referenceLabel}</dt><dd>{presentation.referenceValue}</dd></div>
-        <div><dt>{presentation.areaLabel}</dt><dd lang="ko">{presentation.areaValue}</dd></div>
-        <div><dt>{presentation.retrievalLabel}</dt><dd>{presentation.retrievalValue}</dd></div>
-      </dl>
-      <p className="store-dynamics-source">{presentation.source}</p>
-      <p className="store-dynamics-limitation">{presentation.limitation}</p>
+      <p className="store-dynamics-scope">
+        <span>{presentation.periodValue}</span>
+        <span lang="ko">{presentation.areaValue}</span>
+      </p>
+      <p className="store-dynamics-total">
+        <span>{presentation.totalLabel}</span>
+        <strong>{presentation.totalValue}</strong>
+      </p>
+      <p className="store-dynamics-composition">
+        {presentation.composition.map((part) => <span key={part}>{part}</span>)}
+      </p>
+      <p className="store-dynamics-change">
+        <span className="store-dynamics-change-title">{presentation.changeTitle}</span>
+        {presentation.change.map((part) => <span key={part}>{part}</span>)}
+      </p>
+      <p className="store-dynamics-meta">
+        {presentation.meta.map((line) => <span key={line}>{line}</span>)}
+      </p>
     </div>
   </article>;
 }

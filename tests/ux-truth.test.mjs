@@ -73,8 +73,8 @@ test("foreign purpose mobility is historical, dated, and never presented as visi
 
 test("subway signal preserves boarding/alighting truth in all four languages", () => {
   for (const phrase of [
-    "최근 역 승하차 흐름", "Recent station boarding and alighting",
-    "近期地铁站进出站客流", "最近の駅乗降動向",
+    "대표 지하철역 승하차", "Representative station boarding and alighting",
+    "代表地铁站进出站", "代表駅の乗降",
     "실시간·고유 방문객·상권 방문객 수 아님",
     "not real-time, unique people, or commercial-area visitors",
   ]) assert.ok(signals.includes(phrase), `${phrase} must remain visible`);
@@ -84,6 +84,14 @@ test("subway signal preserves boarding/alighting truth in all four languages", (
   assert.match(subwayBlock, /subway\.alightingCount/);
   assert.match(subwayBlock, /subway\.boardingCount/);
   assert.doesNotMatch(subwayBlock, /visitor count|방문객 수.*\$\{|LIVE|realtime/i);
+  // The station names itself. The old internal vocabulary told a visitor
+  // nothing about which station produced the number. Comments are stripped
+  // first, since the code explains the change it made.
+  assert.match(subwayBlock, /formatRepresentativeStations\(subway\.selectedStations\)/);
+  const shown = signals.replace(/(^|[^:])\/\/.*$/gm, "$1").replace(/\/\*[\s\S]*?\*\//g, " ");
+  for (const internal of ["선정 역", "Selected-station", "所选车站", "選定駅"]) {
+    assert.equal(shown.includes(internal), false, `internal "${internal}" vocabulary must not reach the UI`);
+  }
 });
 
 /**
@@ -230,8 +238,16 @@ test("Store Dynamics is a dedicated historical block with four-language limitati
       `${realtimeTerm} must appear only in the exact negative limitation`);
   }
   assert.match(signals, /timeState: signalStructureText\.timeState\.historical\[lang\]/);
-  assert.match(signals, /<dd lang="ko">\{presentation\.areaValue\}<\/dd>/,
+  assert.match(signals, /<(\w+) lang="ko">\{presentation\.areaValue\}<\/\1>/,
     "official Korean geography keeps its source language for assistive technology");
+  // The spreadsheet grid is gone: no cell-per-field grid, and the one rule
+  // left is the divider before the quarter's change.
+  for (const gridClass of ["store-dynamics-counts", "store-dynamics-changes", "store-dynamics-context"]) {
+    assert.equal(signals.includes(gridClass), false, `${gridClass} was the table layout and must be gone`);
+    assert.equal(styles.includes(gridClass), false, `${gridClass} styles must be gone`);
+  }
+  assert.match(styles, /\.store-dynamics-total > strong \{[^}]*font-size: clamp\(/,
+    "the total is the headline, set by type size rather than by a bordered cell");
 });
 
 /**
@@ -253,4 +269,80 @@ test("the event card leads with official fields and exposes the complete descrip
     "the disclosure promises exactly the event cards present in the payload");
   assert.match(signals, /nextEventCategory: block\?\.events\?\.\[0\]\?\.categoryName \?\? null/,
     "the brief names the category from the same stored field");
+});
+
+/**
+ * Display headings do not end in a full stop.
+ *
+ * A headline is a sign, not a sentence: "숫자 하나가 무슨 뜻인지부터." reads as
+ * a fragment that trailed off, while the same words without the stop read as a
+ * title. This scans every h1-h4 literal in all four locales, so the rule holds
+ * for Korean and Japanese (. and 。) as well as English and Chinese.
+ *
+ * Body prose is deliberately NOT covered: disclaimers, methodology and source
+ * notes are sentences and keep their punctuation.
+ */
+const HEADING_BLOCK = /<(h[1-4])[^>]*>([\s\S]{0,600}?)<\/\1>/g;
+const LOCALE_STRING = /(ko|en|zh|ja):\s*"((?:[^"\\]|\\.)*)"/g;
+
+test("no display heading ends in a terminal period, in any locale", () => {
+  const offenders = [];
+  for (const file of ["app/retailpulse-app.tsx", "app/live-signals.tsx", "app/not-found.tsx"]) {
+    const source = readFileSync(file, "utf8");
+    for (const block of source.matchAll(HEADING_BLOCK)) {
+      for (const localized of block[2].matchAll(LOCALE_STRING)) {
+        if (/[.。]$/.test(localized[2])) offenders.push(`${file} <${block[1]}> ${localized[1]}: ${localized[2]}`);
+      }
+    }
+  }
+  assert.deepEqual(offenders, [], "headings must read as titles, not as trailing-off sentences");
+});
+
+test("body prose keeps its punctuation — the rule is about headings only", () => {
+  // A guard on the guard: if the rule were applied mechanically to all copy,
+  // the limitation and source lines would lose their full stops too, and that
+  // is exactly what must not happen.
+  assert.match(signals, /현재 영업 중인 점포의 실시간 수가 아닙니다\./);
+});
+
+/**
+ * Perceptual neutrality, not just #FFFFFF.
+ *
+ * The owner checked the real phone screen: the empty background pixels were
+ * already white, and the page still felt warm. A background token cannot fix
+ * that, because the cast comes from what sits ON the white — an ochre
+ * informational line tints the whole surface by contrast even when every
+ * background pixel is pure. So this scans the palette itself rather than
+ * asserting one colour.
+ */
+function warmColours(css) {
+  const found = [];
+  for (const match of css.matchAll(/#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/g)) {
+    const hex = match[1].length === 3 ? [...match[1]].map((c) => c + c).join("") : match[1];
+    const [r, g, b] = [0, 2, 4].map((offset) => parseInt(hex.slice(offset, offset + 2), 16));
+    // A clearly warm cast: red well ahead of blue. A saturated alert red is
+    // allowed and excluded here — it is a state a person must act on.
+    const isAlertRed = r > 200 && g < 120 && b < 120;
+    if (r - b >= 12 && !isAlertRed) found.push({ colour: match[0], r, g, b });
+  }
+  return found;
+}
+
+test("the palette is cold and neutral — no beige, ochre or warm grey", () => {
+  const warm = warmColours(styles).filter((entry) => entry.colour.toLowerCase() !== "#b22d35");
+  assert.deepEqual(warm, [], "a warm colour tints the whole page even on a pure-white ground");
+  // The neutral system is spelled out, so a later change has to be deliberate.
+  assert.match(styles, /--ink:\s*#111111/);
+  assert.match(styles, /--muted:\s*#666666/);
+  assert.match(styles, /--line:\s*#e5e5e5/);
+  assert.match(styles, /--paper:\s*#ffffff/);
+  assert.equal(styles.includes("--amber"), false, "the warm token is gone, so it cannot be reused");
+});
+
+test("ordinary missing-data and stale states are neutral, not alarms", () => {
+  // "저장된 운항 기록 없음" is an ordinary empty state. In ochre it read as a
+  // warning about something the reader had done wrong.
+  assert.match(styles, /\.date-scope-note \{[^}]*color: var\(--muted\)/);
+  // Stale keeps its prominence through weight, not through hue.
+  assert.match(styles, /\.signal-stale \{[^}]*color: var\(--ink\)[^}]*font-weight: var\(--weight-strong\)/);
 });
