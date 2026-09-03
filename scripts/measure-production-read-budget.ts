@@ -166,10 +166,10 @@ const HOT_QUERIES: HotQuery[] = [
     sql: `SELECT area, content_id AS contentId, title, event_start AS eventStart,
         event_end AS eventEnd, distance_m AS distanceM, retrieved_at AS retrievedAt
       FROM tourism_events
-      WHERE COALESCE(event_end, event_start) >= ?
+      WHERE (event_end >= ? OR (event_end IS NULL AND event_start >= ?))
       ORDER BY event_start LIMIT 30`,
-    binds: [serviceDate],
-    guard: "FROM tourism_events\n      WHERE COALESCE(event_end, event_start) >= ?",
+    binds: [serviceDate, serviceDate],
+    guard: "FROM tourism_events\n      WHERE (event_end >= ? OR (event_end IS NULL AND event_start >= ?))",
     table: "tourism_events",
   },
   {
@@ -366,6 +366,7 @@ const EXPECTED_INDEXES = [
   "weather_forecast_area_issue_idx",
   "weather_forecast_issued_area_idx",
   "seoul_estimated_sales_area_quarter_idx",
+  "tourism_events_window_idx",
   "seoul_store_dynamics_area_quarter_idx",
   "seoul_store_dynamics_unique",
   "airport_congestion_terminal_observed_idx",

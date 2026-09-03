@@ -210,9 +210,9 @@ export async function GET(request: Request) {
         category_name AS categoryName, address, address_detail AS addressDetail,
         overview, homepage
       FROM tourism_events
-      WHERE COALESCE(event_end, event_start) >= ?
+      WHERE (event_end >= ? OR (event_end IS NULL AND event_start >= ?))
       ORDER BY event_start LIMIT 30`,
-    ).bind(serviceDate).all<Row>()).results ?? []);
+    ).bind(serviceDate, serviceDate).all<Row>()).results ?? []);
 
     const salesRows = await safeAll<Row>(async () => (await client.prepare(
       latestPerKey(AREAS, () => `SELECT area, quarter_code AS quarterCode, trade_area_code AS tradeAreaCode,

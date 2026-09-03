@@ -299,3 +299,51 @@ test("the date-picker probes are one statement per day, sent as a batch", () => 
     "the A5 picker must use bounded exact-day existence probes",
   );
 });
+
+/**
+ * The nearby-events window used to be `COALESCE(event_end, event_start) >= ?`.
+ * A COALESCE over two columns cannot use an index, so this statement always
+ * SCANned tourism_events — the Production read-budget diagnostic measured it
+ * at 32 rows read over a 16-row table on 2026-09-02, and its hardened form
+ * (since PR #89) fails the whole measurement on any unindexed hot-path scan.
+ * The rewritten predicate selects exactly the same rows and lets SQLite serve
+ * both OR branches from one composite (event_end, event_start) index
+ * (migration 0014). Two single-column indexes were tried first: with a bare
+ * event_start index the planner walked that whole index in ORDER BY order,
+ * which this guard correctly reports as a SCAN.
+ */
+test("the nearby-events window is served from indexes and selects the same rows the COALESCE form did", (context) => {
+  const { db, path } = freshDatabase("events-window");
+  context.after(() => { db.close(); rmSync(path); });
+  const present = new Set(db.prepare("SELECT name FROM sqlite_master WHERE type = 'index'").all().map((row) => String(row.name)));
+  assert.ok(present.has("tourism_events_window_idx"), "tourism_events_window_idx missing");
+
+  const sql = `SELECT area, content_id AS contentId, title, event_start AS eventStart, event_end AS eventEnd
+      FROM tourism_events
+      WHERE (event_end >= ? OR (event_end IS NULL AND event_start >= ?))
+      ORDER BY event_start LIMIT 30`;
+  assert.match(route, /WHERE \(event_end >= \? OR \(event_end IS NULL AND event_start >= \?\)\)/, "the route uses the indexable predicate");
+  assert.doesNotMatch(route, /COALESCE\(event_end, event_start\)/, "the un-indexable COALESCE form must not return");
+
+  const insert = db.prepare(`INSERT INTO tourism_events (id, source_id, record_origin, area, content_id, title, event_start, event_end, retrieved_at, freshness, schema_version, quality_status, source_hash)
+    VALUES (?, 'KTO_TOURAPI_EVENT', 'LIVE', 'myeongdong', ?, ?, ?, ?, '2026-08-31T05:00:00Z', 'LIVE', 'v1', 'VALID', ?)`);
+  const rows = [
+    ["past-ended", "2026-08-01", "2026-08-20"],
+    ["running", "2026-08-20", "2026-09-10"],
+    ["ends-today", "2026-08-25", "2026-08-31"],
+    ["open-ended-past", "2026-08-10", null],
+    ["open-ended-today", "2026-08-31", null],
+    ["open-ended-future", "2026-09-05", null],
+    ["future", "2026-09-02", "2026-09-03"],
+  ];
+  rows.forEach(([id, start, end], index) => insert.run(id, `c${index}`, id, start, end, `h${index}`));
+
+  const day = "2026-08-31";
+  const expected = db.prepare(`SELECT content_id AS c FROM tourism_events WHERE COALESCE(event_end, event_start) >= ? ORDER BY event_start, content_id`).all(day).map((row) => row.c);
+  const actual = db.prepare(`SELECT content_id AS c FROM tourism_events WHERE (event_end >= ? OR (event_end IS NULL AND event_start >= ?)) ORDER BY event_start, content_id`).all(day, day).map((row) => row.c);
+  assert.deepEqual(actual, expected, "the rewritten predicate must select exactly the rows the COALESCE form selected");
+  assert.equal(actual.length, 5, "past-ended and open-ended-past are excluded; running, ends-today and every open-ended/future row are kept");
+
+  const scans = tableScans(db, sql, [day, day]);
+  assert.deepEqual(scans, [], `events window scans a table: ${scans.join(" | ")}`);
+});
