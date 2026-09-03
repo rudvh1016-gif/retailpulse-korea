@@ -157,3 +157,60 @@ test("the A3 workflow adds no schedule and calls no provider", async () => {
   assert.doesNotMatch(workflow, /DATA_GO_KR_SERVICE_KEY|SEOUL_OPEN_DATA_KEY/,
     "deriving a mapping from stored rows needs no provider credential");
 });
+test("the committed mapping record is internally consistent and carries no unproven claim", async () => {
+  const file = JSON.parse(await readFile(new URL("../config/airport-zone-map.v1.json", import.meta.url), "utf8"));
+  assert.equal(file.mappingVersion, AIRPORT_ZONE_MAPPING_VERSION);
+  assert.ok(Array.isArray(file.mappings));
+  assert.equal(file.counts.officialDirect + file.counts.officialMapReview + file.counts.ambiguous, file.counts.totalFacilities);
+  assert.equal(file.mappings.length, file.counts.officialDirect + file.counts.officialMapReview);
+  const seen = new Set();
+  for (const mapping of file.mappings) {
+    assert.ok(!seen.has(mapping.facilityId), `facility ${mapping.facilityId} must appear once`);
+    seen.add(mapping.facilityId);
+    assert.notEqual(mapping.mappingMethod, "AMBIGUOUS", "an ambiguous facility is absent, never listed");
+    assert.equal(mapping.confidence, "PROVEN");
+    assert.equal(mapping.mappingVersion, AIRPORT_ZONE_MAPPING_VERSION);
+    // Every listed record must actually be backed by evidence a reader can check.
+    assert.ok(mapping.gate || mapping.gateGroup || mapping.checkpointId,
+      `facility ${mapping.facilityId} is listed but proves nothing`);
+    assert.ok(mapping.evidenceText && mapping.evidenceText.length > 0);
+    assert.ok(mapping.officialLocationRaw && mapping.officialLocationRaw.includes(mapping.evidenceText.split(" · ")[0]),
+      `facility ${mapping.facilityId} evidence must be a verbatim quote of its official location text`);
+  }
+});
+
+
+test("the facilities endpoint can only ever render a gate the mapping proved", async () => {
+  const route = await readFile(new URL("../app/api/airport/facilities/route.ts", import.meta.url), "utf8");
+  // Every gate field the endpoint emits comes from the resolved mapping, never
+  // from the row. `resolveZoneMapping` returns AMBIGUOUS with null zones for a
+  // facility the record does not list, so an unproven facility has nothing to
+  // render a gate from.
+  assert.match(route, /const mapping = resolveZoneMapping\(zoneMap, \{/);
+  for (const field of ["gate: mapping.gate", "gateGroup: mapping.gateGroup", "checkpointId: mapping.checkpointId"]) {
+    assert.ok(route.includes(field), `${field} must come from the mapping, not the row`);
+  }
+  assert.doesNotMatch(route, /gate:\s*row\.|gate AS gate/, "a gate must never be read from the facility row");
+  // The index is built once from the committed record, so this costs no D1 read.
+  assert.match(route, /buildZoneMapIndex\(zoneMapFile/);
+
+  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  assert.match(signals, /const verified = row\.mappingMethod !== "AMBIGUOUS";/);
+  assert.match(signals, /const zones = verified \? \[/,
+    "an ambiguous facility must compute no zones at all, not merely hide them");
+  for (const locale of ["정확한 위치 미확인", "Exact location unconfirmed", "确切位置未确认", "正確な位置は未確認"]) {
+    assert.ok(signals.includes(locale), `${locale} must be shown, in every locale`);
+  }
+});
+
+test("the committed record proves how little was claimed, not how much", async () => {
+  const file = JSON.parse(await readFile(new URL("../config/airport-zone-map.v1.json", import.meta.url), "utf8"));
+  // A lower truthful coverage beats a false 100%. This is not a target to
+  // raise by loosening the rules; it is a record of what the official text
+  // actually says.
+  assert.ok(file.counts.ambiguous > 0, "claiming every facility is located would mean the rules had been loosened");
+  assert.equal(file.counts.officialMapReview, 0,
+    "no human has reviewed an official airport map, so no record may claim they did");
+  const proven = file.mappings.filter((row) => row.gate || row.gateGroup || row.checkpointId);
+  assert.equal(proven.length, file.mappings.length, "a listed facility with no zone would be a claim with no evidence");
+});
