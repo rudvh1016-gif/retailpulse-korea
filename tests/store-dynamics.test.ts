@@ -111,52 +111,57 @@ test("normalizer fails closed on identity drift, missing fields, or impossible c
   assert.throws(() => normalizeStoreDynamicsRow(officialRow({ OPBIZ_RT: "3.0000000" }), expected, retrievedAt), /store_dynamics_number/);
 });
 
-test("normalizer verifies the provider's published count/rate relationship", () => {
+/**
+ * OPBIZ_RT/CLSBIZ_RT are trusted as the provider published them, not
+ * recomputed from this row's own counts. Two reconstruction attempts (base
+ * = this quarter's ending total; base = the total with the event backed
+ * out/added back) each matched some real Production rows and contradicted
+ * others: eight real (area, industry) rows were captured this way, and no
+ * single arithmetic relationship using only this row's counts explains all
+ * eight. The provider evidently derives the rate from something this table
+ * does not carry. These are the real values that disproved both formulas —
+ * kept as a regression so a future "fix" is not applied on a hunch again.
+ */
+test("published rates are trusted as the provider sent them, never recomputed from this row's own counts", () => {
   const expected = { ...storeDynamicsMappings.myeongdong, quarterCode: "20261" };
-  assert.throws(() => normalizeStoreDynamicsRow(officialRow({ OPBIZ_RT: 20 }), expected, retrievedAt), /store_dynamics_rate_formula/);
+  const real = [
+    // [total, stor, frc, openingCount, openingRate, closureCount, closureRate]
+    [7, 7, 0, 1, 14, 0, 0],
+    [226, 206, 20, 10, 4, 5, 2],
+    [28, 28, 0, 1, 4, 1, 4],
+    [90, 88, 2, 4, 4, 2, 2],
+    [8, 8, 0, 0, 0, 2, 25],
+    [21, 21, 0, 0, 0, 2, 10],
+    [67, 67, 0, 1, 2, 0, 0],
+    [6, 6, 0, 0, 0, 1, 14],
+  ] as const;
+  for (const [total, stor, frc, openingCount, openingRate, closureCount, closureRate] of real) {
+    assert.doesNotThrow(() => normalizeStoreDynamicsRow(officialRow({
+      SIMILR_INDUTY_STOR_CO: total, STOR_CO: stor, FRC_STOR_CO: frc,
+      OPBIZ_STOR_CO: openingCount, OPBIZ_RT: openingRate,
+      CLSBIZ_STOR_CO: closureCount, CLSBIZ_RT: closureRate,
+    }), expected, retrievedAt), `real row (total=${total}, opening=${openingCount}/${openingRate}%, closure=${closureCount}/${closureRate}%) must validate`);
+  }
+});
+
+test("normalizer still rejects a structurally impossible count, even without a rate formula to check", () => {
+  const expected = { ...storeDynamicsMappings.myeongdong, quarterCode: "20261" };
   assert.throws(() => normalizeStoreDynamicsRow(officialRow({
     SIMILR_INDUTY_STOR_CO: 1_000,
     STOR_CO: 1_000,
     FRC_STOR_CO: 0,
     OPBIZ_STOR_CO: 1_004,
     OPBIZ_RT: 100,
-  }), expected, retrievedAt), /store_dynamics_rate_formula/);
-  assert.doesNotThrow(() => normalizeStoreDynamicsRow(officialRow({ OPBIZ_RT: "3", CLSBIZ_RT: "3" }), expected, retrievedAt));
-});
-
-/**
- * Both rates are published against the store base at the START of the
- * quarter, before the event they measure — never against this quarter's
- * ending total. These two cases are real Production rows (D1 write rejected
- * by the pre-fix validator, so nothing was written) and are the actual
- * evidence the formula below is built from, not invented numbers.
- */
-test("published rates divide by the store base before the event they measure, confirmed against real Production rows", () => {
-  const expected = { ...storeDynamicsMappings.myeongdong, quarterCode: "20261" };
-  // Opening: 1 new store against a base of 67 - 1 = 66 stores that existed
-  // before it opened → 1/66 = 1.515% → 2%, not 1/67 = 1.49% → 1%.
-  assert.doesNotThrow(() => normalizeStoreDynamicsRow(officialRow({
-    SIMILR_INDUTY_STOR_CO: 67, STOR_CO: 67, FRC_STOR_CO: 0,
-    OPBIZ_STOR_CO: 1, OPBIZ_RT: 2,
-    CLSBIZ_STOR_CO: 0, CLSBIZ_RT: 0,
-  }), expected, retrievedAt));
+  }), expected, retrievedAt), /store_dynamics_count_bound/, "opening count may never exceed the row's own total");
   assert.throws(() => normalizeStoreDynamicsRow(officialRow({
-    SIMILR_INDUTY_STOR_CO: 67, STOR_CO: 67, FRC_STOR_CO: 0,
-    OPBIZ_STOR_CO: 1, OPBIZ_RT: 1,
-    CLSBIZ_STOR_CO: 0, CLSBIZ_RT: 0,
-  }), expected, retrievedAt), /store_dynamics_rate_formula/, "dividing by this quarter's ending total instead must not validate");
-  // Closure: 1 closed store against a base of 6 + 1 = 7 stores that existed
-  // before it closed → 1/7 = 14.28% → 14%, not 1/6 = 16.67% → 17%.
-  assert.doesNotThrow(() => normalizeStoreDynamicsRow(officialRow({
-    SIMILR_INDUTY_STOR_CO: 6, STOR_CO: 6, FRC_STOR_CO: 0,
-    OPBIZ_STOR_CO: 0, OPBIZ_RT: 0,
-    CLSBIZ_STOR_CO: 1, CLSBIZ_RT: 14,
-  }), expected, retrievedAt));
-  assert.throws(() => normalizeStoreDynamicsRow(officialRow({
-    SIMILR_INDUTY_STOR_CO: 6, STOR_CO: 6, FRC_STOR_CO: 0,
-    OPBIZ_STOR_CO: 0, OPBIZ_RT: 0,
-    CLSBIZ_STOR_CO: 1, CLSBIZ_RT: 17,
-  }), expected, retrievedAt), /store_dynamics_rate_formula/, "dividing by this quarter's ending total instead must not validate");
+    SIMILR_INDUTY_STOR_CO: 1_000,
+    STOR_CO: 1_000,
+    FRC_STOR_CO: 0,
+    CLSBIZ_STOR_CO: 1_004,
+    CLSBIZ_RT: 100,
+  }), expected, retrievedAt), /store_dynamics_count_bound/, "closure count may never exceed the row's own total");
+  assert.doesNotThrow(() => normalizeStoreDynamicsRow(officialRow({ OPBIZ_RT: 20 }), expected, retrievedAt),
+    "an arbitrary but validly-shaped published rate is trusted, not recomputed");
 });
 
 test("official response validation distinguishes valid rows from an official no-data result", () => {
@@ -211,7 +216,7 @@ test("aggregator creates one compact area fact without duplicate-industry inflat
       FRC_STOR_CO: 1,
       OPBIZ_RT: 0,
       OPBIZ_STOR_CO: 0,
-      CLSBIZ_RT: 5, // 1 / (18 + 1) = 5.26% -> 5%, the base before this closure.
+      CLSBIZ_RT: 5, // trusted as published, not recomputed from the counts.
       CLSBIZ_STOR_CO: 1,
     }), expected, retrievedAt),
   ];
