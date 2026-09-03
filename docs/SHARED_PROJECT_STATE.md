@@ -313,3 +313,29 @@ Do not claim any of the following without evidence:
 - true E2E
 
 If evidence is missing, say BLOCKED / PENDING / NOT VERIFIED.
+
+
+## Airport airline ranking, country reference and A1 recovery (2026-09-03 KST)
+
+- **Why the busiest gate was empty on 2026-09-03:** the 06:07 KST daily
+  collection (`collect-production.yml` run 33694221718) lost every
+  data.go.kr source to `UND_ERR_CONNECT_TIMEOUT`, so no A1 rows existed for
+  the service day; the gate ranking, departures-tracked count and airline
+  ranking all depend on those rows. A manual re-run at 18:31 KST (run
+  33739297862) succeeded (531 tracked departures, 117 pages).
+- **Structural fix:** `.github/workflows/collect-airport-recovery.yml`
+  (10:07 KST) re-runs `airport_recent` + `airport_enrichment` only when the
+  same-day guard finds no complete scan; the A1 scan now counts its own
+  requests and the recovery window is capped at 200 (primary ≤300) so the
+  documented 500 calls/day is never exceeded. The UI says "not collected
+  yet" for a missing day instead of blaming gate coverage.
+- **New:** daily airline ranking (all / T1 / T2) from de-duplicated physical
+  departures, with a per-country roll-up. Country comes from an OpenFlights
+  (ODbL) reference table with an explicit suppression list; unmatched or
+  suppressed designators show **국적 미확인**. Provenance is printed under
+  the ranking and carried in `airport.airlineRanking.countrySource`.
+- **Owner action:** verify ICN-operating airlines against an official
+  register and prune `SUPPRESSED_AIRLINE_DESIGNATORS` (see
+  `docs/DATA_SOURCES.md`, "Airline ranking and airline country reference").
+- Visual: the commercial payment range is now `₩min ~ ₩max` (the bare en
+  dash read as a strike-through on phones) and `--surface` is pure white.

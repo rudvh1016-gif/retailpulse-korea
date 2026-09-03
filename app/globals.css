@@ -68,7 +68,7 @@
   --muted: #666666;
   --line: #e5e5e5;
   --paper: #ffffff;
-  --surface: #f7f7f7;
+  --surface: #ffffff;
   --blue: #214cff;
   --green: #087a55;
   --amber: #a56600;
@@ -303,7 +303,7 @@ nav.bottom-nav { display: none; }
 .home-area-briefs-head > p:last-child { max-width: 520px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
 .home-area-brief-rows button { width: 100%; min-height: 104px; padding: 18px 0; display: grid; grid-template-columns: 150px minmax(0, 1fr) 110px; gap: 28px; align-items: start; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; text-align: left; }
 .home-area-brief-rows button:last-child { border-bottom: 0; }
-.home-area-brief-rows button:hover, .home-area-brief-rows button.selected { background: var(--surface); }
+.home-area-brief-rows button:hover, .home-area-brief-rows button.selected { background: var(--paper); box-shadow: inset 3px 0 0 var(--blue); }
 .home-area-brief-rows button.selected { box-shadow: inset 2px 0 0 var(--ink); padding-left: 14px; padding-right: 14px; }
 .home-area-brief-rows button > span { padding-top: 2px; font-size: 14px; font-weight: var(--weight-strong); }
 .home-area-brief-rows button strong { display: block; font-size: 15px; font-weight: var(--weight-strong); letter-spacing: -.015em; }
@@ -750,11 +750,16 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .airport-gate-list { margin: 14px 0 0; padding: 0; list-style: none; }
 .airport-gate-head { display: grid; grid-template-columns: 30px 1fr; gap: 12px; padding: 0 0 7px; border-bottom: 1px solid var(--line); }
 .airport-gate-head span, .airport-gate-head strong { color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .08em; text-transform: uppercase; }
-.airport-gate-row { display: grid; grid-template-columns: 30px 1fr auto; align-items: baseline; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
-.airport-gate-row > span { color: var(--muted); font-size: 11px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
-.airport-gate-row strong { font-size: 14px; font-weight: var(--weight-strong); letter-spacing: -.01em; }
-.airport-gate-row strong i { display: inline-block; margin-right: 7px; color: var(--muted); font-style: normal; font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .05em; }
-.airport-gate-row b { font-size: 14px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
+.airport-gate-row, .airport-rank-row { display: grid; grid-template-columns: 30px 1fr auto; align-items: baseline; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.airport-gate-row > span, .airport-rank-row > span { color: var(--muted); font-size: 11px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
+.airport-gate-row strong, .airport-rank-row strong { font-size: 14px; font-weight: var(--weight-strong); letter-spacing: -.01em; }
+.airport-gate-row strong i, .airport-rank-row strong i { display: inline-block; margin-right: 7px; color: var(--muted); font-style: normal; font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .05em; }
+.airport-gate-row b, .airport-rank-row b { font-size: 14px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
+.airport-airline-row strong, .airport-country-row strong { min-width: 0; overflow-wrap: anywhere; }
+.airport-airline-row strong em, .airport-country-row strong em { display: block; margin-top: 3px; color: var(--muted); font-style: normal; font-size: 11px; font-weight: var(--weight-regular); letter-spacing: 0; }
+.airport-airline-row b, .airport-country-row b { text-align: right; }
+.airport-airline-row b small, .airport-country-row b small { display: block; color: var(--muted); font-size: 10px; font-weight: var(--weight-regular); }
+.airport-subhead { margin: 30px 0 0; color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .08em; text-transform: uppercase; }
 .airport-checkpoint-terminal article b i, .airport-checkpoint-terminal article p i { display: block; margin-bottom: 2px; color: var(--muted); font-style: normal; font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .06em; text-transform: uppercase; }
 
 /* Flight board */

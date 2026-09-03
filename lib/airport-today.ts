@@ -26,10 +26,20 @@ const ENDPOINT = "https://apis.data.go.kr/B551177/statusOfAllFltDeOdp/getFltDepa
  */
 export const A1_TODAY_PAGE_SIZE = 100;
 export const A1_TODAY_MAX_PAGES = 150;
+/** Documented ceiling of one primary scan: every page once, plus one retry each. */
+export const A1_TODAY_DEFAULT_MAX_REQUESTS = A1_TODAY_MAX_PAGES * 2;
 
 interface AirportTodayEnv {
   DB?: D1Database;
   DATA_GO_KR_SERVICE_KEY?: string;
+  /**
+   * Hard budget of provider requests for one scan, retries included. The
+   * daily recovery window runs with 200 so that a failed primary (≤300) plus
+   * its recovery can never exceed A1's documented 500 calls/day. Exceeding
+   * the budget aborts the scan before the request is made; nothing stored
+   * is touched.
+   */
+  A1_MAX_REQUESTS?: number;
 }
 
 interface A1Body {
@@ -48,6 +58,8 @@ export interface A1TodayFetchResult {
   targetDate: string;
   windowStartDate: string;
   pagesFetched: number;
+  /** Provider requests actually issued, retries included. */
+  requestsIssued: number;
   totalCount: number;
   sourceRowsInRange: number;
   sourceRowsForDate: number;
@@ -112,18 +124,37 @@ export async function fetchA1DeparturesForDate(
   serviceKey: string,
   targetDate: string,
   fetcher: OfficialFetcher = fetchOfficialJson,
+  options: { maxRequests?: number; sleep?: (ms: number) => Promise<void> } = {},
 ): Promise<A1TodayFetchResult> {
   const targetYmd = compactDate(targetDate);
   if (!/^\d{8}$/.test(targetYmd)) throw new Error("a1_today_invalid_target_date");
   const windowStartDate = shiftIsoDate(targetDate, -3);
   const windowStartYmd = compactDate(windowStartDate);
-
+  const maxRequests = Math.max(1, Math.min(Math.trunc(options.maxRequests ?? A1_TODAY_DEFAULT_MAX_REQUESTS), A1_TODAY_DEFAULT_MAX_REQUESTS));
+  const sleep = options.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+  let requestsIssued = 0;
   let declaredTotal = 0;
   let totalPages = 0;
   let sourceRowsInRange = 0;
   let sourceRowsForDate = 0;
   const unique = new Map<string, CanonicalAirportFlight>();
   const retrievedAt = new Date().toISOString();
+
+  // One page, at most one retry after a failure, every attempt counted
+  // against the request budget BEFORE it is issued. The retry lives here
+  // rather than inside the fetcher so the count is exact, not an estimate.
+  const fetchPage = async (url: URL, pageNo: number): Promise<unknown> => {
+    for (let attempt = 0; ; attempt += 1) {
+      if (requestsIssued >= maxRequests) throw new Error(`a1_today_request_budget_${maxRequests}_page_${pageNo}`);
+      requestsIssued += 1;
+      try {
+        return await fetcher(url, { timeoutMs: 30_000, retries: 0 });
+      } catch (error) {
+        if (attempt >= 1) throw error;
+        await sleep(750);
+      }
+    }
+  };
 
   for (let pageNo = 1; ; pageNo += 1) {
     if (pageNo > A1_TODAY_MAX_PAGES) throw new Error("a1_today_page_bound_exceeded");
@@ -132,7 +163,7 @@ export async function fetchA1DeparturesForDate(
       numOfRows: String(A1_TODAY_PAGE_SIZE),
       pageNo: String(pageNo),
     });
-    const payload = await fetcher(url, { timeoutMs: 30_000, retries: 1, retryDelayMs: 750 });
+    const payload = await fetchPage(url, pageNo);
     const body = assertSuccess(payload, pageNo);
     const items = pageItems(body);
 
@@ -166,6 +197,7 @@ export async function fetchA1DeparturesForDate(
   return {
     targetDate,
     windowStartDate,
+    requestsIssued,
     pagesFetched: totalPages,
     totalCount: declaredTotal,
     sourceRowsInRange,
@@ -245,7 +277,7 @@ async function recordSuccess(
     return latest;
   }, null);
   const retrievedAt = fetched.records[0]?.retrievedAt ?? finishedAt;
-  const detail = `recent ${fetched.windowStartDate}..${fetched.targetDate}; pages ${fetched.pagesFetched}; population ${fetched.totalCount}; range rows ${fetched.sourceRowsInRange}; today source rows ${fetched.sourceRowsForDate}; today unique physical ${fetched.trackedToday}; range unique physical ${fetched.records.length}; ${describeWrites(changedRows)}`;
+  const detail = `recent ${fetched.windowStartDate}..${fetched.targetDate}; pages ${fetched.pagesFetched}; requests ${fetched.requestsIssued}; population ${fetched.totalCount}; range rows ${fetched.sourceRowsInRange}; today source rows ${fetched.sourceRowsForDate}; today unique physical ${fetched.trackedToday}; range unique physical ${fetched.records.length}; ${describeWrites(changedRows)}`;
 
   await db.prepare(`INSERT INTO source_health (
       source_id, status, last_event_at, last_published_at, last_retrieved_at,
@@ -326,7 +358,7 @@ export async function collectAirportFlightsToday(
 
   const targetDate = kstDate(now);
   try {
-    const fetched = await fetchA1DeparturesForDate(env.DATA_GO_KR_SERVICE_KEY, targetDate, fetcher);
+    const fetched = await fetchA1DeparturesForDate(env.DATA_GO_KR_SERVICE_KEY, targetDate, fetcher, { maxRequests: env.A1_MAX_REQUESTS });
     if (!fetched.records.length) throw new Error(`a1_today_no_rows_${targetDate}`);
     if (!fetched.trackedToday) throw new Error(`a1_today_no_current_rows_${targetDate}`);
     const changedRows = await persistTodayFlights(env.DB, fetched.records);

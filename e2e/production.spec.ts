@@ -221,6 +221,26 @@ const SUMMARY_FIXTURE = {
     topDepartureGateRetrievedAtByTerminal: { T1: "2026-08-31T12:00:00+09:00", T2: "2026-08-31T12:05:00+09:00" },
     gateCoverageRatio: 0.76,
     gateCoverageRatioByTerminal: { T1: 0.8, T2: 0.7 },
+    airlineRanking: {
+      all: {
+        totalFlights: 561,
+        airlines: [
+          { iata: "KE", providerName: "대한항공", registryName: "Korean Air", country: "KR", countryBasis: "REGISTRY", flights: 140, share: 0.2496 },
+          { iata: "OZ", providerName: "아시아나항공", registryName: "Asiana Airlines", country: "KR", countryBasis: "REGISTRY", flights: 90, share: 0.1604 },
+          { iata: "RS", providerName: "에어서울", registryName: null, country: null, countryBasis: "UNVERIFIED", flights: 20, share: 0.0357 },
+        ],
+        countries: [
+          { country: "KR", flights: 230, airlines: 2, share: 0.41 },
+          { country: null, flights: 20, airlines: 1, share: 0.0357 },
+        ],
+        retrievedAt: "2026-08-31T12:00:00+09:00",
+      },
+      byTerminal: {
+        T1: { totalFlights: 300, airlines: [{ iata: "OZ", providerName: "아시아나항공", registryName: "Asiana Airlines", country: "KR", countryBasis: "REGISTRY", flights: 90, share: 0.3 }], countries: [{ country: "KR", flights: 90, airlines: 1, share: 0.3 }], retrievedAt: "2026-08-31T12:00:00+09:00" },
+        T2: { totalFlights: 261, airlines: [{ iata: "KE", providerName: "대한항공", registryName: "Korean Air", country: "KR", countryBasis: "REGISTRY", flights: 140, share: 0.5364 }], countries: [{ country: "KR", flights: 140, airlines: 1, share: 0.5364 }], retrievedAt: "2026-08-31T12:00:00+09:00" },
+      },
+      countrySource: { provider: "OpenFlights airline database", licence: "ODbL 1.0", retrievedOn: "2026-09-03", entries: 950, suppressed: 25 },
+    },
     serviceDateKst: "2026-08-31",
     periodStartAt: "2026-08-31T00:00:00+09:00",
     periodEndAt: "2026-08-31T23:59:59+09:00",
@@ -406,6 +426,64 @@ test("terminal briefing shows one labelled card per terminal and names the longe
   await page.goto("/ko/airport");
   await page.locator(".terminal-selector button").filter({ hasText: /^T1$/ }).click();
   await expect(page.locator('[data-signal-key="terminal-briefing"]')).toHaveCount(0);
+});
+
+test("airlines are ranked by operating departures with a country or an explicit unverified label", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.goto("/ko/airport");
+  const airlines = page.locator(".airport-airlines");
+  await expect(airlines).toBeVisible();
+  const rows = airlines.locator(".airport-airline-row");
+  await expect(rows).toHaveCount(3);
+  await expect(rows.nth(0)).toContainText("KE");
+  await expect(rows.nth(0)).toContainText("대한항공");
+  await expect(rows.nth(0)).toContainText("대한민국");
+  await expect(rows.nth(0)).toContainText("140편");
+  await expect(rows.nth(0)).toContainText("25%");
+  // A designator the reference table cannot vouch for is never given a country.
+  await expect(rows.nth(2)).toContainText("에어서울");
+  await expect(rows.nth(2)).toContainText("국적 미확인");
+  const countries = airlines.locator(".airport-country-row");
+  await expect(countries).toHaveCount(2);
+  await expect(countries.nth(0)).toContainText("대한민국");
+  await expect(countries.nth(0)).toContainText("2개 항공사");
+  await expect(countries.nth(1)).toContainText("국적 미확인");
+  await expect(airlines).toContainText("OpenFlights");
+  // English readers get the reference-table name and a localized region name.
+  await page.goto("/en/airport");
+  const keRow = page.locator(".airport-airline-row").filter({ hasText: "KE" });
+  await expect(keRow).toContainText("Korean Air");
+  await expect(keRow).toContainText("South Korea");
+  // Terminal scope narrows the ranking to that terminal's own operators.
+  await page.goto("/ko/airport");
+  // Wait for the hydrated all-terminal list before clicking, so the click reaches React.
+  await expect(airlines.locator(".airport-airline-row")).toHaveCount(3);
+  await page.locator(".terminal-selector button").filter({ hasText: /^T1$/ }).click();
+  await expect(airlines.locator(".airport-airline-row")).toHaveCount(1);
+  await expect(airlines.locator(".airport-airline-row").first()).toContainText("아시아나항공");
+});
+
+test("a day with no stored departures says so instead of blaming gate coverage", async ({ page }) => {
+  const empty = {
+    ...SUMMARY_FIXTURE,
+    airport: {
+      ...SUMMARY_FIXTURE.airport,
+      departuresTrackedToday: null,
+      departuresTrackedTodayByTerminal: {},
+      topDepartureGate: null,
+      topDepartureGateTerminal: null,
+      topDepartureGateFlights: null,
+      topDepartureGateByTerminal: {},
+      busyDepartureGates: [],
+      busyDepartureGatesByTerminal: {},
+      airlineRanking: { all: { totalFlights: 0, airlines: [], countries: [], retrievedAt: null }, byTerminal: {}, countrySource: SUMMARY_FIXTURE.airport.airlineRanking.countrySource },
+    },
+  };
+  await page.route("**/api/live/summary*", routeSummary(empty));
+  await page.goto("/ko/airport");
+  await expect(page.locator(".airport-gates .airport-empty-line")).toContainText("아직 수집되지 않았습니다");
+  await expect(page.locator(".airport-airlines .airport-empty-line")).toContainText("아직 수집되지 않았습니다");
+  await expect(page.locator(".airport-gates")).not.toContainText("게이트 정보 범위가 충분하지 않아");
 });
 
 test("the official passenger-flow chart follows the at-a-glance grid directly", async ({ page }) => {
@@ -779,7 +857,7 @@ test("commercial activity and events expose their complete truth without a flat 
   await expect(commercial).toContainText("상태");
   await expect(commercial).toContainText("보통");
   await expect(commercial).toContainText("결제금액");
-  await expect(commercial).toContainText("₩1,000,000–₩1,100,000");
+  await expect(commercial).toContainText("₩1,000,000 ~ ₩1,100,000");
   await expect(commercial).toContainText("14:05 기준 최근 10분");
   await expect(commercial).toContainText("14:07 수집");
   await expect(commercial).toContainText("신한카드 내국인 결제 기반 · 전수 매출 아님 · 외국인 소비 아님");

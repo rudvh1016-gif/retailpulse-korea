@@ -80,7 +80,7 @@ test("A1 scan stores D-3 through today, excludes D+1, deduplicates codeshares, a
     assert.equal(url.searchParams.get("type"), "json");
     assert.equal(url.searchParams.get("serviceKey"), "fixture-key");
     assert.deepEqual([...url.searchParams.keys()].sort(), ["numOfRows", "pageNo", "serviceKey", "type"]);
-    assert.deepEqual(options, { timeoutMs: 30_000, retries: 1, retryDelayMs: 750 });
+    assert.deepEqual(options, { timeoutMs: 30_000, retries: 0 });
   }
 });
 
@@ -133,7 +133,7 @@ test("overlapping next-day import upserts recent flights and never deletes older
   ];
   const fetcher = async (_url, options) => {
     calls += 1;
-    assert.deepEqual(options, { timeoutMs: 30_000, retries: 1, retryDelayMs: 750 });
+    assert.deepEqual(options, { timeoutMs: 30_000, retries: 0 });
     return pagePayload(calls === 1 ? aug30 : aug31, calls === 1 ? aug30.length : aug31.length);
   };
 
@@ -181,4 +181,36 @@ test("A1 today fallback fails closed on an incomplete middle page", async () => 
 
 test("KST target date is computed independently of runner timezone", () => {
   assert.equal(kstDate(new Date("2026-08-29T15:01:00.000Z")), "2026-08-30");
+});
+
+test("A1 request budget counts every attempt, retries a page once, and aborts before exceeding the budget", async () => {
+  const good = [flight({ flightId: "KE100", scheduleDatetime: "202608300900" })];
+  let calls = 0;
+  const flaky = async () => {
+    calls += 1;
+    if (calls === 2) throw new Error("NETWORK_UND_ERR_CONNECT_TIMEOUT");
+    return pagePayload(good, 150);
+  };
+  const noSleep = async () => {};
+  // 150 rows -> 2 pages. Page 2's first attempt fails, its retry succeeds: 3 requests.
+  const result = await fetchA1DeparturesForDate("fixture-key", "2026-08-30", flaky, { maxRequests: 3, sleep: noSleep });
+  assert.equal(result.requestsIssued, 3);
+  assert.equal(result.pagesFetched, 2);
+  assert.equal(calls, 3);
+
+  // The same scan with a budget of 2 must stop before issuing the third request.
+  calls = 0;
+  await assert.rejects(
+    fetchA1DeparturesForDate("fixture-key", "2026-08-30", flaky, { maxRequests: 2, sleep: noSleep }),
+    /a1_today_request_budget_2_page_2/,
+  );
+  assert.equal(calls, 2);
+
+  // A page that fails twice is a real failure, not a third attempt.
+  calls = 0;
+  await assert.rejects(
+    fetchA1DeparturesForDate("fixture-key", "2026-08-30", async () => { calls += 1; throw new Error("NETWORK_UND_ERR_CONNECT_TIMEOUT"); }, { sleep: noSleep }),
+    /NETWORK_UND_ERR_CONNECT_TIMEOUT/,
+  );
+  assert.equal(calls, 2);
 });

@@ -196,6 +196,10 @@ interface LivePassengerForecastRow {
 type ForecastCoverageStatus = "COMPLETE" | "PARTIAL" | "UNAVAILABLE";
 type ForecastBand = { targetStartAt: string; targetEndAt: string; expectedPassengers: number };
 type TerminalGate = { gate: string; flights: number } | null;
+type RankedAirlineRow = { iata: string | null; providerName: string | null; registryName: string | null; country: string | null; countryBasis: "REGISTRY" | "UNVERIFIED"; flights: number; share: number };
+type CountryRollupRow = { country: string | null; flights: number; airlines: number; share: number };
+type AirlineRankingScope = { totalFlights: number; airlines: RankedAirlineRow[]; countries: CountryRollupRow[]; retrievedAt: string | null };
+type AirlineRankingPayload = { all: AirlineRankingScope; byTerminal: Record<string, AirlineRankingScope>; countrySource?: { provider: string; licence: string; retrievedOn: string; entries: number; suppressed?: number } };
 type RankedGate = { terminal: string | null; gate: string; flights: number };
 type RemainingForecast = { expectedPassengers: number; fromAt: string; toAt: string; bands: number } | null;
 
@@ -227,6 +231,7 @@ export interface LiveSummary {
     topDepartureGateRetrievedAtByTerminal: Record<string, string | null>;
     gateCoverageRatio: number;
     gateCoverageRatioByTerminal: Record<string, number>;
+    airlineRanking?: AirlineRankingPayload;
     serviceDateKst: string | null;
     periodStartAt: string | null;
     periodEndAt: string | null;
@@ -514,6 +519,25 @@ const airportTodayText = {
   partialBody: { ko: "공식 예상 데이터의 일부 시간대가 누락되어 하루 전체 합계와 피크는 표시하지 않습니다.", en: "Some official time bands are missing, so the full-day total and peak are not shown.", zh: "部分官方时段数据缺失，因此不显示全天合计与高峰。", ja: "公式予測の一部時間帯が欠けているため、1日全体の合計とピークは表示しません。" },
   unavailableBody: { ko: "이 날짜의 공식 예상 시간대가 없습니다. 실제 출발 운항과 현재 출국장 정보는 계속 확인할 수 있습니다.", en: "No official forecast bands exist for this date. Physical departures and current checkpoints remain available.", zh: "该日期没有官方预计时段数据，仍可查看实际出发航班和当前出境区信息。", ja: "この日付の公式予測時間帯はありません。実出発便と現在の出国場情報は引き続き確認できます。" },
   gateRankHead: { ko: "순위 · 터미널 · 게이트 · 출발편", en: "Rank · Terminal · Gate · Departures", zh: "排名 · 航站楼 · 登机口 · 出发航班", ja: "順位 · ターミナル · ゲート · 出発便" },
+  // Today's rows can be absent for a whole service day when the morning A1
+  // scan timed out at the provider. Say that plainly instead of the generic
+  // coverage line, which would blame gate data that was never collected.
+  noFlightsToday: { ko: "오늘 출발편 데이터가 아직 수집되지 않았습니다. 06:07 / 10:07 KST 수집 후 표시됩니다.", en: "Today's departures have not been collected yet. They appear after the 06:07 / 10:07 KST collection.", zh: "今日出发航班数据尚未采集，将在 06:07 / 10:07 KST 采集后显示。", ja: "本日の出発便データはまだ収集されていません。06:07 / 10:07 KST の収集後に表示されます。" },
+  noFlightsForDate: { ko: "이 날짜의 출발편 데이터가 없습니다.", en: "No departure data is stored for this date.", zh: "该日期没有出发航班数据。", ja: "この日付の出発便データはありません。" },
+  airlinesTitle: { ko: "항공사별 운항 순위", en: "Airlines by departures", zh: "航空公司出发航班排名", ja: "航空会社別運航ランキング" },
+  airlinesNote: { ko: "오늘 실제 출발편을 운항 항공사 기준으로 집계한 순위입니다. 공동운항편은 운항사 1편으로만 셉니다.", en: "Today's physical departures counted by operating airline. A codeshare counts once, for its operator.", zh: "按实际执飞航空公司统计的今日出发航班排名，共享航班仅按执飞方计 1 班。", ja: "本日の実運航出発便を運航会社ごとに集計した順位です。コードシェア便は運航会社の1便としてのみ数えます。" },
+  airlineRankHead: { ko: "순위 · 항공사 · 국적 · 출발편", en: "Rank · Airline · Country · Departures", zh: "排名 · 航空公司 · 国籍 · 出发航班", ja: "順位 · 航空会社 · 国籍 · 出発便" },
+  countriesTitle: { ko: "국적별 운항편", en: "Departures by airline country", zh: "按航空公司国籍的出发航班", ja: "航空会社の国籍別出発便" },
+  countryRankHead: { ko: "순위 · 국적 · 항공사 수 · 출발편", en: "Rank · Country · Airlines · Departures", zh: "排名 · 国籍 · 航空公司数 · 出发航班", ja: "順位 · 国籍 · 航空会社数 · 出発便" },
+  countryUnverified: { ko: "국적 미확인", en: "Country unverified", zh: "国籍未确认", ja: "国籍未確認" },
+  airlinesUnit: { ko: "개 항공사", en: " airlines", zh: "家航空公司", ja: "社" },
+  noAirlineList: { ko: "운항 항공사를 식별할 수 있는 출발편이 없습니다.", en: "No departures with an identifiable operating airline.", zh: "没有可识别执飞航空公司的出发航班。", ja: "運航会社を識別できる出発便がありません。" },
+  airlineCountryBasis: {
+    ko: (retrievedOn: string) => `국적은 OpenFlights 항공사 참조표(ODbL, ${retrievedOn} 수집) 기준이며 공식 등록 자료가 아닙니다. 참조표가 보증하지 못하는 항공사는 '국적 미확인'으로 표시합니다.`,
+    en: (retrievedOn: string) => `Country from the OpenFlights airline reference table (ODbL, retrieved ${retrievedOn}), not an official register. Airlines the table cannot vouch for are shown as unverified.`,
+    zh: (retrievedOn: string) => `国籍依据 OpenFlights 航空公司参考表（ODbL，${retrievedOn} 获取），并非官方登记资料。参考表无法确认的航空公司显示为“国籍未确认”。`,
+    ja: (retrievedOn: string) => `国籍は OpenFlights 航空会社参照表（ODbL、${retrievedOn} 取得）に基づき、公式登録資料ではありません。参照表が保証できない航空会社は「国籍未確認」と表示します。`,
+  },
   nowOnly: {
     ko: "현재 출국장 대기는 실시간 관측이라 언제나 지금 시점만 보여줍니다.",
     en: "Departure-hall waits are live observations, so they always show the present moment.",
@@ -940,6 +964,8 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
 
   const scopeLabel = airportTodayText.scope[lang][terminal];
   const gateList = isAll ? airport.busyDepartureGates ?? [] : airport.busyDepartureGatesByTerminal?.[terminal] ?? [];
+  const ranking = isAll ? airport.airlineRanking?.all ?? null : airport.airlineRanking?.byTerminal?.[terminal] ?? null;
+  const noFlightsText = summary?.dayRelation === "PAST" ? airportTodayText.noFlightsForDate[lang] : airportTodayText.noFlightsToday[lang];
   const rankedCheckpoints = rankCurrentDepartureHallCheckpoints(
     (airport.congestion ?? []).map((row) => ({ ...row, waitTimeRaw: row.waitTimeRaw ?? null })),
   ) as Record<string, LiveCongestionRow[]>;
@@ -1060,9 +1086,54 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
           <strong>{row.terminal ? <i>{row.terminal}</i> : null}Gate {row.gate}</strong>
           <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}</b>
         </li>)}
-      </ol> : <p className="airport-empty-line">{airportTodayText.noGateList[lang]}</p>}
+      </ol> : <p className="airport-empty-line">{flightsCount === null ? noFlightsText : airportTodayText.noGateList[lang]}</p>}
+    </section>
+
+    <section className="airport-detail-section airport-airlines" aria-labelledby="airport-airlines-title">
+      <div className="airport-detail-head"><div><p className="eyebrow">OPERATING AIRLINES · {scopeLabel}</p><h3 id="airport-airlines-title">{airportTodayText.airlinesTitle[lang]}</h3></div><p>{airportTodayText.airlinesNote[lang]}</p></div>
+      {ranking && ranking.airlines.length ? <>
+        <ol className="airport-gate-list airport-airline-list">
+          <li className="airport-gate-head" aria-hidden="true"><span>#</span><strong>{airportTodayText.airlineRankHead[lang]}</strong></li>
+          {ranking.airlines.map((row, index) => <li className="airport-rank-row airport-airline-row" key={row.iata ?? `label-${row.providerName ?? index}`}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <strong>{row.iata ? <i>{row.iata}</i> : null}{airlineDisplayName(row, lang)}<em>{row.country ? regionName(row.country, lang) : airportTodayText.countryUnverified[lang]}</em></strong>
+            <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}<small>{formatShare(row.share)}</small></b>
+          </li>)}
+        </ol>
+        <h4 className="airport-subhead">{airportTodayText.countriesTitle[lang]}</h4>
+        <ol className="airport-gate-list airport-country-list">
+          <li className="airport-gate-head" aria-hidden="true"><span>#</span><strong>{airportTodayText.countryRankHead[lang]}</strong></li>
+          {ranking.countries.map((row, index) => <li className="airport-rank-row airport-country-row" key={row.country ?? "unverified"}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <strong>{row.country ? <i>{row.country}</i> : null}{row.country ? regionName(row.country, lang) : airportTodayText.countryUnverified[lang]}<em>{row.airlines.toLocaleString(numberLocale)}{airportTodayText.airlinesUnit[lang]}</em></strong>
+            <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}<small>{formatShare(row.share)}</small></b>
+          </li>)}
+        </ol>
+        <p className="airport-detail-foot">{airportTodayText.airlineCountryBasis[lang](airport.airlineRanking?.countrySource?.retrievedOn ?? "—")}</p>
+      </> : <p className="airport-empty-line">{flightsCount === null ? noFlightsText : airportTodayText.noAirlineList[lang]}</p>}
     </section>
   </section>;
+}
+
+/** Locale region name for an ISO 3166-1 alpha-2 code; the code itself when the runtime has no display names. */
+function regionName(code: string, lang: Lang): string {
+  try {
+    return new Intl.DisplayNames([airportLocale(lang)], { type: "region" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+function airlineDisplayName(row: RankedAirlineRow, lang: Lang): string {
+  // Korean readers get the provider's official (Korean) name first; other
+  // locales get the reference-table name when the table has a trustworthy
+  // one. The designator is always shown beside it, so nothing is hidden.
+  const preferred = lang === "ko" ? [row.providerName, row.registryName] : [row.registryName, row.providerName];
+  return preferred.find((value): value is string => Boolean(value)) ?? row.iata ?? "—";
+}
+
+function formatShare(share: number): string {
+  return `${Math.round(share * 100)}%`;
 }
 
 /** The three Seoul areas, each opening with its own official brief. */
@@ -1230,7 +1301,10 @@ export function buildCommercialSignalRow(
     && commercial.paymentAmountMax >= 0;
   const hasCount = commercial.paymentCount !== null && Number.isFinite(commercial.paymentCount) && commercial.paymentCount >= 0;
   const amountValue = hasRange
-    ? `₩${commercial.paymentAmountMin!.toLocaleString(airportLocale(lang))}–₩${commercial.paymentAmountMax!.toLocaleString(airportLocale(lang))}`
+    // "min ~ max" with spaces: the bare en dash read as a strike-through on
+    // small screens, and the spaces give the line a place to wrap that is
+    // not inside a number.
+    ? `₩${commercial.paymentAmountMin!.toLocaleString(airportLocale(lang))} ~ ₩${commercial.paymentAmountMax!.toLocaleString(airportLocale(lang))}`
     : null;
   const countValue = hasCount
     ? `${commercial.paymentCount!.toLocaleString(airportLocale(lang))}${lang === "ko" ? "건" : lang === "en" ? " payments" : lang === "zh" ? "笔" : "件"}`

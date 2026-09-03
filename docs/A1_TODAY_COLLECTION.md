@@ -16,3 +16,17 @@ Truth and safety boundaries:
 - Production Collector remains OFF;
 - Worker Cron remains absent;
 - Demand Index remains DEMO.
+
+
+## Request budget and daily recovery (2026-09-03)
+
+`fetchA1DeparturesForDate` now retries a page itself (once, 750 ms later)
+instead of delegating the retry to the fetcher, so every provider request is
+counted exactly (`requestsIssued`). A scan aborts with
+`a1_today_request_budget_<n>_page_<p>` BEFORE issuing a request that would
+exceed its budget; stored rows are never touched by an aborted scan. The
+primary daily run keeps the documented 300-request ceiling; the 10:07 KST
+recovery window (`.github/workflows/collect-airport-recovery.yml`) runs with
+`RPK_A1_MAX_REQUESTS=200`, so the two together stay within the 500 calls/day
+development quota even in the worst case. On a healthy day the recovery
+window makes zero provider requests (same-day guard).
