@@ -228,6 +228,7 @@ function requireRate(value: unknown): { value: number; decimalPlaces: number } {
 }
 
 function verifyPublishedRate(count: number, total: number, rate: { value: number; decimalPlaces: number }): void {
+  if (total < 0) fail("store_dynamics_rate_formula");
   if (total === 0 && count !== 0) fail("store_dynamics_rate_formula");
   const exact = total === 0 ? 0 : (count * 100) / total;
   if (exact > 100) fail("store_dynamics_rate_formula");
@@ -308,7 +309,13 @@ export function normalizeStoreDynamicsRow(
   if (totalStoreCount !== ordinaryStoreCount + franchiseStoreCount) {
     fail("store_dynamics_total_breakdown");
   }
-  verifyPublishedRate(openingCount, totalStoreCount, openingRate);
+  // HYPOTHESIS (temporary, being live-verified against real Production data):
+  // OPBIZ_RT is published against the store base *before this quarter's own
+  // openings* (current total minus this quarter's openings) — real evidence:
+  // count=1, total=67, publishedRate=2%; 1/67=1.49%→1% does not match, but
+  // 1/(67-1)=1.515%→2% does. CLSBIZ_RT is published against the current
+  // (unadjusted) total — unchanged from the original implementation.
+  verifyPublishedRate(openingCount, totalStoreCount - openingCount, openingRate);
   verifyPublishedRate(closureCount, totalStoreCount, closureRate);
 
   return {
