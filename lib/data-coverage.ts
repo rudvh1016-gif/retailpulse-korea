@@ -199,6 +199,47 @@ export const COVERAGE_PROBES: CoverageProbe[] = [
     params: () => [],
   },
   {
+    // A2 asks a different question from source_health: not "did the collector
+    // report SUCCESS" but "what is actually stored right now". Both probes are
+    // bounded by the directory itself (~1.2k reference rows), and the grouped
+    // one collapses to at most terminals x category groups.
+    name: "airport_facility_totals",
+    sourceIds: ["INCHEON_FACILITY_DIRECTORY"],
+    meaning: "stored official facility directory totals: rows, area/side split, per-language name coverage and the missing-field counts that decide quality",
+    sql: `SELECT COUNT(*) AS storedFacilities,
+        SUM(CASE WHEN duty_area = 'DUTY_FREE' THEN 1 ELSE 0 END) AS dutyFreeArea,
+        SUM(CASE WHEN duty_area = 'GENERAL' THEN 1 ELSE 0 END) AS generalArea,
+        SUM(CASE WHEN duty_area IS NULL THEN 1 ELSE 0 END) AS unknownArea,
+        SUM(CASE WHEN arrival_departure = 'ARRIVAL' THEN 1 ELSE 0 END) AS arrivalSide,
+        SUM(CASE WHEN arrival_departure = 'DEPARTURE' THEN 1 ELSE 0 END) AS departureSide,
+        SUM(CASE WHEN arrival_departure IS NULL THEN 1 ELSE 0 END) AS unknownSide,
+        SUM(CASE WHEN name_ko IS NULL OR name_ko = '' THEN 1 ELSE 0 END) AS missingKoreanName,
+        SUM(CASE WHEN name_en IS NULL OR name_en = '' THEN 1 ELSE 0 END) AS missingEnglishName,
+        SUM(CASE WHEN name_ja IS NULL OR name_ja = '' THEN 1 ELSE 0 END) AS missingJapaneseName,
+        SUM(CASE WHEN name_zh IS NULL OR name_zh = '' THEN 1 ELSE 0 END) AS missingChineseName,
+        SUM(CASE WHEN business_hours_raw IS NULL OR business_hours_raw = '' THEN 1 ELSE 0 END) AS missingOfficialHours,
+        SUM(CASE WHEN phone IS NULL OR phone = '' THEN 1 ELSE 0 END) AS missingPhone,
+        SUM(CASE WHEN location_raw IS NULL OR location_raw = '' THEN 1 ELSE 0 END) AS missingLocationText,
+        SUM(CASE WHEN terminal IS NULL THEN 1 ELSE 0 END) AS missingTerminal,
+        SUM(CASE WHEN quality_status = 'VALID' THEN 1 ELSE 0 END) AS validRows,
+        SUM(CASE WHEN quality_status = 'PARTIAL' THEN 1 ELSE 0 END) AS partialRows,
+        MIN(retrieved_at) AS oldestRetrievedAt, MAX(retrieved_at) AS newestRetrievedAt
+      FROM airport_facility`,
+    params: () => [],
+  },
+  {
+    name: "airport_facility_by_terminal_category",
+    sourceIds: ["INCHEON_FACILITY_DIRECTORY"],
+    meaning: "stored facility rows per terminal and KORETAIL category group, the exact breakdown the 매장·시설 filters browse",
+    sql: `SELECT COALESCE(terminal, 'UNKNOWN') AS terminal, category_group AS categoryGroup,
+        COUNT(*) AS facilities,
+        SUM(CASE WHEN duty_area = 'DUTY_FREE' THEN 1 ELSE 0 END) AS dutyFreeArea
+      FROM airport_facility
+      GROUP BY COALESCE(terminal, 'UNKNOWN'), category_group
+      ORDER BY terminal, categoryGroup`,
+    params: () => [],
+  },
+  {
     name: "airport_flights_days",
     sourceIds: ["INCHEON_FLIGHT_DETAIL", "INCHEON_DUTY_FREE_ACTUAL"],
     meaning: "distinct physical departures per stored KST service date, with gate coverage",

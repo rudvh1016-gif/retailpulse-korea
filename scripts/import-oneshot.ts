@@ -9,6 +9,7 @@
  * The recurring scheduler (.github/workflows/collect-production.yml) stays
  * gated behind ENABLE_PRODUCTION_COLLECTOR and separate owner approval.
  */
+import { collectAirportFacilities } from "../lib/airport-facilities";
 import { collectAirportFlightsToday } from "../lib/airport-today";
 import {
   collectAirportCongestion,
@@ -59,6 +60,10 @@ type OneShotResult = {
   sourceHealth?: string;
   lastGoodPreserved?: boolean;
   detail?: string;
+  /** A2 only: the structured coverage breakdown, printed whole rather than truncated with `detail`. */
+  coverage?: unknown;
+  /** A2 only: translation rows whose `sn` matched no Korean facility. */
+  unmatchedTranslations?: number;
 };
 
 type A1VerificationSnapshot = {
@@ -138,6 +143,10 @@ const collectors: Record<string, () => Promise<OneShotResult>> = {
   airport_flights_today: () => collectAirportFlightsToday(env),
   airport_flight_enrichment: () => collectAirportFlightEnrichment(env),
   airport_scheduled: () => collectScheduledAirportFlights(env),
+  // A2 facility directory. The collector is self-bounding: it skips without a
+  // provider request when a SUCCESS run is inside its refresh window, so a
+  // repeated dispatch cannot burn the daily development quota.
+  airport_facilities: () => collectAirportFacilities(env),
 };
 
 const requested = (process.env.RPK_ONESHOT_SOURCES ?? "seoul_realtime,seoul_sales")
@@ -167,6 +176,8 @@ for (const name of requested) {
       ...(result.sourceHealth === undefined ? {} : { sourceHealth: result.sourceHealth }),
       ...(result.lastGoodPreserved === undefined ? {} : { lastGoodPreserved: result.lastGoodPreserved }),
       ...(result.detail === undefined ? {} : { detail: result.detail.slice(0, 500) }),
+      ...(result.coverage === undefined ? {} : { coverage: result.coverage }),
+      ...(result.unmatchedTranslations === undefined ? {} : { unmatchedTranslations: result.unmatchedTranslations }),
     }));
     if (a1TargetDate && a1Before) {
       const a1After = await readA1VerificationSnapshot(a1TargetDate);

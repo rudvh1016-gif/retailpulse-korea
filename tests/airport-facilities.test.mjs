@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
+
+import { COVERAGE_PROBES, isReadOnlyProbe } from "../lib/data-coverage.ts";
 
 import {
   classifyFacility,
@@ -238,4 +241,41 @@ test("the collection is bounded so one run can never approach the daily quota", 
   assert.equal(FACILITY_PAGE_SIZE, 100);
   assert.equal(FACILITY_MAX_PAGES, 30);
   assert.ok(4 * FACILITY_MAX_PAGES * 2 < 1000, "worst-case requests must stay under the development quota");
+});
+
+test("the one-shot import can run the A2 directory, so Production has a path that is not the disabled scheduler", async () => {
+  const script = await readFile(new URL("../scripts/import-oneshot.ts", import.meta.url), "utf8");
+  assert.match(script, /airport_facilities:\s*\(\)\s*=>\s*collectAirportFacilities\(env\)/,
+    "the A2 collector must be selectable from the manual bounded import");
+  assert.match(script, /import \{ collectAirportFacilities \} from "\.\.\/lib\/airport-facilities"/);
+  // Coverage is the whole point of the A2 closure evidence, and `detail` is
+  // truncated to 500 characters; the structured breakdown must survive whole.
+  assert.match(script, /result\.coverage === undefined \? \{\} : \{ coverage: result\.coverage \}/);
+  assert.match(script, /unmatchedTranslations: result\.unmatchedTranslations/);
+
+  const workflow = await readFile(new URL("../.github/workflows/import-oneshot.yml", import.meta.url), "utf8");
+  assert.match(workflow, /airport_facilities/, "the dispatch input must name the A2 source");
+  assert.doesNotMatch(workflow, /^\s*schedule:/m, "the manual import must stay unscheduled");
+});
+
+test("stored A2 rows can be verified read-only, independently of what the collector claimed", async () => {
+  const totals = COVERAGE_PROBES.find((probe) => probe.name === "airport_facility_totals");
+  const grouped = COVERAGE_PROBES.find((probe) => probe.name === "airport_facility_by_terminal_category");
+  assert.ok(totals && grouped, "both A2 coverage probes must exist");
+  for (const probe of [totals, grouped]) {
+    assert.equal(isReadOnlyProbe(probe), true, `${probe.name} must never write to Production`);
+    assert.deepEqual(probe.sourceIds, [FACILITY_SOURCE_ID]);
+    assert.equal(probe.params({ kstNowIso: "x", kstToday: "x", kstHourStartIso: "x" }).length, 0);
+    assert.match(probe.sql, /FROM airport_facility\b/);
+  }
+  // The report has to answer the owner's questions from storage, not from a
+  // collector log line, so each quality column it cites must be selected.
+  for (const column of [
+    "storedFacilities", "dutyFreeArea", "generalArea", "arrivalSide", "departureSide",
+    "missingKoreanName", "missingEnglishName", "missingOfficialHours", "missingPhone",
+    "missingLocationText", "missingTerminal", "validRows", "partialRows",
+  ]) {
+    assert.match(totals.sql, new RegExp(`AS ${column}\\b`), `totals probe must report ${column}`);
+  }
+  assert.match(grouped.sql, /GROUP BY COALESCE\(terminal, 'UNKNOWN'\), category_group/);
 });
