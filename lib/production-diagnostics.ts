@@ -22,6 +22,7 @@ export function sanitizeProductionDetail(value: unknown): string {
 export const DIAGNOSTIC_SOURCE_IDS = {
   airport_recent: "INCHEON_FLIGHT_DETAIL",
   airport_enrichment: "INCHEON_DUTY_FREE_ACTUAL",
+  airport_facilities: "INCHEON_FACILITY_DIRECTORY",
   airport_scheduled: "INCHEON_SCHEDULED_DUTY_FREE",
   airport_congestion: "INCHEON_DEPARTURE_CONGESTION",
   airport_congestion_t2: "INCHEON_DEPARTURE_CONGESTION_T2",

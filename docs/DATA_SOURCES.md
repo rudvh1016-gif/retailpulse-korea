@@ -358,6 +358,58 @@ Raw adapter → schema validation → canonical normalizer → D1 → internal A
 
 `LIVE`, `STALE`, `MISSING`, `DEGRADED`, `ERROR`, `OFFICIAL_HISTORICAL`, and `DEMO` are distinct. A last-good record may remain visible only with its original timestamp and a STALE label. Missing terminal data is N/A; it is never copied from the all-airport value. Each source fails independently; one blocked provider must never break the public site.
 
+## A2-F — official passenger-terminal facility directory (2026-09-03)
+
+**Dataset:** 인천국제공항공사_여객터미널 시설정보 현황, 공공데이터포털 15095064.
+**Operation:** `https://apis.data.go.kr/B551177/FacilitiesInformation/getFacilitesInfo`
+(the official spelling really is `getFacilites`, missing the second `i`; it is
+not a typo to fix). **Cost:** free. **Licence:** 이용허락범위 제한 없음.
+**Approval:** 개발단계/운영단계 자동승인. **Development quota:** 1,000
+requests/day. **Formats:** JSON + XML.
+
+**Verified authenticated probe (2026-09-03, run 33761163324, five Korean
+rows, nothing persisted):** HTTP 200, `resultCode 00` NORMAL SERVICE,
+`totalCount` **1,232**, first-record fields exactly
+`arrordep, facilityitem, facilitynm, floorinfo, goods, lcategorynm, lcduty,
+lcnm, mcategorynm, scategorynm, servicetime, sn, tel, terminalid`. The
+existing `DATA_GO_KR_SERVICE_KEY` is authorized for this dataset; no separate
+utilization approval was needed.
+
+**Request parameters used:** `serviceKey`, `type=json`, `lang`, `numOfRows`,
+`pageNo`. Verified `lang` values are K/E/J/C; `lcduty` Y/N and `arrordep` A/D
+are read from the response rather than sent as filters, so one pass sees the
+whole directory. **Terminal codes:** `P01`=T1, `P03`=T2, `G01`=탑승동,
+`G02`=제1교통센터, `G03`=제2교통센터.
+
+**How it is collected** (`lib/airport-facilities.ts`): Korean is the
+structural pass — one row per official `sn`. The English, Japanese and
+Chinese passes only add names (and the English location) to rows the Korean
+pass already produced; a translation row whose `sn` is unknown is counted as
+unmatched and never creates a facility. Bounded at 100 rows × 30 pages per
+language, so one full run is ~52 requests against a 1,000/day quota. The
+collector skips entirely — zero provider requests — when a successful run is
+less than six days old, so a daily selection normally costs nothing. Writes
+are changed-only against a semantic hash that excludes `retrieved_at`. A
+failed run never deletes, closes or zeroes a facility: stored rows stay and
+source health becomes STALE (ERROR only when nothing is stored).
+
+`category_group` (면세점 / 식당·카페 / 편의점 / 약국 / 환전·통신 / 여객 서비스)
+is **KORETAIL's own grouping** of the provider's category strings, which are
+stored unchanged beside it. Anything the keywords do not recognise is grouped
+as 여객 서비스 rather than dropped.
+
+**Reading path:** `/api/airport/facilities`, deliberately separate from
+`/api/live/summary` — a browsable ~1,200-row directory must not be read on
+every page view. Every request carries a leading equality on `terminal` or
+`category_group` (the endpoint defaults the terminal when the caller gives
+neither), so it always seeks `airport_facility_terminal_category_idx` or
+`airport_facility_category_terminal_idx`; both are covered by
+`tests/d1-read-plans.test.mjs` and measured by the read-budget diagnostic.
+
+**Truth boundary:** these are *published registered hours*, never a live
+"open now" signal. The UI labels them 공식 영업시간 기준 and shows 확인 불가
+where the provider published nothing.
+
 ## Airline ranking and airline country reference (2026-09-03)
 
 The airline ranking on the airport page is derived from the same A1

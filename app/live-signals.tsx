@@ -1143,6 +1143,190 @@ function formatShare(share: number): string {
   return `${Math.round(share * 100)}%`;
 }
 
+/* ── A2 · Official passenger-terminal facility directory ─────────────── */
+
+type FacilityRow = {
+  facilityId: string; nameKo: string | null; nameEn: string | null; nameZh: string | null; nameJa: string | null;
+  facilityItem: string | null; largeCategory: string | null; mediumCategory: string | null; smallCategory: string | null;
+  categoryGroup: string; terminal: string | null; floor: string | null; dutyArea: string | null;
+  arrivalDeparture: string | null; locationRaw: string | null; locationEn: string | null;
+  businessHoursRaw: string | null; goodsBrands: string | null; phone: string | null; retrievedAt: string | null;
+};
+
+const facilityText = {
+  title: { ko: "매장·시설", en: "Stores and facilities", zh: "店铺·设施", ja: "店舗・施設" },
+  intro: {
+    ko: "인천국제공항공사가 공개한 여객터미널 시설 정보입니다. 공식 등록 정보이며, 지금 문을 열었는지를 실시간으로 확인한 것은 아닙니다.",
+    en: "The passenger-terminal facility directory published by Incheon International Airport Corporation. Official registered information — not a real-time check of whether a store is open right now.",
+    zh: "仁川国际机场公社公开的旅客航站楼设施信息。为官方登记信息，并非实时确认当前是否营业。",
+    ja: "仁川国際空港公社が公開した旅客ターミナル施設情報です。公式登録情報であり、今営業中かをリアルタイムで確認したものではありません。",
+  },
+  categories: {
+    DUTY_FREE: { ko: "면세점", en: "Duty-free", zh: "免税店", ja: "免税店" },
+    FOOD: { ko: "식당·카페", en: "Food and cafés", zh: "餐厅·咖啡", ja: "レストラン・カフェ" },
+    CONVENIENCE: { ko: "편의점", en: "Convenience", zh: "便利店", ja: "コンビニ" },
+    PHARMACY: { ko: "약국", en: "Pharmacy", zh: "药店", ja: "薬局" },
+    EXCHANGE_TELECOM: { ko: "환전·통신", en: "Exchange and telecom", zh: "换汇·通信", ja: "両替・通信" },
+    SERVICE: { ko: "여객 서비스", en: "Passenger services", zh: "旅客服务", ja: "旅客サービス" },
+  } as Record<string, Record<Lang, string>>,
+  terminals: {
+    T1: { ko: "제1여객터미널", en: "Terminal 1", zh: "第1航站楼", ja: "第1旅客ターミナル" },
+    T2: { ko: "제2여객터미널", en: "Terminal 2", zh: "第2航站楼", ja: "第2旅客ターミナル" },
+    CONCOURSE: { ko: "탑승동", en: "Concourse", zh: "登机楼", ja: "コンコース" },
+    T1_TRANSPORT: { ko: "제1교통센터", en: "T1 Transport Centre", zh: "第1交通中心", ja: "第1交通センター" },
+    T2_TRANSPORT: { ko: "제2교통센터", en: "T2 Transport Centre", zh: "第2交通中心", ja: "第2交通センター" },
+  } as Record<string, Record<Lang, string>>,
+  areaAll: { ko: "구역 전체", en: "All areas", zh: "全部区域", ja: "全エリア" },
+  dutyFree: { ko: "면세구역", en: "Airside", zh: "免税区", ja: "免税エリア" },
+  general: { ko: "일반구역", en: "Landside", zh: "一般区域", ja: "一般エリア" },
+  sideAll: { ko: "출·입국 전체", en: "Arrival and departure", zh: "出入境全部", ja: "出入国すべて" },
+  arrival: { ko: "입국장", en: "Arrival", zh: "入境区", ja: "入国場" },
+  departure: { ko: "출국장", en: "Departure", zh: "出境区", ja: "出国場" },
+  search: { ko: "매장·브랜드 검색", en: "Search a store or brand", zh: "搜索店铺·品牌", ja: "店舗・ブランド検索" },
+  hours: { ko: "공식 영업시간 기준", en: "Official published hours", zh: "官方公布营业时间", ja: "公式営業時間基準" },
+  location: { ko: "공식 위치", en: "Official location", zh: "官方位置", ja: "公式位置" },
+  phone: { ko: "전화", en: "Phone", zh: "电话", ja: "電話" },
+  brands: { ko: "취급 품목·브랜드", en: "Items and brands", zh: "经营品类·品牌", ja: "取扱品目・ブランド" },
+  empty: { ko: "이 조건에 해당하는 공식 시설 정보가 없습니다.", en: "No official facility matches these filters.", zh: "没有符合该条件的官方设施信息。", ja: "この条件に該当する公式施設情報はありません。" },
+  loading: { ko: "공식 시설 정보를 불러오는 중입니다.", en: "Loading the official facility directory.", zh: "正在载入官方设施信息。", ja: "公式施設情報を読み込んでいます。" },
+  more: { ko: "더 보기", en: "Show more", zh: "查看更多", ja: "もっと見る" },
+  count: { ko: (n: number) => `${n}곳 표시`, en: (n: number) => `${n} shown`, zh: (n: number) => `显示 ${n} 处`, ja: (n: number) => `${n}件を表示` },
+  unknown: { ko: "확인 불가", en: "Unavailable", zh: "暂无法确认", ja: "確認不可" },
+  source: {
+    ko: "출처: 인천국제공항공사 여객터미널 시설정보 현황 (공공데이터포털 15095064)",
+    en: "Source: Incheon International Airport Corporation passenger-terminal facility information (Public Data Portal 15095064)",
+    zh: "来源：仁川国际机场公社 旅客航站楼设施信息现况（公共数据门户 15095064）",
+    ja: "出典: 仁川国際空港公社 旅客ターミナル施設情報現況 (公共データポータル 15095064)",
+  },
+} as const;
+
+const FACILITY_CATEGORY_ORDER = ["DUTY_FREE", "FOOD", "CONVENIENCE", "PHARMACY", "EXCHANGE_TELECOM", "SERVICE"] as const;
+const FACILITY_TERMINAL_ORDER = ["T1", "T2", "CONCOURSE", "T1_TRANSPORT", "T2_TRANSPORT"] as const;
+
+function facilityName(row: FacilityRow, lang: Lang): string {
+  const preferred = lang === "en" ? [row.nameEn, row.nameKo]
+    : lang === "ja" ? [row.nameJa, row.nameKo]
+      : lang === "zh" ? [row.nameZh, row.nameKo]
+        : [row.nameKo, row.nameEn];
+  return preferred.find((value): value is string => Boolean(value)) ?? facilityText.unknown[lang];
+}
+
+/**
+ * The official facility directory. Loaded only when this tab opens, because
+ * it is a browsable list most visitors never need and every row it reads is
+ * a D1 row read. Never claims a store is open now: the provider publishes
+ * registered hours, so the card says "official published hours".
+ */
+export function FacilityDirectory({ lang, terminal }: { lang: Lang; terminal: "all" | "T1" | "T2" }) {
+  const [pickedTerminal, setPickedTerminal] = useState<string>("T1");
+  const [category, setCategory] = useState<string>("DUTY_FREE");
+  const [area, setArea] = useState<"" | "DUTY_FREE" | "GENERAL">("");
+  const [side, setSide] = useState<"" | "ARRIVAL" | "DEPARTURE">("");
+  const [query, setQuery] = useState("");
+  const [limit, setLimit] = useState(60);
+  // The page-level terminal selector leads; it is derived rather than copied
+  // into state so choosing T1 up there can never disagree with this list.
+  const scopeTerminal = terminal === "all" ? pickedTerminal : terminal;
+  const params = new URLSearchParams({ terminal: scopeTerminal, category, limit: String(limit) });
+  if (area) params.set("area", area);
+  if (side) params.set("side", side);
+  if (query.trim()) params.set("q", query.trim());
+  const requestKey = params.toString();
+  // The answered request is tracked with its own key and compared during
+  // render, so changing a filter shows "loading" without clearing state from
+  // inside the effect — and a slow earlier answer can never overwrite a newer.
+  const [loaded, setLoaded] = useState<{ key: string; rows: FacilityRow[]; hasMore: boolean } | null>(null);
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/airport/facilities?${requestKey}`, { headers: { accept: "application/json" } })
+      .then(async (response) => (response.ok ? await response.json() as { facilities?: FacilityRow[]; hasMore?: boolean } : { facilities: [], hasMore: false }))
+      .catch(() => ({ facilities: [] as FacilityRow[], hasMore: false }))
+      .then((payload) => { if (active) setLoaded({ key: requestKey, rows: payload.facilities ?? [], hasMore: Boolean(payload.hasMore) }); });
+    return () => { active = false; };
+  }, [requestKey]);
+
+  const state = loaded && loaded.key === requestKey ? loaded : null;
+  const rows = state?.rows ?? [];
+  return <section className="airport-facilities" aria-labelledby="airport-facilities-title">
+    <div className="section-head">
+      <div><p className="eyebrow">OFFICIAL FACILITY DIRECTORY · 인천국제공항공사</p><h2 id="airport-facilities-title">{facilityText.title[lang]}</h2></div>
+      {state && <span className="official-label">{facilityText.count[lang](rows.length)}</span>}
+    </div>
+    <p className="section-intro">{facilityText.intro[lang]}</p>
+
+    <div className="facility-filters">
+      <div className="facility-filter-row" role="tablist" aria-label={facilityText.title[lang]}>
+        {FACILITY_TERMINAL_ORDER.map((item) => <button
+          key={item}
+          type="button"
+          className={scopeTerminal === item ? "active" : ""}
+          onClick={() => { setPickedTerminal(item); setLimit(60); }}
+          role="tab"
+          aria-selected={scopeTerminal === item}
+        >{facilityText.terminals[item][lang]}</button>)}
+      </div>
+      <div className="facility-filter-row" role="tablist" aria-label={facilityText.categories.DUTY_FREE[lang]}>
+        {FACILITY_CATEGORY_ORDER.map((item) => <button
+          key={item}
+          type="button"
+          className={category === item ? "active" : ""}
+          onClick={() => { setCategory(item); setLimit(60); }}
+          role="tab"
+          aria-selected={category === item}
+        >{facilityText.categories[item][lang]}</button>)}
+      </div>
+      <div className="facility-filter-row">
+        {([["", facilityText.areaAll[lang]], ["GENERAL", facilityText.general[lang]], ["DUTY_FREE", facilityText.dutyFree[lang]]] as const).map(([value, label]) => <button
+          key={label}
+          type="button"
+          className={area === value ? "active" : ""}
+          onClick={() => { setArea(value as "" | "DUTY_FREE" | "GENERAL"); setLimit(60); }}
+        >{label}</button>)}
+        {([["", facilityText.sideAll[lang]], ["DEPARTURE", facilityText.departure[lang]], ["ARRIVAL", facilityText.arrival[lang]]] as const).map(([value, label]) => <button
+          key={label}
+          type="button"
+          className={side === value ? "active" : ""}
+          onClick={() => { setSide(value as "" | "ARRIVAL" | "DEPARTURE"); setLimit(60); }}
+        >{label}</button>)}
+      </div>
+      <label className="facility-search">
+        <span className="sr-only">{facilityText.search[lang]}</span>
+        <input
+          type="search"
+          value={query}
+          placeholder={facilityText.search[lang]}
+          onChange={(event) => { setQuery(event.target.value); setLimit(60); }}
+        />
+      </label>
+    </div>
+
+    {state === null ? <p className="airport-empty-line">{facilityText.loading[lang]}</p>
+      : rows.length === 0 ? <p className="airport-empty-line">{facilityText.empty[lang]}</p>
+        : <ul className="facility-list">
+          {rows.map((row) => <li key={row.facilityId} className="facility-card">
+            <div className="facility-card-head">
+              <h3>{facilityName(row, lang)}</h3>
+              <p className="facility-badges">
+                <span>{row.terminal ? facilityText.terminals[row.terminal]?.[lang] ?? row.terminal : facilityText.unknown[lang]}</span>
+                {row.floor && <span>{row.floor}</span>}
+                {row.dutyArea && <span>{row.dutyArea === "DUTY_FREE" ? facilityText.dutyFree[lang] : facilityText.general[lang]}</span>}
+                {row.arrivalDeparture && <span>{row.arrivalDeparture === "ARRIVAL" ? facilityText.arrival[lang] : facilityText.departure[lang]}</span>}
+              </p>
+            </div>
+            <dl className="facility-details">
+              <div><dt>{facilityText.location[lang]}</dt><dd>{(lang === "en" ? row.locationEn ?? row.locationRaw : row.locationRaw) ?? facilityText.unknown[lang]}</dd></div>
+              <div><dt>{facilityText.hours[lang]}</dt><dd>{row.businessHoursRaw ?? facilityText.unknown[lang]}</dd></div>
+              {row.goodsBrands && <div><dt>{facilityText.brands[lang]}</dt><dd>{row.goodsBrands}</dd></div>}
+              {row.phone && <div><dt>{facilityText.phone[lang]}</dt><dd>{row.phone}</dd></div>}
+            </dl>
+          </li>)}
+        </ul>}
+
+    {state?.hasMore && <button type="button" className="event-list-toggle" onClick={() => setLimit((value) => Math.min(120, value + 60))}>{facilityText.more[lang]}</button>}
+    <p className="airport-detail-foot">{facilityText.source[lang]}</p>
+  </section>;
+}
+
 /** The three Seoul areas, each opening with its own official brief. */
 export function HomeTodayBrief({ lang, selected, onSelect, date = null }: { lang: Lang; selected: AreaId; onSelect: (area: AreaId) => void; date?: string | null }) {
   const summary = useLiveSummary(date);
