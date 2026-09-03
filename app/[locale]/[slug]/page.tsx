@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import RetailPulseApp from "../../retailpulse-app";
-import { buildMetadata, seoLocales, seoSlugs, type SeoLocale, type SeoSlug } from "../../seo-config";
+import { buildMetadata, pageStructuredData, seoLocales, seoSlugs, type SeoLocale, type SeoSlug } from "../../seo-config";
 
 const areaSlugs = ["myeongdong", "hongdae", "seongsu"] as const;
 
@@ -21,5 +21,8 @@ export default async function LocalePage({ params }: { params: Promise<{ locale:
   const isArea = areaSlugs.includes(slug as typeof areaSlugs[number]);
   const view = isArea ? "today" : slug as "forecast" | "airport" | "business" | "about" | "more";
   const area = isArea ? slug as typeof areaSlugs[number] : "myeongdong";
-  return <RetailPulseApp initialLang={locale as SeoLocale} initialView={view} initialArea={area} initialRoute />;
+  return <>
+    <RetailPulseApp initialLang={locale as SeoLocale} initialView={view} initialArea={area} initialRoute initialScope={isArea ? "area" : "home"} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale, slug as SeoSlug)) }} />
+  </>;
 }

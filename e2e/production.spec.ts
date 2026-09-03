@@ -69,7 +69,11 @@ for (const width of [320, 375, 390, 430, 768]) {
 test("primary navigation, terminal filter, back and refresh work", async ({ page }) => {
   await page.goto("/ko");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
-  await page.locator("nav.bottom-nav a").filter({ hasText: "공항" }).click();
+  // Desktop: the header carries the primary navigation and the phone tab bar
+  // is not drawn, so it cannot sit on top of content on a wide screen.
+  await expect(page.locator("nav.top-nav")).toBeVisible();
+  await expect(page.locator("nav.bottom-nav")).toBeHidden();
+  await page.locator("nav.top-nav a").filter({ hasText: "공항" }).click();
   await expect(page).toHaveURL(/\/ko\/airport$/);
   await page.getByRole("tab", { name: "T2" }).click();
   await page.locator(".airport-context-nav").getByRole("button", { name: "항공편" }).click();

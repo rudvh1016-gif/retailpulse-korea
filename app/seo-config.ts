@@ -19,6 +19,13 @@ function normalizeOrigin(value: string | undefined): string {
  * when NEXT_PUBLIC_SITE_ORIGIN is missing or not HTTPS.
  */
 export const siteOrigin = normalizeOrigin(configuredOrigin);
+
+/**
+ * One static social-preview image for every page. It is a committed PNG
+ * rendered from the white-first wordmark card (`public/og-image.png`), so a
+ * share preview never depends on a runtime render or a third-party host.
+ */
+export const socialImage = { url: "/og-image.png", width: 1200, height: 630, alt: "KORETAIL — Retail Demand Signals for Korea" } as const;
 export const seoLocales = ["ko", "en", "zh", "ja"] as const;
 export type SeoLocale = typeof seoLocales[number];
 export const seoSlugs = ["myeongdong", "hongdae", "seongsu", "airport", "forecast", "business", "about", "more"] as const;
@@ -95,7 +102,38 @@ export function buildMetadata(locale: SeoLocale, slug?: SeoSlug): Metadata {
     openGraph: {
       title, description, url: path, siteName: "KORETAIL", type: "website",
       locale: locale === "ko" ? "ko_KR" : locale === "zh" ? "zh_CN" : locale === "ja" ? "ja_JP" : "en_US",
+      images: [socialImage],
     },
-    twitter: { card: "summary", title, description },
+    twitter: { card: "summary_large_image", title, description, images: [socialImage.url] },
   };
+}
+
+const breadcrumbHome = { ko: "홈", en: "Home", zh: "首页", ja: "ホーム" } as const;
+
+/**
+ * Per-page structured data, rendered server-side by the route files. A
+ * `WebPage` carries the page's own title/description and language, and a
+ * `BreadcrumbList` gives crawlers the locale-home → page relationship the
+ * client-side navigation otherwise hides. Nothing here is fetched at runtime.
+ */
+export function pageStructuredData(locale: SeoLocale, slug?: SeoSlug): Record<string, unknown>[] {
+  const path = `/${locale}${slug ? `/${slug}` : ""}`;
+  const url = `${siteOrigin}${path}`;
+  const inLanguage = locale === "ko" ? "ko-KR" : locale === "zh" ? "zh-CN" : locale === "ja" ? "ja-JP" : "en";
+  const webPage = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": url,
+    url,
+    name: pageTitle(locale, slug),
+    description: pageDescription(locale, slug),
+    inLanguage,
+    isPartOf: { "@type": "WebSite", name: "KORETAIL", url: siteOrigin },
+  };
+  const items: Array<{ "@type": "ListItem"; position: number; name: string; item: string }> = [
+    { "@type": "ListItem", position: 1, name: breadcrumbHome[locale], item: `${siteOrigin}/${locale}` },
+  ];
+  if (slug) items.push({ "@type": "ListItem", position: 2, name: pageTitle(locale, slug).replace(/\s*\|\s*KORETAIL$/, ""), item: url });
+  const breadcrumbs = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: items };
+  return [webPage, breadcrumbs];
 }

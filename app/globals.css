@@ -56,12 +56,19 @@
   font-display: swap;
 }
 
+/*
+ * White-first system (owner decision, 2026-09-03; see
+ * docs/DESIGN_AUDIT_2026-09-03.md). The page and every card are pure white;
+ * separation comes from thin #E5E5E5 rules, spacing and type, not from a
+ * tinted ground. `--surface` is the one muted grey, used only where a cell
+ * needs to read as a selected or secondary surface.
+ */
 :root {
-  --ink: #111217;
-  --muted: #686970;
-  --line: #d5d3cc;
-  --paper: #f5f3ed;
-  --surface: #eae7df;
+  --ink: #111111;
+  --muted: #666666;
+  --line: #e5e5e5;
+  --paper: #ffffff;
+  --surface: #f7f7f7;
   --blue: #214cff;
   --green: #087a55;
   --amber: #a56600;
@@ -108,13 +115,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .content-wide { max-width: var(--w-wide); margin-inline: auto; }
 
 .topbar { height: 76px; max-width: var(--w-wide); padding: 0 var(--gutter); margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
-.brand { color: var(--ink); text-decoration: none; font-size: 13px; font-weight: var(--weight-strong); line-height: .92; letter-spacing: -.04em; }
+.brand { color: var(--ink); text-decoration: none; font-size: 16px; font-weight: var(--weight-strong); line-height: .92; letter-spacing: -.03em; }
 .brand span { display: block; }
-.brand .brand-descriptor { margin-top: 4px; color: var(--muted); font-size: 8px; font-weight: var(--weight-regular); line-height: 1.15; letter-spacing: .02em; }
+.brand .brand-descriptor { margin-top: 5px; color: var(--muted); font-size: 10px; font-weight: var(--weight-regular); line-height: 1.15; letter-spacing: .02em; }
 .brand-button { padding: 0; border: 0; background: transparent; text-align: left; }
 .header-meta { display: flex; align-items: center; gap: 18px; }
 /* 실제 데이터 기준일(KST). 예전의 "예시 날짜"와 달리 지어낸 값이 아니다. */
-.kst-chip { color: var(--muted); font-size: 9px; font-weight: var(--weight-strong); letter-spacing: .06em; white-space: nowrap; }
+.kst-chip { color: var(--muted); font-size: 11px; font-weight: var(--weight-strong); letter-spacing: .04em; white-space: nowrap; }
 .language-control select { border: 0; background: transparent; font-size: 11px; font-weight: var(--weight-strong); padding: 8px 2px; cursor: pointer; }
 .page-shell { max-width: var(--w-wide); margin: 0 auto; padding: 18px var(--gutter) 138px; }
 .eyebrow { margin: 0; color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .12em; text-transform: uppercase; }
@@ -146,34 +153,34 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .terminal-selector button { position: relative; min-width: 34px; padding: 20px 0; border: 0; background: transparent; color: #888; font-size: 11px; font-weight: var(--weight-strong); letter-spacing: .08em; }
 .terminal-selector button.active { color: var(--ink); }
 .terminal-selector button.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--blue); }
-.terminal-selector > span { margin-left: auto; color: var(--muted); font-size: 8px; font-weight: var(--weight-strong); letter-spacing: .08em; }
+.terminal-selector > span { margin-left: auto; color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .08em; }
 
 .airport-history { margin-top: 74px; }
-.official-label { align-self: center; padding: 5px 7px; border: 1px solid rgba(8,122,85,.35); color: var(--green); font-size: 8px; font-weight: var(--weight-strong); letter-spacing: .07em; white-space: nowrap; }
+.official-label { align-self: center; padding: 5px 7px; border: 1px solid rgba(8,122,85,.35); color: var(--green); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .07em; white-space: nowrap; }
 .history-controls { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid var(--line); }
 .history-controls > div { display: flex; gap: 21px; overflow-x: auto; }
-.history-controls button { flex: 0 0 auto; padding: 20px 0; border: 0; background: transparent; color: #888; font-size: 9px; font-weight: var(--weight-strong); letter-spacing: .07em; }
+.history-controls button { flex: 0 0 auto; padding: 20px 0; border: 0; background: transparent; color: #888; font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .07em; }
 .history-controls button.active { color: var(--blue); }
 .history-controls .range-trigger { color: var(--ink); }
 .month-range-fields { display: flex; align-items: flex-end; gap: 16px; }
 .month-range-fields > span { min-height: 44px; display: inline-flex; align-items: center; color: var(--muted); }
 .month-range-fields label { display: grid; gap: 8px; }
-.month-range-fields label span { color: var(--muted); font-size: 8px; font-weight: var(--weight-strong); letter-spacing: .08em; }
-.month-range-fields select { min-width: 164px; min-height: 44px; padding: 0 32px 0 10px; border: 1px solid var(--line); border-radius: 0; background-color: rgba(255,255,255,.28); color: var(--ink); font: inherit; font-size: 12px; font-variant-numeric: tabular-nums; }
+.month-range-fields label span { color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .08em; }
+.month-range-fields select { min-width: 164px; min-height: 44px; padding: 0 32px 0 10px; border: 1px solid var(--line); border-radius: 0; background-color: var(--paper); color: var(--ink); font: inherit; font-size: 12px; font-variant-numeric: tabular-nums; }
 .month-range-fields select:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .month-range-actions { grid-column: 2; display: flex; justify-content: flex-end; gap: 18px; }
-.month-range-actions button { min-height: 44px; padding: 0 2px; border: 0; border-bottom: 1px solid var(--ink); background: transparent; color: var(--ink); font-size: 9px; font-weight: var(--weight-strong); letter-spacing: .06em; }
+.month-range-actions button { min-height: 44px; padding: 0 2px; border: 0; border-bottom: 1px solid var(--ink); background: transparent; color: var(--ink); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .06em; }
 .month-range-actions button.primary { color: var(--blue); border-bottom-color: var(--blue); }
 .month-range-actions button:disabled { color: #aaa; border-bottom-color: var(--line); cursor: not-allowed; }
 .month-range-error { grid-column: 2; margin: -12px 0 0; color: var(--red); font-size: 10px; }
-.month-range-coverage { position: absolute; left: 0; bottom: 24px; color: var(--muted); font-size: 8px; letter-spacing: .05em; }
+.month-range-coverage { position: absolute; left: 0; bottom: 24px; color: var(--muted); font-size: 10px; letter-spacing: .05em; }
 .history-kpis { display: grid; grid-template-columns: 1.25fr 1fr 1fr; border-bottom: 1px solid var(--ink); }
 .history-kpis > div { min-height: 170px; padding: 30px 26px 28px 0; border-right: 1px solid var(--line); }
 .history-kpis > div + div { padding-left: 26px; }
 .history-kpis > div:last-child { border-right: 0; }
-.history-kpis span { color: var(--muted); font-size: 8px; font-weight: var(--weight-strong); letter-spacing: .08em; }
+.history-kpis span { color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .08em; }
 .history-kpis strong { display: block; margin-top: 31px; font-size: clamp(26px, 4vw, 49px); line-height: .95; letter-spacing: -.065em; }
-.history-kpis small { display: block; margin-top: 11px; color: var(--muted); font-size: 8px; }
+.history-kpis small { display: block; margin-top: 11px; color: var(--muted); font-size: 10px; }
 
 /* Business */
 .business-view .view-intro h1 { white-space: pre-line; }
@@ -196,15 +203,38 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 @keyframes spin { to { transform: rotate(360deg); } }
 .modal-backdrop { position: fixed; inset: 0; z-index: 50; padding: 24px; display: grid; place-items: center; background: rgba(17,18,23,.58); backdrop-filter: blur(5px); }
 
-.site-footer { margin-top: 92px; padding: 24px 0; border-top: 1px solid var(--ink); color: var(--muted); font-size: 10px; line-height: 1.6; }
+.site-footer { margin-top: 92px; padding: 24px 0; border-top: 1px solid var(--ink); color: var(--muted); font-size: 12px; line-height: 1.6; }
 .site-footer p { margin: 0 0 4px; }
-.site-footer span { display: block; margin-top: 15px; font-size: 8px; font-weight: var(--weight-strong); letter-spacing: .1em; }
-.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; min-height: 68px; padding: 0 max(20px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(20px, env(safe-area-inset-left)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid rgba(17,18,23,.18); background: rgba(245,243,237,.94); backdrop-filter: blur(16px); }
+.site-footer span { display: block; margin-top: 15px; font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .1em; }
+/* The section links had no rule at all and ran together as one word. */
+.footer-links { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 6px 22px; }
+.footer-links a { min-height: 32px; display: inline-flex; align-items: center; color: var(--ink); font-size: 12px; font-weight: var(--weight-strong); text-decoration: none; border-bottom: 1px solid transparent; }
+.footer-links a:hover { border-bottom-color: var(--ink); }
+
+/*
+ * Desktop primary navigation. The fixed bottom tab bar is a phone pattern; on
+ * a wide screen it read as an app template and overlaid content. From 821px
+ * the same six destinations sit in the header and the tab bar is not drawn.
+ */
+.top-nav { display: none; }
+@media (min-width: 821px) {
+.topbar { gap: 32px; }
+.top-nav { display: flex; align-items: center; gap: 4px; margin-right: auto; }
+.top-nav a { position: relative; min-height: 44px; padding: 0 12px; display: inline-flex; align-items: center; color: var(--muted); font-size: 13px; font-weight: var(--weight-strong); letter-spacing: -.005em; text-decoration: none; }
+.top-nav a:hover { color: var(--ink); }
+.top-nav a.active { color: var(--ink); }
+.top-nav a.active::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 6px; height: 2px; background: var(--blue); }
+/* `nav.bottom-nav` outranks the base `.bottom-nav { display: grid }` that is
+   declared later in this file; a bare class here would be overridden. */
+nav.bottom-nav { display: none; }
+.page-shell { padding-bottom: 72px; }
+}
+.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; min-height: 68px; padding: 0 max(20px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(20px, env(safe-area-inset-left)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--line); background: rgba(255,255,255,.96); backdrop-filter: blur(16px); }
 .bottom-nav button, .bottom-nav a { position: relative; min-height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border: 0; background: transparent; color: #8b8a86; text-decoration: none; }
 .bottom-nav button.active, .bottom-nav a.active { color: var(--ink); }
 .bottom-nav button.active::before, .bottom-nav a.active::before { content: ""; position: absolute; top: -1px; width: 32px; height: 2px; background: var(--blue); }
 .bottom-nav svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.bottom-nav span { font-size: 8px; font-weight: var(--weight-strong); letter-spacing: .07em; white-space: nowrap; }
+.bottom-nav span { font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .07em; white-space: nowrap; }
 .hero h1, .view-intro h1 { word-break: keep-all; overflow-wrap: break-word; }
 @media (max-width: 820px) {
 .topbar { height: 60px; padding: 0 18px; }
@@ -227,7 +257,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .airport-history { margin-top: 46px; }
 .history-controls { align-items: flex-start; flex-direction: column; gap: 0; padding: 6px 0; }
 .history-controls > div { width: 100%; min-height: 44px; gap: 17px; }
-.history-controls button { padding: 13px 0; font-size: 8px; }
+.history-controls button { padding: 13px 0; font-size: 10px; }
 .history-controls > div[aria-label="Period"] { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 12px; overflow: visible; }
 .history-controls > div[aria-label="Period"] button { min-height: 44px; padding: 8px 2px; border-bottom: 1px solid var(--line); text-align: center; white-space: nowrap; }
 .history-controls > div[aria-label="Period"] button.active { border-bottom-color: var(--blue); }
@@ -245,7 +275,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .history-kpis strong { margin-top: 23px; font-size: 31px; }
 
 .business-mode { min-height: 57px; gap: 20px; overflow-x: auto; }
-.business-mode button { flex: 0 0 auto; font-size: 9px; }
+.business-mode button { flex: 0 0 auto; font-size: 10px; }
 .industry-tabs { gap: 0 18px; }
 .industry-tabs button { padding: 14px 0; font-size: 11px; }
 .business-pro { margin-top: 46px; }
@@ -257,7 +287,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .site-footer { margin-top: 64px; }
 .bottom-nav { min-height: 64px; padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); }
 .bottom-nav button, .bottom-nav a { min-height: 64px; }
-.bottom-nav span { max-width: 64px; overflow: hidden; text-overflow: ellipsis; font-size: 7px; }
+.bottom-nav span { max-width: 64px; overflow: hidden; text-overflow: ellipsis; font-size: 10px; }
 }
 
 /* V6: compact editorial hierarchy and official airport-today summary. */
@@ -273,12 +303,12 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .home-area-briefs-head > p:last-child { max-width: 520px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
 .home-area-brief-rows button { width: 100%; min-height: 104px; padding: 18px 0; display: grid; grid-template-columns: 150px minmax(0, 1fr) 110px; gap: 28px; align-items: start; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; text-align: left; }
 .home-area-brief-rows button:last-child { border-bottom: 0; }
-.home-area-brief-rows button:hover, .home-area-brief-rows button.selected { background: rgba(255,255,255,.34); }
+.home-area-brief-rows button:hover, .home-area-brief-rows button.selected { background: var(--surface); }
 .home-area-brief-rows button.selected { box-shadow: inset 2px 0 0 var(--ink); padding-left: 14px; padding-right: 14px; }
 .home-area-brief-rows button > span { padding-top: 2px; font-size: 14px; font-weight: var(--weight-strong); }
 .home-area-brief-rows button strong { display: block; font-size: 15px; font-weight: var(--weight-strong); letter-spacing: -.015em; }
 .home-area-brief-rows button p { margin: 6px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
-.home-area-brief-rows button small { justify-self: end; padding-top: 3px; color: var(--muted); font-size: 9px; white-space: nowrap; }
+.home-area-brief-rows button small { justify-self: end; padding-top: 3px; color: var(--muted); font-size: 10px; white-space: nowrap; }
 
 .airport-view .view-intro { min-height: 168px; }
 .airport-view .terminal-selector, .airport-view .airport-context-nav { min-height: 54px; }
@@ -289,9 +319,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .current-brief > p:not(.eyebrow) { max-width: 980px; margin: 9px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
 /* 신선도는 브리핑에서 가장 낮은 계층이다. 숫자가 문장을 밀어내지 않도록
    작게, 조용하게, 한 번만 둔다(같은 출처가 여러 줄에 반복되지 않게). */
-.current-brief > small { display: block; margin-top: 14px; color: var(--muted); font-size: 9px; letter-spacing: .01em; }
+.current-brief > small { display: block; margin-top: 14px; color: var(--muted); font-size: 10px; letter-spacing: .01em; }
 /* 지역 상세의 브리핑은 섹션 첫 요소라 위 테두리를 한 번만 그린다. */
 .area-current-brief { margin-bottom: 34px; }
+.current-brief-link { display: inline-flex; min-height: 44px; align-items: center; margin-top: 10px; color: var(--ink); font-size: 12px; font-weight: var(--weight-strong); text-decoration: none; border-bottom: 1px solid var(--ink); }
 .airport-today .section-head { padding-top: 26px; }
 .airport-today-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 1px solid var(--ink); }
 .airport-today-grid article { min-height: 156px; padding: 25px 20px 20px 0; border-right: 1px solid var(--line); }
@@ -304,11 +335,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
    쓰면 안 된다. 31px로 그리면 한 줄에 못 담겨 다음 칸까지 밀려 내려간다.
    문장은 읽는 크기로, 줄간격도 문장답게 준다. */
 .airport-today-grid strong[data-kind="status"] { font-size: clamp(13px, 1.05vw, 15px); font-weight: var(--weight-strong); line-height: 1.4; letter-spacing: -.012em; word-break: keep-all; }
-.airport-today-grid small { margin-top: 12px; color: var(--muted); font-size: 9px; line-height: 1.45; }
+.airport-today-grid small { margin-top: 12px; color: var(--muted); font-size: 10px; line-height: 1.45; }
 .airport-today-grid small + small { margin-top: 4px; opacity: .75; }
 /* 지표별 반영 기준 시각. 숫자를 밀어내지 않도록 가장 작고 조용하게. */
-.airport-today-grid small.metric-freshness { margin-top: 6px; font-size: 8px; letter-spacing: .01em; opacity: .68; }
-.airport-section-freshness { margin: 10px 0 0; color: var(--muted); font-size: 9px; text-align: right; }
+.airport-today-grid small.metric-freshness { margin-top: 6px; font-size: 10px; letter-spacing: .01em; opacity: .68; }
+.airport-section-freshness { margin: 10px 0 0; color: var(--muted); font-size: 10px; text-align: right; }
 .airport-empty-line { margin: 0; padding: 25px; color: var(--muted); }
 .airport-detail-section { margin-top: 48px; border-top: 1px solid var(--ink); }
 .airport-detail-head { min-height: 96px; display: grid; grid-template-columns: minmax(220px, .8fr) minmax(280px, 1fr); gap: 32px; align-items: center; border-bottom: 1px solid var(--line); }
@@ -317,19 +348,19 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .airport-checkpoint-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .airport-checkpoint-terminal + .airport-checkpoint-terminal { border-left: 1px solid var(--line); }
 .airport-checkpoint-terminal h4 { min-height: 52px; margin: 0; padding: 0 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); font-size: 12px; font-weight: var(--weight-regular); }
-.airport-checkpoint-terminal h4 span { color: var(--muted); font-size: 9px; letter-spacing: .06em; }
+.airport-checkpoint-terminal h4 span { color: var(--muted); font-size: 10px; letter-spacing: .06em; }
 .airport-checkpoint-terminal article { min-height: 70px; padding: 13px 20px; display: grid; grid-template-columns: 28px minmax(110px, 1fr) minmax(62px, auto) minmax(120px, auto); gap: 12px; align-items: center; border-bottom: 1px solid var(--line); }
 .airport-checkpoint-terminal article:last-child { border-bottom: 0; }
-.airport-checkpoint-terminal .checkpoint-rank { color: #aaa; font-size: 9px; }
+.airport-checkpoint-terminal .checkpoint-rank { color: #aaa; font-size: 10px; }
 .airport-checkpoint-terminal article strong { display: block; font-size: 13px; font-weight: var(--weight-regular); }
-.airport-checkpoint-terminal article div small { display: block; margin-top: 4px; color: var(--green); font-size: 8px; font-weight: var(--weight-strong); letter-spacing: .02em; }
+.airport-checkpoint-terminal article div small { display: block; margin-top: 4px; color: var(--green); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .02em; }
 .airport-checkpoint-terminal article b { font-size: 16px; font-weight: var(--weight-strong); text-align: right; white-space: nowrap; }
 .airport-checkpoint-terminal article > p { margin: 0; font-size: 10px; text-align: right; white-space: nowrap; }
-.airport-checkpoint-terminal article > p small { display: block; margin-top: 4px; color: var(--muted); font-size: 8px; }
+.airport-checkpoint-terminal article > p small { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
 .airport-checkpoint-terminal article.is-busiest { box-shadow: inset 2px 0 0 var(--ink); }
 .airport-gates ol { margin: 0; padding: 0; list-style: none; }
 .airport-gates li { min-height: 58px; padding: 0 4px; display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; gap: 16px; align-items: center; border-bottom: 1px solid var(--line); }
-.airport-gates li > span { color: #aaa; font-size: 9px; }
+.airport-gates li > span { color: #aaa; font-size: 10px; }
 .airport-gates li strong { font-size: 14px; font-weight: var(--weight-regular); }
 .airport-gates li b { font-size: 13px; font-weight: var(--weight-strong); }
 /*
@@ -361,15 +392,15 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
  * remain forecasts, not observations.
  */
 .airport-timeline-bars p.now::before { content: ""; position: absolute; left: -3px; top: -8px; bottom: 0; border-left: 1.5px dashed var(--ink); pointer-events: none; }
-.airport-timeline-bars p.now::after { content: attr(data-now-label); position: absolute; left: -3px; top: -14px; padding: 1px 5px; background: var(--ink); color: var(--paper); font-size: 7px; font-weight: var(--weight-strong); letter-spacing: .04em; white-space: nowrap; border-radius: 2px; pointer-events: none; }
-.airport-timeline-bars i { width: 100%; max-width: 48px; min-height: 2px; justify-self: center; display: block; background: #cfcdc6; border-top: 1px solid var(--muted); }
+.airport-timeline-bars p.now::after { content: attr(data-now-label); position: absolute; left: -3px; top: -14px; padding: 1px 5px; background: var(--ink); color: var(--paper); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .04em; white-space: nowrap; border-radius: 2px; pointer-events: none; }
+.airport-timeline-bars i { width: 100%; max-width: 48px; min-height: 2px; justify-self: center; display: block; background: #d9d9d9; border-top: 1px solid var(--muted); }
 .airport-timeline-bars .peak i { background: var(--ink); border-color: var(--ink); }
-.airport-timeline-bars span { color: var(--muted); font-size: 7px; white-space: nowrap; }
-.airport-timeline-bars b { font-size: 8px; font-weight: var(--weight-regular); }
+.airport-timeline-bars span { color: var(--muted); font-size: 10px; white-space: nowrap; }
+.airport-timeline-bars b { font-size: 10px; font-weight: var(--weight-regular); }
 .airport-forecast-state { min-height: 150px; padding: 30px 0; display: grid; grid-template-columns: minmax(210px, .7fr) minmax(280px, 1fr); gap: 12px 32px; align-content: center; border-bottom: 1px solid var(--ink); }
 .airport-forecast-state strong { font-size: 20px; letter-spacing: -.025em; }
 .airport-forecast-state p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
-.airport-forecast-state small { grid-column: 2; color: var(--muted); font-size: 9px; }
+.airport-forecast-state small { grid-column: 2; color: var(--muted); font-size: 10px; }
 @media (max-width: 820px) {
 :root { --type-display: 35px; --type-view: 31px; --type-section: 18px; --type-body: 13px; }
 .hero-copy { padding-top: 28px; }
@@ -413,11 +444,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 }
 
 @media (max-width: 430px) {
-.airport-today-grid span { min-height: 38px; font-size: 9px; }
+.airport-today-grid span { min-height: 38px; font-size: 10px; }
 .airport-today-grid strong { margin-top: 14px; font-size: 19px; }
 .airport-today-grid strong[data-kind="status"] { font-size: 12px; line-height: 1.4; }
-.airport-today-grid small { font-size: 8px; }
-.airport-today-grid small.metric-freshness { margin-top: 5px; font-size: 7.5px; }
+.airport-today-grid small { font-size: 10px; }
+.airport-today-grid small.metric-freshness { margin-top: 5px; font-size: 10px; }
 .airport-checkpoint-terminal article b { font-size: 14px; }
 .airport-checkpoint-terminal article > p { white-space: normal; }
 }
@@ -425,7 +456,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 /* V5.5 information architecture: summary first, explanation second, detail on demand. */
 .section-intro { max-width: 760px; margin: 18px 0 25px; color: var(--muted); font-size: 13px; line-height: 1.7; }
 
-.airport-context-nav { position: sticky; top: 0; z-index: 12; min-height: 58px; display: flex; align-items: stretch; gap: 30px; overflow-x: auto; border-bottom: 1px solid var(--ink); background: rgba(245,243,237,.96); backdrop-filter: blur(12px); }
+.airport-context-nav { position: sticky; top: 0; z-index: 12; min-height: 58px; display: flex; align-items: stretch; gap: 30px; overflow-x: auto; border-bottom: 1px solid var(--ink); background: rgba(255,255,255,.96); backdrop-filter: blur(12px); }
 .airport-context-nav { scrollbar-width: none; }
 .airport-context-nav::-webkit-scrollbar { display: none; }
 .airport-context-nav button { position: relative; flex: 0 0 auto; min-height: 58px; padding: 0; border: 0; background: transparent; color: #858585; font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .07em; }
@@ -450,7 +481,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .page-shell { padding-left: 14px; padding-right: 14px; }
 .airport-context-nav { margin-left: -14px; margin-right: -14px; padding-left: 14px; padding-right: 14px; }
 .hero h1 { font-size: 34px; }
-.bottom-nav span { font-size: 6.4px; letter-spacing: .03em; }
+.bottom-nav span { font-size: 10px; letter-spacing: .03em; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -492,7 +523,7 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .signal-group-body { border-top: 1px solid var(--line); }
 .signal-row, .commercial-signal-card, .store-dynamics-card { display: grid; grid-template-columns: minmax(150px, 180px) minmax(0, 760px); gap: 28px; padding: 22px 0; border-bottom: 1px solid var(--line); }
 .signal-row-label, .commercial-signal-label, .store-dynamics-label { min-width: 0; }
-.signal-time-state { display: block; margin-bottom: 7px; color: var(--muted); font-size: 9px; font-weight: var(--weight-strong); letter-spacing: .06em; text-transform: uppercase; }
+.signal-time-state { display: block; margin-bottom: 7px; color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .06em; text-transform: uppercase; }
 .signal-row h4, .commercial-signal-card h4, .store-dynamics-card h4, .event-signal-panel h4 { margin: 0; font-size: 12px; font-weight: var(--weight-strong); line-height: 1.45; letter-spacing: .015em; overflow-wrap: anywhere; }
 .signal-row-content, .commercial-signal-content, .store-dynamics-content { width: 100%; max-width: 760px; min-width: 0; }
 .signal-row-value { display: block; font-size: 16px; font-weight: var(--weight-regular); line-height: 1.4; overflow-wrap: anywhere; }
@@ -500,18 +531,24 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .signal-row-source, .commercial-attribution, .store-dynamics-source, .store-dynamics-limitation { display: block; max-width: 70ch; margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; text-align: left; letter-spacing: 0; overflow-wrap: anywhere; }
 .signal-stale { display: block; margin-top: 9px; color: var(--amber); font-size: 10px; font-weight: var(--weight-strong); }
 
-.commercial-metrics, .commercial-times { margin: 0; display: grid; gap: 1px; background: var(--line); }
+/*
+ * One card grammar: a tile grid is a white card outlined by the same 1px
+ * rule that separates its cells. The 1px padding draws the outer line, and
+ * a stacked grid overlaps the previous one by 1px so the seam stays 1px.
+ */
+.commercial-basis { margin: 0 0 10px; font-size: 13px; font-weight: var(--weight-strong); line-height: 1.5; color: var(--ink); overflow-wrap: anywhere; }
+.commercial-metrics, .commercial-times { margin: 0; padding: 1px; display: grid; gap: 1px; background: var(--line); }
 .commercial-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.commercial-times { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 1px; }
+.commercial-times { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: -1px; }
 .commercial-metrics > div, .commercial-times > div { min-width: 0; padding: 14px 16px; background: var(--paper); }
-.commercial-metrics dt, .commercial-times dt { color: var(--muted); font-size: 9px; font-weight: var(--weight-strong); letter-spacing: .04em; }
+.commercial-metrics dt, .commercial-times dt { color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .04em; }
 .commercial-metrics dd, .commercial-times dd { margin: 7px 0 0; font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; }
 .commercial-metrics > div:first-child dd { font-weight: var(--weight-strong); }
 
-.store-dynamics-counts, .store-dynamics-changes, .store-dynamics-context { margin: 0; display: grid; gap: 1px; background: var(--line); }
+.store-dynamics-counts, .store-dynamics-changes, .store-dynamics-context { margin: 0; padding: 1px; display: grid; gap: 1px; background: var(--line); }
 .store-dynamics-counts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.store-dynamics-changes { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 1px; }
-.store-dynamics-context { grid-template-columns: minmax(120px, .7fr) minmax(220px, 1.6fr) minmax(150px, 1fr); margin-top: 1px; }
+.store-dynamics-changes { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: -1px; }
+.store-dynamics-context { grid-template-columns: minmax(120px, .7fr) minmax(220px, 1.6fr) minmax(150px, 1fr); margin-top: -1px; }
 .store-dynamics-counts > div, .store-dynamics-changes > div, .store-dynamics-context > div { min-width: 0; padding: 14px 16px; background: var(--paper); }
 .store-dynamics-counts dt, .store-dynamics-changes dt, .store-dynamics-context dt { color: var(--muted); font-size: 11px; font-weight: var(--weight-strong); letter-spacing: .04em; }
 .store-dynamics-counts dd, .store-dynamics-changes dd, .store-dynamics-context dd { margin: 7px 0 0; font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
@@ -526,7 +563,7 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .event-card { min-width: 0; }
 .event-card > article { height: 100%; padding: 18px; border: 1px solid var(--line); }
 .event-card header { min-height: 54px; }
-.event-status { display: inline-flex; min-height: 22px; align-items: center; margin-bottom: 8px; color: var(--green); font-size: 9px; font-weight: var(--weight-strong); letter-spacing: .05em; }
+.event-status { display: inline-flex; min-height: 22px; align-items: center; margin-bottom: 8px; color: var(--green); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .05em; }
 .event-status.upcoming { color: var(--blue); }
 .event-card h4 { font-size: 14px; letter-spacing: -.012em; }
 .event-meta, .event-distance, .event-preview, .event-overview { max-width: 68ch; overflow-wrap: anywhere; }
@@ -554,7 +591,7 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .signal-group + .signal-group { margin-top: 20px; }
 .signal-group-head { min-height: 54px; align-items: start; padding: 15px 0; }
 .signal-group-title { font-size: 15px; }
-.signal-group-head > span { max-width: 48%; text-align: right; font-size: 9px; line-height: 1.45; }
+.signal-group-head > span { max-width: 48%; text-align: right; font-size: 10px; line-height: 1.45; }
 .signal-row, .commercial-signal-card, .store-dynamics-card { grid-template-columns: 1fr; gap: 10px; padding: 18px 0; }
 .signal-row-value { font-size: 15px; }
 .signal-row-source, .commercial-attribution, .store-dynamics-source, .store-dynamics-limitation { font-size: 11px; }
@@ -583,7 +620,7 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 }
 
 .methodology { margin-top: 72px; }
-.methodology .section-head > span { color: var(--muted); font-size: 8px; letter-spacing: .06em; }
+.methodology .section-head > span { color: var(--muted); font-size: 10px; letter-spacing: .06em; }
 @media (max-width: 820px) {
 .methodology { margin-top: 48px; }
 .methodology .section-head > span { display: none; }
@@ -596,9 +633,9 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .beta-signup-copy > p:not(.eyebrow) { max-width: 560px; margin: 20px 0 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
 .beta-signup-copy ol { margin: 28px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
 .beta-signup-copy li { min-height: 50px; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); }
-.beta-signup-copy li > span { color: #999; font-size: 8px; }
+.beta-signup-copy li > span { color: #999; font-size: 10px; }
 .beta-signup-copy li strong { font-size: 10px; letter-spacing: .04em; }
-.beta-signup-copy li small { color: var(--muted); font-size: 8px; text-align: right; }
+.beta-signup-copy li small { color: var(--muted); font-size: 10px; text-align: right; }
 .signup-honeypot { position: absolute !important; left: -10000px !important; width: 1px !important; height: 1px !important; overflow: hidden !important; }
 .signup-consent { margin-top: 18px; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; }
 .signup-consent input { width: 17px; height: 17px; margin: 1px 0 0; accent-color: var(--blue); }
@@ -679,20 +716,20 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
  * A compact row keeps the same official values — checkpoint, wait, waiting
  * count, observation time — in a fraction of the height.
  */
-.airport-checkpoint-toggle { margin: 14px 0 0; padding: 9px 15px; background: none; border: 1px solid var(--ink); border-radius: 999px; font: inherit; font-size: 11px; cursor: pointer; }
+.airport-checkpoint-toggle { margin: 14px 0 0; padding: 9px 15px; background: none; border: 1px solid var(--ink); border-radius: 2px; font: inherit; font-size: 12px; font-weight: var(--weight-strong); cursor: pointer; }
 .airport-checkpoint-toggle:hover { background: var(--ink); color: var(--paper); }
 .airport-checkpoint-toggle:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 
 .airport-detail-foot { margin: 12px 0 0; color: var(--muted); font-size: 11px; font-weight: var(--weight-regular); line-height: 1.5; }
 .airport-gate-list { margin: 14px 0 0; padding: 0; list-style: none; }
 .airport-gate-head { display: grid; grid-template-columns: 30px 1fr; gap: 12px; padding: 0 0 7px; border-bottom: 1px solid var(--line); }
-.airport-gate-head span, .airport-gate-head strong { color: var(--muted); font-size: 9px; font-weight: var(--weight-strong); letter-spacing: .08em; text-transform: uppercase; }
+.airport-gate-head span, .airport-gate-head strong { color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .08em; text-transform: uppercase; }
 .airport-gate-row { display: grid; grid-template-columns: 30px 1fr auto; align-items: baseline; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
 .airport-gate-row > span { color: var(--muted); font-size: 11px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
 .airport-gate-row strong { font-size: 14px; font-weight: var(--weight-strong); letter-spacing: -.01em; }
 .airport-gate-row strong i { display: inline-block; margin-right: 7px; color: var(--muted); font-style: normal; font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .05em; }
 .airport-gate-row b { font-size: 14px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
-.airport-checkpoint-terminal article b i, .airport-checkpoint-terminal article p i { display: block; margin-bottom: 2px; color: var(--muted); font-style: normal; font-size: 9px; font-weight: var(--weight-strong); letter-spacing: .06em; text-transform: uppercase; }
+.airport-checkpoint-terminal article b i, .airport-checkpoint-terminal article p i { display: block; margin-bottom: 2px; color: var(--muted); font-style: normal; font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .06em; text-transform: uppercase; }
 
 /* Flight board */
 .flight-board { margin: 26px 0 0; }
