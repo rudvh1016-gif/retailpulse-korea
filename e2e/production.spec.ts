@@ -225,9 +225,9 @@ const SUMMARY_FIXTURE = {
       all: {
         totalFlights: 561,
         airlines: [
-          { iata: "KE", providerName: "대한항공", registryName: "Korean Air", country: "KR", countryBasis: "REGISTRY", flights: 140, share: 0.2496 },
-          { iata: "OZ", providerName: "아시아나항공", registryName: "Asiana Airlines", country: "KR", countryBasis: "REGISTRY", flights: 90, share: 0.1604 },
-          { iata: "RS", providerName: "에어서울", registryName: null, country: null, countryBasis: "UNVERIFIED", flights: 20, share: 0.0357 },
+          { iata: "KE", registryName: "Korean Air", country: "KR", countryBasis: "REGISTRY", flights: 140, share: 0.2496 },
+          { iata: "OZ", registryName: "Asiana Airlines", country: "KR", countryBasis: "REGISTRY", flights: 90, share: 0.1604 },
+          { iata: "RS", registryName: null, country: null, countryBasis: "UNVERIFIED", flights: 20, share: 0.0357 },
         ],
         countries: [
           { country: "KR", flights: 230, airlines: 2, share: 0.41 },
@@ -236,8 +236,8 @@ const SUMMARY_FIXTURE = {
         retrievedAt: "2026-08-31T12:00:00+09:00",
       },
       byTerminal: {
-        T1: { totalFlights: 300, airlines: [{ iata: "OZ", providerName: "아시아나항공", registryName: "Asiana Airlines", country: "KR", countryBasis: "REGISTRY", flights: 90, share: 0.3 }], countries: [{ country: "KR", flights: 90, airlines: 1, share: 0.3 }], retrievedAt: "2026-08-31T12:00:00+09:00" },
-        T2: { totalFlights: 261, airlines: [{ iata: "KE", providerName: "대한항공", registryName: "Korean Air", country: "KR", countryBasis: "REGISTRY", flights: 140, share: 0.5364 }], countries: [{ country: "KR", flights: 140, airlines: 1, share: 0.5364 }], retrievedAt: "2026-08-31T12:00:00+09:00" },
+        T1: { totalFlights: 300, airlines: [{ iata: "OZ", registryName: "Asiana Airlines", country: "KR", countryBasis: "REGISTRY", flights: 90, share: 0.3 }], countries: [{ country: "KR", flights: 90, airlines: 1, share: 0.3 }], retrievedAt: "2026-08-31T12:00:00+09:00" },
+        T2: { totalFlights: 261, airlines: [{ iata: "KE", registryName: "Korean Air", country: "KR", countryBasis: "REGISTRY", flights: 140, share: 0.5364 }], countries: [{ country: "KR", flights: 140, airlines: 1, share: 0.5364 }], retrievedAt: "2026-08-31T12:00:00+09:00" },
       },
       countrySource: { provider: "OpenFlights airline database", licence: "ODbL 1.0", retrievedOn: "2026-09-03", entries: 950, suppressed: 25 },
     },
@@ -436,12 +436,17 @@ test("airlines are ranked by operating departures with a country or an explicit 
   const rows = airlines.locator(".airport-airline-row");
   await expect(rows).toHaveCount(3);
   await expect(rows.nth(0)).toContainText("KE");
-  await expect(rows.nth(0)).toContainText("대한항공");
+  // The name comes only from the reference table, in every locale — never
+  // from a raw per-row provider field (proven unreliable: see
+  // lib/airline-ranking.ts). English is shown even on the Korean page.
+  await expect(rows.nth(0)).toContainText("Korean Air");
   await expect(rows.nth(0)).toContainText("대한민국");
   await expect(rows.nth(0)).toContainText("140편");
   await expect(rows.nth(0)).toContainText("25%");
-  // A designator the reference table cannot vouch for is never given a country.
-  await expect(rows.nth(2)).toContainText("에어서울");
+  // A designator the reference table cannot vouch for gets no name and no
+  // country — never a guess, and never the raw provider label either.
+  await expect(rows.nth(2)).toContainText("RS");
+  await expect(rows.nth(2)).toContainText("확인 불가");
   await expect(rows.nth(2)).toContainText("국적 미확인");
   const countries = airlines.locator(".airport-country-row");
   await expect(countries).toHaveCount(2);
@@ -460,7 +465,7 @@ test("airlines are ranked by operating departures with a country or an explicit 
   await expect(airlines.locator(".airport-airline-row")).toHaveCount(3);
   await page.locator(".terminal-selector button").filter({ hasText: /^T1$/ }).click();
   await expect(airlines.locator(".airport-airline-row")).toHaveCount(1);
-  await expect(airlines.locator(".airport-airline-row").first()).toContainText("아시아나항공");
+  await expect(airlines.locator(".airport-airline-row").first()).toContainText("Asiana Airlines");
 });
 
 test("a day with no stored departures says so instead of blaming gate coverage", async ({ page }) => {

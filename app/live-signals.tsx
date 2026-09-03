@@ -196,7 +196,7 @@ interface LivePassengerForecastRow {
 type ForecastCoverageStatus = "COMPLETE" | "PARTIAL" | "UNAVAILABLE";
 type ForecastBand = { targetStartAt: string; targetEndAt: string; expectedPassengers: number };
 type TerminalGate = { gate: string; flights: number } | null;
-type RankedAirlineRow = { iata: string | null; providerName: string | null; registryName: string | null; country: string | null; countryBasis: "REGISTRY" | "UNVERIFIED"; flights: number; share: number };
+type RankedAirlineRow = { iata: string | null; registryName: string | null; country: string | null; countryBasis: "REGISTRY" | "UNVERIFIED"; flights: number; share: number };
 type CountryRollupRow = { country: string | null; flights: number; airlines: number; share: number };
 type AirlineRankingScope = { totalFlights: number; airlines: RankedAirlineRow[]; countries: CountryRollupRow[]; retrievedAt: string | null };
 type AirlineRankingPayload = { all: AirlineRankingScope; byTerminal: Record<string, AirlineRankingScope>; countrySource?: { provider: string; licence: string; retrievedOn: string; entries: number; suppressed?: number } };
@@ -1094,7 +1094,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
       {ranking && ranking.airlines.length ? <>
         <ol className="airport-gate-list airport-airline-list">
           <li className="airport-gate-head" aria-hidden="true"><span>#</span><strong>{airportTodayText.airlineRankHead[lang]}</strong></li>
-          {ranking.airlines.map((row, index) => <li className="airport-rank-row airport-airline-row" key={row.iata ?? `label-${row.providerName ?? index}`}>
+          {ranking.airlines.map((row, index) => <li className="airport-rank-row airport-airline-row" key={row.iata ?? `label-${index}`}>
             <span>{String(index + 1).padStart(2, "0")}</span>
             <strong>{row.iata ? <i>{row.iata}</i> : null}{airlineDisplayName(row, lang)}<em>{row.country ? regionName(row.country, lang) : airportTodayText.countryUnverified[lang]}</em></strong>
             <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}<small>{formatShare(row.share)}</small></b>
@@ -1125,11 +1125,16 @@ function regionName(code: string, lang: Lang): string {
 }
 
 function airlineDisplayName(row: RankedAirlineRow, lang: Lang): string {
-  // Korean readers get the provider's official (Korean) name first; other
-  // locales get the reference-table name when the table has a trustworthy
-  // one. The designator is always shown beside it, so nothing is hidden.
-  const preferred = lang === "ko" ? [row.providerName, row.registryName] : [row.registryName, row.providerName];
-  return preferred.find((value): value is string => Boolean(value)) ?? row.iata ?? "—";
+  // The name comes ONLY from the verified reference table, keyed by the
+  // reliably-parsed operating designator — never from the raw per-row
+  // provider field. Investigation on 2026-09-03 found that field unreliable:
+  // when a codeshare pair shares a master flight number, `airport_flights`
+  // keeps one row per physical flight and the stored "airline" text can be
+  // whichever marketing partner's row was written last, not the operator
+  // the flight number actually names (see lib/airline-ranking.ts). Showing
+  // a possibly-wrong name is worse than showing none, so an airline the
+  // table cannot vouch for gets the same "unavailable" text as no country.
+  return row.registryName ?? airportTodayText.unavailable[lang];
 }
 
 function formatShare(share: number): string {

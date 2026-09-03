@@ -6,7 +6,7 @@ import { AIRLINE_REGISTRY } from "../lib/airline-registry.ts";
 import { operatingDesignator, summarizeAirlineRanking } from "../lib/airline-ranking.ts";
 
 const row = (overrides) => ({
-  physicalFlightId: "p1", terminal: "T1", operatingFlight: "KE703", airlineLabel: "대한항공", codeshare: "N", retrievedAt: "2026-09-03T00:03:00Z", ...overrides,
+  physicalFlightId: "p1", terminal: "T1", operatingFlight: "KE703", retrievedAt: "2026-09-03T00:03:00Z", ...overrides,
 });
 
 const lookup = (iata) => ({ KE: { name: "Korean Air", country: "KR" }, OZ: { name: "Asiana Airlines", country: "KR" }, JL: { name: "Japan Airlines", country: "JP" } })[iata] ?? null;
@@ -20,22 +20,22 @@ test("operating designator is the two-character prefix of a flight number, or nu
   assert.equal(operatingDesignator(null), null);
 });
 
-test("a codeshare pair is one flight for its operator, labelled with the operator's own name", () => {
+test("a codeshare pair is one flight for its operating designator; the name and country come only from the lookup", () => {
   const rows = [
-    row({ physicalFlightId: "a", operatingFlight: "KE703", airlineLabel: "대한항공", codeshare: "N" }),
-    row({ physicalFlightId: "a", operatingFlight: "KE703", airlineLabel: "델타항공", codeshare: "Y" }),
-    row({ physicalFlightId: "b", operatingFlight: "KE705", airlineLabel: "대한항공", codeshare: "N" }),
-    row({ physicalFlightId: "c", operatingFlight: "OZ102", airlineLabel: "아시아나항공", codeshare: "N", terminal: "T2" }),
-    row({ physicalFlightId: "d", operatingFlight: "JL092", airlineLabel: "일본항공", codeshare: "N", terminal: "T2", retrievedAt: "2026-09-03T00:09:00Z" }),
-    row({ physicalFlightId: "e", operatingFlight: "RS701", airlineLabel: "에어서울", codeshare: "N" }),
+    row({ physicalFlightId: "a", operatingFlight: "KE703" }),
+    row({ physicalFlightId: "b", operatingFlight: "KE705" }),
+    row({ physicalFlightId: "c", operatingFlight: "OZ102", terminal: "T2" }),
+    row({ physicalFlightId: "d", operatingFlight: "JL092", terminal: "T2", retrievedAt: "2026-09-03T00:09:00Z" }),
+    row({ physicalFlightId: "e", operatingFlight: "RS701" }),
   ];
   const summary = summarizeAirlineRanking(rows, lookup, 10);
   assert.equal(summary.all.totalFlights, 5);
-  assert.deepEqual(summary.all.airlines.map((a) => [a.iata, a.flights, a.providerName, a.country, a.countryBasis]), [
-    ["KE", 2, "대한항공", "KR", "REGISTRY"],
-    ["JL", 1, "일본항공", "JP", "REGISTRY"],
-    ["OZ", 1, "아시아나항공", "KR", "REGISTRY"],
-    ["RS", 1, "에어서울", null, "UNVERIFIED"],
+  assert.deepEqual(summary.all.airlines.map((a) => [a.iata, a.flights, a.registryName, a.country, a.countryBasis]), [
+    ["KE", 2, "Korean Air", "KR", "REGISTRY"],
+    ["JL", 1, "Japan Airlines", "JP", "REGISTRY"],
+    ["OZ", 1, "Asiana Airlines", "KR", "REGISTRY"],
+    // RS is not in the fixture lookup: no name, no country — never a guess.
+    ["RS", 1, null, null, "UNVERIFIED"],
   ]);
   assert.equal(summary.all.airlines[0].share, 0.4);
   assert.deepEqual(summary.all.countries.map((c) => [c.country, c.flights, c.airlines]), [["KR", 3, 2], ["JP", 1, 1], [null, 1, 1]]);
@@ -45,16 +45,31 @@ test("a codeshare pair is one flight for its operator, labelled with the operato
   assert.deepEqual(summary.byTerminal.T2.airlines.map((a) => a.iata), ["JL", "OZ"]);
 });
 
+// Regression for the 2026-09-03 production bug: a codeshare partner's own
+// raw label must never leak into the ranking, even if it were somehow
+// passed in — the ranking never reads a per-row airline text field at all,
+// so it cannot inherit the upsert-collision bug in `airport_flights`.
+test("the ranking never derives a name from anything but the lookup, however the rows are shaped", () => {
+  const rows = [row({ physicalFlightId: "a", operatingFlight: "KE703" }), row({ physicalFlightId: "b", operatingFlight: "OZ102" })];
+  const summary = summarizeAirlineRanking(rows, lookup, 10);
+  const ke = summary.all.airlines.find((a) => a.iata === "KE");
+  const oz = summary.all.airlines.find((a) => a.iata === "OZ");
+  assert.equal(ke.registryName, "Korean Air");
+  assert.equal(oz.registryName, "Asiana Airlines");
+  assert.notEqual(ke.registryName, oz.registryName);
+  assert.ok(!("providerName" in ke), "the ranking must not expose a provider-sourced name field");
+});
+
 test("flights without a designator are counted in the total but never invent an airline", () => {
-  const rows = [row({ physicalFlightId: "a", operatingFlight: "KAL703", airlineLabel: null }), row({ physicalFlightId: "b", operatingFlight: "KE1" })];
+  const rows = [row({ physicalFlightId: "a", operatingFlight: "KAL703" }), row({ physicalFlightId: "b", operatingFlight: "KE1" })];
   const summary = summarizeAirlineRanking(rows, lookup, 10);
   assert.equal(summary.all.totalFlights, 2);
   assert.deepEqual(summary.all.airlines.map((a) => [a.iata, a.flights]), [["KE", 1], [null, 1]]);
-  assert.equal(summary.all.airlines[1].providerName, null);
+  assert.equal(summary.all.airlines[1].registryName, null);
 });
 
 test("the limit bounds both lists and empty input is an empty summary", () => {
-  const rows = ["KE", "OZ", "LJ", "7C"].map((code, i) => row({ physicalFlightId: `p${i}`, operatingFlight: `${code}10${i}`, airlineLabel: code }));
+  const rows = ["KE", "OZ", "LJ", "7C"].map((code, i) => row({ physicalFlightId: `p${i}`, operatingFlight: `${code}10${i}` }));
   const summary = summarizeAirlineRanking(rows, lookup, 2);
   assert.equal(summary.all.airlines.length, 2);
   assert.equal(summary.all.totalFlights, 4);
