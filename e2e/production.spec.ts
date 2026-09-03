@@ -377,6 +377,37 @@ test("airport summary keeps forecast, flights, gate and checkpoints truthful on 
  * it reads immediately after "한눈에 보기" — ahead of the live checkpoint and
  * gate detail, which answer a different question.
  */
+test("terminal briefing shows one labelled card per terminal and names the longest observed wait in four languages", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  const expected = {
+    ko: { title: "지금 주목할 곳", attention: "T2 · 관측된 대기가 가장 긴 터미널", queue: "관측", next: "공식 예상", flights: "집계" },
+    en: { title: "Where to watch now", attention: "T2 · Longest observed wait", queue: "observed", next: "official forecast", flights: "counted" },
+    zh: { title: "现在值得关注的地方", attention: "T2 · 观测等候最长的航站楼", queue: "观测", next: "官方预计", flights: "统计" },
+    ja: { title: "いま注目する場所", attention: "T2 · 観測された待ちが最も長いターミナル", queue: "観測", next: "公式予想", flights: "集計" },
+  } as const;
+  for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
+    await page.goto(`/${locale}/airport`);
+    const briefing = page.locator('[data-signal-key="terminal-briefing"]');
+    await expect(briefing).toBeVisible();
+    await expect(briefing.locator("h3")).toContainText(expected[locale].title);
+    // The fixture's T2 checkpoint waits "60+" against T1's 24 minutes, so the
+    // pick is T2 and the basis is the observed queue, never a forecast.
+    await expect(briefing.locator(".terminal-attention")).toContainText(expected[locale].attention);
+    await expect(briefing.locator(".terminal-attention")).toHaveAttribute("data-attention-terminal", "T2");
+    const cards = briefing.locator(".terminal-brief-card");
+    await expect(cards).toHaveCount(2);
+    await expect(cards.nth(0)).toHaveAttribute("data-terminal", "T1");
+    await expect(cards.nth(1)).toHaveAttribute("data-terminal", "T2");
+    await expect(cards.nth(1)).toHaveClass(/is-attention/);
+    for (const kind of [expected[locale].queue, expected[locale].next, expected[locale].flights]) await expect(cards.nth(1)).toContainText(kind);
+    await expect(briefing).not.toContainText(/%|점수|score|指数|スコア/);
+  }
+  // A single-terminal scope focuses the grid on that terminal; the cards are not repeated there.
+  await page.goto("/ko/airport");
+  await page.locator(".terminal-selector button").filter({ hasText: /^T1$/ }).click();
+  await expect(page.locator('[data-signal-key="terminal-briefing"]')).toHaveCount(0);
+});
+
 test("the official passenger-flow chart follows the at-a-glance grid directly", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
