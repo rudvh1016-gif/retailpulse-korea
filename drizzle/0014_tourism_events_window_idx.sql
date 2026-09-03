@@ -1,0 +1,19 @@
+-- Read-path index for the nearby-events window.
+--
+-- The public summary asks for events whose last day is on or after the
+-- service day: `COALESCE(event_end, event_start) >= ?`. A COALESCE over two
+-- columns cannot use an index, so this statement has always been a full SCAN
+-- of tourism_events (the Production read-budget diagnostic measured it at 32
+-- rows read over a 16-row table on 2026-09-02, and the hardened diagnostic
+-- now fails on any unindexed hot-path scan). The table grows with every
+-- collected event, so the cost would have grown with it.
+--
+-- The predicate is rewritten as `event_end >= ? OR (event_end IS NULL AND
+-- event_start >= ?)` — the same set of rows — and one composite index serves
+-- both OR branches: a range on event_end for the first, event_end = NULL plus
+-- a range on event_start for the second. SQLite's OR optimisation then reads
+-- only matching rows (MULTI-INDEX OR, two SEARCHes). Two single-column
+-- indexes were tried first and rejected: with an index on event_start alone
+-- the planner preferred walking that whole index in ORDER BY order, which is
+-- still proportional to the table. Additive only.
+CREATE INDEX `tourism_events_window_idx` ON `tourism_events` (`event_end`,`event_start`);

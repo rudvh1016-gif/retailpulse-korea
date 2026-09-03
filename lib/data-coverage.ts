@@ -146,9 +146,9 @@ export const COVERAGE_PROBES: CoverageProbe[] = [
     sourceIds: ["KTO_TOURAPI_EVENT"],
     meaning: "events per area still running or upcoming as of the current KST day",
     sql: `SELECT area, COUNT(*) AS upcomingEvents, MIN(event_start) AS nextStart, MAX(retrieved_at) AS retrievedAt
-      FROM tourism_events WHERE COALESCE(event_end, event_start) >= ?
+      FROM tourism_events WHERE (event_end >= ? OR (event_end IS NULL AND event_start >= ?))
       GROUP BY area ORDER BY area`,
-    params: ({ kstToday }) => [kstToday],
+    params: ({ kstToday }) => [kstToday, kstToday],
   },
   {
     name: "seoul_estimated_sales_latest",
