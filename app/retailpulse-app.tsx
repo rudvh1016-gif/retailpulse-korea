@@ -22,6 +22,7 @@ import LiveSignals, {
   DateNavigator,
   DateScopeNote,
   FacilityDirectory,
+  MyStoreBriefing,
   FlightBoard,
   HomeTodayBrief,
   KstTodayChip,
@@ -30,7 +31,7 @@ import LiveSignals, {
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
 
 type View = "today" | "airport" | "business" | "forecast" | "about" | "more";
-type AirportSection = "now" | "flights" | "stores" | "history";
+type AirportSection = "now" | "flights" | "stores" | "mystore" | "history";
 type AreaId = "myeongdong" | "hongdae" | "seongsu";
 
 // Area identity only. There is deliberately no "best time" here: a recommended
@@ -521,15 +522,16 @@ function AirportView({
       </div>
 
       <nav className="airport-context-nav" aria-label={localText(lang, { ko: "공항 정보 구분", en: "Airport sections", zh: "机场信息分类", ja: "空港情報の分類" })}>
-        {(["now", "flights", "stores", "history"] as AirportSection[]).map((item) => <button key={item} className={section === item ? "active" : ""} onClick={() => setSection(item)} aria-current={section === item ? "page" : undefined}>
+        {(["now", "flights", "stores", "mystore", "history"] as AirportSection[]).map((item) => <button key={item} className={section === item ? "active" : ""} onClick={() => setSection(item)} aria-current={section === item ? "page" : undefined}>
           {item === "now" ? localText(lang, { ko: "지금", en: "NOW", zh: "现在", ja: "現在" })
             : item === "flights" ? localText(lang, { ko: "항공편", en: "FLIGHTS", zh: "航班", ja: "フライト" })
               : item === "stores" ? localText(lang, { ko: "매장·시설", en: "STORES", zh: "店铺·设施", ja: "店舗・施設" })
-                : localText(lang, { ko: "과거", en: "HISTORY", zh: "历史", ja: "履歴" })}
+                : item === "mystore" ? localText(lang, { ko: "내 매장", en: "MY STORE", zh: "我的店铺", ja: "自分の店舗" })
+                  : localText(lang, { ko: "과거", en: "HISTORY", zh: "历史", ja: "履歴" })}
         </button>)}
       </nav>
 
-      {section !== "history" && section !== "stores" && <>
+      {section !== "history" && section !== "stores" && section !== "mystore" && <>
         <DateNavigator lang={lang} date={date} onChange={setDate} />
         <DateScopeNote lang={lang} date={date} />
       </>}
@@ -537,6 +539,7 @@ function AirportView({
       {section === "now" && <AirportTodaySummary lang={lang} terminal={terminal} date={date} />}
       {section === "flights" && <FlightBoard lang={lang} terminal={terminal} date={date} />}
       {section === "stores" && <FacilityDirectory lang={lang} terminal={terminal} />}
+      {section === "mystore" && <MyStoreBriefing lang={lang} />}
 
       {section === "history" && <section className="airport-history" aria-labelledby="airport-history-title">
         <div className="section-head">

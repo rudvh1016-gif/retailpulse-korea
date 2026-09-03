@@ -1365,6 +1365,279 @@ export function FacilityDirectory({ lang, terminal }: { lang: Lang; terminal: "a
   </section>;
 }
 
+/* ── A4 · My store: the operations brief for one selected facility ────── */
+
+const myStoreText = {
+  title: { ko: "내 매장 찾기", en: "Find my store", zh: "查找我的店铺", ja: "自分の店舗を探す" },
+  intro: {
+    ko: "공식 시설 목록에서 매장을 고르면, 그 매장이 속한 터미널의 공식 신호를 한 화면에 정리합니다. 이 기기에만 저장되며 로그인은 없습니다.",
+    en: "Pick your store from the official facility list and the official signals for its terminal are gathered on one screen. Saved on this device only; there is no sign-in.",
+    zh: "从官方设施列表中选择店铺，即可在一个页面查看该航站楼的官方信号。仅保存在本设备，无需登录。",
+    ja: "公式施設リストから店舗を選ぶと、その店舗が属するターミナルの公式シグナルを一画面にまとめます。この端末にのみ保存され、ログインはありません。",
+  },
+  search: { ko: "매장·브랜드·업종 검색", en: "Search a store, brand or category", zh: "搜索店铺·品牌·业态", ja: "店舗・ブランド・業種を検索" },
+  choose: { ko: "이 매장 선택", en: "Select this store", zh: "选择该店铺", ja: "この店舗を選択" },
+  change: { ko: "다른 매장 선택", en: "Choose another store", zh: "选择其他店铺", ja: "別の店舗を選ぶ" },
+  selected: { ko: "선택한 매장", en: "Selected store", zh: "已选店铺", ja: "選択した店舗" },
+  empty: { ko: "검색 결과가 없습니다", en: "No matching store", zh: "没有匹配的店铺", ja: "該当する店舗がありません" },
+  loading: { ko: "공식 자료를 불러오는 중입니다", en: "Loading the official record", zh: "正在载入官方资料", ja: "公式資料を読み込んでいます" },
+  briefTitle: { ko: "공항 리테일 운영 스냅샷", en: "Airport retail operations snapshot", zh: "机场零售运营快照", ja: "空港リテール運営スナップショット" },
+  windows: { ko: "출발 예정 항공편", en: "Departures scheduled", zh: "预定出发航班", ja: "出発予定便" },
+  minutes: { ko: "분 내", en: "min", zh: "分钟内", ja: "分以内" },
+  flightsUnit: { ko: "편", en: "flights", zh: "班", ja: "便" },
+  nextBand: { ko: "다음 공식 예상 시간대", en: "Next official expected band", zh: "下一官方预计时段", ja: "次の公式予想時間帯" },
+  nextPeak: { ko: "남은 시간 중 공식 최대 예상", en: "Largest official band still ahead", zh: "剩余时段中官方最大预计", ja: "残り時間帯の公式最大予想" },
+  passengersUnit: { ko: "명", en: "passengers", zh: "人", ja: "人" },
+  checkpoint: { ko: "현재 출국장 관측", en: "Current departure-hall observation", zh: "当前出境区观测", ja: "現在の出国場観測" },
+  waitMinutes: { ko: "대기", en: "wait", zh: "等候", ja: "待ち" },
+  waitingCount: { ko: "대기 인원", en: "waiting", zh: "等候人数", ja: "待ち人数" },
+  reference: { ko: "KORETAIL 운영 참고", en: "KORETAIL operating reference", zh: "KORETAIL 运营参考", ja: "KORETAIL 運営参考" },
+  evidence: { ko: "사용한 근거", en: "Evidence used", zh: "所用依据", ja: "使用した根拠" },
+  missing: { ko: "없는 근거", en: "Missing evidence", zh: "缺少的依据", ja: "不足している根拠" },
+  freshness: { ko: "자료 수집 시각", en: "Source freshness", zh: "资料采集时间", ja: "資料取得時刻" },
+  generated: { ko: "생성 시각", en: "Generated at", zh: "生成时间", ja: "生成時刻" },
+  print: { ko: "브리핑 인쇄", en: "Print briefing", zh: "打印简报", ja: "ブリーフィングを印刷" },
+  none: { ko: "없음", en: "none", zh: "无", ja: "なし" },
+  noTerminal: {
+    ko: "이 시설은 공식 자료에 터미널이 표기되어 있지 않아, 터미널 단위 신호를 연결하지 않았습니다",
+    en: "The official record gives this facility no terminal, so no terminal-level signal is attached to it",
+    zh: "官方资料未标明该设施所属航站楼，因此未关联航站楼级信号",
+    ja: "公式資料にターミナルの記載がないため、ターミナル単位のシグナルは接続していません",
+  },
+  /** The disclaimer the owner requires beside every operating reference. */
+  disclaimer: {
+    ko: "공식 승객·항공편·출국장 데이터를 바탕으로 정리한 운영 참고이며 실제 매장 방문자 수나 매출을 의미하지 않습니다",
+    en: "An operating reference compiled from official passenger, flight and departure-hall data. It does not mean store visitors or sales",
+    zh: "基于官方旅客、航班与出境区数据整理的运营参考，并不代表实际到店人数或销售额",
+    ja: "公式の旅客・運航・出国場データをもとに整理した運営参考であり、実際の来店客数や売上を意味しません",
+  },
+  evidenceLabels: {
+    FLIGHTS: { ko: "출발 항공편", en: "Departures", zh: "出发航班", ja: "出発便" },
+    PASSENGER_FORECAST: { ko: "공식 예상 출국객", en: "Official expected passengers", zh: "官方预计出境旅客", ja: "公式予想出国者" },
+    CHECKPOINT: { ko: "출국장 관측", en: "Departure-hall observation", zh: "出境区观测", ja: "出国場観測" },
+    ZONE_MAPPING: { ko: "위치 매핑", en: "Location mapping", zh: "位置映射", ja: "位置マッピング" },
+  },
+  /**
+   * The operating reference wording. These are KORETAIL readings of official
+   * signals, and the card says so directly beneath them.
+   */
+  referenceLabels: {
+    INFLOW_WAITING: { ko: "유입 대기", en: "Inflow held at the checkpoint", zh: "入场等候", ja: "流入待ち" },
+    FLOW_RISING: { ko: "유동 상승", en: "Flow rising", zh: "客流上升", ja: "流動上昇" },
+    CONCENTRATED_NOW: { ko: "현재 집중", en: "Concentrated now", zh: "当前集中", ja: "現在集中" },
+    FAST_PURCHASE_WATCH: { ko: "빠른 구매 대응 확인", en: "Watch for quick purchases", zh: "留意快速购买", ja: "短時間購買への対応確認" },
+    STABLE: { ko: "운영 안정", en: "Operations steady", zh: "运营平稳", ja: "運営安定" },
+    INSUFFICIENT_EVIDENCE: { ko: "판단 근거 부족", en: "Not enough evidence to say", zh: "判断依据不足", ja: "判断根拠が不足" },
+  },
+} as const;
+
+type OperationsResponse = {
+  mode: string;
+  generatedAt: string;
+  facility: FacilityRow | null;
+  mapping?: { mappingMethod: FacilityRow["mappingMethod"]; gate: string | null; gateGroup: string | null; checkpointId: string | null } | null;
+  brief: {
+    terminal: string | null;
+    windows: Array<{ minutes: number; flights: number }>;
+    nextBand: { targetStartAt: string; targetEndAt: string; expectedPassengers: number } | null;
+    nextPeak: { targetStartAt: string; targetEndAt: string; expectedPassengers: number } | null;
+    checkpoint: { zone: string; waitTimeMinutes: number | null; waitTimeRaw?: string | null; waitingCount: number | null; observedAt: string } | null;
+    operatingReference: keyof typeof myStoreText.referenceLabels;
+    evidence: Array<keyof typeof myStoreText.evidenceLabels>;
+    missingEvidence: Array<keyof typeof myStoreText.evidenceLabels>;
+    sourceRetrievedAt: Record<string, string | null>;
+    generatedAt: string;
+  } | null;
+};
+
+const MY_STORE_KEY = "koretail-my-facility";
+
+function bandClock(value: string, lang: Lang): string {
+  const parsed = new Date(value);
+  if (!Number.isFinite(parsed.getTime())) return value;
+  return new Intl.DateTimeFormat(airportLocale(lang), {
+    timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).format(parsed);
+}
+
+/**
+ * A4 — pick one official facility, then read the official signals its own
+ * terminal actually publishes.
+ *
+ * The store is chosen from the A2 directory, so it is always a real published
+ * facility; the id lives in localStorage on this device, with no account and
+ * no server-side profile. Everything under the header keeps its own kind and
+ * its own name, because the risk this screen carries is a reader collapsing
+ * four different official measurements into "how busy my shop will be".
+ */
+export function MyStoreBriefing({ lang }: { lang: Lang }) {
+  const [facilityId, setFacilityId] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<FacilityRow[] | null>(null);
+  const [operations, setOperations] = useState<OperationsResponse | null>(null);
+
+  // Deferred to a task, matching how the app reads its other stored
+  // preferences: a synchronous setState inside an effect cascades a render.
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        const saved = window.localStorage.getItem(MY_STORE_KEY);
+        if (saved && /^\d{1,12}$/.test(saved)) setFacilityId(saved);
+      } catch {
+        // Device-local storage is a convenience; the screen works without it.
+      } finally {
+        setReady(true);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    try {
+      if (facilityId) window.localStorage.setItem(MY_STORE_KEY, facilityId);
+      else window.localStorage.removeItem(MY_STORE_KEY);
+    } catch {
+      // Storage is optional.
+    }
+  }, [facilityId, ready]);
+
+  const trimmed = query.trim();
+  useEffect(() => {
+    let active = true;
+    const idle = facilityId || trimmed.length < 2;
+    const timer = window.setTimeout(() => {
+      if (idle) { if (active) setResults(null); return; }
+      fetch(`/api/airport/facilities?q=${encodeURIComponent(trimmed)}&limit=20`, { headers: { accept: "application/json" } })
+        .then(async (response) => (response.ok ? await response.json() as { facilities?: FacilityRow[] } : { facilities: [] }))
+        .catch(() => ({ facilities: [] as FacilityRow[] }))
+        .then((payload) => { if (active) setResults(payload.facilities ?? []); });
+    }, idle ? 0 : 250);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [trimmed, facilityId]);
+
+  useEffect(() => {
+    let active = true;
+    const timer = window.setTimeout(() => {
+      if (!active) return;
+      setOperations(null);
+      if (!facilityId) return;
+      fetch(`/api/airport/facility-operations?facilityId=${encodeURIComponent(facilityId)}`, { headers: { accept: "application/json" } })
+        .then(async (response) => await response.json() as OperationsResponse)
+        .catch(() => null)
+        .then((payload) => { if (active && payload) setOperations(payload); });
+    }, 0);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [facilityId]);
+
+  return <section className="my-store" aria-labelledby="my-store-title">
+    <div className="section-head">
+      <div><p className="eyebrow">KORETAIL · MY STORE</p><h2 id="my-store-title">{myStoreText.title[lang]}</h2></div>
+      {facilityId && <button type="button" className="event-list-toggle" onClick={() => { setFacilityId(null); setQuery(""); }}>{myStoreText.change[lang]}</button>}
+    </div>
+    <p className="section-intro">{myStoreText.intro[lang]}</p>
+
+    {!facilityId && <>
+      <label className="facility-search">
+        <span className="sr-only">{myStoreText.search[lang]}</span>
+        <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={myStoreText.search[lang]} />
+      </label>
+      {results !== null && (results.length === 0
+        ? <p className="airport-empty-line">{myStoreText.empty[lang]}</p>
+        : <ul className="my-store-results">
+          {results.map((row) => <li key={row.facilityId}>
+            <button type="button" onClick={() => setFacilityId(row.facilityId)}>
+              <strong>{facilityName(row, lang)}</strong>
+              <span>{[
+                row.terminal ? facilityText.terminals[row.terminal]?.[lang] ?? row.terminal : facilityText.unknown[lang],
+                row.floor,
+                row.facilityItem,
+              ].filter(Boolean).join(" · ")}</span>
+            </button>
+          </li>)}
+        </ul>)}
+    </>}
+
+    {facilityId && <MyStoreSnapshot lang={lang} operations={operations} />}
+  </section>;
+}
+
+/** The snapshot itself: official header first, then only evidence-backed context. */
+function MyStoreSnapshot({ lang, operations }: { lang: Lang; operations: OperationsResponse | null }) {
+  if (!operations) return <p className="airport-empty-line">{myStoreText.loading[lang]}</p>;
+  const { facility, brief } = operations;
+  if (!facility) return <p className="airport-empty-line">{facilityText.empty[lang]}</p>;
+  const locale = airportLocale(lang);
+  const count = (value: number) => value.toLocaleString(locale);
+
+  return <article className="my-store-brief">
+    <header>
+      <h3>{facilityName(facility, lang)}</h3>
+      <p className="facility-badges">
+        {facility.facilityItem && <span>{facility.facilityItem}</span>}
+        <span>{facility.terminal ? facilityText.terminals[facility.terminal]?.[lang] ?? facility.terminal : facilityText.unknown[lang]}</span>
+        {facility.floor && <span>{facility.floor}</span>}
+        {facility.dutyArea && <span>{facility.dutyArea === "DUTY_FREE" ? facilityText.dutyFree[lang] : facilityText.general[lang]}</span>}
+        {facility.arrivalDeparture && <span>{facility.arrivalDeparture === "ARRIVAL" ? facilityText.arrival[lang] : facilityText.departure[lang]}</span>}
+      </p>
+      <dl className="facility-details">
+        <div><dt>{facilityText.location[lang]}</dt><dd>{(lang === "en" ? facility.locationEn ?? facility.locationRaw : facility.locationRaw) ?? facilityText.unknown[lang]}</dd></div>
+        <div><dt>{facilityText.hours[lang]}</dt><dd>{facility.businessHoursRaw ?? facilityText.unknown[lang]}</dd></div>
+        {facility.phone && <div><dt>{facilityText.phone[lang]}</dt><dd>{facility.phone}</dd></div>}
+      </dl>
+      <FacilityLocationStatus row={facility} lang={lang} />
+    </header>
+
+    {!brief || !brief.terminal
+      ? <p className="airport-empty-line">{myStoreText.noTerminal[lang]}</p>
+      : <>
+        <h4>{myStoreText.briefTitle[lang]}</h4>
+        <dl className="my-store-metrics">
+          {brief.windows.map((window) => <div key={window.minutes}>
+            <dt>{myStoreText.windows[lang]} · {window.minutes}{myStoreText.minutes[lang]}</dt>
+            <dd>{count(window.flights)}{lang === "ko" || lang === "ja" || lang === "zh" ? myStoreText.flightsUnit[lang] : ` ${myStoreText.flightsUnit[lang]}`}</dd>
+          </div>)}
+          {brief.nextBand && <div>
+            <dt>{myStoreText.nextBand[lang]}</dt>
+            <dd>{bandClock(brief.nextBand.targetStartAt, lang)}–{bandClock(brief.nextBand.targetEndAt, lang)} · {count(brief.nextBand.expectedPassengers)}{myStoreText.passengersUnit[lang]}</dd>
+          </div>}
+          {brief.nextPeak && <div>
+            <dt>{myStoreText.nextPeak[lang]}</dt>
+            <dd>{bandClock(brief.nextPeak.targetStartAt, lang)}–{bandClock(brief.nextPeak.targetEndAt, lang)} · {count(brief.nextPeak.expectedPassengers)}{myStoreText.passengersUnit[lang]}</dd>
+          </div>}
+          {brief.checkpoint && <div>
+            <dt>{myStoreText.checkpoint[lang]}</dt>
+            <dd>{friendlyCheckpointName(brief.checkpoint.zone, lang)} · {brief.checkpoint.waitTimeRaw ?? brief.checkpoint.waitTimeMinutes ?? "—"}{myStoreText.waitMinutes[lang]}
+              {brief.checkpoint.waitingCount !== null && ` · ${myStoreText.waitingCount[lang]} ${count(brief.checkpoint.waitingCount)}`}</dd>
+          </div>}
+        </dl>
+
+        <p className="my-store-reference">
+          <span>{myStoreText.reference[lang]}</span>
+          <strong>{myStoreText.referenceLabels[brief.operatingReference][lang]}</strong>
+        </p>
+        <p className="my-store-disclaimer">{myStoreText.disclaimer[lang]}</p>
+
+        <p className="my-store-meta">
+          <span>{myStoreText.evidence[lang]}: {brief.evidence.length
+            ? brief.evidence.map((item) => myStoreText.evidenceLabels[item][lang]).join(" · ")
+            : myStoreText.none[lang]}</span>
+          <span>{myStoreText.missing[lang]}: {brief.missingEvidence.length
+            ? brief.missingEvidence.map((item) => myStoreText.evidenceLabels[item][lang]).join(" · ")
+            : myStoreText.none[lang]}</span>
+          <span>{myStoreText.freshness[lang]}: {Object.entries(brief.sourceRetrievedAt)
+            .filter(([, value]) => Boolean(value))
+            .map(([key, value]) => `${key} ${bandClock(String(value), lang)}`).join(" · ") || myStoreText.none[lang]}</span>
+          <span>{myStoreText.generated[lang]}: {bandClock(brief.generatedAt, lang)} KST</span>
+        </p>
+      </>}
+
+    <p className="airport-detail-foot">{facilityText.source[lang]}</p>
+    <button type="button" className="event-list-toggle no-print" onClick={() => window.print()}>{myStoreText.print[lang]}</button>
+  </article>;
+}
+
 /** The three Seoul areas, each opening with its own official brief. */
 export function HomeTodayBrief({ lang, selected, onSelect, date = null }: { lang: Lang; selected: AreaId; onSelect: (area: AreaId) => void; date?: string | null }) {
   const summary = useLiveSummary(date);
