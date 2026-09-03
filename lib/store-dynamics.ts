@@ -227,9 +227,10 @@ function requireRate(value: unknown): { value: number; decimalPlaces: number } {
   return { value: parsed, decimalPlaces };
 }
 
-function verifyPublishedRate(count: number, total: number, rate: { value: number; decimalPlaces: number }): void {
-  if (total === 0 && count !== 0) fail("store_dynamics_rate_formula");
-  const exact = total === 0 ? 0 : (count * 100) / total;
+function verifyPublishedRate(count: number, base: number, rate: { value: number; decimalPlaces: number }): void {
+  if (base < 0) fail("store_dynamics_rate_formula");
+  if (base === 0 && count !== 0) fail("store_dynamics_rate_formula");
+  const exact = base === 0 ? 0 : (count * 100) / base;
   if (exact > 100) fail("store_dynamics_rate_formula");
   const scale = 10 ** rate.decimalPlaces;
   const expected = Math.round(exact * scale) / scale;
@@ -305,8 +306,15 @@ export function normalizeStoreDynamicsRow(
   if (totalStoreCount !== ordinaryStoreCount + franchiseStoreCount) {
     fail("store_dynamics_total_breakdown");
   }
-  verifyPublishedRate(openingCount, totalStoreCount, openingRate);
-  verifyPublishedRate(closureCount, totalStoreCount, closureRate);
+  // OPBIZ_RT/CLSBIZ_RT are each published against the store base at the
+  // START of the quarter, before the specific event they measure — not
+  // against this quarter's ending total. Confirmed against real Production
+  // rows (see tests): opening rate divides by the total with this quarter's
+  // openings backed out (the stores that existed before those openings);
+  // closure rate divides by the total with this quarter's closures added
+  // back (the stores that existed before those closures happened).
+  verifyPublishedRate(openingCount, totalStoreCount - openingCount, openingRate);
+  verifyPublishedRate(closureCount, totalStoreCount + closureCount, closureRate);
 
   return {
     area: expected.area,
