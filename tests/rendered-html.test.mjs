@@ -460,7 +460,10 @@ test("the header date comes from the data on screen and long status text never u
 
   assert.match(signals, /const sharesOneFreshness = distinctFreshness\.length <= 1;/);
   assert.match(signals, /className="metric-freshness"/);
-  assert.match(css, /\.airport-today-grid small\.metric-freshness \{[^}]*font-size: 8px/);
+  // Freshness stays the quietest text on the card, but the white-first type
+  // floor is 10px: nothing on the site is drawn smaller than that any more.
+  assert.match(css, /\.airport-today-grid small\.metric-freshness \{[^}]*font-size: 10px/);
+  assert.doesNotMatch(css, /font-size: *(?:[0-9]|[0-9]\.[0-9]+)px/, "no font-size below 10px anywhere in the stylesheet");
 });
 
 /**
