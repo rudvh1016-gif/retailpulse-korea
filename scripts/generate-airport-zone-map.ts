@@ -14,7 +14,7 @@
  * preserved across regeneration: they are evidence this script cannot derive
  * and must never silently drop.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import {
   AIRPORT_ZONE_EVIDENCE_SOURCE,
@@ -87,6 +87,8 @@ const file: AirportZoneMapFile = {
   mappings,
 };
 const serialized = `${JSON.stringify(file, null, 2)}\n`;
+// config/ holds no other tracked file, so a fresh checkout does not have it.
+mkdirSync(new URL(".", OUTPUT), { recursive: true });
 writeFileSync(OUTPUT, serialized, "utf8");
 console.log(JSON.stringify({ generated: "airport-zone-map.v1", ...counts }, null, 2));
 
