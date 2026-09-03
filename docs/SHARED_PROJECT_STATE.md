@@ -205,6 +205,8 @@ Canonical decision is documented in:
 
 - `docs/BRAND_DECISION_KORETAIL.md`
 
+Visual direction (owner decision, 2026-09-03): **white-first**. Page and card background `#FFFFFF`, thin `#E5E5E5` borders, dark text, muted `#F7F7F7`/`#F8F8F8` surfaces only where needed; no beige/cream/sand page tint. The measured audit and the prioritized fix list live in `docs/DESIGN_AUDIT_2026-09-03.md`; read it before any design, layout, copy or SEO work.
+
 ## 11.5 Official-source integration status (2026-08-27)
 
 Authoritative per-source contract matrix: `docs/DATA_SOURCES.md`.
@@ -278,7 +280,7 @@ Codex and Claude Code must both:
 3. read `AGENTS.md`
 4. read `CLAUDE.md`
 5. read this file: `docs/SHARED_PROJECT_STATE.md`
-6. read `docs/BRAND_DECISION_KORETAIL.md` for any branding/naming work
+6. read `docs/BRAND_DECISION_KORETAIL.md` for any branding/naming work, and `docs/DESIGN_AUDIT_2026-09-03.md` for any design/UX/SEO work
 7. read canonical engineering / zero-cost / production documents relevant to the task
 8. inspect commits newer than any prompt reference SHA
 9. avoid overwriting work from another agent
