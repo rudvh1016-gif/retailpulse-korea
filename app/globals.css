@@ -906,3 +906,52 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
  */
 .facility-location-status { margin: 10px 0 0; display: flex; flex-wrap: wrap; gap: 2px 12px; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .facility-location-status.verified > span:first-child { color: var(--ink); font-weight: var(--weight-strong); }
+
+/* ── A4 · My store ─────────────────────────────────────────────────────── */
+.my-store-results { margin: 14px 0 0; padding: 0; list-style: none; }
+.my-store-results > li { border-bottom: 1px solid var(--line); }
+.my-store-results button { width: 100%; min-height: 52px; padding: 12px 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.my-store-results strong { font-size: 14px; font-weight: var(--weight-strong); }
+.my-store-results span { color: var(--muted); font-size: 11px; }
+.my-store-brief { margin-top: 18px; }
+.my-store-brief h3 { margin: 0; font-size: 20px; font-weight: var(--weight-strong); letter-spacing: -.02em; }
+.my-store-brief h4 { margin: 26px 0 0; font-size: 12px; font-weight: var(--weight-strong); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.my-store-metrics { margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0 24px; }
+.my-store-metrics > div { min-width: 0; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.my-store-metrics dt { color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .04em; }
+.my-store-metrics dd { margin: 6px 0 0; font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
+/* The reading, and immediately under it what the reading is not. They are one
+   unit on purpose: the interpretation must never travel without its boundary. */
+.my-store-reference { margin: 22px 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.my-store-reference > span { color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .04em; }
+.my-store-reference > strong { font-size: 18px; font-weight: var(--weight-strong); letter-spacing: -.015em; }
+.my-store-disclaimer { max-width: 70ch; margin: 8px 0 0; color: var(--ink); font-size: 11px; line-height: 1.6; }
+.my-store-meta { max-width: 74ch; margin: 18px 0 0; display: flex; flex-direction: column; gap: 3px; color: var(--muted); font-size: 11px; line-height: 1.55; overflow-wrap: anywhere; }
+
+/*
+ * The printed briefing. Browser print only — no paid PDF service.
+ *
+ * Everything that is navigation or interaction is dropped, because on paper it
+ * is either useless or a dead end. What survives is the store, the official
+ * numbers, the KORETAIL reading and — always — the sentence saying what that
+ * reading is not, so a printout handed to someone else cannot lose it.
+ */
+@media print {
+  :root { --paper: #ffffff; --surface: #ffffff; }
+  html, body { background: #ffffff !important; }
+  /*
+   * Scoped with :has() on purpose. An unscoped `body * { visibility: hidden }`
+   * would blank every OTHER page in the product when someone hits Ctrl+P,
+   * because nothing would then be there to make visible again. Where :has() is
+   * unsupported the briefing simply prints inside the whole page — a graceful
+   * loss, not a blank sheet.
+   */
+  body:has(.my-store-brief) * { visibility: hidden; }
+  body:has(.my-store-brief) .my-store-brief, body:has(.my-store-brief) .my-store-brief * { visibility: visible; }
+  body:has(.my-store-brief) .my-store-brief { position: absolute; inset: 0 auto auto 0; width: 100%; padding: 0; background: #ffffff !important; }
+  .no-print { display: none !important; }
+  .my-store-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .my-store-brief h3 { font-size: 18pt; }
+  .my-store-disclaimer { font-size: 9pt; }
+  a[href]::after { content: ""; }
+}
