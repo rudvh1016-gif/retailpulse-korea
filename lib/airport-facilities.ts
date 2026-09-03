@@ -308,13 +308,32 @@ export interface FacilityCollectorResult extends CollectorResult {
   unmatchedTranslations?: number;
 }
 
-export async function collectAirportFacilities(env: CollectorEnv, now = new Date(), fetcher: Fetcher = fetchOfficialJson): Promise<FacilityCollectorResult> {
+export interface FacilityCollectionOptions {
+  /**
+   * Re-collects even when a SUCCESS run is inside the refresh window.
+   *
+   * The refresh window exists to keep a repeated run free, so this is not a
+   * routine switch: it is the one way to prove in Production that
+   * re-collecting an unchanged directory writes nothing, which the skip would
+   * otherwise hide behind a zero-request short-circuit. One forced run costs
+   * the same bounded ~52 requests as the first, and the recurring scheduler
+   * never sets it.
+   */
+  forceRefresh?: boolean;
+}
+
+export async function collectAirportFacilities(
+  env: CollectorEnv,
+  now = new Date(),
+  fetcher: Fetcher = fetchOfficialJson,
+  options: FacilityCollectionOptions = {},
+): Promise<FacilityCollectorResult> {
   if (!env.DATA_GO_KR_SERVICE_KEY) {
     await writeCollectorStatus(env.DB, FACILITY_SOURCE_ID, "NEEDS_KEY", "DATA_GO_KR_SERVICE_KEY is not configured");
     await writeSourceHealth(env.DB, FACILITY_SOURCE_ID, "MISSING", "DATA_GO_KR_SERVICE_KEY is not configured");
     return { status: "NEEDS_KEY", records: 0, providerRequests: 0 };
   }
-  if (await hasFreshFacilityRun(env.DB, now)) {
+  if (!options.forceRefresh && await hasFreshFacilityRun(env.DB, now)) {
     return { status: "SKIPPED_NO_NEW_PUBLICATION", records: 0, providerRequests: 0, detail: `facility directory refreshed within ${FACILITY_REFRESH_DAYS} days; no provider request` };
   }
   let providerRequests = 0;
