@@ -89,14 +89,16 @@ jobs:
             area,
             row: summaryBody?.areas?.[area]?.storeDynamics ?? null,
           }));
+          // Phase B v1 publishes counts only (see docs/DATA_SOURCES.md §"Rate
+          // semantics"): the public API projection no longer carries
+          // openingRateTenthsPercent/closureRateTenthsPercent, so this check
+          // no longer asserts on them.
           const storeDynamicsValid = storeDynamics.every(({ area, row }) => {
             const expected = expectedStoreDynamics[area];
             const counts = [row?.totalStoreCount, row?.ordinaryStoreCount, row?.franchiseStoreCount, row?.openingCount, row?.closureCount];
-            const rates = [row?.openingRateTenthsPercent, row?.closureRateTenthsPercent];
             return row
               && /^\d{4}[1-4]$/.test(String(row.quarterCode ?? ""))
               && counts.every((value) => Number.isSafeInteger(value) && value >= 0)
-              && rates.every((value) => Number.isSafeInteger(value) && value >= 0 && value <= 1000)
               && row.totalStoreCount > 0
               && row.totalStoreCount === row.ordinaryStoreCount + row.franchiseStoreCount
               && row.datasetId === "OA-15577"
@@ -105,8 +107,6 @@ jobs:
               && row.tradeAreaName === expected.name
               && row.tradeAreaTypeCode === expected.type
               && row.tradeAreaTypeName === expected.typeName
-              && row.openingRateTenthsPercent === Math.round((row.openingCount * 1000) / row.totalStoreCount)
-              && row.closureRateTenthsPercent === Math.round((row.closureCount * 1000) / row.totalStoreCount)
               && Number.isFinite(Date.parse(row.retrievedAt));
           });
           const storeDynamicsQuarters = new Set(storeDynamics.map(({ row }) => row?.quarterCode).filter(Boolean));
