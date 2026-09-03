@@ -12,7 +12,9 @@ import {
   type ForecastDayOffset,
 } from "../lib/current-brief";
 import { eventPreview, eventStatusForDate, safeOfficialEventHomepage } from "../lib/event-presentation";
+import { formatRepresentativeStations } from "../lib/subway-ridership";
 import { buildTerminalBriefings, type TerminalBriefing } from "../lib/terminal-briefing";
+import { buildWeatherGuide } from "../lib/weather-guide";
 
 type AreaId = "myeongdong" | "hongdae" | "seongsu";
 
@@ -41,6 +43,8 @@ interface LiveWeatherRow {
   precipitationProbability: number | null;
   temperatureTenthC: number | null;
   conditionCode: string | null;
+  /** Official KMA PTY code, so the guide reads falling precipitation rather than inferring it. */
+  precipitationTypeCode?: string | null;
   humidityPercent?: number | null;
   windSpeedTenthMps?: number | null;
   dailyMinTemperatureTenthC?: number | null;
@@ -380,9 +384,9 @@ const text = {
     zh: "首尔市月度统计推算 · 非实时活动、访客数、购买或销售额",
     ja: "ソウル市の月次統計推定 · リアルタイム・来訪者数・購入・売上ではありません",
   },
-  subwayRidership: { ko: "최근 역 승하차 흐름", en: "Recent station boarding and alighting", zh: "近期地铁站进出站客流", ja: "最近の駅乗降動向" },
-  subwayAlighting: { ko: "선정 역 하차 합계", en: "Selected-station alightings", zh: "所选车站出站合计", ja: "選定駅の降車合計" },
-  subwayBoarding: { ko: "선정 역 승차 합계", en: "Selected-station boardings", zh: "所选车站进站合计", ja: "選定駅の乗車合計" },
+  subwayRidership: { ko: "대표 지하철역 승하차", en: "Representative station boarding and alighting", zh: "代表地铁站进出站", ja: "代表駅の乗降" },
+  subwayAlighting: { ko: "하차", en: "alighting", zh: "出站", ja: "降車" },
+  subwayBoarding: { ko: "승차", en: "boarding", zh: "进站", ja: "乗車" },
   subwayNote: {
     ko: "서울교통공사 일별 집계 · 실시간·고유 방문객·상권 방문객 수 아님",
     en: "Daily Seoul Metro counts · not real-time, unique people, or commercial-area visitors",
@@ -1897,14 +1901,21 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
 
   if (block?.subwayRidership) {
     const subway = block.subwayRidership;
+    // The station says its own name. "선정 역" was internal vocabulary that
+    // told a visitor nothing about which station the number came from.
+    const station = formatRepresentativeStations(subway.selectedStations);
+    const withStation = (action: string, count: number) =>
+      `${station ? `${station} ` : ""}${action} ${formatPeopleValue(lang, count)}${text.foreignPeople[lang]}`;
     rows.push({
       key: "subway_ridership",
       group: "movement",
       timeState: signalStructureText.timeState.recent[lang],
       label: text.subwayRidership[lang],
-      value: `${text.subwayAlighting[lang]} ${formatPeopleValue(lang, subway.alightingCount)} ${text.foreignPeople[lang]}`,
-      detail: `${text.subwayBoarding[lang]} ${formatPeopleValue(lang, subway.boardingCount)} ${text.foreignPeople[lang]}`,
-      note: `${subway.referenceDate} · ${subway.selectedStations} · ${text.subwayNote[lang]} · ${subway.datasetId}`,
+      value: withStation(text.subwayAlighting[lang], subway.alightingCount),
+      detail: withStation(text.subwayBoarding[lang], subway.boardingCount),
+      // The limitation stays: a daily station count is not unique people and
+      // not visitors to the commercial area around it.
+      note: `${subway.referenceDate} · ${text.subwayNote[lang]} · ${subway.datasetId}`,
     });
   }
 
@@ -1965,12 +1976,26 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     if (dayLow !== undefined) parts.push(`${text.dayLow[lang]} ${(dayLow / 10).toFixed(0)}°C`);
     if (dayHigh !== undefined) parts.push(`${text.dayHigh[lang]} ${(dayHigh / 10).toFixed(0)}°C`);
 
+    // One practical line under the numbers. 맑음 · 24°C · 강수확률 is correct
+    // and useless to someone deciding whether to take a jacket; this says what
+    // to do about it, from the same official fields, by fixed rules.
+    const guide = buildWeatherGuide({
+      temperatureTenthC: firstTemp ?? null,
+      dailyMinTemperatureTenthC: dayLow ?? null,
+      dailyMaxTemperatureTenthC: dayHigh ?? null,
+      precipitationProbability: next12.some((row) => row.precipitationProbability !== null) ? maxPop : null,
+      precipitationTypeCode: next12.find((row) => row.precipitationTypeCode)?.precipitationTypeCode ?? null,
+      humidityPercent: humidity ?? null,
+      windSpeedTenthMps: wind ?? null,
+    }, lang);
+
     rows.push({
       key: "weather",
       group: "now",
       timeState: signalStructureText.timeState.forecast[lang],
       label: text.weather[lang],
       value: parts.join(" · "),
+      detail: guide ?? undefined,
       note: text.sourceKma[lang],
     });
   }

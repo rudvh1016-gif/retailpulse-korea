@@ -192,6 +192,7 @@ export async function GET(request: Request) {
       latestPerKey(AREAS, () => `SELECT area, issued_at AS issuedAt, target_at AS targetAt,
         precipitation_probability AS precipitationProbability,
         temperature_tenth_c AS temperatureTenthC, condition_code AS conditionCode,
+        precipitation_type_code AS precipitationTypeCode,
         humidity_percent AS humidityPercent, wind_speed_tenth_mps AS windSpeedTenthMps,
         daily_min_temperature_tenth_c AS dailyMinTemperatureTenthC,
         daily_max_temperature_tenth_c AS dailyMaxTemperatureTenthC,
@@ -292,7 +293,7 @@ export async function GET(request: Request) {
       latestPerKey(AREAS, () => `SELECT area, reference_date AS referenceDate,
         SUM(boarding_count) AS boardingCount, SUM(alighting_count) AS alightingCount,
         COUNT(*) AS selectedStationCount,
-        GROUP_CONCAT(station_name || ' ' || line_name, ', ') AS selectedStations,
+        GROUP_CONCAT(station_name || '|' || line_name, ';') AS selectedStations,
         MAX(retrieved_at) AS retrievedAt, dataset_id AS datasetId,
         mapping_version AS mappingVersion
       FROM seoul_subway_ridership
