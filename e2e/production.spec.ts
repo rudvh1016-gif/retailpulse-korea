@@ -117,10 +117,10 @@ test("airport truth labels are complete in all four locales", async ({ page }) =
 test("Store Dynamics is truthful and localized in all four languages", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   const expected = {
-    ko: ["점포 현황", "과거 자료", "총 점포", "174개", "일반 점포", "160개", "프랜차이즈", "14개", "이번 기준분기 개업", "10개", "이번 기준분기 폐업", "5개", "공식 기준", "2026년 2분기", "공식 상권", "분기 기준 공식 과거 자료이며, 현재 영업 중인 점포의 실시간 수가 아닙니다."],
-    en: ["Store openings and closures", "Historical", "Total stores", "174 stores", "Non-franchise stores", "160 stores", "Franchise stores", "14 stores", "Openings this reference quarter", "10 stores", "Closures this reference quarter", "5 stores", "Q2 2026", "Official quarterly historical data, not a real-time count of stores currently operating."],
-    zh: ["店铺开业与歇业", "历史资料", "店铺总数", "174家", "非加盟店", "160家", "加盟店", "14家", "本基准季度开业", "10家", "本基准季度歇业", "5家", "2026年第2季度", "官方季度历史资料，并非当前营业店铺的实时数量。"],
-    ja: ["店舗の開業・廃業", "過去資料", "総店舗数", "174店", "非フランチャイズ店舗", "160店", "フランチャイズ店舗", "14店", "基準四半期の開業", "10店", "基準四半期の廃業", "5店", "2026年第2四半期", "四半期基準の公式過去資料であり、現在営業中の店舗のリアルタイム件数ではありません。"],
+    ko: ["점포 현황", "과거 자료", "총 점포", "174개", "일반 점포 160개", "프랜차이즈 14개", "이번 분기 변화", "개업 10개", "폐업 5개", "2026년 2분기", "공식 과거자료", "KORETAIL 수집", "분기 기준 공식 과거 자료이며, 현재 영업 중인 점포의 실시간 수가 아닙니다."],
+    en: ["Store openings and closures", "Historical", "Total stores", "174 stores", "Non-franchise stores 160 stores", "Franchise stores 14 stores", "Change this quarter", "Opened 10 stores", "Closed 5 stores", "Q2 2026", "official historical record", "KORETAIL retrieval", "Official quarterly historical data, not a real-time count of stores currently operating."],
+    zh: ["店铺开业与歇业", "历史资料", "店铺总数", "174家", "非加盟店 160家", "加盟店 14家", "本季度变化", "开业 10家", "歇业 5家", "2026年第2季度", "官方历史资料", "KORETAIL采集", "官方季度历史资料，并非当前营业店铺的实时数量。"],
+    ja: ["店舗の開業・廃業", "過去資料", "総店舗数", "174店", "非フランチャイズ店舗 160店", "フランチャイズ店舗 14店", "今四半期の変化", "開業 10店", "廃業 5店", "2026年第2四半期", "公式過去資料", "KORETAIL取得", "四半期基準の公式過去資料であり、現在営業中の店舗のリアルタイム件数ではありません。"],
   } as const;
   for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
     await page.goto(`/${locale}/myeongdong`);
@@ -132,7 +132,13 @@ test("Store Dynamics is truthful and localized in all four languages", async ({ 
     // Phase B v1 is counts only: no area-wide 개업률/폐업률 may be invented
     // from the summed counts and shown as if it were the official rate.
     await expect(card).not.toContainText("%");
-    await expect(card.locator(".store-dynamics-context dd").nth(1)).toHaveAttribute("lang", "ko");
+    // The official Korean trade-area name keeps its source language for
+    // assistive technology, wherever the redesign puts it.
+    await expect(card.locator('.store-dynamics-scope [lang="ko"]')).toContainText("명동 남대문 북창동 다동 무교동 관광특구");
+    // The spreadsheet grid is gone: the total is the headline, set by type
+    // rather than by a bordered cell. The unit is localized, so match the count.
+    await expect(card.locator(".store-dynamics-total strong")).toContainText("174");
+    await expect(card.locator(".store-dynamics-counts")).toHaveCount(0);
   }
 });
 
@@ -151,13 +157,16 @@ test("Store Dynamics stays grouped, ordered after sales, and unclipped at every 
     expect(bounds).not.toBeNull();
     expect(bounds!.x).toBeGreaterThanOrEqual(0);
     expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width + 1);
-    await expect(card.locator(".store-dynamics-source")).toBeVisible();
-    await expect(card.locator(".store-dynamics-limitation")).toBeVisible();
+    await expect(card.locator(".store-dynamics-meta")).toBeVisible();
+    await expect(card.locator(".store-dynamics-meta")).toContainText("현재 영업 중인 점포의 실시간 수가 아닙니다.");
+    await expect(card.locator(".store-dynamics-meta")).toContainText("OA-15577");
     for (const selector of [
       ".store-dynamics-content",
-      ".store-dynamics-context dd",
-      ".store-dynamics-source",
-      ".store-dynamics-limitation",
+      ".store-dynamics-scope",
+      ".store-dynamics-total",
+      ".store-dynamics-composition",
+      ".store-dynamics-change",
+      ".store-dynamics-meta",
     ]) {
       const clipped = await card.locator(selector).evaluateAll((nodes) => nodes.some((node) => node.scrollWidth > node.clientWidth + 1));
       expect(clipped, `${selector} must not clip horizontally at ${width}px`).toBe(false);

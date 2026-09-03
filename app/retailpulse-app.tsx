@@ -682,7 +682,7 @@ function BusinessView({
         </section>
 
         <section className="business-pro">
-          <div><p className="eyebrow">KORETAIL · NEXT</p><h2>{localText(lang, { ko: "매일 문 열기 전, 한 장으로.", en: "One page before you open.", zh: "每天开店前，一页简报。", ja: "開店前に、一枚で。" })}</h2><p>{localText(lang, { ko: "업종·지역별 알림과 내려받기를 준비하고 있습니다.", en: "Alerts and exports by business type and area are in preparation.", zh: "正在准备按业态与地区的提醒与导出功能。", ja: "業種・エリア別の通知とエクスポートを準備しています。" })}</p></div>
+          <div><p className="eyebrow">KORETAIL · NEXT</p><h2>{localText(lang, { ko: "매일 문 열기 전, 한 장으로", en: "One page before you open", zh: "每天开店前，一页简报", ja: "開店前に、一枚で" })}</h2><p>{localText(lang, { ko: "업종·지역별 알림과 내려받기를 준비하고 있습니다.", en: "Alerts and exports by business type and area are in preparation.", zh: "正在准备按业态与地区的提醒与导出功能。", ja: "業種・エリア別の通知とエクスポートを準備しています。" })}</p></div>
           <button onClick={() => setProOpen(true)}>{localText(lang, { ko: "미리보기 열기", en: "OPEN PREVIEW", zh: "打开预览", ja: "プレビューを開く" })} ↗</button>
         </section>
       </>}
@@ -789,7 +789,7 @@ function InsightsView({ lang, selected, setSelected, date }: { lang: Lang; selec
       <div className="view-intro">
         <div>
           <p className="eyebrow">OFFICIAL RECORDS</p>
-          <h1>{localText(lang, { ko: "숫자 하나가\n무슨 뜻인지부터.", en: "Start with what\nthe number means.", zh: "先弄清一个\n数字的含义。", ja: "その数字が\n何を意味するかから。" })}</h1>
+          <h1>{localText(lang, { ko: "숫자 하나가\n무슨 뜻인지부터", en: "Start with what\nthe number means", zh: "先弄清一个\n数字的含义", ja: "その数字が\n何を意味するかから" })}</h1>
           <p>{localText(lang, {
             ko: "각 지표마다 무엇을 뜻하는지, 높으면 어떤 상황인지, 어떤 공식 자료에서 왔는지를 함께 적었습니다.",
             en: "Every figure comes with what it means, what a high value indicates, and which official record it came from.",
@@ -965,7 +965,7 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
       <div className="view-intro">
         <div>
           <p className="eyebrow">ABOUT KORETAIL</p>
-          <h1>{localText(lang, { ko: "공식 데이터만,\n있는 그대로.", en: "Official data only,\nexactly as published.", zh: "只用官方数据，\n如实呈现。", ja: "公式データだけを、\nありのままに。" })}</h1>
+          <h1>{localText(lang, { ko: "공식 데이터만,\n있는 그대로", en: "Official data only,\nexactly as published", zh: "只用官方数据，\n如实呈现", ja: "公式データだけを、\nありのままに" })}</h1>
           <p>{localText(lang, { ko: "KORETAIL은 Korea와 Retail을 합친 이름입니다.", en: "KORETAIL combines Korea and Retail.", zh: "KORETAIL 由 Korea 与 Retail 组合而成。", ja: "KORETAIL は Korea と Retail を組み合わせた名前です。" })}</p>
         </div>
       </div>

@@ -29,6 +29,39 @@ export const SUBWAY_AREA_STATIONS: Record<AreaId, readonly SubwayStation[]> = {
   seongsu: [{ stationCode: "0211", stationNumber: "211", stationName: "성수", lineName: "2호선" }],
 };
 
+/**
+ * Field and record separators for the stored station list.
+ *
+ * The summary query concatenates the stations behind one row, and the label
+ * has to be built from name and line separately (Korean needs 역 between
+ * them), so the two are kept apart rather than pre-joined with a space that
+ * would then have to be guessed back out.
+ */
+export const SUBWAY_STATION_FIELD_SEPARATOR = "|";
+export const SUBWAY_STATION_RECORD_SEPARATOR = ";";
+
+/**
+ * The representative station, written the way a Korean reader says it.
+ *
+ * "선정 역" was internal vocabulary that told a visitor nothing; the station's
+ * own name does. `역` is appended only when the official name does not already
+ * carry it, so 명동 becomes 명동역 while a name already ending in 역 is left
+ * alone. The name and line stay Korean in every locale: they are proper nouns
+ * a reader matches against station signage, and translating them would make
+ * the sign harder to find, not easier.
+ */
+export function formatRepresentativeStations(stored: string | null | undefined): string | null {
+  if (typeof stored !== "string" || !stored.trim()) return null;
+  const labels = stored.split(SUBWAY_STATION_RECORD_SEPARATOR)
+    .map((record) => record.split(SUBWAY_STATION_FIELD_SEPARATOR).map((part) => part.trim()))
+    .filter(([name]) => Boolean(name))
+    .map(([name, line]) => {
+      const station = name.endsWith("역") ? name : `${name}역`;
+      return line ? `${station} ${line}` : station;
+    });
+  return labels.length ? labels.join(", ") : null;
+}
+
 export const SUBWAY_STATION_REQUESTS = allAreaIds.flatMap((area) =>
   SUBWAY_AREA_STATIONS[area].map((station) => ({ area, station })),
 );
