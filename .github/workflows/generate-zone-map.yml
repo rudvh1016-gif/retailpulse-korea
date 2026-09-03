@@ -1,0 +1,35 @@
+name: Generate Airport Zone Map
+
+# Read-only A3 helper. It SELECTs the official A2 facility rows from
+# Production D1 and derives config/airport-zone-map.v1.json from their
+# published location text. It calls no provider, executes no write statement
+# and changes nothing in Production; the generated record is printed so it can
+# be committed to the repository, and uploaded as an artifact.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Derive the mapping from the stored official facility directory
+        run: npx tsx scripts/generate-airport-zone-map.ts
+        env:
+          RPK_ZONE_MAP_STDOUT: "true"
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: airport-zone-map
+          path: config/airport-zone-map.v1.json
+          retention-days: 14
