@@ -259,6 +259,41 @@ jobs:
             `${kstYesterday} -> ${dayOneRepeat.serviceDateKst}; cf ${dayOneRepeat.cfCacheStatus}; age ${dayOneRepeat.age}`,
           );
 
+          // A2/A3/A4 acceptance against the live edge. These are the checks
+          // that would catch the failure modes the phases exist to prevent:
+          // an empty directory reading as "no stores here", and a facility
+          // with no proven location being shown a gate anyway.
+          const facilities = await fetch(`${origin}/api/airport/facilities?terminal=T1&limit=60`, { signal: AbortSignal.timeout(15000) });
+          const facilitiesBody = await facilities.json().catch(() => null);
+          check("api /api/airport/facilities", facilities.status === 200 && facilitiesBody?.mode === "airport-facilities", `status ${facilities.status}; mode ${facilitiesBody?.mode}`);
+          const rows = facilitiesBody?.facilities ?? [];
+          check("the official directory is actually populated", rows.length > 0, `${rows.length} T1 rows`);
+          check("published hours are never sold as a live open state", facilitiesBody?.basis === "OFFICIAL_PUBLISHED_HOURS", `basis ${facilitiesBody?.basis}`);
+          check("A3 mapping version is served", facilitiesBody?.mappingVersion === "airport-zone-map.v1", `version ${facilitiesBody?.mappingVersion}`);
+
+          // The one claim that must never appear: a gate on a facility whose
+          // official location text proved none.
+          const falseProximity = rows.filter((row) => row.mappingMethod === "AMBIGUOUS" && (row.gate || row.gateGroup || row.checkpointId));
+          check("false proximity claims = 0", falseProximity.length === 0, `${falseProximity.length} ambiguous rows carry a zone`);
+          const verified = rows.filter((row) => row.mappingMethod && row.mappingMethod !== "AMBIGUOUS");
+          const ambiguous = rows.filter((row) => row.mappingMethod === "AMBIGUOUS");
+          console.log(JSON.stringify({ a3Sample: { rows: rows.length, verified: verified.length, ambiguous: ambiguous.length } }));
+          check("every verified row carries the zone that proved it", verified.every((row) => row.gate || row.gateGroup || row.checkpointId), `${verified.length} verified rows`);
+
+          // A4 reads one selected facility. Only run it when the directory
+          // actually gave us an id; a missing directory already failed above.
+          if (rows.length > 0) {
+            const operations = await fetch(`${origin}/api/airport/facility-operations?facilityId=${encodeURIComponent(rows[0].facilityId)}`, { signal: AbortSignal.timeout(15000) });
+            const brief = await operations.json().catch(() => null);
+            check("api /api/airport/facility-operations", operations.status === 200 && brief?.mode === "facility-operations", `status ${operations.status}; mode ${brief?.mode}`);
+            check("the brief names its own terminal", brief?.brief?.terminal === "T1" || brief?.facility?.terminal === null, `terminal ${brief?.brief?.terminal}`);
+            check("the brief reports 30/60/120 minute windows", (brief?.brief?.windows ?? []).map((w) => w.minutes).join(",") === "30,60,120", JSON.stringify(brief?.brief?.windows ?? []));
+            check("the brief never invents a score", !JSON.stringify(brief ?? {}).includes("\"score\""), "no score field may exist");
+            console.log(JSON.stringify({ a4Sample: { facilityId: rows[0].facilityId, reference: brief?.brief?.operatingReference, evidence: brief?.brief?.evidence, missing: brief?.brief?.missingEvidence } }));
+            const rejected = await fetch(`${origin}/api/airport/facility-operations?facilityId=not-an-id`, { signal: AbortSignal.timeout(15000) });
+            check("a non-id is rejected before it reaches a query", rejected.status === 400, `status ${rejected.status}`);
+          }
+
           const redirect = await fetch(`http://koretaildata.com/ko`, { redirect: "manual", signal: AbortSignal.timeout(15000) });
           check("http->https redirect", [301, 308].includes(redirect.status), `status ${redirect.status}`);
 
