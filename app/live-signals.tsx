@@ -1226,10 +1226,10 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
       <div className="airport-composition-head">
         <div>
           <h3 id="airport-composition-title">{airportTodayText.compositionTitle[lang]}</h3>
+          <p className="airport-composition-scope">{airportTodayText.compositionScope[lang](scopeLabel)}</p>
           <p>{airportTodayText.compositionIntro[lang]}</p>
           <small>{airportTodayText.compositionTruth[lang]}</small>
         </div>
-        <p className="airport-composition-scope">{airportTodayText.compositionScope[lang](scopeLabel)}</p>
       </div>
 
       <div className="airport-composition-tabs" role="tablist" aria-label={airportTodayText.compositionTabsLabel[lang]}>

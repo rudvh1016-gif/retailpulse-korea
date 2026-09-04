@@ -1034,15 +1034,20 @@ test("the composition module has intentional spacing and compact rows from mobil
 
     const geometry = await composition.evaluate((element) => {
       const title = element.querySelector("h3")!.getBoundingClientRect();
-      const intro = element.querySelector(".airport-composition-head > div > p")!.getBoundingClientRect();
+      const scope = element.querySelector(".airport-composition-scope")!.getBoundingClientRect();
+      const intro = element.querySelector(".airport-composition-head > div > p:not(.airport-composition-scope)")!.getBoundingClientRect();
+      const truth = element.querySelector(".airport-composition-head small")!.getBoundingClientRect();
+      const head = element.querySelector(".airport-composition-head")!.getBoundingClientRect();
       const tabs = element.querySelector("[role=tablist]")!.getBoundingClientRect();
       const panel = element.querySelector("[role=tabpanel]")!.getBoundingClientRect();
       const panelHeading = element.querySelector(".airport-composition-panel-head")!.getBoundingClientRect();
       const list = element.querySelector(".airport-gate-list")!.getBoundingClientRect();
       const row = element.querySelector(".airport-gate-row")!.getBoundingClientRect();
       return {
-        titleToIntro: intro.top - title.bottom,
-        introToTabs: tabs.top - intro.bottom,
+        titleToScope: scope.top - title.bottom,
+        scopeToIntro: intro.top - scope.bottom,
+        introToTruth: truth.top - intro.bottom,
+        headToTabs: tabs.top - head.bottom,
         tabsToPanel: panel.top - tabs.bottom,
         headingToList: list.top - panelHeading.bottom,
         panelWidth: panel.width,
@@ -1051,9 +1056,11 @@ test("the composition module has intentional spacing and compact rows from mobil
         overflow: element.scrollWidth - element.clientWidth,
       };
     });
-    expect(geometry.titleToIntro).toBeGreaterThanOrEqual(0);
-    expect(geometry.titleToIntro).toBeLessThanOrEqual(12);
-    expect(geometry.introToTabs).toBeLessThan(42);
+    expect(geometry.titleToScope).toBeGreaterThanOrEqual(0);
+    expect(geometry.titleToScope).toBeLessThanOrEqual(8);
+    expect(geometry.scopeToIntro).toBeLessThanOrEqual(12);
+    expect(geometry.introToTruth).toBeLessThanOrEqual(8);
+    expect(geometry.headToTabs).toBeLessThanOrEqual(22);
     expect(geometry.tabsToPanel).toBeLessThan(28);
     expect(geometry.headingToList).toBeLessThan(24);
     expect(geometry.panelWidth).toBeLessThanOrEqual(862);
