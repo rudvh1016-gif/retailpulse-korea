@@ -9,7 +9,7 @@ const WHITE = "rgb(255, 255, 255)";
 const locales = ["ko", "en", "zh", "ja"] as const;
 const viewports = [390, 430, 768, 1280, 1440, 1920] as const;
 const routes = ["", "/myeongdong", "/hongdae", "/seongsu", "/airport", "/business", "/forecast", "/about", "/more"] as const;
-const surfaces = ["html", "body", ".app", ".page-shell", ".topbar", ".top-nav", ".bottom-nav", ".airport-context-nav", ".hero", ".signal-group", ".terminal-brief-card", ".airport-today-grid article", ".airport-detail-section", ".business-pro"];
+const surfaces = ["html", "body", ".app", ".page-shell", ".topbar", ".top-nav", ".bottom-nav", ".airport-context-nav", ".hero", ".signal-group", ".terminal-brief-card", ".airport-today-grid article", ".airport-detail-section", ".airport-composition", ".airport-composition-tabs", ".airport-composition-panel", ".business-pro"];
 
 const paintedBackground = async (page: import("@playwright/test").Page, selector: string) => page.evaluate((sel) => {
   const out: string[] = [];
@@ -91,47 +91,64 @@ for (const locale of locales) {
   }
 }
 
-test("production airport page: gate → airline ranking → country roll-up, with provenance", async ({ page }, testInfo) => {
-  await page.setViewportSize({ width: 390, height: 900 });
-  await openRoute(page, "/ko/airport");
-  const gates = page.locator(".airport-gates");
-  const airlines = page.locator(".airport-airlines");
-  await expect(gates).toBeVisible();
-  await expect(airlines).toBeVisible();
-  const gateTop = (await gates.boundingBox())!.y;
-  const airlineTop = (await airlines.boundingBox())!.y;
-  expect(gateTop).toBeLessThan(airlineTop);
-  await expect(airlines).toContainText("항공사별 운항 순위");
-  const summary = await page.evaluate(async () => {
-    const res = await fetch("/api/live/summary");
-    const json = await res.json();
-    const r = json.airport?.airlineRanking;
-    return {
-      serviceDate: json.serviceDateKst,
-      departures: json.airport?.departuresTrackedToday ?? null,
-      all: r?.all ? { total: r.all.totalFlights, airlines: r.all.airlines.length, verified: r.all.airlines.filter((a: { country: string | null }) => a.country).length, unverified: r.all.airlines.filter((a: { country: string | null }) => !a.country).length, countries: r.all.countries.length } : null,
-      terminals: r?.byTerminal ? Object.fromEntries(Object.entries(r.byTerminal).map(([k, v]) => [k, (v as { airlines: unknown[]; countries: unknown[] }).airlines.length + "/" + (v as { countries: unknown[] }).countries.length])) : null,
-      source: r?.countrySource ?? null,
-    };
-  });
-  const summaryJson = JSON.stringify(summary, null, 2);
-  console.log(`AIRLINE_RANKING_SUMMARY ${summaryJson}`);
-  await testInfo.attach("airline-ranking-summary.json", { body: summaryJson, contentType: "application/json" });
-  if (summary.all && summary.all.airlines > 0) {
-    await expect(airlines.locator(".airport-airline-row").first()).toBeVisible();
-    // "항공사 등록 국가별", not "국적별". A country here is where the airline
-    // is registered; a passenger's nationality is a different fact this page
-    // does not have. The heading says so, and this assertion holds it there.
-    await expect(airlines).toContainText("항공사 등록 국가별 운항편");
-    await expect(airlines).not.toContainText("승객 국적별");
-    await expect(airlines).toContainText("OpenFlights");
-    for (const terminal of ["T1", "T2"]) {
-      await page.locator(".terminal-selector button").filter({ hasText: new RegExp(`^${terminal}$`) }).click();
-      await expect(airlines.locator(".airport-airline-row, .airport-empty-line").first()).toBeVisible();
-      await testInfo.attach(`airport-${terminal}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+test("production airport composition is one compact tabbed module at every required viewport", async ({ page }, testInfo) => {
+  const views = [
+    ["gates", "게이트"],
+    ["airlines", "항공사"],
+    ["countries", "등록 국가"],
+  ] as const;
+
+  for (const width of viewports) {
+    await page.setViewportSize({ width, height: 1000 });
+    await openRoute(page, "/ko/airport");
+    await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+    await page.locator(".terminal-selector").getByRole("tab", { name: "T2", exact: true }).click();
+
+    const composition = page.locator(".airport-composition");
+    const tablist = composition.getByRole("tablist", { name: "오늘 출발편 구성 보기" });
+    await expect(tablist.getByRole("tab")).toHaveCount(3);
+    await expect(composition.locator(".airport-composition-scope")).toContainText("제2터미널");
+    expect((await composition.innerText()).match(/제2터미널/g)?.length ?? 0).toBe(1);
+    await expect(composition.locator(".eyebrow, .airport-jump-link")).toHaveCount(0);
+
+    for (const [key, label] of views) {
+      const tab = tablist.getByRole("tab", { name: label, exact: true });
+      await tab.click();
+      await expect(tab).toHaveAttribute("aria-selected", "true");
+      const panel = composition.locator('[role="tabpanel"]');
+      await expect(panel).toBeVisible();
+      expect((await panel.boundingBox())?.width ?? Infinity).toBeLessThanOrEqual(862);
+      await testInfo.attach(`airport-composition-${key}-${width}.png`, {
+        body: await composition.screenshot({ animations: "disabled", caret: "hide" }),
+        contentType: "image/png",
+      });
     }
-  } else {
-    await expect(airlines.locator(".airport-empty-line")).toBeVisible();
+
+    await tablist.getByRole("tab", { name: "등록 국가", exact: true }).click();
+    const countries = composition.locator(".airport-countries");
+    await expect(countries.locator(".airport-country-row, .airport-empty-line").first()).toBeVisible();
+    await expect(countries).toContainText("항공사 등록 국가별 운항편");
+    await expect(countries).not.toContainText("승객 국적별");
+    await expect(countries).toContainText("승객의 국적이 아닙니다");
+    await expect(countries).toContainText("OpenFlights");
+
+    // #130 remains true while the new module changes view.
+    await expect(page.locator(".airport-current-brief")).toContainText("공식 예상 출국객");
+    const bars = page.locator(".airport-timeline-bars");
+    const now = bars.locator("p.now");
+    if (await now.count()) {
+      const inView = await bars.evaluate((element) => {
+        const current = element.querySelector<HTMLElement>("p.now");
+        if (!current) return false;
+        const left = current.offsetLeft - element.scrollLeft;
+        return left >= 0 && left + current.clientWidth <= element.clientWidth + 1;
+      });
+      expect(inView).toBe(true);
+    }
+
+    await testInfo.attach(`airport-full-${width}.png`, {
+      body: await page.screenshot({ fullPage: true, animations: "disabled", caret: "hide" }),
+      contentType: "image/png",
+    });
   }
-  await testInfo.attach("airport-all.png", { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
 });

@@ -260,10 +260,24 @@ test("terminal briefing shows one labelled card per terminal and names the longe
   await expect(page.locator('[data-signal-key="terminal-briefing"]')).toHaveCount(0);
 });
 
-test("airlines are ranked by operating departures with a country or an explicit unverified label", async ({ page }) => {
+test("departure composition is one accessible tab group with gate, airline and registered-country views", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.goto("/ko/airport");
-  const airlines = page.locator(".airport-airlines");
+  const composition = page.locator(".airport-composition");
+  const tabs = composition.getByRole("tablist", { name: "오늘 출발편 구성 보기" });
+  const gateTab = tabs.getByRole("tab", { name: "게이트", exact: true });
+  const airlineTab = tabs.getByRole("tab", { name: "항공사", exact: true });
+  const countryTab = tabs.getByRole("tab", { name: "등록 국가", exact: true });
+  await expect(tabs.getByRole("tab")).toHaveCount(3);
+  await expect(gateTab).toHaveAttribute("aria-selected", "true");
+  await expect(gateTab).toHaveAttribute("tabindex", "0");
+  await expect(airlineTab).toHaveAttribute("tabindex", "-1");
+  await expect(composition.getByRole("tabpanel")).toHaveAttribute("id", "airport-composition-panel-gates");
+  await expect(composition.locator(".airport-airline-row, .airport-country-row")).toHaveCount(0);
+
+  await airlineTab.click();
+  await expect(airlineTab).toHaveAttribute("aria-selected", "true");
+  const airlines = composition.locator(".airport-airlines");
   await expect(airlines).toBeVisible();
   const rows = airlines.locator(".airport-airline-row");
   await expect(rows).toHaveCount(3);
@@ -280,24 +294,42 @@ test("airlines are ranked by operating departures with a country or an explicit 
   await expect(rows.nth(2)).toContainText("RS");
   await expect(rows.nth(2)).toContainText("확인 불가");
   await expect(rows.nth(2)).toContainText("등록 국가 미확인");
-  const countries = airlines.locator(".airport-country-row");
+  await expect(airlines).toContainText("OpenFlights");
+
+  await countryTab.click();
+  await expect(countryTab).toHaveAttribute("aria-selected", "true");
+  const countries = composition.locator(".airport-country-row");
   await expect(countries).toHaveCount(2);
   await expect(countries.nth(0)).toContainText("대한민국");
   await expect(countries.nth(0)).toContainText("2개 항공사");
   await expect(countries.nth(1)).toContainText("등록 국가 미확인");
-  await expect(airlines).toContainText("OpenFlights");
+  await expect(composition.locator(".airport-countries")).toContainText("OpenFlights");
+  await expect(composition.locator(".airport-countries")).toContainText("승객의 국적이 아닙니다");
+  await expect(composition.locator(".airport-jump-link")).toHaveCount(0);
+  await expect(composition.locator(".eyebrow")).toHaveCount(0);
+
+  // Arrow keys wrap through the views and move both focus and selection.
+  await countryTab.press("ArrowRight");
+  await expect(gateTab).toBeFocused();
+  await expect(gateTab).toHaveAttribute("aria-selected", "true");
+
   // English readers get the reference-table name and a localized region name.
   await page.goto("/en/airport");
+  await page.getByRole("tab", { name: "Airlines", exact: true }).click();
   const keRow = page.locator(".airport-airline-row").filter({ hasText: "KE" });
   await expect(keRow).toContainText("Korean Air");
   await expect(keRow).toContainText("South Korea");
   // Terminal scope narrows the ranking to that terminal's own operators.
   await page.goto("/ko/airport");
   // Wait for the hydrated all-terminal list before clicking, so the click reaches React.
-  await expect(airlines.locator(".airport-airline-row")).toHaveCount(3);
+  await page.getByRole("tab", { name: "항공사", exact: true }).click();
+  await expect(page.locator(".airport-airline-row")).toHaveCount(3);
   await page.locator(".terminal-selector button").filter({ hasText: /^T1$/ }).click();
-  await expect(airlines.locator(".airport-airline-row")).toHaveCount(1);
-  await expect(airlines.locator(".airport-airline-row").first()).toContainText("Asiana Airlines");
+  await expect(page.locator(".airport-airline-row")).toHaveCount(1);
+  await expect(page.locator(".airport-airline-row").first()).toContainText("Asiana Airlines");
+  await expect(composition.locator(".airport-composition-scope")).toContainText("제1터미널");
+  const terminalRepeats = (await composition.innerText()).match(/제1터미널/g)?.length ?? 0;
+  expect(terminalRepeats).toBe(1);
 });
 
 test("a day with no stored departures says so instead of blaming gate coverage", async ({ page }) => {
@@ -319,7 +351,9 @@ test("a day with no stored departures says so instead of blaming gate coverage",
   await page.route("**/api/live/summary*", routeSummary(empty));
   await page.goto("/ko/airport");
   await expect(page.locator(".airport-gates .airport-empty-line")).toContainText("아직 수집되지 않았습니다");
+  await page.getByRole("tab", { name: "항공사", exact: true }).click();
   await expect(page.locator(".airport-airlines .airport-empty-line")).toContainText("아직 수집되지 않았습니다");
+  await page.getByRole("tab", { name: "게이트", exact: true }).click();
   await expect(page.locator(".airport-gates")).not.toContainText("게이트 정보 범위가 충분하지 않아");
 });
 
@@ -339,15 +373,12 @@ test("the airport page reads summary -> next -> composition -> observation table
   const grid = await top(".airport-today-grid");
   const forecast = await top(".airport-forecast");
   const composition = await top(".airport-composition");
-  const gates = await top(".airport-gates");
   const checkpoints = await top(".airport-checkpoints");
   expect(brief).toBeLessThan(grid);
   expect(grid).toBeLessThan(forecast);
   expect(forecast).toBeLessThan(composition);
-  // 게이트와 항공사는 최상위로 흩어지지 않고 구성 묶음 안에 있다.
-  expect(composition).toBeLessThanOrEqual(gates);
-  // 표는 내려갔을 뿐 사라지지 않았다.
-  expect(gates).toBeLessThan(checkpoints);
+  // 세 구성 보기는 하나의 탭 묶음 안에 있고, 표는 그 뒤에 남는다.
+  expect(composition).toBeLessThan(checkpoints);
   await expect(page.locator(".airport-checkpoints")).toContainText("대기시간");
   await expect(page.getByRole("heading", { name: "공식 예상 출국객 흐름" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "오늘 출발편 구성" })).toBeVisible();
@@ -986,34 +1017,51 @@ test("the tourism desk is reachable from Myeongdong and only from Myeongdong", a
 
 
 /**
- * 오늘 출발편 구성이 제목만 있고 비어 보이면 안 된다.
- *
- * 소유자 보고 2026-09-04: "오늘 출발편구성이 안보여". 제목 아래로 화면
- * 한 뭉텅이만큼 흰 여백이 이어져서 로딩에 실패한 것처럼 보였다. 자료는
- * 있었고 여백이 문제였다.
+ * 한 개의 margin 숫자만 재는 대신, 제목부터 실제 행까지의 간격과 넓은
+ * 화면의 행 폭을 함께 잰다. 그래야 8px 뒤에 96px짜리 자식 헤드가 다시
+ * 등장하는 이전 회귀를 잡을 수 있다.
  */
-test("the composition group shows its content directly under its heading", async ({ page }) => {
+test("the composition module has intentional spacing and compact rows from mobile through wide desktop", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ko/airport");
+  for (const width of [390, 430, 768, 1280, 1440, 1920]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/ko/airport");
 
-  const composition = page.locator(".airport-composition");
-  await expect(composition).toBeVisible();
-  await expect(composition.getByRole("heading", { name: "오늘 출발편 구성" })).toBeVisible();
+    const composition = page.locator(".airport-composition");
+    await expect(composition).toBeVisible();
+    await expect(composition.getByRole("heading", { name: "오늘 출발편 구성" })).toBeVisible();
+    await expect(composition.locator(".airport-gate-row").first()).toBeVisible();
 
-  // 게이트 목록이 실제로 그려진다.
-  const gateRows = composition.locator(".airport-gate-row");
-  await expect(gateRows.first()).toBeVisible();
-
-  // 묶음 머리말이 끝나는 곳과 첫 섹션이 시작하는 곳 사이에 빈 띠가 없다.
-  // 예전에는 머리말이 자기 밑줄을 긋고 닫은 뒤 안쪽 섹션이 마진과 패딩을
-  // 또 얹어서, 제목 다음에 아무것도 없는 구간이 이어졌다.
-  const headBox = await composition.locator("> .airport-detail-head").boundingBox();
-  const firstSectionBox = await composition.locator("> .airport-detail-section").first().boundingBox();
-  if (!headBox || !firstSectionBox) throw new Error("composition head or first section is not rendered");
-  const emptyBand = firstSectionBox.y - (headBox.y + headBox.height);
-  expect(emptyBand).toBeGreaterThanOrEqual(0);
-  expect(emptyBand).toBeLessThan(24);
+    const geometry = await composition.evaluate((element) => {
+      const title = element.querySelector("h3")!.getBoundingClientRect();
+      const intro = element.querySelector(".airport-composition-head > div > p")!.getBoundingClientRect();
+      const tabs = element.querySelector("[role=tablist]")!.getBoundingClientRect();
+      const panel = element.querySelector("[role=tabpanel]")!.getBoundingClientRect();
+      const panelHeading = element.querySelector(".airport-composition-panel-head")!.getBoundingClientRect();
+      const list = element.querySelector(".airport-gate-list")!.getBoundingClientRect();
+      const row = element.querySelector(".airport-gate-row")!.getBoundingClientRect();
+      return {
+        titleToIntro: intro.top - title.bottom,
+        introToTabs: tabs.top - intro.bottom,
+        tabsToPanel: panel.top - tabs.bottom,
+        headingToList: list.top - panelHeading.bottom,
+        panelWidth: panel.width,
+        rowWidth: row.width,
+        minHeight: getComputedStyle(element).minHeight,
+        overflow: element.scrollWidth - element.clientWidth,
+      };
+    });
+    expect(geometry.titleToIntro).toBeGreaterThanOrEqual(0);
+    expect(geometry.titleToIntro).toBeLessThanOrEqual(12);
+    expect(geometry.introToTabs).toBeLessThan(42);
+    expect(geometry.tabsToPanel).toBeLessThan(28);
+    expect(geometry.headingToList).toBeLessThan(24);
+    expect(geometry.panelWidth).toBeLessThanOrEqual(862);
+    expect(geometry.rowWidth).toBeLessThanOrEqual(862);
+    expect(geometry.minHeight).toBe("0px");
+    expect(geometry.overflow).toBeLessThanOrEqual(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  }
 });
 
 /**
