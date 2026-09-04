@@ -7,8 +7,16 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin),
   title: "서울 외국인 쇼핑수요 신호 | KORETAIL",
   description: "명동·홍대·성수의 오늘과 내일 외국인 쇼핑수요 신호, 매장 오픈 브리프, 인천공항 T1·T2 흐름을 KORETAIL에서 확인하세요.",
-  icons: { icon: [{ url: "/favicon.svg", type: "image/svg+xml" }], shortcut: "/favicon.svg" },
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }, { url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+    shortcut: "/favicon.svg",
+    // iOS ignores the manifest icons when adding to the home screen and
+    // reads this one instead; without it the icon is a blurry screenshot.
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
   manifest: "/manifest.webmanifest",
+  // Opens full screen from the iPhone home screen, under the product name.
+  appleWebApp: { capable: true, title: "KORETAIL", statusBarStyle: "default" },
   robots: isStagingDeployment
     ? { index: false, follow: false, noarchive: true, nocache: true }
     : { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } },
