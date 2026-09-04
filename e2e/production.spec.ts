@@ -930,3 +930,51 @@ test("the facility directory browses official stores and never claims a store is
   await expect(page.locator(".facility-card").first()).toContainText("Shilla Duty Free");
   await expect(page.locator(".facility-card").first()).toContainText("T1 3F airside near Gate 27");
 });
+
+/**
+ * 관광안내 데스크 (pilot).
+ *
+ * The screen a Myeongdong guide reads before a shift. The things worth
+ * asserting are not the numbers — they change hourly — but the boundaries:
+ * that it says it is a pilot, that every signal states what it is not, and
+ * that no line turns a living-population estimate into a tourist count.
+ */
+test("the tourism desk marks itself a pilot and never calls a signal a tourist count", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ko/tourism-desk");
+
+  const desk = page.locator(".tourism-desk");
+  await expect(desk).toBeVisible();
+  await expect(desk.getByRole("heading", { name: "관광안내 데스크" })).toBeVisible();
+  await expect(desk).toContainText("시험 운영");
+  // No implied relationship with a tourism body or the airport operator.
+  await expect(desk).toContainText("특정 기관과의 제휴를 뜻하지 않습니다");
+
+  // The boundary is on screen before any number is read.
+  await expect(desk).toContainText("관광객 수가 아닙니다");
+  await expect(desk).toContainText("명동 방문객이 아닙니다");
+
+  // Every briefing line carries its own basis, not just the page header.
+  // The lines only exist after the summary arrives, so wait for the first
+  // one rather than counting a shell that has not hydrated yet.
+  const lines = desk.locator(".desk-line");
+  await expect(lines.first()).toBeVisible();
+  const count = await lines.count();
+  expect(count).toBeGreaterThan(0);
+  for (let index = 0; index < count; index += 1) {
+    await expect(lines.nth(index).locator("small")).not.toBeEmpty();
+  }
+});
+
+test("the tourism desk is reachable from Myeongdong and only from Myeongdong", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  await page.goto("/ko/myeongdong");
+  await expect(page.locator(".desk-entry")).toBeVisible();
+
+  // Hongdae has no tourism desk, so it must not promise one.
+  await page.goto("/ko/hongdae");
+  await expect(page.locator(".desk-entry")).toHaveCount(0);
+});

@@ -990,6 +990,36 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
  * above it, not colour.
  */
 /*
+ * 관광안내 데스크 (pilot).
+ *
+ * A reading screen, not a dashboard: one column, generous line height, and
+ * every fact followed by the sentence saying what it is not. No tiles, no
+ * colour coding — a guide reads this in half a minute and then talks to a
+ * person, so nothing here should need decoding first.
+ */
+.tourism-desk { padding-bottom: 8px; }
+.desk-block { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); }
+.desk-block h3 { margin: 0 0 12px; font-size: 14px; font-weight: var(--weight-strong); letter-spacing: -.01em; }
+.desk-lines { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 14px; }
+.desk-line p { margin: 0; color: var(--ink); font-size: 14px; line-height: 1.5; }
+/* The boundary sentence is quieter than the fact, but never hidden. */
+.desk-line small { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.desk-events { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 16px; }
+.desk-events li { padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.desk-events li:last-child { padding-bottom: 0; border-bottom: 0; }
+.desk-event-head { margin: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.desk-event-head strong { font-size: 14px; font-weight: var(--weight-strong); }
+.desk-event-head span { flex: none; color: var(--muted); font-size: 11px; }
+.desk-events small { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.desk-events p { margin: 6px 0 0; }
+.desk-events a { color: var(--blue); font-size: 11px; }
+
+/* The pilot's own way in, from the area it covers. */
+.desk-entry { margin: 18px 0 0; padding-top: 14px; border-top: 1px solid var(--line); }
+.desk-entry a { color: var(--blue); font-size: 12px; font-weight: var(--weight-strong); }
+.desk-entry small { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+
+/*
  * The reference period of a source that publishes on a cycle.
  *
  * Its own line, under the number. "2026년 7월" alone reads as a stale

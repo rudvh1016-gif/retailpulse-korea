@@ -28,7 +28,7 @@ export const siteOrigin = normalizeOrigin(configuredOrigin);
 export const socialImage = { url: "/og-image.png", width: 1200, height: 630, alt: "KORETAIL — Retail Demand Signals for Korea" } as const;
 export const seoLocales = ["ko", "en", "zh", "ja"] as const;
 export type SeoLocale = typeof seoLocales[number];
-export const seoSlugs = ["myeongdong", "hongdae", "seongsu", "airport", "forecast", "business", "about", "more"] as const;
+export const seoSlugs = ["myeongdong", "hongdae", "seongsu", "airport", "forecast", "business", "tourism-desk", "about", "more"] as const;
 export type SeoSlug = typeof seoSlugs[number];
 
 const names = {
@@ -58,6 +58,7 @@ export function pageTitle(locale: SeoLocale, slug?: SeoSlug) {
     airport: { ko: "인천공항 T1·T2 출국객·항공편·혼잡도 | KORETAIL", en: "Incheon Airport T1·T2 Passengers & Flights | KORETAIL", zh: "仁川机场T1·T2出境旅客与航班 | KORETAIL", ja: "仁川空港T1・T2 出国者・フライト・混雑 | KORETAIL" },
     forecast: { ko: "서울·인천공항 공식 기록과 숫자 설명 | KORETAIL", en: "Seoul & Incheon Official Records Explained | KORETAIL", zh: "首尔与仁川机场官方记录与数据说明 | KORETAIL", ja: "ソウル・仁川空港の公式記録と数値の説明 | KORETAIL" },
     business: { ko: "서울 매장 운영 브리핑과 점검 목록 | KORETAIL", en: "Seoul Store Briefing & Checklist | KORETAIL", zh: "首尔门店运营简报与检查清单 | KORETAIL", ja: "ソウル店舗の運営ブリーフとチェックリスト | KORETAIL" },
+    "tourism-desk": { ko: "명동 관광안내 데스크 브리핑 (시험 운영) | KORETAIL", en: "Myeongdong Tourism Desk Briefing (Pilot) | KORETAIL", zh: "明洞旅游咨询台简报（试运行）| KORETAIL", ja: "明洞 観光案内デスク ブリーフィング（試験運用）| KORETAIL" },
     about: { ko: "KORETAIL 소개 — 무엇을 어떻게 보여주나요", en: "About KORETAIL — What It Shows and How", zh: "关于 KORETAIL — 展示什么、如何呈现", ja: "KORETAIL について — 何をどう表示するか" },
     more: { ko: "KORETAIL 데이터 출처·방법론", en: "KORETAIL Data Sources & Methodology", zh: "KORETAIL 数据来源与方法", ja: "KORETAIL データ出典・方法論" },
   };
@@ -84,6 +85,7 @@ export function pageDescription(locale: SeoLocale, slug?: SeoSlug) {
     airport: { ko: "인천공항 전체·T1·T2의 공식 예상 출국객과 피크, 실제 출발 운항과 집중 게이트, 현재 출국장 대기, 월별 공식 실적을 확인하세요.", en: "Official expected departures and peak, physical departing flights and busiest gates, current departure-hall waits and official monthly history for all terminals, T1 and T2.", zh: "查看仁川机场整体、T1、T2的官方预计出境人数与高峰、实际出发航班与集中登机口、当前出境区等候，以及月度官方实绩。", ja: "仁川空港全体・T1・T2の公式予想出国者とピーク、実出発便と集中ゲート、現在の出国場待ち、月次公式実績を確認できます。" },
     forecast: { ko: "각 지표가 무엇을 뜻하는지, 높으면 어떤 상황인지, 어떤 공식 자료에서 왔는지를 설명과 함께 확인하세요. T1·T2 비중과 지역 외국인 생활인구 흐름을 포함합니다.", en: "Every figure with what it means, what a high value indicates and which official record it came from — including T1/T2 share and area foreign-population history.", zh: "每个指标都附含义、数值偏高时的情况与官方出处说明，包含T1/T2占比与各地区外国人生活人口趋势。", ja: "各指標の意味・高いときの状況・出典を説明付きで確認できます。T1・T2の比率とエリア別外国人生活人口の推移を含みます。" },
     business: { ko: "지금의 공식 혼잡·예측·날씨를 매장 준비 관점으로 읽고, 뷰티·패션·식음료 등 6개 업종별 점검 목록을 확인하세요.", en: "Read the current official crowding, forecast and weather for store preparation, with checklists for six retail business types.", zh: "以门店准备视角解读当前官方拥挤、预测与天气，并查看美妆、时尚、餐饮等6个业态的检查清单。", ja: "現在の公式混雑・予測・天気を店舗準備の視点で読み、ビューティー・ファッション・飲食など6業種のチェックリストを確認できます。" },
+    "tourism-desk": { ko: "명동 관광안내 근무 전에 확인할 것들 — 지금 혼잡, 날씨 안내, 오늘 인근 공식 행사, 대표역 승하차, 인천공항 입국 참고. 각 줄이 무엇이 아닌지도 함께 적었습니다. 시험 운영입니다.", en: "What to check before a Myeongdong information shift — current crowding, weather guidance, today's official nearby events, station boardings and an Incheon arrivals reference, each with what it is not. A pilot screen.", zh: "明洞旅游咨询工作前的确认清单——当前拥挤、天气提示、今日附近官方活动、代表车站上下车、仁川机场入境参考，并标明每项的非含义。试运行页面。", ja: "明洞で観光案内の勤務前に確認する項目 — 現在の混雑、天気の案内、本日の周辺公式イベント、代表駅の乗降、仁川空港の入国参考。各項目が何ではないかも併記。試験運用です。" },
     about: { ko: "KORETAIL이 무엇인지, 누구를 위한 서비스인지, 어떤 공식 데이터를 쓰는지, 실시간·예상·과거 데이터가 어떻게 다른지 설명합니다.", en: "What KORETAIL is, who it is for, which official data it uses, and how live, forecast and past data differ.", zh: "介绍 KORETAIL 是什么、面向哪些人、使用哪些官方数据，以及实时、预测与历史数据的区别。", ja: "KORETAIL とは何か、誰のためのサービスか、どの公式データを使うか、リアルタイム・予測・過去データの違いを説明します。" },
     more: { ko: "KORETAIL의 데이터 출처, 무료·키 필요 여부, Demo·공식 이력 구분, 예측 방법론과 데이터 상태를 확인하세요.", en: "Review KORETAIL data sources, access conditions, Demo/official-history labels, methodology and data health.", zh: "查看KORETAIL数据来源、接入条件、演示与官方历史区分、方法和数据状态。", ja: "KORETAILのデータ出典、接続条件、デモ・公式履歴の区別、方法論、データ状況を確認できます。" },
   };

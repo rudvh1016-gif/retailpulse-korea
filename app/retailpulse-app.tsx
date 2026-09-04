@@ -27,10 +27,11 @@ import LiveSignals, {
   HomeTodayBrief,
   KstTodayChip,
 } from "./live-signals";
+import { TourismDeskView } from "./tourism-desk";
 
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
 
-type View = "today" | "airport" | "business" | "forecast" | "about" | "more";
+type View = "today" | "airport" | "business" | "forecast" | "tourism-desk" | "about" | "more";
 type AirportSection = "now" | "flights" | "stores" | "mystore" | "history";
 type AreaId = "myeongdong" | "hongdae" | "seongsu";
 
@@ -55,28 +56,28 @@ const copy = {
   ko: {
     hero: "지금 서울은\n어떻게 움직이고 있나요?",
     sub: "공식 데이터만 모아 명동·홍대·성수와 인천공항의 지금과 다음을 보여줍니다.",
-    today: "서울", airport: "공항", business: "매장", forecast: "기록", about: "소개", more: "더보기",
+    today: "서울", airport: "공항", business: "매장", forecast: "기록", "tourism-desk": "관광안내", about: "소개", more: "더보기",
     kst: "모든 시간은 한국 표준시(KST)입니다.",
     truth: "표시되는 값은 모두 공식 기관이 발표한 데이터이며, 확인되지 않은 값은 만들어 채우지 않습니다.",
   },
   en: {
     hero: "How is Seoul\nmoving right now?",
     sub: "Official data only, showing what Myeongdong, Hongdae, Seongsu and Incheon Airport look like now and next.",
-    today: "Seoul", airport: "Airport", business: "Business", forecast: "Records", about: "About", more: "More",
+    today: "Seoul", airport: "Airport", business: "Business", forecast: "Records", "tourism-desk": "Tourism", about: "About", more: "More",
     kst: "All times are Korea Standard Time (KST).",
     truth: "Every value shown is published by an official body. Nothing unverified is filled in.",
   },
   zh: {
     hero: "此刻的首尔\n正在如何流动？",
     sub: "仅汇总官方数据，呈现明洞、弘大、圣水与仁川机场的当前与接下来。",
-    today: "首尔", airport: "机场", business: "门店", forecast: "记录", about: "关于", more: "更多",
+    today: "首尔", airport: "机场", business: "门店", forecast: "记录", "tourism-desk": "旅游咨询", about: "关于", more: "更多",
     kst: "所有时间均为韩国标准时间（KST）。",
     truth: "所显示的数值均由官方机构发布，未经确认的数值不会被填充。",
   },
   ja: {
     hero: "いまソウルは\nどう動いていますか？",
     sub: "公式データだけを集め、明洞・弘大・聖水と仁川空港の現在とこれからを表示します。",
-    today: "ソウル", airport: "空港", business: "店舗", forecast: "記録", about: "紹介", more: "その他",
+    today: "ソウル", airport: "空港", business: "店舗", forecast: "記録", "tourism-desk": "観光案内", about: "紹介", more: "その他",
     kst: "すべての時刻は韓国標準時（KST）です。",
     truth: "表示される値はすべて公式機関が発表したものです。確認できない値は作って埋めません。",
   },
@@ -90,6 +91,7 @@ function Icon({ name }: { name: View }) {
     business: "M4 20V9l8-5 8 5v11H4zm6 0v-6h4v6",
     forecast: "M3 17l5-6 4 4 4-7 5 5",
     about: "M12 3a9 9 0 100 18 9 9 0 000-18zm0 5v1m0 3v5",
+    "tourism-desk": "M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7z",
     more: "M5 12h.01M12 12h.01M19 12h.01",
   };
   return <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={paths[name]} /></svg>;
@@ -418,6 +420,22 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             <DateScopeNote lang={lang} date={serviceDate} />
             {initialScope === "home" && <HomeTodayBrief lang={lang} selected={selected} onSelect={selectArea} date={serviceDate} />}
             <LiveSignals lang={lang} area={selected} date={serviceDate} />
+            {/*
+              * The pilot's way in, offered only where it applies. Myeongdong
+              * is the one area it covers, so showing it on Hongdae or
+              * Seongsu would promise a screen that does not exist for them.
+              */}
+            {selected === "myeongdong" && <p className="desk-entry">
+              <a href={routeFor(lang, "tourism-desk", selected)} onClick={(event) => { event.preventDefault(); navigate("tourism-desk"); }}>
+                {localText(lang, { ko: "관광안내 데스크 브리핑 보기 →", en: "Open the tourism desk briefing →", zh: "查看旅游咨询台简报 →", ja: "観光案内デスクのブリーフィングを見る →" })}
+              </a>
+              <small>{localText(lang, {
+                ko: "명동 관광안내 근무자를 위한 시험 운영 화면입니다",
+                en: "A pilot screen for Myeongdong tourism-information staff",
+                zh: "面向明洞旅游咨询工作人员的试运行页面",
+                ja: "明洞の観光案内担当者向けの試験運用画面です",
+              })}</small>
+            </p>}
             {betaSignupEnabled && <BetaSignup lang={lang} />}
           </>
         )}
@@ -435,6 +453,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         )}
         {view === "business" && <BusinessView lang={lang} selected={selected} setSelected={selectArea} industry={industry} setIndustry={setIndustry} date={serviceDate} setDate={setServiceDate} setProOpen={setProOpen} />}
         {view === "forecast" && <InsightsView lang={lang} selected={selected} setSelected={selectArea} date={serviceDate} />}
+        {view === "tourism-desk" && <TourismDeskView lang={lang} />}
         {view === "about" && <AboutView lang={lang} onAirport={() => openAirport("now")} onSeoul={() => navigate("today")} />}
         {view === "more" && <MoreView lang={lang} setLang={changeLanguage} selected={selected} terminal={terminal} industry={industry} onAbout={() => navigate("about")} />}
 
@@ -446,6 +465,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             <a href={routeFor(lang, "airport", selected)}>{t.airport}</a>
             <a href={routeFor(lang, "business", selected)}>{t.business}</a>
             <a href={routeFor(lang, "forecast", selected)}>{t.forecast}</a>
+            <a href={routeFor(lang, "tourism-desk", selected)}>{localText(lang, { ko: "관광안내 데스크", en: "Tourism desk", zh: "旅游咨询台", ja: "観光案内デスク" })}</a>
             <a href={routeFor(lang, "about", selected)}>{t.about}</a>
           </nav>
           <span>KORETAIL · RETAIL DEMAND SIGNALS FOR KOREA</span>
