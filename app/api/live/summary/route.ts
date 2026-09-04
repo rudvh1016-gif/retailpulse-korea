@@ -33,6 +33,7 @@ import { prepareEventsForPresentation } from "../../../../lib/event-presentation
 import { summarizeAirlineRanking, type AirlineRankingFlightRow } from "../../../../lib/airline-ranking";
 import { AIRLINE_COUNTRY_SOURCE, lookupAirline } from "../../../../lib/airline-country";
 import { summaryCacheControl, SUMMARY_NO_STORE } from "../../../../lib/summary-cache-policy";
+import { readGroups, type ReadClient } from "../../../../lib/d1-read-batch";
 import {
   isValidKstDay,
   kstDayBounds,
@@ -151,34 +152,62 @@ export async function GET(request: Request) {
   const { startAt: dayStartAt } = kstDayBounds(serviceDate);
 
   try {
-    const db = await getDb();
-    const client = db.$client;
+    const client = await getDb().then((db) => db.$client);
+    return await summarizeLiveSummary(client, {
+      generatedAt, now, kstNowIso, kstToday, kstHourStart, serviceDate, dayRelation, dayStartAt,
+    });
+  } catch {
+    return degradedSummary({ generatedAt, kstToday, serviceDate, dayRelation });
+  }
+}
 
-    const sources = await safeAll<Row>(async () => (await client.prepare(
+/** Everything a summary is computed from, resolved once by GET. */
+export interface SummaryClock {
+  generatedAt: string;
+  now: number;
+  kstNowIso: string;
+  kstToday: string;
+  kstHourStart: string;
+  serviceDate: string;
+  dayRelation: ReturnType<typeof relateKstDay>;
+  dayStartAt: string;
+}
+
+/** The slice of the D1 binding the summary reads through; tests pass a double. */
+export type SummaryClient = ReadClient & { prepare(sql: string): D1PreparedStatement };
+
+/**
+ * Builds the summary from prepared D1 statements. Exported so a test can hand
+ * in a counting double and assert the read path stays one round trip.
+ */
+export async function summarizeLiveSummary(client: SummaryClient, clock: SummaryClock): Promise<Response> {
+  const { generatedAt, now, kstNowIso, kstToday, kstHourStart, serviceDate, dayRelation, dayStartAt } = clock;
+  const statementGroups = {
+    sources: [client.prepare(
       `SELECT source_id AS sourceId, status, last_event_at AS eventAt,
         last_retrieved_at AS retrievedAt, detail FROM source_health ORDER BY source_id`,
-    ).all<Row>()).results ?? []);
+    )],
 
-    const realtimeRows = await safeAll<Row>(async () => (await client.prepare(
+    realtimeRows: [client.prepare(
       latestPerKey(AREAS, () => `SELECT area, congestion_level AS congestionLevel, congestion_label AS congestionLabel,
         population_min AS populationMin, population_max AS populationMax,
         observed_at AS observedAt, retrieved_at AS retrievedAt
       FROM seoul_realtime_area WHERE area = ? ORDER BY observed_at DESC LIMIT 1`),
-    ).bind(...AREAS).all<Row>()).results ?? []);
+    ).bind(...AREAS)],
 
-    const commercialRows = await safeAll<Row>(async () => (await client.prepare(
+    commercialRows: [client.prepare(
       latestPerKey(AREAS, () => `SELECT area, commercial_level AS commercialLevel,
         payment_count AS paymentCount, payment_amount_min AS paymentAmountMin,
         payment_amount_max AS paymentAmountMax, observed_at AS observedAt,
         retrieved_at AS retrievedAt, quality_status AS qualityStatus
       FROM seoul_realtime_commercial WHERE area = ? ORDER BY observed_at DESC LIMIT 1`),
-    ).bind(...AREAS).all<Row>()).results ?? []);
+    ).bind(...AREAS)],
 
     // Seoul publishes a rolling 12-hour forecast, so from mid-evening onward
     // every band it publishes falls on the next calendar day. The horizon is
     // therefore taken as-is and each band's own day is reported, instead of
     // clipping to "today" and reporting a live forecast as unavailable.
-    const realtimeForecastRows = await safeAll<Row>(async () => (await client.prepare(
+    realtimeForecastRows: [client.prepare(
       latestPerKey(AREAS, () => `SELECT area, issued_at AS issuedAt, target_at AS targetAt, congestion_level AS congestionLevel,
         congestion_label AS congestionLabel, population_min AS populationMin, population_max AS populationMax,
         retrieved_at AS retrievedAt
@@ -186,9 +215,9 @@ export async function GET(request: Request) {
       WHERE area = ? AND issued_at = (SELECT MAX(issued_at) FROM seoul_realtime_forecast WHERE area = ?)
         AND target_at >= ?
       ORDER BY target_at LIMIT 40`),
-    ).bind(...AREAS.flatMap((area) => [area, area, kstHourStart])).all<Row>()).results ?? []);
+    ).bind(...AREAS.flatMap((area) => [area, area, kstHourStart]))],
 
-    const weatherRows = await safeAll<Row>(async () => (await client.prepare(
+    weatherRows: [client.prepare(
       latestPerKey(AREAS, () => `SELECT area, issued_at AS issuedAt, target_at AS targetAt,
         precipitation_probability AS precipitationProbability,
         temperature_tenth_c AS temperatureTenthC, condition_code AS conditionCode,
@@ -205,9 +234,9 @@ export async function GET(request: Request) {
       WHERE area = ? AND issued_at = (SELECT MAX(issued_at) FROM weather_forecast WHERE area = ?)
         AND target_at >= ?
       ORDER BY target_at LIMIT 60`),
-    ).bind(...AREAS.flatMap((area) => [area, area, kstHourStart])).all<Row>()).results ?? []);
+    ).bind(...AREAS.flatMap((area) => [area, area, kstHourStart]))],
 
-    const eventRows = await safeAll<Row>(async () => (await client.prepare(
+    eventRows: [client.prepare(
       `SELECT area, content_id AS contentId, title, event_start AS eventStart,
         event_end AS eventEnd, distance_m AS distanceM, retrieved_at AS retrievedAt,
         category_name AS categoryName, address, address_detail AS addressDetail,
@@ -215,18 +244,18 @@ export async function GET(request: Request) {
       FROM tourism_events
       WHERE (event_end >= ? OR (event_end IS NULL AND event_start >= ?))
       ORDER BY event_start LIMIT 30`,
-    ).bind(serviceDate, serviceDate).all<Row>()).results ?? []);
+    ).bind(serviceDate, serviceDate)],
 
-    const salesRows = await safeAll<Row>(async () => (await client.prepare(
+    salesRows: [client.prepare(
       latestPerKey(AREAS, () => `SELECT area, quarter_code AS quarterCode, trade_area_code AS tradeAreaCode,
         trade_area_name AS tradeAreaName, industry_name AS industryName,
         sales_amount AS salesAmount, retrieved_at AS retrievedAt
       FROM seoul_estimated_sales
       WHERE area = ? AND quarter_code = (SELECT MAX(quarter_code) FROM seoul_estimated_sales WHERE area = ?)
       ORDER BY sales_amount DESC`),
-    ).bind(...AREAS.flatMap((area) => [area, area])).all<Row>()).results ?? []);
+    ).bind(...AREAS.flatMap((area) => [area, area]))],
 
-    const storeDynamicsRows = await safeAll<Row>(async () => (await client.prepare(
+    storeDynamicsRows: [client.prepare(
       latestPerKey(AREAS, () => `SELECT source_id AS sourceId, dataset_id AS datasetId,
         record_origin AS recordOrigin, area,
         quarter_code AS quarterCode, trade_area_code AS tradeAreaCode,
@@ -246,9 +275,9 @@ export async function GET(request: Request) {
       ORDER BY quarter_code DESC LIMIT 1`),
     ).bind(...AREAS.flatMap((area) => [
       area, STORE_DYNAMICS_SOURCE_ID, STORE_DYNAMICS_MAPPING_VERSION,
-    ])).all<Row>()).results ?? []);
+    ]))],
 
-    const foreignPresenceRows = await safeAll<Row>(async () => (await client.prepare(
+    foreignPresenceRows: [client.prepare(
       `SELECT area, product_version AS productVersion, record_origin AS freshness, value, unit,
         reference_at AS referenceAt, retrieved_at AS retrievedAt,
         quality_status AS qualityStatus
@@ -268,9 +297,9 @@ export async function GET(request: Request) {
       SEOUL_FOREIGN_SOURCE_ID,
       SEOUL_FOREIGN_PRODUCT_VERSION,
       SEOUL_FOREIGN_MAPPING_VERSION,
-    ).all<Row>()).results ?? []);
+    )],
 
-    const foreignPurposeRows = await safeAll<Row>(async () => (await client.prepare(
+    foreignPurposeRows: [client.prepare(
       latestPerKey(AREAS, () => `SELECT area, purpose, movement_value AS movementValue,
         reference_date AS referenceDate, retrieved_at AS retrievedAt,
         dataset_id AS datasetId, mapping_version AS mappingVersion,
@@ -287,9 +316,9 @@ export async function GET(request: Request) {
     ).bind(...AREAS.flatMap((area) => [
       area, FOREIGN_PURPOSE_SOURCE_ID, FOREIGN_PURPOSE_MAPPING_VERSION,
       area, FOREIGN_PURPOSE_SOURCE_ID, FOREIGN_PURPOSE_MAPPING_VERSION,
-    ])).all<Row>()).results ?? []);
+    ]))],
 
-    const subwayRows = await safeAll<Row>(async () => (await client.prepare(
+    subwayRows: [client.prepare(
       latestPerKey(AREAS, () => `SELECT area, reference_date AS referenceDate,
         SUM(boarding_count) AS boardingCount, SUM(alighting_count) AS alightingCount,
         COUNT(*) AS selectedStationCount,
@@ -308,19 +337,19 @@ export async function GET(request: Request) {
     ).bind(...AREAS.flatMap((area) => [
       area, SEOUL_SUBWAY_SOURCE_ID, SEOUL_SUBWAY_MAPPING_VERSION,
       area, SEOUL_SUBWAY_SOURCE_ID, SEOUL_SUBWAY_MAPPING_VERSION,
-    ])).all<Row>()).results ?? []);
+    ]))],
 
-    const congestionRows = await safeAll<Row>(async () => (await client.prepare(
+    congestionRows: [client.prepare(
       latestPerKey(CONGESTION_TERMINALS, () => `SELECT terminal, zone, wait_time_minutes AS waitTimeMinutes, wait_time_raw AS waitTimeRaw,
         waiting_count AS waitingCount, observed_at AS observedAt, retrieved_at AS retrievedAt
       FROM airport_congestion
       WHERE terminal = ? AND observed_at = (SELECT MAX(observed_at) FROM airport_congestion WHERE terminal = ?)
       ORDER BY zone LIMIT 12`),
-    ).bind(...CONGESTION_TERMINALS.flatMap((terminal) => [terminal, terminal])).all<Row>()).results ?? []);
+    ).bind(...CONGESTION_TERMINALS.flatMap((terminal) => [terminal, terminal]))],
 
     // A5 official aggregate rows for both directions. Component rows never
     // enter a total or peak calculation, preventing provider-total double count.
-    const passengerForecastRows = await safeAll<Row>(async () => (await client.prepare(
+    passengerForecastRows: [client.prepare(
       `SELECT terminal, direction, is_aggregate AS isAggregate,
         target_date AS targetDate, time_band_raw AS timeBandRaw,
         target_start_at AS targetStartAt, target_end_at AS targetEndAt,
@@ -328,7 +357,7 @@ export async function GET(request: Request) {
       FROM airport_passenger_forecast f
       WHERE f.direction IN ('departure', 'arrival') AND f.is_aggregate = 1 AND f.target_date = ?
       ORDER BY direction, target_start_at, terminal LIMIT 96`,
-    ).bind(serviceDate).all<Row>()).results ?? []);
+    ).bind(serviceDate)],
 
     // One read of the day's departures serves the rows, the all-airport count
     // and the per-terminal counts.
@@ -341,317 +370,330 @@ export async function GET(request: Request) {
     // whose first ten characters are that day, whatever the suffix — and it
     // seeks. Deriving the counts from the rows already fetched also makes the
     // payload self-consistent: the counts can no longer disagree with the rows.
-    const flightRows = await safeAll<Row>(async () => (await client.prepare(
+    flightRows: [client.prepare(
       `SELECT physical_flight_id AS physicalFlightId, terminal, gate, retrieved_at AS retrievedAt,
         flight_number AS operatingFlight
       FROM airport_flights
       WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ?
       LIMIT 2000`,
-    ).bind(serviceDate, shiftKstDay(serviceDate, 1)).all<Row>()).results ?? []);
+    ).bind(serviceDate, shiftKstDay(serviceDate, 1))],
 
-    const scheduledRows = await safeAll<Row>(async () => (await client.prepare(
+    scheduledRows: [client.prepare(
       `SELECT terminal, COUNT(*) AS flights, MIN(scheduled_time) AS firstTime, MAX(scheduled_time) AS lastTime,
         MAX(retrieved_at) AS retrievedAt
       FROM airport_scheduled_flights
       WHERE valid_from <= ? AND valid_to >= ?
       GROUP BY terminal ORDER BY terminal`,
-    ).bind(serviceDate, serviceDate).all<Row>()).results ?? []);
+    ).bind(serviceDate, serviceDate)],
+  };
 
-    // Which KST days actually hold data, so the date picker can offer only
-    // days that exist instead of inviting the reader into an empty screen.
-    const pickerDays = Array.from({ length: DATE_PICKER_DAYS }, (_, index) => shiftKstDay(kstToday, -index));
-    const probeDays = async (sql: string, bindsForDay: (day: string) => unknown[]) => {
-      const results = await client.batch<Row>(
-        pickerDays.map((day) => client.prepare(sql).bind(...bindsForDay(day))),
-      );
-      return results.flatMap((result) => result.results ?? []);
-    };
-    const flightDateRows = await safeAll<Row>(() => probeDays(
+  // Which KST days actually hold data, so the date picker can offer only
+  // days that exist instead of inviting the reader into an empty screen.
+  const pickerDays = Array.from({ length: DATE_PICKER_DAYS }, (_, index) => shiftKstDay(kstToday, -index));
+  // Still one statement per day (D1 rejects the 63-parameter UNION ALL form);
+  // the statements now travel inside the single batch below.
+  const probeDays = (sql: string, bindsForDay: (day: string) => unknown[]) =>
+    pickerDays.map((day) => client.prepare(sql).bind(...bindsForDay(day)));
+  const probeGroups = {
+    flightDateRows: probeDays(
       dayExistsSql("airport_flights", "scheduled_at", "direction = 'departure'"),
       (day) => [day, day, shiftKstDay(day, 1)],
-    ));
-    const forecastDateRows = await safeAll<Row>(() => probeDays(
+    ),
+    forecastDateRows: probeDays(
       dayValueExistsSql("airport_passenger_forecast", "target_date", "direction = 'departure' AND is_aggregate = 1"),
       (day) => [day, day],
-    ));
-    const observedDateRows = await safeAll<Row>(() => probeDays(
+    ),
+    observedDateRows: probeDays(
       dayExistsSql("seoul_realtime_area", "observed_at"),
       (day) => [day, day, shiftKstDay(day, 1)],
-    ));
-    const dayList = (rows: Row[]) => rows
-      .map((row) => String(row.day ?? ""))
-      .filter((day) => isValidKstDay(day))
-      .sort();
+    ),
+  };
 
-    const areas = Object.fromEntries(AREAS.map((area) => {
-      const realtime = realtimeRows.find((row) => row.area === area) ?? null;
-      const commercial = commercialRows.find((row) => row.area === area) ?? null;
-      const foreignPresence = foreignPresenceRows.find((row) => row.area === area) ?? null;
-      const purposeRows = foreignPurposeRows.filter((row) => row.area === area);
-      const subwayRidership = subwayRows.find((row) => row.area === area) ?? null;
-      const salesForArea = salesRows.filter((row) => row.area === area);
-      const salesTotal = salesForArea.reduce((sum, row) => sum + Number(row.salesAmount ?? 0), 0);
-      const eventsForArea = prepareEventsForPresentation(
-        eventRows.filter((row) => row.area === area).map((row) => ({
-          ...row,
-          title: String(row.title ?? ""),
-          eventStart: String(row.eventStart ?? ""),
-          eventEnd: row.eventEnd ? String(row.eventEnd) : null,
-          distanceM: row.distanceM === null || row.distanceM === undefined ? null : Number(row.distanceM),
-          contentId: row.contentId ? String(row.contentId) : null,
-          address: row.address ? String(row.address) : null,
-          overview: row.overview ? String(row.overview) : null,
-          homepage: row.homepage ? String(row.homepage) : null,
-        })),
-        serviceDate,
-      );
-      return [area, {
-        realtime: realtime ? { ...realtime, freshness: freshnessOf(realtime.observedAt, REALTIME_STALE_MINUTES, now) } : null,
-        commercial: commercial ? { ...commercial, freshness: freshnessOf(commercial.observedAt, REALTIME_STALE_MINUTES, now) } : null,
-        // The whole published horizon, not a "today" slice — see the query note.
-        realtimeForecast: realtimeForecastRows.filter((row) => row.area === area).slice(0, 12),
-        weather: weatherRows.filter((row) => row.area === area).slice(0, 24),
-        events: eventsForArea,
-        eventCount: eventsForArea.length,
-        sales: salesForArea.length ? {
-          quarterCode: salesForArea[0].quarterCode,
-          tradeAreaName: salesForArea[0].tradeAreaName,
-          totalAmount: salesTotal,
-          industryCount: salesForArea.length,
-          topIndustries: salesForArea.slice(0, 3).map((row) => ({ industryName: row.industryName, salesAmount: row.salesAmount })),
-        } : null,
-        storeDynamics: (() => {
-          const row = storeDynamicsRows.find((candidate) => candidate.area === area);
-          if (!isValidStoredStoreDynamics(area, row)) return null;
-          return {
-            datasetId: row?.datasetId,
-            quarterCode: row?.quarterCode,
-            tradeAreaCode: row?.tradeAreaCode,
-            tradeAreaName: row?.tradeAreaName,
-            tradeAreaTypeCode: row?.tradeAreaTypeCode,
-            tradeAreaTypeName: row?.tradeAreaTypeName,
-            totalStoreCount: row?.totalStoreCount,
-            ordinaryStoreCount: row?.ordinaryStoreCount,
-            franchiseStoreCount: row?.franchiseStoreCount,
-            openingCount: row?.openingCount,
-            closureCount: row?.closureCount,
-            // The stored *_rate_tenths_percent columns are a KORETAIL-derived
-            // ratio, not an official area-wide 개/폐업률; they stay private.
-            mappingVersion: row?.mappingVersion,
-            retrievedAt: row?.retrievedAt,
-          };
-        })(),
-        foreignPresence,
-        foreignPurposeMobility: purposeRows.length ? {
-          referenceDate: purposeRows[0].referenceDate,
-          retrievedAt: purposeRows[0].retrievedAt,
-          datasetId: purposeRows[0].datasetId,
-          mappingVersion: purposeRows[0].mappingVersion,
-          shopping: purposeRows.find((row) => row.purpose === "shopping")?.movementValue ?? null,
-          tourism: purposeRows.find((row) => row.purpose === "tourism")?.movementValue ?? null,
-        } : null,
-        subwayRidership,
-      }];
-    }));
+  // Every statement above — 15 blocks plus 3 × 21 picker probes — leaves the
+  // Worker in ONE D1 request. Awaiting them one after another was 18 full
+  // Worker → D1 round trips and, measured on Production, 3.5–4.2 s per
+  // uncached summary (see lib/d1-read-batch.ts). Rows read are unchanged.
+  const { rows: blocks } = await readGroups(client, { ...statementGroups, ...probeGroups });
+  const {
+    sources, realtimeRows, commercialRows, realtimeForecastRows, weatherRows, eventRows, salesRows,
+    storeDynamicsRows, foreignPresenceRows, foreignPurposeRows, subwayRows, congestionRows,
+    passengerForecastRows, flightRows, scheduledRows, flightDateRows, forecastDateRows, observedDateRows,
+  } = blocks;
+  const dayList = (rows: Row[]) => rows
+    .map((row) => String(row.day ?? ""))
+    .filter((day) => isValidKstDay(day))
+    .sort();
 
-    const departurePassengerForecastRows = passengerForecastRows.filter((row) => row.direction === "departure");
-    const arrivalPassengerForecastRows = passengerForecastRows.filter((row) => row.direction === "arrival");
-    const passengerToday = summarizeTodayPassengerForecast(
-      departurePassengerForecastRows as unknown as AirportForecastAggregateRow[],
+  const areas = Object.fromEntries(AREAS.map((area) => {
+    const realtime = realtimeRows.find((row) => row.area === area) ?? null;
+    const commercial = commercialRows.find((row) => row.area === area) ?? null;
+    const foreignPresence = foreignPresenceRows.find((row) => row.area === area) ?? null;
+    const purposeRows = foreignPurposeRows.filter((row) => row.area === area);
+    const subwayRidership = subwayRows.find((row) => row.area === area) ?? null;
+    const salesForArea = salesRows.filter((row) => row.area === area);
+    const salesTotal = salesForArea.reduce((sum, row) => sum + Number(row.salesAmount ?? 0), 0);
+    const eventsForArea = prepareEventsForPresentation(
+      eventRows.filter((row) => row.area === area).map((row) => ({
+        ...row,
+        title: String(row.title ?? ""),
+        eventStart: String(row.eventStart ?? ""),
+        eventEnd: row.eventEnd ? String(row.eventEnd) : null,
+        distanceM: row.distanceM === null || row.distanceM === undefined ? null : Number(row.distanceM),
+        contentId: row.contentId ? String(row.contentId) : null,
+        address: row.address ? String(row.address) : null,
+        overview: row.overview ? String(row.overview) : null,
+        homepage: row.homepage ? String(row.homepage) : null,
+      })),
       serviceDate,
     );
-    const arrivalToday = summarizePassengerForecast(
+    return [area, {
+      realtime: realtime ? { ...realtime, freshness: freshnessOf(realtime.observedAt, REALTIME_STALE_MINUTES, now) } : null,
+      commercial: commercial ? { ...commercial, freshness: freshnessOf(commercial.observedAt, REALTIME_STALE_MINUTES, now) } : null,
+      // The whole published horizon, not a "today" slice — see the query note.
+      realtimeForecast: realtimeForecastRows.filter((row) => row.area === area).slice(0, 12),
+      weather: weatherRows.filter((row) => row.area === area).slice(0, 24),
+      events: eventsForArea,
+      eventCount: eventsForArea.length,
+      sales: salesForArea.length ? {
+        quarterCode: salesForArea[0].quarterCode,
+        tradeAreaName: salesForArea[0].tradeAreaName,
+        totalAmount: salesTotal,
+        industryCount: salesForArea.length,
+        topIndustries: salesForArea.slice(0, 3).map((row) => ({ industryName: row.industryName, salesAmount: row.salesAmount })),
+      } : null,
+      storeDynamics: (() => {
+        const row = storeDynamicsRows.find((candidate) => candidate.area === area);
+        if (!isValidStoredStoreDynamics(area, row)) return null;
+        return {
+          datasetId: row?.datasetId,
+          quarterCode: row?.quarterCode,
+          tradeAreaCode: row?.tradeAreaCode,
+          tradeAreaName: row?.tradeAreaName,
+          tradeAreaTypeCode: row?.tradeAreaTypeCode,
+          tradeAreaTypeName: row?.tradeAreaTypeName,
+          totalStoreCount: row?.totalStoreCount,
+          ordinaryStoreCount: row?.ordinaryStoreCount,
+          franchiseStoreCount: row?.franchiseStoreCount,
+          openingCount: row?.openingCount,
+          closureCount: row?.closureCount,
+          // The stored *_rate_tenths_percent columns are a KORETAIL-derived
+          // ratio, not an official area-wide 개/폐업률; they stay private.
+          mappingVersion: row?.mappingVersion,
+          retrievedAt: row?.retrievedAt,
+        };
+      })(),
+      foreignPresence,
+      foreignPurposeMobility: purposeRows.length ? {
+        referenceDate: purposeRows[0].referenceDate,
+        retrievedAt: purposeRows[0].retrievedAt,
+        datasetId: purposeRows[0].datasetId,
+        mappingVersion: purposeRows[0].mappingVersion,
+        shopping: purposeRows.find((row) => row.purpose === "shopping")?.movementValue ?? null,
+        tourism: purposeRows.find((row) => row.purpose === "tourism")?.movementValue ?? null,
+      } : null,
+      subwayRidership,
+    }];
+  }));
+
+  const departurePassengerForecastRows = passengerForecastRows.filter((row) => row.direction === "departure");
+  const arrivalPassengerForecastRows = passengerForecastRows.filter((row) => row.direction === "arrival");
+  const passengerToday = summarizeTodayPassengerForecast(
+    departurePassengerForecastRows as unknown as AirportForecastAggregateRow[],
+    serviceDate,
+  );
+  const arrivalToday = summarizePassengerForecast(
+    arrivalPassengerForecastRows as unknown as AirportForecastAggregateRow[],
+    serviceDate,
+    "arrival",
+  );
+  const nextArrivalBand = dayRelation === "TODAY"
+    ? summarizeNextPassengerForecastBand(
       arrivalPassengerForecastRows as unknown as AirportForecastAggregateRow[],
-      serviceDate,
       "arrival",
-    );
-    const nextArrivalBand = dayRelation === "TODAY"
-      ? summarizeNextPassengerForecastBand(
-        arrivalPassengerForecastRows as unknown as AirportForecastAggregateRow[],
-        "arrival",
-        generatedAt,
-      )
-      : null;
-    // Physical-flight de-duplication, unchanged: a codeshare pair shares one
-    // physicalFlightId and is counted once.
-    const distinctFlightsToday = new Set(flightRows.map((row) => String(row.physicalFlightId ?? ""))).size;
-    const distinctFlightsByTerminal: Record<string, number> = {};
-    const seenPerTerminal = new Map<string, Set<string>>();
-    for (const row of flightRows) {
-      const terminal = row.terminal ? String(row.terminal) : null;
-      if (!terminal) continue;
-      const seen = seenPerTerminal.get(terminal) ?? new Set<string>();
-      seen.add(String(row.physicalFlightId ?? ""));
-      seenPerTerminal.set(terminal, seen);
-    }
-    for (const [terminal, seen] of seenPerTerminal) distinctFlightsByTerminal[terminal] = seen.size;
-    const flightsToday = summarizeTodayTopGate(
-      flightRows as unknown as AirportTodayFlightRow[],
-      0.5,
-      distinctFlightsToday,
-    );
-    // Airline ranking from the same de-duplicated physical rows. The
-    // country comes from a reference table, never from the provider, and is
-    // reported as UNVERIFIED whenever the table cannot vouch for it.
-    const airlineRanking = summarizeAirlineRanking(flightRows as unknown as AirlineRankingFlightRow[], lookupAirline);
-    const flightsTodayByTerminal = summarizeTodayTopGateByTerminal(
-      flightRows as unknown as AirportTodayFlightRow[],
-      0.5,
-      distinctFlightsByTerminal,
-    );
-    const currentBusiest = summarizeCurrentBusiestDepartureHalls(
-      congestionRows.map((row) => ({ ...row, freshness: freshnessOf(row.observedAt, 20, now) })) as unknown as AirportCongestionSummaryRow[],
-    );
-    const latestCongestionRetrieval = congestionRows.reduce<string | null>((latest, row) => {
-      const value = typeof row.retrievedAt === "string" ? row.retrievedAt : null;
-      return value && (!latest || value > latest) ? value : latest;
-    }, null);
-    // `latestRetrievedAt` means "the latest retrieval among airport
-    // datasets" — it never implies every metric below shares that
-    // freshness. Each metric also carries its own retrieval timestamp.
-    const latestAirportRetrieval = [passengerToday.retrievedAt, arrivalToday.retrievedAt, flightsToday.retrievedAt, latestCongestionRetrieval]
-      .filter((value): value is string => Boolean(value)).sort().at(-1) ?? null;
-    const upcomingForecast = departurePassengerForecastRows.filter((row) => String(row.targetEndAt ?? "") >= kstNowIso)
-      .filter((row, index, all) => all.findIndex((candidate) => candidate.terminal === row.terminal) === index);
-
-    // "From this hour to the end of the day" is only meaningful for a day that
-    // is still running, and only when full-day coverage is proven.
-    const remainingAll = dayRelation === "TODAY"
-      ? summarizeRemainingPassengerForecast(passengerToday.timeline, passengerToday.coverage.all, generatedAt)
-      : null;
-    const remainingByTerminal = Object.fromEntries(
-      Object.entries(passengerToday.timelineByTerminal).map(([terminal, timeline]) => [
-        terminal,
-        dayRelation === "TODAY"
-          ? summarizeRemainingPassengerForecast(timeline, passengerToday.coverage.byTerminal[terminal] ?? "UNAVAILABLE", generatedAt)
-          : null,
-      ]),
-    );
-
-    const topDepartureGateByTerminal = Object.fromEntries(
-      Object.entries(flightsTodayByTerminal).map(([terminal, summary]) => [
-        terminal,
-        summary.topDepartureGate ? { gate: summary.topDepartureGate.gate, flights: summary.topDepartureGate.flights } : null,
-      ]),
-    );
-    const busyDepartureGatesByTerminal = Object.fromEntries(
-      Object.entries(flightsTodayByTerminal).map(([terminal, summary]) => [terminal, summary.busyDepartureGates]),
-    );
-    const departuresTrackedTodayByTerminal = Object.fromEntries(
-      Object.entries(flightsTodayByTerminal).map(([terminal, summary]) => [terminal, summary.departuresTrackedToday]),
-    );
-    const gateCoverageRatioByTerminal = Object.fromEntries(
-      Object.entries(flightsTodayByTerminal).map(([terminal, summary]) => [terminal, summary.gateCoverageRatio]),
-    );
-    const departureGateRetrievedAtByTerminal = Object.fromEntries(
-      Object.entries(flightsTodayByTerminal).map(([terminal, summary]) => [terminal, summary.retrievedAt]),
-    );
-    const peakExpectedPassengersByTerminal = Object.fromEntries(
-      Object.entries(passengerToday.peakByTerminal).map(([terminal, band]) => [terminal, band?.expectedPassengers ?? null]),
-    );
-
-    return Response.json({
-      mode: "live-summary",
       generatedAt,
-      todayKst: kstToday,
-      serviceDateKst: serviceDate,
-      dayRelation,
-      dateAvailability: {
-        airportFlights: dayList(flightDateRows),
-        airportPassengerForecast: dayList(forecastDateRows),
-        seoulObserved: dayList(observedDateRows),
-      },
-      sources,
-      areas,
-      airport: {
-        congestion: congestionRows.map((row) => ({ ...row, freshness: freshnessOf(row.observedAt, 20, now) })),
-        currentBusiestDepartureHallByTerminal: currentBusiest,
-        departuresTrackedToday: flightsToday.departuresTrackedToday,
-        departuresTrackedTodayByTerminal,
-        departuresTrackedTodayRetrievedAt: flightsToday.retrievedAt,
-        topDepartureGate: flightsToday.topDepartureGate?.gate ?? null,
-        topDepartureGateTerminal: flightsToday.topDepartureGate?.terminal ?? null,
-        topDepartureGateFlights: flightsToday.topDepartureGate?.flights ?? null,
-        topDepartureGateByTerminal,
-        busyDepartureGates: flightsToday.busyDepartureGates,
-        busyDepartureGatesByTerminal,
-        topDepartureGateRetrievedAt: flightsToday.retrievedAt,
-        topDepartureGateRetrievedAtByTerminal: departureGateRetrievedAtByTerminal,
-        gateCoverageRatio: flightsToday.gateCoverageRatio,
-        gateCoverageRatioByTerminal,
-        airlineRanking: { ...airlineRanking, countrySource: AIRLINE_COUNTRY_SOURCE },
-        serviceDateKst: serviceDate,
-        periodStartAt: dayStartAt,
-        periodEndAt: `${serviceDate}T23:59:59+09:00`,
-        latestRetrievedAt: latestAirportRetrieval,
-        todayExpectedPassengersTotal: passengerToday.total,
-        todayExpectedPassengersByTerminal: passengerToday.totalByTerminal,
-        remainingExpectedPassengers: remainingAll,
-        remainingExpectedPassengersByTerminal: remainingByTerminal,
-        passengerForecastRetrievedAt: passengerToday.retrievedAt,
-        passengerForecastRetrievedAtByTerminal: passengerToday.retrievedAtByTerminal,
-        peakExpectedTimeBand: passengerToday.peak,
-        peakExpectedTimeBandByTerminal: passengerToday.peakByTerminal,
-        peakExpectedPassengers: passengerToday.peak?.expectedPassengers ?? null,
-        peakExpectedPassengersByTerminal,
-        passengerForecastTimeline: passengerToday.timeline,
-        passengerForecastTimelineByTerminal: passengerToday.timelineByTerminal,
-        forecastCoverage: passengerToday.coverage,
-        arrivalForecast: {
-          todayExpectedPassengersTotal: arrivalToday.total,
-          todayExpectedPassengersByTerminal: arrivalToday.totalByTerminal,
-          nextExpectedTimeBand: nextArrivalBand,
-          peakExpectedTimeBand: arrivalToday.peak,
-          passengerForecastRetrievedAt: arrivalToday.retrievedAt,
-          forecastCoverage: arrivalToday.coverage,
-        },
-        scheduled: scheduledRows,
-        // FORECAST/EXPECTED passengers — semantically separate from
-        // `congestion` (CURRENT/OBSERVED). Never merge these two arrays.
-        passengerForecast: upcomingForecast,
-      },
-    }, {
-      // Decided by the payload, not the status code: a 200 that carries no
-      // sources or no area data is an outage in disguise and must never be
-      // admitted to the shared edge cache.
-      headers: { "cache-control": summaryCacheControl({ sources, areas }) },
-    });
-  } catch {
-    return Response.json({
-      mode: "degraded",
-      generatedAt,
-      todayKst: kstToday,
-      serviceDateKst: serviceDate,
-      dayRelation,
-      dateAvailability: { airportFlights: [], airportPassengerForecast: [], seoulObserved: [] },
-      sources: [],
-      areas: {},
-      airport: {
-        congestion: [], currentBusiestDepartureHallByTerminal: {}, departuresTrackedToday: null,
-        departuresTrackedTodayByTerminal: {}, departuresTrackedTodayRetrievedAt: null,
-        topDepartureGate: null, topDepartureGateTerminal: null, topDepartureGateFlights: null,
-        topDepartureGateByTerminal: {}, topDepartureGateRetrievedAt: null, topDepartureGateRetrievedAtByTerminal: {},
-        busyDepartureGates: [], busyDepartureGatesByTerminal: {},
-        gateCoverageRatio: 0, gateCoverageRatioByTerminal: {},
-        airlineRanking: { all: { totalFlights: 0, airlines: [], countries: [], retrievedAt: null }, byTerminal: {}, countrySource: AIRLINE_COUNTRY_SOURCE },
-        serviceDateKst: serviceDate,
-        periodStartAt: null, periodEndAt: null, latestRetrievedAt: null,
-        todayExpectedPassengersTotal: null, todayExpectedPassengersByTerminal: {},
-        remainingExpectedPassengers: null, remainingExpectedPassengersByTerminal: {},
-        passengerForecastRetrievedAt: null, passengerForecastRetrievedAtByTerminal: {},
-        peakExpectedTimeBand: null, peakExpectedTimeBandByTerminal: {},
-        peakExpectedPassengers: null, peakExpectedPassengersByTerminal: {},
-        passengerForecastTimeline: [], passengerForecastTimelineByTerminal: {},
-        forecastCoverage: { all: "UNAVAILABLE", byTerminal: {} },
-        arrivalForecast: {
-          todayExpectedPassengersTotal: null, todayExpectedPassengersByTerminal: {},
-          nextExpectedTimeBand: null, peakExpectedTimeBand: null,
-          passengerForecastRetrievedAt: null,
-          forecastCoverage: { all: "UNAVAILABLE", byTerminal: {} },
-        },
-        scheduled: [], passengerForecast: [],
-      },
-      message: "Live sources are not connected. Official historical views remain available.",
-    }, { status: 200, headers: { "cache-control": SUMMARY_NO_STORE } });
+    )
+    : null;
+  // Physical-flight de-duplication, unchanged: a codeshare pair shares one
+  // physicalFlightId and is counted once.
+  const distinctFlightsToday = new Set(flightRows.map((row) => String(row.physicalFlightId ?? ""))).size;
+  const distinctFlightsByTerminal: Record<string, number> = {};
+  const seenPerTerminal = new Map<string, Set<string>>();
+  for (const row of flightRows) {
+    const terminal = row.terminal ? String(row.terminal) : null;
+    if (!terminal) continue;
+    const seen = seenPerTerminal.get(terminal) ?? new Set<string>();
+    seen.add(String(row.physicalFlightId ?? ""));
+    seenPerTerminal.set(terminal, seen);
   }
+  for (const [terminal, seen] of seenPerTerminal) distinctFlightsByTerminal[terminal] = seen.size;
+  const flightsToday = summarizeTodayTopGate(
+    flightRows as unknown as AirportTodayFlightRow[],
+    0.5,
+    distinctFlightsToday,
+  );
+  // Airline ranking from the same de-duplicated physical rows. The
+  // country comes from a reference table, never from the provider, and is
+  // reported as UNVERIFIED whenever the table cannot vouch for it.
+  const airlineRanking = summarizeAirlineRanking(flightRows as unknown as AirlineRankingFlightRow[], lookupAirline);
+  const flightsTodayByTerminal = summarizeTodayTopGateByTerminal(
+    flightRows as unknown as AirportTodayFlightRow[],
+    0.5,
+    distinctFlightsByTerminal,
+  );
+  const currentBusiest = summarizeCurrentBusiestDepartureHalls(
+    congestionRows.map((row) => ({ ...row, freshness: freshnessOf(row.observedAt, 20, now) })) as unknown as AirportCongestionSummaryRow[],
+  );
+  const latestCongestionRetrieval = congestionRows.reduce<string | null>((latest, row) => {
+    const value = typeof row.retrievedAt === "string" ? row.retrievedAt : null;
+    return value && (!latest || value > latest) ? value : latest;
+  }, null);
+  // `latestRetrievedAt` means "the latest retrieval among airport
+  // datasets" — it never implies every metric below shares that
+  // freshness. Each metric also carries its own retrieval timestamp.
+  const latestAirportRetrieval = [passengerToday.retrievedAt, arrivalToday.retrievedAt, flightsToday.retrievedAt, latestCongestionRetrieval]
+    .filter((value): value is string => Boolean(value)).sort().at(-1) ?? null;
+  const upcomingForecast = departurePassengerForecastRows.filter((row) => String(row.targetEndAt ?? "") >= kstNowIso)
+    .filter((row, index, all) => all.findIndex((candidate) => candidate.terminal === row.terminal) === index);
+
+  // "From this hour to the end of the day" is only meaningful for a day that
+  // is still running, and only when full-day coverage is proven.
+  const remainingAll = dayRelation === "TODAY"
+    ? summarizeRemainingPassengerForecast(passengerToday.timeline, passengerToday.coverage.all, generatedAt)
+    : null;
+  const remainingByTerminal = Object.fromEntries(
+    Object.entries(passengerToday.timelineByTerminal).map(([terminal, timeline]) => [
+      terminal,
+      dayRelation === "TODAY"
+        ? summarizeRemainingPassengerForecast(timeline, passengerToday.coverage.byTerminal[terminal] ?? "UNAVAILABLE", generatedAt)
+        : null,
+    ]),
+  );
+
+  const topDepartureGateByTerminal = Object.fromEntries(
+    Object.entries(flightsTodayByTerminal).map(([terminal, summary]) => [
+      terminal,
+      summary.topDepartureGate ? { gate: summary.topDepartureGate.gate, flights: summary.topDepartureGate.flights } : null,
+    ]),
+  );
+  const busyDepartureGatesByTerminal = Object.fromEntries(
+    Object.entries(flightsTodayByTerminal).map(([terminal, summary]) => [terminal, summary.busyDepartureGates]),
+  );
+  const departuresTrackedTodayByTerminal = Object.fromEntries(
+    Object.entries(flightsTodayByTerminal).map(([terminal, summary]) => [terminal, summary.departuresTrackedToday]),
+  );
+  const gateCoverageRatioByTerminal = Object.fromEntries(
+    Object.entries(flightsTodayByTerminal).map(([terminal, summary]) => [terminal, summary.gateCoverageRatio]),
+  );
+  const departureGateRetrievedAtByTerminal = Object.fromEntries(
+    Object.entries(flightsTodayByTerminal).map(([terminal, summary]) => [terminal, summary.retrievedAt]),
+  );
+  const peakExpectedPassengersByTerminal = Object.fromEntries(
+    Object.entries(passengerToday.peakByTerminal).map(([terminal, band]) => [terminal, band?.expectedPassengers ?? null]),
+  );
+
+  return Response.json({
+    mode: "live-summary",
+    generatedAt,
+    todayKst: kstToday,
+    serviceDateKst: serviceDate,
+    dayRelation,
+    dateAvailability: {
+      airportFlights: dayList(flightDateRows),
+      airportPassengerForecast: dayList(forecastDateRows),
+      seoulObserved: dayList(observedDateRows),
+    },
+    sources,
+    areas,
+    airport: {
+      congestion: congestionRows.map((row) => ({ ...row, freshness: freshnessOf(row.observedAt, 20, now) })),
+      currentBusiestDepartureHallByTerminal: currentBusiest,
+      departuresTrackedToday: flightsToday.departuresTrackedToday,
+      departuresTrackedTodayByTerminal,
+      departuresTrackedTodayRetrievedAt: flightsToday.retrievedAt,
+      topDepartureGate: flightsToday.topDepartureGate?.gate ?? null,
+      topDepartureGateTerminal: flightsToday.topDepartureGate?.terminal ?? null,
+      topDepartureGateFlights: flightsToday.topDepartureGate?.flights ?? null,
+      topDepartureGateByTerminal,
+      busyDepartureGates: flightsToday.busyDepartureGates,
+      busyDepartureGatesByTerminal,
+      topDepartureGateRetrievedAt: flightsToday.retrievedAt,
+      topDepartureGateRetrievedAtByTerminal: departureGateRetrievedAtByTerminal,
+      gateCoverageRatio: flightsToday.gateCoverageRatio,
+      gateCoverageRatioByTerminal,
+      airlineRanking: { ...airlineRanking, countrySource: AIRLINE_COUNTRY_SOURCE },
+      serviceDateKst: serviceDate,
+      periodStartAt: dayStartAt,
+      periodEndAt: `${serviceDate}T23:59:59+09:00`,
+      latestRetrievedAt: latestAirportRetrieval,
+      todayExpectedPassengersTotal: passengerToday.total,
+      todayExpectedPassengersByTerminal: passengerToday.totalByTerminal,
+      remainingExpectedPassengers: remainingAll,
+      remainingExpectedPassengersByTerminal: remainingByTerminal,
+      passengerForecastRetrievedAt: passengerToday.retrievedAt,
+      passengerForecastRetrievedAtByTerminal: passengerToday.retrievedAtByTerminal,
+      peakExpectedTimeBand: passengerToday.peak,
+      peakExpectedTimeBandByTerminal: passengerToday.peakByTerminal,
+      peakExpectedPassengers: passengerToday.peak?.expectedPassengers ?? null,
+      peakExpectedPassengersByTerminal,
+      passengerForecastTimeline: passengerToday.timeline,
+      passengerForecastTimelineByTerminal: passengerToday.timelineByTerminal,
+      forecastCoverage: passengerToday.coverage,
+      arrivalForecast: {
+        todayExpectedPassengersTotal: arrivalToday.total,
+        todayExpectedPassengersByTerminal: arrivalToday.totalByTerminal,
+        nextExpectedTimeBand: nextArrivalBand,
+        peakExpectedTimeBand: arrivalToday.peak,
+        passengerForecastRetrievedAt: arrivalToday.retrievedAt,
+        forecastCoverage: arrivalToday.coverage,
+      },
+      scheduled: scheduledRows,
+      // FORECAST/EXPECTED passengers — semantically separate from
+      // `congestion` (CURRENT/OBSERVED). Never merge these two arrays.
+      passengerForecast: upcomingForecast,
+    },
+  }, {
+    // Decided by the payload, not the status code: a 200 that carries no
+    // sources or no area data is an outage in disguise and must never be
+    // admitted to the shared edge cache.
+    headers: { "cache-control": summaryCacheControl({ sources, areas }) },
+  });
+}
+
+function degradedSummary({ generatedAt, kstToday, serviceDate, dayRelation }: Pick<SummaryClock, "generatedAt" | "kstToday" | "serviceDate" | "dayRelation">): Response {
+  return Response.json({
+    mode: "degraded",
+    generatedAt,
+    todayKst: kstToday,
+    serviceDateKst: serviceDate,
+    dayRelation,
+    dateAvailability: { airportFlights: [], airportPassengerForecast: [], seoulObserved: [] },
+    sources: [],
+    areas: {},
+    airport: {
+      congestion: [], currentBusiestDepartureHallByTerminal: {}, departuresTrackedToday: null,
+      departuresTrackedTodayByTerminal: {}, departuresTrackedTodayRetrievedAt: null,
+      topDepartureGate: null, topDepartureGateTerminal: null, topDepartureGateFlights: null,
+      topDepartureGateByTerminal: {}, topDepartureGateRetrievedAt: null, topDepartureGateRetrievedAtByTerminal: {},
+      busyDepartureGates: [], busyDepartureGatesByTerminal: {},
+      gateCoverageRatio: 0, gateCoverageRatioByTerminal: {},
+      airlineRanking: { all: { totalFlights: 0, airlines: [], countries: [], retrievedAt: null }, byTerminal: {}, countrySource: AIRLINE_COUNTRY_SOURCE },
+      serviceDateKst: serviceDate,
+      periodStartAt: null, periodEndAt: null, latestRetrievedAt: null,
+      todayExpectedPassengersTotal: null, todayExpectedPassengersByTerminal: {},
+      remainingExpectedPassengers: null, remainingExpectedPassengersByTerminal: {},
+      passengerForecastRetrievedAt: null, passengerForecastRetrievedAtByTerminal: {},
+      peakExpectedTimeBand: null, peakExpectedTimeBandByTerminal: {},
+      peakExpectedPassengers: null, peakExpectedPassengersByTerminal: {},
+      passengerForecastTimeline: [], passengerForecastTimelineByTerminal: {},
+      forecastCoverage: { all: "UNAVAILABLE", byTerminal: {} },
+      arrivalForecast: {
+        todayExpectedPassengersTotal: null, todayExpectedPassengersByTerminal: {},
+        nextExpectedTimeBand: null, peakExpectedTimeBand: null,
+        passengerForecastRetrievedAt: null,
+        forecastCoverage: { all: "UNAVAILABLE", byTerminal: {} },
+      },
+      scheduled: [], passengerForecast: [],
+    },
+    message: "Live sources are not connected. Official historical views remain available.",
+  }, { status: 200, headers: { "cache-control": SUMMARY_NO_STORE } });
 }

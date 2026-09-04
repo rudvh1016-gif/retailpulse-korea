@@ -80,6 +80,27 @@ Do not blindly UPSERT unchanged source rows every collection cycle.
 
 Use source-specific semantic changed-only decisions and test that volatile collection fields such as `retrievedAt` do not cause false changes. Account for index write amplification, rows-read trade-offs and storage growth. Preserve immutable Forecast/Outcome integrity while limiting repeated raw snapshots.
 
+## Read-path latency
+
+The public summary (`/api/live/summary`) is read from D1 in **one batched
+request** (`lib/d1-read-batch.ts`): 15 block statements plus 3 × 21 date-picker
+probes leave the Worker together. Measured on Production on 2026-09-04
+(site-smoke run 33836136846) the same statements awaited one after another cost
+3.5–4.2 s per uncached summary — 18 Worker → D1 round trips at roughly 200 ms
+each — while the payload read only ~2,500 indexed rows and a cache HIT answered
+in ~65 ms. Rows read are unchanged by batching; only the round trips are.
+
+- A D1 batch is atomic, so a rejected batch falls back to one concurrent wave
+  of per-block reads; a broken statement still becomes an empty block, never a
+  degraded page (`tests/summary-round-trips.test.mjs`).
+- Every page preloads `/api/live/summary` from its HTML head
+  (`app/[locale]/page.tsx`, `app/[locale]/[slug]/page.tsx`) so the fetch
+  overlaps the JavaScript download instead of waiting for hydration.
+- Verify after a deploy with `site-smoke.yml` (the time between the
+  `api /api/health` line and the `api /api/live/summary` line is the uncached
+  summary) and `production-visual-check.yml` (`AIRPORT_MOBILE_TIMING` in the
+  log: uncached summary duration and time-to-data on a phone profile).
+
 ## Free-tier protection
 
 Use the per-resource 70% NOTICE / 85% PROTECT / 95% EMERGENCY policy defined in `docs/ZERO_COST.md` and `docs/ZERO_COST_HYBRID_AUDIT.md`. Distinguish official provider usage from internal estimates. No code or workflow may automatically upgrade to a paid plan.
