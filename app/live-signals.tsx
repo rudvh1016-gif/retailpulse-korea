@@ -222,6 +222,15 @@ export interface LiveSummary {
     airportPassengerForecast: string[];
     seoulObserved: string[];
   };
+  /**
+   * Per-source collector health. `retrievedAt` here is the last SUCCESSFUL
+   * collection, which is the only field that can tell a healthy source apart
+   * from a stalled one: writes are changed-only, so a data row's own
+   * `retrieved_at` freezes at the last time the numbers changed. A monthly
+   * figure that has not moved since publication would otherwise look like a
+   * collector that stopped working.
+   */
+  sources?: Array<{ sourceId: string; status: string; retrievedAt: string | null }>;
   areas: Partial<Record<AreaId, LiveAreaBlock>>;
   airport: {
     congestion: LiveCongestionRow[];
@@ -2143,6 +2152,7 @@ export function buildStoreDynamicsPresentation(
   lang: Lang,
   row: LiveStoreDynamics | null | undefined,
   nowIso: string | null = null,
+  lastCollectedAt: string | null = null,
 ): StoreDynamicsPresentation | null {
   if (!row || row.datasetId !== "OA-15577") return null;
   const counts = [row.totalStoreCount, row.ordinaryStoreCount, row.franchiseStoreCount, row.openingCount, row.closureCount];
@@ -2163,7 +2173,7 @@ export function buildStoreDynamicsPresentation(
     period: describeSourcePeriod({
       cadence: "QUARTERLY",
       referencePeriod: row.quarterCode,
-      retrievedAt: row.retrievedAt,
+      retrievedAt: lastCollectedAt,
       nowIso: nowIso ?? row.retrievedAt,
     }, lang),
     areaValue: row.tradeAreaName.endsWith(row.tradeAreaTypeName)
@@ -2451,6 +2461,20 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
   });
   const areaBriefCopy = localizeAreaBrief(areaBrief, lang);
 
+  /**
+   * When a collector last SUCCEEDED, from source health — not from the data
+   * row's own `retrieved_at`.
+   *
+   * Writes are changed-only, so an unchanged row keeps the timestamp of the
+   * last time its numbers moved. For a monthly figure that is correct and
+   * stable for a month at a time, which would make a perfectly healthy
+   * source look like a stalled one. Source health records every successful
+   * run, changed or not, so it is the field that separates "the provider has
+   * published nothing newer" from "KORETAIL stopped collecting".
+   */
+  const lastCollected = (sourceId: string): string | null =>
+    summary.sources?.find((source) => source.sourceId === sourceId)?.retrievedAt ?? null;
+
   const rows: SignalRow[] = [];
 
   if (block?.realtime) {
@@ -2467,7 +2491,8 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
   }
 
   const commercialRow = buildCommercialSignalRow(lang, block?.commercial, summary.generatedAt);
-  const storeDynamicsPresentation = buildStoreDynamicsPresentation(lang, block?.storeDynamics, summary.generatedAt);
+  const storeDynamicsPresentation = buildStoreDynamicsPresentation(
+    lang, block?.storeDynamics, summary.generatedAt, lastCollected("SEOUL_STORE_DYNAMICS"));
 
   if (block?.subwayRidership) {
     const subway = block.subwayRidership;
@@ -2501,7 +2526,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       period: describeSourcePeriod({
         cadence: "DAILY",
         referencePeriod: block.foreignPresence.referenceAt,
-        retrievedAt: block.foreignPresence.retrievedAt,
+        retrievedAt: lastCollected("SEOUL_SHORT_STAY_FOREIGN_LIVING_POPULATION"),
         nowIso: summary.generatedAt,
       }, lang) ?? undefined,
     });
@@ -2522,7 +2547,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       period: describeSourcePeriod({
         cadence: "MONTHLY",
         referencePeriod: mobility.referenceDate,
-        retrievedAt: mobility.retrievedAt,
+        retrievedAt: lastCollected("SEOUL_FOREIGN_PURPOSE_MOBILITY"),
         nowIso: summary.generatedAt,
       }, lang) ?? undefined,
     });
@@ -2593,7 +2618,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       period: describeSourcePeriod({
         cadence: "QUARTERLY",
         referencePeriod: block.sales.quarterCode,
-        retrievedAt: block.sales.retrievedAt ?? null,
+        retrievedAt: lastCollected("SEOUL_ESTIMATED_SALES"),
         nowIso: summary.generatedAt,
       }, lang) ?? undefined,
     });

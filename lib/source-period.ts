@@ -44,7 +44,15 @@ export interface SourcePeriodInput {
    * `YYYYQ` for quarters, `YYYY-MM` or an ISO date for months and days.
    */
   referencePeriod: string;
-  /** When KORETAIL last SUCCESSFULLY retrieved this source; null when unknown. */
+  /**
+   * When the COLLECTOR last succeeded, from `source_health.last_retrieved_at`.
+   *
+   * Deliberately not the data row's own `retrieved_at`. Writes are
+   * changed-only, so an unchanged row keeps the timestamp of the last time
+   * its numbers moved — for a monthly figure that is a month old the moment
+   * it is published, and a healthy source would be reported as a stalled
+   * one. Source health records every successful run, changed or not.
+   */
   retrievedAt: string | null;
   nowIso: string;
 }

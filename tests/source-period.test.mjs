@@ -126,3 +126,50 @@ test("every locale answers, and none of them leaves a period unexplained", () =>
     }
   }
 });
+
+/**
+ * The trap this nearly fell into.
+ *
+ * Writes are changed-only: an unchanged row keeps the `retrieved_at` of the
+ * last time its numbers moved. A July figure published once and never
+ * revised would therefore carry a July timestamp forever, and using it here
+ * would report a perfectly healthy collector as a stalled one every August.
+ * The input must be `source_health.last_retrieved_at` — every successful
+ * run, changed or not.
+ */
+test("the standpoint is judged on collection success, not on when the numbers last moved", () => {
+  const rowFrozenAtPublication = "2026-07-31T00:00:00Z";
+  const collectorRanThisMorning = RECENT;
+
+  // What a data row's own retrieved_at would have said: wrong.
+  assert.equal(publicationStandpoint(rowFrozenAtPublication, NOW), "COLLECTION_BEHIND");
+  // What source health says: right.
+  assert.equal(publicationStandpoint(collectorRanThisMorning, NOW), "PROVIDER_NEWEST");
+});
+
+test("the contract documents which timestamp it wants, so a caller cannot pass the wrong one by accident", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const source = await readFile(new URL("../lib/source-period.ts", import.meta.url), "utf8");
+  assert.match(source, /source_health\.last_retrieved_at/);
+  assert.match(source, /changed-only/);
+
+  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  // The helper exists and reads source health, not a data row.
+  assert.match(signals, /const lastCollected = \(sourceId: string\): string \| null =>\s*\n?\s*summary\.sources\?\.find/);
+
+  // Every call site feeds it from that helper — directly, or through a
+  // parameter the caller filled from it.
+  const calls = [...signals.matchAll(/describeSourcePeriod\(\{[\s\S]*?\}, lang\)/g)];
+  assert.ok(calls.length >= 4, "every periodic source must describe its period");
+  for (const call of calls) {
+    assert.match(call[0], /retrievedAt: (lastCollected\("|lastCollectedAt)/,
+      "a period standpoint must be judged on source health, not a row timestamp");
+  }
+  // The one indirect caller really is handed the health-derived value.
+  assert.match(signals, /buildStoreDynamicsPresentation\(\s*\n?\s*lang, block\?\.storeDynamics, summary\.generatedAt, lastCollected\("SEOUL_STORE_DYNAMICS"\)\)/);
+  // And no call site reaches for a data row's own retrieved_at any more.
+  for (const call of calls) {
+    assert.doesNotMatch(call[0], /retrievedAt: (block|row|mobility)\./,
+      "a changed-only row timestamp freezes when the numbers stop moving");
+  }
+});
