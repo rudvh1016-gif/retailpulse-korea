@@ -50,7 +50,10 @@ const ROUTE_PATH = new URL("../app/api/live/summary/route.ts", import.meta.url);
 // Both public read paths are guarded: the summary route and the A2 facility
 // directory endpoint, which is measured here too even though it is separate.
 const FACILITY_ROUTE_PATH = new URL("../app/api/airport/facilities/route.ts", import.meta.url);
-const routeSource = `${readFileSync(ROUTE_PATH, "utf8")}\n${readFileSync(FACILITY_ROUTE_PATH, "utf8")}`;
+/** A4 reads only when a store is selected, but it is still a public read path. */
+const OPERATIONS_ROUTE_PATH = new URL("../app/api/airport/facility-operations/route.ts", import.meta.url);
+const routeSource = [ROUTE_PATH, FACILITY_ROUTE_PATH, OPERATIONS_ROUTE_PATH]
+  .map((path) => readFileSync(path, "utf8")).join("\n");
 
 const AREAS = ["myeongdong", "hongdae", "seongsu"] as const;
 const CONGESTION_TERMINALS = ["T1", "T2"] as const;
@@ -351,6 +354,38 @@ const HOT_QUERIES: HotQuery[] = [
     binds: ["PHARMACY"],
     guard: "ORDER BY name_ko LIMIT ? OFFSET ?",
     table: "airport_facility",
+  },
+  {
+    // A4 — the per-facility operations brief. Four reads, each bounded and
+    // each filtered by the selected facility's own terminal. The A3 mapping
+    // is bundled, so it contributes no read at all.
+    name: "operationsFacility",
+    sql: `SELECT facility_id AS facilityId, name_ko AS nameKo, terminal, floor
+      FROM airport_facility WHERE facility_id = ?`,
+    binds: ["2030"],
+    guard: "FROM airport_facility WHERE facility_id = ?",
+    table: "airport_facility",
+  },
+  {
+    name: "operationsFlights",
+    sql: `SELECT scheduled_at AS scheduledAt, terminal, gate
+      FROM airport_flights
+      WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at <= ? AND terminal = ?
+      ORDER BY scheduled_at LIMIT 400`,
+    binds: [new Date().toISOString(), new Date(Date.now() + 120 * 60_000).toISOString(), "T1"],
+    guard: "scheduled_at >= ? AND scheduled_at <= ? AND terminal = ?",
+    table: "airport_flights",
+  },
+  {
+    name: "operationsForecast",
+    sql: `SELECT target_start_at AS targetStartAt, target_end_at AS targetEndAt,
+        expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
+      FROM airport_passenger_forecast
+      WHERE target_date = ? AND terminal = ? AND direction = 'departure' AND is_aggregate = 1
+      ORDER BY target_start_at LIMIT 48`,
+    binds: [kstDayOf(new Date().toISOString()), "T1"],
+    guard: "WHERE target_date = ? AND terminal = ?",
+    table: "airport_passenger_forecast",
   },
   {
     name: "flightDates",

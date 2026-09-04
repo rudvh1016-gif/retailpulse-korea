@@ -241,10 +241,13 @@ test("every measured hot-path statement still exists in the live route", () => {
   const routeText = [
     readFileSync("app/api/live/summary/route.ts", "utf8"),
     readFileSync("app/api/airport/facilities/route.ts", "utf8"),
+    // A4 reads only when a store is selected, but it is still a public read
+    // path and its statements must stay measurable.
+    readFileSync("app/api/airport/facility-operations/route.ts", "utf8"),
   ].join("\n").replace(/\r\n/g, "\n");
   const guards = [...measureSource.matchAll(/^ {4}guard: (`[^`]*`|"(?:[^"\\]|\\.)*"),$/gm)]
     .map((match) => (match[1].startsWith("`") ? match[1].slice(1, -1) : JSON.parse(match[1])));
-  assert.equal(guards.length, 20, "expected one guard per measured statement");
+  assert.equal(guards.length, 23, "expected one guard per measured statement");
   for (const guard of guards) {
     assert.ok(routeText.includes(guard), `the live route no longer contains: ${guard.slice(0, 80)}`);
   }
