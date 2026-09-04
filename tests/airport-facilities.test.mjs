@@ -15,6 +15,7 @@ import {
   finalizeFacilityHashes,
   mergeFacilityLanguage,
   normalizeAirportFacility,
+  resolveFacilityTerminal,
   summarizeFacilityCoverage,
 } from "../lib/airport-facilities.ts";
 
@@ -99,7 +100,17 @@ test("every official terminal code maps to its published terminal, and an unknow
     const row = await normalizeAirportFacility(officialRow({ terminalid: code }), "2026-09-03T00:00:00.000Z");
     assert.equal(row.terminal, expected, `${code} must map to ${expected}`);
   }
-  const unknown = await normalizeAirportFacility(officialRow({ terminalid: "ZZZ" }), "2026-09-03T00:00:00.000Z");
+  // 알 수 없는 코드라도 공식 위치 문구가 건물을 직접 말하면 그 문구를 믿는다.
+  // 픽스처의 lcnm 은 "제1여객터미널 …" 이므로 코드가 낯설어도 T1 이다.
+  const namedInText = await normalizeAirportFacility(officialRow({ terminalid: "ZZZ" }), "2026-09-03T00:00:00.000Z");
+  assert.equal(namedInText.terminal, "T1", "공식 위치 문구가 말하면 그것도 근거다");
+  assert.equal(namedInText.terminalCode, "ZZZ", "원본 코드는 그대로 보존한다");
+
+  // 코드도 낯설고 위치 문구도 건물을 말하지 않으면 추측하지 않는다.
+  const unknown = await normalizeAirportFacility(
+    officialRow({ terminalid: "ZZZ", lcnm: "3층 면세지역 27번 게이트 부근" }),
+    "2026-09-03T00:00:00.000Z",
+  );
   assert.equal(unknown.terminal, null);
   assert.equal(unknown.terminalCode, "ZZZ");
   assert.equal(unknown.qualityStatus, "PARTIAL");
@@ -304,4 +315,73 @@ test("stored A2 rows can be verified read-only, independently of what the collec
     assert.match(totals.sql, new RegExp(`AS ${column}\\b`), `totals probe must report ${column}`);
   }
   assert.match(grouped.sql, /GROUP BY COALESCE\(terminal, 'UNKNOWN'\), category_group/);
+});
+
+test("문서에 있는 코드는 그대로 쓴다", () => {
+  for (const [code, expected] of [["P01", "T1"], ["P03", "T2"], ["G01", "CONCOURSE"], ["G02", "T1_TRANSPORT"], ["G03", "T2_TRANSPORT"]]) {
+    const { terminal, evidence } = resolveFacilityTerminal(code, null);
+    assert.equal(terminal, expected);
+    assert.equal(evidence, "DOCUMENTED_CODE");
+  }
+});
+
+test("P02는 코드와 위치 문구가 함께 탑승동이라고 말할 때만 인정한다", () => {
+  // 실제로 공급자가 보낸 형태. 안내서에 없는 코드지만 자기 위치 문구가
+  // 같은 건물을 한국어로 직접 말한다.
+  const proven = resolveFacilityTerminal("P02", "탑승동 3층 105번 게이트 부근");
+  assert.equal(proven.terminal, "CONCOURSE");
+  assert.equal(proven.evidence, "UNDOCUMENTED_CODE_WITH_LOCATION_TEXT");
+
+  // 코드만으로는 안 된다. 문서에 없는 코드는 공급자가 언제든 다시 배정할 수
+  // 있으므로, 두 번째 증거 없이는 미해결로 남긴다.
+  const codeOnly = resolveFacilityTerminal("P02", "3층 면세지역");
+  assert.equal(codeOnly.terminal, null);
+  assert.equal(codeOnly.evidence, "NONE");
+  assert.equal(resolveFacilityTerminal("P02", null).terminal, null);
+});
+
+test("위치 문구가 건물을 직접 말하면 코드가 없어도 인정한다", () => {
+  for (const [location, expected] of [
+    ["제1여객터미널 3층 면세지역 27번 게이트 부근", "T1"],
+    ["제2여객터미널 3층 면세지역 251번 게이트 부근", "T2"],
+    ["제1교통센터 지하1층", "T1_TRANSPORT"],
+    ["제2교통센터 지하1층", "T2_TRANSPORT"],
+    ["탑승동 4층 중앙", "CONCOURSE"],
+  ]) {
+    const { terminal, evidence } = resolveFacilityTerminal(null, location);
+    assert.equal(terminal, expected, location);
+    assert.equal(evidence, "OFFICIAL_LOCATION_TEXT");
+  }
+});
+
+test("더 구체적인 건물이 이긴다 — 탑승동은 자기 모(母)터미널에 흡수되지 않는다", () => {
+  // 실제 행: 제1여객터미널과 탑승동이 한 문장에 같이 나온다. 시설이 실제로
+  // 있는 곳은 탑승동이다.
+  assert.equal(resolveFacilityTerminal(null, "제1여객터미널 탑승동 3층 117번 게이트 부근").terminal, "CONCOURSE");
+  assert.equal(resolveFacilityTerminal("P02", "인천국제공항 제1터미널 탑승동 동편").terminal, "CONCOURSE");
+});
+
+test("공식 근거가 없으면 추측하지 않고 미해결로 남긴다", () => {
+  for (const [code, location] of [
+    [null, "3층 면세지역"],
+    ["ZZ9", "지하 1층"],
+    [null, null],
+    ["", ""],
+    // 브랜드·업종·게이트 번호만으로는 절대 추론하지 않는다.
+    [null, "신라면세점 부근"],
+    [null, "251번 게이트 부근"],
+  ]) {
+    const { terminal, evidence } = resolveFacilityTerminal(code, location);
+    assert.equal(terminal, null, `${code} / ${location}`);
+    assert.equal(evidence, "NONE");
+  }
+});
+
+test("정규화는 브랜드나 업종을 근거로 삼지 않는다", async () => {
+  const source = await readFile(new URL("../lib/airport-facilities.ts", import.meta.url), "utf8");
+  const resolver = source.match(/export function resolveFacilityTerminal[\s\S]*?\n\}/)?.[0] ?? "";
+  assert.ok(resolver.length > 0);
+  for (const forbidden of ["nameKo", "categoryGroup", "largeCategory", "facilityItem", "goodsBrands", "facilityId"]) {
+    assert.equal(resolver.includes(forbidden), false, `터미널을 ${forbidden} 로 추론하면 안 된다`);
+  }
 });

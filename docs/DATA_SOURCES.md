@@ -443,6 +443,19 @@ storage, not a log line. `collector_runs.records_read` is **1,232** against
 measured rather than assumed. Source health: **LIVE**, `consecutive_failures`
 0.
 
+**터미널 코드 `P02` — 안내서에 없지만 공급자가 실제로 보내는 코드 (2026-09-04).**
+첫 실제 수집에서 탑승동 행이 0건이었다. `G01` 은 응답에 오지 않았고, 대신
+문서화되지 않은 `P02` 가 81건에 왔다. 표본 40건 전부가 자기 공식 위치 문구에
+`탑승동` 을 담고 있다("탑승동 3층 105번 게이트 부근"). 코드가 일관되고, 원본
+문구가 같은 건물을 한국어로 직접 말한다.
+
+`resolveFacilityTerminal` 은 **두 근거가 모두 있을 때만** 이런 코드를 해석한다:
+문서에 없는 코드는 공급자가 언제든 재배정할 수 있고, 건물 이름만으로는 이웃
+건물을 가리키는 문장일 수 있기 때문이다. 근거 종류는 `DOCUMENTED_CODE` /
+`UNDOCUMENTED_CODE_WITH_LOCATION_TEXT` / `OFFICIAL_LOCATION_TEXT` / `NONE` 로
+구분되어 모든 해석이 감사 가능하다. 브랜드·업종·이웃 시설 ID·게이트 번호로는
+절대 추론하지 않는다.
+
 **The 81 unrecognised terminals are a real gap, not noise.** Zero rows mapped
 to `CONCOURSE`, `T1_TRANSPORT` or `T2_TRANSPORT`, so the documented
 `G01`/`G02`/`G03` codes did not appear in the response at all; those 81 rows
