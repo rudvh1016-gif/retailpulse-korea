@@ -1,8 +1,8 @@
 name: Production Visual Check
 
 # Read-only Playwright run against the live site: PURE WHITE (computed
-# colour + sampled pixels) across KO/EN/ZH/JA and five viewports, plus the
-# airline ranking / country roll-up visibility. Screenshots are uploaded as
+# colour + sampled pixels) across KO/EN/ZH/JA and six viewports, plus Airport
+# composition and Tourism Guide Desk / PWA-install visuals. Screenshots are uploaded as
 # artifacts so the report can cite them. Nothing is written anywhere.
 on:
   workflow_dispatch:

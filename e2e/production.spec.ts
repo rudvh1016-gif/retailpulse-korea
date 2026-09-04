@@ -26,8 +26,8 @@ for (const [locale, htmlLang] of locales) {
 }
 
 const localeFonts = [
-  ["ko", "Pretendard Variable"],
-  ["en", "Pretendard Variable"],
+  ["ko", "KORETAIL Sans Variable"],
+  ["en", "KORETAIL Sans Variable"],
   ["zh", "Noto Sans SC Variable"],
   ["ja", "Noto Sans JP Variable"],
 ] as const;
@@ -358,6 +358,11 @@ test("a day with no stored departures says so instead of blaming gate coverage",
   await expect(page.locator(".airport-gates .airport-empty-line")).toContainText("아직 수집되지 않았습니다");
   await page.getByRole("tab", { name: "항공사", exact: true }).click();
   await expect(page.locator(".airport-airlines .airport-empty-line")).toContainText("아직 수집되지 않았습니다");
+  await page.getByRole("tab", { name: "등록 국가", exact: true }).click();
+  const countries = page.locator(".airport-countries");
+  await expect(countries.locator(".airport-empty-line")).toContainText("아직 수집되지 않았습니다");
+  await expect(countries.locator(".airport-detail-foot")).toContainText("OpenFlights");
+  await expect(countries.locator(".airport-detail-foot")).toContainText("승객의 국적이 아닙니다");
   await page.getByRole("tab", { name: "게이트", exact: true }).click();
   await expect(page.locator(".airport-gates")).not.toContainText("게이트 정보 범위가 충분하지 않아");
 });
@@ -1426,6 +1431,33 @@ test("the header offers an install guide with real steps for Galaxy and iPhone",
 
   await dialog.getByRole("button", { name: "닫기" }).click();
   await expect(dialog).toHaveCount(0);
+});
+
+test("the install guide keeps keyboard focus inside and restores the trigger", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.goto("/ko");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+
+  const trigger = page.locator(".topbar .install-app-button");
+  await trigger.focus();
+  await trigger.press("Enter");
+
+  const dialog = page.getByRole("dialog", { name: "앱처럼 설치하기" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toBeFocused();
+  await expect(dialog).toHaveAttribute("aria-describedby", "install-description");
+  await expect(page.locator("#install-description")).toBeVisible();
+
+  const close = dialog.getByRole("button", { name: "닫기" });
+  const firstControl = dialog.locator("button:not([disabled])").first();
+  await page.keyboard.press("Shift+Tab");
+  await expect(close).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(firstControl).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
 });
 
 test("the install guide is written in every locale, not only Korean", async ({ page }) => {

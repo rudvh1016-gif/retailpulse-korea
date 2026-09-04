@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 
@@ -219,23 +220,35 @@ test("no decorative photograph of unverified origin is served", async () => {
 
 test("keeps the four-language fonts as bounded static assets", async () => {
   const css = await read("../app/globals.css");
-  for (const file of [
-    "pretendard-variable.woff2",
-    "noto-sans-jp-400.woff2",
-    "noto-sans-jp-600.woff2",
-    "noto-sans-sc-400.woff2",
-    "noto-sans-sc-600.woff2",
-  ]) {
+  const assets = [
+    ["koretail-sans-variable.woff2", 300_000],
+    ["noto-sans-jp-400.woff2", 300_000],
+    ["noto-sans-jp-600.woff2", 300_000],
+    ["noto-sans-sc-400.woff2", 300_000],
+    ["noto-sans-sc-600.woff2", 300_000],
+    // Official event titles and descriptions change independently of a code
+    // release. This one exceptional face covers every modern Hangul syllable;
+    // CSS limits it to those provider-owned Korean strings.
+    ["pretendard-variable.woff2", 2_200_000],
+  ];
+  for (const [file, maximumBytes] of assets) {
     assert.match(css, new RegExp(`/fonts/${file.replaceAll(".", "\\.")}`));
     const asset = await stat(new URL(`../public/fonts/${file}`, import.meta.url));
     assert.ok(asset.size > 20_000, `${file} should contain real glyph data`);
-    assert.ok(asset.size < 200_000, `${file} should stay outside the Worker and below 200 KB`);
+    assert.ok(asset.size < maximumBytes,
+      `${file} should stay outside the Worker and below ${maximumBytes} bytes`);
   }
+  const upstreamPretendard = await readFile(new URL(
+    "../public/fonts/pretendard-variable.woff2", import.meta.url,
+  ));
+  assert.equal(createHash("sha256").update(upstreamPretendard).digest("hex"),
+    "9599f12fd42fc0bce1cd50b47a0c022e108d7aa64dd0d1bb0ed44f3282d900b4",
+    "the asset retaining Pretendard's Reserved Font Name must stay byte-identical to upstream");
 });
 
 test("uses one locale-aware font family and only supported UI weights", async () => {
   const css = await read("../app/globals.css");
-  assert.match(css, /--font-ui:\s*"Pretendard Variable"/);
+  assert.match(css, /--font-ui:\s*"KORETAIL Sans Variable"/);
   assert.match(css, /\.app\.lang-ja\s*{[^}]*--font-ui:\s*"Noto Sans JP Variable"/s);
   assert.match(css, /\.app\.lang-zh\s*{[^}]*--font-ui:\s*"Noto Sans SC Variable"/s);
   assert.match(css, /--weight-regular:\s*400/);

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 
+import { tofuCharacters } from "./font-glyphs";
 import { routeSummary, SUMMARY_FIXTURE } from "./summary-fixture";
 
 /**
@@ -23,44 +24,10 @@ import { routeSummary, SUMMARY_FIXTURE } from "./summary-fixture";
  * is a live risk every time copy is added. These tests measure the real
  * rendered result rather than reading the stylesheet.
  *
- * Coverage is asserted on Korean only, and deliberately so. Pretendard's
- * subset is built from the Korean and English copy, so "every character is
- * drawn by the bundled font" is a promise this repository can keep there.
- * The Noto SC / JP subsets are narrower — they carry neither `·` nor plain
- * ASCII punctuation — so ZH and JA fall back on characters that appear all
- * over the existing product, not only here. That is a real but separate,
- * pre-existing issue with those two subsets, and failing this test on it
- * would claim the install guide broke something it did not. What holds for
- * all four locales instead is the symbol allowlist in
- * `tests/install-guide.test.mjs`: new copy may only use symbols the product
- * already uses.
+ * Coverage is asserted on all four locales now. The static subsets are built
+ * from the complete product-copy source, while changeable provider-owned
+ * Korean event text is routed to a complete modern-Hangul face.
  */
-
-/**
- * A character is covered when it measures identically against two fallback
- * families with different metrics: if the primary font has the glyph, the
- * fallback is never reached and the two widths match.
- */
-const uncoveredCharacters = (page: import("@playwright/test").Page, sample: string) =>
-  page.evaluate((text) => {
-    const primary = getComputedStyle(document.body).fontFamily.split(",")[0];
-    const measure = (ch: string, fallback: string) => {
-      const span = document.createElement("span");
-      span.textContent = ch;
-      span.style.cssText = `position:absolute;visibility:hidden;white-space:pre;font-size:100px;font-family:${primary},${fallback}`;
-      document.body.appendChild(span);
-      const width = span.getBoundingClientRect().width;
-      span.remove();
-      return width;
-    };
-    const missing: string[] = [];
-    for (const ch of new Set(text)) {
-      // ASCII and whitespace are drawn the same by every fallback here.
-      if (ch.codePointAt(0)! < 0x00a0) continue;
-      if (Math.abs(measure(ch, "serif") - measure(ch, "monospace")) > 0.5) missing.push(ch);
-    }
-    return missing;
-  }, sample);
 
 const openGuide = async (page: import("@playwright/test").Page, locale: string) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
@@ -73,12 +40,29 @@ const openGuide = async (page: import("@playwright/test").Page, locale: string) 
   return dialog;
 };
 
-test("every character of the install guide is drawn by the bundled font", async ({ page }) => {
-  const dialog = await openGuide(page, "ko");
-  const text = (await dialog.innerText()).replace(/\s+/g, " ");
-  const missing = await uncoveredCharacters(page, text);
-  expect(missing, `these characters fall back to another font and look wrong: ${missing.join(" ")}`).toEqual([]);
-});
+for (const locale of ["ko", "en", "zh", "ja"] as const) {
+  test(`${locale} install guide contains no missing-glyph boxes`, async ({ page }) => {
+    const dialog = await openGuide(page, locale);
+    expect(await tofuCharacters(dialog)).toEqual([]);
+  });
+
+  test(`${locale} Tourism Desk and Visitor Show contain no missing-glyph boxes`, async ({ page }) => {
+    await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+    await page.goto(`/${locale}/tourism-desk/myeongdong`);
+    await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+    const desk = page.locator(".tourism-desk");
+    expect(await tofuCharacters(desk)).toEqual([]);
+
+    const launch = desk.locator(".tourism-visitor-launches button").first();
+    await expect(launch).toBeVisible();
+    await launch.click();
+    const dialog = page.locator("dialog.tourism-visitor-show");
+    await expect(dialog).toBeVisible();
+    await dialog.locator(`button[lang="${locale}"]`).click();
+    await expect(dialog).toHaveAttribute("lang", locale);
+    expect(await tofuCharacters(dialog)).toEqual([]);
+  });
+}
 
 /**
  * One scale, deliberately narrow. Sizes and weights are read off the real

@@ -1346,7 +1346,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         aria-labelledby="airport-composition-tab-countries"
       >
         <div className="airport-composition-panel-head"><h4>{airportTodayText.countriesTitle[lang]}</h4><p>{airportTodayText.countriesNote[lang]}</p></div>
-        {ranking && ranking.countries.length ? <>
+        {ranking && ranking.countries.length ?
           <ol className="airport-gate-list airport-country-list">
             <li className="airport-gate-head" aria-hidden="true"><span>{airportTodayText.rankLabel[lang]}</span><strong>{airportTodayText.countryColumn[lang]}</strong><b>{airportTodayText.departureShareColumn[lang]}</b></li>
             {ranking.countries.map((row, index) => <li className="airport-rank-row airport-country-row" key={row.country ?? "unverified"}>
@@ -1354,9 +1354,10 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
               <strong>{row.country ? <i>{row.country}</i> : null}{row.country ? regionName(row.country, lang) : airportTodayText.countryUnverified[lang]}<em>{row.airlines.toLocaleString(numberLocale)}{airportTodayText.airlinesUnit[lang]}</em></strong>
               <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}<small>{formatShare(row.share)}</small></b>
             </li>)}
-          </ol>
-          <p className="airport-detail-foot">{airportTodayText.airlineCountryBasis[lang](airport.airlineRanking?.countrySource?.retrievedOn ?? "—")}</p>
-        </> : <p className="airport-empty-line">{flightsCount === null ? noFlightsText : airportTodayText.noAirlineList[lang]}</p>}
+          </ol> : <p className="airport-empty-line">{flightsCount === null ? noFlightsText : airportTodayText.noAirlineList[lang]}</p>}
+        <p className="airport-detail-foot">{airport.airlineRanking?.countrySource?.retrievedOn
+          ? airportTodayText.airlineCountryBasis[lang](airport.airlineRanking.countrySource.retrievedOn)
+          : airportTodayText.airlineCountryShortBasis[lang]}</p>
       </section>}
     </section>
 

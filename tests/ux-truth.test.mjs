@@ -356,6 +356,8 @@ test("the palette is cold and neutral — no beige, ochre or warm grey", () => {
   assert.match(styles, /--line:\s*#e5e5e5/);
   assert.match(styles, /--paper:\s*#ffffff/);
   assert.equal(styles.includes("--amber"), false, "the warm token is gone, so it cannot be reused");
+  assert.doesNotMatch(styles, /backdrop-filter\s*:/,
+    "modal overlays stay neutral and must not blur the product behind them");
 });
 
 test("ordinary missing-data and stale states are neutral, not alarms", () => {

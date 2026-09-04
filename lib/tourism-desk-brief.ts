@@ -62,6 +62,8 @@ export interface TourismDeskLine {
   key: "crowding" | "forecast" | "weather" | "event" | "subway";
   /** The fact. */
   text: string;
+  /** Korean source text embedded in a localized sentence. */
+  koreanText?: { value: string; position: "start" | "end" };
   /** What that fact is, and what it is not. Never optional. */
   basis: string;
 }
@@ -216,7 +218,12 @@ function subwayLine(
     : lang === "en" ? `Seoul Metro daily alighting count for ${dateText}${recentAverageNote} · gate counts, not unique visitors or total area visitors`
     : lang === "zh" ? `首尔交通公社${dateText}日度下车次数${recentAverageNote} · 为闸机统计，并非独立访客或整个地区到访人数`
     : `ソウル交通公社の${dateText}の日次降車件数${recentAverageNote} · 改札集計であり、ユニーク訪問者数や地域全体の来訪者数ではありません`;
-  return { key: "subway", text, basis };
+  return {
+    key: "subway",
+    text,
+    koreanText: { value: subway.selectedStations, position: "start" },
+    basis,
+  };
 }
 
 /**
@@ -268,6 +275,7 @@ export function buildTourismDeskBrief(input: TourismDeskInput, lang: DeskLang, a
         : lang === "en" ? `Today falls within the official event period · ${named}`
         : lang === "zh" ? `今日在官方活动期间内 · ${named}`
         : `本日は公式開催期間内 · ${named}`,
+      koreanText: { value: named, position: "end" },
       basis: BASIS.event[lang],
     });
   }

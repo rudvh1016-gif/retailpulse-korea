@@ -130,6 +130,17 @@ test("collector downloads once, stores only aggregates, then metadata-skips the 
   };
   const env = { DB: new LocalD1Database(database) as unknown as D1Database, FOREIGN_PURPOSE_SOURCE: source };
   const first = await collectForeignPurposeMobility(env, new Date("2026-09-02T00:00:00Z"));
+  // Reproduce the Production state that exposed this bug: the last data
+  // publication is still good, but one or more metadata checks have failed
+  // since then. A later successful no-new-publication check must recover the
+  // health row without erasing the publication timestamps it did not fetch.
+  database.prepare(`UPDATE source_health SET
+      status = ?, last_published_at = ?, last_retrieved_at = ?,
+      consecutive_failures = ?, detail = ?
+    WHERE source_id = ?`).run(
+    "STALE", "2026-08-05T00:00:00.000Z", "2026-09-02T00:00:00.000Z",
+    2, "previous metadata failure", "SEOUL_FOREIGN_PURPOSE_MOBILITY",
+  );
   const second = await collectForeignPurposeMobility(env, new Date("2026-09-03T00:00:00Z"));
 
   assert.equal(first.status, "SUCCESS");
@@ -141,7 +152,17 @@ test("collector downloads once, stores only aggregates, then metadata-skips the 
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_purpose_mobility").get()!.count, 3);
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_purpose_publications").get()!.count, 1);
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM sqlite_master WHERE type='table' AND name LIKE '%raw%'").get()!.count, 0);
-  assert.equal(database.prepare("SELECT status FROM source_health WHERE source_id = ?").get("SEOUL_FOREIGN_PURPOSE_MOBILITY")!.status, "OFFICIAL_HISTORICAL");
+  assert.deepEqual({ ...database.prepare(`SELECT status, last_event_at AS eventAt,
+      last_published_at AS publishedAt, last_retrieved_at AS retrievedAt,
+      detail, consecutive_failures AS consecutiveFailures
+    FROM source_health WHERE source_id = ?`).get("SEOUL_FOREIGN_PURPOSE_MOBILITY") }, {
+    status: "OFFICIAL_HISTORICAL",
+    eventAt: "2026-07-31T00:00:00+09:00",
+    publishedAt: "2026-08-05T00:00:00.000Z",
+    retrievedAt: "2026-09-03T00:00:00.000Z",
+    detail: "publication 202607; metadata only; archive download 0",
+    consecutiveFailures: 0,
+  });
   database.close();
 });
 
@@ -153,6 +174,15 @@ test("collector failure preserves last-good aggregates and marks health stale", 
     "myeongdong", "2026-07-31", "shopping", 10, "estimated_movements", '["11140550"]',
     "official-admin-dong-2025-06-02-v1", "2026-09-02T00:00:00Z", "v1", "VALID", "hash",
   );
+  database.prepare(`INSERT INTO source_health (
+      source_id, status, last_event_at, last_published_at, last_retrieved_at,
+      consecutive_failures, schema_version, detail, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .run(
+      "SEOUL_FOREIGN_PURPOSE_MOBILITY", "OFFICIAL_HISTORICAL",
+      "2026-07-31T00:00:00+09:00", null, "2026-09-02T00:00:00.000Z",
+      0, "seoul-foreign-purpose-mobility-v1", "previous success", "2026-09-02T00:00:00.000Z",
+    );
   const result = await collectForeignPurposeMobility({
     DB: new LocalD1Database(database) as unknown as D1Database,
     FOREIGN_PURPOSE_SOURCE: {
@@ -163,7 +193,18 @@ test("collector failure preserves last-good aggregates and marks health stale", 
   assert.equal(result.status, "ERROR");
   assert.equal(result.lastGoodPreserved, true);
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_purpose_mobility").get()!.count, 1);
-  assert.equal(database.prepare("SELECT status FROM source_health WHERE source_id = ?").get("SEOUL_FOREIGN_PURPOSE_MOBILITY")!.status, "STALE");
+  const health = { ...database.prepare(`SELECT status, last_event_at AS eventAt,
+      last_retrieved_at AS retrievedAt, detail, consecutive_failures AS consecutiveFailures
+    FROM source_health WHERE source_id = ?`).get("SEOUL_FOREIGN_PURPOSE_MOBILITY") };
+  assert.deepEqual({ ...health, detail: undefined }, {
+    status: "STALE",
+    eventAt: "2026-07-31T00:00:00+09:00",
+    retrievedAt: "2026-09-02T00:00:00.000Z",
+    detail: undefined,
+    consecutiveFailures: 1,
+  });
+  assert.match(String(health.detail),
+    /^failureClass=PROVIDER causeCode=PROVIDER_TIMEOUT attempts=1 elapsedMs=\d+ retryExhausted=false$/);
   database.close();
 });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   detectInstallPlatform,
   installGuide,
@@ -27,6 +27,33 @@ import {
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
+const FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "[tabindex]:not([tabindex=\"-1\"])",
+].join(",");
+
+/**
+ * Return the boundary target for a modal Tab press. A `null` result means
+ * the browser can perform its normal move between controls in the middle.
+ * Keeping the boundary calculation pure makes the wrap behaviour testable
+ * without pretending Node has a browser focus model.
+ */
+export function dialogTabTargetIndex(
+  activeIndex: number,
+  focusableCount: number,
+  backwards: boolean,
+): number | null {
+  if (focusableCount <= 0) return null;
+  if (activeIndex < 0) return backwards ? focusableCount - 1 : 0;
+  if (backwards && activeIndex === 0) return focusableCount - 1;
+  if (!backwards && activeIndex === focusableCount - 1) return 0;
+  return null;
 }
 
 /** Standalone means the page is already running as the installed app. */
@@ -60,6 +87,8 @@ function subscribeToNothing() {
 export function InstallAppButton({ lang }: { lang: InstallLang }) {
   const guide = installGuide(lang);
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   // Set when the install completes in THIS tab, which stays a browser tab —
   // its display mode does not change, so the event is the only evidence.
@@ -88,9 +117,42 @@ export function InstallAppButton({ lang }: { lang: InstallLang }) {
 
   useEffect(() => {
     if (!open) return;
-    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
-    window.addEventListener("keydown", escape);
-    return () => window.removeEventListener("keydown", escape);
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const trigger = triggerRef.current;
+
+    // Start at the top of this long guide. Focusing the last (close) button
+    // would immediately scroll a phone reader past all of the instructions.
+    dialog.focus({ preventScroll: true });
+
+    const keepFocusInside = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+        .filter((element) => element.getClientRects().length > 0);
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const activeIndex = focusable.indexOf(document.activeElement as HTMLElement);
+      const targetIndex = dialogTabTargetIndex(activeIndex, focusable.length, event.shiftKey);
+      if (targetIndex === null) return;
+      event.preventDefault();
+      focusable[targetIndex].focus();
+    };
+
+    document.addEventListener("keydown", keepFocusInside);
+    return () => {
+      document.removeEventListener("keydown", keepFocusInside);
+      trigger?.focus({ preventScroll: true });
+    };
   }, [open]);
 
   async function installNow() {
@@ -105,16 +167,34 @@ export function InstallAppButton({ lang }: { lang: InstallLang }) {
   }
 
   return <>
-    <button className="install-app-button" onClick={() => setOpen(true)} aria-haspopup="dialog">
+    <button
+      ref={triggerRef}
+      type="button"
+      className="install-app-button"
+      onClick={() => setOpen(true)}
+      aria-haspopup="dialog"
+      aria-controls="install-dialog"
+      aria-expanded={open}
+    >
       {guide.buttonLabel}
     </button>
-    {open && <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="install-title" onClick={() => setOpen(false)}>
-      <div className="modal install-modal" onClick={(event) => event.stopPropagation()}>
+    {open && <div className="modal-backdrop" onClick={() => setOpen(false)}>
+      <div
+        ref={dialogRef}
+        id="install-dialog"
+        className="modal install-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="install-title"
+        aria-describedby="install-description"
+        tabIndex={-1}
+        onClick={(event) => event.stopPropagation()}
+      >
         <p className="eyebrow">KORETAIL · INSTALL</p>
         <h2 id="install-title">{installed ? guide.installedTitle : guide.title}</h2>
 
-        {installed ? <p className="install-intro">{guide.installedBody}</p> : <>
-          <p className="install-intro">{guide.intro}</p>
+        {installed ? <p id="install-description" className="install-intro">{guide.installedBody}</p> : <>
+          <p id="install-description" className="install-intro">{guide.intro}</p>
 
           <ul className="install-benefits">
             {guide.benefits.map((benefit) => <li key={benefit}>{benefit}</li>)}
