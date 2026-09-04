@@ -446,3 +446,92 @@ test("항공사 국가를 사람의 국적으로 부르지 않는다", () => {
   assert.match(signals, /OpenFlights/);
   assert.match(signals, /공식 등록 자료가 아닙니다/);
 });
+
+/**
+ * 공식 등록 자료 ≠ 실시간 입점 현황.
+ *
+ * 소유자가 실제로 겪은 일: 이미 퇴점한 화장품 매장이 여전히 공식 자료에
+ * 남아 있었다. 데이터셋 15095064 는 공항공사의 등록 대장이지 임차 현황
+ * 실시간 피드가 아니다. 기존에도 안내 문구는 있었지만 "그냥 지나치기
+ * 쉽다"는 보고가 있어, 필터 위에 항상 보이는 자리로 올렸다.
+ *
+ * KORETAIL 은 소유자가 근무지에서 아는 사실을 공개 데이터에 덮어쓰지
+ * 않는다. 특정 매장을 코드로 지우는 대신, 자료의 성격을 밝힌다.
+ */
+test("시설 디렉터리는 공식 등록 자료임을 필터 위에서 먼저 밝힌다", () => {
+  const block = signals.match(/const facilityText = \{[\s\S]*?\n\} as const;/)?.[0]
+    ?? signals.match(/const facilityText = \{[\s\S]*?\n\};/)?.[0] ?? "";
+  assert.ok(block.length > 0);
+
+  // 네 언어 모두 "실시간 입점 현황이 아니다" 를 말한다.
+  for (const phrase of ["실시간 입점 현황 아님", "not live tenancy", "非实时入驻状况", "リアルタイムの入居状況ではありません"]) {
+    assert.ok(block.includes(phrase), `${phrase} 가 있어야 한다`);
+  }
+  // 퇴점 매장이 남을 수 있다는 사실도 같은 자리에 있다.
+  assert.ok(block.includes("이미 퇴점한 매장이 표시될 수 있습니다"));
+  // 공급자가 변경일을 주지 않는다는 사실을 수집 시각으로 대체하지 않는다.
+  assert.ok(block.includes("공급자가 개별 시설의 실제 변경일은 제공하지 않습니다"));
+
+  // 필터보다 먼저 렌더링된다: 툴팁도, 더보기도, 푸터도 아니다.
+  const basis = signals.indexOf('className="facility-basis"');
+  const filters = signals.indexOf('className="facility-filters"');
+  const list = signals.indexOf('className="facility-list"');
+  assert.ok(basis > 0 && filters > 0 && list > 0);
+  assert.ok(basis < filters, "근거는 필터보다 먼저 보여야 한다");
+  assert.ok(basis < list, "근거는 결과보다 먼저 보여야 한다");
+});
+
+/**
+ * 등록 자료를 "지금 영업 중"으로 부르지 않는다.
+ *
+ * 등록 대장은 그 매장이 지금 존재하는지도, 문을 열었는지도 증명하지
+ * 못한다. 그렇게 읽히는 라벨을 금지한다.
+ */
+test("시설을 현재 영업/입점 상태로 부르지 않는다", () => {
+  const block = signals.match(/const facilityText = \{[\s\S]*?\n\} as const;/)?.[0]
+    ?? signals.match(/const facilityText = \{[\s\S]*?\n\};/)?.[0] ?? "";
+  assert.ok(block.length > 0);
+  for (const forbidden of ["현재 입점", "현재 영업", "운영 중", "영업 중입니다", "현재 매장"]) {
+    assert.ok(!block.includes(forbidden), `"${forbidden}" 은 등록 자료가 증명하지 못하는 상태다`);
+  }
+  // 영업시간은 언제나 "공식 영업시간 기준" 으로만 말한다.
+  assert.ok(block.includes("공식 영업시간 기준"));
+});
+
+/**
+ * 매장을 저장해도 한계는 사라지지 않는다.
+ *
+ * 내 매장 브리핑은 인쇄되어 다른 사람 손에 넘어간다. 종이에서는 화면의
+ * 안내를 볼 수 없으므로, 근거가 브리핑 안에 함께 있어야 한다.
+ */
+test("선택한 매장과 인쇄물에도 같은 근거가 남는다", () => {
+  const snapshot = signals.match(/function MyStoreSnapshot\([\s\S]*?\n\}/)?.[0] ?? "";
+  assert.ok(snapshot.length > 0);
+  assert.ok(snapshot.includes('className="facility-basis"'),
+    "저장한 매장에도 같은 근거 블록이 있어야 한다");
+  assert.ok(snapshot.includes("facilityText.staleness[lang]"));
+  // 인쇄 범위 안에 있다: 근거 블록이 .my-store-brief 안쪽에 있어야 한다.
+  const brief = snapshot.indexOf('className="my-store-brief"');
+  const basis = snapshot.indexOf('className="facility-basis"');
+  assert.ok(brief > -1 && basis > brief, "근거는 인쇄되는 영역 안에 있어야 한다");
+});
+
+/**
+ * 특정 매장을 코드로 지우지 않는다.
+ *
+ * 소유자는 근무지에서 어떤 매장이 이미 없다는 것을 알 수 있다. 그런 사적
+ * 지식을 공개 데이터 위에 덮어쓰면 KORETAIL 은 더 이상 공공 데이터로
+ * 검증 가능한 제품이 아니게 되고, 근무지 내부 정보를 공개 저장소에
+ * 옮겨 적는 일이 된다. 공개적으로 확인 가능한 공식 근거가 나오기
+ * 전까지는, 기록을 그대로 보여주고 한계를 밝힌다.
+ */
+test("사적 지식으로 특정 시설을 숨기거나 지우지 않는다", () => {
+  for (const source of [signals, styles]) {
+    // 공개 소스에 근무지·특정 브랜드를 지목한 로직이나 설명이 남으면
+    // 안 된다. 공식 자료에 실려 오는 매장 이름은 데이터이지 코드가 아니다.
+    assert.ok(!/신라|Shilla|SHILLA/.test(source),
+      "특정 브랜드를 이름으로 지목한 코드나 주석이 있으면 안 된다");
+  }
+  // 시설을 이름/브랜드로 제외하는 하드코딩 목록이 없어야 한다.
+  assert.ok(!/(HIDDEN|BLOCKED|EXCLUDED|CLOSED)_FACILIT/i.test(signals));
+});

@@ -979,7 +979,34 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
    call to action. */
 .facility-copy { margin: 10px 0 0; }
 .facility-copy button { min-height: 44px; padding: 0; border: 0; border-bottom: 1px solid var(--ink); background: transparent; color: var(--ink); font: inherit; font-size: 11px; font-weight: var(--weight-strong); cursor: pointer; }
-.facility-staleness { max-width: 70ch; margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+/*
+ * The source basis, stated before the reader trusts a result.
+ *
+ * Deliberately NOT a warning. An official registration directory not being
+ * a live tenancy feed is a property of the source, not a mistake anyone
+ * made, so it is set in the same neutral gray as every other piece of
+ * metadata — no amber, no red, no icon. What makes it hard to miss is
+ * position (directly under the heading, above the filters) and the rule
+ * above it, not colour.
+ */
+/*
+ * The reference period of a source that publishes on a cycle.
+ *
+ * Its own line, under the number. "2026년 7월" alone reads as a stale
+ * product; "월간 자료 · 자료 기준 2026년 7월 · 공급자가 공개한 가장 최근
+ * 자료입니다" reads as a source that has not published August yet. Neutral
+ * gray, because neither is an error.
+ */
+.signal-row-period { margin: 6px 0 0; display: flex; flex-direction: column; gap: 2px; }
+.signal-row-period span { color: var(--ink); font-size: 11px; font-weight: var(--weight-strong); }
+.signal-row-period small { color: var(--muted); font-size: 10px; line-height: 1.5; }
+
+.facility-basis { max-width: 70ch; margin: 10px 0 0; padding-top: 10px; border-top: 1px solid var(--line); }
+.facility-basis p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.facility-basis-head { color: var(--ink) !important; font-weight: var(--weight-strong); }
+
+/* Per-row provenance: two words, so a card carries its own basis. */
+.facility-record-label { margin: 8px 0 0; color: var(--muted); font-size: 10px; letter-spacing: .02em; }
 
 /* 구성/이유 묶음. 게이트와 항공사는 별개 주제가 아니라 앞선 숫자의 근거이므로
    하나의 제목 아래 들어가고, 안쪽 섹션은 자기 위쪽 경계선을 갖지 않는다. */

@@ -459,6 +459,10 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
         tradeAreaName: salesForArea[0].tradeAreaName,
         totalAmount: salesTotal,
         industryCount: salesForArea.length,
+        // Already selected by the query above; carried through so the screen
+        // can say whether this quarter is the provider's newest publication
+        // or a sign collection has stopped. No extra read.
+        retrievedAt: salesForArea[0].retrievedAt ?? null,
         topIndustries: salesForArea.slice(0, 3).map((row) => ({ industryName: row.industryName, salesAmount: row.salesAmount })),
       } : null,
       storeDynamics: (() => {

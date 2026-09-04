@@ -70,7 +70,10 @@ test("the freshness caveat is shown on screen too, in all four languages", async
     assert.ok(signals.includes(COPY_DISCLAIMER[lang].staleness), `${lang} caveat must be on screen`);
   }
   // Both surfaces that show a facility show it: the directory and My Store.
-  assert.equal((signals.match(/className="facility-staleness"/g) ?? []).length, 2,
+  // The caveat moved into the always-visible basis block on 2026-09-04 (the
+  // owner reported the old placement was easy to read past), so the count is
+  // of that block — the guarantee is unchanged, its position is not.
+  assert.equal((signals.match(/className="facility-basis"/g) ?? []).length, 2,
     "the directory and the selected-store header must both carry it");
 });
 
