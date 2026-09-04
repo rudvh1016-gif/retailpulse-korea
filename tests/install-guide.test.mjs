@@ -183,6 +183,50 @@ test("the guide promises nothing the product does not do", () => {
   }
 });
 
+/**
+ * Symbols are where a self-hosted font subset breaks.
+ *
+ * The fonts are subsets built from the production copy, so a symbol nobody
+ * used before is simply not in them: the browser draws that ONE character
+ * from a fallback family and it lands at a different width and weight from
+ * everything beside it. The first version of this guide used ≡ for the
+ * Samsung menu, ⬆ for the iOS share button and → between menu steps; none
+ * of the three is in any bundled subset, and the owner saw the result as
+ * "글자체가 뒤죽박죽". Words describe a button just as well and always draw.
+ *
+ * The allowlist is what the product already uses everywhere, so anything on
+ * it is a risk the fonts have already taken.
+ */
+test("the guide uses no symbol the bundled font subsets do not carry", () => {
+  // `·` and `—` are already in the product's own copy, and `⋮` is the
+  // Chrome menu, which no wording replaces. Anything on this list is a risk
+  // the fonts have already taken; anything off it is a new one.
+  const ALLOWED = new Set([..."·⋮—"]);
+  for (const lang of LANGS) {
+    const guide = installGuide(lang);
+    const text = [
+      guide.buttonLabel, guide.title, guide.intro, guide.promptLabel, guide.promptNote,
+      guide.installedTitle, guide.installedBody, guide.questionsTitle, guide.closeLabel,
+      guide.doneTitle, guide.doneBody,
+      ...guide.benefits,
+      ...guide.questions.flatMap((item) => [item.question, item.answer]),
+      ...guide.sections.flatMap((section) => [
+        section.heading, section.note ?? "",
+        ...section.steps.flatMap((step) => [step.action, step.detail ?? ""]),
+      ]),
+    ].join("");
+
+    for (const ch of new Set(text)) {
+      const code = ch.codePointAt(0);
+      // ASCII, and the scripts the fonts are built for.
+      if (code < 0x00a0) continue;
+      if (/[\u3000-\u303f\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7a3\uff00-\uffef]/.test(ch)) continue;
+      assert.ok(ALLOWED.has(ch),
+        `${lang} uses "${ch}" (U+${code.toString(16).toUpperCase().padStart(4, "0")}), which the bundled subsets may not carry — describe it in words instead`);
+    }
+  }
+});
+
 test("the button sits beside the date chip in the header, on every screen size", async () => {
   const app = await read("../app/retailpulse-app.tsx");
   const css = await read("../app/globals.css");

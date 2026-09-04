@@ -1068,8 +1068,8 @@ test("the header offers an install guide with real steps for Galaxy and iPhone",
   for (const heading of ["갤럭시 · 크롬", "갤럭시 · 삼성 인터넷", "아이폰 · 사파리", "컴퓨터 · 크롬 / 엣지"]) {
     await expect(dialog.locator(".install-section h3", { hasText: heading })).toHaveCount(1);
   }
-  await expect(dialog).toContainText("'앱 설치' 를 누릅니다");
-  await expect(dialog).toContainText("'홈 화면에 추가' 를 찾습니다");
+  await expect(dialog).toContainText("'앱 설치'를 누릅니다");
+  await expect(dialog).toContainText("'홈 화면에 추가'를 찾습니다");
   await expect(dialog).toContainText("공유 버튼");
   // And it never promises offline use, because there is no service worker.
   await expect(dialog).toContainText("열 때마다 인터넷 연결이 필요합니다");
