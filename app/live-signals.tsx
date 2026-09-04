@@ -529,20 +529,31 @@ const airportTodayText = {
   // coverage line, which would blame gate data that was never collected.
   noFlightsToday: { ko: "오늘 출발편 데이터가 아직 수집되지 않았습니다. 06:07 / 10:07 KST 수집 후 표시됩니다.", en: "Today's departures have not been collected yet. They appear after the 06:07 / 10:07 KST collection.", zh: "今日出发航班数据尚未采集，将在 06:07 / 10:07 KST 采集后显示。", ja: "本日の出発便データはまだ収集されていません。06:07 / 10:07 KST の収集後に表示されます。" },
   noFlightsForDate: { ko: "이 날짜의 출발편 데이터가 없습니다.", en: "No departure data is stored for this date.", zh: "该日期没有出发航班数据。", ja: "この日付の出発便データはありません。" },
-  airlinesJump: { ko: "오늘 출발편 기준 항공사·국적 분포 보기", en: "See today's airline and country breakdown", zh: "查看今日出发航班的航空公司·国籍分布", ja: "本日の出発便の航空会社・国籍分布を見る" },
+  airlinesJump: { ko: "오늘 출발편 기준 항공사·등록 국가 분포 보기", en: "See today's airline and registered-country breakdown", zh: "查看今日出发航班的航空公司·注册国分布", ja: "本日の出発便の航空会社・登録国分布を見る" },
   airlinesTitle: { ko: "항공사별 운항 순위", en: "Airlines by departures", zh: "航空公司出发航班排名", ja: "航空会社別運航ランキング" },
   airlinesNote: { ko: "오늘 실제 출발편을 운항 항공사 기준으로 집계한 순위입니다. 공동운항편은 운항사 1편으로만 셉니다.", en: "Today's physical departures counted by operating airline. A codeshare counts once, for its operator.", zh: "按实际执飞航空公司统计的今日出发航班排名，共享航班仅按执飞方计 1 班。", ja: "本日の実運航出発便を運航会社ごとに集計した順位です。コードシェア便は運航会社の1便としてのみ数えます。" },
-  airlineRankHead: { ko: "순위 · 항공사 · 국적 · 출발편", en: "Rank · Airline · Country · Departures", zh: "排名 · 航空公司 · 国籍 · 出发航班", ja: "順位 · 航空会社 · 国籍 · 出発便" },
-  countriesTitle: { ko: "국적별 운항편", en: "Departures by airline country", zh: "按航空公司国籍的出发航班", ja: "航空会社の国籍別出発便" },
-  countryRankHead: { ko: "순위 · 국적 · 항공사 수 · 출발편", en: "Rank · Country · Airlines · Departures", zh: "排名 · 国籍 · 航空公司数 · 出发航班", ja: "順位 · 国籍 · 航空会社数 · 出発便" },
-  countryUnverified: { ko: "국적 미확인", en: "Country unverified", zh: "国籍未确认", ja: "国籍未確認" },
+  airlineRankHead: { ko: "순위 · 항공사 · 등록 국가 · 출발편", en: "Rank · Airline · Registered country · Departures", zh: "排名 · 航空公司 · 注册国 · 出发航班", ja: "順位 · 航空会社 · 登録国 · 出発便" },
+  compositionTitle: { ko: "오늘 출발편 구성", en: "What today's departures are made of", zh: "今日出发航班的构成", ja: "本日の出発便の構成" },
+  compositionNote: {
+    ko: "앞의 숫자가 왜 그런지를 설명하는 자료입니다. 실제 운항편 기준이며 승객 수가 아닙니다.",
+    en: "What explains the numbers above. Counted from physical flights, never passengers.",
+    zh: "用于解释上方数字的资料。以实际航班计算，并非旅客人数。",
+    ja: "上の数字の理由を説明する資料です。実運航便基準であり、旅客数ではありません。",
+  },
+  /**
+   * 항공사가 등록된 나라이지, 그 비행기에 탄 사람들의 국적이 아니다.
+   * 한국어에서 "국적"은 사람의 국적으로 먼저 읽히므로 쓰지 않는다.
+   */
+  countriesTitle: { ko: "항공사 등록 국가별 운항편", en: "Departures by airline's registered country", zh: "按航空公司注册国的出发航班", ja: "航空会社の登録国別出発便" },
+  countryRankHead: { ko: "순위 · 등록 국가 · 항공사 수 · 출발편", en: "Rank · Registered country · Airlines · Departures", zh: "排名 · 注册国 · 航空公司数 · 出发航班", ja: "順位 · 登録国 · 航空会社数 · 出発便" },
+  countryUnverified: { ko: "등록 국가 미확인", en: "Registered country unverified", zh: "注册国未确认", ja: "登録国未確認" },
   airlinesUnit: { ko: "개 항공사", en: " airlines", zh: "家航空公司", ja: "社" },
   noAirlineList: { ko: "운항 항공사를 식별할 수 있는 출발편이 없습니다.", en: "No departures with an identifiable operating airline.", zh: "没有可识别执飞航空公司的出发航班。", ja: "運航会社を識別できる出発便がありません。" },
   airlineCountryBasis: {
-    ko: (retrievedOn: string) => `국적은 OpenFlights 항공사 참조표(ODbL, ${retrievedOn} 수집) 기준이며 공식 등록 자료가 아닙니다. 참조표가 보증하지 못하는 항공사는 '국적 미확인'으로 표시합니다.`,
-    en: (retrievedOn: string) => `Country from the OpenFlights airline reference table (ODbL, retrieved ${retrievedOn}), not an official register. Airlines the table cannot vouch for are shown as unverified.`,
-    zh: (retrievedOn: string) => `国籍依据 OpenFlights 航空公司参考表（ODbL，${retrievedOn} 获取），并非官方登记资料。参考表无法确认的航空公司显示为“国籍未确认”。`,
-    ja: (retrievedOn: string) => `国籍は OpenFlights 航空会社参照表（ODbL、${retrievedOn} 取得）に基づき、公式登録資料ではありません。参照表が保証できない航空会社は「国籍未確認」と表示します。`,
+    ko: (retrievedOn: string) => `항공사가 등록된 국가이며, 그 비행기를 탄 승객의 국적이 아닙니다. OpenFlights 항공사 참조표(ODbL, ${retrievedOn} 수집) 기준이며 공식 등록 자료가 아닙니다. 참조표가 보증하지 못하는 항공사는 '등록 국가 미확인'으로 표시합니다.`,
+    en: (retrievedOn: string) => `The country the airline is registered in — never the nationality of the passengers on board. From the OpenFlights airline reference table (ODbL, retrieved ${retrievedOn}), not an official register. Airlines the table cannot vouch for are shown as unverified.`,
+    zh: (retrievedOn: string) => `这是航空公司的注册国，并非机上旅客的国籍。依据 OpenFlights 航空公司参考表（ODbL，${retrievedOn} 获取），并非官方登记资料。参考表无法确认的航空公司显示为“注册国未确认”。`,
+    ja: (retrievedOn: string) => `航空会社が登録されている国であり、搭乗した旅客の国籍ではありません。OpenFlights 航空会社参照表（ODbL、${retrievedOn} 取得）に基づき、公式登録資料ではありません。参照表が保証できない航空会社は「登録国未確認」と表示します。`,
   },
   nowOnly: {
     ko: "현재 출국장 대기는 실시간 관측이라 언제나 지금 시점만 보여줍니다.",
@@ -1017,6 +1028,38 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
 
     {isAll && <TerminalBriefingCards lang={lang} airport={airport} nowIso={nowIso} dayRelation={summary?.dayRelation ?? "TODAY"} />}
 
+    <section className="airport-detail-section airport-checkpoints" aria-labelledby="airport-checkpoints-title">
+      <div className="airport-detail-head"><div><p className="eyebrow">CURRENT OBSERVATION · {scopeLabel}</p><h3 id="airport-checkpoints-title">{airportTodayText.current[lang]}</h3></div><p>{airportTodayText.currentNote[lang]}</p></div>
+      {checkpointTerminals.length ? <div className="airport-checkpoint-groups">{checkpointTerminals.map((terminalId) => {
+        const busiest = airport.currentBusiestDepartureHallByTerminal?.[terminalId];
+        return <div className="airport-checkpoint-terminal" key={terminalId}>
+          <h4><span>{terminalId}</span>{airportTodayText.scope[lang][terminalId as "T1" | "T2"] ?? terminalId}</h4>
+          <div>{(showAllCheckpoints
+            ? rankedCheckpoints[terminalId]
+            : rankedCheckpoints[terminalId].filter((row) => (busiest ? busiest.zone === row.zone : false))
+                .concat(busiest ? [] : rankedCheckpoints[terminalId].slice(0, 1))
+          ).map((row) => {
+            const index = rankedCheckpoints[terminalId].indexOf(row);
+            const isBusiest = busiest?.zone === row.zone;
+            return <article className={isBusiest ? "is-busiest" : ""} key={`${terminalId}-${row.zone}`}>
+              <span className="checkpoint-rank">{String(index + 1).padStart(2, "0")}</span>
+              <div><strong>{friendlyCheckpointName(row.zone, lang)}</strong>{isBusiest && <small>{airportTodayText.longest[lang]}</small>}</div>
+              <b><i>{airportTodayText.waitLabel[lang]}</i>{waitText(row)}</b>
+              <p><i>{airportTodayText.peopleLabel[lang]}</i>{row.waitingCount === null ? airportTodayText.unavailable[lang] : `${row.waitingCount.toLocaleString(numberLocale)}${airportTodayText.waiting[lang]}`}<small>{formatHumanFreshness(row.observedAt, nowIso, lang, "observed")}{row.freshness === "STALE" ? ` · ${text.stale[lang]}` : ""}</small></p>
+            </article>;
+          })}</div>
+        </div>;
+      })}</div> : <p className="airport-empty-line">{airportTodayText.unavailable[lang]}</p>}
+      {checkpointTerminals.length > 0 && <button
+        type="button"
+        className="airport-checkpoint-toggle"
+        aria-expanded={showAllCheckpoints}
+        aria-controls="airport-checkpoints-title"
+        onClick={() => setShowAllCheckpoints((open) => !open)}
+      >{showAllCheckpoints ? airportTodayText.showLongestOnly[lang] : airportTodayText.showAllCheckpoints[lang]}</button>}
+      <p className="airport-detail-foot">{airportTodayText.nowOnly[lang]}</p>
+    </section>
+
     <div className="section-head">
       <div><p className="eyebrow">OFFICIAL · {scopeLabel} · KST</p><h2 id="airport-today-title">{airportTodayText.title[lang]}</h2></div>
       <span className="airport-period-label">{airport.serviceDateKst ? formatKstServicePeriod(airport.serviceDateKst, lang) : airportTodayText.unavailable[lang]}</span>
@@ -1051,38 +1094,20 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         </div>}
     </section>
 
-    <section className="airport-detail-section airport-checkpoints" aria-labelledby="airport-checkpoints-title">
-      <div className="airport-detail-head"><div><p className="eyebrow">CURRENT OBSERVATION · {scopeLabel}</p><h3 id="airport-checkpoints-title">{airportTodayText.current[lang]}</h3></div><p>{airportTodayText.currentNote[lang]}</p></div>
-      {checkpointTerminals.length ? <div className="airport-checkpoint-groups">{checkpointTerminals.map((terminalId) => {
-        const busiest = airport.currentBusiestDepartureHallByTerminal?.[terminalId];
-        return <div className="airport-checkpoint-terminal" key={terminalId}>
-          <h4><span>{terminalId}</span>{airportTodayText.scope[lang][terminalId as "T1" | "T2"] ?? terminalId}</h4>
-          <div>{(showAllCheckpoints
-            ? rankedCheckpoints[terminalId]
-            : rankedCheckpoints[terminalId].filter((row) => (busiest ? busiest.zone === row.zone : false))
-                .concat(busiest ? [] : rankedCheckpoints[terminalId].slice(0, 1))
-          ).map((row) => {
-            const index = rankedCheckpoints[terminalId].indexOf(row);
-            const isBusiest = busiest?.zone === row.zone;
-            return <article className={isBusiest ? "is-busiest" : ""} key={`${terminalId}-${row.zone}`}>
-              <span className="checkpoint-rank">{String(index + 1).padStart(2, "0")}</span>
-              <div><strong>{friendlyCheckpointName(row.zone, lang)}</strong>{isBusiest && <small>{airportTodayText.longest[lang]}</small>}</div>
-              <b><i>{airportTodayText.waitLabel[lang]}</i>{waitText(row)}</b>
-              <p><i>{airportTodayText.peopleLabel[lang]}</i>{row.waitingCount === null ? airportTodayText.unavailable[lang] : `${row.waitingCount.toLocaleString(numberLocale)}${airportTodayText.waiting[lang]}`}<small>{formatHumanFreshness(row.observedAt, nowIso, lang, "observed")}{row.freshness === "STALE" ? ` · ${text.stale[lang]}` : ""}</small></p>
-            </article>;
-          })}</div>
-        </div>;
-      })}</div> : <p className="airport-empty-line">{airportTodayText.unavailable[lang]}</p>}
-      {checkpointTerminals.length > 0 && <button
-        type="button"
-        className="airport-checkpoint-toggle"
-        aria-expanded={showAllCheckpoints}
-        aria-controls="airport-checkpoints-title"
-        onClick={() => setShowAllCheckpoints((open) => !open)}
-      >{showAllCheckpoints ? airportTodayText.showLongestOnly[lang] : airportTodayText.showAllCheckpoints[lang]}</button>}
-      <p className="airport-detail-foot">{airportTodayText.nowOnly[lang]}</p>
-    </section>
 
+    {/*
+      * 구성/이유. 게이트와 항공사는 "지금 어떤가"도 "다음에 무엇이 오는가"도
+      * 아니고, 앞의 두 숫자가 왜 그런지를 설명하는 자료다. 그래서 각각 최상위
+      * 섹션으로 흩어져 있지 않고 하나의 제목 아래 묶여 마지막에 온다.
+      */}
+    <section className="airport-composition" aria-labelledby="airport-composition-title">
+      <div className="airport-detail-head">
+        <div>
+          <p className="eyebrow">COMPOSITION · {scopeLabel}</p>
+          <h3 id="airport-composition-title">{airportTodayText.compositionTitle[lang]}</h3>
+        </div>
+        <p>{airportTodayText.compositionNote[lang]}</p>
+      </div>
     <section className="airport-detail-section airport-gates" aria-labelledby="airport-gates-title">
       <div className="airport-detail-head"><div><p className="eyebrow">PHYSICAL DEPARTURES · {scopeLabel}</p><h3 id="airport-gates-title">{airportTodayText.gatesTitle[lang]}</h3></div><p>{airportTodayText.gatesNote[lang]}</p></div>
       {gateList.length ? <ol className="airport-gate-list">
@@ -1118,6 +1143,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         </ol>
         <p className="airport-detail-foot">{airportTodayText.airlineCountryBasis[lang](airport.airlineRanking?.countrySource?.retrievedOn ?? "—")}</p>
       </> : <p className="airport-empty-line">{flightsCount === null ? noFlightsText : airportTodayText.noAirlineList[lang]}</p>}
+    </section>
     </section>
   </section>;
 }

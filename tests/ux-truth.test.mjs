@@ -346,3 +346,72 @@ test("ordinary missing-data and stale states are neutral, not alarms", () => {
   // Stale keeps its prominence through weight, not through hue.
   assert.match(styles, /\.signal-stale \{[^}]*color: var\(--ink\)[^}]*font-weight: var\(--weight-strong\)/);
 });
+
+/**
+ * 공항 페이지의 정보 순서.
+ *
+ * 화면은 네 가지 질문에 그 순서대로 답해야 한다: 지금 어떤가 → 다음에 무엇이
+ * 오는가 → 왜 그런가 → 내 매장에 무엇이 관련 있는가. 예보가 현재 관측보다
+ * 위에 있으면 읽는 사람은 예보를 지금 벌어지는 일로 읽는다.
+ */
+test("공항 페이지는 지금 → 다음 → 구성 순서로 읽힌다", () => {
+  const summary = signals.match(/export function AirportTodaySummary[\s\S]*?\n\}/)?.[0] ?? "";
+  assert.ok(summary.length > 0);
+  const at = (needle) => summary.indexOf(needle);
+  const brief = at('className="current-brief airport-current-brief"');
+  const checkpoints = at('airport-detail-section airport-checkpoints');
+  const forecast = at('airport-detail-section airport-forecast');
+  const composition = at('className="airport-composition"');
+  for (const [name, index] of [["brief", brief], ["checkpoints", checkpoints], ["forecast", forecast], ["composition", composition]]) {
+    assert.ok(index > -1, `${name} 섹션이 있어야 한다`);
+  }
+  assert.ok(brief < checkpoints, "지금 요약이 가장 먼저");
+  assert.ok(checkpoints < forecast, "관측(지금)이 예보(다음)보다 먼저 — 예보가 위에 있으면 지금으로 읽힌다");
+  assert.ok(forecast < composition, "구성/이유는 마지막");
+  // 게이트와 항공사는 최상위로 흩어지지 않고 구성 묶음 안에 있다.
+  assert.ok(at('airport-detail-section airport-gates') > composition);
+  assert.ok(at('airport-detail-section airport-airlines') > composition);
+});
+
+/**
+ * 항공사 등록 국가는 승객 국적이 아니다.
+ *
+ * 한국어에서 "국적"은 사람의 국적으로 먼저 읽힌다. 대한항공 편이 많다고 해서
+ * 그 비행기에 한국인이 많다는 뜻이 아니다.
+ */
+test("항공사 국가를 사람의 국적으로 부르지 않는다", () => {
+  const block = signals.match(/const airportTodayText = \{[\s\S]*?\n\} as const;/)?.[0] ?? "";
+  assert.ok(block.length > 0);
+  // "국적"은 라벨로 쓰일 때만 금지한다. 부인하는 문장("승객의 국적이 아닙니다")
+  // 에는 반드시 남아 있어야 하므로, 단어 존재 자체를 막으면 경계를 지우게 된다.
+  const shown = block.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/.*$/gm, "$1");
+  for (const asLabel of ["국적별", "국적 미확인", "· 국적 ·", "국적 분포", "국적 ·"]) {
+    assert.equal(shown.includes(asLabel), false,
+      `"${asLabel}" 처럼 라벨로 쓰면 항공사 국가가 승객 국적으로 읽힌다`);
+  }
+  // 남아 있는 "국적"은 전부 부정문 안에 있어야 한다.
+  for (const sentence of shown.split(/[.。\n]/).filter((line) => line.includes("국적"))) {
+    assert.match(sentence, /국적이 아닙니다|국적이 아니다/,
+      `"국적"은 부인하는 문장에서만 쓸 수 있다: ${sentence.trim().slice(0, 60)}`);
+  }
+  // 같은 원리로, 이 표현들도 "…가 아닙니다" 안에서만 허용된다. 경계를 말하는
+  // 문장에는 반드시 나타나야 하므로 단어 자체를 막으면 경계를 지우게 된다.
+  const denial = /아닙니다|아니다|ではありません|并非|不是|never|not the/i;
+  for (const claim of ["승객 국적", "방문객 국적", "관광객 국적", "passenger nationality", "旅客国籍", "旅客の国籍", "nationality of the passengers"]) {
+    for (const sentence of signals.split(/[.。\n]/).filter((line) => line.includes(claim))) {
+      assert.match(sentence, denial,
+        `"${claim}" 은 부인하는 문장에서만 쓸 수 있다: ${sentence.trim().slice(0, 70)}`);
+    }
+  }
+  // 대신 등록 국가라고 부르고, 승객 국적이 아님을 근거 문구가 직접 말한다.
+  for (const phrase of ["항공사 등록 국가별 운항편", "등록 국가 미확인"]) {
+    assert.ok(block.includes(phrase), `${phrase} 가 있어야 한다`);
+  }
+  assert.match(signals, /항공사가 등록된 국가이며, 그 비행기를 탄 승객의 국적이 아닙니다/);
+  assert.match(signals, /never the nationality of the passengers on board/);
+  assert.match(signals, /并非机上旅客的国籍/);
+  assert.match(signals, /搭乗した旅客の国籍ではありません/);
+  // OpenFlights 가 비공식 참조표라는 사실은 계속 남는다.
+  assert.match(signals, /OpenFlights/);
+  assert.match(signals, /공식 등록 자료가 아닙니다/);
+});

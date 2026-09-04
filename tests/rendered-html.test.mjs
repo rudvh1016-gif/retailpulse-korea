@@ -494,20 +494,32 @@ test("a collection time and a summed window are never worded as the same thing",
 });
 
 /**
- * The official forecast chart explains the four numbers immediately above it,
- * so it belongs directly under "한눈에 보기" rather than below the live
- * checkpoint and gate sections, which answer a different question.
+ * The airport page reads 지금 → 다음 → 구성.
+ *
+ *   지금  observed checkpoint waits — the only rows that describe this minute.
+ *   다음  the at-a-glance grid and, directly under it, the official forecast
+ *         chart that explains those numbers.
+ *   구성  gates and airlines, grouped under one heading, because they answer
+ *         neither question and only explain why the numbers look as they do.
+ *
+ * The forecast chart still sits immediately under the grid it explains; what
+ * changed on 2026-09-03 is that the whole forecast block now FOLLOWS the live
+ * checkpoints instead of preceding them, so a reader who opens the page mid-
+ * shift sees the present before a projection.
  */
-test("the official passenger-flow section is rendered directly under the at-a-glance grid", async () => {
+test("the airport page reads now, then next, then composition", async () => {
   const signals = await read("../app/live-signals.tsx");
+  const checkpoints = signals.indexOf('className="airport-detail-section airport-checkpoints"');
   const grid = signals.indexOf('className="airport-today-grid"');
   const forecast = signals.indexOf('className="airport-detail-section airport-forecast"');
-  const checkpoints = signals.indexOf('className="airport-detail-section airport-checkpoints"');
+  const composition = signals.indexOf('className="airport-composition"');
   const gates = signals.indexOf('className="airport-detail-section airport-gates"');
-  assert.ok(grid > 0 && forecast > 0 && checkpoints > 0 && gates > 0);
-  assert.ok(grid < forecast, "the forecast chart must follow the at-a-glance grid");
-  assert.ok(forecast < checkpoints, "the forecast chart must precede current checkpoints");
-  assert.ok(checkpoints < gates, "checkpoints keep their place ahead of the gate ranking");
+  const airlines = signals.indexOf('className="airport-detail-section airport-airlines"');
+  assert.ok(checkpoints > 0 && grid > 0 && forecast > 0 && composition > 0 && gates > 0 && airlines > 0);
+  assert.ok(checkpoints < grid, "observed checkpoints come first: they are the only 'now' rows");
+  assert.ok(grid < forecast, "the forecast chart must follow the at-a-glance grid it explains");
+  assert.ok(forecast < composition, "the forecast closes 'next' before the composition group opens");
+  assert.ok(composition < gates && gates < airlines, "gates and airlines sit inside the composition group");
 });
 
 test("timestamps state what they mean and a forecast band never borrows observation wording", async () => {
