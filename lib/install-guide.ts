@@ -92,8 +92,8 @@ const GUIDE: Record<InstallLang, InstallGuide> = {
         steps: [
           { action: "크롬으로 koretaildata.com 을 엽니다", detail: "카카오톡이나 인스타그램 안에서 열린 화면이라면 설치가 안 됩니다. 오른쪽 위 ⋮ 를 눌러 '다른 브라우저로 열기'를 선택하세요." },
           { action: "오른쪽 위 ⋮ (점 세 개)를 누릅니다", detail: "주소창 오른쪽 끝에 세로로 놓인 점 세 개입니다." },
-          { action: "'앱 설치' 를 누릅니다", detail: "메뉴에 '앱 설치'가 없으면 '홈 화면에 추가'를 누르세요. 둘 중 하나는 반드시 있습니다." },
-          { action: "'설치' 를 한 번 더 누릅니다", detail: "이름을 바꿀 수 있는 창이 뜨면 그대로 두고 설치를 누르면 됩니다." },
+          { action: "'앱 설치'를 누릅니다", detail: "메뉴에 '앱 설치'가 없으면 '홈 화면에 추가'를 누르세요. 둘 중 하나는 반드시 있습니다." },
+          { action: "'설치'를 한 번 더 누릅니다", detail: "이름을 바꿀 수 있는 창이 뜨면 그대로 두고 설치를 누르면 됩니다." },
         ],
         note: null,
       },
@@ -103,9 +103,9 @@ const GUIDE: Record<InstallLang, InstallGuide> = {
         heading: "갤럭시 · 삼성 인터넷",
         steps: [
           { action: "삼성 인터넷으로 koretaildata.com 을 엽니다", detail: null },
-          { action: "화면 아래쪽 ≡ (줄 세 개)를 누릅니다", detail: "삼성 인터넷은 메뉴가 화면 아래에 있습니다." },
-          { action: "'현재 페이지 추가' 를 누릅니다", detail: "버전에 따라 '페이지 추가' 또는 다운로드 모양 아이콘으로 보일 수 있습니다." },
-          { action: "'홈 화면' 을 고릅니다", detail: "'북마크'가 아니라 '홈 화면'이어야 아이콘이 생깁니다." },
+          { action: "화면 아래쪽 메뉴 버튼(줄 세 개)을 누릅니다", detail: "삼성 인터넷은 메뉴가 화면 아래에 있습니다." },
+          { action: "'현재 페이지 추가'를 누릅니다", detail: "버전에 따라 '페이지 추가' 또는 다운로드 모양 아이콘으로 보일 수 있습니다." },
+          { action: "'홈 화면'을 고릅니다", detail: "'북마크'가 아니라 '홈 화면'이어야 아이콘이 생깁니다." },
         ],
         note: "주소창에 설치 아이콘이 바로 보이는 버전도 있습니다. 그때는 그 아이콘만 눌러도 됩니다.",
       },
@@ -115,9 +115,9 @@ const GUIDE: Record<InstallLang, InstallGuide> = {
         heading: "아이폰 · 사파리",
         steps: [
           { action: "반드시 사파리로 koretaildata.com 을 엽니다", detail: "카카오톡·인스타그램·네이버 앱 안에서 열린 화면에서는 홈 화면 추가가 나오지 않습니다. 오른쪽 위 또는 아래의 '사파리로 열기'를 먼저 누르세요." },
-          { action: "화면 아래 공유 버튼을 누릅니다", detail: "네모 상자에서 위쪽으로 화살표가 나온 모양(⬆)입니다. 화면 맨 아래 가운데에 있습니다. 안 보이면 화면을 한 번 아래로 쓸어내리면 나타납니다." },
-          { action: "목록을 위로 올려 '홈 화면에 추가' 를 찾습니다", detail: "공유 목록의 중간쯤에 있습니다. 조금 스크롤해야 보입니다." },
-          { action: "오른쪽 위 '추가' 를 누릅니다", detail: "이름은 그대로 두셔도 됩니다." },
+          { action: "화면 아래 공유 버튼을 누릅니다", detail: "네모 상자에서 위쪽으로 화살표가 나온 모양입니다. 화면 맨 아래 가운데에 있습니다. 안 보이면 화면을 한 번 아래로 쓸어내리면 나타납니다." },
+          { action: "목록을 위로 올려 '홈 화면에 추가'를 찾습니다", detail: "공유 목록의 중간쯤에 있습니다. 조금 스크롤해야 보입니다." },
+          { action: "오른쪽 위 '추가'를 누릅니다", detail: "이름은 그대로 두셔도 됩니다." },
         ],
         note: "아이폰은 사파리에서만 홈 화면에 추가할 수 있습니다. 크롬을 쓰시더라도 이 과정만 사파리로 해주시면 됩니다.",
       },
@@ -127,8 +127,8 @@ const GUIDE: Record<InstallLang, InstallGuide> = {
         heading: "컴퓨터 · 크롬 / 엣지",
         steps: [
           { action: "주소창 오른쪽 끝의 설치 아이콘을 누릅니다", detail: "화면과 아래쪽 화살표가 겹쳐진 모양입니다." },
-          { action: "아이콘이 없으면 ⋮ 메뉴 → '캐스트, 저장 및 공유' → '페이지를 앱으로 설치' 를 누릅니다", detail: "엣지는 ··· 메뉴 → '앱' → '이 사이트를 앱으로 설치' 입니다." },
-          { action: "'설치' 를 누릅니다", detail: null },
+          { action: "아이콘이 없으면 ⋮ 메뉴에서 '캐스트, 저장 및 공유'를 열고 '페이지를 앱으로 설치'를 누릅니다", detail: "엣지는 ··· 메뉴에서 '앱'을 열고 '이 사이트를 앱으로 설치'를 누릅니다." },
+          { action: "'설치'를 누릅니다", detail: null },
         ],
         note: null,
       },
@@ -177,7 +177,7 @@ const GUIDE: Record<InstallLang, InstallGuide> = {
         heading: "Galaxy · Samsung Internet",
         steps: [
           { action: "Open koretaildata.com in Samsung Internet", detail: null },
-          { action: "Tap ≡ at the bottom of the screen", detail: "Samsung Internet keeps its menu at the bottom." },
+          { action: "Tap the menu button (three lines) at the bottom of the screen", detail: "Samsung Internet keeps its menu at the bottom." },
           { action: "Tap \"Add page to\"", detail: "Some versions show a download-style icon instead." },
           { action: "Choose \"Home screen\"", detail: "Choose Home screen, not Bookmarks — only Home screen creates the icon." },
         ],
@@ -189,7 +189,7 @@ const GUIDE: Record<InstallLang, InstallGuide> = {
         heading: "iPhone · Safari",
         steps: [
           { action: "Open koretaildata.com in Safari — it must be Safari", detail: "A page opened inside KakaoTalk, Instagram or another app will not offer Add to Home Screen. Use \"Open in Safari\" first." },
-          { action: "Tap the Share button at the bottom", detail: "A square with an arrow pointing up (⬆), centred at the very bottom. If it is hidden, swipe down once to bring it back." },
+          { action: "Tap the Share button at the bottom", detail: "A square with an arrow pointing up, centred at the very bottom. If it is hidden, swipe down once to bring it back." },
           { action: "Scroll the list up and find \"Add to Home Screen\"", detail: "It sits partway down the share sheet, so you need to scroll a little." },
           { action: "Tap \"Add\" at the top right", detail: "You can leave the name as it is." },
         ],
@@ -201,7 +201,7 @@ const GUIDE: Record<InstallLang, InstallGuide> = {
         heading: "Computer · Chrome / Edge",
         steps: [
           { action: "Click the install icon at the right of the address bar", detail: "A small screen with a downward arrow." },
-          { action: "No icon? Open ⋮ → \"Cast, save and share\" → \"Install page as app\"", detail: "In Edge it is ··· → \"Apps\" → \"Install this site as an app\"." },
+          { action: "No icon? Open ⋮, then \"Cast, save and share\", then \"Install page as app\"", detail: "In Edge: open ···, then \"Apps\", then \"Install this site as an app\"." },
           { action: "Click \"Install\"", detail: null },
         ],
         note: null,
@@ -251,7 +251,7 @@ const GUIDE: Record<InstallLang, InstallGuide> = {
         heading: "三星 · 三星浏览器",
         steps: [
           { action: "用三星浏览器打开 koretaildata.com", detail: null },
-          { action: "点击屏幕下方的 ≡（三条横线）", detail: "三星浏览器的菜单在屏幕下方。" },
+          { action: "点击屏幕下方的菜单按钮（三条横线）", detail: "三星浏览器的菜单在屏幕下方。" },
           { action: "点击「添加当前页面」", detail: "部分版本显示为下载样式的图标。" },
           { action: "选择「主屏幕」", detail: "必须选「主屏幕」而不是「书签」，才会生成图标。" },
         ],
@@ -263,7 +263,7 @@ const GUIDE: Record<InstallLang, InstallGuide> = {
         heading: "iPhone · Safari",
         steps: [
           { action: "务必用 Safari 打开 koretaildata.com", detail: "在 KakaoTalk、Instagram 等应用内打开的页面不会出现「添加到主屏幕」，请先选择「在 Safari 中打开」。" },
-          { action: "点击屏幕底部的分享按钮", detail: "方框中带有向上箭头的图标（⬆），位于屏幕最下方中间。若未显示，向下轻扫一次即可出现。" },
+          { action: "点击屏幕底部的分享按钮", detail: "方框中带有向上箭头的图标，位于屏幕最下方中间。若未显示，向下轻扫一次即可出现。" },
           { action: "向上滑动列表，找到「添加到主屏幕」", detail: "它在分享列表的中间位置，需要稍微滚动。" },
           { action: "点击右上角「添加」", detail: "名称保持默认即可。" },
         ],
@@ -275,7 +275,7 @@ const GUIDE: Record<InstallLang, InstallGuide> = {
         heading: "电脑 · Chrome / Edge",
         steps: [
           { action: "点击地址栏右端的安装图标", detail: "显示为屏幕与向下箭头组合的小图标。" },
-          { action: "没有图标时，依次点击 ⋮ →「投放、保存和共享」→「将页面安装为应用」", detail: "Edge 为 ··· →「应用」→「将此站点安装为应用」。" },
+          { action: "没有图标时，依次点击 ⋮、「投放、保存和共享」、「将页面安装为应用」", detail: "Edge 依次点击 ···、「应用」、「将此站点安装为应用」。" },
           { action: "点击「安装」", detail: null },
         ],
         note: null,
@@ -325,7 +325,7 @@ const GUIDE: Record<InstallLang, InstallGuide> = {
         heading: "Galaxy · Samsung Internet",
         steps: [
           { action: "Samsung Internet で koretaildata.com を開きます", detail: null },
-          { action: "画面下の ≡（横三本線）をタップします", detail: "Samsung Internet はメニューが画面下にあります。" },
+          { action: "画面下のメニューボタン（横三本線）をタップします", detail: "Samsung Internet はメニューが画面下にあります。" },
           { action: "「現在のページを追加」をタップします", detail: "バージョンによってはダウンロード型のアイコンで表示されます。" },
           { action: "「ホーム画面」を選びます", detail: "「ブックマーク」ではなく「ホーム画面」を選ばないとアイコンはできません。" },
         ],
@@ -337,7 +337,7 @@ const GUIDE: Record<InstallLang, InstallGuide> = {
         heading: "iPhone · Safari",
         steps: [
           { action: "必ず Safari で koretaildata.com を開きます", detail: "KakaoTalk や Instagram の中で開いた画面には「ホーム画面に追加」が出ません。先に「Safari で開く」を押してください。" },
-          { action: "画面下部の共有ボタンをタップします", detail: "四角から上向きの矢印が出た形（⬆）で、画面いちばん下の中央にあります。見えないときは一度下にスワイプすると出てきます。" },
+          { action: "画面下部の共有ボタンをタップします", detail: "四角から上向きの矢印が出た形で、画面いちばん下の中央にあります。見えないときは一度下にスワイプすると出てきます。" },
           { action: "リストを上にスクロールして「ホーム画面に追加」を探します", detail: "共有リストの中ほどにあるので、少しスクロールが必要です。" },
           { action: "右上の「追加」をタップします", detail: "名前はそのままで構いません。" },
         ],
@@ -349,7 +349,7 @@ const GUIDE: Record<InstallLang, InstallGuide> = {
         heading: "パソコン · Chrome / Edge",
         steps: [
           { action: "アドレスバー右端のインストールアイコンをクリックします", detail: "画面と下向き矢印が重なった形です。" },
-          { action: "アイコンがない場合は ⋮ →「キャスト、保存、共有」→「ページをアプリとしてインストール」", detail: "Edge は ··· →「アプリ」→「このサイトをアプリとしてインストール」です。" },
+          { action: "アイコンがない場合は ⋮ から「キャスト、保存、共有」を開き「ページをアプリとしてインストール」を押します", detail: "Edge は ··· から「アプリ」を開き「このサイトをアプリとしてインストール」を押します。" },
           { action: "「インストール」をクリックします", detail: null },
         ],
         note: null,
