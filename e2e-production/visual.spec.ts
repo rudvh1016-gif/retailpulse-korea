@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test";
  */
 const WHITE = "rgb(255, 255, 255)";
 const locales = ["ko", "en", "zh", "ja"] as const;
-const viewports = [390, 768, 1280, 1440, 1920] as const;
+const viewports = [390, 430, 768, 1280, 1440, 1920] as const;
 const routes = ["", "/myeongdong", "/hongdae", "/seongsu", "/airport", "/business", "/forecast", "/about", "/more"] as const;
 const surfaces = ["html", "body", ".app", ".page-shell", ".topbar", ".top-nav", ".bottom-nav", ".airport-context-nav", ".hero", ".signal-group", ".terminal-brief-card", ".airport-today-grid article", ".airport-detail-section", ".business-pro"];
 
