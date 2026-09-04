@@ -1041,3 +1041,93 @@ test("the forecast chart opens scrolled to the current hour", async ({ page }) =
   });
   expect(inView).toBe(true);
 });
+
+/**
+ * "앱처럼 설치하기" — the owner asked for a button beside the date and a
+ * guide that a first-time reader can actually follow.
+ *
+ * The install itself belongs to the browser and cannot be driven from a
+ * test, so what is checked here is everything KORETAIL is responsible for:
+ * the button is reachable in the header, the guide opens with real steps
+ * for both phones, and it closes again.
+ */
+test("the header offers an install guide with real steps for Galaxy and iPhone", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.goto("/ko");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+
+  const button = page.locator(".topbar .install-app-button");
+  await expect(button).toBeVisible();
+  await button.click();
+
+  const dialog = page.locator(".install-modal");
+  await expect(dialog).toBeVisible();
+  // What it is, said before how to do it.
+  await expect(dialog).toContainText("플레이스토어나 앱스토어에서 내려받는 앱은 아니며");
+  // Both phones, with the step that actually trips people up.
+  for (const heading of ["갤럭시 · 크롬", "갤럭시 · 삼성 인터넷", "아이폰 · 사파리", "컴퓨터 · 크롬 / 엣지"]) {
+    await expect(dialog.locator(".install-section h3", { hasText: heading })).toHaveCount(1);
+  }
+  await expect(dialog).toContainText("'앱 설치' 를 누릅니다");
+  await expect(dialog).toContainText("'홈 화면에 추가' 를 찾습니다");
+  await expect(dialog).toContainText("공유 버튼");
+  // And it never promises offline use, because there is no service worker.
+  await expect(dialog).toContainText("열 때마다 인터넷 연결이 필요합니다");
+
+  await dialog.getByRole("button", { name: "닫기" }).click();
+  await expect(dialog).toHaveCount(0);
+});
+
+test("the install guide is written in every locale, not only Korean", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  for (const [locale, marker] of [
+    ["en", "iPhone · Safari"],
+    ["zh", "iPhone · Safari"],
+    ["ja", "iPhone · Safari"],
+  ] as const) {
+    await page.goto(`/${locale}`);
+    await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+    await page.locator(".topbar .install-app-button").click();
+    const dialog = page.locator(".install-modal");
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText(marker);
+    await expect(dialog).not.toContainText("앱처럼 설치하기");
+  }
+});
+
+/**
+ * Detection puts the reader's own device first and hides nothing.
+ *
+ * A wrong guess (an old user agent, a rewritten one, a reader installing
+ * for someone else's phone) must cost an extra scroll, never the steps.
+ */
+test("the guide leads with the reader's own device and still lists the others", async ({ browser }) => {
+  for (const [userAgent, first] of [
+    ["Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1", "아이폰 · 사파리"],
+    ["Mozilla/5.0 (Linux; Android 14; SM-S928N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36", "갤럭시 · 크롬"],
+  ] as const) {
+    const context = await browser.newContext({ userAgent });
+    const page = await context.newPage();
+    await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+    await page.goto("/ko");
+    await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+    await page.locator(".topbar .install-app-button").click();
+    const headings = page.locator(".install-modal .install-section h3");
+    await expect(headings.first()).toHaveText(first);
+    await expect(headings, "every section stays on screen whatever the device is").toHaveCount(6);
+    await context.close();
+  }
+});
+
+/** The manifest and icons an install depends on are actually served. */
+test("the manifest and its install icons are served", async ({ page }) => {
+  const manifest = await page.request.get("/manifest.webmanifest");
+  expect(manifest.status()).toBe(200);
+  const body = await manifest.json();
+  expect(body.display).toBe("standalone");
+  for (const icon of body.icons) {
+    const response = await page.request.get(icon.src);
+    expect(response.status(), `${icon.src} must be served`).toBe(200);
+  }
+  expect((await page.request.get("/apple-touch-icon.png")).status()).toBe(200);
+});

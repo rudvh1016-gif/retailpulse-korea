@@ -28,6 +28,7 @@ import LiveSignals, {
   KstTodayChip,
 } from "./live-signals";
 import { TourismDeskView } from "./tourism-desk";
+import { InstallAppButton } from "./install-app";
 
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
 
@@ -383,6 +384,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         </nav>
         <div className="header-meta">
           <KstTodayChip lang={lang} date={serviceDate} />
+          <InstallAppButton lang={lang} />
           <label className="language-control">
             <span className="sr-only">Language</span>
             <select value={lang} onChange={(event) => changeLanguage(event.target.value as Lang)} aria-label="Language">
