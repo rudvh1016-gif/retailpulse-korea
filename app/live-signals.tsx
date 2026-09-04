@@ -12,6 +12,7 @@ import {
   type ForecastDayOffset,
 } from "../lib/current-brief";
 import { eventPreview, eventStatusForDate, safeOfficialEventHomepage } from "../lib/event-presentation";
+import { buildFacilityCopyText, type CopyableFacility } from "../lib/facility-share";
 import { formatRepresentativeStations } from "../lib/subway-ridership";
 import { buildTerminalBriefings, type TerminalBriefing } from "../lib/terminal-briefing";
 import { buildWeatherGuide } from "../lib/weather-guide";
@@ -1199,6 +1200,22 @@ const facilityText = {
   more: { ko: "더 보기", en: "Show more", zh: "查看更多", ja: "もっと見る" },
   count: { ko: (n: number) => `${n}곳 표시`, en: (n: number) => `${n} shown`, zh: (n: number) => `显示 ${n} 处`, ja: (n: number) => `${n}件を表示` },
   unknown: { ko: "확인 불가", en: "Unavailable", zh: "暂无法确认", ja: "確認不可" },
+  /**
+   * The directory is a registration record, not a live tenancy feed. A shop
+   * that has already left can remain listed until the operator republishes —
+   * confirmed by the owner for a cosmetics counter that left Shilla Duty Free
+   * on 2026-04-16 and was still being served. Saying so is cheaper than a
+   * reader trusting a store that is not there.
+   */
+  staleness: {
+    ko: "공식 자료가 갱신되기 전이면 이미 퇴점한 매장이 남아 있을 수 있습니다",
+    en: "Until the operator republishes, a store that has already left may still be listed",
+    zh: "官方资料更新前，已撤店的店铺可能仍会显示",
+    ja: "公式資料が更新されるまで、すでに退店した店舗が残っている場合があります",
+  },
+  copy: { ko: "정보 복사", en: "Copy details", zh: "复制信息", ja: "情報をコピー" },
+  copied: { ko: "복사했습니다", en: "Copied", zh: "已复制", ja: "コピーしました" },
+  copyFailed: { ko: "복사할 수 없습니다", en: "Could not copy", zh: "无法复制", ja: "コピーできません" },
   locationVerified: { ko: "위치 확인됨", en: "Location verified", zh: "位置已确认", ja: "位置確認済み" },
   locationAmbiguous: { ko: "정확한 위치 미확인", en: "Exact location unconfirmed", zh: "确切位置未确认", ja: "正確な位置は未確認" },
   nearGate: { ko: "게이트", en: "Gate", zh: "登机口", ja: "ゲート" },
@@ -1226,6 +1243,70 @@ function facilityName(row: FacilityRow, lang: Lang): string {
       : lang === "zh" ? [row.nameZh, row.nameKo]
         : [row.nameKo, row.nameEn];
   return preferred.find((value): value is string => Boolean(value)) ?? facilityText.unknown[lang];
+}
+
+/**
+ * Copy-to-clipboard, as a hook so every surface that copies behaves the same.
+ *
+ * `navigator.clipboard` needs a secure context and can be refused outright, so
+ * a failure is reported to the reader rather than swallowed — a button that
+ * silently does nothing is worse than one that says it could not.
+ */
+function useCopyToClipboard(resetAfterMs = 2000) {
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
+
+  useEffect(() => {
+    if (state === "idle") return;
+    const timer = window.setTimeout(() => setState("idle"), resetAfterMs);
+    return () => window.clearTimeout(timer);
+  }, [state, resetAfterMs]);
+
+  const copy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setState("copied");
+    } catch {
+      setState("failed");
+    }
+  };
+  return { state, copy };
+}
+
+/** The copy control on a facility card, with its own live-region feedback. */
+function FacilityCopyButton({ facility, lang }: { facility: CopyableFacility; lang: Lang }) {
+  const { state, copy } = useCopyToClipboard();
+  const label = state === "copied" ? facilityText.copied[lang]
+    : state === "failed" ? facilityText.copyFailed[lang]
+      : facilityText.copy[lang];
+  return <p className="facility-copy">
+    <button
+      type="button"
+      onClick={() => void copy(buildFacilityCopyText(facility, lang, {
+        location: facilityText.location[lang],
+        hours: facilityText.hours[lang],
+        brands: facilityText.brands[lang],
+        phone: facilityText.phone[lang],
+        unknown: facilityText.unknown[lang],
+      }))}
+    >{label}</button>
+    <span role="status" aria-live="polite" className="sr-only">{state === "idle" ? "" : label}</span>
+  </p>;
+}
+
+/** Shapes a directory row for copying, using the same localized labels the card shows. */
+function copyableFacility(row: FacilityRow, lang: Lang): CopyableFacility {
+  return {
+    name: facilityName(row, lang),
+    facilityItem: row.facilityItem,
+    terminalLabel: row.terminal ? facilityText.terminals[row.terminal]?.[lang] ?? row.terminal : null,
+    floor: row.floor,
+    areaLabel: row.dutyArea ? (row.dutyArea === "DUTY_FREE" ? facilityText.dutyFree[lang] : facilityText.general[lang]) : null,
+    sideLabel: row.arrivalDeparture ? (row.arrivalDeparture === "ARRIVAL" ? facilityText.arrival[lang] : facilityText.departure[lang]) : null,
+    locationRaw: lang === "en" ? row.locationEn ?? row.locationRaw : row.locationRaw,
+    businessHoursRaw: row.businessHoursRaw,
+    goodsBrands: row.goodsBrands,
+    phone: row.phone,
+  };
 }
 
 /**
@@ -1293,6 +1374,7 @@ export function FacilityDirectory({ lang, terminal }: { lang: Lang; terminal: "a
       {state && <span className="official-label">{facilityText.count[lang](rows.length)}</span>}
     </div>
     <p className="section-intro">{facilityText.intro[lang]}</p>
+    <p className="facility-staleness">{facilityText.staleness[lang]}</p>
 
     <div className="facility-filters">
       <div className="facility-filter-row" role="tablist" aria-label={facilityText.title[lang]}>
@@ -1360,6 +1442,7 @@ export function FacilityDirectory({ lang, terminal }: { lang: Lang; terminal: "a
               {row.phone && <div><dt>{facilityText.phone[lang]}</dt><dd>{row.phone}</dd></div>}
             </dl>
             <FacilityLocationStatus row={row} lang={lang} />
+            <FacilityCopyButton facility={copyableFacility(row, lang)} lang={lang} />
           </li>)}
         </ul>}
 
@@ -1591,6 +1674,8 @@ function MyStoreSnapshot({ lang, operations }: { lang: Lang; operations: Operati
         {facility.phone && <div><dt>{facilityText.phone[lang]}</dt><dd>{facility.phone}</dd></div>}
       </dl>
       <FacilityLocationStatus row={facility} lang={lang} />
+      <p className="facility-staleness">{facilityText.staleness[lang]}</p>
+      <FacilityCopyButton facility={copyableFacility(facility, lang)} lang={lang} />
     </header>
 
     {!brief || !brief.terminal
