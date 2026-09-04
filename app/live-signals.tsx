@@ -13,6 +13,7 @@ import {
   type ForecastDayOffset,
 } from "../lib/current-brief";
 import { eventPreview, eventStatusForDate, safeOfficialEventHomepage } from "../lib/event-presentation";
+import { describeSourcePeriod } from "../lib/source-period";
 import { buildFacilityCopyText, type CopyableFacility } from "../lib/facility-share";
 import { formatRepresentativeStations } from "../lib/subway-ridership";
 import { buildTerminalBriefings, type TerminalBriefing } from "../lib/terminal-briefing";
@@ -86,6 +87,7 @@ interface LiveSales {
   tradeAreaName: string | null;
   totalAmount: number;
   industryCount: number;
+  retrievedAt: string | null;
 }
 
 export interface LiveStoreDynamics {
@@ -1228,11 +1230,22 @@ type FacilityRow = {
 
 const facilityText = {
   title: { ko: "매장·시설", en: "Stores and facilities", zh: "店铺·设施", ja: "店舗・施設" },
-  intro: {
-    ko: "인천국제공항공사가 공개한 여객터미널 시설 정보입니다. 공식 등록 정보이며, 지금 문을 열었는지를 실시간으로 확인한 것은 아닙니다.",
-    en: "The passenger-terminal facility directory published by Incheon International Airport Corporation. Official registered information — not a real-time check of whether a store is open right now.",
-    zh: "仁川国际机场公社公开的旅客航站楼设施信息。为官方登记信息，并非实时确认当前是否营业。",
-    ja: "仁川国際空港公社が公開した旅客ターミナル施設情報です。公式登録情報であり、今営業中かをリアルタイムで確認したものではありません。",
+  /**
+   * The basis, stated before anything is trusted.
+   *
+   * The old copy said the same thing in a long paragraph plus a separate
+   * line, and the owner reported it was still easy to read past. These two
+   * short lines sit directly under the heading, above the filters, always
+   * visible — no tooltip, no "more", no footer, no copy step. They are
+   * styled as neutral information, not as a warning: an official
+   * registration directory not being a live tenancy feed is a property of
+   * the source, not a mistake the reader made.
+   */
+  basis: {
+    ko: "공항공사 공식 등록 자료 · 실시간 입점 현황 아님",
+    en: "Official airport-authority registration record · not live tenancy",
+    zh: "机场公社官方登记资料 · 非实时入驻状况",
+    ja: "空港公社の公式登録資料 · リアルタイムの入居状況ではありません",
   },
   categories: {
     DUTY_FREE: { ko: "면세점", en: "Duty-free", zh: "免税店", ja: "免税店" },
@@ -1267,16 +1280,42 @@ const facilityText = {
   unknown: { ko: "확인 불가", en: "Unavailable", zh: "暂无法确认", ja: "確認不可" },
   /**
    * The directory is a registration record, not a live tenancy feed. A shop
-   * that has already left can remain listed until the operator republishes —
-   * confirmed by the owner for a cosmetics counter that left Shilla Duty Free
-   * on 2026-04-16 and was still being served. Saying so is cheaper than a
-   * reader trusting a store that is not there.
+   * that has already left can remain listed until the operator republishes;
+   * a reader who trusts a store that is not there has been misled by the
+   * screen, so the screen says this before they trust anything.
+   *
+   * KORETAIL never resolves that gap by deleting a facility it privately
+   * believes is gone — that would quietly turn one person's workplace
+   * knowledge into a public-data override, and the product would stop being
+   * something anyone can verify against the official source. It shows the
+   * official record and states the limitation instead.
    */
   staleness: {
-    ko: "공식 자료가 갱신되기 전이면 이미 퇴점한 매장이 남아 있을 수 있습니다",
+    ko: "공식 자료가 갱신되기 전에는 이미 퇴점한 매장이 표시될 수 있습니다",
     en: "Until the operator republishes, a store that has already left may still be listed",
     zh: "官方资料更新前，已撤店的店铺可能仍会显示",
-    ja: "公式資料が更新されるまで、すでに退店した店舗が残っている場合があります",
+    ja: "公式資料が更新されるまで、すでに退店した店舗が表示される場合があります",
+  },
+  /**
+   * Dataset 15095064 returns sn, arrordep, facilityitem, facilitynm,
+   * floorinfo, goods, lcategorynm, lcduty, lcnm, mcategorynm, scategorynm,
+   * servicetime, tel and terminalid — and no date of any kind. So KORETAIL
+   * cannot show when a facility actually changed, and says that rather than
+   * passing its own retrieval time off as the provider's update time. The
+   * two are different facts.
+   */
+  noProviderChangeDate: {
+    ko: "공급자가 개별 시설의 실제 변경일은 제공하지 않습니다",
+    en: "The provider publishes no change date for individual facilities",
+    zh: "供应方不提供各设施的实际变更日期",
+    ja: "提供元は個別施設の実際の変更日を提供していません",
+  },
+  /** The per-card provenance label: what this row is, in two words. */
+  recordLabel: {
+    ko: "공식 등록 자료",
+    en: "Official registration record",
+    zh: "官方登记资料",
+    ja: "公式登録資料",
   },
   copy: { ko: "정보 복사", en: "Copy details", zh: "复制信息", ja: "情報をコピー" },
   copied: { ko: "복사했습니다", en: "Copied", zh: "已复制", ja: "コピーしました" },
@@ -1438,8 +1477,16 @@ export function FacilityDirectory({ lang, terminal }: { lang: Lang; terminal: "a
       <div><p className="eyebrow">OFFICIAL FACILITY DIRECTORY · 인천국제공항공사</p><h2 id="airport-facilities-title">{facilityText.title[lang]}</h2></div>
       {state && <span className="official-label">{facilityText.count[lang](rows.length)}</span>}
     </div>
-    <p className="section-intro">{facilityText.intro[lang]}</p>
-    <p className="facility-staleness">{facilityText.staleness[lang]}</p>
+    {/*
+      * The basis, before the filters. Both lines are always on screen: the
+      * reader must know this is a registration record, not a live tenancy
+      * feed, BEFORE they trust a result — not after opening something.
+      */}
+    <div className="facility-basis">
+      <p className="facility-basis-head">{facilityText.basis[lang]}</p>
+      <p>{facilityText.staleness[lang]}</p>
+      <p>{facilityText.noProviderChangeDate[lang]}</p>
+    </div>
 
     <div className="facility-filters">
       <div className="facility-filter-row" role="tablist" aria-label={facilityText.title[lang]}>
@@ -1507,6 +1554,13 @@ export function FacilityDirectory({ lang, terminal }: { lang: Lang; terminal: "a
               {row.phone && <div><dt>{facilityText.phone[lang]}</dt><dd>{row.phone}</dd></div>}
             </dl>
             <FacilityLocationStatus row={row} lang={lang} />
+            {/*
+              * What this row IS, on the row itself. Two neutral words, so a
+              * card lifted out of its section by search or a screen reader
+              * still carries its own provenance — without turning every
+              * card into a repeated warning.
+              */}
+            <p className="facility-record-label">{facilityText.recordLabel[lang]}</p>
             <FacilityCopyButton facility={copyableFacility(row, lang)} lang={lang} />
           </li>)}
         </ul>}
@@ -1739,7 +1793,17 @@ function MyStoreSnapshot({ lang, operations }: { lang: Lang; operations: Operati
         {facility.phone && <div><dt>{facilityText.phone[lang]}</dt><dd>{facility.phone}</dd></div>}
       </dl>
       <FacilityLocationStatus row={facility} lang={lang} />
-      <p className="facility-staleness">{facilityText.staleness[lang]}</p>
+      {/*
+        * Saving a store does not make its record live. This is the same
+        * basis the directory shows, kept on the selected store and inside
+        * the printed briefing — a sheet handed to someone else must not
+        * arrive without it.
+        */}
+      <div className="facility-basis">
+        <p className="facility-basis-head">{facilityText.basis[lang]}</p>
+        <p>{facilityText.staleness[lang]}</p>
+        <p>{facilityText.noProviderChangeDate[lang]}</p>
+      </div>
       <FacilityCopyButton facility={copyableFacility(facility, lang)} lang={lang} />
     </header>
 
@@ -2028,6 +2092,8 @@ export interface StoreDynamicsPresentation {
   timeState: string;
   /** Quarter and official trade area: the scope every number below inherits. */
   periodValue: string;
+  /** Quarterly cadence facts, so nobody looks for an August that cannot exist. */
+  period: { cadenceLabel: string; periodLabel: string; publicationNote: string; cadenceNote: string | null } | null;
   areaValue: string;
   totalLabel: string;
   totalValue: string;
@@ -2076,6 +2142,7 @@ function formatStoreDynamicsRetrieval(value: string): string | null {
 export function buildStoreDynamicsPresentation(
   lang: Lang,
   row: LiveStoreDynamics | null | undefined,
+  nowIso: string | null = null,
 ): StoreDynamicsPresentation | null {
   if (!row || row.datasetId !== "OA-15577") return null;
   const counts = [row.totalStoreCount, row.ordinaryStoreCount, row.franchiseStoreCount, row.openingCount, row.closureCount];
@@ -2093,6 +2160,12 @@ export function buildStoreDynamicsPresentation(
     title: storeDynamicsText.title[lang],
     timeState: signalStructureText.timeState.historical[lang],
     periodValue: referenceValue,
+    period: describeSourcePeriod({
+      cadence: "QUARTERLY",
+      referencePeriod: row.quarterCode,
+      retrievedAt: row.retrievedAt,
+      nowIso: nowIso ?? row.retrievedAt,
+    }, lang),
     areaValue: row.tradeAreaName.endsWith(row.tradeAreaTypeName)
       ? row.tradeAreaName
       : `${row.tradeAreaName} · ${row.tradeAreaTypeName}`,
@@ -2129,10 +2202,21 @@ interface SignalRow {
   value: string;
   note: string;
   detail?: string;
+  /**
+   * For a source that publishes on a cycle: which period the number
+   * describes, and whether that is the provider's newest publication or a
+   * sign KORETAIL has fallen behind. It gets its own line rather than being
+   * appended to `note`, because "왜 8월이 없나" is a different question from
+   * "어디서 온 자료인가" and a reader should not have to parse one sentence
+   * to answer both.
+   */
+  period?: { cadenceLabel: string; periodLabel: string; publicationNote: string; cadenceNote: string | null };
   state?: "LIVE" | "STALE";
 }
 
 const signalStructureText = {
+  /** Says what the date next to it means, so "최신" never stands alone. */
+  referencePeriod: { ko: "자료 기준", en: "Data for", zh: "数据基准", ja: "資料基準" },
   groups: {
     now: {
       title: { ko: "지금", en: "Now", zh: "现在", ja: "現在" },
@@ -2178,6 +2262,11 @@ function SignalRowCard({ row, lang }: { row: SignalRow; lang: Lang }) {
     <div className="signal-row-content">
       <b className="signal-row-value">{row.value}</b>
       {row.detail && <p className="signal-row-detail">{row.detail}</p>}
+      {row.period && <p className="signal-row-period">
+        <span>{row.period.cadenceLabel} · {signalStructureText.referencePeriod[lang]} {row.period.periodLabel}</span>
+        <small>{row.period.publicationNote}</small>
+        {row.period.cadenceNote && <small>{row.period.cadenceNote}</small>}
+      </p>}
       <small className="signal-row-source">{row.note}{row.state === "STALE" ? ` · ${text.stale[lang]}` : ""}</small>
     </div>
   </article>;
@@ -2220,6 +2309,11 @@ function StoreDynamicsCard({ presentation }: { presentation: StoreDynamicsPresen
         <span>{presentation.periodValue}</span>
         <span lang="ko">{presentation.areaValue}</span>
       </p>
+      {presentation.period && <p className="signal-row-period">
+        <span>{presentation.period.cadenceLabel}</span>
+        <small>{presentation.period.publicationNote}</small>
+        {presentation.period.cadenceNote && <small>{presentation.period.cadenceNote}</small>}
+      </p>}
       <p className="store-dynamics-total">
         <span>{presentation.totalLabel}</span>
         <strong>{presentation.totalValue}</strong>
@@ -2373,7 +2467,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
   }
 
   const commercialRow = buildCommercialSignalRow(lang, block?.commercial, summary.generatedAt);
-  const storeDynamicsPresentation = buildStoreDynamicsPresentation(lang, block?.storeDynamics);
+  const storeDynamicsPresentation = buildStoreDynamicsPresentation(lang, block?.storeDynamics, summary.generatedAt);
 
   if (block?.subwayRidership) {
     const subway = block.subwayRidership;
@@ -2404,6 +2498,12 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       label: text.foreignPresence[lang],
       value: `${formatPeopleValue(lang, block.foreignPresence.value)} ${text.foreignPeople[lang]}`,
       note: `${text.foreignNote[lang]} · ${formatHumanFreshness(block.foreignPresence.referenceAt, summary.generatedAt, lang)} · ${productId}`,
+      period: describeSourcePeriod({
+        cadence: "DAILY",
+        referencePeriod: block.foreignPresence.referenceAt,
+        retrievedAt: block.foreignPresence.retrievedAt,
+        nowIso: summary.generatedAt,
+      }, lang) ?? undefined,
     });
   }
 
@@ -2418,7 +2518,13 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       timeState: signalStructureText.timeState.delayed[lang],
       label: text.foreignPurpose[lang],
       value: `${parts.join(" · ")} ${text.movementUnit[lang]}`,
-      note: `${mobility.referenceDate} · ${text.foreignPurposeNote[lang]} · ${mobility.datasetId}`,
+      note: `${text.foreignPurposeNote[lang]} · ${mobility.datasetId}`,
+      period: describeSourcePeriod({
+        cadence: "MONTHLY",
+        referencePeriod: mobility.referenceDate,
+        retrievedAt: mobility.retrievedAt,
+        nowIso: summary.generatedAt,
+      }, lang) ?? undefined,
     });
   }
 
@@ -2482,8 +2588,14 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       group: "past",
       timeState: signalStructureText.timeState.historical[lang],
       label: text.sales[lang],
-      value: `${formatKrwCompact(lang, block.sales.totalAmount)} · ${block.sales.quarterCode.slice(0, 4)}Q${block.sales.quarterCode.slice(4)}`,
+      value: formatKrwCompact(lang, block.sales.totalAmount),
       note: `${text.sourceSales[lang]} · ${text.salesNote[lang]}`,
+      period: describeSourcePeriod({
+        cadence: "QUARTERLY",
+        referencePeriod: block.sales.quarterCode,
+        retrievedAt: block.sales.retrievedAt ?? null,
+        nowIso: summary.generatedAt,
+      }, lang) ?? undefined,
     });
   }
 
