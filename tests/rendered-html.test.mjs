@@ -494,32 +494,65 @@ test("a collection time and a summed window are never worded as the same thing",
 });
 
 /**
- * The airport page reads 지금 → 다음 → 구성.
+ * The airport page reads 요약 → 다음 → 구성 → 관측.
  *
- *   지금  observed checkpoint waits — the only rows that describe this minute.
+ *   요약  the current-brief headline block: the longest wait right now, and
+ *         the official expected departing passengers for this very hour.
  *   다음  the at-a-glance grid and, directly under it, the official forecast
  *         chart that explains those numbers.
  *   구성  gates and airlines, grouped under one heading, because they answer
  *         neither question and only explain why the numbers look as they do.
+ *   관측  the full checkpoint table, last.
  *
- * The forecast chart still sits immediately under the grid it explains; what
- * changed on 2026-09-03 is that the whole forecast block now FOLLOWS the live
- * checkpoints instead of preceding them, so a reader who opens the page mid-
- * shift sees the present before a projection.
+ * The checkpoint table moved to the bottom on 2026-09-04 at the owner's
+ * request: they were not reading it there. The summary at the top already
+ * names the single longest wait, so the table is reference material a reader
+ * opens on purpose, not the lead. Nothing about it was removed — every zone,
+ * its observed waiting count and its observation time are still on the page.
  */
-test("the airport page reads now, then next, then composition", async () => {
+test("the airport page reads summary, then next, then composition, then the observation table", async () => {
   const signals = await read("../app/live-signals.tsx");
-  const checkpoints = signals.indexOf('className="airport-detail-section airport-checkpoints"');
+  const brief = signals.indexOf('className="current-brief airport-current-brief"');
   const grid = signals.indexOf('className="airport-today-grid"');
   const forecast = signals.indexOf('className="airport-detail-section airport-forecast"');
   const composition = signals.indexOf('className="airport-composition"');
   const gates = signals.indexOf('className="airport-detail-section airport-gates"');
   const airlines = signals.indexOf('className="airport-detail-section airport-airlines"');
-  assert.ok(checkpoints > 0 && grid > 0 && forecast > 0 && composition > 0 && gates > 0 && airlines > 0);
-  assert.ok(checkpoints < grid, "observed checkpoints come first: they are the only 'now' rows");
+  const checkpoints = signals.indexOf('className="airport-detail-section airport-checkpoints"');
+  assert.ok(brief > 0 && grid > 0 && forecast > 0 && composition > 0 && gates > 0 && airlines > 0 && checkpoints > 0);
+  assert.ok(brief < grid, "the summary opens the page");
   assert.ok(grid < forecast, "the forecast chart must follow the at-a-glance grid it explains");
   assert.ok(forecast < composition, "the forecast closes 'next' before the composition group opens");
   assert.ok(composition < gates && gates < airlines, "gates and airlines sit inside the composition group");
+  assert.ok(airlines < checkpoints, "the checkpoint table is reference material and comes last");
+});
+
+/**
+ * The summary must answer "how busy is it right now" with more than a queue.
+ * A wait is one number about one checkpoint; a reader standing at 13:50 was
+ * otherwise told only about a 07:00 peak. The now-band line states the
+ * official expectation for the hour they are in and where it is heading.
+ */
+test("the airport summary states this hour's expected departing passengers, labelled as official", async () => {
+  const brief = await read("../lib/current-brief.ts");
+  const signals = await read("../app/live-signals.tsx");
+  assert.match(brief, /export function selectAirportNowBand/);
+  // Not today, and there is no "now" to report.
+  assert.match(brief, /if \(!input\.isToday\) return null;/);
+  // A partial day can hide the band that would make a rise or fall wrong.
+  assert.match(brief, /const nowBand = input\.forecastCoverage === "COMPLETE" \? input\.nowBand \?\? null : null;/);
+  // The last band of the day has no successor to compare against.
+  assert.match(brief, /nextExpectedPassengers: next \? next\.expectedPassengers : null/);
+
+  assert.match(signals, /if \(brief\.nowBand\) \{/);
+  for (const official of ["공식 예상 출국객", "Official expected departing passengers", "官方预计出境旅客", "公式予想出国旅客"]) {
+    assert.ok(signals.includes(official), `${official} must say the number is an official expectation, in every locale`);
+  }
+  // An expectation is never dressed as an observation or a KORETAIL count.
+  const nowBlock = signals.match(/if \(brief\.nowBand\) \{([\s\S]*?)\n  \}/)?.[1] ?? "";
+  assert.ok(nowBlock.length > 0);
+  assert.doesNotMatch(nowBlock, /관측|observed|観測|观测/,
+    "a forecast band must not borrow observation wording");
 });
 
 test("timestamps state what they mean and a forecast band never borrows observation wording", async () => {
