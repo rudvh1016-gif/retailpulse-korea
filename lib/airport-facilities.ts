@@ -40,7 +40,7 @@ export type FacilityCategoryGroup = "DUTY_FREE" | "FOOD" | "CONVENIENCE" | "PHAR
 export const FACILITY_CATEGORY_GROUPS: readonly FacilityCategoryGroup[] = ["DUTY_FREE", "FOOD", "CONVENIENCE", "PHARMACY", "EXCHANGE_TELECOM", "SERVICE"];
 export const FACILITY_TERMINALS: readonly FacilityTerminal[] = ["T1", "T2", "CONCOURSE", "T1_TRANSPORT", "T2_TRANSPORT"];
 
-/** Official terminalid codes, verified in the dataset guide. */
+/** Official terminalid codes, documented in the dataset guide. */
 const TERMINAL_BY_CODE: Record<string, FacilityTerminal> = {
   P01: "T1",
   P03: "T2",
@@ -48,6 +48,66 @@ const TERMINAL_BY_CODE: Record<string, FacilityTerminal> = {
   G02: "T1_TRANSPORT",
   G03: "T2_TRANSPORT",
 };
+
+/**
+ * Codes the provider actually sends that the guide does not document.
+ *
+ * The first real import produced zero CONCOURSE rows: `G01` never arrived.
+ * `P02` did, on 81 rows, and every sampled one names 탑승동 in its own
+ * published location text ("탑승동 3층 105번 게이트 부근"). So the code is
+ * consistent AND the source text says the same thing in plain Korean.
+ *
+ * Each entry here requires BOTH: the code, and a phrase the provider's own
+ * location text must contain. One alone is not enough — a code with no
+ * documentation could be reassigned by the provider at any time, and a
+ * building name alone could be describing a neighbour rather than the
+ * facility's own location. Requiring both means a row is normalized only
+ * where two independent pieces of official evidence agree.
+ */
+const UNDOCUMENTED_TERMINAL_BY_CODE: Record<string, { terminal: FacilityTerminal; requiresLocationPhrase: string }> = {
+  P02: { terminal: "CONCOURSE", requiresLocationPhrase: "탑승동" },
+};
+
+/**
+ * Building names the provider writes into the location text itself.
+ *
+ * Order matters: 탑승동 is checked first because a concourse row can also
+ * carry its parent terminal ("제1여객터미널 탑승동 3층 117번 게이트 부근"),
+ * and the more specific building is the true location.
+ */
+const TERMINAL_BY_LOCATION_PHRASE: ReadonlyArray<readonly [string, FacilityTerminal]> = [
+  ["탑승동", "CONCOURSE"],
+  ["제1교통센터", "T1_TRANSPORT"],
+  ["제2교통센터", "T2_TRANSPORT"],
+  ["제1여객터미널", "T1"],
+  ["제2여객터미널", "T2"],
+];
+
+/** How a facility's terminal was decided, so every resolution stays auditable. */
+export type TerminalEvidence = "DOCUMENTED_CODE" | "UNDOCUMENTED_CODE_WITH_LOCATION_TEXT" | "OFFICIAL_LOCATION_TEXT" | "NONE";
+
+/**
+ * Resolves a terminal from official evidence only.
+ *
+ * Never infers from brand, category, neighbouring facility id, or gate-number
+ * similarity. When nothing official says which building this is, the answer is
+ * null and the row stays PARTIAL — a directory that admits 81 unknowns is
+ * more useful than one that guesses 81 times.
+ */
+export function resolveFacilityTerminal(terminalCode: string | null, locationRaw: string | null): { terminal: FacilityTerminal | null; evidence: TerminalEvidence } {
+  if (terminalCode && TERMINAL_BY_CODE[terminalCode]) {
+    return { terminal: TERMINAL_BY_CODE[terminalCode], evidence: "DOCUMENTED_CODE" };
+  }
+  const location = locationRaw ?? "";
+  const undocumented = terminalCode ? UNDOCUMENTED_TERMINAL_BY_CODE[terminalCode] : undefined;
+  if (undocumented && location.includes(undocumented.requiresLocationPhrase)) {
+    return { terminal: undocumented.terminal, evidence: "UNDOCUMENTED_CODE_WITH_LOCATION_TEXT" };
+  }
+  for (const [phrase, terminal] of TERMINAL_BY_LOCATION_PHRASE) {
+    if (location.includes(phrase)) return { terminal, evidence: "OFFICIAL_LOCATION_TEXT" };
+  }
+  return { terminal: null, evidence: "NONE" };
+}
 
 export interface CanonicalAirportFacility {
   facilityId: string;
@@ -118,7 +178,7 @@ export async function normalizeAirportFacility(raw: unknown, retrievedAt: string
     mediumCategory: text(record, ["mcategorynm"]),
     smallCategory: text(record, ["scategorynm"]),
     terminalCode,
-    terminal: terminalCode ? TERMINAL_BY_CODE[terminalCode] ?? null : null,
+    terminal: resolveFacilityTerminal(terminalCode, text(record, ["lcnm"])).terminal,
     floor: text(record, ["floorinfo", "floorInfo"]),
     dutyArea: lcduty === "Y" ? "DUTY_FREE" as const : lcduty === "N" ? "GENERAL" as const : null,
     arrivalDeparture: arrordep === "A" ? "ARRIVAL" as const : arrordep === "D" ? "DEPARTURE" as const : null,

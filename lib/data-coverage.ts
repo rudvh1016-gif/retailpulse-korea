@@ -240,6 +240,46 @@ export const COVERAGE_PROBES: CoverageProbe[] = [
     params: () => [],
   },
   {
+    /**
+     * Why 81 facilities have no terminal.
+     *
+     * The dataset guide documents P01/P03/G01/G02/G03, but the first real
+     * import produced zero CONCOURSE and zero TRANSPORT rows, so the G-codes
+     * did not arrive as documented. This groups the unresolved rows by the raw
+     * code the provider actually sent, beside the location text that names the
+     * building in plain Korean — which is what decides whether a deterministic
+     * normalization is defensible or whether the source is genuinely ambiguous.
+     * Bounded by the unresolved set itself (81 rows today).
+     */
+    name: "airport_facility_unresolved_terminal_codes",
+    sourceIds: ["INCHEON_FACILITY_DIRECTORY"],
+    meaning: "raw provider terminal_code distribution for facilities the normalizer left NULL, with how many of them name a building in their official location text",
+    sql: `SELECT COALESCE(terminal_code, '(null)') AS rawTerminalCode, COUNT(*) AS facilities,
+        SUM(CASE WHEN location_raw LIKE '%탑승동%' THEN 1 ELSE 0 END) AS saysConcourse,
+        SUM(CASE WHEN location_raw LIKE '%제1여객터미널%' THEN 1 ELSE 0 END) AS saysT1,
+        SUM(CASE WHEN location_raw LIKE '%제2여객터미널%' THEN 1 ELSE 0 END) AS saysT2,
+        SUM(CASE WHEN location_raw LIKE '%제1교통센터%' THEN 1 ELSE 0 END) AS saysT1Transport,
+        SUM(CASE WHEN location_raw LIKE '%제2교통센터%' THEN 1 ELSE 0 END) AS saysT2Transport,
+        SUM(CASE WHEN location_raw IS NULL OR location_raw = '' THEN 1 ELSE 0 END) AS noLocationText
+      FROM airport_facility
+      WHERE terminal IS NULL
+      GROUP BY COALESCE(terminal_code, '(null)')
+      ORDER BY facilities DESC`,
+    params: () => [],
+  },
+  {
+    /** A readable sample of the same rows, so the patterns can be eyeballed. */
+    name: "airport_facility_unresolved_terminal_sample",
+    sourceIds: ["INCHEON_FACILITY_DIRECTORY"],
+    meaning: "a bounded sample of facilities with no recognised terminal, showing the raw code beside the official location text that would have to justify any normalization",
+    sql: `SELECT facility_id AS facilityId, COALESCE(terminal_code, '(null)') AS rawTerminalCode,
+        name_ko AS nameKo, category_group AS categoryGroup, floor, location_raw AS locationRaw
+      FROM airport_facility
+      WHERE terminal IS NULL
+      ORDER BY terminal_code, facility_id LIMIT 40`,
+    params: () => [],
+  },
+  {
     name: "airport_flights_days",
     sourceIds: ["INCHEON_FLIGHT_DETAIL", "INCHEON_DUTY_FREE_ACTUAL"],
     meaning: "distinct physical departures per stored KST service date, with gate coverage",
