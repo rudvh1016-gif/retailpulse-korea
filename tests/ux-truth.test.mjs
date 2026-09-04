@@ -376,9 +376,11 @@ test("공항 페이지는 요약 → 다음 → 구성 → 관측 표 순서로 
   assert.ok(grid < forecast, "예보 차트는 자기가 설명하는 격자 바로 아래");
   assert.ok(forecast < composition, "구성/이유는 예보 다음");
   assert.ok(composition < checkpoints, "검색대 상세 표는 참고 자료라 마지막");
-  // 게이트와 항공사는 최상위로 흩어지지 않고 구성 묶음 안에 있다.
-  assert.ok(at('airport-detail-section airport-gates') > composition);
-  assert.ok(at('airport-detail-section airport-airlines') > composition);
+  // 게이트·항공사·등록 국가는 최상위로 흩어지지 않고 한 탭 묶음 안에 있다.
+  assert.ok(at('className="airport-composition-tabs"') > composition);
+  assert.ok(at('className="airport-composition-panel airport-gates"') > composition);
+  assert.ok(at('className="airport-composition-panel airport-airlines"') > composition);
+  assert.ok(at('className="airport-composition-panel airport-countries"') > composition);
   // 표를 내렸을 뿐, 내용은 그대로다.
   assert.ok(summary.includes("airportTodayText.waitLabel[lang]"), "대기 시간은 그대로 있어야 한다");
   assert.ok(summary.includes("airportTodayText.peopleLabel[lang]"), "대기 인원은 그대로 있어야 한다");
@@ -514,32 +516,40 @@ test("사적 지식으로 특정 시설을 숨기거나 지우지 않는다", ()
 });
 
 /**
- * 오늘 출발편 구성이 빈 껍데기로 보이지 않는다.
- *
- * 2026-09-04 소유자 보고: "오늘 출발편구성이 안보여". 제목과 설명은
- * 나오는데 그 아래로 화면 한 뭉텅이만큼 흰 여백이 이어졌다. 묶음 제목이
- * 자기 밑줄을 긋고 닫은 뒤, 안쪽 섹션이 각자 36px 마진과 18px 패딩을
- * 또 얹었기 때문이다. 제목 다음에 빈 띠가 오면 읽는 사람은 그 구역이
- * 로딩에 실패했다고 읽는다.
- *
- * 묶음 제목은 이제 자기를 닫지 않고, 첫 섹션이 바로 아래에서 시작한다.
+ * 오늘 출발편 구성은 한 부모와 동등한 세 보기다. 예전처럼 공통 96px
+ * section head를 부모와 자식에 연속 적용하면 실제 행까지 큰 빈 띠가
+ * 다시 생기므로 구성 전용 head/panel만 허용한다.
  */
-test("구성 묶음 제목과 그 내용 사이에 빈 띠를 만들지 않는다", () => {
-  // 묶음 제목이 닫는 밑줄과 아래 여백을 갖지 않는다.
-  assert.match(styles, /\.airport-composition > \.airport-detail-head \{[^}]*border-bottom: 0/);
-  assert.match(styles, /\.airport-composition > \.airport-detail-head \{[^}]*padding-bottom: 0/);
-  // 안쪽 섹션이 자기 위 여백을 다시 쌓지 않는다.
-  assert.match(styles, /\.airport-composition > \.airport-detail-section \{[^}]*padding-top: 0/);
-  assert.match(styles, /\.airport-composition > \.airport-detail-section:first-of-type \{[^}]*margin-top: 8px/);
-
-  // 게이트 목록이 묶음 안에 실제로 들어 있다: 제목만 있고 내용이 없는
-  // 구조가 되면 이 검사가 먼저 깨진다.
+test("오늘 출발편 구성은 반복 머리말 없이 세 탭을 품는 한 묶음이다", () => {
   const summary = signals.match(/export function AirportTodaySummary[\s\S]*?\n\}/)?.[0] ?? "";
-  const composition = summary.indexOf('className="airport-composition"');
-  const gates = summary.indexOf('airport-detail-section airport-gates');
-  const airlines = summary.indexOf('airport-detail-section airport-airlines');
-  assert.ok(composition > -1 && gates > composition && airlines > gates,
-    "게이트와 항공사가 구성 묶음 안에 있어야 한다");
+  assert.match(summary, /className="airport-composition"/);
+  assert.match(summary, /role="tablist"/);
+  assert.match(summary, /\["gates", "airlines", "countries"\]/);
+  assert.match(summary, /role="tabpanel"/);
+  assert.match(summary, /aria-selected=\{compositionView === view\}/);
+  assert.match(summary, /event\.key === "ArrowRight"/);
+  assert.match(summary, /event\.key === "ArrowLeft"/);
+  assert.match(summary, /event\.key === "Home"/);
+  assert.match(summary, /event\.key === "End"/);
+  assert.doesNotMatch(summary, /PHYSICAL DEPARTURES|OPERATING AIRLINES|airlinesJump|airport-jump-link/);
+
+  // 단일 터미널에서는 행마다 같은 terminal을 반복하지 않는다.
+  assert.match(summary, /isAll && row\.terminal/);
+  // 제목·설명·panel은 min-height가 없는 전용 규칙이고, 넓은 화면에서도
+  // 행의 의미 단위가 860px 안에 머문다.
+  assert.match(styles, /\.airport-composition-head \{[^}]*width: min\(100%, 860px\)/);
+  assert.match(styles, /\.airport-composition-panel \{[^}]*width: min\(100%, 860px\)/);
+  assert.doesNotMatch(styles, /\.airport-composition-(?:head|panel) \{[^}]*min-height:/);
+});
+
+test("항공사 등록 국가는 승객 국적으로 보이지 않는다", () => {
+  for (const phrase of [
+    "항공사 등록 국가별 운항편", "등록 국가 미확인",
+    "승객의 국적이 아닙니다", "not passenger nationality",
+    "并非旅客国籍", "旅客の国籍ではありません",
+  ]) assert.ok(signals.includes(phrase), `${phrase} 가 있어야 한다`);
+  assert.ok(!signals.includes("승객 국적별 운항편"));
+  assert.ok(!signals.includes("국적별 운항편"));
 });
 
 /**

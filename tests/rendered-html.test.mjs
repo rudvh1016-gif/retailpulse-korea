@@ -373,7 +373,8 @@ test("airport detail UI uses editorial rows, friendly checkpoints and honest par
   assert.match(signals, /rankCurrentDepartureHallCheckpoints/);
   assert.match(signals, /일부 시간대가 누락되어 하루 전체 합계와 피크는 표시하지 않습니다/);
   assert.match(signals, /className="airport-gate-row"/);
-  assert.match(css, /\.airport-gates li/);
+  assert.match(css, /\.airport-composition-panel/);
+  assert.match(css, /\.airport-gate-row/);
 });
 
 /**
@@ -387,7 +388,8 @@ test("the busiest-gate list is a ranking with terminal, gate and flight count", 
   assert.match(signals, /gateList\.map\(\(row, index\)/);
   assert.match(signals, /String\(index \+ 1\)\.padStart\(2, "0"\)/);
   assert.match(signals, /Gate \{row\.gate\}/);
-  assert.match(signals, /gateRankHead/);
+  assert.match(signals, /terminalGateColumn/);
+  assert.match(signals, /departuresColumn/);
   // Coverage gating stays: a ranking built on partial gate data is withheld.
   assert.match(signals, /noGateList/);
 });
@@ -500,8 +502,8 @@ test("a collection time and a summed window are never worded as the same thing",
  *         the official expected departing passengers for this very hour.
  *   다음  the at-a-glance grid and, directly under it, the official forecast
  *         chart that explains those numbers.
- *   구성  gates and airlines, grouped under one heading, because they answer
- *         neither question and only explain why the numbers look as they do.
+ *   구성  gate, airline and registered-country tabs under one heading,
+ *         because they are three views of the same physical departures.
  *   관측  the full checkpoint table, last.
  *
  * The checkpoint table moved to the bottom on 2026-09-04 at the owner's
@@ -516,15 +518,18 @@ test("the airport page reads summary, then next, then composition, then the obse
   const grid = signals.indexOf('className="airport-today-grid"');
   const forecast = signals.indexOf('className="airport-detail-section airport-forecast"');
   const composition = signals.indexOf('className="airport-composition"');
-  const gates = signals.indexOf('className="airport-detail-section airport-gates"');
-  const airlines = signals.indexOf('className="airport-detail-section airport-airlines"');
+  const tabs = signals.indexOf('className="airport-composition-tabs"');
+  const gates = signals.indexOf('className="airport-composition-panel airport-gates"');
+  const airlines = signals.indexOf('className="airport-composition-panel airport-airlines"');
+  const countries = signals.indexOf('className="airport-composition-panel airport-countries"');
   const checkpoints = signals.indexOf('className="airport-detail-section airport-checkpoints"');
-  assert.ok(brief > 0 && grid > 0 && forecast > 0 && composition > 0 && gates > 0 && airlines > 0 && checkpoints > 0);
+  assert.ok(brief > 0 && grid > 0 && forecast > 0 && composition > 0 && tabs > 0 && gates > 0 && airlines > 0 && countries > 0 && checkpoints > 0);
   assert.ok(brief < grid, "the summary opens the page");
   assert.ok(grid < forecast, "the forecast chart must follow the at-a-glance grid it explains");
   assert.ok(forecast < composition, "the forecast closes 'next' before the composition group opens");
-  assert.ok(composition < gates && gates < airlines, "gates and airlines sit inside the composition group");
-  assert.ok(airlines < checkpoints, "the checkpoint table is reference material and comes last");
+  assert.ok(composition < tabs && tabs < gates && gates < airlines && airlines < countries,
+    "three tab panels sit inside the composition group");
+  assert.ok(countries < checkpoints, "the checkpoint table is reference material and comes last");
 });
 
 /**

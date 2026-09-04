@@ -535,29 +535,46 @@ const airportTodayText = {
   forecastTitle: { ko: "공식 예상 출국객 흐름", en: "Official expected passenger flow", zh: "官方预计出境客流", ja: "公式予想出国者の流れ" },
   partialBody: { ko: "공식 예상 데이터의 일부 시간대가 누락되어 하루 전체 합계와 피크는 표시하지 않습니다.", en: "Some official time bands are missing, so the full-day total and peak are not shown.", zh: "部分官方时段数据缺失，因此不显示全天合计与高峰。", ja: "公式予測の一部時間帯が欠けているため、1日全体の合計とピークは表示しません。" },
   unavailableBody: { ko: "이 날짜의 공식 예상 시간대가 없습니다. 실제 출발 운항과 현재 출국장 정보는 계속 확인할 수 있습니다.", en: "No official forecast bands exist for this date. Physical departures and current checkpoints remain available.", zh: "该日期没有官方预计时段数据，仍可查看实际出发航班和当前出境区信息。", ja: "この日付の公式予測時間帯はありません。実出発便と現在の出国場情報は引き続き確認できます。" },
-  gateRankHead: { ko: "순위 · 터미널 · 게이트 · 출발편", en: "Rank · Terminal · Gate · Departures", zh: "排名 · 航站楼 · 登机口 · 出发航班", ja: "順位 · ターミナル · ゲート · 出発便" },
+  rankLabel: { ko: "순위", en: "Rank", zh: "排名", ja: "順位" },
+  gateColumn: { ko: "게이트", en: "Gate", zh: "登机口", ja: "ゲート" },
+  terminalGateColumn: { ko: "터미널 · 게이트", en: "Terminal · gate", zh: "航站楼 · 登机口", ja: "ターミナル · ゲート" },
+  departuresColumn: { ko: "출발편", en: "Departures", zh: "出发航班", ja: "出発便" },
+  departureShareColumn: { ko: "출발편 · 비중", en: "Departures · share", zh: "出发航班 · 占比", ja: "出発便 · 構成比" },
   // Today's rows can be absent for a whole service day when the morning A1
   // scan timed out at the provider. Say that plainly instead of the generic
   // coverage line, which would blame gate data that was never collected.
   noFlightsToday: { ko: "오늘 출발편 데이터가 아직 수집되지 않았습니다. 06:07 / 10:07 KST 수집 후 표시됩니다.", en: "Today's departures have not been collected yet. They appear after the 06:07 / 10:07 KST collection.", zh: "今日出发航班数据尚未采集，将在 06:07 / 10:07 KST 采集后显示。", ja: "本日の出発便データはまだ収集されていません。06:07 / 10:07 KST の収集後に表示されます。" },
   noFlightsForDate: { ko: "이 날짜의 출발편 데이터가 없습니다.", en: "No departure data is stored for this date.", zh: "该日期没有出发航班数据。", ja: "この日付の出発便データはありません。" },
-  airlinesJump: { ko: "오늘 출발편 기준 항공사·등록 국가 분포 보기", en: "See today's airline and registered-country breakdown", zh: "查看今日出发航班的航空公司·注册国分布", ja: "本日の出発便の航空会社・登録国分布を見る" },
   airlinesTitle: { ko: "항공사별 운항 순위", en: "Airlines by departures", zh: "航空公司出发航班排名", ja: "航空会社別運航ランキング" },
   airlinesNote: { ko: "오늘 실제 출발편을 운항 항공사 기준으로 집계한 순위입니다. 공동운항편은 운항사 1편으로만 셉니다.", en: "Today's physical departures counted by operating airline. A codeshare counts once, for its operator.", zh: "按实际执飞航空公司统计的今日出发航班排名，共享航班仅按执飞方计 1 班。", ja: "本日の実運航出発便を運航会社ごとに集計した順位です。コードシェア便は運航会社の1便としてのみ数えます。" },
-  airlineRankHead: { ko: "순위 · 항공사 · 등록 국가 · 출발편", en: "Rank · Airline · Registered country · Departures", zh: "排名 · 航空公司 · 注册国 · 出发航班", ja: "順位 · 航空会社 · 登録国 · 出発便" },
-  compositionTitle: { ko: "오늘 출발편 구성", en: "What today's departures are made of", zh: "今日出发航班的构成", ja: "本日の出発便の構成" },
-  compositionNote: {
-    ko: "앞의 숫자가 왜 그런지를 설명하는 자료입니다. 실제 운항편 기준이며 승객 수가 아닙니다.",
-    en: "What explains the numbers above. Counted from physical flights, never passengers.",
-    zh: "用于解释上方数字的资料。以实际航班计算，并非旅客人数。",
-    ja: "上の数字の理由を説明する資料です。実運航便基準であり、旅客数ではありません。",
+  airlineColumn: { ko: "항공사 · 등록 국가", en: "Airline · registered country", zh: "航空公司 · 注册国", ja: "航空会社 · 登録国" },
+  compositionTitle: { ko: "오늘 출발편 구성", en: "Today's departure composition", zh: "今日出发航班构成", ja: "本日の出発便構成" },
+  compositionIntro: {
+    ko: "오늘 실제 출발편을 게이트·항공사·항공사 등록 국가 기준으로 나눠 봅니다.",
+    en: "Today's physical departures, viewed by gate, airline, and the airline's registered country.",
+    zh: "按登机口、航空公司及航空公司注册国查看今日实际出发航班。",
+    ja: "本日の実運航出発便を、ゲート・航空会社・航空会社の登録国別に確認します。",
+  },
+  compositionTruth: { ko: "운항편 기준이며 승객 수가 아닙니다.", en: "Flight counts, not passenger counts.", zh: "按航班统计，并非旅客人数。", ja: "運航便数であり、旅客数ではありません。" },
+  compositionScope: {
+    ko: (scope: string) => `${scope} · 오늘 실제 출발편 기준`,
+    en: (scope: string) => `${scope} · today's physical departures`,
+    zh: (scope: string) => `${scope} · 今日实际出发航班口径`,
+    ja: (scope: string) => `${scope} · 本日の実運航出発便基準`,
+  },
+  compositionTabsLabel: { ko: "오늘 출발편 구성 보기", en: "Choose a departure composition view", zh: "选择今日出发航班构成视图", ja: "出発便構成の表示を選択" },
+  compositionTabs: {
+    gates: { ko: "게이트", en: "Gates", zh: "登机口", ja: "ゲート" },
+    airlines: { ko: "항공사", en: "Airlines", zh: "航空公司", ja: "航空会社" },
+    countries: { ko: "등록 국가", en: "Registered country", zh: "注册国", ja: "登録国" },
   },
   /**
    * 항공사가 등록된 나라이지, 그 비행기에 탄 사람들의 국적이 아니다.
    * 한국어에서 "국적"은 사람의 국적으로 먼저 읽히므로 쓰지 않는다.
    */
   countriesTitle: { ko: "항공사 등록 국가별 운항편", en: "Departures by airline's registered country", zh: "按航空公司注册国的出发航班", ja: "航空会社の登録国別出発便" },
-  countryRankHead: { ko: "순위 · 등록 국가 · 항공사 수 · 출발편", en: "Rank · Registered country · Airlines · Departures", zh: "排名 · 注册国 · 航空公司数 · 出发航班", ja: "順位 · 登録国 · 航空会社数 · 出発便" },
+  countriesNote: { ko: "오늘 실제 출발편을 운항 항공사의 등록 국가 기준으로 묶었습니다.", en: "Today's physical departures grouped by the operating airline's registered country.", zh: "按执飞航空公司的注册国汇总今日实际出发航班。", ja: "本日の実運航出発便を、運航会社の登録国別に集計しました。" },
+  countryColumn: { ko: "등록 국가 · 항공사 수", en: "Registered country · airlines", zh: "注册国 · 航空公司数", ja: "登録国 · 航空会社数" },
   countryUnverified: { ko: "등록 국가 미확인", en: "Registered country unverified", zh: "注册国未确认", ja: "登録国未確認" },
   airlinesUnit: { ko: "개 항공사", en: " airlines", zh: "家航空公司", ja: "社" },
   noAirlineList: { ko: "운항 항공사를 식별할 수 있는 출발편이 없습니다.", en: "No departures with an identifiable operating airline.", zh: "没有可识别执飞航空公司的出发航班。", ja: "運航会社を識別できる出発便がありません。" },
@@ -566,6 +583,12 @@ const airportTodayText = {
     en: (retrievedOn: string) => `The country the airline is registered in — never the nationality of the passengers on board. From the OpenFlights airline reference table (ODbL, retrieved ${retrievedOn}), not an official register. Airlines the table cannot vouch for are shown as unverified.`,
     zh: (retrievedOn: string) => `这是航空公司的注册国，并非机上旅客的国籍。依据 OpenFlights 航空公司参考表（ODbL，${retrievedOn} 获取），并非官方登记资料。参考表无法确认的航空公司显示为“注册国未确认”。`,
     ja: (retrievedOn: string) => `航空会社が登録されている国であり、搭乗した旅客の国籍ではありません。OpenFlights 航空会社参照表（ODbL、${retrievedOn} 取得）に基づき、公式登録資料ではありません。参照表が保証できない航空会社は「登録国未確認」と表示します。`,
+  },
+  airlineCountryShortBasis: {
+    ko: "등록 국가는 OpenFlights 항공사 참조표 기준이며 승객 국적이 아닙니다.",
+    en: "Registered country comes from the OpenFlights airline reference table and is not passenger nationality.",
+    zh: "注册国依据 OpenFlights 航空公司参考表，并非旅客国籍。",
+    ja: "登録国は OpenFlights 航空会社参照表に基づき、旅客の国籍ではありません。",
   },
   nowOnly: {
     ko: "현재 출국장 대기는 실시간 관측이라 언제나 지금 시점만 보여줍니다.",
@@ -1073,6 +1096,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   // than they earn: what a reader needs first is the one queue that is longest
   // right now. The rest stay one keystroke away rather than always on screen.
   const [showAllCheckpoints, setShowAllCheckpoints] = useState(false);
+  const [compositionView, setCompositionView] = useState<"gates" | "airlines" | "countries">("gates");
   const summary = useLiveSummary(date);
   const airport = summary?.airport;
   if (!airport) return <div className="airport-unavailable" role="status"><strong>{airportTodayText.unavailable[lang]}</strong></div>;
@@ -1199,49 +1223,99 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
       * 섹션으로 흩어져 있지 않고 하나의 제목 아래 묶여 마지막에 온다.
       */}
     <section className="airport-composition" aria-labelledby="airport-composition-title">
-      <div className="airport-detail-head">
+      <div className="airport-composition-head">
         <div>
-          <p className="eyebrow">COMPOSITION · {scopeLabel}</p>
           <h3 id="airport-composition-title">{airportTodayText.compositionTitle[lang]}</h3>
+          <p className="airport-composition-scope">{airportTodayText.compositionScope[lang](scopeLabel)}</p>
+          <p>{airportTodayText.compositionIntro[lang]}</p>
+          <small>{airportTodayText.compositionTruth[lang]}</small>
         </div>
-        <p>{airportTodayText.compositionNote[lang]}</p>
       </div>
-    <section className="airport-detail-section airport-gates" aria-labelledby="airport-gates-title">
-      <div className="airport-detail-head"><div><p className="eyebrow">PHYSICAL DEPARTURES · {scopeLabel}</p><h3 id="airport-gates-title">{airportTodayText.gatesTitle[lang]}</h3></div><p>{airportTodayText.gatesNote[lang]}</p></div>
-      {gateList.length ? <ol className="airport-gate-list">
-        <li className="airport-gate-head" aria-hidden="true"><span>#</span><strong>{airportTodayText.gateRankHead[lang]}</strong></li>
-        {gateList.map((row, index) => <li className="airport-gate-row" key={`${row.terminal ?? "unknown"}-${row.gate}`}>
-          <span>{String(index + 1).padStart(2, "0")}</span>
-          <strong>{row.terminal ? <i>{row.terminal}</i> : null}Gate {row.gate}</strong>
-          <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}</b>
-        </li>)}
-      </ol> : <p className="airport-empty-line">{flightsCount === null ? noFlightsText : airportTodayText.noGateList[lang]}</p>}
-      <p className="airport-detail-foot"><a className="airport-jump-link" href="#airport-airlines-title">{airportTodayText.airlinesJump[lang]} ↓</a></p>
-    </section>
 
-    <section className="airport-detail-section airport-airlines" aria-labelledby="airport-airlines-title">
-      <div className="airport-detail-head"><div><p className="eyebrow">OPERATING AIRLINES · {scopeLabel}</p><h3 id="airport-airlines-title">{airportTodayText.airlinesTitle[lang]}</h3></div><p>{airportTodayText.airlinesNote[lang]}</p></div>
-      {ranking && ranking.airlines.length ? <>
-        <ol className="airport-gate-list airport-airline-list">
-          <li className="airport-gate-head" aria-hidden="true"><span>#</span><strong>{airportTodayText.airlineRankHead[lang]}</strong></li>
-          {ranking.airlines.map((row, index) => <li className="airport-rank-row airport-airline-row" key={row.iata ?? `label-${index}`}>
+      <div className="airport-composition-tabs" role="tablist" aria-label={airportTodayText.compositionTabsLabel[lang]}>
+        {(["gates", "airlines", "countries"] as const).map((view, index, views) => <button
+          type="button"
+          role="tab"
+          id={`airport-composition-tab-${view}`}
+          aria-controls={`airport-composition-panel-${view}`}
+          aria-selected={compositionView === view}
+          tabIndex={compositionView === view ? 0 : -1}
+          key={view}
+          onClick={() => setCompositionView(view)}
+          onKeyDown={(event) => {
+            let nextIndex = index;
+            if (event.key === "ArrowRight") nextIndex = (index + 1) % views.length;
+            else if (event.key === "ArrowLeft") nextIndex = (index - 1 + views.length) % views.length;
+            else if (event.key === "Home") nextIndex = 0;
+            else if (event.key === "End") nextIndex = views.length - 1;
+            else return;
+            event.preventDefault();
+            const nextView = views[nextIndex];
+            setCompositionView(nextView);
+            document.getElementById(`airport-composition-tab-${nextView}`)?.focus();
+          }}
+        >{airportTodayText.compositionTabs[view][lang]}</button>)}
+      </div>
+
+      {compositionView === "gates" && <section
+        className="airport-composition-panel airport-gates"
+        id="airport-composition-panel-gates"
+        role="tabpanel"
+        tabIndex={0}
+        aria-labelledby="airport-composition-tab-gates"
+      >
+        <div className="airport-composition-panel-head"><h4>{airportTodayText.gatesTitle[lang]}</h4><p>{airportTodayText.gatesNote[lang]}</p></div>
+        {gateList.length ? <ol className="airport-gate-list">
+          <li className="airport-gate-head" aria-hidden="true"><span>{airportTodayText.rankLabel[lang]}</span><strong>{isAll ? airportTodayText.terminalGateColumn[lang] : airportTodayText.gateColumn[lang]}</strong><b>{airportTodayText.departuresColumn[lang]}</b></li>
+          {gateList.map((row, index) => <li className="airport-gate-row" key={`${row.terminal ?? "unknown"}-${row.gate}`}>
             <span>{String(index + 1).padStart(2, "0")}</span>
-            <strong>{row.iata ? <i>{row.iata}</i> : null}{airlineDisplayName(row, lang)}<em>{row.country ? regionName(row.country, lang) : airportTodayText.countryUnverified[lang]}</em></strong>
-            <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}<small>{formatShare(row.share)}</small></b>
+            <strong>{isAll && row.terminal ? <i>{row.terminal}</i> : null}Gate {row.gate}</strong>
+            <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}</b>
           </li>)}
-        </ol>
-        <h4 className="airport-subhead">{airportTodayText.countriesTitle[lang]}</h4>
-        <ol className="airport-gate-list airport-country-list">
-          <li className="airport-gate-head" aria-hidden="true"><span>#</span><strong>{airportTodayText.countryRankHead[lang]}</strong></li>
-          {ranking.countries.map((row, index) => <li className="airport-rank-row airport-country-row" key={row.country ?? "unverified"}>
-            <span>{String(index + 1).padStart(2, "0")}</span>
-            <strong>{row.country ? <i>{row.country}</i> : null}{row.country ? regionName(row.country, lang) : airportTodayText.countryUnverified[lang]}<em>{row.airlines.toLocaleString(numberLocale)}{airportTodayText.airlinesUnit[lang]}</em></strong>
-            <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}<small>{formatShare(row.share)}</small></b>
-          </li>)}
-        </ol>
-        <p className="airport-detail-foot">{airportTodayText.airlineCountryBasis[lang](airport.airlineRanking?.countrySource?.retrievedOn ?? "—")}</p>
-      </> : <p className="airport-empty-line">{flightsCount === null ? noFlightsText : airportTodayText.noAirlineList[lang]}</p>}
-    </section>
+        </ol> : <p className="airport-empty-line">{flightsCount === null ? noFlightsText : airportTodayText.noGateList[lang]}</p>}
+      </section>}
+
+      {compositionView === "airlines" && <section
+        className="airport-composition-panel airport-airlines"
+        id="airport-composition-panel-airlines"
+        role="tabpanel"
+        tabIndex={0}
+        aria-labelledby="airport-composition-tab-airlines"
+      >
+        <div className="airport-composition-panel-head"><h4>{airportTodayText.airlinesTitle[lang]}</h4><p>{airportTodayText.airlinesNote[lang]}</p></div>
+        {ranking && ranking.airlines.length ? <>
+          <ol className="airport-gate-list airport-airline-list">
+            <li className="airport-gate-head" aria-hidden="true"><span>{airportTodayText.rankLabel[lang]}</span><strong>{airportTodayText.airlineColumn[lang]}</strong><b>{airportTodayText.departureShareColumn[lang]}</b></li>
+            {ranking.airlines.map((row, index) => <li className="airport-rank-row airport-airline-row" key={row.iata ?? `label-${index}`}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <strong>{row.iata ? <i>{row.iata}</i> : null}{airlineDisplayName(row, lang)}<em>{row.country ? regionName(row.country, lang) : airportTodayText.countryUnverified[lang]}</em></strong>
+              <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}<small>{formatShare(row.share)}</small></b>
+            </li>)}
+          </ol>
+          <p className="airport-detail-foot">{airportTodayText.airlineCountryShortBasis[lang]}</p>
+        </> : <p className="airport-empty-line">{flightsCount === null ? noFlightsText : airportTodayText.noAirlineList[lang]}</p>}
+      </section>}
+
+      {compositionView === "countries" && <section
+        className="airport-composition-panel airport-countries"
+        id="airport-composition-panel-countries"
+        role="tabpanel"
+        tabIndex={0}
+        aria-labelledby="airport-composition-tab-countries"
+      >
+        <div className="airport-composition-panel-head"><h4>{airportTodayText.countriesTitle[lang]}</h4><p>{airportTodayText.countriesNote[lang]}</p></div>
+        {ranking && ranking.countries.length ? <>
+          <ol className="airport-gate-list airport-country-list">
+            <li className="airport-gate-head" aria-hidden="true"><span>{airportTodayText.rankLabel[lang]}</span><strong>{airportTodayText.countryColumn[lang]}</strong><b>{airportTodayText.departureShareColumn[lang]}</b></li>
+            {ranking.countries.map((row, index) => <li className="airport-rank-row airport-country-row" key={row.country ?? "unverified"}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <strong>{row.country ? <i>{row.country}</i> : null}{row.country ? regionName(row.country, lang) : airportTodayText.countryUnverified[lang]}<em>{row.airlines.toLocaleString(numberLocale)}{airportTodayText.airlinesUnit[lang]}</em></strong>
+              <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}<small>{formatShare(row.share)}</small></b>
+            </li>)}
+          </ol>
+          <p className="airport-detail-foot">{airportTodayText.airlineCountryBasis[lang](airport.airlineRanking?.countrySource?.retrievedOn ?? "—")}</p>
+        </> : <p className="airport-empty-line">{flightsCount === null ? noFlightsText : airportTodayText.noAirlineList[lang]}</p>}
+      </section>}
     </section>
 
     <section className="airport-detail-section airport-checkpoints" aria-labelledby="airport-checkpoints-title">
