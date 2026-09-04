@@ -15,18 +15,80 @@ easy the integration would be.
 
 ## What the pilot answers today
 
-Only from sources KORETAIL already collects:
+The same reusable guide workflow serves exactly three areas: Myeongdong,
+Hongdae and Seongsu. The area switch changes the URL and every scoped signal;
+it does not add nearby stations or mix area records. Each page is ordered for
+the question a worker asks before a shift, not for the order in which datasets
+were collected:
+
+1. 오늘 근무 브리핑 — three to five high-value facts for the next 10–30 seconds
+2. 오늘 안내할 것 — a small, evidence-ranked set of official event records
+3. 교통 흐름 참고 — the area's one mapped station, with alighting first
+4. 지금 지역 상황 — the detailed crowd state and its observation time
+5. 관광 흐름 배경 참고 — delayed foreign statistics and airport context
+6. 관광객에게 보여주기 — a deliberately narrow visitor-facing event view
+7. 자료 기준과 한계 — source periods, formulas and semantic boundaries
+
+It uses only sources KORETAIL already collects:
 
 | Block | Source | Cadence |
 |---|---|---|
-| 지금 지역 crowding | Seoul live city data (SEOUL_CITYDATA_PPLTN) | real-time |
-| 지금 지역 weather | KMA village forecast, via the deterministic guide | ~hourly |
-| 오늘 지역 events | KTO TourAPI, official dates + official links | by event date |
-| 외국인 흐름 · 대표역 | Seoul Metro daily boarding/alighting (OA-22723) | daily |
-| 외국인 흐름 · 체류 | Short-stay foreign living population (OA-23018) | daily, ~9-day lag |
-| 인천공항 입국 참고 | Incheon A5 arrival forecast | ~hourly |
+| 오늘 근무 브리핑 / 지금 지역 상황 | Seoul live city data (SEOUL_CITYDATA_PPLTN) and its official forecast | real-time |
+| 실용 날씨 안내 | KMA village forecast, through the deterministic guide | ~hourly |
+| 오늘 안내할 것 | KTO TourAPI official title, period, address and official link | by event date |
+| 교통 흐름 참고 | Stored Seoul Metro daily boarding/alighting observations (OA-22723) | daily |
+| 관광 흐름 배경 참고 | Short-stay foreign living population (OA-23018), foreign-purpose mobility and Incheon A5 arrival forecast | source-specific; visibly dated |
+| 관광객에게 보여주기 | Safe subset of the same event and deterministic weather records | no additional collection |
 
-No new provider was added for the pilot.
+No new provider or provider call was added for this workflow.
+
+### Subway comparison contract
+
+The primary station signal is **alighting flow**, not boarding. The mappings
+remain exactly `명동역 4호선`, `홍대입구역 2호선` and `성수역 2호선`.
+An alighting count is a station gate count: it is not a unique-person count,
+an area visitor count or a tourist count.
+
+Comparisons use only compact daily observations already stored by KORETAIL.
+The read is bounded to the exact area, station, line, mapping version, source,
+quality and date window. It never calls OA-22723 for historical comparison,
+never fills a missing date with zero and never chooses a nearby date.
+
+| Comparison | Evidence required before display |
+|---|---|
+| Previous day | exact `D-1` row with a positive baseline |
+| Same weekday last week | exact `D-7` row with a positive baseline |
+| Recent seven-day average | all exact `D-1` through `D-7` rows and a positive total |
+| Four-week same-weekday average | all exact `D-7`, `D-14`, `D-21` and `D-28` rows and a positive total |
+
+For one baseline, percentage change is `(current - baseline) / baseline ×
+100`. For an average baseline, the same formula is applied to the arithmetic
+mean without prematurely rounding that mean. A zero, negative, missing,
+wrong-station, wrong-line or duplicate baseline makes that comparison
+unavailable. The UI omits it; it never shows a fabricated `0%`.
+
+No simple previous-month-same-date comparison is shown because calendar and
+weekday effects make it misleading. Month and year-on-year comparisons remain
+unavailable until real stored history and a defensible documented method both
+exist.
+
+### Event and visitor-show truth contract
+
+`startDate <= today <= endDate` supports only **"today falls within the
+official event period"**. It does not prove that an event is physically
+operating now or establish today's opening hours. Event cards, copied event
+facts and visitor show all retain the instruction to check the official page
+for actual operation.
+
+Event priority is deterministic: today inside the official period, verified
+area relevance or distance, then date proximity. It is not a popularity,
+attendance or AI score. Visitor show accepts only the official event title,
+official period, address, safe official URL, source and a deterministic
+weather note. It excludes crowd statistics, diagnostics and inferred status.
+Its Korean, English, Chinese and Japanese interface labels do not create a
+translated proper name: when no verified official foreign-language name is
+available, the official Korean source name remains unchanged and the gap is
+stated.
 
 ## Gaps
 
@@ -96,8 +158,10 @@ within their own block. **Priority: LOW for the pilot**, cheap later.
 
 **Worker question.** "경복궁 오늘 몇 시까지예요? 휴관일이에요?"
 
-**Why KORETAIL cannot answer.** TourAPI event records carry event dates,
-not per-attraction daily operating hours or closure days.
+**Why KORETAIL cannot answer.** Tourism Desk now exposes an event's official
+period and official page, including in visitor show, but TourAPI event records
+do not carry dependable per-attraction daily operating hours or closure days.
+An official event period is not an "open now" signal.
 
 **Possible official source.** TourAPI `detailIntro` per content id, and each
 attraction's own official page.
@@ -142,8 +206,11 @@ verifiable official sources are eligible.
 needs the official Korean name to give directions.
 
 **Why KORETAIL partly cannot answer.** The airport facility directory has
-verified KO/EN/JA/ZH names, but attractions in the three Tourism Desk areas do not: TourAPI's
-multilingual endpoints are separate services from the one collected.
+verified KO/EN/JA/ZH names, but attractions and events in the three Tourism
+Desk areas do not: TourAPI's multilingual endpoints are separate services
+from the one collected. Visitor show therefore translates its interface and
+weather guidance only; it preserves the official Korean proper name and says
+that an official foreign-language name has not been verified.
 
 **Possible official source.** TourAPI multilingual services.
 **Data quality risk.** Coverage is uneven; a fabricated translation would be
@@ -162,5 +229,7 @@ worse than none, so any gap must fall back to the Korean name unchanged.
 ## How to decide
 
 None of these is scheduled. The next one to build — if any — should be
-chosen from what pilot users actually ask for during validation (see
-`docs/product/PILOT_VALIDATION.md`), not from this list's ordering.
+chosen from what 3–5 Tourism Desk workers actually ask for during a 2–4 week
+validation (see `docs/product/PILOT_VALIDATION.md`), not from this list's
+ordering. No major expansion starts unless at least 1–2 of those workers
+return voluntarily.

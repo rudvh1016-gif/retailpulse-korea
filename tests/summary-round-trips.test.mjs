@@ -7,7 +7,7 @@ import { DatabaseSync } from "node:sqlite";
 
 import { summarizeLiveSummary } from "../app/api/live/summary/route.ts";
 import { SUMMARY_CACHE_CONTROL, SUMMARY_NO_STORE } from "../lib/summary-cache-policy.ts";
-import { kstDayBounds, kstDayOf, kstHourStartIsoOf, kstNowIsoOf, relateKstDay } from "../lib/kst.ts";
+import { kstDayBounds, kstDayOf, kstHourStartIsoOf, kstNowIsoOf, relateKstDay, shiftKstDay } from "../lib/kst.ts";
 
 /**
  * Production, 2026-09-04: an uncached /api/live/summary took 3.5–4.2 s
@@ -75,6 +75,20 @@ function seed(database) {
     congestion_label, population_min, population_max, observed_at, retrieved_at, freshness, schema_version, quality_status, source_hash)
     VALUES ('r1', 'SEOUL_CITYDATA_PPLTN', 'LIVE', 'myeongdong', 'POI001', '명동', 3, '약간 붐빔', 23000, 25000,
       '2026-09-04T13:10:00+09:00', '2026-09-04T04:11:05.638Z', 'LIVE', 'v1', 'VALID', 'h1')`).run();
+
+  const subwayInsert = database.prepare(`INSERT INTO seoul_subway_ridership (
+    id, source_id, dataset_id, record_origin, area, reference_date,
+    station_code, station_number, station_name, line_name,
+    boarding_count, alighting_count, mapping_version, retrieved_at,
+    schema_version, quality_status, source_hash
+  ) VALUES (?, 'SEOUL_SUBWAY_RIDERSHIP', 'OA-22723', 'OFFICIAL_DAILY', 'myeongdong', ?,
+    '0424', '424', '명동', '4호선', ?, ?, 'oa-22723-area-stations-2026-09-02-v1',
+    '2026-09-04T00:00:00.000Z', 'seoul-subway-ridership-v1', 'VALID', ?)`);
+  Array.from({ length: 29 }, (_, delta) => {
+    const date = shiftKstDay("2026-09-03", -delta);
+    const alighting = delta === 0 ? 1_124 : 1_000;
+    subwayInsert.run(`subway-${date}`, date, alighting - 100, alighting, `hash-${date}`);
+  });
 }
 
 test("the whole summary read path is one D1 round trip, and the payload is a cacheable live summary", async () => {
@@ -93,6 +107,12 @@ test("the whole summary read path is one D1 round trip, and the payload is a cac
 
     assert.equal(body.areas.myeongdong.realtime.congestionLabel, "약간 붐빔");
     assert.equal(body.areas.myeongdong.realtime.freshness, "LIVE");
+    assert.equal(body.areas.myeongdong.subwayRidership.referenceDate, "2026-09-03");
+    assert.equal(body.areas.myeongdong.subwayRidership.alightingCount, 1_124);
+    assert.equal(body.areas.myeongdong.subwayRidership.trend.previousDay.changeTenthsPercent, 124);
+    assert.equal(body.areas.myeongdong.subwayRidership.trend.sameWeekdayLastWeek.changeTenthsPercent, 124);
+    assert.equal(body.areas.myeongdong.subwayRidership.trend.recentSevenDayAverage.changeTenthsPercent, 124);
+    assert.equal(body.areas.myeongdong.subwayRidership.trend.fourWeekSameWeekdayAverage.changeTenthsPercent, 124);
     assert.deepEqual(body.dateAvailability.seoulObserved, ["2026-09-04"], "the per-day probes still feed the picker");
     assert.deepEqual(body.dateAvailability.airportFlights, []);
     assert.equal(response.headers.get("cache-control"), SUMMARY_CACHE_CONTROL,

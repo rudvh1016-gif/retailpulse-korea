@@ -50,7 +50,7 @@ export function pageTitle(locale: SeoLocale, slug?: SeoSlug, tourismArea: Touris
   if (!slug) return {
     ko: "서울 외국인 쇼핑수요 신호 | KORETAIL",
     en: "Seoul Foreign Retail Demand Signals | KORETAIL",
-    zh: "首尔外国游客购物需求信号 | KORETAIL",
+    zh: "首尔外国人购物需求信号 | KORETAIL",
     ja: "ソウル外国人ショッピング需要 | KORETAIL",
   }[locale];
   if (slug === "tourism-desk") {

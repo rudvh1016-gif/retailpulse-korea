@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { FLIGHT_ROWS, routeSummary, SUMMARY_FIXTURE } from "./summary-fixture";
+import {
+  FLIGHT_ROWS,
+  routeSummary,
+  SUBWAY_TREND_FIXTURE,
+  SUMMARY_FIXTURE,
+} from "./summary-fixture";
 
 const locales = [
   ["ko", "ko"],
@@ -477,7 +482,7 @@ test("Seoul renders compact arrival forecasts in four languages and no departure
   await page.goto("/ko");
   await page.locator(".home-area-briefs button").first().click();
   const rows = page.locator(".signal-groups");
-  await expect(rows).toContainText("서울 소비 수요의 선행 참고 신호");
+  await expect(rows).toContainText("서울의 특정 지역과 직접 연결되지 않는 배경 참고");
   await expect(rows).toContainText("실제 서울 방문객 수 아님");
   await expect(rows).not.toContainText("현재 출국장 대기");
   await expect(rows).not.toContainText("예상 출국 승객");
@@ -764,7 +769,8 @@ test("commercial activity and events expose their complete truth without a flat 
   await expect(commercial).not.toContainText(/오늘 누적 매출|외국인 매출|명동 전체 매출/);
 
   const panel = page.locator(".event-signal-panel");
-  await expect(panel).toContainText("4건 진행·예정");
+  await expect(panel).toContainText("4건 공식 행사기간 내·예정");
+  await expect(panel).toContainText("공식 행사기간만으로 실제 운영 여부나 운영시간을 확인할 수 없습니다. 공식 안내를 확인하세요.");
   await expect(panel.locator(".event-card")).toHaveCount(3);
   await expect(panel.getByRole("button", { name: "전체 4건 보기" })).toHaveAttribute("aria-expanded", "false");
   await expect(
@@ -773,7 +779,7 @@ test("commercial activity and events expose their complete truth without a flat 
   ).toHaveCount(1);
 
   const firstCard = panel.locator(".event-card").first();
-  await expect(firstCard).toContainText("진행 중");
+  await expect(firstCard).toContainText("선택 날짜가 공식 행사기간에 포함");
   await expect(firstCard).toContainText("8/20–9/10");
   await expect(firstCard).toContainText("중구 명동길 14");
   await expect(firstCard).toContainText("320m");
@@ -802,7 +808,7 @@ test("a transitional cached payload never promises event cards it did not includ
   await page.goto("/ko");
 
   const panel = page.locator(".event-signal-panel");
-  await expect(panel).toContainText("13건 진행·예정");
+  await expect(panel).toContainText("13건 공식 행사기간 내·예정");
   await expect(panel.locator(".event-card")).toHaveCount(3);
   await expect(panel.locator(".event-list-toggle")).toHaveCount(0);
 });
@@ -975,16 +981,40 @@ const TOURISM_SUMMARY_FIXTURE = {
       ...SUMMARY_FIXTURE.areas.hongdae,
       subwayRidership: {
         referenceDate: "2026-08-30", boardingCount: 31000, alightingCount: 32000,
-        selectedStationCount: 1, selectedStations: "홍대입구(2호선)",
+        selectedStationCount: 1, selectedStations: "홍대입구|2호선",
         retrievedAt: "2026-08-31T01:00:00Z", datasetId: "OA-22723", mappingVersion: "fixture",
+        trend: SUBWAY_TREND_FIXTURE({
+          previousDay: { baselineDates: ["2026-08-29"], baselineAlightingCount: 31_000, changeTenthsPercent: 32 },
+          sameWeekdayLastWeek: { baselineDates: ["2026-08-23"], baselineAlightingCount: 33_000, changeTenthsPercent: -30 },
+          recentSevenDayAverage: {
+            baselineDates: ["2026-08-29", "2026-08-28", "2026-08-27", "2026-08-26", "2026-08-25", "2026-08-24", "2026-08-23"],
+            baselineAlightingCount: 30_000, changeTenthsPercent: 67,
+          },
+          fourWeekSameWeekdayAverage: {
+            baselineDates: ["2026-08-23", "2026-08-16", "2026-08-09", "2026-08-02"],
+            baselineAlightingCount: 34_000, changeTenthsPercent: -59,
+          },
+        }),
       },
     },
     seongsu: {
       ...SUMMARY_FIXTURE.areas.seongsu,
       subwayRidership: {
         referenceDate: "2026-08-30", boardingCount: 41000, alightingCount: 42000,
-        selectedStationCount: 1, selectedStations: "성수(2호선)",
+        selectedStationCount: 1, selectedStations: "성수|2호선",
         retrievedAt: "2026-08-31T01:00:00Z", datasetId: "OA-22723", mappingVersion: "fixture",
+        trend: SUBWAY_TREND_FIXTURE({
+          previousDay: { baselineDates: ["2026-08-29"], baselineAlightingCount: 40_000, changeTenthsPercent: 50 },
+          sameWeekdayLastWeek: { baselineDates: ["2026-08-23"], baselineAlightingCount: 40_000, changeTenthsPercent: 50 },
+          recentSevenDayAverage: {
+            baselineDates: ["2026-08-29", "2026-08-28", "2026-08-27", "2026-08-26", "2026-08-25", "2026-08-24", "2026-08-23"],
+            baselineAlightingCount: 41_000, changeTenthsPercent: 24,
+          },
+          fourWeekSameWeekdayAverage: {
+            baselineDates: ["2026-08-23", "2026-08-16", "2026-08-09", "2026-08-02"],
+            baselineAlightingCount: 39_000, changeTenthsPercent: 77,
+          },
+        }),
       },
       events: [{
         contentId: "seongsu-event", title: "성수 공식 전시", eventStart: "2026-08-20", eventEnd: "2026-09-10",
@@ -1004,9 +1034,21 @@ const TOURISM_SUMMARY_FIXTURE = {
 test("the three Tourism Desk routes render only their selected area's data", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
   const areas = [
-    { id: "myeongdong", name: "명동", station: "명동(4호선)", range: "23,000~25,000", others: ["홍대입구(2호선)", "성수(2호선)"] },
-    { id: "hongdae", name: "홍대", station: "홍대입구(2호선)", range: "18,000~20,000", others: ["명동(4호선)", "성수(2호선)"] },
-    { id: "seongsu", name: "성수", station: "성수(2호선)", range: "12,000~14,000", others: ["명동(4호선)", "홍대입구(2호선)"] },
+    {
+      id: "myeongdong", name: "명동", station: "명동역 4호선", alightings: "21,000",
+      range: "23,000–25,000", event: "명동 공연 예술제",
+      otherStations: ["홍대입구역 2호선", "성수역 2호선"], otherEvents: ["홍대 거리공연", "성수 공식 전시"],
+    },
+    {
+      id: "hongdae", name: "홍대", station: "홍대입구역 2호선", alightings: "32,000",
+      range: "18,000–20,000", event: "홍대 거리공연",
+      otherStations: ["명동역 4호선", "성수역 2호선"], otherEvents: ["명동 공연 예술제", "성수 공식 전시"],
+    },
+    {
+      id: "seongsu", name: "성수", station: "성수역 2호선", alightings: "42,000",
+      range: null, event: "성수 공식 전시",
+      otherStations: ["명동역 4호선", "홍대입구역 2호선"], otherEvents: ["명동 공연 예술제", "홍대 거리공연"],
+    },
   ] as const;
 
   for (const area of areas) {
@@ -1015,19 +1057,159 @@ test("the three Tourism Desk routes render only their selected area's data", asy
     await expect(desk.getByRole("heading", { level: 1, name: `${area.name} 관광안내` })).toBeVisible();
     await expect(page.locator(".tourism-area-switcher a[aria-current='page']")).toHaveText(area.name);
     await expect(desk).toContainText(area.station);
-    await expect(desk).toContainText(area.range);
+    await expect(desk.locator(".tourism-subway-primary")).toContainText(area.alightings);
+    if (area.range) await expect(desk.locator(".tourism-current-reading")).toContainText(area.range);
+    else await expect(desk.locator(".tourism-current-reading")).toHaveCount(0);
+    await expect(desk).toContainText(area.event);
     await expect(desk).toContainText("관광객 수가 아닙니다");
-    await expect(desk).toContainText(`공항 입국객은 ${area.name} 방문객이 아닙니다`);
-    for (const other of area.others) await expect(desk).not.toContainText(other);
+    await expect(desk).toContainText("인천공항 입국 예보는 이 지역 방문객이나 관광객 수가 아닙니다");
+    for (const other of area.otherStations) await expect(desk).not.toContainText(other);
+    for (const other of area.otherEvents) await expect(desk).not.toContainText(other);
 
-    const lines = desk.locator(".desk-line");
+    const lines = desk.locator(".tourism-brief-line");
     await expect(lines.first()).toBeVisible();
     const count = await lines.count();
-    expect(count).toBeGreaterThan(0);
+    expect(count).toBeGreaterThanOrEqual(3);
+    expect(count).toBeLessThanOrEqual(5);
     for (let index = 0; index < count; index += 1) {
       await expect(lines.nth(index).locator("small")).not.toBeEmpty();
     }
   }
+});
+
+test("Tourism Desk follows the seven-part guide workflow and shows only evidence-backed subway comparisons", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
+  await page.goto("/ko/tourism-desk/myeongdong");
+  const desk = page.locator(".tourism-desk");
+  const sectionHeadings = desk.locator(".tourism-guide-section > .tourism-section-head h2");
+
+  await expect(sectionHeadings).toHaveCount(7);
+  expect(await sectionHeadings.allInnerTexts()).toEqual([
+    "오늘 근무 브리핑",
+    "오늘 안내할 것",
+    "교통 흐름 참고",
+    "지금 지역 상황",
+    "관광 흐름 배경 참고",
+    "관광객에게 보여주기",
+    "자료 기준과 한계",
+  ]);
+
+  const briefLines = desk.locator(".tourism-shift-brief .tourism-brief-line");
+  await expect(briefLines).toHaveCount(5);
+  await expect(briefLines.nth(0)).toContainText("현재 명동");
+  await expect(briefLines.nth(4)).toContainText("지난주 같은 요일 대비 +12.4%");
+
+  const comparisons = desk.locator(".tourism-subway-comparisons li");
+  await expect(comparisons).toHaveCount(4);
+  await expect(comparisons.nth(0)).toContainText("지난주 같은 요일 대비");
+  await expect(comparisons.nth(0)).toContainText("+12.4%");
+  await expect(comparisons.nth(1)).toContainText("최근 7일 평균 대비");
+  await expect(comparisons.nth(1)).toContainText("+8.1%");
+  await expect(comparisons.nth(1)).toContainText("정확히 직전 7일");
+  await expect(comparisons.nth(2)).toContainText("전일 대비");
+  await expect(comparisons.nth(2)).toContainText("+4.2%");
+  await expect(comparisons.nth(3)).toContainText("최근 4주 같은 요일 평균 대비");
+  await expect(comparisons.nth(3)).toContainText("+10.2%");
+  await expect(desk.locator(".tourism-subway-secondary")).toContainText("2026년 8월 30일");
+  await expect(desk.locator(".tourism-subway")).toContainText("고유 방문객 수나 이 지역 전체 방문객 수가 아닙니다");
+});
+
+test("Tourism Desk treats missing trend, stale realtime and all-null purpose data as unavailable evidence", async ({ page }) => {
+  const missingTrend = JSON.parse(JSON.stringify(TOURISM_SUMMARY_FIXTURE));
+  delete missingTrend.areas.hongdae.subwayRidership.trend;
+  missingTrend.areas.hongdae.foreignPurposeMobility = {
+    referenceDate: "2026-07-31",
+    retrievedAt: "2026-08-29T01:00:00Z",
+    datasetId: "OA-22378",
+    mappingVersion: "fixture",
+    shopping: null,
+    tourism: null,
+  };
+  await page.route("**/api/live/summary*", routeSummary(missingTrend));
+  await page.goto("/ko/tourism-desk/hongdae");
+  const desk = page.locator(".tourism-desk");
+  await expect(desk.locator(".tourism-subway-primary")).toContainText("32,000");
+  await expect(desk.locator(".tourism-subway-history")).toHaveText("비교 이력 축적 중");
+  await expect(desk.getByRole("heading", { name: "외국인 목적별 이동" })).toHaveCount(0);
+
+  const stale = JSON.parse(JSON.stringify(TOURISM_SUMMARY_FIXTURE));
+  stale.areas.myeongdong.realtime.freshness = "STALE";
+  await page.unroute("**/api/live/summary*");
+  await page.route("**/api/live/summary*", routeSummary(stale));
+  await page.goto("/ko/tourism-desk/myeongdong");
+  await expect(page.locator(".tourism-current-reading")).toHaveCount(0);
+  await expect(page.locator(".tourism-shift-brief")).not.toContainText("현재 명동");
+  await expect(page.locator(".tourism-shift-brief .tourism-brief-line")).toHaveCount(4);
+});
+
+test("Tourism event cards state official-period truth and copy only the allowlisted official facts", async ({ page, context }) => {
+  await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
+  await page.goto("/ko/tourism-desk/myeongdong");
+  await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: new URL(page.url()).origin });
+
+  const cards = page.locator(".tourism-event");
+  await expect(cards).toHaveCount(3);
+  const first = cards.first();
+  await expect(first.locator(".tourism-event-status")).toHaveText("공식 행사기간에 오늘 포함");
+  await expect(first).toContainText("2026-08-20 – 2026-09-10");
+  await expect(first).toContainText("서울특별시 중구 명동길 14 · 1층");
+  await expect(first).toContainText("한국관광공사 TourAPI");
+  await expect(page.locator(".tourism-event-caveat")).toContainText("실제 운영 중인지");
+  await expect(page.locator(".tourism-events")).not.toContainText("진행 중");
+
+  await first.getByRole("button", { name: "정보 복사: 명동 공연 예술제" }).click();
+  await expect(first.getByRole("status")).toHaveText("복사했습니다");
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toContain("행사명: 명동 공연 예술제");
+  expect(copied).toContain("공식 행사기간: 2026-08-20 – 2026-09-10");
+  expect(copied).toContain("주소: 서울특별시 중구 명동길 14 · 1층");
+  expect(copied).toContain("공식 안내: https://example.org/event-one");
+  expect(copied).toContain("출처: 한국관광공사 TourAPI");
+  expect(copied).toContain("실제 운영 여부나 운영시간을 뜻하지 않습니다");
+  expect(copied).not.toContain("관객과 소통");
+  expect(copied).not.toContain("공연: ");
+
+  const unsafe = cards.filter({ hasText: "도심 전시" });
+  await expect(unsafe.getByRole("link", { name: /공식 안내 확인/ })).toHaveCount(0);
+});
+
+test("Visitor Show keeps the URL and official Korean proper name while supporting four languages and focus restoration", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ko/tourism-desk/myeongdong");
+  const launch = page.locator(".tourism-visitor-launches li").filter({ hasText: "명동 공연 예술제" })
+    .getByRole("button", { name: "이 행사 보여주기: 명동 공연 예술제" });
+  const before = page.url();
+  await launch.click();
+
+  const dialog = page.locator("dialog.tourism-visitor-show");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("group", { name: "표시 언어" }).getByRole("button")).toHaveCount(4);
+  await dialog.getByRole("button", { name: "English" }).click();
+  await expect(dialog.getByRole("heading", { level: 2, name: "Visitor information" })).toBeVisible();
+  await expect(dialog.locator("dd[lang='ko']").first()).toHaveText("명동 공연 예술제");
+  await expect(dialog).toContainText("An official foreign-language name has not been verified");
+  expect(page.url()).toBe(before);
+
+  const overflow = await dialog.evaluate((element) => ({
+    dialog: element.scrollWidth - element.clientWidth,
+    page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  }));
+  expect(overflow.dialog).toBeLessThanOrEqual(1);
+  expect(overflow.page).toBeLessThanOrEqual(1);
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(launch).toBeFocused();
+  expect(page.url()).toBe(before);
+
+  await launch.click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "닫기" })).toBeVisible();
+  await dialog.getByRole("button", { name: "닫기" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(launch).toBeFocused();
+  expect(page.url()).toBe(before);
 });
 
 test("Tourism area links support keyboard, browser history and locale-preserving URLs", async ({ page }) => {
@@ -1039,7 +1221,7 @@ test("Tourism area links support keyboard, browser history and locale-preserving
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/ko\/tourism-desk\/hongdae$/);
   await expect(page.getByRole("heading", { level: 1, name: "홍대 관광안내" })).toBeVisible();
-  await expect(page.locator(".tourism-desk")).toContainText("홍대입구(2호선)");
+  await expect(page.locator(".tourism-desk")).toContainText("홍대입구역 2호선");
 
   const language = page.locator(".language-control select");
   await expect(language).toHaveValue("ko");

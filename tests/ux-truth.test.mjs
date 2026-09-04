@@ -110,18 +110,37 @@ test("airport current observation and official forecast stay separately named", 
   assert.deepEqual(claims, [], "a forecast must never be worded as a measurement");
 });
 
-test("Seoul uses airport arrivals only as a leading reference signal", () => {
-  for (const wording of ["예상 입국객", "입국 예상", "공식 예상"]) {
+test("Seoul uses airport arrivals only as area-independent background context", () => {
+  for (const wording of ["예상 입국객", "입국 예보", "공식 입국 예보"]) {
     assert.ok(signals.includes(wording), `${wording} must exist as forecast wording`);
   }
-  assert.match(signals, /서울 소비 수요의 선행 참고 신호/);
+  assert.match(signals, /서울의 특정 지역과 직접 연결되지 않는 배경 참고/);
   assert.match(signals, /실제 서울 방문객 수 아님/);
+  assert.doesNotMatch(signals, /서울 소비 수요의 선행 참고 신호/);
   const claims = signals.split("\n").filter((line) =>
     /실제 입국객|현재 입국객|실측 입국객/.test(line)
     && !/아님|ではありません|not actual|非实际/.test(line));
   assert.deepEqual(claims, [], "airport arrival forecasts must never read as observed arrivals");
   assert.doesNotMatch(signals, /입국객[^\n]*명동에 유입/,
     "airport arrivals must never be asserted as Myeongdong visitors");
+});
+
+test("event cards describe the selected date, not an unproven live operating state", () => {
+  for (const wording of [
+    "선택 날짜가 공식 행사기간에 포함",
+    "Selected date falls within the official event period",
+    "所选日期在官方活动期间内",
+    "選択日は公式開催期間内",
+    "선택 날짜 이후 공식 행사기간 시작",
+    "Official event period starts after the selected date",
+    "官方活动期间在所选日期之后开始",
+    "公式開催期間は選択日より後に開始",
+  ]) assert.ok(signals.includes(wording), `${wording} must exist as selected-date wording`);
+
+  const eventCard = signals.match(/function EventCard[\s\S]*?\nfunction EventSignalPanel/)?.[0] ?? "";
+  assert.ok(eventCard.length > 0);
+  assert.match(eventCard, /eventStatusForDate\(event, serviceDate\)/);
+  assert.doesNotMatch(eventCard, /진행 중|\bRunning\b|进行中|開催中|오늘 포함|\bToday\b/u);
 });
 
 /**

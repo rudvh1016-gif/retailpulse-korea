@@ -389,8 +389,9 @@ test("A5 arrival forecast replaces Seoul departure rows with compact, coverage-s
     "오늘 예상 입국객", "Expected arrivals today", "今日预计入境旅客", "今日の予想入国者数",
     "다음 시간대 예상 입국객", "Next-band expected arrivals", "下一时段预计入境旅客", "次の時間帯の予想入国者数",
     "오늘 예상 입국 피크", "Expected arrival peak today", "今日预计入境高峰", "今日の予想入国ピーク",
-    "서울 소비 수요의 선행 참고 신호", "실제 서울 방문객 수 아님",
+    "서울의 특정 지역과 직접 연결되지 않는 배경 참고", "실제 서울 방문객 수 아님",
   ]) assert.match(signals, new RegExp(phrase));
+  assert.doesNotMatch(signals, /서울 소비 수요의 선행 참고 신호/);
   assert.doesNotMatch(areaSignals, /실시간 입국객|현재 입국객|실제 입국객|실측 입국객/);
   assert.doesNotMatch(route, /\bfetch\(/, "the summary must reuse D1 and never add an airport provider call");
 });

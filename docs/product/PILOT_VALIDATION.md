@@ -17,6 +17,12 @@ enthusiasm.
 Small on purpose. Eight people who actually work a shift tell you more than a
 hundred who click once.
 
+The two cohorts are evaluated independently. In particular, the Tourism Desk
+gate means **3–5 actual guides or information-desk workers**, not a combined
+total padded with Airport participants. Record which of Myeongdong, Hongdae
+or Seongsu each participant used, while keeping their identity and employer
+out of the notes.
+
 ## How long
 
 **2–4 weeks.** Long enough that the novelty wears off and a second visit means
@@ -50,6 +56,22 @@ applies here too.
 7. What task did KORETAIL replace?
 8. Did it reduce the number of official sites you check before a shift?
 
+For a Tourism Desk participant, observe the guide workflow in order rather
+than prompting them toward a particular feature:
+
+- Can they read **오늘 근무 브리핑** and state what matters in 10–30 seconds?
+- Do they use **오늘 안내할 것** to answer what, where, when and where to
+  verify an event officially?
+- Is the station **alighting comparison** useful, and do they understand that
+  it is a gate count rather than a visitor or tourist count?
+- Do they use **관광객에게 보여주기** when helping an English-, Chinese- or
+  Japanese-speaking visitor? Do they understand that an unchanged Korean
+  proper name is intentional when no official translation is verified?
+- Which of current area detail, background tourism context and source limits
+  do they use, and which do they ignore?
+- Does the whole page answer a real visitor question faster than their prior
+  workflow?
+
 ### Return — the only metric that decides anything
 
 9. Did you open it again without being asked? How many times this week?
@@ -62,22 +84,39 @@ applies here too.
     it more, or did it just look out of date?
 13. Did any line make you tell a customer something you later had to correct?
 
+14. Did "today falls within the official event period" stop you from reading
+    it as "the event is operating now", or was the caveat still unclear?
+15. Did a subway percentage ever make you say that tourists or area visitors
+    increased? If so, quote the exact line that caused the mistake.
+16. In visitor show, was any interface translation mistaken for an official
+    translated event or place name?
+
 Question 13 matters most. A guide repeating a KORETAIL line to a visitor is
 the highest-consequence use, and a wrong reading there is worse than a blank
 screen.
 
 ## What to record per participant
 
+- Pilot cohort and Tourism Desk area used (never employer or shift location)
 - Which screens were opened, and in what order (from the diary, not tracking)
+- Whether the first 10–30 seconds produced a correct shift summary
+- Whether event information, station comparison and visitor show were used
 - Number of voluntary returns in the period
 - Any label misread, quoted exactly
+- Every instance where KORETAIL caused an incorrect statement to a visitor
 - The one feature they asked for, in their words
 - Whether they would notice if KORETAIL disappeared
 
 ## The decision gate
 
-**Continue major development only if 3–5 real users were tested AND at least
-1–2 returned voluntarily.**
+**Continue major Tourism Desk development only if 3–5 real Tourism workers
+were tested for 2–4 weeks AND at least 1–2 returned voluntarily.** Praise,
+stated intent to return and a researcher-requested second visit do not count
+as a voluntary return.
+
+Passing the return gate is necessary, not sufficient. Any case where KORETAIL
+caused a worker to tell a visitor something incorrect must be understood and
+fixed before expansion, even if the return threshold was met.
 
 If that gate is not met:
 
@@ -91,3 +130,5 @@ If that gate is not met:
 - Not statistically significant, and it does not pretend to be.
 - Not a reason to build the top item on the data-gaps list. That list is
   ordered by guesswork; participants are not.
+- Not permission to add a fourth area, a new provider, runtime translation or
+  an AI score before the evidence gate is met.

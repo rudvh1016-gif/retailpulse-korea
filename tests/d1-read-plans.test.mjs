@@ -55,6 +55,11 @@ function tableScans(db, sql, binds) {
 }
 
 const AREAS = ["myeongdong", "hongdae", "seongsu"];
+const SUBWAY_STATIONS = {
+  myeongdong: { code: "0424", number: "424", name: "명동", line: "4호선" },
+  hongdae: { code: "0239", number: "239", name: "홍대입구", line: "2호선" },
+  seongsu: { code: "0211", number: "211", name: "성수", line: "2호선" },
+};
 const perKey = (keys, sql) => keys.map(() => `SELECT * FROM (${sql})`).join(" UNION ALL ");
 const probe = (table, column, filter) => Array.from({ length: 21 }, () =>
   `SELECT ? AS day WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${filter ? `${filter} AND ` : ""}${column} >= ? AND ${column} < ?)`).join(" UNION ALL ");
@@ -72,7 +77,10 @@ const HOT_QUERIES = {
   "summary.latestStoreDynamics": [perKey(AREAS, "SELECT area FROM seoul_store_dynamics WHERE area = ? AND source_id = ? AND mapping_version = ? AND record_origin = 'OFFICIAL_HISTORICAL' AND quality_status = 'VALID' ORDER BY quarter_code DESC LIMIT 1"), AREAS.flatMap((a) => [a, "SEOUL_STORE_DYNAMICS", "oa-15577-standard-area-2026-09-03-v1"])],
   "collector.storeDynamicsLastGood": [perKey(AREAS, "SELECT source_id, dataset_id, record_origin, area, quarter_code, trade_area_code, trade_area_name, trade_area_type_code, trade_area_type_name, overall_store_count, ordinary_store_count, franchise_store_count, opening_store_count, opening_rate_tenths_percent, closure_store_count, closure_rate_tenths_percent, mapping_version, retrieved_at, schema_version, quality_status FROM seoul_store_dynamics WHERE source_id = ? AND mapping_version = ? AND record_origin = 'OFFICIAL_HISTORICAL' AND quality_status = 'VALID' AND area = ? ORDER BY quarter_code DESC LIMIT 1"), AREAS.flatMap((a) => ["SEOUL_STORE_DYNAMICS", "oa-15577-standard-area-2026-09-03-v1", a])],
   "summary.latestForeignPurpose": [perKey(AREAS, "SELECT area, purpose FROM seoul_foreign_purpose_mobility WHERE area = ? AND source_id = ? AND mapping_version = ? AND reference_date = (SELECT MAX(reference_date) FROM seoul_foreign_purpose_mobility WHERE area = ? AND source_id = ? AND mapping_version = ?) ORDER BY purpose LIMIT 2"), AREAS.flatMap((a) => [a, "SEOUL_FOREIGN_PURPOSE_MOBILITY", "official-admin-dong-2025-06-02-v1", a, "SEOUL_FOREIGN_PURPOSE_MOBILITY", "official-admin-dong-2025-06-02-v1"])],
-  "summary.latestSubway": [perKey(AREAS, "SELECT area, SUM(boarding_count), SUM(alighting_count) FROM seoul_subway_ridership WHERE area = ? AND source_id = ? AND mapping_version = ? AND reference_date = (SELECT MAX(reference_date) FROM seoul_subway_ridership WHERE area = ? AND source_id = ? AND mapping_version = ?) GROUP BY area, reference_date LIMIT 1"), AREAS.flatMap((a) => [a, "SEOUL_SUBWAY_RIDERSHIP", "oa-22723-area-stations-2026-09-02-v1", a, "SEOUL_SUBWAY_RIDERSHIP", "oa-22723-area-stations-2026-09-02-v1"])],
+  "summary.subwayHistory": [perKey(AREAS, "SELECT area, reference_date, boarding_count, alighting_count FROM seoul_subway_ridership WHERE area = ? AND mapping_version = ? AND reference_date <= ? AND station_code = ? AND station_number = ? AND station_name = ? AND line_name = ? AND source_id = ? AND dataset_id = ? AND record_origin = 'OFFICIAL_DAILY' AND quality_status = 'VALID' ORDER BY reference_date DESC LIMIT 29"), AREAS.flatMap((area) => {
+    const station = SUBWAY_STATIONS[area];
+    return [area, "oa-22723-area-stations-2026-09-02-v1", "2026-09-04", station.code, station.number, station.name, station.line, "SEOUL_SUBWAY_RIDERSHIP", "OA-22723"];
+  })],
   "summary.latestCongestion": [perKey(["T1", "T2"], "SELECT terminal FROM airport_congestion WHERE terminal = ? AND observed_at = (SELECT MAX(observed_at) FROM airport_congestion WHERE terminal = ?) ORDER BY zone LIMIT 12"), ["T1", "T1", "T2", "T2"]],
   "summary.passengerForecast": ["SELECT terminal, direction FROM airport_passenger_forecast WHERE direction IN ('departure', 'arrival') AND is_aggregate = 1 AND target_date = ? ORDER BY direction, target_start_at, terminal LIMIT 96", ["2026-08-31"]],
   "summary.flightsForDay": ["SELECT physical_flight_id, terminal, gate FROM airport_flights WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ? LIMIT 2000", ["2026-08-31", "2026-09-01"]],
@@ -95,6 +103,19 @@ test("no hot read-path query scans a growing table", (context) => {
     const scans = tableScans(db, sql, binds);
     assert.deepEqual(scans, [], `${label} scans a table: ${scans.join(" | ")}`);
   }
+});
+
+test("the 29-day exact-station subway history is bounded and never scans its growing table", (context) => {
+  const { db, path } = freshDatabase("subway-history");
+  context.after(() => { db.close(); rmSync(path); });
+  const [sql, binds] = HOT_QUERIES["summary.subwayHistory"];
+  assert.equal((sql.match(/LIMIT 29/g) ?? []).length, 3, "each exact area scope must have its own 29-row ceiling");
+  for (const predicate of [
+    "area = ?", "mapping_version = ?", "reference_date <= ?", "station_code = ?",
+    "station_number = ?", "station_name = ?", "line_name = ?", "source_id = ?",
+    "dataset_id = ?", "record_origin = 'OFFICIAL_DAILY'", "quality_status = 'VALID'",
+  ]) assert.ok(sql.includes(predicate), `missing exact subway predicate: ${predicate}`);
+  assert.deepEqual(tableScans(db, sql, binds), [], "the bounded subway-history query must use an index SEARCH");
 });
 
 test("the recovery planners look up D1 without scanning either table", (context) => {
@@ -122,6 +143,7 @@ test("the read-path indexes the queries depend on exist in a migration", (contex
     "seoul_realtime_area_area_observed_idx", "seoul_realtime_area_observed_idx",
     "seoul_realtime_commercial_area_observed_idx",
     "seoul_foreign_purpose_mobility_area_reference_idx",
+    "seoul_subway_ridership_unique",
     "seoul_subway_ridership_area_reference_idx",
     "seoul_realtime_forecast_area_issue_idx", "weather_forecast_area_issue_idx",
     "seoul_estimated_sales_area_quarter_idx", "seoul_store_dynamics_area_quarter_idx",
