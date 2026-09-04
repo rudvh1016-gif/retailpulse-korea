@@ -36,7 +36,13 @@ import {
   SEOUL_FOREIGN_SOURCE_ID,
 } from "../lib/seoul-foreign";
 import { FOREIGN_PURPOSE_MAPPING_VERSION, FOREIGN_PURPOSE_SOURCE_ID } from "../lib/foreign-purpose-mobility";
-import { SEOUL_SUBWAY_MAPPING_VERSION, SEOUL_SUBWAY_SOURCE_ID } from "../lib/subway-ridership";
+import {
+  SEOUL_SUBWAY_DATASET_ID,
+  SEOUL_SUBWAY_MAPPING_VERSION,
+  SEOUL_SUBWAY_SOURCE_ID,
+  SUBWAY_AREA_STATIONS,
+} from "../lib/subway-ridership";
+import { SUBWAY_TREND_WINDOW_DAYS } from "../lib/subway-trend";
 import { STORE_DYNAMICS_MAPPING_VERSION, STORE_DYNAMICS_SOURCE_ID } from "../lib/store-dynamics";
 import { resolveProductionDatabaseConfig } from "./production-database";
 
@@ -263,26 +269,31 @@ const HOT_QUERIES: HotQuery[] = [
   },
   {
     name: "subwayRidership",
-    sql: latestPerKey(AREAS, () => `SELECT area, reference_date AS referenceDate,
-        SUM(boarding_count) AS boardingCount, SUM(alighting_count) AS alightingCount,
-        COUNT(*) AS selectedStationCount,
-        GROUP_CONCAT(station_name || ' ' || line_name, ', ') AS selectedStations,
-        MAX(retrieved_at) AS retrievedAt, dataset_id AS datasetId,
-        mapping_version AS mappingVersion
+    sql: latestPerKey(AREAS, () => `SELECT source_id AS sourceId, dataset_id AS datasetId,
+        record_origin AS recordOrigin, area, reference_date AS referenceDate,
+        station_code AS stationCode, station_number AS stationNumber,
+        station_name AS stationName, line_name AS lineName,
+        boarding_count AS boardingCount, alighting_count AS alightingCount,
+        retrieved_at AS retrievedAt, mapping_version AS mappingVersion,
+        quality_status AS qualityStatus
       FROM seoul_subway_ridership
-      WHERE area = ? AND source_id = ? AND mapping_version = ?
+      WHERE area = ? AND mapping_version = ? AND reference_date <= ?
+        AND station_code = ? AND station_number = ?
+        AND station_name = ? AND line_name = ?
+        AND source_id = ? AND dataset_id = ?
         AND record_origin = 'OFFICIAL_DAILY' AND quality_status = 'VALID'
-        AND reference_date = (
-          SELECT MAX(reference_date) FROM seoul_subway_ridership
-          WHERE area = ? AND source_id = ? AND mapping_version = ?
-            AND record_origin = 'OFFICIAL_DAILY' AND quality_status = 'VALID'
-        )
-      GROUP BY area, reference_date, dataset_id, mapping_version LIMIT 1`),
-    binds: AREAS.flatMap((area) => [
-      area, SEOUL_SUBWAY_SOURCE_ID, SEOUL_SUBWAY_MAPPING_VERSION,
-      area, SEOUL_SUBWAY_SOURCE_ID, SEOUL_SUBWAY_MAPPING_VERSION,
-    ]),
-    guard: "FROM seoul_subway_ridership",
+      ORDER BY reference_date DESC LIMIT ${SUBWAY_TREND_WINDOW_DAYS}`),
+    binds: AREAS.flatMap((area) => {
+      const station = SUBWAY_AREA_STATIONS[area][0];
+      return [
+        area, SEOUL_SUBWAY_MAPPING_VERSION, kstToday,
+        station.stationCode, station.stationNumber, station.stationName, station.lineName,
+        SEOUL_SUBWAY_SOURCE_ID, SEOUL_SUBWAY_DATASET_ID,
+      ];
+    }),
+    guard: `AND station_code = ? AND station_number = ?
+        AND station_name = ? AND line_name = ?
+        AND source_id = ? AND dataset_id = ?`,
     table: "seoul_subway_ridership",
   },
   {
@@ -423,6 +434,7 @@ const EXPECTED_INDEXES = [
   "seoul_realtime_area_observed_idx",
   "seoul_realtime_commercial_area_observed_idx",
   "seoul_foreign_purpose_mobility_area_reference_idx",
+  "seoul_subway_ridership_unique",
   "seoul_subway_ridership_area_reference_idx",
   "seoul_realtime_forecast_area_issue_idx",
   "weather_forecast_area_issue_idx",

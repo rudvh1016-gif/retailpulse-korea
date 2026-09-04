@@ -910,10 +910,10 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
       eyebrow: "01 · WHAT",
       title: localText(lang, { ko: "KORETAIL은 무엇인가요?", en: "What is KORETAIL?", zh: "KORETAIL 是什么？", ja: "KORETAIL とは？" }),
       body: localText(lang, {
-        ko: "서울의 대표 쇼핑 지역과 인천공항이 지금 어떻게 움직이고 있는지를, 공식 기관이 발표한 데이터만 모아 한 화면에서 보여주는 서비스입니다. 저희가 값을 추정하거나 만들어내지 않습니다.",
-        en: "KORETAIL gathers official data about Seoul's main shopping areas and Incheon Airport into one screen, so you can see how they are moving right now. We do not estimate or invent any value ourselves.",
-        zh: "KORETAIL 将首尔主要购物区与仁川机场的官方数据汇总到一个页面，让您了解当前的实际情况。我们不自行推算或编造任何数值。",
-        ja: "KORETAIL は、ソウルの主要ショッピングエリアと仁川空港の公式データだけを一画面に集め、いまどう動いているかを示すサービスです。数値を自ら推定したり作り出したりはしません。",
+        ko: "서울의 대표 쇼핑 지역과 인천공항에 관한 공개 공식 자료와 출처가 표시된 참조자료를 한 화면에 모읍니다. 원자료와 KORETAIL이 계산한 비교값을 구분해 표시하며, 자체 예측은 만들지 않습니다.",
+        en: "KORETAIL brings public official data and clearly labelled reference data about Seoul’s main shopping areas and Incheon Airport into one view. Source values and KORETAIL-calculated comparisons are identified separately; we do not create our own forecasts.",
+        zh: "KORETAIL 将首尔主要购物区与仁川机场的公开官方数据及明确标注来源的参考资料汇总到一个页面。来源数值与 KORETAIL 计算的比较值会分开标示，我们不自行生成预测。",
+        ja: "KORETAILは、ソウルの主要ショッピングエリアと仁川空港について、公開された公式データと出典を明記した参照データを一画面にまとめます。出典の数値とKORETAILが算出した比較値を区別し、独自の予測は作りません。",
       }),
     },
     {
@@ -930,10 +930,10 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
       eyebrow: "03 · SEOUL",
       title: localText(lang, { ko: "서울에서는 무엇을 보나요?", en: "What do you see for Seoul?", zh: "在首尔能看到什么？", ja: "ソウルでは何が見られる？" }),
       body: localText(lang, {
-        ko: "명동·홍대·성수 각각에 대해 지금 얼마나 붐비는지(현재 인원 범위 포함), 서울시 공식 예측 기준으로 앞으로 가장 붐빌 시간, 날씨에 따른 준비사항, 그리고 인근에 진행 중인 행사를 봅니다.",
-        en: "For Myeongdong, Hongdae and Seongsu: how busy each is right now including the current headcount range, the busiest hour ahead according to Seoul's own official forecast, what the weather means for your plans, and any events running nearby.",
-        zh: "针对明洞、弘大、圣水：当前的拥挤程度（含现时人数区间）、依据首尔市官方预测的接下来最拥挤时段、天气带来的准备建议，以及附近正在举行的活动。",
-        ja: "明洞・弘大・聖水それぞれについて、現在の混雑度（現時点の人数レンジを含む）、ソウル市公式予測によるこれから最も混雑する時間、天気に応じた準備、周辺で開催中のイベントを表示します。",
+        ko: "명동·홍대·성수 각각의 현재 혼잡 상태와 현재 추정 인구 범위, 서울시 공식 예측 기준 앞으로 가장 붐빌 시간, 날씨에 따른 준비사항을 봅니다. 인근 행사는 공식 행사기간에 오늘이 포함되거나 앞으로 시작할 때 표시합니다.",
+        en: "For Myeongdong, Hongdae and Seongsu, see current crowd conditions and the official estimated population range, the busiest hour ahead in Seoul’s official forecast, and weather implications. Nearby events are shown when their official dates include today or start later.",
+        zh: "针对明洞、弘大、圣水，可查看当前拥挤状况与官方推定人口区间、首尔市官方预测中接下来最拥挤的时段，以及天气带来的准备事项。附近活动仅在官方活动日期包含今日或之后开始时显示。",
+        ja: "明洞・弘大・聖水それぞれの現在の混雑状況と公式の推定人口レンジ、ソウル市公式予測で今後最も混雑する時間帯、天気に応じた準備を確認できます。周辺イベントは、公式開催期間に本日が含まれるもの、または今後開始予定のものを表示します。",
       }),
     },
     {

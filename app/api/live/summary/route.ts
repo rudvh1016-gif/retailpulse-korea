@@ -9,9 +9,12 @@ import {
   FOREIGN_PURPOSE_SOURCE_ID,
 } from "../../../../lib/foreign-purpose-mobility";
 import {
+  SEOUL_SUBWAY_DATASET_ID,
   SEOUL_SUBWAY_MAPPING_VERSION,
   SEOUL_SUBWAY_SOURCE_ID,
+  SUBWAY_AREA_STATIONS,
 } from "../../../../lib/subway-ridership";
+import { SUBWAY_TREND_WINDOW_DAYS, summarizeSubwayTrend } from "../../../../lib/subway-trend";
 import {
   STORE_DYNAMICS_MAPPING_VERSION,
   STORE_DYNAMICS_SOURCE_ID,
@@ -319,25 +322,28 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     ]))],
 
     subwayRows: [client.prepare(
-      latestPerKey(AREAS, () => `SELECT area, reference_date AS referenceDate,
-        SUM(boarding_count) AS boardingCount, SUM(alighting_count) AS alightingCount,
-        COUNT(*) AS selectedStationCount,
-        GROUP_CONCAT(station_name || '|' || line_name, ';') AS selectedStations,
-        MAX(retrieved_at) AS retrievedAt, dataset_id AS datasetId,
-        mapping_version AS mappingVersion
+      latestPerKey(AREAS, () => `SELECT source_id AS sourceId, dataset_id AS datasetId,
+        record_origin AS recordOrigin, area, reference_date AS referenceDate,
+        station_code AS stationCode, station_number AS stationNumber,
+        station_name AS stationName, line_name AS lineName,
+        boarding_count AS boardingCount, alighting_count AS alightingCount,
+        retrieved_at AS retrievedAt, mapping_version AS mappingVersion,
+        quality_status AS qualityStatus
       FROM seoul_subway_ridership
-      WHERE area = ? AND source_id = ? AND mapping_version = ?
+      WHERE area = ? AND mapping_version = ? AND reference_date <= ?
+        AND station_code = ? AND station_number = ?
+        AND station_name = ? AND line_name = ?
+        AND source_id = ? AND dataset_id = ?
         AND record_origin = 'OFFICIAL_DAILY' AND quality_status = 'VALID'
-        AND reference_date = (
-          SELECT MAX(reference_date) FROM seoul_subway_ridership
-          WHERE area = ? AND source_id = ? AND mapping_version = ?
-            AND record_origin = 'OFFICIAL_DAILY' AND quality_status = 'VALID'
-        )
-      GROUP BY area, reference_date, dataset_id, mapping_version LIMIT 1`),
-    ).bind(...AREAS.flatMap((area) => [
-      area, SEOUL_SUBWAY_SOURCE_ID, SEOUL_SUBWAY_MAPPING_VERSION,
-      area, SEOUL_SUBWAY_SOURCE_ID, SEOUL_SUBWAY_MAPPING_VERSION,
-    ]))],
+      ORDER BY reference_date DESC LIMIT ${SUBWAY_TREND_WINDOW_DAYS}`),
+    ).bind(...AREAS.flatMap((area) => {
+      const station = SUBWAY_AREA_STATIONS[area][0];
+      return [
+        area, SEOUL_SUBWAY_MAPPING_VERSION, kstToday,
+        station.stationCode, station.stationNumber, station.stationName, station.lineName,
+        SEOUL_SUBWAY_SOURCE_ID, SEOUL_SUBWAY_DATASET_ID,
+      ];
+    }))],
 
     congestionRows: [client.prepare(
       latestPerKey(CONGESTION_TERMINALS, () => `SELECT terminal, zone, wait_time_minutes AS waitTimeMinutes, wait_time_raw AS waitTimeRaw,
@@ -429,7 +435,8 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     const commercial = commercialRows.find((row) => row.area === area) ?? null;
     const foreignPresence = foreignPresenceRows.find((row) => row.area === area) ?? null;
     const purposeRows = foreignPurposeRows.filter((row) => row.area === area);
-    const subwayRidership = subwayRows.find((row) => row.area === area) ?? null;
+    const subwayTrend = summarizeSubwayTrend(area, subwayRows);
+    const subwayRidership = subwayTrend ? { ...subwayTrend.latest, trend: subwayTrend.trend } : null;
     const salesForArea = salesRows.filter((row) => row.area === area);
     const salesTotal = salesForArea.reduce((sum, row) => sum + Number(row.salesAmount ?? 0), 0);
     const eventsForArea = prepareEventsForPresentation(

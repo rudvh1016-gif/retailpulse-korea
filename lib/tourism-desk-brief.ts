@@ -1,41 +1,65 @@
 /**
- * The 10–30 second briefing a tourism-information worker reads
- * before the first visitor of the shift.
+ * The 10–30 second briefing a tourism-information worker reads before a
+ * shift. It is deliberately a short decision surface rather than a catalogue
+ * of every KORETAIL dataset.
  *
- * Not a tourist-facing screen. The reader is a 관광통역안내사 or an
- * information-desk staffer who is about to answer questions, and the only
- * useful question this can answer is "what should I check before I start".
- *
- * Every line is a deterministic reading of data KORETAIL already collects —
- * no runtime LLM, no scoring, no randomness — and every line carries its own
- * basis, because each of these signals is one step removed from the thing a
- * guide actually cares about:
- *
- *   living population   is not a count of tourists
- *   subway boardings    are not unique visitors
- *   short-stay foreign
- *   living population   is not a count of tourists
- *   airport arrivals    are not arrivals in the selected Seoul area
- *
- * A line whose evidence is missing is omitted. Nothing is filled in to reach
- * a line count, and no line recommends an action the data cannot support.
+ * Every line is a deterministic reading of already-collected official data.
+ * Missing evidence removes the line; nothing is invented to fill the list.
+ * Background statistics such as short-stay foreign living population and
+ * airport arrivals do not belong here — the Tourism Desk renders those lower
+ * on the page with their own reference periods and limitations.
  */
 export type DeskLang = "ko" | "en" | "zh" | "ja";
 
+export interface TourismSubwayComparison {
+  baselineDates: string[];
+  baselineAlightingCount: number;
+  /** Signed percentage change multiplied by ten: 124 means +12.4%. */
+  changeTenthsPercent: number;
+}
+
+export interface TourismSubwayTrend {
+  observedDayCount: number;
+  earliestReferenceDate: string | null;
+  previousDay: TourismSubwayComparison | null;
+  sameWeekdayLastWeek: TourismSubwayComparison | null;
+  recentSevenDayAverage: TourismSubwayComparison | null;
+  fourWeekSameWeekdayAverage: TourismSubwayComparison | null;
+}
+
 export interface TourismDeskInput {
-  crowding: { label: string; populationMin: number; populationMax: number; observedAt: string } | null;
+  crowding: {
+    /** The canonical Seoul level, 1–4. Never pass the provider's Korean label. */
+    congestionLevel: number;
+    populationMin: number;
+    populationMax: number;
+    observedAt: string;
+  } | null;
+  /** The busiest official Seoul forecast band still ahead of the reader. */
+  crowdForecast: {
+    targetAt: string;
+    congestionLevel: number;
+    dayOffset: "TODAY" | "TOMORROW" | "LATER";
+  } | null;
   /** Already-built deterministic weather sentence, or null when KMA published too little. */
   weatherGuide: string | null;
-  todayEvent: { title: string; categoryName: string | null; status: "RUNNING" | "UPCOMING" } | null;
-  eventCount: number;
-  subway: { boardingCount: number; alightingCount: number; referenceDate: string; selectedStations: string } | null;
-  foreignPresence: { value: number; referenceAt: string } | null;
-  /** A5 arrival forecast — the airport's own expectation, never the area's. */
-  airportArrival: { expectedPassengers: number; targetStartAt: string; targetEndAt: string } | null;
+  todayEvent: {
+    title: string;
+    categoryName: string | null;
+    /** A date-range check, not a claim that the venue is operating right now. */
+    status: "IN_OFFICIAL_PERIOD" | "UPCOMING";
+  } | null;
+  subway: {
+    boardingCount: number;
+    alightingCount: number;
+    referenceDate: string;
+    selectedStations: string;
+    trend: TourismSubwayTrend;
+  } | null;
 }
 
 export interface TourismDeskLine {
-  key: "crowding" | "weather" | "event" | "subway" | "foreign" | "airport";
+  key: "crowding" | "forecast" | "weather" | "event" | "subway";
   /** The fact. */
   text: string;
   /** What that fact is, and what it is not. Never optional. */
@@ -44,9 +68,12 @@ export interface TourismDeskLine {
 
 const LOCALE: Record<DeskLang, string> = { ko: "ko-KR", en: "en-GB", zh: "zh-CN", ja: "ja-JP" };
 
-function count(value: number, lang: DeskLang): string {
-  return Math.round(value).toLocaleString(LOCALE[lang]);
-}
+const CROWD_STATUS: Record<number, Record<DeskLang, string>> = {
+  1: { ko: "여유", en: "Calm", zh: "宽松", ja: "余裕" },
+  2: { ko: "보통", en: "Normal", zh: "一般", ja: "普通" },
+  3: { ko: "약간 붐빔", en: "Somewhat busy", zh: "略拥挤", ja: "やや混雑" },
+  4: { ko: "붐빔", en: "Crowded", zh: "拥挤", ja: "混雑" },
+};
 
 function clock(iso: string, lang: DeskLang): string {
   const parsed = new Date(iso);
@@ -57,28 +84,44 @@ function clock(iso: string, lang: DeskLang): string {
 }
 
 function day(value: string, lang: DeskLang): string {
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value.trim());
-  if (!match) return value;
-  const [, year, month, date] = match;
+  const trimmed = value.trim();
+  const bareDay = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+  let year: string;
+  let month: string;
+  let date: string;
+  if (bareDay) {
+    [, year, month, date] = bareDay;
+  } else {
+    const parsed = new Date(trimmed);
+    if (Number.isNaN(parsed.getTime())) return value;
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit",
+    }).formatToParts(parsed);
+    const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((candidate) => candidate.type === type)?.value;
+    year = part("year") ?? "";
+    month = part("month") ?? "";
+    date = part("day") ?? "";
+    if (!year || !month || !date) return value;
+  }
   const m = Number(month);
   const d = Number(date);
-  return lang === "en" ? `${year}-${month}-${date}`
-    : lang === "ko" ? `${m}월 ${d}일`
-    : lang === "zh" ? `${m}月${d}日`
-    : `${m}月${d}日`;
+  return lang === "en" ? `${year}-${month}-${date}` : `${m}${lang === "ko" ? "월 " : "月"}${d}${lang === "ko" ? "일" : "日"}`;
 }
 
-/**
- * The basis sentences. Each names the signal AND the thing it is not, in the
- * same breath, so a line cannot be quoted to a visitor as something stronger
- * than it is.
- */
+function crowdingBasis(lang: DeskLang, observedAt: string): string {
+  const at = clock(observedAt, lang);
+  return lang === "ko" ? `서울시 실시간 생활인구 상태${at ? ` · ${at} 관측` : ""} · 관광객 수가 아닙니다`
+    : lang === "en" ? `Seoul live living-population status${at ? ` · observed ${at}` : ""} · not a count of tourists`
+    : lang === "zh" ? `首尔市实时生活人口状态${at ? ` · ${at}观测` : ""} · 并非游客人数`
+    : `ソウル市のリアルタイム生活人口状況${at ? ` · ${at}観測` : ""} · 観光客数ではありません`;
+}
+
 const BASIS = {
-  crowding: {
-    ko: "서울시 실시간 생활인구 관측 · 관광객 수가 아닙니다",
-    en: "Seoul live living-population observation · not a count of tourists",
-    zh: "首尔市实时生活人口观测 · 并非游客人数",
-    ja: "ソウル市のリアルタイム生活人口観測 · 観光客数ではありません",
+  forecast: {
+    ko: "서울시 공식 생활인구 예측 · 관광객이나 매장 방문객 예측이 아닙니다",
+    en: "Seoul official living-population forecast · not a tourist or store-visitor forecast",
+    zh: "首尔市官方生活人口预测 · 并非游客或门店访客预测",
+    ja: "ソウル市の公式生活人口予測 · 観光客や店舗来訪者の予測ではありません",
   },
   weather: {
     ko: "기상청 단기예보 기준",
@@ -87,114 +130,152 @@ const BASIS = {
     ja: "気象庁の短期予報基準",
   },
   event: {
-    ko: "한국관광공사 공식 행사 일정 · 운영시간은 주최 측 공지를 확인하세요",
-    en: "Official KTO event schedule · check the organiser for opening hours",
-    zh: "韩国观光公社官方活动日程 · 开放时间请以主办方公告为准",
-    ja: "韓国観光公社の公式イベント日程 · 開催時間は主催者の案内をご確認ください",
-  },
-  subway: {
-    ko: "서울교통공사 승하차 건수 · 방문자 수가 아니며 같은 사람이 여러 번 셀 수 있습니다",
-    en: "Seoul Metro boarding/alighting counts · not unique visitors; one person can be counted more than once",
-    zh: "首尔交通公社上下车次数 · 并非到访人数，同一人可能被多次计入",
-    ja: "ソウル交通公社の乗降件数 · 訪問者数ではなく、同じ人が複数回数えられます",
-  },
-  foreign: {
-    ko: "서울시 단기체류 외국인 생활인구 추정 · 관광객 수가 아닙니다",
-    en: "Seoul short-stay foreign living-population estimate · not a count of tourists",
-    zh: "首尔市短期停留外国人生活人口推算 · 并非游客人数",
-    ja: "ソウル市の短期滞在外国人生活人口の推計 · 観光客数ではありません",
+    ko: "한국관광공사 공식 행사기간 기준 · 실제 운영 여부와 시간은 공식 안내를 확인하세요",
+    en: "Based on the official KTO event period · check the official notice for actual operation and hours",
+    zh: "以韩国观光公社官方活动期间为准 · 实际开放与时间请查看官方公告",
+    ja: "韓国観光公社の公式イベント期間基準 · 実際の開催有無と時間は公式案内をご確認ください",
   },
 } as const;
 
-function airportBasis(lang: DeskLang, areaName: string): string {
-  return lang === "ko" ? `인천공항 공식 입국 예상 · ${areaName} 방문객 수가 아닙니다`
-    : lang === "en" ? `Incheon Airport official arrival forecast · not ${areaName} visitors`
-    : lang === "zh" ? `仁川机场官方入境预计 · 并非${areaName}到访人数`
-    : `仁川空港の公式入国予想 · ${areaName}の来訪者数ではありません`;
+function forecastBand(input: NonNullable<TourismDeskInput["crowdForecast"]>, lang: DeskLang): string | null {
+  const start = new Date(input.targetAt);
+  if (Number.isNaN(start.getTime())) return null;
+  const startText = clock(start.toISOString(), lang);
+  const endText = clock(new Date(start.getTime() + 3_600_000).toISOString(), lang);
+  if (!startText || !endText) return null;
+  const when = input.dayOffset === "TODAY"
+    ? { ko: "오늘", en: "today", zh: "今天", ja: "今日" }[lang]
+    : input.dayOffset === "TOMORROW"
+      ? { ko: "내일", en: "tomorrow", zh: "明天", ja: "明日" }[lang]
+      : day(input.targetAt, lang);
+  return `${when} ${startText}–${endText}`;
 }
 
+type SubwayComparisonKind = "sameWeekdayLastWeek" | "recentSevenDayAverage" | "previousDay";
+
+function usableComparison(
+  value: TourismSubwayComparison | null,
+  expectedBaselineDates: number,
+): value is TourismSubwayComparison {
+  return value !== null
+    && value.baselineDates.length === expectedBaselineDates
+    && Number.isFinite(value.baselineAlightingCount)
+    && value.baselineAlightingCount > 0
+    && Number.isFinite(value.changeTenthsPercent);
+}
+
+function preferredSubwayComparison(trend: TourismSubwayTrend): {
+  kind: SubwayComparisonKind;
+  value: TourismSubwayComparison;
+} | null {
+  if (usableComparison(trend.sameWeekdayLastWeek, 1)) {
+    return { kind: "sameWeekdayLastWeek", value: trend.sameWeekdayLastWeek };
+  }
+  if (usableComparison(trend.recentSevenDayAverage, 7)) {
+    return { kind: "recentSevenDayAverage", value: trend.recentSevenDayAverage };
+  }
+  if (usableComparison(trend.previousDay, 1)) return { kind: "previousDay", value: trend.previousDay };
+  return null;
+}
+
+function signedPercent(tenths: number, lang: DeskLang): string {
+  const magnitude = Math.abs(tenths) / 10;
+  const rendered = new Intl.NumberFormat(LOCALE[lang], {
+    minimumFractionDigits: Number.isInteger(magnitude) ? 0 : 1,
+    maximumFractionDigits: 1,
+  }).format(magnitude);
+  return `${tenths > 0 ? "+" : tenths < 0 ? "−" : ""}${rendered}%`;
+}
+
+function subwayLine(
+  subway: NonNullable<TourismDeskInput["subway"]>,
+  lang: DeskLang,
+): TourismDeskLine | null {
+  const selected = preferredSubwayComparison(subway.trend);
+  if (!selected) return null;
+  const percent = signedPercent(selected.value.changeTenthsPercent, lang);
+  const comparison = selected.kind === "sameWeekdayLastWeek"
+    ? { ko: `지난주 같은 요일 대비 ${percent}`, en: `${percent} vs the same weekday last week`, zh: `较上周同一星期几 ${percent}`, ja: `先週の同じ曜日比 ${percent}` }[lang]
+    : selected.kind === "recentSevenDayAverage"
+      ? { ko: `최근 7일 평균 대비 ${percent}`, en: `${percent} vs the recent 7-day average`, zh: `较最近7日平均 ${percent}`, ja: `直近7日平均比 ${percent}` }[lang]
+      : { ko: `전일 대비 ${percent}`, en: `${percent} vs the previous day`, zh: `较前一日 ${percent}`, ja: `前日比 ${percent}` }[lang];
+  const text = lang === "ko" ? `${subway.selectedStations} 하차 흐름 · ${comparison}`
+    : lang === "en" ? `${subway.selectedStations} alighting count · ${comparison}`
+    : lang === "zh" ? `${subway.selectedStations} 下车次数 · ${comparison}`
+    : `${subway.selectedStations} 降車件数 · ${comparison}`;
+  const recentAverageNote = selected.kind === "recentSevenDayAverage"
+    ? {
+      ko: " · 정확히 직전 7일의 일일 집계 평균이며 같은 요일 보정이 아닙니다",
+      en: " · the baseline is the immediately preceding seven calendar days, not a same-weekday adjustment",
+      zh: " · 基准为紧接此前7个日历日的平均，并非同星期几校正",
+      ja: " · 比較基準は直前7暦日の日次集計平均で、同じ曜日への補正ではありません",
+    }[lang]
+    : "";
+  const dateText = day(subway.referenceDate, lang);
+  const basis = lang === "ko" ? `서울교통공사 ${dateText} 일일 하차 건수${recentAverageNote} · 개찰구 집계이며 고유 방문객 수나 지역 전체 방문객 수가 아닙니다`
+    : lang === "en" ? `Seoul Metro daily alighting count for ${dateText}${recentAverageNote} · gate counts, not unique visitors or total area visitors`
+    : lang === "zh" ? `首尔交通公社${dateText}日度下车次数${recentAverageNote} · 为闸机统计，并非独立访客或整个地区到访人数`
+    : `ソウル交通公社の${dateText}の日次降車件数${recentAverageNote} · 改札集計であり、ユニーク訪問者数や地域全体の来訪者数ではありません`;
+  return { key: "subway", text, basis };
+}
+
+/**
+ * Returns zero to five lines in guide-work priority order:
+ * current state → official crowd peak → weather → today's event → subway
+ * comparison. A sparse official response stays sparse.
+ */
 export function buildTourismDeskBrief(input: TourismDeskInput, lang: DeskLang, areaName: string): TourismDeskLine[] {
   const lines: TourismDeskLine[] = [];
 
   if (input.crowding) {
-    const { populationMin: min, populationMax: max, label, observedAt } = input.crowding;
-    const range = `${count(min, lang)}~${count(max, lang)}`;
-    const at = clock(observedAt, lang);
-    lines.push({
-      key: "crowding",
-      text: lang === "ko" ? `지금 ${areaName} 생활인구 ${range}명 · ${label}${at ? ` (${at} 관측)` : ""}`
-        : lang === "en" ? `${areaName} living population now ${range} · ${label}${at ? ` (observed ${at})` : ""}`
-        : lang === "zh" ? `当前${areaName}生活人口 ${range}人 · ${label}${at ? `（${at} 观测）` : ""}`
-        : `現在の${areaName}の生活人口 ${range}人 · ${label}${at ? `（${at} 観測）` : ""}`,
-      basis: BASIS.crowding[lang],
-    });
+    const status = CROWD_STATUS[input.crowding.congestionLevel]?.[lang];
+    if (status) {
+      lines.push({
+        key: "crowding",
+        text: lang === "ko" ? `현재 ${areaName} · ${status}`
+          : lang === "en" ? `${areaName} now · ${status}`
+          : lang === "zh" ? `当前${areaName} · ${status}`
+          : `現在の${areaName} · ${status}`,
+        basis: crowdingBasis(lang, input.crowding.observedAt),
+      });
+    }
   }
 
-  if (input.weatherGuide) {
-    lines.push({ key: "weather", text: input.weatherGuide, basis: BASIS.weather[lang] });
+  if (input.crowdForecast) {
+    const status = CROWD_STATUS[input.crowdForecast.congestionLevel]?.[lang];
+    const band = forecastBand(input.crowdForecast, lang);
+    if (status && band) {
+      lines.push({
+        key: "forecast",
+        text: lang === "ko" ? `공식 예상 최대 시간대 · ${band} · ${status}`
+          : lang === "en" ? `Official busiest band ahead · ${band} · ${status}`
+          : lang === "zh" ? `官方预计最拥挤时段 · ${band} · ${status}`
+          : `公式予想の最混雑時間帯 · ${band} · ${status}`,
+        basis: BASIS.forecast[lang],
+      });
+    }
   }
 
-  if (input.todayEvent) {
-    const { title, categoryName, status } = input.todayEvent;
-    const named = [categoryName, title].filter(Boolean).join(" · ");
-    const more = input.eventCount > 1
-      ? (lang === "ko" ? ` 외 ${input.eventCount - 1}건`
-        : lang === "en" ? ` and ${input.eventCount - 1} more`
-        : lang === "zh" ? ` 等${input.eventCount - 1}项`
-        : ` ほか${input.eventCount - 1}件`)
-      : "";
-    const state = status === "RUNNING"
-      ? { ko: "진행 중", en: "Running", zh: "进行中", ja: "開催中" }[lang]
-      : { ko: "예정", en: "Upcoming", zh: "即将举行", ja: "開催予定" }[lang];
-    const heading = { ko: "인근 행사", en: "Nearby event", zh: "附近活动", ja: "周辺イベント" }[lang];
+  if (input.weatherGuide) lines.push({ key: "weather", text: input.weatherGuide, basis: BASIS.weather[lang] });
+
+  // A date range can prove only that today is inside the official period. It
+  // cannot prove the venue is operating at the moment this page is read.
+  if (input.todayEvent?.status === "IN_OFFICIAL_PERIOD") {
+    const named = [input.todayEvent.categoryName, input.todayEvent.title].filter(Boolean).join(" · ");
     lines.push({
       key: "event",
-      text: `${heading} ${state}: ${named}${more}`,
+      text: lang === "ko" ? `오늘은 공식 행사기간에 포함 · ${named}`
+        : lang === "en" ? `Today falls within the official event period · ${named}`
+        : lang === "zh" ? `今日在官方活动期间内 · ${named}`
+        : `本日は公式開催期間内 · ${named}`,
       basis: BASIS.event[lang],
     });
   }
 
   if (input.subway) {
-    const { boardingCount, alightingCount, referenceDate, selectedStations } = input.subway;
-    const on = count(boardingCount, lang);
-    const off = count(alightingCount, lang);
-    const when = day(referenceDate, lang);
-    lines.push({
-      key: "subway",
-      text: lang === "ko" ? `${selectedStations} 승차 ${on} · 하차 ${off} (${when} 자료)`
-        : lang === "en" ? `${selectedStations}: ${on} boardings · ${off} alightings (data for ${when})`
-        : lang === "zh" ? `${selectedStations} 上车 ${on} · 下车 ${off}（${when} 数据）`
-        : `${selectedStations} 乗車 ${on} · 降車 ${off}（${when} のデータ）`,
-      basis: BASIS.subway[lang],
-    });
+    const line = subwayLine(input.subway, lang);
+    if (line) lines.push(line);
   }
 
-  if (input.foreignPresence) {
-    const value = count(input.foreignPresence.value, lang);
-    const when = day(input.foreignPresence.referenceAt, lang);
-    lines.push({
-      key: "foreign",
-      text: lang === "ko" ? `단기체류 외국인 생활인구 ${value}명 (${when} 기준)`
-        : lang === "en" ? `Short-stay foreign living population ${value} (as of ${when})`
-        : lang === "zh" ? `短期停留外国人生活人口 ${value}人（${when} 基准）`
-        : `短期滞在外国人生活人口 ${value}人（${when} 基準）`,
-      basis: BASIS.foreign[lang],
-    });
-  }
-
-  if (input.airportArrival) {
-    const { expectedPassengers, targetStartAt, targetEndAt } = input.airportArrival;
-    const band = `${clock(targetStartAt, lang)}–${clock(targetEndAt, lang)}`;
-    const people = count(expectedPassengers, lang);
-    lines.push({
-      key: "airport",
-      text: lang === "ko" ? `인천공항 입국 참고 · ${band} 예상 ${people}명`
-        : lang === "en" ? `Incheon arrivals reference · ${people} expected ${band}`
-        : lang === "zh" ? `仁川机场入境参考 · ${band} 预计 ${people}人`
-        : `仁川空港の入国参考 · ${band} 予想 ${people}人`,
-      basis: airportBasis(lang, areaName),
-    });
-  }
-
-  return lines;
+  return lines.slice(0, 5);
 }

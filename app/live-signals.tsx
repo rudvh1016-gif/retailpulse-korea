@@ -12,7 +12,12 @@ import {
   type AirportCurrentBrief,
   type ForecastDayOffset,
 } from "../lib/current-brief";
-import { eventPreview, eventStatusForDate, safeOfficialEventHomepage } from "../lib/event-presentation";
+import {
+  eventPreview,
+  eventStatusForDate,
+  safeOfficialEventHomepage,
+  type EventPresentationStatus,
+} from "../lib/event-presentation";
 import { describeSourcePeriod } from "../lib/source-period";
 import { buildFacilityCopyText, type CopyableFacility } from "../lib/facility-share";
 import { formatRepresentativeStations } from "../lib/subway-ridership";
@@ -79,7 +84,7 @@ interface LiveEventRow {
   addressDetail?: string | null;
   overview?: string | null;
   homepage?: string | null;
-  status?: "RUNNING" | "UPCOMING";
+  status?: EventPresentationStatus;
 }
 
 interface LiveSales {
@@ -134,6 +139,22 @@ interface LiveSubwayRidership {
   retrievedAt: string;
   datasetId: "OA-22723";
   mappingVersion: string;
+  /** Added in the guide-utility release; optional while an older edge payload expires. */
+  trend?: {
+    observedDayCount: number;
+    earliestReferenceDate: string;
+    previousDay: LiveSubwayComparison | null;
+    sameWeekdayLastWeek: LiveSubwayComparison | null;
+    recentSevenDayAverage: LiveSubwayComparison | null;
+    fourWeekSameWeekdayAverage: LiveSubwayComparison | null;
+  };
+}
+
+interface LiveSubwayComparison {
+  baselineDates: string[];
+  baselineAlightingCount: number;
+  /** Tenths of one percent: 124 means +12.4%. */
+  changeTenthsPercent: number;
 }
 
 export interface LiveObservedPoint {
@@ -370,12 +391,33 @@ const text = {
   dayLow: { ko: "최저", en: "low", zh: "最低", ja: "最低" },
   dayHigh: { ko: "최고", en: "high", zh: "最高", ja: "最高" },
   events: { ko: "주변 행사", en: "Nearby events", zh: "周边活动", ja: "周辺イベント" },
-  eventCount: { ko: "건 진행·예정", en: "running or upcoming", zh: "项进行或即将举行", ja: "件 開催・予定" },
+  eventCount: {
+    ko: "건 공식 행사기간 내·예정",
+    en: "within official period or upcoming",
+    zh: "项在官方活动期间内或即将开始",
+    ja: "件 公式開催期間内・開催予定",
+  },
   eventRepresentative: { ko: "대표 행사", en: "Representative events", zh: "代表活动", ja: "代表イベント" },
   eventDetails: { ko: "자세히 보기", en: "View details", zh: "查看详情", ja: "詳細を見る" },
   eventOfficialPage: { ko: "공식 행사 페이지", en: "Official event page", zh: "官方活动页面", ja: "公式イベントページ" },
-  eventRunning: { ko: "진행 중", en: "Running", zh: "进行中", ja: "開催中" },
-  eventUpcoming: { ko: "예정", en: "Upcoming", zh: "即将举行", ja: "開催予定" },
+  eventInOfficialPeriod: {
+    ko: "선택 날짜가 공식 행사기간에 포함",
+    en: "Selected date falls within the official event period",
+    zh: "所选日期在官方活动期间内",
+    ja: "選択日は公式開催期間内",
+  },
+  eventStartsAfterSelectedDate: {
+    ko: "선택 날짜 이후 공식 행사기간 시작",
+    en: "Official event period starts after the selected date",
+    zh: "官方活动期间在所选日期之后开始",
+    ja: "公式開催期間は選択日より後に開始",
+  },
+  eventOperationCaveat: {
+    ko: "공식 행사기간만으로 실제 운영 여부나 운영시간을 확인할 수 없습니다. 공식 안내를 확인하세요.",
+    en: "The official event period does not confirm that the event is actually taking place or its opening hours. Check the official notice.",
+    zh: "官方活动期间并不代表活动此刻实际举办，也不代表当天开放时间。请查看官方公告。",
+    ja: "公式開催期間だけでは、実際の開催状況や当日の開催時間は確認できません。公式案内をご確認ください。",
+  },
   eventDistanceBasis: { ko: "선택 지역 기준", en: "from selected area", zh: "距所选区域", ja: "選択エリア基準" },
   sales: { ko: "상권 과거 흐름", en: "Commercial history", zh: "商圈历史", ja: "商圏の過去推移" },
   salesNote: { ko: "분기 추정매출 · 실매출 아님", en: "Quarterly estimate · not POS sales", zh: "季度推算 · 非实际销售", ja: "四半期推定 · 実売上ではない" },
@@ -411,10 +453,10 @@ const text = {
   arrivalPeak: { ko: "오늘 예상 입국 피크", en: "Expected arrival peak today", zh: "今日预计入境高峰", ja: "今日の予想入国ピーク" },
   arrivalUnit: { ko: "명", en: " people", zh: "人", ja: "人" },
   arrivalSource: {
-    ko: "인천공항 공식 입국 예상 · 서울 소비 수요의 선행 참고 신호 · 실제 서울 방문객 수 아님",
-    en: "Official Incheon arrival forecast · leading reference signal for Seoul consumer demand · not an actual Seoul visitor count",
-    zh: "仁川机场官方入境预测 · 首尔消费需求的先行参考信号 · 非首尔实际访客数",
-    ja: "仁川空港公式入国予測 · ソウル消費需要の先行参考シグナル · ソウルの実来訪者数ではありません",
+    ko: "인천공항 공식 입국 예보 · 서울의 특정 지역과 직접 연결되지 않는 배경 참고 · 실제 서울 방문객 수 아님",
+    en: "Official Incheon arrival forecast · background context not directly tied to a specific Seoul area · not an actual Seoul visitor count",
+    zh: "仁川机场官方入境预测 · 与首尔具体地区无直接对应关系的背景参考 · 非首尔实际访客数",
+    ja: "仁川空港の公式入国予測 · ソウルの特定エリアとは直接対応しない背景参考 · ソウルの実来訪者数ではありません",
   },
   arrivalTerminalBreakdown: { ko: "터미널별", en: "By terminal", zh: "按航站楼", ja: "ターミナル別" },
   stale: { ko: "지연됨", en: "STALE", zh: "已延迟", ja: "遅延" },
@@ -2498,7 +2540,10 @@ function StoreDynamicsCard({ presentation }: { presentation: StoreDynamicsPresen
 }
 
 function EventCard({ event, lang, serviceDate }: { event: LiveEventRow; lang: Lang; serviceDate: string }) {
-  const status = event.status ?? eventStatusForDate(event, serviceDate);
+  const suppliedStatus: unknown = event.status;
+  const status: EventPresentationStatus = suppliedStatus === "IN_OFFICIAL_PERIOD" || suppliedStatus === "UPCOMING"
+    ? suppliedStatus
+    : eventStatusForDate(event, serviceDate);
   const preview = eventPreview(event.overview);
   const homepage = safeOfficialEventHomepage(event.homepage);
   const place = [formatEventPlace(event), event.addressDetail?.trim()].filter(Boolean).join(" · ");
@@ -2506,7 +2551,9 @@ function EventCard({ event, lang, serviceDate }: { event: LiveEventRow; lang: La
   return <li className="event-card">
     <article>
       <header>
-        <span className={`event-status ${status.toLowerCase()}`}>{status === "RUNNING" ? text.eventRunning[lang] : text.eventUpcoming[lang]}</span>
+        <span className={`event-status ${status.toLowerCase().replaceAll("_", "-")}`}>
+          {status === "IN_OFFICIAL_PERIOD" ? text.eventInOfficialPeriod[lang] : text.eventStartsAfterSelectedDate[lang]}
+        </span>
         <h4>{[event.categoryName, event.title].filter(Boolean).join(" · ")}</h4>
       </header>
       <p className="event-meta">{[formatEventPeriod(event), place].filter(Boolean).join(" · ")}</p>
@@ -2536,6 +2583,7 @@ function EventSignalPanel({ lang, events, eventCount, serviceDate }: { lang: Lan
       </div>
       <p><strong>{eventCount.toLocaleString(airportLocale(lang))}</strong>{lang === "en" ? " " : ""}{text.eventCount[lang]} · {text.eventRepresentative[lang]} {Math.min(3, events.length)}</p>
     </header>
+    <p className="event-operation-caveat">{text.eventOperationCaveat[lang]}</p>
     <ol className="event-card-list" id={listId}>
       {visibleEvents.map((event, index) => <EventCard
         key={event.contentId ?? `${event.title}-${event.eventStart}-${index}`}
@@ -2779,8 +2827,9 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     });
   }
 
-  // A5 ARRIVAL is a forecast and only a leading reference for Seoul demand.
-  // It is never presented as observed airport arrivals or as Seoul visitors.
+  // A5 ARRIVAL is a forecast and only area-independent background context.
+  // It is never presented as observed airport arrivals, Seoul visitors, or a
+  // causal/leading signal for demand in a specific Seoul area.
   // Whole-day total and peak stay hidden unless all aggregate T1/T2 bands prove
   // COMPLETE coverage; the next band is independently safe only when both
   // terminals have the exact same active interval.

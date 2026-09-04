@@ -144,7 +144,7 @@ export const COVERAGE_PROBES: CoverageProbe[] = [
   {
     name: "tourism_events_upcoming",
     sourceIds: ["KTO_TOURAPI_EVENT"],
-    meaning: "events per area still running or upcoming as of the current KST day",
+    meaning: "events whose official period includes the current KST day, or starts later",
     sql: `SELECT area, COUNT(*) AS upcomingEvents, MIN(event_start) AS nextStart, MAX(retrieved_at) AS retrievedAt
       FROM tourism_events WHERE (event_end >= ? OR (event_end IS NULL AND event_start >= ?))
       GROUP BY area ORDER BY area`,
