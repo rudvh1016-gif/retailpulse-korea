@@ -12,7 +12,10 @@ import { routeSummary, SUMMARY_FIXTURE } from "./summary-fixture";
 const WHITE = "rgb(255, 255, 255)";
 const locales = ["ko", "en", "zh", "ja"] as const;
 const viewports = [390, 430, 768, 1280, 1440, 1920] as const;
-const routes = ["", "/myeongdong", "/hongdae", "/seongsu", "/airport", "/business", "/forecast", "/tourism-desk", "/about", "/more"] as const;
+const routes = [
+  "", "/myeongdong", "/hongdae", "/seongsu", "/airport", "/business", "/forecast",
+  "/tourism-desk/myeongdong", "/tourism-desk/hongdae", "/tourism-desk/seongsu", "/about", "/more",
+] as const;
 const surfaces = [
   "html", "body", ".app", ".page-shell", ".topbar", ".top-nav", ".bottom-nav", ".airport-context-nav",
   ".hero", ".home-area-briefs", ".home-area-brief-rows button", ".signal-group", ".signal-row",

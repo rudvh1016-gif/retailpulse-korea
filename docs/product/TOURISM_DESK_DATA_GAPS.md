@@ -1,7 +1,8 @@
 # Tourism Desk — what a guide asks that KORETAIL cannot answer
 
 **Recorded:** 2026-09-04 KST
-**Scope:** the Myeongdong Tourism Desk pilot (`/{lang}/tourism-desk`).
+**Scope:** the three-area Tourism Desk pilot: Myeongdong, Hongdae and Seongsu
+(`/{lang}/tourism-desk/{area}`).
 
 This is a list of questions a 관광통역안내사 or information-desk worker is
 actually asked, which the pilot **does not answer today**. Nothing here has
@@ -18,9 +19,9 @@ Only from sources KORETAIL already collects:
 
 | Block | Source | Cadence |
 |---|---|---|
-| 지금 명동 crowding | Seoul live city data (SEOUL_CITYDATA_PPLTN) | real-time |
-| 지금 명동 weather | KMA village forecast, via the deterministic guide | ~hourly |
-| 오늘 명동 events | KTO TourAPI, official dates + official links | by event date |
+| 지금 지역 crowding | Seoul live city data (SEOUL_CITYDATA_PPLTN) | real-time |
+| 지금 지역 weather | KMA village forecast, via the deterministic guide | ~hourly |
+| 오늘 지역 events | KTO TourAPI, official dates + official links | by event date |
 | 외국인 흐름 · 대표역 | Seoul Metro daily boarding/alighting (OA-22723) | daily |
 | 외국인 흐름 · 체류 | Short-stay foreign living population (OA-23018) | daily, ~9-day lag |
 | 인천공항 입국 참고 | Incheon A5 arrival forecast | ~hourly |
@@ -34,7 +35,7 @@ No new provider was added for the pilot.
 **Worker question.** "지금 문 연 약국이 어디예요?"
 
 **Why KORETAIL cannot answer.** The airport facility directory covers the
-airport only. For Myeongdong there is no collected pharmacy source at all,
+airport only. For the three Tourism Desk areas there is no collected pharmacy source at all,
 and even the airport directory is a registration record with published
 hours — it cannot say "open now".
 
@@ -141,7 +142,7 @@ verifiable official sources are eligible.
 needs the official Korean name to give directions.
 
 **Why KORETAIL partly cannot answer.** The airport facility directory has
-verified KO/EN/JA/ZH names, but Myeongdong attractions do not: TourAPI's
+verified KO/EN/JA/ZH names, but attractions in the three Tourism Desk areas do not: TourAPI's
 multilingual endpoints are separate services from the one collected.
 
 **Possible official source.** TourAPI multilingual services.

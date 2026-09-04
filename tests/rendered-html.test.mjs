@@ -2,12 +2,12 @@ import assert from "node:assert/strict";
 import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 
-async function renderHome() {
+async function renderPath(path, documentLanguage = "ko") {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}-${Math.random()}`);
   const { default: worker } = await import(workerUrl.href);
   return worker.fetch(
-    new Request("http://localhost/ko", { headers: { accept: "text/html", "x-rpk-document-language": "ko" } }),
+    new Request(`http://localhost${path}`, { headers: { accept: "text/html", "x-rpk-document-language": documentLanguage } }),
     { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
     { waitUntil() {}, passThroughOnException() {} },
   );
@@ -101,7 +101,7 @@ test("Store Dynamics ships as a stored, compact, four-language historical block"
 });
 
 test("renders the KORETAIL production shell", async () => {
-  const response = await renderHome();
+  const response = await renderPath("/ko");
   const html = await response.text();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -109,6 +109,35 @@ test("renders the KORETAIL production shell", async () => {
   assert.doesNotMatch(html, /codex-preview/i);
   assert.match(html, /지금 서울은/);
   assert.match(html, /KORETAIL/);
+});
+
+test("the former flat Tourism Desk route permanently redirects to Myeongdong", async () => {
+  const response = await renderPath("/ko/tourism-desk");
+  assert.equal(response.status, 308);
+  const location = response.headers.get("location");
+  assert.ok(location, "the permanent redirect must include a Location header");
+  assert.equal(new URL(location, "http://localhost").pathname, "/ko/tourism-desk/myeongdong");
+});
+
+test("the three Tourism Desk pages render unique area SEO and headings", async () => {
+  const expected = {
+    myeongdong: { name: "명동", title: "명동 관광안내 근무 브리핑 (시험 운영) | KORETAIL" },
+    hongdae: { name: "홍대", title: "홍대 관광안내 근무 브리핑 (시험 운영) | KORETAIL" },
+    seongsu: { name: "성수", title: "성수 관광안내 근무 브리핑 (시험 운영) | KORETAIL" },
+  };
+  for (const [area, copy] of Object.entries(expected)) {
+    const path = `/ko/tourism-desk/${area}`;
+    const response = await renderPath(path);
+    const html = await response.text();
+    assert.equal(response.status, 200, path);
+    assert.match(html, new RegExp(`<title>${copy.title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}<\\/title>`));
+    assert.match(html, new RegExp(`<h1[^>]*>${copy.name} 관광안내<\\/h1>`));
+    assert.match(html, new RegExp(`<link rel="canonical" href="[^"]*${path}"`));
+    assert.match(html, new RegExp(`/en/tourism-desk/${area}`), "x-default/English alternate must preserve the area");
+    assert.match(html, new RegExp(`/zh/tourism-desk/${area}`), "Chinese alternate must preserve the area");
+    assert.match(html, /"@type":"WebPage"/);
+    assert.match(html, /"@type":"BreadcrumbList"/);
+  }
 });
 
 /**
@@ -298,7 +327,8 @@ test("ships localized indexable routes and technical SEO files", async () => {
   assert.match(localizedRoute, /generateStaticParams/);
   assert.match(robots, /sitemap:/);
   assert.match(sitemap, /seoLocales\.flatMap/);
-  assert.match(sitemap, /seoSlugs\.map/);
+  assert.match(sitemap, /standaloneSeoSlugs\.map/);
+  assert.match(sitemap, /tourismDeskAreas\.map/);
   assert.match(page, /document\.title = title/);
   assert.match(page, /link\[rel="canonical"\]/);
   assert.match(page, /hreflang="x-default"/);
