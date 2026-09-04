@@ -52,6 +52,21 @@ treated as zero stores.
    and can exceed A1's 500 calls/day quota together with the two scheduled
    ones; use it only when both scheduled windows failed.
 
+## Site feels slow
+
+1. Run `site-smoke.yml` and read the timestamps: `/ko`… page lines should be
+   tens of milliseconds apart; the uncached `api /api/live/summary` line
+   should follow `api /api/health` within about half a second. Seconds there
+   means the D1 read path has regressed to more than one round trip — check
+   that `summarizeLiveSummary` still reads through `readGroups` and that
+   `tests/summary-round-trips.test.mjs` passes.
+2. Run `production-visual-check.yml` and read `AIRPORT_MOBILE_TIMING`:
+   `summary[].duration` is the API, `dataReal` is when the airport numbers
+   appeared. If the API is fast but `dataReal` is late, the cost is JavaScript
+   download/hydration on the phone, not the database.
+3. Do not add a paid plan, a cache TTL that outlives the data's freshness
+   rule, or a runtime provider call to make a page faster.
+
 ## GitHub Action fails
 
 1. Open the failed job and first red step.

@@ -203,14 +203,14 @@ test("the live summary reads both A5 directions once while the Airport date pick
 });
 
 test("the live summary exposes one indexed latest commercial observation per known area", () => {
-  assert.match(route, /const commercialRows = await safeAll<Row>/);
+  assert.match(route, /commercialRows: \[client\.prepare\(/, "the commercial block is one statement in the route's single batched read");
   assert.match(route, /FROM seoul_realtime_commercial WHERE area = \? ORDER BY observed_at DESC LIMIT 1/);
   assert.match(route, /const commercial = commercialRows\.find\(\(row\) => row\.area === area\) \?\? null/);
   assert.match(route, /commercial: commercial \? \{ \.\.\.commercial, freshness:/);
 });
 
 test("the live summary exposes one compact indexed Store Dynamics row per exact current mapping", () => {
-  assert.match(route, /const storeDynamicsRows = await safeAll<Row>/);
+  assert.match(route, /storeDynamicsRows: \[client\.prepare\(/, "the Store Dynamics block is one statement in the route's single batched read");
   assert.match(route, /FROM seoul_store_dynamics\s+WHERE area = \? AND source_id = \? AND mapping_version = \?/);
   assert.match(route, /record_origin = 'OFFICIAL_HISTORICAL' AND quality_status = 'VALID'/);
   assert.match(route, /ORDER BY quarter_code DESC LIMIT 1/);
@@ -218,7 +218,7 @@ test("the live summary exposes one compact indexed Store Dynamics row per exact 
   const publicBlock = route.match(/storeDynamics: \(\(\) => \{[\s\S]*?\n        \}\)\(\),/)?.[0] ?? "";
   assert.doesNotMatch(publicBlock, /sourceId:|recordOrigin:|schemaVersion:|qualityStatus:|industryCount:/,
     "validation-only metadata must not leak into the compact public area block");
-  const block = route.match(/const storeDynamicsRows = await safeAll<Row>[\s\S]*?\.results \?\? \[\]\);/)?.[0] ?? "";
+  const block = route.match(/storeDynamicsRows: \[client\.prepare\([\s\S]*?\)\],/)?.[0] ?? "";
   assert.doesNotMatch(block, /SVC_INDUTY|industry_name|raw_payload/,
     "the summary must not expose industry rows or provider payload fields");
 });
@@ -301,8 +301,15 @@ test("the date-picker probes are one statement per day, sent as a batch", () => 
     "the builder must emit exactly one probe",
   );
   assert.ok(
-    /client\.batch<Row>\(\s*pickerDays\.map\(/.test(source),
-    "the per-day probes must be sent through client.batch, not one statement at a time",
+    /pickerDays\.map\(\(day\) => client\.prepare\(sql\)\.bind\(/.test(source),
+    "the per-day probes must stay one prepared statement per day",
+  );
+  // Since 2026-09-04 the probes ride inside the route's single batched read
+  // (lib/d1-read-batch.ts) rather than a batch of their own; either way they
+  // are never sent one statement at a time.
+  assert.ok(
+    /readGroups\(client, \{ \.\.\.statementGroups, \.\.\.probeGroups \}\)/.test(source),
+    "the per-day probes must be read through the route's one batched read, not one statement at a time",
   );
   assert.equal(
     /SELECT DISTINCT target_date AS day FROM airport_passenger_forecast/.test(source),
