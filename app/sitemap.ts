@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { isStagingDeployment, seoLocales, seoSlugs, siteOrigin } from "./seo-config";
+import { isStagingDeployment, seoLocales, siteOrigin, standaloneSeoSlugs, tourismDeskAreas } from "./seo-config";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   if (isStagingDeployment) return [];
@@ -11,11 +11,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily" as const,
       priority: 1,
     },
-    ...seoSlugs.map((slug) => ({
+    ...standaloneSeoSlugs.map((slug) => ({
       url: `${siteOrigin}/${locale}/${slug}`,
       lastModified: now,
       changeFrequency: slug === "more" ? "weekly" as const : "daily" as const,
       priority: slug === "more" ? 0.5 : slug === "forecast" || slug === "business" ? 0.8 : 0.9,
+    })),
+    ...tourismDeskAreas.map((area) => ({
+      url: `${siteOrigin}/${locale}/tourism-desk/${area}`,
+      lastModified: now,
+      changeFrequency: "daily" as const,
+      priority: 0.9,
     })),
   ]);
 }

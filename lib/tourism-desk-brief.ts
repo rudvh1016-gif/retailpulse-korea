@@ -1,5 +1,5 @@
 /**
- * The 10–30 second briefing a Myeongdong tourism-information worker reads
+ * The 10–30 second briefing a tourism-information worker reads
  * before the first visitor of the shift.
  *
  * Not a tourist-facing screen. The reader is a 관광통역안내사 or an
@@ -15,7 +15,7 @@
  *   subway boardings    are not unique visitors
  *   short-stay foreign
  *   living population   is not a count of tourists
- *   airport arrivals    are not Myeongdong arrivals
+ *   airport arrivals    are not arrivals in the selected Seoul area
  *
  * A line whose evidence is missing is omitted. Nothing is filled in to reach
  * a line count, and no line recommends an action the data cannot support.
@@ -30,7 +30,7 @@ export interface TourismDeskInput {
   eventCount: number;
   subway: { boardingCount: number; alightingCount: number; referenceDate: string; selectedStations: string } | null;
   foreignPresence: { value: number; referenceAt: string } | null;
-  /** A5 arrival forecast — the airport's own expectation, never Myeongdong's. */
+  /** A5 arrival forecast — the airport's own expectation, never the area's. */
   airportArrival: { expectedPassengers: number; targetStartAt: string; targetEndAt: string } | null;
 }
 
@@ -104,15 +104,16 @@ const BASIS = {
     zh: "首尔市短期停留外国人生活人口推算 · 并非游客人数",
     ja: "ソウル市の短期滞在外国人生活人口の推計 · 観光客数ではありません",
   },
-  airport: {
-    ko: "인천공항 공식 입국 예상 · 명동 방문객 수가 아닙니다",
-    en: "Incheon Airport official arrival forecast · not Myeongdong visitors",
-    zh: "仁川机场官方入境预计 · 并非明洞到访人数",
-    ja: "仁川空港の公式入国予想 · 明洞の来訪者数ではありません",
-  },
 } as const;
 
-export function buildTourismDeskBrief(input: TourismDeskInput, lang: DeskLang): TourismDeskLine[] {
+function airportBasis(lang: DeskLang, areaName: string): string {
+  return lang === "ko" ? `인천공항 공식 입국 예상 · ${areaName} 방문객 수가 아닙니다`
+    : lang === "en" ? `Incheon Airport official arrival forecast · not ${areaName} visitors`
+    : lang === "zh" ? `仁川机场官方入境预计 · 并非${areaName}到访人数`
+    : `仁川空港の公式入国予想 · ${areaName}の来訪者数ではありません`;
+}
+
+export function buildTourismDeskBrief(input: TourismDeskInput, lang: DeskLang, areaName: string): TourismDeskLine[] {
   const lines: TourismDeskLine[] = [];
 
   if (input.crowding) {
@@ -121,10 +122,10 @@ export function buildTourismDeskBrief(input: TourismDeskInput, lang: DeskLang): 
     const at = clock(observedAt, lang);
     lines.push({
       key: "crowding",
-      text: lang === "ko" ? `지금 명동 생활인구 ${range}명 · ${label}${at ? ` (${at} 관측)` : ""}`
-        : lang === "en" ? `Myeongdong living population now ${range} · ${label}${at ? ` (observed ${at})` : ""}`
-        : lang === "zh" ? `当前明洞生活人口 ${range}人 · ${label}${at ? `（${at} 观测）` : ""}`
-        : `現在の明洞の生活人口 ${range}人 · ${label}${at ? `（${at} 観測）` : ""}`,
+      text: lang === "ko" ? `지금 ${areaName} 생활인구 ${range}명 · ${label}${at ? ` (${at} 관측)` : ""}`
+        : lang === "en" ? `${areaName} living population now ${range} · ${label}${at ? ` (observed ${at})` : ""}`
+        : lang === "zh" ? `当前${areaName}生活人口 ${range}人 · ${label}${at ? `（${at} 观测）` : ""}`
+        : `現在の${areaName}の生活人口 ${range}人 · ${label}${at ? `（${at} 観測）` : ""}`,
       basis: BASIS.crowding[lang],
     });
   }
@@ -191,7 +192,7 @@ export function buildTourismDeskBrief(input: TourismDeskInput, lang: DeskLang): 
         : lang === "en" ? `Incheon arrivals reference · ${people} expected ${band}`
         : lang === "zh" ? `仁川机场入境参考 · ${band} 预计 ${people}人`
         : `仁川空港の入国参考 · ${band} 予想 ${people}人`,
-      basis: BASIS.airport[lang],
+      basis: airportBasis(lang, areaName),
     });
   }
 

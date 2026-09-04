@@ -64,7 +64,7 @@ const copy = {
   en: {
     hero: "How is Seoul\nmoving right now?",
     sub: "Official data only, showing what Myeongdong, Hongdae, Seongsu and Incheon Airport look like now and next.",
-    today: "Seoul", airport: "Airport", business: "Business", forecast: "Records", "tourism-desk": "Tourism", about: "About", more: "More",
+    today: "Seoul", airport: "Airport", business: "Business", forecast: "Records", "tourism-desk": "Guide Desk", about: "About", more: "More",
     kst: "All times are Korea Standard Time (KST).",
     truth: "Every value shown is published by an official body. Nothing unverified is filled in.",
   },
@@ -258,6 +258,7 @@ const htmlLang: Record<Lang, string> = { ko: "ko", en: "en", zh: "zh-CN", ja: "j
 function routeFor(lang: Lang, view: View, area: AreaId) {
   const base = `/${lang}`;
   if (view === "today") return `${base}/${area}`;
+  if (view === "tourism-desk") return `${base}/tourism-desk/${area}`;
   return `${base}/${view}`;
 }
 
@@ -306,11 +307,15 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   }, [lang, selected, terminal, industry, preferencesReady]);
 
   useEffect(() => {
-    const pathSlug = window.location.pathname.split("/")[2];
+    const [, , pathSlug, pathArea] = window.location.pathname.split("/");
     const slug = seoSlugs.includes(pathSlug as SeoSlug) ? pathSlug as SeoSlug : undefined;
-    const title = pageTitle(lang, slug);
-    const description = pageDescription(lang, slug);
-    const canonicalPath = `/${lang}${slug ? `/${slug}` : ""}`;
+    const tourismArea = slug === "tourism-desk" && pathArea && Object.hasOwn(areaInfo, pathArea)
+      ? pathArea as AreaId
+      : undefined;
+    const title = pageTitle(lang, slug, tourismArea);
+    const description = pageDescription(lang, slug, tourismArea);
+    const suffix = slug ? `/${slug}${tourismArea ? `/${tourismArea}` : ""}` : "";
+    const canonicalPath = `/${lang}${suffix}`;
 
     document.title = title;
     const setMeta = (selector: string, value: string) => {
@@ -327,18 +332,21 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     const languageTags: Record<(typeof seoLocales)[number], string> = { ko: "ko-KR", en: "en", zh: "zh-CN", ja: "ja-JP" };
     seoLocales.forEach((locale) => {
       document.querySelector<HTMLLinkElement>(`link[rel="alternate"][hreflang="${languageTags[locale]}"]`)
-        ?.setAttribute("href", `${siteOrigin}/${locale}${slug ? `/${slug}` : ""}`);
+        ?.setAttribute("href", `${siteOrigin}/${locale}${suffix}`);
     });
     document.querySelector<HTMLLinkElement>('link[rel="alternate"][hreflang="x-default"]')
-      ?.setAttribute("href", `${siteOrigin}/en${slug ? `/${slug}` : ""}`);
+      ?.setAttribute("href", `${siteOrigin}/en${suffix}`);
   }, [lang, view, selected]);
 
   useEffect(() => {
     const onPopState = () => {
-      const [, locale, slug] = window.location.pathname.split("/");
+      const [, locale, slug, routeArea] = window.location.pathname.split("/");
       if (["ko", "en", "zh", "ja"].includes(locale)) setLang(locale as Lang);
       if (slug && Object.hasOwn(areaInfo, slug)) { setSelected(slug as AreaId); setView("today"); }
-      else if (["today", "forecast", "airport", "business", "about", "more"].includes(slug)) setView(slug as View);
+      else if (slug === "tourism-desk" && routeArea && Object.hasOwn(areaInfo, routeArea)) {
+        setSelected(routeArea as AreaId);
+        setView("tourism-desk");
+      } else if (["today", "forecast", "airport", "business", "about", "more"].includes(slug)) setView(slug as View);
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
@@ -356,7 +364,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
   function selectArea(next: AreaId) {
     setSelected(next);
-    if (view === "today") updateUrl(lang, "today", next);
+    if (view === "today" || view === "tourism-desk") updateUrl(lang, view, next);
   }
 
   function navigate(next: View) {
@@ -378,7 +386,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           <span>KORETAIL</span><span className="brand-descriptor">Retail Demand Signals for Korea</span>
         </button>
         <nav className="top-nav" aria-label="Primary">
-          {(["today", "airport", "business", "forecast", "about", "more"] as View[]).map((item) => (
+          {(["today", "airport", "business", "tourism-desk", "forecast", "about", "more"] as View[]).map((item) => (
             <a key={item} href={routeFor(lang, item, selected)} className={view === item ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} aria-current={view === item ? "page" : undefined}>{t[item]}</a>
           ))}
         </nav>
@@ -422,22 +430,6 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             <DateScopeNote lang={lang} date={serviceDate} />
             {initialScope === "home" && <HomeTodayBrief lang={lang} selected={selected} onSelect={selectArea} date={serviceDate} />}
             <LiveSignals lang={lang} area={selected} date={serviceDate} />
-            {/*
-              * The pilot's way in, offered only where it applies. Myeongdong
-              * is the one area it covers, so showing it on Hongdae or
-              * Seongsu would promise a screen that does not exist for them.
-              */}
-            {selected === "myeongdong" && <p className="desk-entry">
-              <a href={routeFor(lang, "tourism-desk", selected)} onClick={(event) => { event.preventDefault(); navigate("tourism-desk"); }}>
-                {localText(lang, { ko: "관광안내 데스크 브리핑 보기 →", en: "Open the tourism desk briefing →", zh: "查看旅游咨询台简报 →", ja: "観光案内デスクのブリーフィングを見る →" })}
-              </a>
-              <small>{localText(lang, {
-                ko: "명동 관광안내 근무자를 위한 시험 운영 화면입니다",
-                en: "A pilot screen for Myeongdong tourism-information staff",
-                zh: "面向明洞旅游咨询工作人员的试运行页面",
-                ja: "明洞の観光案内担当者向けの試験運用画面です",
-              })}</small>
-            </p>}
             {betaSignupEnabled && <BetaSignup lang={lang} />}
           </>
         )}
@@ -455,9 +447,17 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         )}
         {view === "business" && <BusinessView lang={lang} selected={selected} setSelected={selectArea} industry={industry} setIndustry={setIndustry} date={serviceDate} setDate={setServiceDate} setProOpen={setProOpen} />}
         {view === "forecast" && <InsightsView lang={lang} selected={selected} setSelected={selectArea} date={serviceDate} />}
-        {view === "tourism-desk" && <TourismDeskView lang={lang} />}
+        {view === "tourism-desk" && <TourismDeskView lang={lang} area={selected} onAreaChange={selectArea} />}
         {view === "about" && <AboutView lang={lang} onAirport={() => openAirport("now")} onSeoul={() => navigate("today")} />}
-        {view === "more" && <MoreView lang={lang} setLang={changeLanguage} selected={selected} terminal={terminal} industry={industry} onAbout={() => navigate("about")} />}
+        {view === "more" && <MoreView
+          lang={lang}
+          setLang={changeLanguage}
+          selected={selected}
+          terminal={terminal}
+          industry={industry}
+          onTourism={() => navigate("tourism-desk")}
+          onAbout={() => navigate("about")}
+        />}
 
         <footer className="site-footer">
           <p>{t.truth}</p><p>{t.kst}</p>
@@ -476,7 +476,13 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
       <nav className="bottom-nav" aria-label="Primary">
         {(["today", "airport", "business", "forecast", "more"] as View[]).map((item) => (
-          <a key={item} href={routeFor(lang, item, selected)} className={view === item ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} aria-current={view === item ? "page" : undefined}>
+          <a
+            key={item}
+            href={routeFor(lang, item, selected)}
+            className={view === item || (view === "tourism-desk" && item === "more") ? "active" : ""}
+            onClick={(event) => { event.preventDefault(); navigate(item); }}
+            aria-current={view === item ? "page" : view === "tourism-desk" && item === "more" ? "location" : undefined}
+          >
             <Icon name={item} />
             <span>{t[item].toUpperCase()}</span>
           </a>
@@ -1009,9 +1015,10 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
 }
 
 function MoreView({
-  lang, setLang, selected, terminal, industry, onAbout,
+  lang, setLang, selected, terminal, industry, onTourism, onAbout,
 }: {
-  lang: Lang; setLang: (value: Lang) => void; selected: AreaId; terminal: Terminal; industry: IndustryId; onAbout: () => void;
+  lang: Lang; setLang: (value: Lang) => void; selected: AreaId; terminal: Terminal; industry: IndustryId;
+  onTourism: () => void; onAbout: () => void;
 }) {
   const [sourcesOpen, setSourcesOpen] = useState(false);
   return (
@@ -1022,6 +1029,17 @@ function MoreView({
           <h1>{localText(lang, { ko: "설정과 데이터 출처", en: "Settings and sources", zh: "设置与数据来源", ja: "設定とデータ出典" })}</h1>
         </div>
       </div>
+
+      <section className="about-link-block tourism-link-block">
+        <div>
+          <p className="eyebrow">GUIDE DESK</p>
+          <h2>{localText(lang, { ko: "관광안내 근무를 시작하시나요?", en: "Starting a tourism-information shift?", zh: "准备开始旅游咨询工作吗？", ja: "観光案内の勤務を始めますか？" })}</h2>
+          <p>{localText(lang, { ko: "명동·홍대·성수의 근무 전 브리핑을 한 번 더 눌러 엽니다.", en: "Open a pre-shift briefing for Myeongdong, Hongdae or Seongsu in one more tap.", zh: "再点一次即可查看明洞、弘大或圣水的上岗前简报。", ja: "もう一度タップすると、明洞・弘大・聖水の勤務前ブリーフィングを開けます。" })}</p>
+        </div>
+        <a href={routeFor(lang, "tourism-desk", selected)} onClick={(event) => { event.preventDefault(); onTourism(); }}>
+          {localText(lang, { ko: "관광안내 열기", en: "OPEN GUIDE DESK", zh: "打开旅游咨询", ja: "観光案内を開く" })} ↗
+        </a>
+      </section>
 
       <section className="preference-block" aria-labelledby="preference-title">
         <div className="section-head"><div><p className="eyebrow">SAVED ON THIS DEVICE</p><h2 id="preference-title">{localText(lang, { ko: "저장된 설정", en: "Saved preferences", zh: "已保存的设置", ja: "保存された設定" })}</h2></div></div>

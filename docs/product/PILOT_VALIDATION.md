@@ -12,7 +12,7 @@ enthusiasm.
 | Group | Target | Screen |
 |---|---|---|
 | Airport retail / operations workers | 3–5 people | `/{lang}/airport`, especially 내 매장 |
-| Tourism guides / information-desk staff | 3–5 people | `/{lang}/tourism-desk` (Myeongdong pilot) |
+| Tourism guides / information-desk staff | 3–5 people | `/{lang}/tourism-desk/{area}` (Myeongdong, Hongdae, Seongsu pilot) |
 
 Small on purpose. Eight people who actually work a shift tell you more than a
 hundred who click once.

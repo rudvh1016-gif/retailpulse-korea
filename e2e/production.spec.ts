@@ -967,52 +967,165 @@ test("the facility directory browses official stores and never claims a store is
   await expect(page.locator(".facility-card").first()).toContainText("T1 3F airside near Gate 27");
 });
 
+const TOURISM_SUMMARY_FIXTURE = {
+  ...SUMMARY_FIXTURE,
+  areas: {
+    ...SUMMARY_FIXTURE.areas,
+    hongdae: {
+      ...SUMMARY_FIXTURE.areas.hongdae,
+      subwayRidership: {
+        referenceDate: "2026-08-30", boardingCount: 31000, alightingCount: 32000,
+        selectedStationCount: 1, selectedStations: "홍대입구(2호선)",
+        retrievedAt: "2026-08-31T01:00:00Z", datasetId: "OA-22723", mappingVersion: "fixture",
+      },
+    },
+    seongsu: {
+      ...SUMMARY_FIXTURE.areas.seongsu,
+      subwayRidership: {
+        referenceDate: "2026-08-30", boardingCount: 41000, alightingCount: 42000,
+        selectedStationCount: 1, selectedStations: "성수(2호선)",
+        retrievedAt: "2026-08-31T01:00:00Z", datasetId: "OA-22723", mappingVersion: "fixture",
+      },
+      events: [{
+        contentId: "seongsu-event", title: "성수 공식 전시", eventStart: "2026-08-20", eventEnd: "2026-09-10",
+        distanceM: 240, categoryName: "전시", address: "서울특별시 성동구 성수이로 1", addressDetail: null,
+        overview: "성수 지역의 공식 행사 자료입니다.", homepage: null,
+      }],
+      eventCount: 1,
+    },
+  },
+};
+
 /**
- * 관광안내 데스크 (pilot).
- *
- * The screen a Myeongdong guide reads before a shift. The things worth
- * asserting are not the numbers — they change hourly — but the boundaries:
- * that it says it is a pilot, that every signal states what it is not, and
- * that no line turns a living-population estimate into a tourist count.
+ * Tourism Desk routing is one component over three isolated summary blocks.
+ * Station names and counts are deliberately distinct so a route that keeps a
+ * previous area's data cannot pass merely because its heading changed.
  */
-test("the tourism desk marks itself a pilot and never calls a signal a tourist count", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ko/tourism-desk");
+test("the three Tourism Desk routes render only their selected area's data", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
+  const areas = [
+    { id: "myeongdong", name: "명동", station: "명동(4호선)", range: "23,000~25,000", others: ["홍대입구(2호선)", "성수(2호선)"] },
+    { id: "hongdae", name: "홍대", station: "홍대입구(2호선)", range: "18,000~20,000", others: ["명동(4호선)", "성수(2호선)"] },
+    { id: "seongsu", name: "성수", station: "성수(2호선)", range: "12,000~14,000", others: ["명동(4호선)", "홍대입구(2호선)"] },
+  ] as const;
 
-  const desk = page.locator(".tourism-desk");
-  await expect(desk).toBeVisible();
-  await expect(desk.getByRole("heading", { name: "관광안내 데스크" })).toBeVisible();
-  await expect(desk).toContainText("시험 운영");
-  // No implied relationship with a tourism body or the airport operator.
-  await expect(desk).toContainText("특정 기관과의 제휴를 뜻하지 않습니다");
+  for (const area of areas) {
+    await page.goto(`/ko/tourism-desk/${area.id}`);
+    const desk = page.locator(".tourism-desk");
+    await expect(desk.getByRole("heading", { level: 1, name: `${area.name} 관광안내` })).toBeVisible();
+    await expect(page.locator(".tourism-area-switcher a[aria-current='page']")).toHaveText(area.name);
+    await expect(desk).toContainText(area.station);
+    await expect(desk).toContainText(area.range);
+    await expect(desk).toContainText("관광객 수가 아닙니다");
+    await expect(desk).toContainText(`공항 입국객은 ${area.name} 방문객이 아닙니다`);
+    for (const other of area.others) await expect(desk).not.toContainText(other);
 
-  // The boundary is on screen before any number is read.
-  await expect(desk).toContainText("관광객 수가 아닙니다");
-  await expect(desk).toContainText("명동 방문객이 아닙니다");
-
-  // Every briefing line carries its own basis, not just the page header.
-  // The lines only exist after the summary arrives, so wait for the first
-  // one rather than counting a shell that has not hydrated yet.
-  const lines = desk.locator(".desk-line");
-  await expect(lines.first()).toBeVisible();
-  const count = await lines.count();
-  expect(count).toBeGreaterThan(0);
-  for (let index = 0; index < count; index += 1) {
-    await expect(lines.nth(index).locator("small")).not.toBeEmpty();
+    const lines = desk.locator(".desk-line");
+    await expect(lines.first()).toBeVisible();
+    const count = await lines.count();
+    expect(count).toBeGreaterThan(0);
+    for (let index = 0; index < count; index += 1) {
+      await expect(lines.nth(index).locator("small")).not.toBeEmpty();
+    }
   }
 });
 
-test("the tourism desk is reachable from Myeongdong and only from Myeongdong", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+test("Tourism area links support keyboard, browser history and locale-preserving URLs", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
+  await page.goto("/ko/tourism-desk/myeongdong");
+  const hongdae = page.locator(".tourism-area-switcher a").filter({ hasText: "홍대" });
+  await expect(hongdae).toHaveAttribute("href", "/ko/tourism-desk/hongdae");
+  await hongdae.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/ko\/tourism-desk\/hongdae$/);
+  await expect(page.getByRole("heading", { level: 1, name: "홍대 관광안내" })).toBeVisible();
+  await expect(page.locator(".tourism-desk")).toContainText("홍대입구(2호선)");
+
+  const language = page.locator(".language-control select");
+  await expect(language).toHaveValue("ko");
+  await language.selectOption("en");
+  await expect(page).toHaveURL(/\/en\/tourism-desk\/hongdae$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Hongdae Guide Desk" })).toBeVisible();
+  await expect(page.locator("link[rel='canonical']")).toHaveAttribute("href", /\/en\/tourism-desk\/hongdae$/);
+
+  // History is checked from a fresh Korean route so the language-switch
+  // pushState entry is not mistaken for an area-navigation entry.
+  await page.goto("/ko/tourism-desk/myeongdong");
+  await page.locator(".tourism-area-switcher a").filter({ hasText: "홍대" }).click();
+  await expect(page).toHaveURL(/\/ko\/tourism-desk\/hongdae$/);
+
+  await page.goBack();
+  await expect(page).toHaveURL(/\/ko\/tourism-desk\/myeongdong$/);
+  await expect(page.getByRole("heading", { level: 1, name: "명동 관광안내" })).toBeVisible();
+  await page.goForward();
+  await expect(page).toHaveURL(/\/ko\/tourism-desk\/hongdae$/);
+  await expect(page.getByRole("heading", { level: 1, name: "홍대 관광안내" })).toBeVisible();
+});
+
+test("desktop navigation promotes Guide Desk in the exact localized order", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const expected = {
+    ko: ["서울", "공항", "매장", "관광안내", "기록", "소개", "더보기"],
+    en: ["Seoul", "Airport", "Business", "Guide Desk", "Records", "About", "More"],
+    zh: ["首尔", "机场", "门店", "旅游咨询", "记录", "关于", "更多"],
+    ja: ["ソウル", "空港", "店舗", "観光案内", "記録", "紹介", "その他"],
+  } as const;
+
+  for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
+    await page.goto(`/${locale}/tourism-desk/myeongdong`);
+    const nav = page.locator("nav.top-nav");
+    await expect(nav).toBeVisible();
+    expect(await nav.locator("a").allInnerTexts()).toEqual([...expected[locale]]);
+    await expect(nav.locator("a[aria-current='page']")).toHaveText(expected[locale][3]);
+    await expect(page.locator("nav.bottom-nav")).toBeHidden();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow, `${locale} desktop header must not overflow`).toBeLessThanOrEqual(1);
+  }
+});
+
+test("mobile keeps five bottom items and opens Tourism from More in one additional tap", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
-
   await page.goto("/ko/myeongdong");
-  await expect(page.locator(".desk-entry")).toBeVisible();
 
-  // Hongdae has no tourism desk, so it must not promise one.
-  await page.goto("/ko/hongdae");
-  await expect(page.locator(".desk-entry")).toHaveCount(0);
+  const bottom = page.locator("nav.bottom-nav");
+  await expect(bottom).toBeVisible();
+  await expect(bottom.locator("a")).toHaveCount(5);
+  await expect(bottom).not.toContainText("관광안내");
+  await bottom.locator("a").filter({ hasText: "더보기" }).click();
+  await expect(page).toHaveURL(/\/ko\/more$/);
+
+  const tourismLink = page.locator(".tourism-link-block a");
+  await expect(tourismLink).toBeVisible();
+  await expect(tourismLink).toHaveAttribute("href", "/ko/tourism-desk/myeongdong");
+  await tourismLink.click();
+  await expect(page).toHaveURL(/\/ko\/tourism-desk\/myeongdong$/);
+  await expect(page.getByRole("heading", { level: 1, name: "명동 관광안내" })).toBeVisible();
+  await expect(bottom.locator("a[aria-current='location']")).toHaveText("더보기");
+  await expect(page.locator(".footer-links a").filter({ hasText: "관광안내 데스크" })).toHaveAttribute("href", "/ko/tourism-desk/myeongdong");
+});
+
+test("the obsolete area-page Tourism promotion is gone", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
+  for (const area of ["myeongdong", "hongdae", "seongsu"]) {
+    await page.goto(`/ko/${area}`);
+    await expect(page.locator(".desk-entry")).toHaveCount(0);
+    await expect(page.locator("body")).not.toContainText("관광안내 데스크 브리핑 보기");
+  }
+});
+
+test("Tourism area navigation has no horizontal overflow at mobile and tablet widths", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
+  for (const width of [390, 430, 768]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/ko/tourism-desk/seongsu");
+    await expect(page.locator(".tourism-area-switcher")).toBeVisible();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow, `${width}px Tourism page must not overflow`).toBeLessThanOrEqual(1);
+    const switcherOverflow = await page.locator(".tourism-area-switcher").evaluate((element) => element.scrollWidth - element.clientWidth);
+    expect(switcherOverflow, `${width}px area switcher must not overflow`).toBeLessThanOrEqual(1);
+  }
 });
 
 

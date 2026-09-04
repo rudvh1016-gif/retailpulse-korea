@@ -5,6 +5,7 @@ import test from "node:test";
 import { buildTourismDeskBrief } from "../lib/tourism-desk-brief.ts";
 
 const LANGS = ["ko", "en", "zh", "ja"];
+const MYEONGDONG_NAMES = { ko: "명동", en: "Myeongdong", zh: "明洞", ja: "明洞" };
 
 const FULL = {
   crowding: { label: "보통", populationMin: 21000, populationMax: 23000, observedAt: "2026-09-04T06:50:00Z" },
@@ -17,7 +18,7 @@ const FULL = {
 };
 
 test("the briefing reads in guide order and every line carries its own basis", () => {
-  const lines = buildTourismDeskBrief(FULL, "ko");
+  const lines = buildTourismDeskBrief(FULL, "ko", MYEONGDONG_NAMES.ko);
   assert.deepEqual(lines.map((line) => line.key),
     ["crowding", "weather", "event", "subway", "foreign", "airport"]);
   for (const line of lines) {
@@ -34,9 +35,10 @@ test("the briefing reads in guide order and every line carries its own basis", (
  * dashboard. Each basis names the signal AND the thing it is not, in the
  * same sentence, so the two cannot be separated by a copy-paste.
  */
-test("no signal is presented as a tourist count, a visitor count, or a Myeongdong arrival", () => {
+test("no signal is presented as a tourist count, a visitor count, or a selected-area arrival", () => {
   for (const lang of LANGS) {
-    const lines = buildTourismDeskBrief(FULL, lang);
+    const areaName = MYEONGDONG_NAMES[lang];
+    const lines = buildTourismDeskBrief(FULL, lang, areaName);
     const basisFor = (key) => lines.find((line) => line.key === key)?.basis ?? "";
 
     const notTourists = { ko: "관광객 수가 아닙니다", en: "not a count of tourists", zh: "并非游客人数", ja: "観光客数ではありません" }[lang];
@@ -46,8 +48,29 @@ test("no signal is presented as a tourist count, a visitor count, or a Myeongdon
     const notVisitors = { ko: "방문자 수가 아니며", en: "not unique visitors", zh: "并非到访人数", ja: "訪問者数ではなく" }[lang];
     assert.ok(basisFor("subway").includes(notVisitors), `${lang}: boardings are not unique visitors`);
 
-    const notMyeongdong = { ko: "명동 방문객 수가 아닙니다", en: "not Myeongdong visitors", zh: "并非明洞到访人数", ja: "明洞の来訪者数ではありません" }[lang];
-    assert.ok(basisFor("airport").includes(notMyeongdong), `${lang}: airport arrivals are not Myeongdong arrivals`);
+    const notSelectedArea = {
+      ko: `${areaName} 방문객 수가 아닙니다`,
+      en: `not ${areaName} visitors`,
+      zh: `并非${areaName}到访人数`,
+      ja: `${areaName}の来訪者数ではありません`,
+    }[lang];
+    assert.ok(basisFor("airport").includes(notSelectedArea), `${lang}: airport arrivals are not selected-area arrivals`);
+  }
+});
+
+test("crowding and airport caveats use the selected area's localized name", () => {
+  const areas = {
+    ko: ["명동", "홍대", "성수"],
+    en: ["Myeongdong", "Hongdae", "Seongsu"],
+    zh: ["明洞", "弘大", "圣水"],
+    ja: ["明洞", "弘大", "聖水"],
+  };
+  for (const lang of LANGS) {
+    for (const areaName of areas[lang]) {
+      const lines = buildTourismDeskBrief(FULL, lang, areaName);
+      assert.ok(lines.find((line) => line.key === "crowding")?.text.includes(areaName));
+      assert.ok(lines.find((line) => line.key === "airport")?.basis.includes(areaName));
+    }
   }
 });
 
@@ -55,21 +78,21 @@ test("missing evidence removes a line rather than filling it in", () => {
   const sparse = buildTourismDeskBrief({
     crowding: null, weatherGuide: null, todayEvent: null, eventCount: 0,
     subway: null, foreignPresence: null, airportArrival: null,
-  }, "ko");
+  }, "ko", MYEONGDONG_NAMES.ko);
   assert.deepEqual(sparse, [], "nothing may be invented to reach a line count");
 
-  const partial = buildTourismDeskBrief({ ...FULL, subway: null, airportArrival: null }, "ko");
+  const partial = buildTourismDeskBrief({ ...FULL, subway: null, airportArrival: null }, "ko", MYEONGDONG_NAMES.ko);
   assert.deepEqual(partial.map((line) => line.key), ["crowding", "weather", "event", "foreign"]);
 });
 
 test("the briefing is deterministic: the same evidence always yields the same words", () => {
-  const first = buildTourismDeskBrief(FULL, "ko");
-  const second = buildTourismDeskBrief(FULL, "ko");
+  const first = buildTourismDeskBrief(FULL, "ko", MYEONGDONG_NAMES.ko);
+  const second = buildTourismDeskBrief(FULL, "ko", MYEONGDONG_NAMES.ko);
   assert.deepEqual(first, second);
 });
 
 test("every locale is answered, and none falls back to another language's text", () => {
-  const rendered = LANGS.map((lang) => buildTourismDeskBrief(FULL, lang));
+  const rendered = LANGS.map((lang) => buildTourismDeskBrief(FULL, lang, MYEONGDONG_NAMES[lang]));
   for (const lines of rendered) assert.equal(lines.length, 6);
   const korean = rendered[0].map((line) => line.basis).join("|");
   for (const lines of rendered.slice(1)) {
@@ -104,13 +127,15 @@ test("the screen says it is a pilot and claims no partnership", async () => {
 test("the route, its metadata and a way in all exist in four languages", async () => {
   const seo = await readFile(new URL("../app/seo-config.ts", import.meta.url), "utf8");
   const app = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
+  const desk = await readFile(new URL("../app/tourism-desk.tsx", import.meta.url), "utf8");
 
   assert.match(seo, /"tourism-desk"/, "the slug must be routable");
-  // Title and description exist for the slug, and say it is a pilot in Korean.
-  assert.match(seo, /"tourism-desk": \{ ko: "명동 관광안내 데스크 브리핑 \(시험 운영\)/);
+  assert.match(seo, /tourismDeskAreas = \["myeongdong", "hongdae", "seongsu"\]/);
 
   assert.match(app, /view === "tourism-desk" && <TourismDeskView/);
-  for (const label of ["관광안내", "Tourism", "旅游咨询", "観光案内"]) {
+  for (const label of ["관광안내", "Guide Desk", "旅游咨询", "観光案内"]) {
     assert.ok(app.includes(label), `${label} nav label must exist`);
   }
+  assert.match(desk, /summary\?\.areas\?\.\[area\]/, "the desk must read only the selected area's summary block");
+  assert.doesNotMatch(app, /className="desk-entry"/, "the old area-page promotion must be removed");
 });
