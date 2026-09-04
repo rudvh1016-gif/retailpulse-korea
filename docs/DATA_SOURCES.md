@@ -425,23 +425,28 @@ reading of the source, not a filter KORETAIL applied. Nothing is dropped for
 failing validation: a row with no Korean name or no recognised terminal is
 stored as `PARTIAL`, never discarded.
 
-**Coverage as stored:** T1 556 · T2 584 · terminal unrecognised 81. Duty-free
-area 595 / general area 626. Arrival side 62 / departure side 1,159.
-Category groups: 면세점 165 · 식당·카페 234 · 편의점 15 · 약국 8 ·
-환전·통신 119 · 여객 서비스 680. Names: Korean, English, Japanese and Chinese
-all 1,221 (complete). Missing official hours 154 · missing phone 436 ·
-missing location text 48 · missing terminal 81. Quality: 1,140 VALID / 81
-PARTIAL, and the PARTIAL set is exactly the 81 rows with no recognised
-terminal. Every stored row has both a duty/general area and an
-arrival/departure side — neither is ever unknown.
+**Coverage as stored (after the `P02` resolution, run 33834973908):** T1 556 ·
+T2 584 · 탑승동 81 · terminal unrecognised **0**. Duty-free area 595 / general
+area 626. Arrival side 62 / departure side 1,159. Category groups: 면세점 165 ·
+식당·카페 234 · 편의점 15 · 약국 8 · 환전·통신 119 · 여객 서비스 680. Names:
+Korean, English, Japanese and Chinese all 1,221 (complete). Missing official
+hours 154 · missing phone 436 · missing location text 48 · missing terminal 0.
+Quality: **1,221 VALID / 0 PARTIAL**. Every stored row has a terminal, a
+duty/general area and an arrival/departure side.
 
-Verified read-only from D1 by the `airport_facility_totals` and
-`airport_facility_by_terminal_category` coverage probes (run 33810252481),
-which report the same numbers the collector logged, so the evidence is
-storage, not a log line. `collector_runs.records_read` is **1,232** against
-`records_written` **1,221**, which is the duplicate-`sn` arithmetic above
-measured rather than assumed. Source health: **LIVE**, `consecutive_failures`
-0.
+The re-collection that applied the fix wrote **81 changed rows / 243 storage
+writes** out of 1,221 — the changed-only path touching exactly the rows whose
+meaning changed. The attempt before it (run 33834868567) failed on a transient
+`NETWORK / UND_ERR_CONNECT_TIMEOUT` with 0 provider requests and 0 writes, and
+source health went **STALE**, not ERROR, while the site kept serving all 1,221
+rows.
+
+The first import's own read-back (probes `airport_facility_totals` and
+`airport_facility_by_terminal_category`, run 33810252481) reported the same
+numbers the collector logged, so the evidence is storage rather than a log
+line. `collector_runs.records_read` is **1,232** against `records_written`
+**1,221**, which is the duplicate-`sn` arithmetic above measured rather than
+assumed. Source health: **LIVE**, `consecutive_failures` 0.
 
 **터미널 코드 `P02` — 안내서에 없지만 공급자가 실제로 보내는 코드 (2026-09-04).**
 첫 실제 수집에서 탑승동 행이 0건이었다. `G01` 은 응답에 오지 않았고, 대신
@@ -454,16 +459,8 @@ measured rather than assumed. Source health: **LIVE**, `consecutive_failures`
 건물을 가리키는 문장일 수 있기 때문이다. 근거 종류는 `DOCUMENTED_CODE` /
 `UNDOCUMENTED_CODE_WITH_LOCATION_TEXT` / `OFFICIAL_LOCATION_TEXT` / `NONE` 로
 구분되어 모든 해석이 감사 가능하다. 브랜드·업종·이웃 시설 ID·게이트 번호로는
-절대 추론하지 않는다.
-
-**The 81 unrecognised terminals are a real gap, not noise.** Zero rows mapped
-to `CONCOURSE`, `T1_TRANSPORT` or `T2_TRANSPORT`, so the documented
-`G01`/`G02`/`G03` codes did not appear in the response at all; those 81 rows
-carry a `terminalid` outside the documented set (or none). They are stored
-honestly as `PARTIAL` with `terminal` NULL and are simply absent from the
-terminal filters, which is preferable to guessing a terminal for them. The
-raw `terminal_code` is retained, so the codes can be identified and mapped
-without re-collecting.
+절대 추론하지 않는다. 실제 운영 재수집으로 81건 전부가 탑승동으로 해석되었고,
+미해결 터미널은 0건이 되었다.
 
 **Refresh window and the force waiver:** the collector skips with zero
 provider requests when a SUCCESS run is inside `FACILITY_REFRESH_DAYS`. That

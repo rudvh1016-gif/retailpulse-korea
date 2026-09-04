@@ -7,7 +7,8 @@
     "A facility absent from `mappings` is AMBIGUOUS: it keeps its official terminal, floor and area and is never given a gate, a checkpoint or any proximity claim.",
     "OFFICIAL_DIRECT means the airport authority's own published location text names the gate or checkpoint, quoted verbatim in `evidenceText`.",
     "OFFICIAL_MAP_REVIEW records are added by a human who located the facility on an official Incheon Airport map; this generator never produces them and never removes them.",
-    "A stated gate range is kept literally (for example 24~27). Enumerating the numbers in between would assert that each one is a real gate, which the text does not say."
+    "A stated gate range is kept literally (for example 24~27). Enumerating the numbers in between would assert that each one is a real gate, which the text does not say.",
+    "2026-09-04: the 48 records that carried a null terminal are exactly the mapped subset of the 81 facilities whose provider terminal code was the undocumented P02. Production re-collection run 33834973908 resolved all 81 to CONCOURSE (탑승동) and left missingTerminal at 0, so a mapped record with no terminal can only be one of them. Nothing else in this file changed: gate, checkpoint, method and evidence all come from officialLocationRaw, which the re-collection did not touch."
   ],
   "counts": {
     "totalFacilities": 1221,
@@ -21,7 +22,7 @@
   "mappings": [
     {
       "facilityId": "1",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -89,7 +90,7 @@
     },
     {
       "facilityId": "13",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -599,7 +600,7 @@
     },
     {
       "facilityId": "147",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -616,7 +617,7 @@
     },
     {
       "facilityId": "150",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -1024,7 +1025,7 @@
     },
     {
       "facilityId": "244",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -1143,7 +1144,7 @@
     },
     {
       "facilityId": "274",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -1415,7 +1416,7 @@
     },
     {
       "facilityId": "322",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -1483,7 +1484,7 @@
     },
     {
       "facilityId": "358",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -1619,7 +1620,7 @@
     },
     {
       "facilityId": "393",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -2044,7 +2045,7 @@
     },
     {
       "facilityId": "529",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -2843,7 +2844,7 @@
     },
     {
       "facilityId": "763",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -3047,7 +3048,7 @@
     },
     {
       "facilityId": "819",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -3166,7 +3167,7 @@
     },
     {
       "facilityId": "849",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -3336,7 +3337,7 @@
     },
     {
       "facilityId": "914",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -3387,7 +3388,7 @@
     },
     {
       "facilityId": "917",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F4",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -3404,7 +3405,7 @@
     },
     {
       "facilityId": "918",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -3421,7 +3422,7 @@
     },
     {
       "facilityId": "919",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -3455,7 +3456,7 @@
     },
     {
       "facilityId": "925",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -3693,7 +3694,7 @@
     },
     {
       "facilityId": "1056",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -3795,7 +3796,7 @@
     },
     {
       "facilityId": "1077",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -3829,7 +3830,7 @@
     },
     {
       "facilityId": "1080",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -4016,7 +4017,7 @@
     },
     {
       "facilityId": "2009",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -4305,7 +4306,7 @@
     },
     {
       "facilityId": "2151",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F2",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -4322,7 +4323,7 @@
     },
     {
       "facilityId": "2152",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F2",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -4339,7 +4340,7 @@
     },
     {
       "facilityId": "2153",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F2",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -4356,7 +4357,7 @@
     },
     {
       "facilityId": "2154",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F2",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -4373,7 +4374,7 @@
     },
     {
       "facilityId": "2155",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -4390,7 +4391,7 @@
     },
     {
       "facilityId": "2156",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -4407,7 +4408,7 @@
     },
     {
       "facilityId": "2157",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -4424,7 +4425,7 @@
     },
     {
       "facilityId": "2158",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -4832,7 +4833,7 @@
     },
     {
       "facilityId": "2261",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -5393,7 +5394,7 @@
     },
     {
       "facilityId": "2339",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -5410,7 +5411,7 @@
     },
     {
       "facilityId": "2341",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -5563,7 +5564,7 @@
     },
     {
       "facilityId": "2464",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -5580,7 +5581,7 @@
     },
     {
       "facilityId": "2465",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -5597,7 +5598,7 @@
     },
     {
       "facilityId": "2466",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -5614,7 +5615,7 @@
     },
     {
       "facilityId": "2467",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -5682,7 +5683,7 @@
     },
     {
       "facilityId": "2475",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -6056,7 +6057,7 @@
     },
     {
       "facilityId": "3253",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -6107,7 +6108,7 @@
     },
     {
       "facilityId": "3263",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -6260,7 +6261,7 @@
     },
     {
       "facilityId": "3275",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -6277,7 +6278,7 @@
     },
     {
       "facilityId": "3278",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -6294,7 +6295,7 @@
     },
     {
       "facilityId": "3279",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -6311,7 +6312,7 @@
     },
     {
       "facilityId": "3280",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -6328,7 +6329,7 @@
     },
     {
       "facilityId": "3281",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -6345,7 +6346,7 @@
     },
     {
       "facilityId": "3282",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -7059,7 +7060,7 @@
     },
     {
       "facilityId": "3359",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",
@@ -7297,7 +7298,7 @@
     },
     {
       "facilityId": "3377",
-      "terminal": null,
+      "terminal": "CONCOURSE",
       "floor": "F3",
       "dutyArea": "DUTY_FREE",
       "arrivalDeparture": "DEPARTURE",

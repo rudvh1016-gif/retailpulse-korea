@@ -214,3 +214,15 @@ test("the committed record proves how little was claimed, not how much", async (
   const proven = file.mappings.filter((row) => row.gate || row.gateGroup || row.checkpointId);
   assert.equal(proven.length, file.mappings.length, "a listed facility with no zone would be a claim with no evidence");
 });
+
+test("every mapped facility names the terminal it sits in", async () => {
+  const file = JSON.parse(await readFile(new URL("../config/airport-zone-map.v1.json", import.meta.url), "utf8"));
+  // Before 2026-09-04 the provider's undocumented P02 code left 81 facilities
+  // with no terminal, 48 of them in this record. Production re-collection
+  // resolved all 81 to 탑승동 (CONCOURSE) and left none unrecognised, so a
+  // mapped record with a null terminal now means the directory regressed —
+  // and a facility that has a proven gate but no building is a half-located
+  // claim, which is exactly what this file exists to prevent.
+  const missing = file.mappings.filter((row) => !row.terminal);
+  assert.equal(missing.length, 0, `mapped facilities with no terminal: ${missing.map((row) => row.facilityId).join(", ")}`);
+});

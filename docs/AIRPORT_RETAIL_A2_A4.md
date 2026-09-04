@@ -35,13 +35,13 @@ call sites so the next missing method fails in CI instead of in Production.
 | | |
 |---|---|
 | stored facilities | **1,221** |
-| terminals | T1 556 · T2 584 · unrecognised 81 |
+| terminals | T1 556 · T2 584 · 탑승동 81 · unrecognised **0** |
 | area | duty-free 595 · general 626 · unknown **0** |
 | side | departure 1,159 · arrival 62 · unknown **0** |
 | categories | 면세점 165 · 식당·카페 234 · 편의점 15 · 약국 8 · 환전·통신 119 · 여객 서비스 680 |
 | names | KO/EN/JA/ZH all 1,221 — missing **0** in every language |
-| quality | 1,140 VALID / 81 PARTIAL |
-| missing | official hours 154 · phone 436 · location text 48 · terminal 81 |
+| quality | **1,221 VALID / 0 PARTIAL** |
+| missing | official hours 154 · phone 436 · location text 48 · terminal **0** |
 | source health | **LIVE**, `consecutive_failures` 0 |
 
 ### Why 1,221 and not the provider's `totalCount` of 1,232
@@ -54,24 +54,38 @@ already existed. The Korean response therefore ships 1,232 rows carrying
 and the table's primary key, so one row per `sn` is the correct reading of the
 source. Nothing was dropped for failing validation.
 
-### The 81 unrecognised terminals
+### The 81 unrecognised terminals — resolved 2026-09-04
 
-Zero rows mapped to `CONCOURSE`, `T1_TRANSPORT` or `T2_TRANSPORT`: the
-documented `G01`/`G02`/`G03` codes did not appear in the response at all. Those
-81 rows are stored honestly as `PARTIAL` with a null terminal and are absent
-from the terminal filters, rather than guessed into one. The raw
-`terminal_code` is retained, so they can be identified and mapped later
-without re-collecting.
+They were never junk. Zero rows carried the documented `G01`/`G02`/`G03`
+codes; instead the provider sent an **undocumented `P02`** for 81 rows, and
+every sampled row's own published location text said 탑승동 ("탑승동 3층 동편
+107번 탑승구 부근"). `resolveFacilityTerminal` now reads such a code only when
+**two independent pieces of evidence agree** — the consistent undocumented code
+*and* the official location text naming the building — because an undocumented
+code can be reassigned by the provider at any time and a building name alone
+can belong to a sentence about a neighbour. The basis of every resolution is
+recorded as `DOCUMENTED_CODE` / `UNDOCUMENTED_CODE_WITH_LOCATION_TEXT` /
+`OFFICIAL_LOCATION_TEXT` / `NONE`, so each one is auditable. Brand, trade,
+neighbouring facility id and gate number are never used to infer a terminal.
 
-**They are not junk.** Facility `1` is `탑승동 3층 동편 107번 탑승구 부근` —
-a 탑승동 (Concourse) facility whose `terminalid` is outside the documented set.
-All 81 sit in the duty-free area. Resolving their real codes is the obvious
-next A2 follow-up, and would move ~81 facilities into a terminal filter.
+**Proven in Production** (run 33834973908, forced re-collection): terminals now
+read T1 556 · T2 584 · **탑승동 81**, `missingTerminal` **0**, and quality
+1,221 VALID / **0 PARTIAL**. The write cost was **81 changed rows and 243
+storage writes** out of 1,221 facilities — the changed-only path writing exactly
+the rows whose meaning changed and nothing else.
+
+That run also re-proved last-good preservation the hard way: the attempt
+immediately before it (run 33834868567) died on a transient
+`NETWORK / UND_ERR_CONNECT_TIMEOUT` before its first provider request
+completed. It wrote nothing, deleted nothing, and moved source health to
+**STALE**, not ERROR — the site kept serving all 1,221 rows throughout, which
+the site smoke of that window recorded independently.
 
 ## A3 — verified facility-to-zone mapping
 
 `config/airport-zone-map.v1.json`, derived read-only from the stored A2 rows
-(run 33812037794).
+(run 33812037794; regenerated read-only against the post-fix directory in run
+33835162738).
 
 | method | count | |
 |---|---:|---|
@@ -82,6 +96,11 @@ next A2 follow-up, and would move ~81 facilities into a terminal filter.
 **Zero map-review entries is the honest count.** That method requires a human
 to locate a facility on an official Incheon Airport map. Nobody has, so no
 record claims it.
+
+**Terminals in the record.** 220 T2 · 191 T1 · 48 탑승동, none null. The 48
+are the mapped subset of the 81 facilities the `P02` fix resolved; since
+Production now reports `missingTerminal` 0, a mapped record with no terminal
+would mean the directory regressed, and a test says so.
 
 **762 ambiguous is not a gap to close by loosening the rules.** Those
 facilities' published location text names no gate. A test asserts

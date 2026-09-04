@@ -119,7 +119,11 @@ test("production airport page: gate → airline ranking → country roll-up, wit
   await testInfo.attach("airline-ranking-summary.json", { body: summaryJson, contentType: "application/json" });
   if (summary.all && summary.all.airlines > 0) {
     await expect(airlines.locator(".airport-airline-row").first()).toBeVisible();
-    await expect(airlines).toContainText("국적별 운항편");
+    // "항공사 등록 국가별", not "국적별". A country here is where the airline
+    // is registered; a passenger's nationality is a different fact this page
+    // does not have. The heading says so, and this assertion holds it there.
+    await expect(airlines).toContainText("항공사 등록 국가별 운항편");
+    await expect(airlines).not.toContainText("승객 국적별");
     await expect(airlines).toContainText("OpenFlights");
     for (const terminal of ["T1", "T2"]) {
       await page.locator(".terminal-selector button").filter({ hasText: new RegExp(`^${terminal}$`) }).click();
