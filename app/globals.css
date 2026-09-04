@@ -1040,5 +1040,21 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 
 /* 구성/이유 묶음. 게이트와 항공사는 별개 주제가 아니라 앞선 숫자의 근거이므로
    하나의 제목 아래 들어가고, 안쪽 섹션은 자기 위쪽 경계선을 갖지 않는다. */
+/*
+ * 오늘 출발편 구성 — the group, not an empty shell.
+ *
+ * The group's head introduced the two sections inside it and then drew its
+ * own closing rule, after which each nested section added its own 36px
+ * margin and 18px padding. The result on a phone was a heading, a rule, and
+ * a tall blank band before anything appeared — which reads as a section
+ * that failed to load, and was reported as exactly that.
+ *
+ * The head no longer closes itself, and the first section inside starts
+ * immediately under it. The gate list is the group's first visible content,
+ * so the heading and its content are never separated by a screenful of white.
+ */
 .airport-composition { padding-top: 22px; border-top: 1px solid var(--line); }
-.airport-composition > .airport-detail-section { padding-top: 18px; border-top: 0; }
+.airport-composition > .airport-detail-head { padding-bottom: 0; border-bottom: 0; }
+.airport-composition > .airport-detail-section { margin-top: 20px; padding-top: 0; border-top: 0; }
+.airport-composition > .airport-detail-section:first-of-type { margin-top: 8px; }
+.airport-composition > .airport-detail-section > .airport-detail-head { padding-top: 0; }

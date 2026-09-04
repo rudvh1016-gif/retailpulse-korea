@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Lang } from "./retailpulse-data";
 import { friendlyCheckpointName, rankCurrentDepartureHallCheckpoints } from "../lib/airport-today-summary";
 import {
@@ -702,86 +702,125 @@ function localizeAirportBrief(
   remaining: RemainingForecast,
 ): string[] {
   const locale = airportLocale(lang);
-  const lines: string[] = [];
-  const scopeName = airportTodayText.scope[lang][brief.scope];
-  if (brief.checkpoint) {
-    const checkpoint = friendlyCheckpointName(brief.checkpoint.zone, lang);
-    const terminalPrefix = brief.scope === "all" ? `${brief.checkpoint.terminal} ` : "";
-    if (brief.checkpointBasis === "WAIT_TIME") {
-      const raw = brief.checkpoint.waitTimeRaw ?? (brief.checkpoint.waitTimeMinutes === null ? null : String(brief.checkpoint.waitTimeMinutes));
-      const unit = { ko: "분", en: " min", zh: "分钟", ja: "分" }[lang];
-      const wait = raw ? (/분|min|分钟|分/i.test(raw) ? raw : `${raw}${unit}`) : "";
-      lines.push(lang === "ko" ? `지금 ${scopeName}에서 대기가 가장 긴 곳은 ${terminalPrefix}${checkpoint}, ${wait}입니다`
-        : lang === "en" ? `${terminalPrefix}${checkpoint} has the longest ${scopeName} wait right now at ${wait}`
-        : lang === "zh" ? `当前${scopeName}等候最长的是${terminalPrefix}${checkpoint}，${wait}`
-        : `現在、${scopeName}で最も待ちが長いのは${terminalPrefix}${checkpoint}の${wait}です`);
-    } else if (brief.checkpoint.waitingCount !== null) {
-      lines.push(lang === "ko" ? `지금 ${terminalPrefix}${checkpoint}에 ${brief.checkpoint.waitingCount.toLocaleString(locale)}명이 대기 중입니다`
-        : lang === "en" ? `${brief.checkpoint.waitingCount.toLocaleString(locale)} people are waiting at ${terminalPrefix}${checkpoint} right now`
-        : lang === "zh" ? `当前${terminalPrefix}${checkpoint}有${brief.checkpoint.waitingCount.toLocaleString(locale)}人等候`
-        : `現在、${terminalPrefix}${checkpoint}で${brief.checkpoint.waitingCount.toLocaleString(locale)}人が待機中です`);
-    }
-  }
-
-  // The hour the reader is standing in, before the day's peak. Everything
-  // here is the airport's own published expectation, so every locale says
-  // "official expected" out loud — a departing-passenger count is not
-  // something KORETAIL observes.
-  if (brief.nowBand) {
+  /*
+   * Order and length, both deliberate (owner review 2026-09-04).
+   *
+   * The headline used to be "지금 …에서 대기가 가장 긴 곳은 …, 16분입니다" —
+   * a long bold sentence that made one checkpoint queue look like the most
+   * important fact on the page. It is not. The number an airport retail
+   * worker plans a shift around is how many departing passengers the airport
+   * officially expects IN THE HOUR THEY ARE STANDING IN, so that leads now
+   * and the queue is demoted to a short supporting line.
+   *
+   * Every line is trimmed to what it asserts. "…가 오늘 피크입니다 (4,675명)"
+   * became "오늘 피크 07:00–08:00 · 4,675명": same facts, no sentence to read
+   * through. Nothing was removed except words — no figure, and no basis.
+   *
+   * The peak line only appears when there is no current hour to lead with
+   * (a past or future date), because the at-a-glance grid directly below
+   * already carries the day's peak and the lead line already carries this
+   * hour's share OF that peak.
+   */
+  const nowLine = (() => {
+    if (!brief.nowBand) return null;
     const now = brief.nowBand;
     const band = formatKstBand(now.targetStartAt, now.targetEndAt).replace(" KST", "");
     const people = Math.round(now.expectedPassengers).toLocaleString(locale);
+    return {
+      ko: `${band} 공식 예상 출국객 ${people}명`,
+      en: `${band} official expected departures: ${people}`,
+      zh: `${band} 官方预计出境旅客 ${people}人`,
+      ja: `${band} 公式予想出国旅客 ${people}人`,
+    }[lang];
+  })();
+
+  // Share of the day's peak, and where the next hour goes. Stated only from
+  // two real bands; the last band of the day says so rather than implying
+  // the day simply stops.
+  const trendLine = (() => {
+    if (!brief.nowBand) return null;
+    const now = brief.nowBand;
     const share = now.peakShare === null ? null : Math.round(now.peakShare * 100);
-    // The direction is stated only from two real bands. The last band of the
-    // day says so instead of implying the day simply stops.
     const next = now.nextExpectedPassengers === null ? null : Math.round(now.nextExpectedPassengers);
     const nextPeople = next === null ? null : next.toLocaleString(locale);
-    const rising = next !== null && next > Math.round(now.expectedPassengers);
-    const flat = next !== null && next === Math.round(now.expectedPassengers);
-    const trend = nextPeople === null
-      ? { ko: "오늘의 마지막 시간대입니다", en: "the last band of the day", zh: "为今日最后一个时段", ja: "本日最後の時間帯です" }[lang]
-      : flat
-        ? { ko: `다음 시간대도 ${nextPeople}명으로 비슷합니다`, en: `next hour is about the same at ${nextPeople}`, zh: `下一时段${nextPeople}人，基本持平`, ja: `次の時間帯も${nextPeople}人でほぼ同じです` }[lang]
-        : rising
-          ? { ko: `다음 시간대 ${nextPeople}명으로 늘어납니다`, en: `rising to ${nextPeople} next hour`, zh: `下一时段增至${nextPeople}人`, ja: `次の時間帯は${nextPeople}人に増えます` }[lang]
-          : { ko: `다음 시간대 ${nextPeople}명으로 줄어듭니다`, en: `falling to ${nextPeople} next hour`, zh: `下一时段降至${nextPeople}人`, ja: `次の時間帯は${nextPeople}人に減ります` }[lang];
-    const head = share === null
-      ? { ko: `현재 ${band} 공식 예상 출국객 ${people}명`, en: `Official expected departing passengers now (${band}): ${people}`, zh: `当前${band}官方预计出境旅客${people}人`, ja: `現在${band}の公式予想出国旅客は${people}人` }[lang]
-      : { ko: `현재 ${band} 공식 예상 출국객 ${people}명 · 오늘 피크의 ${share}%`, en: `Official expected departing passengers now (${band}): ${people} · ${share}% of today's peak`, zh: `当前${band}官方预计出境旅客${people}人 · 为今日高峰的${share}%`, ja: `現在${band}の公式予想出国旅客は${people}人 · 本日ピークの${share}%` }[lang];
-    lines.push(`${head} · ${trend}`);
-  }
+    const sharePart = share === null ? null : {
+      ko: `오늘 피크의 ${share}%`, en: `${share}% of today's peak`,
+      zh: `为今日高峰的${share}%`, ja: `本日ピークの${share}%`,
+    }[lang];
+    const nextPart = nextPeople === null
+      ? { ko: "오늘 마지막 시간대", en: "last hour of the day", zh: "今日最后一个时段", ja: "本日最後の時間帯" }[lang]
+      : { ko: `다음 시간대 ${nextPeople}명`, en: `next hour ${nextPeople}`, zh: `下一时段${nextPeople}人`, ja: `次の時間帯${nextPeople}人` }[lang];
+    return [sharePart, nextPart].filter(Boolean).join(" · ");
+  })();
 
-  if (brief.forecastCoverage === "COMPLETE" && brief.peak) {
-    const band = formatKstBand(brief.peak.targetStartAt, brief.peak.targetEndAt).replace(" KST", "");
-    const people = Math.round(brief.peak.expectedPassengers).toLocaleString(locale);
-    lines.push(lang === "ko" ? `공식 예상 승객 기준 ${band}가 오늘 피크입니다 (${people}명)`
-      : lang === "en" ? `Official expected passengers peak at ${band} today (${people})`
-      : lang === "zh" ? `按官方预计旅客，今日高峰为${band}（${people}人）`
-      : `公式予想旅客では本日のピークは${band}（${people}人）`);
-  } else if (brief.forecastCoverage === "PARTIAL") {
-    lines.push(lang === "ko" ? "공식 예상 승객 데이터가 일부 누락되어 피크는 판단하지 않습니다" : lang === "en" ? "Some official passenger forecast bands are missing, so no peak is inferred" : lang === "zh" ? "部分官方预计旅客时段缺失，因此不判断高峰" : "公式予想旅客データの一部が欠けているため、ピークは判断しません");
-  } else {
-    lines.push(lang === "ko" ? "이 날짜의 공식 예상 승객 데이터는 아직 없습니다" : lang === "en" ? "No official passenger forecast exists for this date yet" : lang === "zh" ? "该日期尚无官方预计旅客数据" : "この日付の公式予想旅客データはまだありません");
-  }
+  const peakLine = (() => {
+    if (brief.forecastCoverage === "COMPLETE" && brief.peak) {
+      const band = formatKstBand(brief.peak.targetStartAt, brief.peak.targetEndAt).replace(" KST", "");
+      const people = Math.round(brief.peak.expectedPassengers).toLocaleString(locale);
+      return {
+        ko: `오늘 피크 ${band} · 공식 예상 출국객 ${people}명`,
+        en: `Today's peak ${band} · ${people} officially expected`,
+        zh: `今日高峰 ${band} · 官方预计${people}人`,
+        ja: `本日ピーク ${band} · 公式予想${people}人`,
+      }[lang];
+    }
+    if (brief.forecastCoverage === "PARTIAL") {
+      return { ko: "공식 예상 승객 일부 누락 · 피크 판단 안 함", en: "Some official bands missing · no peak inferred", zh: "部分官方时段缺失 · 不判断高峰", ja: "公式予想の一部が欠落 · ピークは判断しません" }[lang];
+    }
+    return { ko: "이 날짜의 공식 예상 승객 자료 없음", en: "No official passenger forecast for this date", zh: "该日期无官方预计旅客数据", ja: "この日付の公式予想旅客データなし" }[lang];
+  })();
 
-  const departure = brief.departures === null ? null
-    : (lang === "ko" ? `출발 ${brief.departures.toLocaleString(locale)}편` : lang === "en" ? `${brief.departures.toLocaleString(locale)} departing flights` : lang === "zh" ? `出发${brief.departures.toLocaleString(locale)}班` : `出発${brief.departures.toLocaleString(locale)}便`);
-  const gate = brief.topGate
-    ? (lang === "ko" ? `Gate ${brief.topGate.gate}에 ${brief.topGate.flights.toLocaleString(locale)}편으로 가장 집중` : lang === "en" ? `Gate ${brief.topGate.gate} is busiest with ${brief.topGate.flights.toLocaleString(locale)} flights` : lang === "zh" ? `Gate ${brief.topGate.gate}最集中，共${brief.topGate.flights.toLocaleString(locale)}班` : `Gate ${brief.topGate.gate}が最多で${brief.topGate.flights.toLocaleString(locale)}便`)
-    : null;
-  // The remaining figure is only ever present when the day's official bands
-  // are provably complete, so it can be stated without a hedge.
-  const rest = remaining
-    ? (lang === "ko" ? `${formatKstClock(remaining.fromAt)}부터 오늘 끝까지 예상 ${Math.round(remaining.expectedPassengers).toLocaleString(locale)}명`
-      : lang === "en" ? `${Math.round(remaining.expectedPassengers).toLocaleString(locale)} expected from ${formatKstClock(remaining.fromAt)} to end of day`
-      : lang === "zh" ? `${formatKstClock(remaining.fromAt)}起至今日结束预计${Math.round(remaining.expectedPassengers).toLocaleString(locale)}人`
-      : `${formatKstClock(remaining.fromAt)}から今日終わりまで予想${Math.round(remaining.expectedPassengers).toLocaleString(locale)}人`)
-    : null;
-  const third = [departure, gate].filter(Boolean).join(" · ");
-  if (third) lines.push(third);
-  if (rest) lines.push(rest);
-  // Five, because "this hour" was added ahead of the day's peak. The cap
-  // still exists so a future line cannot quietly turn the brief into a list.
+  // The queue, kept but demoted: one checkpoint's wait is a fact about that
+  // checkpoint, not about the terminal's day.
+  const waitLine = (() => {
+    if (!brief.checkpoint) return null;
+    const checkpoint = friendlyCheckpointName(brief.checkpoint.zone, lang);
+    const where = brief.scope === "all" ? `${brief.checkpoint.terminal} ${checkpoint}` : checkpoint;
+    if (brief.checkpointBasis === "WAIT_TIME") {
+      const raw = brief.checkpoint.waitTimeRaw ?? (brief.checkpoint.waitTimeMinutes === null ? null : String(brief.checkpoint.waitTimeMinutes));
+      if (!raw) return null;
+      const unit = { ko: "분", en: " min", zh: "分钟", ja: "分" }[lang];
+      const wait = /분|min|分钟|分/i.test(raw) ? raw : `${raw}${unit}`;
+      return {
+        ko: `대기 최장 ${where} ${wait}`, en: `Longest wait ${where} ${wait}`,
+        zh: `等候最长 ${where} ${wait}`, ja: `待ち最長 ${where} ${wait}`,
+      }[lang];
+    }
+    if (brief.checkpoint.waitingCount === null) return null;
+    const people = brief.checkpoint.waitingCount.toLocaleString(locale);
+    return {
+      ko: `${where} 대기 ${people}명`, en: `${where}: ${people} waiting`,
+      zh: `${where} 等候${people}人`, ja: `${where} 待機${people}人`,
+    }[lang];
+  })();
+
+  const departure = brief.departures === null ? null : {
+    ko: `출발 ${brief.departures.toLocaleString(locale)}편`,
+    en: `${brief.departures.toLocaleString(locale)} departures`,
+    zh: `出发${brief.departures.toLocaleString(locale)}班`,
+    ja: `出発${brief.departures.toLocaleString(locale)}便`,
+  }[lang];
+  const gate = brief.topGate ? {
+    ko: `Gate ${brief.topGate.gate} 최다 ${brief.topGate.flights.toLocaleString(locale)}편`,
+    en: `Gate ${brief.topGate.gate} busiest with ${brief.topGate.flights.toLocaleString(locale)}`,
+    zh: `Gate ${brief.topGate.gate}最多${brief.topGate.flights.toLocaleString(locale)}班`,
+    ja: `Gate ${brief.topGate.gate}最多${brief.topGate.flights.toLocaleString(locale)}便`,
+  }[lang] : null;
+  const flightsLine = [departure, gate].filter(Boolean).join(" · ") || null;
+
+  const restLine = remaining ? {
+    ko: `${formatKstClock(remaining.fromAt)} 이후 예상 ${Math.round(remaining.expectedPassengers).toLocaleString(locale)}명`,
+    en: `${formatKstClock(remaining.fromAt)} onward: ${Math.round(remaining.expectedPassengers).toLocaleString(locale)} expected`,
+    zh: `${formatKstClock(remaining.fromAt)}起预计${Math.round(remaining.expectedPassengers).toLocaleString(locale)}人`,
+    ja: `${formatKstClock(remaining.fromAt)}以降 予想${Math.round(remaining.expectedPassengers).toLocaleString(locale)}人`,
+  }[lang] : null;
+
+  // This hour leads when there is one. Otherwise the day's peak does, so the
+  // brief never opens on a queue.
+  const lines = (nowLine
+    ? [nowLine, trendLine, waitLine, flightsLine, restLine]
+    : [peakLine, waitLine, flightsLine, restLine]
+  ).filter((line): line is string => Boolean(line && line.trim()));
   return lines.slice(0, 5);
 }
 
@@ -985,6 +1024,50 @@ function TerminalBriefingCards({ lang, airport, nowIso, dayRelation }: {
   </section>;
 }
 
+/**
+ * The official hourly forecast chart.
+ *
+ * Its own component for one reason: it owns a hook. The bars scroll
+ * horizontally and a whole day does not fit on a phone, so the chart used
+ * to open at 00:00 — a reader at 17:27 saw the small hours and had to drag
+ * to find themselves, which is the one hour the chart exists to show.
+ *
+ * `scrollLeft`, never `scrollIntoView`: the latter scrolls the PAGE too,
+ * which would drag the reader away from the summary above.
+ */
+function AirportForecastChart({
+  timeline, peakStartAt, nowBandStart, nowLabel, maxBand, numberLocale, label,
+}: {
+  timeline: ForecastBand[];
+  peakStartAt: string | null;
+  nowBandStart: string | null;
+  nowLabel: string;
+  maxBand: number;
+  numberLocale: string;
+  label: string;
+}) {
+  const barsRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const bars = barsRef.current;
+    if (!bars || !nowBandStart) return;
+    const current = bars.querySelector<HTMLElement>("p.now");
+    if (!current) return;
+    bars.scrollLeft = Math.max(0, current.offsetLeft - (bars.clientWidth - current.clientWidth) / 2);
+  }, [nowBandStart, timeline.length]);
+
+  return <div className="airport-timeline" role="img" aria-label={label}>
+    <div className="airport-timeline-bars" ref={barsRef}>{timeline.map((row) => <p
+      key={row.targetStartAt}
+      className={[peakStartAt === row.targetStartAt ? "peak" : "", nowBandStart === row.targetStartAt ? "now" : ""].filter(Boolean).join(" ")}
+      data-now-label={nowBandStart === row.targetStartAt ? nowLabel : undefined}
+    >
+      <i style={{ height: `${Math.max(4, row.expectedPassengers / maxBand * 100)}%` }} />
+      <span>{formatKstClock(row.targetStartAt)}</span>
+      <b>{Math.round(row.expectedPassengers).toLocaleString(numberLocale)}</b>
+    </p>)}</div>
+  </div>;
+}
+
 export function AirportTodaySummary({ lang, terminal = "all", date = null }: { lang: Lang; terminal?: "all" | "T1" | "T2"; date?: string | null }) {
   // Eight full-height checkpoint rows per terminal cost more vertical space
   // than they earn: what a reader needs first is the one queue that is longest
@@ -1093,17 +1176,15 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     <section className="airport-detail-section airport-forecast" aria-labelledby="airport-forecast-title">
       <div className="airport-detail-head"><div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-forecast-title">{airportTodayText.forecastTitle[lang]}</h3></div><p>{airportTodayText.forecastOnly[lang]}</p></div>
       {forecastStatus === "COMPLETE" && timeline.length > 0
-        ? <div className="airport-timeline" role="img" aria-label={`${airportTodayText.forecastTitle[lang]}. ${airportTodayText.forecastOnly[lang]}${nowBandStart ? `. ${nowLabel}` : ""}`}>
-          <div className="airport-timeline-bars">{timeline.map((row) => <p
-            key={row.targetStartAt}
-            className={[peak?.targetStartAt === row.targetStartAt ? "peak" : "", nowBandStart === row.targetStartAt ? "now" : ""].filter(Boolean).join(" ")}
-            data-now-label={nowBandStart === row.targetStartAt ? nowLabel : undefined}
-          >
-            <i style={{ height: `${Math.max(4, row.expectedPassengers / maxBand * 100)}%` }} />
-            <span>{formatKstClock(row.targetStartAt)}</span>
-            <b>{Math.round(row.expectedPassengers).toLocaleString(numberLocale)}</b>
-          </p>)}</div>
-        </div>
+        ? <AirportForecastChart
+          timeline={timeline}
+          peakStartAt={peak?.targetStartAt ?? null}
+          nowBandStart={nowBandStart}
+          nowLabel={nowLabel}
+          maxBand={maxBand}
+          numberLocale={numberLocale}
+          label={`${airportTodayText.forecastTitle[lang]}. ${airportTodayText.forecastOnly[lang]}${nowBandStart ? `. ${nowLabel}` : ""}`}
+        />
         : <div className={`airport-forecast-state ${isForecastPartial ? "partial" : "unavailable"}`}>
           <strong>{isForecastPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]}</strong>
           <p>{isForecastPartial ? airportTodayText.partialBody[lang] : airportTodayText.unavailableBody[lang]}</p>

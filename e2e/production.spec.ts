@@ -179,8 +179,9 @@ test("airport summary keeps forecast, flights, gate and checkpoints truthful on 
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko/airport");
-  await expect(page.locator(".airport-current-brief")).toContainText("지금 전체 공항에서 대기가 가장 긴 곳은 T2 출국장 1B, 60+분입니다");
-  await expect(page.locator(".airport-current-brief")).toContainText("15:00–16:00가 오늘 피크입니다");
+  // 첫 줄은 지금 시간대의 공식 예상 출국객, 대기는 짧은 보조 줄.
+  await expect(page.locator(".airport-current-brief")).toContainText("공식 예상 출국객");
+  await expect(page.locator(".airport-current-brief")).toContainText("대기 최장 T2 출국장 1B 60+분");
   await expect(page.locator(".airport-current-brief")).toContainText("출발 561편");
   await expect(page.getByText("공식 예상 출국객", { exact: true })).toBeVisible();
   await expect(page.getByText("47,320명", { exact: true })).toBeVisible();
@@ -362,9 +363,13 @@ test("the summary states this hour's official expected departing passengers and 
   await page.goto("/ko/airport");
   const brief = page.locator(".airport-current-brief");
   await expect(brief).toBeVisible();
-  // 첫 줄은 관측(가장 긴 대기), 그다음이 이 시간대의 공식 예상 출국객.
-  await expect(brief).toContainText("대기가 가장 긴 곳");
-  await expect(brief).toContainText("공식 예상 출국객");
+  // 강조되는 첫 줄이 지금 시간대의 공식 예상 출국객이다. 대기는 그 아래
+  // 보조 줄로 내려갔다 — 검색대 줄 하나가 이 화면에서 가장 중요한
+  // 사실은 아니다.
+  const headline = brief.locator("strong").first();
+  await expect(headline).toContainText("공식 예상 출국객");
+  await expect(headline).not.toContainText("대기");
+  await expect(brief).toContainText("대기 최장");
   // 예상치를 관측이라고 부르지 않는다.
   await expect(brief).not.toContainText("관측 출국객");
 });
@@ -379,7 +384,7 @@ test("remaining expected departures is shown for a complete day and withheld for
   await page.goto("/ko/airport");
   await expect(page.getByText("지금부터 오늘 끝까지", { exact: true })).toBeVisible();
   await expect(page.getByText("11,430명", { exact: true })).toBeVisible();
-  await expect(page.locator(".airport-current-brief")).toContainText("14:00부터 오늘 끝까지 예상 11,430명");
+  await expect(page.locator(".airport-current-brief")).toContainText("14:00 이후 예상 11,430명");
 
   // Two different times sit on this one card: the window the sum covers
   // (14:00–24:00) and the moment the forecast was fetched (09:05). Both used
@@ -490,7 +495,7 @@ test("selecting T1 or T2 changes every top metric, not just the current departur
   await expect(page.getByText("561편", { exact: true })).toBeVisible();
 
   await page.getByRole("tab", { name: "T1" }).click();
-  await expect(page.locator(".airport-current-brief")).toContainText("지금 제1터미널에서 대기가 가장 긴 곳은 출국장 P01, 24분입니다");
+  await expect(page.locator(".airport-current-brief")).toContainText("대기 최장 출국장 P01 24분");
   await expect(page.getByText("30,100명", { exact: true })).toBeVisible();
   await expect(page.getByText("300편", { exact: true })).toBeVisible();
   await expect(page.locator(".airport-gate-row").first()).toContainText("Gate 27");
@@ -500,7 +505,7 @@ test("selecting T1 or T2 changes every top metric, not just the current departur
   await expect(page.getByText("출국장 1B", { exact: true })).toHaveCount(0);
 
   await page.getByRole("tab", { name: "T2" }).click();
-  await expect(page.locator(".airport-current-brief")).toContainText("지금 제2터미널에서 대기가 가장 긴 곳은 출국장 1B, 60+분입니다");
+  await expect(page.locator(".airport-current-brief")).toContainText("대기 최장 출국장 1B 60+분");
   await expect(page.getByText("17,220명", { exact: true })).toBeVisible();
   await expect(page.getByText("261편", { exact: true })).toBeVisible();
   await expect(page.getByText("30,100명", { exact: true })).toHaveCount(0);
@@ -527,7 +532,7 @@ test("incomplete A5 daily coverage never renders as a full-day total or peak", a
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await expect(page.locator(".airport-today-grid article").filter({ hasText: "공식 예상 출국객" }).getByText("전체 시간대 확인 불가", { exact: true })).toBeVisible();
   await expect(page.getByText("공식 예상 데이터 일부 누락").first()).toBeVisible();
-  await expect(page.locator(".airport-current-brief")).toContainText("피크는 판단하지 않습니다");
+  await expect(page.locator(".airport-current-brief")).toContainText("공식 예상 승객 일부 누락 · 피크 판단 안 함");
   await expect(page.getByText(/일부 시간대가 누락되어 하루 전체 합계와 피크는 표시하지 않습니다/)).toBeVisible();
   await expect(page.locator(".airport-timeline")).toHaveCount(0);
   await expect(page.getByText("47,320명", { exact: true })).toHaveCount(0);
@@ -977,4 +982,62 @@ test("the tourism desk is reachable from Myeongdong and only from Myeongdong", a
   // Hongdae has no tourism desk, so it must not promise one.
   await page.goto("/ko/hongdae");
   await expect(page.locator(".desk-entry")).toHaveCount(0);
+});
+
+
+/**
+ * 오늘 출발편 구성이 제목만 있고 비어 보이면 안 된다.
+ *
+ * 소유자 보고 2026-09-04: "오늘 출발편구성이 안보여". 제목 아래로 화면
+ * 한 뭉텅이만큼 흰 여백이 이어져서 로딩에 실패한 것처럼 보였다. 자료는
+ * 있었고 여백이 문제였다.
+ */
+test("the composition group shows its content directly under its heading", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ko/airport");
+
+  const composition = page.locator(".airport-composition");
+  await expect(composition).toBeVisible();
+  await expect(composition.getByRole("heading", { name: "오늘 출발편 구성" })).toBeVisible();
+
+  // 게이트 목록이 실제로 그려진다.
+  const gateRows = composition.locator(".airport-gate-row");
+  await expect(gateRows.first()).toBeVisible();
+
+  // 묶음 머리말이 끝나는 곳과 첫 섹션이 시작하는 곳 사이에 빈 띠가 없다.
+  // 예전에는 머리말이 자기 밑줄을 긋고 닫은 뒤 안쪽 섹션이 마진과 패딩을
+  // 또 얹어서, 제목 다음에 아무것도 없는 구간이 이어졌다.
+  const headBox = await composition.locator("> .airport-detail-head").boundingBox();
+  const firstSectionBox = await composition.locator("> .airport-detail-section").first().boundingBox();
+  if (!headBox || !firstSectionBox) throw new Error("composition head or first section is not rendered");
+  const emptyBand = firstSectionBox.y - (headBox.y + headBox.height);
+  expect(emptyBand).toBeGreaterThanOrEqual(0);
+  expect(emptyBand).toBeLessThan(24);
+});
+
+/**
+ * 예보 차트는 지금 시간대에서 열린다.
+ *
+ * 하루가 화면에 다 안 들어가서 늘 00:00 에서 열렸고, 오후에 보는 사람은
+ * 새벽 막대를 보고 직접 끌어야 했다.
+ */
+test("the forecast chart opens scrolled to the current hour", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ko/airport");
+
+  const bars = page.locator(".airport-timeline-bars");
+  await expect(bars).toBeVisible();
+  const now = bars.locator("p.now");
+  await expect(now).toBeVisible();
+
+  // 현재 시간대 막대가 보이는 영역 안에 들어와 있다.
+  const inView = await bars.evaluate((element) => {
+    const current = element.querySelector<HTMLElement>("p.now");
+    if (!current) return false;
+    const left = current.offsetLeft - element.scrollLeft;
+    return left >= 0 && left + current.clientWidth <= element.clientWidth + 1;
+  });
+  expect(inView).toBe(true);
 });

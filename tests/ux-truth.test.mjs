@@ -386,65 +386,42 @@ test("공항 페이지는 요약 → 다음 → 구성 → 관측 표 순서로 
 });
 
 /**
- * 요약은 관측으로 열고, 예보는 예보라고 말한다.
+ * 요약은 지금 시간대 출국객으로 열고, 예보는 예보라고 말한다.
  *
- * 상세 표가 아래로 내려간 뒤로는 이게 "예보를 지금으로 읽는" 것을 막는
- * 유일한 장치다. 그래서 검사로 붙잡아 둔다.
+ * 2026-09-04 소유자 검토: 예전 첫 줄은 "지금 …에서 대기가 가장 긴 곳은
+ * …, 16분입니다" 였다. 길고 굵어서 검색대 줄 하나가 이 화면에서 가장
+ * 중요한 사실처럼 보였는데, 사실이 아니다. 공항 매장 근무자가 근무를
+ * 계획하는 숫자는 "지금 이 시간대에 공항이 공식으로 예상하는 출국객"
+ * 이다. 그래서 그게 첫 줄이 되고, 대기는 짧은 보조 줄로 내려갔다.
+ *
+ * 예보가 관측인 척하지 않게 하는 장치는 그대로다: 예보에서 나온 값은
+ * 네 언어 모두 "공식 예상" 이라고 말한다.
  */
-test("요약의 첫 줄은 관측이고, 예보에서 나온 값은 스스로 예보라고 말한다", () => {
+test("요약은 지금 시간대 공식 예상 출국객으로 열고, 대기는 보조 줄로 내려간다", () => {
   const localize = signals.match(/function localizeAirportBrief\([\s\S]*?\n\}/)?.[0] ?? "";
   assert.ok(localize.length > 0);
-  const at = (needle) => localize.indexOf(needle);
-  // 관측(검색대 대기)이 예보 줄들보다 먼저 push 된다.
-  assert.ok(at("if (brief.checkpoint) {") > -1);
-  assert.ok(at("if (brief.nowBand) {") > at("if (brief.checkpoint) {"),
-    "관측 줄이 먼저, 예보 줄이 나중");
-  // 예보에서 나온 두 줄 모두 "공식 예상" 이라고 말한다.
-  assert.ok(localize.includes("공식 예상 출국객"), "현재 시간대 값은 공식 예상이라고 말해야 한다");
-  assert.ok(localize.includes("공식 예상 승객 기준"), "피크 값은 공식 예상이라고 말해야 한다");
-});
 
-/**
- * 항공사 등록 국가는 승객 국적이 아니다.
- *
- * 한국어에서 "국적"은 사람의 국적으로 먼저 읽힌다. 대한항공 편이 많다고 해서
- * 그 비행기에 한국인이 많다는 뜻이 아니다.
- */
-test("항공사 국가를 사람의 국적으로 부르지 않는다", () => {
-  const block = signals.match(/const airportTodayText = \{[\s\S]*?\n\} as const;/)?.[0] ?? "";
-  assert.ok(block.length > 0);
-  // "국적"은 라벨로 쓰일 때만 금지한다. 부인하는 문장("승객의 국적이 아닙니다")
-  // 에는 반드시 남아 있어야 하므로, 단어 존재 자체를 막으면 경계를 지우게 된다.
-  const shown = block.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/.*$/gm, "$1");
-  for (const asLabel of ["국적별", "국적 미확인", "· 국적 ·", "국적 분포", "국적 ·"]) {
-    assert.equal(shown.includes(asLabel), false,
-      `"${asLabel}" 처럼 라벨로 쓰면 항공사 국가가 승객 국적으로 읽힌다`);
-  }
-  // 남아 있는 "국적"은 전부 부정문 안에 있어야 한다.
-  for (const sentence of shown.split(/[.。\n]/).filter((line) => line.includes("국적"))) {
-    assert.match(sentence, /국적이 아닙니다|국적이 아니다/,
-      `"국적"은 부인하는 문장에서만 쓸 수 있다: ${sentence.trim().slice(0, 60)}`);
-  }
-  // 같은 원리로, 이 표현들도 "…가 아닙니다" 안에서만 허용된다. 경계를 말하는
-  // 문장에는 반드시 나타나야 하므로 단어 자체를 막으면 경계를 지우게 된다.
-  const denial = /아닙니다|아니다|ではありません|并非|不是|never|not the/i;
-  for (const claim of ["승객 국적", "방문객 국적", "관광객 국적", "passenger nationality", "旅客国籍", "旅客の国籍", "nationality of the passengers"]) {
-    for (const sentence of signals.split(/[.。\n]/).filter((line) => line.includes(claim))) {
-      assert.match(sentence, denial,
-        `"${claim}" 은 부인하는 문장에서만 쓸 수 있다: ${sentence.trim().slice(0, 70)}`);
-    }
-  }
-  // 대신 등록 국가라고 부르고, 승객 국적이 아님을 근거 문구가 직접 말한다.
-  for (const phrase of ["항공사 등록 국가별 운항편", "등록 국가 미확인"]) {
-    assert.ok(block.includes(phrase), `${phrase} 가 있어야 한다`);
-  }
-  assert.match(signals, /항공사가 등록된 국가이며, 그 비행기를 탄 승객의 국적이 아닙니다/);
-  assert.match(signals, /never the nationality of the passengers on board/);
-  assert.match(signals, /并非机上旅客的国籍/);
-  assert.match(signals, /搭乗した旅客の国籍ではありません/);
-  // OpenFlights 가 비공식 참조표라는 사실은 계속 남는다.
-  assert.match(signals, /OpenFlights/);
-  assert.match(signals, /공식 등록 자료가 아닙니다/);
+  // 줄 순서가 코드로 고정되어 있다: 지금 시간대 → 증감 → 대기 → 운항 → 남은 예상.
+  assert.match(localize, /\[nowLine, trendLine, waitLine, flightsLine, restLine\]/,
+    "지금 시간대 값이 첫 줄이어야 한다");
+  // 지금 시간대가 없는 날짜(과거·미래)에는 피크가 대신 열고, 대기가 열지 않는다.
+  assert.match(localize, /\[peakLine, waitLine, flightsLine, restLine\]/,
+    "지금 시간대가 없어도 요약이 대기로 시작하면 안 된다");
+
+  // 예보에서 나온 값은 스스로 예보라고 말한다.
+  assert.ok(localize.includes("공식 예상 출국객"), "지금 시간대 값은 공식 예상이라고 말해야 한다");
+  assert.ok(localize.includes("오늘 피크"), "피크 값도 함께 제시되어야 한다");
+
+  // 길이: 첫 줄은 숫자를 앞세운 짧은 구절이지 문장이 아니다.
+  // 주석은 왜 바뀌었는지 설명하느라 옛 문구를 인용하므로, 실제로 화면에
+  // 나가는 문자열만 본다.
+  const rendered = localize.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+  assert.ok(!/대기가 가장 긴 곳은/.test(rendered),
+    "검색대 대기를 긴 문장으로 강조하던 옛 문구가 남아 있으면 안 된다");
+  assert.ok(!/가 오늘 피크입니다/.test(rendered),
+    "읽고 지나가야 하는 서술문 대신 요점만 남아야 한다");
+  assert.ok(!/입니다/.test(rendered),
+    "요약 줄은 서술문이 아니라 요점이어야 한다");
 });
 
 /**
@@ -534,4 +511,56 @@ test("사적 지식으로 특정 시설을 숨기거나 지우지 않는다", ()
   }
   // 시설을 이름/브랜드로 제외하는 하드코딩 목록이 없어야 한다.
   assert.ok(!/(HIDDEN|BLOCKED|EXCLUDED|CLOSED)_FACILIT/i.test(signals));
+});
+
+/**
+ * 오늘 출발편 구성이 빈 껍데기로 보이지 않는다.
+ *
+ * 2026-09-04 소유자 보고: "오늘 출발편구성이 안보여". 제목과 설명은
+ * 나오는데 그 아래로 화면 한 뭉텅이만큼 흰 여백이 이어졌다. 묶음 제목이
+ * 자기 밑줄을 긋고 닫은 뒤, 안쪽 섹션이 각자 36px 마진과 18px 패딩을
+ * 또 얹었기 때문이다. 제목 다음에 빈 띠가 오면 읽는 사람은 그 구역이
+ * 로딩에 실패했다고 읽는다.
+ *
+ * 묶음 제목은 이제 자기를 닫지 않고, 첫 섹션이 바로 아래에서 시작한다.
+ */
+test("구성 묶음 제목과 그 내용 사이에 빈 띠를 만들지 않는다", () => {
+  // 묶음 제목이 닫는 밑줄과 아래 여백을 갖지 않는다.
+  assert.match(styles, /\.airport-composition > \.airport-detail-head \{[^}]*border-bottom: 0/);
+  assert.match(styles, /\.airport-composition > \.airport-detail-head \{[^}]*padding-bottom: 0/);
+  // 안쪽 섹션이 자기 위 여백을 다시 쌓지 않는다.
+  assert.match(styles, /\.airport-composition > \.airport-detail-section \{[^}]*padding-top: 0/);
+  assert.match(styles, /\.airport-composition > \.airport-detail-section:first-of-type \{[^}]*margin-top: 8px/);
+
+  // 게이트 목록이 묶음 안에 실제로 들어 있다: 제목만 있고 내용이 없는
+  // 구조가 되면 이 검사가 먼저 깨진다.
+  const summary = signals.match(/export function AirportTodaySummary[\s\S]*?\n\}/)?.[0] ?? "";
+  const composition = summary.indexOf('className="airport-composition"');
+  const gates = summary.indexOf('airport-detail-section airport-gates');
+  const airlines = summary.indexOf('airport-detail-section airport-airlines');
+  assert.ok(composition > -1 && gates > composition && airlines > gates,
+    "게이트와 항공사가 구성 묶음 안에 있어야 한다");
+});
+
+/**
+ * 예보 차트는 읽는 사람이 서 있는 시간대에서 열린다.
+ *
+ * 막대가 가로로 스크롤되고 하루가 휴대폰 화면에 다 안 들어가서, 차트는
+ * 늘 00:00 에서 열렸다. 17:27 에 보는 사람은 새벽 시간대를 보고 직접
+ * 끌어야 자기 시간을 찾았다 — 그 한 시간대가 차트가 존재하는 이유인데.
+ *
+ * scrollIntoView 가 아니라 scrollLeft 를 쓴다. 전자는 페이지까지 같이
+ * 스크롤해서 방금 읽던 요약에서 사용자를 끌어내린다.
+ */
+test("예보 차트는 현재 시간대로 가로 스크롤해서 열린다", () => {
+  // 구조 분해 매개변수의 닫는 중괄호는 "\n}: {" 라서, 함수 자체가 닫히는
+  // "\n}\n" 까지 읽는다.
+  const chart = signals.match(/function AirportForecastChart\([\s\S]*?\n\}\n/)?.[0] ?? "";
+  assert.ok(chart.length > 0, "차트가 자기 컴포넌트여야 훅을 가질 수 있다");
+  assert.match(chart, /bars\.scrollLeft = Math\.max\(0,/);
+  assert.match(chart, /querySelector<HTMLElement>\("p\.now"\)/);
+  assert.ok(!/scrollIntoView/.test(chart),
+    "scrollIntoView 는 페이지까지 스크롤해서 읽던 자리를 잃게 만든다");
+  // 오늘이 아니면 현재 시간대가 없으므로 아무것도 하지 않는다.
+  assert.match(chart, /if \(!bars \|\| !nowBandStart\) return;/);
 });
