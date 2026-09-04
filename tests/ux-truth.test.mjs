@@ -348,29 +348,60 @@ test("ordinary missing-data and stale states are neutral, not alarms", () => {
 });
 
 /**
- * 공항 페이지의 정보 순서.
+ * 공항 페이지의 정보 순서, 그리고 예보가 관측인 척하지 않게 하는 것.
  *
- * 화면은 네 가지 질문에 그 순서대로 답해야 한다: 지금 어떤가 → 다음에 무엇이
- * 오는가 → 왜 그런가 → 내 매장에 무엇이 관련 있는가. 예보가 현재 관측보다
- * 위에 있으면 읽는 사람은 예보를 지금 벌어지는 일로 읽는다.
+ * 원래 이 검사는 "관측 섹션이 예보 섹션보다 위" 를 강제했다. 예보가 위에
+ * 있으면 읽는 사람이 그걸 지금 벌어지는 일로 읽기 때문이다.
+ *
+ * 2026-09-04, 소유자 요청으로 검색대 상세 표를 맨 아래로 내렸다("잘 안 봐").
+ * 그래서 섹션 순서만으로는 그 걱정을 막지 못한다. 대신 진짜로 지키는 두 가지를
+ * 강제한다:
+ *   1. 맨 위 요약이 관측으로 시작한다 — 지금 대기가 가장 긴 곳.
+ *   2. 예보에서 나온 모든 값이 자기 입으로 예보라고 말한다.
+ * 표를 내린 것이지 지운 것이 아니다. 구역·대기 인원·관측 시각은 그대로 있다.
  */
-test("공항 페이지는 지금 → 다음 → 구성 순서로 읽힌다", () => {
+test("공항 페이지는 요약 → 다음 → 구성 → 관측 표 순서로 읽힌다", () => {
   const summary = signals.match(/export function AirportTodaySummary[\s\S]*?\n\}/)?.[0] ?? "";
   assert.ok(summary.length > 0);
   const at = (needle) => summary.indexOf(needle);
   const brief = at('className="current-brief airport-current-brief"');
-  const checkpoints = at('airport-detail-section airport-checkpoints');
+  const grid = at('className="airport-today-grid"');
   const forecast = at('airport-detail-section airport-forecast');
   const composition = at('className="airport-composition"');
-  for (const [name, index] of [["brief", brief], ["checkpoints", checkpoints], ["forecast", forecast], ["composition", composition]]) {
+  const checkpoints = at('airport-detail-section airport-checkpoints');
+  for (const [name, index] of [["brief", brief], ["grid", grid], ["forecast", forecast], ["composition", composition], ["checkpoints", checkpoints]]) {
     assert.ok(index > -1, `${name} 섹션이 있어야 한다`);
   }
-  assert.ok(brief < checkpoints, "지금 요약이 가장 먼저");
-  assert.ok(checkpoints < forecast, "관측(지금)이 예보(다음)보다 먼저 — 예보가 위에 있으면 지금으로 읽힌다");
-  assert.ok(forecast < composition, "구성/이유는 마지막");
+  assert.ok(brief < grid, "지금 요약이 가장 먼저");
+  assert.ok(grid < forecast, "예보 차트는 자기가 설명하는 격자 바로 아래");
+  assert.ok(forecast < composition, "구성/이유는 예보 다음");
+  assert.ok(composition < checkpoints, "검색대 상세 표는 참고 자료라 마지막");
   // 게이트와 항공사는 최상위로 흩어지지 않고 구성 묶음 안에 있다.
   assert.ok(at('airport-detail-section airport-gates') > composition);
   assert.ok(at('airport-detail-section airport-airlines') > composition);
+  // 표를 내렸을 뿐, 내용은 그대로다.
+  assert.ok(summary.includes("airportTodayText.waitLabel[lang]"), "대기 시간은 그대로 있어야 한다");
+  assert.ok(summary.includes("airportTodayText.peopleLabel[lang]"), "대기 인원은 그대로 있어야 한다");
+  assert.ok(summary.includes('formatHumanFreshness(row.observedAt, nowIso, lang, "observed")'), "관측 시각은 그대로 있어야 한다");
+});
+
+/**
+ * 요약은 관측으로 열고, 예보는 예보라고 말한다.
+ *
+ * 상세 표가 아래로 내려간 뒤로는 이게 "예보를 지금으로 읽는" 것을 막는
+ * 유일한 장치다. 그래서 검사로 붙잡아 둔다.
+ */
+test("요약의 첫 줄은 관측이고, 예보에서 나온 값은 스스로 예보라고 말한다", () => {
+  const localize = signals.match(/function localizeAirportBrief\([\s\S]*?\n\}/)?.[0] ?? "";
+  assert.ok(localize.length > 0);
+  const at = (needle) => localize.indexOf(needle);
+  // 관측(검색대 대기)이 예보 줄들보다 먼저 push 된다.
+  assert.ok(at("if (brief.checkpoint) {") > -1);
+  assert.ok(at("if (brief.nowBand) {") > at("if (brief.checkpoint) {"),
+    "관측 줄이 먼저, 예보 줄이 나중");
+  // 예보에서 나온 두 줄 모두 "공식 예상" 이라고 말한다.
+  assert.ok(localize.includes("공식 예상 출국객"), "현재 시간대 값은 공식 예상이라고 말해야 한다");
+  assert.ok(localize.includes("공식 예상 승객 기준"), "피크 값은 공식 예상이라고 말해야 한다");
 });
 
 /**

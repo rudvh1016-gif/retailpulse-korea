@@ -7,6 +7,7 @@ import {
   buildAirportCurrentBrief,
   buildAreaCurrentBrief,
   formatHumanFreshness,
+  selectAirportNowBand,
   type AreaCurrentBrief,
   type AirportCurrentBrief,
   type ForecastDayOffset,
@@ -711,6 +712,34 @@ function localizeAirportBrief(
     }
   }
 
+  // The hour the reader is standing in, before the day's peak. Everything
+  // here is the airport's own published expectation, so every locale says
+  // "official expected" out loud — a departing-passenger count is not
+  // something KORETAIL observes.
+  if (brief.nowBand) {
+    const now = brief.nowBand;
+    const band = formatKstBand(now.targetStartAt, now.targetEndAt).replace(" KST", "");
+    const people = Math.round(now.expectedPassengers).toLocaleString(locale);
+    const share = now.peakShare === null ? null : Math.round(now.peakShare * 100);
+    // The direction is stated only from two real bands. The last band of the
+    // day says so instead of implying the day simply stops.
+    const next = now.nextExpectedPassengers === null ? null : Math.round(now.nextExpectedPassengers);
+    const nextPeople = next === null ? null : next.toLocaleString(locale);
+    const rising = next !== null && next > Math.round(now.expectedPassengers);
+    const flat = next !== null && next === Math.round(now.expectedPassengers);
+    const trend = nextPeople === null
+      ? { ko: "오늘의 마지막 시간대입니다", en: "the last band of the day", zh: "为今日最后一个时段", ja: "本日最後の時間帯です" }[lang]
+      : flat
+        ? { ko: `다음 시간대도 ${nextPeople}명으로 비슷합니다`, en: `next hour is about the same at ${nextPeople}`, zh: `下一时段${nextPeople}人，基本持平`, ja: `次の時間帯も${nextPeople}人でほぼ同じです` }[lang]
+        : rising
+          ? { ko: `다음 시간대 ${nextPeople}명으로 늘어납니다`, en: `rising to ${nextPeople} next hour`, zh: `下一时段增至${nextPeople}人`, ja: `次の時間帯は${nextPeople}人に増えます` }[lang]
+          : { ko: `다음 시간대 ${nextPeople}명으로 줄어듭니다`, en: `falling to ${nextPeople} next hour`, zh: `下一时段降至${nextPeople}人`, ja: `次の時間帯は${nextPeople}人に減ります` }[lang];
+    const head = share === null
+      ? { ko: `현재 ${band} 공식 예상 출국객 ${people}명`, en: `Official expected departing passengers now (${band}): ${people}`, zh: `当前${band}官方预计出境旅客${people}人`, ja: `現在${band}の公式予想出国旅客は${people}人` }[lang]
+      : { ko: `현재 ${band} 공식 예상 출국객 ${people}명 · 오늘 피크의 ${share}%`, en: `Official expected departing passengers now (${band}): ${people} · ${share}% of today's peak`, zh: `当前${band}官方预计出境旅客${people}人 · 为今日高峰的${share}%`, ja: `現在${band}の公式予想出国旅客は${people}人 · 本日ピークの${share}%` }[lang];
+    lines.push(`${head} · ${trend}`);
+  }
+
   if (brief.forecastCoverage === "COMPLETE" && brief.peak) {
     const band = formatKstBand(brief.peak.targetStartAt, brief.peak.targetEndAt).replace(" KST", "");
     const people = Math.round(brief.peak.expectedPassengers).toLocaleString(locale);
@@ -740,7 +769,9 @@ function localizeAirportBrief(
   const third = [departure, gate].filter(Boolean).join(" · ");
   if (third) lines.push(third);
   if (rest) lines.push(rest);
-  return lines.slice(0, 4);
+  // Five, because "this hour" was added ahead of the day's peak. The cap
+  // still exists so a future line cannot quietly turn the brief into a list.
+  return lines.slice(0, 5);
 }
 
 /**
@@ -1005,6 +1036,14 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     congestion: airport.congestion ?? [],
     forecastCoverage: forecastStatus ?? "UNAVAILABLE",
     peak,
+    // "현재" only means something on the day being read today; the selector
+    // returns null otherwise rather than dressing a stale hour as now.
+    nowBand: selectAirportNowBand({
+      timeline,
+      nowIso,
+      peakExpectedPassengers: peak?.expectedPassengers ?? null,
+      isToday: summary?.dayRelation === "TODAY",
+    }),
     departures: flightsCount,
     topGate,
   });
@@ -1027,39 +1066,6 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     </section>
 
     {isAll && <TerminalBriefingCards lang={lang} airport={airport} nowIso={nowIso} dayRelation={summary?.dayRelation ?? "TODAY"} />}
-
-    <section className="airport-detail-section airport-checkpoints" aria-labelledby="airport-checkpoints-title">
-      <div className="airport-detail-head"><div><p className="eyebrow">CURRENT OBSERVATION · {scopeLabel}</p><h3 id="airport-checkpoints-title">{airportTodayText.current[lang]}</h3></div><p>{airportTodayText.currentNote[lang]}</p></div>
-      {checkpointTerminals.length ? <div className="airport-checkpoint-groups">{checkpointTerminals.map((terminalId) => {
-        const busiest = airport.currentBusiestDepartureHallByTerminal?.[terminalId];
-        return <div className="airport-checkpoint-terminal" key={terminalId}>
-          <h4><span>{terminalId}</span>{airportTodayText.scope[lang][terminalId as "T1" | "T2"] ?? terminalId}</h4>
-          <div>{(showAllCheckpoints
-            ? rankedCheckpoints[terminalId]
-            : rankedCheckpoints[terminalId].filter((row) => (busiest ? busiest.zone === row.zone : false))
-                .concat(busiest ? [] : rankedCheckpoints[terminalId].slice(0, 1))
-          ).map((row) => {
-            const index = rankedCheckpoints[terminalId].indexOf(row);
-            const isBusiest = busiest?.zone === row.zone;
-            return <article className={isBusiest ? "is-busiest" : ""} key={`${terminalId}-${row.zone}`}>
-              <span className="checkpoint-rank">{String(index + 1).padStart(2, "0")}</span>
-              <div><strong>{friendlyCheckpointName(row.zone, lang)}</strong>{isBusiest && <small>{airportTodayText.longest[lang]}</small>}</div>
-              <b><i>{airportTodayText.waitLabel[lang]}</i>{waitText(row)}</b>
-              <p><i>{airportTodayText.peopleLabel[lang]}</i>{row.waitingCount === null ? airportTodayText.unavailable[lang] : `${row.waitingCount.toLocaleString(numberLocale)}${airportTodayText.waiting[lang]}`}<small>{formatHumanFreshness(row.observedAt, nowIso, lang, "observed")}{row.freshness === "STALE" ? ` · ${text.stale[lang]}` : ""}</small></p>
-            </article>;
-          })}</div>
-        </div>;
-      })}</div> : <p className="airport-empty-line">{airportTodayText.unavailable[lang]}</p>}
-      {checkpointTerminals.length > 0 && <button
-        type="button"
-        className="airport-checkpoint-toggle"
-        aria-expanded={showAllCheckpoints}
-        aria-controls="airport-checkpoints-title"
-        onClick={() => setShowAllCheckpoints((open) => !open)}
-      >{showAllCheckpoints ? airportTodayText.showLongestOnly[lang] : airportTodayText.showAllCheckpoints[lang]}</button>}
-      <p className="airport-detail-foot">{airportTodayText.nowOnly[lang]}</p>
-    </section>
-
     <div className="section-head">
       <div><p className="eyebrow">OFFICIAL · {scopeLabel} · KST</p><h2 id="airport-today-title">{airportTodayText.title[lang]}</h2></div>
       <span className="airport-period-label">{airport.serviceDateKst ? formatKstServicePeriod(airport.serviceDateKst, lang) : airportTodayText.unavailable[lang]}</span>
@@ -1145,6 +1151,39 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
       </> : <p className="airport-empty-line">{flightsCount === null ? noFlightsText : airportTodayText.noAirlineList[lang]}</p>}
     </section>
     </section>
+
+    <section className="airport-detail-section airport-checkpoints" aria-labelledby="airport-checkpoints-title">
+      <div className="airport-detail-head"><div><p className="eyebrow">CURRENT OBSERVATION · {scopeLabel}</p><h3 id="airport-checkpoints-title">{airportTodayText.current[lang]}</h3></div><p>{airportTodayText.currentNote[lang]}</p></div>
+      {checkpointTerminals.length ? <div className="airport-checkpoint-groups">{checkpointTerminals.map((terminalId) => {
+        const busiest = airport.currentBusiestDepartureHallByTerminal?.[terminalId];
+        return <div className="airport-checkpoint-terminal" key={terminalId}>
+          <h4><span>{terminalId}</span>{airportTodayText.scope[lang][terminalId as "T1" | "T2"] ?? terminalId}</h4>
+          <div>{(showAllCheckpoints
+            ? rankedCheckpoints[terminalId]
+            : rankedCheckpoints[terminalId].filter((row) => (busiest ? busiest.zone === row.zone : false))
+                .concat(busiest ? [] : rankedCheckpoints[terminalId].slice(0, 1))
+          ).map((row) => {
+            const index = rankedCheckpoints[terminalId].indexOf(row);
+            const isBusiest = busiest?.zone === row.zone;
+            return <article className={isBusiest ? "is-busiest" : ""} key={`${terminalId}-${row.zone}`}>
+              <span className="checkpoint-rank">{String(index + 1).padStart(2, "0")}</span>
+              <div><strong>{friendlyCheckpointName(row.zone, lang)}</strong>{isBusiest && <small>{airportTodayText.longest[lang]}</small>}</div>
+              <b><i>{airportTodayText.waitLabel[lang]}</i>{waitText(row)}</b>
+              <p><i>{airportTodayText.peopleLabel[lang]}</i>{row.waitingCount === null ? airportTodayText.unavailable[lang] : `${row.waitingCount.toLocaleString(numberLocale)}${airportTodayText.waiting[lang]}`}<small>{formatHumanFreshness(row.observedAt, nowIso, lang, "observed")}{row.freshness === "STALE" ? ` · ${text.stale[lang]}` : ""}</small></p>
+            </article>;
+          })}</div>
+        </div>;
+      })}</div> : <p className="airport-empty-line">{airportTodayText.unavailable[lang]}</p>}
+      {checkpointTerminals.length > 0 && <button
+        type="button"
+        className="airport-checkpoint-toggle"
+        aria-expanded={showAllCheckpoints}
+        aria-controls="airport-checkpoints-title"
+        onClick={() => setShowAllCheckpoints((open) => !open)}
+      >{showAllCheckpoints ? airportTodayText.showLongestOnly[lang] : airportTodayText.showAllCheckpoints[lang]}</button>}
+      <p className="airport-detail-foot">{airportTodayText.nowOnly[lang]}</p>
+    </section>
+
   </section>;
 }
 

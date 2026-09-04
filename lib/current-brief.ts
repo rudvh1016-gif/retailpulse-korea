@@ -172,15 +172,76 @@ export interface AirportBriefGate {
   flights: number;
 }
 
+/**
+ * The hour the reader is standing in, and where it is headed.
+ *
+ * The brief used to open with a wait and then jump straight to the day's
+ * peak, which for most of the day is hours away — so a reader at 13:50 was
+ * told about 07:00 and nothing about now. This answers "how many departing
+ * passengers are officially expected in this hour, and is that rising or
+ * falling", which is the other half of a current picture.
+ *
+ * It is a FORECAST, never an observation: `expectedPassengers` is the
+ * airport's own published expectation for the band, not a count of people.
+ * Callers must label it as such.
+ */
+export interface AirportBriefNowBand {
+  targetStartAt: string;
+  targetEndAt: string;
+  expectedPassengers: number;
+  /** The band immediately after this one; null when today has no later band. */
+  nextExpectedPassengers: number | null;
+  /** This band as a share of the day's busiest band, 0..1; null when no peak was proven. */
+  peakShare: number | null;
+}
+
 export interface AirportCurrentBrief {
   scope: BriefScope;
   checkpoint: AirportBriefCheckpoint | null;
   checkpointBasis: "WAIT_TIME" | "WAITING_COUNT" | null;
   forecastCoverage: BriefCoverage;
   peak: AirportBriefPeak | null;
+  /** Only ever present on a COMPLETE forecast for the day being read today. */
+  nowBand: AirportBriefNowBand | null;
   departures: number | null;
   topGate: AirportBriefGate | null;
   evidenceTypes: Array<"CHECKPOINT" | "PASSENGER_FORECAST" | "FLIGHTS">;
+}
+
+/**
+ * The band containing `nowIso`, plus the one after it.
+ *
+ * Three refusals, each deliberate:
+ *   · Not today → null. "현재" on a past or future date names no hour the
+ *     reader is in, and a stale hour dressed as "now" is worse than silence.
+ *   · Coverage not COMPLETE → the caller must not ask. A day with missing
+ *     bands can put a gap where "the next hour" should be, and comparing
+ *     across that gap would state a rise or fall the data does not show.
+ *   · The last band of the day has no successor, so `nextExpectedPassengers`
+ *     is null rather than a wrap-around to the first band.
+ */
+export function selectAirportNowBand(input: {
+  timeline: AirportBriefPeak[];
+  nowIso: string;
+  peakExpectedPassengers: number | null;
+  isToday: boolean;
+}): AirportBriefNowBand | null {
+  if (!input.isToday) return null;
+  const now = Date.parse(input.nowIso);
+  if (!Number.isFinite(now)) return null;
+  const bands = [...input.timeline].sort((a, b) => a.targetStartAt.localeCompare(b.targetStartAt));
+  const index = bands.findIndex((band) => Date.parse(band.targetStartAt) <= now && now < Date.parse(band.targetEndAt));
+  if (index < 0) return null;
+  const band = bands[index];
+  const next = bands[index + 1] ?? null;
+  const peak = input.peakExpectedPassengers;
+  return {
+    targetStartAt: band.targetStartAt,
+    targetEndAt: band.targetEndAt,
+    expectedPassengers: band.expectedPassengers,
+    nextExpectedPassengers: next ? next.expectedPassengers : null,
+    peakShare: peak && peak > 0 ? band.expectedPassengers / peak : null,
+  };
 }
 
 function comparableWait(row: AirportBriefCheckpoint): number | null {
@@ -213,15 +274,19 @@ export function buildAirportCurrentBrief(input: {
   congestion: AirportBriefCheckpoint[];
   forecastCoverage: BriefCoverage;
   peak: AirportBriefPeak | null;
+  nowBand?: AirportBriefNowBand | null;
   departures: number | null;
   topGate: AirportBriefGate | null;
 }): AirportCurrentBrief {
   const scopedRows = input.scope === "all" ? input.congestion : input.congestion.filter((row) => row.terminal === input.scope);
   const selected = selectBusiestCheckpoint(scopedRows);
   const peak = input.forecastCoverage === "COMPLETE" ? input.peak : null;
+  // Same gate as the peak: a partial day can hide the very band that would
+  // make "this hour" or "the next hour" wrong.
+  const nowBand = input.forecastCoverage === "COMPLETE" ? input.nowBand ?? null : null;
   const evidenceTypes: AirportCurrentBrief["evidenceTypes"] = [];
   if (selected) evidenceTypes.push("CHECKPOINT");
-  if (peak) evidenceTypes.push("PASSENGER_FORECAST");
+  if (peak || nowBand) evidenceTypes.push("PASSENGER_FORECAST");
   if (input.departures !== null || input.topGate) evidenceTypes.push("FLIGHTS");
   return {
     scope: input.scope,
@@ -229,6 +294,7 @@ export function buildAirportCurrentBrief(input: {
     checkpointBasis: selected?.basis ?? null,
     forecastCoverage: input.forecastCoverage,
     peak,
+    nowBand,
     departures: input.departures,
     topGate: input.topGate,
     evidenceTypes,

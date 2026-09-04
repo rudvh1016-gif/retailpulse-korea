@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   buildAirportCurrentBrief,
   buildAreaCurrentBrief,
+  selectAirportNowBand,
   formatHumanFreshness,
   WEATHER_THRESHOLDS,
 } from "../lib/current-brief.ts";
@@ -153,4 +154,67 @@ test("human freshness renders today, yesterday and older KST dates without repea
   assert.equal(formatHumanFreshness(collected, now, "en", "observed"), "Observed 08:42");
   assert.equal(formatHumanFreshness(collected, now, "ja", "collected"), "08:42 取得");
   assert.equal(formatHumanFreshness(collected, now, "zh", "observed"), "08:42 观测");
+});
+
+/* ── The hour the reader is standing in ───────────────────────────────── */
+
+// 14:00 KST bands across a short day, so "now" (14:00) is the third.
+const BANDS = [
+  { targetStartAt: "2026-08-31T12:00:00+09:00", targetEndAt: "2026-08-31T13:00:00+09:00", expectedPassengers: 1000 },
+  { targetStartAt: "2026-08-31T13:00:00+09:00", targetEndAt: "2026-08-31T14:00:00+09:00", expectedPassengers: 4000 },
+  { targetStartAt: "2026-08-31T14:00:00+09:00", targetEndAt: "2026-08-31T15:00:00+09:00", expectedPassengers: 2000 },
+  { targetStartAt: "2026-08-31T15:00:00+09:00", targetEndAt: "2026-08-31T16:00:00+09:00", expectedPassengers: 3000 },
+];
+
+test("the now band is the one containing this moment, with the next band and the share of the peak", () => {
+  const band = selectAirportNowBand({ timeline: BANDS, nowIso: NOW, peakExpectedPassengers: 4000, isToday: true });
+  assert.equal(band?.targetStartAt, "2026-08-31T14:00:00+09:00");
+  assert.equal(band?.expectedPassengers, 2000);
+  assert.equal(band?.nextExpectedPassengers, 3000);
+  assert.equal(band?.peakShare, 0.5);
+});
+
+test("the last band of the day reports no next band rather than wrapping to the first", () => {
+  const band = selectAirportNowBand({
+    timeline: BANDS,
+    nowIso: "2026-08-31T06:30:00Z", // 15:30 KST, inside the final band
+    peakExpectedPassengers: 4000,
+    isToday: true,
+  });
+  assert.equal(band?.targetStartAt, "2026-08-31T15:00:00+09:00");
+  assert.equal(band?.nextExpectedPassengers, null,
+    "a wrap-around would claim the day starts again after it ends");
+});
+
+test('"now" is refused on a date the reader is not standing in', () => {
+  assert.equal(selectAirportNowBand({ timeline: BANDS, nowIso: NOW, peakExpectedPassengers: 4000, isToday: false }), null);
+});
+
+test("a moment outside every band yields no now band", () => {
+  assert.equal(selectAirportNowBand({
+    timeline: BANDS, nowIso: "2026-08-30T22:00:00Z", peakExpectedPassengers: 4000, isToday: true,
+  }), null);
+});
+
+test("no peak means no share, never a share of zero or of nothing", () => {
+  assert.equal(selectAirportNowBand({ timeline: BANDS, nowIso: NOW, peakExpectedPassengers: null, isToday: true })?.peakShare, null);
+  assert.equal(selectAirportNowBand({ timeline: BANDS, nowIso: NOW, peakExpectedPassengers: 0, isToday: true })?.peakShare, null);
+});
+
+test("a partial forecast day drops the now band, because a gap can hide the very next hour", () => {
+  const nowBand = selectAirportNowBand({ timeline: BANDS, nowIso: NOW, peakExpectedPassengers: 4000, isToday: true });
+  const common = {
+    scope: "all", congestion: [], peak: null, departures: 100, topGate: null, nowBand,
+  };
+  assert.equal(buildAirportCurrentBrief({ ...common, forecastCoverage: "PARTIAL" }).nowBand, null);
+  assert.equal(buildAirportCurrentBrief({ ...common, forecastCoverage: "UNAVAILABLE" }).nowBand, null);
+  assert.equal(buildAirportCurrentBrief({ ...common, forecastCoverage: "COMPLETE" }).nowBand?.expectedPassengers, 2000);
+});
+
+test("the now band counts as passenger-forecast evidence even when no peak was proven", () => {
+  const nowBand = selectAirportNowBand({ timeline: BANDS, nowIso: NOW, peakExpectedPassengers: null, isToday: true });
+  const brief = buildAirportCurrentBrief({
+    scope: "all", congestion: [], forecastCoverage: "COMPLETE", peak: null, nowBand, departures: null, topGate: null,
+  });
+  assert.deepEqual(brief.evidenceTypes, ["PASSENGER_FORECAST"]);
 });

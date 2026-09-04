@@ -322,7 +322,7 @@ test("a day with no stored departures says so instead of blaming gate coverage",
   await expect(page.locator(".airport-gates")).not.toContainText("게이트 정보 범위가 충분하지 않아");
 });
 
-test("the airport page reads now -> next -> composition, in that order", async ({ page }) => {
+test("the airport page reads summary -> next -> composition -> observation table, in that order", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko/airport");
@@ -331,20 +331,42 @@ test("the airport page reads now -> next -> composition, in that order", async (
     if (!box) throw new Error(`${selector} is not rendered`);
     return box.y;
   };
-  // 지금 -> 다음 -> 구성. 현재 관측이 예보보다 먼저 와야 한다: 예보가 위에
-  // 있으면 읽는 사람이 예보를 지금 벌어지는 일로 읽는다.
-  const checkpoints = await top(".airport-checkpoints");
+  // 요약 -> 다음 -> 구성 -> 관측 표. 검색대 상세 표는 2026-09-04에 맨 아래로
+  // 내렸다(소유자: "잘 안 봐"). 맨 위 요약이 이미 지금 가장 긴 대기를 관측으로
+  // 말하므로, 표는 일부러 펼쳐 보는 참고 자료다.
+  const brief = await top(".airport-current-brief");
   const grid = await top(".airport-today-grid");
   const forecast = await top(".airport-forecast");
   const composition = await top(".airport-composition");
   const gates = await top(".airport-gates");
-  expect(checkpoints).toBeLessThan(grid);
+  const checkpoints = await top(".airport-checkpoints");
+  expect(brief).toBeLessThan(grid);
   expect(grid).toBeLessThan(forecast);
   expect(forecast).toBeLessThan(composition);
   // 게이트와 항공사는 최상위로 흩어지지 않고 구성 묶음 안에 있다.
   expect(composition).toBeLessThanOrEqual(gates);
+  // 표는 내려갔을 뿐 사라지지 않았다.
+  expect(gates).toBeLessThan(checkpoints);
+  await expect(page.locator(".airport-checkpoints")).toContainText("대기시간");
   await expect(page.getByRole("heading", { name: "공식 예상 출국객 흐름" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "오늘 출발편 구성" })).toBeVisible();
+});
+
+/**
+ * The summary must say something about departing passengers right now, not
+ * only about a queue. It is a forecast, so it says so.
+ */
+test("the summary states this hour's official expected departing passengers and where it is heading", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ko/airport");
+  const brief = page.locator(".airport-current-brief");
+  await expect(brief).toBeVisible();
+  // 첫 줄은 관측(가장 긴 대기), 그다음이 이 시간대의 공식 예상 출국객.
+  await expect(brief).toContainText("대기가 가장 긴 곳");
+  await expect(brief).toContainText("공식 예상 출국객");
+  // 예상치를 관측이라고 부르지 않는다.
+  await expect(brief).not.toContainText("관측 출국객");
 });
 
 /**
