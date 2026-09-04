@@ -57,6 +57,18 @@ If an older production document or implementation conflicts with canonical direc
 
 Do not expose secrets in prompts, code, logs, screenshots, commits, or frontend bundles.
 
+## Reporting to the owner
+
+Write to the owner in Korean.
+
+Put every completion/handoff report inside **one single fenced code block**, so
+the owner can copy the whole thing with one button and paste it elsewhere
+(ChatGPT handoff, records). Do not split a report across several blocks, and do
+not leave half of it as ordinary prose outside the fence — a report that has to
+be selected by hand is a report the owner cannot use.
+
+Short answers to a direct question do not need the fence. A report does.
+
 Before finishing:
 
 - run applicable checks and audit gates
