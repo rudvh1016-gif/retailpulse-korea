@@ -80,6 +80,35 @@ jobs:
           });
           check("core live data is present", areasWithCoreData.length > 0, `${areasWithCoreData.length}/${coreAreas.length} areas have realtime or weather`);
 
+          // "앱처럼 설치" depends on files, not only on copy. A missing icon or
+          // manifest does not break a page, so nothing else here would notice:
+          // Android would quietly install a browser shortcut instead of an app,
+          // and the iPhone home-screen icon would be a screenshot of the page.
+          const installAssets = [
+            ["/manifest.webmanifest", "manifest"],
+            ["/icon-192.png", "image/png"],
+            ["/icon-512.png", "image/png"],
+            ["/icon-maskable-512.png", "image/png"],
+            ["/apple-touch-icon.png", "image/png"],
+          ];
+          for (const [path, kind] of installAssets) {
+            const asset = await fetch(`${origin}${path}`, { signal: AbortSignal.timeout(15000) });
+            const type = asset.headers.get("content-type") ?? "";
+            const bytes = (await asset.arrayBuffer()).byteLength;
+            check(`install asset ${path}`, asset.status === 200 && type.includes(kind) && bytes > 0,
+              `status ${asset.status}; ${type}; ${bytes}B`);
+          }
+          const installManifest = await (await fetch(`${origin}/manifest.webmanifest`, { signal: AbortSignal.timeout(15000) })).json().catch(() => null);
+          check("manifest can install as an app",
+            installManifest?.display === "standalone"
+              && (installManifest?.icons ?? []).some((icon) => icon.sizes === "192x192")
+              && (installManifest?.icons ?? []).some((icon) => icon.purpose === "maskable"),
+            `display ${installManifest?.display}; ${installManifest?.icons?.length ?? 0} icons`);
+          check("the install button is server-rendered in the header",
+            korean.includes("install-app-button"), "header button missing from the served HTML");
+          check("iOS is given its own home-screen icon",
+            korean.includes("/apple-touch-icon.png"), "apple-touch-icon link missing");
+
           const expectedStoreDynamics = {
             myeongdong: { code: "3001492", name: "명동 남대문 북창동 다동 무교동 관광특구", type: "U", typeName: "관광특구" },
             hongdae: { code: "3120103", name: "홍대입구역(홍대)", type: "D", typeName: "발달상권" },
