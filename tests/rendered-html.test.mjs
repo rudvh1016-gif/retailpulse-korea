@@ -544,15 +544,19 @@ test("the airport summary states this hour's expected departing passengers, labe
   // The last band of the day has no successor to compare against.
   assert.match(brief, /nextExpectedPassengers: next \? next\.expectedPassengers : null/);
 
-  assert.match(signals, /if \(brief\.nowBand\) \{/);
-  for (const official of ["공식 예상 출국객", "Official expected departing passengers", "官方预计出境旅客", "公式予想出国旅客"]) {
-    assert.ok(signals.includes(official), `${official} must say the number is an official expectation, in every locale`);
+  // The current hour is built in its own block, from the band and nothing else.
+  assert.match(signals, /const nowLine = \(\(\) => \{\s*\n\s*if \(!brief\.nowBand\) return null;/);
+  const nowBlock = signals.match(/const nowLine = \(\(\) => \{([\s\S]*?)\n  \}\)\(\);/)?.[1] ?? "";
+  assert.ok(nowBlock.length > 0);
+  for (const official of ["공식 예상 출국객", "official expected departures", "官方预计出境旅客", "公式予想出国旅客"]) {
+    assert.ok(nowBlock.includes(official),
+      `${official} must say the number is an official expectation, in every locale`);
   }
   // An expectation is never dressed as an observation or a KORETAIL count.
-  const nowBlock = signals.match(/if \(brief\.nowBand\) \{([\s\S]*?)\n  \}/)?.[1] ?? "";
-  assert.ok(nowBlock.length > 0);
   assert.doesNotMatch(nowBlock, /관측|observed|観測|观测/,
     "a forecast band must not borrow observation wording");
+  // And it LEADS the brief: this hour first, the queue demoted below it.
+  assert.match(signals, /\[nowLine, trendLine, waitLine, flightsLine, restLine\]/);
 });
 
 test("timestamps state what they mean and a forecast band never borrows observation wording", async () => {
