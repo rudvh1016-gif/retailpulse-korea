@@ -1346,7 +1346,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         aria-labelledby="airport-composition-tab-countries"
       >
         <div className="airport-composition-panel-head"><h4>{airportTodayText.countriesTitle[lang]}</h4><p>{airportTodayText.countriesNote[lang]}</p></div>
-        {ranking && ranking.countries.length ? <>
+        {ranking && ranking.countries.length ?
           <ol className="airport-gate-list airport-country-list">
             <li className="airport-gate-head" aria-hidden="true"><span>{airportTodayText.rankLabel[lang]}</span><strong>{airportTodayText.countryColumn[lang]}</strong><b>{airportTodayText.departureShareColumn[lang]}</b></li>
             {ranking.countries.map((row, index) => <li className="airport-rank-row airport-country-row" key={row.country ?? "unverified"}>
@@ -1354,9 +1354,10 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
               <strong>{row.country ? <i>{row.country}</i> : null}{row.country ? regionName(row.country, lang) : airportTodayText.countryUnverified[lang]}<em>{row.airlines.toLocaleString(numberLocale)}{airportTodayText.airlinesUnit[lang]}</em></strong>
               <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}<small>{formatShare(row.share)}</small></b>
             </li>)}
-          </ol>
-          <p className="airport-detail-foot">{airportTodayText.airlineCountryBasis[lang](airport.airlineRanking?.countrySource?.retrievedOn ?? "—")}</p>
-        </> : <p className="airport-empty-line">{flightsCount === null ? noFlightsText : airportTodayText.noAirlineList[lang]}</p>}
+          </ol> : <p className="airport-empty-line">{flightsCount === null ? noFlightsText : airportTodayText.noAirlineList[lang]}</p>}
+        <p className="airport-detail-foot">{airport.airlineRanking?.countrySource?.retrievedOn
+          ? airportTodayText.airlineCountryBasis[lang](airport.airlineRanking.countrySource.retrievedOn)
+          : airportTodayText.airlineCountryShortBasis[lang]}</p>
       </section>}
     </section>
 
@@ -1398,7 +1399,14 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
 /** Locale region name for an ISO 3166-1 alpha-2 code; the code itself when the runtime has no display names. */
 function regionName(code: string, lang: Lang): string {
   try {
-    return new Intl.DisplayNames([airportLocale(lang)], { type: "region" }).of(code) ?? code;
+    // `short` is deliberate. Node and Chromium use different CLDR long names
+    // for a few regions (notably HK/MO), which can otherwise change this text
+    // during hydration. The compact label also belongs with the dense ranking.
+    return new Intl.DisplayNames([airportLocale(lang)], {
+      type: "region",
+      style: "short",
+      fallback: "code",
+    }).of(code) ?? code;
   } catch {
     return code;
   }
@@ -1547,12 +1555,45 @@ const facilityText = {
 const FACILITY_CATEGORY_ORDER = ["DUTY_FREE", "FOOD", "CONVENIENCE", "PHARMACY", "EXCHANGE_TELECOM", "SERVICE"] as const;
 const FACILITY_TERMINAL_ORDER = ["T1", "T2", "CONCOURSE", "T1_TRANSPORT", "T2_TRANSPORT"] as const;
 
+type FacilityDisplayText = { text: string; lang: Lang; providerOwned: boolean };
+
+function facilityNameValue(row: FacilityRow, lang: Lang): FacilityDisplayText {
+  const preferred: Array<[string | null, Lang]> = lang === "en" ? [[row.nameEn, "en"], [row.nameKo, "ko"]]
+    : lang === "ja" ? [[row.nameJa, "ja"], [row.nameKo, "ko"]]
+      : lang === "zh" ? [[row.nameZh, "zh"], [row.nameKo, "ko"]]
+        : [[row.nameKo, "ko"], [row.nameEn, "en"]];
+  const picked = preferred.find(([value]) => Boolean(value));
+  return picked
+    ? { text: picked[0] as string, lang: picked[1], providerOwned: true }
+    : { text: facilityText.unknown[lang], lang, providerOwned: false };
+}
+
 function facilityName(row: FacilityRow, lang: Lang): string {
-  const preferred = lang === "en" ? [row.nameEn, row.nameKo]
-    : lang === "ja" ? [row.nameJa, row.nameKo]
-      : lang === "zh" ? [row.nameZh, row.nameKo]
-        : [row.nameKo, row.nameEn];
-  return preferred.find((value): value is string => Boolean(value)) ?? facilityText.unknown[lang];
+  return facilityNameValue(row, lang).text;
+}
+
+function facilityRawValue(value: string | null, fallback: string, lang: Lang): FacilityDisplayText {
+  return value
+    ? { text: value, lang: "ko", providerOwned: true }
+    : { text: fallback, lang, providerOwned: false };
+}
+
+function facilityLocationValue(row: FacilityRow, lang: Lang): FacilityDisplayText {
+  if (lang === "en" && row.locationEn) return { text: row.locationEn, lang: "en", providerOwned: true };
+  return facilityRawValue(row.locationRaw, facilityText.unknown[lang], lang);
+}
+
+function FacilityProviderText({ value }: { value: FacilityDisplayText }) {
+  const classes = [
+    value.providerOwned ? "airport-provider-text" : "",
+    value.providerOwned && value.lang === "ko" ? "airport-official-ko" : "",
+  ].filter(Boolean).join(" ");
+  // The provider sometimes uses U+2219 as a visual list separator. None of
+  // the pinned Korean/CJK sources carries it, while U+00B7 is the same neutral
+  // separator already used throughout this UI. Normalize only the rendered
+  // copy; clipboard/source data retains the provider's original character.
+  const displayText = value.providerOwned ? value.text.replaceAll("∙", "·") : value.text;
+  return <span className={classes || undefined} lang={value.lang}>{displayText}</span>;
 }
 
 /**
@@ -1680,7 +1721,7 @@ export function FacilityDirectory({ lang, terminal }: { lang: Lang; terminal: "a
   const rows = state?.rows ?? [];
   return <section className="airport-facilities" aria-labelledby="airport-facilities-title">
     <div className="section-head">
-      <div><p className="eyebrow">OFFICIAL FACILITY DIRECTORY · 인천국제공항공사</p><h2 id="airport-facilities-title">{facilityText.title[lang]}</h2></div>
+      <div><p className="eyebrow">OFFICIAL FACILITY DIRECTORY</p><h2 id="airport-facilities-title">{facilityText.title[lang]}</h2></div>
       {state && <span className="official-label">{facilityText.count[lang](rows.length)}</span>}
     </div>
     {/*
@@ -1745,18 +1786,18 @@ export function FacilityDirectory({ lang, terminal }: { lang: Lang; terminal: "a
         : <ul className="facility-list">
           {rows.map((row) => <li key={row.facilityId} className="facility-card">
             <div className="facility-card-head">
-              <h3>{facilityName(row, lang)}</h3>
+              <h3><FacilityProviderText value={facilityNameValue(row, lang)} /></h3>
               <p className="facility-badges">
                 <span>{row.terminal ? facilityText.terminals[row.terminal]?.[lang] ?? row.terminal : facilityText.unknown[lang]}</span>
-                {row.floor && <span>{row.floor}</span>}
+                {row.floor && <span><FacilityProviderText value={facilityRawValue(row.floor, facilityText.unknown[lang], lang)} /></span>}
                 {row.dutyArea && <span>{row.dutyArea === "DUTY_FREE" ? facilityText.dutyFree[lang] : facilityText.general[lang]}</span>}
                 {row.arrivalDeparture && <span>{row.arrivalDeparture === "ARRIVAL" ? facilityText.arrival[lang] : facilityText.departure[lang]}</span>}
               </p>
             </div>
             <dl className="facility-details">
-              <div><dt>{facilityText.location[lang]}</dt><dd>{(lang === "en" ? row.locationEn ?? row.locationRaw : row.locationRaw) ?? facilityText.unknown[lang]}</dd></div>
-              <div><dt>{facilityText.hours[lang]}</dt><dd>{row.businessHoursRaw ?? facilityText.unknown[lang]}</dd></div>
-              {row.goodsBrands && <div><dt>{facilityText.brands[lang]}</dt><dd>{row.goodsBrands}</dd></div>}
+              <div><dt>{facilityText.location[lang]}</dt><dd><FacilityProviderText value={facilityLocationValue(row, lang)} /></dd></div>
+              <div><dt>{facilityText.hours[lang]}</dt><dd><FacilityProviderText value={facilityRawValue(row.businessHoursRaw, facilityText.unknown[lang], lang)} /></dd></div>
+              {row.goodsBrands && <div><dt>{facilityText.brands[lang]}</dt><dd><FacilityProviderText value={facilityRawValue(row.goodsBrands, facilityText.unknown[lang], lang)} /></dd></div>}
               {row.phone && <div><dt>{facilityText.phone[lang]}</dt><dd>{row.phone}</dd></div>}
             </dl>
             <FacilityLocationStatus row={row} lang={lang} />
@@ -1960,12 +2001,12 @@ export function MyStoreBriefing({ lang }: { lang: Lang }) {
         : <ul className="my-store-results">
           {results.map((row) => <li key={row.facilityId}>
             <button type="button" onClick={() => setFacilityId(row.facilityId)}>
-              <strong>{facilityName(row, lang)}</strong>
-              <span>{[
-                row.terminal ? facilityText.terminals[row.terminal]?.[lang] ?? row.terminal : facilityText.unknown[lang],
-                row.floor,
-                row.facilityItem,
-              ].filter(Boolean).join(" · ")}</span>
+              <strong><FacilityProviderText value={facilityNameValue(row, lang)} /></strong>
+              <span>
+                {row.terminal ? facilityText.terminals[row.terminal]?.[lang] ?? row.terminal : facilityText.unknown[lang]}
+                {row.floor && <> · <FacilityProviderText value={facilityRawValue(row.floor, facilityText.unknown[lang], lang)} /></>}
+                {row.facilityItem && <> · <FacilityProviderText value={facilityRawValue(row.facilityItem, facilityText.unknown[lang], lang)} /></>}
+              </span>
             </button>
           </li>)}
         </ul>)}
@@ -1985,17 +2026,17 @@ function MyStoreSnapshot({ lang, operations }: { lang: Lang; operations: Operati
 
   return <article className="my-store-brief">
     <header>
-      <h3>{facilityName(facility, lang)}</h3>
+      <h3><FacilityProviderText value={facilityNameValue(facility, lang)} /></h3>
       <p className="facility-badges">
-        {facility.facilityItem && <span>{facility.facilityItem}</span>}
+        {facility.facilityItem && <span><FacilityProviderText value={facilityRawValue(facility.facilityItem, facilityText.unknown[lang], lang)} /></span>}
         <span>{facility.terminal ? facilityText.terminals[facility.terminal]?.[lang] ?? facility.terminal : facilityText.unknown[lang]}</span>
-        {facility.floor && <span>{facility.floor}</span>}
+        {facility.floor && <span><FacilityProviderText value={facilityRawValue(facility.floor, facilityText.unknown[lang], lang)} /></span>}
         {facility.dutyArea && <span>{facility.dutyArea === "DUTY_FREE" ? facilityText.dutyFree[lang] : facilityText.general[lang]}</span>}
         {facility.arrivalDeparture && <span>{facility.arrivalDeparture === "ARRIVAL" ? facilityText.arrival[lang] : facilityText.departure[lang]}</span>}
       </p>
       <dl className="facility-details">
-        <div><dt>{facilityText.location[lang]}</dt><dd>{(lang === "en" ? facility.locationEn ?? facility.locationRaw : facility.locationRaw) ?? facilityText.unknown[lang]}</dd></div>
-        <div><dt>{facilityText.hours[lang]}</dt><dd>{facility.businessHoursRaw ?? facilityText.unknown[lang]}</dd></div>
+        <div><dt>{facilityText.location[lang]}</dt><dd><FacilityProviderText value={facilityLocationValue(facility, lang)} /></dd></div>
+        <div><dt>{facilityText.hours[lang]}</dt><dd><FacilityProviderText value={facilityRawValue(facility.businessHoursRaw, facilityText.unknown[lang], lang)} /></dd></div>
         {facility.phone && <div><dt>{facilityText.phone[lang]}</dt><dd>{facility.phone}</dd></div>}
       </dl>
       <FacilityLocationStatus row={facility} lang={lang} />

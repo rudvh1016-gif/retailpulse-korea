@@ -786,6 +786,10 @@ export async function collectForeignPurposeMobility(
       if ((existing.results ?? []).length > 0) {
         const detail = `publication ${publication.publicationId}; metadata only; archive download 0`;
         await writeCollectorStatus(env.DB, sourceId, SKIPPED_NO_NEW_PUBLICATION, detail);
+        await writeSourceHealth(env.DB, sourceId, "OFFICIAL_HISTORICAL", detail, {
+          retrievedAt: now.toISOString(),
+          schemaVersion: FOREIGN_PURPOSE_SCHEMA_VERSION,
+        });
         const lastGoodPreserved = Number(existing.results?.[0]?.aggregateRows ?? 0) > 0
           || await hasStoredRow(env.DB, `SELECT 1 FROM seoul_foreign_purpose_mobility LIMIT 1`);
         return {

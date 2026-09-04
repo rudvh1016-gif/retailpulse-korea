@@ -1,7 +1,10 @@
 @import "tailwindcss";
 
-/* Project-local OFL subsets keep fonts out of the Worker bundle. The source
-   glyph set is generated from the four localized production surfaces.
+/* Project-local OFL subsets keep fonts out of the Worker bundle. The primary
+   glyph sets are generated from all four localized product-copy sources. A
+   separate complete modern-Hangul face is used only for changeable official
+   Korean event text, so a future provider title cannot become tofu while the
+   ordinary shell remains a small bounded download.
 
    The variable weight axis (45–920) is declared on the plain "woff2" format,
    not "woff2-variations": that suffixed hint is a non-standard legacy alias,
@@ -17,6 +20,17 @@
    "woff2" alone is understood by every engine that also understands
    "woff2-variations", so this loses no browser support. */
 @font-face {
+  font-family: "KORETAIL Sans Variable";
+  src: url("/fonts/koretail-sans-variable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 45 920;
+  font-display: swap;
+}
+
+@font-face {
+  /* Exact, unmodified upstream Pretendard v1.3.9 WOFF2. It may therefore
+     retain the OFL Reserved Font Name; our smaller modified shell subset is
+     renamed KORETAIL Sans both here and inside the font. */
   font-family: "Pretendard Variable";
   src: url("/fonts/pretendard-variable.woff2") format("woff2");
   font-style: normal;
@@ -83,7 +97,7 @@
   --type-view: clamp(36px, 4.1vw, 54px);
   --type-section: clamp(17px, 1.8vw, 22px);
   --type-body: 14px;
-  --font-ui: "Pretendard Variable", "Pretendard", system-ui, sans-serif;
+  --font-ui: "KORETAIL Sans Variable", system-ui, sans-serif;
   --weight-regular: 400;
   --weight-strong: 600;
 }
@@ -213,7 +227,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .business-history { padding-top: 44px; }
 .business-history > .section-head { margin-top: 42px; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.modal-backdrop { position: fixed; inset: 0; z-index: 50; padding: 24px; display: grid; place-items: center; background: rgba(17,18,23,.58); backdrop-filter: blur(5px); }
+.modal-backdrop { position: fixed; inset: 0; z-index: 50; padding: 24px; display: grid; place-items: center; background: rgba(17,18,23,.58); }
 
 .site-footer { margin-top: 92px; padding: 24px 0; border-top: 1px solid var(--ink); color: var(--muted); font-size: 12px; line-height: 1.6; }
 .site-footer p { margin: 0 0 4px; }
@@ -797,6 +811,9 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .facility-card { padding: 18px 0; border-bottom: 1px solid var(--line); background-color: #FFFFFF; }
 .facility-card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 18px; }
 .facility-card h3 { margin: 0; font-size: 15px; font-weight: var(--weight-strong); letter-spacing: -.015em; overflow-wrap: anywhere; }
+.airport-provider-text:lang(ko) { font-family: "Pretendard Variable", "KORETAIL Sans Variable", "Noto Sans SC Variable", "Noto Sans JP Variable", system-ui, sans-serif; }
+.airport-provider-text:lang(zh) { font-family: "Noto Sans SC Variable", "Noto Sans JP Variable", "Pretendard Variable", "KORETAIL Sans Variable", system-ui, sans-serif; }
+.airport-provider-text:lang(ja) { font-family: "Noto Sans JP Variable", "Noto Sans SC Variable", "Pretendard Variable", "KORETAIL Sans Variable", system-ui, sans-serif; }
 .facility-badges { display: flex; flex-wrap: wrap; gap: 0 12px; margin: 0; color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .04em; }
 .facility-details { margin: 10px 0 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 26px; }
 .facility-details > div { min-width: 0; }
@@ -993,6 +1010,7 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .my-store-results button { width: 100%; min-height: 52px; padding: 12px 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
 .my-store-results strong { font-size: 14px; font-weight: var(--weight-strong); }
 .my-store-results span { color: var(--muted); font-size: 11px; }
+.my-store-results strong .airport-provider-text { color: inherit; font-size: inherit; }
 .my-store-brief { margin-top: 18px; }
 .my-store-brief h3 { margin: 0; font-size: 20px; font-weight: var(--weight-strong); letter-spacing: -.02em; }
 .my-store-brief h4 { margin: 26px 0 0; font-size: 12px; font-weight: var(--weight-strong); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
@@ -1177,6 +1195,20 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .tourism-visitor-show-close { flex: none; min-width: 64px; min-height: 44px; padding: 0 12px; border: 1px solid var(--ink); background: #FFFFFF; color: var(--ink); font: inherit; font-size: 11px; font-weight: var(--weight-strong); }
 .tourism-visitor-show-languages { margin-top: 24px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); }
 .tourism-visitor-show-languages button { position: relative; min-width: 0; min-height: 48px; padding: 0 8px; border: 0; border-right: 1px solid var(--line); background: #FFFFFF; color: var(--muted); font: inherit; font-size: 12px; font-weight: var(--weight-strong); line-height: 1.35; overflow-wrap: anywhere; }
+/*
+ * The staff shell may stay Korean while this sheet switches language. `lang`
+ * gives assistive technology the right pronunciation, but it does not change
+ * the inherited Korean font by itself. Bind each script to its bundled local
+ * subset so 中文/日本語 never become missing-glyph boxes; official Korean names
+ * inside a foreign-language sheet switch back to Pretendard via `lang="ko"`.
+ */
+.tourism-visitor-show:lang(zh), .tourism-visitor-show :lang(zh) { font-family: "Noto Sans SC Variable", system-ui, sans-serif; }
+.tourism-visitor-show:lang(ja), .tourism-visitor-show :lang(ja) { font-family: "Noto Sans JP Variable", system-ui, sans-serif; }
+.tourism-desk :lang(ko),
+.tourism-visitor-show :lang(ko) { font-family: "KORETAIL Sans Variable", system-ui, sans-serif; }
+.tourism-official-ko { font-family: "Pretendard Variable", "KORETAIL Sans Variable", "Noto Sans SC Variable", "Noto Sans JP Variable", system-ui, sans-serif; }
+.tourism-desk .tourism-official-ko,
+.tourism-visitor-show .tourism-official-ko { font-family: "Pretendard Variable", "KORETAIL Sans Variable", "Noto Sans SC Variable", "Noto Sans JP Variable", system-ui, sans-serif; }
 .tourism-visitor-show-languages button:last-child { border-right: 0; }
 .tourism-visitor-show-languages button[aria-pressed="true"] { color: var(--blue); box-shadow: inset 0 -2px 0 var(--blue); }
 .tourism-visitor-show-content { margin-top: 28px; }

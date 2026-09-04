@@ -183,7 +183,7 @@ export function TourismVisitorShow({
           <dl>
             <div>
               <dt>{labels.officialTitle}</dt>
-              <dd lang="ko">{content.officialEventTitleKo}</dd>
+              <dd className="tourism-official-ko" lang="ko">{content.officialEventTitleKo}</dd>
             </div>
             <div>
               <dt>{labels.period}</dt>
@@ -191,7 +191,7 @@ export function TourismVisitorShow({
             </div>
             {content.officialEventAddressKo && <div>
               <dt>{labels.address}</dt>
-              <dd lang="ko">{content.officialEventAddressKo}</dd>
+              <dd className="tourism-official-ko" lang="ko">{content.officialEventAddressKo}</dd>
             </div>}
             {officialUrl && <div>
               <dt>{labels.officialPage}</dt>

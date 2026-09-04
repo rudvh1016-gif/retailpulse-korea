@@ -45,8 +45,8 @@ test("foreign-language mode keeps official Korean proper names unchanged", () =>
   const html = render("en");
   assert.match(html, /^<dialog [^>]*lang="en"/);
   assert.match(html, /An official foreign-language name has not been verified/);
-  assert.match(html, /<dd lang="ko">서울 공식 봄 행사<\/dd>/);
-  assert.match(html, /<dd lang="ko">서울특별시 중구 공식로 1<\/dd>/);
+  assert.match(html, /<dd[^>]*lang="ko"[^>]*>서울 공식 봄 행사<\/dd>/);
+  assert.match(html, /<dd[^>]*lang="ko"[^>]*>서울특별시 중구 공식로 1<\/dd>/);
   assert.ok(html.includes(content.deterministicWeatherNote.en));
   assert.ok(!html.includes(content.deterministicWeatherNote.ko), "weather guidance must not fall back to another language");
 });

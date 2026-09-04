@@ -7,9 +7,20 @@ import {
   installGuide,
   orderedSections,
 } from "../lib/install-guide.ts";
+import { dialogTabTargetIndex } from "../app/install-app.tsx";
 
 const LANGS = ["ko", "en", "zh", "ja"];
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
+
+test("the install dialog wraps keyboard focus at both boundaries", () => {
+  assert.equal(dialogTabTargetIndex(2, 3, false), 0, "Tab from the last control wraps to the first");
+  assert.equal(dialogTabTargetIndex(0, 3, true), 2, "Shift+Tab from the first control wraps to the last");
+  assert.equal(dialogTabTargetIndex(-1, 3, false), 0, "focus outside the controls moves to the first");
+  assert.equal(dialogTabTargetIndex(-1, 3, true), 2, "backward focus outside the controls moves to the last");
+  assert.equal(dialogTabTargetIndex(1, 3, false), null, "middle controls keep native tab order");
+  assert.equal(dialogTabTargetIndex(1, 3, true), null, "middle controls keep native reverse order");
+  assert.equal(dialogTabTargetIndex(-1, 0, false), null, "a dialog without controls keeps focus on itself");
+});
 
 test("every locale gets a complete guide, with nothing left blank", () => {
   for (const lang of LANGS) {

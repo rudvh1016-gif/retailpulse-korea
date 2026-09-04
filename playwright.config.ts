@@ -16,7 +16,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   webServer: {
-    command: "NEXT_PUBLIC_SITE_ORIGIN=http://127.0.0.1:4173 npm run dev -- --host 127.0.0.1 --port 4173",
+    command: "CLOUDFLARE_CF_FETCH_ENABLED=false NEXT_PUBLIC_SITE_ORIGIN=http://127.0.0.1:4173 npm run dev -- --host 127.0.0.1 --port 4173",
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

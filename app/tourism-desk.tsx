@@ -458,8 +458,21 @@ function PeriodNote({ period }: { period: SourcePeriodDescription }) {
 }
 
 function BriefLine({ line }: { line: TourismDeskLine }) {
+  const marked = line.koreanText;
+  const canMark = Boolean(marked && (marked.position === "start"
+    ? line.text.startsWith(marked.value)
+    : line.text.endsWith(marked.value)));
+  const before = canMark && marked?.position === "end"
+    ? line.text.slice(0, -marked.value.length)
+    : canMark && marked?.position === "start" ? "" : line.text;
+  const after = canMark && marked?.position === "start"
+    ? line.text.slice(marked.value.length)
+    : "";
   return <li className="tourism-brief-line">
-    <strong>{line.text}</strong>
+    <strong>{before}{canMark && marked && <span
+      className={line.key === "event" ? "tourism-official-ko" : undefined}
+      lang="ko"
+    >{marked.value}</span>}{after}</strong>
     <small>{line.basis}</small>
   </li>;
 }
@@ -490,19 +503,19 @@ function EventCard({ event, lang, featured }: { event: GuideEvent; lang: Lang; f
   return <article className={`tourism-event${featured ? " tourism-event-featured" : ""}`}>
     <header className="tourism-event-header">
       <span className="tourism-event-status">{eventPeriodStatusLabel(event.status, lang)}</span>
-      <h3 lang="ko">{event.title}</h3>
-      {event.categoryName && <p className="tourism-event-category" lang="ko">{event.categoryName}</p>}
+      <h3 className="tourism-official-ko" lang="ko">{event.title}</h3>
+      {event.categoryName && <p className="tourism-event-category tourism-official-ko" lang="ko">{event.categoryName}</p>}
     </header>
     <dl className="tourism-event-facts">
       {period && <div><dt>{copy.eventPeriod}</dt><dd>{period}</dd></div>}
-      {address && <div><dt>{copy.eventAddress}</dt><dd lang="ko">{address}</dd></div>}
+      {address && <div><dt>{copy.eventAddress}</dt><dd className="tourism-official-ko" lang="ko">{address}</dd></div>}
       {distance && <div><dt>{copy.eventDistance}</dt><dd>{distance}</dd></div>}
       <div><dt>{copy.eventSource}</dt><dd>{copy.ktoSource}</dd></div>
     </dl>
-    {preview && <p className="tourism-event-preview" lang="ko">{preview}</p>}
+    {preview && <p className="tourism-event-preview tourism-official-ko" lang="ko">{preview}</p>}
     {showFullDescription && <details className="tourism-event-description">
       <summary>{copy.eventFull}</summary>
-      <p lang="ko">{overview}</p>
+      <p className="tourism-official-ko" lang="ko">{overview}</p>
     </details>}
     <div className="tourism-event-actions">
       {homepage && <a
@@ -679,7 +692,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
       officialEventPeriod: period,
       officialEventAddressKo: [row.address?.trim(), row.addressDetail?.trim()].filter(Boolean).join(" · ") || null,
       officialEventUrl: row.homepage,
-      officialEventSource: "한국관광공사 TourAPI / Korea Tourism Organization (KTO) TourAPI",
+      officialEventSource: "Korea Tourism Organization (KTO) TourAPI",
       deterministicWeatherNote: guides,
     });
   };
@@ -845,7 +858,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
         </header>
         {preparedEvents.length ? <ul className="tourism-visitor-launches">
           {preparedEvents.map((event) => <li key={event.contentId ?? `${event.title}-${event.eventStart}`}>
-            <span lang="ko">{event.title}</span>
+            <span className="tourism-official-ko" lang="ko">{event.title}</span>
             <button
               type="button"
               onClick={(clickEvent) => openVisitor(clickEvent, event)}

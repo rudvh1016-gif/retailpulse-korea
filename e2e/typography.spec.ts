@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 
+import { lookupAirline } from "../lib/airline-country";
+import { AIRLINE_REGISTRY, type AirlineRegistryEntry } from "../lib/airline-registry";
+import { tofuCharacters } from "./font-glyphs";
 import { routeSummary, SUMMARY_FIXTURE } from "./summary-fixture";
 
 /**
@@ -23,44 +26,10 @@ import { routeSummary, SUMMARY_FIXTURE } from "./summary-fixture";
  * is a live risk every time copy is added. These tests measure the real
  * rendered result rather than reading the stylesheet.
  *
- * Coverage is asserted on Korean only, and deliberately so. Pretendard's
- * subset is built from the Korean and English copy, so "every character is
- * drawn by the bundled font" is a promise this repository can keep there.
- * The Noto SC / JP subsets are narrower — they carry neither `·` nor plain
- * ASCII punctuation — so ZH and JA fall back on characters that appear all
- * over the existing product, not only here. That is a real but separate,
- * pre-existing issue with those two subsets, and failing this test on it
- * would claim the install guide broke something it did not. What holds for
- * all four locales instead is the symbol allowlist in
- * `tests/install-guide.test.mjs`: new copy may only use symbols the product
- * already uses.
+ * Coverage is asserted on all four locales now. The static subsets are built
+ * from the complete product-copy source, while changeable provider-owned
+ * Korean event text is routed to a complete modern-Hangul face.
  */
-
-/**
- * A character is covered when it measures identically against two fallback
- * families with different metrics: if the primary font has the glyph, the
- * fallback is never reached and the two widths match.
- */
-const uncoveredCharacters = (page: import("@playwright/test").Page, sample: string) =>
-  page.evaluate((text) => {
-    const primary = getComputedStyle(document.body).fontFamily.split(",")[0];
-    const measure = (ch: string, fallback: string) => {
-      const span = document.createElement("span");
-      span.textContent = ch;
-      span.style.cssText = `position:absolute;visibility:hidden;white-space:pre;font-size:100px;font-family:${primary},${fallback}`;
-      document.body.appendChild(span);
-      const width = span.getBoundingClientRect().width;
-      span.remove();
-      return width;
-    };
-    const missing: string[] = [];
-    for (const ch of new Set(text)) {
-      // ASCII and whitespace are drawn the same by every fallback here.
-      if (ch.codePointAt(0)! < 0x00a0) continue;
-      if (Math.abs(measure(ch, "serif") - measure(ch, "monospace")) > 0.5) missing.push(ch);
-    }
-    return missing;
-  }, sample);
 
 const openGuide = async (page: import("@playwright/test").Page, locale: string) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
@@ -73,12 +42,176 @@ const openGuide = async (page: import("@playwright/test").Page, locale: string) 
   return dialog;
 };
 
-test("every character of the install guide is drawn by the bundled font", async ({ page }) => {
-  const dialog = await openGuide(page, "ko");
-  const text = (await dialog.innerText()).replace(/\s+/g, " ");
-  const missing = await uncoveredCharacters(page, text);
-  expect(missing, `these characters fall back to another font and look wrong: ${missing.join(" ")}`).toEqual([]);
-});
+const registeredCountryRepresentatives = (() => {
+  const byCountry = new Map<string, AirlineRegistryEntry>();
+  for (const entry of Object.values(AIRLINE_REGISTRY)) {
+    if (byCountry.has(entry.country)) continue;
+    if (lookupAirline(entry.iata)?.country !== entry.country) continue;
+    byCountry.set(entry.country, entry);
+  }
+  return [...byCountry.values()].sort((left, right) => left.country.localeCompare(right.country));
+})();
+
+const countryCoverageShare = 1 / registeredCountryRepresentatives.length;
+const ALL_REGISTERED_COUNTRIES_FIXTURE = {
+  ...SUMMARY_FIXTURE,
+  airport: {
+    ...SUMMARY_FIXTURE.airport,
+    departuresTrackedToday: registeredCountryRepresentatives.length,
+    airlineRanking: {
+      ...SUMMARY_FIXTURE.airport.airlineRanking,
+      all: {
+        ...SUMMARY_FIXTURE.airport.airlineRanking.all,
+        totalFlights: registeredCountryRepresentatives.length,
+        airlines: registeredCountryRepresentatives.map((entry) => ({
+          iata: entry.iata,
+          registryName: `Coverage carrier ${entry.iata}`,
+          country: entry.country,
+          countryBasis: "REGISTRY" as const,
+          flights: 1,
+          share: countryCoverageShare,
+        })),
+        countries: registeredCountryRepresentatives.map((entry) => ({
+          country: entry.country,
+          flights: 1,
+          airlines: 1,
+          share: countryCoverageShare,
+        })),
+      },
+    },
+  },
+};
+
+const PROVIDER_FONT_FACILITY = {
+  facilityId: "9001",
+  nameKo: "제1여객터미널 客家旅番福第階",
+  nameEn: "Provider Coverage Store",
+  nameZh: "香港旅客服务中心 · 김대리 면세점",
+  nameJa: "香港旅客サービス · 专业东乐亚侧净凯办务协变场妆库时现疗约线罗货进递邮银际韩预饭 · 김대리 면세점",
+  facilityItem: "여객 편의 ∙ 福",
+  largeCategory: "면세점",
+  mediumCategory: "서비스",
+  smallCategory: null,
+  categoryGroup: "DUTY_FREE",
+  terminal: "T1",
+  floor: "第1階",
+  dutyArea: "DUTY_FREE",
+  arrivalDeparture: "DEPARTURE",
+  locationRaw: "제1여객터미널 客家旅番福第階 ∙",
+  locationEn: "T1 3F airside",
+  businessHoursRaw: "매일 07:00~21:00 ∙ 福",
+  goodsBrands: "여행·면세 ∙ 福",
+  phone: "032-000-0000",
+  retrievedAt: "2026-09-04T00:00:00.000Z",
+  mappingMethod: "AMBIGUOUS",
+  mappingVersion: "fixture",
+  gate: null,
+  gateGroup: null,
+  checkpointId: null,
+  mappingEvidence: null,
+};
+
+for (const locale of ["ko", "en", "zh", "ja"] as const) {
+  test(`${locale} install guide contains no missing-glyph boxes`, async ({ page }) => {
+    const dialog = await openGuide(page, locale);
+    expect(await tofuCharacters(dialog)).toEqual([]);
+  });
+
+  test(`${locale} Tourism Desk and Visitor Show contain no missing-glyph boxes`, async ({ page }) => {
+    await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+    await page.goto(`/${locale}/tourism-desk/myeongdong`);
+    await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+    const desk = page.locator(".tourism-desk");
+    expect(await tofuCharacters(desk)).toEqual([]);
+
+    const launch = desk.locator(".tourism-visitor-launches button").first();
+    await expect(launch).toBeVisible();
+    await launch.click();
+    const dialog = page.locator("dialog.tourism-visitor-show");
+    await expect(dialog).toBeVisible();
+    await dialog.locator(`button[lang="${locale}"]`).click();
+    await expect(dialog).toHaveAttribute("lang", locale);
+    expect(await tofuCharacters(dialog)).toEqual([]);
+  });
+}
+
+for (const locale of ["ko", "en", "zh", "ja"] as const) {
+  test(`${locale} Airport composition renders every supported registered country without tofu`, async ({ page }) => {
+    await page.route("**/api/live/summary*", routeSummary(ALL_REGISTERED_COUNTRIES_FIXTURE));
+    await page.goto(`/${locale}/airport`);
+    await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+
+    const composition = page.locator(".airport-composition");
+    await composition.locator("#airport-composition-tab-airlines").click();
+    const airlines = composition.locator(".airport-airlines");
+    await expect(airlines.locator(".airport-airline-row")).toHaveCount(registeredCountryRepresentatives.length);
+    await expect(airlines.locator(".airport-airline-row em").first()).toHaveCSS("font-weight", "400");
+    expect(
+      await tofuCharacters(airlines),
+      `${locale} airline-view region names must have 400-weight glyphs`,
+    ).toEqual([]);
+
+    await composition.locator("#airport-composition-tab-countries").click();
+    const countries = composition.locator(".airport-countries");
+    await expect(countries.locator(".airport-country-row")).toHaveCount(registeredCountryRepresentatives.length);
+    await expect(countries.locator(".airport-country-row strong").first()).toHaveCSS("font-weight", "600");
+    expect(await countries.locator(".airport-country-row strong > i").allTextContents())
+      .toEqual(registeredCountryRepresentatives.map((entry) => entry.country));
+    expect(
+      await tofuCharacters(countries),
+      `${locale} country-view region names must have 600-weight glyphs`,
+    ).toEqual([]);
+  });
+}
+
+const airportStoreLabel = { ko: "매장·시설", en: "STORES", zh: "店铺·设施", ja: "店舗・施設" } as const;
+const airportMyStoreLabel = { ko: "내 매장", en: "MY STORE", zh: "我的店铺", ja: "自分の店舗" } as const;
+const facilityNameLanguage = { ko: "ko", en: "en", zh: "zh", ja: "ja" } as const;
+
+for (const locale of ["ko", "en", "zh", "ja"] as const) {
+  test(`${locale} Airport directory and selected-store provider text contain no tofu`, async ({ page }) => {
+    await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+    await page.route("**/api/airport/facilities*", async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          mode: "airport-facilities",
+          facilities: [PROVIDER_FONT_FACILITY],
+          hasMore: false,
+          basis: "OFFICIAL_PUBLISHED_HOURS",
+        }),
+      });
+    });
+    await page.route("**/api/airport/facility-operations*", async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ mode: "airport-facility-operations", facility: PROVIDER_FONT_FACILITY, brief: null }),
+      });
+    });
+    await page.goto(`/${locale}/airport`);
+    await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+
+    await page.locator(".airport-context-nav button").filter({ hasText: airportStoreLabel[locale] }).click();
+    const directory = page.locator(".airport-facilities");
+    await expect(directory.locator(".facility-card")).toHaveCount(1);
+    await expect(directory.locator(".facility-card h3 .airport-provider-text"))
+      .toHaveAttribute("lang", facilityNameLanguage[locale]);
+    await expect(directory.locator(".facility-details dd .airport-provider-text").first())
+      .toHaveAttribute("lang", locale === "en" ? "en" : "ko");
+    expect(await tofuCharacters(directory)).toEqual([]);
+
+    await page.locator(".airport-context-nav button").filter({ hasText: airportMyStoreLabel[locale] }).click();
+    await page.locator(".my-store input[type='search']").fill("Provider");
+    const result = page.locator(".my-store-results button").first();
+    await expect(result).toBeVisible();
+    await result.click();
+    const selectedStore = page.locator(".my-store-brief");
+    await expect(selectedStore).toBeVisible();
+    await expect(selectedStore.locator("h3 .airport-provider-text"))
+      .toHaveAttribute("lang", facilityNameLanguage[locale]);
+    expect(await tofuCharacters(selectedStore)).toEqual([]);
+  });
+}
 
 /**
  * One scale, deliberately narrow. Sizes and weights are read off the real

@@ -134,6 +134,8 @@ test("an event says only that today is inside its official period, never that it
       ja: "本日は公式開催期間内",
     }[lang];
     assert.ok(line?.text.includes(periodTruth));
+    assert.deepEqual(line?.koreanText, { value: "축제 · 명동 페스티벌", position: "end" },
+      "changeable official Korean text stays separately language-markable in every locale");
     assert.doesNotMatch(line?.text ?? "", /진행 중|\bRunning\b|进行中|開催中/);
     assert.match(line?.basis ?? "", /운영|operation|开放|開催/);
   }
@@ -147,6 +149,7 @@ test("an event says only that today is inside its official period, never that it
 test("subway comparison priority is D-7, then recent seven-day average, then D-1", () => {
   const d7 = buildTourismDeskBrief(full(), "ko", "명동").find(({ key }) => key === "subway");
   assert.equal(d7?.text, "명동역 4호선 하차 흐름 · 지난주 같은 요일 대비 +12.4%");
+  assert.deepEqual(d7?.koreanText, { value: "명동역 4호선", position: "start" });
 
   const averageInput = full();
   averageInput.subway.trend = trend({ sameWeekdayLastWeek: null });
