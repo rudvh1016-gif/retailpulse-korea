@@ -41,6 +41,8 @@ export const SUPPRESSED_AIRLINE_DESIGNATORS: Readonly<Record<string, string>> = 
   DG: "snapshot row is South East Asian Airlines (PH); designator re-assigned since the snapshot",
   "5W": "snapshot row is Astraeus (GB); designator re-assigned since the snapshot",
   VQ: "snapshot row is Viking Hellas (GR); designator re-assigned since the snapshot",
+  "7I": "snapshot country is withdrawn code AN; current CLDR aliases it to Curaçao, which is not a reliable registration-country claim",
+  WM: "snapshot country is withdrawn code AN; current CLDR aliases it to Curaçao, which is not a reliable registration-country claim",
 };
 
 /**

@@ -811,6 +811,9 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .facility-card { padding: 18px 0; border-bottom: 1px solid var(--line); background-color: #FFFFFF; }
 .facility-card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 18px; }
 .facility-card h3 { margin: 0; font-size: 15px; font-weight: var(--weight-strong); letter-spacing: -.015em; overflow-wrap: anywhere; }
+.airport-provider-text:lang(ko) { font-family: "Pretendard Variable", "KORETAIL Sans Variable", "Noto Sans SC Variable", "Noto Sans JP Variable", system-ui, sans-serif; }
+.airport-provider-text:lang(zh) { font-family: "Noto Sans SC Variable", "Noto Sans JP Variable", "Pretendard Variable", "KORETAIL Sans Variable", system-ui, sans-serif; }
+.airport-provider-text:lang(ja) { font-family: "Noto Sans JP Variable", "Noto Sans SC Variable", "Pretendard Variable", "KORETAIL Sans Variable", system-ui, sans-serif; }
 .facility-badges { display: flex; flex-wrap: wrap; gap: 0 12px; margin: 0; color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .04em; }
 .facility-details { margin: 10px 0 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 26px; }
 .facility-details > div { min-width: 0; }
@@ -1007,6 +1010,7 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .my-store-results button { width: 100%; min-height: 52px; padding: 12px 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
 .my-store-results strong { font-size: 14px; font-weight: var(--weight-strong); }
 .my-store-results span { color: var(--muted); font-size: 11px; }
+.my-store-results strong .airport-provider-text { color: inherit; font-size: inherit; }
 .my-store-brief { margin-top: 18px; }
 .my-store-brief h3 { margin: 0; font-size: 20px; font-weight: var(--weight-strong); letter-spacing: -.02em; }
 .my-store-brief h4 { margin: 26px 0 0; font-size: 12px; font-weight: var(--weight-strong); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
@@ -1202,9 +1206,9 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .tourism-visitor-show:lang(ja), .tourism-visitor-show :lang(ja) { font-family: "Noto Sans JP Variable", system-ui, sans-serif; }
 .tourism-desk :lang(ko),
 .tourism-visitor-show :lang(ko) { font-family: "KORETAIL Sans Variable", system-ui, sans-serif; }
-.tourism-official-ko { font-family: "Pretendard Variable", "KORETAIL Sans Variable", system-ui, sans-serif; }
+.tourism-official-ko { font-family: "Pretendard Variable", "KORETAIL Sans Variable", "Noto Sans SC Variable", "Noto Sans JP Variable", system-ui, sans-serif; }
 .tourism-desk .tourism-official-ko,
-.tourism-visitor-show .tourism-official-ko { font-family: "Pretendard Variable", "KORETAIL Sans Variable", system-ui, sans-serif; }
+.tourism-visitor-show .tourism-official-ko { font-family: "Pretendard Variable", "KORETAIL Sans Variable", "Noto Sans SC Variable", "Noto Sans JP Variable", system-ui, sans-serif; }
 .tourism-visitor-show-languages button:last-child { border-right: 0; }
 .tourism-visitor-show-languages button[aria-pressed="true"] { color: var(--blue); box-shadow: inset 0 -2px 0 var(--blue); }
 .tourism-visitor-show-content { margin-top: 28px; }

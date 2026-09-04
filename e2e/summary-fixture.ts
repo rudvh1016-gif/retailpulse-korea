@@ -163,7 +163,7 @@ export const SUMMARY_FIXTURE = {
         T1: { totalFlights: 300, airlines: [{ iata: "OZ", registryName: "Asiana Airlines", country: "KR", countryBasis: "REGISTRY", flights: 90, share: 0.3 }], countries: [{ country: "KR", flights: 90, airlines: 1, share: 0.3 }], retrievedAt: "2026-08-31T12:00:00+09:00" },
         T2: { totalFlights: 261, airlines: [{ iata: "KE", registryName: "Korean Air", country: "KR", countryBasis: "REGISTRY", flights: 140, share: 0.5364 }], countries: [{ country: "KR", flights: 140, airlines: 1, share: 0.5364 }], retrievedAt: "2026-08-31T12:00:00+09:00" },
       },
-      countrySource: { provider: "OpenFlights airline database", licence: "ODbL 1.0", retrievedOn: "2026-09-03", entries: 950, suppressed: 25 },
+      countrySource: { provider: "OpenFlights airline database", licence: "ODbL 1.0", retrievedOn: "2026-09-03", entries: 950, suppressed: 27 },
     },
     serviceDateKst: "2026-08-31",
     periodStartAt: "2026-08-31T00:00:00+09:00",

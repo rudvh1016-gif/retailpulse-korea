@@ -291,7 +291,7 @@ test("departure composition is one accessible tab group with gate, airline and r
   // from a raw per-row provider field (proven unreliable: see
   // lib/airline-ranking.ts). English is shown even on the Korean page.
   await expect(rows.nth(0)).toContainText("Korean Air");
-  await expect(rows.nth(0)).toContainText("대한민국");
+  await expect(rows.nth(0)).toContainText("한국");
   await expect(rows.nth(0)).toContainText("140편");
   await expect(rows.nth(0)).toContainText("25%");
   // A designator the reference table cannot vouch for gets no name and no
@@ -305,7 +305,7 @@ test("departure composition is one accessible tab group with gate, airline and r
   await expect(countryTab).toHaveAttribute("aria-selected", "true");
   const countries = composition.locator(".airport-country-row");
   await expect(countries).toHaveCount(2);
-  await expect(countries.nth(0)).toContainText("대한민국");
+  await expect(countries.nth(0)).toContainText("한국");
   await expect(countries.nth(0)).toContainText("2개 항공사");
   await expect(countries.nth(1)).toContainText("등록 국가 미확인");
   await expect(composition.locator(".airport-countries")).toContainText("OpenFlights");

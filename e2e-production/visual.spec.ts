@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { lookupAirline } from "../lib/airline-country";
+import { AIRLINE_REGISTRY } from "../lib/airline-registry";
 import { tofuCharacters } from "../e2e/font-glyphs";
 
 /**
@@ -22,6 +24,9 @@ const surfaces = [
   ".tourism-desk", ".tourism-shift-brief", ".tourism-event", ".tourism-subway",
   ".tourism-current-reading", ".tourism-background-item", ".tourism-link-block",
 ];
+const registeredCountryCodes = [...new Set(Object.values(AIRLINE_REGISTRY)
+  .filter((entry) => lookupAirline(entry.iata)?.country === entry.country)
+  .map((entry) => entry.country))].sort();
 
 const paintedBackground = async (page: import("@playwright/test").Page, selector: string) => page.evaluate((sel) => {
   const out: string[] = [];
@@ -276,6 +281,141 @@ for (const width of viewports) {
     expect(writes, "visual acceptance must not issue provider or application writes").toEqual([]);
   });
 }
+
+type ProductionFacilityFontRow = {
+  facilityId: string;
+  terminal: string | null;
+  nameKo: string | null;
+  nameEn: string | null;
+  nameZh: string | null;
+  nameJa: string | null;
+  facilityItem: string | null;
+  largeCategory: string | null;
+  mediumCategory: string | null;
+  smallCategory: string | null;
+  floor: string | null;
+  locationRaw: string | null;
+  locationEn: string | null;
+  businessHoursRaw: string | null;
+  goodsBrands: string | null;
+};
+
+const airportStoreLabels = { ko: "매장·시설", en: "STORES", zh: "店铺·设施", ja: "店舗・施設" } as const;
+const airportMyStoreLabels = { ko: "내 매장", en: "MY STORE", zh: "我的店铺", ja: "自分の店舗" } as const;
+
+test("production Airport provider and registry text has complete four-language glyph coverage", async ({ page }, testInfo) => {
+  test.setTimeout(240_000);
+  await page.setViewportSize({ width: 390, height: 900 });
+  await openRoute(page, "/ko/airport");
+
+  const facilities = await page.evaluate(async (terminals) => {
+    const rows: ProductionFacilityFontRow[] = [];
+    for (const terminal of terminals) {
+      for (let offset = 0; ; offset += 120) {
+        const response = await fetch(`/api/airport/facilities?terminal=${terminal}&limit=120&offset=${offset}`);
+        if (!response.ok) throw new Error(`facility HTTP ${response.status} for ${terminal}/${offset}`);
+        const payload = await response.json() as {
+          mode: string;
+          facilities: ProductionFacilityFontRow[];
+          hasMore: boolean;
+        };
+        if (payload.mode !== "airport-facilities") throw new Error(`facility data degraded for ${terminal}/${offset}`);
+        rows.push(...payload.facilities);
+        if (!payload.hasMore) break;
+      }
+    }
+    return [...new Map(rows.map((row) => [row.facilityId, row])).values()];
+  }, ["T1", "T2", "CONCOURSE", "T1_TRANSPORT", "T2_TRANSPORT"]);
+  expect(facilities.length, "the official directory corpus should not silently collapse").toBeGreaterThanOrEqual(1_200);
+
+  for (const locale of locales) {
+    await openRoute(page, `/${locale}/airport`);
+    await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+
+    await page.evaluate(({ rows, locale: activeLocale, countryCodes }) => {
+      document.getElementById("production-provider-font-audit")?.remove();
+      const root = document.createElement("section");
+      root.id = "production-provider-font-audit";
+      root.setAttribute("aria-hidden", "true");
+      Object.assign(root.style, {
+        position: "absolute",
+        left: "-100000px",
+        top: "0",
+        width: "1px",
+        height: "1px",
+        overflow: "hidden",
+        whiteSpace: "pre-wrap",
+      });
+
+      const groups = new Map<string, Set<string>>();
+      const add = (language: string, text: string | null) => {
+        if (!text) return;
+        const values = groups.get(language) ?? new Set<string>();
+        values.add(text.replaceAll("∙", "·"));
+        groups.set(language, values);
+      };
+      for (const row of rows) {
+        add("ko", row.nameKo);
+        add("en", row.nameEn);
+        add("zh", row.nameZh);
+        add("ja", row.nameJa);
+        for (const key of ["facilityItem", "largeCategory", "mediumCategory", "smallCategory", "floor", "locationRaw", "businessHoursRaw", "goodsBrands"] as const) add("ko", row[key]);
+        add("en", row.locationEn);
+      }
+      for (const [language, values] of groups) {
+        for (const weight of [400, 600]) {
+          const span = document.createElement("span");
+          span.className = "airport-provider-text";
+          span.lang = language;
+          span.style.fontWeight = String(weight);
+          span.textContent = [...values].join("\n");
+          root.append(span);
+        }
+      }
+
+      const localeName = { ko: "ko-KR", en: "en-US", zh: "zh-CN", ja: "ja-JP" }[activeLocale];
+      const displayNames = new Intl.DisplayNames([localeName], { type: "region", style: "short", fallback: "code" });
+      for (const weight of [400, 600]) {
+        const span = document.createElement("span");
+        span.lang = activeLocale;
+        span.style.fontWeight = String(weight);
+        span.textContent = countryCodes.map((code) => displayNames.of(code) ?? code).join("\n");
+        root.append(span);
+      }
+      document.querySelector(".app")?.append(root);
+    }, { rows: facilities, locale, countryCodes: registeredCountryCodes });
+
+    const audit = page.locator("#production-provider-font-audit");
+    await expect(audit).toHaveCount(1);
+    expect(await tofuCharacters(audit), `${locale} current provider/registry corpus has tofu`).toEqual([]);
+    await audit.evaluate((element) => element.remove());
+
+    await page.locator(".airport-context-nav button").filter({ hasText: airportStoreLabels[locale] }).click();
+    const directory = page.locator(".airport-facilities");
+    await expect(directory.locator(".facility-card").first()).toBeVisible({ timeout: 30_000 });
+    expect(await tofuCharacters(directory), `${locale} live facility directory has tofu`).toEqual([]);
+    await testInfo.attach(`airport-facilities-${locale}-390.png`, {
+      body: await page.screenshot({ fullPage: true, animations: "disabled", caret: "hide" }),
+      contentType: "image/png",
+    });
+
+    await page.evaluate(() => localStorage.removeItem("koretail-my-facility"));
+    await page.locator(".airport-context-nav button").filter({ hasText: airportMyStoreLabels[locale] }).click();
+    const searchable = facilities.find((row) => row.terminal === "T1" && row.nameKo && [...row.nameKo].length >= 2);
+    expect(searchable?.nameKo).toBeTruthy();
+    await page.locator(".my-store input[type='search']").fill(searchable!.nameKo!);
+    const result = page.locator(".my-store-results button").first();
+    await expect(result).toBeVisible({ timeout: 30_000 });
+    await result.click();
+    const selectedStore = page.locator(".my-store-brief");
+    await expect(selectedStore).toBeVisible({ timeout: 30_000 });
+    expect(await tofuCharacters(selectedStore), `${locale} live selected-store briefing has tofu`).toEqual([]);
+    await testInfo.attach(`airport-selected-store-${locale}-390.png`, {
+      body: await page.screenshot({ fullPage: true, animations: "disabled", caret: "hide" }),
+      contentType: "image/png",
+    });
+  }
+});
 
 test("production airport composition is one compact tabbed module at every required viewport", async ({ page }, testInfo) => {
   const views = [

@@ -222,10 +222,13 @@ test("keeps the four-language fonts as bounded static assets", async () => {
   const css = await read("../app/globals.css");
   const assets = [
     ["koretail-sans-variable.woff2", 300_000],
-    ["noto-sans-jp-400.woff2", 300_000],
-    ["noto-sans-jp-600.woff2", 300_000],
-    ["noto-sans-sc-400.woff2", 300_000],
-    ["noto-sans-sc-600.woff2", 300_000],
+    // Each CJK face also carries the current official Airport facility
+    // corpus and every registry-country display name. Keep that dynamic-text
+    // safety net bounded rather than allowing a silent full-font expansion.
+    ["noto-sans-jp-400.woff2", 320_000],
+    ["noto-sans-jp-600.woff2", 320_000],
+    ["noto-sans-sc-400.woff2", 320_000],
+    ["noto-sans-sc-600.woff2", 320_000],
     // Official event titles and descriptions change independently of a code
     // release. This one exceptional face covers every modern Hangul syllable;
     // CSS limits it to those provider-owned Korean strings.
@@ -574,6 +577,10 @@ test("the airport page reads summary, then next, then composition, then the obse
   assert.ok(composition < tabs && tabs < gates && gates < airlines && airlines < countries,
     "three tab panels sit inside the composition group");
   assert.ok(countries < checkpoints, "the checkpoint table is reference material and comes last");
+  assert.match(signals, /style:\s*"short"/,
+    "registered-country names must use the Node/Chromium-stable short CLDR form");
+  assert.match(signals, /fallback:\s*"code"/,
+    "an unsupported region must fall back to its code instead of an invented name");
 });
 
 /**
