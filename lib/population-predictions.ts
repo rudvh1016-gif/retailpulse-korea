@@ -34,7 +34,7 @@ export function buildPopulationHours(rows:PopulationSample[],targetDate:string,c
 export const POPULATION_ROWS_SQL = `SELECT observed_at AS observedAt,retrieved_at AS retrievedAt,
  population_min AS populationMin,population_max AS populationMax,source_hash AS sourceHash,
  quality_status AS qualityStatus,record_origin AS recordOrigin,schema_version AS schemaVersion
- FROM seoul_realtime_area WHERE area=? AND observed_at>=? AND observed_at<? ORDER BY observed_at LIMIT 10001`;
+ FROM seoul_realtime_area WHERE area=? AND source_id='SEOUL_CITYDATA_PPLTN' AND quality_status='VALID' AND record_origin='LIVE' AND observed_at>=? AND observed_at<? ORDER BY observed_at LIMIT 10001`;
 
 /** Runs in existing Actions, once per area/target day from 18:00 KST. Never on a page request. */
 export async function runPopulationPredictions(db:D1Database,now=new Date()) {
@@ -120,7 +120,7 @@ export async function updatePopulationCoverage(db:D1Database,now=new Date()) {
   if(cached&&Date.parse(cached.calculated_at)>now.getTime()-50*60000)continue;
   const rows=(await db.prepare(`SELECT substr(observed_at,1,10) AS day,MIN(observed_at) AS firstAt,MAX(observed_at) AS latestAt,
     COUNT(DISTINCT substr(observed_at,12,2)) AS hours FROM seoul_realtime_area
-    WHERE area=? AND observed_at>=? AND observed_at<? AND quality_status='VALID' AND record_origin='LIVE'
+    WHERE area=? AND source_id='SEOUL_CITYDATA_PPLTN' AND observed_at>=? AND observed_at<? AND quality_status='VALID' AND record_origin='LIVE'
     GROUP BY substr(observed_at,1,10) ORDER BY day`).bind(area,shiftKstDay(tomorrow,-28),tomorrow)
     .all<{day:string;firstAt:string;latestAt:string;hours:number}>()).results??[];
   const payload={days:rows.length,firstAt:rows[0]?.firstAt??null,latestAt:rows.at(-1)?.latestAt??null,
