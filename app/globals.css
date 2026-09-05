@@ -895,7 +895,7 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .site-usage-guide dt { font-size: 16px; font-weight: var(--weight-strong); }
 .site-usage-guide dd { margin: 8px 0 0; font-size: 14px; line-height: 1.7; color: var(--muted); }
 .site-usage-guide .site-usage-limit { font-size: 13px; color: var(--muted); }
-.lang-ko .site-usage-guide { font-family: "Pretendard Variable", var(--font-ui); }
+.lang-ko .site-usage-guide { font-family: var(--font-ui); }
 .preference-rows { margin: 14px 0 0; padding: 0; list-style: none; }
 .preference-rows li { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
 .preference-rows span { color: var(--muted); font-weight: var(--weight-strong); }
@@ -1360,7 +1360,7 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 }
 
 /* Complete Korean glyph coverage keeps new operational copy consistent. */
-.lang-ko { --font-ui: "Pretendard Variable", "KORETAIL Sans Variable", system-ui, sans-serif; }
+.lang-ko { --font-ui: "KORETAIL Sans Variable", system-ui, sans-serif; }
 .commercial-status { margin: 10px 0; font-size: 14px; line-height: 1.6; }
 .period-comparison { margin: 6px 0; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
 

@@ -26,7 +26,7 @@ for (const [locale, htmlLang] of locales) {
 }
 
 const localeFonts = [
-  ["ko", "Pretendard Variable"],
+  ["ko", "KORETAIL Sans Variable"],
   ["en", "KORETAIL Sans Variable"],
   ["zh", "Noto Sans SC Variable"],
   ["ja", "Noto Sans JP Variable"],
