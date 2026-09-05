@@ -448,7 +448,10 @@ nav.bottom-nav { display: none; }
  * bands are already behind them. Past bands keep their forecast styling: they
  * remain forecasts, not observations.
  */
-.airport-timeline-bars p.now::before { content: ""; position: absolute; z-index: 2; left: var(--now-offset, 0%); top: -8px; bottom: 36px; border-left: 1.5px dashed var(--ink); pointer-events: none; }
+/* Explicit height: do not depend on an empty absolute grid item's automatic
+ * stretch between top/bottom (the label can survive while its rule collapses).
+ * Keep the rule full-height even when this hour's forecast bar is tiny. */
+.airport-timeline-bars p.now::before { content: ""; position: absolute; z-index: 2; left: var(--now-offset, 0%); top: -8px; height: calc(100% - 28px); width: 0; align-self: start; border-left: 1.5px dashed var(--ink); pointer-events: none; }
 .airport-timeline-bars p.now::after { content: attr(data-now-label); position: absolute; z-index: 3; left: var(--now-offset, 0%); top: -14px; transform: translateX(-50%); padding: 2px 6px; background: var(--ink); color: var(--paper); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .04em; white-space: nowrap; border-radius: 3px; pointer-events: none; }
 .airport-timeline-bars i { width: 100%; max-width: 48px; min-height: 2px; justify-self: center; display: block; background: #d9d9d9; border-top: 1px solid var(--muted); }
 .airport-timeline-bars .peak i { background: var(--ink); border-color: var(--ink); }

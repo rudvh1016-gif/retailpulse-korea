@@ -412,11 +412,10 @@ test("the summary states this hour's official expected departing passengers and 
   await page.goto("/ko/airport");
   const brief = page.locator(".airport-current-brief");
   await expect(brief).toBeVisible();
-  // 강조되는 첫 줄이 지금 시간대의 공식 예상 출국객이다. 대기는 그 아래
-  // 보조 줄로 내려갔다 — 검색대 줄 하나가 이 화면에서 가장 중요한
-  // 사실은 아니다.
+  // 하루 전체를 먼저, 현재 시간대를 두 번째로 강조한다.
   const headline = brief.locator("strong").first();
-  await expect(headline).toContainText("공식 예상 출국객");
+  await expect(headline).toHaveText("금일 전체 공식 예상 출국객 47,320명");
+  await expect(brief.locator("strong").nth(1)).toContainText("14:00–15:00 공식 예상 출국객");
   await expect(headline).not.toContainText("대기");
   await expect(brief).toContainText("대기 최장");
   // 예상치를 관측이라고 부르지 않는다.
