@@ -16,7 +16,7 @@ export function PredictionView({lang,area,onArea}:{lang:Lang;area:'myeongdong'|'
  const t=(ko:string,en:string,zh:string,ja:string)=>contextText(lang,ko,en,zh,ja);
  const names={myeongdong:t('명동','Myeongdong','明洞','明洞'),hongdae:t('홍대','Hongdae','弘大','弘大'),seongsu:t('성수','Seongsu','圣水','聖水')};
  const official=summary?.areas[area]?.realtimeForecast??[];
- const future=official.filter(row=>Date.parse(row.targetAt)>Date.parse(summary?.generatedAt??""));
+ const future=official.filter(row=>Date.parse(row.targetAt)>Date.parse(summary?.generatedAt??"") && typeof row.populationMin==='number' && typeof row.populationMax==='number' && Number.isFinite(row.populationMin) && Number.isFinite(row.populationMax) && row.populationMin>=0 && row.populationMax>=row.populationMin);
  const peak=[...future].sort((a,b)=>(b.populationMax??0)-(a.populationMax??0))[0];
  const hours=data?.run?.hours??[];
  const ownPeak=[...hours].sort((a,b)=>b.value-a.value)[0];
