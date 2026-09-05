@@ -3,11 +3,12 @@ import {routeSummary,SUMMARY_FIXTURE} from './summary-fixture';
 
 test('airport starts compact, explains unmatched flights and expands truthful next hours',async({page})=>{
  const payload=structuredClone(SUMMARY_FIXTURE) as typeof SUMMARY_FIXTURE & {airport:Record<string,unknown>};
- payload.airport.flightScope={total:561,T1:300,T2:250,other:0,unassigned:11,conflicting:0,capped:false};
+ payload.airport.flightScope={total:561,T1:300,T2:250,CONCOURSE:10,other:0,unassigned:1,conflicting:0,capped:false};
  await page.route('**/api/live/summary*',routeSummary(payload));
  await page.setViewportSize({width:390,height:844});
  await page.goto('/ko/airport');
- await expect(page.locator('.airport-current-brief')).toContainText('T1·T2 미분류 11편');
+ await expect(page.locator('.airport-current-brief')).toContainText('탑승동 10편');
+ await expect(page.locator('.airport-current-brief')).toContainText('탑승 위치 확인 중 1편');
  await expect(page.locator('.airport-today-grid')).not.toBeVisible();
  await page.locator('.airport-summary-details > summary').click();
  await expect(page.locator('.airport-today-grid')).toBeVisible();
@@ -37,4 +38,16 @@ test('prediction shows a limited scorecard and exact missing weekday inputs',asy
  await expect(page.locator('.prediction-score')).toContainText('평균 차이 약 200명');
  await page.locator('.prediction-readiness summary').click();
  await expect(page.locator('.prediction-readiness')).toContainText('1주 확보 · 1주 더 필요');
+});
+
+test('first load preloads one shared summary and uses the small Korean shell font',async({page})=>{
+ let requests=0;
+ await page.route('**/api/live/summary*',async route=>{requests++;await routeSummary(SUMMARY_FIXTURE)(route);});
+ await page.goto('/ko/airport');
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.locator('.airport-current-brief')).toBeVisible();
+ await expect(page.locator('link[rel="preload"][as="fetch"][href="/api/live/summary"]')).toHaveCount(1);
+ expect(requests).toBe(1);
+ const family=await page.locator('.app').evaluate(el=>getComputedStyle(el).fontFamily);
+ expect(family.split(',')[0]).toContain('KORETAIL Sans Variable');
 });

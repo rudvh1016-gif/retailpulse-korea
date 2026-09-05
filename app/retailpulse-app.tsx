@@ -408,6 +408,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         </div>
       </header>
 
+      {view !== "about" && <link rel="preload" href="/api/live/summary" as="fetch" crossOrigin="anonymous" />}
       <main className="page-shell">
         {view === "today" && (
           <>

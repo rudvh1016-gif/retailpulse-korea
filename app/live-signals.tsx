@@ -1,4 +1,5 @@
 "use client";
+import {flightBoardingLocation} from "../lib/flight-scope";
 
 import { SeoulContextCard, HolidayContext, contextText } from "./operational-context";
 import type { SeoulContext } from "../lib/seoul-context";
@@ -294,7 +295,7 @@ export interface LiveSummary {
     latestRetrievedAt: string | null;
     todayExpectedPassengersTotal: number | null;
     todayExpectedPassengersByTerminal: Record<string, number | null>;
-    flightScope?: { total:number; T1:number; T2:number; other:number; unassigned:number; conflicting:number; capped:boolean };
+    flightScope?: { total:number; T1:number; T2:number; CONCOURSE?:number; other:number; unassigned:number; conflicting:number; capped:boolean };
     remainingExpectedPassengers: RemainingForecast;
     remainingExpectedPassengersByTerminal: Record<string, RemainingForecast>;
     passengerForecastRetrievedAt: string | null;
@@ -1155,10 +1156,11 @@ function FlightScopeNote({airport,lang}:{airport:LiveSummary["airport"];lang:Lan
   const t=(ko:string,en:string,zh:string,ja:string)=>contextText(lang,ko,en,zh,ja);
   const unit=t('편',' flights','班','便');
   const parts=[`T1 ${counts.T1}${unit}`,`T2 ${counts.T2}${unit}`,
+    counts.CONCOURSE?`${t('탑승동','Concourse','登机楼','コンコース')} ${counts.CONCOURSE}${unit}`:null,
     counts.other?`${t('기타 표기','Other designation','其他标记','その他表記')} ${counts.other}${unit}`:null,
-    counts.unassigned?`${t('T1·T2 미분류','Not classified as T1/T2','未归类为T1/T2','T1・T2未分類')} ${counts.unassigned}${unit}`:null,
+    counts.unassigned?`${t('탑승 위치 확인 중','Boarding location unknown','登机位置待确认','搭乗場所確認中')} ${counts.unassigned}${unit}`:null,
     counts.conflicting?`${t('터미널 표기 충돌','Conflicting terminal labels','航站楼标记冲突','ターミナル表記の不一致')} ${counts.conflicting}${unit}`:null].filter(Boolean);
-  return <p className="flight-scope-note">{parts.join(' · ')}<small>{t('같은 출발편을 한 번씩 센 구성입니다. 저장된 기록에서 T1·T2로 분류되지 않은 편은 별도로 표시합니다. 탑승동이나 원본 미표기 여부를 단정하지 않습니다.','Each physical departure is counted once. Records not classified as T1/T2 stay separate; this does not establish concourse use or an absent provider label.','每个实际出发航班计一次，未归类为T1/T2的记录单独显示，不推定为登机楼或原始标记缺失。','同じ出発便は1回だけ集計。T1・T2に分類されない記録は別表示。搭乗棟や元データの未表記とは断定しません。')}{counts.capped&&t(' 조회 상한에 도달해 일부 기록일 수 있습니다.',' Query limit reached; records may be partial.',' 已达查询上限，可能不完整。',' 取得上限に達し、一部記録の可能性があります。')}</small></p>;
+  return <p className="flight-scope-note">{parts.join(' · ')}<small>{t('같은 출발편을 한 번씩 셉니다. 탑승동은 공식 게이트 안내(101~132번)로 확인한 탑승 위치이며, 체크인 터미널과 다릅니다. 위치를 확인할 근거가 없는 편만 별도로 표시합니다.','Each departure is counted once. Concourse boarding is identified by the official gate map (101–132), not the check-in terminal. Unknown locations stay separate.','每个实际出发航班计一次。登机楼依据官方101–132号登机口识别，不代表值机航站楼；未知位置单独显示。','同じ出発便は1回集計。コンコースは公式の101–132番ゲートで確認した搭乗場所です。チェックイン場所とは異なり、不明な場所は別表示。')}{counts.capped&&t(' 조회 상한에 도달해 일부 기록일 수 있습니다.',' Query limit reached; records may be partial.',' 已达查询上限，可能不完整。',' 取得上限に達し、一部記録の可能性があります。')}</small></p>;
 }
 
 export function AirportTodaySummary({ lang, terminal = "all", date = null }: { lang: Lang; terminal?: "all" | "T1" | "T2"; date?: string | null }) {
@@ -3129,7 +3131,7 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
             <b>{formatKstClock(flight.scheduledAt)}</b>
             <strong>{flight.flightNumber}</strong>
             <span>{flight.airportCode ?? ""}</span>
-            <i>{[flight.terminal, flight.gate ? `${flightBoardText.gate[lang]} ${flight.gate}` : null, flight.checkinCounter ? `${flightBoardText.counter[lang]} ${flight.checkinCounter}` : null].filter(Boolean).join(" · ")}</i>
+            <i>{[flightBoardingLocation(flight) === "CONCOURSE" ? contextText(lang,"탑승동","Concourse","登机楼","コンコース") : flight.terminal, flight.gate ? `${flightBoardText.gate[lang]} ${flight.gate}` : null, flight.checkinCounter ? `${flightBoardText.counter[lang]} ${flight.checkinCounter}` : null].filter(Boolean).join(" · ")}</i>
             <small>{flight.status}</small>
           </li>)}</ol>
           {visible.length < scoped.length && <button type="button" className="event-list-toggle" onClick={() => setVisibleCount(count => count + 20)}>{({ ko: "항공편 20개 더 보기", en: "Show 20 more flights", zh: "再查看20班", ja: "さらに20便を見る" })[lang]}</button>}

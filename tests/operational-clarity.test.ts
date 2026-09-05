@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {flightScopeCounts} from '../lib/flight-scope';
+import {flightScopeCounts,flightBoardingLocation} from '../lib/flight-scope';
 import {predictionReadiness,predictionScore} from '../lib/prediction-progress';
 import {seoulContextTime,seoulContextObservedAt} from '../lib/seoul-context';
 import {nextSourceWindow,publicFailureReason} from '../lib/source-status';
@@ -11,7 +11,7 @@ test('physical departure partition reconciles without guessing missing terminals
  {physicalFlightId:'b',terminal:'T2'},{physicalFlightId:'c',terminal:null},
  {physicalFlightId:'d',terminal:'P02'},{physicalFlightId:'e',terminal:'T1'},{physicalFlightId:'e',terminal:'T2'}];
  const counts=flightScopeCounts(rows);
- assert.deepEqual(counts,{total:5,T1:1,T2:1,other:1,unassigned:1,conflicting:1});
+ assert.deepEqual(counts,{total:5,T1:1,T2:1,CONCOURSE:0,other:1,unassigned:1,conflicting:1});
  assert.equal(counts.total,counts.T1+counts.T2+counts.other+counts.unassigned+counts.conflicting);
 });
 test('next means future at the hour boundary and near midnight, never current',()=>{
@@ -51,4 +51,13 @@ test('nominal source schedules roll over KST correctly and failure text never le
  assert.equal(nextSourceWindow('unknown','2026-09-05T07:00:00Z'),null);
  assert.equal(publicFailureReason('failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT'),'NETWORK');
  assert.equal(publicFailureReason('arbitrary private detail'),'OTHER');
+});
+
+test('concourse uses exact official gate bounds, never an unknown code or inferred check-in',()=>{
+ for(const gate of ['101','132',' 115 '])assert.equal(flightBoardingLocation({terminal:null,gate}),'CONCOURSE');
+ for(const gate of ['100','133','101A','101/102','',null])assert.equal(flightBoardingLocation({terminal:null,gate}),null);
+ assert.equal(flightBoardingLocation({terminal:'T1',gate:'101'}),'T1');
+ assert.equal(flightBoardingLocation({terminal:'P02',gate:null}),'P02');
+ const result=flightScopeCounts([{physicalFlightId:'a',gate:'101'},{physicalFlightId:'a',gate:'101'},{physicalFlightId:'b',gate:null}]);
+ assert.equal(result.CONCOURSE,1);assert.equal(result.unassigned,1);assert.equal(result.total,2);
 });
