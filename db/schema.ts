@@ -1,5 +1,5 @@
 import { desc, sql } from "drizzle-orm";
-import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const sourceHealth = sqliteTable("source_health", {
   sourceId: text("source_id").primaryKey(),
@@ -459,7 +459,7 @@ export const predictions = sqliteTable("predictions", {
   inputHash: text("input_hash").notNull(),
   predictionHash: text("prediction_hash").notNull(),
   recordOrigin: text("record_origin").notNull(),
-}, (table) => [uniqueIndex("predictions_hash_unique").on(table.predictionHash)]);
+}, (table) => [uniqueIndex("predictions_hash_unique").on(table.predictionHash),index("predictions_area_target_idx").on(table.area,table.targetAt),index("predictions_model_target_idx").on(table.modelVersion,table.targetAt)]);
 
 export const baselinePredictions = sqliteTable("baseline_predictions", {
   id: text("id").primaryKey(),
@@ -509,3 +509,33 @@ export const betaSignups = sqliteTable("beta_signups", {
 }, (table) => [
   uniqueIndex("beta_signups_email_unique").on(table.email),
 ]);
+
+// Operational context is compact source data; predictions retain the existing immutable ledger.
+export const seoulContext = sqliteTable('seoul_context', {
+  area:text('area').notNull(), observedAt:text('observed_at').notNull(), retrievedAt:text('retrieved_at').notNull(),
+  payload:text('payload').notNull(),sourceHash:text('source_hash').notNull(),
+},table=>[primaryKey({columns:[table.area,table.observedAt]})]);
+export const holidayMonths = sqliteTable('holiday_months', {
+  month:text('month').primaryKey(),payload:text('payload').notNull(),retrievedAt:text('retrieved_at').notNull(),sourceHash:text('source_hash').notNull(),
+});
+export const forecastRuns = sqliteTable('forecast_runs', {
+  area:text('area').notNull(),targetDate:text('target_date').notNull(),createdAt:text('created_at').notNull(),payload:text('payload').notNull(),
+},table=>[primaryKey({columns:[table.area,table.targetDate]})]);
+export const predictionInputs = sqliteTable('prediction_inputs', {
+  predictionId:text('prediction_id').primaryKey(),payload:text('payload').notNull(),
+});
+export const airportForecastVersions = sqliteTable('airport_forecast_versions', {
+  id:text('id').primaryKey(),canonicalId:text('canonical_id').notNull(),sourceHash:text('source_hash').notNull(),
+  terminal:text('terminal').notNull(),direction:text('direction').notNull(),targetAt:text('target_at').notNull(),
+  expectedPassengers:integer('expected_passengers'),retrievedAt:text('retrieved_at').notNull(),archivedAt:text('archived_at').notNull(),
+},table=>[index('airport_forecast_versions_target_idx').on(table.targetAt)]);
+export const airportDailyComposition = sqliteTable('airport_daily_composition', {
+  day:text('day').primaryKey(),payload:text('payload').notNull(),sourceHash:text('source_hash').notNull(),calculatedAt:text('calculated_at').notNull(),
+});
+export const forecastMaintenance = sqliteTable('forecast_maintenance', {
+  day:text('day').primaryKey(),completedAt:text('completed_at').notNull(),
+});
+
+export const areaDataCoverage = sqliteTable('area_data_coverage', {
+ area:text('area').primaryKey(),calculatedAt:text('calculated_at').notNull(),payload:text('payload').notNull(),
+});

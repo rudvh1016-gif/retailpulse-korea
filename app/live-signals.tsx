@@ -1,5 +1,8 @@
 "use client";
 
+import { SeoulContextCard, HolidayContext, contextText } from "./operational-context";
+import type { SeoulContext } from "../lib/seoul-context";
+import type { compareComposition } from "../lib/airport-composition-history";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { Lang } from "./retailpulse-data";
 import { friendlyCheckpointName, rankCurrentDepartureHallCheckpoints } from "../lib/airport-today-summary";
@@ -177,6 +180,7 @@ export interface LiveObservedPoint {
 }
 
 interface LiveAreaBlock {
+  context?: (SeoulContext & {retrievedAt:string}) | null;
   realtime: LiveRealtime | null;
   commercial: LiveCommercial | null;
   realtimeForecast: LiveRealtimeForecast[];
@@ -244,6 +248,7 @@ type RankedGate = { terminal: string | null; gate: string; flights: number };
 type RemainingForecast = { expectedPassengers: number; fromAt: string; toAt: string; bands: number } | null;
 
 export interface LiveSummary {
+  holidays?: Array<{month:string;days:Array<{date:string;name:string}>;retrievedAt:string}>;
   mode: string;
   generatedAt: string;
   todayKst: string;
@@ -265,7 +270,7 @@ export interface LiveSummary {
   sources?: Array<{ sourceId: string; status: string; retrievedAt: string | null }>;
   areas: Partial<Record<AreaId, LiveAreaBlock>>;
   airport: {
-    periodComparisons?: Record<string, Partial<Record<7 | 28, { passengers: RangeChange | null; flightRecords: RangeChange | null }>>>;
+    periodComparisons?: Record<string, Partial<Record<7 | 28, { passengers: RangeChange | null; flightRecords: RangeChange | null; composition?: (ReturnType<typeof compareComposition> & {baselineDate:string}) | null }>>>;
     congestion: LiveCongestionRow[];
     currentBusiestDepartureHallByTerminal: Record<string, LiveCongestionRow>;
     departuresTrackedToday: number | null;
@@ -2993,6 +2998,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
               {groupId === "now" ? <>
                 {firstNow.map((row) => <SignalRowCard key={row.key} row={row} lang={lang} />)}
                 {commercialRow && <CommercialSignalCard signal={commercialRow} lang={lang} />}
+                <SeoulContextCard context={block?.context} lang={lang} />
                 {remainingNow.map((row) => <SignalRowCard key={row.key} row={row} lang={lang} />)}
               </> : null}
               {groupId === "today-next" && events.length > 0 && <EventSignalPanel
@@ -3063,6 +3069,7 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
   const visible = scoped.slice(0, visibleCount);
   const ranking = terminal === "all" ? summary?.airport.airlineRanking?.all : summary?.airport.airlineRanking?.byTerminal?.[terminal];
   const changes = summary?.airport.periodComparisons?.[terminal]?.[7]?.flightRecords;
+  const composition = summary?.airport.periodComparisons?.[terminal]?.[7]?.composition;
   const unit = { ko: "편", en: " flights", zh: "班", ja: "便" }[lang];
   const airlineLine = ranking?.airlines.slice(0, 3).map(row => `${airlineDisplayName(row, lang)}${row.iata ? ` (${row.iata})` : ""} ${row.flights}${unit}`).join(" · ");
   const countryLine = ranking?.countries.filter(row => row.country).slice(0, 3).map((row, i) => `${i + 1}. ${regionName(row.country!, lang)} ${row.flights}${unit}`).join(" · ");
@@ -3071,11 +3078,16 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
     <div className="section-head">
       <div><p className="eyebrow">OFFICIAL FLIGHT RECORD · KST</p><h2 id="flight-board-title">{flightBoardText.search[lang]}</h2></div>
     </div>
+    {summary && <HolidayContext months={summary.holidays} date={summary.serviceDateKst} lang={lang} />}
     {ranking && ranking.totalFlights > 0 && <div className="current-brief flight-summary">
       <strong>{({ ko: "선택 터미널 출발 운항", en: "Departures in the selected scope", zh: "所选范围的出发航班", ja: "選択範囲の出発運航" })[lang]} {ranking.totalFlights}{unit}{changes ? ` · ${comparisonText(changes, lang, 7)}` : ""}</strong>
       {airlineLine && <p>{airlineLine}</p>}
       {countryLine && <p>{({ ko: "항공사 등록 국가 순위", en: "Airline registration-country ranking", zh: "航空公司注册国家排名", ja: "航空会社登録国ランキング" })[lang]} · {countryLine}</p>}
-      <small>{({ ko: "공동운항 중복을 뺀 출발 운항 기준입니다. 등록 국가는 승객 국적이 아닙니다. 국가별 과거 비교 자료가 연결되지 않아 증감 추세는 표시하지 않습니다.", en: "Departures exclude codeshare duplicates. Registration country is not passenger nationality. Country-level historical comparisons are not available here.", zh: "出发运航已去除代码共享重复。注册国家不是乘客国籍。此处暂无各国历史比较。", ja: "共同運航の重複を除いた出発便です。登録国は旅客国籍ではありません。国別の過去比較は未対応です。" })[lang]}</small>
+      {composition && <details className="composition-changes"><summary>{contextText(lang,'전주 동요일 대비 항공사·국가별 변화','Airline/country changes vs. last weekday','较上周同日航空公司及国家变化','前週同曜日比の航空会社・国別変化')}</summary>
+        <p>{composition.baselineDate} → {date || summary?.serviceDateKst}</p>
+        {(['airlines','countries'] as const).map(kind=><p key={kind}>{composition[kind].slice(0,5).map(row=>`${kind==='countries'?regionName(row.id,lang):row.id} ${row.previous} → ${row.current}${unit} (${row.delta>=0?'+':''}${row.delta}${unit}${row.percent===null?'':`, ${row.percent>=0?'+':''}${row.percent.toFixed(1)}%`})`).join(' · ')}</p>)}
+      </details>}
+      <small>{contextText(lang,'수집된 출발 운항 기록 비교 · 공동운항 중복 제외. 등록 국가는 승객 국적이 아닙니다.','Comparison of collected departure records, excluding codeshare duplicates. Registration country is not passenger nationality.','比较已收集的出发记录，排除代码共享重复。注册国家并非乘客国籍。','収集済み出発記録の比較・共同運航重複除外。登録国は旅客国籍ではありません。')}{!composition&&` · ${contextText(lang,'국가별 비교 기록 수집 중','Collecting country comparison history','收集各国比较记录中','国別比較記録を収集中')}`}</small>
     </div>}
     <div className="flight-board-controls">
       <div className="flight-direction" role="group">

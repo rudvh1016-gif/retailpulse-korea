@@ -29,11 +29,12 @@ import LiveSignals, {
 } from "./live-signals";
 import { TourismDeskView } from "./tourism-desk";
 import { InstallAppButton } from "./install-app";
+import { PredictionView } from "./prediction-view";
 import { SiteUsageGuide } from "./site-usage-guide";
 
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
 
-type View = "today" | "airport" | "business" | "forecast" | "tourism-desk" | "about" | "more";
+type View = "today" | "airport" | "business" | "forecast" | "predictions" | "tourism-desk" | "about" | "more";
 type AirportSection = "now" | "flights" | "stores" | "mystore" | "history";
 type AreaId = "myeongdong" | "hongdae" | "seongsu";
 
@@ -58,28 +59,28 @@ const copy = {
   ko: {
     hero: "지금 서울은\n어떻게 움직이고 있나요?",
     sub: "공식 데이터만 모아 명동·홍대·성수와 인천공항의 지금과 다음을 보여줍니다.",
-    today: "서울", airport: "공항", business: "매장", forecast: "기록", "tourism-desk": "관광안내", about: "소개", more: "더보기",
+    today: "서울", airport: "공항", business: "매장", forecast: "기록", predictions: "예측", "tourism-desk": "관광안내", about: "소개", more: "더보기",
     kst: "모든 시간은 한국 표준시(KST)입니다.",
-    truth: "표시되는 값은 모두 공식 기관이 발표한 데이터이며, 확인되지 않은 값은 만들어 채우지 않습니다.",
+    truth: "공식 발표값과 KORETAIL의 비교·참고 예상을 구분하며, 확인되지 않은 값은 만들어 채우지 않습니다.",
   },
   en: {
     hero: "How is Seoul\nmoving right now?",
     sub: "Official data only, showing what Myeongdong, Hongdae, Seongsu and Incheon Airport look like now and next.",
-    today: "Seoul", airport: "Airport", business: "Business", forecast: "Records", "tourism-desk": "Guide Desk", about: "About", more: "More",
+    today: "Seoul", airport: "Airport", business: "Business", forecast: "Records", predictions: "Outlook", "tourism-desk": "Guide Desk", about: "About", more: "More",
     kst: "All times are Korea Standard Time (KST).",
     truth: "Every value shown is published by an official body. Nothing unverified is filled in.",
   },
   zh: {
     hero: "此刻的首尔\n正在如何流动？",
     sub: "仅汇总官方数据，呈现明洞、弘大、圣水与仁川机场的当前与接下来。",
-    today: "首尔", airport: "机场", business: "门店", forecast: "记录", "tourism-desk": "旅游咨询", about: "关于", more: "更多",
+    today: "首尔", airport: "机场", business: "门店", forecast: "记录", predictions: "预测", "tourism-desk": "旅游咨询", about: "关于", more: "更多",
     kst: "所有时间均为韩国标准时间（KST）。",
     truth: "所显示的数值均由官方机构发布，未经确认的数值不会被填充。",
   },
   ja: {
     hero: "いまソウルは\nどう動いていますか？",
     sub: "公式データだけを集め、明洞・弘大・聖水と仁川空港の現在とこれからを表示します。",
-    today: "ソウル", airport: "空港", business: "店舗", forecast: "記録", "tourism-desk": "観光案内", about: "紹介", more: "その他",
+    today: "ソウル", airport: "空港", business: "店舗", forecast: "記録", predictions: "予測", "tourism-desk": "観光案内", about: "紹介", more: "その他",
     kst: "すべての時刻は韓国標準時（KST）です。",
     truth: "表示される値はすべて公式機関が発表したものです。確認できない値は作って埋めません。",
   },
@@ -92,6 +93,7 @@ function Icon({ name }: { name: View }) {
     airport: "M2 15l20-7-6 12-3-4-4 3z",
     business: "M4 20V9l8-5 8 5v11H4zm6 0v-6h4v6",
     forecast: "M3 17l5-6 4 4 4-7 5 5",
+    predictions: "M3 18l6-6 4 3 8-11M15 4h6v6",
     about: "M12 3a9 9 0 100 18 9 9 0 000-18zm0 5v1m0 3v5",
     "tourism-desk": "M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7z",
     more: "M5 12h.01M12 12h.01M19 12h.01",
@@ -347,7 +349,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       else if (slug === "tourism-desk" && routeArea && Object.hasOwn(areaInfo, routeArea)) {
         setSelected(routeArea as AreaId);
         setView("tourism-desk");
-      } else if (["today", "forecast", "airport", "business", "about", "more"].includes(slug)) setView(slug as View);
+      } else if (["today", "forecast", "predictions", "airport", "business", "about", "more"].includes(slug)) setView(slug as View);
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
@@ -387,7 +389,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           <span>KORETAIL</span><span className="brand-descriptor">Retail Demand Signals for Korea</span>
         </button>
         <nav className="top-nav" aria-label="Primary">
-          {(["today", "airport", "business", "tourism-desk", "forecast", "about", "more"] as View[]).map((item) => (
+          {(["today", "airport", "business", "predictions", "tourism-desk", "forecast", "about", "more"] as View[]).map((item) => (
             <a key={item} href={routeFor(lang, item, selected)} className={view === item ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} aria-current={view === item ? "page" : undefined}>{t[item]}</a>
           ))}
         </nav>
@@ -447,6 +449,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           />
         )}
         {view === "business" && <BusinessView lang={lang} selected={selected} setSelected={selectArea} industry={industry} setIndustry={setIndustry} date={serviceDate} setDate={setServiceDate} setProOpen={setProOpen} />}
+        {view === "predictions" && <PredictionView lang={lang} area={selected} onArea={selectArea} />}
         {view === "forecast" && <InsightsView lang={lang} selected={selected} setSelected={selectArea} date={serviceDate} />}
         {view === "tourism-desk" && <TourismDeskView lang={lang} area={selected} onAreaChange={selectArea} />}
         {view === "about" && <AboutView lang={lang} onAirport={() => openAirport("now")} onSeoul={() => navigate("today")} />}
@@ -466,6 +469,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             {(Object.keys(areaInfo) as AreaId[]).map((id) => <a key={id} href={routeFor(lang, "today", id)}>{areaLocalName(id, lang)}</a>)}
             <a href={routeFor(lang, "airport", selected)}>{t.airport}</a>
             <a href={routeFor(lang, "business", selected)}>{t.business}</a>
+            <a href={routeFor(lang, "predictions", selected)}>{t.predictions}</a>
             <a href={routeFor(lang, "forecast", selected)}>{t.forecast}</a>
             <a href={routeFor(lang, "tourism-desk", selected)}>{localText(lang, { ko: "관광안내 데스크", en: "Tourism desk", zh: "旅游咨询台", ja: "観光案内デスク" })}</a>
             <a href={routeFor(lang, "about", selected)}>{t.about}</a>
@@ -475,7 +479,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       </main>
 
       <nav className="bottom-nav" aria-label="Primary">
-        {(["today", "airport", "business", "forecast", "more"] as View[]).map((item) => (
+        {(["today", "airport", "business", "predictions", "more"] as View[]).map((item) => (
           <a
             key={item}
             href={routeFor(lang, item, selected)}
@@ -885,10 +889,10 @@ function InsightsView({ lang, selected, setSelected, date }: { lang: Lang; selec
           <div><p className="eyebrow">04 · TRACK RECORD</p><h2 id="insight-accuracy-title">{localText(lang, { ko: "예측 성적표는 아직 없습니다", en: "There is no accuracy record yet", zh: "目前还没有预测成绩", ja: "予測の成績はまだありません" })}</h2></div>
         </div>
         <p className="section-intro">{localText(lang, {
-          ko: "KORETAIL은 아직 자체 예측을 발표하지 않습니다. 지금 화면에 보이는 예측은 모두 서울시와 인천공항이 직접 발표한 공식 예측이며, 그 기관들의 정확도를 저희가 채점하지는 않습니다.",
-          en: "KORETAIL does not publish its own forecast yet. Every forecast on screen is published directly by Seoul or Incheon Airport, and we do not grade those institutions' accuracy.",
-          zh: "KORETAIL 目前尚未发布自有预测。屏幕上的预测均由首尔市与仁川机场直接发布，我们不对这些机构的准确率进行评分。",
-          ja: "KORETAIL はまだ自前の予測を発表していません。画面上の予測はすべてソウル市と仁川空港が直接発表した公式予測で、その精度を当方が採点することはありません。",
+          ko: "예측 메뉴에서 서울시 공식 예상과 KORETAIL의 과거 기록 기반 참고 예상을 구분해 볼 수 있습니다. KORETAIL 예상은 검증 자료를 모으는 단계이며 정확도 성적을 주장하지 않습니다.",
+          en: "The Outlook menu separates official forecasts from KORETAIL’s historical-baseline estimates. Validation is collecting; no accuracy claim is made.",
+          zh: "预测菜单区分官方预测与KORETAIL历史基线参考预测。正在收集验证数据，不声称准确率。",
+          ja: "予測メニューでは公式予測とKORETAILの過去記録に基づく参考予測を区別します。検証データを収集中で精度は主張しません。",
         })}</p>
         <p className="section-intro">{localText(lang, {
           ko: "언젠가 자체 예측을 내놓게 되면, 결과가 나오기 전에 저장해 둔 예측만으로 성적을 계산합니다. 과거 데이터를 나중에 끼워 맞춰 정확도를 만들어내지 않습니다.",
@@ -910,10 +914,10 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
       eyebrow: "01 · WHAT",
       title: localText(lang, { ko: "KORETAIL은 무엇인가요?", en: "What is KORETAIL?", zh: "KORETAIL 是什么？", ja: "KORETAIL とは？" }),
       body: localText(lang, {
-        ko: "서울의 대표 쇼핑 지역과 인천공항에 관한 공개 공식 자료와 출처가 표시된 참조자료를 한 화면에 모읍니다. 원자료와 KORETAIL이 계산한 비교값을 구분해 표시하며, 자체 예측은 만들지 않습니다.",
-        en: "KORETAIL brings public official data and clearly labelled reference data about Seoul’s main shopping areas and Incheon Airport into one view. Source values and KORETAIL-calculated comparisons are identified separately; we do not create our own forecasts.",
-        zh: "KORETAIL 将首尔主要购物区与仁川机场的公开官方数据及明确标注来源的参考资料汇总到一个页面。来源数值与 KORETAIL 计算的比较值会分开标示，我们不自行生成预测。",
-        ja: "KORETAILは、ソウルの主要ショッピングエリアと仁川空港について、公開された公式データと出典を明記した参照データを一画面にまとめます。出典の数値とKORETAILが算出した比較値を区別し、独自の予測は作りません。",
+        ko: "서울의 대표 쇼핑 지역과 인천공항에 관한 공개 공식 자료와 출처가 표시된 참조자료를 한 화면에 모읍니다. 원자료와 KORETAIL이 계산한 비교값을 구분해 표시하며, 과거 기록 기반 참고 예상은 예측 메뉴에서 별도로 구분합니다.",
+        en: "KORETAIL brings public official data and clearly labelled reference data about Seoul’s main shopping areas and Incheon Airport into one view. Source values and KORETAIL-calculated comparisons are identified separately; historical-baseline estimates are separately labelled.",
+        zh: "KORETAIL 将首尔主要购物区与仁川机场的公开官方数据及明确标注来源的参考资料汇总到一个页面。来源数值与 KORETAIL 计算的比较值会分开标示，历史基线参考预测另行标注。",
+        ja: "KORETAILは、ソウルの主要ショッピングエリアと仁川空港について、公開された公式データと出典を明記した参照データを一画面にまとめます。出典の数値とKORETAILが算出した比較値を区別し、過去記録に基づく参考予測は別に表示します。",
       }),
     },
     {

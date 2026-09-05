@@ -1,5 +1,6 @@
 "use client";
 
+import { HolidayContext } from "./operational-context";
 import { useRef, useState, type MouseEvent } from "react";
 
 import { useEventPagination, EventPaginationControls } from "./event-pagination";
@@ -602,7 +603,9 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
 
   const guides = weatherGuides(block?.weather ?? []);
   const weatherGuide = guides[lang] ?? null;
-  const weatherDetails = formatWeatherDetails(weatherInput(block?.weather ?? []), lang);
+  const environment = block?.context?.weather;
+  const airFacts = environment ? [environment.pm10!==null?`PM10 ${environment.pm10}μg/m³`:null,environment.pm25!==null?`PM2.5 ${environment.pm25}μg/m³`:null].filter(Boolean).join(' · ') : '';
+  const weatherDetails = [formatWeatherDetails(weatherInput(block?.weather ?? []), lang), airFacts ? `${airFacts} · ${environment?.observedAt.slice(5,16).replace('T',' ')} KST` : ''].filter(Boolean).join(' · ');
   const areaBrief = buildAreaCurrentBrief({
     realtime: block?.realtime?.freshness === "LIVE" ? block.realtime : null,
     realtimeForecast: block?.realtimeForecast ?? [],
@@ -724,6 +727,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
     <p className="tourism-desk-intro">{introFor(lang, areaName)}</p>
     <p className="tourism-pilot-note">{copy.pilotNote}</p>
 
+    {summary && <HolidayContext months={summary.holidays} date={summary.serviceDateKst} lang={lang} />}
     {!summary ? <LiveLoadMessage loading={summary === undefined} lang={lang} /> : <>
       <section className="tourism-guide-section tourism-shift-brief" aria-labelledby="tourism-brief-title">
         <header className="tourism-section-head">

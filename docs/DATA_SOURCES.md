@@ -602,3 +602,20 @@ These are representative product-area mappings, not interchangeable polygons. Th
 The service name, authenticated response contract, mappings, idempotent D1 persistence, internal API and four-locale UI are complete. Production one-shot `seoul_foreign` succeeded with 18 changed rows; it remains delayed official data, not real-time tourism counts.
 
 The prepared airport schedule is 12 calls/day and at most 24 with its single retry, below the listed 500-call development quota. This is a quota calculation, not proof of a successful approved-key response.
+
+## Additional operational context (2026-09-05)
+
+OA-21285 same integrated payload: CMRCL_RSB category labels, payment level/count/
+amount range; WEATHER_STTS observation time, temperature, humidity, wind, PM10,
+PM25 and provider grades. Missing/suppressed/invalid fields stay null. Context
+preserves its own source times; category level is ordinal, never numeric uplift.
+Seoul KOGL1 permits attribution/commercial/adapted reuse. No extra source calls.
+
+KASI public holidays: https://www.data.go.kr/data/15012690/openapi.do
+Free, unrestricted reuse, automatic application approval, development10000/day.
+getRestDeInfo uses solYear/solMonth, 100rows, page1, JSON envelope; require result00
+and complete item count. Current and next month cached, max4calls/day withretry.
+Existing data.go.kr key still needs this service entitlement; key existence alone
+is not LIVE. Source activation requires actual contract outcome. AirKorea was not
+added: available Seoul PM values satisfy this scope without another provider/key;
+never reuse a Seoul station as airport air quality.
