@@ -1,3 +1,4 @@
+import { withAreaBaselines } from "../lib/period-comparison";
 /**
  * Read-only Production D1 read-budget measurement.
  *
@@ -128,21 +129,21 @@ const HOT_QUERIES: HotQuery[] = [
   },
   {
     name: "realtime",
-    sql: latestPerKey(AREAS, () => `SELECT area, congestion_level AS congestionLevel, congestion_label AS congestionLabel,
+    sql: withAreaBaselines(latestPerKey(AREAS, () => `SELECT area, source_id AS sourceId, schema_version AS schemaVersion, quality_status AS qualityStatus, congestion_level AS congestionLevel, congestion_label AS congestionLabel,
         population_min AS populationMin, population_max AS populationMax,
         observed_at AS observedAt, retrieved_at AS retrievedAt
-      FROM seoul_realtime_area WHERE area = ? ORDER BY observed_at DESC LIMIT 1`),
+      FROM seoul_realtime_area WHERE area = ? ORDER BY observed_at DESC LIMIT 1`), "seoul_realtime_area", "population_min", "population_max"),
     binds: [...AREAS],
     guard: "FROM seoul_realtime_area WHERE area = ? ORDER BY observed_at DESC LIMIT 1",
     table: "seoul_realtime_area",
   },
   {
     name: "commercial",
-    sql: latestPerKey(AREAS, () => `SELECT area, commercial_level AS commercialLevel,
+    sql: withAreaBaselines(latestPerKey(AREAS, () => `SELECT area, source_id AS sourceId, schema_version AS schemaVersion, commercial_level AS commercialLevel,
         payment_count AS paymentCount, payment_amount_min AS paymentAmountMin,
         payment_amount_max AS paymentAmountMax, observed_at AS observedAt,
         retrieved_at AS retrievedAt, quality_status AS qualityStatus
-      FROM seoul_realtime_commercial WHERE area = ? ORDER BY observed_at DESC LIMIT 1`),
+      FROM seoul_realtime_commercial WHERE area = ? ORDER BY observed_at DESC LIMIT 1`), "seoul_realtime_commercial", "payment_amount_min", "payment_amount_max"),
     binds: [...AREAS],
     guard: "FROM seoul_realtime_commercial WHERE area = ? ORDER BY observed_at DESC LIMIT 1",
     table: "seoul_realtime_commercial",
@@ -314,12 +315,24 @@ const HOT_QUERIES: HotQuery[] = [
         target_start_at AS targetStartAt, target_end_at AS targetEndAt,
         expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
       FROM airport_passenger_forecast f
-      WHERE f.direction IN ('departure', 'arrival') AND f.is_aggregate = 1 AND f.target_date = ?
-      ORDER BY direction, target_start_at, terminal LIMIT 96`,
-    binds: [serviceDate],
-    guard: "WHERE f.direction IN ('departure', 'arrival') AND f.is_aggregate = 1 AND f.target_date = ?",
+      WHERE f.direction IN ('departure', 'arrival') AND f.is_aggregate = 1 AND f.target_date IN (?, ?, ?)
+      ORDER BY target_date DESC, direction, target_start_at, terminal LIMIT 288`,
+    binds: [serviceDate, shiftKstDay(serviceDate, -7), shiftKstDay(serviceDate, -28)],
+    guard: "WHERE f.direction IN ('departure', 'arrival') AND f.is_aggregate = 1 AND f.target_date IN (?, ?, ?)",
     table: "airport_passenger_forecast",
     scanTargets: ["airport_passenger_forecast", "f"],
+  },
+  {
+    name: "historicalFlightCounts",
+    sql: `SELECT ? AS baselineDate, terminal, COUNT(*) AS flights FROM
+        (SELECT DISTINCT physical_flight_id, terminal FROM airport_flights
+         WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ?
+           AND physical_flight_id IS NOT NULL LIMIT 2001)
+       GROUP BY terminal`,
+    binds: [],
+    repeatBinds: [7, 28].map(days => [shiftKstDay(serviceDate, -days), shiftKstDay(serviceDate, -days), shiftKstDay(serviceDate, 1 - days)]),
+    guard: "AND physical_flight_id IS NOT NULL LIMIT 2001",
+    table: "airport_flights",
   },
   {
     name: "flights",
