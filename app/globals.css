@@ -599,8 +599,11 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
    of facts about one reading, not a grid of separate cards, so a hairline
    box around each field read as clutter. A bottom border between rows is
    enough to separate them. */
-.commercial-metrics, .commercial-times { margin: 0; padding: 0; }
-.commercial-metrics > div, .commercial-times > div { min-width: 0; padding: 13px 0; border-bottom: 1px solid var(--line); }
+.commercial-status { margin: 0 0 12px; font-size: 14px; }
+.period-comparison { margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: var(--ink); }
+.commercial-metrics { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; margin: 0; padding: 0; }
+.commercial-times { margin: 10px 0 0; padding: 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
+.commercial-metrics > div { min-width: 0; padding: 10px 0; }
 .commercial-metrics > div:last-child, .commercial-times > div:last-child { border-bottom: 0; }
 .commercial-metrics dt, .commercial-times dt { color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .04em; }
 .commercial-metrics dd, .commercial-times dd { margin: 7px 0 0; font-size: 14px; line-height: 1.35; overflow-wrap: anywhere; }
@@ -884,6 +887,15 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 
 /* Settings and sources */
 .preference-block, .source-block { margin: 30px 0 0; padding-top: 22px; border-top: 1px solid var(--line); }
+.site-usage-guide { margin-top: 28px; }
+.site-usage-guide h2 { font-size: 22px; letter-spacing: -.025em; }
+.site-usage-guide h3 { margin: 26px 0 8px; font-size: 17px; }
+.site-usage-guide p { max-width: 78ch; font-size: 15px; line-height: 1.7; }
+.site-usage-guide dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 22px; padding: 20px 0; border-block: 1px solid var(--line); }
+.site-usage-guide dt { font-size: 16px; font-weight: var(--weight-strong); }
+.site-usage-guide dd { margin: 8px 0 0; font-size: 14px; line-height: 1.7; color: var(--muted); }
+.site-usage-guide .site-usage-limit { font-size: 13px; color: var(--muted); }
+.lang-ko .site-usage-guide { font-family: "Pretendard Variable", var(--font-ui); }
 .preference-rows { margin: 14px 0 0; padding: 0; list-style: none; }
 .preference-rows li { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
 .preference-rows span { color: var(--muted); font-weight: var(--weight-strong); }
@@ -1346,3 +1358,8 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
   .airport-composition .airport-gate-row,
   .airport-composition .airport-rank-row { grid-template-columns: 30px minmax(0, 1fr) minmax(68px, auto); column-gap: 10px; }
 }
+
+/* Complete Korean glyph coverage keeps new operational copy consistent. */
+.lang-ko { --font-ui: "Pretendard Variable", "KORETAIL Sans Variable", system-ui, sans-serif; }
+.commercial-status { margin: 10px 0; font-size: 14px; line-height: 1.6; }
+.period-comparison { margin: 6px 0; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }

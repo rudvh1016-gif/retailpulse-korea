@@ -29,6 +29,7 @@ import LiveSignals, {
 } from "./live-signals";
 import { TourismDeskView } from "./tourism-desk";
 import { InstallAppButton } from "./install-app";
+import { SiteUsageGuide } from "./site-usage-guide";
 
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
 
@@ -455,7 +456,6 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           selected={selected}
           terminal={terminal}
           industry={industry}
-          onTourism={() => navigate("tourism-desk")}
           onAbout={() => navigate("about")}
         />}
 
@@ -1015,10 +1015,10 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
 }
 
 function MoreView({
-  lang, setLang, selected, terminal, industry, onTourism, onAbout,
+  lang, setLang, selected, terminal, industry, onAbout,
 }: {
   lang: Lang; setLang: (value: Lang) => void; selected: AreaId; terminal: Terminal; industry: IndustryId;
-  onTourism: () => void; onAbout: () => void;
+  onAbout: () => void;
 }) {
   const [sourcesOpen, setSourcesOpen] = useState(false);
   return (
@@ -1030,16 +1030,7 @@ function MoreView({
         </div>
       </div>
 
-      <section className="about-link-block tourism-link-block">
-        <div>
-          <p className="eyebrow">GUIDE DESK</p>
-          <h2>{localText(lang, { ko: "관광안내 근무를 시작하시나요?", en: "Starting a tourism-information shift?", zh: "准备开始旅游咨询工作吗？", ja: "観光案内の勤務を始めますか？" })}</h2>
-          <p>{localText(lang, { ko: "명동·홍대·성수의 근무 전 브리핑을 한 번 더 눌러 엽니다.", en: "Open a pre-shift briefing for Myeongdong, Hongdae or Seongsu in one more tap.", zh: "再点一次即可查看明洞、弘大或圣水的上岗前简报。", ja: "もう一度タップすると、明洞・弘大・聖水の勤務前ブリーフィングを開けます。" })}</p>
-        </div>
-        <a href={routeFor(lang, "tourism-desk", selected)} onClick={(event) => { event.preventDefault(); onTourism(); }}>
-          {localText(lang, { ko: "관광안내 열기", en: "OPEN GUIDE DESK", zh: "打开旅游咨询", ja: "観光案内を開く" })} ↗
-        </a>
-      </section>
+      <SiteUsageGuide lang={lang} />
 
       <section className="preference-block" aria-labelledby="preference-title">
         <div className="section-head"><div><p className="eyebrow">SAVED ON THIS DEVICE</p><h2 id="preference-title">{localText(lang, { ko: "저장된 설정", en: "Saved preferences", zh: "已保存的设置", ja: "保存された設定" })}</h2></div></div>

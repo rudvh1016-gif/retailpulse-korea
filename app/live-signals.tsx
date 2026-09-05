@@ -23,10 +23,17 @@ import { buildFacilityCopyText, type CopyableFacility } from "../lib/facility-sh
 import { formatRepresentativeStations } from "../lib/subway-ridership";
 import { buildTerminalBriefings, type TerminalBriefing } from "../lib/terminal-briefing";
 import { buildWeatherGuide } from "../lib/weather-guide";
+import { comparisonText, type RangeChange } from "../lib/period-comparison";
+
+type PeriodComparisons = Partial<Record<7 | 28, RangeChange | null>>;
+function comparisonLines(comparisons: PeriodComparisons | undefined, lang: Lang): string[] {
+  return ([7, 28] as const).flatMap((days) => comparisons?.[days] ? [comparisonText(comparisons[days]!, lang, days)] : []);
+}
 
 type AreaId = "myeongdong" | "hongdae" | "seongsu";
 
 interface LiveRealtime {
+  comparisons?: PeriodComparisons;
   congestionLevel: number;
   congestionLabel: string;
   populationMin: number;
@@ -36,6 +43,7 @@ interface LiveRealtime {
 }
 
 export interface LiveCommercial {
+  comparisons?: PeriodComparisons;
   commercialLevel: string;
   paymentCount: number | null;
   paymentAmountMin: number | null;
@@ -254,6 +262,7 @@ export interface LiveSummary {
   sources?: Array<{ sourceId: string; status: string; retrievedAt: string | null }>;
   areas: Partial<Record<AreaId, LiveAreaBlock>>;
   airport: {
+    periodComparisons?: Record<string, Partial<Record<7 | 28, { passengers: RangeChange | null; flightRecords: RangeChange | null }>>>;
     congestion: LiveCongestionRow[];
     currentBusiestDepartureHallByTerminal: Record<string, LiveCongestionRow>;
     departuresTrackedToday: number | null;
@@ -585,7 +594,7 @@ const airportTodayText = {
   // Today's rows can be absent for a whole service day when the morning A1
   // scan timed out at the provider. Say that plainly instead of the generic
   // coverage line, which would blame gate data that was never collected.
-  noFlightsToday: { ko: "오늘 출발편 데이터가 아직 수집되지 않았습니다. 06:07 / 10:07 KST 수집 후 표시됩니다.", en: "Today's departures have not been collected yet. They appear after the 06:07 / 10:07 KST collection.", zh: "今日出发航班数据尚未采集，将在 06:07 / 10:07 KST 采集后显示。", ja: "本日の出発便データはまだ収集されていません。06:07 / 10:07 KST の収集後に表示されます。" },
+  noFlightsToday: { ko: "오늘 출발편 수집이 완료되지 않았습니다. 정기 수집은 06:07, 실패 시 재수집은 10:07 KST 예정이며, 실행 지연이나 공급자 장애가 있으면 늦어질 수 있습니다. 수집 성공 후 게이트·항공사·등록 국가가 함께 표시됩니다.", en: "Today's departures collection is incomplete. Collection is scheduled for 06:07 KST, with recovery at 10:07 KST. Execution delays or provider outages may postpone all three breakdowns.", zh: "今日出发航班尚未完成采集。计划于 06:07 KST 采集，失败后于 10:07 KST 重试；任务延迟或供应方故障可能推迟显示。", ja: "本日の出発便の収集は未完了です。06:07 KST に収集、失敗時は 10:07 KST に再試行予定です。実行遅延や提供元の障害で表示が遅れる場合があります。" },
   noFlightsForDate: { ko: "이 날짜의 출발편 데이터가 없습니다.", en: "No departure data is stored for this date.", zh: "该日期没有出发航班数据。", ja: "この日付の出発便データはありません。" },
   airlinesTitle: { ko: "항공사별 운항 순위", en: "Airlines by departures", zh: "航空公司出发航班排名", ja: "航空会社別運航ランキング" },
   airlinesNote: { ko: "오늘 실제 출발편을 운항 항공사 기준으로 집계한 순위입니다. 공동운항편은 운항사 1편으로만 셉니다.", en: "Today's physical departures counted by operating airline. A codeshare counts once, for its operator.", zh: "按实际执飞航空公司统计的今日出发航班排名，共享航班仅按执飞方计 1 班。", ja: "本日の実運航出発便を運航会社ごとに集計した順位です。コードシェア便は運航会社の1便としてのみ数えます。" },
@@ -621,10 +630,10 @@ const airportTodayText = {
   airlinesUnit: { ko: "개 항공사", en: " airlines", zh: "家航空公司", ja: "社" },
   noAirlineList: { ko: "운항 항공사를 식별할 수 있는 출발편이 없습니다.", en: "No departures with an identifiable operating airline.", zh: "没有可识别执飞航空公司的出发航班。", ja: "運航会社を識別できる出発便がありません。" },
   airlineCountryBasis: {
-    ko: (retrievedOn: string) => `항공사가 등록된 국가이며, 그 비행기를 탄 승객의 국적이 아닙니다. OpenFlights 항공사 참조표(ODbL, ${retrievedOn} 수집) 기준이며 공식 등록 자료가 아닙니다. 참조표가 보증하지 못하는 항공사는 '등록 국가 미확인'으로 표시합니다.`,
-    en: (retrievedOn: string) => `The country the airline is registered in — never the nationality of the passengers on board. From the OpenFlights airline reference table (ODbL, retrieved ${retrievedOn}), not an official register. Airlines the table cannot vouch for are shown as unverified.`,
-    zh: (retrievedOn: string) => `这是航空公司的注册国，并非机上旅客的国籍。依据 OpenFlights 航空公司参考表（ODbL，${retrievedOn} 获取），并非官方登记资料。参考表无法确认的航空公司显示为“注册国未确认”。`,
-    ja: (retrievedOn: string) => `航空会社が登録されている国であり、搭乗した旅客の国籍ではありません。OpenFlights 航空会社参照表（ODbL、${retrievedOn} 取得）に基づき、公式登録資料ではありません。参照表が保証できない航空会社は「登録国未確認」と表示します。`,
+    ko: (retrievedOn: string) => `항공사가 등록된 국가이며, 그 비행기를 탄 승객의 국적이 아닙니다. OpenFlights 항공사 참조표(ODbL, ${retrievedOn} 수집) 기준이며 공식 등록 자료가 아닙니다. RS 에어서울은 나리타공항·에어서울 공식 자료로 별도 확인했습니다. 확인하지 못한 항공사는 '등록 국가 미확인'으로 표시합니다.`,
+    en: (retrievedOn: string) => `The country the airline is registered in — never the nationality of the passengers on board. From the OpenFlights airline reference table (ODbL, retrieved ${retrievedOn}), not an official register. RS / Air Seoul is separately verified against Narita Airport and Air Seoul official sources. Other unverified airlines remain marked unverified.`,
+    zh: (retrievedOn: string) => `这是航空公司的注册国，并非机上旅客的国籍。依据 OpenFlights 航空公司参考表（ODbL，${retrievedOn} 获取），并非官方登记资料。RS 首尔航空另据成田机场及首尔航空官方资料确认。无法确认的航空公司显示为“注册国未确认”。`,
+    ja: (retrievedOn: string) => `航空会社が登録されている国であり、搭乗した旅客の国籍ではありません。OpenFlights 航空会社参照表（ODbL、${retrievedOn} 取得）に基づき、公式登録資料ではありません。RS エアソウルは成田空港・エアソウルの公式資料で別途確認しています。確認できない航空会社は「登録国未確認」と表示します。`,
   },
   airlineCountryShortBasis: {
     ko: "등록 국가는 OpenFlights 항공사 참조표 기준이며 승객 국적이 아닙니다.",
@@ -1217,6 +1226,10 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     topGate,
   });
   const airportBriefLines = localizeAirportBrief(airportBrief, lang, remaining);
+  const comparisons = airport.periodComparisons?.[terminal];
+  const passengerChanges = ([7, 28] as const).flatMap((days) => comparisons?.[days]?.passengers ? [comparisonText(comparisons[days]!.passengers!, lang, days)] : []);
+  const flightChanges = ([7, 28] as const).flatMap((days) => comparisons?.[days]?.flightRecords ? [comparisonText(comparisons[days]!.flightRecords!, lang, days)] : []);
+  const recordsOnly = ({ ko: "수집된 출발편 기록 기준 · 전체 운항 증감과 다를 수 있음", en: "Collected departing-flight records; not a complete operational census", zh: "按已采集出发航班记录，非完整运行统计", ja: "収集済み出発便記録による比較・全運航の増減とは異なる場合あり" })[lang];
   // Metrics can be collected at different times (expected passengers 09:34 vs
   // flights 00:03), so each cell carries its own time. When all four agree the
   // section states it once instead of repeating it.
@@ -1232,6 +1245,9 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     <section className="current-brief airport-current-brief" aria-label={`${scopeLabel} ${areaBriefText.nowLabel[lang]}`}>
       <p className="eyebrow">{scopeLabel} · {areaBriefText.nowLabel[lang].toUpperCase()}</p>
       {airportBriefLines.map((line, index) => index === 0 ? <strong key={line}>{line}</strong> : <p key={line}>{line}</p>)}
+      {expectedTotal !== null && <p>{airportTodayText.expected[lang]} {Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}{passengerChanges.length ? ` · ${passengerChanges.join(" · ")}` : ""}</p>}
+      {flightsCount !== null && <p>{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}{flightChanges.length ? ` · ${flightChanges.join(" · ")}` : ""}</p>}
+      {flightChanges.length > 0 && <small>{recordsOnly}</small>}
     </section>
 
     {isAll && <TerminalBriefingCards lang={lang} airport={airport} nowIso={nowIso} dayRelation={summary?.dayRelation ?? "TODAY"} />}
@@ -1423,6 +1439,7 @@ function regionName(code: string, lang: Lang): string {
 }
 
 function airlineDisplayName(row: RankedAirlineRow, lang: Lang): string {
+  if (row.iata === "RS" && row.registryName === "Air Seoul") return ({ ko: "에어서울", en: "Air Seoul", zh: "首尔航空", ja: "エアソウル" })[lang];
   // The name comes ONLY from the verified reference table, keyed by the
   // reliably-parsed operating designator — never from the raw per-row
   // provider field. Investigation on 2026-09-03 found that field unreliable:
@@ -2202,6 +2219,7 @@ function formatKrwCompact(lang: Lang, amount: number): string {
 }
 
 export interface CommercialSignalRow {
+  comparisons: string[];
   key: "commercial";
   label: string;
   statusLabel: string;
@@ -2291,6 +2309,7 @@ export function buildCommercialSignalRow(
   const staleAge = commercial.freshness === "STALE" ? formatCommercialAge(lang, commercial.observedAt, generatedAt) : null;
   return {
     key: "commercial",
+    comparisons: comparisonLines(commercial.comparisons, lang),
     label: text.commercial[lang],
     statusLabel: commercialFieldText.status[lang],
     statusValue: commercial.commercialLevel.trim(),
@@ -2532,7 +2551,6 @@ function SignalRowCard({ row, lang }: { row: SignalRow; lang: Lang }) {
 
 function CommercialSignalCard({ signal, lang }: { signal: CommercialSignalRow; lang: Lang }) {
   const metrics = [
-    { label: signal.statusLabel, value: signal.statusValue },
     { label: signal.amountLabel, value: signal.amountValue ?? signal.privacyMessage },
     ...(signal.countValue ? [{ label: signal.countLabel, value: signal.countValue }] : []),
   ];
@@ -2544,13 +2562,12 @@ function CommercialSignalCard({ signal, lang }: { signal: CommercialSignalRow; l
     </div>
     <div className="commercial-signal-content">
       <p className="commercial-basis">{text.commercialBasis[lang]}</p>
+      <p className="commercial-status">{lang === "ko" ? "서울시 제공 소비활동 상태" : signal.statusLabel} · <strong>{lang === "ko" ? `최근 10분 소비활동 ‘${signal.statusValue}’` : signal.statusValue}</strong></p>
       <dl className="commercial-metrics">
         {metrics.map((metric) => <div key={metric.label}><dt>{metric.label}</dt><dd>{metric.value}</dd></div>)}
       </dl>
-      <dl className="commercial-times">
-        <div><dt>{signal.referenceLabel}</dt><dd>{signal.referenceValue}</dd></div>
-        <div><dt>{signal.retrievalLabel}</dt><dd>{signal.retrievalValue}</dd></div>
-      </dl>
+      <p className="commercial-times">{signal.referenceValue} · {signal.retrievalValue}</p>
+      {signal.comparisons.length ? signal.comparisons.map((line) => <p className="period-comparison" key={line}>{line}</p>) : <p className="commercial-times">{({ ko: "동일 시간대 과거 자료 부족 · 전주·4주 전 비교 불가", en: "Matching historical time window unavailable for weekly comparisons", zh: "缺少同一时段历史资料，无法进行周比较", ja: "同時刻の過去資料不足のため週比較不可" })[lang]}</p>}
       <p className="commercial-attribution">{text.sourceSeoul[lang]} · {signal.attribution}</p>
     </div>
   </article>;
@@ -2738,6 +2755,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       group: "now",
       timeState: signalStructureText.timeState.recent[lang],
       label: text.currentPopulation[lang],
+      detail: comparisonLines(block.realtime.comparisons, lang).join(" · ") || undefined,
       value: `${formatPeopleRange(lang, block.realtime.populationMin, block.realtime.populationMax)}${text.foreignPeople[lang]} · ${level}`,
       note: `${text.sourceSeoul[lang]} · ${formatHumanFreshness(block.realtime.observedAt, summary.generatedAt, lang, "observed")} · ${text.notCumulative[lang]}`,
       state: block.realtime.freshness,

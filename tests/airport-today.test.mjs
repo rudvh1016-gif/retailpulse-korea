@@ -214,3 +214,29 @@ test("A1 request budget counts every attempt, retries a page once, and aborts be
   );
   assert.equal(calls, 2);
 });
+
+
+test("A1 does not retry permanent HTTP failures and records failure without touching last-good rows", async () => {
+  const { SourceFetchError } = await import("../lib/source-adapters.ts");
+  let calls = 0;
+  const writes = [];
+  const db = { prepare(sql) { return { bind(...values) { this.values = values; return this; }, async run() { writes.push({ sql, values: this.values }); return { success: true }; } }; } };
+  const result = await collectAirportFlightsToday({ DB: db, DATA_GO_KR_SERVICE_KEY: "fixture-key" }, new Date("2026-09-05T01:00:00Z"), async () => { calls++; throw new SourceFetchError("HTTP", 401); });
+  assert.equal(calls, 1);
+  assert.equal(result.status, "ERROR");
+  assert.equal(writes.length, 2);
+  assert.ok(writes.some(x => x.sql.includes("INSERT INTO source_health") && x.values.includes("ERROR")));
+  assert.ok(writes.every(x => !x.sql.includes("airport_flights")));
+  assert.ok(writes.some(x => x.values.some(v => typeof v === "string" && v.includes("httpStatus=401"))));
+});
+
+test("A1 transient recovery waits twenty seconds without increasing its two-attempt bound", async () => {
+  const { SourceFetchError } = await import("../lib/source-adapters.ts");
+  const delays = []; let calls = 0;
+  const result = await fetchA1DeparturesForDate("fixture-key", "2026-08-30", async () => {
+    if (++calls === 1) throw new SourceFetchError("NETWORK", undefined, "UND_ERR_CONNECT_TIMEOUT");
+    return pagePayload([flight({ flightId: "KE100", scheduleDatetime: "202608300900" })], 1);
+  }, { sleep: async ms => { delays.push(ms); } });
+  assert.equal(result.requestsIssued, 2);
+  assert.deepEqual(delays, [20000]);
+});

@@ -103,7 +103,7 @@ test("the whole summary read path is one D1 round trip, and the payload is a cac
     assert.equal(client.trips.length, 1, `expected one D1 request, saw ${JSON.stringify(client.trips)}`);
     assert.equal(client.trips[0].kind, "batch");
     // 15 block statements + 3 × 21 date-picker probes, all in the one request.
-    assert.equal(client.trips[0].count, 15 + 3 * 21);
+    assert.equal(client.trips[0].count, 17 + 3 * 21);
 
     assert.equal(body.areas.myeongdong.realtime.congestionLabel, "약간 붐빔");
     assert.equal(body.areas.myeongdong.realtime.freshness, "LIVE");
@@ -141,7 +141,7 @@ test("a broken statement still isolates to its own block: the page stays live, t
     assert.equal(response.headers.get("cache-control"), SUMMARY_CACHE_CONTROL);
     assert.equal(client.trips[0].kind, "batch", "the single batch is tried first");
     // Then one concurrent wave: one request per group, not the old serial chain.
-    assert.equal(client.trips.length, 1 + 18);
+    assert.equal(client.trips.length, 1 + 19);
   } finally {
     database.close();
     unlinkSync(databasePath);
@@ -163,4 +163,22 @@ test("an empty database is still a well-formed live summary that the cache refus
     database.close();
     unlinkSync(databasePath);
   }
+});
+
+
+test("population comparisons require exact local time, source, schema and valid quality", async () => {
+  const { database, databasePath } = openDatabase("comparisons");
+  try {
+    seed(database);
+    database.exec(`INSERT INTO seoul_realtime_area SELECT 'baseline', source_id, record_origin, area, area_code, area_name, congestion_level, congestion_label, 10000, 10000, '2026-08-28T13:10:00+09:00', retrieved_at, freshness, schema_version, quality_status, 'baseline-hash' FROM seoul_realtime_area WHERE id='r1'`);
+    const read = async () => (await (await summarizeLiveSummary(new LocalD1Database(database), clockFor())).json()).areas.myeongdong.realtime.comparisons;
+    let changes = await read();
+    assert.ok(Math.abs(changes[7].minPercent - 130) < 0.0001);
+    assert.equal(changes[28], null);
+    for (const [column, value, original] of [["schema_version", "different", "v1"], ["source_id", "other", "SEOUL_CITYDATA_PPLTN"], ["quality_status", "INVALID", "VALID"], ["observed_at", "2026-08-28T13:15:00+09:00", "2026-08-28T13:10:00+09:00"]]) {
+      database.prepare(`UPDATE seoul_realtime_area SET ${column}=? WHERE id='baseline'`).run(value);
+      assert.equal((await read())[7], null, column);
+      database.prepare(`UPDATE seoul_realtime_area SET ${column}=? WHERE id='baseline'`).run(original);
+    }
+  } finally { database.close(); unlinkSync(databasePath); }
 });

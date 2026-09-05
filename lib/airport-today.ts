@@ -1,7 +1,11 @@
+import { writeSourceHealth, writeCollectorStatus } from "./collector";
 import { buildDataGoKrUrl } from "./data-go-kr.mjs";
 import { describeWrites, NO_D1_WRITES, runD1Batches, type D1WriteCounts } from "./d1-write-counts";
 import {
   fetchOfficialJson,
+  classifySourceFetchFailure,
+  isTransientSourceFailure,
+  safeSourceFailureDetail,
   normalizeAirportFlight,
   type CanonicalAirportFlight,
 } from "./source-adapters";
@@ -150,8 +154,9 @@ export async function fetchA1DeparturesForDate(
       try {
         return await fetcher(url, { timeoutMs: 30_000, retries: 0 });
       } catch (error) {
-        if (attempt >= 1) throw error;
-        await sleep(750);
+        if (attempt >= 1 || !isTransientSourceFailure(classifySourceFetchFailure(error))) throw error;
+        // Allow a short gateway outage to recover without adding requests.
+        await sleep(20_000);
       }
     }
   };
@@ -353,6 +358,7 @@ export async function collectAirportFlightsToday(
   fetcher: OfficialFetcher = fetchOfficialJson,
 ): Promise<{ status: string; records: number; trackedToday: number; pagesFetched: number }> {
   if (!env.DATA_GO_KR_SERVICE_KEY) {
+    await writeSourceHealth(env.DB, SOURCE_ID, "MISSING", "DATA_GO_KR_SERVICE_KEY is not configured");
     return { status: "NEEDS_KEY", records: 0, trackedToday: 0, pagesFetched: 0 };
   }
 
@@ -370,11 +376,11 @@ export async function collectAirportFlightsToday(
       pagesFetched: fetched.pagesFetched,
     };
   } catch (error) {
-    const detail = error instanceof Error ? error.message : "a1_today_collector_error";
+    const detail = safeSourceFailureDetail(error);
     console.error("airport_today_collector_failed", { sourceId: SOURCE_ID, error: detail.slice(0, 200) });
-    // Keep the last-good A1 source-health snapshot intact. This auxiliary,
-    // manual current-date scan failing must not relabel previously verified
-    // official rows as fabricated or unavailable.
+    // A failed refresh changes health, never the last-good rows or timestamps.
+    await writeCollectorStatus(env.DB, SOURCE_ID, "ERROR", detail);
+    await writeSourceHealth(env.DB, SOURCE_ID, "ERROR", detail);
     return { status: "ERROR", records: 0, trackedToday: 0, pagesFetched: 0 };
   }
 }

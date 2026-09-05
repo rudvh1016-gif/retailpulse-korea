@@ -82,7 +82,7 @@ const HOT_QUERIES = {
     return [area, "oa-22723-area-stations-2026-09-02-v1", "2026-09-04", station.code, station.number, station.name, station.line, "SEOUL_SUBWAY_RIDERSHIP", "OA-22723"];
   })],
   "summary.latestCongestion": [perKey(["T1", "T2"], "SELECT terminal FROM airport_congestion WHERE terminal = ? AND observed_at = (SELECT MAX(observed_at) FROM airport_congestion WHERE terminal = ?) ORDER BY zone LIMIT 12"), ["T1", "T1", "T2", "T2"]],
-  "summary.passengerForecast": ["SELECT terminal, direction FROM airport_passenger_forecast WHERE direction IN ('departure', 'arrival') AND is_aggregate = 1 AND target_date = ? ORDER BY direction, target_start_at, terminal LIMIT 96", ["2026-08-31"]],
+  "summary.passengerForecast": ["SELECT terminal, direction FROM airport_passenger_forecast WHERE direction IN ('departure', 'arrival') AND is_aggregate = 1 AND target_date = ? ORDER BY target_date DESC, direction, target_start_at, terminal LIMIT 288", ["2026-08-31"]],
   "summary.flightsForDay": ["SELECT physical_flight_id, terminal, gate FROM airport_flights WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ? LIMIT 2000", ["2026-08-31", "2026-09-01"]],
   "summary.availableFlightDates": [probe("airport_flights", "scheduled_at", "direction = 'departure'"), probeBinds()],
   "summary.availableForecastDates": [exactDayProbe("airport_passenger_forecast", "target_date", "direction = 'departure' AND is_aggregate = 1"), ["2026-08-31", "2026-08-31"]],
@@ -216,8 +216,8 @@ test("bounded forecast date probes preserve the aggregate-departure picker contr
 test("the live summary reads both A5 directions once while the Airport date picker stays departure-only", () => {
   assert.equal((route.match(/FROM airport_passenger_forecast f/g) ?? []).length, 1,
     "one bounded D1 statement must serve both departure and arrival summaries");
-  assert.match(route, /WHERE f\.direction IN \('departure', 'arrival'\) AND f\.is_aggregate = 1 AND f\.target_date = \?/);
-  assert.match(route, /ORDER BY direction, target_start_at, terminal LIMIT 96/);
+  assert.match(route, /WHERE f\.direction IN \('departure', 'arrival'\) AND f\.is_aggregate = 1 AND f\.target_date IN \(\?, \?, \?\)/);
+  assert.match(route, /ORDER BY target_date DESC, direction, target_start_at, terminal LIMIT 288/);
   assert.match(route, /passengerForecastRows\.filter\(\(row\) => row\.direction === "departure"\)/);
   assert.match(route, /passengerForecastRows\.filter\(\(row\) => row\.direction === "arrival"\)/);
   assert.match(route, /dayValueExistsSql\("airport_passenger_forecast", "target_date", "direction = 'departure' AND is_aggregate = 1"\)/,
@@ -228,7 +228,7 @@ test("the live summary exposes one indexed latest commercial observation per kno
   assert.match(route, /commercialRows: \[client\.prepare\(/, "the commercial block is one statement in the route's single batched read");
   assert.match(route, /FROM seoul_realtime_commercial WHERE area = \? ORDER BY observed_at DESC LIMIT 1/);
   assert.match(route, /const commercial = commercialRows\.find\(\(row\) => row\.area === area\) \?\? null/);
-  assert.match(route, /commercial: commercial \? \{ \.\.\.commercial, freshness:/);
+  assert.match(route, /commercial: commercial \? \{ \.\.\.commercial, comparisons: areaComparisons\(commercial, "paymentAmountMin", "paymentAmountMax"\), freshness:/);
 });
 
 test("the live summary exposes one compact indexed Store Dynamics row per exact current mapping", () => {
@@ -269,7 +269,7 @@ test("every measured hot-path statement still exists in the live route", () => {
   ].join("\n").replace(/\r\n/g, "\n");
   const guards = [...measureSource.matchAll(/^ {4}guard: (`[^`]*`|"(?:[^"\\]|\\.)*"),$/gm)]
     .map((match) => (match[1].startsWith("`") ? match[1].slice(1, -1) : JSON.parse(match[1])));
-  assert.equal(guards.length, 23, "expected one guard per measured statement");
+  assert.equal(guards.length, 24, "expected one guard per measured statement");
   for (const guard of guards) {
     assert.ok(routeText.includes(guard), `the live route no longer contains: ${guard.slice(0, 80)}`);
   }

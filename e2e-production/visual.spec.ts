@@ -175,7 +175,9 @@ for (const width of viewports) {
       await expect(bottomNav.locator("a")).toHaveCount(5);
       await bottomNav.getByRole("link", { name: /더보기/ }).click();
       await expect(page).toHaveURL(/\/ko\/more$/);
-      const tourismLink = page.locator(".tourism-link-block a");
+      await expect(page.locator(".tourism-link-block")).toHaveCount(0);
+      await expect(page.locator(".site-usage-guide h2")).toHaveText("누가, 어떻게 쓰면 좋을까요?");
+      const tourismLink = page.locator(".footer-links a").filter({ hasText: "관광안내 데스크" });
       await expect(tourismLink).toHaveAttribute("href", "/ko/tourism-desk/myeongdong");
       await testInfo.attach(`tourism-mobile-more-${width}.png`, {
         body: await page.screenshot({ animations: "disabled", caret: "hide" }),

@@ -41,7 +41,7 @@ test("no public read path selects the raw provider airline name", async () => {
 
 test("the ranking reads the master flight number, never a stored airline label", async () => {
   const summary = await read("../app/api/live/summary/route.ts");
-  const flightSelect = summary.match(/SELECT[\s\S]*?FROM airport_flights/)?.[0] ?? "";
+  const flightSelect = summary.match(/flightRows: \[client\.prepare\([\s\S]*?FROM airport_flights/)?.[0] ?? "";
   assert.ok(flightSelect.length > 0);
   assert.match(flightSelect, /flight_number AS operatingFlight/,
     "the operating identity must come from the master flight number");

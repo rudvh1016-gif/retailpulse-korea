@@ -80,6 +80,7 @@ test("the registry answers Korean carriers and withholds every suppressed or unk
   assert.deepEqual(lookupAirline("KE"), { name: "Korean Air", country: "KR" });
   assert.equal(lookupAirline("oz").country, "KR");
   assert.equal(lookupAirline("7C").country, "KR");
+  assert.deepEqual(lookupAirline("rs"), { name: "Air Seoul", country: "KR" });
   assert.equal(lookupAirline("7I"), null, "withdrawn AN must not be presented as Curaçao");
   assert.equal(lookupAirline("WM"), null, "withdrawn AN must not be presented as Curaçao");
   for (const code of Object.keys(SUPPRESSED_AIRLINE_DESIGNATORS)) {
