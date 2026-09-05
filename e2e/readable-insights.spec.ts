@@ -17,6 +17,8 @@ test("the flight list starts compact and can reveal records beyond the old 80-ro
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.route("**/api/live/flights*", routeSummary({ mode: "live-flights", flights: Array.from({ length: 91 }, (_, i) => ({ ...FLIGHT_ROWS[0], flightNumber: `KE${1000 + i}` })) }));
   await page.goto("/ko/airport");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+  await expect(page.locator(".airport-current-brief")).toBeVisible();
   await page.locator(".airport-context-nav").getByRole("button", { name: "항공편", exact: true }).click();
   await expect(page.locator(".flight-rows li")).toHaveCount(10);
   for (let i = 0; i < 5; i++) await page.getByRole("button", { name: "항공편 20개 더 보기" }).click();
