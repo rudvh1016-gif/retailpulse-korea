@@ -1156,9 +1156,9 @@ function FlightScopeNote({airport,lang}:{airport:LiveSummary["airport"];lang:Lan
   const unit=t('편',' flights','班','便');
   const parts=[`T1 ${counts.T1}${unit}`,`T2 ${counts.T2}${unit}`,
     counts.other?`${t('기타 표기','Other designation','其他标记','その他表記')} ${counts.other}${unit}`:null,
-    counts.unassigned?`${t('터미널 미표기','Terminal not supplied','未提供航站楼','ターミナル表記なし')} ${counts.unassigned}${unit}`:null,
+    counts.unassigned?`${t('T1·T2 미분류','Not classified as T1/T2','未归类为T1/T2','T1・T2未分類')} ${counts.unassigned}${unit}`:null,
     counts.conflicting?`${t('터미널 표기 충돌','Conflicting terminal labels','航站楼标记冲突','ターミナル表記の不一致')} ${counts.conflicting}${unit}`:null].filter(Boolean);
-  return <p className="flight-scope-note">{parts.join(' · ')}<small>{t('같은 출발편을 한 번씩 센 구성입니다. 미표기 항공편을 탑승동이나 특정 터미널로 추정하지 않습니다.','Each physical departure is counted once. Missing terminal labels are not inferred as concourse or another terminal.','每个实际出发航班计一次，不将未标记航班推定为登机楼或某航站楼。','同じ出発便は1回だけ集計。未表記を搭乗棟や特定ターミナルと推定しません。')}{counts.capped&&t(' 조회 상한에 도달해 일부 기록일 수 있습니다.',' Query limit reached; records may be partial.',' 已达查询上限，可能不完整。',' 取得上限に達し、一部記録の可能性があります。')}</small></p>;
+  return <p className="flight-scope-note">{parts.join(' · ')}<small>{t('같은 출발편을 한 번씩 센 구성입니다. 저장된 기록에서 T1·T2로 분류되지 않은 편은 별도로 표시합니다. 탑승동이나 원본 미표기 여부를 단정하지 않습니다.','Each physical departure is counted once. Records not classified as T1/T2 stay separate; this does not establish concourse use or an absent provider label.','每个实际出发航班计一次，未归类为T1/T2的记录单独显示，不推定为登机楼或原始标记缺失。','同じ出発便は1回だけ集計。T1・T2に分類されない記録は別表示。搭乗棟や元データの未表記とは断定しません。')}{counts.capped&&t(' 조회 상한에 도달해 일부 기록일 수 있습니다.',' Query limit reached; records may be partial.',' 已达查询上限，可能不完整。',' 取得上限に達し、一部記録の可能性があります。')}</small></p>;
 }
 
 export function AirportTodaySummary({ lang, terminal = "all", date = null }: { lang: Lang; terminal?: "all" | "T1" | "T2"; date?: string | null }) {

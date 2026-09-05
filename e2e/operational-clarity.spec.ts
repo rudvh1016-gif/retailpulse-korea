@@ -7,7 +7,7 @@ test('airport starts compact, explains unmatched flights and expands truthful ne
  await page.route('**/api/live/summary*',routeSummary(payload));
  await page.setViewportSize({width:390,height:844});
  await page.goto('/ko/airport');
- await expect(page.locator('.airport-current-brief')).toContainText('터미널 미표기 11편');
+ await expect(page.locator('.airport-current-brief')).toContainText('T1·T2 미분류 11편');
  await expect(page.locator('.airport-today-grid')).not.toBeVisible();
  await page.locator('.airport-summary-details > summary').click();
  await expect(page.locator('.airport-today-grid')).toBeVisible();
