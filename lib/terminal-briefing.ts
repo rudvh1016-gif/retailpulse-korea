@@ -51,7 +51,7 @@ export interface TerminalBriefing {
   /** Longest current wait in this terminal (observed), or null. */
   checkpoint: AirportBriefCheckpoint | null;
   checkpointBasis: "WAIT_TIME" | "WAITING_COUNT" | null;
-  /** The official band that contains or follows `nowIso` today (forecast). */
+  /** The official band that starts strictly after `nowIso` today (forecast). */
   nextBand: TerminalForecastBand | null;
   /** Today's official peak band; only when the day's bands are COMPLETE. */
   peak: AirportBriefPeak | null;
@@ -105,14 +105,12 @@ function isValidBand(band: TerminalForecastBand): boolean {
     && band.expectedPassengers >= 0;
 }
 
-/** The band whose window contains `now`, else the first band starting after it. Today only. */
+/** The next not-yet-started band. The current band is never labelled next. Today only. */
 export function selectNextBand(timeline: TerminalForecastBand[], nowIso: string, dayRelation: TerminalBriefingInput["dayRelation"]): TerminalForecastBand | null {
   if (dayRelation !== "TODAY") return null;
   const now = Date.parse(nowIso);
   if (!Number.isFinite(now)) return null;
   const bands = timeline.filter(isValidBand).sort((a, b) => Date.parse(a.targetStartAt) - Date.parse(b.targetStartAt));
-  const containing = bands.find((band) => Date.parse(band.targetStartAt) <= now && now < Date.parse(band.targetEndAt));
-  if (containing) return containing;
   return bands.find((band) => Date.parse(band.targetStartAt) > now) ?? null;
 }
 

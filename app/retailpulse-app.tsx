@@ -1,4 +1,5 @@
 "use client";
+import { activeSourceCatalog,sourceName,sourceUse,CollectionStatus } from "./source-status";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { checklistPhaseLabels, checklistPhaseOrder, type IndustryId, industryProfiles } from "../lib/industry-guidance";
@@ -10,7 +11,6 @@ import {
   foreignMonthly,
   formatCount,
   monthDays,
-  sourceCatalog,
   type AirportDirection,
   type Lang,
   type Terminal,
@@ -1035,6 +1035,7 @@ function MoreView({
       </div>
 
       <SiteUsageGuide lang={lang} />
+      <CollectionStatus lang={lang} />
 
       <section className="preference-block" aria-labelledby="preference-title">
         <div className="section-head"><div><p className="eyebrow">SAVED ON THIS DEVICE</p><h2 id="preference-title">{localText(lang, { ko: "저장된 설정", en: "Saved preferences", zh: "已保存的设置", ja: "保存された設定" })}</h2></div></div>
@@ -1060,10 +1061,10 @@ function MoreView({
           <button className="source-toggle" onClick={() => setSourcesOpen((open) => !open)} aria-expanded={sourcesOpen}>{sourcesOpen ? localText(lang, { ko: "접기", en: "COLLAPSE", zh: "收起", ja: "閉じる" }) : localText(lang, { ko: "전체 보기", en: "SHOW ALL", zh: "查看全部", ja: "すべて見る" })}</button>
         </div>
         <ol className="source-rows">
-          {(sourcesOpen ? sourceCatalog : sourceCatalog.slice(0, 6)).map((row, index) => <li key={row.source}>
+          {(sourcesOpen ? activeSourceCatalog : activeSourceCatalog.slice(0, 6)).map((row, index) => <li key={row.id}>
             <span>{String(index + 1).padStart(2, "0")}</span>
-            <div><strong>{row.source}</strong><small>{row.provider}</small></div>
-            <p>{lang === "ko" || lang === "ja" ? row.use.ko : lang === "zh" ? row.use.zh : row.use.en}</p>
+            <div><strong>{sourceName(row.id,lang)}</strong></div>
+            <p>{sourceUse(row,lang)}</p>
           </li>)}
         </ol>
       </section>

@@ -11,7 +11,7 @@ export async function GET(request:Request) {
       db.prepare('SELECT payload FROM forecast_runs WHERE area=? AND target_date=?').bind(area,tomorrow).first<{payload:string}>(),
       db.prepare('SELECT payload FROM area_data_coverage WHERE area=?').bind(area).first<{payload:string}>(),
       db.prepare(`SELECT p.target_at AS targetAt,p.value AS predicted,p.created_at AS createdAt,o.actual_value AS actual,o.event_at AS actualAt
-        FROM predictions p LEFT JOIN outcomes o ON o.prediction_id=p.prediction_id
+        FROM predictions p LEFT JOIN outcomes o ON o.prediction_id=p.prediction_id AND o.quality_status='VALID' AND o.source_id='SEOUL_CITYDATA_PPLTN' AND o.actual_unit='estimated_people_midpoint'
         WHERE p.area=? AND p.model_version=? AND p.target_at>=? AND p.target_at<? ORDER BY p.target_at DESC LIMIT 168`)
         .bind(area,POPULATION_MODEL,shiftKstDay(today,-7),tomorrow).all(),
     ]);

@@ -40,7 +40,7 @@ test("each terminal card carries only that terminal's longest observed wait, nex
   const [t1, t2] = terminals;
   assert.equal(t1.checkpoint?.zone, "P01-DG1");
   assert.equal(t1.checkpointBasis, "WAIT_TIME");
-  assert.equal(t1.nextBand?.targetStartAt, "2026-08-31T14:00:00+09:00", "the band containing 14:10 KST is the next band");
+  assert.equal(t1.nextBand?.targetStartAt, "2026-08-31T15:00:00+09:00", "next excludes the currently running 14:00 band");
   assert.equal(t1.peak?.expectedPassengers, 2_400);
   assert.equal(t1.remaining?.expectedPassengers, 9_000);
   assert.equal(t1.departures, 310);
@@ -90,7 +90,7 @@ test("peak and remaining are withheld unless the day's official bands are COMPLE
   const partial = buildTerminalBriefings(input);
   assert.equal(partial.terminals[0].peak, null);
   assert.equal(partial.terminals[0].remaining, null);
-  assert.equal(partial.terminals[0].nextBand?.targetStartAt, "2026-08-31T14:00:00+09:00", "a next band is a single official band and may still be shown");
+  assert.equal(partial.terminals[0].nextBand?.targetStartAt, "2026-08-31T15:00:00+09:00", "a future band is a single official band and may still be shown");
   assert.deepEqual(partial.terminals[0].evidenceTypes, ["CHECKPOINT", "NEXT_BAND", "FLIGHTS"]);
 
   const future = baseInput();
