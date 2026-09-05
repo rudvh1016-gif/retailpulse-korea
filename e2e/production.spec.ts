@@ -190,6 +190,8 @@ test("airport summary keeps forecast, flights, gate and checkpoints truthful on 
   await expect(page.locator(".airport-current-brief")).toContainText("출발 운항 561편");
   await expect(page.locator(".airport-current-brief")).not.toContainText("출발 561편");
   await expect(page.locator(".airport-current-brief")).toContainText("전주 동요일 비교 자료 없음");
+  await expect(page.locator(".airport-today-grid")).not.toBeVisible();
+  await page.locator(".airport-summary-details > summary").click();
   await expect(page.getByText("공식 예상 출국객", { exact: true })).toBeVisible();
   await expect(page.getByText("47,320명", { exact: true })).toBeVisible();
   await expect(page.getByText("561편", { exact: true })).toBeVisible();
