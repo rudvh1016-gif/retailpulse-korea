@@ -1,4 +1,4 @@
-import { normalizeSeoulContext } from "./seoul-context";
+import { normalizeSeoulContext, seoulContextObservedAt } from "./seoul-context";
 import {
   DATA_GO_KR_LOW_CALL_POLICY,
   DATA_GO_KR_PAGED_POLICY,
@@ -510,7 +510,7 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
     // Optional context is isolated from the existing population/card collector.
     try {
       const context = normalizeSeoulContext(citydata);
-      const observedAt = context.commercialAt ?? context.weather?.observedAt;
+      const observedAt = seoulContextObservedAt(context);
       if (env.DB && observedAt && (context.categories.length || context.weather)) {
         console.log(JSON.stringify({context:"seoul",area:areaId,categories:context.categories.length,weather:!!context.weather,
           pm10Published:context.weather?.pm10!==null&&context.weather?.pm10!==undefined,

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {flightScopeCounts} from '../lib/flight-scope';
 import {predictionReadiness,predictionScore} from '../lib/prediction-progress';
-import {seoulContextTime} from '../lib/seoul-context';
+import {seoulContextTime,seoulContextObservedAt} from '../lib/seoul-context';
 import {nextSourceWindow,publicFailureReason} from '../lib/source-status';
 import {selectNextBand} from '../lib/terminal-briefing';
 
@@ -36,6 +36,14 @@ test('scorecard counts prospective matched observations only and computes absolu
 test('commercial compact timestamps and absent timestamps remain distinct',()=>{
  assert.equal(seoulContextTime('20260905 1620'),'2026-09-05T16:20:00+09:00');
  assert.equal(seoulContextTime(undefined),null);
+});
+test('combined context never moves backwards when a lagging commercial timestamp becomes parseable',()=>{
+ const weather={observedAt:'2026-09-05T17:30:00+09:00',temperature:null,humidity:null,wind:null,pm10:null,pm25:null,pm10Grade:null,pm25Grade:null};
+ const context={commercialAt:'2026-09-05T17:00:00+09:00',weather,categories:[]};
+ assert.equal(seoulContextObservedAt(context),'2026-09-05T17:30:00+09:00');
+ assert.equal(context.commercialAt,'2026-09-05T17:00:00+09:00','the card keeps its own actual observation time');
+ assert.equal(seoulContextObservedAt({...context,commercialAt:'2026-09-05T17:40:00+09:00'}),'2026-09-05T17:40:00+09:00');
+ assert.equal(seoulContextObservedAt({commercialAt:null,weather:null,categories:[]}),null);
 });
 test('nominal source schedules roll over KST correctly and failure text never leaks raw details',()=>{
  assert.equal(nextSourceWindow('KASI_PUBLIC_HOLIDAYS','2026-09-05T00:00:00Z'),'2026-09-05T10:07:00+09:00');
