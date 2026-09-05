@@ -9,6 +9,12 @@ export interface SeoulContext {
     wind: number | null; pm10: number | null; pm25: number | null;
     pm10Grade: string | null; pm25Grade: string | null };
 }
+/** A combined snapshot is ordered by its latest observation, while each metric keeps its own time. */
+export function seoulContextObservedAt(context: SeoulContext): string | null {
+  return [context.commercialAt, context.weather?.observedAt]
+    .filter((value): value is string => typeof value === 'string' && Number.isFinite(Date.parse(value)))
+    .sort((a,b)=>Date.parse(a)-Date.parse(b)).at(-1) ?? null;
+}
 function object(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
