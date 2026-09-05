@@ -462,6 +462,11 @@ test("production airport composition is one compact tabbed module at every requi
 
     // #130 remains true while the new module changes view.
     await expect(page.locator(".airport-current-brief")).toContainText("공식 예상 출국객");
+    const dailyTotal = page.locator(".airport-brief-total");
+    if (await dailyTotal.count()) {
+      await expect(page.locator(".airport-current-brief > strong").first()).toHaveClass("airport-brief-total");
+      await expect(dailyTotal).toContainText("금일 전체 공식 예상 출국객");
+    }
     const bars = page.locator(".airport-timeline-bars");
     const now = bars.locator("p.now");
     if (await now.count()) {
@@ -472,6 +477,15 @@ test("production airport composition is one compact tabbed module at every requi
         return left >= 0 && left + current.clientWidth <= element.clientWidth + 1;
       });
       expect(inView).toBe(true);
+      const marker = await now.evaluate(el => {
+        const rule = getComputedStyle(el, "::before");
+        return { height: parseFloat(rule.height), width: parseFloat(rule.borderLeftWidth), style: rule.borderLeftStyle, label: el.getAttribute("data-now-label") };
+      });
+      expect(marker.height).toBeGreaterThan(110);
+      expect(marker.width).toBeGreaterThanOrEqual(1);
+      expect(marker.style).toBe("dashed");
+      console.log(`AIRPORT_CURRENT_MARKER ${JSON.stringify({ viewport: width, ...marker })}`);
+      await testInfo.attach(`airport-marker-${width}.png`, { body: await page.locator(".airport-forecast").screenshot(), contentType: "image/png" });
     }
 
     await testInfo.attach(`airport-full-${width}.png`, {

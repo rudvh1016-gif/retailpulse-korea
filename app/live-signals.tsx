@@ -799,8 +799,9 @@ function localizeAirportBrief(
    * a long bold sentence that made one checkpoint queue look like the most
    * important fact on the page. It is not. The number an airport retail
    * worker plans a shift around is how many departing passengers the airport
-   * officially expects IN THE HOUR THEY ARE STANDING IN, so that leads now
-   * and the queue is demoted to a short supporting line.
+   * officially expects IN THE HOUR THEY ARE STANDING IN. This is the first
+   * contextual line, immediately below the full-day total in the view.
+   * The queue stays a short supporting line.
    *
    * Every line is trimmed to what it asserts. "…가 오늘 피크입니다 (4,675명)"
    * became "오늘 피크 07:00–08:00 · 4,675명": same facts, no sentence to read
@@ -1263,8 +1264,11 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   return <section className="airport-today" aria-labelledby="airport-today-title">
     <section className="current-brief airport-current-brief" aria-label={`${scopeLabel} ${areaBriefText.nowLabel[lang]}`}>
       <p className="eyebrow">{scopeLabel} · {areaBriefText.nowLabel[lang].toUpperCase()}</p>
-      {airportBriefLines.map((line, index) => index === 0 ? <strong key={line}>{line}</strong> : <p key={line}>{line}</p>)}
-      {expectedTotal !== null && <p>{airportTodayText.expected[lang]} {Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}{passengerChanges.length ? ` · ${passengerChanges.join(" · ")}` : ""}</p>}
+      {expectedTotal !== null && <strong className="airport-brief-total">{summary.dayRelation === "TODAY"
+        ? contextText(lang, "금일 전체 공식 예상 출국객", "Today's total official expected departures", "今日全天官方预计出境旅客", "本日合計の公式予想出国旅客")
+        : contextText(lang, "선택일 전체 공식 예상 출국객", "Selected day's total official expected departures", "所选日期全天官方预计出境旅客", "選択日合計の公式予想出国旅客")} {Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}</strong>}
+      {airportBriefLines.map((line, index) => index === 0 ? <strong className="airport-brief-current" key={line}>{line}</strong> : <p key={line}>{line}</p>)}
+      {expectedTotal !== null && passengerChanges.length > 0 && <p>{airportTodayText.expected[lang]} · {passengerChanges.join(" · ")}</p>}
       {flightsCount !== null && <p>{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}{flightChanges.length ? ` · ${flightChanges.join(" · ")}` : ""}</p>}
       {isAll && <FlightScopeNote airport={airport} lang={lang} />}
       {flightChanges.length > 0 && <small>{recordsOnly}</small>}
