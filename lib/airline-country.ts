@@ -74,5 +74,6 @@ export function lookupAirline(iata: string | null | undefined): AirlineLookup | 
 
 export const AIRLINE_COUNTRY_SOURCE = {
   ...AIRLINE_REGISTRY_SOURCE,
+  verifiedOverrides: { RS: { name: "Air Seoul", country: "KR", verifiedOn: "2026-09-05", sources: ["https://www.narita-airport.jp/ko/flight/airline-search/asv/", "https://flyairseoul.com/CW/ko/main.do"] } },
   suppressed: Object.keys(SUPPRESSED_AIRLINE_DESIGNATORS).length,
 } as const;

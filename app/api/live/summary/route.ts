@@ -115,7 +115,8 @@ function withAreaBaselines(sql: string, table: "seoul_realtime_area" | "seoul_re
   return `SELECT current.*, ${[7, 28].map((days) => `(SELECT json_object('min', h.${min}, 'max', h.${max}, 'observedAt', h.observed_at)
     FROM ${table} h WHERE h.area = current.area
       AND h.observed_at = strftime('%Y-%m-%dT%H:%M:%S', substr(current.observedAt, 1, 19), '-${days} days') || '+09:00'
-      AND h.quality_status = 'VALID' LIMIT 1) AS baseline${days}`).join(", ")}
+      AND h.quality_status = 'VALID' AND current.qualityStatus = 'VALID'
+      AND h.source_id = current.sourceId AND h.schema_version = current.schemaVersion LIMIT 1) AS baseline${days}`).join(", ")}
     FROM (${sql}) current`;
 }
 
@@ -212,14 +213,14 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     )],
 
     realtimeRows: [client.prepare(
-      withAreaBaselines(latestPerKey(AREAS, () => `SELECT area, congestion_level AS congestionLevel, congestion_label AS congestionLabel,
+      withAreaBaselines(latestPerKey(AREAS, () => `SELECT area, source_id AS sourceId, schema_version AS schemaVersion, quality_status AS qualityStatus, congestion_level AS congestionLevel, congestion_label AS congestionLabel,
         population_min AS populationMin, population_max AS populationMax,
         observed_at AS observedAt, retrieved_at AS retrievedAt
       FROM seoul_realtime_area WHERE area = ? ORDER BY observed_at DESC LIMIT 1`), "seoul_realtime_area", "population_min", "population_max"),
     ).bind(...AREAS)],
 
     commercialRows: [client.prepare(
-      withAreaBaselines(latestPerKey(AREAS, () => `SELECT area, commercial_level AS commercialLevel,
+      withAreaBaselines(latestPerKey(AREAS, () => `SELECT area, source_id AS sourceId, schema_version AS schemaVersion, commercial_level AS commercialLevel,
         payment_count AS paymentCount, payment_amount_min AS paymentAmountMin,
         payment_amount_max AS paymentAmountMax, observed_at AS observedAt,
         retrieved_at AS retrievedAt, quality_status AS qualityStatus

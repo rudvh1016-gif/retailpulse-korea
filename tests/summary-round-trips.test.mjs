@@ -164,3 +164,21 @@ test("an empty database is still a well-formed live summary that the cache refus
     unlinkSync(databasePath);
   }
 });
+
+
+test("population comparisons require exact local time, source, schema and valid quality", async () => {
+  const { database, databasePath } = openDatabase("comparisons");
+  try {
+    seed(database);
+    database.exec(`INSERT INTO seoul_realtime_area SELECT 'baseline', source_id, record_origin, area, area_code, area_name, congestion_level, congestion_label, 10000, 10000, '2026-08-28T13:10:00+09:00', retrieved_at, freshness, schema_version, quality_status, 'baseline-hash' FROM seoul_realtime_area WHERE id='r1'`);
+    const read = async () => (await (await summarizeLiveSummary(new LocalD1Database(database), clockFor())).json()).areas.myeongdong.realtime.comparisons;
+    let changes = await read();
+    assert.ok(Math.abs(changes[7].minPercent - 130) < 0.0001);
+    assert.equal(changes[28], null);
+    for (const [column, value, original] of [["schema_version", "different", "v1"], ["source_id", "other", "SEOUL_CITYDATA_PPLTN"], ["quality_status", "INVALID", "VALID"], ["observed_at", "2026-08-28T13:15:00+09:00", "2026-08-28T13:10:00+09:00"]]) {
+      database.prepare(`UPDATE seoul_realtime_area SET ${column}=? WHERE id='baseline'`).run(value);
+      assert.equal((await read())[7], null, column);
+      database.prepare(`UPDATE seoul_realtime_area SET ${column}=? WHERE id='baseline'`).run(original);
+    }
+  } finally { database.close(); unlinkSync(databasePath); }
+});

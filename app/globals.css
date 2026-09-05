@@ -1358,3 +1358,8 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
   .airport-composition .airport-gate-row,
   .airport-composition .airport-rank-row { grid-template-columns: 30px minmax(0, 1fr) minmax(68px, auto); column-gap: 10px; }
 }
+
+/* Complete Korean glyph coverage keeps new operational copy consistent. */
+.lang-ko { --font-ui: "Pretendard Variable", "KORETAIL Sans Variable", system-ui, sans-serif; }
+.commercial-status { margin: 10px 0; font-size: 14px; line-height: 1.6; }
+.period-comparison { margin: 6px 0; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
