@@ -23,10 +23,17 @@ import { buildFacilityCopyText, type CopyableFacility } from "../lib/facility-sh
 import { formatRepresentativeStations } from "../lib/subway-ridership";
 import { buildTerminalBriefings, type TerminalBriefing } from "../lib/terminal-briefing";
 import { buildWeatherGuide } from "../lib/weather-guide";
+import { comparisonText, type RangeChange } from "../lib/period-comparison";
+
+type PeriodComparisons = Partial<Record<7 | 28, RangeChange | null>>;
+function comparisonLines(comparisons: PeriodComparisons | undefined, lang: Lang): string[] {
+  return ([7, 28] as const).flatMap((days) => comparisons?.[days] ? [comparisonText(comparisons[days]!, lang, days)] : []);
+}
 
 type AreaId = "myeongdong" | "hongdae" | "seongsu";
 
 interface LiveRealtime {
+  comparisons?: PeriodComparisons;
   congestionLevel: number;
   congestionLabel: string;
   populationMin: number;
@@ -36,6 +43,7 @@ interface LiveRealtime {
 }
 
 export interface LiveCommercial {
+  comparisons?: PeriodComparisons;
   commercialLevel: string;
   paymentCount: number | null;
   paymentAmountMin: number | null;
@@ -254,6 +262,7 @@ export interface LiveSummary {
   sources?: Array<{ sourceId: string; status: string; retrievedAt: string | null }>;
   areas: Partial<Record<AreaId, LiveAreaBlock>>;
   airport: {
+    periodComparisons?: Record<string, Partial<Record<7 | 28, { passengers: RangeChange | null; flightRecords: RangeChange | null }>>>;
     congestion: LiveCongestionRow[];
     currentBusiestDepartureHallByTerminal: Record<string, LiveCongestionRow>;
     departuresTrackedToday: number | null;
@@ -1217,6 +1226,10 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     topGate,
   });
   const airportBriefLines = localizeAirportBrief(airportBrief, lang, remaining);
+  const comparisons = airport.periodComparisons?.[terminal];
+  const passengerChanges = ([7, 28] as const).flatMap((days) => comparisons?.[days]?.passengers ? [comparisonText(comparisons[days]!.passengers!, lang, days)] : []);
+  const flightChanges = ([7, 28] as const).flatMap((days) => comparisons?.[days]?.flightRecords ? [comparisonText(comparisons[days]!.flightRecords!, lang, days)] : []);
+  const recordsOnly = ({ ko: "수집된 출발편 기록 기준 · 전체 운항 증감과 다를 수 있음", en: "Collected departing-flight records; not a complete operational census", zh: "按已采集出发航班记录，非完整运行统计", ja: "収集済み出発便記録による比較・全運航の増減とは異なる場合あり" })[lang];
   // Metrics can be collected at different times (expected passengers 09:34 vs
   // flights 00:03), so each cell carries its own time. When all four agree the
   // section states it once instead of repeating it.
@@ -1232,6 +1245,9 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     <section className="current-brief airport-current-brief" aria-label={`${scopeLabel} ${areaBriefText.nowLabel[lang]}`}>
       <p className="eyebrow">{scopeLabel} · {areaBriefText.nowLabel[lang].toUpperCase()}</p>
       {airportBriefLines.map((line, index) => index === 0 ? <strong key={line}>{line}</strong> : <p key={line}>{line}</p>)}
+      {expectedTotal !== null && <p>{airportTodayText.expected[lang]} {Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}{passengerChanges.length ? ` · ${passengerChanges.join(" · ")}` : ""}</p>}
+      {flightsCount !== null && <p>{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}{flightChanges.length ? ` · ${flightChanges.join(" · ")}` : ""}</p>}
+      {flightChanges.length > 0 && <small>{recordsOnly}</small>}
     </section>
 
     {isAll && <TerminalBriefingCards lang={lang} airport={airport} nowIso={nowIso} dayRelation={summary?.dayRelation ?? "TODAY"} />}
@@ -1423,6 +1439,7 @@ function regionName(code: string, lang: Lang): string {
 }
 
 function airlineDisplayName(row: RankedAirlineRow, lang: Lang): string {
+  if (row.iata === "RS" && row.registryName === "Air Seoul") return ({ ko: "에어서울", en: "Air Seoul", zh: "首尔航空", ja: "エアソウル" })[lang];
   // The name comes ONLY from the verified reference table, keyed by the
   // reliably-parsed operating designator — never from the raw per-row
   // provider field. Investigation on 2026-09-03 found that field unreliable:
@@ -2202,6 +2219,7 @@ function formatKrwCompact(lang: Lang, amount: number): string {
 }
 
 export interface CommercialSignalRow {
+  comparisons: string[];
   key: "commercial";
   label: string;
   statusLabel: string;
@@ -2291,6 +2309,7 @@ export function buildCommercialSignalRow(
   const staleAge = commercial.freshness === "STALE" ? formatCommercialAge(lang, commercial.observedAt, generatedAt) : null;
   return {
     key: "commercial",
+    comparisons: comparisonLines(commercial.comparisons, lang),
     label: text.commercial[lang],
     statusLabel: commercialFieldText.status[lang],
     statusValue: commercial.commercialLevel.trim(),
@@ -2532,7 +2551,6 @@ function SignalRowCard({ row, lang }: { row: SignalRow; lang: Lang }) {
 
 function CommercialSignalCard({ signal, lang }: { signal: CommercialSignalRow; lang: Lang }) {
   const metrics = [
-    { label: signal.statusLabel, value: signal.statusValue },
     { label: signal.amountLabel, value: signal.amountValue ?? signal.privacyMessage },
     ...(signal.countValue ? [{ label: signal.countLabel, value: signal.countValue }] : []),
   ];
@@ -2544,13 +2562,12 @@ function CommercialSignalCard({ signal, lang }: { signal: CommercialSignalRow; l
     </div>
     <div className="commercial-signal-content">
       <p className="commercial-basis">{text.commercialBasis[lang]}</p>
+      <p className="commercial-status">{lang === "ko" ? "서울시 제공 소비활동 상태" : signal.statusLabel} · <strong>{signal.statusValue}</strong></p>
       <dl className="commercial-metrics">
         {metrics.map((metric) => <div key={metric.label}><dt>{metric.label}</dt><dd>{metric.value}</dd></div>)}
       </dl>
-      <dl className="commercial-times">
-        <div><dt>{signal.referenceLabel}</dt><dd>{signal.referenceValue}</dd></div>
-        <div><dt>{signal.retrievalLabel}</dt><dd>{signal.retrievalValue}</dd></div>
-      </dl>
+      <p className="commercial-times">{signal.referenceValue} · {signal.retrievalValue}</p>
+      {signal.comparisons.length ? signal.comparisons.map((line) => <p className="period-comparison" key={line}>{line}</p>) : <p className="commercial-times">{({ ko: "동일 시간대 과거 자료 부족 · 전주·4주 전 비교 불가", en: "Matching historical time window unavailable for weekly comparisons", zh: "缺少同一时段历史资料，无法进行周比较", ja: "同時刻の過去資料不足のため週比較不可" })[lang]}</p>}
       <p className="commercial-attribution">{text.sourceSeoul[lang]} · {signal.attribution}</p>
     </div>
   </article>;
@@ -2738,6 +2755,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       group: "now",
       timeState: signalStructureText.timeState.recent[lang],
       label: text.currentPopulation[lang],
+      detail: comparisonLines(block.realtime.comparisons, lang).join(" · ") || undefined,
       value: `${formatPeopleRange(lang, block.realtime.populationMin, block.realtime.populationMax)}${text.foreignPeople[lang]} · ${level}`,
       note: `${text.sourceSeoul[lang]} · ${formatHumanFreshness(block.realtime.observedAt, summary.generatedAt, lang, "observed")} · ${text.notCumulative[lang]}`,
       state: block.realtime.freshness,

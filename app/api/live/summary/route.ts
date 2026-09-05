@@ -1,4 +1,5 @@
 import { getDb } from "../../../../db";
+import { rangeChange } from "../../../../lib/period-comparison";
 import {
   SEOUL_FOREIGN_MAPPING_VERSION,
   SEOUL_FOREIGN_PRODUCT_VERSION,
@@ -109,6 +110,25 @@ function latestPerKey(keys: readonly string[], build: (placeholder: string) => s
   return keys.map(() => `SELECT * FROM (${build("?")})`).join(" UNION ALL ");
 }
 
+/** Two exact-time index seeks per area; no history scan or extra D1 round trip. */
+function withAreaBaselines(sql: string, table: "seoul_realtime_area" | "seoul_realtime_commercial", min: string, max: string): string {
+  return `SELECT current.*, ${[7, 28].map((days) => `(SELECT json_object('min', h.${min}, 'max', h.${max}, 'observedAt', h.observed_at)
+    FROM ${table} h WHERE h.area = current.area
+      AND h.observed_at = strftime('%Y-%m-%dT%H:%M:%S', substr(current.observedAt, 1, 19), '-${days} days') || '+09:00'
+      AND h.quality_status = 'VALID' LIMIT 1) AS baseline${days}`).join(", ")}
+    FROM (${sql}) current`;
+}
+
+function areaComparisons(row: Row, min: string, max: string) {
+  return Object.fromEntries([7, 28].map((days) => {
+    try {
+      const raw = row[`baseline${days}`];
+      const baseline = typeof raw === "string" ? JSON.parse(raw) : null;
+      return [days, baseline ? rangeChange(row[min], row[max], baseline.min, baseline.max, baseline.observedAt) : null];
+    } catch { return [days, null]; }
+  }));
+}
+
 /** Minutes after which a real-time observation is labelled STALE, not LIVE. */
 const REALTIME_STALE_MINUTES = 40;
 
@@ -192,18 +212,18 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     )],
 
     realtimeRows: [client.prepare(
-      latestPerKey(AREAS, () => `SELECT area, congestion_level AS congestionLevel, congestion_label AS congestionLabel,
+      withAreaBaselines(latestPerKey(AREAS, () => `SELECT area, congestion_level AS congestionLevel, congestion_label AS congestionLabel,
         population_min AS populationMin, population_max AS populationMax,
         observed_at AS observedAt, retrieved_at AS retrievedAt
-      FROM seoul_realtime_area WHERE area = ? ORDER BY observed_at DESC LIMIT 1`),
+      FROM seoul_realtime_area WHERE area = ? ORDER BY observed_at DESC LIMIT 1`), "seoul_realtime_area", "population_min", "population_max"),
     ).bind(...AREAS)],
 
     commercialRows: [client.prepare(
-      latestPerKey(AREAS, () => `SELECT area, commercial_level AS commercialLevel,
+      withAreaBaselines(latestPerKey(AREAS, () => `SELECT area, commercial_level AS commercialLevel,
         payment_count AS paymentCount, payment_amount_min AS paymentAmountMin,
         payment_amount_max AS paymentAmountMax, observed_at AS observedAt,
         retrieved_at AS retrievedAt, quality_status AS qualityStatus
-      FROM seoul_realtime_commercial WHERE area = ? ORDER BY observed_at DESC LIMIT 1`),
+      FROM seoul_realtime_commercial WHERE area = ? ORDER BY observed_at DESC LIMIT 1`), "seoul_realtime_commercial", "payment_amount_min", "payment_amount_max"),
     ).bind(...AREAS)],
 
     // Seoul publishes a rolling 12-hour forecast, so from mid-evening onward
@@ -361,9 +381,17 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
         target_start_at AS targetStartAt, target_end_at AS targetEndAt,
         expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
       FROM airport_passenger_forecast f
-      WHERE f.direction IN ('departure', 'arrival') AND f.is_aggregate = 1 AND f.target_date = ?
-      ORDER BY direction, target_start_at, terminal LIMIT 96`,
-    ).bind(serviceDate)],
+      WHERE f.direction IN ('departure', 'arrival') AND f.is_aggregate = 1 AND f.target_date IN (?, ?, ?)
+      ORDER BY target_date DESC, direction, target_start_at, terminal LIMIT 288`,
+    ).bind(serviceDate, shiftKstDay(serviceDate, -7), shiftKstDay(serviceDate, -28))],
+
+    historicalFlightCounts: [7, 28].map((days) => client.prepare(
+      `SELECT ? AS baselineDate, terminal, COUNT(*) AS flights FROM
+        (SELECT DISTINCT physical_flight_id, terminal FROM airport_flights
+         WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ?
+           AND physical_flight_id IS NOT NULL LIMIT 2001)
+       GROUP BY terminal`,
+    ).bind(shiftKstDay(serviceDate, -days), shiftKstDay(serviceDate, -days), shiftKstDay(serviceDate, 1 - days))),
 
     // One read of the day's departures serves the rows, the all-airport count
     // and the per-terminal counts.
@@ -423,8 +451,9 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   const {
     sources, realtimeRows, commercialRows, realtimeForecastRows, weatherRows, eventRows, salesRows,
     storeDynamicsRows, foreignPresenceRows, foreignPurposeRows, subwayRows, congestionRows,
-    passengerForecastRows, flightRows, scheduledRows, flightDateRows, forecastDateRows, observedDateRows,
+    passengerForecastRows: allPassengerForecastRows, historicalFlightCounts, flightRows, scheduledRows, flightDateRows, forecastDateRows, observedDateRows,
   } = blocks;
+  const passengerForecastRows = allPassengerForecastRows.filter((row) => row.targetDate === serviceDate);
   const dayList = (rows: Row[]) => rows
     .map((row) => String(row.day ?? ""))
     .filter((day) => isValidKstDay(day))
@@ -454,8 +483,8 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       serviceDate,
     );
     return [area, {
-      realtime: realtime ? { ...realtime, freshness: freshnessOf(realtime.observedAt, REALTIME_STALE_MINUTES, now) } : null,
-      commercial: commercial ? { ...commercial, freshness: freshnessOf(commercial.observedAt, REALTIME_STALE_MINUTES, now) } : null,
+      realtime: realtime ? { ...realtime, comparisons: areaComparisons(realtime, "populationMin", "populationMax"), freshness: freshnessOf(realtime.observedAt, REALTIME_STALE_MINUTES, now) } : null,
+      commercial: commercial ? { ...commercial, comparisons: areaComparisons(commercial, "paymentAmountMin", "paymentAmountMax"), freshness: freshnessOf(commercial.observedAt, REALTIME_STALE_MINUTES, now) } : null,
       // The whole published horizon, not a "today" slice — see the query note.
       realtimeForecast: realtimeForecastRows.filter((row) => row.area === area).slice(0, 12),
       weather: weatherRows.filter((row) => row.area === area).slice(0, 24),
@@ -546,6 +575,23 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   // country comes from a reference table, never from the provider, and is
   // reported as UNVERIFIED whenever the table cannot vouch for it.
   const airlineRanking = summarizeAirlineRanking(flightRows as unknown as AirlineRankingFlightRow[], lookupAirline);
+  const periodComparisons = Object.fromEntries(["all", "T1", "T2"].map((scope) => [scope,
+    Object.fromEntries(([7, 28] as const).map((days) => {
+      const baselineDate = shiftKstDay(serviceDate, -days);
+      const past = summarizeTodayPassengerForecast(allPassengerForecastRows.filter((row) => row.targetDate === baselineDate) as unknown as AirportForecastAggregateRow[], baselineDate);
+      const currentPassengers = scope === "all" ? passengerToday.total : passengerToday.totalByTerminal[scope];
+      const pastPassengers = scope === "all" ? past.total : past.totalByTerminal[scope];
+      const pastRows = historicalFlightCounts.filter((row) => row.baselineDate === baselineDate);
+      const allPastCount = pastRows.reduce((sum, row) => sum + Number(row.flights), 0);
+      const pastCount = scope === "all" ? allPastCount : Number(pastRows.find((row) => row.terminal === scope)?.flights ?? 0);
+      const currentCount = scope === "all" ? airlineRanking.all.totalFlights : airlineRanking.byTerminal[scope]?.totalFlights;
+      return [days, {
+        passengers: rangeChange(currentPassengers, currentPassengers, pastPassengers, pastPassengers, baselineDate),
+        // These are collected physical-flight records, not a verified whole-day operational census.
+        flightRecords: allPastCount > 0 && allPastCount < 2001 && flightRows.length < 2000
+          ? rangeChange(currentCount, currentCount, pastCount, pastCount, baselineDate) : null,
+      }];
+    }))]));
   const flightsTodayByTerminal = summarizeTodayTopGateByTerminal(
     flightRows as unknown as AirportTodayFlightRow[],
     0.5,
@@ -616,6 +662,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     sources,
     areas,
     airport: {
+      periodComparisons,
       congestion: congestionRows.map((row) => ({ ...row, freshness: freshnessOf(row.observedAt, 20, now) })),
       currentBusiestDepartureHallByTerminal: currentBusiest,
       departuresTrackedToday: flightsToday.departuresTrackedToday,

@@ -16,7 +16,6 @@
 import { AIRLINE_REGISTRY, AIRLINE_REGISTRY_SOURCE, type AirlineRegistryEntry } from "./airline-registry";
 
 export const SUPPRESSED_AIRLINE_DESIGNATORS: Readonly<Record<string, string>> = {
-  RS: "snapshot row is Sky Regional (CA); designator re-assigned since the snapshot",
   VJ: "snapshot row is Royal Air Cambodge (KH); designator re-assigned since the snapshot",
   RF: "snapshot row is Florida West International Airways (US); designator re-assigned since the snapshot",
   QH: "snapshot row is Air Florida (US); designator re-assigned since the snapshot",
@@ -62,6 +61,11 @@ export interface AirlineLookup {
 export function lookupAirline(iata: string | null | undefined): AirlineLookup | null {
   if (!iata) return null;
   const key = iata.toUpperCase();
+  // Verified 2026-09-05: Narita Airport lists Air Seoul as RS / ASV.
+  // https://www.narita-airport.jp/ko/flight/airline-search/asv/
+  // Air Seoul's own corporate footer identifies its Korean legal entity.
+  // https://flyairseoul.com/CW/ko/main.do
+  if (key === "RS") return { name: "Air Seoul", country: "KR" };
   if (SUPPRESSED_AIRLINE_DESIGNATORS[key]) return null;
   const entry: AirlineRegistryEntry | undefined = AIRLINE_REGISTRY[key];
   if (!entry) return null;

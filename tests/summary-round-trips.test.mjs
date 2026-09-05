@@ -103,7 +103,7 @@ test("the whole summary read path is one D1 round trip, and the payload is a cac
     assert.equal(client.trips.length, 1, `expected one D1 request, saw ${JSON.stringify(client.trips)}`);
     assert.equal(client.trips[0].kind, "batch");
     // 15 block statements + 3 × 21 date-picker probes, all in the one request.
-    assert.equal(client.trips[0].count, 15 + 3 * 21);
+    assert.equal(client.trips[0].count, 17 + 3 * 21);
 
     assert.equal(body.areas.myeongdong.realtime.congestionLabel, "약간 붐빔");
     assert.equal(body.areas.myeongdong.realtime.freshness, "LIVE");
@@ -141,7 +141,7 @@ test("a broken statement still isolates to its own block: the page stays live, t
     assert.equal(response.headers.get("cache-control"), SUMMARY_CACHE_CONTROL);
     assert.equal(client.trips[0].kind, "batch", "the single batch is tried first");
     // Then one concurrent wave: one request per group, not the old serial chain.
-    assert.equal(client.trips.length, 1 + 18);
+    assert.equal(client.trips.length, 1 + 19);
   } finally {
     database.close();
     unlinkSync(databasePath);
