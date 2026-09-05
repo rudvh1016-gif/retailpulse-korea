@@ -21,7 +21,7 @@ function number(value: unknown, min = 0, max = 1e12): number | null {
   return Number.isFinite(parsed) && parsed >= min && parsed <= max ? parsed : null;
 }
 export function seoulContextTime(value: unknown): string | null {
-  const text = label(value);
+  const text = label(value)?.replace(/^(\d{4})(\d{2})(\d{2}) (\d{2})(\d{2})$/, "$1-$2-$3 $4:$5");
   if (!text || !/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/.test(text)) return null;
   const iso = text.replace(' ','T').slice(0,19);
   const result = `${iso.length === 16 ? iso + ':00' : iso}+09:00`;

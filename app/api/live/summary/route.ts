@@ -1,3 +1,4 @@
+import { flightScopeCounts } from "../../../../lib/flight-scope";
 import { compareComposition } from "../../../../lib/airport-composition-history";
 import type { AirlineRankingSummary } from "../../../../lib/airline-ranking";
 import { getDb } from "../../../../db";
@@ -679,6 +680,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       currentBusiestDepartureHallByTerminal: currentBusiest,
       departuresTrackedToday: flightsToday.departuresTrackedToday,
       departuresTrackedTodayByTerminal,
+      flightScope: { ...flightScopeCounts(flightRows), capped: flightRows.length >= 2000 },
       departuresTrackedTodayRetrievedAt: flightsToday.retrievedAt,
       topDepartureGate: flightsToday.topDepartureGate?.gate ?? null,
       topDepartureGateTerminal: flightsToday.topDepartureGate?.terminal ?? null,

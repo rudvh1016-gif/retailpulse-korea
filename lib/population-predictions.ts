@@ -1,3 +1,4 @@
+import { predictionReadiness } from './prediction-progress';
 import { allAreaIds, type AreaId } from './areas';
 import { kstDayOf, shiftKstDay } from './kst';
 import { createImmutablePrediction } from './forecast';
@@ -116,14 +117,20 @@ export async function matchPopulationOutcomes(db:D1Database,now=new Date()) {
 export async function updatePopulationCoverage(db:D1Database,now=new Date()) {
  const today=kstDayOf(now.toISOString()),tomorrow=shiftKstDay(today,1);
  for(const area of allAreaIds) {
-  const cached=await db.prepare('SELECT calculated_at FROM area_data_coverage WHERE area=?').bind(area).first<{calculated_at:string}>();
-  if(cached&&Date.parse(cached.calculated_at)>now.getTime()-50*60000)continue;
+  const cached=await db.prepare('SELECT calculated_at,payload FROM area_data_coverage WHERE area=?').bind(area).first<{calculated_at:string;payload:string}>();
+  if(cached&&Date.parse(cached.calculated_at)>now.getTime()-50*60000) {
+    try { if(JSON.parse(cached.payload).readiness?.targetDate===tomorrow)continue; } catch { /* rebuild outdated coverage only */ }
+  }
   const rows=(await db.prepare(`SELECT substr(observed_at,1,10) AS day,MIN(observed_at) AS firstAt,MAX(observed_at) AS latestAt,
-    COUNT(DISTINCT substr(observed_at,12,2)) AS hours FROM seoul_realtime_area
+    COUNT(DISTINCT substr(observed_at,12,2)) AS hours,
+    GROUP_CONCAT(DISTINCT CASE WHEN CAST(substr(observed_at,15,2) AS INTEGER)<15
+      AND population_min IS NOT NULL AND population_max IS NOT NULL AND population_min>=0 AND population_max>=population_min
+      AND julianday(retrieved_at)<=julianday(?) THEN substr(observed_at,12,2)||':'||schema_version END) AS eligible
+    FROM seoul_realtime_area
     WHERE area=? AND source_id='SEOUL_CITYDATA_PPLTN' AND observed_at>=? AND observed_at<? AND quality_status='VALID' AND record_origin='LIVE'
-    GROUP BY substr(observed_at,1,10) ORDER BY day`).bind(area,shiftKstDay(tomorrow,-28),tomorrow)
-    .all<{day:string;firstAt:string;latestAt:string;hours:number}>()).results??[];
-  const payload={days:rows.length,firstAt:rows[0]?.firstAt??null,latestAt:rows.at(-1)?.latestAt??null,
+    GROUP BY substr(observed_at,1,10) ORDER BY day`).bind(now.toISOString(),area,shiftKstDay(tomorrow,-28),tomorrow)
+    .all<{day:string;firstAt:string;latestAt:string;hours:number;eligible:string|null}>()).results??[];
+  const payload={readiness:predictionReadiness(rows,tomorrow),days:rows.length,firstAt:rows[0]?.firstAt??null,latestAt:rows.at(-1)?.latestAt??null,
     missingDays:Array.from({length:28},(_,i)=>shiftKstDay(tomorrow,-28+i)).filter(day=>!rows.some(row=>row.day===day)),
     dailyHours:rows.map(row=>({day:row.day,hours:row.hours})),calculatedAt:now.toISOString()};
   await db.prepare(`INSERT INTO area_data_coverage(area,calculated_at,payload) VALUES(?,?,?) ON CONFLICT(area) DO UPDATE SET

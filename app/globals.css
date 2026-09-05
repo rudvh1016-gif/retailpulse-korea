@@ -1388,3 +1388,14 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .prediction-view summary,.composition-changes summary { cursor:pointer; font-weight:var(--weight-strong); padding:.75rem 0; }
 .prediction-hours { max-height:25rem; overflow:auto; }
 @media(max-width:700px) { .outlook-grid { grid-template-columns:1fr; gap:.5rem; } .context-category-list li { grid-template-columns:1fr; } }
+
+/* Progressive detail: keep the first airport screen focused on one brief. */
+.airport-summary-details { margin: 20px 0; border-block: 1px solid var(--line); padding: 16px 0; }
+.airport-summary-details > summary, .prediction-readiness > summary, .collection-status summary { cursor: pointer; font-weight: var(--weight-strong); padding: 8px 0; }
+.flight-scope-note, .collection-status p { line-height: 1.65; overflow-wrap: anywhere; }
+.flight-scope-note small { display: block; color: var(--muted); }
+.prediction-score, .collection-status { margin: 24px 0; padding: 20px 0; border-top: 1px solid var(--line); }
+.collection-status article { padding: 16px 0; border-bottom: 1px solid var(--line); }
+.collection-status h3 { font-size: 16px; }
+.collection-status { scroll-margin-top: 100px; }
+.holiday-context a { display: inline-block; margin-top: 8px; }
