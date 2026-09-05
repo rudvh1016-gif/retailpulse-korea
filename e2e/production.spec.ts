@@ -355,12 +355,12 @@ test("a day with no stored departures says so instead of blaming gate coverage",
   };
   await page.route("**/api/live/summary*", routeSummary(empty));
   await page.goto("/ko/airport");
-  await expect(page.locator(".airport-gates .airport-empty-line")).toContainText("아직 수집되지 않았습니다");
+  await expect(page.locator(".airport-gates .airport-empty-line")).toContainText("수집이 완료되지 않았습니다");
   await page.getByRole("tab", { name: "항공사", exact: true }).click();
-  await expect(page.locator(".airport-airlines .airport-empty-line")).toContainText("아직 수집되지 않았습니다");
+  await expect(page.locator(".airport-airlines .airport-empty-line")).toContainText("수집이 완료되지 않았습니다");
   await page.getByRole("tab", { name: "등록 국가", exact: true }).click();
   const countries = page.locator(".airport-countries");
-  await expect(countries.locator(".airport-empty-line")).toContainText("아직 수집되지 않았습니다");
+  await expect(countries.locator(".airport-empty-line")).toContainText("수집이 완료되지 않았습니다");
   await expect(countries.locator(".airport-detail-foot")).toContainText("OpenFlights");
   await expect(countries.locator(".airport-detail-foot")).toContainText("승객의 국적이 아닙니다");
   await page.getByRole("tab", { name: "게이트", exact: true }).click();
@@ -1271,7 +1271,7 @@ test("desktop navigation promotes Guide Desk in the exact localized order", asyn
   }
 });
 
-test("mobile keeps five bottom items and opens Tourism from More in one additional tap", async ({ page }) => {
+test("mobile More explains usage without the removed promotion and retains its Tourism footer link", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko/myeongdong");
@@ -1283,7 +1283,9 @@ test("mobile keeps five bottom items and opens Tourism from More in one addition
   await bottom.locator("a").filter({ hasText: "더보기" }).click();
   await expect(page).toHaveURL(/\/ko\/more$/);
 
-  const tourismLink = page.locator(".tourism-link-block a");
+  await expect(page.locator(".tourism-link-block")).toHaveCount(0);
+  await expect(page.locator(".site-usage-guide h2")).toHaveText("누가, 어떻게 쓰면 좋을까요?");
+  const tourismLink = page.locator(".footer-links a").filter({ hasText: "관광안내 데스크" });
   await expect(tourismLink).toBeVisible();
   await expect(tourismLink).toHaveAttribute("href", "/ko/tourism-desk/myeongdong");
   await tourismLink.click();
