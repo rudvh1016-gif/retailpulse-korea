@@ -187,7 +187,9 @@ test("airport summary keeps forecast, flights, gate and checkpoints truthful on 
   // 첫 줄은 지금 시간대의 공식 예상 출국객, 대기는 짧은 보조 줄.
   await expect(page.locator(".airport-current-brief")).toContainText("공식 예상 출국객");
   await expect(page.locator(".airport-current-brief")).toContainText("대기 최장 T2 출국장 1B 60+분");
-  await expect(page.locator(".airport-current-brief")).toContainText("출발 561편");
+  await expect(page.locator(".airport-current-brief")).toContainText("출발 운항 561편");
+  await expect(page.locator(".airport-current-brief")).not.toContainText("출발 561편");
+  await expect(page.locator(".airport-current-brief")).toContainText("전주 동요일 비교 자료 없음");
   await expect(page.getByText("공식 예상 출국객", { exact: true })).toBeVisible();
   await expect(page.getByText("47,320명", { exact: true })).toBeVisible();
   await expect(page.getByText("561편", { exact: true })).toBeVisible();

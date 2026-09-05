@@ -4,6 +4,7 @@ import test from "node:test";
 
 import {
   buildWeatherGuide,
+  formatWeatherDetails,
   deriveWeatherGuideKind,
   WEATHER_GUIDE_THRESHOLDS as T,
 } from "../lib/weather-guide.ts";
@@ -19,6 +20,20 @@ const forecast = (overrides = {}) => ({
   humidityPercent: 50,
   windSpeedTenthMps: 20,
   ...overrides,
+});
+
+test("compact weather facts retain zero and negative readings and omit unavailable values", () => {
+  assert.equal(formatWeatherDetails(forecast({ temperatureTenthC: -25, humidityPercent: null, windSpeedTenthMps: 0 }), "ko"),
+    "기온 -2.5°C · 바람 0m/s · 최저 18°C · 최고 24°C · 예보 강수확률 최대 0%");
+  assert.equal(formatWeatherDetails(null, "ko"), "");
+  const invalid = forecast({ temperatureTenthC: NaN, humidityPercent: 101, windSpeedTenthMps: -1,
+    dailyMinTemperatureTenthC: null, dailyMaxTemperatureTenthC: Infinity, precipitationProbability: -1 });
+  assert.equal(formatWeatherDetails(invalid, "ko"), "");
+  for (const lang of LANGS) {
+    const text = formatWeatherDetails(forecast(), lang);
+    assert.ok(text.includes("20°C") && text.includes("50%") && text.includes("2m/s"));
+    assert.doesNotMatch(text, /undefined|null|NaN/);
+  }
 });
 
 test("nothing published means no sentence, not a cheerful default", () => {

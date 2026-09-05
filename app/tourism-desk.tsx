@@ -32,7 +32,7 @@ import {
   type TourismDeskLine,
   type TourismSubwayComparison,
 } from "../lib/tourism-desk-brief";
-import { buildWeatherGuide, type WeatherGuideInput } from "../lib/weather-guide";
+import { buildWeatherGuide, formatWeatherDetails, type WeatherGuideInput } from "../lib/weather-guide";
 
 export type TourismAreaId = "myeongdong" | "hongdae" | "seongsu";
 
@@ -457,7 +457,7 @@ function PeriodNote({ period }: { period: SourcePeriodDescription }) {
   </div>;
 }
 
-function BriefLine({ line }: { line: TourismDeskLine }) {
+function BriefLine({ line, weatherDetails }: { line: TourismDeskLine; weatherDetails: string }) {
   const marked = line.koreanText;
   const canMark = Boolean(marked && (marked.position === "start"
     ? line.text.startsWith(marked.value)
@@ -473,7 +473,7 @@ function BriefLine({ line }: { line: TourismDeskLine }) {
       className={line.key === "event" ? "tourism-official-ko" : undefined}
       lang="ko"
     >{marked.value}</span>}{after}</strong>
-    <small>{line.basis}</small>
+    <small>{line.basis}{line.key === "weather" && weatherDetails ? ` · ${weatherDetails}` : ""}</small>
   </li>;
 }
 
@@ -600,6 +600,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
 
   const guides = weatherGuides(block?.weather ?? []);
   const weatherGuide = guides[lang] ?? null;
+  const weatherDetails = formatWeatherDetails(weatherInput(block?.weather ?? []), lang);
   const areaBrief = buildAreaCurrentBrief({
     realtime: block?.realtime?.freshness === "LIVE" ? block.realtime : null,
     realtimeForecast: block?.realtimeForecast ?? [],
@@ -728,7 +729,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
           <p>{copy.briefIntro}</p>
         </header>
         {brief.length
-          ? <ol className="tourism-brief-list">{brief.map((line) => <BriefLine key={line.key} line={line} />)}</ol>
+          ? <ol className="tourism-brief-list">{brief.map((line) => <BriefLine key={line.key} line={line} weatherDetails={weatherDetails} />)}</ol>
           : <p className="tourism-empty">{copy.unavailable}</p>}
       </section>
 

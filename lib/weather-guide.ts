@@ -31,6 +31,30 @@ export interface WeatherGuideInput {
   windSpeedTenthMps: number | null;
 }
 
+/** Compact forecast facts; missing values are omitted rather than shown as zero. */
+export function formatWeatherDetails(input: WeatherGuideInput | null, lang: Lang): string {
+  if (!input) return "";
+  const labels = {
+    ko: ["기온", "습도", "바람", "최저", "최고", "예보 강수확률 최대"],
+    en: ["Temperature", "Humidity", "Wind", "Low", "High", "Maximum forecast rain chance"],
+    zh: ["气温", "湿度", "风速", "最低", "最高", "预报最高降雨概率"],
+    ja: ["気温", "湿度", "風速", "最低", "最高", "予報の最大降水確率"],
+  }[lang];
+  const fields = [
+    [input.temperatureTenthC, 10, "°C"],
+    [input.humidityPercent, 1, "%"],
+    [input.windSpeedTenthMps, 10, "m/s"],
+    [input.dailyMinTemperatureTenthC, 10, "°C"],
+    [input.dailyMaxTemperatureTenthC, 10, "°C"],
+    [input.precipitationProbability, 1, "%"],
+  ] as const;
+  return fields.flatMap(([value, divisor, unit], index) => {
+    if (value === null || !Number.isFinite(value)) return [];
+    if ((unit === "%" && (value < 0 || value > 100)) || (unit === "m/s" && value < 0)) return [];
+    return [`${labels[index]} ${value / divisor}${unit}`];
+  }).join(" · ");
+}
+
 /**
  * The guide kinds, in the fixed order they are tested.
  *
