@@ -19,3 +19,9 @@ Existing low-call data.go.kr policy: at most four attempts, delays 2/10/45 secon
 No architecture migration, schema, indexes, collector writes, provider requests, cron, billing or credentials change. Read path uses the same already-loaded gate fields, one bounded physical-flight pass and the same summary cache admission. Validate exact gate boundaries, duplicate/conflicting IDs, unknown labels, rendering/type safety and one summary request on first load. Compare the existing production mobile timing before/after; do not generalize one run into a universal speed guarantee.
 
 Baseline mobile timing (4x CPU, one run, existing production workflow): data 1700 ms; uncached summary 938 ms; font transfers 2,057,988 + 241,468 bytes. The existing preload is already working. Primary confirmed avoidable transfer is the global full-font preference.
+
+## Passenger scope follow-up
+
+A5 is the existing owner-verified V5.0 departure-hall forecast contract. `t1dgsum1` and `t2dgsum2` are the official terminal aggregates, consumed independently of the A1 flight terminal/gate classification. No concourse field is dropped by our A5 parser; this source has no separate concourse passenger total. The airport's departure procedure (https://www.airport.kr/ap_ko/886/subview.do) places passengers going to concourse gates through T1 departure formalities. From the departure-hall counting basis and that published route, such passengers are within the T1 departure-hall scope. This does not establish an independently verified count of all concourse boarding/transfer passengers. Preserve the provider's totals and add a localized scope note; never estimate or add passengers from concourse flight share.
+
+The initial CI's only failed browser assertion required the former full-font family by name; 115 other browser cases passed. Update that explicit family expectation to the intentional subset choice while retaining weight and glyph checks.

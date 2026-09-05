@@ -1269,6 +1269,11 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
       {isAll && <FlightScopeNote airport={airport} lang={lang} />}
       {flightChanges.length > 0 && <small>{recordsOnly}</small>}
       <small>{[passengerCollected ? `${airportTodayText.expected[lang]} · ${passengerCollected}` : null, flightsCollected ? `${airportTodayText.flights[lang]} · ${flightsCollected}` : null].filter(Boolean).join(" / ")}</small>
+      {(isAll || terminal === "T1") && <small className="passenger-scope-note">{contextText(lang,
+        "예상 출국객은 출국장 기준입니다. T1에서 출국 수속 후 탑승동으로 이동하는 승객도 T1 범위이며, 탑승동 인원을 따로 더하지 않습니다.",
+        "Passenger forecasts count departure halls. Passengers clearing departure at T1 before moving to the concourse are within T1; no separate concourse count is added.",
+        "预计出境旅客按出境大厅统计。在T1办理出境后前往登机楼的旅客属于T1范围，不另加登机楼人数。",
+        "予想出国客は出国場単位です。T1で出国手続き後にコンコースへ移動する旅客もT1の範囲で、別途加算しません。")}</small>}
     </section>
 
     <details className="airport-summary-details"><summary>{contextText(lang,"터미널별 상세·집계 기준 보기","Terminal details and counting basis","航站楼详情与统计标准","ターミナル詳細・集計基準を見る")}</summary>
