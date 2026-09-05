@@ -2,8 +2,9 @@
 
 import { useRef, useState, type MouseEvent } from "react";
 
+import { useEventPagination, EventPaginationControls } from "./event-pagination";
 import type { Lang } from "./retailpulse-data";
-import { useLiveSummary } from "./live-signals";
+import { useLiveSummary, LiveLoadMessage } from "./live-signals";
 import {
   TourismVisitorShow,
   type TourismVisitorShowContent,
@@ -596,7 +597,8 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
       addressDetail: row.addressDetail,
       overview: row.overview,
       homepage: row.homepage,
-    })), summary.todayKst).slice(0, 3);
+    })), summary.todayKst);
+  const eventPage = useEventPagination(preparedEvents, area, summary?.todayKst ?? "");
 
   const guides = weatherGuides(block?.weather ?? []);
   const weatherGuide = guides[lang] ?? null;
@@ -722,7 +724,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
     <p className="tourism-desk-intro">{introFor(lang, areaName)}</p>
     <p className="tourism-pilot-note">{copy.pilotNote}</p>
 
-    {!summary ? <p className="tourism-empty" role="status">{copy.loading}</p> : <>
+    {!summary ? <LiveLoadMessage loading={summary === undefined} lang={lang} /> : <>
       <section className="tourism-guide-section tourism-shift-brief" aria-labelledby="tourism-brief-title">
         <header className="tourism-section-head">
           <h2 id="tourism-brief-title">{copy.sectionBrief}</h2>
@@ -741,13 +743,14 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
         {preparedEvents.length
           ? <>
             <div className="tourism-events">
-              {preparedEvents.map((event, index) => <EventCard
+              {eventPage.visible.map((event, index) => <EventCard
                 key={event.contentId ?? `${event.title}-${event.eventStart}`}
                 event={event}
                 lang={lang}
                 featured={index === 0}
               />)}
             </div>
+            <EventPaginationControls page={eventPage} lang={lang} />
             <p className="tourism-event-caveat">{copy.eventCaveat}</p>
           </>
           : <p className="tourism-empty">{copy.noEvents}</p>}
@@ -858,7 +861,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
           <p>{copy.visitorIntro}</p>
         </header>
         {preparedEvents.length ? <ul className="tourism-visitor-launches">
-          {preparedEvents.map((event) => <li key={event.contentId ?? `${event.title}-${event.eventStart}`}>
+          {eventPage.visible.map((event) => <li key={event.contentId ?? `${event.title}-${event.eventStart}`}>
             <span className="tourism-official-ko" lang="ko">{event.title}</span>
             <button
               type="button"

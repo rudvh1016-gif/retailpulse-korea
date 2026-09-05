@@ -391,3 +391,24 @@ test("the nearby-events window is served from indexes and selects the same rows 
   const scans = tableScans(db, sql, [day, day]);
   assert.deepEqual(scans, [], `events window scans a table: ${scans.join(" | ")}`);
 });
+
+test("event pagination reaches the 45th stored event without mixing areas or scanning history", (context) => {
+  const { db, path } = freshDatabase("events-pagination");
+  context.after(() => { db.close(); rmSync(path); });
+  const source = readFileSync("app/api/live/events/route.ts", "utf8");
+  const sql = source.match(/prepare\(`([\s\S]*?)`\)/)?.[1];
+  assert.ok(sql);
+  const insert = db.prepare(`INSERT INTO tourism_events (id, source_id, record_origin, area, content_id, title, event_start, event_end, retrieved_at, freshness, schema_version, quality_status, source_hash)
+    VALUES (?, 'KTO_TOURAPI_EVENT', 'LIVE', ?, ?, ?, '2026-09-01', '2026-10-01', '2026-09-05T00:00:00Z', 'LIVE', 'v1', 'VALID', ?)`);
+  for (let i = 0; i < 90; i++) insert.run(`page-${i}`, i < 45 ? "myeongdong" : "hongdae", String(i).padStart(3, "0"), `Event ${i}`, `hash-${i}`);
+  const first = db.prepare(sql).all("2026-09-05", "2026-09-05", "myeongdong", 0);
+  const second = db.prepare(sql).all("2026-09-05", "2026-09-05", "myeongdong", 40);
+  assert.equal(first.length, 41, "one sentinel indicates another page");
+  assert.equal(second.length, 5);
+  const identifiers = [...first.slice(0, 40), ...second].map(row => row.contentId);
+  assert.equal(new Set(identifiers).size, 45);
+  assert.ok(identifiers.includes("044"));
+  const plan = db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all("2026-09-05", "2026-09-05", "myeongdong", 0);
+  assert.ok(plan.some(row => /SEARCH .*USING.*INDEX/.test(row.detail)));
+  assert.ok(!plan.some(row => /SCAN tourism_events/.test(row.detail)));
+});

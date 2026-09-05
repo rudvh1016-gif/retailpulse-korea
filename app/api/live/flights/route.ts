@@ -32,14 +32,15 @@ export async function GET(request: Request) {
         checkin_counter AS checkinCounter, status, scheduled_at AS scheduledAt
       FROM airport_flights
       WHERE substr(scheduled_at, 1, 10) = ?
-      ORDER BY scheduled_at, flight_number LIMIT 1200`,
+      ORDER BY scheduled_at, flight_number LIMIT 1201`,
     ).bind(serviceDate).all<Record<string, unknown>>()).results ?? [];
 
     return Response.json({
       mode: "live-flights",
       generatedAt,
       serviceDateKst: serviceDate,
-      flights: rows,
+      flights: rows.slice(0, 1200),
+      truncated: rows.length > 1200,
     }, { headers: { "cache-control": "public, max-age=120, stale-while-revalidate=600" } });
   } catch {
     // A failure here must not read as "no flights operated" — the board says

@@ -601,7 +601,7 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
    enough to separate them. */
 .commercial-status { margin: 0 0 12px; font-size: 14px; }
 .period-comparison { margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: var(--ink); }
-.commercial-metrics { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; margin: 0; padding: 0; }
+.commercial-metrics { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; margin: 0; padding: 0; }
 .commercial-times { margin: 10px 0 0; padding: 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
 .commercial-metrics > div { min-width: 0; padding: 10px 0; }
 .commercial-metrics > div:last-child, .commercial-times > div:last-child { border-bottom: 0; }

@@ -263,7 +263,9 @@ test("terminal briefing shows one labelled card per terminal and names the longe
   }
   // A single-terminal scope focuses the grid on that terminal; the cards are not repeated there.
   await page.goto("/ko/airport");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await page.locator(".terminal-selector button").filter({ hasText: /^T1$/ }).click();
+  await expect(page.getByRole("tab", { name: "T1", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(page.locator('[data-signal-key="terminal-briefing"]')).toHaveCount(0);
 });
 
@@ -762,6 +764,7 @@ test("the checklist stacks without overflow on a narrow phone", async ({ page })
 });
 
 test("commercial activity and events expose their complete truth without a flat clamped row", async ({ page }) => {
+  await page.route("**/api/live/events*", routeSummary({ events: SUMMARY_FIXTURE.areas.myeongdong.events, nextOffset: null }));
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.goto("/ko");
   const commercial = page.locator(".commercial-signal-card");
@@ -779,7 +782,7 @@ test("commercial activity and events expose their complete truth without a flat 
   await expect(panel).toContainText("4건 공식 행사기간 내·예정");
   await expect(panel).toContainText("공식 행사기간만으로 실제 운영 여부나 운영시간을 확인할 수 없습니다. 공식 안내를 확인하세요.");
   await expect(panel.locator(".event-card")).toHaveCount(3);
-  await expect(panel.getByRole("button", { name: "전체 4건 보기" })).toHaveAttribute("aria-expanded", "false");
+  await expect(panel.getByRole("button", { name: "수집된 행사 전체 보기" })).toHaveAttribute("aria-expanded", "false");
   await expect(
     panel.getByRole("link", { name: "공식 행사 페이지" }),
     "the representative valid URL is shown while javascript: is rejected",
@@ -801,9 +804,9 @@ test("commercial activity and events expose their complete truth without a flat 
   await expect(details.locator(".event-overview")).toHaveText("관객과 소통하는 공연형 미술 콘텐츠입니다. 두 번째 공식 문장도 끝까지 읽을 수 있어야 합니다.");
   expect(await details.locator(".event-overview").evaluate((element) => getComputedStyle(element).webkitLineClamp)).toBe("none");
 
-  await panel.getByRole("button", { name: "전체 4건 보기" }).click();
+  await panel.getByRole("button", { name: "수집된 행사 전체 보기" }).click();
   await expect(panel.locator(".event-card")).toHaveCount(4);
-  await expect(panel.getByRole("button", { name: "대표 행사만 보기" })).toHaveAttribute("aria-expanded", "true");
+  await expect(panel.getByRole("button", { name: "대표 3개만 보기" })).toHaveAttribute("aria-expanded", "true");
   await expect(panel.getByRole("link", { name: "공식 행사 페이지" })).toHaveCount(2);
 });
 
@@ -817,7 +820,7 @@ test("a transitional cached payload never promises event cards it did not includ
   const panel = page.locator(".event-signal-panel");
   await expect(panel).toContainText("13건 공식 행사기간 내·예정");
   await expect(panel.locator(".event-card")).toHaveCount(3);
-  await expect(panel.locator(".event-list-toggle")).toHaveCount(0);
+  await expect(panel.getByRole("button", { name: "수집된 행사 전체 보기" })).toBeVisible();
 });
 
 test("signal groups keep time meaning and value-source geometry at every required width", async ({ page }) => {
@@ -859,10 +862,10 @@ test("signal groups keep time meaning and value-source geometry at every require
 test("commercial and event controls preserve their meaning in KO EN ZH JA", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   const expected = {
-    ko: ["최근 10분 내국인 카드 소비", "전체 4건 보기", "자세히 보기", "공식 행사 페이지"],
-    en: ["Recent 10-minute domestic-card activity", "View all 4 events", "View details", "Official event page"],
-    zh: ["最近10分钟境内消费者银行卡支付", "查看全部4项活动", "查看详情", "官方活动页面"],
-    ja: ["直近10分の国内消費者カード決済", "全4件を見る", "詳細を見る", "公式イベントページ"],
+    ko: ["최근 10분 내국인 카드 소비", "수집된 행사 전체 보기", "자세히 보기", "공식 행사 페이지"],
+    en: ["Recent 10-minute domestic-card activity", "Browse all collected events", "View details", "Official event page"],
+    zh: ["最近10分钟境内消费者银行卡支付", "查看全部已收集活动", "查看详情", "官方活动页面"],
+    ja: ["直近10分の国内消費者カード決済", "収集済みの全イベントを見る", "詳細を見る", "公式イベントページ"],
   } as const;
   for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
     await page.goto(`/${locale}`);

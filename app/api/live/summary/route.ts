@@ -252,14 +252,15 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     ).bind(...AREAS.flatMap((area) => [area, area, kstHourStart]))],
 
     eventRows: [client.prepare(
-      `SELECT area, content_id AS contentId, title, event_start AS eventStart,
+      latestPerKey(AREAS, () => `SELECT area, content_id AS contentId, title, event_start AS eventStart,
         event_end AS eventEnd, distance_m AS distanceM, retrieved_at AS retrievedAt,
         category_name AS categoryName, address, address_detail AS addressDetail,
         overview, homepage
       FROM tourism_events
       WHERE (event_end >= ? OR (event_end IS NULL AND event_start >= ?))
-      ORDER BY event_start LIMIT 30`,
-    ).bind(serviceDate, serviceDate)],
+        AND area = ?
+      ORDER BY event_start, content_id LIMIT 30`),
+    ).bind(...AREAS.flatMap(area => [serviceDate, serviceDate, area]))],
 
     salesRows: [client.prepare(
       latestPerKey(AREAS, () => `SELECT area, quarter_code AS quarterCode, trade_area_code AS tradeAreaCode,

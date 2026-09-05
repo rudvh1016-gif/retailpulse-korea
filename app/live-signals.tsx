@@ -24,6 +24,9 @@ import { formatRepresentativeStations } from "../lib/subway-ridership";
 import { buildTerminalBriefings, type TerminalBriefing } from "../lib/terminal-briefing";
 import { buildWeatherGuide } from "../lib/weather-guide";
 import { comparisonText, type RangeChange } from "../lib/period-comparison";
+import { averagePaymentRange, commercialActivityContext } from "../lib/commercial-context";
+
+import { useEventPagination, EventPaginationControls } from "./event-pagination";
 
 type PeriodComparisons = Partial<Record<7 | 28, RangeChange | null>>;
 function comparisonLines(comparisons: PeriodComparisons | undefined, lang: Lang): string[] {
@@ -346,19 +349,25 @@ async function loadSummary(date: string | null): Promise<LiveSummary | null> {
  * `date` is null for "whatever today is in KST", which keeps the first paint
  * free of any date the client had to guess before the server answered.
  */
-export function useLiveSummary(date: string | null = null): LiveSummary | null {
+export function useLiveSummary(date: string | null = null): LiveSummary | null | undefined {
   const key = date ?? DEFAULT_KEY;
-  const [state, setState] = useState<{ key: string; value: LiveSummary | null }>(() => ({ key, value: summaryCache.get(key) ?? null }));
+  const [state, setState] = useState<{ key: string; value: LiveSummary | null | undefined }>(() => ({ key, value: summaryCache.get(key) }));
   // Switching dates must not leave the previous day's numbers on screen for a
   // frame. The state is adjusted during render rather than in an effect, which
   // React handles without a second pass and without cascading renders.
-  if (state.key !== key) setState({ key, value: summaryCache.get(key) ?? null });
+  if (state.key !== key) setState({ key, value: summaryCache.get(key) });
   useEffect(() => {
     let active = true;
     loadSummary(date).then((value) => { if (active) setState({ key, value }); });
     return () => { active = false; };
   }, [date, key]);
-  return state.key === key ? state.value : null;
+  return state.key === key ? state.value : undefined;
+}
+
+export function LiveLoadMessage({ loading, lang }: { loading: boolean; lang: Lang }) {
+  return <p className="airport-empty-line" role="status" aria-live="polite" aria-busy={loading}>{(loading
+    ? { ko: "로딩 중, 잠시 기다려주세요.", en: "Loading, please wait.", zh: "正在加载，请稍候。", ja: "読み込み中です。しばらくお待ちください。" }
+    : { ko: "자료를 불러오지 못했습니다. 잠시 후 새로고침해 주세요.", en: "Could not load data. Please refresh shortly.", zh: "未能加载资料，请稍后刷新。", ja: "データを取得できませんでした。しばらくして再読み込みしてください。" })[lang]}</p>;
 }
 
 const text = {
@@ -1142,6 +1151,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   const [compositionView, setCompositionView] = useState<"gates" | "airlines" | "countries">("gates");
   const summary = useLiveSummary(date);
   const airport = summary?.airport;
+  if (!summary) return <LiveLoadMessage loading={summary === undefined} lang={lang} />;
   if (!airport) return <div className="airport-unavailable" role="status"><strong>{airportTodayText.unavailable[lang]}</strong></div>;
   const numberLocale = airportLocale(lang);
   const peopleUnit = { ko: "명", en: " people", zh: "人", ja: "人" }[lang];
@@ -2122,7 +2132,7 @@ function MyStoreSnapshot({ lang, operations }: { lang: Lang; operations: Operati
 /** The three Seoul areas, each opening with its own official brief. */
 export function HomeTodayBrief({ lang, selected, onSelect, date = null }: { lang: Lang; selected: AreaId; onSelect: (area: AreaId) => void; date?: string | null }) {
   const summary = useLiveSummary(date);
-  if (!summary) return null;
+  if (!summary) return <LiveLoadMessage loading={summary === undefined} lang={lang} />;
   const areas = AREA_IDS.map((area) => {
     const block = summary.areas[area];
     const brief = buildAreaCurrentBrief({
@@ -2208,6 +2218,8 @@ function formatKrwCompact(lang: Lang, amount: number): string {
 }
 
 export interface CommercialSignalRow {
+  activityContext: string | null;
+  averagePayment: string | null;
   comparisons: string[];
   key: "commercial";
   label: string;
@@ -2293,11 +2305,15 @@ export function buildCommercialSignalRow(
   const countValue = hasCount
     ? `${commercial.paymentCount!.toLocaleString(airportLocale(lang))}${lang === "ko" ? "건" : lang === "en" ? " payments" : lang === "zh" ? "笔" : "件"}`
     : null;
+  const average = averagePaymentRange(commercial.paymentAmountMin, commercial.paymentAmountMax, commercial.paymentCount);
+  const averagePayment = average ? `₩${average[0].toLocaleString(airportLocale(lang))} ~ ₩${average[1].toLocaleString(airportLocale(lang))}` : null;
   const referenceValue = formatCommercialReference(lang, commercial.observedAt);
   const retrievalValue = formatCommercialRetrieval(lang, commercial.retrievedAt);
   const staleAge = commercial.freshness === "STALE" ? formatCommercialAge(lang, commercial.observedAt, generatedAt) : null;
   return {
     key: "commercial",
+    activityContext: commercialActivityContext(commercial.commercialLevel, lang),
+    averagePayment,
     comparisons: comparisonLines(commercial.comparisons, lang),
     label: text.commercial[lang],
     statusLabel: commercialFieldText.status[lang],
@@ -2542,6 +2558,7 @@ function CommercialSignalCard({ signal, lang }: { signal: CommercialSignalRow; l
   const metrics = [
     { label: signal.amountLabel, value: signal.amountValue ?? signal.privacyMessage },
     ...(signal.countValue ? [{ label: signal.countLabel, value: signal.countValue }] : []),
+    ...(signal.averagePayment ? [{ label: ({ ko: "건당 평균 결제액 · 같은 10분 기준", en: "Average per payment · same 10-minute window", zh: "每笔平均支付额 · 同一10分钟", ja: "1件あたり平均決済額・同じ10分間" })[lang], value: signal.averagePayment }] : []),
   ];
   return <article className="commercial-signal-card">
     <div className="commercial-signal-label">
@@ -2551,12 +2568,13 @@ function CommercialSignalCard({ signal, lang }: { signal: CommercialSignalRow; l
     </div>
     <div className="commercial-signal-content">
       <p className="commercial-basis">{text.commercialBasis[lang]}</p>
-      <p className="commercial-status">{lang === "ko" ? "서울시 제공 소비활동 상태" : signal.statusLabel} · <strong>{lang === "ko" ? `최근 10분 소비활동 ‘${signal.statusValue}’` : signal.statusValue}</strong></p>
+      <p className="commercial-status">{lang === "ko" ? "서울시 제공 소비활동 상태" : signal.statusLabel} · <strong>{signal.activityContext ?? signal.statusValue}</strong></p>
       <dl className="commercial-metrics">
         {metrics.map((metric) => <div key={metric.label}><dt>{metric.label}</dt><dd>{metric.value}</dd></div>)}
       </dl>
       <p className="commercial-times">{signal.referenceValue} · {signal.retrievalValue}</p>
       {signal.comparisons.length ? signal.comparisons.map((line) => <p className="period-comparison" key={line}>{line}</p>) : <p className="commercial-times">{({ ko: "동일 시간대 과거 자료 부족 · 전주·4주 전 비교 불가", en: "Matching historical time window unavailable for weekly comparisons", zh: "缺少同一时段历史资料，无法进行周比较", ja: "同時刻の過去資料不足のため週比較不可" })[lang]}</p>}
+      <p className="commercial-attribution">{({ ko: "소비활동은 과거 평균 결제금액 등을 고려한 서울시 4단계 등급입니다. 과거 평균 금액이나 증감률 자체가 아니며, 건당 평균은 현재 금액을 현재 건수로 나눈 값입니다.", en: "Seoul’s four activity levels consider past average payments. They are not historical mean amounts or growth rates; the per-payment average uses this window’s amount and count.", zh: "首尔市四级消费活跃度参考过去平均支付金额，不代表历史均额或增减率；每笔平均额按当前时段金额和笔数计算。", ja: "ソウル市の4段階指標は過去の平均決済額などを考慮します。過去の平均額や増減率そのものではなく、1件平均は現在の金額と件数から算出します。" })[lang]}</p>
       <p className="commercial-attribution">{text.sourceSeoul[lang]} · {signal.attribution}</p>
     </div>
   </article>;
@@ -2627,9 +2645,9 @@ function EventCard({ event, lang, serviceDate }: { event: LiveEventRow; lang: La
   </li>;
 }
 
-function EventSignalPanel({ lang, events, eventCount, serviceDate }: { lang: Lang; events: LiveEventRow[]; eventCount: number; serviceDate: string }) {
-  const [showAll, setShowAll] = useState(false);
-  const visibleEvents = showAll ? events : events.slice(0, 3);
+function EventSignalPanel({ lang, events, eventCount, serviceDate, area }: { lang: Lang; events: LiveEventRow[]; eventCount: number; serviceDate: string; area: AreaId }) {
+  const page = useEventPagination(events, area, serviceDate);
+  const visibleEvents = page.visible;
   const listId = `event-list-${serviceDate}`;
   if (!events.length) return null;
   return <section className="event-signal-panel" aria-labelledby={`${listId}-title`}>
@@ -2638,7 +2656,7 @@ function EventSignalPanel({ lang, events, eventCount, serviceDate }: { lang: Lan
         <span className="signal-time-state">{signalStructureText.timeState.schedule[lang]}</span>
         <h4 id={`${listId}-title`}>{text.events[lang]}</h4>
       </div>
-      <p><strong>{eventCount.toLocaleString(airportLocale(lang))}</strong>{lang === "en" ? " " : ""}{text.eventCount[lang]} · {text.eventRepresentative[lang]} {Math.min(3, events.length)}</p>
+      <p><strong>{(page.expanded && page.rows.length ? page.rows.length : eventCount).toLocaleString(airportLocale(lang))}{(page.expanded ? page.next !== null : events.length >= 30) ? "+" : ""}</strong>{lang === "en" ? " " : ""}{text.eventCount[lang]} · {text.eventRepresentative[lang]} {Math.min(3, events.length)}</p>
     </header>
     <p className="event-operation-caveat">{text.eventOperationCaveat[lang]}</p>
     <ol className="event-card-list" id={listId}>
@@ -2649,13 +2667,7 @@ function EventSignalPanel({ lang, events, eventCount, serviceDate }: { lang: Lan
         serviceDate={serviceDate}
       />)}
     </ol>
-    {events.length > 3 && <button
-      type="button"
-      className="event-list-toggle"
-      aria-expanded={showAll}
-      aria-controls={listId}
-      onClick={() => setShowAll((value) => !value)}
-    >{showAll ? signalStructureText.eventRepresentativesOnly[lang] : signalStructureText.eventAll[lang](events.length)}</button>}
+    <EventPaginationControls page={page} lang={lang} />
   </section>;
 }
 
@@ -2668,7 +2680,7 @@ export function AreaCurrentBrief({ lang, area, date = null, linkHref, linkLabel 
   lang: Lang; area: AreaId; date?: string | null; linkHref?: string; linkLabel?: string;
 }) {
   const summary = useLiveSummary(date);
-  if (!summary) return null;
+  if (!summary) return <LiveLoadMessage loading={summary === undefined} lang={lang} />;
   const block = summary.areas[area];
   const brief = buildAreaCurrentBrief({
     realtime: block?.realtime ?? null,
@@ -2685,6 +2697,7 @@ export function AreaCurrentBrief({ lang, area, date = null, linkHref, linkLabel 
     <p className="eyebrow">{areaNames[area][lang]} · {areaBriefText.nowLabel[lang].toUpperCase()}</p>
     <strong>{copy.headline}</strong>
     {copy.lines.map((line) => <p key={line}>{line}</p>)}
+    {block?.realtime && <p className="period-comparison">{comparisonLines(block.realtime.comparisons, lang).join(" · ") || ({ ko: "전주 동요일 비교 자료 없음 · 현재 혼잡도는 서울시 제공 등급", en: "Same-weekday comparison unavailable · crowding is Seoul’s official level", zh: "缺少上周同曜日比较资料 · 当前拥挤程度为首尔市发布等级", ja: "前週同曜日の比較資料なし・混雑度はソウル市の提供指標" })[lang]}</p>}
     {copy.freshness && <small>{formatHumanFreshness(copy.freshness, summary.generatedAt, lang, "observed")}</small>}
     {linkHref && linkLabel && <a className="current-brief-link" href={linkHref}>{linkLabel} ↗</a>}
   </section>;
@@ -2692,7 +2705,7 @@ export function AreaCurrentBrief({ lang, area, date = null, linkHref, linkLabel 
 
 export default function LiveSignals({ lang, area, date = null }: { lang: Lang; area: AreaId; date?: string | null }) {
   const summary = useLiveSummary(date);
-  if (!summary) return null;
+  if (!summary) return <LiveLoadMessage loading={summary === undefined} lang={lang} />;
   const block = summary.areas[area];
   const arrival = summary.airport.arrivalForecast ?? {
     todayExpectedPassengersTotal: null,
@@ -2985,6 +2998,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
               {groupId === "today-next" && events.length > 0 && <EventSignalPanel
                 lang={lang}
                 events={events}
+                area={area}
                 eventCount={block?.eventCount ?? events.length}
                 serviceDate={summary.serviceDateKst}
               />}
@@ -3016,9 +3030,11 @@ const flightBoardText = {
  * gate, counter, status, time — is what the provider published for that flight.
  */
 export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; terminal: "all" | "T1" | "T2"; date?: string | null }) {
+  const summary = useLiveSummary(date);
+  const [visibleCount, setVisibleCount] = useState(10);
   const [direction, setDirection] = useState<"departure" | "arrival">("departure");
   const [query, setQuery] = useState("");
-  const [loaded, setLoaded] = useState<{ date: string | null; rows: LiveFlightRow[] } | null>(null);
+  const [loaded, setLoaded] = useState<{ date: string | null; rows: LiveFlightRow[]; failed: boolean; truncated: boolean } | null>(null);
   // Changing the date must not leave the previous day's flights on screen, so
   // the loaded date is tracked alongside the rows and compared during render
   // rather than cleared from inside the effect.
@@ -3029,9 +3045,9 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
     let active = true;
     const url = date ? `/api/live/flights?date=${encodeURIComponent(date)}` : "/api/live/flights";
     fetch(url, { headers: { accept: "application/json" } })
-      .then(async (response) => (response.ok ? (await response.json() as { flights?: LiveFlightRow[] }).flights ?? [] : []))
-      .catch(() => [])
-      .then((rows) => { if (active) setLoaded({ date, rows }); });
+      .then(async (response) => (response.ok ? await response.json() as { mode?: string; flights?: LiveFlightRow[]; truncated?: boolean } : null))
+      .catch(() => null)
+      .then((payload) => { if (active) setLoaded({ date, rows: payload?.flights ?? [], failed: !payload || payload.mode !== "live-flights", truncated: payload?.truncated ?? false }); });
     return () => { active = false; };
   }, [date]);
   const scoped = useMemo(() => {
@@ -3043,27 +3059,37 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
       return `${flight.flightNumber} ${flight.airlineCode ?? ""} ${flight.airportCode ?? ""}`.toUpperCase().includes(needle);
     });
   }, [flights, direction, terminal, query]);
-  if (flights === null) return null;
-  const visible = scoped.slice(0, 80);
-  const directionCount = flights.filter((flight) => flight.direction === direction).length;
+  if (flights === null || loaded?.failed) return <section className="flight-board" aria-labelledby="flight-board-title"><div className="section-head"><h2 id="flight-board-title">{flightBoardText.search[lang]}</h2></div><LiveLoadMessage loading={flights === null} lang={lang} /></section>;
+  const visible = scoped.slice(0, visibleCount);
+  const ranking = terminal === "all" ? summary?.airport.airlineRanking?.all : summary?.airport.airlineRanking?.byTerminal?.[terminal];
+  const changes = summary?.airport.periodComparisons?.[terminal]?.[7]?.flightRecords;
+  const unit = { ko: "편", en: " flights", zh: "班", ja: "便" }[lang];
+  const airlineLine = ranking?.airlines.slice(0, 3).map(row => `${airlineDisplayName(row, lang)}${row.iata ? ` (${row.iata})` : ""} ${row.flights}${unit}`).join(" · ");
+  const countryLine = ranking?.countries.filter(row => row.country).slice(0, 3).map((row, i) => `${i + 1}. ${regionName(row.country!, lang)} ${row.flights}${unit}`).join(" · ");
 
   return <section className="flight-board" aria-labelledby="flight-board-title">
     <div className="section-head">
       <div><p className="eyebrow">OFFICIAL FLIGHT RECORD · KST</p><h2 id="flight-board-title">{flightBoardText.search[lang]}</h2></div>
     </div>
+    {ranking && ranking.totalFlights > 0 && <div className="current-brief flight-summary">
+      <strong>{({ ko: "선택 터미널 출발 운항", en: "Departures in the selected scope", zh: "所选范围的出发航班", ja: "選択範囲の出発運航" })[lang]} {ranking.totalFlights}{unit}{changes ? ` · ${comparisonText(changes, lang, 7)}` : ""}</strong>
+      {airlineLine && <p>{airlineLine}</p>}
+      {countryLine && <p>{({ ko: "항공사 등록 국가 순위", en: "Airline registration-country ranking", zh: "航空公司注册国家排名", ja: "航空会社登録国ランキング" })[lang]} · {countryLine}</p>}
+      <small>{({ ko: "공동운항 중복을 뺀 출발 운항 기준입니다. 등록 국가는 승객 국적이 아닙니다. 국가별 과거 비교 자료가 연결되지 않아 증감 추세는 표시하지 않습니다.", en: "Departures exclude codeshare duplicates. Registration country is not passenger nationality. Country-level historical comparisons are not available here.", zh: "出发运航已去除代码共享重复。注册国家不是乘客国籍。此处暂无各国历史比较。", ja: "共同運航の重複を除いた出発便です。登録国は旅客国籍ではありません。国別の過去比較は未対応です。" })[lang]}</small>
+    </div>}
     <div className="flight-board-controls">
       <div className="flight-direction" role="group">
         {(["departure", "arrival"] as const).map((value) => <button
           key={value}
           type="button"
           className={direction === value ? "active" : ""}
-          onClick={() => setDirection(value)}
+          onClick={() => { setDirection(value); setVisibleCount(10); }}
           aria-pressed={direction === value}
         >{value === "departure" ? flightBoardText.departures[lang] : flightBoardText.arrivals[lang]}</button>)}
       </div>
       <label className="flight-search-field">
         <span>{flightBoardText.search[lang]}</span>
-        <input type="search" value={query} placeholder={flightBoardText.hint[lang]} onChange={(event) => setQuery(event.target.value)} />
+        <input type="search" value={query} placeholder={flightBoardText.hint[lang]} onChange={(event) => { setQuery(event.target.value); setVisibleCount(10); }} />
       </label>
     </div>
     {!flights.length ? <p className="airport-empty-line">{flightBoardText.empty[lang]}</p>
@@ -3076,7 +3102,9 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
             <i>{[flight.terminal, flight.gate ? `${flightBoardText.gate[lang]} ${flight.gate}` : null, flight.checkinCounter ? `${flightBoardText.counter[lang]} ${flight.checkinCounter}` : null].filter(Boolean).join(" · ")}</i>
             <small>{flight.status}</small>
           </li>)}</ol>
-          <p className="flight-board-foot">{flightBoardText.showing[lang](visible.length, directionCount)}</p>
+          {visible.length < scoped.length && <button type="button" className="event-list-toggle" onClick={() => setVisibleCount(count => count + 20)}>{({ ko: "항공편 20개 더 보기", en: "Show 20 more flights", zh: "再查看20班", ja: "さらに20便を見る" })[lang]}</button>}
+          {loaded?.truncated && <p role="status">{({ ko: "편명 목록은 수집된 기록 중 시간순 첫 1,200개입니다. 검색도 이 범위에 적용됩니다. 위 운항 요약은 별도 집계입니다.", en: "The list and search cover the first 1,200 collected flight records in time order. The summary is calculated separately.", zh: "列表和搜索仅涵盖按时间排列的前1,200条记录。上方汇总另行统计。", ja: "一覧と検索は時刻順の先頭1,200件が対象です。上の運航概要は別集計です。" })[lang]}</p>}
+          <p className="flight-board-foot">{flightBoardText.showing[lang](visible.length, scoped.length)}</p>
         </>}
   </section>;
 }
