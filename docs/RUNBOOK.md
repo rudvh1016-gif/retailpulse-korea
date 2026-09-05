@@ -102,3 +102,32 @@ Rollback is atomic: remove that exact Cron from `wrangler.production.jsonc`
 and restore the matching GitHub `schedule:` block in the same Green PR/deploy.
 Never operate both paths together. No D1 migration or data rollback is part of
 this procedure.
+
+## Operational context and forecast maintenance (Sept5)
+
+- Existing Seoul realtime Actions also collects category/environment fields from
+  its existing3responses. No new upstream endpoint or Cron for this expansion.
+- After18KST the same runner saves next-day population reference forecasts and
+  matches previous outcomes. Missing enough same-weekday data => COLLECTING;
+  no recent observation => wait for next run, not invented values.
+- Existing A1 runner also refreshes compact airline/country daily aggregates for
+  last29days only when collector-run evidence proves a completed bounded scan.
+  Comparisons describe collected flight records, not a whole-day operational census.
+- Holiday source: KASI getRestDeInfo, current+next month, one daily successful
+  refresh. Source Health shows failed/unauthorized access; preserve previous rows.
+- Context snapshots90days (max400pruned/day); forecast/input/outcome/aggregate
+  history preserved. A5 aggregate revision archive is immutable and starts at
+  migration; old historical source-issued versions cannot be reconstructed.
+  `retrieved_at` is when we received a version, not provider issue time.
+- Before every production migration, Deploy Cloudflare records a D1 Time Travel
+  bookmark. Free recovery window7days. Bookmark acquisition is not a restore drill.
+  Never run a production restore just to test: it rewinds canonical records.
+  Keep the workflow log/time/bookmark for recovery within that window.
+- Long-term canonical history stays in D1. No public GitHub dump of database rows,
+  no new paid storage, no claim that this supplies an off-account long-term backup.
+
+For initial activation after migration, use the existing manual One-shot Data
+Import with sources `seoul_realtime,population_predictions,airport_composition,holidays`
+and confirmation IMPORT. This reuses the same functions, adds no scheduler, and
+avoids rerunning unrelated airport/provider sources. Before18KST prediction creation
+waits normally; coverage accounting still runs.

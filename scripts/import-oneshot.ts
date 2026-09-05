@@ -1,3 +1,7 @@
+import { collectHolidays } from "../lib/holidays";
+import { collectAirportComposition } from "../lib/airport-composition-history";
+import { runPopulationPredictions } from "../lib/population-predictions";
+import { safeSourceFailureDetail } from "../lib/source-adapters";
 /**
  * Manual, bounded, one-shot import of verified sources into D1.
  *
@@ -12,6 +16,7 @@
 import { collectAirportFacilities } from "../lib/airport-facilities";
 import { collectAirportFlightsToday } from "../lib/airport-today";
 import {
+  writeSourceHealth,
   collectAirportCongestion,
   collectAirportCongestionT2,
   collectAirportFlightEnrichment,
@@ -129,6 +134,19 @@ async function readA1VerificationSnapshot(targetDate: string): Promise<A1Verific
 }
 
 const collectors: Record<string, () => Promise<OneShotResult>> = {
+  airport_composition: () => collectAirportComposition(database),
+  population_predictions: async () => { const result=await runPopulationPredictions(database);return {status:result.status,records:result.predictions}; },
+  holidays: async () => {
+    try {
+      const result=await collectHolidays(database,env.DATA_GO_KR_SERVICE_KEY);
+      await writeSourceHealth(database,'KASI_PUBLIC_HOLIDAYS',result.status==='SUCCESS'?'LIVE':'MISSING',result.status,
+        result.status==='SUCCESS'?{retrievedAt:new Date().toISOString(),schemaVersion:'kasi-holidays-v1'}:undefined);
+      return result;
+    } catch(error) {
+      await writeSourceHealth(database,'KASI_PUBLIC_HOLIDAYS','ERROR',safeSourceFailureDetail(error));
+      throw error;
+    }
+  },
   seoul_realtime: () => collectSeoulRealtime(env),
   seoul_foreign: () => collectSeoulForeignPresence(env),
   subway_ridership: () => collectSeoulSubwayRidership(env),

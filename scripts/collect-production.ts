@@ -1,3 +1,7 @@
+import { safeSourceFailureDetail } from "../lib/source-adapters";
+import { collectHolidays } from "../lib/holidays";
+import { collectAirportComposition } from "../lib/airport-composition-history";
+import { runPopulationPredictions } from "../lib/population-predictions";
 /**
  * Selectable Production collector runner.
  *
@@ -15,7 +19,7 @@
  * SKIPPED_ALREADY_COMPLETE_TODAY. A legacy first-page-only success never
  * satisfies this guard. See lib/airport-today.ts:hasCompleteA1RecentHistoryToday.
  */
-import { pruneOperationalHistory } from "../lib/collector";
+import { pruneOperationalHistory, writeSourceHealth } from "../lib/collector";
 import { CloudflareD1RestDatabase } from "../lib/d1-rest";
 import {
   hasProductionSourceFailure,
@@ -92,4 +96,29 @@ const now = new Date();
 if ((now.getUTCHours() + 9) % 24 === 3) {
   const prunedRows = await pruneOperationalHistory(database as unknown as D1Database, now);
   console.log(JSON.stringify({ maintenance: "retention", prunedRows }));
+}
+
+// Additional user-authorized context stays in the existing runner; no duplicate scheduler.
+if (requested.includes("airport_recent")) {
+  for (const [name,run] of [
+    ["airport_composition",()=>collectAirportComposition(env.DB)],
+    ["holidays",()=>collectHolidays(env.DB,env.DATA_GO_KR_SERVICE_KEY)],
+  ] as const) {
+    try {
+      const result=await run();
+      console.log(JSON.stringify({context:name,...result}));
+      if(name==='holidays') await writeSourceHealth(env.DB,'KASI_PUBLIC_HOLIDAYS',result.status==='SUCCESS'?'LIVE':'MISSING',result.status,
+        result.status==='SUCCESS'?{retrievedAt:new Date().toISOString(),schemaVersion:'kasi-holidays-v1'}:undefined);
+    }
+    catch (error) {
+      const detail=safeSourceFailureDetail(error);
+      console.error(JSON.stringify({context:name,status:"ERROR",lastGoodPreserved:true,detail}));
+      if(name==='holidays') await writeSourceHealth(env.DB,'KASI_PUBLIC_HOLIDAYS','ERROR',detail);
+      process.exitCode=1;
+    }
+  }
+}
+if (requested.includes("seoul_realtime")) {
+  try { console.log(JSON.stringify({context:"population_predictions",...await runPopulationPredictions(env.DB)})); }
+  catch { console.error(JSON.stringify({context:"population_predictions",status:"ERROR",lastGoodPreserved:true})); process.exitCode=1; }
 }

@@ -1,3 +1,5 @@
+import { compareComposition } from "../../../../lib/airport-composition-history";
+import type { AirlineRankingSummary } from "../../../../lib/airline-ranking";
 import { getDb } from "../../../../db";
 import { rangeChange, withAreaBaselines } from "../../../../lib/period-comparison";
 import {
@@ -203,6 +205,9 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
         last_retrieved_at AS retrievedAt, detail FROM source_health ORDER BY source_id`,
     )],
 
+    contextRows: [client.prepare(latestPerKey(AREAS, () => `SELECT area,payload,retrieved_at AS retrievedAt FROM seoul_context WHERE area=? ORDER BY observed_at DESC LIMIT 1`)).bind(...AREAS)],
+    holidayRows: [client.prepare('SELECT month,payload,retrieved_at AS retrievedAt FROM holiday_months WHERE month>=? ORDER BY month LIMIT 2').bind(serviceDate.slice(0,7))],
+    compositionRows: [client.prepare('SELECT day,payload FROM airport_daily_composition WHERE day IN (?,?)').bind(shiftKstDay(serviceDate,-7),shiftKstDay(serviceDate,-28))],
     realtimeRows: [client.prepare(
       withAreaBaselines(latestPerKey(AREAS, () => `SELECT area, source_id AS sourceId, schema_version AS schemaVersion, quality_status AS qualityStatus, congestion_level AS congestionLevel, congestion_label AS congestionLabel,
         population_min AS populationMin, population_max AS populationMax,
@@ -442,7 +447,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   // uncached summary (see lib/d1-read-batch.ts). Rows read are unchanged.
   const { rows: blocks } = await readGroups(client, { ...statementGroups, ...probeGroups });
   const {
-    sources, realtimeRows, commercialRows, realtimeForecastRows, weatherRows, eventRows, salesRows,
+    sources, contextRows, holidayRows, compositionRows, realtimeRows, commercialRows, realtimeForecastRows, weatherRows, eventRows, salesRows,
     storeDynamicsRows, foreignPresenceRows, foreignPurposeRows, subwayRows, congestionRows,
     passengerForecastRows: allPassengerForecastRows, historicalFlightCounts, flightRows, scheduledRows, flightDateRows, forecastDateRows, observedDateRows,
   } = blocks;
@@ -475,7 +480,11 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       })),
       serviceDate,
     );
+    const contextRow = contextRows.find(row=>row.area===area);
+    let context = null;
+    try { if(contextRow) context={...JSON.parse(String(contextRow.payload)),retrievedAt:contextRow.retrievedAt}; } catch { /* malformed optional context is unavailable */ }
     return [area, {
+      context,
       realtime: realtime ? { ...realtime, comparisons: areaComparisons(realtime, "populationMin", "populationMax"), freshness: freshnessOf(realtime.observedAt, REALTIME_STALE_MINUTES, now) } : null,
       commercial: commercial ? { ...commercial, comparisons: areaComparisons(commercial, "paymentAmountMin", "paymentAmountMax"), freshness: freshnessOf(commercial.observedAt, REALTIME_STALE_MINUTES, now) } : null,
       // The whole published horizon, not a "today" slice — see the query note.
@@ -567,7 +576,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   // Airline ranking from the same de-duplicated physical rows. The
   // country comes from a reference table, never from the provider, and is
   // reported as UNVERIFIED whenever the table cannot vouch for it.
-  const airlineRanking = summarizeAirlineRanking(flightRows as unknown as AirlineRankingFlightRow[], lookupAirline);
+  const airlineRanking = summarizeAirlineRanking(flightRows as unknown as AirlineRankingFlightRow[], lookupAirline, 300);
   const periodComparisons = Object.fromEntries(["all", "T1", "T2"].map((scope) => [scope,
     Object.fromEntries(([7, 28] as const).map((days) => {
       const baselineDate = shiftKstDay(serviceDate, -days);
@@ -578,7 +587,16 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       const allPastCount = pastRows.reduce((sum, row) => sum + Number(row.flights), 0);
       const pastCount = scope === "all" ? allPastCount : Number(pastRows.find((row) => row.terminal === scope)?.flights ?? 0);
       const currentCount = scope === "all" ? airlineRanking.all.totalFlights : airlineRanking.byTerminal[scope]?.totalFlights;
+      let composition = null;
+      try {
+        const raw = compositionRows.find(row=>row.day===baselineDate);
+        const history: AirlineRankingSummary | null = raw ? JSON.parse(String(raw.payload)) : null;
+        const baseline = scope==='all' ? history?.all : history?.byTerminal[scope];
+        const current = scope==='all' ? airlineRanking.all : airlineRanking.byTerminal[scope];
+        if(baseline && current && flightRows.length<2000) composition={baselineDate,...compareComposition(current,baseline)};
+      } catch { /* missing or invalid history is not zero */ }
       return [days, {
+        composition,
         passengers: rangeChange(currentPassengers, currentPassengers, pastPassengers, pastPassengers, baselineDate),
         // These are collected physical-flight records, not a verified whole-day operational census.
         flightRecords: allPastCount > 0 && allPastCount < 2001 && flightRows.length < 2000
@@ -652,6 +670,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       airportPassengerForecast: dayList(forecastDateRows),
       seoulObserved: dayList(observedDateRows),
     },
+    holidays: holidayRows.flatMap(row=>{ try { return [{month:row.month,days:JSON.parse(String(row.payload)),retrievedAt:row.retrievedAt}]; } catch { return []; } }),
     sources,
     areas,
     airport: {
@@ -671,7 +690,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       topDepartureGateRetrievedAtByTerminal: departureGateRetrievedAtByTerminal,
       gateCoverageRatio: flightsToday.gateCoverageRatio,
       gateCoverageRatioByTerminal,
-      airlineRanking: { ...airlineRanking, countrySource: AIRLINE_COUNTRY_SOURCE },
+      airlineRanking: { all: {...airlineRanking.all,airlines:airlineRanking.all.airlines.slice(0,10),countries:airlineRanking.all.countries.slice(0,10)}, byTerminal:Object.fromEntries(Object.entries(airlineRanking.byTerminal).map(([key,value])=>[key,{...value,airlines:value.airlines.slice(0,10),countries:value.countries.slice(0,10)}])), countrySource: AIRLINE_COUNTRY_SOURCE },
       serviceDateKst: serviceDate,
       periodStartAt: dayStartAt,
       periodEndAt: `${serviceDate}T23:59:59+09:00`,

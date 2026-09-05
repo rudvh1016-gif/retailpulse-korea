@@ -1,3 +1,4 @@
+import { normalizeSeoulContext } from "./seoul-context";
 import {
   DATA_GO_KR_LOW_CALL_POLICY,
   DATA_GO_KR_PAGED_POLICY,
@@ -506,6 +507,21 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
     }
 
     const retrievedAt = nowIso();
+    // Optional context is isolated from the existing population/card collector.
+    try {
+      const context = normalizeSeoulContext(citydata);
+      const observedAt = context.commercialAt ?? context.weather?.observedAt;
+      if (env.DB && observedAt && (context.categories.length || context.weather)) {
+        console.log(JSON.stringify({context:"seoul",area:areaId,categories:context.categories.length,weather:!!context.weather,
+          pm10Published:context.weather?.pm10!==null&&context.weather?.pm10!==undefined,
+          pm25Published:context.weather?.pm25!==null&&context.weather?.pm25!==undefined}));
+        const payload = JSON.stringify(context);
+        await env.DB.prepare(`INSERT INTO seoul_context(area,observed_at,retrieved_at,payload,source_hash)
+          VALUES(?,?,?,?,?) ON CONFLICT(area,observed_at) DO UPDATE SET
+          payload=excluded.payload,retrieved_at=excluded.retrieved_at,source_hash=excluded.source_hash
+          WHERE seoul_context.source_hash<>excluded.source_hash`).bind(areaId,observedAt,retrievedAt,payload,await sha256(context)).run();
+      }
+    } catch { console.warn("seoul_optional_context_unavailable"); }
     try {
       const { observed, forecasts } = await normalizeSeoulRealtime(integratedPopulationRecord(citydata), areaId, retrievedAt);
       lastPopulation = observed;

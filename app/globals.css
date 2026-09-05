@@ -1363,3 +1363,28 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .lang-ko { --font-ui: "Pretendard Variable", "KORETAIL Sans Variable", system-ui, sans-serif; }
 .commercial-status { margin: 10px 0; font-size: 14px; line-height: 1.6; }
 .period-comparison { margin: 6px 0; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+
+/* Operational context: compact facts, optional detail, existing editorial palette. */
+.operational-context { padding: 1.25rem 0; border-top: 1px solid var(--line, #ddd); }
+.operational-context h3 { font-size: 1rem; margin-bottom: .4rem; }
+.operational-context small, .holiday-context small, .outlook-grid small, .prediction-history > small { display: block; font-size: .875rem; line-height: 1.65; color: #666; }
+.context-category-list, .prediction-hours { list-style: none; margin: .75rem 0; padding: 0; }
+.context-category-list li, .prediction-hours li { display: grid; grid-template-columns: minmax(6rem,1fr) 2fr; gap: .25rem 1rem; padding: .65rem 0; border-bottom: 1px solid #e5e5e5; }
+.context-category-list li small, .prediction-hours li small { grid-column: 1 / -1; }
+.context-environment { margin: 1rem 0 0; font-size: .9375rem; line-height: 1.8; }
+.holiday-context { margin: 1rem 0; font-size: .9375rem; }
+.prediction-view { padding-top: 2rem; }
+.prediction-view h1 { font-size: clamp(1.7rem,4vw,2.5rem); }
+.prediction-view .segmented { display:flex; gap:.75rem; margin:1.5rem 0; }
+.prediction-view .segmented button { padding:.7rem 1.1rem; border:1px solid #ddd; }
+.prediction-view .segmented button.active { border-color:var(--blue,#3450ff); color:var(--blue,#3450ff); }
+.outlook-grid { display:grid; grid-template-columns:1fr 1fr; gap:2rem; }
+.outlook-grid article { padding:1.5rem 0; border-top:2px solid #111; min-width:0; }
+.outlook-grid h2,.prediction-history h2 { font-size:1.3rem; margin:.5rem 0 1rem; }
+.outlook-grid p,.prediction-history p { line-height:1.75; }
+.outlook-value { display:block; font-size:clamp(1.3rem,2.5vw,1.8rem); line-height:1.5; margin:1rem 0; }
+.prediction-history { padding:1.5rem 0; margin-top:1.5rem; border-top:1px solid #ddd; }
+.prediction-view details,.composition-changes { margin:1rem 0; }
+.prediction-view summary,.composition-changes summary { cursor:pointer; font-weight:var(--weight-strong); padding:.75rem 0; }
+.prediction-hours { max-height:25rem; overflow:auto; }
+@media(max-width:700px) { .outlook-grid { grid-template-columns:1fr; gap:.5rem; } .context-category-list li { grid-template-columns:1fr; } }
