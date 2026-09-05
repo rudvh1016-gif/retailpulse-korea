@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { Lang } from "./retailpulse-data";
 import { friendlyCheckpointName, rankCurrentDepartureHallCheckpoints } from "../lib/airport-today-summary";
 import {
@@ -1101,11 +1101,12 @@ function TerminalBriefingCards({ lang, airport, nowIso, dayRelation }: {
  * which would drag the reader away from the summary above.
  */
 function AirportForecastChart({
-  timeline, peakStartAt, nowBandStart, nowLabel, maxBand, numberLocale, label,
+  timeline, peakStartAt, nowBandStart, nowBandProgress, nowLabel, maxBand, numberLocale, label,
 }: {
   timeline: ForecastBand[];
   peakStartAt: string | null;
   nowBandStart: string | null;
+  nowBandProgress: number | null;
   nowLabel: string;
   maxBand: number;
   numberLocale: string;
@@ -1125,6 +1126,9 @@ function AirportForecastChart({
       key={row.targetStartAt}
       className={[peakStartAt === row.targetStartAt ? "peak" : "", nowBandStart === row.targetStartAt ? "now" : ""].filter(Boolean).join(" ")}
       data-now-label={nowBandStart === row.targetStartAt ? nowLabel : undefined}
+      style={nowBandStart === row.targetStartAt && nowBandProgress !== null
+        ? { "--now-offset": `${nowBandProgress * 100}%` } as CSSProperties
+        : undefined}
     >
       <i style={{ height: `${Math.max(4, row.expectedPassengers / maxBand * 100)}%` }} />
       <span>{formatKstClock(row.targetStartAt)}</span>
@@ -1182,8 +1186,13 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   // The current-time marker exists only for TODAY. A past or future service
   // date has no "now" inside it, and drawing one would invent a moment in a
   // day the clock is not in. Bands the marker has passed stay forecasts.
-  const nowBandStart = summary?.dayRelation === "TODAY"
-    ? timeline.find((row) => Date.parse(row.targetStartAt) <= Date.parse(nowIso) && Date.parse(nowIso) < Date.parse(row.targetEndAt))?.targetStartAt ?? null
+  const nowBand = summary?.dayRelation === "TODAY"
+    ? timeline.find((row) => Date.parse(row.targetStartAt) <= Date.parse(nowIso) && Date.parse(nowIso) < Date.parse(row.targetEndAt)) ?? null
+    : null;
+  const nowBandStart = nowBand?.targetStartAt ?? null;
+  const nowBandDuration = nowBand ? Date.parse(nowBand.targetEndAt) - Date.parse(nowBand.targetStartAt) : 0;
+  const nowBandProgress = nowBand && nowBandDuration > 0
+    ? Math.min(1, Math.max(0, (Date.parse(nowIso) - Date.parse(nowBand.targetStartAt)) / nowBandDuration))
     : null;
   const nowLabel = `${airportTodayText.nowMarker[lang]} ${formatKstClock(nowIso)}`;
   const waitUnit = { ko: "분", en: " min", zh: "分钟", ja: "分" }[lang];
@@ -1246,6 +1255,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
           timeline={timeline}
           peakStartAt={peak?.targetStartAt ?? null}
           nowBandStart={nowBandStart}
+          nowBandProgress={nowBandProgress}
           nowLabel={nowLabel}
           maxBand={maxBand}
           numberLocale={numberLocale}

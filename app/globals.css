@@ -186,18 +186,24 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .history-controls button { flex: 0 0 auto; padding: 20px 0; border: 0; background: transparent; color: #888; font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .07em; }
 .history-controls button.active { color: var(--blue); }
 .history-controls .range-trigger { color: var(--ink); }
-.month-range-fields { display: flex; align-items: flex-end; gap: 16px; }
-.month-range-fields > span { min-height: 44px; display: inline-flex; align-items: center; color: var(--muted); }
-.month-range-fields label { display: grid; gap: 8px; }
+.month-range { margin: 16px 0 6px; padding: 22px; display: grid; grid-template-columns: minmax(190px, .72fr) minmax(390px, 1.28fr); gap: 18px 32px; border: 1px solid var(--ink); background: var(--paper); }
+.month-range-head { min-width: 0; }
+.month-range-head .eyebrow { color: var(--ink); }
+.month-range-head > p:last-child { max-width: 38ch; margin: 10px 0 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+.month-range-fields { display: grid; grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr); align-items: end; gap: 10px; }
+.month-range-fields > span { min-height: 50px; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); font-size: 13px; }
+.month-range-fields label { position: relative; min-width: 0; display: grid; gap: 8px; }
 .month-range-fields label span { color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .08em; }
-.month-range-fields select { min-width: 164px; min-height: 44px; padding: 0 32px 0 10px; border: 1px solid var(--line); border-radius: 0; background-color: var(--paper); color: var(--ink); font: inherit; font-size: 12px; font-variant-numeric: tabular-nums; }
-.month-range-fields select:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-.month-range-actions { grid-column: 2; display: flex; justify-content: flex-end; gap: 18px; }
-.month-range-actions button { min-height: 44px; padding: 0 2px; border: 0; border-bottom: 1px solid var(--ink); background: transparent; color: var(--ink); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .06em; }
-.month-range-actions button.primary { color: var(--blue); border-bottom-color: var(--blue); }
-.month-range-actions button:disabled { color: #aaa; border-bottom-color: var(--line); cursor: not-allowed; }
-.month-range-error { grid-column: 2; margin: -12px 0 0; color: var(--red); font-size: 10px; }
-.month-range-coverage { position: absolute; left: 0; bottom: 24px; color: var(--muted); font-size: 10px; letter-spacing: .05em; }
+.month-range-fields label::after { content: ""; position: absolute; right: 16px; bottom: 21px; width: 7px; height: 7px; border-right: 1.5px solid var(--ink); border-bottom: 1.5px solid var(--ink); transform: rotate(45deg); pointer-events: none; }
+.month-range-fields select { width: 100%; min-width: 0; min-height: 50px; padding: 0 40px 0 14px; appearance: none; -webkit-appearance: none; border: 1px solid #cfcfcf; border-radius: 6px; background-color: var(--paper); color: var(--ink); font: inherit; font-size: 14px; font-variant-numeric: tabular-nums; }
+.month-range-fields select:hover { border-color: var(--ink); }
+.month-range-fields select:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-color: var(--blue); }
+.month-range-actions { grid-column: 2; display: flex; justify-content: flex-end; gap: 8px; }
+.month-range-actions button { min-height: 42px; padding: 0 16px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); font-size: 11px; font-weight: var(--weight-strong); letter-spacing: .02em; }
+.month-range-actions button.primary { min-width: 126px; border-color: var(--blue); background: var(--blue); color: var(--paper); }
+.month-range-actions button:disabled { border-color: var(--line); background: var(--line); color: #888; cursor: not-allowed; }
+.month-range-error { grid-column: 2; margin: -7px 0 0; color: var(--red); font-size: 10px; }
+.month-range-coverage { grid-column: 1; align-self: end; width: fit-content; padding: 6px 9px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 10px; letter-spacing: .03em; }
 .history-kpis { display: grid; grid-template-columns: 1.25fr 1fr 1fr; border-bottom: 1px solid var(--ink); }
 .history-kpis > div { min-height: 170px; padding: 30px 26px 28px 0; border-right: 1px solid var(--line); }
 .history-kpis > div + div { padding-left: 26px; }
@@ -287,12 +293,16 @@ nav.bottom-nav { display: none; }
 .history-controls > div[aria-label="Period"] { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 12px; overflow: visible; }
 .history-controls > div[aria-label="Period"] button { min-height: 44px; padding: 8px 2px; border-bottom: 1px solid var(--line); text-align: center; white-space: nowrap; }
 .history-controls > div[aria-label="Period"] button.active { border-bottom-color: var(--blue); }
-.month-range-fields { align-items: stretch; display: grid; grid-template-columns: 1fr; gap: 13px; }
-.month-range-fields > span { display: none; }
-.month-range-fields select { width: 100%; min-width: 0; }
-.month-range-actions { grid-column: 1; justify-content: flex-start; }
-.month-range-error { grid-column: 1; margin: -8px 0 0; }
-.month-range-coverage { position: static; grid-row: 5; }
+.month-range { padding: 18px 16px; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.month-range-head > p:last-child { max-width: none; margin-top: 8px; }
+.month-range-fields { grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1fr); gap: 6px; }
+.month-range-fields > span { min-height: 48px; font-size: 11px; }
+.month-range-fields label::after { right: 13px; bottom: 20px; width: 6px; height: 6px; }
+.month-range-fields select { min-height: 48px; padding: 0 30px 0 11px; font-size: 12px; }
+.month-range-actions { grid-column: 1; display: grid; grid-template-columns: minmax(82px, .75fr) minmax(128px, 1.25fr); }
+.month-range-actions button, .month-range-actions button.primary { width: 100%; min-width: 0; padding: 0 10px; }
+.month-range-error { grid-column: 1; margin: -6px 0 0; }
+.month-range-coverage { grid-column: 1; grid-row: auto; }
 .history-kpis { grid-template-columns: 1fr 1fr; }
 .history-kpis > div { min-height: 136px; padding: 24px 15px 22px 0; }
 .history-kpis > div + div { padding-left: 15px; }
@@ -438,8 +448,8 @@ nav.bottom-nav { display: none; }
  * bands are already behind them. Past bands keep their forecast styling: they
  * remain forecasts, not observations.
  */
-.airport-timeline-bars p.now::before { content: ""; position: absolute; left: -3px; top: -8px; bottom: 0; border-left: 1.5px dashed var(--ink); pointer-events: none; }
-.airport-timeline-bars p.now::after { content: attr(data-now-label); position: absolute; left: -3px; top: -14px; padding: 1px 5px; background: var(--ink); color: var(--paper); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .04em; white-space: nowrap; border-radius: 2px; pointer-events: none; }
+.airport-timeline-bars p.now::before { content: ""; position: absolute; z-index: 2; left: var(--now-offset, 0%); top: -8px; bottom: 36px; border-left: 1.5px dashed var(--ink); pointer-events: none; }
+.airport-timeline-bars p.now::after { content: attr(data-now-label); position: absolute; z-index: 3; left: var(--now-offset, 0%); top: -14px; transform: translateX(-50%); padding: 2px 6px; background: var(--ink); color: var(--paper); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .04em; white-space: nowrap; border-radius: 3px; pointer-events: none; }
 .airport-timeline-bars i { width: 100%; max-width: 48px; min-height: 2px; justify-self: center; display: block; background: #d9d9d9; border-top: 1px solid var(--muted); }
 .airport-timeline-bars .peak i { background: var(--ink); border-color: var(--ink); }
 .airport-timeline-bars span { color: var(--muted); font-size: 10px; white-space: nowrap; }
