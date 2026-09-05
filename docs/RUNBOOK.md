@@ -125,3 +125,9 @@ this procedure.
   Keep the workflow log/time/bookmark for recovery within that window.
 - Long-term canonical history stays in D1. No public GitHub dump of database rows,
   no new paid storage, no claim that this supplies an off-account long-term backup.
+
+For initial activation after migration, use the existing manual One-shot Data
+Import with sources `seoul_realtime,population_predictions,airport_composition,holidays`
+and confirmation IMPORT. This reuses the same functions, adds no scheduler, and
+avoids rerunning unrelated airport/provider sources. Before18KST prediction creation
+waits normally; coverage accounting still runs.
