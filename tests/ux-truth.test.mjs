@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
+const app = readFileSync("app/retailpulse-app.tsx", "utf8");
 const signals = readFileSync("app/live-signals.tsx", "utf8");
 const styles = readFileSync("app/globals.css", "utf8");
 
@@ -187,6 +188,23 @@ test("the current-time marker is drawn for today only and never rewrites past ba
   // so a band behind the marker keeps its forecast styling.
   assert.match(styles, /\.airport-timeline-bars p\.now::before/);
   assert.doesNotMatch(styles, /p\.now i \{/, "past bars must not be restyled as observations");
+});
+
+test("the current-time rule follows the exact minute inside its forecast band", () => {
+  assert.match(signals, /const nowBandDuration = nowBand \? Date\.parse\(nowBand\.targetEndAt\) - Date\.parse\(nowBand\.targetStartAt\) : 0/);
+  assert.match(signals, /const nowBandProgress = nowBand && nowBandDuration > 0/);
+  assert.match(signals, /"--now-offset": `\$\{nowBandProgress \* 100\}%`/);
+  assert.match(styles, /\.airport-timeline-bars p\.now::before \{[^}]*left: var\(--now-offset, 0%\)[^}]*border-left: 1\.5px dashed/s);
+  assert.match(styles, /\.airport-timeline-bars p\.now::after \{[^}]*left: var\(--now-offset, 0%\)[^}]*transform: translateX\(-50%\)/s);
+});
+
+test("the custom month range is a compact grouped control on phone and desktop", () => {
+  assert.match(app, /<form className="month-range"/);
+  assert.match(styles, /\.month-range \{[^}]*display: grid[^}]*border: 1px solid var\(--ink\)/s);
+  assert.match(styles, /\.month-range-fields \{[^}]*grid-template-columns: minmax\(0, 1fr\) 18px minmax\(0, 1fr\)/s);
+  assert.match(styles, /\.month-range-fields select \{[^}]*appearance: none[^}]*border-radius: 6px/s);
+  assert.match(styles, /\.month-range-actions button\.primary \{[^}]*background: var\(--blue\)[^}]*color: var\(--paper\)/s);
+  assert.match(styles, /@media \(max-width: 820px\)[\s\S]*\.month-range-fields \{ grid-template-columns: minmax\(0, 1fr\) 14px minmax\(0, 1fr\)/);
 });
 
 test("the content width system exists and is used rather than one page-wide cap", () => {
