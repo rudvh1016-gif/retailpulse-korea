@@ -302,8 +302,8 @@ test("the event card leads with official fields and exposes the complete descrip
   assert.match(signals, /target="_blank" rel="noopener noreferrer"/);
   assert.doesNotMatch(styles, /-webkit-line-clamp:\s*[1-9]/,
     "a line clamp must not be the only path to official event text");
-  assert.match(signals, /signalStructureText\.eventAll\[lang\]\(events\.length\)/,
-    "the disclosure promises exactly the event cards present in the payload");
+  assert.match(signals, /<EventPaginationControls page=\{page\} lang=\{lang\}/,
+    "the disclosure can request additional stored events beyond the preview payload");
   assert.match(signals, /nextEventCategory: block\?\.events\?\.\[0\]\?\.categoryName \?\? null/,
     "the brief names the category from the same stored field");
 });

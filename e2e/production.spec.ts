@@ -762,6 +762,7 @@ test("the checklist stacks without overflow on a narrow phone", async ({ page })
 });
 
 test("commercial activity and events expose their complete truth without a flat clamped row", async ({ page }) => {
+  await page.route("**/api/live/events*", routeSummary({ events: SUMMARY_FIXTURE.areas.myeongdong.events, nextOffset: null }));
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.goto("/ko");
   const commercial = page.locator(".commercial-signal-card");
@@ -779,7 +780,7 @@ test("commercial activity and events expose their complete truth without a flat 
   await expect(panel).toContainText("4건 공식 행사기간 내·예정");
   await expect(panel).toContainText("공식 행사기간만으로 실제 운영 여부나 운영시간을 확인할 수 없습니다. 공식 안내를 확인하세요.");
   await expect(panel.locator(".event-card")).toHaveCount(3);
-  await expect(panel.getByRole("button", { name: "전체 4건 보기" })).toHaveAttribute("aria-expanded", "false");
+  await expect(panel.getByRole("button", { name: "수집된 행사 전체 보기" })).toHaveAttribute("aria-expanded", "false");
   await expect(
     panel.getByRole("link", { name: "공식 행사 페이지" }),
     "the representative valid URL is shown while javascript: is rejected",
@@ -801,9 +802,9 @@ test("commercial activity and events expose their complete truth without a flat 
   await expect(details.locator(".event-overview")).toHaveText("관객과 소통하는 공연형 미술 콘텐츠입니다. 두 번째 공식 문장도 끝까지 읽을 수 있어야 합니다.");
   expect(await details.locator(".event-overview").evaluate((element) => getComputedStyle(element).webkitLineClamp)).toBe("none");
 
-  await panel.getByRole("button", { name: "전체 4건 보기" }).click();
+  await panel.getByRole("button", { name: "수집된 행사 전체 보기" }).click();
   await expect(panel.locator(".event-card")).toHaveCount(4);
-  await expect(panel.getByRole("button", { name: "대표 행사만 보기" })).toHaveAttribute("aria-expanded", "true");
+  await expect(panel.getByRole("button", { name: "대표 3개만 보기" })).toHaveAttribute("aria-expanded", "true");
   await expect(panel.getByRole("link", { name: "공식 행사 페이지" })).toHaveCount(2);
 });
 
@@ -817,7 +818,7 @@ test("a transitional cached payload never promises event cards it did not includ
   const panel = page.locator(".event-signal-panel");
   await expect(panel).toContainText("13건 공식 행사기간 내·예정");
   await expect(panel.locator(".event-card")).toHaveCount(3);
-  await expect(panel.locator(".event-list-toggle")).toHaveCount(0);
+  await expect(panel.getByRole("button", { name: "수집된 행사 전체 보기" })).toBeVisible();
 });
 
 test("signal groups keep time meaning and value-source geometry at every required width", async ({ page }) => {
