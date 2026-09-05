@@ -263,7 +263,9 @@ test("terminal briefing shows one labelled card per terminal and names the longe
   }
   // A single-terminal scope focuses the grid on that terminal; the cards are not repeated there.
   await page.goto("/ko/airport");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await page.locator(".terminal-selector button").filter({ hasText: /^T1$/ }).click();
+  await expect(page.getByRole("tab", { name: "T1", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(page.locator('[data-signal-key="terminal-briefing"]')).toHaveCount(0);
 });
 
@@ -860,10 +862,10 @@ test("signal groups keep time meaning and value-source geometry at every require
 test("commercial and event controls preserve their meaning in KO EN ZH JA", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   const expected = {
-    ko: ["최근 10분 내국인 카드 소비", "전체 4건 보기", "자세히 보기", "공식 행사 페이지"],
-    en: ["Recent 10-minute domestic-card activity", "View all 4 events", "View details", "Official event page"],
-    zh: ["最近10分钟境内消费者银行卡支付", "查看全部4项活动", "查看详情", "官方活动页面"],
-    ja: ["直近10分の国内消費者カード決済", "全4件を見る", "詳細を見る", "公式イベントページ"],
+    ko: ["최근 10분 내국인 카드 소비", "수집된 행사 전체 보기", "자세히 보기", "공식 행사 페이지"],
+    en: ["Recent 10-minute domestic-card activity", "Browse all collected events", "View details", "Official event page"],
+    zh: ["最近10分钟境内消费者银行卡支付", "查看全部已收集活动", "查看详情", "官方活动页面"],
+    ja: ["直近10分の国内消費者カード決済", "収集済みの全イベントを見る", "詳細を見る", "公式イベントページ"],
   } as const;
   for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
     await page.goto(`/${locale}`);

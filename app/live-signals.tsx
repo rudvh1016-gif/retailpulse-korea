@@ -3059,7 +3059,7 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
       return `${flight.flightNumber} ${flight.airlineCode ?? ""} ${flight.airportCode ?? ""}`.toUpperCase().includes(needle);
     });
   }, [flights, direction, terminal, query]);
-  if (flights === null || loaded?.failed) return <LiveLoadMessage loading={flights === null} lang={lang} />;
+  if (flights === null || loaded?.failed) return <section className="flight-board" aria-labelledby="flight-board-title"><div className="section-head"><h2 id="flight-board-title">{flightBoardText.search[lang]}</h2></div><LiveLoadMessage loading={flights === null} lang={lang} /></section>;
   const visible = scoped.slice(0, visibleCount);
   const ranking = terminal === "all" ? summary?.airport.airlineRanking?.all : summary?.airport.airlineRanking?.byTerminal?.[terminal];
   const changes = summary?.airport.periodComparisons?.[terminal]?.[7]?.flightRecords;
