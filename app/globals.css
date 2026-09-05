@@ -892,7 +892,7 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .site-usage-guide h3 { margin: 26px 0 8px; font-size: 17px; }
 .site-usage-guide p { max-width: 78ch; font-size: 15px; line-height: 1.7; }
 .site-usage-guide dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 22px; padding: 20px 0; border-block: 1px solid var(--line); }
-.site-usage-guide dt { font-size: 16px; font-weight: 600; }
+.site-usage-guide dt { font-size: 16px; font-weight: var(--weight-strong); }
 .site-usage-guide dd { margin: 8px 0 0; font-size: 14px; line-height: 1.7; color: var(--muted); }
 .site-usage-guide .site-usage-limit { font-size: 13px; color: var(--muted); }
 .lang-ko .site-usage-guide { font-family: "Pretendard Variable", var(--font-ui); }
