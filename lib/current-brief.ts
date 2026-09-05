@@ -191,6 +191,8 @@ export interface AirportBriefNowBand {
   expectedPassengers: number;
   /** The band immediately after this one; null when today has no later band. */
   nextExpectedPassengers: number | null;
+  nextTargetStartAt: string | null;
+  nextTargetEndAt: string | null;
   /** This band as a share of the day's busiest band, 0..1; null when no peak was proven. */
   peakShare: number | null;
 }
@@ -240,6 +242,8 @@ export function selectAirportNowBand(input: {
     targetEndAt: band.targetEndAt,
     expectedPassengers: band.expectedPassengers,
     nextExpectedPassengers: next ? next.expectedPassengers : null,
+    nextTargetStartAt: next?.targetStartAt ?? null,
+    nextTargetEndAt: next?.targetEndAt ?? null,
     peakShare: peak && peak > 0 ? band.expectedPassengers / peak : null,
   };
 }

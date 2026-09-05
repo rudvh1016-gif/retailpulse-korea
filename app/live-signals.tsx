@@ -817,13 +817,15 @@ function localizeAirportBrief(
     const share = now.peakShare === null ? null : Math.round(now.peakShare * 100);
     const next = now.nextExpectedPassengers === null ? null : Math.round(now.nextExpectedPassengers);
     const nextPeople = next === null ? null : next.toLocaleString(locale);
-    const sharePart = share === null ? null : {
-      ko: `오늘 피크의 ${share}%`, en: `${share}% of today's peak`,
-      zh: `为今日高峰的${share}%`, ja: `本日ピークの${share}%`,
+    const peakPeople = brief.peak ? Math.round(brief.peak.expectedPassengers).toLocaleString(locale) : null;
+    const nextBand = now.nextTargetStartAt && now.nextTargetEndAt ? formatKstBand(now.nextTargetStartAt, now.nextTargetEndAt).replace(" KST", "") : null;
+    const sharePart = share === null || peakPeople === null ? null : {
+      ko: `오늘 피크 ${peakPeople}명의 ${share}%`, en: `${share}% of today's peak (${peakPeople})`,
+      zh: `为今日高峰${peakPeople}人的${share}%`, ja: `本日ピーク${peakPeople}人の${share}%`,
     }[lang];
     const nextPart = nextPeople === null
       ? { ko: "오늘 마지막 시간대", en: "last hour of the day", zh: "今日最后一个时段", ja: "本日最後の時間帯" }[lang]
-      : { ko: `다음 시간대 ${nextPeople}명`, en: `next hour ${nextPeople}`, zh: `下一时段${nextPeople}人`, ja: `次の時間帯${nextPeople}人` }[lang];
+      : { ko: `다음 ${nextBand ?? "시간대"} ${nextPeople}명`, en: `next ${nextBand ?? "hour"}: ${nextPeople}`, zh: `下一时段 ${nextBand ?? ""} ${nextPeople}人`, ja: `次 ${nextBand ?? "の時間帯"} ${nextPeople}人` }[lang];
     return [sharePart, nextPart].filter(Boolean).join(" · ");
   })();
 
@@ -868,20 +870,6 @@ function localizeAirportBrief(
     }[lang];
   })();
 
-  const departure = brief.departures === null ? null : {
-    ko: `출발 ${brief.departures.toLocaleString(locale)}편`,
-    en: `${brief.departures.toLocaleString(locale)} departures`,
-    zh: `出发${brief.departures.toLocaleString(locale)}班`,
-    ja: `出発${brief.departures.toLocaleString(locale)}便`,
-  }[lang];
-  const gate = brief.topGate ? {
-    ko: `Gate ${brief.topGate.gate} 최다 ${brief.topGate.flights.toLocaleString(locale)}편`,
-    en: `Gate ${brief.topGate.gate} busiest with ${brief.topGate.flights.toLocaleString(locale)}`,
-    zh: `Gate ${brief.topGate.gate}最多${brief.topGate.flights.toLocaleString(locale)}班`,
-    ja: `Gate ${brief.topGate.gate}最多${brief.topGate.flights.toLocaleString(locale)}便`,
-  }[lang] : null;
-  const flightsLine = [departure, gate].filter(Boolean).join(" · ") || null;
-
   const restLine = remaining ? {
     ko: `${formatKstClock(remaining.fromAt)} 이후 예상 ${Math.round(remaining.expectedPassengers).toLocaleString(locale)}명`,
     en: `${formatKstClock(remaining.fromAt)} onward: ${Math.round(remaining.expectedPassengers).toLocaleString(locale)} expected`,
@@ -892,8 +880,8 @@ function localizeAirportBrief(
   // This hour leads when there is one. Otherwise the day's peak does, so the
   // brief never opens on a queue.
   const lines = (nowLine
-    ? [nowLine, trendLine, waitLine, flightsLine, restLine]
-    : [peakLine, waitLine, flightsLine, restLine]
+    ? [nowLine, trendLine, waitLine, restLine]
+    : [peakLine, waitLine, restLine]
   ).filter((line): line is string => Boolean(line && line.trim()));
   return lines.slice(0, 5);
 }
@@ -1228,6 +1216,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   const airportBriefLines = localizeAirportBrief(airportBrief, lang, remaining);
   const comparisons = airport.periodComparisons?.[terminal];
   const passengerChanges = ([7, 28] as const).flatMap((days) => comparisons?.[days]?.passengers ? [comparisonText(comparisons[days]!.passengers!, lang, days)] : []);
+  if (!comparisons?.[7]?.passengers) passengerChanges.unshift(({ ko: "전주 동요일 비교 자료 없음", en: "Same weekday last week: comparison unavailable", zh: "缺少上周同曜日比较资料", ja: "前週同曜日の比較資料なし" })[lang]);
   const flightChanges = ([7, 28] as const).flatMap((days) => comparisons?.[days]?.flightRecords ? [comparisonText(comparisons[days]!.flightRecords!, lang, days)] : []);
   const recordsOnly = ({ ko: "수집된 출발편 기록 기준 · 전체 운항 증감과 다를 수 있음", en: "Collected departing-flight records; not a complete operational census", zh: "按已采集出发航班记录，非完整运行统计", ja: "収集済み出発便記録による比較・全運航の増減とは異なる場合あり" })[lang];
   // Metrics can be collected at different times (expected passengers 09:34 vs

@@ -443,10 +443,10 @@ test("요약은 지금 시간대 공식 예상 출국객으로 열고, 대기는
   assert.ok(localize.length > 0);
 
   // 줄 순서가 코드로 고정되어 있다: 지금 시간대 → 증감 → 대기 → 운항 → 남은 예상.
-  assert.match(localize, /\[nowLine, trendLine, waitLine, flightsLine, restLine\]/,
+  assert.match(localize, /\[nowLine, trendLine, waitLine, restLine\]/,
     "지금 시간대 값이 첫 줄이어야 한다");
   // 지금 시간대가 없는 날짜(과거·미래)에는 피크가 대신 열고, 대기가 열지 않는다.
-  assert.match(localize, /\[peakLine, waitLine, flightsLine, restLine\]/,
+  assert.match(localize, /\[peakLine, waitLine, restLine\]/,
     "지금 시간대가 없어도 요약이 대기로 시작하면 안 된다");
 
   // 예보에서 나온 값은 스스로 예보라고 말한다.

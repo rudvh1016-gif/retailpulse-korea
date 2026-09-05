@@ -612,7 +612,7 @@ test("the airport summary states this hour's expected departing passengers, labe
   assert.doesNotMatch(nowBlock, /관측|observed|観測|观测/,
     "a forecast band must not borrow observation wording");
   // And it LEADS the brief: this hour first, the queue demoted below it.
-  assert.match(signals, /\[nowLine, trendLine, waitLine, flightsLine, restLine\]/);
+  assert.match(signals, /\[nowLine, trendLine, waitLine, restLine\]/);
 });
 
 test("timestamps state what they mean and a forecast band never borrows observation wording", async () => {

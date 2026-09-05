@@ -171,6 +171,8 @@ test("the now band is the one containing this moment, with the next band and the
   assert.equal(band?.targetStartAt, "2026-08-31T14:00:00+09:00");
   assert.equal(band?.expectedPassengers, 2000);
   assert.equal(band?.nextExpectedPassengers, 3000);
+  assert.equal(band?.nextTargetStartAt, "2026-08-31T15:00:00+09:00");
+  assert.equal(band?.nextTargetEndAt, "2026-08-31T16:00:00+09:00");
   assert.equal(band?.peakShare, 0.5);
 });
 
