@@ -10,6 +10,30 @@ interface D1ApiResponse {
   errors?: Array<{ code?: number; message?: string }>;
 }
 
+/**
+ * The Cloudflare error code behind a non-2xx, appended to the thrown message.
+ *
+ * `d1_http_400` on its own is not a diagnosis. Production hit exactly that on
+ * 2026-09-06 — twice in a row, forty seconds after the same code wrote to the
+ * same database successfully — and the log said nothing about which of the
+ * many things that can 400 had happened. Cloudflare returns a numeric code in
+ * the body for precisely this purpose.
+ *
+ * Only the CODE is taken, never the message: an error message can quote the
+ * offending SQL, and no D1 diagnostic here has ever been allowed to echo a
+ * statement or a bound value. A body that cannot be read adds nothing rather
+ * than replacing the status we already know.
+ */
+async function d1ErrorCodeSuffix(response: Response): Promise<string> {
+  try {
+    const payload = await response.json() as D1ApiResponse;
+    const code = payload.errors?.[0]?.code;
+    return Number.isSafeInteger(code) ? `_${code}` : "";
+  } catch {
+    return "";
+  }
+}
+
 class RestPreparedStatement {
   private params: unknown[] = [];
 
@@ -113,7 +137,7 @@ export class CloudflareD1RestDatabase {
         await new Promise((resolve) => setTimeout(resolve, 250 * (2 ** attempt)));
         continue;
       }
-      if (!response.ok) throw new Error(`d1_http_${response.status}`);
+      if (!response.ok) throw new Error(`d1_http_${response.status}${await d1ErrorCodeSuffix(response)}`);
       const payload = await response.json() as D1ApiResponse;
       if (!payload.success || !Array.isArray(payload.result)) {
         const code = payload.errors?.[0]?.code ?? "unknown";

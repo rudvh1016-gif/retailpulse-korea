@@ -58,6 +58,25 @@ export const sources = [
     params: { pageNo: "1", numOfRows: "5", type: "json", lang: "K" },
   },
   {
+    /*
+     * A5 — 인천국제공항공사_실시간 항공기 운항현황(여객 예고).
+     *
+     * This was the one source the smoke did NOT probe, and it is the one that
+     * fails most: production saw thirty consecutive UND_ERR_CONNECT_TIMEOUTs
+     * with zero requests, while every other apis.data.go.kr endpoint here
+     * answered in under two seconds from the same runner. Probing it beside
+     * the others is what turns "the provider is down" from a guess into a
+     * comparison — and a lost A5 window costs TOMORROW'S whole forecast, so
+     * it is the source most worth watching.
+     *
+     * selectdate 1 is tomorrow: the day whose absence the owner reported.
+     */
+    sourceId: "A5_passenger_forecast_tomorrow",
+    endpoint: "https://apis.data.go.kr/B551177/passgrAnncmt/getPassgrAnncmt",
+    successCode: "00",
+    params: { pageNo: "1", numOfRows: "2", type: "json", selectdate: "1" },
+  },
+  {
     sourceId: "T1_tourapi_festival",
     endpoint: "https://apis.data.go.kr/B551011/KorService2/searchFestival2",
     successCode: "0000",

@@ -55,6 +55,6 @@ export function PredictionView({lang,area,onArea}:{lang:Lang;area:'myeongdong'|'
    <details><summary>{t('날짜별 수집 상태','Daily coverage','每日收集情况','日別の収集状況')}</summary><p>{t('관측 기록이 없는 날','Days without observations','无观测记录的日期','観測記録のない日')} · {data.coverage.missingDays.join(' · ')||'—'}</p><ul className="prediction-hours">{data.coverage.dailyHours.map(row=><li key={row.day}><strong>{row.day}</strong><span>{row.hours}/24 {t('시간에 기록 있음','hours recorded','小时有记录','時間に記録あり')}</span></li>)}</ul></details>
    <details><summary>{t('지난 예상과 실제 관측 비교','Past estimates and later observations','过去预测与后续观测对比','過去予測と後日の観測を比較')}</summary>{data.records.length?<ul className="prediction-hours">{data.records.map(row=><li key={row.targetAt}><strong>{row.targetAt.slice(5,16).replace('T',' ')}</strong><span>{t('예상','Estimate','预测','予測')} {row.predicted.toLocaleString()} · {t('관측','Observed','观测','観測')} {row.actual?.toLocaleString()??t('대기','Pending','等待','待機')}</span></li>)}</ul>:<p>{t('결과보다 먼저 저장한 예측 기록이 아직 없습니다. 정확도를 주장하지 않습니다.','No prospectively saved prediction records yet. No accuracy claim.','尚无提前保存的预测记录，不声称准确率。','結果より前に保存した予測はまだありません。精度は主張しません。')}</p>}</details>
   </section>}
-  <SeoulContextCard context={summary?.areas[area]?.context} lang={lang}/>
+  <SeoulContextCard context={summary?.areas[area]?.context} lang={lang} nowIso={summary?.generatedAt}/>
  </section>;
 }

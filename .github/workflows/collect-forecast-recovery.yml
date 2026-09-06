@@ -24,6 +24,31 @@ name: Collect Airport Passenger Forecast (Recovery)
 # automatic alarm. It performs one allowlisted workflow_dispatch and no
 # provider or D1 work. Keeping a native GitHub schedule here would duplicate
 # A5 provider calls.
+#
+# SELF-HEALING ACROSS RUNNERS — added after A5 lost an entire day.
+#
+# Every failure in that outage was NETWORK_UND_ERR_CONNECT_TIMEOUT with
+# `requests 0`: the TCP connection to apis.data.go.kr never completed, so the
+# provider never saw us. Minutes after the last of them, the credential-free
+# smoke reached seven endpoints on that same host from a GitHub runner in
+# under two seconds each. Retrying inside the job cannot help with that — it
+# keeps the same runner and the same egress address, which is why the
+# congestion collector exhausted all four of its in-process retries in the
+# same window. A fresh JOB is a fresh runner, and that is the one thing an
+# in-process retry can never be.
+#
+# So a failed attempt is followed by up to two more, each its own job.
+#
+# They cost nothing on a healthy run, and they cannot become a blind repeat:
+# an attempt only starts after the previous one failed OUTRIGHT, which for
+# these collectors means nothing at all was normalized and nothing was stored.
+# A partial collection reports PARTIAL, not ERROR, and starts no retry — that
+# case belongs to the recovery window, which reads Production D1 first and
+# asks only for what is still missing.
+#
+# Every attempt names the same single source this workflow owns. A retry is
+# not a second scheduler and must never smuggle in another source.
+
 on:
   workflow_dispatch:
 
@@ -39,19 +64,26 @@ concurrency:
 jobs:
   collect:
     if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    environment: production
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22.13.1
-          cache: npm
-      - run: npm ci --ignore-scripts
-      - run: npm run collect:production
-        env:
-          ENABLE_PRODUCTION_COLLECTOR: "true"
-          RPK_PRODUCTION_SOURCES: airport_passenger_forecast_recovery
-          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
-          DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
+    uses: ./.github/workflows/collect-attempt.yml
+    with:
+      sources: airport_passenger_forecast_recovery
+      attempt: 1
+    secrets: inherit
+
+  retry_1:
+    needs: collect
+    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.collect.result == 'failure' }}
+    uses: ./.github/workflows/collect-attempt.yml
+    with:
+      sources: airport_passenger_forecast_recovery
+      attempt: 2
+    secrets: inherit
+
+  retry_2:
+    needs: [collect, retry_1]
+    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.retry_1.result == 'failure' }}
+    uses: ./.github/workflows/collect-attempt.yml
+    with:
+      sources: airport_passenger_forecast_recovery
+      attempt: 3
+    secrets: inherit

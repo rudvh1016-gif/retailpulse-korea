@@ -291,6 +291,55 @@ syntax gives the minute field as 0-59 with `* , - /`, so
 minutes. Healthy issuances still cost zero extra provider requests, because
 each window reads D1 before it decides to call KMA.
 
+### Spatial self-healing — a retry is a fresh runner (2026-09-07)
+
+Temporal windows were not enough. On 2026-09-06 A5 went **thirty consecutive
+collections** without a single provider request: every attempt died as
+`NETWORK_UND_ERR_CONNECT_TIMEOUT`, meaning the TCP connection to
+`apis.data.go.kr` never completed and the provider never saw us. `2026-09-07`
+had no stored row at all, so the next day's departure and arrival screens were
+blank for the whole day.
+
+The measurement that changed the diagnosis: minutes after the last of those
+failures, the credential-free smoke reached **seven endpoints on that same
+host, from a GitHub runner, in 165 ms – 2084 ms each**. Both facts cannot be
+explained by "the provider is down". In the same window the congestion
+collector — which already performs four in-process retries — failed all four.
+
+That is the signature of a failure that follows the RUNNER, not the clock. An
+in-process retry reuses the runner's egress address and therefore reuses
+whatever was refusing it; only a fresh **job** gets a fresh runner.
+
+So each of these workflows now chains up to three attempts, one job each, via
+the reusable `collect-attempt.yml`:
+
+| workflow | source | attempts |
+| --- | --- | --- |
+| `collect-forecast.yml` | `airport_passenger_forecast` | 3 |
+| `collect-forecast-recovery.yml` | `airport_passenger_forecast_recovery` | 3 |
+| `collect-weather-recovery.yml` | `weather_recovery` | 3 |
+
+Cost when healthy is **zero**: an attempt only starts after the previous one
+failed outright — for these collectors that means nothing was normalized and
+nothing was stored. A partial collection reports `PARTIAL`, not `ERROR`, and
+starts no retry; that case still belongs to the recovery window, which reads D1
+first and asks only for what is missing. Every attempt names the one source its
+workflow owns, so a retry can never become a second scheduler
+(`tests/hybrid.test.ts`).
+
+Worst case for A5 — every attempt of both the primary and the recovery window
+failing all day — is 24 × 3 × 2 = 144 requests/day against a dataset whose
+documented cadence we poll at 48/day. Requests that die at connect never reach
+the provider at all, so the real load in that state is zero.
+
+Runner cost is zero in both directions. Standard GitHub-hosted runners are free
+and unlimited for public repositories (`docs/ZERO_COST_HYBRID_AUDIT.md` §
+runner facts), and a retry job only exists on a cycle that already failed.
+
+`diagnose-provider-reachability.yml` reruns the measurement on demand: it fires
+the credential-free DNS/TLS/HTTP staged probe from N independent jobs, so the
+"does it follow the runner" question can be re-answered rather than re-argued.
+
 Recomputed for the second window, from `KMA_GRID_RETRY_POLICY` (`maxAttempts:
 3`) and `uniqueKmaGrids()` (3 cells) rather than from the old two-window math:
 

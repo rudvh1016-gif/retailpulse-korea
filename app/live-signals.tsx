@@ -27,6 +27,7 @@ import { buildFacilityCopyText, type CopyableFacility } from "../lib/facility-sh
 import { formatRepresentativeStations } from "../lib/subway-ridership";
 import { buildTerminalBriefings, type TerminalBriefing } from "../lib/terminal-briefing";
 import { buildWeatherGuide, worseAirGrade } from "../lib/weather-guide";
+import { describeObservationAge } from "../lib/observation-freshness";
 import { comparisonText, type RangeChange } from "../lib/period-comparison";
 import { averagePaymentRange, commercialActivityContext } from "../lib/commercial-context";
 
@@ -3143,8 +3144,22 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     const dayLow = firstOf((row) => row.dailyMinTemperatureTenthC);
     const dayHigh = firstOf((row) => row.dailyMaxTemperatureTenthC);
 
-    if (humidity !== undefined) parts.push(`${text.humidity[lang]} ${humidity}%`);
-    if (wind !== undefined) parts.push(`${text.wind[lang]} ${(wind / 10).toFixed(1)}m/s`);
+    // The observation card above prints measured humidity and wind from
+    // Seoul's city sensors. While that reading is current, KMA's forecast of
+    // the same two values for the same hour is the weaker of two answers to
+    // one question, and showing both is exactly the duplicated weather block
+    // the owner reported. So they are dropped here only while the observation
+    // is fresh; the moment it goes stale or missing, KMA is the only source
+    // for them and they come back.
+    const observation = block?.context?.weather ?? null;
+    const observationIsNow = observation
+      ? describeObservationAge(observation.observedAt, summary.generatedAt, lang).isNow
+      : false;
+    const humidityMeasured = observationIsNow && observation?.humidity !== null && observation?.humidity !== undefined;
+    const windMeasured = observationIsNow && observation?.wind !== null && observation?.wind !== undefined;
+
+    if (humidity !== undefined && !humidityMeasured) parts.push(`${text.humidity[lang]} ${humidity}%`);
+    if (wind !== undefined && !windMeasured) parts.push(`${text.wind[lang]} ${(wind / 10).toFixed(1)}m/s`);
     if (rainfall) parts.push(`${text.rainfall[lang]} ${(rainfall.precipitationAmountTenthMm! / 10).toFixed(1)}mm`);
     if (dayLow !== undefined) parts.push(`${text.dayLow[lang]} ${(dayLow / 10).toFixed(0)}°C`);
     if (dayHigh !== undefined) parts.push(`${text.dayHigh[lang]} ${(dayHigh / 10).toFixed(0)}°C`);
@@ -3155,7 +3170,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     // The air-quality half comes from Seoul's real-time city data, not from
     // KMA — a different source and a different reading, so the row's note
     // names both rather than letting one sentence imply one provider.
-    const airGrades = block?.context?.weather ?? null;
+    const airGrades = observation;
     const guide = buildWeatherGuide({
       temperatureTenthC: firstTemp ?? null,
       dailyMinTemperatureTenthC: dayLow ?? null,
@@ -3290,7 +3305,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
               {groupId === "now" ? <>
                 {firstNow.map((row) => <SignalRowCard key={row.key} row={row} lang={lang} />)}
                 {commercialRow && <CommercialSignalCard signal={commercialRow} lang={lang} />}
-                <SeoulContextCard context={block?.context} lang={lang} />
+                <SeoulContextCard context={block?.context} lang={lang} nowIso={summary.generatedAt} />
                 {remainingNow.map((row) => <SignalRowCard key={row.key} row={row} lang={lang} />)}
               </> : null}
               {groupId === "today-next" && events.length > 0 && <EventSignalPanel
