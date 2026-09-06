@@ -126,6 +126,23 @@ test("production collector remains gated and only production carries a Worker Cr
 });
 
 /**
+ * The sources a cadence-group workflow declares.
+ *
+ * A workflow either names them inline (`RPK_PRODUCTION_SOURCES:`) or delegates
+ * each attempt to the reusable collect-attempt workflow (`sources:`). The
+ * second form repeats the same name once per attempt on purpose — separate
+ * jobs are how a failed collection gets a fresh runner, and therefore a fresh
+ * egress address — so the DISTINCT names are what identifies an owner. A
+ * retry is not a second scheduler.
+ */
+function declaredSources(workflow: string): string[] {
+  const declarations = [...workflow.matchAll(/^\s*(?:RPK_PRODUCTION_SOURCES|sources): (.+)$/gm)]
+    .flatMap((match) => match[1].split(",").map((value) => value.trim()))
+    .filter(Boolean);
+  return [...new Set(declarations)];
+}
+
+/**
  * REALTIME, FORECAST and WEATHER are the audited exceptions: their cadences are
  * owned by Cloudflare trigger-only Crons. Every other cadence group keeps a
  * native GitHub `schedule:`.
@@ -142,9 +159,45 @@ test("every cadence-group collector workflow is gated behind the same owner-appr
     } else {
       assert.match(workflow, /^\s*schedule:/m, `${file} must carry a real schedule, not workflow_dispatch-only`);
     }
-    assert.match(workflow, /RPK_PRODUCTION_SOURCES: /, `${file} must select sources explicitly`);
+    assert.ok(declaredSources(workflow).length > 0, `${file} must select sources explicitly`);
     assert.doesNotMatch(workflow, /CLOUDFLARE_ACCOUNT_ID/, `${file} must resolve the account id from wrangler.production.jsonc, never a secret`);
   }
+});
+
+/**
+ * A retry is a fresh runner, not a second scheduler.
+ *
+ * The collectors whose failure mode is UND_ERR_CONNECT_TIMEOUT chain up to
+ * three attempts, each as its own job, because a retry inside one job reuses
+ * the runner's egress address and so reuses whatever was refusing it. What
+ * must never follow from that is a retry quietly collecting something the
+ * workflow does not own, or a chain that keeps calling a provider that
+ * already answered.
+ */
+test("a retry attempt repeats the workflow's own source and only after an outright failure", async () => {
+  const chained = ["collect-forecast.yml", "collect-forecast-recovery.yml", "collect-weather-recovery.yml"];
+  for (const file of chained) {
+    const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
+    assert.deepEqual(declaredSources(workflow).length, 1,
+      `${file} must name one source across every attempt — a retry may repeat it, never replace it`);
+
+    const attempts = [...workflow.matchAll(/^\s*uses: \.\/\.github\/workflows\/collect-attempt\.yml$/gm)];
+    assert.equal(attempts.length, 3, `${file} should chain exactly three attempts`);
+
+    // Every attempt after the first is conditional on the previous FAILING, so
+    // a healthy cycle makes exactly one and costs the provider nothing extra.
+    const guards = [...workflow.matchAll(/needs\.(\w+)\.result == 'failure'/g)].map((match) => match[1]);
+    assert.deepEqual(guards, ["collect", "retry_1"],
+      `${file} must gate each retry on the previous attempt, in order`);
+    assert.match(workflow, /vars\.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs\.collect\.result/,
+      `${file} retries must stay behind the same owner-approved switch as the first attempt`);
+  }
+
+  // The reusable attempt carries no schedule of its own: callers own cadence.
+  const attempt = await readFile(new URL("../.github/workflows/collect-attempt.yml", import.meta.url), "utf8");
+  assert.match(attempt, /^\s*workflow_call:/m, "collect-attempt must only ever be called by a cadence-group workflow");
+  assert.doesNotMatch(attempt, /^\s*(?:schedule|workflow_dispatch):/m,
+    "collect-attempt must not be independently schedulable or dispatchable");
 });
 
 test("A1 (airport_recent) is scheduled by exactly one collector workflow group", async () => {
@@ -152,8 +205,7 @@ test("A1 (airport_recent) is scheduled by exactly one collector workflow group",
   const owners: string[] = [];
   for (const file of groupFiles) {
     const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
-    const sourcesLine = workflow.match(/RPK_PRODUCTION_SOURCES: (.+)/)?.[1] ?? "";
-    if (sourcesLine.split(",").map((value) => value.trim()).includes("airport_recent")) owners.push(file);
+    if (declaredSources(workflow).includes("airport_recent")) owners.push(file);
   }
   assert.deepEqual(owners, ["collect-production.yml"], "there must not be two competing scheduled A1 collectors");
 });
@@ -163,8 +215,7 @@ test("Store Dynamics is owned only by the existing weekly slow workflow", async 
   const owners: string[] = [];
   for (const file of groupFiles) {
     const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
-    const sourcesLine = workflow.match(/RPK_PRODUCTION_SOURCES: (.+)/)?.[1] ?? "";
-    if (sourcesLine.split(",").map((value) => value.trim()).includes("store_dynamics")) owners.push(file);
+    if (declaredSources(workflow).includes("store_dynamics")) owners.push(file);
   }
   assert.deepEqual(owners, ["collect-sales.yml"]);
 });
@@ -174,8 +225,7 @@ test("every production source is scheduled by exactly one cadence-group workflow
   const scheduledSources: string[] = [];
   for (const file of groupFiles) {
     const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
-    const sourcesLine = workflow.match(/RPK_PRODUCTION_SOURCES: (.+)/)?.[1] ?? "";
-    scheduledSources.push(...sourcesLine.split(",").map((value) => value.trim()).filter(Boolean));
+    scheduledSources.push(...declaredSources(workflow));
   }
   assert.deepEqual([...scheduledSources].sort(), [...PRODUCTION_SOURCE_NAMES].sort(), "every known source should be scheduled exactly once, with none forgotten or duplicated");
   assert.equal(new Set(scheduledSources).size, scheduledSources.length, "no source may be scheduled by two workflow groups at once");
@@ -279,7 +329,7 @@ test("Cloudflare is the single authoritative FORECAST scheduler and GitHub stays
   assert.doesNotMatch(forecast, /^\s*schedule:/m);
   assert.doesNotMatch(forecast, /- cron:/);
   assert.match(forecast, /^\s*workflow_dispatch:/m);
-  assert.match(forecast, /RPK_PRODUCTION_SOURCES: airport_passenger_forecast/);
+  assert.deepEqual(declaredSources(forecast), ["airport_passenger_forecast"]);
 });
 
 test("Cloudflare is the single authoritative WEATHER scheduler and GitHub stays dispatchable", () => {
