@@ -187,6 +187,26 @@ export const COVERAGE_PROBES: CoverageProbe[] = [
     params: () => [],
   },
   {
+    /*
+     * ARRIVAL bands, asked separately.
+     *
+     * The departure probe below says nothing about arrivals, so when the
+     * 입국 screen came up empty there was no way to tell "the provider
+     * published no arrival rows" from "our screen is not reading them".
+     * Same shape, same bounds, one more question answered.
+     */
+    name: "airport_arrival_forecast_days",
+    sourceIds: ["INCHEON_PASSENGER_FORECAST"],
+    meaning: "official A5 aggregate ARRIVAL bands per stored target date and terminal",
+    sql: `SELECT target_date AS targetDate, terminal, COUNT(*) AS bands,
+        MIN(target_start_at) AS firstBandStart, MAX(target_end_at) AS lastBandEnd,
+        MAX(retrieved_at) AS retrievedAt
+      FROM airport_passenger_forecast
+      WHERE direction = 'arrival' AND is_aggregate = 1
+      GROUP BY target_date, terminal ORDER BY target_date DESC, terminal LIMIT 30`,
+    params: () => [],
+  },
+  {
     name: "airport_passenger_forecast_days",
     sourceIds: ["INCHEON_PASSENGER_FORECAST"],
     meaning: "official A5 aggregate departure bands per stored target date and terminal",
