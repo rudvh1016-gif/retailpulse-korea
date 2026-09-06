@@ -507,3 +507,84 @@ test("the gate chart adds no script, no library and no request", async ({ page }
   ).every((bar) => /^\d+(\.\d+)?%$/.test(bar.style.width)));
   expect(widthsAreInline, "each bar's width is a plain percentage set at render").toBe(true);
 });
+
+/**
+ * 입국 on every date the owner can pick: 오늘 · 과거 · 자료 없는 날.
+ *
+ * Owner report, 2026-09-07: "입국 정보가 안 보여 오늘 내일 과거 봐도".
+ *
+ * Production was checked before writing these. Arrival rows are stored
+ * exactly like departure rows — 24 aggregate bands per terminal for every
+ * date that has any A5 data at all (2026-08-31 … 2026-09-06, T1 and T2) —
+ * so there is no arrival-shaped data bug. The screen was blank on 09-07
+ * because that DAY has no rows: collection has failed 30 times running
+ * since 09-05. The gap was that the screen did not say so.
+ */
+const arrivalOnlyFixture = (overrides: Record<string, unknown>) => ({
+  ...SUMMARY_FIXTURE, ...overrides,
+});
+
+test("입국 renders the stored forecast on a past date, not only today", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(arrivalOnlyFixture({
+    dayRelation: "PAST",
+    serviceDateKst: "2026-08-30",
+    // A past day has no "now" band; the day total has to carry the headline.
+    generatedAt: "2026-08-31T05:10:00Z",
+  })));
+  await page.goto("/ko/airport");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+  await page.locator(".airport-context-nav").getByRole("button", { name: "입국", exact: true }).click();
+
+  const brief = page.locator(".airport-arrival-brief");
+  await expect(brief).toBeVisible();
+  await expect(brief).toContainText("금일 전체 공식 예상 입국객");
+  await expect(brief).toContainText("41,300명");
+  await expect(page.locator(".airport-forecast .airport-timeline-bars p")).toHaveCount(2);
+  await expect(page.locator(".airport-arrival-terminals")).toContainText("25,700명");
+});
+
+test("입국 says WHY it is empty when collection is behind, instead of just 확인 불가", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(arrivalOnlyFixture({
+    sources: [{ sourceId: "INCHEON_PASSENGER_FORECAST", status: "STALE", retrievedAt: "2026-08-29T13:43:00.000Z" }],
+    airport: {
+      ...SUMMARY_FIXTURE.airport,
+      arrivalForecast: {
+        ...SUMMARY_FIXTURE.airport.arrivalForecast,
+        todayExpectedPassengersTotal: null,
+        todayExpectedPassengersByTerminal: {},
+        peakExpectedTimeBand: null,
+        peakExpectedTimeBandByTerminal: {},
+        passengerForecastTimeline: [],
+        passengerForecastTimelineByTerminal: {},
+        forecastCoverage: { all: "UNAVAILABLE", byTerminal: { T1: "UNAVAILABLE", T2: "UNAVAILABLE" } },
+      },
+    },
+  })));
+  await page.goto("/ko/airport");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+  await page.locator(".airport-context-nav").getByRole("button", { name: "입국", exact: true }).click();
+
+  const brief = page.locator(".airport-arrival-brief");
+  await expect(brief).toContainText("수집이 밀려 있습니다");
+  await expect(brief).toContainText("공급자가 자료를 내지 않은 것이 아닙니다");
+  // The bare label alone would blame the airport for our own outage.
+  await expect(brief.locator("h2")).not.toHaveText("확인 불가");
+});
+
+/**
+ * Stored FLIGHT records are a departure fact. Announcing "저장된 운항 기록
+ * 없음" above 입국 described something that screen never shows.
+ */
+test("the date note above 입국 never reports missing flight records", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(arrivalOnlyFixture({
+    dateAvailability: { airportFlights: [], airportPassengerForecast: ["2026-08-31"], seoulObserved: ["2026-08-31"] },
+  })));
+  await page.goto("/ko/airport");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+
+  // On 출국 the missing flight record is real and must still be reported.
+  await expect(page.locator(".date-scope-note")).toContainText("저장된 운항 기록 없음");
+
+  await page.locator(".airport-context-nav").getByRole("button", { name: "입국", exact: true }).click();
+  await expect(page.locator(".date-scope-note")).toHaveCount(0);
+});
