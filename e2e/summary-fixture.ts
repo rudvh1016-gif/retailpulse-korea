@@ -228,6 +228,26 @@ export const SUMMARY_FIXTURE = {
       todayExpectedPassengersByTerminal: { T1: 25700, T2: 15600 },
       nextExpectedTimeBand: { targetStartAt: "2026-08-31T14:00:00+09:00", targetEndAt: "2026-08-31T15:00:00+09:00", expectedPassengers: 3250 },
       peakExpectedTimeBand: { targetStartAt: "2026-08-31T18:00:00+09:00", targetEndAt: "2026-08-31T19:00:00+09:00", expectedPassengers: 4500 },
+      peakExpectedTimeBandByTerminal: {
+        T1: { targetStartAt: "2026-08-31T18:00:00+09:00", targetEndAt: "2026-08-31T19:00:00+09:00", expectedPassengers: 2800 },
+        T2: { targetStartAt: "2026-08-31T18:00:00+09:00", targetEndAt: "2026-08-31T19:00:00+09:00", expectedPassengers: 1700 },
+      },
+      // The hourly arrival bands the 입국 screen draws. Same shape as the
+      // departure timeline and read from the same D1 statement.
+      passengerForecastTimeline: [
+        { targetStartAt: "2026-08-31T14:00:00+09:00", targetEndAt: "2026-08-31T15:00:00+09:00", expectedPassengers: 3250 },
+        { targetStartAt: "2026-08-31T15:00:00+09:00", targetEndAt: "2026-08-31T16:00:00+09:00", expectedPassengers: 3980 },
+      ],
+      passengerForecastTimelineByTerminal: {
+        T1: [
+          { targetStartAt: "2026-08-31T14:00:00+09:00", targetEndAt: "2026-08-31T15:00:00+09:00", expectedPassengers: 2010 },
+          { targetStartAt: "2026-08-31T15:00:00+09:00", targetEndAt: "2026-08-31T16:00:00+09:00", expectedPassengers: 2460 },
+        ],
+        T2: [
+          { targetStartAt: "2026-08-31T14:00:00+09:00", targetEndAt: "2026-08-31T15:00:00+09:00", expectedPassengers: 1240 },
+          { targetStartAt: "2026-08-31T15:00:00+09:00", targetEndAt: "2026-08-31T16:00:00+09:00", expectedPassengers: 1520 },
+        ],
+      },
       passengerForecastRetrievedAt: "2026-08-31T09:05:00+09:00",
       forecastCoverage: { all: "COMPLETE", byTerminal: { T1: "COMPLETE", T2: "COMPLETE" } },
     },

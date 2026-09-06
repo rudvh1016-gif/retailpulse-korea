@@ -817,6 +817,19 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 @media (max-width: 430px) { .stat-rows b { font-size: 17px; } }
 @media (max-width: 365px) { .stat-rows b { font-size: 15px; } .stat-rows div { column-gap: 10px; } }
 
+/* 입국 — the arrival forecast screen. Same type scale as the departure
+   brief; it carries fewer facts because fewer are published. */
+.airport-arrival-brief { padding-top: 22px; }
+.airport-arrival-brief h2 { margin: 8px 0 14px; font-size: clamp(22px, 3.4vw, 32px); font-weight: var(--weight-strong); line-height: 1.25; letter-spacing: -.03em; }
+.airport-arrival-lines { margin: 0; padding: 0; list-style: none; }
+.airport-arrival-lines li { margin-bottom: 8px; font-size: 13px; line-height: 1.7; }
+.airport-arrival-lines li:last-child { margin-bottom: 0; }
+.airport-arrival-lines .airport-arrival-basis { color: var(--muted); font-size: 12px; }
+.airport-arrival-terminals { margin: 0; padding: 0; list-style: none; }
+.airport-arrival-terminals li { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.airport-arrival-terminals span { color: var(--muted); font-size: 11px; font-weight: var(--weight-strong); letter-spacing: .04em; }
+.airport-arrival-terminals strong { white-space: nowrap; font-size: 17px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
+
 /* Airport: remaining-departures cell, gate ranking, checkpoint footnote */
 .airport-period-label { color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .04em; white-space: nowrap; }
 .airport-today-grid article.airport-remaining strong { color: var(--blue); }
@@ -838,6 +851,20 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .airport-gate-row strong, .airport-rank-row strong { font-size: 14px; font-weight: var(--weight-strong); letter-spacing: -.01em; }
 .airport-gate-row strong i, .airport-rank-row strong i { display: inline-block; margin-right: 7px; color: var(--muted); font-style: normal; font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .05em; }
 .airport-gate-row b, .airport-rank-row b { font-size: 14px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
+/*
+ * Gate ranking bars.
+ *
+ * The bar occupies its own grid line under the row's text, so the three
+ * columns above it stay aligned and the number is never pushed around by
+ * the drawing. Width is an inline percentage of the busiest gate, set at
+ * render: no script runs after paint and nothing is measured in the
+ * browser, which is what keeps this free on a phone.
+ */
+.airport-gate-chart .airport-gate-row { padding-bottom: 9px; row-gap: 7px; }
+.airport-gate-bar { grid-column: 1 / -1; display: block; height: 4px; min-width: 2%; background: var(--blue); }
+.airport-gate-chart .airport-gate-row:first-of-type .airport-gate-bar { height: 6px; }
+.airport-gate-chart-note { margin: 10px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+@media (prefers-reduced-motion: no-preference) { .airport-gate-bar { transition: width .2s ease-out; } }
 .airport-airline-row strong, .airport-country-row strong { min-width: 0; overflow-wrap: anywhere; }
 .airport-airline-row strong em, .airport-country-row strong em { display: block; margin-top: 3px; color: var(--muted); font-style: normal; font-size: 11px; font-weight: var(--weight-regular); letter-spacing: 0; }
 .airport-airline-row b, .airport-country-row b { text-align: right; }

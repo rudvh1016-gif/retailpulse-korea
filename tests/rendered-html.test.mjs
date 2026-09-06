@@ -57,11 +57,16 @@ test("public endpoints stay available and never fabricate zeros when a source is
   assert.equal(summary.airport.departuresTrackedToday, null);
   assert.equal(summary.airport.remainingExpectedPassengers, null);
   assert.equal(summary.airport.forecastCoverage.all, "UNAVAILABLE");
+  // The 입국 screen reads the same fields the departure one does, so a
+  // degraded payload must carry the whole shape with nothing invented.
   assert.deepEqual(summary.airport.arrivalForecast, {
     todayExpectedPassengersTotal: null,
     todayExpectedPassengersByTerminal: {},
     nextExpectedTimeBand: null,
     peakExpectedTimeBand: null,
+    peakExpectedTimeBandByTerminal: {},
+    passengerForecastTimeline: [],
+    passengerForecastTimelineByTerminal: {},
     passengerForecastRetrievedAt: null,
     forecastCoverage: { all: "UNAVAILABLE", byTerminal: {} },
   });
@@ -560,7 +565,13 @@ test("a collection time and a summed window are never worded as the same thing",
  * its observed waiting count and its observation time are still on the page.
  */
 test("the airport page reads summary, then next, then composition, then the observation table", async () => {
-  const signals = await read("../app/live-signals.tsx");
+  const source = await read("../app/live-signals.tsx");
+  // Scoped to the DEPARTURE component. The arrival screen reuses the same
+  // `airport-forecast` section class, so a whole-file indexOf would measure
+  // whichever component happens to be declared first — file order is not
+  // what this test is about.
+  const signals = source.slice(source.indexOf("export function AirportTodaySummary("));
+  assert.ok(signals.length > 0, "the departure summary component must exist");
   const brief = signals.indexOf('className="current-brief airport-current-brief"');
   const grid = signals.indexOf('className="airport-today-grid"');
   const forecast = signals.indexOf('className="airport-detail-section airport-forecast"');

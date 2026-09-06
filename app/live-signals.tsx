@@ -312,6 +312,9 @@ export interface LiveSummary {
       todayExpectedPassengersByTerminal: Record<string, number | null>;
       nextExpectedTimeBand: ForecastBand | null;
       peakExpectedTimeBand: ForecastBand | null;
+      peakExpectedTimeBandByTerminal?: Record<string, ForecastBand | null>;
+      passengerForecastTimeline?: ForecastBand[];
+      passengerForecastTimelineByTerminal?: Record<string, ForecastBand[]>;
       passengerForecastRetrievedAt: string | null;
       forecastCoverage: { all: ForecastCoverageStatus; byTerminal: Record<string, ForecastCoverageStatus> };
     };
@@ -566,6 +569,31 @@ const dayWord: Record<ForecastDayOffset, Record<Lang, string>> = {
   LATER: { ko: "이후", en: "later", zh: "之后", ja: "以降" },
 };
 
+/**
+ * 입국 copy.
+ *
+ * Every line names the arrival forecast as a FORECAST and says what it is
+ * not: it is the airport's own expectation of arriving passengers, not an
+ * observed count, not a queue, and not a number of people heading into
+ * Seoul. The departure screen's queue and gate facts have no arrival
+ * equivalent in the official data and are deliberately absent here.
+ */
+const arrivalSectionText = {
+  nowBand: { ko: "공식 예상 입국객", en: "official expected arrivals", zh: "官方预计入境旅客", ja: "公式予想入国旅客" },
+  dayTotal: { ko: "금일 전체 공식 예상 입국객", en: "Official expected arrivals today", zh: "今日官方预计入境旅客", ja: "本日の公式予想入国旅客" },
+  peak: { ko: "오늘 피크", en: "Today's peak", zh: "今日高峰", ja: "本日のピーク" },
+  flowTitle: { ko: "공식 예상 입국객 흐름", en: "Official expected arrival flow", zh: "官方预计入境客流", ja: "公式予想入国者の流れ" },
+  flowOnly: { ko: "공식 예상 승객 · 실제 입국 인원 아님", en: "Official expected passengers · not an observed arrival count", zh: "官方预计旅客 · 非实际入境人数", ja: "公式予想旅客 · 実際の入国人数ではありません" },
+  byTerminal: { ko: "터미널별 공식 예상 입국객", en: "Official expected arrivals by terminal", zh: "各航站楼官方预计入境旅客", ja: "ターミナル別の公式予想入国旅客" },
+  basis: {
+    ko: "인천공항이 발표한 시간대별 예상 입국객입니다. 서울로 이동하는 인원 수가 아닙니다",
+    en: "Incheon Airport's own hourly arrival forecast · not a count of people travelling into Seoul",
+    zh: "仁川机场发布的分时段预计入境旅客 · 并非前往首尔的人数",
+    ja: "仁川空港が発表した時間帯別の予想入国旅客です · ソウルへ移動する人数ではありません",
+  },
+  source: { ko: "인천국제공항공사 승객예고", en: "Incheon International Airport Corporation passenger forecast", zh: "仁川国际机场公社旅客预告", ja: "仁川国際空港公社の旅客予告" },
+} as const;
+
 const airportTodayText = {
   title: { ko: "한눈에 보기", en: "At a glance", zh: "概览", ja: "概要" },
   // Means "the latest retrieval AMONG airport datasets" — never that every
@@ -608,6 +636,14 @@ const airportTodayText = {
   },
   gatesTitle: { ko: "운항 집중 게이트", en: "Busiest departure gates", zh: "航班集中登机口", ja: "運航集中ゲート" },
   gatesNote: { ko: "출발편이 많이 배정된 게이트 순위입니다. 출국장 대기시간과는 다른 정보입니다.", en: "Gates ranked by tracked departures. This is separate from checkpoint waiting time.", zh: "按出发航班数排名的登机口，与出境区等候时间不同。", ja: "出発便数で並べたゲートです。出国場の待ち時間とは別の情報です。" },
+  // What the bar is measured against, said out loud: a reader who assumes
+  // "share of all departures" would misread every row but the first.
+  gateChartNote: {
+    ko: "막대는 1위 게이트 대비 비율입니다. 전체 출발편 중 비중이 아닙니다.",
+    en: "Bars are drawn against the busiest gate, not as a share of all departures.",
+    zh: "柱形以排名第一的登机口为基准，并非占全部出发航班的比重。",
+    ja: "バーは1位のゲートを基準にした比率です。全出発便に占める割合ではありません。",
+  },
   noGateList: { ko: "게이트 정보 범위가 충분하지 않아 순위를 표시하지 않습니다.", en: "Gate coverage is insufficient to show a reliable ranking.", zh: "登机口数据覆盖不足，暂不显示排名。", ja: "ゲート情報の範囲が十分でないため、順位を表示しません。" },
   longest: { ko: "현재 가장 긴 대기", en: "Longest current wait", zh: "当前最长等候", ja: "現在最も長い待ち" },
   showAllCheckpoints: { ko: "전체 출국장 보기", en: "Show all checkpoints", zh: "查看全部出境检查口", ja: "すべての出国場を表示" },
@@ -1206,6 +1242,108 @@ function FlightScopeNote({airport,lang}:{airport:LiveSummary["airport"];lang:Lan
   return <p className="flight-scope-note">{parts.join(' · ')}<small>{t('같은 출발편을 한 번씩 셉니다. 탑승동은 공식 게이트 안내(101~132번)로 확인한 탑승 위치이며, 체크인 터미널과 다릅니다. 위치를 확인할 근거가 없는 편만 별도로 표시합니다.','Each departure is counted once. Concourse boarding is identified by the official gate map (101–132), not the check-in terminal. Unknown locations stay separate.','每个实际出发航班计一次。登机楼依据官方101–132号登机口识别，不代表值机航站楼；未知位置单独显示。','同じ出発便は1回集計。コンコースは公式の101–132番ゲートで確認した搭乗場所です。チェックイン場所とは異なり、不明な場所は別表示。')}{counts.capped&&t(' 조회 상한에 도달해 일부 기록일 수 있습니다.',' Query limit reached; records may be partial.',' 已达查询上限，可能不完整。',' 取得上限に達し、一部記録の可能性があります。')}</small></p>;
 }
 
+/**
+ * 입국 — the arrival side of the same official forecast.
+ *
+ * Owner request, 2026-09-06: "출국 바로 옆에 입국을 추가해서 입국객수도
+ * 보여주면 안돼? 입국항공편까진 필요없어."
+ *
+ * Deliberately NOT a mirror of the departure screen. Everything that makes
+ * the departure screen useful to a retail worker — the security-queue wait,
+ * the busiest gate, the airline mix — is departure-only in the official
+ * data: A4 congestion publishes 출국장 checkpoints only, and A1 gate/airline
+ * counts are read for departures. Inventing arrival equivalents would mean
+ * showing departure facts under an arrival heading, so this screen carries
+ * exactly what the arrival forecast itself publishes and nothing else.
+ *
+ * The rows cost no extra request: the summary already selects both
+ * directions in one statement for the departure page.
+ */
+export function AirportArrivalSummary({ lang, terminal = "all", date = null }: { lang: Lang; terminal?: "all" | "T1" | "T2"; date?: string | null }) {
+  const summary = useLiveSummary(date);
+  const airport = summary?.airport;
+  if (!summary) return <LiveLoadMessage loading={summary === undefined} lang={lang} />;
+  if (!airport) return <div className="airport-unavailable" role="status"><strong>{airportTodayText.unavailable[lang]}</strong></div>;
+
+  const arrival = airport.arrivalForecast;
+  const numberLocale = airportLocale(lang);
+  const peopleUnit = { ko: "명", en: " people", zh: "人", ja: "人" }[lang];
+  const isAll = terminal === "all";
+  const scopeLabel = airportTodayText.scope[lang][terminal];
+  const nowIso = summary.generatedAt ?? new Date().toISOString();
+
+  const total = isAll ? arrival?.todayExpectedPassengersTotal ?? null : arrival?.todayExpectedPassengersByTerminal?.[terminal] ?? null;
+  const peak = isAll ? arrival?.peakExpectedTimeBand ?? null : arrival?.peakExpectedTimeBandByTerminal?.[terminal] ?? null;
+  const timeline = (isAll ? arrival?.passengerForecastTimeline : arrival?.passengerForecastTimelineByTerminal?.[terminal]) ?? [];
+  const coverage = (isAll ? arrival?.forecastCoverage?.all : arrival?.forecastCoverage?.byTerminal?.[terminal]) ?? "UNAVAILABLE";
+  const isPartial = coverage === "PARTIAL";
+  const collected = arrival?.passengerForecastRetrievedAt
+    ? formatHumanFreshness(arrival.passengerForecastRetrievedAt, nowIso, lang, "collected")
+    : null;
+
+  const nowBand = summary.dayRelation === "TODAY"
+    ? timeline.find((row) => Date.parse(row.targetStartAt) <= Date.parse(nowIso) && Date.parse(nowIso) < Date.parse(row.targetEndAt)) ?? null
+    : null;
+  const nowBandStart = nowBand?.targetStartAt ?? null;
+  const nowBandDuration = nowBand ? Date.parse(nowBand.targetEndAt) - Date.parse(nowBand.targetStartAt) : 0;
+  const nowBandProgress = nowBand && nowBandDuration > 0
+    ? Math.min(1, Math.max(0, (Date.parse(nowIso) - Date.parse(nowBand.targetStartAt)) / nowBandDuration))
+    : null;
+  const nowLabel = `${airportTodayText.nowMarker[lang]} ${formatKstClock(nowIso)}`;
+  const maxBand = Math.max(1, ...timeline.map((row) => row.expectedPassengers));
+
+  const people = (value: number) => `${Math.round(value).toLocaleString(numberLocale)}${peopleUnit}`;
+  const headline = nowBand
+    ? `${formatKstBand(nowBand.targetStartAt, nowBand.targetEndAt).replace(" KST", "")} ${arrivalSectionText.nowBand[lang]} ${people(nowBand.expectedPassengers)}`
+    : total !== null ? `${arrivalSectionText.dayTotal[lang]} ${people(total)}` : null;
+
+  return <>
+    <section className="airport-arrival-brief" aria-labelledby="airport-arrival-title">
+      <p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p>
+      <h2 id="airport-arrival-title">{headline ?? (isPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang])}</h2>
+      <ul className="airport-arrival-lines">
+        {total !== null && nowBand && <li>{arrivalSectionText.dayTotal[lang]} {people(total)}</li>}
+        {peak && <li>{arrivalSectionText.peak[lang]} {formatKstBand(peak.targetStartAt, peak.targetEndAt).replace(" KST", "")} · {people(peak.expectedPassengers)}</li>}
+        <li className="airport-arrival-basis">{arrivalSectionText.basis[lang]}</li>
+        {collected && <li className="airport-arrival-basis">{arrivalSectionText.source[lang]} · {collected}</li>}
+      </ul>
+    </section>
+
+    <section className="airport-detail-section airport-forecast" aria-labelledby="airport-arrival-flow-title">
+      <div className="airport-detail-head">
+        <div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-arrival-flow-title">{arrivalSectionText.flowTitle[lang]}</h3></div>
+        <p>{arrivalSectionText.flowOnly[lang]}</p>
+      </div>
+      {coverage === "COMPLETE" && timeline.length > 0
+        ? <AirportForecastChart
+          timeline={timeline}
+          peakStartAt={peak?.targetStartAt ?? null}
+          nowBandStart={nowBandStart}
+          nowBandProgress={nowBandProgress}
+          nowLabel={nowLabel}
+          maxBand={maxBand}
+          numberLocale={numberLocale}
+          label={`${arrivalSectionText.flowTitle[lang]}. ${arrivalSectionText.flowOnly[lang]}${nowBandStart ? `. ${nowLabel}` : ""}`}
+        />
+        : <div className={`airport-forecast-state ${isPartial ? "partial" : "unavailable"}`}>
+          <strong>{isPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]}</strong>
+          <p>{isPartial ? airportTodayText.partialBody[lang] : airportTodayText.unavailableBody[lang]}</p>
+          {collected && <small>{collected}</small>}
+        </div>}
+    </section>
+
+    {isAll && <section className="airport-detail-section" aria-labelledby="airport-arrival-terminal-title">
+      <div className="airport-detail-head"><div><h3 id="airport-arrival-terminal-title">{arrivalSectionText.byTerminal[lang]}</h3></div></div>
+      <ul className="airport-arrival-terminals">
+        {["T1", "T2"].map((id) => {
+          const value = arrival?.todayExpectedPassengersByTerminal?.[id] ?? null;
+          return <li key={id}><span>{id}</span><strong>{value === null ? airportTodayText.unavailable[lang] : people(value)}</strong></li>;
+        })}
+      </ul>
+    </section>}
+  </>;
+}
+
 export function AirportTodaySummary({ lang, terminal = "all", date = null }: { lang: Lang; terminal?: "all" | "T1" | "T2"; date?: string | null }) {
   // Eight full-height checkpoint rows per terminal cost more vertical space
   // than they earn: what a reader needs first is the one queue that is longest
@@ -1246,6 +1384,10 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
 
   const scopeLabel = airportTodayText.scope[lang][terminal];
   const gateList = isAll ? airport.busyDepartureGates ?? [] : airport.busyDepartureGatesByTerminal?.[terminal] ?? [];
+  // Bars are read against the busiest gate, not against the day's total: the
+  // question is which gate leads, and a share-of-total scale would flatten
+  // all five into slivers. Guarded so an all-zero list cannot divide by zero.
+  const topGateFlights = Math.max(1, ...gateList.map((row) => row.flights));
   const ranking = isAll ? airport.airlineRanking?.all ?? null : airport.airlineRanking?.byTerminal?.[terminal] ?? null;
   const noFlightsText = summary?.dayRelation === "PAST" ? airportTodayText.noFlightsForDate[lang] : airportTodayText.noFlightsToday[lang];
   const rankedCheckpoints = rankCurrentDepartureHallCheckpoints(
@@ -1411,14 +1553,34 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         aria-labelledby="airport-composition-tab-gates"
       >
         <div className="airport-composition-panel-head"><h4>{airportTodayText.gatesTitle[lang]}</h4><p>{airportTodayText.gatesNote[lang]}</p></div>
-        {gateList.length ? <ol className="airport-gate-list">
+        {/*
+          * The ranking IS the chart.
+          *
+          * The owner asked to see, at a glance, which gates send the most
+          * flights. A second chart under the same five rows would render the
+          * same five numbers twice and cost a second layout pass; a bar
+          * drawn inside each row says it once. The bar is scaled to the
+          * leader, so rank 01 is always full width and the rest are read
+          * against it — which is the comparison the question asks for.
+          *
+          * Pure CSS width, computed at render from numbers the page already
+          * holds: no chart library, no measurement, no extra request, and
+          * nothing to run after paint.
+          */}
+        {gateList.length ? <ol className="airport-gate-list airport-gate-chart">
           <li className="airport-gate-head" aria-hidden="true"><span>{airportTodayText.rankLabel[lang]}</span><strong>{isAll ? airportTodayText.terminalGateColumn[lang] : airportTodayText.gateColumn[lang]}</strong><b>{airportTodayText.departuresColumn[lang]}</b></li>
           {gateList.map((row, index) => <li className="airport-gate-row" key={`${row.terminal ?? "unknown"}-${row.gate}`}>
             <span>{String(index + 1).padStart(2, "0")}</span>
             <strong>{isAll && row.terminal ? <i>{row.terminal}</i> : null}Gate {row.gate}</strong>
             <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}</b>
+            <em
+              className="airport-gate-bar"
+              style={{ width: `${Math.max(2, Math.round((row.flights / topGateFlights) * 100))}%` }}
+              aria-hidden="true"
+            />
           </li>)}
         </ol> : <p className="airport-empty-line">{flightsCount === null ? noFlightsText : airportTodayText.noGateList[lang]}</p>}
+        {gateList.length > 0 && <p className="airport-gate-chart-note">{airportTodayText.gateChartNote[lang]}</p>}
       </section>}
 
       {compositionView === "airlines" && <section

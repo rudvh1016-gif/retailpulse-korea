@@ -106,11 +106,13 @@ test("no sample or demo placeholder text is visible in any locale", async ({ pag
 });
 
 test("airport truth labels are complete in all four locales", async ({ page }) => {
+  // Arrivals joined the screen as their own section, so the intro names
+  // both directions.
   const intro = {
-    ko: "공식 예상 출국객, 실제 출발 운항, 현재 출국장 대기를 서로 섞지 않고 따로 보여줍니다.",
-    en: "Official expected departures, physical departing flights and current departure-hall waits—kept separate, never blended.",
-    zh: "分别显示官方预计出境人数、实际出发航班与当前出境区等候，互不混用。",
-    ja: "公式予想出国者・実出発便・現在の出国場待ちを混ぜずに分けて表示します。",
+    ko: "공식 예상 출국객·입국객, 실제 출발 운항, 현재 출국장 대기를 서로 섞지 않고 따로 보여줍니다.",
+    en: "Official expected departures and arrivals, physical departing flights and current departure-hall waits—kept separate, never blended.",
+    zh: "分别显示官方预计出境与入境人数、实际出发航班与当前出境区等候，互不混用。",
+    ja: "公式予想の出国者・入国者、実出発便、現在の出国場待ちを混ぜずに分けて表示します。",
   } as const;
   for (const locale of Object.keys(intro) as Array<keyof typeof intro>) {
     await page.goto(`/${locale}/airport`);

@@ -394,3 +394,116 @@ test("the weather guide names dust and wind, and the observation is marked as no
   await expect(guide).toContainText("미세먼지는");
   await expect(guide).toContainText("바람은");
 });
+
+/**
+ * 출국 / 입국 — the Airport screen's two directions, side by side.
+ *
+ * "지금" named a TIME, which was never the choice a reader makes here, and
+ * the arrival forecast had no way in at all even though the summary already
+ * carried it. The arrival screen deliberately shows fewer facts than the
+ * departure one: the queue, the busiest gate and the airline mix are
+ * departure-only in the official data, so showing them under an arrival
+ * heading would be showing departure facts.
+ */
+test("the airport screen separates 출국 and 입국, and 입국 shows arrival passengers only", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.goto("/ko/airport");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+
+  const nav = page.locator(".airport-context-nav");
+  await expect(nav).toContainText("출국");
+  await expect(nav).toContainText("입국");
+  await expect(nav).not.toContainText("지금");
+
+  await nav.getByRole("button", { name: "입국", exact: true }).click();
+
+  const brief = page.locator(".airport-arrival-brief");
+  await expect(brief).toBeVisible();
+  await expect(brief).toContainText("공식 예상 입국객");
+  await expect(brief).toContainText("41,300명");
+  // It is a forecast about the airport, never a count of people reaching Seoul.
+  await expect(brief).toContainText("서울로 이동하는 인원 수가 아닙니다");
+
+  // The hourly arrival flow, from the same statement the departure page reads.
+  await expect(page.locator("#airport-arrival-flow-title")).toContainText("공식 예상 입국객 흐름");
+  await expect(page.locator(".airport-forecast .airport-timeline-bars p")).toHaveCount(2);
+
+  // Per terminal, and nothing departure-only anywhere on the screen.
+  await expect(page.locator(".airport-arrival-terminals")).toContainText("25,700명");
+  await expect(page.locator(".airport-arrival-terminals")).toContainText("15,600명");
+  // Scoped to the arrival content: the screen's own intro paragraph names
+  // both directions, and that sentence is not an arrival claim.
+  const arrivalContent = page.locator(".airport-arrival-brief, .airport-detail-section");
+  for (const departureOnly of ["대기 최장", "운항 집중 게이트", "출발 운항"]) {
+    await expect(arrivalContent.filter({ hasText: departureOnly })).toHaveCount(0);
+  }
+});
+
+/**
+ * 게이트 순위를 한눈에 — the ranking drawn as a chart.
+ *
+ * Owner request, 2026-09-06: "게이트별 항공편을 순위별로 차트로 … 한눈에
+ * 어떤 항공편이 주로 많이 나가는지 보여지면 좋겠어." Five numbers in a
+ * column answer "how many" but not "which one dominates"; a bar scaled to
+ * the leader answers it without reading a single digit.
+ *
+ * The bar is measured against the BUSIEST gate, not against the day's total
+ * departures — a share-of-total scale would flatten all five into slivers —
+ * and the note under the chart says so, because a reader who assumes
+ * "share of all flights" would misread every row but the first.
+ */
+test("the busiest-gate ranking is drawn as a chart scaled to its leader", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.goto("/ko/airport");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+
+  const rows = page.locator(".airport-gate-chart .airport-gate-row");
+  await expect(rows.first()).toBeVisible();
+
+  const bars = await page.evaluate(() => Array.from(
+    document.querySelectorAll<HTMLElement>(".airport-gate-chart .airport-gate-row"),
+  ).map((row) => ({
+    flights: Number((row.querySelector("b")?.textContent ?? "").replace(/[^0-9]/g, "")),
+    width: row.querySelector<HTMLElement>(".airport-gate-bar")!.getBoundingClientRect().width,
+    track: row.getBoundingClientRect().width,
+  })));
+
+  expect(bars.length).toBeGreaterThan(1);
+  // Rank 01 fills the row; it is the scale everything else is read against.
+  expect(bars[0].width / bars[0].track).toBeGreaterThan(0.98);
+  // Every bar is proportional to its own count, and never longer than the leader's.
+  for (const bar of bars) {
+    const expected = bar.flights / bars[0].flights;
+    expect(Math.abs(bar.width / bars[0].width - expected)).toBeLessThan(0.03);
+  }
+  // Ranked descending, so the chart and the numbers can never disagree.
+  for (let i = 1; i < bars.length; i += 1) expect(bars[i].flights).toBeLessThanOrEqual(bars[i - 1].flights);
+
+  await expect(page.locator(".airport-gate-chart-note")).toContainText("전체 출발편 중 비중이 아닙니다");
+});
+
+/**
+ * The chart costs nothing to run.
+ *
+ * A phone renders this, so the bars must be plain CSS width set at render:
+ * no chart library, no post-paint measurement, no second request. If a
+ * future change reaches for a canvas or a layout pass, this fails.
+ */
+test("the gate chart adds no script, no library and no request", async ({ page }) => {
+  const extraRequests: string[] = [];
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  page.on("request", (request) => {
+    if (/chart|d3|plotly|echarts|highcharts/i.test(request.url())) extraRequests.push(request.url());
+  });
+  await page.goto("/ko/airport");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+  await expect(page.locator(".airport-gate-chart .airport-gate-row").first()).toBeVisible();
+
+  expect(extraRequests, `a charting library was loaded: ${extraRequests.join(", ")}`).toEqual([]);
+  // Drawn by CSS width alone — no canvas, no svg, no inline script.
+  expect(await page.locator(".airport-gate-chart canvas, .airport-gate-chart svg").count()).toBe(0);
+  const widthsAreInline = await page.evaluate(() => Array.from(
+    document.querySelectorAll<HTMLElement>(".airport-gate-bar"),
+  ).every((bar) => /^\d+(\.\d+)?%$/.test(bar.style.width)));
+  expect(widthsAreInline, "each bar's width is a plain percentage set at render").toBe(true);
+});
