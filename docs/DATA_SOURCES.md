@@ -340,6 +340,23 @@ runner facts), and a retry job only exists on a cycle that already failed.
 the credential-free DNS/TLS/HTTP staged probe from N independent jobs, so the
 "does it follow the runner" question can be re-answered rather than re-argued.
 
+**Measured 2026-09-06T22:09Z, eight runners, same instant, run 34063168928:**
+
+| runners | DNS | TCP/TLS | verdict |
+| --- | --- | --- | --- |
+| 6 of 8 | PASS | PASS, 1–4 s end to end | reachable |
+| 2 of 8 | PASS in 562 ms | **REQUEST_ERROR at 10 172 ms** | connection refused/dropped |
+
+DNS resolves on every runner, so this is not name resolution and not an IPv6
+fallback: the address is known and the connection to it never completes. That
+is `UND_ERR_CONNECT_TIMEOUT` exactly. Roughly a quarter of runners could not
+reach `apis.data.go.kr` while the rest reached it in under four seconds.
+
+At a ~25 % per-runner block rate, one attempt loses a cycle 25 % of the time,
+three independent attempts about 1.6 % of the time, and A5's primary plus its
+recovery window — six attempts an hour — put losing a whole day's forecast out
+of reach of anything but a real provider outage.
+
 Recomputed for the second window, from `KMA_GRID_RETRY_POLICY` (`maxAttempts:
 3`) and `uniqueKmaGrids()` (3 cells) rather than from the old two-window math:
 
