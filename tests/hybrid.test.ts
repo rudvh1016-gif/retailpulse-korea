@@ -42,6 +42,44 @@ test("D1 REST adapter batches parameterized queries without exposing token in er
   });
 });
 
+/**
+ * A status code alone is not a diagnosis.
+ *
+ * Production hit `d1_http_400` twice in a row on 2026-09-06, forty seconds
+ * after the same code had written to the same database successfully, and the
+ * log said nothing about which of the many things that can 400 had happened.
+ * Cloudflare puts a numeric code in the body for exactly this.
+ */
+test("a D1 failure carries Cloudflare's error code, and never its message", async () => {
+  const coded: typeof fetch = async () => Response.json(
+    { success: false, errors: [{ code: 7500, message: "near \"INSERT INTO secrets\": syntax error" }] },
+    { status: 400 },
+  );
+  await assert.rejects(
+    new CloudflareD1RestDatabase("account", "database", "token", coded).prepare("SELECT 1").run(),
+    (error: unknown) => {
+      assert.ok(error instanceof Error);
+      assert.equal(error.message, "d1_http_400_7500");
+      // An error message can quote the offending statement. The code cannot.
+      assert.doesNotMatch(error.message, /INSERT INTO|syntax/);
+      return true;
+    },
+  );
+
+  // A body that is not the documented shape must not replace what we do know.
+  for (const body of ["<html>gateway</html>", JSON.stringify({ success: false }), ""]) {
+    await assert.rejects(
+      new CloudflareD1RestDatabase("account", "database", "token", async () => new Response(body, { status: 400 }))
+        .prepare("SELECT 1").run(),
+      (error: unknown) => {
+        assert.ok(error instanceof Error);
+        assert.equal(error.message, "d1_http_400");
+        return true;
+      },
+    );
+  }
+});
+
 test("quota guardrails distinguish estimates and apply 70/85/95 levels", () => {
   assert.equal(evaluateQuotaUsage(69, 100, "INTERNAL_ESTIMATE").level, "NORMAL");
   assert.equal(evaluateQuotaUsage(70, 100, "INTERNAL_ESTIMATE").level, "NOTICE");
