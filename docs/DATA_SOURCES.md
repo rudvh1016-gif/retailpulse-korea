@@ -332,6 +332,10 @@ failing all day — is 24 × 3 × 2 = 144 requests/day against a dataset whose
 documented cadence we poll at 48/day. Requests that die at connect never reach
 the provider at all, so the real load in that state is zero.
 
+Runner cost is zero in both directions. Standard GitHub-hosted runners are free
+and unlimited for public repositories (`docs/ZERO_COST_HYBRID_AUDIT.md` §
+runner facts), and a retry job only exists on a cycle that already failed.
+
 `diagnose-provider-reachability.yml` reruns the measurement on demand: it fires
 the credential-free DNS/TLS/HTTP staged probe from N independent jobs, so the
 "does it follow the runner" question can be re-answered rather than re-argued.
