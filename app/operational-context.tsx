@@ -3,6 +3,13 @@ import { useState } from 'react';
 import type { Lang } from './retailpulse-data';
 import type { SeoulContext } from '../lib/seoul-context';
 import { commercialActivityContext } from '../lib/commercial-context';
+import { AIR_GRADE_TEXT, readAirGrade } from '../lib/weather-guide';
+
+/** Seoul's own grade word, localized. An unrecognised label is shown as published. */
+function airGradeWord(publishedGrade: string, lang: Lang): string {
+  const grade = readAirGrade(publishedGrade);
+  return grade ? AIR_GRADE_TEXT[grade][lang] : publishedGrade;
+}
 export const contextText=(lang:Lang,ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
 export function SeoulContextCard({context,lang}:{context?:SeoulContext & {retrievedAt?:string}|null;lang:Lang}) {
   const [expanded,setExpanded]=useState(false);
@@ -29,11 +36,19 @@ export function SeoulContextCard({context,lang}:{context?:SeoulContext & {retrie
         </button>
       </div>}
     </div>}
+    {/*
+      * Reads as an OBSERVATION, next to a KMA FORECAST that lists the same
+      * three metrics with different numbers. The owner saw 29.4°C here and
+      * 23°C below and read the pair as one broken weather block, so the
+      * numbers now open with "지금" and the dust grade is spelled out in
+      * words instead of hiding in a parenthesis after a raw μg/m³ figure.
+      */}
     {weather&&<p className="context-environment"><strong>{t('주변 환경 관측','Local environment observation','当前周边环境','現在の周辺環境')}</strong><br/>
-      {[weather.temperature!==null?`${weather.temperature}°C`:null,weather.humidity!==null?`${t('습도','Humidity','湿度','湿度')} ${weather.humidity}%`:null,
+      {[weather.temperature!==null?`${t('지금','Now','当前','現在')} ${weather.temperature}°C`:null,
+        weather.humidity!==null?`${t('습도','Humidity','湿度','湿度')} ${weather.humidity}%`:null,
         weather.wind!==null?`${t('바람','Wind','风','風')} ${weather.wind}m/s`:null,
-        weather.pm10!==null?`PM10 ${weather.pm10}μg/m³${weather.pm10Grade?` (${weather.pm10Grade})`:''}`:null,
-        weather.pm25!==null?`PM2.5 ${weather.pm25}μg/m³${weather.pm25Grade?` (${weather.pm25Grade})`:''}`:null].filter(Boolean).join(' · ')}
+        weather.pm10!==null?`${t('미세먼지','PM10','可吸入颗粒物 PM10','PM10')}${weather.pm10Grade?` ${airGradeWord(weather.pm10Grade,lang)}`:''} ${weather.pm10}μg/m³`:null,
+        weather.pm25!==null?`${t('초미세먼지','PM2.5','细颗粒物 PM2.5','PM2.5')}${weather.pm25Grade?` ${airGradeWord(weather.pm25Grade,lang)}`:''} ${weather.pm25}μg/m³`:null].filter(Boolean).join(' · ')}
       <small>{t('서울시 실시간 도시데이터 · 관측','Seoul real-time city data · observed','首尔市实时城市数据 · 观测','ソウル市リアルタイム都市データ · 観測')} {weather.observedAt.slice(5,16).replace('T',' ')} KST</small>
     </p>}
   </div>;

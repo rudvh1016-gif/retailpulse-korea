@@ -178,8 +178,132 @@ export function deriveWeatherGuideKind(input: WeatherGuideInput): WeatherGuideKi
   return "MILD";
 }
 
-/** The finished line, or null when there is not enough official data to say anything. */
-export function buildWeatherGuide(input: WeatherGuideInput, lang: Lang): string | null {
+/**
+ * How strong the wind is, said in words.
+ *
+ * The card already prints "바람 2.5m/s", which tells a reader nothing unless
+ * they know what 2.5 feels like. The buckets follow the KMA's own everyday
+ * wording for 풍속: under 4 m/s is calm, 4-8.9 is noticeable, 9 and above is
+ * strong. Tenths of m/s, as stored.
+ */
+export const WIND_WORD_THRESHOLDS = { briskTenthMps: 40, strongTenthMps: 90 } as const;
+
+export type WindWord = "CALM" | "BREEZY" | "STRONG";
+
+export function describeWindStrength(windSpeedTenthMps: number | null): WindWord | null {
+  if (windSpeedTenthMps === null || !Number.isFinite(windSpeedTenthMps) || windSpeedTenthMps < 0) return null;
+  if (windSpeedTenthMps >= WIND_WORD_THRESHOLDS.strongTenthMps) return "STRONG";
+  if (windSpeedTenthMps >= WIND_WORD_THRESHOLDS.briskTenthMps) return "BREEZY";
+  return "CALM";
+}
+
+const WIND_TEXT: Record<WindWord, Record<Lang, string>> = {
+  CALM: { ko: "바람은 약해요", en: "the wind is light", zh: "风力较弱", ja: "風は弱めです" },
+  BREEZY: { ko: "바람은 조금 불어요", en: "there is a noticeable breeze", zh: "有一些风", ja: "風はやや吹いています" },
+  STRONG: { ko: "바람은 강해요", en: "the wind is strong", zh: "风力较强", ja: "風は強めです" },
+};
+
+const WIND_ALONE: Record<WindWord, Record<Lang, string>> = {
+  CALM: { ko: "바람은 약해요", en: "The wind is light", zh: "风力较弱", ja: "風は弱めです" },
+  BREEZY: { ko: "바람은 조금 불어요", en: "There is a noticeable breeze", zh: "有一些风", ja: "風はやや吹いています" },
+  STRONG: { ko: "바람은 강해요", en: "The wind is strong", zh: "风力较强", ja: "風は強めです" },
+};
+
+/**
+ * Air quality is quoted, never computed.
+ *
+ * The grade is Seoul's own published label for the reading; KORETAIL does not
+ * own a PM scale and must not invent one, so a label it does not recognise is
+ * dropped rather than guessed at. This is also a DIFFERENT source from the
+ * KMA forecast the rest of the sentence comes from — the caller is
+ * responsible for naming both.
+ */
+export type AirGrade = "GOOD" | "MODERATE" | "BAD" | "VERY_BAD";
+
+const SEOUL_AIR_GRADE: Record<string, AirGrade> = {
+  "좋음": "GOOD", "보통": "MODERATE", "나쁨": "BAD", "매우나쁨": "VERY_BAD", "매우 나쁨": "VERY_BAD",
+};
+
+export function readAirGrade(publishedGrade: string | null | undefined): AirGrade | null {
+  if (typeof publishedGrade !== "string") return null;
+  return SEOUL_AIR_GRADE[publishedGrade.trim()] ?? null;
+}
+
+export const AIR_GRADE_TEXT: Record<AirGrade, Record<Lang, string>> = {
+  GOOD: { ko: "좋음", en: "good", zh: "优", ja: "良い" },
+  MODERATE: { ko: "보통", en: "moderate", zh: "普通", ja: "普通" },
+  BAD: { ko: "나쁨", en: "bad", zh: "差", ja: "悪い" },
+  VERY_BAD: { ko: "매우 나쁨", en: "very bad", zh: "很差", ja: "非常に悪い" },
+};
+
+/*
+ * Written out per locale, in both the joined and the standalone form.
+ *
+ * The file's rule is that a comfort sentence is never assembled from
+ * fragments — a conjugation patched on with a regex reads like machine
+ * translation in Korean and Japanese exactly where it matters most.
+ */
+const AIR_JOINED: Record<AirGrade, Record<Lang, string>> = {
+  GOOD: { ko: "미세먼지는 좋음이고", en: "air quality is good", zh: "空气质量为优", ja: "大気質は良好で" },
+  MODERATE: { ko: "미세먼지는 보통이고", en: "air quality is moderate", zh: "空气质量普通", ja: "大気質は普通で" },
+  BAD: { ko: "미세먼지는 나쁨이고", en: "air quality is bad", zh: "空气质量较差", ja: "大気質は悪く" },
+  VERY_BAD: { ko: "미세먼지는 매우 나쁨이고", en: "air quality is very bad", zh: "空气质量很差", ja: "大気質は非常に悪く" },
+};
+
+const AIR_ALONE: Record<AirGrade, Record<Lang, string>> = {
+  GOOD: { ko: "미세먼지는 좋음이에요", en: "Air quality is good", zh: "空气质量为优", ja: "大気質は良好です" },
+  MODERATE: { ko: "미세먼지는 보통이에요", en: "Air quality is moderate", zh: "空气质量普通", ja: "大気質は普通です" },
+  BAD: { ko: "미세먼지는 나쁨이에요", en: "Air quality is bad", zh: "空气质量较差", ja: "大気質は悪いです" },
+  VERY_BAD: { ko: "미세먼지는 매우 나쁨이에요", en: "Air quality is very bad", zh: "空气质量很差", ja: "大気質は非常に悪いです" },
+};
+
+/** The air grade to quote: the worse of the two readings, because that is the one a person feels. */
+export function worseAirGrade(pm10Grade: string | null | undefined, pm25Grade: string | null | undefined): AirGrade | null {
+  const order: AirGrade[] = ["GOOD", "MODERATE", "BAD", "VERY_BAD"];
+  const grades = [readAirGrade(pm10Grade), readAirGrade(pm25Grade)].filter((grade): grade is AirGrade => grade !== null);
+  if (!grades.length) return null;
+  return grades.reduce((worst, grade) => (order.indexOf(grade) > order.indexOf(worst) ? grade : worst));
+}
+
+export interface WeatherGuideExtras {
+  /** Seoul's published PM grades, quoted as-is. Null when not observed. */
+  pm10Grade?: string | null;
+  pm25Grade?: string | null;
+}
+
+/**
+ * The finished line, or null when there is not enough official data to say
+ * anything.
+ *
+ * `extras` appends one more clause about air quality and wind — the owner's
+ * two "so what do I do about it" questions, which the numbers above the line
+ * never answered. It is appended to the existing sentence rather than
+ * replacing it, and each half is omitted when its own source published
+ * nothing, so the line never implies a reading that does not exist.
+ */
+export function buildWeatherGuide(input: WeatherGuideInput, lang: Lang, extras: WeatherGuideExtras = {}): string | null {
   const kind = deriveWeatherGuideKind(input);
-  return kind ? GUIDE_TEXT[kind][lang] : null;
+  if (!kind) return null;
+  const base = GUIDE_TEXT[kind][lang];
+
+  const air = worseAirGrade(extras.pm10Grade, extras.pm25Grade);
+  const wind = describeWindStrength(input.windSpeedTenthMps);
+  if (!air && !wind) return base;
+
+  // "미세먼지는 좋음이고, 바람은 약해요" — one clause when only one half is
+  // known, so a missing reading never leaves a dangling conjunction.
+  const clause = air && wind
+    ? {
+        ko: `${AIR_JOINED[air].ko}, ${WIND_TEXT[wind].ko}`,
+        // English starts a new sentence here, so it takes the capitalised form.
+        en: `${AIR_ALONE[air].en} and ${WIND_TEXT[wind].en}`,
+        zh: `${AIR_JOINED[air].zh}，${WIND_TEXT[wind].zh}`,
+        ja: `${AIR_JOINED[air].ja}、${WIND_TEXT[wind].ja}`,
+      }[lang]
+    : air ? AIR_ALONE[air][lang] : WIND_ALONE[wind!][lang];
+
+  // No terminal period: this file's display copy never ends in one, and the
+  // existing locale test enforces it.
+  const joiner = { ko: ". ", en: ". ", zh: "。", ja: "。" }[lang];
+  return `${base}${joiner}${clause}`;
 }

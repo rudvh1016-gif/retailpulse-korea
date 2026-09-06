@@ -84,7 +84,9 @@ export const SUMMARY_FIXTURE = {
         observedAt: "2026-08-31T14:05:00+09:00", retrievedAt: "2026-08-31T05:07:00Z", qualityStatus: "VALID", freshness: "LIVE",
       },
       realtimeForecast: [{ targetAt: "2026-08-31T17:00:00+09:00", congestionLevel: 4, congestionLabel: "붐빔", populationMin: 27000, populationMax: 29000, issuedAt: "2026-08-31T14:00:00+09:00", retrievedAt: "2026-08-31T14:05:00+09:00" }],
-      weather: [{ targetAt: "2026-08-31T18:00:00+09:00", precipitationProbability: 60, temperatureTenthC: 270, conditionCode: "rain" }],
+      // Humidity and wind included: without a wind reading the guide line
+      // correctly omits its wind half, which is not the shape a reader sees.
+      weather: [{ targetAt: "2026-08-31T18:00:00+09:00", precipitationProbability: 60, temperatureTenthC: 270, conditionCode: "rain", humidityPercent: 65, windSpeedTenthMps: 25 }],
       subwayRidership: {
         referenceDate: "2026-08-30", boardingCount: 20_000, alightingCount: 21_000,
         selectedStationCount: 1, selectedStations: "명동|4호선",

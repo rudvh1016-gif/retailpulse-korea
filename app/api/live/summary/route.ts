@@ -422,7 +422,18 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
 
   // Which KST days actually hold data, so the date picker can offer only
   // days that exist instead of inviting the reader into an empty screen.
-  const pickerDays = Array.from({ length: DATE_PICKER_DAYS }, (_, index) => shiftKstDay(kstToday, -index));
+  // Tomorrow FIRST, then today and the days behind it.
+  //
+  // The probe used to start at today and only walk backwards, so
+  // `dateAvailability` could never contain tomorrow — and the airport
+  // forecast is published a day ahead, which is the one thing a reader opens
+  // "내일" to see. The date picker's `max` was therefore pinned to today and
+  // the scope note announced "공식 예상 승객 없음" for a day whose rows were
+  // sitting in D1. One extra probe day, not a new query shape.
+  const pickerDays = [
+    shiftKstDay(kstToday, 1),
+    ...Array.from({ length: DATE_PICKER_DAYS - 1 }, (_, index) => shiftKstDay(kstToday, -index)),
+  ];
   // Still one statement per day (D1 rejects the 63-parameter UNION ALL form);
   // the statements now travel inside the single batch below.
   const probeDays = (sql: string, bindsForDay: (day: string) => unknown[]) =>

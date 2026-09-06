@@ -2125,7 +2125,26 @@ export async function collectAirportPassengerForecast(
           env.DATA_GO_KR_SERVICE_KEY,
           { pageNo: String(pageNo), numOfRows: String(A5_PAGE_SIZE), type: "json", selectdate },
         );
-        const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
+        /*
+         * One retry, because the failure this source actually suffers is a
+         * TCP connect timeout that lasts seconds, not hours.
+         *
+         * `timeoutMs` never governed this: undici aborts at its own ~10s
+         * connect timeout long before a 30s signal fires, and with
+         * `retries: 0` that single blip cost the whole hourly opportunity —
+         * and, when it hit the evening the provider first publishes
+         * tomorrow, cost TOMORROW'S FORECAST FOR THE WHOLE NEXT DAY. That is
+         * the "내일 출국객수가 안 뜬다" the owner reported: production had
+         * 24 consecutive failures with `requests 0` and no row for the next
+         * day at all.
+         *
+         * A retry costs nothing on a healthy run (it only happens after a
+         * failure) and is what every other collector here already does. It
+         * does not paper over a real outage: a provider that is genuinely
+         * down still fails, still preserves last-good rows, and still marks
+         * source health STALE.
+         */
+        const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 1, retryDelayMs: 500 });
         requestCount += 1;
         const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown }; totalCount?: number } } };
         const resultCode = root?.response?.header?.resultCode;
