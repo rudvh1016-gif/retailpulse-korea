@@ -1,0 +1,67 @@
+name: Diagnose Provider Reachability
+
+# WHY THIS EXISTS
+#
+# A5 (공식 예상 출국객/입국객) went thirty consecutive collections without a
+# single provider request: every attempt died as NETWORK_UND_ERR_CONNECT_TIMEOUT,
+# which means the TCP connection to apis.data.go.kr never completed. Minutes
+# later the read-only smoke reached seven endpoints on that same host, from a
+# GitHub runner, in under two seconds each.
+#
+# Both observations cannot be explained by "the provider is down". The question
+# this workflow answers is the one that decides what a fix should even be:
+#
+#   Does reaching apis.data.go.kr depend on WHICH RUNNER you happen to get?
+#
+# If the failure follows the runner, then retrying inside a job is useless — it
+# keeps the same egress address — and the repair is a fresh job. If instead all
+# runners fail together, the outage is the provider's and only time helps.
+#
+# It runs several INDEPENDENT jobs, so each gets its own runner and its own
+# egress address, and reports DNS / TLS / HTTP separately for each. No
+# credentials are used and nothing is written: this is a network measurement.
+
+on:
+  workflow_dispatch:
+    inputs:
+      runners:
+        description: How many independent runners to probe from (2-10)
+        required: false
+        default: "6"
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      matrix: ${{ steps.build.outputs.matrix }}
+    steps:
+      - id: build
+        run: |
+          COUNT="${{ inputs.runners }}"
+          [ -n "$COUNT" ] || COUNT=6
+          case "$COUNT" in ''|*[!0-9]*) COUNT=6 ;; esac
+          [ "$COUNT" -ge 2 ] || COUNT=2
+          [ "$COUNT" -le 10 ] || COUNT=10
+          echo "matrix=$(seq 1 "$COUNT" | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+
+  probe:
+    needs: plan
+    # Separate jobs, not steps: the whole point is a different runner, and so a
+    # different egress address, for each probe. fail-fast off so one blocked
+    # runner does not hide how the others fared.
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe the shared gateway without credentials
+        run: |
+          echo "runner=${{ matrix.runner }}"
+          node scripts/diagnose-data-go-kr-network.mjs
