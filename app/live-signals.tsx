@@ -592,6 +592,19 @@ const arrivalSectionText = {
     ja: "仁川空港が発表した時間帯別の予想入国旅客です · ソウルへ移動する人数ではありません",
   },
   source: { ko: "인천국제공항공사 승객예고", en: "Incheon International Airport Corporation passenger forecast", zh: "仁川国际机场公社旅客预告", ja: "仁川国際空港公社の旅客予告" },
+  // Collection lag, named as ours. Never "the airport published nothing".
+  behindTitle: {
+    ko: "공식 예상 입국객 수집이 밀려 있습니다",
+    en: "Arrival forecast collection is behind",
+    zh: "官方预计入境旅客采集已滞后",
+    ja: "公式予想入国旅客の収集が遅れています",
+  },
+  behindBody: {
+    ko: (at: string) => `${at} 이후 수집이 성공하지 않아 이 날짜의 값이 아직 없습니다. 공급자가 자료를 내지 않은 것이 아닙니다`,
+    en: (at: string) => `No collection has succeeded since ${at}, so this date has no value yet. This is not a gap in the provider's data`,
+    zh: (at: string) => `自${at}起采集未成功，因此该日期尚无数值。并非供应方没有发布资料`,
+    ja: (at: string) => `${at} 以降の収集が成功しておらず、この日付の値がまだありません。提供元が資料を出していないわけではありません`,
+  },
 } as const;
 
 const airportTodayText = {
@@ -1076,11 +1089,23 @@ export function DateNavigator({
 }
 
 /** Explains, in one line, what a chosen date can and cannot show. */
-export function DateScopeNote({ lang, date }: { lang: Lang; date: string | null }) {
+export function DateScopeNote({ lang, date, scope = "departures" }: {
+  lang: Lang;
+  date: string | null;
+  /**
+   * Which screen is asking.
+   *
+   * Stored FLIGHT records are a departure fact — the arrival screen shows
+   * no flights at all — so announcing "저장된 운항 기록 없음" above 입국
+   * described something that screen never claimed to have.
+   */
+  scope?: "departures" | "arrivals";
+}) {
   const summary = useLiveSummary(date);
   if (!summary) return null;
   const { dayRelation, serviceDateKst, dateAvailability } = summary;
-  const hasFlights = dateAvailability.airportFlights.includes(serviceDateKst);
+  const showsFlights = scope === "departures";
+  const hasFlights = !showsFlights || dateAvailability.airportFlights.includes(serviceDateKst);
   const hasForecast = dateAvailability.airportPassengerForecast.includes(serviceDateKst);
   if (dayRelation === "TODAY" && hasFlights && hasForecast) return null;
   const parts: string[] = [];
@@ -1281,6 +1306,31 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
     ? formatHumanFreshness(arrival.passengerForecastRetrievedAt, nowIso, lang, "collected")
     : null;
 
+  /*
+   * An empty screen has to say WHY, exactly as the departure one does.
+   *
+   * "확인 불가" alone reads as "the airport published nothing", and on
+   * 2026-09-07 that was wrong: the provider had simply been unreachable
+   * since the 5th, so no row for the day existed to read. The departure
+   * brief already drew that distinction and this screen did not — the owner
+   * hit the same dead end one screen over.
+   *
+   * Judged on `source_health.last_retrieved_at`, on the same window the
+   * rest of the product uses for collection lag.
+   */
+  const forecastCollectedAt = summary.sources?.find(
+    (source) => source.sourceId === "INCHEON_PASSENGER_FORECAST")?.retrievedAt ?? null;
+  const collectedMs = forecastCollectedAt ? Date.parse(forecastCollectedAt) : Number.NaN;
+  const nowMs = Date.parse(nowIso);
+  const collectionBehind = Number.isFinite(collectedMs) && Number.isFinite(nowMs)
+    && nowMs - collectedMs > PERIOD_VOUCH_WINDOW_MS / 4;
+  const emptyTitle = collectionBehind
+    ? arrivalSectionText.behindTitle[lang]
+    : isPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang];
+  const emptyBody = collectionBehind
+    ? arrivalSectionText.behindBody[lang](formatKstDayClock(forecastCollectedAt!, lang))
+    : isPartial ? airportTodayText.partialBody[lang] : airportTodayText.unavailableBody[lang];
+
   const nowBand = summary.dayRelation === "TODAY"
     ? timeline.find((row) => Date.parse(row.targetStartAt) <= Date.parse(nowIso) && Date.parse(nowIso) < Date.parse(row.targetEndAt)) ?? null
     : null;
@@ -1300,10 +1350,11 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
   return <>
     <section className="airport-arrival-brief" aria-labelledby="airport-arrival-title">
       <p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p>
-      <h2 id="airport-arrival-title">{headline ?? (isPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang])}</h2>
+      <h2 id="airport-arrival-title">{headline ?? emptyTitle}</h2>
       <ul className="airport-arrival-lines">
         {total !== null && nowBand && <li>{arrivalSectionText.dayTotal[lang]} {people(total)}</li>}
         {peak && <li>{arrivalSectionText.peak[lang]} {formatKstBand(peak.targetStartAt, peak.targetEndAt).replace(" KST", "")} · {people(peak.expectedPassengers)}</li>}
+        {headline === null && <li className="airport-arrival-basis">{emptyBody}</li>}
         <li className="airport-arrival-basis">{arrivalSectionText.basis[lang]}</li>
         {collected && <li className="airport-arrival-basis">{arrivalSectionText.source[lang]} · {collected}</li>}
       </ul>
@@ -1326,8 +1377,8 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
           label={`${arrivalSectionText.flowTitle[lang]}. ${arrivalSectionText.flowOnly[lang]}${nowBandStart ? `. ${nowLabel}` : ""}`}
         />
         : <div className={`airport-forecast-state ${isPartial ? "partial" : "unavailable"}`}>
-          <strong>{isPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]}</strong>
-          <p>{isPartial ? airportTodayText.partialBody[lang] : airportTodayText.unavailableBody[lang]}</p>
+          <strong>{emptyTitle}</strong>
+          <p>{emptyBody}</p>
           {collected && <small>{collected}</small>}
         </div>}
     </section>

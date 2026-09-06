@@ -573,7 +573,7 @@ function AirportView({
 
       {section !== "history" && section !== "stores" && section !== "mystore" && <>
         <DateNavigator lang={lang} date={date} onChange={setDate} />
-        <DateScopeNote lang={lang} date={date} />
+        <DateScopeNote lang={lang} date={date} scope={section === "arrivals" ? "arrivals" : "departures"} />
       </>}
 
       {section === "now" && <AirportTodaySummary lang={lang} terminal={terminal} date={date} />}
