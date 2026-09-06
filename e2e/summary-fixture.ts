@@ -51,6 +51,33 @@ export const SUMMARY_FIXTURE = {
   sources: [],
   areas: {
     myeongdong: AREA_BLOCK({
+      /**
+       * Seoul city-data context. Twelve categories, because the "show all"
+       * control only appears past three and the owner's report was about
+       * that control being mistaken for a heading — with no context in the
+       * fixture, nothing here rendered it at all.
+       */
+      context: {
+        commercialAt: "2026-08-31T14:05:00+09:00",
+        categories: [
+          { group: "음식", category: "한식", level: "한산", payments: 15, amountMin: 550_000, amountMax: 600_000 },
+          { group: "음식", category: "일식/중식/양식", level: "보통", payments: 44, amountMin: 800_000, amountMax: 850_000 },
+          { group: "음식", category: "제과/커피/패스트푸드", level: "분주한", payments: 508, amountMin: 1_700_000, amountMax: 1_800_000 },
+          { group: "생활", category: "생활용품", level: "보통", payments: 61, amountMin: 300_000, amountMax: 350_000 },
+          { group: "생활", category: "의류/잡화", level: "바쁜", payments: 122, amountMin: 900_000, amountMax: 950_000 },
+          { group: "생활", category: "화장품", level: "분주한", payments: 311, amountMin: 1_200_000, amountMax: 1_250_000 },
+          { group: "여가", category: "문화/취미", level: "한산", payments: 8, amountMin: 120_000, amountMax: 150_000 },
+          { group: "여가", category: "숙박", level: "보통", payments: 27, amountMin: 700_000, amountMax: 760_000 },
+          { group: "의료", category: "의료기관", level: "보통", payments: 33, amountMin: 640_000, amountMax: 690_000 },
+          { group: "의료", category: "약국", level: "바쁜", payments: 96, amountMin: 210_000, amountMax: 240_000 },
+          { group: "교통", category: "주유/충전", level: "한산", payments: 4, amountMin: 90_000, amountMax: 110_000 },
+          { group: "교통", category: "교통/운수", level: "바쁜", payments: 140, amountMin: 380_000, amountMax: 410_000 },
+        ],
+        weather: {
+          observedAt: "2026-08-31T14:50:00+09:00", temperature: 29.4, humidity: 44, wind: 5,
+          pm10: 7, pm25: 5, pm10Grade: "좋음", pm25Grade: "좋음",
+        },
+      },
       realtime: { congestionLevel: 3, congestionLabel: "약간 붐빔", populationMin: 23000, populationMax: 25000, observedAt: "2026-08-31T14:07:00+09:00", freshness: "LIVE" },
       commercial: {
         commercialLevel: "보통", paymentCount: 12345, paymentAmountMin: 1000000, paymentAmountMax: 1100000,

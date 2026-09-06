@@ -651,7 +651,20 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .event-actions summary { cursor: pointer; }
 .event-actions details[open] { width: 100%; }
 .event-overview { margin: 8px 0 12px; color: var(--muted); font-size: 12px; line-height: 1.75; white-space: pre-line; -webkit-line-clamp: none; }
-.event-list-toggle { margin-top: 12px; padding: 0; border: 0; border-bottom: 1px solid var(--ink); background: transparent; }
+/*
+ * "더 보기" controls.
+ *
+ * These used to be a full-width ink underline with no box, which on a phone
+ * drew a rule across the whole column — indistinguishable from the section
+ * dividers around it. The owner read "업종 12개 전체 보기" as a heading for
+ * the weather block below it rather than as something to press. A real
+ * bordered control, and the small "눌러서 펼치기" beside the label, say what
+ * it is without a word of explanation.
+ */
+.event-list-toggle { margin-top: 12px; padding: 0 14px; gap: 10px; border: 1px solid var(--line); background: transparent; cursor: pointer; }
+.event-list-toggle:hover { border-color: var(--ink); }
+.event-list-toggle .toggle-hint { display: inline; color: var(--muted); font-size: 10px; font-weight: var(--weight-regular); line-height: 1.5; white-space: nowrap; }
+.context-more { margin-top: 4px; }
 
 .not-found { min-height: 100vh; max-width: 860px; margin: 0 auto; padding: 14vh 28px 80px; background: var(--paper); }
 .not-found h1 { margin: 28px 0 0; font-size: clamp(42px, 7vw, 78px); letter-spacing: -.06em; }
@@ -779,11 +792,30 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .reading-notes li { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
 .reading-notes span { color: var(--muted); font-weight: var(--weight-strong); }
 .reading-notes b { font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
+/*
+ * Historical stat rows.
+ *
+ * The value is ONE line, always. The owner's phone broke "2026-07" across
+ * two lines and pushed the "07" down into the next paragraph, which is
+ * unreadable and looks like a bug — a period never means anything split in
+ * half. Two things caused it: the label track took `1fr` and squeezed the
+ * value, and the value was free to wrap at the hyphen and at the slash of
+ * "2026-01 / 2026-03".
+ *
+ * So the value never wraps, and it is the LABEL that gives way — a label
+ * running onto a second line still reads correctly, a date does not. The
+ * value also steps down on narrow screens so the longest of them (two
+ * months and a slash) still fits on one line at 360px, which `nowrap`
+ * alone cannot promise. Phone browsers may inflate text further; the label
+ * yielding is what absorbs that.
+ */
 .stat-rows { margin: 16px 0 0; display: grid; gap: 0; }
-.stat-rows div { display: grid; grid-template-columns: 1fr auto; align-items: baseline; column-gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); }
-.stat-rows span { color: var(--muted); font-size: 11px; font-weight: var(--weight-strong); }
-.stat-rows b { font-size: 19px; font-weight: var(--weight-strong); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-.stat-rows i { grid-column: 1 / -1; margin-top: 3px; color: var(--muted); font-size: 11px; font-style: normal; font-weight: var(--weight-regular); }
+.stat-rows div { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.stat-rows span { min-width: 0; color: var(--muted); font-size: 11px; font-weight: var(--weight-strong); line-height: 1.5; overflow-wrap: anywhere; }
+.stat-rows b { white-space: nowrap; font-size: 19px; font-weight: var(--weight-strong); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.stat-rows i { grid-column: 1 / -1; margin-top: 3px; color: var(--muted); font-size: 11px; font-style: normal; font-weight: var(--weight-regular); white-space: nowrap; }
+@media (max-width: 430px) { .stat-rows b { font-size: 17px; } }
+@media (max-width: 365px) { .stat-rows b { font-size: 15px; } .stat-rows div { column-gap: 10px; } }
 
 /* Airport: remaining-departures cell, gate ranking, checkpoint footnote */
 .airport-period-label { color: var(--muted); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .04em; white-space: nowrap; }
@@ -1370,11 +1402,13 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 /* Operational context: compact facts, optional detail, existing editorial palette. */
 .operational-context { padding: 1.25rem 0; border-top: 1px solid var(--line, #ddd); }
 .operational-context h3 { font-size: 1rem; margin-bottom: .4rem; }
-.operational-context small, .holiday-context small, .outlook-grid small, .prediction-history > small { display: block; font-size: .875rem; line-height: 1.65; color: #666; }
+.operational-context small:not(.toggle-hint), .holiday-context small, .outlook-grid small, .prediction-history > small { display: block; font-size: .875rem; line-height: 1.65; color: #666; }
 .context-category-list, .prediction-hours { list-style: none; margin: .75rem 0; padding: 0; }
 .context-category-list li, .prediction-hours li { display: grid; grid-template-columns: minmax(6rem,1fr) 2fr; gap: .25rem 1rem; padding: .65rem 0; border-bottom: 1px solid #e5e5e5; }
 .context-category-list li small, .prediction-hours li small { grid-column: 1 / -1; }
-.context-environment { margin: 1rem 0 0; font-size: .9375rem; line-height: 1.8; }
+/* Its own block, clearly separated: it used to start right under the
+   category toggle and read as that button's content. */
+.context-environment { margin: 28px 0 0; padding-top: 22px; border-top: 1px solid var(--line); font-size: .9375rem; line-height: 1.8; }
 .holiday-context { margin: 1rem 0; font-size: .9375rem; }
 .prediction-view { padding-top: 2rem; }
 .prediction-view h1 { font-size: clamp(1.7rem,4vw,2.5rem); }
