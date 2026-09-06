@@ -582,11 +582,49 @@ test("the busiest-gate ranking is drawn as a chart scaled to its leader", async 
  * no chart library, no post-paint measurement, no second request. If a
  * future change reaches for a canvas or a layout pass, this fails.
  */
+/**
+ * A charting library is recognised by a PATH SEGMENT, never by a substring.
+ *
+ * This used to test the whole URL against /chart|d3|.../i, which quietly means
+ * "any URL containing the two characters d3 anywhere". Vite stamps every dev
+ * module with a dep hash, and on 2026-09-06 CI drew `?v=a2fd3205` — so every
+ * one of the sixty framework modules matched, and the guard failed with a wall
+ * of vinext URLs and nothing to do with charts. Any edit that reshuffles the
+ * bundle can produce such a hash, so this was a trap waiting on a coin flip.
+ *
+ * Matching a delimiter-bounded token inside a path segment keeps every real
+ * import caught — /node_modules/d3/…, chart.umd.js, echarts/index.js — while a
+ * hex hash cannot spell one by accident.
+ */
+const CHART_LIBRARY_TOKENS = new Set([
+  "chart", "charts", "chartjs", "d3", "plotly", "echarts", "highcharts",
+  "recharts", "apexcharts", "nivo", "victory", "billboard", "amcharts",
+]);
+
+function loadsChartLibrary(rawUrl: string): boolean {
+  let pathname: string;
+  try {
+    pathname = new URL(rawUrl).pathname;
+  } catch {
+    pathname = rawUrl;
+  }
+  return pathname.toLowerCase().split("/").some((segment) =>
+    segment.split(/[.\-_@]/).some((token) => CHART_LIBRARY_TOKENS.has(token)));
+}
+
 test("the gate chart adds no script, no library and no request", async ({ page }) => {
+  // The matcher itself is worth asserting: it is the reason this guard means
+  // anything, and the reason it stopped crying wolf at a dep hash.
+  expect(loadsChartLibrary("http://x/node_modules/d3/dist/d3.js")).toBe(true);
+  expect(loadsChartLibrary("http://x/node_modules/chart.js/dist/chart.umd.js")).toBe(true);
+  expect(loadsChartLibrary("http://x/node_modules/echarts/index.js")).toBe(true);
+  expect(loadsChartLibrary("http://x/node_modules/.vite/deps/chunk-CO3PsZeE.js?v=a2fd3205")).toBe(false);
+  expect(loadsChartLibrary("http://x/node_modules/vinext/dist/utils/hash.js?v=a2fd3205")).toBe(false);
+
   const extraRequests: string[] = [];
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   page.on("request", (request) => {
-    if (/chart|d3|plotly|echarts|highcharts/i.test(request.url())) extraRequests.push(request.url());
+    if (loadsChartLibrary(request.url())) extraRequests.push(request.url());
   });
   await page.goto("/ko/airport");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
