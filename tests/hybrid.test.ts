@@ -50,21 +50,46 @@ test("D1 REST adapter batches parameterized queries without exposing token in er
  * log said nothing about which of the many things that can 400 had happened.
  * Cloudflare puts a numeric code in the body for exactly this.
  */
-test("a D1 failure carries Cloudflare's error code, and never its message", async () => {
-  const coded: typeof fetch = async () => Response.json(
-    { success: false, errors: [{ code: 7500, message: "near \"INSERT INTO secrets\": syntax error" }] },
-    { status: 400 },
+test("a D1 failure carries Cloudflare's code and a reduced message", async () => {
+  const d1 = (body: BodyInit, status = 400) =>
+    new CloudflareD1RestDatabase("account", "database", "token", async () => new Response(body, { status }));
+  const rejects = async (body: BodyInit, expected: string) => {
+    await assert.rejects(d1(body).prepare("SELECT 1").run(), (error: unknown) => {
+      assert.ok(error instanceof Error);
+      assert.equal(error.message, expected);
+      return true;
+    });
+  };
+
+  // The failure that actually happened: the code says "query error", and only
+  // the message says which column.
+  await rejects(
+    JSON.stringify({ success: false, errors: [{ code: 7500, message: "NOT NULL constraint failed: airport_passenger_forecast.zone" }] }),
+    "d1_http_400_7500_NOT_NULL_constraint_failed:_airport_passenger_forecast.z",
   );
+
+  // Quotes, parens and commas are what a SQL fragment or a bound value needs.
+  // They collapse, so nothing rides out of a message inside an identifier.
+  await rejects(
+    JSON.stringify({ success: false, errors: [{ code: 7500, message: "near \"INSERT INTO t VALUES ('secret-value')\": syntax error" }] }),
+    "d1_http_400_7500_near_INSERT_INTO_t_VALUES_secret-value_:_syntax_error",
+  );
+
+  // The cause code the collectors log has a bounded shape; whatever comes back
+  // from Cloudflare must still fit it (lib/source-adapters.ts).
+  const longMessage = "x".repeat(400);
   await assert.rejects(
-    new CloudflareD1RestDatabase("account", "database", "token", coded).prepare("SELECT 1").run(),
+    d1(JSON.stringify({ success: false, errors: [{ code: 7500, message: longMessage }] })).prepare("SELECT 1").run(),
     (error: unknown) => {
       assert.ok(error instanceof Error);
-      assert.equal(error.message, "d1_http_400_7500");
-      // An error message can quote the offending statement. The code cannot.
-      assert.doesNotMatch(error.message, /INSERT INTO|syntax/);
+      assert.ok(error.message.length <= 79, `cause code must stay bounded, got ${error.message.length}`);
+      assert.match(error.message, /^[A-Za-z][A-Za-z0-9_.:-]{0,79}$/);
       return true;
     },
   );
+
+  // A code with no message still reports the code alone.
+  await rejects(JSON.stringify({ success: false, errors: [{ code: 7500 }] }), "d1_http_400_7500");
 
   // A body that is not the documented shape must not replace what we do know.
   for (const body of ["<html>gateway</html>", JSON.stringify({ success: false }), ""]) {

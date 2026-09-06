@@ -11,24 +11,45 @@ interface D1ApiResponse {
 }
 
 /**
- * The Cloudflare error code behind a non-2xx, appended to the thrown message.
+ * What Cloudflare said went wrong, reduced to something safe to log.
  *
  * `d1_http_400` on its own is not a diagnosis. Production hit exactly that on
- * 2026-09-06 — twice in a row, forty seconds after the same code wrote to the
- * same database successfully — and the log said nothing about which of the
- * many things that can 400 had happened. Cloudflare returns a numeric code in
- * the body for precisely this purpose.
+ * 2026-09-06, three attempts in a row on three different runners, and the log
+ * could not say whether it was auth, a malformed request or the SQL. The
+ * numeric code narrowed it to a query error; the message is what names the
+ * column.
  *
- * Only the CODE is taken, never the message: an error message can quote the
- * offending SQL, and no D1 diagnostic here has ever been allowed to echo a
- * statement or a bound value. A body that cannot be read adds nothing rather
- * than replacing the status we already know.
+ * The message is SQLite's, about OUR schema — "no such column: zone", "NOT
+ * NULL constraint failed: airport_passenger_forecast.zone" — and that schema
+ * is in this repository. What keeps a secret out is upstream of the reduction:
+ * every value this code sends is a bound parameter, so the statement SQLite
+ * quotes back contains `?` where the values were, never the values.
+ *
+ * The reduction is the second line, not the first. Only letters, digits, `_`,
+ * `.`, `:` and `-` survive; runs of anything else collapse to a single `_`;
+ * the result is capped. That strips the punctuation a SQL fragment is made of
+ * and keeps the whole string inside the caller's bounded cause-code shape
+ * (lib/source-adapters.ts). It does not claim to launder a message that
+ * already contains a bare token — nothing here should ever produce one.
+ *
+ * A body that is not the documented shape adds nothing rather than replacing
+ * the status we already know.
  */
-async function d1ErrorCodeSuffix(response: Response): Promise<string> {
+const D1_MESSAGE_MAX = 56;
+
+function safeD1Message(message: unknown): string {
+  if (typeof message !== "string") return "";
+  const reduced = message.replace(/[^A-Za-z0-9_.:-]+/g, "_").replace(/^_+|_+$/g, "");
+  return reduced ? `_${reduced.slice(0, D1_MESSAGE_MAX)}` : "";
+}
+
+async function d1ErrorSuffix(response: Response): Promise<string> {
   try {
     const payload = await response.json() as D1ApiResponse;
-    const code = payload.errors?.[0]?.code;
-    return Number.isSafeInteger(code) ? `_${code}` : "";
+    const failure = payload.errors?.[0];
+    if (!failure) return "";
+    const code = Number.isSafeInteger(failure.code) ? `_${failure.code}` : "";
+    return `${code}${safeD1Message(failure.message)}`;
   } catch {
     return "";
   }
@@ -137,7 +158,7 @@ export class CloudflareD1RestDatabase {
         await new Promise((resolve) => setTimeout(resolve, 250 * (2 ** attempt)));
         continue;
       }
-      if (!response.ok) throw new Error(`d1_http_${response.status}${await d1ErrorCodeSuffix(response)}`);
+      if (!response.ok) throw new Error(`d1_http_${response.status}${await d1ErrorSuffix(response)}`);
       const payload = await response.json() as D1ApiResponse;
       if (!payload.success || !Array.isArray(payload.result)) {
         const code = payload.errors?.[0]?.code ?? "unknown";
