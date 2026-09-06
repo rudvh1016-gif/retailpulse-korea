@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { lookupAirline } from "../lib/airline-country";
 import { AIRLINE_REGISTRY, type AirlineRegistryEntry } from "../lib/airline-registry";
 import { tofuCharacters } from "./font-glyphs";
-import { routeSummary, SUMMARY_FIXTURE } from "./summary-fixture";
+import { MYEONGDONG_CONTEXT, routeSummary, SUMMARY_FIXTURE } from "./summary-fixture";
 
 /**
  * TYPOGRAPHY regression, from the owner's 2026-09-04 review of the install
@@ -388,11 +388,104 @@ test("the weather guide names dust and wind, and the observation is marked as no
   await expect(environment).toContainText("초미세먼지 좋음");
   // The raw parenthesised form the owner read as noise is gone.
   await expect(environment).not.toContainText("PM10 7μg/m³ (좋음)");
+  // A current observation needs no essay about the forecast below it.
+  await expect(environment).not.toContainText("기상청 예보라서");
 
   // Forecast guide: the existing sentence, plus the appended clause.
   const guide = page.locator(".signal-row", { hasText: "날씨" }).first();
   await expect(guide).toContainText("미세먼지는");
   await expect(guide).toContainText("바람은");
+
+  // Humidity and wind are MEASURED right above. Printing KMA's forecast of
+  // the same two values a few lines down is the overlap the owner reported,
+  // so while the observation is current the forecast row leaves them out.
+  await expect(environment).toContainText("습도 44%");
+  await expect(guide).not.toContainText("습도 65%");
+  await expect(guide).not.toContainText("바람 2.5m/s");
+});
+
+/**
+ * "주변환경관측과 날씨의 온도가 다른 게 이해가 안 가고 겹쳐."
+ *
+ * Both numbers were right. Seoul's sensor really had recorded 29.4°C, and
+ * KMA really did forecast 27°C for the current hour — but the observation was
+ * from the previous afternoon, because that collector had stopped succeeding,
+ * and the screen still called it "지금". A stale reading labelled as current,
+ * sitting directly above a live forecast, is what turns two honest sources
+ * into one broken-looking weather block.
+ */
+test("a stale observation is stamped with the time it was taken and explains the forecast beneath it", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary({
+    ...SUMMARY_FIXTURE,
+    areas: {
+      ...SUMMARY_FIXTURE.areas,
+      myeongdong: {
+        ...SUMMARY_FIXTURE.areas.myeongdong,
+        context: {
+          ...MYEONGDONG_CONTEXT,
+          // Yesterday afternoon: the collector stopped succeeding after this.
+          weather: { ...MYEONGDONG_CONTEXT.weather, observedAt: "2026-08-30T14:50:00+09:00" },
+        },
+      },
+    },
+  }));
+  await page.goto("/ko/myeongdong");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+
+  const environment = page.locator(".context-environment");
+  // The one word that caused the confusion must be gone from the number.
+  await expect(environment).not.toContainText("지금 29.4°C");
+  await expect(environment).toContainText("08-30 14:50 관측 29.4°C");
+  // And the screen says, in one line, why the row below disagrees.
+  await expect(environment).toContainText("23시간 20분 전 관측된 값입니다");
+  await expect(environment).toContainText("기상청 예보라서 숫자가 다릅니다");
+
+  // With no current measurement to defer to, KMA is the only source for
+  // humidity and wind, so they come back rather than silently vanishing.
+  const guide = page.locator(".signal-row", { hasText: "날씨" }).first();
+  await expect(guide).toContainText("습도 65%");
+  await expect(guide).toContainText("바람 2.5m/s");
+});
+
+/**
+ * "소비업종 정보 버튼이 갑자기 또 사라졌어."
+ *
+ * Nothing was deleted. The expand control only has work to do above three
+ * categories, and on the night the owner looked Seoul had published exactly
+ * one. An absent button is indistinguishable from a removed feature, so the
+ * count is now stated whatever the provider published.
+ */
+test("the category count is on screen even when Seoul publishes a single category", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary({
+    ...SUMMARY_FIXTURE,
+    areas: {
+      ...SUMMARY_FIXTURE.areas,
+      myeongdong: {
+        ...SUMMARY_FIXTURE.areas.myeongdong,
+        context: { ...MYEONGDONG_CONTEXT, categories: MYEONGDONG_CONTEXT.categories.slice(0, 1) },
+      },
+    },
+  }));
+  await page.goto("/ko/myeongdong");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+
+  await expect(page.locator(".context-category-list li")).toHaveCount(1);
+  await expect(page.locator(".context-category-count"))
+    .toHaveText("서울시가 지금 공개한 업종 1개를 모두 표시했습니다");
+  // There is genuinely nothing to expand, so no control is offered — but the
+  // reader is told why, which is the whole difference from a deleted feature.
+  await expect(page.locator(".context-more .event-list-toggle")).toHaveCount(0);
+});
+
+test("the count stays truthful while the full list is collapsed and expanded", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.goto("/ko/myeongdong");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+
+  const count = page.locator(".context-category-count");
+  await expect(count).toHaveText("서울시가 지금 공개한 업종 12개 중 3개를 표시했습니다");
+  await page.locator(".context-more .event-list-toggle").click();
+  await expect(count).toHaveText("서울시가 지금 공개한 업종 12개를 모두 표시했습니다");
 });
 
 /**
