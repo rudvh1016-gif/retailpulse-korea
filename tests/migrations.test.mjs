@@ -22,6 +22,13 @@ const migrations = [
   "drizzle/0013_seoul_store_dynamics.sql",
   "drizzle/0014_tourism_events_window_idx.sql",
   "drizzle/0015_airport_facility.sql",
+  // 0016 was missing from this list, and that is why the forecast archive
+  // triggers it creates were never exercised by any test. They shipped with a
+  // conflict clause SQLite does not honour inside a trigger and took A5 writes
+  // down with them; 0017 repairs that. An unlisted migration is an untested
+  // one, so both are here now.
+  "drizzle/0016_operational_context_forecast.sql",
+  "drizzle/0017_forecast_archive_trigger_conflict.sql",
 ];
 
 function applyMigrations(database) {
@@ -264,6 +271,119 @@ test("D1 migrations apply and prediction rows remain immutable", () => {
           .run("prediction-test-1"),
       /predictions are immutable/,
     );
+  } finally {
+    database.close();
+    unlinkSync(databasePath);
+  }
+});
+
+/**
+ * The write that could abort the write it was recording.
+ *
+ * Both forecast archive triggers said `INSERT OR IGNORE INTO
+ * airport_forecast_versions` — "archive this version, say nothing if it is
+ * already there". SQLite does not honour that here: when the statement firing
+ * a trigger carries its own ON CONFLICT clause, the OUTER statement's conflict
+ * policy replaces the one written inside the trigger body. Every canonical A5
+ * write is an upsert, which is how changed-only writing works, so IGNORE
+ * silently became ABORT.
+ *
+ * The result was exact. The AFTER UPDATE trigger re-archives the OLD version,
+ * which AFTER INSERT had already archived under the same id, so the FIRST time
+ * Incheon revised an aggregate band the archive insert conflicted and took the
+ * whole batch with it:
+ *
+ *   d1_http_400_7500 UNIQUE constraint failed: airport_forecast_versions.id
+ *
+ * A months-long provider outage hid it. While no runner could open a connection
+ * to apis.data.go.kr nothing was ever normalized, so this write never ran — and
+ * the day a fresh runner got through again, this is what kept 2026-09-07 from
+ * being stored. The statements below are the real ones, so a return to a
+ * conflict-clause-dependent trigger fails here rather than in production.
+ */
+const A5_UPSERT = `INSERT INTO airport_passenger_forecast (
+  id, source_id, record_origin, terminal, direction, zone, is_aggregate, target_date, time_band_raw,
+  target_start_at, target_end_at, expected_passengers, retrieved_at, schema_version, quality_status, source_hash)
+ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ ON CONFLICT(source_id, terminal, direction, zone, target_date, time_band_raw) DO UPDATE SET
+  target_start_at = excluded.target_start_at,
+  target_end_at = excluded.target_end_at,
+  expected_passengers = excluded.expected_passengers,
+  retrieved_at = excluded.retrieved_at,
+  quality_status = excluded.quality_status,
+  source_hash = excluded.source_hash
+ WHERE airport_passenger_forecast.source_hash <> excluded.source_hash`;
+
+test("a revised aggregate forecast is archived, not rejected", () => {
+  const databasePath = join(tmpdir(), `rpk-archive-${process.pid}.db`);
+  const database = new DatabaseSync(databasePath);
+  try {
+    applyMigrations(database);
+
+    const publish = (sourceHash, passengers) => database.prepare(A5_UPSERT).run(
+      "row-1", "INCHEON_PASSENGER_FORECAST", "PROVIDER", "T1", "departure", "SUM", 1,
+      "2026-09-07", "0000_0100", "2026-09-07T00:00:00+09:00", "2026-09-07T01:00:00+09:00",
+      passengers, `2026-09-06T${sourceHash}:00:00Z`, "a5-v1", "VALID", sourceHash,
+    );
+    const archived = () => database
+      .prepare("SELECT count(*) AS total FROM airport_forecast_versions").get().total;
+
+    publish("11", 100);
+    assert.equal(archived(), 1, "the first publication is archived once");
+
+    // The revision that used to abort the entire batch.
+    publish("12", 200);
+    assert.equal(archived(), 2, "a revision archives the new version beside the old one");
+
+    publish("13", 300);
+    assert.equal(archived(), 3, "and every later revision keeps accumulating");
+
+    // Changed-only writing: republishing identical content changes nothing, so
+    // the archive must not grow a duplicate either.
+    publish("13", 300);
+    assert.equal(archived(), 3, "an unchanged republication archives nothing new");
+
+    assert.equal(
+      database.prepare("SELECT expected_passengers FROM airport_passenger_forecast WHERE id = ?").get("row-1").expected_passengers,
+      300,
+      "the canonical row carries the newest official number",
+    );
+    assert.deepEqual(
+      database.prepare("SELECT expected_passengers FROM airport_forecast_versions ORDER BY source_hash").all()
+        .map((row) => row.expected_passengers),
+      [100, 200, 300],
+      "and every superseded number is still recoverable from the archive",
+    );
+
+    // The archive stays append-only. Repairing the insert path must not have
+    // loosened the immutability guarantee the prospective record depends on.
+    assert.throws(
+      () => database.prepare("UPDATE airport_forecast_versions SET expected_passengers = 0").run(),
+      /archive is immutable/,
+    );
+    assert.throws(
+      () => database.prepare("DELETE FROM airport_forecast_versions").run(),
+      /archive is immutable/,
+    );
+  } finally {
+    database.close();
+    unlinkSync(databasePath);
+  }
+});
+
+test("a non-aggregate band is not archived at all", () => {
+  // The archive exists for the published totals. Archiving every zone row would
+  // multiply an immutable table by the number of bands for no added truth.
+  const databasePath = join(tmpdir(), `rpk-archive-zone-${process.pid}.db`);
+  const database = new DatabaseSync(databasePath);
+  try {
+    applyMigrations(database);
+    database.prepare(A5_UPSERT).run(
+      "row-zone", "INCHEON_PASSENGER_FORECAST", "PROVIDER", "T1", "departure", "t1dg1", 0,
+      "2026-09-07", "0000_0100", "2026-09-07T00:00:00+09:00", "2026-09-07T01:00:00+09:00",
+      50, "2026-09-06T00:00:00Z", "a5-v1", "VALID", "zone-hash-1",
+    );
+    assert.equal(database.prepare("SELECT count(*) AS total FROM airport_forecast_versions").get().total, 0);
   } finally {
     database.close();
     unlinkSync(databasePath);
