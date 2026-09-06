@@ -50,3 +50,11 @@ jobs:
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
           SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
           RPK_RETAIN_FLIGHT_CHANGE_HISTORY: ${{ vars.RPK_RETAIN_FLIGHT_CHANGE_HISTORY }}
+          # A1 now runs first at 04:07 KST (collect-airport-recovery.yml). This
+          # run is the day's refresh, not its first sight of the day: gate
+          # assignments firm up through the morning and the busiest-gate
+          # ranking is what the departures screen is for, so it rescans instead
+          # of skipping. The ceiling keeps the day's worst case at exactly A1's
+          # documented 500 calls -- 3 x 125 early + 1 x 125 here.
+          RPK_A1_MAX_REQUESTS: "125"
+          RPK_A1_RESCAN_TODAY: "true"

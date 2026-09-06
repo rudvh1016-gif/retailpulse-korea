@@ -489,3 +489,58 @@ test("the CPU benchmark measures the real collectors and makes no provider or D1
   assert.match(benchmark, /globalThis\.fetch = /);
   assert.ok(benchmark.includes("CountingD1"), "benchmark must use the counting no-op D1");
 });
+
+/**
+ * A1's day, in numbers rather than in prose.
+ *
+ * The departures scan used to get one attempt at 06:07 KST and its next one
+ * four hours later, so a single blocked runner cost the reader a whole morning
+ * on the screen whose purpose is today's gate ranking. It now runs first at
+ * 04:07 with two immediate fresh-runner retries, and 06:07 became the day's
+ * refresh.
+ *
+ * More windows are only safe if the arithmetic holds, so the arithmetic is
+ * asserted here: A1 documents 500 development calls a day and the worst case
+ * must be exactly that, never above.
+ */
+test("the A1 windows cannot exceed the documented 500 calls a day", async () => {
+  const early = await readFile(new URL("../.github/workflows/collect-airport-recovery.yml", import.meta.url), "utf8");
+  const daily = await readFile(new URL("../.github/workflows/collect-production.yml", import.meta.url), "utf8");
+
+  const ceilings = (workflow: string) => [...workflow.matchAll(/(?:a1_max_requests|RPK_A1_MAX_REQUESTS): "(\d+)"/g)]
+    .map((match) => Number(match[1]));
+
+  const earlyCeilings = ceilings(early);
+  const dailyCeilings = ceilings(daily);
+  assert.equal(earlyCeilings.length, 3, "the early window runs three attempts, one job apiece");
+  assert.equal(dailyCeilings.length, 1, "the daily group runs one");
+
+  const worstCase = [...earlyCeilings, ...dailyCeilings].reduce((sum, value) => sum + value, 0);
+  assert.ok(worstCase <= 500, `A1 documents 500 calls/day; this day's worst case is ${worstCase}`);
+  assert.equal(worstCase, 500, "the budget is spent deliberately, so a drift in either direction should be noticed");
+
+  // Each ceiling has to clear the ~118 pages the D-3..today window needs, or a
+  // scan would abort mid-way and the extra windows would buy nothing.
+  for (const ceiling of [...earlyCeilings, ...dailyCeilings]) {
+    assert.ok(ceiling >= 125, `a ceiling of ${ceiling} is below what one full scan needs`);
+  }
+});
+
+test("A1 runs early, and the later window refreshes rather than skipping", async () => {
+  const early = await readFile(new URL("../.github/workflows/collect-airport-recovery.yml", import.meta.url), "utf8");
+  const daily = await readFile(new URL("../.github/workflows/collect-production.yml", import.meta.url), "utf8");
+
+  // 04:07 KST is 19:07 UTC the previous day. Off-minute per ENGINEERING_DIRECTION.
+  assert.match(early, /- cron: "7 19 \* \* \*"/, "the early window must run at 04:07 KST");
+  assert.match(daily, /- cron: "7 21 \* \* \*"/, "the daily group stays at 06:07 KST");
+
+  // Gate assignments firm up through the morning, so exactly one window a day
+  // rescans. Two would double the day's cost; none would freeze the early,
+  // gate-poor picture until tomorrow.
+  assert.match(daily, /RPK_A1_RESCAN_TODAY: "true"/, "the 06:07 group refreshes the day");
+  assert.doesNotMatch(early, /a1_rescan_today: true/, "the early window keeps the same-day guard");
+
+  // Every attempt is a separate job, gated on the previous one failing.
+  const guards = [...early.matchAll(/needs\.(\w+)\.result == 'failure'/g)].map((match) => match[1]);
+  assert.deepEqual(guards, ["collect", "retry_1"]);
+});

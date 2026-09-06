@@ -61,6 +61,9 @@ const env = {
   A1_MAX_REQUESTS: Number.isSafeInteger(Number(process.env.RPK_A1_MAX_REQUESTS)) && Number(process.env.RPK_A1_MAX_REQUESTS) > 0
     ? Number(process.env.RPK_A1_MAX_REQUESTS)
     : undefined,
+  // The one window a day that refreshes today's scan rather than skipping it,
+  // so gate assignments published after the early run still reach the screen.
+  A1_RESCAN_TODAY: process.env.RPK_A1_RESCAN_TODAY === "true",
 };
 
 const results = await runSelectedProductionSources(env, requested);

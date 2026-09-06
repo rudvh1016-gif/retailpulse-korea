@@ -83,9 +83,24 @@ export const SKIPPED_ALREADY_COMPLETE_TODAY = "SKIPPED_ALREADY_COMPLETE_TODAY";
 export { SKIPPED_ALREADY_HEALTHY } from "./collection-recovery";
 
 const DEFAULT_RUNNERS = {
+  /*
+   * The same-day guard is what makes an extra A1 window free — and it is also
+   * what would freeze the day at whatever the first scan saw.
+   *
+   * A1 now runs early (04:07 KST) so today's departures are on screen before
+   * five in the morning. But gate assignments firm up during the day: a scan
+   * that early can record flights whose gate the airport has not published
+   * yet, and the busiest-gate ranking is exactly what the reader came for.
+   * With the guard alone, the later window would skip and the day would keep
+   * the early, gate-poor picture until tomorrow.
+   *
+   * So one window a day asks to rescan regardless. It is not a blind repeat:
+   * it carries its own request ceiling, it writes changed-only, and every
+   * other window still skips at zero cost once the day is recorded.
+   */
   airport_recent: async (env: CollectorEnv, now: Date): Promise<ProductionSourceOutcome> => {
     const targetDate = kstDate(now);
-    if (await hasCompleteA1RecentHistoryToday(env.DB, targetDate)) {
+    if (!env.A1_RESCAN_TODAY && await hasCompleteA1RecentHistoryToday(env.DB, targetDate)) {
       return { status: SKIPPED_ALREADY_COMPLETE_TODAY, records: 0 };
     }
     return collectAirportFlightsToday(env, now);

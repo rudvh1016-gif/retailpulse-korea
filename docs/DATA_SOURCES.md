@@ -585,18 +585,42 @@ dataset) and either remove designators from the suppression table or replace
 the reference table with the official one. Until then, `countryBasis:
 "UNVERIFIED"` rows must not be read as a nationality.
 
-## A1 daily recovery window (2026-09-03)
+## A1 early window and fast retries (2026-09-07)
 
-`collect-airport-recovery.yml` (10:07 KST) is the daily A1 counterpart of
-the A5 hourly recovery. It runs `airport_recent` then `airport_enrichment`.
-`airport_recent` reads `collector_runs` first: a COMPLETE scan already
+`collect-airport-recovery.yml` used to be a 10:07 KST recovery — four hours
+after the 06:07 primary. A blocked runner at 06:07 therefore cost the reader an
+entire morning on a screen whose whole purpose is today's gate ranking.
+
+It now runs **first, at 04:07 KST**, and a failure is retried on a fresh runner
+within about a minute. Both halves matter. Early puts today's departures on
+screen before five in the morning; a fresh runner is the only thing that helps
+against the failure this collector actually suffers — a blocked egress address,
+measured 2026-09-06 at two of eight runners unable to open a connection while
+six reached the host in under four seconds. Retrying inside the job keeps the
+address that was refused.
+
+`airport_recent` still reads `collector_runs` first: a COMPLETE scan already
 recorded for today's KST date → `SKIPPED_ALREADY_COMPLETE_TODAY` with zero
-provider requests. Only a day whose 06:07 primary failed (the 2026-09-03
-scheduled run lost every data.go.kr source to `UND_ERR_CONNECT_TIMEOUT`)
-pays for a second scan. The scan now counts every request it issues
-(`requestsIssued`, recorded in the run detail) and aborts before exceeding
-`RPK_A1_MAX_REQUESTS`; the recovery window uses 200 so primary (≤300) plus
-recovery can never exceed A1's documented 500 calls/day.
+provider requests.
+
+The 06:07 group is now the day's **refresh** rather than its first sight of the
+day, and asks to rescan (`RPK_A1_RESCAN_TODAY`) rather than skipping. Gate
+assignments firm up through the morning, so a 04:07 scan can record flights
+whose gate the airport has not published yet; without the refresh the day would
+keep that gate-poor picture until tomorrow.
+
+| window | attempts | ceiling each | worst case |
+| --- | --- | --- | --- |
+| 04:07 KST early | 3, one job apiece | 125 | 375 |
+| 06:07 KST refresh | 1 | 125 | 125 |
+| | | **day total** | **500** |
+
+500 is exactly A1's documented development quota, never above. A scan walks the
+D-3..today window at 100 rows a page and the dataset needs about 118 of them, so
+125 leaves margin; a run aborts (`a1_today_request_budget_<n>_page_<p>`) with
+rows untouched rather than exceed its ceiling. An attempt blocked at connect
+issues no requests at all, which is why the retries are nearly free in practice
+as well as bounded on paper. A normal day pays for one scan plus one refresh.
 
 ## Deduplication rule (A1 vs A2)
 
