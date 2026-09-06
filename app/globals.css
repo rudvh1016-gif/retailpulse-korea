@@ -851,6 +851,20 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .airport-gate-row strong, .airport-rank-row strong { font-size: 14px; font-weight: var(--weight-strong); letter-spacing: -.01em; }
 .airport-gate-row strong i, .airport-rank-row strong i { display: inline-block; margin-right: 7px; color: var(--muted); font-style: normal; font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .05em; }
 .airport-gate-row b, .airport-rank-row b { font-size: 14px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
+/*
+ * Gate ranking bars.
+ *
+ * The bar occupies its own grid line under the row's text, so the three
+ * columns above it stay aligned and the number is never pushed around by
+ * the drawing. Width is an inline percentage of the busiest gate, set at
+ * render: no script runs after paint and nothing is measured in the
+ * browser, which is what keeps this free on a phone.
+ */
+.airport-gate-chart .airport-gate-row { padding-bottom: 9px; row-gap: 7px; }
+.airport-gate-bar { grid-column: 1 / -1; display: block; height: 4px; min-width: 2%; background: var(--blue); }
+.airport-gate-chart .airport-gate-row:first-of-type .airport-gate-bar { height: 6px; }
+.airport-gate-chart-note { margin: 10px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+@media (prefers-reduced-motion: no-preference) { .airport-gate-bar { transition: width .2s ease-out; } }
 .airport-airline-row strong, .airport-country-row strong { min-width: 0; overflow-wrap: anywhere; }
 .airport-airline-row strong em, .airport-country-row strong em { display: block; margin-top: 3px; color: var(--muted); font-style: normal; font-size: 11px; font-weight: var(--weight-regular); letter-spacing: 0; }
 .airport-airline-row b, .airport-country-row b { text-align: right; }

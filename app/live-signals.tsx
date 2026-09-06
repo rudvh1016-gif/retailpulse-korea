@@ -636,6 +636,14 @@ const airportTodayText = {
   },
   gatesTitle: { ko: "운항 집중 게이트", en: "Busiest departure gates", zh: "航班集中登机口", ja: "運航集中ゲート" },
   gatesNote: { ko: "출발편이 많이 배정된 게이트 순위입니다. 출국장 대기시간과는 다른 정보입니다.", en: "Gates ranked by tracked departures. This is separate from checkpoint waiting time.", zh: "按出发航班数排名的登机口，与出境区等候时间不同。", ja: "出発便数で並べたゲートです。出国場の待ち時間とは別の情報です。" },
+  // What the bar is measured against, said out loud: a reader who assumes
+  // "share of all departures" would misread every row but the first.
+  gateChartNote: {
+    ko: "막대는 1위 게이트 대비 비율입니다. 전체 출발편 중 비중이 아닙니다.",
+    en: "Bars are drawn against the busiest gate, not as a share of all departures.",
+    zh: "柱形以排名第一的登机口为基准，并非占全部出发航班的比重。",
+    ja: "バーは1位のゲートを基準にした比率です。全出発便に占める割合ではありません。",
+  },
   noGateList: { ko: "게이트 정보 범위가 충분하지 않아 순위를 표시하지 않습니다.", en: "Gate coverage is insufficient to show a reliable ranking.", zh: "登机口数据覆盖不足，暂不显示排名。", ja: "ゲート情報の範囲が十分でないため、順位を表示しません。" },
   longest: { ko: "현재 가장 긴 대기", en: "Longest current wait", zh: "当前最长等候", ja: "現在最も長い待ち" },
   showAllCheckpoints: { ko: "전체 출국장 보기", en: "Show all checkpoints", zh: "查看全部出境检查口", ja: "すべての出国場を表示" },
@@ -1376,6 +1384,10 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
 
   const scopeLabel = airportTodayText.scope[lang][terminal];
   const gateList = isAll ? airport.busyDepartureGates ?? [] : airport.busyDepartureGatesByTerminal?.[terminal] ?? [];
+  // Bars are read against the busiest gate, not against the day's total: the
+  // question is which gate leads, and a share-of-total scale would flatten
+  // all five into slivers. Guarded so an all-zero list cannot divide by zero.
+  const topGateFlights = Math.max(1, ...gateList.map((row) => row.flights));
   const ranking = isAll ? airport.airlineRanking?.all ?? null : airport.airlineRanking?.byTerminal?.[terminal] ?? null;
   const noFlightsText = summary?.dayRelation === "PAST" ? airportTodayText.noFlightsForDate[lang] : airportTodayText.noFlightsToday[lang];
   const rankedCheckpoints = rankCurrentDepartureHallCheckpoints(
@@ -1541,14 +1553,34 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         aria-labelledby="airport-composition-tab-gates"
       >
         <div className="airport-composition-panel-head"><h4>{airportTodayText.gatesTitle[lang]}</h4><p>{airportTodayText.gatesNote[lang]}</p></div>
-        {gateList.length ? <ol className="airport-gate-list">
+        {/*
+          * The ranking IS the chart.
+          *
+          * The owner asked to see, at a glance, which gates send the most
+          * flights. A second chart under the same five rows would render the
+          * same five numbers twice and cost a second layout pass; a bar
+          * drawn inside each row says it once. The bar is scaled to the
+          * leader, so rank 01 is always full width and the rest are read
+          * against it — which is the comparison the question asks for.
+          *
+          * Pure CSS width, computed at render from numbers the page already
+          * holds: no chart library, no measurement, no extra request, and
+          * nothing to run after paint.
+          */}
+        {gateList.length ? <ol className="airport-gate-list airport-gate-chart">
           <li className="airport-gate-head" aria-hidden="true"><span>{airportTodayText.rankLabel[lang]}</span><strong>{isAll ? airportTodayText.terminalGateColumn[lang] : airportTodayText.gateColumn[lang]}</strong><b>{airportTodayText.departuresColumn[lang]}</b></li>
           {gateList.map((row, index) => <li className="airport-gate-row" key={`${row.terminal ?? "unknown"}-${row.gate}`}>
             <span>{String(index + 1).padStart(2, "0")}</span>
             <strong>{isAll && row.terminal ? <i>{row.terminal}</i> : null}Gate {row.gate}</strong>
             <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}</b>
+            <em
+              className="airport-gate-bar"
+              style={{ width: `${Math.max(2, Math.round((row.flights / topGateFlights) * 100))}%` }}
+              aria-hidden="true"
+            />
           </li>)}
         </ol> : <p className="airport-empty-line">{flightsCount === null ? noFlightsText : airportTodayText.noGateList[lang]}</p>}
+        {gateList.length > 0 && <p className="airport-gate-chart-note">{airportTodayText.gateChartNote[lang]}</p>}
       </section>}
 
       {compositionView === "airlines" && <section
