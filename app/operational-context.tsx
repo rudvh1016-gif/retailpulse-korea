@@ -19,7 +19,15 @@ export function SeoulContextCard({context,lang}:{context?:SeoulContext & {retrie
         <strong>{row.category}</strong><span>{commercialActivityContext(row.level??"",lang)??row.level??'—'}</span>
         <small>{row.amountMin!==null&&row.amountMax!==null?`₩${number(row.amountMin)} ~ ₩${number(row.amountMax)}`:'—'}{row.payments!==null?` · ${number(row.payments)}${t('건',' payments','笔','件')}`:''}</small>
       </li>)}</ul>
-      {context.categories.length>3&&<button type="button" className="event-list-toggle" aria-expanded={expanded} onClick={()=>setExpanded(!expanded)}>{expanded?t('접기','Show less','收起','閉じる'):t(`업종 ${context.categories.length}개 전체 보기`,`All ${context.categories.length} categories`,`查看全部${context.categories.length}个行业`,`${context.categories.length}業種をすべて見る`)}</button>}
+      {/* The hint sits inside the button, so tapping the small print works
+          too. Without it the owner found the control read as a heading for
+          the block underneath rather than as something to press. */}
+      {context.categories.length>3&&<div className="context-more">
+        <button type="button" className="event-list-toggle" aria-expanded={expanded} onClick={()=>setExpanded(!expanded)}>
+          <span>{expanded?t('접기','Show less','收起','閉じる'):t(`업종 ${context.categories.length}개 전체 보기`,`All ${context.categories.length} categories`,`查看全部${context.categories.length}个行业`,`${context.categories.length}業種をすべて見る`)}</span>
+          <small className="toggle-hint">{expanded?t('눌러서 접기','Tap to close','点击收起','タップで閉じる'):t('눌러서 펼치기','Tap to open','点击展开','タップで開く')}</small>
+        </button>
+      </div>}
     </div>}
     {weather&&<p className="context-environment"><strong>{t('주변 환경 관측','Local environment observation','当前周边环境','現在の周辺環境')}</strong><br/>
       {[weather.temperature!==null?`${weather.temperature}°C`:null,weather.humidity!==null?`${t('습도','Humidity','湿度','湿度')} ${weather.humidity}%`:null,

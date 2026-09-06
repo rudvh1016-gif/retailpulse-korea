@@ -248,3 +248,93 @@ test("the install guide uses one type scale and two weights", async ({ page }) =
   // Prose shares one rhythm; the title is the only exception.
   expect(used.heights, `line-height ratios in use: ${used.heights.join(", ")}`).toEqual(["1.30", "1.70"]);
 });
+
+/**
+ * Historical stat values stay on ONE line.
+ *
+ * The owner's phone broke "2026-07" after the hyphen and dropped the "07"
+ * into the paragraph below, and "2026-01 / 2026-03" split at the slash. A
+ * period cut in half is not a smaller period, it is a wrong one, so the
+ * value never wraps and the LABEL is what gives way. Measured on the real
+ * rendered box rather than from the stylesheet, at the widths a phone
+ * actually uses.
+ */
+for (const width of [360, 390, 430] as const) {
+  test(`every historical stat value fits on one line · ${width}px`, async ({ page }) => {
+    await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/ko/forecast");
+    await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+    const rows = page.locator(".stat-rows b");
+    await expect(rows.first()).toBeVisible();
+
+    const wrapped = await page.evaluate(() => {
+      const broken: string[] = [];
+      for (const value of Array.from(document.querySelectorAll<HTMLElement>(".stat-rows b, .stat-rows i"))) {
+        const lines = value.getClientRects().length;
+        if (lines > 1) broken.push(`${value.textContent?.trim()} (${lines} lines)`);
+      }
+      return broken;
+    });
+    expect(wrapped, `these values are split across lines: ${wrapped.join(" · ")}`).toEqual([]);
+
+    // And nothing escapes the column while staying on one line.
+    const overflow = await page.evaluate(() =>
+      Array.from(document.querySelectorAll<HTMLElement>(".stat-rows > div"))
+        .filter((row) => row.scrollWidth > row.clientWidth + 1)
+        .map((row) => row.textContent?.trim() ?? ""));
+    expect(overflow, `these rows overflow their column: ${overflow.join(" · ")}`).toEqual([]);
+  });
+}
+
+/**
+ * The "show all categories" control reads as a control.
+ *
+ * It used to be a bare full-width underline sitting directly on top of the
+ * weather paragraph, so the owner read it as that block's heading and never
+ * pressed it. It now has a box of its own, a small "눌러서 펼치기" beside the
+ * label, and real space before the block underneath.
+ */
+test("the category toggle looks pressable and is separated from the weather block", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto("/ko/myeongdong");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+
+  const toggle = page.locator(".operational-context .event-list-toggle");
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toContainText("업종 12개 전체 보기");
+  // The hint the owner asked for, and it is inside the button so tapping
+  // the small print works too.
+  await expect(toggle.locator(".toggle-hint")).toHaveText("눌러서 펼치기");
+
+  // A box, not a rule: all four borders, so it cannot read as a divider.
+  const borders = await toggle.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth];
+  });
+  expect(borders).toEqual(["1px", "1px", "1px", "1px"]);
+
+  // The weather block is its own section: a rule of its own, and real space
+  // between the button and its first word. Measured to the TEXT, because
+  // that is the distance a reader sees.
+  const separation = await page.evaluate(() => {
+    const button = document.querySelector(".operational-context .event-list-toggle");
+    const weather = document.querySelector<HTMLElement>(".context-environment");
+    const heading = weather?.querySelector("strong");
+    if (!button || !weather || !heading) return null;
+    return {
+      toBlock: weather.getBoundingClientRect().top - button.getBoundingClientRect().bottom,
+      toText: heading.getBoundingClientRect().top - button.getBoundingClientRect().bottom,
+      rule: getComputedStyle(weather).borderTopWidth,
+    };
+  });
+  expect(separation?.rule, "the weather block needs a rule of its own").toBe("1px");
+  expect(separation?.toBlock ?? 0).toBeGreaterThanOrEqual(24);
+  expect(separation?.toText ?? 0).toBeGreaterThanOrEqual(44);
+
+  // And it actually expands, with the hint following the state.
+  await toggle.click();
+  await expect(page.locator(".context-category-list li")).toHaveCount(12);
+  await expect(toggle.locator(".toggle-hint")).toHaveText("눌러서 접기");
+});
