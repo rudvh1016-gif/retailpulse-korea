@@ -726,6 +726,13 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
         todayExpectedPassengersByTerminal: arrivalToday.totalByTerminal,
         nextExpectedTimeBand: nextArrivalBand,
         peakExpectedTimeBand: arrivalToday.peak,
+        // The hourly bands, already computed from rows this request read for
+        // the departure summary — `passengerForecastRows` selects BOTH
+        // directions in one statement. Exposing them costs no extra D1 read
+        // and is what lets the Airport screen show 입국 beside 출국.
+        peakExpectedTimeBandByTerminal: arrivalToday.peakByTerminal,
+        passengerForecastTimeline: arrivalToday.timeline,
+        passengerForecastTimelineByTerminal: arrivalToday.timelineByTerminal,
         passengerForecastRetrievedAt: arrivalToday.retrievedAt,
         forecastCoverage: arrivalToday.coverage,
       },
@@ -772,6 +779,8 @@ function degradedSummary({ generatedAt, kstToday, serviceDate, dayRelation }: Pi
       arrivalForecast: {
         todayExpectedPassengersTotal: null, todayExpectedPassengersByTerminal: {},
         nextExpectedTimeBand: null, peakExpectedTimeBand: null,
+        peakExpectedTimeBandByTerminal: {},
+        passengerForecastTimeline: [], passengerForecastTimelineByTerminal: {},
         passengerForecastRetrievedAt: null,
         forecastCoverage: { all: "UNAVAILABLE", byTerminal: {} },
       },

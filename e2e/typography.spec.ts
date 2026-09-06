@@ -394,3 +394,47 @@ test("the weather guide names dust and wind, and the observation is marked as no
   await expect(guide).toContainText("미세먼지는");
   await expect(guide).toContainText("바람은");
 });
+
+/**
+ * 출국 / 입국 — the Airport screen's two directions, side by side.
+ *
+ * "지금" named a TIME, which was never the choice a reader makes here, and
+ * the arrival forecast had no way in at all even though the summary already
+ * carried it. The arrival screen deliberately shows fewer facts than the
+ * departure one: the queue, the busiest gate and the airline mix are
+ * departure-only in the official data, so showing them under an arrival
+ * heading would be showing departure facts.
+ */
+test("the airport screen separates 출국 and 입국, and 입국 shows arrival passengers only", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.goto("/ko/airport");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+
+  const nav = page.locator(".airport-context-nav");
+  await expect(nav).toContainText("출국");
+  await expect(nav).toContainText("입국");
+  await expect(nav).not.toContainText("지금");
+
+  await nav.getByRole("button", { name: "입국", exact: true }).click();
+
+  const brief = page.locator(".airport-arrival-brief");
+  await expect(brief).toBeVisible();
+  await expect(brief).toContainText("공식 예상 입국객");
+  await expect(brief).toContainText("41,300명");
+  // It is a forecast about the airport, never a count of people reaching Seoul.
+  await expect(brief).toContainText("서울로 이동하는 인원 수가 아닙니다");
+
+  // The hourly arrival flow, from the same statement the departure page reads.
+  await expect(page.locator("#airport-arrival-flow-title")).toContainText("공식 예상 입국객 흐름");
+  await expect(page.locator(".airport-forecast .airport-timeline-bars p")).toHaveCount(2);
+
+  // Per terminal, and nothing departure-only anywhere on the screen.
+  await expect(page.locator(".airport-arrival-terminals")).toContainText("25,700명");
+  await expect(page.locator(".airport-arrival-terminals")).toContainText("15,600명");
+  // Scoped to the arrival content: the screen's own intro paragraph names
+  // both directions, and that sentence is not an arrival claim.
+  const arrivalContent = page.locator(".airport-arrival-brief, .airport-detail-section");
+  for (const departureOnly of ["대기 최장", "운항 집중 게이트", "출발 운항"]) {
+    await expect(arrivalContent.filter({ hasText: departureOnly })).toHaveCount(0);
+  }
+});

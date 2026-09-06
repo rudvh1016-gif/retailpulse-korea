@@ -17,6 +17,7 @@ import {
 } from "./retailpulse-data";
 import { pageDescription, pageTitle, seoLocales, seoSlugs, siteOrigin, type SeoSlug } from "./seo-config";
 import LiveSignals, {
+  AirportArrivalSummary,
   AirportTodaySummary,
   AreaCurrentBrief,
   DateNavigator,
@@ -35,7 +36,7 @@ import { SiteUsageGuide } from "./site-usage-guide";
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
 
 type View = "today" | "airport" | "business" | "forecast" | "predictions" | "tourism-desk" | "about" | "more";
-type AirportSection = "now" | "flights" | "stores" | "mystore" | "history";
+type AirportSection = "now" | "arrivals" | "flights" | "stores" | "mystore" | "history";
 type AreaId = "myeongdong" | "hongdae" | "seongsu";
 
 // Area identity only. There is deliberately no "best time" here: a recommended
@@ -545,7 +546,7 @@ function AirportView({
         <div>
           <p className="eyebrow">INCHEON AIRPORT · OFFICIAL · KST</p>
           <h1>{localText(lang, { ko: "인천공항", en: "Incheon Airport", zh: "仁川机场", ja: "仁川空港" })}</h1>
-          <p>{localText(lang, { ko: "공식 예상 출국객, 실제 출발 운항, 현재 출국장 대기를 서로 섞지 않고 따로 보여줍니다.", en: "Official expected departures, physical departing flights and current departure-hall waits—kept separate, never blended.", zh: "分别显示官方预计出境人数、实际出发航班与当前出境区等候，互不混用。", ja: "公式予想出国者・実出発便・現在の出国場待ちを混ぜずに分けて表示します。" })}</p>
+          <p>{localText(lang, { ko: "공식 예상 출국객·입국객, 실제 출발 운항, 현재 출국장 대기를 서로 섞지 않고 따로 보여줍니다.", en: "Official expected departures and arrivals, physical departing flights and current departure-hall waits—kept separate, never blended.", zh: "分别显示官方预计出境与入境人数、实际出发航班与当前出境区等候，互不混用。", ja: "公式予想の出国者・入国者、実出発便、現在の出国場待ちを混ぜずに分けて表示します。" })}</p>
         </div>
       </div>
 
@@ -554,8 +555,15 @@ function AirportView({
       </div>
 
       <nav className="airport-context-nav" aria-label={localText(lang, { ko: "공항 정보 구분", en: "Airport sections", zh: "机场信息分类", ja: "空港情報の分類" })}>
-        {(["now", "flights", "stores", "mystore", "history"] as AirportSection[]).map((item) => <button key={item} className={section === item ? "active" : ""} onClick={() => setSection(item)} aria-current={section === item ? "page" : undefined}>
-          {item === "now" ? localText(lang, { ko: "지금", en: "NOW", zh: "现在", ja: "現在" })
+        {/*
+          * "지금" said WHEN, which was never the choice a reader is making
+          * here — the two screens differ by DIRECTION, and the arrival one
+          * had no way in at all. 출국 / 입국 sit next to each other because
+          * that is the only thing that separates them.
+          */}
+        {(["now", "arrivals", "flights", "stores", "mystore", "history"] as AirportSection[]).map((item) => <button key={item} className={section === item ? "active" : ""} onClick={() => setSection(item)} aria-current={section === item ? "page" : undefined}>
+          {item === "now" ? localText(lang, { ko: "출국", en: "DEPARTURES", zh: "出境", ja: "出国" })
+            : item === "arrivals" ? localText(lang, { ko: "입국", en: "ARRIVALS", zh: "入境", ja: "入国" })
             : item === "flights" ? localText(lang, { ko: "항공편", en: "FLIGHTS", zh: "航班", ja: "フライト" })
               : item === "stores" ? localText(lang, { ko: "매장·시설", en: "STORES", zh: "店铺·设施", ja: "店舗・施設" })
                 : item === "mystore" ? localText(lang, { ko: "내 매장", en: "MY STORE", zh: "我的店铺", ja: "自分の店舗" })
@@ -569,6 +577,7 @@ function AirportView({
       </>}
 
       {section === "now" && <AirportTodaySummary lang={lang} terminal={terminal} date={date} />}
+      {section === "arrivals" && <AirportArrivalSummary lang={lang} terminal={terminal} date={date} />}
       {section === "flights" && <FlightBoard lang={lang} terminal={terminal} date={date} />}
       {section === "stores" && <FacilityDirectory lang={lang} terminal={terminal} />}
       {section === "mystore" && <MyStoreBriefing lang={lang} />}
