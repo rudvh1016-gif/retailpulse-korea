@@ -668,10 +668,49 @@ test("입국 renders the stored forecast on a past date, not only today", async 
 
   const brief = page.locator(".airport-arrival-brief");
   await expect(brief).toBeVisible();
-  await expect(brief).toContainText("금일 전체 공식 예상 입국객");
+  // A past day has no current hour, so the day total is also the only thing
+  // that could lead — and it correctly says 선택일, not 금일.
+  await expect(brief.locator("h2")).toContainText("선택일 전체 공식 예상 입국객");
   await expect(brief).toContainText("41,300명");
+  await expect(brief).not.toContainText("금일 전체");
   await expect(page.locator(".airport-forecast .airport-timeline-bars p")).toHaveCount(2);
   await expect(page.locator(".airport-arrival-terminals")).toContainText("25,700명");
+});
+
+/**
+ * 출국처럼 — the day's total leads, in bold.
+ *
+ * The arrival screen opened with the current hour and put the day's figure in
+ * a plain list line underneath, while the departure screen next to it led with
+ * its day total in bold. The same question got a different answer depending on
+ * which tab you were on, and the owner asked for the pair to match.
+ */
+test("입국 leads with the day's total in bold, above the current hour", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(arrivalOnlyFixture({})));
+  await page.goto("/ko/airport");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+  await page.locator(".airport-context-nav").getByRole("button", { name: "입국", exact: true }).click();
+
+  const brief = page.locator(".airport-arrival-brief");
+  const heading = brief.locator("h2");
+  await expect(heading).toContainText("금일 전체 공식 예상 입국객");
+  await expect(heading).toContainText("41,300명");
+
+  // The current hour keeps its own bold line, one step down, directly after.
+  const current = brief.locator(".airport-arrival-current");
+  await expect(current).toContainText("공식 예상 입국객");
+  const weight = await current.evaluate((node) => Number(getComputedStyle(node).fontWeight));
+  expect(weight, "the current hour must still read as a headline fact").toBeGreaterThanOrEqual(600);
+
+  // Order and hierarchy, measured rather than assumed.
+  const [headingBox, currentBox] = await Promise.all([heading.boundingBox(), current.boundingBox()]);
+  expect(headingBox && currentBox && currentBox.y > headingBox.y, "the total sits above the current hour").toBe(true);
+  const headingSize = await heading.evaluate((node) => parseFloat(getComputedStyle(node).fontSize));
+  const currentSize = await current.evaluate((node) => parseFloat(getComputedStyle(node).fontSize));
+  expect(headingSize).toBeGreaterThan(currentSize);
+
+  // The total must not also appear as a list line: it moved, it was not copied.
+  await expect(brief.locator(".airport-arrival-lines")).not.toContainText("금일 전체 공식 예상 입국객");
 });
 
 test("입국 says WHY it is empty when collection is behind, instead of just 확인 불가", async ({ page }) => {

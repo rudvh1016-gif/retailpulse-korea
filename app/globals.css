@@ -824,6 +824,9 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
    brief; it carries fewer facts because fewer are published. */
 .airport-arrival-brief { padding-top: 22px; }
 .airport-arrival-brief h2 { margin: 8px 0 14px; font-size: clamp(22px, 3.4vw, 32px); font-weight: var(--weight-strong); line-height: 1.25; letter-spacing: -.03em; }
+/* The current hour, one step below the day total that now leads. Bold, so it
+   still reads as a headline fact, but never competing with the h2 above it. */
+.airport-arrival-current { display: block; max-width: 980px; margin: 0 0 14px; font-size: clamp(15px, 1.5vw, 18px); font-weight: var(--weight-strong); line-height: 1.4; letter-spacing: -.015em; }
 .airport-arrival-lines { margin: 0; padding: 0; list-style: none; }
 .airport-arrival-lines li { margin-bottom: 8px; font-size: 13px; line-height: 1.7; }
 .airport-arrival-lines li:last-child { margin-bottom: 0; }

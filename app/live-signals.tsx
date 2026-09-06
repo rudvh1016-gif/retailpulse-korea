@@ -581,7 +581,10 @@ const dayWord: Record<ForecastDayOffset, Record<Lang, string>> = {
  */
 const arrivalSectionText = {
   nowBand: { ko: "공식 예상 입국객", en: "official expected arrivals", zh: "官方预计入境旅客", ja: "公式予想入国旅客" },
-  dayTotal: { ko: "금일 전체 공식 예상 입국객", en: "Official expected arrivals today", zh: "今日官方预计入境旅客", ja: "本日の公式予想入国旅客" },
+  dayTotal: { ko: "금일 전체 공식 예상 입국객", en: "Today's total official expected arrivals", zh: "今日全天官方预计入境旅客", ja: "本日合計の公式予想入国旅客" },
+  // A past or future date is not "today", and the departure brief has always
+  // said so. The arrival one said 금일 whatever date was selected.
+  selectedDayTotal: { ko: "선택일 전체 공식 예상 입국객", en: "Selected day's total official expected arrivals", zh: "所选日期全天官方预计入境旅客", ja: "選択日合計の公式予想入国旅客" },
   peak: { ko: "오늘 피크", en: "Today's peak", zh: "今日高峰", ja: "本日のピーク" },
   flowTitle: { ko: "공식 예상 입국객 흐름", en: "Official expected arrival flow", zh: "官方预计入境客流", ja: "公式予想入国者の流れ" },
   flowOnly: { ko: "공식 예상 승객 · 실제 입국 인원 아님", en: "Official expected passengers · not an observed arrival count", zh: "官方预计旅客 · 非实际入境人数", ja: "公式予想旅客 · 実際の入国人数ではありません" },
@@ -1344,16 +1347,31 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
   const maxBand = Math.max(1, ...timeline.map((row) => row.expectedPassengers));
 
   const people = (value: number) => `${Math.round(value).toLocaleString(numberLocale)}${peopleUnit}`;
-  const headline = nowBand
+
+  /*
+   * The day's total leads, and the current hour follows it.
+   *
+   * This screen used to open with the current band and bury the day's figure
+   * in a plain list line underneath. The departure screen has always led with
+   * its day total in bold, so the same question got a different answer
+   * depending on which of two adjacent tabs you were on. The owner asked for
+   * them to match, and the day total is the one number that exists for every
+   * date the picker offers — a past or future day has no "current hour" at
+   * all, and on those days the old layout had nothing to lead with.
+   */
+  const totalLine = total === null ? null
+    : `${(summary.dayRelation === "TODAY" ? arrivalSectionText.dayTotal : arrivalSectionText.selectedDayTotal)[lang]} ${people(total)}`;
+  const nowLine = nowBand
     ? `${formatKstBand(nowBand.targetStartAt, nowBand.targetEndAt).replace(" KST", "")} ${arrivalSectionText.nowBand[lang]} ${people(nowBand.expectedPassengers)}`
-    : total !== null ? `${arrivalSectionText.dayTotal[lang]} ${people(total)}` : null;
+    : null;
+  const headline = totalLine ?? nowLine;
 
   return <>
     <section className="airport-arrival-brief" aria-labelledby="airport-arrival-title">
       <p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p>
       <h2 id="airport-arrival-title">{headline ?? emptyTitle}</h2>
+      {totalLine && nowLine && <strong className="airport-arrival-current">{nowLine}</strong>}
       <ul className="airport-arrival-lines">
-        {total !== null && nowBand && <li>{arrivalSectionText.dayTotal[lang]} {people(total)}</li>}
         {peak && <li>{arrivalSectionText.peak[lang]} {formatKstBand(peak.targetStartAt, peak.targetEndAt).replace(" KST", "")} · {people(peak.expectedPassengers)}</li>}
         {headline === null && <li className="airport-arrival-basis">{emptyBody}</li>}
         <li className="airport-arrival-basis">{arrivalSectionText.basis[lang]}</li>
