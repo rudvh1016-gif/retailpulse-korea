@@ -4,8 +4,11 @@ import test from "node:test";
 
 import {
   buildWeatherGuide,
+  describeWindStrength,
   formatWeatherDetails,
   deriveWeatherGuideKind,
+  readAirGrade,
+  worseAirGrade,
   WEATHER_GUIDE_THRESHOLDS as T,
 } from "../lib/weather-guide.ts";
 
@@ -154,5 +157,87 @@ test("the guide advises, it does not diagnose", async () => {
   for (const overclaim of ["온열질환", "저체온", "위험", "경보", "주의보", "danger", "warning", "emergency", "health"]) {
     assert.equal(shown.toLowerCase().includes(overclaim.toLowerCase()), false,
       `the weather line must not overclaim with "${overclaim}"`);
+  }
+});
+
+/**
+ * The two questions the numbers never answered.
+ *
+ * Owner, 2026-09-06: "문구에 미세먼지는 어떤지 바람의 세기는 센지도 한줄
+ * 문구로 설명해줘 기존문구에 붙여서". "바람 2.5m/s" is a fact nobody can act
+ * on unless they already know what 2.5 feels like, and the dust grade was
+ * buried in a parenthesis after a μg/m³ figure.
+ *
+ * The clause is APPENDED — the existing sentence is never replaced — and
+ * each half disappears when its own source published nothing, so the line
+ * can never imply a reading that does not exist.
+ */
+const CLEAR_DAY = {
+  temperatureTenthC: 230, dailyMinTemperatureTenthC: 190, dailyMaxTemperatureTenthC: 260,
+  precipitationProbability: 0, precipitationTypeCode: "0", humidityPercent: 70, windSpeedTenthMps: 25,
+};
+
+test("wind strength is words, and the buckets are the ones KMA uses in plain speech", () => {
+  assert.equal(describeWindStrength(0), "CALM");
+  assert.equal(describeWindStrength(39), "CALM");
+  assert.equal(describeWindStrength(40), "BREEZY");
+  assert.equal(describeWindStrength(89), "BREEZY");
+  assert.equal(describeWindStrength(90), "STRONG");
+  assert.equal(describeWindStrength(null), null);
+  assert.equal(describeWindStrength(-1), null, "a negative speed is not a light breeze");
+});
+
+test("the air grade is quoted from Seoul, never computed, and an unknown label is dropped", () => {
+  assert.equal(readAirGrade("좋음"), "GOOD");
+  assert.equal(readAirGrade("매우나쁨"), "VERY_BAD");
+  assert.equal(readAirGrade("매우 나쁨"), "VERY_BAD");
+  assert.equal(readAirGrade("Good"), null, "KORETAIL owns no PM scale, so it cannot invent a mapping");
+  assert.equal(readAirGrade(null), null);
+  // The worse of the two is what a person actually feels.
+  assert.equal(worseAirGrade("좋음", "나쁨"), "BAD");
+  assert.equal(worseAirGrade("보통", null), "MODERATE");
+  assert.equal(worseAirGrade(null, null), null);
+});
+
+test("the guide appends dust and wind to the existing sentence, in every locale", () => {
+  const base = { ko: "특별히 대비할 것 없는 무난한 날씨예요", en: "A mild day with nothing in particular to prepare for",
+    zh: "天气平稳，无需特别准备", ja: "特に備えるものがない、過ごしやすい天気です" };
+  const expected = {
+    ko: /미세먼지는 좋음이고, 바람은 약해요/,
+    en: /Air quality is good and the wind is light$/,
+    zh: /空气质量为优，风力较弱/,
+    ja: /大気質は良好で、風は弱めです/,
+  };
+  for (const lang of ["ko", "en", "zh", "ja"]) {
+    const line = buildWeatherGuide(CLEAR_DAY, lang, { pm10Grade: "좋음", pm25Grade: "좋음" });
+    assert.ok(line.startsWith(base[lang]), `${lang} must keep the original sentence, not replace it`);
+    assert.match(line, expected[lang]);
+  }
+});
+
+test("a half with no reading is left out rather than left dangling", () => {
+  const noWind = { ...CLEAR_DAY, windSpeedTenthMps: null };
+  assert.equal(buildWeatherGuide(noWind, "ko", { pm10Grade: "나쁨" }),
+    "특별히 대비할 것 없는 무난한 날씨예요. 미세먼지는 나쁨이에요");
+  assert.equal(buildWeatherGuide(CLEAR_DAY, "ko", {}),
+    "특별히 대비할 것 없는 무난한 날씨예요. 바람은 약해요");
+  // Neither reading: byte-for-byte the sentence this file shipped before.
+  assert.equal(buildWeatherGuide(noWind, "ko", {}), "특별히 대비할 것 없는 무난한 날씨예요");
+  assert.equal(buildWeatherGuide(noWind, "ko"), "특별히 대비할 것 없는 무난한 날씨예요",
+    "the extras argument stays optional, so no existing caller changes meaning");
+  // An unrecognised grade contributes nothing at all.
+  assert.equal(buildWeatherGuide(noWind, "ko", { pm10Grade: "unknown-label" }),
+    "특별히 대비할 것 없는 무난한 날씨예요");
+});
+
+test("no locale is left with a dangling conjunction or a doubled full stop", () => {
+  for (const lang of ["ko", "en", "zh", "ja"]) {
+    for (const extras of [{ pm10Grade: "보통" }, {}, { pm10Grade: "좋음", pm25Grade: "매우나쁨" }]) {
+      for (const input of [CLEAR_DAY, { ...CLEAR_DAY, windSpeedTenthMps: null }]) {
+        const line = buildWeatherGuide(input, lang, extras);
+        assert.ok(line && line.trim().length > 0);
+        assert.doesNotMatch(line, /\.\.|。。|, *$|、 *$|and *$/, `${lang} produced a broken tail: ${line}`);
+      }
+    }
   }
 });

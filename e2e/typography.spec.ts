@@ -338,3 +338,59 @@ test("the category toggle looks pressable and is separated from the weather bloc
   await expect(page.locator(".context-category-list li")).toHaveCount(12);
   await expect(toggle.locator(".toggle-hint")).toHaveText("눌러서 접기");
 });
+
+/**
+ * "왜 자꾸 안 뜨는지 모르겠어" — the screen has to answer that.
+ *
+ * When the official forecast is missing because KORETAIL has not been able
+ * to collect it, saying "이 날짜의 공식 예상 승객 자료 없음" blames the
+ * provider for our own outage and leaves the reader with no idea why. On
+ * 2026-09-06 production had 25 consecutive collection failures and no row
+ * for the next day at all, and the screen looked exactly like a day the
+ * airport had chosen not to publish.
+ */
+test("a stale forecast collection is named as ours, not as the provider having no data", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary({
+    ...SUMMARY_FIXTURE,
+    // No forecast rows for the day, and health that last succeeded long ago.
+    sources: [{ sourceId: "INCHEON_PASSENGER_FORECAST", status: "STALE", retrievedAt: "2026-08-29T13:43:00.000Z" }],
+    airport: {
+      ...SUMMARY_FIXTURE.airport,
+      forecastCoverage: { all: "UNAVAILABLE", byTerminal: { T1: "UNAVAILABLE", T2: "UNAVAILABLE" } },
+      passengerForecastTimeline: [],
+      passengerForecastTimelineByTerminal: {},
+      peakExpectedTimeBand: null,
+      peakExpectedTimeBandByTerminal: {},
+    },
+  }));
+  await page.goto("/ko/airport");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+
+  const brief = page.locator(".airport-brief, .terminal-brief-card, main").first();
+  await expect(brief).toContainText("수집이");
+  await expect(brief).toContainText("공급자 자료 없음이 아닙니다");
+  await expect(page.locator("main")).not.toContainText("이 날짜의 공식 예상 승객 자료 없음");
+});
+
+/**
+ * The weather line answers the two questions the numbers never did, and the
+ * observation block stops reading as a second, contradictory forecast.
+ */
+test("the weather guide names dust and wind, and the observation is marked as now", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.goto("/ko/myeongdong");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+
+  // Observation: its own numbers, opening with 지금, dust spelled out.
+  const environment = page.locator(".context-environment");
+  await expect(environment).toContainText("지금 29.4°C");
+  await expect(environment).toContainText("미세먼지 좋음");
+  await expect(environment).toContainText("초미세먼지 좋음");
+  // The raw parenthesised form the owner read as noise is gone.
+  await expect(environment).not.toContainText("PM10 7μg/m³ (좋음)");
+
+  // Forecast guide: the existing sentence, plus the appended clause.
+  const guide = page.locator(".signal-row", { hasText: "날씨" }).first();
+  await expect(guide).toContainText("미세먼지는");
+  await expect(guide).toContainText("바람은");
+});

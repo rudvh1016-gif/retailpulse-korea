@@ -412,3 +412,26 @@ test("event pagination reaches the 45th stored event without mixing areas or sca
   assert.ok(plan.some(row => /SEARCH .*USING.*INDEX/.test(row.detail)));
   assert.ok(!plan.some(row => /SCAN tourism_events/.test(row.detail)));
 });
+
+/**
+ * Tomorrow is probed, and the read budget does not grow.
+ *
+ * The airport passenger forecast is published a day ahead — "내일" is the one
+ * thing a reader opens it for. The availability probe walked backwards from
+ * today only, so `dateAvailability.airportPassengerForecast` could never
+ * contain tomorrow: the date picker's `max` was pinned to today and the
+ * scope note announced "공식 예상 승객 없음" for a day whose rows were sitting
+ * in D1. Owner report, 2026-09-06: "내일 출국객수가 왜 자꾸 안 뜨는지".
+ *
+ * Tomorrow replaces the OLDEST probed day rather than being added to the
+ * list, so this stays 21 statements per probe group and the measured read
+ * budget is unchanged.
+ */
+test("the date-availability probe covers tomorrow without spending another read", () => {
+  assert.match(route, /shiftKstDay\(kstToday, 1\),/,
+    "tomorrow must be probed, or a forecast published a day ahead can never be offered");
+  assert.match(route, /Array\.from\(\{ length: DATE_PICKER_DAYS - 1 \}, \(_, index\) => shiftKstDay\(kstToday, -index\)\)/,
+    "the backwards window shrinks by one so the probe count is unchanged");
+  assert.match(route, /pickerDays\.map\(\(day\) => client\.prepare\(sql\)\.bind\(/,
+    "the probe still issues one bounded statement per day");
+});

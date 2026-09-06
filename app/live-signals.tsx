@@ -22,11 +22,11 @@ import {
   safeOfficialEventHomepage,
   type EventPresentationStatus,
 } from "../lib/event-presentation";
-import { describeSourcePeriod } from "../lib/source-period";
+import { describeSourcePeriod, PERIOD_VOUCH_WINDOW_MS } from "../lib/source-period";
 import { buildFacilityCopyText, type CopyableFacility } from "../lib/facility-share";
 import { formatRepresentativeStations } from "../lib/subway-ridership";
 import { buildTerminalBriefings, type TerminalBriefing } from "../lib/terminal-briefing";
-import { buildWeatherGuide } from "../lib/weather-guide";
+import { buildWeatherGuide, worseAirGrade } from "../lib/weather-guide";
 import { comparisonText, type RangeChange } from "../lib/period-comparison";
 import { averagePaymentRange, commercialActivityContext } from "../lib/commercial-context";
 
@@ -487,6 +487,9 @@ const text = {
   stale: { ko: "지연됨", en: "STALE", zh: "已延迟", ja: "遅延" },
   sourceSeoul: { ko: "서울 실시간 도시데이터", en: "Seoul real-time city data", zh: "首尔实时城市数据", ja: "ソウルリアルタイム都市データ" },
   sourceKma: { ko: "기상청 단기예보", en: "KMA short-term forecast", zh: "气象厅短期预报", ja: "気象庁短期予報" },
+  // Named only when the sentence actually quotes an air-quality grade, so
+  // the row never credits a source it did not use.
+  sourceAirQuality: { ko: "미세먼지는 서울시 실시간 도시데이터 관측", en: "air quality observed by Seoul real-time city data", zh: "空气质量来自首尔市实时城市数据观测", ja: "大気質はソウル市リアルタイム都市データの観測" },
   sourceKto: { ko: "한국관광공사 TourAPI", en: "KTO TourAPI", zh: "韩国观光公社 TourAPI", ja: "韓国観光公社 TourAPI" },
   sourceSales: { ko: "서울시 상권분석서비스", en: "Seoul commercial-district analysis", zh: "首尔商圈分析服务", ja: "ソウル商圏分析サービス" },
 } as const;
@@ -537,6 +540,16 @@ function formatKstBand(start: string, end: string): string {
 function formatRemainingWindow(remaining: NonNullable<RemainingForecast>): string {
   const end = formatKstClock(remaining.toAt);
   return `${formatKstClock(remaining.fromAt)}–${end === "00:00" ? "24:00" : end} KST`;
+}
+
+/** "9월 5일 22:43" — enough for a reader to see how far behind collection is. */
+function formatKstDayClock(value: string, lang: Lang): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return new Intl.DateTimeFormat(airportLocale(lang), {
+    timeZone: "Asia/Seoul", month: "long", day: "numeric",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  }).format(parsed);
 }
 
 function formatKstClock(value: string): string {
@@ -790,8 +803,27 @@ function localizeAirportBrief(
   brief: AirportCurrentBrief,
   lang: Lang,
   remaining: RemainingForecast,
+  /**
+   * When collection last succeeded for the official forecast, from
+   * `source_health.last_retrieved_at`. Null when unknown.
+   *
+   * "자료 없음" and "우리가 아직 못 가져왔음" are different facts and the
+   * reader needs the second one: the owner asked "내일 출국객수가 왜 자꾸
+   * 안 뜨는지 모르겠어" while the provider had simply been unreachable for a
+   * day, which the screen described as the airport having published nothing.
+   */
+  forecastCollectedAt: string | null = null,
+  nowIso: string | null = null,
 ): string[] {
   const locale = airportLocale(lang);
+  // Collection counts as behind when the last success is older than the
+  // window every periodic collector comfortably beats. Same 48h boundary as
+  // lib/source-period.ts, so the product speaks with one voice about lag.
+  const collectedMs = forecastCollectedAt ? Date.parse(forecastCollectedAt) : Number.NaN;
+  const nowMs = nowIso ? Date.parse(nowIso) : Number.NaN;
+  const collectionBehind = Number.isFinite(collectedMs) && Number.isFinite(nowMs)
+    && nowMs - collectedMs > PERIOD_VOUCH_WINDOW_MS / 4;
+  const collectedLabel = collectionBehind ? formatKstDayClock(forecastCollectedAt!, lang) : "";
   /*
    * Order and length, both deliberate (owner review 2026-09-04).
    *
@@ -859,6 +891,16 @@ function localizeAirportBrief(
     }
     if (brief.forecastCoverage === "PARTIAL") {
       return { ko: "공식 예상 승객 일부 누락 · 피크 판단 안 함", en: "Some official bands missing · no peak inferred", zh: "部分官方时段缺失 · 不判断高峰", ja: "公式予想の一部が欠落 · ピークは判断しません" }[lang];
+    }
+    // Stale collection is named as KORETAIL's lag, never as the provider's
+    // silence — the same distinction lib/source-period.ts draws elsewhere.
+    if (collectionBehind) {
+      return {
+        ko: `공식 예상 승객 수집이 ${collectedLabel} 이후 실패 중 · 공급자 자료 없음이 아닙니다`,
+        en: `Official forecast collection has been failing since ${collectedLabel} · not a gap in the provider's data`,
+        zh: `官方预计旅客采集自${collectedLabel}起持续失败 · 并非供应方无数据`,
+        ja: `公式予想旅客の収集が${collectedLabel}以降失敗中 · 提供元にデータが無いわけではありません`,
+      }[lang];
     }
     return { ko: "이 날짜의 공식 예상 승객 자료 없음", en: "No official passenger forecast for this date", zh: "该日期无官方预计旅客数据", ja: "この日付の公式予想旅客データなし" }[lang];
   })();
@@ -1244,7 +1286,11 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     departures: flightsCount,
     topGate,
   });
-  const airportBriefLines = localizeAirportBrief(airportBrief, lang, remaining);
+  const airportBriefLines = localizeAirportBrief(
+    airportBrief, lang, remaining,
+    summary?.sources?.find((source) => source.sourceId === "INCHEON_PASSENGER_FORECAST")?.retrievedAt ?? null,
+    summary?.generatedAt ?? null,
+  );
   const comparisons = airport.periodComparisons?.[terminal];
   const passengerChanges = ([7, 28] as const).flatMap((days) => comparisons?.[days]?.passengers ? [comparisonText(comparisons[days]!.passengers!, lang, days)] : []);
   if (!comparisons?.[7]?.passengers) passengerChanges.unshift(({ ko: "전주 동요일 비교 자료 없음", en: "Same weekday last week: comparison unavailable", zh: "缺少上周同曜日比较资料", ja: "前週同曜日の比較資料なし" })[lang]);
@@ -2893,6 +2939,10 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     // One practical line under the numbers. 맑음 · 24°C · 강수확률 is correct
     // and useless to someone deciding whether to take a jacket; this says what
     // to do about it, from the same official fields, by fixed rules.
+    // The air-quality half comes from Seoul's real-time city data, not from
+    // KMA — a different source and a different reading, so the row's note
+    // names both rather than letting one sentence imply one provider.
+    const airGrades = block?.context?.weather ?? null;
     const guide = buildWeatherGuide({
       temperatureTenthC: firstTemp ?? null,
       dailyMinTemperatureTenthC: dayLow ?? null,
@@ -2901,7 +2951,8 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       precipitationTypeCode: next12.find((row) => row.precipitationTypeCode)?.precipitationTypeCode ?? null,
       humidityPercent: humidity ?? null,
       windSpeedTenthMps: wind ?? null,
-    }, lang);
+    }, lang, { pm10Grade: airGrades?.pm10Grade ?? null, pm25Grade: airGrades?.pm25Grade ?? null });
+    const quotedAir = Boolean(worseAirGrade(airGrades?.pm10Grade, airGrades?.pm25Grade));
 
     rows.push({
       key: "weather",
@@ -2910,7 +2961,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       label: text.weather[lang],
       value: parts.join(" · "),
       detail: guide ?? undefined,
-      note: text.sourceKma[lang],
+      note: quotedAir ? `${text.sourceKma[lang]} · ${text.sourceAirQuality[lang]}` : text.sourceKma[lang],
     });
   }
 
