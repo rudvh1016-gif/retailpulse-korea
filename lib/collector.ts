@@ -85,6 +85,8 @@ export interface CollectorEnv {
   retainChangeHistory?: boolean;
   /** Hard request budget for one A1 scan (recovery windows use a smaller one). */
   A1_MAX_REQUESTS?: number;
+  /** One window a day rescans today's A1 even when today is already recorded. */
+  A1_RESCAN_TODAY?: boolean;
 }
 
 function nowIso(): string {

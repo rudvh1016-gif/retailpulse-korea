@@ -44,6 +44,8 @@ interface AirportTodayEnv {
    * is touched.
    */
   A1_MAX_REQUESTS?: number;
+  /** One window a day rescans even when today is already recorded; see production-runner. */
+  A1_RESCAN_TODAY?: boolean;
 }
 
 interface A1Body {
