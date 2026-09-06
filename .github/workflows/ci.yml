@@ -4,6 +4,11 @@ on:
   push:
     branches: [main, production-v1]
   pull_request:
+  # PR #149 was opened and pushed to twice without GitHub ever creating a
+  # `pull_request` run, leaving the branch with no way to be verified except
+  # by merging it blind. A manual trigger is the supported way to re-run a
+  # check that never fired; closing and reopening a PR to kick CI is not.
+  workflow_dispatch:
 
 permissions:
   contents: read
