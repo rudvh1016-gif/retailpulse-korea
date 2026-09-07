@@ -861,3 +861,47 @@ test("Korean breaks at word boundaries, and the rule that allows it cannot be dr
   assert.deepEqual(offenders, [],
     `word-break: break-all splits Korean words; found on: ${offenders.join(", ")}`);
 });
+
+/**
+ * Static assets outside /assets/ must carry a Cache-Control rule.
+ *
+ * vinext generates a `_headers` covering /assets/* and skips generation when
+ * one already exists, so `public/_headers` is the supported way to add rules —
+ * and until it existed, everything else the Worker serves as an asset fell
+ * back to Cloudflare's default for Workers assets, which revalidates on every
+ * visit. That is a round trip per font and per icon, on every page view.
+ *
+ * The distinction the file encodes is the important part. /assets/* is
+ * content-hashed, so a byte change is a name change and `immutable` is safe
+ * there. /fonts/* is NOT: the Korean shell face is a subset generated from the
+ * product's own copy, so adding a word to the UI changes the file while its
+ * name stays the same. An immutable year would leave returning readers with
+ * tofu. This test fails if anyone ever promotes fonts to immutable.
+ */
+test("fonts are cached but never immutable, and hashed assets are", async () => {
+  const headers = await readFile(new URL("../public/_headers", import.meta.url), "utf8");
+
+  const ruleFor = (path) => {
+    const lines = headers.split("\n");
+    const at = lines.findIndex((line) => line.trim() === path);
+    assert.ok(at >= 0, `no rule for ${path}`);
+    return lines[at + 1]?.trim() ?? "";
+  };
+
+  assert.match(ruleFor("/assets/*"), /^Cache-Control: public, max-age=31536000, immutable$/,
+    "content-hashed build output should stay immutable");
+
+  const fonts = ruleFor("/fonts/*");
+  assert.match(fonts, /^Cache-Control: public, max-age=\d+/, "fonts must carry a Cache-Control");
+  assert.doesNotMatch(fonts, /immutable/,
+    "the shell font is a subset regenerated from product copy under a STABLE name; immutable would serve tofu to returning readers until the max-age expired");
+  const maxAge = Number(/max-age=(\d+)/.exec(fonts)?.[1] ?? 0);
+  assert.ok(maxAge >= 86_400, "a font revalidated more often than daily gives most of the win back");
+  assert.ok(maxAge <= 2_592_000, "a stale face should not outlive a month");
+
+  // Every file actually shipped in public/fonts must be covered by that rule.
+  const { readdir } = await import("node:fs/promises");
+  const shipped = await readdir(new URL("../public/fonts", import.meta.url));
+  assert.ok(shipped.every((name) => name.endsWith(".woff2")),
+    `public/fonts holds a file the /fonts/* rule was not written for: ${shipped.join(", ")}`);
+});

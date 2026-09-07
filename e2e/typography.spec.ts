@@ -902,3 +902,38 @@ test("the area headline fits one line on a phone, at the owner's own numbers", a
     expect(headline.lines.length, `the headline wrapped at ${width}px: ${headline.lines.join(" / ")}`).toBe(1);
   }
 });
+
+/**
+ * The shell font is requested from the head, and only the one the locale uses.
+ *
+ * A font referenced only by an @font-face `src` is not discoverable until the
+ * stylesheet has been downloaded, parsed, and matched against a laid-out
+ * element — three serialized steps before the request starts, on a connection
+ * where each one costs a round trip. Preloading it removes that chain.
+ *
+ * The second half of the assertion matters as much as the first: there are six
+ * faces totalling 3.3 MB, and preloading them all would push 3.3 MB at a
+ * reader who needs 241 KB of it. Exactly one must be preloaded per locale, and
+ * it must be the one `--font-ui` actually resolves to.
+ */
+test("each locale preloads exactly one shell font, and it is its own", async ({ page }) => {
+  const EXPECTED: Record<string, string> = {
+    ko: "/fonts/koretail-sans-variable.woff2",
+    en: "/fonts/koretail-sans-variable.woff2",
+    ja: "/fonts/noto-sans-jp-400.woff2",
+    zh: "/fonts/noto-sans-sc-400.woff2",
+  };
+
+  for (const [locale, expected] of Object.entries(EXPECTED)) {
+    const response = await page.goto(`/${locale}`);
+    const html = await response!.text();
+    const fontPreloads = [...html.matchAll(/<link[^>]*rel="preload"[^>]*as="font"[^>]*>/g)].map((match) => match[0]);
+
+    expect(fontPreloads.length, `/${locale} must preload exactly one face, got ${fontPreloads.length}`).toBe(1);
+    expect(fontPreloads[0]).toContain(`href="${expected}"`);
+    // Fonts are always fetched in CORS mode; without crossorigin the preload
+    // is not reused and the file is downloaded twice.
+    expect(fontPreloads[0], "a font preload without crossorigin is fetched twice").toContain("crossorigin");
+    expect(fontPreloads[0]).toContain('type="font/woff2"');
+  }
+});
