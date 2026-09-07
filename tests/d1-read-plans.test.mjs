@@ -94,6 +94,11 @@ const HOT_QUERIES = {
   "facilities.terminalOnly": [`${FACILITY_SELECT} WHERE terminal = ? ORDER BY name_ko LIMIT ? OFFSET ?`, ["T2", 61, 0]],
   "facilities.categoryOnly": [`${FACILITY_SELECT} WHERE category_group = ? ORDER BY name_ko LIMIT ? OFFSET ?`, ["PHARMACY", 61, 0]],
   "facilities.filteredAndSearched": [`${FACILITY_SELECT} WHERE terminal = ? AND category_group = ? AND floor = ? AND duty_area = ? AND arrival_departure = ? AND (name_ko LIKE ? OR name_en LIKE ? OR goods_brands LIKE ? OR facility_item LIKE ?) ORDER BY name_ko LIMIT ? OFFSET ?`, ["T1", "FOOD", "3층", "DUTY_FREE", "DEPARTURE", "%cafe%", "%cafe%", "%cafe%", "%cafe%", 61, 0]],
+  // 내 매장 찾기 names no terminal, because a store owner should not have to
+  // know which terminal the search needs before it will find their store.
+  // Naming EVERY terminal is what keeps the leading equality: without it the
+  // same search scans the table, which is the one thing this test exists for.
+  "facilities.searchAllTerminals": [`${FACILITY_SELECT} WHERE terminal IN (?,?,?,?,?) AND (name_ko LIKE ? OR name_en LIKE ? OR goods_brands LIKE ? OR facility_item LIKE ?) ORDER BY name_ko LIMIT ? OFFSET ?`, ["T1", "T2", "CONCOURSE", "T1_TRANSPORT", "T2_TRANSPORT", "%루이%", "%루이%", "%루이%", "%루이%", 21, 0]],
 };
 
 test("no hot read-path query scans a growing table", (context) => {

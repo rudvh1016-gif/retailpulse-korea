@@ -60,13 +60,38 @@ export async function GET(request: Request) {
   const query = param(url, "q");
   const limit = Math.min(MAX_LIMIT, Math.max(1, Number(param(url, "limit")) || LIMIT));
   const offset = Math.max(0, Number(param(url, "offset")) || 0);
-  // The index needs a leading equality; without either filter the directory
-  // opens on T1 rather than scanning every terminal.
-  const seekTerminal = terminal ?? (category ? null : DEFAULT_TERMINAL);
+  /*
+   * A search with no terminal must search EVERY terminal.
+   *
+   * The index needs a leading equality, so a caller who names neither a
+   * terminal nor a category used to be given one: T1. For the browsing
+   * directory that was harmless — it opens on a terminal and shows its tabs.
+   * For 내 매장 찾기 it was not. That screen sends only `q`, so every search
+   * was silently confined to T1, and the 584 T2 and 81 탑승동 facilities —
+   * 54% of the official directory — could not be found. Their owners were
+   * told "검색 결과가 없습니다", which is not true: the store is in the
+   * directory, we just refused to look at it.
+   *
+   * Naming every terminal keeps the leading equality the read plan needs.
+   * EXPLAIN QUERY PLAN over the real migrations:
+   *   terminal = ? + LIKE   -> SEARCH USING INDEX airport_facility_terminal_category_idx
+   *   terminal IN (5) + LIKE -> SEARCH USING INDEX airport_facility_terminal_category_idx
+   *   no terminal filter     -> SCAN airport_facility          <- what we must not do
+   * so the table is still never scanned (tests/d1-read-plans.test.mjs).
+   *
+   * The browsing default stays: with no query and no category the directory
+   * still opens on one terminal rather than pouring 1,221 rows into a list.
+   */
+  const seekTerminal = terminal ?? (category || query ? null : DEFAULT_TERMINAL);
+  const seekEveryTerminal = !terminal && !category && Boolean(query);
 
   const where: string[] = [];
   const binds: unknown[] = [];
   if (seekTerminal) { where.push("terminal = ?"); binds.push(seekTerminal); }
+  else if (seekEveryTerminal) {
+    where.push(`terminal IN (${FACILITY_TERMINALS.map(() => "?").join(",")})`);
+    binds.push(...FACILITY_TERMINALS);
+  }
   if (category) { where.push("category_group = ?"); binds.push(category); }
   if (floor) { where.push("floor = ?"); binds.push(floor); }
   if (dutyArea) { where.push("duty_area = ?"); binds.push(dutyArea); }

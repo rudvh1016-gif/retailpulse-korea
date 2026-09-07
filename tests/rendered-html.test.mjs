@@ -826,3 +826,82 @@ test("no stylesheet rules survive for components that no longer exist", async ()
     assert.doesNotMatch(css, new RegExp(dead.replace(".", "\\.")), `${dead} styles a component that was removed`);
   }
 });
+
+/**
+ * Korean must be allowed to break only at word boundaries.
+ *
+ * `word-break: normal` — the CSS initial value, and what all but two rules in
+ * this stylesheet were using — lets WebKit break between two Hangul syllables,
+ * which is how "약간 붐빔" came to be photographed as "약간 붐" / "빔" on an
+ * iPhone. Chromium does not do this, so no Playwright test in this repository
+ * can catch its loss; that is precisely why the declaration is pinned here.
+ *
+ * The pairing is not decoration. `keep-all` alone raises an element's
+ * min-content width from one syllable to one whole word, which can widen a
+ * grid or flex column and move a layout. `overflow-wrap: anywhere` is the one
+ * value that both rescues a word too long for its line AND keeps min-content
+ * measured at a single character, so nothing grows. `break-word` does not
+ * participate in min-content and would not hold this together.
+ */
+test("Korean breaks at word boundaries, and the rule that allows it cannot be dropped", async () => {
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(css, /^body \{ word-break: keep-all; overflow-wrap: anywhere; \}$/m,
+    "the root rule must set BOTH: keep-all for correct Korean breaks, anywhere so min-content does not grow");
+
+  // It has to be inherited from the root. Setting it on a handful of rules is
+  // what the product did before, and it left ~118 of ~120 rules breaking words.
+  const rootIndex = css.indexOf("body { word-break: keep-all");
+  const bodyBase = css.indexOf("body { margin: 0;");
+  assert.ok(rootIndex > bodyBase && bodyBase !== -1,
+    "the rule belongs with the other root declarations, not buried in a component block");
+
+  // No later rule may reintroduce character-level breaking for Korean.
+  const offenders = [...css.matchAll(/^(?!body )([^\n{]+)\{([^}]*word-break:\s*break-all[^}]*)\}/gm)]
+    .map((match) => match[1].trim());
+  assert.deepEqual(offenders, [],
+    `word-break: break-all splits Korean words; found on: ${offenders.join(", ")}`);
+});
+
+/**
+ * Static assets outside /assets/ must carry a Cache-Control rule.
+ *
+ * vinext generates a `_headers` covering /assets/* and skips generation when
+ * one already exists, so `public/_headers` is the supported way to add rules —
+ * and until it existed, everything else the Worker serves as an asset fell
+ * back to Cloudflare's default for Workers assets, which revalidates on every
+ * visit. That is a round trip per font and per icon, on every page view.
+ *
+ * The distinction the file encodes is the important part. /assets/* is
+ * content-hashed, so a byte change is a name change and `immutable` is safe
+ * there. /fonts/* is NOT: the Korean shell face is a subset generated from the
+ * product's own copy, so adding a word to the UI changes the file while its
+ * name stays the same. An immutable year would leave returning readers with
+ * tofu. This test fails if anyone ever promotes fonts to immutable.
+ */
+test("fonts are cached but never immutable, and hashed assets are", async () => {
+  const headers = await readFile(new URL("../public/_headers", import.meta.url), "utf8");
+
+  const ruleFor = (path) => {
+    const lines = headers.split("\n");
+    const at = lines.findIndex((line) => line.trim() === path);
+    assert.ok(at >= 0, `no rule for ${path}`);
+    return lines[at + 1]?.trim() ?? "";
+  };
+
+  assert.match(ruleFor("/assets/*"), /^Cache-Control: public, max-age=31536000, immutable$/,
+    "content-hashed build output should stay immutable");
+
+  const fonts = ruleFor("/fonts/*");
+  assert.match(fonts, /^Cache-Control: public, max-age=\d+/, "fonts must carry a Cache-Control");
+  assert.doesNotMatch(fonts, /immutable/,
+    "the shell font is a subset regenerated from product copy under a STABLE name; immutable would serve tofu to returning readers until the max-age expired");
+  const maxAge = Number(/max-age=(\d+)/.exec(fonts)?.[1] ?? 0);
+  assert.ok(maxAge >= 86_400, "a font revalidated more often than daily gives most of the win back");
+  assert.ok(maxAge <= 2_592_000, "a stale face should not outlive a month");
+
+  // Every file actually shipped in public/fonts must be covered by that rule.
+  const { readdir } = await import("node:fs/promises");
+  const shipped = await readdir(new URL("../public/fonts", import.meta.url));
+  assert.ok(shipped.every((name) => name.endsWith(".woff2")),
+    `public/fonts holds a file the /fonts/* rule was not written for: ${shipped.join(", ")}`);
+});
