@@ -226,3 +226,44 @@ test("every mapped facility names the terminal it sits in", async () => {
   const missing = file.mappings.filter((row) => !row.terminal);
   assert.equal(missing.length, 0, `mapped facilities with no terminal: ${missing.map((row) => row.facilityId).join(", ")}`);
 });
+
+/**
+ * 내 매장 찾기 must be able to find a store in any terminal.
+ *
+ * The endpoint needs a leading equality on `terminal` or `category_group` or
+ * its query scans the table, so a caller who named neither used to be given
+ * one: T1. For the browsing directory that is harmless — it opens on a
+ * terminal and shows tabs to change it. For My Store it was not. That screen
+ * sends only `q`, so every search was silently confined to T1 and the 584 T2
+ * and 81 탑승동 facilities — 54% of the official directory — could not be
+ * found. Their owners were told "검색 결과가 없습니다", which is false: the
+ * store is in the directory.
+ *
+ * Naming every terminal keeps the leading equality (the plan is asserted in
+ * tests/d1-read-plans.test.mjs as facilities.searchAllTerminals), so this can
+ * be fixed without giving up the read-plan guarantee.
+ */
+test("a name search with no terminal searches every terminal, not just T1", async () => {
+  const route = await readFile(new URL("../app/api/airport/facilities/route.ts", import.meta.url), "utf8");
+
+  // The default may only apply to BROWSING — no query, no category.
+  assert.match(route, /const seekTerminal = terminal \?\? \(category \|\| query \? null : DEFAULT_TERMINAL\);/,
+    "a search must not fall back to a single default terminal");
+  assert.match(route, /const seekEveryTerminal = !terminal && !category && Boolean\(query\);/);
+
+  // ...and when it applies, it must name every terminal rather than dropping
+  // the filter, which would scan the table.
+  assert.match(route, /terminal IN \(\$\{FACILITY_TERMINALS\.map\(\(\) => "\?"\)\.join\(","\)\}\)/,
+    "every terminal must be named so the index still seeks");
+  assert.match(route, /binds\.push\(\.\.\.FACILITY_TERMINALS\);/);
+
+  // The browsing default is deliberately kept: with no query and no category
+  // the directory should still open on one terminal, not pour 1,221 rows out.
+  assert.match(route, /const DEFAULT_TERMINAL = "T1";/);
+
+  // And the screen that exposed the bug still sends no terminal — if it ever
+  // starts sending one, this test's premise is gone and it should be revisited.
+  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  assert.match(signals, /\/api\/airport\/facilities\?q=\$\{encodeURIComponent\(trimmed\)\}&limit=20/,
+    "My Store searches by name alone; that is the whole point of the fix");
+});
