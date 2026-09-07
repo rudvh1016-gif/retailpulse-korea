@@ -342,7 +342,10 @@ nav.bottom-nav { display: none; }
 .history-kpis > div + div { padding-left: 15px; }
 .history-kpis > div:first-child { grid-column: 1 / 3; border-right: 0; border-bottom: 1px solid var(--line); }
 .history-kpis > div:nth-child(2) { padding-left: 0; }
-.history-kpis strong { margin-top: 23px; font-size: 31px; }
+/* 31px put "19,011,163명" 339px wide inside a 354px column — technically one
+   line, visually wall-to-wall. The figure is the point of the card, not the
+   whole card. */
+.history-kpis strong { margin-top: 19px; font-size: 25px; }
 
 .business-mode { min-height: 57px; gap: 20px; overflow-x: auto; }
 .business-mode button { flex: 0 0 auto; font-size: 10px; }
@@ -474,7 +477,12 @@ nav.bottom-nav { display: none; }
  * the chart simply fits whatever column it is given, and the box grows with
  * its content rather than trapping it.
  */
-.airport-timeline-bars { position: relative; min-width: 0; height: auto; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(44px, 1fr); align-items: stretch; gap: 5px; overflow-x: auto; overscroll-behavior-x: contain; padding: 14px 0 6px; }
+/* The horizontal padding is not decoration: the 현재 시각 label is centred on
+   its band and is wider than one 44px column, so on the first or last band it
+   overhangs the content box and `overflow-x: auto` clips it to half a label.
+   Padding is part of the scrollable area, so the overhang lands inside it and
+   the label stays whole wherever the marker falls. */
+.airport-timeline-bars { position: relative; min-width: 0; height: auto; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(44px, 1fr); align-items: stretch; gap: 5px; overflow-x: auto; overscroll-behavior-x: contain; padding: 14px 28px 6px; }
 .airport-timeline-bars p { position: relative; min-width: 0; height: 158px; margin: 0; display: grid; grid-template-rows: 1fr auto auto; gap: 5px; align-items: end; text-align: center; }
 /*
  * Current-time marker, today only. A thin rule on the left edge of the band
@@ -485,7 +493,15 @@ nav.bottom-nav { display: none; }
 /* Explicit height: do not depend on an empty absolute grid item's automatic
  * stretch between top/bottom (the label can survive while its rule collapses).
  * Keep the rule full-height even when this hour's forecast bar is tiny. */
-.airport-timeline-bars p.now::before { content: ""; position: absolute; z-index: 2; left: var(--now-offset, 0%); top: -8px; height: calc(100% - 28px); width: 0; align-self: start; border-left: 1.5px dashed var(--ink); pointer-events: none; }
+/* The 현재 시각 marker is a PAINTED BOX, not a border on a zero-width box.
+   It used to be `width: 0` with `border-left: 1.5px dashed`. Chromium draws
+   that; WebKit — every browser on iOS — frequently does not paint a border on
+   a box with no width at all, which is why the owner saw the line on a desktop
+   and never on their phone, on both 출국 and 입국. A repeating gradient is a
+   real 2px-wide box with a background, so there is no zero-size edge case to
+   fall through, it is crisper on a high-DPI screen, and it costs no request.
+   `margin-left` re-centres it on the offset the border used to sit at. */
+.airport-timeline-bars p.now::before { content: ""; position: absolute; z-index: 2; left: var(--now-offset, 0%); top: -8px; height: calc(100% - 28px); width: 2px; margin-left: -1px; background: repeating-linear-gradient(to bottom, var(--ink) 0 4px, transparent 4px 8px); pointer-events: none; }
 .airport-timeline-bars p.now::after { content: attr(data-now-label); position: absolute; z-index: 3; left: var(--now-offset, 0%); top: -14px; transform: translateX(-50%); padding: 2px 6px; background: var(--ink); color: var(--paper); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .04em; white-space: nowrap; border-radius: 3px; pointer-events: none; }
 .airport-timeline-bars i { width: 100%; max-width: 48px; min-height: 2px; justify-self: center; display: block; background: #d9d9d9; border-top: 1px solid var(--muted); }
 .airport-timeline-bars .peak i { background: var(--ink); border-color: var(--ink); }
@@ -1110,8 +1126,16 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .flight-rows li { grid-template-columns: 52px 1fr auto; }
 .flight-rows i { grid-column: 2 / -1; }
 .date-nav { gap: 10px; }
-.history-bars li { grid-template-columns: 62px 1fr; }
-.history-bars b { grid-column: 2 / -1; text-align: right; }
+/* The month, its bar and its value stay on ONE row on a phone.
+   This used to drop to `62px 1fr` with the value forced onto a second row,
+   right-aligned — so every month became a 62px-tall block with a number
+   floating alone under a bar, and twelve of them read as a broken table
+   rather than a chart. Three columns fit at 354px once the type is sized for
+   a phone: 54 + gap + bar + gap + a tabular value that never wraps. */
+.history-bars li { grid-template-columns: 54px 1fr auto; gap: 8px; padding: 5px 0; }
+.history-bars span { font-size: 10px; }
+.history-bars b { font-size: 11px; }
+.history-bars i { height: 6px; }
 }
 
 @media (max-width: 365px) {

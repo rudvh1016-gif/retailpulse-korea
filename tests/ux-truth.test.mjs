@@ -194,9 +194,30 @@ test("the current-time rule follows the exact minute inside its forecast band", 
   assert.match(signals, /const nowBandDuration = nowBand \? Date\.parse\(nowBand\.targetEndAt\) - Date\.parse\(nowBand\.targetStartAt\) : 0/);
   assert.match(signals, /const nowBandProgress = nowBand && nowBandDuration > 0/);
   assert.match(signals, /"--now-offset": `\$\{nowBandProgress \* 100\}%`/);
-  assert.match(styles, /\.airport-timeline-bars p\.now::before \{[^}]*left: var\(--now-offset, 0%\)[^}]*border-left: 1\.5px dashed/s);
-  assert.match(styles, /\.airport-timeline-bars p\.now::before \{[^}]*height: calc\(100% - 28px\)[^}]*width: 0/,
+  assert.match(styles, /\.airport-timeline-bars p\.now::before \{[^}]*left: var\(--now-offset, 0%\)/s,
+    "the rule must sit at the exact minute, not at the band edge");
+  assert.match(styles, /\.airport-timeline-bars p\.now::before \{[^}]*height: calc\(100% - 28px\)/,
     "empty absolute grid marker must have explicit height, not automatic top/bottom stretch");
+
+  /*
+   * The rule is a PAINTED BOX, and this used to pin the opposite.
+   *
+   * It asserted `width: 0` with `border-left: 1.5px dashed` — which is what
+   * the marker was, and what WebKit (every browser on iOS) frequently refuses
+   * to paint: a border on a box with no width at all. The line showed on a
+   * desktop and never on the owner's phone, on both 출국 and 입국, while this
+   * test held the broken shape in place.
+   *
+   * What the marker actually has to be is a box with a real width and a
+   * background. The explicit height above is still required for the same
+   * reason it always was.
+   */
+  const marker = /\.airport-timeline-bars p\.now::before \{([^}]*)\}/.exec(styles)?.[1] ?? "";
+  assert.match(marker, /width: [1-9]/, "a zero-width marker is the shape iOS does not paint");
+  assert.match(marker, /background: repeating-linear-gradient/,
+    "the dashes must be painted as a background, not drawn as a border");
+  assert.doesNotMatch(marker, /border-left:/,
+    "a border on this box is exactly what stopped rendering on iOS");
   assert.match(styles, /\.airport-timeline-bars p\.now::after \{[^}]*left: var\(--now-offset, 0%\)[^}]*transform: translateX\(-50%\)/s);
 });
 
