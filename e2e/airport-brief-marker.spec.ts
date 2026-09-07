@@ -42,8 +42,12 @@ for (const clock of ["11:57", "21:03", "23:59"]) {
         return {
           tall: parseFloat(line.height) >= 110,
           visible: line.display !== "none" && line.visibility === "visible" && Number(line.opacity) > 0,
-          dashed: line.borderLeftStyle === "dashed" && parseFloat(line.borderLeftWidth) >= 1,
-          dark: line.borderLeftColor === "rgb(17, 17, 17)",
+          // A painted box, not a border. `width: 0` with `border-left: dashed`
+          // is what this used to assert, and it is the shape WebKit — every
+          // browser on iOS — frequently declines to paint: the rule showed on
+          // a desktop and never on the owner's phone while this test passed.
+          dashed: parseFloat(line.width) >= 1 && line.backgroundImage.includes("repeating-linear-gradient"),
+          dark: line.backgroundImage.includes("rgb(17, 17, 17)"),
           aligned: Math.abs(parseFloat(label.left) - parseFloat(line.left)) < 1,
           inside: x >= viewport.left && x <= viewport.right,
         };

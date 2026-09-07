@@ -758,3 +758,135 @@ test("the date note above 입국 never reports missing flight records", async ({
   await page.locator(".airport-context-nav").getByRole("button", { name: "입국", exact: true }).click();
   await expect(page.locator(".date-scope-note")).toHaveCount(0);
 });
+
+/**
+ * The 현재 시각 marker has to be a PAINTED BOX, not a border on a zero-width one.
+ *
+ * It was `width: 0` with `border-left: 1.5px dashed`. Chromium draws that, so
+ * the desktop showed a line and every test passed — and WebKit, which is every
+ * browser on iOS, frequently does not paint a border on a box with no width at
+ * all. The owner saw the marker on a computer and never on their phone, on
+ * both 출국 and 입국, and said so three times.
+ *
+ * Asserting "a line is visible" in Chromium would keep passing through exactly
+ * that regression, because Chromium never had it. So this asserts the SHAPE of
+ * the thing instead: a real width, and a painted background rather than a
+ * border. That property is what makes it render on both engines, and it is
+ * what must not be quietly reverted.
+ */
+async function nowMarker(page: import("@playwright/test").Page) {
+  return page.evaluate(() => {
+    const marker = document.querySelector<HTMLElement>(".airport-timeline-bars p.now");
+    if (!marker) return null;
+    const before = getComputedStyle(marker, "::before");
+    return {
+      width: parseFloat(before.width),
+      height: parseFloat(before.height),
+      backgroundImage: before.backgroundImage,
+      borderLeftWidth: parseFloat(before.borderLeftWidth),
+      visibility: before.visibility,
+      opacity: Number(before.opacity),
+      zIndex: before.zIndex,
+    };
+  });
+}
+
+for (const section of ["출국", "입국"] as const) {
+  test(`the 현재 시각 marker is a painted box on ${section}, at phone width`, async ({ page }) => {
+    await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.goto("/ko/airport");
+    await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+    if (section === "입국") {
+      await page.locator(".airport-context-nav").getByRole("button", { name: "입국", exact: true }).click();
+    }
+    await expect(page.locator(".airport-timeline-bars p.now").first()).toBeVisible();
+
+    const marker = await nowMarker(page);
+    expect(marker, `${section} has no current-time band to mark`).toBeTruthy();
+
+    // A real box. A zero-width box is the exact shape WebKit refuses to paint.
+    expect(marker!.width, "the marker must have a real width, not be a border on a zero-width box").toBeGreaterThan(0);
+    expect(marker!.height, "the marker must span the chart").toBeGreaterThan(40);
+
+    // Painted as a background, so there is no border-on-empty-box edge case.
+    expect(marker!.backgroundImage, "the marker must be painted, not drawn as a border").not.toBe("none");
+    expect(marker!.borderLeftWidth, "a border is what stopped rendering on iOS; do not go back to it").toBe(0);
+
+    expect(marker!.visibility).toBe("visible");
+    expect(marker!.opacity).toBeGreaterThan(0);
+  });
+}
+
+/**
+ * 과거 — the month, its bar and its value stay on ONE row on a phone.
+ *
+ * The mobile rule collapsed the three-column row to `62px 1fr` and pushed the
+ * value onto a second row, right-aligned. Each month became a 62px block with
+ * a number floating alone under a bar, and a twelve-month range read as a
+ * broken table rather than a chart. The owner has now reported this twice, and
+ * nothing in the suite covered this screen — the one-line assertions that do
+ * exist are for `.stat-rows` on 예측, which is a different component.
+ */
+for (const width of [360, 390, 430] as const) {
+  test(`과거 keeps month, bar and value on one row · ${width}px`, async ({ page }) => {
+    await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/ko/airport");
+    await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+    await page.locator(".airport-context-nav").getByRole("button", { name: "과거", exact: true }).click();
+    await expect(page.locator(".history-bars li").first()).toBeVisible();
+
+    const rows = await page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>(".history-bars li")).map((li) => {
+      const month = li.querySelector<HTMLElement>("span");
+      const value = li.querySelector<HTMLElement>("b");
+      const bar = li.querySelector<HTMLElement>("i");
+      const box = (el: HTMLElement | null) => (el ? el.getBoundingClientRect() : null);
+      const m = box(month), v = box(value), b = box(bar);
+      return {
+        text: `${month?.textContent ?? ""} ${value?.textContent ?? ""}`.trim(),
+        height: li.getBoundingClientRect().height,
+        columns: getComputedStyle(li).gridTemplateColumns.split(" ").length,
+        // Same row means the value's vertical centre sits inside the month's box.
+        sameRow: !!(m && v && v.top < m.bottom && v.bottom > m.top),
+        barBetween: !!(m && v && b && b.left >= m.right - 1 && b.right <= v.left + 1),
+        valueLines: value?.getClientRects().length ?? 0,
+      };
+    }));
+
+    expect(rows.length, "the history chart rendered no months").toBeGreaterThan(0);
+
+    for (const row of rows) {
+      expect(row.columns, `"${row.text}" collapsed to ${row.columns} columns; the value drops to its own row below two`).toBe(3);
+      expect(row.sameRow, `"${row.text}" put its value on a separate row from its month`).toBe(true);
+      expect(row.barBetween, `"${row.text}" no longer reads month → bar → value left to right`).toBe(true);
+      expect(row.valueLines, `"${row.text}" wrapped its value`).toBe(1);
+      // 62px was the broken two-row height; a single row is roughly half that.
+      expect(row.height, `"${row.text}" is ${Math.round(row.height)}px tall — that is the two-row layout again`).toBeLessThan(40);
+    }
+  });
+}
+
+test("과거 headline figures are sized for a phone, not for a desktop", async ({ page }) => {
+  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto("/ko/airport");
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+  await page.locator(".airport-context-nav").getByRole("button", { name: "과거", exact: true }).click();
+
+  const figures = await page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>(".history-kpis strong")).map((el) => ({
+    text: el.textContent ?? "",
+    fontSize: parseFloat(getComputedStyle(el).fontSize),
+    lines: el.getClientRects().length,
+    overflows: el.scrollWidth > el.clientWidth + 1,
+  })));
+
+  expect(figures.length).toBeGreaterThan(0);
+  for (const figure of figures) {
+    expect(figure.lines, `"${figure.text}" wrapped`).toBe(1);
+    expect(figure.overflows, `"${figure.text}" overflows its card`).toBe(false);
+    // 31px put an eight-digit total 339px wide inside a 354px column.
+    expect(figure.fontSize, `"${figure.text}" is ${figure.fontSize}px on a phone`).toBeLessThanOrEqual(27);
+    expect(figure.fontSize, "still the card's headline figure").toBeGreaterThanOrEqual(18);
+  }
+});
