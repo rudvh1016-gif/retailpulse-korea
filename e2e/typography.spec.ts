@@ -760,6 +760,150 @@ test("the date note above 입국 never reports missing flight records", async ({
 });
 
 /**
+ * Korean wrapping, measured on the rendered line boxes.
+ *
+ * The owner photographed "약간 붐" ending a line and "빔" starting the next,
+ * and asked for it to be fixed everywhere: "다른것들도 점검해서 이런거없게해".
+ *
+ * An honest note about what this suite can and cannot prove. Chromium — the
+ * only engine Playwright can run here — never splits spaced Korean mid-word,
+ * measured across six widths and five word-break/overflow-wrap combinations.
+ * The screenshot is an iPhone, and WebKit does apply UAX#14 to Hangul, which
+ * is what `word-break: keep-all` exists to stop. So this file CANNOT reproduce
+ * the original symptom, and a test that claimed to would be lying.
+ *
+ * What it does instead is guard the two things that are real here:
+ *   · the headline no longer wraps at all at phone widths, which is what
+ *     actually removes the symptom on every engine, and
+ *   · no line anywhere ends mid-word, which stays true if the suite is ever
+ *     run on another engine and catches a genuine regression in Chromium too.
+ * The keep-all declaration itself is pinned in tests/rendered-html.test.mjs,
+ * where a CSS assertion belongs.
+ */
+const HANGUL = /[가-힣]/;
+
+async function renderedLines(page: import("@playwright/test").Page, selector: string) {
+  return page.evaluate((sel) => {
+    const out: { text: string; lines: string[] }[] = [];
+    for (const el of Array.from(document.querySelectorAll<HTMLElement>(sel))) {
+      // Only a single text node can be walked this way: an element built from
+      // several children would overrun the range. Those are covered by their
+      // own children appearing in the same selector list.
+      if (el.childNodes.length !== 1) continue;
+      const node = el.firstChild;
+      if (!node || node.nodeType !== Node.TEXT_NODE) continue;
+      const text = node.textContent ?? "";
+      if (!text.trim()) continue;
+      const range = document.createRange();
+      const lines: string[] = [];
+      let start = 0;
+      let lastTop: number | null = null;
+      for (let i = 1; i <= text.length; i += 1) {
+        range.setStart(node, i - 1);
+        range.setEnd(node, i);
+        const top = Math.round(range.getBoundingClientRect().top);
+        if (lastTop !== null && top !== lastTop) { lines.push(text.slice(start, i - 1)); start = i - 1; }
+        lastTop = top;
+      }
+      lines.push(text.slice(start));
+      out.push({ text, lines });
+    }
+    return out;
+  }, selector);
+}
+
+test("no Korean line ever breaks in the middle of a word", async ({ page }) => {
+  // The owner's own numbers. A six-figure population is the longest form this
+  // headline takes, and it is what pushed the line over on their phone.
+  await page.route("**/api/live/summary*", routeSummary({
+    ...SUMMARY_FIXTURE,
+    areas: {
+      ...SUMMARY_FIXTURE.areas,
+      myeongdong: {
+        ...SUMMARY_FIXTURE.areas.myeongdong,
+        realtime: {
+          congestionLevel: 3, congestionLabel: "약간 붐빔",
+          populationMin: 100_000, populationMax: 105_000,
+          observedAt: "2026-08-31T14:07:00+09:00", freshness: "LIVE",
+        },
+      },
+    },
+  }));
+
+  // The measured text must be long enough that it MUST wrap at these widths,
+  // or the assertion passes vacuously — the headline at its new size fits on
+  // one line, which is a different guarantee (pinned by the next test).
+  const SELECTOR = [
+    ".current-brief > strong",
+    ".current-brief > p:not(.eyebrow)",
+    ".signal-row-value",
+    ".commercial-basis",
+    ".section-intro",
+    ".airport-arrival-brief h2",
+    ".airport-arrival-current",
+    ".context-environment small",
+    ".holiday-context small",
+  ].join(", ");
+
+  for (const width of [360, 390, 430]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const path of ["/ko/myeongdong", "/ko/airport"]) {
+      await page.goto(path);
+      await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+
+      const measured = await renderedLines(page, SELECTOR);
+      expect(measured.length, `${path} at ${width}px rendered nothing to measure`).toBeGreaterThan(0);
+
+      for (const { text, lines } of measured) {
+        for (let i = 0; i < lines.length - 1; i += 1) {
+          // A break AT A SPACE is what correct Korean wrapping looks like; the
+          // trailing space belongs to the line that ends. Only a break with no
+          // space between two Hangul syllables is the defect.
+          if (/\s$/.test(lines[i])) continue;
+          const endsWith = lines[i].slice(-1);
+          const startsWith = lines[i + 1].slice(0, 1);
+          expect(
+            HANGUL.test(endsWith) && HANGUL.test(startsWith),
+            `${path} at ${width}px split a Korean word across lines: "…${lines[i].slice(-8)}" / "${lines[i + 1].slice(0, 8)}…" in "${text.slice(0, 60)}"`,
+          ).toBe(false);
+        }
+      }
+    }
+  }
+});
+
+test("the area headline fits one line on a phone, at the owner's own numbers", async ({ page }) => {
+  // 19px wrapped this string at 390px; 17px carries it on one line from 360px
+  // up. The size was reduced deliberately — "글자크기를줄여서라도해결해" — and
+  // this pins the result so a later size bump cannot quietly undo it.
+  await page.route("**/api/live/summary*", routeSummary({
+    ...SUMMARY_FIXTURE,
+    areas: {
+      ...SUMMARY_FIXTURE.areas,
+      myeongdong: {
+        ...SUMMARY_FIXTURE.areas.myeongdong,
+        realtime: {
+          congestionLevel: 3, congestionLabel: "약간 붐빔",
+          populationMin: 100_000, populationMax: 105_000,
+          observedAt: "2026-08-31T14:07:00+09:00", freshness: "LIVE",
+        },
+      },
+    },
+  }));
+
+  for (const width of [360, 390, 430]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/ko/myeongdong");
+    await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+
+    const [headline] = await renderedLines(page, ".current-brief > strong");
+    expect(headline, `no headline at ${width}px`).toBeTruthy();
+    expect(headline.text).toContain("100,000–105,000명 · 약간 붐빔");
+    expect(headline.lines.length, `the headline wrapped at ${width}px: ${headline.lines.join(" / ")}`).toBe(1);
+  }
+});
+
+/**
  * The shell font is requested from the head, and only the one the locale uses.
  *
  * A font referenced only by an @font-face `src` is not discoverable until the

@@ -828,6 +828,41 @@ test("no stylesheet rules survive for components that no longer exist", async ()
 });
 
 /**
+ * Korean must be allowed to break only at word boundaries.
+ *
+ * `word-break: normal` — the CSS initial value, and what all but two rules in
+ * this stylesheet were using — lets WebKit break between two Hangul syllables,
+ * which is how "약간 붐빔" came to be photographed as "약간 붐" / "빔" on an
+ * iPhone. Chromium does not do this, so no Playwright test in this repository
+ * can catch its loss; that is precisely why the declaration is pinned here.
+ *
+ * The pairing is not decoration. `keep-all` alone raises an element's
+ * min-content width from one syllable to one whole word, which can widen a
+ * grid or flex column and move a layout. `overflow-wrap: anywhere` is the one
+ * value that both rescues a word too long for its line AND keeps min-content
+ * measured at a single character, so nothing grows. `break-word` does not
+ * participate in min-content and would not hold this together.
+ */
+test("Korean breaks at word boundaries, and the rule that allows it cannot be dropped", async () => {
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(css, /^body \{ word-break: keep-all; overflow-wrap: anywhere; \}$/m,
+    "the root rule must set BOTH: keep-all for correct Korean breaks, anywhere so min-content does not grow");
+
+  // It has to be inherited from the root. Setting it on a handful of rules is
+  // what the product did before, and it left ~118 of ~120 rules breaking words.
+  const rootIndex = css.indexOf("body { word-break: keep-all");
+  const bodyBase = css.indexOf("body { margin: 0;");
+  assert.ok(rootIndex > bodyBase && bodyBase !== -1,
+    "the rule belongs with the other root declarations, not buried in a component block");
+
+  // No later rule may reintroduce character-level breaking for Korean.
+  const offenders = [...css.matchAll(/^(?!body )([^\n{]+)\{([^}]*word-break:\s*break-all[^}]*)\}/gm)]
+    .map((match) => match[1].trim());
+  assert.deepEqual(offenders, [],
+    `word-break: break-all splits Korean words; found on: ${offenders.join(", ")}`);
+});
+
+/**
  * Static assets outside /assets/ must carry a Cache-Control rule.
  *
  * vinext generates a `_headers` covering /assets/* and skips generation when

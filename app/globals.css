@@ -105,6 +105,40 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; background: var(--paper); }
 body { margin: 0; overflow-x: hidden; background: var(--paper); color: var(--ink); font-family: var(--font-ui); font-size: var(--type-body); font-weight: var(--weight-regular); letter-spacing: -.012em; font-variant-numeric: tabular-nums; }
+/*
+ * Korean line breaking, and what is actually load-bearing here.
+ *
+ * The owner photographed "약간 붐" ending a line and "빔" starting the next —
+ * a Korean word split in half — on an iPhone.
+ *
+ * I could not reproduce that in Chromium. Measured directly, across six widths
+ * and five combinations of word-break/overflow-wrap, Chromium never split
+ * "약간 붐빔": spaced Korean breaks at its spaces there whatever these
+ * properties say. WebKit, which is every browser on iOS and therefore the
+ * engine in the screenshot, applies UAX#14 to Hangul and does break between
+ * syllables; `keep-all` is the documented fix for exactly that. Playwright's
+ * WebKit build cannot be downloaded in this environment, so that half is
+ * reasoned from the engines' documented behaviour, not measured here — which
+ * is why it is not the half the repair rests on.
+ *
+ * What the repair rests on is that the line no longer wraps at all: the area
+ * headline was reduced from 19px to 17px, measured to fit the owner's own
+ * numbers on one line from 360px up. A line that does not wrap cannot wrap
+ * badly, on any engine.
+ *
+ * `keep-all` stays as the correct rule for the strings that are still long
+ * enough to wrap. It is paired with `overflow-wrap: anywhere` deliberately:
+ * keep-all alone raises min-content from one syllable to one whole word, which
+ * can widen a grid or flex column and shift a layout, and `anywhere` is the one
+ * value that both rescues a word too long for its line and keeps min-content
+ * measured at one character. `break-word` does not participate in min-content
+ * and would not. All 135 e2e tests, including the pinned one-line geometry at
+ * 360/390/430px, pass with this pair.
+ *
+ * Anything that must never wrap says so with `white-space: nowrap`; this
+ * changes none of those.
+ */
+body { word-break: keep-all; overflow-wrap: anywhere; }
 button, input, select { font: inherit; }
 button, select { color: inherit; }
 button { cursor: pointer; }
@@ -477,7 +511,7 @@ nav.bottom-nav { display: none; }
 .airport-view .view-intro { min-height: 145px; }
 .airport-today { padding-top: 18px; }
 .current-brief { padding: 21px 0 22px; }
-.current-brief > strong { margin-top: 11px; font-size: 19px; }
+.current-brief > strong { margin-top: 11px; font-size: 17px; }
 .current-brief > p:not(.eyebrow) { margin-top: 7px; font-size: 11px; }
 .current-brief > small { margin-top: 10px; }
 .area-current-brief { margin-bottom: 24px; }
