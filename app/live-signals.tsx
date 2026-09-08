@@ -1463,6 +1463,7 @@ export function AirportAtAGlance({summary,lang,terminal="all"}:{summary:LiveSumm
   const flightChanges = ([7, 28] as const).flatMap((days) => comparisons?.[days]?.flightRecords ? [comparisonText(comparisons[days]!.flightRecords!, lang, days)] : []);
   const recordsOnly = ({ ko: "수집된 출발편 기록 기준 · 전체 운항 증감과 다를 수 있음", en: "Collected departing-flight records; not a complete operational census", zh: "按已采集出发航班记录，非完整运行统计", ja: "収集済み出発便記録による比較・全運航の増減とは異なる場合あり" })[lang];
   const schedule=airport.scheduledBriefing?.serviceDateKst===summary.serviceDateKst&&summary.dayRelation!=="PAST"?airport.scheduledBriefing:null;
+  const officialSchedule=schedule?.basis==='OFFICIAL_DEPARTURE_SCHEDULE';
   const planned=isAll?schedule?.ranking.all:schedule?.ranking.byTerminal[terminal];
   const dayLabel=summary.dayRelation==="TODAY"?areaBriefText.nowLabel[lang]:contextText(lang,"선택일 요약","Selected day summary","所选日期概览","選択日の概要");
   const dayLines=airportBriefLines.map(line=>summary.dayRelation==="TODAY"?line:line.replace(contextText(lang,"오늘 피크","Today's peak","今日高峰","本日ピーク"),contextText(lang,"선택일 피크","Selected day's peak","所选日期高峰","選択日のピーク")));
@@ -1474,7 +1475,7 @@ export function AirportAtAGlance({summary,lang,terminal="all"}:{summary:LiveSumm
       {dayLines.map((line, index) => index === 0 ? <strong className="airport-brief-current" key={line}>{line}</strong> : <p key={line}>{line}</p>)}
       {expectedTotal !== null && passengerChanges.length > 0 && <p>{airportTodayText.expected[lang]} · {passengerChanges.join(" · ")}</p>}
       {flightsCount !== null && <p>{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}{flightChanges.length ? ` · ${flightChanges.join(" · ")}` : ""}</p>}
-      {flightsCount===null&&planned&&planned.totalFlights>0&&<><p>{pc('scheduledFlights',lang)} {planned.totalFlights.toLocaleString(numberLocale)}{flightUnit}</p><small>{pc('scheduleBasis',lang)}</small></>}
+      {flightsCount===null&&<>{officialSchedule&&planned&&planned.totalFlights>0?<><p>{pc('officialScheduledFlights',lang)} {planned.totalFlights.toLocaleString(numberLocale)}{flightUnit}</p><small>{pc('officialScheduleBasis',lang)}</small></>:<><p>{pc('schedulePending',lang)}</p>{planned&&planned.totalFlights>0&&<small>{pc('scheduledFlights',lang)} {planned.totalFlights.toLocaleString(numberLocale)}{flightUnit} · {pc('scheduleBasis',lang)}</small>}</>}</>}
       {isAll && <FlightScopeNote airport={airport} lang={lang} />}
       {flightChanges.length > 0 && <small>{recordsOnly}</small>}
       <small>{[passengerCollected ? `${airportTodayText.expected[lang]} · ${passengerCollected}` : null, flightsCollected ? `${airportTodayText.flights[lang]} · ${flightsCollected}` : null].filter(Boolean).join(" / ")}</small>

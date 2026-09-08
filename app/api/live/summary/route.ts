@@ -1,3 +1,4 @@
+import { readDepartureSchedule } from '../../../../lib/departure-schedule';
 import { flightScopeCounts } from "../../../../lib/flight-scope";
 import { summarizeScheduledBriefing, type ScheduledBriefingRow } from "../../../../lib/scheduled-briefing";
 import { compareComposition } from "../../../../lib/airport-composition-history";
@@ -412,6 +413,9 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       LIMIT 2000`,
     ).bind(serviceDate, shiftKstDay(serviceDate, 1))],
 
+    departureScheduleRows: [client.prepare(
+      'SELECT payload, retrieved_at AS retrievedAt FROM airport_departure_schedule WHERE service_date = ? LIMIT 1',
+    ).bind(serviceDate)],
     scheduledRows: [client.prepare(
       `SELECT terminal, COALESCE(master_flight_number, flight_number) AS operatingFlight,
         scheduled_time AS scheduledTime, weekdays, valid_from AS validFrom, valid_to AS validTo,
@@ -463,7 +467,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   const {
     sources, contextRows, holidayRows, compositionRows, realtimeRows, commercialRows, realtimeForecastRows, weatherRows, eventRows, salesRows,
     storeDynamicsRows, foreignPresenceRows, foreignPurposeRows, subwayRows, congestionRows,
-    passengerForecastRows: allPassengerForecastRows, historicalFlightCounts, flightRows, scheduledRows, flightDateRows, forecastDateRows, observedDateRows,
+    passengerForecastRows: allPassengerForecastRows, historicalFlightCounts, flightRows, scheduledRows, departureScheduleRows, flightDateRows, forecastDateRows, observedDateRows,
   } = blocks;
   const passengerForecastRows = allPassengerForecastRows.filter((row) => row.targetDate === serviceDate);
   const dayList = (rows: Row[]) => rows
@@ -591,7 +595,9 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   // country comes from a reference table, never from the provider, and is
   // reported as UNVERIFIED whenever the table cannot vouch for it.
   const airlineRanking = summarizeAirlineRanking(flightRows as unknown as AirlineRankingFlightRow[], lookupAirline, 300);
-  const scheduledBriefing = summarizeScheduledBriefing(scheduledRows as unknown as ScheduledBriefingRow[], serviceDate, lookupAirline);
+  const officialSchedule = dayRelation === 'FUTURE' ? readDepartureSchedule(departureScheduleRows[0], serviceDate) : [];
+  const scheduledBriefing = summarizeScheduledBriefing(officialSchedule.length ? officialSchedule : scheduledRows as unknown as ScheduledBriefingRow[], serviceDate, lookupAirline,
+    officialSchedule.length ? 'OFFICIAL_DEPARTURE_SCHEDULE' : 'PARTIAL_SCHEDULE');
   const periodComparisons = Object.fromEntries(["all", "T1", "T2"].map((scope) => [scope,
     Object.fromEntries(([7, 28] as const).map((days) => {
       const baselineDate = shiftKstDay(serviceDate, -days);

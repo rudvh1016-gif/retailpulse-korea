@@ -1576,16 +1576,16 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 
 /* One type scale for the personal sheet; full Korean glyphs cover new copy. */
 .lang-ko .personal-home { --font-ui: "Pretendard Variable", "KORETAIL Sans Variable", system-ui, sans-serif; }
-.personal-home { font-family: var(--font-ui); font-size: 1rem; line-height: 1.6; }
-.personal-home h2 { font-size: clamp(1.5rem, 3vw, 2rem); }
-.personal-home h3, .personal-place { font-size: 1rem; }
+.personal-home { font-family: var(--font-ui); font-size: .9375rem; line-height: 1.6; }
+.personal-home h2 { font-size: clamp(1.375rem, 2.7vw, 1.75rem); }
+.personal-home h3, .personal-place { font-size: .9375rem; }
 .personal-kicker { font-size: .8125rem; letter-spacing: .02em; }
-.personal-summary { font-size: 1.125rem; }
+.personal-summary { font-size: 1rem; }
 .personal-facts { grid-template-columns: repeat(2,minmax(0,1fr)); }
-.personal-facts strong { font-size: 1.5rem; font-weight: var(--weight-strong); }
+.personal-facts strong { font-size: 1.3125rem; font-weight: var(--weight-strong); }
 .personal-facts [data-interest="airlines"] { grid-column: 1 / -1; }
-.personal-facts [data-interest="airlines"] strong, .personal-fact-detail { font-size: 1rem; line-height: 1.6; }
-.personal-facts p, .personal-facts small, .personal-note, .personal-consent p, .personal-feedback { font-size: .875rem; line-height: 1.6; }
+.personal-facts [data-interest="airlines"] strong, .personal-fact-detail { font-size: .9375rem; line-height: 1.6; }
+.personal-facts p, .personal-facts small, .personal-note, .personal-consent p, .personal-feedback { font-size: .8125rem; line-height: 1.6; }
 .personal-facts small { display: block; font-size: .8125rem; }
 .personal-fact-detail { margin-top: .375rem; }
 
@@ -1599,8 +1599,17 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 }
 
 .personal-timezone { display: block; color: #536273; font-size: .8125rem; }
-.personal-home .airport-current-brief { margin: 1.5rem 0; padding: 1.25rem 0; }
+.personal-home .airport-current-brief { margin: 1rem 0; padding: 1rem 0; }
 .personal-home .airport-current-brief .airport-brief-total,
-.personal-home .airport-current-brief .airport-brief-current { font-family: inherit; font-size: 1.125rem; line-height: 1.6; }
-.personal-home .airport-current-brief p { font-size: .875rem; line-height: 1.6; }
+.personal-home .airport-current-brief .airport-brief-current { font-family: inherit; font-size: 1rem; line-height: 1.6; }
+.personal-home .airport-current-brief p { font-size: .8125rem; line-height: 1.6; }
 .personal-home .airport-current-brief small { font-size: .8125rem; line-height: 1.6; }
+
+/* Compact personal briefing controls; preserve a 44px touch target. */
+.personal-home button { font-size: .875rem; min-height: 44px; padding: .375rem .625rem; }
+.personal-switches { padding: .75rem 0; display: flex; flex-wrap: wrap; gap: .5rem .75rem; align-items: center; }
+.personal-switches > p { flex-basis: 100%; margin: 0 0 .125rem; font-size: .8125rem; }
+.personal-switches .personal-inline { margin: 0; gap: .375rem; }
+.personal-switches .personal-inline:last-child { flex-basis: 100%; }
+.personal-sheet { padding-top: 1rem; }
+.personal-place { margin-bottom: .25rem; }

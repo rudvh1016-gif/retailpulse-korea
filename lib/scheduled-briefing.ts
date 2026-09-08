@@ -11,7 +11,7 @@ export interface ScheduledBriefingRow {
 }
 
 /** A3 is a partial schedule, never observed operations or a whole-day total. */
-export function summarizeScheduledBriefing(rows: ScheduledBriefingRow[], date: string, lookup: AirlineLookupFn) {
+export function summarizeScheduledBriefing(rows: ScheduledBriefingRow[], date: string, lookup: AirlineLookupFn, basis: 'PARTIAL_SCHEDULE' | 'OFFICIAL_DEPARTURE_SCHEDULE' = 'PARTIAL_SCHEDULE') {
   const weekday = ['SUN','MON','TUE','WED','THU','FRI','SAT'][new Date(`${date}T00:00:00Z`).getUTCDay()];
   const selected = new Map<string, ScheduledBriefingRow>();
   for (const row of rows.slice(0, 2000)) {
@@ -30,5 +30,5 @@ export function summarizeScheduledBriefing(rows: ScheduledBriefingRow[], date: s
     const scoped = flights.filter(row => row.terminal === terminal);
     return { terminal, flights: scoped.length, firstTime: scoped.map(row=>row.scheduledTime).sort()[0], lastTime: scoped.map(row=>row.scheduledTime).sort().at(-1)!, retrievedAt: scoped.map(row=>row.retrievedAt).sort().at(-1)! };
   });
-  return { serviceDateKst: date, basis: 'PARTIAL_SCHEDULE' as const, capped: rows.length > 2000, ranking, scheduled };
+  return { serviceDateKst: date, basis, capped: rows.length > 2000, ranking, scheduled };
 }
