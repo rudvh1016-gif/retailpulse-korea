@@ -25,8 +25,26 @@ for(const width of [390,1280]) test(`production Seoul and airport truth closure 
     await expect(page.locator('.airport-current-brief')).toContainText(passengerCopy.limitation.ko);
     await page.screenshot({path:`production-visual-results/closure-${terminal}-${width}.png`,fullPage:false});
   }
+  const selectedResponse = page.waitForResponse(response => {
+    const url = new URL(response.url());
+    return url.pathname === '/api/live/summary' && Boolean(url.searchParams.get('date')) && response.ok();
+  });
   await page.getByRole('button',{name:'내일',exact:true}).click();
-  await expect(page.locator('.airport-current-brief')).toContainText(passengerCopy.selected.ko);
+  const selected = await (await selectedResponse).json();
+  expect(selected.dayRelation).toBe('FUTURE');
+  const tomorrowTotal = selected.airport?.todayExpectedPassengersByTerminal?.T2;
+  const tomorrowBrief = page.locator('.airport-current-brief');
+  if (typeof tomorrowTotal === 'number') {
+    await expect(tomorrowBrief).toContainText(passengerCopy.selected.ko);
+    await expect(tomorrowBrief.locator('.airport-brief-total')).toContainText(`${Math.round(tomorrowTotal).toLocaleString('ko-KR')}명`);
+  } else {
+    // A new KST day can precede the first hourly A5 run. Verify absence truth,
+    // not a made-up passenger number merely to satisfy a live-site assertion.
+    await expect(tomorrowBrief).toContainText('이 날짜의 공식 예상 승객 자료 없음');
+    await expect(tomorrowBrief.locator('.airport-brief-total')).toHaveCount(0);
+  }
+  await expect(tomorrowBrief).toContainText(passengerCopy.limitation.ko);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await expect(page.locator('.airport-current-brief')).not.toContainText('전체 공식 예상 출국객');
   await page.screenshot({path:`production-visual-results/closure-tomorrow-${width}.png`,fullPage:false});
   for(const path of ['/ko/more','/ko/about']) {

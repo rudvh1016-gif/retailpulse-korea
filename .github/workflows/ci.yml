@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, production-v1]
+    branches: [main, production-v1, fix/seoul-glance-transfer-truth]
   pull_request:
   # PR #149 was opened and pushed to twice without GitHub ever creating a
   # `pull_request` run, leaving the branch with no way to be verified except

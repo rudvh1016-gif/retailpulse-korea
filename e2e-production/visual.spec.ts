@@ -172,7 +172,8 @@ for (const width of viewports) {
     } else {
       const bottomNav = page.locator("nav.bottom-nav");
       await expect(bottomNav).toBeVisible();
-      await expect(bottomNav.locator("a")).toHaveCount(5);
+      await expect(bottomNav.locator("a")).toHaveCount(6);
+      await expect(bottomNav.getByRole("link", { name: /내\s*브리핑/ })).toBeVisible();
       await bottomNav.getByRole("link", { name: /더보기/ }).click();
       await expect(page).toHaveURL(/\/ko\/more$/);
       await expect(page.locator(".tourism-link-block")).toHaveCount(0);
@@ -479,11 +480,11 @@ test("production airport composition is one compact tabbed module at every requi
       expect(inView).toBe(true);
       const marker = await now.evaluate(el => {
         const rule = getComputedStyle(el, "::before");
-        return { height: parseFloat(rule.height), width: parseFloat(rule.borderLeftWidth), style: rule.borderLeftStyle, label: el.getAttribute("data-now-label") };
+        return { height: parseFloat(rule.height), width: parseFloat(rule.width), background: rule.backgroundImage, label: el.getAttribute("data-now-label") };
       });
       expect(marker.height).toBeGreaterThan(110);
       expect(marker.width).toBeGreaterThanOrEqual(1);
-      expect(marker.style).toBe("dashed");
+      expect(marker.background).toContain("repeating-linear-gradient");
       console.log(`AIRPORT_CURRENT_MARKER ${JSON.stringify({ viewport: width, ...marker })}`);
       await testInfo.attach(`airport-marker-${width}.png`, { body: await page.locator(".airport-forecast").screenshot(), contentType: "image/png" });
     }
