@@ -61,9 +61,9 @@ Excel label: 환승 보안검색 이용 예상 · 도착 기준.
 
 ## Production operation and cost
 
-One source-specific GitHub workflow, no overlapping Worker alarm. A successful normal Production deployment also checks once for missing D+1 data after17:
+One source-specific GitHub workflow, no overlapping Worker alarm. A successful normal Production deployment also checks once for missing data:
 08:10/08:30/09:00/10:00 UTC = 17:10/17:30/18:00/19:00 KST.
-GitHub alarms may start late; the runner derives D+1 from KST and refuses before17.
+GitHub alarms may start late; after17 the runner derives D+1 from KST. A deployment bootstrap before17 requests the current service date from the real official file published the previous day; it never estimates missing history.
 This reuses the existing GitHub runner → pinned Production D1 REST architecture,
 source_health model, and changed-row/storage-write counters. A separate workflow
 is needed for the isolated Python BIFF reader; A5's hourly runner is unchanged.

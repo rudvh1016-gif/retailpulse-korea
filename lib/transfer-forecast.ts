@@ -28,3 +28,9 @@ export function validateTransferDownloadHeaders(headers: Headers, date: string, 
     throw new Error('SCHEMA_DOWNLOAD_HEADERS');
   }
 }
+
+/** Latest official publication's service date, including deployment bootstrap. */
+export function transferServiceDate(now: Date): string {
+  const kst = new Date(now.getTime() + 9 * 3600000);
+  return new Date(kst.getTime() + (kst.getUTCHours() >= 17 ? 86400000 : 0)).toISOString().slice(0, 10);
+}

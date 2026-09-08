@@ -5,16 +5,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CloudflareD1RestDatabase } from '../lib/d1-rest';
 import { resolveProductionDatabaseConfig } from './production-database';
-import { persistTransferForecast, validateTransferDownloadHeaders, TRANSFER_SOURCE, type TransferForecast } from '../lib/transfer-forecast';
+import { persistTransferForecast, validateTransferDownloadHeaders, transferServiceDate, TRANSFER_SOURCE, type TransferForecast } from '../lib/transfer-forecast';
 import { writeSourceHealth } from '../lib/collector';
 
 if (process.env.ENABLE_PRODUCTION_COLLECTOR !== 'true') throw new Error('production_collector_not_enabled');
 const {accountId,databaseId,apiToken}=resolveProductionDatabaseConfig('production');
 const db=new CloudflareD1RestDatabase(accountId,databaseId,apiToken) as unknown as D1Database;
 const now=new Date();
-const kst=new Date(now.getTime()+9*3600000);
-if(kst.getUTCHours()<17) { console.log('SKIPPED_BEFORE_PUBLICATION providerRequests=0'); process.exit(0); }
-const date=new Date(kst.getTime()+86400000).toISOString().slice(0,10);
+// Before17, a deployment bootstrap can read TODAY's real file published yesterday.
+// Scheduled windows after17 always collect D+1. No guessed/backfilled values.
+const date=transferServiceDate(now);
 const rows=await db.prepare('SELECT terminal FROM airport_transfer_forecast WHERE service_date=? AND quality_status=? AND schema_version=?').bind(date,'OFFICIAL_FORECAST','incheon-transfer-security-v1').all<{terminal:string}>();
 const missing=(['T1','T2'] as const).filter(t=>!(rows.results ?? []).some(r=>r.terminal===t));
 if(!missing.length){ console.log('SKIPPED_ALREADY_HEALTHY providerRequests=0 changedRows=0'); }
@@ -51,5 +51,5 @@ else {
     await writeSourceHealth(db,TRANSFER_SOURCE,'ERROR',`${failure}; service_date=${date}; last-good rows preserved`);
     throw new Error(failure);
   }
-  await writeSourceHealth(db,TRANSFER_SOURCE,'LIVE',`D+1 ${date}; arrival transfer security forecast; no combined departure total`,{retrievedAt:now.toISOString(),schemaVersion:'incheon-transfer-security-v1'});
+  await writeSourceHealth(db,TRANSFER_SOURCE,'LIVE',`service_date=${date}; arrival transfer security forecast; no combined departure total`,{retrievedAt:now.toISOString(),schemaVersion:'incheon-transfer-security-v1'});
 }

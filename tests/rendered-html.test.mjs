@@ -780,7 +780,8 @@ test("keeps the source catalog visible and honest about what each source is", as
   const data = await read("../app/retailpulse-data.ts");
   const audit = await read("../docs/archive/work-v6.1/api-key-audit.md");
   assert.match(data, /INCHEON ARRIVAL HALL STATUS/);
-  assert.match(data, /status: "AUTOMATION_REVIEW"/);
+  assert.match(data, /INCHEON AIRPORT FORECAST.*status: "OFFICIAL_FORECAST".*no combined departures/);
+  assert.match(data, /T1 \/ T2 separately/);
   assert.match(data, /Same data\.go\.kr project key/);
   assert.match(audit, /프로젝트 서비스키 1개 \+ API별 활용신청 3건/);
 });

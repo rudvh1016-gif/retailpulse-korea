@@ -5,7 +5,7 @@ import { passengerCopy } from '../lib/passenger-copy';
 for (const lang of ['ko','en','zh','ja'] as const) {
   for (const tomorrow of [false,true]) test(`${lang} ${tomorrow?'tomorrow':'today'} passenger meaning agrees across personal/full and terminals`, async ({page}) => {
     await page.setViewportSize({width:390,height:844});
-    await page.addInitScript(({key,tomorrow})=>localStorage.setItem(key,JSON.stringify({version:1,role:'manager',location:'airport',selectedLocations:['airport'],terminal:'all',selectedTerminals:['all','T1','T2'],interests:['passengers'],day:tomorrow?'tomorrow':'today',selectedDays:['today','tomorrow'],analytics:false})),{key:PREFERENCE_KEY,tomorrow});
+    await page.addInitScript(({key,tomorrow})=>localStorage.setItem(key,JSON.stringify({version:1,role:'manager',location:'airport',selectedLocations:['airport'],terminal:'all',selectedTerminals:['all'],interests:['passengers'],day:tomorrow?'tomorrow':'today',selectedDays:['today','tomorrow'],analytics:false})),{key:PREFERENCE_KEY,tomorrow});
     await page.route('**/api/live/summary*', async route=>{
       const date=tomorrow?'2026-09-01':'2026-08-31';
       await route.fulfill({json:{...SUMMARY_FIXTURE,serviceDateKst:date,dayRelation:tomorrow?'FUTURE':'TODAY',airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:date,transferForecast:[{terminal:'T1',serviceDate:date,expectedTransferPassengers:559,retrievedAt:'2026-08-30T08:10:00Z'},{terminal:'T2',serviceDate:date,expectedTransferPassengers:10485,retrievedAt:'2026-08-30T08:10:00Z'}]}}});

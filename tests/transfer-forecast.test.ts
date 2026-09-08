@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
-import { persistTransferForecast, validateTransferDownloadHeaders, type TransferForecast } from '../lib/transfer-forecast';
+import { persistTransferForecast, validateTransferDownloadHeaders, transferServiceDate, type TransferForecast } from '../lib/transfer-forecast';
 
 test('transfer rows are dated, idempotent, and last-good values survive rejected writes', async () => {
   const sql=new DatabaseSync(':memory:');
@@ -26,5 +26,11 @@ test('actual official T1/T2 filename contracts and wrong-date responses', () => 
     assert.throws(()=>validateTransferDownloadHeaders(headers,'2026-09-10',terminal));
     headers.set('content-type','text/html');
     assert.throws(()=>validateTransferDownloadHeaders(headers,'2026-09-09',terminal));
+  }
+});
+
+test('publication service date respects17 KST, midnight, and year rollover', () => {
+  for (const [now,date] of [['2026-09-08T07:59:00Z','2026-09-08'],['2026-09-08T08:10:00Z','2026-09-09'],['2026-09-08T15:01:00Z','2026-09-09'],['2026-12-31T08:30:00Z','2027-01-01']]) {
+    assert.equal(transferServiceDate(new Date(now)),date);
   }
 });
