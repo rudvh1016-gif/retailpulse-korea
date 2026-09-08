@@ -1,6 +1,10 @@
 name: Deploy Cloudflare
 
 on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       stage:
@@ -14,17 +18,32 @@ permissions:
   contents: read
 
 concurrency:
-  group: cloudflare-deploy-${{ inputs.stage }}
+  group: cloudflare-deploy-${{ inputs.stage || 'production' }}
   cancel-in-progress: false
 
 jobs:
   deploy:
-    if: github.ref == 'refs/heads/main'
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    environment: ${{ inputs.stage }}
+    environment: ${{ inputs.stage || 'production' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Require current main revision
+        run: |
+          git fetch origin main --depth=1
+          test "$(git rev-parse HEAD)" = "$(git rev-parse FETCH_HEAD)" || {
+            echo "Refusing to deploy an outdated revision. Wait for current main CI."
+            exit 1
+          }
       - uses: actions/setup-node@v4
         with:
           node-version: 22.13.1
@@ -34,12 +53,12 @@ jobs:
       - run: npm run typecheck
       - run: npm run test:unit
       - name: Record Production D1 recovery bookmark
-        if: inputs.stage == 'production'
+        if: github.event_name == 'workflow_run' || inputs.stage == 'production'
         run: npx wrangler d1 time-travel info DB --env production --config wrangler.production.jsonc
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       - name: Apply Production D1 migrations
-        if: inputs.stage == 'production'
+        if: github.event_name == 'workflow_run' || inputs.stage == 'production'
         run: npm run db:migrate:production
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -50,5 +69,5 @@ jobs:
           NEXT_PUBLIC_GA4_ENABLED: ${{ vars.NEXT_PUBLIC_GA4_ENABLED }}
           GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION }}
           NAVER_SITE_VERIFICATION: ${{ vars.NAVER_SITE_VERIFICATION }}
-          RPK_DEPLOYMENT_STAGE: ${{ inputs.stage }}
+          RPK_DEPLOYMENT_STAGE: ${{ inputs.stage || 'production' }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

@@ -150,8 +150,8 @@ test("Cloudflare deploy gate accepts production and rejects unresolved staging D
 test("deploy workflow maps one stage to matching GitHub and Wrangler environments", async () => {
   const workflow = await readFile(new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url), "utf8");
   const deployScript = await readFile(new URL("../scripts/deploy-cloudflare.mjs", import.meta.url), "utf8");
-  assert.match(workflow, /environment: \$\{\{ inputs\.stage \}\}/);
-  assert.match(workflow, /RPK_DEPLOYMENT_STAGE: \$\{\{ inputs\.stage \}\}/);
+  assert.match(workflow, /environment: \$\{\{ inputs\.stage \|\| 'production' \}\}/);
+  assert.match(workflow, /RPK_DEPLOYMENT_STAGE: \$\{\{ inputs\.stage \|\| 'production' \}\}/);
   assert.match(workflow, /npm run deploy:cloudflare/);
   assert.match(deployScript, /CLOUDFLARE_ENV: stage/);
   assert.match(deployScript, /"--env", stage/);
@@ -168,7 +168,7 @@ test("production deployment applies D1 migrations before Worker deploy", async (
   assert.notEqual(migrationIndex, -1);
   assert.notEqual(deployIndex, -1);
   assert.ok(migrationIndex < deployIndex);
-  assert.match(steps[migrationIndex], /if: inputs\.stage == 'production'/);
+  assert.match(steps[migrationIndex], /if: github\.event_name == 'workflow_run' \|\| inputs\.stage == 'production'/);
   assert.match(steps[migrationIndex], /CLOUDFLARE_API_TOKEN: \$\{\{ secrets\.CLOUDFLARE_API_TOKEN \}\}/);
   assert.doesNotMatch(workflow, /CLOUDFLARE_ACCOUNT_ID/);
 });
