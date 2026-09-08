@@ -12,9 +12,13 @@ for (const lang of ['ko','en','zh','ja'] as const) {
     });
     await page.goto(`/${lang}`);
     const personal=page.locator('.airport-current-brief');
-    await expect(personal).toContainText(passengerCopy[tomorrow?'selected':'today'][lang]);
-    await expect(personal).toContainText(passengerCopy.limitation[lang]);
+    await expect(personal).toContainText(passengerCopy[tomorrow?'summedSelected':'summedToday'][lang]);
+    await expect(personal).toContainText(passengerCopy.arithmeticNote[lang]);
     await expect(personal.getByTestId('transfer-forecast')).toContainText('10,485');
+    await expect(personal.locator('.airport-brief-total')).toHaveAttribute('data-basis','ARITHMETIC_ONLY');
+    await expect(personal.locator('.airport-brief-total')).toContainText('58,364');
+    await expect(personal.locator('.airport-passenger-components')).toContainText('47,320');
+    await expect(personal.locator('.airport-passenger-components')).toContainText('11,044');
     const scope=await personal.locator('.departure-hall-scope-note').first().textContent();
     await page.goto(`/${lang}/airport`);
     await expect(page.locator(".app")).toHaveAttribute("data-hydrated","true");
@@ -23,9 +27,11 @@ for (const lang of ['ko','en','zh','ja'] as const) {
       await page.getByRole('tab',{name:terminal,exact:true}).click();
       await expect(page.getByRole('tab',{name:terminal,exact:true})).toHaveAttribute('aria-selected','true');
       const full=page.locator('.airport-current-brief');
-      await expect(full).toContainText(passengerCopy[tomorrow?'selected':'today'][lang]);
+      await expect(full).toContainText(passengerCopy[tomorrow?'summedSelected':'summedToday'][lang]);
       await expect(full.locator('.departure-hall-scope-note').first()).toHaveText(scope!);
-      await expect(full).toContainText(passengerCopy.limitation[lang]);
+      await expect(full).toContainText(passengerCopy.arithmeticNote[lang]);
+      await expect(full.locator('.airport-brief-total')).toContainText(terminal==='T1'?'30,659':'27,705');
+      await expect(full.locator('.airport-passenger-components')).toContainText(terminal==='T1'?'30,100':'17,220');
       await expect(full.getByTestId('transfer-forecast')).toContainText(terminal==='T1'?'559':'10,485');
       await expect(full.getByTestId('transfer-forecast')).not.toContainText(terminal==='T1'?'10,485':'T1');
       expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
@@ -38,6 +44,7 @@ for (const lang of ['ko','en','zh','ja'] as const) {
     const transfer=page.getByTestId('transfer-forecast');
     await expect(transfer).toContainText(passengerCopy.unavailable[lang]);
     await expect(transfer).not.toContainText(/0(?:명|人| people)/);
+    await expect(page.locator('[data-basis="ARITHMETIC_ONLY"]')).toHaveCount(0);
     await expect(page.locator('.passenger-transfer-limitation')).toBeVisible();
   });
 }

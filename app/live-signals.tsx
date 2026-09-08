@@ -1,5 +1,6 @@
 "use client";
 import { passengerCopy } from "../lib/passenger-copy";
+import { passengerReferenceSum } from "../lib/passenger-reference-sum";
 import { pc } from '../lib/personal-copy';
 import {flightBoardingLocation} from "../lib/flight-scope";
 
@@ -1431,6 +1432,7 @@ export function AirportAtAGlance({summary,lang,terminal="all"}:{summary:LiveSumm
   const remaining=summary.dayRelation==="TODAY"?(isAll?airport.remainingExpectedPassengers:airport.remainingExpectedPassengersByTerminal?.[terminal]??null):null;
   const timeline=isAll?airport.passengerForecastTimeline:airport.passengerForecastTimelineByTerminal?.[terminal]??[];
   const forecastStatus=isAll?airport.forecastCoverage?.all:airport.forecastCoverage?.byTerminal?.[terminal];
+  const referenceSum=passengerReferenceSum(expectedTotal,forecastStatus,summary.serviceDateKst,terminal,airport.transferForecast);
   const gate=airport.topDepartureGateByTerminal?.[terminal];
   const topGate=isAll?(airport.topDepartureGate&&airport.topDepartureGateFlights!==null?{terminal:airport.topDepartureGateTerminal,gate:airport.topDepartureGate,flights:airport.topDepartureGateFlights}:null):(gate?{terminal,...gate}:null);
   const nowIso=summary.generatedAt;
@@ -1472,14 +1474,16 @@ export function AirportAtAGlance({summary,lang,terminal="all"}:{summary:LiveSumm
   const dayLines=airportBriefLines.map(line=>summary.dayRelation==="TODAY"?line:line.replace(contextText(lang,"오늘 피크","Today's peak","今日高峰","本日ピーク"),contextText(lang,"선택일 피크","Selected day's peak","所选日期高峰","選択日のピーク")));
   return <section className="current-brief airport-current-brief" aria-label={`${scopeLabel} ${dayLabel}`}>
       <p className="eyebrow">{scopeLabel} · {dayLabel}</p>
-      {expectedTotal !== null && <strong className="airport-brief-total">{passengerCopy[summary.dayRelation === "TODAY" ? "today" : "selected"][lang]} {Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}</strong>}
+      {referenceSum ? <>
+        <strong className="airport-brief-total" data-basis="ARITHMETIC_ONLY">{passengerCopy[summary.dayRelation === "TODAY" ? "summedToday" : "summedSelected"][lang]} {referenceSum.total.toLocaleString(numberLocale)}{peopleUnit}</strong>
+        <small className="airport-passenger-components">({passengerCopy.hallComponent[lang]} {referenceSum.hall.toLocaleString(numberLocale)}{peopleUnit} + {passengerCopy.transferComponent[lang]} {referenceSum.transfer.toLocaleString(numberLocale)}{peopleUnit})</small>
+      </> : expectedTotal !== null && <strong className="airport-brief-total">{passengerCopy[summary.dayRelation === "TODAY" ? "today" : "selected"][lang]} {Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}</strong>}
       <small className="departure-hall-scope-note">{passengerCopy.scope[lang]}</small>
-      <small className="passenger-transfer-limitation">{passengerCopy.limitation[lang]}</small>
+      <small className="passenger-transfer-limitation">{passengerCopy[referenceSum ? 'arithmeticNote' : 'limitation'][lang]}</small>
       <div className="transfer-forecast" data-testid="transfer-forecast">
         {(airport.transferForecast ?? []).filter(r => r.serviceDate === summary.serviceDateKst && (isAll || r.terminal === terminal)).map(r =>
-          <p key={r.terminal}>{r.terminal} · {passengerCopy.transfer[lang]} {r.expectedTransferPassengers.toLocaleString(numberLocale)}{peopleUnit} · {formatHumanFreshness(r.retrievedAt,nowIso,lang,"collected")}</p>)}
+          <small key={r.terminal} style={{display:'block'}}>{r.terminal} · {passengerCopy.transfer[lang]} {r.expectedTransferPassengers.toLocaleString(numberLocale)}{peopleUnit} · {formatHumanFreshness(r.retrievedAt,nowIso,lang,"collected")}</small>)}
         {((isAll ? ['T1','T2'] : [terminal]) as string[]).filter(t => !(airport.transferForecast ?? []).some(r => r.serviceDate === summary.serviceDateKst && r.terminal === t)).map(t => <p key={t}>{t} · {passengerCopy[summary.sources?.some(s => s.sourceId === 'INCHEON_TRANSFER_FORECAST' && s.status === 'ERROR' && s.detail?.includes(`service_date=${summary.serviceDateKst}`)) ? 'failed' : summary.dayRelation === 'FUTURE' && new Date(new Date(nowIso).getTime()+9*3600000).getUTCHours()<17 ? 'pending' : 'unavailable'][lang]}</p>)}
-        {(airport.transferForecast ?? []).some(r => r.serviceDate === summary.serviceDateKst && (isAll || r.terminal === terminal)) && <small>{passengerCopy.noSum[lang]}</small>}
       </div>
       {dayLines.map((line, index) => index === 0 ? <strong className="airport-brief-current" key={line}>{line}</strong> : <p key={line}>{line}</p>)}
       {expectedTotal !== null && passengerChanges.length > 0 && <p>{airportTodayText.expected[lang]} · {passengerChanges.join(" · ")}</p>}

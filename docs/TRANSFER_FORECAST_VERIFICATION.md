@@ -45,12 +45,26 @@ Section 1 `예약환승객(전체)` has airline-specific figures and a different
 it is deliberately NOT ingested, nor treated as an airport-wide unique count.
 No airport total is stored or manufactured. No historical ratios are used.
 
+## Owner-requested arithmetic display (2026-09-09)
+
+The owner requested addition with component figures beneath the headline. The UI
+now labels the result explicitly as an arithmetic sum of two forecasts, NOT an
+official or deduplicated departing-passenger total. The concise visible note says
+arrival basis / overlap unverified / not total departures. The original long Excel
+explanation was removed from the briefing. A5 is called departure-hall forecast,
+not “general passengers”. Both components must exist for the exact selected date;
+all-terminal arithmetic requires both T1 and T2. Missing, duplicate, invalid, or
+partial inputs produce no sum. Only presentation changes: no collector, storage,
+history, official forecast chart, or comparison is changed. Additional provider
+calls, DB reads/writes, paid APIs, runtime LLM calls: zero.
+
 ## No combined departing total
 
 Arrival-based transfer security and departure-hall use have different temporal
 and population bases. The workbook mentions transfer effects on reservation vs
 hall counts but does not prove all six non-overlap/scope conditions for adding
-A5 to transfer security. Therefore NO SUM, even for the same service date.
+A5 to transfer security. Therefore no official combined departing total, even for the same service date.
+The separately labelled arithmetic display above is not such a total.
 T1/T2 remain individually visible in the all-terminal view.
 
 A5 label: 금일 출국장 공식 예상 승객 / 선택일 출국장 공식 예상 승객.

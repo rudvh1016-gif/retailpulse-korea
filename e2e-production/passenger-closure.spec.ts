@@ -1,6 +1,13 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator } from '@playwright/test';
 import { PREFERENCE_KEY } from '../lib/personal-briefing';
 import { passengerCopy } from '../lib/passenger-copy';
+async function expectHeadline(brief: Locator, selected = false) {
+  await expect(brief.locator('.airport-brief-total')).toBeVisible();
+  const arithmetic = await brief.locator('.airport-brief-total').getAttribute('data-basis') === 'ARITHMETIC_ONLY';
+  await expect(brief).toContainText(passengerCopy[arithmetic ? selected ? 'summedSelected' : 'summedToday' : selected ? 'selected' : 'today'].ko);
+  await expect(brief).toContainText(passengerCopy[arithmetic ? 'arithmeticNote' : 'limitation'].ko);
+  if (arithmetic) await expect(brief.locator('.airport-passenger-components')).toContainText(' + ');
+}
 for(const width of [390,1280]) test(`production Seoul and airport truth closure ${width}px`, async({page})=>{
   test.setTimeout(180000);
   await page.setViewportSize({width,height:900});
@@ -13,16 +20,14 @@ for(const width of [390,1280]) test(`production Seoul and airport truth closure 
     await page.screenshot({path:`production-visual-results/closure-${area}-${width}.png`,fullPage:false});
   }
   await page.locator('[data-view-location="airport"]').click();
-  await expect(page.locator('.airport-current-brief')).toContainText(passengerCopy.today.ko);
-  await expect(page.locator('.airport-current-brief')).toContainText(passengerCopy.limitation.ko);
+  await expectHeadline(page.locator('.airport-current-brief'));
   await page.screenshot({path:`production-visual-results/closure-personal-airport-${width}.png`,fullPage:false});
   await page.goto('/ko/airport');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
   for(const terminal of ['T1','T2']) {
     await page.getByRole('tab',{name:terminal,exact:true}).click();
     await expect(page.getByRole('tab',{name:terminal,exact:true})).toHaveAttribute('aria-selected','true');
-    await expect(page.locator('.airport-current-brief')).toContainText(passengerCopy.today.ko);
-    await expect(page.locator('.airport-current-brief')).toContainText(passengerCopy.limitation.ko);
+    await expectHeadline(page.locator('.airport-current-brief'));
     await page.screenshot({path:`production-visual-results/closure-${terminal}-${width}.png`,fullPage:false});
   }
   const selectedResponse = page.waitForResponse(response => {
@@ -35,15 +40,17 @@ for(const width of [390,1280]) test(`production Seoul and airport truth closure 
   const tomorrowTotal = selected.airport?.todayExpectedPassengersByTerminal?.T2;
   const tomorrowBrief = page.locator('.airport-current-brief');
   if (typeof tomorrowTotal === 'number') {
-    await expect(tomorrowBrief).toContainText(passengerCopy.selected.ko);
-    await expect(tomorrowBrief.locator('.airport-brief-total')).toContainText(`${Math.round(tomorrowTotal).toLocaleString('ko-KR')}명`);
+    await expectHeadline(tomorrowBrief,true);
+    const transfers = (selected.airport.transferForecast ?? []).filter((r: {terminal:string; serviceDate:string}) => r.terminal === 'T2' && r.serviceDate === selected.serviceDateKst);
+    const total = transfers.length === 1 && selected.airport.forecastCoverage?.byTerminal.T2 === 'COMPLETE' ? tomorrowTotal + transfers[0].expectedTransferPassengers : tomorrowTotal;
+    await expect(tomorrowBrief.locator('.airport-brief-total')).toContainText(`${Math.round(total).toLocaleString('ko-KR')}명`);
   } else {
     // A new KST day can precede the first hourly A5 run. Verify absence truth,
     // not a made-up passenger number merely to satisfy a live-site assertion.
     await expect(tomorrowBrief).toContainText('이 날짜의 공식 예상 승객 자료 없음');
     await expect(tomorrowBrief.locator('.airport-brief-total')).toHaveCount(0);
   }
-  await expect(tomorrowBrief).toContainText(passengerCopy.limitation.ko);
+  await expect(tomorrowBrief.locator('.passenger-transfer-limitation')).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await expect(page.locator('.airport-current-brief')).not.toContainText('전체 공식 예상 출국객');
   await page.screenshot({path:`production-visual-results/closure-tomorrow-${width}.png`,fullPage:false});
