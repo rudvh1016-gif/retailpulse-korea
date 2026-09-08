@@ -134,5 +134,5 @@ test('personal airport briefing shares the airport at-a-glance explanation and k
   const before=await overview.innerText();
   await page.locator('nav.bottom-nav').getByRole('link',{name:'공항',exact:true}).click();
   await page.locator('nav.bottom-nav').getByRole('link',{name:'내 브리핑',exact:true}).click();
-  await expect(brief.locator('.airport-current-brief')).toHaveText(before);
+  await expect(brief.locator('.airport-current-brief')).toHaveText(before,{useInnerText:true});
 });
