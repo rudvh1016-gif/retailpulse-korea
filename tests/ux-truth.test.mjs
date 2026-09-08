@@ -629,7 +629,7 @@ test("항공사 등록 국가는 승객 국적으로 보이지 않는다", () =>
 test("예보 차트는 현재 시간대로 가로 스크롤해서 열린다", () => {
   // 구조 분해 매개변수의 닫는 중괄호는 "\n}: {" 라서, 함수 자체가 닫히는
   // "\n}\n" 까지 읽는다.
-  const chart = signals.match(/function AirportForecastChart\([\s\S]*?\n\}\n/)?.[0] ?? "";
+  const chart = signals.match(/function AirportForecastChart\([\s\S]*?\r?\n\}\r?\n/)?.[0] ?? "";
   assert.ok(chart.length > 0, "차트가 자기 컴포넌트여야 훅을 가질 수 있다");
   assert.match(chart, /bars\.scrollLeft = Math\.max\(0,/);
   assert.match(chart, /querySelector<HTMLElement>\("p\.now"\)/);

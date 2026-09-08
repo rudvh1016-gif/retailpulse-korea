@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { setAnalyticsConsent, trackPersonalEvent } from "../lib/personal-analytics";
+import { usePersonalPreferences } from './personal-preferences';
 import {
   detectInstallPlatform,
   installGuide,
@@ -85,8 +87,11 @@ function subscribeToNothing() {
 }
 
 export function InstallAppButton({ lang }: { lang: InstallLang }) {
+  const {ready,preferences} = usePersonalPreferences();
+  useEffect(() => { if(ready) setAnalyticsConsent(preferences?.analytics ?? false); }, [ready,preferences?.analytics]);
   const guide = installGuide(lang);
   const [open, setOpen] = useState(false);
+  const guideSeen = useRef(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
@@ -106,7 +111,7 @@ export function InstallAppButton({ lang }: { lang: InstallLang }) {
       event.preventDefault();
       setDeferred(event as BeforeInstallPromptEvent);
     };
-    const done = () => { setJustInstalled(true); setDeferred(null); };
+    const done = () => { setJustInstalled(true); setDeferred(null); trackPersonalEvent('pwa_installed'); };
     window.addEventListener("beforeinstallprompt", capture);
     window.addEventListener("appinstalled", done);
     return () => {
@@ -171,7 +176,7 @@ export function InstallAppButton({ lang }: { lang: InstallLang }) {
       ref={triggerRef}
       type="button"
       className="install-app-button"
-      onClick={() => setOpen(true)}
+      onClick={() => { setOpen(true); if (!guideSeen.current) { guideSeen.current = true; trackPersonalEvent('pwa_install_prompt_seen', {language:lang}); } }}
       aria-haspopup="dialog"
       aria-controls="install-dialog"
       aria-expanded={open}

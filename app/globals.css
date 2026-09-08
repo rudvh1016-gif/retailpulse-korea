@@ -1530,3 +1530,43 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .collection-status h3 { font-size: 16px; }
 .collection-status { scroll-margin-top: 100px; }
 .holiday-context a { display: inline-block; margin-top: 8px; }
+
+/* Personal briefing uses the existing typefaces and quiet white/ink palette. */
+.personal-home { min-width: 0; }
+.personal-sheet { border-top: 3px solid #171d25; padding: clamp(22px, 4vw, 48px) 0 24px; margin-bottom: 24px; }
+.personal-sheet h2 { font-family: var(--font-ui), sans-serif; font-size: clamp(26px, 3.4vw, 44px); line-height: 1.25; letter-spacing: -.035em; margin: 12px 0; }
+.personal-sheet h2:focus { outline: none; }
+.personal-kicker { color: #536273; font-size: 12px; letter-spacing: .09em; }
+.personal-place { font-weight: var(--weight-strong); }
+.personal-progress { display: flex; gap: 6px; max-width: 440px; margin: 20px 0 26px; }
+.personal-progress span { flex: 1; height: 3px; background: #e4e8ec; }
+.personal-progress .complete { background: #254d70; }
+.personal-options { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(220px,100%),1fr)); gap: 12px; margin: 24px 0; }
+.personal-home button { cursor: pointer; font: inherit; min-height: 44px; border: 1px solid #c8d0d9; border-radius: 6px; background: #fff; color: #202833; padding: 10px 16px; }
+.personal-home button:focus-visible, .personal-home input:focus-visible, .personal-home summary:focus-visible { outline: 3px solid #4276a3; outline-offset: 3px; }
+.personal-home button[aria-pressed=true] { background: #edf3f8; border-color: #254d70; box-shadow: inset 0 0 0 1px #254d70; }
+.personal-home button:disabled { opacity: .55; cursor: default; }
+.personal-options button { text-align: start; padding: 20px; }
+.personal-options strong, .personal-options span { display: block; }
+.personal-options span { color: #536273; font-size: 14px; margin-top: 8px; line-height: 1.6; }
+.personal-options label, .personal-consent label { display: flex; align-items: center; gap: 10px; padding: 12px 0; line-height: 1.5; }
+.personal-home input { width: 18px; height: 18px; flex-shrink: 0; accent-color: #254d70; }
+.personal-inline, .personal-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.personal-actions { justify-content: flex-end; }
+.personal-home .personal-primary { background: #254d70; border-color: #254d70; color: white; }
+.personal-note, .personal-consent p, .personal-settings small { color: #536273; font-size: 13px; line-height: 1.7; }
+.personal-summary { font-size: clamp(18px,2vw,25px); padding: 20px 0; border-block: 1px solid #dce2e8; }
+.personal-facts { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 0 30px; }
+.personal-facts article { padding: 22px 0; border-bottom: 1px solid #dce2e8; min-width: 0; overflow-wrap: anywhere; }
+.personal-facts h3 { color: #536273; font-size: 14px; font-weight: var(--weight-regular); margin: 0 0 12px; }
+.personal-facts strong { display: block; font-size: 24px; line-height: 1.4; font-variant-numeric: tabular-nums; }
+.personal-facts p, .personal-facts small { color: #536273; font-size: 12px; line-height: 1.7; }
+.personal-preparation { padding: 22px 0; }
+.personal-preparation li { margin: 10px 0; line-height: 1.6; }
+.personal-detail-link { display: inline-block; margin: 12px 0; text-decoration: underline; }
+.personal-feedback { border-top: 1px solid #dce2e8; margin-top: 20px; padding-top: 14px; font-size: 13px; }
+.personal-settings, .personal-existing { margin: 24px 0; border-top: 1px solid #dce2e8; padding: 20px 0; }
+.personal-settings summary, .personal-existing summary { cursor: pointer; padding: 10px 0; font-weight: var(--weight-strong); }
+.personal-settings p { line-height: 1.7; }
+@media (max-width: 767px) { .personal-facts { grid-template-columns: 1fr 1fr; gap: 0 18px; } }
+@media (max-width: 479px) { .personal-options { grid-template-columns: 1fr; } .personal-sheet { padding-top: 24px; } }

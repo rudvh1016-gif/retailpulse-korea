@@ -48,10 +48,10 @@ const names = {
 
 export function pageTitle(locale: SeoLocale, slug?: SeoSlug, tourismArea: TourismDeskArea = "myeongdong") {
   if (!slug) return {
-    ko: "서울 외국인 쇼핑수요 신호 | KORETAIL",
-    en: "Seoul Foreign Retail Demand Signals | KORETAIL",
-    zh: "首尔外国人购物需求信号 | KORETAIL",
-    ja: "ソウル外国人ショッピング需要 | KORETAIL",
+    ko: "인천공항·명동·홍대·성수 오늘·내일 브리핑 | KORETAIL",
+    en: "Incheon Airport & Seoul Areas: Today and Tomorrow | KORETAIL",
+    zh: "仁川机场·明洞·弘大·圣水 今日与明日简报 | KORETAIL",
+    ja: "仁川空港・明洞・弘大・聖水 今日と明日のブリーフィング | KORETAIL",
   }[locale];
   if (slug === "tourism-desk") {
     const name = names[tourismArea][locale];
@@ -84,10 +84,10 @@ export function pageTitle(locale: SeoLocale, slug?: SeoSlug, tourismArea: Touris
 
 export function pageDescription(locale: SeoLocale, slug?: SeoSlug, tourismArea: TourismDeskArea = "myeongdong") {
   if (!slug) return {
-    ko: "명동·홍대·성수의 오늘과 내일 쇼핑 수요, 추천시간, 인천공항 T1·T2 흐름을 KORETAIL에서 한눈에 확인하세요.",
-    en: "KORETAIL compares today and tomorrow's shopping demand in Myeongdong, Hongdae and Seongsu, plus Incheon Airport T1/T2 flow.",
-    zh: "通过KORETAIL查看明洞、弘大、圣水今天与明天的购物需求、推荐时间，以及仁川机场T1/T2客流。",
-    ja: "KORETAILで明洞・弘大・聖水の今日と明日の買い物需要、おすすめ時間、仁川空港T1/T2の流れを確認できます。",
+    ko: "오늘·내일 필요한 공항·관광·상권 정보를 한 번에 확인하세요. 역할과 관심지역을 선택하면 공식 자료가 제공되는 범위에서 예상 출국객·혼잡·날씨·행사를 내 브리핑으로 봅니다.",
+    en: "Choose your role and place for a personal briefing on Incheon Airport, Myeongdong, Hongdae or Seongsu. See expected departures, crowds, weather and events where official data is available.",
+    zh: "选择角色与关注地区，查看仁川机场、明洞、弘大或圣水的个人简报。根据已有官方资料，了解预计出境旅客、拥挤、天气与活动。",
+    ja: "役割と関心のある場所を選び、仁川空港・明洞・弘大・聖水の情報を自分のブリーフィングで確認。公式資料の提供範囲で予想出国者・混雑・天気・イベントを表示します。",
   }[locale];
   if (slug === "tourism-desk") {
     const name = names[tourismArea][locale];
