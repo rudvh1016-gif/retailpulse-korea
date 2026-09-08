@@ -1,11 +1,17 @@
 export type PersonalLang = 'ko' | 'en' | 'zh' | 'ja';
 const row = (ko: string, en: string, zh: string, ja: string) => ({ko,en,zh,ja});
 export const personalCopy = {
+  multiple: row('여러 개 선택할 수 있어요. 최소 하나는 선택해 주세요.','Choose one or more options.','可选择多项，请至少保留一项。','複数選択できます。1つ以上選んでください。'),
+  switchBriefing: row('선택한 지역·날짜 보기','View your selected places and days','查看所选地区与日期','選択した場所・日付を見る'),
+  yesterday: row('어제 브리핑','Yesterday’s briefing','昨日简报','昨日のブリーフィング'),
+  pastNote: row('어제 날짜의 저장된 자료입니다. 예상값은 실제 결과와 구분해 표시합니다.','Stored information for yesterday. Forecasts remain distinct from actual outcomes.','昨日已保存的资料。预测与实际结果分别标示。','昨日の保存済み資料です。予測と実績を区別して表示します。'),
+  pastSeoulNote: row('상권의 어제 인구·혼잡·날씨는 현재 제공하지 않습니다. 확인되는 일정과 과거 공개자료만 표시합니다.','Yesterday’s neighbourhood population, crowding and weather are not currently available. Only available schedules and published history are shown.','目前不提供商圈昨日人口、拥挤和天气。仅显示可用日程与已发布历史资料。','街の昨日の人口・混雑・天気は現在提供していません。確認できる予定と公表済みの過去資料のみ表示します。'),
+  noLocalInterests: row('선택한 지역에 해당하는 관심정보가 없어요. 내 설정에서 필요한 정보를 추가해 주세요.','None of your selected interests apply to this place. Add interests in your settings.','所选关注信息不适用于该地区，请在设置中添加。','選択した関心情報はこの場所に対応していません。設定で追加してください。'),
   promise: row('오늘·내일 필요한 공항·관광·상권 정보를 한 번에 확인하세요.', 'Your airport, travel and neighbourhood briefing for today and tomorrow.', '一站查看今天和明天所需的机场、旅游与商圈信息。', '今日・明日に必要な空港・観光・街の情報をまとめて確認。'),
   role: row('어떤 목적으로 이용하시나요?', 'What brings you here?', '您主要用于什么目的？', 'どのような目的で利用しますか？'),
-  location: row('어디를 가장 자주 보시나요?', 'Which place do you check most?', '您最常关注哪里？', 'よく確認する場所はどこですか？'),
+  location: row('어느 지역을 보고 싶으신가요?', 'Which places would you like to see?', '您想查看哪些地区？', 'どの場所を確認したいですか？'),
   interests: row('어떤 정보가 가장 중요하신가요?', 'What matters most to you?', '哪些信息最重要？', 'どの情報が重要ですか？'),
-  preference: row('처음 열었을 때 무엇을 먼저 볼까요?', 'Which briefing should open first?', '打开时先看哪份简报？', '最初にどちらを表示しますか？'),
+  preference: row('어느 날짜의 브리핑을 볼까요?', 'Which days would you like to see?', '您想查看哪些日期的简报？', 'どの日付のブリーフィングを見ますか？'),
   tourist: row('관광객', 'Traveller', '游客', '旅行者'),
   manager: row('매장 영업관리자', 'Store manager', '门店营业管理者', '店舗営業管理者'),
   guide: row('관광통역안내사', 'Tour guide', '旅游翻译导游', '観光通訳ガイド'),

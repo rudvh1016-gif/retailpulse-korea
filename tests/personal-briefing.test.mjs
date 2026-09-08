@@ -1,6 +1,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parsePreferences, recommendedPreferences, availableInterests, buildPersonalBrief } from '../lib/personal-briefing.ts';
+import { parsePreferences, recommendedPreferences, availableInterests, buildPersonalBrief, toggleChoice, briefingDate } from '../lib/personal-briefing.ts';
+
+test('multiple places, terminals and days survive storage without discarding legacy settings',()=>{
+  const p={...recommendedPreferences('manager'),selectedLocations:['airport','seongsu'],selectedTerminals:['T1','T2'],terminal:'T1',selectedDays:['tomorrow','today','yesterday']};
+  assert.deepEqual(parsePreferences(JSON.stringify(p)),p);
+  assert.equal(parsePreferences(JSON.stringify({...p,selectedDays:[]})),null);
+  assert.equal(parsePreferences(JSON.stringify({...p,selectedLocations:['airport','private']})),null);
+  assert.equal(parsePreferences(JSON.stringify({...p,selectedDays:['today','today']})),null);
+  assert.deepEqual(toggleChoice(['today'],'today'),['today']);
+  assert.deepEqual(toggleChoice(['today'],'yesterday'),['today','yesterday']);
+  assert.equal(briefingDate('2026-01-01','yesterday'),'2025-12-31');
+});
 
 test('device preferences reject malformed, obsolete and non-public values', () => {
   for (const raw of ['bad', '{}', 'null', JSON.stringify({version: 9}), JSON.stringify({...recommendedPreferences('tourist'), location: 'busan'})]) assert.equal(parsePreferences(raw), null);
@@ -15,6 +26,13 @@ test('only existing local information can be selected', () => {
   assert.ok(!availableInterests('hongdae').includes('flights'));
 });
 const base = {mode:'live-summary', generatedAt:'2026-09-08T01:00:00Z', todayKst:'2026-09-08',serviceDateKst:'2026-09-09',dayRelation:'FUTURE', areas:{}, airport:{serviceDateKst:'2026-09-09',forecastCoverage:{all:'PARTIAL',byTerminal:{T1:'COMPLETE'}}, todayExpectedPassengersTotal:999, todayExpectedPassengersByTerminal:{T1:123},peakExpectedTimeBandByTerminal:{},flightScope:{CONCOURSE:12}}};
+test('yesterday uses the requested saved airport forecast without presenting it as actual or future advice',()=>{
+  const summary={...base,todayKst:'2026-09-10',dayRelation:'PAST'};
+  const result=buildPersonalBrief(summary,{...recommendedPreferences('manager'),day:'yesterday',terminal:'T1'},'2026-09-09','ko');
+  assert.equal(result.cards.find(c=>c.interest==='passengers')?.value,'123');
+  assert.match(result.cards[0].note,/예상/);
+  assert.deepEqual(result.actions,[]);
+});
 test('partial coverage cannot become a whole day passenger number', () => {
   const result = buildPersonalBrief(base, recommendedPreferences('manager'), '2026-09-09', 'ko');
   assert.ok(!JSON.stringify(result).includes('999'));
