@@ -1305,7 +1305,7 @@ test("mobile More explains usage without the removed promotion and retains its T
 
   const bottom = page.locator("nav.bottom-nav");
   await expect(bottom).toBeVisible();
-  await expect(bottom.locator("a")).toHaveCount(5);
+  await expect(bottom.locator("a")).toHaveCount(6);
   await expect(bottom).not.toContainText("관광안내");
   await bottom.locator("a").filter({ hasText: "더보기" }).click();
   await expect(page).toHaveURL(/\/ko\/more$/);

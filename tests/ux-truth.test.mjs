@@ -426,7 +426,7 @@ test("공항 페이지는 요약 → 다음 → 구성 → 관측 표 순서로 
   const summary = signals.match(/export function AirportTodaySummary[\s\S]*?\n\}/)?.[0] ?? "";
   assert.ok(summary.length > 0);
   const at = (needle) => summary.indexOf(needle);
-  const brief = at('className="current-brief airport-current-brief"');
+  const brief = at('<AirportAtAGlance summary={summary} lang={lang} terminal={terminal}');
   const grid = at('className="airport-today-grid"');
   const forecast = at('airport-detail-section airport-forecast');
   const composition = at('className="airport-composition"');
@@ -462,7 +462,7 @@ test("공항 페이지는 요약 → 다음 → 구성 → 관측 표 순서로 
  * 네 언어 모두 "공식 예상" 이라고 말한다.
  */
 test("하루 전체 합계 다음에는 지금 시간대 공식 예상 출국객, 대기는 보조 줄로 내려간다", () => {
-  assert.ok(signals.indexOf('className="airport-brief-total"') < signals.indexOf('{airportBriefLines.map('),
+  assert.ok(signals.indexOf('className="airport-brief-total"') < signals.indexOf('{dayLines.map('),
     "선택한 터미널의 하루 합계를 현재 시간대보다 먼저 강조한다");
   const localize = signals.match(/function localizeAirportBrief\([\s\S]*?\n\}/)?.[0] ?? "";
   assert.ok(localize.length > 0);

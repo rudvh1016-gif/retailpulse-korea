@@ -1,4 +1,5 @@
 "use client";
+import { pc } from '../lib/personal-copy';
 import {flightBoardingLocation} from "../lib/flight-scope";
 
 import { SeoulContextCard, HolidayContext, contextText } from "./operational-context";
@@ -320,6 +321,7 @@ export interface LiveSummary {
       forecastCoverage: { all: ForecastCoverageStatus; byTerminal: Record<string, ForecastCoverageStatus> };
     };
     scheduled: LiveScheduledRow[];
+    scheduledBriefing?: ReturnType<typeof import('../lib/scheduled-briefing').summarizeScheduledBriefing>;
     passengerForecast: LivePassengerForecastRow[];
   };
 }
@@ -1414,6 +1416,76 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
   </>;
 }
 
+export function AirportAtAGlance({summary,lang,terminal="all"}:{summary:LiveSummary;lang:Lang;terminal?:"all"|"T1"|"T2"}) {
+  const airport=summary.airport;
+  const isAll=terminal==="all";
+  const numberLocale=airportLocale(lang);
+  const peopleUnit={ko:"명",en:" people",zh:"人",ja:"人"}[lang];
+  const flightUnit={ko:"편",en:" flights",zh:"班",ja:"便"}[lang];
+  const expectedTotal=isAll?airport.todayExpectedPassengersTotal:airport.todayExpectedPassengersByTerminal?.[terminal]??null;
+  const flightsCount=isAll?airport.departuresTrackedToday:airport.departuresTrackedTodayByTerminal?.[terminal]??null;
+  const peak=isAll?airport.peakExpectedTimeBand:airport.peakExpectedTimeBandByTerminal?.[terminal]??null;
+  const remaining=summary.dayRelation==="TODAY"?(isAll?airport.remainingExpectedPassengers:airport.remainingExpectedPassengersByTerminal?.[terminal]??null):null;
+  const timeline=isAll?airport.passengerForecastTimeline:airport.passengerForecastTimelineByTerminal?.[terminal]??[];
+  const forecastStatus=isAll?airport.forecastCoverage?.all:airport.forecastCoverage?.byTerminal?.[terminal];
+  const gate=airport.topDepartureGateByTerminal?.[terminal];
+  const topGate=isAll?(airport.topDepartureGate&&airport.topDepartureGateFlights!==null?{terminal:airport.topDepartureGateTerminal,gate:airport.topDepartureGate,flights:airport.topDepartureGateFlights}:null):(gate?{terminal,...gate}:null);
+  const nowIso=summary.generatedAt;
+  const scopeLabel=airportTodayText.scope[lang][terminal];
+  const passengerAt=isAll?airport.passengerForecastRetrievedAt:airport.passengerForecastRetrievedAtByTerminal?.[terminal]??null;
+  const flightsAt=airport.departuresTrackedTodayRetrievedAt;
+  const passengerCollected=passengerAt?formatHumanFreshness(passengerAt,nowIso,lang,"collected"):null;
+  const flightsCollected=flightsAt?formatHumanFreshness(flightsAt,nowIso,lang,"collected"):null;
+  const airportBrief = buildAirportCurrentBrief({
+    scope: terminal,
+    congestion: summary.dayRelation === "TODAY" ? airport.congestion ?? [] : [],
+    forecastCoverage: forecastStatus ?? "UNAVAILABLE",
+    peak,
+    // "현재" only means something on the day being read today; the selector
+    // returns null otherwise rather than dressing a stale hour as now.
+    nowBand: selectAirportNowBand({
+      timeline,
+      nowIso,
+      peakExpectedPassengers: peak?.expectedPassengers ?? null,
+      isToday: summary?.dayRelation === "TODAY",
+    }),
+    departures: flightsCount,
+    topGate,
+  });
+  const airportBriefLines = localizeAirportBrief(
+    airportBrief, lang, remaining,
+    summary?.sources?.find((source) => source.sourceId === "INCHEON_PASSENGER_FORECAST")?.retrievedAt ?? null,
+    summary?.generatedAt ?? null,
+  );
+  const comparisons = airport.periodComparisons?.[terminal];
+  const passengerChanges = ([7, 28] as const).flatMap((days) => comparisons?.[days]?.passengers ? [comparisonText(comparisons[days]!.passengers!, lang, days)] : []);
+  if (!comparisons?.[7]?.passengers) passengerChanges.unshift(({ ko: "전주 동요일 비교 자료 없음", en: "Same weekday last week: comparison unavailable", zh: "缺少上周同曜日比较资料", ja: "前週同曜日の比較資料なし" })[lang]);
+  const flightChanges = ([7, 28] as const).flatMap((days) => comparisons?.[days]?.flightRecords ? [comparisonText(comparisons[days]!.flightRecords!, lang, days)] : []);
+  const recordsOnly = ({ ko: "수집된 출발편 기록 기준 · 전체 운항 증감과 다를 수 있음", en: "Collected departing-flight records; not a complete operational census", zh: "按已采集出发航班记录，非完整运行统计", ja: "収集済み出発便記録による比較・全運航の増減とは異なる場合あり" })[lang];
+  const schedule=airport.scheduledBriefing?.serviceDateKst===summary.serviceDateKst&&summary.dayRelation!=="PAST"?airport.scheduledBriefing:null;
+  const planned=isAll?schedule?.ranking.all:schedule?.ranking.byTerminal[terminal];
+  const dayLabel=summary.dayRelation==="TODAY"?areaBriefText.nowLabel[lang]:contextText(lang,"선택일 요약","Selected day summary","所选日期概览","選択日の概要");
+  const dayLines=airportBriefLines.map(line=>summary.dayRelation==="TODAY"?line:line.replace(contextText(lang,"오늘 피크","Today's peak","今日高峰","本日ピーク"),contextText(lang,"선택일 피크","Selected day's peak","所选日期高峰","選択日のピーク")));
+  return <section className="current-brief airport-current-brief" aria-label={`${scopeLabel} ${dayLabel}`}>
+      <p className="eyebrow">{scopeLabel} · {dayLabel}</p>
+      {expectedTotal !== null && <strong className="airport-brief-total">{summary.dayRelation === "TODAY"
+        ? contextText(lang, "금일 전체 공식 예상 출국객", "Today's total official expected departures", "今日全天官方预计出境旅客", "本日合計の公式予想出国旅客")
+        : contextText(lang, "선택일 전체 공식 예상 출국객", "Selected day's total official expected departures", "所选日期全天官方预计出境旅客", "選択日合計の公式予想出国旅客")} {Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}</strong>}
+      {dayLines.map((line, index) => index === 0 ? <strong className="airport-brief-current" key={line}>{line}</strong> : <p key={line}>{line}</p>)}
+      {expectedTotal !== null && passengerChanges.length > 0 && <p>{airportTodayText.expected[lang]} · {passengerChanges.join(" · ")}</p>}
+      {flightsCount !== null && <p>{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}{flightChanges.length ? ` · ${flightChanges.join(" · ")}` : ""}</p>}
+      {flightsCount===null&&planned&&planned.totalFlights>0&&<><p>{pc('scheduledFlights',lang)} {planned.totalFlights.toLocaleString(numberLocale)}{flightUnit}</p><small>{pc('scheduleBasis',lang)}</small></>}
+      {isAll && <FlightScopeNote airport={airport} lang={lang} />}
+      {flightChanges.length > 0 && <small>{recordsOnly}</small>}
+      <small>{[passengerCollected ? `${airportTodayText.expected[lang]} · ${passengerCollected}` : null, flightsCollected ? `${airportTodayText.flights[lang]} · ${flightsCollected}` : null].filter(Boolean).join(" / ")}</small>
+      {(isAll || terminal === "T1") && <small className="passenger-scope-note">{contextText(lang,
+        "예상 출국객은 출국장 기준입니다. T1에서 출국 수속 후 탑승동으로 이동하는 승객도 T1 범위이며, 탑승동 인원을 따로 더하지 않습니다.",
+        "Passenger forecasts count departure halls. Passengers clearing departure at T1 before moving to the concourse are within T1; no separate concourse count is added.",
+        "预计出境旅客按出境大厅统计。在T1办理出境后前往登机楼的旅客属于T1范围，不另加登机楼人数。",
+        "予想出国客は出国場単位です。T1で出国手続き後にコンコースへ移動する旅客もT1の範囲で、別途加算しません。")}</small>}
+    </section>;
+}
+
 export function AirportTodaySummary({ lang, terminal = "all", date = null }: { lang: Lang; terminal?: "all" | "T1" | "T2"; date?: string | null }) {
   // Eight full-height checkpoint rows per terminal cost more vertical space
   // than they earn: what a reader needs first is the one queue that is longest
@@ -1436,10 +1508,6 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   const flightsCount = isAll ? airport.departuresTrackedToday : airport.departuresTrackedTodayByTerminal?.[terminal] ?? null;
   const peak = isAll ? airport.peakExpectedTimeBand : airport.peakExpectedTimeBandByTerminal?.[terminal] ?? null;
   const remaining = isAll ? airport.remainingExpectedPassengers : airport.remainingExpectedPassengersByTerminal?.[terminal] ?? null;
-  const topGateForTerminal = airport.topDepartureGateByTerminal?.[terminal];
-  const topGate = isAll
-    ? (airport.topDepartureGate && airport.topDepartureGateFlights !== null ? { terminal: airport.topDepartureGateTerminal, gate: airport.topDepartureGate, flights: airport.topDepartureGateFlights } : null)
-    : (topGateForTerminal ? { terminal, gate: topGateForTerminal.gate, flights: topGateForTerminal.flights } : null);
   const timeline = isAll ? airport.passengerForecastTimeline : airport.passengerForecastTimelineByTerminal?.[terminal] ?? [];
   const forecastStatus = isAll ? airport.forecastCoverage?.all : airport.forecastCoverage?.byTerminal?.[terminal];
   const isForecastPartial = forecastStatus === "PARTIAL";
@@ -1482,32 +1550,6 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     if (row.waitTimeRaw) return /분|min|分钟|分/i.test(row.waitTimeRaw) ? row.waitTimeRaw : `${row.waitTimeRaw}${waitUnit}`;
     return row.waitTimeMinutes !== null ? `${row.waitTimeMinutes}${waitUnit}` : airportTodayText.unavailable[lang];
   };
-  const airportBrief = buildAirportCurrentBrief({
-    scope: terminal,
-    congestion: airport.congestion ?? [],
-    forecastCoverage: forecastStatus ?? "UNAVAILABLE",
-    peak,
-    // "현재" only means something on the day being read today; the selector
-    // returns null otherwise rather than dressing a stale hour as now.
-    nowBand: selectAirportNowBand({
-      timeline,
-      nowIso,
-      peakExpectedPassengers: peak?.expectedPassengers ?? null,
-      isToday: summary?.dayRelation === "TODAY",
-    }),
-    departures: flightsCount,
-    topGate,
-  });
-  const airportBriefLines = localizeAirportBrief(
-    airportBrief, lang, remaining,
-    summary?.sources?.find((source) => source.sourceId === "INCHEON_PASSENGER_FORECAST")?.retrievedAt ?? null,
-    summary?.generatedAt ?? null,
-  );
-  const comparisons = airport.periodComparisons?.[terminal];
-  const passengerChanges = ([7, 28] as const).flatMap((days) => comparisons?.[days]?.passengers ? [comparisonText(comparisons[days]!.passengers!, lang, days)] : []);
-  if (!comparisons?.[7]?.passengers) passengerChanges.unshift(({ ko: "전주 동요일 비교 자료 없음", en: "Same weekday last week: comparison unavailable", zh: "缺少上周同曜日比较资料", ja: "前週同曜日の比較資料なし" })[lang]);
-  const flightChanges = ([7, 28] as const).flatMap((days) => comparisons?.[days]?.flightRecords ? [comparisonText(comparisons[days]!.flightRecords!, lang, days)] : []);
-  const recordsOnly = ({ ko: "수집된 출발편 기록 기준 · 전체 운항 증감과 다를 수 있음", en: "Collected departing-flight records; not a complete operational census", zh: "按已采集出发航班记录，非完整运行统计", ja: "収集済み出発便記録による比較・全運航の増減とは異なる場合あり" })[lang];
   // Metrics can be collected at different times (expected passengers 09:34 vs
   // flights 00:03), so each cell carries its own time. When all four agree the
   // section states it once instead of repeating it.
@@ -1520,23 +1562,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   const perMetric = (value: string | null) => (sharesOneFreshness ? null : value);
 
   return <section className="airport-today" aria-labelledby="airport-today-title">
-    <section className="current-brief airport-current-brief" aria-label={`${scopeLabel} ${areaBriefText.nowLabel[lang]}`}>
-      <p className="eyebrow">{scopeLabel} · {areaBriefText.nowLabel[lang].toUpperCase()}</p>
-      {expectedTotal !== null && <strong className="airport-brief-total">{summary.dayRelation === "TODAY"
-        ? contextText(lang, "금일 전체 공식 예상 출국객", "Today's total official expected departures", "今日全天官方预计出境旅客", "本日合計の公式予想出国旅客")
-        : contextText(lang, "선택일 전체 공식 예상 출국객", "Selected day's total official expected departures", "所选日期全天官方预计出境旅客", "選択日合計の公式予想出国旅客")} {Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}</strong>}
-      {airportBriefLines.map((line, index) => index === 0 ? <strong className="airport-brief-current" key={line}>{line}</strong> : <p key={line}>{line}</p>)}
-      {expectedTotal !== null && passengerChanges.length > 0 && <p>{airportTodayText.expected[lang]} · {passengerChanges.join(" · ")}</p>}
-      {flightsCount !== null && <p>{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}{flightChanges.length ? ` · ${flightChanges.join(" · ")}` : ""}</p>}
-      {isAll && <FlightScopeNote airport={airport} lang={lang} />}
-      {flightChanges.length > 0 && <small>{recordsOnly}</small>}
-      <small>{[passengerCollected ? `${airportTodayText.expected[lang]} · ${passengerCollected}` : null, flightsCollected ? `${airportTodayText.flights[lang]} · ${flightsCollected}` : null].filter(Boolean).join(" / ")}</small>
-      {(isAll || terminal === "T1") && <small className="passenger-scope-note">{contextText(lang,
-        "예상 출국객은 출국장 기준입니다. T1에서 출국 수속 후 탑승동으로 이동하는 승객도 T1 범위이며, 탑승동 인원을 따로 더하지 않습니다.",
-        "Passenger forecasts count departure halls. Passengers clearing departure at T1 before moving to the concourse are within T1; no separate concourse count is added.",
-        "预计出境旅客按出境大厅统计。在T1办理出境后前往登机楼的旅客属于T1范围，不另加登机楼人数。",
-        "予想出国客は出国場単位です。T1で出国手続き後にコンコースへ移動する旅客もT1の範囲で、別途加算しません。")}</small>}
-    </section>
+    <AirportAtAGlance summary={summary} lang={lang} terminal={terminal}/>
 
     <details className="airport-summary-details"><summary>{contextText(lang,"터미널별 상세·집계 기준 보기","Terminal details and counting basis","航站楼详情与统计标准","ターミナル詳細・集計基準を見る")}</summary>
     {isAll && <TerminalBriefingCards lang={lang} airport={airport} nowIso={nowIso} dayRelation={summary?.dayRelation ?? "TODAY"} />}

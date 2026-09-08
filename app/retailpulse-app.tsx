@@ -1,4 +1,5 @@
 "use client";
+import { pc } from '../lib/personal-copy';
 import { activeSourceCatalog,sourceName,sourceUse,CollectionStatus } from "./source-status";
 
 import { Fragment, lazy, Suspense, useEffect, useMemo, useState } from "react";
@@ -498,13 +499,17 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       </main>
 
       <nav className="bottom-nav" aria-label="Primary">
+        <a href={`/${lang}`} className={homeVisible ? 'active' : ''} aria-current={homeVisible ? 'page' : undefined} onClick={event=>{event.preventDefault();goHome();}}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
+          <span>{pc('myBriefing',lang)}</span>
+        </a>
         {(["today", "airport", "business", "predictions", "more"] as View[]).map((item) => (
           <a
             key={item}
             href={routeFor(lang, item, selected)}
-            className={view === item || (view === "tourism-desk" && item === "more") ? "active" : ""}
+            className={!homeVisible && (view === item || (view === "tourism-desk" && item === "more")) ? "active" : ""}
             onClick={(event) => { event.preventDefault(); navigate(item); }}
-            aria-current={view === item ? "page" : view === "tourism-desk" && item === "more" ? "location" : undefined}
+            aria-current={homeVisible ? undefined : view === item ? "page" : view === "tourism-desk" && item === "more" ? "location" : undefined}
           >
             <Icon name={item} />
             <span>{t[item].toUpperCase()}</span>

@@ -589,7 +589,7 @@ test("the airport page reads summary, then next, then composition, then the obse
   // what this test is about.
   const signals = source.slice(source.indexOf("export function AirportTodaySummary("));
   assert.ok(signals.length > 0, "the departure summary component must exist");
-  const brief = signals.indexOf('className="current-brief airport-current-brief"');
+  const brief = signals.indexOf('<AirportAtAGlance summary={summary} lang={lang} terminal={terminal}');
   const grid = signals.indexOf('className="airport-today-grid"');
   const forecast = signals.indexOf('className="airport-detail-section airport-forecast"');
   const composition = signals.indexOf('className="airport-composition"');

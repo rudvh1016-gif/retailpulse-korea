@@ -1,4 +1,5 @@
 import { flightScopeCounts } from "../../../../lib/flight-scope";
+import { summarizeScheduledBriefing, type ScheduledBriefingRow } from "../../../../lib/scheduled-briefing";
 import { compareComposition } from "../../../../lib/airport-composition-history";
 import type { AirlineRankingSummary } from "../../../../lib/airline-ranking";
 import { getDb } from "../../../../db";
@@ -412,11 +413,12 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     ).bind(serviceDate, shiftKstDay(serviceDate, 1))],
 
     scheduledRows: [client.prepare(
-      `SELECT terminal, COUNT(*) AS flights, MIN(scheduled_time) AS firstTime, MAX(scheduled_time) AS lastTime,
-        MAX(retrieved_at) AS retrievedAt
+      `SELECT terminal, COALESCE(master_flight_number, flight_number) AS operatingFlight,
+        scheduled_time AS scheduledTime, weekdays, valid_from AS validFrom, valid_to AS validTo,
+        retrieved_at AS retrievedAt
       FROM airport_scheduled_flights
       WHERE valid_from <= ? AND valid_to >= ?
-      GROUP BY terminal ORDER BY terminal`,
+      ORDER BY scheduled_time, physical_schedule_id LIMIT 2001`,
     ).bind(serviceDate, serviceDate)],
   };
 
@@ -589,6 +591,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   // country comes from a reference table, never from the provider, and is
   // reported as UNVERIFIED whenever the table cannot vouch for it.
   const airlineRanking = summarizeAirlineRanking(flightRows as unknown as AirlineRankingFlightRow[], lookupAirline, 300);
+  const scheduledBriefing = summarizeScheduledBriefing(scheduledRows as unknown as ScheduledBriefingRow[], serviceDate, lookupAirline);
   const periodComparisons = Object.fromEntries(["all", "T1", "T2"].map((scope) => [scope,
     Object.fromEntries(([7, 28] as const).map((days) => {
       const baselineDate = shiftKstDay(serviceDate, -days);
@@ -736,7 +739,8 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
         passengerForecastRetrievedAt: arrivalToday.retrievedAt,
         forecastCoverage: arrivalToday.coverage,
       },
-      scheduled: scheduledRows,
+      scheduled: scheduledBriefing.scheduled,
+      scheduledBriefing,
       // FORECAST/EXPECTED passengers — semantically separate from
       // `congestion` (CURRENT/OBSERVED). Never merge these two arrays.
       passengerForecast: upcomingForecast,
