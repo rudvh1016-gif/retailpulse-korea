@@ -63,10 +63,12 @@ export function buildPersonalBrief(summary: LiveSummary | null | undefined, p: P
     // A real whole-airport count is the evidence gate before exposing any scope.
     const flights = !finite(a.departuresTrackedToday) ? null : p.terminal === 'CONCOURSE' ? a.flightScope?.CONCOURSE : all ? a.departuresTrackedToday : a.departuresTrackedTodayByTerminal?.[p.terminal];
     const schedule = a.scheduledBriefing?.serviceDateKst === date && date >= summary.todayKst ? a.scheduledBriefing : undefined;
+    const officialSchedule = schedule?.basis === 'OFFICIAL_DEPARTURE_SCHEDULE';
+    const scheduleNote = pc(officialSchedule ? 'officialScheduleBasis' : 'scheduleBasis',lang);
     const planned = all ? schedule?.ranking.all : schedule?.ranking.byTerminal[p.terminal];
     const useSchedule = !finite(flights) && Boolean(planned?.totalFlights);
     if (finite(flights)) add('flights',pc('flights',lang),`${num(flights)}${pc('flightUnit',lang)}`,pc('flightBasis',lang) + (a.flightScope?.capped ? ` · ${pc('partial',lang)}` : ''),a.departuresTrackedTodayRetrievedAt ?? undefined);
-    else if(useSchedule && planned) add('flights',pc('scheduledFlights',lang),`${num(planned.totalFlights)}${pc('flightUnit',lang)}`,pc('scheduleBasis',lang),planned.retrievedAt ?? undefined);
+    else if(useSchedule && planned) add('flights',pc(officialSchedule ? 'officialScheduledFlights' : 'scheduledFlights',lang),`${num(planned.totalFlights)}${pc('flightUnit',lang)}`,scheduleNote,planned.retrievedAt ?? undefined);
     const ranking = useSchedule ? planned : all ? a.airlineRanking?.all : a.airlineRanking?.byTerminal[p.terminal];
     const ranked = ranking?.airlines.filter(row=>row.registryName && finite(row.flights)).slice(0,3) ?? [];
     const airlineLines = ranked.map(row=>{
@@ -74,7 +76,7 @@ export function buildPersonalBrief(summary: LiveSummary | null | undefined, p: P
       if(country) { try { country = new Intl.DisplayNames([lang],{type:'region',style:'short'}).of(country) ?? country; } catch { /* Retain registry code. */ } }
       return `${row.registryName}${row.countryBasis==='REGISTRY'&&country?` · ${country}`:''} · ${num(row.flights)}${pc('flightUnit',lang)} (${Math.round(row.share*100)}%)`;
     });
-    if(airlineLines.length) add('airlines',pc('airlines',lang),airlineLines[0],`${useSchedule?`${pc('scheduleBasis',lang)} · `:''}${pc('airlineBasis',lang)}`,ranking?.retrievedAt ?? undefined,airlineLines.slice(1));
+    if(airlineLines.length) add('airlines',pc('airlines',lang),airlineLines[0],`${useSchedule?`${scheduleNote} · `:''}${pc('airlineBasis',lang)}`,ranking?.retrievedAt ?? undefined,airlineLines.slice(1));
   } else {
     const a = summary.areas[p.location];
     if (!a) return {cards,actions};

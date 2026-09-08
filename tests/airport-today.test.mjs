@@ -41,7 +41,7 @@ function pagePayload(items, totalCount) {
   };
 }
 
-test("A1 scan stores D-3 through today, excludes D+1, deduplicates codeshares, and adds no calls", async () => {
+test("A1 scan stores D-3 through today, separates D+1, deduplicates codeshares, and adds no calls", async () => {
   const seen = [];
   const pages = new Map([
     [1, [
@@ -71,6 +71,8 @@ test("A1 scan stores D-3 through today, excludes D+1, deduplicates codeshares, a
   assert.equal(result.sourceRowsForDate, 3);
   assert.equal(result.trackedToday, 2);
   assert.equal(result.records.length, 5);
+  assert.equal(result.tomorrowRecords.length, 1);
+  assert.equal(result.tomorrowRecords[0].scheduledAt.slice(0,10), "2026-08-31");
   assert.deepEqual(result.records.map((record) => record.scheduledAt.slice(0, 10)).sort(), [
     "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-30",
   ]);
@@ -98,7 +100,8 @@ class MemoryD1 {
   }
 
   async batch(statements) {
-    return statements.map(({ params }) => {
+    return statements.map(({ sql, params }) => {
+      if (!sql.includes("INSERT INTO airport_flights")) return { meta: { rows_written: 0 } };
       const physicalFlightId = params[20];
       const sourceHash = params[19];
       const previous = this.flights.get(physicalFlightId);
