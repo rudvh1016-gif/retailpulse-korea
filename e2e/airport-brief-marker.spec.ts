@@ -22,7 +22,7 @@ for (const clock of ["11:57", "21:03", "23:59"]) {
     for (const [terminal, total] of [["전체", "47,320"], ["T2", "17,220"], ["T1", "30,100"], ["전체", "47,320"]]) {
       await page.getByRole("tab", { name: terminal, exact: true }).click();
       const brief = page.locator(".airport-current-brief");
-      await expect(brief.locator("strong").first()).toHaveText(`금일 전체 공식 예상 출국객 ${total}명`);
+      await expect(brief.locator("strong").first()).toHaveText(`금일 출국장 공식 예상 승객 ${total}명`);
       await expect(brief.locator("strong").nth(1)).toContainText(`${clock.slice(0, 2)}:00–`);
       await expect(brief).toContainText("전주 동요일 비교 자료 없음");
       await expect(brief).toContainText("출발 운항");

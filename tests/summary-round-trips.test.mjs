@@ -102,8 +102,8 @@ test("the whole summary read path is one D1 round trip, and the payload is a cac
     assert.equal(body.mode, "live-summary");
     assert.equal(client.trips.length, 1, `expected one D1 request, saw ${JSON.stringify(client.trips)}`);
     assert.equal(client.trips[0].kind, "batch");
-    // 21 block statements + 3 × 21 date-picker probes, all in the one request.
-    assert.equal(client.trips[0].count, 21 + 3 * 21);
+    // 22 block statements + 3 × 21 date-picker probes, all in the one request.
+    assert.equal(client.trips[0].count, 22 + 3 * 21);
 
     assert.equal(body.areas.myeongdong.realtime.congestionLabel, "약간 붐빔");
     assert.equal(body.areas.myeongdong.realtime.freshness, "LIVE");
@@ -141,7 +141,7 @@ test("a broken statement still isolates to its own block: the page stays live, t
     assert.equal(response.headers.get("cache-control"), SUMMARY_CACHE_CONTROL);
     assert.equal(client.trips[0].kind, "batch", "the single batch is tried first");
     // Then one concurrent wave: one request per group, not the old serial chain.
-    assert.equal(client.trips.length, 1 + 23);
+    assert.equal(client.trips.length, 1 + 24);
   } finally {
     database.close();
     unlinkSync(databasePath);
@@ -181,4 +181,16 @@ test("population comparisons require exact local time, source, schema and valid 
       database.prepare(`UPDATE seoul_realtime_area SET ${column}=? WHERE id='baseline'`).run(original);
     }
   } finally { database.close(); unlinkSync(databasePath); }
+});
+
+test('selected dates never reuse the latest Seoul realtime population as yesterday or tomorrow', async () => {
+  const {database,databasePath}=openDatabase('selected-seoul');
+  try {
+    seed(database);
+    for(const serviceDate of ['2026-09-03','2026-09-05']) {
+      const clock={...clockFor(),serviceDate,dayRelation:serviceDate<'2026-09-04'?'PAST':'FUTURE',dayStartAt:`${serviceDate}T00:00:00+09:00`};
+      const body=await (await summarizeLiveSummary(new LocalD1Database(database),clock)).json();
+      for(const area of ['myeongdong','hongdae','seongsu']) assert.equal(body.areas[area].realtime,null);
+    }
+  } finally {database.close();unlinkSync(databasePath);}
 });

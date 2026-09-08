@@ -1,4 +1,5 @@
 "use client";
+import { passengerCopy } from "../lib/passenger-copy";
 import { pc } from '../lib/personal-copy';
 import {flightBoardingLocation} from "../lib/flight-scope";
 
@@ -321,6 +322,7 @@ export interface LiveSummary {
       forecastCoverage: { all: ForecastCoverageStatus; byTerminal: Record<string, ForecastCoverageStatus> };
     };
     scheduled: LiveScheduledRow[];
+    transferForecast?: {terminal: "T1" | "T2"; expectedTransferPassengers: number; retrievedAt: string; serviceDate: string}[];
     scheduledBriefing?: ReturnType<typeof import('../lib/scheduled-briefing').summarizeScheduledBriefing>;
     passengerForecast: LivePassengerForecastRow[];
   };
@@ -589,7 +591,7 @@ const arrivalSectionText = {
   selectedDayTotal: { ko: "선택일 전체 공식 예상 입국객", en: "Selected day's total official expected arrivals", zh: "所选日期全天官方预计入境旅客", ja: "選択日合計の公式予想入国旅客" },
   peak: { ko: "오늘 피크", en: "Today's peak", zh: "今日高峰", ja: "本日のピーク" },
   flowTitle: { ko: "공식 예상 입국객 흐름", en: "Official expected arrival flow", zh: "官方预计入境客流", ja: "公式予想入国者の流れ" },
-  flowOnly: { ko: "공식 예상 승객 · 실제 입국 인원 아님", en: "Official expected passengers · not an observed arrival count", zh: "官方预计旅客 · 非实际入境人数", ja: "公式予想旅客 · 実際の入国人数ではありません" },
+  flowOnly: { ko: "공식 예상 승객 · 실제 입국 인원 아님", en: "Official departure-hall passenger forecast · not an observed arrival count", zh: "官方预计旅客 · 非实际入境人数", ja: "公式予想旅客 · 実際の入国人数ではありません" },
   byTerminal: { ko: "터미널별 공식 예상 입국객", en: "Official expected arrivals by terminal", zh: "各航站楼官方预计入境旅客", ja: "ターミナル別の公式予想入国旅客" },
   basis: {
     ko: "인천공항이 발표한 시간대별 예상 입국객입니다. 서울로 이동하는 인원 수가 아닙니다",
@@ -618,7 +620,7 @@ const airportTodayText = {
   // Means "the latest retrieval AMONG airport datasets" — never that every
   // metric below shares this freshness (see per-metric `collected` lines).
   retrieved: { ko: "공항 데이터 중 최근 수집", en: "Latest collected, among airport datasets", zh: "机场数据中最近一次采集", ja: "空港データの中で最終取得" },
-  expected: { ko: "공식 예상 출국객", en: "Official expected departures", zh: "官方预计出境人数", ja: "公式予想出国者数" },
+  expected: { ko: "출국장 공식 예상 승객", en: "Official departure-hall passenger forecast", zh: "出境大厅官方预计人数", ja: "出国場公式予想旅客数" },
   expectedNote: { ko: "인천공항 공식 예상 · 실제 출국객 집계 아님", en: "Official Incheon forecast · not an actual passenger count", zh: "仁川机场官方预测 · 非实际出境人数", ja: "仁川空港公式予測 · 実際の出国者集計ではありません" },
   remaining: { ko: "현재 시간대부터 자정까지", en: "Current hour through midnight", zh: "当前时段至午夜", ja: "現在の時間帯から深夜まで" },
   // Deliberately carries the summed BAND (14:00–24:00 KST), not a clock: the
@@ -626,14 +628,14 @@ const airportTodayText = {
   // two numbers disagreed. A range cannot be mistaken for a retrieval moment.
   remainingNote: {
     ko: (band: string) => `${band} 공식 예상 승객 합계`,
-    en: (band: string) => `Official expected passengers, ${band}`,
+    en: (band: string) => `Official departure-hall passenger forecast, ${band}`,
     zh: (band: string) => `${band} 官方预计旅客合计`,
     ja: (band: string) => `${band} 公式予想旅客合計`,
   },
   flights: { ko: "출발 운항", en: "Departing flights", zh: "出发航班", ja: "出発便" },
   flightsNote: { ko: "실제 운항편 기준 · 승객 수 아님", en: "Physical flights · not passengers", zh: "实际航班口径 · 非旅客人数", ja: "実運航便基準 · 旅客数ではありません" },
   peak: { ko: "예상 피크", en: "Expected peak", zh: "预计高峰", ja: "予想ピーク" },
-  peakNote: { ko: "공식 예상 출국객 시간대", en: "Official expected departure band", zh: "官方预计出境时段", ja: "公式予想出国時間帯" },
+  peakNote: { ko: "출국장 공식 예상 승객 시간대", en: "Official expected departure band", zh: "官方预计出境时段", ja: "公式予想出国時間帯" },
   unavailable: { ko: "확인 불가", en: "Unavailable", zh: "暂无法确认", ja: "確認不可" },
   // A5 daily total/peak honesty gate: shown only in place of a number when the
   // day's official aggregate bands do not prove full-day coverage — never a
@@ -645,7 +647,7 @@ const airportTodayText = {
   waiting: { ko: "명 대기", en: " waiting", zh: "人等候", ja: "人待機" },
   waitLabel: { ko: "대기시간", en: "Wait", zh: "等候时间", ja: "待ち時間" },
   peopleLabel: { ko: "대기인원", en: "People", zh: "等候人数", ja: "待機人数" },
-  forecastOnly: { ko: "공식 예상 승객 · 실제 대기인원 아님", en: "Official expected passengers · not actual waiting", zh: "官方预计旅客 · 非实际等候人数", ja: "公式予想旅客 · 実際の待機人数ではありません" },
+  forecastOnly: { ko: "공식 예상 승객 · 실제 대기인원 아님", en: "Official departure-hall passenger forecast · not actual waiting", zh: "官方预计旅客 · 非实际等候人数", ja: "公式予想旅客 · 実際の待機人数ではありません" },
   nowMarker: { ko: "현재 시각", en: "Now", zh: "当前时间", ja: "現在時刻" },
   scope: {
     ko: { all: "전체 공항", T1: "제1터미널", T2: "제2터미널" },
@@ -667,7 +669,7 @@ const airportTodayText = {
   longest: { ko: "현재 가장 긴 대기", en: "Longest current wait", zh: "当前最长等候", ja: "現在最も長い待ち" },
   showAllCheckpoints: { ko: "전체 출국장 보기", en: "Show all checkpoints", zh: "查看全部出境检查口", ja: "すべての出国場を表示" },
   showLongestOnly: { ko: "가장 긴 대기만 보기", en: "Show longest wait only", zh: "仅显示最长等候", ja: "最も長い待ちのみ表示" },
-  forecastTitle: { ko: "공식 예상 출국객 흐름", en: "Official expected passenger flow", zh: "官方预计出境客流", ja: "公式予想出国者の流れ" },
+  forecastTitle: { ko: "출국장 공식 예상 승객 흐름", en: "Official departure-hall passenger flow", zh: "出境大厅官方预计客流", ja: "出国場公式予想旅客の流れ" },
   partialBody: { ko: "공식 예상 데이터의 일부 시간대가 누락되어 하루 전체 합계와 피크는 표시하지 않습니다.", en: "Some official time bands are missing, so the full-day total and peak are not shown.", zh: "部分官方时段数据缺失，因此不显示全天合计与高峰。", ja: "公式予測の一部時間帯が欠けているため、1日全体の合計とピークは表示しません。" },
   unavailableBody: { ko: "이 날짜의 공식 예상 시간대가 없습니다. 실제 출발 운항과 현재 출국장 정보는 계속 확인할 수 있습니다.", en: "No official forecast bands exist for this date. Physical departures and current checkpoints remain available.", zh: "该日期没有官方预计时段数据，仍可查看实际出发航班和当前出境区信息。", ja: "この日付の公式予測時間帯はありません。実出発便と現在の出国場情報は引き続き確認できます。" },
   rankLabel: { ko: "순위", en: "Rank", zh: "排名", ja: "順位" },
@@ -798,7 +800,7 @@ function formatForecastHour(value: string): string {
  * no data behind it, it is dropped rather than filled with a placeholder, so
  * the brief is short and true instead of long and padded.
  */
-function localizeAreaBrief(brief: AreaCurrentBrief, lang: Lang): { headline: string; lines: string[]; freshness: string | null } {
+function localizeAreaBrief(brief: AreaCurrentBrief, lang: Lang, selectedDay = false): { headline: string; lines: string[]; freshness: string | null } {
   const locale = airportLocale(lang);
   let headline: string = areaBriefText.unavailableNow[lang];
   let freshness: string | null = null;
@@ -850,6 +852,7 @@ function localizeAreaBrief(brief: AreaCurrentBrief, lang: Lang): { headline: str
       : (lang === "ko" ? `인근 행사 ${brief.eventCount}건` : lang === "en" ? `${brief.eventCount} nearby events` : lang === "zh" ? `附近${brief.eventCount}项活动` : `周辺イベント${brief.eventCount}件`);
     lines.push(label);
   }
+  if (selectedDay && !brief.current) headline = contextText(lang,"선택일 공식 예보·일정 요약","Official forecasts and schedules for the selected day","所选日期官方预测与日程概要","選択日の公式予報・日程の概要");
   return { headline, lines: lines.slice(0, 3), freshness };
 }
 
@@ -905,10 +908,10 @@ function localizeAirportBrief(
     const band = formatKstBand(now.targetStartAt, now.targetEndAt).replace(" KST", "");
     const people = Math.round(now.expectedPassengers).toLocaleString(locale);
     return {
-      ko: `${band} 공식 예상 출국객 ${people}명`,
-      en: `${band} official expected departures: ${people}`,
-      zh: `${band} 官方预计出境旅客 ${people}人`,
-      ja: `${band} 公式予想出国旅客 ${people}人`,
+      ko: `${band} 출국장 공식 예상 승객 ${people}명`,
+      en: `${band} official departure-hall passenger forecast: ${people}`,
+      zh: `${band} 出境大厅官方预计旅客 ${people}人`,
+      ja: `${band} 出国場公式予想旅客 ${people}人`,
     }[lang];
   })();
 
@@ -938,7 +941,7 @@ function localizeAirportBrief(
       const band = formatKstBand(brief.peak.targetStartAt, brief.peak.targetEndAt).replace(" KST", "");
       const people = Math.round(brief.peak.expectedPassengers).toLocaleString(locale);
       return {
-        ko: `오늘 피크 ${band} · 공식 예상 출국객 ${people}명`,
+        ko: `오늘 피크 ${band} · 출국장 공식 예상 승객 ${people}명`,
         en: `Today's peak ${band} · ${people} officially expected`,
         zh: `今日高峰 ${band} · 官方预计${people}人`,
         ja: `本日ピーク ${band} · 公式予想${people}人`,
@@ -1469,9 +1472,15 @@ export function AirportAtAGlance({summary,lang,terminal="all"}:{summary:LiveSumm
   const dayLines=airportBriefLines.map(line=>summary.dayRelation==="TODAY"?line:line.replace(contextText(lang,"오늘 피크","Today's peak","今日高峰","本日ピーク"),contextText(lang,"선택일 피크","Selected day's peak","所选日期高峰","選択日のピーク")));
   return <section className="current-brief airport-current-brief" aria-label={`${scopeLabel} ${dayLabel}`}>
       <p className="eyebrow">{scopeLabel} · {dayLabel}</p>
-      {expectedTotal !== null && <strong className="airport-brief-total">{summary.dayRelation === "TODAY"
-        ? contextText(lang, "금일 전체 공식 예상 출국객", "Today's total official expected departures", "今日全天官方预计出境旅客", "本日合計の公式予想出国旅客")
-        : contextText(lang, "선택일 전체 공식 예상 출국객", "Selected day's total official expected departures", "所选日期全天官方预计出境旅客", "選択日合計の公式予想出国旅客")} {Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}</strong>}
+      {expectedTotal !== null && <strong className="airport-brief-total">{passengerCopy[summary.dayRelation === "TODAY" ? "today" : "selected"][lang]} {Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}</strong>}
+      <small className="departure-hall-scope-note">{passengerCopy.scope[lang]}</small>
+      <small className="passenger-transfer-limitation">{passengerCopy.limitation[lang]}</small>
+      <div className="transfer-forecast" data-testid="transfer-forecast">
+        {(airport.transferForecast ?? []).filter(r => r.serviceDate === summary.serviceDateKst && (isAll || r.terminal === terminal)).map(r =>
+          <p key={r.terminal}>{r.terminal} · {passengerCopy.transfer[lang]} {r.expectedTransferPassengers.toLocaleString(numberLocale)}{peopleUnit} · {formatHumanFreshness(r.retrievedAt,nowIso,lang,"collected")}</p>)}
+        {((isAll ? ['T1','T2'] : [terminal]) as string[]).filter(t => !(airport.transferForecast ?? []).some(r => r.serviceDate === summary.serviceDateKst && r.terminal === t)).map(t => <p key={t}>{t} · {passengerCopy[summary.sources?.some(s => s.sourceId === 'INCHEON_TRANSFER_FORECAST' && s.status === 'ERROR' && s.detail?.includes(`service_date=${summary.serviceDateKst}`)) ? 'failed' : summary.dayRelation === 'FUTURE' && new Date(new Date(nowIso).getTime()+9*3600000).getUTCHours()<17 ? 'pending' : 'unavailable'][lang]}</p>)}
+        {(airport.transferForecast ?? []).some(r => r.serviceDate === summary.serviceDateKst && (isAll || r.terminal === terminal)) && <small>{passengerCopy.noSum[lang]}</small>}
+      </div>
       {dayLines.map((line, index) => index === 0 ? <strong className="airport-brief-current" key={line}>{line}</strong> : <p key={line}>{line}</p>)}
       {expectedTotal !== null && passengerChanges.length > 0 && <p>{airportTodayText.expected[lang]} · {passengerChanges.join(" · ")}</p>}
       {flightsCount !== null && <p>{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}{flightChanges.length ? ` · ${flightChanges.join(" · ")}` : ""}</p>}
@@ -1480,9 +1489,9 @@ export function AirportAtAGlance({summary,lang,terminal="all"}:{summary:LiveSumm
       {flightChanges.length > 0 && <small>{recordsOnly}</small>}
       <small>{[passengerCollected ? `${airportTodayText.expected[lang]} · ${passengerCollected}` : null, flightsCollected ? `${airportTodayText.flights[lang]} · ${flightsCollected}` : null].filter(Boolean).join(" / ")}</small>
       {(isAll || terminal === "T1") && <small className="passenger-scope-note">{contextText(lang,
-        "예상 출국객은 출국장 기준입니다. T1에서 출국 수속 후 탑승동으로 이동하는 승객도 T1 범위이며, 탑승동 인원을 따로 더하지 않습니다.",
+        "출국장 예상 승객은 출국장 기준입니다. T1에서 출국 수속 후 탑승동으로 이동하는 승객도 T1 범위이며, 탑승동 인원을 따로 더하지 않습니다.",
         "Passenger forecasts count departure halls. Passengers clearing departure at T1 before moving to the concourse are within T1; no separate concourse count is added.",
-        "预计出境旅客按出境大厅统计。在T1办理出境后前往登机楼的旅客属于T1范围，不另加登机楼人数。",
+        "出境大厅预计旅客按出境大厅统计。在T1办理出境后前往登机楼的旅客属于T1范围，不另加登机楼人数。",
         "予想出国客は出国場単位です。T1で出国手続き後にコンコースへ移動する旅客もT1の範囲で、別途加算しません。")}</small>}
     </section>;
 }
@@ -2230,7 +2239,7 @@ const myStoreText = {
   },
   evidenceLabels: {
     FLIGHTS: { ko: "출발 항공편", en: "Departures", zh: "出发航班", ja: "出発便" },
-    PASSENGER_FORECAST: { ko: "공식 예상 출국객", en: "Official expected passengers", zh: "官方预计出境旅客", ja: "公式予想出国者" },
+    PASSENGER_FORECAST: { ko: "출국장 공식 예상 승객", en: "Official departure-hall passenger forecast", zh: "出境大厅官方预计旅客", ja: "出国場公式予想旅客" },
     CHECKPOINT: { ko: "출국장 관측", en: "Departure-hall observation", zh: "出境区观测", ja: "出国場観測" },
     ZONE_MAPPING: { ko: "위치 매핑", en: "Location mapping", zh: "位置映射", ja: "位置マッピング" },
   },
@@ -2482,7 +2491,7 @@ export function HomeTodayBrief({ lang, selected, onSelect, date = null }: { lang
       nextEventCategory: block?.events?.[0]?.categoryName ?? null,
       nowIso: summary.generatedAt,
     });
-    return { area, brief, copy: localizeAreaBrief(brief, lang) };
+    return { area, brief, copy: localizeAreaBrief(brief, lang, summary.dayRelation !== "TODAY") };
   });
   if (!areas.some(({ brief }) => brief.evidenceTypes.length > 0)) return null;
   return <section className="home-area-briefs" aria-labelledby="home-area-briefs-title">
@@ -3029,10 +3038,11 @@ export function AreaCurrentBrief({ lang, area, date = null, linkHref, linkLabel 
     nextEventCategory: block?.events?.[0]?.categoryName ?? null,
     nowIso: summary.generatedAt,
   });
-  if (!brief.evidenceTypes.length) return null;
-  const copy = localizeAreaBrief(brief, lang);
-  return <section className="current-brief area-current-brief" aria-label={`${areaNames[area][lang]} ${areaBriefText.nowLabel[lang]}`}>
-    <p className="eyebrow">{areaNames[area][lang]} · {areaBriefText.nowLabel[lang].toUpperCase()}</p>
+  const selectedDay = summary.dayRelation !== "TODAY";
+  const selectedLabel = contextText(lang,"선택일 요약","Selected day summary","所选日期概览","選択日の概要");
+  const copy = localizeAreaBrief(brief, lang, summary.dayRelation !== "TODAY");
+  return <section className="current-brief area-current-brief" aria-label={`${areaNames[area][lang]} ${selectedDay ? selectedLabel : areaBriefText.nowLabel[lang]}`}>
+    <p className="eyebrow">{areaNames[area][lang]} · {selectedDay ? selectedLabel : areaBriefText.nowLabel[lang].toUpperCase()}</p>
     <strong>{copy.headline}</strong>
     {copy.lines.map((line) => <p key={line}>{line}</p>)}
     {block?.realtime && <p className="period-comparison">{comparisonLines(block.realtime.comparisons, lang).join(" · ") || ({ ko: "전주 동요일 비교 자료 없음 · 현재 혼잡도는 서울시 제공 등급", en: "Same-weekday comparison unavailable · crowding is Seoul’s official level", zh: "缺少上周同曜日比较资料 · 当前拥挤程度为首尔市发布等级", ja: "前週同曜日の比較資料なし・混雑度はソウル市の提供指標" })[lang]}</p>}
@@ -3070,7 +3080,9 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     nextEventCategory: block?.events?.[0]?.categoryName ?? null,
     nowIso: summary.generatedAt,
   });
-  const areaBriefCopy = localizeAreaBrief(areaBrief, lang);
+  const selectedDay = summary.dayRelation !== "TODAY";
+  const selectedLabel = contextText(lang,"선택일 요약","Selected day summary","所选日期概览","選択日の概要");
+  const areaBriefCopy = localizeAreaBrief(areaBrief, lang, selectedDay);
 
   /**
    * When a collector last SUCCEEDED, from source health — not from the data
@@ -3317,8 +3329,8 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
   return (
     <section className="live-signals" aria-labelledby="live-signals-title">
       {areaBrief.evidenceTypes.length > 0 && (
-        <section className="current-brief area-current-brief" aria-label={`${areaNames[area][lang]} ${areaBriefText.nowLabel[lang]}`}>
-          <p className="eyebrow">{areaNames[area][lang]} · {areaBriefText.nowLabel[lang].toUpperCase()}</p>
+        <section className="current-brief area-current-brief" aria-label={`${areaNames[area][lang]} ${selectedDay ? selectedLabel : areaBriefText.nowLabel[lang]}`}>
+          <p className="eyebrow">{areaNames[area][lang]} · {selectedDay ? selectedLabel : areaBriefText.nowLabel[lang].toUpperCase()}</p>
           <strong>{areaBriefCopy.headline}</strong>
           {areaBriefCopy.lines.map((line) => <p key={line}>{line}</p>)}
           {areaBriefCopy.freshness && <small>{formatHumanFreshness(areaBriefCopy.freshness, summary.generatedAt, lang, "observed")}</small>}

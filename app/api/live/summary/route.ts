@@ -413,6 +413,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       LIMIT 2000`,
     ).bind(serviceDate, shiftKstDay(serviceDate, 1))],
 
+    transferRows: [client.prepare('SELECT service_date AS serviceDate, terminal, expected_transfer_passengers AS expectedTransferPassengers, retrieved_at AS retrievedAt FROM airport_transfer_forecast WHERE service_date = ? AND quality_status = ? LIMIT 2').bind(serviceDate, 'OFFICIAL_FORECAST')],
     departureScheduleRows: [client.prepare(
       'SELECT payload, retrieved_at AS retrievedAt FROM airport_departure_schedule WHERE service_date = ? LIMIT 1',
     ).bind(serviceDate)],
@@ -467,7 +468,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   const {
     sources, contextRows, holidayRows, compositionRows, realtimeRows, commercialRows, realtimeForecastRows, weatherRows, eventRows, salesRows,
     storeDynamicsRows, foreignPresenceRows, foreignPurposeRows, subwayRows, congestionRows,
-    passengerForecastRows: allPassengerForecastRows, historicalFlightCounts, flightRows, scheduledRows, departureScheduleRows, flightDateRows, forecastDateRows, observedDateRows,
+    passengerForecastRows: allPassengerForecastRows, historicalFlightCounts, flightRows, scheduledRows, departureScheduleRows, transferRows, flightDateRows, forecastDateRows, observedDateRows,
   } = blocks;
   const passengerForecastRows = allPassengerForecastRows.filter((row) => row.targetDate === serviceDate);
   const dayList = (rows: Row[]) => rows
@@ -476,7 +477,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     .sort();
 
   const areas = Object.fromEntries(AREAS.map((area) => {
-    const realtime = realtimeRows.find((row) => row.area === area) ?? null;
+    const realtime = dayRelation === "TODAY" ? realtimeRows.find((row) => row.area === area) ?? null : null;
     const commercial = commercialRows.find((row) => row.area === area) ?? null;
     const foreignPresence = foreignPresenceRows.find((row) => row.area === area) ?? null;
     const purposeRows = foreignPurposeRows.filter((row) => row.area === area);
@@ -506,8 +507,8 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       realtime: realtime ? { ...realtime, comparisons: areaComparisons(realtime, "populationMin", "populationMax"), freshness: freshnessOf(realtime.observedAt, REALTIME_STALE_MINUTES, now) } : null,
       commercial: commercial ? { ...commercial, comparisons: areaComparisons(commercial, "paymentAmountMin", "paymentAmountMax"), freshness: freshnessOf(commercial.observedAt, REALTIME_STALE_MINUTES, now) } : null,
       // The whole published horizon, not a "today" slice — see the query note.
-      realtimeForecast: realtimeForecastRows.filter((row) => row.area === area).slice(0, 12),
-      weather: weatherRows.filter((row) => row.area === area).slice(0, 24),
+      realtimeForecast: realtimeForecastRows.filter((row) => row.area === area && (dayRelation === "TODAY" || String(row.targetAt).slice(0,10) === serviceDate)).slice(0, 12),
+      weather: weatherRows.filter((row) => row.area === area && (dayRelation === "TODAY" || String(row.targetAt).slice(0,10) === serviceDate)).slice(0, 24),
       events: eventsForArea,
       eventCount: eventsForArea.length,
       sales: salesForArea.length ? {
@@ -695,6 +696,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     sources,
     areas,
     airport: {
+      transferForecast: transferRows,
       periodComparisons,
       congestion: congestionRows.map((row) => ({ ...row, freshness: freshnessOf(row.observedAt, 20, now) })),
       currentBusiestDepartureHallByTerminal: currentBusiest,

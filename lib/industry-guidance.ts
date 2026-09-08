@@ -250,7 +250,7 @@ export const industryProfiles: Record<IndustryId, {
   tourism: {
     label: { ko: "관광·숙박", en: "Tourism & stay", zh: "旅游·住宿", ja: "観光・宿泊" }, short: "TOURISM",
     watch: {
-      ko: "공항 화면의 공식 예상 출국객 흐름과 이 지역의 실시간 활동을 함께 보세요. 체크인·체크아웃이 공항 혼잡과 겹치는지가 핵심입니다.",
+      ko: "공항 화면의 출국장 공식 예상 승객 흐름과 이 지역의 실시간 활동을 함께 보세요. 체크인·체크아웃이 공항 혼잡과 겹치는지가 핵심입니다.",
       en: "Read the official expected-departure flow on the Airport screen together with live activity here: the question is whether check-in and check-out overlap the airport's busy band.",
       zh: "把机场页面的官方预计出境客流与本地区实时活动一起看，关键是入住与退房是否与机场拥挤时段重叠。",
       ja: "空港画面の公式予想出国客の流れと、この地域のリアルタイム活動を併せて確認します。チェックイン・チェックアウトが空港の混雑と重なるかが要点です。",

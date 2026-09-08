@@ -109,10 +109,10 @@ test("airport truth labels are complete in all four locales", async ({ page }) =
   // Arrivals joined the screen as their own section, so the intro names
   // both directions.
   const intro = {
-    ko: "공식 예상 출국객·입국객, 실제 출발 운항, 현재 출국장 대기를 서로 섞지 않고 따로 보여줍니다.",
-    en: "Official expected departures and arrivals, physical departing flights and current departure-hall waits—kept separate, never blended.",
-    zh: "分别显示官方预计出境与入境人数、实际出发航班与当前出境区等候，互不混用。",
-    ja: "公式予想の出国者・入国者、実出発便、現在の出国場待ちを混ぜずに分けて表示します。",
+    ko: "출국장 공식 예상 승객·입국객, 실제 출발 운항, 현재 출국장 대기를 서로 섞지 않고 따로 보여줍니다.",
+    en: "Official departure-hall passenger forecast and arrivals, physical departing flights and current departure-hall waits—kept separate, never blended.",
+    zh: "分别显示出境大厅与入境检查预计人数、实际出发航班与当前出境区等候，互不混用。",
+    ja: "公式予想の出国場利用者・入国審査利用者、実出発便、現在の出国場待ちを混ぜずに分けて表示します。",
   } as const;
   for (const locale of Object.keys(intro) as Array<keyof typeof intro>) {
     await page.goto(`/${locale}/airport`);
@@ -186,15 +186,15 @@ test("airport summary keeps forecast, flights, gate and checkpoints truthful on 
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko/airport");
-  // 첫 줄은 지금 시간대의 공식 예상 출국객, 대기는 짧은 보조 줄.
-  await expect(page.locator(".airport-current-brief")).toContainText("공식 예상 출국객");
+  // 첫 줄은 지금 시간대의 출국장 공식 예상 승객, 대기는 짧은 보조 줄.
+  await expect(page.locator(".airport-current-brief")).toContainText("출국장 공식 예상 승객");
   await expect(page.locator(".airport-current-brief")).toContainText("대기 최장 T2 출국장 1B 60+분");
   await expect(page.locator(".airport-current-brief")).toContainText("출발 운항 561편");
   await expect(page.locator(".airport-current-brief")).not.toContainText("출발 561편");
   await expect(page.locator(".airport-current-brief")).toContainText("전주 동요일 비교 자료 없음");
   await expect(page.locator(".airport-today-grid")).not.toBeVisible();
   await page.locator(".airport-summary-details > summary").click();
-  await expect(page.getByText("공식 예상 출국객", { exact: true })).toBeVisible();
+  await expect(page.getByText("출국장 공식 예상 승객", { exact: true })).toBeVisible();
   await expect(page.getByText("47,320명", { exact: true })).toBeVisible();
   await expect(page.getByText("561편", { exact: true })).toBeVisible();
   await expect(page.getByText(/실제 운항편 기준 · 승객 수 아님/)).toBeVisible();
@@ -413,7 +413,7 @@ test("the airport page reads summary -> next -> composition -> observation table
   // 세 구성 보기는 하나의 탭 묶음 안에 있고, 표는 그 뒤에 남는다.
   expect(composition).toBeLessThan(checkpoints);
   await expect(page.locator(".airport-checkpoints")).toContainText("대기시간");
-  await expect(page.getByRole("heading", { name: "공식 예상 출국객 흐름" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "출국장 공식 예상 승객 흐름" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "오늘 출발편 구성" })).toBeVisible();
 });
 
@@ -429,8 +429,8 @@ test("the summary states this hour's official expected departing passengers and 
   await expect(brief).toBeVisible();
   // 하루 전체를 먼저, 현재 시간대를 두 번째로 강조한다.
   const headline = brief.locator("strong").first();
-  await expect(headline).toHaveText("금일 전체 공식 예상 출국객 47,320명");
-  await expect(brief.locator("strong").nth(1)).toContainText("14:00–15:00 공식 예상 출국객");
+  await expect(headline).toHaveText("금일 출국장 공식 예상 승객 47,320명");
+  await expect(brief.locator("strong").nth(1)).toContainText("14:00–15:00 출국장 공식 예상 승객");
   await expect(headline).not.toContainText("대기");
   await expect(brief).toContainText("대기 최장");
   // 예상치를 관측이라고 부르지 않는다.
@@ -597,7 +597,7 @@ test("incomplete A5 daily coverage never renders as a full-day total or peak", a
   await page.goto("/ko/airport");
   await page.locator(".airport-summary-details > summary").click();
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
-  await expect(page.locator(".airport-today-grid article").filter({ hasText: "공식 예상 출국객" }).getByText("전체 시간대 확인 불가", { exact: true })).toBeVisible();
+  await expect(page.locator(".airport-today-grid article").filter({ hasText: "출국장 공식 예상 승객" }).getByText("전체 시간대 확인 불가", { exact: true })).toBeVisible();
   await expect(page.getByText("공식 예상 데이터 일부 누락").first()).toBeVisible();
   await expect(page.locator(".airport-current-brief")).toContainText("공식 예상 승객 일부 누락 · 피크 판단 안 함");
   await expect(page.getByText(/일부 시간대가 누락되어 하루 전체 합계와 피크는 표시하지 않습니다/)).toBeVisible();

@@ -1,0 +1,36 @@
+name: Collect Official Transfer Forecast
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Deploy Cloudflare]
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: '10,30 8 * * *'
+    - cron: '0 9,10 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: production-collector-transfer
+  cancel-in-progress: false
+jobs:
+  collect:
+    if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci --ignore-scripts
+      - run: pip install xlrd==2.0.2
+      - run: npx tsx scripts/collect-transfer.ts
+        env:
+          ENABLE_PRODUCTION_COLLECTOR: 'true'
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}

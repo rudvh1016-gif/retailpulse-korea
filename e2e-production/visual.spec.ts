@@ -461,11 +461,11 @@ test("production airport composition is one compact tabbed module at every requi
     await expect(countries).toContainText("OpenFlights");
 
     // #130 remains true while the new module changes view.
-    await expect(page.locator(".airport-current-brief")).toContainText("공식 예상 출국객");
+    await expect(page.locator(".airport-current-brief")).toContainText("출국장 공식 예상 승객");
     const dailyTotal = page.locator(".airport-brief-total");
     if (await dailyTotal.count()) {
       await expect(page.locator(".airport-current-brief > strong").first()).toHaveClass("airport-brief-total");
-      await expect(dailyTotal).toContainText("금일 전체 공식 예상 출국객");
+      await expect(dailyTotal).toContainText("금일 출국장 공식 예상 승객");
     }
     const bars = page.locator(".airport-timeline-bars");
     const now = bars.locator("p.now");

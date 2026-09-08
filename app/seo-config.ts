@@ -72,7 +72,7 @@ export function pageTitle(locale: SeoLocale, slug?: SeoSlug, tourismArea: Touris
     }[locale];
   }
   const titles: Record<Exclude<SeoSlug, keyof typeof names | "tourism-desk">, Record<SeoLocale, string>> = {
-    airport: { ko: "인천공항 T1·T2 출국객·항공편·혼잡도 | KORETAIL", en: "Incheon Airport T1·T2 Passengers & Flights | KORETAIL", zh: "仁川机场T1·T2出境旅客与航班 | KORETAIL", ja: "仁川空港T1・T2 出国者・フライト・混雑 | KORETAIL" },
+    airport: { ko: "인천공항 T1·T2 출국장 예고·항공편·혼잡도 | KORETAIL", en: "Incheon Airport T1·T2 Departure-Hall Forecasts & Flights | KORETAIL", zh: "仁川机场T1·T2出境大厅预报与航班 | KORETAIL", ja: "仁川空港T1・T2 出国場予告・フライト・混雑 | KORETAIL" },
     predictions: { ko: "지역 인구 예측·기록 관리 | KORETAIL", en: "Population Outlook & Records | KORETAIL", zh: "区域人口预测与记录 | KORETAIL", ja: "地域人口の予測と記録 | KORETAIL" },
     forecast: { ko: "서울·인천공항 공식 기록과 숫자 설명 | KORETAIL", en: "Seoul & Incheon Official Records Explained | KORETAIL", zh: "首尔与仁川机场官方记录与数据说明 | KORETAIL", ja: "ソウル・仁川空港の公式記録と数値の説明 | KORETAIL" },
     business: { ko: "서울 매장 운영 브리핑과 점검 목록 | KORETAIL", en: "Seoul Store Briefing & Checklist | KORETAIL", zh: "首尔门店运营简报与检查清单 | KORETAIL", ja: "ソウル店舗の運営ブリーフとチェックリスト | KORETAIL" },
@@ -84,10 +84,10 @@ export function pageTitle(locale: SeoLocale, slug?: SeoSlug, tourismArea: Touris
 
 export function pageDescription(locale: SeoLocale, slug?: SeoSlug, tourismArea: TourismDeskArea = "myeongdong") {
   if (!slug) return {
-    ko: "오늘·내일 필요한 공항·관광·상권 정보를 한 번에 확인하세요. 역할과 관심지역을 선택하면 공식 자료가 제공되는 범위에서 예상 출국객·혼잡·날씨·행사를 내 브리핑으로 봅니다.",
-    en: "Choose your role and place for a personal briefing on Incheon Airport, Myeongdong, Hongdae or Seongsu. See expected departures, crowds, weather and events where official data is available.",
-    zh: "选择角色与关注地区，查看仁川机场、明洞、弘大或圣水的个人简报。根据已有官方资料，了解预计出境旅客、拥挤、天气与活动。",
-    ja: "役割と関心のある場所を選び、仁川空港・明洞・弘大・聖水の情報を自分のブリーフィングで確認。公式資料の提供範囲で予想出国者・混雑・天気・イベントを表示します。",
+    ko: "오늘·내일 필요한 공항·관광·상권 정보를 한 번에 확인하세요. 역할과 관심지역을 선택하면 공식 자료가 제공되는 범위에서 출국장 예상 승객·혼잡·날씨·행사를 내 브리핑으로 봅니다.",
+    en: "Choose your role and place for a personal briefing on Incheon Airport, Myeongdong, Hongdae or Seongsu. See departure-hall forecasts, crowds, weather and events where official data is available.",
+    zh: "选择角色与关注地区，查看仁川机场、明洞、弘大或圣水的个人简报。根据已有官方资料，了解出境大厅预计旅客、拥挤、天气与活动。",
+    ja: "役割と関心のある場所を選び、仁川空港・明洞・弘大・聖水の情報を自分のブリーフィングで確認。公式資料の提供範囲で出国場予想旅客・混雑・天気・イベントを表示します。",
   }[locale];
   if (slug === "tourism-desk") {
     const name = names[tourismArea][locale];
@@ -108,7 +108,7 @@ export function pageDescription(locale: SeoLocale, slug?: SeoSlug, tourismArea: 
     }[locale];
   }
   const descriptions: Record<Exclude<SeoSlug, keyof typeof names | "tourism-desk">, Record<SeoLocale, string>> = {
-    airport: { ko: "인천공항 전체·T1·T2의 공식 예상 출국객과 피크, 실제 출발 운항과 집중 게이트, 현재 출국장 대기, 월별 공식 실적을 확인하세요.", en: "Official expected departures and peak, physical departing flights and busiest gates, current departure-hall waits and official monthly history for all terminals, T1 and T2.", zh: "查看仁川机场整体、T1、T2的官方预计出境人数与高峰、实际出发航班与集中登机口、当前出境区等候，以及月度官方实绩。", ja: "仁川空港全体・T1・T2の公式予想出国者とピーク、実出発便と集中ゲート、現在の出国場待ち、月次公式実績を確認できます。" },
+    airport: { ko: "인천공항 전체·T1·T2의 출국장 공식 예상 승객과 피크, 실제 출발 운항과 집중 게이트, 현재 출국장 대기, 월별 공식 실적을 확인하세요.", en: "Official departure-hall passenger forecast and peak, physical departing flights and busiest gates, current departure-hall waits and official monthly history for all terminals, T1 and T2.", zh: "查看仁川机场整体、T1、T2的出境大厅官方预计人数与高峰、实际出发航班与集中登机口、当前出境区等候，以及月度官方实绩。", ja: "仁川空港全体・T1・T2の出国場公式予想旅客とピーク、実出発便と集中ゲート、現在の出国場待ち、月次公式実績を確認できます。" },
     predictions: { ko: "지역 인구 예측·기록 관리 | KORETAIL", en: "Population Outlook & Records | KORETAIL", zh: "区域人口预测与记录 | KORETAIL", ja: "地域人口の予測と記録 | KORETAIL" },
     forecast: { ko: "각 지표가 무엇을 뜻하는지, 높으면 어떤 상황인지, 어떤 공식 자료에서 왔는지를 설명과 함께 확인하세요. T1·T2 비중과 지역 외국인 생활인구 흐름을 포함합니다.", en: "Every figure with what it means, what a high value indicates and which official record it came from — including T1/T2 share and area foreign-population history.", zh: "每个指标都附含义、数值偏高时的情况与官方出处说明，包含T1/T2占比与各地区外国人生活人口趋势。", ja: "各指標の意味・高いときの状況・出典を説明付きで確認できます。T1・T2の比率とエリア別外国人生活人口の推移を含みます。" },
     business: { ko: "지금의 공식 혼잡·예측·날씨를 매장 준비 관점으로 읽고, 뷰티·패션·식음료 등 6개 업종별 점검 목록을 확인하세요.", en: "Read the current official crowding, forecast and weather for store preparation, with checklists for six retail business types.", zh: "以门店准备视角解读当前官方拥挤、预测与天气，并查看美妆、时尚、餐饮等6个业态的检查清单。", ja: "現在の公式混雑・予測・天気を店舗準備の視点で読み、ビューティー・ファッション・飲食など6業種のチェックリストを確認できます。" },

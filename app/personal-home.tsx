@@ -4,7 +4,7 @@ import { availableInterests, buildPersonalBrief, locations, days, briefingDate, 
 import { pc, type PersonalLang } from '../lib/personal-copy';
 import { setAnalyticsConsent, trackPersonalEvent } from '../lib/personal-analytics';
 import { rememberFeedback, savePersonalPreferences, useFeedback, usePersonalPreferences } from './personal-preferences';
-import { AirportAtAGlance, LiveLoadMessage, useLiveSummary } from './live-signals';
+import { AirportAtAGlance, AreaCurrentBrief, LiveLoadMessage, useLiveSummary } from './live-signals';
 
 function terminalName(value: PersonalPreferences['terminal'],lang:PersonalLang) {return value === 'T1'||value==='T2'?value:pc(value,lang);}
 function referenceTime(value:string,lang:PersonalLang) {
@@ -81,7 +81,11 @@ function Briefing({p,lang}:{p:PersonalPreferences;lang:PersonalLang}) {
   return <section className="personal-sheet" data-testid="personal-briefing" aria-labelledby="personal-title"><p className="personal-kicker">KORETAIL · {pc(p.role,lang)}</p><h2 id="personal-title">{pc(title,lang)}</h2><p className="personal-place">{pc(p.location,lang)}{p.location==='airport'?` ${terminalName(p.terminal,lang)}`:''} · {date ?? '…'}</p><small className="personal-timezone">{pc('timeBasis',lang)}</small><p>{pc(p.day==='yesterday'?'pastNote':`${p.role}Promise`,lang)}</p>
     {p.day==='yesterday'&&p.location!=='airport'&&<p className="personal-note">{pc('pastSeoulNote',lang)}</p>}
     {!p.interests.length?<p>{pc('noLocalInterests',lang)}</p>:!date||!summary?<LiveLoadMessage loading={today===undefined||summary===undefined} lang={lang}/>:<>
-      {p.location==='airport'&&p.terminal!=='CONCOURSE'&&summary.mode==='live-summary'&&summary.serviceDateKst===date&&summary.airport?.serviceDateKst===date?<AirportAtAGlance summary={summary} lang={lang} terminal={p.terminal}/>:<p className="personal-summary">{cards.find(c=>c.interest!=='guidance')?`${cards.find(c=>c.interest!=='guidance')!.label} · ${cards.find(c=>c.interest!=='guidance')!.value}`:pc('empty',lang)}</p>}
+      {p.location==='airport'&&p.terminal!=='CONCOURSE'&&summary.mode==='live-summary'&&summary.serviceDateKst===date&&summary.airport?.serviceDateKst===date
+        ? <AirportAtAGlance summary={summary} lang={lang} terminal={p.terminal}/>
+        : p.location!=='airport'
+          ? <AreaCurrentBrief lang={lang} area={p.location} date={p.day==='today'?null:date}/>
+          : <p className="personal-summary">{cards.find(c=>c.interest!=='guidance')?`${cards.find(c=>c.interest!=='guidance')!.label} · ${cards.find(c=>c.interest!=='guidance')!.value}`:pc('empty',lang)}</p>}
       <div className="personal-facts">{p.interests.map(interest=>{const card=cards.find(c=>c.interest===interest);return <article key={interest} data-interest={interest}><h3>{card?.label??pc(interest,lang)}</h3><strong>{card?.value??'—'}</strong>{card?.details?.map(line=><div className="personal-fact-detail" key={line}>{line}</div>)}<p>{card?.note??(interest==='flights'?pc('flightsMissing',lang):interest==='airlines'?pc('airlinesMissing',lang):p.terminal==='CONCOURSE'&&interest==='passengers'?pc('concourseNote',lang):pc('missing',lang))}</p>{card?.at&&<small>{referenceTime(card.at,lang)}</small>}{interest==='guidance'&&<a href={`/${lang}/tourism-desk/${p.location}`}>{pc('details',lang)}</a>}</article>;})}</div>
       {actions.length>0&&<div className="personal-preparation"><h3>{pc('prepare',lang)}</h3><ul>{actions.map(action=><li key={action}>{action}</li>)}</ul></div>}
       <a className="personal-detail-link" href={href}>{pc('details',lang)} → {pc(p.location,lang)}</a><Feedback p={p} date={date} lang={lang}/>
