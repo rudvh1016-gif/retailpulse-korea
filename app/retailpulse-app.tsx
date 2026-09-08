@@ -1,7 +1,7 @@
 "use client";
 import { activeSourceCatalog,sourceName,sourceUse,CollectionStatus } from "./source-status";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { checklistPhaseLabels, checklistPhaseOrder, type IndustryId, industryProfiles } from "../lib/industry-guidance";
 import {
   airportAnnual,
@@ -32,8 +32,13 @@ import { TourismDeskView } from "./tourism-desk";
 import { InstallAppButton } from "./install-app";
 import { PredictionView } from "./prediction-view";
 import { SiteUsageGuide } from "./site-usage-guide";
+const PersonalHome = lazy(() => import('./personal-home'));
 
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
+
+function HomeBriefingWrapper({active,lang,children}:{active:boolean;lang:Lang;children:React.ReactNode}) {
+  return active ? <Suspense fallback={children}><PersonalHome lang={lang}>{children}</PersonalHome></Suspense> : <>{children}</>;
+}
 
 type View = "today" | "airport" | "business" | "forecast" | "predictions" | "tourism-desk" | "about" | "more";
 type AirportSection = "now" | "arrivals" | "flights" | "stores" | "mystore" | "history";
@@ -269,6 +274,7 @@ function routeFor(lang: Lang, view: View, area: AreaId) {
 export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false, initialScope = "home" }: RetailPulseProps = {}) {
   const [lang, setLang] = useState<Lang>(initialLang);
   const [view, setView] = useState<View>(initialView);
+  const [homeVisible, setHomeVisible] = useState(initialScope === "home" && initialView === "today");
   const [selected, setSelected] = useState<AreaId>(initialArea);
   const [terminal, setTerminal] = useState<Terminal>("all");
   const [airportSection, setAirportSection] = useState<AirportSection>("now");
@@ -340,11 +346,13 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     });
     document.querySelector<HTMLLinkElement>('link[rel="alternate"][hreflang="x-default"]')
       ?.setAttribute("href", `${siteOrigin}/en${suffix}`);
-  }, [lang, view, selected]);
+  }, [lang, view, selected, homeVisible]);
 
   useEffect(() => {
     const onPopState = () => {
       const [, locale, slug, routeArea] = window.location.pathname.split("/");
+      setHomeVisible(!slug);
+      if (!slug) setView("today");
       if (["ko", "en", "zh", "ja"].includes(locale)) setLang(locale as Lang);
       if (slug && Object.hasOwn(areaInfo, slug)) { setSelected(slug as AreaId); setView("today"); }
       else if (slug === "tourism-desk" && routeArea && Object.hasOwn(areaInfo, routeArea)) {
@@ -363,18 +371,28 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
   function changeLanguage(next: Lang) {
     setLang(next);
-    updateUrl(next, view, selected);
+    if (homeVisible) window.history.pushState({}, "", `/${next}`);
+    else updateUrl(next, view, selected);
   }
 
   function selectArea(next: AreaId) {
+    setHomeVisible(false);
     setSelected(next);
     if (view === "today" || view === "tourism-desk") updateUrl(lang, view, next);
   }
 
   function navigate(next: View) {
+    setHomeVisible(false);
     setView(next);
     updateUrl(lang, next, selected);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function goHome() {
+    setHomeVisible(true);
+    setView('today');
+    if(window.location.pathname !== `/${lang}`) window.history.pushState({}, '', `/${lang}`);
+    window.scrollTo({top:0,behavior:'smooth'});
   }
 
   function openAirport(section: AirportSection, preferredTerminal?: Terminal) {
@@ -386,7 +404,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   return (
     <div className={"app lang-" + lang} data-hydrated={preferencesReady ? "true" : "false"}>
       <header className="topbar">
-        <button className="brand brand-button" onClick={() => navigate("today")} aria-label="KORETAIL home">
+        <button className="brand brand-button" onClick={goHome} aria-label="KORETAIL home">
           <span>KORETAIL</span><span className="brand-descriptor">Retail Demand Signals for Korea</span>
         </button>
         <nav className="top-nav" aria-label="Primary">
@@ -411,7 +429,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
       <main className="page-shell">
         {view === "today" && (
-          <>
+          <HomeBriefingWrapper active={homeVisible} lang={lang}>
             <section className="hero" aria-labelledby="hero-title">
               <div className="hero-copy">
                 <p className="eyebrow">OFFICIAL DEMAND SIGNALS · SEOUL</p>
@@ -435,7 +453,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             {initialScope === "home" && <HomeTodayBrief lang={lang} selected={selected} onSelect={selectArea} date={serviceDate} />}
             <LiveSignals lang={lang} area={selected} date={serviceDate} />
             {betaSignupEnabled && <BetaSignup lang={lang} />}
-          </>
+          </HomeBriefingWrapper>
         )}
 
         {view === "airport" && (

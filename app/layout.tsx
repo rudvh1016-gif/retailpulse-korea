@@ -1,12 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
-import { isStagingDeployment, siteOrigin, socialImage } from "./seo-config";
+import { isStagingDeployment, pageTitle, pageDescription, siteOrigin, socialImage } from "./seo-config";
 
 export const metadata: Metadata = {
+  verification: {
+    ...(process.env.GOOGLE_SITE_VERIFICATION?.trim() ? { google: process.env.GOOGLE_SITE_VERIFICATION.trim() } : {}),
+    ...(process.env.NAVER_SITE_VERIFICATION?.trim() ? { other: { 'naver-site-verification': process.env.NAVER_SITE_VERIFICATION.trim() } } : {}),
+  },
   metadataBase: new URL(siteOrigin),
-  title: "서울 외국인 쇼핑수요 신호 | KORETAIL",
-  description: "명동·홍대·성수의 오늘과 내일 외국인 쇼핑수요 신호, 매장 오픈 브리프, 인천공항 T1·T2 흐름을 KORETAIL에서 확인하세요.",
+  title: pageTitle('ko'),
+  description: pageDescription('ko'),
   icons: {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml" }, { url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
     shortcut: "/favicon.svg",
@@ -22,12 +26,12 @@ export const metadata: Metadata = {
     : { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } },
   alternates: { canonical: "/ko", languages: { "ko-KR": "/ko", en: "/en", "zh-CN": "/zh", "ja-JP": "/ja", "x-default": "/en" } },
   openGraph: {
-    title: "서울 외국인 쇼핑수요 신호 | KORETAIL",
-    description: "오늘과 내일의 서울 외국인 쇼핑수요 신호, 매장 준비와 인천공항 T1·T2 흐름을 한눈에.",
+    title: pageTitle('ko'),
+    description: pageDescription('ko'),
     url: "/ko", siteName: "KORETAIL", type: "website", locale: "ko_KR",
     images: [socialImage],
   },
-  twitter: { card: "summary_large_image", title: "KORETAIL", description: "Retail Demand Signals for Korea — 서울의 외국인 쇼핑수요 신호를 오늘과 내일 관점에서 읽습니다.", images: [socialImage.url] },
+  twitter: { card: "summary_large_image", title: pageTitle('ko'), description: pageDescription('ko'), images: [socialImage.url] },
 };
 
 // White-first: the browser chrome and PWA splash match the page, which is

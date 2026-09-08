@@ -44,6 +44,12 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
+    // These verification tokens are intentionally public HTML metadata.
+    // Bake only this allowlist into the Worker; arbitrary server secrets stay out.
+    define: {
+      'process.env.GOOGLE_SITE_VERIFICATION': JSON.stringify(process.env.GOOGLE_SITE_VERIFICATION?.trim() ?? ''),
+      'process.env.NAVER_SITE_VERIFICATION': JSON.stringify(process.env.NAVER_SITE_VERIFICATION?.trim() ?? ''),
+    },
     server: {
       host: "0.0.0.0",
       allowedHosts: ["terminal.local"],

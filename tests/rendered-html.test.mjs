@@ -16,6 +16,23 @@ async function renderPath(path, documentLanguage = "ko") {
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
+test("Naver verification is rendered once in the head for every language when configured", async () => {
+  // Run with the same NAVER_SITE_VERIFICATION value used for the build.
+  // The default CI build also verifies that an absent value emits no empty tag.
+  const expected = process.env.NAVER_SITE_VERIFICATION?.trim();
+  for (const language of ["ko", "en", "zh", "ja"]) {
+    const response = await renderPath(`/${language}`, language === "zh" ? "zh-CN" : language);
+    assert.equal(response.status, 200);
+    const html = await response.text();
+    const tags = html.match(/<meta\b[^>]*name="naver-site-verification"[^>]*>/g) ?? [];
+    assert.equal(tags.length, expected ? 1 : 0, language);
+    if (expected) {
+      assert.equal(tags[0].match(/content="([^"]*)"/)?.[1], expected, language);
+      assert.ok(html.slice(0, html.indexOf("</head>")).includes(tags[0]), language);
+    }
+  }
+});
+
 /**
  * One unavailable upstream must never take the public API down with it.
  *
@@ -111,7 +128,7 @@ test("renders the KORETAIL production shell", async () => {
   const html = await response.text();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
-  assert.match(html, /<title>서울 외국인 쇼핑수요 신호 \| KORETAIL<\/title>/i);
+  assert.match(html, /<title>인천공항·명동·홍대·성수 오늘·내일 브리핑 \| KORETAIL<\/title>/i);
   assert.doesNotMatch(html, /codex-preview/i);
   assert.match(html, /지금 서울은/);
   assert.match(html, /KORETAIL/);
