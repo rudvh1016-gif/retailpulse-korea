@@ -669,7 +669,7 @@ const airportTodayText = {
   longest: { ko: "현재 가장 긴 대기", en: "Longest current wait", zh: "当前最长等候", ja: "現在最も長い待ち" },
   showAllCheckpoints: { ko: "전체 출국장 보기", en: "Show all checkpoints", zh: "查看全部出境检查口", ja: "すべての出国場を表示" },
   showLongestOnly: { ko: "가장 긴 대기만 보기", en: "Show longest wait only", zh: "仅显示最长等候", ja: "最も長い待ちのみ表示" },
-  forecastTitle: { ko: "출국장 공식 예상 승객 흐름", en: "Official expected passenger flow", zh: "官方预计出境客流", ja: "公式予想出国者の流れ" },
+  forecastTitle: { ko: "출국장 공식 예상 승객 흐름", en: "Official departure-hall passenger flow", zh: "出境大厅官方预计客流", ja: "出国場公式予想旅客の流れ" },
   partialBody: { ko: "공식 예상 데이터의 일부 시간대가 누락되어 하루 전체 합계와 피크는 표시하지 않습니다.", en: "Some official time bands are missing, so the full-day total and peak are not shown.", zh: "部分官方时段数据缺失，因此不显示全天合计与高峰。", ja: "公式予測の一部時間帯が欠けているため、1日全体の合計とピークは表示しません。" },
   unavailableBody: { ko: "이 날짜의 공식 예상 시간대가 없습니다. 실제 출발 운항과 현재 출국장 정보는 계속 확인할 수 있습니다.", en: "No official forecast bands exist for this date. Physical departures and current checkpoints remain available.", zh: "该日期没有官方预计时段数据，仍可查看实际出发航班和当前出境区信息。", ja: "この日付の公式予測時間帯はありません。実出発便と現在の出国場情報は引き続き確認できます。" },
   rankLabel: { ko: "순위", en: "Rank", zh: "排名", ja: "順位" },
@@ -2239,7 +2239,7 @@ const myStoreText = {
   },
   evidenceLabels: {
     FLIGHTS: { ko: "출발 항공편", en: "Departures", zh: "出发航班", ja: "出発便" },
-    PASSENGER_FORECAST: { ko: "출국장 공식 예상 승객", en: "Official departure-hall passenger forecast", zh: "出境大厅官方预计旅客", ja: "公式予想出国者" },
+    PASSENGER_FORECAST: { ko: "출국장 공식 예상 승객", en: "Official departure-hall passenger forecast", zh: "出境大厅官方预计旅客", ja: "出国場公式予想旅客" },
     CHECKPOINT: { ko: "출국장 관측", en: "Departure-hall observation", zh: "出境区观测", ja: "出国場観測" },
     ZONE_MAPPING: { ko: "위치 매핑", en: "Location mapping", zh: "位置映射", ja: "位置マッピング" },
   },

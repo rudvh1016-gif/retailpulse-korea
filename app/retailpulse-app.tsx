@@ -570,7 +570,7 @@ function AirportView({
         <div>
           <p className="eyebrow">INCHEON AIRPORT · OFFICIAL · KST</p>
           <h1>{localText(lang, { ko: "인천공항", en: "Incheon Airport", zh: "仁川机场", ja: "仁川空港" })}</h1>
-          <p>{localText(lang, { ko: "출국장 공식 예상 승객·입국객, 실제 출발 운항, 현재 출국장 대기를 서로 섞지 않고 따로 보여줍니다.", en: "Official departure-hall passenger forecast and arrivals, physical departing flights and current departure-hall waits—kept separate, never blended.", zh: "分别显示官方预计出境与入境人数、实际出发航班与当前出境区等候，互不混用。", ja: "公式予想の出国者・入国者、実出発便、現在の出国場待ちを混ぜずに分けて表示します。" })}</p>
+          <p>{localText(lang, { ko: "출국장 공식 예상 승객·입국객, 실제 출발 운항, 현재 출국장 대기를 서로 섞지 않고 따로 보여줍니다.", en: "Official departure-hall passenger forecast and arrivals, physical departing flights and current departure-hall waits—kept separate, never blended.", zh: "分别显示出境大厅与入境检查预计人数、实际出发航班与当前出境区等候，互不混用。", ja: "公式予想の出国場利用者・入国審査利用者、実出発便、現在の出国場待ちを混ぜずに分けて表示します。" })}</p>
         </div>
       </div>
 
