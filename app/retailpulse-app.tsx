@@ -1018,9 +1018,9 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
       title: localText(lang, { ko: "무엇을 주의해야 하나요?", en: "What should you keep in mind?", zh: "需要注意什么？", ja: "注意点は？" }),
       body: localText(lang, {
         ko: "여기 숫자는 매출이나 방문자 수가 아닙니다. 공항 출국장 이용 예상은 외국인 수가 아니고, 게이트에 편수가 몰린다고 출국장이 붐빈다는 뜻도 아닙니다. 원본 기관의 발표가 늦어지면 저희 화면도 함께 늦어지며, 그때는 값을 지어내는 대신 '확인 불가'로 표시합니다.",
-        en: "These numbers are not sales or visitor counts. Total airport passengers are not foreign visitors, and flights concentrating at a gate does not mean the departure hall is crowded. When a source publishes late, this screen is late too — and in that case we show \"unavailable\" instead of inventing a value.",
-        zh: "这些数字并非销售额或访客数。机场总旅客数不等于外国人数，航班集中于某登机口也不代表出境区拥挤。若来源机构发布延迟，本页面也会延迟，此时我们会显示「暂无法确认」而不是编造数值。",
-        ja: "ここの数値は売上や来訪者数ではありません。空港の総旅客数は外国人数ではなく、ゲートに便が集中しても出国場が混雑しているという意味ではありません。提供元の発表が遅れれば本画面も遅れ、その際は値を作らず「確認不可」と表示します。",
+        en: "These numbers are not sales or visitor counts. The departure-hall forecast is not a count of foreign visitors, and flights concentrating at a gate does not mean the departure hall is crowded. When a source publishes late, this screen is late too — and in that case we show \"unavailable\" instead of inventing a value.",
+        zh: "这些数字并非销售额或访客数。出境区预计旅客数不等于外国人数，航班集中于某登机口也不代表出境区拥挤。若来源机构发布延迟，本页面也会延迟，此时我们会显示「暂无法确认」而不是编造数值。",
+        ja: "ここの数値は売上や来訪者数ではありません。出国場の予想旅客数は外国人数ではなく、ゲートに便が集中しても出国場が混雑しているという意味ではありません。提供元の発表が遅れれば本画面も遅れ、その際は値を作らず「確認不可」と表示します。",
       }),
     },
   ];
