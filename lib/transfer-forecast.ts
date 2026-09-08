@@ -19,3 +19,12 @@ export async function persistTransferForecast(db: D1Database, row: TransferForec
       OR airport_transfer_forecast.schema_version != excluded.schema_version`)
     .bind(TRANSFER_SOURCE,row.serviceDate,row.terminal,row.expectedTransferPassengers,row.basis,retrievedAt,row.sourceHash,row.schemaVersion)]);
 }
+
+/** Verified actual server filenames differ between T1 and T2. */
+export function validateTransferDownloadHeaders(headers: Headers, date: string, terminal: 'T1' | 'T2') {
+  const filename = `E${date.replaceAll('-', '')}${terminal === 'T2' ? 'T2' : ''}.xls`;
+  if (!/application\/(x-msdownload|vnd.ms-excel|octet-stream)(?:;|$)/i.test(headers.get('content-type') ?? '')
+    || !(headers.get('content-disposition') ?? '').split(';').some(part => part.trim() === `filename=${filename}` || part.trim() === `filename="${filename}"`)) {
+    throw new Error('SCHEMA_DOWNLOAD_HEADERS');
+  }
+}

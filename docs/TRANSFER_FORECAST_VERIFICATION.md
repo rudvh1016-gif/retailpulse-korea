@@ -16,9 +16,9 @@ not download/publication date. Both requests returned HTTP 200 without incoming
 cookies, session, login, API key, or Referer on 2026-09-08 14:20 UTC (23:20 KST).
 The response sets cookies but retrieval does not require sending them.
 MIME: `application/x-msdownload; charset=UTF-8`.
-Content-Disposition: `attachment; filename=E20260909.xls;` (both terminals).
+Content-Disposition: T1 `attachment; filename=E20260909.xls;`; T2 `attachment; filename=E20260909T2.xls;`.
 Actual format: OLE compound document / BIFF8 `.xls`, not HTML or XLSX.
-The filename alone does not identify terminal; request scope and workbook title/
+The filename, request scope and workbook title/
 transfer headers are validated together. Old document creation/save metadata are
 TEMPLATE metadata and MUST NOT be used as publication timestamps.
 

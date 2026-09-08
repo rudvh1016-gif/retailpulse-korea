@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CloudflareD1RestDatabase } from '../lib/d1-rest';
 import { resolveProductionDatabaseConfig } from './production-database';
-import { persistTransferForecast, TRANSFER_SOURCE, type TransferForecast } from '../lib/transfer-forecast';
+import { persistTransferForecast, validateTransferDownloadHeaders, TRANSFER_SOURCE, type TransferForecast } from '../lib/transfer-forecast';
 import { writeSourceHealth } from '../lib/collector';
 
 if (process.env.ENABLE_PRODUCTION_COLLECTOR !== 'true') throw new Error('production_collector_not_enabled');
@@ -35,8 +35,7 @@ else {
         if(attempt<2) await new Promise(r=>setTimeout(r,2000*(attempt+1)));
       }
       if(!response?.ok) throw new Error('NETWORK_DOWNLOAD_FAILURE');
-      if(!/application\/(x-msdownload|vnd.ms-excel|octet-stream)/i.test(response.headers.get('content-type')??'')
-        || !(response.headers.get('content-disposition')??'').includes(`E${date.replaceAll('-','')}.xls`)) throw new Error('SCHEMA_DOWNLOAD_HEADERS');
+      validateTransferDownloadHeaders(response.headers,date,terminal);
       const raw=Buffer.from(await response.arrayBuffer());
       if(raw.length>2_000_000) throw new Error('SCHEMA_SIZE');
       const file=join(dir,`${terminal}.xls`);writeFileSync(file,raw);

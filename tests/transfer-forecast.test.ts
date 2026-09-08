@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
-import { persistTransferForecast, type TransferForecast } from '../lib/transfer-forecast';
+import { persistTransferForecast, validateTransferDownloadHeaders, type TransferForecast } from '../lib/transfer-forecast';
 
 test('transfer rows are dated, idempotent, and last-good values survive rejected writes', async () => {
   const sql=new DatabaseSync(':memory:');
@@ -17,4 +17,14 @@ test('transfer rows are dated, idempotent, and last-good values survive rejected
     const rows=sql.prepare('SELECT service_date,expected_transfer_passengers,retrieved_at FROM airport_transfer_forecast ORDER BY service_date').all();
     assert.equal(rows.length,2);assert.equal(rows[0].expected_transfer_passengers,559);assert.equal(rows[0].retrieved_at,'2026-09-08T08:10:00Z');
   } finally {sql.close();}
+});
+
+test('actual official T1/T2 filename contracts and wrong-date responses', () => {
+  for (const [terminal,filename] of [['T1','E20260909.xls'],['T2','E20260909T2.xls']] as const) {
+    const headers=new Headers({'content-type':'application/x-msdownload; charset=UTF-8;','content-disposition':`attachment; filename=${filename};`});
+    assert.doesNotThrow(()=>validateTransferDownloadHeaders(headers,'2026-09-09',terminal));
+    assert.throws(()=>validateTransferDownloadHeaders(headers,'2026-09-10',terminal));
+    headers.set('content-type','text/html');
+    assert.throws(()=>validateTransferDownloadHeaders(headers,'2026-09-09',terminal));
+  }
 });
