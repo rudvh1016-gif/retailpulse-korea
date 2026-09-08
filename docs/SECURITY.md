@@ -16,7 +16,7 @@ Secrets are prohibited in source, documentation, fixtures, frontend bundles, URL
 
 ## CI permissions
 
-Pull-request CI has read-only repository permission and receives no production secret. Cloudflare deployment is manual, main-only and protected by a GitHub production environment. Do not use `pull_request_target` for untrusted code.
+Pull-request CI has read-only repository permission and receives no production secret. Cloudflare production deployment follows successful push CI on current main, and remains protected by the GitHub production environment. PR and fork workflow runs cannot trigger deployment. Checkout is pinned to the successful CI revision, and stale revisions are rejected. Manual main-only staging/production deployment remains available. Do not use `pull_request_target` for untrusted code.
 
 ## Known residual risk
 

@@ -131,3 +131,9 @@ Import with sources `seoul_realtime,population_predictions,airport_composition,h
 and confirmation IMPORT. This reuses the same functions, adds no scheduler, and
 avoids rerunning unrelated airport/provider sources. Before18KST prediction creation
 waits normally; coverage accounting still runs.
+
+## Automatic production deployment (2026-09-09 KST)
+
+Owner requested removal of the recurring manual deployment step. Deploy Cloudflare now follows successful CI for pushes to main. It deploys the exact tested revision, rejects outdated revisions, and retains environment protection, serialized deployments, D1 recovery bookmark and migration checks. Failed CI and pull-request/fork runs never deploy. Existing manual staging/production controls remain available.
+
+Observe CI, then Deploy Cloudflare, then verify koretaildata.com. A merge alone is not a deployment success. If deployment fails, inspect its failed step; fix the cause and merge through CI. To disable automatic releases, remove only the workflow_run trigger from deploy-cloudflare.yml; retain manual deployment. No credentials, collectors, paid services, or environment approval settings were changed.
