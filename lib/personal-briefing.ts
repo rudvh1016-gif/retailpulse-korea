@@ -85,7 +85,7 @@ export function buildPersonalBrief(summary: LiveSummary | null | undefined, p: P
     const rows = (a.realtimeForecast ?? []).filter(r=>kstDay(r.targetAt) === date && Date.parse(r.targetAt)>=Date.parse(summary.generatedAt) && finite(r.populationMax));
     const peak = [...rows].sort((a,b)=>b.congestionLevel-a.congestionLevel || b.populationMax-a.populationMax)[0];
     if (peak) {
-      add('crowding',pc('peak',lang),`${clock(peak.targetAt)} KST`,pc('partial',lang),peak.retrievedAt);
+      add('crowding',pc('peak',lang),`${clock(peak.targetAt)}`,pc('partial',lang),peak.retrievedAt);
       if(date !== summary.todayKst) add('passengers',pc('passengers',lang),`${num(peak.populationMin)}–${num(peak.populationMax)}`,`${clock(peak.targetAt)} KST · ${pc('partial',lang)}`,peak.retrievedAt);
     }
     const weather = (a.weather ?? []).filter(r=>kstDay(r.targetAt)===date);

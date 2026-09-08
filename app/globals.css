@@ -1588,7 +1588,7 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .personal-facts p, .personal-facts small, .personal-note, .personal-consent p, .personal-feedback { font-size: .875rem; line-height: 1.6; }
 .personal-facts small { display: block; font-size: .8125rem; }
 .personal-fact-detail { margin-top: .375rem; }
-.personal-facts [data-interest="crowding"] strong { white-space: nowrap; }
+
 @media (max-width: 479px) {
   .personal-facts { grid-template-columns: 1fr; }
   .personal-facts article { padding: 1rem 0; }
@@ -1597,3 +1597,10 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
   .personal-home button { padding: .625rem .75rem; }
   .bottom-nav span { font-size: .625rem; letter-spacing: 0; max-width: 100%; }
 }
+
+.personal-timezone { display: block; color: #536273; font-size: .8125rem; }
+.personal-home .airport-current-brief { margin: 1.5rem 0; padding: 1.25rem 0; }
+.personal-home .airport-current-brief .airport-brief-total,
+.personal-home .airport-current-brief .airport-brief-current { font-family: inherit; font-size: 1.125rem; line-height: 1.6; }
+.personal-home .airport-current-brief p { font-size: .875rem; line-height: 1.6; }
+.personal-home .airport-current-brief small { font-size: .8125rem; line-height: 1.6; }

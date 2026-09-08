@@ -119,3 +119,20 @@ test('mobile briefing can be reopened from airport with one active navigation it
   await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
   await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
 });
+
+test('personal airport briefing shares the airport at-a-glance explanation and keeps KST out of large text',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await fixture(page);await page.goto('/ko');await setup(page);
+  const brief=page.getByTestId('personal-briefing');
+  const overview=brief.locator('.airport-current-brief');
+  await expect(overview).toBeVisible();
+  await expect(overview).toContainText('선택일 전체 공식 예상 출국객');
+  await expect(overview).toContainText('선택일 피크');
+  await expect(overview).not.toContainText('오늘 피크');
+  await expect(brief.locator('.personal-timezone')).toHaveText('한국시간 기준');
+  await expect(brief.locator('.personal-facts strong').filter({hasText:'KST'})).toHaveCount(0);
+  const before=await overview.innerText();
+  await page.locator('nav.bottom-nav').getByRole('link',{name:'공항',exact:true}).click();
+  await page.locator('nav.bottom-nav').getByRole('link',{name:'내 브리핑',exact:true}).click();
+  await expect(brief.locator('.airport-current-brief')).toHaveText(before);
+});

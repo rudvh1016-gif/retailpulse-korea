@@ -27,6 +27,7 @@ export const personalCopy = {
   passengers: row('예상 이용객·인구','Expected passengers / population','预计旅客与人口','予想利用者・人口'),
   crowding: row('혼잡·붐비는 시간','Crowding and busy hours','拥挤与高峰时段','混雑・混み合う時間'),
   flights: row('항공편 흐름','Flight activity','航班动向','フライト動向'),
+  timeBasis: row('한국시간 기준','All times are Korea time','所有时间均为韩国时间','時刻はすべて韓国時間'),
   myBriefing: row('내 브리핑','My briefing','我的简报','マイブリーフ'),
   flightUnit: row('편',' flights','班','便'),
   peopleUnit: row('명',' people','人','人'),
