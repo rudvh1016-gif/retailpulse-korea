@@ -100,7 +100,7 @@ test("subway signal preserves boarding/alighting truth in all four languages", (
  * product must never let one read as the other.
  */
 test("airport current observation and official forecast stay separately named", () => {
-  for (const forecastWord of ["예상 출국객", "예상 피크"]) {
+  for (const forecastWord of ["출국장 예상 승객", "예상 피크"]) {
     assert.ok(signals.includes(forecastWord), `${forecastWord} must exist as forecast wording`);
   }
   // These words may appear only where the product denies them, e.g.
@@ -461,7 +461,7 @@ test("공항 페이지는 요약 → 다음 → 구성 → 관측 표 순서로 
  * 예보가 관측인 척하지 않게 하는 장치는 그대로다: 예보에서 나온 값은
  * 네 언어 모두 "공식 예상" 이라고 말한다.
  */
-test("하루 전체 합계 다음에는 지금 시간대 공식 예상 출국객, 대기는 보조 줄로 내려간다", () => {
+test("하루 전체 합계 다음에는 지금 시간대 출국장 공식 예상 승객, 대기는 보조 줄로 내려간다", () => {
   assert.ok(signals.indexOf('className="airport-brief-total"') < signals.indexOf('{dayLines.map('),
     "선택한 터미널의 하루 합계를 현재 시간대보다 먼저 강조한다");
   const localize = signals.match(/function localizeAirportBrief\([\s\S]*?\n\}/)?.[0] ?? "";
@@ -475,7 +475,7 @@ test("하루 전체 합계 다음에는 지금 시간대 공식 예상 출국객
     "지금 시간대가 없어도 요약이 대기로 시작하면 안 된다");
 
   // 예보에서 나온 값은 스스로 예보라고 말한다.
-  assert.ok(localize.includes("공식 예상 출국객"), "지금 시간대 값은 공식 예상이라고 말해야 한다");
+  assert.ok(localize.includes("출국장 공식 예상 승객"), "지금 시간대 값은 공식 예상이라고 말해야 한다");
   assert.ok(localize.includes("오늘 피크"), "피크 값도 함께 제시되어야 한다");
 
   // 길이: 첫 줄은 숫자를 앞세운 짧은 구절이지 문장이 아니다.

@@ -68,7 +68,7 @@ export const personalCopy = {
   missing: row('아직 제공된 자료가 없어요','No published data yet','暂无已发布资料','まだ公表資料がありません'),
   forecast: row('공식 예상 · 관측값 아님','Official forecast · not observed','官方预测 · 非实测','公式予想・観測値ではありません'),
   partial: row('일부 시간대만 제공 · 하루 전체 예상 아님','Only some hours available · not a whole-day forecast','仅部分时段 · 非全天预测','一部時間帯のみ・一日全体の予想ではありません'),
-  expectedDepartures: row('예상 출국객','Expected departing passengers','预计出境旅客','予想出国者数'),
+  expectedDepartures: row('출국장 예상 승객','Departure-hall passenger forecast','出境大厅预计旅客','出国場予想旅客数'),
   peak: row('제공된 예측 중 가장 붐빌 시간','Busiest hour in the published forecast','已发布预测中的最拥挤时段','公表予測内で最も混み合う時間'),
   current: row('현재 추정 인구 · 누적 방문객 아님','Estimated population now · not cumulative visitors','当前推定人口 · 非累计访客','現在の推定人口・累計来訪者ではありません'),
   stale: row('지난 관측 · 현재와 다를 수 있어요','Older observation · conditions may have changed','较早观测 · 当前状况可能不同','過去の観測・現在と異なる場合があります'),

@@ -126,7 +126,7 @@ test('personal airport briefing shares the airport at-a-glance explanation and k
   const brief=page.getByTestId('personal-briefing');
   const overview=brief.locator('.airport-current-brief');
   await expect(overview).toBeVisible();
-  await expect(overview).toContainText('선택일 전체 공식 예상 출국객');
+  await expect(overview).toContainText('선택일 출국장 공식 예상 승객');
   await expect(overview).toContainText('선택일 피크');
   await expect(overview).not.toContainText('오늘 피크');
   await expect(brief.locator('.personal-timezone')).toHaveText('한국시간 기준');

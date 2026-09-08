@@ -1,4 +1,5 @@
 "use client";
+import { passengerCopy } from "../lib/passenger-copy";
 import { pc } from '../lib/personal-copy';
 import { activeSourceCatalog,sourceName,sourceUse,CollectionStatus } from "./source-status";
 
@@ -569,7 +570,7 @@ function AirportView({
         <div>
           <p className="eyebrow">INCHEON AIRPORT · OFFICIAL · KST</p>
           <h1>{localText(lang, { ko: "인천공항", en: "Incheon Airport", zh: "仁川机场", ja: "仁川空港" })}</h1>
-          <p>{localText(lang, { ko: "공식 예상 출국객·입국객, 실제 출발 운항, 현재 출국장 대기를 서로 섞지 않고 따로 보여줍니다.", en: "Official expected departures and arrivals, physical departing flights and current departure-hall waits—kept separate, never blended.", zh: "分别显示官方预计出境与入境人数、实际出发航班与当前出境区等候，互不混用。", ja: "公式予想の出国者・入国者、実出発便、現在の出国場待ちを混ぜずに分けて表示します。" })}</p>
+          <p>{localText(lang, { ko: "출국장 공식 예상 승객·입국객, 실제 출발 운항, 현재 출국장 대기를 서로 섞지 않고 따로 보여줍니다.", en: "Official departure-hall passenger forecast and arrivals, physical departing flights and current departure-hall waits—kept separate, never blended.", zh: "分别显示官方预计出境与入境人数、实际出发航班与当前出境区等候，互不混用。", ja: "公式予想の出国者・入国者、実出発便、現在の出国場待ちを混ぜずに分けて表示します。" })}</p>
         </div>
       </div>
 
@@ -877,7 +878,7 @@ function InsightsView({ lang, selected, setSelected, date }: { lang: Lang; selec
         </div>
         <MetricExplainer
           lang={lang}
-          what={localText(lang, { ko: "인천공항 전체 출국객 가운데 각 터미널이 차지한 비율입니다.", en: "The share of all Incheon departures handled by each terminal.", zh: "各航站楼在仁川机场全部出境旅客中所占的比例。", ja: "仁川空港の全出国者のうち各ターミナルが占める割合です。" })}
+          what={localText(lang, { ko: "인천공항 과거 출국 여객 통계에서 각 터미널이 차지한 비율입니다.", en: "The share of all Incheon departures handled by each terminal.", zh: "各航站楼在仁川机场全部出境旅客中所占的比例。", ja: "仁川空港の全出国者のうち各ターミナルが占める割合です。" })}
           high={localText(lang, { ko: "그 터미널로 출국 수요가 더 몰렸다는 뜻입니다.", en: "More departure demand was concentrated at that terminal.", zh: "表示出境需求更集中于该航站楼。", ja: "その ターミナルに出国需要がより集中したことを意味します。" })}
           source={localText(lang, { ko: "인천국제공항공사 공식 월별 통계", en: "Incheon International Airport Corporation monthly statistics", zh: "仁川国际机场公社官方月度统计", ja: "仁川国際空港公社 公式月次統計" })}
           why={localText(lang, { ko: "이용할 터미널이 최근 더 붐비는 쪽인지 미리 가늠할 수 있습니다.", en: "It tells you in advance whether your terminal is the busier one lately.", zh: "可提前判断您将使用的航站楼近期是否更为繁忙。", ja: "利用するターミナルが最近混んでいる側かを事前に把握できます。" })}
@@ -976,11 +977,11 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
       eyebrow: "04 · AIRPORT",
       title: localText(lang, { ko: "공항에서는 무엇을 보나요?", en: "What do you see for the airport?", zh: "在机场能看到什么？", ja: "空港では何が見られる？" }),
       body: localText(lang, {
-        ko: "인천공항의 공식 예상 출국객과 피크 시간, 실제 출발 운항 편수와 게이트 집중 순위, 그리고 현재 출국장별 대기시간과 대기인원을 봅니다. 전체·T1·T2를 따로 볼 수 있습니다.",
-        en: "Incheon's official expected departures and peak hour, the number of physical departing flights with the busiest gates, and the current wait time and queue size at each departure checkpoint. All terminals, T1 and T2 can be viewed separately.",
-        zh: "仁川机场的官方预计出境人数与高峰时段、实际出发航班数与登机口集中排名，以及各出境检查点当前的等候时间与等候人数。可分别查看全部、T1 与 T2。",
-        ja: "仁川空港の公式予想出国者数とピーク時間、実際の出発便数とゲート集中ランキング、各出国場の現在の待ち時間と待機人数を表示します。全体・T1・T2 を分けて確認できます。",
-      }),
+        ko: "인천공항의 출국장 공식 예상 승객과 피크 시간, 실제 출발 운항 편수와 게이트 집중 순위, 그리고 현재 출국장별 대기시간과 대기인원을 봅니다. 전체·T1·T2를 따로 볼 수 있습니다.",
+        en: "Incheon's official departure-hall passenger forecast and peak hour, the number of physical departing flights with the busiest gates, and the current wait time and queue size at each departure checkpoint. All terminals, T1 and T2 can be viewed separately.",
+        zh: "仁川机场的出境大厅官方预计人数与高峰时段、实际出发航班数与登机口集中排名，以及各出境检查点当前的等候时间与等候人数。可分别查看全部、T1 与 T2。",
+        ja: "仁川空港の出国場公式予想旅客数とピーク時間、実際の出発便数とゲート集中ランキング、各出国場の現在の待ち時間と待機人数を表示します。全体・T1・T2 を分けて確認できます。",
+      }) + " " + passengerCopy.scope[lang] + ". " + passengerCopy.limitation[lang] + " " + passengerCopy.noSum[lang],
     },
     {
       eyebrow: "05 · DATA",
@@ -1016,7 +1017,7 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
       eyebrow: "08 · LIMITS",
       title: localText(lang, { ko: "무엇을 주의해야 하나요?", en: "What should you keep in mind?", zh: "需要注意什么？", ja: "注意点は？" }),
       body: localText(lang, {
-        ko: "여기 숫자는 매출이나 방문자 수가 아닙니다. 공항의 전체 승객 수는 외국인 수가 아니고, 게이트에 편수가 몰린다고 출국장이 붐빈다는 뜻도 아닙니다. 원본 기관의 발표가 늦어지면 저희 화면도 함께 늦어지며, 그때는 값을 지어내는 대신 '확인 불가'로 표시합니다.",
+        ko: "여기 숫자는 매출이나 방문자 수가 아닙니다. 공항 출국장 이용 예상은 외국인 수가 아니고, 게이트에 편수가 몰린다고 출국장이 붐빈다는 뜻도 아닙니다. 원본 기관의 발표가 늦어지면 저희 화면도 함께 늦어지며, 그때는 값을 지어내는 대신 '확인 불가'로 표시합니다.",
         en: "These numbers are not sales or visitor counts. Total airport passengers are not foreign visitors, and flights concentrating at a gate does not mean the departure hall is crowded. When a source publishes late, this screen is late too — and in that case we show \"unavailable\" instead of inventing a value.",
         zh: "这些数字并非销售额或访客数。机场总旅客数不等于外国人数，航班集中于某登机口也不代表出境区拥挤。若来源机构发布延迟，本页面也会延迟，此时我们会显示「暂无法确认」而不是编造数值。",
         ja: "ここの数値は売上や来訪者数ではありません。空港の総旅客数は外国人数ではなく、ゲートに便が集中しても出国場が混雑しているという意味ではありません。提供元の発表が遅れれば本画面も遅れ、その際は値を作らず「確認不可」と表示します。",

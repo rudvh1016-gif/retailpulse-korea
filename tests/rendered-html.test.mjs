@@ -303,7 +303,7 @@ test("ships every product surface in four languages without a runtime LLM depend
     "简体中文", "日本語",
   ]) assert.match(page, new RegExp(required));
   for (const feature of [
-    "공식 예상 출국객", "OFFICIAL HISTORICAL", "T1", "T2",
+    "출국장 공식 예상 승객", "OFFICIAL HISTORICAL", "T1", "T2",
     "뷰티·화장품", "패션·잡화", "식음료·카페",
     "INCHEON DEPARTURE HALL CONGESTION", "INCHEON ARRIVAL HALL STATUS",
     "INCHEON DUTY-FREE FACILITIES", "NAVER DATALAB",
@@ -484,7 +484,7 @@ test("each Seoul area view opens with its own current brief built from the same 
   const css = await read("../app/globals.css");
   assert.match(signals, /className="current-brief area-current-brief"/);
   assert.match(signals, /const areaBrief = buildAreaCurrentBrief\(/);
-  assert.match(signals, /const areaBriefCopy = localizeAreaBrief\(areaBrief, lang\)/);
+  assert.match(signals, /const areaBriefCopy = localizeAreaBrief\(areaBrief, lang, selectedDay\)/);
   assert.ok(
     signals.indexOf('className="current-brief area-current-brief"')
       < signals.indexOf('id="live-signals-title"'),
@@ -632,7 +632,7 @@ test("the airport summary states this hour's expected departing passengers, labe
   assert.match(signals, /const nowLine = \(\(\) => \{\s*\n\s*if \(!brief\.nowBand\) return null;/);
   const nowBlock = signals.match(/const nowLine = \(\(\) => \{([\s\S]*?)\n  \}\)\(\);/)?.[1] ?? "";
   assert.ok(nowBlock.length > 0);
-  for (const official of ["공식 예상 출국객", "official expected departures", "官方预计出境旅客", "公式予想出国旅客"]) {
+  for (const official of ["출국장 공식 예상 승객", "official departure-hall passenger forecast", "出境大厅官方预计旅客", "出国場公式予想旅客"]) {
     assert.ok(nowBlock.includes(official),
       `${official} must say the number is an official expectation, in every locale`);
   }
