@@ -106,3 +106,16 @@ test('brand returns to the personal home while Seoul navigation retains the area
   await expect(page.getByTestId('personal-briefing')).toBeVisible();
   await expect(page).toHaveTitle('인천공항·명동·홍대·성수 오늘·내일 브리핑 | KORETAIL');
 });
+
+test('mobile briefing can be reopened from airport with one active navigation item',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await fixture(page);await page.goto('/ko');await setup(page);
+  const nav=page.locator('nav.bottom-nav');
+  await expect(nav.locator('[aria-current="page"]')).toHaveText('내 브리핑');
+  await nav.getByRole('link',{name:'공항',exact:true}).click();
+  await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+  await nav.getByRole('link',{name:'내 브리핑',exact:true}).click();
+  await expect(page.getByTestId('personal-briefing')).toBeVisible();
+  await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
+  await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+});

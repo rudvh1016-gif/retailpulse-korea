@@ -320,6 +320,7 @@ export interface LiveSummary {
       forecastCoverage: { all: ForecastCoverageStatus; byTerminal: Record<string, ForecastCoverageStatus> };
     };
     scheduled: LiveScheduledRow[];
+    scheduledBriefing?: ReturnType<typeof import('../lib/scheduled-briefing').summarizeScheduledBriefing>;
     passengerForecast: LivePassengerForecastRow[];
   };
 }

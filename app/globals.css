@@ -295,7 +295,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 nav.bottom-nav { display: none; }
 .page-shell { padding-bottom: 72px; }
 }
-.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; min-height: 68px; padding: 0 max(20px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(20px, env(safe-area-inset-left)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--line); background-color: #FFFFFF; }
+.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; min-height: 68px; padding: 0 max(20px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(20px, env(safe-area-inset-left)); display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-top: 1px solid var(--line); background-color: #FFFFFF; }
 .bottom-nav button, .bottom-nav a { position: relative; min-height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border: 0; background: transparent; color: #8b8a86; text-decoration: none; }
 .bottom-nav button.active, .bottom-nav a.active { color: var(--ink); }
 .bottom-nav button.active::before, .bottom-nav a.active::before { content: ""; position: absolute; top: -1px; width: 32px; height: 2px; background: var(--blue); }
@@ -1573,3 +1573,27 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .personal-switches { padding: 20px 0; border-bottom: 1px solid #d8dfe6; }
 .personal-switches .personal-inline { margin: 10px 0; }
 .personal-switches button[aria-pressed="true"] { background: #edf4f8; border-color: #315e7d; color: #214c6b; }
+
+/* One type scale for the personal sheet; full Korean glyphs cover new copy. */
+.lang-ko .personal-home { --font-ui: "Pretendard Variable", "KORETAIL Sans Variable", system-ui, sans-serif; }
+.personal-home { font-family: var(--font-ui); font-size: 1rem; line-height: 1.6; }
+.personal-home h2 { font-size: clamp(1.5rem, 3vw, 2rem); }
+.personal-home h3, .personal-place { font-size: 1rem; }
+.personal-kicker { font-size: .8125rem; letter-spacing: .02em; }
+.personal-summary { font-size: 1.125rem; }
+.personal-facts { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.personal-facts strong { font-size: 1.5rem; font-weight: var(--weight-strong); }
+.personal-facts [data-interest="airlines"] { grid-column: 1 / -1; }
+.personal-facts [data-interest="airlines"] strong, .personal-fact-detail { font-size: 1rem; line-height: 1.6; }
+.personal-facts p, .personal-facts small, .personal-note, .personal-consent p, .personal-feedback { font-size: .875rem; line-height: 1.6; }
+.personal-facts small { display: block; font-size: .8125rem; }
+.personal-fact-detail { margin-top: .375rem; }
+.personal-facts [data-interest="crowding"] strong { white-space: nowrap; }
+@media (max-width: 479px) {
+  .personal-facts { grid-template-columns: 1fr; }
+  .personal-facts article { padding: 1rem 0; }
+  .personal-facts h3 { margin-bottom: .375rem; }
+  .personal-inline { gap: .5rem; }
+  .personal-home button { padding: .625rem .75rem; }
+  .bottom-nav span { font-size: .625rem; letter-spacing: 0; max-width: 100%; }
+}

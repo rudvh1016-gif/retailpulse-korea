@@ -41,12 +41,12 @@ export function parsePreferences(raw: string | null): PersonalPreferences | null
 export function nextDay(date: string) { return new Date(`${date}T00:00:00Z`).toISOString().slice(0,10) === date ? new Date(Date.parse(`${date}T00:00:00Z`)+86400000).toISOString().slice(0,10) : date; }
 const kstDay = (date: string) => Number.isFinite(Date.parse(date)) ? new Date(Date.parse(date)+9*3600000).toISOString().slice(0,10) : '';
 const clock = (date: string) => new Date(Date.parse(date)+9*3600000).toISOString().slice(11,16);
-export interface PersonalCard { interest: Interest; label: string; value: string; note: string; at?: string }
+export interface PersonalCard { interest: Interest; label: string; value: string; note: string; at?: string; details?: string[] }
 export function buildPersonalBrief(summary: LiveSummary | null | undefined, p: PersonalPreferences, date: string, lang: PersonalLang): {cards: PersonalCard[]; actions: string[]} {
   const cards: PersonalCard[] = [];
   const actions: string[] = [];
   if (!summary || summary.mode !== 'live-summary' || summary.serviceDateKst !== date) return {cards,actions};
-  const add = (interest: Interest, label: string, value: string, note: string, at?: string) => { if(p.interests.includes(interest)) cards.push({interest,label,value,note,at}); };
+  const add = (interest: Interest, label: string, value: string, note: string, at?: string, details?: string[]) => { if(p.interests.includes(interest)) cards.push({interest,label,value,note,at,details}); };
   const num = (value: number) => value.toLocaleString(lang === 'zh' ? 'zh-CN' : lang);
   const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0;
   if (p.location === 'airport') {
@@ -58,14 +58,23 @@ export function buildPersonalBrief(summary: LiveSummary | null | undefined, p: P
     const at = all ? a.passengerForecastRetrievedAt : a.passengerForecastRetrievedAtByTerminal?.[p.terminal];
     if (p.terminal !== 'CONCOURSE' && coverage === 'COMPLETE' && finite(passengers)) add('passengers',pc('expectedDepartures',lang),num(passengers),pc('forecast',lang),at ?? undefined);
     const peak = all ? a.peakExpectedTimeBand : a.peakExpectedTimeBandByTerminal?.[p.terminal];
-    if (p.terminal !== 'CONCOURSE' && coverage === 'COMPLETE' && peak && kstDay(peak.targetStartAt)===date) add('crowding',pc('peak',lang),`${clock(peak.targetStartAt)}–${clock(peak.targetEndAt)} KST`,pc('forecast',lang),at ?? undefined);
+    if (p.terminal !== 'CONCOURSE' && coverage === 'COMPLETE' && peak && kstDay(peak.targetStartAt)===date) add('crowding',pc('peak',lang),`${clock(peak.targetStartAt)}–${clock(peak.targetEndAt)}`,`${pc('forecast',lang)} · KST`,at ?? undefined,finite(peak.expectedPassengers)?[`${num(peak.expectedPassengers)}${pc('peopleUnit',lang)}`]:undefined);
     // Scope counters start at zero even when the date has no collected flights.
     // A real whole-airport count is the evidence gate before exposing any scope.
     const flights = !finite(a.departuresTrackedToday) ? null : p.terminal === 'CONCOURSE' ? a.flightScope?.CONCOURSE : all ? a.departuresTrackedToday : a.departuresTrackedTodayByTerminal?.[p.terminal];
-    if (finite(flights)) add('flights',pc('flights',lang),num(flights),pc('flightBasis',lang) + (a.flightScope?.capped ? ` · ${pc('partial',lang)}` : ''),a.departuresTrackedTodayRetrievedAt ?? undefined);
-    const ranking = all ? a.airlineRanking?.all : a.airlineRanking?.byTerminal[p.terminal];
-    const airline = ranking?.airlines.find(row=>row.registryName && finite(row.flights));
-    if(airline) add('airlines',pc('airlines',lang),`${airline.registryName}${airline.countryBasis==='REGISTRY'&&airline.country?` · ${airline.country}`:''}`,pc('airlineBasis',lang),ranking?.retrievedAt ?? undefined);
+    const schedule = a.scheduledBriefing?.serviceDateKst === date && date >= summary.todayKst ? a.scheduledBriefing : undefined;
+    const planned = all ? schedule?.ranking.all : schedule?.ranking.byTerminal[p.terminal];
+    const useSchedule = !finite(flights) && Boolean(planned?.totalFlights);
+    if (finite(flights)) add('flights',pc('flights',lang),`${num(flights)}${pc('flightUnit',lang)}`,pc('flightBasis',lang) + (a.flightScope?.capped ? ` · ${pc('partial',lang)}` : ''),a.departuresTrackedTodayRetrievedAt ?? undefined);
+    else if(useSchedule && planned) add('flights',pc('scheduledFlights',lang),`${num(planned.totalFlights)}${pc('flightUnit',lang)}`,pc('scheduleBasis',lang),planned.retrievedAt ?? undefined);
+    const ranking = useSchedule ? planned : all ? a.airlineRanking?.all : a.airlineRanking?.byTerminal[p.terminal];
+    const ranked = ranking?.airlines.filter(row=>row.registryName && finite(row.flights)).slice(0,3) ?? [];
+    const airlineLines = ranked.map(row=>{
+      let country = row.country ?? '';
+      if(country) { try { country = new Intl.DisplayNames([lang],{type:'region',style:'short'}).of(country) ?? country; } catch { /* Retain registry code. */ } }
+      return `${row.registryName}${row.countryBasis==='REGISTRY'&&country?` · ${country}`:''} · ${num(row.flights)}${pc('flightUnit',lang)} (${Math.round(row.share*100)}%)`;
+    });
+    if(airlineLines.length) add('airlines',pc('airlines',lang),airlineLines[0],`${useSchedule?`${pc('scheduleBasis',lang)} · `:''}${pc('airlineBasis',lang)}`,ranking?.retrievedAt ?? undefined,airlineLines.slice(1));
   } else {
     const a = summary.areas[p.location];
     if (!a) return {cards,actions};

@@ -60,3 +60,30 @@ test('Seoul tomorrow never reuses today observations, weather or expired events'
   assert.match(b.cards.find(c=>c.interest==='foreign').note,/과거/);
   assert.match(b.cards.find(c=>c.interest==='crowding').note,/일부 시간대/);
 });
+
+test('future briefing uses weekday-matched partial schedules and shows airline counts', async()=>{
+  const {summarizeScheduledBriefing}=await import('../lib/scheduled-briefing.ts');
+  const row={terminal:'T2',operatingFlight:'KE703',scheduledTime:'08:00',weekdays:'["WED"]',validFrom:'2026-09-01',validTo:'2026-09-30',retrievedAt:'2026-09-08T00:00:00Z'};
+  const lookup=()=>({name:'Korean Air',country:'KR'});
+  const schedule=summarizeScheduledBriefing([row,{...row,retrievedAt:'2026-09-08T01:00:00Z'},{...row,operatingFlight:'KE999',weekdays:'["TUE"]'},{...row,operatingFlight:'KE888',validTo:'2026-09-08'},{...row,operatingFlight:'KE777',weekdays:'broken'}],'2026-09-09',lookup);
+  assert.equal(schedule.ranking.all.totalFlights,1);
+  assert.equal(schedule.scheduled[0].flights,1);
+  const s={...base,airport:{...base.airport,departuresTrackedToday:null,scheduledBriefing:schedule}};
+  const p={...recommendedPreferences('manager'),terminal:'T2'};
+  const result=buildPersonalBrief(s,p,'2026-09-09','ko');
+  assert.equal(result.cards.find(c=>c.interest==='flights').value,'1편');
+  assert.match(result.cards.find(c=>c.interest==='flights').note,/전체 운항편 수나 운항 실적 아님/);
+  assert.match(result.cards.find(c=>c.interest==='airlines').value,/1편 \(100%\)/);
+  assert.match(result.cards.find(c=>c.interest==='airlines').note,/승객 국적/);
+  assert.ok(!buildPersonalBrief(s,{...p,terminal:'T1'},'2026-09-09','ko').cards.some(c=>c.interest==='flights'));
+  assert.ok(!buildPersonalBrief({...s,todayKst:'2026-09-10'},p,'2026-09-09','ko').cards.some(c=>c.interest==='flights'));
+  const actual={...s,airport:{...s.airport,departuresTrackedToday:12,departuresTrackedTodayByTerminal:{T2:12}}};
+  assert.equal(buildPersonalBrief(actual,p,'2026-09-09','ko').cards.find(c=>c.interest==='flights').value,'12편');
+});
+
+test('peak hour retains the number of expected passengers as well as time',()=>{
+  const s={...base,airport:{...base.airport,peakExpectedTimeBandByTerminal:{T1:{targetStartAt:'2026-09-09T07:00:00+09:00',targetEndAt:'2026-09-09T08:00:00+09:00',expectedPassengers:3210}}}};
+  const card=buildPersonalBrief(s,{...recommendedPreferences('manager'),terminal:'T1'},'2026-09-09','ko').cards.find(c=>c.interest==='crowding');
+  assert.equal(card.value,'07:00–08:00');
+  assert.deepEqual(card.details,['3,210명']);
+});
