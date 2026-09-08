@@ -1473,7 +1473,7 @@ export function AirportAtAGlance({summary,lang,terminal="all"}:{summary:LiveSumm
   return <section className="current-brief airport-current-brief" aria-label={`${scopeLabel} ${dayLabel}`}>
       <p className="eyebrow">{scopeLabel} · {dayLabel}</p>
       {expectedTotal !== null && <strong className="airport-brief-total">{passengerCopy[summary.dayRelation === "TODAY" ? "today" : "selected"][lang]} {Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}</strong>}
-      <small className="passenger-scope-note">{passengerCopy.scope[lang]}</small>
+      <small className="departure-hall-scope-note">{passengerCopy.scope[lang]}</small>
       <small className="passenger-transfer-limitation">{passengerCopy.limitation[lang]}</small>
       <div className="transfer-forecast" data-testid="transfer-forecast">
         {(airport.transferForecast ?? []).filter(r => r.serviceDate === summary.serviceDateKst && (isAll || r.terminal === terminal)).map(r =>

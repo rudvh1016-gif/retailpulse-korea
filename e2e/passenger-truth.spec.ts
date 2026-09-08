@@ -5,23 +5,26 @@ import { passengerCopy } from '../lib/passenger-copy';
 for (const lang of ['ko','en','zh','ja'] as const) {
   for (const tomorrow of [false,true]) test(`${lang} ${tomorrow?'tomorrow':'today'} passenger meaning agrees across personal/full and terminals`, async ({page}) => {
     await page.setViewportSize({width:390,height:844});
-    await page.addInitScript(({key,tomorrow})=>localStorage.setItem(key,JSON.stringify({version:1,role:'manager',location:'airport',selectedLocations:['airport'],terminal:'all',selectedTerminals:['all'],interests:['passengers'],day:tomorrow?'tomorrow':'today',selectedDays:['today','tomorrow'],analytics:false})),{key:PREFERENCE_KEY,tomorrow});
+    await page.addInitScript(({key,tomorrow})=>localStorage.setItem(key,JSON.stringify({version:1,role:'manager',location:'airport',selectedLocations:['airport'],terminal:'all',selectedTerminals:['all'],interests:['passengers'],day:tomorrow?'tomorrow':'today',selectedDays:tomorrow?['tomorrow','today']:['today','tomorrow'],analytics:false})),{key:PREFERENCE_KEY,tomorrow});
     await page.route('**/api/live/summary*', async route=>{
-      const date=tomorrow?'2026-09-01':'2026-08-31';
-      await route.fulfill({json:{...SUMMARY_FIXTURE,serviceDateKst:date,dayRelation:tomorrow?'FUTURE':'TODAY',airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:date,transferForecast:[{terminal:'T1',serviceDate:date,expectedTransferPassengers:559,retrievedAt:'2026-08-30T08:10:00Z'},{terminal:'T2',serviceDate:date,expectedTransferPassengers:10485,retrievedAt:'2026-08-30T08:10:00Z'}]}}});
+      const date=new URL(route.request().url()).searchParams.get('date') ?? '2026-08-31';
+      await route.fulfill({json:{...SUMMARY_FIXTURE,serviceDateKst:date,dayRelation:date>'2026-08-31'?'FUTURE':'TODAY',airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:date,transferForecast:[{terminal:'T1',serviceDate:date,expectedTransferPassengers:559,retrievedAt:'2026-08-30T08:10:00Z'},{terminal:'T2',serviceDate:date,expectedTransferPassengers:10485,retrievedAt:'2026-08-30T08:10:00Z'}]}}});
     });
     await page.goto(`/${lang}`);
     const personal=page.locator('.airport-current-brief');
     await expect(personal).toContainText(passengerCopy[tomorrow?'selected':'today'][lang]);
     await expect(personal).toContainText(passengerCopy.limitation[lang]);
     await expect(personal.getByTestId('transfer-forecast')).toContainText('10,485');
-    const scope=await personal.locator('.passenger-scope-note').first().textContent();
+    const scope=await personal.locator('.departure-hall-scope-note').first().textContent();
     await page.goto(`/${lang}/airport`);
+    await expect(page.locator(".app")).toHaveAttribute("data-hydrated","true");
+    if (tomorrow) await page.getByRole('button',{name:{ko:'내일',en:'Tomorrow',zh:'明天',ja:'明日'}[lang],exact:true}).click();
     for (const terminal of ['T1','T2']) {
       await page.getByRole('tab',{name:terminal,exact:true}).click();
+      await expect(page.getByRole('tab',{name:terminal,exact:true})).toHaveAttribute('aria-selected','true');
       const full=page.locator('.airport-current-brief');
       await expect(full).toContainText(passengerCopy[tomorrow?'selected':'today'][lang]);
-      await expect(full.locator('.passenger-scope-note').first()).toHaveText(scope!);
+      await expect(full.locator('.departure-hall-scope-note').first()).toHaveText(scope!);
       await expect(full).toContainText(passengerCopy.limitation[lang]);
       await expect(full.getByTestId('transfer-forecast')).toContainText(terminal==='T1'?'559':'10,485');
       await expect(full.getByTestId('transfer-forecast')).not.toContainText(terminal==='T1'?'10,485':'T1');
@@ -31,6 +34,7 @@ for (const lang of ['ko','en','zh','ja'] as const) {
   test(`${lang} missing transfer is visible and never zero`,async({page})=>{
     await page.route('**/api/live/summary*',r=>r.fulfill({json:SUMMARY_FIXTURE}));
     await page.goto(`/${lang}/airport`);
+    await expect(page.locator(".app")).toHaveAttribute("data-hydrated","true");
     const transfer=page.getByTestId('transfer-forecast');
     await expect(transfer).toContainText(passengerCopy.unavailable[lang]);
     await expect(transfer).not.toContainText(/0(?:명|人| people)/);
