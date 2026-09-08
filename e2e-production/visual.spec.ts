@@ -466,7 +466,15 @@ test("production airport composition is one compact tabbed module at every requi
     const dailyTotal = page.locator(".airport-brief-total");
     if (await dailyTotal.count()) {
       await expect(page.locator(".airport-current-brief > strong").first()).toHaveClass("airport-brief-total");
-      await expect(dailyTotal).toContainText("금일 출국장 공식 예상 승객");
+      if (await dailyTotal.getAttribute("data-basis") === "ARITHMETIC_ONLY") {
+        await expect(dailyTotal).toContainText("금일 두 예고 수치 단순 합계");
+        const components = page.locator(".airport-passenger-components");
+        await expect(components).toContainText("출국장 예상");
+        await expect(components).toContainText(" + 환승 보안검색 예상");
+        await expect(page.locator(".passenger-transfer-limitation")).toContainText("전체 출발객 수 아님");
+      } else {
+        await expect(dailyTotal).toContainText("금일 출국장 공식 예상 승객");
+      }
     }
     const bars = page.locator(".airport-timeline-bars");
     const now = bars.locator("p.now");
