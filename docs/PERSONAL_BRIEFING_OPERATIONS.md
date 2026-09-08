@@ -41,6 +41,8 @@ Google 공식 근거: [페이지 조회 설정](https://developers.google.com/an
 
 ## Naver Search Advisor
 
+2026-09-08 발급된 실제 인증값의 content만 GitHub production 환경의 NAVER_SITE_VERIFICATION 변수에 등록했습니다. 소스에 실제 값이나 meta 태그 문자열을 하드코딩하지 않았습니다. 기존 루트 메타데이터와 빌드 시 공개 변수 주입 경로를 그대로 사용합니다. 4개 언어 HTML의 head에 정확한 인증 태그가 한 번씩 출력되는지, 설정이 없을 때 빈 태그가 생기지 않는지 테스트합니다. 소유 확인 버튼 클릭과 사이트맵 제출은 운영 배포 후에 가능합니다. 아직 운영 사이트에는 반영되지 않았습니다.
+
 웹마스터 도구에 https://koretaildata.com을 등록하고 HTML 태그 인증을 선택합니다. 발급받은 content 값만 NAVER_SITE_VERIFICATION 변수에 넣습니다. 다음 배포 후 소유 확인을 완료하고 요청 메뉴에서 사이트맵 https://koretaildata.com/sitemap.xml을 제출합니다. 수집·색인은 검색엔진이 결정하므로 등록이 즉시 노출을 보장하지는 않습니다.
 
 [네이버 소유 확인·검색 최적화 안내](https://searchadvisor.naver.com/guide/seo-basic-intro).
