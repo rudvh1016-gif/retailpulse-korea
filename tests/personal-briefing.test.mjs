@@ -26,6 +26,23 @@ test('only existing local information can be selected', () => {
   assert.ok(!availableInterests('hongdae').includes('flights'));
 });
 const base = {mode:'live-summary', generatedAt:'2026-09-08T01:00:00Z', todayKst:'2026-09-08',serviceDateKst:'2026-09-09',dayRelation:'FUTURE', areas:{}, airport:{serviceDateKst:'2026-09-09',forecastCoverage:{all:'PARTIAL',byTerminal:{T1:'COMPLETE'}}, todayExpectedPassengersTotal:999, todayExpectedPassengersByTerminal:{T1:123},peakExpectedTimeBandByTerminal:{},flightScope:{CONCOURSE:12}}};
+test('today retains the latest Seoul observation across midnight without inventing selected-day history',()=>{
+  for(const location of ['myeongdong','hongdae','seongsu']) {
+    const observedAt='2026-09-08T23:55:00+09:00';
+    const s={...base,generatedAt:'2026-09-09T00:05:00+09:00',todayKst:'2026-09-09',dayRelation:'TODAY',areas:{[location]:{realtime:{observedAt,populationMin:10000,populationMax:12000,freshness:'LIVE'}}}};
+    const p={...recommendedPreferences('manager',location),day:'today'};
+    const card=buildPersonalBrief(s,p,'2026-09-09','ko').cards.find(c=>c.interest==='passengers');
+    assert.equal(card?.value,'10,000–12,000');
+    assert.equal(card?.at,observedAt);
+    for(const date of ['2026-09-08','2026-09-10']) {
+      assert.equal(buildPersonalBrief({...s,serviceDateKst:date},p,date,'ko').cards.some(c=>c.interest==='passengers'),false);
+    }
+    s.areas[location].realtime.freshness='STALE';
+    const stale=buildPersonalBrief(s,p,'2026-09-09','ko').cards.find(c=>c.interest==='passengers');
+    assert.equal(stale?.at,observedAt);
+    assert.notEqual(stale?.note,card?.note);
+  }
+});
 test('yesterday uses the requested saved airport forecast without presenting it as actual or future advice',()=>{
   const summary={...base,todayKst:'2026-09-10',dayRelation:'PAST'};
   const result=buildPersonalBrief(summary,{...recommendedPreferences('manager'),day:'yesterday',terminal:'T1'},'2026-09-09','ko');

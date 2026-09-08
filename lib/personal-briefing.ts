@@ -81,7 +81,9 @@ export function buildPersonalBrief(summary: LiveSummary | null | undefined, p: P
     const a = summary.areas[p.location];
     if (!a) return {cards,actions};
     const now = a.realtime;
-    if (date === summary.todayKst && now && kstDay(now.observedAt) === date && finite(now.populationMin) && finite(now.populationMax)) {
+    // Today's glance and cards share the latest observation, including across
+    // midnight. Keep its original timestamp/freshness; never reuse it for a selected past/future day.
+    if (date === summary.todayKst && now && Number.isFinite(Date.parse(now.observedAt)) && finite(now.populationMin) && finite(now.populationMax)) {
       add('passengers',pc('current',lang),`${num(now.populationMin)}–${num(now.populationMax)}`,now.freshness === 'STALE' ? pc('stale',lang) : pc('current',lang),now.observedAt);
     }
     const rows = (a.realtimeForecast ?? []).filter(r=>kstDay(r.targetAt) === date && Date.parse(r.targetAt)>=Date.parse(summary.generatedAt) && finite(r.populationMax));
