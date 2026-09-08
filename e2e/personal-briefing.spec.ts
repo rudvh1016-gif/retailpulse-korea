@@ -4,7 +4,7 @@ import {pc,type PersonalLang} from '../lib/personal-copy';
 async function fixture(page:Page) {
   await page.route('**/api/live/summary*',async route=>{
     const date=new URL(route.request().url()).searchParams.get('date')??SUMMARY_FIXTURE.todayKst;
-    await route.fulfill({json:{...SUMMARY_FIXTURE,serviceDateKst:date,dayRelation:date===SUMMARY_FIXTURE.todayKst?'TODAY':'FUTURE',airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:date}}});
+    await route.fulfill({json:{...SUMMARY_FIXTURE,serviceDateKst:date,dayRelation:date===SUMMARY_FIXTURE.todayKst?'TODAY':date<SUMMARY_FIXTURE.todayKst?'PAST':'FUTURE',airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:date}}});
   });
 }
 async function setup(page:Page,lang:PersonalLang='ko',location='airport') {
@@ -13,6 +13,7 @@ async function setup(page:Page,lang:PersonalLang='ko',location='airport') {
   await form.locator('[data-role="manager"]').click();
   await form.getByRole('button',{name:pc('next',lang),exact:true}).click();
   await form.locator(`[data-location="${location}"]`).click();
+  if(location!=='airport') await form.locator('[data-location="airport"]').click();
   if(location==='airport') await form.getByRole('button',{name:'T1',exact:true}).click();
   await form.getByRole('button',{name:pc('next',lang),exact:true}).click();
   await form.getByRole('button',{name:pc('next',lang),exact:true}).click();
@@ -46,6 +47,33 @@ test('reopening with persisted browser state, editing, feedback and reset',async
   await reopened.getByRole('button',{name:'처음부터 다시 설정',exact:true}).click();
   await expect(reopened.getByTestId('personal-onboarding')).toBeVisible();
   await context.close();
+});
+
+test('multiple locations, terminals and all three days persist and switch to the matching date',async({page})=>{
+  await page.setViewportSize({width:390,height:900});await fixture(page);await page.goto('/ko');
+  const f=page.getByTestId('personal-onboarding');await f.locator('[data-role="manager"]').click();
+  await f.getByRole('button',{name:pc('next','ko'),exact:true}).click();
+  await f.locator('[data-location="seongsu"]').click();
+  await expect(f.locator('[data-location="airport"]')).toHaveAttribute('aria-pressed','true');
+  await f.getByRole('button',{name:'T1',exact:true}).click();await f.getByRole('button',{name:'T2',exact:true}).click();
+  await f.getByRole('button',{name:pc('next','ko'),exact:true}).click();
+  await expect(f.getByRole('checkbox',{name:pc('weather','ko'),exact:true})).toBeVisible();
+  await f.getByRole('button',{name:pc('next','ko'),exact:true}).click();
+  await f.locator('[data-day="yesterday"]').click();await f.locator('[data-day="today"]').click();
+  for(const day of ['yesterday','today','tomorrow'])await expect(f.locator(`[data-day="${day}"]`)).toHaveAttribute('aria-pressed','true');
+  await f.getByRole('button',{name:pc('finish','ko'),exact:true}).click();
+  await page.locator('[data-view-day="yesterday"]').click();
+  await expect(page.getByTestId('personal-briefing')).toContainText('2026-08-30');
+  await page.locator('[data-view-terminal="T2"]').click();
+  await expect(page.locator('.personal-place')).toContainText('T2');
+  await page.locator('[data-view-location="seongsu"]').click();
+  await expect(page.locator('.personal-place')).toContainText('성수');
+  await expect(page.locator('.personal-facts')).not.toContainText(pc('flights','ko'));
+  await page.reload();
+  await expect(page.locator('[data-view-location]')).toHaveCount(2);
+  await expect(page.locator('[data-view-day]')).toHaveCount(3);
+  await expect(page.locator('[data-view-terminal]')).toHaveCount(2);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
 });
 test('corrupt or denied storage leaves setup usable and shows save limitation',async({page})=>{
   await page.addInitScript(()=>{Storage.prototype.setItem=function(){throw new DOMException('denied','SecurityError');};});

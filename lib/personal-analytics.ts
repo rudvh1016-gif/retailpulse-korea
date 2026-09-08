@@ -5,7 +5,7 @@ type Params = Record<string, unknown>;
 export function validMeasurementId(value: string | undefined) { return /^G-[A-Z0-9]{4,20}$/.test(value ?? '') && !/^G-X+$/.test(value ?? '') ? value : undefined; }
 export function safeAnalyticsParams(params: Params): Record<string,string> {
   const result: Record<string,string> = {};
-  const enums: Record<string, readonly string[]> = {role:roles,location:locations,terminal:terminals,day:['today','tomorrow'],language:['ko','en','zh','ja']};
+  const enums: Record<string, readonly string[]> = {role:roles,location:locations,terminal:terminals,day:['yesterday','today','tomorrow'],language:['ko','en','zh','ja']};
   for(const [key,values] of Object.entries(enums)) if(typeof params[key] === 'string' && values.includes(params[key])) result[key] = params[key];
   if(Array.isArray(params.interests)) result.interests = interests.filter(i=>(params.interests as unknown[]).includes(i)).join(',');
   return result;

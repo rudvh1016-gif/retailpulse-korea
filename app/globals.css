@@ -1570,3 +1570,6 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .personal-settings p { line-height: 1.7; }
 @media (max-width: 767px) { .personal-facts { grid-template-columns: 1fr 1fr; gap: 0 18px; } }
 @media (max-width: 479px) { .personal-options { grid-template-columns: 1fr; } .personal-sheet { padding-top: 24px; } }
+.personal-switches { padding: 20px 0; border-bottom: 1px solid #d8dfe6; }
+.personal-switches .personal-inline { margin: 10px 0; }
+.personal-switches button[aria-pressed="true"] { background: #edf4f8; border-color: #315e7d; color: #214c6b; }
