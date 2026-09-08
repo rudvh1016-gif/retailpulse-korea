@@ -22,10 +22,20 @@ test('configured analytics stays silent until consent, then uses the Google tag 
     assert.equal(scripts.length,0);
     setAnalyticsConsent(true);
     assert.equal(scripts.length,1);
+    assert.equal(scripts[0].src,'https://www.googletagmanager.com/gtag/js?id=G-TEST1234');
     let commands=window.dataLayer.map(x=>Array.from(x));
     assert.equal(commands.filter(x=>x[0]==='event').length,1);
     assert.equal(commands.find(x=>x[0]==='config')[2].send_page_view,false);
+    assert.equal(commands.find(x=>x[0]==='config')[2].allow_google_signals,false);
+    assert.equal(commands.find(x=>x[0]==='event')[2].page_referrer,'');
+    assert.equal(commands.find(x=>x[0]==='event')[2].page_location,'https://example.invalid');
+    assert.equal(commands.find(x=>x[0]==='event')[2].send_to,'G-TEST1234');
     assert.ok(!JSON.stringify(commands).includes('private'));
+    setAnalyticsConsent(true);
+    assert.equal(scripts.length,1);
+    const beforeUnknown=window.dataLayer.length;
+    trackPersonalEvent('unapproved_event',{email:'private'});
+    assert.equal(window.dataLayer.length,beforeUnknown);
     setAnalyticsConsent(false);
     const length=window.dataLayer.length;
     trackPersonalEvent('briefing_helpful_yes');
@@ -33,5 +43,19 @@ test('configured analytics stays silent until consent, then uses the Google tag 
     assert.equal(window['ga-disable-G-TEST1234'],true);
   `;
   const result=spawnSync(process.execPath,['--import','tsx','--input-type=module','-e',script],{encoding:'utf8'});
+  assert.equal(result.status,0,result.stderr);
+});
+for(const enabled of [undefined,'false']) test(`measurement ID alone cannot enable collection (${enabled})`,()=>{
+  const script=`
+    import assert from 'node:assert/strict';
+    globalThis.window={location:{origin:'https://example.invalid'}};
+    globalThis.document={createElement:()=>{throw new Error('must not load a tag');}};
+    const {setAnalyticsConsent,trackPersonalEvent}=await import('./lib/personal-analytics.ts');
+    setAnalyticsConsent(true);
+    trackPersonalEvent('briefing_viewed');
+    assert.equal(window.dataLayer,undefined);
+  `;
+  const env={...process.env,NEXT_PUBLIC_GA4_MEASUREMENT_ID:'G-TEST1234',NEXT_PUBLIC_GA4_ENABLED:enabled};
+  const result=spawnSync(process.execPath,['--import','tsx','--input-type=module','-e',script],{encoding:'utf8',env});
   assert.equal(result.status,0,result.stderr);
 });
