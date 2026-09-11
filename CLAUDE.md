@@ -46,7 +46,10 @@ Current architectural intent:
 - free-tier guardrails: 70% NOTICE / 85% PROTECT / 95% EMERGENCY per resource, with `OFFICIAL_USAGE` distinguished from `INTERNAL_ESTIMATE`
 - no paid API/data/runtime LLM unless owner explicitly approves
 - no duplicate live schedulers for the same source
-- current prepared scheduler is disabled-by-default `.github/workflows/collect-production.yml`; Worker Cron has been removed
+- the live scheduler is split across two platforms, verified by `npm run health` and `tests/scheduler-truth.test.mjs` rather than by this sentence:
+  - Cloudflare Worker Cron holds exactly five trigger-only expressions in `wrangler.production.jsonc`. Each makes ONE allowlisted `workflow_dispatch` call (`lib/realtime-dispatch.ts`) and performs no provider call, no parsing and no D1 access. The heavy Worker `scheduled` handler that `docs/REALTIME_SCHEDULER_AUDIT.md` measured at 414% of the Free Cron CPU budget is what was removed; the trigger-only alarm clock is live and authoritative for realtime, A5 and weather
+  - GitHub Actions cron drives the daily group (`collect-production.yml`, 06:07 KST), the early A1 window (`collect-airport-recovery.yml`, 04:07 KST), weekly estimated sales and the official transfer forecast
+  - `collect-production.yml` still carries `if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'`. That Variable lives in GitHub, not in this repository, so a checkout can only report `RUNTIME_ENABLE_STATE_UNKNOWN`, never "disabled"
 - activate P0 sources one at a time with real contract/timestamp/quota/error verification
 - preserve immutable prospective prediction archive and separate later outcomes
 - preserve truth labels and never relabel proxy as actual foreign sales

@@ -43,6 +43,12 @@ jobs:
       - run: pip install xlrd==2.0.2
       - run: python tests/transfer-parser.py
       - run: npm run test:unit
+      # Config-derived operational audit. With no Production credentials it
+      # reports the scheduler graph, the doc/config drift and the runtime-LLM
+      # verdict, and exits non-zero only on ERROR (a duplicate live scheduler, a
+      # dead Worker route, a runtime model call). UNKNOWN is the expected answer
+      # from a checkout and must not fail the build.
+      - run: npm run health
       - run: npm run build
       - run: node --test tests/rendered-html.test.mjs
       # Fails on a high/critical vulnerability, but not on the registry being
