@@ -1401,7 +1401,7 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
         <div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-arrival-flow-title">{arrivalSectionText.flowTitle[lang]}</h3></div>
         <p>{arrivalSectionText.flowOnly[lang]}</p>
       </div>
-      <p className="flow-note">{summary.serviceDateKst} · {scopeLabel} · {timeline.length ? `${formatKstBand(timeline[0].targetStartAt,timeline.at(-1)!.targetEndAt)} · ${timeline.length} ${contextText(lang,"개 확인 시간대","available bands","个已确认时段","確認済み時間帯")}` : airportTodayText.unavailable[lang]}{isPartial ? ` · ${airportTodayText.partialBody[lang]}` : ""}</p>
+      <p className="flow-note">{summary.serviceDateKst} · {scopeLabel} · {timeline.length ? `${kstStamp(timeline[0].targetStartAt)}–${kstStamp(timeline.at(-1)!.targetEndAt)} KST · ${timeline.length} ${contextText(lang,"개 확인 시간대","available bands","个已确认时段","確認済み時間帯")}` : airportTodayText.unavailable[lang]}{isPartial ? ` · ${airportTodayText.partialBody[lang]}` : ""}</p>
       {timeline.length > 0
         ? <AirportForecastChart
           timeline={timeline}
@@ -1618,7 +1618,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     </details>
     <section className="airport-detail-section airport-forecast" aria-labelledby="airport-forecast-title">
       <div className="airport-detail-head"><div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-forecast-title">{airportTodayText.forecastTitle[lang]}</h3></div><p>{airportTodayText.forecastOnly[lang]}</p></div>
-      <p className="flow-note">{summary.serviceDateKst} · {scopeLabel} · {timeline.length ? `${formatKstBand(timeline[0].targetStartAt,timeline.at(-1)!.targetEndAt)} · ${timeline.length} ${contextText(lang,"개 확인 시간대","available bands","个已确认时段","確認済み時間帯")}` : airportTodayText.unavailable[lang]}{isForecastPartial ? ` · ${airportTodayText.partialBody[lang]}` : ''}</p>
+      <p className="flow-note">{summary.serviceDateKst} · {scopeLabel} · {timeline.length ? `${kstStamp(timeline[0].targetStartAt)}–${kstStamp(timeline.at(-1)!.targetEndAt)} KST · ${timeline.length} ${contextText(lang,"개 확인 시간대","available bands","个已确认时段","確認済み時間帯")}` : airportTodayText.unavailable[lang]}{isForecastPartial ? ` · ${airportTodayText.partialBody[lang]}` : ''}</p>
       {timeline.length > 0
         ? <AirportForecastChart
           timeline={timeline}
