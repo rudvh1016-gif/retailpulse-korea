@@ -26,6 +26,28 @@ export function compactPeople(value: number, lang: DemandLang): string {
   return new Intl.NumberFormat(lang === 'zh' ? 'zh-CN' : lang, { notation: 'compact', maximumFractionDigits: 1 }).format(value);
 }
 
+/** Axis labels use elapsed KST time, never the number/density of samples.
+ * Keep midnight first so a date change survives narrow screens; other labels
+ * yield when their actual pixel positions would collide. No data is resampled. */
+export function populationTicks(start: number, end: number, plotWidth: number): number[] {
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return [];
+  if (start === end) return [start];
+  const gap = 72, limit = Math.max(2, Math.min(6, Math.floor(plotWidth / gap) + 1));
+  const hour = 3_600_000, offset = 9 * hour;
+  const desired = (end - start) / (limit - 1);
+  const step = [.25, .5, 1, 2, 3, 4, 6, 12, 24, 48, 168].map(v => v * hour).find(v => v >= desired) ?? Math.ceil(desired / (24 * hour)) * 24 * hour;
+  const midnight: number[] = [];
+  for (let t = Math.floor((start + offset) / (24 * hour)) * 24 * hour - offset + 24 * hour; t <= end; t += 24 * hour) midnight.push(t);
+  const regular: number[] = [];
+  for (let t = Math.ceil((start + offset) / step) * step - offset; t <= end; t += step) regular.push(t);
+  const chosen: number[] = [];
+  for (const time of [...midnight, start, end, ...regular]) {
+    if (chosen.length >= limit) break;
+    if (chosen.every(t => Math.abs(t - time) / (end - start) * plotWidth >= gap)) chosen.push(time);
+  }
+  return chosen.sort((a, b) => a - b);
+}
+
 /** The server already checks area/source/schema/unit compatibility and computes
  * rangeChange. Keep that result, but reject a malformed or wrong-time baseline. */
 export function usableComparison(row: (PopulationObservation & { comparisons?: Partial<Record<7 | 28, RangeChange | null>> }) | null | undefined, days: 7 | 28): RangeChange | null {

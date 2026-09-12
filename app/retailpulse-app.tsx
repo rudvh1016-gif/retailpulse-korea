@@ -40,7 +40,7 @@ const PersonalHome = lazy(() => import('./personal-home'));
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
 
 function HomeBriefingWrapper({active,lang,children,openRequest}:{active:boolean;lang:Lang;children:React.ReactNode;openRequest:number}) {
-  return active ? <Suspense fallback={children}><PersonalHome lang={lang} openRequest={openRequest}>{children}</PersonalHome></Suspense> : <>{children}</>;
+  return active ? <Suspense fallback={<div className="personal-loading" aria-busy="true"><p>{pc('myBriefing',lang)}</p></div>}><PersonalHome lang={lang} openRequest={openRequest}>{children}</PersonalHome></Suspense> : <>{children}</>;
 }
 
 type View = "today" | "airport" | "business" | "forecast" | "predictions" | "tourism-desk" | "about" | "more";

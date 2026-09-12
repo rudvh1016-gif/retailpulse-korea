@@ -480,6 +480,7 @@ test("home gives deterministic current briefs for all three Seoul areas", async 
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko");
+  await page.locator(".personal-existing > summary").click();
   await expect(page.getByRole("heading", { name: "다른 상권 살펴보기" })).toBeVisible();
   const briefs = page.locator(".home-area-briefs");
   await expect(page.getByTestId('area-demand-card').first()).toContainText('현재 추정 인구');

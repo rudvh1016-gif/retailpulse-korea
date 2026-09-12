@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type PointerEvent } from 'react';
 import type { Lang } from './retailpulse-data';
 import type { LiveSummary } from './live-signals';
 import { buildAreaCurrentBrief } from '../lib/current-brief';
 import { comparisonText } from '../lib/period-comparison';
 import { describeObservationAge } from '../lib/observation-freshness';
-import { compactPeople, flowSegments, kstDay, kstStamp, peopleRange, populationFlow, usableComparison, validPopulationRange, type FlowPoint } from '../lib/demand-presentation';
+import { compactPeople, flowSegments, kstDay, kstStamp, peopleRange, populationFlow, populationTicks, usableComparison, validPopulationRange, type FlowPoint } from '../lib/demand-presentation';
 
 export const demandCopy = {
   selected: { ko: '선택 지역', en: 'Selected area', zh: '所选地区', ja: '選択エリア' },
@@ -57,36 +57,57 @@ export function usePresentationClock(reference: string): number {
 }
 
 export function PopulationFlow({ points, lang, now }: { points: FlowPoint[]; lang: Lang; now: number }) {
-  const id = useId();
+  const id = useId(), figure = useRef<HTMLElement>(null);
+  const [width, setWidth] = useState(640);
   const [selected, setSelected] = useState<string | null>(null);
+  useEffect(() => {
+    const element = figure.current;
+    if (!element) return;
+    const observer = new ResizeObserver(([entry]) => setWidth(Math.max(240, Math.round(entry.contentRect.width))));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   const rows = useMemo(() => flowSegments(points), [points]);
-  const active = points.find(p => `${p.kind}:${p.at}` === selected) ?? points.find(p => p.kind === 'observed') ?? points[0];
   const forecasts = points.filter(p => p.kind === 'forecast');
   const observed = points.filter(p => p.kind === 'observed');
+  const latest = observed.at(-1);
+  const active = points.find(p => `${p.kind}:${p.at}` === selected) ?? latest ?? points[0];
   const min = points[0]?.time ?? 0, max = points.at(-1)?.time ?? 0;
   const domainStart = min === max ? min - 1_800_000 : min, domainEnd = min === max ? max + 1_800_000 : max;
+  const left = 46, right = width - 14, plotWidth = right - left;
   const ceiling = Math.max(1, ...points.map(p => p.populationMax)) * 1.1;
-  const x = (time: number) => 76 + (time - domainStart) / (domainEnd - domainStart) * 620;
-  const y = (value: number) => 160 - value / ceiling * 136;
+  const x = (time: number) => left + (time - domainStart) / (domainEnd - domainStart) * plotWidth;
+  const y = (value: number) => 168 - value / ceiling * 130;
   const path = (segment: FlowPoint[], bound: 'populationMin' | 'populationMax') => segment.map((p, i) => `${i ? 'L' : 'M'}${x(p.time)},${y(p[bound])}`).join(' ');
-  const stamps = [...new Set([0, Math.round((points.length - 1) / 3), Math.round((points.length - 1) * 2 / 3), points.length - 1])].filter(i => i >= 0);
-  const midnight = points.filter((p, i) => i > 0 && kstDay(p.time) !== kstDay(points[i - 1].time)).map(p => Date.parse(`${kstDay(p.time)}T00:00:00+09:00`));
+  const ticks = populationTicks(min, max, plotWidth);
   const unit = { ko: '명', en: ' people', zh: '人', ja: '人' }[lang];
-  return <figure className="population-flow" aria-labelledby={`${id}-title`}>
+  const compact = new Intl.NumberFormat(lang === 'zh' ? 'zh-CN' : lang, { notation: 'compact', maximumFractionDigits: 6 });
+  const nowX = Math.max(left + 22, Math.min(right - 22, x(now)));
+  function selectAt(event: PointerEvent<SVGSVGElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const position = (event.clientX - rect.left) / rect.width * width;
+    const time = domainStart + Math.max(0, Math.min(1, (position - left) / plotWidth)) * (domainEnd - domainStart);
+    const point = points.reduce((best, p) => Math.abs(p.time - time) < Math.abs(best.time - time) ? p : best);
+    setSelected(`${point.kind}:${point.at}`);
+  }
+  return <figure ref={figure} className="population-flow" aria-labelledby={`${id}-title`}>
     <figcaption id={`${id}-title`}>{demandCopy.flow[lang]}</figcaption>
     <div className="flow-legend"><span><i className="observed" />{demandCopy.observed[lang]}</span><span><i className="forecast" />{demandCopy.forecast[lang]}</span><span>{unit.trim()} · KST</span></div>
     {!points.length ? <p className="demand-empty">{demandCopy.noFlow[lang]}</p> : <>
-      <svg className="population-chart" viewBox="0 0 720 216" aria-hidden="true">
-        {[0, ceiling / 2, ceiling].map(value => <g key={value}><line className="flow-grid" x1="76" x2="696" y1={y(value)} y2={y(value)}/><text x="66" y={y(value) + 5} textAnchor="end">{compactPeople(Math.round(value), lang)}</text></g>)}
-        {midnight.map(time => <line key={time} className="flow-day-boundary" x1={x(time)} x2={x(time)} y1="24" y2="160"/>)}
+      <svg className="population-chart" viewBox={`0 0 ${width} 216`} aria-hidden="true"
+        onPointerDown={event => { event.currentTarget.setPointerCapture(event.pointerId); selectAt(event); }}
+        onPointerMove={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) selectAt(event); }}
+        onPointerUp={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }}>
+        {[0, ceiling / 2, ceiling].map(value => <g key={value}><line className="flow-grid" x1={left} x2={right} y1={y(value)} y2={y(value)}/><text className="flow-y-label" x={left - 8} y={y(value) + 4} textAnchor="end">{compactPeople(Math.round(value), lang)}</text></g>)}
         {rows.map((segment, index) => <g key={index} className={`flow-${segment[0].kind}`}>
-          {segment.length > 1 ? <><path className="flow-range" d={`${path(segment, 'populationMax')} ${[...segment].reverse().map(p => `L${x(p.time)},${y(p.populationMin)}`).join(' ')} Z`}/><path className="flow-bound" d={path(segment, 'populationMin')}/><path className="flow-bound" d={path(segment, 'populationMax')}/></> : <><line className="flow-bound" x1={x(segment[0].time)} x2={x(segment[0].time)} y1={y(segment[0].populationMin)} y2={y(segment[0].populationMax)}/><circle cx={x(segment[0].time)} cy={y(segment[0].populationMax)} r="4"/></>}
+          {segment.length > 1 ? <><path className="flow-range" d={`${path(segment, 'populationMax')} ${[...segment].reverse().map(p => `L${x(p.time)},${y(p.populationMin)}`).join(' ')} Z`}/><path className="flow-bound" d={path(segment, 'populationMin')}/><path className="flow-bound" d={path(segment, 'populationMax')}/></> : <line className="flow-bound flow-interval" x1={x(segment[0].time)} x2={x(segment[0].time)} y1={y(segment[0].populationMin)} y2={y(segment[0].populationMax)}/>}
         </g>)}
-        {now >= min && now <= max && <g className="flow-now"><line x1={x(now)} x2={x(now)} y1="20" y2="164"/><text x={Math.max(104, Math.min(661, x(now)))} y="15" textAnchor="middle">{demandCopy.now[lang]}</text></g>}
-        {active && <line className="flow-selection" x1={x(active.time)} x2={x(active.time)} y1="24" y2="160"/>}
-        {stamps.map(i => <text key={i} x={x(points[i].time)} y="186" textAnchor={i === 0 ? 'start' : i === points.length - 1 ? 'end' : 'middle'}><tspan x={x(points[i].time)}>{kstStamp(points[i].time).slice(6)}</tspan><tspan x={x(points[i].time)} dy="24">{kstStamp(points[i].time).slice(0, 5)}</tspan></text>)}
+        {now >= min && now <= max && <g className="flow-now"><line x1={x(now)} x2={x(now)} y1="28" y2="168"/><rect x={nowX - 22} y="4" width="44" height="20" rx="2"/><text x={nowX} y="18" textAnchor="middle">{demandCopy.now[lang]}</text></g>}
+        {selected && active && <line className="flow-selection" x1={x(active.time)} x2={x(active.time)} y1="32" y2="168"/>}
+        {[...new Set([latest, active])].filter((p): p is FlowPoint => Boolean(p)).map(p => <g key={`${p.kind}:${p.at}`} className={`flow-${p.kind} flow-marker`}><line x1={x(p.time)} x2={x(p.time)} y1={y(p.populationMin)} y2={y(p.populationMax)}/><circle cx={x(p.time)} cy={y(p.populationMax)} r="2.5"/></g>)}
+        {ticks.map(time => <text className="flow-tick" data-time={time} key={time} x={x(time)} y="190" textAnchor={time === min ? 'start' : time === max ? 'end' : 'middle'}><tspan x={x(time)}>{kstStamp(time).slice(6)}</tspan>{kstDay(time) !== kstDay(min) && kstStamp(time).slice(6) === '00:00' && <tspan className="flow-tick-date" x={x(time)} dy="18">{Number(kstDay(time).slice(5, 7))}/{Number(kstDay(time).slice(8))}</tspan>}</text>)}
       </svg>
-      <div className="flow-inspector"><label htmlFor={`${id}-time`}>{demandCopy.timeSelect[lang]}</label><input id={`${id}-time`} type="range" min="0" max={points.length - 1} step="1" value={points.indexOf(active)} disabled={points.length === 1} onChange={e => { const p = points[Number(e.target.value)]; setSelected(`${p.kind}:${p.at}`); }} aria-valuetext={`${kstStamp(active.time)} KST · ${demandCopy[active.kind === 'forecast' ? 'forecast' : 'observed'][lang]} ${peopleRange(active, lang)}${unit}`}/><output aria-live="polite"><span>{kstStamp(active.time)} · {demandCopy[active.kind === 'forecast' ? 'forecast' : 'observed'][lang]}</span><strong>{peopleRange(active, lang)}{unit}</strong></output></div>
+      <div className="flow-inspector"><label className="sr-only" htmlFor={`${id}-time`}>{demandCopy.timeSelect[lang]}</label><input id={`${id}-time`} type="range" min="0" max={points.length - 1} step="1" value={points.indexOf(active)} disabled={points.length === 1} onChange={e => { const p = points[Number(e.target.value)]; setSelected(`${p.kind}:${p.at}`); }} aria-valuetext={`${kstStamp(active.time)} KST · ${demandCopy[active.kind === 'forecast' ? 'forecast' : 'observed'][lang]} ${peopleRange(active, lang)}${unit}`}/><output aria-live="polite"><span className="flow-selected-time">{kstStamp(active.time).slice(6)} · {demandCopy[active.kind === 'forecast' ? 'forecast' : 'observed'][lang]}</span><strong title={`${peopleRange(active, lang)}${unit}`}>{compact.format(active.populationMin)}–{compact.format(active.populationMax)} {unit.trim()}</strong><small>{kstDay(active.time)} · KST</small></output></div>
     </>}
     {observed.length === 1 && <p className="flow-note">{demandCopy.noHistory[lang]}</p>}
     {!observed.length && <p className="flow-note">{demandCopy.missing[lang]}</p>}

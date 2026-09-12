@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { populationFlow, flowSegments, usableComparison } from '../lib/demand-presentation';
+import { populationFlow, flowSegments, populationTicks, usableComparison } from '../lib/demand-presentation';
 import { rangeChange } from '../lib/period-comparison';
 
 const now = Date.parse('2026-09-12T23:20:00+09:00');
@@ -32,4 +32,29 @@ test('exact same weekday/time comparison retains a range crossing zero', () => {
   assert.ok(change.minPercent < 0 && change.maxPercent > 0);
   assert.equal(usableComparison({ ...row, observedAt: '2026-09-12T23:15:00+09:00' }, 7), null);
   assert.equal(usableComparison(row, 28), null);
+});
+
+test('mobile ticks use actual time, keep midnight and have enough rendered space', () => {
+  const start = Date.parse('2026-09-12T17:10:00+09:00');
+  const end = Date.parse('2026-09-13T09:00:00+09:00');
+  const midnight = Date.parse('2026-09-13T00:00:00+09:00');
+  for (const width of [266, 296, 540]) {
+    const ticks = populationTicks(start, end, width);
+    assert.ok(ticks.includes(midnight));
+    assert.ok(ticks.length >= 3 && ticks.length <= (width < 300 ? 4 : 6));
+    assert.deepEqual(ticks, populationTicks(start, end, width));
+    ticks.forEach((time, i) => {
+      assert.ok(time >= start && time <= end);
+      if (i) assert.ok((time - ticks[i - 1]) / (end - start) * width >= 72);
+    });
+  }
+  assert.deepEqual(populationTicks(start, start, 266), [start]);
+  assert.deepEqual(populationTicks(NaN, end, 266), []);
+});
+
+test('a date boundary near the chart edge replaces a colliding label', () => {
+  const start = Date.parse('2026-09-12T23:40:00+09:00'), end = Date.parse('2026-09-13T01:00:00+09:00');
+  const ticks = populationTicks(start, end, 266);
+  assert.ok(ticks.includes(Date.parse('2026-09-13T00:00:00+09:00')));
+  assert.ok(!ticks.includes(start));
 });

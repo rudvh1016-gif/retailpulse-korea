@@ -81,11 +81,11 @@ function Briefing({p,lang}:{p:PersonalPreferences;lang:PersonalLang}) {
   return <section className="personal-sheet" data-testid="personal-briefing" aria-labelledby="personal-title"><p className="personal-kicker">KORETAIL · {pc(p.role,lang)}</p><h2 id="personal-title">{pc(title,lang)}</h2><p className="personal-place">{pc(p.location,lang)}{p.location==='airport'?` ${terminalName(p.terminal,lang)}`:''} · {date ?? '…'}</p><small className="personal-timezone">{pc('timeBasis',lang)}</small><p>{pc(p.day==='yesterday'?'pastNote':`${p.role}Promise`,lang)}</p>
     {p.day==='yesterday'&&p.location!=='airport'&&<p className="personal-note">{pc('pastSeoulNote',lang)}</p>}
     {!p.interests.length?<p>{pc('noLocalInterests',lang)}</p>:!date||!summary?<LiveLoadMessage loading={today===undefined||summary===undefined} lang={lang}/>:<>
-      {p.location==='airport'&&p.terminal!=='CONCOURSE'&&summary.mode==='live-summary'&&summary.serviceDateKst===date&&summary.airport?.serviceDateKst===date
-        ? <AirportAtAGlance summary={summary} lang={lang} terminal={p.terminal}/>
-        : p.location!=='airport'
+      {p.location==='airport'&&p.terminal!=='CONCOURSE'&&(p.interests.includes('passengers')||p.interests.includes('crowding'))&&summary.mode==='live-summary'&&summary.serviceDateKst===date&&summary.airport?.serviceDateKst===date
+        ? <AirportAtAGlance summary={summary} lang={lang} terminal={p.terminal} showPassengers={p.interests.includes('passengers')} showCrowding={p.interests.includes('crowding')} showFlights={p.interests.includes('flights')}/>
+        : p.location!=='airport'&&p.interests.includes('passengers')&&p.interests.includes('crowding')
           ? <AreaCurrentBrief lang={lang} area={p.location} date={p.day==='today'?null:date}/>
-          : <p className="personal-summary">{cards.find(c=>c.interest!=='guidance')?`${cards.find(c=>c.interest!=='guidance')!.label} · ${cards.find(c=>c.interest!=='guidance')!.value}`:pc('empty',lang)}</p>}
+          : null}
       <div className="personal-facts">{p.interests.map(interest=>{const card=cards.find(c=>c.interest===interest);return <article key={interest} data-interest={interest}><h3>{card?.label??pc(interest,lang)}</h3><strong>{card?.value??'—'}</strong>{card?.details?.map(line=><div className="personal-fact-detail" key={line}>{line}</div>)}<p>{card?.note??(interest==='flights'?pc('flightsMissing',lang):interest==='airlines'?pc('airlinesMissing',lang):p.terminal==='CONCOURSE'&&interest==='passengers'?pc('concourseNote',lang):pc('missing',lang))}</p>{card?.at&&<small>{referenceTime(card.at,lang)}</small>}{interest==='guidance'&&<a href={`/${lang}/tourism-desk/${p.location}`}>{pc('details',lang)}</a>}</article>;})}</div>
       {actions.length>0&&<div className="personal-preparation"><h3>{pc('prepare',lang)}</h3><ul>{actions.map(action=><li key={action}>{action}</li>)}</ul></div>}
       <a className="personal-detail-link" href={href}>{pc('details',lang)} → {pc(p.location,lang)}</a><Feedback p={p} date={date} lang={lang}/>
@@ -103,27 +103,28 @@ function SelectedBriefing({p,lang}:{p:PersonalPreferences;lang:PersonalLang}) {
     <p>{pc('switchBriefing',lang)}</p>
     <div className="personal-inline">{places.map(v=><button key={v} data-view-location={v} aria-pressed={place===v} onClick={()=>setLocation(v)}>{pc(v,lang)}</button>)}</div>
     {place==='airport'&&<div className="personal-inline">{scopes.map(v=><button key={v} data-view-terminal={v} aria-pressed={scope===v} onClick={()=>setTerminal(v)}>{terminalName(v,lang)}</button>)}</div>}
-    <div className="personal-inline">{days.filter(v=>dates.includes(v)).map(v=><button key={v} data-view-day={v} aria-pressed={date===v} onClick={()=>setDay(v)}>{pc(v,lang)}</button>)}</div>
+    <div className="date-nav-shortcuts personal-day-switches" role="group" aria-label={pc('preference',lang)}>{days.filter(v=>dates.includes(v)).map(v=><button key={v} data-view-day={v} aria-pressed={date===v} onClick={()=>setDay(v)}>{pc(v,lang)}</button>)}</div>
   </nav><Briefing p={{...p,location:place,day:date,terminal:scope,interests:available}} lang={lang}/></>;
 }
 export default function PersonalHome({lang,children,openRequest=0}:{lang:PersonalLang;children:ReactNode;openRequest?:number}) {
   const {ready,preferences:p,storageFailed}=usePersonalPreferences();
   const [editing,setEditing]=useState(false);
-  const [expanded,setExpanded]=useState(openRequest>0);
-  const panel=useRef<HTMLDetailsElement>(null);
+  const [publicOpen,setPublicOpen]=useState(false);
+  const panel=useRef<HTMLDivElement>(null);
   useEffect(()=>{
     if(!openRequest||!ready)return;
-    const timer=window.setTimeout(()=>{setExpanded(true);panel.current?.scrollIntoView({block:"start",behavior:"instant"});},0);
+    const timer=window.setTimeout(()=>{setPublicOpen(false);panel.current?.scrollIntoView({block:"start",behavior:"instant"});},0);
     return()=>window.clearTimeout(timer);
   },[openRequest,ready]);
   useEffect(()=>{if(ready)setAnalyticsConsent(p?.analytics??false);},[ready,p?.analytics]);
-  if(!ready)return <>{children}</>;
-  return <div className="personal-home">
-    {children}
-    <details ref={panel} className="personal-existing" open={expanded} onToggle={event=>setExpanded(event.currentTarget.open)}><summary>{pc(p ? 'myBriefing' : 'settings',lang)}</summary>
-    {expanded&&((!p||editing)?<Setup lang={lang} initial={p} onCancel={()=>{setEditing(false);setExpanded(false);setAnalyticsConsent(p?.analytics??false);}} onDone={()=>setEditing(false)}/>:<SelectedBriefing p={p} lang={lang}/>)}
+  if(!ready)return <div className="personal-loading"><header className="personal-heading"><h1>{pc('myBriefing',lang)}</h1></header><LiveLoadMessage loading lang={lang}/></div>;
+  return <>
+    <div ref={panel} className="personal-home">
+    <header className="personal-heading"><h1>{pc('myBriefing',lang)}</h1>{p&&!editing&&<button onClick={()=>setEditing(true)}>{pc('edit',lang)}</button>}</header>
+    {(!p||editing)?<Setup lang={lang} initial={p} onCancel={()=>{setEditing(false);setAnalyticsConsent(p?.analytics??false);}} onDone={()=>setEditing(false)}/>:<SelectedBriefing key={JSON.stringify(p)} p={p} lang={lang}/>}
     {storageFailed&&<p role="status">{pc('storageError',lang)}</p>}
-    {p&&!editing&&<details className="personal-settings"><summary>{pc('settings',lang)}</summary><p>{pc(p.role,lang)} · {(p.selectedLocations??[p.location]).map(v=>pc(v,lang)).join(' · ')} · {(p.selectedTerminals??[p.terminal]).map(v=>terminalName(v,lang)).join(' · ')} · {(p.selectedDays??[p.day]).map(v=>pc(v,lang)).join(' · ')}</p><p>{p.interests.map(i=>pc(i,lang)).join(' · ')}</p><p>{pc('remembered',lang)}</p><p>{pc('storageNote',lang)}</p><div className="personal-inline"><button onClick={()=>setEditing(true)}>{pc('edit',lang)}</button><button onClick={()=>{savePersonalPreferences(null);setAnalyticsConsent(false);}}>{pc('reset',lang)}</button></div><AnalyticsChoice lang={lang} value={p.analytics} onChange={value=>{savePersonalPreferences({...p,analytics:value});setAnalyticsConsent(value);}}/><p>{pc('install',lang)}</p><p>{pc('push',lang)}</p><small>{pc('pushNote',lang)}</small></details>}
-    </details>
-  </div>;
+    {p&&!editing&&<details className="personal-settings"><summary>{pc('settings',lang)}</summary><p>{pc(p.role,lang)} · {(p.selectedLocations??[p.location]).map(v=>pc(v,lang)).join(' · ')} · {(p.selectedTerminals??[p.terminal]).map(v=>terminalName(v,lang)).join(' · ')} · {(p.selectedDays??[p.day]).map(v=>pc(v,lang)).join(' · ')}</p><p>{p.interests.map(i=>pc(i,lang)).join(' · ')}</p><p>{pc('remembered',lang)}</p><p>{pc('storageNote',lang)}</p><div className="personal-inline"><button onClick={()=>{savePersonalPreferences(null);setAnalyticsConsent(false);}}>{pc('reset',lang)}</button></div><AnalyticsChoice lang={lang} value={p.analytics} onChange={value=>{savePersonalPreferences({...p,analytics:value});setAnalyticsConsent(value);}}/><p>{pc('install',lang)}</p><p>{pc('push',lang)}</p><small>{pc('pushNote',lang)}</small></details>}
+    </div>
+    <details className="personal-existing" open={publicOpen} onToggle={event=>setPublicOpen(event.currentTarget.open)}><summary>{pc('existing',lang)}</summary>{publicOpen&&children}</details>
+  </>;
 }

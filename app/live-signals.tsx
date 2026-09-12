@@ -1082,10 +1082,10 @@ export function DateNavigator({
         aria-current={selected === value ? "date" : undefined}
         onClick={() => onChange(value === today ? null : value)}
       >{label}</button>)}
-      {historyHref && <a className="period-outlook-link" href={historyHref}>7DAYS · {contextText(lang,"지난 기록","Past records","历史记录","過去の記録")}</a>}
     </div>
+    <div className="date-nav-tools">
     <label className="date-nav-picker">
-      <span>{dateNavText.pick[lang]}</span>
+      <span className="sr-only">{dateNavText.pick[lang]}</span>
       <input
         type="date"
         value={selected}
@@ -1098,6 +1098,8 @@ export function DateNavigator({
         }}
       />
     </label>
+    {historyHref && <a className="period-outlook-link" href={historyHref}>7DAYS · {contextText(lang,"지난 기록","Past records","历史记录","過去の記録")}</a>}
+    </div>
   </nav>;
 }
 
@@ -1432,7 +1434,7 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
   </>;
 }
 
-export function AirportAtAGlance({summary,lang,terminal="all"}:{summary:LiveSummary;lang:Lang;terminal?:"all"|"T1"|"T2"}) {
+export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=true,showCrowding=true,showFlights=true}:{summary:LiveSummary;lang:Lang;terminal?:"all"|"T1"|"T2";showPassengers?:boolean;showCrowding?:boolean;showFlights?:boolean}) {
   const airport=summary.airport;
   const isAll=terminal==="all";
   const numberLocale=airportLocale(lang);
@@ -1492,6 +1494,7 @@ export function AirportAtAGlance({summary,lang,terminal="all"}:{summary:LiveSumm
 
   return <section className="current-brief airport-current-brief" aria-label={`${scopeLabel} ${dayLabel}`}>
       <p className="eyebrow">{scopeLabel} · {dayLabel}</p>
+      {showPassengers&&<>
       {expectedTotal !== null && forecastStatus === "COMPLETE" ? <strong className="airport-brief-total"><span className="airport-metric-label">{passengerCopy[summary.dayRelation === "TODAY" ? "today" : "selected"][lang]}</span>{" "}<span className="airport-metric-value">{Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}</span></strong> : <p className="airport-data-missing">{forecastStatus === "PARTIAL" ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]}</p>}
       <small className="departure-hall-scope-note">{summary.serviceDateKst} · {scopeLabel} · {passengerCopy.scope[lang]}</small>
       {dayLines.map((line, index) => index === 0 ? <strong className="airport-brief-current" key={line}>{line}</strong> : <p className="airport-near-term" key={line}>{line}</p>)}
@@ -1506,14 +1509,15 @@ export function AirportAtAGlance({summary,lang,terminal="all"}:{summary:LiveSumm
         {((isAll ? ['T1','T2'] : [terminal]) as string[]).filter(t => !(airport.transferForecast ?? []).some(r => r.serviceDate === summary.serviceDateKst && r.terminal === t)).map(t => <p key={t}>{t} · {passengerCopy[summary.sources?.some(s => s.sourceId === 'INCHEON_TRANSFER_FORECAST' && s.status === 'ERROR' && s.detail?.includes(`service_date=${summary.serviceDateKst}`)) ? 'failed' : summary.dayRelation === 'FUTURE' && new Date(new Date(nowIso).getTime()+9*3600000).getUTCHours()<17 ? 'pending' : 'unavailable'][lang]}</p>)}
       </div>
 
-      {checkpoint && <aside className="airport-wait-brief"><p>{queueIsStale ? contextText(lang,"이전 대기 관측","Previous queue observation","先前等候观测","以前の待ち状況の観測") : contextText(lang,"현재 대기 관측","Current queue observation","当前等候观测","現在の待ち状況の観測")} · {checkpoint.terminal} {friendlyCheckpointName(checkpoint.zone,lang)}</p><p>{queueValue ? `${queueValue}${/분|min|分钟|分/i.test(queueValue) ? '' : {ko:'분',en:' min',zh:'分钟',ja:'分'}[lang]}` : checkpoint.waitingCount !== null ? `${checkpoint.waitingCount.toLocaleString(numberLocale)}${peopleUnit}` : airportTodayText.unavailable[lang]} · {kstStamp(checkpoint.observedAt)} KST {demandCopy.observed[lang]}</p></aside>}
-      {expectedTotal !== null && passengerChanges.length > 0 && <p>{airportTodayText.expected[lang]} · {passengerChanges.join(" · ")}</p>}
-      {flightsCount !== null && <p>{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}{flightChanges.length ? ` · ${flightChanges.join(" · ")}` : ""}</p>}
-      {flightsCount===null&&<>{officialSchedule&&planned&&planned.totalFlights>0?<><p>{pc('officialScheduledFlights',lang)} {planned.totalFlights.toLocaleString(numberLocale)}{flightUnit}</p><small>{pc('officialScheduleBasis',lang)}</small></>:<><p>{pc('schedulePending',lang)}</p>{planned&&planned.totalFlights>0&&<small>{pc('scheduledFlights',lang)} {planned.totalFlights.toLocaleString(numberLocale)}{flightUnit} · {pc('scheduleBasis',lang)}</small>}</>}</>}
-      {isAll && <FlightScopeNote airport={airport} lang={lang} />}
-      {flightChanges.length > 0 && <small>{recordsOnly}</small>}
-      <small>{[passengerCollected ? `${airportTodayText.expected[lang]} · ${passengerCollected}` : null, flightsCollected ? `${airportTodayText.flights[lang]} · ${flightsCollected}` : null].filter(Boolean).join(" / ")}</small>
-      {(isAll || terminal === "T1") && <small className="passenger-scope-note">{contextText(lang,
+      </>}
+      {showCrowding && checkpoint && <aside className="airport-wait-brief"><p>{queueIsStale ? contextText(lang,"이전 대기 관측","Previous queue observation","先前等候观测","以前の待ち状況の観測") : contextText(lang,"현재 대기 관측","Current queue observation","当前等候观测","現在の待ち状況の観測")} · {checkpoint.terminal} {friendlyCheckpointName(checkpoint.zone,lang)}</p><p>{queueValue ? `${queueValue}${/분|min|分钟|分/i.test(queueValue) ? '' : {ko:'분',en:' min',zh:'分钟',ja:'分'}[lang]}` : checkpoint.waitingCount !== null ? `${checkpoint.waitingCount.toLocaleString(numberLocale)}${peopleUnit}` : airportTodayText.unavailable[lang]} · {kstStamp(checkpoint.observedAt)} KST {demandCopy.observed[lang]}</p></aside>}
+      {showPassengers && expectedTotal !== null && passengerChanges.length > 0 && <p>{airportTodayText.expected[lang]} · {passengerChanges.join(" · ")}</p>}
+      {showFlights && flightsCount !== null && <p>{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}{flightChanges.length ? ` · ${flightChanges.join(" · ")}` : ""}</p>}
+      {showFlights && flightsCount===null&&<>{officialSchedule&&planned&&planned.totalFlights>0?<><p>{pc('officialScheduledFlights',lang)} {planned.totalFlights.toLocaleString(numberLocale)}{flightUnit}</p><small>{pc('officialScheduleBasis',lang)}</small></>:<><p>{pc('schedulePending',lang)}</p>{planned&&planned.totalFlights>0&&<small>{pc('scheduledFlights',lang)} {planned.totalFlights.toLocaleString(numberLocale)}{flightUnit} · {pc('scheduleBasis',lang)}</small>}</>}</>}
+      {showFlights && isAll && <FlightScopeNote airport={airport} lang={lang} />}
+      {showFlights && flightChanges.length > 0 && <small>{recordsOnly}</small>}
+      <small>{[showPassengers && passengerCollected ? `${airportTodayText.expected[lang]} · ${passengerCollected}` : null, showFlights && flightsCollected ? `${airportTodayText.flights[lang]} · ${flightsCollected}` : null].filter(Boolean).join(" / ")}</small>
+      {showPassengers && (isAll || terminal === "T1") && <small className="passenger-scope-note">{contextText(lang,
         "출국장 예상 승객은 출국장 기준입니다. T1에서 출국 수속 후 탑승동으로 이동하는 승객도 T1 범위이며, 탑승동 인원을 따로 더하지 않습니다.",
         "Passenger forecasts count departure halls. Passengers clearing departure at T1 before moving to the concourse are within T1; no separate concourse count is added.",
         "出境大厅预计旅客按出境大厅统计。在T1办理出境后前往登机楼的旅客属于T1范围，不另加登机楼人数。",
