@@ -1,11 +1,15 @@
 import { test, expect, type Page } from '@playwright/test';
 import { SUMMARY_FIXTURE } from './summary-fixture';
-import { PREFERENCE_KEY, type PersonalPreferences } from '../lib/personal-briefing';
+import { PREFERENCE_KEY, parsePreferences, type PersonalPreferences } from '../lib/personal-briefing';
 import { pc } from '../lib/personal-copy';
 import type { LiveSummary } from '../app/live-signals';
 
 const preferences: PersonalPreferences = { version: 1, role: 'manager', location: 'myeongdong', terminal: 'T2', interests: ['weather'], day: 'today', analytics: false };
+const allDayPreferences: PersonalPreferences = { ...preferences, selectedDays: ['today', 'yesterday', 'tomorrow'] };
+// The existing storage contract requires the primary day to be first.
+expect(parsePreferences(JSON.stringify(allDayPreferences))).toEqual(allDayPreferences);
 async function seed(page: Page, p: PersonalPreferences) {
+  expect(parsePreferences(JSON.stringify(p))).toEqual(p);
   await page.addInitScript(({ key, p }) => {
     if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(p));
   }, { key: PREFERENCE_KEY, p });
@@ -161,7 +165,7 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-09-01');
     await page.locator('.date-nav-shortcuts button').nth(1).click();
     await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-08-31');
-    await page.evaluate(({ key, p }) => localStorage.setItem(key, JSON.stringify({ ...p, selectedDays: ['yesterday', 'today', 'tomorrow'] })), { key: PREFERENCE_KEY, p: preferences });
+    await page.evaluate(({ key, p }) => localStorage.setItem(key, JSON.stringify(p)), { key: PREFERENCE_KEY, p: allDayPreferences });
     await page.goto(`/${lang}`);
     await expect(page.locator('.personal-day-switches button')).toHaveCount(3);
     const days = await page.locator('.personal-day-switches button').evaluateAll(els => els.map(el => { const r = el.getBoundingClientRect(); return { x: r.x, right: r.right, y: r.y }; }));
