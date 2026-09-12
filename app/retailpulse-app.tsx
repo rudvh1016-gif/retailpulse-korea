@@ -360,6 +360,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
   useEffect(() => {
     const onPopState = () => {
+      setPersonalOpenRequest(0);
       const query = new URLSearchParams(window.location.search);
       setServiceDate(/^\d{4}-\d{2}-\d{2}$/.test(query.get('date') ?? '') ? query.get('date') : null);
       if (query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
@@ -401,12 +402,14 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   }
 
   function selectArea(next: AreaId) {
+    setPersonalOpenRequest(0);
     setHomeVisible(false);
     setSelected(next);
     if (view === "today" || view === "tourism-desk" || view === "predictions") updateUrl(lang, view, next);
   }
 
   function navigate(next: View, nextTerminal: Terminal = terminal) {
+    setPersonalOpenRequest(0);
     setHomeVisible(false);
     setView(next);
     updateUrl(lang, next, selected, nextTerminal);

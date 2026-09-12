@@ -120,6 +120,13 @@ test('mobile briefing can be reopened from airport with one active navigation it
   await expect(page.getByTestId('personal-briefing')).toBeVisible();
   await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
   await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+  await page.locator('.personal-existing > summary').click();
+  await nav.getByRole('link',{name:'공항',exact:true}).click();
+  await page.goBack();
+  await expect(page.locator('.demand-home')).toBeVisible();
+  await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+  await nav.getByRole('link',{name:'내 브리핑',exact:true}).click();
+  await expect(page.getByTestId('personal-briefing')).toBeVisible();
 });
 
 test('personal airport briefing shares the airport at-a-glance explanation and keeps KST out of large text',async({page})=>{
