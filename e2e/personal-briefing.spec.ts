@@ -116,7 +116,7 @@ test('mobile briefing can be reopened from airport with one active navigation it
   await expect(nav.locator('[aria-current="page"]')).toHaveText('내 브리핑');
   await nav.getByRole('link',{name:'공항',exact:true}).click();
   await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-  await nav.getByRole('link',{name:'내 브리핑',exact:true}).click();await page.locator('.personal-existing > summary').click();
+  await nav.getByRole('link',{name:'내 브리핑',exact:true}).click();
   await expect(page.getByTestId('personal-briefing')).toBeVisible();
   await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
   await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
@@ -135,6 +135,6 @@ test('personal airport briefing shares the airport at-a-glance explanation and k
   await expect(brief.locator('.personal-facts strong').filter({hasText:'KST'})).toHaveCount(0);
   const before=await overview.innerText();
   await page.locator('nav.bottom-nav').getByRole('link',{name:'공항',exact:true}).click();
-  await page.locator('nav.bottom-nav').getByRole('link',{name:'내 브리핑',exact:true}).click();await page.locator('.personal-existing > summary').click();
+  await page.locator('nav.bottom-nav').getByRole('link',{name:'내 브리핑',exact:true}).click();
   await expect(brief.locator('.airport-current-brief')).toHaveText(before,{useInnerText:true});
 });

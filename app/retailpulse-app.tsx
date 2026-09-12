@@ -39,8 +39,8 @@ const PersonalHome = lazy(() => import('./personal-home'));
 
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
 
-function HomeBriefingWrapper({active,lang,children}:{active:boolean;lang:Lang;children:React.ReactNode}) {
-  return active ? <Suspense fallback={children}><PersonalHome lang={lang}>{children}</PersonalHome></Suspense> : <>{children}</>;
+function HomeBriefingWrapper({active,lang,children,openRequest}:{active:boolean;lang:Lang;children:React.ReactNode;openRequest:number}) {
+  return active ? <Suspense fallback={children}><PersonalHome lang={lang} openRequest={openRequest}>{children}</PersonalHome></Suspense> : <>{children}</>;
 }
 
 type View = "today" | "airport" | "business" | "forecast" | "predictions" | "tourism-desk" | "about" | "more";
@@ -278,6 +278,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   const [lang, setLang] = useState<Lang>(initialLang);
   const [view, setView] = useState<View>(initialView);
   const [homeVisible, setHomeVisible] = useState(initialScope === "home" && initialView === "today");
+  const [personalOpenRequest, setPersonalOpenRequest] = useState(0);
   const [selected, setSelected] = useState<AreaId>(initialArea);
   const [terminal, setTerminal] = useState<Terminal>("all");
   const [airportSection, setAirportSection] = useState<AirportSection>("now");
@@ -412,7 +413,8 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   }
 
-  function goHome() {
+  function goHome(openBriefing = false) {
+    setPersonalOpenRequest(value => openBriefing ? value + 1 : 0);
     setHomeVisible(true);
     setView('today');
     if(window.location.pathname !== `/${lang}`) window.history.pushState({}, '', `/${lang}${serviceDate ? `?date=${serviceDate}` : ''}`);
@@ -428,7 +430,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   return (
     <div className={"app lang-" + lang} data-hydrated={preferencesReady ? "true" : "false"}>
       <header className="topbar">
-        <button className="brand brand-button" onClick={goHome} aria-label="KORETAIL home">
+        <button className="brand brand-button" onClick={() => goHome()} aria-label="KORETAIL home">
           <span>KORETAIL</span><span className="brand-descriptor">Retail Demand Signals for Korea</span>
         </button>
         <nav className="top-nav" aria-label="Primary">
@@ -453,7 +455,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
       <main className="page-shell">
         {view === "today" && (
-          <HomeBriefingWrapper active={homeVisible} lang={lang}>
+          <HomeBriefingWrapper active={homeVisible} lang={lang} openRequest={personalOpenRequest}>
             <section className="hero demand-hero" aria-labelledby="hero-title">
               <div className="hero-copy">
                 <h1 id="hero-title">{homeVisible ? localText(lang, {ko:"서울과 공항의 흐름",en:"Seoul & airport, at a glance",zh:"首尔与机场的流动",ja:"ソウルと空港の流れ"}) : areaHeadline[lang](areaLocalName(selected, lang))}</h1>
@@ -514,7 +516,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       </main>
 
       <nav className="bottom-nav" aria-label="Primary">
-        <a href={`/${lang}`} className={homeVisible ? 'active' : ''} aria-current={homeVisible ? 'page' : undefined} onClick={event=>{event.preventDefault();goHome();}}>
+        <a href={`/${lang}`} className={homeVisible ? 'active' : ''} aria-current={homeVisible ? 'page' : undefined} onClick={event=>{event.preventDefault();goHome(true);}}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
           <span>{pc('myBriefing',lang)}</span>
         </a>
