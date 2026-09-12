@@ -4,6 +4,7 @@ import test from "node:test";
 
 const app = readFileSync("app/retailpulse-app.tsx", "utf8");
 const signals = readFileSync("app/live-signals.tsx", "utf8");
+const demandCard = readFileSync("app/area-demand-card.tsx", "utf8");
 const styles = readFileSync("app/globals.css", "utf8");
 
 /**
@@ -30,19 +31,19 @@ test("the realtime population is never called a visitor count", () => {
 });
 
 test("the population range is presented with its metric, not on its own", () => {
-  // The row's label carries the metric and the value carries the unit, so a
-  // bare range can never be the whole of what the reader sees.
-  assert.match(signals, /label: text\.currentPopulation\[lang\]/);
-  assert.match(signals, /formatPeopleRange\(lang, block\.realtime\.populationMin, block\.realtime\.populationMax\)\}\$\{text\.foreignPeople\[lang\]\}/);
-  assert.match(signals, /const measured = `\$\{metric\} \$\{range\}\$\{people\} · \$\{level\}`/,
-    "the brief headline must name the metric before the number too");
+  assert.match(demandCard, /className="demand-metric-label"/);
+  assert.match(demandCard, /peopleRange\(realtime, lang\)/);
+  assert.match(demandCard, /<span>\{unit\}<\/span>/);
+  assert.ok(demandCard.indexOf('className="demand-metric-label"') < demandCard.indexOf('className="demand-number"'));
+
 });
 
 test("the observation time and the not-cumulative note travel with the number", () => {
   assert.match(signals, /notCumulative/);
   assert.match(signals, /오늘 누적 방문객 아님/);
-  assert.match(signals, /formatHumanFreshness\(block\.realtime\.observedAt, summary\.generatedAt, lang, "observed"\)/,
-    "the reader must be able to see which moment was observed");
+  assert.match(demandCard, /kstStamp\(realtime.observedAt\)/, "the original observation time remains beside the range");
+  assert.match(demandCard, /하루 누적 방문객·구매고객 수가 아닙니다/);
+
 });
 
 test("realtime commercial activity appears immediately after population with truthful scope", () => {
@@ -53,7 +54,7 @@ test("realtime commercial activity appears immediately after population with tru
     "新韓カードの国内消費者決済に基づく · 売上全数ではありません · 外国人消費ではありません",
   ]) assert.ok(signals.includes(phrase), `${phrase} must remain visible`);
   const areaSignals = signals.match(/export default function LiveSignals[\s\S]*?\nconst flightBoardText/)?.[0] ?? "";
-  assert.ok(areaSignals.indexOf('key: "realtime"') < areaSignals.indexOf("buildCommercialSignalRow"));
+  assert.ok(areaSignals.indexOf("<AreaDemandCard") < areaSignals.indexOf("<CommercialSignalCard"));
   assert.ok(areaSignals.indexOf("buildCommercialSignalRow") < areaSignals.indexOf("block?.foreignPresence"));
   assert.doesNotMatch(areaSignals, /foreign spend|tourist spend|외국인 매출|관광객 매출/i);
 });

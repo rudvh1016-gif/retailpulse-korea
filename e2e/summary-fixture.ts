@@ -273,5 +273,8 @@ export const FLIGHT_ROWS = [
   { flightNumber: "KE704", airlineCode: "KE", airportCode: "NRT", direction: "arrival", terminal: "T2", gate: "251", checkinCounter: null, status: "도착", scheduledAt: "2026-08-31T13:30:00+09:00" },
 ];
 
-export const routeSummary = (payload: unknown) => async (route: { fulfill: (options: { contentType: string; body: string }) => Promise<void> }) =>
-  route.fulfill({ contentType: "application/json", body: JSON.stringify(payload) });
+export const routeSummary = (payload: unknown) => async (route: import('@playwright/test').Route) => {
+  const at = (payload as { generatedAt?: string })?.generatedAt;
+  if (at && Number.isFinite(Date.parse(at))) await route.request().frame().page().clock.setFixedTime(new Date(at));
+  await route.fulfill({ contentType: "application/json", body: JSON.stringify(payload) });
+};

@@ -54,7 +54,7 @@ function Setup({lang,initial,onCancel,onDone}:{lang:PersonalLang;initial:Persona
     {step===1&&<><p>{pc('multiple',lang)}</p><div className="personal-options">{locations.map(location=><button key={location} data-location={location} aria-pressed={selectedLocations.includes(location)} onClick={()=>changeLocation(location)}>{pc(location,lang)}</button>)}</div>{selectedLocations.includes('airport')&&<div className="personal-inline" aria-label={pc('airport',lang)}>{terminals.map(terminal=><button key={terminal} aria-pressed={selectedTerminals.includes(terminal)} onClick={()=>changeTerminal(terminal)}>{terminalName(terminal,lang)}</button>)}</div>}</>}
     {step===2&&<><p>{pc('selectedOnly',lang)}</p><div className="personal-options">{available.map(interest=><label key={interest}><input type="checkbox" checked={p.interests.includes(interest)} onChange={e=>setP({...p,interests:e.target.checked?[...p.interests,interest]:p.interests.filter(i=>i!==interest)})}/>{pc(interest,lang)}</label>)}</div></>}
     {step===3&&<><p>{pc('multiple',lang)}</p><div className="personal-options">{days.map(day=><button key={day} data-day={day} aria-pressed={selectedDays.includes(day)} onClick={()=>{const values=toggleChoice(selectedDays,day);setP({...p,day:values[0],selectedDays:values});}}>{pc(day,lang)}</button>)}</div><p>{pc('remembered',lang)}</p><p className="personal-note">{pc('storageNote',lang)}</p></>}
-    <div className="personal-actions">{step>0&&<button onClick={()=>setStep(step-1)}>{pc('back',lang)}</button>}{initial&&<button onClick={onCancel}>{pc('cancel',lang)}</button>}<button className="personal-primary" disabled={step===2&&!p.interests.length} onClick={advance}>{pc(step===3?'finish':'next',lang)}</button></div>
+    <div className="personal-actions">{step>0&&<button onClick={()=>setStep(step-1)}>{pc('back',lang)}</button>}{<button onClick={onCancel}>{pc('cancel',lang)}</button>}<button className="personal-primary" disabled={step===2&&!p.interests.length} onClick={advance}>{pc(step===3?'finish':'next',lang)}</button></div>
   </section>;
 }
 function Feedback({p,date,lang}:{p:PersonalPreferences;date:string;lang:PersonalLang}) {
@@ -109,12 +109,15 @@ function SelectedBriefing({p,lang}:{p:PersonalPreferences;lang:PersonalLang}) {
 export default function PersonalHome({lang,children}:{lang:PersonalLang;children:ReactNode}) {
   const {ready,preferences:p,storageFailed}=usePersonalPreferences();
   const [editing,setEditing]=useState(false);
+  const [expanded,setExpanded]=useState(false);
   useEffect(()=>{if(ready)setAnalyticsConsent(p?.analytics??false);},[ready,p?.analytics]);
   if(!ready)return <>{children}</>;
   return <div className="personal-home">
-    {(!p||editing)?<Setup lang={lang} initial={p} onCancel={()=>{setEditing(false);setAnalyticsConsent(p?.analytics??false);}} onDone={()=>setEditing(false)}/>:<SelectedBriefing p={p} lang={lang}/>}
+    {children}
+    <details className="personal-existing" open={expanded} onToggle={event=>setExpanded(event.currentTarget.open)}><summary>{pc(p ? 'myBriefing' : 'settings',lang)}</summary>
+    {expanded&&((!p||editing)?<Setup lang={lang} initial={p} onCancel={()=>{setEditing(false);setExpanded(false);setAnalyticsConsent(p?.analytics??false);}} onDone={()=>setEditing(false)}/>:<SelectedBriefing p={p} lang={lang}/>)}
     {storageFailed&&<p role="status">{pc('storageError',lang)}</p>}
     {p&&!editing&&<details className="personal-settings"><summary>{pc('settings',lang)}</summary><p>{pc(p.role,lang)} · {(p.selectedLocations??[p.location]).map(v=>pc(v,lang)).join(' · ')} · {(p.selectedTerminals??[p.terminal]).map(v=>terminalName(v,lang)).join(' · ')} · {(p.selectedDays??[p.day]).map(v=>pc(v,lang)).join(' · ')}</p><p>{p.interests.map(i=>pc(i,lang)).join(' · ')}</p><p>{pc('remembered',lang)}</p><p>{pc('storageNote',lang)}</p><div className="personal-inline"><button onClick={()=>setEditing(true)}>{pc('edit',lang)}</button><button onClick={()=>{savePersonalPreferences(null);setAnalyticsConsent(false);}}>{pc('reset',lang)}</button></div><AnalyticsChoice lang={lang} value={p.analytics} onChange={value=>{savePersonalPreferences({...p,analytics:value});setAnalyticsConsent(value);}}/><p>{pc('install',lang)}</p><p>{pc('push',lang)}</p><small>{pc('pushNote',lang)}</small></details>}
-    {p?<details className="personal-existing"><summary>{pc('existing',lang)}</summary>{children}</details>:children}
+    </details>
   </div>;
 }

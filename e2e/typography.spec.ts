@@ -896,9 +896,9 @@ test("the area headline fits one line on a phone, at the owner's own numbers", a
     await page.goto("/ko/myeongdong");
     await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
 
-    const [headline] = await renderedLines(page, ".current-brief > strong");
+    const [headline] = await renderedLines(page, ".demand-number strong");
     expect(headline, `no headline at ${width}px`).toBeTruthy();
-    expect(headline.text).toContain("100,000–105,000명 · 약간 붐빔");
+    expect(headline.text).toContain("100,000–105,000");
     expect(headline.lines.length, `the headline wrapped at ${width}px: ${headline.lines.join(" / ")}`).toBe(1);
   }
 });

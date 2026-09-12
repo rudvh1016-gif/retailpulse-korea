@@ -1,6 +1,8 @@
 "use client";
+import { demandCopy, demandLevel, AreaDemandCard, usePresentationClock } from "./area-demand-card";
 import { passengerCopy } from "../lib/passenger-copy";
 import { passengerReferenceSum } from "../lib/passenger-reference-sum";
+import { usableComparison, validPopulationRange, kstStamp, kstDay, peopleRange, populationFlow } from "../lib/demand-presentation";
 import { pc } from '../lib/personal-copy';
 import {flightBoardingLocation} from "../lib/flight-scope";
 
@@ -1053,8 +1055,8 @@ function shiftDay(day: string, delta: number): string {
  * hold rows, so choosing a date can never land on an empty screen by accident.
  */
 export function DateNavigator({
-  lang, date, onChange,
-}: { lang: Lang; date: string | null; onChange: (date: string | null) => void }) {
+  lang, date, onChange, historyHref,
+}: { lang: Lang; date: string | null; onChange: (date: string | null) => void; historyHref?: string }) {
   const summary = useLiveSummary(date);
   if (!summary?.todayKst) return null;
   const today = summary.todayKst;
@@ -1080,6 +1082,7 @@ export function DateNavigator({
         aria-current={selected === value ? "date" : undefined}
         onClick={() => onChange(value === today ? null : value)}
       >{label}</button>)}
+      {historyHref && <a className="period-outlook-link" href={historyHref}>7DAYS · {contextText(lang,"지난 기록","Past records","历史记录","過去の記録")}</a>}
     </div>
     <label className="date-nav-picker">
       <span>{dateNavText.pick[lang]}</span>
@@ -1248,16 +1251,23 @@ function AirportForecastChart({
     bars.scrollLeft = Math.max(0, current.offsetLeft - (bars.clientWidth - current.clientWidth) / 2);
   }, [nowBandStart, timeline.length]);
 
-  return <div className="airport-timeline" role="img" aria-label={label}>
-    <div className="airport-timeline-bars" ref={barsRef}>{timeline.map((row) => <p
+  const slots = [...timeline].sort((a,b)=>a.targetStartAt.localeCompare(b.targetStartAt)).flatMap((row,index,all) => {
+    const previous = all[index-1];
+    const gap = previous ? Math.min(24, Math.max(0, Math.floor((Date.parse(row.targetStartAt)-Date.parse(previous.targetEndAt))/3600000))) : 0;
+    return [...Array.from({length:gap},(_,i)=>({gapAt:new Date(Date.parse(previous!.targetEndAt)+i*3600000).toISOString()})), row];
+  });
+  return <div className="airport-timeline" role="group" aria-label={label}>
+    <div className="airport-timeline-bars" ref={barsRef}>{slots.map((row) => "gapAt" in row ? <p className="airport-band-gap" key={row.gapAt} aria-label={`${formatKstClock(row.gapAt)} —`}><span>{formatKstClock(row.gapAt)}</span><b>—</b></p> : <p
       key={row.targetStartAt}
+      tabIndex={0}
+      aria-label={`${kstStamp(row.targetStartAt)}–${kstStamp(row.targetEndAt)} KST · ${Math.round(row.expectedPassengers).toLocaleString(numberLocale)}`}
       className={[peakStartAt === row.targetStartAt ? "peak" : "", nowBandStart === row.targetStartAt ? "now" : ""].filter(Boolean).join(" ")}
       data-now-label={nowBandStart === row.targetStartAt ? nowLabel : undefined}
       style={nowBandStart === row.targetStartAt && nowBandProgress !== null
         ? { "--now-offset": `${nowBandProgress * 100}%` } as CSSProperties
         : undefined}
     >
-      <i style={{ height: `${Math.max(4, row.expectedPassengers / maxBand * 100)}%` }} />
+      <i style={{ height: `${row.expectedPassengers / maxBand * 100}%` }} />
       <span>{formatKstClock(row.targetStartAt)}</span>
       <b>{Math.round(row.expectedPassengers).toLocaleString(numberLocale)}</b>
     </p>)}</div>
@@ -1296,6 +1306,7 @@ function FlightScopeNote({airport,lang}:{airport:LiveSummary["airport"];lang:Lan
  */
 export function AirportArrivalSummary({ lang, terminal = "all", date = null }: { lang: Lang; terminal?: "all" | "T1" | "T2"; date?: string | null }) {
   const summary = useLiveSummary(date);
+  const presentationNow = usePresentationClock(summary?.generatedAt ?? "");
   const airport = summary?.airport;
   if (!summary) return <LiveLoadMessage loading={summary === undefined} lang={lang} />;
   if (!airport) return <div className="airport-unavailable" role="status"><strong>{airportTodayText.unavailable[lang]}</strong></div>;
@@ -1305,7 +1316,7 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
   const peopleUnit = { ko: "명", en: " people", zh: "人", ja: "人" }[lang];
   const isAll = terminal === "all";
   const scopeLabel = airportTodayText.scope[lang][terminal];
-  const nowIso = summary.generatedAt ?? new Date().toISOString();
+  const nowIso = new Date(presentationNow).toISOString();
 
   const total = isAll ? arrival?.todayExpectedPassengersTotal ?? null : arrival?.todayExpectedPassengersByTerminal?.[terminal] ?? null;
   const peak = isAll ? arrival?.peakExpectedTimeBand ?? null : arrival?.peakExpectedTimeBandByTerminal?.[terminal] ?? null;
@@ -1390,7 +1401,8 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
         <div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-arrival-flow-title">{arrivalSectionText.flowTitle[lang]}</h3></div>
         <p>{arrivalSectionText.flowOnly[lang]}</p>
       </div>
-      {coverage === "COMPLETE" && timeline.length > 0
+      <p className="flow-note">{summary.serviceDateKst} · {scopeLabel} · {timeline.length ? `${formatKstBand(timeline[0].targetStartAt,timeline.at(-1)!.targetEndAt)} · ${timeline.length} ${contextText(lang,"개 확인 시간대","available bands","个已确认时段","確認済み時間帯")}` : airportTodayText.unavailable[lang]}{isPartial ? ` · ${airportTodayText.partialBody[lang]}` : ""}</p>
+      {timeline.length > 0
         ? <AirportForecastChart
           timeline={timeline}
           peakStartAt={peak?.targetStartAt ?? null}
@@ -1435,7 +1447,8 @@ export function AirportAtAGlance({summary,lang,terminal="all"}:{summary:LiveSumm
   const referenceSum=passengerReferenceSum(expectedTotal,forecastStatus,summary.serviceDateKst,terminal,airport.transferForecast);
   const gate=airport.topDepartureGateByTerminal?.[terminal];
   const topGate=isAll?(airport.topDepartureGate&&airport.topDepartureGateFlights!==null?{terminal:airport.topDepartureGateTerminal,gate:airport.topDepartureGate,flights:airport.topDepartureGateFlights}:null):(gate?{terminal,...gate}:null);
-  const nowIso=summary.generatedAt;
+  const presentationNow = usePresentationClock(summary.generatedAt);
+  const nowIso = new Date(presentationNow).toISOString();
   const scopeLabel=airportTodayText.scope[lang][terminal];
   const passengerAt=isAll?airport.passengerForecastRetrievedAt:airport.passengerForecastRetrievedAtByTerminal?.[terminal]??null;
   const flightsAt=airport.departuresTrackedTodayRetrievedAt;
@@ -1451,14 +1464,14 @@ export function AirportAtAGlance({summary,lang,terminal="all"}:{summary:LiveSumm
     nowBand: selectAirportNowBand({
       timeline,
       nowIso,
-      peakExpectedPassengers: peak?.expectedPassengers ?? null,
+      peakExpectedPassengers: forecastStatus === "COMPLETE" ? peak?.expectedPassengers ?? null : null,
       isToday: summary?.dayRelation === "TODAY",
     }),
     departures: flightsCount,
     topGate,
   });
   const airportBriefLines = localizeAirportBrief(
-    airportBrief, lang, remaining,
+    { ...airportBrief, checkpoint: null }, lang, remaining,
     summary?.sources?.find((source) => source.sourceId === "INCHEON_PASSENGER_FORECAST")?.retrievedAt ?? null,
     summary?.generatedAt ?? null,
   );
@@ -1472,20 +1485,28 @@ export function AirportAtAGlance({summary,lang,terminal="all"}:{summary:LiveSumm
   const planned=isAll?schedule?.ranking.all:schedule?.ranking.byTerminal[terminal];
   const dayLabel=summary.dayRelation==="TODAY"?areaBriefText.nowLabel[lang]:contextText(lang,"선택일 요약","Selected day summary","所选日期概览","選択日の概要");
   const dayLines=airportBriefLines.map(line=>summary.dayRelation==="TODAY"?line:line.replace(contextText(lang,"오늘 피크","Today's peak","今日高峰","本日ピーク"),contextText(lang,"선택일 피크","Selected day's peak","所选日期高峰","選択日のピーク")));
+  const upcomingPeak = [...timeline].filter(row => Number.isFinite(row.expectedPassengers) && (summary.dayRelation === "FUTURE" || (summary.dayRelation === "TODAY" && Date.parse(row.targetStartAt) >= Date.parse(nowIso)))).sort((a,b)=>b.expectedPassengers-a.expectedPassengers)[0];
+  const checkpoint = airportBrief.checkpoint;
+  const queueIsStale = checkpoint && (checkpoint.freshness === "STALE" || presentationNow - Date.parse(checkpoint.observedAt) > 20 * 60_000);
+  const queueValue = checkpoint?.waitTimeRaw ?? (checkpoint?.waitTimeMinutes !== null && checkpoint?.waitTimeMinutes !== undefined ? String(checkpoint.waitTimeMinutes) : null);
+
   return <section className="current-brief airport-current-brief" aria-label={`${scopeLabel} ${dayLabel}`}>
       <p className="eyebrow">{scopeLabel} · {dayLabel}</p>
-      {referenceSum ? <>
-        <strong className="airport-brief-total" data-basis="ARITHMETIC_ONLY">{passengerCopy[summary.dayRelation === "TODAY" ? "summedToday" : "summedSelected"][lang]} {referenceSum.total.toLocaleString(numberLocale)}{peopleUnit}</strong>
-        <small className="airport-passenger-components">({passengerCopy.hallComponent[lang]} {referenceSum.hall.toLocaleString(numberLocale)}{peopleUnit} + {passengerCopy.transferComponent[lang]} {referenceSum.transfer.toLocaleString(numberLocale)}{peopleUnit})</small>
-      </> : expectedTotal !== null && <strong className="airport-brief-total">{passengerCopy[summary.dayRelation === "TODAY" ? "today" : "selected"][lang]} {Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}</strong>}
-      <small className="departure-hall-scope-note">{passengerCopy.scope[lang]}</small>
-      <small className="passenger-transfer-limitation">{passengerCopy[referenceSum ? 'arithmeticNote' : 'limitation'][lang]}</small>
+      {expectedTotal !== null && forecastStatus === "COMPLETE" ? <strong className="airport-brief-total"><span className="airport-metric-label">{passengerCopy[summary.dayRelation === "TODAY" ? "today" : "selected"][lang]}</span>{" "}<span className="airport-metric-value">{Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}</span></strong> : <p className="airport-data-missing">{forecastStatus === "PARTIAL" ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]}</p>}
+      <small className="departure-hall-scope-note">{summary.serviceDateKst} · {scopeLabel} · {passengerCopy.scope[lang]}</small>
+      {dayLines.map((line, index) => index === 0 ? <strong className="airport-brief-current" key={line}>{line}</strong> : <p className="airport-near-term" key={line}>{line}</p>)}
+      {upcomingPeak && <p className="airport-upcoming-peak"><span>{contextText(lang,"이후 확인된 시간대 중 최대","Largest among upcoming available bands","未来已确认时段中最高","今後の確認済み時間帯の中で最多")}</span><b>{formatKstBand(upcomingPeak.targetStartAt,upcomingPeak.targetEndAt)} · {upcomingPeak.expectedPassengers.toLocaleString(numberLocale)}{peopleUnit}</b></p>}
+      <div className="airport-reference-block">
+        {referenceSum && <><p className="airport-reference-total" data-basis="ARITHMETIC_ONLY">{passengerCopy[summary.dayRelation === "TODAY" ? "summedToday" : "summedSelected"][lang]} {referenceSum.total.toLocaleString(numberLocale)}{peopleUnit}</p><small className="airport-passenger-components">({passengerCopy.hallComponent[lang]} {referenceSum.hall.toLocaleString(numberLocale)}{peopleUnit} + {passengerCopy.transferComponent[lang]} {referenceSum.transfer.toLocaleString(numberLocale)}{peopleUnit})</small></>}
+        <small className="passenger-transfer-limitation">{passengerCopy[referenceSum ? 'arithmeticNote' : 'limitation'][lang]}</small>
+      </div>
       <div className="transfer-forecast" data-testid="transfer-forecast">
         {(airport.transferForecast ?? []).filter(r => r.serviceDate === summary.serviceDateKst && (isAll || r.terminal === terminal)).map(r =>
           <small key={r.terminal} style={{display:'block'}}>{r.terminal} · {passengerCopy.transfer[lang]} {r.expectedTransferPassengers.toLocaleString(numberLocale)}{peopleUnit} · {formatHumanFreshness(r.retrievedAt,nowIso,lang,"collected")}</small>)}
         {((isAll ? ['T1','T2'] : [terminal]) as string[]).filter(t => !(airport.transferForecast ?? []).some(r => r.serviceDate === summary.serviceDateKst && r.terminal === t)).map(t => <p key={t}>{t} · {passengerCopy[summary.sources?.some(s => s.sourceId === 'INCHEON_TRANSFER_FORECAST' && s.status === 'ERROR' && s.detail?.includes(`service_date=${summary.serviceDateKst}`)) ? 'failed' : summary.dayRelation === 'FUTURE' && new Date(new Date(nowIso).getTime()+9*3600000).getUTCHours()<17 ? 'pending' : 'unavailable'][lang]}</p>)}
       </div>
-      {dayLines.map((line, index) => index === 0 ? <strong className="airport-brief-current" key={line}>{line}</strong> : <p key={line}>{line}</p>)}
+
+      {checkpoint && <aside className="airport-wait-brief"><p>{queueIsStale ? contextText(lang,"이전 대기 관측","Previous queue observation","先前等候观测","以前の待ち状況の観測") : contextText(lang,"현재 대기 관측","Current queue observation","当前等候观测","現在の待ち状況の観測")} · {checkpoint.terminal} {friendlyCheckpointName(checkpoint.zone,lang)}</p><p>{queueValue ? `${queueValue}${/분|min|分钟|分/i.test(queueValue) ? '' : {ko:'분',en:' min',zh:'分钟',ja:'分'}[lang]}` : checkpoint.waitingCount !== null ? `${checkpoint.waitingCount.toLocaleString(numberLocale)}${peopleUnit}` : airportTodayText.unavailable[lang]} · {kstStamp(checkpoint.observedAt)} KST {demandCopy.observed[lang]}</p></aside>}
       {expectedTotal !== null && passengerChanges.length > 0 && <p>{airportTodayText.expected[lang]} · {passengerChanges.join(" · ")}</p>}
       {flightsCount !== null && <p>{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}{flightChanges.length ? ` · ${flightChanges.join(" · ")}` : ""}</p>}
       {flightsCount===null&&<>{officialSchedule&&planned&&planned.totalFlights>0?<><p>{pc('officialScheduledFlights',lang)} {planned.totalFlights.toLocaleString(numberLocale)}{flightUnit}</p><small>{pc('officialScheduleBasis',lang)}</small></>:<><p>{pc('schedulePending',lang)}</p>{planned&&planned.totalFlights>0&&<small>{pc('scheduledFlights',lang)} {planned.totalFlights.toLocaleString(numberLocale)}{flightUnit} · {pc('scheduleBasis',lang)}</small>}</>}</>}
@@ -1507,6 +1528,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   const [showAllCheckpoints, setShowAllCheckpoints] = useState(false);
   const [compositionView, setCompositionView] = useState<"gates" | "airlines" | "countries">("gates");
   const summary = useLiveSummary(date);
+  const presentationNow = usePresentationClock(summary?.generatedAt ?? "");
   const airport = summary?.airport;
   if (!summary) return <LiveLoadMessage loading={summary === undefined} lang={lang} />;
   if (!airport) return <div className="airport-unavailable" role="status"><strong>{airportTodayText.unavailable[lang]}</strong></div>;
@@ -1528,7 +1550,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   const passengerRetrievedAt = isAll ? airport.passengerForecastRetrievedAt : airport.passengerForecastRetrievedAtByTerminal?.[terminal] ?? null;
   const flightsRetrievedAt = isAll ? airport.departuresTrackedTodayRetrievedAt : airport.topDepartureGateRetrievedAtByTerminal?.[terminal] ?? null;
   const gateRetrievedAt = isAll ? airport.topDepartureGateRetrievedAt : airport.topDepartureGateRetrievedAtByTerminal?.[terminal] ?? null;
-  const nowIso = summary?.generatedAt ?? new Date().toISOString();
+  const nowIso = new Date(presentationNow).toISOString();
   const collectedText = (value: string | null) => value ? formatHumanFreshness(value, nowIso, lang, "collected") : null;
   const passengerCollected = collectedText(passengerRetrievedAt);
   const flightsCollected = collectedText(flightsRetrievedAt);
@@ -1575,7 +1597,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   const distinctSectionFreshness = [...new Set([passengerRetrievedAt, flightsRetrievedAt, gateRetrievedAt].map(plainText).filter((value): value is string => Boolean(value)))];
   const perMetric = (value: string | null) => (sharesOneFreshness ? null : value);
 
-  return <section className="airport-today" aria-labelledby="airport-today-title">
+  return <section className="airport-today" aria-label={airportTodayText.title[lang]}>
     <AirportAtAGlance summary={summary} lang={lang} terminal={terminal}/>
 
     <details className="airport-summary-details"><summary>{contextText(lang,"터미널별 상세·집계 기준 보기","Terminal details and counting basis","航站楼详情与统计标准","ターミナル詳細・集計基準を見る")}</summary>
@@ -1596,7 +1618,8 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     </details>
     <section className="airport-detail-section airport-forecast" aria-labelledby="airport-forecast-title">
       <div className="airport-detail-head"><div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-forecast-title">{airportTodayText.forecastTitle[lang]}</h3></div><p>{airportTodayText.forecastOnly[lang]}</p></div>
-      {forecastStatus === "COMPLETE" && timeline.length > 0
+      <p className="flow-note">{summary.serviceDateKst} · {scopeLabel} · {timeline.length ? `${formatKstBand(timeline[0].targetStartAt,timeline.at(-1)!.targetEndAt)} · ${timeline.length} ${contextText(lang,"개 확인 시간대","available bands","个已确认时段","確認済み時間帯")}` : airportTodayText.unavailable[lang]}{isForecastPartial ? ` · ${airportTodayText.partialBody[lang]}` : ''}</p>
+      {timeline.length > 0
         ? <AirportForecastChart
           timeline={timeline}
           peakStartAt={peak?.targetStartAt ?? null}
@@ -2483,38 +2506,45 @@ function MyStoreSnapshot({ lang, operations }: { lang: Lang; operations: Operati
 /** The three Seoul areas, each opening with its own official brief. */
 export function HomeTodayBrief({ lang, selected, onSelect, date = null }: { lang: Lang; selected: AreaId; onSelect: (area: AreaId) => void; date?: string | null }) {
   const summary = useLiveSummary(date);
-  if (!summary) return <LiveLoadMessage loading={summary === undefined} lang={lang} />;
-  const areas = AREA_IDS.map((area) => {
-    const block = summary.areas[area];
-    const brief = buildAreaCurrentBrief({
-      realtime: block?.realtime ?? null,
-      realtimeForecast: block?.realtimeForecast ?? [],
-      weather: block?.weather ?? [],
-      eventCount: block?.eventCount ?? block?.events?.length ?? 0,
-      nextEventTitle: block?.events?.[0]?.title ?? null,
-      nextEventCategory: block?.events?.[0]?.categoryName ?? null,
-      nowIso: summary.generatedAt,
-    });
-    return { area, brief, copy: localizeAreaBrief(brief, lang, summary.dayRelation !== "TODAY") };
-  });
-  if (!areas.some(({ brief }) => brief.evidenceTypes.length > 0)) return null;
-  return <section className="home-area-briefs" aria-labelledby="home-area-briefs-title">
-    <div className="home-area-briefs-head">
-      <p className="eyebrow">OFFICIAL NOW · SEOUL</p>
-      <h2 id="home-area-briefs-title">{areaBriefText.title[lang]}</h2>
-      <p>{lang === "ko" ? "지금 상태와 공식 예측을 지역별로 함께 봅니다." : lang === "en" ? "Current conditions and the official forecast, area by area." : lang === "zh" ? "按地区查看当前状态与官方预测。" : "現在の状況と公式予測をエリアごとに確認します。"}</p>
-    </div>
-    <div className="home-area-brief-rows">{areas.map(({ area, copy }) => <button
-      key={area}
-      className={selected === area ? "selected" : ""}
-      onClick={() => onSelect(area)}
-      aria-current={selected === area ? "true" : undefined}
-    >
-      <span>{areaNames[area][lang]}</span>
-      <div><strong>{copy.headline}</strong>{copy.lines.map((line) => <p key={line}>{line}</p>)}</div>
-      {copy.freshness && <small>{formatHumanFreshness(copy.freshness, summary.generatedAt, lang, "observed")}</small>}
-    </button>)}</div>
-  </section>;
+  const now = usePresentationClock(summary?.generatedAt ?? "");
+  if (!summary) return <div className="demand-loading"><LiveLoadMessage loading={summary === undefined} lang={lang}/></div>;
+  const block = summary.areas[selected];
+  const dateSuffix = date ? `?date=${encodeURIComponent(date)}` : "";
+  const supporting = buildAreaCurrentBrief({ realtime: null, realtimeForecast: [], weather: block?.weather ?? [], eventCount: block?.eventCount ?? 0, nextEventTitle: block?.events?.[0]?.title, nextEventCategory: block?.events?.[0]?.categoryName ?? null, nowIso: new Date(now).toISOString() });
+  const supportLines = localizeAreaBrief(supporting, lang).lines.slice(1);
+  const changes = AREA_IDS.flatMap(area => {
+    const row = summary.areas[area];
+    const current = row?.realtime;
+    if (summary.dayRelation !== "TODAY" || !current || current.freshness !== "LIVE" || !describeObservationAge(current.observedAt, new Date(now).toISOString(), lang).isNow) return [];
+    const comparison = usableComparison(current, 7);
+    if (comparison && (comparison.minPercent > 0 || comparison.maxPercent < 0)) return [{ area, line: comparisonText(comparison, lang, 7) }];
+    const future = populationFlow({ ...row, serviceDate: summary.serviceDateKst, isToday: true, now }).filter(p => p.kind === 'forecast');
+    const rising = future.map(p => row!.realtimeForecast.find(r => r.targetAt === p.at)!).find(p => p.congestionLevel > current.congestionLevel);
+    return rising ? [{ area, line: `${demandCopy.forecast[lang]} · ${kstDay(rising.targetAt) === kstDay(now + 86400000) ? demandCopy.tomorrow[lang] + ' ' : ''}${kstStamp(rising.targetAt)} KST · ${demandLevel(current.congestionLevel, lang)} → ${demandLevel(rising.congestionLevel, lang)}` }] : [];
+  }).slice(0, 3);
+  return <div className="demand-home">
+    <p className="demand-section-label">{demandCopy.selected[lang]} · {summary.serviceDateKst} KST</p>
+    <AreaDemandCard summary={summary} area={selected} lang={lang} linkHref={`/${lang}/${selected}${dateSuffix}`}/>
+    <section className="home-area-briefs" aria-labelledby="home-area-briefs-title">
+      <h2 id="home-area-briefs-title">{contextText(lang,"다른 상권 살펴보기","Explore the districts","查看其他商圈","ほかの商圏を見る")}</h2>
+      <div className="home-area-brief-rows">{AREA_IDS.map(area => {
+        const row = summary.areas[area]?.realtime;
+        const valid = validPopulationRange(row) && kstDay(row!.observedAt) === summary.serviceDateKst;
+        return <button key={area} className={selected === area ? 'selected' : ''} aria-pressed={selected === area} onClick={() => onSelect(area)}>
+          <span>{areaNames[area][lang]}</span><strong>{valid ? demandLevel(row!.congestionLevel, lang) : demandCopy.missing[lang]}</strong>
+          <small>{valid ? `${peopleRange(row!,lang)}${text.foreignPeople[lang]} · ${kstStamp(row!.observedAt)} ${demandCopy.observed[lang]}` : '—'}</small>
+        </button>;
+      })}</div>
+      <p className="flow-note">{contextText(lang,"각 측정 구역의 범위가 달라, 인구 크기로 지역의 인기나 혼잡 밀도를 비교하지 않습니다.","Measured areas differ. Headcounts are not a ranking of popularity or crowd density.","测量区域范围不同，人数不能作为人气或拥挤密度排名。","測定区域が異なるため、人口の大きさで人気や混雑密度は比較できません。")}</p>
+    </section>
+    {changes.length > 0 && <section className="demand-changes"><h2>{contextText(lang,"주목할 변화","Changes to watch","值得关注的变化","注目する変化")}</h2><ul>{changes.map(change => <li key={change.area}><strong>{areaNames[change.area][lang]}</strong><p>{change.line}</p></li>)}</ul></section>}
+    <section className="home-airport"><div className="demand-section-head"><h2>{contextText(lang,"인천공항","Incheon Airport","仁川机场","仁川空港")}</h2><a href={`/${lang}/airport${dateSuffix}`}>{contextText(lang,"공항 자세히 보기","Explore airport","机场详情","空港の詳細")} →</a></div><AirportAtAGlance summary={summary} lang={lang}/></section>
+    <section className="home-support"><h2>{contextText(lang,"날씨와 주변 일정","Weather and nearby events","天气与周边日程","天気と周辺の予定")}</h2>
+      {supportLines.length ? supportLines.map(line => <p key={line}>{line}</p>) : <p>{contextText(lang,"선택 날짜에 확인된 보조자료가 없습니다.","No supporting data for the selected date.","所选日期暂无辅助资料。","選択日の補足資料はありません。")}</p>}
+      <p className="flow-note">{contextText(lang,"기상청 예보·공식 행사기간 기준. 실제 운영시간은 상세 화면의 공식 안내를 확인하세요.","KMA forecasts and official event periods. Check official links in the area details for operating hours.","按气象厅预测与官方活动期间，实际营业时间请查看地区详情内的官方信息。","気象庁予報・公式イベント期間。実際の開催時間はエリア詳細の公式案内をご確認ください。")}</p>
+      <a href={`/${lang}/${selected}${dateSuffix}`}>{areaNames[selected][lang]} · {contextText(lang,"날씨·행사·소비·지하철 보기","Weather, events, spending and subway","查看天气、活动、消费及地铁","天気・イベント・消費・地下鉄を見る")} →</a>
+    </section>
+  </div>;
 }
 
 /** `9/1–9/30` from the official start and end dates; start alone when there is no end. */
@@ -2546,10 +2576,6 @@ function formatEventDistance(lang: Lang, event: { distanceM: number | null }): s
   return `${metres}m`;
 }
 
-function formatPeopleRange(lang: Lang, min: number, max: number): string {
-  const locale = airportLocale(lang);
-  return `${min.toLocaleString(locale)}–${max.toLocaleString(locale)}`;
-}
 
 function formatPeopleValue(lang: Lang, value: number): string {
   const locale = airportLocale(lang);
@@ -3032,27 +3058,7 @@ export function AreaCurrentBrief({ lang, area, date = null, linkHref, linkLabel 
 }) {
   const summary = useLiveSummary(date);
   if (!summary) return <LiveLoadMessage loading={summary === undefined} lang={lang} />;
-  const block = summary.areas[area];
-  const brief = buildAreaCurrentBrief({
-    realtime: block?.realtime ?? null,
-    realtimeForecast: block?.realtimeForecast ?? [],
-    weather: block?.weather ?? [],
-    eventCount: block?.eventCount ?? block?.events?.length ?? 0,
-    nextEventTitle: block?.events?.[0]?.title ?? null,
-    nextEventCategory: block?.events?.[0]?.categoryName ?? null,
-    nowIso: summary.generatedAt,
-  });
-  const selectedDay = summary.dayRelation !== "TODAY";
-  const selectedLabel = contextText(lang,"선택일 요약","Selected day summary","所选日期概览","選択日の概要");
-  const copy = localizeAreaBrief(brief, lang, summary.dayRelation !== "TODAY");
-  return <section className="current-brief area-current-brief" aria-label={`${areaNames[area][lang]} ${selectedDay ? selectedLabel : areaBriefText.nowLabel[lang]}`}>
-    <p className="eyebrow">{areaNames[area][lang]} · {selectedDay ? selectedLabel : areaBriefText.nowLabel[lang].toUpperCase()}</p>
-    <strong>{copy.headline}</strong>
-    {copy.lines.map((line) => <p key={line}>{line}</p>)}
-    {block?.realtime && <p className="period-comparison">{comparisonLines(block.realtime.comparisons, lang).join(" · ") || ({ ko: "전주 동요일 비교 자료 없음 · 현재 혼잡도는 서울시 제공 등급", en: "Same-weekday comparison unavailable · crowding is Seoul’s official level", zh: "缺少上周同曜日比较资料 · 当前拥挤程度为首尔市发布等级", ja: "前週同曜日の比較資料なし・混雑度はソウル市の提供指標" })[lang]}</p>}
-    {copy.freshness && <small>{formatHumanFreshness(copy.freshness, summary.generatedAt, lang, "observed")}</small>}
-    {linkHref && linkLabel && <a className="current-brief-link" href={linkHref}>{linkLabel} ↗</a>}
-  </section>;
+  return <AreaDemandCard summary={summary} area={area} lang={lang} linkHref={linkHref} linkLabel={linkLabel}/>;
 }
 
 export default function LiveSignals({ lang, area, date = null }: { lang: Lang; area: AreaId; date?: string | null }) {
@@ -3067,26 +3073,10 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     passengerForecastRetrievedAt: null,
     forecastCoverage: { all: "UNAVAILABLE" as const, byTerminal: {} },
   };
-  const hasArea = Boolean(block && (block.realtime || block.commercial || block.realtimeForecast?.length || block.subwayRidership || block.foreignPresence || block.foreignPurposeMobility || block.weather.length || block.events.length || block.sales || block.storeDynamics));
-  const hasArrival = arrival.todayExpectedPassengersTotal !== null
-    || arrival.nextExpectedTimeBand !== null
-    || arrival.peakExpectedTimeBand !== null;
-  if (!hasArea && !hasArrival) return null;
+
 
   // The detail screen reuses the same deterministic builder as the home rows,
   // so the same data can never produce two different sentences.
-  const areaBrief = buildAreaCurrentBrief({
-    realtime: block?.realtime ?? null,
-    realtimeForecast: block?.realtimeForecast ?? [],
-    weather: block?.weather ?? [],
-    eventCount: block?.eventCount ?? block?.events?.length ?? 0,
-    nextEventTitle: block?.events?.[0]?.title ?? null,
-    nextEventCategory: block?.events?.[0]?.categoryName ?? null,
-    nowIso: summary.generatedAt,
-  });
-  const selectedDay = summary.dayRelation !== "TODAY";
-  const selectedLabel = contextText(lang,"선택일 요약","Selected day summary","所选日期概览","選択日の概要");
-  const areaBriefCopy = localizeAreaBrief(areaBrief, lang, selectedDay);
 
   /**
    * When a collector last SUCCEEDED, from source health — not from the data
@@ -3103,20 +3093,6 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     summary.sources?.find((source) => source.sourceId === sourceId)?.retrievedAt ?? null;
 
   const rows: SignalRow[] = [];
-
-  if (block?.realtime) {
-    const level = congestionLabels[block.realtime.congestionLevel]?.[lang] ?? block.realtime.congestionLabel;
-    rows.push({
-      key: "realtime",
-      group: "now",
-      timeState: signalStructureText.timeState.recent[lang],
-      label: text.currentPopulation[lang],
-      detail: comparisonLines(block.realtime.comparisons, lang).join(" · ") || undefined,
-      value: `${formatPeopleRange(lang, block.realtime.populationMin, block.realtime.populationMax)}${text.foreignPeople[lang]} · ${level}`,
-      note: `${text.sourceSeoul[lang]} · ${formatHumanFreshness(block.realtime.observedAt, summary.generatedAt, lang, "observed")} · ${text.notCumulative[lang]}`,
-      state: block.realtime.freshness,
-    });
-  }
 
   const commercialRow = buildCommercialSignalRow(lang, block?.commercial, summary.generatedAt);
   const storeDynamicsPresentation = buildStoreDynamicsPresentation(
@@ -3327,19 +3303,12 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
   }
 
   const events = block?.events ?? [];
-  if (!rows.length && !commercialRow && !storeDynamicsPresentation && !events.length) return null;
+
   const groupIds: SignalGroupId[] = ["now", "movement", "today-next", "past"];
 
   return (
     <section className="live-signals" aria-labelledby="live-signals-title">
-      {areaBrief.evidenceTypes.length > 0 && (
-        <section className="current-brief area-current-brief" aria-label={`${areaNames[area][lang]} ${selectedDay ? selectedLabel : areaBriefText.nowLabel[lang]}`}>
-          <p className="eyebrow">{areaNames[area][lang]} · {selectedDay ? selectedLabel : areaBriefText.nowLabel[lang].toUpperCase()}</p>
-          <strong>{areaBriefCopy.headline}</strong>
-          {areaBriefCopy.lines.map((line) => <p key={line}>{line}</p>)}
-          {areaBriefCopy.freshness && <small>{formatHumanFreshness(areaBriefCopy.freshness, summary.generatedAt, lang, "observed")}</small>}
-        </section>
-      )}
+      <AreaDemandCard summary={summary} area={area} lang={lang}/>
       <div className="section-head">
         <div>
           <p className="eyebrow">{text.eyebrow}</p>

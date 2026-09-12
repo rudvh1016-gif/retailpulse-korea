@@ -130,7 +130,7 @@ test("renders the KORETAIL production shell", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   assert.match(html, /<title>인천공항·명동·홍대·성수 오늘·내일 브리핑 \| KORETAIL<\/title>/i);
   assert.doesNotMatch(html, /codex-preview/i);
-  assert.match(html, /지금 서울은/);
+  assert.match(html, /서울과 공항의 흐름/);
   assert.match(html, /KORETAIL/);
 });
 
@@ -479,19 +479,15 @@ test("current briefs use existing official forecasts and deterministic editorial
   assert.doesNotMatch(page, /20:42 KST|예시 날짜|SAMPLE DATE|示例日期|サンプル日付/);
 });
 
-test("each Seoul area view opens with its own current brief built from the same deterministic builder", async () => {
+test("each Seoul area view opens with its shared range-preserving demand card", async () => {
   const signals = await read("../app/live-signals.tsx");
-  const css = await read("../app/globals.css");
-  assert.match(signals, /className="current-brief area-current-brief"/);
-  assert.match(signals, /const areaBrief = buildAreaCurrentBrief\(/);
-  assert.match(signals, /const areaBriefCopy = localizeAreaBrief\(areaBrief, lang, selectedDay\)/);
-  assert.ok(
-    signals.indexOf('className="current-brief area-current-brief"')
-      < signals.indexOf('id="live-signals-title"'),
-    "area brief must render above the live-signals heading",
-  );
-  assert.match(signals, /areaBrief\.evidenceTypes\.length > 0 &&/);
-  assert.match(css, /\.area-current-brief \{/);
+  const card = await read("../app/area-demand-card.tsx");
+  assert.match(card, /className="current-brief area-current-brief demand-card"/);
+  assert.match(card, /buildAreaCurrentBrief/);
+  assert.match(card, /peopleRange\(realtime, lang\)/);
+  assert.match(card, /PopulationFlow points=\{points\}/);
+  const detail = signals.slice(signals.indexOf("export default function LiveSignals"));
+  assert.ok(detail.indexOf("<AreaDemandCard") < detail.indexOf('id="live-signals-title"'));
 });
 
 /**
