@@ -1025,7 +1025,7 @@ export function KstTodayChip({ lang, date = null }: { lang: Lang; date?: string 
   return <span className="kst-chip" title={`${summary.serviceDateKst} (Asia/Seoul)`}>{label} · KST</span>;
 }
 
-const dateNavText = {
+export const dateNavText = {
   yesterday: { ko: "어제", en: "Yesterday", zh: "昨天", ja: "昨日" },
   today: { ko: "오늘", en: "Today", zh: "今天", ja: "今日" },
   tomorrow: { ko: "내일", en: "Tomorrow", zh: "明天", ja: "明日" },

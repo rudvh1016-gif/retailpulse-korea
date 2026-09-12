@@ -121,6 +121,16 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     await page.goto(`/${lang}/hongdae`);
     await expect(page.locator('.population-chart')).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
+    // Apply insets before focus/drag can trigger browser scroll anchoring.
+    // This is layout emulation, not a physical iPhone test.
+    await page.addStyleTag({ content: ':root { --safe-area-top: 59px; --safe-area-bottom: 34px; }' });
+    await expect(page.locator('.app')).toHaveCSS('padding-top', '59px');
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await expect.poll(() => page.locator('.topbar').evaluate(el => el.getBoundingClientRect().top)).toBeGreaterThanOrEqual(59);
+    const header = await page.locator('.topbar').boundingBox(), title = await page.locator('h1').boundingBox();
+    expect(title!.y).toBeGreaterThanOrEqual(header!.y + header!.height);
+    const padding = await page.locator('.page-shell').evaluate(el => parseFloat(getComputedStyle(el).paddingBottom));
+    expect(padding).toBeGreaterThanOrEqual(146);
     const ticks = page.locator('.flow-tick');
     await expect(ticks).toHaveCount(3);
     const rects = await ticks.evaluateAll(els => els.map(el => { const r = el.getBoundingClientRect(); return { x: r.x, right: r.right }; }));
@@ -144,14 +154,6 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     await expect(slider).toHaveValue('0');
     expect(chart!.width).toBeLessThan(width);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    // Inset simulation tests layout composition; it is not a physical iPhone test.
-    await page.addStyleTag({ content: ':root { --safe-area-top: 59px; --safe-area-bottom: 34px; }' });
-    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
-    const header = await page.locator('.topbar').boundingBox(), title = await page.locator('h1').boundingBox();
-    expect(header!.y).toBeGreaterThanOrEqual(59);
-    expect(title!.y).toBeGreaterThanOrEqual(header!.y + header!.height);
-    const padding = await page.locator('.page-shell').evaluate(el => parseFloat(getComputedStyle(el).paddingBottom));
-    expect(padding).toBeGreaterThanOrEqual(146);
     if (lang === 'ko') await page.screenshot({ path: info.outputPath(`hongdae-safe-area-${width}.png`), fullPage: true });
     await page.locator('.date-nav-shortcuts button').first().click();
     await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-08-30');
@@ -159,6 +161,12 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-09-01');
     await page.locator('.date-nav-shortcuts button').nth(1).click();
     await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-08-31');
+    await page.evaluate(({ key, p }) => localStorage.setItem(key, JSON.stringify({ ...p, selectedDays: ['yesterday', 'today', 'tomorrow'] })), { key: PREFERENCE_KEY, p: preferences });
+    await page.goto(`/${lang}`);
+    await expect(page.locator('.personal-day-switches button')).toHaveCount(3);
+    const days = await page.locator('.personal-day-switches button').evaluateAll(els => els.map(el => { const r = el.getBoundingClientRect(); return { x: r.x, right: r.right, y: r.y }; }));
+    days.forEach((r, i) => { expect(r.right).toBeLessThanOrEqual(width); expect(r.y).toBe(days[0].y); if (i) expect(r.x).toBeGreaterThanOrEqual(days[i - 1].right); });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
 }
 

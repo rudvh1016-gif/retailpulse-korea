@@ -4,7 +4,7 @@ import { availableInterests, buildPersonalBrief, locations, days, briefingDate, 
 import { pc, type PersonalLang } from '../lib/personal-copy';
 import { setAnalyticsConsent, trackPersonalEvent } from '../lib/personal-analytics';
 import { rememberFeedback, savePersonalPreferences, useFeedback, usePersonalPreferences } from './personal-preferences';
-import { AirportAtAGlance, AreaCurrentBrief, LiveLoadMessage, useLiveSummary } from './live-signals';
+import { AirportAtAGlance, AreaCurrentBrief, LiveLoadMessage, dateNavText, useLiveSummary } from './live-signals';
 
 function terminalName(value: PersonalPreferences['terminal'],lang:PersonalLang) {return value === 'T1'||value==='T2'?value:pc(value,lang);}
 function referenceTime(value:string,lang:PersonalLang) {
@@ -103,7 +103,7 @@ function SelectedBriefing({p,lang}:{p:PersonalPreferences;lang:PersonalLang}) {
     <p>{pc('switchBriefing',lang)}</p>
     <div className="personal-inline">{places.map(v=><button key={v} data-view-location={v} aria-pressed={place===v} onClick={()=>setLocation(v)}>{pc(v,lang)}</button>)}</div>
     {place==='airport'&&<div className="personal-inline">{scopes.map(v=><button key={v} data-view-terminal={v} aria-pressed={scope===v} onClick={()=>setTerminal(v)}>{terminalName(v,lang)}</button>)}</div>}
-    <div className="date-nav-shortcuts personal-day-switches" role="group" aria-label={pc('preference',lang)}>{days.filter(v=>dates.includes(v)).map(v=><button key={v} data-view-day={v} aria-pressed={date===v} onClick={()=>setDay(v)}>{pc(v,lang)}</button>)}</div>
+    <div className="date-nav-shortcuts personal-day-switches" role="group" aria-label={pc('preference',lang)}>{days.filter(v=>dates.includes(v)).map(v=><button key={v} data-view-day={v} aria-pressed={date===v} onClick={()=>setDay(v)}>{dateNavText[v][lang]}</button>)}</div>
   </nav><Briefing p={{...p,location:place,day:date,terminal:scope,interests:available}} lang={lang}/></>;
 }
 export default function PersonalHome({lang,children,openRequest=0}:{lang:PersonalLang;children:ReactNode;openRequest?:number}) {

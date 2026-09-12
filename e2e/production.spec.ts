@@ -505,6 +505,7 @@ test("Seoul renders compact arrival forecasts in four languages and no departure
 
   for (const [locale, labels] of Object.entries(expected)) {
     await page.goto(`/${locale}`);
+    await page.locator(".personal-existing > summary").click();
     await page.locator(".demand-card-footer > a").first().click();
     const rows = page.locator(".signal-groups");
     for (const label of labels) await expect(rows.getByText(label, { exact: true })).toBeVisible();
@@ -512,6 +513,7 @@ test("Seoul renders compact arrival forecasts in four languages and no departure
   }
 
   await page.goto("/ko");
+  await page.locator(".personal-existing > summary").click();
   await page.locator(".demand-card-footer > a").first().click();
   const rows = page.locator(".signal-groups");
   await expect(rows).toContainText("서울의 특정 지역과 직접 연결되지 않는 배경 참고");
@@ -527,6 +529,7 @@ test("partial arrival coverage hides the whole-day total and peak", async ({ pag
   partial.airport.arrivalForecast.forecastCoverage = { all: "PARTIAL", byTerminal: { T1: "PARTIAL", T2: "COMPLETE" } };
   await page.route("**/api/live/summary*", routeSummary(partial));
   await page.goto("/ko");
+  await page.locator(".personal-existing > summary").click();
   await page.locator(".demand-card-footer > a").first().click();
   const rows = page.locator(".signal-groups");
   await expect(rows.getByText("오늘 예상 입국객", { exact: true })).toHaveCount(0);
@@ -549,6 +552,7 @@ test("a forecast peak that falls after midnight is shown and labelled tomorrow",
   ];
   await page.route("**/api/live/summary*", routeSummary(evening));
   await page.goto("/ko");
+  await page.locator(".personal-existing > summary").click();
   const myeongdong = page.getByTestId("area-demand-card").first();
   await expect(myeongdong).toContainText("내일 04:00");
   await expect(myeongdong).not.toContainText("확인할 수 없습니다");
