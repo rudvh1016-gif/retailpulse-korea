@@ -19,7 +19,7 @@ export const demandCopy = {
   compareMissing: { ko: '전주 동요일 비교자료 없음', en: 'Same weekday last week: comparison unavailable', zh: '上周同星期比较资料不足', ja: '先週同曜日の比較資料なし' },
   uncertain: { ko: '범위가 겹쳐 증가·감소를 확정할 수 없습니다.', en: 'Overlapping ranges do not establish an increase or decrease.', zh: '区间重叠，无法确定增减。', ja: '範囲が重なるため増減を断定できません。' },
   flow: { ko: '관측과 앞으로의 흐름', en: 'Observed and upcoming flow', zh: '观测与未来趋势', ja: '観測とこれからの流れ' },
-  noHistory: { ko: '과거 흐름자료 없음 · 현재 관측은 점으로 표시', en: 'No observation history · current reading shown as a point', zh: '无历史趋势 · 当前观测以点表示', ja: '過去の推移なし・現在の観測は点で表示' },
+  noHistory: { ko: '과거 흐름자료 없음 · 관측 1개를 점으로 표시', en: 'No observation history · one reading shown as a point', zh: '无历史趋势 · 当前观测以点表示', ja: '過去の推移なし・現在の観測は点で表示' },
   noFlow: { ko: '표시할 관측·공식 예보가 없습니다.', en: 'No observation or official forecast to display.', zh: '暂无可显示的观测或官方预测。', ja: '表示できる観測・公式予報がありません。' },
   noForecast: { ko: '공개된 향후 예보 없음', en: 'No published upcoming forecast', zh: '暂无已发布未来预测', ja: '公表済みの今後の予報なし' },
   issued: { ko: '발표', en: 'Issued', zh: '发布', ja: '発表' },

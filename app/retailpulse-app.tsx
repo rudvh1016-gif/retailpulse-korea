@@ -305,6 +305,10 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       } catch {
         // Device-local preferences are optional; the product works without storage.
       } finally {
+        const query = new URLSearchParams(window.location.search);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(query.get('date') ?? '')) setServiceDate(query.get('date'));
+        if (query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
+        if (['all','T1','T2'].includes(query.get('terminal') ?? '')) setTerminal(query.get('terminal') as Terminal);
         setPreferencesReady(true);
       }
     }, 0);
@@ -355,6 +359,10 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
   useEffect(() => {
     const onPopState = () => {
+      const query = new URLSearchParams(window.location.search);
+      setServiceDate(/^\d{4}-\d{2}-\d{2}$/.test(query.get('date') ?? '') ? query.get('date') : null);
+      if (query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
+      if (['all','T1','T2'].includes(query.get('terminal') ?? '')) setTerminal(query.get('terminal') as Terminal);
       const [, locale, slug, routeArea] = window.location.pathname.split("/");
       setHomeVisible(!slug);
       if (!slug) setView("today");
@@ -370,13 +378,24 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   }, []);
 
   function updateUrl(nextLang: Lang, nextView: View, nextArea: AreaId) {
-    const nextPath = routeFor(nextLang, nextView, nextArea);
-    if (window.location.pathname !== nextPath) window.history.pushState({}, "", nextPath);
+    const params = new URLSearchParams();
+    if (serviceDate) params.set('date',serviceDate);
+    if (nextView === 'predictions') params.set('area',nextArea);
+    if (nextView === 'airport' && terminal !== 'all') params.set('terminal',terminal);
+    const nextPath = routeFor(nextLang, nextView, nextArea) + (params.size ? `?${params}` : '');
+    if (window.location.pathname + window.location.search !== nextPath) window.history.pushState({}, "", nextPath);
+  }
+
+  function changeDate(next: string | null) {
+    setServiceDate(next);
+    const url = new URL(window.location.href);
+    if (next) url.searchParams.set('date', next); else url.searchParams.delete('date');
+    window.history.pushState({}, '', url.pathname + url.search + url.hash);
   }
 
   function changeLanguage(next: Lang) {
     setLang(next);
-    if (homeVisible) window.history.pushState({}, "", `/${next}`);
+    if (homeVisible) window.history.pushState({}, "", `/${next}${window.location.search}`);
     else updateUrl(next, view, selected);
   }
 
@@ -390,14 +409,14 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     setHomeVisible(false);
     setView(next);
     updateUrl(lang, next, selected);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   }
 
   function goHome() {
     setHomeVisible(true);
     setView('today');
-    if(window.location.pathname !== `/${lang}`) window.history.pushState({}, '', `/${lang}`);
-    window.scrollTo({top:0,behavior:'smooth'});
+    if(window.location.pathname !== `/${lang}`) window.history.pushState({}, '', `/${lang}${serviceDate ? `?date=${serviceDate}` : ''}`);
+    window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
   }
 
   function openAirport(section: AirportSection, preferredTerminal?: Terminal) {
@@ -446,7 +465,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
                 {(Object.keys(areaInfo) as AreaId[]).map((id) => <button key={id} className={selected === id ? "active" : ""} onClick={() => selectArea(id)} role="tab" aria-selected={selected === id}>{areaLocalName(id, lang)}</button>)}
               </div>
             )}
-            <DateNavigator lang={lang} date={serviceDate} onChange={setServiceDate} />
+            <DateNavigator lang={lang} date={serviceDate} onChange={changeDate} historyHref={`/${lang}/predictions?area=${selected}#prediction-score`} />
             <DateScopeNote lang={lang} date={serviceDate} />
             {homeVisible ? <HomeTodayBrief lang={lang} selected={selected} onSelect={setSelected} date={serviceDate} /> : <LiveSignals lang={lang} area={selected} date={serviceDate} />}
             {betaSignupEnabled && <BetaSignup lang={lang} />}
@@ -461,10 +480,10 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             section={airportSection}
             setSection={setAirportSection}
             date={serviceDate}
-            setDate={setServiceDate}
+            setDate={changeDate}
           />
         )}
-        {view === "business" && <BusinessView lang={lang} selected={selected} setSelected={selectArea} industry={industry} setIndustry={setIndustry} date={serviceDate} setDate={setServiceDate} setProOpen={setProOpen} />}
+        {view === "business" && <BusinessView lang={lang} selected={selected} setSelected={selectArea} industry={industry} setIndustry={setIndustry} date={serviceDate} setDate={changeDate} setProOpen={setProOpen} />}
         {view === "predictions" && <PredictionView lang={lang} area={selected} onArea={selectArea} />}
         {view === "forecast" && <InsightsView lang={lang} selected={selected} setSelected={selectArea} date={serviceDate} />}
         {view === "tourism-desk" && <TourismDeskView lang={lang} area={selected} onAreaChange={selectArea} />}

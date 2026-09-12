@@ -1,5 +1,7 @@
 'use client';
 import { useEffect,useState } from 'react';
+import { PopulationFlow, usePresentationClock } from './area-demand-card';
+import { populationFlow } from '../lib/demand-presentation';
 import { predictionScore } from '../lib/prediction-progress';
 import type { Lang } from './retailpulse-data';
 import { useLiveSummary,LiveLoadMessage } from './live-signals';
@@ -11,6 +13,7 @@ interface ForecastPayload {
 }
 export function PredictionView({lang,area,onArea}:{lang:Lang;area:'myeongdong'|'hongdae'|'seongsu';onArea:(area:'myeongdong'|'hongdae'|'seongsu')=>void}) {
  const summary=useLiveSummary();
+ const now = usePresentationClock(summary?.generatedAt ?? "");
  const [loaded,setLoaded]=useState<{area:string;data:ForecastPayload|null}|null>(null);
  useEffect(()=>{let active=true;fetch(`/api/live/predictions?area=${area}`).then(async response=>response.ok?await response.json() as ForecastPayload:null).catch(()=>null).then(data=>{if(active)setLoaded({area,data});});return()=>{active=false;};},[area]);
  const data=loaded?.area===area?loaded.data:undefined;
@@ -30,6 +33,7 @@ export function PredictionView({lang,area,onArea}:{lang:Lang;area:'myeongdong'|'
   <div className="outlook-grid">
    <article><p className="eyebrow">{t('서울시 공식 예상','SEOUL OFFICIAL FORECAST','首尔市官方预测','ソウル市公式予測')}</p><h2>{t('앞으로 가장 붐빌 시간','Busiest upcoming hour','未来最拥挤时段','今後の最混雑時間')}</h2>
     {summary===undefined||summary===null?<LiveLoadMessage loading={summary===undefined} lang={lang}/>:peak?<><strong className="outlook-value">{peak.targetAt.slice(11,16)} · {peak.populationMin?.toLocaleString()}–{peak.populationMax?.toLocaleString()}{t('명',' people','人','人')}</strong><p>{peak.targetAt.slice(0,10)} · {t('서울시 발표 예상 · 실제 관측 아님','Published by Seoul · not observed','首尔市公布预测 · 非实际观测','ソウル市発表予測・実測ではありません')}</p></>:<p>{t('앞으로의 공식 예상이 아직 없습니다.','No upcoming official forecast yet.','尚无未来官方预测。','今後の公式予測はまだありません。')}</p>}
+    {summary && <PopulationFlow points={populationFlow({...summary.areas[area],serviceDate:summary.serviceDateKst,isToday:true,now})} lang={lang} now={now}/>}
     <a href={`/${lang}/airport`}>{t('인천공항 시간대별 예상도 보기 →','Airport hourly outlook →','查看机场分时预测 →','空港の時間帯別予測 →')}</a>
    </article>
    <article><p className="eyebrow">{t('KORETAIL 참고 예상 · 검증 자료 수집 중','KORETAIL REFERENCE · VALIDATION COLLECTING','KORETAIL参考预测 · 收集验证数据中','KORETAIL参考予測・検証データ収集中')}</p><h2>{t('내일 지역 인구 흐름','Tomorrow’s area population','明日区域人口趋势','明日のエリア人口の流れ')}</h2>
@@ -47,7 +51,7 @@ export function PredictionView({lang,area,onArea}:{lang:Lang;area:'myeongdong'|'
     <p>{t('각 시간의 시작 15분 안에 관측한 같은 요일 기록을 확인합니다. 자료 확보는 정확도 검증 완료를 뜻하지 않습니다.','Checks matching weekdays observed within the first 15 minutes of each hour. Input readiness is not validated accuracy.','检查每小时开始15分钟内的同星期观测。资料就绪不代表准确率已验证。','各時間の最初の15分以内に観測した同曜日の記録。資料の確保は精度の検証完了ではありません。')}</p>
     <ul className="prediction-hours">{readiness.hours.map(row=><li key={row.hour}><strong>{String(row.hour).padStart(2,'0')}:00</strong><span>{row.ready?t('최소 자료 확보','Minimum inputs ready','最低资料就绪','最低資料確保'):!row.compatible?t('자료 기준이 달라 비교 보류','Different source definitions','资料定义不同，暂缓比较','資料基準が異なり比較保留'):t(`${row.sampleDates.length}주 확보 · ${row.missingWeeks}주 더 필요`,`${row.sampleDates.length} weeks available · ${row.missingWeeks} more needed`,`已有${row.sampleDates.length}周 · 还需${row.missingWeeks}周`,`${row.sampleDates.length}週分確保・あと${row.missingWeeks}週必要`)}</span><small>{row.sampleDates.join(' · ')||t('해당 요일·시간 기록 없음','No matching records','无匹配记录','該当記録なし')}</small></li>)}</ul>
    </details>}
-   <div className="prediction-score"><h3>{t('예측 성적표 · 최근 7일','Prediction scorecard · last 7 days','预测成绩单 · 最近7天','予測の成績表・直近7日')}</h3>
+   <div className="prediction-score" id="prediction-score"><p>{t("7DAYS · 최근 7일의 예측·관측 비교 기록입니다. 앞으로 7일의 예보가 아닙니다.","7DAYS · Forecast/observation comparisons from the last 7 days, not a 7-day forecast.","7DAYS · 最近7天预测与观测对比记录，并非未来7天预报。","7DAYS・直近7日間の予測と観測の比較記録です。今後7日間の予報ではありません。")}</p><h3>{t('예측 성적표 · 최근 7일','Prediction scorecard · last 7 days','预测成绩单 · 最近7天','予測の成績表・直近7日')}</h3>
     <p>{t(`관측과 비교한 ${score.matchedHours}개 시간 · ${score.matchedDays}일`,`${score.matchedHours} matched hours across ${score.matchedDays} days`,`已比较${score.matchedHours}个时段 · ${score.matchedDays}天`,`${score.matchedHours}時間・${score.matchedDays}日分を観測と比較`)}</p>
     <p>{score.meanAbsoluteError===null?t('아직 비교할 결과가 없습니다.','No matched outcomes yet.','暂无可比较结果。','まだ比較結果がありません。'):t(`예상과 관측의 평균 차이 약 ${score.meanAbsoluteError.toLocaleString()}명`,`Mean absolute difference: about ${score.meanAbsoluteError.toLocaleString()} people`,`预测与观测平均绝对差约${score.meanAbsoluteError.toLocaleString()}人`,`予測と観測の平均絶対差は約${score.meanAbsoluteError.toLocaleString()}人`)}</p>
     <small>{t(`관측 연결 대기 ${score.pendingHours}개 시간. 관측값도 서울시 추정 인구 범위의 중간값입니다. 단순 과거 평균을 사용하는 초기 모델이며, 정확도 보증이나 매출 예측이 아닙니다.`,`${score.pendingHours} hours await observations. Observations also use Seoul's estimated population-range midpoint. This initial historical-mean model is not an accuracy guarantee or sales forecast.`,`${score.pendingHours}个时段等待观测。观测也是首尔市估计人口区间中点。初期历史平均模型，不保证准确率，也不是销售预测。`,`${score.pendingHours}時間が観測待ち。観測値もソウル市の推定人口範囲の中央値です。過去平均を使う初期モデルで、精度保証や売上予測ではありません。`)}</small>

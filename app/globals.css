@@ -1663,6 +1663,7 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .flow-table-wrap td, .flow-table-wrap th { padding: 12px 8px; text-align: left; border-bottom: 1px solid var(--line); font-size: 13px; }
 .flow-table-wrap small { display: block; font-size: 12px; }
 .demand-hero.hero { min-height: 0; padding: 24px 0 16px; margin: 0; border: 0; display: block; }
+.demand-hero .hero-copy { padding: 0; }
 .demand-hero h1 { font-size: clamp(24px, 3vw, 32px); line-height: 1.3; letter-spacing: -.025em; margin: 0 0 8px; }
 .demand-hero .hero-line { font-size: 14px; line-height: 1.6; margin: 0; max-width: none; }
 .demand-section-label { margin: 16px 0 0; font-size: 13px; color: var(--muted); }
@@ -1683,6 +1684,51 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .demand-section-head a, .home-support > a { font-size: 14px; display: inline-flex; align-items: center; min-height: 44px; }
 .home-support > p { font-size: 15px; line-height: 1.6; margin-top: 12px; }
 .demand-loading { min-height: 380px; padding: 24px 0; }
+.airport-view .view-intro { min-height: 0; padding: 24px 0 16px; margin: 0; }
+.airport-view .view-intro h1 { font-size: clamp(24px, 3vw, 32px); line-height: 1.3; }
+.airport-view .view-intro p { font-size: 14px; line-height: 1.6; margin-top: 8px; }
+.airport-current-brief.current-brief { padding: 24px 0; margin: 16px 0; border-color: var(--line); }
+.airport-current-brief .airport-brief-total, .personal-home .airport-current-brief .airport-brief-total { display: block; margin: 0 0 8px; line-height: 1.3; }
+.airport-brief-total .airport-metric-label { display: block; font-size: 14px; color: var(--muted); font-weight: var(--weight-regular); }
+.airport-brief-total .airport-metric-value { display: block; margin-top: 4px; font-size: clamp(28px, 3vw, 36px); font-variant-numeric: tabular-nums; font-weight: var(--weight-strong); }
+.airport-current-brief .airport-brief-current, .personal-home .airport-current-brief .airport-brief-current { font-size: 18px; line-height: 1.6; display: block; margin: 20px 0 4px; }
+.airport-current-brief .airport-near-term, .airport-current-brief p { font-size: 14px; line-height: 1.6; }
+.airport-current-brief small, .personal-home .airport-current-brief small { font-size: 13px; line-height: 1.6; }
+.airport-upcoming-peak { margin: 16px 0; }
+.airport-upcoming-peak span, .airport-upcoming-peak b { display: block; font-size: 14px; }
+.airport-upcoming-peak span { color: var(--muted); font-size: 13px; }
+.airport-reference-block { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 16px; }
+.airport-current-brief .airport-reference-total { font-size: 14px; font-weight: var(--weight-strong); margin: 0 0 4px; }
+.airport-wait-brief { border-block: 1px solid var(--line); padding: 12px 0; margin: 16px 0; }
+.airport-wait-brief p { margin: 0; font-size: 13px; }
+.airport-wait-brief p:first-child { color: var(--muted); }
+.airport-forecast > .flow-note { font-size: 13px; line-height: 1.6; color: var(--muted); }
+.airport-timeline-bars p:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+.airport-band-gap { border-inline: 1px dashed var(--line); }
+.date-nav button, .area-tabs button, .terminal-selector button, .airport-context-nav button { min-height: 44px; font-size: 14px; }
+.date-nav { padding: 8px 0; margin: 0 0 8px; }
+.date-nav-picker { font-size: 12px; }
+.date-nav-picker input { min-height: 44px; font-size: 13px; }
+.personal-home .date-nav-picker input { width: auto; min-width: 132px; height: auto; }
+.airport-reference-block small { display: block; margin-top: 4px; }
+.lang-ko { --font-ui: "KORETAIL Sans Variable", "Pretendard Variable", system-ui, sans-serif; }
+.period-outlook-link { display: inline-flex; align-items: center; min-height: 44px; font-size: 13px; padding: 0 12px; color: var(--muted); }
+.prediction-view .section-head { margin-bottom: 12px; }
+.outlook-grid article { border-top: 1px solid var(--line); }
+.prediction-history h2, .outlook-grid h2 { font-size: 20px; }
+.bottom-nav { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+.bottom-nav a { min-height: 48px; }
+.bottom-nav span { font-size: 12px; text-transform: none; }
+@media (max-width: 479px) {
+  .bottom-nav span { font-size: 11px; }
+  .airport-view .view-intro { padding: 16px 0 12px; }
+  .airport-current-brief.current-brief { margin: 8px 0; padding: 16px 0; }
+  .date-nav { flex-wrap: wrap; gap: 0 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .app *, .app *::before, .app *::after { animation: none !important; transition: none !important; }
+}
 .personal-home button { border-radius: 0; border-color: var(--line); color: var(--ink); box-shadow: none; }
 .personal-home button[aria-pressed="true"] { background: var(--paper); border-color: var(--blue); color: var(--blue); box-shadow: none; }
 .personal-home .personal-primary { background: var(--blue); border-color: var(--blue); color: white; }
