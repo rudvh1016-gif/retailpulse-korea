@@ -41,7 +41,14 @@ import { checkComparability } from "../lib/comparability.ts";
 import { observeQuota } from "../lib/quota-observation.ts";
 import { evaluateForecastPipeline } from "../lib/forecast-pipeline-state.ts";
 import { SELF_EXEMPT_PATHS, scanForRuntimeLlm, isScannableProductionPath } from "../lib/runtime-llm-scan.ts";
-import { buildHealthReport, runtimeLlmVerdict, summarizeHealthReport } from "../lib/operational-health.ts";
+import {
+  buildHealthReport,
+  incidentSeverity,
+  quotaSeverity,
+  runtimeLlmVerdict,
+  schedulerSeverity,
+  summarizeHealthReport,
+} from "../lib/operational-health.ts";
 
 const NOW = "2026-09-11T06:00:00.000Z";
 const HOUR = 3_600_000;
@@ -690,6 +697,51 @@ test("the watchdog's permanent coverage gap keeps the overall verdict off HEALTH
   assert.equal(report.areas.runtimeLlm, "HEALTHY");
   assert.equal(report.overall, "UNKNOWN", "nothing can observe the platforms themselves, so HEALTHY is unreachable");
   assert.equal(report.areas.watchdog, "UNKNOWN");
+});
+
+test("an area with nothing measured is UNKNOWN, never a false all-clear", () => {
+  // Every severity function answers by looking for problems. For an empty input
+  // every such search comes back empty, so the naive reading is "no problems
+  // found" — which for an UNMEASURED area is a false all-clear. These three
+  // guards are what stop that, and this test is what keeps them.
+  const emptyGraph = {
+    entries: [],
+    duplicateSchedulers: [],
+    unroutedWorkerCrons: [],
+    missingRoutedWorkflows: [],
+    undispatchableRoutes: [],
+    manualOnly: [],
+  };
+  assert.equal(schedulerSeverity(emptyGraph), "UNKNOWN", "a repository where nothing schedules anything is not healthy");
+  assert.equal(quotaSeverity([]), "UNKNOWN", "no quota observation is not a quota that is fine");
+  assert.equal(incidentSeverity([], false), "UNKNOWN", "an empty ledger nobody populated proves nothing");
+
+  // Examined and genuinely clean is still allowed to be HEALTHY, so the guard
+  // does not simply paint everything UNKNOWN.
+  assert.equal(incidentSeverity([], true), "HEALTHY");
+});
+
+test("a report in which nothing at all was measured is UNKNOWN in every derived area", () => {
+  const report = buildHealthReport(
+    reportInputs({
+      scheduler: {
+        entries: [],
+        duplicateSchedulers: [],
+        unroutedWorkerCrons: [],
+        missingRoutedWorkflows: [],
+        undispatchableRoutes: [],
+        manualOnly: [],
+      },
+      sources: [],
+      incidents: [],
+      quota: [],
+      forecast: [],
+    }),
+  );
+  for (const area of ["scheduler", "sources", "incidents", "quota", "forecast"]) {
+    assert.equal(report.areas[area], "UNKNOWN", `${area} must be UNKNOWN when it was not measured`);
+  }
+  assert.equal(report.overall, "UNKNOWN");
 });
 
 test("a duplicate live scheduler makes the whole report an ERROR", () => {

@@ -27,8 +27,17 @@ import type { QuotaVerdict } from "./quota-observation";
 import type { ForecastVerdict } from "./forecast-pipeline-state";
 import { rankImprovements, type ImprovementCandidate } from "./improvement-priorities";
 
-/** Severity of the scheduler graph itself, independent of any single source. */
+/**
+ * Severity of the scheduler graph itself, independent of any single source.
+ *
+ * An EMPTY graph is UNKNOWN, not HEALTHY. Every `.some()` below is false for an
+ * empty list, so the plain reading of "no problems found" would report a
+ * repository in which nothing schedules anything as perfectly healthy — the
+ * exact shape of lie this module exists to prevent. No derivation means no
+ * evidence.
+ */
 export function schedulerSeverity(truth: SchedulerTruth): OverallStatus {
+  if (!truth.entries.length) return "UNKNOWN";
   if (truth.duplicateSchedulers.length) return "ERROR";
   if (truth.missingRoutedWorkflows.length || truth.undispatchableRoutes.length) return "ERROR";
   if (truth.unroutedWorkerCrons.length) return "ERROR";
@@ -37,14 +46,31 @@ export function schedulerSeverity(truth: SchedulerTruth): OverallStatus {
   return "HEALTHY";
 }
 
-export function incidentSeverity(ledger: readonly Incident[]): OverallStatus {
+/**
+ * Severity of the incident ledger.
+ *
+ * `examinedAnything` is required rather than inferred: the ledger is FOLDED FROM
+ * source verdicts, so an empty ledger means "no source failed" only when sources
+ * were actually examined. Without that, empty means "nothing was looked at", and
+ * reporting HEALTHY for it would be a false all-clear.
+ */
+export function incidentSeverity(ledger: readonly Incident[], examinedAnything: boolean): OverallStatus {
+  if (!examinedAnything) return "UNKNOWN";
   const open = unresolvedIncidents(ledger);
   if (!open.length) return "HEALTHY";
   if (open.some((incident) => incident.currentState === "HUMAN_REVIEW_REQUIRED" || incident.severity === "HIGH")) return "ERROR";
   return "DEGRADED";
 }
 
+/**
+ * Severity of the quota guardrails.
+ *
+ * No observations is UNKNOWN, not HEALTHY, for the same reason as the scheduler
+ * graph: "nobody reported a breach" and "nobody measured" are different facts,
+ * and a resource at 99% that nothing watches must never render as fine.
+ */
 export function quotaSeverity(verdicts: readonly QuotaVerdict[]): OverallStatus {
+  if (!verdicts.length) return "UNKNOWN";
   if (verdicts.some((verdict) => verdict.level === "EMERGENCY")) return "ERROR";
   if (verdicts.some((verdict) => verdict.level === "UNKNOWN")) return "UNKNOWN";
   if (verdicts.some((verdict) => verdict.level === "PROTECT" || verdict.level === "NOTICE")) return "DEGRADED";
@@ -133,7 +159,9 @@ export function buildHealthReport(inputs: HealthInputs): HealthReport {
     scheduler: schedulerSeverity(inputs.scheduler),
     // An empty source list is UNKNOWN: zero sources checked is not zero problems.
     sources: inputs.sources.length ? rollUp(inputs.sources.map((source) => source.severity)) : "UNKNOWN",
-    incidents: incidentSeverity(inputs.incidents),
+    // The ledger is derived from the source verdicts, so "no incidents" only
+    // means anything when at least one source was actually evaluated.
+    incidents: incidentSeverity(inputs.incidents, inputs.sources.length > 0),
     watchdog: inputs.watchdog.severity,
     quota: quotaSeverity(inputs.quota),
     forecast: forecastSeverity(inputs.forecast),
