@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { populationFlow, flowSegments, usableComparison } from '../lib/demand-presentation.ts';
-import { rangeChange } from '../lib/period-comparison.ts';
+import { populationFlow, flowSegments, usableComparison } from '../lib/demand-presentation';
+import { rangeChange } from '../lib/period-comparison';
 
 const now = Date.parse('2026-09-12T23:20:00+09:00');
 const observedAt = '2026-09-12T23:10:00+09:00';

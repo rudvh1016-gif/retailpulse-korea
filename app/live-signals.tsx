@@ -1,7 +1,8 @@
 "use client";
-import { AreaDemandCard } from "./area-demand-card";
+import { demandCopy, demandLevel, AreaDemandCard, usePresentationClock } from "./area-demand-card";
 import { passengerCopy } from "../lib/passenger-copy";
 import { passengerReferenceSum } from "../lib/passenger-reference-sum";
+import { usableComparison, validPopulationRange, kstStamp, kstDay, peopleRange, populationFlow } from "../lib/demand-presentation";
 import { pc } from '../lib/personal-copy';
 import {flightBoardingLocation} from "../lib/flight-scope";
 
@@ -2484,38 +2485,44 @@ function MyStoreSnapshot({ lang, operations }: { lang: Lang; operations: Operati
 /** The three Seoul areas, each opening with its own official brief. */
 export function HomeTodayBrief({ lang, selected, onSelect, date = null }: { lang: Lang; selected: AreaId; onSelect: (area: AreaId) => void; date?: string | null }) {
   const summary = useLiveSummary(date);
-  if (!summary) return <LiveLoadMessage loading={summary === undefined} lang={lang} />;
-  const areas = AREA_IDS.map((area) => {
-    const block = summary.areas[area];
-    const brief = buildAreaCurrentBrief({
-      realtime: block?.realtime ?? null,
-      realtimeForecast: block?.realtimeForecast ?? [],
-      weather: block?.weather ?? [],
-      eventCount: block?.eventCount ?? block?.events?.length ?? 0,
-      nextEventTitle: block?.events?.[0]?.title ?? null,
-      nextEventCategory: block?.events?.[0]?.categoryName ?? null,
-      nowIso: summary.generatedAt,
-    });
-    return { area, brief, copy: localizeAreaBrief(brief, lang, summary.dayRelation !== "TODAY") };
-  });
-  if (!areas.some(({ brief }) => brief.evidenceTypes.length > 0)) return null;
-  return <section className="home-area-briefs" aria-labelledby="home-area-briefs-title">
-    <div className="home-area-briefs-head">
-      <p className="eyebrow">OFFICIAL NOW · SEOUL</p>
-      <h2 id="home-area-briefs-title">{areaBriefText.title[lang]}</h2>
-      <p>{lang === "ko" ? "지금 상태와 공식 예측을 지역별로 함께 봅니다." : lang === "en" ? "Current conditions and the official forecast, area by area." : lang === "zh" ? "按地区查看当前状态与官方预测。" : "現在の状況と公式予測をエリアごとに確認します。"}</p>
-    </div>
-    <div className="home-area-brief-rows">{areas.map(({ area, copy }) => <button
-      key={area}
-      className={selected === area ? "selected" : ""}
-      onClick={() => onSelect(area)}
-      aria-current={selected === area ? "true" : undefined}
-    >
-      <span>{areaNames[area][lang]}</span>
-      <div><strong>{copy.headline}</strong>{copy.lines.map((line) => <p key={line}>{line}</p>)}</div>
-      {copy.freshness && <small>{formatHumanFreshness(copy.freshness, summary.generatedAt, lang, "observed")}</small>}
-    </button>)}</div>
-  </section>;
+  const now = usePresentationClock(summary?.generatedAt ?? "");
+  if (!summary) return <div className="demand-loading"><LiveLoadMessage loading={summary === undefined} lang={lang}/></div>;
+  const block = summary.areas[selected];
+  const supporting = buildAreaCurrentBrief({ realtime: null, realtimeForecast: [], weather: block?.weather ?? [], eventCount: block?.eventCount ?? 0, nextEventTitle: block?.events?.[0]?.title, nowIso: new Date(now).toISOString() });
+  const supportLines = localizeAreaBrief(supporting, lang).lines.slice(1);
+  const changes = AREA_IDS.flatMap(area => {
+    const row = summary.areas[area];
+    const current = row?.realtime;
+    if (summary.dayRelation !== "TODAY" || !current || current.freshness !== "LIVE" || !describeObservationAge(current.observedAt, new Date(now).toISOString(), lang).isNow) return [];
+    const comparison = usableComparison(current, 7);
+    if (comparison && (comparison.minPercent > 0 || comparison.maxPercent < 0)) return [{ area, line: comparisonText(comparison, lang, 7) }];
+    const future = populationFlow({ ...row, serviceDate: summary.serviceDateKst, isToday: true, now }).filter(p => p.kind === 'forecast');
+    const rising = future.map(p => row!.realtimeForecast.find(r => r.targetAt === p.at)!).find(p => p.congestionLevel > current.congestionLevel);
+    return rising ? [{ area, line: `${demandCopy.forecast[lang]} · ${kstDay(rising.targetAt) === kstDay(now + 86400000) ? demandCopy.tomorrow[lang] + ' ' : ''}${kstStamp(rising.targetAt)} KST · ${demandLevel(current.congestionLevel, lang)} → ${demandLevel(rising.congestionLevel, lang)}` }] : [];
+  }).slice(0, 3);
+  return <div className="demand-home">
+    <p className="demand-section-label">{demandCopy.selected[lang]} · {summary.serviceDateKst} KST</p>
+    <AreaDemandCard summary={summary} area={selected} lang={lang} linkHref={`/${lang}/${selected}`}/>
+    <section className="home-area-briefs" aria-labelledby="home-area-briefs-title">
+      <h2 id="home-area-briefs-title">{contextText(lang,"다른 상권 살펴보기","Explore the districts","查看其他商圈","ほかの商圏を見る")}</h2>
+      <div className="home-area-brief-rows">{AREA_IDS.map(area => {
+        const row = summary.areas[area]?.realtime;
+        const valid = validPopulationRange(row) && kstDay(row!.observedAt) === summary.serviceDateKst;
+        return <button key={area} className={selected === area ? 'selected' : ''} aria-pressed={selected === area} onClick={() => onSelect(area)}>
+          <span>{areaNames[area][lang]}</span><strong>{valid ? demandLevel(row!.congestionLevel, lang) : demandCopy.missing[lang]}</strong>
+          <small>{valid ? `${peopleRange(row!,lang)}${text.foreignPeople[lang]} · ${kstStamp(row!.observedAt)} ${demandCopy.observed[lang]}` : '—'}</small>
+        </button>;
+      })}</div>
+      <p className="flow-note">{contextText(lang,"각 측정 구역의 범위가 달라, 인구 크기로 지역의 인기나 혼잡 밀도를 비교하지 않습니다.","Measured areas differ. Headcounts are not a ranking of popularity or crowd density.","测量区域范围不同，人数不能作为人气或拥挤密度排名。","測定区域が異なるため、人口の大きさで人気や混雑密度は比較できません。")}</p>
+    </section>
+    {changes.length > 0 && <section className="demand-changes"><h2>{contextText(lang,"주목할 변화","Changes to watch","值得关注的变化","注目する変化")}</h2><ul>{changes.map(change => <li key={change.area}><strong>{areaNames[change.area][lang]}</strong><p>{change.line}</p></li>)}</ul></section>}
+    <section className="home-airport"><div className="demand-section-head"><h2>{contextText(lang,"인천공항","Incheon Airport","仁川机场","仁川空港")}</h2><a href={`/${lang}/airport`}>{contextText(lang,"공항 자세히 보기","Explore airport","机场详情","空港の詳細")} →</a></div><AirportAtAGlance summary={summary} lang={lang}/></section>
+    <section className="home-support"><h2>{contextText(lang,"날씨와 주변 일정","Weather and nearby events","天气与周边日程","天気と周辺の予定")}</h2>
+      {supportLines.length ? supportLines.map(line => <p key={line}>{line}</p>) : <p>{contextText(lang,"선택 날짜에 확인된 보조자료가 없습니다.","No supporting data for the selected date.","所选日期暂无辅助资料。","選択日の補足資料はありません。")}</p>}
+      <p className="flow-note">{contextText(lang,"기상청 예보·공식 행사기간 기준. 실제 운영시간은 상세 화면의 공식 안내를 확인하세요.","KMA forecasts and official event periods. Check official links in the area details for operating hours.","按气象厅预测与官方活动期间，实际营业时间请查看地区详情内的官方信息。","気象庁予報・公式イベント期間。実際の開催時間はエリア詳細の公式案内をご確認ください。")}</p>
+      <a href={`/${lang}/${selected}`}>{areaNames[selected][lang]} · {contextText(lang,"날씨·행사·소비·지하철 보기","Weather, events, spending and subway","查看天气、活动、消费及地铁","天気・イベント・消費・地下鉄を見る")} →</a>
+    </section>
+  </div>;
 }
 
 /** `9/1–9/30` from the official start and end dates; start alone when there is no end. */
