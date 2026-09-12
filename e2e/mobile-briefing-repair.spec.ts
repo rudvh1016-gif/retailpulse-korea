@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { SUMMARY_FIXTURE, routeSummary } from './summary-fixture';
+import { SUMMARY_FIXTURE } from './summary-fixture';
 import { PREFERENCE_KEY, type PersonalPreferences } from '../lib/personal-briefing';
 import { pc } from '../lib/personal-copy';
 import type { LiveSummary } from '../app/live-signals';
@@ -10,11 +10,12 @@ async function seed(page: Page, p: PersonalPreferences) {
     if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(p));
   }, { key: PREFERENCE_KEY, p });
 }
-async function fixture(page: Page) {
-  await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
+async function fixture(page: Page, payload: unknown = SUMMARY_FIXTURE) {
+  const data = payload as typeof SUMMARY_FIXTURE;
+  await page.clock.setFixedTime(new Date(data.generatedAt));
   await page.route('**/api/live/summary*', async route => {
-    const date = new URL(route.request().url()).searchParams.get('date') ?? SUMMARY_FIXTURE.todayKst;
-    await route.fulfill({ json: { ...SUMMARY_FIXTURE, serviceDateKst: date, dayRelation: date === SUMMARY_FIXTURE.todayKst ? 'TODAY' : date < SUMMARY_FIXTURE.todayKst ? 'PAST' : 'FUTURE', airport: { ...SUMMARY_FIXTURE.airport, serviceDateKst: date } } });
+    const date = new URL(route.request().url()).searchParams.get('date') ?? data.todayKst;
+    await route.fulfill({ json: { ...data, serviceDateKst: date, dayRelation: date === data.todayKst ? 'TODAY' : date < data.todayKst ? 'PAST' : 'FUTURE', airport: { ...data.airport, serviceDateKst: date } } });
   });
 }
 
@@ -116,8 +117,7 @@ function chartFixture() {
 for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as const) {
   test(`mobile date, chart and safe-area geometry ${lang} ${width}`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 844 });
-    await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
-    await page.route('**/api/live/summary*', routeSummary(chartFixture()));
+    await fixture(page, chartFixture());
     await page.goto(`/${lang}/hongdae`);
     await expect(page.locator('.population-chart')).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
