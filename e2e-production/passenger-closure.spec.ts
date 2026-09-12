@@ -19,7 +19,7 @@ for(const width of [390,1280]) test(`production Seoul and airport truth closure 
   await page.setViewportSize({width,height:900});
   await page.addInitScript(key=>localStorage.setItem(key,JSON.stringify({version:1,role:'manager',location:'myeongdong',selectedLocations:['myeongdong','hongdae','seongsu','airport'],terminal:'all',selectedTerminals:['all'],interests:['passengers','weather','events','crowding'],day:'today',selectedDays:['today','tomorrow','yesterday'],analytics:false})),PREFERENCE_KEY);
   await page.goto('/ko');
-  await page.locator('.personal-existing > summary').click();
+
   for(const area of ['myeongdong','hongdae','seongsu']) {
     await page.locator(`[data-view-location="${area}"]`).click();
     await expect(page.locator('.personal-briefing .area-current-brief, [data-testid="personal-briefing"] .area-current-brief').first()).toBeVisible();

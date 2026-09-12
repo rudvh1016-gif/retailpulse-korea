@@ -130,7 +130,8 @@ test("renders the KORETAIL production shell", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   assert.match(html, /<title>인천공항·명동·홍대·성수 오늘·내일 브리핑 \| KORETAIL<\/title>/i);
   assert.doesNotMatch(html, /codex-preview/i);
-  assert.match(html, /서울과 공항의 흐름/);
+  assert.match(html, /내 브리핑/);
+  assert.doesNotMatch(html, /<section[^>]+class="demand-home"/);
   assert.match(html, /KORETAIL/);
 });
 

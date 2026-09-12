@@ -34,7 +34,7 @@ test('personal briefing gives every Seoul area an at-a-glance explanation', asyn
     }));
   }, { key: PREFERENCE_KEY });
   await fixture(page);
-  await page.goto('/ko');await page.locator('.personal-existing > summary').click();
+  await page.goto('/ko');
 
   const brief = page.getByTestId('personal-briefing');
   const glance = brief.locator('.current-brief');

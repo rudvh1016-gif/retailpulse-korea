@@ -10,7 +10,7 @@ for (const lang of ['ko','en','zh','ja'] as const) {
       const date=new URL(route.request().url()).searchParams.get('date') ?? '2026-08-31';
       await route.fulfill({json:{...SUMMARY_FIXTURE,serviceDateKst:date,dayRelation:date>'2026-08-31'?'FUTURE':'TODAY',airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:date,transferForecast:[{terminal:'T1',serviceDate:date,expectedTransferPassengers:559,retrievedAt:'2026-08-30T08:10:00Z'},{terminal:'T2',serviceDate:date,expectedTransferPassengers:10485,retrievedAt:'2026-08-30T08:10:00Z'}]}}});
     });
-    await page.goto(`/${lang}`);await page.locator('.personal-existing > summary').click();
+    await page.goto(`/${lang}`);
     const personal=page.getByTestId('personal-briefing').locator('.airport-current-brief');
     await expect(personal).toContainText(passengerCopy[tomorrow?'summedSelected':'summedToday'][lang]);
     await expect(personal).toContainText(passengerCopy.arithmeticNote[lang]);
