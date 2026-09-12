@@ -202,6 +202,7 @@ export type SummaryClient = ReadClient & { prepare(sql: string): D1PreparedState
  */
 export async function summarizeLiveSummary(client: SummaryClient, clock: SummaryClock): Promise<Response> {
   const { generatedAt, now, kstNowIso, kstToday, kstHourStart, serviceDate, dayRelation, dayStartAt } = clock;
+  const observedStartAt = [dayStartAt, kstNowIsoOf(new Date(now - 6 * 3_600_000).toISOString())].sort().at(-1)!;
   const statementGroups = {
     sources: [client.prepare(
       `SELECT source_id AS sourceId, status, last_event_at AS eventAt,
@@ -212,11 +213,26 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     holidayRows: [client.prepare('SELECT month,payload,retrieved_at AS retrievedAt FROM holiday_months WHERE month>=? ORDER BY month LIMIT 2').bind(serviceDate.slice(0,7))],
     compositionRows: [client.prepare('SELECT day,payload FROM airport_daily_composition WHERE day IN (?,?)').bind(shiftKstDay(serviceDate,-7),shiftKstDay(serviceDate,-28))],
     realtimeRows: [client.prepare(
-      withAreaBaselines(latestPerKey(AREAS, () => `SELECT area, source_id AS sourceId, schema_version AS schemaVersion, quality_status AS qualityStatus, congestion_level AS congestionLevel, congestion_label AS congestionLabel,
+      withAreaBaselines(latestPerKey(AREAS, () => `SELECT area, area_code AS areaCode, source_id AS sourceId, schema_version AS schemaVersion, quality_status AS qualityStatus, congestion_level AS congestionLevel, congestion_label AS congestionLabel,
         population_min AS populationMin, population_max AS populationMax,
         observed_at AS observedAt, retrieved_at AS retrievedAt
       FROM seoul_realtime_area WHERE area = ? ORDER BY observed_at DESC LIMIT 1`), "seoul_realtime_area", "population_min", "population_max"),
     ).bind(...AREAS)],
+
+    // Existing stored observations were never returned to observedSeries, so
+    // the chart stayed at one point regardless of successful collection.
+    // Read only today's last six hours, at most 73 original five-minute rows
+    // per area, through the existing (area, observed_at) index and D1 batch.
+    observedSeriesRows: [client.prepare(
+      latestPerKey(AREAS, () => `SELECT area, area_code AS areaCode, source_id AS sourceId, schema_version AS schemaVersion,
+        congestion_level AS congestionLevel, congestion_label AS congestionLabel,
+        population_min AS populationMin, population_max AS populationMax, observed_at AS observedAt
+      FROM seoul_realtime_area
+      WHERE area = ? AND ? = 'TODAY' AND observed_at >= ? AND observed_at <= ?
+        AND source_id = 'SEOUL_CITYDATA_PPLTN' AND record_origin = 'LIVE' AND quality_status = 'VALID'
+        AND population_min >= 0 AND population_max >= population_min
+      ORDER BY observed_at DESC LIMIT 73`),
+    ).bind(...AREAS.flatMap(area => [area, dayRelation, observedStartAt, kstNowIso]))],
 
     commercialRows: [client.prepare(
       withAreaBaselines(latestPerKey(AREAS, () => `SELECT area, source_id AS sourceId, schema_version AS schemaVersion, commercial_level AS commercialLevel,
@@ -460,13 +476,13 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     ),
   };
 
-  // Every statement above — 15 blocks plus 3 × 21 picker probes — leaves the
-  // Worker in ONE D1 request. Awaiting them one after another was 18 full
+  // Every statement above, including bounded history and picker probes, leaves
+  // the Worker in ONE D1 request. Awaiting them one after another was 18 full
   // Worker → D1 round trips and, measured on Production, 3.5–4.2 s per
-  // uncached summary (see lib/d1-read-batch.ts). Rows read are unchanged.
+  // uncached summary (see lib/d1-read-batch.ts). History reads are bounded above.
   const { rows: blocks } = await readGroups(client, { ...statementGroups, ...probeGroups });
   const {
-    sources, contextRows, holidayRows, compositionRows, realtimeRows, commercialRows, realtimeForecastRows, weatherRows, eventRows, salesRows,
+    sources, contextRows, holidayRows, compositionRows, realtimeRows, observedSeriesRows, commercialRows, realtimeForecastRows, weatherRows, eventRows, salesRows,
     storeDynamicsRows, foreignPresenceRows, foreignPurposeRows, subwayRows, congestionRows,
     passengerForecastRows: allPassengerForecastRows, historicalFlightCounts, flightRows, scheduledRows, departureScheduleRows, transferRows, flightDateRows, forecastDateRows, observedDateRows,
   } = blocks;
@@ -505,6 +521,9 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     return [area, {
       context,
       realtime: realtime ? { ...realtime, comparisons: areaComparisons(realtime, "populationMin", "populationMax"), freshness: freshnessOf(realtime.observedAt, REALTIME_STALE_MINUTES, now) } : null,
+      observedSeries: realtime?.qualityStatus === 'VALID' ? observedSeriesRows.filter(row => row.area === area
+        && row.areaCode === realtime.areaCode && row.sourceId === realtime.sourceId && row.schemaVersion === realtime.schemaVersion
+        && String(row.observedAt) <= String(realtime.observedAt)).sort((a, b) => String(a.observedAt).localeCompare(String(b.observedAt))) : [],
       commercial: commercial ? { ...commercial, comparisons: areaComparisons(commercial, "paymentAmountMin", "paymentAmountMax"), freshness: freshnessOf(commercial.observedAt, REALTIME_STALE_MINUTES, now) } : null,
       // The whole published horizon, not a "today" slice — see the query note.
       realtimeForecast: realtimeForecastRows.filter((row) => row.area === area && (dayRelation === "TODAY" || String(row.targetAt).slice(0,10) === serviceDate)).slice(0, 12),

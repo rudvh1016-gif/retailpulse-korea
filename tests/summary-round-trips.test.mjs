@@ -102,8 +102,8 @@ test("the whole summary read path is one D1 round trip, and the payload is a cac
     assert.equal(body.mode, "live-summary");
     assert.equal(client.trips.length, 1, `expected one D1 request, saw ${JSON.stringify(client.trips)}`);
     assert.equal(client.trips[0].kind, "batch");
-    // 22 block statements + 3 × 21 date-picker probes, all in the one request.
-    assert.equal(client.trips[0].count, 22 + 3 * 21);
+    // 23 block statements + 3 × 21 date-picker probes, all in the one request.
+    assert.equal(client.trips[0].count, 23 + 3 * 21);
 
     assert.equal(body.areas.myeongdong.realtime.congestionLabel, "약간 붐빔");
     assert.equal(body.areas.myeongdong.realtime.freshness, "LIVE");
@@ -141,7 +141,7 @@ test("a broken statement still isolates to its own block: the page stays live, t
     assert.equal(response.headers.get("cache-control"), SUMMARY_CACHE_CONTROL);
     assert.equal(client.trips[0].kind, "batch", "the single batch is tried first");
     // Then one concurrent wave: one request per group, not the old serial chain.
-    assert.equal(client.trips.length, 1 + 24);
+    assert.equal(client.trips.length, 1 + 25);
   } finally {
     database.close();
     unlinkSync(databasePath);
@@ -190,7 +190,57 @@ test('selected dates never reuse the latest Seoul realtime population as yesterd
     for(const serviceDate of ['2026-09-03','2026-09-05']) {
       const clock={...clockFor(),serviceDate,dayRelation:serviceDate<'2026-09-04'?'PAST':'FUTURE',dayStartAt:`${serviceDate}T00:00:00+09:00`};
       const body=await (await summarizeLiveSummary(new LocalD1Database(database),clock)).json();
-      for(const area of ['myeongdong','hongdae','seongsu']) assert.equal(body.areas[area].realtime,null);
+      for(const area of ['myeongdong','hongdae','seongsu']) {
+        assert.equal(body.areas[area].realtime,null);
+        assert.deepEqual(body.areas[area].observedSeries,[]);
+      }
     }
+  } finally {database.close();unlinkSync(databasePath);}
+});
+
+test('stored recent observations reach the existing chart with their original ranges and times', async () => {
+  const {database,databasePath}=openDatabase('observed-series');
+  try {
+    seed(database);
+    database.exec(`INSERT INTO seoul_realtime_area SELECT 'earlier', source_id, record_origin, area, area_code, area_name, congestion_level, congestion_label, 21000, 24000, '2026-09-04T12:55:00+09:00', retrieved_at, freshness, schema_version, quality_status, 'earlier-hash' FROM seoul_realtime_area WHERE id='r1'`);
+    for(const [id,column,value,at] of [
+      ['wrong-schema','schema_version','other','12:56'],
+      ['wrong-zone','area_code','other','12:57'],
+      ['invalid','quality_status','INVALID','12:58'],
+      ['wrong-source','source_id','other','12:59'],
+      ['forecast-row','record_origin','FORECAST','13:00'],
+      ['old-day','observed_at','2026-09-03T13:10:00+09:00','13:01'],
+    ]) {
+      database.exec(`INSERT INTO seoul_realtime_area SELECT '${id}', source_id, record_origin, area, area_code, area_name, congestion_level, congestion_label, 1, 2, '2026-09-04T${at}:00+09:00', retrieved_at, freshness, schema_version, quality_status, '${id}' FROM seoul_realtime_area WHERE id='r1'`);
+      database.prepare(`UPDATE seoul_realtime_area SET ${column}=? WHERE id=?`).run(value,id);
+    }
+    const body=await (await summarizeLiveSummary(new LocalD1Database(database),clockFor())).json();
+    assert.deepEqual(body.areas.myeongdong.observedSeries.map(row=>[row.observedAt,row.populationMin,row.populationMax]),[
+      ['2026-09-04T12:55:00+09:00',21000,24000],
+      ['2026-09-04T13:10:00+09:00',23000,25000],
+    ]);
+  } finally {database.close();unlinkSync(databasePath);}
+});
+
+test('observation history uses indexed six-hour bounds, caps rows, and never adds a D1 round trip', async () => {
+  const {database,databasePath}=openDatabase('observed-cap');
+  try {
+    seed(database);
+    const insert=database.prepare(`INSERT INTO seoul_realtime_area SELECT ?, source_id, record_origin, area, area_code, area_name, congestion_level, congestion_label, population_min, population_max, ?, retrieved_at, freshness, schema_version, quality_status, ? FROM seoul_realtime_area WHERE id='r1'`);
+    for(let i=1;i<=90;i++) insert.run(`history-${i}`,kstNowIsoOf(new Date(Date.parse('2026-09-04T04:10:00Z')-i*300000).toISOString()),`h-${i}`);
+    insert.run('future','2026-09-04T13:20:00+09:00','future-hash');
+    const client=new LocalD1Database(database), prepared=[];
+    const prepare=client.prepare.bind(client);
+    client.prepare=sql=>{const statement=prepare(sql);prepared.push(statement);return statement;};
+    const body=await (await summarizeLiveSummary(client,clockFor('2026-09-04T04:10:00Z'))).json();
+    const rows=body.areas.myeongdong.observedSeries;
+    assert.equal(rows.length,73);
+    assert.equal(rows[0].observedAt,'2026-09-04T07:10:00+09:00');
+    assert.equal(rows.at(-1).observedAt,'2026-09-04T13:10:00+09:00');
+    assert.equal(client.trips.length,1);
+    const history=prepared.find(statement=>statement.sql.includes('ORDER BY observed_at DESC LIMIT 73'));
+    const plan=database.prepare(`EXPLAIN QUERY PLAN ${history.sql}`).all(...history.values).map(row=>row.detail).join('\n');
+    assert.equal((plan.match(/SEARCH seoul_realtime_area USING INDEX seoul_realtime_area_(?:area_observed_idx|observed_unique)/g)??[]).length,3,plan);
+    assert.doesNotMatch(plan,/SCAN seoul_realtime_area/);
   } finally {database.close();unlinkSync(databasePath);}
 });
