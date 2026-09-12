@@ -188,14 +188,15 @@ test("airport summary keeps forecast, flights, gate and checkpoints truthful on 
   await page.goto("/ko/airport");
   // 첫 줄은 지금 시간대의 출국장 공식 예상 승객, 대기는 짧은 보조 줄.
   await expect(page.locator(".airport-current-brief")).toContainText("출국장 공식 예상 승객");
-  await expect(page.locator(".airport-current-brief")).toContainText("대기 최장 T2 출국장 1B 60+분");
+  await expect(page.locator(".airport-current-brief")).toContainText("현재 대기 관측 · T2 출국장 1B");
+  await expect(page.locator(".airport-wait-brief")).toContainText("60+분");
   await expect(page.locator(".airport-current-brief")).toContainText("출발 운항 561편");
   await expect(page.locator(".airport-current-brief")).not.toContainText("출발 561편");
   await expect(page.locator(".airport-current-brief")).toContainText("전주 동요일 비교 자료 없음");
   await expect(page.locator(".airport-today-grid")).not.toBeVisible();
   await page.locator(".airport-summary-details > summary").click();
-  await expect(page.getByText("출국장 공식 예상 승객", { exact: true })).toBeVisible();
-  await expect(page.getByText("47,320명", { exact: true })).toBeVisible();
+  await expect(page.locator(".airport-today-grid").getByText("출국장 공식 예상 승객", { exact: true })).toBeVisible();
+  await expect(page.locator(".airport-today-grid").getByText("47,320명", { exact: true })).toBeVisible();
   await expect(page.getByText("561편", { exact: true })).toBeVisible();
   await expect(page.getByText(/실제 운항편 기준 · 승객 수 아님/)).toBeVisible();
   const topGateRow = page.locator(".airport-gate-row").first();
@@ -432,7 +433,7 @@ test("the summary states this hour's official expected departing passengers and 
   await expect(headline).toHaveText("금일 출국장 공식 예상 승객 47,320명");
   await expect(brief.locator("strong").nth(1)).toContainText("14:00–15:00 출국장 공식 예상 승객");
   await expect(headline).not.toContainText("대기");
-  await expect(brief).toContainText("대기 최장");
+  await expect(brief).toContainText("현재 대기 관측");
   // 예상치를 관측이라고 부르지 않는다.
   await expect(brief).not.toContainText("관측 출국객");
 });
@@ -479,15 +480,16 @@ test("home gives deterministic current briefs for all three Seoul areas", async 
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko");
-  await expect(page.getByRole("heading", { name: "서울 지금" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "다른 상권 살펴보기" })).toBeVisible();
   const briefs = page.locator(".home-area-briefs");
-  // The metric is named before the number: a bare range beside a congestion
-  // word reads as today's visitor count, which is not what this value is.
-  await expect(briefs.getByRole("button", { name: /명동/ })).toContainText("현재 추정 인구 23,000–25,000명 · 약간 붐빔");
-  await expect(briefs.getByRole("button", { name: /명동/ })).toContainText("오늘 17:00–18:00");
-  await expect(briefs.getByRole("button", { name: /명동/ })).toContainText("비 가능성 60%");
-  await expect(briefs.getByRole("button", { name: /홍대/ })).toContainText("인근 행사 1건 · 일반축제 · 홍대 거리공연");
-  await expect(briefs.getByRole("button", { name: /성수/ })).toContainText("최근 관측 지연");
+  await expect(page.getByTestId('area-demand-card').first()).toContainText('현재 추정 인구');
+  await expect(briefs.getByRole('button', { name: /명동/ })).toContainText('23,000–25,000명');
+  await expect(briefs.getByRole('button', { name: /명동/ })).toContainText('약간 붐빔');
+  await expect(page.locator('.home-support')).toContainText('비 가능성 60%');
+  await briefs.getByRole('button', { name: /홍대/ }).click();
+  await expect(page.locator('.home-support')).toContainText('홍대 거리공연');
+  await briefs.getByRole('button', { name: /성수/ }).click();
+  await expect(page.getByTestId('area-demand-card').first()).toContainText('이전 자료');
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
 
@@ -502,14 +504,14 @@ test("Seoul renders compact arrival forecasts in four languages and no departure
 
   for (const [locale, labels] of Object.entries(expected)) {
     await page.goto(`/${locale}`);
-    await page.locator(".home-area-briefs button").first().click();
+    await page.locator(".demand-card-footer > a").first().click();
     const rows = page.locator(".signal-groups");
     for (const label of labels) await expect(rows.getByText(label, { exact: true })).toBeVisible();
     await expect(rows).toContainText(locale === "ko" ? "41,300명" : "41,300");
   }
 
   await page.goto("/ko");
-  await page.locator(".home-area-briefs button").first().click();
+  await page.locator(".demand-card-footer > a").first().click();
   const rows = page.locator(".signal-groups");
   await expect(rows).toContainText("서울의 특정 지역과 직접 연결되지 않는 배경 참고");
   await expect(rows).toContainText("실제 서울 방문객 수 아님");
@@ -524,7 +526,7 @@ test("partial arrival coverage hides the whole-day total and peak", async ({ pag
   partial.airport.arrivalForecast.forecastCoverage = { all: "PARTIAL", byTerminal: { T1: "PARTIAL", T2: "COMPLETE" } };
   await page.route("**/api/live/summary*", routeSummary(partial));
   await page.goto("/ko");
-  await page.locator(".home-area-briefs button").first().click();
+  await page.locator(".demand-card-footer > a").first().click();
   const rows = page.locator(".signal-groups");
   await expect(rows.getByText("오늘 예상 입국객", { exact: true })).toHaveCount(0);
   await expect(rows.getByText("오늘 예상 입국 피크", { exact: true })).toHaveCount(0);
@@ -546,8 +548,8 @@ test("a forecast peak that falls after midnight is shown and labelled tomorrow",
   ];
   await page.route("**/api/live/summary*", routeSummary(evening));
   await page.goto("/ko");
-  const myeongdong = page.locator(".home-area-briefs").getByRole("button", { name: /명동/ });
-  await expect(myeongdong).toContainText("내일 04:00–05:00");
+  const myeongdong = page.getByTestId("area-demand-card").first();
+  await expect(myeongdong).toContainText("내일 04:00");
   await expect(myeongdong).not.toContainText("확인할 수 없습니다");
 });
 
@@ -557,29 +559,31 @@ test("selecting T1 or T2 changes every top metric, not just the current departur
   await page.goto("/ko/airport");
   await page.locator(".airport-summary-details > summary").click();
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
-  await expect(page.getByText("47,320명", { exact: true })).toBeVisible();
+  await expect(page.locator(".airport-today-grid").getByText("47,320명", { exact: true })).toBeVisible();
   await expect(page.getByText("561편", { exact: true })).toBeVisible();
 
   await page.getByRole("tab", { name: "T1" }).click();
-  await expect(page.locator(".airport-current-brief")).toContainText("대기 최장 출국장 P01 24분");
-  await expect(page.getByText("30,100명", { exact: true })).toBeVisible();
+  await expect(page.locator(".airport-current-brief")).toContainText("현재 대기 관측 · T1 출국장 P01");
+  await expect(page.locator(".airport-wait-brief")).toContainText("24분");
+  await expect(page.locator(".airport-today-grid").getByText("30,100명", { exact: true })).toBeVisible();
   await expect(page.getByText("300편", { exact: true })).toBeVisible();
   await expect(page.locator(".airport-gate-row").first()).toContainText("Gate 27");
-  await expect(page.getByText("47,320명", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".airport-today-grid").getByText("47,320명", { exact: true })).toHaveCount(0);
   await expect(page.getByText("561편", { exact: true })).toHaveCount(0);
   await expect(page.locator(".airport-gate-row")).toHaveCount(2);
   await expect(page.getByText("출국장 1B", { exact: true })).toHaveCount(0);
 
   await page.getByRole("tab", { name: "T2" }).click();
-  await expect(page.locator(".airport-current-brief")).toContainText("대기 최장 출국장 1B 60+분");
-  await expect(page.getByText("17,220명", { exact: true })).toBeVisible();
+  await expect(page.locator(".airport-current-brief")).toContainText("현재 대기 관측 · T2 출국장 1B");
+  await expect(page.locator(".airport-wait-brief")).toContainText("60+분");
+  await expect(page.locator(".airport-today-grid").getByText("17,220명", { exact: true })).toBeVisible();
   await expect(page.getByText("261편", { exact: true })).toBeVisible();
-  await expect(page.getByText("30,100명", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".airport-today-grid").getByText("30,100명", { exact: true })).toHaveCount(0);
   await expect(page.locator(".airport-gate-row")).toHaveCount(1);
   await expect(page.getByText("출국장 1B", { exact: true })).toBeVisible();
 
   await page.getByRole("tab", { name: "전체" }).click();
-  await expect(page.getByText("47,320명", { exact: true })).toBeVisible();
+  await expect(page.locator(".airport-today-grid").getByText("47,320명", { exact: true })).toBeVisible();
 });
 
 test("incomplete A5 daily coverage never renders as a full-day total or peak", async ({ page }) => {
@@ -598,14 +602,14 @@ test("incomplete A5 daily coverage never renders as a full-day total or peak", a
   await page.locator(".airport-summary-details > summary").click();
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await expect(page.locator(".airport-today-grid article").filter({ hasText: "출국장 공식 예상 승객" }).getByText("전체 시간대 확인 불가", { exact: true })).toBeVisible();
-  await expect(page.getByText("공식 예상 데이터 일부 누락").first()).toBeVisible();
+  await expect(page.locator(".airport-forecast .flow-note")).toContainText("일부");
   await expect(page.locator(".airport-current-brief")).toContainText("공식 예상 승객 일부 누락 · 피크 판단 안 함");
-  await expect(page.getByText(/일부 시간대가 누락되어 하루 전체 합계와 피크는 표시하지 않습니다/)).toBeVisible();
-  await expect(page.locator(".airport-timeline")).toHaveCount(0);
-  await expect(page.getByText("47,320명", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".airport-forecast .flow-note")).toContainText("전체");
+  await expect(page.locator(".airport-timeline")).toBeVisible();
+  await expect(page.locator(".airport-today-grid").getByText("47,320명", { exact: true })).toHaveCount(0);
 
   await page.getByRole("tab", { name: "T2" }).click();
-  await expect(page.getByText("17,220명", { exact: true })).toBeVisible();
+  await expect(page.locator(".airport-today-grid").getByText("17,220명", { exact: true })).toBeVisible();
 });
 
 /** 어제 / 오늘 / 내일 / 날짜 선택 must drive the request and stay bounded. */
@@ -641,7 +645,7 @@ test("date navigation switches the service date and explains what a date cannot 
   await expect(page.getByRole("button", { name: "어제" })).toHaveClass(/active/);
   await expect(page.locator(".date-scope-note")).toContainText("지난 날짜는 기록으로만 봅니다");
   await expect(page.locator(".date-scope-note")).toContainText("공식 예상 승객 없음");
-  await expect(page.getByText("47,320명", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".airport-today-grid").getByText("47,320명", { exact: true })).toHaveCount(0);
 
   await page.getByRole("button", { name: "내일" }).click();
   await expect.poll(() => requested.includes("2026-09-01")).toBe(true);
@@ -788,7 +792,7 @@ test("the checklist stacks without overflow on a narrow phone", async ({ page })
 test("commercial activity and events expose their complete truth without a flat clamped row", async ({ page }) => {
   await page.route("**/api/live/events*", routeSummary({ events: SUMMARY_FIXTURE.areas.myeongdong.events, nextOffset: null }));
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  await page.goto("/ko");
+  await page.goto("/ko/myeongdong");
   const commercial = page.locator(".commercial-signal-card");
   await expect(commercial).toContainText("최근 10분 내국인 카드 소비");
   await expect(commercial).toContainText("상태");
@@ -837,7 +841,7 @@ test("a transitional cached payload never promises event cards it did not includ
   transitional.areas.myeongdong.eventCount = 13;
   transitional.areas.myeongdong.events = transitional.areas.myeongdong.events.slice(0, 3);
   await page.route("**/api/live/summary*", routeSummary(transitional));
-  await page.goto("/ko");
+  await page.goto("/ko/myeongdong");
 
   const panel = page.locator(".event-signal-panel");
   await expect(panel).toContainText("13건 공식 행사기간 내·예정");
@@ -849,7 +853,7 @@ test("signal groups keep time meaning and value-source geometry at every require
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   for (const width of [1280, 1440, 1920]) {
     await page.setViewportSize({ width, height: 1000 });
-    await page.goto("/ko");
+    await page.goto("/ko/myeongdong");
     await expect(page.locator(".signal-group-title")).toHaveText(["지금", "이동과 외국인 흐름", "오늘과 다음", "과거 상권 정보"]);
     for (const state of ["실시간/최근", "공식 예상", "지연 공개", "과거 자료"]) {
       await expect(page.getByText(state, { exact: true }).first()).toBeVisible();
@@ -871,7 +875,7 @@ test("signal groups keep time meaning and value-source geometry at every require
   }
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ko");
+  await page.goto("/ko/myeongdong");
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   const panelWidth = await page.locator(".event-signal-panel").evaluate((element) => element.getBoundingClientRect().width);
   const cardWidth = await page.locator(".event-card").first().evaluate((element) => element.getBoundingClientRect().width);
@@ -890,7 +894,7 @@ test("commercial and event controls preserve their meaning in KO EN ZH JA", asyn
     ja: ["直近10分の国内消費者カード決済", "収集済みの全イベントを見る", "詳細を見る", "公式イベントページ"],
   } as const;
   for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
-    await page.goto(`/${locale}`);
+    await page.goto(`/${locale}/myeongdong`);
     for (const phrase of expected[locale].slice(0, 3)) await expect(page.getByText(phrase, { exact: true }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: expected[locale][3] }).first()).toBeVisible();
   }

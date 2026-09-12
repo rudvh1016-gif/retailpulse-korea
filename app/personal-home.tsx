@@ -109,12 +109,13 @@ function SelectedBriefing({p,lang}:{p:PersonalPreferences;lang:PersonalLang}) {
 export default function PersonalHome({lang,children}:{lang:PersonalLang;children:ReactNode}) {
   const {ready,preferences:p,storageFailed}=usePersonalPreferences();
   const [editing,setEditing]=useState(false);
+  const [expanded,setExpanded]=useState(false);
   useEffect(()=>{if(ready)setAnalyticsConsent(p?.analytics??false);},[ready,p?.analytics]);
   if(!ready)return <>{children}</>;
   return <div className="personal-home">
     {children}
-    <details className="personal-existing" open={editing || undefined}><summary>{pc(p ? 'myBriefing' : 'settings',lang)}</summary>
-    {(!p||editing)?<Setup lang={lang} initial={p} onCancel={()=>{setEditing(false);setAnalyticsConsent(p?.analytics??false);}} onDone={()=>setEditing(false)}/>:<SelectedBriefing p={p} lang={lang}/>}
+    <details className="personal-existing" open={expanded} onToggle={event=>setExpanded(event.currentTarget.open)}><summary>{pc(p ? 'myBriefing' : 'settings',lang)}</summary>
+    {expanded&&((!p||editing)?<Setup lang={lang} initial={p} onCancel={()=>{setEditing(false);setExpanded(false);setAnalyticsConsent(p?.analytics??false);}} onDone={()=>setEditing(false)}/>:<SelectedBriefing p={p} lang={lang}/>)}
     {storageFailed&&<p role="status">{pc('storageError',lang)}</p>}
     {p&&!editing&&<details className="personal-settings"><summary>{pc('settings',lang)}</summary><p>{pc(p.role,lang)} · {(p.selectedLocations??[p.location]).map(v=>pc(v,lang)).join(' · ')} · {(p.selectedTerminals??[p.terminal]).map(v=>terminalName(v,lang)).join(' · ')} · {(p.selectedDays??[p.day]).map(v=>pc(v,lang)).join(' · ')}</p><p>{p.interests.map(i=>pc(i,lang)).join(' · ')}</p><p>{pc('remembered',lang)}</p><p>{pc('storageNote',lang)}</p><div className="personal-inline"><button onClick={()=>setEditing(true)}>{pc('edit',lang)}</button><button onClick={()=>{savePersonalPreferences(null);setAnalyticsConsent(false);}}>{pc('reset',lang)}</button></div><AnalyticsChoice lang={lang} value={p.analytics} onChange={value=>{savePersonalPreferences({...p,analytics:value});setAnalyticsConsent(value);}}/><p>{pc('install',lang)}</p><p>{pc('push',lang)}</p><small>{pc('pushNote',lang)}</small></details>}
     </details>

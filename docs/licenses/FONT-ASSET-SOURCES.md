@@ -54,3 +54,13 @@ so a loaded font file with incomplete coverage fails before a release even
 when `document.fonts.check()` would incorrectly report success. Production
 visual validation repeats the check against the then-current public provider
 rows; provider-corpus coverage must be refreshed when those rows add glyphs.
+
+## 2026-09-12 UI copy refresh
+
+The SC/JP 400 and 600 subsets were regenerated from the same SHA-256-verified
+2.004 sources. Their corpus is the union of every previously bundled glyph
+(including the provider snapshot) and all current app/lib product copy.
+The KORETAIL Sans subset was refreshed from the SHA-256-verified full Pretendard
+WOFF2 with the same union policy and its existing renamed name table.
+Existing family names, weights and OFL licenses are retained. This adds missing
+new copy/holiday characters without introducing external font requests.

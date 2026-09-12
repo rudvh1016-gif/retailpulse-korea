@@ -3,6 +3,7 @@ import { SUMMARY_FIXTURE } from './summary-fixture';
 import { PREFERENCE_KEY } from '../lib/personal-briefing';
 
 async function fixture(page: Page) {
+  await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
   await page.route('**/api/live/summary*', async route => {
     const date = new URL(route.request().url()).searchParams.get('date') ?? SUMMARY_FIXTURE.todayKst;
     await route.fulfill({
@@ -33,7 +34,7 @@ test('personal briefing gives every Seoul area an at-a-glance explanation', asyn
     }));
   }, { key: PREFERENCE_KEY });
   await fixture(page);
-  await page.goto('/ko');
+  await page.goto('/ko');await page.locator('.personal-existing > summary').click();
 
   const brief = page.getByTestId('personal-briefing');
   const glance = brief.locator('.current-brief');

@@ -100,7 +100,7 @@ export function AreaDemandCard({ summary, area, lang, linkHref, linkLabel }: { s
   const points = populationFlow({ ...block, serviceDate: summary.serviceDateKst, isToday: summary.dayRelation === 'TODAY', now });
   const realtime = validPopulationRange(block?.realtime) && kstDay(block!.realtime!.observedAt) === summary.serviceDateKst && Date.parse(block!.realtime!.observedAt) <= now ? block!.realtime! : null;
   const age = realtime ? describeObservationAge(realtime.observedAt, new Date(now).toISOString(), lang) : null;
-  const isCurrent = summary.dayRelation === 'TODAY' && age?.isNow && realtime?.freshness !== 'STALE';
+  const isCurrent = summary.dayRelation === 'TODAY' && kstDay(now) === summary.serviceDateKst && age?.isNow && realtime?.freshness !== 'STALE';
   const comparison = usableComparison(realtime, 7), monthComparison = usableComparison(realtime, 28);
   const brief = buildAreaCurrentBrief({ realtime, realtimeForecast: points.filter(p => p.kind === 'forecast').map(p => ({ ...p, targetAt: p.at, congestionLevel: block?.realtimeForecast.find(r => r.targetAt === p.at)?.congestionLevel ?? 0 })), weather: [], eventCount: 0, nowIso: new Date(now).toISOString() });
   const peak = brief.upcomingPeak;

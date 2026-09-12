@@ -296,12 +296,12 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         if (saved) {
           const value = JSON.parse(saved) as Partial<{ lang: Lang; area: AreaId; terminal: Terminal; industry: IndustryId }>;
           if (!initialRoute && value.lang && ["ko", "en", "zh", "ja"].includes(value.lang)) setLang(value.lang);
-          if ((!initialRoute || initialScope === "home") && value.area && Object.hasOwn(areaInfo, value.area)) setSelected(value.area);
+          if ((!initialRoute || (initialScope === "home" && initialView === "today")) && value.area && Object.hasOwn(areaInfo, value.area)) setSelected(value.area);
           if (value.terminal && ["all", "T1", "T2"].includes(value.terminal)) setTerminal(value.terminal);
           if (value.industry && Object.hasOwn(industryProfiles, value.industry)) setIndustry(value.industry);
         }
         const personal = parsePreferences(window.localStorage.getItem(PREFERENCE_KEY));
-        if (initialScope === "home" && personal && Object.hasOwn(areaInfo, personal.location)) setSelected(personal.location as AreaId);
+        if (initialScope === "home" && initialView === "today" && personal && Object.hasOwn(areaInfo, personal.location)) setSelected(personal.location as AreaId);
       } catch {
         // Device-local preferences are optional; the product works without storage.
       } finally {
@@ -313,7 +313,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [initialRoute, initialScope]);
+  }, [initialRoute, initialScope, initialView]);
 
   useEffect(() => {
     document.documentElement.lang = htmlLang[lang];
@@ -362,7 +362,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       const query = new URLSearchParams(window.location.search);
       setServiceDate(/^\d{4}-\d{2}-\d{2}$/.test(query.get('date') ?? '') ? query.get('date') : null);
       if (query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
-      if (['all','T1','T2'].includes(query.get('terminal') ?? '')) setTerminal(query.get('terminal') as Terminal);
+      setTerminal(['T1','T2'].includes(query.get('terminal') ?? '') ? query.get('terminal') as Terminal : 'all');
       const [, locale, slug, routeArea] = window.location.pathname.split("/");
       setHomeVisible(!slug);
       if (!slug) setView("today");
@@ -377,11 +377,11 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  function updateUrl(nextLang: Lang, nextView: View, nextArea: AreaId) {
+  function updateUrl(nextLang: Lang, nextView: View, nextArea: AreaId, nextTerminal: Terminal = terminal) {
     const params = new URLSearchParams();
     if (serviceDate) params.set('date',serviceDate);
     if (nextView === 'predictions') params.set('area',nextArea);
-    if (nextView === 'airport' && terminal !== 'all') params.set('terminal',terminal);
+    if (nextView === 'airport' && nextTerminal !== 'all') params.set('terminal',nextTerminal);
     const nextPath = routeFor(nextLang, nextView, nextArea) + (params.size ? `?${params}` : '');
     if (window.location.pathname + window.location.search !== nextPath) window.history.pushState({}, "", nextPath);
   }
@@ -402,13 +402,13 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   function selectArea(next: AreaId) {
     setHomeVisible(false);
     setSelected(next);
-    if (view === "today" || view === "tourism-desk") updateUrl(lang, view, next);
+    if (view === "today" || view === "tourism-desk" || view === "predictions") updateUrl(lang, view, next);
   }
 
-  function navigate(next: View) {
+  function navigate(next: View, nextTerminal: Terminal = terminal) {
     setHomeVisible(false);
     setView(next);
-    updateUrl(lang, next, selected);
+    updateUrl(lang, next, selected, nextTerminal);
     window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   }
 
@@ -422,7 +422,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   function openAirport(section: AirportSection, preferredTerminal?: Terminal) {
     if (preferredTerminal) setTerminal(preferredTerminal);
     setAirportSection(section);
-    navigate("airport");
+    navigate("airport", preferredTerminal ?? terminal);
   }
 
   return (
@@ -476,7 +476,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           <AirportView
             lang={lang}
             terminal={terminal}
-            setTerminal={setTerminal}
+            setTerminal={next => { setTerminal(next); updateUrl(lang, "airport", selected, next); }}
             section={airportSection}
             setSection={setAirportSection}
             date={serviceDate}
