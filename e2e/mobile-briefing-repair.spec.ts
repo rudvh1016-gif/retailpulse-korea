@@ -56,7 +56,7 @@ test('saving Myeongdong and weather only excludes every unselected area and inte
   await expect(page.locator('.personal-facts [data-interest]')).toHaveCount(1);
   await expect(page.locator('.personal-facts [data-interest]')).toHaveAttribute('data-interest', 'weather');
   await expect(page.locator('.demand-home, .area-current-brief, .airport-current-brief')).toHaveCount(0);
-  await expect(page.getByTestId('personal-briefing')).not.toContainText(/홍대|성수|인천공항/);
+  await expect(page.getByTestId('personal-briefing')).not.toContainText(/홍대|성수|인천공항|내일/);
   await page.reload();
   await expect(page.locator('.personal-place')).toContainText('명동');
   await expect(page.locator('.personal-facts [data-interest]')).toHaveCount(1);
