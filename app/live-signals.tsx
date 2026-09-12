@@ -1,4 +1,5 @@
 "use client";
+import { AreaDemandCard } from "./area-demand-card";
 import { passengerCopy } from "../lib/passenger-copy";
 import { passengerReferenceSum } from "../lib/passenger-reference-sum";
 import { pc } from '../lib/personal-copy';
@@ -2546,10 +2547,6 @@ function formatEventDistance(lang: Lang, event: { distanceM: number | null }): s
   return `${metres}m`;
 }
 
-function formatPeopleRange(lang: Lang, min: number, max: number): string {
-  const locale = airportLocale(lang);
-  return `${min.toLocaleString(locale)}–${max.toLocaleString(locale)}`;
-}
 
 function formatPeopleValue(lang: Lang, value: number): string {
   const locale = airportLocale(lang);
@@ -3032,27 +3029,7 @@ export function AreaCurrentBrief({ lang, area, date = null, linkHref, linkLabel 
 }) {
   const summary = useLiveSummary(date);
   if (!summary) return <LiveLoadMessage loading={summary === undefined} lang={lang} />;
-  const block = summary.areas[area];
-  const brief = buildAreaCurrentBrief({
-    realtime: block?.realtime ?? null,
-    realtimeForecast: block?.realtimeForecast ?? [],
-    weather: block?.weather ?? [],
-    eventCount: block?.eventCount ?? block?.events?.length ?? 0,
-    nextEventTitle: block?.events?.[0]?.title ?? null,
-    nextEventCategory: block?.events?.[0]?.categoryName ?? null,
-    nowIso: summary.generatedAt,
-  });
-  const selectedDay = summary.dayRelation !== "TODAY";
-  const selectedLabel = contextText(lang,"선택일 요약","Selected day summary","所选日期概览","選択日の概要");
-  const copy = localizeAreaBrief(brief, lang, summary.dayRelation !== "TODAY");
-  return <section className="current-brief area-current-brief" aria-label={`${areaNames[area][lang]} ${selectedDay ? selectedLabel : areaBriefText.nowLabel[lang]}`}>
-    <p className="eyebrow">{areaNames[area][lang]} · {selectedDay ? selectedLabel : areaBriefText.nowLabel[lang].toUpperCase()}</p>
-    <strong>{copy.headline}</strong>
-    {copy.lines.map((line) => <p key={line}>{line}</p>)}
-    {block?.realtime && <p className="period-comparison">{comparisonLines(block.realtime.comparisons, lang).join(" · ") || ({ ko: "전주 동요일 비교 자료 없음 · 현재 혼잡도는 서울시 제공 등급", en: "Same-weekday comparison unavailable · crowding is Seoul’s official level", zh: "缺少上周同曜日比较资料 · 当前拥挤程度为首尔市发布等级", ja: "前週同曜日の比較資料なし・混雑度はソウル市の提供指標" })[lang]}</p>}
-    {copy.freshness && <small>{formatHumanFreshness(copy.freshness, summary.generatedAt, lang, "observed")}</small>}
-    {linkHref && linkLabel && <a className="current-brief-link" href={linkHref}>{linkLabel} ↗</a>}
-  </section>;
+  return <AreaDemandCard summary={summary} area={area} lang={lang} linkHref={linkHref} linkLabel={linkLabel}/>;
 }
 
 export default function LiveSignals({ lang, area, date = null }: { lang: Lang; area: AreaId; date?: string | null }) {
@@ -3075,18 +3052,6 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
 
   // The detail screen reuses the same deterministic builder as the home rows,
   // so the same data can never produce two different sentences.
-  const areaBrief = buildAreaCurrentBrief({
-    realtime: block?.realtime ?? null,
-    realtimeForecast: block?.realtimeForecast ?? [],
-    weather: block?.weather ?? [],
-    eventCount: block?.eventCount ?? block?.events?.length ?? 0,
-    nextEventTitle: block?.events?.[0]?.title ?? null,
-    nextEventCategory: block?.events?.[0]?.categoryName ?? null,
-    nowIso: summary.generatedAt,
-  });
-  const selectedDay = summary.dayRelation !== "TODAY";
-  const selectedLabel = contextText(lang,"선택일 요약","Selected day summary","所选日期概览","選択日の概要");
-  const areaBriefCopy = localizeAreaBrief(areaBrief, lang, selectedDay);
 
   /**
    * When a collector last SUCCEEDED, from source health — not from the data
@@ -3103,20 +3068,6 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     summary.sources?.find((source) => source.sourceId === sourceId)?.retrievedAt ?? null;
 
   const rows: SignalRow[] = [];
-
-  if (block?.realtime) {
-    const level = congestionLabels[block.realtime.congestionLevel]?.[lang] ?? block.realtime.congestionLabel;
-    rows.push({
-      key: "realtime",
-      group: "now",
-      timeState: signalStructureText.timeState.recent[lang],
-      label: text.currentPopulation[lang],
-      detail: comparisonLines(block.realtime.comparisons, lang).join(" · ") || undefined,
-      value: `${formatPeopleRange(lang, block.realtime.populationMin, block.realtime.populationMax)}${text.foreignPeople[lang]} · ${level}`,
-      note: `${text.sourceSeoul[lang]} · ${formatHumanFreshness(block.realtime.observedAt, summary.generatedAt, lang, "observed")} · ${text.notCumulative[lang]}`,
-      state: block.realtime.freshness,
-    });
-  }
 
   const commercialRow = buildCommercialSignalRow(lang, block?.commercial, summary.generatedAt);
   const storeDynamicsPresentation = buildStoreDynamicsPresentation(
@@ -3327,19 +3278,12 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
   }
 
   const events = block?.events ?? [];
-  if (!rows.length && !commercialRow && !storeDynamicsPresentation && !events.length) return null;
+
   const groupIds: SignalGroupId[] = ["now", "movement", "today-next", "past"];
 
   return (
     <section className="live-signals" aria-labelledby="live-signals-title">
-      {areaBrief.evidenceTypes.length > 0 && (
-        <section className="current-brief area-current-brief" aria-label={`${areaNames[area][lang]} ${selectedDay ? selectedLabel : areaBriefText.nowLabel[lang]}`}>
-          <p className="eyebrow">{areaNames[area][lang]} · {selectedDay ? selectedLabel : areaBriefText.nowLabel[lang].toUpperCase()}</p>
-          <strong>{areaBriefCopy.headline}</strong>
-          {areaBriefCopy.lines.map((line) => <p key={line}>{line}</p>)}
-          {areaBriefCopy.freshness && <small>{formatHumanFreshness(areaBriefCopy.freshness, summary.generatedAt, lang, "observed")}</small>}
-        </section>
-      )}
+      <AreaDemandCard summary={summary} area={area} lang={lang}/>
       <div className="section-head">
         <div>
           <p className="eyebrow">{text.eyebrow}</p>
