@@ -49,7 +49,9 @@ Hard rules:
 - Heavy Worker Cron work is not authoritative by default; benchmark first.
 - Do not enable duplicate live schedulers for the same source.
 - D1 collectors must not blindly rewrite unchanged rows; semantic changed-only writes must be measured and tested.
-- The only prepared authoritative collector scheduler is `.github/workflows/collect-production.yml`; keep it disabled until account/key/source gates pass. Do not restore Worker Cron in parallel.
+- Scheduling runs on two platforms today, and `npm run health` derives the real graph from configuration: trust it over any prose, including this line. Cloudflare Worker Cron carries five trigger-only expressions that each dispatch one allowlisted workflow and touch no provider and no D1; GitHub Actions cron drives the daily, early-A1, weekly-sales and transfer groups. What the realtime audit removed is the HEAVY Worker `scheduled` handler, not the alarm clock.
+- Never run two timed schedulers for one source. Adding a GitHub `schedule:` block to a workflow the Worker already dispatches creates exactly that, and `tests/scheduler-truth.test.mjs` fails on it.
+- `collect-production.yml` is gated by `vars.ENABLE_PRODUCTION_COLLECTOR`. That Variable is GitHub state, not repository state: report `RUNTIME_ENABLE_STATE_UNKNOWN` from a checkout and never assert that the collector is disabled.
 - Do not keep unlimited repeated raw snapshots; use explicit current/change-history/aggregate/retention classes while preserving audit evidence.
 - Free-tier guardrails are 70% NOTICE / 85% PROTECT / 95% EMERGENCY per resource, and must distinguish official usage from internal estimates.
 - Do not claim `LIVE`, `PASS`, free-tier safety, traffic capacity, or bug-free without evidence.

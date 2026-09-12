@@ -27,6 +27,7 @@
     "db:migrate:staging": "wrangler d1 migrations apply DB --remote --env staging --config wrangler.production.jsonc",
     "db:migrate:production": "wrangler d1 migrations apply DB --remote --env production --config wrangler.production.jsonc",
     "collect:production": "tsx scripts/collect-production.ts",
+    "health": "tsx scripts/health.ts",
     "cf:typegen": "wrangler types --config wrangler.production.jsonc"
   },
   "dependencies": {
