@@ -3,16 +3,23 @@ import { PREFERENCE_KEY } from '../lib/personal-briefing';
 import { passengerCopy } from '../lib/passenger-copy';
 async function expectHeadline(brief: Locator, selected = false) {
   await expect(brief.locator('.airport-brief-total')).toBeVisible();
-  const arithmetic = await brief.locator('.airport-brief-total').getAttribute('data-basis') === 'ARITHMETIC_ONLY';
-  await expect(brief).toContainText(passengerCopy[arithmetic ? selected ? 'summedSelected' : 'summedToday' : selected ? 'selected' : 'today'].ko);
+  await expect(brief.locator('.airport-brief-total')).toContainText(passengerCopy[selected ? 'selected' : 'today'].ko);
+  const reference = brief.locator('.airport-reference-total');
+  const arithmetic = await reference.count() > 0;
   await expect(brief).toContainText(passengerCopy[arithmetic ? 'arithmeticNote' : 'limitation'].ko);
-  if (arithmetic) await expect(brief.locator('.airport-passenger-components')).toContainText(' + ');
+  if (arithmetic) {
+    await expect(reference).toHaveAttribute('data-basis','ARITHMETIC_ONLY');
+    await expect(reference).toContainText(passengerCopy[selected ? 'summedSelected' : 'summedToday'].ko);
+    await expect(brief.locator('.airport-passenger-components')).toContainText(' + ');
+  }
+
 }
 for(const width of [390,1280]) test(`production Seoul and airport truth closure ${width}px`, async({page})=>{
   test.setTimeout(180000);
   await page.setViewportSize({width,height:900});
   await page.addInitScript(key=>localStorage.setItem(key,JSON.stringify({version:1,role:'manager',location:'myeongdong',selectedLocations:['myeongdong','hongdae','seongsu','airport'],terminal:'all',selectedTerminals:['all'],interests:['passengers','weather','events','crowding'],day:'today',selectedDays:['today','tomorrow','yesterday'],analytics:false})),PREFERENCE_KEY);
   await page.goto('/ko');
+  await page.locator('.personal-existing > summary').click();
   for(const area of ['myeongdong','hongdae','seongsu']) {
     await page.locator(`[data-view-location="${area}"]`).click();
     await expect(page.locator('.personal-briefing .area-current-brief, [data-testid="personal-briefing"] .area-current-brief').first()).toBeVisible();
@@ -20,7 +27,7 @@ for(const width of [390,1280]) test(`production Seoul and airport truth closure 
     await page.screenshot({path:`production-visual-results/closure-${area}-${width}.png`,fullPage:false});
   }
   await page.locator('[data-view-location="airport"]').click();
-  await expectHeadline(page.locator('.airport-current-brief'));
+  await expectHeadline(page.getByTestId('personal-briefing').locator('.airport-current-brief'));
   await page.screenshot({path:`production-visual-results/closure-personal-airport-${width}.png`,fullPage:false});
   await page.goto('/ko/airport');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
@@ -43,7 +50,8 @@ for(const width of [390,1280]) test(`production Seoul and airport truth closure 
     await expectHeadline(tomorrowBrief,true);
     const transfers = (selected.airport.transferForecast ?? []).filter((r: {terminal:string; serviceDate:string}) => r.terminal === 'T2' && r.serviceDate === selected.serviceDateKst);
     const total = transfers.length === 1 && selected.airport.forecastCoverage?.byTerminal.T2 === 'COMPLETE' ? tomorrowTotal + transfers[0].expectedTransferPassengers : tomorrowTotal;
-    await expect(tomorrowBrief.locator('.airport-brief-total')).toContainText(`${Math.round(total).toLocaleString('ko-KR')}명`);
+    await expect(tomorrowBrief.locator('.airport-brief-total')).toContainText(`${Math.round(tomorrowTotal).toLocaleString('ko-KR')}명`);
+    if (total !== tomorrowTotal) await expect(tomorrowBrief.locator('.airport-reference-total')).toContainText(`${Math.round(total).toLocaleString('ko-KR')}명`);
   } else {
     // A new KST day can precede the first hourly A5 run. Verify absence truth,
     // not a made-up passenger number merely to satisfy a live-site assertion.
