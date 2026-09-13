@@ -44,6 +44,21 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   await page.locator('.population-chart').scrollIntoViewIfNeeded();
   await page.getByRole('slider').press('End');
   await expect(page.getByRole('slider')).toHaveAttribute('aria-valuetext', /KST/);
+  // The handle and the chart's own selection line must share one real screen x
+  // on the LIVE site, at every position an operator can actually reach — not
+  // only where a fixture happens to place them. Production carries the cadence
+  // a fixture cannot: 5-minute observations, hourly overnight forecast rows and
+  // real gaps. An index-based thumb tracks index/(length-1) while the line
+  // tracks the point's actual time, so the two drift apart exactly there.
+  const thumb = page.locator('.flow-slider-thumb'), selection = page.locator('.flow-selection line');
+  for (const key of ['Home', 'ArrowRight', 'ArrowRight', 'ArrowRight', 'End', 'ArrowLeft', 'ArrowLeft', 'ArrowLeft']) {
+    await page.getByRole('slider').press(key);
+    const at = await page.getByRole('slider').getAttribute('aria-valuetext');
+    const [handle, line] = [await thumb.boundingBox(), await selection.boundingBox()];
+    expect(handle, `handle missing at ${at}`).not.toBeNull();
+    expect(line, `selection line missing at ${at}`).not.toBeNull();
+    expect(Math.abs((handle!.x + handle!.width / 2) - (line!.x + line!.width / 2)), `handle vs selection at ${at}`).toBeLessThanOrEqual(2);
+  }
   await page.screenshot({ path: info.outputPath(`chart-${width}.png`) });
   await page.locator('.population-flow').screenshot({ path: info.outputPath(`chart-panel-${width}.png`) });
   // The same header remains below the real browser-provided inset while scrolling.
