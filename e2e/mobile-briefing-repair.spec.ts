@@ -128,7 +128,7 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     // Apply insets before focus/drag can trigger browser scroll anchoring.
     // This is layout emulation, not a physical iPhone test.
     await page.addStyleTag({ content: ':root { --safe-area-top: 59px; --safe-area-bottom: 34px; }' });
-    await expect(page.locator('.app')).toHaveCSS('padding-top', '59px');
+    await expect(page.locator('.site-header')).toHaveCSS('padding-top', '59px');
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
     await expect.poll(() => page.locator('.topbar').evaluate(el => el.getBoundingClientRect().top)).toBeGreaterThanOrEqual(59);
     const header = await page.locator('.topbar').boundingBox(), title = await page.locator('h1').boundingBox();
@@ -142,6 +142,9 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     await expect(page.locator('.flow-tick-date')).toHaveCount(1);
     await expect(page.locator('.flow-tick-date')).toHaveText('9/1');
     await expect(page.locator('.flow-observed circle')).toHaveCount(1);
+    await expect(page.locator('.flow-observed').first()).toHaveCSS('stroke', 'rgb(17, 17, 17)');
+    await expect(page.locator('.demand-number strong')).toHaveCSS('font-size', '17px');
+    await expect(page.locator('.flow-now rect')).toHaveCount(0);
     const buttons = await page.locator('.date-nav-shortcuts button').evaluateAll(els => els.map(el => { const r = el.getBoundingClientRect(), s = getComputedStyle(el); return { x: r.x, right: r.right, y: r.y, bottom: r.bottom, height: r.height, border: s.borderTopWidth }; }));
     expect(buttons).toHaveLength(3);
     buttons.forEach((r, i) => { expect(r.height).toBeGreaterThanOrEqual(44); expect(r.border).toBe('0px'); if (i) expect(r.x).toBeGreaterThanOrEqual(buttons[i - 1].right); });
@@ -153,6 +156,8 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     await slider.press('End');
     await expect(slider).toHaveAttribute('aria-valuetext', /09-01 03:00/);
     await expect(page.locator('.flow-forecast .flow-bound').first()).toHaveCSS('stroke-dasharray', '4px, 5px');
+    // Each contiguous segment retains its exact range band and only one quiet edge.
+    expect(await page.locator('path.flow-bound').count()).toBe(await page.locator('path.flow-range').count());
     const chart = await page.locator('.population-chart').boundingBox();
     await page.locator('.population-chart').click({ position: { x: 46, y: 100 } });
     await expect(slider).toHaveValue('0');
@@ -182,4 +187,42 @@ for (const width of [390, 1440]) test(`personal home screenshots ${width}`, asyn
   await page.reload();
   await expect(page.getByTestId('personal-briefing')).toBeVisible();
   await page.screenshot({ path: info.outputPath(`personal-${width}.png`) });
+});
+
+for (const width of [360, 390]) test(`owner UI lock across main screens ${width}`, async ({ page }, info) => {
+  test.setTimeout(60_000);
+  await page.setViewportSize({ width, height: 844 });
+  const saved: PersonalPreferences = { ...allDayPreferences, location: 'airport', selectedLocations: ['airport', 'hongdae'], selectedTerminals: ['T2', 'T1'], interests: ['passengers', 'crowding'] };
+  await seed(page, saved); await fixture(page, chartFixture());
+  for (const route of ['', '/hongdae', '/airport', '/predictions', '/forecast', '/more']) {
+    await page.goto(`/ko${route}`);
+    await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
+    await page.addStyleTag({ content: ':root { --safe-area-top: 59px; --safe-area-bottom: 34px; } html { scroll-behavior: auto; }' });
+    await expect(page.locator('.site-header')).toHaveCount(1);
+    await expect(page.locator('.site-header')).toHaveCSS('padding-top', '59px');
+    // Both initial paint and scrolled content must leave the status-bar region clear.
+    for (const top of [0, 250]) {
+      await page.evaluate(y => window.scrollTo({ top: y, behavior: 'instant' }), top);
+      await expect.poll(() => page.locator('.site-header').evaluate(el => el.getBoundingClientRect().top)).toBe(0);
+      expect((await page.locator('.brand').boundingBox())!.y).toBeGreaterThanOrEqual(59);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    if (!route || route === '/airport') {
+      await expect(page.locator('.airport-metric-value')).toBeVisible();
+      await expect(page.locator('.airport-metric-value')).toHaveCSS('font-size', route ? '17px' : '16px');
+    }
+    const controls = page.locator('.personal-switches button, .date-nav-shortcuts button, .area-tabs button, .terminal-selector button, .airport-context-nav button, .prediction-view .segmented button');
+    for (const style of await controls.evaluateAll(els => els.map(el => { const s = getComputedStyle(el); return { top:s.borderTopWidth, left:s.borderLeftWidth, right:s.borderRightWidth, bottom:s.borderBottomWidth, background:s.backgroundColor, height:el.getBoundingClientRect().height }; }))) {
+      expect(style.top).toBe('0px'); expect(style.left).toBe('0px'); expect(style.right).toBe('0px');
+      expect(style.bottom).toBe('1px'); expect(style.background).toBe('rgb(255, 255, 255)'); expect(style.height).toBeGreaterThanOrEqual(44);
+    }
+    if (!route || route === '/airport' || route === '/hongdae') {
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+      await page.screenshot({ path: info.outputPath(`owner-${route.slice(1) || 'personal'}-${width}.png`) });
+    }
+    if (route === '/hongdae') {
+      await page.locator('.flow-inspector').scrollIntoViewIfNeeded();
+      await page.screenshot({ path: info.outputPath(`owner-chart-${width}.png`) });
+    }
+  }
 });
