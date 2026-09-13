@@ -16,6 +16,7 @@ import { summarizeTodayPassengerForecast } from '../lib/airport-today-summary.ts
 import { sha256 } from '../lib/hash.ts';
 import { POPULATION_MODEL } from '../lib/population-predictions.ts';
 import { CloudflareD1RestDatabase } from '../lib/d1-rest.ts';
+import { unstable_splitSqlQuery } from 'wrangler';
 import { saveMeasurement,recordExistingCompletion } from '../lib/operational-bookkeeping.ts';
 import { readForecastEvidence } from '../lib/operational-forecast-evidence.ts';
 import { scanForRuntimeLlm } from '../lib/runtime-llm-scan.ts';
@@ -63,6 +64,15 @@ test('runtime scan catches Groq too, and shipped source remains scan-gated',()=>
 test('empty evidence never healthy',()=>assert.equal(walkLifecycle([]).state,'UNKNOWN'));
 test('evidence is bounded and strips credential assignments/URLs',()=>{const safe=safeOperationalEvidence('token=abc123 password=secret https://provider.invalid/key/'+ 'x'.repeat(1000));assert.ok(safe.length<=500);assert.doesNotMatch(safe,/abc123|password=secret|provider.invalid|x{40}/);});
 test('migration reapplication preserves old and new rows',async()=>{const {db,memory}=setup();await memory.recordEvent(failure());db.raw.exec(readFileSync('drizzle/0020_operational_memory.sql','utf8'));assert.equal((await memory.incidents())[0].occurrenceCount,1);});
+test('actual Wrangler statement splitter preserves the entire trigger and migration marker',async()=>{
+ const db=new SqliteD1(':memory:',false);db.raw.exec('CREATE TABLE d1_migrations(name TEXT)');
+ const sql=readFileSync('drizzle/0020_operational_memory.sql','utf8')+"\nINSERT INTO d1_migrations(name) VALUES('0020_operational_memory.sql');";
+ for(const statement of unstable_splitSqlQuery(sql))db.raw.exec(statement);
+ const memory=new OperationalMemory(db);assert.equal(await memory.available(),true);
+ await memory.recordEvent(failure());await memory.recordEvent(failure('second'));assert.equal((await memory.incidents())[0].occurrenceCount,2);
+ assert.equal(db.raw.prepare('SELECT COUNT(*) n FROM d1_migrations').get().n,1);
+});
+test('partial schema without event trigger stays dormant',async()=>{const {db,memory}=setup();db.raw.exec('DROP TRIGGER operational_event_fold');assert.equal(await memory.available(),false);});
 test('SQL constraint refuses verified recovery with an UNKNOWN layer',async()=>{const {db,memory}=setup();const a=await memory.admit(request());assert.throws(()=>db.raw.prepare("UPDATE operational_recovery_attempts SET verified=1,outcome='RECOVERED',data_valid=1,storage_valid=1,public_valid=NULL WHERE attempt_id=?").run(a.attemptId),/CHECK/);});
 test('ledger serializes without losing historical recurrence',async()=>{const {memory}=setup();await memory.recordEvent(failure());const rows=await memory.incidents();assert.deepEqual(JSON.parse(JSON.stringify(rows)),rows);});
 test('regression candidates and improvement order deterministic',async()=>{const {memory}=setup();for(let i=0;i<4;i++)await memory.recordEvent(failure('r'+i));const rows=await memory.incidents();assert.deepEqual(regressionCandidates(rows),regressionCandidates([...rows].reverse()));assert.equal(regressionCandidates(rows)[0].automaticCodeChangeAllowed,false);});

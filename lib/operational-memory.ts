@@ -50,8 +50,11 @@ export class OperationalMemory {
 
   async available(): Promise<boolean> {
     // Missing migration is a supported dormant state, not a successful write.
-    const result = await this.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('operational_incidents','operational_incident_events','operational_recovery_attempts','operational_source_state','operational_usage_daily')").all();
-    return result.success === true && result.results?.length === 5;
+    const result = await this.db.prepare(`SELECT name FROM sqlite_master WHERE
+      (type='table' AND name IN ('operational_incidents','operational_incident_events','operational_recovery_attempts','operational_source_state','operational_usage_daily'))
+      OR (type='trigger' AND name='operational_event_fold')
+      OR (type='index' AND name IN ('operational_incident_source_idx','operational_event_incident_idx','operational_attempt_budget_idx','operational_attempt_execution_idx','operational_attempt_inflight_idx'))`).all();
+    return result.success === true && result.results?.length === 11;
   }
 
   eventStatement(event: MemoryEvent): D1PreparedStatement {

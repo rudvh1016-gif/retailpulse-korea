@@ -339,6 +339,16 @@ and reported `No migrations to apply!`. Current migration metadata is also print
 existing read-only inspection. Application/deployment evidence belongs in the PR/run logs;
 a committed migration alone is never described as applied.
 
+The first Phase 2 deployment (run 34748715214) stopped before Worker deployment with
+`incomplete input` while applying 0020. The exact installed Wrangler statement splitter
+reproduced the truncated trigger: an unparenthesized CASE expression ended its trigger
+state early. Parenthesizing CASE/END preserves identical SQLite semantics and allows the
+split statements to apply, including the migration marker. A regression executes the
+actual installed splitter, not just SQLite's whole-file parser. No earlier migration or
+metadata is rewritten; the failed 0020 remains idempotent and the next protected deploy
+prints the actual pending migration list first. Memory remains dormant unless all five
+tables, five required indexes and the event trigger exist.
+
 Operational tables never appear in hot public page queries. Source-state/day counters are
 compact; incident events are written only for actual failures/recovery transitions, not for
 every healthy heartbeat. At roughly 500 source observations/day, the two compact UPSERTs
