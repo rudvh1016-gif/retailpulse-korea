@@ -422,8 +422,15 @@ test("ordinary missing-data and stale states are neutral, not alarms", () => {
  *   1. 맨 위 요약이 관측으로 시작한다 — 지금 대기가 가장 긴 곳.
  *   2. 예보에서 나온 모든 값이 자기 입으로 예보라고 말한다.
  * 표를 내린 것이지 지운 것이 아니다. 구역·대기 인원·관측 시각은 그대로 있다.
+ *
+ * 2026-09-13, 소유자 요청: "하루 공식 예상승객 + 시간대별 예상승객 차트를
+ * 핵심 영역으로 통합". 예전에는 시간대별 예보 차트가 airport-today-grid 아래,
+ * 즉 접힌 <details "터미널별 상세·집계 기준 보기"> 다음에 있었다. 하루 합계를
+ * 읽은 사람이 그 합계가 시간대별로 어떻게 갈라지는지 보려면 접힌 블록을
+ * 지나쳐 내려가야 했다. 이제 차트는 요약 바로 아래에 붙고, 상세 격자는 참고
+ * 자료로 그 아래에 남는다. 격자를 지운 것이 아니라 순서를 바꾼 것이다.
  */
-test("공항 페이지는 요약 → 다음 → 구성 → 관측 표 순서로 읽힌다", () => {
+test("공항 페이지는 요약 → 예보 차트 → 상세 격자 → 구성 → 관측 표 순서로 읽힌다", () => {
   const summary = signals.match(/export function AirportTodaySummary[\s\S]*?\n\}/)?.[0] ?? "";
   assert.ok(summary.length > 0);
   const at = (needle) => summary.indexOf(needle);
@@ -435,9 +442,9 @@ test("공항 페이지는 요약 → 다음 → 구성 → 관측 표 순서로 
   for (const [name, index] of [["brief", brief], ["grid", grid], ["forecast", forecast], ["composition", composition], ["checkpoints", checkpoints]]) {
     assert.ok(index > -1, `${name} 섹션이 있어야 한다`);
   }
-  assert.ok(brief < grid, "지금 요약이 가장 먼저");
-  assert.ok(grid < forecast, "예보 차트는 자기가 설명하는 격자 바로 아래");
-  assert.ok(forecast < composition, "구성/이유는 예보 다음");
+  assert.ok(brief < forecast, "지금 요약이 가장 먼저");
+  assert.ok(forecast < grid, "하루 합계를 시간대로 갈라 보여주는 차트가 접힌 상세 격자보다 먼저");
+  assert.ok(grid < composition, "구성/이유는 상세 격자 다음");
   assert.ok(composition < checkpoints, "검색대 상세 표는 참고 자료라 마지막");
   // 게이트·항공사·등록 국가는 최상위로 흩어지지 않고 한 탭 묶음 안에 있다.
   assert.ok(at('className="airport-composition-tabs"') > composition);
@@ -468,15 +475,30 @@ test("하루 전체 합계 다음에는 지금 시간대 출국장 공식 예상
   const localize = signals.match(/function localizeAirportBrief\([\s\S]*?\n\}/)?.[0] ?? "";
   assert.ok(localize.length > 0);
 
-  // 줄 순서가 코드로 고정되어 있다: 지금 시간대 → 증감 → 대기 → 운항 → 남은 예상.
-  assert.match(localize, /\[nowLine, trendLine, waitLine, restLine\]/,
-    "지금 시간대 값이 첫 줄이어야 한다");
+  // 2026-09-13: 지금 시간대 값은 여전히 맨 앞이지만, 자리가 바뀌었다. 이제
+  // 한눈에 보기 그리드의 첫 칸이고, 그 아래 줄들은 그리드가 담지 못하는
+  // 것(피크 대비 비율, 다음 시간대, 대기, 남은 합계)만 말한다. 예전 첫 줄은
+  // 바로 위 칸과 똑같은 숫자를 더 작은 글씨로 한 번 더 찍고 있었다.
+  assert.ok(signals.indexOf('className="airport-glance-strip"') < signals.indexOf('{dayLines.map('),
+    "지금 시간대 값을 담은 그리드가 보조 줄보다 먼저 나와야 한다");
+  assert.match(signals, /<dt>\{contextText\(lang,"현재 시간대 · 공식 예상"/,
+    "그리드 첫 칸이 지금 시간대의 공식 예상이어야 한다");
+  assert.match(signals, /nowBand \? <><b>\{Math\.round\(nowBand\.expectedPassengers\)/,
+    "그리드 첫 칸 숫자는 지금 시간대 예상 승객이어야 한다");
+
+  // 줄 순서가 코드로 고정되어 있다: 피크 대비 → 대기 → 남은 예상.
+  assert.match(localize, /\[trendLine, waitLine, restLine\]/,
+    "지금 시간대가 있으면 보조 줄은 피크 대비 비율로 시작한다");
   // 지금 시간대가 없는 날짜(과거·미래)에는 피크가 대신 열고, 대기가 열지 않는다.
   assert.match(localize, /\[peakLine, waitLine, restLine\]/,
     "지금 시간대가 없어도 요약이 대기로 시작하면 안 된다");
 
+  // 그리드 첫 칸이 가져간 숫자를 아래 줄이 다시 찍지 않는다.
+  assert.ok(!/const nowLine =/.test(localize),
+    "그리드 첫 칸을 그대로 반복하던 줄은 남아 있으면 안 된다");
+
   // 예보에서 나온 값은 스스로 예보라고 말한다.
-  assert.ok(localize.includes("출국장 공식 예상 승객"), "지금 시간대 값은 공식 예상이라고 말해야 한다");
+  assert.ok(localize.includes("출국장 공식 예상 승객"), "피크 줄은 공식 예상이라고 말해야 한다");
   assert.ok(localize.includes("오늘 피크"), "피크 값도 함께 제시되어야 한다");
 
   // 길이: 첫 줄은 숫자를 앞세운 짧은 구절이지 문장이 아니다.

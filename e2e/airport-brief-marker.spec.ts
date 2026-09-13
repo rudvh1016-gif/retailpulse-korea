@@ -23,8 +23,10 @@ for (const clock of ["11:57", "21:03", "23:59"]) {
       await page.getByRole("tab", { name: terminal, exact: true }).click();
       const brief = page.locator(".airport-current-brief");
       await expect(brief.locator("strong").first()).toHaveText(`금일 출국장 공식 예상 승객 ${total}명`);
-      await expect(brief.locator("strong").nth(1)).toContainText(`${clock.slice(0, 2)}:00–`);
-      await expect(brief).toContainText("전주 동요일 비교 자료 없음");
+      // 현재 시간대는 한눈에 보기 줄의 첫 칸이다. 예전에는 요약의 두 번째
+      // <strong> 이었는데, 그 줄이 바로 위 칸을 그대로 반복하고 있어 없앴다.
+      await expect(brief.locator(".airport-glance-strip > div").first()).toContainText(`${clock.slice(0, 2)}:00–`);
+      await expect(brief.locator(".airport-glance-strip")).toContainText("비교 자료 없음");
       await expect(brief).toContainText("출발 운항");
       const style = await brief.locator("strong").first().evaluate(el => ({ weight: getComputedStyle(el).fontWeight, color: getComputedStyle(el).color }));
       expect(Number(style.weight)).toBeGreaterThanOrEqual(600);

@@ -122,9 +122,20 @@ export function PopulationFlow({ points, lang, now }: { points: FlowPoint[]; lan
   }
   const valueText = points.length ? `${kstStamp(active.time)} KST · ${demandCopy[active.kind === 'forecast' ? 'forecast' : 'observed'][lang]} ${peopleRange(active, lang)}${unit}` : '';
   return <figure ref={figure} className="population-flow" aria-labelledby={`${id}-title`}>
-    <figcaption id={`${id}-title`}>{demandCopy.flow[lang]}</figcaption>
-    <div className="flow-legend"><span><i className="observed" />{demandCopy.observed[lang]}</span><span><i className="forecast" />{demandCopy.forecast[lang]}</span><span>{unit.trim()} · KST</span></div>
+    {/* Caption and legend share one row. Stacked separately they read as two
+        headings before the reader reaches a single number. */}
+    <div className="flow-head">
+      <figcaption id={`${id}-title`}>{demandCopy.flow[lang]}</figcaption>
+      <div className="flow-legend"><span><i className="observed" />{demandCopy.observed[lang]}</span><span><i className="forecast" />{demandCopy.forecast[lang]}</span><span className="flow-legend-unit">{unit.trim()} · KST</span></div>
+    </div>
     {!points.length ? <p className="demand-empty">{demandCopy.noFlow[lang]}</p> : <>
+      {/* The selection readout sits directly above the plot rather than under
+          the handle. Below the control it put three separate zones — chart,
+          handle, text — between the eye and the number it had just selected. */}
+      <output className="flow-readout" aria-live="polite" htmlFor={`${id}-time`}>
+        <span className="flow-readout-meta"><span className="flow-selected-time">{kstStamp(active.time).slice(6)} · {demandCopy[active.kind === 'forecast' ? 'forecast' : 'observed'][lang]}</span><small>{kstDay(active.time)} · KST</small></span>
+        <strong title={`${peopleRange(active, lang)}${unit}`}>{compact.format(active.populationMin)}–{compact.format(active.populationMax)} {unit.trim()}</strong>
+      </output>
       <svg className="population-chart" viewBox={`0 0 ${width} 216`} aria-hidden="true"
         onPointerDown={event => { event.currentTarget.setPointerCapture(event.pointerId); selectAt(event.clientX, event.currentTarget.getBoundingClientRect()); }}
         onPointerMove={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) selectAt(event.clientX, event.currentTarget.getBoundingClientRect()); }}
@@ -157,12 +168,15 @@ export function PopulationFlow({ points, lang, now }: { points: FlowPoint[]; lan
           <span className="flow-slider-track" style={{ left, right: width - right }} aria-hidden="true"/>
           <span className="flow-slider-thumb" style={{ left: x(active.time) }} aria-hidden="true"/>
         </div>
-        <output aria-live="polite" htmlFor={`${id}-time`}><span className="flow-selected-time">{kstStamp(active.time).slice(6)} · {demandCopy[active.kind === 'forecast' ? 'forecast' : 'observed'][lang]}</span><strong title={`${peopleRange(active, lang)}${unit}`}>{compact.format(active.populationMin)}–{compact.format(active.populationMax)} {unit.trim()}</strong><small>{kstDay(active.time)} · KST</small></output>
       </div>
     </>}
-    {observed.length === 1 && <p className="flow-note">{demandCopy.noHistory[lang]}</p>}
-    {!observed.length && <p className="flow-note">{demandCopy.missing[lang]}</p>}
-    {forecasts.length > 0 ? <p className="flow-note">{demandCopy.forecast[lang]} · {kstStamp(forecasts[0].at)}–{kstStamp(forecasts.at(-1)!.at)} KST<br/>{[...new Set(forecasts.map(p => p.issuedAt ? `${demandCopy.issued[lang]} ${kstStamp(p.issuedAt)} KST` : demandCopy.unknownIssue[lang]))].join(' · ')}</p> : <p className="flow-note">{demandCopy.noForecast[lang]}</p>}
+    {/* One block, one margin. Three sibling paragraphs each carrying their own
+        spacing was most of the loose whitespace under this chart. */}
+    <div className="flow-notes">
+      {observed.length === 1 && <p className="flow-note">{demandCopy.noHistory[lang]}</p>}
+      {!observed.length && <p className="flow-note">{demandCopy.missing[lang]}</p>}
+      {forecasts.length > 0 ? <p className="flow-note">{demandCopy.forecast[lang]} · {kstStamp(forecasts[0].at)}–{kstStamp(forecasts.at(-1)!.at)} KST<br/>{[...new Set(forecasts.map(p => p.issuedAt ? `${demandCopy.issued[lang]} ${kstStamp(p.issuedAt)} KST` : demandCopy.unknownIssue[lang]))].join(' · ')}</p> : <p className="flow-note">{demandCopy.noForecast[lang]}</p>}
+    </div>
   </figure>;
 }
 
