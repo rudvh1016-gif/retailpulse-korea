@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS operational_incident_events (
 CREATE INDEX IF NOT EXISTS operational_event_incident_idx ON operational_incident_events(fingerprint, at DESC);
 --> statement-breakpoint
 -- Insert-once events make retries atomic: a response lost after commit cannot count twice.
+-- Parenthesized CASE ... END keeps D1/Wrangler's statement splitter inside the trigger.
 CREATE TRIGGER IF NOT EXISTS operational_event_fold AFTER INSERT ON operational_incident_events
 BEGIN
  INSERT INTO operational_incidents(fingerprint,source_id,failure_class,contract_version,logical_job,first_seen,last_seen,last_good_at)
@@ -33,21 +34,21 @@ BEGIN
   occurrence_count=operational_incidents.occurrence_count+1,
   first_seen=MIN(operational_incidents.first_seen,excluded.first_seen),
   last_seen=MAX(operational_incidents.last_seen,excluded.last_seen),
-  current_state=CASE WHEN excluded.last_seen<operational_incidents.last_seen THEN operational_incidents.current_state
-    WHEN operational_incidents.current_state='HUMAN_REVIEW_REQUIRED' THEN 'HUMAN_REVIEW_REQUIRED' ELSE 'OPEN' END,
-  resolved_at=CASE WHEN excluded.last_seen<operational_incidents.last_seen THEN operational_incidents.resolved_at ELSE NULL END,
-  last_good_at=CASE WHEN operational_incidents.last_good_at IS NULL THEN excluded.last_good_at
-    WHEN excluded.last_good_at>operational_incidents.last_good_at THEN excluded.last_good_at ELSE operational_incidents.last_good_at END;
+  current_state=(CASE WHEN excluded.last_seen<operational_incidents.last_seen THEN operational_incidents.current_state
+    WHEN operational_incidents.current_state='HUMAN_REVIEW_REQUIRED' THEN 'HUMAN_REVIEW_REQUIRED' ELSE 'OPEN' END),
+  resolved_at=(CASE WHEN excluded.last_seen<operational_incidents.last_seen THEN operational_incidents.resolved_at ELSE NULL END),
+  last_good_at=(CASE WHEN operational_incidents.last_good_at IS NULL THEN excluded.last_good_at
+    WHEN excluded.last_good_at>operational_incidents.last_good_at THEN excluded.last_good_at ELSE operational_incidents.last_good_at END);
  UPDATE operational_incidents SET
-  recovery_attempts=recovery_attempts+CASE WHEN NEW.kind='RECOVERY_STARTED' THEN 1 ELSE 0 END,
-  current_state=CASE WHEN NEW.at<last_seen THEN current_state
+  recovery_attempts=recovery_attempts+(CASE WHEN NEW.kind='RECOVERY_STARTED' THEN 1 ELSE 0 END),
+  current_state=(CASE WHEN NEW.at<last_seen THEN current_state
     WHEN NEW.kind='RECOVERY_STARTED' THEN 'RECOVERING'
     WHEN NEW.kind='HUMAN_REVIEW' THEN 'HUMAN_REVIEW_REQUIRED'
-    WHEN NEW.verified=1 AND NEW.kind IN ('HEALTHY','RECOVERY_RESULT') THEN 'RESOLVED' ELSE 'DEGRADED' END,
-  resolved_at=CASE WHEN NEW.at<last_seen THEN resolved_at WHEN NEW.verified=1 THEN NEW.at ELSE NULL END,
-  last_good_at=CASE WHEN NEW.verified=1 AND (last_good_at IS NULL OR NEW.at>last_good_at) THEN NEW.at ELSE last_good_at END,
+    WHEN NEW.verified=1 AND NEW.kind IN ('HEALTHY','RECOVERY_RESULT') THEN 'RESOLVED' ELSE 'DEGRADED' END),
+  resolved_at=(CASE WHEN NEW.at<last_seen THEN resolved_at WHEN NEW.verified=1 THEN NEW.at ELSE NULL END),
+  last_good_at=(CASE WHEN NEW.verified=1 AND (last_good_at IS NULL OR NEW.at>last_good_at) THEN NEW.at ELSE last_good_at END),
   last_seen=MAX(last_seen,NEW.at),
-  last_recovery_result=CASE WHEN NEW.kind IN ('RECOVERY_RESULT','HUMAN_REVIEW') THEN NEW.evidence ELSE last_recovery_result END
+  last_recovery_result=(CASE WHEN NEW.kind IN ('RECOVERY_RESULT','HUMAN_REVIEW') THEN NEW.evidence ELSE last_recovery_result END)
  WHERE fingerprint=NEW.fingerprint AND NEW.kind<>'FAILURE';
 END;
 --> statement-breakpoint
