@@ -1668,14 +1668,18 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .flow-day-boundary { stroke: #aaa; stroke-dasharray: 2 4; }
 .flow-now line { stroke: #aaa; stroke-width: .75; stroke-dasharray: 2 5; }
 .flow-now text { fill: var(--muted); font-size: 11px; }
-.flow-selection { stroke: #aaa; stroke-width: .75; stroke-dasharray: 1 5; }
+/* Distinct from .flow-now: darker, tighter dash, so a selection near "now"
+ * never reads as the same dotted line twice (chart audit Section 5). */
+.flow-selection line { stroke: var(--ink); stroke-width: .75; stroke-dasharray: 3 3; opacity: .6; }
 .flow-inspector { margin-top: 0; }
-.flow-inspector input[type="range"] { appearance: none; -webkit-appearance: none; display: block; width: 100%; height: 44px; min-height: 44px; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; cursor: ew-resize; }
-.flow-inspector input[type="range"]::-webkit-slider-runnable-track { height: 1px; background: var(--line); border: 0; }
-.flow-inspector input[type="range"]::-webkit-slider-thumb { appearance: none; -webkit-appearance: none; width: 3px; height: 14px; margin-top: -6.5px; background: var(--muted); border: 0; border-radius: 0; box-shadow: none; }
-.flow-inspector input[type="range"]::-moz-range-track { height: 1px; background: var(--line); border: 0; }
-.flow-inspector input[type="range"]::-moz-range-thumb { width: 3px; height: 14px; background: var(--muted); border: 0; border-radius: 0; box-shadow: none; }
-.flow-inspector input[type="range"]:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+/* Custom slider: its thumb is positioned in JS at the exact x(time) pixel the
+ * SVG plot uses (never at index/(length-1)), so it can never disagree with
+ * the chart's own selection line, however irregular the data cadence is. */
+.flow-slider { position: relative; display: block; width: 100%; height: 44px; min-height: 44px; margin: 0; padding: 0; cursor: ew-resize; touch-action: pan-y; -webkit-tap-highlight-color: transparent; }
+.flow-slider[aria-disabled="true"] { cursor: default; }
+.flow-slider-track { position: absolute; top: 50%; height: 1px; background: var(--line); transform: translateY(-50%); pointer-events: none; }
+.flow-slider-thumb { position: absolute; top: 50%; width: 3px; height: 14px; margin-left: -1.5px; background: var(--muted); transform: translateY(-50%); pointer-events: none; }
+.flow-slider:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
 .flow-inspector output { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 4px 12px; padding: 8px 0 12px; border-bottom: 1px solid var(--line); font-size: 13px; line-height: 1.5; font-variant-numeric: tabular-nums; }
 .flow-inspector output strong { font-size: 14px; color: var(--ink); text-align: right; white-space: nowrap; }
 .flow-inspector output small { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }
@@ -1757,7 +1761,6 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .personal-progress .complete { background: var(--blue); }
 .personal-kicker, .personal-note, .personal-consent p, .personal-settings small, .personal-timezone { color: var(--muted); }
 .personal-home input { accent-color: var(--blue); }
-.personal-home .flow-inspector input { width: 100%; height: auto; }
 .personal-home .demand-card-head h2 { font-size: 17px; }
 .personal-home .demand-home .home-area-brief-rows button { padding: 16px; }
 .personal-existing > summary { font-size: 16px; min-height: 44px; }
