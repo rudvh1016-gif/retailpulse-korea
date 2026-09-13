@@ -29,6 +29,7 @@ import {
 } from "../lib/production-runner";
 import { resolveProductionDatabaseConfig } from "./production-database";
 import { createForeignPurposeMobilitySource } from "./foreign-purpose-mobility-source";
+import { recordExistingCompletion } from '../lib/operational-bookkeeping';
 
 if (process.env.ENABLE_PRODUCTION_COLLECTOR !== "true") {
   throw new Error("production_collector_not_enabled");
@@ -66,7 +67,26 @@ const env = {
   A1_RESCAN_TODAY: process.env.RPK_A1_RESCAN_TODAY === "true",
 };
 
-const results = await runSelectedProductionSources(env, requested);
+const results = [];
+const collectionNow = new Date();
+for (const source of requested) {
+  const startedAt = new Date().toISOString(), before = database.usageSnapshot();
+  const [result] = await runSelectedProductionSources(env, [source], collectionNow);
+  results.push(result);
+  const completedAt = new Date().toISOString(), after = database.usageSnapshot();
+  // Bookkeeping is outside the collector result. Failure never causes an extra provider retry.
+  try {
+    const attempt = Math.max(1, Number(process.env.RPK_OPERATIONAL_ATTEMPT) || 1);
+    const runId = `${process.env.GITHUB_RUN_ID ?? crypto.randomUUID()}-${process.env.GITHUB_RUN_ATTEMPT ?? '1'}-${attempt}:${source}`;
+    const measured = after.unmeasuredStatements === before.unmeasuredStatements;
+    const memory = await recordExistingCompletion(env.DB, result, {runId, startedAt, completedAt, attempt,
+      rowsRead: measured ? after.rowsRead-before.rowsRead : null,
+      rowsWritten: measured ? after.rowsWritten-before.rowsWritten : null});
+    console.log(JSON.stringify({operationalMemory: memory.state, source, sourceCount: memory.sourceCount}));
+  } catch {
+    console.error(JSON.stringify({operationalMemory:'UNKNOWN',source,reason:'bookkeeping failed; collector result preserved; human review required'}));
+  }
+}
 for (const result of results) {
   // One structured, secret-free line per source. `providerRequests: 0` beside
   // SKIPPED_ALREADY_HEALTHY is the proof that a recovery window cost nothing;

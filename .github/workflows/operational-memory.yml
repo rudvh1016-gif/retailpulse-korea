@@ -1,0 +1,39 @@
+name: Operational Memory Inspection
+
+# No schedule, workflow_run or provider secret. Trial-safe manual bookkeeping only.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Read persistent memory, record verified observations, or prove recovery dormant
+        required: true
+        default: inspect
+        type: choice
+        options: [inspect, record, recover]
+
+permissions:
+  contents: read
+concurrency:
+  group: operational-memory-inspection
+  cancel-in-progress: false
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run operations:memory
+        env:
+          RPK_OPERATIONAL_MODE: ${{ inputs.mode }}
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+      - name: Read central evidence after the operation
+        if: inputs.mode != 'recover'
+        run: npm run health:production -- --json
+        env:
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}

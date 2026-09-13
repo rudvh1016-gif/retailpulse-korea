@@ -13,18 +13,19 @@
  *
  * With Production D1 credentials (`CLOUDFLARE_D1_WRITE_TOKEN` or
  * `CLOUDFLARE_API_TOKEN`) it additionally reads `collector_runs` and
- * `source_health` — SELECT only — and evaluates each source through the
+ * `source_health`, bounded canonical data and persisted operational memory — SELECT only — and evaluates each source through the
  * lifecycle. It performs ZERO provider calls, ZERO writes and ZERO deploys, so
  * it is safe to run against production at any time.
  *
  * Usage:
  *   npm run health              human-readable summary
  *   npm run health -- --json    the same report as JSON
+ *   npm run health:production  also compare two read-only KORETAIL public summaries
  */
 import { readFile, readdir } from "node:fs/promises";
 
 import { CloudflareD1RestDatabase } from "../lib/d1-rest";
-import { DIAGNOSTIC_SOURCE_IDS, sanitizeProductionDetail } from "../lib/production-diagnostics";
+import { DIAGNOSTIC_SOURCE_IDS } from "../lib/production-diagnostics";
 import { PRODUCTION_CRONS, workflowForCron } from "../lib/realtime-dispatch";
 import {
   buildSchedulerTruth,
@@ -35,8 +36,11 @@ import {
   type WorkflowFacts,
 } from "../lib/scheduler-truth";
 import { buildHealthReport, summarizeHealthReport, type HealthInputs } from "../lib/operational-health";
-import { applyIncidentEvents, type IncidentEvent } from "../lib/incident-ledger";
-import { evaluateSource, type SourceObservation, type SourceVerdict } from "../lib/source-lifecycle";
+import { OperationalMemory } from '../lib/operational-memory';
+import { measureSource, sourceObservation, canonicalOperationalJob, verifyPublicMeasurement, readPublicEvidence, type SourceMeasurement } from '../lib/operational-evidence';
+import { readForecastEvidence } from '../lib/operational-forecast-evidence';
+import { observedUsage, scoreRecoveryAttempts, regressionCandidates, evaluateShadowPolicy } from '../lib/recovery-scorecard';
+import { evaluateSource, type SourceVerdict } from "../lib/source-lifecycle";
 import { buildWatchdogReport, type Heartbeat } from "../lib/watchdog";
 import { observeQuota, type QuotaObservation, type QuotaVerdict } from "../lib/quota-observation";
 import { scanForRuntimeLlm, isScannableProductionPath } from "../lib/runtime-llm-scan";
@@ -119,97 +123,27 @@ function sourceToWorkflow(workflows: readonly WorkflowFacts[], rawYaml: Map<stri
   return mapping;
 }
 
-interface RunRow {
-  source_id: string;
-  status: string;
-  started_at: string;
-  finished_at: string | null;
-  records_read: number;
-  records_written: number;
-  detail: string | null;
-}
-
-interface HealthRow {
-  source_id: string;
-  status: string;
-  last_retrieved_at: string | null;
-  consecutive_failures: number;
-}
-
-/**
- * Reads live collector state, or returns null when no credentials are present.
- *
- * Returning null rather than throwing is deliberate: a developer running
- * `npm run health` locally should get the offline half of the report, not an
- * error, and the report then says plainly that source state is UNKNOWN.
- */
-async function readLiveState(): Promise<{ runs: RunRow[]; health: HealthRow[] } | null> {
+async function readLiveState() {
   let config: ReturnType<typeof resolveProductionDatabaseConfig>;
-  try {
-    config = resolveProductionDatabaseConfig("production");
-  } catch {
-    return null;
+  try { config=resolveProductionDatabaseConfig('production'); } catch { return null; }
+  const database=new CloudflareD1RestDatabase(config.accountId,config.databaseId,config.apiToken);
+  const db=database as unknown as D1Database;
+  const health=await database.prepare('SELECT source_id FROM source_health ORDER BY source_id LIMIT 100').all<{source_id:string}>();
+  const ids=[...new Set([...Object.values(DIAGNOSTIC_SOURCE_IDS),'SEOUL_CITYDATA_CMRCL',...health.results.map(row=>row.source_id)])];
+  const measurements:SourceMeasurement[]=[];
+  for(const id of ids)measurements.push(await measureSource(db,id,new Date().toISOString()));
+  if(process.argv.includes('--production')) {
+    try {const publicBody=await readPublicEvidence(new Date().toISOString());for(const item of measurements)verifyPublicMeasurement(item,publicBody);}
+    catch { /* unavailable public measurement remains null; never a false pass */ }
   }
-  const database = new CloudflareD1RestDatabase(config.accountId, config.databaseId, config.apiToken);
-  // Bounded, SELECT-only, and ordered so one row per source is the latest run.
-  const runs = await database
-    .prepare(`SELECT source_id, status, started_at, finished_at, records_read, records_written, detail
-      FROM collector_runs ORDER BY started_at DESC LIMIT 400`)
-    .all<RunRow>();
-  const health = await database
-    .prepare(`SELECT source_id, status, last_retrieved_at, consecutive_failures FROM source_health ORDER BY source_id`)
-    .all<HealthRow>();
-  return { runs: runs.results ?? [], health: health.results ?? [] };
-}
-
-function buildSourceVerdicts(
-  live: { runs: RunRow[]; health: HealthRow[] },
-  jobBySource: Map<string, string>,
-  cadence: Map<string, number>,
-  truth: SchedulerTruth,
-  nowIso: string,
-): SourceVerdict[] {
-  const latestRun = new Map<string, RunRow>();
-  for (const row of live.runs) if (!latestRun.has(row.source_id)) latestRun.set(row.source_id, row);
-  const healthById = new Map(live.health.map((row) => [row.source_id, row]));
-  const enablementByWorkflow = new Map(truth.entries.filter((entry) => entry.cron).map((entry) => [entry.workflow, entry.enablement]));
-
-  const sourceIds = [...new Set([...healthById.keys(), ...latestRun.keys()])].sort();
-  return sourceIds.map((sourceId) => {
-    const job = jobBySource.get(sourceId) ?? "unmapped";
-    const run = latestRun.get(sourceId);
-    const health = healthById.get(sourceId);
-    const observation: SourceObservation = {
-      sourceId,
-      job,
-      enablement: enablementByWorkflow.get(job) ?? "SCHEDULE_DEFINED",
-      expectedIntervalMs: cadence.get(job) ?? null,
-      lastRun: run
-        ? {
-            status: run.status,
-            startedAt: run.started_at,
-            finishedAt: run.finished_at,
-            recordsRead: Number(run.records_read ?? 0),
-            recordsWritten: Number(run.records_written ?? 0),
-            detail: run.detail ? sanitizeProductionDetail(run.detail) : null,
-          }
-        : null,
-      health: health
-        ? {
-            status: health.status,
-            lastRetrievedAt: health.last_retrieved_at,
-            consecutiveFailures: Number(health.consecutive_failures ?? 0),
-          }
-        : null,
-      // Storage and publication are measured by the coverage probes and the
-      // public smoke, neither of which this entry point runs. Left unmeasured on
-      // purpose so the verdict stops at UNKNOWN rather than claiming PUBLISHED.
-      storedRows: null,
-      storageReadFailed: false,
-      published: null,
-    };
-    return evaluateSource(observation, nowIso);
-  });
+  const memory=new OperationalMemory(db), available=await memory.available();
+  const incidents=available?await memory.incidents():[];
+  const attempts=available?(await Promise.all(ids.map(id=>memory.attempts(id,new Date(Date.now()-30*86400000).toISOString().slice(0,10))))).flat():[];
+  const usage=available?(await database.prepare('SELECT * FROM operational_usage_daily WHERE day=? ORDER BY source_id').bind(new Date().toISOString().slice(0,10)).all()).results:[];
+  const states=available?(await database.prepare('SELECT source_id,logical_job,checked_at,last_good_at,execution_platform,trigger_evidence FROM operational_source_state ORDER BY source_id LIMIT 100').all()).results:[];
+  let forecast: Awaited<ReturnType<typeof readForecastEvidence>>=[];
+  try {forecast=await readForecastEvidence(db,new Date().toISOString());}catch {forecast=[{targetDate:new Date().toISOString().slice(0,10),state:'UNKNOWN',performanceClaimAllowed:false,detail:'forecast evidence query unavailable'}];}
+  return {measurements,incidents,attempts,usage,states,forecast,memoryState:available?'PERSISTED_READ':'DORMANT_MIGRATION_UNAVAILABLE'};
 }
 
 const nowIso = new Date().toISOString();
@@ -241,11 +175,9 @@ const runtimeLlm = scanForRuntimeLlm(await loadProductionSources(), [
 /**
  * Heartbeats, one per timed scheduler group.
  *
- * `observedByIndependentPlatform` is true only where a job on the OTHER platform
- * can see this one: the Worker-dispatched collectors leave Actions runs that an
- * Actions job can read, and the Actions cron group leaves D1 rows a Worker could
- * read. Nothing observes the platforms themselves, which is why
- * lib/watchdog.ts reports a permanent coverage gap regardless of these values.
+ * A collector completion in D1 does not prove which scheduler triggered it.
+ * No independent trigger receipt is available here, so independence remains
+ * false even when a recent completion is readable on the other platform.
  */
 const heartbeats: Heartbeat[] = truth.entries
   .filter((entry) => entry.cron)
@@ -253,23 +185,27 @@ const heartbeats: Heartbeat[] = truth.entries
     name: `${entry.driver}:${entry.workflow}`,
     lastSeenAt: null,
     expectedIntervalMs: entry.cron ? cronMaxIntervalMs(entry.cron) : null,
-    observedByIndependentPlatform: entry.driver === "WORKER_CRON",
+    observedByIndependentPlatform: false,
   }));
 
 const cadence = cadenceByWorkflow(truth);
 const jobBySource = sourceToWorkflow(workflows, rawYaml);
 const live = await readLiveState();
-const sources = live ? buildSourceVerdicts(live, jobBySource, cadence, truth, nowIso) : [];
+const sources:SourceVerdict[] = live ? live.measurements.map(item=> {
+  const job=canonicalOperationalJob(item.sourceId);
+  return evaluateSource(sourceObservation(item,job,cadence.get(job)??null),nowIso);
+}) : [];
 
 if (live) {
   // A heartbeat is only real when something recorded an execution. With live
   // state, each group's most recent run supplies it.
   const latestByWorkflow = new Map<string, string>();
-  for (const row of live.runs) {
-    const job = jobBySource.get(row.source_id);
+  for (const measured of live.measurements) {
+    const row=measured.run; if(!row)continue;
+    const job = jobBySource.get(measured.sourceId) ?? canonicalOperationalJob(measured.sourceId);
     if (!job) continue;
     const existing = latestByWorkflow.get(job);
-    if (!existing || Date.parse(row.started_at) > Date.parse(existing)) latestByWorkflow.set(job, row.started_at);
+    if (!existing || Date.parse(String(row.started_at)) > Date.parse(existing)) latestByWorkflow.set(job, String(row.started_at));
   }
   for (const beat of heartbeats) {
     const workflow = beat.name.split(":")[1];
@@ -307,47 +243,31 @@ const unwiredDefences = (
   ] as const
 ).filter((candidate) => !allSources.some((file) => file.path !== candidate.module && file.content.includes(candidate.symbol)));
 
-/**
- * The ledger for this run.
- *
- * Folded from the source verdicts rather than stored, because nothing persists
- * it yet: a single run can therefore only ever report `occurrenceCount: 1`, and
- * the repeat counters stay at zero until the ledger is given a D1 table. That
- * limitation is stated here rather than hidden behind a number that looks like a
- * count but is really "this run". The fingerprinting and the counting rules are
- * the part that is finished and tested.
- */
-const incidentEvents: IncidentEvent[] = sources
-  .filter((source) => source.failureClass !== null)
-  .map((source) => ({
-    kind: "FAILURE" as const,
-    at: nowIso,
-    parts: {
-      sourceId: source.sourceId,
-      failureClass: source.failureClass!,
-      contractVersion: "UNKNOWN_CONTRACT",
-      logicalJob: source.job,
-    },
-    runId: `${source.sourceId}@${nowIso}`,
-    evidence: source.walk.trail[source.walk.trail.length - 1]?.evidence ?? "no evidence recorded",
-    lastGoodAt: null,
-  }));
-
+// Read-only health never resets/re-writes recurrence. Completion bookkeeping owns writes.
 const inputs: HealthInputs = {
   nowIso,
   scheduler: truth,
   docDrift,
   sources,
-  incidents: applyIncidentEvents([], incidentEvents),
+  incidents: live?.incidents ?? [],
+  incidentMemoryAvailable: live?.memoryState === 'PERSISTED_READ',
   watchdog: buildWatchdogReport(heartbeats, nowIso),
   quota,
-  forecast: [],
+  forecast: live?.forecast ?? [],
   runtimeLlm,
   unwiredDefences: unwiredDefences.map((entry) => ({ module: entry.module, detail: entry.detail })),
 };
 
-const report = buildHealthReport(inputs);
-console.log(wantsJson ? JSON.stringify(report, null, 2) : summarizeHealthReport(report));
+const report = {...buildHealthReport(inputs),phase2:{
+  memory:live?.memoryState??'UNKNOWN_NO_DATABASE',sourceEvidence:live?.measurements.map(({sample,run,health,...facts})=>({...facts,sampleRows:sample.length,collectorStatus:run?.status??null,sourceStatus:health?.status??null}))??[],
+  lastGood:live?.states??[],scorecard:scoreRecoveryAttempts(live?.attempts??[]),usage:observedUsage(live?.usage??[]),
+  regressionCandidates:regressionCandidates(live?.incidents??[]),automaticPolicyChangeAllowed:false,automaticCodeChangeAllowed:false,
+  centralRecovery:'DORMANT',shadow:(live?.incidents??[]).map(incident=>evaluateShadowPolicy(live?.attempts??[],
+    {sourceId:incident.sourceId,failureClass:incident.failureClass,contractVersion:incident.contractVersion,logicalJob:incident.logicalJob},
+    'REDISPATCH_SAME_WORKFLOW','REQUEST_ONLY_MISSING_COVERAGE')),
+}};
+console.log(wantsJson ? JSON.stringify(report, null, 2) : summarizeHealthReport(report)+
+  `\nPERSISTENT MEMORY: ${report.phase2.memory}\nRECOVERY SCORECARD: ${report.phase2.scorecard.length} groups\nCENTRAL RECOVERY: DORMANT; AUTOMATIC POLICY PROMOTION: false`);
 
 // ERROR is the only exit-code failure. UNKNOWN must not fail the command,
 // because an offline run is legitimately UNKNOWN and a health command that

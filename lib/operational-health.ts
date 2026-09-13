@@ -109,6 +109,8 @@ export interface HealthInputs {
   docDrift: readonly DocDrift[];
   sources: readonly SourceVerdict[];
   incidents: readonly Incident[];
+  /** False means memory was not read, not an empty healthy ledger. */
+  incidentMemoryAvailable?: boolean;
   watchdog: WatchdogReport;
   quota: readonly QuotaVerdict[];
   forecast: readonly ForecastVerdict[];
@@ -161,7 +163,7 @@ export function buildHealthReport(inputs: HealthInputs): HealthReport {
     sources: inputs.sources.length ? rollUp(inputs.sources.map((source) => source.severity)) : "UNKNOWN",
     // The ledger is derived from the source verdicts, so "no incidents" only
     // means anything when at least one source was actually evaluated.
-    incidents: incidentSeverity(inputs.incidents, inputs.sources.length > 0),
+    incidents: incidentSeverity(inputs.incidents, inputs.sources.length > 0 && inputs.incidentMemoryAvailable !== false),
     watchdog: inputs.watchdog.severity,
     quota: quotaSeverity(inputs.quota),
     forecast: forecastSeverity(inputs.forecast),

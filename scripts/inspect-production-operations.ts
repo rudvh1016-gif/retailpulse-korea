@@ -27,6 +27,7 @@ const placeholders = sourceIds.map(() => "?").join(", ");
 
 const { accountId, databaseId, apiToken } = resolveProductionDatabaseConfig("production");
 const database = new CloudflareD1RestDatabase(accountId, databaseId, apiToken);
+const migrations = await database.prepare('SELECT name FROM d1_migrations ORDER BY id DESC LIMIT 5').all();
 
 const runs = await database.prepare(`SELECT source_id, status, started_at, finished_at,
     records_read, records_written, detail
@@ -77,6 +78,7 @@ for (const probe of selectedCoverageProbes) {
 
 console.log(JSON.stringify({
   diagnostic: "production-operations-read-only",
+  migrationState: migrations.results,
   since,
   inspectedSourceIds: sourceIds,
   inspectedCoverageProbes: selectedCoverageProbes.map((probe) => probe.name),
