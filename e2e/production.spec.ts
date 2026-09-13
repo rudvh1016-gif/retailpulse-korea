@@ -192,7 +192,8 @@ test("airport summary keeps forecast, flights, gate and checkpoints truthful on 
   await expect(page.locator(".airport-wait-brief")).toContainText("60+분");
   await expect(page.locator(".airport-current-brief")).toContainText("출발 운항 561편");
   await expect(page.locator(".airport-current-brief")).not.toContainText("출발 561편");
-  await expect(page.locator(".airport-current-brief")).toContainText("전주 동요일 비교 자료 없음");
+  await expect(page.locator(".airport-glance-strip")).toContainText("전주 동요일 대비");
+  await expect(page.locator(".airport-glance-strip")).toContainText("비교 자료 없음");
   await expect(page.locator(".airport-today-grid")).not.toBeVisible();
   await page.locator(".airport-summary-details > summary").click();
   await expect(page.locator(".airport-today-grid").getByText("출국장 공식 예상 승객", { exact: true })).toBeVisible();
@@ -408,9 +409,12 @@ test("the airport page reads summary -> next -> composition -> observation table
   const forecast = await top(".airport-forecast");
   const composition = await top(".airport-composition");
   const checkpoints = await top(".airport-checkpoints");
-  expect(brief).toBeLessThan(grid);
-  expect(grid).toBeLessThan(forecast);
-  expect(forecast).toBeLessThan(composition);
+  expect(brief).toBeLessThan(forecast);
+  // 2026-09-13: 시간대별 차트는 하루 합계를 시간대로 갈라 보여주므로 그 합계를
+  // 실은 요약 바로 아래다. 예전에는 접힌 상세 격자 다음이라, 시간대 모양을
+  // 보려면 닫힌 블록을 지나쳐 내려가야 했다.
+  expect(forecast).toBeLessThan(grid);
+  expect(grid).toBeLessThan(composition);
   // 세 구성 보기는 하나의 탭 묶음 안에 있고, 표는 그 뒤에 남는다.
   expect(composition).toBeLessThan(checkpoints);
   await expect(page.locator(".airport-checkpoints")).toContainText("대기시간");
@@ -428,14 +432,21 @@ test("the summary states this hour's official expected departing passengers and 
   await page.goto("/ko/airport");
   const brief = page.locator(".airport-current-brief");
   await expect(brief).toBeVisible();
-  // 하루 전체를 먼저, 현재 시간대를 두 번째로 강조한다.
+  // 하루 전체를 먼저, 현재 시간대를 두 번째로 강조한다. 현재 시간대는 이제
+  // 한눈에 보기 줄의 첫 칸이며, 값과 시간대를 나눠서 싣는다.
   const headline = brief.locator("strong").first();
   await expect(headline).toHaveText("금일 출국장 공식 예상 승객 47,320명");
-  await expect(brief.locator("strong").nth(1)).toContainText("14:00–15:00 출국장 공식 예상 승객");
+  const nowCell = brief.locator(".airport-glance-strip > div").first();
+  await expect(nowCell).toContainText("현재 시간대 · 공식 예상");
+  await expect(nowCell.locator("b")).toHaveText("5,110명");
+  await expect(nowCell).toContainText("14:00–15:00 KST");
   await expect(headline).not.toContainText("대기");
   await expect(brief).toContainText("현재 대기 관측");
   // 예상치를 관측이라고 부르지 않는다.
   await expect(brief).not.toContainText("관측 출국객");
+  await expect(nowCell).not.toContainText("관측");
+  // 바로 아래 보조 줄이 같은 숫자를 다시 찍지 않는다.
+  await expect(brief.locator(".airport-near-term").first()).not.toContainText("5,110");
 });
 
 /**

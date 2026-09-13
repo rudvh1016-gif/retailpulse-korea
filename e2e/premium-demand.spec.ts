@@ -87,7 +87,14 @@ for (const state of ['forecast-only', 'missing', 'stale', 'comparison-overlap', 
       await expect(page.locator('.airport-timeline')).toBeVisible();
       await expect(page.locator('.airport-brief-total')).toHaveCount(0);
       await expect(page.locator('.airport-current-brief')).toContainText('이후 확인된 시간대 중 최대');
-      await expect(page.locator('.airport-current-brief')).not.toContainText("오늘 피크");
+      // 불완전한 하루에서는 피크를 판단하지 않는다. 한눈에 보기 줄의 피크
+      // 칸은 이름만 남고 값 자리에는 확인 불가가 들어간다. 칸을 통째로 빼면
+      // 읽는 사람은 그 줄이 원래 없는 줄 알고, 옆 칸 숫자를 피크로 읽는다.
+      const peakCell = page.locator('.airport-glance-strip > div').nth(1);
+      await expect(peakCell).toContainText('오늘 피크 · 공식 예상');
+      await expect(peakCell).toContainText('확인 불가');
+      await expect(peakCell.locator('b')).toHaveCount(0);
+      await expect(page.locator('.airport-current-brief')).toContainText('피크 판단 안 함');
     } else {
       const card = page.getByTestId('area-demand-card');
       await expect(card).toBeVisible();

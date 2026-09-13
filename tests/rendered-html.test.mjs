@@ -596,9 +596,14 @@ test("the airport page reads summary, then next, then composition, then the obse
   const countries = signals.indexOf('className="airport-composition-panel airport-countries"');
   const checkpoints = signals.indexOf('className="airport-detail-section airport-checkpoints"');
   assert.ok(brief > 0 && grid > 0 && forecast > 0 && composition > 0 && tabs > 0 && gates > 0 && airlines > 0 && countries > 0 && checkpoints > 0);
-  assert.ok(brief < grid, "the summary opens the page");
-  assert.ok(grid < forecast, "the forecast chart must follow the at-a-glance grid it explains");
-  assert.ok(forecast < composition, "the forecast closes 'next' before the composition group opens");
+  assert.ok(brief < forecast, "the summary opens the page");
+  // 2026-09-13, owner request: the hourly chart is the day total split by
+  // hour, so it belongs directly under the summary carrying that total. It
+  // used to sit below `airport-today-grid`, which lives inside a COLLAPSED
+  // <details>, so a reader who wanted the hourly shape had to scroll past a
+  // closed disclosure to reach it. The grid is reference material below.
+  assert.ok(forecast < grid, "the hourly chart splits the day total and follows it directly");
+  assert.ok(grid < composition, "the detail grid closes 'next' before the composition group opens");
   assert.ok(composition < tabs && tabs < gates && gates < airlines && airlines < countries,
     "three tab panels sit inside the composition group");
   assert.ok(countries < checkpoints, "the checkpoint table is reference material and comes last");
@@ -625,19 +630,32 @@ test("the airport summary states this hour's expected departing passengers, labe
   // The last band of the day has no successor to compare against.
   assert.match(brief, /nextExpectedPassengers: next \? next\.expectedPassengers : null/);
 
-  // The current hour is built in its own block, from the band and nothing else.
-  assert.match(signals, /const nowLine = \(\(\) => \{\s*\n\s*if \(!brief\.nowBand\) return null;/);
-  const nowBlock = signals.match(/const nowLine = \(\(\) => \{([\s\S]*?)\n  \}\)\(\);/)?.[1] ?? "";
-  assert.ok(nowBlock.length > 0);
-  for (const official of ["출국장 공식 예상 승객", "official departure-hall passenger forecast", "出境大厅官方预计旅客", "出国場公式予想旅客"]) {
-    assert.ok(nowBlock.includes(official),
+  // 2026-09-13: this hour moved UP, from the brief's first line into the first
+  // cell of the at-a-glance grid, where it is set in larger type. The line it
+  // replaced printed the same figure again one row lower, in smaller type.
+  const strip = signals.match(/<dl className="airport-glance-strip"([\s\S]*?)<\/dl>/)?.[1] ?? "";
+  assert.ok(strip.length > 0, "the at-a-glance grid must exist");
+  // The first cell reads the band and nothing else — no borrowed neighbour.
+  assert.match(strip, /nowBand \? <><b>\{Math\.round\(nowBand\.expectedPassengers\)/);
+  assert.match(strip, /formatKstBand\(nowBand\.targetStartAt,nowBand\.targetEndAt\)/);
+  for (const official of ["현재 시간대 · 공식 예상", "This hour · official forecast", "当前时段 · 官方预计", "現在の時間帯 · 公式予想"]) {
+    assert.ok(strip.includes(official),
       `${official} must say the number is an official expectation, in every locale`);
   }
   // An expectation is never dressed as an observation or a KORETAIL count.
-  assert.doesNotMatch(nowBlock, /관측|observed|観測|观测/,
+  assert.doesNotMatch(strip, /관측|observed|観測|观测/,
     "a forecast band must not borrow observation wording");
-  // And it LEADS the brief: this hour first, the queue demoted below it.
-  assert.match(signals, /\[nowLine, trendLine, waitLine, restLine\]/);
+  // And it LEADS the brief: this hour first, the supporting lines below it.
+  assert.ok(signals.indexOf('className="airport-glance-strip"') < signals.indexOf("{dayLines.map("),
+    "the grid carrying this hour comes before the lines that support it");
+  assert.match(signals, /\[trendLine, waitLine, restLine\]/);
+  // Nothing below the grid restates the cell above it. Scoped to the departure
+  // brief builder: the ARRIVAL screen has its own unrelated nowLine, and it has
+  // no at-a-glance grid to duplicate.
+  const localize = signals.match(/function localizeAirportBrief\([\s\S]*?\n\}/)?.[0] ?? "";
+  assert.ok(localize.length > 0);
+  assert.doesNotMatch(localize, /const nowLine = /,
+    "the line that duplicated the grid's first cell must be gone");
 });
 
 test("timestamps state what they mean and a forecast band never borrows observation wording", async () => {

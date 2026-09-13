@@ -33,7 +33,7 @@ import { formatRepresentativeStations } from "../lib/subway-ridership";
 import { buildTerminalBriefings, type TerminalBriefing } from "../lib/terminal-briefing";
 import { buildWeatherGuide, worseAirGrade } from "../lib/weather-guide";
 import { describeObservationAge } from "../lib/observation-freshness";
-import { comparisonText, type RangeChange } from "../lib/period-comparison";
+import { comparisonText, comparisonValue, type RangeChange } from "../lib/period-comparison";
 import { averagePaymentRange, commercialActivityContext } from "../lib/commercial-context";
 
 import { useEventPagination, EventPaginationControls } from "./event-pagination";
@@ -892,46 +892,41 @@ function localizeAirportBrief(
    * a long bold sentence that made one checkpoint queue look like the most
    * important fact on the page. It is not. The number an airport retail
    * worker plans a shift around is how many departing passengers the airport
-   * officially expects IN THE HOUR THEY ARE STANDING IN. This is the first
-   * contextual line, immediately below the full-day total in the view.
-   * The queue stays a short supporting line.
+   * officially expects IN THE HOUR THEY ARE STANDING IN. That figure still
+   * leads the view — it is now the first cell of the at-a-glance grid these
+   * lines sit under (2026-09-13), where it is the largest thing on the
+   * screen after the day's total. The queue stays a short supporting line.
    *
    * Every line is trimmed to what it asserts. "…가 오늘 피크입니다 (4,675명)"
    * became "오늘 피크 07:00–08:00 · 4,675명": same facts, no sentence to read
    * through. Nothing was removed except words — no figure, and no basis.
    *
-   * The peak line only appears when there is no current hour to lead with
-   * (a past or future date), because the at-a-glance grid directly below
-   * already carries the day's peak and the lead line already carries this
-   * hour's share OF that peak.
+   * Nothing here restates a grid cell. The line that used to open this list
+   * ("14:00–15:00 출국장 공식 예상 승객 5,110명") printed the grid's first
+   * cell again, one line below it, in smaller type — two identical figures a
+   * reader had to compare before trusting either. The peak line survives for
+   * the dates the grid's current-hour cell cannot fill (a past or future
+   * day), so the list never opens on a queue.
    */
-  const nowLine = (() => {
-    if (!brief.nowBand) return null;
-    const now = brief.nowBand;
-    const band = formatKstBand(now.targetStartAt, now.targetEndAt).replace(" KST", "");
-    const people = Math.round(now.expectedPassengers).toLocaleString(locale);
-    return {
-      ko: `${band} 출국장 공식 예상 승객 ${people}명`,
-      en: `${band} official departure-hall passenger forecast: ${people}`,
-      zh: `${band} 出境大厅官方预计旅客 ${people}人`,
-      ja: `${band} 出国場公式予想旅客 ${people}人`,
-    }[lang];
-  })();
-
   // Share of the day's peak, and where the next hour goes. Stated only from
   // two real bands; the last band of the day says so rather than implying
   // the day simply stops.
+  //
+  // It names its own hour ("현재 시간대 · …") because it no longer follows a
+  // line that did. The share is a RATIO, which is the one thing the grid
+  // above cannot show; both figures it used to quote — this hour's count and
+  // the peak's — are already up there, so quoting them again only made the
+  // reader check whether two identical numbers were really the same fact.
   const trendLine = (() => {
     if (!brief.nowBand) return null;
     const now = brief.nowBand;
     const share = now.peakShare === null ? null : Math.round(now.peakShare * 100);
     const next = now.nextExpectedPassengers === null ? null : Math.round(now.nextExpectedPassengers);
     const nextPeople = next === null ? null : next.toLocaleString(locale);
-    const peakPeople = brief.peak ? Math.round(brief.peak.expectedPassengers).toLocaleString(locale) : null;
     const nextBand = now.nextTargetStartAt && now.nextTargetEndAt ? formatKstBand(now.nextTargetStartAt, now.nextTargetEndAt).replace(" KST", "") : null;
-    const sharePart = share === null || peakPeople === null ? null : {
-      ko: `오늘 피크 ${peakPeople}명의 ${share}%`, en: `${share}% of today's peak (${peakPeople})`,
-      zh: `为今日高峰${peakPeople}人的${share}%`, ja: `本日ピーク${peakPeople}人の${share}%`,
+    const sharePart = share === null ? null : {
+      ko: `현재 시간대 · 오늘 피크의 ${share}%`, en: `This hour · ${share}% of today's peak`,
+      zh: `当前时段 · 为今日高峰的${share}%`, ja: `現在の時間帯 · 本日ピークの${share}%`,
     }[lang];
     const nextPart = nextPeople === null
       ? { ko: "오늘 마지막 시간대", en: "last hour of the day", zh: "今日最后一个时段", ja: "本日最後の時間帯" }[lang]
@@ -997,10 +992,14 @@ function localizeAirportBrief(
     ja: `${formatKstClock(remaining.fromAt)}以降 予想${Math.round(remaining.expectedPassengers).toLocaleString(locale)}人`,
   }[lang] : null;
 
-  // This hour leads when there is one. Otherwise the day's peak does, so the
-  // brief never opens on a queue.
-  const lines = (nowLine
-    ? [nowLine, trendLine, waitLine, restLine]
+  // This hour leads when there is one — as the first cell of the at-a-glance
+  // grid these lines sit under, which states it in larger type than any line
+  // here could. What remains is what the grid cannot hold: the ratio to the
+  // peak, the next band, the queue, the rest of the day. Without a current
+  // hour there is no grid figure to lead with, so the day's peak opens the
+  // lines instead, and the queue still never does.
+  const lines = (trendLine
+    ? [trendLine, waitLine, restLine]
     : [peakLine, waitLine, restLine]
   ).filter((line): line is string => Boolean(line && line.trim()));
   return lines.slice(0, 5);
@@ -1456,19 +1455,20 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
   const flightsAt=airport.departuresTrackedTodayRetrievedAt;
   const passengerCollected=passengerAt?formatHumanFreshness(passengerAt,nowIso,lang,"collected"):null;
   const flightsCollected=flightsAt?formatHumanFreshness(flightsAt,nowIso,lang,"collected"):null;
+  // "현재" only means something on the day being read today; the selector
+  // returns null otherwise rather than dressing a stale hour as now.
+  const nowBand = selectAirportNowBand({
+    timeline,
+    nowIso,
+    peakExpectedPassengers: forecastStatus === "COMPLETE" ? peak?.expectedPassengers ?? null : null,
+    isToday: summary?.dayRelation === "TODAY",
+  });
   const airportBrief = buildAirportCurrentBrief({
     scope: terminal,
     congestion: summary.dayRelation === "TODAY" ? airport.congestion ?? [] : [],
     forecastCoverage: forecastStatus ?? "UNAVAILABLE",
     peak,
-    // "현재" only means something on the day being read today; the selector
-    // returns null otherwise rather than dressing a stale hour as now.
-    nowBand: selectAirportNowBand({
-      timeline,
-      nowIso,
-      peakExpectedPassengers: forecastStatus === "COMPLETE" ? peak?.expectedPassengers ?? null : null,
-      isToday: summary?.dayRelation === "TODAY",
-    }),
+    nowBand,
     departures: flightsCount,
     topGate,
   });
@@ -1479,13 +1479,25 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
   );
   const comparisons = airport.periodComparisons?.[terminal];
   const passengerChanges = ([7, 28] as const).flatMap((days) => comparisons?.[days]?.passengers ? [comparisonText(comparisons[days]!.passengers!, lang, days)] : []);
-  if (!comparisons?.[7]?.passengers) passengerChanges.unshift(({ ko: "전주 동요일 비교 자료 없음", en: "Same weekday last week: comparison unavailable", zh: "缺少上周同曜日比较资料", ja: "前週同曜日の比較資料なし" })[lang]);
+  // No placeholder for a missing 7-day comparison: the grid's third cell says
+  // "비교 자료 없음" in its own right, and this line repeated it word for word
+  // six rows further down. The real comparisons stay here because they carry
+  // the baseline timestamp the grid has no room for.
   const flightChanges = ([7, 28] as const).flatMap((days) => comparisons?.[days]?.flightRecords ? [comparisonText(comparisons[days]!.flightRecords!, lang, days)] : []);
   const recordsOnly = ({ ko: "수집된 출발편 기록 기준 · 전체 운항 증감과 다를 수 있음", en: "Collected departing-flight records; not a complete operational census", zh: "按已采集出发航班记录，非完整运行统计", ja: "収集済み出発便記録による比較・全運航の増減とは異なる場合あり" })[lang];
   const schedule=airport.scheduledBriefing?.serviceDateKst===summary.serviceDateKst&&summary.dayRelation!=="PAST"?airport.scheduledBriefing:null;
   const officialSchedule=schedule?.basis==='OFFICIAL_DEPARTURE_SCHEDULE';
   const planned=isAll?schedule?.ranking.all:schedule?.ranking.byTerminal[terminal];
   const dayLabel=summary.dayRelation==="TODAY"?areaBriefText.nowLabel[lang]:contextText(lang,"선택일 요약","Selected day summary","所选日期概览","選択日の概要");
+  // A past or future date has no "today" to peak in. Both halves are written
+  // out rather than patched into one another by string replacement, which is
+  // how the lines below still do it and is why their Japanese drifted apart.
+  // Not airportTodayText.peak: that is the tile label ("예상 피크"), which
+  // names neither the day nor the basis, and a grid cell this prominent has
+  // to say that the figure is the airport's own forecast.
+  const peakLabel=summary.dayRelation==="TODAY"
+    ?contextText(lang,"오늘 피크 · 공식 예상","Today's peak · official forecast","今日高峰 · 官方预计","本日のピーク · 公式予想")
+    :contextText(lang,"선택일 피크 · 공식 예상","Selected day's peak · official forecast","所选日期高峰 · 官方预计","選択日のピーク · 公式予想");
   const dayLines=airportBriefLines.map(line=>summary.dayRelation==="TODAY"?line:line.replace(contextText(lang,"오늘 피크","Today's peak","今日高峰","本日ピーク"),contextText(lang,"선택일 피크","Selected day's peak","所选日期高峰","選択日のピーク")));
   const upcomingPeak = [...timeline].filter(row => Number.isFinite(row.expectedPassengers) && (summary.dayRelation === "FUTURE" || (summary.dayRelation === "TODAY" && Date.parse(row.targetStartAt) >= Date.parse(nowIso)))).sort((a,b)=>b.expectedPassengers-a.expectedPassengers)[0];
   const checkpoint = airportBrief.checkpoint;
@@ -1497,8 +1509,31 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
       {showPassengers&&<>
       {expectedTotal !== null && forecastStatus === "COMPLETE" ? <strong className="airport-brief-total"><span className="airport-metric-label">{passengerCopy[summary.dayRelation === "TODAY" ? "today" : "selected"][lang]}</span>{" "}<span className="airport-metric-value">{Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}</span></strong> : <p className="airport-data-missing">{forecastStatus === "PARTIAL" ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]}</p>}
       <small className="departure-hall-scope-note">{summary.serviceDateKst} · {scopeLabel} · {passengerCopy.scope[lang]}</small>
-      {dayLines.map((line, index) => index === 0 ? <strong className="airport-brief-current" key={line}>{line}</strong> : <p className="airport-near-term" key={line}>{line}</p>)}
-      {upcomingPeak && <p className="airport-upcoming-peak"><span>{contextText(lang,"이후 확인된 시간대 중 최대","Largest among upcoming available bands","未来已确认时段中最高","今後の確認済み時間帯の中で最多")}</span><b>{formatKstBand(upcomingPeak.targetStartAt,upcomingPeak.targetEndAt)} · {upcomingPeak.expectedPassengers.toLocaleString(numberLocale)}{peopleUnit}</b></p>}
+      {/* The three questions a reader asks of a daily total, on one line and in
+          one scope: what is happening in this hour, when does the day peak, and
+          is that bigger or smaller than the same weekday last week. Every cell
+          reads the SELECTED terminal's own field, so T1 never shows a T1+T2
+          number. A cell whose source is unavailable says so instead of
+          borrowing a neighbouring figure. */}
+      <dl className="airport-glance-strip" data-scope={terminal}>
+        <div><dt>{contextText(lang,"현재 시간대 · 공식 예상","This hour · official forecast","当前时段 · 官方预计","現在の時間帯 · 公式予想")}</dt>
+          <dd>{nowBand ? <><b>{Math.round(nowBand.expectedPassengers).toLocaleString(numberLocale)}{peopleUnit}</b><small>{formatKstBand(nowBand.targetStartAt,nowBand.targetEndAt)}</small></> : <small>{summary.dayRelation === "TODAY" ? airportTodayText.unavailable[lang] : contextText(lang,"오늘이 아닙니다","Not today","非今日","本日ではありません")}</small>}</dd></div>
+        <div><dt>{peakLabel}</dt>
+          <dd>{peak ? <><b>{Math.round(peak.expectedPassengers).toLocaleString(numberLocale)}{peopleUnit}</b><small>{formatKstBand(peak.targetStartAt,peak.targetEndAt)}</small></> : <small>{airportTodayText.unavailable[lang]}</small>}</dd></div>
+        <div><dt>{contextText(lang,"전주 동요일 대비","Vs. same weekday last week","较上周同星期","前週同曜日比")}</dt>
+          <dd>{comparisons?.[7]?.passengers ? <b className="airport-glance-change">{comparisonValue(comparisons[7]!.passengers!)}</b> : <small>{contextText(lang,"비교 자료 없음","Comparison unavailable","缺少比较资料","比較資料なし")}</small>}</dd></div>
+      </dl>
+      {/* All one weight now. The first line used to be bold 16px because it
+          carried this hour's headline figure; the grid above carries that, so
+          keeping the bold here would have put the emphasis on whichever
+          supporting fact happened to come first. */}
+      {dayLines.map(line => <p className="airport-near-term" key={line}>{line}</p>)}
+      {/* Only when the largest band still ahead is NOT the day's peak — that is,
+          once the peak has passed. While the peak is still ahead the two are the
+          same band, and the grid above already shows it; printing it again under
+          a different heading made one fact look like two. A missing peak leaves
+          the grid cell empty, so the upcoming maximum is new information again. */}
+      {upcomingPeak && upcomingPeak.targetStartAt !== peak?.targetStartAt && <p className="airport-upcoming-peak"><span>{contextText(lang,"이후 확인된 시간대 중 최대","Largest among upcoming available bands","未来已确认时段中最高","今後の確認済み時間帯の中で最多")}</span><b>{formatKstBand(upcomingPeak.targetStartAt,upcomingPeak.targetEndAt)} · {upcomingPeak.expectedPassengers.toLocaleString(numberLocale)}{peopleUnit}</b></p>}
       <div className="airport-reference-block">
         {referenceSum && <><p className="airport-reference-total" data-basis="ARITHMETIC_ONLY">{passengerCopy[summary.dayRelation === "TODAY" ? "summedToday" : "summedSelected"][lang]} {referenceSum.total.toLocaleString(numberLocale)}{peopleUnit}</p><small className="airport-passenger-components">({passengerCopy.hallComponent[lang]} {referenceSum.hall.toLocaleString(numberLocale)}{peopleUnit} + {passengerCopy.transferComponent[lang]} {referenceSum.transfer.toLocaleString(numberLocale)}{peopleUnit})</small></>}
         <small className="passenger-transfer-limitation">{passengerCopy[referenceSum ? 'arithmeticNote' : 'limitation'][lang]}</small>
@@ -1604,22 +1639,10 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   return <section className="airport-today" aria-label={airportTodayText.title[lang]}>
     <AirportAtAGlance summary={summary} lang={lang} terminal={terminal}/>
 
-    <details className="airport-summary-details"><summary>{contextText(lang,"터미널별 상세·집계 기준 보기","Terminal details and counting basis","航站楼详情与统计标准","ターミナル詳細・集計基準を見る")}</summary>
-    {isAll && <TerminalBriefingCards lang={lang} airport={airport} nowIso={nowIso} dayRelation={summary?.dayRelation ?? "TODAY"} />}
-    <div className="section-head">
-      <div><p className="eyebrow">OFFICIAL · {scopeLabel} · KST</p><h2 id="airport-today-title">{airportTodayText.title[lang]}</h2></div>
-      <span className="airport-period-label">{airport.serviceDateKst ? formatKstServicePeriod(airport.serviceDateKst, lang) : airportTodayText.unavailable[lang]}</span>
-    </div>
-
-    <div className="airport-today-grid">
-      <article><span>{airportTodayText.expected[lang]}</span><strong data-kind={expectedTotal === null ? "status" : "value"}>{expectedTotal === null ? (isForecastPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]) : `${Math.round(expectedTotal).toLocaleString(numberLocale)}${peopleUnit}`}</strong><small>{isForecastPartial ? airportTodayText.forecastPartialNote[lang] : airportTodayText.expectedNote[lang]}</small>{perMetric(passengerCollected) && <small className="metric-freshness">{passengerCollected}</small>}</article>
-      <article><span>{airportTodayText.peak[lang]}</span><strong data-kind={peak ? "value" : "status"}>{peak ? formatKstBand(peak.targetStartAt, peak.targetEndAt) : airportTodayText.unavailable[lang]}</strong><small>{peak ? `${airportTodayText.peakNote[lang]} · ${Math.round(peak.expectedPassengers).toLocaleString(numberLocale)}${peopleUnit}` : (isForecastPartial ? airportTodayText.forecastPartialNote[lang] : airportTodayText.peakNote[lang])}</small>{perMetric(passengerCollected) && <small className="metric-freshness">{passengerCollected}</small>}</article>
-      <article><span>{airportTodayText.flights[lang]}</span><strong data-kind={flightsCount === null ? "status" : "value"}>{flightsCount === null ? airportTodayText.unavailable[lang] : `${flightsCount.toLocaleString(numberLocale)}${flightUnit}`}</strong><small>{airportTodayText.flightsNote[lang]}</small>{perMetric(flightsCollected) && <small className="metric-freshness">{flightsCollected}</small>}</article>
-      {remaining && <article className="airport-remaining"><span>{airportTodayText.remaining[lang]}</span><strong data-kind="value">{Math.round(remaining.expectedPassengers).toLocaleString(numberLocale)}{peopleUnit}</strong><small>{airportTodayText.remainingNote[lang](formatRemainingWindow(remaining))}</small>{perMetric(passengerCollected) && <small className="metric-freshness">{passengerCollected}</small>}</article>}
-    </div>
-    {sharesOneFreshness && distinctSectionFreshness.length > 0 && <p className="airport-section-freshness">{airportTodayText.retrieved[lang]} · {distinctSectionFreshness[0]}</p>}
-
-    </details>
+    {/* The day's official total and the hour-by-hour shape of that same
+        total are one question, so they are one block. The chart used to sit
+        after a collapsed details element, which put the terminal-by-terminal
+        counting basis between a reader and the curve the headline summarises. */}
     <section className="airport-detail-section airport-forecast" aria-labelledby="airport-forecast-title">
       <div className="airport-detail-head"><div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-forecast-title">{airportTodayText.forecastTitle[lang]}</h3></div><p>{airportTodayText.forecastOnly[lang]}</p></div>
       <p className="flow-note">{summary.serviceDateKst} · {scopeLabel} · {timeline.length ? `${kstStamp(timeline[0].targetStartAt)}–${kstStamp(timeline.at(-1)!.targetEndAt)} KST · ${timeline.length} ${contextText(lang,"개 확인 시간대","available bands","个已确认时段","確認済み時間帯")}` : airportTodayText.unavailable[lang]}{isForecastPartial ? ` · ${airportTodayText.partialBody[lang]}` : ''}</p>
@@ -1640,6 +1663,23 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
           {passengerCollected && <small>{passengerCollected}</small>}
         </div>}
     </section>
+
+    <details className="airport-summary-details"><summary>{contextText(lang,"터미널별 상세·집계 기준 보기","Terminal details and counting basis","航站楼详情与统计标准","ターミナル詳細・集計基準を見る")}</summary>
+    {isAll && <TerminalBriefingCards lang={lang} airport={airport} nowIso={nowIso} dayRelation={summary?.dayRelation ?? "TODAY"} />}
+    <div className="section-head">
+      <div><p className="eyebrow">OFFICIAL · {scopeLabel} · KST</p><h2 id="airport-today-title">{airportTodayText.title[lang]}</h2></div>
+      <span className="airport-period-label">{airport.serviceDateKst ? formatKstServicePeriod(airport.serviceDateKst, lang) : airportTodayText.unavailable[lang]}</span>
+    </div>
+
+    <div className="airport-today-grid">
+      <article><span>{airportTodayText.expected[lang]}</span><strong data-kind={expectedTotal === null ? "status" : "value"}>{expectedTotal === null ? (isForecastPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]) : `${Math.round(expectedTotal).toLocaleString(numberLocale)}${peopleUnit}`}</strong><small>{isForecastPartial ? airportTodayText.forecastPartialNote[lang] : airportTodayText.expectedNote[lang]}</small>{perMetric(passengerCollected) && <small className="metric-freshness">{passengerCollected}</small>}</article>
+      <article><span>{airportTodayText.peak[lang]}</span><strong data-kind={peak ? "value" : "status"}>{peak ? formatKstBand(peak.targetStartAt, peak.targetEndAt) : airportTodayText.unavailable[lang]}</strong><small>{peak ? `${airportTodayText.peakNote[lang]} · ${Math.round(peak.expectedPassengers).toLocaleString(numberLocale)}${peopleUnit}` : (isForecastPartial ? airportTodayText.forecastPartialNote[lang] : airportTodayText.peakNote[lang])}</small>{perMetric(passengerCollected) && <small className="metric-freshness">{passengerCollected}</small>}</article>
+      <article><span>{airportTodayText.flights[lang]}</span><strong data-kind={flightsCount === null ? "status" : "value"}>{flightsCount === null ? airportTodayText.unavailable[lang] : `${flightsCount.toLocaleString(numberLocale)}${flightUnit}`}</strong><small>{airportTodayText.flightsNote[lang]}</small>{perMetric(flightsCollected) && <small className="metric-freshness">{flightsCollected}</small>}</article>
+      {remaining && <article className="airport-remaining"><span>{airportTodayText.remaining[lang]}</span><strong data-kind="value">{Math.round(remaining.expectedPassengers).toLocaleString(numberLocale)}{peopleUnit}</strong><small>{airportTodayText.remainingNote[lang](formatRemainingWindow(remaining))}</small>{perMetric(passengerCollected) && <small className="metric-freshness">{passengerCollected}</small>}</article>}
+    </div>
+    {sharesOneFreshness && distinctSectionFreshness.length > 0 && <p className="airport-section-freshness">{airportTodayText.retrieved[lang]} · {distinctSectionFreshness[0]}</p>}
+
+    </details>
 
 
     {/*

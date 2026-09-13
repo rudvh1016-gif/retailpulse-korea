@@ -13,14 +13,34 @@ export function rangeChange(currentMin: unknown, currentMax: unknown, baselineMi
   return { baselineAt, minPercent: (a / d - 1) * 100, maxPercent: (b / c - 1) * 100 };
 }
 
+/**
+ * The change on its own, with no label and no baseline stamp.
+ *
+ * Exported so a compact cell that already names the comparison in its own
+ * heading can print the number without slicing it back out of the sentence
+ * below. Locale-independent by construction: it is signs and digits only.
+ *
+ * A real change smaller than the printed resolution must not read as "no
+ * change". `(+0.04).toFixed(1)` is "+0.0", which tells a reader the count held
+ * steady when one more person was actually counted. Below the resolution the
+ * sign is still known, so the bound is printed instead of a rounded zero:
+ * `<+0.1%` and `>-0.1%` say "moved, by less than a tenth of a percent".
+ * Exactly zero keeps "0.0%", because that one genuinely is no change.
+ */
+export function comparisonValue(change: RangeChange): string {
+  const signed = (n: number) => {
+    if (n !== 0 && Math.abs(n) < 0.05) return n > 0 ? "<+0.1%" : ">-0.1%";
+    return `${n > 0 ? "+" : ""}${n.toFixed(1)}%`;
+  };
+  return Math.abs(change.minPercent - change.maxPercent) < 0.00001
+    ? signed(change.minPercent) : `${signed(change.minPercent)} ~ ${signed(change.maxPercent)}`;
+}
+
 export function comparisonText(change: RangeChange, lang: "ko" | "en" | "zh" | "ja", days: 7 | 28): string {
   const labels = days === 7
     ? { ko: "전주 동요일", en: "Same weekday last week", zh: "上周同星期", ja: "先週同曜日" }
     : { ko: "4주 전 동요일", en: "Same weekday 4 weeks ago", zh: "4周前同星期", ja: "4週前同曜日" };
-  const signed = (n: number) => `${n > 0 ? "+" : ""}${n.toFixed(1)}%`;
-  const value = Math.abs(change.minPercent - change.maxPercent) < 0.00001
-    ? signed(change.minPercent) : `${signed(change.minPercent)} ~ ${signed(change.maxPercent)}`;
-  return `${labels[lang]} ${value} (${change.baselineAt.replace("T", " ").replace("+09:00", " KST")})`;
+  return `${labels[lang]} ${comparisonValue(change)} (${change.baselineAt.replace("T", " ").replace("+09:00", " KST")})`;
 }
 
 /** Two exact-time index seeks per area; no history scan or extra D1 round trip. */
