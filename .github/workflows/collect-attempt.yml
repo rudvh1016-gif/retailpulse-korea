@@ -65,6 +65,7 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - name: Collect ${{ inputs.sources }} (attempt ${{ inputs.attempt }})
+        id: collect
         run: npm run collect:production
         env:
           ENABLE_PRODUCTION_COLLECTOR: "true"
@@ -74,3 +75,21 @@ jobs:
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
           RPK_A1_MAX_REQUESTS: ${{ inputs.a1_max_requests }}
           RPK_A1_RESCAN_TODAY: ${{ inputs.a1_rescan_today }}
+      # Informational only: never continue-on-error, never touches this job's
+      # own conclusion or the caller workflow's `needs.<job>.result`. GitHub
+      # computes a workflow run's overall red/green from ALL of its jobs, so
+      # this attempt's own failure still makes the run read "failure" even
+      # when a later attempt (a separate job, a fresh runner) succeeds -- that
+      # is correct and must not be hidden. What this step adds is the one
+      # thing the run badge cannot say: this attempt's OWN result, and where
+      # the round's actual, evidence-checked result lives instead.
+      - name: Record this attempt's own result (not the round's final verdict)
+        if: always()
+        run: |
+          {
+            echo "### Attempt ${{ inputs.attempt }} — ${{ inputs.sources }}"
+            echo "- This job's own result: \`${{ steps.collect.outcome }}\`."
+            echo "- This is one attempt, not the collection round. A prior attempt failing and this one succeeding (or vice versa) is normal for the fresh-runner retry design documented in this workflow's header."
+            echo "- The round's actual outcome — whether data was re-validated, storage re-counted and the public surface re-checked — is decided by \`lib/recovery-orchestration.ts\` (\`verifyRecovery\`) against Production D1, never by this GitHub Actions run's overall conclusion badge."
+            echo "- A red run badge here can still mean the round eventually succeeded on a later attempt; a green one never means every attempt in it also succeeded. Check the operational ledger (\`npm run health\`, \`operational_recovery_attempts\`) for the verified result."
+          } >> "$GITHUB_STEP_SUMMARY"

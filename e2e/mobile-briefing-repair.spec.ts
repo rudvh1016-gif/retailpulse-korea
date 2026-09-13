@@ -160,7 +160,15 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     expect(await page.locator('path.flow-bound').count()).toBe(await page.locator('path.flow-range').count());
     const chart = await page.locator('.population-chart').boundingBox();
     await page.locator('.population-chart').click({ position: { x: 46, y: 100 } });
-    await expect(slider).toHaveValue('0');
+    await expect(slider).toHaveAttribute('aria-valuenow', '0');
+    // The custom handle must sit at the same real screen x as the chart's own
+    // selection line, however irregular the observed/forecast cadence is
+    // (5-minute observations mixed with hourly overnight forecast rows).
+    // A native <input type="range"> would put the thumb at index/(length-1)
+    // instead of at the point's actual time, which is the bug this replaces.
+    const thumbBox = await page.locator('.flow-slider-thumb').boundingBox();
+    const selectionBox = await page.locator('.flow-selection line').boundingBox();
+    expect(Math.abs((thumbBox!.x + thumbBox!.width / 2) - (selectionBox!.x + selectionBox!.width / 2))).toBeLessThanOrEqual(2);
     expect(chart!.width).toBeLessThan(width);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     if (lang === 'ko') await page.screenshot({ path: info.outputPath(`hongdae-safe-area-${width}.png`), fullPage: true });
