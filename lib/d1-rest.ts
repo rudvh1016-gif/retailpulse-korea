@@ -123,6 +123,14 @@ class RestPreparedStatement {
  */
 export class CloudflareD1RestDatabase {
   private readonly endpoint: string;
+  private observedRowsRead = 0;
+  private observedRowsWritten = 0;
+  private unmeasuredStatements = 0;
+
+  /** Returned query metadata only; a lower bound, never account-wide daily usage. */
+  usageSnapshot() {
+    return { rowsRead: this.observedRowsRead, rowsWritten: this.observedRowsWritten, unmeasuredStatements: this.unmeasuredStatements };
+  }
 
   constructor(
     accountId: string,
@@ -165,6 +173,12 @@ export class CloudflareD1RestDatabase {
         throw new Error(`d1_query_failed_${code}`);
       }
       if (payload.result.some((result) => result.success === false)) throw new Error("d1_batch_statement_failed");
+      for (const result of payload.result) {
+        const read = result.meta?.rows_read, written = result.meta?.rows_written;
+        if (typeof read === 'number' && Number.isSafeInteger(read) && read >= 0) this.observedRowsRead += read;
+        if (typeof written === 'number' && Number.isSafeInteger(written) && written >= 0) this.observedRowsWritten += written;
+        if (read === undefined || written === undefined) this.unmeasuredStatements += 1;
+      }
       return payload.result;
     }
     throw new Error("d1_retry_exhausted");

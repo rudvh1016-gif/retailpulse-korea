@@ -69,6 +69,7 @@ jobs:
         env:
           ENABLE_PRODUCTION_COLLECTOR: "true"
           RPK_PRODUCTION_SOURCES: ${{ inputs.sources }}
+          RPK_OPERATIONAL_ATTEMPT: ${{ inputs.attempt }}
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
           RPK_A1_MAX_REQUESTS: ${{ inputs.a1_max_requests }}

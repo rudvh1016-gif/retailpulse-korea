@@ -71,3 +71,26 @@ jobs:
           NAVER_SITE_VERIFICATION: ${{ vars.NAVER_SITE_VERIFICATION }}
           RPK_DEPLOYMENT_STAGE: ${{ inputs.stage || 'production' }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      # Piggyback the existing deployment event. No timer, provider secret, retry
+      # or dispatch; operational evidence cannot change the deployed site result.
+      - name: Record post-deployment operational evidence
+        id: memory
+        if: github.event_name == 'workflow_run' || inputs.stage == 'production'
+        continue-on-error: true
+        run: npm run operations:memory
+        env:
+          RPK_OPERATIONAL_MODE: record
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+      - name: Re-read persistent memory in a separate process
+        if: steps.memory.outcome == 'success'
+        continue-on-error: true
+        run: npm run operations:memory
+        env:
+          RPK_OPERATIONAL_MODE: inspect
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+      - name: Report Production operational health separately from deployment
+        if: steps.memory.outcome == 'success'
+        continue-on-error: true
+        run: npm run health:production -- --json
+        env:
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}

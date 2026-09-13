@@ -88,6 +88,10 @@ export interface SourceObservation {
    * and every freshness check, so it needs its own signal.
    */
   scopeMismatch?: string | null;
+  /** Optional direct payload proof. Explicit UNKNOWN must not fall back to run success. */
+  payloadProof?: { valid: boolean | null; failure: FailureState; detail: string };
+  /** A structured collector failure may require human review instead of a retry. */
+  collectionFailure?: FailureState | null;
 }
 
 export const DEFAULT_LEGITIMATE_SKIP_STATUSES = [
@@ -195,10 +199,16 @@ export function buildSourceEvidence(observation: SourceObservation, nowIso: stri
   evidence.push({
     stage: "COLLECTED",
     proven: failedRun ? "DISPROVEN" : "PROVEN",
-    failure: "EXECUTION_ERROR",
+    failure: observation.collectionFailure ?? "EXECUTION_ERROR",
     evidence: `run status ${run.status}, read ${run.recordsRead}, wrote ${run.recordsWritten}`,
   });
   if (failedRun) return evidence;
+
+  if (observation.payloadProof && observation.payloadProof.valid !== true) {
+    evidence.push({ stage: "VALIDATED", proven: observation.payloadProof.valid === false ? "DISPROVEN" : "UNPROVABLE",
+      failure: observation.payloadProof.failure, evidence: observation.payloadProof.detail });
+    return evidence;
+  }
 
   // ── VALIDATED: useful AND current. Two separate ways to fail. ──
   // HTTP 200 with an empty or error body reads as a successful run that read

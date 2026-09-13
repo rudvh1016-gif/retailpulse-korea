@@ -17,6 +17,7 @@
 /** Dependency names that would make a runtime model call possible. */
 export const FORBIDDEN_RUNTIME_LLM_DEPENDENCIES = [
   "openai",
+  "groq-sdk",
   "@anthropic-ai/sdk",
   "@anthropic-ai/bedrock-sdk",
   "@anthropic-ai/vertex-sdk",
@@ -41,6 +42,7 @@ export const FORBIDDEN_RUNTIME_LLM_DEPENDENCIES = [
  */
 export const RUNTIME_LLM_PATTERNS: ReadonlyArray<{ name: string; pattern: RegExp }> = [
   { name: "openai_api_endpoint", pattern: /api\.openai\.com/i },
+  { name: "groq_api_endpoint", pattern: /api\.groq\.com/i },
   { name: "anthropic_api_endpoint", pattern: /api\.anthropic\.com/i },
   { name: "google_generative_endpoint", pattern: /generativelanguage\.googleapis\.com/i },
   { name: "cohere_api_endpoint", pattern: /api\.cohere\.(ai|com)/i },
