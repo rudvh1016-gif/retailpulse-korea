@@ -432,6 +432,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
   return (
     <div className={"app lang-" + lang} data-hydrated={preferencesReady ? "true" : "false"}>
+      <div className="site-header">
       <header className="topbar">
         <button className="brand brand-button" onClick={() => goHome()} aria-label="KORETAIL home">
           <span>KORETAIL</span><span className="brand-descriptor">Retail Demand Signals for Korea</span>
@@ -455,6 +456,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           </label>
         </div>
       </header>
+      </div>
 
       <main className="page-shell">
         {view === "today" && (

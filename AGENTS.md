@@ -62,6 +62,16 @@ Hard rules:
 - If current code conflicts with canonical docs, report and resolve the conflict deliberately rather than silently following an older note.
 - Preserve the existing product/UI direction unless the owner explicitly asks for redesign.
 
+## Owner UI lock — 2026-09-13
+
+Preserve white-first, compact typography, thin rules, restrained spacing and minimal blue.
+Reuse the existing type/weight tokens; do not redesign the typography scale or change a
+font size by 2px or more without owner approval or a demonstrated clipping/accessibility
+defect. Location, day and terminal selection use text with a thin bottom indicator, never
+blue rectangular borders, blue fills or large pills. Population observations are neutral;
+official forecasts use a restrained dashed blue range edge. Preserve exact min/max bands,
+missing intervals and personal preferences. All main screens use the shared safe-area header.
+
 Before push:
 
 - run applicable lint/typecheck/unit/build/render/E2E/secret checks;
