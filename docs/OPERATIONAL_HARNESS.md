@@ -349,6 +349,43 @@ metadata is rewritten; the failed 0020 remains idempotent and the next protected
 prints the actual pending migration list first. Memory remains dormant unless all five
 tables, five required indexes and the event trigger exist.
 
+The closure gate runs **inside the existing protected GitHub Actions deployment** with
+the existing `secrets.CLOUDFLARE_API_TOKEN`. Codex needs no Production token. After the
+recovery bookmark and migration list, `scripts/operational-migration-preflight.ts` makes
+read-only Wrangler queries of `d1_migrations` and `sqlite_master`. Existing object SQL is
+compared with the corrected 0020 definition by tokens, preserving quoted values. Only
+whitespace, comments, keyword case and SQLite's removal of `IF NOT EXISTS` are ignored;
+unproven semantic equivalence is rejected, not silently rewritten. Unexpected triggers on
+the five operational tables also stop deployment. No raw query/provider payload or token
+is logged: the report contains migration filenames, object names, counts and gate reasons.
+
+| Classification | Required action |
+|---|---|
+| STATE_A_EMPTY_PENDING | SAFE_TO_APPLY after confirmed empty schema and pending registration |
+| STATE_B_PARTIAL_PENDING | SAFE_TO_APPLY only for compatible existing definitions and safe resume evidence |
+| STATE_C_FULL_PENDING | SAFE_TO_APPLY only after all definitions match; Wrangler registers it normally |
+| STATE_D_FULL_APPLIED | ALREADY_VALID only for the complete compatible schema; no replay of applied 0020 |
+| STATE_E_APPLIED_INCOMPLETE | UNSAFE; stop before migration/deployment |
+| STATE_F_UNKNOWN | UNSAFE; failed/malformed/unavailable inspection never means an empty database |
+
+Incompatible definitions stop in every state. For a pending partial schema, existing event
+rows without the fold trigger require review because their historical folding cannot be
+proved. Conflicting in-flight attempts without the unique lock index likewise stop; neither
+case deletes or repairs evidence automatically. The additional checks use targeted SELECTs
+only, during this deployment event. Local simulations cover empty, one-table, several-table,
+partial-index, missing-trigger and complete pending installations, preserving existing
+counts/rows and proving insert-once folding through the installed Wrangler splitter.
+
+The normal migration command retains its existing Production-only gate. Wrangler applies
+only filenames pending in its recorded history: applied 0020 is not replayed, and later
+pending filenames still use the normal migration path. After application, the workflow lists migrations again and runs
+the same gate with `--after`: registered 0020, compatible 5/5 tables, 5/5 indexes, 1/1 trigger
+and no remaining pending migration are mandatory **before Worker deployment**. Both gates
+fail the deployment job on UNKNOWN/UNSAFE; neither has `continue-on-error`. No new workflow,
+schedule, provider call or automatic recovery/policy activation is introduced. These are
+implemented protections, not a claim that Production preflight or application has passed;
+the actual classification and each post-deploy result must be read from the deployment run.
+
 Operational tables never appear in hot public page queries. Source-state/day counters are
 compact; incident events are written only for actual failures/recovery transitions, not for
 every healthy heartbeat. At roughly 500 source observations/day, the two compact UPSERTs
