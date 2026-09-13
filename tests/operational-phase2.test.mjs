@@ -15,6 +15,7 @@ import { evaluateSource } from '../lib/source-lifecycle.ts';
 import { summarizeTodayPassengerForecast } from '../lib/airport-today-summary.ts';
 import { sha256 } from '../lib/hash.ts';
 import { POPULATION_MODEL } from '../lib/population-predictions.ts';
+import { CloudflareD1RestDatabase } from '../lib/d1-rest.ts';
 import { saveMeasurement,recordExistingCompletion } from '../lib/operational-bookkeeping.ts';
 import { readForecastEvidence } from '../lib/operational-forecast-evidence.ts';
 import { scanForRuntimeLlm } from '../lib/runtime-llm-scan.ts';
@@ -85,6 +86,12 @@ test('empty actual database is not successful coverage or forecast skill',async(
 test('storage read failure is unknown, never empty or successful',async()=>{const {db}=setup();db.raw.exec('ALTER TABLE seoul_realtime_area RENAME TO missing_seoul');const measured=await measureSource(db,'SEOUL_CITYDATA_PPLTN',at);assert.equal(measured.storageReadFailed,true);assert.equal(measured.storedRows,null);assert.equal(measured.storageValid,null);});
 test('HTTP-shaped empty public body is not publication evidence',()=>{assert.equal(matchPublicEvidence({observedAt:at,storageValid:true,sourceId:'SEOUL_CITYDATA_PPLTN',sample:[]},{status:200}),null);});
 test('usage unknown remains unknown despite an observed lower bound',()=>{const [usage]=observedUsage([{day:'2026-09-13',source_id:'x',executions:4,provider_requests:2,provider_measured:1,rows_read:20,rows_written:4}]);assert.equal(usage.quotaPercent,null);assert.equal(usage.providerRequests.upperBound,null);});
+test('absent/null/invalid D1 counters remain unmeasured, not an exact zero',async()=>{
+ for(const value of [undefined,null,-1,'0']) {
+   const db=new CloudflareD1RestDatabase('acct','db','test',async()=>({ok:true,status:200,json:async()=>({success:true,result:[{success:true,results:[],meta:{rows_read:value,rows_written:0}}]})}));
+   await db.prepare('SELECT 1').all();assert.equal(db.usageSnapshot().unmeasuredStatements,1);
+ }
+});
 test('observational bookkeeping does not rerun providers and duplicate run does not double usage',async()=>{
  const {db,memory}=setup();const measurement={sourceId:parts.sourceId,contractVersion:parts.contractVersion,observedAt:at,run:{status:'SUCCESS'},health:null,runId:'r',storedRows:3,storageReadFailed:false,coverage:'COMPLETE',failureClass:null,detail:'storage verified',sample:[],dataValid:true,storageValid:true,publicValid:null};
  await saveMeasurement(memory,measurement,'r',{providerRequests:2,rowsRead:10,rowsWritten:3});
