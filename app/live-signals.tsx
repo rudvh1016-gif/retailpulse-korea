@@ -1457,9 +1457,9 @@ function AirportSumFormula({ hall, transfer, total, lang, numberLocale, unit, is
   );
   return <div className="airport-sum-formula" data-testid="airport-sum-formula">
     {cell(passengerCopy.hallComponent[lang], hall, "hall")}
-    <span className="airport-sum-operator" aria-hidden="true">+</span>
+    <span className="airport-sum-operator" data-op="plus" aria-hidden="true">+</span>
     {cell(passengerCopy.transferComponent[lang], transfer, "transfer")}
-    <span className="airport-sum-operator" aria-hidden="true">=</span>
+    <span className="airport-sum-operator" data-op="equals" aria-hidden="true">=</span>
     {cell(passengerCopy[isToday ? "summedToday" : "summedSelected"][lang], total, "total")}
   </div>;
 }

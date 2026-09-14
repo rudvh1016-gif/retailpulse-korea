@@ -1583,7 +1583,7 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
   /* Two operands per row with the operator between them, the result on its
      own row. Five columns at 390px would compress a five-digit figure. */
   .airport-sum-formula { grid-template-columns: 1fr auto 1fr; gap: 8px; }
-  .airport-sum-formula .airport-sum-operator:last-of-type { grid-column: 1 / -1; justify-self: center; }
+  .airport-sum-formula .airport-sum-operator[data-op="equals"] { grid-column: 1 / -1; justify-self: center; }
   .airport-sum-formula .airport-sum-term[data-kind="total"] { grid-column: 1 / -1; }
   .airport-mtd-compare { grid-template-columns: 1fr; }
   .airport-current-brief .airport-mtd-total { font-size: 19px; }

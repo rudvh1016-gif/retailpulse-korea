@@ -133,3 +133,55 @@ test("month to date reads the selected terminal's own month, never a neighbour's
     for (const other of foreign) await expect(mtd).not.toContainText(other);
   }
 });
+
+/**
+ * A month with a hole in it. The owner's rule: a missing day must never be
+ * counted as zero, and a partial span must never wear a complete label. This
+ * also exercises the longest strings the block can render — the withheld-growth
+ * sentence — which the complete fixture never reaches.
+ */
+const GAPPED = (() => {
+  const clone = JSON.parse(JSON.stringify(WITH_TRANSFER));
+  for (const key of ["all", "T1", "T2"]) {
+    const month = clone.airport.monthToDate[key];
+    month.current.days = month.current.days.map((day: { date: string }) =>
+      day.date === "2026-09-06" ? { ...day, total: null } : day);
+    month.current.total = null;
+    month.current.status = "PARTIAL";
+    month.current.completeDays = 12;
+    month.current.missingDates = ["2026-09-06"];
+    month.change = null;
+  }
+  return clone;
+})();
+
+for (const lang of ["ko", "en", "zh", "ja"] as const) {
+  for (const width of [390, 1280]) {
+    test(`a month with a missing day reads as incomplete, not small · ${lang} · ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 1000 });
+      await page.route("**/api/live/summary**", routeSummary(GAPPED));
+      await page.goto(`/${lang}/airport`);
+      await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+      const mtd = page.locator('[data-testid="airport-mtd"]');
+
+      // No total, and no figure that could be mistaken for one.
+      await expect(mtd).toContainText(mtdCopy.partial[lang](12, 13));
+      await expect(mtd).not.toContainText("46,800");
+      await expect(mtd).toContainText(mtdCopy.missing[lang](["9/6"]));
+      // The previous span is whole, but growth still needs BOTH.
+      await expect(mtd).toContainText("42,120");
+      await expect(mtd).toContainText(mtdCopy.bothComplete[lang]);
+      await expect(mtd.locator(".airport-glance-change")).toHaveCount(0);
+
+      // The running line must stop at the gap rather than step over it.
+      const points = await page.locator(".airport-month-run").getAttribute("points");
+      expect((points ?? "").trim().split(/\s+/).length,
+        "the running total is drawn only for the complete days before the gap").toBe(5);
+
+      expect(await page.locator('.airport-mtd *').evaluateAll(els => els
+        .map(el => ({ text: (el.textContent ?? "").trim().slice(0, 40), over: el.scrollWidth - el.clientWidth }))
+        .filter(x => x.over > 1)), "no clipped text in the partial month block").toEqual([]);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    });
+  }
+}
