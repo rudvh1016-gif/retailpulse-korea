@@ -43,6 +43,7 @@ import { observedUsage, scoreRecoveryAttempts, regressionCandidates, evaluateSha
 import { capabilityFor, SOURCE_RECOVERY_CAPABILITIES, PRODUCTION_SOURCE_IDS } from '../lib/recovery-capability';
 import { centralRecoveryActivation } from '../lib/operational-recovery-runner';
 import { provesIndependentPlatform, classifyTriggerEvidence } from '../lib/trigger-evidence';
+import { censusSources, CENSUSED_SOURCE_IDS } from '../lib/source-census';
 import { evaluateSource, type SourceVerdict } from "../lib/source-lifecycle";
 import { buildWatchdogReport, type Heartbeat } from "../lib/watchdog";
 import { observeQuota, type QuotaObservation, type QuotaVerdict } from "../lib/quota-observation";
@@ -132,7 +133,11 @@ async function readLiveState() {
   const database=new CloudflareD1RestDatabase(config.accountId,config.databaseId,config.apiToken);
   const db=database as unknown as D1Database;
   const health=await database.prepare('SELECT source_id FROM source_health ORDER BY source_id LIMIT 100').all<{source_id:string}>();
-  const ids=[...new Set([...Object.values(DIAGNOSTIC_SOURCE_IDS),'SEOUL_CITYDATA_CMRCL',...health.results.map(row=>row.source_id)])];
+  // What Production ACTUALLY has, before any table of ours is consulted. This
+  // is the census's observation, and it is the only list that can reveal a
+  // source the harness has never heard of.
+  const observedSourceIds=health.results.map(row=>row.source_id);
+  const ids=[...new Set([...Object.values(DIAGNOSTIC_SOURCE_IDS),'SEOUL_CITYDATA_CMRCL',...observedSourceIds])];
   const measurements:SourceMeasurement[]=[];
   for(const id of ids)measurements.push(await measureSource(db,id,new Date().toISOString()));
   if(process.argv.includes('--production')) {
@@ -148,7 +153,7 @@ async function readLiveState() {
   const inFlight=available?await memory.inFlightControlled():[];
   let forecast: Awaited<ReturnType<typeof readForecastEvidence>>=[];
   try {forecast=await readForecastEvidence(db,new Date().toISOString());}catch {forecast=[{targetDate:new Date().toISOString().slice(0,10),state:'UNKNOWN',performanceClaimAllowed:false,detail:'forecast evidence query unavailable'}];}
-  return {measurements,incidents,attempts,usage,states,forecast,stuck,inFlight,memoryState:available?'PERSISTED_READ':'DORMANT_MIGRATION_UNAVAILABLE'};
+  return {measurements,incidents,attempts,usage,states,forecast,stuck,inFlight,observedSourceIds,memoryState:available?'PERSISTED_READ':'DORMANT_MIGRATION_UNAVAILABLE'};
 }
 
 const nowIso = new Date().toISOString();
@@ -274,6 +279,24 @@ const unwiredDefences = (
   ] as const
 ).filter((candidate) => !allSources.some((file) => file.path !== candidate.module && file.content.includes(candidate.symbol)));
 
+/**
+ * The source census: is the set this report covers the set Production has?
+ *
+ * `observed` is null offline, which makes the verdict UNMEASURED rather than
+ * COMPLETE — a checkout cannot see Production's source list, and a census that
+ * reported "complete" from reading nothing would be the exact false green this
+ * exists to prevent.
+ *
+ * Ownership comes from `canonicalOperationalJob`, which already maps every
+ * source to the workflow that collects it, so no second ownership table is
+ * introduced.
+ */
+const census = censusSources({
+  observed: live ? live.observedSourceIds : null,
+  classifiedIds: SOURCE_RECOVERY_CAPABILITIES.map((entry) => entry.sourceId),
+  ownedIds: CENSUSED_SOURCE_IDS.filter((id) => Boolean(canonicalOperationalJob(id))),
+});
+
 // Read-only health never resets/re-writes recurrence. Completion bookkeeping owns writes.
 const inputs: HealthInputs = {
   nowIso,
@@ -287,6 +310,7 @@ const inputs: HealthInputs = {
   forecast: live?.forecast ?? [],
   runtimeLlm,
   unwiredDefences: unwiredDefences.map((entry) => ({ module: entry.module, detail: entry.detail })),
+  sourceCensus: census,
 };
 
 /**
@@ -370,7 +394,21 @@ const report = {...buildHealthReport(inputs),phase2:{
   centralRecovery:'DORMANT',shadow,
 },phase3:{centralRecoveryReadiness,sourceCapabilities:SOURCE_RECOVERY_CAPABILITIES,
   stuckControlledAttempts:stuckAttempts,inFlightControlledAttempts:live?.inFlight??[]}};
-console.log(wantsJson ? JSON.stringify(report, null, 2) : summarizeHealthReport(report)+
+/**
+ * Two verdicts, never one.
+ *
+ * HARNESS EXECUTION answers "did the checking program run correctly". SYSTEM
+ * VERDICT answers "is the checked system well". A harness that correctly finds
+ * fifteen live failures has SUCCEEDED, and printing a single red number for
+ * both makes a working diagnostic indistinguishable from a broken one — after
+ * which nobody trusts the diagnostic.
+ */
+const harnessExecution = runtimeLlm.scannedFileCount > 0 && truth.entries.length > 0 ? 'PASS' : 'INCOMPLETE';
+
+console.log(wantsJson ? JSON.stringify({...report,harnessExecution}, null, 2) : summarizeHealthReport(report)+
+  `\nHARNESS EXECUTION: ${harnessExecution}   SYSTEM VERDICT: ${report.overall}`+
+  `\n  (the first says the checker ran; the second says what it found)`+
+  `\nSOURCE CENSUS: ${census.verdict} — ${census.detail}`+
   `\nPERSISTENT MEMORY: ${report.phase2.memory}\nRECOVERY SCORECARD: ${report.phase2.scorecard.length} groups\nCENTRAL RECOVERY: DORMANT; AUTOMATIC POLICY PROMOTION: false`+
   `\nCENTRAL RECOVERY GATE: ${centralRecoveryReadiness.executionGate} (${activation.blockedBy.join(', ') || 'no blockers'})`+
   `\nSOURCE CAPABILITY COVERAGE: ${centralRecoveryReadiness.sourceCapabilityCoverage}`+

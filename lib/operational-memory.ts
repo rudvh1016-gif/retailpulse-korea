@@ -159,8 +159,19 @@ export class OperationalMemory {
     if(!/^\d{4}-\d{2}-\d{2}$/.test(request.targetDate)) throw new Error('invalid_recovery_date');
     const at=iso(request.at), executionId=recoveryExecutionId({...parts,...request});
     const attemptId=`${executionId}|${request.runId}`;
+    // ONLY controlled attempts spend the recovery budget.
+    //
+    // This counted every row, and `recordExistingCompletion` writes one per
+    // ordinary scheduled collection with mode='EXISTING_RUN'. So a source that
+    // simply ran on schedule all day arrived at its recovery budget already
+    // exhausted: the Production rehearsal on 2026-09-14 measured A5 at 32 used
+    // against a ceiling of 3, and KMA at 16 against 2, purely from normal runs.
+    // The budget exists to stop a REPAIR from looping, and a healthy collection
+    // is not a repair. Counting them together meant that once activation
+    // happened, controlled recovery would have been permanently refused for the
+    // exact two sources it was built for — failing closed, and silently.
     const used=await this.db.prepare(`SELECT COUNT(*) AS n FROM operational_recovery_attempts
-      WHERE source_id=? AND logical_job=? AND target_date=?`).bind(parts.sourceId,parts.logicalJob,request.targetDate).first<{n:number}>();
+      WHERE source_id=? AND logical_job=? AND target_date=? AND mode='CONTROLLED'`).bind(parts.sourceId,parts.logicalJob,request.targetDate).first<{n:number}>();
     const decision=decideRecovery(parts.failureClass,used?.n??0);
     const reject=async(reason:string)=>{
       await this.recordEvent({parts,kind:'HUMAN_REVIEW',runId:request.runId,at,evidence:reason});
@@ -171,8 +182,8 @@ export class OperationalMemory {
     const insert=this.db.prepare(`INSERT INTO operational_recovery_attempts
       (attempt_id,execution_id,fingerprint,source_id,failure_class,contract_version,logical_job,target_date,scheduled_slot,operation,attempt_number,started_at,mode)
       SELECT ?,?,?,?,?,?,?,?,?,?,
-       (SELECT COUNT(*)+1 FROM operational_recovery_attempts WHERE source_id=? AND logical_job=? AND target_date=?),?,'CONTROLLED'
-      WHERE (SELECT COUNT(*) FROM operational_recovery_attempts WHERE source_id=? AND logical_job=? AND target_date=?)<?
+       (SELECT COUNT(*)+1 FROM operational_recovery_attempts WHERE source_id=? AND logical_job=? AND target_date=? AND mode='CONTROLLED'),?,'CONTROLLED'
+      WHERE (SELECT COUNT(*) FROM operational_recovery_attempts WHERE source_id=? AND logical_job=? AND target_date=? AND mode='CONTROLLED')<?
        AND NOT EXISTS(SELECT 1 FROM operational_recovery_attempts WHERE source_id=? AND logical_job=? AND completed_at IS NULL AND mode='CONTROLLED')
        AND NOT EXISTS(SELECT 1 FROM operational_recovery_attempts WHERE execution_id=? AND outcome IN ('RECOVERED','RECOVERY_PENDING'))
       ON CONFLICT(attempt_id) DO NOTHING`).bind(attemptId,executionId,incidentFingerprint(parts),parts.sourceId,parts.failureClass,parts.contractVersion,
