@@ -138,18 +138,21 @@ for (const lang of ["ko", "en", "zh", "ja"] as const) {
       await expect(mtd).toContainText("9/1–9/13");
       await expect(mtd).toContainText("8/1–8/13");
 
-      // The running total is a second series on the same plot, so it must be
-      // named and it must end somewhere a reader can point at. An unlabelled
-      // blue diagonal measures nothing as far as the reader can tell.
-      const legend = page.locator(".airport-month-legend");
-      await expect(legend).toContainText(mtdCopy.perDay[lang]);
-      await expect(legend).toContainText(mtdCopy.cumulative[lang]);
-      const plot = await page.locator(".airport-month-plot").boundingBox();
-      const endDot = await page.locator(".airport-month-run-end").boundingBox();
-      expect(endDot, "the running total must end in a marked point").not.toBeNull();
-      expect(endDot!.x).toBeGreaterThanOrEqual(plot!.x - 4);
-      expect(endDot!.x + endDot!.width).toBeLessThanOrEqual(plot!.x + plot!.width + 4);
-      expect(endDot!.y).toBeGreaterThanOrEqual(plot!.y - 4);
+      // The cumulative line is GONE (owner decision, 2026-09-15) and must stay
+      // gone: no polyline, no end dot, and no legend that existed only to tell
+      // it apart from the bars. Asserted as absence rather than as a hidden
+      // element, because `display: none` would leave the mark in the DOM and in
+      // the accessibility tree while looking removed.
+      await expect(page.locator(".airport-month-run")).toHaveCount(0);
+      await expect(page.locator(".airport-month-run-end")).toHaveCount(0);
+      await expect(page.locator(".airport-month-legend")).toHaveCount(0);
+      await expect(page.locator(".airport-month-chart polyline")).toHaveCount(0);
+
+      // The cumulative FIGURE stays. Removing the line removed a repetition,
+      // not the information: the readout still prints the selected day's
+      // running total in words.
+      await expect(page.locator(".airport-month-readout")).toContainText(mtdCopy.cumulative[lang]);
+      await expect(page.locator(".airport-month-readout")).toContainText("46,800");
 
       // Bars are inset by half their width, so the 1st and today — the two days
       // a reader looks at most — are drawn whole instead of half-clipped by the
@@ -229,10 +232,25 @@ for (const lang of ["ko", "en", "zh", "ja"] as const) {
       await expect(mtd).toContainText(mtdCopy.bothComplete[lang]);
       await expect(mtd.locator(".airport-glance-change")).toHaveCount(0);
 
-      // The running line must stop at the gap rather than step over it.
-      const points = await page.locator(".airport-month-run").getAttribute("points");
-      expect((points ?? "").trim().split(/\s+/).length,
-        "the running total is drawn only for the complete days before the gap").toBe(5);
+      // A gap is never stepped over. This used to be proven by counting the
+      // running line's points; with the line gone the same rule is checked
+      // where it actually matters — in the data the reader is shown.
+      //
+      // The missing day draws a baseline tick and NOT a bar, so it can never be
+      // read as a zero-passenger day...
+      const bars = await page.locator(".airport-month-bar").count();
+      const gaps = await page.locator(".airport-month-gap").count();
+      expect(gaps, "the missing day draws a baseline tick, not a bar").toBe(1);
+      expect(bars, "the twelve complete days each draw a bar").toBe(12);
+
+      // ...and the running total refuses to report a figure past the gap. The
+      // cumulative half of the readout must carry no number at all, in any
+      // locale — a running total that stepped over a missing day would print
+      // one, which is the failure this guards.
+      await page.locator(".airport-month-picks button").last().click();
+      const cumulativeText = await page.locator(".airport-month-readout small").innerText();
+      expect(cumulativeText, "no cumulative figure may be reported past a gap").not.toMatch(/[0-9]/);
+      expect(cumulativeText).toContain(mtdCopy.cumulative[lang]);
 
       expect(await page.locator('.airport-mtd *').evaluateAll(els => els
         .map(el => ({ text: (el.textContent ?? "").trim().slice(0, 40), over: el.scrollWidth - el.clientWidth }))
