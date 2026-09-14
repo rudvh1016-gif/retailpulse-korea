@@ -1505,31 +1505,28 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
   const span = width - inset * 2;
   const maxDay = days.reduce((best, day) => Math.max(best, day.total ?? 0), 0);
 
+  // The running total is still COMPUTED — the readout below prints the selected
+  // day's cumulative figure — it is simply no longer DRAWN. The owner removed
+  // the line on 2026-09-15: the month total sits at the top of this card and
+  // the same cumulative value is one line below in words, so a third rendering
+  // of it as a diagonal repeated what the card already said twice.
   const cumulative = runningTotals(days);
-  const maxRun = cumulative.reduce<number>((best, value) => Math.max(best, value ?? 0), 0);
   const x = (index: number) => days.length > 1 ? inset + (index * span) / (days.length - 1) : inset + span / 2;
-  // Bars occupy the lower three quarters so the daily series stays the primary
-  // mark; the running total climbs through the full height to its own corner.
-  const barY = (value: number) => height - (maxDay > 0 ? (value / maxDay) * (height * 0.74) : 0);
-  const runY = (value: number) => height - (maxRun > 0 ? (value / maxRun) * (height * 0.94) : 0);
-  const runPoints = cumulative.flatMap((value, index) => value === null ? [] : [[x(index), runY(value)] as const]);
+  // One mark, so it uses the plot. The bars were held to the lower 74% to leave
+  // the upper quarter for the line that climbed through it; with the line gone
+  // that reserved band is just a permanently empty strip above the tallest day.
+  const barY = (value: number) => height - (maxDay > 0 ? (value / maxDay) * (height * 0.92) : 0);
 
   const activeIndex = active ? days.findIndex((day) => day.date === active) : -1;
   const shown = activeIndex >= 0 ? activeIndex : days.length - 1;
   const shownDay = days[shown];
   const ticks = [...new Set([0, 4, 9, days.length - 1].filter((index) => index >= 0 && index < days.length))];
-  const last = runPoints.at(-1);
 
   return <figure className="airport-month-chart">
-    {/* Two marks on one plot, so both are named. Without this the running
-        total is an unexplained blue diagonal — the reader cannot tell what it
-        measures, and an unlabelled line reads as decoration. */}
+    {/* One series, named by the caption. A legend existed to tell two marks
+        apart; with a single mark it restates the caption and nothing else. */}
     <figcaption>
       <span>{mtdCopy.daily[lang]}</span>
-      <span className="airport-month-legend">
-        <span><i className="bar" />{mtdCopy.perDay[lang]}</span>
-        <span><i className="run" />{mtdCopy.cumulative[lang]}</span>
-      </span>
     </figcaption>
     <div className="airport-month-plot">
       <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
@@ -1537,14 +1534,7 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
           ? <rect key={day.date} className="airport-month-gap" x={x(index) - barWidth / 2} y={height - 1.5} width={barWidth} height={1.5} />
           : <rect key={day.date} className="airport-month-bar" data-selected={day.date === shownDay.date || undefined}
               x={x(index) - barWidth / 2} y={barY(day.total)} width={barWidth} height={Math.max(1, height - barY(day.total))} />)}
-        {runPoints.length > 1 && <polyline className="airport-month-run" points={runPoints.map(([px, py]) => `${px},${py}`).join(" ")} />}
       </svg>
-      {/* The running total ends in a fact, not a fade: a dot marks where it
-          stops, which is also the month total printed above. Drawn over the plot
-          rather than inside the stretched viewBox, so it stays a true circle at
-          every width — and inside this wrapper its percentages resolve against
-          the plot box, not the whole figure. */}
-      {last && <span className="airport-month-run-end" style={{ left: `${last[0]}%`, top: `${last[1]}%` }} aria-hidden="true" />}
       <div className="airport-month-picks" role="group" aria-label={mtdCopy.daily[lang]}>
         {days.map((day) => <button key={day.date} type="button" aria-pressed={day.date === shownDay.date}
           onClick={() => setActive(day.date)}

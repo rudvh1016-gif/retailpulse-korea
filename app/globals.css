@@ -1783,33 +1783,25 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
   .airport-current-brief .airport-mtd-total { font-size: 19px; }
 }
 
-/* Daily bars with the running total over them.
+/* Daily bars, and only daily bars.
  *
- * Two rules the drawing must not break: a day with no complete forecast draws
- * no bar and no zero, only a baseline tick; and the running total stops at the
- * first incomplete day rather than stepping over it.
+ * The rule the drawing must not break: a day with no complete forecast draws no
+ * bar and no zero, only a baseline tick.
  *
- * Both marks are named in the caption. An unlabelled blue diagonal is not a
- * chart, it is decoration — the reader cannot tell whether it measures people,
- * a rate, or nothing at all. The bars carry the day and stay the darker,
- * primary mark; the line is a hairline overlay that ends in a dot where the
- * month total, printed above, actually lands. */
+ * There used to be a second mark here — a blue line tracing the running total,
+ * ending in a dot, with a legend naming both. The owner removed it on
+ * 2026-09-15 as visual repetition: the month total is printed at the top of
+ * this card and the selected day's cumulative figure is printed in words
+ * directly below the plot, so the diagonal was a third rendering of a number
+ * the card already gave twice. The running total is still computed for that
+ * readout; it is simply not drawn. */
 .airport-month-chart { margin: 14px 0 0; position: relative; }
-.airport-month-chart figcaption { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; font-size: 12px; color: var(--muted); line-height: 1.5; }
-.airport-month-legend { display: flex; gap: 10px; }
-.airport-month-legend span { display: inline-flex; align-items: center; gap: 4px; }
-.airport-month-legend i { display: inline-block; }
-.airport-month-legend i.bar { width: 7px; height: 9px; background: #b9b9b9; }
-.airport-month-legend i.run { width: 11px; height: 0; border-top: 2px solid var(--blue); }
+.airport-month-chart figcaption { font-size: 12px; color: var(--muted); line-height: 1.5; }
 .airport-month-plot { position: relative; height: 104px; margin-top: 8px; }
 .airport-month-chart svg { display: block; width: 100%; height: 100%; }
 .airport-month-bar { fill: #c4c4c4; }
 .airport-month-bar[data-selected] { fill: var(--ink); }
 .airport-month-gap { fill: var(--line); }
-.airport-month-run { fill: none; stroke: var(--blue); stroke-width: 1.25; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
-/* Positioned in percentages over the plot so the marker stays a true circle
-   however the non-uniform viewBox is stretched. */
-.airport-month-run-end { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: var(--blue); pointer-events: none; transform: translate(-50%, -50%); }
 .airport-month-ticks { position: relative; height: 16px; margin-top: 4px; }
 .airport-month-ticks span { position: absolute; transform: translateX(-50%); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* The end ticks sit ON the plot edges, so centring them hangs half a label

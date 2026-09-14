@@ -153,21 +153,21 @@ for (const locale of ["ko", "en", "zh", "ja"] as const) {
         console.log(`MTD ${locale} ${viewport.name} ${JSON.stringify((await mtd.innerText()).replace(/\s+/g, " ").trim().slice(0, 260))}`);
         await expect(mtd).toHaveAttribute("data-scope", "all");
 
-        // A second series on the plot has to be named and has to end somewhere
-        // the reader can point at; an unlabelled blue diagonal measures nothing
-        // as far as they can tell. Its text is read from the page rather than
-        // asserted, because the labels are the same in every locale's own words
-        // and the point here is that BOTH marks are named at all.
-        const legend = await page.locator(".airport-month-legend").innerText();
-        console.log(`LEGEND ${locale} ${viewport.name} ${JSON.stringify(legend.replace(/\s+/g, " ").trim())}`);
-        expect(legend.trim().length, "both marks on the month plot must be named").toBeGreaterThan(0);
-        expect(await page.locator(".airport-month-legend span i").count(),
-          "one swatch for the bars and one for the running total").toBe(2);
-        const plot = await page.locator(".airport-month-plot").boundingBox();
-        const endDot = await page.locator(".airport-month-run-end").boundingBox();
-        expect(endDot, "the running total must end in a marked point").not.toBeNull();
-        expect(endDot!.x + endDot!.width).toBeLessThanOrEqual(plot!.x + plot!.width + 4);
-        expect(endDot!.y).toBeGreaterThanOrEqual(plot!.y - 4);
+        // The cumulative line is GONE on the live site (owner decision,
+        // 2026-09-15) and must stay gone. Asserted as absence rather than as a
+        // hidden element: `display: none` would leave the mark in the DOM and
+        // in the accessibility tree while merely looking removed.
+        await expect(page.locator(".airport-month-run")).toHaveCount(0);
+        await expect(page.locator(".airport-month-run-end")).toHaveCount(0);
+        await expect(page.locator(".airport-month-legend")).toHaveCount(0);
+        await expect(page.locator(".airport-month-chart polyline")).toHaveCount(0);
+
+        // The cumulative FIGURE stays: removing the line removed a repetition,
+        // not the information. Read and logged rather than asserted against a
+        // number, because live figures move every hour.
+        const readout = (await page.locator(".airport-month-readout").innerText()).replace(/\s+/g, " ").trim();
+        console.log(`MTD_READOUT ${locale} ${viewport.name} ${JSON.stringify(readout)}`);
+        expect(readout.length, "the month readout must still report the day and its running total").toBeGreaterThan(0);
 
         // Bars inset by half their width, so the 1st and today are drawn whole.
         const bars = await page.locator(".airport-month-bar").evaluateAll(els =>
