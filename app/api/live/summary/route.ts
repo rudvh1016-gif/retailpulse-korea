@@ -38,7 +38,7 @@ import {
   type AirportForecastAggregateRow,
   type AirportTodayFlightRow,
 } from "../../../../lib/airport-today-summary";
-import { buildMonthToDate, monthStartOf, previousMonthSameDay, type MonthToDate } from "../../../../lib/airport-mtd";
+import { buildMonthToDate, datesBetween, monthStartOf, previousMonthSameDay, type MonthToDate } from "../../../../lib/airport-mtd";
 import { prepareEventsForPresentation } from "../../../../lib/event-presentation";
 import { summarizeAirlineRanking, type AirlineRankingFlightRow } from "../../../../lib/airline-ranking";
 import { AIRLINE_COUNTRY_SOURCE, lookupAirline } from "../../../../lib/airline-country";
@@ -58,13 +58,31 @@ import { readGroups, type ReadClient } from "../../../../lib/d1-read-batch";
  * hourly bands = 1,488) with headroom, not a guess: it exists so a provider
  * publishing an unexpected band grid cannot turn a bounded read into a scan.
  */
-const MONTH_RANGE_SQL = `SELECT terminal, direction, is_aggregate AS isAggregate,
+/**
+ * One month of official departure aggregate rows, by exact KST service date.
+ *
+ * Deliberately `target_date IN (...)` rather than a `>= AND <=` range. Measured
+ * against Production D1 on 2026-09-14, the range form read ~259 rows per date
+ * because a range scan over `airport_passenger_forecast_target_idx` walks every
+ * row of every date in the span — arrivals and component rows included — while
+ * the exact-equality form reads ~64, the rows the filter actually wants. Over
+ * two months that was the difference between +6,736 and roughly +1,700 rows on
+ * every uncached summary, so the cheaper shape is the shipped one.
+ *
+ * The placeholders are generated from a bounded date list this file computes;
+ * no value is ever interpolated into the SQL. The LIMIT is the ceiling of one
+ * real month (31 days x 2 terminals x 24 hourly bands = 1,488) with headroom,
+ * so an unexpected band grid cannot turn a bounded read into a scan.
+ */
+function monthRangeSql(days: number): string {
+  return `SELECT terminal, direction, is_aggregate AS isAggregate,
     target_date AS targetDate, time_band_raw AS timeBandRaw,
     target_start_at AS targetStartAt, target_end_at AS targetEndAt,
     expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
   FROM airport_passenger_forecast
-  WHERE direction = 'departure' AND is_aggregate = 1 AND target_date >= ? AND target_date <= ?
+  WHERE direction = 'departure' AND is_aggregate = 1 AND target_date IN (${Array.from({ length: days }, () => "?").join(", ")})
   ORDER BY target_date, terminal, target_start_at LIMIT 1600`;
+}
 import {
   isValidKstDay,
   kstDayBounds,
@@ -225,9 +243,11 @@ export type SummaryClient = ReadClient & { prepare(sql: string): D1PreparedState
 export async function summarizeLiveSummary(client: SummaryClient, clock: SummaryClock): Promise<Response> {
   const { generatedAt, now, kstNowIso, kstToday, kstHourStart, serviceDate, dayRelation, dayStartAt } = clock;
   const observedStartAt = [dayStartAt, kstNowIsoOf(new Date(now - 6 * 3_600_000).toISOString())].sort().at(-1)!;
-  // null when the previous month has no same-numbered day; the second range
-  // statement is then not issued at all rather than bound to an invented date.
+  // null when the previous month has no same-numbered day; the second statement
+  // is then not issued at all rather than bound to an invented date.
   const previousMonthEnd = previousMonthSameDay(serviceDate);
+  const currentMonthDays = datesBetween(monthStartOf(serviceDate), serviceDate);
+  const previousMonthDays = previousMonthEnd ? datesBetween(monthStartOf(previousMonthEnd), previousMonthEnd) : [];
   const statementGroups = {
     sources: [client.prepare(
       `SELECT source_id AS sourceId, status, last_event_at AS eventAt,
@@ -434,8 +454,8 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     // Completeness is decided afterwards by the DAY view's own evaluator, so a
     // month total can never be built from a definition this file invented.
     monthToDateRows: [
-      client.prepare(MONTH_RANGE_SQL).bind(monthStartOf(serviceDate), serviceDate),
-      ...(previousMonthEnd ? [client.prepare(MONTH_RANGE_SQL).bind(monthStartOf(previousMonthEnd), previousMonthEnd)] : []),
+      client.prepare(monthRangeSql(currentMonthDays.length)).bind(...currentMonthDays),
+      ...(previousMonthDays.length ? [client.prepare(monthRangeSql(previousMonthDays.length)).bind(...previousMonthDays)] : []),
     ],
 
     historicalFlightCounts: [7, 28].map((days) => client.prepare(

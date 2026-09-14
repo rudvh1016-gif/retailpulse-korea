@@ -31,7 +31,7 @@ import { withAreaBaselines } from "../lib/period-comparison";
 import { readFileSync } from "node:fs";
 import { CloudflareD1RestDatabase } from "../lib/d1-rest";
 import { kstDayOf, kstHourStartIsoOf, shiftKstDay } from "../lib/kst";
-import { monthStartOf, previousMonthSameDay } from "../lib/airport-mtd";
+import { datesBetween, monthStartOf, previousMonthSameDay } from "../lib/airport-mtd";
 import {
   SEOUL_FOREIGN_MAPPING_VERSION,
   SEOUL_FOREIGN_PRODUCT_VERSION,
@@ -50,6 +50,17 @@ import { resolveProductionDatabaseConfig } from "./production-database";
 
 /** Cloudflare's documented D1 Free daily allowance (rows read). */
 const D1_FREE_DAILY_ROWS_READ = 5_000_000;
+
+/** Mirrors monthRangeSql in the route; the guard below proves it still matches. */
+function monthRangeSqlFor(days: number): string {
+  return `SELECT terminal, direction, is_aggregate AS isAggregate,
+    target_date AS targetDate, time_band_raw AS timeBandRaw,
+    target_start_at AS targetStartAt, target_end_at AS targetEndAt,
+    expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
+  FROM airport_passenger_forecast
+  WHERE direction = 'departure' AND is_aggregate = 1 AND target_date IN (${Array.from({ length: days }, () => "?").join(", ")})
+  ORDER BY target_date, terminal, target_start_at LIMIT 1600`;
+}
 
 const CEILING = Number(process.env.RPK_READ_BUDGET_CEILING ?? 100_000);
 if (!Number.isFinite(CEILING) || CEILING <= 0) throw new Error("invalid_read_budget_ceiling");
@@ -88,6 +99,9 @@ const generatedAt = new Date().toISOString();
 const kstToday = kstDayOf(generatedAt);
 const kstHourStart = kstHourStartIsoOf(generatedAt);
 const serviceDate = kstToday;
+const MTD_CURRENT_DAYS = datesBetween(monthStartOf(serviceDate), serviceDate);
+const MTD_PREVIOUS_END = previousMonthSameDay(serviceDate);
+const MTD_PREVIOUS_DAYS = MTD_PREVIOUS_END ? datesBetween(monthStartOf(MTD_PREVIOUS_END), MTD_PREVIOUS_END) : [];
 const pickerDays = Array.from({ length: DATE_PICKER_DAYS }, (_, index) => shiftKstDay(kstToday, -index));
 
 type HotQuery = {
@@ -324,34 +338,22 @@ const HOT_QUERIES: HotQuery[] = [
     scanTargets: ["airport_passenger_forecast", "f"],
   },
   {
-    // Month-to-date: this month's span and the previous month's same span.
-    // Measured because it is the largest range this route reads — if it ever
-    // stops seeking the target_date index, the cost shows up here rather than
-    // on the free tier.
+    // Month-to-date: this month's dates and the previous month's same span.
+    // Measured because it is the widest read this route performs. The exact
+    // IN(...) form is what ships: a >= / <= range over the same index measured
+    // ~259 rows per date against Production on 2026-09-14, versus ~64 here.
     name: "monthToDateCurrent",
-    sql: `SELECT terminal, direction, is_aggregate AS isAggregate,
-    target_date AS targetDate, time_band_raw AS timeBandRaw,
-    target_start_at AS targetStartAt, target_end_at AS targetEndAt,
-    expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
-  FROM airport_passenger_forecast
-  WHERE direction = 'departure' AND is_aggregate = 1 AND target_date >= ? AND target_date <= ?
-  ORDER BY target_date, terminal, target_start_at LIMIT 1600`,
-    binds: [monthStartOf(serviceDate), serviceDate],
-    guard: "WHERE direction = 'departure' AND is_aggregate = 1 AND target_date >= ? AND target_date <= ?",
+    sql: monthRangeSqlFor(MTD_CURRENT_DAYS.length),
+    binds: MTD_CURRENT_DAYS,
+    guard: "WHERE direction = 'departure' AND is_aggregate = 1 AND target_date IN (",
     table: "airport_passenger_forecast",
     scanTargets: ["airport_passenger_forecast"],
   },
   {
     name: "monthToDatePrevious",
-    sql: `SELECT terminal, direction, is_aggregate AS isAggregate,
-    target_date AS targetDate, time_band_raw AS timeBandRaw,
-    target_start_at AS targetStartAt, target_end_at AS targetEndAt,
-    expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
-  FROM airport_passenger_forecast
-  WHERE direction = 'departure' AND is_aggregate = 1 AND target_date >= ? AND target_date <= ?
-  ORDER BY target_date, terminal, target_start_at LIMIT 1600`,
-    binds: [monthStartOf(previousMonthSameDay(serviceDate) ?? serviceDate), previousMonthSameDay(serviceDate) ?? serviceDate],
-    guard: "WHERE direction = 'departure' AND is_aggregate = 1 AND target_date >= ? AND target_date <= ?",
+    sql: monthRangeSqlFor(MTD_PREVIOUS_DAYS.length || 1),
+    binds: MTD_PREVIOUS_DAYS.length ? MTD_PREVIOUS_DAYS : [serviceDate],
+    guard: "FROM airport_passenger_forecast\n  WHERE direction = 'departure' AND is_aggregate = 1 AND target_date IN (",
     table: "airport_passenger_forecast",
     scanTargets: ["airport_passenger_forecast"],
   },
