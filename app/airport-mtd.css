@@ -1,0 +1,15 @@
+/*
+ * The MTD card already states the month-to-date total and keeps the selected
+ * day's cumulative figure in the numeric readout. A second cumulative line
+ * over the daily bars repeats the same information and adds visual noise.
+ * Keep the daily bars as the only plot mark.
+ */
+.airport-month-run,
+.airport-month-run-end {
+  display: none;
+}
+
+/* The second legend item describes the removed cumulative line. */
+.airport-month-legend > span:last-child {
+  display: none;
+}
