@@ -283,6 +283,42 @@ test("every measured hot-path statement still exists in the live route", () => {
   }
 });
 
+/**
+ * Preflight must be able to explain every statement it is about to measure.
+ *
+ * EXPLAIN QUERY PLAN does not execute a statement, but D1 still validates the
+ * binding count — so a statement whose real bind sets live only in
+ * `repeatBinds` cannot be explained with an empty `binds`. historicalFlightCounts
+ * was in exactly that state: three placeholders against `binds: []`. Every run
+ * of measure-read-budget failed preflight with "Wrong number of parameter
+ * bindings", skipped that statement as plan_error, and exited 1 — so the cost
+ * gate was red on every run and could not have reported a real regression.
+ *
+ * Two things keep that from returning: preflight falls back to the first
+ * repeatBinds set, and no statement may be left with neither.
+ */
+test("every measured statement has a bind set preflight can explain it with", () => {
+  const measureSource = readFileSync("scripts/measure-production-read-budget.ts", "utf8").replace(/\r\n/g, "\n");
+  assert.match(
+    measureSource,
+    /const planBinds = query\.binds\.length \? query\.binds : query\.repeatBinds\?\.\[0\]/,
+    "preflight must fall back to the first repeatBinds set when binds is empty",
+  );
+  const hot = measureSource.slice(measureSource.indexOf("const HOT_QUERIES"));
+  const entries = hot.split(/\n  \{\n/).slice(1);
+  const unexplainable = [];
+  for (const entry of entries) {
+    const name = /^\s*name: "([^"]+)"/m.exec(entry)?.[1];
+    if (!name) continue;
+    const sql = /^ {4}sql: `([^`]*)`/m.exec(entry)?.[1] ?? "";
+    const placeholders = (sql.match(/\?/g) ?? []).length;
+    const emptyBinds = /^ {4}binds: \[\],$/m.test(entry);
+    const hasRepeat = /^ {4}repeatBinds:/m.test(entry);
+    if (placeholders > 0 && emptyBinds && !hasRepeat) unexplainable.push(name);
+  }
+  assert.deepEqual(unexplainable, [], "a statement with placeholders has no bind set at all");
+});
+
 test("the read-budget measurement only ever reads", () => {
   const measureSource = readFileSync("scripts/measure-production-read-budget.ts", "utf8");
   // Statement text lives in `sql:` entries and in the two literal statements

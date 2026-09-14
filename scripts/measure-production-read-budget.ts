@@ -548,7 +548,16 @@ const missingIndexes = EXPECTED_INDEXES.filter((name) => !presentIndexes.include
 const planChecks: Array<Record<string, unknown>> = [];
 for (const query of HOT_QUERIES) {
   try {
-    const plan = await explain(query.sql, query.binds);
+    // EXPLAIN QUERY PLAN does not execute the statement, but D1 still checks
+    // the binding count — so a statement whose only real bind sets live in
+    // repeatBinds must be explained with one of those, not with an empty
+    // `binds`. historicalFlightCounts was in exactly that state: three
+    // placeholders, `binds: []`, so every run of this workflow failed
+    // preflight with "Wrong number of parameter bindings", skipped the
+    // statement as plan_error and exited 1. A cost gate that is red on every
+    // run cannot report a real cost regression, which is the whole point of it.
+    const planBinds = query.binds.length ? query.binds : query.repeatBinds?.[0] ?? query.binds;
+    const plan = await explain(query.sql, planBinds);
     const scanTargets = new Set(query.scanTargets ?? [query.table]);
     const unindexedTableScans = query.allowUnindexedScan
       ? []
