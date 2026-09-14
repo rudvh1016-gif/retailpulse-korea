@@ -71,13 +71,27 @@ for(const width of [390,1280]) test(`production Seoul and airport truth closure 
     } else {
       await expect(tomorrowBrief.locator('.airport-brief-total')).toContainText(`${Math.round(tomorrowTotal).toLocaleString('ko-KR')}명`);
     }
+    // The caveat belongs to the figure. It is rendered beside the sum and
+    // beside the hall-only headline, so it must be present whenever one of
+    // them is.
+    await expect(tomorrowBrief.locator('.passenger-transfer-limitation')).toBeVisible();
   } else {
     // A new KST day can precede the first hourly A5 run. Verify absence truth,
     // not a made-up passenger number merely to satisfy a live-site assertion.
     await expect(tomorrowBrief).toContainText('이 날짜의 공식 예상 승객 자료 없음');
     await expect(tomorrowBrief.locator('.airport-brief-total')).toHaveCount(0);
+    // And no caveat either, because there is no figure for one to qualify.
+    //
+    // This assertion used to sit OUTSIDE the branch and demanded the caveat
+    // unconditionally. It passed for months because the runs that exercised it
+    // happened to land on a date whose forecast was already collected — run 47
+    // fired at 23:58 KST, where "tomorrow" was the next day and had data. Run
+    // 48 fired 36 minutes later at 00:34 KST, where "tomorrow" had become the
+    // day AFTER that, which no collector has reached yet. The empty state
+    // correctly renders `.airport-data-missing` and no caveat, and the test
+    // failed a screen that was right.
+    await expect(tomorrowBrief.locator('.passenger-transfer-limitation')).toHaveCount(0);
   }
-  await expect(tomorrowBrief.locator('.passenger-transfer-limitation')).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await expect(page.locator('.airport-current-brief')).not.toContainText('전체 공식 예상 출국객');
   await page.screenshot({path:`production-visual-results/closure-tomorrow-${width}.png`,fullPage:false});
