@@ -1,18 +1,29 @@
 import { test, expect, type Locator } from '@playwright/test';
 import { PREFERENCE_KEY } from '../lib/personal-briefing';
 import { passengerCopy } from '../lib/passenger-copy';
+/**
+ * 2026-09-14: the arithmetic sum LEADS the brief when it can be formed.
+ *
+ * The departure hall's own figure is one of the sum's two operands and now
+ * lives inside the drawn formula. That is the whole point of the change, so
+ * this checks the new arrangement rather than the old one: headline = sum,
+ * operands = formula. When no transfer forecast exists the sum cannot be
+ * formed and the hall figure leads again, labelled as itself.
+ */
 async function expectHeadline(brief: Locator, selected = false) {
-  await expect(brief.locator('.airport-brief-total')).toBeVisible();
-  await expect(brief.locator('.airport-brief-total')).toContainText(passengerCopy[selected ? 'selected' : 'today'].ko);
-  const reference = brief.locator('.airport-reference-total');
-  const arithmetic = await reference.count() > 0;
+  const headline = brief.locator('.airport-brief-total');
+  await expect(headline).toBeVisible();
+  const formula = brief.locator('[data-testid="airport-sum-formula"]');
+  const arithmetic = await formula.count() > 0;
   await expect(brief).toContainText(passengerCopy[arithmetic ? 'arithmeticNote' : 'limitation'].ko);
   if (arithmetic) {
-    await expect(reference).toHaveAttribute('data-basis','ARITHMETIC_ONLY');
-    await expect(reference).toContainText(passengerCopy[selected ? 'summedSelected' : 'summedToday'].ko);
-    await expect(brief.locator('.airport-passenger-components')).toContainText(' + ');
+    await expect(headline).toHaveAttribute('data-basis','ARITHMETIC_ONLY');
+    await expect(headline).toContainText(passengerCopy[selected ? 'summedSelected' : 'summedToday'].ko);
+    await expect(formula).toContainText(passengerCopy.hallComponent.ko);
+    await expect(formula).toContainText(passengerCopy.transferComponent.ko);
+  } else {
+    await expect(headline).toContainText(passengerCopy[selected ? 'selected' : 'today'].ko);
   }
-
 }
 for(const width of [390,1280]) test(`production Seoul and airport truth closure ${width}px`, async({page})=>{
   test.setTimeout(180000);
@@ -50,8 +61,16 @@ for(const width of [390,1280]) test(`production Seoul and airport truth closure 
     await expectHeadline(tomorrowBrief,true);
     const transfers = (selected.airport.transferForecast ?? []).filter((r: {terminal:string; serviceDate:string}) => r.terminal === 'T2' && r.serviceDate === selected.serviceDateKst);
     const total = transfers.length === 1 && selected.airport.forecastCoverage?.byTerminal.T2 === 'COMPLETE' ? tomorrowTotal + transfers[0].expectedTransferPassengers : tomorrowTotal;
-    await expect(tomorrowBrief.locator('.airport-brief-total')).toContainText(`${Math.round(tomorrowTotal).toLocaleString('ko-KR')}명`);
-    if (total !== tomorrowTotal) await expect(tomorrowBrief.locator('.airport-reference-total')).toContainText(`${Math.round(total).toLocaleString('ko-KR')}명`);
+    // The headline carries the SUM; the hall figure it was built from is in
+    // the formula. Both are still checked against the payload, so neither can
+    // drift from the numbers the API actually returned.
+    const tomorrowFormula = tomorrowBrief.locator('[data-testid="airport-sum-formula"]');
+    if (await tomorrowFormula.count() > 0) {
+      await expect(tomorrowBrief.locator('.airport-brief-total')).toContainText(`${Math.round(total).toLocaleString('ko-KR')}명`);
+      await expect(tomorrowFormula).toContainText(`${Math.round(tomorrowTotal).toLocaleString('ko-KR')}명`);
+    } else {
+      await expect(tomorrowBrief.locator('.airport-brief-total')).toContainText(`${Math.round(tomorrowTotal).toLocaleString('ko-KR')}명`);
+    }
   } else {
     // A new KST day can precede the first hourly A5 run. Verify absence truth,
     // not a made-up passenger number merely to satisfy a live-site assertion.
