@@ -22,7 +22,7 @@ import { OperationalMemory } from '../lib/operational-memory.ts';
 import { executeControlledRecovery, centralRecoveryActivation, CENTRAL_RECOVERY_EXECUTION_ENABLED } from '../lib/operational-recovery-runner.ts';
 import { resolveCentralRecoveryActivation, runtimeCentralRecoveryEnabled, ownerApprovedCentralRecovery } from '../lib/central-recovery-gate.ts';
 import {
-  SOURCE_RECOVERY_CAPABILITIES, PRODUCTION_SOURCE_IDS, CLASSIFIED_SOURCE_IDS,
+  SOURCE_RECOVERY_CAPABILITIES, PRODUCTION_SOURCE_IDS, CLASSIFIED_SOURCE_IDS, ADDITIONAL_LIVE_SOURCE_IDS,
   capabilityFor, resolveRecoveryDisposition,
 } from '../lib/recovery-capability.ts';
 import { buildOrchestrationPlan, kstDate } from '../lib/orchestration-plan.ts';
@@ -230,6 +230,29 @@ test('B: every production source id is classified exactly once', () => {
   const extra = CLASSIFIED_SOURCE_IDS.filter((id) => !PRODUCTION_SOURCE_IDS.includes(id));
   assert.deepEqual(extra, [], 'the matrix must not classify sources no collector writes');
   assert.equal(new Set(CLASSIFIED_SOURCE_IDS).size, CLASSIFIED_SOURCE_IDS.length, 'one entry per source');
+  // A source that reaches D1 without being in DIAGNOSTIC_SOURCE_IDS is still a
+  // production source. The first Production rehearsal found one.
+  for (const id of ADDITIONAL_LIVE_SOURCE_IDS) {
+    assert.ok(CLASSIFIED_SOURCE_IDS.includes(id), `${id} is written by a collector and must be classified`);
+    assert.ok(readFileSync('scripts/collect-production.ts', 'utf8').includes(id),
+      `${id} must actually be written by the production collector, not merely asserted here`);
+  }
+});
+
+test('coverage is counted over sources SEEN, not only over the static table', () => {
+  // The defect this locks: a source carrying live incidents but missing from
+  // DIAGNOSTIC_SOURCE_IDS used to leave coverage reading 16/16 and readiness
+  // reading true. Coverage must be able to see it and withhold the green.
+  const plan = buildOrchestrationPlan(planInput({
+    incidents: [incident(), incident({ fingerprint: 'zzz', sourceId: 'A_SOURCE_NOBODY_CLASSIFIED' })],
+  }));
+  assert.deepEqual(plan.capabilityCoverage.unclassified, ['A_SOURCE_NOBODY_CLASSIFIED']);
+  assert.equal(plan.capabilityCoverage.productionSources, PRODUCTION_SOURCE_IDS.length + 1);
+  assert.equal(plan.capabilityCoverage.classified, PRODUCTION_SOURCE_IDS.length);
+  // And it still refuses the unclassified source rather than acting on it.
+  const entry = plan.entries.find((row) => row.sourceId === 'A_SOURCE_NOBODY_CLASSIFIED');
+  assert.equal(entry.sourceCapability.controlledRecoveryEligible, false);
+  assert.notEqual(entry.finalDisposition, 'WOULD_CONTROLLED_RECOVER');
 });
 
 test('B: an unclassified source resolves to human review, never to permission', () => {
@@ -543,6 +566,7 @@ test('the plan surfaces stuck attempts and full capability coverage', () => {
   assert.equal(plan.capabilityCoverage.productionSources, PRODUCTION_SOURCE_IDS.length);
   assert.equal(plan.capabilityCoverage.classified, PRODUCTION_SOURCE_IDS.length);
   assert.deepEqual(plan.capabilityCoverage.unclassified, []);
+  assert.ok(plan.capabilityCoverage.observeOnly.includes('KASI_PUBLIC_HOLIDAYS'));
   assert.deepEqual(plan.capabilityCoverage.controlledEligible, ['INCHEON_PASSENGER_FORECAST', 'KMA_VILAGE_FCST']);
   assert.ok(plan.capabilityCoverage.nextSlotOnly.includes('INCHEON_DEPARTURE_CONGESTION'));
   assert.ok(plan.capabilityCoverage.humanReviewOnly.includes('INCHEON_FLIGHT_DETAIL'));

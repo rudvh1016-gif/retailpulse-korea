@@ -331,13 +331,20 @@ const shadow = (live?.incidents ?? []).flatMap((incident) => {
  * LOCKED regardless: readiness is a recommendation, never an activation.
  */
 const activation = centralRecoveryActivation(nowIso);
-const unclassified = PRODUCTION_SOURCE_IDS.filter((id) => capabilityFor(id).logicalJob === 'UNKNOWN');
+// Over the union of the static table AND every source the ledger actually
+// mentions. A table-only count reported full coverage on 2026-09-14 while
+// KASI_PUBLIC_HOLIDAYS was live and unclassified — a false green is exactly
+// what withholds readiness, so it must be able to see one.
+const observedSourceIds = [...new Set([...PRODUCTION_SOURCE_IDS,
+  ...(live?.incidents ?? []).map((incident) => incident.sourceId),
+  ...(live?.measurements ?? []).map((measured) => measured.sourceId)])].sort();
+const unclassified = observedSourceIds.filter((id) => capabilityFor(id).logicalJob === 'UNKNOWN');
 const stuckAttempts = live?.stuck ?? [];
 const centralRecoveryReadiness = {
   executionGate: activation.allowed ? 'OPEN' : 'LOCKED',
   executionGateBlockedBy: activation.blockedBy,
   executionGateEvaluated: activation.evaluated,
-  sourceCapabilityCoverage: `${PRODUCTION_SOURCE_IDS.length - unclassified.length}/${PRODUCTION_SOURCE_IDS.length}`,
+  sourceCapabilityCoverage: `${observedSourceIds.length - unclassified.length}/${observedSourceIds.length}`,
   unsupportedSources: SOURCE_RECOVERY_CAPABILITIES.filter((entry) => !entry.controlledRecoveryEligible).map((entry) => entry.sourceId),
   controlledEligibleSources: SOURCE_RECOVERY_CAPABILITIES.filter((entry) => entry.controlledRecoveryEligible).map((entry) => entry.sourceId),
   unclassifiedSources: unclassified,

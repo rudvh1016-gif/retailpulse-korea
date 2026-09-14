@@ -97,6 +97,18 @@ export interface OrchestrationPlan {
   capabilityCoverage: {
     productionSources: number;
     classified: number;
+    /**
+     * Sources that are live but unclassified.
+     *
+     * Computed over the union of the static production table AND every source
+     * id actually seen in the ledger — not the table alone. The first
+     * Production rehearsal (2026-09-14) found exactly why that matters:
+     * `KASI_PUBLIC_HOLIDAYS` carries incidents but is absent from
+     * `DIAGNOSTIC_SOURCE_IDS`, so a table-only count reported 16/16 and full
+     * coverage while an unclassified source was live. The disposition itself
+     * was safe — it refused — but the COVERAGE CLAIM was false, and a false
+     * green is the failure this phase exists to prevent.
+     */
     unclassified: readonly string[];
     controlledEligible: readonly string[];
     nextSlotOnly: readonly string[];
@@ -196,6 +208,16 @@ export function buildOrchestrationPlan(input: OrchestrationPlanInput): Orchestra
     dispositionCounts[entry.finalDisposition] = (dispositionCounts[entry.finalDisposition] ?? 0) + 1;
   }
 
+  // Every source the ledger actually mentions, whether or not the static table
+  // knows about it. A source can reach D1 without being in DIAGNOSTIC_SOURCE_IDS.
+  const observedSourceIds = [...new Set([
+    ...PRODUCTION_SOURCE_IDS,
+    ...input.incidents.map((incident) => incident.sourceId),
+    ...input.attempts.map((attempt) => attempt.sourceId),
+    ...input.inFlight.map((row) => row.sourceId),
+    ...input.stuck.map((row) => row.sourceId),
+  ])].sort();
+
   const byClass = (recoveryClass: string) =>
     SOURCE_RECOVERY_CAPABILITIES.filter((entry) => entry.recoveryClass === recoveryClass)
       .map((entry) => entry.sourceId)
@@ -221,9 +243,9 @@ export function buildOrchestrationPlan(input: OrchestrationPlanInput): Orchestra
       .sort((a, b) => a.attemptId.localeCompare(b.attemptId))
       .map((row) => ({ ...row, disposition: "HUMAN_REVIEW_REQUIRED" as const })),
     capabilityCoverage: {
-      productionSources: PRODUCTION_SOURCE_IDS.length,
-      classified: PRODUCTION_SOURCE_IDS.filter((id) => capabilityFor(id).logicalJob !== "UNKNOWN").length,
-      unclassified: PRODUCTION_SOURCE_IDS.filter((id) => capabilityFor(id).logicalJob === "UNKNOWN").sort(),
+      productionSources: observedSourceIds.length,
+      classified: observedSourceIds.filter((id) => capabilityFor(id).logicalJob !== "UNKNOWN").length,
+      unclassified: observedSourceIds.filter((id) => capabilityFor(id).logicalJob === "UNKNOWN"),
       controlledEligible: byClass("CONTROLLED_ELIGIBLE"),
       nextSlotOnly: byClass("NEXT_SCHEDULED_SLOT_ONLY"),
       observeOnly: byClass("OBSERVE_ONLY"),

@@ -295,6 +295,18 @@ export const SOURCE_RECOVERY_CAPABILITIES: readonly SourceRecoveryCapability[] =
     reason: "quarterly-published store dynamics collected weekly; same reasoning as estimated sales",
   },
   {
+    sourceId: "KASI_PUBLIC_HOLIDAYS",
+    logicalJob: "collect-production.yml",
+    recoveryClass: "OBSERVE_ONLY",
+    supportedActions: [],
+    adapter: null,
+    publicVerification: "STORAGE_ONLY",
+    providerBudgetPolicy: "UNMEASURED",
+    nextScheduledSlotBehavior: "daily group windows at 06:07 and 10:07 KST",
+    controlledRecoveryEligible: false,
+    reason: "a published holiday calendar that changes a few times a year; no adapter, no measured re-request cost, and two scheduled windows a day already repair a missed one",
+  },
+  {
     sourceId: "KTO_TOURAPI_EVENT",
     logicalJob: "collect-production.yml",
     recoveryClass: "OBSERVE_ONLY",
@@ -311,10 +323,27 @@ export const SOURCE_RECOVERY_CAPABILITIES: readonly SourceRecoveryCapability[] =
 /** The source ids this harness knows about, companion included. */
 export const CLASSIFIED_SOURCE_IDS: readonly string[] = SOURCE_RECOVERY_CAPABILITIES.map((entry) => entry.sourceId);
 
+/**
+ * Canonical ids that reach D1 without appearing in `DIAGNOSTIC_SOURCE_IDS`.
+ *
+ * Found by the first Production rehearsal on 2026-09-14, not by reading the
+ * table: `KASI_PUBLIC_HOLIDAYS` carried live incidents while the diagnostic
+ * table had never heard of it. `scripts/collect-production.ts` writes its
+ * source_health under the production source name `holidays`.
+ *
+ * It is classified here rather than bolted onto `DIAGNOSTIC_SOURCE_IDS`,
+ * because that table also drives the default diagnostic selection and the
+ * health source list, and widening it is a separate change with its own
+ * evidence to gather. What matters for recovery is that the source is
+ * classified at all — which it now is.
+ */
+export const ADDITIONAL_LIVE_SOURCE_IDS: readonly string[] = ["KASI_PUBLIC_HOLIDAYS"];
+
 /** Every canonical id a production collector writes, companion included. */
 export const PRODUCTION_SOURCE_IDS: readonly string[] = [
   ...Object.values(DIAGNOSTIC_SOURCE_IDS),
   "SEOUL_CITYDATA_CMRCL",
+  ...ADDITIONAL_LIVE_SOURCE_IDS,
 ];
 
 /**
