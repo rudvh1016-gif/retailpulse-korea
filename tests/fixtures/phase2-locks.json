@@ -13,7 +13,7 @@
     "app/api/live/events/route.ts": "cf0c38ac44278438d4c4d134c7ec3a0ece9ded3572600c6aa1d5c560d9a2932f",
     "app/api/live/flights/route.ts": "24995b1b8ec2794b0010cfeec062bb87f25c1fb2a47c441b4d5150faef6e93b4",
     "app/api/live/predictions/route.ts": "b8926f63ea781a39459daa56726b38bca7d71c223738022faa00ba819bcecaf9",
-    "app/api/live/summary/route.ts": "f3ff074cd27c64c67ba46021479d2814eafcd8c52fc4ffc5cc75da7ec8ef12e0",
+    "app/api/live/summary/route.ts": "c957468b69ac6515998dee3b2f72e14a3bb7e00c4bb37444476a614e6a5c3696",
     "app/area-demand-card.tsx": "07279f69da2db15cb1e28537ef3340a466c6d193f3773257687468142dc3b325",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "7f52ff9f824cf647c694f64f4ff0365c0400801635e5c91133b224b8c6db9d7a",

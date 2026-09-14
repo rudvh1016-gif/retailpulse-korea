@@ -75,10 +75,10 @@ import { readGroups, type ReadClient } from "../../../../lib/d1-read-batch";
  * so an unexpected band grid cannot turn a bounded read into a scan.
  */
 function monthRangeSql(days: number): string {
-  return `SELECT terminal, direction, is_aggregate AS isAggregate,
-    target_date AS targetDate, time_band_raw AS timeBandRaw,
+  return `SELECT terminal, target_date AS targetDate,
     target_start_at AS targetStartAt, target_end_at AS targetEndAt,
-    expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
+    expected_passengers AS expectedPassengers,
+    'departure' AS direction, 1 AS isAggregate
   FROM airport_passenger_forecast
   WHERE direction = 'departure' AND is_aggregate = 1 AND target_date IN (${Array.from({ length: days }, () => "?").join(", ")})
   ORDER BY target_date, terminal, target_start_at LIMIT 1600`;
