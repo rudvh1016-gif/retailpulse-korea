@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
+import "./airport-mtd.css";
 import { isStagingDeployment, pageTitle, pageDescription, siteOrigin, socialImage } from "./seo-config";
 
 export const metadata: Metadata = {
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
   robots: isStagingDeployment
     ? { index: false, follow: false, noarchive: true, nocache: true }
     : { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } },
-  alternates: { canonical: "/ko", languages: { "ko-KR": "/ko", en: "/en", "zh-CN": "/zh", "ja-JP": "/ja", "x-default": "/en" } },
+  alternates: { canonical: "/ko", languages: { "ko-KR": "/ko", en: "/en", "zh-CN": "/zh", ja: "/ja", "x-default": "/en" } },
   openGraph: {
     title: pageTitle('ko'),
     description: pageDescription('ko'),
