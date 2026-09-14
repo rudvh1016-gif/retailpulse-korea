@@ -295,6 +295,18 @@ export const SOURCE_RECOVERY_CAPABILITIES: readonly SourceRecoveryCapability[] =
     reason: "quarterly-published store dynamics collected weekly; same reasoning as estimated sales",
   },
   {
+    sourceId: "INCHEON_TRANSFER_FORECAST",
+    logicalJob: "collect-transfer.yml",
+    recoveryClass: "NEXT_SCHEDULED_SLOT_ONLY",
+    supportedActions: [],
+    adapter: null,
+    publicVerification: "VERIFIABLE_ON_PUBLIC_SUMMARY",
+    providerBudgetPolicy: "COVERED_BY_NEXT_SCHEDULED_RUN",
+    nextScheduledSlotBehavior: "four windows every morning KST (collect-transfer.yml crons 10,30 8 and 0 9,10 UTC)",
+    controlledRecoveryEligible: false,
+    reason: "no recovery adapter exists, and the workflow already retries the same day's forecast in four separate morning windows; a central call would duplicate a repair the schedule performs by itself",
+  },
+  {
     sourceId: "KASI_PUBLIC_HOLIDAYS",
     logicalJob: "collect-production.yml",
     recoveryClass: "OBSERVE_ONLY",
@@ -326,10 +338,16 @@ export const CLASSIFIED_SOURCE_IDS: readonly string[] = SOURCE_RECOVERY_CAPABILI
 /**
  * Canonical ids that reach D1 without appearing in `DIAGNOSTIC_SOURCE_IDS`.
  *
- * Found by the first Production rehearsal on 2026-09-14, not by reading the
- * table: `KASI_PUBLIC_HOLIDAYS` carried live incidents while the diagnostic
- * table had never heard of it. `scripts/collect-production.ts` writes its
- * source_health under the production source name `holidays`.
+ * Found by the Production rehearsals on 2026-09-14, not by reading the table.
+ * `KASI_PUBLIC_HOLIDAYS` carried live incidents while the diagnostic table had
+ * never heard of it (`scripts/collect-production.ts` writes its source_health
+ * under the production source name `holidays`). Counting coverage over sources
+ * SEEN rather than sources TABULATED then immediately exposed a second one:
+ * `INCHEON_TRANSFER_FORECAST`, which has its own workflow and its own logical
+ * job in `canonicalOperationalJob` and is likewise absent from the table.
+ *
+ * Two in two runs is the argument for the union-based count: the table is not
+ * a reliable census of what reaches D1.
  *
  * It is classified here rather than bolted onto `DIAGNOSTIC_SOURCE_IDS`,
  * because that table also drives the default diagnostic selection and the
@@ -337,7 +355,7 @@ export const CLASSIFIED_SOURCE_IDS: readonly string[] = SOURCE_RECOVERY_CAPABILI
  * evidence to gather. What matters for recovery is that the source is
  * classified at all — which it now is.
  */
-export const ADDITIONAL_LIVE_SOURCE_IDS: readonly string[] = ["KASI_PUBLIC_HOLIDAYS"];
+export const ADDITIONAL_LIVE_SOURCE_IDS: readonly string[] = ["KASI_PUBLIC_HOLIDAYS", "INCHEON_TRANSFER_FORECAST"];
 
 /** Every canonical id a production collector writes, companion included. */
 export const PRODUCTION_SOURCE_IDS: readonly string[] = [

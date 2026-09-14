@@ -232,10 +232,12 @@ test('B: every production source id is classified exactly once', () => {
   assert.equal(new Set(CLASSIFIED_SOURCE_IDS).size, CLASSIFIED_SOURCE_IDS.length, 'one entry per source');
   // A source that reaches D1 without being in DIAGNOSTIC_SOURCE_IDS is still a
   // production source. The first Production rehearsal found one.
+  // Each one must be written by something real, not merely asserted here.
+  const collectors = ['scripts/collect-production.ts', 'lib/collector.ts', 'lib/operational-evidence.ts']
+    .map((path) => readFileSync(path, 'utf8')).join('\n');
   for (const id of ADDITIONAL_LIVE_SOURCE_IDS) {
-    assert.ok(CLASSIFIED_SOURCE_IDS.includes(id), `${id} is written by a collector and must be classified`);
-    assert.ok(readFileSync('scripts/collect-production.ts', 'utf8').includes(id),
-      `${id} must actually be written by the production collector, not merely asserted here`);
+    assert.ok(CLASSIFIED_SOURCE_IDS.includes(id), `${id} reaches D1 and must be classified`);
+    assert.ok(collectors.includes(id), `${id} must be a real collected source, not an invented entry`);
   }
 });
 
