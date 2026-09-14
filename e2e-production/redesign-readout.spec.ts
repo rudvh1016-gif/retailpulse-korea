@@ -87,6 +87,39 @@ for (const locale of ["ko", "en", "zh", "ja"] as const) {
         }
       }
 
+      // The executive brief's own order, read from the live page (2026-09-14).
+      // The sum leads, is shown as arithmetic, and carries its limitation; the
+      // month block follows the hourly chart and the glance grid. Geometry, not
+      // markup order, because that is what a reader actually experiences.
+      const sum = page.locator('[data-testid="airport-sum-total"]');
+      const formula = page.locator('[data-testid="airport-sum-formula"]');
+      const mtd = page.locator('[data-testid="airport-mtd"]');
+      if (await sum.count()) {
+        console.log(`SUM ${locale} ${viewport.name} ${JSON.stringify((await sum.innerText()).replace(/\s+/g, " ").trim())}`);
+        console.log(`FORMULA ${locale} ${viewport.name} ${JSON.stringify((await formula.innerText()).replace(/\s+/g, " ").trim())}`);
+        const order: number[] = [];
+        for (const locator of [sum, formula, page.locator(".passenger-transfer-limitation").first(), strip]) {
+          const box = await locator.boundingBox();
+          expect(box, "every leading block must render").not.toBeNull();
+          order.push(box!.y);
+        }
+        for (let i = 1; i < order.length; i += 1) {
+          expect(order[i], "the sum leads, then the formula, then its limitation").toBeGreaterThan(order[i - 1]);
+        }
+        // The hall figure is an OPERAND. It must never be a headline above the sum.
+        const sumTop = order[0];
+        const hallHeadline = await page.locator(".airport-brief-total:not([data-basis])").boundingBox();
+        if (hallHeadline) expect(hallHeadline.y, "the hall-only headline must not sit above the sum").toBeGreaterThan(sumTop);
+      } else {
+        console.log(`SUM ${locale} ${viewport.name} "not formed — transfer forecast unavailable"`);
+      }
+      if (await mtd.count()) {
+        console.log(`MTD ${locale} ${viewport.name} ${JSON.stringify((await mtd.innerText()).replace(/\s+/g, " ").trim().slice(0, 260))}`);
+        await expect(mtd).toHaveAttribute("data-scope", "all");
+        expect(await overflowing(page, ".airport-mtd *"), "no clipped text in the month block").toEqual([]);
+      } else {
+        console.log(`MTD ${locale} ${viewport.name} "absent"`);
+      }
       expect(await overflowing(page, ".airport-glance-strip *"), "no clipped cell").toEqual([]);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.screenshot({ path: info.outputPath(`airport-${locale}-${viewport.name}.png`) });
