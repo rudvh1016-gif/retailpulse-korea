@@ -5,11 +5,11 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Read persistent memory, record verified observations, or prove recovery dormant
+        description: Read persistent memory, record verified observations, print the read-only orchestration plan, or prove recovery dormant
         required: true
         default: inspect
         type: choice
-        options: [inspect, record, recover]
+        options: [inspect, record, plan, recover]
 
 permissions:
   contents: read

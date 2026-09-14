@@ -9,6 +9,7 @@ import { SqliteD1 } from './helpers/operational-sqlite.mjs';
 import { OperationalMemory,safeOperationalEvidence,AUTOMATIC_POLICY_CHANGE_ALLOWED } from '../lib/operational-memory.ts';
 import { decideRecovery } from '../lib/recovery-orchestration.ts';
 import { executeControlledRecovery,recoveryActivation,CENTRAL_RECOVERY_EXECUTION_ENABLED } from '../lib/operational-recovery-runner.ts';
+import { resolveCentralRecoveryActivation } from '../lib/central-recovery-gate.ts';
 import { scoreRecoveryAttempts,evaluateShadowPolicy,regressionCandidates,observedUsage } from '../lib/recovery-scorecard.ts';
 import { observedContract,measureSource,matchPublicEvidence,matchPublicBundle,verifyPublicMeasurement,sourceObservation,sourceIdsForRun } from '../lib/operational-evidence.ts';
 import { evaluateSource } from '../lib/source-lifecycle.ts';
@@ -26,6 +27,18 @@ import { readWorkflowFacts } from '../lib/scheduler-truth.ts';
 const at='2026-09-13T06:00:00.000Z';
 const later='2026-09-13T06:01:00.000Z';
 const parts={sourceId:'KMA_VILAGE_FCST',failureClass:'STALE',contractVersion:'weather-v1',logicalJob:'collect-weather.yml'};
+/**
+ * The closed-loop tests below exercise what happens AFTER admission, so they
+ * need the execution gate open. Production cannot reach this state: the
+ * compiled constant is false and only an owner-approved pull request changes
+ * it. Constructing the open gate explicitly here — rather than letting the
+ * tests inherit whatever the environment says — is what makes these the only
+ * scenarios in the suite where a provider executor is allowed to run at all.
+ * tests/operational-phase3.test.mjs asserts that no file outside tests/ ever
+ * passes an `activation`.
+ */
+const OPEN_GATE=resolveCentralRecoveryActivation({compiledEnabled:true,runtimeEnabled:true,ownerApproved:true,
+  nowIso:'2026-10-01T00:00:00Z',trialEndExclusiveIso:'2026-09-27T00:00:00+09:00'});
 const failure=(runId='run1',overrides={})=>({parts,kind:'FAILURE',runId,at,evidence:'current issuance absent',...overrides});
 const request=(runId='run1',overrides={})=>({parts,targetDate:'2026-09-13',scheduledSlot:'14:00',operation:'REQUEST_ONLY_MISSING_COVERAGE',runId,at,...overrides});
 const verified={dataValid:true,storageValid:true,publicValid:true};
@@ -54,8 +67,8 @@ for(const [name,verification,state] of [
   ['failed storage',{...verified,storageValid:false},'RECOVERY_FAILED'],
   ['failed publication',{...verified,publicValid:false},'RECOVERY_FAILED'],
   ['unknown publication',{...verified,publicValid:null},'RECOVERY_PENDING'],
-])test(`durable closed loop: ${name}`,async()=>{const {memory}=setup();await memory.recordEvent(failure());const result=await executeControlledRecovery(memory,request(),{now:()=>later,execute:async()=>({source:'weather_recovery',status:'SUCCESS',records:0,providerRequests:0}),verify:async()=>verification});assert.equal(result.stage,state);const [attempt]=await memory.attempts(parts.sourceId,'2026-09-13');assert.equal(attempt.outcome,state);assert.equal(attempt.verified,false);assert.notEqual((await memory.incidents())[0].currentState,'RESOLVED');});
-test('duplicate execution blocked and provider called once',async()=>{const {memory}=setup();await memory.recordEvent(failure());let calls=0;const executor={execute:async()=>{calls++;return {status:'SUCCESS',source:'weather',records:3};},verify:async()=>verified,now:()=>later};await executeControlledRecovery(memory,request(),executor);await executeControlledRecovery(memory,request('again'),executor);assert.equal(calls,1);});
+])test(`durable closed loop: ${name}`,async()=>{const {memory}=setup();await memory.recordEvent(failure());const result=await executeControlledRecovery(memory,request(),{now:()=>later,execute:async()=>({source:'weather_recovery',status:'SUCCESS',records:0,providerRequests:0}),verify:async()=>verification},{activation:OPEN_GATE});assert.equal(result.stage,state);const [attempt]=await memory.attempts(parts.sourceId,'2026-09-13');assert.equal(attempt.outcome,state);assert.equal(attempt.verified,false);assert.notEqual((await memory.incidents())[0].currentState,'RESOLVED');});
+test('duplicate execution blocked and provider called once',async()=>{const {memory}=setup();await memory.recordEvent(failure());let calls=0;const executor={execute:async()=>{calls++;return {status:'SUCCESS',source:'weather',records:3};},verify:async()=>verified,now:()=>later};await executeControlledRecovery(memory,request(),executor,{activation:OPEN_GATE});await executeControlledRecovery(memory,request('again'),executor,{activation:OPEN_GATE});assert.equal(calls,1);});
 test('stale lock never automatically releases',async()=>{const {memory}=setup();await memory.recordEvent(failure());assert.equal((await memory.admit(request())).admitted,true);assert.equal((await memory.admit(request('next',{at:'2026-10-20T06:00:00Z'}))).admitted,false);});
 test('concurrent clients cannot admit different slots for same source/job',async()=>{const {db,memory}=setup();const other=new OperationalMemory(db);const results=await Promise.all([memory.admit(request('a')),other.admit(request('b',{scheduledSlot:'15:00'}))]);assert.equal(results.filter(row=>row.admitted).length,1);});
 test('persistent budget survives fresh store instances, different slots and changed contract',async()=>{const {db,memory}=setup();await memory.recordEvent(failure());for(let i=0;i<3;i++){const m=new OperationalMemory(db),a=await m.admit(request(`r${i}`,{scheduledSlot:String(i)}));assert.equal(a.admitted,true);await m.finish(a.attemptId,later,{...verified,dataValid:false});}const result=await new OperationalMemory(db).admit(request('four',{scheduledSlot:'4',parts:{...parts,contractVersion:'weather-v2'}}));assert.equal(result.admitted,false);assert.equal(result.state,'HUMAN_REVIEW_REQUIRED');});

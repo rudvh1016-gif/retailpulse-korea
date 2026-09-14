@@ -4,10 +4,11 @@ import { resolveProductionDatabaseConfig } from './production-database';
 import { OperationalMemory } from '../lib/operational-memory';
 import { measureSource, verifyPublicMeasurement, readPublicEvidence } from '../lib/operational-evidence';
 import { saveMeasurement } from '../lib/operational-bookkeeping';
-import { recoveryActivation } from '../lib/operational-recovery-runner';
+import { recoveryActivation, centralRecoveryActivation } from '../lib/operational-recovery-runner';
+import { buildOrchestrationPlan } from '../lib/orchestration-plan';
 
 const mode=process.env.RPK_OPERATIONAL_MODE??'inspect';
-if(!['inspect','record','recover'].includes(mode))throw new Error('unknown_operational_mode');
+if(!['inspect','record','recover','plan'].includes(mode))throw new Error('unknown_operational_mode');
 if(mode==='recover') {
   console.log(JSON.stringify({centralRecovery:recoveryActivation(new Date().toISOString()),providerCalls:0}));
 } else {
@@ -34,7 +35,24 @@ if(mode==='recover') {
       observedD1RowsWritten:after.rowsWritten-before.rowsWritten,usageBasis:'OBSERVED_QUERY_METADATA'}));
   }
   const incidents=await memory.incidents();
-  console.log(JSON.stringify({memory:'PERSISTED_READ',incidentCount:incidents.length,
+  if(mode==='plan') {
+    // SELECT only, and bounded: incidents are already capped at 500, attempts at
+    // 1000 per source over a 30-day window, stuck/in-flight at 100. Nothing here
+    // scans a growing table without a ceiling, and nothing here writes.
+    const nowIso=new Date().toISOString();
+    const before=database.usageSnapshot();
+    const from=new Date(Date.now()-30*86400000).toISOString().slice(0,10);
+    const sourceIds=[...new Set(incidents.map(row=>row.sourceId))].sort();
+    const attempts=(await Promise.all(sourceIds.map(id=>memory.attempts(id,from)))).flat();
+    const plan=buildOrchestrationPlan({nowIso,incidents,attempts,
+      inFlight:await memory.inFlightControlled(),
+      stuck:await memory.stuckControlledAttempts(nowIso),
+      activation:centralRecoveryActivation(nowIso)});
+    const after=database.usageSnapshot();
+    console.log(JSON.stringify({...plan,observedD1RowsRead:after.rowsRead-before.rowsRead,
+      observedD1RowsWritten:after.rowsWritten-before.rowsWritten},null,2));
+    if(after.rowsWritten-before.rowsWritten!==0)throw new Error('orchestration_plan_must_not_write');
+  } else console.log(JSON.stringify({memory:'PERSISTED_READ',incidentCount:incidents.length,
     incidents:incidents.map(({fingerprint,occurrenceCount,currentState,lastGoodAt})=>({fingerprint,occurrenceCount,currentState,lastGoodAt})),
     automaticPolicyChangeAllowed:false,centralRecovery:'DORMANT'}));
 }

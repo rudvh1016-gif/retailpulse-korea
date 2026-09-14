@@ -1,0 +1,233 @@
+/**
+ * "If central recovery were on right now, what would it do?" — answered by reading only.
+ *
+ * Why this exists before any execution
+ * ────────────────────────────────────
+ * The dangerous thing about an orchestrator is not that it acts; it is that
+ * nobody can see what it would have decided until it has already decided it.
+ * This module produces that decision list from stored evidence alone, so the
+ * owner can read a full round of judgements — including every refusal and the
+ * reason for it — while the execution gate is still locked.
+ *
+ * Hard property: PURE. It takes already-read rows and returns a value. No D1
+ * handle, no fetch, no clock of its own. A planner that cannot perform a
+ * provider call or a write does not need to be trusted not to.
+ *
+ * Determinism is part of the contract. Entries are keyed by incident
+ * fingerprint and sorted by it, and every field is derived from the inputs, so
+ * the same stored rows produce byte-identical JSON however many times it runs.
+ * That is what makes the plan diffable between runs and therefore reviewable.
+ */
+import type { Incident } from "./incident-ledger";
+import type { StoredAttempt } from "./operational-memory";
+import type { CentralRecoveryActivation } from "./central-recovery-gate";
+import {
+  PRODUCTION_SOURCE_IDS,
+  SOURCE_RECOVERY_CAPABILITIES,
+  capabilityFor,
+  resolveRecoveryDisposition,
+  type FinalDisposition,
+} from "./recovery-capability";
+
+export interface StuckAttempt {
+  attemptId: string;
+  sourceId: string;
+  logicalJob: string;
+  executionId: string;
+  startedAt: string;
+  ageMs: number;
+}
+
+export interface OrchestrationPlanInput {
+  nowIso: string;
+  incidents: readonly Incident[];
+  attempts: readonly StoredAttempt[];
+  /** Controlled attempts holding a lock right now, from OperationalMemory.inFlightControlled(). */
+  inFlight: readonly { sourceId: string; logicalJob: string }[];
+  /** Orphans from OperationalMemory.stuckControlledAttempts(). */
+  stuck: readonly StuckAttempt[];
+  activation: CentralRecoveryActivation;
+}
+
+export interface OrchestrationPlanEntry {
+  fingerprint: string;
+  sourceId: string;
+  failureClass: string;
+  contractVersion: string;
+  logicalJob: string;
+  currentState: string;
+  occurrenceCount: number;
+  lastSeen: string;
+  lastGoodAt: string | null;
+  ruleDecision: { approved: boolean; action: string; stage: string; reason: string };
+  sourceCapability: {
+    recoveryClass: string;
+    controlledRecoveryEligible: boolean;
+    supportedActions: readonly string[];
+    adapter: string | null;
+    publicVerification: string;
+    providerBudgetPolicy: string;
+    nextScheduledSlotBehavior: string;
+  };
+  attemptsUsed: number;
+  maxAttempts: number;
+  inFlightAttempt: boolean;
+  recommendedAction: string;
+  finalDisposition: FinalDisposition;
+  blockReason: string;
+}
+
+export interface OrchestrationPlan {
+  generatedAt: string;
+  /** Proof, in the artifact itself, that producing it cost nothing. */
+  providerCalls: 0;
+  d1Writes: 0;
+  deploys: 0;
+  dispatches: 0;
+  centralRecovery: {
+    executionGate: "LOCKED" | "OPEN";
+    blockedBy: readonly string[];
+    reason: string;
+    evaluated: CentralRecoveryActivation["evaluated"];
+  };
+  incidentsExamined: number;
+  dispositionCounts: Record<string, number>;
+  entries: readonly OrchestrationPlanEntry[];
+  stuckControlledAttempts: readonly (StuckAttempt & { disposition: "HUMAN_REVIEW_REQUIRED" })[];
+  capabilityCoverage: {
+    productionSources: number;
+    classified: number;
+    unclassified: readonly string[];
+    controlledEligible: readonly string[];
+    nextSlotOnly: readonly string[];
+    observeOnly: readonly string[];
+    humanReviewOnly: readonly string[];
+  };
+}
+
+/**
+ * Attempts already spent against today's budget for one incident.
+ *
+ * Counted the way `OperationalMemory.admit` counts them — by source, logical
+ * job and target date — rather than by fingerprint, because that is the budget
+ * the admission statement actually enforces. A plan that counted differently
+ * would predict an admission the database would refuse.
+ */
+function attemptsUsedFor(
+  incident: Incident,
+  attempts: readonly StoredAttempt[],
+  targetDate: string,
+): number {
+  return attempts.filter(
+    (row) => row.sourceId === incident.sourceId && row.logicalJob === incident.logicalJob && row.targetDate === targetDate,
+  ).length;
+}
+
+/** KST civil date, which is the date the admission budget is keyed by. */
+export function kstDate(nowIso: string): string {
+  const time = Date.parse(nowIso);
+  if (!Number.isFinite(time)) throw new Error("invalid_plan_timestamp");
+  return new Date(time + 9 * 3600_000).toISOString().slice(0, 10);
+}
+
+/**
+ * Builds the plan.
+ *
+ * Resolved incidents are included rather than filtered out, carrying
+ * ALREADY_RECOVERED. A plan that silently drops them cannot be read as "these
+ * are all the open items" — the reader would have to trust that the omission
+ * was deliberate rather than a query that missed rows.
+ */
+export function buildOrchestrationPlan(input: OrchestrationPlanInput): OrchestrationPlan {
+  const targetDate = kstDate(input.nowIso);
+  const inFlightKeys = new Set(input.inFlight.map((row) => `${row.sourceId}::${row.logicalJob}`));
+
+  const entries = [...input.incidents]
+    .sort((a, b) => a.fingerprint.localeCompare(b.fingerprint))
+    .map((incident): OrchestrationPlanEntry => {
+      const attemptsUsed = attemptsUsedFor(incident, input.attempts, targetDate);
+      const inFlightAttempt = inFlightKeys.has(`${incident.sourceId}::${incident.logicalJob}`);
+      const resolved = resolveRecoveryDisposition({
+        sourceId: incident.sourceId,
+        failureClass: incident.failureClass,
+        contractVersion: incident.contractVersion,
+        attemptsUsed,
+        inFlight: inFlightAttempt,
+        alreadyRecovered: incident.currentState === "RESOLVED",
+        centralGateAllowed: input.activation.allowed,
+      });
+      const capability = resolved.capability;
+      return {
+        fingerprint: incident.fingerprint,
+        sourceId: incident.sourceId,
+        failureClass: incident.failureClass,
+        contractVersion: incident.contractVersion,
+        logicalJob: incident.logicalJob,
+        currentState: incident.currentState,
+        occurrenceCount: incident.occurrenceCount,
+        lastSeen: incident.lastSeen,
+        lastGoodAt: incident.lastGoodAt,
+        ruleDecision: {
+          approved: resolved.ruleDecision.approved,
+          action: resolved.ruleDecision.action,
+          stage: resolved.ruleDecision.stage,
+          reason: resolved.ruleDecision.reason,
+        },
+        sourceCapability: {
+          recoveryClass: capability.recoveryClass,
+          controlledRecoveryEligible: capability.controlledRecoveryEligible,
+          supportedActions: capability.supportedActions,
+          adapter: capability.adapter,
+          publicVerification: capability.publicVerification,
+          providerBudgetPolicy: capability.providerBudgetPolicy,
+          nextScheduledSlotBehavior: capability.nextScheduledSlotBehavior,
+        },
+        attemptsUsed,
+        maxAttempts: resolved.ruleDecision.maxAttempts,
+        inFlightAttempt,
+        recommendedAction: resolved.recommendedAction,
+        finalDisposition: resolved.finalDisposition,
+        blockReason: resolved.blockReason,
+      };
+    });
+
+  const dispositionCounts: Record<string, number> = {};
+  for (const entry of entries) {
+    dispositionCounts[entry.finalDisposition] = (dispositionCounts[entry.finalDisposition] ?? 0) + 1;
+  }
+
+  const byClass = (recoveryClass: string) =>
+    SOURCE_RECOVERY_CAPABILITIES.filter((entry) => entry.recoveryClass === recoveryClass)
+      .map((entry) => entry.sourceId)
+      .sort();
+
+  return {
+    generatedAt: input.nowIso,
+    providerCalls: 0,
+    d1Writes: 0,
+    deploys: 0,
+    dispatches: 0,
+    centralRecovery: {
+      executionGate: input.activation.allowed ? "OPEN" : "LOCKED",
+      blockedBy: input.activation.blockedBy,
+      reason: input.activation.reason,
+      evaluated: input.activation.evaluated,
+    },
+    incidentsExamined: entries.length,
+    // Sorted so the same counts serialise in the same order every run.
+    dispositionCounts: Object.fromEntries(Object.entries(dispositionCounts).sort(([a], [b]) => a.localeCompare(b))),
+    entries,
+    stuckControlledAttempts: [...input.stuck]
+      .sort((a, b) => a.attemptId.localeCompare(b.attemptId))
+      .map((row) => ({ ...row, disposition: "HUMAN_REVIEW_REQUIRED" as const })),
+    capabilityCoverage: {
+      productionSources: PRODUCTION_SOURCE_IDS.length,
+      classified: PRODUCTION_SOURCE_IDS.filter((id) => capabilityFor(id).logicalJob !== "UNKNOWN").length,
+      unclassified: PRODUCTION_SOURCE_IDS.filter((id) => capabilityFor(id).logicalJob === "UNKNOWN").sort(),
+      controlledEligible: byClass("CONTROLLED_ELIGIBLE"),
+      nextSlotOnly: byClass("NEXT_SCHEDULED_SLOT_ONLY"),
+      observeOnly: byClass("OBSERVE_ONLY"),
+      humanReviewOnly: byClass("HUMAN_REVIEW_ONLY"),
+    },
+  };
+}

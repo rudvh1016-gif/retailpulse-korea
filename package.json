@@ -30,6 +30,7 @@
     "health": "tsx scripts/health.ts",
     "health:production": "tsx scripts/health.ts --production",
     "operations:memory": "tsx scripts/operational-memory.ts",
+    "orchestration:plan": "RPK_OPERATIONAL_MODE=plan bash scripts/sites-env.sh -- tsx scripts/operational-memory.ts",
     "cf:typegen": "wrangler types --config wrangler.production.jsonc"
   },
   "dependencies": {

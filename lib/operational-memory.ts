@@ -111,6 +111,48 @@ export class OperationalMemory {
       durationMs:count(row.duration_ms as number),escalationRequired:row.escalation_required===1,mode:row.mode as StoredAttempt['mode']}));
   }
 
+  /**
+   * Controlled attempts that started and never finished.
+   *
+   * The lock these hold is correct and must stay held: elapsed time is not
+   * evidence the earlier attempt stopped, and releasing on a timer is how two
+   * runs end up hitting the same provider for the same window. But a lock that
+   * is both permanent and invisible is indistinguishable from a system that has
+   * quietly stopped trying, so the orphans are surfaced here and reported by
+   * health and by the orchestration plan.
+   *
+   * Read-only. Nothing in this method unlocks anything.
+   */
+  async stuckControlledAttempts(nowIso: string, olderThanMs = 3600_000): Promise<Array<{
+    attemptId: string; sourceId: string; logicalJob: string; executionId: string;
+    startedAt: string; ageMs: number; disposition: 'HUMAN_REVIEW_REQUIRED';
+  }>> {
+    const now = Date.parse(iso(nowIso));
+    const rows = (await this.db.prepare(`SELECT attempt_id,source_id,logical_job,execution_id,started_at
+      FROM operational_recovery_attempts WHERE completed_at IS NULL AND mode='CONTROLLED'
+      ORDER BY started_at,attempt_id LIMIT 101`).all<Row>()).results;
+    if (!rows) throw new Error('operational_attempts_unmeasured');
+    if (rows.length > 100) throw new Error('operational_stuck_attempt_limit_requires_review');
+    return rows.flatMap(row => {
+      const started = Date.parse(String(row.started_at));
+      const ageMs = now - started;
+      if (!Number.isFinite(ageMs) || ageMs < olderThanMs) return [];
+      return [{ attemptId: String(row.attempt_id), sourceId: String(row.source_id), logicalJob: String(row.logical_job),
+        executionId: String(row.execution_id), startedAt: String(row.started_at), ageMs,
+        disposition: 'HUMAN_REVIEW_REQUIRED' as const }];
+    });
+  }
+
+  /** Controlled attempts holding a lock right now, whatever their age. Read-only. */
+  async inFlightControlled(): Promise<Array<{ sourceId: string; logicalJob: string; executionId: string; startedAt: string }>> {
+    const rows = (await this.db.prepare(`SELECT source_id,logical_job,execution_id,started_at
+      FROM operational_recovery_attempts WHERE completed_at IS NULL AND mode='CONTROLLED'
+      ORDER BY source_id,logical_job LIMIT 101`).all<Row>()).results;
+    if (!rows) throw new Error('operational_attempts_unmeasured');
+    return rows.map(row => ({ sourceId: String(row.source_id), logicalJob: String(row.logical_job),
+      executionId: String(row.execution_id), startedAt: String(row.started_at) }));
+  }
+
   async admit(request: AttemptRequest): Promise<{ admitted: boolean; attemptId: string; state: string; reason: string }> {
     const {parts}=request;
     Object.values(parts).forEach(identity); identity(request.operation); identity(request.scheduledSlot); identity(request.runId);

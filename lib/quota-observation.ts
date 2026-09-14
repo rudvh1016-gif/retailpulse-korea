@@ -22,7 +22,24 @@
 import { evaluateQuotaUsage, type GuardrailDecision, type GuardrailLevel, type UsageEvidence } from "./quota-guard";
 
 export type QuotaLevel = GuardrailLevel | "UNKNOWN";
-export type QuotaBasis = UsageEvidence | "UNKNOWN";
+/**
+ * `OBSERVED_LOWER_BOUND` is what `operational_usage_daily` actually holds.
+ *
+ * Those counters sum what THIS harness observed itself doing. They are not
+ * account usage: anything the account spent outside a measured execution is
+ * invisible to them. The asymmetry that follows is the whole point of the
+ * basis, and it is one-way:
+ *
+ *   · A lower bound at or above 95% of the limit proves the real figure is at
+ *     least that high, because the real figure can only be larger. EMERGENCY is
+ *     therefore assertable from a lower bound.
+ *   · A lower bound at 20% proves nothing about the real figure, which may be
+ *     20% or 99%. NORMAL is NOT assertable, and saying it would be the same
+ *     mistake as passing 0 for "unmeasured".
+ *
+ * So a low lower bound stays UNKNOWN and keeps the resource OBSERVE_ONLY.
+ */
+export type QuotaBasis = UsageEvidence | "OBSERVED_LOWER_BOUND" | "UNKNOWN";
 
 export interface QuotaObservation {
   resource: string;
@@ -67,6 +84,31 @@ export function observeQuota(observation: QuotaObservation): QuotaVerdict {
       detail: measurementSource
         ? `no usage figure available for ${resource}; UNKNOWN is not 0`
         : `no measurement source exists for ${resource}; OBSERVE_ONLY`,
+    };
+  }
+  if (basis === "OBSERVED_LOWER_BOUND") {
+    const percent = (used / limit) * 100;
+    if (percent >= 95) {
+      // Safe in one direction only: the true figure is at least this, so the
+      // highest guardrail is earned even though the exact number is unknown.
+      return {
+        resource,
+        level: "EMERGENCY",
+        basis,
+        percent,
+        observeOnly: false,
+        decision: evaluateQuotaUsage(used, limit, "INTERNAL_ESTIMATE"),
+        detail: `at least ${used}/${limit} = ${percent.toFixed(1)}% observed for ${resource}; a lower bound this high proves EMERGENCY regardless of what is unmeasured`,
+      };
+    }
+    return {
+      resource,
+      level: "UNKNOWN",
+      basis,
+      percent,
+      observeOnly: true,
+      decision: null,
+      detail: `at least ${used}/${limit} = ${percent.toFixed(1)}% observed for ${resource}; a low lower bound cannot establish NORMAL, so the level stays UNKNOWN`,
     };
   }
   if (basis === "UNKNOWN") {
