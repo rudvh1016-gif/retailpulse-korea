@@ -39,7 +39,10 @@ import { buildHealthReport, summarizeHealthReport, type HealthInputs } from "../
 import { OperationalMemory } from '../lib/operational-memory';
 import { measureSource, sourceObservation, canonicalOperationalJob, verifyPublicMeasurement, readPublicEvidence, type SourceMeasurement } from '../lib/operational-evidence';
 import { readForecastEvidence } from '../lib/operational-forecast-evidence';
-import { observedUsage, scoreRecoveryAttempts, regressionCandidates, evaluateShadowPolicy } from '../lib/recovery-scorecard';
+import { observedUsage, scoreRecoveryAttempts, regressionCandidates, evaluateShadowPolicy, currentActionFor, shadowCandidatesFor } from '../lib/recovery-scorecard';
+import { capabilityFor, SOURCE_RECOVERY_CAPABILITIES, PRODUCTION_SOURCE_IDS } from '../lib/recovery-capability';
+import { centralRecoveryActivation } from '../lib/operational-recovery-runner';
+import { provesIndependentPlatform, classifyTriggerEvidence } from '../lib/trigger-evidence';
 import { evaluateSource, type SourceVerdict } from "../lib/source-lifecycle";
 import { buildWatchdogReport, type Heartbeat } from "../lib/watchdog";
 import { observeQuota, type QuotaObservation, type QuotaVerdict } from "../lib/quota-observation";
@@ -141,9 +144,11 @@ async function readLiveState() {
   const attempts=available?(await Promise.all(ids.map(id=>memory.attempts(id,new Date(Date.now()-30*86400000).toISOString().slice(0,10))))).flat():[];
   const usage=available?(await database.prepare('SELECT * FROM operational_usage_daily WHERE day=? ORDER BY source_id').bind(new Date().toISOString().slice(0,10)).all()).results:[];
   const states=available?(await database.prepare('SELECT source_id,logical_job,checked_at,last_good_at,execution_platform,trigger_evidence FROM operational_source_state ORDER BY source_id LIMIT 100').all()).results:[];
+  const stuck=available?await memory.stuckControlledAttempts(new Date().toISOString()):[];
+  const inFlight=available?await memory.inFlightControlled():[];
   let forecast: Awaited<ReturnType<typeof readForecastEvidence>>=[];
   try {forecast=await readForecastEvidence(db,new Date().toISOString());}catch {forecast=[{targetDate:new Date().toISOString().slice(0,10),state:'UNKNOWN',performanceClaimAllowed:false,detail:'forecast evidence query unavailable'}];}
-  return {measurements,incidents,attempts,usage,states,forecast,memoryState:available?'PERSISTED_READ':'DORMANT_MIGRATION_UNAVAILABLE'};
+  return {measurements,incidents,attempts,usage,states,forecast,stuck,inFlight,memoryState:available?'PERSISTED_READ':'DORMANT_MIGRATION_UNAVAILABLE'};
 }
 
 const nowIso = new Date().toISOString();
@@ -152,10 +157,31 @@ const rawYaml = new Map<string, string>(
   await Promise.all(workflows.map(async (facts) => [facts.file, await readText(`.github/workflows/${facts.file}`)] as const)),
 );
 
+/**
+ * Actions Variables this run genuinely knows the value of.
+ *
+ * `classifyRuntimeEnablement` has always accepted `knownVariables`; nothing ever
+ * passed them, so every gated schedule reported RUNTIME_ENABLE_STATE_UNKNOWN
+ * even inside the Production environment that can read the Variable. A workflow
+ * step echoes the one Variable that gates a schedule into
+ * `RPK_KNOWN_ENABLE_PRODUCTION_COLLECTOR`, and only that name is read here —
+ * arbitrary repository Variables are never harvested, and no secret is involved.
+ *
+ * The purpose is NOT to remove UNKNOWN. A local checkout and an ordinary CI run
+ * still pass nothing and still report UNKNOWN, which remains the correct answer
+ * there. The purpose is to stop reporting UNKNOWN in the one environment that
+ * actually knows.
+ */
+const knownVariables = Object.fromEntries(
+  ([["ENABLE_PRODUCTION_COLLECTOR", process.env.RPK_KNOWN_ENABLE_PRODUCTION_COLLECTOR]] as const)
+    .flatMap(([name, value]) => (value === "true" || value === "false" ? [[name, value] as const] : [])),
+);
+
 const truth = buildSchedulerTruth({
   workflows,
   workerCrons: PRODUCTION_CRONS,
   cronRouting: (cron) => workflowForCron(cron),
+  knownVariables: Object.keys(knownVariables).length ? knownVariables : undefined,
 });
 
 const docDrift = findDocDrift(
@@ -175,17 +201,22 @@ const runtimeLlm = scanForRuntimeLlm(await loadProductionSources(), [
 /**
  * Heartbeats, one per timed scheduler group.
  *
- * A collector completion in D1 does not prove which scheduler triggered it.
- * No independent trigger receipt is available here, so independence remains
- * false even when a recent completion is readable on the other platform.
+ * Independence is DERIVED from the trigger evidence rather than written as a
+ * literal `false`, so the answer arrives with its reason attached. It is still
+ * false everywhere, and that is the honest result: a Worker Cron reaches Actions
+ * as a `workflow_dispatch`, which GitHub renders identically to a person
+ * clicking Run workflow, so an Actions record proves only that Actions ran. The
+ * coverage gap stays open until a receipt the Worker itself signs exists.
  */
+const triggerEvidence = classifyTriggerEvidence(process.env);
+const independence = provesIndependentPlatform(triggerEvidence);
 const heartbeats: Heartbeat[] = truth.entries
   .filter((entry) => entry.cron)
   .map((entry) => ({
     name: `${entry.driver}:${entry.workflow}`,
     lastSeenAt: null,
     expectedIntervalMs: entry.cron ? cronMaxIntervalMs(entry.cron) : null,
-    observedByIndependentPlatform: false,
+    observedByIndependentPlatform: independence.independent,
   }));
 
 const cadence = cadenceByWorkflow(truth);
@@ -258,16 +289,88 @@ const inputs: HealthInputs = {
   unwiredDefences: unwiredDefences.map((entry) => ({ module: entry.module, detail: entry.detail })),
 };
 
+/**
+ * Shadow evaluation against the rule table, not against a hardcoded string.
+ *
+ * The previous version passed 'REDISPATCH_SAME_WORKFLOW' as the CURRENT action
+ * for every incident. For STALE and PARTIAL_DATA the rule in force is actually
+ * REQUEST_ONLY_MISSING_COVERAGE, so it compared a policy that is not in force
+ * against a candidate identical to the one that is. Both halves are now derived:
+ * the current action from `decideRecovery`, and the candidates from what this
+ * SOURCE can actually perform. A source with no adapter yields no candidates and
+ * is reported as such rather than accumulating evidence for a change that could
+ * never be applied to it.
+ */
+const shadow = (live?.incidents ?? []).flatMap((incident) => {
+  const scope = { sourceId: incident.sourceId, failureClass: incident.failureClass,
+    contractVersion: incident.contractVersion, logicalJob: incident.logicalJob };
+  const current = currentActionFor(incident.failureClass);
+  const candidates = shadowCandidatesFor(incident.sourceId, incident.failureClass,
+    (sourceId) => capabilityFor(sourceId).supportedActions);
+  if (!candidates.length) {
+    return [{ scope, currentAction: current, candidateAction: null as string | null,
+      state: 'NO_SUPPORTED_ALTERNATIVE' as string, automaticPolicyChangeAllowed: false as const,
+      scorecard: [] as ReturnType<typeof scoreRecoveryAttempts>,
+      reason: `${incident.sourceId} supports no action other than the one already in force; there is nothing to shadow` }];
+  }
+  return candidates.map((candidate) => {
+    const evaluated = evaluateShadowPolicy(live?.attempts ?? [], scope, current, candidate);
+    return { scope, currentAction: current, candidateAction: candidate as string | null,
+      state: evaluated.state as string, automaticPolicyChangeAllowed: evaluated.automaticPolicyChangeAllowed,
+      scorecard: evaluated.scorecard, reason: evaluated.reason };
+  });
+});
+
+/**
+ * Whether central recovery could responsibly be switched on — as its own answer.
+ *
+ * "The code exists" and "activation is safe" are different claims, and the
+ * second one is what an owner is actually deciding. Every condition below is
+ * derived from measured state, and `readyForOwnerReview` is the conjunction, so
+ * a single unclassified source or one stuck attempt withholds it. The gate stays
+ * LOCKED regardless: readiness is a recommendation, never an activation.
+ */
+const activation = centralRecoveryActivation(nowIso);
+const unclassified = PRODUCTION_SOURCE_IDS.filter((id) => capabilityFor(id).logicalJob === 'UNKNOWN');
+const stuckAttempts = live?.stuck ?? [];
+const centralRecoveryReadiness = {
+  executionGate: activation.allowed ? 'OPEN' : 'LOCKED',
+  executionGateBlockedBy: activation.blockedBy,
+  executionGateEvaluated: activation.evaluated,
+  sourceCapabilityCoverage: `${PRODUCTION_SOURCE_IDS.length - unclassified.length}/${PRODUCTION_SOURCE_IDS.length}`,
+  unsupportedSources: SOURCE_RECOVERY_CAPABILITIES.filter((entry) => !entry.controlledRecoveryEligible).map((entry) => entry.sourceId),
+  controlledEligibleSources: SOURCE_RECOVERY_CAPABILITIES.filter((entry) => entry.controlledRecoveryEligible).map((entry) => entry.sourceId),
+  unclassifiedSources: unclassified,
+  stuckAttempts,
+  unresolvedIncidents: (live?.incidents ?? []).filter((incident) => incident.currentState !== 'RESOLVED').length,
+  shadowEvidence: shadow.map((entry) => entry.state),
+  runtimeEnablementEvidence: Object.keys(knownVariables).length
+    ? knownVariables
+    : 'RUNTIME_ENABLE_STATE_UNKNOWN: no Actions Variable value was supplied to this run',
+  triggerEvidence,
+  watchdogLimitations: independence.reason,
+  automaticPolicyChangeAllowed: false as const,
+  automaticCodeChangeAllowed: false as const,
+  // Deliberately a conjunction of measured facts. Anything unmeasured withholds it.
+  readyForOwnerReview: unclassified.length === 0 && stuckAttempts.length === 0
+    && live?.memoryState === 'PERSISTED_READ' && runtimeLlm.offendingFiles.length === 0,
+};
+
 const report = {...buildHealthReport(inputs),phase2:{
   memory:live?.memoryState??'UNKNOWN_NO_DATABASE',sourceEvidence:live?.measurements.map(({sample,run,health,...facts})=>({...facts,sampleRows:sample.length,collectorStatus:run?.status??null,sourceStatus:health?.status??null}))??[],
   lastGood:live?.states??[],scorecard:scoreRecoveryAttempts(live?.attempts??[]),usage:observedUsage(live?.usage??[]),
   regressionCandidates:regressionCandidates(live?.incidents??[]),automaticPolicyChangeAllowed:false,automaticCodeChangeAllowed:false,
-  centralRecovery:'DORMANT',shadow:(live?.incidents??[]).map(incident=>evaluateShadowPolicy(live?.attempts??[],
-    {sourceId:incident.sourceId,failureClass:incident.failureClass,contractVersion:incident.contractVersion,logicalJob:incident.logicalJob},
-    'REDISPATCH_SAME_WORKFLOW','REQUEST_ONLY_MISSING_COVERAGE')),
-}};
+  centralRecovery:'DORMANT',shadow,
+},phase3:{centralRecoveryReadiness,sourceCapabilities:SOURCE_RECOVERY_CAPABILITIES,
+  stuckControlledAttempts:stuckAttempts,inFlightControlledAttempts:live?.inFlight??[]}};
 console.log(wantsJson ? JSON.stringify(report, null, 2) : summarizeHealthReport(report)+
-  `\nPERSISTENT MEMORY: ${report.phase2.memory}\nRECOVERY SCORECARD: ${report.phase2.scorecard.length} groups\nCENTRAL RECOVERY: DORMANT; AUTOMATIC POLICY PROMOTION: false`);
+  `\nPERSISTENT MEMORY: ${report.phase2.memory}\nRECOVERY SCORECARD: ${report.phase2.scorecard.length} groups\nCENTRAL RECOVERY: DORMANT; AUTOMATIC POLICY PROMOTION: false`+
+  `\nCENTRAL RECOVERY GATE: ${centralRecoveryReadiness.executionGate} (${activation.blockedBy.join(', ') || 'no blockers'})`+
+  `\nSOURCE CAPABILITY COVERAGE: ${centralRecoveryReadiness.sourceCapabilityCoverage}`+
+  `; controlled-eligible ${centralRecoveryReadiness.controlledEligibleSources.length}`+
+  `\nSTUCK CONTROLLED ATTEMPTS: ${stuckAttempts.length}`+
+  (stuckAttempts.length?stuckAttempts.map(row=>`\n  HUMAN_REVIEW_REQUIRED ${row.attemptId} ${row.sourceId} age ${Math.round(row.ageMs/60000)} min`).join(''):'')+
+  `\nREADY FOR OWNER REVIEW: ${centralRecoveryReadiness.readyForOwnerReview}`);
 
 // ERROR is the only exit-code failure. UNKNOWN must not fail the command,
 // because an offline run is legitimately UNKNOWN and a health command that

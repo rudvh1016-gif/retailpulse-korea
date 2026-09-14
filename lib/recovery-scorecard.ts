@@ -34,6 +34,35 @@ export function scoreRecoveryAttempts(attempts:readonly StoredAttempt[]) {
   });
 }
 
+/**
+ * The action the rule table ACTUALLY prescribes for one failure class.
+ *
+ * scripts/health.ts used to hardcode 'REDISPATCH_SAME_WORKFLOW' as the current
+ * action for every incident it evaluated. For STALE and PARTIAL_DATA the real
+ * current rule is REQUEST_ONLY_MISSING_COVERAGE, so the comparison was between
+ * a policy that is not in force and a candidate identical to the one that is —
+ * a shadow evaluation of a fiction. The rule table is the source of truth, so
+ * it is read rather than restated.
+ */
+export function currentActionFor(failureClass:string):string {
+  return decideRecovery(failureClass as Parameters<typeof decideRecovery>[0],0).action;
+}
+
+/**
+ * Candidate actions worth shadowing for one source.
+ *
+ * A candidate the source cannot perform is not a policy option; it is a
+ * daydream. Only actions the capability matrix says this source supports, minus
+ * the one already in force, are evaluated — so a source with no adapter
+ * produces no candidates at all rather than accumulating evidence for a change
+ * that could never be applied to it.
+ */
+export function shadowCandidatesFor(sourceId:string,failureClass:string,
+  supportedActions:(sourceId:string)=>readonly string[]):string[] {
+  const current=currentActionFor(failureClass);
+  return supportedActions(sourceId).filter(action=>action!==current&&action!=='NONE').sort();
+}
+
 /** Screening rule, NOT statistical confidence. Ten fully measured executions across
  * three distinct days per action avoid promoting a one-outage anecdote. Still owner review only. */
 export function evaluateShadowPolicy(attempts:readonly StoredAttempt[],scope:{sourceId:string;failureClass:string;contractVersion:string;logicalJob:string},

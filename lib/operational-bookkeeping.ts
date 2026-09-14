@@ -3,10 +3,21 @@ import { OperationalMemory, safeOperationalEvidence } from './operational-memory
 import { canonicalOperationalJob, fullyVerified, measureSource, sourceIdsForRun, type SourceMeasurement } from './operational-evidence';
 import { incidentFingerprint } from './incident-ledger';
 import { recoveryExecutionId, verifyRecovery } from './recovery-orchestration';
+import { classifyTriggerEvidence, type ExecutionPlatform } from './trigger-evidence';
 import type { ProductionSourceResult } from './production-runner';
 
+/**
+ * `trigger_evidence` has existed since migration 0020 and nothing ever wrote it,
+ * so every Production row carries the NOT NULL default 'UNKNOWN'. It is written
+ * now from the execution environment — and only with what that environment
+ * genuinely proves. A workflow_dispatch is recorded as
+ * GITHUB_WORKFLOW_DISPATCH_ORIGIN_UNVERIFIED rather than as a Worker Cron
+ * firing, because GitHub reports the Worker's dispatch and a person's click
+ * identically. See lib/trigger-evidence.ts.
+ */
 export async function saveMeasurement(memory:OperationalMemory,measurement:SourceMeasurement,runId:string,
-  metrics:{providerRequests:number|null;rowsRead:number|null;rowsWritten:number|null},executionPlatform='GITHUB_ACTIONS'):Promise<void> {
+  metrics:{providerRequests:number|null;rowsRead:number|null;rowsWritten:number|null},
+  executionPlatform:ExecutionPlatform='GITHUB_ACTIONS',env:Record<string,string|undefined>=process.env):Promise<void> {
   const {db}=memory, job=canonicalOperationalJob(measurement.sourceId), verified=fullyVerified(measurement);
   const at=new Date(measurement.observedAt).toISOString();
   const detail=safeOperationalEvidence(measurement.detail);
@@ -23,15 +34,17 @@ export async function saveMeasurement(memory:OperationalMemory,measurement:Sourc
       .bind(at.slice(0,10),measurement.sourceId,metrics.providerRequests??0,Number(metrics.providerRequests!==null),
         metrics.rowsRead??0,metrics.rowsWritten??0,Number(metrics.rowsRead!==null&&metrics.rowsWritten!==null),measurement.sourceId,runId,at));
     statements.push(db.prepare(`INSERT INTO operational_source_state(source_id,logical_job,run_id,checked_at,contract_version,last_good_at,
-      data_valid,storage_valid,public_valid,collector_status,stored_rows,evidence,execution_platform)
-      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(source_id) DO UPDATE SET logical_job=excluded.logical_job,run_id=excluded.run_id,
+      data_valid,storage_valid,public_valid,collector_status,stored_rows,evidence,execution_platform,trigger_evidence)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(source_id) DO UPDATE SET logical_job=excluded.logical_job,run_id=excluded.run_id,
        checked_at=excluded.checked_at,contract_version=excluded.contract_version,last_good_at=CASE WHEN excluded.contract_version<>operational_source_state.contract_version THEN excluded.last_good_at ELSE COALESCE(excluded.last_good_at,operational_source_state.last_good_at) END,
        data_valid=excluded.data_valid,storage_valid=excluded.storage_valid,public_valid=excluded.public_valid,
-       collector_status=excluded.collector_status,stored_rows=excluded.stored_rows,evidence=excluded.evidence,execution_platform=excluded.execution_platform
+       collector_status=excluded.collector_status,stored_rows=excluded.stored_rows,evidence=excluded.evidence,
+       execution_platform=excluded.execution_platform,trigger_evidence=excluded.trigger_evidence
        WHERE excluded.checked_at>operational_source_state.checked_at`)
       .bind(measurement.sourceId,job,runId,at,measurement.contractVersion,lastGood,
         ...[measurement.dataValid,measurement.storageValid,measurement.publicValid].map(v=>v===null?null:Number(v)),
-        String(measurement.run?.status??'UNKNOWN'),measurement.storedRows,detail,executionPlatform));
+        String(measurement.run?.status??'UNKNOWN'),measurement.storedRows,detail,executionPlatform,
+        classifyTriggerEvidence(env,executionPlatform)));
   }
   if(measurement.failureClass)statements.push(memory.eventStatement({parts:{sourceId:measurement.sourceId,logicalJob:job,
     contractVersion:measurement.contractVersion,failureClass:measurement.failureClass},kind:'FAILURE',runId,at,
