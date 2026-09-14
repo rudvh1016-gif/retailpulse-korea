@@ -1450,17 +1450,17 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
 function AirportSumFormula({ hall, transfer, total, lang, numberLocale, unit, isToday }: {
   hall: number; transfer: number; total: number; lang: Lang; numberLocale: string; unit: string; isToday: boolean;
 }) {
-  const cell = (label: string, value: number, kind: string) => (
-    <div className="airport-sum-term" data-kind={kind}>
-      <span>{label}</span><b>{Math.round(value).toLocaleString(numberLocale)}{unit}</b>
+  const row = (op: string, label: string, value: number, kind: string) => (
+    <div className="airport-sum-row" data-kind={kind}>
+      <span className="airport-sum-op" aria-hidden="true">{op}</span>
+      <span className="airport-sum-label">{label}</span>
+      <b className="airport-sum-value">{Math.round(value).toLocaleString(numberLocale)}{unit}</b>
     </div>
   );
   return <div className="airport-sum-formula" data-testid="airport-sum-formula">
-    {cell(passengerCopy.hallComponent[lang], hall, "hall")}
-    <span className="airport-sum-operator" data-op="plus" aria-hidden="true">+</span>
-    {cell(passengerCopy.transferComponent[lang], transfer, "transfer")}
-    <span className="airport-sum-operator" data-op="equals" aria-hidden="true">=</span>
-    {cell(passengerCopy[isToday ? "summedToday" : "summedSelected"][lang], total, "total")}
+    {row("", passengerCopy.hallComponent[lang], hall, "hall")}
+    {row("+", passengerCopy.transferComponent[lang], transfer, "transfer")}
+    {row("=", passengerCopy[isToday ? "summedToday" : "summedSelected"][lang], total, "total")}
   </div>;
 }
 
@@ -1496,42 +1496,63 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
 }) {
   const [active, setActive] = useState<string | null>(null);
   if (!days.length) return null;
-  const width = 100, height = 34, left = 0, right = width;
-  const step = days.length > 1 ? (right - left) / (days.length - 1) : 0;
-  const barWidth = Math.max(1.2, (right - left) / Math.max(days.length, 1) * 0.55);
+  const width = 100, height = 100;
+  const barWidth = Math.max(1.5, (width / Math.max(days.length, 1)) * 0.6);
+  // Inset by half a bar so the first and last bars are drawn WHOLE. Centring
+  // them on the plot edge clipped half of each, which quietly understated the
+  // two days a reader looks at most: the 1st and today.
+  const inset = barWidth / 2;
+  const span = width - inset * 2;
   const maxDay = days.reduce((best, day) => Math.max(best, day.total ?? 0), 0);
 
   const cumulative = runningTotals(days);
   const maxRun = cumulative.reduce<number>((best, value) => Math.max(best, value ?? 0), 0);
-  const x = (index: number) => left + index * step;
-  const barY = (value: number) => height - (maxDay > 0 ? (value / maxDay) * (height * 0.62) : 0);
-  const runY = (value: number) => height - (maxRun > 0 ? (value / maxRun) * (height * 0.92) : 0);
-  const linePoints = cumulative.flatMap((value, index) => value === null ? [] : [`${x(index)},${runY(value)}`]);
+  const x = (index: number) => days.length > 1 ? inset + (index * span) / (days.length - 1) : inset + span / 2;
+  // Bars occupy the lower three quarters so the daily series stays the primary
+  // mark; the running total climbs through the full height to its own corner.
+  const barY = (value: number) => height - (maxDay > 0 ? (value / maxDay) * (height * 0.74) : 0);
+  const runY = (value: number) => height - (maxRun > 0 ? (value / maxRun) * (height * 0.94) : 0);
+  const runPoints = cumulative.flatMap((value, index) => value === null ? [] : [[x(index), runY(value)] as const]);
 
   const activeIndex = active ? days.findIndex((day) => day.date === active) : -1;
   const shown = activeIndex >= 0 ? activeIndex : days.length - 1;
   const shownDay = days[shown];
-  // Representative ticks only: every date at 390px is unreadable.
   const ticks = [...new Set([0, 4, 9, days.length - 1].filter((index) => index >= 0 && index < days.length))];
+  const last = runPoints.at(-1);
 
   return <figure className="airport-month-chart">
-    <figcaption>{mtdCopy.daily[lang]}</figcaption>
-    <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
-      {days.map((day, index) => day.total === null
-        ? <rect key={day.date} className="airport-month-gap" x={x(index) - barWidth / 2} y={height - 1} width={barWidth} height={1} />
-        : <rect key={day.date} className="airport-month-bar" data-selected={day.date === shownDay.date || undefined}
-            x={x(index) - barWidth / 2} y={barY(day.total)} width={barWidth} height={Math.max(0.6, height - barY(day.total))} />)}
-      {linePoints.length > 1 && <polyline className="airport-month-run" points={linePoints.join(" ")} />}
-    </svg>
+    {/* Two marks on one plot, so both are named. Without this the running
+        total is an unexplained blue diagonal — the reader cannot tell what it
+        measures, and an unlabelled line reads as decoration. */}
+    <figcaption>
+      <span>{mtdCopy.daily[lang]}</span>
+      <span className="airport-month-legend">
+        <span><i className="bar" />{mtdCopy.perDay[lang]}</span>
+        <span><i className="run" />{mtdCopy.cumulative[lang]}</span>
+      </span>
+    </figcaption>
+    <div className="airport-month-plot">
+      <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+        {days.map((day, index) => day.total === null
+          ? <rect key={day.date} className="airport-month-gap" x={x(index) - barWidth / 2} y={height - 1.5} width={barWidth} height={1.5} />
+          : <rect key={day.date} className="airport-month-bar" data-selected={day.date === shownDay.date || undefined}
+              x={x(index) - barWidth / 2} y={barY(day.total)} width={barWidth} height={Math.max(1, height - barY(day.total))} />)}
+        {runPoints.length > 1 && <polyline className="airport-month-run" points={runPoints.map(([px, py]) => `${px},${py}`).join(" ")} />}
+      </svg>
+      {/* The running total ends in a fact, not a fade: a dot marks where it
+          stops, which is also the month total printed above. Drawn over the plot
+          rather than inside the stretched viewBox, so it stays a true circle at
+          every width — and inside this wrapper its percentages resolve against
+          the plot box, not the whole figure. */}
+      {last && <span className="airport-month-run-end" style={{ left: `${last[0]}%`, top: `${last[1]}%` }} aria-hidden="true" />}
+      <div className="airport-month-picks" role="group" aria-label={mtdCopy.daily[lang]}>
+        {days.map((day) => <button key={day.date} type="button" aria-pressed={day.date === shownDay.date}
+          onClick={() => setActive(day.date)}
+          aria-label={`${shortDay(day.date)} · ${day.total === null ? airportTodayText.unavailable[lang] : `${Math.round(day.total).toLocaleString(numberLocale)}${unit}`}`} />)}
+      </div>
+    </div>
     <div className="airport-month-ticks" aria-hidden="true">
       {ticks.map((index) => <span key={index} style={{ left: `${(x(index) / width) * 100}%` }}>{shortDay(days[index].date)}</span>)}
-    </div>
-    {/* One control per day, labelled with the facts it reveals: the chart stays
-        readable by touch and by screen reader without a tooltip layer. */}
-    <div className="airport-month-picks" role="group" aria-label={mtdCopy.daily[lang]}>
-      {days.map((day) => <button key={day.date} type="button" aria-pressed={day.date === shownDay.date}
-        onClick={() => setActive(day.date)}
-        aria-label={`${shortDay(day.date)} · ${day.total === null ? airportTodayText.unavailable[lang] : `${Math.round(day.total).toLocaleString(numberLocale)}${unit}`}`} />)}
     </div>
     <p className="airport-month-readout" aria-live="polite">
       <span>{shortDay(shownDay.date)}</span>

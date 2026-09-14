@@ -1580,13 +1580,6 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .personal-settings p { line-height: 1.7; }
 @media (max-width: 767px) { .personal-facts { grid-template-columns: 1fr 1fr; gap: 0 18px; } }
 @media (max-width: 479px) { .personal-options { grid-template-columns: 1fr; } .personal-sheet { padding-top: 24px; } }
-  /* Two operands per row with the operator between them, the result on its
-     own row. Five columns at 390px would compress a five-digit figure. */
-  .airport-sum-formula { grid-template-columns: 1fr auto 1fr; gap: 8px; }
-  .airport-sum-formula .airport-sum-operator[data-op="equals"] { grid-column: 1 / -1; justify-self: center; }
-  .airport-sum-formula .airport-sum-term[data-kind="total"] { grid-column: 1 / -1; }
-  .airport-mtd-compare { grid-template-columns: 1fr; }
-  .airport-current-brief .airport-mtd-total { font-size: 19px; }
 .personal-switches { padding: 20px 0; border-bottom: 1px solid #d8dfe6; }
 .personal-switches .personal-inline { margin: 10px 0; }
 .personal-switches button[aria-pressed="true"] { background: #edf4f8; border-color: #315e7d; color: #214c6b; }
@@ -1740,17 +1733,28 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
    line that used to restate that grid's first cell. */
 .airport-current-brief .airport-near-term, .airport-current-brief p { font-size: 14px; line-height: 1.6; }
 .airport-current-brief small, .personal-home .airport-current-brief small { font-size: 13px; line-height: 1.6; }
-/* The sum, drawn as arithmetic. Thin rules and generous space instead of
-   cards: the operands must read as parts of one expression, not as three
-   independent tiles. Deliberately NOT a pie or a stacked bar — overlap between
-   the two forecasts is unverified, so nothing here may look like a whole being
-   divided. */
-.airport-sum-formula { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; gap: 0 10px; margin: 10px 0 8px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.airport-sum-formula .airport-sum-term { min-width: 0; }
-.airport-sum-formula .airport-sum-term span { display: block; font-size: 12px; line-height: 1.45; color: var(--muted); }
-.airport-sum-formula .airport-sum-term b { display: block; margin-top: 2px; font-size: 15px; line-height: 1.3; letter-spacing: -.015em; color: var(--ink); font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
-.airport-sum-formula .airport-sum-term[data-kind="total"] b { font-size: 16px; }
-.airport-sum-operator { font-size: 14px; line-height: 1; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* The sum, written the way addition is written.
+ *
+ * The first attempt laid the three terms across a row with the operators
+ * between them. At 390px that wrapped into an orphaned "=" floating under the
+ * second figure — a stray character, not an operator. So: a ledger. Operators
+ * hold their own narrow column so + and = sit directly under one another, the
+ * figures are right-aligned with tabular digits so their places line up, and a
+ * rule separates the operands from the result. A reader can check the addition
+ * by eye, which is the entire reason the sum is shown as arithmetic.
+ *
+ * Still deliberately not a pie, donut or 100% stacked bar: overlap between the
+ * two forecasts is unverified, so nothing may look like a whole being divided. */
+.airport-sum-formula { margin: 10px 0 8px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.airport-sum-row { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; align-items: baseline; column-gap: 8px; }
+.airport-sum-row + .airport-sum-row { margin-top: 8px; }
+.airport-sum-op { font-size: 14px; line-height: 1.4; color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
+.airport-sum-label { font-size: 13px; line-height: 1.45; color: var(--muted); }
+.airport-current-brief .airport-sum-value { font-size: 15px; line-height: 1.4; letter-spacing: -.01em; color: var(--ink); font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+/* The result is separated by a rule and set a step larger, as a total is. */
+.airport-sum-row[data-kind="total"] { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.airport-sum-row[data-kind="total"] .airport-sum-label { color: var(--ink); }
+.airport-current-brief .airport-sum-row[data-kind="total"] .airport-sum-value { font-size: 16px; }
 
 /* Month to date. Same white ground and hairlines as the rest of the brief. */
 .airport-mtd { margin: 18px 0 0; padding: 16px 0 0; border-top: 1px solid var(--line); }
@@ -1765,24 +1769,55 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .airport-mtd-compare dd { margin: 2px 0 0; min-width: 0; }
 .airport-mtd-compare b { display: block; font-size: 15px; line-height: 1.3; color: var(--ink); font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
 .airport-mtd-compare small { display: block; font-size: 12px; line-height: 1.5; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* Phone overrides for the brief.
+ *
+ * These lived above, written outside any media query AND above the base rules
+ * they meant to override, so the cascade discarded every one of them: the
+ * month comparison never dropped to one column, and the sum kept its desktop
+ * five-column grid at 390px — which is how the "=" ended up adrift under the
+ * second figure instead of in front of the total. Narrow-width overrides must
+ * come after the rules they override, inside the query. */
+@media (max-width: 479px) {
+  .airport-sum-label { font-size: 12px; }
+  .airport-mtd-compare { grid-template-columns: 1fr; }
+  .airport-current-brief .airport-mtd-total { font-size: 19px; }
+}
 
-/* Daily bars with the running total over them. The bars carry the day, the
-   line carries the month; a missing day draws neither, only a baseline tick. */
+/* Daily bars with the running total over them.
+ *
+ * Two rules the drawing must not break: a day with no complete forecast draws
+ * no bar and no zero, only a baseline tick; and the running total stops at the
+ * first incomplete day rather than stepping over it.
+ *
+ * Both marks are named in the caption. An unlabelled blue diagonal is not a
+ * chart, it is decoration — the reader cannot tell whether it measures people,
+ * a rate, or nothing at all. The bars carry the day and stay the darker,
+ * primary mark; the line is a hairline overlay that ends in a dot where the
+ * month total, printed above, actually lands. */
 .airport-month-chart { margin: 14px 0 0; position: relative; }
-.airport-month-chart figcaption { font-size: 12px; color: var(--muted); line-height: 1.5; }
-.airport-month-chart svg { display: block; width: 100%; height: 92px; margin-top: 6px; overflow: visible; }
-.airport-month-bar { fill: #d8d8d8; }
+.airport-month-chart figcaption { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; font-size: 12px; color: var(--muted); line-height: 1.5; }
+.airport-month-legend { display: flex; gap: 10px; }
+.airport-month-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.airport-month-legend i { display: inline-block; }
+.airport-month-legend i.bar { width: 7px; height: 9px; background: #b9b9b9; }
+.airport-month-legend i.run { width: 11px; height: 0; border-top: 2px solid var(--blue); }
+.airport-month-plot { position: relative; height: 104px; margin-top: 8px; }
+.airport-month-chart svg { display: block; width: 100%; height: 100%; }
+.airport-month-bar { fill: #c4c4c4; }
 .airport-month-bar[data-selected] { fill: var(--ink); }
 .airport-month-gap { fill: var(--line); }
-.airport-month-run { fill: none; stroke: var(--blue); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
-.airport-month-ticks { position: relative; height: 16px; margin-top: 2px; }
+.airport-month-run { fill: none; stroke: var(--blue); stroke-width: 1.25; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+/* Positioned in percentages over the plot so the marker stays a true circle
+   however the non-uniform viewBox is stretched. */
+.airport-month-run-end { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: var(--blue); pointer-events: none; transform: translate(-50%, -50%); }
+.airport-month-ticks { position: relative; height: 16px; margin-top: 4px; }
 .airport-month-ticks span { position: absolute; transform: translateX(-50%); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* The end ticks sit ON the plot edges, so centring them hangs half a label
    past the chart and widens the block. Align them inward instead. */
 .airport-month-ticks span:first-child { transform: none; }
 .airport-month-ticks span:last-child { transform: translateX(-100%); }
-/* One invisible 44px-tall control per day, laid over the plot. */
-.airport-month-picks { position: absolute; left: 0; right: 0; top: 24px; height: 92px; display: flex; }
+/* One invisible control per day, laid over the plot. */
+.airport-month-picks { position: absolute; inset: 0; display: flex; }
 .airport-month-picks button { flex: 1 1 0; min-width: 0; padding: 0; border: 0; background: transparent; cursor: pointer; }
 .airport-month-readout { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin: 6px 0 0; font-variant-numeric: tabular-nums; }
 .airport-current-brief .airport-month-readout span { font-size: 12px; color: var(--muted); }
