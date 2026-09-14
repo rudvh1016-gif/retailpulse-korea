@@ -18,6 +18,7 @@
  * code below. See `runtimeLlmCalls` on the report.
  */
 import { rollUp, type OverallStatus } from "./operational-states";
+import { censusSeverity, type CensusResult } from "./source-census";
 import type { SourceVerdict } from "./source-lifecycle";
 import type { SchedulerTruth, DocDrift, RuntimeEnablement } from "./scheduler-truth";
 import type { Incident } from "./incident-ledger";
@@ -116,13 +117,21 @@ export interface HealthInputs {
   forecast: readonly ForecastVerdict[];
   runtimeLlm: RuntimeLlmEvidence;
   unwiredDefences: readonly { module: string; detail: string }[];
+  /**
+   * The source census: does the harness know about everything Production collects?
+   *
+   * Optional so an existing caller that cannot census still builds a report —
+   * and when it is absent the area is UNKNOWN, never HEALTHY, because a census
+   * nobody ran is not a census that passed.
+   */
+  sourceCensus?: CensusResult;
 }
 
 export interface HealthReport {
   checkedAt: string;
   overall: OverallStatus;
   /** Per-area severities, so a reader can see WHICH area forced the overall. */
-  areas: Record<"scheduler" | "sources" | "incidents" | "watchdog" | "quota" | "forecast" | "runtimeLlm", OverallStatus>;
+  areas: Record<"scheduler" | "sources" | "sourceCensus" | "incidents" | "watchdog" | "quota" | "forecast" | "runtimeLlm", OverallStatus>;
   scheduler: {
     severity: OverallStatus;
     entries: SchedulerTruth["entries"];
@@ -140,6 +149,15 @@ export interface HealthReport {
   forecast: ForecastVerdict[];
   improvements: ImprovementCandidate[];
   runtimeLlm: RuntimeLlmEvidence & { verdict: "RUNTIME_LLM_CALLS = 0 VERIFIED" | "RUNTIME_LLM_CALLS != 0" | "RUNTIME_LLM_CALLS = UNKNOWN" };
+  /**
+   * Whether the set of sources this report covers is the set Production has.
+   *
+   * Separate from `sources`, which grades the sources it knows about. A report
+   * can have every known source HEALTHY and still be wrong, because the
+   * denominator was incomplete — that is exactly what happened on 2026-09-14,
+   * twice. This area is what makes the denominator a first-class claim.
+   */
+  sourceCensus: CensusResult | null;
 }
 
 /**
@@ -161,6 +179,10 @@ export function buildHealthReport(inputs: HealthInputs): HealthReport {
     scheduler: schedulerSeverity(inputs.scheduler),
     // An empty source list is UNKNOWN: zero sources checked is not zero problems.
     sources: inputs.sources.length ? rollUp(inputs.sources.map((source) => source.severity)) : "UNKNOWN",
+    // A source Production collects that this harness has never heard of makes
+    // every "all clear" it prints unreliable, so a gap is ERROR and an absent
+    // census is UNKNOWN. Neither can reach HEALTHY.
+    sourceCensus: inputs.sourceCensus ? censusSeverity(inputs.sourceCensus.verdict) : "UNKNOWN",
     // The ledger is derived from the source verdicts, so "no incidents" only
     // means anything when at least one source was actually evaluated.
     incidents: incidentSeverity(inputs.incidents, inputs.sources.length > 0 && inputs.incidentMemoryAvailable !== false),
@@ -174,6 +196,7 @@ export function buildHealthReport(inputs: HealthInputs): HealthReport {
     checkedAt: inputs.nowIso,
     overall: rollUp(Object.values(areas)),
     areas,
+    sourceCensus: inputs.sourceCensus ?? null,
     scheduler: {
       severity: areas.scheduler,
       entries: inputs.scheduler.entries,

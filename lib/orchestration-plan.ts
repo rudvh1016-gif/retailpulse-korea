@@ -69,8 +69,11 @@ export interface OrchestrationPlanEntry {
     providerBudgetPolicy: string;
     nextScheduledSlotBehavior: string;
   };
+  /** Controlled repairs spent today. This is what the budget measures. */
   attemptsUsed: number;
   maxAttempts: number;
+  /** Ordinary scheduled collections today. Never spends the recovery budget. */
+  normalRunsToday: number;
   inFlightAttempt: boolean;
   recommendedAction: string;
   finalDisposition: FinalDisposition;
@@ -79,6 +82,19 @@ export interface OrchestrationPlanEntry {
 
 export interface OrchestrationPlan {
   generatedAt: string;
+  /**
+   * Did the PLANNER run correctly — separately from whether Production is well.
+   *
+   * These are different questions and conflating them is how a working
+   * diagnostic gets mistaken for a broken one. A planner that correctly
+   * identifies fifteen live failures has SUCCEEDED; the system it examined is
+   * the thing that is DEGRADED. Reporting one number for both would mean a
+   * harness that finds problems looks exactly like a harness that is itself
+   * broken, and the natural response to that is to stop trusting the harness.
+   */
+  executionStatus: "PASS";
+  /** What the examined system looks like, which is a wholly separate verdict. */
+  productionVerdict: "NO_UNRESOLVED_INCIDENTS" | "DEGRADED" | "UNKNOWN";
   /** Proof, in the artifact itself, that producing it cost nothing. */
   providerCalls: 0;
   d1Writes: 0;
@@ -118,12 +134,17 @@ export interface OrchestrationPlan {
 }
 
 /**
- * Attempts already spent against today's budget for one incident.
+ * Attempts already spent against today's RECOVERY budget for one incident.
  *
- * Counted the way `OperationalMemory.admit` counts them — by source, logical
- * job and target date — rather than by fingerprint, because that is the budget
- * the admission statement actually enforces. A plan that counted differently
- * would predict an admission the database would refuse.
+ * Counted exactly the way `OperationalMemory.admit` counts them — by source,
+ * logical job, target date and `mode='CONTROLLED'` — because that is the budget
+ * the admission statement enforces. A plan that counted differently would
+ * predict an admission the database would refuse, or vice versa.
+ *
+ * The mode filter matters and was missing on both sides until 2026-09-15:
+ * `recordExistingCompletion` writes an EXISTING_RUN row for every ordinary
+ * scheduled collection, so counting all rows made a source that merely ran on
+ * schedule look like one that had exhausted its repairs.
  */
 function attemptsUsedFor(
   incident: Incident,
@@ -131,7 +152,26 @@ function attemptsUsedFor(
   targetDate: string,
 ): number {
   return attempts.filter(
-    (row) => row.sourceId === incident.sourceId && row.logicalJob === incident.logicalJob && row.targetDate === targetDate,
+    (row) => row.sourceId === incident.sourceId && row.logicalJob === incident.logicalJob
+      && row.targetDate === targetDate && row.mode === "CONTROLLED",
+  ).length;
+}
+
+/**
+ * How many of today's rows are normal collection rather than repair.
+ *
+ * Reported alongside the budget so a reader can see the two are separate. They
+ * were conflated once; showing both is what keeps them from quietly merging
+ * again.
+ */
+function normalRunsFor(
+  incident: Incident,
+  attempts: readonly StoredAttempt[],
+  targetDate: string,
+): number {
+  return attempts.filter(
+    (row) => row.sourceId === incident.sourceId && row.logicalJob === incident.logicalJob
+      && row.targetDate === targetDate && row.mode === "EXISTING_RUN",
   ).length;
 }
 
@@ -196,6 +236,7 @@ export function buildOrchestrationPlan(input: OrchestrationPlanInput): Orchestra
         },
         attemptsUsed,
         maxAttempts: resolved.ruleDecision.maxAttempts,
+        normalRunsToday: normalRunsFor(incident, input.attempts, targetDate),
         inFlightAttempt,
         recommendedAction: resolved.recommendedAction,
         finalDisposition: resolved.finalDisposition,
@@ -223,8 +264,15 @@ export function buildOrchestrationPlan(input: OrchestrationPlanInput): Orchestra
       .map((entry) => entry.sourceId)
       .sort();
 
+  const unresolved = entries.filter((entry) => entry.finalDisposition !== "ALREADY_RECOVERED").length;
   return {
     generatedAt: input.nowIso,
+    // The planner reached the end of its work. Whether what it found is good
+    // news is the next field, deliberately.
+    executionStatus: "PASS",
+    productionVerdict: input.incidents.length === 0
+      ? "UNKNOWN"
+      : unresolved > 0 ? "DEGRADED" : "NO_UNRESOLVED_INCIDENTS",
     providerCalls: 0,
     d1Writes: 0,
     deploys: 0,
