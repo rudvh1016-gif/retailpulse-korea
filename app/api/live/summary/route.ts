@@ -38,11 +38,51 @@ import {
   type AirportForecastAggregateRow,
   type AirportTodayFlightRow,
 } from "../../../../lib/airport-today-summary";
+import { buildMonthToDate, datesBetween, monthStartOf, previousMonthSameDay, type MonthToDate } from "../../../../lib/airport-mtd";
 import { prepareEventsForPresentation } from "../../../../lib/event-presentation";
 import { summarizeAirlineRanking, type AirlineRankingFlightRow } from "../../../../lib/airline-ranking";
 import { AIRLINE_COUNTRY_SOURCE, lookupAirline } from "../../../../lib/airline-country";
 import { summaryCacheControl, SUMMARY_NO_STORE } from "../../../../lib/summary-cache-policy";
 import { readGroups, type ReadClient } from "../../../../lib/d1-read-batch";
+
+/**
+ * One month of official departure aggregate rows, by KST service date.
+ *
+ * Written once and bound twice — this month and the same span of the previous
+ * month — so the two ranges can never drift apart in their filters. The shape
+ * matches the day query deliberately: same table, same index
+ * (`airport_passenger_forecast_target_idx`), same `direction`/`is_aggregate`
+ * gate, so the rows feeding a month total are the same rows that feed a day.
+ *
+ * The LIMIT is the ceiling of one real month (31 days x 2 terminals x 24
+ * hourly bands = 1,488) with headroom, not a guess: it exists so a provider
+ * publishing an unexpected band grid cannot turn a bounded read into a scan.
+ */
+/**
+ * One month of official departure aggregate rows, by exact KST service date.
+ *
+ * Deliberately `target_date IN (...)` rather than a `>= AND <=` range. Measured
+ * against Production D1 on 2026-09-14, the range form read ~259 rows per date
+ * because a range scan over `airport_passenger_forecast_target_idx` walks every
+ * row of every date in the span — arrivals and component rows included — while
+ * the exact-equality form reads ~64, the rows the filter actually wants. Over
+ * two months that was the difference between +6,736 and roughly +1,700 rows on
+ * every uncached summary, so the cheaper shape is the shipped one.
+ *
+ * The placeholders are generated from a bounded date list this file computes;
+ * no value is ever interpolated into the SQL. The LIMIT is the ceiling of one
+ * real month (31 days x 2 terminals x 24 hourly bands = 1,488) with headroom,
+ * so an unexpected band grid cannot turn a bounded read into a scan.
+ */
+function monthRangeSql(days: number): string {
+  return `SELECT terminal, target_date AS targetDate,
+    target_start_at AS targetStartAt, target_end_at AS targetEndAt,
+    expected_passengers AS expectedPassengers,
+    'departure' AS direction, 1 AS isAggregate
+  FROM airport_passenger_forecast
+  WHERE direction = 'departure' AND is_aggregate = 1 AND target_date IN (${Array.from({ length: days }, () => "?").join(", ")})
+  ORDER BY target_date, terminal, target_start_at LIMIT 1600`;
+}
 import {
   isValidKstDay,
   kstDayBounds,
@@ -203,6 +243,11 @@ export type SummaryClient = ReadClient & { prepare(sql: string): D1PreparedState
 export async function summarizeLiveSummary(client: SummaryClient, clock: SummaryClock): Promise<Response> {
   const { generatedAt, now, kstNowIso, kstToday, kstHourStart, serviceDate, dayRelation, dayStartAt } = clock;
   const observedStartAt = [dayStartAt, kstNowIsoOf(new Date(now - 6 * 3_600_000).toISOString())].sort().at(-1)!;
+  // null when the previous month has no same-numbered day; the second statement
+  // is then not issued at all rather than bound to an invented date.
+  const previousMonthEnd = previousMonthSameDay(serviceDate);
+  const currentMonthDays = datesBetween(monthStartOf(serviceDate), serviceDate);
+  const previousMonthDays = previousMonthEnd ? datesBetween(monthStartOf(previousMonthEnd), previousMonthEnd) : [];
   const statementGroups = {
     sources: [client.prepare(
       `SELECT source_id AS sourceId, status, last_event_at AS eventAt,
@@ -402,6 +447,17 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       ORDER BY target_date DESC, direction, target_start_at, terminal LIMIT 288`,
     ).bind(serviceDate, shiftKstDay(serviceDate, -7), shiftKstDay(serviceDate, -28))],
 
+    // Month-to-date, and the same span of the month before it. Two bounded
+    // range seeks on the same index the day query already uses — never an
+    // open-ended history scan. Each is capped at one month of official
+    // departure aggregate rows (31 days x 2 terminals x 24 bands = 1,488).
+    // Completeness is decided afterwards by the DAY view's own evaluator, so a
+    // month total can never be built from a definition this file invented.
+    monthToDateRows: [
+      client.prepare(monthRangeSql(currentMonthDays.length)).bind(...currentMonthDays),
+      ...(previousMonthDays.length ? [client.prepare(monthRangeSql(previousMonthDays.length)).bind(...previousMonthDays)] : []),
+    ],
+
     historicalFlightCounts: [7, 28].map((days) => client.prepare(
       `SELECT ? AS baselineDate, terminal, COUNT(*) AS flights FROM
         (SELECT DISTINCT physical_flight_id, terminal FROM airport_flights
@@ -484,7 +540,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   const {
     sources, contextRows, holidayRows, compositionRows, realtimeRows, observedSeriesRows, commercialRows, realtimeForecastRows, weatherRows, eventRows, salesRows,
     storeDynamicsRows, foreignPresenceRows, foreignPurposeRows, subwayRows, congestionRows,
-    passengerForecastRows: allPassengerForecastRows, historicalFlightCounts, flightRows, scheduledRows, departureScheduleRows, transferRows, flightDateRows, forecastDateRows, observedDateRows,
+    passengerForecastRows: allPassengerForecastRows, monthToDateRows, historicalFlightCounts, flightRows, scheduledRows, departureScheduleRows, transferRows, flightDateRows, forecastDateRows, observedDateRows,
   } = blocks;
   const passengerForecastRows = allPassengerForecastRows.filter((row) => row.targetDate === serviceDate);
   const dayList = (rows: Row[]) => rows
@@ -659,6 +715,22 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   // `latestRetrievedAt` means "the latest retrieval among airport
   // datasets" — it never implies every metric below shares that
   // freshness. Each metric also carries its own retrieval timestamp.
+  // One index of month rows, shared by all three scopes. Grouping once keeps
+  // the Worker's share of this to a single pass over a bounded row set; the
+  // per-day completeness verdict inside is the day view's own.
+  const monthRowsByDate = new Map<string, AirportForecastAggregateRow[]>();
+  for (const row of monthToDateRows as unknown as AirportForecastAggregateRow[]) {
+    if (!isValidKstDay(row.targetDate)) continue;
+    const list = monthRowsByDate.get(row.targetDate) ?? [];
+    list.push(row);
+    monthRowsByDate.set(row.targetDate, list);
+  }
+  const monthToDate: Record<"all" | "T1" | "T2", MonthToDate> = {
+    all: buildMonthToDate(monthRowsByDate, serviceDate, "all"),
+    T1: buildMonthToDate(monthRowsByDate, serviceDate, "T1"),
+    T2: buildMonthToDate(monthRowsByDate, serviceDate, "T2"),
+  };
+
   const latestAirportRetrieval = [passengerToday.retrievedAt, arrivalToday.retrievedAt, flightsToday.retrievedAt, latestCongestionRetrieval]
     .filter((value): value is string => Boolean(value)).sort().at(-1) ?? null;
   const upcomingForecast = departurePassengerForecastRows.filter((row) => String(row.targetEndAt ?? "") >= kstNowIso)
@@ -716,6 +788,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     areas,
     airport: {
       transferForecast: transferRows,
+      monthToDate,
       periodComparisons,
       congestion: congestionRows.map((row) => ({ ...row, freshness: freshnessOf(row.observedAt, 20, now) })),
       currentBusiestDepartureHallByTerminal: currentBusiest,

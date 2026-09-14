@@ -20,10 +20,10 @@ for (const lang of ['ko','en','zh','ja'] as const) {
     await expect(personal).toContainText(passengerCopy[tomorrow?'summedSelected':'summedToday'][lang]);
     await expect(personal).toContainText(passengerCopy.arithmeticNote[lang]);
     await expect(personal.getByTestId('transfer-forecast')).toContainText('10,485');
-    await expect(personal.locator('.airport-reference-total')).toHaveAttribute('data-basis','ARITHMETIC_ONLY');
-    await expect(personal.locator('.airport-reference-total')).toContainText('58,364');
-    await expect(personal.locator('.airport-passenger-components')).toContainText('47,320');
-    await expect(personal.locator('.airport-passenger-components')).toContainText('11,044');
+    await expect(personal.locator('[data-testid="airport-sum-total"]')).toHaveAttribute('data-basis','ARITHMETIC_ONLY');
+    await expect(personal.locator('[data-testid="airport-sum-total"]')).toContainText('58,364');
+    await expect(personal.locator('[data-testid="airport-sum-formula"]')).toContainText('47,320');
+    await expect(personal.locator('[data-testid="airport-sum-formula"]')).toContainText('11,044');
     const scope=await personal.locator('.departure-hall-scope-note').first().textContent();
     await page.goto(`/${lang}/airport`);
     await expect(page.locator(".app")).toHaveAttribute("data-hydrated","true");
@@ -47,8 +47,8 @@ for (const lang of ['ko','en','zh','ja'] as const) {
       await expect(full.locator('.departure-hall-scope-note').first()).toContainText(passengerCopy.scope[lang]);
       expect(scope).toContain(passengerCopy.scope[lang]);
       await expect(full).toContainText(passengerCopy.arithmeticNote[lang]);
-      await expect(full.locator('.airport-reference-total')).toContainText(terminal==='T1'?'30,659':'27,705');
-      await expect(full.locator('.airport-passenger-components')).toContainText(terminal==='T1'?'30,100':'17,220');
+      await expect(full.locator('[data-testid="airport-sum-total"]')).toContainText(terminal==='T1'?'30,659':'27,705');
+      await expect(full.locator('[data-testid="airport-sum-formula"]')).toContainText(terminal==='T1'?'30,100':'17,220');
       await expect(full.getByTestId('transfer-forecast')).toContainText(terminal==='T1'?'559':'10,485');
       await expect(full.getByTestId('transfer-forecast')).not.toContainText(terminal==='T1'?'10,485':'T1');
       expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);

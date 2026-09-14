@@ -9,7 +9,7 @@ import {flightBoardingLocation} from "../lib/flight-scope";
 import { SeoulContextCard, HolidayContext, contextText } from "./operational-context";
 import type { SeoulContext } from "../lib/seoul-context";
 import type { compareComposition } from "../lib/airport-composition-history";
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { Lang } from "./retailpulse-data";
 import { friendlyCheckpointName, rankCurrentDepartureHallCheckpoints } from "../lib/airport-today-summary";
 import {
@@ -34,6 +34,8 @@ import { buildTerminalBriefings, type TerminalBriefing } from "../lib/terminal-b
 import { buildWeatherGuide, worseAirGrade } from "../lib/weather-guide";
 import { describeObservationAge } from "../lib/observation-freshness";
 import { comparisonText, comparisonValue, type RangeChange } from "../lib/period-comparison";
+import type { MonthToDate, MtdDay } from "../lib/airport-mtd";
+import { mtdCopy, shortDay, shortRange } from "../lib/airport-mtd-copy";
 import { averagePaymentRange, commercialActivityContext } from "../lib/commercial-context";
 
 import { useEventPagination, EventPaginationControls } from "./event-pagination";
@@ -277,6 +279,8 @@ export interface LiveSummary {
   sources?: Array<{ sourceId: string; status: string; retrievedAt: string | null; detail?:string | null }>;
   areas: Partial<Record<AreaId, LiveAreaBlock>>;
   airport: {
+    /** Month-to-date and the previous month's same span, per terminal scope. */
+    monthToDate?: Record<"all" | "T1" | "T2", MonthToDate>;
     periodComparisons?: Record<string, Partial<Record<7 | 28, { passengers: RangeChange | null; flightRecords: RangeChange | null; composition?: (ReturnType<typeof compareComposition> & {baselineDate:string}) | null }>>>;
     congestion: LiveCongestionRow[];
     currentBusiestDepartureHallByTerminal: Record<string, LiveCongestionRow>;
@@ -1433,7 +1437,111 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
   </>;
 }
 
-export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=true,showCrowding=true,showFlights=true}:{summary:LiveSummary;lang:Lang;terminal?:"all"|"T1"|"T2";showPassengers?:boolean;showCrowding?:boolean;showFlights?:boolean}) {
+/**
+ * The arithmetic sum, shown as the arithmetic it is.
+ *
+ * The two inputs are official; their sum is not an official figure, and the
+ * screen has to make that visible rather than only say it in a footnote. So
+ * the operands and the operator are drawn, not implied: a reader who sees
+ * "A + B = C" knows C was computed here. A pie or a 100% stacked bar would
+ * claim the opposite — that C is a known whole being divided — which is
+ * exactly what "overlap unverified" means we cannot claim.
+ */
+function AirportSumFormula({ hall, transfer, total, lang, numberLocale, unit, isToday }: {
+  hall: number; transfer: number; total: number; lang: Lang; numberLocale: string; unit: string; isToday: boolean;
+}) {
+  const cell = (label: string, value: number, kind: string) => (
+    <div className="airport-sum-term" data-kind={kind}>
+      <span>{label}</span><b>{Math.round(value).toLocaleString(numberLocale)}{unit}</b>
+    </div>
+  );
+  return <div className="airport-sum-formula" data-testid="airport-sum-formula">
+    {cell(passengerCopy.hallComponent[lang], hall, "hall")}
+    <span className="airport-sum-operator" data-op="plus" aria-hidden="true">+</span>
+    {cell(passengerCopy.transferComponent[lang], transfer, "transfer")}
+    <span className="airport-sum-operator" data-op="equals" aria-hidden="true">=</span>
+    {cell(passengerCopy[isToday ? "summedToday" : "summedSelected"][lang], total, "total")}
+  </div>;
+}
+
+/**
+ * The month's running total, defined only while every day so far is complete.
+ *
+ * Once a day is missing, every later entry is null: a cumulative figure that
+ * steps over a gap quietly asserts the gap contributed nothing. Pure and
+ * module-level so the chart computes it without holding mutable render state.
+ */
+function runningTotals(days: readonly MtdDay[]): (number | null)[] {
+  return days.reduce<(number | null)[]>((acc, day) => {
+    const previous = acc.length === 0 ? 0 : acc[acc.length - 1];
+    acc.push(previous === null || day.total === null ? null : previous + day.total);
+    return acc;
+  }, []);
+}
+
+/**
+ * Daily forecast bars with the month's running total over them.
+ *
+ * Two rules the drawing must not break:
+ *
+ *  - A day with no complete forecast has NO bar and no zero. It is drawn as a
+ *    gap tick, because a missing day rendered at height zero is indistinguishable
+ *    from a day the airport expected nobody.
+ *  - The running total stops at the first incomplete day. A cumulative line
+ *    drawn across a gap silently asserts the gap contributed nothing, which is
+ *    the same lie in line form.
+ */
+function AirportMonthChart({ days, lang, numberLocale, unit }: {
+  days: readonly MtdDay[]; lang: Lang; numberLocale: string; unit: string;
+}) {
+  const [active, setActive] = useState<string | null>(null);
+  if (!days.length) return null;
+  const width = 100, height = 34, left = 0, right = width;
+  const step = days.length > 1 ? (right - left) / (days.length - 1) : 0;
+  const barWidth = Math.max(1.2, (right - left) / Math.max(days.length, 1) * 0.55);
+  const maxDay = days.reduce((best, day) => Math.max(best, day.total ?? 0), 0);
+
+  const cumulative = runningTotals(days);
+  const maxRun = cumulative.reduce<number>((best, value) => Math.max(best, value ?? 0), 0);
+  const x = (index: number) => left + index * step;
+  const barY = (value: number) => height - (maxDay > 0 ? (value / maxDay) * (height * 0.62) : 0);
+  const runY = (value: number) => height - (maxRun > 0 ? (value / maxRun) * (height * 0.92) : 0);
+  const linePoints = cumulative.flatMap((value, index) => value === null ? [] : [`${x(index)},${runY(value)}`]);
+
+  const activeIndex = active ? days.findIndex((day) => day.date === active) : -1;
+  const shown = activeIndex >= 0 ? activeIndex : days.length - 1;
+  const shownDay = days[shown];
+  // Representative ticks only: every date at 390px is unreadable.
+  const ticks = [...new Set([0, 4, 9, days.length - 1].filter((index) => index >= 0 && index < days.length))];
+
+  return <figure className="airport-month-chart">
+    <figcaption>{mtdCopy.daily[lang]}</figcaption>
+    <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+      {days.map((day, index) => day.total === null
+        ? <rect key={day.date} className="airport-month-gap" x={x(index) - barWidth / 2} y={height - 1} width={barWidth} height={1} />
+        : <rect key={day.date} className="airport-month-bar" data-selected={day.date === shownDay.date || undefined}
+            x={x(index) - barWidth / 2} y={barY(day.total)} width={barWidth} height={Math.max(0.6, height - barY(day.total))} />)}
+      {linePoints.length > 1 && <polyline className="airport-month-run" points={linePoints.join(" ")} />}
+    </svg>
+    <div className="airport-month-ticks" aria-hidden="true">
+      {ticks.map((index) => <span key={index} style={{ left: `${(x(index) / width) * 100}%` }}>{shortDay(days[index].date)}</span>)}
+    </div>
+    {/* One control per day, labelled with the facts it reveals: the chart stays
+        readable by touch and by screen reader without a tooltip layer. */}
+    <div className="airport-month-picks" role="group" aria-label={mtdCopy.daily[lang]}>
+      {days.map((day) => <button key={day.date} type="button" aria-pressed={day.date === shownDay.date}
+        onClick={() => setActive(day.date)}
+        aria-label={`${shortDay(day.date)} · ${day.total === null ? airportTodayText.unavailable[lang] : `${Math.round(day.total).toLocaleString(numberLocale)}${unit}`}`} />)}
+    </div>
+    <p className="airport-month-readout" aria-live="polite">
+      <span>{shortDay(shownDay.date)}</span>
+      <b>{mtdCopy.perDay[lang]} {shownDay.total === null ? airportTodayText.unavailable[lang] : `${Math.round(shownDay.total).toLocaleString(numberLocale)}${unit}`}</b>
+      <small>{mtdCopy.cumulative[lang]} {cumulative[shown] === null ? airportTodayText.unavailable[lang] : `${Math.round(cumulative[shown]!).toLocaleString(numberLocale)}${unit}`}</small>
+    </p>
+  </figure>;
+}
+
+export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=true,showCrowding=true,showFlights=true,flow=null}:{summary:LiveSummary;lang:Lang;terminal?:"all"|"T1"|"T2";showPassengers?:boolean;showCrowding?:boolean;showFlights?:boolean;flow?:ReactNode}) {
   const airport=summary.airport;
   const isAll=terminal==="all";
   const numberLocale=airportLocale(lang);
@@ -1500,6 +1608,7 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
     :contextText(lang,"선택일 피크 · 공식 예상","Selected day's peak · official forecast","所选日期高峰 · 官方预计","選択日のピーク · 公式予想");
   const dayLines=airportBriefLines.map(line=>summary.dayRelation==="TODAY"?line:line.replace(contextText(lang,"오늘 피크","Today's peak","今日高峰","本日ピーク"),contextText(lang,"선택일 피크","Selected day's peak","所选日期高峰","選択日のピーク")));
   const upcomingPeak = [...timeline].filter(row => Number.isFinite(row.expectedPassengers) && (summary.dayRelation === "FUTURE" || (summary.dayRelation === "TODAY" && Date.parse(row.targetStartAt) >= Date.parse(nowIso)))).sort((a,b)=>b.expectedPassengers-a.expectedPassengers)[0];
+  const mtd = airport.monthToDate?.[terminal] ?? null;
   const checkpoint = airportBrief.checkpoint;
   const queueIsStale = checkpoint && (checkpoint.freshness === "STALE" || presentationNow - Date.parse(checkpoint.observedAt) > 20 * 60_000);
   const queueValue = checkpoint?.waitTimeRaw ?? (checkpoint?.waitTimeMinutes !== null && checkpoint?.waitTimeMinutes !== undefined ? String(checkpoint.waitTimeMinutes) : null);
@@ -1507,8 +1616,31 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
   return <section className="current-brief airport-current-brief" aria-label={`${scopeLabel} ${dayLabel}`}>
       <p className="eyebrow">{scopeLabel} · {dayLabel}</p>
       {showPassengers&&<>
-      {expectedTotal !== null && forecastStatus === "COMPLETE" ? <strong className="airport-brief-total"><span className="airport-metric-label">{passengerCopy[summary.dayRelation === "TODAY" ? "today" : "selected"][lang]}</span>{" "}<span className="airport-metric-value">{Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}</span></strong> : <p className="airport-data-missing">{forecastStatus === "PARTIAL" ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]}</p>}
+      {/* OWNER PRIORITY LOCK 1-3 (2026-09-14). The arithmetic sum of the two
+          official forecasts leads, because that is the number an airport
+          retail manager plans around. Under it the sum is SHOWN as arithmetic,
+          and the limitation follows immediately — not many rows below, where a
+          reader who has already taken the figure as a passenger count will
+          never reach it. The departure hall alone led this view before and
+          must not lead it again: it is one of the two operands, so a reader
+          could not tell the part from the whole. When the sum cannot be formed
+          the hall figure leads again, labelled as itself. */}
+      {referenceSum ? <>
+        <strong className="airport-brief-total" data-basis="ARITHMETIC_ONLY" data-testid="airport-sum-total">
+          <span className="airport-metric-label">{passengerCopy[summary.dayRelation === "TODAY" ? "summedToday" : "summedSelected"][lang]}</span>{" "}
+          <span className="airport-metric-value">{referenceSum.total.toLocaleString(numberLocale)}{peopleUnit}</span>
+        </strong>
+        <AirportSumFormula hall={referenceSum.hall} transfer={referenceSum.transfer} total={referenceSum.total}
+          lang={lang} numberLocale={numberLocale} unit={peopleUnit} isToday={summary.dayRelation === "TODAY"} />
+        <small className="passenger-transfer-limitation">{passengerCopy.arithmeticNote[lang]}</small>
+      </> : expectedTotal !== null && forecastStatus === "COMPLETE"
+        ? <><strong className="airport-brief-total"><span className="airport-metric-label">{passengerCopy[summary.dayRelation === "TODAY" ? "today" : "selected"][lang]}</span>{" "}<span className="airport-metric-value">{Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}</span></strong>
+          <small className="passenger-transfer-limitation">{passengerCopy.limitation[lang]}</small></>
+        : <p className="airport-data-missing">{forecastStatus === "PARTIAL" ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]}</p>}
       <small className="departure-hall-scope-note">{summary.serviceDateKst} · {scopeLabel} · {passengerCopy.scope[lang]}</small>
+      {/* LOCK 4: the hour-by-hour shape of the day, directly under the day's
+          size. Supplied by the airport page; the personal home passes none. */}
+      {flow}
       {/* The three questions a reader asks of a daily total, on one line and in
           one scope: what is happening in this hour, when does the day peak, and
           is that bigger or smaller than the same weekday last week. Every cell
@@ -1534,10 +1666,32 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
           a different heading made one fact look like two. A missing peak leaves
           the grid cell empty, so the upcoming maximum is new information again. */}
       {upcomingPeak && upcomingPeak.targetStartAt !== peak?.targetStartAt && <p className="airport-upcoming-peak"><span>{contextText(lang,"이후 확인된 시간대 중 최대","Largest among upcoming available bands","未来已确认时段中最高","今後の確認済み時間帯の中で最多")}</span><b>{formatKstBand(upcomingPeak.targetStartAt,upcomingPeak.targetEndAt)} · {upcomingPeak.expectedPassengers.toLocaleString(numberLocale)}{peopleUnit}</b></p>}
-      <div className="airport-reference-block">
-        {referenceSum && <><p className="airport-reference-total" data-basis="ARITHMETIC_ONLY">{passengerCopy[summary.dayRelation === "TODAY" ? "summedToday" : "summedSelected"][lang]} {referenceSum.total.toLocaleString(numberLocale)}{peopleUnit}</p><small className="airport-passenger-components">({passengerCopy.hallComponent[lang]} {referenceSum.hall.toLocaleString(numberLocale)}{peopleUnit} + {passengerCopy.transferComponent[lang]} {referenceSum.transfer.toLocaleString(numberLocale)}{peopleUnit})</small></>}
-        <small className="passenger-transfer-limitation">{passengerCopy[referenceSum ? 'arithmeticNote' : 'limitation'][lang]}</small>
-      </div>
+      {/* OWNER PRIORITY LOCK 6-8: this month so far, the same span of the month
+          before, and the shape of how it accumulated. Scope-isolated like every
+          other figure here — T2 sums T2's own days and nothing else. */}
+      {mtd && <section className="airport-mtd" data-scope={terminal} data-testid="airport-mtd" aria-label={mtdCopy.heading[lang]}>
+        <p className="airport-mtd-head"><span>{mtdCopy.heading[lang]}</span><small>{shortRange(mtd.current.start, mtd.current.end)}</small></p>
+        {mtd.current.total !== null
+          ? <strong className="airport-mtd-total">{Math.round(mtd.current.total).toLocaleString(numberLocale)}{peopleUnit}</strong>
+          : <p className="airport-mtd-missing">{mtd.current.status === "PARTIAL"
+              ? mtdCopy.partial[lang](mtd.current.completeDays, mtd.current.expectedDays)
+              : mtdCopy.unavailable[lang]}</p>}
+        {/* A partial span names the days it is missing rather than only saying
+            it is partial, so the reader can judge how far off the total is. */}
+        {mtd.current.status === "PARTIAL" && mtd.current.missingDates.length > 0
+          && <small className="airport-mtd-note">{mtdCopy.missing[lang](mtd.current.missingDates.map(shortDay))}</small>}
+        <dl className="airport-mtd-compare">
+          <div><dt>{mtdCopy.previous[lang]}</dt>
+            <dd>{mtd.previous && mtd.previous.total !== null
+              ? <><b>{Math.round(mtd.previous.total).toLocaleString(numberLocale)}{peopleUnit}</b><small>{shortRange(mtd.previous.start, mtd.previous.end)}</small></>
+              : <small>{mtd.previousAbsentReason === "NO_SUCH_DAY" ? mtdCopy.noSuchDay[lang] : mtdCopy.noCompare[lang]}</small>}</dd></div>
+          <div><dt>{mtdCopy.change[lang]}</dt>
+            <dd>{mtd.change
+              ? <b className="airport-glance-change">{comparisonValue(mtd.change)}</b>
+              : <small>{mtd.previousAbsentReason === "NO_SUCH_DAY" ? mtdCopy.noSuchDay[lang] : mtdCopy.bothComplete[lang]}</small>}</dd></div>
+        </dl>
+        <AirportMonthChart days={mtd.current.days} lang={lang} numberLocale={numberLocale} unit={peopleUnit} />
+      </section>}
       <div className="transfer-forecast" data-testid="transfer-forecast">
         {(airport.transferForecast ?? []).filter(r => r.serviceDate === summary.serviceDateKst && (isAll || r.terminal === terminal)).map(r =>
           <small key={r.terminal} style={{display:'block'}}>{r.terminal} · {passengerCopy.transfer[lang]} {r.expectedTransferPassengers.toLocaleString(numberLocale)}{peopleUnit} · {formatHumanFreshness(r.retrievedAt,nowIso,lang,"collected")}</small>)}
@@ -1637,12 +1791,12 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   const perMetric = (value: string | null) => (sharesOneFreshness ? null : value);
 
   return <section className="airport-today" aria-label={airportTodayText.title[lang]}>
-    <AirportAtAGlance summary={summary} lang={lang} terminal={terminal}/>
-
-    {/* The day's official total and the hour-by-hour shape of that same
-        total are one question, so they are one block. The chart used to sit
-        after a collapsed details element, which put the terminal-by-terminal
-        counting basis between a reader and the curve the headline summarises. */}
+    {/* LOCK 4. The day's official size and the hour-by-hour shape of that same
+        size are one question, so they are one block — and the chart has to sit
+        INSIDE the brief to land between the limitation note and the at-a-glance
+        grid. Passing it as a slot keeps a single component and a single DOM
+        order; the personal home renders the same brief with no chart. */}
+    <AirportAtAGlance summary={summary} lang={lang} terminal={terminal} flow={
     <section className="airport-detail-section airport-forecast" aria-labelledby="airport-forecast-title">
       <div className="airport-detail-head"><div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-forecast-title">{airportTodayText.forecastTitle[lang]}</h3></div><p>{airportTodayText.forecastOnly[lang]}</p></div>
       <p className="flow-note">{summary.serviceDateKst} · {scopeLabel} · {timeline.length ? `${kstStamp(timeline[0].targetStartAt)}–${kstStamp(timeline.at(-1)!.targetEndAt)} KST · ${timeline.length} ${contextText(lang,"개 확인 시간대","available bands","个已确认时段","確認済み時間帯")}` : airportTodayText.unavailable[lang]}{isForecastPartial ? ` · ${airportTodayText.partialBody[lang]}` : ''}</p>
@@ -1663,6 +1817,8 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
           {passengerCollected && <small>{passengerCollected}</small>}
         </div>}
     </section>
+    }/>
+
 
     <details className="airport-summary-details"><summary>{contextText(lang,"터미널별 상세·집계 기준 보기","Terminal details and counting basis","航站楼详情与统计标准","ターミナル詳細・集計基準を見る")}</summary>
     {isAll && <TerminalBriefingCards lang={lang} airport={airport} nowIso={nowIso} dayRelation={summary?.dayRelation ?? "TODAY"} />}
