@@ -119,12 +119,64 @@ for (const locale of ["ko", "en", "zh", "ja"] as const) {
           const box = await hallHeadline.boundingBox();
           if (box) expect(box.y, "the hall-only headline must not sit above the sum").toBeGreaterThan(sumTop);
         }
+
+        // The sum is shown as arithmetic so a reader can check it by eye, and
+        // that only works if the expression is laid out as one: each operator
+        // on its own term's row, "+" and "=" in one column, the figures sharing
+        // a right edge. Structure and geometry only — never the live figures.
+        const ledger = await formula.locator(".airport-sum-row").evaluateAll(rows => rows.map(row => {
+          const box = row.getBoundingClientRect();
+          const op = row.querySelector(".airport-sum-op")!.getBoundingClientRect();
+          const value = row.querySelector(".airport-sum-value")!.getBoundingClientRect();
+          return {
+            kind: (row as HTMLElement).dataset.kind,
+            opText: (row.querySelector(".airport-sum-op")?.textContent ?? "").trim(),
+            opLeft: Math.round(op.left - box.left), opMid: op.top + op.height / 2,
+            rowTop: box.top, rowBottom: box.bottom,
+            valueRight: Math.round(box.right - value.right),
+          };
+        }));
+        console.log(`LEDGER ${locale} ${viewport.name} ${JSON.stringify(ledger.map(r => `${r.kind}:${r.opText}`))}`);
+        expect(ledger.map(r => `${r.kind}:${r.opText}`)).toEqual(["hall:", "transfer:+", "total:="]);
+        for (const row of ledger) {
+          expect(row.opMid > row.rowTop && row.opMid < row.rowBottom,
+            `the ${row.kind} operator must sit on its own term's row`).toBe(true);
+        }
+        expect(Math.max(...ledger.map(r => r.opLeft)) - Math.min(...ledger.map(r => r.opLeft)),
+          "+ and = must share one column").toBeLessThanOrEqual(1);
+        expect(Math.max(...ledger.map(r => r.valueRight)) - Math.min(...ledger.map(r => r.valueRight)),
+          "the figures must share a right edge").toBeLessThanOrEqual(1);
       } else {
         console.log(`SUM ${locale} ${viewport.name} "not formed — transfer forecast unavailable"`);
       }
       if (await mtd.count()) {
         console.log(`MTD ${locale} ${viewport.name} ${JSON.stringify((await mtd.innerText()).replace(/\s+/g, " ").trim().slice(0, 260))}`);
         await expect(mtd).toHaveAttribute("data-scope", "all");
+
+        // A second series on the plot has to be named and has to end somewhere
+        // the reader can point at; an unlabelled blue diagonal measures nothing
+        // as far as they can tell. Its text is read from the page rather than
+        // asserted, because the labels are the same in every locale's own words
+        // and the point here is that BOTH marks are named at all.
+        const legend = await page.locator(".airport-month-legend").innerText();
+        console.log(`LEGEND ${locale} ${viewport.name} ${JSON.stringify(legend.replace(/\s+/g, " ").trim())}`);
+        expect(legend.trim().length, "both marks on the month plot must be named").toBeGreaterThan(0);
+        expect(await page.locator(".airport-month-legend span i").count(),
+          "one swatch for the bars and one for the running total").toBe(2);
+        const plot = await page.locator(".airport-month-plot").boundingBox();
+        const endDot = await page.locator(".airport-month-run-end").boundingBox();
+        expect(endDot, "the running total must end in a marked point").not.toBeNull();
+        expect(endDot!.x + endDot!.width).toBeLessThanOrEqual(plot!.x + plot!.width + 4);
+        expect(endDot!.y).toBeGreaterThanOrEqual(plot!.y - 4);
+
+        // Bars inset by half their width, so the 1st and today are drawn whole.
+        const bars = await page.locator(".airport-month-bar").evaluateAll(els =>
+          els.map(el => [Number(el.getAttribute("x")), Number(el.getAttribute("width"))] as const));
+        for (const [x, w] of bars) {
+          expect(x).toBeGreaterThanOrEqual(-0.01);
+          expect(x + w).toBeLessThanOrEqual(100.01);
+        }
+
         expect(await overflowing(page, ".airport-mtd *"), "no clipped text in the month block").toEqual([]);
       } else {
         console.log(`MTD ${locale} ${viewport.name} "absent"`);

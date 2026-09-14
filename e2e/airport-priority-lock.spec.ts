@@ -68,6 +68,38 @@ for (const lang of ["ko", "en", "zh", "ja"] as const) {
       await expect(formula).toContainText("11,044");
       await expect(page.locator(".passenger-transfer-limitation").first()).toContainText(passengerCopy.arithmeticNote[lang]);
 
+      // The arithmetic must be CHECKABLE BY EYE, which is the only reason to
+      // show it as arithmetic at all. The first attempt laid the terms across a
+      // row and at 390px the "=" wrapped onto a line of its own, under the
+      // second figure — a stray glyph rather than an operator. So lock the
+      // three things that make it read as addition:
+      //   · every operator shares a row with the term it applies to,
+      //   · "+" and "=" sit in one column, directly under one another,
+      //   · the figures share a right edge, so their digit places line up.
+      const ledger = await formula.locator(".airport-sum-row").evaluateAll(rows => rows.map(row => {
+        const box = row.getBoundingClientRect();
+        const op = row.querySelector(".airport-sum-op")!.getBoundingClientRect();
+        const value = row.querySelector(".airport-sum-value")!.getBoundingClientRect();
+        return {
+          kind: (row as HTMLElement).dataset.kind,
+          opText: (row.querySelector(".airport-sum-op")?.textContent ?? "").trim(),
+          opLeft: op.left - box.left, opMid: op.top + op.height / 2,
+          rowTop: box.top, rowBottom: box.bottom,
+          valueRight: box.right - value.right,
+        };
+      }));
+      expect(ledger.map(r => `${r.kind}:${r.opText}`)).toEqual(["hall:", "transfer:+", "total:="]);
+      for (const row of ledger) {
+        expect(row.opMid > row.rowTop && row.opMid < row.rowBottom,
+          `the ${row.kind} operator must sit on its own term's row, not float between rows`).toBe(true);
+      }
+      const opLefts = ledger.map(r => Math.round(r.opLeft));
+      expect(Math.max(...opLefts) - Math.min(...opLefts),
+        "+ and = must share one column").toBeLessThanOrEqual(1);
+      const valueRights = ledger.map(r => Math.round(r.valueRight));
+      expect(Math.max(...valueRights) - Math.min(...valueRights),
+        "the figures must share a right edge so the places line up").toBeLessThanOrEqual(1);
+
       // The hall figure must never be a larger, higher headline than the sum.
       const hallOnly = page.getByText(passengerCopy.today[lang], { exact: false });
       expect(await hallOnly.count(), "the hall-only headline must not return above the sum").toBe(0);
@@ -105,6 +137,30 @@ for (const lang of ["ko", "en", "zh", "ja"] as const) {
       await expect(mtd).toContainText("+11.1%");
       await expect(mtd).toContainText("9/1–9/13");
       await expect(mtd).toContainText("8/1–8/13");
+
+      // The running total is a second series on the same plot, so it must be
+      // named and it must end somewhere a reader can point at. An unlabelled
+      // blue diagonal measures nothing as far as the reader can tell.
+      const legend = page.locator(".airport-month-legend");
+      await expect(legend).toContainText(mtdCopy.perDay[lang]);
+      await expect(legend).toContainText(mtdCopy.cumulative[lang]);
+      const plot = await page.locator(".airport-month-plot").boundingBox();
+      const endDot = await page.locator(".airport-month-run-end").boundingBox();
+      expect(endDot, "the running total must end in a marked point").not.toBeNull();
+      expect(endDot!.x).toBeGreaterThanOrEqual(plot!.x - 4);
+      expect(endDot!.x + endDot!.width).toBeLessThanOrEqual(plot!.x + plot!.width + 4);
+      expect(endDot!.y).toBeGreaterThanOrEqual(plot!.y - 4);
+
+      // Bars are inset by half their width, so the 1st and today — the two days
+      // a reader looks at most — are drawn whole instead of half-clipped by the
+      // plot edge.
+      const bars = await page.locator(".airport-month-bar").evaluateAll(els =>
+        els.map(el => [Number(el.getAttribute("x")), Number(el.getAttribute("width"))] as const));
+      expect(bars.length).toBeGreaterThan(1);
+      for (const [x, w] of bars) {
+        expect(x, "no bar may start left of the plot").toBeGreaterThanOrEqual(-0.01);
+        expect(x + w, "no bar may run past the plot's right edge").toBeLessThanOrEqual(100.01);
+      }
 
       // Nothing may overflow its box, and the page may not scroll sideways.
       const clipped = await page.locator('.airport-sum-formula *, .airport-mtd *').evaluateAll(els => els

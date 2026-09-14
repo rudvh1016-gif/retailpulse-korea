@@ -661,3 +661,49 @@ test("예보 차트는 현재 시간대로 가로 스크롤해서 열린다", ()
   // 오늘이 아니면 현재 시간대가 없으므로 아무것도 하지 않는다.
   assert.match(chart, /if \(!bars \|\| !nowBandStart\) return;/);
 });
+
+/**
+ * A width override that never applies is worse than no override: the author
+ * believes the narrow layout was handled, and nobody looks again.
+ *
+ * PR #178 wrote four phone rules for the executive brief indented as if they
+ * were inside `@media (max-width: 479px)`, but the query had already closed on
+ * the line above — and they sat ABOVE the base rules they meant to override,
+ * so the cascade discarded all four. The visible consequence was the sum
+ * keeping its desktop five-column grid at 390px, which pushed the "=" out from
+ * in front of the total and left it adrift under the second figure.
+ *
+ * The indentation is the tell: nothing in this stylesheet is indented at top
+ * level. So assert exactly that — an indented rule must be inside a block.
+ */
+test("no stylesheet rule is indented as if nested while sitting at top level", () => {
+  // Comment bodies are prose and are indented freely, so they are blanked
+  // first — line numbers are preserved so a failure still points somewhere.
+  const scannable = styles.replace(/\/\*[\s\S]*?\*\//g, block => block.replace(/[^\n]/g, " "));
+  let depth = 0;
+  const orphans = [];
+  for (const [index, line] of scannable.split("\n").entries()) {
+    if (depth === 0 && /^\s+\S/.test(line)) orphans.push(`${index + 1}: ${line.trim().slice(0, 70)}`);
+    for (const char of line) {
+      if (char === "{") depth += 1;
+      else if (char === "}") depth = Math.max(0, depth - 1);
+    }
+  }
+  assert.deepEqual(orphans, [], "indented rules at top level never reached the query they were written for");
+});
+
+/**
+ * And the narrow overrides that DO exist must be able to win, which means
+ * coming after the rule they override. Checked by position, because equal
+ * specificity makes source order the whole of the decision.
+ */
+test("the brief's phone overrides come after the rules they override", () => {
+  for (const selector of [".airport-mtd-compare", ".airport-current-brief .airport-mtd-total"]) {
+    const base = styles.indexOf(`\n${selector} {`) >= 0
+      ? styles.indexOf(`\n${selector} {`)
+      : styles.indexOf(`\n${selector} `);
+    const override = styles.indexOf(`  ${selector} {`);
+    assert.ok(base >= 0, `${selector} must have a base rule`);
+    assert.ok(override > base, `${selector}'s narrow override must come after its base rule, not before`);
+  }
+});
