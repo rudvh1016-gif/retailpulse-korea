@@ -102,8 +102,12 @@ test("the whole summary read path is one D1 round trip, and the payload is a cac
     assert.equal(body.mode, "live-summary");
     assert.equal(client.trips.length, 1, `expected one D1 request, saw ${JSON.stringify(client.trips)}`);
     assert.equal(client.trips[0].kind, "batch");
-    // 23 block statements + 3 × 21 date-picker probes, all in the one request.
-    assert.equal(client.trips[0].count, 23 + 3 * 21);
+    // 25 block statements + 3 × 21 date-picker probes, all in the one request.
+    // 2026-09-14: month-to-date added two of those block statements — this
+    // month's range and the previous month's same span. They are bounded range
+    // seeks that ride the SAME batch, which is the property this test exists to
+    // hold: a new figure on the screen must not cost a new round trip.
+    assert.equal(client.trips[0].count, 25 + 3 * 21);
 
     assert.equal(body.areas.myeongdong.realtime.congestionLabel, "약간 붐빔");
     assert.equal(body.areas.myeongdong.realtime.freshness, "LIVE");
@@ -141,7 +145,9 @@ test("a broken statement still isolates to its own block: the page stays live, t
     assert.equal(response.headers.get("cache-control"), SUMMARY_CACHE_CONTROL);
     assert.equal(client.trips[0].kind, "batch", "the single batch is tried first");
     // Then one concurrent wave: one request per group, not the old serial chain.
-    assert.equal(client.trips.length, 1 + 25);
+    // 26 groups since month-to-date added its own (2026-09-14); the property
+    // being held is that the fallback stays ONE wave, not that it never grows.
+    assert.equal(client.trips.length, 1 + 26);
   } finally {
     database.close();
     unlinkSync(databasePath);

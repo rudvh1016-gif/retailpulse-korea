@@ -31,6 +31,7 @@ import { withAreaBaselines } from "../lib/period-comparison";
 import { readFileSync } from "node:fs";
 import { CloudflareD1RestDatabase } from "../lib/d1-rest";
 import { kstDayOf, kstHourStartIsoOf, shiftKstDay } from "../lib/kst";
+import { monthStartOf, previousMonthSameDay } from "../lib/airport-mtd";
 import {
   SEOUL_FOREIGN_MAPPING_VERSION,
   SEOUL_FOREIGN_PRODUCT_VERSION,
@@ -321,6 +322,38 @@ const HOT_QUERIES: HotQuery[] = [
     guard: "WHERE f.direction IN ('departure', 'arrival') AND f.is_aggregate = 1 AND f.target_date IN (?, ?, ?)",
     table: "airport_passenger_forecast",
     scanTargets: ["airport_passenger_forecast", "f"],
+  },
+  {
+    // Month-to-date: this month's span and the previous month's same span.
+    // Measured because it is the largest range this route reads — if it ever
+    // stops seeking the target_date index, the cost shows up here rather than
+    // on the free tier.
+    name: "monthToDateCurrent",
+    sql: `SELECT terminal, direction, is_aggregate AS isAggregate,
+    target_date AS targetDate, time_band_raw AS timeBandRaw,
+    target_start_at AS targetStartAt, target_end_at AS targetEndAt,
+    expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
+  FROM airport_passenger_forecast
+  WHERE direction = 'departure' AND is_aggregate = 1 AND target_date >= ? AND target_date <= ?
+  ORDER BY target_date, terminal, target_start_at LIMIT 1600`,
+    binds: [monthStartOf(serviceDate), serviceDate],
+    guard: "WHERE direction = 'departure' AND is_aggregate = 1 AND target_date >= ? AND target_date <= ?",
+    table: "airport_passenger_forecast",
+    scanTargets: ["airport_passenger_forecast"],
+  },
+  {
+    name: "monthToDatePrevious",
+    sql: `SELECT terminal, direction, is_aggregate AS isAggregate,
+    target_date AS targetDate, time_band_raw AS timeBandRaw,
+    target_start_at AS targetStartAt, target_end_at AS targetEndAt,
+    expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
+  FROM airport_passenger_forecast
+  WHERE direction = 'departure' AND is_aggregate = 1 AND target_date >= ? AND target_date <= ?
+  ORDER BY target_date, terminal, target_start_at LIMIT 1600`,
+    binds: [monthStartOf(previousMonthSameDay(serviceDate) ?? serviceDate), previousMonthSameDay(serviceDate) ?? serviceDate],
+    guard: "WHERE direction = 'departure' AND is_aggregate = 1 AND target_date >= ? AND target_date <= ?",
+    table: "airport_passenger_forecast",
+    scanTargets: ["airport_passenger_forecast"],
   },
   {
     name: "historicalFlightCounts",

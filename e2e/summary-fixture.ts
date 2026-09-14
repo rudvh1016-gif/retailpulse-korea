@@ -225,6 +225,40 @@ export const SUMMARY_FIXTURE = {
     },
     peakExpectedPassengers: 6320,
     peakExpectedPassengersByTerminal: { T1: 3500, T2: 2900 },
+    // Month-to-date, shaped exactly as the route publishes it. The three scopes
+    // carry deliberately different daily figures (all 3,600 / T1 2,400 /
+    // T2 1,200) so a screen borrowing a neighbouring scope's month total is
+    // visible in a test rather than plausible.
+    monthToDate: {
+      all: {
+      current: { start: "2026-09-01", end: "2026-09-13", total: 46800, expectedDays: 13, completeDays: 13,
+        status: "COMPLETE", missingDates: [],
+        days: [{ date: "2026-09-01", total: 3600 }, { date: "2026-09-02", total: 3600 }, { date: "2026-09-03", total: 3600 }, { date: "2026-09-04", total: 3600 }, { date: "2026-09-05", total: 3600 }, { date: "2026-09-06", total: 3600 }, { date: "2026-09-07", total: 3600 }, { date: "2026-09-08", total: 3600 }, { date: "2026-09-09", total: 3600 }, { date: "2026-09-10", total: 3600 }, { date: "2026-09-11", total: 3600 }, { date: "2026-09-12", total: 3600 }, { date: "2026-09-13", total: 3600 }] },
+      previous: { start: "2026-08-01", end: "2026-08-13", total: 42120, expectedDays: 13, completeDays: 13,
+        status: "COMPLETE", missingDates: [] },
+      previousAbsentReason: null,
+      change: { baselineAt: "2026-08-01~2026-08-13", minPercent: 11.111111, maxPercent: 11.111111 },
+    },
+      T1: {
+      current: { start: "2026-09-01", end: "2026-09-13", total: 31200, expectedDays: 13, completeDays: 13,
+        status: "COMPLETE", missingDates: [],
+        days: [{ date: "2026-09-01", total: 2400 }, { date: "2026-09-02", total: 2400 }, { date: "2026-09-03", total: 2400 }, { date: "2026-09-04", total: 2400 }, { date: "2026-09-05", total: 2400 }, { date: "2026-09-06", total: 2400 }, { date: "2026-09-07", total: 2400 }, { date: "2026-09-08", total: 2400 }, { date: "2026-09-09", total: 2400 }, { date: "2026-09-10", total: 2400 }, { date: "2026-09-11", total: 2400 }, { date: "2026-09-12", total: 2400 }, { date: "2026-09-13", total: 2400 }] },
+      previous: { start: "2026-08-01", end: "2026-08-13", total: 28080, expectedDays: 13, completeDays: 13,
+        status: "COMPLETE", missingDates: [] },
+      previousAbsentReason: null,
+      change: { baselineAt: "2026-08-01~2026-08-13", minPercent: 11.111111, maxPercent: 11.111111 },
+    },
+      T2: {
+      current: { start: "2026-09-01", end: "2026-09-13", total: 15600, expectedDays: 13, completeDays: 13,
+        status: "COMPLETE", missingDates: [],
+        days: [{ date: "2026-09-01", total: 1200 }, { date: "2026-09-02", total: 1200 }, { date: "2026-09-03", total: 1200 }, { date: "2026-09-04", total: 1200 }, { date: "2026-09-05", total: 1200 }, { date: "2026-09-06", total: 1200 }, { date: "2026-09-07", total: 1200 }, { date: "2026-09-08", total: 1200 }, { date: "2026-09-09", total: 1200 }, { date: "2026-09-10", total: 1200 }, { date: "2026-09-11", total: 1200 }, { date: "2026-09-12", total: 1200 }, { date: "2026-09-13", total: 1200 }] },
+      previous: { start: "2026-08-01", end: "2026-08-13", total: 14040, expectedDays: 13, completeDays: 13,
+        status: "COMPLETE", missingDates: [] },
+      previousAbsentReason: null,
+      change: { baselineAt: "2026-08-01~2026-08-13", minPercent: 11.111111, maxPercent: 11.111111 },
+    },
+    },
+
     passengerForecastTimeline: [
       { targetStartAt: "2026-08-31T14:00:00+09:00", targetEndAt: "2026-08-31T15:00:00+09:00", expectedPassengers: 5110 },
       { targetStartAt: "2026-08-31T15:00:00+09:00", targetEndAt: "2026-08-31T16:00:00+09:00", expectedPassengers: 6320 },
