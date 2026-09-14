@@ -107,9 +107,18 @@ for (const locale of ["ko", "en", "zh", "ja"] as const) {
           expect(order[i], "the sum leads, then the formula, then its limitation").toBeGreaterThan(order[i - 1]);
         }
         // The hall figure is an OPERAND. It must never be a headline above the sum.
+        //
+        // Counted before it is measured: `boundingBox()` WAITS for a matching
+        // element rather than returning null, so asking it about a locator that
+        // correctly matches nothing hangs until the test times out. When the sum
+        // is formed there is deliberately no bare hall headline, which is the
+        // common case — so the absence has to be checked, not awaited.
         const sumTop = order[0];
-        const hallHeadline = await page.locator(".airport-brief-total:not([data-basis])").boundingBox();
-        if (hallHeadline) expect(hallHeadline.y, "the hall-only headline must not sit above the sum").toBeGreaterThan(sumTop);
+        const hallHeadline = page.locator(".airport-brief-total:not([data-basis])");
+        if (await hallHeadline.count()) {
+          const box = await hallHeadline.boundingBox();
+          if (box) expect(box.y, "the hall-only headline must not sit above the sum").toBeGreaterThan(sumTop);
+        }
       } else {
         console.log(`SUM ${locale} ${viewport.name} "not formed — transfer forecast unavailable"`);
       }
