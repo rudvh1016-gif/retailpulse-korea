@@ -1,0 +1,48 @@
+name: Discoverability Check
+
+# Can a customer still find this site?
+#
+# Read-only and secret-free: GET requests to public URLs only. It runs after
+# every production deploy because that is when the catastrophic failure is
+# introduced — app/robots.ts answers `Disallow: /` and app/sitemap.ts answers
+# an empty list whenever RPK_DEPLOYMENT_STAGE is "staging", and
+# deploy-cloudflare.yml takes that value from `inputs.stage || 'production'`.
+# A single dispatch with the wrong input de-indexes KORETAIL from Google and
+# Naver while every page keeps answering 200, every smoke check keeps passing
+# and every screenshot keeps looking correct. Nothing else in this repository
+# would notice, and a de-indexing takes far longer to undo than to cause.
+#
+# No cron: a timed schedule here would be a new scheduler, and per
+# tests/scheduler-truth.test.mjs this repository keeps its scheduler graph
+# small and derived. Deploy-time is where the risk enters.
+on:
+  workflow_dispatch:
+    inputs:
+      origin:
+        description: Origin to check
+        required: false
+        default: https://koretaildata.com
+  workflow_run:
+    workflows: [Deploy Cloudflare]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  discoverability:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Check that the live site is findable
+        env:
+          NEXT_PUBLIC_SITE_ORIGIN: ${{ inputs.origin || 'https://koretaildata.com' }}
+        run: npm run check:discoverability

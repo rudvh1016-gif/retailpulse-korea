@@ -60,5 +60,18 @@ test("the former flat route redirects and only nested Tourism Desk URLs enter th
   assert.match(areaPage, /initialView="tourism-desk"/);
   assert.match(sitemap, /standaloneSeoSlugs\.map/);
   assert.match(sitemap, /tourismDeskAreas\.map/);
-  assert.match(sitemap, /tourism-desk\/\$\{area\}/);
+
+  // Asserting that the SOURCE TEXT contains `tourism-desk/${area}` only proved
+  // one spelling of one template literal: it broke the moment the same URLs
+  // were built through seoPath(), while the sitemap itself was still correct.
+  // The URLs the sitemap actually emits are the thing that matters, so those
+  // are what is checked.
+  const { default: buildSitemap } = await import("../app/sitemap.ts");
+  const urls = buildSitemap().map((entry) => entry.url);
+  const deskUrls = urls.filter((url) => url.includes("/tourism-desk"));
+  assert.equal(deskUrls.length, seoLocales.length * tourismDeskAreas.length);
+  for (const url of deskUrls) {
+    assert.match(url, /\/tourism-desk\/(myeongdong|hongdae|seongsu)$/,
+      "the flat /tourism-desk URL is a permanent redirect, so it must never be offered for indexing");
+  }
 });
