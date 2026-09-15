@@ -66,8 +66,16 @@ test("the former flat route redirects and only nested Tourism Desk URLs enter th
   // were built through seoPath(), while the sitemap itself was still correct.
   // The URLs the sitemap actually emits are the thing that matters, so those
   // are what is checked.
-  const { default: buildSitemap } = await import("../app/sitemap.ts");
-  const urls = buildSitemap().map((entry) => entry.url);
+  // Read in a child process pinned to the production stage. CI builds as
+  // staging, where app/sitemap.ts correctly answers an empty list — and
+  // setting the variable here would not help, because ESM imports hoist above
+  // any assignment and seo-config would already have read the old value.
+  const { execFileSync } = await import("node:child_process");
+  const urls = JSON.parse(execFileSync(process.execPath, [
+    "--import", "tsx", "--input-type=module",
+    "--eval", 'console.log(JSON.stringify((await import("./app/sitemap.ts")).default().map((entry) => entry.url)));',
+  ], { env: { ...process.env, RPK_DEPLOYMENT_STAGE: "production" }, encoding: "utf8" }).trim().split("\n").at(-1));
+  assert.ok(urls.length > 0, "an empty sitemap would make every assertion below vacuous");
   const deskUrls = urls.filter((url) => url.includes("/tourism-desk"));
   assert.equal(deskUrls.length, seoLocales.length * tourismDeskAreas.length);
   for (const url of deskUrls) {

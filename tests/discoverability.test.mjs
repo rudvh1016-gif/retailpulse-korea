@@ -13,12 +13,21 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 process.env.NEXT_PUBLIC_SITE_ORIGIN ??= "https://koretaildata.com";
+// CI builds as staging (`RPK_DEPLOYMENT_STAGE: staging` in ci.yml), where
+// app/sitemap.ts deliberately answers an empty list and app/robots.ts answers
+// `Disallow: /`. These tests are about the PRODUCTION surface, so they state
+// the stage they mean instead of inheriting whatever the runner had — the
+// staging behaviour is asserted separately, in its own process, below.
+process.env.RPK_DEPLOYMENT_STAGE = "production";
 
 const { runDiscoverabilityChecks } = await import("../lib/discoverability.ts");
-const { seoLocales, seoPath, standaloneSeoSlugs, tourismDeskAreas, pageTitle, pageDescription } =
+const { seoLocales, seoPath, standaloneSeoSlugs, tourismDeskAreas, pageTitle, pageDescription, siteOrigin } =
   await import("../app/seo-config.ts");
 
-const ORIGIN = "https://koretaildata.com";
+// The fixture site serves whatever origin THIS build is configured for. CI
+// builds against https://rpk-ci.invalid, so hardcoding the production host
+// here would make the fixture disagree with the sitemap it is checking.
+const ORIGIN = siteOrigin;
 
 const LANG_TAG = { ko: "ko-KR", en: "en", zh: "zh-CN", ja: "ja-JP" };
 
@@ -265,7 +274,12 @@ test("sitemap lastmod is stable within a day, not a fresh timestamp per request"
 });
 
 test("every sitemap entry declares all four locales plus x-default", () => {
-  for (const entry of sitemapModule.default()) {
+  const entries = sitemapModule.default();
+  // Without this, an empty sitemap would pass by iterating nothing — which is
+  // exactly how this test first passed under the staging flag while the two
+  // beside it failed.
+  assert.equal(entries.length, seoLocales.length * (standaloneSeoSlugs.length + 1 + tourismDeskAreas.length));
+  for (const entry of entries) {
     const languages = entry.alternates?.languages ?? {};
     assert.deepEqual(
       Object.keys(languages).sort(),
@@ -289,4 +303,24 @@ test("the discoverability check is actually wired to a workflow, not decorative"
   const workflow = bodies[files.indexOf(runners[0])];
   assert.match(workflow, /workflow_run:/, "it must run automatically after a deploy, not only when someone remembers");
   assert.match(workflow, /workflows: \[Deploy Cloudflare\]/);
+});
+
+test("the staging flag really does withhold the whole site from crawlers", async () => {
+  // The catastrophe this file exists for, asserted against the real modules
+  // in their own process so the flag is read at import time. Both halves
+  // matter: an empty sitemap alone would still leave the pages crawlable,
+  // and a blanket disallow alone would still advertise every URL.
+  const { execFileSync } = await import("node:child_process");
+  const script = [
+    'const s = (await import("./app/sitemap.ts")).default;',
+    'const r = (await import("./app/robots.ts")).default;',
+    'console.log(JSON.stringify({ entries: s().length, disallow: r().rules.disallow }));',
+  ].join("\n");
+  const output = execFileSync(process.execPath, ["--import", "tsx", "--input-type=module", "--eval", script], {
+    env: { ...process.env, RPK_DEPLOYMENT_STAGE: "staging", NEXT_PUBLIC_SITE_ORIGIN: ORIGIN },
+    encoding: "utf8",
+  });
+  const staging = JSON.parse(output.trim().split("\n").at(-1));
+  assert.equal(staging.entries, 0, "a staging build must offer no URLs for indexing");
+  assert.equal(staging.disallow, "/", "a staging build must forbid every crawler");
 });
