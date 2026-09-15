@@ -48,6 +48,16 @@ on:
         required: false
         default: false
         type: boolean
+      a4_max_attempts_per_request:
+        description: >-
+          Per-request attempt ceiling for the A4 congestion pair on this
+          attempt. Set by the realtime fresh-runner retry so one extra runner
+          costs exactly one provider request per source, never the full
+          ladder the normal 15-minute cycle is budgeted for. Unset elsewhere,
+          so A1, A5 and weather keep their existing policies unchanged.
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -75,6 +85,7 @@ jobs:
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
           RPK_A1_MAX_REQUESTS: ${{ inputs.a1_max_requests }}
           RPK_A1_RESCAN_TODAY: ${{ inputs.a1_rescan_today }}
+          RPK_A4_MAX_ATTEMPTS_PER_REQUEST: ${{ inputs.a4_max_attempts_per_request }}
       # Informational only: never continue-on-error, never touches this job's
       # own conclusion or the caller workflow's `needs.<job>.result`. GitHub
       # computes a workflow run's overall red/green from ALL of its jobs, so

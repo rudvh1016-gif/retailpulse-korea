@@ -8,6 +8,7 @@ import { evaluateQuotaUsage } from "../lib/quota-guard";
 import { normalizeAirportFlight } from "../lib/source-adapters";
 import { readCloudflareConfig, validateCloudflareEnvironment } from "../scripts/validate-cloudflare-environment.mjs";
 import { PRODUCTION_CRONS, WORKERS_FREE_CRON_TRIGGER_LIMIT } from "../lib/realtime-dispatch";
+import { RETRYABLE_A4_SOURCES } from "../lib/congestion-retry";
 
 test("semantic flight hash ignores retrieval time and unknown volatile fields", async () => {
   const base = { flightId: "KE703", scheduleDateTime: "202608251430", terminalid: "2", gate: "231", remark: "정상" };
@@ -198,10 +199,26 @@ test("production collector remains gated and only production carries a Worker Cr
  * egress address — so the DISTINCT names are what identifies an owner. A
  * retry is not a second scheduler.
  */
+/**
+ * A `sources:` value can be an expression rather than a literal list.
+ *
+ * `collect-realtime.yml` passes `${{ needs.collect.outputs.retry_sources }}`
+ * to its fresh-runner retry, because which A4 sources earn a retry is decided
+ * from that cycle's own results. An expression is not a source name, so it is
+ * resolved to the set of names it can actually produce — the allowlist
+ * `lib/congestion-retry.ts` filters against — and never counted as one.
+ */
+function resolveSourceExpression(value: string): string[] {
+  if (!value.includes("${{")) return [value];
+  if (value.includes("needs.collect.outputs.retry_sources")) return [...RETRYABLE_A4_SOURCES];
+  throw new Error(`unresolved workflow expression in a sources declaration: ${value}. Teach this resolver what it can produce, or a new source could be scheduled with nothing noticing.`);
+}
+
 function declaredSources(workflow: string): string[] {
   const declarations = [...workflow.matchAll(/^\s*(?:RPK_PRODUCTION_SOURCES|sources): (.+)$/gm)]
     .flatMap((match) => match[1].split(",").map((value) => value.trim()))
-    .filter(Boolean);
+    .filter(Boolean)
+    .flatMap(resolveSourceExpression);
   return [...new Set(declarations)];
 }
 
@@ -543,4 +560,17 @@ test("A1 runs early, and the later window refreshes rather than skipping", async
   // Every attempt is a separate job, gated on the previous one failing.
   const guards = [...early.matchAll(/needs\.(\w+)\.result == 'failure'/g)].map((match) => match[1]);
   assert.deepEqual(guards, ["collect", "retry_1"]);
+});
+
+test("the realtime retry can never schedule a source its own cadence group does not own", async () => {
+  // A retry is an extra attempt at this group's work, never a way to collect
+  // something else. If the retry's allowlist ever grew past what the group
+  // already declares, that new source would be running on a cadence nobody
+  // reviewed.
+  const workflow = await readFile(new URL("../.github/workflows/collect-realtime.yml", import.meta.url), "utf8");
+  const primary = [...workflow.matchAll(/^\s*RPK_PRODUCTION_SOURCES: (.+)$/gm)]
+    .flatMap((match) => match[1].split(",").map((value) => value.trim()));
+  for (const source of RETRYABLE_A4_SOURCES) {
+    assert.ok(primary.includes(source), `${source} may be retried but is not collected by the realtime group`);
+  }
 });

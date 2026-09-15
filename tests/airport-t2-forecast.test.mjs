@@ -10,6 +10,7 @@ import {
   normalizeAirportPassengerForecastRow,
 } from "../lib/source-adapters.ts";
 import {
+  collectAirportCongestion,
   collectAirportCongestionT2,
   collectAirportPassengerForecast,
 } from "../lib/collector.ts";
@@ -544,4 +545,90 @@ test("A5 collector: a rejected row records its reason code in D1 without abortin
   const detail = database.prepare("SELECT detail FROM collector_runs WHERE source_id = 'INCHEON_PASSENGER_FORECAST' ORDER BY started_at DESC LIMIT 1").get().detail;
   assert.match(detail, /row: SCHEMA_A5_ATIME_FORMAT/);
   assert.doesNotMatch(detail, /SUPER-SECRET-VALUE/);
+});
+
+// ── The bounded A4 retry: one request per source, never more ───────────────
+// The fresh-runner retry added to collect-realtime.yml must never spend the
+// quota the next normal 15-minute cycle needs. `a4_max_attempts_per_request`
+// is what enforces that, and it is enforced HERE, in the collector — not by a
+// comment in a workflow file. These count real requests against a stub.
+
+test("A4-T2 bounded retry: a total outage costs exactly one request, not the full ladder", async (context) => {
+  const { database, databasePath } = freshDatabase("t2-bounded-outage");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+
+  let requests = 0;
+  globalThis.fetch = async () => {
+    requests += 1;
+    const cause = Object.assign(new Error("connect timeout"), { code: "UND_ERR_CONNECT_TIMEOUT" });
+    throw new TypeError("fetch failed", { cause });
+  };
+
+  const result = await collectAirportCongestionT2({
+    DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture", A4_MAX_ATTEMPTS_PER_REQUEST: 1,
+  });
+  assert.equal(result.status, "ERROR");
+  assert.equal(requests, 1, "the bounded retry must stop at its ceiling instead of walking the 3-attempt ladder");
+});
+
+test("A4-T2 bounded retry: a multi-page dataset still costs one request", async (context) => {
+  const { database, databasePath } = freshDatabase("t2-bounded-pages");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+
+  // totalCount 60 is three full pages — more than Production has ever had.
+  let requests = 0;
+  globalThis.fetch = async () => {
+    requests += 1;
+    return Response.json(t2Page(Array.from({ length: 20 }, (_, index) => t2Item({ gateId: `DG${requests}_${index}` })), 60));
+  };
+
+  const result = await collectAirportCongestionT2({
+    DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture", A4_MAX_ATTEMPTS_PER_REQUEST: 1,
+  });
+  assert.equal(result.status, "SUCCESS");
+  assert.equal(requests, 1, "the retry stores the page it got; the next normal cycle collects the rest");
+});
+
+test("A4-T1 bounded retry: one request instead of its four-attempt ladder", async (context) => {
+  const { database, databasePath } = freshDatabase("t1-bounded-outage");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+
+  let requests = 0;
+  globalThis.fetch = async () => {
+    requests += 1;
+    const cause = Object.assign(new Error("connect timeout"), { code: "UND_ERR_CONNECT_TIMEOUT" });
+    throw new TypeError("fetch failed", { cause });
+  };
+
+  const bounded = await collectAirportCongestion({
+    DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture", A4_MAX_ATTEMPTS_PER_REQUEST: 1,
+  });
+  assert.equal(bounded.status, "ERROR");
+  assert.equal(requests, 1, "T1's retry costs one request, not the four the normal cycle is budgeted for");
+});
+
+// The two assertions above run a real collector against a stub, which is what
+// makes them worth their seconds. Walking the UNBOUNDED ladder to prove it is
+// untouched would mean really sleeping through 2s+10s+45s (T1) and 5s+30s
+// (T2) on every CI run, forever, to learn one number. The ladder is chosen by
+// one pure function, so that is what is asserted.
+test("the bound lowers a ladder, never widens one, and is inert when unset", async () => {
+  const { boundedA4Policy } = await import("../lib/collector.ts");
+  const { DATA_GO_KR_LOW_CALL_POLICY, DATA_GO_KR_PAGED_POLICY } = await import("../lib/source-adapters.ts");
+
+  // Unset: the normal 15-minute cycle keeps exactly the attempts it had.
+  assert.equal(DATA_GO_KR_LOW_CALL_POLICY.maxAttempts, 4);
+  assert.equal(DATA_GO_KR_PAGED_POLICY.maxAttempts, 3);
+  for (const policy of [DATA_GO_KR_LOW_CALL_POLICY, DATA_GO_KR_PAGED_POLICY]) {
+    assert.equal(boundedA4Policy(policy, {}).maxAttempts, policy.maxAttempts);
+    assert.equal(boundedA4Policy(policy, { A4_MAX_ATTEMPTS_PER_REQUEST: 1 }).maxAttempts, 1);
+    // A larger, zero, negative or nonsense ceiling can never widen the ladder.
+    for (const ceiling of [99, 0, -1, Number.NaN, 2.5]) {
+      assert.ok(boundedA4Policy(policy, { A4_MAX_ATTEMPTS_PER_REQUEST: ceiling }).maxAttempts <= policy.maxAttempts,
+        `ceiling ${ceiling} must never raise maxAttempts`);
+    }
+  }
 });
