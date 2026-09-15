@@ -63,6 +63,44 @@ export function snippetWidth(text: string): number {
 /** Below this, a search engine tends to write its own snippet instead. */
 export const MINIMUM_SNIPPET_WIDTH = 80;
 
+/**
+ * The `lang` a document must declare, which is NOT its hreflang tag.
+ *
+ * Caught by this check's own first run against Production: it expected
+ * `ko-KR`/`ja-JP` and six pages "failed" while the live site was correct.
+ * hreflang identifies a translation for a REGION and uses `ko-KR`; the
+ * document's own `lang` states the language it is written in, and `ko` is
+ * both valid and what this site serves. docs/SEO.md fixes the contract as
+ * `ko | en | zh-CN | ja`, `app/layout.tsx` enforces it in
+ * `supportedDocumentLanguages`, and `app/retailpulse-app.tsx` applies it on
+ * navigation. tests/discoverability.test.mjs holds this map against both of
+ * those files, so it cannot drift from them in silence.
+ */
+export const DOCUMENT_LANGUAGE: Record<SeoLocale, string> = { ko: "ko", en: "en", zh: "zh-CN", ja: "ja" };
+
+/** The hreflang tag for the same locale — a different thing, for a different job. */
+export const HREFLANG_TAG: Record<SeoLocale, string> = { ko: "ko-KR", en: "en", zh: "zh-CN", ja: "ja-JP" };
+
+/**
+ * Text as a reader sees it, not as the HTML spells it.
+ *
+ * `pageTitle("en")` contains an ampersand, which is served as `&amp;`. The
+ * first Production run reported `/en` as "serving metadata from a different
+ * build" for exactly that reason — comparing a decoded string against an
+ * encoded one. Only the five characters HTML must escape, plus numeric
+ * references, ever appear here.
+ */
+export function decodeHtmlText(value: string): string {
+  return value
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+}
+
 const TIMEOUT_MS = 20_000;
 
 export interface Check {
@@ -240,7 +278,7 @@ async function checkPageIdentity(context: Context, locale: SeoLocale, slug?: Seo
   const { response, body } = await get(context, `${origin}${path}`);
   if (!check(context, `${label} is served`, response.status === 200, `status ${response.status}`)) return;
 
-  const expectedLang = locale === "zh" ? "zh-CN" : locale === "ja" ? "ja-JP" : locale === "ko" ? "ko-KR" : "en";
+  const expectedLang = DOCUMENT_LANGUAGE[locale];
   check(context,
     `${label} declares lang="${expectedLang}"`,
     new RegExp(`<html[^>]*\\slang="${expectedLang}"`).test(body),
@@ -261,12 +299,12 @@ async function checkPageIdentity(context: Context, locale: SeoLocale, slug?: Seo
   const hreflangs = [...body.matchAll(/<link[^>]+rel="alternate"[^>]+hreflang="([^"]+)"/gi)].map((match) => match[1]);
   check(context,
     `${label} links its other locales`,
-    ["ko-KR", "en", "zh-CN", "ja-JP", "x-default"].every((tag) => hreflangs.includes(tag)),
+    [...Object.values(HREFLANG_TAG), "x-default"].every((tag) => hreflangs.includes(tag)),
     `hreflang: ${hreflangs.join(",") || "none"}`,
   );
 
-  const title = body.match(/<title>([^<]*)<\/title>/)?.[1]?.trim() ?? "";
-  const description = attribute(body, /<meta[^>]+name="description"[^>]+content="([^"]*)"/i)?.trim() ?? "";
+  const title = decodeHtmlText(body.match(/<title>([^<]*)<\/title>/)?.[1] ?? "").trim();
+  const description = decodeHtmlText(attribute(body, /<meta[^>]+name="description"[^>]+content="([^"]*)"/i) ?? "").trim();
   check(context, `${label} has a title`, title.length > 0, `${title.length} chars`);
   check(context, `${label} has a description`, description.length > 0, `${description.length} chars`);
 

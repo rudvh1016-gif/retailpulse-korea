@@ -29,7 +29,11 @@ const { seoLocales, seoPath, standaloneSeoSlugs, tourismDeskAreas, pageTitle, pa
 // here would make the fixture disagree with the sitemap it is checking.
 const ORIGIN = siteOrigin;
 
-const LANG_TAG = { ko: "ko-KR", en: "en", zh: "zh-CN", ja: "ja-JP" };
+const { DOCUMENT_LANGUAGE, HREFLANG_TAG, decodeHtmlText } = await import("../lib/discoverability.ts");
+
+/** Escapes like a real HTML serializer, so the fixture is not easier than production. */
+const escapeHtml = (value) => value
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 function indexablePaths() {
   return seoLocales.flatMap((locale) => [
@@ -44,16 +48,16 @@ function pageHtml(locale, slug, overrides = {}) {
   const title = overrides.title ?? pageTitle(locale, slug);
   const description = overrides.description ?? pageDescription(locale, slug);
   const alternates = seoLocales
-    .map((other) => `<link rel="alternate" hreflang="${LANG_TAG[other]}" href="${ORIGIN}${seoPath(other, slug)}"/>`)
+    .map((other) => `<link rel="alternate" hreflang="${HREFLANG_TAG[other]}" href="${ORIGIN}${seoPath(other, slug)}"/>`)
     .join("");
   const jsonLd = JSON.stringify([
     { "@context": "https://schema.org", "@type": "WebPage", url: `${ORIGIN}${path}`, name: title },
     { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [] },
   ]);
   return [
-    `<!DOCTYPE html><html lang="${overrides.lang ?? LANG_TAG[locale]}"><head>`,
-    `<title>${title}</title>`,
-    `<meta name="description" content="${description}"/>`,
+    `<!DOCTYPE html><html lang="${overrides.lang ?? DOCUMENT_LANGUAGE[locale]}"><head>`,
+    `<title>${escapeHtml(title)}</title>`,
+    `<meta name="description" content="${escapeHtml(description)}"/>`,
     overrides.robotsMeta ? `<meta name="robots" content="${overrides.robotsMeta}"/>` : "",
     `<link rel="canonical" href="${ORIGIN}${path}"/>`,
     alternates,
@@ -193,7 +197,7 @@ test("a stale edge serving another build's metadata is caught", async () => {
 test("a wrong html lang is caught", async () => {
   const report = await run({ pageOverrides: (path) => (path === "/ja" ? { lang: "en" } : {}) });
   assert.equal(report.ok, false);
-  assert.ok(failing(report).includes('/ja declares lang="ja-JP"'));
+  assert.ok(failing(report).includes('/ja declares lang="ja"'));
 });
 
 test("the check issues only GET requests and never carries a credential", async () => {
@@ -323,4 +327,46 @@ test("the staging flag really does withhold the whole site from crawlers", async
   const staging = JSON.parse(output.trim().split("\n").at(-1));
   assert.equal(staging.entries, 0, "a staging build must offer no URLs for indexing");
   assert.equal(staging.disallow, "/", "a staging build must forbid every crawler");
+});
+
+// ── Two bugs the first Production run found in this checker itself ─────────
+
+test("the expected document lang matches what the app actually enforces", async () => {
+  // The checker expected ko-KR/ja-JP and called six correct pages broken.
+  // hreflang names a translation for a region; a document's own `lang` names
+  // the language it is written in. They are different, and this holds the
+  // checker's map against the two files that decide the real thing.
+  const { readFile } = await import("node:fs/promises");
+  const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
+  const app = await readFile(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
+
+  const declared = [...new Set(Object.values(DOCUMENT_LANGUAGE))].sort();
+  const supported = JSON.parse(layout.match(/supportedDocumentLanguages = new Set\((\[[^\]]+\])\)/)[1].replace(/'/g, '"')).sort();
+  assert.deepEqual(declared, supported, "app/layout.tsx rejects any lang outside its own set");
+
+  const appMap = app.match(/const htmlLang: Record<Lang, string> = \{([^}]+)\}/)[1].replace(/\s+/g, " ");
+  for (const [locale, lang] of Object.entries(DOCUMENT_LANGUAGE)) {
+    assert.ok(appMap.includes(`${locale}: "${lang}"`), `${locale} -> ${lang} must match app/retailpulse-app.tsx, which reads: ${appMap}`);
+  }
+
+  // And the two maps must stay distinct where they genuinely differ.
+  assert.notEqual(DOCUMENT_LANGUAGE.ko, HREFLANG_TAG.ko);
+  assert.notEqual(DOCUMENT_LANGUAGE.ja, HREFLANG_TAG.ja);
+});
+
+test("metadata is compared as a reader sees it, not as HTML spells it", () => {
+  // `/en`'s title contains an ampersand. Served as `&amp;`, compared against a
+  // decoded string, it read as "the edge is serving a different build".
+  assert.equal(decodeHtmlText("Incheon Airport &amp; Seoul Areas"), "Incheon Airport & Seoul Areas");
+  assert.equal(decodeHtmlText("&lt;b&gt; &quot;q&quot; &#39;a&#39;"), `<b> "q" 'a'`);
+  assert.equal(decodeHtmlText("&amp;amp;"), "&amp;", "one pass only; a double-decode would corrupt real text");
+  assert.equal(decodeHtmlText("nothing to decode"), "nothing to decode");
+  assert.ok(pageTitle("en").includes("&"), "if this stops being true the regression above stops being covered");
+});
+
+test("a real ampersand in served metadata is not mistaken for a stale build", async () => {
+  const report = await run({});
+  assert.equal(report.ok, true, `unexpected failures: ${failing(report).join(", ")}`);
+  const enTitle = report.notes.find((note) => note.page === "/en")?.title;
+  assert.equal(enTitle, pageTitle("en"));
 });
