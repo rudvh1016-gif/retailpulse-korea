@@ -145,15 +145,37 @@ const tourismSectionHeadings = [
 ] as const;
 
 for (const width of viewports) {
-  test(`production Tourism guide workflow · ${width}px`, async ({ page }, testInfo) => {
+  test(`production Tourism guide workflow · ${width}px`, async ({ page, baseURL }, testInfo) => {
     test.setTimeout(120_000);
     await page.setViewportSize({ width, height: width <= 430 ? 900 : 1000 });
 
+    // Any non-GET this acceptance run causes, split into the one kind that is
+    // expected and everything else.
+    //
+    // Cloudflare Web Analytics reports each page view as a POST to the SAME
+    // ORIGIN at /cdn-cgi/rum, an endpoint Cloudflare's own edge answers. It is
+    // telemetry, not a write to a provider or to this application: it reaches
+    // no upstream API and no D1 row. It appeared here the moment
+    // next.config.ts let the beacon through the CSP, which is also the proof
+    // that measurement is live — so it is counted and checked below rather
+    // than ignored, and `writes` keeps exactly its old meaning for everything
+    // else.
     const writes: string[] = [];
-    page.on("request", (request) => {
-      if (!["GET", "HEAD", "OPTIONS"].includes(request.method())) {
-        writes.push(`${request.method()} ${request.url()}`);
+    const analyticsBeacons: string[] = [];
+    const siteHost = new URL(baseURL ?? "https://koretaildata.com").host;
+    const isEdgeTelemetry = (url: string) => {
+      try {
+        const parsed = new URL(url);
+        return parsed.host === siteHost && parsed.pathname.startsWith("/cdn-cgi/");
+      } catch {
+        return false;
       }
+    };
+    page.on("request", (request) => {
+      if (["GET", "HEAD", "OPTIONS"].includes(request.method())) return;
+      const record = `${request.method()} ${request.url()}`;
+      if (isEdgeTelemetry(request.url())) analyticsBeacons.push(record);
+      else writes.push(record);
     });
 
     // Enter by the navigation a real worker sees at this width.
@@ -282,6 +304,23 @@ for (const width of viewports) {
     await expect(install).toHaveCount(0);
 
     expect(writes, "visual acceptance must not issue provider or application writes").toEqual([]);
+
+    // Whatever telemetry did fire must be Cloudflare's own same-origin
+    // endpoint and nothing else: a third-party analytics host appearing here
+    // would mean reader data leaving for somewhere nobody approved.
+    for (const beacon of analyticsBeacons) {
+      const target = new URL(beacon.slice(beacon.indexOf(" ") + 1));
+      expect(
+        `${target.host}${target.pathname}`,
+        "only Cloudflare's same-origin RUM endpoint may receive telemetry",
+      ).toEqual(`${siteHost}/cdn-cgi/rum`);
+    }
+
+    // One beacon per page, never two. A duplicated beacon would double every
+    // page view and make the first number the owner ever sees a wrong one —
+    // and it is invisible on screen, so nothing else would catch it.
+    const beaconScripts = page.locator("script[data-cf-beacon], script[src*='beacon.min.js']");
+    expect(await beaconScripts.count(), "a second analytics beacon would double-count every visit").toBeLessThanOrEqual(1);
   });
 }
 
