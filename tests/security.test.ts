@@ -64,6 +64,49 @@ test("production headers include clickjacking, sniffing and privacy protections"
   for (const header of ["Content-Security-Policy", "X-Content-Type-Options", "Referrer-Policy", "Permissions-Policy", "X-Frame-Options"]) assert.match(config, new RegExp(header));
 });
 
+/**
+ * Which outside hosts may run code in a reader's browser, named one by one.
+ *
+ * Asserting only that a Content-Security-Policy EXISTS let its contents drift
+ * without review — a policy naming any host at all would have passed. Every
+ * entry below is a deliberate decision, so adding or removing one has to be a
+ * deliberate edit here too.
+ */
+test("the CSP allows exactly the outside hosts we decided on", async () => {
+  const config = await readFile(new URL("../next.config.ts", import.meta.url), "utf8");
+  const policy = config.match(/"Content-Security-Policy", value: "([^"]+)"/)?.[1];
+  assert.ok(policy, "the policy must be readable as a single string");
+
+  const directive = (name: string) => policy.split(";").map((part) => part.trim()).find((part) => part.startsWith(`${name} `)) ?? "";
+  const hosts = (name: string) => directive(name).split(/\s+/).filter((token) => token.startsWith("http")).sort();
+
+  assert.deepEqual(hosts("script-src"), [
+    "https://static.cloudflareinsights.com", // Cloudflare Web Analytics beacon
+    "https://www.googletagmanager.com",      // the existing, currently-off GA4 option
+  ], "a new script host means someone else's code can run on every page");
+
+  assert.deepEqual(hosts("connect-src"), [
+    "https://*.analytics.google.com",
+    "https://*.google-analytics.com",
+    "https://cloudflareinsights.com",        // /cdn-cgi/rum receives the page view
+    "https://www.googletagmanager.com",
+  ], "a new connect host means reader data can be sent somewhere new");
+
+  // The beacon host is useless without somewhere to report to, and vice
+  // versa. Half the pair is a silent failure, so neither may stand alone.
+  assert.equal(
+    policy.includes("https://static.cloudflareinsights.com"),
+    policy.includes("https://cloudflareinsights.com"),
+    "Cloudflare Web Analytics needs the script host AND the reporting host",
+  );
+
+  // Nothing may be loaded from an arbitrary origin.
+  assert.ok(!/script-src[^;]*\*[^.]/.test(policy), "script-src must never carry a bare wildcard");
+  assert.match(policy, /object-src 'none'/);
+  assert.match(policy, /frame-ancestors 'none'/);
+  assert.match(policy, /base-uri 'self'/);
+});
+
 test("staging deployments are explicitly noindex", async () => {
   const config = await readFile(new URL("../next.config.ts", import.meta.url), "utf8");
   const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
