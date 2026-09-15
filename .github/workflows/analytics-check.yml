@@ -1,0 +1,39 @@
+name: Analytics Readiness Check
+
+# Read-only, secret-free: GET requests to public URLs only.
+#
+# Answers the three questions that decide whether visitor measurement can be
+# switched on, none of which a checkout can answer:
+#   · is a beacon already on the page (installing a second would double-count)
+#   · does the LIVE response carry the CSP that next.config.ts declares, and
+#     does that CSP permit Cloudflare Web Analytics
+#   · are the Google / Naver verification meta tags actually being served
+#
+# Manual only. This is a diagnostic the owner runs when deciding or verifying
+# a measurement change, not something that needs to run on a schedule.
+on:
+  workflow_dispatch:
+    inputs:
+      origin:
+        description: Origin to check
+        required: false
+        default: https://koretaildata.com
+
+permissions:
+  contents: read
+
+jobs:
+  analytics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Report what is measuring, and what would block a beacon
+        env:
+          NEXT_PUBLIC_SITE_ORIGIN: ${{ inputs.origin || 'https://koretaildata.com' }}
+        run: npx tsx scripts/check-analytics.ts
