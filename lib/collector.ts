@@ -87,6 +87,30 @@ export interface CollectorEnv {
   A1_MAX_REQUESTS?: number;
   /** One window a day rescans today's A1 even when today is already recorded. */
   A1_RESCAN_TODAY?: boolean;
+  /**
+   * Hard per-request attempt ceiling for the A4 congestion pair, set only by
+   * the fresh-runner retry in `collect-realtime.yml`.
+   *
+   * The normal 15-minute cycle keeps its full ladder. The retry does not need
+   * one: measured on Production, the in-job ladder rescued 0 of 21 connect
+   * timeouts because it keeps the same refused egress address, while the
+   * fresh runner succeeded on its FIRST request every time. Extra attempts on
+   * the retry would therefore buy nothing and spend the quota the next normal
+   * cycle needs, so the retry is bounded to one request per source per cycle.
+   */
+  A4_MAX_ATTEMPTS_PER_REQUEST?: number;
+}
+
+/**
+ * Applies A4_MAX_ATTEMPTS_PER_REQUEST, if the caller set one.
+ *
+ * It can only ever LOWER a policy's attempt count — an env value larger than
+ * the configured ladder is ignored rather than allowed to widen it.
+ */
+export function boundedA4Policy<T extends { maxAttempts: number }>(policy: T, env: CollectorEnv): T {
+  const ceiling = env.A4_MAX_ATTEMPTS_PER_REQUEST;
+  if (!Number.isSafeInteger(ceiling) || !ceiling || ceiling < 1) return policy;
+  return { ...policy, maxAttempts: Math.min(policy.maxAttempts, ceiling) };
 }
 
 function nowIso(): string {
@@ -1794,7 +1818,7 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
       { pageNo: "1", numOfRows: "50", type: "json", terminalId },
     );
     try {
-      const payload = await fetchOfficialJson(url, DATA_GO_KR_LOW_CALL_POLICY);
+      const payload = await fetchOfficialJson(url, boundedA4Policy(DATA_GO_KR_LOW_CALL_POLICY, env));
       const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown } } } };
       const resultCode = root?.response?.header?.resultCode;
       if (resultCode !== "00") throw new Error(`congestion_result_${String(resultCode ?? "missing")}`);
@@ -1865,13 +1889,19 @@ export async function collectAirportCongestionT2(env: CollectorEnv): Promise<Col
   let totalCount: number | null = null;
   const retrievedAt = nowIso();
   try {
-    for (let pageNo = 1; pageNo <= A4_T2_MAX_PAGES; pageNo += 1) {
+    // The bounded retry walks one page, not three, so its cost is exactly one
+    // request. Production totalCount has been 8 (one page of 20) throughout,
+    // so this loses nothing today; if the dataset ever outgrows a page, the
+    // retry stores the page it got and the next normal cycle collects the
+    // rest with its full ladder.
+    const maxPages = env.A4_MAX_ATTEMPTS_PER_REQUEST ? 1 : A4_T2_MAX_PAGES;
+    for (let pageNo = 1; pageNo <= maxPages; pageNo += 1) {
       const url = buildDataGoKrUrl(
         "https://apis.data.go.kr/B551177/statusOfDepartureCongestionT2/getDepartureCongestionT2",
         env.DATA_GO_KR_SERVICE_KEY,
         { pageNo: String(pageNo), numOfRows: String(A4_T2_PAGE_SIZE), type: "json" },
       );
-      const payload = await fetchOfficialJson(url, DATA_GO_KR_PAGED_POLICY);
+      const payload = await fetchOfficialJson(url, boundedA4Policy(DATA_GO_KR_PAGED_POLICY, env));
       const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown }; totalCount?: number } } };
       const resultCode = root?.response?.header?.resultCode;
       if (resultCode !== "00") throw new Error(`congestion_t2_result_${String(resultCode ?? "missing")}`);

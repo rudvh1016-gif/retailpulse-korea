@@ -65,6 +65,12 @@ const env = {
   // The one window a day that refreshes today's scan rather than skipping it,
   // so gate assignments published after the early run still reach the screen.
   A1_RESCAN_TODAY: process.env.RPK_A1_RESCAN_TODAY === "true",
+  // Set only by the A4 fresh-runner retry, which must never consume the quota
+  // the next normal 15-minute cycle needs. Unset here means the normal ladder.
+  A4_MAX_ATTEMPTS_PER_REQUEST:
+    Number.isSafeInteger(Number(process.env.RPK_A4_MAX_ATTEMPTS_PER_REQUEST)) && Number(process.env.RPK_A4_MAX_ATTEMPTS_PER_REQUEST) > 0
+      ? Number(process.env.RPK_A4_MAX_ATTEMPTS_PER_REQUEST)
+      : undefined,
 };
 
 const results = [];

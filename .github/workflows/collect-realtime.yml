@@ -55,6 +55,10 @@ jobs:
     # T2's three bounded pages. Twelve minutes leaves setup/D1/S1 margin.
     timeout-minutes: 12
     environment: production
+    outputs:
+      # Which A4 sources — if any — this cycle's own results say a fresh
+      # egress address would fix. Empty means no extra runner starts.
+      retry_sources: ${{ steps.retry_decision.outputs.retry_sources }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -62,59 +66,98 @@ jobs:
           node-version: 22.13.1
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: npm run collect:production
+      - name: Collect the realtime group
+        id: collect
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run collect:production 2>&1 | tee "$RUNNER_TEMP/collector.log"
         env:
           ENABLE_PRODUCTION_COLLECTOR: "true"
           RPK_PRODUCTION_SOURCES: airport_congestion,airport_congestion_t2,seoul_realtime
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
           SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
+      # Reads THIS cycle's per-source results. `set -o pipefail` above keeps
+      # the collector's own failure as this job's failure, so the red badge
+      # and the operational ledger still record the original attempt exactly
+      # as before — this step only decides whether spending one more request
+      # could help. It never fails the job: an unreadable or inconclusive log
+      # yields an empty list, which starts nothing.
+      - name: Decide whether a fresh runner would fix anything
+        id: retry_decision
+        if: always()
+        run: npx tsx scripts/decide-congestion-retry.ts "$RUNNER_TEMP/collector.log"
 
-  # ONE FRESH RUNNER FOR THE CONGESTION PAIR, and only after a failure.
+  # ONE FRESH RUNNER, FOR THE SOURCES THIS CYCLE SAYS IT WOULD FIX.
   #
   # `collect-attempt.yml` was written FOR this collector — its header names the
   # congestion collector as the case that "kept failing all four of its
   # in-process retries while, minutes later, a different runner reached seven
-  # endpoints on that same host in under two seconds each." A1, A5 and weather
-  # all adopted it. This workflow never did, and it is the one that suffers the
-  # failure the mechanism exists to answer.
+  # endpoints on that same host in under two seconds each."
   #
   # Measured on Production over 14.7 h (2026-09-14 20:39 – 2026-09-15 11:23 KST,
-  # 120 runs), which is what justifies adding a call path at all:
+  # 120 runs):
   #   · T1 21/60 failed, T2 21/60 failed — always in the same run as each other
   #   · every failure: failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT
-  #     retryExhausted=true. The in-job ladder (30 s timeout, 3-4 attempts,
-  #     ~67 s) rescued 0 of 21. It cannot: it keeps the refused egress address.
+  #     retryExhausted=true. The in-job ladder rescued 0 of 21. It cannot: it
+  #     keeps the refused egress address.
   #   · in 19 of those 21 runs `seoul_realtime` SUCCEEDED from the SAME runner
-  #     at the SAME moment (118/120 overall), so the runner's network was fine
-  #     and only this provider host was unreachable
-  #   · the queue reading was therefore shown as "이전 대기 관측" for 240 of
-  #     871 minutes — 27.6% of the window
+  #     at the SAME moment, so the runner's network was fine and only this
+  #     provider host was unreachable
   #
-  # Only the congestion pair is retried. seoul_realtime succeeds 98% of the
-  # time and re-requesting it would spend Seoul quota to fix an airport problem.
+  # WHAT STARTS IT. Not the job's red badge — that one bit covers T1, T2 and
+  # Seoul together, so gating on it re-requested both airport datasets when
+  # Seoul alone failed, when a key was rejected, when a schema moved, or when
+  # only one terminal was actually affected. `lib/congestion-retry.ts` reads
+  # THIS cycle's own per-source results and names only the A4 sources whose
+  # own failure was the connect timeout a different egress address fixes. T1
+  # only, T2 only, both, or neither. A source with no result line this cycle
+  # is RESULT_UNKNOWN and is not retried; a source that already succeeded is
+  # not retried; an old healthy value in D1 is never read as recovery.
   #
-  # PROVIDER BUDGET. T1 is ~1 call/run against dataset 15148225's 1,000/day and
-  # T2 ~1 call/run against 15161098's own quota, so today's 96 runs/day cost
-  # ~96 each (~10%). If EVERY run failed and every retry fired, that doubles to
-  # ~192/day (~19%) — the true ceiling, not an estimate. In the dominant failure
-  # mode the retry is cheaper still: a connect timeout means zero calls reached
-  # the provider, so the retry is making the calls that never landed rather than
-  # repeating ones that did. Writes stay changed-only, so a retry that finds the
-  # same rows writes nothing.
+  # PROVIDER BUDGET, in provider REQUESTS — not collection calls. The earlier
+  # note here counted calls and was wrong by the size of the in-job ladders.
   #
-  # ONE retry, not A1's two: the next scheduled cycle is 15 minutes away here,
-  # against A1's next window hours later, so a second fresh runner would buy
-  # little that waiting does not. Timing: attempt 1 is bounded at 12 min and
-  # this at 6, so a total gateway outage cannot push one round past ~18 min;
-  # GitHub keeps at most one pending run per concurrency group, so a late round
-  # cannot pile up.
+  #   T1  dataset 15148225, 1,000/day dev quota.
+  #       normal cycle: 1 URL x up to 4 attempts (DATA_GO_KR_LOW_CALL_POLICY).
+  #       Healthy 1; a measured connect-timeout failure spends 4.
+  #       96 runs/day -> worst case 384/day (38.4%) BEFORE this retry existed.
+  #       bounded retry: 1 request, at most once per cycle -> +96/day.
+  #       CEILING 480/day = 48% of quota.
+  #   T2  dataset 15161098. Quota: no official number is readable from a
+  #       checkout, so the ceiling is stated as a request count, never as a
+  #       percentage — UNVERIFIED_QUOTA, not "safe".
+  #       normal cycle: pages x up to 3 attempts (DATA_GO_KR_PAGED_POLICY). A
+  #       throw exits the page loop, so a connect-timeout failure spends 3,
+  #       not 9. Production totalCount has been 8 — one page — so healthy is
+  #       1 request. 96 runs/day -> worst case 288/day at today's totalCount.
+  #       bounded retry: 1 page x 1 attempt = 1 request -> +96/day.
+  #       CEILING 384/day at today's totalCount. The pre-existing structural
+  #       maximum, if the dataset ever outgrows one page and every page needs
+  #       its full ladder, is 864/day for the normal cycle alone; this PR does
+  #       not change that and does not widen it.
+  #
+  # The retry is bounded to ONE request per source per cycle
+  # (`a4_max_attempts_per_request: 1`) precisely so it can never eat the quota
+  # the next 15-minute cycle needs. That bound costs nothing measurable: every
+  # observed fresh runner succeeded on its FIRST request, in about 10 seconds.
+  # A connect timeout is NOT assumed to cost the provider zero — it is counted
+  # at full price above, because this repository cannot read the provider's
+  # own accounting.
+  #
+  # ONE retry, never two: `collect-attempt.yml` starts nothing after itself,
+  # and the next scheduled cycle is only 15 minutes away. The original
+  # attempt's failure is never hidden — `set -o pipefail` keeps it as this
+  # job's failure, so the run badge and the operational ledger both still
+  # record it.
   retry_congestion:
     needs: collect
-    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.collect.result == 'failure' }}
+    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.collect.result == 'failure' && needs.collect.outputs.retry_sources != '' }}
     uses: ./.github/workflows/collect-attempt.yml
     with:
-      sources: airport_congestion,airport_congestion_t2
+      sources: ${{ needs.collect.outputs.retry_sources }}
       attempt: 2
       timeout_minutes: 6
+      a4_max_attempts_per_request: "1"
     secrets: inherit
