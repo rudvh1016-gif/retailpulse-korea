@@ -49,6 +49,23 @@ jobs:
       # dead Worker route, a runtime model call). UNKNOWN is the expected answer
       # from a checkout and must not fail the build.
       - run: npm run health
+        env:
+          # The Actions Variable that gates every collector schedule, handed to
+          # the harness so it can tell "disabled" from "cannot tell".
+          #
+          # `classifyRuntimeEnablement` has accepted `knownVariables` since the
+          # scheduler graph was built, and scripts/health.ts has read
+          # RPK_KNOWN_ENABLE_PRODUCTION_COLLECTOR since 2026-09-14 — but nothing
+          # ever supplied it, so all ten variable-gated schedules reported
+          # RUNTIME_ENABLE_STATE_UNKNOWN and the harness's own P1 list was ten
+          # copies of that one unwired line. A collector group silently switched
+          # off would have looked exactly like the normal state.
+          #
+          # Only this one name is forwarded; repository Variables are not
+          # harvested wholesale, and no secret is involved. Where the Variable is
+          # not visible the expression yields "", which health treats as UNKNOWN
+          # rather than as disabled — the offline answer stays honest.
+          RPK_KNOWN_ENABLE_PRODUCTION_COLLECTOR: ${{ vars.ENABLE_PRODUCTION_COLLECTOR }}
       - run: npm run build
       - run: node --test tests/rendered-html.test.mjs
       # Fails on a high/critical vulnerability, but not on the registry being

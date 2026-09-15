@@ -452,6 +452,40 @@ test('T: with no supplied variable, a gated schedule stays UNKNOWN offline', () 
   assert.equal(classifyRuntimeEnablement(gated, { SOMETHING_ELSE: 'true' }), 'RUNTIME_ENABLE_STATE_UNKNOWN');
 });
 
+test('U+: some workflow actually SUPPLIES the variable, or the mechanism is decorative', () => {
+  // The gap this closes. `classifyRuntimeEnablement` accepted `knownVariables`
+  // from the day the scheduler graph was built, and scripts/health.ts read
+  // RPK_KNOWN_ENABLE_PRODUCTION_COLLECTOR from 2026-09-14 — but no workflow
+  // ever set it. So every one of the ten variable-gated schedules reported
+  // RUNTIME_ENABLE_STATE_UNKNOWN for ever, and the harness's own P1 list was
+  // ten copies of that single unwired line. A collector group switched off
+  // would have looked exactly like the normal state.
+  //
+  // A mechanism nobody feeds is not a safeguard, so the wiring is asserted
+  // rather than the mechanism alone.
+  const suppliers = readdirSync('.github/workflows')
+    .filter((file) => /\.ya?ml$/.test(file))
+    .filter((file) => {
+      const yaml = readFileSync(join('.github/workflows', file), 'utf8');
+      return yaml.includes('RPK_KNOWN_ENABLE_PRODUCTION_COLLECTOR:')
+        && /RPK_KNOWN_ENABLE_PRODUCTION_COLLECTOR:\s*\$\{\{\s*vars\.ENABLE_PRODUCTION_COLLECTOR\s*\}\}/.test(yaml);
+    });
+  assert.ok(suppliers.length > 0, 'at least one workflow must hand the gating Variable to the harness');
+  // And each supplier must be a workflow that actually runs health, or it is
+  // setting an environment variable nothing reads.
+  for (const file of suppliers) {
+    const yaml = readFileSync(join('.github/workflows', file), 'utf8');
+    assert.match(yaml, /npm run health/, `${file} sets the variable but never runs health`);
+  }
+  // Only this one name is forwarded: repository Variables are not harvested
+  // wholesale, and no secret may ride along.
+  for (const file of suppliers) {
+    const yaml = readFileSync(join('.github/workflows', file), 'utf8');
+    const forwarded = [...yaml.matchAll(/RPK_KNOWN_([A-Z0-9_]+):/g)].map((m) => m[1]);
+    assert.deepEqual([...new Set(forwarded)], ['ENABLE_PRODUCTION_COLLECTOR'], file);
+  }
+});
+
 test('U: a genuinely known variable value is classified, in both directions', () => {
   assert.equal(classifyRuntimeEnablement(gated, { ENABLE_PRODUCTION_COLLECTOR: 'true' }), 'RUNTIME_ENABLED');
   assert.equal(classifyRuntimeEnablement(gated, { ENABLE_PRODUCTION_COLLECTOR: 'false' }), 'RUNTIME_DISABLED');

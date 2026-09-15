@@ -69,3 +69,52 @@ jobs:
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
           SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
+
+  # ONE FRESH RUNNER FOR THE CONGESTION PAIR, and only after a failure.
+  #
+  # `collect-attempt.yml` was written FOR this collector — its header names the
+  # congestion collector as the case that "kept failing all four of its
+  # in-process retries while, minutes later, a different runner reached seven
+  # endpoints on that same host in under two seconds each." A1, A5 and weather
+  # all adopted it. This workflow never did, and it is the one that suffers the
+  # failure the mechanism exists to answer.
+  #
+  # Measured on Production over 14.7 h (2026-09-14 20:39 – 2026-09-15 11:23 KST,
+  # 120 runs), which is what justifies adding a call path at all:
+  #   · T1 21/60 failed, T2 21/60 failed — always in the same run as each other
+  #   · every failure: failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT
+  #     retryExhausted=true. The in-job ladder (30 s timeout, 3-4 attempts,
+  #     ~67 s) rescued 0 of 21. It cannot: it keeps the refused egress address.
+  #   · in 19 of those 21 runs `seoul_realtime` SUCCEEDED from the SAME runner
+  #     at the SAME moment (118/120 overall), so the runner's network was fine
+  #     and only this provider host was unreachable
+  #   · the queue reading was therefore shown as "이전 대기 관측" for 240 of
+  #     871 minutes — 27.6% of the window
+  #
+  # Only the congestion pair is retried. seoul_realtime succeeds 98% of the
+  # time and re-requesting it would spend Seoul quota to fix an airport problem.
+  #
+  # PROVIDER BUDGET. T1 is ~1 call/run against dataset 15148225's 1,000/day and
+  # T2 ~1 call/run against 15161098's own quota, so today's 96 runs/day cost
+  # ~96 each (~10%). If EVERY run failed and every retry fired, that doubles to
+  # ~192/day (~19%) — the true ceiling, not an estimate. In the dominant failure
+  # mode the retry is cheaper still: a connect timeout means zero calls reached
+  # the provider, so the retry is making the calls that never landed rather than
+  # repeating ones that did. Writes stay changed-only, so a retry that finds the
+  # same rows writes nothing.
+  #
+  # ONE retry, not A1's two: the next scheduled cycle is 15 minutes away here,
+  # against A1's next window hours later, so a second fresh runner would buy
+  # little that waiting does not. Timing: attempt 1 is bounded at 12 min and
+  # this at 6, so a total gateway outage cannot push one round past ~18 min;
+  # GitHub keeps at most one pending run per concurrency group, so a late round
+  # cannot pile up.
+  retry_congestion:
+    needs: collect
+    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.collect.result == 'failure' }}
+    uses: ./.github/workflows/collect-attempt.yml
+    with:
+      sources: airport_congestion,airport_congestion_t2
+      attempt: 2
+      timeout_minutes: 6
+    secrets: inherit

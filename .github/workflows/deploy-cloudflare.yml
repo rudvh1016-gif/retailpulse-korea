@@ -116,3 +116,4 @@ jobs:
         run: npm run health:production -- --json
         env:
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+          RPK_KNOWN_ENABLE_PRODUCTION_COLLECTOR: ${{ vars.ENABLE_PRODUCTION_COLLECTOR }}
