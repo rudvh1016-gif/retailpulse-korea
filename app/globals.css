@@ -1948,3 +1948,14 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .app :is(.area-tabs, .terminal-selector, .airport-context-nav) button.active::after { display: none; }
 .personal-options button { padding: 12px 0; }
 .personal-inline { column-gap: 12px; }
+
+/* Airport page, 출국 tab: the date navigator already ends in a rule, and the
+   brief directly beneath it opened with a second one. Between the two rules
+   sat nothing — .airport-today's top padding plus the brief's top margin,
+   34px of blank paper on a phone — which read as an empty section. The
+   navigator's rule now serves as the brief's top edge; the brief's own
+   padding keeps the date and the eyebrow apart. Scoped to this page: the
+   personal home renders the same brief without a navigator above it and
+   never had the double rule. */
+.airport-today { padding-top: 0; }
+.airport-today > .airport-current-brief.current-brief { margin-top: 0; border-top: 0; }
