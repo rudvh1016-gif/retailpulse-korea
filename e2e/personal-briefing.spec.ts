@@ -25,12 +25,28 @@ async function setup(page:Page,lang:PersonalLang='ko',location='airport') {
   // said so. The work list below it did not: it was headed "오늘 준비할 것"
   // under a briefing explicitly titled tomorrow's, telling a store manager to
   // prepare for the wrong day. A wrong date is a P0 in
-  // docs/UI_TRIAL_20260912_20260926.md, and nothing asserted this heading, so
-  // it is asserted here in all four languages.
+  // docs/UI_TRIAL_20260912_20260926.md, and nothing asserted this heading.
+  //
+  // The section only exists where the fixture actually yields work: airport
+  // and Myeongdong do, Seongsu and Hongdae do not. So this checks the heading
+  // wherever it appears — across four languages and every caller of setup() —
+  // and the test below pins the case that must always render it, so the
+  // condition here can never quietly become vacuous everywhere.
   const preparation = page.locator('.personal-preparation h3');
-  await expect(preparation).toHaveCount(1);
-  await expect(preparation).toHaveText(pc('prepareTomorrow',lang));
+  if(await preparation.count()) await expect(preparation).toHaveText(pc('prepareTomorrow',lang));
 }
+test('a manager default briefing heads its work list with tomorrow, not today',async({page})=>{
+  // The non-vacuous anchor for the conditional in setup(): the manager/airport
+  // default is the case that always produces work, so the section must be
+  // there AND must name the day the items were built for.
+  await fixture(page);await page.goto('/ko');await setup(page);
+  await expect(page.getByTestId('personal-briefing')).toContainText('내일 영업 브리핑');
+  const preparation=page.locator('.personal-preparation h3');
+  await expect(preparation).toHaveCount(1);
+  await expect(preparation).toHaveText('내일 준비할 것');
+  await expect(preparation).not.toHaveText('오늘 준비할 것');
+});
+
 for(const lang of ['ko','en','zh','ja'] as const) for(const width of [390,768,1280,1920]) {
   test(`personal setup and briefing ${lang} ${width}`,async({page})=>{
     await page.setViewportSize({width,height:900});await fixture(page);await page.goto(`/${lang}`);
