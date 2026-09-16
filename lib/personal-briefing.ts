@@ -1,5 +1,5 @@
 import type { LiveSummary } from '../app/live-signals';
-import { pc, pcValue, type PersonalLang } from './personal-copy';
+import { pc, type PersonalLang } from './personal-copy';
 
 export const roles = ['tourist','manager','guide'] as const;
 export const locations = ['airport','myeongdong','hongdae','seongsu'] as const;
@@ -45,8 +45,6 @@ export interface PersonalCard { interest: Interest; label: string; value: string
 export function buildPersonalBrief(summary: LiveSummary | null | undefined, p: PersonalPreferences, date: string, lang: PersonalLang): {cards: PersonalCard[]; actions: string[]} {
   const cards: PersonalCard[] = [];
   const actions: string[] = [];
-  /** The first official event title for the day, kept for the work list below. */
-  let eventLead: string | null = null;
   if (!summary || summary.mode !== 'live-summary' || summary.serviceDateKst !== date) return {cards,actions};
   const add = (interest: Interest, label: string, value: string, note: string, at?: string, details?: string[]) => { if(p.interests.includes(interest)) cards.push({interest,label,value,note,at,details}); };
   const num = (value: number) => value.toLocaleString(lang === 'zh' ? 'zh-CN' : lang);
@@ -98,37 +96,14 @@ export function buildPersonalBrief(summary: LiveSummary | null | undefined, p: P
     const rain = weather.map(r=>r.precipitationProbability).filter(finite);
     if(rain.length) add('weather',pc('rain',lang),`${Math.max(...rain)}%`,`${date} · ${pc('forecast',lang)}`);
     const events = (a.events ?? []).filter(r=>r.eventStart<=date && (r.eventEnd ?? r.eventStart)>=date);
-    if(events.length) { add('events',pc('events',lang),events.slice(0,2).map(e=>e.title).join(' · '),pc('eventNote',lang)); eventLead = events[0].title ?? null; }
+    if(events.length) add('events',pc('events',lang),events.slice(0,2).map(e=>e.title).join(' · '),pc('eventNote',lang));
     if(a.foreignPresence && finite(a.foreignPresence.value)) add('foreign',pc('foreign',lang),num(a.foreignPresence.value),pc('historic',lang),a.foreignPresence.referenceAt);
     if(p.interests.includes('guidance')) add('guidance',pc('guidance',lang),pc('details',lang),pc(date<summary.todayKst?'pastNote':'guidePromise',lang));
   }
   if(date<summary.todayKst)return {cards,actions};
-  /**
-   * Each line of work carries the value that produced it.
-   *
-   * The advice sentences are fixed and general on purpose — they are operating
-   * guidance, not a prediction. What changes day to day is the lead: the busy
-   * hour, the rain chance, the flight count, the event name. Those leads are
-   * copied verbatim from a card that is already rendered above with its own
-   * source and basis note, so nothing here is a value the reader cannot also
-   * see qualified. When the lead is missing the sentence stands alone exactly
-   * as it did before, which is why every lead is optional rather than faked.
-   */
-  const card = (interest: Interest) => cards.find(c=>c.interest===interest);
-  const work = (key: Parameters<typeof pc>[0], lead: string | null) => actions.push(lead ? `${lead} · ${pc(key,lang)}` : pc(key,lang));
-  const busy = card('crowding');
-  if(busy || card('passengers')) work(p.role==='manager'?'managerPrep':p.role==='guide'?'guidePrep':'visitPrep', busy ? pcValue('peakLead',lang,busy.value) : null);
-  const flights = card('flights');
-  if(flights) work('flightPrep', flights.value);
-  // The weather card's own label already reads as a lead in every language
-  // ("강수확률 최대 80%", "Maximum rain chance 80%"), so it is reused rather
-  // than duplicated as a second template.
-  const rainCard = card('weather');
-  if(rainCard) work('weatherPrep', `${rainCard.label} ${rainCard.value}`);
-  // The event name is more use to a guide than a count: it is the thing they
-  // will be asked about. Only the first is led with, so one long official
-  // title cannot push the advice off a phone screen.
-  const eventCard = card('events');
-  if(eventCard) work('eventPrep', eventLead);
+  if(cards.some(c=>c.interest==='crowding'||c.interest==='passengers')) actions.push(pc(p.role==='manager'?'managerPrep':p.role==='guide'?'guidePrep':'visitPrep',lang));
+  if(cards.some(c=>c.interest==='flights')) actions.push(pc('flightPrep',lang));
+  if(cards.some(c=>c.interest==='weather')) actions.push(pc('weatherPrep',lang));
+  if(cards.some(c=>c.interest==='events')) actions.push(pc('eventPrep',lang));
   return {cards,actions:actions.slice(0,4)};
 }
