@@ -21,6 +21,15 @@ async function setup(page:Page,lang:PersonalLang='ko',location='airport') {
   await expect(form.locator('[data-day="tomorrow"]')).toHaveAttribute('aria-pressed','true');
   await form.getByRole('button',{name:pc('finish',lang),exact:true}).click();
   await expect(page.getByTestId('personal-briefing')).toContainText(pc('managerTomorrow',lang));
+  // The manager's default horizon is tomorrow, and the briefing title already
+  // said so. The work list below it did not: it was headed "오늘 준비할 것"
+  // under a briefing explicitly titled tomorrow's, telling a store manager to
+  // prepare for the wrong day. A wrong date is a P0 in
+  // docs/UI_TRIAL_20260912_20260926.md, and nothing asserted this heading, so
+  // it is asserted here in all four languages.
+  const preparation = page.locator('.personal-preparation h3');
+  await expect(preparation).toHaveCount(1);
+  await expect(preparation).toHaveText(pc('prepareTomorrow',lang));
 }
 for(const lang of ['ko','en','zh','ja'] as const) for(const width of [390,768,1280,1920]) {
   test(`personal setup and briefing ${lang} ${width}`,async({page})=>{
