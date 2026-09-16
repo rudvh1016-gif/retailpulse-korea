@@ -87,7 +87,7 @@ function Briefing({p,lang}:{p:PersonalPreferences;lang:PersonalLang}) {
           ? <AreaCurrentBrief lang={lang} area={p.location} date={p.day==='today'?null:date}/>
           : null}
       <div className="personal-facts">{p.interests.map(interest=>{const card=cards.find(c=>c.interest===interest);return <article key={interest} data-interest={interest}><h3>{card?.label??pc(interest,lang)}</h3><strong>{card?.value??'—'}</strong>{card?.details?.map(line=><div className="personal-fact-detail" key={line}>{line}</div>)}<p>{card?.note??(interest==='flights'?pc('flightsMissing',lang):interest==='airlines'?pc('airlinesMissing',lang):p.terminal==='CONCOURSE'&&interest==='passengers'?pc('concourseNote',lang):pc('missing',lang))}</p>{card?.at&&<small>{referenceTime(card.at,lang)}</small>}{interest==='guidance'&&<a href={`/${lang}/tourism-desk/${p.location}`}>{pc('details',lang)}</a>}</article>;})}</div>
-      {actions.length>0&&<div className="personal-preparation"><h3>{pc('prepare',lang)}</h3><ul>{actions.map(action=><li key={action}>{action}</li>)}</ul></div>}
+      {actions.length>0&&<div className="personal-preparation"><h3>{pc(p.day==='tomorrow'?'prepareTomorrow':'prepare',lang)}</h3><ul>{actions.map(action=><li key={action}>{action}</li>)}</ul></div>}
       <a className="personal-detail-link" href={href}>{pc('details',lang)} → {pc(p.location,lang)}</a><Feedback p={p} date={date} lang={lang}/>
     </>}
   </section>;
