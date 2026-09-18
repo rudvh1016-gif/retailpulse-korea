@@ -104,3 +104,36 @@ test('peak hour retains the number of expected passengers as well as time',()=>{
   assert.equal(card.value,'07:00–08:00');
   assert.deepEqual(card.details,['3,210명']);
 });
+
+test('an unreadable peak band omits the hour instead of taking the screen down',()=>{
+  // buildPersonalBrief runs during render, so a throw here white-screens 내 브리핑.
+  // `clock()` used to call new Date(NaN).toISOString(), which is a RangeError,
+  // while its sibling kstDay in the same file already returned '' for the same
+  // input. Both ends of the band must be readable before a band is stated.
+  const p={...recommendedPreferences('manager'),terminal:'T1'};
+  for(const targetEndAt of [null,undefined,'','not-a-date','2026-13-45T99:99:99Z',Number.NaN]) {
+    const s={...base,airport:{...base.airport,peakExpectedTimeBandByTerminal:{T1:{
+      targetStartAt:'2026-09-09T07:00:00+09:00',targetEndAt,expectedPassengers:3210}}}};
+    const result=buildPersonalBrief(s,p,'2026-09-09','ko');
+    assert.equal(result.cards.some(c=>c.interest==='crowding'),false,String(targetEndAt));
+    // The rest of the briefing still renders: one unreadable field is not an outage.
+    assert.equal(result.cards.find(c=>c.interest==='passengers')?.value,'123',String(targetEndAt));
+  }
+  // An unreadable START is refused the same way.
+  const badStart={...base,airport:{...base.airport,peakExpectedTimeBandByTerminal:{T1:{
+    targetStartAt:'not-a-date',targetEndAt:'2026-09-09T08:00:00+09:00',expectedPassengers:3210}}}};
+  assert.equal(buildPersonalBrief(badStart,p,'2026-09-09','ko').cards.some(c=>c.interest==='crowding'),false);
+  // A readable band is unchanged.
+  const good={...base,airport:{...base.airport,peakExpectedTimeBandByTerminal:{T1:{
+    targetStartAt:'2026-09-09T07:00:00+09:00',targetEndAt:'2026-09-09T08:00:00+09:00',expectedPassengers:3210}}}};
+  assert.equal(buildPersonalBrief(good,p,'2026-09-09','ko').cards.find(c=>c.interest==='crowding')?.value,'07:00–08:00');
+});
+
+test('an unreadable Seoul forecast hour cannot take the briefing down either',()=>{
+  for(const targetAt of [null,undefined,'','not-a-date',Number.NaN]) {
+    const s={...base,areas:{hongdae:{realtime:null,weather:[],events:[],
+      realtimeForecast:[{targetAt,populationMin:300,populationMax:400,congestionLevel:3}]}}};
+    const result=buildPersonalBrief(s,recommendedPreferences('manager','hongdae'),'2026-09-09','ko');
+    assert.equal(result.cards.some(c=>c.interest==='crowding'),false,String(targetAt));
+  }
+});
