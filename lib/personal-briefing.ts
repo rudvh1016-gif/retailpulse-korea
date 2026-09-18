@@ -40,7 +40,17 @@ export function parsePreferences(raw: string | null): PersonalPreferences | null
 }
 export function nextDay(date: string) { return new Date(`${date}T00:00:00Z`).toISOString().slice(0,10) === date ? new Date(Date.parse(`${date}T00:00:00Z`)+86400000).toISOString().slice(0,10) : date; }
 const kstDay = (date: string) => Number.isFinite(Date.parse(date)) ? new Date(Date.parse(date)+9*3600000).toISOString().slice(0,10) : '';
-const clock = (date: string) => new Date(Date.parse(date)+9*3600000).toISOString().slice(11,16);
+/**
+ * KST `HH:MM`, or '' when the value cannot be read.
+ *
+ * Its sibling `kstDay` above already returns '' for an unreadable instant;
+ * this one did not, so `new Date(NaN).toISOString()` threw a RangeError.
+ * `buildPersonalBrief` runs during render, so that throw took the whole
+ * 내 브리핑 screen down rather than dropping one line. Callers below treat ''
+ * as "no time to state" and omit the card, which is the product rule: a value
+ * that cannot be confirmed is not filled in.
+ */
+const clock = (date: string) => { const t = Date.parse(date); return Number.isFinite(t) ? new Date(t+9*3600000).toISOString().slice(11,16) : ''; };
 export interface PersonalCard { interest: Interest; label: string; value: string; note: string; at?: string; details?: string[] }
 export function buildPersonalBrief(summary: LiveSummary | null | undefined, p: PersonalPreferences, date: string, lang: PersonalLang): {cards: PersonalCard[]; actions: string[]} {
   const cards: PersonalCard[] = [];
@@ -58,7 +68,8 @@ export function buildPersonalBrief(summary: LiveSummary | null | undefined, p: P
     const at = all ? a.passengerForecastRetrievedAt : a.passengerForecastRetrievedAtByTerminal?.[p.terminal];
     if (p.terminal !== 'CONCOURSE' && coverage === 'COMPLETE' && finite(passengers)) add('passengers',pc('expectedDepartures',lang),num(passengers),pc('forecast',lang),at ?? undefined);
     const peak = all ? a.peakExpectedTimeBand : a.peakExpectedTimeBandByTerminal?.[p.terminal];
-    if (p.terminal !== 'CONCOURSE' && coverage === 'COMPLETE' && peak && kstDay(peak.targetStartAt)===date) add('crowding',pc('peak',lang),`${clock(peak.targetStartAt)}–${clock(peak.targetEndAt)}`,`${pc('forecast',lang)} · KST`,at ?? undefined,finite(peak.expectedPassengers)?[`${num(peak.expectedPassengers)}${pc('peopleUnit',lang)}`]:undefined);
+    const peakFrom = peak ? clock(peak.targetStartAt) : '', peakTo = peak ? clock(peak.targetEndAt) : '';
+    if (p.terminal !== 'CONCOURSE' && coverage === 'COMPLETE' && peak && kstDay(peak.targetStartAt)===date && peakFrom && peakTo) add('crowding',pc('peak',lang),`${peakFrom}–${peakTo}`,`${pc('forecast',lang)} · KST`,at ?? undefined,finite(peak.expectedPassengers)?[`${num(peak.expectedPassengers)}${pc('peopleUnit',lang)}`]:undefined);
     // Scope counters start at zero even when the date has no collected flights.
     // A real whole-airport count is the evidence gate before exposing any scope.
     const flights = !finite(a.departuresTrackedToday) ? null : p.terminal === 'CONCOURSE' ? a.flightScope?.CONCOURSE : all ? a.departuresTrackedToday : a.departuresTrackedTodayByTerminal?.[p.terminal];
