@@ -53,3 +53,24 @@ Scope: existing collection reliability and truthful operational accounting.
   after 2026-09-26. This patch changes no UI, analytics, data source or schedule.
 - Runtime quota utilisation, actual user value and forecast accuracy require
   their own evidence. Neither passing CI nor an HTTP 200 establishes them.
+
+## Post-deployment defect discovered during closure
+
+PR #203 merged as `a218824be6d5e7c672e51574bb76baae07acd4af`.
+CI passed 907 unit tests, 42 rendered checks and 239 browser checks. Deployment
+`35447247326` succeeded (Worker version `0080235a-1f83-42b7-9be7-5c2421a1bf39`),
+and the public health, summary, airport and four language homes returned 200.
+The post-deployment discoverability workflow also succeeded.
+
+However, its optional operational-record step failed with
+`invalid_operational_identity`; the following ledger re-read and health report
+were consequently skipped. Deployment success did not prove ledger success.
+
+The real `saveMeasurement` path passed an entire stored `Incident` as the four
+fingerprint parts of a HEALTHY event. Identity validation consequently examined
+evidence arrays, counters and nullable dates. A SQLite regression reproduced
+the identical production stack when a previously failed source became fully
+verified. The caller now passes exactly source, failure class, contract version
+and logical job. Identity validation and the three-layer verification gate are
+unchanged. The regression also checks that unverified publication stays OPEN
+and a repeated healthy observation creates only one resolution event.
