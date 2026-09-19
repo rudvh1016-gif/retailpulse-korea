@@ -79,6 +79,14 @@ export const personalCopy = {
   eventNote: row('공식 행사기간 기준 · 당일 운영은 확인 권장','Official event period · confirm daily opening','依据官方活动期间 · 建议确认当天开放情况','公式開催期間に基づく・当日の開催状況をご確認ください'),
   prepare: row('오늘 준비할 것','Prepare today','今天准备什么','今日準備すること'),
   prepareTomorrow: row('내일 준비할 것','Prepare for tomorrow','明天准备什么','明日準備すること'),
+  // Seoul's peak IS a congestion forecast: the band is chosen by the official
+  // congestionLevel, so naming it 혼잡 is what the source says.
+  peakLead: row('{v} 예상 혼잡','busy around {v}','预计 {v} 拥挤','{v} 混雑予想'),
+  // The airport's peak is NOT. It is the band with the most expected
+  // departure-hall passengers, which is a head count, not a queue length —
+  // the busiest hour for people is not necessarily the longest wait at
+  // security. So it is named as the count it is.
+  passengerPeakLead: row('{v} 예상 이용객 최다','most expected passengers around {v}','预计 {v} 使用人数最多','{v} 予想利用者が最多'),
   visitPrep: row('예상 혼잡 시간과 방문 동선 확인 권장','Check busy hours and your route','建议确认拥挤时段与游览路线','混雑予想時間と訪問ルートを確認'),
   managerPrep: row('붐비는 시간대 인력 배치와 주요 상품 재고 확인 권장','Review staffing and key stock for busy hours','建议核对高峰时段人员安排与主要商品库存','混雑時間帯の人員配置と主要商品の在庫を確認'),
   guidePrep: row('집합 시간과 단체 이동 동선 확인 권장','Review meeting times and group routes','建议确认集合时间与团体路线','集合時間と団体の移動ルートを確認'),
@@ -99,3 +107,14 @@ export const personalCopy = {
 };
 export type PersonalCopyKey = keyof typeof personalCopy;
 export function pc(key: PersonalCopyKey, lang: PersonalLang) { return personalCopy[key][lang]; }
+/**
+ * A copy row that carries one observed value, written per language so the
+ * value sits where that language puts it. `{v}` is the only placeholder, and
+ * a row without one returns unchanged rather than dropping the value
+ * silently — the caller is expected to pass a value that is already on the
+ * screen above, never a new one.
+ */
+export function pcValue(key: PersonalCopyKey, lang: PersonalLang, value: string) {
+  const template = personalCopy[key][lang];
+  return template.includes('{v}') ? template.replace('{v}', value) : template;
+}
