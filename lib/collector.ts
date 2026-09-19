@@ -16,7 +16,6 @@ import {
   normalizeTourismEventDetail,
   normalizeWeatherForecast,
   redactSeoulUrl,
-  redactServiceKey,
   safeSourceFailureDetail,
   type CanonicalAirportCongestion,
   type CanonicalAirportFlight,
@@ -1485,6 +1484,10 @@ export async function collectWeatherForecasts(
   let lastForecast: CanonicalWeatherForecast | undefined;
   let written: D1WriteCounts = NO_D1_WRITES;
   let requestCount = 0;
+  const countedFetch: typeof fetch = (input, init) => {
+    requestCount += 1;
+    return fetch(input, init);
+  };
   for (const grid of grids) {
     const url = buildDataGoKrUrl(
       "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst",
@@ -1492,8 +1495,7 @@ export async function collectWeatherForecasts(
       { pageNo: "1", numOfRows: "1000", dataType: "JSON", base_date: baseDate, base_time: baseTime, nx: String(grid.nx), ny: String(grid.ny) },
     );
     try {
-      requestCount += 1;
-      const payload = await fetchOfficialJson(url, KMA_GRID_RETRY_POLICY);
+      const payload = await fetchOfficialJson(url, { ...KMA_GRID_RETRY_POLICY, fetchImpl: countedFetch });
       const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] } } } };
       const resultCode = root?.response?.header?.resultCode;
       if (resultCode !== "00") throw new Error(`kma_result_${String(resultCode ?? "missing")}`);
@@ -2146,6 +2148,11 @@ export async function collectAirportPassengerForecast(
   let written: D1WriteCounts = NO_D1_WRITES;
   let normalizedRowGroups = 0;
   let requestCount = 0;
+  let responseCount = 0;
+  const countedFetch: typeof fetch = (input, init) => {
+    requestCount += 1;
+    return fetch(input, init);
+  };
   const collectedAt = options.now ?? new Date();
   const retrievedAt = collectedAt.toISOString();
   for (const selectdate of selectdates) {
@@ -2176,8 +2183,8 @@ export async function collectAirportPassengerForecast(
          * down still fails, still preserves last-good rows, and still marks
          * source health STALE.
          */
-        const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 1, retryDelayMs: 500 });
-        requestCount += 1;
+        const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 1, retryDelayMs: 500, fetchImpl: countedFetch });
+        responseCount += 1;
         const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown }; totalCount?: number } } };
         const resultCode = root?.response?.header?.resultCode;
         if (resultCode !== "00") throw new Error(`forecast_result_${String(resultCode ?? "missing")}`);
@@ -2224,7 +2231,7 @@ export async function collectAirportPassengerForecast(
         if (totalCount === null || pageNo * A5_PAGE_SIZE >= totalCount || items.length < A5_PAGE_SIZE) break;
       }
     } catch (error) {
-      dayFailures.push(`selectdate=${selectdate}: ${error instanceof Error ? redactServiceKey(error.message) : "collector_error"}`);
+      dayFailures.push(`selectdate=${selectdate}: ${safeSourceFailureDetail(error)}`);
     }
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
@@ -2234,8 +2241,9 @@ export async function collectAirportPassengerForecast(
   // and must stay — validation is not weakened here. What was wrong is
   // counting that expected structural drop as a collection failure, which made
   // every single run PARTIAL forever. Anything BEYOND one per request is not
-  // structural, so it still counts.
-  const expectedNonBandDrops = requestCount;
+  // structural, so it still counts. Failed transport attempts have no rows
+  // and must never increase this allowance.
+  const expectedNonBandDrops = responseCount;
   const unexpectedRowFailures = Math.max(0, rowFailures.length - expectedNonBandDrops);
 
   // Health answers "is the required coverage there", so it is read back from
