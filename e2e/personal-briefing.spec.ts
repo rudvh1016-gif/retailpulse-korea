@@ -49,7 +49,7 @@ test('a first visit answers with the information, not a questionnaire',async({pa
   // The public summary is there in full, not behind a fold-out.
   await expect(page.locator('details.personal-existing')).toHaveCount(0);
   await expect(page.getByRole('heading',{name:'서울과 공항의 흐름'})).toBeVisible();
-  await expect(page.getByText('2026-08-31')).toBeVisible();
+  await expect(page.getByTestId('area-demand-card').first()).toBeVisible();
   // Nothing is asked first: no role, no analytics consent.
   await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
   // Setting one up is a choice, and cancelling comes back to the information.
@@ -106,12 +106,16 @@ test('reopening with persisted browser state, editing, feedback and reset',async
   await expect(reopened.getByTestId('personal-briefing')).toContainText('성수');
   await reopened.getByText('내 설정 보기',{exact:true}).click();
   await reopened.getByRole('button',{name:'처음부터 다시 설정',exact:true}).click();
-  await expect(reopened.getByTestId('personal-onboarding')).toBeVisible();
+  // Clearing the settings returns the reader to a first visit: the information,
+  // with setting one up on offer again — not straight back into the form.
+  await expect(reopened.getByTestId('personal-onboarding')).toHaveCount(0);
+  await expect(reopened.getByRole('button',{name:pc('startSetup','ko'),exact:true})).toBeVisible();
   await context.close();
 });
 
 test('multiple locations, terminals and all three days persist and switch to the matching date',async({page})=>{
   await page.setViewportSize({width:390,height:900});await fixture(page);await page.goto('/ko');
+  await page.getByRole('button',{name:pc('startSetup','ko'),exact:true}).click();
   const f=page.getByTestId('personal-onboarding');await f.locator('[data-role="manager"]').click();
   await f.getByRole('button',{name:pc('next','ko'),exact:true}).click();
   await f.locator('[data-location="seongsu"]').click();
