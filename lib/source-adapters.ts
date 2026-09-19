@@ -182,8 +182,13 @@ export async function fetchOfficialJson(url: URL, options: FetchOfficialJsonOpti
       }
       try {
         return await response.json();
-      } catch {
-        throw new SourceFetchError("MALFORMED_JSON");
+      } catch (error) {
+        // Headers can arrive before the body times out or the connection drops.
+        // Only a JSON syntax error is permanent; transport failures still use
+        // the same bounded retry policy as a failure before headers arrive.
+        if (controller.signal.aborted) throw new SourceFetchError("TIMEOUT");
+        if (error instanceof SyntaxError) throw new SourceFetchError("MALFORMED_JSON");
+        throw error;
       }
     } catch (error) {
       failure = classifySourceFetchFailure(error);
