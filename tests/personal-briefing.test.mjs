@@ -143,12 +143,16 @@ test('the work list leads with the value that produced it, and falls back to the
   const s={...base,airport:{...base.airport,peakExpectedTimeBandByTerminal:{T1:band}}};
   const p={...recommendedPreferences('manager'),terminal:'T1'};
   const led=buildPersonalBrief(s,p,'2026-09-09','ko').actions;
-  assert.equal(led[0],'07:00–08:00 예상 혼잡 · 붐비는 시간대 인력 배치와 주요 상품 재고 확인 권장');
+  // The airport band is the hour with the most expected departure-hall
+  // passengers — a head count, not a queue length — so it must not be
+  // called 혼잡. The busiest hour for people is not the longest wait.
+  assert.equal(led[0],'07:00–08:00 예상 이용객 최다 · 붐비는 시간대 인력 배치와 주요 상품 재고 확인 권장');
+  assert.ok(!led[0].includes('혼잡'));
   // Without a published peak the same reader keeps the general sentence
   // rather than a lead invented to fill the gap.
   const bare=buildPersonalBrief({...base,airport:{...base.airport,peakExpectedTimeBandByTerminal:{}}},p,'2026-09-09','ko').actions;
   assert.equal(bare[0],'붐비는 시간대 인력 배치와 주요 상품 재고 확인 권장');
-  assert.equal(buildPersonalBrief(s,p,'2026-09-09','en').actions[0],'busy around 07:00–08:00 · Review staffing and key stock for busy hours');
+  assert.equal(buildPersonalBrief(s,p,'2026-09-09','en').actions[0],'most expected passengers around 07:00–08:00 · Review staffing and key stock for busy hours');
 });
 
 test('rain chance and the official event name reach the work list from their own cards',()=>{
@@ -163,6 +167,8 @@ test('rain chance and the official event name reach the work list from their own
   assert.ok(actions.includes('홍대 거리공연 주간 · 행사 운영시간과 방문 가능 여부 확인 권장'));
   // One title only: a second official name must not push the advice off screen.
   assert.ok(!actions.some(action=>action.includes('두 번째 행사')));
+  // Seoul's band IS chosen by the official congestion level, so here 혼잡
+  // is exactly what the source says.
   assert.equal(actions[0],'18:00 예상 혼잡 · 집합 시간과 단체 이동 동선 확인 권장');
 });
 

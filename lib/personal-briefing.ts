@@ -128,7 +128,11 @@ export function buildPersonalBrief(summary: LiveSummary | null | undefined, p: P
   const card = (interest: Interest) => cards.find(c=>c.interest===interest);
   const work = (key: Parameters<typeof pc>[0], lead: string | null) => actions.push(lead ? `${lead} · ${pc(key,lang)}` : pc(key,lang));
   const busy = card('crowding');
-  if(busy || card('passengers')) work(p.role==='manager'?'managerPrep':p.role==='guide'?'guidePrep':'visitPrep', busy ? pcValue('peakLead',lang,busy.value) : null);
+  // Two different peaks wear one word otherwise. Seoul's band is picked by
+  // the official congestion level; the airport's is picked by expected
+  // passengers, so only the first may be called 혼잡.
+  if(busy || card('passengers')) work(p.role==='manager'?'managerPrep':p.role==='guide'?'guidePrep':'visitPrep',
+    busy ? pcValue(p.location==='airport'?'passengerPeakLead':'peakLead',lang,busy.value) : null);
   const flights = card('flights');
   if(flights) work('flightPrep', flights.value);
   // The weather card's own label already reads as a lead in every language
