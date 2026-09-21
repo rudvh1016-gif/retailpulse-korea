@@ -100,8 +100,13 @@ type Row = Record<string, unknown>;
 const AREAS = ["myeongdong", "hongdae", "seongsu"] as const;
 /** Incheon's two passenger terminals; congestion is only ever published for these. */
 const CONGESTION_TERMINALS = ["T1", "T2"] as const;
-/** The date picker never offers more than this many days. */
-const DATE_PICKER_DAYS = 21;
+/** A calendar request probes at most 31 exact days, never the whole history. */
+export function availabilityPeriod(month: unknown, serviceDate: string) {
+  const selectedMonth = typeof month === 'string' && /^\d{4}-\d{2}$/.test(month) && isValidKstDay(`${month}-01`) ? month : serviceDate.slice(0,7);
+  const startDate = `${selectedMonth}-01`;
+  const endDate = new Date(Date.UTC(Number(selectedMonth.slice(0,4)), Number(selectedMonth.slice(5,7)), 0)).toISOString().slice(0,10);
+  return { month: selectedMonth, startDate, endDate };
+}
 
 /** A corrupt row is isolated to its area instead of entering the public payload. */
 export function isValidStoredStoreDynamics(area: (typeof AREAS)[number], row: Row | undefined): boolean {
@@ -109,35 +114,24 @@ export function isValidStoredStoreDynamics(area: (typeof AREAS)[number], row: Ro
 }
 
 /**
- * "Does this one day hold data?" as a single bounded existence probe.
- *
- * The old form was `SELECT DISTINCT substr(col, 1, 10) … ORDER BY day DESC
- * LIMIT 21`, which had to visit every historical row to learn the distinct
- * days — a full scan of a forever-growing table, on every request, just to
- * populate a picker. Asking whether any row exists in one day's range is the
- * same answer for a fixed cost: an index seek that stops at the first match,
- * measured at exactly one row read per day on Production.
- *
- * One statement per day, not one statement for all of them. Joining the 21
- * probes with UNION ALL into a single 63-parameter statement is what shipped
- * first, and D1 rejects that statement outright — on the Workers binding and
- * on the REST endpoint alike. Because safeAll turns a failing statement into
- * an empty list, the failure was invisible: every day list came back empty and
- * the date picker silently offered nothing while the endpoint answered 200.
- * The probes are therefore sent as a batch of single-day statements, which is
- * one round trip and the same total rows read.
+ * One VALUES CTE per source, at most 31 indexed existence seeks and 62 binds.
+ * Unlike the old per-day statements this keeps the entire summary below the
+ * Free invocation's 50-query ceiling; a single batch alone does not do that.
+ * The historical UNION ALL shape failed on D1. This uses a bounded VALUES
+ * table instead, with no DISTINCT or function over an indexed history column.
  */
-function dayExistsSql(table: string, column: string, filter = ""): string {
-  // `filter` supplies the index's leading column so the probe is a range seek
-  // that stops at the first row, rather than a scan of the whole index.
+function dayExistsSql(table: string, column: string, days: number, filter = ""): string {
   const where = filter ? `${filter} AND ` : "";
-  return `SELECT ? AS day WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${where}${column} >= ? AND ${column} < ?)`;
+  return `WITH requested_days(day, next_day) AS (VALUES ${Array.from({ length: days }, () => '(?, ?)').join(', ')})
+    SELECT day FROM requested_days WHERE EXISTS
+      (SELECT 1 FROM ${table} WHERE ${where}${column} >= requested_days.day AND ${column} < requested_days.next_day)`;
 }
 
 /** Exact-value variant for columns already stored as a canonical KST day. */
-function dayValueExistsSql(table: string, column: string, filter = ""): string {
+function dayValueExistsSql(table: string, column: string, days: number, filter = ""): string {
   const where = filter ? `${filter} AND ` : "";
-  return `SELECT ? AS day WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${where}${column} = ?)`;
+  return `WITH requested_days(day) AS (VALUES ${Array.from({ length: days }, () => '(?)').join(', ')})
+    SELECT day FROM requested_days WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${where}${column} = requested_days.day)`;
 }
 
 /**
@@ -208,16 +202,17 @@ export async function GET(request: Request) {
     }
   })();
   const serviceDate = isValidKstDay(requestedDateRaw) ? requestedDateRaw : kstToday;
+  const availabilityMonth = availabilityPeriod(new URL(request.url).searchParams.get('month'), serviceDate).month;
   const dayRelation = relateKstDay(serviceDate, kstToday);
   const { startAt: dayStartAt } = kstDayBounds(serviceDate);
 
   try {
     const client = await getDb().then((db) => db.$client);
     return await summarizeLiveSummary(client, {
-      generatedAt, now, kstNowIso, kstToday, kstHourStart, serviceDate, dayRelation, dayStartAt,
+      generatedAt, now, kstNowIso, kstToday, kstHourStart, serviceDate, dayRelation, dayStartAt, availabilityMonth,
     });
   } catch {
-    return degradedSummary({ generatedAt, kstToday, serviceDate, dayRelation });
+    return degradedSummary({ generatedAt, kstToday, serviceDate, dayRelation, availabilityMonth });
   }
 }
 
@@ -231,6 +226,7 @@ export interface SummaryClock {
   serviceDate: string;
   dayRelation: ReturnType<typeof relateKstDay>;
   dayStartAt: string;
+  availabilityMonth?: string;
 }
 
 /** The slice of the D1 binding the summary reads through; tests pass a double. */
@@ -248,6 +244,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   const previousMonthEnd = previousMonthSameDay(serviceDate);
   const currentMonthDays = datesBetween(monthStartOf(serviceDate), serviceDate);
   const previousMonthDays = previousMonthEnd ? datesBetween(monthStartOf(previousMonthEnd), previousMonthEnd) : [];
+  const period = availabilityPeriod(clock.availabilityMonth, serviceDate);
   const statementGroups = {
     sources: [client.prepare(
       `SELECT source_id AS sourceId, status, last_event_at AS eventAt,
@@ -431,9 +428,9 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       latestPerKey(CONGESTION_TERMINALS, () => `SELECT terminal, zone, wait_time_minutes AS waitTimeMinutes, wait_time_raw AS waitTimeRaw,
         waiting_count AS waitingCount, observed_at AS observedAt, retrieved_at AS retrievedAt
       FROM airport_congestion
-      WHERE terminal = ? AND observed_at = (SELECT MAX(observed_at) FROM airport_congestion WHERE terminal = ?)
+      WHERE terminal = ? AND ? = 'TODAY' AND observed_at = (SELECT MAX(observed_at) FROM airport_congestion WHERE terminal = ?)
       ORDER BY zone LIMIT 12`),
-    ).bind(...CONGESTION_TERMINALS.flatMap((terminal) => [terminal, terminal]))],
+    ).bind(...CONGESTION_TERMINALS.flatMap((terminal) => [terminal, dayRelation, terminal]))],
 
     // A5 official aggregate rows for both directions. Component rows never
     // enter a total or peak calculation, preventing provider-total double count.
@@ -481,9 +478,9 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       `SELECT physical_flight_id AS physicalFlightId, terminal, gate, retrieved_at AS retrievedAt,
         flight_number AS operatingFlight
       FROM airport_flights
-      WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ?
+      WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ? AND ? <> 'FUTURE'
       LIMIT 2000`,
-    ).bind(serviceDate, shiftKstDay(serviceDate, 1))],
+    ).bind(serviceDate, shiftKstDay(serviceDate, 1), dayRelation)],
 
     transferRows: [client.prepare('SELECT service_date AS serviceDate, terminal, expected_transfer_passengers AS expectedTransferPassengers, retrieved_at AS retrievedAt FROM airport_transfer_forecast WHERE service_date = ? AND quality_status = ? LIMIT 2').bind(serviceDate, 'OFFICIAL_FORECAST')],
     departureScheduleRows: [client.prepare(
@@ -499,50 +496,42 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     ).bind(serviceDate, serviceDate)],
   };
 
-  // Which KST days actually hold data, so the date picker can offer only
-  // days that exist instead of inviting the reader into an empty screen.
-  // Tomorrow FIRST, then today and the days behind it.
-  //
-  // The probe used to start at today and only walk backwards, so
-  // `dateAvailability` could never contain tomorrow — and the airport
-  // forecast is published a day ahead, which is the one thing a reader opens
-  // "내일" to see. The date picker's `max` was therefore pinned to today and
-  // the scope note announced "공식 예상 승객 없음" for a day whose rows were
-  // sitting in D1. One extra probe day, not a new query shape.
-  const pickerDays = [
-    shiftKstDay(kstToday, 1),
-    ...Array.from({ length: DATE_PICKER_DAYS - 1 }, (_, index) => shiftKstDay(kstToday, -index)),
-  ];
-  // Still one statement per day (D1 rejects the 63-parameter UNION ALL form);
-  // the statements now travel inside the single batch below.
+  // The requested month is bounded even when navigating years of history.
+  // Indexed existence probes stop after one matching row per source/day.
+  const pickerDays = datesBetween(period.startDate, period.endDate);
   const probeDays = (sql: string, bindsForDay: (day: string) => unknown[]) =>
-    pickerDays.map((day) => client.prepare(sql).bind(...bindsForDay(day)));
+    [client.prepare(sql).bind(...pickerDays.flatMap(bindsForDay))];
   const probeGroups = {
     flightDateRows: probeDays(
-      dayExistsSql("airport_flights", "scheduled_at", "direction = 'departure'"),
-      (day) => [day, day, shiftKstDay(day, 1)],
+      dayExistsSql("airport_flights", "scheduled_at", pickerDays.length, "direction = 'departure'"),
+      (day) => [day, shiftKstDay(day, 1)],
     ),
     forecastDateRows: probeDays(
-      dayValueExistsSql("airport_passenger_forecast", "target_date", "direction = 'departure' AND is_aggregate = 1"),
-      (day) => [day, day],
+      dayValueExistsSql("airport_passenger_forecast", "target_date", pickerDays.length, "direction = 'departure' AND is_aggregate = 1"),
+      (day) => [day],
     ),
     observedDateRows: probeDays(
-      dayExistsSql("seoul_realtime_area", "observed_at"),
-      (day) => [day, day, shiftKstDay(day, 1)],
+      dayExistsSql("seoul_realtime_area", "observed_at", pickerDays.length),
+      (day) => [day, shiftKstDay(day, 1)],
     ),
+    scheduleDateRows: [client.prepare(`SELECT service_date AS day FROM airport_departure_schedule
+      WHERE service_date >= ? AND service_date <= ? AND service_date > ? AND payload <> '[]'
+      ORDER BY service_date LIMIT 31`).bind(period.startDate, period.endDate, kstToday)],
   };
 
   // Every statement above, including bounded history and picker probes, leaves
   // the Worker in ONE D1 request. Awaiting them one after another was 18 full
   // Worker → D1 round trips and, measured on Production, 3.5–4.2 s per
   // uncached summary (see lib/d1-read-batch.ts). History reads are bounded above.
-  const { rows: blocks } = await readGroups(client, { ...statementGroups, ...probeGroups });
+  const readResult = await readGroups(client, { ...statementGroups, ...probeGroups }, { maxStatements: 50 });
+  const blocks = readResult.rows;
+  const readDegraded = readResult.failedGroups.length > 0 || readResult.skippedGroups.length > 0;
   const {
     sources, contextRows, holidayRows, compositionRows, realtimeRows, observedSeriesRows, commercialRows, realtimeForecastRows, weatherRows, eventRows, salesRows,
     storeDynamicsRows, foreignPresenceRows, foreignPurposeRows, subwayRows, congestionRows,
-    passengerForecastRows: allPassengerForecastRows, monthToDateRows, historicalFlightCounts, flightRows, scheduledRows, departureScheduleRows, transferRows, flightDateRows, forecastDateRows, observedDateRows,
+    passengerForecastRows: allPassengerForecastRows, monthToDateRows, historicalFlightCounts, flightRows, scheduledRows, departureScheduleRows, transferRows, flightDateRows, forecastDateRows, observedDateRows, scheduleDateRows,
   } = blocks;
-  const passengerForecastRows = allPassengerForecastRows.filter((row) => row.targetDate === serviceDate);
+  const passengerForecastRows = serviceDate > shiftKstDay(kstToday, 1) ? [] : allPassengerForecastRows.filter((row) => row.targetDate === serviceDate);
   const dayList = (rows: Row[]) => rows
     .map((row) => String(row.day ?? ""))
     .filter((day) => isValidKstDay(day))
@@ -672,8 +661,10 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   // reported as UNVERIFIED whenever the table cannot vouch for it.
   const airlineRanking = summarizeAirlineRanking(flightRows as unknown as AirlineRankingFlightRow[], lookupAirline, 300);
   const officialSchedule = dayRelation === 'FUTURE' ? readDepartureSchedule(departureScheduleRows[0], serviceDate) : [];
-  const scheduledBriefing = summarizeScheduledBriefing(officialSchedule.length ? officialSchedule : scheduledRows as unknown as ScheduledBriefingRow[], serviceDate, lookupAirline,
-    officialSchedule.length ? 'OFFICIAL_DEPARTURE_SCHEDULE' : 'PARTIAL_SCHEDULE');
+  const hasOfficialSchedule = dayRelation === 'FUTURE' && departureScheduleRows.length > 0;
+  const partialSchedule = dayRelation !== 'PAST' && serviceDate <= shiftKstDay(kstToday, 1) ? scheduledRows as unknown as ScheduledBriefingRow[] : [];
+  const scheduledBriefing = summarizeScheduledBriefing(hasOfficialSchedule ? officialSchedule : partialSchedule, serviceDate, lookupAirline,
+    hasOfficialSchedule ? 'OFFICIAL_DEPARTURE_SCHEDULE' : 'PARTIAL_SCHEDULE');
   const periodComparisons = Object.fromEntries(["all", "T1", "T2"].map((scope) => [scope,
     Object.fromEntries(([7, 28] as const).map((days) => {
       const baselineDate = shiftKstDay(serviceDate, -days);
@@ -773,15 +764,20 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   );
 
   return Response.json({
-    mode: "live-summary",
+    mode: readDegraded ? "degraded" : "live-summary",
+    readStatus: { status: readDegraded ? 'DEGRADED' : 'COMPLETE', failedGroups: readResult.failedGroups, skippedGroups: readResult.skippedGroups, statementsAttempted: readResult.statementsAttempted },
     generatedAt,
     todayKst: kstToday,
     serviceDateKst: serviceDate,
     dayRelation,
     dateAvailability: {
-      airportFlights: dayList(flightDateRows),
-      airportPassengerForecast: dayList(forecastDateRows),
+      ...period,
+      airportFlights: dayList(flightDateRows).filter(day => day <= kstToday),
+      airportPassengerForecast: dayList(forecastDateRows).filter(day => day <= shiftKstDay(kstToday, 1)),
+      airportDepartureSchedule: dayList(scheduleDateRows),
       seoulObserved: dayList(observedDateRows),
+      checkedAt: Object.fromEntries(Object.entries({ airportFlights: 'INCHEON_FLIGHT_DETAIL', airportDepartureSchedule: 'INCHEON_FLIGHT_DETAIL', airportPassengerForecast: 'INCHEON_PASSENGER_FORECAST', seoulObserved: 'SEOUL_CITYDATA_PPLTN' })
+        .map(([key, sourceId]) => [key, sources.find(source => source.sourceId === sourceId)?.retrievedAt ?? null])),
     },
     holidays: holidayRows.flatMap(row=>{ try { return [{month:row.month,days:JSON.parse(String(row.payload)),retrievedAt:row.retrievedAt}]; } catch { return []; } }),
     sources,
@@ -849,18 +845,19 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     // Decided by the payload, not the status code: a 200 that carries no
     // sources or no area data is an outage in disguise and must never be
     // admitted to the shared edge cache.
-    headers: { "cache-control": summaryCacheControl({ sources, areas }) },
+    headers: { "cache-control": readDegraded ? SUMMARY_NO_STORE : summaryCacheControl({ sources, areas }) },
   });
 }
 
-function degradedSummary({ generatedAt, kstToday, serviceDate, dayRelation }: Pick<SummaryClock, "generatedAt" | "kstToday" | "serviceDate" | "dayRelation">): Response {
+function degradedSummary({ generatedAt, kstToday, serviceDate, dayRelation, availabilityMonth }: Pick<SummaryClock, "generatedAt" | "kstToday" | "serviceDate" | "dayRelation" | "availabilityMonth">): Response {
   return Response.json({
     mode: "degraded",
+    readStatus: { status: 'DEGRADED', failedGroups: ['database'], skippedGroups: [] },
     generatedAt,
     todayKst: kstToday,
     serviceDateKst: serviceDate,
     dayRelation,
-    dateAvailability: { airportFlights: [], airportPassengerForecast: [], seoulObserved: [] },
+    dateAvailability: { ...availabilityPeriod(availabilityMonth, serviceDate), airportFlights: [], airportDepartureSchedule: [], airportPassengerForecast: [], seoulObserved: [], checkedAt: { airportFlights: null, airportDepartureSchedule: null, airportPassengerForecast: null, seoulObserved: null } },
     sources: [],
     areas: {},
     airport: {

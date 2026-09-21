@@ -1915,6 +1915,13 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .date-nav .date-nav-picker input { width: 142px; min-width: 0; min-height: 44px; padding: 4px 0; border: 0; border-radius: 0; background: var(--paper); color: var(--muted); font-size: 13px; font-weight: var(--weight-regular); }
 .date-nav-picker input::-webkit-date-and-time-value { text-align: start; }
 .date-nav-picker input::-webkit-calendar-picker-indicator { margin: 0; padding: 8px; opacity: .65; }
+.stored-date-picker { flex-basis: 100%; min-width: 0; max-width: 100%; font-size: 12px; color: var(--muted); }
+.stored-date-picker summary { padding: 8px 0; cursor: pointer; }
+.stored-date-content { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 8px 0; }
+.stored-date-content label { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 8px; }
+.stored-date-content :is(input, select) { max-width: 100%; min-height: 44px; padding: 4px 0; border: 0; border-bottom: 1px solid var(--line); background: var(--paper); color: var(--ink); font: inherit; }
+.stored-date-content select { min-width: 0; text-overflow: ellipsis; }
+.stored-date-content p { margin: 0; line-height: 1.7; }
 .date-nav .period-outlook-link { padding: 0; font-size: 12px; }
 .personal-day-switches { flex-basis: 100%; margin-top: 4px; }
 .personal-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding: 20px 0 16px; }

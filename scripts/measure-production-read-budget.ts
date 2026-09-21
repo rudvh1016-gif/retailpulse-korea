@@ -64,6 +64,8 @@ function monthRangeSqlFor(days: number): string {
 
 const CEILING = Number(process.env.RPK_READ_BUDGET_CEILING ?? 100_000);
 if (!Number.isFinite(CEILING) || CEILING <= 0) throw new Error("invalid_read_budget_ceiling");
+const SCOPE = process.env.RPK_READ_BUDGET_SCOPE || 'all';
+if (!['all', 'date_availability'].includes(SCOPE)) throw new Error('invalid_read_budget_scope');
 
 const ROUTE_PATH = new URL("../app/api/live/summary/route.ts", import.meta.url);
 // Both public read paths are guarded: the summary route and the A2 facility
@@ -76,19 +78,21 @@ const routeSource = [ROUTE_PATH, FACILITY_ROUTE_PATH, OPERATIONS_ROUTE_PATH]
 
 const AREAS = ["myeongdong", "hongdae", "seongsu"] as const;
 const CONGESTION_TERMINALS = ["T1", "T2"] as const;
-const DATE_PICKER_DAYS = 21;
 
 // Mirrors of the route's two SQL builders. The `guard` fragment on every
 // statement below is what keeps these honest: if the route stops shaping its
 // SQL this way, the guard fails instead of the measurement silently drifting.
-function dayExistsSql(table: string, column: string, filter = ""): string {
+function dayExistsSql(table: string, column: string, days: number, filter = ""): string {
   const where = filter ? `${filter} AND ` : "";
-  return `SELECT ? AS day WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${where}${column} >= ? AND ${column} < ?)`;
+  return `WITH requested_days(day, next_day) AS (VALUES ${Array.from({ length: days }, () => '(?, ?)').join(', ')})
+    SELECT day FROM requested_days WHERE EXISTS
+      (SELECT 1 FROM ${table} WHERE ${where}${column} >= requested_days.day AND ${column} < requested_days.next_day)`;
 }
 
-function dayValueExistsSql(table: string, column: string, filter = ""): string {
+function dayValueExistsSql(table: string, column: string, days: number, filter = ""): string {
   const where = filter ? `${filter} AND ` : "";
-  return `SELECT ? AS day WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${where}${column} = ?)`;
+  return `WITH requested_days(day) AS (VALUES ${Array.from({ length: days }, () => '(?)').join(', ')})
+    SELECT day FROM requested_days WHERE EXISTS (SELECT 1 FROM ${table} WHERE ${where}${column} = requested_days.day)`;
 }
 
 function latestPerKey(keys: readonly string[], build: (placeholder: string) => string): string {
@@ -102,7 +106,9 @@ const serviceDate = kstToday;
 const MTD_CURRENT_DAYS = datesBetween(monthStartOf(serviceDate), serviceDate);
 const MTD_PREVIOUS_END = previousMonthSameDay(serviceDate);
 const MTD_PREVIOUS_DAYS = MTD_PREVIOUS_END ? datesBetween(monthStartOf(MTD_PREVIOUS_END), MTD_PREVIOUS_END) : [];
-const pickerDays = Array.from({ length: DATE_PICKER_DAYS }, (_, index) => shiftKstDay(kstToday, -index));
+const pickerStart = monthStartOf(serviceDate);
+const pickerEnd = new Date(Date.UTC(Number(serviceDate.slice(0,4)), Number(serviceDate.slice(5,7)), 0)).toISOString().slice(0,10);
+const pickerDays = datesBetween(pickerStart, pickerEnd);
 
 type HotQuery = {
   /** The block of the response this statement fills. */
@@ -123,11 +129,8 @@ type HotQuery = {
   /**
    * Run this statement once per bind set and sum the rows read.
    *
-   * The route sends the date-picker probes as one statement per day in a
-   * single D1 batch, so the diagnostic runs them the same way and sums the
-   * rows read. Measuring them as one 21-way UNION ALL is what this script
-   * tried first; D1 rejects that statement, which is exactly how the live
-   * bug it was hiding came to light.
+   * Used by repeated baseline-day queries. Calendar availability now uses
+   * one bounded VALUES CTE per source, exactly as the route does.
    */
   repeatBinds?: unknown[][];
 };
@@ -317,10 +320,10 @@ const HOT_QUERIES: HotQuery[] = [
     sql: latestPerKey(CONGESTION_TERMINALS, () => `SELECT terminal, zone, wait_time_minutes AS waitTimeMinutes, wait_time_raw AS waitTimeRaw,
         waiting_count AS waitingCount, observed_at AS observedAt, retrieved_at AS retrievedAt
       FROM airport_congestion
-      WHERE terminal = ? AND observed_at = (SELECT MAX(observed_at) FROM airport_congestion WHERE terminal = ?)
+      WHERE terminal = ? AND ? = 'TODAY' AND observed_at = (SELECT MAX(observed_at) FROM airport_congestion WHERE terminal = ?)
       ORDER BY zone LIMIT 12`),
-    binds: CONGESTION_TERMINALS.flatMap((terminal) => [terminal, terminal]),
-    guard: "FROM airport_congestion\n      WHERE terminal = ? AND observed_at = (SELECT MAX(observed_at) FROM airport_congestion WHERE terminal = ?)",
+    binds: CONGESTION_TERMINALS.flatMap((terminal) => [terminal, 'TODAY', terminal]),
+    guard: "FROM airport_congestion\n      WHERE terminal = ? AND ? = 'TODAY' AND observed_at = (SELECT MAX(observed_at) FROM airport_congestion WHERE terminal = ?)",
     table: "airport_congestion",
   },
   {
@@ -374,22 +377,39 @@ const HOT_QUERIES: HotQuery[] = [
     sql: `SELECT physical_flight_id AS physicalFlightId, terminal, gate, retrieved_at AS retrievedAt,
         flight_number AS operatingFlight
       FROM airport_flights
-      WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ?
+      WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ? AND ? <> 'FUTURE'
       LIMIT 2000`,
-    binds: [serviceDate, shiftKstDay(serviceDate, 1)],
-    guard: "WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ?",
+    binds: [serviceDate, shiftKstDay(serviceDate, 1), 'TODAY'],
+    guard: "WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ? AND ? <> 'FUTURE'",
     table: "airport_flights",
   },
   {
     name: "scheduled",
-    sql: `SELECT terminal, COUNT(*) AS flights, MIN(scheduled_time) AS firstTime, MAX(scheduled_time) AS lastTime,
-        MAX(retrieved_at) AS retrievedAt
+    sql: `SELECT terminal, COALESCE(master_flight_number, flight_number) AS operatingFlight,
+        scheduled_time AS scheduledTime, weekdays, valid_from AS validFrom, valid_to AS validTo,
+        retrieved_at AS retrievedAt
       FROM airport_scheduled_flights
       WHERE valid_from <= ? AND valid_to >= ?
-      GROUP BY terminal ORDER BY terminal`,
+      ORDER BY scheduled_time, physical_schedule_id LIMIT 2001`,
     binds: [serviceDate, serviceDate],
     guard: "FROM airport_scheduled_flights\n      WHERE valid_from <= ? AND valid_to >= ?",
     table: "airport_scheduled_flights",
+  },
+  {
+    name: "departureSchedule",
+    sql: `SELECT payload, retrieved_at AS retrievedAt FROM airport_departure_schedule WHERE service_date = ? LIMIT 1`,
+    binds: [serviceDate],
+    guard: "SELECT payload, retrieved_at AS retrievedAt FROM airport_departure_schedule WHERE service_date = ? LIMIT 1",
+    table: "airport_departure_schedule",
+  },
+  {
+    name: "departureScheduleDates",
+    sql: `SELECT service_date AS day FROM airport_departure_schedule
+      WHERE service_date >= ? AND service_date <= ? AND service_date > ? AND payload <> '[]'
+      ORDER BY service_date LIMIT 31`,
+    binds: [pickerStart, pickerEnd, kstToday],
+    guard: "WHERE service_date >= ? AND service_date <= ? AND service_date > ? AND payload <> '[]'",
+    table: "airport_departure_schedule",
   },
   {
     // A2 facility directory. Not part of the summary — it is its own
@@ -448,36 +468,38 @@ const HOT_QUERIES: HotQuery[] = [
   },
   {
     name: "flightDates",
-    sql: dayExistsSql("airport_flights", "scheduled_at", "direction = 'departure'"),
-    binds: [pickerDays[0], pickerDays[0], shiftKstDay(pickerDays[0], 1)],
-    repeatBinds: pickerDays.map((day) => [day, day, shiftKstDay(day, 1)]),
-    guard: `dayExistsSql("airport_flights", "scheduled_at", "direction = 'departure'")`,
+    sql: dayExistsSql("airport_flights", "scheduled_at", pickerDays.length, "direction = 'departure'"),
+    binds: pickerDays.flatMap(day => [day, shiftKstDay(day, 1)]),
+    guard: `dayExistsSql("airport_flights", "scheduled_at", pickerDays.length, "direction = 'departure'")`,
     table: "airport_flights",
   },
   {
     name: "forecastDates",
-    sql: dayValueExistsSql("airport_passenger_forecast", "target_date", "direction = 'departure' AND is_aggregate = 1"),
-    binds: [pickerDays[0], pickerDays[0]],
-    repeatBinds: pickerDays.map((day) => [day, day]),
-    guard: `dayValueExistsSql("airport_passenger_forecast", "target_date", "direction = 'departure' AND is_aggregate = 1")`,
+    sql: dayValueExistsSql("airport_passenger_forecast", "target_date", pickerDays.length, "direction = 'departure' AND is_aggregate = 1"),
+    binds: pickerDays,
+    guard: `dayValueExistsSql("airport_passenger_forecast", "target_date", pickerDays.length, "direction = 'departure' AND is_aggregate = 1")`,
     table: "airport_passenger_forecast",
   },
   {
     name: "observedDates",
-    sql: dayExistsSql("seoul_realtime_area", "observed_at"),
-    binds: [pickerDays[0], pickerDays[0], shiftKstDay(pickerDays[0], 1)],
-    repeatBinds: pickerDays.map((day) => [day, day, shiftKstDay(day, 1)]),
-    guard: `dayExistsSql("seoul_realtime_area", "observed_at")`,
+    sql: dayExistsSql("seoul_realtime_area", "observed_at", pickerDays.length),
+    binds: pickerDays.flatMap(day => [day, shiftKstDay(day, 1)]),
+    guard: `dayExistsSql("seoul_realtime_area", "observed_at", pickerDays.length)`,
     table: "seoul_realtime_area",
   },
 ];
 
-const drifted = HOT_QUERIES.filter((query) => !routeSource.includes(query.guard)).map((query) => query.name);
+const DATE_AVAILABILITY_QUERIES = new Set(['flightDates', 'forecastDates', 'observedDates', 'departureScheduleDates']);
+const selectedQueries = SCOPE === 'date_availability' ? HOT_QUERIES.filter(query => DATE_AVAILABILITY_QUERIES.has(query.name)) : HOT_QUERIES;
+const drifted = selectedQueries.filter((query) => !routeSource.includes(query.guard)).map((query) => query.name);
 if (drifted.length) {
   throw new Error(`hot_query_drifted_from_route: ${drifted.join(", ")}`);
 }
 
-const EXPECTED_INDEXES = [
+const EXPECTED_INDEXES = SCOPE === 'date_availability' ? [
+  'airport_flights_direction_scheduled_idx', 'airport_passenger_forecast_target_idx',
+  'seoul_realtime_area_observed_idx', 'sqlite_autoindex_airport_departure_schedule_1',
+] : [
   "seoul_realtime_area_area_observed_idx",
   "seoul_realtime_area_observed_idx",
   "seoul_realtime_commercial_area_observed_idx",
@@ -546,7 +568,7 @@ const missingIndexes = EXPECTED_INDEXES.filter((name) => !presentIndexes.include
 // is skipped; safe statements (including Store Dynamics) can still provide
 // real rows_read evidence without spending through an unrelated legacy scan.
 const planChecks: Array<Record<string, unknown>> = [];
-for (const query of HOT_QUERIES) {
+for (const query of selectedQueries) {
   try {
     // EXPLAIN QUERY PLAN does not execute the statement, but D1 still checks
     // the binding count — so a statement whose only real bind sets live in
@@ -580,7 +602,7 @@ const preflightPassed = missingIndexes.length === 0 && planErrors.length === 0 &
 // unindexed scan, the complete summary number stays null and the workflow
 // fails, but bounded statements retain their actual per-query evidence.
 const perQuery: Array<Record<string, unknown>> = [];
-for (const query of HOT_QUERIES) {
+for (const query of selectedQueries) {
   const planCheck = planChecks.find((entry) => entry.name === query.name);
   if (missingIndexes.length > 0) {
     perQuery.push({ name: query.name, skipped: "missing_required_index" });
@@ -635,12 +657,13 @@ const measurementComplete = preflightPassed
   && !stoppedAtCeiling
   && queryErrors.length === 0
   && skippedQueries.length === 0
-  && perQuery.length === HOT_QUERIES.length;
+  && perQuery.length === selectedQueries.length;
 const measuredSummaryRowsRead = perQuery.reduce((total, entry) => total + Number(entry.rowsRead ?? 0), 0);
 const summaryRowsRead = measurementComplete ? measuredSummaryRowsRead : null;
 
 console.log(JSON.stringify({
   diagnostic: "production-read-budget",
+  scope: SCOPE,
   generatedAt,
   serviceDate,
   requiredIndexes: {
@@ -655,7 +678,7 @@ console.log(JSON.stringify({
     scanRegressions,
     plans: planChecks,
   },
-  liveSummary: {
+  [SCOPE === 'date_availability' ? 'dateAvailability' : 'liveSummary']: {
     statements: perQuery.length,
     complete: measurementComplete,
     rowsReadPerUncachedRequest: summaryRowsRead,
