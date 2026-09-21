@@ -109,13 +109,16 @@ for (const state of ['forecast-only', 'missing', 'stale', 'comparison-overlap', 
 
 
 test('selected dates and terminal scopes survive links, reload and back', async ({ page }) => {
+  // The selected date must match the fixture's actual service date; the
+  // summary reader now correctly rejects a response for another day.
+  const selectedDate = SUMMARY_FIXTURE.serviceDateKst;
   await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
   await page.route('**/api/live/predictions*', routeSummary({targetDate:'2026-09-01',run:null,coverage:null,records:[]}));
-  await page.goto('/ko?date=2026-09-01');
+  await page.goto(`/ko?date=${selectedDate}`);
   await page.locator('.personal-existing > summary').click();
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
-  await expect(page.locator('.demand-card-footer > a').first()).toHaveAttribute('href','/ko/myeongdong?date=2026-09-01');
-  await page.goto('/ko/airport?terminal=T1&date=2026-09-01');
+  await expect(page.locator('.demand-card-footer > a').first()).toHaveAttribute('href',`/ko/myeongdong?date=${selectedDate}`);
+  await page.goto(`/ko/airport?terminal=T1&date=${selectedDate}`);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
   await page.getByRole('tab',{name:'T2',exact:true}).click();
   await expect(page).toHaveURL(/terminal=T2/);
