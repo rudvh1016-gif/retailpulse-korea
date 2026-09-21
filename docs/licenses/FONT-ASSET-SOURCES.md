@@ -64,3 +64,17 @@ The KORETAIL Sans subset was refreshed from the SHA-256-verified full Pretendard
 WOFF2 with the same union policy and its existing renamed name table.
 Existing family names, weights and OFL licenses are retained. This adds missing
 new copy/holiday characters without introducing external font requests.
+
+## 2026-09-21 industry guide copy refresh
+
+The same checksum-verified upstream sources were used with FontTools 4.65.0
+and Brotli 1.2.0. Each subset retains the union of its existing cmap and all
+current app/lib `.ts`, `.tsx`, `.css`, `.mjs` and `.json` copy supported by the
+source font. The KORETAIL Sans renamed name table is preserved; Noto instances
+remain at weights 400 and 600. No family, CSS weight or font source changed.
+
+Verified cmap growth: KORETAIL Sans 1,502 → 1,508; SC at each weight
+2,159 → 2,223; JP at each weight 1,783 → 1,833. Every previously bundled
+code point remains. The new playbook corpus initially lacked 6 Korean,
+34 Chinese and 33 Japanese characters in its primary subset; after refresh
+it lacks none. Browser coverage includes every sector in four languages.
