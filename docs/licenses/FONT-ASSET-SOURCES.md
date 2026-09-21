@@ -72,6 +72,10 @@ and Brotli 1.2.0. Each subset retains the union of its existing cmap and all
 current app/lib `.ts`, `.tsx`, `.css`, `.mjs` and `.json` copy supported by the
 source font. The KORETAIL Sans renamed name table is preserved; Noto instances
 remain at weights 400 and 600. No family, CSS weight or font source changed.
+Layout features are limited to the feature tags already present in each
+original subset, avoiding unrelated alternate glyph expansion. Final sizes
+remain within the existing 300 KB Korean / 320 KB CJK per-face budgets:
+226,772 bytes (Korean), 277,860 / 281,668 (SC), 215,432 / 217,728 (JP).
 
 Verified cmap growth: KORETAIL Sans 1,502 → 1,508; SC at each weight
 2,159 → 2,223; JP at each weight 1,783 → 1,833. Every previously bundled
