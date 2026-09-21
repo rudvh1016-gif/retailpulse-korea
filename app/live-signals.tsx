@@ -1147,9 +1147,47 @@ export function DateNavigator({
   const summary = useLiveSummary(date);
   const [navigation, setNavigation] = useState(summary);
   if (summary && summary !== navigation) setNavigation(summary);
+  const [navigationClock, setNavigationClock] = useState<{
+    serverAt: number; receivedAt: number; serverDay: string; today: string;
+  } | null>(null);
+  const freshServerAt = summary && !summary.clientRefresh ? Date.parse(summary.generatedAt) : Number.NaN;
+  const freshServerDay = summary && !summary.clientRefresh ? summary.todayKst : undefined;
+  useEffect(() => {
+    if (!Number.isFinite(freshServerAt) || !freshServerDay) return;
+    const receivedAt = performance.now();
+    const timer = setTimeout(() => setNavigationClock(current => !current || freshServerAt > current.serverAt
+      ? { serverAt: freshServerAt, receivedAt, serverDay: freshServerDay, today: freshServerDay }
+      : current), 0);
+    return () => clearTimeout(timer);
+  }, [freshServerAt, freshServerDay]);
+  const serverAt = navigationClock?.serverAt;
+  const receivedAt = navigationClock?.receivedAt;
+  const serverDay = navigationClock?.serverDay;
+  useEffect(() => {
+    if (serverAt === undefined || receivedAt === undefined || !serverDay) return;
+    // Advance navigation from the last successful SERVER clock, not the
+    // device calendar. Failures and old cache entries never reset this anchor.
+    // This one midnight timer changes no payload and performs no request.
+    const estimatedNow = () => serverAt + Math.max(0, performance.now() - receivedAt);
+    let timer: ReturnType<typeof setTimeout>;
+    const update = () => {
+      clearTimeout(timer);
+      const now = estimatedNow();
+      const days = Math.floor((now + 9 * 3_600_000) / 86_400_000) - Math.floor((serverAt + 9 * 3_600_000) / 86_400_000);
+      const today = shiftDay(serverDay, days);
+      setNavigationClock(current => current?.serverAt === serverAt && current.today !== today ? { ...current, today } : current);
+      timer = setTimeout(update, Math.max(1, nextKstMidnight(now) - now));
+    };
+    const onVisible = () => { if (document.visibilityState === 'visible') update(); };
+    const now = estimatedNow();
+    timer = setTimeout(update, Math.max(1, nextKstMidnight(now) - now));
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { clearTimeout(timer); document.removeEventListener('visibilitychange', onVisible); };
+  }, [serverAt, receivedAt, serverDay]);
   const context = summary ?? navigation;
   if (!context?.todayKst) return null;
-  const today = context.todayKst;
+  const today = freshServerDay && (!navigationClock || freshServerAt > navigationClock.serverAt)
+    ? freshServerDay : navigationClock?.today ?? context.todayKst;
   const selected = date ?? today;
   const shortcuts: Array<[string, string]> = [
     [shiftDay(today, -1), dateNavText.yesterday[lang]],

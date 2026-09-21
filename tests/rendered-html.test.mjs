@@ -752,7 +752,7 @@ test("date navigation keeps KST shortcuts and offers month-bounded stored dates"
   assert.match(route, /pickerDays = datesBetween\(period.startDate, period.endDate\)/);
   // Shortcuts come from the server's today, never the device clock.
   assert.match(navigator, /const context = summary \?\? navigation/);
-  assert.match(navigator, /const today = context\.todayKst/);
+  assert.match(navigator, /navigationClock\?\.today \?\? context\.todayKst/);
   assert.doesNotMatch(signals, /new Date\(\)\.toISOString\(\)\.slice\(0, 10\)/);
   // The API scopes day-bound blocks to the requested service date.
   assert.match(route, /searchParams\.get\("date"\)/);

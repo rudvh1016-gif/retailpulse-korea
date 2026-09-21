@@ -19,7 +19,7 @@
     "app/globals.css": "5f6a80268f3d62d28d2671699b8bf04afc8fe9cf296d9f212570aa95a10c3812",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
     "app/layout.tsx": "5046b7a098cbea56b3c315af2033bbc3d846462584f2c27b97f8dc1bb4c49ec7",
-    "app/live-signals.tsx": "3094a77afcd4fc6f15b147fabc7368a96210095315572b4d6184e8d8251d083b",
+    "app/live-signals.tsx": "a7e3c86213c82272de88f36e80eec6d3cfed15b4e5f7e87cf01d1240e6955539",
     "app/not-found.tsx": "591f0a968f3b9fd14eeaca187604d4069269770a1071668e94e491224503a087",
     "app/operational-context.tsx": "d7973bd3a5d54c4ecf8fc1a7cd975bd3994cdc95975b54fa28db1d9690c36358",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",

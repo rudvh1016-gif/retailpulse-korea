@@ -133,6 +133,45 @@ for (const fixedDate of [false, true]) test(`KST midnight renews shortcuts and $
   await expect.poll(() => requests.includes('2026-09-23')).toBe(true);
 });
 
+for (const fixedDate of [false, true]) test(`KST midnight refresh failure still renews shortcuts for ${fixedDate ? 'a fixed target' : 'today'}`, async ({ page }) => {
+  // A wrong device calendar must not replace the last successful server day.
+  await page.clock.install({ time: new Date(fixedDate ? '2030-01-01T14:59:50Z' : '2026-09-21T14:59:50Z') });
+  let fail = false;
+  const requests: Array<string | null> = [];
+  await page.route('**/api/live/summary*', async route => {
+    const requested = new URL(route.request().url()).searchParams.get('date');
+    requests.push(requested);
+    if (fail) return route.fulfill({ status: 503 });
+    const date = requested ?? today;
+    const payload = responseFor(date, date.slice(0, 7));
+    payload.generatedAt = '2026-09-21T14:59:50Z';
+    await route.fulfill({ json: payload });
+  });
+  await page.goto('/ko/airport');
+  await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
+  const nav = page.locator('.date-nav');
+  if (fixedDate) {
+    await nav.getByRole('button', { name: '내일', exact: true }).click();
+    await expect(nav.locator('input[type="date"]')).toHaveValue('2026-09-22');
+  }
+  fail = true;
+  const beforeMidnight = requests.length;
+  await page.clock.fastForward(11_000);
+  await expect.poll(() => requests.length).toBe(beforeMidnight + 1);
+  await expect(nav.locator('input[type="date"]')).toHaveValue('2026-09-22');
+  await expect(nav.getByRole('button', { name: '오늘', exact: true })).toHaveClass(/active/);
+  if (fixedDate) await expect(page.getByTestId('summary-refresh-failed')).toBeVisible();
+  else await expect(page.locator('.airport-brief-total')).toHaveCount(0);
+  // Repeated failures must not reset the last server clock anchor or add a
+  // second request stream merely to keep the navigation date current.
+  await page.clock.fastForward(61_000);
+  await expect.poll(() => requests.length).toBe(beforeMidnight + 2);
+  await expect(nav.getByRole('button', { name: '오늘', exact: true })).toHaveClass(/active/);
+  await nav.getByRole('button', { name: '내일', exact: true }).click();
+  await expect.poll(() => requests.includes('2026-09-23')).toBe(true);
+  await expect(nav.locator('input[type="date"]')).toHaveValue('2026-09-23');
+});
+
 test('month request failure is an error, and arrivals use their own collection time', async ({ page }) => {
   await page.clock.setFixedTime(new Date(`${today}T03:00:00Z`));
   await page.route('**/api/live/summary*', async route => {
