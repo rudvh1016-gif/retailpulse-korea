@@ -19,7 +19,7 @@ function responseFor(date: string, month: string) {
   payload.generatedAt = `${today}T03:00:00Z`;
   payload.dayRelation = date < today ? 'PAST' : date > today ? 'FUTURE' : 'TODAY';
   Object.assign(payload.dateAvailability, {
-    month, startDate: `${month}-01`, endDate: `${month === '2026-07' ? '2026-08' : '2026-10'}-01`,
+    month, startDate: `${month}-01`, endDate: `${month}-${month === '2026-07' ? '31' : '30'}`,
     airportFlights: [oldDate, today].filter(d => d.startsWith(month)),
     airportPassengerForecast: [oldDate, today, '2026-09-22'].filter(d => d.startsWith(month)),
     airportDepartureSchedule: ['2026-09-22', futureDate].filter(d => d.startsWith(month)),
