@@ -129,6 +129,36 @@ export function decodeHtmlText(value: string): string {
     .replace(/&amp;/g, "&");
 }
 
+/**
+ * Text a crawler can read, with the tags, scripts and styles removed.
+ *
+ * The same extraction tests/rendered-html.test.mjs performs against the BUILD.
+ * Running it here as well is the point: that test proves the build renders
+ * body copy, and nothing proved the EDGE serves it. A stale Worker, a
+ * half-finished deploy, a rollback to a pre-2026-09-22 build or an exception
+ * path that falls back to the client shell would leave every URL answering
+ * 200 with a few hundred characters of navigation — and every other check in
+ * this file, robots through JSON-LD, would still pass.
+ */
+export function crawlableTextLength(html: string): number {
+  const body = html.slice(html.indexOf("<body"));
+  return body
+    .replace(/<script[\s\S]*?<\/script>/g, " ")
+    .replace(/<style[\s\S]*?<\/style>/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim().length;
+}
+
+/**
+ * Per locale, because Chinese says the same thing in roughly half the
+ * characters English needs and one global number would be unfair in both
+ * directions. Set well below the offline floors in
+ * tests/rendered-html.test.mjs: this is a "the edge is serving a shell"
+ * detector, and it must not fail on a copy edit that CI already accepted.
+ */
+const LIVE_TEXT_FLOOR: Record<SeoLocale, number> = { ko: 900, en: 1700, zh: 700, ja: 800 };
+
 const TIMEOUT_MS = 20_000;
 
 export interface Check {
@@ -274,6 +304,19 @@ async function checkRobots(context: Context): Promise<void> {
     missingApiRule.length === 0,
     missingApiRule.join(", ") || `${named.length} named groups all repeat Disallow: /api/`,
   );
+
+  // Checking only that named groups are well-formed would pass a robots.txt
+  // with no named groups at all — which is exactly what a rollback to a build
+  // from before this work produces. These are the agents this audience
+  // actually arrives through: Naver's crawler for the Korean readers, and the
+  // answer engines for everyone else.
+  const expected = ["Yeti", "OAI-SearchBot", "ClaudeBot", "PerplexityBot", "Googlebot", "bingbot"];
+  const lost = expected.filter((agent) => !named.some((entry) => entry.toLowerCase() === agent.toLowerCase()));
+  check(context,
+    "the crawlers this audience arrives through are named",
+    lost.length === 0,
+    lost.length ? `no longer named: ${lost.join(", ")}` : expected.join(", "),
+  );
 }
 
 /**
@@ -353,10 +396,14 @@ async function checkSitemap(context: Context): Promise<string[]> {
  */
 async function checkSitemapUrlsResolve(context: Context, urls: string[]): Promise<void> {
   const failures: string[] = [];
+  const thin: string[] = [];
   for (const url of urls) {
     try {
       const response = await context.fetch(url, { redirect: "manual", signal: AbortSignal.timeout(TIMEOUT_MS) });
-      if (response.status !== 200) failures.push(`${url} -> ${response.status}`);
+      if (response.status !== 200) { failures.push(`${url} -> ${response.status}`); continue; }
+      const locale = new URL(url).pathname.split("/")[1] as SeoLocale;
+      const length = crawlableTextLength(await response.text());
+      if (length < LIVE_TEXT_FLOOR[locale]) thin.push(`${url} (${length} chars, floor ${LIVE_TEXT_FLOOR[locale]})`);
     } catch (error) {
       failures.push(`${url} -> ${(error as Error).message}`);
     }
@@ -365,6 +412,11 @@ async function checkSitemapUrlsResolve(context: Context, urls: string[]): Promis
     "every sitemap URL answers 200 without redirecting",
     failures.length === 0,
     failures.slice(0, 5).join("; ") || `${urls.length} URLs all 200`,
+  );
+  check(context,
+    "every page serves its content in the first HTML response",
+    thin.length === 0,
+    thin.slice(0, 5).join("; ") || `${urls.length} URLs all above the floor`,
   );
 }
 

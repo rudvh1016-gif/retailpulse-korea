@@ -1035,7 +1035,16 @@ test("every page serves real text before any JavaScript runs", async () => {
  * answer really is in the HTML a crawler receives, not only in the JSON.
  */
 test("the FAQ markup quotes text the page actually displays", async () => {
-  for (const path of ["/ko", "/ko/airport", "/en/business", "/ja/myeongdong"]) {
+  // Every page, not a sample: a route whose component forgets <PageBrief> or
+  // forgets faqStructuredData is invisible to a four-page spot check, and the
+  // four pages sampled here were exactly the ones known to be correct.
+  const { seoLocales, standaloneSeoSlugs, tourismDeskAreas, seoPath } = await import("../app/seo-config.ts");
+  const everyPath = seoLocales.flatMap((locale) => [
+    seoPath(locale),
+    ...standaloneSeoSlugs.map((slug) => seoPath(locale, slug)),
+    ...tourismDeskAreas.map((area) => seoPath(locale, "tourism-desk", area)),
+  ]);
+  for (const path of everyPath) {
     const locale = path.split("/")[1];
     const response = await renderPath(path, locale === "zh" ? "zh-CN" : locale);
     const html = await response.text();
@@ -1075,9 +1084,14 @@ test("the FAQ markup quotes text the page actually displays", async () => {
  * page to its publisher. These assertions hold the joined graph in place.
  */
 test("every page points back at one publisher and one website by @id", async () => {
-  const { siteOrigin } = await import("../app/seo-config.ts");
+  const { siteOrigin, seoLocales, standaloneSeoSlugs, tourismDeskAreas, seoPath } = await import("../app/seo-config.ts");
+  const everyPath = seoLocales.flatMap((locale) => [
+    seoPath(locale),
+    ...standaloneSeoSlugs.map((slug) => seoPath(locale, slug)),
+    ...tourismDeskAreas.map((area) => seoPath(locale, "tourism-desk", area)),
+  ]);
 
-  for (const path of ["/ko", "/en/airport", "/zh/more", "/ja/tourism-desk/hongdae"]) {
+  for (const path of everyPath) {
     const locale = path.split("/")[1];
     const response = await renderPath(path, locale === "zh" ? "zh-CN" : locale);
     const html = await response.text();

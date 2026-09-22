@@ -64,7 +64,10 @@ function pageHtml(locale, slug, overrides = {}) {
     `<link rel="alternate" hreflang="x-default" href="${ORIGIN}${seoPath("en", slug)}"/>`,
     `<meta property="og:image" content="/og-image.png"/>`,
     `<script type="application/ld+json">${jsonLd}</script>`,
-    `</head><body>KORETAIL</body></html>`,
+    // Long enough to clear the live body-text floor: the fixture must not fail
+    // a check that exists to catch a shell, and the checks that DO exercise
+    // that floor pass `thinBody` explicitly below.
+    `</head><body>${overrides.thinBody ? "KORETAIL" : "KORETAIL ".repeat(400)}</body></html>`,
   ].join("");
 }
 
@@ -75,7 +78,7 @@ function pageHtml(locale, slug, overrides = {}) {
  * fixture exists so the CHECKER can be driven with inputs a live site would
  * never conveniently produce.
  */
-function robotsTxt(groups = ["*", "GPTBot", "Yeti"]) {
+function robotsTxt(groups = ["*", "Googlebot", "bingbot", "OAI-SearchBot", "ClaudeBot", "PerplexityBot", "GPTBot", "Yeti"]) {
   const block = (agent) => `User-Agent: ${agent}\nAllow: /\nDisallow: /api/\n`;
   return `${groups.map(block).join("\n")}\nSitemap: ${ORIGIN}/sitemap.xml\nHost: ${ORIGIN}\n`;
 }
@@ -501,4 +504,47 @@ test("a missing or empty llms.txt is caught", async () => {
 
   const linkless = await run({ llms: "# KORETAIL\n\n> Retail Demand Signals for Korea.\n\nIt is not total sales.\n" });
   assert.ok(linkless.failed.some((item) => /llms\.txt links/.test(item.name)), "an llms.txt with no page links passed");
+});
+
+/**
+ * The edge can serve a shell while every other check passes.
+ *
+ * tests/rendered-html.test.mjs proves the BUILD renders body copy. Nothing
+ * proved the live origin serves it. A stale Worker, a half-finished deploy or
+ * a rollback to a build from before 2026-09-22 would leave all 52 URLs
+ * answering 200 with a few hundred characters of navigation — robots,
+ * sitemap, canonical, hreflang, description and JSON-LD would all still pass,
+ * and the site would be uncitable by every crawler that does not run
+ * JavaScript. This is the check that notices.
+ */
+test("a live origin serving the old empty shell is caught", async () => {
+  const healthy = await run();
+  assert.equal(healthy.failed.filter((item) => /first HTML response/.test(item.name)).length, 0,
+    `a site with real body copy failed: ${JSON.stringify(healthy.failed)}`);
+
+  const shell = await run({ pageOverrides: () => ({ thinBody: true }) });
+  assert.ok(shell.failed.some((item) => /first HTML response/.test(item.name)),
+    "every page served a bare shell and the checker reported the site as findable");
+});
+
+/**
+ * Verifying only that named groups are well-formed passes a robots.txt with
+ * no named groups at all — which is what a rollback produces. Naver's Yeti in
+ * particular decides whether the Korean half of this audience can find the
+ * site at all.
+ */
+test("losing the named crawler groups is caught", async () => {
+  const bare = await run({
+    robots: `User-Agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${ORIGIN}/sitemap.xml\nHost: ${ORIGIN}\n`,
+  });
+  assert.ok(bare.failed.some((item) => /crawlers this audience arrives through/.test(item.name)),
+    "a robots.txt naming no crawler passed");
+
+  const partial = await run({
+    robots: ["*", "Googlebot", "bingbot", "OAI-SearchBot", "ClaudeBot", "PerplexityBot"]
+      .map((agent) => `User-Agent: ${agent}\nAllow: /\nDisallow: /api/\n`).join("\n")
+      + `\nSitemap: ${ORIGIN}/sitemap.xml\nHost: ${ORIGIN}\n`,
+  });
+  assert.ok(partial.failed.some((item) => /crawlers this audience arrives through/.test(item.name)),
+    "dropping Yeti — the crawler the Korean audience arrives through — passed");
 });
