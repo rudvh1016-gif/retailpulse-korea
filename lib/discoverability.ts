@@ -64,6 +64,34 @@ export function snippetWidth(text: string): number {
 export const MINIMUM_SNIPPET_WIDTH = 80;
 
 /**
+ * Above this, the snippet is cut mid-sentence instead.
+ *
+ * Two rules that look contradictory turn out to be the same rule. Naver's
+ * markup guide asks for a description of at most 80 characters, and Naver is
+ * where the Korean half of this product's readers actually search. Google
+ * truncates by PIXELS at roughly 160 Latin characters. A Korean character is
+ * about twice as wide, so 80 Korean characters and 160 Latin ones occupy the
+ * same width — which is exactly what `snippetWidth` counts. One ceiling in
+ * half-width units therefore satisfies both, and `MINIMUM_SNIPPET_WIDTH`
+ * below it is not in conflict with either: it is the floor of the same band.
+ *
+ * Measured on 2026-09-22 before this constant existed: three Korean pages
+ * (`/ko` at 99 characters, `/ko/forecast` 91, `/ko/predictions` 88) were over
+ * Naver's cap, and seven pages across locales were over Google's. All 52 now
+ * sit between 84 and 160.
+ */
+export const MAXIMUM_SNIPPET_WIDTH = 160;
+
+/**
+ * Naver's URL inspection counts CHARACTERS, not width, so the Korean pages
+ * carry the literal cap as well as the width one. For Korean the two coincide
+ * at exactly this point, which is why the band above works — but a future
+ * description written in mixed Hangul and Latin could satisfy one and not the
+ * other, and it is the Korean reader who would see the truncation.
+ */
+export const NAVER_DESCRIPTION_MAX_CHARS = 80;
+
+/**
  * The `lang` a document must declare, which is NOT its hreflang tag.
  *
  * Caught by this check's own first run against Production: it expected
@@ -167,6 +195,38 @@ function attribute(html: string, pattern: RegExp): string | null {
  * it on the production origin is the one failure in this file that costs
  * months, so it is checked first and stated plainly.
  */
+/**
+ * The rules that actually govern an ordinary crawler.
+ *
+ * RFC 9309 §2.2.1: a crawler that finds a group naming it obeys ONLY that
+ * group and ignores `*` entirely. That makes a flat scan of the whole file
+ * wrong in both directions once named groups exist, and `app/robots.ts` now
+ * emits twenty of them:
+ *
+ *  - a `Disallow: /` under a named agent is a deliberate, scoped block, not a
+ *    de-indexing — reporting it as one would cry wolf on the single alarm in
+ *    this file that must never be ignored;
+ *  - an `Allow: /` under a named agent says nothing about whether the site as
+ *    a whole is crawlable, so counting it would let a named group stand in for
+ *    the `*` group and hide the staging regression this check exists to catch.
+ *
+ * Only the `*` group can answer the question being asked, so only the `*`
+ * group is read.
+ */
+function wildcardGroup(lines: string[]): string[] {
+  const rules: string[] = [];
+  let inWildcard = false;
+  for (const line of lines) {
+    if (!line || line.startsWith("#")) continue;
+    const agent = /^user-agent:\s*(.+)$/i.exec(line);
+    // Consecutive User-agent lines share one group, so `*` stays selected
+    // until a rule line has been seen for it.
+    if (agent) { inWildcard = agent[1].trim() === "*" || (inWildcard && rules.length === 0); continue; }
+    if (inWildcard) rules.push(line);
+  }
+  return rules;
+}
+
 async function checkRobots(context: Context): Promise<void> {
   const { origin } = context;
   const { response, body } = await get(context, `${origin}/robots.txt`);
@@ -174,7 +234,8 @@ async function checkRobots(context: Context): Promise<void> {
   note(context, { robotsTxt: body.trim().slice(0, 400) });
 
   const lines = body.split(/\r?\n/).map((line) => line.trim());
-  const blanketDisallow = lines.some((line) => /^disallow:\s*\/\s*$/i.test(line));
+  const wildcard = wildcardGroup(lines);
+  const blanketDisallow = wildcard.some((line) => /^disallow:\s*\/\s*$/i.test(line));
   check(context,
     "crawling is allowed (no blanket Disallow: /)",
     !blanketDisallow,
@@ -182,8 +243,8 @@ async function checkRobots(context: Context): Promise<void> {
   );
   check(context,
     "robots.txt allows the site root",
-    lines.some((line) => /^allow:\s*\//i.test(line)),
-    "expected an Allow: / rule",
+    wildcard.some((line) => /^allow:\s*\//i.test(line)),
+    "expected an Allow: / rule in the * group",
   );
   const declaredSitemap = lines.find((line) => /^sitemap:/i.test(line))?.slice("sitemap:".length).trim() ?? "";
   check(context,
@@ -193,9 +254,49 @@ async function checkRobots(context: Context): Promise<void> {
   );
   check(context,
     "the internal API is kept out of the index",
-    lines.some((line) => /^disallow:\s*\/api\//i.test(line)),
-    "expected Disallow: /api/",
+    wildcard.some((line) => /^disallow:\s*\/api\//i.test(line)),
+    "expected Disallow: /api/ in the * group",
   );
+
+  // Every named group must repeat the /api/ rule. A crawler that matches its
+  // own group stops reading `*`, so a group written without it would be an
+  // invitation to the D1-backed endpoints for exactly the agents we named.
+  const groups = [...body.matchAll(/^user-agent:\s*(.+)$/gim)].map((match) => match[1].trim());
+  const named = groups.filter((agent) => agent !== "*");
+  const missingApiRule = named.filter((agent) => {
+    const at = lines.findIndex((line) => new RegExp(`^user-agent:\\s*${agent}$`, "i").test(line));
+    const until = lines.slice(at + 1).findIndex((line) => /^user-agent:/i.test(line));
+    const block = lines.slice(at + 1, until === -1 ? undefined : at + 1 + until);
+    return !block.some((line) => /^disallow:\s*\/api\//i.test(line));
+  });
+  check(context,
+    "every named crawler group also keeps the API out",
+    missingApiRule.length === 0,
+    missingApiRule.join(", ") || `${named.length} named groups all repeat Disallow: /api/`,
+  );
+}
+
+/**
+ * `/llms.txt` is generated at build time into the static asset directory, so
+ * a Worker that answers HTML correctly can still be serving no llms.txt at
+ * all — a broken build step would be invisible from every other check here.
+ *
+ * Reported honestly: this file is optionality, not a traffic lever. Google
+ * states Search ignores it, and no major provider has documented consuming a
+ * third-party one. It costs nothing, so it ships; it earns no claim.
+ */
+async function checkLlmsTxt(context: Context): Promise<void> {
+  const { origin } = context;
+  const { response, body } = await get(context, `${origin}/llms.txt`);
+  if (!check(context, "llms.txt is served", response.status === 200, `status ${response.status}`)) return;
+  check(context, "llms.txt names the brand as its H1", /^#\s*KORETAIL/m.test(body), body.slice(0, 40));
+  check(context, "llms.txt carries the one-line summary", /^>\s*\S/m.test(body), "expected a blockquote descriptor");
+  check(context, "llms.txt links the pages it describes",
+    (body.match(/^- \[.+\]\(https:\/\//gm) ?? []).length >= 20,
+    `${(body.match(/^- \[.+\]\(https:\/\//gm) ?? []).length} page links`);
+  check(context, "llms.txt states the truth boundaries",
+    /not .*(sales|purchase|queue)/i.test(body),
+    "a link list with no boundaries is worse than no file at all");
 }
 
 /**
@@ -323,6 +424,20 @@ async function checkPageIdentity(context: Context, locale: SeoLocale, slug?: Seo
     `width ${snippetWidth(description)} (${description.length} chars) — a snippet this thin gets replaced by text the search engine picks itself`,
   );
   check(context,
+    `${label} description is short enough to survive truncation`,
+    snippetWidth(description) <= MAXIMUM_SNIPPET_WIDTH,
+    `width ${snippetWidth(description)} (${description.length} chars) — over this it is cut mid-sentence in Google and in Naver`,
+  );
+  // Korean is the locale Naver ranks this product for, and Naver counts
+  // characters rather than width when it inspects a URL.
+  if (locale === "ko") {
+    check(context,
+      `${label} description fits Naver's character budget`,
+      description.length <= NAVER_DESCRIPTION_MAX_CHARS,
+      `${description.length} characters, Naver allows ${NAVER_DESCRIPTION_MAX_CHARS}`,
+    );
+  }
+  check(context,
     `${label} serves the metadata this build declares`,
     title === pageTitle(locale, slug) && description === pageDescription(locale, slug),
     "the edge is serving metadata from a different build than this checkout",
@@ -382,6 +497,7 @@ export async function runDiscoverabilityChecks(options: { origin: string; fetch?
   };
 
   await checkRobots(context);
+  await checkLlmsTxt(context);
   const urls = await checkSitemap(context);
   if (urls.length > 0) await checkSitemapUrlsResolve(context, urls);
   for (const locale of seoLocales) await checkPageIdentity(context, locale);

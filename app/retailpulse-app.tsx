@@ -254,6 +254,14 @@ type RetailPulseProps = {
    * under two URLs.
    */
   initialScope?: "home" | "area";
+  /**
+   * The server-rendered brief for this route (app/page-brief.tsx), handed in
+   * as a slot rather than imported. This module is "use client", so anything
+   * it imports ships to the browser; a slot keeps the brief on the server,
+   * out of the bundle, while still placing it inside <main> where it belongs
+   * for a reader and for a crawler reading the document in order.
+   */
+  brief?: React.ReactNode;
 };
 
 const areaHeadline: Record<Lang, (name: string) => string> = {
@@ -274,7 +282,7 @@ function routeFor(lang: Lang, view: View, area: AreaId) {
   return `${base}/${view}`;
 }
 
-export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false, initialScope = "home" }: RetailPulseProps = {}) {
+export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false, initialScope = "home", brief }: RetailPulseProps = {}) {
   const [lang, setLang] = useState<Lang>(initialLang);
   const [view, setView] = useState<View>(initialView);
   const [homeVisible, setHomeVisible] = useState(initialScope === "home" && initialView === "today");
@@ -503,6 +511,8 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           industry={industry}
           onAbout={() => navigate("about")}
         />}
+
+        {brief}
 
         <footer className="site-footer">
           <p>{t.truth}</p><p>{t.kst}</p>

@@ -35,3 +35,9 @@
   Cache-Control: public, max-age=604800
 /manifest.webmanifest
   Cache-Control: public, max-age=86400
+
+# Generated at build time from app/seo-config.ts and lib/page-brief.ts into
+# dist/client, so it is a static asset and never costs a Worker invocation.
+# A day is right for a file whose content only changes when a page is added.
+/llms.txt
+  Cache-Control: public, max-age=86400

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { preload } from "react-dom";
 import { notFound } from "next/navigation";
 import RetailPulseApp from "../../retailpulse-app";
+import PageBrief from "../../page-brief";
+import { faqStructuredData } from "../../../lib/page-brief";
 import { buildMetadata, pageStructuredData, seoLocales, standaloneSeoSlugs, type SeoLocale, type SeoSlug } from "../../seo-config";
 
 /**
@@ -36,7 +38,7 @@ export default async function LocalePage({ params }: { params: Promise<{ locale:
   const area = isArea ? slug as typeof areaSlugs[number] : "myeongdong";
   preloadLiveSummary();
   return <>
-    <RetailPulseApp initialLang={locale as SeoLocale} initialView={view} initialArea={area} initialRoute initialScope={isArea ? "area" : "home"} />
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale, slug as SeoSlug)) }} />
+    <RetailPulseApp initialLang={locale as SeoLocale} initialView={view} initialArea={area} initialRoute initialScope={isArea ? "area" : "home"} brief={<PageBrief locale={locale as SeoLocale} slug={slug as SeoSlug} area={area} />} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([...pageStructuredData(locale as SeoLocale, slug as SeoSlug), faqStructuredData(locale as SeoLocale, slug as SeoSlug, area)].filter(Boolean)) }} />
   </>;
 }

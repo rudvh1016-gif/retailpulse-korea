@@ -938,3 +938,201 @@ test("fonts are cached but never immutable, and hashed assets are", async () => 
   assert.ok(shipped.every((name) => name.endsWith(".woff2")),
     `public/fonts holds a file the /fonts/* rule was not written for: ${shipped.join(", ")}`);
 });
+
+/**
+ * Can a crawler that never runs JavaScript read this site?
+ *
+ * Measured against the built Worker on 2026-09-22, before `app/page-brief.tsx`
+ * existed: `/ko` served 318 characters of body text, `/zh` 263,
+ * `/ko/myeongdong` 350. Twenty-two of the forty indexable pages sat under 600
+ * characters, and twenty-eight of them rendered a localized "로딩 중" where
+ * their content belongs, because everything on those screens arrives from a
+ * client fetch of /api/live/summary after hydration.
+ *
+ * That is the state this test exists to prevent returning to. It renders the
+ * real Worker — not the source, not a fixture — strips the tags, and requires
+ * every page in every locale to carry enough text to be worth indexing and
+ * worth quoting. It is deliberately a floor and not a target: Google has
+ * confirmed word count is not a ranking factor, and the number here is only
+ * high enough to catch a page that has gone back to being a spinner.
+ */
+test("every page serves real text before any JavaScript runs", async () => {
+  const { seoLocales, standaloneSeoSlugs, tourismDeskAreas, seoPath } = await import("../app/seo-config.ts");
+
+  const paths = seoLocales.flatMap((locale) => [
+    seoPath(locale),
+    ...standaloneSeoSlugs.map((slug) => seoPath(locale, slug)),
+    ...tourismDeskAreas.map((area) => seoPath(locale, "tourism-desk", area)),
+  ]);
+
+  const thin = [];
+  for (const path of paths) {
+    const locale = path.split("/")[1];
+    const response = await renderPath(path, locale === "zh" ? "zh-CN" : locale);
+    assert.equal(response.status, 200, path);
+    const html = await response.text();
+
+    const body = html.slice(html.indexOf("<body"));
+    const text = body
+      .replace(/<script[\s\S]*?<\/script>/g, " ")
+      .replace(/<style[\s\S]*?<\/style>/g, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (text.length < 900) thin.push(`${path} (${text.length} chars)`);
+
+    // A heading outline, not one h1 and a wall of text: the brief contributes
+    // an h2 and question-form h3s, which is what gives a page structure an
+    // extractive reader can follow.
+    assert.ok(/<h2[\s>]/.test(html), `${path} renders no h2 at all`);
+    assert.ok(/<h3[\s>]/.test(html), `${path} renders no h3 at all`);
+    assert.ok(/class="page-brief"/.test(html), `${path} does not render the server-side brief`);
+  }
+
+  assert.deepEqual(thin, [],
+    "these pages are back to serving a shell: an AI crawler that does not execute JavaScript, which is most of them, would read nothing worth citing");
+});
+
+/**
+ * The visible questions and the FAQPage markup must be the same sentences.
+ *
+ * Marking up a Q&A the page does not display is the textbook cause of a
+ * structured-data manual action. tests/page-brief.test.mjs proves the two
+ * come from one object; this proves the object survives the render — that the
+ * answer really is in the HTML a crawler receives, not only in the JSON.
+ */
+test("the FAQ markup quotes text the page actually displays", async () => {
+  for (const path of ["/ko", "/ko/airport", "/en/business", "/ja/myeongdong"]) {
+    const locale = path.split("/")[1];
+    const response = await renderPath(path, locale === "zh" ? "zh-CN" : locale);
+    const html = await response.text();
+
+    const blocks = [...html.matchAll(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi)]
+      .flatMap((match) => { const parsed = JSON.parse(match[1]); return Array.isArray(parsed) ? parsed : [parsed]; });
+    const faq = blocks.find((block) => block["@type"] === "FAQPage");
+    assert.ok(faq, `${path} emits no FAQPage`);
+    assert.ok(faq.mainEntity.length >= 2, `${path} marks up ${faq.mainEntity.length} questions`);
+
+    const visible = html
+      .replace(/<script[\s\S]*?<\/script>/g, " ")
+      .replace(/<[^>]+>/g, " ")
+      // React serializes an apostrophe as &#x27;, so numeric references have to
+      // be decoded too — otherwise "today's sales?" never matches its markup.
+      .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+      .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+      .replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+      .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")
+      .replace(/\s+/g, " ");
+    for (const entry of faq.mainEntity) {
+      assert.ok(visible.includes(entry.name.replace(/\s+/g, " ")),
+        `${path} marks up a question the reader cannot see: ${entry.name}`);
+      assert.ok(visible.includes(entry.acceptedAnswer.text.replace(/\s+/g, " ")),
+        `${path} marks up an answer the reader cannot see: ${entry.acceptedAnswer.text.slice(0, 60)}…`);
+    }
+  }
+});
+
+/**
+ * One entity, named the same way everywhere.
+ *
+ * An answer engine resolves a source to an entity before deciding whether to
+ * cite it. Until 2026-09-22 this site emitted two unconnected descriptions of
+ * itself — an anonymous WebSite/WebApplication node in the layout, and a
+ * second inline `WebSite` inside every page's `isPartOf` — so nothing tied a
+ * page to its publisher. These assertions hold the joined graph in place.
+ */
+test("every page points back at one publisher and one website by @id", async () => {
+  const { siteOrigin } = await import("../app/seo-config.ts");
+
+  for (const path of ["/ko", "/en/airport", "/zh/more", "/ja/tourism-desk/hongdae"]) {
+    const locale = path.split("/")[1];
+    const response = await renderPath(path, locale === "zh" ? "zh-CN" : locale);
+    const html = await response.text();
+    const blocks = [...html.matchAll(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi)]
+      .flatMap((match) => { const parsed = JSON.parse(match[1]); return Array.isArray(parsed) ? parsed : [parsed]; });
+
+    const graph = blocks.find((block) => Array.isArray(block["@graph"]))?.["@graph"] ?? [];
+    const organization = graph.find((node) => node["@type"] === "Organization");
+    const website = graph.find((node) => Array.isArray(node["@type"]) && node["@type"].includes("WebSite"));
+    assert.ok(organization, `${path} emits no Organization`);
+    assert.ok(website, `${path} emits no WebSite`);
+    assert.equal(organization["@id"], `${siteOrigin}/#organization`);
+    assert.equal(website["@id"], `${siteOrigin}/#website`);
+    assert.equal(website.publisher["@id"], organization["@id"], "the website must name its publisher");
+
+    // Nothing the owner cannot stand behind: no invented profile, address or
+    // phone number padding out the Organization to look more complete.
+    for (const invented of ["sameAs", "address", "telephone", "email", "foundingDate"]) {
+      assert.equal(organization[invented], undefined,
+        `Organization carries ${invented}, which KORETAIL has no verified value for`);
+    }
+
+    const page = blocks.find((block) => block["@type"] === "WebPage");
+    assert.ok(page, `${path} emits no WebPage`);
+    assert.equal(page.isPartOf["@id"], website["@id"], `${path} is not linked to the site entity`);
+    assert.equal(page.publisher["@id"], organization["@id"], `${path} names no publisher`);
+  }
+});
+
+/**
+ * There is no AI-specific indexing opt-in. Google states that appearance in
+ * AI Overviews and AI Mode is governed by the ordinary preview directives, so
+ * `max-snippet:-1` is the one tag that actually widens how much of a page a
+ * generative surface may quote. Before 2026-09-22 the rendered googlebot meta
+ * stopped at `max-image-preview:large`, leaving the text snippet capped.
+ */
+test("the preview directives let a generative surface quote the page", async () => {
+  const response = await renderPath("/ko");
+  const html = await response.text();
+  const googlebot = /<meta[^>]+name="googlebot"[^>]+content="([^"]+)"/i.exec(html)?.[1] ?? "";
+  assert.match(googlebot, /max-snippet:-1/, `googlebot meta is "${googlebot}"`);
+  assert.match(googlebot, /max-image-preview:large/);
+  assert.match(googlebot, /index/);
+});
+
+/**
+ * The robots.txt the Worker actually serves, not the source that produces it.
+ *
+ * `app/robots.ts` names twenty-two AI and Korean crawlers explicitly. That is
+ * only safe because every group repeats `Disallow: /api/`: under RFC 9309
+ * §2.2.1 a crawler that finds a group naming it obeys that group and stops
+ * reading `*` entirely, so a group written without the rule would be a
+ * standing invitation to the D1-backed endpoints for exactly the agents the
+ * file went out of its way to name. The groups are built from one shared
+ * shape so the rule cannot be dropped by hand; this proves the built output.
+ */
+test("every named crawler group keeps the API closed", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("test", `${process.pid}-robots`);
+  const { default: worker } = await import(workerUrl.href);
+  const response = await worker.fetch(
+    new Request("http://localhost/robots.txt"),
+    { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(response.status, 200);
+  const body = await response.text();
+
+  const lines = body.split(/\r?\n/).map((line) => line.trim());
+  const agents = lines.filter((line) => /^user-agent:/i.test(line)).map((line) => line.split(":")[1].trim());
+  assert.ok(agents.includes("*"), "the default group is missing");
+  assert.ok(agents.length >= 20, `only ${agents.length} groups — the named crawlers are gone`);
+
+  for (const [index, line] of lines.entries()) {
+    if (!/^user-agent:/i.test(line)) continue;
+    const next = lines.slice(index + 1).findIndex((entry) => /^user-agent:/i.test(entry));
+    const block = lines.slice(index + 1, next === -1 ? undefined : index + 1 + next);
+    const agent = line.split(":")[1].trim();
+    assert.ok(block.some((entry) => /^disallow:\s*\/api\//i.test(entry)),
+      `the ${agent} group does not close /api/, so that crawler may reach the D1-backed endpoints`);
+    assert.ok(block.some((entry) => /^allow:\s*\/$/i.test(entry)), `the ${agent} group does not allow the site`);
+    assert.ok(!block.some((entry) => /^disallow:\s*\/$/i.test(entry)),
+      `the ${agent} group blocks the whole site — this build allows every named crawler deliberately`);
+  }
+
+  // The crawlers that decide whether this product is reachable at all:
+  // Naver for the Korean readers, and the answer engines for the rest.
+  for (const required of ["Yeti", "OAI-SearchBot", "ClaudeBot", "PerplexityBot", "Googlebot", "bingbot"]) {
+    assert.ok(agents.includes(required), `${required} is no longer named`);
+  }
+});

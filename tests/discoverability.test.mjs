@@ -68,8 +68,32 @@ function pageHtml(locale, slug, overrides = {}) {
   ].join("");
 }
 
-function robotsTxt() {
-  return `User-Agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${ORIGIN}/sitemap.xml\nHost: ${ORIGIN}\n`;
+/**
+ * Shaped like what app/robots.ts actually answers: the `*` group followed by
+ * named crawler groups, each repeating the /api/ rule. The real file is
+ * asserted against the built Worker in tests/rendered-html.test.mjs; this
+ * fixture exists so the CHECKER can be driven with inputs a live site would
+ * never conveniently produce.
+ */
+function robotsTxt(groups = ["*", "GPTBot", "Yeti"]) {
+  const block = (agent) => `User-Agent: ${agent}\nAllow: /\nDisallow: /api/\n`;
+  return `${groups.map(block).join("\n")}\nSitemap: ${ORIGIN}/sitemap.xml\nHost: ${ORIGIN}\n`;
+}
+
+/** llms.txt as scripts/build-llms-txt.mjs writes it, trimmed to what is checked. */
+function llmsTxt() {
+  return [
+    "# KORETAIL",
+    "",
+    "> Retail Demand Signals for Korea.",
+    "",
+    "Card activity is DOMESTIC card activity. It is not spending by foreign visitors and it is not total sales.",
+    "",
+    "## Pages",
+    "",
+    ...indexablePaths().map((path) => `- [Page](${ORIGIN}${path}): description`),
+    "",
+  ].join("\n");
 }
 
 function sitemapXml(paths, { lastmod = "2026-09-15T00:00:00.000Z", withAlternates = true } = {}) {
@@ -92,6 +116,7 @@ function healthySite(faults = {}) {
       Promise.resolve(new Response(body, { status, headers }));
 
     if (pathname === "/robots.txt") return reply(faults.robots ?? robotsTxt(), 200, { "content-type": "text/plain" });
+    if (pathname === "/llms.txt") return reply(faults.llms ?? llmsTxt(), 200, { "content-type": "text/plain" });
     if (pathname === "/sitemap.xml") {
       return reply(faults.sitemap ?? sitemapXml(paths, faults.sitemapOptions), 200, { "content-type": "application/xml" });
     }
@@ -369,4 +394,111 @@ test("a real ampersand in served metadata is not mistaken for a stale build", as
   assert.equal(report.ok, true, `unexpected failures: ${failing(report).join(", ")}`);
   const enTitle = report.notes.find((note) => note.page === "/en")?.title;
   assert.equal(enTitle, pageTitle("en"));
+});
+
+/**
+ * Every description has to survive two different truncations.
+ *
+ * Naver's markup guide caps a description at 80 characters and Naver is where
+ * the Korean half of this product's readers search; Google truncates by pixel
+ * width at roughly 160 Latin characters. Because a Korean character is about
+ * twice as wide, those are the same budget expressed two ways, and
+ * `snippetWidth` is the comparison that treats the four locales fairly.
+ *
+ * Measured on 2026-09-22 before the band existed: `/ko` carried a 99-character
+ * description, `/ko/forecast` 91 and `/ko/predictions` 88 — all cut short in
+ * Naver — and seven descriptions across locales were over Google's budget.
+ *
+ * This runs against app/seo-config.ts rather than the live site, so a
+ * description that would be truncated fails in CI, before it ships, instead of
+ * being discovered in a search result weeks later.
+ */
+test("every description fits the band both search engines truncate at", async () => {
+  const { snippetWidth, MINIMUM_SNIPPET_WIDTH, MAXIMUM_SNIPPET_WIDTH, NAVER_DESCRIPTION_MAX_CHARS } =
+    await import("../lib/discoverability.ts");
+
+  const pages = [
+    ...seoLocales.flatMap((locale) => [
+      { locale, slug: undefined, area: undefined },
+      ...standaloneSeoSlugs.map((slug) => ({ locale, slug, area: undefined })),
+    ]),
+    ...seoLocales.flatMap((locale) => tourismDeskAreas.map((area) => ({ locale, slug: "tourism-desk", area }))),
+  ];
+
+  for (const { locale, slug, area } of pages) {
+    const label = seoPath(locale, slug, area ?? "myeongdong");
+    const description = pageDescription(locale, slug, area ?? "myeongdong");
+    const width = snippetWidth(description);
+
+    assert.ok(width >= MINIMUM_SNIPPET_WIDTH,
+      `${label} description is ${width} wide; below ${MINIMUM_SNIPPET_WIDTH} a search engine writes its own snippet instead`);
+    assert.ok(width <= MAXIMUM_SNIPPET_WIDTH,
+      `${label} description is ${width} wide (${description.length} chars); over ${MAXIMUM_SNIPPET_WIDTH} it is cut mid-sentence`);
+    if (locale === "ko") {
+      assert.ok(description.length <= NAVER_DESCRIPTION_MAX_CHARS,
+        `${label} description is ${description.length} characters; Naver's URL inspection allows ${NAVER_DESCRIPTION_MAX_CHARS}`);
+    }
+  }
+});
+
+/**
+ * A named crawler group is not a de-indexing, and it is not a substitute for
+ * the `*` group either.
+ *
+ * `app/robots.ts` now emits twenty-three groups. Under RFC 9309 §2.2.1 a
+ * crawler that finds a group naming it obeys that group and ignores `*`
+ * entirely, so the checker has to read the `*` group and only the `*` group.
+ * Before that scoping existed the scan was flat, which would have failed in
+ * both directions: a scoped `Disallow: /` would have raised the de-indexing
+ * alarm this file exists to make trustworthy, and a named `Allow: /` would
+ * have answered for the `*` group and hidden a real staging regression.
+ */
+test("robots checks read the * group, not whichever line happens to match", async () => {
+  // A named agent blocked outright must not read as the site being de-indexed.
+  const scopedBlock = [
+    "User-Agent: *", "Allow: /", "Disallow: /api/", "",
+    "User-Agent: SomeAggressiveBot", "Disallow: /", "",
+    `Sitemap: ${ORIGIN}/sitemap.xml`, `Host: ${ORIGIN}`, "",
+  ].join("\n");
+  const scoped = await run({ robots: scopedBlock });
+  assert.equal(scoped.failed.filter((item) => /blanket Disallow/.test(item.name)).length, 0,
+    "a scoped block on one crawler was reported as the site being de-indexed");
+
+  // The real thing still has to fail: `*` blocked is the staging regression.
+  const staging = await run({
+    robots: [
+      "User-Agent: *", "Disallow: /", "",
+      "User-Agent: GPTBot", "Allow: /", "Disallow: /api/", "",
+      `Sitemap: ${ORIGIN}/sitemap.xml`,
+    ].join("\n"),
+  });
+  assert.ok(staging.failed.some((item) => /blanket Disallow/.test(item.name)),
+    "a site-wide Disallow was missed because a named group said Allow: /");
+
+  // A named group that forgets the API rule is an open door for that crawler.
+  const leaky = await run({
+    robots: [
+      "User-Agent: *", "Allow: /", "Disallow: /api/", "",
+      "User-Agent: GPTBot", "Allow: /", "",
+      `Sitemap: ${ORIGIN}/sitemap.xml`,
+    ].join("\n"),
+  });
+  assert.ok(leaky.failed.some((item) => /named crawler group/.test(item.name)),
+    "a named group without Disallow: /api/ was accepted");
+});
+
+/**
+ * llms.txt is generated into dist/client by a build step, so every other
+ * check here can pass while the file is missing entirely.
+ */
+test("a missing or empty llms.txt is caught", async () => {
+  const healthy = await run();
+  assert.equal(healthy.failed.filter((item) => /llms\.txt/.test(item.name)).length, 0,
+    `a well-formed llms.txt failed: ${JSON.stringify(healthy.failed)}`);
+
+  const missing = await run({ llms: "" });
+  assert.ok(missing.failed.some((item) => /llms\.txt/.test(item.name)), "an empty llms.txt passed");
+
+  const linkless = await run({ llms: "# KORETAIL\n\n> Retail Demand Signals for Korea.\n\nIt is not total sales.\n" });
+  assert.ok(linkless.failed.some((item) => /llms\.txt links/.test(item.name)), "an llms.txt with no page links passed");
 });

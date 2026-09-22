@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { preload } from "react-dom";
 import { notFound } from "next/navigation";
 import RetailPulseApp from "../retailpulse-app";
+import PageBrief from "../page-brief";
+import { faqStructuredData } from "../../lib/page-brief";
 import { buildMetadata, pageStructuredData, seoLocales, type SeoLocale } from "../seo-config";
 
 /**
@@ -62,7 +64,7 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
   preloadLiveSummary();
   preloadShellFont(locale as SeoLocale);
   return <>
-    <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialScope="home" />
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale)) }} />
+    <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialScope="home" brief={<PageBrief locale={locale as SeoLocale} />} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([...pageStructuredData(locale as SeoLocale), faqStructuredData(locale as SeoLocale)].filter(Boolean)) }} />
   </>;
 }

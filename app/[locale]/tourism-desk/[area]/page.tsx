@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { preload } from "react-dom";
 import RetailPulseApp from "../../../retailpulse-app";
+import PageBrief from "../../../page-brief";
+import { faqStructuredData } from "../../../../lib/page-brief";
 import {
   buildMetadata,
   pageStructuredData,
@@ -35,10 +37,11 @@ export default async function TourismDeskAreaPage({ params }: { params: Promise<
       initialView="tourism-desk"
       initialArea={area as TourismDeskArea}
       initialRoute
+      brief={<PageBrief locale={locale as SeoLocale} slug="tourism-desk" area={area as TourismDeskArea} />}
     />
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale, "tourism-desk", area as TourismDeskArea)) }}
+      dangerouslySetInnerHTML={{ __html: JSON.stringify([...pageStructuredData(locale as SeoLocale, "tourism-desk", area as TourismDeskArea), faqStructuredData(locale as SeoLocale, "tourism-desk", area as TourismDeskArea)].filter(Boolean)) }}
     />
   </>;
 }

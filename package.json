@@ -15,7 +15,7 @@
     "e2e:install": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright install --with-deps chromium",
     "test:e2e": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright test",
     "test:e2e:list": "PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers playwright test --list",
-    "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern .playwright-browsers",
+    "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern .playwright-browsers --ignore-pattern .claude",
     "typecheck": "bash scripts/sites-env.sh -- tsc --noEmit",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate",
     "secret:scan": "node scripts/secret-scan.mjs",

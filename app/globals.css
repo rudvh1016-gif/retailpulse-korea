@@ -271,6 +271,47 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 @keyframes spin { to { transform: rotate(360deg); } }
 .modal-backdrop { position: fixed; inset: 0; z-index: 50; padding: 24px; display: grid; place-items: center; background: rgba(17,18,23,.58); }
 
+/*
+ * The server-rendered brief (app/page-brief.tsx).
+ *
+ * It sits between the live screen and the footer and is the only substantial
+ * text a crawler that never runs JavaScript can read, so it must be visible
+ * text rather than a hidden block — text served to a crawler and withheld
+ * from a reader is cloaking.
+ *
+ * Kept inside the 2026-09-13 owner UI lock: white ground, no card, no fill,
+ * no blue, one hairline rule above it in the same weight the footer uses, and
+ * the existing 14px/12px/10px sizes rather than a new scale. Nothing here is
+ * larger than the copy already on the page.
+ */
+.page-brief { margin-top: 84px; padding-top: 26px; border-top: 1px solid var(--ink); }
+.page-brief h2 { margin: 0; font-size: 12px; font-weight: var(--weight-strong); letter-spacing: .1em; text-transform: uppercase; }
+.page-brief h3 { margin: 26px 0 8px; font-size: 13px; font-weight: var(--weight-strong); letter-spacing: -.01em; }
+.page-brief p { margin: 0; max-width: 72ch; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.page-brief-intro { margin-top: 14px !important; color: var(--ink) !important; }
+.page-brief-list, .page-brief-sources { margin: 0; padding: 0; list-style: none; max-width: 72ch; }
+.page-brief-list li { position: relative; padding-left: 14px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.page-brief-list li::before { content: ""; position: absolute; left: 0; top: .85em; width: 6px; height: 1px; background: var(--muted); }
+.page-brief-sources li { padding: 10px 0; border-top: 1px solid var(--line); }
+.page-brief-sources li:first-child { border-top: 0; }
+.page-brief-sources strong { display: block; font-size: 13px; font-weight: var(--weight-strong); color: var(--ink); }
+.page-brief-sources span { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+/* The citation line: the dataset number, linked where the landing page is
+   known. Quieter than the caveat above it, and underlined only on hover so a
+   list of twenty sources does not turn into a wall of blue. */
+.page-brief-citation { margin-top: 5px !important; font-size: 11px !important; }
+.page-brief-citation a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--line); }
+.page-brief-citation a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+/* The questions carry their own label, so the individual question headings
+   do not each need to restate that they are questions. */
+.page-brief-questions-title { margin-top: 34px !important; font-size: 12px !important; letter-spacing: .1em; text-transform: uppercase; }
+.page-brief-question { margin-top: 20px; }
+.page-brief-question h3 { margin: 0 0 6px; }
+.page-brief-locales { margin-top: 30px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; }
+.page-brief-locales span { color: var(--muted); font-size: 11px; letter-spacing: .04em; }
+.page-brief-locales a { min-height: 32px; display: inline-flex; align-items: center; color: var(--ink); font-size: 12px; font-weight: var(--weight-strong); text-decoration: none; border-bottom: 1px solid transparent; }
+.page-brief-locales a:hover { border-bottom-color: var(--ink); }
+
 .site-footer { margin-top: 92px; padding: 24px 0; border-top: 1px solid var(--ink); color: var(--muted); font-size: 12px; line-height: 1.6; }
 .site-footer p { margin: 0 0 4px; }
 .site-footer span { display: block; margin-top: 15px; font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .1em; }
@@ -359,6 +400,7 @@ nav.bottom-nav { display: none; }
 .business-history { padding-top: 26px; }
 .business-history > .section-head { margin-top: 28px; }
 
+.page-brief { margin-top: 56px; }
 .site-footer { margin-top: 64px; }
 .bottom-nav { min-height: 64px; padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); }
 .bottom-nav button, .bottom-nav a { min-height: 64px; }
