@@ -959,11 +959,31 @@ test("fonts are cached but never immutable, and hashed assets are", async () => 
 test("every page serves real text before any JavaScript runs", async () => {
   const { seoLocales, standaloneSeoSlugs, tourismDeskAreas, seoPath } = await import("../app/seo-config.ts");
 
+  /**
+   * Per locale, because one global number would be unfair in both directions.
+   * Chinese says the same thing in roughly half the characters English needs,
+   * so a floor set for English would be unreachable for `/zh` and a floor set
+   * for Chinese would let an English page rot.
+   *
+   * Measured minima on 2026-09-22 against this build: ko 1424, en 2722,
+   * zh 1059, ja 1268. Each floor is set about 20% below its minimum — low
+   * enough not to fail on ordinary copy edits, and still three to four times
+   * the pre-change worst case (`/zh` served 263 characters, `/ko` 318).
+   *
+   * This is a shell detector, not a length target. Google has confirmed word
+   * count is not a ranking factor; what it catches is a page going back to
+   * rendering a spinner.
+   */
+  const FLOOR = { ko: 1100, en: 2100, zh: 850, ja: 1000 };
+
   const paths = seoLocales.flatMap((locale) => [
     seoPath(locale),
     ...standaloneSeoSlugs.map((slug) => seoPath(locale, slug)),
     ...tourismDeskAreas.map((area) => seoPath(locale, "tourism-desk", area)),
   ]);
+  // A route added without a brief must fail here rather than quietly skip the
+  // floor, so the count is pinned to the page inventory seo-config declares.
+  assert.equal(paths.length, seoLocales.length * (1 + standaloneSeoSlugs.length + tourismDeskAreas.length));
 
   const thin = [];
   for (const path of paths) {
@@ -979,7 +999,7 @@ test("every page serves real text before any JavaScript runs", async () => {
       .replace(/<[^>]+>/g, " ")
       .replace(/\s+/g, " ")
       .trim();
-    if (text.length < 900) thin.push(`${path} (${text.length} chars)`);
+    if (text.length < FLOOR[locale]) thin.push(`${path} (${text.length} chars, floor ${FLOOR[locale]})`);
 
     // A heading outline, not one h1 and a wall of text: the brief contributes
     // an h2 and question-form h3s, which is what gives a page structure an
@@ -987,6 +1007,19 @@ test("every page serves real text before any JavaScript runs", async () => {
     assert.ok(/<h2[\s>]/.test(html), `${path} renders no h2 at all`);
     assert.ok(/<h3[\s>]/.test(html), `${path} renders no h3 at all`);
     assert.ok(/class="page-brief"/.test(html), `${path} does not render the server-side brief`);
+
+    /*
+     * A heading a crawler can actually see.
+     *
+     * React streams a suspended subtree inside `<div hidden>` and swaps it in
+     * on the client. Until 2026-09-22 the four locale home pages — the
+     * canonical roots and the x-default target — had their only `<h1>` in
+     * exactly that hidden block, because the home screen is lazy-loaded and
+     * its Suspense fallback was a bare paragraph. A crawler correctly ignores
+     * hidden content, so those four pages served no heading at all.
+     */
+    const visible = html.replace(/<div hidden[\s\S]*?<\/div>/g, " ");
+    assert.match(visible, /<h1[\s>]/, `${path} has no h1 outside React's hidden streaming block`);
   }
 
   assert.deepEqual(thin, [],

@@ -55,16 +55,23 @@ const NAMED_CRAWLERS = [
 ] as const;
 
 /**
- * `/api/` is closed to everyone, in every group.
+ * The paths no crawler should spend a request on, closed in EVERY group.
  *
- * This is not stylistic repetition. Under RFC 9309 §2.2.1 a crawler that
- * finds a group naming it obeys that group and ignores `*` completely, so a
- * named group written without this rule would be a standing invitation to
- * the D1-backed endpoints for precisely the agents listed above. Building
- * every group from one shared shape is what makes it impossible to forget,
- * and `lib/discoverability.ts` re-checks it against the live file.
+ * Repeating them is not stylistic. Under RFC 9309 §2.2.1 a crawler that finds
+ * a group naming it obeys that group and ignores `*` completely, so a named
+ * group written without these rules would be a standing invitation for
+ * precisely the agents listed above. Building every group from one shared
+ * shape is what makes it impossible to forget, and `lib/discoverability.ts`
+ * re-checks it against the live file.
+ *
+ * `/api/` is the D1-backed read surface. `/_vinext/image` (worker/index.ts) is
+ * the image-optimisation endpoint and the only other route that can spend
+ * Worker CPU and the IMAGES binding on a crawler request — on a site whose
+ * only image is one shared social card, nothing is lost by closing it.
  */
-const allowSiteButNotApi = (userAgent: string) => ({ userAgent, allow: "/", disallow: ["/api/"] });
+const CLOSED_PATHS = ["/api/", "/_vinext/"];
+
+const allowSiteButNotApi = (userAgent: string) => ({ userAgent, allow: "/", disallow: CLOSED_PATHS });
 
 export default function robots(): MetadataRoute.Robots {
   if (isStagingDeployment) {

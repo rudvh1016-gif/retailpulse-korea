@@ -39,8 +39,32 @@ const PersonalHome = lazy(() => import('./personal-home'));
 
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
 
+/**
+ * The home screen is `PersonalHome`, loaded lazily. Until its chunk arrives
+ * this fallback is the entire main content — including in the FIRST HTML
+ * response, because a lazy component suspends during the server render too.
+ *
+ * So the fallback has to carry the screen's heading, not just its name in a
+ * paragraph. Measured on 2026-09-22: every locale home page — `/ko`, `/en`,
+ * `/zh`, `/ja`, the canonical roots and the x-default target — served no
+ * visible `<h1>` at all. The only `<h1>` in the document sat inside the
+ * `<div hidden>` React uses to stream the suspended subtree, which a crawler
+ * correctly ignores. Every other page on the site has one.
+ *
+ * This is the same `personal-heading` header `PersonalHome` renders in its
+ * own not-ready branch, so the heading is identical before and after the
+ * chunk loads and nothing moves when it does.
+ *
+ * What this deliberately does NOT do is render `children` as the fallback.
+ * `PersonalHome` puts the public Seoul overview inside a collapsed
+ * `<details>` and mounts it only when opened — the personal briefing is the
+ * home screen and the overview is secondary, which is a product decision, not
+ * an oversight. Promoting the overview to the first paint would change the
+ * screen. The evergreen text a crawler needs is served by `app/page-brief.tsx`
+ * instead, as ordinary visible content further down the same page.
+ */
 function HomeBriefingWrapper({active,lang,children,openRequest}:{active:boolean;lang:Lang;children:React.ReactNode;openRequest:number}) {
-  return active ? <Suspense fallback={<div className="personal-loading" aria-busy="true"><p>{pc('myBriefing',lang)}</p></div>}><PersonalHome lang={lang} openRequest={openRequest}>{children}</PersonalHome></Suspense> : <>{children}</>;
+  return active ? <Suspense fallback={<div className="personal-loading" aria-busy="true"><header className="personal-heading"><h1>{pc('myBriefing',lang)}</h1></header></div>}><PersonalHome lang={lang} openRequest={openRequest}>{children}</PersonalHome></Suspense> : <>{children}</>;
 }
 
 type View = "today" | "airport" | "business" | "forecast" | "predictions" | "tourism-desk" | "about" | "more";
