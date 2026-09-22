@@ -222,6 +222,49 @@ These were found, verified, and deliberately left alone.
    regex-based extractor would miss it. Recorded rather than worked around,
    because the workaround fights the framework for a case that may not exist.
 
+## 7b. Measured after the fact — two claims checked, one true
+
+An adversarial pass over this work claimed two performance regressions. Both
+were measured against a build of the pre-change commit (5b22240) served side
+by side with the current one, because a claim about a regression is only worth
+acting on if the "before" number exists.
+
+**Font — claim wrong on cause, real underneath.** The claim was that eight
+Hangul syllables introduced by `lib/page-brief.ts` pushed every Korean page
+into downloading the 2,057,688-byte Pretendard face. The syllables were real:
+깔뀔끔났넣묻쓴힌 were absent from the 226 KB subset and zero were missing
+before, with 묻 sitting in "자주 묻는 질문" on every Korean page. They are now
+reworded away and `tests/font-coverage.test.mjs` fails on the next one.
+
+But the causal claim does not hold. Measured on `/ko`, `/ko/myeongdong` and
+`/ko/airport`, font bytes are **2,284,108 before and 2,284,108 after** — byte
+for byte identical. Pretendard was already being downloaded on every Korean
+page, because `.lang-ko` lists it as the second fallback (app/globals.css) and
+something outside `app/` and `lib/` needs it. That is a genuine ~2 MB win
+available on the most important pages, and it is **pre-existing**, not
+introduced here. Finding what triggers it is the highest-value performance
+work left on this site; it is not in scope for this change and is not claimed
+as fixed.
+
+**CLS — real on one page, and the opposite elsewhere.** Measured layout shift:
+
+| Page | Before | After |
+|---|---|---|
+| `/ko` | 0.135 | **0.23** |
+| `/ko/myeongdong` | 0.027 | 0.019 |
+| `/ko/airport` | 0.035 | 0.002 |
+
+So the claim of 0.58 on an area page is wrong — area and airport pages
+improved, because the brief adds stable content to a page whose shifting
+region is now a smaller fraction of it. `/ko` did get worse, and it was
+already over Google's 0.1 threshold before. The cause is structural: the home
+screen is lazy-loaded, and content placed below a region that grows on
+hydration gets pushed down. The fix is to reserve the lazy region's height so
+the swap moves nothing — but on `/ko` the loaded content is shorter than a
+viewport, so reserving it leaves visible whitespace on the owner's home
+screen. That is a design decision, not a bug fix, so it is in the owner list
+below rather than applied here.
+
 ## 8. Owner runbook — what no code change can do
 
 In order; each step blocks the next.
@@ -240,6 +283,11 @@ In order; each step blocks the next.
 4. **Daum.** Register the site for Korean coverage outside Naver.
 5. Only then: watch indexed pages, impressions, CTR and landing pages. None of
    the code in this change can be called effective until those numbers move.
+
+Two performance decisions also need an owner call, both detailed in 7b:
+reserving the home screen's lazy region to bring `/ko` back under the CLS
+threshold (it costs visible whitespace while loading), and tracking down what
+pulls the 2 MB Pretendard face onto every Korean page.
 
 ## 9. How each property is proven
 

@@ -106,7 +106,7 @@ const HEADING: Words = [
 export const BRIEF_LABELS = {
   answers: ["이 화면에서 확인할 수 있는 것", "What you can settle here", "本页面可以确认的内容", "この画面で確認できること"] as Words,
   sources: ["이 화면이 쓰는 공식 자료", "The official records this page reads", "本页面使用的官方资料", "この画面が使う公式資料"] as Words,
-  questions: ["자주 묻는 질문", "Common questions", "常见问题", "よくある質問"] as Words,
+  questions: ["자주 하는 질문", "Common questions", "常见问题", "よくある質問"] as Words,
 };
 
 /**
@@ -194,7 +194,7 @@ const areaBrief = (area: BriefArea): PageBrief => ({
         "{}の店舗の売上はわかりますか？",
       ]),
       answer: [
-        "아니요. 이 화면이 보여주는 카드 소비는 서울시 통합 도시데이터의 내국인 카드 활동이고, 상권 추정매출은 서울시 상권분석서비스의 분기 추정치입니다. 둘 다 공개 통계이며 특정 매장의 매출도, 외국인이 쓴 금액도 아닙니다. KORETAIL은 매장 실제 매출 자료를 보유하지 않습니다.",
+        "아니요. 이 화면이 보여주는 카드 소비는 서울시 통합 도시데이터의 내국인 카드 활동이고, 상권 추정매출은 서울시 상권분석서비스의 분기 추정치입니다. 둘 다 공개 통계이며 특정 매장의 매출도, 외국인이 지출한 금액도 아닙니다. KORETAIL은 매장 실제 매출 자료를 보유하지 않습니다.",
         "No. The card activity on this page is domestic-card activity from Seoul's integrated city data, and the trade-area sales figure is a quarterly estimate from Seoul's commercial-district analysis service. Both are public statistics: neither is any individual store's revenue, and neither is money spent by foreign visitors. KORETAIL holds no actual store sales data.",
         "不可以。本页显示的刷卡消费来自首尔市综合城市数据中的本国居民刷卡活动，商圈估计销售额来自首尔市商圈分析服务的季度估算。两者均为公开统计，既非某家门店的营业额，也非外国人的消费金额。KORETAIL 不持有门店实际销售数据。",
         "いいえ。この画面のカード消費はソウル統合都市データの国内カード活動であり、商圏の推定売上はソウル市商圏分析サービスの四半期推定値です。いずれも公開統計で、特定店舗の売上でも、外国人が使った金額でもありません。KORETAIL は店舗の実売上データを保有していません。",
@@ -351,7 +351,7 @@ const BRIEFS: Record<string, PageBrief> = {
       {
         question: ["외국인 이동 목적 통계는 쇼핑 매출을 뜻하나요?", "Do the foreign movement-purpose statistics mean shopping revenue?", "外国人移动目的统计代表购物销售额吗？", "外国人の移動目的統計は買物の売上を意味しますか？"],
         answer: [
-          "아니요. 서울시가 공개하는 월간 추정 이동 자료로, 쇼핑이나 관광을 목적으로 추정된 이동 건수입니다. 구매가 일어났다는 뜻이 아니고 금액도 아닙니다. KORETAIL은 이런 자료를 외국인 쇼핑 수요의 대리 지표로만 쓰며, 외국인 매출이라고 부르지 않습니다.",
+          "아니요. 서울시가 공개하는 월간 추정 이동 자료로, 쇼핑이나 관광을 목적으로 추정된 이동 건수입니다. 구매가 발생했다는 뜻이 아니고 금액도 아닙니다. KORETAIL은 이런 자료를 외국인 쇼핑 수요의 대리 지표로만 쓰며, 외국인 매출이라고 부르지 않습니다.",
           "No. It is Seoul's monthly estimate of movements attributed to a shopping or tourism purpose. It does not mean a purchase took place, and it carries no monetary amount. KORETAIL uses this kind of record only as a proxy for foreign shopping demand, and never calls it foreign sales.",
           "不是。这是首尔市公布的月度推定移动资料，指被推定为以购物或旅游为目的的移动次数。它既不表示发生了购买，也不含金额。KORETAIL 仅将此类资料作为外国人购物需求的代理指标，绝不称其为外国人销售额。",
           "いいえ。ソウル市が公開する月間の推定移動データで、買物や観光を目的と推定された移動の件数です。購入が発生したことを意味せず、金額でもありません。KORETAIL はこの種の資料を外国人の買物需要の代理指標としてのみ用い、外国人売上とは呼びません。",
@@ -360,7 +360,7 @@ const BRIEFS: Record<string, PageBrief> = {
       {
         question: ["왜 어떤 비교 수치는 비어 있나요?", "Why is some comparison left blank?", "为什么部分比较数值是空白的？", "なぜ一部の比較の数値が空欄なのですか？"],
         answer: [
-          "같은 대상과 같은 기간의 자료가 양쪽 모두 있을 때에만 비교를 계산하기 때문입니다. 한쪽 기간이 비어 있거나 집계 기준이 다르면 비교값을 만들지 않고 비워 둡니다. 근사치를 채워 넣는 편이 화면은 깔끔해지지만, 그 숫자는 사실이 아니게 됩니다.",
+          "같은 대상과 같은 기간의 자료가 양쪽 모두 있을 때에만 비교를 계산하기 때문입니다. 한쪽 기간이 비어 있거나 집계 기준이 다르면 비교값을 만들지 않고 비워 둡니다. 근사치로 채우면 화면은 정돈되어 보이지만, 그 숫자는 사실이 아니게 됩니다.",
           "Because a comparison is computed only when both sides have data for the same subject over the same period. If one period is missing, or the two are aggregated on different bases, the comparison is left blank rather than produced. Filling in an approximation would make the screen tidier and the number untrue.",
           "因为只有在双方均具备同一对象、同一期间的资料时才计算比较值。若一方期间缺失，或两者统计口径不同，则留空而不生成比较值。填入近似值会让页面更整齐，但那个数字将不再真实。",
           "同じ対象・同じ期間の資料が双方に揃っている場合にのみ比較を計算するためです。片方の期間が欠けていたり、集計基準が異なる場合は、比較値を作らず空欄のままにします。近似値で埋めれば画面は整いますが、その数字は事実ではなくなります。",
@@ -521,7 +521,7 @@ const BRIEFS: Record<string, PageBrief> = {
       {
         question: ["이 화면은 정식 서비스인가요?", "Is this page a finished service?", "本页面是正式服务吗？", "この画面は正式なサービスですか？"],
         answer: [
-          "시험 운영 화면입니다. 구성과 항목이 바뀔 수 있으며, 현장 안내의 근거 자료로 쓰기 전에 각 값 옆에 적힌 출처와 한계를 함께 확인하세요.",
+          "시험 운영 화면입니다. 구성과 항목이 달라질 수 있으며, 현장 안내의 근거 자료로 쓰기 전에 각 값 옆에 표시된 출처와 한계를 함께 확인하세요.",
           "It is a pilot. Its layout and items may change, so read the source and the limitation written beside each value before relying on it as the basis for advice given at the desk.",
           "这是试运行页面。其结构与项目可能变更，在将其作为现场咨询的依据资料使用前，请一并确认各数值旁标注的出处与局限。",
           "試験運用の画面です。構成や項目が変わる可能性があるため、現場での案内の根拠として使う前に、各値の横に記載された出典と限界を併せて確認してください。",
