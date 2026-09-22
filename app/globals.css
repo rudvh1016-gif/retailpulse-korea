@@ -1584,8 +1584,23 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .personal-switches .personal-inline { margin: 10px 0; }
 .personal-switches button[aria-pressed="true"] { background: #edf4f8; border-color: #315e7d; color: #214c6b; }
 
-/* One type scale for the personal sheet; full Korean glyphs cover new copy. */
-.lang-ko .personal-home { --font-ui: "Pretendard Variable", "KORETAIL Sans Variable", system-ui, sans-serif; }
+/* One type scale for the personal sheet.
+ *
+ * This asked for the full 2,057,688-byte Pretendard face FIRST so that new
+ * copy could never fall outside the 226 KB subset. Measured on 2026-09-22 in
+ * a real browser, that cost every Korean reader 2,231 KB of font on /ko
+ * against 221 KB on /en — ten times the weight, for the same screen, on the
+ * audience this product is actually for. /ko/myeongdong downloaded the same
+ * 2 MB and rendered NOT ONE glyph from it.
+ *
+ * The subset now leads here, matching `.lang-ko` below. What makes that safe
+ * is not an assumption: tests/font-coverage.test.mjs reads every Hangul
+ * syllable under app/ and lib/ and fails if one is missing from the bundled
+ * subset, so copy that would have fallen back cannot merge in the first
+ * place. Provider-issued Korean names are a different case and keep the full
+ * face above (`.airport-provider-text:lang(ko)`, `.tourism-official-ko`),
+ * because an official place name must never become a missing-glyph box. */
+.lang-ko .personal-home { --font-ui: "KORETAIL Sans Variable", "Pretendard Variable", system-ui, sans-serif; }
 .personal-home { font-family: var(--font-ui); font-size: .9375rem; line-height: 1.6; }
 .personal-home h2 { font-size: clamp(1.375rem, 2.7vw, 1.75rem); }
 .personal-home h3, .personal-place { font-size: .9375rem; }
@@ -1850,7 +1865,13 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .date-nav-picker input { min-height: 44px; font-size: 13px; }
 .personal-home .date-nav-picker input { width: auto; min-width: 132px; height: auto; }
 .airport-reference-block small { display: block; margin-top: 4px; }
-.lang-ko { --font-ui: "KORETAIL Sans Variable", "Pretendard Variable", system-ui, sans-serif; }
+/* The subset covers every character this product prints — proven per build by
+ * tests/font-coverage.test.mjs — so naming the 2 MB face here as a safety net
+ * bought nothing and cost everything: measured 2026-09-22 on the production
+ * build, /ko fetched it (2,009 KB) and used NOT ONE glyph from it, while /en
+ * fetched none of it. Provider-issued Korean names still get the full face,
+ * on their own selectors above, where a missing glyph is a real risk. */
+.lang-ko { --font-ui: "KORETAIL Sans Variable", system-ui, sans-serif; }
 .period-outlook-link { display: inline-flex; align-items: center; min-height: 44px; font-size: 13px; padding: 0 12px; color: var(--muted); }
 .prediction-view .section-head { margin-bottom: 12px; }
 .outlook-grid article { border-top: 1px solid var(--line); }
