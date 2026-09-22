@@ -52,7 +52,11 @@ export async function saveMeasurement(memory:OperationalMemory,measurement:Sourc
   if(verified) {
     for(const incident of await memory.incidents(measurement.sourceId)) {
       if(incident.currentState==='RESOLVED'||incident.contractVersion!==measurement.contractVersion)continue;
-      statements.push(memory.eventStatement({parts:incident,kind:'HEALTHY',runId,at,evidence:detail,verification:measurement}));
+      // A stored incident also carries evidence, counts and nullable dates;
+      // only its four fingerprint fields are operational identities.
+      const {sourceId,failureClass,contractVersion,logicalJob}=incident;
+      statements.push(memory.eventStatement({parts:{sourceId,failureClass,contractVersion,logicalJob},
+        kind:'HEALTHY',runId,at,evidence:detail,verification:measurement}));
     }
   }
   for(let i=0;i<statements.length;i+=40)await db.batch(statements.slice(i,i+40));

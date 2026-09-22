@@ -87,6 +87,19 @@ test("a real AbortError is TIMEOUT and remains retryable", async () => {
   assert.equal(sequence.calls(), 2);
 });
 
+for (const bodyError of [new DOMException("aborted", "AbortError"), networkError("ECONNRESET")]) {
+  test(`a body transfer failure (${bodyError.name}) retries after successful headers`, async () => {
+    const interrupted = new Response(new ReadableStream({
+      start(controller) { controller.error(bodyError); },
+    }), { headers: { "content-type": "application/json" } });
+    const sequence = sequenceFetch([interrupted, Response.json({ ok: true })]);
+    const { options, delays } = testPolicy({ fetchImpl: sequence.fetchImpl });
+    assert.deepEqual(await fetchOfficialJson(URL_FIXTURE, options), { ok: true });
+    assert.equal(sequence.calls(), 2);
+    assert.deepEqual(delays, [2_000]);
+  });
+}
+
 for (const status of [500, 503]) {
   test(`HTTP ${status} retries and can recover`, async () => {
     const sequence = sequenceFetch([new Response("gateway", { status }), Response.json({ ok: true })]);

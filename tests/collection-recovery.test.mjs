@@ -21,6 +21,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 import { uniqueKmaGrids } from "../lib/areas.ts";
+import { collectAirportPassengerForecast, collectWeatherForecasts } from "../lib/collector.ts";
 import {
   describeForecastPlan,
   describeWeatherPlan,
@@ -724,6 +725,67 @@ test("weather reports ERROR when every grid fails and nothing is stored", async 
   const [result] = await runRecovery(database, "weather_recovery");
   assert.equal(result.sourceHealth, "ERROR");
   assert.equal(health(database).get("KMA_VILAGE_FCST").status, "ERROR");
+});
+
+for (const recover of [false, true]) {
+  test(`weather counts every provider attempt when retries ${recover ? "recover" : "exhaust"}`, async (context) => {
+    const originalFetch = globalThis.fetch;
+    context.after(() => { globalThis.fetch = originalFetch; });
+    const callsByGrid = new Map();
+    globalThis.fetch = async (input) => {
+      const url = new URL(String(input));
+      const grid = `${url.searchParams.get("nx")},${url.searchParams.get("ny")}`;
+      const calls = (callsByGrid.get(grid) ?? 0) + 1;
+      callsByGrid.set(grid, calls);
+      return recover && calls > 1 ? Response.json(kmaPage())
+        : new Response("unavailable", { status: 503, headers: { "retry-after": "0" } });
+    };
+    const result = await collectWeatherForecasts({ DATA_GO_KR_SERVICE_KEY: "fixture-key" }, NOW);
+    const actualRequests = [...callsByGrid.values()].reduce((sum, count) => sum + count, 0);
+    assert.equal(actualRequests, uniqueKmaGrids().length * (recover ? 2 : 3));
+    assert.equal(result.providerRequests, actualRequests);
+    assert.match(result.detail, new RegExp(`requests ${actualRequests};`));
+    assert.equal(result.status, recover ? "SUCCESS" : "ERROR");
+  });
+}
+
+test("A5 counts exhausted attempts and preserves their safe failure context", async (context) => {
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; });
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    throw new TypeError("fetch failed", { cause: Object.assign(new Error("connection failed"), { code: "UND_ERR_CONNECT_TIMEOUT" }) });
+  };
+  const result = await collectAirportPassengerForecast({ DATA_GO_KR_SERVICE_KEY: "fixture-key" }, { now: NOW });
+  assert.equal(calls, 4, "two days, at most two attempts each");
+  assert.equal(result.providerRequests, calls, "failed requests cannot be recorded as zero");
+  assert.equal(result.status, "ERROR");
+  assert.match(result.detail, /failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT attempts=2/);
+});
+
+test("A5 retries do not forgive extra malformed rows in a successful response", async (context) => {
+  const { database, databasePath } = freshDatabase("a5-counted-retries");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+  const callsByDay = new Map();
+  globalThis.fetch = async (input) => {
+    const day = new URL(String(input)).searchParams.get("selectdate");
+    const calls = (callsByDay.get(day) ?? 0) + 1;
+    callsByDay.set(day, calls);
+    if (calls === 1) return new Response("unavailable", { status: 503, headers: { "retry-after": "0" } });
+    return Response.json(a5Page([
+      a5Row(day === "0" ? "20260901" : "20260902"),
+      a5Row("total"), a5Row("invalid-extra"),
+    ], 3));
+  };
+  const result = await collectAirportPassengerForecast(
+    { DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture-key" }, { now: NOW },
+  );
+  assert.equal(result.providerRequests, 4);
+  assert.equal(result.status, "PARTIAL", "four attempts only produced two responses, allowing two structural drops");
+  assert.equal(result.sourceHealth, "STALE");
+  assert.ok(forecastRowCount(database) > 0, "valid rows still survive the partial collection");
 });
 
 test("a recovery failure detail never carries the service key", async (context) => {

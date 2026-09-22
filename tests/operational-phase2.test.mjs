@@ -44,6 +44,25 @@ const request=(runId='run1',overrides={})=>({parts,targetDate:'2026-09-13',sched
 const verified={dataValid:true,storageValid:true,publicValid:true};
 const setup=()=>{const db=new SqliteD1();return {db,memory:new OperationalMemory(db)};};
 
+test('post-deployment measurement resolves a stored incident without treating its evidence as identity',async(context)=>{
+ const {db,memory}=setup();context.after(()=>db.raw.close());
+ await memory.recordEvent(failure());
+ const measurement={sourceId:parts.sourceId,contractVersion:parts.contractVersion,observedAt:later,
+  run:{status:'SUCCESS'},health:null,runId:'recovered-run',storedRows:3,storageReadFailed:false,
+  coverage:'COMPLETE',failureClass:null,detail:'all three layers verified',sample:[],...verified};
+ const metrics={providerRequests:null,rowsRead:null,rowsWritten:null};
+ await saveMeasurement(memory,{...measurement,observedAt:at,publicValid:null},'pending-run',metrics,'MANUAL_INSPECTION');
+ assert.equal((await memory.incidents())[0].currentState,'OPEN','unconfirmed publication must not resolve an incident');
+ await saveMeasurement(memory,measurement,'recovered-run',metrics,'MANUAL_INSPECTION');
+ await saveMeasurement(memory,measurement,'recovered-run',metrics,'MANUAL_INSPECTION');
+ const [incident]=await memory.incidents();
+ assert.equal(incident.currentState,'RESOLVED');
+ assert.equal(incident.occurrenceCount,1);
+ assert.equal(incident.lastGoodAt,later);
+ assert.equal(db.raw.prepare('SELECT last_good_at FROM operational_source_state').get().last_good_at,later);
+ assert.equal(db.raw.prepare("SELECT COUNT(*) n FROM operational_incident_events WHERE kind='HEALTHY'").get().n,1);
+});
+
 test('first occurrence persists exactly one incident',async()=>{const {memory}=setup();await memory.recordEvent(failure());assert.equal((await memory.incidents())[0].occurrenceCount,1);});
 test('same fingerprint increments while duplicate event does not',async()=>{const {memory}=setup();await memory.recordEvent(failure());await memory.recordEvent(failure());await memory.recordEvent(failure('run2'));assert.equal((await memory.incidents())[0].occurrenceCount,2);});
 test('real child process restart preserves incidence, attempt result and daily budget',()=>{
