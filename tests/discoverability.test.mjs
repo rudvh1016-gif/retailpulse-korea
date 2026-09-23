@@ -11,6 +11,7 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
+import { existsSync, readdirSync } from "node:fs";
 
 process.env.NEXT_PUBLIC_SITE_ORIGIN ??= "https://koretaildata.com";
 // CI builds as staging (`RPK_DEPLOYMENT_STAGE: staging` in ci.yml), where
@@ -29,7 +30,31 @@ const { seoLocales, seoPath, standaloneSeoSlugs, tourismDeskAreas, pageTitle, pa
 // here would make the fixture disagree with the sitemap it is checking.
 const ORIGIN = siteOrigin;
 
-const { DOCUMENT_LANGUAGE, HREFLANG_TAG, decodeHtmlText } = await import("../lib/discoverability.ts");
+const { DOCUMENT_LANGUAGE, HREFLANG_TAG, decodeHtmlText, robotsAllows } = await import("../lib/discoverability.ts");
+const { crawlableContentApis, CONTENT_API_ROBOTS_TAG } = await import("../lib/crawl-policy.ts");
+const robotsModule = await import("../app/robots.ts");
+
+/**
+ * robots.txt exactly as the framework serializes `app/robots.ts`, so the
+ * fixture below is THIS build's file and cannot drift from it. The format was
+ * compared against the served `/robots.txt` of a production build.
+ */
+function serializeRobots(data) {
+  const list = (value) => (value === undefined ? [] : Array.isArray(value) ? value : [value]);
+  let text = "";
+  for (const rule of list(data.rules)) {
+    for (const agent of list(rule.userAgent ?? "*")) text += `User-Agent: ${agent}\n`;
+    for (const path of list(rule.allow)) text += `Allow: ${path}\n`;
+    for (const path of list(rule.disallow)) text += `Disallow: ${path}\n`;
+    text += "\n";
+  }
+  for (const sitemap of list(data.sitemap)) text += `Sitemap: ${sitemap}\n`;
+  if (data.host) text += `Host: ${data.host}\n`;
+  return text;
+}
+
+/** The robots.txt that produced the Search Console Soft 404s (until 2026-09-23). */
+const BLINDING_ROBOTS = `User-Agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${siteOrigin}/sitemap.xml\n`;
 
 /** Escapes like a real HTML serializer, so the fixture is not easier than production. */
 const escapeHtml = (value) => value
@@ -69,7 +94,7 @@ function pageHtml(locale, slug, overrides = {}) {
 }
 
 function robotsTxt() {
-  return `User-Agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${ORIGIN}/sitemap.xml\nHost: ${ORIGIN}\n`;
+  return serializeRobots(robotsModule.default());
 }
 
 function sitemapXml(paths, { lastmod = "2026-09-15T00:00:00.000Z", withAlternates = true } = {}) {
@@ -96,6 +121,10 @@ function healthySite(faults = {}) {
       return reply(faults.sitemap ?? sitemapXml(paths, faults.sitemapOptions), 200, { "content-type": "application/xml" });
     }
     if (pathname === "/og-image.png") return reply("PNGDATA", 200, { "content-type": "image/png" });
+    if (crawlableContentApis.includes(pathname)) {
+      const tag = "contentApiRobotsTag" in faults ? faults.contentApiRobotsTag : CONTENT_API_ROBOTS_TAG;
+      return reply("{}", 200, { "content-type": "application/json", ...(tag ? { "x-robots-tag": tag } : {}) });
+    }
     if (pathname === "/") {
       return init.redirect === "manual"
         ? reply("", 308, { location: `${ORIGIN}/ko` })
@@ -132,6 +161,58 @@ test("the staging robots.txt on production is caught — the silent de-indexing"
   assert.equal(report.ok, false);
   assert.ok(failing(report).includes("crawling is allowed (no blanket Disallow: /)"),
     "a production robots.txt that forbids every crawler must fail loudly");
+});
+
+test("the robots.txt that turned every page into a Soft 404 is caught", async () => {
+  // Search Console, 2026-09: /ja/hongdae and en/tourism-desk/{hongdae,
+  // myeongdong,seongsu} reported as Soft 404. Every page draws its content
+  // from /api/live/summary after it loads, and Googlebot obeys robots.txt for
+  // that request too — so under `Disallow: /api/` the page it rendered said
+  // only "Could not load data". The old check passed this file, because it
+  // tested for the presence of that very line.
+  const report = await run({ robots: BLINDING_ROBOTS });
+  assert.equal(report.ok, false);
+  assert.deepEqual(failing(report), ["the data every page renders with is crawlable"]);
+  assert.match(report.failed[0].detail, /\/api\/live\/summary, \/api\/live\/predictions/);
+});
+
+test("opening all of /api/ to fix rendering is caught too", async () => {
+  // The lazy fix. It would let crawlers into write and operational endpoints.
+  const report = await run({ robots: `User-Agent: *\nAllow: /\n\nSitemap: ${ORIGIN}/sitemap.xml\n` });
+  assert.equal(report.ok, false);
+  assert.deepEqual(failing(report), ["the internal API stays uncrawled"]);
+});
+
+test("a crawlable content API without noindex is caught", async () => {
+  // Crawlable is only safe because the response tells Google not to list it;
+  // without the tag a raw JSON body can surface as a search result.
+  const report = await run({ contentApiRobotsTag: null });
+  assert.equal(report.ok, false);
+  assert.deepEqual(failing(report), crawlableContentApis.map((path) => `${path} is kept out of the index`));
+});
+
+test("robots.txt is evaluated by RFC 9309 precedence, not by spotting a line", () => {
+  const rules = "User-Agent: *\nAllow: /\nAllow: /api/live/summary\nDisallow: /api/\n";
+  assert.equal(robotsAllows(rules, "/ja/hongdae"), true);
+  assert.equal(robotsAllows(rules, "/api/live/summary"), true, "the longer Allow beats Disallow: /api/");
+  assert.equal(robotsAllows(rules, "/api/live/summary?date=2026-09-23"), true, "rules match by prefix, query included");
+  assert.equal(robotsAllows(rules, "/api/health"), false);
+  assert.equal(robotsAllows(rules, "/api/"), false);
+  // Order in the file does not matter; length does.
+  assert.equal(robotsAllows("User-Agent: *\nDisallow: /api/\nAllow: /api/live/summary\n", "/api/live/summary"), true);
+  // A tie goes to Allow.
+  assert.equal(robotsAllows("User-Agent: *\nDisallow: /api/x\nAllow: /api/x\n", "/api/x"), true);
+  // `*` and `$`.
+  assert.equal(robotsAllows("User-Agent: *\nDisallow: /*.json$\n", "/a/b.json"), false);
+  assert.equal(robotsAllows("User-Agent: *\nDisallow: /*.json$\n", "/a/b.json?x=1"), true);
+  // An empty Disallow permits everything.
+  assert.equal(robotsAllows("User-Agent: *\nDisallow:\n", "/api/health"), true);
+  // A group naming Googlebot replaces the `*` group for Googlebot entirely.
+  const specific = "User-Agent: *\nDisallow: /\n\nUser-Agent: Googlebot\nAllow: /\n";
+  assert.equal(robotsAllows(specific, "/ko"), true);
+  assert.equal(robotsAllows(specific, "/ko", "bingbot"), false);
+  // Consecutive User-Agent lines share one group.
+  assert.equal(robotsAllows("User-Agent: a\nUser-Agent: googlebot\nDisallow: /x\n", "/x"), false);
 });
 
 test("an empty sitemap is caught, not read as a quiet day", async () => {
@@ -309,6 +390,42 @@ test("the discoverability check is actually wired to a workflow, not decorative"
   assert.match(workflow, /workflows: \[Deploy Cloudflare\]/);
 });
 
+test("this build lets a crawler render every page with its data, and nothing else under /api/", () => {
+  const served = robotsTxt();
+  for (const path of crawlableContentApis) {
+    assert.equal(robotsAllows(served, path), true, `${path} is blocked: pages render as the load-failure message`);
+    assert.ok(existsSync(new URL(`../app${path}/route.ts`, import.meta.url)), `${path} names no route in this build`);
+  }
+  // Every /api/ route that is not a page's content stays uncrawled.
+  const routes = readdirSync(new URL("../app/api/", import.meta.url), { recursive: true })
+    .filter((file) => file.endsWith("route.ts"))
+    .map((file) => `/api/${file.replace(/\/?route\.ts$/, "")}`);
+  const opened = routes.filter((path) => robotsAllows(served, path) && !crawlableContentApis.includes(path));
+  assert.ok(routes.length > crawlableContentApis.length, `found ${routes.length} API routes`);
+  assert.deepEqual(opened, [], "only the page-content APIs may be crawlable");
+});
+
+test("every response a crawler can get from a content API tells it not to index", async () => {
+  // Run the real handlers. Under Node there is no D1 binding, so the summary
+  // answers through its degraded path and predictions through its 503 path —
+  // the two a crawler is most likely to meet in an outage. The live summary
+  // path is asserted in tests/summary-round-trips.test.mjs.
+  const summary = await import("../app/api/live/summary/route.ts");
+  const predictions = await import("../app/api/live/predictions/route.ts");
+  const responses = {
+    "summary (degraded)": await summary.GET(new Request(`${ORIGIN}/api/live/summary`)),
+    "predictions (unknown area)": await predictions.GET(new Request(`${ORIGIN}/api/live/predictions?area=nowhere`)),
+    "predictions (unavailable)": await predictions.GET(new Request(`${ORIGIN}/api/live/predictions?area=hongdae`)),
+  };
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(responses).map(([name, response]) => [name, response.headers.get("x-robots-tag")])),
+    Object.fromEntries(Object.keys(responses).map((name) => [name, CONTENT_API_ROBOTS_TAG])),
+  );
+  assert.equal(responses["summary (degraded)"].status, 200);
+  assert.equal(responses["predictions (unknown area)"].status, 400);
+  assert.equal(responses["predictions (unavailable)"].status, 503);
+});
+
 test("the staging flag really does withhold the whole site from crawlers", async () => {
   // The catastrophe this file exists for, asserted against the real modules
   // in their own process so the flag is read at import time. Both halves
@@ -369,4 +486,22 @@ test("a real ampersand in served metadata is not mistaken for a stale build", as
   assert.equal(report.ok, true, `unexpected failures: ${failing(report).join(", ")}`);
   const enTitle = report.notes.find((note) => note.page === "/en")?.title;
   assert.equal(enTitle, pageTitle("en"));
+});
+
+
+test("content API exceptions do not expose sibling or nested internal paths", async () => {
+  const { default: robots } = await import("../app/robots.ts");
+  const rules = robots().rules;
+  const text = ["User-agent: *", ...[rules.allow].flat().map(path => `Allow: ${path}`),
+    ...[rules.disallow].flat().map(path => `Disallow: ${path}`)].join("\n");
+  for (const path of ["/api/live/summary", "/api/live/predictions"]) {
+    assert.equal(robotsAllows(text, path), true);
+    assert.equal(robotsAllows(text, `${path}?date=2026-09-27&area=hongdae`), true);
+    for (const suffix of ["-internal", "/debug", "Backup", "/"]) {
+      assert.equal(robotsAllows(text, `${path}${suffix}`), false, `${path}${suffix}`);
+    }
+  }
+  for (const path of ["/api/health", "/api/live/flights", "/api/beta-signups"]) {
+    assert.equal(robotsAllows(text, path), false);
+  }
 });

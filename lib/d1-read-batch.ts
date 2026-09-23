@@ -41,29 +41,42 @@ export interface ReadGroupsResult<K extends string> {
   mode: "batch" | "isolated";
   /** D1 requests actually issued, so a regression back to a chain is visible. */
   roundTrips: number;
+  statementsAttempted: number;
+  failedGroups: K[];
+  skippedGroups: K[];
 }
 
-async function readGroupIsolated(client: ReadClient, statements: ReadStatement[]): Promise<ReadRow[]> {
+async function readGroupIsolated(client: ReadClient, statements: ReadStatement[]): Promise<{ rows: ReadRow[]; failed: boolean }> {
   // Each group fails independently: one broken table or statement must never
   // take down the whole response.
   try {
-    if (statements.length === 1) return (await statements[0].all<ReadRow>()).results ?? [];
+    if (!statements.length) return { rows: [], failed: false };
+    if (statements.length === 1) return { rows: (await statements[0].all<ReadRow>()).results ?? [], failed: false };
     const results = await client.batch<ReadRow>(statements);
-    return results.flatMap((result) => result.results ?? []);
+    if (results.length !== statements.length) throw new Error('batch result count mismatch');
+    return { rows: results.flatMap((result) => result.results ?? []), failed: false };
   } catch {
-    return [];
+    return { rows: [], failed: true };
   }
 }
 
 export async function readGroups<K extends string>(
   client: ReadClient,
   groups: Record<K, ReadStatement[]>,
+  options: { maxStatements?: number } = {},
 ): Promise<ReadGroupsResult<K>> {
   const names = Object.keys(groups) as K[];
   const flat = names.flatMap((name) => groups[name]);
+  const maxStatements = options.maxStatements ?? Number.POSITIVE_INFINITY;
+  let statementsAttempted = 0;
+  let roundTrips = 0;
+  const failedGroups: K[] = [];
+  const skippedGroups: K[] = [];
 
-  if (flat.length > 0) {
+  if (flat.length > 0 && flat.length <= maxStatements) {
     try {
+      statementsAttempted += flat.length;
+      roundTrips += 1;
       const results = await client.batch<ReadRow>(flat);
       if (results.length !== flat.length) throw new Error("batch result count mismatch");
       const rows = {} as Record<K, ReadRow[]>;
@@ -73,14 +86,26 @@ export async function readGroups<K extends string>(
         rows[name] = results.slice(cursor, cursor + count).flatMap((result) => result.results ?? []);
         cursor += count;
       }
-      return { rows, mode: "batch", roundTrips: 1 };
+      return { rows, mode: "batch", roundTrips, statementsAttempted, failedGroups, skippedGroups };
     } catch {
       // Fall through to the isolated read below.
     }
   }
 
-  const entries = await Promise.all(names.map(async (name) => [name, await readGroupIsolated(client, groups[name])] as const));
+  const entries = await Promise.all(names.map(async (name) => {
+    const count = groups[name].length;
+    if (statementsAttempted + count > maxStatements) {
+      skippedGroups.push(name);
+      return [name, []] as const;
+    }
+    // Reserve synchronously before the concurrent wave. Count every statement
+    // in a rejected batch conservatively, not just rows returned or requests.
+    statementsAttempted += count;
+    if (count) roundTrips += 1;
+    const result = await readGroupIsolated(client, groups[name]);
+    if (result.failed) failedGroups.push(name);
+    return [name, result.rows] as const;
+  }));
   const rows = Object.fromEntries(entries) as Record<K, ReadRow[]>;
-  const isolatedTrips = names.filter((name) => groups[name].length > 0).length;
-  return { rows, mode: "isolated", roundTrips: (flat.length > 0 ? 1 : 0) + isolatedTrips };
+  return { rows, mode: "isolated", roundTrips, statementsAttempted, failedGroups, skippedGroups };
 }

@@ -257,6 +257,8 @@ type RankedGate = { terminal: string | null; gate: string; flights: number };
 type RemainingForecast = { expectedPassengers: number; fromAt: string; toAt: string; bands: number } | null;
 
 export interface LiveSummary {
+  /** Browser refresh status only; never a source collection/observation time. */
+  clientRefresh?: { failedAt: string };
   holidays?: Array<{month:string;days:Array<{date:string;name:string}>;retrievedAt:string}>;
   mode: string;
   generatedAt: string;
@@ -267,6 +269,11 @@ export interface LiveSummary {
     airportFlights: string[];
     airportPassengerForecast: string[];
     seoulObserved: string[];
+    airportDepartureSchedule?: string[];
+    month?: string;
+    startDate?: string;
+    endDate?: string;
+    checkedAt?: Partial<Record<'airportFlights' | 'airportPassengerForecast' | 'airportDepartureSchedule' | 'seoulObserved', string | null>>;
   };
   /**
    * Per-source collector health. `retrievedAt` here is the last SUCCESSFUL
@@ -335,30 +342,76 @@ export interface LiveSummary {
   };
 }
 
-// One in-flight request and one cached payload per service date, so switching
-// between 어제/오늘/내일 never refetches a day already loaded and never leaves
-// two responses racing to render.
-const summaryCache = new Map<string, LiveSummary | null>();
+// Rechecks use only the existing summary read API. Each date/month shares one
+// request; an unsuccessful refresh keeps the previous payload and source times.
+type SummaryCacheEntry = { value: LiveSummary | null; recheckAt: number };
+const summaryCache = new Map<string, SummaryCacheEntry>();
 const summaryPending = new Map<string, Promise<LiveSummary | null>>();
-const DEFAULT_KEY = "__today__";
+const SUMMARY_RECHECK_MS = { empty: 60_000, partial: 120_000, normal: 300_000 };
 
-async function loadSummary(date: string | null): Promise<LiveSummary | null> {
-  const key = date ?? DEFAULT_KEY;
-  if (summaryCache.has(key)) return summaryCache.get(key) ?? null;
+function summaryKey(date: string | null, month?: string): string {
+  // The device day only invalidates the cache. The undated request still lets
+  // the server decide today, including the first paint and midnight rollover.
+  return `${date ?? `__today__:${kstDay(new Date().toISOString())}`}|${month ?? ""}`;
+}
+
+function nextKstMidnight(now: number): number {
+  return Date.parse(`${kstDay(new Date(now).toISOString())}T00:00:00+09:00`) + 86_400_000;
+}
+
+function summaryRecheckDelay(value: LiveSummary | null): number {
+  if (!value) return SUMMARY_RECHECK_MS.empty;
+  const airport = value.airport;
+  const hasAirportData = airport.todayExpectedPassengersTotal != null
+    || airport.departuresTrackedToday != null
+    || airport.passengerForecastTimeline?.length || airport.passengerForecast?.length
+    || airport.arrivalForecast?.todayExpectedPassengersTotal != null
+    || airport.arrivalForecast?.passengerForecastTimeline?.length
+    || airport.scheduled?.length || airport.congestion?.length || airport.transferForecast?.length;
+  const hasAreaData = Object.values(value.areas).some(area => area && (
+    area.realtime || area.realtimeForecast?.length || area.observedSeries?.length || area.weather?.length
+  ));
+  if (!hasAirportData && !hasAreaData) return SUMMARY_RECHECK_MS.empty;
+  if (airport.forecastCoverage?.all !== "COMPLETE"
+    || airport.arrivalForecast?.forecastCoverage?.all !== "COMPLETE"
+    || value.sources?.some(source => ["ERROR", "DEGRADED", "MISSING"].includes(source.status))) {
+    return SUMMARY_RECHECK_MS.partial;
+  }
+  return SUMMARY_RECHECK_MS.normal;
+}
+
+async function loadSummary(date: string | null, month: string | undefined, key: string): Promise<LiveSummary | null> {
+  const cached = summaryCache.get(key);
+  if (cached && cached.recheckAt > Date.now()) return cached.value;
   let pending = summaryPending.get(key);
   if (!pending) {
-    const url = date ? `/api/live/summary?date=${encodeURIComponent(date)}` : "/api/live/summary";
-    pending = fetch(url, { headers: { accept: "application/json" } })
+    const query = new URLSearchParams();
+    if (date) query.set("date", date);
+    if (month) query.set("month", month);
+    const url = `/api/live/summary${query.size ? `?${query}` : ""}`;
+    pending = fetch(url, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(15_000) })
       .then(async (response) => {
         if (!response.ok) return null;
         const payload = await response.json() as LiveSummary;
-        return payload.mode === "live-summary" ? payload : null;
+        return payload?.mode === "live-summary" && payload.areas && payload.airport
+          && payload.serviceDateKst === (date ?? payload.todayKst) ? payload : null;
       })
       .catch(() => null)
       .then((value) => {
-        summaryCache.set(key, value);
+        const now = Date.now();
+        // A valid response (including no data) clears the browser-only failure.
+        // Wrap once per failed request, never during render: all original source
+        // fields and times remain the last successful response's values.
+        if (value) delete value.clientRefresh;
+        const retained = value ?? (cached?.value
+          ? { ...cached.value, clientRefresh: { failedAt: new Date(now).toISOString() } }
+          : null);
+        summaryCache.set(key, {
+          value: retained,
+          recheckAt: Math.min(now + summaryRecheckDelay(value), nextKstMidnight(now)),
+        });
         summaryPending.delete(key);
-        return value;
+        return retained;
       });
     summaryPending.set(key, pending);
   }
@@ -371,18 +424,50 @@ async function loadSummary(date: string | null): Promise<LiveSummary | null> {
  * `date` is null for "whatever today is in KST", which keeps the first paint
  * free of any date the client had to guess before the server answered.
  */
-export function useLiveSummary(date: string | null = null): LiveSummary | null | undefined {
-  const key = date ?? DEFAULT_KEY;
-  const [state, setState] = useState<{ key: string; value: LiveSummary | null | undefined }>(() => ({ key, value: summaryCache.get(key) }));
+export function useLiveSummary(date: string | null = null, availabilityMonth?: string): LiveSummary | null | undefined {
+  const key = summaryKey(date, availabilityMonth);
+  const [state, setState] = useState<{ key: string; value: LiveSummary | null | undefined }>(() => ({ key, value: summaryCache.get(key)?.value }));
   // Switching dates must not leave the previous day's numbers on screen for a
   // frame. The state is adjusted during render rather than in an effect, which
   // React handles without a second pass and without cascading renders.
-  if (state.key !== key) setState({ key, value: summaryCache.get(key) });
+  if (state.key !== key) setState({ key, value: summaryCache.get(key)?.value });
   useEffect(() => {
     let active = true;
-    loadSummary(date).then((value) => { if (active) setState({ key, value }); });
-    return () => { active = false; };
-  }, [date, key]);
+    let refreshing = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const refresh = () => {
+      clearTimeout(timer);
+      if (!active || refreshing || document.visibilityState === "hidden") return;
+      const currentKey = summaryKey(date, availabilityMonth);
+      if (currentKey !== key) {
+        setState({ key: currentKey, value: summaryCache.get(currentKey)?.value });
+        return;
+      }
+      refreshing = true;
+      void loadSummary(date, availabilityMonth, key).then(value => {
+        refreshing = false;
+        if (!active) return;
+        const latestKey = summaryKey(date, availabilityMonth);
+        // A response started before midnight or a date switch must never
+        // replace the new selection, even if that older response arrives last.
+        if (latestKey !== key) {
+          setState({ key: latestKey, value: summaryCache.get(latestKey)?.value });
+          return;
+        }
+        setState({ key, value });
+        if (document.visibilityState !== "hidden") {
+          timer = setTimeout(refresh, Math.max(1, (summaryCache.get(key)?.recheckAt ?? Date.now() + SUMMARY_RECHECK_MS.empty) - Date.now()));
+        }
+      });
+    };
+    refresh();
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [date, availabilityMonth, key]);
   return state.key === key ? state.value : undefined;
 }
 
@@ -777,7 +862,7 @@ const terminalBriefText = {
 const areaBriefText = {
   title: { ko: "서울 지금", en: "Seoul now", zh: "首尔当前", ja: "ソウル現在" },
   unavailableNow: { ko: "현재 공식 활동 상태를 확인할 수 없습니다", en: "Current official activity is unavailable", zh: "当前官方活动状态暂不可用", ja: "現在の公式活動状況を確認できません" },
-  noForecast: { ko: "공식 혼잡 예측이 아직 발표되지 않았습니다", en: "No official crowd forecast has been published yet", zh: "官方拥挤预测尚未发布", ja: "公式の混雑予測はまだ発表されていません" },
+  noForecast: { ko: "확인할 수 있는 공식 혼잡 예측이 없습니다", en: "No official crowd forecast is available to read", zh: "暂无可确认的官方拥挤预测", ja: "確認できる公式の混雑予測はありません" },
   stale: { ko: "최근 관측 지연", en: "Latest observation delayed", zh: "最新观测延迟", ja: "最新観測に遅れ" },
   nowLabel: { ko: "지금", en: "now", zh: "当前", ja: "現在" },
 } as const;
@@ -1052,25 +1137,58 @@ function shiftDay(day: string, delta: number): string {
 /**
  * 어제 / 오늘 / 내일 / 날짜 선택.
  *
- * The three shortcuts are computed from the server's KST day, never the
- * viewer's device clock, so a phone in another timezone still means the same
- * "today" as the data. The free picker is bounded by the days that actually
- * hold rows, so choosing a date can never land on an empty screen by accident.
+ * Shortcuts use the refreshed server KST day. The free picker may cross
+ * months; a month-bounded list separately identifies dates actually held.
+ * Retain only navigation context on a failed date request, never its numbers.
  */
 export function DateNavigator({
-  lang, date, onChange, historyHref,
-}: { lang: Lang; date: string | null; onChange: (date: string | null) => void; historyHref?: string }) {
+  lang, date, onChange, historyHref, airportDates = false,
+}: { lang: Lang; date: string | null; onChange: (date: string | null) => void; historyHref?: string; airportDates?: boolean }) {
   const summary = useLiveSummary(date);
-  if (!summary?.todayKst) return null;
-  const today = summary.todayKst;
-  const selected = summary.serviceDateKst;
-  const known = [
-    ...summary.dateAvailability.airportFlights,
-    ...summary.dateAvailability.airportPassengerForecast,
-    ...summary.dateAvailability.seoulObserved,
-  ];
-  const min = known.length ? known.reduce((a, b) => (a < b ? a : b)) : shiftDay(today, -1);
-  const max = known.length ? known.reduce((a, b) => (a > b ? a : b)) : shiftDay(today, 1);
+  const [navigation, setNavigation] = useState(summary);
+  if (summary && summary !== navigation) setNavigation(summary);
+  const [navigationClock, setNavigationClock] = useState<{
+    serverAt: number; receivedAt: number; serverDay: string; today: string;
+  } | null>(null);
+  const freshServerAt = summary && !summary.clientRefresh ? Date.parse(summary.generatedAt) : Number.NaN;
+  const freshServerDay = summary && !summary.clientRefresh ? summary.todayKst : undefined;
+  useEffect(() => {
+    if (!Number.isFinite(freshServerAt) || !freshServerDay) return;
+    const receivedAt = performance.now();
+    const timer = setTimeout(() => setNavigationClock(current => !current || freshServerAt > current.serverAt
+      ? { serverAt: freshServerAt, receivedAt, serverDay: freshServerDay, today: freshServerDay }
+      : current), 0);
+    return () => clearTimeout(timer);
+  }, [freshServerAt, freshServerDay]);
+  const serverAt = navigationClock?.serverAt;
+  const receivedAt = navigationClock?.receivedAt;
+  const serverDay = navigationClock?.serverDay;
+  useEffect(() => {
+    if (serverAt === undefined || receivedAt === undefined || !serverDay) return;
+    // Advance navigation from the last successful SERVER clock, not the
+    // device calendar. Failures and old cache entries never reset this anchor.
+    // This one midnight timer changes no payload and performs no request.
+    const estimatedNow = () => serverAt + Math.max(0, performance.now() - receivedAt);
+    let timer: ReturnType<typeof setTimeout>;
+    const update = () => {
+      clearTimeout(timer);
+      const now = estimatedNow();
+      const days = Math.floor((now + 9 * 3_600_000) / 86_400_000) - Math.floor((serverAt + 9 * 3_600_000) / 86_400_000);
+      const today = shiftDay(serverDay, days);
+      setNavigationClock(current => current?.serverAt === serverAt && current.today !== today ? { ...current, today } : current);
+      timer = setTimeout(update, Math.max(1, nextKstMidnight(now) - now));
+    };
+    const onVisible = () => { if (document.visibilityState === 'visible') update(); };
+    const now = estimatedNow();
+    timer = setTimeout(update, Math.max(1, nextKstMidnight(now) - now));
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { clearTimeout(timer); document.removeEventListener('visibilitychange', onVisible); };
+  }, [serverAt, receivedAt, serverDay]);
+  const context = summary ?? navigation;
+  if (!context?.todayKst) return null;
+  const today = freshServerDay && (!navigationClock || freshServerAt > navigationClock.serverAt)
+    ? freshServerDay : navigationClock?.today ?? context.todayKst;
+  const selected = date ?? today;
   const shortcuts: Array<[string, string]> = [
     [shiftDay(today, -1), dateNavText.yesterday[lang]],
     [today, dateNavText.today[lang]],
@@ -1096,8 +1214,6 @@ export function DateNavigator({
       <input
         type="date"
         value={selected}
-        min={min}
-        max={max}
         onChange={(event) => {
           const next = event.target.value;
           if (!next) return;
@@ -1107,7 +1223,61 @@ export function DateNavigator({
     </label>
     {historyHref && <a className="period-outlook-link" href={historyHref}>7DAYS · {contextText(lang,"지난 기록","Past records","历史记录","過去の記録")}</a>}
     </div>
+    {airportDates && <StoredAirportDates lang={lang} date={date} selected={selected} onChange={onChange} />}
   </nav>;
+}
+
+const storedDateText = {
+  dates: { ko: '보유 날짜', en: 'Stored dates', zh: '已存日期', ja: '保存済みの日付' },
+  month: { ko: '조회 월', en: 'Month to read', zh: '查询月份', ja: '照会月' },
+  select: { ko: '저장된 날짜 선택', en: 'Select a stored date', zh: '选择已存日期', ja: '保存済みの日付を選択' },
+  flights: { ko: '운항 기록', en: 'Flight records', zh: '航班记录', ja: '運航記録' },
+  forecast: { ko: '승객 예보', en: 'Passenger forecast', zh: '旅客预测', ja: '旅客予報' },
+  planned: { ko: '예정 출발편', en: 'Scheduled departures', zh: '计划出发航班', ja: '出発予定便' },
+  none: { ko: '이 월에 확인된 공항 자료 없음', en: 'No airport data confirmed in this month', zh: '本月暂无已确认机场资料', ja: 'この月に確認済みの空港資料はありません' },
+  note: { ko: '저장된 날짜만 표시합니다. 예정편은 변경될 수 있고, 과거 승객 예보는 실제 여객 실적이 아닙니다.', en: 'Only stored dates are listed. Scheduled flights may change; past passenger forecasts are not actual passenger results.', zh: '仅列出已存日期。计划航班可能变更；过去的旅客预测并非实际旅客统计。', ja: '保存済みの日付のみ表示。予定便は変更される場合があり、過去の旅客予報は実績ではありません。' },
+} as const;
+
+function StoredAirportDates({ lang, date, selected, onChange }: {
+  lang: Lang; date: string | null; selected: string; onChange: (date: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return <details className="stored-date-picker" onToggle={event => setOpen(event.currentTarget.open)}>
+    <summary>{storedDateText.dates[lang]}</summary>
+    {open && <StoredAirportMonth lang={lang} date={date} selected={selected} onChange={onChange} />}
+  </details>;
+}
+
+function StoredAirportMonth({ lang, date, selected, onChange }: {
+  lang: Lang; date: string | null; selected: string; onChange: (date: string | null) => void;
+}) {
+  const [pickedMonth, setPickedMonth] = useState<string>();
+  const month = pickedMonth ?? selected.slice(0, 7);
+  const summary = useLiveSummary(date, pickedMonth);
+  const availability = summary?.dateAvailability;
+  const known = [...new Set([
+    ...(availability?.airportFlights ?? []), ...(availability?.airportPassengerForecast ?? []),
+    ...(availability?.airportDepartureSchedule ?? []),
+  ])].filter(day => day.startsWith(month)).sort();
+  return <div className="stored-date-content">
+    <label>{storedDateText.month[lang]} <input type="month" value={month} onChange={event => {
+      if (/^\d{4}-(0[1-9]|1[0-2])$/.test(event.target.value)) setPickedMonth(event.target.value);
+    }} /></label>
+    <label>{storedDateText.select[lang]} <select aria-label={storedDateText.select[lang]} value={known.includes(selected) ? selected : ''} onChange={event => {
+      if (!event.target.value) return;
+      setPickedMonth(undefined);
+      onChange(event.target.value);
+    }}>
+      <option value="" disabled>{storedDateText.select[lang]}</option>
+      {known.map(day => <option key={day} value={day}>{day} · {[
+        availability?.airportFlights.includes(day) ? storedDateText.flights[lang] : null,
+        availability?.airportPassengerForecast.includes(day) ? storedDateText.forecast[lang] : null,
+        availability?.airportDepartureSchedule?.includes(day) ? storedDateText.planned[lang] : null,
+      ].filter(Boolean).join(' / ')}</option>)}
+    </select></label>
+    {summary ? !known.length && <p>{storedDateText.none[lang]}</p> : <LiveLoadMessage loading={summary === undefined} lang={lang} />}
+    <p>{storedDateText.note[lang]}</p>
+  </div>;
 }
 
 /** Explains, in one line, what a chosen date can and cannot show. */
@@ -1127,24 +1297,47 @@ export function DateScopeNote({ lang, date, scope = "departures" }: {
   if (!summary) return null;
   const { dayRelation, serviceDateKst, dateAvailability } = summary;
   const showsFlights = scope === "departures";
-  const hasFlights = !showsFlights || dateAvailability.airportFlights.includes(serviceDateKst);
-  const hasForecast = dateAvailability.airportPassengerForecast.includes(serviceDateKst);
-  if (dayRelation === "TODAY" && hasFlights && hasForecast) return null;
+  const hasFlights = dateAvailability.airportFlights.includes(serviceDateKst);
+  const passengerData = scope === 'arrivals' ? summary.airport.arrivalForecast : summary.airport;
+  const hasForecast = dateAvailability.airportPassengerForecast.includes(serviceDateKst)
+    && passengerData?.forecastCoverage?.all !== 'UNAVAILABLE';
+  const hasSchedule = dateAvailability.airportDepartureSchedule?.includes(serviceDateKst);
   const parts: string[] = [];
   if (dayRelation === "PAST") {
     parts.push(lang === "ko" ? "지난 날짜는 기록으로만 봅니다" : lang === "en" ? "A past date is shown as a record only" : lang === "zh" ? "过去日期仅作为记录显示" : "過去の日付は記録としてのみ表示します");
   }
   if (dayRelation === "FUTURE") {
-    parts.push(lang === "ko" ? "앞으로의 날짜는 공식 예측만 있습니다" : lang === "en" ? "A future date has official forecasts only" : lang === "zh" ? "未来日期仅有官方预测" : "先の日付は公式予測のみです");
+    parts.push(contextText(lang, '확보한 예보·예정 운항만 표시합니다', 'Only forecasts and schedules actually held are shown', '仅显示已获取的预测与计划航班', '取得済みの予報・予定便のみ表示します'));
   }
-  if (!hasForecast) {
+  if (hasForecast) {
+    const stamp = passengerData?.passengerForecastRetrievedAt;
+    parts.push(`${storedDateText.forecast[lang]}${stamp ? ` · ${kstStamp(stamp)} KST` : ''}`);
+    if (passengerData?.forecastCoverage?.all === 'PARTIAL') parts.push(contextText(lang,
+      '일부 시간대만 확보', 'Only some time bands held', '仅获取部分时段', '一部の時間帯のみ取得'));
+  } else {
     parts.push(lang === "ko" ? "공식 예상 승객 없음" : lang === "en" ? "no official passenger forecast" : lang === "zh" ? "无官方预计旅客" : "公式予想旅客なし");
   }
-  if (!hasFlights) {
+  if (showsFlights && dayRelation !== 'FUTURE' && hasFlights) {
+    const stamp = summary.airport.departuresTrackedTodayRetrievedAt;
+    parts.push(`${storedDateText.flights[lang]}${stamp ? ` · ${kstStamp(stamp)} KST` : ''}`);
+  } else if (showsFlights && dayRelation !== 'FUTURE') {
     parts.push(lang === "ko" ? "저장된 운항 기록 없음" : lang === "en" ? "no stored flight record" : lang === "zh" ? "无已存储航班记录" : "保存された運航記録なし");
   }
+  if (showsFlights && dayRelation === 'FUTURE') {
+    const stamp = summary.airport.scheduledBriefing?.ranking.all.retrievedAt;
+    parts.push(hasSchedule ? `${storedDateText.planned[lang]}${stamp ? ` · ${kstStamp(stamp)} KST` : ''}`
+      : contextText(lang, '해당 날짜 예정편 자료 없음 / 제공 범위 확인 불가', 'No held schedule for this date / provider coverage unconfirmed', '该日期无已存计划航班／提供范围未确认', 'この日の予定便資料なし・提供範囲は未確認'));
+  }
+  const forecastSource = summary.sources?.find(source => source.sourceId === 'INCHEON_PASSENGER_FORECAST');
+  if (forecastSource?.status === 'ERROR' || forecastSource?.status === 'DEGRADED') {
+    parts.push(contextText(lang, '승객 예보 자료원의 최근 수집 오류', 'Latest passenger-source collection had an error', '旅客预测资料源最近采集出错', '旅客予報の資料源の直近収集にエラー'));
+  }
   if (!parts.length) return null;
-  return <p className="date-scope-note" role="status">{parts.join(" · ")}</p>;
+  return <p className="date-scope-note" role="status">{summary.clientRefresh?.failedAt && <span data-testid="summary-refresh-failed">{contextText(lang,
+    '화면 갱신 실패 · 마지막 정상 자료를 표시합니다.',
+    'Refresh failed · showing the last successful data.',
+    '页面更新失败 · 显示上次成功取得的资料。',
+    '画面の更新に失敗・最後に取得できた資料を表示します。')} {kstStamp(summary.clientRefresh.failedAt)} KST · </span>}{parts.join(" · ")}</p>;
 }
 
 /**
@@ -3589,25 +3782,33 @@ const flightBoardText = {
  */
 export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; terminal: "all" | "T1" | "T2"; date?: string | null }) {
   const summary = useLiveSummary(date);
+  const requestDate = date ?? summary?.serviceDateKst ?? null;
   const [visibleCount, setVisibleCount] = useState(10);
   const [direction, setDirection] = useState<"departure" | "arrival">("departure");
   const [query, setQuery] = useState("");
-  const [loaded, setLoaded] = useState<{ date: string | null; rows: LiveFlightRow[]; failed: boolean; truncated: boolean } | null>(null);
+  const [loaded, setLoaded] = useState<{ date: string; rows: LiveFlightRow[]; failed: boolean; truncated: boolean; basis?: string; retrievedAt?: string | null } | null>(null);
   // Changing the date must not leave the previous day's flights on screen, so
   // the loaded date is tracked alongside the rows and compared during render
   // rather than cleared from inside the effect.
-  const flights = loaded && loaded.date === date ? loaded.rows : null;
+  const flights = loaded && loaded.date === requestDate ? loaded.rows : null;
   // Loaded here rather than with the summary: the board reads far more rows
   // than the rest of the product, so it is fetched only once this tab opens.
   useEffect(() => {
+    if (!requestDate) return;
     let active = true;
-    const url = date ? `/api/live/flights?date=${encodeURIComponent(date)}` : "/api/live/flights";
+    const url = `/api/live/flights?date=${encodeURIComponent(requestDate)}`;
     fetch(url, { headers: { accept: "application/json" } })
-      .then(async (response) => (response.ok ? await response.json() as { mode?: string; flights?: LiveFlightRow[]; truncated?: boolean } : null))
+      .then(async (response) => (response.ok ? await response.json() as { mode?: string; serviceDateKst?: string; flights?: LiveFlightRow[]; truncated?: boolean; basis?: string; retrievedAt?: string | null } : null))
       .catch(() => null)
-      .then((payload) => { if (active) setLoaded({ date, rows: payload?.flights ?? [], failed: !payload || payload.mode !== "live-flights", truncated: payload?.truncated ?? false }); });
+      .then((payload) => {
+        if (!active) return;
+        const failed = !payload || payload.mode !== 'live-flights' || (payload.serviceDateKst && payload.serviceDateKst !== requestDate);
+        setLoaded(previous => failed && previous?.date === requestDate && !previous.failed
+          ? previous
+          : { date: requestDate, rows: failed ? [] : payload?.flights ?? [], failed: Boolean(failed), truncated: payload?.truncated ?? false, basis: payload?.basis, retrievedAt: payload?.retrievedAt });
+      });
     return () => { active = false; };
-  }, [date]);
+  }, [requestDate, summary?.generatedAt]);
   const scoped = useMemo(() => {
     const needle = query.trim().toUpperCase();
     return (flights ?? []).filter((flight) => {
@@ -3619,7 +3820,8 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
   }, [flights, direction, terminal, query]);
   if (flights === null || loaded?.failed) return <section className="flight-board" aria-labelledby="flight-board-title"><div className="section-head"><h2 id="flight-board-title">{flightBoardText.search[lang]}</h2></div><LiveLoadMessage loading={flights === null} lang={lang} /></section>;
   const visible = scoped.slice(0, visibleCount);
-  const ranking = terminal === "all" ? summary?.airport.airlineRanking?.all : summary?.airport.airlineRanking?.byTerminal?.[terminal];
+  const planned = loaded?.basis === 'OFFICIAL_DEPARTURE_SCHEDULE';
+  const ranking = planned ? null : terminal === "all" ? summary?.airport.airlineRanking?.all : summary?.airport.airlineRanking?.byTerminal?.[terminal];
   const changes = summary?.airport.periodComparisons?.[terminal]?.[7]?.flightRecords;
   const composition = summary?.airport.periodComparisons?.[terminal]?.[7]?.composition;
   const unit = { ko: "편", en: " flights", zh: "班", ja: "便" }[lang];
@@ -3628,8 +3830,13 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
 
   return <section className="flight-board" aria-labelledby="flight-board-title">
     <div className="section-head">
-      <div><p className="eyebrow">OFFICIAL FLIGHT RECORD · KST</p><h2 id="flight-board-title">{flightBoardText.search[lang]}</h2></div>
+      <div><p className="eyebrow">{planned ? 'SCHEDULED DEPARTURES' : 'OFFICIAL FLIGHT RECORD'} · KST</p><h2 id="flight-board-title">{flightBoardText.search[lang]}</h2></div>
     </div>
+    {planned && <p className="flow-note" data-testid="planned-flight-basis">{requestDate} · {contextText(lang,
+      '확보한 예정 출발편 · 변경·취소될 수 있으며 확정 운항 결과가 아닙니다.',
+      'Held scheduled departures · may change or be cancelled; not confirmed operating results.',
+      '已获取的计划出发航班 · 可能变更或取消，并非确认的运行结果。',
+      '取得済みの出発予定便・変更や欠航の可能性があり、確定運航結果ではありません。')}{loaded?.retrievedAt ? ` · ${kstStamp(loaded.retrievedAt)} KST` : ''}</p>}
     {summary && <HolidayContext months={summary.holidays} date={summary.serviceDateKst} lang={lang} />}
     {ranking && ranking.totalFlights > 0 && <div className="current-brief flight-summary">
       <strong>{({ ko: "선택 터미널 출발 운항", en: "Departures in the selected scope", zh: "所选范围的出发航班", ja: "選択範囲の出発運航" })[lang]} {ranking.totalFlights}{unit}{changes ? ` · ${comparisonText(changes, lang, 7)}` : ""}</strong>

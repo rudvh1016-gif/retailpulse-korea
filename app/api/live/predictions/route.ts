@@ -1,10 +1,11 @@
 import { getDb } from '../../../../db';
 import { kstDayOf,shiftKstDay } from '../../../../lib/kst';
 import { POPULATION_MODEL } from '../../../../lib/population-predictions';
+import { CONTENT_API_ROBOTS_TAG } from '../../../../lib/crawl-policy';
 export const dynamic='force-dynamic';
 export async function GET(request:Request) {
   const area=new URL(request.url).searchParams.get('area')??'myeongdong';
-  if(!['myeongdong','hongdae','seongsu'].includes(area)) return Response.json({error:'invalid_area'},{status:400});
+  if(!['myeongdong','hongdae','seongsu'].includes(area)) return Response.json({error:'invalid_area'},{status:400,headers:{'x-robots-tag':CONTENT_API_ROBOTS_TAG}});
   try {
     const db=(await getDb()).$client, today=kstDayOf(new Date().toISOString()), tomorrow=shiftKstDay(today,1);
     const [run,coverage,records]=await Promise.all([
@@ -16,6 +17,6 @@ export async function GET(request:Request) {
         .bind(area,POPULATION_MODEL,shiftKstDay(today,-7),tomorrow).all(),
     ]);
     return Response.json({area,targetDate:tomorrow,run:run?JSON.parse(run.payload):null,coverage:coverage?JSON.parse(coverage.payload):null,records:records.results??[],
-      generatedAt:new Date().toISOString()},{headers:{'cache-control':'public, max-age=60, s-maxage=120'}});
-  } catch { return Response.json({error:'prediction_data_unavailable'},{status:503,headers:{'cache-control':'no-store'}}); }
+      generatedAt:new Date().toISOString()},{headers:{'cache-control':'public, max-age=60, s-maxage=120','x-robots-tag':CONTENT_API_ROBOTS_TAG}});
+  } catch { return Response.json({error:'prediction_data_unavailable'},{status:503,headers:{'cache-control':'no-store','x-robots-tag':CONTENT_API_ROBOTS_TAG}}); }
 }

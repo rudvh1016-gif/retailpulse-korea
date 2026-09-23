@@ -44,6 +44,7 @@ import {
   type SeoLocale,
   type SeoSlug,
 } from "../app/seo-config";
+import { CONTENT_API_ROBOTS_TAG, crawlableContentApis } from "./crawl-policy";
 
 /**
  * Roughly how wide a string renders, in half-width units.
@@ -100,6 +101,71 @@ export function decodeHtmlText(value: string): string {
     .replace(/&gt;/g, ">")
     .replace(/&amp;/g, "&");
 }
+
+/**
+ * Whether robots.txt lets a crawler fetch `path`, decided the way Google and
+ * RFC 9309 decide it rather than by spotting a line.
+ *
+ * The group for the named agent applies if one exists, otherwise the `*`
+ * group. Within it the rule with the LONGEST matching path wins, and `Allow`
+ * wins a tie; `*` matches any run of characters and a trailing `$` anchors
+ * the end. Matching is by prefix, so a rule for `/api/live/summary` also
+ * covers `/api/live/summary?date=…`.
+ *
+ * This exists because the old check looked for the line `Disallow: /api/`
+ * and passed — while that line was the reason Googlebot could not render a
+ * single page (see lib/crawl-policy.ts). A presence test cannot tell a rule
+ * that protects the site from one that blinds the crawler; evaluating it can.
+ */
+export function robotsAllows(robotsTxt: string, path: string, agent = "googlebot"): boolean {
+  const groups: { agents: string[]; rules: { allow: boolean; pattern: string }[] }[] = [];
+  let current: (typeof groups)[number] | null = null;
+  let collectingAgents = false;
+  for (const raw of robotsTxt.split(/\r?\n/)) {
+    const line = raw.replace(/#.*/, "").trim();
+    const match = line.match(/^([a-z-]+)\s*:\s*(.*)$/i);
+    if (!match) continue;
+    const field = match[1].toLowerCase();
+    const value = match[2].trim();
+    if (field === "user-agent") {
+      if (!current || !collectingAgents) {
+        current = { agents: [], rules: [] };
+        groups.push(current);
+      }
+      current.agents.push(value.toLowerCase());
+      collectingAgents = true;
+    } else if ((field === "allow" || field === "disallow") && current) {
+      collectingAgents = false;
+      // An empty Disallow permits everything; it is not a rule that matches.
+      if (value) current.rules.push({ allow: field === "allow", pattern: value });
+    } else {
+      collectingAgents = false;
+    }
+  }
+  const token = agent.toLowerCase();
+  const group = groups.find((entry) => entry.agents.includes(token)) ?? groups.find((entry) => entry.agents.includes("*"));
+  if (!group) return true;
+
+  let best: { allow: boolean; length: number } | null = null;
+  for (const rule of group.rules) {
+    const anchored = rule.pattern.endsWith("$");
+    const body = anchored ? rule.pattern.slice(0, -1) : rule.pattern;
+    const source = body.split("*").map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&")).join(".*");
+    if (!new RegExp(`^${source}${anchored ? "$" : ""}`).test(path)) continue;
+    const length = rule.pattern.length;
+    if (!best || length > best.length || (length === best.length && rule.allow && !best.allow)) {
+      best = { allow: rule.allow, length };
+    }
+  }
+  return best ? best.allow : true;
+}
+
+/**
+ * Paths no crawler has any business fetching. Two are enough to prove the
+ * blanket `/api/` rule still holds under the content-API exceptions: a write
+ * endpoint and an operational read.
+ */
+const INTERNAL_API_PROBES = ["/api/beta-signups", "/api/health"] as const;
 
 const TIMEOUT_MS = 20_000;
 
@@ -191,11 +257,51 @@ async function checkRobots(context: Context): Promise<void> {
     declaredSitemap === `${origin}/sitemap.xml`,
     `declared ${declaredSitemap || "nothing"}`,
   );
+  const crawlableInternal = INTERNAL_API_PROBES.filter((path) => robotsAllows(body, path));
   check(context,
-    "the internal API is kept out of the index",
-    lines.some((line) => /^disallow:\s*\/api\//i.test(line)),
-    "expected Disallow: /api/",
+    "the internal API stays uncrawled",
+    crawlableInternal.length === 0,
+    crawlableInternal.length ? `crawlable: ${crawlableInternal.join(", ")}` : `blocked: ${INTERNAL_API_PROBES.join(", ")}`,
   );
+  // The pages render their main content from these. Blocked, Googlebot sees
+  // only the load-failure message and reports the page as Soft 404.
+  const blockedContent = crawlableContentApis.filter((path) => !robotsAllows(body, `${path}?probe=1`));
+  check(context,
+    "the data every page renders with is crawlable",
+    blockedContent.length === 0,
+    blockedContent.length ? `blocked for Googlebot: ${blockedContent.join(", ")} — pages render as the load-failure message` : `allowed: ${crawlableContentApis.join(", ")}`,
+  );
+}
+
+/**
+ * A content API a crawler may fetch must still never appear as a search
+ * result of its own; `X-Robots-Tag: noindex` is what keeps it out.
+ *
+ * Only the header is read. The status is not judged here — a degraded 200 or
+ * a 503 still has to carry the tag, because either can be what the crawler
+ * happens to fetch.
+ */
+async function checkContentApisStayUnlisted(context: Context): Promise<void> {
+  const { origin } = context;
+  // This runs minutes after a deploy, while the edge may still hold a response
+  // the previous build produced (summary: max-age 60 + stale-while-revalidate
+  // 300). A query the routes ignore gives a cache key nobody has used, so the
+  // header read is the one THIS build emits — at the cost of one uncached read.
+  const probe = `discoverability=${Date.now()}`;
+  const probes: Record<string, string> = {
+    "/api/live/summary": `/api/live/summary?${probe}`,
+    "/api/live/predictions": `/api/live/predictions?area=myeongdong&${probe}`,
+  };
+  for (const path of crawlableContentApis) {
+    const response = await context.fetch(`${origin}${probes[path] ?? path}`, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+    await response.arrayBuffer();
+    const tag = response.headers.get("x-robots-tag") ?? "";
+    check(context,
+      `${path} is kept out of the index`,
+      tag.toLowerCase().split(/\s*,\s*/).includes(CONTENT_API_ROBOTS_TAG),
+      `status ${response.status}; x-robots-tag: ${tag || "absent"}`,
+    );
+  }
 }
 
 /**
@@ -382,6 +488,7 @@ export async function runDiscoverabilityChecks(options: { origin: string; fetch?
   };
 
   await checkRobots(context);
+  await checkContentApisStayUnlisted(context);
   const urls = await checkSitemap(context);
   if (urls.length > 0) await checkSitemapUrlsResolve(context, urls);
   for (const locale of seoLocales) await checkPageIdentity(context, locale);
