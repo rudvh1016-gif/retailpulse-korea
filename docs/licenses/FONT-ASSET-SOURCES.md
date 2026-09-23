@@ -64,3 +64,38 @@ The KORETAIL Sans subset was refreshed from the SHA-256-verified full Pretendard
 WOFF2 with the same union policy and its existing renamed name table.
 Existing family names, weights and OFL licenses are retained. This adds missing
 new copy/holiday characters without introducing external font requests.
+
+## 2026-09-22 airport date copy refresh (review branch)
+
+Only the SC 400/600 subsets needed new characters for the stored-date controls.
+They were regenerated from the same SHA-256-verified 2.004 source using
+FontTools 4.65.0 and Brotli 1.2.0. The corpus preserves all 2,159 existing
+codepoints and adds two from current app/lib copy (2,161 total). Resulting
+WOFF2 sizes are 269,028 and 272,812 bytes. Existing layout features, names,
+weights and licenses are preserved; KO/JP assets and typography are unchanged.
+This branch remains unmerged and does not change the running UI trial.
+## 2026-09-21 industry guide copy refresh
+
+The same checksum-verified upstream sources were used with FontTools 4.65.0
+and Brotli 1.2.0. Each subset retains the union of its existing cmap and all
+current app/lib `.ts`, `.tsx`, `.css`, `.mjs` and `.json` copy supported by the
+source font. The KORETAIL Sans renamed name table is preserved; Noto instances
+remain at weights 400 and 600. No family, CSS weight or font source changed.
+Layout features are limited to the feature tags already present in each
+original subset, avoiding unrelated alternate glyph expansion. Final sizes
+remain within the existing 300 KB Korean / 320 KB CJK per-face budgets:
+226,772 bytes (Korean), 277,860 / 281,668 (SC), 215,432 / 217,728 (JP).
+
+Verified cmap growth: KORETAIL Sans 1,502 → 1,508; SC at each weight
+2,159 → 2,223; JP at each weight 1,783 → 1,833. Every previously bundled
+code point remains. The new playbook corpus initially lacked 6 Korean,
+34 Chinese and 33 Japanese characters in its primary subset; after refresh
+it lacks none. Browser coverage includes every sector in four languages.
+
+## 2026-09-23 latest-main reconciliation
+
+Merged main 43ce9f61af0fdde126ff7369992755098e4f6b8a, retaining #207's Korean-page font loading restrictions and #208's GitHub-record policy. The previously prepared Korean subset already contains all 1,502 main code points plus the six new playbook syllables; no font regeneration or full-font loading was needed. Generated the new main coverage fixture directly from that 226,772-byte font (1,508 code points, zero removed). Existing four CJK subset files retain the guide's required characters and unchanged budgets. Browser checks still verify that Korean shell text does not fetch the 2 MB full font. No collector, schedule, dependency or runtime API change.
+
+## 2026-09-23 ordered review integration
+
+PR #205 follows #206. FontTools cmap comparison confirmed that both guide SC faces already contain all 2,161 airport-date code points (2,223 total), so the guide faces are retained without regeneration. No airport glyph is removed. The Korean font loading restriction from latest main remains intact.

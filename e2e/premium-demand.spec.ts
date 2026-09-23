@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { SUMMARY_FIXTURE, routeSummary } from './summary-fixture';
 import type { LiveSummary } from '../app/live-signals';
@@ -18,7 +18,7 @@ for (const width of [390, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(`/ko${route}`);
       await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
-      if (!route) await page.locator('.personal-existing > summary').click();
+      if (!route) await revealPublicArea(page);
       await expect(page.locator(route === '/airport' ? '.airport-current-brief' : '.area-current-brief').first()).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
       await page.evaluate(() => window.scrollTo({top:0,behavior:'instant'}));
@@ -47,9 +47,9 @@ for (const lang of ['ko', 'en', 'zh', 'ja']) {
     await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
     await page.setViewportSize({ width: 360, height: 844 });
     await page.goto(`/${lang}`);
-    await expect(page.getByTestId('personal-onboarding')).toBeVisible();
-    await expect(page.getByTestId('area-demand-card')).toHaveCount(0);
-    await page.locator('.personal-existing > summary').click();
+    // A first visit leads with the public overview, so the card is already
+    // there and no questionnaire stands in front of it.
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     const card = page.getByTestId('area-demand-card').first();
     await expect(card).toBeVisible();
 
@@ -58,11 +58,9 @@ for (const lang of ['ko', 'en', 'zh', 'ja']) {
     await page.locator('.demand-card-footer > a').first().click();
     await expect(page).toHaveURL(new RegExp(`/${lang}/hongdae`));
     await page.goBack();
-    await expect(page.getByTestId('personal-onboarding')).toBeVisible();
-    await expect(page.locator('.demand-home')).toHaveCount(0);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await page.locator('.personal-existing > summary').click();
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.locator('.demand-home')).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
 }
 
@@ -108,14 +106,30 @@ for (const state of ['forecast-only', 'missing', 'stale', 'comparison-overlap', 
 }
 
 
+/**
+ * Reveal the public area, whichever state the reader is in.
+ *
+ * A reader with saved settings still gets it behind the fold-out; a first
+ * visit now has it on the page already. The assertions after each call are
+ * what prove the content is really there, so this cannot pass by showing
+ * nothing.
+ */
+async function revealPublicArea(page: Page) {
+  const foldout = page.locator('.personal-existing > summary');
+  if (await foldout.count()) await foldout.click();
+}
+
 test('selected dates and terminal scopes survive links, reload and back', async ({ page }) => {
+  // The selected date must match the fixture's actual service date; the
+  // summary reader now correctly rejects a response for another day.
+  const selectedDate = SUMMARY_FIXTURE.serviceDateKst;
   await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
   await page.route('**/api/live/predictions*', routeSummary({targetDate:'2026-09-01',run:null,coverage:null,records:[]}));
-  await page.goto('/ko?date=2026-09-01');
-  await page.locator('.personal-existing > summary').click();
+  await page.goto(`/ko?date=${selectedDate}`);
+  await revealPublicArea(page);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
-  await expect(page.locator('.demand-card-footer > a').first()).toHaveAttribute('href','/ko/myeongdong?date=2026-09-01');
-  await page.goto('/ko/airport?terminal=T1&date=2026-09-01');
+  await expect(page.locator('.demand-card-footer > a').first()).toHaveAttribute('href',`/ko/myeongdong?date=${selectedDate}`);
+  await page.goto(`/ko/airport?terminal=T1&date=${selectedDate}`);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
   await page.getByRole('tab',{name:'T2',exact:true}).click();
   await expect(page).toHaveURL(/terminal=T2/);

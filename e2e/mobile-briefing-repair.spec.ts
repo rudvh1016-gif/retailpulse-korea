@@ -23,19 +23,25 @@ async function fixture(page: Page, payload: unknown = SUMMARY_FIXTURE) {
   });
 }
 
-test('new personal home opens setup without a public area', async ({ page }) => {
+test('the personal home leads with the public area and offers setup', async ({ page }) => {
+  // Until 2026-09-19 this asserted the opposite: a first visit opened the
+  // questionnaire and the public area was absent until the fold-out was
+  // clicked. Measured against a populated summary that page carried 579
+  // characters and not one figure, which is what the change below replaced.
   await fixture(page);
   await page.goto('/ko');
-  await expect(page.getByTestId('personal-onboarding')).toBeVisible();
-  await expect(page.getByRole('heading', { name: '내 브리핑', exact: true })).toBeVisible();
-  await expect(page.locator('.demand-home, .area-current-brief, .airport-current-brief')).toHaveCount(0);
-  await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
-  await page.locator('.personal-existing > summary').click();
+  await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
   await expect(page.locator('.demand-home')).toBeVisible();
+  await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
+  await page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true }).click();
+  await expect(page.getByTestId('personal-onboarding')).toBeVisible();
 });
+
 
 test('saving Myeongdong and weather only excludes every unselected area and interest', async ({ page }) => {
   await fixture(page); await page.goto('/ko');
+  // A first visit answers with the information, so the questionnaire is opened.
+  await page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true }).click();
   const form = page.getByTestId('personal-onboarding');
   await form.locator('[data-role="manager"]').click();
   await form.getByRole('button', { name: '다음', exact: true }).click();
@@ -147,7 +153,7 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     await expect(page.locator('.flow-now rect')).toHaveCount(0);
     const buttons = await page.locator('.date-nav-shortcuts button').evaluateAll(els => els.map(el => { const r = el.getBoundingClientRect(), s = getComputedStyle(el); return { x: r.x, right: r.right, y: r.y, bottom: r.bottom, height: r.height, border: s.borderTopWidth }; }));
     expect(buttons).toHaveLength(3);
-    buttons.forEach((r, i) => { expect(r.height).toBeGreaterThanOrEqual(44); expect(r.border).toBe('0px'); if (i) expect(r.x).toBeGreaterThanOrEqual(buttons[i - 1].right); });
+    buttons.forEach((r, i) => { expect(r.height).toBeGreaterThanOrEqual(48); expect(r.border).toBe('1px'); if (i) expect(r.x).toBeGreaterThanOrEqual(buttons[i - 1].right); });
     const tools = await page.locator('.date-nav-tools').boundingBox();
     expect(tools!.y).toBeGreaterThanOrEqual(buttons[0].bottom);
     const slider = page.getByRole('slider');
@@ -189,6 +195,8 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
 
 for (const width of [390, 1440]) test(`personal home screenshots ${width}`, async ({ page }, info) => {
   await page.setViewportSize({ width, height: 900 }); await fixture(page); await page.goto('/ko');
+  await page.screenshot({ path: info.outputPath(`first-visit-${width}.png`) });
+  await page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true }).click();
   await expect(page.getByTestId('personal-onboarding')).toBeVisible();
   await page.screenshot({ path: info.outputPath(`setup-${width}.png`) });
   await page.evaluate(({ key, p }) => { localStorage.setItem(key, JSON.stringify(p)); }, { key: PREFERENCE_KEY, p: preferences });
@@ -219,10 +227,15 @@ for (const width of [360, 390]) test(`owner UI lock across main screens ${width}
       await expect(page.locator('.airport-metric-value')).toBeVisible();
       await expect(page.locator('.airport-metric-value')).toHaveCSS('font-size', route ? '17px' : '16px');
     }
-    const controls = page.locator('.personal-switches button, .date-nav-shortcuts button, .area-tabs button, .terminal-selector button, .airport-context-nav button, .prediction-view .segmented button');
+    const controls = page.locator('.personal-switches .personal-inline button, .area-tabs button, .terminal-selector button, .airport-context-nav button, .prediction-view .segmented button');
     for (const style of await controls.evaluateAll(els => els.map(el => { const s = getComputedStyle(el); return { top:s.borderTopWidth, left:s.borderLeftWidth, right:s.borderRightWidth, bottom:s.borderBottomWidth, background:s.backgroundColor, height:el.getBoundingClientRect().height }; }))) {
       expect(style.top).toBe('0px'); expect(style.left).toBe('0px'); expect(style.right).toBe('0px');
       expect(style.bottom).toBe('1px'); expect(style.background).toBe('rgb(255, 255, 255)'); expect(style.height).toBeGreaterThanOrEqual(44);
+    }
+    for (const control of await page.locator('.date-nav-shortcuts button').all()) {
+      await expect(control).toHaveCSS('border-top-width', '1px');
+      await expect(control).toHaveCSS('border-left-width', '1px');
+      expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(48);
     }
     if (!route || route === '/airport' || route === '/hongdae') {
       await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
