@@ -82,3 +82,7 @@ Verified cmap growth: KORETAIL Sans 1,502 → 1,508; SC at each weight
 code point remains. The new playbook corpus initially lacked 6 Korean,
 34 Chinese and 33 Japanese characters in its primary subset; after refresh
 it lacks none. Browser coverage includes every sector in four languages.
+
+## 2026-09-23 latest-main reconciliation
+
+Merged main 43ce9f61af0fdde126ff7369992755098e4f6b8a, retaining #207's Korean-page font loading restrictions and #208's GitHub-record policy. The previously prepared Korean subset already contains all 1,502 main code points plus the six new playbook syllables; no font regeneration or full-font loading was needed. Generated the new main coverage fixture directly from that 226,772-byte font (1,508 code points, zero removed). Existing four CJK subset files retain the guide's required characters and unchanged budgets. Browser checks still verify that Korean shell text does not fetch the 2 MB full font. No collector, schedule, dependency or runtime API change.

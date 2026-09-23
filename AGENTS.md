@@ -72,6 +72,19 @@ blue rectangular borders, blue fills or large pills. Population observations are
 official forecasts use a restrained dashed blue range edge. Preserve exact min/max bands,
 missing intervals and personal preferences. All main screens use the shared safe-area header.
 
+## 작업 완료와 GitHub 기록
+
+**최종 기록의 기준은 GitHub다.** Claude Code·Codex·GPT 등 모든 작업자는 사용자의 보고 복사·붙여넣기 없이 최신 GitHub만으로 마지막 작업을 복원할 수 있게 한다.
+
+1. 변경이 있으면 저장소에서 요구하는 테스트·검증 → 커밋·push → PR → 해당 커밋의 CI 확인 → 안전하면 병합 → 최신 `origin/main`을 다시 받아 반영 여부·검증 상태 확인까지 진행한다. 기본 브랜치가 다르면 그 브랜치를 기준으로 한다.
+2. PR 본문 또는 기존 STATUS/운영 문서에 작업 목적·결과, 변경 파일, 실제 검증 명령과 결과, 커밋 SHA·PR/CI 링크, 병합 여부, 남은 일과 막힌 이유를 기록한다. 병합 후에는 확인한 최신 main SHA와 최종 상태를 PR 본문/댓글 또는 운영 문서에 갱신한다.
+3. 코드 변경이 없는 조사도 변경하지 않은 이유, 조사 결과·근거(확인한 SHA·파일/실행/자료 링크), 검증 한계와 남은 일을 해당 저장소의 GitHub Issue/기존 인계함 또는 STATUS/운영 문서에 남긴다. 기록만을 위해 빈 코드 커밋이나 빈 PR을 만들지 않는다.
+4. 결과를 Claude 채팅에만 남기거나 로컬 브랜치에만 두지 않는다. 미완료 작업도 원격 브랜치·draft PR 또는 Issue에 진행 상황과 재개 방법을 남긴다. 기존 채팅 보고 형식은 유지하되 GitHub 기록을 대신하지 못한다.
+5. 기존 안전정책·승인 범위·필수 리뷰·브랜치 보호·배포 절차를 우선한다. 실패/미확인 CI, 충돌, 권한 부족, 필요한 승인 미충족이면 강제 병합하거나 우회하지 말고 원인과 다음 조치를 기록한다. CI가 없거나 실행되지 않았으면 통과라고 쓰지 말고 적용 가능한 검증과 그 한계를 적는다.
+6. 기록에 Secret·토큰·계좌정보·비공개 원본 자료를 넣지 않는다. GitHub 쓰기까지 막히면 로컬에 인계 자료를 보존하고 사용자에게 저장 실패·필요 권한을 알린다. GitHub 기록 전에는 저장·인계 완료라고 보고하지 않는다.
+
+기존 운영 인계 문서는 `docs/SHARED_PROJECT_STATE.md`이며, 실제 최신 작업 근거는 해당 PR/Issue와 최신 main을 함께 확인한다.
+
 Before push:
 
 - run applicable lint/typecheck/unit/build/render/E2E/secret checks;
