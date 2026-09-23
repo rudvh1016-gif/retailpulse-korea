@@ -1201,12 +1201,16 @@ export function DateNavigator({
         type="button"
         className={selected === value ? "active" : ""}
         aria-current={selected === value ? "date" : undefined}
+        aria-pressed={selected === value}
+        aria-label={label}
         onClick={() => onChange(value === today ? null : value)}
-      >{label}</button>)}
+      ><span>{label}</span><time dateTime={value}>{new Intl.DateTimeFormat(airportLocale(lang), {
+        timeZone: "Asia/Seoul", month: "numeric", day: "numeric", weekday: "short",
+      }).format(new Date(`${value}T12:00:00+09:00`))}</time></button>)}
     </div>
     <div className="date-nav-tools">
     <label className="date-nav-picker">
-      <span className="sr-only">{dateNavText.pick[lang]}</span>
+      <span>{dateNavText.pick[lang]}</span>
       <input
         type="date"
         value={selected}
