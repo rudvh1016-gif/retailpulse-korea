@@ -9,7 +9,11 @@ async function fixture(page:Page) {
   });
 }
 async function setup(page:Page,lang:PersonalLang='ko',location='airport') {
+  // A first visit now answers with the public summary, so the questionnaire is
+  // opened on request. When setup() is reached from 설정 변경 the form is
+  // already up, and this is a no-op.
   const form=page.getByTestId('personal-onboarding');
+  if(!await form.count()) await page.getByRole('button',{name:pc('startSetup',lang),exact:true}).click();
   await expect(form).toBeVisible();
   await form.locator('[data-role="manager"]').click();
   await form.getByRole('button',{name:pc('next',lang),exact:true}).click();
@@ -35,6 +39,37 @@ async function setup(page:Page,lang:PersonalLang='ko',location='airport') {
   const preparation = page.locator('.personal-preparation h3');
   if(await preparation.count()) await expect(preparation).toHaveText(pc('prepareTomorrow',lang));
 }
+test('a first visit answers with the information, not a questionnaire',async({page})=>{
+  // The home is the sitemap's priority-1.0 URL. It used to render a four-step
+  // role question with the public summary collapsed underneath, so a reader —
+  // and a crawler — met a settings screen instead of the data.
+  await fixture(page);await page.goto('/ko');
+  await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+  await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+  // The public summary is there in full, not behind a fold-out.
+  await expect(page.locator('details.personal-existing')).toHaveCount(0);
+  await expect(page.getByRole('heading',{name:'서울과 공항의 흐름'})).toBeVisible();
+  await expect(page.getByTestId('area-demand-card').first()).toBeVisible();
+  // Nothing is asked first: no role, no analytics consent.
+  await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
+  // Setting one up is a choice, and cancelling comes back to the information.
+  const start=page.getByRole('button',{name:pc('startSetup','ko'),exact:true});
+  await expect(start).toBeVisible();
+  await start.click();
+  await expect(page.getByTestId('personal-onboarding')).toBeVisible();
+  await page.getByRole('button',{name:'취소',exact:true}).click();
+  await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+  await expect(page.getByRole('heading',{name:'서울과 공항의 흐름'})).toBeVisible();
+});
+
+test('a deep link is never diverted to the home or the setup screen',async({page})=>{
+  for(const path of ['/ko/myeongdong','/ko/airport','/ko/tourism-desk/myeongdong']) {
+    await fixture(page);await page.goto(path);
+    await expect(page).toHaveURL(new RegExp(`${path}$`));
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+  }
+});
+
 test('a manager default briefing heads its work list with tomorrow, not today',async({page})=>{
   // The non-vacuous anchor for the conditional in setup(): the manager/airport
   // default is the case that always produces work, so the section must be
@@ -71,12 +106,16 @@ test('reopening with persisted browser state, editing, feedback and reset',async
   await expect(reopened.getByTestId('personal-briefing')).toContainText('성수');
   await reopened.getByText('내 설정 보기',{exact:true}).click();
   await reopened.getByRole('button',{name:'처음부터 다시 설정',exact:true}).click();
-  await expect(reopened.getByTestId('personal-onboarding')).toBeVisible();
+  // Clearing the settings returns the reader to a first visit: the information,
+  // with setting one up on offer again — not straight back into the form.
+  await expect(reopened.getByTestId('personal-onboarding')).toHaveCount(0);
+  await expect(reopened.getByRole('button',{name:pc('startSetup','ko'),exact:true})).toBeVisible();
   await context.close();
 });
 
 test('multiple locations, terminals and all three days persist and switch to the matching date',async({page})=>{
   await page.setViewportSize({width:390,height:900});await fixture(page);await page.goto('/ko');
+  await page.getByRole('button',{name:pc('startSetup','ko'),exact:true}).click();
   const f=page.getByTestId('personal-onboarding');await f.locator('[data-role="manager"]').click();
   await f.getByRole('button',{name:pc('next','ko'),exact:true}).click();
   await f.locator('[data-location="seongsu"]').click();
