@@ -59,6 +59,8 @@ test("a rejected batch isolates the broken group and keeps every other group's r
     probes: [client.prepare("p1"), client.prepare("p2")],
   });
   assert.equal(result.mode, "isolated");
+  assert.deepEqual(result.failedGroups,['broken']);
+  assert.deepEqual(result.skippedGroups,[]);
   assert.deepEqual(result.rows.sources, [{ sql: "s" }], "a healthy single statement still answers");
   assert.deepEqual(result.rows.broken, [], "the broken statement becomes an empty list, never a thrown page");
   assert.deepEqual(result.rows.probes, [{ sql: "p1" }, { sql: "p2" }], "a healthy multi-statement group is re-read as its own batch");
@@ -99,4 +101,14 @@ test("no statements means no request at all", async () => {
   const result = await readGroups(client, {});
   assert.deepEqual(trips, []);
   assert.equal(result.roundTrips, 0);
+});
+
+test('an optional statement ceiling includes failed batches and distinguishes skipped or failed groups from empty data',async()=>{
+  const {client,trips}=makeClient({failing:['broken']});
+  const result=await readGroups(client,{a:[client.prepare('a')],broken:[client.prepare('broken')],b:[client.prepare('b')],c:[client.prepare('c')]},{maxStatements:6});
+  assert.equal(result.statementsAttempted,6);
+  assert.deepEqual(result.failedGroups,['broken']);
+  assert.deepEqual(result.skippedGroups,['b','c']);
+  assert.equal(trips.reduce((n,t)=>n+(t.kind==='batch'?t.count:1),0),6);
+  assert.deepEqual(result.rows.a,[{sql:'a'}]);
 });

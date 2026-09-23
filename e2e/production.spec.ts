@@ -666,10 +666,10 @@ test("date navigation switches the service date and explains what a date cannot 
   await page.getByRole("button", { name: "내일" }).click();
   await expect.poll(() => requested.includes("2026-09-01")).toBe(true);
 
-  // The free picker is bounded to the days that actually hold rows.
+  // A recent-month availability list must not block older stored dates.
   const picker = page.locator('.date-nav-picker input[type="date"]');
-  await expect(picker).toHaveAttribute("min", "2026-08-29");
-  await expect(picker).toHaveAttribute("max", "2026-09-01");
+  await expect(picker).not.toHaveAttribute("min");
+  await expect(picker).not.toHaveAttribute("max");
 });
 
 test("the flight board lists official flight rows and filters by search and terminal", async ({ page }) => {

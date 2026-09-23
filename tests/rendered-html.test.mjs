@@ -734,8 +734,8 @@ test("each insights metric ships a plain-language explanation", async () => {
   assert.ok((page.match(/<MetricExplainer/g) ?? []).length >= 3, "explanations must cover the insight metrics");
 });
 
-/** Date navigation must be driven by the server's KST day and bounded to stored days. */
-test("date navigation offers yesterday, today, tomorrow and a bounded picker", async () => {
+/** Old records remain selectable; availability reads, not the picker, are month-bounded. */
+test("date navigation keeps KST shortcuts and offers month-bounded stored dates", async () => {
   const signals = await read("../app/live-signals.tsx");
   const route = await read("../app/api/live/summary/route.ts");
   assert.match(signals, /export function DateNavigator/);
@@ -743,10 +743,16 @@ test("date navigation offers yesterday, today, tomorrow and a bounded picker", a
     assert.match(signals, new RegExp(phrase));
   }
   assert.match(signals, /type="date"/);
-  assert.match(signals, /min=\{min\}/);
-  assert.match(signals, /max=\{max\}/);
+  const navigator = signals.slice(signals.indexOf('export function DateNavigator'), signals.indexOf('const storedDateText'));
+  assert.doesNotMatch(navigator, /\b(?:min|max)=\{/);
+  assert.match(navigator, /airportDates && <StoredAirportDates/);
+  assert.match(signals, /type="month"/);
+  assert.match(signals, /useLiveSummary\(date, pickedMonth\)/);
+  assert.match(route, /availabilityPeriod/);
+  assert.match(route, /pickerDays = datesBetween\(period.startDate, period.endDate\)/);
   // Shortcuts come from the server's today, never the device clock.
-  assert.match(signals, /const today = summary\.todayKst/);
+  assert.match(navigator, /const context = summary \?\? navigation/);
+  assert.match(navigator, /navigationClock\?\.today \?\? context\.todayKst/);
   assert.doesNotMatch(signals, /new Date\(\)\.toISOString\(\)\.slice\(0, 10\)/);
   // The API scopes day-bound blocks to the requested service date.
   assert.match(route, /searchParams\.get\("date"\)/);
