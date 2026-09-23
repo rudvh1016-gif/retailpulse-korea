@@ -72,6 +72,8 @@ be selected by hand is a report the owner cannot use.
 
 Short answers to a direct question do not need the fence. A report does.
 
+The completion and GitHub record rules in `AGENTS.md` also apply. The owner-facing report below is a convenience; it does not replace the permanent GitHub record.
+
 Before finishing:
 
 - run applicable checks and audit gates
