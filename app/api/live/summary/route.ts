@@ -43,6 +43,7 @@ import { prepareEventsForPresentation } from "../../../../lib/event-presentation
 import { summarizeAirlineRanking, type AirlineRankingFlightRow } from "../../../../lib/airline-ranking";
 import { AIRLINE_COUNTRY_SOURCE, lookupAirline } from "../../../../lib/airline-country";
 import { summaryCacheControl, SUMMARY_NO_STORE } from "../../../../lib/summary-cache-policy";
+import { CONTENT_API_ROBOTS_TAG } from "../../../../lib/crawl-policy";
 import { readGroups, type ReadClient } from "../../../../lib/d1-read-batch";
 
 /**
@@ -845,7 +846,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     // Decided by the payload, not the status code: a 200 that carries no
     // sources or no area data is an outage in disguise and must never be
     // admitted to the shared edge cache.
-    headers: { "cache-control": readDegraded ? SUMMARY_NO_STORE : summaryCacheControl({ sources, areas }) },
+    headers: { "cache-control": readDegraded ? SUMMARY_NO_STORE : summaryCacheControl({ sources, areas }), "x-robots-tag": CONTENT_API_ROBOTS_TAG },
   });
 }
 
@@ -888,5 +889,5 @@ function degradedSummary({ generatedAt, kstToday, serviceDate, dayRelation, avai
       scheduled: [], passengerForecast: [],
     },
     message: "Live sources are not connected. Official historical views remain available.",
-  }, { status: 200, headers: { "cache-control": SUMMARY_NO_STORE } });
+  }, { status: 200, headers: { "cache-control": SUMMARY_NO_STORE, "x-robots-tag": CONTENT_API_ROBOTS_TAG } });
 }

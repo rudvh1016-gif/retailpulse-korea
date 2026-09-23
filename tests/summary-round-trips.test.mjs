@@ -8,6 +8,7 @@ import { DatabaseSync } from "node:sqlite";
 import { summarizeLiveSummary, availabilityPeriod } from "../app/api/live/summary/route.ts";
 import { readFlightsForDate } from '../app/api/live/flights/route.ts';
 import { SUMMARY_CACHE_CONTROL, SUMMARY_NO_STORE } from "../lib/summary-cache-policy.ts";
+import { CONTENT_API_ROBOTS_TAG } from "../lib/crawl-policy.ts";
 import { kstDayBounds, kstDayOf, kstHourStartIsoOf, kstNowIsoOf, relateKstDay, shiftKstDay } from "../lib/kst.ts";
 
 /**
@@ -149,6 +150,9 @@ test("a broken statement is explicit degraded data, never cached as absence, and
     assert.ok(body.readStatus.skippedGroups.length>0);
     assert.equal(body.readStatus.statementsAttempted,50);
     assert.equal(client.trips.reduce((n,trip)=>n+(trip.kind==='batch'?trip.count:1),0),50);
+    assert.equal(response.headers.get("x-robots-tag"), CONTENT_API_ROBOTS_TAG,
+      "robots.txt lets crawlers fetch this so pages render; the tag keeps the JSON itself out of results");
+
     assert.equal(client.trips[0].kind, "batch", "the single batch is tried first");
     // Then one concurrent wave: one request per group, not the old serial chain.
     // 26 groups since month-to-date added its own (2026-09-14); the property
@@ -242,6 +246,7 @@ test("an empty database is still a well-formed live summary that the cache refus
     assert.deepEqual(body.sources, []);
     assert.equal(response.headers.get("cache-control"), SUMMARY_NO_STORE,
       "no evidence of data means no-store, exactly as before the batching");
+    assert.equal(response.headers.get("x-robots-tag"), CONTENT_API_ROBOTS_TAG);
     assert.equal(client.trips.length, 1);
   } finally {
     database.close();
