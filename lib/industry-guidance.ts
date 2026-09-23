@@ -35,53 +35,53 @@ export const industryProfiles: Record<IndustryId, {
   beauty: {
     label: { ko: "뷰티·화장품", en: "Beauty & cosmetics", zh: "美妆·化妆品", ja: "ビューティー・化粧品" }, short: "BEAUTY",
     watch: {
-      ko: "위의 실시간 활동과 단기외국인 생활인구를 먼저 보세요. 외국인 방문 비중이 응대 언어와 매대 구성을 좌우합니다.",
-      en: "Read live activity and short-stay foreign living population above first: the share of overseas visitors drives both staffing language and shelf mix.",
-      zh: "先看上方的实时活动与短期停留外国人生活人口，境外访客比例会左右接待语种与陈列组合。",
-      ja: "上のリアルタイム活動と短期滞在外国人生活人口をまず確認します。外国人比率が接客言語と売場構成を左右します。",
+      ko: "지역 활동과 자료 기준시각을 확인하세요. 언어·상품 구성은 실제 상담과 판매 기록으로 판단하며, 외국인 생활인구를 구매 고객으로 환산하지 마세요.",
+      en: "Check local activity and timestamps. Choose language support and products from actual enquiries and sales; foreign living population is not a buyer count.",
+      zh: "核对区域活动和资料时间。语言服务与商品组合依据实际咨询和销售，勿把外国人生活人口换算为购买人数。",
+      ja: "地域活動と資料時刻を確認。言語対応・品揃えは実際の相談と販売で判断し、外国人生活人口を購入客数に換算しません。",
     },
     checklist: {
       ko: [
-        ["before", "재고", "선케어·마스크팩·미니세트처럼 여행객이 찾는 품목의 잔량과 진열 위치를 확인"],
-        ["before", "표기", "가격표와 성분 안내에 영문·중문 표기가 빠진 매대가 없는지 점검"],
+        ["before", "재고", "자체 판매 기록을 보고 색상·용량별 판매 재고와 테스터를 따로 확인"],
+        ["before", "표기", "가격·성분 안내와 실제 문의 언어에 맞춘 설명이 준비됐는지 점검"],
         ["peak", "응대", "다국어 응대가 가능한 인력을 혼잡 시간대가 시작되기 전에 배치"],
         ["peak", "테스터", "테스터 위생 상태와 소진 여부를 시간대 중간에 한 번 더 확인"],
         ["close", "보충", "그날 가장 빨리 빠진 품목을 적어 다음 발주 기준으로 사용"],
-        ["close", "정산", "사후면세 서류와 결제 취소 건을 당일 안에 정리"],
+        ["close", "정산", "결제 취소 건을 정리하고 사후면세 취급 매장은 관련 서류도 확인"],
       ],
       en: [
-        ["before", "STOCK", "Check remaining quantity and shelf position for traveller-driven items: sun care, sheet masks, mini sets"],
-        ["before", "LABELS", "Look for shelves missing English or Chinese price and ingredient labels"],
+        ["before", "STOCK", "Use your own sales records to check stock by shade and size separately from testers"],
+        ["before", "LABELS", "Check price and ingredient information and explanations in languages customers actually request"],
         ["peak", "STAFF", "Place multilingual staff before the busy band begins"],
         ["peak", "TESTERS", "Re-check tester hygiene and whether any tester has run out midway"],
         ["close", "RESTOCK", "Write down the fastest-moving items of the day and use them for the next order"],
-        ["close", "REFUNDS", "Clear tax-refund paperwork and payment cancellations the same day"],
+        ["close", "REFUNDS", "Reconcile payment cancellations and, where the store offers tax refunds, the relevant paperwork"],
       ],
       zh: [
-        ["before", "库存", "确认防晒、面膜、旅行装等旅客常买商品的余量与陈列位置"],
-        ["before", "标签", "检查是否有货架缺少英文或中文的价格与成分说明"],
+        ["before", "库存", "根据本店销售记录，按色号容量分别检查可售库存与试用品"],
+        ["before", "标签", "检查价格成分说明，以及按实际咨询语言准备的指引"],
         ["peak", "接待", "在拥挤时段开始前安排具备多语种能力的人员"],
         ["peak", "试用装", "时段中途再次确认试用装的卫生状况与是否用尽"],
         ["close", "补货", "记录当日售出最快的商品，作为下次订货依据"],
-        ["close", "结算", "当天处理完退税单据与支付取消件"],
+        ["close", "结算", "整理支付取消记录，提供退税服务的店铺同时核对相关单据"],
       ],
       ja: [
-        ["before", "在庫", "日焼け止め・シートマスク・ミニセットなど旅行者需要品の残量と陳列位置を確認"],
-        ["before", "表示", "英語・中国語の価格と成分表示が抜けている棚がないか点検"],
+        ["before", "在庫", "自店の販売記録で色番・容量ごとの販売在庫とテスターを別々に確認"],
+        ["before", "表示", "価格・成分表示と実際に質問される言語の説明を点検"],
         ["peak", "接客", "混雑時間帯が始まる前に多言語対応のスタッフを配置"],
         ["peak", "テスター", "テスターの衛生状態と使い切りを時間帯の途中で再確認"],
         ["close", "補充", "その日に最も早く減った商品を記録し次の発注基準にする"],
-        ["close", "精算", "免税書類と決済取消をその日のうちに整理"],
+        ["close", "精算", "決済取消を整理し、免税対応店舗は関連書類も確認"],
       ],
     },
   },
   fashion: {
     label: { ko: "패션·잡화", en: "Fashion & goods", zh: "时尚·杂货", ja: "ファッション・雑貨" }, short: "FASHION",
     watch: {
-      ko: "위의 실시간 활동과 날씨를 함께 보세요. 비 예보는 매장 체류 시간과 피팅 대기 길이에 바로 영향을 줍니다.",
-      en: "Read live activity together with the weather row above: a rain forecast changes dwell time and fitting-room queues directly.",
-      zh: "把上方的实时活动与天气一起看，降水预报会直接影响店内停留时间与试衣排队。",
-      ja: "上のリアルタイム活動と天気を併せて確認します。雨予報は滞在時間と試着待ちに直結します。",
+      ko: "지역 활동과 날씨를 확인하고, 실제 피팅·결제 대기를 보고 동선과 인력을 조정하세요. 비 예보만으로 체류나 판매 증가를 단정하지 마세요.",
+      en: "Check local activity and weather, then adjust flow and staffing from real fitting and checkout queues. Rain alone does not establish longer stays or higher sales.",
+      zh: "参考区域活动和天气，按实际试衣收银排队调整动线与人员，勿仅凭雨预报断定停留或销量增加。",
+      ja: "地域活動と天気を確認し、実際の試着・会計待ちで動線と配置を調整。雨予報だけで滞在や販売増を断定しません。",
     },
     checklist: {
       ko: [
@@ -121,10 +121,10 @@ export const industryProfiles: Record<IndustryId, {
   food: {
     label: { ko: "식음료·카페", en: "Food & café", zh: "餐饮·咖啡", ja: "飲食・カフェ" }, short: "F&B",
     watch: {
-      ko: "위의 날씨와 주변 행사를 먼저 보세요. 강수확률과 근처 행사 유무가 포장 주문과 좌석 회전을 가릅니다.",
-      en: "Read the weather and nearby-events rows above first: rain probability and a nearby event split takeaway demand from seat turnover.",
-      zh: "先看上方的天气与周边活动，降水概率与附近是否有活动会左右外带需求与翻台节奏。",
-      ja: "上の天気と周辺イベントをまず確認します。降水確率と近隣の催しがテイクアウトと席回転を分けます。",
+      ko: "날씨와 행사 날짜를 확인한 뒤 실제 주문·좌석·폐기 기록으로 준비량을 정하세요. 주변 행사 유무는 주문량이 아닙니다.",
+      en: "Check weather and event dates, then plan from real orders, seating and waste records. A nearby event is not an order forecast.",
+      zh: "核对天气与活动日期，再按实际订单、座位和废弃记录备料，周边活动不等于订单预测。",
+      ja: "天気と催事日を確認し、実注文・席・廃棄記録で準備量を判断。近隣催事は注文予測ではありません。",
     },
     checklist: {
       ko: [
@@ -164,10 +164,10 @@ export const industryProfiles: Record<IndustryId, {
   convenience: {
     label: { ko: "편의·약국", en: "Convenience & pharmacy", zh: "便利店·药店", ja: "コンビニ・薬局" }, short: "ESSENTIALS",
     watch: {
-      ko: "위의 실시간 활동과 날씨를 보세요. 갑작스러운 비 예보는 우산·상비약처럼 바로 사 가는 품목의 수요와 직결됩니다.",
-      en: "Read live activity and the weather row above: a sudden rain forecast maps directly onto impulse items such as umbrellas and first-aid goods.",
-      zh: "查看上方的实时活动与天气，突然的降水预报直接对应雨伞、常备药等即买商品。",
-      ja: "上のリアルタイム活動と天気を確認します。急な雨予報は傘や常備薬など即購入品の需要に直結します。",
+      ko: "지역 활동과 날씨로 사전 점검 항목을 정하고 실제 판매·잔량을 확인하세요. 의약품 문의는 약사에게 연결하며 날씨로 약품 수요를 추정하지 마세요.",
+      en: "Use local activity and weather to plan checks, then review actual sales and stock. Refer medicine questions to a pharmacist; do not infer medicine demand from weather.",
+      zh: "用区域活动和天气安排检查，再核对实际销售与余量。药品问题交给药师，勿按天气推断药品需求。",
+      ja: "地域活動と天気で点検項目を決め、実販売と残量を確認。薬の質問は薬剤師へつなぎ、天気で薬の需要を推定しません。",
     },
     checklist: {
       ko: [
