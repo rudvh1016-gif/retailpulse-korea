@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { crawlableContentApis } from "../lib/crawl-policy";
+import { contentApiAllowRules } from "../lib/crawl-policy";
 import { isStagingDeployment, siteOrigin } from "./seo-config";
 
 export default function robots(): MetadataRoute.Robots {
@@ -15,7 +15,7 @@ export default function robots(): MetadataRoute.Robots {
   // their responses; every other /api/ path stays uncrawled. The longer
   // `Allow` wins over `Disallow: /api/` by longest-match precedence.
   return {
-    rules: { userAgent: "*", allow: ["/", ...crawlableContentApis], disallow: ["/api/"] },
+    rules: { userAgent: "*", allow: ["/", ...contentApiAllowRules], disallow: ["/api/"] },
     sitemap: `${siteOrigin}/sitemap.xml`,
     host: siteOrigin,
   };

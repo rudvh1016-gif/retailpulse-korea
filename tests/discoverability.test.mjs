@@ -487,3 +487,21 @@ test("a real ampersand in served metadata is not mistaken for a stale build", as
   const enTitle = report.notes.find((note) => note.page === "/en")?.title;
   assert.equal(enTitle, pageTitle("en"));
 });
+
+
+test("content API exceptions do not expose sibling or nested internal paths", async () => {
+  const { default: robots } = await import("../app/robots.ts");
+  const rules = robots().rules;
+  const text = ["User-agent: *", ...[rules.allow].flat().map(path => `Allow: ${path}`),
+    ...[rules.disallow].flat().map(path => `Disallow: ${path}`)].join("\n");
+  for (const path of ["/api/live/summary", "/api/live/predictions"]) {
+    assert.equal(robotsAllows(text, path), true);
+    assert.equal(robotsAllows(text, `${path}?date=2026-09-27&area=hongdae`), true);
+    for (const suffix of ["-internal", "/debug", "Backup", "/"]) {
+      assert.equal(robotsAllows(text, `${path}${suffix}`), false, `${path}${suffix}`);
+    }
+  }
+  for (const path of ["/api/health", "/api/live/flights", "/api/beta-signups"]) {
+    assert.equal(robotsAllows(text, path), false);
+  }
+});

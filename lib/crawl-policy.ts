@@ -33,5 +33,9 @@
  */
 export const crawlableContentApis = ["/api/live/summary", "/api/live/predictions"] as const;
 
+// Anchor the endpoint and separately permit query strings. A bare prefix
+// would also expose /summary-internal or /predictions/debug in the future.
+export const contentApiAllowRules = crawlableContentApis.flatMap(path => [`${path}$`, `${path}?`]);
+
 /** Lets a crawler render with the response while never listing it as a result. */
 export const CONTENT_API_ROBOTS_TAG = "noindex";
