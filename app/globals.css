@@ -1980,3 +1980,34 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
    never had the double rule. */
 .airport-today { padding-top: 0; }
 .airport-today > .airport-current-brief.current-brief { margin-top: 0; border-top: 0; }
+
+/* Owner-approved 2026-09-23 date controls only. Other selection controls keep
+   their existing hairline treatment; no type scale or date semantics change. */
+.date-nav { gap: 10px 16px; }
+.date-nav-shortcuts { gap: 6px; }
+.app :is(.date-nav, .personal-switches) .date-nav-shortcuts button {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; min-height: 52px; min-width: 72px; padding: 6px 12px;
+  border: 1px solid var(--line); border-radius: 6px;
+  background: var(--paper); color: var(--ink); line-height: 1.35;
+}
+.app :is(.date-nav, .personal-switches) .date-nav-shortcuts button:is(.active, [aria-pressed="true"]) {
+  background: #f0f5ff; border-color: var(--blue); color: var(--blue);
+  font-weight: var(--weight-strong);
+}
+.app :is(.date-nav, .personal-switches) .date-nav-shortcuts button:hover { border-color: var(--muted); }
+.app :is(.date-nav, .personal-switches) .date-nav-shortcuts button:focus-visible,
+.app .date-nav-picker input:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.date-nav-shortcuts time { font-size: 11px; font-weight: var(--weight-regular); color: var(--muted); }
+.date-nav-tools { gap: 8px 16px; }
+.date-nav-picker { gap: 6px; }
+.date-nav-picker > span { font-size: 11px; letter-spacing: 0; text-transform: none; }
+.date-nav .date-nav-picker input {
+  min-height: 48px; padding: 6px 8px; border: 1px solid var(--line);
+  border-radius: 6px; color: var(--ink); background: var(--paper);
+}
+@media (max-width: 479px) {
+  .date-nav > .date-nav-shortcuts { flex: 1 1 100%; }
+  .date-nav-shortcuts button { flex: 1 1 0; min-width: 0; }
+  .personal-day-switches { width: 100%; }
+}
