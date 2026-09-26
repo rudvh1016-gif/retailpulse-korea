@@ -2,6 +2,14 @@
 
 This repository is worked on by multiple coding agents, including Codex and Claude Code.
 
+## 2026-09-12 quarterly direction review
+
+For product priorities, token-free operations, exceptional AI handoff, and the next 90 days, read `docs/KORETAIL_NEXT_QUARTER_MASTER_KO.md`. The independent review entry is `docs/KORETAIL_PRO_REVIEW_PROMPT_KO.md`.
+
+These are OWNER_REQUESTED / PRO_REVIEW_PENDING planning documents, not permission to start a Routine, create a live next task, change billing, merge, or deploy. Preserve the existing user-validation gates in `docs/product/PRODUCT_DIRECTION.md` and `docs/product/PILOT_VALIDATION.md`. Reuse the existing Tourism Desk, forecast, diagnostics, recovery, and quota components; do not rebuild them.
+
+Historical statements below about disabled collection are not live-state evidence. Compare current workflows/configuration and `docs/REALTIME_SCHEDULER_AUDIT.md`, report conflicts, and preserve the one-authoritative-collector rule. Do not silently activate a competing scheduler. Ordinary checks must not invoke an LLM; any GPT/Claude review consumes usage and needs the separately verified handoff/budget boundary.
+
 ## Canonical brand
 
 The owner approved the final public brand on 2026-08-26 KST:
