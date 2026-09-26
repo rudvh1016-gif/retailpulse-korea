@@ -118,6 +118,35 @@ export default function PersonalHome({lang,children,openRequest=0}:{lang:Persona
   },[openRequest,ready]);
   useEffect(()=>{if(ready)setAnalyticsConsent(p?.analytics??false);},[ready,p?.analytics]);
   if(!ready)return <div className="personal-loading"><header className="personal-heading"><h1>{pc('myBriefing',lang)}</h1></header><LiveLoadMessage loading lang={lang}/></div>;
+  /**
+   * A first visit shows the information, not a form.
+   *
+   * Until now a reader with no saved settings met a four-step questionnaire,
+   * and the public summary sat inside a collapsed <details> below it. Measured
+   * in a browser against a fully populated summary, /ko rendered 579 characters
+   * — brand, hero and the role question — and not one figure, because the data
+   * was behind the fold-out. That is the sitemap's priority-1.0 URL answering
+   * with a settings screen.
+   *
+   * So the public summary — the SAME `children` the fold-out already received,
+   * not a second copy of it — is what a first visit renders, and the personal
+   * briefing becomes something the reader opts into. Nothing is asked of them
+   * first: no role, no analytics consent. Choosing to set it up reaches the
+   * unchanged Setup, and cancelling comes straight back here.
+   *
+   * A reader who already has settings is untouched below: their briefing still
+   * leads and the public summary stays in its fold-out, exactly as before.
+   */
+  if(!p&&!editing)return <>
+    {children}
+    <div ref={panel} className="personal-sheet">
+      <p className="personal-kicker">KORETAIL</p>
+      <h2>{pc('myBriefing',lang)}</h2>
+      <p>{pc('promise',lang)}</p>
+      {storageFailed&&<p role="status">{pc('storageError',lang)}</p>}
+      <div className="personal-actions"><button className="personal-primary" onClick={()=>setEditing(true)}>{pc('startSetup',lang)}</button></div>
+    </div>
+  </>;
   return <>
     <div ref={panel} className="personal-home">
     <header className="personal-heading"><h1>{pc('myBriefing',lang)}</h1>{p&&!editing&&<button onClick={()=>setEditing(true)}>{pc('edit',lang)}</button>}</header>
