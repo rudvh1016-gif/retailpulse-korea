@@ -1,6 +1,7 @@
 import { summarizeAirlineRanking, type AirlineLookupFn } from './airline-ranking';
 
 export interface ScheduledBriefingRow {
+  physicalFlightId?: string;
   terminal: string | null;
   operatingFlight: string | null;
   scheduledTime: string;
@@ -19,7 +20,7 @@ export function summarizeScheduledBriefing(rows: ScheduledBriefingRow[], date: s
     let days: unknown;
     try { days = JSON.parse(row.weekdays); } catch { continue; }
     if (!Array.isArray(days) || !days.includes(weekday)) continue;
-    const key = JSON.stringify([row.terminal, row.operatingFlight, row.scheduledTime]);
+    const key = row.physicalFlightId ?? JSON.stringify([row.terminal, row.operatingFlight, row.scheduledTime]);
     const prior = selected.get(key);
     if (!prior || row.retrievedAt > prior.retrievedAt) selected.set(key, row);
   }

@@ -656,13 +656,19 @@ const arrivalOnlyFixture = (overrides: Record<string, unknown>) => ({
 });
 
 test("입국 renders the stored forecast on a past date, not only today", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(arrivalOnlyFixture({
+  const pastDate = "2026-08-30";
+  // Give the selected past day its own dated bands and collection times;
+  // a past payload returned for an undated/today request must be rejected.
+  const past = JSON.parse(JSON.stringify(SUMMARY_FIXTURE).replaceAll(SUMMARY_FIXTURE.serviceDateKst, pastDate));
+  await page.route("**/api/live/summary*", routeSummary({
+    ...past,
     dayRelation: "PAST",
-    serviceDateKst: "2026-08-30",
+    todayKst: SUMMARY_FIXTURE.todayKst,
+    serviceDateKst: pastDate,
     // A past day has no "now" band; the day total has to carry the headline.
     generatedAt: "2026-08-31T05:10:00Z",
-  })));
-  await page.goto("/ko/airport");
+  }));
+  await page.goto(`/ko/airport?date=${pastDate}`);
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await page.locator(".airport-context-nav").getByRole("button", { name: "입국", exact: true }).click();
 
@@ -756,7 +762,11 @@ test("the date note above 입국 never reports missing flight records", async ({
   await expect(page.locator(".date-scope-note")).toContainText("저장된 운항 기록 없음");
 
   await page.locator(".airport-context-nav").getByRole("button", { name: "입국", exact: true }).click();
-  await expect(page.locator(".date-scope-note")).toHaveCount(0);
+  // The date note now identifies the held passenger forecast and its time,
+  // while the departure-only missing-flight message must stay out of arrivals.
+  await expect(page.locator(".date-scope-note")).toContainText("승객 예보");
+  await expect(page.locator(".date-scope-note")).toContainText("KST");
+  await expect(page.locator(".date-scope-note")).not.toContainText("운항 기록");
 });
 
 /**

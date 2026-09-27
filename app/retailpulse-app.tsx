@@ -4,7 +4,7 @@ import { pc } from '../lib/personal-copy';
 import { activeSourceCatalog,sourceName,sourceUse,CollectionStatus } from "./source-status";
 
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { checklistPhaseLabels, checklistPhaseOrder, type IndustryId, industryProfiles } from "../lib/industry-guidance";
+import { type IndustryId, industryProfiles } from "../lib/industry-guidance";
 import {
   airportAnnual,
   airportMonthly,
@@ -35,6 +35,7 @@ import { InstallAppButton } from "./install-app";
 import { PredictionView } from "./prediction-view";
 import { parsePreferences, PREFERENCE_KEY } from "../lib/personal-briefing";
 import { SiteUsageGuide } from "./site-usage-guide";
+import { IndustryGuide } from "./industry-guide";
 const PersonalHome = lazy(() => import('./personal-home'));
 
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
@@ -481,6 +482,8 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
         {view === "airport" && (
           <AirportView
+            industry={industry}
+            setIndustry={setIndustry}
             lang={lang}
             terminal={terminal}
             setTerminal={next => { setTerminal(next); updateUrl(lang, "airport", selected, next); }}
@@ -545,8 +548,9 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 }
 
 function AirportView({
-  lang, terminal, setTerminal, section, setSection, date, setDate,
+  lang, terminal, setTerminal, section, setSection, date, setDate, industry, setIndustry,
 }: {
+  industry: IndustryId; setIndustry: (value: IndustryId) => void;
   lang: Lang; terminal: Terminal; setTerminal: (value: Terminal) => void;
   section: AirportSection; setSection: (value: AirportSection) => void;
   date: string | null; setDate: (value: string | null) => void;
@@ -617,15 +621,18 @@ function AirportView({
       </nav>
 
       {section !== "history" && section !== "stores" && section !== "mystore" && <>
-        <DateNavigator lang={lang} date={date} onChange={setDate} />
+        <DateNavigator lang={lang} date={date} onChange={setDate} airportDates />
         <DateScopeNote lang={lang} date={date} scope={section === "arrivals" ? "arrivals" : "departures"} />
       </>}
+
+      {(section === "now" || section === "arrivals") && <a className="operating-jump" href="#airport-industry-guide">{localText(lang, { ko: "업종별 공항 매장 운영 가이드 ↓", en: "Airport store operating guide ↓", zh: "按业态查看机场店铺指南 ↓", ja: "業種別の空港店舗ガイド ↓" })}</a>}
 
       {section === "now" && <AirportTodaySummary lang={lang} terminal={terminal} date={date} />}
       {section === "arrivals" && <AirportArrivalSummary lang={lang} terminal={terminal} date={date} />}
       {section === "flights" && <FlightBoard lang={lang} terminal={terminal} date={date} />}
       {section === "stores" && <FacilityDirectory lang={lang} terminal={terminal} />}
       {section === "mystore" && <MyStoreBriefing lang={lang} />}
+      {(section === "now" || section === "arrivals") && <IndustryGuide key={section} lang={lang} industry={industry} onIndustryChange={setIndustry} airport={{ terminal, direction: section === "arrivals" ? "arrival" : "departure" }} />}
 
       {section === "history" && <section className="airport-history" aria-labelledby="airport-history-title">
         <div className="section-head">
@@ -687,7 +694,6 @@ function BusinessView({
   setProOpen: (open: boolean) => void;
 }) {
   const [mode, setMode] = useState<"briefing" | "history">("briefing");
-  const profile = industryProfiles[industry];
 
   return (
     <section className="view-section business-view">
@@ -726,46 +732,7 @@ function BusinessView({
           linkLabel={localText(lang, { ko: `${areaLocalName(selected, lang)} 전체 신호 보기`, en: `All ${areaLocalName(selected, lang)} signals`, zh: `查看${areaLocalName(selected, lang)}全部信号`, ja: `${areaLocalName(selected, lang)}の全シグナルを見る` })}
         />
 
-        <section className="industry-section" aria-labelledby="industry-title">
-          <div className="section-head">
-            <div><p className="eyebrow">OPERATING CHECKLIST · {profile.short}</p><h2 id="industry-title">{localText(lang, { ko: "업종별 점검 목록", en: "Checklist by business type", zh: "分业态检查清单", ja: "業種別チェックリスト" })}</h2></div>
-          </div>
-          <div className="industry-tabs" role="tablist" aria-label={localText(lang, { ko: "업종 선택", en: "Select a business type", zh: "选择业态", ja: "業種を選択" })}>
-            {(Object.keys(industryProfiles) as IndustryId[]).map((id) => <button key={id} className={industry === id ? "active" : ""} onClick={() => setIndustry(id)} role="tab" aria-selected={industry === id}>{industryProfiles[id].label[lang]}</button>)}
-          </div>
-          <p className="industry-watch">
-            <span>{localText(lang, { ko: "먼저 볼 신호", en: "READ FIRST", zh: "优先查看", ja: "先に見る指標" })}</span>
-            <b>{profile.watch[lang]}</b>
-          </p>
-          {/* Grouped by when the work happens, so the operator reads only the
-              block for the moment they are in rather than scanning one long list. */}
-          <div className="checklist-groups">
-            {checklistPhaseOrder.map((phase) => {
-              const rows = profile.checklist[lang]
-                .map((row, index) => ({ row, index }))
-                .filter(({ row }) => row[0] === phase);
-              if (!rows.length) return null;
-              return (
-                <section key={phase} className="checklist-phase">
-                  <h3>{checklistPhaseLabels[phase][lang]}</h3>
-                  <ol className="checklist-rows">
-                    {rows.map(({ row: [, label, action], index }) => <li key={`${phase}-${label}`}>
-                      <span>{String(index + 1).padStart(2, "0")}</span>
-                      <strong>{label}</strong>
-                      <p>{action}</p>
-                    </li>)}
-                  </ol>
-                </section>
-              );
-            })}
-          </div>
-          <p className="truth-note">{localText(lang, {
-            ko: "이 목록은 위의 공식 혼잡 시간대와 함께 보도록 만든 일반 가이드입니다. 매출이나 방문자 수를 예측하지 않습니다.",
-            en: "This list is general guidance meant to be read alongside the official busy band above. It does not predict sales or visitor counts.",
-            zh: "本清单为一般指南，应与上方官方拥挤时段一起阅读，不预测销售额或访客数。",
-            ja: "このリストは上の公式混雑時間帯と併せて読むための一般ガイドです。売上や来訪者数を予測するものではありません。",
-          })}</p>
-        </section>
+        <IndustryGuide lang={lang} industry={industry} onIndustryChange={setIndustry} />
 
         <section className="business-pro">
           <div><p className="eyebrow">KORETAIL · NEXT</p><h2>{localText(lang, { ko: "매일 문 열기 전, 한 장으로", en: "One page before you open", zh: "每天开店前，一页简报", ja: "開店前に、一枚で" })}</h2><p>{localText(lang, { ko: "업종·지역별 알림과 내려받기를 준비하고 있습니다.", en: "Alerts and exports by business type and area are in preparation.", zh: "正在准备按业态与地区的提醒与导出功能。", ja: "業種・エリア別の通知とエクスポートを準備しています。" })}</p></div>

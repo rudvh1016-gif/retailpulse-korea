@@ -1,4 +1,5 @@
-import { persistDepartureSchedule } from './departure-schedule';
+import { prepareDepartureSchedules } from './departure-schedule';
+import { isValidKstDay } from './kst';
 import { writeSourceHealth, writeCollectorStatus } from "./collector";
 import { buildDataGoKrUrl } from "./data-go-kr.mjs";
 import { describeWrites, NO_D1_WRITES, runD1Batches, type D1WriteCounts } from "./d1-write-counts";
@@ -15,12 +16,14 @@ const SOURCE_ID = "INCHEON_FLIGHT_DETAIL";
 const ENDPOINT = "https://apis.data.go.kr/B551177/statusOfAllFltDeOdp/getFltDeparturesDeOdp";
 
 /**
- * A1 exposes a D-3..D+6 population when called without its optional time
+ * A1 returns a dated population when called without its optional time
  * filters. The portal confirms date/time filtering exists, but the exact
  * parameter names are not present in the public metadata we have verified.
  * Until those names are verified, do not guess them: scan bounded 100-row
  * pages and persist the official recent-history window from D-3 through the
- * requested KST service date. Tomorrow A1 rows are retained separately as a replaceable schedule snapshot;
+ * requested KST service date. All explicitly dated future A1 rows in that same
+ * complete response are retained as replaceable schedule snapshots. The old
+ * D-3..D+6 comment was not a verified or guaranteed publication horizon;
  * they never enter observed airport_flights history. A3 is only a partial fallback.
  *
  * 150 pages = at most 15,000 source rows. Each sequential page may be retried
@@ -73,6 +76,7 @@ export interface A1TodayFetchResult {
   trackedToday: number;
   records: CanonicalAirportFlight[];
   tomorrowRecords: CanonicalAirportFlight[];
+  futureRecords: CanonicalAirportFlight[];
 }
 
 type OfficialFetcher = (url: URL, options?: { timeoutMs?: number; retries?: number; retryDelayMs?: number }) => Promise<unknown>;
@@ -104,7 +108,8 @@ function scheduledDateOf(raw: unknown): string | null {
   const value = (raw as Record<string, unknown>).scheduleDatetime;
   if (typeof value !== "string" && typeof value !== "number") return null;
   const digits = String(value).replace(/\D/g, "");
-  return digits.length >= 8 ? digits.slice(0, 8) : null;
+  const date = `${digits.slice(0,4)}-${digits.slice(4,6)}-${digits.slice(6,8)}`;
+  return digits.length >= 8 && isValidKstDay(date) ? digits.slice(0, 8) : null;
 }
 
 function totalCountOf(body: A1Body | undefined): number {
@@ -122,7 +127,7 @@ function assertSuccess(payload: unknown, pageNo: number): A1Body {
 }
 
 /**
- * Read the complete bounded A1 D-3..D+6 population in provider-safe pages,
+ * Read the complete bounded A1 population in provider-safe pages,
  * then retain D-3 through the requested KST service date. This deliberately scans
  * every declared page so correctness does not depend on undocumented sort
  * order. Calls are sequential to avoid a provider request burst. A page gets
@@ -135,9 +140,8 @@ export async function fetchA1DeparturesForDate(
   options: { maxRequests?: number; sleep?: (ms: number) => Promise<void> } = {},
 ): Promise<A1TodayFetchResult> {
   const targetYmd = compactDate(targetDate);
-  if (!/^\d{8}$/.test(targetYmd)) throw new Error("a1_today_invalid_target_date");
-  const tomorrowYmd = compactDate(shiftIsoDate(targetDate, 1));
-  const tomorrow = new Map<string, CanonicalAirportFlight>();
+  if (!isValidKstDay(targetDate)) throw new Error("a1_today_invalid_target_date");
+  const future = new Map<string, CanonicalAirportFlight>();
   const windowStartDate = shiftIsoDate(targetDate, -3);
   const windowStartYmd = compactDate(windowStartDate);
   const maxRequests = Math.max(1, Math.min(Math.trunc(options.maxRequests ?? A1_TODAY_DEFAULT_MAX_REQUESTS), A1_TODAY_DEFAULT_MAX_REQUESTS));
@@ -147,6 +151,8 @@ export async function fetchA1DeparturesForDate(
   let totalPages = 0;
   let sourceRowsInRange = 0;
   let sourceRowsForDate = 0;
+  let rowsFetched = 0;
+  const seenSourceRows = new Set<string>();
   const unique = new Map<string, CanonicalAirportFlight>();
   const retrievedAt = new Date().toISOString();
 
@@ -187,16 +193,24 @@ export async function fetchA1DeparturesForDate(
       }
     }
 
-    if (pageNo < totalPages && items.length === 0) {
+    if (totalCountOf(body) !== declaredTotal) throw new Error(`a1_today_population_changed_page_${pageNo}`);
+    if (items.length !== Math.min(A1_TODAY_PAGE_SIZE, declaredTotal - rowsFetched)) {
       throw new Error(`a1_today_incomplete_page_${pageNo}`);
     }
+    rowsFetched += items.length;
 
     for (const item of items) {
       const serviceDate = scheduledDateOf(item);
       if (!serviceDate) throw new Error(`a1_today_missing_schedule_date_page_${pageNo}`);
-      if (serviceDate === tomorrowYmd) {
+      // A repeated page can otherwise match totalCount while omitting rows.
+      const raw = item as Record<string, unknown>;
+      const sourceKey = JSON.stringify([raw.flightId, raw.scheduleDatetime, raw.fid]);
+      if (seenSourceRows.has(sourceKey)) throw new Error(`a1_today_duplicate_source_row_page_${pageNo}`);
+      seenSourceRows.add(sourceKey);
+      if (serviceDate > targetYmd) {
         const record = await normalizeAirportFlight(item, "departure", retrievedAt);
-        tomorrow.set(record.physicalFlightId, record);
+        const prior = future.get(record.physicalFlightId);
+        if (!prior || prior.codeshare === 'Y' || record.codeshare !== 'Y') future.set(record.physicalFlightId, record);
         continue;
       }
       if (serviceDate < windowStartYmd || serviceDate > targetYmd) continue;
@@ -220,7 +234,8 @@ export async function fetchA1DeparturesForDate(
     sourceRowsForDate,
     trackedToday: records.filter((record) => record.scheduledAt.slice(0, 10) === targetDate).length,
     records,
-    tomorrowRecords: [...tomorrow.values()],
+    futureRecords: [...future.values()],
+    tomorrowRecords: [...future.values()].filter(record => record.scheduledAt.slice(0,10) === shiftIsoDate(targetDate, 1)),
   };
 }
 
@@ -294,7 +309,8 @@ async function recordSuccess(
     return latest;
   }, null);
   const retrievedAt = fetched.records[0]?.retrievedAt ?? finishedAt;
-  const detail = `recent ${fetched.windowStartDate}..${fetched.targetDate}; tomorrow scheduled ${fetched.tomorrowRecords.length}; pages ${fetched.pagesFetched}; requests ${fetched.requestsIssued}; population ${fetched.totalCount}; range rows ${fetched.sourceRowsInRange}; today source rows ${fetched.sourceRowsForDate}; today unique physical ${fetched.trackedToday}; range unique physical ${fetched.records.length}; ${describeWrites(changedRows)}`;
+  const futureDates = [...new Set(fetched.futureRecords.map(record => record.scheduledAt.slice(0,10)))].sort();
+  const detail = `recent ${fetched.windowStartDate}..${fetched.targetDate}; future scheduled ${fetched.futureRecords.length} dates ${futureDates[0] ?? 'none'}..${futureDates.at(-1) ?? 'none'}; pages ${fetched.pagesFetched}; requests ${fetched.requestsIssued}; population ${fetched.totalCount}; range rows ${fetched.sourceRowsInRange}; today source rows ${fetched.sourceRowsForDate}; today unique physical ${fetched.trackedToday}; range unique physical ${fetched.records.length}; ${describeWrites(changedRows)}`;
 
   await db.prepare(`INSERT INTO source_health (
       source_id, status, last_event_at, last_published_at, last_retrieved_at,
@@ -379,8 +395,9 @@ export async function collectAirportFlightsToday(
     const fetched = await fetchA1DeparturesForDate(env.DATA_GO_KR_SERVICE_KEY, targetDate, fetcher, { maxRequests: env.A1_MAX_REQUESTS });
     if (!fetched.records.length) throw new Error(`a1_today_no_rows_${targetDate}`);
     if (!fetched.trackedToday) throw new Error(`a1_today_no_current_rows_${targetDate}`);
+    const scheduleStatements = prepareDepartureSchedules(env.DB, targetDate, fetched.futureRecords);
     const changedRows = await persistTodayFlights(env.DB, fetched.records);
-    const scheduleWrites = await persistDepartureSchedule(env.DB, shiftIsoDate(targetDate, 1), fetched.tomorrowRecords);
+    const scheduleWrites = env.DB ? await runD1Batches(env.DB, scheduleStatements) : NO_D1_WRITES;
     changedRows.changedRows += scheduleWrites.changedRows;
     changedRows.storageWrites += scheduleWrites.storageWrites;
     await recordSuccess(env.DB, fetched, changedRows);

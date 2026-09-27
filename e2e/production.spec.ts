@@ -57,6 +57,7 @@ test("business checklist uses one regular and one strong weight", async ({ page 
   await page.goto("/ko/business");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await expect(page.locator(".industry-tabs button").first()).toHaveCSS("font-weight", "600");
+  await page.locator('.operating-checklist > summary').click();
   await expect(page.locator(".checklist-rows p").first()).toHaveCSS("font-weight", "400");
   await expect(page.locator(".checklist-rows strong").first()).toHaveCSS("font-weight", "600");
 });
@@ -491,7 +492,6 @@ test("home gives deterministic current briefs for all three Seoul areas", async 
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko");
-  await page.locator(".personal-existing > summary").click();
   await expect(page.getByRole("heading", { name: "다른 상권 살펴보기" })).toBeVisible();
   const briefs = page.locator(".home-area-briefs");
   await expect(page.getByTestId('area-demand-card').first()).toContainText('현재 추정 인구');
@@ -516,7 +516,6 @@ test("Seoul renders compact arrival forecasts in four languages and no departure
 
   for (const [locale, labels] of Object.entries(expected)) {
     await page.goto(`/${locale}`);
-    await page.locator(".personal-existing > summary").click();
     await page.locator(".demand-card-footer > a").first().click();
     const rows = page.locator(".signal-groups");
     for (const label of labels) await expect(rows.getByText(label, { exact: true })).toBeVisible();
@@ -524,7 +523,6 @@ test("Seoul renders compact arrival forecasts in four languages and no departure
   }
 
   await page.goto("/ko");
-  await page.locator(".personal-existing > summary").click();
   await page.locator(".demand-card-footer > a").first().click();
   const rows = page.locator(".signal-groups");
   await expect(rows).toContainText("서울의 특정 지역과 직접 연결되지 않는 배경 참고");
@@ -540,7 +538,6 @@ test("partial arrival coverage hides the whole-day total and peak", async ({ pag
   partial.airport.arrivalForecast.forecastCoverage = { all: "PARTIAL", byTerminal: { T1: "PARTIAL", T2: "COMPLETE" } };
   await page.route("**/api/live/summary*", routeSummary(partial));
   await page.goto("/ko");
-  await page.locator(".personal-existing > summary").click();
   await page.locator(".demand-card-footer > a").first().click();
   const rows = page.locator(".signal-groups");
   await expect(rows.getByText("오늘 예상 입국객", { exact: true })).toHaveCount(0);
@@ -563,7 +560,6 @@ test("a forecast peak that falls after midnight is shown and labelled tomorrow",
   ];
   await page.route("**/api/live/summary*", routeSummary(evening));
   await page.goto("/ko");
-  await page.locator(".personal-existing > summary").click();
   const myeongdong = page.getByTestId("area-demand-card").first();
   await expect(myeongdong).toContainText("내일 04:00");
   await expect(myeongdong).not.toContainText("확인할 수 없습니다");
@@ -666,10 +662,10 @@ test("date navigation switches the service date and explains what a date cannot 
   await page.getByRole("button", { name: "내일" }).click();
   await expect.poll(() => requested.includes("2026-09-01")).toBe(true);
 
-  // The free picker is bounded to the days that actually hold rows.
+  // A recent-month availability list must not block older stored dates.
   const picker = page.locator('.date-nav-picker input[type="date"]');
-  await expect(picker).toHaveAttribute("min", "2026-08-29");
-  await expect(picker).toHaveAttribute("max", "2026-09-01");
+  await expect(picker).not.toHaveAttribute("min");
+  await expect(picker).not.toHaveAttribute("max");
 });
 
 test("the flight board lists official flight rows and filters by search and terminal", async ({ page }) => {
@@ -778,12 +774,14 @@ test("the business-type checklist is readable, filled in and switches with the t
   expect(tabs.filter((tab) => tab.active)).toHaveLength(1);
 
   // Three phase columns, each with rows, rather than one sparse list.
+  await page.locator('.operating-checklist > summary').click();
   await expect(page.locator(".checklist-phase")).toHaveCount(3);
   await expect(page.locator(".checklist-rows li")).toHaveCount(6);
-  await expect(page.locator(".industry-watch b")).not.toBeEmpty();
+  await expect(page.locator(".operating-focus p")).not.toBeEmpty();
 
   const beauty = await page.locator(".checklist-rows p").first().textContent();
-  await page.getByRole("tab", { name: "관광·숙박" }).click();
+  await page.getByRole("button", { name: "관광·숙박", exact: true }).click();
+  await page.locator('.operating-checklist > summary').click();
   await expect(page.locator(".checklist-rows p").first()).not.toHaveText(beauty ?? "");
   await expect(page.locator(".checklist-rows li")).toHaveCount(6);
 
@@ -796,6 +794,7 @@ test("the checklist stacks without overflow on a narrow phone", async ({ page })
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await page.evaluate(async () => document.fonts.ready);
   await page.locator(".industry-section").scrollIntoViewIfNeeded();
+  await page.locator('.operating-checklist > summary').click();
   await expect(page.locator(".checklist-phase")).toHaveCount(3);
   // Every row has to fit inside its own box: a label that paints wider than the
   // element it sits in is the readability defect this layout replaced.
