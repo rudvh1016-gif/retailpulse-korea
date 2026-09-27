@@ -57,6 +57,7 @@ export const personalCopy = {
   finish: row('내 브리핑 보기','Show my briefing','查看我的简报','自分のブリーフィングを見る'),
   settings: row('내 설정 보기','My settings','我的设置','自分の設定'),
   edit: row('설정 변경','Change settings','更改设置','設定を変更'),
+  startSetup: row('내 브리핑 설정','Set up my briefing','设置我的简报','マイブリーフを設定'),
   reset: row('처음부터 다시 설정','Start setup again','重新设置','最初から設定'),
   cancel: row('취소','Cancel','取消','キャンセル'),
   remembered: row('이 기기에서 설정을 기억합니다.','Your settings are remembered on this device.','在此设备上记住您的设置。','この端末で設定を記憶します。'),
@@ -79,6 +80,8 @@ export const personalCopy = {
   eventNote: row('공식 행사기간 기준 · 당일 운영은 확인 권장','Official event period · confirm daily opening','依据官方活动期间 · 建议确认当天开放情况','公式開催期間に基づく・当日の開催状況をご確認ください'),
   prepare: row('오늘 준비할 것','Prepare today','今天准备什么','今日準備すること'),
   prepareTomorrow: row('내일 준비할 것','Prepare for tomorrow','明天准备什么','明日準備すること'),
+  peakLead: row('{v} 예상 혼잡','busy around {v}','预计 {v} 拥挤','{v} 混雑予想'),
+  passengerPeakLead: row('{v} 예상 이용객 최다','most expected passengers around {v}','预计 {v} 使用人数最多','{v} 予想利用者が最多'),
   visitPrep: row('예상 혼잡 시간과 방문 동선 확인 권장','Check busy hours and your route','建议确认拥挤时段与游览路线','混雑予想時間と訪問ルートを確認'),
   managerPrep: row('붐비는 시간대 인력 배치와 주요 상품 재고 확인 권장','Review staffing and key stock for busy hours','建议核对高峰时段人员安排与主要商品库存','混雑時間帯の人員配置と主要商品の在庫を確認'),
   guidePrep: row('집합 시간과 단체 이동 동선 확인 권장','Review meeting times and group routes','建议确认集合时间与团体路线','集合時間と団体の移動ルートを確認'),
@@ -99,3 +102,8 @@ export const personalCopy = {
 };
 export type PersonalCopyKey = keyof typeof personalCopy;
 export function pc(key: PersonalCopyKey, lang: PersonalLang) { return personalCopy[key][lang]; }
+
+/** Inserts only a value already shown by the corresponding evidence card. */
+export function pcValue(key: 'peakLead' | 'passengerPeakLead', lang: PersonalLang, value: string) {
+  return personalCopy[key][lang].replace('{v}', value);
+}
