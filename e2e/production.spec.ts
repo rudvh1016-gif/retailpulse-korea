@@ -57,6 +57,7 @@ test("business checklist uses one regular and one strong weight", async ({ page 
   await page.goto("/ko/business");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await expect(page.locator(".industry-tabs button").first()).toHaveCSS("font-weight", "600");
+  await page.locator('.operating-checklist > summary').click();
   await expect(page.locator(".checklist-rows p").first()).toHaveCSS("font-weight", "400");
   await expect(page.locator(".checklist-rows strong").first()).toHaveCSS("font-weight", "600");
 });
@@ -773,12 +774,14 @@ test("the business-type checklist is readable, filled in and switches with the t
   expect(tabs.filter((tab) => tab.active)).toHaveLength(1);
 
   // Three phase columns, each with rows, rather than one sparse list.
+  await page.locator('.operating-checklist > summary').click();
   await expect(page.locator(".checklist-phase")).toHaveCount(3);
   await expect(page.locator(".checklist-rows li")).toHaveCount(6);
-  await expect(page.locator(".industry-watch b")).not.toBeEmpty();
+  await expect(page.locator(".operating-focus p")).not.toBeEmpty();
 
   const beauty = await page.locator(".checklist-rows p").first().textContent();
-  await page.getByRole("tab", { name: "관광·숙박" }).click();
+  await page.getByRole("button", { name: "관광·숙박", exact: true }).click();
+  await page.locator('.operating-checklist > summary').click();
   await expect(page.locator(".checklist-rows p").first()).not.toHaveText(beauty ?? "");
   await expect(page.locator(".checklist-rows li")).toHaveCount(6);
 
@@ -791,6 +794,7 @@ test("the checklist stacks without overflow on a narrow phone", async ({ page })
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await page.evaluate(async () => document.fonts.ready);
   await page.locator(".industry-section").scrollIntoViewIfNeeded();
+  await page.locator('.operating-checklist > summary').click();
   await expect(page.locator(".checklist-phase")).toHaveCount(3);
   // Every row has to fit inside its own box: a label that paints wider than the
   // element it sits in is the readability defect this layout replaced.
