@@ -46,7 +46,11 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   await page.evaluate(() => document.fonts.ready);
   const labels = await page.locator('.flow-tick').evaluateAll(els => els.map(el => { const r = el.getBoundingClientRect(); return { left: r.left, right: r.right }; }));
   expect(labels.length).toBeGreaterThan(0);
-  expect(labels.length).toBeLessThanOrEqual(4);
+  // After 00:00 KST the chart adds a date label at midnight, so a phone can
+  // legitimately show five times (populationTicks keeps them >= 72px apart;
+  // tests/demand-presentation.test.ts holds that rule). Overlap and overflow
+  // are what a reader would notice, and the lines below still forbid both.
+  expect(labels.length).toBeLessThanOrEqual(5);
   labels.forEach((r, i) => { expect(r.left).toBeGreaterThanOrEqual(0); expect(r.right).toBeLessThanOrEqual(width); if (i) expect(r.left).toBeGreaterThan(labels[i - 1].right); });
   const header = await page.locator('.topbar').boundingBox(), title = await page.locator('h1').boundingBox();
   expect(title!.y).toBeGreaterThanOrEqual(header!.y + header!.height);
