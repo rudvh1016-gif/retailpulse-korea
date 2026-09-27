@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 import {
   FLIGHT_ROWS,
@@ -51,19 +51,6 @@ for (const [locale, primaryFamily] of localeFonts) {
     );
     expect(weights).toEqual(["400", "600"]);
   });
-}
-
-/**
- * Reveal the public area, whichever state the reader is in.
- *
- * A reader with saved settings still gets it behind the fold-out; a first
- * visit now has it on the page already. The assertions after each call are
- * what prove the content is really there, so this cannot pass by showing
- * nothing.
- */
-async function revealPublicArea(page: Page) {
-  const foldout = page.locator(".personal-existing > summary");
-  if (await foldout.count()) await foldout.click();
 }
 
 test("business checklist uses one regular and one strong weight", async ({ page }) => {
@@ -505,7 +492,6 @@ test("home gives deterministic current briefs for all three Seoul areas", async 
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko");
-  await revealPublicArea(page);
   await expect(page.getByRole("heading", { name: "다른 상권 살펴보기" })).toBeVisible();
   const briefs = page.locator(".home-area-briefs");
   await expect(page.getByTestId('area-demand-card').first()).toContainText('현재 추정 인구');
@@ -530,7 +516,6 @@ test("Seoul renders compact arrival forecasts in four languages and no departure
 
   for (const [locale, labels] of Object.entries(expected)) {
     await page.goto(`/${locale}`);
-    await revealPublicArea(page);
     await page.locator(".demand-card-footer > a").first().click();
     const rows = page.locator(".signal-groups");
     for (const label of labels) await expect(rows.getByText(label, { exact: true })).toBeVisible();
@@ -538,7 +523,6 @@ test("Seoul renders compact arrival forecasts in four languages and no departure
   }
 
   await page.goto("/ko");
-  await revealPublicArea(page);
   await page.locator(".demand-card-footer > a").first().click();
   const rows = page.locator(".signal-groups");
   await expect(rows).toContainText("서울의 특정 지역과 직접 연결되지 않는 배경 참고");
@@ -554,7 +538,6 @@ test("partial arrival coverage hides the whole-day total and peak", async ({ pag
   partial.airport.arrivalForecast.forecastCoverage = { all: "PARTIAL", byTerminal: { T1: "PARTIAL", T2: "COMPLETE" } };
   await page.route("**/api/live/summary*", routeSummary(partial));
   await page.goto("/ko");
-  await revealPublicArea(page);
   await page.locator(".demand-card-footer > a").first().click();
   const rows = page.locator(".signal-groups");
   await expect(rows.getByText("오늘 예상 입국객", { exact: true })).toHaveCount(0);
@@ -577,7 +560,6 @@ test("a forecast peak that falls after midnight is shown and labelled tomorrow",
   ];
   await page.route("**/api/live/summary*", routeSummary(evening));
   await page.goto("/ko");
-  await revealPublicArea(page);
   const myeongdong = page.getByTestId("area-demand-card").first();
   await expect(myeongdong).toContainText("내일 04:00");
   await expect(myeongdong).not.toContainText("확인할 수 없습니다");
