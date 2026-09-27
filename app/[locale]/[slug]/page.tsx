@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { preload } from "react-dom";
 import { notFound } from "next/navigation";
 import RetailPulseApp from "../../retailpulse-app";
+import { loadTodayAnswer } from "../../../lib/today-answer-server";
 import { buildMetadata, pageStructuredData, seoLocales, standaloneSeoSlugs, type SeoLocale, type SeoSlug } from "../../seo-config";
 
 /**
@@ -35,8 +36,10 @@ export default async function LocalePage({ params }: { params: Promise<{ locale:
   const view = isArea ? "today" : slug as "predictions" | "forecast" | "airport" | "business" | "about" | "more";
   const area = isArea ? slug as typeof areaSlugs[number] : "myeongdong";
   preloadLiveSummary();
+  // Only the pages whose question this answers pay for the read.
+  const todayAnswer = isArea || slug === "airport" ? await loadTodayAnswer() : null;
   return <>
-    <RetailPulseApp initialLang={locale as SeoLocale} initialView={view} initialArea={area} initialRoute initialScope={isArea ? "area" : "home"} />
+    <RetailPulseApp initialLang={locale as SeoLocale} initialView={view} initialArea={area} initialRoute initialScope={isArea ? "area" : "home"} todayAnswer={todayAnswer} />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale, slug as SeoSlug)) }} />
   </>;
 }
