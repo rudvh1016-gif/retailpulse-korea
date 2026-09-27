@@ -23,19 +23,19 @@ async function fixture(page: Page, payload: unknown = SUMMARY_FIXTURE) {
   });
 }
 
-test('new personal home opens setup without a public area', async ({ page }) => {
+test('new personal home shows public information before optional setup', async ({ page }) => {
   await fixture(page);
   await page.goto('/ko');
-  await expect(page.getByTestId('personal-onboarding')).toBeVisible();
-  await expect(page.getByRole('heading', { name: '내 브리핑', exact: true })).toBeVisible();
-  await expect(page.locator('.demand-home, .area-current-brief, .airport-current-brief')).toHaveCount(0);
-  await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
-  await page.locator('.personal-existing > summary').click();
+  await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
   await expect(page.locator('.demand-home')).toBeVisible();
+  await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
+  await page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true }).click();
+  await expect(page.getByTestId('personal-onboarding')).toBeVisible();
 });
 
 test('saving Myeongdong and weather only excludes every unselected area and interest', async ({ page }) => {
   await fixture(page); await page.goto('/ko');
+  await page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true }).click();
   const form = page.getByTestId('personal-onboarding');
   await form.locator('[data-role="manager"]').click();
   await form.getByRole('button', { name: '다음', exact: true }).click();
@@ -189,6 +189,7 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
 
 for (const width of [390, 1440]) test(`personal home screenshots ${width}`, async ({ page }, info) => {
   await page.setViewportSize({ width, height: 900 }); await fixture(page); await page.goto('/ko');
+  await page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true }).click();
   await expect(page.getByTestId('personal-onboarding')).toBeVisible();
   await page.screenshot({ path: info.outputPath(`setup-${width}.png`) });
   await page.evaluate(({ key, p }) => { localStorage.setItem(key, JSON.stringify(p)); }, { key: PREFERENCE_KEY, p: preferences });
