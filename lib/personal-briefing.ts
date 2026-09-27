@@ -1,5 +1,5 @@
 import type { LiveSummary } from '../app/live-signals';
-import { pc, type PersonalLang } from './personal-copy';
+import { pc, pcValue, type PersonalLang } from './personal-copy';
 
 export const roles = ['tourist','manager','guide'] as const;
 export const locations = ['airport','myeongdong','hongdae','seongsu'] as const;
@@ -55,6 +55,7 @@ export interface PersonalCard { interest: Interest; label: string; value: string
 export function buildPersonalBrief(summary: LiveSummary | null | undefined, p: PersonalPreferences, date: string, lang: PersonalLang): {cards: PersonalCard[]; actions: string[]} {
   const cards: PersonalCard[] = [];
   const actions: string[] = [];
+  let eventLead: string | null = null;
   if (!summary || summary.mode !== 'live-summary' || summary.serviceDateKst !== date) return {cards,actions};
   const add = (interest: Interest, label: string, value: string, note: string, at?: string, details?: string[]) => { if(p.interests.includes(interest)) cards.push({interest,label,value,note,at,details}); };
   const num = (value: number) => value.toLocaleString(lang === 'zh' ? 'zh-CN' : lang);
@@ -107,14 +108,22 @@ export function buildPersonalBrief(summary: LiveSummary | null | undefined, p: P
     const rain = weather.map(r=>r.precipitationProbability).filter(finite);
     if(rain.length) add('weather',pc('rain',lang),`${Math.max(...rain)}%`,`${date} · ${pc('forecast',lang)}`);
     const events = (a.events ?? []).filter(r=>r.eventStart<=date && (r.eventEnd ?? r.eventStart)>=date);
-    if(events.length) add('events',pc('events',lang),events.slice(0,2).map(e=>e.title).join(' · '),pc('eventNote',lang));
+    if(events.length) { add('events',pc('events',lang),events.slice(0,2).map(e=>e.title).join(' · '),pc('eventNote',lang)); eventLead = events[0].title ?? null; }
     if(a.foreignPresence && finite(a.foreignPresence.value)) add('foreign',pc('foreign',lang),num(a.foreignPresence.value),pc('historic',lang),a.foreignPresence.referenceAt);
     if(p.interests.includes('guidance')) add('guidance',pc('guidance',lang),pc('details',lang),pc(date<summary.todayKst?'pastNote':'guidePromise',lang));
   }
   if(date<summary.todayKst)return {cards,actions};
-  if(cards.some(c=>c.interest==='crowding'||c.interest==='passengers')) actions.push(pc(p.role==='manager'?'managerPrep':p.role==='guide'?'guidePrep':'visitPrep',lang));
-  if(cards.some(c=>c.interest==='flights')) actions.push(pc('flightPrep',lang));
-  if(cards.some(c=>c.interest==='weather')) actions.push(pc('weatherPrep',lang));
-  if(cards.some(c=>c.interest==='events')) actions.push(pc('eventPrep',lang));
+  // Reuse visible evidence only; unavailable or unselected interests cannot
+  // introduce a value. Airport passenger peaks are not queue congestion.
+  const card = (interest: Interest) => cards.find(c=>c.interest===interest);
+  const work = (key: Parameters<typeof pc>[0], lead: string | null) => actions.push(lead ? `${lead} · ${pc(key,lang)}` : pc(key,lang));
+  const busy = card('crowding');
+  if(busy || card('passengers')) work(p.role==='manager'?'managerPrep':p.role==='guide'?'guidePrep':'visitPrep',
+    busy ? pcValue(p.location==='airport'?'passengerPeakLead':'peakLead',lang,busy.value) : null);
+  const flights = card('flights');
+  if(flights) work('flightPrep', flights.value);
+  const rain = card('weather');
+  if(rain) work('weatherPrep', `${rain.label} ${rain.value}`);
+  if(card('events')) work('eventPrep', eventLead);
   return {cards,actions:actions.slice(0,4)};
 }

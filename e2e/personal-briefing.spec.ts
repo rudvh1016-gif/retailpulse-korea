@@ -49,7 +49,7 @@ test('a first visit answers with the information, not a questionnaire',async({pa
   // The public summary is there in full, not behind a fold-out.
   await expect(page.locator('details.personal-existing')).toHaveCount(0);
   await expect(page.getByRole('heading',{name:'서울과 공항의 흐름'})).toBeVisible();
-  await expect(page.getByTestId('area-demand-card').first()).toBeVisible();
+  await expect(page.getByText('2026-08-31 · KST',{exact:true})).toBeVisible();
   // Nothing is asked first: no role, no analytics consent.
   await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
   // Setting one up is a choice, and cancelling comes back to the information.
@@ -106,9 +106,8 @@ test('reopening with persisted browser state, editing, feedback and reset',async
   await expect(reopened.getByTestId('personal-briefing')).toContainText('성수');
   await reopened.getByText('내 설정 보기',{exact:true}).click();
   await reopened.getByRole('button',{name:'처음부터 다시 설정',exact:true}).click();
-  // Clearing the settings returns the reader to a first visit: the information,
-  // with setting one up on offer again — not straight back into the form.
   await expect(reopened.getByTestId('personal-onboarding')).toHaveCount(0);
+  await expect(reopened.getByRole('heading',{name:'서울과 공항의 흐름'})).toBeVisible();
   await expect(reopened.getByRole('button',{name:pc('startSetup','ko'),exact:true})).toBeVisible();
   await context.close();
 });

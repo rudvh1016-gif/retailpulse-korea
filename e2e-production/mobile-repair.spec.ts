@@ -5,9 +5,16 @@ import { PREFERENCE_KEY } from '../lib/personal-briefing';
 for (const width of [360, 390]) test(`personalization and chart repair on Production ${width}`, async ({ page }, info) => {
   await page.setViewportSize({ width, height: 844 });
   await page.goto('/ko');
+  await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+  await expect(page.locator('.demand-home')).toBeVisible();
+  await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
+  await page.screenshot({ path: info.outputPath(`public-${width}.png`) });
+  await page.getByRole('button', { name: '내 브리핑 설정', exact: true }).click();
   await expect(page.getByTestId('personal-onboarding')).toBeVisible();
-  await expect(page.locator('.demand-home, .area-current-brief')).toHaveCount(0);
   await page.screenshot({ path: info.outputPath(`setup-${width}.png`) });
+  await page.getByRole('button', { name: '취소', exact: true }).click();
+  await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+  await expect(page.locator('.demand-home')).toBeVisible();
   await page.evaluate(key => localStorage.setItem(key, JSON.stringify({ version: 1, role: 'manager', location: 'myeongdong', terminal: 'T2', interests: ['weather'], day: 'today', analytics: false })), PREFERENCE_KEY);
   await page.reload();
   await expect(page.locator('.personal-place')).toContainText('명동');

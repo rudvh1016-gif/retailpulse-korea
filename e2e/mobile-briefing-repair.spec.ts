@@ -23,11 +23,7 @@ async function fixture(page: Page, payload: unknown = SUMMARY_FIXTURE) {
   });
 }
 
-test('the personal home leads with the public area and offers setup', async ({ page }) => {
-  // Until 2026-09-19 this asserted the opposite: a first visit opened the
-  // questionnaire and the public area was absent until the fold-out was
-  // clicked. Measured against a populated summary that page carried 579
-  // characters and not one figure, which is what the change below replaced.
+test('new personal home shows public information before optional setup', async ({ page }) => {
   await fixture(page);
   await page.goto('/ko');
   await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
@@ -37,10 +33,8 @@ test('the personal home leads with the public area and offers setup', async ({ p
   await expect(page.getByTestId('personal-onboarding')).toBeVisible();
 });
 
-
 test('saving Myeongdong and weather only excludes every unselected area and interest', async ({ page }) => {
   await fixture(page); await page.goto('/ko');
-  // A first visit answers with the information, so the questionnaire is opened.
   await page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true }).click();
   const form = page.getByTestId('personal-onboarding');
   await form.locator('[data-role="manager"]').click();
@@ -195,7 +189,6 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
 
 for (const width of [390, 1440]) test(`personal home screenshots ${width}`, async ({ page }, info) => {
   await page.setViewportSize({ width, height: 900 }); await fixture(page); await page.goto('/ko');
-  await page.screenshot({ path: info.outputPath(`first-visit-${width}.png`) });
   await page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true }).click();
   await expect(page.getByTestId('personal-onboarding')).toBeVisible();
   await page.screenshot({ path: info.outputPath(`setup-${width}.png`) });
