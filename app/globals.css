@@ -2043,3 +2043,9 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
   .date-nav-shortcuts button { flex: 1 1 0; min-width: 0; }
   .personal-day-switches { width: 100%; }
 }
+
+/* Today's answer, stated in the first HTML (lib/today-answer.ts). Plain text
+   under the heading: no box, no colour of its own, so it reads as part of the
+   page rather than a banner. */
+.today-answer { margin-top: 12px; }
+.today-answer p { margin: 4px 0 0; font-size: 14px; line-height: 1.6; color: var(--ink, #111); }

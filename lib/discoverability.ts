@@ -444,7 +444,11 @@ async function checkPageIdentity(context: Context, locale: SeoLocale, slug?: Seo
     `@type: ${types.join(",") || "none"}`,
   );
 
-  note(context, { page: label, title, descriptionChars: description.length, structuredTypes: types });
+  // Evidence, not a gate: the answer line depends on the day's official data
+  // being complete, so its absence is reported rather than failed.
+  const answer = [...body.matchAll(/<div class="today-answer">([\s\S]*?)<\/div>/g)]
+    .map((match) => decodeHtmlText(match[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()))[0] ?? null;
+  note(context, { page: label, title, descriptionChars: description.length, structuredTypes: types, todayAnswer: answer });
 }
 
 /** A share with a broken preview image converts worse than one with none. */
