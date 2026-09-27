@@ -1,4 +1,4 @@
-import { allAreaIds, type AreaId } from "./areas";
+import { publicAreaIds, type AreaId } from "./areas";
 import { fetchOfficialJson } from "./source-adapters";
 import { kstDayOf, shiftKstDay } from "./kst";
 
@@ -27,6 +27,9 @@ export const SUBWAY_AREA_STATIONS: Record<AreaId, readonly SubwayStation[]> = {
   myeongdong: [{ stationCode: "0424", stationNumber: "424", stationName: "명동", lineName: "4호선" }],
   hongdae: [{ stationCode: "0239", stationNumber: "239", stationName: "홍대입구", lineName: "2호선" }],
   seongsu: [{ stationCode: "0211", stationNumber: "211", stationName: "성수", lineName: "2호선" }],
+  // No OA-22723 station code has been verified for Itaewon, so none is guessed:
+  // it is requested for no station and has no ridership trend.
+  itaewon: [],
 };
 
 /**
@@ -62,7 +65,7 @@ export function formatRepresentativeStations(stored: string | null | undefined):
   return labels.length ? labels.join(", ") : null;
 }
 
-export const SUBWAY_STATION_REQUESTS = allAreaIds.flatMap((area) =>
+export const SUBWAY_STATION_REQUESTS = publicAreaIds.flatMap((area) =>
   SUBWAY_AREA_STATIONS[area].map((station) => ({ area, station })),
 );
 

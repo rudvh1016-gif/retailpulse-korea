@@ -100,7 +100,7 @@ export async function normalizeSeoulForeignRows(
 
 export async function aggregateSeoulForeignByArea(
   rows: readonly CanonicalSeoulForeignDong[],
-  mapping: Record<AreaId, readonly string[]>,
+  mapping: Partial<Record<AreaId, readonly string[]>>,
 ): Promise<CanonicalSeoulForeignArea[]> {
   const output: CanonicalSeoulForeignArea[] = [];
   for (const [area, configuredCodes] of Object.entries(mapping) as [AreaId, readonly string[]][]) {

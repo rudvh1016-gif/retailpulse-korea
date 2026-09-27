@@ -1,5 +1,5 @@
 import { predictionReadiness } from './prediction-progress';
-import { allAreaIds, type AreaId } from './areas';
+import { publicAreaIds, realtimeAreaIds } from './areas';
 import { kstDayOf, shiftKstDay } from './kst';
 import { createImmutablePrediction } from './forecast';
 import { sha256 } from './hash';
@@ -44,7 +44,7 @@ export async function runPopulationPredictions(db:D1Database,now=new Date()) {
   const hour=(now.getUTCHours()+9)%24;
   if(hour<18) return {status:'WAITING_FOR_18_KST',predictions:0};
   let count=0;
-  for(const area of allAreaIds) {
+  for(const area of publicAreaIds) {
     if(await db.prepare('SELECT 1 FROM forecast_runs WHERE area=? AND target_date=?').bind(area,targetDate).first()) continue;
     const rows=(await db.prepare(POPULATION_ROWS_SQL).bind(area,shiftKstDay(targetDate,-28),targetDate).all<PopulationSample>()).results ?? [];
     const latest=rows.at(-1);
@@ -60,7 +60,7 @@ export async function runPopulationPredictions(db:D1Database,now=new Date()) {
         availableAt:row.retrievedAt,ingestionAt:row.retrievedAt,value:(row.populationMin+row.populationMax)/2,recordOrigin:'LIVE' as const}));
       const inputHash=await sha256(forecast.samples);
       const prediction=await createImmutablePrediction({predictionId:id,createdAt:cutoff,targetAt,dataCutoff:cutoff,
-        targetId:'AREA_ACTIVITY',area:area as AreaId,value:forecast.value,forecastClass:'MODERATE',confidence:'LOW',
+        targetId:'AREA_ACTIVITY',area,value:forecast.value,forecastClass:'MODERATE',confidence:'LOW',
         modelVersion:POPULATION_MODEL,proxyVersion:'population-midpoint-people-v1',featureVersion:'same-weekday-00-14min-v1',
         sourceVersions:{SEOUL_CITYDATA_PPLTN:forecast.samples[0].schemaVersion},inputHash,recordOrigin:'FORECAST'},features);
       statements.push(db.prepare(`INSERT INTO predictions(prediction_id,created_at,target_at,data_cutoff,target_id,area,
@@ -116,7 +116,7 @@ export async function matchPopulationOutcomes(db:D1Database,now=new Date()) {
 /** Hourly bounded history accounting in Actions, never on a visitor request. */
 export async function updatePopulationCoverage(db:D1Database,now=new Date()) {
  const today=kstDayOf(now.toISOString()),tomorrow=shiftKstDay(today,1);
- for(const area of allAreaIds) {
+ for(const area of realtimeAreaIds) {
   const cached=await db.prepare('SELECT calculated_at,payload FROM area_data_coverage WHERE area=?').bind(area).first<{calculated_at:string;payload:string}>();
   if(cached&&Date.parse(cached.calculated_at)>now.getTime()-50*60000) {
     try { if(JSON.parse(cached.payload).readiness?.targetDate===tomorrow)continue; } catch { /* rebuild outdated coverage only */ }
