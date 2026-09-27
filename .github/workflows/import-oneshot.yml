@@ -45,8 +45,14 @@ jobs:
         run: npx tsx scripts/probe-seoul-citydata-contract.ts
         env:
           SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
+      - name: Probe the Itaewon source values (read only, writes nothing)
+        if: inputs.sources == 'probe_itaewon_sources' && inputs.confirm == 'PROBE'
+        run: npx tsx scripts/probe-itaewon-sources.ts
+        env:
+          SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
+          DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
       - name: Run bounded one-shot import
-        if: inputs.sources != 'probe_seoul_citydata_contract'
+        if: inputs.sources != 'probe_seoul_citydata_contract' && inputs.sources != 'probe_itaewon_sources'
         run: npx tsx scripts/import-oneshot.ts
         env:
           RPK_ONESHOT_CONFIRM: ${{ inputs.confirm }}
@@ -57,5 +63,5 @@ jobs:
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
           SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
       - name: Reject an invalid Seoul contract-probe confirmation
-        if: inputs.sources == 'probe_seoul_citydata_contract' && inputs.confirm != 'PROBE'
+        if: (inputs.sources == 'probe_seoul_citydata_contract' || inputs.sources == 'probe_itaewon_sources') && inputs.confirm != 'PROBE'
         run: exit 1
