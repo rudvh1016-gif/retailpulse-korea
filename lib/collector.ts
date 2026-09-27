@@ -30,7 +30,7 @@ import {
 } from "./source-adapters";
 import { buildDataGoKrUrl } from "./data-go-kr.mjs";
 import { describeWrites, NO_D1_WRITES, runD1Batches, type D1WriteCounts } from "./d1-write-counts";
-import { allAreaIds, areaMappings, distanceMeters, uniqueKmaGrids, type AreaId } from "./areas";
+import { areaMappings, distanceMeters, publicAreaIds, realtimeAreaIds, uniqueKmaGrids, type AreaId, type PublicAreaId } from "./areas";
 import { summarizeTodayPassengerForecast, type AirportForecastAggregateRow } from "./airport-today-summary";
 import { sha256 } from "./hash";
 import {
@@ -517,7 +517,7 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
   let lastCommercial: CanonicalSeoulRealtimeCommercial | undefined;
 
   const failureDetail = (areaId: AreaId, error: unknown) => `${areaId}: ${safeSourceFailureDetail(error)}`;
-  for (const areaId of allAreaIds) {
+  for (const areaId of realtimeAreaIds) {
     const mapping = areaMappings[areaId];
     const url = new URL(`http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/citydata/1/5/${mapping.seoulPoiCode}`);
     let citydata: Record<string, unknown>;
@@ -631,11 +631,11 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
     written: D1WriteCounts,
     lastRecord: HealthSnapshot | undefined,
   ): Promise<"SUCCESS" | "PARTIAL" | "ERROR"> => {
-    const okCount = allAreaIds.length - failures.length;
-    const detail = `areas ok ${okCount}/${allAreaIds.length}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
-    const collectorStatus = okCount === allAreaIds.length ? "SUCCESS" : okCount > 0 ? "PARTIAL" : "ERROR";
+    const okCount = realtimeAreaIds.length - failures.length;
+    const detail = `areas ok ${okCount}/${realtimeAreaIds.length}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
+    const collectorStatus = okCount === realtimeAreaIds.length ? "SUCCESS" : okCount > 0 ? "PARTIAL" : "ERROR";
     const hasUsable = okCount > 0 || await hasStoredRow(env.DB, `SELECT 1 FROM ${table} LIMIT 1`);
-    const health: SourceHealthStatus = okCount === allAreaIds.length ? "LIVE" : hasUsable ? "STALE" : "ERROR";
+    const health: SourceHealthStatus = okCount === realtimeAreaIds.length ? "LIVE" : hasUsable ? "STALE" : "ERROR";
     await writeCollectorStatus(env.DB, sourceId, collectorStatus, detail, okCount, written.changedRows);
     await writeSourceHealth(env.DB, sourceId, health, detail, lastRecord);
     return collectorStatus;
@@ -733,7 +733,7 @@ export async function collectSeoulForeignPresence(env: CollectorEnv, now: Date =
   }
   try {
     const base = `http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/Spop250mFornTempDong`;
-    const configuredCodes = [...new Set(allAreaIds.flatMap((area) => areaMappings[area].seoulAdministrativeDongCodes))];
+    const configuredCodes = [...new Set(publicAreaIds.flatMap((area) => areaMappings[area].seoulAdministrativeDongCodes))];
     let selectedPeriod: SeoulForeignPeriod | undefined;
     let rawRows: Record<string, unknown>[] = [];
     for (const candidate of seoulForeignPeriodCandidates(now)) {
@@ -770,11 +770,11 @@ export async function collectSeoulForeignPresence(env: CollectorEnv, now: Date =
 
     const retrievedAt = nowIso();
     const dongRows = await normalizeSeoulForeignRows(rawRows, retrievedAt);
-    const mapping = Object.fromEntries(allAreaIds.map((area) => [area, areaMappings[area].seoulAdministrativeDongCodes])) as Record<(typeof allAreaIds)[number], readonly string[]>;
+    const mapping = Object.fromEntries(publicAreaIds.map((area) => [area, areaMappings[area].seoulAdministrativeDongCodes])) as Record<(typeof publicAreaIds)[number], readonly string[]>;
     const areaRows = await aggregateSeoulForeignByArea(dongRows, mapping);
     const written = await persistSeoulForeignPresence(env.DB, dongRows, areaRows);
     const lastRecord = areaRows.at(-1);
-    const detail = `period ${ymd}/${tt}; dongs ${dongRows.length}/${configuredCodes.length}; areas ${areaRows.length}/${allAreaIds.length}; ${describeWrites(written)}`;
+    const detail = `period ${ymd}/${tt}; dongs ${dongRows.length}/${configuredCodes.length}; areas ${areaRows.length}/${publicAreaIds.length}; ${describeWrites(written)}`;
     await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, rawRows.length, written.changedRows);
     await writeSourceHealth(env.DB, sourceId, "OFFICIAL_HISTORICAL", detail, lastRecord ? {
       eventAt: lastRecord.referenceAt,
@@ -1151,7 +1151,7 @@ export async function collectEstimatedSales(env: CollectorEnv, now = new Date())
     await writeSourceHealth(env.DB, sourceId, "MISSING", "SEOUL_OPEN_DATA_KEY is not configured");
     return { status: "NEEDS_KEY", records: 0 };
   }
-  const codeToArea = new Map(allAreaIds.map((areaId) => [areaMappings[areaId].salesTradeArea.code, areaId]));
+  const codeToArea = new Map(publicAreaIds.map((areaId) => [areaMappings[areaId].salesTradeArea.code, areaId]));
   const statements: D1PreparedStatement[] = [];
   let lastRecord: CanonicalEstimatedSales | undefined;
   const matchedAreas = new Set<string>();
@@ -1220,8 +1220,8 @@ export async function collectEstimatedSales(env: CollectorEnv, now = new Date())
     if (!matchedAreas.size) throw new Error("estimated_sales_no_matching_rows");
 
     if (env.DB && statements.length) written = await runBatches(env.DB, statements);
-    const detail = `quarter ${quarterCode}; pages ${pagesRead}; areas ok ${matchedAreas.size}/${allAreaIds.length}; ${describeWrites(written)}`;
-    const partial = matchedAreas.size < allAreaIds.length;
+    const detail = `quarter ${quarterCode}; pages ${pagesRead}; areas ok ${matchedAreas.size}/${publicAreaIds.length}; ${describeWrites(written)}`;
+    const partial = matchedAreas.size < publicAreaIds.length;
     await writeCollectorStatus(env.DB, sourceId, partial ? "PARTIAL" : "SUCCESS", detail, matchedAreas.size, written.changedRows);
     await writeSourceHealth(env.DB, sourceId, "OFFICIAL_HISTORICAL", detail, lastRecord ? { retrievedAt: lastRecord.retrievedAt, schemaVersion: lastRecord.schemaVersion } : undefined);
     return { status: partial ? "PARTIAL" : "SUCCESS", records: written.changedRows };
@@ -1271,7 +1271,7 @@ async function hasCompleteStoreDynamicsLastGood(db: D1Database | undefined): Pro
       && Object.keys(storeDynamicsMappings).every((area) => areas.has(area))
       && quarters.size === 1
       && Object.keys(storeDynamicsMappings).every((area) =>
-        isValidStoredStoreDynamicsRow(area as AreaId, rows.find((row) => row.area === area)));
+        isValidStoredStoreDynamicsRow(area as PublicAreaId, rows.find((row) => row.area === area)));
   } catch {
     return false;
   }
@@ -1733,8 +1733,9 @@ export async function collectTourismEvents(env: CollectorEnv, now = new Date()):
       const lat = Number(record.mapy);
       const lng = Number(record.mapx);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
-      for (const areaId of allAreaIds) {
+      for (const areaId of publicAreaIds) {
         const mapping = areaMappings[areaId];
+        if (!mapping.center || mapping.eventRadiusM === null) continue;
         const distance = distanceMeters(mapping.center, { lat, lng });
         if (distance > mapping.eventRadiusM) continue;
         const canonical = await normalizeTourismEvent({ ...record, dist: String(distance) }, areaId, retrievedAt);

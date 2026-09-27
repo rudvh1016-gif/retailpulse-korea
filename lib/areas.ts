@@ -11,7 +11,20 @@
  * context signals, never as one exact polygon.
  */
 
-export type AreaId = "myeongdong" | "hongdae" | "seongsu";
+import { itaewonPreparation } from "./prepared-areas/itaewon";
+
+export type AreaId = "myeongdong" | "hongdae" | "seongsu" | "itaewon";
+
+/**
+ * The areas every collector reads and every public page shows.
+ *
+ * Itaewon joins one source at a time, each only after that source's real
+ * response has been verified (docs/ITAEWON_PREPARATION.md). Until a source
+ * lists it, that source neither calls a provider nor writes a row for it, and
+ * no page, route, sitemap or prediction names it.
+ */
+export const publicAreaIds = ["myeongdong", "hongdae", "seongsu"] as const satisfies readonly AreaId[];
+export type PublicAreaId = typeof publicAreaIds[number];
 
 export interface AreaMapping {
   id: AreaId;
@@ -21,10 +34,14 @@ export interface AreaMapping {
   seoulPoiName: string;
   /** KMA 단기예보 5km grid cell. */
   kmaGrid: { nx: number; ny: number };
-  /** WGS84 center used for event distance mapping (approximate area center). */
-  center: { lat: number; lng: number };
-  /** Event search radius in meters around the center (TourAPI locationBasedList2, max 20000). */
-  eventRadiusM: number;
+  /**
+   * WGS84 center used for event distance mapping (approximate area center).
+   * Null when no verified center exists: events are then not mapped to the
+   * area rather than mapped around a guessed point.
+   */
+  center: { lat: number; lng: number } | null;
+  /** Event search radius in meters around the center (TourAPI locationBasedList2, max 20000). Null with a null center. */
+  eventRadiusM: number | null;
   /**
    * Primary 서울시 상권분석서비스 trade area (current 3-prefixed code scheme).
    * One defensible primary geography per product area; alternates are
@@ -68,12 +85,22 @@ export const areaMappings: Record<AreaId, AreaMapping> = {
     salesTradeArea: { code: "3110131", name: "성수동카페거리", seCd: "A" },
     seoulAdministrativeDongCodes: ["11200670"],
   },
+  // Collection only (Seoul real-time city data); see publicAreaIds.
+  itaewon: {
+    id: "itaewon",
+    ...itaewonPreparation,
+    center: null,
+    eventRadiusM: null,
+  },
 };
 
 /** Incheon Airport (운서동) grid for airport-context weather when needed. */
 export const incheonAirportKmaGrid = { nx: 51, ny: 125 } as const;
 
 export const allAreaIds = Object.keys(areaMappings) as AreaId[];
+
+/** Seoul real-time city data (POI) is the one source that also reads Itaewon. */
+export const realtimeAreaIds: readonly AreaId[] = [...publicAreaIds, "itaewon"];
 
 export function areaBySeoulPoi(code: string): AreaMapping | null {
   return allAreaIds.map((id) => areaMappings[id]).find((area) => area.seoulPoiCode === code) ?? null;
@@ -91,7 +118,7 @@ export function distanceMeters(a: { lat: number; lng: number }, b: { lat: number
 /** Unique KMA grid cells across target areas (grid cells can be shared). */
 export function uniqueKmaGrids(): Array<{ nx: number; ny: number; areas: AreaId[] }> {
   const cells = new Map<string, { nx: number; ny: number; areas: AreaId[] }>();
-  for (const id of allAreaIds) {
+  for (const id of publicAreaIds) {
     const { nx, ny } = areaMappings[id].kmaGrid;
     const key = `${nx},${ny}`;
     const existing = cells.get(key);

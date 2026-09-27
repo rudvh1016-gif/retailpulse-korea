@@ -1,4 +1,4 @@
-import { allAreaIds, areaMappings, type AreaId } from "./areas";
+import { areaMappings, publicAreaIds, type PublicAreaId } from "./areas";
 
 export const FOREIGN_PURPOSE_SOURCE_ID = "SEOUL_FOREIGN_PURPOSE_MOBILITY";
 export const FOREIGN_PURPOSE_DATASET_ID = "OA-22378";
@@ -23,7 +23,7 @@ export interface ForeignPurposeMobilitySource {
 }
 
 export interface ForeignPurposeMobilityAggregate {
-  area: AreaId;
+  area: PublicAreaId;
   purpose: ForeignPurpose;
   movementValue: number;
   unit: "estimated_movements";
@@ -37,7 +37,7 @@ export interface ForeignPurposeMobilityResult {
   suppressedOrInvalidRows: number;
 }
 
-type PurposeMappings = Record<AreaId, readonly string[]>;
+type PurposeMappings = Record<PublicAreaId, readonly string[]>;
 
 function unescapeHtml(value: string): string {
   return value.replaceAll("&quot;", '"').replaceAll("&#39;", "'").replaceAll("&amp;", "&");
@@ -97,12 +97,12 @@ export function assertPurposeMobilityHeader(headerLine: string): Map<string, num
 }
 
 function defaultMappings(): PurposeMappings {
-  return Object.fromEntries(allAreaIds.map((area) => [area, areaMappings[area].seoulAdministrativeDongCodes])) as PurposeMappings;
+  return Object.fromEntries(publicAreaIds.map((area) => [area, areaMappings[area].seoulAdministrativeDongCodes])) as PurposeMappings;
 }
 
-function destinationLookup(mappings: PurposeMappings): Map<string, AreaId> {
-  const lookup = new Map<string, AreaId>();
-  for (const area of allAreaIds) {
+function destinationLookup(mappings: PurposeMappings): Map<string, PublicAreaId> {
+  const lookup = new Map<string, PublicAreaId>();
+  for (const area of publicAreaIds) {
     for (const code of mappings[area]) {
       if (lookup.has(code)) throw new Error(`duplicate_destination_mapping:${code}`);
       lookup.set(code, area);
@@ -132,7 +132,7 @@ export function aggregateForeignPurposeMobility(
   const totalIndex = indexes.get("total_cnt")!;
   const dateIndex = indexes.get("etl_ymd")!;
   const lookup = destinationLookup(mappings);
-  const parsed: Array<{ area: AreaId; purpose: ForeignPurpose; value: number; ymd: string }> = [];
+  const parsed: Array<{ area: PublicAreaId; purpose: ForeignPurpose; value: number; ymd: string }> = [];
   let latestYmd = "";
   let sourceRowsRead = 0;
   let suppressedOrInvalidRows = 0;
@@ -169,9 +169,9 @@ export function aggregateForeignPurposeMobility(
     sums.set(key, (sums.get(key) ?? 0) + row.value);
   }
   const rows = [...sums.entries()].map(([key, movementValue]) => {
-    const [area, purpose] = key.split(":") as [AreaId, ForeignPurpose];
+    const [area, purpose] = key.split(":") as [PublicAreaId, ForeignPurpose];
     return { area, purpose, movementValue, unit: "estimated_movements" as const, destinationCodes: mappings[area] };
   }).sort((a, b) => a.area.localeCompare(b.area) || a.purpose.localeCompare(b.purpose));
-  if (rows.length > allAreaIds.length * 2) throw new Error("aggregate_row_bound_exceeded");
+  if (rows.length > publicAreaIds.length * 2) throw new Error("aggregate_row_bound_exceeded");
   return { referenceDate: ymdToDate(latestYmd), rows, sourceRowsRead, suppressedOrInvalidRows };
 }

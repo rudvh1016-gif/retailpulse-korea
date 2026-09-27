@@ -1,5 +1,5 @@
 /** Bounded read-only evidence. No provider calls, and no hot public-route imports. */
-import { allAreaIds } from './areas';
+import { publicAreaIds } from './areas';
 import { buildCoverageContext } from './data-coverage';
 import { readRequiredForecastCoverage } from './collector';
 import { expectedWeatherIssuedAt } from './collection-recovery';
@@ -65,19 +65,19 @@ export async function measureSource(db:D1Database,sourceId:string,nowIso:string)
     if(sourceId==='SEOUL_CITYDATA_PPLTN'||sourceId==='SEOUL_CITYDATA_CMRCL') {
       const population=sourceId==='SEOUL_CITYDATA_PPLTN';
       const table=population?'seoul_realtime_area':'seoul_realtime_commercial';
-      output.sample=(await Promise.all(allAreaIds.map(area=>rows(db,`SELECT * FROM ${table}
+      output.sample=(await Promise.all(publicAreaIds.map(area=>rows(db,`SELECT * FROM ${table}
         WHERE source_id=? AND area=? AND observed_at<=? ORDER BY observed_at DESC LIMIT 1`,[sourceId,area,context.kstNowIso])))).flat();
       const valid=output.sample.every(row=>row.quality_status==='VALID'&&validTime(row.observed_at)&&
         (population?safeNumber(row.population_min)&&safeNumber(row.population_max)&&Number(row.population_max)>=Number(row.population_min):true));
       const current=output.sample.every(row=>now-Date.parse(String(row.observed_at))<=35*60_000);
-      output.storedRows=output.sample.length; output.storageValid=output.sample.length===3;
-      output.coverage=output.sample.length===3?'COMPLETE':'PARTIAL';output.dataValid=valid&&current&&output.storageValid;
+      output.storedRows=output.sample.length; output.storageValid=output.sample.length===publicAreaIds.length;
+      output.coverage=output.storageValid?'COMPLETE':'PARTIAL';output.dataValid=valid&&current&&output.storageValid;
       output.failureClass=!valid?'INVALID_PAYLOAD':!current?'STALE':!output.storageValid?'PARTIAL_DATA':null;
     } else if(sourceId==='KMA_VILAGE_FCST') {
       const {issuedAt}=expectedWeatherIssuedAt(new Date(nowIso));
-      output.sample=(await Promise.all(allAreaIds.map(area=>rows(db,`SELECT * FROM weather_forecast WHERE area=? AND issued_at=? AND target_at>=?
+      output.sample=(await Promise.all(publicAreaIds.map(area=>rows(db,`SELECT * FROM weather_forecast WHERE area=? AND issued_at=? AND target_at>=?
         ORDER BY target_at LIMIT 1`,[area,issuedAt,context.kstHourStartIso])))).flat();
-      output.storedRows=output.sample.length;output.storageValid=output.sample.length===3;
+      output.storedRows=output.sample.length;output.storageValid=output.sample.length===publicAreaIds.length;
       output.coverage=output.storageValid?'COMPLETE':'PARTIAL';
       output.dataValid=output.storageValid&&output.sample.every(row=>row.source_id===sourceId&&row.quality_status==='VALID'&&validTime(row.target_at));
       output.failureClass=output.dataValid?null:output.storageValid?'INVALID_PAYLOAD':'PARTIAL_DATA';

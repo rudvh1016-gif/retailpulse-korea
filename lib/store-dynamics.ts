@@ -1,4 +1,4 @@
-import type { AreaId } from "./areas";
+import type { PublicAreaId } from "./areas";
 import { sha256 } from "./hash";
 
 export const STORE_DYNAMICS_SOURCE_ID = "SEOUL_STORE_DYNAMICS";
@@ -7,7 +7,7 @@ export const STORE_DYNAMICS_MAPPING_VERSION = "oa-15577-standard-area-2026-09-03
 export const STORE_DYNAMICS_SCHEMA_VERSION = "store-dynamics-v1";
 
 export interface StoreDynamicsMapping {
-  area: AreaId;
+  area: PublicAreaId;
   tradeAreaCode: string;
   tradeAreaName: string;
   tradeAreaTypeCode: "A" | "D" | "U";
@@ -16,7 +16,7 @@ export interface StoreDynamicsMapping {
 
 export type StoreDynamicsExpected = StoreDynamicsMapping & { quarterCode: string };
 
-export const storeDynamicsMappings: Record<AreaId, StoreDynamicsMapping> = {
+export const storeDynamicsMappings: Record<PublicAreaId, StoreDynamicsMapping> = {
   myeongdong: {
     area: "myeongdong",
     tradeAreaCode: "3001492",
@@ -61,7 +61,7 @@ function isNonNegativeSafeInteger(value: unknown): value is number {
  * invalidated by them beyond being non-negative integers.
  */
 export function isValidStoredStoreDynamicsRow(
-  area: AreaId,
+  area: PublicAreaId,
   row: Record<string, unknown> | undefined,
 ): boolean {
   if (!row) return false;
@@ -90,7 +90,7 @@ export function isValidStoredStoreDynamicsRow(
 }
 
 export interface NormalizedStoreDynamicsRow {
-  area: AreaId;
+  area: PublicAreaId;
   quarterCode: string;
   tradeAreaCode: string;
   tradeAreaName: string;
@@ -112,7 +112,7 @@ export interface CanonicalStoreDynamicsAggregate {
   sourceId: typeof STORE_DYNAMICS_SOURCE_ID;
   datasetId: typeof STORE_DYNAMICS_DATASET_ID;
   recordOrigin: "OFFICIAL_HISTORICAL";
-  area: AreaId;
+  area: PublicAreaId;
   quarterCode: string;
   tradeAreaCode: string;
   tradeAreaName: string;
