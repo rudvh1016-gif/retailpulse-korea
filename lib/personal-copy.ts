@@ -57,6 +57,7 @@ export const personalCopy = {
   finish: row('내 브리핑 보기','Show my briefing','查看我的简报','自分のブリーフィングを見る'),
   settings: row('내 설정 보기','My settings','我的设置','自分の設定'),
   edit: row('설정 변경','Change settings','更改设置','設定を変更'),
+  startSetup: row('내 브리핑 설정','Set up my briefing','设置我的简报','マイブリーフを設定'),
   reset: row('처음부터 다시 설정','Start setup again','重新设置','最初から設定'),
   cancel: row('취소','Cancel','取消','キャンセル'),
   remembered: row('이 기기에서 설정을 기억합니다.','Your settings are remembered on this device.','在此设备上记住您的设置。','この端末で設定を記憶します。'),
