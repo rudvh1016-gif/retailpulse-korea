@@ -30,7 +30,9 @@ interface ProbeOptions {
   write?: (line: string) => void;
 }
 
-const DEFAULT_POI_CODES = ["POI003", "POI007", "POI068"] as const;
+// POI004 (이태원 관광특구) is probed before it is collected: its real response
+// shape decides whether it can join the live collector (docs/ITAEWON_PREPARATION.md).
+const DEFAULT_POI_CODES = ["POI003", "POI007", "POI068", "POI004"] as const;
 
 function objectRecord(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object" && !Array.isArray(value)
