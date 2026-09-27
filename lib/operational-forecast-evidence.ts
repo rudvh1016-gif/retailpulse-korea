@@ -1,6 +1,6 @@
 import { evaluateForecastPipeline, type ForecastVerdict } from './forecast-pipeline-state';
 import { POPULATION_MODEL, buildPopulationHours, type PopulationSample } from './population-predictions';
-import { allAreaIds } from './areas';
+import { publicAreaIds } from './areas';
 import { kstDayOf, shiftKstDay } from './kst';
 import { sha256 } from './hash';
 
@@ -10,7 +10,7 @@ type ForecastRow={prediction_id:string;target_at:string;created_at:string;data_c
 export async function readForecastEvidence(db:D1Database,nowIso:string):Promise<ForecastVerdict[]> {
   const today=kstDayOf(nowIso), output:ForecastVerdict[]=[];
   // Seven completed days and tomorrow, at most 216 hourly rows per area.
-  for(const area of allAreaIds) {
+  for(const area of publicAreaIds) {
     const result=await db.prepare(`SELECT p.prediction_id,p.target_at,p.created_at,p.data_cutoff,p.source_versions,p.input_hash,p.record_origin,
       p.target_id,p.value,i.payload,o.actual_value,o.event_at,o.actual_unit,o.target_id AS actual_target_id,o.source_version,o.quality_status,b.value AS baseline
       FROM predictions p LEFT JOIN prediction_inputs i ON i.prediction_id=p.prediction_id

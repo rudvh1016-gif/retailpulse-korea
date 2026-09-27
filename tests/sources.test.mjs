@@ -506,10 +506,10 @@ test("Seoul realtime collector uses one integrated request per area and isolates
   globalThis.fetch = async (input) => {
     const url = String(input);
     requests.push(url);
-    const poi = url.includes("POI003") ? "POI003" : url.includes("POI007") ? "POI007" : "POI068";
+    const poi = ["POI003", "POI007", "POI068", "POI004"].find((code) => url.includes(code));
     const fixture = seoulIntegratedFixture();
     fixture.CITYDATA.AREA_CD = poi;
-    fixture.CITYDATA.AREA_NM = poi === "POI003" ? "명동 관광특구" : poi === "POI007" ? "홍대 관광특구" : "성수카페거리";
+    fixture.CITYDATA.AREA_NM = { POI003: "명동 관광특구", POI007: "홍대 관광특구", POI068: "성수카페거리", POI004: "이태원 관광특구" }[poi];
     fixture.CITYDATA.LIVE_PPLTN_STTS[0] = {
       ...fixture.CITYDATA.LIVE_PPLTN_STTS[0],
       AREA_CD: poi,
@@ -523,19 +523,22 @@ test("Seoul realtime collector uses one integrated request per area and isolates
   const first = await collectSeoulRealtime(env);
   assert.equal(first.status, "PARTIAL");
   assert.ok(first.records > 0);
-  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_realtime_area").get().count, 3);
-  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_realtime_forecast").get().count, 6);
-  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_realtime_commercial").get().count, 2);
-  assert.equal(requests.length, 3);
+  // Three public areas plus Itaewon (POI004), which is collected before it is shown.
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_realtime_area").get().count, 4);
+  assert.deepEqual(database.prepare("SELECT area FROM seoul_realtime_area ORDER BY area").all().map((row) => row.area),
+    ["hongdae", "itaewon", "myeongdong", "seongsu"]);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_realtime_forecast").get().count, 8);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_realtime_commercial").get().count, 3);
+  assert.equal(requests.length, 4);
   assert.equal(requests.every((url) => url.includes("/json/citydata/1/5/") && !url.includes("citydata_ppltn")), true);
 
   const second = await collectSeoulRealtime(env);
   assert.equal(second.records, 0);
-  assert.equal(requests.length, 6, "each run remains one integrated request per area");
+  assert.equal(requests.length, 8, "each run remains one integrated request per area");
 
   const populationHealth = database.prepare("SELECT status, detail FROM source_health WHERE source_id = ?").get("SEOUL_CITYDATA_PPLTN");
   assert.equal(populationHealth.status, "LIVE");
-  assert.match(populationHealth.detail, /areas ok 3\/3/);
+  assert.match(populationHealth.detail, /areas ok 4\/4/);
 
   const commercialHealth = database.prepare("SELECT status, detail FROM source_health WHERE source_id = ?").get("SEOUL_CITYDATA_CMRCL");
   assert.equal(commercialHealth.status, "STALE");

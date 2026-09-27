@@ -1,11 +1,11 @@
 import type { AreaMapping } from "../areas";
 
 /**
- * Verified identifiers for a future, separately approved activation.
- * This module is deliberately not imported by the active area registry,
- * collectors, routes or UI. Importing it has no registration side effect.
+ * Verified official identifiers for Itaewon.
+ * `lib/areas.ts` registers them; which sources actually read Itaewon is
+ * decided there (`realtimeAreaIds`, `publicAreaIds`), one source at a time.
  * No guessed event centre/radius or station mapping is supplied.
- * Evidence and activation prerequisites: docs/ITAEWON_PREPARATION.md.
+ * Evidence and activation stages: docs/ITAEWON_PREPARATION.md.
  */
 export const itaewonPreparation = {
   seoulPoiCode: "POI004",

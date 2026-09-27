@@ -7,6 +7,7 @@ import {
   SEOUL_SUBWAY_DATASET_ID,
   SEOUL_SUBWAY_MAPPING_VERSION,
   SUBWAY_AREA_STATIONS,
+  SUBWAY_STATION_REQUESTS,
   normalizeSubwayRidershipPayload,
   subwayBackfillDates,
 } from "../lib/subway-ridership";
@@ -29,7 +30,10 @@ test("OA-22723 station mapping is conservative, explicit, and versioned", () => 
     myeongdong: [{ stationCode: "0424", stationNumber: "424", stationName: "명동", lineName: "4호선" }],
     hongdae: [{ stationCode: "0239", stationNumber: "239", stationName: "홍대입구", lineName: "2호선" }],
     seongsu: [{ stationCode: "0211", stationNumber: "211", stationName: "성수", lineName: "2호선" }],
+    // Collected for real-time city data only; no verified station code, so none.
+    itaewon: [],
   });
+  assert.deepEqual(SUBWAY_STATION_REQUESTS.map((request) => request.area), ["myeongdong", "hongdae", "seongsu"]);
 });
 
 test("initial collection is bounded to the seven completed KST days", () => {
