@@ -225,7 +225,7 @@ test("the live summary reads both A5 directions once while the Airport date pick
   assert.match(route, /ORDER BY target_date DESC, direction, target_start_at, terminal LIMIT 288/);
   assert.match(route, /passengerForecastRows\.filter\(\(row\) => row\.direction === "departure"\)/);
   assert.match(route, /passengerForecastRows\.filter\(\(row\) => row\.direction === "arrival"\)/);
-  assert.match(route, /dayValueExistsSql\("airport_passenger_forecast", "target_date", "direction = 'departure' AND is_aggregate = 1"\)/,
+  assert.match(route, /dayValueExistsSql\("airport_passenger_forecast", "target_date", pickerDays.length, "direction = 'departure' AND is_aggregate = 1"\)/,
     "the Airport detail date picker remains departure-scoped");
 });
 
@@ -274,10 +274,10 @@ test("every measured hot-path statement still exists in the live route", () => {
   ].join("\n").replace(/\r\n/g, "\n");
   const guards = [...measureSource.matchAll(/^ {4}guard: (`[^`]*`|"(?:[^"\\]|\\.)*"),$/gm)]
     .map((match) => (match[1].startsWith("`") ? match[1].slice(1, -1) : JSON.parse(match[1])));
-  // 26 since month-to-date added its two bounded range reads (2026-09-14).
+  // 28 including the held dated schedule and its bounded month availability.
   // The count is asserted so a statement added to the route without a matching
   // measured entry is caught here, rather than going to Production unmeasured.
-  assert.equal(guards.length, 26, "expected one guard per measured statement");
+  assert.equal(guards.length, 28, "expected one guard per measured statement");
   for (const guard of guards) {
     assert.ok(routeText.includes(guard), `the live route no longer contains: ${guard.slice(0, 80)}`);
   }
@@ -341,40 +341,37 @@ test("the read-budget measurement only ever reads", () => {
 });
 
 /**
- * The date-picker probes must stay one statement per day.
- *
  * Production, 2026-09-02: the probes shipped as one 21-way UNION ALL carrying
  * 63 bound parameters. D1 rejects that statement — on the Workers binding and
  * on the REST endpoint alike — and because safeAll turns a failing statement
  * into an empty list, nothing surfaced: /api/live/summary answered 200 while
  * dateAvailability.airportFlights and .seoulObserved were both empty and the
- * date picker silently offered no days. Sent as a batch of single-day
- * statements the same probes cost exactly one row read each.
- *
- * This test fails if the probes are ever recombined into one statement.
+ * date picker silently offered no days. The subsequent per-day statements
+ * preserved indexed seeks but exceeded the Free invocation query ceiling.
+ * A bounded VALUES CTE now combines the dates without that UNION ALL shape.
  */
-test("the date-picker probes are one statement per day, sent as a batch", () => {
+test("the date-picker probes use one bounded VALUES table per source, sent as a batch", () => {
   const source = readFileSync("app/api/live/summary/route.ts", "utf8");
   const builder = /function dayExistsSql\([^)]*\): string \{[\s\S]*?\n\}/.exec(source);
   assert.ok(builder, "expected a dayExistsSql builder");
   assert.ok(
     !/UNION ALL/.test(builder[0]),
-    "the day probe must be a single statement; joining days with UNION ALL is what D1 rejects",
+    "the historical UNION ALL shape must not return",
   );
   assert.equal(
-    (builder[0].match(/SELECT \? AS day/g) ?? []).length,
+    (builder[0].match(/SELECT day FROM requested_days/g) ?? []).length,
     1,
-    "the builder must emit exactly one probe",
+    "the builder must emit exactly one month query",
   );
   assert.ok(
-    /pickerDays\.map\(\(day\) => client\.prepare\(sql\)\.bind\(/.test(source),
-    "the per-day probes must stay one prepared statement per day",
+    /client\.prepare\(sql\)\.bind\(\.\.\.pickerDays\.flatMap\(bindsForDay\)\)/.test(source),
+    "the month must use one prepared statement per source",
   );
   // Since 2026-09-04 the probes ride inside the route's single batched read
   // (lib/d1-read-batch.ts) rather than a batch of their own; either way they
   // are never sent one statement at a time.
   assert.ok(
-    /readGroups\(client, \{ \.\.\.statementGroups, \.\.\.probeGroups \}\)/.test(source),
+    /readGroups\(client, \{ \.\.\.statementGroups, \.\.\.probeGroups \}, \{ maxStatements: 50 \}\)/.test(source),
     "the per-day probes must be read through the route's one batched read, not one statement at a time",
   );
   assert.equal(
@@ -383,7 +380,7 @@ test("the date-picker probes are one statement per day, sent as a batch", () => 
     "the A5 picker must not scan all historical forecast dates",
   );
   assert.ok(
-    /probeDays\(\s*dayValueExistsSql\("airport_passenger_forecast", "target_date", "direction = 'departure' AND is_aggregate = 1"\)/.test(source),
+    /probeDays\(\s*dayValueExistsSql\("airport_passenger_forecast", "target_date", pickerDays.length, "direction = 'departure' AND is_aggregate = 1"\)/.test(source),
     "the A5 picker must use bounded exact-day existence probes",
   );
 });
@@ -471,11 +468,22 @@ test("event pagination reaches the 45th stored event without mixing areas or sca
  * list, so this stays 21 statements per probe group and the measured read
  * budget is unchanged.
  */
-test("the date-availability probe covers tomorrow without spending another read", () => {
-  assert.match(route, /shiftKstDay\(kstToday, 1\),/,
-    "tomorrow must be probed, or a forecast published a day ahead can never be offered");
-  assert.match(route, /Array\.from\(\{ length: DATE_PICKER_DAYS - 1 \}, \(_, index\) => shiftKstDay\(kstToday, -index\)\)/,
-    "the backwards window shrinks by one so the probe count is unchanged");
-  assert.match(route, /pickerDays\.map\(\(day\) => client\.prepare\(sql\)\.bind\(/,
-    "the probe still issues one bounded statement per day");
+test("the date-availability probe uses only the requested bounded month", () => {
+  assert.match(route, /const pickerDays = datesBetween\(period.startDate, period.endDate\)/,
+    "calendar navigation must probe one validated month, not scan all history");
+  assert.match(route, /client\.prepare\(sql\)\.bind\(\.\.\.pickerDays\.flatMap\(bindsForDay\)\)/,
+    "the probe issues one bounded statement per source");
+});
+
+test('the existing read-budget workflow can measure only date availability without unrelated source reads',()=>{
+  const source=readFileSync('scripts/measure-production-read-budget.ts','utf8');
+  const workflow=readFileSync('.github/workflows/measure-read-budget.yml','utf8');
+  assert.match(source,/new Set\(\['flightDates', 'forecastDates', 'observedDates', 'departureScheduleDates'\]\)/);
+  assert.equal((source.match(/for \(const query of selectedQueries\)/g)??[]).length,2,'both preflight and measurement use the selected scope');
+  assert.match(source,/const drifted = selectedQueries\.filter/);
+  assert.match(source,/const EXPECTED_INDEXES = SCOPE === 'date_availability'/);
+  assert.match(source,/invalid_read_budget_scope/);
+  assert.match(workflow,/default: all/);
+  assert.match(workflow,/RPK_READ_BUDGET_SCOPE: \$\{\{ inputs.scope \}\}/);
+  assert.doesNotMatch(workflow,/schedule:/);
 });

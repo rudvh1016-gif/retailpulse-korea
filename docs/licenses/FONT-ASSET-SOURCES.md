@@ -64,3 +64,13 @@ The KORETAIL Sans subset was refreshed from the SHA-256-verified full Pretendard
 WOFF2 with the same union policy and its existing renamed name table.
 Existing family names, weights and OFL licenses are retained. This adds missing
 new copy/holiday characters without introducing external font requests.
+
+## 2026-09-22 airport date copy refresh (review branch)
+
+Only the SC 400/600 subsets needed new characters for the stored-date controls.
+They were regenerated from the same SHA-256-verified 2.004 source using
+FontTools 4.65.0 and Brotli 1.2.0. The corpus preserves all 2,159 existing
+codepoints and adds two from current app/lib copy (2,161 total). Resulting
+WOFF2 sizes are 269,028 and 272,812 bytes. Existing layout features, names,
+weights and licenses are preserved; KO/JP assets and typography are unchanged.
+This branch remains unmerged and does not change the running UI trial.

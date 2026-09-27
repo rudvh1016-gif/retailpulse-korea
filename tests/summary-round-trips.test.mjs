@@ -5,7 +5,8 @@ import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 
-import { summarizeLiveSummary } from "../app/api/live/summary/route.ts";
+import { summarizeLiveSummary, availabilityPeriod } from "../app/api/live/summary/route.ts";
+import { readFlightsForDate } from '../app/api/live/flights/route.ts';
 import { SUMMARY_CACHE_CONTROL, SUMMARY_NO_STORE } from "../lib/summary-cache-policy.ts";
 import { CONTENT_API_ROBOTS_TAG } from "../lib/crawl-policy.ts";
 import { kstDayBounds, kstDayOf, kstHourStartIsoOf, kstNowIsoOf, relateKstDay, shiftKstDay } from "../lib/kst.ts";
@@ -103,12 +104,12 @@ test("the whole summary read path is one D1 round trip, and the payload is a cac
     assert.equal(body.mode, "live-summary");
     assert.equal(client.trips.length, 1, `expected one D1 request, saw ${JSON.stringify(client.trips)}`);
     assert.equal(client.trips[0].kind, "batch");
-    // 25 block statements + 3 × 21 date-picker probes, all in the one request.
+    // 25 block statements + 3 month CTEs + 1 schedule-date range.
     // 2026-09-14: month-to-date added two of those block statements — this
     // month's range and the previous month's same span. They are bounded range
     // seeks that ride the SAME batch, which is the property this test exists to
     // hold: a new figure on the screen must not cost a new round trip.
-    assert.equal(client.trips[0].count, 25 + 3 * 21);
+    assert.equal(client.trips[0].count, 29);
 
     assert.equal(body.areas.myeongdong.realtime.congestionLabel, "약간 붐빔");
     assert.equal(body.areas.myeongdong.realtime.freshness, "LIVE");
@@ -128,7 +129,7 @@ test("the whole summary read path is one D1 round trip, and the payload is a cac
   }
 });
 
-test("a broken statement still isolates to its own block: the page stays live, the cache decision unchanged", async () => {
+test("a broken statement is explicit degraded data, never cached as absence, and retries stay within 50 statements", async () => {
   const { database, databasePath } = openDatabase("isolated");
   try {
     seed(database);
@@ -140,21 +141,99 @@ test("a broken statement still isolates to its own block: the page stays live, t
     const response = await summarizeLiveSummary(client, clockFor());
     const body = await response.json();
 
-    assert.equal(body.mode, "live-summary", "one broken statement must never take the page down");
+    assert.equal(body.mode, "degraded", "a failed read must not masquerade as an absent source");
     assert.deepEqual(body.areas.myeongdong.events, []);
     assert.equal(body.areas.myeongdong.realtime.congestionLabel, "약간 붐빔");
-    assert.equal(response.headers.get("cache-control"), SUMMARY_CACHE_CONTROL);
+    assert.equal(response.headers.get("cache-control"), SUMMARY_NO_STORE);
+    assert.equal(body.readStatus.status,'DEGRADED');
+    assert.ok(body.readStatus.failedGroups.includes('eventRows'));
+    assert.ok(body.readStatus.skippedGroups.length>0);
+    assert.equal(body.readStatus.statementsAttempted,50);
+    assert.equal(client.trips.reduce((n,trip)=>n+(trip.kind==='batch'?trip.count:1),0),50);
     assert.equal(response.headers.get("x-robots-tag"), CONTENT_API_ROBOTS_TAG,
       "robots.txt lets crawlers fetch this so pages render; the tag keeps the JSON itself out of results");
+
     assert.equal(client.trips[0].kind, "batch", "the single batch is tried first");
     // Then one concurrent wave: one request per group, not the old serial chain.
     // 26 groups since month-to-date added its own (2026-09-14); the property
     // being held is that the fallback stays ONE wave, not that it never grows.
-    assert.equal(client.trips.length, 1 + 26);
+    assert.ok(client.trips.length <= 1 + 21);
   } finally {
     database.close();
     unlinkSync(databasePath);
   }
+});
+
+test('month availability reaches held past and future dates with bounded indexed probes and explicit source checks', async t => {
+  const {database,databasePath}=openDatabase('availability-month');
+  try {
+    seed(database);
+    database.exec(`INSERT INTO seoul_realtime_area SELECT 'old-month', source_id, record_origin, area, area_code, area_name, congestion_level, congestion_label, population_min, population_max, '2026-07-01T13:10:00+09:00', retrieved_at, freshness, schema_version, quality_status, 'old-month-hash' FROM seoul_realtime_area WHERE id='r1'`);
+    const schedule=JSON.stringify([{physicalFlightId:'KE1',terminal:'T2',operatingFlight:'KE1',scheduledTime:'08:00'}]);
+    database.prepare('INSERT INTO airport_departure_schedule VALUES (?,?,?)').run('2026-09-20',schedule,'2026-09-04T04:00:00Z');
+    database.prepare(`INSERT INTO source_health (source_id,status,last_retrieved_at,schema_version,detail) VALUES ('INCHEON_FLIGHT_DETAIL','LIVE','2026-09-04T04:00:00Z','v1','complete')`).run();
+    const client=new LocalD1Database(database),prepared=[];
+    const prepare=client.prepare.bind(client);client.prepare=sql=>{const s=prepare(sql);prepared.push(s);return s;};
+    const body=await (await summarizeLiveSummary(client,{...clockFor(),availabilityMonth:'2026-07'})).json();
+    assert.deepEqual(body.dateAvailability.seoulObserved,['2026-07-01']);
+    assert.equal(body.dateAvailability.month,'2026-07');
+    assert.equal(body.dateAvailability.startDate,'2026-07-01');
+    assert.equal(body.dateAvailability.endDate,'2026-07-31');
+    assert.equal(body.dateAvailability.checkedAt.airportFlights,'2026-09-04T04:00:00Z');
+    assert.equal(client.trips.length,1);
+    assert.equal(client.trips[0].count,29);
+    assert.ok(client.trips[0].count<=50,'one batch must also stay within the Free invocation query limit');
+    const probes=prepared.filter(s=>s.sql.startsWith('WITH requested_days'));
+    assert.equal(probes.length,3);
+    for(const s of probes) {
+      const plans=database.prepare(`EXPLAIN QUERY PLAN ${s.sql}`).all(...s.values).map(r=>r.detail).join('\n');
+      assert.match(plans,/SEARCH .*USING/);
+      assert.doesNotMatch(plans,/SCAN (airport_flights|airport_passenger_forecast|seoul_realtime_area)/);
+      assert.ok(s.values.length<=62,'at most two binds for each of 31 dates');
+      assert.ok(s.execute().length<=31);
+    }
+    const future=await (await summarizeLiveSummary(new LocalD1Database(database),{...clockFor(),serviceDate:'2026-09-20',dayRelation:'FUTURE',dayStartAt:'2026-09-20T00:00:00+09:00'})).json();
+    assert.deepEqual(future.dateAvailability.airportDepartureSchedule,['2026-09-20']);
+    assert.equal(future.airport.scheduledBriefing.basis,'OFFICIAL_DEPARTURE_SCHEDULE');
+    assert.equal(future.airport.scheduledBriefing.ranking.all.totalFlights,1);
+    assert.equal(future.airport.departuresTrackedToday,null);
+    assert.equal(future.airport.todayExpectedPassengersTotal,null);
+    assert.deepEqual(future.airport.congestion,[]);
+    assert.equal(future.airport.remainingExpectedPassengers,null);
+    t.diagnostic('INTERNAL_ESTIMATE: largest month uses 29 statements vs old 88, 1 D1 round trip; 3 bounded VALUES CTEs return <=31 rows/source, use <=62 binds/query; schedule query <=31 rows. Only fixed month CTE rows are scanned; source history uses indexes. Billed D1 rows/CPU require production meta.');
+  } finally {database.close();unlinkSync(databasePath);}
+});
+
+test('availability validates months and keeps leap years bounded',()=>{
+  assert.deepEqual(availabilityPeriod('2024-02','2026-09-04'),{month:'2024-02',startDate:'2024-02-01',endDate:'2024-02-29'});
+  for(const invalid of ['2026-13','2026-00','2026-1','2026-09-01',"2026-09' OR 1=1",'garbage']) assert.equal(availabilityPeriod(invalid,'2026-09-04').month,'2026-09');
+});
+
+test('flight board reads only the selected recorded day through a date index', async()=>{
+  const {database,databasePath}=openDatabase('flight-day');
+  try {
+    const insert=database.prepare(`INSERT INTO airport_flights
+      (id,source_id,record_origin,direction,flight_number,terminal,gate,status,scheduled_at,event_at,retrieved_at,freshness,schema_version,quality_status,source_hash,physical_flight_id)
+      VALUES (?,'INCHEON_FLIGHT_DETAIL','LIVE','departure',?,'T2','250','on_time',?,?,'2026-09-04T04:00:00Z','LIVE','v1','VALID',?,?)`);
+    for(const [id,date] of [['KE1','2026-08-01'],['KE2','2026-09-04']]) insert.run(id,id,`${date}T08:00:00+09:00`,`${date}T08:00:00+09:00`,id,id);
+    database.exec(`INSERT INTO airport_congestion (id,source_id,record_origin,terminal,zone,wait_time_minutes,waiting_count,observed_at,retrieved_at,freshness,schema_version,quality_status,source_hash)
+      VALUES ('current','INCHEON_CONGESTION','LIVE','T2','1',10,100,'2026-09-04T13:00:00+09:00','2026-09-04T04:00:00Z','LIVE','v1','VALID','congestion')`);
+    const client=new LocalD1Database(database),prepared=[];
+    const prepare=client.prepare.bind(client);client.prepare=sql=>{const s=prepare(sql);prepared.push(s);return s;};
+    const body=await readFlightsForDate(client,'2026-08-01','2026-09-04');
+    assert.equal(body.basis,'COLLECTED_FLIGHT_RECORDS');assert.deepEqual(body.flights.map(r=>r.flightNumber),['KE1']);
+    assert.deepEqual(prepared[0].values,['2026-08-01','2026-08-02']);
+    const plan=database.prepare(`EXPLAIN QUERY PLAN ${prepared[0].sql}`).all(...prepared[0].values).map(r=>r.detail).join('\n');
+    assert.match(plan,/SEARCH airport_flights USING INDEX/);assert.doesNotMatch(plan,/SCAN airport_flights/);
+    const past=await (await summarizeLiveSummary(client,{...clockFor(),serviceDate:'2026-08-01',dayRelation:'PAST',dayStartAt:'2026-08-01T00:00:00+09:00'})).json();
+    assert.equal(past.airport.departuresTrackedToday,1);
+    assert.deepEqual(past.airport.congestion,[]);
+    assert.deepEqual(past.airport.scheduled,[]);
+    assert.equal(past.airport.remainingExpectedPassengers,null);
+    const missing=await (await summarizeLiveSummary(client,{...clockFor(),serviceDate:'2026-08-02',dayRelation:'PAST',dayStartAt:'2026-08-02T00:00:00+09:00'})).json();
+    assert.equal(missing.airport.departuresTrackedToday,null);
+    assert.deepEqual((await readFlightsForDate(client,'2026-08-02','2026-09-04')).flights,[]);
+  } finally {database.close();unlinkSync(databasePath);}
 });
 
 test("an empty database is still a well-formed live summary that the cache refuses", async () => {

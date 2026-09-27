@@ -6,6 +6,14 @@ name: Measure Production Read Budget
 on:
   workflow_dispatch:
     inputs:
+      scope:
+        description: Read all existing diagnostic paths or only airport/Seoul calendar availability
+        required: false
+        type: choice
+        options:
+          - all
+          - date_availability
+        default: all
       ceiling:
         description: Maximum rows this diagnostic may read before it stops early
         required: false
@@ -30,4 +38,5 @@ jobs:
         run: npx tsx scripts/measure-production-read-budget.ts
         env:
           RPK_READ_BUDGET_CEILING: ${{ inputs.ceiling }}
+          RPK_READ_BUDGET_SCOPE: ${{ inputs.scope }}
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}

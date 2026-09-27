@@ -41,7 +41,7 @@ function pagePayload(items, totalCount) {
   };
 }
 
-test("A1 scan stores D-3 through today, separates D+1, deduplicates codeshares, and adds no calls", async () => {
+test("A1 scan stores D-3 through today, separates every held future date, deduplicates codeshares, and adds no calls", async () => {
   const seen = [];
   const pages = new Map([
     [1, [
@@ -54,8 +54,13 @@ test("A1 scan stores D-3 through today, separates D+1, deduplicates codeshares, 
       flight({ flightId: "DL9001", masterFlightId: "KE200", codeshare: "Y", scheduleDatetime: "202608301430" }),
       flight({ flightId: "OZ300", scheduleDatetime: "202608301700", terminalId: "P03" }),
     ]],
-    [3, [flight({ flightId: "KE400", scheduleDatetime: "202608310800" })]],
+    [3, [flight({ flightId: "KE400", scheduleDatetime: "202608310800" }),
+      flight({ flightId: "KE500", scheduleDatetime: "202609020800" }),
+      flight({ flightId: "DL9500", masterFlightId: 'KE500', codeshare: 'Y', scheduleDatetime: "202609020800" }),
+      flight({ flightId: "KE600", scheduleDatetime: "202609100800" }),
+      flight({ flightId: "KE601", scheduleDatetime: "202609100900" })]],
   ]);
+  for (const page of [1,2]) while(pages.get(page).length < 100) pages.get(page).push(flight({flightId:`OLD${page}${pages.get(page).length}`,scheduleDatetime:'202608200900'}));
 
   const result = await fetchA1DeparturesForDate("fixture-key", "2026-08-30", async (url, options) => {
     seen.push({ url: new URL(url), options });
@@ -72,6 +77,8 @@ test("A1 scan stores D-3 through today, separates D+1, deduplicates codeshares, 
   assert.equal(result.trackedToday, 2);
   assert.equal(result.records.length, 5);
   assert.equal(result.tomorrowRecords.length, 1);
+  assert.equal(result.futureRecords.length, 4);
+  assert.deepEqual([...new Set(result.futureRecords.map(r=>r.scheduledAt.slice(0,10)))], ['2026-08-31','2026-09-02','2026-09-10']);
   assert.equal(result.tomorrowRecords[0].scheduledAt.slice(0,10), "2026-08-31");
   assert.deepEqual(result.records.map((record) => record.scheduledAt.slice(0, 10)).sort(), [
     "2026-08-27", "2026-08-28", "2026-08-29", "2026-08-30", "2026-08-30",
@@ -88,6 +95,8 @@ test("A1 scan stores D-3 through today, separates D+1, deduplicates codeshares, 
 
 class MemoryD1 {
   flights = new Map();
+  schedules = new Map();
+  batches = 0;
 
   prepare(sql) {
     return {
@@ -100,7 +109,18 @@ class MemoryD1 {
   }
 
   async batch(statements) {
+    this.batches++;
     return statements.map(({ sql, params }) => {
+      if (sql.includes('INSERT INTO airport_departure_schedule')) {
+        const [date,payload,retrievedAt]=params;
+        const changes=this.schedules.get(date)?.payload===payload?0:1;
+        if(changes)this.schedules.set(date,{payload,retrievedAt});
+        return {meta:{changes,rows_written:changes}};
+      }
+      if (sql.includes('DELETE FROM airport_departure_schedule')) {
+        for(const day of this.schedules.keys()) if(day<=params[0]||!params.slice(1).includes(day)) this.schedules.delete(day);
+        return {meta:{changes:0,rows_written:0}};
+      }
       if (!sql.includes("INSERT INTO airport_flights")) return { meta: { rows_written: 0 } };
       const physicalFlightId = params[20];
       const sourceHash = params[19];
@@ -160,6 +180,33 @@ test("overlapping next-day import upserts recent flights and never deletes older
   assert.equal(db.flights.size, 5);
 });
 
+test('failed, short, changed-total, duplicate and invalid-date scans preserve every last-good future snapshot', async()=>{
+  const { SourceFetchError } = await import('../lib/source-adapters.ts');
+  const db=new MemoryD1();
+  const today=flight({flightId:'KE1',scheduleDatetime:'202608300900'});
+  const future=flight({flightId:'KE2',scheduleDatetime:'202609100900'});
+  const env={DB:db,DATA_GO_KR_SERVICE_KEY:'fixture-key'};
+  const now=new Date('2026-08-30T03:00:00Z');
+  assert.equal((await collectAirportFlightsToday(env,now,async()=>pagePayload([today,future],2))).status,'SUCCESS');
+  const saved=JSON.stringify([...db.schedules]);const batches=db.batches;
+  const fullPage=Array.from({length:100},(_,i)=>flight({flightId:`KE${i}`,scheduleDatetime:'202608300900'}));
+  const tooManyDates=[today,...Array.from({length:32},(_,i)=>flight({flightId:`FUTURE${i}`,scheduleDatetime:`${new Date(Date.UTC(2026,8,1+i)).toISOString().slice(0,10).replaceAll('-','')}0900`}))];
+  const failures=[
+    async()=>{throw new SourceFetchError('HTTP',401);},
+    async()=>pagePayload([today],2),
+    async url=>pagePayload(url.searchParams.get('pageNo')==='1'?fullPage:[future],url.searchParams.get('pageNo')==='1'?101:102),
+    async url=>pagePayload(url.searchParams.get('pageNo')==='1'?fullPage:[fullPage[0]],101),
+    async()=>pagePayload([today,{...future,scheduleDatetime:'202602300900'}],2),
+    async()=>pagePayload(tooManyDates,tooManyDates.length),
+  ];
+  for(const fetcher of failures){
+    assert.equal((await collectAirportFlightsToday(env,now,fetcher)).status,'ERROR');
+    assert.equal(JSON.stringify([...db.schedules]),saved);
+    assert.equal(db.batches,batches,'no canonical writes before complete validation');
+  }
+  assert.deepEqual([...db.flights.values()].map(row=>row.scheduledAt.slice(0,10)),['2026-08-30']);
+});
+
 test("A1 today fallback refuses an unbounded population before requesting page 2", async () => {
   let calls = 0;
   await assert.rejects(
@@ -176,7 +223,7 @@ test("A1 today fallback fails closed on an incomplete middle page", async () => 
   await assert.rejects(
     fetchA1DeparturesForDate("fixture-key", "2026-08-30", async (url) => {
       const pageNo = Number(url.searchParams.get("pageNo"));
-      return pagePayload(pageNo === 1 ? [flight({ flightId: "KE100", scheduleDatetime: "202608270900" })] : [], 201);
+      return pagePayload(pageNo === 1 ? Array.from({length:100},(_,i)=>flight({ flightId: `KE${i}`, scheduleDatetime: "202608270900" })) : [], 201);
     }),
     /a1_today_incomplete_page_2/,
   );
@@ -192,7 +239,7 @@ test("A1 request budget counts every attempt, retries a page once, and aborts be
   const flaky = async () => {
     calls += 1;
     if (calls === 2) throw new Error("NETWORK_UND_ERR_CONNECT_TIMEOUT");
-    return pagePayload(good, 150);
+    return pagePayload(Array.from({length:calls === 1 ? 100 : 50},(_,i)=>({...good[0],flightId:`KE${calls}${i}`,masterFlightId:`KE${calls}${i}`,fid:`${calls}-${i}`})), 150);
   };
   const noSleep = async () => {};
   // 150 rows -> 2 pages. Page 2's first attempt fails, its retry succeeds: 3 requests.

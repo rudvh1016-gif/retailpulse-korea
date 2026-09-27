@@ -1,7 +1,33 @@
 import { getDb } from "../../../../db";
-import { isValidKstDay, kstDayOf } from "../../../../lib/kst";
+import { isValidKstDay, kstDayOf, relateKstDay, shiftKstDay } from "../../../../lib/kst";
+import { readDepartureSchedule } from "../../../../lib/departure-schedule";
 
 export const dynamic = "force-dynamic";
+
+/** One indexed date snapshot (future) or indexed day range (recorded flights). */
+export async function readFlightsForDate(client: Pick<D1Database, 'prepare'>, serviceDate: string, today: string) {
+  const dayRelation = relateKstDay(serviceDate, today);
+  if (dayRelation === 'FUTURE') {
+    const snapshots = (await client.prepare('SELECT payload, retrieved_at AS retrievedAt FROM airport_departure_schedule WHERE service_date = ? LIMIT 1')
+      .bind(serviceDate).all<{payload: string; retrievedAt: string}>()).results ?? [];
+    const rows = readDepartureSchedule(snapshots[0], serviceDate).map(row => ({
+      flightNumber: row.operatingFlight, airlineCode: row.airlineCode ?? null, airportCode: row.airportCode ?? null,
+      direction: 'departure', terminal: row.terminal, gate: row.gate ?? null, checkinCounter: row.checkinCounter ?? null,
+      status: row.status ?? 'unknown', scheduledAt: `${serviceDate}T${row.scheduledTime}:00+09:00`,
+    })).sort((a,b) => a.scheduledAt.localeCompare(b.scheduledAt) || a.flightNumber.localeCompare(b.flightNumber));
+    return { basis: 'OFFICIAL_DEPARTURE_SCHEDULE', dayRelation, flights: rows.slice(0,1200), truncated: rows.length > 1200, retrievedAt: snapshots[0]?.retrievedAt ?? null };
+  }
+  const rows = (await client.prepare(
+    `SELECT flight_number AS flightNumber, airline_code AS airlineCode,
+      airport_code AS airportCode, direction, terminal, gate,
+      checkin_counter AS checkinCounter, status, scheduled_at AS scheduledAt, retrieved_at AS retrievedAt
+    FROM airport_flights
+    WHERE direction IN ('departure', 'arrival') AND scheduled_at >= ? AND scheduled_at < ?
+    ORDER BY scheduled_at, flight_number LIMIT 1201`,
+  ).bind(serviceDate, shiftKstDay(serviceDate, 1)).all<Record<string, unknown>>()).results ?? [];
+  return { basis: 'COLLECTED_FLIGHT_RECORDS', dayRelation, flights: rows.slice(0,1200), truncated: rows.length > 1200,
+    retrievedAt: rows.map(row => String(row.retrievedAt ?? '')).filter(Boolean).sort().at(-1) ?? null };
+}
 
 /**
  * The official flight record for one KST service day.
@@ -26,21 +52,14 @@ export async function GET(request: Request) {
 
   try {
     const db = await getDb();
-    const rows = (await db.$client.prepare(
-      `SELECT flight_number AS flightNumber, airline_code AS airlineCode,
-        airport_code AS airportCode, direction, terminal, gate,
-        checkin_counter AS checkinCounter, status, scheduled_at AS scheduledAt
-      FROM airport_flights
-      WHERE substr(scheduled_at, 1, 10) = ?
-      ORDER BY scheduled_at, flight_number LIMIT 1201`,
-    ).bind(serviceDate).all<Record<string, unknown>>()).results ?? [];
+    const result = await readFlightsForDate(db.$client, serviceDate, kstToday);
 
     return Response.json({
       mode: "live-flights",
       generatedAt,
       serviceDateKst: serviceDate,
-      flights: rows.slice(0, 1200),
-      truncated: rows.length > 1200,
+      todayKst: kstToday,
+      ...result,
     }, { headers: { "cache-control": "public, max-age=120, stale-while-revalidate=600" } });
   } catch {
     // A failure here must not read as "no flights operated" — the board says
