@@ -985,7 +985,15 @@ export async function collectSeoulSubwayRidership(
         FROM seoul_subway_collection_checkpoint WHERE source_id = ? LIMIT 1`)
         .bind(sourceId).all<{ checkedDate: string; latestReferenceDate: string | null }>();
       const row = checkpoint.results?.[0];
-      if (row?.checkedDate === checkedKstDate) {
+      // A station added to the mapping must not wait for tomorrow: the same-day
+      // skip holds only while the latest stored day covers every mapped station.
+      const latestComplete = row?.latestReferenceDate
+        ? ((await env.DB.prepare(`SELECT COUNT(*) AS stations FROM seoul_subway_ridership
+            WHERE source_id = ? AND mapping_version = ? AND reference_date = ?`)
+          .bind(sourceId, SEOUL_SUBWAY_MAPPING_VERSION, row.latestReferenceDate)
+          .all<{ stations: number }>()).results?.[0]?.stations ?? 0) >= SUBWAY_STATION_REQUESTS.length
+        : true;
+      if (row?.checkedDate === checkedKstDate && latestComplete) {
         const lastGoodPreserved = await hasStoredRow(env.DB, `SELECT 1 FROM seoul_subway_ridership LIMIT 1`);
         const health: SourceHealthStatus = row.latestReferenceDate
           ? (row.latestReferenceDate >= shiftKstDay(checkedKstDate, -2) ? "LIVE" : "STALE")

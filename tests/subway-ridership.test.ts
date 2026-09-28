@@ -201,14 +201,20 @@ test("a day stored with the earlier three stations is completed once for the add
     },
   };
   await collectSeoulSubwayRidership(env, new Date("2026-09-02T00:00:00Z"));
-  // Production before Itaewon: every stored day has three stations.
+  // Production before Itaewon: every stored day has three stations, and the
+  // same-day checkpoint is already set by the morning run.
   database.prepare("DELETE FROM seoul_subway_ridership WHERE area = 'itaewon'").run();
-  database.prepare("DELETE FROM seoul_subway_collection_checkpoint").run();
   calls = 0;
   const repaired = await collectSeoulSubwayRidership(env, new Date("2026-09-02T06:00:00Z"));
   assert.equal(repaired.status, "SUCCESS");
   assert.equal(calls, 28, "one bounded pass over the seven days, never more");
   assert.equal(repaired.records, 7, "existing station rows are unchanged; only Itaewon's seven are new");
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_subway_ridership").get()!.count, 28);
+
+  // Once complete, the same-day rerun is a zero-call skip again.
+  calls = 0;
+  const rerun = await collectSeoulSubwayRidership(env, new Date("2026-09-02T07:00:00Z"));
+  assert.equal(rerun.providerRequests, 0);
+  assert.equal(calls, 0);
   database.close();
 });
