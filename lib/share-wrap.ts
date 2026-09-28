@@ -5,7 +5,8 @@
  * between words. A closing mark (。、」) never starts a line: it is pulled
  * back onto the line before, even if that line then runs a little long.
  */
-const CJK = /[　-ヿ㐀-䶿一-鿿＀-￯]/;
+// Escaped so the range ends are not mistaken for printed copy by the font subset corpus.
+const CJK = /[\u3000-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uff00-\uffef]/;
 const CLOSING = /^[。、，．）」』】〕〉》！？：；,.)\]!?%]/;
 
 export function breakUnits(text: string): string[] {

@@ -99,3 +99,34 @@ Merged main 43ce9f61af0fdde126ff7369992755098e4f6b8a, retaining #207's Korean-pa
 ## 2026-09-23 ordered review integration
 
 PR #205 follows #206. FontTools cmap comparison confirmed that both guide SC faces already contain all 2,161 airport-date code points (2,223 total), so the guide faces are retained without regeneration. No airport glyph is removed. The Korean font loading restriction from latest main remains intact.
+
+## 2026-09-28 business prep copy refresh (PR #223, review branch)
+
+The business prep, usual comparison and staff share copy added Chinese and
+Japanese characters the SC/JP subsets did not carry, so those characters would
+have been drawn from a system fallback face in the middle of a line. The SC/JP
+400 and 600 subsets were regenerated from the same pinned 2.004 sources, whose
+SHA-256 was checked again before use (SC `d68bafcb…5964`, JP `f4b373b2…0369`),
+with FontTools 4.66.0 and Brotli 1.2.0 and the union policy above: static
+`wght` 400/600 instance → subset to the existing cmap plus every current app/lib
+`.ts`, `.tsx`, `.css`, `.mjs` and `.json` code point the source supports →
+WOFF2. Options: layout features limited to the tags already present (GSUB
+`ccmp liga locl vert vrt2`, GPOS `halt kern vert vhal vkrn vpal`), all name IDs
+and languages kept, no glyph names, no hinting, empty `.notdef`.
+
+The pipeline was first run with the existing cmaps only: every decoded table
+(`glyf`, `cmap`, `name`, `OS/2`, `GSUB`, `GPOS`, `hmtx`, `vmtx`, `BASE`, `STAT`
+and the rest) matched the shipped files exactly; only `head.modified` and
+`checkSumAdjustment` (the save timestamp) differed.
+
+- SC at each weight: 2,223 → 2,235 code points, adding ■做六剔床暖梨燥片禁章響.
+- JP at each weight: 1,833 → 1,847 code points, adding ■做六剔土干床暖梨燥片禁章響.
+- 梨 (梨泰院, Itaewon) was already in main's copy and missing from both subsets;
+  the others come from this branch's copy. No bundled code point was removed.
+- Sizes: SC 279,408 / 283,396 bytes; JP 217,164 / 219,460 bytes, inside the
+  320 KB per-face budget. KORETAIL Sans is unchanged: its Hangul coverage test
+  passes without regeneration.
+- `lib/share-wrap.ts` writes its CJK range with `\u` escapes, so range ends such
+  as U+9FFF are not mistaken for printed copy.
+
+Owner UI Lock: only these four font hashes are re-approved.
