@@ -1,7 +1,7 @@
 {
   "base": "65907c971b5e279da48525875df6c972ab998c64",
   "protectedFiles": {
-    "app/[locale]/[slug]/page.tsx": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545",
+    "app/[locale]/[slug]/page.tsx": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1",
     "app/[locale]/not-found.tsx": "620e62c747a4a0d4b8af1558492c74e961f2a4f0d55caa2c960c508395a41ff0",
     "app/[locale]/page.tsx": "2d86e8cbda4feb8497813a8bb022e03518a7ba6b9682a92ee7fad8afd18e841d",
     "app/[locale]/tourism-desk/[area]/page.tsx": "b74c40a03d7ff4ec57a8314f4c11825467212d48634bebf057d078d3ae360b35",

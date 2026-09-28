@@ -121,15 +121,19 @@ const areaName: Record<TodayAnswerArea, Record<Lang, string>> = {
  * Official expected departing passengers — never "congestion" or "wait time";
  * the peak is the hour the airport's own forecast expects the most departures.
  */
-export function airportAnswerText(answer: TodayAnswer | null | undefined, lang: Lang): string | null {
+function airportPeakParts(answer: TodayAnswer | null | undefined, lang: Lang): string[] {
   const peak = answer?.airportPeak;
-  if (!peak) return null;
-  const parts = (["T1", "T2"] as const).flatMap((t) => {
+  if (!peak) return [];
+  return (["T1", "T2"] as const).flatMap((t) => {
     const b = peak[t];
     if (!b) return [];
     const n = b.expectedPassengers.toLocaleString(lang === "zh" ? "zh-CN" : lang);
     return [{ ko: `${t} ${band(b)} (약 ${n}명)`, en: `${t} ${band(b)} (about ${n})`, zh: `${t} ${band(b)}（约${n}人）`, ja: `${t} ${band(b)}（約${n}人）` }[lang]];
   });
+}
+
+export function airportAnswerText(answer: TodayAnswer | null | undefined, lang: Lang): string | null {
+  const parts = airportPeakParts(answer, lang);
   if (!parts.length) return null;
   const date = answer!.serviceDate.slice(5).replace("-", "/");
   return {
@@ -154,5 +158,49 @@ export function areaAnswerText(answer: TodayAnswer | null | undefined, lang: Lan
     en: `Now (${time} KST), Seoul city real-time congestion: ${body}`,
     zh: `现在（${time} KST）首尔市实时拥挤度：${body}`,
     ja: `いま（${time} KST）ソウル市リアルタイム混雑度：${body}`,
+  }[lang];
+}
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** "2026-09-28" → 9월 28일 / Sep 28 / 9月28日. */
+function calendarDay(day: string, lang: Lang): string {
+  const month = Number(day.slice(5, 7));
+  const date = Number(day.slice(8, 10));
+  return { ko: `${month}월 ${date}일`, en: `${MONTHS[month - 1]} ${date}`, zh: `${month}月${date}日`, ja: `${month}月${date}日` }[lang];
+}
+
+/**
+ * The line a messenger shows under a shared link (og:description).
+ *
+ * KakaoTalk and other chat apps keep a link preview long after it was made,
+ * so this names its own calendar day and never says "today" or "now": a
+ * preview read a day later is then old, but still true. Null when there is no
+ * answer, and the page keeps its ordinary description.
+ */
+export function shareAnswerText(answer: TodayAnswer | null | undefined, lang: Lang, page: "airport" | TodayAnswerArea): string | null {
+  if (!answer) return null;
+  if (page === "airport") {
+    const parts = airportPeakParts(answer, lang);
+    if (!parts.length) return null;
+    const day = calendarDay(answer.serviceDate, lang);
+    return {
+      ko: `${day} 인천공항 출국 예상 승객이 가장 많은 시간: ${parts.join(" · ")} — 인천공항 공식 예고`,
+      en: `${day}: Incheon Airport's busiest departure hour by official forecast: ${parts.join(" · ")}`,
+      zh: `${day}仁川机场官方预告出境人数最多的时段：${parts.join(" · ")}`,
+      ja: `${day}の仁川空港、公式予告で出国者が最も多い時間：${parts.join(" · ")}`,
+    }[lang];
+  }
+  const now = answer.areas[page];
+  if (!now) return null;
+  const day = calendarDay(now.observedAt.slice(0, 10), lang);
+  const time = now.observedAt.slice(11, 16);
+  const name = areaName[page][lang];
+  const level = levelText[lang][now.level];
+  return {
+    ko: `${day} ${time} KST 기준 ${name} 서울시 실시간 혼잡도: ${level}`,
+    en: `${name} at ${time} KST on ${day}, Seoul city real-time congestion: ${level}`,
+    zh: `${day} ${time} KST ${name}首尔市实时拥挤度：${level}`,
+    ja: `${day} ${time} KST時点の${name}、ソウル市リアルタイム混雑度：${level}`,
   }[lang];
 }

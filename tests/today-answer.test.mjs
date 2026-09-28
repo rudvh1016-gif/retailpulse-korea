@@ -9,6 +9,7 @@ import {
   areaAnswerText,
   composeTodayAnswer,
   readTodayAnswer,
+  shareAnswerText,
   resetTodayAnswerMemo,
 } from "../lib/today-answer.ts";
 
@@ -121,4 +122,26 @@ test("a failing database yields no answer, never a guessed one", async () => {
   assert.equal(await readTodayAnswer(broken, NOW), null);
   assert.equal(airportAnswerText(null, "ko"), null);
   assert.equal(areaAnswerText(null, "ko"), null);
+});
+
+test("a shared link previews the answer with its own date and never says today or now", () => {
+  const answer = composeTodayAnswer([...hourRows("T1", 7), ...hourRows("T2", 18)], [
+    { area: "myeongdong", level: 3, observedAt: "2026-09-28T09:40:00+09:00" },
+  ], NOW);
+  const airport = shareAnswerText(answer, "ko", "airport");
+  assert.equal(airport, "9월 28일 인천공항 출국 예상 승객이 가장 많은 시간: T1 07:00–08:00 (약 5,432명) · T2 18:00–19:00 (약 5,432명) — 인천공항 공식 예고");
+  assert.equal(shareAnswerText(answer, "ko", "myeongdong"), "9월 28일 09:40 KST 기준 명동 서울시 실시간 혼잡도: 약간 붐빔");
+  for (const lang of ["ko", "en", "zh", "ja"]) {
+    const texts = [shareAnswerText(answer, lang, "airport"), shareAnswerText(answer, lang, "myeongdong")];
+    for (const text of texts) {
+      assert.ok(text);
+      assert.doesNotMatch(text, /오늘|지금|[Tt]oday|[Nn]ow\b|今天|现在|今日|いま/);
+    }
+  }
+  assert.match(shareAnswerText(answer, "en", "airport"), /^Sep 28/);
+  assert.doesNotMatch(shareAnswerText(answer, "ko", "airport"), /혼잡|대기/);
+  // No answer for a page: the ordinary description stays.
+  assert.equal(shareAnswerText(answer, "ko", "hongdae"), null);
+  assert.equal(shareAnswerText(null, "ko", "airport"), null);
+  assert.equal(shareAnswerText(composeTodayAnswer([], [], NOW), "ko", "airport"), null);
 });
