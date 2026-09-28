@@ -63,16 +63,31 @@ export function weekItemLine(item: WeekItem, lang: PrepLang): string {
   }
 }
 
+const headline = {
+  koreanUnknown: row("한국 공휴일 미확인", "Korean holidays not yet known", "韩国假日未确认", "韓国の祝日は未確認"),
+  none: row("확인된 공휴일 없음", "No confirmed holiday", "无已确认假日", "確認済みの祝日なし"),
+};
+
+/**
+ * Holidays are counted per country, never as one number: "공휴일 4일" over
+ * China's National Day reads as four Korean holidays, and while KASI's months
+ * are missing a Korean count of zero would be a claim, not a fact.
+ */
 export function weekHeadline(week: WeekAhead, lang: PrepLang): string {
-  const holidayDays = week.days.filter((day) => day.items.some((item) => item.kind === "HOLIDAY")).length;
+  const parts: string[] = [];
+  if (week.koreanHolidays === "UNAVAILABLE") parts.push(headline.koreanUnknown[lang]);
+  for (const country of ["KR", "CN", "JP"] as const) {
+    const days = week.days.filter((day) => day.items.some((item) => item.kind === "HOLIDAY" && item.country === country)).length;
+    if (!days) continue;
+    parts.push(row(`${countries[country].ko} 공휴일 ${days}일`, `${countries[country].en}: ${days} holiday day(s)`,
+      `${countries[country].zh}假日 ${days} 天`, `${countries[country].ja}の祝日 ${days}日`)[lang]);
+  }
+  if (!parts.length) parts.push(headline.none[lang]);
   const events = week.events?.length ?? 0;
   const range = `${short(week.start)}–${short(week.end)}`;
-  return row(
-    `${weekCopy.title.ko} (${range}) · 공휴일 ${holidayDays}일${week.events ? ` · 행사 ${events}건` : ""}`,
-    `${weekCopy.title.en} (${range}) · ${holidayDays} holiday day(s)${week.events ? ` · ${events} event(s)` : ""}`,
-    `${weekCopy.title.zh}（${range}）· 假日 ${holidayDays} 天${week.events ? ` · 活动 ${events} 项` : ""}`,
-    `${weekCopy.title.ja}（${range}）· 祝日 ${holidayDays}日${week.events ? ` · イベント ${events}件` : ""}`,
-  )[lang];
+  const eventPart = week.events ? row(`행사 ${events}건`, `${events} event(s)`, `活动 ${events} 项`, `イベント ${events}件`)[lang] : null;
+  const rest = [...parts, ...(eventPart ? [eventPart] : [])].join(" · ");
+  return lang === "zh" || lang === "ja" ? `${weekCopy.title[lang]}（${range}）· ${rest}` : `${weekCopy.title[lang]} (${range}) · ${rest}`;
 }
 
 export function weekDayLabel(date: string, today: boolean, lang: PrepLang): string {

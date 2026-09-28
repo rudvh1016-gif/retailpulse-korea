@@ -20,6 +20,8 @@ async function open(page: Page, payload: unknown = WEEK, path = '/ko/business', 
 test('the week ahead shows official holidays once, labels what is unknown, and hides nothing', async ({ page }) => {
   const prep = await open(page);
   const week = prep.getByTestId('week-ahead');
+  // Counted per country: KASI's months are missing in this fixture, so Korea is unknown, not zero.
+  await expect(week.locator('summary').first()).toHaveText('이번 주 준비 (09/28–10/04) · 한국 공휴일 미확인 · 중국 공휴일 4일 · 행사 0건');
   await week.locator('summary').first().click();
   const october = week.locator('.prep-week-days > li').nth(3);
   await expect(october).toContainText('10/01 (목)');

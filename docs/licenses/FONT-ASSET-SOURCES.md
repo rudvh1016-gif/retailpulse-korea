@@ -130,3 +130,19 @@ and the rest) matched the shipped files exactly; only `head.modified` and
   as U+9FFF are not mistaken for printed copy.
 
 Owner UI Lock: only these four font hashes are re-approved.
+
+## 2026-09-28 holiday and weekly check copy refresh (PR #224, review branch)
+
+Same sources, checksums, tools, options and union policy as the PR #223 entry
+above, applied on top of its subsets for the official China/Japan holiday
+names and the week-ahead, weekly check and feeling-log copy.
+
+- SC at each weight: 2,235 → 2,255 code points, adding
+  七八农劳労憲敬春昭烘焙皇菓華製誕謝趣閑閣.
+- JP at each weight: 1,847 → 1,868 code points, adding
+  七八労憲敬旦春昭烘焙皇老腊菓華製誕謝趣閑閣. Simplified forms the JP source
+  does not carry (农, 劳, 庆 and others) stay with the SC face.
+- No bundled code point was removed. Sizes: SC 282,024 / 286,120 bytes;
+  JP 219,848 / 222,052 bytes, inside the 320 KB per-face budget.
+
+Owner UI Lock: only these four font hashes are re-approved.
