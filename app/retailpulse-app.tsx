@@ -36,6 +36,8 @@ import { PredictionView } from "./prediction-view";
 import { parsePreferences, PREFERENCE_KEY } from "../lib/personal-briefing";
 import { SiteUsageGuide } from "./site-usage-guide";
 import { IndustryGuide } from "./industry-guide";
+import { BusinessPrep } from "./business-prep";
+import { saveBusinessPreferences, useBusinessPreferences } from "./business-preferences";
 import { airportAnswerText, areaAnswerText, type TodayAnswer, type TodayAnswerArea } from "../lib/today-answer";
 const PersonalHome = lazy(() => import('./personal-home'));
 
@@ -705,6 +707,14 @@ function BusinessView({
   setProOpen: (open: boolean) => void;
 }) {
   const [mode, setMode] = useState<"briefing" | "history">("briefing");
+  // The airport is a place for the briefing only; the area tab keeps its own
+  // choice so the history tab and the area pages are unaffected.
+  const { preferences: business } = useBusinessPreferences();
+  const atAirport = business.place === "airport";
+  const chooseArea = (id: AreaId) => {
+    if (atAirport) saveBusinessPreferences({ ...business, place: "area" });
+    setSelected(id);
+  };
 
   return (
     <section className="view-section business-view">
@@ -728,22 +738,25 @@ function BusinessView({
 
       {mode === "history" ? <BusinessHistoryView lang={lang} selected={selected} setSelected={setSelected} /> : <>
         <div className="area-tabs" role="tablist">
-          {(Object.keys(areaInfo) as AreaId[]).map((id) => <button key={id} className={selected === id ? "active" : ""} onClick={() => setSelected(id)} role="tab" aria-selected={selected === id}>{areaLocalName(id, lang)}</button>)}
+          {(Object.keys(areaInfo) as AreaId[]).map((id) => <button key={id} className={!atAirport && selected === id ? "active" : ""} onClick={() => chooseArea(id)} role="tab" aria-selected={!atAirport && selected === id}>{areaLocalName(id, lang)}</button>)}
+          <button className={atAirport ? "active" : ""} onClick={() => { if (!atAirport) saveBusinessPreferences({ ...business, place: "airport" }); }} role="tab" aria-selected={atAirport}>{localText(lang, { ko: "인천공항", en: "Incheon Airport", zh: "仁川机场", ja: "仁川空港" })}</button>
         </div>
         <DateNavigator lang={lang} date={date} onChange={setDate} />
-        {/* The store screen used to repeat the whole Seoul signal page above
-            the checklist, pushing the one thing this screen is for about
-            3,000px down. It now shows the area's short current brief and
-            links to the full area page. */}
-        <AreaCurrentBrief
-          lang={lang}
-          area={selected}
-          date={date}
-          linkHref={routeFor(lang, "today", selected)}
-          linkLabel={localText(lang, { ko: `${areaLocalName(selected, lang)} 전체 신호 보기`, en: `All ${areaLocalName(selected, lang)} signals`, zh: `查看${areaLocalName(selected, lang)}全部信号`, ja: `${areaLocalName(selected, lang)}の全シグナルを見る` })}
-        />
+        {/* Order for a reader about to open: conditions, the facts inside
+            their hours, at most three actions, then the graphs and the
+            standing guide. */}
+        <BusinessPrep lang={lang} area={selected} industry={industry} onIndustryChange={setIndustry} date={date} />
+        {atAirport
+          ? <a className="current-brief-link business-airport-link" href={routeFor(lang, "airport", selected)}>{localText(lang, { ko: "공항 전체 신호 보기", en: "All airport signals", zh: "查看机场全部信号", ja: "空港の全シグナルを見る" })} →</a>
+          : <AreaCurrentBrief
+            lang={lang}
+            area={selected}
+            date={date}
+            linkHref={routeFor(lang, "today", selected)}
+            linkLabel={localText(lang, { ko: `${areaLocalName(selected, lang)} 전체 신호 보기`, en: `All ${areaLocalName(selected, lang)} signals`, zh: `查看${areaLocalName(selected, lang)}全部信号`, ja: `${areaLocalName(selected, lang)}の全シグナルを見る` })}
+          />}
 
-        <IndustryGuide lang={lang} industry={industry} onIndustryChange={setIndustry} />
+        <IndustryGuide lang={lang} industry={industry} onIndustryChange={setIndustry} airport={atAirport ? { terminal: business.terminal, direction: "departure" } : undefined} />
 
         <section className="business-pro">
           <div><p className="eyebrow">KORETAIL · NEXT</p><h2>{localText(lang, { ko: "매일 문 열기 전, 한 장으로", en: "One page before you open", zh: "每天开店前，一页简报", ja: "開店前に、一枚で" })}</h2><p>{localText(lang, { ko: "업종·지역별 알림과 내려받기를 준비하고 있습니다.", en: "Alerts and exports by business type and area are in preparation.", zh: "正在准备按业态与地区的提醒与导出功能。", ja: "業種・エリア別の通知とエクスポートを準備しています。" })}</p></div>

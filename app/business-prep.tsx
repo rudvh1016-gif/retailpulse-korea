@@ -1,0 +1,145 @@
+'use client';
+
+import { useId, useState } from 'react';
+import type { Lang } from './retailpulse-data';
+import { useLiveSummary, LiveLoadMessage } from './live-signals';
+import { usePresentationClock } from './area-demand-card';
+import { saveBusinessPreferences, useBusinessPreferences } from './business-preferences';
+import { buildBusinessPrep, prepInputFromSummary, type BusinessHours, type PrepArea, type PrepPlace } from '../lib/business-prep';
+import { HOUR_CHOICES, type BusinessPreferences } from '../lib/business-preferences';
+import { actionText, coverageLine, evidenceText, factLine, hoursLabel, placeName, prepCopy, statusLine } from '../lib/business-prep-copy';
+import { industryProfiles, type IndustryId } from '../lib/industry-guidance';
+import { snapshotOf } from '../lib/last-check';
+import { LastCheckBlock, UsualComparisonBlock } from './business-compare';
+import { PrepShare } from './prep-share';
+import { buildShareDocument, shareLink } from '../lib/prep-share';
+import { siteOrigin } from './seo-config';
+
+/** Where the reader's store is: the area tab, or an airport terminal they chose. */
+export function prepPlaceOf(preferences: BusinessPreferences, area: PrepArea): PrepPlace {
+  return preferences.place === 'airport' ? { kind: 'airport', terminal: preferences.terminal } : { kind: 'area', area };
+}
+
+function Conditions({ lang, place, preferences, saved, storageFailed, industry, onIndustryChange }: {
+  lang: Lang; place: PrepPlace; preferences: BusinessPreferences; saved: boolean; storageFailed: boolean;
+  industry: IndustryId; onIndustryChange: (value: IndustryId) => void;
+}) {
+  const id = useId();
+  const [open, setOpen] = useState(false);
+  const [wholeDay, setWholeDay] = useState(preferences.hours === null);
+  const [openAt, setOpenAt] = useState(preferences.hours?.open ?? '10:00');
+  const [closeAt, setCloseAt] = useState(preferences.hours?.close ?? '22:00');
+  const [terminal, setTerminal] = useState(preferences.terminal);
+  const start = () => {
+    setWholeDay(preferences.hours === null);
+    setOpenAt(preferences.hours?.open ?? '10:00');
+    setCloseAt(preferences.hours?.close ?? '22:00');
+    setTerminal(preferences.terminal);
+    setOpen(true);
+  };
+  const save = () => {
+    const hours: BusinessHours | null = wholeDay ? null : { open: openAt, close: closeAt };
+    saveBusinessPreferences({ version: 1, place: preferences.place, terminal, hours });
+    setOpen(false);
+  };
+  return <div className="prep-conditions">
+    <p className="prep-conditions-line">
+      <span className="prep-conditions-label">{prepCopy.conditions[lang]}</span>
+      <span data-testid="prep-place">{placeName(place, lang)}</span>
+      <span aria-hidden="true">·</span>
+      <span data-testid="prep-industry">{industryProfiles[industry].label[lang]}</span>
+      <span aria-hidden="true">·</span>
+      <span data-testid="prep-hours">{hoursLabel(preferences.hours, lang)}</span>
+      <button type="button" className="prep-change" aria-expanded={open} aria-controls={`${id}-form`} onClick={() => (open ? setOpen(false) : start())}>{open ? prepCopy.close[lang] : prepCopy.change[lang]}</button>
+    </p>
+    {open && <form id={`${id}-form`} className="prep-form" onSubmit={(event) => { event.preventDefault(); save(); }}>
+      {place.kind === 'airport' && <fieldset className="prep-terminal">
+        <legend>{prepCopy.terminal[lang]}</legend>
+        {(['T1', 'T2'] as const).map((value) => <label key={value}><input type="radio" name={`${id}-terminal`} value={value} checked={terminal === value} onChange={() => setTerminal(value)}/>{value}</label>)}
+      </fieldset>}
+      <label className="prep-field">{prepCopy.industry[lang]}
+        <select value={industry} onChange={(event) => onIndustryChange(event.target.value as IndustryId)}>
+          {(Object.keys(industryProfiles) as IndustryId[]).map((value) => <option key={value} value={value}>{industryProfiles[value].label[lang]}</option>)}
+        </select>
+      </label>
+      <label className="prep-check"><input type="checkbox" checked={wholeDay} onChange={(event) => setWholeDay(event.target.checked)}/>{prepCopy.wholeDayOption[lang]}</label>
+      {!wholeDay && <div className="prep-hours">
+        <label className="prep-field">{prepCopy.open[lang]}
+          <select value={openAt} onChange={(event) => setOpenAt(event.target.value)}>{HOUR_CHOICES.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+        </label>
+        <label className="prep-field">{prepCopy.closeTime[lang]}
+          <select value={closeAt} onChange={(event) => setCloseAt(event.target.value)}>{HOUR_CHOICES.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+        </label>
+      </div>}
+      <p className="prep-note">{prepCopy.deviceOnly[lang]}</p>
+      <button type="submit" className="prep-save">{prepCopy.save[lang]}</button>
+    </form>}
+    {storageFailed && saved && <p className="prep-note" role="status">{prepCopy.storageBlocked[lang]}</p>}
+  </div>;
+}
+
+export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
+  lang: Lang; area: PrepArea; industry: IndustryId; onIndustryChange: (value: IndustryId) => void; date: string | null;
+}) {
+  const id = useId();
+  const summary = useLiveSummary(date);
+  const { ready, saved, preferences, storageFailed } = useBusinessPreferences();
+  const clock = usePresentationClock(summary?.generatedAt ?? new Date(0).toISOString());
+  // The service date is always the server's. The device clock only moves
+  // "now" forward between refreshes; a device set hours off is ignored.
+  const generated = summary ? Date.parse(summary.generatedAt) : NaN;
+  const now = Number.isFinite(generated) && Math.abs(clock - generated) > 2 * 3_600_000 ? generated : clock;
+  const place = prepPlaceOf(preferences, area);
+  const nowIso = new Date(now).toISOString();
+  const input = summary && ready ? prepInputFromSummary(summary, place, preferences.hours, nowIso) : null;
+  const prep = input ? buildBusinessPrep(input) : null;
+  const snapshot = input && prep && prep.status !== 'PAST' && prep.status !== 'ENDED' ? snapshotOf(input, prep, nowIso) : null;
+  const serviceDate = summary?.serviceDateKst ?? '';
+  return <section className="business-prep" data-testid="business-prep" aria-labelledby={`${id}-title`}>
+    <div className="section-head"><div>
+      <p className="eyebrow">KORETAIL · {prepCopy.eyebrow[lang]}</p>
+      <h2 id={`${id}-title`}>{prepCopy.title[lang]}</h2>
+    </div></div>
+    <Conditions key={`${preferences.place}:${preferences.terminal}:${preferences.hours?.open ?? ''}:${preferences.hours?.close ?? ''}`}
+      lang={lang} place={place} preferences={preferences} saved={saved} storageFailed={storageFailed} industry={industry} onIndustryChange={onIndustryChange}/>
+    {!summary || !prep ? <LiveLoadMessage loading={summary === undefined || !ready} lang={lang}/> : <>
+      <div className="prep-block">
+        <h3>{prepCopy.factsTitle[lang]}</h3>
+        {prep.facts.length
+          ? <ul className="prep-facts" data-testid="prep-facts">{prep.facts.map((fact, index) => <li key={index}>{factLine(fact, serviceDate, lang)}</li>)}</ul>
+          : prep.status === 'PAST' || prep.status === 'ENDED' ? null : <p className="prep-empty">{prepCopy.noFacts[lang]}</p>}
+        {prep.coverage.map((entry) => coverageLine(entry, serviceDate, lang)).filter(Boolean).map((line, index) => <p key={index} className="prep-coverage">{line}</p>)}
+      </div>
+      {prep.status !== 'PAST' && <UsualComparisonBlock lang={lang} place={place} today={summary.dayRelation === 'TODAY'}/>}
+      <LastCheckBlock lang={lang} snapshot={snapshot} serviceDate={serviceDate} nowIso={nowIso}/>
+      <div className="prep-block">
+        <h3>{prepCopy.actionsTitle[lang]}</h3>
+        {prep.actions.length ? <ol className="prep-actions" data-testid="prep-actions">{prep.actions.map((action, index) => {
+          const text = actionText(action, serviceDate, industry, lang);
+          const evidence = evidenceText(action, serviceDate, lang);
+          return <li key={index} data-rule={action.rule}>
+            <p className="prep-action-title">{text.title}</p>
+            <p>{text.body}</p>
+            {text.industryHint && <p className="prep-industry-hint"><strong>{prepCopy.industryCheck[lang]}</strong> {text.industryHint}</p>}
+            <details className="prep-evidence"><summary>{prepCopy.evidence[lang]}</summary><dl>
+              <dt>{prepCopy.condition[lang]}</dt><dd>{evidence.condition}</dd>
+              <dt>{prepCopy.dataUsed[lang]}</dt><dd>{evidence.data}</dd>
+              <dt>{prepCopy.issuedAt[lang]}</dt><dd>{evidence.issued}</dd>
+              <dt>{prepCopy.target[lang]}</dt><dd>{evidence.target}</dd>
+              <dt>{prepCopy.limit[lang]}</dt><dd>{evidence.limit}</dd>
+            </dl></details>
+          </li>;
+        })}</ol> : null}
+        {(!prep.actions.length || prep.hourlyStatus !== 'ACTIONS') && <p className="prep-status" data-testid="prep-status" data-status={prep.actions.length ? prep.hourlyStatus : prep.status}>
+          {statusLine(prep.actions.length ? prep.hourlyStatus : prep.status, lang)}
+        </p>}
+        <p className="prep-note">{prepCopy.standing[lang]}</p>
+      </div>
+      {prep.status !== 'PAST' && prep.status !== 'ENDED' && <PrepShare
+        lang={lang}
+        fileName={`koretail-${serviceDate}-${place.kind === 'airport' ? `airport-${place.terminal}` : place.area}.png`}
+        doc={buildShareDocument({ prep, serviceDate, place, industry, hours: preferences.hours, lang, link: shareLink(siteOrigin, lang, serviceDate), savedAt: nowIso })}
+      />}
+    </>}
+  </section>;
+}
