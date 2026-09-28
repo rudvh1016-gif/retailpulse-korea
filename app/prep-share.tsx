@@ -4,6 +4,7 @@ import { useId, useRef, useState } from 'react';
 import type { Lang } from './retailpulse-data';
 import { shareCopy, shareText, type ShareDocument } from '../lib/prep-share';
 import { wrapText } from '../lib/share-wrap';
+import { trackPersonalEvent } from '../lib/personal-analytics';
 
 type ShareStatus = 'idle' | 'copied' | 'copyFailed' | 'imageReady' | 'imageFailed' | 'shareChosen' | 'shareCancelled' | 'shareFailed';
 
@@ -57,7 +58,7 @@ export async function renderShareImage(doc: ShareDocument, fontFamily: string): 
   return new Promise((resolve, reject) => canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('image_encode_failed'))), 'image/png'));
 }
 
-export function PrepShare({ lang, doc, fileName }: { lang: Lang; doc: ShareDocument; fileName: string }) {
+export function PrepShare({ lang, doc, fileName, analytics = {} }: { lang: Lang; doc: ShareDocument; fileName: string; analytics?: Record<string, string> }) {
   const id = useId();
   const section = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<ShareStatus>('idle');
@@ -70,6 +71,7 @@ export function PrepShare({ lang, doc, fileName }: { lang: Lang; doc: ShareDocum
       if (!navigator.clipboard?.writeText) throw new Error('clipboard_unavailable');
       await navigator.clipboard.writeText(text);
       setStatus('copied');
+      trackPersonalEvent('business_prep_copied', analytics);
     } catch {
       setStatus('copyFailed');
       setFallback(true);
@@ -88,6 +90,7 @@ export function PrepShare({ lang, doc, fileName }: { lang: Lang; doc: ShareDocum
       link.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
       setStatus('imageReady');
+      trackPersonalEvent('business_prep_image_created', analytics);
     } catch {
       setStatus('imageFailed');
       setFallback(true);
@@ -97,6 +100,7 @@ export function PrepShare({ lang, doc, fileName }: { lang: Lang; doc: ShareDocum
     try {
       await navigator.share({ title: doc.title, text });
       setStatus('shareChosen');
+      trackPersonalEvent('business_prep_share_target_chosen', analytics);
     } catch (error) {
       setStatus(error instanceof DOMException && error.name === 'AbortError' ? 'shareCancelled' : 'shareFailed');
     }

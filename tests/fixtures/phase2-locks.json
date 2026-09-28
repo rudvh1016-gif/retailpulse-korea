@@ -16,7 +16,7 @@
     "app/api/live/summary/route.ts": "315530f6ef80652ee9301896f1c129f614c18bdf24e2c87dfe1b55cd56825cb5",
     "app/area-demand-card.tsx": "b24e36ec1935544b6a1f2db60e6a0bfb2b585d1deb3af10e2224e7d42d3c16b1",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
-    "app/globals.css": "f5c917eb0b2435c64c0a48b6c1f7343eecd369f1a2db29eb88b4b7ed048de078",
+    "app/globals.css": "6d7df80347aee33655fe48aec5f0613918d3a85d627044f280ca57502f212266",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
     "app/layout.tsx": "5046b7a098cbea56b3c315af2033bbc3d846462584f2c27b97f8dc1bb4c49ec7",
     "app/live-signals.tsx": "3fe78f394f0a3be322d59a871ad9651c61c3a47ebaeab35a062338942dfeca00",

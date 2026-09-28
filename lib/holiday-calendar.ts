@@ -156,3 +156,14 @@ export function calendarCoverage(todayKst: string): CalendarCoverage[] {
 export function isPublished(country: HolidayCountry, date: string): boolean {
   return HOLIDAY_SOURCES[country].years.includes(Number(date.slice(0, 4)));
 }
+
+/**
+ * A holiday name for a reader: native names stay as published; otherwise the
+ * settled translation with the published name beside it, or the published
+ * name alone when no translation is settled.
+ */
+export function localHolidayName(name: string, lang: "ko" | "en" | "zh" | "ja", country: "KR" | HolidayCountry): string {
+  if (country === "KR" || (country === "CN" && lang === "zh") || (country === "JP" && lang === "ja")) return name;
+  const translated = HOLIDAY_TRANSLATIONS[name]?.[lang];
+  return translated ? `${translated} (${name})` : name;
+}
