@@ -2,7 +2,7 @@ import type { LiveSummary } from '../app/live-signals';
 import { pc, pcValue, type PersonalLang } from './personal-copy';
 
 export const roles = ['tourist','manager','guide'] as const;
-export const locations = ['airport','myeongdong','hongdae','seongsu'] as const;
+export const locations = ['airport','myeongdong','hongdae','seongsu','itaewon'] as const;
 export const terminals = ['all','T1','T2','CONCOURSE'] as const;
 export const interests = ['passengers','crowding','flights','airlines','foreign','weather','events','guidance'] as const;
 export type Role = typeof roles[number];

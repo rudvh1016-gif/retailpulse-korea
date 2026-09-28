@@ -30,7 +30,7 @@ import {
 } from "./source-adapters";
 import { buildDataGoKrUrl } from "./data-go-kr.mjs";
 import { describeWrites, NO_D1_WRITES, runD1Batches, type D1WriteCounts } from "./d1-write-counts";
-import { areaMappings, distanceMeters, publicAreaIds, realtimeAreaIds, uniqueKmaGrids, type AreaId, type PublicAreaId } from "./areas";
+import { areaMappings, distanceMeters, publicAreaIds, uniqueKmaGrids, type AreaId, type PublicAreaId } from "./areas";
 import { summarizeTodayPassengerForecast, type AirportForecastAggregateRow } from "./airport-today-summary";
 import { sha256 } from "./hash";
 import {
@@ -517,7 +517,7 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
   let lastCommercial: CanonicalSeoulRealtimeCommercial | undefined;
 
   const failureDetail = (areaId: AreaId, error: unknown) => `${areaId}: ${safeSourceFailureDetail(error)}`;
-  for (const areaId of realtimeAreaIds) {
+  for (const areaId of publicAreaIds) {
     const mapping = areaMappings[areaId];
     const url = new URL(`http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/citydata/1/5/${mapping.seoulPoiCode}`);
     let citydata: Record<string, unknown>;
@@ -631,11 +631,11 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
     written: D1WriteCounts,
     lastRecord: HealthSnapshot | undefined,
   ): Promise<"SUCCESS" | "PARTIAL" | "ERROR"> => {
-    const okCount = realtimeAreaIds.length - failures.length;
-    const detail = `areas ok ${okCount}/${realtimeAreaIds.length}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
-    const collectorStatus = okCount === realtimeAreaIds.length ? "SUCCESS" : okCount > 0 ? "PARTIAL" : "ERROR";
+    const okCount = publicAreaIds.length - failures.length;
+    const detail = `areas ok ${okCount}/${publicAreaIds.length}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
+    const collectorStatus = okCount === publicAreaIds.length ? "SUCCESS" : okCount > 0 ? "PARTIAL" : "ERROR";
     const hasUsable = okCount > 0 || await hasStoredRow(env.DB, `SELECT 1 FROM ${table} LIMIT 1`);
-    const health: SourceHealthStatus = okCount === realtimeAreaIds.length ? "LIVE" : hasUsable ? "STALE" : "ERROR";
+    const health: SourceHealthStatus = okCount === publicAreaIds.length ? "LIVE" : hasUsable ? "STALE" : "ERROR";
     await writeCollectorStatus(env.DB, sourceId, collectorStatus, detail, okCount, written.changedRows);
     await writeSourceHealth(env.DB, sourceId, health, detail, lastRecord);
     return collectorStatus;
@@ -1254,20 +1254,15 @@ async function hasCompleteStoreDynamicsLastGood(db: D1Database | undefined): Pro
       AND quality_status = 'VALID' AND area = ?
     ORDER BY quarter_code DESC LIMIT 1`;
   try {
-    const result = await db.prepare(`SELECT * FROM (${latestForArea})
-      UNION ALL SELECT * FROM (${latestForArea})
-      UNION ALL SELECT * FROM (${latestForArea})`)
-      .bind(
-        STORE_DYNAMICS_SOURCE_ID, STORE_DYNAMICS_MAPPING_VERSION, "myeongdong",
-        STORE_DYNAMICS_SOURCE_ID, STORE_DYNAMICS_MAPPING_VERSION, "hongdae",
-        STORE_DYNAMICS_SOURCE_ID, STORE_DYNAMICS_MAPPING_VERSION, "seongsu",
-      )
+    const mappedAreas = Object.keys(storeDynamicsMappings);
+    const result = await db.prepare(mappedAreas.map(() => `SELECT * FROM (${latestForArea})`).join(" UNION ALL "))
+      .bind(...mappedAreas.flatMap((area) => [STORE_DYNAMICS_SOURCE_ID, STORE_DYNAMICS_MAPPING_VERSION, area]))
       .all<Record<string, unknown>>();
     const rows = result.results ?? [];
     const areas = new Set(rows.map((row) => row.area));
     const quarters = new Set(rows.map((row) => row.quarterCode));
-    return rows.length === 3
-      && areas.size === 3
+    return rows.length === mappedAreas.length
+      && areas.size === mappedAreas.length
       && Object.keys(storeDynamicsMappings).every((area) => areas.has(area))
       && quarters.size === 1
       && Object.keys(storeDynamicsMappings).every((area) =>
@@ -1735,7 +1730,6 @@ export async function collectTourismEvents(env: CollectorEnv, now = new Date()):
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
       for (const areaId of publicAreaIds) {
         const mapping = areaMappings[areaId];
-        if (!mapping.center || mapping.eventRadiusM === null) continue;
         const distance = distanceMeters(mapping.center, { lat, lng });
         if (distance > mapping.eventRadiusM) continue;
         const canonical = await normalizeTourismEvent({ ...record, dist: String(distance) }, areaId, retrievedAt);

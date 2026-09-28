@@ -57,8 +57,16 @@ test("OA-15577 mapping uses one unique current official area per KORETAIL area",
       tradeAreaTypeCode: "A",
       tradeAreaTypeName: "골목상권",
     },
+    // OA-15577 returned exactly this identity (quarter 20262) in the 2026-09-28 probe.
+    itaewon: {
+      area: "itaewon",
+      tradeAreaCode: "3001491",
+      tradeAreaName: "이태원 관광특구",
+      tradeAreaTypeCode: "U",
+      tradeAreaTypeName: "관광특구",
+    },
   });
-  assert.equal(new Set(Object.values(storeDynamicsMappings).map((mapping) => mapping.tradeAreaCode)).size, 3);
+  assert.equal(new Set(Object.values(storeDynamicsMappings).map((mapping) => mapping.tradeAreaCode)).size, 4);
   assert.equal(STORE_DYNAMICS_MAPPING_VERSION, "oa-15577-standard-area-2026-09-03-v1");
 });
 

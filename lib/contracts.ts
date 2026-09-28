@@ -31,7 +31,7 @@ export interface PredictionInput {
   targetAt: string;
   dataCutoff: string;
   targetId: "AREA_ACTIVITY" | "FOREIGN_PRESENCE" | "FOREIGN_SHOPPING_MOVEMENT" | "FOREIGN_RETAIL_PROXY";
-  area: "myeongdong" | "hongdae" | "seongsu";
+  area: "myeongdong" | "hongdae" | "seongsu" | "itaewon";
   industry?: "beauty" | "fashion" | "food" | "convenience" | "popup" | "tourism";
   value: number;
   forecastClass: "LOW" | "MODERATE" | "HIGH";

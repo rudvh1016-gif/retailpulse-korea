@@ -68,12 +68,12 @@ jobs:
           check("api /api/live/summary", summary.status === 200 && Boolean(summaryBody?.mode), `status ${summary.status}; mode ${summaryBody?.mode}`);
           for (const source of summaryBody?.sources ?? []) console.log(JSON.stringify({ source }));
           check("summary is in live mode", summaryBody?.mode === "live-summary", `mode ${summaryBody?.mode ?? "missing"}`);
-          check("summary carries the core areas", Boolean(summaryBody?.areas) && ["myeongdong", "hongdae", "seongsu"].every((area) => area in (summaryBody.areas ?? {})), "areas object incomplete");
+          check("summary carries the core areas", Boolean(summaryBody?.areas) && ["myeongdong", "hongdae", "seongsu", "itaewon"].every((area) => area in (summaryBody.areas ?? {})), "areas object incomplete");
           // A legitimately quiet day has no events and may have no sales, so
           // neither of those alone fails. Every area losing BOTH its realtime
           // reading and its weather rows at once is not a quiet day - that is
           // the database being unreadable.
-          const coreAreas = ["myeongdong", "hongdae", "seongsu"];
+          const coreAreas = ["myeongdong", "hongdae", "seongsu", "itaewon"];
           const areasWithCoreData = coreAreas.filter((area) => {
             const block = summaryBody?.areas?.[area] ?? {};
             return Boolean(block.realtime) || (block.weather?.length ?? 0) > 0;
@@ -113,6 +113,7 @@ jobs:
             myeongdong: { code: "3001492", name: "명동 남대문 북창동 다동 무교동 관광특구", type: "U", typeName: "관광특구" },
             hongdae: { code: "3120103", name: "홍대입구역(홍대)", type: "D", typeName: "발달상권" },
             seongsu: { code: "3110131", name: "성수동카페거리", type: "A", typeName: "골목상권" },
+            itaewon: { code: "3001491", name: "이태원 관광특구", type: "U", typeName: "관광특구" },
           };
           const storeDynamics = coreAreas.map((area) => ({
             area,
@@ -140,7 +141,7 @@ jobs:
           });
           const storeDynamicsQuarters = new Set(storeDynamics.map(({ row }) => row?.quarterCode).filter(Boolean));
           check(
-            "Store Dynamics covers all three exact areas",
+            "Store Dynamics covers all four exact areas",
             storeDynamicsValid && storeDynamicsQuarters.size === 1,
             `${storeDynamics.filter(({ row }) => Boolean(row)).length}/${coreAreas.length} areas`,
           );
@@ -157,7 +158,7 @@ jobs:
 
           if (summaryBody?.mode === "live-summary") {
             const areas = summaryBody.areas ?? {};
-            for (const area of ["myeongdong", "hongdae", "seongsu"]) {
+            for (const area of coreAreas) {
               const block = areas[area] ?? {};
               console.log(JSON.stringify({
                 area,

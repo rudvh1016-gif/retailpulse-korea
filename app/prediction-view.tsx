@@ -11,14 +11,14 @@ interface ForecastPayload {
  coverage:null|{readiness?:{targetDate:string;hours:Array<{hour:number;sampleDates:string[];missingWeeks:number;ready:boolean;compatible:boolean}>};days:number;firstAt:string|null;latestAt:string|null;missingDays:string[];dailyHours:Array<{day:string;hours:number}>};
  records:Array<{targetAt:string;predicted:number;actual:number|null;createdAt:string;actualAt:string|null}>;
 }
-export function PredictionView({lang,area,onArea}:{lang:Lang;area:'myeongdong'|'hongdae'|'seongsu';onArea:(area:'myeongdong'|'hongdae'|'seongsu')=>void}) {
+export function PredictionView({lang,area,onArea}:{lang:Lang;area:'myeongdong'|'hongdae'|'seongsu'|'itaewon';onArea:(area:'myeongdong'|'hongdae'|'seongsu'|'itaewon')=>void}) {
  const summary=useLiveSummary();
  const now = usePresentationClock(summary?.generatedAt ?? "");
  const [loaded,setLoaded]=useState<{area:string;data:ForecastPayload|null}|null>(null);
  useEffect(()=>{let active=true;fetch(`/api/live/predictions?area=${area}`).then(async response=>response.ok?await response.json() as ForecastPayload:null).catch(()=>null).then(data=>{if(active)setLoaded({area,data});});return()=>{active=false;};},[area]);
  const data=loaded?.area===area?loaded.data:undefined;
  const t=(ko:string,en:string,zh:string,ja:string)=>contextText(lang,ko,en,zh,ja);
- const names={myeongdong:t('명동','Myeongdong','明洞','明洞'),hongdae:t('홍대','Hongdae','弘大','弘大'),seongsu:t('성수','Seongsu','圣水','聖水')};
+ const names={myeongdong:t('명동','Myeongdong','明洞','明洞'),hongdae:t('홍대','Hongdae','弘大','弘大'),seongsu:t('성수','Seongsu','圣水','聖水'),itaewon:t('이태원','Itaewon','梨泰院','梨泰院')};
  const official=summary?.areas[area]?.realtimeForecast??[];
  const future=official.filter(row=>Date.parse(row.targetAt)>now && typeof row.populationMin==='number' && typeof row.populationMax==='number' && Number.isFinite(row.populationMin) && Number.isFinite(row.populationMax) && row.populationMin>=0 && row.populationMax>=row.populationMin);
  const peak=[...future].sort((a,b)=>(b.populationMax??0)-(a.populationMax??0))[0];

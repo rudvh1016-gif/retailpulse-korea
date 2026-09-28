@@ -13,8 +13,8 @@ const WHITE = "rgb(255, 255, 255)";
 const locales = ["ko", "en", "zh", "ja"] as const;
 const viewports = [390, 430, 768, 1280, 1440, 1920] as const;
 const routes = [
-  "", "/myeongdong", "/hongdae", "/seongsu", "/airport", "/business", "/forecast",
-  "/tourism-desk/myeongdong", "/tourism-desk/hongdae", "/tourism-desk/seongsu", "/about", "/more",
+  "", "/myeongdong", "/hongdae", "/seongsu", "/itaewon", "/airport", "/business", "/forecast",
+  "/tourism-desk/myeongdong", "/tourism-desk/hongdae", "/tourism-desk/seongsu", "/tourism-desk/itaewon", "/about", "/more",
 ] as const;
 const surfaces = [
   "html", "body", ".app", ".page-shell", ".topbar", ".top-nav", ".bottom-nav",
@@ -116,21 +116,28 @@ const tourismAreas = [
     name: "명동",
     heading: "명동 관광안내",
     station: "명동역 4호선",
-    otherStations: ["홍대입구역 2호선", "성수역 2호선"],
+    otherStations: ["홍대입구역 2호선", "성수역 2호선", "이태원역 6호선"],
   },
   {
     id: "hongdae",
     name: "홍대",
     heading: "홍대 관광안내",
     station: "홍대입구역 2호선",
-    otherStations: ["명동역 4호선", "성수역 2호선"],
+    otherStations: ["명동역 4호선", "성수역 2호선", "이태원역 6호선"],
   },
   {
     id: "seongsu",
     name: "성수",
     heading: "성수 관광안내",
     station: "성수역 2호선",
-    otherStations: ["명동역 4호선", "홍대입구역 2호선"],
+    otherStations: ["명동역 4호선", "홍대입구역 2호선", "이태원역 6호선"],
+  },
+  {
+    id: "itaewon",
+    name: "이태원",
+    heading: "이태원 관광안내",
+    station: "이태원역 6호선",
+    otherStations: ["명동역 4호선", "홍대입구역 2호선", "성수역 2호선"],
   },
 ] as const;
 
@@ -216,7 +223,7 @@ for (const width of viewports) {
     await expect(sectionHeadings).toHaveCount(tourismSectionHeadings.length, { timeout: 30_000 });
     expect(await sectionHeadings.allInnerTexts()).toEqual([...tourismSectionHeadings]);
 
-    // All three links reuse the same module, preserve the locale and swap the
+    // All four links reuse the same module, preserve the locale and swap the
     // exact station scope. Other station names must not leak into the panel.
     for (const area of tourismAreas) {
       const link = desk.locator(".tourism-area-switcher").getByRole("link", { name: area.name, exact: true });

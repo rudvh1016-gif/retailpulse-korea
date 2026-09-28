@@ -13,8 +13,8 @@ import {
   tourismDeskAreas,
 } from "../app/seo-config.ts";
 
-test("Tourism Desk has exactly three area routes and no flat indexable slug", () => {
-  assert.deepEqual(tourismDeskAreas, ["myeongdong", "hongdae", "seongsu"]);
+test("Tourism Desk has exactly four area routes and no flat indexable slug", () => {
+  assert.deepEqual(tourismDeskAreas, ["myeongdong", "hongdae", "seongsu", "itaewon"]);
   assert.equal(standaloneSeoSlugs.includes("tourism-desk"), false);
   assert.deepEqual(
     seoLocales.flatMap((locale) => tourismDeskAreas.map((area) => seoPath(locale, "tourism-desk", area))),
@@ -79,7 +79,7 @@ test("the former flat route redirects and only nested Tourism Desk URLs enter th
   const deskUrls = urls.filter((url) => url.includes("/tourism-desk"));
   assert.equal(deskUrls.length, seoLocales.length * tourismDeskAreas.length);
   for (const url of deskUrls) {
-    assert.match(url, /\/tourism-desk\/(myeongdong|hongdae|seongsu)$/,
+    assert.match(url, /\/tourism-desk\/(myeongdong|hongdae|seongsu|itaewon)$/,
       "the flat /tourism-desk URL is a permanent redirect, so it must never be offered for indexing");
   }
 });

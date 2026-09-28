@@ -33,8 +33,8 @@ export type SeoLocale = typeof seoLocales[number];
  * out of this list because its indexable pages have an additional area
  * segment; the old flat URL is a permanent redirect, not duplicate content.
  */
-export const standaloneSeoSlugs = ["myeongdong", "hongdae", "seongsu", "airport", "forecast", "predictions", "business", "about", "more"] as const;
-export const tourismDeskAreas = ["myeongdong", "hongdae", "seongsu"] as const;
+export const standaloneSeoSlugs = ["myeongdong", "hongdae", "seongsu", "itaewon", "airport", "forecast", "predictions", "business", "about", "more"] as const;
+export const tourismDeskAreas = ["myeongdong", "hongdae", "seongsu", "itaewon"] as const;
 export type TourismDeskArea = typeof tourismDeskAreas[number];
 export const seoSlugs = [...standaloneSeoSlugs, "tourism-desk"] as const;
 export type SeoSlug = typeof seoSlugs[number];
@@ -43,15 +43,16 @@ const names = {
   myeongdong: { ko: "명동", en: "Myeongdong", zh: "明洞", ja: "明洞" },
   hongdae: { ko: "홍대", en: "Hongdae", zh: "弘大", ja: "弘大" },
   seongsu: { ko: "성수", en: "Seongsu", zh: "圣水", ja: "聖水" },
+  itaewon: { ko: "이태원", en: "Itaewon", zh: "梨泰院", ja: "梨泰院" },
 } as const;
 
 
 export function pageTitle(locale: SeoLocale, slug?: SeoSlug, tourismArea: TourismDeskArea = "myeongdong") {
   if (!slug) return {
-    ko: "인천공항·명동·홍대·성수 오늘·내일 브리핑 | KORETAIL",
+    ko: "인천공항·명동·홍대·성수·이태원 오늘·내일 브리핑 | KORETAIL",
     en: "Incheon Airport & Seoul Areas: Today and Tomorrow | KORETAIL",
-    zh: "仁川机场·明洞·弘大·圣水 今日与明日简报 | KORETAIL",
-    ja: "仁川空港・明洞・弘大・聖水 今日と明日のブリーフィング | KORETAIL",
+    zh: "仁川机场·明洞·弘大·圣水·梨泰院 今日与明日简报 | KORETAIL",
+    ja: "仁川空港・明洞・弘大・聖水・梨泰院 今日と明日のブリーフィング | KORETAIL",
   }[locale];
   if (slug === "tourism-desk") {
     const name = names[tourismArea][locale];
@@ -85,9 +86,9 @@ export function pageTitle(locale: SeoLocale, slug?: SeoSlug, tourismArea: Touris
 export function pageDescription(locale: SeoLocale, slug?: SeoSlug, tourismArea: TourismDeskArea = "myeongdong") {
   if (!slug) return {
     ko: "오늘·내일 필요한 공항·관광·상권 정보를 한 번에 확인하세요. 역할과 관심지역을 선택하면 공식 자료가 제공되는 범위에서 출국장 예상 승객·혼잡·날씨·행사를 내 브리핑으로 봅니다.",
-    en: "Choose your role and place for a personal briefing on Incheon Airport, Myeongdong, Hongdae or Seongsu. See departure-hall forecasts, crowds, weather and events where official data is available.",
-    zh: "选择角色与关注地区，查看仁川机场、明洞、弘大或圣水的个人简报。根据已有官方资料，了解出境大厅预计旅客、拥挤、天气与活动。",
-    ja: "役割と関心のある場所を選び、仁川空港・明洞・弘大・聖水の情報を自分のブリーフィングで確認。公式資料の提供範囲で出国場予想旅客・混雑・天気・イベントを表示します。",
+    en: "Choose your role and place for a personal briefing on Incheon Airport, Myeongdong, Hongdae, Seongsu or Itaewon. See departure-hall forecasts, crowds, weather and events where official data is available.",
+    zh: "选择角色与关注地区，查看仁川机场、明洞、弘大、圣水或梨泰院的个人简报。根据已有官方资料，了解出境大厅预计旅客、拥挤、天气与活动。",
+    ja: "役割と関心のある場所を選び、仁川空港・明洞・弘大・聖水・梨泰院の情報を自分のブリーフィングで確認。公式資料の提供範囲で出国場予想旅客・混雑・天気・イベントを表示します。",
   }[locale];
   if (slug === "tourism-desk") {
     const name = names[tourismArea][locale];
@@ -109,7 +110,7 @@ export function pageDescription(locale: SeoLocale, slug?: SeoSlug, tourismArea: 
   }
   const descriptions: Record<Exclude<SeoSlug, keyof typeof names | "tourism-desk">, Record<SeoLocale, string>> = {
     airport: { ko: "인천공항 전체·T1·T2의 출국장 공식 예상 승객과 피크, 실제 출발 운항과 집중 게이트, 현재 출국장 대기, 월별 공식 실적을 확인하세요.", en: "Official departure-hall passenger forecast and peak, physical departing flights and busiest gates, current departure-hall waits and official monthly history for all terminals, T1 and T2.", zh: "查看仁川机场整体、T1、T2的出境大厅官方预计人数与高峰、实际出发航班与集中登机口、当前出境区等候，以及月度官方实绩。", ja: "仁川空港全体・T1・T2の出国場公式予想旅客とピーク、実出発便と集中ゲート、現在の出国場待ち、月次公式実績を確認できます。" },
-    predictions: { ko: "서울시 공식 예측으로 앞으로 가장 붐빌 시간을 확인하고, 명동·홍대·성수의 내일 인구 흐름 참고 예상과 최근 28일 관측 기록이 얼마나 쌓였는지 함께 보세요.", en: "See the busiest hour ahead in Seoul's official forecast, KORETAIL's reference outlook for tomorrow in Myeongdong, Hongdae and Seongsu, and how much of the last 28 days is actually on record.", zh: "通过首尔市官方预测查看未来最拥挤的时段，并了解明洞、弘大、圣水明日人口趋势的参考预测，以及最近28天观测记录的累积情况。", ja: "ソウル市公式予測で今後最も混雑する時間を確認し、明洞・弘大・聖水の明日の人口の流れの参考予測と、直近28日の観測記録の蓄積状況を合わせて確認できます。" },
+    predictions: { ko: "서울시 공식 예측으로 앞으로 가장 붐빌 시간을 확인하고, 명동·홍대·성수·이태원의 내일 인구 흐름 참고 예상과 최근 28일 관측 기록이 얼마나 쌓였는지 함께 보세요.", en: "See the busiest hour ahead in Seoul's official forecast, KORETAIL's reference outlook for tomorrow in Myeongdong, Hongdae, Seongsu and Itaewon, and how much of the last 28 days is actually on record.", zh: "通过首尔市官方预测查看未来最拥挤的时段，并了解明洞、弘大、圣水、梨泰院明日人口趋势的参考预测，以及最近28天观测记录的累积情况。", ja: "ソウル市公式予測で今後最も混雑する時間を確認し、明洞・弘大・聖水・梨泰院の明日の人口の流れの参考予測と、直近28日の観測記録の蓄積状況を合わせて確認できます。" },
     forecast: { ko: "각 지표가 무엇을 뜻하는지, 높으면 어떤 상황인지, 어떤 공식 자료에서 왔는지를 설명과 함께 확인하세요. T1·T2 비중과 지역 외국인 생활인구 흐름을 포함합니다.", en: "Every figure with what it means, what a high value indicates and which official record it came from — including T1/T2 share and area foreign-population history.", zh: "每个指标都附含义、数值偏高时的情况与官方出处说明，包含T1/T2占比与各地区外国人生活人口趋势。", ja: "各指標の意味・高いときの状況・出典を説明付きで確認できます。T1・T2の比率とエリア別外国人生活人口の推移を含みます。" },
     business: { ko: "지금의 공식 혼잡·예측·날씨를 매장 준비 관점으로 읽고, 뷰티·패션·식음료 등 6개 업종별 점검 목록을 확인하세요.", en: "Read the current official crowding, forecast and weather for store preparation, with checklists for six retail business types.", zh: "以门店准备视角解读当前官方拥挤、预测与天气，并查看美妆、时尚、餐饮等6个业态的检查清单。", ja: "現在の公式混雑・予測・天気を店舗準備の視点で読み、ビューティー・ファッション・飲食など6業種のチェックリストを確認できます。" },
     about: { ko: "KORETAIL이 무엇인지, 누구를 위한 서비스인지, 어떤 공식 데이터를 쓰는지, 실시간·예상·과거 데이터가 어떻게 다른지 설명합니다.", en: "What KORETAIL is, who it is for, which official data it uses, and how live, forecast and past data differ.", zh: "介绍 KORETAIL 是什么、面向哪些人、使用哪些官方数据，以及实时、预测与历史数据的区别。", ja: "KORETAIL とは何か、誰のためのサービスか、どの公式データを使うか、リアルタイム・予測・過去データの違いを説明します。" },

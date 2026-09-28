@@ -379,6 +379,7 @@ const storeDynamicsAreas = {
   "3001492": { name: "명동 남대문 북창동 다동 무교동 관광특구", type: "U", typeName: "관광특구" },
   "3120103": { name: "홍대입구역(홍대)", type: "D", typeName: "발달상권" },
   "3110131": { name: "성수동카페거리", type: "A", typeName: "골목상권" },
+  "3001491": { name: "이태원 관광특구", type: "U", typeName: "관광특구" },
 };
 
 const storeDynamicsRow = (tradeAreaCode, overrides = {}) => {
@@ -569,6 +570,7 @@ test("estimated sales collector probes quarters, sweeps pages and filters client
         estimatedSalesRow({ TRDAR_CD: "3001492", SVC_INDUTY_CD: "CS100002", SVC_INDUTY_CD_NM: "중식음식점", THSMON_SELNG_AMT: "1000000" }),
         estimatedSalesRow({ TRDAR_CD: "3120103", SVC_INDUTY_CD: "CS100003" }),
         estimatedSalesRow({ TRDAR_CD: "3110131", SVC_INDUTY_CD: "CS100004" }),
+        estimatedSalesRow({ TRDAR_CD: "3001491", SVC_INDUTY_CD: "CS100006" }),
         estimatedSalesRow({ TRDAR_CD: "9999999", SVC_INDUTY_CD: "CS100005" }),
       ];
     return Response.json({
@@ -588,9 +590,10 @@ test("estimated sales collector probes quarters, sweeps pages and filters client
   // Probes 20263 → 20262 → 20261, then sweeps one short page and stops.
   assert.ok(requests.some((request) => request.quarter === "20263"));
   assert.equal(requests.filter((request) => request.quarter === "20261" && request.end - request.start > 0).length, 1);
-  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_estimated_sales").get().count, 4);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_estimated_sales").get().count, 5);
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_estimated_sales WHERE trade_area_code IN ('9999999','3110001')").get().count, 0);
   assert.equal(database.prepare("SELECT area FROM seoul_estimated_sales WHERE trade_area_code = '3120103'").get().area, "hongdae");
+  assert.equal(database.prepare("SELECT area FROM seoul_estimated_sales WHERE trade_area_code = '3001491'").get().area, "itaewon");
 
   const second = await collectEstimatedSales(env, now);
   assert.equal(second.records, 0);
@@ -625,12 +628,12 @@ test("store dynamics collector finds the newest quarter, writes all exact areas 
   const first = await collectStoreDynamics(env, new Date("2026-09-03T01:00:00.000Z"));
   assert.deepEqual(
     { status: first.status, records: first.records, providerRequests: first.providerRequests, sourceHealth: first.sourceHealth, lastGoodPreserved: first.lastGoodPreserved },
-    { status: "SUCCESS", records: 3, providerRequests: 5, sourceHealth: "OFFICIAL_HISTORICAL", lastGoodPreserved: true },
+    { status: "SUCCESS", records: 4, providerRequests: 6, sourceHealth: "OFFICIAL_HISTORICAL", lastGoodPreserved: true },
   );
-  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_store_dynamics").get().count, 3);
-  assert.equal(database.prepare("SELECT COUNT(DISTINCT area) AS count FROM seoul_store_dynamics WHERE quarter_code = '20262'").get().count, 3);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_store_dynamics").get().count, 4);
+  assert.equal(database.prepare("SELECT COUNT(DISTINCT area) AS count FROM seoul_store_dynamics WHERE quarter_code = '20262'").get().count, 4);
   assert.equal(requests.filter((request) => request.quarter === "20263").length, 1);
-  assert.equal(requests.filter((request) => request.quarter === "20262").length, 4);
+  assert.equal(requests.filter((request) => request.quarter === "20262").length, 5);
   assert.equal(requests.filter((request) => request.quarter === "20262" && request.start === 1 && request.end === 1).length, 1);
   const firstRetrievedAt = database.prepare("SELECT retrieved_at AS retrievedAt FROM seoul_store_dynamics WHERE area = 'myeongdong'").get().retrievedAt;
 
@@ -652,7 +655,7 @@ test("store dynamics collector finds the newest quarter, writes all exact areas 
   assert.equal(failed.records, 0);
   assert.equal(failed.sourceHealth, "STALE");
   assert.equal(failed.lastGoodPreserved, true);
-  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_store_dynamics").get().count, 3);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_store_dynamics").get().count, 4);
   const health = database.prepare("SELECT status, detail, schema_version AS schemaVersion FROM source_health WHERE source_id = 'SEOUL_STORE_DYNAMICS'").get();
   assert.equal(health.status, "STALE");
   assert.equal(health.detail.includes("fixture-secret"), false);
@@ -662,14 +665,14 @@ test("store dynamics collector finds the newest quarter, writes all exact areas 
   const corruptLastGood = await collectStoreDynamics({ DB: env.DB }, new Date("2026-09-03T03:30:00.000Z"));
   assert.equal(corruptLastGood.sourceHealth, "ERROR");
   assert.equal(corruptLastGood.lastGoodPreserved, false,
-    "three labelled rows are not Last-good unless every stored identity and arithmetic field is valid");
+    "four labelled rows are not Last-good unless every stored identity and arithmetic field is valid");
   database.exec("UPDATE seoul_store_dynamics SET ordinary_store_count = ordinary_store_count - 1 WHERE area = 'hongdae'");
 
   database.exec("DELETE FROM seoul_store_dynamics WHERE area <> 'myeongdong'");
   const incompleteLastGood = await collectStoreDynamics({ DB: env.DB }, new Date("2026-09-03T04:00:00.000Z"));
   assert.equal(incompleteLastGood.status, "NEEDS_KEY");
   assert.equal(incompleteLastGood.sourceHealth, "ERROR");
-  assert.equal(incompleteLastGood.lastGoodPreserved, false, "one orphan row is not complete three-area Last-good");
+  assert.equal(incompleteLastGood.lastGoodPreserved, false, "one orphan row is not complete four-area Last-good");
 });
 
 test("store dynamics collector rejects identity drift or a missing area before any fact write", async (context) => {
@@ -705,7 +708,7 @@ test("store dynamics collector rejects identity drift or a missing area before a
   assert.equal(missingArea.status, "ERROR");
   assert.equal(missingArea.lastGoodPreserved, false);
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_store_dynamics").get().count, 0,
-    "all three areas validate before any fact row is written");
+    "all four areas validate before any fact row is written");
 });
 
 test("store dynamics collector completes bounded multi-page areas without duplicate industries", async (context) => {
@@ -738,7 +741,7 @@ test("store dynamics collector completes bounded multi-page areas without duplic
 
   const result = await collectStoreDynamics({ SEOUL_OPEN_DATA_KEY: "fixture" }, new Date("2026-09-03T01:00:00.000Z"));
   assert.equal(result.status, "SUCCESS");
-  assert.equal(result.providerRequests, 6);
+  assert.equal(result.providerRequests, 7);
   assert.equal(requests.filter((request) => request.area === "3001492" && request.end > 1).length, 2);
   assert.equal(requests.every((request) => request.end <= 3000), true);
 });
@@ -825,9 +828,9 @@ test("weather collector writes forecast rows for every area sharing a grid", asy
   const env = { DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture" };
   const result = await collectWeatherForecasts(env, new Date("2026-08-27T15:00:00Z"));
   assert.equal(result.status, "SUCCESS");
-  // 명동(60,127), 홍대(59,126), 성수(61,126) — three distinct grid cells.
-  assert.equal(new Set(requestedGrids).size, 3);
-  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM weather_forecast").get().count, 3);
+  // 명동(60,127), 홍대(59,126), 성수(61,126), 이태원(60,126) — four distinct grid cells.
+  assert.deepEqual([...new Set(requestedGrids)].sort(), ["59,126", "60,126", "60,127", "61,126"]);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM weather_forecast").get().count, 4);
 
   const second = await collectWeatherForecasts(env, new Date("2026-08-27T15:00:00Z"));
   assert.equal(second.records, 0);
@@ -858,8 +861,8 @@ test("weather partial-grid failure preserves last-good area data and never inser
   };
   const partial = await collectWeatherForecasts(env, new Date("2026-08-27T15:00:00Z"));
   assert.equal(partial.status, "PARTIAL");
-  assert.match(partial.detail, /grids ok 2\/3/);
-  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM weather_forecast").get().count, 3);
+  assert.match(partial.detail, /grids ok 3\/4/);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM weather_forecast").get().count, 4);
   assert.equal(
     database.prepare("SELECT temperature_tenth_c FROM weather_forecast WHERE area = 'myeongdong'").get().temperature_tenth_c,
     270,

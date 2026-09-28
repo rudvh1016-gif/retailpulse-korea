@@ -295,7 +295,7 @@ test("the route, metadata and selected-area summary access exist in four languag
   const desk = await readFile(new URL("../app/tourism-desk.tsx", import.meta.url), "utf8");
 
   assert.match(seo, /"tourism-desk"/);
-  assert.match(seo, /tourismDeskAreas = \["myeongdong", "hongdae", "seongsu"\]/);
+  assert.match(seo, /tourismDeskAreas = \["myeongdong", "hongdae", "seongsu", "itaewon"\]/);
   assert.match(app, /view === "tourism-desk" && <TourismDeskView/);
   for (const label of ["관광안내", "Guide Desk", "旅游咨询", "観光案内"]) assert.ok(app.includes(label));
   assert.match(desk, /summary\?\.areas\?\.\[area\]/);

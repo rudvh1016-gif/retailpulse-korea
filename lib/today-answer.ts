@@ -16,7 +16,7 @@
 import { summarizeTodayPassengerForecast, type AirportForecastAggregateRow, type ForecastBand } from "./airport-today-summary";
 import { kstDayOf } from "./kst";
 
-export const TODAY_ANSWER_AREAS = ["myeongdong", "hongdae", "seongsu"] as const;
+export const TODAY_ANSWER_AREAS = ["myeongdong", "hongdae", "seongsu", "itaewon"] as const;
 export type TodayAnswerArea = typeof TODAY_ANSWER_AREAS[number];
 type Lang = "ko" | "en" | "zh" | "ja";
 
@@ -114,6 +114,7 @@ const areaName: Record<TodayAnswerArea, Record<Lang, string>> = {
   myeongdong: { ko: "명동", en: "Myeongdong", zh: "明洞", ja: "明洞" },
   hongdae: { ko: "홍대", en: "Hongdae", zh: "弘大", ja: "弘大" },
   seongsu: { ko: "성수", en: "Seongsu", zh: "圣水", ja: "聖水" },
+  itaewon: { ko: "이태원", en: "Itaewon", zh: "梨泰院", ja: "梨泰院" },
 };
 
 /**

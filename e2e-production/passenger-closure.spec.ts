@@ -28,10 +28,10 @@ async function expectHeadline(brief: Locator, selected = false) {
 for(const width of [390,1280]) test(`production Seoul and airport truth closure ${width}px`, async({page})=>{
   test.setTimeout(180000);
   await page.setViewportSize({width,height:900});
-  await page.addInitScript(key=>localStorage.setItem(key,JSON.stringify({version:1,role:'manager',location:'myeongdong',selectedLocations:['myeongdong','hongdae','seongsu','airport'],terminal:'all',selectedTerminals:['all'],interests:['passengers','weather','events','crowding'],day:'today',selectedDays:['today','tomorrow','yesterday'],analytics:false})),PREFERENCE_KEY);
+  await page.addInitScript(key=>localStorage.setItem(key,JSON.stringify({version:1,role:'manager',location:'myeongdong',selectedLocations:['myeongdong','hongdae','seongsu','itaewon','airport'],terminal:'all',selectedTerminals:['all'],interests:['passengers','weather','events','crowding'],day:'today',selectedDays:['today','tomorrow','yesterday'],analytics:false})),PREFERENCE_KEY);
   await page.goto('/ko');
 
-  for(const area of ['myeongdong','hongdae','seongsu']) {
+  for(const area of ['myeongdong','hongdae','seongsu','itaewon']) {
     await page.locator(`[data-view-location="${area}"]`).click();
     await expect(page.locator('.personal-briefing .area-current-brief, [data-testid="personal-briefing"] .area-current-brief').first()).toBeVisible();
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);

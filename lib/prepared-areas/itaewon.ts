@@ -1,11 +1,10 @@
 import type { AreaMapping } from "../areas";
 
 /**
- * Verified official identifiers for Itaewon.
- * `lib/areas.ts` registers them; which sources actually read Itaewon is
- * decided there (`realtimeAreaIds`, `publicAreaIds`), one source at a time.
- * No guessed event centre/radius or station mapping is supplied.
- * Evidence and activation stages: docs/ITAEWON_PREPARATION.md.
+ * Verified official identifiers for Itaewon, registered by `lib/areas.ts`.
+ * The event centre and subway station live with the other areas' values
+ * (lib/areas.ts, lib/subway-ridership.ts).
+ * Evidence: docs/ITAEWON_PREPARATION.md.
  */
 export const itaewonPreparation = {
   seoulPoiCode: "POI004",

@@ -124,7 +124,7 @@ test('no new recurring schedule and Owner UI Lock byte-identical to approved bas
   const workflow=readWorkflowFacts('operational-memory.yml',readFileSync('.github/workflows/operational-memory.yml','utf8'));assert.deepEqual(workflow.triggers,['workflow_dispatch']);
 });
 test('real schema version used; unavailable remains unknown; companion source included',()=>{assert.equal(observedContract('KMA_VILAGE_FCST',{schema_version:'weather-v1'}),'weather-v1');assert.equal(observedContract('KMA_VILAGE_FCST',{schema_version:'unavailable'}),'UNKNOWN_CONTRACT');assert.deepEqual(sourceIdsForRun('seoul_realtime'),['SEOUL_CITYDATA_PPLTN','SEOUL_CITYDATA_CMRCL']);});
-test('empty actual database is not successful coverage or forecast skill',async()=>{const {db}=setup();const measured=await measureSource(db,'SEOUL_CITYDATA_PPLTN',at);assert.equal(measured.dataValid,false);assert.equal(measured.publicValid,null);const forecasts=await readForecastEvidence(db,at);assert.equal(forecasts.length,3);assert.ok(forecasts.every(row=>row.state==='UNKNOWN'&&!row.performanceClaimAllowed));});
+test('empty actual database is not successful coverage or forecast skill',async()=>{const {db}=setup();const measured=await measureSource(db,'SEOUL_CITYDATA_PPLTN',at);assert.equal(measured.dataValid,false);assert.equal(measured.publicValid,null);const forecasts=await readForecastEvidence(db,at);assert.equal(forecasts.length,4);assert.ok(forecasts.every(row=>row.state==='UNKNOWN'&&!row.performanceClaimAllowed));});
 test('storage read failure is unknown, never empty or successful',async()=>{const {db}=setup();db.raw.exec('ALTER TABLE seoul_realtime_area RENAME TO missing_seoul');const measured=await measureSource(db,'SEOUL_CITYDATA_PPLTN',at);assert.equal(measured.storageReadFailed,true);assert.equal(measured.storedRows,null);assert.equal(measured.storageValid,null);});
 test('HTTP-shaped empty public body is not publication evidence',()=>{assert.equal(matchPublicEvidence({observedAt:at,storageValid:true,sourceId:'SEOUL_CITYDATA_PPLTN',sample:[]},{status:200}),null);});
 test('usage unknown remains unknown despite an observed lower bound',()=>{const [usage]=observedUsage([{day:'2026-09-13',source_id:'x',executions:4,provider_requests:2,provider_measured:1,rows_read:20,rows_written:4}]);assert.equal(usage.quotaPercent,null);assert.equal(usage.providerRequests.upperBound,null);});
@@ -146,17 +146,17 @@ test('pre-migration collector observer stays dormant without changing a result',
 function insert(db,table,row){const keys=Object.keys(row);db.raw.prepare(`INSERT INTO ${table} (${keys.join(',')}) VALUES(${keys.map(()=>'?').join(',')})`).run(...Object.values(row));}
 function populationFixture(db) {
  const source='SEOUL_CITYDATA_PPLTN',observed='2026-09-13T15:00:00+09:00';
- insert(db,'collector_runs',{run_id:'observed-run',source_id:source,started_at:at,finished_at:at,status:'SUCCESS',records_read:3,records_written:3});
+ insert(db,'collector_runs',{run_id:'observed-run',source_id:source,started_at:at,finished_at:at,status:'SUCCESS',records_read:4,records_written:4});
  insert(db,'source_health',{source_id:source,status:'LIVE',last_retrieved_at:at,schema_version:'population-v1'});
  const areas={};
- for(const area of ['hongdae','myeongdong','seongsu']) {
+ for(const area of ['hongdae','itaewon','myeongdong','seongsu']) {
    insert(db,'seoul_realtime_area',{id:area,source_id:source,record_origin:'LIVE',area,area_code:area,area_name:area,congestion_level:2,
      congestion_label:'normal',population_min:100,population_max:200,observed_at:observed,retrieved_at:at,freshness:'LIVE',schema_version:'population-v1',quality_status:'VALID',source_hash:area});
    areas[area]={realtime:{observedAt:observed,populationMin:100,populationMax:200,schemaVersion:'population-v1',areaCode:area}};
  }
  return {mode:'live-summary',serviceDateKst:'2026-09-13',areas};
 }
-test('real three-area stored ranges match public projection; only all layers earn lastGood',async()=>{
+test('real four-area stored ranges match public projection; only all layers earn lastGood',async()=>{
  const {db,memory}=setup(),body=populationFixture(db),m=await measureSource(db,'SEOUL_CITYDATA_PPLTN',at);
  assert.equal(m.dataValid,true);assert.equal(m.storageValid,true);assert.equal(m.contractVersion,'population-v1');
  await saveMeasurement(memory,m,'observed-run',{providerRequests:null,rowsRead:null,rowsWritten:null});

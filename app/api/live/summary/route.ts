@@ -98,7 +98,7 @@ export const dynamic = "force-dynamic";
 
 type Row = Record<string, unknown>;
 
-const AREAS = ["myeongdong", "hongdae", "seongsu"] as const;
+const AREAS = ["myeongdong", "hongdae", "seongsu", "itaewon"] as const;
 /** Incheon's two passenger terminals; congestion is only ever published for these. */
 const CONGESTION_TERMINALS = ["T1", "T2"] as const;
 /** A calendar request probes at most 31 exact days, never the whole history. */
@@ -144,7 +144,7 @@ function dayValueExistsSql(table: string, column: string, days: number, filter =
  * which is how one uncached request came to read six figures of rows.
  *
  * One seek per known key is the same answer for a bounded, tiny cost, because
- * the key set (3 areas, 2 terminals) is fixed by the product.
+ * the key set (4 areas, 2 terminals) is fixed by the product.
  */
 function latestPerKey(keys: readonly string[], build: (placeholder: string) => string): string {
   return keys.map(() => `SELECT * FROM (${build("?")})`).join(" UNION ALL ");

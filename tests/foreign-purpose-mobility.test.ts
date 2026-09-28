@@ -80,6 +80,7 @@ test("overlapping administrative-dong mappings fail closed before aggregation", 
     myeongdong: ["11140550"],
     hongdae: ["11140550"],
     seongsu: ["11200670"],
+    itaewon: ["11170650", "11170660"],
   }), /duplicate_destination_mapping:11140550/);
 });
 

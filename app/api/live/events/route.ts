@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const area = params.get("area");
   const offset = Number(params.get("offset") ?? 0);
-  if (!["myeongdong", "hongdae", "seongsu"].includes(area ?? "") || !Number.isSafeInteger(offset) || offset < 0) {
+  if (!["myeongdong", "hongdae", "seongsu", "itaewon"].includes(area ?? "") || !Number.isSafeInteger(offset) || offset < 0) {
     return Response.json({ error: "invalid_parameters" }, { status: 400 });
   }
   const date = params.get("date");

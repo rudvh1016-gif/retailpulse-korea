@@ -1,14 +1,16 @@
 import { expect, test } from '@playwright/test';
 import { routeSummary, SUMMARY_FIXTURE } from './summary-fixture';
-for (const locale of ['ko', 'en', 'zh', 'ja']) {
-  test(`Itaewon preparation is not a public area in ${locale}`, async ({ page }) => {
+
+// English tab labels are upper-case, like MYEONGDONG.
+const names = { ko: '이태원', en: 'ITAEWON', zh: '梨泰院', ja: '梨泰院' } as const;
+
+for (const locale of ['ko', 'en', 'zh', 'ja'] as const) {
+  test(`Itaewon is a public area like the other three in ${locale}`, async ({ page }) => {
     await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
-    await page.goto(`/${locale}/myeongdong`);
+    const response = await page.goto(`/${locale}/itaewon`);
+    expect(response?.status()).toBe(200);
     await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
-    await expect(page.locator('a[href*="itaewon"], button[data-location="itaewon"]')).toHaveCount(0);
-    for (const suffix of ['itaewon', 'tourism-desk/itaewon']) {
-      const response = await page.goto(`/${locale}/${suffix}`);
-      expect(response?.status()).toBe(404);
-    }
+    await expect(page.getByRole('tab', { name: names[locale], exact: true }).first()).toHaveAttribute('aria-selected', 'true');
+    expect((await page.goto(`/${locale}/tourism-desk/itaewon`))?.status()).toBe(200);
   });
 }

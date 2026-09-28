@@ -47,7 +47,7 @@ function HomeBriefingWrapper({active,lang,children,openRequest}:{active:boolean;
 
 type View = "today" | "airport" | "business" | "forecast" | "predictions" | "tourism-desk" | "about" | "more";
 type AirportSection = "now" | "arrivals" | "flights" | "stores" | "mystore" | "history";
-type AreaId = "myeongdong" | "hongdae" | "seongsu";
+type AreaId = "myeongdong" | "hongdae" | "seongsu" | "itaewon";
 
 // Area identity only. There is deliberately no "best time" here: a recommended
 // hour would be a claim about demand, and the only hour KORETAIL can stand
@@ -56,6 +56,7 @@ const areaInfo = {
   myeongdong: { en: "MYEONGDONG", ko: "명동", zh: "明洞", ja: "明洞" },
   hongdae: { en: "HONGDAE", ko: "홍대", zh: "弘大", ja: "弘大" },
   seongsu: { en: "SEONGSU", ko: "성수", zh: "圣水", ja: "聖水" },
+  itaewon: { en: "ITAEWON", ko: "이태원", zh: "梨泰院", ja: "梨泰院" },
 };
 
 function localText(lang: Lang, values: Record<Lang, string>) {
@@ -69,28 +70,28 @@ function areaLocalName(id: AreaId, lang: Lang) {
 const copy = {
   ko: {
     hero: "지금 서울은\n어떻게 움직이고 있나요?",
-    sub: "공식 데이터만 모아 명동·홍대·성수와 인천공항의 지금과 다음을 보여줍니다.",
+    sub: "공식 데이터만 모아 명동·홍대·성수·이태원와 인천공항의 지금과 다음을 보여줍니다.",
     today: "서울", airport: "공항", business: "매장", forecast: "기록", predictions: "예측", "tourism-desk": "관광안내", about: "소개", more: "더보기",
     kst: "모든 시간은 한국 표준시(KST)입니다.",
     truth: "공식 발표값과 KORETAIL의 비교·참고 예상을 구분하며, 확인되지 않은 값은 만들어 채우지 않습니다.",
   },
   en: {
     hero: "How is Seoul\nmoving right now?",
-    sub: "Official data only, showing what Myeongdong, Hongdae, Seongsu and Incheon Airport look like now and next.",
+    sub: "Official data only, showing what Myeongdong, Hongdae, Seongsu, Itaewon and Incheon Airport look like now and next.",
     today: "Seoul", airport: "Airport", business: "Business", forecast: "Records", predictions: "Outlook", "tourism-desk": "Guide Desk", about: "About", more: "More",
     kst: "All times are Korea Standard Time (KST).",
     truth: "Every value shown is published by an official body. Nothing unverified is filled in.",
   },
   zh: {
     hero: "此刻的首尔\n正在如何流动？",
-    sub: "仅汇总官方数据，呈现明洞、弘大、圣水与仁川机场的当前与接下来。",
+    sub: "仅汇总官方数据，呈现明洞、弘大、圣水、梨泰院与仁川机场的当前与接下来。",
     today: "首尔", airport: "机场", business: "门店", forecast: "记录", predictions: "预测", "tourism-desk": "旅游咨询", about: "关于", more: "更多",
     kst: "所有时间均为韩国标准时间（KST）。",
     truth: "所显示的数值均由官方机构发布，未经确认的数值不会被填充。",
   },
   ja: {
     hero: "いまソウルは\nどう動いていますか？",
-    sub: "公式データだけを集め、明洞・弘大・聖水と仁川空港の現在とこれからを表示します。",
+    sub: "公式データだけを集め、明洞・弘大・聖水・梨泰院と仁川空港の現在とこれからを表示します。",
     today: "ソウル", airport: "空港", business: "店舗", forecast: "記録", predictions: "予測", "tourism-desk": "観光案内", about: "紹介", more: "その他",
     kst: "すべての時刻は韓国標準時（KST）です。",
     truth: "表示される値はすべて公式機関が発表したものです。確認できない値は作って埋めません。",
@@ -471,7 +472,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             <section className="hero demand-hero" aria-labelledby="hero-title">
               <div className="hero-copy">
                 <h1 id="hero-title">{homeVisible ? localText(lang, {ko:"서울과 공항의 흐름",en:"Seoul & airport, at a glance",zh:"首尔与机场的流动",ja:"ソウルと空港の流れ"}) : areaHeadline[lang](areaLocalName(selected, lang))}</h1>
-                <p className="hero-line">{localText(lang,{ko:"서울 3개 상권과 인천공항, 지금과 앞으로의 흐름",en:"Three Seoul districts and Incheon Airport. Now and next.",zh:"首尔3个商圈与仁川机场，当前与未来趋势",ja:"ソウル3商圏と仁川空港、現在とこれからの流れ"})}</p>
+                <p className="hero-line">{localText(lang,{ko:"서울 4개 상권과 인천공항, 지금과 앞으로의 흐름",en:"Four Seoul districts and Incheon Airport. Now and next.",zh:"首尔4个商圈与仁川机场，当前与未来趋势",ja:"ソウル4商圏と仁川空港、現在とこれからの流れ"})}</p>
                 <TodayAnswerLines lines={homeVisible ? [areaAnswerText(todayAnswer, lang), airportAnswerText(todayAnswer, lang)] : [areaAnswerText(todayAnswer, lang, selected as TodayAnswerArea)]} />
               </div>
             </section>
@@ -753,7 +754,36 @@ function BusinessView({
   );
 }
 
+/** Areas the precomputed monthly foreign history (retailpulse-data.ts) covers. */
+type ForeignHistoryAreaId = keyof typeof foreignJulyDetail;
+function hasForeignHistory(id: AreaId): id is ForeignHistoryAreaId {
+  return id in foreignJulyDetail;
+}
+
+/**
+ * The monthly foreign history was computed once from Seoul's monthly
+ * administrative-dong files for the first three areas. Itaewon has not been
+ * computed yet, so it says so instead of showing another area's figures.
+ */
+function ForeignHistoryPending({ lang, id }: { lang: Lang; id: AreaId }) {
+  const name = areaLocalName(id, lang);
+  return <p className="section-intro">{localText(lang, {
+    ko: `${name}의 월별 외국인 생활인구 기록은 아직 준비되지 않았습니다. 명동·홍대·성수와 같은 서울시 월별 행정동 자료로 계산한 뒤 추가합니다.`,
+    en: `${name}'s monthly foreign-population record is not ready yet. It will be added once computed from the same Seoul monthly administrative-dong files as the other areas.`,
+    zh: `${name}的月度外国人生活人口记录尚未准备好。将以与其他地区相同的首尔市月度行政洞资料计算后加入。`,
+    ja: `${name}の月別外国人生活人口の記録はまだ準備できていません。他のエリアと同じソウル市の月別行政洞資料で算出後に追加します。`,
+  })}</p>;
+}
+
 function BusinessHistoryView({ lang, selected, setSelected }: { lang: Lang; selected: AreaId; setSelected: (id: AreaId) => void }) {
+  if (hasForeignHistory(selected)) return <BusinessHistoryBody lang={lang} selected={selected} setSelected={setSelected} />;
+  return <section className="business-history">
+    <div className="area-tabs" role="tablist">{(Object.keys(areaInfo) as AreaId[]).map((id) => <button key={id} className={selected === id ? "active" : ""} onClick={() => setSelected(id)} role="tab" aria-selected={selected === id}>{areaLocalName(id, lang)}</button>)}</div>
+    <ForeignHistoryPending lang={lang} id={selected} />
+  </section>;
+}
+
+function BusinessHistoryBody({ lang, selected, setSelected }: { lang: Lang; selected: ForeignHistoryAreaId; setSelected: (id: AreaId) => void }) {
   const [period, setPeriod] = useState<"3m" | "6m" | "12m" | "all" | "custom">("6m");
   const [rangeOpen, setRangeOpen] = useState(false);
   const [rangeStart, setRangeStart] = useState(foreignMonthly.at(-6)!.month);
@@ -816,6 +846,27 @@ function BusinessHistoryView({ lang, selected, setSelected }: { lang: Lang; sele
   </section>;
 }
 
+function ForeignHistoryStats({ lang, selected }: { lang: Lang; selected: ForeignHistoryAreaId }) {
+  const foreignRecent = foreignMonthly.at(-1)!;
+  const foreignPrior = foreignMonthly.at(-2)!;
+  const foreignChange = foreignPrior[selected] ? (foreignRecent[selected] - foreignPrior[selected]) / foreignPrior[selected] * 100 : null;
+  const twelve = foreignMonthly.slice(-12);
+  const twelveAverage = Math.round(twelve.reduce((sum, row) => sum + row[selected], 0) / twelve.length);
+  const vsAverage = twelveAverage ? (foreignRecent[selected] - twelveAverage) / twelveAverage * 100 : null;
+  const twelveMax = Math.max(...twelve.map((row) => row[selected]));
+  const twelveMin = Math.min(...twelve.map((row) => row[selected]));
+  const maxRow = twelve.find((row) => row[selected] === twelveMax)!;
+  const minRow = twelve.find((row) => row[selected] === twelveMin)!;
+  return <>
+    <div className="stat-rows">
+      <div><span>{localText(lang, { ko: "최신 월", en: "Latest month", zh: "最新月份", ja: "最新月" })}</span><b>{foreignRecent.month}</b><i>{formatCount(lang, foreignRecent[selected])}</i></div>
+      <div><span>{localText(lang, { ko: "전월 대비", en: "Vs. previous month", zh: "环比", ja: "前月比" })}</span><b>{foreignChange === null ? "—" : `${foreignChange >= 0 ? "+" : ""}${foreignChange.toFixed(1)}%`}</b><i>{foreignPrior.month} → {foreignRecent.month}</i></div>
+      <div><span>{localText(lang, { ko: "최근 12개월 평균 대비", en: "Vs. 12-month average", zh: "较近12个月平均", ja: "直近12か月平均比" })}</span><b>{vsAverage === null ? "—" : `${vsAverage >= 0 ? "+" : ""}${vsAverage.toFixed(1)}%`}</b><i>{formatCount(lang, twelveAverage)}</i></div>
+      <div><span>{localText(lang, { ko: "12개월 최고 / 최저", en: "12-month high / low", zh: "12个月最高／最低", ja: "12か月の最高／最低" })}</span><b>{maxRow.month} / {minRow.month}</b><i>{formatCount(lang, twelveMax)} / {formatCount(lang, twelveMin)}</i></div>
+    </div>
+  </>;
+}
+
 /**
  * Insights.
  *
@@ -836,16 +887,6 @@ function InsightsView({ lang, selected, setSelected, date }: { lang: Lang; selec
   const recentMonths = `${recentAirport[0].month} — ${recentAirport.at(-1)!.month}`;
   const priorMonths = `${priorAirport[0].month} — ${priorAirport.at(-1)!.month}`;
 
-  const foreignRecent = foreignMonthly.at(-1)!;
-  const foreignPrior = foreignMonthly.at(-2)!;
-  const foreignChange = foreignPrior[selected] ? (foreignRecent[selected] - foreignPrior[selected]) / foreignPrior[selected] * 100 : null;
-  const twelve = foreignMonthly.slice(-12);
-  const twelveAverage = Math.round(twelve.reduce((sum, row) => sum + row[selected], 0) / twelve.length);
-  const vsAverage = twelveAverage ? (foreignRecent[selected] - twelveAverage) / twelveAverage * 100 : null;
-  const twelveMax = Math.max(...twelve.map((row) => row[selected]));
-  const twelveMin = Math.min(...twelve.map((row) => row[selected]));
-  const maxRow = twelve.find((row) => row[selected] === twelveMax)!;
-  const minRow = twelve.find((row) => row[selected] === twelveMin)!;
 
   return (
     <section className="view-section insights-view">
@@ -907,12 +948,7 @@ function InsightsView({ lang, selected, setSelected, date }: { lang: Lang; selec
           source={localText(lang, { ko: "서울 열린데이터광장 (OA-23018) · 매월 지연 공개", en: "Seoul Open Data (OA-23018) · published monthly with a delay", zh: "首尔开放数据广场 (OA-23018) · 每月延迟发布", ja: "ソウル オープンデータ広場 (OA-23018) · 毎月遅れて公開" })}
           why={localText(lang, { ko: "실시간 값이 아니라 이미 확정된 기록이므로, 계절과 추세를 비교하는 기준으로 삼을 수 있습니다.", en: "It is a settled record rather than a live value, so it works as a baseline for seasonal comparison.", zh: "它是已确定的记录而非实时值，可作为季节性比较的基准。", ja: "リアルタイム値ではなく確定した記録のため、季節や傾向を比較する基準になります。" })}
         />
-        <div className="stat-rows">
-          <div><span>{localText(lang, { ko: "최신 월", en: "Latest month", zh: "最新月份", ja: "最新月" })}</span><b>{foreignRecent.month}</b><i>{formatCount(lang, foreignRecent[selected])}</i></div>
-          <div><span>{localText(lang, { ko: "전월 대비", en: "Vs. previous month", zh: "环比", ja: "前月比" })}</span><b>{foreignChange === null ? "—" : `${foreignChange >= 0 ? "+" : ""}${foreignChange.toFixed(1)}%`}</b><i>{foreignPrior.month} → {foreignRecent.month}</i></div>
-          <div><span>{localText(lang, { ko: "최근 12개월 평균 대비", en: "Vs. 12-month average", zh: "较近12个月平均", ja: "直近12か月平均比" })}</span><b>{vsAverage === null ? "—" : `${vsAverage >= 0 ? "+" : ""}${vsAverage.toFixed(1)}%`}</b><i>{formatCount(lang, twelveAverage)}</i></div>
-          <div><span>{localText(lang, { ko: "12개월 최고 / 최저", en: "12-month high / low", zh: "12个月最高／最低", ja: "12か月の最高／最低" })}</span><b>{maxRow.month} / {minRow.month}</b><i>{formatCount(lang, twelveMax)} / {formatCount(lang, twelveMin)}</i></div>
-        </div>
+        {hasForeignHistory(selected) ? <ForeignHistoryStats lang={lang} selected={selected} /> : <ForeignHistoryPending lang={lang} id={selected} />}
       </section>
 
       <section className="insight-block" aria-labelledby="insight-accuracy-title">
@@ -955,20 +991,20 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
       eyebrow: "02 · WHO",
       title: localText(lang, { ko: "누구를 위한 서비스인가요?", en: "Who is it for?", zh: "面向哪些人？", ja: "誰のためのサービス？" }),
       body: localText(lang, {
-        ko: "서울을 방문해 어디를 언제 갈지 정하려는 분, 인천공항 출국 흐름을 미리 확인하려는 분, 그리고 명동·홍대·성수에서 매장을 운영하며 오늘의 준비를 결정해야 하는 분을 위해 만들었습니다.",
-        en: "For visitors deciding where and when to go in Seoul, for travellers checking Incheon's departure flow before they leave, and for people running a shop in Myeongdong, Hongdae or Seongsu who need to decide today's preparation.",
-        zh: "适合正在决定首尔行程的访客、出发前想确认仁川出境情况的旅客，以及在明洞、弘大、圣水经营门店、需要决定当日准备的经营者。",
-        ja: "ソウルでどこへいつ行くか決めたい方、出発前に仁川の出国状況を確認したい方、そして明洞・弘大・聖水で店舗を運営し当日の準備を決める方のために作りました。",
+        ko: "서울을 방문해 어디를 언제 갈지 정하려는 분, 인천공항 출국 흐름을 미리 확인하려는 분, 그리고 명동·홍대·성수·이태원에서 매장을 운영하며 오늘의 준비를 결정해야 하는 분을 위해 만들었습니다.",
+        en: "For visitors deciding where and when to go in Seoul, for travellers checking Incheon's departure flow before they leave, and for people running a shop in Myeongdong, Hongdae, Seongsu or Itaewon who need to decide today's preparation.",
+        zh: "适合正在决定首尔行程的访客、出发前想确认仁川出境情况的旅客，以及在明洞、弘大、圣水、梨泰院经营门店、需要决定当日准备的经营者。",
+        ja: "ソウルでどこへいつ行くか決めたい方、出発前に仁川の出国状況を確認したい方、そして明洞・弘大・聖水・梨泰院で店舗を運営し当日の準備を決める方のために作りました。",
       }),
     },
     {
       eyebrow: "03 · SEOUL",
       title: localText(lang, { ko: "서울에서는 무엇을 보나요?", en: "What do you see for Seoul?", zh: "在首尔能看到什么？", ja: "ソウルでは何が見られる？" }),
       body: localText(lang, {
-        ko: "명동·홍대·성수 각각의 현재 혼잡 상태와 현재 추정 인구 범위, 서울시 공식 예측 기준 앞으로 가장 붐빌 시간, 날씨에 따른 준비사항을 봅니다. 인근 행사는 공식 행사기간에 오늘이 포함되거나 앞으로 시작할 때 표시합니다.",
-        en: "For Myeongdong, Hongdae and Seongsu, see current crowd conditions and the official estimated population range, the busiest hour ahead in Seoul’s official forecast, and weather implications. Nearby events are shown when their official dates include today or start later.",
-        zh: "针对明洞、弘大、圣水，可查看当前拥挤状况与官方推定人口区间、首尔市官方预测中接下来最拥挤的时段，以及天气带来的准备事项。附近活动仅在官方活动日期包含今日或之后开始时显示。",
-        ja: "明洞・弘大・聖水それぞれの現在の混雑状況と公式の推定人口レンジ、ソウル市公式予測で今後最も混雑する時間帯、天気に応じた準備を確認できます。周辺イベントは、公式開催期間に本日が含まれるもの、または今後開始予定のものを表示します。",
+        ko: "명동·홍대·성수·이태원 각각의 현재 혼잡 상태와 현재 추정 인구 범위, 서울시 공식 예측 기준 앞으로 가장 붐빌 시간, 날씨에 따른 준비사항을 봅니다. 인근 행사는 공식 행사기간에 오늘이 포함되거나 앞으로 시작할 때 표시합니다.",
+        en: "For Myeongdong, Hongdae, Seongsu and Itaewon, see current crowd conditions and the official estimated population range, the busiest hour ahead in Seoul’s official forecast, and weather implications. Nearby events are shown when their official dates include today or start later.",
+        zh: "针对明洞、弘大、圣水、梨泰院，可查看当前拥挤状况与官方推定人口区间、首尔市官方预测中接下来最拥挤的时段，以及天气带来的准备事项。附近活动仅在官方活动日期包含今日或之后开始时显示。",
+        ja: "明洞・弘大・聖水・梨泰院それぞれの現在の混雑状況と公式の推定人口レンジ、ソウル市公式予測で今後最も混雑する時間帯、天気に応じた準備を確認できます。周辺イベントは、公式開催期間に本日が含まれるもの、または今後開始予定のものを表示します。",
       }),
     },
     {
