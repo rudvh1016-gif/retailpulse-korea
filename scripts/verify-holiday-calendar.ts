@@ -14,9 +14,11 @@
  * calendar disagrees with a publication it could read.
  */
 import { createHash } from "node:crypto";
+import { HOLIDAY_SOURCES, OFFICIAL_DAYS } from "../lib/holiday-calendar";
 
-const JP_CSV = "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv";
+const JP_CSV = HOLIDAY_SOURCES.JP.url;
 const YEARS = [2026, 2027];
+const problems: string[] = [];
 
 function log(value: Record<string, unknown>) {
   console.log(JSON.stringify(value));
@@ -48,12 +50,29 @@ else {
     japan.push({ date: `${match[1]}-${match[2].padStart(2, "0")}-${match[3].padStart(2, "0")}`, name: match[4].trim() });
   }
   log({ source: "JP_CAO_CSV", url: JP_CSV, status: jp.status, sha256: sha256(jp.bytes), rows: japan.length, years: YEARS, holidays: japan });
+  // The calendar must list exactly the published rows for the years it covers.
+  const published = new Set(japan.filter((row) => HOLIDAY_SOURCES.JP.years.includes(Number(row.date.slice(0, 4)))).map((row) => `${row.date} ${row.name}`));
+  const listed = new Set(OFFICIAL_DAYS.filter((day) => day.country === "JP").map((day) => `${day.start} ${day.name}`));
+  for (const row of published) if (!listed.has(row)) problems.push(`JP missing ${row}`);
+  for (const row of listed) if (!published.has(row)) problems.push(`JP not published ${row}`);
+  // 休日 is either a substitute holiday (after a holiday that fell on Sunday)
+  // or a citizens' holiday (between two holidays); the kind must say which.
+  const holidayDates = new Set(japan.map((row) => row.date));
+  const shift = (date: string, days: number) => new Date(Date.parse(`${date}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+  for (const day of OFFICIAL_DAYS.filter((entry) => entry.country === "JP" && entry.name === "休日")) {
+    let back = shift(day.start, -1), sundayBefore = false;
+    while (holidayDates.has(back)) { if (new Date(`${back}T00:00:00Z`).getUTCDay() === 0) sundayBefore = true; back = shift(back, -1); }
+    const sandwiched = holidayDates.has(shift(day.start, -1)) && holidayDates.has(shift(day.start, 1));
+    const expected = sundayBefore ? "SUBSTITUTE" : sandwiched ? "CITIZENS_HOLIDAY" : "UNKNOWN";
+    if (day.kind !== expected) problems.push(`JP ${day.start} kind ${day.kind} but rule says ${expected}`);
+  }
 }
 
 // China -------------------------------------------------------------------
 // The notice URL is not predictable, so the government site's own search is
 // asked for it; every candidate is printed so a person can check the pick.
-const candidates = new Map<string, string>();
+// The recorded notice is always re-read, whether or not the search finds it.
+const candidates = new Map<string, string>([[HOLIDAY_SOURCES.CN.url, String(HOLIDAY_SOURCES.CN.years[0])]]);
 for (const year of YEARS) {
   const query = encodeURIComponent(`${year}年部分节假日安排`);
   for (const url of [
@@ -77,4 +96,23 @@ for (const [url, year] of candidates) {
   if (!title) { log({ source: "CN_GOV_NOTICE", url, year, status: page.status, title: null }); continue; }
   const lines = body.split("\n").filter((line) => /放假|上班|国办发明电|发文字号|成文日期|发布日期|\d{4}年\d{1,2}月\d{1,2}日/.test(line)).slice(0, 40);
   log({ source: "CN_GOV_NOTICE", url, year, status: page.status, sha256: sha256(page.bytes), title, lines });
+  if (url !== HOLIDAY_SOURCES.CN.url) {
+    if (!HOLIDAY_SOURCES.CN.years.includes(Number(year))) log({ source: "CN_GOV_NOTICE", renewalAvailable: true, year, url });
+    continue;
+  }
+  // Every item the calendar lists must be quoted verbatim from this notice,
+  // and every holiday line of the notice must be in the calendar.
+  const flat = body.replace(/\s+/g, "");
+  if (title !== HOLIDAY_SOURCES.CN.title) problems.push(`CN title ${title}`);
+  if (!flat.includes(HOLIDAY_SOURCES.CN.documentNumber ?? "")) problems.push("CN document number not found");
+  for (const day of OFFICIAL_DAYS.filter((entry) => entry.country === "CN")) {
+    if (!day.quote || !flat.includes(day.quote.replace(/\s+/g, ""))) problems.push(`CN quote not found for ${day.name} ${day.start}`);
+  }
+  const holidayLines = body.split("\n").filter((line) => /^[一二三四五六七八九十]+、/.test(line.trim()) && /放假/.test(line));
+  const listedNames = new Set(OFFICIAL_DAYS.filter((day) => day.country === "CN" && day.kind === "HOLIDAY").map((day) => day.name));
+  if (holidayLines.length !== listedNames.size) problems.push(`CN notice has ${holidayLines.length} holiday lines, calendar lists ${listedNames.size}`);
 }
+if ("error" in jp) log({ source: "JP_CAO_CSV", warning: "the CSV could not be read; the calendar was not checked against it" });
+
+log({ result: problems.length ? "MISMATCH" : "MATCH", problems });
+if (problems.length) process.exitCode = 1;
