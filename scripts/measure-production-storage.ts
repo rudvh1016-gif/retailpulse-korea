@@ -64,7 +64,12 @@ const CEILING = Number(process.env.RPK_READ_BUDGET_CEILING ?? 100_000);
 if (!Number.isFinite(CEILING) || CEILING <= 0) throw new Error("invalid_read_budget_ceiling");
 const DAYS = Number(process.env.RPK_STORAGE_DAYS ?? 3);
 if (!Number.isInteger(DAYS) || DAYS < 2 || DAYS > 7) throw new Error("invalid_storage_days");
-const RETENTION_CUTOFFS = [56, 90] as const;
+/**
+ * Dry-run windows. 56 days is the owner's review starting point; 14 and 30
+ * are measured too because the tables that grow fastest are read only at
+ * their latest issuance, so a 56-day window alone would not bound them.
+ */
+const RETENTION_CUTOFFS = [14, 30, 56, 90] as const;
 /** Cloudflare's D1 Free daily allowances, as recorded in docs/ENGINEERING_DIRECTION.md. */
 const FREE_DAILY_ROWS_READ = 5_000_000;
 const FREE_DAILY_ROWS_WRITTEN = 100_000;
@@ -482,6 +487,14 @@ for (const row of usage ?? []) {
   slot.sources += 1;
   collectorDays.set(day, slot);
 }
+// Which collector spends it, on the last complete UTC day.
+const lastCompleteUtcDay = utcDaysAgo(1);
+const collectorsBySource = (usage ?? []).filter((row) => String(row.day) === lastCompleteUtcDay).map((row) => ({
+  sourceId: String(row.sourceId),
+  rowsRead: countOf(row.rowsRead),
+  rowsWritten: countOf(row.rowsWritten),
+  measured: row.measured === 1,
+})).sort((a, b) => (b.rowsWritten ?? 0) - (a.rowsWritten ?? 0));
 
 // 7 — what the retention that already exists costs to run (plans only).
 const existingPrunes = [
@@ -547,7 +560,7 @@ console.log(JSON.stringify({
   usage: {
     databaseDaily: databaseUsage,
     accountDaily: accountUsage,
-    collectorsLowerBound: { basis: usage ? "MEASURED_LOWER_BOUND" : "UNAVAILABLE", days: [...collectorDays.values()] },
+    collectorsLowerBound: { basis: usage ? "MEASURED_LOWER_BOUND" : "UNAVAILABLE", days: [...collectorDays.values()], lastCompleteUtcDay, bySource: collectorsBySource },
     estimatedRowsWrittenPerDayFromGrowth: { basis: "INTERNAL_ESTIMATE_ROWS_TIMES_1_PLUS_INDEXES", value: estimatedRowsWrittenPerDay, perTable: writes },
   },
   tables: reports.map((report) => ({ ...report, bytes: tableBytes.find((row) => row.table === report.table) })),
