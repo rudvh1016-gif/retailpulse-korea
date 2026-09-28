@@ -31,9 +31,10 @@ test("OA-22723 station mapping is conservative, explicit, and versioned", () => 
     hongdae: [{ stationCode: "0239", stationNumber: "239", stationName: "홍대입구", lineName: "2호선" }],
     seongsu: [{ stationCode: "0211", stationNumber: "211", stationName: "성수", lineName: "2호선" }],
     // Collected for real-time city data only; no verified station code, so none.
-    itaewon: [],
+    // Returned by OA-22723 for this exact code in the 2026-09-28 read-only probe.
+    itaewon: [{ stationCode: "2631", stationNumber: "630", stationName: "이태원", lineName: "6호선" }],
   });
-  assert.deepEqual(SUBWAY_STATION_REQUESTS.map((request) => request.area), ["myeongdong", "hongdae", "seongsu"]);
+  assert.deepEqual(SUBWAY_STATION_REQUESTS.map((request) => request.area), ["myeongdong", "hongdae", "seongsu", "itaewon"]);
 });
 
 test("initial collection is bounded to the seven completed KST days", () => {
@@ -131,13 +132,14 @@ test("collector performs one bounded seven-day backfill and same-day rerun makes
   const first = await collectSeoulSubwayRidership(env, new Date("2026-09-02T00:00:00Z"));
   const second = await collectSeoulSubwayRidership(env, new Date("2026-09-02T03:00:00Z"));
   assert.equal(first.status, "SUCCESS");
-  assert.equal(first.providerRequests, 21);
-  assert.equal(first.records, 21);
+  // Seven completed days × four representative stations.
+  assert.equal(first.providerRequests, 28);
+  assert.equal(first.records, 28);
   assert.equal(second.status, "SUCCESS");
   assert.equal(second.providerRequests, 0);
   assert.equal(second.records, 0);
-  assert.equal(calls, 21);
-  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_subway_ridership").get()!.count, 21);
+  assert.equal(calls, 28);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_subway_ridership").get()!.count, 28);
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM sqlite_master WHERE type='table' AND name LIKE '%raw%'").get()!.count, 0);
   database.close();
 });
@@ -157,10 +159,10 @@ test("next daily run requests only the newly completed day and keeps compact his
   await collectSeoulSubwayRidership(env, new Date("2026-09-02T00:00:00Z"));
   calls = 0;
   const next = await collectSeoulSubwayRidership(env, new Date("2026-09-03T00:00:00Z"));
-  assert.equal(next.providerRequests, 3);
-  assert.equal(next.records, 3);
-  assert.equal(calls, 3);
-  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_subway_ridership").get()!.count, 24);
+  assert.equal(next.providerRequests, 4);
+  assert.equal(next.records, 4);
+  assert.equal(calls, 4);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_subway_ridership").get()!.count, 32);
   database.close();
 });
 
@@ -182,6 +184,37 @@ test("schema failure preserves last-good history and marks the source stale", as
   assert.equal(failed.status, "ERROR");
   assert.equal(failed.sourceHealth, "STALE");
   assert.equal(failed.lastGoodPreserved, true);
-  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_subway_ridership").get()!.count, 21);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_subway_ridership").get()!.count, 28);
+  database.close();
+});
+
+test("a day stored with the earlier three stations is completed once for the added station", async () => {
+  const database = migratedDatabase();
+  let calls = 0;
+  const env = {
+    DB: new LocalD1Database(database) as unknown as D1Database,
+    SUBWAY_RIDERSHIP_SOURCE: {
+      async fetchStationDay(referenceDate: string, selectedStation: typeof station) {
+        calls += 1;
+        return payloadFor(referenceDate, selectedStation);
+      },
+    },
+  };
+  await collectSeoulSubwayRidership(env, new Date("2026-09-02T00:00:00Z"));
+  // Production before Itaewon: every stored day has three stations, and the
+  // same-day checkpoint is already set by the morning run.
+  database.prepare("DELETE FROM seoul_subway_ridership WHERE area = 'itaewon'").run();
+  calls = 0;
+  const repaired = await collectSeoulSubwayRidership(env, new Date("2026-09-02T06:00:00Z"));
+  assert.equal(repaired.status, "SUCCESS");
+  assert.equal(calls, 28, "one bounded pass over the seven days, never more");
+  assert.equal(repaired.records, 7, "existing station rows are unchanged; only Itaewon's seven are new");
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_subway_ridership").get()!.count, 28);
+
+  // Once complete, the same-day rerun is a zero-call skip again.
+  calls = 0;
+  const rerun = await collectSeoulSubwayRidership(env, new Date("2026-09-02T07:00:00Z"));
+  assert.equal(rerun.providerRequests, 0);
+  assert.equal(calls, 0);
   database.close();
 });

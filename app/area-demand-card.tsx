@@ -39,6 +39,7 @@ export const demandAreaNames = {
   myeongdong: { ko: '명동', en: 'Myeongdong', zh: '明洞', ja: '明洞' },
   hongdae: { ko: '홍대', en: 'Hongdae', zh: '弘大', ja: '弘大' },
   seongsu: { ko: '성수', en: 'Seongsu', zh: '圣水', ja: '聖水' },
+  itaewon: { ko: '이태원', en: 'Itaewon', zh: '梨泰院', ja: '梨泰院' },
 };
 export function demandLevel(level: number, lang: Lang) {
   return ({ ko: ['자료 없음', '여유', '보통', '약간 붐빔', '붐빔'], en: ['Unavailable', 'Quiet', 'Moderate', 'Slightly busy', 'Busy'], zh: ['无资料', '空闲', '一般', '略拥挤', '拥挤'], ja: ['資料なし', '余裕', '普通', 'やや混雑', '混雑'] })[lang][level] ?? '—';

@@ -1,5 +1,5 @@
 import { predictionReadiness } from './prediction-progress';
-import { publicAreaIds, realtimeAreaIds } from './areas';
+import { publicAreaIds } from './areas';
 import { kstDayOf, shiftKstDay } from './kst';
 import { createImmutablePrediction } from './forecast';
 import { sha256 } from './hash';
@@ -116,7 +116,7 @@ export async function matchPopulationOutcomes(db:D1Database,now=new Date()) {
 /** Hourly bounded history accounting in Actions, never on a visitor request. */
 export async function updatePopulationCoverage(db:D1Database,now=new Date()) {
  const today=kstDayOf(now.toISOString()),tomorrow=shiftKstDay(today,1);
- for(const area of realtimeAreaIds) {
+ for(const area of publicAreaIds) {
   const cached=await db.prepare('SELECT calculated_at,payload FROM area_data_coverage WHERE area=?').bind(area).first<{calculated_at:string;payload:string}>();
   if(cached&&Date.parse(cached.calculated_at)>now.getTime()-50*60000) {
     try { if(JSON.parse(cached.payload).readiness?.targetDate===tomorrow)continue; } catch { /* rebuild outdated coverage only */ }

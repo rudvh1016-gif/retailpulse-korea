@@ -18,7 +18,7 @@ import {
   STORE_DYNAMICS_SOURCE_ID,
 } from "./store-dynamics";
 
-const STORE_DYNAMICS_AREAS = ["myeongdong", "hongdae", "seongsu"] as const;
+const STORE_DYNAMICS_AREAS = ["myeongdong", "hongdae", "seongsu", "itaewon"] as const;
 
 function storeDynamicsCoverageSql(): string {
   return STORE_DYNAMICS_AREAS.map(() => `SELECT sourceId, datasetId, recordOrigin, area, quarterCode,

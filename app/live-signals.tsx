@@ -45,7 +45,7 @@ function comparisonLines(comparisons: PeriodComparisons | undefined, lang: Lang)
   return ([7, 28] as const).flatMap((days) => comparisons?.[days] ? [comparisonText(comparisons[days]!, lang, days)] : []);
 }
 
-type AreaId = "myeongdong" | "hongdae" | "seongsu";
+type AreaId = "myeongdong" | "hongdae" | "seongsu" | "itaewon";
 
 interface LiveRealtime {
   comparisons?: PeriodComparisons;
@@ -871,9 +871,10 @@ const areaNames: Record<AreaId, Record<Lang, string>> = {
   myeongdong: { ko: "명동", en: "Myeongdong", zh: "明洞", ja: "明洞" },
   hongdae: { ko: "홍대", en: "Hongdae", zh: "弘大", ja: "弘大" },
   seongsu: { ko: "성수", en: "Seongsu", zh: "圣水", ja: "聖水" },
+  itaewon: { ko: "이태원", en: "Itaewon", zh: "梨泰院", ja: "梨泰院" },
 };
 
-export const AREA_IDS: AreaId[] = ["myeongdong", "hongdae", "seongsu"];
+export const AREA_IDS: AreaId[] = ["myeongdong", "hongdae", "seongsu", "itaewon"];
 export function areaDisplayName(area: AreaId, lang: Lang): string {
   return areaNames[area][lang];
 }
@@ -2911,7 +2912,7 @@ function MyStoreSnapshot({ lang, operations }: { lang: Lang; operations: Operati
   </article>;
 }
 
-/** The three Seoul areas, each opening with its own official brief. */
+/** The four Seoul areas, each opening with its own official brief. */
 export function HomeTodayBrief({ lang, selected, onSelect, date = null }: { lang: Lang; selected: AreaId; onSelect: (area: AreaId) => void; date?: string | null }) {
   const summary = useLiveSummary(date);
   const now = usePresentationClock(summary?.generatedAt ?? "");

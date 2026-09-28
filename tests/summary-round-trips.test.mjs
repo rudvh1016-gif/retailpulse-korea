@@ -329,7 +329,7 @@ test('observation history uses indexed six-hour bounds, caps rows, and never add
     assert.equal(client.trips.length,1);
     const history=prepared.find(statement=>statement.sql.includes('ORDER BY observed_at DESC LIMIT 73'));
     const plan=database.prepare(`EXPLAIN QUERY PLAN ${history.sql}`).all(...history.values).map(row=>row.detail).join('\n');
-    assert.equal((plan.match(/SEARCH seoul_realtime_area USING INDEX seoul_realtime_area_(?:area_observed_idx|observed_unique)/g)??[]).length,3,plan);
+    assert.equal((plan.match(/SEARCH seoul_realtime_area USING INDEX seoul_realtime_area_(?:area_observed_idx|observed_unique)/g)??[]).length,4,plan);
     assert.doesNotMatch(plan,/SCAN seoul_realtime_area/);
   } finally {database.close();unlinkSync(databasePath);}
 });

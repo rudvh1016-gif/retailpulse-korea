@@ -36,12 +36,13 @@ import {
 } from "../lib/tourism-desk-brief";
 import { buildWeatherGuide, formatWeatherDetails, type WeatherGuideInput } from "../lib/weather-guide";
 
-export type TourismAreaId = "myeongdong" | "hongdae" | "seongsu";
+export type TourismAreaId = "myeongdong" | "hongdae" | "seongsu" | "itaewon";
 
 const areaNames: Record<TourismAreaId, Record<Lang, string>> = {
   myeongdong: { ko: "명동", en: "Myeongdong", zh: "明洞", ja: "明洞" },
   hongdae: { ko: "홍대", en: "Hongdae", zh: "弘大", ja: "弘大" },
   seongsu: { ko: "성수", en: "Seongsu", zh: "圣水", ja: "聖水" },
+  itaewon: { ko: "이태원", en: "Itaewon", zh: "梨泰院", ja: "梨泰院" },
 };
 
 const COPY = {

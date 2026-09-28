@@ -18,7 +18,7 @@ function preloadLiveSummary() {
   preload("/api/live/summary", { as: "fetch", crossOrigin: "anonymous" });
 }
 
-const areaSlugs = ["myeongdong", "hongdae", "seongsu"] as const;
+const areaSlugs = ["myeongdong", "hongdae", "seongsu", "itaewon"] as const;
 
 export function generateStaticParams() {
   return seoLocales.flatMap((locale) => standaloneSeoSlugs.map((slug) => ({ locale, slug })));

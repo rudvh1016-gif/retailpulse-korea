@@ -433,7 +433,7 @@ test("production smoke requires A5 picker dates whenever A5 reports LIVE", () =>
 
 test("production smoke verifies Store Dynamics coverage, health, and one isolated cache key", () => {
   const smoke = readFileSync(".github/workflows/site-smoke.yml", "utf8");
-  assert.match(smoke, /Store Dynamics covers all three exact areas/);
+  assert.match(smoke, /Store Dynamics covers all four exact areas/);
   assert.match(smoke, /row\.datasetId === "OA-15577"/);
   assert.match(smoke, /row\.mappingVersion === "oa-15577-standard-area-2026-09-03-v1"/);
   assert.match(smoke, /row\.tradeAreaCode === expected\.code/);

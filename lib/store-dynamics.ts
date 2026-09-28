@@ -37,6 +37,14 @@ export const storeDynamicsMappings: Record<PublicAreaId, StoreDynamicsMapping> =
     tradeAreaName: "성수동카페거리",
     tradeAreaTypeCode: "A",
     tradeAreaTypeName: "골목상권",
+  },  // OA-15577 returned this exact identity for 3001491 (quarter 20262,
+  // 87 rows) in the 2026-09-28 read-only probe.
+  itaewon: {
+    area: "itaewon",
+    tradeAreaCode: "3001491",
+    tradeAreaName: "이태원 관광특구",
+    tradeAreaTypeCode: "U",
+    tradeAreaTypeName: "관광특구",
   },
 };
 

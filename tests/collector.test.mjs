@@ -91,6 +91,9 @@ test("S2 collector persists one raw and area row per mapping idempotently", asyn
     11140550: s2Row("11140550", 100, { YMD: ymd, TT: tt }),
     11440660: s2Row("11440660", 200, { YMD: ymd, TT: tt }),
     11200670: s2Row("11200670", 300, { YMD: ymd, TT: tt }),
+    // Itaewon is two official dongs (이태원1동, 이태원2동) summed into one area.
+    11170650: s2Row("11170650", 400, { YMD: ymd, TT: tt }),
+    11170660: s2Row("11170660", 500, { YMD: ymd, TT: tt }),
   };
   const requests = [];
   globalThis.fetch = async (input) => {
@@ -132,13 +135,14 @@ test("S2 collector persists one raw and area row per mapping idempotently", asyn
   const first = await collectSeoulForeignPresence(env, testNow);
   const second = await collectSeoulForeignPresence(env, testNow);
 
-  assert.deepEqual(first, { status: "SUCCESS", records: 6 });
+  assert.deepEqual(first, { status: "SUCCESS", records: 9 });
   assert.deepEqual(second, { status: "SUCCESS", records: 0 });
-  assert.equal(requests.length, 6);
+  assert.equal(requests.length, 10);
   assert.equal(requests.some((url) => url.endsWith("/1/1/")), false);
   assert.equal(requests.every((url) => url.includes(`/${ymd}/${tt}/`)), true);
-  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_dong").get().count, 3);
-  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_area").get().count, 4);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_dong").get().count, 5);
+  assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_area").get().count, 5);
+  assert.equal(database.prepare("SELECT value FROM seoul_foreign_presence_area WHERE area = 'itaewon'").get().value, 900);
   assert.equal(database.prepare("SELECT value FROM seoul_foreign_presence_area WHERE area = 'seongsu' AND mapping_version = ?").get(SEOUL_FOREIGN_MAPPING_VERSION).value, 300);
   assert.equal(database.prepare("SELECT value FROM seoul_foreign_presence_area WHERE area = 'seongsu' AND mapping_version = ?").get(legacyMappingVersion).value, 999);
   assert.equal(database.prepare("SELECT status FROM source_health WHERE source_id = ?").get("SEOUL_SHORT_STAY_FOREIGN_LIVING_POPULATION").status, "OFFICIAL_HISTORICAL");
@@ -162,7 +166,7 @@ test("S2 collector skips an incomplete newest period and imports the next comple
   globalThis.fetch = async (input) => {
     const url = String(input);
     requests.push(url.replace("fixture", "[REDACTED]"));
-    const code = ["11140550", "11440660", "11200670"].find((dong) => url.endsWith(`/${dong}`));
+    const code = ["11140550", "11440660", "11200670", "11170650", "11170660"].find((dong) => url.endsWith(`/${dong}`));
     const isNewest = url.includes(`/${newest.ymd}/${newest.tt}/`);
     const complete = !isNewest || code !== "11440660";
     return Response.json({
@@ -179,8 +183,9 @@ test("S2 collector skips an incomplete newest period and imports the next comple
 
   const result = await collectSeoulForeignPresence({ DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: "fixture" }, testNow);
 
-  assert.deepEqual(result, { status: "SUCCESS", records: 6 });
-  assert.equal(requests.length, 5);
+  assert.deepEqual(result, { status: "SUCCESS", records: 9 });
+  // Newest period stops at its first missing dong (2 requests); the previous one reads all five.
+  assert.equal(requests.length, 7);
   assert.equal(database.prepare("SELECT MIN(reference_at) AS referenceAt FROM seoul_foreign_presence_area").get().referenceAt.startsWith(`${previous.ymd.slice(0, 4)}-${previous.ymd.slice(4, 6)}-${previous.ymd.slice(6, 8)}`), true);
 });
 

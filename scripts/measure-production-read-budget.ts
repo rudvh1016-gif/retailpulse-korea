@@ -76,7 +76,7 @@ const OPERATIONS_ROUTE_PATH = new URL("../app/api/airport/facility-operations/ro
 const routeSource = [ROUTE_PATH, FACILITY_ROUTE_PATH, OPERATIONS_ROUTE_PATH]
   .map((path) => readFileSync(path, "utf8")).join("\n");
 
-const AREAS = ["myeongdong", "hongdae", "seongsu"] as const;
+const AREAS = ["myeongdong", "hongdae", "seongsu", "itaewon"] as const;
 const CONGESTION_TERMINALS = ["T1", "T2"] as const;
 
 // Mirrors of the route's two SQL builders. The `guard` fragment on every

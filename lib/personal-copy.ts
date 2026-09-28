@@ -22,6 +22,7 @@ export const personalCopy = {
   myeongdong: row('명동','Myeongdong','明洞','明洞'),
   hongdae: row('홍대','Hongdae','弘大','弘大'),
   seongsu: row('성수','Seongsu','圣水','聖水'),
+  itaewon: row('이태원','Itaewon','梨泰院','梨泰院'),
   all: row('전체','All','全部','全体'),
   CONCOURSE: row('탑승동','Concourse','登机楼','コンコース'),
   passengers: row('예상 이용객·인구','Expected passengers / population','预计旅客与人口','予想利用者・人口'),

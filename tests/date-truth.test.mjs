@@ -237,10 +237,10 @@ test("coverage probe parameters are built in the KST offset space", () => {
   assert.equal(context.kstHourStartIso, "2026-08-31T23:00:00+09:00");
 });
 
-test("Store Dynamics coverage checks three exact mapped areas with bounded latest-row seeks", () => {
+test("Store Dynamics coverage checks four exact mapped areas with bounded latest-row seeks", () => {
   const probe = COVERAGE_PROBES.find((candidate) => candidate.name === "seoul_store_dynamics_latest");
   assert.ok(probe);
-  assert.equal((probe.sql.match(/LIMIT 1/g) ?? []).length, 3);
+  assert.equal((probe.sql.match(/LIMIT 1/g) ?? []).length, 4);
   assert.match(probe.sql, /source_id = \? AND mapping_version = \?/);
   assert.match(probe.sql, /record_origin = 'OFFICIAL_HISTORICAL' AND quality_status = 'VALID'/);
   for (const field of [
@@ -252,5 +252,6 @@ test("Store Dynamics coverage checks three exact mapped areas with bounded lates
     "myeongdong", "SEOUL_STORE_DYNAMICS", "oa-15577-standard-area-2026-09-03-v1",
     "hongdae", "SEOUL_STORE_DYNAMICS", "oa-15577-standard-area-2026-09-03-v1",
     "seongsu", "SEOUL_STORE_DYNAMICS", "oa-15577-standard-area-2026-09-03-v1",
+    "itaewon", "SEOUL_STORE_DYNAMICS", "oa-15577-standard-area-2026-09-03-v1",
   ]);
 });

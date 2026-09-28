@@ -5,7 +5,7 @@ import { CONTENT_API_ROBOTS_TAG } from '../../../../lib/crawl-policy';
 export const dynamic='force-dynamic';
 export async function GET(request:Request) {
   const area=new URL(request.url).searchParams.get('area')??'myeongdong';
-  if(!['myeongdong','hongdae','seongsu'].includes(area)) return Response.json({error:'invalid_area'},{status:400,headers:{'x-robots-tag':CONTENT_API_ROBOTS_TAG}});
+  if(!['myeongdong','hongdae','seongsu','itaewon'].includes(area)) return Response.json({error:'invalid_area'},{status:400,headers:{'x-robots-tag':CONTENT_API_ROBOTS_TAG}});
   try {
     const db=(await getDb()).$client, today=kstDayOf(new Date().toISOString()), tomorrow=shiftKstDay(today,1);
     const [run,coverage,records]=await Promise.all([

@@ -169,7 +169,7 @@ test('brand returns to the personal home while Seoul navigation retains the area
   await expect(page).toHaveURL(/\/ko$/);
 
   await expect(page.getByTestId('personal-briefing')).toBeVisible();
-  await expect(page).toHaveTitle('인천공항·명동·홍대·성수 오늘·내일 브리핑 | KORETAIL');
+  await expect(page).toHaveTitle('인천공항·명동·홍대·성수·이태원 오늘·내일 브리핑 | KORETAIL');
 });
 
 test('mobile briefing can be reopened from airport with one active navigation item',async({page})=>{

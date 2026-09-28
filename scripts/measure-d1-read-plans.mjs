@@ -30,11 +30,12 @@ const N = { airport_flights: 12000, seoul_realtime_area: 5000, seoul_realtime_co
   seoul_foreign_purpose_mobility: 120, seoul_subway_ridership: 3000 };
 
 const BASE = Date.UTC(2026, 7, 21);
-const areas = ["myeongdong", "hongdae", "seongsu"];
+const areas = ["myeongdong", "hongdae", "seongsu", "itaewon"];
 const subwayStations = {
   myeongdong: { code: "0424", number: "424", name: "명동", line: "4호선" },
   hongdae: { code: "0239", number: "239", name: "홍대입구", line: "2호선" },
   seongsu: { code: "0211", number: "211", name: "성수", line: "2호선" },
+  itaewon: { code: "2631", number: "630", name: "이태원", line: "6호선" },
 };
 const kst = (i, perDay) => {
   const at = new Date(BASE + Math.floor(i / perDay) * 86_400_000 + Math.floor(((i % perDay) * 86_400_000) / perDay));

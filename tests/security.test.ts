@@ -147,6 +147,14 @@ test("manual S2 import stays confirmed, bounded, isolated, and unscheduled", asy
   assert.doesNotMatch(probeStep, /CLOUDFLARE|D1|DATA_GO_KR_SERVICE_KEY/,
     "the read-only contract probe must never receive a database or unrelated provider credential");
 
+  // The Itaewon source probe reads Seoul and data.go.kr, so it gets those two
+  // provider keys and nothing that could write.
+  const itaewonProbe = workflow.split("- name: Probe the Itaewon source values (read only, writes nothing)")[1] ?? "";
+  assert.match(itaewonProbe, /inputs\.sources == 'probe_itaewon_sources' && inputs\.confirm == 'PROBE'/);
+  assert.match(itaewonProbe, /scripts\/probe-itaewon-sources\.ts/);
+  assert.doesNotMatch(itaewonProbe, /CLOUDFLARE|D1_|- name:/,
+    "the Itaewon probe is the last step and never receives a database credential");
+
   const rejected = spawnSync(process.execPath, ["--import", "tsx", "scripts/import-oneshot.ts"], {
     cwd: new URL("..", import.meta.url),
     env: { ...process.env, RPK_ONESHOT_CONFIRM: "NO" },
