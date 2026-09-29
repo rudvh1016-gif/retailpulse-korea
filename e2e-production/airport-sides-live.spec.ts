@@ -39,6 +39,7 @@ for (const width of [1280, 360]) {
     page.on("pageerror", (error) => errors.push(error.message));
     const prep = await openAirport(page, width);
     const sides = prep.getByTestId("airport-sides");
+    const states: Record<string, string> = {};
     log(`${width} notice`, await sides.getByTestId("sides-notice").textContent());
     log(`${width} halls`, (await sides.getByTestId("halls-withheld").count()) ? "WITHHELD" : await sides.getByTestId("halls-sides").textContent());
 
@@ -46,10 +47,25 @@ for (const width of [1280, 360]) {
       for (const side of ["터미널 전체", "동편", "서편"] as const) {
         await setConditions(page, prep, terminal, side, side === "동편" ? ["09:30", "18:00"] : null);
         await expect(prep.getByTestId("prep-place")).toContainText(`인천공항 ${terminal}`);
+        // The comparison card is always present once the block is. Its state is
+        // the API's own answer: OK when the day has flight records, otherwise a
+        // designed empty state (for example just after midnight KST, before the
+        // day's first collection). Both are asserted; neither is skipped.
         const card = sides.getByTestId("flight-split");
-        log(`${width} ${terminal} ${side} split heading`, await card.locator("h3").textContent().catch(() => "NONE"));
-        for (const id of ["split-flights", "split-shares", "split-estimate", "split-estimate-basis", "split-note", "split-no-estimate"]) {
-          if (await card.getByTestId(id).count()) log(`${width} ${terminal} ${side} ${id}`, await card.getByTestId(id).textContent());
+        await expect(card).toBeVisible();
+        const state = await card.getAttribute("data-state");
+        states[terminal] = String(state);
+        log(`${width} ${terminal} ${side} split state`, `${state} | ${(await card.innerText()).replace(/\s+/g, " ")}`);
+        if (state === "OK") {
+          await expect(card.getByTestId("split-flights")).toContainText("동편");
+          await expect(card.getByTestId("split-shares")).toContainText("동·서 위치가 확인된 항공편 기준");
+          if (await card.getByTestId("split-estimate").count()) await expect(card.getByTestId("split-note")).toContainText("실제 동·서편 승객 수가 아닙니다");
+          else await expect(card.getByTestId("split-no-estimate")).toBeVisible();
+        } else {
+          expect(["NONE", "STALE", "DATE_MISMATCH", "NO_TERMINAL_FLIGHTS"]).toContain(state);
+          await expect(card.getByTestId("split-estimate")).toHaveCount(0);
+          await expect(card.getByTestId("split-flights")).toHaveCount(0);
+          await expect(prep.getByTestId("prep-facts")).not.toContainText("출발편(하루 전체)");
         }
         const gates = sides.getByTestId("gates-areas");
         log(`${width} ${terminal} ${side} place`, await prep.getByTestId("prep-place").textContent());
@@ -70,8 +86,10 @@ for (const width of [1280, 360]) {
     await share.getByRole("button", { name: "문구 복사" }).click();
     const text = await page.evaluate(() => navigator.clipboard.readText()).catch(() => "");
     log(`${width} share`, text);
-    expect(text).toContain("출발편(하루 전체)");
     expect(text).toContain("인천공항 T2 서편");
+    // The copied text carries the comparison exactly when the card shows it.
+    if (states.T2 === "OK") expect(text).toContain("출발편(하루 전체)");
+    else expect(text).not.toContain("출발편(하루 전체)");
     const download = page.waitForEvent("download", { timeout: 15_000 }).catch(() => null);
     await share.getByRole("button", { name: "이미지 저장" }).click();
     const file = await download;
