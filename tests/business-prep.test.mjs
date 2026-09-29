@@ -202,6 +202,22 @@ test("gate departures: a whole terminal gives a fact and an action; a partly loc
   assert.equal(complete.actions.some((row) => row.rule === "GATE_PEAK"), true);
 });
 
+test("a side is partial only when the counted hours hold unverified flights", () => {
+  const day = "2026-09-28";
+  const build = (hoursRows) => buildBusinessPrep({
+    serviceDate: day, dayRelation: "TODAY", nowIso: at(day, 19, 30), place: { kind: "airport", terminal: "T1", side: "WEST" }, hours: null,
+    airport: { bands: [], coverage: "UNAVAILABLE", retrievedAt: null, gates: { hours: hoursRows, scope: "SIDE_VERIFIED_ONLY", verifiedShare: 0.98, retrievedAt: at(day, 9, 57), basis: "COLLECTED_FLIGHT_RECORDS" } },
+  });
+  // Two unverified flights left in the morning; none from 19:00 on.
+  const earlier = build([{ hour: 8, count: 3, unverified: 2 }, { hour: 20, count: 9, unverified: 0 }, { hour: 21, count: 4, unverified: 0 }]);
+  const fact = earlier.facts.find((row) => row.kind === "GATE_PEAK");
+  assert.equal(fact.partial, undefined, "no unverified flight in the counted hours: the side's count there is complete");
+  assert.equal(earlier.actions.some((row) => row.rule === "GATE_PEAK"), true);
+  const later = build([{ hour: 20, count: 9, unverified: 1 }, { hour: 21, count: 4, unverified: 0 }]);
+  assert.equal(later.facts.find((row) => row.kind === "GATE_PEAK").partial, true);
+  assert.equal(later.actions.some((row) => row.rule === "GATE_PEAK"), false);
+});
+
 test("flight records older than the publication window are not used", () => {
   const day = "2026-09-28";
   const prep = buildBusinessPrep({

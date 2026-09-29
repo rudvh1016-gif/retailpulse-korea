@@ -374,11 +374,14 @@ export function buildBusinessPrep(input: PrepInput): BusinessPrep {
         const top = inHours.reduce((best, row) => (row.count > best.count ? row : best));
         const startAt = `${input.serviceDate}T${String(top.hour).padStart(2, "0")}:00:00+09:00`;
         const endAt = kstIso(Date.parse(startAt) + HOUR_MS);
-        const partial = gates.scope === "SIDE_VERIFIED_ONLY";
         const unverifiedInHours = gates.hours.filter((row) => {
           const at = Date.parse(`${input.serviceDate}T${String(row.hour).padStart(2, "0")}:00:00+09:00`);
           return at + HOUR_MS > start && at < windowEnd;
         }).reduce((sum, row) => sum + (row.unverified ?? 0), 0);
+        // Partial is judged on the hours this answer counts: unverified
+        // flights earlier in the day (or outside the store's hours) cannot
+        // hide a later side peak, so they do not make it partial.
+        const partial = gates.scope === "SIDE_VERIFIED_ONLY" && unverifiedInHours > 0;
         facts.push({ kind: "GATE_PEAK", count: top.count, startAt, endAt, issuedAt: gates.retrievedAt, side, basis: gates.basis,
           ...(partial ? { partial: true, unverifiedInHour: top.unverified ?? 0, unverifiedInHours } : {}) });
         // A partial side count is shown as a fact only: it can never say where
