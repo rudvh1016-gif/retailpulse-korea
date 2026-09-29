@@ -14,7 +14,7 @@
  * count from flights, seats or shares, and nothing moves a passenger count
  * from the hall's hour to a flight's departure hour.
  */
-import sides from "../config/airport-sides.v1.json";
+import sides from "../config/airport-sides.v1.json" with { type: "json" };
 import { flightBoardingLocation } from "./flight-scope";
 
 export type HallSide = "EAST" | "WEST";

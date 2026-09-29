@@ -1,6 +1,6 @@
 import type { Lang } from "../app/retailpulse-data";
 
-export type IndustryId = "beauty" | "fashion" | "food" | "convenience" | "popup" | "tourism";
+export type IndustryId = "beauty" | "fashion" | "food" | "convenience" | "popup" | "tourism" | "liquor" | "luxury";
 
 /**
  * Operating guidance per business type.
@@ -287,6 +287,92 @@ export const industryProfiles: Record<IndustryId, {
         ["peak", "フロント", "チェックイン待ちの列と問い合わせ窓口を分ける"],
         ["close", "客室", "翌日の早いチェックイン希望がある客室を先に整備"],
         ["close", "引き継ぎ", "翌日の空港混雑時間帯を夜勤担当に引き継ぐ"],
+      ],
+    },
+  },
+  liquor: {
+    label: { ko: "주류·담배", en: "Liquor & tobacco", zh: "酒类·烟草", ja: "酒類・たばこ" }, short: "LIQUOR",
+    watch: {
+      ko: "출국장 예고와 탑승구 기준 출발편을 따로 확인하세요. 구매 한도와 반입 조건은 공식 안내로 확인하고, 항공편 목적지를 고객 국적으로 보지 마세요.",
+      en: "Read the departure-hall notice and departures by gate separately. Check purchase limits and carriage rules with official guidance; a flight's destination is not a customer's nationality.",
+      zh: "分别查看出境大厅预告与按登机口的出发航班。购买限额与携带条件以官方说明为准，勿把航班目的地当作顾客国籍。",
+      ja: "出国場の予告と搭乗口基準の出発便を分けて確認。購入限度と持込条件は公式案内で確認し、便の行き先を顧客の国籍とみなしません。",
+    },
+    checklist: {
+      ko: [
+        ["before", "재고", "자체 판매 기록으로 자주 팔리는 용량·세트의 판매 재고와 창고 재고를 확인"],
+        ["before", "안내", "면세 한도와 액체류 반입 안내가 최신 공식 기준인지 확인"],
+        ["peak", "계산", "계산과 포장 담당을 나누고 결제 대기 줄을 확인"],
+        ["peak", "포장", "파손 방지 포장재 잔량을 시간대 중간에 한 번 더 확인"],
+        ["close", "보충", "그날 가장 빨리 빠진 품목을 적어 다음 발주 기준으로 사용"],
+        ["close", "정산", "결제 취소와 면세 관련 서류를 정리"],
+      ],
+      en: [
+        ["before", "STOCK", "Use your own sales records to check shelf and stockroom quantities of frequently sold sizes and sets"],
+        ["before", "RULES", "Check that duty-free limits and liquid carriage guidance follow the latest official rules"],
+        ["peak", "CHECKOUT", "Split checkout and packing duties and watch the payment queue"],
+        ["peak", "PACKING", "Re-check protective packing material midway through the busy band"],
+        ["close", "RESTOCK", "Write down the fastest-moving items of the day and use them for the next order"],
+        ["close", "RECORDS", "Reconcile payment cancellations and duty-free paperwork"],
+      ],
+      zh: [
+        ["before", "库存", "根据本店销售记录，核对常售容量与套装的可售库存和仓库库存"],
+        ["before", "说明", "确认免税限额与液体携带说明符合最新官方规定"],
+        ["peak", "收银", "分开收银与包装职责，并留意结账排队"],
+        ["peak", "包装", "时段中途再次确认防破损包装材料的余量"],
+        ["close", "补货", "记录当日售出最快的商品，作为下次订货依据"],
+        ["close", "结算", "整理支付取消记录与免税相关单据"],
+      ],
+      ja: [
+        ["before", "在庫", "自店の販売記録で、よく売れる容量・セットの店頭在庫と倉庫在庫を確認"],
+        ["before", "案内", "免税限度と液体持込の案内が最新の公式基準か確認"],
+        ["peak", "会計", "会計と包装の担当を分け、会計待ちの列を確認"],
+        ["peak", "包装", "破損防止の包装材の残量を時間帯の途中で再確認"],
+        ["close", "補充", "その日に最も早く減った商品を記録し次の発注基準にする"],
+        ["close", "精算", "決済取消と免税関連の書類を整理"],
+      ],
+    },
+  },
+  luxury: {
+    label: { ko: "명품", en: "Luxury", zh: "奢侈品", ja: "ラグジュアリー" }, short: "LUXURY",
+    watch: {
+      ko: "상담 예약과 실제 대기 고객을 기준으로 인력을 정하세요. 출국 예상 인원이나 출발편 수를 구매 고객 수로 보지 마세요.",
+      en: "Staff from consultation bookings and customers actually waiting. Expected departures and flight counts are not buyers.",
+      zh: "按咨询预约与实际等候的顾客安排人员，勿把预计出境人数或出发航班数当作购买人数。",
+      ja: "相談予約と実際に待っている顧客を基準に人員を決めます。出国予想や出発便数を購入客数とみなしません。",
+    },
+    checklist: {
+      ko: [
+        ["before", "상담", "상담 가능 인력과 예약 시간을 확인해 역할을 정하기"],
+        ["before", "재고", "문의가 많은 모델의 재고와 대체 모델 안내를 미리 준비"],
+        ["peak", "대기", "대기 고객 응대 방식(순번과 대기 안내)을 정해 직원과 공유"],
+        ["peak", "진열", "진열 상품 확인과 입구 관리 담당을 정하기"],
+        ["close", "기록", "상담 기록과 다음 방문 약속을 정리"],
+        ["close", "정산", "결제 취소와 면세 관련 서류를 정리"],
+      ],
+      en: [
+        ["before", "ADVICE", "Confirm who can consult and at which booked times, and set roles"],
+        ["before", "STOCK", "Prepare stock of often-asked models and guidance on alternatives"],
+        ["peak", "WAITING", "Agree how waiting customers are handled (queue order and wait guidance) and share it"],
+        ["peak", "DISPLAY", "Assign display checks and entrance management"],
+        ["close", "RECORDS", "Tidy consultation notes and next-visit appointments"],
+        ["close", "PAPERS", "Reconcile payment cancellations and duty-free paperwork"],
+      ],
+      zh: [
+        ["before", "咨询", "确认可接待咨询的人员与预约时间，并分配职责"],
+        ["before", "库存", "提前准备常被询问款式的库存与替代款说明"],
+        ["peak", "等候", "确定等候顾客的接待方式（顺序与等候说明）并与员工共享"],
+        ["peak", "陈列", "指定陈列商品核对与入口管理负责人"],
+        ["close", "记录", "整理咨询记录与下次到访预约"],
+        ["close", "结算", "整理支付取消记录与免税相关单据"],
+      ],
+      ja: [
+        ["before", "相談", "相談できるスタッフと予約時間を確認し役割を決める"],
+        ["before", "在庫", "問い合わせの多いモデルの在庫と代替モデルの案内を準備"],
+        ["peak", "待ち", "待っている顧客への対応方法（順番と待ち時間の案内）を決めて共有"],
+        ["peak", "陳列", "陳列商品の確認と入口管理の担当を決める"],
+        ["close", "記録", "相談記録と次回来店の約束を整理"],
+        ["close", "精算", "決済取消と免税関連の書類を整理"],
       ],
     },
   },

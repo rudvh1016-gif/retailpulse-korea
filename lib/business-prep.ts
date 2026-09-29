@@ -14,12 +14,15 @@
  *   - a forecast is never extended past the hours it actually covers;
  *   - stale or missing data is never reported as "no change".
  */
+import type { AirportSidesBlock } from "./airport-sides-summary";
 import type { LiveSummary } from "../app/live-signals";
 import { WEATHER_THRESHOLDS } from "./current-brief";
 
 export type PrepArea = "myeongdong" | "hongdae" | "seongsu" | "itaewon";
 export type PrepTerminal = "T1" | "T2";
-export type PrepPlace = { kind: "area"; area: PrepArea } | { kind: "airport"; terminal: PrepTerminal };
+export type AirportSide = "EAST" | "WEST";
+/** An airport store may name its side of the terminal; null means the whole terminal. */
+export type PrepPlace = { kind: "area"; area: PrepArea } | { kind: "airport"; terminal: PrepTerminal; side?: AirportSide | null };
 
 /** Store hours in KST, "HH:MM". Equal open and close mean open all day. */
 export interface BusinessHours { open: string; close: string }
@@ -90,12 +93,19 @@ export function prepWindow(serviceDate: string, hours: BusinessHours | null, now
   return { startAt: kstIso(start), endAt: kstIso(end), wholeDay: false, crossesMidnight, startedYesterday: false };
 }
 
-export type PrepSource = "SEOUL_FORECAST" | "KMA_FORECAST" | "TOURAPI_EVENTS" | "A5_FORECAST" | "HOLIDAY_CALENDAR";
+export type PrepSource = "SEOUL_FORECAST" | "KMA_FORECAST" | "TOURAPI_EVENTS" | "A5_FORECAST" | "A1_FLIGHTS" | "HOLIDAY_CALENDAR";
 
 export interface PrepForecastRow { targetAt: string; congestionLevel: number; issuedAt?: string | null; retrievedAt?: string | null }
 export interface PrepWeatherRow { targetAt: string; precipitationProbability: number | null; temperatureTenthC: number | null; issuedAt?: string | null }
 export interface PrepEventRow { title: string; eventStart: string; eventEnd: string | null; retrievedAt?: string | null }
 export interface PrepAirportBand { targetStartAt: string; targetEndAt: string; expectedPassengers: number }
+export interface PrepGateHours {
+  hours: ReadonlyArray<{ hour: number; count: number }>;
+  /** Share of the terminal's flights at a gate whose side official text names. */
+  verifiedShare: number | null;
+  retrievedAt: string | null;
+  basis: "COLLECTED_FLIGHT_RECORDS" | "OFFICIAL_DEPARTURE_SCHEDULE";
+}
 export interface PrepHoliday {
   country: "KR" | "CN" | "JP";
   date: string;
@@ -115,7 +125,20 @@ export interface PrepInput {
   weather?: readonly PrepWeatherRow[];
   events?: readonly PrepEventRow[];
   eventsRetrievedAt?: string | null;
-  airport?: { bands: readonly PrepAirportBand[]; coverage: "COMPLETE" | "PARTIAL" | "UNAVAILABLE"; retrievedAt: string | null };
+  airport?: {
+    bands: readonly PrepAirportBand[];
+    coverage: "COMPLETE" | "PARTIAL" | "UNAVAILABLE";
+    retrievedAt: string | null;
+    /**
+     * The chosen side's departure-hall bands (A5 halls summed by side), when
+     * a side is chosen and the hall split is published; otherwise null and
+     * the terminal bands are used, labelled as the terminal.
+     */
+    sideBands?: readonly PrepAirportBand[] | null;
+    sideCoverage?: "COMPLETE" | "PARTIAL" | "UNAVAILABLE";
+    /** Physical departures per scheduled hour at this terminal (and side, when chosen and verified). */
+    gates?: PrepGateHours | null;
+  };
   holidays?: readonly PrepHoliday[];
 }
 
@@ -137,13 +160,14 @@ export interface PrepCoverage {
   issuedAt: string | null;
 }
 
-export type PrepRule = "CROWD" | "AIRPORT_PEAK" | "RAIN" | "HOLIDAY" | "EVENT" | "HEAT" | "COLD";
+export type PrepRule = "CROWD" | "AIRPORT_PEAK" | "GATE_PEAK" | "RAIN" | "HOLIDAY" | "EVENT" | "HEAT" | "COLD";
 
 export type PrepValue =
   | { kind: "LEVEL"; level: number }
   | { kind: "PROBABILITY"; percent: number }
   | { kind: "TEMPERATURE"; celsius: number }
-  | { kind: "PASSENGERS"; count: number }
+  | { kind: "PASSENGERS"; count: number; side?: AirportSide | null }
+  | { kind: "FLIGHTS"; count: number; side: AirportSide | null; verifiedShare: number | null }
   | { kind: "EVENTS"; count: number; title: string; eventStart: string; eventEnd: string | null }
   | { kind: "HOLIDAY"; country: PrepHoliday["country"]; name: string; officialSource: string };
 
@@ -163,8 +187,9 @@ export type PrepFact =
   | { kind: "CROWD_MAX"; level: number; startAt: string; endAt: string; issuedAt: string | null }
   | { kind: "RAIN_MAX"; percent: number; startAt: string; endAt: string; issuedAt: string | null }
   | { kind: "TEMPERATURE_RANGE"; minC: number; maxC: number; issuedAt: string | null }
-  | { kind: "AIRPORT_PEAK"; count: number; startAt: string; endAt: string; issuedAt: string | null }
-  | { kind: "AIRPORT_TOTAL"; count: number; bands: number; startAt: string; endAt: string; issuedAt: string | null }
+  | { kind: "AIRPORT_PEAK"; count: number; startAt: string; endAt: string; issuedAt: string | null; side?: AirportSide | null }
+  | { kind: "AIRPORT_TOTAL"; count: number; bands: number; startAt: string; endAt: string; issuedAt: string | null; side?: AirportSide | null }
+  | { kind: "GATE_PEAK"; count: number; startAt: string; endAt: string; issuedAt: string | null; side: AirportSide | null; basis: PrepGateHours["basis"] }
   | { kind: "EVENTS"; count: number; title: string; eventStart: string; eventEnd: string | null; issuedAt: string | null }
   | { kind: "HOLIDAY"; country: PrepHoliday["country"]; name: string; officialSource: string };
 
@@ -189,7 +214,7 @@ export interface BusinessPrep {
 export const MAX_ACTIONS = 3;
 export const CROWD_LEVEL = 3;
 export const RAIN_PERCENT = WEATHER_THRESHOLDS.umbrellaProbability;
-const RULE_ORDER: PrepRule[] = ["CROWD", "AIRPORT_PEAK", "RAIN", "HOLIDAY", "EVENT", "HEAT", "COLD"];
+const RULE_ORDER: PrepRule[] = ["CROWD", "AIRPORT_PEAK", "GATE_PEAK", "RAIN", "HOLIDAY", "EVENT", "HEAT", "COLD"];
 
 const within = (at: number, start: number, end: number) => at >= start && at < end;
 
@@ -290,9 +315,13 @@ export function buildBusinessPrep(input: PrepInput): BusinessPrep {
       actions.push({ rule: "EVENT", source: "TOURAPI_EVENTS", value, startAt: null, endAt: null, issuedAt });
     }
   } else {
-    // A5: the airport's own expected departures for the terminal.
+    // A5: the airport's own expected departures — the chosen side's halls
+    // when that split is published, otherwise the whole terminal.
     const airport = input.airport;
-    const bands = (airport?.bands ?? []).filter((band) => {
+    const side = input.place.kind === "airport" ? input.place.side ?? null : null;
+    const useSide = Boolean(side && airport?.sideBands);
+    const bandSide = useSide ? side : null;
+    const bands = ((useSide ? airport?.sideBands : airport?.bands) ?? []).filter((band) => {
       const bandStart = Date.parse(band.targetStartAt), bandEnd = Date.parse(band.targetEndAt);
       return Number.isFinite(bandStart) && Number.isFinite(bandEnd) && bandEnd > start && bandStart < windowEnd && Number.isFinite(band.expectedPassengers);
     });
@@ -304,16 +333,35 @@ export function buildBusinessPrep(input: PrepInput): BusinessPrep {
     });
     const a5 = coverageOf("A5_FORECAST", hoursCovered, start, windowEnd, issuedAt, now, input.dayRelation);
     // The provider's own coverage verdict wins over a count of hours.
-    if (a5.status === "COVERED" && airport?.coverage !== "COMPLETE") a5.status = "PARTIAL";
+    if (a5.status === "COVERED" && (useSide ? airport?.sideCoverage : airport?.coverage) !== "COMPLETE") a5.status = "PARTIAL";
     coverage.push(a5);
     if (bands.length && a5.status !== "STALE") {
       const peak = bands.reduce((best, band) => band.expectedPassengers > best.expectedPassengers ? band : best);
-      facts.push({ kind: "AIRPORT_PEAK", count: peak.expectedPassengers, startAt: peak.targetStartAt, endAt: peak.targetEndAt, issuedAt });
-      actions.push({ rule: "AIRPORT_PEAK", source: "A5_FORECAST", value: { kind: "PASSENGERS", count: peak.expectedPassengers }, startAt: peak.targetStartAt, endAt: peak.targetEndAt, issuedAt });
+      facts.push({ kind: "AIRPORT_PEAK", count: peak.expectedPassengers, startAt: peak.targetStartAt, endAt: peak.targetEndAt, issuedAt, side: bandSide });
+      actions.push({ rule: "AIRPORT_PEAK", source: "A5_FORECAST", value: { kind: "PASSENGERS", count: peak.expectedPassengers, side: bandSide }, startAt: peak.targetStartAt, endAt: peak.targetEndAt, issuedAt });
       // A total is only honest when every hour inside the hours has its band.
+      // A band cut by the opening or closing time is never halved: then no total.
       if (a5.status === "COVERED") {
         const whole = bands.every((band) => Date.parse(band.targetStartAt) >= start && Date.parse(band.targetEndAt) <= windowEnd);
-        if (whole) facts.push({ kind: "AIRPORT_TOTAL", count: bands.reduce((sum, band) => sum + band.expectedPassengers, 0), bands: bands.length, startAt: kstIso(start), endAt: kstIso(windowEnd), issuedAt });
+        if (whole) facts.push({ kind: "AIRPORT_TOTAL", count: bands.reduce((sum, band) => sum + band.expectedPassengers, 0), bands: bands.length, startAt: kstIso(start), endAt: kstIso(windowEnd), issuedAt, side: bandSide });
+      }
+    }
+
+    // A1: physical departures by scheduled hour at gates of this terminal
+    // (and side). A flight count, never a person count, and on the flight's
+    // own departure clock — not moved to a guessed shopping hour.
+    const gates = airport?.gates;
+    if (gates) {
+      const inHours = gates.hours.filter((row) => {
+        const at = Date.parse(`${input.serviceDate}T${String(row.hour).padStart(2, "0")}:00:00+09:00`);
+        return row.count > 0 && at + HOUR_MS > start && at < windowEnd;
+      });
+      if (inHours.length) {
+        const top = inHours.reduce((best, row) => (row.count > best.count ? row : best));
+        const startAt = `${input.serviceDate}T${String(top.hour).padStart(2, "0")}:00:00+09:00`;
+        const endAt = kstIso(Date.parse(startAt) + HOUR_MS);
+        facts.push({ kind: "GATE_PEAK", count: top.count, startAt, endAt, issuedAt: gates.retrievedAt, side, basis: gates.basis });
+        actions.push({ rule: "GATE_PEAK", source: "A1_FLIGHTS", value: { kind: "FLIGHTS", count: top.count, side, verifiedShare: gates.verifiedShare }, startAt, endAt, issuedAt: gates.retrievedAt });
       }
     }
   }
@@ -386,12 +434,33 @@ export function prepInputFromSummary(
   }
   const airport = summary.airport;
   const sameDay = airport?.serviceDateKst === summary.serviceDateKst;
+  // `airport.sides` (lib/airport-sides-summary.ts) is read through a local
+  // type so the locked summary type file does not change.
+  const sides = sameDay ? (airport as (typeof airport & { sides?: AirportSidesBlock }) | undefined)?.sides ?? null : null;
+  const side = place.side ?? null;
+  const halls = sides?.halls?.[place.terminal] ?? null;
+  const sideBands = side && halls ? halls.bands
+    .filter((band) => (side === "EAST" ? band.east : band.west) !== null)
+    .map((band) => ({ targetStartAt: band.startAt, targetEndAt: band.endAt, expectedPassengers: Number(side === "EAST" ? band.east : band.west) })) : null;
+  const gateDay = sides?.gates ?? null;
+  const gates: PrepGateHours | null = gateDay && sides?.gateBasis ? {
+    hours: gateDay.byHour.map((row) => {
+      const counts = row.byArea[place.terminal];
+      return { hour: row.hour, count: side ? counts[side] : counts.total };
+    }),
+    verifiedShare: gateDay.byArea[place.terminal].total ? (gateDay.byArea[place.terminal].total - gateDay.byArea[place.terminal].UNVERIFIED) / gateDay.byArea[place.terminal].total : null,
+    retrievedAt: gateDay.retrievedAt,
+    basis: sides.gateBasis,
+  } : null;
   return {
     ...base,
     airport: {
       bands: sameDay ? airport?.passengerForecastTimelineByTerminal?.[place.terminal] ?? [] : [],
       coverage: sameDay ? airport?.forecastCoverage?.byTerminal?.[place.terminal] ?? "UNAVAILABLE" : "UNAVAILABLE",
       retrievedAt: sameDay ? airport?.passengerForecastRetrievedAtByTerminal?.[place.terminal] ?? null : null,
+      sideBands,
+      sideCoverage: halls?.coverage ?? "UNAVAILABLE",
+      gates,
     },
   };
 }

@@ -141,6 +141,50 @@ export const industryPlaybooks: Record<IndustryId, Playbook> = {
     record: l('실제 체크인·픽업 지연, 자주 찾는 안내, 인계 누락을 기록해 다음 근무 안내에 반영하세요.', 'Record actual check-in/pickup delays, frequent questions and missed handoffs for the next shift.', '记录实际入住或接送延迟、常见咨询与交接遗漏，并用于下一班说明。', '実際の受付・送迎遅延、頻出案内、引継ぎ漏れを記録し次の勤務へ反映します。'),
     airport: l('픽업은 고객이 확인한 항공편·터미널·만남 장소로 준비하고 운항 변경을 재확인하세요. 항공기 도착 시각을 입국장 밖에서 만날 시각으로 확정하지 마세요.', 'Prepare pickups from the traveller’s confirmed flight, terminal and meeting point, and recheck changes. An aircraft arrival time is not a guaranteed meeting time outside arrivals.', '按客人确认的航班、航站楼和会面地点准备接机并复核变更，飞机到达时间不是旅客走出到达厅的确定时间。', '送迎は顧客が確認した便・ターミナル・集合場所を基に準備し変更を再確認。航空機到着時刻を到着ロビー外で会える時刻と確定しません。'),
   },
+  liquor: {
+    focus: l('계산과 포장이 막히지 않게 하고, 구매 한도·반입 안내를 정확히 하세요.', 'Keep checkout and packing moving, and give accurate limit and carriage guidance.', '保持收银与包装顺畅，准确说明购买限额与携带规定。', '会計と包装を滞らせず、購入限度・持込の案内を正確に。'),
+    priorities: [
+      {
+        title: l('자주 팔리는 용량·세트 재고 확인', 'Check frequently sold sizes and sets', '核对常售容量与套装库存', 'よく売れる容量・セットの在庫確認'),
+        action: l('자체 판매 기록으로 자주 팔리는 용량·세트를 정하고 판매 재고와 창고 재고를 대조하세요. 품절 시 대체 상품과 가격 차이를 안내표로 준비하세요.', 'Use your own sales records to identify frequently sold sizes and sets, then reconcile shelf and stockroom stock. Prepare alternatives and price differences for anything out of stock.', '用本店销售记录确定常售容量与套装，核对可售与仓库库存；缺货时准备替代品及价差说明。', '自店の販売記録でよく売れる容量・セットを決め、店頭と倉庫の在庫を照合。欠品時の代替品と価格差を用意します。'),
+        reason: l('출국 예상 인원이나 목적지만으로 특정 상품의 수요를 정할 수 없습니다.', 'Expected departures or destinations cannot establish demand for a specific product.', '预计出境人数或目的地不能决定具体商品需求。', '出国予想や行き先だけで個別商品の需要は判断できません。'),
+      },
+      {
+        title: l('계산과 포장 역할 나누기', 'Split checkout and packing', '分开收银与包装', '会計と包装の分担'),
+        action: l('혼잡 예고 시간대 전에 계산 담당과 포장 담당을 정하고, 파손 방지 포장재와 봉투 잔량을 확인하세요. 줄이 길어지는 업무부터 조정하세요.', 'Before the busy notice hours, assign checkout and packing roles and check protective packing and bags. Adjust the task where the queue grows first.', '在预告的繁忙时段前分配收银与包装职责，检查防破损包装材料和袋子余量，优先调整排队变长的环节。', '混雑予告の時間帯前に会計と包装の担当を決め、破損防止の包装材と袋の残量を確認。列が伸びる業務から調整します。'),
+        reason: l('계산과 포장이 한 줄에 몰리면 대기가 길어집니다.', 'Queues grow when checkout and packing share one line.', '收银与包装挤在同一队列时，等候会变长。', '会計と包装が一つの列に集まると待ちが長くなります。'),
+      },
+      {
+        title: l('구매 한도·반입 안내를 공식 기준으로', 'Keep limit and carriage guidance official', '以官方标准说明限额与携带', '購入限度・持込案内を公式基準で'),
+        action: l('면세 한도, 액체류 반입, 환승 시 휴대 조건은 관세청·항공사의 최신 공식 안내로 확인해 안내하세요. 환승 공항 통과를 보장하지 마세요.', 'Give duty-free limits, liquid carriage and transfer conditions from the latest customs and airline guidance. Do not guarantee clearance at a transfer airport.', '免税限额、液体携带与转机条件以海关和航空公司的最新官方说明为准，勿保证转机机场放行。', '免税限度・液体持込・乗継時の条件は税関と航空会社の最新公式案内で確認して案内。乗継空港の通過は保証しません。'),
+        reason: l('규정은 변경될 수 있고 공항마다 다릅니다.', 'Rules change and differ by airport.', '规定可能变化，且各机场不同。', '規定は変わることがあり、空港ごとに異なります。'),
+      },
+    ],
+    record: l('품목별 품절 시각, 대체품 구매 여부, 계산·포장 대기, 반복된 한도 문의를 기록하세요. 발주량은 실제 판매·잔량·입고 소요일로 정하세요.', 'Record stockout times, substitute purchases, checkout and packing queues and repeated limit questions. Base orders on actual sales, remaining stock and lead time.', '记录各商品缺货时间、替代品购买、收银包装排队及重复的限额咨询；按实际销量、余量和到货周期订货。', '品目別の欠品時刻、代替購入、会計・包装の待ち、限度の質問を記録。発注は実販売・残量・納期で決めます。'),
+    airport: l('출국장 예고는 출국장 단위, 출발편은 탑승구 단위입니다. 두 숫자를 더하거나 매장 방문객으로 바꾸지 말고, 실제 매장 앞 대기와 함께 보세요.', 'The departure-hall notice is per hall and departures are per gate. Do not add the two or turn them into store visitors; read them alongside the actual queue at the store.', '出境大厅预告按大厅，出发航班按登机口统计。两者不可相加，也不能换算为到店人数，请结合店前实际排队查看。', '出国場の予告は出国場単位、出発便は搭乗口単位です。二つを足したり来店客数に換えたりせず、実際の店前の待ちと合わせて見ます。'),
+  },
+  luxury: {
+    focus: l('상담이 끊기지 않게 인력과 대기 응대를 정하세요.', 'Keep consultations uninterrupted with clear staffing and waiting service.', '明确人员与等候接待，使咨询不中断。', '人員と待ち対応を決めて相談を途切れさせない。'),
+    priorities: [
+      {
+        title: l('상담 인력과 예약 확인', 'Confirm consultants and bookings', '确认咨询人员与预约', '相談スタッフと予約の確認'),
+        action: l('상담 가능한 인력과 예약 시간을 확인해 역할을 정하세요. 예약이 없는 시간에도 대기 고객 응대 담당을 한 명 정해 두세요.', 'Confirm who can consult and at which booked times, and set roles. Keep one person on waiting customers even between bookings.', '确认可接待咨询的人员与预约时间并分配职责，没有预约时也安排一人负责等候顾客。', '相談できるスタッフと予約時間を確認し役割を決めます。予約のない時間も待ち客対応を一人決めておきます。'),
+        reason: l('필요한 인원 수는 실제 예약과 대기로 판단합니다. 출국 예상 인원은 구매 고객 수가 아닙니다.', 'Staffing needs come from bookings and actual waits; expected departures are not buyers.', '所需人数依据实际预约和等候判断，预计出境人数不是购买人数。', '必要な人数は実際の予約と待ちで判断します。出国予想は購入客数ではありません。'),
+      },
+      {
+        title: l('대기 고객 응대 방식 공유', 'Share how waiting customers are served', '共享等候顾客的接待方式', '待ち客への対応方法の共有'),
+        action: l('순번과 대기 안내 문구를 정해 직원과 공유하고, 탑승 시각을 궁금해하는 고객에게는 항공사 안내를 확인하도록 안내하세요.', 'Agree queue order and wait wording with staff, and ask customers who mention boarding times to check with their airline.', '确定顺序与等候说明并与员工共享，提到登机时间的顾客请其向航空公司确认。', '順番と待ちの案内文を決めて共有し、搭乗時刻を気にする顧客には航空会社の案内を確認してもらいます。'),
+        reason: l('탑승 마감은 고객마다 달라 매장이 대신 보장할 수 없습니다.', 'Boarding cut-offs differ per customer and the store cannot guarantee them.', '登机截止时间因人而异，店铺无法代为保证。', '搭乗締切は顧客ごとに異なり、店舗が保証することはできません。'),
+      },
+      {
+        title: l('인기 모델 재고와 대체 안내', 'Stock of often-asked models and alternatives', '常问款式库存与替代说明', '人気モデルの在庫と代替案内'),
+        action: l('문의가 많은 모델의 재고를 미리 확인하고 대체 모델과 가격 차이를 안내할 수 있게 준비하세요.', 'Check stock of often-asked models ahead of time and prepare alternatives with price differences.', '提前确认常被询问款式的库存，并准备替代款与价差说明。', '問い合わせの多いモデルの在庫を事前に確認し、代替モデルと価格差を案内できるようにします。'),
+        reason: l('인기 여부는 자체 판매와 문의 기록으로 확인합니다.', 'Popularity comes from your own sales and enquiry records.', '是否畅销以本店销售与咨询记录判断。', '人気は自店の販売と問い合わせの記録で確認します。'),
+      },
+    ],
+    record: l('상담 대기 시간, 예약 변경, 문의가 많은 모델, 품절 시각을 기록해 다음 근무 준비에 쓰세요.', 'Record consultation waits, booking changes, often-asked models and stockout times for the next shift.', '记录咨询等候时间、预约变更、常问款式和缺货时间，用于下一班准备。', '相談の待ち時間、予約変更、よく聞かれるモデル、欠品時刻を記録し次の勤務準備に使います。'),
+    airport: l('출국장 예고와 탑승구 기준 출발편은 서로 다른 장소와 시간축입니다. 매장 앞 실제 대기로 응대 인원을 조정하세요.', 'The departure-hall notice and departures by gate are different places and clocks. Adjust service staff from the actual queue at the store.', '出境大厅预告与按登机口的出发航班是不同的地点与时间轴，请按店前实际排队调整接待人员。', '出国場の予告と搭乗口基準の出発便は別の場所と時間軸です。店前の実際の待ちで対応人数を調整します。'),
+  },
 };
 
 export type AirportStoreArea = 'landside' | 'airside' | 'arrival' | 'arrivalDutyFree' | 'concourse';

@@ -8,7 +8,7 @@
  * means "whole day, no hours set" — a default is never written back as if
  * the reader had chosen it.
  */
-import { parseBusinessHours, type BusinessHours, type PrepTerminal } from "./business-prep";
+import { parseBusinessHours, type AirportSide, type BusinessHours, type PrepTerminal } from "./business-prep";
 
 export const BUSINESS_KEY = "koretail-business-v1";
 
@@ -16,11 +16,16 @@ export interface BusinessPreferences {
   version: 1;
   place: "area" | "airport";
   terminal: PrepTerminal;
+  /**
+   * Side of the terminal the airport store is on; null = the whole terminal.
+   * Optional in stored values, so a value saved before sides existed still reads.
+   */
+  side: AirportSide | null;
   /** null = no hours set; the briefing reads the whole day. */
   hours: BusinessHours | null;
 }
 
-export const DEFAULT_BUSINESS_PREFERENCES: BusinessPreferences = { version: 1, place: "area", terminal: "T1", hours: null };
+export const DEFAULT_BUSINESS_PREFERENCES: BusinessPreferences = { version: 1, place: "area", terminal: "T1", side: null, hours: null };
 
 /**
  * Strict: a value from another version, a hand-edited value or a truncated
@@ -34,16 +39,18 @@ export function parseBusinessPreferences(raw: string | null | undefined): Busine
     const place = value.place === "airport" ? "airport" : value.place === "area" ? "area" : null;
     const terminal = value.terminal === "T2" ? "T2" : value.terminal === "T1" ? "T1" : null;
     if (!place || !terminal) return null;
+    const side = value.side === undefined || value.side === null ? null : value.side === "EAST" ? "EAST" : value.side === "WEST" ? "WEST" : undefined;
+    if (side === undefined) return null;
     const hours = value.hours === null ? null : parseBusinessHours(value.hours);
     if (value.hours !== null && !hours) return null;
-    return { version: 1, place, terminal, hours };
+    return { version: 1, place, terminal, side, hours };
   } catch {
     return null;
   }
 }
 
 export function serializeBusinessPreferences(value: BusinessPreferences): string {
-  return JSON.stringify({ version: 1, place: value.place, terminal: value.terminal, hours: value.hours });
+  return JSON.stringify({ version: 1, place: value.place, terminal: value.terminal, side: value.side, hours: value.hours });
 }
 
 /** Half-hour steps for the hour pickers, "00:00" … "23:30". */

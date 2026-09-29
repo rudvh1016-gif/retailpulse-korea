@@ -7,7 +7,7 @@ import { usePresentationClock } from './area-demand-card';
 import { saveBusinessPreferences, useBusinessPreferences } from './business-preferences';
 import { buildBusinessPrep, prepInputFromSummary, type BusinessHours, type PrepArea, type PrepPlace } from '../lib/business-prep';
 import { HOUR_CHOICES, type BusinessPreferences } from '../lib/business-preferences';
-import { actionText, coverageLine, evidenceText, factLine, hoursLabel, placeName, prepCopy, statusLine } from '../lib/business-prep-copy';
+import { actionText, coverageLine, evidenceText, factLine, hoursLabel, placeName, prepCopy, sideNames, statusLine } from '../lib/business-prep-copy';
 import { industryProfiles, type IndustryId } from '../lib/industry-guidance';
 import { snapshotOf } from '../lib/last-check';
 import { LastCheckBlock, UsualComparisonBlock } from './business-compare';
@@ -15,6 +15,7 @@ import { PrepShare } from './prep-share';
 import { buildShareDocument, shareLink } from '../lib/prep-share';
 import { siteOrigin } from './seo-config';
 import { WeekAheadBlock } from './week-ahead';
+import { AirportSidesBlock } from './airport-sides';
 import { FeelingLogBlock, WeeklyReviewBlock } from './weekly-review';
 import { trackPersonalEvent } from '../lib/personal-analytics';
 import { placeKey } from '../lib/last-check';
@@ -29,7 +30,7 @@ export function prepAnalytics(lang: Lang, place: PrepPlace, serviceDate: string,
 
 /** Where the reader's store is: the area tab, or an airport terminal they chose. */
 export function prepPlaceOf(preferences: BusinessPreferences, area: PrepArea): PrepPlace {
-  return preferences.place === 'airport' ? { kind: 'airport', terminal: preferences.terminal } : { kind: 'area', area };
+  return preferences.place === 'airport' ? { kind: 'airport', terminal: preferences.terminal, side: preferences.side } : { kind: 'area', area };
 }
 
 function Conditions({ lang, place, preferences, saved, storageFailed, industry, onIndustryChange }: {
@@ -42,16 +43,18 @@ function Conditions({ lang, place, preferences, saved, storageFailed, industry, 
   const [openAt, setOpenAt] = useState(preferences.hours?.open ?? '10:00');
   const [closeAt, setCloseAt] = useState(preferences.hours?.close ?? '22:00');
   const [terminal, setTerminal] = useState(preferences.terminal);
+  const [side, setSide] = useState(preferences.side);
   const start = () => {
     setWholeDay(preferences.hours === null);
     setOpenAt(preferences.hours?.open ?? '10:00');
     setCloseAt(preferences.hours?.close ?? '22:00');
     setTerminal(preferences.terminal);
+    setSide(preferences.side);
     setOpen(true);
   };
   const save = () => {
     const hours: BusinessHours | null = wholeDay ? null : { open: openAt, close: closeAt };
-    saveBusinessPreferences({ version: 1, place: preferences.place, terminal, hours });
+    saveBusinessPreferences({ version: 1, place: preferences.place, terminal, side, hours });
     trackPersonalEvent('business_hours_saved', { language: lang, location: place.kind === 'airport' ? 'airport' : place.area });
     setOpen(false);
   };
@@ -69,6 +72,10 @@ function Conditions({ lang, place, preferences, saved, storageFailed, industry, 
       {place.kind === 'airport' && <fieldset className="prep-terminal">
         <legend>{prepCopy.terminal[lang]}</legend>
         {(['T1', 'T2'] as const).map((value) => <label key={value}><input type="radio" name={`${id}-terminal`} value={value} checked={terminal === value} onChange={() => setTerminal(value)}/>{value}</label>)}
+      </fieldset>}
+      {place.kind === 'airport' && <fieldset className="prep-terminal" data-testid="prep-side">
+        <legend>{prepCopy.side[lang]}</legend>
+        {([null, 'EAST', 'WEST'] as const).map((value) => <label key={value ?? 'all'}><input type="radio" name={`${id}-side`} value={value ?? 'all'} checked={side === value} onChange={() => setSide(value)}/>{value ? sideNames[value][lang] : prepCopy.wholeTerminal[lang]}</label>)}
       </fieldset>}
       <label className="prep-field">{prepCopy.industry[lang]}
         <select value={industry} onChange={(event) => onIndustryChange(event.target.value as IndustryId)}>
@@ -130,7 +137,7 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
       <p className="eyebrow">KORETAIL · {prepCopy.eyebrow[lang]}</p>
       <h2 id={`${id}-title`}>{prepCopy.title[lang]}</h2>
     </div></div>
-    <Conditions key={`${preferences.place}:${preferences.terminal}:${preferences.hours?.open ?? ''}:${preferences.hours?.close ?? ''}`}
+    <Conditions key={`${preferences.place}:${preferences.terminal}:${preferences.side ?? ''}:${preferences.hours?.open ?? ''}:${preferences.hours?.close ?? ''}`}
       lang={lang} place={place} preferences={preferences} saved={saved} storageFailed={storageFailed} industry={industry} onIndustryChange={onIndustryChange}/>
     {!summary || !prep ? <LiveLoadMessage loading={summary === undefined || !ready} lang={lang}/> : <>
       <div className="prep-block">
@@ -140,6 +147,7 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
           : prep.status === 'PAST' || prep.status === 'ENDED' ? null : <p className="prep-empty">{prepCopy.noFacts[lang]}</p>}
         {prep.coverage.map((entry) => coverageLine(entry, serviceDate, lang)).filter(Boolean).map((line, index) => <p key={index} className="prep-coverage">{line}</p>)}
       </div>
+      {place.kind === 'airport' && <AirportSidesBlock lang={lang} summary={summary} terminal={place.terminal} side={place.side ?? null} hours={preferences.hours} nowIso={nowIso}/>}
       {prep.status !== 'PAST' && <UsualComparisonBlock lang={lang} place={place} today={summary.dayRelation === 'TODAY'}/>}
       <LastCheckBlock lang={lang} snapshot={snapshot} serviceDate={serviceDate} nowIso={nowIso}/>
       <div className="prep-block">

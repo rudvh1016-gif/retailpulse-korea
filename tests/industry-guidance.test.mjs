@@ -11,7 +11,8 @@ const LANGS = ["ko", "en", "zh", "ja"];
 const ids = Object.keys(industryProfiles);
 
 test("every business type carries the same guidance in all four languages", () => {
-  assert.equal(ids.length, 6);
+  // 2026-09-29: liquor & tobacco and luxury added for airport duty-free stores.
+  assert.equal(ids.length, 8);
   for (const id of ids) {
     const profile = industryProfiles[id];
     for (const lang of LANGS) {
