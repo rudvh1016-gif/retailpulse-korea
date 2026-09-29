@@ -1,11 +1,18 @@
 import { interests, locations, roles, terminals } from './personal-briefing';
-const names = ['onboarding_started','role_selected','location_selected','interests_selected','briefing_preference_selected','onboarding_completed','briefing_viewed','briefing_helpful_yes','briefing_helpful_no','briefing_used_for_work_yes','briefing_used_for_work_no','pwa_install_prompt_seen','pwa_installed'] as const;
-type EventName = typeof names[number];
+const names = ['onboarding_started','role_selected','location_selected','interests_selected','briefing_preference_selected','onboarding_completed','briefing_viewed','briefing_helpful_yes','briefing_helpful_no','briefing_used_for_work_yes','briefing_used_for_work_no','pwa_install_prompt_seen','pwa_installed',
+  // Business screen (docs/REVISIT_WORKFLOW_2026-09-28.md §3). Each fires on an outcome, not
+  // on a click: a view with data, a copy that succeeded, an image that was
+  // made, a share target that was chosen. None carries a free value.
+  'business_prep_viewed','business_prep_copied','business_prep_image_created','business_prep_share_target_chosen','business_hours_saved','business_feeling_recorded'] as const;
+export type AnalyticsEventName = typeof names[number];
+/** The prep verdicts, so "not enough data" can be counted without any content. */
+export const PREP_STATUSES = ['ACTIONS','NO_CHANGE','PARTIAL','INSUFFICIENT','ENDED','PAST'] as const;
+type EventName = AnalyticsEventName;
 type Params = Record<string, unknown>;
 export function validMeasurementId(value: string | undefined) { return /^G-[A-Z0-9]{4,20}$/.test(value ?? '') && !/^G-X+$/.test(value ?? '') ? value : undefined; }
 export function safeAnalyticsParams(params: Params): Record<string,string> {
   const result: Record<string,string> = {};
-  const enums: Record<string, readonly string[]> = {role:roles,location:locations,terminal:terminals,day:['yesterday','today','tomorrow'],language:['ko','en','zh','ja']};
+  const enums: Record<string, readonly string[]> = {role:roles,location:locations,terminal:terminals,day:['yesterday','today','tomorrow'],language:['ko','en','zh','ja'],prep_status:PREP_STATUSES};
   for(const [key,values] of Object.entries(enums)) if(typeof params[key] === 'string' && values.includes(params[key])) result[key] = params[key];
   if(Array.isArray(params.interests)) result.interests = interests.filter(i=>(params.interests as unknown[]).includes(i)).join(',');
   return result;
