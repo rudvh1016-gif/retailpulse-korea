@@ -25,6 +25,9 @@ export const INDUSTRY_CATEGORIES: Record<IndustryId, readonly string[]> = {
   convenience: ["생활용품"],
   popup: [],
   tourism: ["숙박", "문화/취미"],
+  // No Seoul category is an honest match for either; the review says so.
+  liquor: [],
+  luxury: [],
 };
 
 export type RangeVerdict = "HIGHER" | "OVERLAPS" | "LOWER";

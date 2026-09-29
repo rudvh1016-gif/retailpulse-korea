@@ -1,0 +1,144 @@
+import { test, expect, type Page } from '@playwright/test';
+import { SUMMARY_FIXTURE, routeSummary } from './summary-fixture';
+import { tofuCharacters } from './font-glyphs';
+import { airportSides } from '../lib/airport-sides-summary';
+import { sidesCopy } from '../lib/airport-sides-copy';
+import { industryProfiles } from '../lib/industry-guidance';
+import { prepCopy } from '../lib/business-prep-copy';
+
+// SUMMARY_FIXTURE is 2026-08-31 14:10 KST (today).
+const DATE = '2026-08-31';
+const pad = (hour: number) => String(hour).padStart(2, '0');
+const hall = (terminal: string, zone: string, hour: number, value: number, aggregate = false) => ({
+  terminal, zone, isAggregate: aggregate ? 1 : 0, targetDate: DATE, timeBandRaw: `${pad(hour)}_${hour === 23 ? '24' : pad(hour + 1)}`,
+  targetStartAt: `${DATE}T${pad(hour)}:00:00+09:00`, targetEndAt: hour === 23 ? '2026-09-01T00:00:00+09:00' : `${DATE}T${pad(hour + 1)}:00:00+09:00`,
+  expectedPassengers: value, retrievedAt: '2026-08-31T04:42:00Z',
+});
+const HALL_ROWS = Array.from({ length: 24 }, (_, hour) => [
+  hall('T1', 't1dg1', hour, 0), hall('T1', 't1dg2', hour, 100 + hour), hall('T1', 't1dg3', hour, 200 + hour),
+  hall('T1', 't1dg4', hour, 150), hall('T1', 't1dg5', hour, 50), hall('T1', 't1dg6', hour, 0),
+  hall('T1', 't1dgsum1', hour, 500 + 2 * hour, true),
+  hall('T2', 't2dg1', hour, 80), hall('T2', 't2dg2', hour, 120 + hour), hall('T2', 't2dgsum2', hour, 200 + hour, true),
+]).flat();
+const flight = (id: string, terminal: string | null, gate: string, time: string, status = 'scheduled') =>
+  ({ physicalFlightId: id, terminal, gate, scheduledAt: `${DATE}T${time}:00+09:00`, status, retrievedAt: '2026-08-31T05:00:00Z' });
+const FLIGHTS = [
+  flight('A', 'T1', '9', '15:05'), flight('A', 'T1', '9', '15:05'), flight('B', 'T1', '11', '15:40'), flight('C', 'T1', '29', '15:20'),
+  flight('D', 'T1', '27', '16:10'), flight('E', 'T1', '10', '17:00'), flight('F', null, '107', '15:30'), flight('G', 'T2', '274', '18:00'),
+  flight('H', 'T1', '12', '15:50', 'cancelled'),
+];
+
+function fixture(hallsPublic: boolean) {
+  return {
+    ...SUMMARY_FIXTURE,
+    airport: { ...SUMMARY_FIXTURE.airport, sides: airportSides(DATE, 'TODAY', HALL_ROWS, FLIGHTS, [], false, hallsPublic) },
+  };
+}
+
+async function open(page: Page, { lang = 'ko', width = 390, hallsPublic = false, side = 'EAST', hours = { open: '09:30', close: '18:00' } as { open: string; close: string } | null } = {}) {
+  await page.setViewportSize({ width, height: 900 });
+  await page.addInitScript((stored) => localStorage.setItem('koretail-business-v1', stored), JSON.stringify({ version: 1, place: 'airport', terminal: 'T1', side, hours }));
+  await page.route('**/api/live/summary*', routeSummary(fixture(hallsPublic)));
+  await page.route('**/api/live/usual*', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+  await page.goto(`/${lang}/business`);
+  await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
+  const prep = page.getByTestId('business-prep');
+  await expect(prep.getByTestId('airport-sides')).toBeVisible();
+  return prep;
+}
+
+test('until the notice condition is met, hall sides are withheld and point to the official page; gates are counted', async ({ page }) => {
+  const prep = await open(page);
+  await expect(prep.getByTestId('prep-place')).toHaveText('인천공항 T1 동편');
+  const sides = prep.getByTestId('airport-sides');
+  await expect(sides.getByTestId('sides-notice')).toHaveText(sidesCopy.notice.ko);
+  await expect(sides.getByTestId('halls-withheld')).toContainText('안내문구 협의');
+  await expect(sides.getByTestId('halls-withheld').getByRole('link')).toHaveAttribute('href', 'https://www.airport.kr/ap_ko/883/subview.do');
+  // Codeshares once, cancelled apart, the concourse and T2 kept separate.
+  await expect(sides.getByTestId('gates-areas')).toHaveText('T1 본관 5편 · T2 1편 · 탑승동 1편 · 터미널 미확인 0편');
+  await expect(sides.getByTestId('gates-sides')).toContainText('동편 2편 · 서편 1편 · 중앙 1편 · 위치 미확인 1편');
+  await expect(sides).toContainText('결항편은 합계에서 제외했습니다 (1편)');
+  // The prep fact is a flight count at east gates, on the scheduled clock.
+  await expect(prep.getByTestId('prep-facts')).toContainText('탑승구 기준 출발편이 가장 많은 시간 15:00–16:00 · 2편 (동편 탑승구)');
+  const gate = prep.getByTestId('prep-actions').locator('li[data-rule="GATE_PEAK"]');
+  await expect(gate).toContainText('예정 출발 시각 기준');
+  await gate.locator('summary').click();
+  await expect(gate).toContainText('위치가 확인된 탑승구의 편수 비율 80%');
+  // The terminal A5 peak is not relabelled as east while the split is withheld.
+  await expect(prep.getByTestId('prep-facts')).not.toContainText('동편 출국장');
+});
+
+test('with the hall split published: sides add up, hours never split a band, and the day stays whole', async ({ page }) => {
+  const prep = await open(page, { hallsPublic: true });
+  const sides = prep.getByTestId('airport-sides');
+  const east = Array.from({ length: 24 }, (_, hour) => 300 + 2 * hour).reduce((a, b) => a + b, 0);
+  const west = 200 * 24;
+  await expect(sides.getByTestId('halls-sides')).toContainText(`동편 ${east.toLocaleString('ko-KR')}명 · 서편 ${west.toLocaleString('ko-KR')}명`);
+  await expect(sides.getByTestId('halls-compare')).toContainText(`T1 ${(east + west).toLocaleString('ko-KR')}명 (하루 전체)`);
+  // 09:30–18:00: 10–17 whole, 09–10 shown apart and never halved.
+  const inside = Array.from({ length: 8 }, (_, i) => 300 + 2 * (10 + i)).reduce((a, b) => a + b, 0);
+  await expect(sides.getByTestId('halls-hours')).toContainText(`영업시간 안: ${inside.toLocaleString('ko-KR')}명`);
+  await expect(sides.getByTestId('halls-hours')).toContainText('경계 시간대 09–10시 318');
+  // From now first (14:10 → the 14–15 band), whole day behind a toggle.
+  await expect(sides.getByTestId('halls-upcoming').locator('li').first()).toContainText('14–15시');
+  await expect(sides.getByTestId('halls-all').locator('li')).toHaveCount(24);
+  await expect(prep.getByTestId('prep-facts')).toContainText('동편 출국장 예상 이용객이 가장 많은 시간');
+});
+
+test('the side is chosen in the conditions, stored on this device, and whole-terminal is the default', async ({ page }) => {
+  const prep = await open(page, { side: null as unknown as string });
+  await expect(prep.getByTestId('prep-place')).toHaveText('인천공항 T1');
+  await prep.getByRole('button', { name: prepCopy.change.ko }).click();
+  await prep.getByTestId('prep-side').getByLabel('서편').check();
+  await prep.getByRole('button', { name: prepCopy.save.ko, exact: true }).click();
+  await expect(prep.getByTestId('prep-place')).toHaveText('인천공항 T1 서편');
+  expect(JSON.parse(await page.evaluate(() => localStorage.getItem('koretail-business-v1') ?? 'null')).side).toBe('WEST');
+});
+
+test('a stored side that is not east or west is ignored, not guessed', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('koretail-business-v1', '{"version":1,"place":"airport","terminal":"T1","side":"NORTH","hours":null}'));
+  await page.route('**/api/live/summary*', routeSummary(fixture(false)));
+  await page.goto('/ko/business');
+  await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
+  await expect(page.getByTestId('business-prep').getByTestId('prep-place')).toHaveText('명동');
+});
+
+test('the staff share names the date, terminal, side, expectation basis and flight basis', async ({ page }) => {
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  const prep = await open(page, { hallsPublic: true });
+  await prep.getByTestId('prep-share').getByRole('button', { name: '문구 복사' }).click();
+  const text = await page.evaluate(() => navigator.clipboard.readText());
+  expect(text).toContain('2026-08-31 (월) · 인천공항 T1 동편');
+  expect(text).toContain('동편 출국장 예상 이용객이 가장 많은 시간');
+  expect(text).toContain('탑승구 기준 출발편이 가장 많은 시간 15:00–16:00 · 2편 (동편 탑승구)');
+  expect(text).toContain(sidesCopy.notice.ko);
+  expect(text).toContain('인천공항 운항 정보 (탑승구 기준 출발편)');
+});
+
+test('the added business types sit in the existing selector and drive the gate hint', async ({ page }) => {
+  const prep = await open(page);
+  await prep.getByRole('button', { name: prepCopy.change.ko }).click();
+  const select = prep.locator('.prep-form select').first();
+  await expect(select.locator('option')).toHaveCount(8);
+  await select.selectOption('luxury');
+  await expect(prep.getByTestId('prep-industry')).toHaveText(industryProfiles.luxury.label.ko);
+  await expect(prep.getByTestId('prep-actions').locator('li[data-rule="GATE_PEAK"] .prep-industry-hint')).toContainText('대기 고객 응대 방식');
+});
+
+for (const lang of ['en', 'zh', 'ja'] as const) {
+  test(`the airport sides read in ${lang} without missing glyphs and fit a small phone`, async ({ page }) => {
+    const prep = await open(page, { lang, width: 360, hallsPublic: true });
+    const sides = prep.getByTestId('airport-sides');
+    await sides.locator('details').last().locator('summary').click();
+    await expect(sides.getByTestId('sides-notice')).toHaveText(sidesCopy.notice[lang]);
+    expect(await tofuCharacters(sides)).toEqual([]);
+    expect(await tofuCharacters(prep.getByTestId('prep-facts'))).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+  });
+}
+
+test('Korean at 360px has no overflow and no missing glyph', async ({ page }) => {
+  const prep = await open(page, { width: 360, hallsPublic: true });
+  expect(await tofuCharacters(prep.getByTestId('airport-sides'))).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+});

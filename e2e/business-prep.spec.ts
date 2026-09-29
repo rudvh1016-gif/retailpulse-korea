@@ -80,7 +80,7 @@ test('saved hours narrow the briefing and survive a reload', async ({ page }) =>
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   await expect(page.getByTestId('business-prep').getByTestId('prep-hours')).toHaveText('10:00–16:00');
   const stored = await page.evaluate(() => localStorage.getItem('koretail-business-v1'));
-  expect(JSON.parse(stored ?? 'null')).toEqual({ version: 1, place: 'area', terminal: 'T1', hours: { open: '10:00', close: '16:00' } });
+  expect(JSON.parse(stored ?? 'null')).toEqual({ version: 1, place: 'area', terminal: 'T1', side: null, hours: { open: '10:00', close: '16:00' } });
 });
 
 test('hours past midnight are labelled and a first visit saves nothing', async ({ page }) => {

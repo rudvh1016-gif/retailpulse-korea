@@ -93,7 +93,7 @@ export function FeelingLogBlock({ lang, place, industry, today }: { lang: Lang; 
       <p className="prep-note" role="status" aria-live="polite">{saved ? reviewCopy.saved[lang] : ''}</p>
       {entries.length > 0 && <details className="prep-evidence"><summary>{reviewCopy.recent[lang]}</summary>
         <ul className="prep-feeling-list">{[...entries].reverse().slice(0, 7).map((entry) => <li key={`${entry.date}${entry.place}${entry.industry}`}>
-          <span>{entry.date.slice(5).replace('-', '/')} · {entry.place.startsWith('airport:') ? placeName({ kind: 'airport', terminal: entry.place.slice(8) as 'T1' | 'T2' }, lang) : placeName({ kind: 'area', area: entry.place.slice(5) as 'myeongdong' }, lang)} · {feelingLabels[entry.feeling][lang]}</span>
+          <span>{entry.date.slice(5).replace('-', '/')} · {entry.place.startsWith('airport:') ? placeName({ kind: 'airport', terminal: entry.place.slice(8, 10) as 'T1' | 'T2', side: (entry.place.slice(11) || null) as 'EAST' | 'WEST' | null }, lang) : placeName({ kind: 'area', area: entry.place.slice(5) as 'myeongdong' }, lang)} · {feelingLabels[entry.feeling][lang]}</span>
           <button type="button" onClick={() => write(removeFeeling(entries, entry.date, entry.place, entry.industry))}>{reviewCopy.remove[lang]}</button>
         </li>)}</ul>
       </details>}

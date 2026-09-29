@@ -153,9 +153,9 @@ test("the airport ranks its own peak band and totals only complete coverage", ()
     serviceDate: day, dayRelation: "TODAY", nowIso: at(day, 5, 30), place: { kind: "airport", terminal: "T1" }, hours: hours("06:00", "10:00"),
     airport: { bands, coverage: "COMPLETE", retrievedAt: at("2026-09-27", 18) },
   });
-  assert.deepEqual(complete.actions.map((action) => [action.rule, action.startAt, action.value]), [["AIRPORT_PEAK", at(day, 8), { kind: "PASSENGERS", count: 4667 }]]);
+  assert.deepEqual(complete.actions.map((action) => [action.rule, action.startAt, action.value]), [["AIRPORT_PEAK", at(day, 8), { kind: "PASSENGERS", count: 4667, side: null }]]);
   assert.deepEqual(complete.facts.find((fact) => fact.kind === "AIRPORT_TOTAL"), {
-    kind: "AIRPORT_TOTAL", count: 3000 + 4200 + 4667 + 3900, bands: 4, startAt: at(day, 6), endAt: at(day, 10), issuedAt: at("2026-09-27", 18),
+    kind: "AIRPORT_TOTAL", count: 3000 + 4200 + 4667 + 3900, bands: 4, startAt: at(day, 6), endAt: at(day, 10), issuedAt: at("2026-09-27", 18), side: null,
   });
   const partial = buildBusinessPrep({
     serviceDate: day, dayRelation: "TODAY", nowIso: at(day, 5, 30), place: { kind: "airport", terminal: "T1" }, hours: hours("06:00", "10:00"),
@@ -163,6 +163,37 @@ test("the airport ranks its own peak band and totals only complete coverage", ()
   });
   assert.equal(partial.facts.some((fact) => fact.kind === "AIRPORT_TOTAL"), false, "a total over partial coverage could hide the real peak");
   assert.equal(partial.coverage[0].status, "PARTIAL");
+});
+
+test("a chosen side uses that side's halls when published, and the terminal (labelled as such) when not", () => {
+  const day = "2026-09-28";
+  const band = (hour, count) => ({ targetStartAt: at(day, hour), targetEndAt: at(day, hour + 1), expectedPassengers: count });
+  const terminal = [band(6, 3000), band(7, 4200), band(8, 4667), band(9, 3900)];
+  const east = [band(6, 2000), band(7, 1000), band(8, 1500), band(9, 900)];
+  const input = (sideBands) => ({
+    serviceDate: day, dayRelation: "TODAY", nowIso: at(day, 5, 30), place: { kind: "airport", terminal: "T1", side: "EAST" }, hours: hours("06:00", "10:00"),
+    airport: { bands: terminal, coverage: "COMPLETE", retrievedAt: at("2026-09-27", 18), sideBands, sideCoverage: sideBands ? "COMPLETE" : "UNAVAILABLE" },
+  });
+  const onSide = buildBusinessPrep(input(east));
+  assert.deepEqual(onSide.facts.find((fact) => fact.kind === "AIRPORT_PEAK"), { kind: "AIRPORT_PEAK", count: 2000, startAt: at(day, 6), endAt: at(day, 7), issuedAt: at("2026-09-27", 18), side: "EAST" });
+  assert.equal(onSide.facts.find((fact) => fact.kind === "AIRPORT_TOTAL").count, 5400);
+  const withheld = buildBusinessPrep(input(null));
+  assert.equal(withheld.facts.find((fact) => fact.kind === "AIRPORT_PEAK").side, null, "without the published split the terminal figure is not called east");
+  assert.equal(withheld.facts.find((fact) => fact.kind === "AIRPORT_PEAK").count, 4667);
+});
+
+test("gate departures give an hour and a count of flights, on the flight clock, never people", () => {
+  const day = "2026-09-28";
+  const gates = { hours: [{ hour: 5, count: 30 }, { hour: 7, count: 9 }, { hour: 9, count: 12 }, { hour: 12, count: 40 }], verifiedShare: 0.35, retrievedAt: at(day, 5), basis: "COLLECTED_FLIGHT_RECORDS" };
+  const prep = buildBusinessPrep({
+    serviceDate: day, dayRelation: "TODAY", nowIso: at(day, 5, 30), place: { kind: "airport", terminal: "T1", side: "EAST" }, hours: hours("06:30", "10:00"),
+    airport: { bands: [], coverage: "UNAVAILABLE", retrievedAt: null, gates },
+  });
+  const fact = prep.facts.find((row) => row.kind === "GATE_PEAK");
+  assert.deepEqual([fact.count, fact.startAt, fact.side], [12, at(day, 9), "EAST"], "hours outside 06:30-10:00 never win; the 06:00 band touching the opening counts whole");
+  const action = prep.actions.find((row) => row.rule === "GATE_PEAK");
+  assert.deepEqual(action.value, { kind: "FLIGHTS", count: 12, side: "EAST", verifiedShare: 0.35 });
+  assert.equal(action.source, "A1_FLIGHTS");
 });
 
 test("no value this module emits can be read as visitors, sales, staff or nationality", () => {

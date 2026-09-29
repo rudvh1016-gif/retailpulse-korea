@@ -22,8 +22,8 @@ export interface FeelingEntry {
 }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
-const PLACE = /^(area:(myeongdong|hongdae|seongsu|itaewon)|airport:T[12])$/;
-const INDUSTRY = /^(beauty|fashion|food|convenience|popup|tourism)$/;
+const PLACE = /^(area:(myeongdong|hongdae|seongsu|itaewon)|airport:T[12](:(EAST|WEST))?)$/;
+const INDUSTRY = /^(beauty|fashion|food|convenience|popup|tourism|liquor|luxury)$/;
 
 function isEntry(value: unknown): value is FeelingEntry {
   if (!value || typeof value !== "object") return false;

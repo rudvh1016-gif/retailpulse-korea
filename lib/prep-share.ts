@@ -7,6 +7,7 @@
  * date in its link, and says that the link shows the latest data while the
  * saved text or image stays as it was when saved. Nothing personal goes in.
  */
+import { sidesCopy } from "./airport-sides-copy";
 import type { BusinessHours, BusinessPrep, PrepPlace, PrepSource } from "./business-prep";
 import { actionText, factLine, hoursLabel, placeName, prepTime, sourceName, statusLine, type PrepLang } from "./business-prep-copy";
 import { industryProfiles, type IndustryId } from "./industry-guidance";
@@ -103,6 +104,9 @@ export function buildShareDocument(input: ShareInput): ShareDocument {
   if (!prep.actions.length || prep.hourlyStatus !== "ACTIONS") lines.push({ kind: "item", text: statusLine(prep.actions.length ? prep.hourlyStatus : prep.status, lang) });
   const issued = prep.coverage.filter((entry) => entry.issuedAt && (entry.status === "COVERED" || entry.status === "PARTIAL"))
     .map((entry) => `${sourceName(entry.source, lang)} ${prepTime(entry.issuedAt as string, serviceDate, lang)}`);
+  // Gate departures are a flight count with their own collection time.
+  for (const fact of prep.facts) if (fact.kind === "GATE_PEAK" && fact.issuedAt) issued.push(`${sourceName("A1_FLIGHTS", lang)} ${prepTime(fact.issuedAt, serviceDate, lang)}`);
+  if (input.place.kind === "airport") lines.push({ kind: "note", text: sidesCopy.notice[lang] });
   lines.push({ kind: "note", text: `${labels.basis[lang]}: ${issued.length ? issued.join(" · ") : labels.none[lang]} (KST)` });
   lines.push({ kind: "note", text: `${labels.source[lang]}: ${sourcesUsed(prep).map((source) => sourceName(source, lang)).join(", ") || labels.none[lang]}` });
   const savedMs = Date.parse(input.savedAt);

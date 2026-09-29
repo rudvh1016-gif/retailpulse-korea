@@ -37,7 +37,7 @@ export interface CheckSnapshot {
 }
 
 export function placeKey(place: PrepPlace): string {
-  return place.kind === "airport" ? `airport:${place.terminal}` : `area:${place.area}`;
+  return place.kind === "airport" ? `airport:${place.terminal}${place.side ? `:${place.side}` : ""}` : `area:${place.area}`;
 }
 
 export function hoursKey(hours: BusinessHours | null): string {

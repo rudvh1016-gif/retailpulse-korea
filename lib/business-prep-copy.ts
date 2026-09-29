@@ -26,6 +26,8 @@ export const prepCopy = {
   open: row("여는 시간", "Opens", "开店", "開店"),
   closeTime: row("닫는 시간", "Closes", "打烊", "閉店"),
   terminal: row("터미널", "Terminal", "航站楼", "ターミナル"),
+  side: row("터미널 안 위치", "Side of the terminal", "航站楼内位置", "ターミナル内の位置"),
+  wholeTerminal: row("터미널 전체", "Whole terminal", "整个航站楼", "ターミナル全体"),
   industry: row("업종", "Business type", "业态", "業種"),
   deviceOnly: row("이 기기에만 저장되며 서버로 보내지 않습니다.", "Saved on this device only; never sent to a server.", "仅保存在本设备，不会发送到服务器。", "この端末にのみ保存され、サーバーには送信されません。"),
   storageBlocked: row("이 브라우저가 저장을 막아 이번 방문에만 적용됩니다.", "This browser blocks storage, so this applies to this visit only.", "此浏览器禁止存储，仅本次访问有效。", "このブラウザは保存を許可していないため、今回の訪問のみ有効です。"),
@@ -63,6 +65,7 @@ const sourceCopy: Record<PrepSource, Row> = {
   KMA_FORECAST: row("기상청 단기예보", "KMA short-range forecast", "韩国气象厅短期预报", "気象庁短期予報"),
   TOURAPI_EVENTS: row("한국관광공사 행사 정보", "Korea Tourism Organization events", "韩国观光公社活动信息", "韓国観光公社のイベント情報"),
   A5_FORECAST: row("인천공항 공식 출국 예상", "Incheon Airport official departure forecast", "仁川机场官方出境预测", "仁川空港公式出国予測"),
+  A1_FLIGHTS: row("인천공항 운항 정보 (탑승구 기준 출발편)", "Incheon Airport flight records (departures by gate)", "仁川机场航班信息（按登机口的出发航班）", "仁川空港の運航情報（搭乗口基準の出発便）"),
   HOLIDAY_CALENDAR: row("공식 공휴일", "Official public holidays", "官方公共假日", "公式の祝日"),
 };
 
@@ -75,6 +78,7 @@ const limitCopy: Record<PrepSource, Row> = {
   KMA_FORECAST: row("기상청 격자 예보입니다. 날씨가 매출에 주는 영향은 판단하지 않습니다.", "A KMA grid forecast. It says nothing about the effect of weather on sales.", "为气象厅网格预报，不判断天气对销售的影响。", "気象庁の格子予報です。天気が売上に与える影響は判断しません。"),
   TOURAPI_EVENTS: row("공식 행사 기간 정보입니다. 행사 방문객 수는 알 수 없습니다.", "Official event dates only; event attendance is unknown.", "仅为官方活动期间，无法得知活动访客数。", "公式の開催期間のみで、来場者数は分かりません。"),
   A5_FORECAST: row("공항이 발표한 출국 예상 승객입니다. 매장 방문객 수가 아니며, 항공사로 승객 국적을 알 수는 없습니다.", "The airport's expected departing passengers — not store visitors, and airline does not tell passenger nationality.", "机场发布的预计出境旅客，并非到店人数，也不能由航空公司推断旅客国籍。", "空港発表の出国予想旅客で、来店客数ではなく、航空会社から旅客の国籍は分かりません。"),
+  A1_FLIGHTS: row("비행기 출발편 수이며 사람 수가 아닙니다. 예정 출발 시각 기준이고, 공식 문구로 위치가 확인된 탑승구만 동·서편으로 셉니다.", "A count of departing flights, not people. It uses scheduled departure times, and only gates whose side official text names are counted as east or west.", "为出发航班数，并非人数。按计划出发时间统计，只有官方文字确认位置的登机口才计入东侧或西侧。", "出発便の数で、人数ではありません。予定出発時刻に基づき、公式の文言で位置が確認できた搭乗口だけを東側・西側に数えます。"),
   HOLIDAY_CALENDAR: row("공식 공휴일 정보입니다. 공휴일에 손님이 늘거나 준다고 판단하지 않습니다.", "Official holiday dates. They do not say whether customers rise or fall.", "为官方假日信息，不判断假日客人增减。", "公式の祝日情報です。客数の増減は判断しません。"),
 };
 
@@ -100,8 +104,13 @@ const areaNames: Record<string, Row> = {
   itaewon: row("이태원", "Itaewon", "梨泰院", "梨泰院"),
 };
 
+export const sideNames: Record<"EAST" | "WEST", Row> = {
+  EAST: row("동편", "East side", "东侧", "東側"),
+  WEST: row("서편", "West side", "西侧", "西側"),
+};
+
 export function placeName(place: PrepPlace, lang: PrepLang): string {
-  if (place.kind === "airport") return `${row("인천공항", "Incheon Airport", "仁川机场", "仁川空港")[lang]} ${place.terminal}`;
+  if (place.kind === "airport") return `${row("인천공항", "Incheon Airport", "仁川机场", "仁川空港")[lang]} ${place.terminal}${place.side ? ` ${sideNames[place.side][lang]}` : ""}`;
   return areaNames[place.area][lang];
 }
 
@@ -171,13 +180,32 @@ export function factLine(fact: PrepFact, serviceDate: string, lang: PrepLang): s
         + ` (${sourceName("KMA_FORECAST", lang)})`;
     }
     case "AIRPORT_PEAK":
+      if (fact.side) return row(
+        `${sideNames[fact.side].ko} 출국장 예상 이용객이 가장 많은 시간 ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)} · 약 ${number(fact.count, lang)}명`,
+        `Most expected passengers at the ${sideNames[fact.side].en.toLowerCase()} departure halls ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)} · about ${number(fact.count, lang)}`,
+        `${sideNames[fact.side].zh}出境大厅预计旅客最多时段 ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)} · 约${number(fact.count, lang)}人`,
+        `${sideNames[fact.side].ja}の出国場で予想旅客が最も多い時間 ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)} · 約${number(fact.count, lang)}人`,
+      )[lang] + ` (${sourceName("A5_FORECAST", lang)}${issued(fact.issuedAt, serviceDate, lang)})`;
       return row(
         `출국 예상 승객이 가장 많은 시간 ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)} · 약 ${number(fact.count, lang)}명`,
         `Most expected departures ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)} · about ${number(fact.count, lang)}`,
         `预计出境旅客最多时段 ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)} · 约${number(fact.count, lang)}人`,
         `出国予想旅客が最も多い時間 ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)} · 約${number(fact.count, lang)}人`,
       )[lang] + ` (${sourceName("A5_FORECAST", lang)}${issued(fact.issuedAt, serviceDate, lang)})`;
+    case "GATE_PEAK":
+      return row(
+        `탑승구 기준 출발편이 가장 많은 시간 ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)} · ${fact.count}편${fact.side ? ` (${sideNames[fact.side].ko} 탑승구)` : ""}`,
+        `Most departures by gate ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)} · ${fact.count} flight(s)${fact.side ? ` (${sideNames[fact.side].en.toLowerCase()} gates)` : ""}`,
+        `按登机口出发航班最多时段 ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)} · ${fact.count}班${fact.side ? `（${sideNames[fact.side].zh}登机口）` : ""}`,
+        `搭乗口基準の出発便が最も多い時間 ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)} · ${fact.count}便${fact.side ? `（${sideNames[fact.side].ja}の搭乗口）` : ""}`,
+      )[lang] + ` (${sourceName("A1_FLIGHTS", lang)}${issued(fact.issuedAt, serviceDate, lang)})`;
     case "AIRPORT_TOTAL":
+      if (fact.side) return row(
+        `영업시간 ${sideNames[fact.side].ko} 출국장 예상 이용객 합계 약 ${number(fact.count, lang)}명 (${fact.bands}개 시간대)`,
+        `Expected passengers at the ${sideNames[fact.side].en.toLowerCase()} halls across your hours about ${number(fact.count, lang)} (${fact.bands} bands)`,
+        `营业时间内${sideNames[fact.side].zh}出境大厅预计旅客合计约${number(fact.count, lang)}人（${fact.bands}个时段）`,
+        `営業時間内の${sideNames[fact.side].ja}出国場の予想旅客合計 約${number(fact.count, lang)}人（${fact.bands}時間帯）`,
+      )[lang];
       return row(
         `영업시간 출국 예상 승객 합계 약 ${number(fact.count, lang)}명 (${fact.bands}개 시간대)`,
         `Expected departures across your hours about ${number(fact.count, lang)} (${fact.bands} bands)`,
@@ -239,6 +267,20 @@ export function actionText(action: PrepAction, serviceDate: string, industry: In
         )[lang],
         industryHint: industryPeakHint(industry, lang),
       };
+    case "GATE_PEAK": {
+      const count = value.kind === "FLIGHTS" ? value.count : 0;
+      const side = value.kind === "FLIGHTS" && value.side ? value.side : null;
+      return {
+        title: row("출발편이 가장 많은 시간 확인", "The busiest hour for departures", "确认出发航班最多的时段", "出発便が最も多い時間を確認")[lang],
+        body: row(
+          `${span}에 ${side ? `${sideNames[side].ko} ` : ""}탑승구 기준 출발편이 가장 많습니다(${count}편, 예정 출발 시각 기준). 출국장 이용 시각과는 다른 시간축입니다.`,
+          `${span} has the most departures by gate${side ? ` on the ${sideNames[side].en.toLowerCase()}` : ""} (${count}, by scheduled departure). This is a different clock from the departure-hall times.`,
+          `${span} ${side ? `${sideNames[side].zh}` : ""}按登机口的出发航班最多（${count}班，按计划出发时间）。与出境大厅的使用时间是不同的时间轴。`,
+          `${span} は${side ? `${sideNames[side].ja}の` : ""}搭乗口基準の出発便が最も多い時間です（${count}便、予定出発時刻基準）。出国場を利用する時刻とは別の時間軸です。`,
+        )[lang],
+        industryHint: industryPeakHint(industry, lang),
+      };
+    }
     case "RAIN":
       return {
         title: row("비 예보 대비", "Rain in the forecast", "预报有雨", "雨の予報に備える")[lang],
@@ -305,6 +347,7 @@ export function actionText(action: PrepAction, serviceDate: string, industry: In
 const conditionCopy: Record<PrepAction["rule"], Row> = {
   CROWD: row("영업시간 안 공식 혼잡 단계가 '약간 붐빔' 이상", "Official crowding 'slightly busy' or higher inside your hours", "营业时间内官方拥挤等级为「略拥挤」或以上", "営業時間内の公式混雑度が「やや混雑」以上"),
   AIRPORT_PEAK: row("영업시간 안 출국 예상 승객이 가장 많은 공식 시간대", "The official band with the most expected departures inside your hours", "营业时间内预计出境旅客最多的官方时段", "営業時間内で出国予想旅客が最も多い公式時間帯"),
+  GATE_PEAK: row("영업시간 안 탑승구 기준 출발편이 가장 많은 예정 출발 시간", "The scheduled hour with the most departures by gate inside your hours", "营业时间内按登机口出发航班最多的计划出发时段", "営業時間内で搭乗口基準の出発便が最も多い予定出発時間"),
   RAIN: row("영업시간 안 강수확률 50% 이상", "Chance of rain 50% or more inside your hours", "营业时间内降水概率 50% 以上", "営業時間内の降水確率50%以上"),
   HEAT: row("영업시간 안 기온 30°C 이상", "30°C or more inside your hours", "营业时间内气温 30°C 以上", "営業時間内の気温30°C以上"),
   COLD: row("영업시간 안 기온 5°C 이하", "5°C or less inside your hours", "营业时间内气温 5°C 以下", "営業時間内の気温5°C以下"),
@@ -321,7 +364,8 @@ export function evidenceText(action: PrepAction, serviceDate: string, lang: Prep
     data: `${sourceName(action.source, lang)}${official}`,
     issued: action.issuedAt ? prepTime(action.issuedAt, serviceDate, lang) : row("시각 정보 없음", "No time given", "无时间信息", "時刻情報なし")[lang],
     target: action.startAt && action.endAt ? prepSpan(action.startAt, action.endAt, serviceDate, lang) : row("날짜 전체", "The whole date", "整日", "日付全体")[lang],
-    limit: limitLine(action.source, lang),
+    limit: limitLine(action.source, lang) + (action.value.kind === "FLIGHTS" && action.value.verifiedShare !== null
+      ? row(` 위치가 확인된 탑승구의 편수 비율 ${Math.round(action.value.verifiedShare * 100)}%.`, ` Flights at a gate with a confirmed side: ${Math.round(action.value.verifiedShare * 100)}%.`, ` 位置已确认的登机口航班比例 ${Math.round(action.value.verifiedShare * 100)}%。`, ` 位置が確認できた搭乗口の便の割合 ${Math.round(action.value.verifiedShare * 100)}%。`)[lang] : ""),
   };
 }
 
