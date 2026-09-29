@@ -84,6 +84,7 @@ function sourcesUsed(prep: BusinessPrep): PrepSource[] {
   for (const action of prep.actions) used.add(action.source);
   if (prep.facts.some((fact) => fact.kind === "EVENTS")) used.add("TOURAPI_EVENTS");
   if (prep.facts.some((fact) => fact.kind === "HOLIDAY")) used.add("HOLIDAY_CALENDAR");
+  if (prep.facts.some((fact) => fact.kind === "GATE_PEAK")) used.add("A1_FLIGHTS");
   return [...used];
 }
 

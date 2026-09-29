@@ -43,7 +43,7 @@ test("official geomap gate points", async ({ page }) => {
     const namesSide = /(동편|서편)/.test(`${ko.name ?? ""} ${ko.locDesc ?? ""}`);
     if (!isGate && !namesSide) continue;
     const at = byDbId.get(Number(poi.nodeDbId));
-    const { name: _name, imageUrl: _image, ...rest } = flat(poi);
+    const rest = Object.fromEntries(Object.entries(flat(poi)).filter(([key]) => key !== "name" && key !== "imageUrl"));
     console.log(`GEOPOI ${isGate ? "GATE" : "SIDE"} ${JSON.stringify({ ko: ko.name, desc: ko.locDesc, ...rest })} NODE ${at ? `${at.list} ${JSON.stringify(flat(at.node))}` : "none"}`);
     printed++;
   }

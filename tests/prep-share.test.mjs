@@ -86,4 +86,5 @@ test("a partly located airport side reads the same in the text and the image, wi
   assert.ok(text.includes("위치 미확인 47편 제외, 그중 같은 시간 17편"));
   assert.doesNotMatch(text, /탑승구 기준 출발편이 가장 많은 시간/);
   assert.equal(prep.actions.some((row) => row.rule === "GATE_PEAK"), false);
+  assert.match(text, /출처: .*인천공항 운항 정보/, "the flight source is named even when the gate count gives no action");
 });
