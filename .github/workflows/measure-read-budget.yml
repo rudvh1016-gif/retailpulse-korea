@@ -3,16 +3,19 @@ name: Measure Production Read Budget
 # Read-only D1 diagnostic. Runs no collectors and calls no provider, so it can
 # never manufacture collection evidence; it replays the public read path and
 # reports each statement's real rows_read, bounded by an explicit ceiling.
+# Scope "storage" instead measures database size, per-table growth and a
+# retention dry-run (scripts/measure-production-storage.ts); it deletes nothing.
 on:
   workflow_dispatch:
     inputs:
       scope:
-        description: Read all existing diagnostic paths or only airport/Seoul calendar availability
+        description: Read all existing diagnostic paths, only airport/Seoul calendar availability, or storage size and growth
         required: false
         type: choice
         options:
           - all
           - date_availability
+          - storage
         default: all
       ceiling:
         description: Maximum rows this diagnostic may read before it stops early
@@ -35,8 +38,15 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - name: Measure the live read path against Production D1
+        if: inputs.scope != 'storage'
         run: npx tsx scripts/measure-production-read-budget.ts
         env:
           RPK_READ_BUDGET_CEILING: ${{ inputs.ceiling }}
           RPK_READ_BUDGET_SCOPE: ${{ inputs.scope }}
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+      - name: Measure Production D1 storage, growth and retention candidates
+        if: inputs.scope == 'storage'
+        run: npx tsx scripts/measure-production-storage.ts
+        env:
+          RPK_READ_BUDGET_CEILING: ${{ inputs.ceiling }}
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
