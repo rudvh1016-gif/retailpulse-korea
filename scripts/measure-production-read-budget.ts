@@ -341,6 +341,19 @@ const HOT_QUERIES: HotQuery[] = [
     scanTargets: ["airport_passenger_forecast", "f"],
   },
   {
+    // East/west departure-hall components for the service date. Measured with
+    // the switch on, i.e. the cost once hall sides are published.
+    name: "passengerForecastHalls",
+    sql: `SELECT terminal, zone, is_aggregate AS isAggregate, target_date AS targetDate, time_band_raw AS timeBandRaw,
+        target_start_at AS targetStartAt, target_end_at AS targetEndAt,
+        expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
+      FROM airport_passenger_forecast
+      WHERE direction = 'departure' AND is_aggregate = 0 AND target_date = ? AND ? = 'true' LIMIT 240`,
+    binds: [serviceDate, "true"],
+    guard: "WHERE direction = 'departure' AND is_aggregate = 0 AND target_date = ? AND ? = 'true' LIMIT 240",
+    table: "airport_passenger_forecast",
+  },
+  {
     // Month-to-date: this month's dates and the previous month's same span.
     // Measured because it is the widest read this route performs. The exact
     // IN(...) form is what ships: a >= / <= range over the same index measured

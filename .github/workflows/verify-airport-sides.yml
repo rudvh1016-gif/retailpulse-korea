@@ -1,0 +1,25 @@
+name: Verify Airport Sides Sources
+
+# Reads the official Incheon Airport and data.go.kr pages the east/west
+# mapping cites, from a GitHub runner (the work environment cannot reach
+# them). No secret, no database, no schedule: it runs when the mapping or this
+# checker changes in a PR, or by hand. It prints what the sources say; it never
+# writes anything.
+on:
+  pull_request:
+    paths:
+      - config/airport-sides.v1.json
+      - scripts/verify-airport-sides.sh
+      - .github/workflows/verify-airport-sides.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/verify-airport-sides.sh
