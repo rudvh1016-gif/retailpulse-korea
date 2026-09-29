@@ -6,13 +6,45 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
+      # "Current build" means the commit the last successful production deploy
+      # shipped, not copy remembered in this file: hardcoded markers went stale
+      # twice when the product copy moved on (run 36527677925).
+      - name: Find the deployed commit
+        id: deployed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run=$(gh api "repos/${{ github.repository }}/actions/workflows/deploy-cloudflare.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0] | "\(.head_sha) \(.id) \(.updated_at)"')
+          set -- $run
+          test -n "$1"
+          echo "sha=$1" >> "$GITHUB_OUTPUT"
+          echo "deployed commit $1 (Deploy Cloudflare run $2, finished $3)"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.deployed.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+      - name: Read the deployed commit's own server-rendered markers
+        run: |
+          npx --yes tsx@4.20.6 -e 'import("./app/seo-config.ts").then(async (seo) => {
+            const { industryProfiles } = await import("./lib/industry-guidance.ts");
+            const { prepCopy } = await import("./lib/business-prep-copy.ts");
+            const markers = { homeTitle: seo.pageTitle("ko"), prepTitle: prepCopy.title.ko, checklist: industryProfiles.beauty.checklist.ko.find((row) => row[0] === "peak")[2] };
+            console.log(JSON.stringify(markers));
+            (await import("node:fs")).writeFileSync(process.env.RUNNER_TEMP + "/markers.json", JSON.stringify(markers));
+          })'
       - name: Check public pages and internal APIs
+        env:
+          DEPLOYED_SHA: ${{ steps.deployed.outputs.sha }}
         run: |
           node <<'NODE'
           const origin = "https://koretaildata.com";
@@ -29,20 +61,23 @@ jobs:
           }
 
           // Build freshness. "KORETAIL" alone cannot tell a current deployment
-          // from a stale one, so a deploy that silently kept serving the old
-          // bundle would still pass. These markers only exist in the build that
-          // removed the fabricated demand index, so a stale edge fails loudly
-          // instead of being explained away as caching.
+          // from a stale one, so the served HTML is compared with markers read
+          // from the commit the last successful deploy shipped (DEPLOYED_SHA).
+          const markers = JSON.parse((await import("node:fs")).readFileSync(`${process.env.RUNNER_TEMP}/markers.json`, "utf8"));
           const korean = await (await fetch(`${origin}/ko`, { redirect: "follow", signal: AbortSignal.timeout(15000) })).text();
-          check("serves the current build", korean.includes("지금 서울은"), "expected the current hero copy");
+          const servedTitle = korean.match(/<title>([^<]*)<\/title>/)?.[1] ?? "";
+          check("serves the current build", servedTitle === markers.homeTitle, `deployed ${process.env.DEPLOYED_SHA}; served title "${servedTitle}"; expected "${markers.homeTitle}"`);
           check("no placeholder demand index", !/예시 수요지수|DEMO DEMAND INDEX/.test(korean), "sample index must not be served");
 
           // The business screen's operating checklist is server-rendered, so a
           // deploy that did not reach the edge shows up here as missing copy
-          // rather than as a page that merely looks fine.
+          // rather than as a page that merely looks fine. The expected lines
+          // come from the deployed commit: the prep heading and the default
+          // industry's busy-period checklist item.
           const business = await fetch(`${origin}/ko/business`, { redirect: "follow", signal: AbortSignal.timeout(15000) });
           const businessHtml = await business.text();
-          check("business checklist is served", business.status === 200 && businessHtml.includes("먼저 볼 신호") && businessHtml.includes("혼잡 시간대"), `status ${business.status}`);
+          check("business checklist is served", business.status === 200 && businessHtml.includes(markers.prepTitle) && businessHtml.includes(markers.checklist),
+            `status ${business.status}; prep heading ${businessHtml.includes(markers.prepTitle)}; checklist ${businessHtml.includes(markers.checklist)}`);
 
           const about = await fetch(`${origin}/ko/about`, { redirect: "follow", signal: AbortSignal.timeout(15000) });
           const aboutHtml = await about.text();

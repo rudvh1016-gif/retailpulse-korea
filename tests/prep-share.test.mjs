@@ -69,3 +69,21 @@ test("image lines break Chinese and Japanese by character and never start with a
   assert.ok(korean.every((line) => !/^\S+\S$/.test(line) || line.length <= 15), "Korean breaks between words");
   assert.deepEqual(wrapText("https://koretaildata.com/ko/business?date=2026-08-31", 100, measure).join(""), "https://koretaildata.com/ko/business?date=2026-08-31", "a long link is split, never dropped");
 });
+
+test("a partly located airport side reads the same in the text and the image, with no gate action", () => {
+  const place = { kind: "airport", terminal: "T1", side: "EAST" };
+  const prep = buildBusinessPrep({
+    serviceDate: day, dayRelation: "TODAY", nowIso: at(5, 30), place, hours: { open: "06:30", close: "10:00" },
+    airport: { bands: [], coverage: "UNAVAILABLE", retrievedAt: null, gates: {
+      hours: [{ hour: 7, count: 2, unverified: 30 }, { hour: 9, count: 3, unverified: 17 }], scope: "SIDE_VERIFIED_ONLY", verifiedShare: 0.1, retrievedAt: at(5), basis: "COLLECTED_FLIGHT_RECORDS" } },
+  });
+  const doc = buildShareDocument({ ...input(prep), place, industry: "beauty", hours: { open: "06:30", close: "10:00" } });
+  const text = shareText(doc);
+  const fact = prep.facts.find((row) => row.kind === "GATE_PEAK");
+  // The image draws doc.lines; the text is built from the same lines.
+  assert.ok(doc.lines.some((line) => line.text === factLine(fact, day, "ko")));
+  assert.ok(text.includes("위치가 확인된 동편 탑승구 항공편 중 가장 많은 시간"));
+  assert.ok(text.includes("위치 미확인 47편 제외, 그중 같은 시간 17편"));
+  assert.doesNotMatch(text, /탑승구 기준 출발편이 가장 많은 시간/);
+  assert.equal(prep.actions.some((row) => row.rule === "GATE_PEAK"), false);
+});

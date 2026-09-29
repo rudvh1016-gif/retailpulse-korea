@@ -24,7 +24,7 @@ const flight = (id: string, terminal: string | null, gate: string, time: string,
   ({ physicalFlightId: id, terminal, gate, scheduledAt: `${DATE}T${time}:00+09:00`, status, retrievedAt: '2026-08-31T05:00:00Z' });
 const FLIGHTS = [
   flight('A', 'T1', '9', '15:05'), flight('A', 'T1', '9', '15:05'), flight('B', 'T1', '11', '15:40'), flight('C', 'T1', '29', '15:20'),
-  flight('D', 'T1', '27', '16:10'), flight('E', 'T1', '10', '17:00'), flight('F', null, '107', '15:30'), flight('G', 'T2', '274', '18:00'),
+  flight('D', 'T1', '27', '16:10'), flight('E', 'T1', '13', '17:00'), flight('F', null, '107', '15:30'), flight('G', 'T2', '274', '18:00'),
   flight('H', 'T1', '12', '15:50', 'cancelled'),
 ];
 
@@ -58,12 +58,15 @@ test('until the notice condition is met, hall sides are withheld and point to th
   await expect(sides.getByTestId('gates-areas')).toHaveText('T1 본관 5편 · T2 1편 · 탑승동 1편 · 터미널 미확인 0편');
   await expect(sides.getByTestId('gates-sides')).toContainText('동편 2편 · 서편 1편 · 중앙 1편 · 위치 미확인 1편');
   await expect(sides).toContainText('결항편은 합계에서 제외했습니다 (1편)');
-  // The prep fact is a flight count at east gates, on the scheduled clock.
-  await expect(prep.getByTestId('prep-facts')).toContainText('탑승구 기준 출발편이 가장 많은 시간 15:00–16:00 · 2편 (동편 탑승구)');
-  const gate = prep.getByTestId('prep-actions').locator('li[data-rule="GATE_PEAK"]');
-  await expect(gate).toContainText('예정 출발 시각 기준');
-  await gate.locator('summary').click();
-  await expect(gate).toContainText('위치가 확인된 탑승구의 편수 비율 80%');
+  // T1 has 4 of 5 flights at a gate with an evidenced side: the east count is partial.
+  await expect(sides.getByTestId('gates-coverage')).toHaveText('위치가 확인된 탑승구의 편수 4/5편 (80%) · 위치 미확인 1편: 위치표에 없는 탑승구 1');
+  await expect(sides.getByTestId('gates-partial')).toHaveText(sidesCopy.sideCountsNote.ko);
+  // So the fact names its own scope and is never "the east side's busiest hour"…
+  const facts = prep.getByTestId('prep-facts');
+  await expect(facts).toContainText('위치가 확인된 동편 탑승구 항공편 중 가장 많은 시간 15:00–16:00 · 2편 (위치 미확인 1편 제외, 그중 같은 시간 0편 · 동편 전체의 가장 많은 시간은 아직 알 수 없습니다)');
+  await expect(facts).not.toContainText('탑승구 기준 출발편이 가장 많은 시간');
+  // …and it never becomes a staffing or stock action; the general checklist stays.
+  await expect(prep.getByTestId('prep-actions').locator('li[data-rule="GATE_PEAK"]')).toHaveCount(0);
   // The terminal A5 peak is not relabelled as east while the split is withheld.
   await expect(prep.getByTestId('prep-facts')).not.toContainText('동편 출국장');
 });
@@ -110,13 +113,25 @@ test('the staff share names the date, terminal, side, expectation basis and flig
   const text = await page.evaluate(() => navigator.clipboard.readText());
   expect(text).toContain('2026-08-31 (월) · 인천공항 T1 동편');
   expect(text).toContain('동편 출국장 예상 이용객이 가장 많은 시간');
-  expect(text).toContain('탑승구 기준 출발편이 가장 많은 시간 15:00–16:00 · 2편 (동편 탑승구)');
+  // The copy text carries the same partial scope as the screen (and the PNG, which renders the same lines).
+  expect(text).toContain('위치가 확인된 동편 탑승구 항공편 중 가장 많은 시간 15:00–16:00 · 2편 (위치 미확인 1편 제외');
+  expect(text).not.toContain('탑승구 기준 출발편이 가장 많은 시간');
   expect(text).toContain(sidesCopy.notice.ko);
   expect(text).toContain('인천공항 운항 정보 (탑승구 기준 출발편)');
 });
 
+test('the whole terminal counts every flight, unknown sides included, and keeps the flight action', async ({ page }) => {
+  const prep = await open(page, { side: null as unknown as string });
+  await expect(prep.getByTestId('prep-place')).toHaveText('인천공항 T1');
+  // 15:00–16:00 has A, B, C (east, east, west) — the unverified 17:00 flight is still in the terminal's day.
+  await expect(prep.getByTestId('prep-facts')).toContainText('탑승구 기준 출발편이 가장 많은 시간 15:00–16:00 · 3편 (터미널 전체)');
+  await expect(prep.getByTestId('airport-sides').getByTestId('gates-areas')).toContainText('T1 본관 5편');
+  const gate = prep.getByTestId('prep-actions').locator('li[data-rule="GATE_PEAK"]');
+  await expect(gate).toContainText('예정 출발 시각 기준');
+});
+
 test('the added business types sit in the existing selector and drive the gate hint', async ({ page }) => {
-  const prep = await open(page);
+  const prep = await open(page, { side: null as unknown as string });
   await prep.getByRole('button', { name: prepCopy.change.ko }).click();
   const select = prep.locator('.prep-form select').first();
   await expect(select.locator('option')).toHaveCount(8);

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import {
-  boardingAreaOf, gateSideCoverage, gateSideOf, hallSideOf, hallsOn, summarizeGateSides, summarizeHallSides,
+  boardingAreaOf, gateSideCoverage, gateSideOf, hallSideOf, hallsOn, summarizeGateSides, summarizeHallSides, unverifiedReasonOf,
 } from "../lib/airport-sides.ts";
 
 const config = JSON.parse(readFileSync(new URL("../config/airport-sides.v1.json", import.meta.url), "utf8"));
@@ -86,7 +86,10 @@ test("gates: only officially named gates have a side; center stays center; the r
   assert.equal(gateSideOf("T1", "9"), "EAST");
   assert.equal(gateSideOf("T1", "27"), "CENTER");
   assert.equal(gateSideOf("T1", "29"), "WEST");
-  assert.equal(gateSideOf("T1", "10"), "UNVERIFIED", "between two east gates is still not proven");
+  assert.equal(gateSideOf("T1", "13"), "UNVERIFIED", "a gate with neither official text nor an official map point stays unverified");
+  assert.equal(gateSideOf("T1", "10"), "EAST", "placed by the official map position, beyond the innermost officially east gate");
+  assert.equal(gateSideOf("T1", "26"), "CENTER");
+  assert.equal(gateSideOf("T2", "250"), "UNVERIFIED", "between the officially east and west bounds is never forced to a side");
   assert.equal(gateSideOf("T2", "274"), "EAST");
   assert.equal(gateSideOf("T2", "225"), "WEST");
   assert.equal(gateSideOf("T2", "1"), "UNVERIFIED", "the T2 '1번 게이트' text is an entrance, not a boarding gate");
@@ -99,13 +102,45 @@ test("gates: only officially named gates have a side; center stays center; the r
 
 test("every gate side is quoted from official text within the published gate range", () => {
   const texts = new Set([...zoneMap.mappings.map((row) => row.officialLocationRaw)]);
-  for (const gate of config.gates) {
+  for (const gate of config.gates.filter((row) => row.basis === "OFFICIAL_TEXT")) {
     const [low, high] = config.gateRanges[gate.area];
     assert.ok(Number(gate.gate) >= low && Number(gate.gate) <= high, `${gate.area} ${gate.gate} outside the published range`);
     assert.match(gate.evidence, new RegExp(`${gate.gate}번`));
     assert.match(gate.evidence, { EAST: /동편/, WEST: /서편/, CENTER: /중앙/ }[gate.side]);
     if (gate.source.startsWith("data.go.kr")) assert.ok(texts.has(gate.evidence), `${gate.area} ${gate.gate}: not in the official facility text`);
   }
+});
+
+test("a gate placed from the official map lies beyond an officially named gate of the same side, with its own point and source", () => {
+  const map = config.gates.filter((row) => row.basis === "OFFICIAL_MAP_POSITION");
+  assert.ok(map.length > 0);
+  assert.deepEqual([...new Set(config.gates.map((row) => row.basis))].sort(), ["OFFICIAL_MAP_POSITION", "OFFICIAL_TEXT"]);
+  const keys = new Set();
+  for (const gate of config.gates) {
+    const key = `${gate.area}:${gate.gate}`;
+    assert.ok(!keys.has(key), `${key} listed twice`);
+    keys.add(key);
+  }
+  for (const gate of map) {
+    const [low, high] = config.gateRanges[gate.area];
+    assert.ok(Number(gate.gate) >= low && Number(gate.gate) <= high, `${gate.area} ${gate.gate} outside the published range`);
+    assert.notEqual(gate.side, "CENTER", "the map never places a centre gate");
+    assert.match(gate.source, /^https:\/\/icnmap\.airport\.kr:18080\/API\/v2_0\/nodes\/no-auth\/web\/1 \(spoiInfors poi \d+, .*run \d+\)$/);
+    const match = gate.evidence.match(/^공식 지도 '탑승구 (\d+)' 위치 (37\.\d{6}), (126\.\d{6}) · 동서 축 위치 (-?\d+)m ([≥≤]) 공식 문구 (동편|서편) (\d+)번 탑승구 (-?\d+)m → (\d+)번 (동편|서편)$/);
+    assert.ok(match, `${gate.area} ${gate.gate}: evidence shape`);
+    const [, pointGate, , , at, sign, anchorWord, anchor, anchorAt, resultGate, resultWord] = match;
+    assert.equal(pointGate, gate.gate);
+    assert.equal(resultGate, gate.gate);
+    const word = gate.side === "EAST" ? "동편" : "서편";
+    assert.equal(anchorWord, word);
+    assert.equal(resultWord, word);
+    assert.equal(sign, gate.side === "EAST" ? "≥" : "≤");
+    assert.ok(gate.side === "EAST" ? Number(at) >= Number(anchorAt) : Number(at) <= Number(anchorAt), `${gate.area} ${gate.gate}: not beyond its anchor`);
+    const official = config.gates.find((row) => row.area === gate.area && row.gate === anchor);
+    assert.ok(official && official.basis === "OFFICIAL_TEXT" && official.side === gate.side, `${gate.area} ${gate.gate}: anchor ${anchor} is not an officially ${word} gate`);
+  }
+  // The published range is respected even where the map shows more (T2 291).
+  assert.equal(config.gates.some((row) => row.area === "T2" && row.gate === "291"), false);
 });
 
 const flight = (id, terminal, gate, time, extra = {}) => ({ physicalFlightId: id, terminal, gate, scheduledAt: `${DATE}T${time}:00+09:00`, status: "scheduled", retrievedAt: "2026-09-29T01:00:00Z", ...extra });
@@ -115,7 +150,7 @@ test("flights: codeshares count once, cancelled apart, concourse and unknown kep
     flight("A", "T1", "9", "08:10"), flight("A", "T1", "9", "08:10"), flight("A", "T1", "9", "08:10"),
     flight("B", "T1", "29", "08:40"),
     flight("C", "T1", "27", "09:00"),
-    flight("D", "T1", "10", "09:05"),
+    flight("D", "T1", "13", "09:05"),
     flight("E", null, "107", "09:10"),
     flight("F", null, null, "09:20"),
     flight("G", "T2", "274", "10:00", { status: "cancelled" }),
@@ -133,6 +168,35 @@ test("flights: codeshares count once, cancelled apart, concourse and unknown kep
   assert.equal(day.byHour.reduce((sum, hour) => sum + Object.values(hour.byArea).reduce((inner, counts) => inner + counts.total, 0), 0), day.total);
   assert.deepEqual(day.byHour.map((hour) => hour.hour), [8, 9, 10]);
   assert.equal(gateSideCoverage(day, "T1"), 0.75);
+});
+
+test("an unverified flight says why: no gate, a gate missing from the table, or a gate that does not belong to the building", () => {
+  assert.equal(unverifiedReasonOf("T1", "9"), null);
+  assert.equal(unverifiedReasonOf("T1", ""), "NO_GATE");
+  assert.equal(unverifiedReasonOf("T1", null), "NO_GATE");
+  assert.equal(unverifiedReasonOf("T1", "13"), "NOT_IN_TABLE");
+  assert.equal(unverifiedReasonOf("T2", "250"), "NOT_IN_TABLE");
+  assert.equal(unverifiedReasonOf("T2", "9"), "CONFLICT");
+  assert.equal(unverifiedReasonOf("CONCOURSE", "150"), "CONFLICT");
+  assert.equal(unverifiedReasonOf("UNKNOWN", "9"), "NO_TERMINAL");
+  const day = summarizeGateSides([
+    flight("A", "T2", "268", "10:00"),
+    flight("B", "T2", "250", "10:05"), flight("C", "T2", "250", "10:10"), flight("D", "T2", "252", "10:20"),
+    flight("E", "T2", "", "10:30"), flight("F", "T2", "9", "10:40"),
+    flight("G", null, null, "10:50"),
+  ], DATE);
+  assert.deepEqual(day.unverifiedByArea.T2, { NO_GATE: 1, NOT_IN_TABLE: 3, CONFLICT: 1, NO_TERMINAL: 0 });
+  assert.deepEqual(day.unverifiedByArea.UNKNOWN, { NO_GATE: 0, NOT_IN_TABLE: 0, CONFLICT: 0, NO_TERMINAL: 1 });
+  for (const area of Object.keys(day.byArea)) {
+    assert.equal(Object.values(day.unverifiedByArea[area]).reduce((sum, n) => sum + n, 0), day.byArea[area].UNVERIFIED);
+  }
+  // A missing table entry is listed by gate so the map work can start from the busiest one; a conflict is not.
+  assert.deepEqual(day.unmappedGates, [{ area: "T2", gate: "250", flights: 2 }, { area: "T2", gate: "252", flights: 1 }]);
+  // The terminal total counts every flight; unknown sides never shrink it.
+  assert.equal(day.byArea.T2.total, 6);
+  assert.equal(day.byArea.T2.EAST, 1);
+  // All of the unverified flights sit in one hour, and that hour still counts them.
+  assert.equal(day.byHour.find((hour) => hour.hour === 10).byArea.T2.UNVERIFIED, 5);
 });
 
 test("a gate change uses the newest retrieval and is reported, never counted twice", () => {

@@ -9,6 +9,7 @@ import {
   parseBusinessHours,
   prepWindow,
 } from "../lib/business-prep.ts";
+import { factLine } from "../lib/business-prep-copy.ts";
 
 const at = (day, hour, minute = 0) => `${day}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00+09:00`;
 const hours = (open, close) => ({ open, close });
@@ -182,18 +183,41 @@ test("a chosen side uses that side's halls when published, and the terminal (lab
   assert.equal(withheld.facts.find((fact) => fact.kind === "AIRPORT_PEAK").count, 4667);
 });
 
-test("gate departures give an hour and a count of flights, on the flight clock, never people", () => {
+test("gate departures: a whole terminal gives a fact and an action; a partly located side gives a labelled fact only", () => {
   const day = "2026-09-28";
-  const gates = { hours: [{ hour: 5, count: 30 }, { hour: 7, count: 9 }, { hour: 9, count: 12 }, { hour: 12, count: 40 }], verifiedShare: 0.35, retrievedAt: at(day, 5), basis: "COLLECTED_FLIGHT_RECORDS" };
-  const prep = buildBusinessPrep({
-    serviceDate: day, dayRelation: "TODAY", nowIso: at(day, 5, 30), place: { kind: "airport", terminal: "T1", side: "EAST" }, hours: hours("06:30", "10:00"),
+  const hoursOf = (scope, verifiedShare) => ({ hours: [{ hour: 5, count: 30, unverified: 20 }, { hour: 7, count: 9, unverified: 30 }, { hour: 9, count: 12, unverified: 2 }, { hour: 12, count: 40, unverified: 0 }],
+    scope, verifiedShare, retrievedAt: at(day, 5), basis: "COLLECTED_FLIGHT_RECORDS" });
+  const build = (side, gates) => buildBusinessPrep({
+    serviceDate: day, dayRelation: "TODAY", nowIso: at(day, 5, 30), place: { kind: "airport", terminal: "T1", side }, hours: hours("06:30", "10:00"),
     airport: { bands: [], coverage: "UNAVAILABLE", retrievedAt: null, gates },
   });
-  const fact = prep.facts.find((row) => row.kind === "GATE_PEAK");
-  assert.deepEqual([fact.count, fact.startAt, fact.side], [12, at(day, 9), "EAST"], "hours outside 06:30-10:00 never win; the 06:00 band touching the opening counts whole");
-  const action = prep.actions.find((row) => row.rule === "GATE_PEAK");
-  assert.deepEqual(action.value, { kind: "FLIGHTS", count: 12, side: "EAST", verifiedShare: 0.35 });
-  assert.equal(action.source, "A1_FLIGHTS");
+  const terminal = build(null, hoursOf("TERMINAL", 0.35));
+  assert.deepEqual(terminal.actions.find((row) => row.rule === "GATE_PEAK").value, { kind: "FLIGHTS", count: 12, side: null, verifiedShare: 0.35 });
+  const partial = build("EAST", hoursOf("SIDE_VERIFIED_ONLY", 0.05));
+  const fact = partial.facts.find((row) => row.kind === "GATE_PEAK");
+  assert.deepEqual([fact.count, fact.startAt, fact.side, fact.partial, fact.unverifiedInHour, fact.unverifiedInHours], [12, at(day, 9), "EAST", true, 2, 32],
+    "hours outside 06:30-10:00 never win; the 06-07 band touching the opening counts whole");
+  assert.equal(partial.actions.some((row) => row.rule === "GATE_PEAK"), false, "a partial side count never becomes a staffing or stock action");
+  const complete = build("EAST", hoursOf("SIDE_COMPLETE", 1));
+  assert.equal(complete.actions.some((row) => row.rule === "GATE_PEAK"), true);
+});
+
+test("flight records older than the publication window are not used", () => {
+  const day = "2026-09-28";
+  const prep = buildBusinessPrep({
+    serviceDate: day, dayRelation: "TODAY", nowIso: at(day, 10), place: { kind: "airport", terminal: "T1", side: null }, hours: null,
+    airport: { bands: [], coverage: "UNAVAILABLE", retrievedAt: null, gates: { hours: [{ hour: 12, count: 40 }], scope: "TERMINAL", verifiedShare: 1, retrievedAt: at("2026-09-26", 23), basis: "COLLECTED_FLIGHT_RECORDS" } },
+  });
+  assert.equal(prep.facts.some((row) => row.kind === "GATE_PEAK"), false);
+});
+
+test("the partial wording names its scope in the headline, in all four languages", () => {
+  const fact = { kind: "GATE_PEAK", count: 3, startAt: "2026-09-28T09:00:00+09:00", endAt: "2026-09-28T10:00:00+09:00", issuedAt: null, side: "EAST", basis: "COLLECTED_FLIGHT_RECORDS", partial: true, unverifiedInHour: 17, unverifiedInHours: 40 };
+  assert.match(factLine(fact, "2026-09-28", "ko"), /^위치가 확인된 동편 탑승구 항공편 중 가장 많은 시간 .* 3편 \(위치 미확인 40편 제외, 그중 같은 시간 17편 · 동편 전체의 가장 많은 시간은 아직 알 수 없습니다\)/);
+  assert.match(factLine(fact, "2026-09-28", "en"), /^Among flights at gates confirmed on the east side/);
+  assert.match(factLine(fact, "2026-09-28", "zh"), /^在位置已确认的东侧登机口航班中/);
+  assert.match(factLine(fact, "2026-09-28", "ja"), /^位置が確認できた東側の搭乗口の便のうち/);
+  assert.doesNotMatch(factLine(fact, "2026-09-28", "ko"), /^동편 출발편이 가장 많은 시간/);
 });
 
 test("no value this module emits can be read as visitors, sales, staff or nationality", () => {

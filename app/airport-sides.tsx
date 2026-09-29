@@ -90,6 +90,17 @@ export function AirportSidesBlock({ lang, summary, terminal, side, hours, nowIso
     {gates ? <>
       <p data-testid="gates-areas">{(['T1', 'T2', 'CONCOURSE', 'UNKNOWN'] as const).map((area) => `${copy.area[area][lang]} ${gates.byArea[area].total}${copy.flights[lang]}`).join(' · ')}</p>
       <p data-testid="gates-sides"><strong>{copy.area[terminal][lang]}</strong> {countsLine(gates.byArea[terminal], lang)}</p>
+      {(() => {
+        const counts = gates.byArea[terminal];
+        const reasons = gates.unverifiedByArea?.[terminal];
+        const verified = counts.total - counts.UNVERIFIED;
+        return <>
+          <p className="prep-note" data-testid="gates-coverage">{copy.coverage[lang]} {verified}/{counts.total}{copy.flights[lang]}{counts.total ? ` (${Math.round((verified / counts.total) * 100)}%)` : ''}
+            {reasons && counts.UNVERIFIED > 0 && <> · {copy.side.UNVERIFIED[lang]} {counts.UNVERIFIED}{copy.flights[lang]}: {(['NO_GATE', 'NOT_IN_TABLE', 'CONFLICT', 'NO_TERMINAL'] as const).filter((key) => reasons[key] > 0).map((key) => `${copy.reason[key][lang]} ${reasons[key]}`).join(' · ')}</>}
+          </p>
+          {counts.UNVERIFIED > 0 && <p className="prep-note" data-testid="gates-partial">{copy.sideCountsNote[lang]}</p>}
+        </>;
+      })()}
       {gates.cancelled > 0 && <p className="prep-note">{copy.cancelled[lang]} ({gates.cancelled}{copy.flights[lang]})</p>}
       <p className="prep-note">{copy.scheduledHour[lang]}</p>
       <ul className="prep-side-hours" data-testid="gates-upcoming">{upcomingHours.slice(0, 6).map((row) => <li key={row.hour}>{hourLine(row)}</li>)}</ul>
