@@ -5,6 +5,7 @@ import { airportSides } from '../lib/airport-sides-summary';
 import { sidesCopy } from '../lib/airport-sides-copy';
 import { industryProfiles } from '../lib/industry-guidance';
 import { prepCopy } from '../lib/business-prep-copy';
+import { splitCopy } from '../lib/airport-flight-split-copy';
 
 // SUMMARY_FIXTURE is 2026-08-31 14:10 KST (today).
 const DATE = '2026-08-31';
@@ -35,10 +36,10 @@ function fixture(hallsPublic: boolean) {
   };
 }
 
-async function open(page: Page, { lang = 'ko', width = 390, hallsPublic = false, side = 'EAST', hours = { open: '09:30', close: '18:00' } as { open: string; close: string } | null } = {}) {
+async function open(page: Page, { lang = 'ko', width = 390, hallsPublic = false, side = 'EAST', hours = { open: '09:30', close: '18:00' } as { open: string; close: string } | null, mutate = null as null | ((summary: ReturnType<typeof fixture>) => unknown), terminal = 'T1' }: { lang?: string; width?: number; hallsPublic?: boolean; side?: string | null; hours?: { open: string; close: string } | null; mutate?: null | ((summary: ReturnType<typeof fixture>) => unknown); terminal?: string } = {}) {
   await page.setViewportSize({ width, height: 900 });
-  await page.addInitScript((stored) => localStorage.setItem('koretail-business-v1', stored), JSON.stringify({ version: 1, place: 'airport', terminal: 'T1', side, hours }));
-  await page.route('**/api/live/summary*', routeSummary(fixture(hallsPublic)));
+  await page.addInitScript((stored) => localStorage.setItem('koretail-business-v1', stored), JSON.stringify({ version: 1, place: 'airport', terminal, side, hours }));
+  await page.route('**/api/live/summary*', routeSummary((mutate ? mutate(fixture(hallsPublic)) : fixture(hallsPublic)) as ReturnType<typeof fixture>));
   await page.route('**/api/live/usual*', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
   await page.goto(`/${lang}/business`);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
@@ -157,3 +158,96 @@ test('Korean at 360px has no overflow and no missing glyph', async ({ page }) =>
   expect(await tofuCharacters(prep.getByTestId('airport-sides'))).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 });
+
+// --- east/west flight comparison and the reference passenger split ----------
+
+const T1_EXPECTED = SUMMARY_FIXTURE.airport.passengerForecastTimelineByTerminal.T1.reduce((sum: number, band: { expectedPassengers: number }) => sum + band.expectedPassengers, 0);
+
+test('the comparison is the first thing in the airport block: flights, ratio, and a reference estimate', async ({ page }) => {
+  const prep = await open(page, { side: null });
+  const sides = prep.getByTestId('airport-sides');
+  await expect(sides.locator(':scope > *').first()).toHaveAttribute('data-testid', 'flight-split');
+  const card = sides.getByTestId('flight-split');
+  await expect(card.locator('h3')).toHaveText('T1 오늘 출발편');
+  // Fixture: 2 east, 1 west, 1 centre, 1 unconfirmed of 5 T1 departures (codeshares once, cancelled apart).
+  await expect(card.getByTestId('split-flights')).toHaveText('동편 2편 67% · 서편 1편 33% · 중앙 1편 · 위치 미확인 1편(전체의 20%)');
+  await expect(card.getByTestId('split-shares')).toHaveText('동·서 위치가 확인된 항공편 기준 (3편): 동편 67% · 서편 33% (동편이 더 많음)');
+  const east = Math.round((T1_EXPECTED * 2) / 3);
+  const fmt = (value: number) => value.toLocaleString('ko-KR');
+  await expect(card.getByTestId('split-estimate')).toHaveText(`동편 약 ${fmt(east)}명 · 서편 약 ${fmt(T1_EXPECTED - east)}명`);
+  await expect(card.getByTestId('split-estimate-basis')).toHaveText(`터미널 전체 예상 ${fmt(T1_EXPECTED)}명 기준 · 확인된 항공편 기준 추정`);
+  await expect(card.getByTestId('split-note')).toHaveText(splitCopy.estimateNote.ko);
+  // Hours: each with east/west counts and shares.
+  await expect(sides.getByTestId('gates-all').locator('li').first()).toHaveText(/^15–16시 · 동 2편 \/ 서 1편 \(동 67% · 서 33%\)/);
+  // The hall split stays withheld; the estimate is not the hall figure.
+  await expect(sides.getByTestId('halls-withheld')).toBeVisible();
+});
+
+test('the terminal switch and the side choice change the right things', async ({ page }) => {
+  const prep = await open(page, { side: null });
+  const card = prep.getByTestId('flight-split');
+  await prep.getByRole('button', { name: prepCopy.change.ko }).click();
+  await prep.locator('.prep-terminal').first().getByLabel('T2').check();
+  await prep.getByRole('button', { name: prepCopy.save.ko, exact: true }).click();
+  await expect(card.locator('h3')).toHaveText('T2 오늘 출발편');
+  // T2 has one east flight and none in the west: 100 / 0, nothing assigned by force.
+  await expect(card.getByTestId('split-shares')).toContainText('동편 100% · 서편 0%');
+  await prep.getByRole('button', { name: prepCopy.change.ko }).click();
+  await prep.getByTestId('prep-side').getByLabel('서편').check();
+  await prep.getByRole('button', { name: prepCopy.save.ko, exact: true }).click();
+  await expect(card.locator('h3')).toHaveText('T2 오늘 출발편');
+  await expect(card.getByTestId('split-flights')).toContainText('동편 1편 100% · 서편 0편 0%');
+});
+
+test('screen, copied text and image carry the same lines', async ({ page }) => {
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  const prep = await open(page, { side: null });
+  const flights = await prep.getByTestId('prep-facts').locator('li', { hasText: '출발편(하루 전체)' }).textContent();
+  const estimate = await prep.getByTestId('prep-facts').locator('li', { hasText: '항공편 비율로 본 예상 출국객' }).textContent();
+  expect(flights).toContain('동편 2편 67% · 서편 1편 33% · 중앙 1편 · 위치 미확인 1편(전체의 20%)');
+  expect(estimate).toContain(splitCopy.estimateNote.ko);
+  await prep.getByTestId('prep-share').getByRole('button', { name: '문구 복사' }).click();
+  const text = await page.evaluate(() => navigator.clipboard.readText());
+  expect(text).toContain(flights as string);
+  expect(text).toContain(estimate as string);
+  const download = page.waitForEvent('download');
+  await prep.getByTestId('prep-share').getByRole('button', { name: '이미지 저장' }).click();
+  expect((await download).suggestedFilename()).toMatch(/\.png$/);
+});
+
+test('no estimate without a complete terminal-wide figure; no comparison from old flight records', async ({ page }) => {
+  const partial = await open(page, {
+    side: null,
+    mutate: (summary) => ({ ...summary, airport: { ...summary.airport, forecastCoverage: { all: 'PARTIAL', byTerminal: { T1: 'PARTIAL', T2: 'PARTIAL' } } } }),
+  });
+  await expect(partial.getByTestId('split-flights')).toBeVisible();
+  await expect(partial.getByTestId('split-no-estimate')).toHaveText(splitCopy.noEstimate.ko);
+  await expect(partial.getByTestId('split-estimate')).toHaveCount(0);
+});
+
+test('old flight records show no comparison', async ({ page }) => {
+  const prep = await open(page, {
+    side: null,
+    mutate: (summary) => {
+      const sides = summary.airport.sides;
+      return { ...summary, airport: { ...summary.airport, sides: { ...sides, gates: { ...sides.gates, retrievedAt: '2026-08-29T00:00:00Z' } } } };
+    },
+  });
+  const card = prep.getByTestId('flight-split');
+  await expect(card).toHaveAttribute('data-state', 'STALE');
+  await expect(card).toContainText(splitCopy.unavailable.STALE.ko);
+  await expect(prep.getByTestId('prep-facts')).not.toContainText('출발편(하루 전체)');
+});
+
+for (const [lang, width] of [['ko', 360], ['en', 360], ['zh', 360], ['ja', 360], ['ko', 1280]] as const) {
+  test(`the comparison fits and has no missing glyph: ${lang} at ${width}px`, async ({ page }) => {
+    const prep = await open(page, { lang, width, side: null });
+    const card = prep.getByTestId('flight-split');
+    await expect(card.getByTestId('split-estimate')).toBeVisible();
+    expect(await tofuCharacters(card)).toEqual([]);
+    expect(await tofuCharacters(prep.getByTestId('prep-facts'))).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+    const box = await card.boundingBox();
+    expect(box && box.x >= 0 && box.x + box.width <= width + 1).toBeTruthy();
+  });
+}

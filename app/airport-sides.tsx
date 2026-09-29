@@ -8,6 +8,8 @@ import type { AirportSide, BusinessHours, PrepTerminal } from '../lib/business-p
 import { prepWindow } from '../lib/business-prep';
 import { prepTime } from '../lib/business-prep-copy';
 import { OFFICIAL_LINKS, count, hourSpan, sidesCopy as copy } from '../lib/airport-sides-copy';
+import { splitFromSummary } from '../lib/airport-flight-split';
+import { estimateBasisLine, estimateBody, flightsBody, hourBody, sharesBody, splitCopy } from '../lib/airport-flight-split-copy';
 
 type Side = AirportSide | null;
 const hourOf = (iso: string) => Number(iso.slice(11, 13));
@@ -64,6 +66,38 @@ function HallDay({ lang, day, side, other, serviceDate, hours, nowIso, today }: 
 const countsLine = (counts: SideCounts, lang: Lang) =>
   (['EAST', 'WEST', 'CENTER', 'UNVERIFIED'] as const).map((key) => `${copy.side[key][lang]} ${counts[key]}${copy.flights[lang]}`).join(' · ');
 
+const kstDay = (ms: number) => new Date(ms + 9 * 3_600_000).toISOString().slice(0, 10);
+
+/**
+ * East and west departures of the chosen terminal, side by side, first in the
+ * block. Flights are counted by evidenced gate side; the person figures are a
+ * reference split of the terminal-wide expectation, not the hall figures.
+ */
+function FlightSplitCard({ lang, summary, sides, terminal, nowIso }: { lang: Lang; summary: LiveSummary; sides: SidesBlock; terminal: PrepTerminal; nowIso: string }) {
+  const result = splitFromSummary(summary, sides, terminal, nowIso);
+  if (result.status !== 'OK') return <div className="prep-block" data-testid="flight-split" data-state={result.status}><p className="prep-note">{splitCopy.unavailable[result.status][lang]}</p></div>;
+  const s = result.split;
+  const today = kstDay(Date.parse(nowIso));
+  const when = summary.serviceDateKst === today ? 'TODAY' : summary.serviceDateKst === kstDay(Date.parse(nowIso) + 86_400_000) ? 'TOMORROW' : 'DATE';
+  const bar = { display: 'flex', height: 10, borderRadius: 5, overflow: 'hidden', background: 'var(--line)', margin: '8px 0' } as const;
+  return <div className="prep-block" data-testid="flight-split" data-state="OK" data-larger={s.larger ?? 'NONE'}>
+    <h3>{splitCopy.heading(terminal, when, lang)}</h3>
+    <p data-testid="split-flights"><strong>{flightsBody(s, lang)}</strong></p>
+    {s.eastPct !== null && <div style={bar} role="img" aria-label={`${copy.side.EAST[lang]} ${s.eastPct}% ${copy.side.WEST[lang]} ${s.westPct}%`}>
+      <span style={{ width: `${s.eastPct}%`, background: 'var(--blue)' }}/><span style={{ width: `${s.westPct}%`, background: 'var(--green)' }}/>
+    </div>}
+    <p className="prep-note" data-testid="split-shares">{sharesBody(s, lang)}</p>
+    <h4 style={{ margin: '12px 0 0' }}>{splitCopy.estimateHeading[lang]}</h4>
+    {s.expected && s.eastPct !== null
+      ? <>
+        <p data-testid="split-estimate"><strong>{estimateBody({ terminal, ...s.expected }, lang)}</strong></p>
+        <p className="prep-note" data-testid="split-estimate-basis">{estimateBasisLine({ terminal, ...s.expected }, lang)}</p>
+        <p className="prep-note" data-testid="split-note">{splitCopy.estimateNote[lang]}</p>
+      </>
+      : <p className="prep-note" data-testid="split-no-estimate">{splitCopy.noEstimate[lang]}</p>}
+  </div>;
+}
+
 export function AirportSidesBlock({ lang, summary, terminal, side, hours, nowIso }: {
   lang: Lang; summary: LiveSummary; terminal: PrepTerminal; side: Side; hours: BusinessHours | null; nowIso: string;
 }) {
@@ -74,13 +108,19 @@ export function AirportSidesBlock({ lang, summary, terminal, side, hours, nowIso
   const gates = sides.gates;
   const now = Date.parse(nowIso);
   const nowHour = today ? Number(new Date(now + 9 * 3_600_000).toISOString().slice(11, 13)) : -1;
-  const hourRows = gates?.byHour ?? [];
+  const hourRows = (gates?.byHour ?? []).filter((row) => row.byArea[terminal].total > 0);
+  const flightSplitHours = (() => {
+    const result = splitFromSummary(summary, sides, terminal, nowIso);
+    return result.status === 'OK' ? result.split.hours.map((row) => [row.hour, row] as const) : [];
+  })();
   const upcomingHours = today ? hourRows.filter((row) => row.hour >= nowHour) : hourRows;
+  const splitHours = new Map(flightSplitHours);
   const hourLine = (row: (typeof hourRows)[number]) => {
-    const counts = row.byArea[terminal];
-    return `${hourSpan(row.hour, lang)} · ${copy.total[lang]} ${counts.total}${copy.flights[lang]} (${countsLine(counts, lang)})`;
+    const hour = splitHours.get(row.hour);
+    return hour ? hourBody(hour, lang) : `${hourSpan(row.hour, lang)} · ${copy.total[lang]} ${row.byArea[terminal].total}${copy.flights[lang]}`;
   };
   return <div className="prep-block prep-sides" data-testid="airport-sides" data-side={side ?? 'ALL'}>
+    <FlightSplitCard lang={lang} summary={summary} sides={sides} terminal={terminal} nowIso={nowIso}/>
     <p className="prep-note" data-testid="sides-notice">{copy.notice[lang]}</p>
     <h3>{copy.hallTitle[lang]}</h3>
     {sides.halls
@@ -102,7 +142,7 @@ export function AirportSidesBlock({ lang, summary, terminal, side, hours, nowIso
         </>;
       })()}
       {gates.cancelled > 0 && <p className="prep-note">{copy.cancelled[lang]} ({gates.cancelled}{copy.flights[lang]})</p>}
-      <p className="prep-note">{copy.scheduledHour[lang]}</p>
+      <p className="prep-note">{splitCopy.perHour[lang]} · {copy.scheduledHour[lang]}</p>
       <ul className="prep-side-hours" data-testid="gates-upcoming">{upcomingHours.slice(0, 6).map((row) => <li key={row.hour}>{hourLine(row)}</li>)}</ul>
       <details className="prep-evidence"><summary>{copy.showAll[lang]}</summary>
         <ul className="prep-side-hours" data-testid="gates-all">{hourRows.map((row) => <li key={row.hour}>{hourLine(row)}</li>)}</ul>

@@ -9,6 +9,7 @@
 import type { BusinessHours, BusinessPrep, PrepAction, PrepCoverage, PrepFact, PrepPlace, PrepSource, PrepStatus } from "./business-prep";
 import { industryProfiles, type IndustryId } from "./industry-guidance";
 import { localHolidayName } from "./holiday-calendar";
+import { estimateSentence, flightSentence } from "./airport-flight-split-copy";
 
 export type PrepLang = "ko" | "en" | "zh" | "ja";
 type Row = Record<PrepLang, string>;
@@ -215,6 +216,10 @@ export function factLine(fact: PrepFact, serviceDate: string, lang: PrepLang): s
         `搭乗口基準の出発便が最も多い時間 ${span} · ${fact.count}便${fact.side ? `（${sideNames[fact.side].ja}の搭乗口）` : "（ターミナル全体）"}`,
       )[lang] + source;
     }
+    case "FLIGHT_SPLIT":
+      return `${flightSentence(fact.split, lang)} (${sourceName("A1_FLIGHTS", lang)}${issued(fact.issuedAt, serviceDate, lang)})`;
+    case "FLIGHT_SPLIT_ESTIMATE":
+      return `${estimateSentence(fact.estimate, lang)} (${sourceName("A5_FORECAST", lang)} × ${sourceName("A1_FLIGHTS", lang)})`;
     case "AIRPORT_TOTAL":
       if (fact.side) return row(
         `영업시간 ${sideNames[fact.side].ko} 출국장 예상 이용객 합계 약 ${number(fact.count, lang)}명 (${fact.bands}개 시간대)`,

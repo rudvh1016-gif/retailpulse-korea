@@ -15,6 +15,8 @@
  *   - stale or missing data is never reported as "no change".
  */
 import type { AirportSidesBlock } from "./airport-sides-summary";
+import { splitFromSummary, type FlightSplit } from "./airport-flight-split";
+import type { SplitCore, SplitEstimate } from "./airport-flight-split-copy";
 import type { LiveSummary } from "../app/live-signals";
 import { WEATHER_THRESHOLDS } from "./current-brief";
 
@@ -146,6 +148,12 @@ export interface PrepInput {
     sideCoverage?: "COMPLETE" | "PARTIAL" | "UNAVAILABLE";
     /** Physical departures per scheduled hour at this terminal (and side, when chosen and verified). */
     gates?: PrepGateHours | null;
+    /**
+     * East/west departure flights of the whole terminal and the reference
+     * passenger split derived from them (lib/airport-flight-split.ts). It is
+     * independent of the chosen side and of the hall split.
+     */
+    split?: FlightSplit | null;
   };
   holidays?: readonly PrepHoliday[];
 }
@@ -203,6 +211,8 @@ export type PrepFact =
   | { kind: "GATE_PEAK"; count: number; startAt: string; endAt: string; issuedAt: string | null; side: AirportSide | null; basis: PrepGateHours["basis"];
       /** true: counted only flights at gates with an evidenced side; unverified flights are listed, not included. */
       partial?: boolean; unverifiedInHour?: number; unverifiedInHours?: number }
+  | { kind: "FLIGHT_SPLIT"; split: SplitCore; issuedAt: string | null }
+  | { kind: "FLIGHT_SPLIT_ESTIMATE"; estimate: SplitEstimate; issuedAt: string | null }
   | { kind: "EVENTS"; count: number; title: string; eventStart: string; eventEnd: string | null; issuedAt: string | null }
   | { kind: "HOLIDAY"; country: PrepHoliday["country"]; name: string; officialSource: string };
 
@@ -389,6 +399,18 @@ export function buildBusinessPrep(input: PrepInput): BusinessPrep {
         if (!partial) actions.push({ rule: "GATE_PEAK", source: "A1_FLIGHTS", value: { kind: "FLIGHTS", count: top.count, side, verifiedShare: gates.verifiedShare }, startAt, endAt, issuedAt: gates.retrievedAt });
       }
     }
+
+    // The whole-day east/west flight comparison of this terminal, with the
+    // reference passenger split. Never an action: it says which side has more
+    // flights, not what to staff or stock. Stale flight records give nothing.
+    const split = airport?.split;
+    const splitStale = split?.retrievedAt ? now - Date.parse(split.retrievedAt) > FRESHNESS_MS.A1_FLIGHTS : false;
+    if (split && !splitStale) {
+      const core: SplitCore = { terminal: split.terminal, total: split.total, east: split.east, west: split.west, center: split.center, unverified: split.unverified,
+        verified: split.verified, eastPct: split.eastPct, westPct: split.westPct, unverifiedPct: split.unverifiedPct, larger: split.larger };
+      facts.push({ kind: "FLIGHT_SPLIT", split: core, issuedAt: split.retrievedAt });
+      if (split.expected && core.eastPct !== null) facts.push({ kind: "FLIGHT_SPLIT_ESTIMATE", estimate: { terminal: split.terminal, ...split.expected }, issuedAt: split.retrievedAt });
+    }
   }
 
   for (const holiday of input.holidays ?? []) {
@@ -482,9 +504,11 @@ export function prepInputFromSummary(
     retrievedAt: gateDay.retrievedAt,
     basis: sides.gateBasis,
   } : null;
+  const flightSplit = splitFromSummary(summary, sides, place.terminal, nowIso);
   return {
     ...base,
     airport: {
+      split: flightSplit.status === "OK" ? flightSplit.split : null,
       bands: sameDay ? airport?.passengerForecastTimelineByTerminal?.[place.terminal] ?? [] : [],
       coverage: sameDay ? airport?.forecastCoverage?.byTerminal?.[place.terminal] ?? "UNAVAILABLE" : "UNAVAILABLE",
       retrievedAt: sameDay ? airport?.passengerForecastRetrievedAtByTerminal?.[place.terminal] ?? null : null,
