@@ -1,0 +1,30 @@
+name: Verify Holiday Calendar
+
+# Reads the official holiday publications (Japan Cabinet Office CSV, China
+# State Council notice on www.gov.cn) and checks lib/holiday-calendar.ts
+# against them. No secret, no database, no schedule: it runs only when the
+# calendar or its checker changes in a pull request, or by hand.
+on:
+  pull_request:
+    paths:
+      - lib/holiday-calendar.ts
+      - scripts/verify-holiday-calendar.ts
+      - .github/workflows/verify-holiday-calendar.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Read official holiday publications and compare
+        run: npx tsx scripts/verify-holiday-calendar.ts

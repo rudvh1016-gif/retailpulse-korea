@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { Lang } from './retailpulse-data';
 import { useLiveSummary, LiveLoadMessage } from './live-signals';
 import { usePresentationClock } from './area-demand-card';
@@ -14,6 +14,18 @@ import { LastCheckBlock, UsualComparisonBlock } from './business-compare';
 import { PrepShare } from './prep-share';
 import { buildShareDocument, shareLink } from '../lib/prep-share';
 import { siteOrigin } from './seo-config';
+import { WeekAheadBlock } from './week-ahead';
+import { FeelingLogBlock, WeeklyReviewBlock } from './weekly-review';
+import { trackPersonalEvent } from '../lib/personal-analytics';
+import { placeKey } from '../lib/last-check';
+import { holidaysOn } from '../lib/holiday-calendar';
+
+/** Analytics context: only enumerated values, never hours, names or free text. */
+export function prepAnalytics(lang: Lang, place: PrepPlace, serviceDate: string, todayKst: string) {
+  const shift = (days: number) => new Date(Date.parse(`${todayKst}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+  const day = serviceDate === todayKst ? 'today' : serviceDate === shift(1) ? 'tomorrow' : serviceDate === shift(-1) ? 'yesterday' : undefined;
+  return { language: lang, location: place.kind === 'airport' ? 'airport' : place.area, ...(day ? { day } : {}) };
+}
 
 /** Where the reader's store is: the area tab, or an airport terminal they chose. */
 export function prepPlaceOf(preferences: BusinessPreferences, area: PrepArea): PrepPlace {
@@ -40,6 +52,7 @@ function Conditions({ lang, place, preferences, saved, storageFailed, industry, 
   const save = () => {
     const hours: BusinessHours | null = wholeDay ? null : { open: openAt, close: closeAt };
     saveBusinessPreferences({ version: 1, place: preferences.place, terminal, hours });
+    trackPersonalEvent('business_hours_saved', { language: lang, location: place.kind === 'airport' ? 'airport' : place.area });
     setOpen(false);
   };
   return <div className="prep-conditions">
@@ -91,10 +104,27 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
   const now = Number.isFinite(generated) && Math.abs(clock - generated) > 2 * 3_600_000 ? generated : clock;
   const place = prepPlaceOf(preferences, area);
   const nowIso = new Date(now).toISOString();
-  const input = summary && ready ? prepInputFromSummary(summary, place, preferences.hours, nowIso) : null;
+  // China's and Japan's official holidays on the service date (never an
+  // adjusted working day), from the verified calendar; Korea's come in the summary.
+  const officialHolidays = summary ? holidaysOn(summary.serviceDateKst).map((day) => ({
+    country: day.country, date: summary.serviceDateKst, name: day.name,
+    source: day.country === 'CN' ? 'gov.cn 国办发明电〔2025〕7号' : '内閣府 国民の祝日',
+  })) : [];
+  const input = summary && ready ? prepInputFromSummary(summary, place, preferences.hours, nowIso, officialHolidays) : null;
   const prep = input ? buildBusinessPrep(input) : null;
   const snapshot = input && prep && prep.status !== 'PAST' && prep.status !== 'ENDED' ? snapshotOf(input, prep, nowIso) : null;
   const serviceDate = summary?.serviceDateKst ?? '';
+  // One valid view per date, place, language and verdict: a view counts only
+  // once the prep has data behind it, never while loading or on an error.
+  const viewed = useRef<string | null>(null);
+  const viewKey = prep && summary ? `${serviceDate}|${placeKey(place)}|${lang}|${prep.status}` : null;
+  useEffect(() => {
+    if (!viewKey || !prep || !summary || viewed.current === viewKey) return;
+    viewed.current = viewKey;
+    trackPersonalEvent('business_prep_viewed', { ...prepAnalytics(lang, place, serviceDate, summary.todayKst), prep_status: prep.status });
+    // viewKey already names everything this depends on.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewKey]);
   return <section className="business-prep" data-testid="business-prep" aria-labelledby={`${id}-title`}>
     <div className="section-head"><div>
       <p className="eyebrow">KORETAIL · {prepCopy.eyebrow[lang]}</p>
@@ -139,7 +169,11 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
         lang={lang}
         fileName={`koretail-${serviceDate}-${place.kind === 'airport' ? `airport-${place.terminal}` : place.area}.png`}
         doc={buildShareDocument({ prep, serviceDate, place, industry, hours: preferences.hours, lang, link: shareLink(siteOrigin, lang, serviceDate), savedAt: nowIso })}
+        analytics={prepAnalytics(lang, place, serviceDate, summary.todayKst)}
       />}
+      {summary.dayRelation === 'TODAY' && <WeekAheadBlock lang={lang} summary={summary} place={place}/>}
+      {summary.dayRelation !== 'PAST' && <WeeklyReviewBlock lang={lang} summary={summary} place={place} industry={industry}/>}
+      {summary.dayRelation === 'TODAY' && <FeelingLogBlock lang={lang} place={place} industry={industry} today={summary.todayKst}/>}
     </>}
   </section>;
 }

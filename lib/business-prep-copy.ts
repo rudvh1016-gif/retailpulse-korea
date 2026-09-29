@@ -8,6 +8,7 @@
  */
 import type { BusinessHours, BusinessPrep, PrepAction, PrepCoverage, PrepFact, PrepPlace, PrepSource, PrepStatus } from "./business-prep";
 import { industryProfiles, type IndustryId } from "./industry-guidance";
+import { localHolidayName } from "./holiday-calendar";
 
 export type PrepLang = "ko" | "en" | "zh" | "ja";
 type Row = Record<PrepLang, string>;
@@ -192,13 +193,15 @@ export function factLine(fact: PrepFact, serviceDate: string, lang: PrepLang): s
         `近くの公式イベント ${fact.count}件 · ${fact.title}（${period}）`,
       )[lang];
     }
-    case "HOLIDAY":
+    case "HOLIDAY": {
+      const name = localHolidayName(fact.name, lang, fact.country);
       return row(
-        `${countryNames[fact.country].ko} 공휴일 · ${fact.name}`,
-        `${countryNames[fact.country].en} public holiday · ${fact.name}`,
-        `${countryNames[fact.country].zh}公共假日 · ${fact.name}`,
-        `${countryNames[fact.country].ja}の祝日 · ${fact.name}`,
+        `${countryNames[fact.country].ko} 공휴일 · ${name}`,
+        `${countryNames[fact.country].en} public holiday · ${name}`,
+        `${countryNames[fact.country].zh}公共假日 · ${name}`,
+        `${countryNames[fact.country].ja}の祝日 · ${name}`,
       )[lang];
+    }
   }
 }
 
@@ -283,11 +286,12 @@ export function actionText(action: PrepAction, serviceDate: string, industry: In
       };
     }
     case "HOLIDAY": {
-      const country = value.kind === "HOLIDAY" ? value.country : "KR", name = value.kind === "HOLIDAY" ? value.name : "";
+      const country = value.kind === "HOLIDAY" ? value.country : "KR";
+      const name = value.kind === "HOLIDAY" ? localHolidayName(value.name, lang, country) : "";
       const bodies: Record<"KR" | "CN" | "JP", Row> = {
-        KR: row(`오늘은 한국 공휴일(${name})입니다. 공휴일 영업시간 안내가 맞는지 확인하세요.`, `This is a Korean public holiday (${name}). Check that your holiday hours are posted correctly.`, `这天是韩国公共假日（${name}）。请确认假日营业时间的告示是否正确。`, `韓国の祝日（${name}）です。祝日の営業時間の案内が正しいか確認してください。`),
-        CN: row(`중국 공식 연휴(${name}) 기간입니다. 중국어 안내와 결제 수단을 확인해 보세요.`, `China's official holiday (${name}). Check your Chinese-language signs and payment options.`, `中国官方假期（${name}）期间。请检查中文指引与支付方式。`, `中国の公式連休（${name}）期間です。中国語の案内と決済手段を確認してください。`),
-        JP: row(`일본 공휴일(${name})입니다. 일본어 안내와 결제 수단을 확인해 보세요.`, `A Japanese public holiday (${name}). Check your Japanese-language signs and payment options.`, `日本公共假日（${name}）。请检查日语指引与支付方式。`, `日本の祝日（${name}）です。日本語の案内と決済手段を確認してください。`),
+        KR: row(`한국 공휴일입니다: ${name}. 공휴일 영업시간 안내가 맞는지 확인하세요.`, `A Korean public holiday: ${name}. Check that your holiday hours are posted correctly.`, `韩国公共假日：${name}。请确认假日营业时间的告示是否正确。`, `韓国の祝日です：${name}。祝日の営業時間の案内が正しいか確認してください。`),
+        CN: row(`중국 공식 연휴 기간입니다: ${name}. 중국어 안내와 결제 수단을 확인해 보세요.`, `China's official holiday: ${name}. Check your Chinese-language signs and payment options.`, `中国官方假期期间：${name}。请检查中文指引与支付方式。`, `中国の公式連休期間です：${name}。中国語の案内と決済手段を確認してください。`),
+        JP: row(`일본 공휴일입니다: ${name}. 일본어 안내와 결제 수단을 확인해 보세요.`, `A Japanese public holiday: ${name}. Check your Japanese-language signs and payment options.`, `日本公共假日：${name}。请检查日语指引与支付方式。`, `日本の祝日です：${name}。日本語の案内と決済手段を確認してください。`),
       };
       return {
         title: row(`${countryNames[country].ko} 공휴일`, `${countryNames[country].en} holiday`, `${countryNames[country].zh}假日`, `${countryNames[country].ja}の祝日`)[lang],

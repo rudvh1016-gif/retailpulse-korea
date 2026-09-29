@@ -32,7 +32,7 @@ function loadUsual(area: PrepArea): Promise<UsualComparison | null> {
   return pending;
 }
 
-function useUsualComparison(area: PrepArea | null): UsualComparison | null | undefined {
+export function useUsualComparison(area: PrepArea | null): UsualComparison | null | undefined {
   const [state, setState] = useState<{ area: PrepArea | null; value: UsualComparison | null | undefined }>({ area, value: undefined });
   useEffect(() => {
     if (!area) return;
