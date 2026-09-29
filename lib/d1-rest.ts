@@ -1,7 +1,9 @@
 type D1Query = { sql: string; params?: unknown[] };
 // `changes` is SQLite changes(): logical rows the statement altered.
 // `rows_written` is D1's storage counter and includes index writes.
-type D1Meta = { rows_read?: number; rows_written?: number; changes?: number; duration?: number };
+// `size_after` is the database size in bytes Cloudflare reports after the
+// statement (read only by scripts/measure-production-storage.ts).
+type D1Meta = { rows_read?: number; rows_written?: number; changes?: number; duration?: number; size_after?: number };
 type D1QueryResult = { success: boolean; meta?: D1Meta; results?: unknown[] };
 
 interface D1ApiResponse {
