@@ -221,8 +221,12 @@ test("bounded forecast date probes preserve the aggregate-departure picker contr
 test("the live summary reads both A5 directions once while the Airport date picker stays departure-only", () => {
   assert.equal((route.match(/FROM airport_passenger_forecast f/g) ?? []).length, 1,
     "one bounded D1 statement must serve both departure and arrival summaries");
-  assert.match(route, /WHERE f\.direction IN \('departure', 'arrival'\) AND f\.is_aggregate = 1 AND f\.target_date IN \(\?, \?, \?\)/);
-  assert.match(route, /ORDER BY target_date DESC, direction, target_start_at, terminal LIMIT 288/);
+  // Aggregates for three dates, plus the service date's departure-hall rows
+  // for the east/west split: the same index range, so no extra rows read.
+  assert.match(route, /WHERE f\.direction IN \('departure', 'arrival'\) AND f\.target_date IN \(\?, \?, \?\)\s+AND \(f\.is_aggregate = 1 OR \(f\.direction = 'departure' AND f\.target_date = \?\)\)/);
+  assert.match(route, /ORDER BY target_date DESC, direction, target_start_at, terminal LIMIT 480/);
+  assert.match(route, /const allPassengerForecastRows = forecastAndHallRows\.filter\(\(row\) => Number\(row\.isAggregate\) === 1\)/,
+    "only official aggregates reach the existing totals, peaks and comparisons");
   assert.match(route, /passengerForecastRows\.filter\(\(row\) => row\.direction === "departure"\)/);
   assert.match(route, /passengerForecastRows\.filter\(\(row\) => row\.direction === "arrival"\)/);
   assert.match(route, /dayValueExistsSql\("airport_passenger_forecast", "target_date", pickerDays.length, "direction = 'departure' AND is_aggregate = 1"\)/,
