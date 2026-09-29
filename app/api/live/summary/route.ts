@@ -1,6 +1,6 @@
 import { readDepartureSchedule } from '../../../../lib/departure-schedule';
 import { flightScopeCounts } from "../../../../lib/flight-scope";
-import { airportSides } from "../../../../lib/airport-sides-summary";
+import { AIRPORT_HALL_SIDES_PUBLIC, airportSides } from "../../../../lib/airport-sides-summary";
 import { summarizeScheduledBriefing, type ScheduledBriefingRow } from "../../../../lib/scheduled-briefing";
 import { compareComposition } from "../../../../lib/airport-composition-history";
 import type { AirlineRankingSummary } from "../../../../lib/airline-ranking";
@@ -436,20 +436,26 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
 
     // A5 official aggregate rows for both directions. Component rows never
     // enter a total or peak calculation, preventing provider-total double count.
-    //
-    // The service date's departure-hall rows ride along: the index range read
-    // is the same three dates either way, so they add returned rows, not rows
-    // read. They are split off below and used only for the east/west halls.
     passengerForecastRows: [client.prepare(
-      `SELECT terminal, direction, zone, is_aggregate AS isAggregate,
+      `SELECT terminal, direction, is_aggregate AS isAggregate,
         target_date AS targetDate, time_band_raw AS timeBandRaw,
         target_start_at AS targetStartAt, target_end_at AS targetEndAt,
         expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
       FROM airport_passenger_forecast f
-      WHERE f.direction IN ('departure', 'arrival') AND f.target_date IN (?, ?, ?)
-        AND (f.is_aggregate = 1 OR (f.direction = 'departure' AND f.target_date = ?))
-      ORDER BY target_date DESC, direction, target_start_at, terminal LIMIT 480`,
-    ).bind(serviceDate, shiftKstDay(serviceDate, -7), shiftKstDay(serviceDate, -28), serviceDate)],
+      WHERE f.direction IN ('departure', 'arrival') AND f.is_aggregate = 1 AND f.target_date IN (?, ?, ?)
+      ORDER BY target_date DESC, direction, target_start_at, terminal LIMIT 288`,
+    ).bind(serviceDate, shiftKstDay(serviceDate, -7), shiftKstDay(serviceDate, -28))],
+
+    // The service date's departure-hall components, used only for the
+    // east/west split (lib/airport-sides.ts), never for a total. One covering
+    // index seek: 8 halls x 24 bands at most.
+    hallRows: [client.prepare(
+      `SELECT terminal, zone, is_aggregate AS isAggregate, target_date AS targetDate, time_band_raw AS timeBandRaw,
+        target_start_at AS targetStartAt, target_end_at AS targetEndAt,
+        expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
+      FROM airport_passenger_forecast
+      WHERE direction = 'departure' AND is_aggregate = 0 AND target_date = ? AND ? = 'true' LIMIT 240`,
+    ).bind(serviceDate, String(AIRPORT_HALL_SIDES_PUBLIC))],
 
     // Month-to-date, and the same span of the month before it. Two bounded
     // range seeks on the same index the day query already uses — never an
@@ -536,10 +542,8 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   const {
     sources, contextRows, holidayRows, compositionRows, realtimeRows, observedSeriesRows, commercialRows, realtimeForecastRows, weatherRows, eventRows, salesRows,
     storeDynamicsRows, foreignPresenceRows, foreignPurposeRows, subwayRows, congestionRows,
-    passengerForecastRows: forecastAndHallRows, monthToDateRows, historicalFlightCounts, flightRows, scheduledRows, departureScheduleRows, transferRows, flightDateRows, forecastDateRows, observedDateRows, scheduleDateRows,
+    passengerForecastRows: allPassengerForecastRows, hallRows, monthToDateRows, historicalFlightCounts, flightRows, scheduledRows, departureScheduleRows, transferRows, flightDateRows, forecastDateRows, observedDateRows, scheduleDateRows,
   } = blocks;
-  const allPassengerForecastRows = forecastAndHallRows.filter((row) => Number(row.isAggregate) === 1);
-  const hallRows = forecastAndHallRows.filter((row) => Number(row.isAggregate) !== 1 && row.targetDate === serviceDate && row.direction === "departure");
   const passengerForecastRows = serviceDate > shiftKstDay(kstToday, 1) ? [] : allPassengerForecastRows.filter((row) => row.targetDate === serviceDate);
   const dayList = (rows: Row[]) => rows
     .map((row) => String(row.day ?? ""))

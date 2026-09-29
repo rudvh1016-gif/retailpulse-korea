@@ -109,7 +109,9 @@ test("the whole summary read path is one D1 round trip, and the payload is a cac
     // month's range and the previous month's same span. They are bounded range
     // seeks that ride the SAME batch, which is the property this test exists to
     // hold: a new figure on the screen must not cost a new round trip.
-    assert.equal(client.trips[0].count, 29);
+    // 2026-09-29: the east/west departure-hall components add one indexed
+    // statement to the same batch.
+    assert.equal(client.trips[0].count, 30);
 
     assert.equal(body.areas.myeongdong.realtime.congestionLabel, "약간 붐빔");
     assert.equal(body.areas.myeongdong.realtime.freshness, "LIVE");
@@ -181,7 +183,7 @@ test('month availability reaches held past and future dates with bounded indexed
     assert.equal(body.dateAvailability.endDate,'2026-07-31');
     assert.equal(body.dateAvailability.checkedAt.airportFlights,'2026-09-04T04:00:00Z');
     assert.equal(client.trips.length,1);
-    assert.equal(client.trips[0].count,29);
+    assert.equal(client.trips[0].count,30);
     assert.ok(client.trips[0].count<=50,'one batch must also stay within the Free invocation query limit');
     const probes=prepared.filter(s=>s.sql.startsWith('WITH requested_days'));
     assert.equal(probes.length,3);
@@ -200,7 +202,7 @@ test('month availability reaches held past and future dates with bounded indexed
     assert.equal(future.airport.todayExpectedPassengersTotal,null);
     assert.deepEqual(future.airport.congestion,[]);
     assert.equal(future.airport.remainingExpectedPassengers,null);
-    t.diagnostic('INTERNAL_ESTIMATE: largest month uses 29 statements vs old 88, 1 D1 round trip; 3 bounded VALUES CTEs return <=31 rows/source, use <=62 binds/query; schedule query <=31 rows. Only fixed month CTE rows are scanned; source history uses indexes. Billed D1 rows/CPU require production meta.');
+    t.diagnostic('INTERNAL_ESTIMATE: largest month uses 30 statements vs old 88, 1 D1 round trip; 3 bounded VALUES CTEs return <=31 rows/source, use <=62 binds/query; schedule query <=31 rows. Only fixed month CTE rows are scanned; source history uses indexes. Billed D1 rows/CPU require production meta.');
   } finally {database.close();unlinkSync(databasePath);}
 });
 

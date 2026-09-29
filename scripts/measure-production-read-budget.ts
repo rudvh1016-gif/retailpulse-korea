@@ -328,18 +328,30 @@ const HOT_QUERIES: HotQuery[] = [
   },
   {
     name: "passengerForecast",
-    sql: `SELECT terminal, direction, zone, is_aggregate AS isAggregate,
+    sql: `SELECT terminal, direction, is_aggregate AS isAggregate,
         target_date AS targetDate, time_band_raw AS timeBandRaw,
         target_start_at AS targetStartAt, target_end_at AS targetEndAt,
         expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
       FROM airport_passenger_forecast f
-      WHERE f.direction IN ('departure', 'arrival') AND f.target_date IN (?, ?, ?)
-        AND (f.is_aggregate = 1 OR (f.direction = 'departure' AND f.target_date = ?))
-      ORDER BY target_date DESC, direction, target_start_at, terminal LIMIT 480`,
-    binds: [serviceDate, shiftKstDay(serviceDate, -7), shiftKstDay(serviceDate, -28), serviceDate],
-    guard: "AND (f.is_aggregate = 1 OR (f.direction = 'departure' AND f.target_date = ?))",
+      WHERE f.direction IN ('departure', 'arrival') AND f.is_aggregate = 1 AND f.target_date IN (?, ?, ?)
+      ORDER BY target_date DESC, direction, target_start_at, terminal LIMIT 288`,
+    binds: [serviceDate, shiftKstDay(serviceDate, -7), shiftKstDay(serviceDate, -28)],
+    guard: "WHERE f.direction IN ('departure', 'arrival') AND f.is_aggregate = 1 AND f.target_date IN (?, ?, ?)",
     table: "airport_passenger_forecast",
     scanTargets: ["airport_passenger_forecast", "f"],
+  },
+  {
+    // East/west departure-hall components for the service date. Measured with
+    // the switch on, i.e. the cost once hall sides are published.
+    name: "passengerForecastHalls",
+    sql: `SELECT terminal, zone, is_aggregate AS isAggregate, target_date AS targetDate, time_band_raw AS timeBandRaw,
+        target_start_at AS targetStartAt, target_end_at AS targetEndAt,
+        expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
+      FROM airport_passenger_forecast
+      WHERE direction = 'departure' AND is_aggregate = 0 AND target_date = ? AND ? = 'true' LIMIT 240`,
+    binds: [serviceDate, "true"],
+    guard: "WHERE direction = 'departure' AND is_aggregate = 0 AND target_date = ? AND ? = 'true' LIMIT 240",
+    table: "airport_passenger_forecast",
   },
   {
     // Month-to-date: this month's dates and the previous month's same span.
