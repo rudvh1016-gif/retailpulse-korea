@@ -274,10 +274,11 @@ test("every measured hot-path statement still exists in the live route", () => {
   ].join("\n").replace(/\r\n/g, "\n");
   const guards = [...measureSource.matchAll(/^ {4}guard: (`[^`]*`|"(?:[^"\\]|\\.)*"),$/gm)]
     .map((match) => (match[1].startsWith("`") ? match[1].slice(1, -1) : JSON.parse(match[1])));
-  // 28 including the held dated schedule and its bounded month availability.
+  // 29 including the held dated schedule, its bounded month availability and
+  // the east/west departure-hall components.
   // The count is asserted so a statement added to the route without a matching
   // measured entry is caught here, rather than going to Production unmeasured.
-  assert.equal(guards.length, 28, "expected one guard per measured statement");
+  assert.equal(guards.length, 29, "expected one guard per measured statement");
   for (const guard of guards) {
     assert.ok(routeText.includes(guard), `the live route no longer contains: ${guard.slice(0, 80)}`);
   }

@@ -1,5 +1,6 @@
 import { readDepartureSchedule } from '../../../../lib/departure-schedule';
 import { flightScopeCounts } from "../../../../lib/flight-scope";
+import { AIRPORT_HALL_SIDES_PUBLIC, airportSides } from "../../../../lib/airport-sides-summary";
 import { summarizeScheduledBriefing, type ScheduledBriefingRow } from "../../../../lib/scheduled-briefing";
 import { compareComposition } from "../../../../lib/airport-composition-history";
 import type { AirlineRankingSummary } from "../../../../lib/airline-ranking";
@@ -445,6 +446,17 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       ORDER BY target_date DESC, direction, target_start_at, terminal LIMIT 288`,
     ).bind(serviceDate, shiftKstDay(serviceDate, -7), shiftKstDay(serviceDate, -28))],
 
+    // The service date's departure-hall components, used only for the
+    // east/west split (lib/airport-sides.ts), never for a total. One covering
+    // index seek: 8 halls x 24 bands at most.
+    hallRows: [client.prepare(
+      `SELECT terminal, zone, is_aggregate AS isAggregate, target_date AS targetDate, time_band_raw AS timeBandRaw,
+        target_start_at AS targetStartAt, target_end_at AS targetEndAt,
+        expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
+      FROM airport_passenger_forecast
+      WHERE direction = 'departure' AND is_aggregate = 0 AND target_date = ? AND ? = 'true' LIMIT 240`,
+    ).bind(serviceDate, String(AIRPORT_HALL_SIDES_PUBLIC))],
+
     // Month-to-date, and the same span of the month before it. Two bounded
     // range seeks on the same index the day query already uses — never an
     // open-ended history scan. Each is capped at one month of official
@@ -477,7 +489,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     // payload self-consistent: the counts can no longer disagree with the rows.
     flightRows: [client.prepare(
       `SELECT physical_flight_id AS physicalFlightId, terminal, gate, retrieved_at AS retrievedAt,
-        flight_number AS operatingFlight
+        flight_number AS operatingFlight, scheduled_at AS scheduledAt, status
       FROM airport_flights
       WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ? AND ? <> 'FUTURE'
       LIMIT 2000`,
@@ -530,7 +542,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   const {
     sources, contextRows, holidayRows, compositionRows, realtimeRows, observedSeriesRows, commercialRows, realtimeForecastRows, weatherRows, eventRows, salesRows,
     storeDynamicsRows, foreignPresenceRows, foreignPurposeRows, subwayRows, congestionRows,
-    passengerForecastRows: allPassengerForecastRows, monthToDateRows, historicalFlightCounts, flightRows, scheduledRows, departureScheduleRows, transferRows, flightDateRows, forecastDateRows, observedDateRows, scheduleDateRows,
+    passengerForecastRows: allPassengerForecastRows, hallRows, monthToDateRows, historicalFlightCounts, flightRows, scheduledRows, departureScheduleRows, transferRows, flightDateRows, forecastDateRows, observedDateRows, scheduleDateRows,
   } = blocks;
   const passengerForecastRows = serviceDate > shiftKstDay(kstToday, 1) ? [] : allPassengerForecastRows.filter((row) => row.targetDate === serviceDate);
   const dayList = (rows: Row[]) => rows
@@ -792,6 +804,8 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       departuresTrackedToday: flightsToday.departuresTrackedToday,
       departuresTrackedTodayByTerminal,
       flightScope: { ...flightScopeCounts(flightRows), capped: flightRows.length >= 2000 },
+      sides: airportSides(serviceDate, dayRelation, hallRows, flightRows, officialSchedule, hasOfficialSchedule, undefined,
+        hasOfficialSchedule ? String(departureScheduleRows[0]?.retrievedAt ?? '') || null : null),
       departuresTrackedTodayRetrievedAt: flightsToday.retrievedAt,
       topDepartureGate: flightsToday.topDepartureGate?.gate ?? null,
       topDepartureGateTerminal: flightsToday.topDepartureGate?.terminal ?? null,

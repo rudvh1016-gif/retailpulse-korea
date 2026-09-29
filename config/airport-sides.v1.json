@@ -1,0 +1,342 @@
+{
+  "version": "airport-sides.v1",
+  "checkedOn": "2026-09-29",
+  "notes": [
+    "Hall sides: the airport's own facility location text names each departure hall with its terminal side (quoted in evidence). The owner's reading of the official accessibility maps (https://www.airport.kr/ap_ko/908/subview.do) gives the same split: T1 1-3 east / 4-6 west (axis between halls 3 and 4, G/H check-in), T2 2 east / 1 west (axis between halls 1 and 2, F/G check-in).",
+    "The T2 texts ('1번 출국장 서편', '2번 출국장 동편') could also be read as a side within the hall; they agree with the owner's map reading, which is the basis used here.",
+    "A5 fields: data.go.kr 15095066 lists the items as T1 출국장1..6, 출국장 합계, T2 출국장1, 2, 합계; the V5.0 field names are t1dg1..t1dg6, t1dgsum1, t2dg1, t2dg2, t2dgsum2 (docs/DATA_SOURCES.md). Production (run 36518271601) showed the official aggregate equal to the sum of the six (T1) and two (T2) hall fields in all 96 hour bands checked; t1dg5 and t1dg6 are separate fields, never a combined one.",
+    "Gate sides are listed only where official text names the gate together with 동편/서편/중앙. Every other gate is 'UNVERIFIED': no range is filled in from gate numbers, and no side is inferred from an airline.",
+    "The published gate ranges are 1-50 (T1), 101-132 (탑승동) and 208-290 (T2) (https://www.airport.kr/ap_ko/886/subview.do). A T2 '1번 게이트' in the facility text is an entrance, not a boarding gate, and is not used.",
+    "The 탑승동 (Concourse) is its own building; its east/west gates are never counted as T1 east/west."
+  ],
+  "halls": [
+    {
+      "terminal": "T1",
+      "field": "t1dg1",
+      "hall": 1,
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 동편 1번출국장 우측",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "terminal": "T1",
+      "field": "t1dg2",
+      "hall": 2,
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 동편 2번출국장 우측",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "terminal": "T1",
+      "field": "t1dg3",
+      "hall": 3,
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 동편 3번 출국장 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "terminal": "T1",
+      "field": "t1dg4",
+      "hall": 4,
+      "side": "WEST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 서편 4번 출국장 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "terminal": "T1",
+      "field": "t1dg5",
+      "hall": 5,
+      "side": "WEST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 서편 5번출국장 좌측",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "terminal": "T1",
+      "field": "t1dg6",
+      "hall": 6,
+      "side": "WEST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 서편 6번출국장 좌측",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "terminal": "T2",
+      "field": "t2dg1",
+      "hall": 1,
+      "side": "WEST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제2여객터미널 3층 일반지역 1번 출국장 서편",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "terminal": "T2",
+      "field": "t2dg2",
+      "hall": 2,
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제2여객터미널 3층 일반지역 2번 출국장  동편",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    }
+  ],
+  "gateRanges": {
+    "T1": [
+      1,
+      50
+    ],
+    "CONCOURSE": [
+      101,
+      132
+    ],
+    "T2": [
+      208,
+      290
+    ]
+  },
+  "gates": [
+    {
+      "area": "T1",
+      "gate": "1",
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 동편 1번 탑승구 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T1",
+      "gate": "9",
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 동편 9번 탑승구 맞은편",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T1",
+      "gate": "11",
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 4층 동편 환승구역 (11번 게이트 인근)",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T1",
+      "gate": "12",
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 동편 12번 탑승구 맞은편",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T1",
+      "gate": "14",
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 동편 14번 탑승구 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T1",
+      "gate": "16",
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 동편 16번 탑승구 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T1",
+      "gate": "23",
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 동편 23번 탑승구 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T1",
+      "gate": "25",
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 동편 25번 탑승구 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T1",
+      "gate": "26",
+      "side": "CENTER",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 면세지역 26번(중앙) 근처 4층",
+      "source": "https://www.airport.kr/ap_ko/1008/subview.do"
+    },
+    {
+      "area": "T1",
+      "gate": "27",
+      "side": "CENTER",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 면세지역 3층 중앙 27번 게이트 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T1",
+      "gate": "28",
+      "side": "CENTER",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 면세지역 중앙 28번 게이트 인근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T1",
+      "gate": "29",
+      "side": "WEST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 서편 29번 탑승구 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T1",
+      "gate": "30",
+      "side": "WEST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 서편 30번 탑승구 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T1",
+      "gate": "32",
+      "side": "WEST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 서편 32번 탑승구 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T1",
+      "gate": "39",
+      "side": "WEST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 서편 39번 탑승구 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T1",
+      "gate": "41",
+      "side": "WEST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 서편 41번 탑승구 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T1",
+      "gate": "42",
+      "side": "WEST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 4층 서편 환승구역(42번 게이트 부근)",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T1",
+      "gate": "45",
+      "side": "WEST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 서편 45번 탑승구 맞은편",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T1",
+      "gate": "50",
+      "side": "WEST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제1여객터미널 3층 서편 50번 탑승구 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T2",
+      "gate": "225",
+      "side": "WEST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제2여객터미널 면세지역 3층 서편 225번 게이트 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T2",
+      "gate": "231",
+      "side": "WEST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제2여객터미널 4층 서편 환승구역 (231번 게이트 인근)",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T2",
+      "gate": "268",
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제2여객터미널 4층 동편 환승구역 (268번 게이트 인근)",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T2",
+      "gate": "270",
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제2여객터미널 3층 면세지역 동편 270번 게이트 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T2",
+      "gate": "274",
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제2여객터미널 면세지역 3층 동편 274번 게이트 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T2",
+      "gate": "276",
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "제2여객터미널 면세지역 3층 동편 276번 게이트 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "107",
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "탑승동 3층 동편 107번 탑승구 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "108",
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "탑승동 3층 동편 108번 탑승구 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "112",
+      "side": "EAST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "탑승동 3층 동편 112번 게이트 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "123",
+      "side": "WEST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "탑승동 3층 서편 123번 탑승구 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "128",
+      "side": "WEST",
+      "basis": "OFFICIAL_TEXT",
+      "evidence": "탑승동 3층 서편 128번 탑승구 부근",
+      "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    }
+  ]
+}
