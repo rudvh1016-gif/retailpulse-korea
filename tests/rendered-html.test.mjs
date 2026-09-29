@@ -252,10 +252,6 @@ test("keeps the four-language fonts as bounded static assets", async () => {
     ["noto-sans-jp-600.woff2", 320_000],
     ["noto-sans-sc-400.woff2", 320_000],
     ["noto-sans-sc-600.woff2", 320_000],
-    // Official event titles and descriptions change independently of a code
-    // release. This one exceptional face covers every modern Hangul syllable;
-    // CSS limits it to those provider-owned Korean strings.
-    ["pretendard-variable.woff2", 2_200_000],
   ];
   for (const [file, maximumBytes] of assets) {
     assert.match(css, new RegExp(`/fonts/${file.replaceAll(".", "\\.")}`));
@@ -264,12 +260,28 @@ test("keeps the four-language fonts as bounded static assets", async () => {
     assert.ok(asset.size < maximumBytes,
       `${file} should stay outside the Worker and below ${maximumBytes} bytes`);
   }
-  const upstreamPretendard = await readFile(new URL(
-    "../public/fonts/pretendard-variable.woff2", import.meta.url,
-  ));
-  assert.equal(createHash("sha256").update(upstreamPretendard).digest("hex"),
-    "9599f12fd42fc0bce1cd50b47a0c022e108d7aa64dd0d1bb0ed44f3282d900b4",
-    "the asset retaining Pretendard's Reserved Font Name must stay byte-identical to upstream");
+  // Official event titles and descriptions change independently of a code
+  // release, so Pretendard must cover every modern Hangul syllable. It ships as
+  // Pretendard's own unmodified dynamic-subset slices: the page downloads only
+  // the slices whose unicode-range holds the characters it draws, not 2 MB.
+  const manifest = JSON.parse(await readFile(new URL("./fixtures/pretendard-slices.json", import.meta.url), "utf8"));
+  const names = Object.keys(manifest);
+  assert.equal(names.length, 92);
+  const covered = new Set();
+  for (const name of names) {
+    const bytes = await readFile(new URL(`../public/fonts/pretendard/${name}`, import.meta.url));
+    assert.equal(createHash("sha256").update(bytes).digest("hex"), manifest[name],
+      `${name} retains Pretendard's Reserved Font Name and must stay byte-identical to upstream`);
+    assert.ok(bytes.length < 60_000, `${name} is one small slice, not a whole face`);
+    const rule = css.match(new RegExp(`/fonts/pretendard/${name.replaceAll(".", "\\.")}"\\) format\\("woff2"\\);[^}]*?unicode-range:\\s*([^;]+);`, "s"));
+    assert.ok(rule, `${name} needs its unicode-range rule`);
+    for (const part of rule[1].split(",")) {
+      const [from, to = from] = part.trim().slice(2).split("-").map((hex) => parseInt(hex, 16));
+      for (let code = from; code <= to; code++) covered.add(code);
+    }
+  }
+  for (let code = 0xAC00; code <= 0xD7A3; code++) assert.ok(covered.has(code), `Hangul U+${code.toString(16)} must be served by some slice`);
+  assert.doesNotMatch(css, /\/fonts\/pretendard-variable\.woff2/, "the 2 MB whole face is gone from the stylesheet");
 });
 
 test("uses one locale-aware font family and only supported UI weights", async () => {
@@ -940,7 +952,8 @@ test("fonts are cached but never immutable, and hashed assets are", async () => 
 
   // Every file actually shipped in public/fonts must be covered by that rule.
   const { readdir } = await import("node:fs/promises");
-  const shipped = await readdir(new URL("../public/fonts", import.meta.url));
+  // `/fonts/*` is a splat, so it also covers the Pretendard slices in /fonts/pretendard/.
+  const shipped = (await readdir(new URL("../public/fonts", import.meta.url), { recursive: true })).filter((name) => !/^pretendard$/.test(name));
   assert.ok(shipped.every((name) => name.endsWith(".woff2")),
     `public/fonts holds a file the /fonts/* rule was not written for: ${shipped.join(", ")}`);
 });

@@ -46,6 +46,11 @@ for (const width of [1280, 360]) {
       for (const side of ["터미널 전체", "동편", "서편"] as const) {
         await setConditions(page, prep, terminal, side, side === "동편" ? ["09:30", "18:00"] : null);
         await expect(prep.getByTestId("prep-place")).toContainText(`인천공항 ${terminal}`);
+        const card = sides.getByTestId("flight-split");
+        log(`${width} ${terminal} ${side} split heading`, await card.locator("h3").textContent().catch(() => "NONE"));
+        for (const id of ["split-flights", "split-shares", "split-estimate", "split-estimate-basis", "split-note", "split-no-estimate"]) {
+          if (await card.getByTestId(id).count()) log(`${width} ${terminal} ${side} ${id}`, await card.getByTestId(id).textContent());
+        }
         const gates = sides.getByTestId("gates-areas");
         log(`${width} ${terminal} ${side} place`, await prep.getByTestId("prep-place").textContent());
         if (await gates.count()) {
@@ -65,6 +70,7 @@ for (const width of [1280, 360]) {
     await share.getByRole("button", { name: "문구 복사" }).click();
     const text = await page.evaluate(() => navigator.clipboard.readText()).catch(() => "");
     log(`${width} share`, text);
+    expect(text).toContain("출발편(하루 전체)");
     expect(text).toContain("인천공항 T2 서편");
     const download = page.waitForEvent("download", { timeout: 15_000 }).catch(() => null);
     await share.getByRole("button", { name: "이미지 저장" }).click();

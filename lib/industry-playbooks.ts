@@ -29,7 +29,7 @@ export const industryPlaybooks: Record<IndustryId, Playbook> = {
       },
     ],
     record: l('색상·용량별 품절 시각, 대체품 구매 여부, 반복된 성분·가격 문의, 상담·결제 대기를 기록하세요. 발주량은 실제 판매·잔량·입고 소요일로 결정하세요.', 'Record stockout times by option, substitute purchases, repeated ingredient/price questions and consultation/checkout queues. Base orders on actual sales, remaining stock and delivery lead time.', '记录各色号容量缺货时间、替代品购买情况、重复的成分价格问题及咨询收银排队。按实际销量、余量和到货周期订货。', '仕様別の欠品時刻、代替購入、成分・価格の質問、相談・会計の待ちを記録。実販売・残量・納期を基に発注します。'),
-    airport: l('액체류·향수·세트 상품은 결제 전에 고객의 환승 여부와 휴대 조건을 확인할 수 있도록 공식 안내를 연결하세요. 면세 포장·영수증 보관 안내는 해당 매장 절차와 항공사 확인에 따르며, 환승 공항 통과를 보장하지 마세요.', 'For liquids, fragrances and sets, link official carriage guidance before purchase and ask whether the traveller is connecting. Follow store procedures for duty-free packaging and receipts; have the airline confirm transfer restrictions rather than guaranteeing clearance.', '液体、香水和套装结账前提供官方携带指引，并确认是否转机。免税包装及收据按门店流程处理，转机限制请航空公司确认，勿保证通关。', '液体・香水・セットは購入前に公式の持込案内と乗継の有無を確認。免税包装・領収書は店舗手順に従い、乗継制限は航空会社へ確認し、通過を保証しません。'),
+    airport: l('액체류·향수·세트 상품은 계산하기 전에 손님이 환승하는지, 기내에 가져갈 수 있는지 공식 안내로 확인해 드리세요. 면세 포장과 영수증 보관 방법은 매장 절차와 항공사 안내를 따르고, 환승 공항에서 통과된다고 약속하지 마세요.', 'For liquids, fragrances and sets, link official carriage guidance before purchase and ask whether the traveller is connecting. Follow store procedures for duty-free packaging and receipts; have the airline confirm transfer restrictions rather than guaranteeing clearance.', '液体、香水和套装结账前提供官方携带指引，并确认是否转机。免税包装及收据按门店流程处理，转机限制请航空公司确认，勿保证通关。', '液体・香水・セットは購入前に公式の持込案内と乗継の有無を確認。免税包装・領収書は店舗手順に従い、乗継制限は航空会社へ確認し、通過を保証しません。'),
   },
   fashion: {
     focus: l('찾는 사이즈를 빠르게 확인하고, 피팅에서 결제까지 이어지게 하세요.', 'Make size lookup, fitting and checkout easy to follow.', '让尺码查询、试穿与结账顺畅衔接。', 'サイズ確認から試着・会計までをつなぎましょう。'),
@@ -51,7 +51,7 @@ export const industryPlaybooks: Record<IndustryId, Playbook> = {
       },
     ],
     record: l('사이즈별 품절, 피팅 대기, 구매하지 않은 이유, 반품·교환 사유를 기록해 재고와 안내를 조정하세요.', 'Record size stockouts, fitting queues, reasons for not buying and return/exchange reasons to refine stock and service.', '记录尺码缺货、试衣排队、未购买及退换原因，用于调整库存与说明。', 'サイズ欠品、試着待ち、見送り・返品交換の理由を記録し、在庫と案内を見直します。'),
-    airport: l('탑승까지 여유가 적은 고객은 사이즈 확인·결제·포장 순서를 먼저 안내하세요. 수선·배송을 제공한다면 실제 가능한 완료 시점과 수령 방법만 설명하세요.', 'For travellers short on time, explain sizing, checkout and packing first. If alterations or shipping are available, state only confirmed completion and receipt arrangements.', '赶时间的旅客先说明尺码确认、收银和包装顺序。若提供修改或配送，只说明已确认的完成时间和收货方式。', '時間の少ない旅客にはサイズ確認・会計・包装の順序を先に案内。補正・配送は確認できた完了時点と受取方法だけを伝えます。'),
+    airport: l('탑승까지 시간이 얼마 안 남은 손님에게는 사이즈 확인, 계산, 포장 순서로 빠르게 안내하세요. 수선이나 배송을 한다면 실제로 마칠 수 있는 시점과 받는 방법만 알려 주세요.', 'For travellers short on time, explain sizing, checkout and packing first. If alterations or shipping are available, state only confirmed completion and receipt arrangements.', '赶时间的旅客先说明尺码确认、收银和包装顺序。若提供修改或配送，只说明已确认的完成时间和收货方式。', '時間の少ない旅客にはサイズ確認・会計・包装の順序を先に案内。補正・配送は確認できた完了時点と受取方法だけを伝えます。'),
   },
   food: {
     focus: l('주문량보다 조리·픽업·좌석의 병목을 먼저 확인하세요.', 'Check preparation, pickup and seating bottlenecks.', '先检查制作、取餐与座位的瓶颈。', '調理・受取・席の滞りを先に確認しましょう。'),
@@ -73,7 +73,7 @@ export const industryPlaybooks: Record<IndustryId, Playbook> = {
       },
     ],
     record: l('메뉴별 품절 시각·폐기량, 주문부터 전달까지의 대기, 좌석과 포장 비중을 자체 기록으로 비교하세요.', 'Compare menu sell-out times and waste, order-to-handoff waits and dine-in/takeaway mix using your own records.', '用本店记录比较菜单售罄时间、损耗、下单至取餐等候以及堂食外带比例。', '品目別の品切れ・廃棄、注文から受渡しの待ち、店内・持帰り構成を自店記録で比較します。'),
-    airport: l('탑승 시각을 확인한 고객에게 실제 조리 대기를 먼저 설명하고, 제공 가능한 빠른 메뉴·포장 선택지를 안내하세요. 운항 지연만으로 주문 증가나 영업 연장을 결정하지 마세요.', 'Tell travellers the actual preparation queue before they order and offer available quick or takeaway options. A flight delay alone does not justify extra preparation or extended hours.', '旅客下单前说明实际制作等候，提供确实可供的快速菜单或外带选择，勿仅因航班延误增加备料或延长营业。', '注文前に実際の調理待ちを伝え、提供可能な早いメニュー・持帰りを案内。遅延だけで増産や営業時間延長を決めません。'),
+    airport: l('탑승 시간이 얼마 안 남은 손님께는 지금 조리에 필요한 시간을 먼저 알려 주고, 빨리 나오는 메뉴와 포장 메뉴를 안내하세요. 항공편이 지연됐다는 이유만으로 주문이 늘 거라 보거나 영업시간을 늘리지 마세요.', 'Tell travellers the actual preparation queue before they order and offer available quick or takeaway options. A flight delay alone does not justify extra preparation or extended hours.', '旅客下单前说明实际制作等候，提供确实可供的快速菜单或外带选择，勿仅因航班延误增加备料或延长营业。', '注文前に実際の調理待ちを伝え、提供可能な早いメニュー・持帰りを案内。遅延だけで増産や営業時間延長を決めません。'),
   },
   convenience: {
     focus: l('필수품을 찾기 쉽게 하고, 결제와 전문 상담을 구분하세요.', 'Make essentials easy to find and separate checkout from specialist advice.', '方便寻找必需品，区分结账与专业咨询。', '必需品を見つけやすくし、会計と専門相談を分けましょう。'),
@@ -95,7 +95,7 @@ export const industryPlaybooks: Record<IndustryId, Playbook> = {
       },
     ],
     record: l('품절·결제 실패·반복 문의를 상품과 시간대별로 기록하세요. 민감한 건강정보는 운영 메모에 남기지 마세요.', 'Record stockouts, payment failures and common questions by item and period; keep sensitive health information out of operating notes.', '按商品和时段记录缺货、支付失败及重复问题，运营笔记不记录敏感健康信息。', '商品・時間帯別に欠品、決済失敗、よくある質問を記録。運営メモに機微な健康情報は残しません。'),
-    airport: l('출국·입국 고객이 바로 찾을 수 있도록 필수품 위치와 결제 안내를 정리하세요. 반입 가능 여부는 목적지·항공사 공식 안내로 확인하고, 약품 관련 문의는 약사에게 연결하세요.', 'Keep essentials and payment information easy to find for arriving and departing travellers. Check destination and airline carriage guidance; refer medicine questions to a pharmacist.', '便于出入境旅客查找必需品和支付说明。携带限制核对目的地及航空公司官方信息，药品问题交给药师。', '出入国客が必需品と決済案内をすぐ見つけられるよう整理。持込は目的地・航空会社の公式案内を確認し、薬の相談は薬剤師へつなぎます。'),
+    airport: l('출국·입국 손님이 바로 찾을 수 있게 필수품 위치와 계산 방법을 한눈에 보이게 정리하세요. 기내나 목적지로 가져갈 수 있는지는 목적지·항공사 공식 안내로 확인하고, 약에 관한 질문은 약사에게 연결하세요.', 'Keep essentials and payment information easy to find for arriving and departing travellers. Check destination and airline carriage guidance; refer medicine questions to a pharmacist.', '便于出入境旅客查找必需品和支付说明。携带限制核对目的地及航空公司官方信息，药品问题交给药师。', '出入国客が必需品と決済案内をすぐ見つけられるよう整理。持込は目的地・航空会社の公式案内を確認し、薬の相談は薬剤師へつなぎます。'),
   },
   popup: {
     focus: l('입장 조건·대기·체험 시간을 한 번에 알 수 있게 하세요.', 'Show entry rules, queues and session duration together.', '一并说明入场条件、等候和体验时长。', '入場条件・待ち・体験時間を一度に伝えましょう。'),
@@ -117,7 +117,7 @@ export const industryPlaybooks: Record<IndustryId, Playbook> = {
       },
     ],
     record: l('회차별 실제 소요 시간·대기·미참여 사유·소모품 잔량을 기록하세요. 체험 참여와 상품 구매는 별도 집계하세요.', 'Record actual session duration, waits, non-participation reasons and supplies. Count participation separately from purchases.', '记录每场实际时长、等候、未参与原因和耗材余量；体验参与与购买分别统计。', '各回の実所要時間・待ち・不参加理由・消耗品残量を記録。体験参加と購入は別集計にします。'),
-    airport: l('탑승 전 고객에게 체험·대기 시간을 먼저 설명하세요. 공항 승인 구역 안에서 운영하고 탑승 동선·비상 통로를 가리지 않도록 현장 관리자와 확인하세요.', 'Explain session and waiting time before participation. Operate within approved airport space and confirm clear boarding and emergency routes with the site manager.', '参与前说明体验和等候时间，在机场批准区域内运营，与现场负责人确认不妨碍登机及应急通道。', '参加前に体験・待ち時間を案内。空港の承認区画内で運営し、搭乗動線と非常通路を塞がないよう現地管理者と確認します。'),
+    airport: l('탑승 전 손님께는 체험과 대기에 드는 시간을 먼저 알려 주세요. 공항이 허가한 구역 안에서만 운영하고, 손님이 다니는 길과 비상 통로를 막지 않는지 현장 관리자와 확인하세요.', 'Explain session and waiting time before participation. Operate within approved airport space and confirm clear boarding and emergency routes with the site manager.', '参与前说明体验和等候时间，在机场批准区域内运营，与现场负责人确认不妨碍登机及应急通道。', '参加前に体験・待ち時間を案内。空港の承認区画内で運営し、搭乗動線と非常通路を塞がないよう現地管理者と確認します。'),
   },
   tourism: {
     focus: l('도착부터 체크인·출발까지 필요한 안내를 연결하세요.', 'Connect arrival, check-in and onward-travel information.', '衔接抵达、入住与出发所需信息。', '到着・チェックイン・出発の案内をつなぎましょう。'),
@@ -139,7 +139,7 @@ export const industryPlaybooks: Record<IndustryId, Playbook> = {
       },
     ],
     record: l('실제 체크인·픽업 지연, 자주 찾는 안내, 인계 누락을 기록해 다음 근무 안내에 반영하세요.', 'Record actual check-in/pickup delays, frequent questions and missed handoffs for the next shift.', '记录实际入住或接送延迟、常见咨询与交接遗漏，并用于下一班说明。', '実際の受付・送迎遅延、頻出案内、引継ぎ漏れを記録し次の勤務へ反映します。'),
-    airport: l('픽업은 고객이 확인한 항공편·터미널·만남 장소로 준비하고 운항 변경을 재확인하세요. 항공기 도착 시각을 입국장 밖에서 만날 시각으로 확정하지 마세요.', 'Prepare pickups from the traveller’s confirmed flight, terminal and meeting point, and recheck changes. An aircraft arrival time is not a guaranteed meeting time outside arrivals.', '按客人确认的航班、航站楼和会面地点准备接机并复核变更，飞机到达时间不是旅客走出到达厅的确定时间。', '送迎は顧客が確認した便・ターミナル・集合場所を基に準備し変更を再確認。航空機到着時刻を到着ロビー外で会える時刻と確定しません。'),
+    airport: l('픽업은 손님이 알려 준 항공편·터미널·만날 장소를 기준으로 준비하고, 항공편이 바뀌었는지 다시 확인하세요. 비행기 도착 시각을 입국장 밖에서 손님을 만나는 시각으로 확정하지 마세요.', 'Prepare pickups from the traveller’s confirmed flight, terminal and meeting point, and recheck changes. An aircraft arrival time is not a guaranteed meeting time outside arrivals.', '按客人确认的航班、航站楼和会面地点准备接机并复核变更，飞机到达时间不是旅客走出到达厅的确定时间。', '送迎は顧客が確認した便・ターミナル・集合場所を基に準備し変更を再確認。航空機到着時刻を到着ロビー外で会える時刻と確定しません。'),
   },
   liquor: {
     focus: l('계산과 포장이 막히지 않게 하고, 구매 한도·반입 안내를 정확히 하세요.', 'Keep checkout and packing moving, and give accurate limit and carriage guidance.', '保持收银与包装顺畅，准确说明购买限额与携带规定。', '会計と包装を滞らせず、購入限度・持込の案内を正確に。'),
@@ -161,7 +161,7 @@ export const industryPlaybooks: Record<IndustryId, Playbook> = {
       },
     ],
     record: l('품목별 품절 시각, 대체품 구매 여부, 계산·포장 대기, 반복된 한도 문의를 기록하세요. 발주량은 실제 판매·잔량·입고 소요일로 정하세요.', 'Record stockout times, substitute purchases, checkout and packing queues and repeated limit questions. Base orders on actual sales, remaining stock and lead time.', '记录各商品缺货时间、替代品购买、收银包装排队及重复的限额咨询；按实际销量、余量和到货周期订货。', '品目別の欠品時刻、代替購入、会計・包装の待ち、限度の質問を記録。発注は実販売・残量・納期で決めます。'),
-    airport: l('출국장 예고는 출국장 단위, 출발편은 탑승구 단위입니다. 두 숫자를 더하거나 매장 방문객으로 바꾸지 말고, 실제 매장 앞 대기와 함께 보세요.', 'The departure-hall notice is per hall and departures are per gate. Do not add the two or turn them into store visitors; read them alongside the actual queue at the store.', '出境大厅预告按大厅，出发航班按登机口统计。两者不可相加，也不能换算为到店人数，请结合店前实际排队查看。', '出国場の予告は出国場単位、出発便は搭乗口単位です。二つを足したり来店客数に換えたりせず、実際の店前の待ちと合わせて見ます。'),
+    airport: l('‘출국장 예상 승객’은 출국장 입구 기준, ‘출발편’은 비행기 탑승구 기준으로 센 숫자입니다. 두 숫자를 더하지 말고, 우리 매장에 올 손님 수로 바꾸지도 마세요. 매장 앞 실제 줄과 함께 보세요.', 'The departure-hall notice is per hall and departures are per gate. Do not add the two or turn them into store visitors; read them alongside the actual queue at the store.', '出境大厅预告按大厅，出发航班按登机口统计。两者不可相加，也不能换算为到店人数，请结合店前实际排队查看。', '出国場の予告は出国場単位、出発便は搭乗口単位です。二つを足したり来店客数に換えたりせず、実際の店前の待ちと合わせて見ます。'),
   },
   luxury: {
     focus: l('상담이 끊기지 않게 인력과 대기 응대를 정하세요.', 'Keep consultations uninterrupted with clear staffing and waiting service.', '明确人员与等候接待，使咨询不中断。', '人員と待ち対応を決めて相談を途切れさせない。'),
@@ -183,7 +183,7 @@ export const industryPlaybooks: Record<IndustryId, Playbook> = {
       },
     ],
     record: l('상담 대기 시간, 예약 변경, 문의가 많은 모델, 품절 시각을 기록해 다음 근무 준비에 쓰세요.', 'Record consultation waits, booking changes, often-asked models and stockout times for the next shift.', '记录咨询等候时间、预约变更、常问款式和缺货时间，用于下一班准备。', '相談の待ち時間、予約変更、よく聞かれるモデル、欠品時刻を記録し次の勤務準備に使います。'),
-    airport: l('출국장 예고와 탑승구 기준 출발편은 서로 다른 장소와 시간축입니다. 매장 앞 실제 대기로 응대 인원을 조정하세요.', 'The departure-hall notice and departures by gate are different places and clocks. Adjust service staff from the actual queue at the store.', '出境大厅预告与按登机口的出发航班是不同的地点与时间轴，请按店前实际排队调整接待人员。', '出国場の予告と搭乗口基準の出発便は別の場所と時間軸です。店前の実際の待ちで対応人数を調整します。'),
+    airport: l('‘출국장 예상 승객’과 ‘탑승구 출발편’은 세는 장소도, 기준 시각도 다릅니다. 매장 앞에 실제로 서 있는 줄을 보고 응대 인원을 조정하세요.', 'The departure-hall notice and departures by gate are different places and clocks. Adjust service staff from the actual queue at the store.', '出境大厅预告与按登机口的出发航班是不同的地点与时间轴，请按店前实际排队调整接待人员。', '出国場の予告と搭乗口基準の出発便は別の場所と時間軸です。店前の実際の待ちで対応人数を調整します。'),
   },
 };
 
@@ -191,27 +191,27 @@ export type AirportStoreArea = 'landside' | 'airside' | 'arrival' | 'arrivalDuty
 export const airportStoreAreas: Record<AirportStoreArea, { label: Copy; signal: Copy; action: Copy }> = {
   landside: {
     label: l('출국장 일반구역', 'Departures · public area', '出境大厅·公共区', '出発階・一般区域'),
-    signal: l('선택 터미널의 출국장 예상 승객과 현재 출국장 대기를 구분해 확인하세요.', 'Read the selected terminal’s departure-hall forecast separately from current checkpoint waits.', '分别查看所选航站楼出境大厅预计人数和当前安检等候。', '選択ターミナルの出国場予想と現在の検査待ちを分けて確認します。'),
-    action: l('체크인 전후 고객의 문의와 실제 매장 대기를 보고 보충·결제 업무를 준비하세요. 보안검색 대기 인원을 매장 방문 인원으로 계산하지 마세요.', 'Prepare replenishment and checkout from actual enquiries and store queues around check-in. Checkpoint queues are not store visits.', '按值机前后实际咨询及店内排队准备补货收银，勿将安检等候人数算作门店客流。', 'チェックイン前後の質問と実際の店内待ちを基に補充・会計を準備。検査待ちを来店人数として扱いません。'),
+    signal: l('위쪽의 ‘예상 승객’(공항이 미리 발표한 숫자)과 ‘현재 대기’(지금 보안검색 줄)는 서로 다른 숫자입니다. 섞지 말고 따로 보세요.', 'Read the selected terminal’s departure-hall forecast separately from current checkpoint waits.', '分别查看所选航站楼出境大厅预计人数和当前安检等候。', '選択ターミナルの出国場予想と現在の検査待ちを分けて確認します。'),
+    action: l('체크인 전후에 손님이 무엇을 질문하는지, 매장 앞에 줄이 얼마나 서는지를 직접 보고 물건 채우기와 계산 담당을 정하세요. 보안검색 줄에 선 사람 수는 우리 매장에 올 손님 수가 아닙니다.', 'Prepare replenishment and checkout from actual enquiries and store queues around check-in. Checkpoint queues are not store visits.', '按值机前后实际咨询及店内排队准备补货收银，勿将安检等候人数算作门店客流。', 'チェックイン前後の質問と実際の店内待ちを基に補充・会計を準備。検査待ちを来店人数として扱いません。'),
   },
   airside: {
     label: l('출국장 면세구역', 'Departures · duty-free area', '出境·免税区', '出国・免税区域'),
-    signal: l('출국장 공식 예보는 터미널 단위입니다. 항공편 변경과 매장·시설의 공식 위치를 함께 확인하세요.', 'The official departure-hall forecast is terminal-wide. Check flight changes and the store’s official location separately.', '出境大厅官方预测以航站楼为单位，另行核对航班变更及店铺官方位置。', '出国場公式予報はターミナル単位です。便の変更と店舗の公式位置も別に確認します。'),
-    action: l('보안검색 이후 매장 도착까지의 시간은 고정하지 마세요. 실제 유입과 탑승 마감 문의를 보고 상담·결제·포장을 배분하고 액체류·환승 안내를 확인하세요.', 'Do not assume a fixed delay from security to the store. Allocate advice, checkout and packing using actual arrivals and boarding-time enquiries; check liquid and transfer guidance.', '勿设定安检后抵达门店的固定间隔。依据实际到店及登机时间咨询分配接待、收银、包装，并核对液体及转机指引。', '検査から店舗到着までの時間を固定しません。実流入と搭乗時刻の質問から相談・会計・包装を分担し、液体・乗継案内を確認します。'),
+    signal: l('공항의 공식 예상은 터미널 전체 숫자라서 우리 매장 앞 상황과 다를 수 있습니다. 항공편 변경과 매장의 실제 위치를 같이 확인하세요.', 'The official departure-hall forecast is terminal-wide. Check flight changes and the store’s official location separately.', '出境大厅官方预测以航站楼为单位，另行核对航班变更及店铺官方位置。', '出国場公式予報はターミナル単位です。便の変更と店舗の公式位置も別に確認します。'),
+    action: l('보안검색을 통과한 손님이 매장에 오기까지 드는 시간을 미리 정해 두지 마세요. 실제로 들어오는 손님과 탑승 시간 문의를 보고 상담·계산·포장 담당을 나누고, 액체류·환승 안내를 확인하세요.', 'Do not assume a fixed delay from security to the store. Allocate advice, checkout and packing using actual arrivals and boarding-time enquiries; check liquid and transfer guidance.', '勿设定安检后抵达门店的固定间隔。依据实际到店及登机时间咨询分配接待、收银、包装，并核对液体及转机指引。', '検査から店舗到着までの時間を固定しません。実流入と搭乗時刻の質問から相談・会計・包装を分担し、液体・乗継案内を確認します。'),
   },
   arrival: {
     label: l('입국장 일반구역', 'Arrivals · public area', '入境大厅·公共区', '到着階・一般区域'),
-    signal: l('입국 화면의 입국 심사 예상 인원과 도착 항공편을 확인하세요. 출국 예보를 대신 쓰지 마세요.', 'Use the arrivals screen’s immigration forecast and arriving flights, not departure forecasts.', '使用入境页面的入境审查预计人数及到达航班，不以出境预测替代。', '入国画面の審査予想と到着便を確認し、出国予報で代用しません。'),
-    action: l('수하물 수취와 입국 절차 뒤 실제 유입을 보며 결제·픽업·필수품 안내를 준비하세요. 착륙 시각이나 심사 예상 인원을 매장 도착 시각·구매 인원으로 바꾸지 마세요.', 'Prepare checkout, pickup and essentials guidance from actual flow after immigration and baggage reclaim. Landing times and immigration forecasts do not establish store arrival times or buyers.', '按入境手续和取行李后的实际人流准备收银、接送和必需品说明，勿把着陆时间或审查预测换成到店时间或购买人数。', '入国手続と荷物受取後の実際の流れを見て会計・送迎・必需品案内を準備。着陸時刻や審査予想を来店時刻・購入人数に置き換えません。'),
+    signal: l('입국 화면의 ‘입국 심사 예상 인원’과 도착 항공편을 보세요. 출국 숫자로 대신하면 안 됩니다.', 'Use the arrivals screen’s immigration forecast and arriving flights, not departure forecasts.', '使用入境页面的入境审查预计人数及到达航班，不以出境预测替代。', '入国画面の審査予想と到着便を確認し、出国予報で代用しません。'),
+    action: l('짐을 찾고 입국 심사를 마친 뒤 실제로 들어오는 손님을 보며 계산·픽업·필수품 안내를 준비하세요. 비행기 착륙 시각이나 심사 예상 인원을 매장에 오는 시각이나 구매할 사람 수로 바꾸어 읽지 마세요.', 'Prepare checkout, pickup and essentials guidance from actual flow after immigration and baggage reclaim. Landing times and immigration forecasts do not establish store arrival times or buyers.', '按入境手续和取行李后的实际人流准备收银、接送和必需品说明，勿把着陆时间或审查预测换成到店时间或购买人数。', '入国手続と荷物受取後の実際の流れを見て会計・送迎・必需品案内を準備。着陸時刻や審査予想を来店時刻・購入人数に置き換えません。'),
   },
   arrivalDutyFree: {
     label: l('입국장 면세구역', 'Arrivals · duty-free area', '入境·免税区', '入国・免税区域'),
-    signal: l('입국 화면과 해당 매장의 공식 위치·운영시간을 확인하세요. 출국장 면세구역과 이용 동선이 다릅니다.', 'Check arrivals and the store’s official location and hours. This is a different journey from departure duty-free shopping.', '核对入境信息及店铺官方位置和营业时间，其动线不同于出境免税区。', '入国情報と店舗の公式位置・時間を確認。出国免税区域とは利用動線が異なります。'),
-    action: l('입국 고객의 실제 대기와 상품 문의를 보고 역할을 배분하세요. 구매 조건·반입·신고 안내는 매장과 관세청의 최신 공식 안내로 확인하세요.', 'Allocate work using actual arriving-customer queues and enquiries. Check current store and customs guidance for purchase conditions, imports and declarations.', '按入境顾客实际排队和咨询分配工作，购买条件、携带入境和申报依据店铺及海关最新官方指引。', '入国客の実際の待ちと質問で分担を調整。購入条件・持込・申告は店舗と税関の最新公式案内で確認します。'),
+    signal: l('입국 화면과 우리 매장의 공식 위치·운영시간을 확인하세요. 출국장 면세구역과는 손님 이동 경로가 다릅니다.', 'Check arrivals and the store’s official location and hours. This is a different journey from departure duty-free shopping.', '核对入境信息及店铺官方位置和营业时间，其动线不同于出境免税区。', '入国情報と店舗の公式位置・時間を確認。出国免税区域とは利用動線が異なります。'),
+    action: l('입국 손님이 실제로 얼마나 기다리는지, 어떤 상품을 질문하는지를 보고 담당을 나누세요. 구매 조건·반입·신고는 매장과 관세청의 최신 공식 안내로 확인하세요.', 'Allocate work using actual arriving-customer queues and enquiries. Check current store and customs guidance for purchase conditions, imports and declarations.', '按入境顾客实际排队和咨询分配工作，购买条件、携带入境和申报依据店铺及海关最新官方指引。', '入国客の実際の待ちと質問で分担を調整。購入条件・持込・申告は店舗と税関の最新公式案内で確認します。'),
   },
   concourse: {
     label: l('탑승동', 'Concourse', '登机楼', 'コンコース'),
-    signal: l('탑승동으로 확인된 항공편·매장 위치를 확인하세요. 터미널 전체 예상 승객을 탑승동 숫자로 표시하지 않습니다.', 'Use flights and locations confirmed as concourse. Terminal-wide passenger forecasts are not concourse counts.', '查看已确认属于登机楼的航班与店铺位置，航站楼总体预测不等于登机楼人数。', 'コンコースと確認された便・店舗位置を確認。ターミナル全体の予想をコンコースの人数にしません。'),
-    action: l('실제 매장 앞 흐름과 탑승구 변경을 확인해 보충·응대 순서를 조정하세요. 탑승구 번호만으로 매장과의 거리나 고객 이동 시간을 추정하지 마세요.', 'Adjust replenishment and service using observed flow and gate changes. A gate number alone does not establish store distance or walking time.', '按店前实际人流和登机口变更调整补货接待，勿仅凭登机口号码推断距离或步行时间。', '店前の実際の流れと搭乗口変更で補充・接客を調整。搭乗口番号だけで距離や移動時間を推定しません。'),
+    signal: l('탑승동(별도 건물)으로 확인된 항공편과 매장 위치만 보세요. 터미널 전체 예상 승객은 탑승동 숫자가 아니라서 탑승동 숫자로 쓰지 않습니다.', 'Use flights and locations confirmed as concourse. Terminal-wide passenger forecasts are not concourse counts.', '查看已确认属于登机楼的航班与店铺位置，航站楼总体预测不等于登机楼人数。', 'コンコースと確認された便・店舗位置を確認。ターミナル全体の予想をコンコースの人数にしません。'),
+    action: l('매장 앞을 지나는 손님 흐름과 탑승구 변경을 직접 보고 물건 채우기와 응대 순서를 조정하세요. 탑승구 번호만 보고 매장과 얼마나 먼지, 손님이 매장까지 몇 분 이동하는지 짐작하지 마세요.', 'Adjust replenishment and service using observed flow and gate changes. A gate number alone does not establish store distance or walking time.', '按店前实际人流和登机口变更调整补货接待，勿仅凭登机口号码推断距离或步行时间。', '店前の実際の流れと搭乗口変更で補充・接客を調整。搭乗口番号だけで距離や移動時間を推定しません。'),
   },
 };

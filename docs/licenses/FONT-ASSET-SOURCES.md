@@ -12,9 +12,16 @@ texts in this directory.
 - Official full WOFF2: `https://raw.githubusercontent.com/orioncactus/pretendard/v1.3.9/packages/pretendard/dist/web/variable/woff2/PretendardVariable.woff2`
 - Official full WOFF2 SHA-256: `9599f12fd42fc0bce1cd50b47a0c022e108d7aa64dd0d1bb0ed44f3282d900b4`
 
-`pretendard-variable.woff2` is that exact unmodified official WOFF2. It is
-loaded only for changeable official Korean event text and carries all modern
-Hangul syllables.
+`public/fonts/pretendard/PretendardVariable.subset.{0..91}.woff2` are the 92
+unmodified official dynamic-subset slices of Pretendard 1.3.9
+(`packages/pretendard/dist/web/variable/woff2-dynamic-subset/`, taken from the
+`pretendard@1.3.9` npm package; sha256 of each in
+`tests/fixtures/pretendard-slices.json`). They replace the single 2,057,688-byte
+`pretendard-variable.woff2` (sha256 above), which was the same font in one file.
+Each slice keeps upstream's `unicode-range`, so a page downloads only the slices
+holding the characters it draws. The slices together carry every modern Hangul
+syllable, as the whole face did, and are loaded only for changeable official
+Korean text. No glyph data was altered.
 
 `koretail-sans-variable.woff2` is a FontTools/Brotli subset generated from the
 same TTF and every text-bearing `.ts`, `.tsx`, `.css`, `.mjs`, and `.json`
