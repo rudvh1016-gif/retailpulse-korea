@@ -7,6 +7,7 @@
  */
 import { CloudflareD1RestDatabase } from "../lib/d1-rest";
 import { resolveProductionDatabaseConfig } from "./production-database";
+import { AIRPORT_SIDES_VERSION, summarizeGateSides } from "../lib/airport-sides";
 
 const { accountId, databaseId, apiToken } = resolveProductionDatabaseConfig("production");
 const database = new CloudflareD1RestDatabase(accountId, databaseId, apiToken);
@@ -78,5 +79,16 @@ await all("changed_at shape sample",
   `SELECT scheduled_at AS s, changed_at AS c, status AS st, gate AS g, terminal AS t FROM airport_flights
    WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ? AND changed_at IS NOT NULL LIMIT 5`, today, tomorrow)
   .then((rows) => rows.forEach((row) => console.log(JSON.stringify(row))));
+
+// One fixed, finished day and one flight set: classification coverage with
+// the current config/airport-sides.v1.json, and why the rest is unverified.
+const fixedDay = process.env.RPK_SIDES_DATE && /^\d{4}-\d{2}-\d{2}$/.test(process.env.RPK_SIDES_DATE) ? process.env.RPK_SIDES_DATE : kstDay(-1);
+const next = new Date(Date.parse(`${fixedDay}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+const dayRows = await all(`Departures on ${fixedDay} for side coverage`,
+  `SELECT physical_flight_id AS physicalFlightId, terminal, gate, scheduled_at AS scheduledAt, status, retrieved_at AS retrievedAt
+   FROM airport_flights WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ? LIMIT 2000`, fixedDay, next);
+const summary = summarizeGateSides(dayRows, fixedDay);
+console.log(JSON.stringify({ sidesVersion: AIRPORT_SIDES_VERSION, date: fixedDay, sourceRows: dayRows.length, physicalFlights: summary.total, cancelled: summary.cancelled,
+  byArea: summary.byArea, unverifiedByArea: summary.unverifiedByArea, unmappedGates: summary.unmappedGates }));
 
 console.log(`\nTOTAL rows_read ${rowsRead}`);

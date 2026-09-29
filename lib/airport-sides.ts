@@ -142,6 +142,26 @@ export function boardingAreaOf(row: { terminal?: unknown; gate?: unknown }): Boa
   return location === "T1" || location === "T2" || location === "CONCOURSE" ? location : "UNKNOWN";
 }
 
+/**
+ * Why a flight has no confirmed side:
+ *   NO_GATE       no gate assigned yet (or none stored) — a map cannot fix it
+ *   NOT_IN_TABLE  a real gate of this building whose side is not yet evidenced
+ *   CONFLICT      the gate is outside the published range of the stored building
+ *   NO_TERMINAL   the building itself is unknown
+ */
+export type UnverifiedReason = "NO_GATE" | "NOT_IN_TABLE" | "CONFLICT" | "NO_TERMINAL";
+const RANGES = sides.gateRanges as Record<"T1" | "T2" | "CONCOURSE", [number, number]>;
+
+export function unverifiedReasonOf(area: BoardingArea, gate: unknown): UnverifiedReason | null {
+  const key = String(gate ?? "").trim();
+  if (area === "UNKNOWN") return "NO_TERMINAL";
+  if (!key) return "NO_GATE";
+  if (GATE_BY_KEY.has(`${area}:${key}`)) return null;
+  const [low, high] = RANGES[area];
+  if (!/^\d{1,3}$/.test(key) || Number(key) < low || Number(key) > high) return "CONFLICT";
+  return "NOT_IN_TABLE";
+}
+
 /** A gate's side only when official text names it; every other gate is UNVERIFIED. */
 export function gateSideOf(area: BoardingArea, gate: unknown): GateSide {
   if (area === "UNKNOWN") return "UNVERIFIED";
@@ -162,6 +182,8 @@ export interface SideFlightRow {
 
 export type SideCounts = Record<GateSide, number> & { total: number };
 const emptyCounts = (): SideCounts => ({ EAST: 0, WEST: 0, CENTER: 0, UNVERIFIED: 0, total: 0 });
+export type ReasonCounts = Record<UnverifiedReason, number>;
+const emptyReasons = (): ReasonCounts => ({ NO_GATE: 0, NOT_IN_TABLE: 0, CONFLICT: 0, NO_TERMINAL: 0 });
 
 export interface GateSideDay {
   date: string;
@@ -169,6 +191,10 @@ export interface GateSideDay {
   total: number;
   cancelled: number;
   byArea: Record<BoardingArea, SideCounts>;
+  /** The UNVERIFIED flights of each area, by cause (sums to byArea[area].UNVERIFIED). */
+  unverifiedByArea: Record<BoardingArea, ReasonCounts>;
+  /** Gates seen without an evidenced side, with their flight counts, most flights first. */
+  unmappedGates: Array<{ area: BoardingArea; gate: string; flights: number }>;
   /** Scheduled KST hour (0-23) → area → side counts. */
   byHour: Array<{ hour: number; byArea: Record<BoardingArea, SideCounts> }>;
   /** Flights whose codeshare rows disagree on the gate; the newest retrieval is used. */
@@ -201,6 +227,8 @@ export function summarizeGateSides(rows: readonly SideFlightRow[], date: string)
     if (!current || String(row.retrievedAt ?? "") > String(current.retrievedAt ?? "")) latest.set(id, row);
   }
   const byArea = areas();
+  const unverifiedByArea: Record<BoardingArea, ReasonCounts> = { T1: emptyReasons(), T2: emptyReasons(), CONCOURSE: emptyReasons(), UNKNOWN: emptyReasons() };
+  const unmapped = new Map<string, { area: BoardingArea; gate: string; flights: number }>();
   const hours = new Map<number, Record<BoardingArea, SideCounts>>();
   let cancelled = 0;
   for (const row of latest.values()) {
@@ -209,6 +237,16 @@ export function summarizeGateSides(rows: readonly SideFlightRow[], date: string)
     const side = gateSideOf(area, row.gate);
     byArea[area][side]++;
     byArea[area].total++;
+    if (side === "UNVERIFIED") {
+      const reason = unverifiedReasonOf(area, row.gate) ?? "NOT_IN_TABLE";
+      unverifiedByArea[area][reason]++;
+      if (reason === "NOT_IN_TABLE") {
+        const key = `${area}:${String(row.gate).trim()}`;
+        const entry = unmapped.get(key) ?? { area, gate: String(row.gate).trim(), flights: 0 };
+        entry.flights++;
+        unmapped.set(key, entry);
+      }
+    }
     const hour = kstHour(String(row.scheduledAt));
     const bucket = hours.get(hour) ?? areas();
     bucket[area][side]++;
@@ -221,6 +259,8 @@ export function summarizeGateSides(rows: readonly SideFlightRow[], date: string)
     total: Object.values(byArea).reduce((sum, counts) => sum + counts.total, 0),
     cancelled,
     byArea,
+    unverifiedByArea,
+    unmappedGates: [...unmapped.values()].sort((a, b) => b.flights - a.flights || a.gate.localeCompare(b.gate)),
     byHour: [...hours].sort((a, b) => a[0] - b[0]).map(([hour, value]) => ({ hour, byArea: value })),
     reassigned: [...gatesSeen.values()].filter((seen) => seen.size > 1).length,
     retrievedAt: retrieved.at(-1) ?? null,
