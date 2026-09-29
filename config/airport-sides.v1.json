@@ -2,10 +2,10 @@
   "version": "airport-sides.v1",
   "checkedOn": "2026-09-29",
   "notes": [
-    "Hall sides: the airport's own facility location text names each departure hall with its terminal side (quoted in evidence). The owner's reading of the official accessibility maps (https://www.airport.kr/ap_ko/908/subview.do) gives the same split: T1 1-3 east / 4-6 west (axis between halls 3 and 4, G/H check-in), T2 2 east / 1 west (axis between halls 1 and 2, F/G check-in).",
-    "The T2 texts ('1번 출국장 서편', '2번 출국장 동편') could also be read as a side within the hall; they agree with the owner's map reading, which is the basis used here.",
+    "Hall sides: the airport's own facility location text names each departure hall with its terminal side (quoted in evidence). The owner's instruction described the official accessibility maps (https://www.airport.kr/ap_ko/908/subview.do) with the same split (T1 1-3 east / 4-6 west, T2 2 east / 1 west); that description is recorded as the owner's instruction, not as a reading KORETAIL verified. OCR of those map images was not reliable and is not used.",
+    "The T2 texts ('1번 출국장 서편', '2번 출국장 동편') could also be read as a side within the hall. The airport's own congestion service names every T1 hall with both an east and a west part ('출국장 1 동편', '출국장 1 서편', …, icnplus.airport.kr departures/gates, read 2026-09-29), so '출국장 N 동편/서편' is a within-hall name there. Hall sides stay withheld from the public (NEXT_PUBLIC_AIRPORT_HALL_SIDES) until the notice wording is agreed.",
     "A5 fields: data.go.kr 15095066 lists the items as T1 출국장1..6, 출국장 합계, T2 출국장1, 2, 합계; the V5.0 field names are t1dg1..t1dg6, t1dgsum1, t2dg1, t2dg2, t2dgsum2 (docs/DATA_SOURCES.md). Production (run 36518271601) showed the official aggregate equal to the sum of the six (T1) and two (T2) hall fields in all 96 hour bands checked; t1dg5 and t1dg6 are separate fields, never a combined one.",
-    "Gate sides are listed only where official text names the gate together with 동편/서편/중앙. Every other gate is 'UNVERIFIED': no range is filled in from gate numbers, and no side is inferred from an airline.",
+    "Gate sides have two bases, both official and both per gate. OFFICIAL_TEXT: official text names the gate with 동편/서편/중앙. OFFICIAL_MAP_POSITION: the airport's interactive map (https://www.airport.kr/geomap/ap_ko/view.do) loads its own gate points with coordinates (https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1, spoiInfors). In each building the east direction is the line from the mean position of the OFFICIAL_TEXT west gates to that of the OFFICIAL_TEXT east gates (T1 55.8°, T2 52.1°, 탑승동 54.2° from north). A gate is east only when it lies at least as far east along that line as the innermost officially east gate, west only when at least as far west as the innermost officially west gate. Every gate between the two stays UNVERIFIED; T1 26-28 stay CENTER. No gate number range is filled in, no side is taken from an airline, and a gate outside the published range (T2 291 on the map) is not added. The OFFICIAL_TEXT gates themselves separate cleanly on that line (0 mismatches), and none of the map's other points labelled 동편/서편 lies on the opposite side of a bound except the within-hall names '출국장 N 동편/서편'. These positions were read by KORETAIL from the official map data on 2026-09-29 (Production Visual Check run 36557391138); they are not an owner confirmation.",
     "The published gate ranges are 1-50 (T1), 101-132 (탑승동) and 208-290 (T2) (https://www.airport.kr/ap_ko/886/subview.do). A T2 '1번 게이트' in the facility text is an entrance, not a boarding gate, and is not used.",
     "The 탑승동 (Concourse) is its own building; its east/west gates are never counted as T1 east/west."
   ],
@@ -337,6 +337,742 @@
       "basis": "OFFICIAL_TEXT",
       "evidence": "탑승동 3층 서편 128번 탑승구 부근",
       "source": "data.go.kr 15095064 getFacilitesInfo lcnm (config/airport-zone-map.v1.json)"
+    },
+    {
+      "area": "T1",
+      "gate": "2",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 2' 위치 37.450140, 126.455969 · 동서 축 위치 1176m ≥ 공식 문구 동편 25번 탑승구 927m → 2번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 62140, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "3",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 3' 위치 37.450163, 126.456099 · 동서 축 위치 1187m ≥ 공식 문구 동편 25번 탑승구 927m → 3번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 62141, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "5",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 5' 위치 37.450475, 126.454632 · 동서 축 위치 1099m ≥ 공식 문구 동편 25번 탑승구 927m → 5번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61942, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "6",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 6' 위치 37.450284, 126.456240 · 동서 축 위치 1205m ≥ 공식 문구 동편 25번 탑승구 927m → 6번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34460, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "7",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 7' 위치 37.450452, 126.456201 · 동서 축 위치 1212m ≥ 공식 문구 동편 25번 탑승구 927m → 7번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34459, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "8",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 8' 위치 37.450565, 126.456014 · 동서 축 위치 1206m ≥ 공식 문구 동편 25번 탑승구 927m → 8번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34450, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "10",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 10' 위치 37.450798, 126.454633 · 동서 축 위치 1119m ≥ 공식 문구 동편 25번 탑승구 927m → 10번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34544, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "15",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 15' 위치 37.452689, 126.451753 · 동서 축 위치 1026m ≥ 공식 문구 동편 25번 탑승구 927m → 15번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34494, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "17",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 17' 위치 37.453558, 126.451398 · 동서 축 위치 1054m ≥ 공식 문구 동편 25번 탑승구 927m → 17번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34497, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "18",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 18' 위치 37.453634, 126.451249 · 동서 축 위치 1048m ≥ 공식 문구 동편 25번 탑승구 927m → 18번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34549, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "19",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 19' 위치 37.453639, 126.451049 · 동서 축 위치 1034m ≥ 공식 문구 동편 25번 탑승구 927m → 19번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34532, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "20",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 20' 위치 37.453549, 126.450886 · 동서 축 위치 1016m ≥ 공식 문구 동편 25번 탑승구 927m → 20번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34501, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "21",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 21' 위치 37.453421, 126.450820 · 동서 축 위치 1003m ≥ 공식 문구 동편 25번 탑승구 927m → 21번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34542, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "22",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 22' 위치 37.453166, 126.450879 · 동서 축 위치 992m ≥ 공식 문구 동편 25번 탑승구 927m → 22번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34465, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "24",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 24' 위치 37.451937, 126.451433 · 동서 축 위치 956m ≥ 공식 문구 동편 25번 탑승구 927m → 24번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34523, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "31",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 31' 위치 37.449715, 126.447485 · 동서 축 위치 529m ≤ 공식 문구 서편 29번 탑승구 566m → 31번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34487, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "33",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 33' 위치 37.450538, 126.446206 · 동서 축 위치 487m ≤ 공식 문구 서편 29번 탑승구 566m → 33번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34517, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "34",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 34' 위치 37.450670, 126.445930 · 동서 축 위치 475m ≤ 공식 문구 서편 29번 탑승구 566m → 34번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34489, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "35",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 35' 위치 37.450666, 126.445754 · 동서 축 위치 462m ≤ 공식 문구 서편 29번 탑승구 566m → 35번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34527, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "36",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 36' 위치 37.450571, 126.445592 · 동서 축 위치 444m ≤ 공식 문구 서편 29번 탑승구 566m → 36번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34479, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "37",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 37' 위치 37.450415, 126.445534 · 동서 축 위치 430m ≤ 공식 문구 서편 29번 탑승구 566m → 37번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34536, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "38",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 38' 위치 37.450279, 126.445574 · 동서 축 위치 425m ≤ 공식 문구 서편 29번 탑승구 566m → 38번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34518, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "40",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 40' 위치 37.449723, 126.446488 · 동서 축 위치 457m ≤ 공식 문구 서편 29번 탑승구 566m → 40번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34539, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "43",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 43' 위치 37.447479, 126.447996 · 동서 축 위치 428m ≤ 공식 문구 서편 29번 탑승구 566m → 43번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34537, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "46",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 46' 위치 37.446386, 126.447666 · 동서 축 위치 336m ≤ 공식 문구 서편 29번 탑승구 566m → 46번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34525, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "47",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 47' 위치 37.445827, 126.447620 · 동서 축 위치 298m ≤ 공식 문구 서편 29번 탑승구 566m → 47번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34446, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "48",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 48' 위치 37.445633, 126.447690 · 동서 축 위치 291m ≤ 공식 문구 서편 29번 탑승구 566m → 48번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34546, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T1",
+      "gate": "49",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 49' 위치 37.445564, 126.447883 · 동서 축 위치 301m ≤ 공식 문구 서편 29번 탑승구 566m → 49번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34484, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "216",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 216' 위치 37.470190, 126.427011 · 동서 축 위치 466m ≤ 공식 문구 서편 231번 탑승구 469m → 216번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61310, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "217",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 217' 위치 37.469961, 126.427113 · 동서 축 위치 458m ≤ 공식 문구 서편 231번 탑승구 469m → 217번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61319, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "218",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 218' 위치 37.469504, 126.427627 · 동서 축 위치 462m ≤ 공식 문구 서편 231번 탑승구 469m → 218번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61312, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "219",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 219' 위치 37.468956, 126.428243 · 동서 축 위치 468m ≤ 공식 문구 서편 231번 탑승구 469m → 219번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61314, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "220",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 220' 위치 37.468513, 126.428645 · 동서 축 위치 466m ≤ 공식 문구 서편 231번 탑승구 469m → 220번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61318, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "221",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 221' 위치 37.468032, 126.429123 · 동서 축 위치 467m ≤ 공식 문구 서편 231번 탑승구 469m → 221번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61320, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "222",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 222' 위치 37.467455, 126.429677 · 동서 축 위치 466m ≤ 공식 문구 서편 231번 탑승구 469m → 222번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61313, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "223",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 223' 위치 37.466916, 126.430192 · 동서 축 위치 465m ≤ 공식 문구 서편 231번 탑승구 469m → 223번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61317, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "224",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 224' 위치 37.466851, 126.430250 · 동서 축 위치 465m ≤ 공식 문구 서편 231번 탑승구 469m → 224번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61306, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "232",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 232' 위치 37.464544, 126.432098 · 동서 축 위치 437m ≤ 공식 문구 서편 231번 탑승구 469m → 232번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34473, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "233",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 233' 위치 37.463809, 126.432365 · 동서 축 위치 406m ≤ 공식 문구 서편 231번 탑승구 469m → 233번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34443, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "234",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 234' 위치 37.462993, 126.432738 · 동서 축 위치 376m ≤ 공식 문구 서편 231번 탑승구 469m → 234번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34477, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "235",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 235' 위치 37.462447, 126.432988 · 동서 축 위치 357m ≤ 공식 문구 서편 231번 탑승구 469m → 235번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34529, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "236",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 236' 위치 37.462200, 126.433197 · 동서 축 위치 355m ≤ 공식 문구 서편 231번 탑승구 469m → 236번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34451, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "237",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 237' 위치 37.462217, 126.433169 · 동서 축 위치 354m ≤ 공식 문구 서편 231번 탑승구 469m → 237번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34505, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "238",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 238' 위치 37.462193, 126.433471 · 동서 축 위치 373m ≤ 공식 문구 서편 231번 탑승구 469m → 238번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34522, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "239",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 239' 위치 37.462283, 126.433678 · 동서 축 위치 394m ≤ 공식 문구 서편 231번 탑승구 469m → 239번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34545, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "240",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 240' 위치 37.462314, 126.433731 · 동서 축 위치 399m ≤ 공식 문구 서편 231번 탑승구 469m → 240번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34543, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "241",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 241' 위치 37.462484, 126.433840 · 동서 축 위치 419m ≤ 공식 문구 서편 231번 탑승구 469m → 241번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34550, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "242",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 242' 위치 37.462632, 126.433866 · 동서 축 위치 430m ≤ 공식 문구 서편 231번 탑승구 469m → 242번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34468, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "243",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 243' 위치 37.462864, 126.433642 · 동서 축 위치 431m ≤ 공식 문구 서편 231번 탑승구 469m → 243번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34490, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "245",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 245' 위치 37.463155, 126.433265 · 동서 축 위치 424m ≤ 공식 문구 서편 231번 탑승구 469m → 245번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34481, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "246",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 246' 위치 37.463936, 126.432825 · 동서 축 위치 446m ≤ 공식 문구 서편 231번 탑승구 469m → 246번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34486, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "255",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 255' 위치 37.467235, 126.439996 · 동서 축 위치 1171m ≥ 공식 문구 동편 270번 탑승구 1149m → 255번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34526, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "256",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 256' 위치 37.466634, 126.440441 · 동서 축 위치 1161m ≥ 공식 문구 동편 270번 탑승구 1149m → 256번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34452, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "257",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 257' 위치 37.466393, 126.440590 · 동서 축 위치 1155m ≥ 공식 문구 동편 270번 탑승구 1149m → 257번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34503, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "258",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 258' 위치 37.466325, 126.440789 · 동서 축 위치 1164m ≥ 공식 문구 동편 270번 탑승구 1149m → 258번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34541, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "259",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 259' 위치 37.466321, 126.440842 · 동서 축 위치 1167m ≥ 공식 문구 동편 270번 탑승구 1149m → 259번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34540, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "260",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 260' 위치 37.466384, 126.441083 · 동서 축 위치 1189m ≥ 공식 문구 동편 270번 탑승구 1149m → 260번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34588, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "261",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 261' 위치 37.466535, 126.441321 · 동서 축 위치 1215m ≥ 공식 문구 동편 270번 탑승구 1149m → 261번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34454, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "262",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 262' 위치 37.466508, 126.441286 · 동서 축 위치 1211m ≥ 공식 문구 동편 270번 탑승구 1149m → 262번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34492, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "263",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 263' 위치 37.466736, 126.441363 · 동서 축 위치 1232m ≥ 공식 문구 동편 270번 탑승구 1149m → 263번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34498, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "264",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 264' 위치 37.466938, 126.441144 · 동서 축 위치 1230m ≥ 공식 문구 동편 270번 탑승구 1149m → 264번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34491, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "265",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 265' 위치 37.467503, 126.440312 · 동서 축 위치 1211m ≥ 공식 문구 동편 270번 탑승구 1149m → 265번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34455, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "266",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 266' 위치 37.467877, 126.439753 · 동서 축 위치 1197m ≥ 공식 문구 동편 270번 탑승구 1149m → 266번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34519, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "267",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 267' 위치 37.468345, 126.438983 · 동서 축 위치 1175m ≥ 공식 문구 동편 270번 탑승구 1149m → 267번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34472, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "275",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 275' 위치 37.469917, 126.437409 · 동서 축 위치 1172m ≥ 공식 문구 동편 270번 탑승구 1149m → 275번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61092, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "277",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 277' 위치 37.471154, 126.436389 · 동서 축 위치 1185m ≥ 공식 문구 동편 270번 탑승구 1149m → 277번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61294, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "278",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 278' 위치 37.471761, 126.435874 · 동서 축 위치 1191m ≥ 공식 문구 동편 270번 탑승구 1149m → 278번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61292, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "279",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 279' 위치 37.472266, 126.435492 · 동서 축 위치 1198m ≥ 공식 문구 동편 270번 탑승구 1149m → 279번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61289, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "280",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 280' 위치 37.472742, 126.435092 · 동서 축 위치 1203m ≥ 공식 문구 동편 270번 탑승구 1149m → 280번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61291, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "281",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 281' 위치 37.473263, 126.434751 · 동서 축 위치 1214m ≥ 공식 문구 동편 270번 탑승구 1149m → 281번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61280, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "282",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 282' 위치 37.473926, 126.434315 · 동서 축 위치 1229m ≥ 공식 문구 동편 270번 탑승구 1149m → 282번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61298, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "283",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 283' 위치 37.474075, 126.434125 · 동서 축 위치 1226m ≥ 공식 문구 동편 270번 탑승구 1149m → 283번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61287, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "284",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 284' 위치 37.474073, 126.434066 · 동서 축 위치 1222m ≥ 공식 문구 동편 270번 탑승구 1149m → 284번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61296, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "285",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 285' 위치 37.474067, 126.433830 · 동서 축 위치 1205m ≥ 공식 문구 동편 270번 탑승구 1149m → 285번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61295, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "286",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 286' 위치 37.474064, 126.433745 · 동서 축 위치 1199m ≥ 공식 문구 동편 270번 탑승구 1149m → 286번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61285, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "287",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 287' 위치 37.473854, 126.433373 · 동서 축 위치 1158m ≥ 공식 문구 동편 270번 탑승구 1149m → 287번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61300, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "288",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 288' 위치 37.473827, 126.433335 · 동서 축 위치 1154m ≥ 공식 문구 동편 270번 탑승구 1149m → 288번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 61297, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "101",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 101' 위치 37.458307, 126.449245 · 동서 축 위치 1200m ≥ 공식 문구 동편 112번 탑승구 940m → 101번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34466, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "102",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 102' 위치 37.458383, 126.449131 · 동서 축 위치 1196m ≥ 공식 문구 동편 112번 탑승구 940m → 102번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34469, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "103",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 103' 위치 37.458148, 126.449273 · 동서 축 위치 1191m ≥ 공식 문구 동편 112번 탑승구 940m → 103번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34456, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "104",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 104' 위치 37.458385, 126.449002 · 동서 축 위치 1187m ≥ 공식 문구 동편 112번 탑승구 940m → 104번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34515, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "105",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 105' 위치 37.458015, 126.449152 · 동서 축 위치 1174m ≥ 공식 문구 동편 112번 탑승구 940m → 105번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34448, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "106",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 106' 위치 37.458337, 126.448863 · 동서 축 위치 1174m ≥ 공식 문구 동편 112번 탑승구 940m → 106번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34538, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "109",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 109' 위치 37.457258, 126.447801 · 동서 축 위치 1028m ≥ 공식 문구 동편 112번 탑승구 940m → 109번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34463, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "110",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 110' 위치 37.457580, 126.447515 · 동서 축 위치 1029m ≥ 공식 문구 동편 112번 탑승구 940m → 110번 동편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34581, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "125",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 125' 위치 37.454061, 126.442117 · 동서 축 위치 414m ≤ 공식 문구 서편 123번 탑승구 503m → 125번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34508, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "126",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 126' 위치 37.454382, 126.441832 · 동서 축 위치 415m ≤ 공식 문구 서편 123번 탑승구 503m → 126번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34496, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "127",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 127' 위치 37.453687, 126.441440 · 동서 축 위치 342m ≤ 공식 문구 서편 123번 탑승구 503m → 127번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34547, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "129",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 129' 위치 37.453432, 126.440970 · 동서 축 위치 291m ≤ 공식 문구 서편 123번 탑승구 503m → 129번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34476, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "130",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 130' 위치 37.453774, 126.440741 · 동서 축 위치 297m ≤ 공식 문구 서편 123번 탑승구 503m → 130번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34445, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "131",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 131' 위치 37.453416, 126.440826 · 동서 축 위치 280m ≤ 공식 문구 서편 123번 탑승구 503m → 131번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34524, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "132",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_POSITION",
+      "evidence": "공식 지도 '탑승구 132' 위치 37.453544, 126.440656 · 동서 축 위치 276m ≤ 공식 문구 서편 123번 탑승구 503m → 132번 서편",
+      "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34507, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
     }
   ]
 }

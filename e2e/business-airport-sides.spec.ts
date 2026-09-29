@@ -24,7 +24,7 @@ const flight = (id: string, terminal: string | null, gate: string, time: string,
   ({ physicalFlightId: id, terminal, gate, scheduledAt: `${DATE}T${time}:00+09:00`, status, retrievedAt: '2026-08-31T05:00:00Z' });
 const FLIGHTS = [
   flight('A', 'T1', '9', '15:05'), flight('A', 'T1', '9', '15:05'), flight('B', 'T1', '11', '15:40'), flight('C', 'T1', '29', '15:20'),
-  flight('D', 'T1', '27', '16:10'), flight('E', 'T1', '10', '17:00'), flight('F', null, '107', '15:30'), flight('G', 'T2', '274', '18:00'),
+  flight('D', 'T1', '27', '16:10'), flight('E', 'T1', '13', '17:00'), flight('F', null, '107', '15:30'), flight('G', 'T2', '274', '18:00'),
   flight('H', 'T1', '12', '15:50', 'cancelled'),
 ];
 
