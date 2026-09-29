@@ -192,13 +192,29 @@ export function factLine(fact: PrepFact, serviceDate: string, lang: PrepLang): s
         `预计出境旅客最多时段 ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)} · 约${number(fact.count, lang)}人`,
         `出国予想旅客が最も多い時間 ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)} · 約${number(fact.count, lang)}人`,
       )[lang] + ` (${sourceName("A5_FORECAST", lang)}${issued(fact.issuedAt, serviceDate, lang)})`;
-    case "GATE_PEAK":
+    case "GATE_PEAK": {
+      const span = prepSpan(fact.startAt, fact.endAt, serviceDate, lang);
+      const source = ` (${sourceName("A1_FLIGHTS", lang)}${issued(fact.issuedAt, serviceDate, lang)})`;
+      if (fact.partial && fact.side) {
+        // The scope is in the sentence itself: a count of the flights whose
+        // gate side is confirmed, never "the east side's busiest hour".
+        const inHour = fact.unverifiedInHour ?? 0;
+        const inHours = fact.unverifiedInHours ?? inHour;
+        const [ko, en, zh, ja] = [sideNames[fact.side].ko, sideNames[fact.side].en.toLowerCase(), sideNames[fact.side].zh, sideNames[fact.side].ja];
+        return row(
+          `위치가 확인된 ${ko} 탑승구 항공편 중 가장 많은 시간 ${span} · ${fact.count}편 (위치 미확인 ${inHours}편 제외, 그중 같은 시간 ${inHour}편 · ${ko} 전체의 가장 많은 시간은 아직 알 수 없습니다)`,
+          `Among flights at gates confirmed on the ${en}, the most in ${span} · ${fact.count} (${inHours} flight(s) with an unconfirmed side left out, ${inHour} of them that hour · the ${en}'s busiest hour is not known yet)`,
+          `在位置已确认的${zh}登机口航班中最多的时段 ${span} · ${fact.count}班（未计入位置未确认的${inHours}班，其中同一时段${inHour}班 · ${zh}整体最多的时段尚无法确定）`,
+          `位置が確認できた${ja}の搭乗口の便のうち最も多い時間 ${span} · ${fact.count}便（位置未確認の${inHours}便は除外、うち同じ時間${inHour}便 · ${ja}全体で最も多い時間はまだ分かりません）`,
+        )[lang] + source;
+      }
       return row(
-        `탑승구 기준 출발편이 가장 많은 시간 ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)} · ${fact.count}편${fact.side ? ` (${sideNames[fact.side].ko} 탑승구)` : ""}`,
-        `Most departures by gate ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)} · ${fact.count} flight(s)${fact.side ? ` (${sideNames[fact.side].en.toLowerCase()} gates)` : ""}`,
-        `按登机口出发航班最多时段 ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)} · ${fact.count}班${fact.side ? `（${sideNames[fact.side].zh}登机口）` : ""}`,
-        `搭乗口基準の出発便が最も多い時間 ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)} · ${fact.count}便${fact.side ? `（${sideNames[fact.side].ja}の搭乗口）` : ""}`,
-      )[lang] + ` (${sourceName("A1_FLIGHTS", lang)}${issued(fact.issuedAt, serviceDate, lang)})`;
+        `탑승구 기준 출발편이 가장 많은 시간 ${span} · ${fact.count}편${fact.side ? ` (${sideNames[fact.side].ko} 탑승구)` : " (터미널 전체)"}`,
+        `Most departures by gate ${span} · ${fact.count} flight(s)${fact.side ? ` (${sideNames[fact.side].en.toLowerCase()} gates)` : " (whole terminal)"}`,
+        `按登机口出发航班最多时段 ${span} · ${fact.count}班${fact.side ? `（${sideNames[fact.side].zh}登机口）` : "（整个航站楼）"}`,
+        `搭乗口基準の出発便が最も多い時間 ${span} · ${fact.count}便${fact.side ? `（${sideNames[fact.side].ja}の搭乗口）` : "（ターミナル全体）"}`,
+      )[lang] + source;
+    }
     case "AIRPORT_TOTAL":
       if (fact.side) return row(
         `영업시간 ${sideNames[fact.side].ko} 출국장 예상 이용객 합계 약 ${number(fact.count, lang)}명 (${fact.bands}개 시간대)`,

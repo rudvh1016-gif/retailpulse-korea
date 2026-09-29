@@ -100,7 +100,15 @@ export interface PrepWeatherRow { targetAt: string; precipitationProbability: nu
 export interface PrepEventRow { title: string; eventStart: string; eventEnd: string | null; retrievedAt?: string | null }
 export interface PrepAirportBand { targetStartAt: string; targetEndAt: string; expectedPassengers: number }
 export interface PrepGateHours {
-  hours: ReadonlyArray<{ hour: number; count: number }>;
+  /** count: flights in scope; unverified: flights of the terminal that hour whose gate side is not evidenced. */
+  hours: ReadonlyArray<{ hour: number; count: number; unverified?: number }>;
+  /**
+   * TERMINAL: every flight of the terminal is counted (a terminal is known
+   * even when the gate side is not). SIDE_VERIFIED_ONLY: only flights at
+   * gates with an evidenced side — a partial count that must never be read
+   * as the side's peak or turned into a preparation action.
+   */
+  scope?: "TERMINAL" | "SIDE_COMPLETE" | "SIDE_VERIFIED_ONLY";
   /** Share of the terminal's flights at a gate whose side official text names. */
   verifiedShare: number | null;
   retrievedAt: string | null;
@@ -147,6 +155,9 @@ export const FRESHNESS_MS = {
   SEOUL_FORECAST: 3 * HOUR_MS,
   KMA_FORECAST: 6 * HOUR_MS,
   A5_FORECAST: 30 * HOUR_MS,
+  // The same daily-publication window as A5: flight records older than this
+  // are not used for a preparation fact.
+  A1_FLIGHTS: 30 * HOUR_MS,
 } as const;
 
 export type CoverageStatus = "COVERED" | "PARTIAL" | "NONE" | "STALE" | "NOT_YET_PUBLISHED";
@@ -189,7 +200,9 @@ export type PrepFact =
   | { kind: "TEMPERATURE_RANGE"; minC: number; maxC: number; issuedAt: string | null }
   | { kind: "AIRPORT_PEAK"; count: number; startAt: string; endAt: string; issuedAt: string | null; side?: AirportSide | null }
   | { kind: "AIRPORT_TOTAL"; count: number; bands: number; startAt: string; endAt: string; issuedAt: string | null; side?: AirportSide | null }
-  | { kind: "GATE_PEAK"; count: number; startAt: string; endAt: string; issuedAt: string | null; side: AirportSide | null; basis: PrepGateHours["basis"] }
+  | { kind: "GATE_PEAK"; count: number; startAt: string; endAt: string; issuedAt: string | null; side: AirportSide | null; basis: PrepGateHours["basis"];
+      /** true: counted only flights at gates with an evidenced side; unverified flights are listed, not included. */
+      partial?: boolean; unverifiedInHour?: number; unverifiedInHours?: number }
   | { kind: "EVENTS"; count: number; title: string; eventStart: string; eventEnd: string | null; issuedAt: string | null }
   | { kind: "HOLIDAY"; country: PrepHoliday["country"]; name: string; officialSource: string };
 
@@ -351,7 +364,8 @@ export function buildBusinessPrep(input: PrepInput): BusinessPrep {
     // (and side). A flight count, never a person count, and on the flight's
     // own departure clock — not moved to a guessed shopping hour.
     const gates = airport?.gates;
-    if (gates) {
+    const gatesStale = gates?.retrievedAt ? now - Date.parse(gates.retrievedAt) > FRESHNESS_MS.A1_FLIGHTS : false;
+    if (gates && !gatesStale) {
       const inHours = gates.hours.filter((row) => {
         const at = Date.parse(`${input.serviceDate}T${String(row.hour).padStart(2, "0")}:00:00+09:00`);
         return row.count > 0 && at + HOUR_MS > start && at < windowEnd;
@@ -360,8 +374,16 @@ export function buildBusinessPrep(input: PrepInput): BusinessPrep {
         const top = inHours.reduce((best, row) => (row.count > best.count ? row : best));
         const startAt = `${input.serviceDate}T${String(top.hour).padStart(2, "0")}:00:00+09:00`;
         const endAt = kstIso(Date.parse(startAt) + HOUR_MS);
-        facts.push({ kind: "GATE_PEAK", count: top.count, startAt, endAt, issuedAt: gates.retrievedAt, side, basis: gates.basis });
-        actions.push({ rule: "GATE_PEAK", source: "A1_FLIGHTS", value: { kind: "FLIGHTS", count: top.count, side, verifiedShare: gates.verifiedShare }, startAt, endAt, issuedAt: gates.retrievedAt });
+        const partial = gates.scope === "SIDE_VERIFIED_ONLY";
+        const unverifiedInHours = gates.hours.filter((row) => {
+          const at = Date.parse(`${input.serviceDate}T${String(row.hour).padStart(2, "0")}:00:00+09:00`);
+          return at + HOUR_MS > start && at < windowEnd;
+        }).reduce((sum, row) => sum + (row.unverified ?? 0), 0);
+        facts.push({ kind: "GATE_PEAK", count: top.count, startAt, endAt, issuedAt: gates.retrievedAt, side, basis: gates.basis,
+          ...(partial ? { partial: true, unverifiedInHour: top.unverified ?? 0, unverifiedInHours } : {}) });
+        // A partial side count is shown as a fact only: it can never say where
+        // the side's departures peak, so it never becomes a preparation action.
+        if (!partial) actions.push({ rule: "GATE_PEAK", source: "A1_FLIGHTS", value: { kind: "FLIGHTS", count: top.count, side, verifiedShare: gates.verifiedShare }, startAt, endAt, issuedAt: gates.retrievedAt });
       }
     }
   }
@@ -443,12 +465,17 @@ export function prepInputFromSummary(
     .filter((band) => (side === "EAST" ? band.east : band.west) !== null)
     .map((band) => ({ targetStartAt: band.startAt, targetEndAt: band.endAt, expectedPassengers: Number(side === "EAST" ? band.east : band.west) })) : null;
   const gateDay = sides?.gates ?? null;
+  const terminalCounts = gateDay?.byArea[place.terminal];
+  const verifiedShare = terminalCounts?.total ? (terminalCounts.total - terminalCounts.UNVERIFIED) / terminalCounts.total : null;
   const gates: PrepGateHours | null = gateDay && sides?.gateBasis ? {
     hours: gateDay.byHour.map((row) => {
       const counts = row.byArea[place.terminal];
-      return { hour: row.hour, count: side ? counts[side] : counts.total };
+      return { hour: row.hour, count: side ? counts[side] : counts.total, unverified: counts.UNVERIFIED };
     }),
-    verifiedShare: gateDay.byArea[place.terminal].total ? (gateDay.byArea[place.terminal].total - gateDay.byArea[place.terminal].UNVERIFIED) / gateDay.byArea[place.terminal].total : null,
+    // A terminal's own flights are all counted; a side is complete only when
+    // every flight of the terminal has an evidenced gate side.
+    scope: !side ? "TERMINAL" : verifiedShare === 1 ? "SIDE_COMPLETE" : "SIDE_VERIFIED_ONLY",
+    verifiedShare,
     retrievedAt: gateDay.retrievedAt,
     basis: sides.gateBasis,
   } : null;

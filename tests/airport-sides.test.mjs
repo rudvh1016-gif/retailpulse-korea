@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import {
-  boardingAreaOf, gateSideCoverage, gateSideOf, hallSideOf, hallsOn, summarizeGateSides, summarizeHallSides,
+  boardingAreaOf, gateSideCoverage, gateSideOf, hallSideOf, hallsOn, summarizeGateSides, summarizeHallSides, unverifiedReasonOf,
 } from "../lib/airport-sides.ts";
 
 const config = JSON.parse(readFileSync(new URL("../config/airport-sides.v1.json", import.meta.url), "utf8"));
@@ -133,6 +133,35 @@ test("flights: codeshares count once, cancelled apart, concourse and unknown kep
   assert.equal(day.byHour.reduce((sum, hour) => sum + Object.values(hour.byArea).reduce((inner, counts) => inner + counts.total, 0), 0), day.total);
   assert.deepEqual(day.byHour.map((hour) => hour.hour), [8, 9, 10]);
   assert.equal(gateSideCoverage(day, "T1"), 0.75);
+});
+
+test("an unverified flight says why: no gate, a gate missing from the table, or a gate that does not belong to the building", () => {
+  assert.equal(unverifiedReasonOf("T1", "9"), null);
+  assert.equal(unverifiedReasonOf("T1", ""), "NO_GATE");
+  assert.equal(unverifiedReasonOf("T1", null), "NO_GATE");
+  assert.equal(unverifiedReasonOf("T1", "10"), "NOT_IN_TABLE");
+  assert.equal(unverifiedReasonOf("T2", "250"), "NOT_IN_TABLE");
+  assert.equal(unverifiedReasonOf("T2", "9"), "CONFLICT");
+  assert.equal(unverifiedReasonOf("CONCOURSE", "150"), "CONFLICT");
+  assert.equal(unverifiedReasonOf("UNKNOWN", "9"), "NO_TERMINAL");
+  const day = summarizeGateSides([
+    flight("A", "T2", "268", "10:00"),
+    flight("B", "T2", "250", "10:05"), flight("C", "T2", "250", "10:10"), flight("D", "T2", "252", "10:20"),
+    flight("E", "T2", "", "10:30"), flight("F", "T2", "9", "10:40"),
+    flight("G", null, null, "10:50"),
+  ], DATE);
+  assert.deepEqual(day.unverifiedByArea.T2, { NO_GATE: 1, NOT_IN_TABLE: 3, CONFLICT: 1, NO_TERMINAL: 0 });
+  assert.deepEqual(day.unverifiedByArea.UNKNOWN, { NO_GATE: 0, NOT_IN_TABLE: 0, CONFLICT: 0, NO_TERMINAL: 1 });
+  for (const area of Object.keys(day.byArea)) {
+    assert.equal(Object.values(day.unverifiedByArea[area]).reduce((sum, n) => sum + n, 0), day.byArea[area].UNVERIFIED);
+  }
+  // A missing table entry is listed by gate so the map work can start from the busiest one; a conflict is not.
+  assert.deepEqual(day.unmappedGates, [{ area: "T2", gate: "250", flights: 2 }, { area: "T2", gate: "252", flights: 1 }]);
+  // The terminal total counts every flight; unknown sides never shrink it.
+  assert.equal(day.byArea.T2.total, 6);
+  assert.equal(day.byArea.T2.EAST, 1);
+  // All of the unverified flights sit in one hour, and that hour still counts them.
+  assert.equal(day.byHour.find((hour) => hour.hour === 10).byArea.T2.UNVERIFIED, 5);
 });
 
 test("a gate change uses the newest retrieval and is reported, never counted twice", () => {
