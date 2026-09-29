@@ -47,10 +47,7 @@ for (const width of [1280, 360]) {
         await setConditions(page, prep, terminal, side, side === "동편" ? ["09:30", "18:00"] : null);
         await expect(prep.getByTestId("prep-place")).toContainText(`인천공항 ${terminal}`);
         const card = sides.getByTestId("flight-split");
-        log(`${width} ${terminal} ${side} split heading`, await card.locator("h3").textContent().catch(() => "NONE"));
-        for (const id of ["split-flights", "split-shares", "split-estimate", "split-estimate-basis", "split-note", "split-no-estimate"]) {
-          if (await card.getByTestId(id).count()) log(`${width} ${terminal} ${side} ${id}`, await card.getByTestId(id).textContent());
-        }
+        log(`${width} ${terminal} ${side} split state`, (await card.count()) ? `${await card.getAttribute("data-state", { timeout: 2000 })} | ${(await card.innerText({ timeout: 2000 })).replace(/\s+/g, " ")}` : "NO_CARD");
         const gates = sides.getByTestId("gates-areas");
         log(`${width} ${terminal} ${side} place`, await prep.getByTestId("prep-place").textContent());
         if (await gates.count()) {
