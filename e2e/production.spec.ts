@@ -764,7 +764,8 @@ test("the business-type checklist is readable, filled in and switches with the t
       return { text: button.textContent ?? "", color: style.color, paper, height: Math.round(button.getBoundingClientRect().height), active: button.classList.contains("active") };
     });
   });
-  expect(tabs).toHaveLength(6);
+  // 2026-09-29: 주류·담배 and 명품 added for airport stores.
+  expect(tabs).toHaveLength(8);
   for (const tab of tabs) {
     expect(tab.color).not.toBe(tab.paper);
     expect(tab.color).not.toBe("rgb(255, 255, 255)");
