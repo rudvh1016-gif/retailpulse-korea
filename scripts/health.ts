@@ -47,6 +47,7 @@ import { censusSources, CENSUSED_SOURCE_IDS } from '../lib/source-census';
 import { evaluateSource, type SourceVerdict } from "../lib/source-lifecycle";
 import { buildWatchdogReport, type Heartbeat } from "../lib/watchdog";
 import { observeQuota, type QuotaObservation, type QuotaVerdict } from "../lib/quota-observation";
+import { calendarCoverage } from "../lib/holiday-calendar";
 import { scanForRuntimeLlm, isScannableProductionPath } from "../lib/runtime-llm-scan";
 import { resolveProductionDatabaseConfig } from "./production-database";
 
@@ -387,7 +388,10 @@ const centralRecoveryReadiness = {
     && live?.memoryState === 'PERSISTED_READ' && runtimeLlm.offendingFiles.length === 0,
 };
 
-const report = {...buildHealthReport(inputs),phase2:{
+// China's and Japan's holiday calendar is a verified file, not a collector; it
+// needs a person when the next year's arrangement is due. Reported, never failing.
+const holidayCalendar = calendarCoverage(new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10));
+const report = {...buildHealthReport(inputs),holidayCalendar,phase2:{
   memory:live?.memoryState??'UNKNOWN_NO_DATABASE',sourceEvidence:live?.measurements.map(({sample,run,health,...facts})=>({...facts,sampleRows:sample.length,collectorStatus:run?.status??null,sourceStatus:health?.status??null}))??[],
   lastGood:live?.states??[],scorecard:scoreRecoveryAttempts(live?.attempts??[]),usage:observedUsage(live?.usage??[]),
   regressionCandidates:regressionCandidates(live?.incidents??[]),automaticPolicyChangeAllowed:false,automaticCodeChangeAllowed:false,
@@ -415,7 +419,8 @@ console.log(wantsJson ? JSON.stringify({...report,harnessExecution}, null, 2) : 
   `; controlled-eligible ${centralRecoveryReadiness.controlledEligibleSources.length}`+
   `\nSTUCK CONTROLLED ATTEMPTS: ${stuckAttempts.length}`+
   (stuckAttempts.length?stuckAttempts.map(row=>`\n  HUMAN_REVIEW_REQUIRED ${row.attemptId} ${row.sourceId} age ${Math.round(row.ageMs/60000)} min`).join(''):'')+
-  `\nREADY FOR OWNER REVIEW: ${centralRecoveryReadiness.readyForOwnerReview}`);
+  `\nREADY FOR OWNER REVIEW: ${centralRecoveryReadiness.readyForOwnerReview}`+
+  `\nHOLIDAY CALENDAR: ${holidayCalendar.map((row) => `${row.country} through ${row.coveredThrough}${row.renewalDue ? ' RENEWAL_DUE (run verify-holiday-calendar.yml after the next official notice)' : ''}`).join(' · ')}`);
 
 // ERROR is the only exit-code failure. UNKNOWN must not fail the command,
 // because an offline run is legitimately UNKNOWN and a health command that
