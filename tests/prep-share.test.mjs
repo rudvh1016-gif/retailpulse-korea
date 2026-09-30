@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { buildBusinessPrep } from "../lib/business-prep.ts";
-import { actionText, factLine } from "../lib/business-prep-copy.ts";
+import { actionText, coverageLine, factLine } from "../lib/business-prep-copy.ts";
 import { buildShareDocument, dateLabel, shareLink, shareText } from "../lib/prep-share.ts";
 
 const day = "2026-09-28";
@@ -87,4 +87,15 @@ test("a partly located airport side reads the same in the text and the image, wi
   assert.doesNotMatch(text, /탑승구 기준 출발편이 가장 많은 시간/);
   assert.equal(prep.actions.some((row) => row.rule === "GATE_PEAK"), false);
   assert.match(text, /출처: .*인천공항 운항 정보/, "the flight source is named even when the gate count gives no action");
+});
+
+test("the share carries the same coverage caveats as the screen, in every language", () => {
+  // Forecast rows only at 12:00 and 17:00 for a 10:00-20:00 store: the screen says so, and so must the share.
+  for (const lang of ["ko", "en", "zh", "ja"]) {
+    const prep = prepFor();
+    const caveats = prep.coverage.map((entry) => coverageLine(entry, day, lang)).filter(Boolean);
+    assert.ok(caveats.length > 0, "the fixture must have a partial or missing source");
+    const text = shareText(buildShareDocument(input(prep, lang)));
+    for (const caveat of caveats) assert.ok(text.includes(caveat), `${lang}: ${caveat}`);
+  }
 });

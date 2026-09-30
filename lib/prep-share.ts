@@ -9,7 +9,7 @@
  */
 import { sidesCopy } from "./airport-sides-copy";
 import type { BusinessHours, BusinessPrep, PrepPlace, PrepSource } from "./business-prep";
-import { actionText, factLine, hoursLabel, isWholeDayFact, placeName, prepTime, sourceName, statusLine, type PrepLang } from "./business-prep-copy";
+import { actionText, coverageLine, factLine, hoursLabel, isWholeDayFact, placeName, prepTime, sourceName, statusLine, type PrepLang } from "./business-prep-copy";
 import { industryProfiles, type IndustryId } from "./industry-guidance";
 
 type Row = Record<PrepLang, string>;
@@ -111,6 +111,12 @@ export function buildShareDocument(input: ShareInput): ShareDocument {
     lines.push({ kind: "item", text: `${index + 1}. ${text.body}` });
   });
   if (!prep.actions.length || prep.hourlyStatus !== "ACTIONS") lines.push({ kind: "item", text: statusLine(prep.actions.length ? prep.hourlyStatus : prep.status, lang) });
+  // The same coverage caveats the screen prints under the facts: a partial,
+  // missing or old source must not read as the whole shift in the shared copy.
+  for (const entry of prep.coverage) {
+    const line = coverageLine(entry, serviceDate, lang);
+    if (line) lines.push({ kind: "note", text: line });
+  }
   const issued = prep.coverage.filter((entry) => entry.issuedAt && (entry.status === "COVERED" || entry.status === "PARTIAL"))
     .map((entry) => `${sourceName(entry.source, lang)} ${prepTime(entry.issuedAt as string, serviceDate, lang)}`);
   // Gate departures are a flight count with their own collection time.

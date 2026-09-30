@@ -33,6 +33,9 @@ export interface FacilityForecastBand {
   expectedPassengers: number;
 }
 
+/** The departure-hall queue is collected every few minutes; the summary treats a reading older than this as stale. */
+export const CHECKPOINT_FRESH_MS = 20 * 60_000;
+
 export interface FacilityCheckpointObservation {
   terminal: string;
   zone: string;
@@ -195,8 +198,12 @@ export function buildFacilityOperationsBrief(input: FacilityOperationsInput): Fa
   // A checkpoint is attached only when the mapping proved one and a stored
   // observation carries that exact zone. Matching on terminal alone would
   // relabel a terminal-wide queue as this store's checkpoint.
+  // A reading older than the queue's own refresh window is not "current": the
+  // route asks for the newest stored observation with no age limit, so an
+  // outage would otherwise leave an old queue driving today's reference.
   const checkpoint = proven && input.mapping.checkpointId && terminal
-    ? input.checkpoints.find((row) => row.terminal === terminal && row.zone === input.mapping.checkpointId) ?? null
+    ? input.checkpoints.find((row) => row.terminal === terminal && row.zone === input.mapping.checkpointId
+      && Number.isFinite(Date.parse(row.observedAt)) && now - Date.parse(row.observedAt) <= CHECKPOINT_FRESH_MS) ?? null
     : null;
 
   const hasFlights = terminalFlights.length > 0;
