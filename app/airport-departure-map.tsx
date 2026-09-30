@@ -1,0 +1,220 @@
+'use client';
+
+/**
+ * The airport departure map (loaded only when a reader opens it; see
+ * app/airport-sides.tsx). It reads the same /api/live/flights rows as the
+ * flight board, once per date, and computes everything on the device: moving
+ * the time or the destination filter never asks the server again.
+ */
+import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
+import type { Lang } from './retailpulse-data';
+import { shiftKstDay } from '../lib/kst';
+import {
+  buildingsOf, customWindow, departureMap, minuteOfDay, presetWindow,
+  type DepartureMap, type MapBuilding, type MapFlight, type MapFlightRow, type MapTerminal, type MapWindow, type WindowPreset,
+} from '../lib/airport-departure-map';
+import { flightLine, groupShare, statusText, leadLine, mapCopy as copy, mapShareText, windowCountsLine, windowText } from '../lib/airport-departure-map-copy';
+import type { DestinationGroup } from '../lib/airport-destinations';
+
+interface FlightsPayload { mode: string; basis?: string; flights: MapFlightRow[]; retrievedAt?: string | null }
+type Loaded = { status: 'OK'; payload: FlightsPayload } | { status: 'FAILED' };
+
+// One request per date for the whole page visit; the flight board uses the same route.
+const pending = new Map<string, Promise<Loaded>>();
+function loadFlights(date: string): Promise<Loaded> {
+  let request = pending.get(date);
+  if (!request) {
+    request = fetch(`/api/live/flights?date=${encodeURIComponent(date)}`, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(15_000) })
+      .then(async (response) => {
+        const payload = response.ok ? await response.json() as FlightsPayload : null;
+        return payload?.mode === 'live-flights' ? { status: 'OK' as const, payload } : { status: 'FAILED' as const };
+      })
+      .catch(() => ({ status: 'FAILED' as const }));
+    pending.set(date, request);
+    // A failure may be retried on the next open.
+    void request.then((result) => { if (result.status === 'FAILED') pending.delete(date); });
+  }
+  return request;
+}
+
+function useFlights(date: string | null): Loaded | undefined {
+  const [state, setState] = useState<{ date: string; value: Loaded } | undefined>(undefined);
+  useEffect(() => {
+    if (!date) return;
+    let live = true;
+    void loadFlights(date).then((value) => { if (live) setState({ date, value }); });
+    return () => { live = false; };
+  }, [date]);
+  return state && state.date === date ? state.value : undefined;
+}
+
+/** "14:05" in KST, with the date in front when it is not the service date. */
+function kstClock(iso: string, date: string): string {
+  const at = Date.parse(iso);
+  if (!Number.isFinite(at)) return '';
+  const kst = new Date(at + 9 * 3_600_000).toISOString();
+  return `${kst.slice(0, 10) === date ? '' : `${kst.slice(5, 10)} `}${kst.slice(11, 16)} KST`;
+}
+
+const SIDE_FILL: Record<string, string> = { EAST: 'var(--blue)', WEST: 'var(--green)', CENTER: 'var(--muted)', UNVERIFIED: 'var(--paper)' };
+
+function BuildingMap({ lang, building, map, flights, selected, onSelect }: {
+  lang: Lang; building: MapBuilding; map: DepartureMap; flights: readonly MapFlight[]; selected: string | null; onSelect: (key: string | null) => void;
+}) {
+  const gates = map.gates.filter((gate) => gate.building === building);
+  if (!gates.length) return null;
+  const counts = new Map<string, number>();
+  for (const flight of flights) if (flight.building === building && flight.position && flight.gate) counts.set(flight.gate, (counts.get(flight.gate) ?? 0) + 1);
+  const pad = 60;
+  const maxX = Math.max(...gates.map((gate) => gate.x)), maxY = Math.max(...gates.map((gate) => gate.y));
+  const width = maxX + pad * 2, height = maxY + pad * 2;
+  const key = (gate: string) => `${building}:${gate}`;
+  const activate = (gate: string) => onSelect(selected === key(gate) ? null : key(gate));
+  const onKey = (event: KeyboardEvent, gate: string) => {
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activate(gate); }
+  };
+  return <figure style={{ margin: '10px 0 0' }} data-testid={`map-${building}`}>
+    <figcaption className="prep-note">{copy.building[building][lang]}</figcaption>
+    <svg viewBox={`0 0 ${width} ${height}`} width="100%" role="group" aria-label={`${copy.building[building][lang]} · ${copy.axis[lang]}`}
+      style={{ display: 'block', maxHeight: building === 'T2' ? 340 : 220, border: '1px solid var(--line)', background: 'var(--paper)' }}>
+      {gates.map((gate) => {
+        const n = counts.get(gate.gate) ?? 0;
+        const cx = gate.x + pad, cy = height - (gate.y + pad);
+        const isSelected = selected === key(gate.gate);
+        const unitR = width / 100;
+        const r = n ? unitR * (2.2 + Math.sqrt(n) * 1.1) : unitR * 0.9;
+        const label = `${copy.gate[lang]} ${gate.gate} · ${copy.side[gate.side][lang]} · ${n}${lang === 'en' ? ' flights' : lang === 'ko' ? '편' : lang === 'zh' ? '班' : '便'}`;
+        return <g key={gate.gate} role="button" tabIndex={n ? 0 : -1} aria-label={label} aria-pressed={isSelected}
+          data-gate={gate.gate} data-flights={n} data-side={gate.side}
+          onClick={() => n && activate(gate.gate)} onKeyDown={(event) => n && onKey(event, gate.gate)} style={{ cursor: n ? 'pointer' : 'default' }}>
+          <title>{label}</title>
+          <circle cx={cx} cy={cy} r={r} fill={n ? SIDE_FILL[gate.side] : 'var(--line)'} fillOpacity={n ? (gate.side === 'UNVERIFIED' ? 1 : 0.85) : 1}
+            stroke={isSelected ? 'var(--ink)' : gate.side === 'UNVERIFIED' && n ? 'var(--muted)' : 'none'} strokeWidth={unitR * (isSelected ? 0.6 : 0.3)}/>
+          {n > 0 && <text x={cx} y={cy + unitR * 1.1} textAnchor="middle" fontSize={unitR * 3} fill={gate.side === 'UNVERIFIED' ? 'var(--ink)' : 'var(--paper)'} style={{ pointerEvents: 'none' }}>{n}</text>}
+        </g>;
+      })}
+    </svg>
+  </figure>;
+}
+
+function FlightRows({ lang, flights, testId }: { lang: Lang; flights: readonly MapFlight[]; testId: string }) {
+  return <ul className="prep-side-hours" data-testid={testId}>
+    {flights.map((flight) => <li key={`${flight.id}:${flight.day}`} data-group={flight.group}>
+      {flightLine(flight, lang)} <span className="prep-note">({copy.side[flight.side][lang]}{flight.building === 'CONCOURSE' ? ` · ${copy.concourse[lang]}` : ''} · {statusText(flight.status, lang)})</span>
+    </li>)}
+  </ul>;
+}
+
+export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, terminal, nowIso, holidays }: {
+  lang: Lang; date: string; todayKst: string; dayRelation: 'PAST' | 'TODAY' | 'FUTURE'; terminal: MapTerminal; nowIso: string;
+  /** China's and Japan's official holidays on the date, from the page's own calendar lookup. */
+  holidays: ReadonlyArray<{ country: string; name: string }>;
+}) {
+  const today = dayRelation === 'TODAY' && date === todayKst;
+  const [preset, setPreset] = useState<WindowPreset>('DAY');
+  const [custom, setCustom] = useState<[number, number]>([9, 18]);
+  const [filter, setFilter] = useState<DestinationGroup | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [copied, setCopied] = useState<'OK' | 'FAILED' | null>(null);
+  const nowMinute = today ? minuteOfDay(date, `${new Date(Date.parse(nowIso) + 9 * 3_600_000).toISOString().slice(0, 16)}:00+09:00`) : null;
+  const span: MapWindow = preset === 'CUSTOM' ? (customWindow(custom[0], custom[1]) ?? { startMin: 0, endMin: 1440 })
+    : presetWindow(preset === 'DAY' || !today ? 'DAY' : preset, nowMinute);
+  const nextDate = shiftKstDay(date, 1);
+  const current = useFlights(date);
+  const next = useFlights(span.endMin > 1440 ? nextDate : null);
+  const map = useMemo(() => current?.status === 'OK'
+    ? departureMap({ date, nextDate, terminal, window: span, rows: current.payload.flights, nextRows: next === undefined ? null : next.status === 'OK' ? next.payload.flights : [] })
+    : null, [current, next, date, nextDate, terminal, span.startMin, span.endMin]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (current === undefined) return <p className="prep-note" data-testid="map-loading">{copy.loading[lang]}</p>;
+  if (current.status === 'FAILED' || !map) return <p className="prep-note" data-testid="map-failed">{copy.failed[lang]}</p>;
+
+  const shown = filter ? map.flights.filter((flight) => flight.group === filter) : map.flights;
+  const atGate = selected ? shown.filter((flight) => `${flight.building}:${flight.gate}` === selected) : [];
+  const unplaced = [...map.unplaced.noGate, ...map.unplaced.notOnMap].filter((flight) => !filter || flight.group === filter);
+  const basis = current.payload.basis === 'OFFICIAL_DEPARTURE_SCHEDULE' ? copy.basisSchedule[lang] : copy.basisCollected[lang];
+  const holidayFor = (group: DestinationGroup) => holidays.filter((day) => (group === 'JP' && day.country === 'JP') || (group === 'CN' && day.country === 'CN'));
+  const shareUrl = typeof location === 'undefined' ? 'https://koretaildata.com' : `${location.origin}${location.pathname}`;
+  const share = mapShareText(map, { date, filter, basis, url: shareUrl }, lang);
+  const copyText = async () => {
+    try { await navigator.clipboard.writeText(share); setCopied('OK'); } catch { setCopied('FAILED'); }
+  };
+  const hours = Array.from({ length: 25 }, (_, hour) => hour);
+  const presets: WindowPreset[] = today ? ['DAY', 'NEXT1', 'NEXT3', 'NEXT6', 'CUSTOM'] : ['DAY', 'CUSTOM'];
+
+  return <div data-testid="departure-map" data-window={`${span.startMin}-${span.endMin}`} data-filter={filter ?? 'ALL'}>
+    <p className="prep-note">{copy.intro[lang]}</p>
+    <div className="date-nav-shortcuts" role="group" aria-label={copy.time[lang]} style={{ flexWrap: 'wrap' }}>
+      {presets.map((value) => <button key={value} type="button" aria-pressed={preset === value} data-preset={value} style={{ whiteSpace: 'nowrap', flex: '0 0 auto' }}
+        onClick={() => { setPreset(value); setSelected(null); }}>{copy.presets[value][lang]}</button>)}
+    </div>
+    {preset === 'CUSTOM' && <p style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+      <label>{copy.from[lang]} <select value={custom[0]} data-testid="map-from" onChange={(event) => { const start = Number(event.target.value); setCustom([start, Math.max(start + 1, custom[1])]); }}>
+        {hours.slice(0, 24).map((hour) => <option key={hour} value={hour}>{String(hour).padStart(2, '0')}:00</option>)}
+      </select></label>
+      <label>{copy.to[lang]} <select value={custom[1]} data-testid="map-to" onChange={(event) => setCustom([custom[0], Number(event.target.value)])}>
+        {hours.slice(custom[0] + 1).map((hour) => <option key={hour} value={hour}>{String(hour).padStart(2, '0')}:00</option>)}
+      </select></label>
+    </p>}
+    <p className="prep-note">{windowText(map.window, lang)} · {copy.scheduled[lang]}</p>
+    {map.nextDay === 'MISSING' && <p className="prep-note" data-testid="map-next-missing">{copy.nextDayMissing[lang]}</p>}
+    {map.nextDay === 'COVERED' && <p className="prep-note" data-testid="map-next-covered">{copy.nextDayCovered[lang]}</p>}
+
+    <p data-testid="map-counts"><strong>{windowCountsLine(map, lang)}</strong></p>
+    <p data-testid="map-lead">{leadLine(map, lang)}</p>
+
+    {!map.flights.length ? <p className="prep-note" data-testid="map-empty">{copy.empty[lang]}</p> : <>
+      <h4 style={{ margin: '12px 0 0' }}>{copy.destinations[lang]}</h4>
+      <table data-testid="map-groups" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+        <tbody>
+          {map.groups.map((row) => {
+            const share = groupShare(row, map.flights.length);
+            const days = holidayFor(row.group);
+            return <tr key={row.group} data-group={row.group} style={{ borderTop: '1px solid var(--line)' }}>
+              <th scope="row" style={{ textAlign: 'left', fontWeight: 400, padding: '6px 0' }}>
+                <button type="button" aria-pressed={filter === row.group} onClick={() => { setFilter(filter === row.group ? null : row.group); setSelected(null); }}
+                  style={{ border: 0, padding: 0, background: 'transparent', color: filter === row.group ? 'var(--blue)' : 'var(--ink)', textDecoration: filter === row.group ? 'underline' : 'none', cursor: 'pointer', font: 'inherit', textAlign: 'left' }}>
+                  {copy.groups[row.group][lang]}
+                </button>
+                {days.length > 0 && <span className="prep-note" data-testid="map-holiday"> · {days.map((day) => day.name).join(', ')} ({copy.holidayNote[lang]})</span>}
+              </th>
+              <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{row.flights}{lang === 'en' ? '' : lang === 'ko' ? '편' : lang === 'zh' ? '班' : '便'}{share === null ? '' : ` · ${share}%`}</td>
+              <td className="prep-note" style={{ textAlign: 'right', whiteSpace: 'nowrap', paddingLeft: 8 }}>
+                {(['EAST', 'WEST'] as const).map((side) => `${copy.side[side][lang].slice(0, 1)} ${row.bySide[side]}`).join(' / ')}
+                {row.concourse > 0 ? ` / ${copy.concourse[lang]} ${row.concourse}` : ''}
+              </td>
+            </tr>;
+          })}
+        </tbody>
+      </table>
+      <p className="prep-note" data-testid="map-groups-basis">{copy.destinationNote(map.flights.length, map.unknownDestination, lang)}</p>
+      {filter && <p><button type="button" className="prep-link" onClick={() => setFilter(null)} data-testid="map-clear-filter"
+        style={{ border: 0, padding: 0, background: 'transparent', color: 'var(--blue)', cursor: 'pointer', font: 'inherit' }}>{copy.clearFilter[lang]}</button>
+        {' '}<span className="prep-note">({copy.filtered[lang]}: {copy.groups[filter][lang]} · {shown.length})</span></p>}
+
+      <p className="prep-note" style={{ marginTop: 12 }}>{copy.axis[lang]}</p>
+      {buildingsOf(terminal).map((building) => <BuildingMap key={building} lang={lang} building={building} map={map} flights={shown} selected={selected} onSelect={setSelected}/>)}
+      <p className="prep-note">{copy.schematic[lang]}</p>
+      {selected && <div data-testid="map-gate-flights">
+        <h4 style={{ margin: '10px 0 0' }}>{copy.gate[lang]} {selected.split(':')[1]} · {copy.building[selected.split(':')[0] as MapBuilding][lang]}</h4>
+        {atGate.length ? <FlightRows lang={lang} flights={atGate} testId="map-gate-list"/> : <p className="prep-note">{copy.noFlightsAtGate[lang]}</p>}
+      </div>}
+
+      {unplaced.length > 0 && <details className="prep-evidence" data-testid="map-unplaced">
+        <summary>{copy.unplacedTitle[lang]} {unplaced.length}</summary>
+        <p className="prep-note">{copy.noGate[lang]} {map.unplaced.noGate.filter((flight) => !filter || flight.group === filter).length} · {copy.notOnMap[lang]} {map.unplaced.notOnMap.filter((flight) => !filter || flight.group === filter).length}</p>
+        <FlightRows lang={lang} flights={unplaced} testId="map-unplaced-list"/>
+      </details>}
+      <details className="prep-evidence" data-testid="map-flights">
+        <summary>{copy.flightList[lang]} {shown.length}</summary>
+        <FlightRows lang={lang} flights={shown} testId="map-flight-list"/>
+      </details>
+    </>}
+
+    <p className="prep-note">{basis}{current.payload.retrievedAt ? ` · ${copy.collected[lang]} ${kstClock(String(current.payload.retrievedAt), date)}` : ''} · {copy.notPeople[lang]}</p>
+    <p><button type="button" className="install-app-button" onClick={copyText} data-testid="map-copy">{copy.copy[lang]}</button>
+      {copied === 'OK' && <span className="prep-note" role="status"> {copy.copied[lang]}</span>}</p>
+    {copied === 'FAILED' && <><p className="prep-note" role="status">{copy.copyFailed[lang]}</p><pre data-testid="map-share-text" style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>{share}</pre></>}
+  </div>;
+}
+

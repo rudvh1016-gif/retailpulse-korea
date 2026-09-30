@@ -1,5 +1,6 @@
 'use client';
 
+import { lazy, Suspense, useState } from 'react';
 import type { Lang } from './retailpulse-data';
 import type { LiveSummary } from './live-signals';
 import type { AirportSidesBlock as SidesBlock } from '../lib/airport-sides-summary';
@@ -12,6 +13,19 @@ import { splitFromSummary } from '../lib/airport-flight-split';
 import { estimateBasisLine, estimateBody, estimateNote, flightsBody, hourBody, sharesBody, splitCopy } from '../lib/airport-flight-split-copy';
 
 type Side = AirportSide | null;
+
+// The map's code and gate positions load only when a reader opens it.
+const DepartureMap = lazy(() => import('./airport-departure-map'));
+
+function DepartureMapSection({ lang, summary, terminal, nowIso, holidays }: { lang: Lang; summary: LiveSummary; terminal: PrepTerminal; nowIso: string; holidays: ReadonlyArray<{ country: string; name: string }> }) {
+  const [open, setOpen] = useState(false);
+  return <details className="prep-block prep-evidence" data-testid="departure-map-section" onToggle={(event) => setOpen((event.currentTarget as HTMLDetailsElement).open)}>
+    <summary><h3 style={{ margin: 0 }}>{copy.mapTitle[lang]}</h3></summary>
+    {open && <Suspense fallback={<p className="prep-note">{copy.mapLoading[lang]}</p>}>
+      <DepartureMap lang={lang} date={summary.serviceDateKst} todayKst={summary.todayKst} dayRelation={summary.dayRelation} terminal={terminal} nowIso={nowIso} holidays={holidays}/>
+    </Suspense>}
+  </details>;
+}
 const hourOf = (iso: string) => Number(iso.slice(11, 13));
 
 /** The chosen side's value in a band, or the terminal total when no side is chosen. */
@@ -98,8 +112,9 @@ function FlightSplitCard({ lang, summary, sides, terminal, nowIso }: { lang: Lan
   </div>;
 }
 
-export function AirportSidesBlock({ lang, summary, terminal, side, hours, nowIso }: {
+export function AirportSidesBlock({ lang, summary, terminal, side, hours, nowIso, holidays = [] }: {
   lang: Lang; summary: LiveSummary; terminal: PrepTerminal; side: Side; hours: BusinessHours | null; nowIso: string;
+  holidays?: ReadonlyArray<{ country: string; name: string }>;
 }) {
   const sides = (summary.airport as LiveSummary['airport'] & { sides?: SidesBlock }).sides;
   if (!sides) return null;
@@ -122,6 +137,7 @@ export function AirportSidesBlock({ lang, summary, terminal, side, hours, nowIso
   };
   return <div className="prep-block prep-sides" data-testid="airport-sides" data-side={side ?? 'ALL'}>
     <FlightSplitCard lang={lang} summary={summary} sides={sides} terminal={terminal} nowIso={nowIso}/>
+    <DepartureMapSection lang={lang} summary={summary} terminal={terminal} nowIso={nowIso} holidays={holidays}/>
     <p className="prep-note" data-testid="sides-notice">{copy.notice[lang]}</p>
     <h3>{copy.hallTitle[lang]}</h3>
     {sides.halls
