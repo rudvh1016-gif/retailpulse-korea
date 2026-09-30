@@ -11,14 +11,14 @@ export async function readFlightsForDate(client: Pick<D1Database, 'prepare'>, se
     const snapshots = (await client.prepare('SELECT payload, retrieved_at AS retrievedAt FROM airport_departure_schedule WHERE service_date = ? LIMIT 1')
       .bind(serviceDate).all<{payload: string; retrievedAt: string}>()).results ?? [];
     const rows = readDepartureSchedule(snapshots[0], serviceDate).map(row => ({
-      flightNumber: row.operatingFlight, airlineCode: row.airlineCode ?? null, airportCode: row.airportCode ?? null,
+      physicalFlightId: row.physicalFlightId, flightNumber: row.operatingFlight, airlineCode: row.airlineCode ?? null, airportCode: row.airportCode ?? null,
       direction: 'departure', terminal: row.terminal, gate: row.gate ?? null, checkinCounter: row.checkinCounter ?? null,
       status: row.status ?? 'unknown', scheduledAt: `${serviceDate}T${row.scheduledTime}:00+09:00`,
     })).sort((a,b) => a.scheduledAt.localeCompare(b.scheduledAt) || a.flightNumber.localeCompare(b.flightNumber));
     return { basis: 'OFFICIAL_DEPARTURE_SCHEDULE', dayRelation, flights: rows.slice(0,1200), truncated: rows.length > 1200, retrievedAt: snapshots[0]?.retrievedAt ?? null };
   }
   const rows = (await client.prepare(
-    `SELECT flight_number AS flightNumber, airline_code AS airlineCode,
+    `SELECT physical_flight_id AS physicalFlightId, flight_number AS flightNumber, airline_code AS airlineCode,
       airport_code AS airportCode, direction, terminal, gate,
       checkin_counter AS checkinCounter, status, scheduled_at AS scheduledAt, retrieved_at AS retrievedAt
     FROM airport_flights

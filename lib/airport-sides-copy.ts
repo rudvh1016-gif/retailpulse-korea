@@ -81,6 +81,9 @@ export const sidesCopy = {
     "官方没有提供各登机口的实际人数，因此不显示。以人数表示的只有顶部的参考估算，它假设每班航班旅客数相同，未计入机型大小和上座率。",
     "搭乗口ごとの実際の人数は公式に提供されていないため表示しません。人数で示すのは上部の参考推定だけで、1便あたりの乗客数が同じという前提としており、機材の大きさや搭乗率は反映していません。",
   ),
+  // The departure map's own words live in lib/airport-departure-map-copy.ts, which loads with the map.
+  mapTitle: row("공항 출발편 지도", "Airport departure map", "机场出发航班地图", "空港出発便マップ"),
+  mapLoading: row("출발편 지도를 불러오는 중입니다.", "Loading the departure map.", "正在读取出发航班地图。", "出発便マップを読み込んでいます。"),
   basisTitle: row("동·서편 기준과 공식 근거", "How east and west are set, with sources", "东西侧的划分依据与官方来源", "東西の区分基準と公式根拠"),
   basisHalls: row(
     "출국장: T1은 1·2·3번 동편, 4·5·6번 서편(3·4번 사이, G/H 체크인 사이가 중앙 축), T2는 2번 동편, 1번 서편(1·2번 사이, F/G 체크인 사이). 공항의 시설 위치 안내 문구와 공식 안내도에 따른 KORETAIL의 업무용 구분입니다.",

@@ -148,7 +148,7 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
           : prep.status === 'PAST' || prep.status === 'ENDED' ? null : <p className="prep-empty">{prepCopy.noFacts[lang]}</p>}
         {prep.coverage.map((entry) => coverageLine(entry, serviceDate, lang)).filter(Boolean).map((line, index) => <p key={index} className="prep-coverage">{line}</p>)}
       </div>
-      {place.kind === 'airport' && <AirportSidesBlock lang={lang} summary={summary} terminal={place.terminal} side={place.side ?? null} hours={preferences.hours} nowIso={nowIso}/>}
+      {place.kind === 'airport' && <AirportSidesBlock lang={lang} summary={summary} terminal={place.terminal} side={place.side ?? null} hours={preferences.hours} nowIso={nowIso} holidays={officialHolidays}/>}
       {prep.status !== 'PAST' && <UsualComparisonBlock lang={lang} place={place} today={summary.dayRelation === 'TODAY'}/>}
       <LastCheckBlock lang={lang} snapshot={snapshot} serviceDate={serviceDate} nowIso={nowIso}/>
       <div className="prep-block">

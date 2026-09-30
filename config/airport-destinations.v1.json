@@ -1,0 +1,1248 @@
+{
+ "version": "airport-destinations.v1",
+ "checkedOn": "2026-09-30",
+ "notes": [
+  "Only destinations the airport itself lists: the names are the airport's own Korean destination names, exactly as the flight feed stores them in airport_flights.airport_code. All 164 names seen in the stored departures of 2026-09-23..30 are in this list (168 entries).",
+  "name <-> IATA code: the destination list of the airport's own flight-status page (option value = code, label = name). code <-> city and airport: IATA airport code search, one query per code. Both read 2026-09-30 by the read-only evidence runs of e2e-production/destination-evidence.spec.ts (Production Visual Check runs 36714424696, 36716515897 and the IATA run on branch work/airport-evidence).",
+  "country: neither page states it. It is KORETAIL's review of the IATA-confirmed city and airport (ISO 3166-1 alpha-2; Guam GU and the Northern Mariana Islands MP keep their own codes). Nothing is inferred from an airline, a flight number or a passenger's nationality.",
+  "groupOf puts every country in exactly one group, so group totals never double count. Turkey is grouped with Europe; Georgia, Central and South Asia and Mongolia with other Asia; Hawaii and Alaska (US) with the Americas; Guam and Saipan with Oceania and the Pacific; Gimhae, Daegu and Jeju are domestic legs.",
+  "A stored name that is not in this list is shown as region not confirmed."
+ ],
+ "sources": {
+  "airportkr+iata": {
+   "title": "Incheon Airport flight-status destination list (name, code) + IATA airport code search (city, airport); country reviewed by KORETAIL",
+   "url": "https://www.airport.kr/ap_ko/869/subview.do ; https://www.iata.org/en/publications/directories/code-search/",
+   "checkedOn": "2026-09-30"
+  }
+ },
+ "groupOf": {
+  "JP": "JP",
+  "CN": "CN",
+  "TW": "HK_MO_TW",
+  "HK": "HK_MO_TW",
+  "MO": "HK_MO_TW",
+  "KR": "DOMESTIC",
+  "VN": "SEA",
+  "ID": "SEA",
+  "PH": "SEA",
+  "TH": "SEA",
+  "BN": "SEA",
+  "LA": "SEA",
+  "SG": "SEA",
+  "MM": "SEA",
+  "MY": "SEA",
+  "KH": "SEA",
+  "IN": "ASIA_OTHER",
+  "KG": "ASIA_OTHER",
+  "KZ": "ASIA_OTHER",
+  "TM": "ASIA_OTHER",
+  "UZ": "ASIA_OTHER",
+  "MN": "ASIA_OTHER",
+  "NP": "ASIA_OTHER",
+  "LK": "ASIA_OTHER",
+  "GE": "ASIA_OTHER",
+  "QA": "MIDDLE_EAST",
+  "AE": "MIDDLE_EAST",
+  "TR": "EUROPE",
+  "GB": "EUROPE",
+  "IT": "EUROPE",
+  "PT": "EUROPE",
+  "ES": "EUROPE",
+  "FR": "EUROPE",
+  "DE": "EUROPE",
+  "PL": "EUROPE",
+  "HU": "EUROPE",
+  "AT": "EUROPE",
+  "NL": "EUROPE",
+  "CH": "EUROPE",
+  "DK": "EUROPE",
+  "CZ": "EUROPE",
+  "FI": "EUROPE",
+  "US": "AMERICAS",
+  "CA": "AMERICAS",
+  "MX": "AMERICAS",
+  "AU": "OCEANIA",
+  "NZ": "OCEANIA",
+  "GU": "OCEANIA",
+  "MP": "OCEANIA",
+  "ET": "AFRICA"
+ },
+ "destinations": [
+  {
+   "name": "가고시마",
+   "iata": "KOJ",
+   "en": "Kagoshima (Kagoshima Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "가오슝",
+   "iata": "KHH",
+   "en": "Kaohsiung (Kaohsiung Intl.)",
+   "country": "TW",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "고마쓰",
+   "iata": "KMQ",
+   "en": "Komatsu (Komatsu Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "고베",
+   "iata": "UKB",
+   "en": "Osaka (Kobe)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "괌",
+   "iata": "GUM",
+   "en": "Guam (A.B. Won Pat Intl)",
+   "country": "GU",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "광저우",
+   "iata": "CAN",
+   "en": "Guangzhou (Baiyun Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "구마모토",
+   "iata": "KMJ",
+   "en": "Kumamoto (Kumamoto Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "구이린",
+   "iata": "KWL",
+   "en": "Guilin (Liangjiang Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "김해",
+   "iata": "PUS",
+   "en": "Busan (Gimhae Intl)",
+   "country": "KR",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "나가사키",
+   "iata": "NGS",
+   "en": "Nagasaki (Nagasaki Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "나고야",
+   "iata": "NGO",
+   "en": "Nagoya (Chubu Centrair Intl)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "나트랑",
+   "iata": "CXR",
+   "en": "Nha Trang (Cam Ranh Intl)",
+   "country": "VN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "난징",
+   "iata": "NKG",
+   "en": "Nanjing (Lukou Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "뉴어크",
+   "iata": "EWR",
+   "en": "New York (Newark Liberty Intl)",
+   "country": "US",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "뉴욕/존에프케네디",
+   "iata": "JFK",
+   "en": "New York (John F Kennedy Intl)",
+   "country": "US",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "니가타",
+   "iata": "KIJ",
+   "en": "Niigata (Niigata Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "닝보",
+   "iata": "NGB",
+   "en": "Ningbo (Lishe Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "다낭",
+   "iata": "DAD",
+   "en": "Da Nang (Da Nang Intl.)",
+   "country": "VN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "다롄(대련)",
+   "iata": "DLC",
+   "en": "Dalian (Zhoushuizi Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "다카마쓰",
+   "iata": "TAK",
+   "en": "Takamatsu (Takamatsu Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "대구",
+   "iata": "TAE",
+   "en": "Daegu (Daegu Intl.)",
+   "country": "KR",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "댈러스/포트워스",
+   "iata": "DFW",
+   "en": "Dallas",
+   "country": "US",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "덴파사르",
+   "iata": "DPS",
+   "en": "Denpasar-Bali (Ngurah Rai)",
+   "country": "ID",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "델리",
+   "iata": "DEL",
+   "en": "Delhi (Indira Gandhi Intl)",
+   "country": "IN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "도야마",
+   "iata": "TOY",
+   "en": "Toyama (Toyama Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "도쿄/나리타",
+   "iata": "NRT",
+   "en": "Tokyo (Narita Intl)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "도쿄/하네다",
+   "iata": "HND",
+   "en": "Tokyo (Tokyo Intl (Haneda))",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "도쿠시마",
+   "iata": "TKS",
+   "en": "Tokushima (Tokushima Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "도하",
+   "iata": "DOH",
+   "en": "Doha (Hamad International)",
+   "country": "QA",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "두바이",
+   "iata": "DXB",
+   "en": "Dubai",
+   "country": "AE",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "디트로이트",
+   "iata": "DTW",
+   "en": "Detroit (Metropolitan Wayne Co.)",
+   "country": "US",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "라스베이거스",
+   "iata": "LAS",
+   "en": "Las Vegas",
+   "country": "US",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "런던/히드로",
+   "iata": "LHR",
+   "en": "London (Heathrow)",
+   "country": "GB",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "로마",
+   "iata": "FCO",
+   "en": "Rome (Fiumicino)",
+   "country": "IT",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "로스앤젤레스",
+   "iata": "LAX",
+   "en": "Los Angeles (Los Angeles Intl.)",
+   "country": "US",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "리스본",
+   "iata": "LIS",
+   "en": "Lisbon (Lisbon Airport)",
+   "country": "PT",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "리장",
+   "iata": "LJG",
+   "en": "Lijiang (Sanyi)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "린이",
+   "iata": "LYI",
+   "en": "Linyi (Shubuling)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "마나도",
+   "iata": "MDC",
+   "en": "Manado (Sam Ratulangi)",
+   "country": "ID",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "마닐라",
+   "iata": "MNL",
+   "en": "Manila (Ninoy Aquino Intl)",
+   "country": "PH",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "마드리드",
+   "iata": "MAD",
+   "en": "Madrid",
+   "country": "ES",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "마르세유",
+   "iata": "MRS",
+   "en": "Marseille (Provence)",
+   "country": "FR",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "마쓰야마",
+   "iata": "MYJ",
+   "en": "Matsuyama (Matsuyama Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "마카오",
+   "iata": "MFM",
+   "en": "Macau (Macau Intl.)",
+   "country": "MO",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "멕시코시티",
+   "iata": "MEX",
+   "en": "Mexico City (Benito Juarez Intl)",
+   "country": "MX",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "몬트리올",
+   "iata": "YUL",
+   "en": "Montreal (Pierre E.Trudeau Intl)",
+   "country": "CA",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "뮌헨",
+   "iata": "MUC",
+   "en": "Munich",
+   "country": "DE",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "미니애폴리스",
+   "iata": "MSP",
+   "en": "Minneapolis/St Paul",
+   "country": "US",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "미야자키",
+   "iata": "KMI",
+   "en": "Miyazaki (Miyazaki Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "미야코지마/시모지시마",
+   "iata": "SHI",
+   "en": "Miyakojima (Shimojishima)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "밀라노",
+   "iata": "MXP",
+   "en": "Milan (Malpensa)",
+   "country": "IT",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "바르샤바",
+   "iata": "WAW",
+   "en": "Warsaw",
+   "country": "PL",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "바르셀로나",
+   "iata": "BCN",
+   "en": "Barcelona (Josep Tarradellas Barcelona - El Prat)",
+   "country": "ES",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "반다르스리브가완",
+   "iata": "BWN",
+   "en": "Bandar Seri Begawan (Brunei International)",
+   "country": "BN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "방콕/돈므앙",
+   "iata": "DMK",
+   "en": "Bangkok (Don Mueang Int'l)",
+   "country": "TH",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "방콕/수완나품",
+   "iata": "BKK",
+   "en": "Bangkok (Suvarnabhumi Int'l)",
+   "country": "TH",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "밴쿠버",
+   "iata": "YVR",
+   "en": "Vancouver",
+   "country": "CA",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "베이징/다싱",
+   "iata": "PKX",
+   "en": "Beijing (Daxing Intl.)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "베이징/서우두",
+   "iata": "PEK",
+   "en": "Beijing (Capital Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "보스턴",
+   "iata": "BOS",
+   "en": "Boston",
+   "country": "US",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "보홀 팡라오",
+   "iata": "TAG",
+   "en": "Panglao (Bohol International)",
+   "country": "PH",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "부다페스트",
+   "iata": "BUD",
+   "en": "Budapest (Liszt Ferenc Int'l)",
+   "country": "HU",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "브로츠와프",
+   "iata": "WRO",
+   "en": "Wroclaw (Nicolaus Copernicus)",
+   "country": "PL",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "브리즈번",
+   "iata": "BNE",
+   "en": "Brisbane (Brisbane Intl.)",
+   "country": "AU",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "비슈케크",
+   "iata": "BSZ",
+   "en": "Bishkek (Manas Intl)",
+   "country": "KG",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "비엔나",
+   "iata": "VIE",
+   "en": "Vienna (Schwechat Intl)",
+   "country": "AT",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "비엔티안",
+   "iata": "VTE",
+   "en": "Vientiane (Wattay Intl)",
+   "country": "LA",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "사가",
+   "iata": "HSG",
+   "en": "Saga (Saga Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "사이판",
+   "iata": "SPN",
+   "en": "Saipan (Francisco C. Ada Intl)",
+   "country": "MP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "삿포로",
+   "iata": "CTS",
+   "en": "Sapporo (New Chitose)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "상하이/푸동",
+   "iata": "PVG",
+   "en": "Shanghai (Pudong Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "샌프란시스코",
+   "iata": "SFO",
+   "en": "San Francisco (San Francisco Intl.)",
+   "country": "US",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "샤먼",
+   "iata": "XMN",
+   "en": "Xiamen (Gaoqi Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "선양(심양)",
+   "iata": "SHE",
+   "en": "Shenyang (Taoxian Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "선전",
+   "iata": "SZX",
+   "en": "Shenzhen (Bao'an Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "세부",
+   "iata": "CEB",
+   "en": "Cebu (Mactan International)",
+   "country": "PH",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "센다이",
+   "iata": "SDJ",
+   "en": "Sendai (Sendai Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "솔트레이크시티",
+   "iata": "SLC",
+   "en": "Salt Lake City (Salt Lake City Intl.)",
+   "country": "US",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "쉼켄트",
+   "iata": "CIT",
+   "en": "Shymkent (Shymkent Intl.)",
+   "country": "KZ",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "스자좡",
+   "iata": "SJW",
+   "en": "Shijiazhuang (Zhengding Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "시드니",
+   "iata": "SYD",
+   "en": "Sydney (Kingsford Smith)",
+   "country": "AU",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "시라하마",
+   "iata": "SHM",
+   "en": "Shirahama (Nanki-Shirahama)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "시안",
+   "iata": "XIY",
+   "en": "Xi'an (Xianyang Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "시애틀/타코마",
+   "iata": "SEA",
+   "en": "Seattle (Seattle-Tacoma Intl)",
+   "country": "US",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "시즈오카",
+   "iata": "FSZ",
+   "en": "Shizuoka (Mount Fuji)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "시카고/오헤어",
+   "iata": "ORD",
+   "en": "Chicago (O'Hare International)",
+   "country": "US",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "신 울란바타르",
+   "iata": "UBN",
+   "en": "Ulaanbaatar (Chinggis Khaan)",
+   "country": "MN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "싱가포르",
+   "iata": "SIN",
+   "en": "Singapore (Changi)",
+   "country": "SG",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "싼야",
+   "iata": "SYX",
+   "en": "Sanya (Phoenix Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "아디스아바바/볼레",
+   "iata": "ADD",
+   "en": "Addis Ababa (Bole Intl)",
+   "country": "ET",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "아부다비",
+   "iata": "AUH",
+   "en": "Abu Dhabi (Zayed Intl.)",
+   "country": "AE",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "아쉬가바트",
+   "iata": "ASB",
+   "en": "Ashgabat (Ashgabat Intl.)",
+   "country": "TM",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "아스타나",
+   "iata": "NQZ",
+   "en": "Astana (Nursultan Nazarbayev)",
+   "country": "KZ",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "아오모리",
+   "iata": "AOJ",
+   "en": "Aomori (Aomori Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "알마티",
+   "iata": "ALA",
+   "en": "Almaty (Almaty Intl.)",
+   "country": "KZ",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "암스테르담",
+   "iata": "AMS",
+   "en": "Amsterdam (Schiphol Airport)",
+   "country": "NL",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "애틀랜타",
+   "iata": "ATL",
+   "en": "Atlanta (Hartsfield-Jackson Int)",
+   "country": "US",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "앵커리지",
+   "iata": "ANC",
+   "en": "Anchorage",
+   "country": "US",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "양곤",
+   "iata": "RGN",
+   "en": "Yangon (Yangon Intl.)",
+   "country": "MM",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "양저우",
+   "iata": "YTY",
+   "en": "Yangzhou (Yangzhou Taizhou International Airport)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "옌지(연길)",
+   "iata": "YNJ",
+   "en": "Yanji (Chaoyangchuan)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "옌청",
+   "iata": "YNZ",
+   "en": "Yancheng (Nanyang)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "옌타이",
+   "iata": "YNT",
+   "en": "Yantai (Penglai Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "오사카/ 간사이",
+   "iata": "KIX",
+   "en": "Osaka (Kansai International)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "오이타",
+   "iata": "OIT",
+   "en": "Oita (Oita Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "오카야마",
+   "iata": "OKJ",
+   "en": "Okayama (Okayama Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "오클랜드(뉴질랜드)",
+   "iata": "AKL",
+   "en": "Auckland",
+   "country": "NZ",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "오키나와",
+   "iata": "OKA",
+   "en": "Okinawa (Naha)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "요나고",
+   "iata": "YGJ",
+   "en": "Yonago (Miho)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "우루무치",
+   "iata": "URC",
+   "en": "Urumqi (Urumqi Tianshan Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "우시",
+   "iata": "WUX",
+   "en": "Wuxi (Sunan Shuofang)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "우한",
+   "iata": "WUH",
+   "en": "Wuhan (Tianhe Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "워싱턴",
+   "iata": "IAD",
+   "en": "Washington (Dulles Intl)",
+   "country": "US",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "원저우",
+   "iata": "WNZ",
+   "en": "Wenzhou (Wenzhou Longwan Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "웨이하이",
+   "iata": "WEH",
+   "en": "Weihai (Dashuibo)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "윈청옌후 국제공항",
+   "iata": "YCU",
+   "en": "Yuncheng (Guangong)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "이스탄불",
+   "iata": "IST",
+   "en": "Istanbul (Istanbul Airport)",
+   "country": "TR",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "이시가키지마",
+   "iata": "ISG",
+   "en": "Ishigaki (Ishigaki)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "이창",
+   "iata": "YIH",
+   "en": "Yichang (Sanxia)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "자무쓰",
+   "iata": "JMU",
+   "en": "Jiamusi (Dongjiao)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "자카르타/수카르노하타",
+   "iata": "CGK",
+   "en": "Jakarta (Soekarno-Hatta Intl)",
+   "country": "ID",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "장가계",
+   "iata": "DYG",
+   "en": "Zhangjiajie (Hehua)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "장사",
+   "iata": "CSX",
+   "en": "Changsha (Huanghua International)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "정저우",
+   "iata": "CGO",
+   "en": "Zhengzhou (Xinzheng Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "제주",
+   "iata": "CJU",
+   "en": "Jeju (Jeju Intl.)",
+   "country": "KR",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "지난",
+   "iata": "TNA",
+   "en": "Jinan (Yaoqiang Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "창춘",
+   "iata": "CGQ",
+   "en": "Changchun (Longjia Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "청두/톈푸",
+   "iata": "TFU",
+   "en": "Chengdu (Tianfu International)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "충칭",
+   "iata": "CKG",
+   "en": "Chongqing (Jiangbei Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "취리히",
+   "iata": "ZRH",
+   "en": "Zurich (Zurich Airport)",
+   "country": "CH",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "치앙마이",
+   "iata": "CNX",
+   "en": "Chiang Mai (Chiang Mai Intl.)",
+   "country": "TH",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "칭다오",
+   "iata": "TAO",
+   "en": "Qingdao (Jiaodong International)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "카트만두",
+   "iata": "KTM",
+   "en": "Kathmandu (Tribhuvan Intl)",
+   "country": "NP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "칼리보",
+   "iata": "KLO",
+   "en": "Kalibo (Kalibo Intl.)",
+   "country": "PH",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "캘거리",
+   "iata": "YYC",
+   "en": "Calgary (Calgary Intl.)",
+   "country": "CA",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "코타키나발루",
+   "iata": "BKI",
+   "en": "Kota Kinabalu (Kota Kinabalu Intl.)",
+   "country": "MY",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "코펜하겐",
+   "iata": "CPH",
+   "en": "Copenhagen",
+   "country": "DK",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "콜롬보",
+   "iata": "CMB",
+   "en": "Colombo",
+   "country": "LK",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "쿠알라룸푸르",
+   "iata": "KUL",
+   "en": "Kuala Lumpur (Kuala Lumpur Intl.)",
+   "country": "MY",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "쿤밍",
+   "iata": "KMG",
+   "en": "Kunming (Changshui Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "클라크필드",
+   "iata": "CRK",
+   "en": "Angeles/Mabalacat (Clark Intl)",
+   "country": "PH",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "키타큐슈",
+   "iata": "KKJ",
+   "en": "Kitakyushu (Kitakyushu Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "타슈켄트",
+   "iata": "TAS",
+   "en": "Tashkent (Tashkent Intl.)",
+   "country": "UZ",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "타이베이",
+   "iata": "TPE",
+   "en": "Taipei",
+   "country": "TW",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "타이중/칭촨강",
+   "iata": "RMQ",
+   "en": "Taichung (Cingcyuangang)",
+   "country": "TW",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "톈진",
+   "iata": "TSN",
+   "en": "Tianjin (Binhai Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "토론토",
+   "iata": "YYZ",
+   "en": "Toronto (Lester B. Pearson Intl)",
+   "country": "CA",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "트빌리시",
+   "iata": "TBS",
+   "en": "Tbilisi (Tbilisi Intl.)",
+   "country": "GE",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "파리/샤를드골",
+   "iata": "CDG",
+   "en": "Paris (Charles de Gaulle)",
+   "country": "FR",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "푸꾸옥",
+   "iata": "PQC",
+   "en": "Phu Quoc Island (Phu Quoc Island Intl.)",
+   "country": "VN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "푸저우",
+   "iata": "FOC",
+   "en": "Fuzhou (Changle Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "푸켓",
+   "iata": "HKT",
+   "en": "Phuket (Phuket Intl.)",
+   "country": "TH",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "프놈펜/떼조",
+   "iata": "KTI",
+   "en": "Phnom Penh (Techo International)",
+   "country": "KH",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "프라하",
+   "iata": "PRG",
+   "en": "Prague",
+   "country": "CZ",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "프랑크푸르트",
+   "iata": "FRA",
+   "en": "Frankfurt",
+   "country": "DE",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "하나마키",
+   "iata": "HNA",
+   "en": "Hanamaki (Hanamaki Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "하노이",
+   "iata": "HAN",
+   "en": "Hanoi (Noi Bai Intl)",
+   "country": "VN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "하얼빈",
+   "iata": "HRB",
+   "en": "Harbin (Taiping Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "하이커우",
+   "iata": "HAK",
+   "en": "Haikou (Meilan Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "하이퐁",
+   "iata": "HPH",
+   "en": "Haiphong (Cat Bi Intl)",
+   "country": "VN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "항저우",
+   "iata": "HGH",
+   "en": "Hangzhou (Xiaoshan Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "허페이",
+   "iata": "HFE",
+   "en": "Hefei (Xinqiao Intl)",
+   "country": "CN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "헬싱키",
+   "iata": "HEL",
+   "en": "Helsinki (Helsinki-Vantaa)",
+   "country": "FI",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "호놀룰루",
+   "iata": "HNL",
+   "en": "Honolulu (Daniel K. Inouye Intl)",
+   "country": "US",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "호찌민",
+   "iata": "SGN",
+   "en": "Ho Chi Minh City (Tan Son Nhat Intl)",
+   "country": "VN",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "홍콩",
+   "iata": "HKG",
+   "en": "Hong Kong",
+   "country": "HK",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "후쿠오카",
+   "iata": "FUK",
+   "en": "Fukuoka (Fukuoka Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  },
+  {
+   "name": "히로시마",
+   "iata": "HIJ",
+   "en": "Hiroshima (Hiroshima Airport)",
+   "country": "JP",
+   "source": "airportkr+iata"
+  }
+ ]
+}

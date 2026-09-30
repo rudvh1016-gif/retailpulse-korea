@@ -11,7 +11,7 @@
     "app/api/beta-signups/route.ts": "12fa56a8ad3c93968fb10744a1bf39781da6e1483772dce2c5b467586fb9c972",
     "app/api/health/route.ts": "06ad9419fed3d5824d78d4fbeee8b8ed7dc780d2e30af5d30ff79e33895906e2",
     "app/api/live/events/route.ts": "f85c532f05c89b1412fbd77a04ff88d5d3b9f8587ddbebad00dbe1c3df9ed7a4",
-    "app/api/live/flights/route.ts": "d8937175df552bdf0d06c9345901ebe86991a7080582029db464bfbb68081e3e",
+    "app/api/live/flights/route.ts": "0eeaa4942dbb8d6fc10998dfa691ecfe4b5b55cd06aac6b27a6d95de572fa6ee",
     "app/api/live/predictions/route.ts": "b82f003bd3d77c293a379c4dbd0bf5e2aa449b19e54a65119ef2e4f291cdfced",
     "app/api/live/summary/route.ts": "94ed2cc1785781375323f1e65d9da197305fa3c21a2b44d672b943d6fbb260c9",
     "app/area-demand-card.tsx": "b24e36ec1935544b6a1f2db60e6a0bfb2b585d1deb3af10e2224e7d42d3c16b1",
