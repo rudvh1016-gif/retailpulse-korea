@@ -4,18 +4,34 @@
  *
  * This is NOT the departure-hall east/west sum (that one adds hall figures
  * and stays withheld behind NEXT_PUBLIC_AIRPORT_HALL_SIDES). Here people are
- * never assigned to a side by hall number. The only person figure used is the
- * terminal-wide expected departures the airport already publishes (A5), split
- * by the east:west ratio of flights whose gate side is evidenced:
+ * never assigned to a side by hall number. Two separate things are computed:
  *
- *   east share = east / (east + west)      centre and unverified flights are
- *   west share = west / (east + west)      outside the denominator
- *   estimate   = terminal expected departures x share
+ * 1. The comparison. Flights whose gate side is evidenced, east against west:
+ *
+ *      east share = east / (east + west)    centre and unverified flights are
+ *      west share = west / (east + west)    outside this denominator
+ *
+ * 2. The reference estimate. The only person figure used is the terminal-wide
+ *    expected departures the airport already publishes (A5). It is divided over
+ *    EVERY flight in the same scope as that figure, each flight counting the
+ *    same, so what nobody could place on a side stays where it is:
+ *
+ *      share of a group = flights of the group / all flights in the scope
+ *      people of a group = terminal expected departures x share, to the nearest 100
+ *
+ *    The groups are east, west, centre, side-not-confirmed and, for T1 only, the
+ *    concourse (탑승동). Passengers who clear departure at T1 and then walk or
+ *    ride to the concourse are inside the T1 figure (see the departure-hall
+ *    note in app/live-signals.tsx), so the T1 scope is the T1 gates plus the
+ *    concourse gates, the concourse kept as a group of its own. T2 has no
+ *    concourse. Flights whose boarding building is unknown are outside both
+ *    scopes and are counted apart.
  *
  * The estimate is a reference value, never an actual count. The flight rows
  * carry no aircraft type or seat field (airport_flights columns), so flights
  * are weighted equally; no seat count, load factor or per-flight passenger
- * figure is invented.
+ * figure is invented. Rounded parts are not forced to add up to the total, and
+ * the unconfirmed share is never added to east or west to make them.
  */
 import type { GateSideDay } from "./airport-sides";
 import type { AirportSidesBlock } from "./airport-sides-summary";
@@ -62,10 +78,32 @@ export interface FlightSplit {
    */
   checkedAt: string | null;
   basis: NonNullable<AirportSidesBlock["gateBasis"]>;
-  /** Terminal-wide expected departures x flight share; east + west equals the terminal total exactly. */
-  expected: { total: number; east: number; west: number } | null;
+  /** The airport's terminal-wide expected departures spread over every flight in the same scope; null when they cannot be. */
+  expected: FlightEstimate | null;
   /** When the airport's expected-departures rows last changed (shown beside the estimate). */
   expectedIssuedAt: string | null;
+}
+
+/** People of one group (rounded to the nearest 100) beside the flights they were derived from. */
+export interface EstimatePart {
+  flights: number;
+  people: number;
+}
+
+export interface FlightEstimate {
+  /** The airport's published expected departures for the terminal, as published (not rounded). */
+  total: number;
+  /** Every flight in the same scope as `total`: the denominator of every share below. */
+  flights: number;
+  east: EstimatePart;
+  west: EstimatePart;
+  center: EstimatePart;
+  /** Flights whose east/west side could not be confirmed: their share stays here. */
+  unverified: EstimatePart;
+  /** T1 only: concourse flights, inside the T1 figure, kept apart from east and west. null for T2. */
+  concourse: EstimatePart | null;
+  /** Flights whose boarding building is unknown; in neither scope, so left out. */
+  outsideScope: number;
 }
 
 export type SplitResult =
@@ -80,15 +118,39 @@ export function sharePercents(east: number, west: number): { eastPct: number; we
   return { eastPct, westPct: 100 - eastPct };
 }
 
+/** A headcount shown to the nearest 100: a reference figure is not more exact than that. */
+export const ESTIMATE_STEP = 100;
+export const roundToStep = (people: number) => Math.round(people / ESTIMATE_STEP) * ESTIMATE_STEP;
+
+export interface EstimateFlights {
+  east: number;
+  west: number;
+  center: number;
+  unverified: number;
+  /** null for a terminal that has no concourse in its scope (T2). */
+  concourse: number | null;
+  outsideScope: number;
+}
+
 /**
- * Splits a whole number by the east:west ratio so the two parts add up to it
- * exactly (rounding never leaves a person over or short).
+ * Spreads the terminal's expected departures over every flight of the scope,
+ * each flight counting the same. Each group is rounded on its own to the
+ * nearest 100; nothing is moved between groups so the rounded parts add up.
  */
-export function splitByRatio(total: number, east: number, west: number): { east: number; west: number } | null {
-  const sum = east + west;
-  if (!(sum > 0) || !Number.isFinite(total) || total < 0) return null;
-  const eastPart = Math.round((total * east) / sum);
-  return { east: eastPart, west: total - eastPart };
+export function estimateByFlights(total: number, flights: EstimateFlights): FlightEstimate | null {
+  const all = flights.east + flights.west + flights.center + flights.unverified + (flights.concourse ?? 0);
+  if (!(all > 0) || !Number.isFinite(total) || total < 0) return null;
+  const part = (count: number): EstimatePart => ({ flights: count, people: roundToStep((total * count) / all) });
+  return {
+    total,
+    flights: all,
+    east: part(flights.east),
+    west: part(flights.west),
+    center: part(flights.center),
+    unverified: part(flights.unverified),
+    concourse: flights.concourse === null ? null : part(flights.concourse),
+    outsideScope: flights.outsideScope,
+  };
 }
 
 const oneDecimal = (part: number, whole: number) => (whole > 0 ? Math.round((part * 1000) / whole) / 10 : null);
@@ -104,7 +166,15 @@ export function flightSplitOf(
   const counts = day.byArea[terminal];
   if (!counts.total) return null;
   const shares = sharePercents(counts.EAST, counts.WEST);
-  const parts = expectedTotal !== null ? splitByRatio(expectedTotal, counts.EAST, counts.WEST) : null;
+  // An estimate needs at least one flight with a confirmed side to compare; the
+  // scope is the terminal's own gates plus, for T1, the concourse.
+  const expected = expectedTotal !== null && counts.EAST + counts.WEST > 0
+    ? estimateByFlights(expectedTotal, {
+      east: counts.EAST, west: counts.WEST, center: counts.CENTER, unverified: counts.UNVERIFIED,
+      concourse: terminal === "T1" ? day.byArea.CONCOURSE.total : null,
+      outsideScope: day.byArea.UNKNOWN.total,
+    })
+    : null;
   return {
     terminal,
     total: counts.total,
@@ -127,7 +197,7 @@ export function flightSplitOf(
     retrievedAt: day.retrievedAt,
     checkedAt,
     basis,
-    expected: parts && expectedTotal !== null ? { total: expectedTotal, east: parts.east, west: parts.west } : null,
+    expected,
     expectedIssuedAt,
   };
 }

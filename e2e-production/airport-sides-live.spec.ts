@@ -67,8 +67,21 @@ for (const width of [1280, 360]) {
         if (state === "OK") {
           await expect(card.getByTestId("split-flights")).toContainText("동편");
           await expect(card.getByTestId("split-shares")).toContainText("동·서 위치가 확인된 항공편 기준");
-          if (await card.getByTestId("split-estimate").count()) await expect(card.getByTestId("split-note")).toContainText("실제 동·서편 승객 수가 아닙니다");
-          else await expect(card.getByTestId("split-no-estimate")).toBeVisible();
+          if (await card.getByTestId("split-estimate").count()) {
+            await expect(card.getByTestId("split-note")).toContainText("실제 동·서편 승객 수가 아닙니다");
+            // The people are spread over every flight of the same scope: what the
+            // API could not place on a side, and (T1 only) the concourse, appear
+            // as their own items instead of being folded into east and west.
+            const estimate = await card.getByTestId("split-estimate").innerText();
+            const counts = apiGates?.byArea?.[terminal];
+            if (Number(counts?.UNVERIFIED ?? 0) > 0) expect(estimate, "unconfirmed flights keep their own share").toContain("위치 미확인");
+            if (Number(counts?.CENTER ?? 0) > 0) expect(estimate).toContain("중앙");
+            if (terminal === "T1" && Number(apiGates?.byArea?.CONCOURSE?.total ?? 0) > 0) expect(estimate, "T1's figure includes concourse passengers").toContain("탑승동");
+            if (terminal === "T2") expect(estimate, "T2 has no concourse").not.toContain("탑승동");
+            for (const figure of estimate.match(/[\d,]+(?=명)/g) ?? []) expect(Number(figure.replace(/,/g, "")) % 100, `${figure} is rounded to 100`).toBe(0);
+            await expect(card.getByTestId("split-note")).toContainText("편당 승객 수가 같다는 가정의 참고값");
+            await expect(card.getByTestId("split-estimate-basis")).toContainText("같은 범위 출발편");
+          } else await expect(card.getByTestId("split-no-estimate")).toBeVisible();
         } else {
           expect(["NONE", "STALE", "DATE_MISMATCH", "NO_TERMINAL_FLIGHTS"]).toContain(state);
           await expect(card.getByTestId("split-estimate")).toHaveCount(0);
