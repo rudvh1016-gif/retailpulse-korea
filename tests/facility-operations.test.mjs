@@ -257,3 +257,24 @@ test("the printed briefing keeps the boundary and drops the navigation", async (
   const article = signals.match(/<article className="my-store-brief">[\s\S]*?\n  <\/article>/)?.[0] ?? "";
   assert.match(article, /my-store-disclaimer/, "a printout handed to someone else must carry the boundary");
 });
+
+test("the departure window is bound in the +09:00 offset the rows are stored in", async () => {
+  const source = await readFile(new URL("../app/api/airport/facility-operations/route.ts", import.meta.url), "utf8");
+  assert.match(source, /kstNowIsoOf\(generatedAt\)/);
+  assert.match(source, /\.bind\(windowStart, windowEnd, terminal, FLIGHT_ROW_LIMIT\)/);
+  assert.doesNotMatch(source, /\.bind\(generatedAt, windowEnd/);
+  // Behaviour, on the same SQL and the stored format: at 14:10 KST only upcoming flights are returned.
+  const { DatabaseSync } = await import("node:sqlite");
+  const { kstNowIsoOf } = await import("../lib/kst.ts");
+  const db = new DatabaseSync(":memory:");
+  db.exec("CREATE TABLE airport_flights (scheduled_at TEXT, terminal TEXT, direction TEXT, gate TEXT)");
+  const insert = db.prepare("INSERT INTO airport_flights VALUES (?, 'T1', 'departure', '9')");
+  for (let hour = 5; hour <= 18; hour++) for (const minute of ["00", "30"]) insert.run(`2026-09-30T${String(hour).padStart(2, "0")}:${minute}:00+09:00`);
+  const generatedAt = "2026-09-30T05:10:00.000Z"; // 14:10 KST
+  const start = kstNowIsoOf(generatedAt);
+  const end = kstNowIsoOf(new Date(Date.parse(generatedAt) + 120 * 60_000).toISOString());
+  const rows = db.prepare("SELECT scheduled_at FROM airport_flights WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at <= ? AND terminal = ? ORDER BY scheduled_at").all(start, end, "T1");
+  assert.deepEqual(rows.map((row) => row.scheduled_at.slice(11, 16)), ["14:30", "15:00", "15:30", "16:00"]);
+  const wrong = db.prepare("SELECT scheduled_at FROM airport_flights WHERE scheduled_at >= ? AND scheduled_at <= ?").all(generatedAt, new Date(Date.parse(generatedAt) + 120 * 60_000).toISOString());
+  assert.ok(wrong.some((row) => row.scheduled_at < "2026-09-30T14:10"), "the old UTC bind returned flights that had already left");
+});
