@@ -37,7 +37,7 @@ export function IndustryGuide({ lang, industry, onIndustryChange, airport }: {
         </select>
       </div>
       <p className="truth-note">{text(lang, '내 매장이 있는 구역을 고르면 아래 안내 문구만 달라집니다. 위쪽의 터미널·출국/입국 숫자는 그대로입니다.', 'This selects location guidance only. It does not change the terminal or departure/arrival data above.', '此菜单仅选择区域说明，不改变上方航站楼或出入境数据。', '区域別案内の選択です。上のターミナル・出入国データ選択は変わりません。')}</p>
-      <p><strong>{text(lang, '이 구역에서 볼 숫자', 'What to read', '查看资料', '確認する資料')}</strong>{area.signal[lang]}</p>
+      <p><strong>{text(lang, '이 구역에서 볼 것', 'What to read', '查看资料', '確認する資料')}</strong>{area.signal[lang]}</p>
       <p>{area.action[lang]}</p>
       <p className="airport-industry-note"><strong>{profile.label[lang]}</strong>{playbook.airport[lang]}</p>
       <div className="operating-links">

@@ -21,9 +21,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          run=$(gh api "repos/${{ github.repository }}/actions/workflows/deploy-cloudflare.yml/runs?branch=main&status=success&per_page=1" --jq '.workflow_runs[0] | "\(.head_sha) \(.id) \(.updated_at)"')
+          # event=workflow_run: the automatic production deploys after CI on main.
+          # A manual dispatch defaults to the staging stage and must not be
+          # mistaken for what production serves.
+          run=$(gh api "repos/${{ github.repository }}/actions/workflows/deploy-cloudflare.yml/runs?branch=main&event=workflow_run&status=success&per_page=1" --jq '.workflow_runs[0] // empty | "\(.head_sha) \(.id) \(.updated_at)"')
           set -- $run
-          test -n "$1"
+          [[ "${1:-}" =~ ^[0-9a-f]{40}$ ]] || { echo "no successful production deploy found on main" >&2; exit 1; }
           echo "sha=$1" >> "$GITHUB_OUTPUT"
           echo "deployed commit $1 (Deploy Cloudflare run $2, finished $3)"
       - uses: actions/checkout@v4

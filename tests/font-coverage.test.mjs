@@ -8,12 +8,16 @@
  * stops covering the copy. The page still renders, every content assertion
  * still passes, and every screenshot still looks almost right.
  *
- * What it costs is not cosmetic. Measured on 2026-09-22: eight syllables
- * introduced with the server-rendered brief (깔뀔끔났넣묻쓴힌 — one of them in
- * "자주 묻는 질문", which appears on every Korean page) took `/ko` and
- * `/ko/myeongdong` from loading the 226 KB subset alone to also loading
- * `pretendard-variable.woff2`, all 2,057,688 bytes of it. That is roughly ten
- * times the page's entire font budget, downloaded to draw eight characters.
+ * What it costs is not cosmetic. Measured on 2026-09-22, before Pretendard
+ * was split into slices: eight syllables introduced with the server-rendered
+ * brief (깔뀔끔났넣묻쓴힌 — one of them in "자주 묻는 질문", which appears on
+ * every Korean page) took `/ko` and `/ko/myeongdong` from loading the 226 KB
+ * subset alone to also loading the whole 2,057,688-byte Pretendard file, to
+ * draw eight characters. Since 2026-09-30 Pretendard ships as its official
+ * unicode-range slices (largest 43,920 bytes), so the same miss now costs a
+ * few slices and a visible font swap on the words that use them, not 2 MB.
+ * The subset is still the rule: a page that draws only subset syllables loads
+ * no Pretendard slice at all.
  *
  * e2e/typography.spec.ts already looks for tofu — characters drawn as the
  * missing-glyph box. It cannot catch this: the fallback face draws the
@@ -60,7 +64,7 @@ test("every Korean syllable the product prints is in the bundled subset", async 
   }
 
   assert.deepEqual([...uncovered.keys()], [],
-    `these syllables are not in koretail-sans-variable.woff2, so a Korean reader downloads the 2 MB fallback face to draw them: ${
+    `these syllables are not in koretail-sans-variable.woff2, so a Korean reader downloads one or more Pretendard slices (about 20-44 KB each) and sees a font swap to draw them: ${
       [...uncovered].map(([character, file]) => `${character} (${file})`).join(", ")
     }. Reword the copy, or regenerate the subset AND tests/fixtures/koretail-sans-hangul.json together.`);
 });

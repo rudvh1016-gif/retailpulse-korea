@@ -335,3 +335,44 @@ test('observation history uses indexed six-hour bounds, caps rows, and never add
     assert.doesNotMatch(plan,/SCAN seoul_realtime_area/);
   } finally {database.close();unlinkSync(databasePath);}
 });
+
+test("a day with no collected flight is never compared as -100% against a past day", async () => {
+  const { database, databasePath } = openDatabase("no-false-minus-100");
+  try {
+    seed(database);
+    const columns = database.prepare("PRAGMA table_info(airport_flights)").all();
+    const insert = database.prepare(`INSERT INTO airport_flights (${columns.map((c) => c.name).join(",")}) VALUES (${columns.map(() => "?").join(",")})`);
+    const flight = (id, scheduledAt) => insert.run(...columns.map((column) => {
+      if (column.name === "id") return id;
+      if (column.name === "scheduled_at") return scheduledAt;
+      if (column.name === "direction") return "departure";
+      if (column.name === "terminal") return "T1";
+      if (column.name === "physical_flight_id") return id;
+      if (column.name === "flight_number") return id.toUpperCase();
+      return /INT|REAL|NUM/i.test(column.type) ? 0 : `${column.name}`;
+    }));
+    const base = clockFor();
+    // Three collected departures a week earlier, so a comparison would have a baseline.
+    for (const n of [1, 2, 3]) flight(`past${n}`, `${shiftKstDay(base.kstToday, -7)}T0${n + 5}:00:00+09:00`);
+    const summaryFor = async (clock) => (await (await summarizeLiveSummary(new LocalD1Database(database), clock)).json()).airport.periodComparisons.all[7];
+
+    // Tomorrow: nothing is collected for a future day.
+    const tomorrow = shiftKstDay(base.kstToday, 1);
+    const future = await summaryFor({ ...base, serviceDate: tomorrow, dayRelation: "FUTURE", dayStartAt: kstDayBounds(tomorrow).startAt });
+    assert.equal(future.flightRecords, null, "a future day has no collected flights to compare");
+    assert.equal(future.composition, null);
+
+    // Today before the first scan: same.
+    const beforeScan = await summaryFor(base);
+    assert.equal(beforeScan.flightRecords, null, "today before its first scan is not zero flights");
+
+    // Once flights are collected the comparison is back.
+    for (const n of [1, 2]) flight(`today${n}`, `${base.kstToday}T0${n + 5}:00:00+09:00`);
+    const afterScan = await summaryFor(base);
+    assert.ok(afterScan.flightRecords, "with collected flights the comparison returns");
+    assert.ok(afterScan.flightRecords.minPercent > -100, "2 of 3 is a real change, not -100%");
+  } finally {
+    database.close();
+    unlinkSync(databasePath);
+  }
+});

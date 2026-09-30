@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { Lang } from './retailpulse-data';
 import type { SeoulContext } from '../lib/seoul-context';
 import { commercialActivityContext } from '../lib/commercial-context';
+import { kstDay } from '../lib/demand-presentation';
 import { AIR_GRADE_TEXT, readAirGrade } from '../lib/weather-guide';
 import { describeObservationAge, explainObservationVsForecast } from '../lib/observation-freshness';
 
@@ -98,7 +99,7 @@ export function HolidayContext({months,date,lang}:{months?:Array<{month:string;d
   const weekend=[0,6].includes(new Date(`${date}T00:00:00Z`).getUTCDay());
   const t=(ko:string,en:string,zh:string,ja:string)=>contextText(lang,ko,en,zh,ja);
   return <p className="holiday-context"><strong>{date} · {days.length?days.map(row=>row.name).join(' · '):weekend?t('주말','Weekend','周末','週末'):t('평일','Weekday','工作日','平日')}</strong>
-    <small>{record?`${t('한국천문연구원 공휴일 자료','KASI public-holiday data','韩国天文研究院节假日数据','韓国天文研究院の祝日データ')} · ${record.retrievedAt.slice(0,10)}`:t('공휴일 자료 연결 대기 · 임시·대체공휴일 여부는 아직 확인되지 않았습니다.','Holiday data pending · temporary and substitute holidays are not verified.','节假日数据连接中，临时及补休日尚未核实。','祝日データ接続待ち・臨時休日や振替休日は未確認です。')}</small>
+    <small>{record?`${t('한국천문연구원 공휴일 자료','KASI public-holiday data','韩国天文研究院节假日数据','韓国天文研究院の祝日データ')} · ${kstDay(record.retrievedAt)} KST`:t('공휴일 자료 연결 대기 · 임시·대체공휴일 여부는 아직 확인되지 않았습니다.','Holiday data pending · temporary and substitute holidays are not verified.','节假日数据连接中，临时及补休日尚未核实。','祝日データ接続待ち・臨時休日や振替休日は未確認です。')}</small>
     {!record&&<a href={`/${lang}/more#collection-status`}>{t('자료 연결 상태·수집 일정 보기','Collection status and schedule','查看连接状态与收集计划','接続状況・収集予定を見る')}</a>}
   </p>;
 }

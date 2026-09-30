@@ -177,7 +177,10 @@ test("an unverified flight says why: no gate, a gate missing from the table, or 
   assert.equal(unverifiedReasonOf("T1", "13"), "NOT_IN_TABLE");
   assert.equal(unverifiedReasonOf("T2", "250"), "NOT_IN_TABLE");
   assert.equal(unverifiedReasonOf("T2", "9"), "CONFLICT");
-  assert.equal(unverifiedReasonOf("CONCOURSE", "150"), "CONFLICT");
+  assert.equal(unverifiedReasonOf("CONCOURSE", "150"), "NOT_IN_TABLE", "a number outside every published range is not another building's gate");
+  assert.equal(unverifiedReasonOf("CONCOURSE", "209"), "CONFLICT", "a T2 number at the concourse is a real disagreement");
+  assert.equal(unverifiedReasonOf("T2", "291"), "NOT_IN_TABLE", "291 is on the airport's own map though outside the published range page");
+  assert.equal(unverifiedReasonOf("T1", "23A"), "NOT_IN_TABLE", "a suffixed gate is not a disagreement");
   assert.equal(unverifiedReasonOf("UNKNOWN", "9"), "NO_TERMINAL");
   const day = summarizeGateSides([
     flight("A", "T2", "268", "10:00"),
