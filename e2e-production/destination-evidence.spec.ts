@@ -12,7 +12,7 @@ import { test } from "@playwright/test";
  */
 const kstDay = (offsetDays: number) => new Date(Date.now() + 9 * 3_600_000 + offsetDays * 86_400_000).toISOString().slice(0, 10);
 
-test("destination values in the stored departures", async ({ request }) => {
+test.skip("destination values in the stored departures", async ({ request }) => {
   test.skip(process.env.RPK_GEOMAP_EVIDENCE !== "1", "evidence run only");
   test.setTimeout(120_000);
   const counts = new Map<string, { flights: number; days: Set<string>; sample: string }>();
@@ -36,7 +36,7 @@ test("destination values in the stored departures", async ({ request }) => {
   console.log(`DEST-TOTAL distinct ${counts.size}`);
 });
 
-test("airport.kr pages that list destinations and notices", async ({ page }) => {
+test.skip("airport.kr pages that list destinations and notices", async ({ page }) => {
   test.skip(process.env.RPK_GEOMAP_EVIDENCE !== "1", "evidence run only");
   test.setTimeout(180_000);
   for (const url of ["https://www.airport.kr/ap_ko/index.do", "https://www.airport.kr/ap_ko/sitemap.do"]) {
@@ -50,7 +50,7 @@ test("airport.kr pages that list destinations and notices", async ({ page }) => 
   }
 });
 
-test("airport.kr route map and notice board contents", async ({ page }) => {
+test.skip("airport.kr route map and notice board contents", async ({ page }) => {
   test.skip(process.env.RPK_GEOMAP_EVIDENCE !== "1", "evidence run only");
   test.setTimeout(240_000);
   const json: Array<{ url: string; body: string }> = [];
@@ -75,7 +75,7 @@ test("airport.kr route map and notice board contents", async ({ page }) => {
   }
 });
 
-test("airport.kr flight-status destination picker, notice feed and terms", async ({ page, request }) => {
+test.skip("airport.kr flight-status destination picker, notice feed and terms", async ({ page, request }) => {
   test.skip(process.env.RPK_GEOMAP_EVIDENCE !== "1", "evidence run only");
   test.setTimeout(300_000);
   const bodies: Array<{ url: string; body: string }> = [];
@@ -124,5 +124,22 @@ test("airport.kr flight-status destination picker, notice feed and terms", async
     const hits = text.split(/(?<=[.。])\s/).filter((s) => /저작|복제|전재|배포|출처|상업|무단|공공누리|이용 ?허락/.test(s)).slice(0, 30);
     console.log(`TERMS ${href} length ${text.length}`);
     for (const hit of hits) console.log(`TERMS-HIT ${hit.slice(0, 400)}`);
+  }
+});
+
+/** The airport codes of the destinations above, as the airport's own flight-status page lists them. */
+const DESTINATION_CODES = ["KOJ", "KHH", "KMQ", "UKB", "GUM", "CAN", "KMJ", "KWL", "PUS", "NGS", "NGO", "CXR", "NKG", "EWR", "JFK", "KIJ", "NGB", "DAD", "DLC", "TAK", "TAE", "DFW", "DPS", "DEL", "TOY", "NRT", "HND", "TKS", "DOH", "DXB", "DTW", "LAS", "LHR", "FCO", "LAX", "LIS", "LJG", "LYI", "MDC", "MNL", "MAD", "MRS", "MYJ", "MFM", "MEX", "YUL", "MUC", "MSP", "KMI", "SHI", "MXP", "WAW", "BCN", "BWN", "DMK", "BKK", "YVR", "PKX", "PEK", "BOS", "TAG", "BUD", "WRO", "BNE", "BSZ", "VIE", "VTE", "HSG", "SPN", "CTS", "PVG", "SFO", "XMN", "SHE", "SZX", "CEB", "SDJ", "SLC", "CIT", "SJW", "SYD", "SHM", "XIY", "SEA", "FSZ", "ORD", "UBN", "SIN", "SYX", "ADD", "AUH", "ASB", "NQZ", "AOJ", "ALA", "AMS", "ATL", "ANC", "RGN", "YTY", "YNJ", "YNZ", "YNT", "KIX", "OIT", "OKJ", "AKL", "OKA", "YGJ", "URC", "WUX", "WUH", "IAD", "WNZ", "WEH", "YCU", "IST", "ISG", "YIH", "JMU", "CGK", "DYG", "CSX", "CGO", "CJU", "TNA", "CGQ", "TFU", "CKG", "ZRH", "CNX", "TAO", "KTM", "KLO", "YYC", "BKI", "CPH", "CMB", "KUL", "KMG", "CRK", "KKJ", "TAS", "TPE", "RMQ", "TSN", "YYZ", "TBS", "CDG", "PQC", "FOC", "HKT", "KTI", "PRG", "FRA", "HNA", "HAN", "HRB", "HAK", "HPH", "HGH", "HFE", "HEL", "HNL", "SGN", "HKG", "FUK", "HIJ"];
+
+test("IATA airport code search: the country of each destination code", async ({ page }) => {
+  test.skip(process.env.RPK_GEOMAP_EVIDENCE !== "1", "evidence run only");
+  test.setTimeout(600_000);
+  let blocked = 0;
+  for (const code of DESTINATION_CODES) {
+    await page.goto(`https://www.iata.org/en/publications/directories/code-search/?airport.search=${code}`, { waitUntil: "domcontentloaded", timeout: 45_000 }).catch(() => null);
+    await page.waitForTimeout(1_500);
+    const rows = await page.evaluate(() => Array.from(document.querySelectorAll("table tr")).map((tr) => Array.from(tr.querySelectorAll("td,th")).map((td) => (td.textContent ?? "").trim()).join(" | ")).filter(Boolean).slice(0, 6));
+    if (!rows.length) blocked++;
+    console.log(`IATA ${code} ${JSON.stringify(rows)}`);
+    if (blocked >= 5 && blocked === DESTINATION_CODES.indexOf(code) + 1) { console.log("IATA stopped: no table on the first pages"); break; }
   }
 });
