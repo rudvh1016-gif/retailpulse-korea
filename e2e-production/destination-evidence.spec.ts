@@ -74,3 +74,55 @@ test("airport.kr route map and notice board contents", async ({ page }) => {
     await page.screenshot({ path: `production-visual-results/airportkr-${url.split("/")[4]}.png`, fullPage: true }).catch(() => null);
   }
 });
+
+test("airport.kr flight-status destination picker, notice feed and terms", async ({ page, request }) => {
+  test.skip(process.env.RPK_GEOMAP_EVIDENCE !== "1", "evidence run only");
+  test.setTimeout(300_000);
+  const bodies: Array<{ url: string; body: string }> = [];
+  page.on("response", async (response) => {
+    const type = response.headers()["content-type"] ?? "";
+    if (!/json|xml|text\/plain/.test(type)) return;
+    const body = await response.text().catch(() => "");
+    if (body) bodies.push({ url: response.url(), body });
+  });
+  await page.goto("https://www.airport.kr/ap_ko/869/subview.do", { waitUntil: "networkidle", timeout: 90_000 }).catch(() => null);
+  await page.waitForTimeout(8_000);
+  const selects = await page.evaluate(() => Array.from(document.querySelectorAll("select")).map((select) => ({
+    name: select.name || select.id, options: Array.from(select.querySelectorAll("option, optgroup")).map((o) => o.tagName === "OPTGROUP" ? `[${(o as HTMLOptGroupElement).label}]` : `${(o as HTMLOptionElement).value}=${o.textContent?.trim()}`),
+  })));
+  for (const select of selects) console.log(`FS-SELECT ${select.name} ${select.options.length} ${JSON.stringify(select.options).slice(0, 12000)}`);
+  const lists = await page.evaluate(() => Array.from(document.querySelectorAll("[class*=airport], [class*=city], [id*=airport], [id*=city], ul[class*=list]"))
+    .map((node) => (node as HTMLElement).innerText.replace(/\s+/g, " ").slice(0, 3000)).filter((text) => text.length > 40).slice(0, 10));
+  for (const text of lists) console.log(`FS-LIST ${text}`);
+  for (const body of bodies) if (!/tempPwd|userInfoCheck|popup|imageSlide/.test(body.url)) console.log(`FS-XHR ${body.url} ${body.body.slice(0, 20000).replace(/\s+/g, " ")}`);
+  await page.screenshot({ path: "production-visual-results/airportkr-869.png", fullPage: true }).catch(() => null);
+
+  // The notice board's own feed and the urgent-notice banner data.
+  await page.goto("https://www.airport.kr/ap_ko/1011/subview.do", { waitUntil: "networkidle", timeout: 90_000 }).catch(() => null);
+  const feed = await page.evaluate(() => Array.from(document.querySelectorAll("a")).find((a) => /RSS/.test(a.textContent ?? ""))?.href ?? null);
+  const detail = await page.evaluate(() => Array.from(document.querySelectorAll("a")).filter((a) => /artclView/.test(a.href)).map((a) => a.href).slice(0, 6));
+  console.log(`NOTICE-FEED ${feed} DETAIL ${JSON.stringify(detail)}`);
+  if (feed) {
+    const rss = await request.get(feed).then((r) => r.text()).catch(() => "");
+    console.log(`NOTICE-RSS ${rss.slice(0, 12000).replace(/\s+/g, " ")}`);
+  }
+  const slides = await request.get("https://www.airport.kr/imageSlide/ap_ko/91/getJsonImageSlideArtclList.do").then((r) => r.text()).catch(() => "");
+  console.log(`NOTICE-SLIDES ${slides.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 12000)}`);
+  for (const href of detail.slice(0, 3)) {
+    await page.goto(href, { waitUntil: "domcontentloaded", timeout: 60_000 }).catch(() => null);
+    const text = await page.evaluate(() => ((document.querySelector(".artclView, .view-con, #contents, #content") as HTMLElement | null)?.innerText ?? "").replace(/\s+/g, " "));
+    const kogl = await page.evaluate(() => Array.from(document.querySelectorAll("img, a")).map((n) => `${(n as HTMLImageElement).alt ?? ""} ${(n as HTMLAnchorElement).href ?? ""}`).filter((t) => /공공누리|kogl|저작권/i.test(t)).slice(0, 5));
+    console.log(`NOTICE-DETAIL ${href} KOGL ${JSON.stringify(kogl)} TEXT ${text.slice(0, 1500)}`);
+  }
+  // Terms of use and copyright policy of the site.
+  await page.goto("https://www.airport.kr/ap_ko/index.do", { waitUntil: "domcontentloaded", timeout: 60_000 }).catch(() => null);
+  const terms = await page.evaluate(() => Array.from(document.querySelectorAll("a")).filter((a) => /이용약관|저작권/.test(a.textContent ?? "")).map((a) => a.href));
+  console.log(`TERMS-LINKS ${JSON.stringify(terms)}`);
+  for (const href of terms.slice(0, 2)) {
+    await page.goto(href, { waitUntil: "domcontentloaded", timeout: 60_000 }).catch(() => null);
+    const text = await page.evaluate(() => ((document.querySelector("#contents, #content, main") as HTMLElement | null)?.innerText ?? document.body.innerText).replace(/\s+/g, " "));
+    const hits = text.split(/(?<=[.。])\s/).filter((s) => /저작|복제|전재|배포|출처|상업|무단|공공누리|이용 ?허락/.test(s)).slice(0, 30);
+    console.log(`TERMS ${href} length ${text.length}`);
+    for (const hit of hits) console.log(`TERMS-HIT ${hit.slice(0, 400)}`);
+  }
+});
