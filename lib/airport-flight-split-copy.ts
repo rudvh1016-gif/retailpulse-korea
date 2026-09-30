@@ -4,17 +4,18 @@
  * all call these, so a number can only be written one way.
  *
  * The person figure is always "참고 추정" (a reference estimate): the airport's
- * terminal-wide expected departures divided by the east:west flight ratio. It
- * is never called actual east or west passengers.
+ * terminal-wide expected departures divided over every flight of the same
+ * scope, each flight counting the same. It is never called actual east or west
+ * passengers, and what could not be placed on a side is shown as its own item.
  */
-import type { FlightSplit, SplitHour, SplitResult } from "./airport-flight-split";
+import type { FlightEstimate, FlightSplit, SplitHour, SplitResult } from "./airport-flight-split";
 
 type Lang = "ko" | "en" | "zh" | "ja";
 type Row = Record<Lang, string>;
 const row = (ko: string, en: string, zh: string, ja: string): Row => ({ ko, en, zh, ja });
 
 export type SplitCore = Omit<FlightSplit, "hours" | "expected" | "expectedIssuedAt" | "retrievedAt" | "checkedAt" | "basis">;
-export type SplitEstimate = { terminal: FlightSplit["terminal"]; total: number; east: number; west: number };
+export type SplitEstimate = { terminal: FlightSplit["terminal"] } & FlightEstimate;
 
 const locale = { ko: "ko-KR", en: "en-US", zh: "zh-CN", ja: "ja-JP" } as const;
 const num = (value: number, lang: Lang) => new Intl.NumberFormat(locale[lang], { maximumFractionDigits: 0 }).format(value);
@@ -36,13 +37,22 @@ export const splitCopy = {
   })[when][lang],
   estimateHeading: row("항공편 비율로 본 예상 출국객", "Expected departing passengers by flight ratio", "按航班比例的预计出境旅客", "便数の比率で見た出国予想客"),
   estimateNote: row(
-    "실제 동·서편 승객 수가 아닙니다. 터미널 전체 예상 출국객을 이 터미널 탑승구의 동·서편 항공편 비율로 나눈 참고값입니다.",
-    "Not the actual passengers on each side. The terminal-wide expected departures split by the east:west ratio of flights at this terminal's gates, for reference only.",
-    "并非东西两侧的实际旅客数。这是把航站楼整体预计出境旅客，按本航站楼登机口航班的东西侧比例分配得到的参考值。",
-    "東西それぞれの実際の乗客数ではありません。ターミナル全体の出国予想客を、このターミナルの搭乗口の東西の便数比率で分けた参考値です。",
+    "실제 동·서편 승객 수가 아닙니다. 편당 승객 수가 같다는 가정의 참고값이며 백 명 단위로 반올림했습니다.",
+    "Not the actual passengers on each side. A reference value that assumes every flight carries the same number of passengers, rounded to the nearest hundred.",
+    "并非东西两侧的实际旅客数。这是假设每班航班旅客数相同的参考值，按百人取整。",
+    "東西それぞれの実際の乗客数ではありません。1便あたりの乗客数が同じという前提の参考値で、百人単位に四捨五入しています。",
   ),
+  concourseNote: row(
+    "T1 예상 출국객에는 탑승동으로 가는 승객이 포함된 것으로 보고(공항 출국 절차 기준), 탑승동 출발편도 함께 나누어 따로 표시했습니다.",
+    "The T1 figure is taken to include passengers bound for the concourse (per the airport's departure procedure), so concourse departures are divided too and shown separately.",
+    "按机场出境流程，T1的预计出境旅客视为包含前往登机楼的旅客，因此登机楼出发航班也一并分配并单独显示。",
+    "空港の出国手続きに基づき、T1の出国予想客には搭乗棟へ向かう乗客が含まれるものとして、搭乗棟の出発便もあわせて分け、別に表示しています。",
+  ),
+  center: row("중앙", "Centre", "中央", "中央"),
+  unverified: row("위치 미확인", "Side not confirmed", "位置未确认", "位置未確認"),
+  concourse: row("탑승동", "Concourse", "登机楼", "搭乗棟"),
+  underHundred: row("100명 미만", "under 100", "不足100人", "100人より少ない"),
   verifiedBasis: row("동·서 위치가 확인된 항공편 기준", "Based on flights whose east/west side is confirmed", "以东西位置已确认的航班为准", "東西の位置が確認できた便が基準"),
-  estimateBasis: row("이 터미널 탑승구 항공편 비율로 나눈 추정", "split by this terminal's gate-flight ratio", "按本航站楼登机口航班比例分配", "このターミナルの搭乗口の便数比率で按分"),
   scheduled: row("예정 출발 시각 기준", "By scheduled departure time", "按计划出发时间", "予定出発時刻基準"),
   perHour: row("시간대별 동·서편 출발편", "East and west departures by hour", "各时段东西侧出发航班", "時間帯別の東西の出発便"),
   unavailable: {
@@ -91,23 +101,67 @@ export function sharesBody(s: SplitCore, lang: Lang): string {
   return `${head}: ${sideWord.EAST[lang]} ${s.eastPct}% · ${sideWord.WEST[lang]} ${s.westPct}% (${largerWord(s, lang)})`;
 }
 
-/** "동편 약 24,000명 · 서편 약 16,000명": the reference estimate. */
-export function estimateBody(e: SplitEstimate, lang: Lang): string {
+/** One group's figure: exactly none when it has no flight (or nothing to spread), "under 100" when it rounds to nothing, else "about N". */
+function peopleText(part: { flights: number; people: number }, total: number, lang: Lang): string {
+  if (part.flights === 0 || total === 0) return `0${person[lang]}`;
+  if (part.people === 0) return splitCopy.underHundred[lang];
   const about = row("약 ", "about ", "约", "約");
-  return `${sideWord.EAST[lang]} ${about[lang]}${num(e.east, lang)}${person[lang]} · ${sideWord.WEST[lang]} ${about[lang]}${num(e.west, lang)}${person[lang]}`;
+  return `${about[lang]}${num(part.people, lang)}${person[lang]}`;
 }
 
-/** "터미널 전체 예상 40,000명 기준 · 확인된 항공편 기준 추정" */
+/**
+ * "동편 약 15,700명 · 서편 약 14,300명 · 위치 미확인 약 12,600명": the reference estimate.
+ * East and west are always named; a group with no flight is left out, and the
+ * unconfirmed share is its own item, never folded into east or west.
+ */
+export function estimateBody(e: SplitEstimate, lang: Lang): string {
+  const items: Array<[string, { flights: number; people: number }]> = [
+    [sideWord.EAST[lang], e.east],
+    [sideWord.WEST[lang], e.west],
+  ];
+  if (e.center.flights > 0) items.push([splitCopy.center[lang], e.center]);
+  if (e.unverified.flights > 0) items.push([splitCopy.unverified[lang], e.unverified]);
+  if (e.concourse && e.concourse.flights > 0) items.push([splitCopy.concourse[lang], e.concourse]);
+  return items.map(([label, part]) => `${label} ${peopleText(part, e.total, lang)}`).join(" · ");
+}
+
+/**
+ * "터미널 전체 예상 42,606명 기준 · 같은 범위 출발편 303편(T1 본관 162편 + 탑승동 141편)으로 나눈 추정":
+ * what was divided, and over how many flights of which scope.
+ */
 export function estimateBasisLine(e: SplitEstimate, lang: Lang): string {
   const total = row(`터미널 전체 예상 ${num(e.total, lang)}명 기준`, `from ${num(e.total, lang)} expected across the terminal`, `按航站楼整体预计 ${num(e.total, lang)} 人`, `ターミナル全体の予想 ${num(e.total, lang)}人が基準`)[lang];
-  return `${total} · ${splitCopy.estimateBasis[lang]}`;
+  const concourse = e.concourse?.flights ?? 0;
+  const main = e.flights - concourse;
+  // T1 with concourse flights: show the two buildings so the count can be reconciled with the card's own T1 total.
+  const composition = concourse > 0
+    ? row(`(T1 본관 ${num(main, lang)}편 + 탑승동 ${num(concourse, lang)}편)`, ` (${num(main, lang)} T1 main building + ${num(concourse, lang)} concourse)`, `（T1主楼 ${num(main, lang)} 班 + 登机楼 ${num(concourse, lang)} 班）`, `（T1本館 ${num(main, lang)}便 + 搭乗棟 ${num(concourse, lang)}便）`)[lang]
+    : "";
+  const spread = row(
+    `같은 범위 출발편 ${num(e.flights, lang)}편${composition}으로 나눈 추정`,
+    `divided over ${num(e.flights, lang)} departures of the same scope${composition}`,
+    `按同一范围的 ${num(e.flights, lang)} 班出发航班分配${composition}`,
+    `同じ範囲の出発${num(e.flights, lang)}便${composition}で按分`,
+  )[lang];
+  const outside = e.outsideScope > 0
+    ? ` · ${row(`터미널 미확인 ${num(e.outsideScope, lang)}편 제외`, `${num(e.outsideScope, lang)} departures with unknown terminal left out`, `航站楼未确认的 ${num(e.outsideScope, lang)} 班未计入`, `ターミナル未確認の${num(e.outsideScope, lang)}便は除外`)[lang]}`
+    : "";
+  return `${total} · ${spread}${outside}`;
+}
+
+/**
+ * The warning that travels with the number: the base note, plus the T1 concourse
+ * line when there are concourse flights among the ones divided.
+ */
+export function estimateNote(e: SplitEstimate, lang: Lang): string {
+  return (e.concourse?.flights ?? 0) > 0 ? `${splitCopy.estimateNote[lang]} ${splitCopy.concourseNote[lang]}` : splitCopy.estimateNote[lang];
 }
 
 /** The estimate as one sentence, with its basis and its short warning. */
 export function estimateSentence(e: SplitEstimate, lang: Lang): string {
   const day = row("하루 전체", "whole day", "全天", "終日")[lang];
   const heading = lang === "en" ? splitCopy.estimateHeading.en.replace(/^./, (first) => first.toLowerCase()) : splitCopy.estimateHeading[lang];
-  return `${e.terminal}${lang === "en" ? " — " : " "}${heading}(${day}): ${estimateBody(e, lang)} (${estimateBasisLine(e, lang)}). ${splitCopy.estimateNote[lang]}`;
+  return `${e.terminal}${lang === "en" ? " — " : " "}${heading}(${day}): ${estimateBody(e, lang)} (${estimateBasisLine(e, lang)}). ${estimateNote(e, lang)}`;
 }
 
 /** The whole-day flight sentence used as a prep fact. */

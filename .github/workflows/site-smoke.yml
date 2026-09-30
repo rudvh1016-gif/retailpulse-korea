@@ -98,10 +98,17 @@ jobs:
           check("health lists source status", Array.isArray(healthBody?.sources) && healthBody.sources.length > 0, `${healthBody?.sources?.length ?? 0} sources`);
           console.log(JSON.stringify({ healthSources: healthBody?.sources ?? [] }));
 
-          // A unique cache key prevents a pre-import null response from making
+          // A key nobody has used prevents a pre-import null response from making
           // the post-import Store Dynamics acceptance check read stale edge data.
+          // The gateway keys the summary cache on `date` and `month` only
+          // (worker/summary-cache-key.ts), so an arbitrary query string no longer
+          // makes a new entry; the cold key is a real month far from today (2000-01
+          // to 2099-12), which changes only the date picker's calendar block.
+          // 1,200 possible keys, one request per run.
           const cacheProbeKey = `site-smoke-${Date.now()}`;
-          const summary = await fetch(`${origin}/api/live/summary?cacheProbe=${cacheProbeKey}`, { signal: AbortSignal.timeout(15000) });
+          const coldMonth = `${2000 + Math.floor(Math.random() * 100)}-${String(1 + Math.floor(Math.random() * 12)).padStart(2, "0")}`;
+          const coldUrl = `${origin}/api/live/summary?month=${coldMonth}`;
+          const summary = await fetch(coldUrl, { signal: AbortSignal.timeout(15000) });
           const summaryBody = await summary.json().catch(() => null);
           check("api /api/live/summary", summary.status === 200 && Boolean(summaryBody?.mode), `status ${summary.status}; mode ${summaryBody?.mode}`);
           for (const source of summaryBody?.sources ?? []) console.log(JSON.stringify({ source }));
@@ -215,7 +222,11 @@ jobs:
           // silent-empty failure mode the row-read incident hid behind. The
           // database demonstrably holds many days of both flights and Seoul
           // observations, so empty lists here mean the statement failed.
-          const availability = summaryBody?.dateAvailability ?? {};
+          // The cold read above is a calendar month far from today, so the picker's
+          // populated days come from the ordinary current-month read (which may be
+          // an edge copy up to 6 minutes old).
+          const currentBody = await (await fetch(`${origin}/api/live/summary`, { signal: AbortSignal.timeout(15000) })).json().catch(() => null);
+          const availability = currentBody?.dateAvailability ?? {};
           console.log(JSON.stringify({ dateAvailability: {
             airportFlights: availability.airportFlights?.length ?? null,
             airportPassengerForecast: availability.airportPassengerForecast?.length ?? null,
@@ -242,8 +253,8 @@ jobs:
           // second reader cost no database reads at all. This is reported, never
           // failed - caching is an optimisation, and the read path has to be
           // affordable uncached anyway.
-          const cacheProbe = async () => {
-            const response = await fetch(`${origin}/api/live/summary?cacheProbe=${cacheProbeKey}`, { signal: AbortSignal.timeout(15000) });
+          const cacheProbe = async (url = coldUrl, headers = undefined) => {
+            const response = await fetch(url, { headers, signal: AbortSignal.timeout(15000) });
             const body = await response.json().catch(() => null);
             return {
               status: response.status,
@@ -285,6 +296,31 @@ jobs:
               && String(firstRead.cacheControl ?? "").includes("public"),
             `${firstRead.cfCacheStatus ?? "missing"} -> ${hitRead?.cfCacheStatus ?? "no-hit"}; age ${hitRead?.age ?? "missing"}; reused ${bodyReused}`,
           );
+
+          // A query string the route does not read must NOT be its own cache
+          // entry: each one used to run the whole database batch again. Asked
+          // inside the cold entry's fresh window, an extra parameter has to be
+          // answered by that same body. An identical generatedAt is the body
+          // proving it was reused, whatever the edge calls it (HIT, UPDATING...).
+          // One of the two is enough, as in the cold-to-HIT check: if ignored
+          // queries made their own entries, neither read could match the first.
+          const ignoredA = await cacheProbe(`${coldUrl}&cacheProbe=${cacheProbeKey}`);
+          const ignoredB = await cacheProbe(`${coldUrl}&anything=else&x=${Date.now()}`);
+          console.log(JSON.stringify({ ignoredQueries: { ignoredA, ignoredB } }));
+          check(
+            "a query the route ignores shares the cached summary",
+            Boolean(firstRead.generatedAt)
+              && [ignoredA, ignoredB].some((read) => read.generatedAt === firstRead.generatedAt)
+              && [ignoredA, ignoredB].every((read) => read.status === 200 && read.mode === "live-summary"),
+            `first ${firstRead.generatedAt}; a ${ignoredA.generatedAt} ${ignoredA.cfCacheStatus}; b ${ignoredB.generatedAt} ${ignoredB.cfCacheStatus}`,
+          );
+
+          // Workers Cache does not serve a request that carries Authorization, and
+          // the gateway drops that header before the cached entrypoint. Reported,
+          // never failed: the bypass rule comes from Cloudflare's documentation and
+          // has not been verified on this edge, so the log is what records it.
+          const withAuthorization = await cacheProbe(coldUrl, { authorization: "Bearer site-smoke-probe" });
+          console.log(JSON.stringify({ authorizationHeader: { ...withAuthorization, reusedColdBody: withAuthorization.generatedAt === firstRead.generatedAt } }));
 
           // A ?date= day the picker offers must still render live, not fall back
           // to an empty shell. Yesterday in KST is always one of those days.

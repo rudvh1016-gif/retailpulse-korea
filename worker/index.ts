@@ -4,6 +4,7 @@ import handler from "vinext/server/app-router-entry";
 import { dispatchScheduledCollection } from "../lib/realtime-dispatch";
 import { redirectHttpToHttps } from "./https-redirect";
 import { shouldRouteToSummaryCache } from "./summary-cache-routing";
+import { canonicalSummaryRequest } from "./summary-cache-key";
 
 interface Env {
   ASSETS: Fetcher;
@@ -71,7 +72,11 @@ const worker = {
     // gateway and reaches the application unchanged.
     if (shouldRouteToSummaryCache(request.method, url.pathname)) {
       const summaryCache = ctx.exports?.SummaryCache;
-      if (summaryCache) return summaryCache.fetch(request);
+      // Cloudflare keys the cache on path + query string, so a query the route
+      // ignores (`?x=1`, `?x=2`, ...) would be a new entry and a new D1 batch every
+      // time. Only `date` and `month` change the answer; they are kept as given and
+      // everything else is dropped (worker/summary-cache-key.ts).
+      if (summaryCache) return summaryCache.fetch(canonicalSummaryRequest(request, url));
     }
 
     return handler.fetch(request, env, ctx);

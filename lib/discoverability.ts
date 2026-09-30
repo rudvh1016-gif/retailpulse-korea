@@ -45,6 +45,7 @@ import {
   type SeoSlug,
 } from "../app/seo-config";
 import { CONTENT_API_ROBOTS_TAG, crawlableContentApis } from "./crawl-policy";
+import { coldSummaryMonth } from "./summary-cold-month";
 
 /**
  * Roughly how wide a string renders, in half-width units.
@@ -285,11 +286,13 @@ async function checkContentApisStayUnlisted(context: Context): Promise<void> {
   const { origin } = context;
   // This runs minutes after a deploy, while the edge may still hold a response
   // the previous build produced (summary: max-age 60 + stale-while-revalidate
-  // 300). A query the routes ignore gives a cache key nobody has used, so the
-  // header read is the one THIS build emits — at the cost of one uncached read.
+  // 300). A key nobody has used gives a read of what THIS build emits, at the
+  // cost of one uncached read. The summary key is built from `month`, a real
+  // parameter, because the gateway drops every query the route does not read
+  // (worker/summary-cache-key.ts); predictions still key on the full query.
   const probe = `discoverability=${Date.now()}`;
   const probes: Record<string, string> = {
-    "/api/live/summary": `/api/live/summary?${probe}`,
+    "/api/live/summary": `/api/live/summary?month=${coldSummaryMonth(Date.now())}`,
     "/api/live/predictions": `/api/live/predictions?area=myeongdong&${probe}`,
   };
   for (const path of crawlableContentApis) {

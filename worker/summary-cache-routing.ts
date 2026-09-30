@@ -19,11 +19,13 @@ export const SUMMARY_CACHE_PATH = "/api/live/summary";
 const CACHEABLE_METHODS = new Set(["GET", "HEAD"]);
 
 /**
- * Note on the query string: the request is forwarded unchanged, and
- * Cloudflare's default cache key includes the full path *and* query string.
- * That is what keeps `?date=2026-09-01` and `?date=2026-09-02` on separate
- * cache entries. Never normalize, strip or reorder the query here — doing so
- * would collapse two different service dates onto one cached body.
+ * Note on the query string: Cloudflare's default cache key includes the full
+ * path *and* query string. That is what keeps `?date=2026-09-01` and
+ * `?date=2026-09-02` on separate cache entries. Never normalize, strip or
+ * reorder the query HERE — this file only decides whether a request is
+ * cacheable. The one place that reduces the query is
+ * `worker/summary-cache-key.ts`, which keeps `date` and `month` exactly as given
+ * and drops only what the route ignores.
  */
 export function shouldRouteToSummaryCache(method: string, pathname: string): boolean {
   if (!CACHEABLE_METHODS.has(method.toUpperCase())) return false;

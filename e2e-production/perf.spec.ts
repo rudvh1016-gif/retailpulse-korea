@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { coldSummaryMonth } from "../lib/summary-cold-month";
 
 /**
  * Read-only timing of the live airport page on a phone profile.
@@ -28,8 +29,9 @@ test("production airport page: mobile timing to data", async ({ browser }) => {
     } catch { /* not supported */ }
   });
 
-  // A unique query string defeats the shared edge cache, so this measures the
-  // uncached path the way a visitor whose colo holds no fresh copy sees it.
+  // The page itself is not edge-cached; the summary is timed below with a cold
+  // key of its own, which measures the uncached path the way a visitor whose
+  // colo holds no fresh copy sees it.
   const probe = `perf-${Date.now()}`;
   const startedAt = Date.now();
   const response = await page.goto(`/ko/airport?perf=${probe}`, { waitUntil: "domcontentloaded" });
@@ -58,14 +60,17 @@ test("production airport page: mobile timing to data", async ({ browser }) => {
   });
 
   // The same uncached fetch again, timed directly, with the edge's verdict.
-  const direct = await page.evaluate(async (key) => {
+  // The gateway drops query parameters the route does not read, so the cold key
+  // is a real one: a calendar month far from today (worker/summary-cache-key.ts).
+  const coldMonth = coldSummaryMonth(Date.now());
+  const direct = await page.evaluate(async (month) => {
     const t0 = performance.now();
-    const res = await fetch(`/api/live/summary?perf=${key}-direct`);
+    const res = await fetch(`/api/live/summary?month=${month}`);
     await res.text();
     return { ms: Math.round(performance.now() - t0), status: res.status, cfCacheStatus: res.headers.get("cf-cache-status"), cacheControl: res.headers.get("cache-control") };
-  }, probe);
+  }, coldMonth);
 
-  const report = { probe, dataVisibleAt, dataReal, direct, ...timing };
+  const report = { probe, coldMonth, dataVisibleAt, dataReal, direct, ...timing };
   console.log(`AIRPORT_MOBILE_TIMING ${JSON.stringify(report, null, 2)}`);
   await test.info().attach("airport-mobile-timing.json", { body: JSON.stringify(report, null, 2), contentType: "application/json" });
   await context.close();

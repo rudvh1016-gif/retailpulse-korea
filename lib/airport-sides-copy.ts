@@ -76,10 +76,10 @@ export const sidesCopy = {
   noFlights: row("이 날짜의 운항 기록이 아직 없습니다.", "No flight records for this date yet.", "该日期尚无航班记录。", "この日付の運航記録はまだありません。"),
   noHalls: row("이 날짜의 출국장 예고가 아직 없습니다.", "No departure-hall notice for this date yet.", "该日期尚无出境大厅预告。", "この日付の出国場予告はまだありません。"),
   passengerPerGate: row(
-    "탑승구별 실제 인원은 공식 자료로 제공되지 않아 표시하지 않습니다. 사람 수로 바꾼 값은 맨 위 '예상 출국객' 참고 추정 하나뿐이며, 항공기 크기나 탑승률은 반영하지 않았습니다.",
-    "No official source gives people per gate, so none is shown. The only figure in people is the reference estimate at the top, split by flight ratio; aircraft size and load are not considered.",
-    "官方没有提供各登机口的实际人数，因此不显示。以人数表示的只有顶部按航班比例分配的参考估算，未计入机型大小和上座率。",
-    "搭乗口ごとの実際の人数は公式に提供されていないため表示しません。人数で示すのは上部の便数比率による参考推定だけで、機材の大きさや搭乗率は反映していません。",
+    "탑승구별 실제 인원은 공식 자료로 제공되지 않아 표시하지 않습니다. 사람 수로 바꾼 값은 맨 위 '예상 출국객' 참고 추정 하나뿐이며, 편당 승객 수가 같다고 가정했고 항공기 크기나 탑승률은 반영하지 않았습니다.",
+    "No official source gives people per gate, so none is shown. The only figure in people is the reference estimate at the top, which assumes every flight carries the same number of passengers; aircraft size and load are not considered.",
+    "官方没有提供各登机口的实际人数，因此不显示。以人数表示的只有顶部的参考估算，它假设每班航班旅客数相同，未计入机型大小和上座率。",
+    "搭乗口ごとの実際の人数は公式に提供されていないため表示しません。人数で示すのは上部の参考推定だけで、1便あたりの乗客数が同じという前提としており、機材の大きさや搭乗率は反映していません。",
   ),
   basisTitle: row("동·서편 기준과 공식 근거", "How east and west are set, with sources", "东西侧的划分依据与官方来源", "東西の区分基準と公式根拠"),
   basisHalls: row(
@@ -95,10 +95,10 @@ export const sidesCopy = {
     "搭乗口は次の二つの根拠だけで分けます。① 空港の公式な位置の文言に東側・西側・中央と書かれた搭乗口（30か所）。② 空港の公式地図上の搭乗口の位置をKORETAILが計算したもの：建物ごとに公式文言の西側から東側の搭乗口を結ぶ方向を軸とし、公式文言で最も内側の東側（西側）の搭乗口より東（西）にある搭乗口だけを東側（西側）とします（92か所）。二つの境界の間の搭乗口と地図にない搭乗口は、番号から推測せず「位置未確認」とします。搭乗棟は別の建物として数えます。",
   ),
   basisEstimate: row(
-    "예상 출국객 참고 추정: 공항이 발표한 터미널 전체 예상 출국객을, 이 터미널 탑승구에서 출발하는 항공편 중 동·서편 위치가 확인된 편수 비율로 나눈 값입니다. 중앙·위치 미확인 항공편과 탑승동으로 가는 승객도 같은 비율로 들어 있고, 항공기 크기와 탑승률은 반영하지 않았습니다. 출국장 번호로 사람을 나누지 않습니다.",
-    "Reference estimate of departing passengers: the airport's published terminal-wide expected departures, split by the share of flights from this terminal's gates whose east or west side is confirmed. Passengers of centre and unconfirmed flights, and of those bound for the Concourse, are folded in at the same ratio; aircraft size and load are not considered. People are never assigned to a side by departure-hall number.",
-    "预计出境旅客参考估算：把机场发布的航站楼整体预计出境旅客，按本航站楼登机口出发航班中东西位置已确认的航班数比例分配。中央、位置未确认航班及前往登机楼的旅客也按同一比例计入，未计入机型大小和上座率。不按出境大厅编号把人分到东西两侧。",
-    "出国予想客の参考推定：空港が発表したターミナル全体の出国予想客を、このターミナルの搭乗口から出る便のうち東西の位置が確認できた便数の比率で分けた値です。中央・位置未確認の便や搭乗棟に向かう乗客も同じ比率で含まれ、機材の大きさや搭乗率は反映していません。出国場の番号で人を東西に分けることはしません。",
+    "예상 출국객 참고 추정: 공항이 발표한 터미널 전체 예상 출국객을, 같은 범위의 전체 출발편(동편·서편·중앙·위치 미확인)에 편당 승객 수가 같다고 가정하고 나눈 값입니다. 동·서 위치를 확인하지 못한 항공편의 비중은 동·서편에 더하지 않고 '위치 미확인'으로 따로 보여 줍니다. T1 예상 인원에는 탑승동으로 가는 승객이 포함된 것으로 봅니다(공항 출국 절차 기준). 그래서 탑승동 출발편도 함께 나누고 따로 표시합니다(T2에는 탑승동이 없습니다). 어느 건물인지 알 수 없는 출발편은 제외합니다. 항공기 크기와 탑승률은 반영하지 않았고, 100명 단위로 반올림합니다. 동·서 비율은 위치가 확인된 항공편만으로 계산합니다. 출국장 번호로 사람을 나누지 않습니다.",
+    "Reference estimate of departing passengers: the airport's published terminal-wide expected departures, divided over all departures in the same scope (east, west, centre and side not confirmed), assuming every flight carries the same number of passengers. The share of flights whose side is not confirmed is not added to east or west; it is shown as its own item. The T1 figure is taken to include passengers bound for the Concourse (per the airport's departure procedure), so Concourse departures are divided too and shown separately (T2 has no Concourse). Departures whose building is unknown are left out. Aircraft size and load are not considered, and figures are rounded to the nearest 100. The east:west ratio is worked out from flights with a confirmed side only. People are never assigned to a side by departure-hall number.",
+    "预计出境旅客参考估算：把机场发布的航站楼整体预计出境旅客，按同一范围内的全部出发航班（东侧、西侧、中央、位置未确认），假设每班航班旅客数相同进行分配。东西位置未确认的航班所占份额不加到东侧或西侧，而是作为“位置未确认”单独显示。按机场出境流程，T1的预计人数视为包含前往登机楼的旅客，因此登机楼出发航班也一并分配并单独显示（T2没有登机楼）。无法确认所在建筑的出发航班不计入。未计入机型大小和上座率，并按100人取整。东西比例只用位置已确认的航班计算。不按出境大厅编号把人分到东西两侧。",
+    "出国予想客の参考推定：空港が発表したターミナル全体の出国予想客を、同じ範囲のすべての出発便（東側・西側・中央・位置未確認）に、1便あたりの乗客数が同じという前提で分けた値です。東西の位置が確認できない便の分は東西に加えず、「位置未確認」として別に示します。空港の出国手続きに基づき、T1の予想人数には搭乗棟へ向かう乗客が含まれるものとして、搭乗棟の出発便もあわせて分け、別に表示します（T2に搭乗棟はありません）。どの建物か分からない出発便は除きます。機材の大きさや搭乗率は反映せず、100人単位に四捨五入します。東西の比率は位置が確認できた便だけで計算します。出国場の番号で人を東西に分けることはしません。",
   ),
   basisLinks: row("공식 출처", "Official sources", "官方来源", "公式出典"),
 };

@@ -172,11 +172,14 @@ test('the comparison is the first thing in the airport block: flights, ratio, an
   // Fixture: 2 east, 1 west, 1 centre, 1 unconfirmed of 5 T1 departures (codeshares once, cancelled apart).
   await expect(card.getByTestId('split-flights')).toHaveText('동편 2편 67% · 서편 1편 33% · 중앙 1편 · 위치 미확인 1편(전체의 20%)');
   await expect(card.getByTestId('split-shares')).toHaveText('동·서 위치가 확인된 항공편 기준 (3편): 동편 67% · 서편 33% (동편이 더 많음)');
-  const east = Math.round((T1_EXPECTED * 2) / 3);
+  // The people are spread over ALL 6 flights of the T1 scope (5 T1 gates + 1 concourse), 100-rounded per group.
+  const hundreds = (value: number) => Math.round(value / 100) * 100;
   const fmt = (value: number) => value.toLocaleString('ko-KR');
-  await expect(card.getByTestId('split-estimate')).toHaveText(`동편 약 ${fmt(east)}명 · 서편 약 ${fmt(T1_EXPECTED - east)}명`);
-  await expect(card.getByTestId('split-estimate-basis')).toHaveText(`터미널 전체 예상 ${fmt(T1_EXPECTED)}명 기준 · 이 터미널 탑승구 항공편 비율로 나눈 추정`);
-  await expect(card.getByTestId('split-note')).toHaveText(splitCopy.estimateNote.ko);
+  await expect(card.getByTestId('split-estimate')).toHaveText(
+    `동편 약 ${fmt(hundreds((T1_EXPECTED * 2) / 6))}명 · 서편 약 ${fmt(hundreds(T1_EXPECTED / 6))}명 · 중앙 약 ${fmt(hundreds(T1_EXPECTED / 6))}명 · 위치 미확인 약 ${fmt(hundreds(T1_EXPECTED / 6))}명 · 탑승동 약 ${fmt(hundreds(T1_EXPECTED / 6))}명`,
+  );
+  await expect(card.getByTestId('split-estimate-basis')).toHaveText(`터미널 전체 예상 ${fmt(T1_EXPECTED)}명 기준 · 같은 범위 출발편 6편(T1 본관 5편 + 탑승동 1편)으로 나눈 추정`);
+  await expect(card.getByTestId('split-note')).toHaveText(`${splitCopy.estimateNote.ko} ${splitCopy.concourseNote.ko}`);
   // Hours: each with east/west counts and shares.
   await expect(sides.getByTestId('gates-all').locator('li').first()).toHaveText('15–16시 · 합계 3편 · 동 2편 / 서 1편 (동 67% · 서 33%)');
   // The hall split stays withheld; the estimate is not the hall figure.
@@ -215,6 +218,8 @@ test('screen, copied text and image carry the same lines, and the whole-day line
   expect(text).toContain(shares);
   expect(text).toContain(estimate);
   expect(text).toContain(splitCopy.estimateNote.ko);
+  expect(text).toContain(splitCopy.concourseNote.ko);
+  expect(text).toContain('편당 승객 수가 같다는 가정의 참고값');
   expect(text.indexOf('■ 하루 전체 참고 (영업시간과 무관)')).toBeGreaterThan(text.indexOf('■ 영업시간 안에서 확인된 사실'));
   expect(text.indexOf('■ 하루 전체 참고 (영업시간과 무관)')).toBeLessThan(text.indexOf('■ 준비할 일'));
   expect(text).toMatch(/출처: .*인천공항 공식 출국 예상.*인천공항 운항 정보/);

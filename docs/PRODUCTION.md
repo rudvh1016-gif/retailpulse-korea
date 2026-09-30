@@ -96,9 +96,17 @@ in ~65 ms. Rows read are unchanged by batching; only the round trips are.
 - Every page preloads `/api/live/summary` from its HTML head
   (`app/[locale]/page.tsx`, `app/[locale]/[slug]/page.tsx`) so the fetch
   overlaps the JavaScript download instead of waiting for hydration.
+- The summary's edge-cache key is `date` and `month` only
+  (`worker/summary-cache-key.ts`, applied by the gateway in `worker/index.ts`):
+  a query string the route ignores (`?x=1`, `?_=<time>`) shares the plain
+  entry instead of running the whole D1 batch again. `date` and `month`
+  each still make their own entry, so this is not a rate limit; a
+  Cloudflare rate-limiting rule for `/api/*` remains an owner decision.
+  Probes that need a cold entry (site smoke, discoverability, `perf.spec.ts`)
+  use a real `month` far from today, 2000-01 to 2099-12 (`lib/summary-cold-month.ts`).
 - Verify after a deploy with `site-smoke.yml` (the time between the
   `api /api/health` line and the `api /api/live/summary` line is the uncached
-  summary) and `production-visual-check.yml` (`AIRPORT_MOBILE_TIMING` in the
+  summary, read with a cold `month` key) and `production-visual-check.yml` (`AIRPORT_MOBILE_TIMING` in the
   log: uncached summary duration and time-to-data on a phone profile).
 
 ## Free-tier protection

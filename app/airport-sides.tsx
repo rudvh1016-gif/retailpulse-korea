@@ -9,7 +9,7 @@ import { prepWindow } from '../lib/business-prep';
 import { prepTime } from '../lib/business-prep-copy';
 import { OFFICIAL_LINKS, count, hourSpan, sidesCopy as copy } from '../lib/airport-sides-copy';
 import { splitFromSummary } from '../lib/airport-flight-split';
-import { estimateBasisLine, estimateBody, flightsBody, hourBody, sharesBody, splitCopy } from '../lib/airport-flight-split-copy';
+import { estimateBasisLine, estimateBody, estimateNote, flightsBody, hourBody, sharesBody, splitCopy } from '../lib/airport-flight-split-copy';
 
 type Side = AirportSide | null;
 const hourOf = (iso: string) => Number(iso.slice(11, 13));
@@ -92,7 +92,7 @@ function FlightSplitCard({ lang, summary, sides, terminal, nowIso }: { lang: Lan
       ? <>
         <p data-testid="split-estimate"><strong>{estimateBody({ terminal, ...s.expected }, lang)}</strong></p>
         <p className="prep-note" data-testid="split-estimate-basis">{estimateBasisLine({ terminal, ...s.expected }, lang)}</p>
-        <p className="prep-note" data-testid="split-note">{splitCopy.estimateNote[lang]}</p>
+        <p className="prep-note" data-testid="split-note">{estimateNote({ terminal, ...s.expected }, lang)}</p>
       </>
       : <p className="prep-note" data-testid="split-no-estimate">{(s.eastPct === null ? splitCopy.noConfirmedEstimate : splitCopy.noEstimate)[lang]}</p>}
   </div>;
