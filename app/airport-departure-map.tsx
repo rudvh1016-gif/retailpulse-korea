@@ -6,47 +6,16 @@
  * flight board, once per date, and computes everything on the device: moving
  * the time or the destination filter never asks the server again.
  */
-import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
+import { useMemo, useState, type KeyboardEvent } from 'react';
+import { useFlights } from './flights-client';
 import type { Lang } from './retailpulse-data';
 import { shiftKstDay } from '../lib/kst';
 import {
   buildingsOf, customWindow, departureMap, minuteOfDay, presetWindow,
-  type DepartureMap, type MapBuilding, type MapFlight, type MapFlightRow, type MapTerminal, type MapWindow, type WindowPreset,
+  type DepartureMap, type MapBuilding, type MapFlight, type MapTerminal, type MapWindow, type WindowPreset,
 } from '../lib/airport-departure-map';
 import { flightLine, groupShare, statusText, leadLine, mapCopy as copy, mapShareText, windowCountsLine, windowText } from '../lib/airport-departure-map-copy';
 import type { DestinationGroup } from '../lib/airport-destinations';
-
-interface FlightsPayload { mode: string; basis?: string; flights: MapFlightRow[]; retrievedAt?: string | null }
-type Loaded = { status: 'OK'; payload: FlightsPayload } | { status: 'FAILED' };
-
-// One request per date for the whole page visit; the flight board uses the same route.
-const pending = new Map<string, Promise<Loaded>>();
-function loadFlights(date: string): Promise<Loaded> {
-  let request = pending.get(date);
-  if (!request) {
-    request = fetch(`/api/live/flights?date=${encodeURIComponent(date)}`, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(15_000) })
-      .then(async (response) => {
-        const payload = response.ok ? await response.json() as FlightsPayload : null;
-        return payload?.mode === 'live-flights' ? { status: 'OK' as const, payload } : { status: 'FAILED' as const };
-      })
-      .catch(() => ({ status: 'FAILED' as const }));
-    pending.set(date, request);
-    // A failure may be retried on the next open.
-    void request.then((result) => { if (result.status === 'FAILED') pending.delete(date); });
-  }
-  return request;
-}
-
-function useFlights(date: string | null): Loaded | undefined {
-  const [state, setState] = useState<{ date: string; value: Loaded } | undefined>(undefined);
-  useEffect(() => {
-    if (!date) return;
-    let live = true;
-    void loadFlights(date).then((value) => { if (live) setState({ date, value }); });
-    return () => { live = false; };
-  }, [date]);
-  return state && state.date === date ? state.value : undefined;
-}
 
 /** "14:05" in KST, with the date in front when it is not the service date. */
 function kstClock(iso: string, date: string): string {

@@ -1,6 +1,6 @@
 'use client';
 
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { Lang } from './retailpulse-data';
 import type { LiveSummary } from './live-signals';
 import type { AirportSidesBlock as SidesBlock } from '../lib/airport-sides-summary';
@@ -16,6 +16,30 @@ type Side = AirportSide | null;
 
 // The map's code and gate positions load only when a reader opens it.
 const DepartureMap = lazy(() => import('./airport-departure-map'));
+const DayRadar = lazy(() => import('./airport-day-radar'));
+
+type HolidayRef = ReadonlyArray<{ country: string; name: string }>;
+
+/** Loads the day comparison once the block is on screen, so a visit that never reaches it reads nothing. */
+function DayRadarSection({ lang, summary, terminal, nowIso, holidays, isHoliday }: {
+  lang: Lang; summary: LiveSummary; terminal: PrepTerminal; nowIso: string; holidays: HolidayRef; isHoliday: (day: string) => boolean | null;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || visible) return;
+    const observer = new IntersectionObserver((entries) => { if (entries.some((entry) => entry.isIntersecting)) setVisible(true); }, { rootMargin: '200px' });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [visible]);
+  if (summary.dayRelation === 'FUTURE') return null;
+  return <div className="prep-block" ref={ref} data-testid="day-radar-section">
+    {visible ? <Suspense fallback={<p className="prep-note">{copy.radarLoading[lang]}</p>}>
+      <DayRadar lang={lang} date={summary.serviceDateKst} dayRelation={summary.dayRelation} terminal={terminal} nowIso={nowIso} holidays={holidays} isHoliday={isHoliday}/>
+    </Suspense> : <p className="prep-note">{copy.radarLoading[lang]}</p>}
+  </div>;
+}
 
 function DepartureMapSection({ lang, summary, terminal, nowIso, holidays }: { lang: Lang; summary: LiveSummary; terminal: PrepTerminal; nowIso: string; holidays: ReadonlyArray<{ country: string; name: string }> }) {
   const [open, setOpen] = useState(false);
@@ -112,9 +136,10 @@ function FlightSplitCard({ lang, summary, sides, terminal, nowIso }: { lang: Lan
   </div>;
 }
 
-export function AirportSidesBlock({ lang, summary, terminal, side, hours, nowIso, holidays = [] }: {
+export function AirportSidesBlock({ lang, summary, terminal, side, hours, nowIso, holidays = [], isHoliday = () => null }: {
   lang: Lang; summary: LiveSummary; terminal: PrepTerminal; side: Side; hours: BusinessHours | null; nowIso: string;
   holidays?: ReadonlyArray<{ country: string; name: string }>;
+  isHoliday?: (day: string) => boolean | null;
 }) {
   const sides = (summary.airport as LiveSummary['airport'] & { sides?: SidesBlock }).sides;
   if (!sides) return null;
@@ -138,6 +163,7 @@ export function AirportSidesBlock({ lang, summary, terminal, side, hours, nowIso
   return <div className="prep-block prep-sides" data-testid="airport-sides" data-side={side ?? 'ALL'}>
     <FlightSplitCard lang={lang} summary={summary} sides={sides} terminal={terminal} nowIso={nowIso}/>
     <DepartureMapSection lang={lang} summary={summary} terminal={terminal} nowIso={nowIso} holidays={holidays}/>
+    <DayRadarSection lang={lang} summary={summary} terminal={terminal} nowIso={nowIso} holidays={holidays} isHoliday={isHoliday}/>
     <p className="prep-note" data-testid="sides-notice">{copy.notice[lang]}</p>
     <h3>{copy.hallTitle[lang]}</h3>
     {sides.halls
