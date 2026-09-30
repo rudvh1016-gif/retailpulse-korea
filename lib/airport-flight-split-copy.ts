@@ -49,7 +49,7 @@ export const splitCopy = {
     NONE: row("탑승구 기준 출발편 자료가 없어 동·서편 비교를 표시하지 않습니다.", "No gate-based flight data, so the east/west comparison is not shown.", "没有按登机口的航班资料，因此不显示东西侧比较。", "搭乗口基準の便データがないため、東西の比較は表示しません。"),
     STALE: row("항공편 자료가 오래되어 동·서편 비교를 표시하지 않습니다.", "The flight data is too old, so the east/west comparison is not shown.", "航班资料过旧，因此不显示东西侧比较。", "便データが古いため、東西の比較は表示しません。"),
     DATE_MISMATCH: row("항공편 자료의 날짜가 선택한 날과 달라 동·서편 비교를 표시하지 않습니다.", "The flight data is for another date, so the comparison is not shown.", "航班资料日期与所选日期不同，因此不显示比较。", "便データの日付が選択日と異なるため、比較は表示しません。"),
-    NO_TERMINAL_FLIGHTS: row("이 터미널의 출발편 기록이 없어 동·서편 비교를 표시하지 않습니다.", "There are no departure records for this terminal, so the comparison is not shown.", "该航站楼没有出发航班记录，因此不显示比较。", "このターミナルの出発便の記録がないため、比較は表示しません。"),
+    NO_TERMINAL_FLIGHTS: row("이 터미널 탑승구로 확인된 출발편 자료가 없어 동·서편 비교를 표시하지 않습니다.", "No collected departures are placed at this terminal's gates, so the comparison is not shown.", "没有归入本航站楼登机口的已收集出发航班，因此不显示比较。", "このターミナルの搭乗口に分類された収集済みの出発便がないため、比較は表示しません。"),
   } as Record<Exclude<SplitResult["status"], "OK">, Row>,
   noConfirmedEstimate: row(
     "동·서 위치가 확인된 항공편이 없어 예상 출국객을 동·서편으로 나누지 않습니다.",
@@ -58,10 +58,10 @@ export const splitCopy = {
     "東西の位置が確認できた便がないため、出国予想客は東西に分けません。",
   ),
   noEstimate: row(
-    "터미널 전체 예상 출국객 자료가 없어 항공편 비율 추정은 표시하지 않습니다.",
-    "There is no terminal-wide expected-departures figure, so no estimate by flight ratio is shown.",
-    "没有航站楼整体预计出境旅客资料，因此不显示按航班比例的估算。",
-    "ターミナル全体の出国予想客データがないため、便数の比率による推定は表示しません。",
+    "터미널 전체 예상 출국객이 아직 하루치 모두 모이지 않았거나 오래되어 항공편 비율 추정은 표시하지 않습니다.",
+    "The terminal-wide expected departures are incomplete or out of date, so no estimate by flight ratio is shown.",
+    "航站楼整体预计出境旅客尚不完整或已过期，因此不显示按航班比例的估算。",
+    "ターミナル全体の出国予想客が未完了または古いため、便数の比率による推定は表示しません。",
   ),
 };
 
@@ -70,7 +70,7 @@ export function flightsBody(s: SplitCore, lang: Lang): string {
   const east = `${sideWord.EAST[lang]} ${num(s.east, lang)}${unit[lang]}${s.eastPct !== null ? ` ${s.eastPct}%` : ""}`;
   const west = `${sideWord.WEST[lang]} ${num(s.west, lang)}${unit[lang]}${s.westPct !== null ? ` ${s.westPct}%` : ""}`;
   const center = row("중앙", "Centre", "中央", "中央")[lang] + ` ${num(s.center, lang)}${unit[lang]}`;
-  const unverified = `${row("위치 미확인", "Side not confirmed", "位置未确认", "位置未確認")[lang]} ${num(s.unverified, lang)}${unit[lang]}${s.unverifiedPct !== null ? `(${row("전체의", "of all", "占全部", "全体の")[lang]} ${pctText(s.unverifiedPct)})` : ""}`;
+  const unverified = `${row("위치 미확인", "Side not confirmed", "位置未确认", "位置未確認")[lang]} ${num(s.unverified, lang)}${unit[lang]}${s.unverifiedPct !== null ? `${lang === "en" ? " " : ""}(${row("전체의", "of all", "占全部", "全体の")[lang]} ${pctText(s.unverifiedPct)})` : ""}`;
   return `${east} · ${west} · ${center} · ${unverified}`;
 }
 
@@ -106,7 +106,8 @@ export function estimateBasisLine(e: SplitEstimate, lang: Lang): string {
 /** The estimate as one sentence, with its basis and its short warning. */
 export function estimateSentence(e: SplitEstimate, lang: Lang): string {
   const day = row("하루 전체", "whole day", "全天", "終日")[lang];
-  return `${e.terminal} ${splitCopy.estimateHeading[lang]}(${day}): ${estimateBody(e, lang)} (${estimateBasisLine(e, lang)}). ${splitCopy.estimateNote[lang]}`;
+  const heading = lang === "en" ? splitCopy.estimateHeading.en.replace(/^./, (first) => first.toLowerCase()) : splitCopy.estimateHeading[lang];
+  return `${e.terminal}${lang === "en" ? " — " : " "}${heading}(${day}): ${estimateBody(e, lang)} (${estimateBasisLine(e, lang)}). ${splitCopy.estimateNote[lang]}`;
 }
 
 /** The whole-day flight sentence used as a prep fact. */

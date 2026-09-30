@@ -5,6 +5,7 @@ import type { LiveSummary } from './live-signals';
 import type { PrepPlace } from '../lib/business-prep';
 import { buildWeekAhead } from '../lib/week-ahead';
 import { isPublished } from '../lib/holiday-calendar';
+import { kstDay } from '../lib/demand-presentation';
 import { unpublishedLine, weekCopy, weekDayLabel, weekHeadline, weekItemLine, weekLabel } from '../lib/week-copy';
 import { prepTime } from '../lib/business-prep-copy';
 
@@ -26,7 +27,7 @@ export function WeekAheadBlock({ lang, summary, place }: { lang: Lang; summary: 
           <strong>{event.title}</strong>
           <span>{event.eventEnd && event.eventEnd !== event.eventStart ? `${event.eventStart}~${event.eventEnd}` : event.eventStart}</span>
           {event.place && <span>{event.place}</span>}
-          {event.retrievedAt && <span>{prepTime(event.retrievedAt, event.retrievedAt.slice(0, 10), lang)}</span>}
+          {event.retrievedAt && <span>{prepTime(event.retrievedAt, kstDay(event.retrievedAt), lang)}</span>}
         </li>)}</ul>
         : <p className="prep-note" data-testid="week-no-events">{weekCopy.noEvents[lang]}</p>}
     </div>}

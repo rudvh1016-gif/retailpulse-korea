@@ -149,7 +149,7 @@ export function boardingAreaOf(row: { terminal?: unknown; gate?: unknown }): Boa
  * Why a flight has no confirmed side:
  *   NO_GATE       no gate assigned yet (or none stored) — a map cannot fix it
  *   NOT_IN_TABLE  a real gate of this building whose side is not yet evidenced
- *   CONFLICT      the gate is outside the published range of the stored building
+ *   CONFLICT      a numeric gate that belongs to another building's published range
  *   NO_TERMINAL   the building itself is unknown
  */
 export type UnverifiedReason = "NO_GATE" | "NOT_IN_TABLE" | "CONFLICT" | "NO_TERMINAL";
@@ -160,9 +160,16 @@ export function unverifiedReasonOf(area: BoardingArea, gate: unknown): Unverifie
   if (area === "UNKNOWN") return "NO_TERMINAL";
   if (!key) return "NO_GATE";
   if (GATE_BY_KEY.has(`${area}:${key}`)) return null;
+  // CONFLICT only when a purely numeric gate belongs to another building's
+  // published range (a T2 flight at gate 9). A gate outside every published
+  // range (T2 291 is on the airport's own map) or with a suffix ("23A") is
+  // simply not in the table.
+  if (!/^\d{1,3}$/.test(key)) return "NOT_IN_TABLE";
+  const number = Number(key);
   const [low, high] = RANGES[area];
-  if (!/^\d{1,3}$/.test(key) || Number(key) < low || Number(key) > high) return "CONFLICT";
-  return "NOT_IN_TABLE";
+  if (number >= low && number <= high) return "NOT_IN_TABLE";
+  const elsewhere = (Object.entries(RANGES) as Array<[string, [number, number]]>).some(([other, [from, to]]) => other !== area && number >= from && number <= to);
+  return elsewhere ? "CONFLICT" : "NOT_IN_TABLE";
 }
 
 /** A gate's side only when the table evidences it (official text or official map position); every other gate is UNVERIFIED. */

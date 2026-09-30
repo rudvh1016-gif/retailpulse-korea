@@ -694,13 +694,15 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
         const history: AirlineRankingSummary | null = raw ? JSON.parse(String(raw.payload)) : null;
         const baseline = scope==='all' ? history?.all : history?.byTerminal[scope];
         const current = scope==='all' ? airlineRanking.all : airlineRanking.byTerminal[scope];
-        if(baseline && current && flightRows.length<2000) composition={baselineDate,...compareComposition(current,baseline)};
+        // A day with no collected flight (a future date, or today before the first scan) is
+        // not "zero flights": comparing it to a past day would print a false -100%.
+        if(baseline && current && flightRows.length>0 && flightRows.length<2000) composition={baselineDate,...compareComposition(current,baseline)};
       } catch { /* missing or invalid history is not zero */ }
       return [days, {
         composition,
         passengers: rangeChange(currentPassengers, currentPassengers, pastPassengers, pastPassengers, baselineDate),
         // These are collected physical-flight records, not a verified whole-day operational census.
-        flightRecords: allPastCount > 0 && allPastCount < 2001 && flightRows.length < 2000
+        flightRecords: allPastCount > 0 && allPastCount < 2001 && flightRows.length > 0 && flightRows.length < 2000
           ? rangeChange(currentCount, currentCount, pastCount, pastCount, baselineDate) : null,
       }];
     }))]));
