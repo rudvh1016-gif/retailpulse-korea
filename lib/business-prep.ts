@@ -15,7 +15,7 @@
  *   - stale or missing data is never reported as "no change".
  */
 import type { AirportSidesBlock } from "./airport-sides-summary";
-import { splitFromSummary, type FlightSplit } from "./airport-flight-split";
+import { collectionStamp, splitFromSummary, type FlightSplit } from "./airport-flight-split";
 import type { SplitCore, SplitEstimate } from "./airport-flight-split-copy";
 import type { LiveSummary } from "../app/live-signals";
 import { WEATHER_THRESHOLDS } from "./current-brief";
@@ -114,6 +114,8 @@ export interface PrepGateHours {
   /** Share of the terminal's flights at a gate whose side official text names. */
   verifiedShare: number | null;
   retrievedAt: string | null;
+  /** Source-level collection time (rows are written changed-only); freshness uses it when present. */
+  checkedAt?: string | null;
   basis: "COLLECTED_FLIGHT_RECORDS" | "OFFICIAL_DEPARTURE_SCHEDULE";
 }
 export interface PrepHoliday {
@@ -212,7 +214,7 @@ export type PrepFact =
       /** true: counted only flights at gates with an evidenced side; unverified flights are listed, not included. */
       partial?: boolean; unverifiedInHour?: number; unverifiedInHours?: number }
   | { kind: "FLIGHT_SPLIT"; split: SplitCore; issuedAt: string | null }
-  | { kind: "FLIGHT_SPLIT_ESTIMATE"; estimate: SplitEstimate; issuedAt: string | null }
+  | { kind: "FLIGHT_SPLIT_ESTIMATE"; estimate: SplitEstimate; issuedAt: string | null; forecastIssuedAt: string | null }
   | { kind: "EVENTS"; count: number; title: string; eventStart: string; eventEnd: string | null; issuedAt: string | null }
   | { kind: "HOLIDAY"; country: PrepHoliday["country"]; name: string; officialSource: string };
 
@@ -374,7 +376,8 @@ export function buildBusinessPrep(input: PrepInput): BusinessPrep {
     // (and side). A flight count, never a person count, and on the flight's
     // own departure clock — not moved to a guessed shopping hour.
     const gates = airport?.gates;
-    const gatesStale = gates?.retrievedAt ? now - Date.parse(gates.retrievedAt) > FRESHNESS_MS.A1_FLIGHTS : false;
+    const gatesStamp = gates?.checkedAt ?? gates?.retrievedAt ?? null;
+    const gatesStale = gatesStamp ? now - Date.parse(gatesStamp) > FRESHNESS_MS.A1_FLIGHTS : false;
     if (gates && !gatesStale) {
       const inHours = gates.hours.filter((row) => {
         const at = Date.parse(`${input.serviceDate}T${String(row.hour).padStart(2, "0")}:00:00+09:00`);
@@ -404,12 +407,13 @@ export function buildBusinessPrep(input: PrepInput): BusinessPrep {
     // reference passenger split. Never an action: it says which side has more
     // flights, not what to staff or stock. Stale flight records give nothing.
     const split = airport?.split;
-    const splitStale = split?.retrievedAt ? now - Date.parse(split.retrievedAt) > FRESHNESS_MS.A1_FLIGHTS : false;
+    const splitStamp = split?.checkedAt ?? split?.retrievedAt ?? null;
+    const splitStale = splitStamp ? now - Date.parse(splitStamp) > FRESHNESS_MS.A1_FLIGHTS : false;
     if (split && !splitStale) {
       const core: SplitCore = { terminal: split.terminal, total: split.total, east: split.east, west: split.west, center: split.center, unverified: split.unverified,
         verified: split.verified, eastPct: split.eastPct, westPct: split.westPct, unverifiedPct: split.unverifiedPct, larger: split.larger };
       facts.push({ kind: "FLIGHT_SPLIT", split: core, issuedAt: split.retrievedAt });
-      if (split.expected && core.eastPct !== null) facts.push({ kind: "FLIGHT_SPLIT_ESTIMATE", estimate: { terminal: split.terminal, ...split.expected }, issuedAt: split.retrievedAt });
+      if (split.expected && core.eastPct !== null) facts.push({ kind: "FLIGHT_SPLIT_ESTIMATE", estimate: { terminal: split.terminal, ...split.expected }, issuedAt: split.retrievedAt, forecastIssuedAt: split.expectedIssuedAt });
     }
   }
 
@@ -502,6 +506,7 @@ export function prepInputFromSummary(
     scope: !side ? "TERMINAL" : verifiedShare === 1 ? "SIDE_COMPLETE" : "SIDE_VERIFIED_ONLY",
     verifiedShare,
     retrievedAt: gateDay.retrievedAt,
+    checkedAt: collectionStamp(summary, "INCHEON_FLIGHT_DETAIL", gateDay.retrievedAt),
     basis: sides.gateBasis,
   } : null;
   const flightSplit = splitFromSummary(summary, sides, place.terminal, nowIso);

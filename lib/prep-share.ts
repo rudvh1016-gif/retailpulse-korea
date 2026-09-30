@@ -9,7 +9,7 @@
  */
 import { sidesCopy } from "./airport-sides-copy";
 import type { BusinessHours, BusinessPrep, PrepPlace, PrepSource } from "./business-prep";
-import { actionText, factLine, hoursLabel, placeName, prepTime, sourceName, statusLine, type PrepLang } from "./business-prep-copy";
+import { actionText, factLine, hoursLabel, isWholeDayFact, placeName, prepTime, sourceName, statusLine, type PrepLang } from "./business-prep-copy";
 import { industryProfiles, type IndustryId } from "./industry-guidance";
 
 type Row = Record<PrepLang, string>;
@@ -36,6 +36,7 @@ const labels = {
   industry: row("업종", "Business", "业态", "業種"),
   hours: row("영업시간", "Hours", "营业时间", "営業時間"),
   facts: row("영업시간 안에서 확인된 사실", "Official facts inside the hours", "营业时间内确认的事实", "営業時間内で確認できた事実"),
+  reference: row("하루 전체 참고 (영업시간과 무관)", "Whole-day reference (not limited to the hours)", "全天参考（不限于营业时间）", "終日の参考（営業時間とは別）"),
   actions: row("준비할 일", "What to prepare", "需要准备的事", "準備すること"),
   basis: row("자료 기준", "Data as of", "资料基准", "資料の基準"),
   source: row("출처", "Sources", "来源", "出典"),
@@ -84,7 +85,8 @@ function sourcesUsed(prep: BusinessPrep): PrepSource[] {
   for (const action of prep.actions) used.add(action.source);
   if (prep.facts.some((fact) => fact.kind === "EVENTS")) used.add("TOURAPI_EVENTS");
   if (prep.facts.some((fact) => fact.kind === "HOLIDAY")) used.add("HOLIDAY_CALENDAR");
-  if (prep.facts.some((fact) => fact.kind === "GATE_PEAK")) used.add("A1_FLIGHTS");
+  if (prep.facts.some((fact) => fact.kind === "GATE_PEAK" || fact.kind === "FLIGHT_SPLIT" || fact.kind === "FLIGHT_SPLIT_ESTIMATE")) used.add("A1_FLIGHTS");
+  if (prep.facts.some((fact) => fact.kind === "FLIGHT_SPLIT_ESTIMATE")) used.add("A5_FORECAST");
   return [...used];
 }
 
@@ -95,8 +97,14 @@ export function buildShareDocument(input: ShareInput): ShareDocument {
   lines.push({ kind: "text", text: `${dateLabel(serviceDate, lang)} · ${placeName(input.place, lang)}` });
   lines.push({ kind: "text", text: `${labels.industry[lang]}: ${industryProfiles[input.industry].label[lang]} · ${labels.hours[lang]}: ${hoursLabel(input.hours, lang)}` });
   lines.push({ kind: "heading", text: labels.facts[lang] });
-  if (prep.facts.length) for (const fact of prep.facts) lines.push({ kind: "item", text: factLine(fact, serviceDate, lang) });
+  const inHours = prep.facts.filter((fact) => !isWholeDayFact(fact));
+  const wholeDay = prep.facts.filter(isWholeDayFact);
+  if (inHours.length) for (const fact of inHours) lines.push({ kind: "item", text: factLine(fact, serviceDate, lang) });
   else lines.push({ kind: "item", text: labels.none[lang] });
+  if (wholeDay.length) {
+    lines.push({ kind: "heading", text: labels.reference[lang] });
+    for (const fact of wholeDay) lines.push({ kind: "item", text: factLine(fact, serviceDate, lang) });
+  }
   lines.push({ kind: "heading", text: labels.actions[lang] });
   prep.actions.forEach((action, index) => {
     const text = actionText(action, serviceDate, input.industry, lang);
@@ -106,9 +114,10 @@ export function buildShareDocument(input: ShareInput): ShareDocument {
   const issued = prep.coverage.filter((entry) => entry.issuedAt && (entry.status === "COVERED" || entry.status === "PARTIAL"))
     .map((entry) => `${sourceName(entry.source, lang)} ${prepTime(entry.issuedAt as string, serviceDate, lang)}`);
   // Gate departures are a flight count with their own collection time.
-  for (const fact of prep.facts) if (fact.kind === "GATE_PEAK" && fact.issuedAt) issued.push(`${sourceName("A1_FLIGHTS", lang)} ${prepTime(fact.issuedAt, serviceDate, lang)}`);
+  for (const fact of prep.facts) if ((fact.kind === "GATE_PEAK" || fact.kind === "FLIGHT_SPLIT") && fact.issuedAt) issued.push(`${sourceName("A1_FLIGHTS", lang)} ${prepTime(fact.issuedAt, serviceDate, lang)}`);
+  for (const fact of prep.facts) if (fact.kind === "FLIGHT_SPLIT_ESTIMATE" && fact.forecastIssuedAt) issued.push(`${sourceName("A5_FORECAST", lang)} ${prepTime(fact.forecastIssuedAt, serviceDate, lang)}`);
   if (input.place.kind === "airport") lines.push({ kind: "note", text: sidesCopy.notice[lang] });
-  lines.push({ kind: "note", text: `${labels.basis[lang]}: ${issued.length ? issued.join(" · ") : labels.none[lang]} (KST)` });
+  lines.push({ kind: "note", text: `${labels.basis[lang]}: ${issued.length ? [...new Set(issued)].join(" · ") : labels.none[lang]} (KST)` });
   lines.push({ kind: "note", text: `${labels.source[lang]}: ${sourcesUsed(prep).map((source) => sourceName(source, lang)).join(", ") || labels.none[lang]}` });
   const savedMs = Date.parse(input.savedAt);
   const savedDay = Number.isFinite(savedMs) ? new Date(savedMs + 9 * 3_600_000).toISOString().slice(0, 10) : serviceDate;

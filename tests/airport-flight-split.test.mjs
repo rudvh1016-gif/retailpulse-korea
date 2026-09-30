@@ -34,7 +34,7 @@ test("west larger, and equal", () => {
   const equal = flightSplitOf(day([...many(5, "T2", "274", "09:00"), ...many(5, "T2", "231", "09:00")]), "T2", "COLLECTED_FLIGHT_RECORDS", 1001);
   assert.deepEqual([equal.eastPct, equal.westPct, equal.larger], [50, 50, "EQUAL"]);
   assert.equal(equal.expected.east + equal.expected.west, 1001, "an odd total still adds up exactly");
-  assert.match(sharesBody(equal, "ko"), /동·서 같음/);
+  assert.match(sharesBody(equal, "ko"), /동·서 차이 작음/);
 });
 
 test("centre and unconfirmed flights stay out of the denominator and are named beside the ratio", () => {
@@ -74,9 +74,9 @@ test("rounding: the two estimates always add up to the terminal total", () => {
 test("hourly lines carry counts, shares and the unconfirmed ones", () => {
   const rows = [...many(8, "T2", "274", "08:10"), ...many(4, "T2", "231", "08:40"), ...many(11, "T2", "274", "09:10"), ...many(7, "T2", "231", "09:20"), flight("T2", "208", "09:30"), ...many(6, "T2", "274", "10:00"), ...many(12, "T2", "231", "10:05")];
   const split = flightSplitOf(day(rows), "T2", "COLLECTED_FLIGHT_RECORDS", null);
-  assert.equal(hourBody(split.hours[0], "ko"), "08–09시 · 동 8편 / 서 4편 (동 67% · 서 33%)");
-  assert.equal(hourBody(split.hours[1], "ko"), "09–10시 · 동 11편 / 서 7편 (동 61% · 서 39%) · 미확인 1");
-  assert.equal(hourBody(split.hours[2], "en"), "10:00–11:00 · E 6 / W 12 (E 33% · W 67%)");
+  assert.equal(hourBody(split.hours[0], "ko"), "08–09시 · 합계 12편 · 동 8편 / 서 4편 (동 67% · 서 33%)");
+  assert.equal(hourBody(split.hours[1], "ko"), "09–10시 · 합계 19편 · 동 11편 / 서 7편 (동 61% · 서 39%) · 미확인 1편");
+  assert.equal(hourBody(split.hours[2], "en"), "10:00–11:00 · total 18 flights · E 6 flights / W 12 flights (E 33% · W 67%)");
   assert.equal(split.expected, null, "no terminal-wide figure → no estimate");
 });
 
@@ -159,7 +159,7 @@ test("the prep facts, the copied text and the image carry the same numbers as th
     assert.ok(factLine(estimateFact, DATE, lang).includes(splitCopy.estimateNote[lang]), `${lang}: the short warning travels with the number`);
   }
   assert.match(factLine(flightsFact, DATE, "ko"), /동편 120편 60% · 서편 80편 40% · 중앙 0편 · 위치 미확인 20편\(전체의 9\.1%\)\. 동·서 위치가 확인된 항공편 기준/);
-  assert.match(factLine(estimateFact, DATE, "ko"), /동편 약 14,400명 · 서편 약 9,600명 \(터미널 전체 예상 24,000명 기준 · 확인된 항공편 기준 추정\)\. 실제 동·서편 승객 수가 아닙니다/);
+  assert.match(factLine(estimateFact, DATE, "ko"), /예상 출국객\(하루 전체\): 동편 약 14,400명 · 서편 약 9,600명 \(터미널 전체 예상 24,000명 기준 · 이 터미널 탑승구 항공편 비율로 나눈 추정\)\. 실제 동·서편 승객 수가 아닙니다/);
   assert.equal(prep.actions.some((action) => /SPLIT/.test(action.rule)), false, "it is a comparison, never a staffing or stock action");
 });
 
@@ -173,7 +173,7 @@ test("stale flight records or no expected total leave the facts out or shorter",
   assert.equal(prep.facts.some((fact) => fact.kind === "FLIGHT_SPLIT_ESTIMATE"), false);
   // Built directly, a split whose records are old is dropped by the prep itself too.
   const direct = buildBusinessPrep({ serviceDate: DATE, dayRelation: "TODAY", nowIso: NOW, place: { kind: "airport", terminal: "T2", side: null }, hours: null,
-    airport: { bands: [], coverage: "UNAVAILABLE", retrievedAt: null, split: { ...flightSplitOf(day(T2_EXAMPLE), "T2", "COLLECTED_FLIGHT_RECORDS", 100), retrievedAt: "2026-09-26T23:00:00Z" } } });
+    airport: { bands: [], coverage: "UNAVAILABLE", retrievedAt: null, split: { ...flightSplitOf(day(T2_EXAMPLE), "T2", "COLLECTED_FLIGHT_RECORDS", 100), retrievedAt: "2026-09-26T23:00:00Z", checkedAt: "2026-09-26T23:00:00Z" } } });
   assert.equal(direct.facts.some((fact) => /FLIGHT_SPLIT/.test(fact.kind)), false);
 });
 
@@ -187,4 +187,46 @@ test("the estimate is a separate calculation from the hall split: the halls stay
   }
   const words = ["ko", "en", "zh", "ja"].map((lang) => estimateSentence({ terminal: "T2", total: 100, east: 60, west: 40 }, lang)).join("\n");
   assert.doesNotMatch(words, /실제 동·서편 승객 수입니다|actual passengers are/i);
+});
+
+test("a rounded tie is never 'more on the west', and freshness follows the source stamp, not the rows' own", () => {
+  const near = flightSplitOf(day([...many(199, "T2", "274", "09:00"), ...many(200, "T2", "231", "09:00")]), "T2", "COLLECTED_FLIGHT_RECORDS", 3500);
+  assert.deepEqual([near.eastPct, near.westPct, near.larger], [50, 50, "EQUAL"]);
+  assert.equal(near.expected.east + near.expected.west, 3500);
+  // Rows are written changed-only, so their own stamp can be days old on a healthy quiet day.
+  const quiet = summaryFor({ rows: T2_EXAMPLE.map((row) => ({ ...row, retrievedAt: "2026-09-27T00:57:00Z" })), retrieved: "2026-09-27T09:42:00Z" });
+  assert.equal(splitFromSummary(quiet, sidesOf(quiet), "T2", NOW).status, "STALE", "with only row stamps, 2-day-old rows are stale");
+  const collected = { ...quiet, sources: [{ sourceId: "INCHEON_FLIGHT_DETAIL", retrievedAt: "2026-09-29T00:57:00Z" }, { sourceId: "INCHEON_PASSENGER_FORECAST", retrievedAt: "2026-09-29T09:42:00Z" }] };
+  const fresh = splitFromSummary(collected, sidesOf(collected), "T2", NOW);
+  assert.equal(fresh.status, "OK", "the source was collected this morning, the unchanged rows are still current");
+  assert.deepEqual(fresh.split.expected, { total: 24_000, east: 14_400, west: 9_600 });
+  const oldSource = { ...quiet, sources: [{ sourceId: "INCHEON_FLIGHT_DETAIL", retrievedAt: "2026-09-27T00:57:00Z" }] };
+  assert.equal(splitFromSummary(oldSource, sidesOf(oldSource), "T2", NOW).status, "STALE", "a source that has not collected for 2 days is stale");
+});
+
+test("the prep gate fact follows the same source stamp", () => {
+  const summary = { ...summaryFor({ rows: T2_EXAMPLE.map((row) => ({ ...row, retrievedAt: "2026-09-27T00:57:00Z" })), retrieved: "2026-09-27T09:42:00Z" }),
+    sources: [{ sourceId: "INCHEON_FLIGHT_DETAIL", retrievedAt: "2026-09-29T00:57:00Z" }, { sourceId: "INCHEON_PASSENGER_FORECAST", retrievedAt: "2026-09-29T09:42:00Z" }] };
+  const EARLY = "2026-09-29T08:00:00+09:00";
+  const prep = buildBusinessPrep(prepInputFromSummary(summary, { kind: "airport", terminal: "T2", side: null }, null, EARLY));
+  assert.ok(prep.facts.some((fact) => fact.kind === "GATE_PEAK"), "gate peak kept on a quiet but freshly collected day");
+  assert.ok(prep.facts.some((fact) => fact.kind === "FLIGHT_SPLIT"));
+  assert.ok(prep.facts.some((fact) => fact.kind === "FLIGHT_SPLIT_ESTIMATE"));
+});
+
+test("the share lists the whole-day comparison apart from the store hours, with its sources and times", () => {
+  const summary = summaryFor();
+  const place = { kind: "airport", terminal: "T2", side: null };
+  // Hours that yield no gate peak at all: the comparison is still sourced.
+  const prep = buildBusinessPrep(prepInputFromSummary(summary, place, { open: "02:00", close: "03:00" }, "2026-09-29T01:30:00+09:00"));
+  const doc = buildShareDocument({ prep, serviceDate: DATE, place, industry: "beauty", hours: { open: "02:00", close: "03:00" }, lang: "ko", link: shareLink("https://koretaildata.com", "ko", DATE), savedAt: "2026-09-29T01:00:00.000Z" });
+  const text = shareText(doc);
+  const at = (needle) => text.indexOf(needle);
+  assert.ok(at("■ 영업시간 안에서 확인된 사실") < at("■ 하루 전체 참고 (영업시간과 무관)"));
+  assert.ok(at("■ 하루 전체 참고 (영업시간과 무관)") < at("T2 출발편(하루 전체)"), "the flight line sits under the whole-day heading");
+  assert.ok(at("■ 하루 전체 참고 (영업시간과 무관)") < at("예상 출국객(하루 전체)"));
+  assert.ok(at("■ 하루 전체 참고 (영업시간과 무관)") < at("■ 준비할 일"));
+  assert.match(text, /자료 기준: .*인천공항 공식 출국 예상 .* · 인천공항 운항 정보/);
+  assert.match(text, /출처: .*인천공항 공식 출국 예상.*인천공항 운항 정보/);
+  assert.doesNotMatch(text, /자료 기준: 없음/);
 });

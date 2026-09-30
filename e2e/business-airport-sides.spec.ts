@@ -175,10 +175,10 @@ test('the comparison is the first thing in the airport block: flights, ratio, an
   const east = Math.round((T1_EXPECTED * 2) / 3);
   const fmt = (value: number) => value.toLocaleString('ko-KR');
   await expect(card.getByTestId('split-estimate')).toHaveText(`동편 약 ${fmt(east)}명 · 서편 약 ${fmt(T1_EXPECTED - east)}명`);
-  await expect(card.getByTestId('split-estimate-basis')).toHaveText(`터미널 전체 예상 ${fmt(T1_EXPECTED)}명 기준 · 확인된 항공편 기준 추정`);
+  await expect(card.getByTestId('split-estimate-basis')).toHaveText(`터미널 전체 예상 ${fmt(T1_EXPECTED)}명 기준 · 이 터미널 탑승구 항공편 비율로 나눈 추정`);
   await expect(card.getByTestId('split-note')).toHaveText(splitCopy.estimateNote.ko);
   // Hours: each with east/west counts and shares.
-  await expect(sides.getByTestId('gates-all').locator('li').first()).toHaveText(/^15–16시 · 동 2편 \/ 서 1편 \(동 67% · 서 33%\)/);
+  await expect(sides.getByTestId('gates-all').locator('li').first()).toHaveText('15–16시 · 합계 3편 · 동 2편 / 서 1편 (동 67% · 서 33%)');
   // The hall split stays withheld; the estimate is not the hall figure.
   await expect(sides.getByTestId('halls-withheld')).toBeVisible();
 });
@@ -199,17 +199,25 @@ test('the terminal switch and the side choice change the right things', async ({
   await expect(card.getByTestId('split-flights')).toContainText('동편 1편 100% · 서편 0편 0%');
 });
 
-test('screen, copied text and image carry the same lines', async ({ page }) => {
+test('screen, copied text and image carry the same lines, and the whole-day lines sit apart from the store hours', async ({ page }) => {
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   const prep = await open(page, { side: null });
-  const flights = await prep.getByTestId('prep-facts').locator('li', { hasText: '출발편(하루 전체)' }).textContent();
-  const estimate = await prep.getByTestId('prep-facts').locator('li', { hasText: '항공편 비율로 본 예상 출국객' }).textContent();
-  expect(flights).toContain('동편 2편 67% · 서편 1편 33% · 중앙 1편 · 위치 미확인 1편(전체의 20%)');
-  expect(estimate).toContain(splitCopy.estimateNote.ko);
+  const card = prep.getByTestId('flight-split');
+  const flights = (await card.getByTestId('split-flights').textContent()) as string;
+  const shares = (await card.getByTestId('split-shares').textContent()) as string;
+  const estimate = (await card.getByTestId('split-estimate').textContent()) as string;
+  // The whole-day lines are the card; the "inside your hours" list holds only in-hours facts.
+  await expect(prep.getByTestId('prep-facts')).not.toContainText('출발편(하루 전체)');
+  await expect(prep.getByTestId('prep-facts')).not.toContainText('항공편 비율로 본 예상 출국객');
   await prep.getByTestId('prep-share').getByRole('button', { name: '문구 복사' }).click();
   const text = await page.evaluate(() => navigator.clipboard.readText());
-  expect(text).toContain(flights as string);
-  expect(text).toContain(estimate as string);
+  expect(text).toContain(flights);
+  expect(text).toContain(shares);
+  expect(text).toContain(estimate);
+  expect(text).toContain(splitCopy.estimateNote.ko);
+  expect(text.indexOf('■ 하루 전체 참고 (영업시간과 무관)')).toBeGreaterThan(text.indexOf('■ 영업시간 안에서 확인된 사실'));
+  expect(text.indexOf('■ 하루 전체 참고 (영업시간과 무관)')).toBeLessThan(text.indexOf('■ 준비할 일'));
+  expect(text).toMatch(/출처: .*인천공항 공식 출국 예상.*인천공항 운항 정보/);
   const download = page.waitForEvent('download');
   await prep.getByTestId('prep-share').getByRole('button', { name: '이미지 저장' }).click();
   expect((await download).suggestedFilename()).toMatch(/\.png$/);
@@ -237,6 +245,10 @@ test('old flight records show no comparison', async ({ page }) => {
   await expect(card).toHaveAttribute('data-state', 'STALE');
   await expect(card).toContainText(splitCopy.unavailable.STALE.ko);
   await expect(prep.getByTestId('prep-facts')).not.toContainText('출발편(하루 전체)');
+  // The gate block below does not repeat the old counts either; it only says when they were collected.
+  await expect(prep.getByTestId('airport-sides').getByTestId('gates-stale')).toBeVisible();
+  await expect(prep.getByTestId('airport-sides').getByTestId('gates-sides')).toHaveCount(0);
+  await expect(prep.getByTestId('airport-sides').getByTestId('gates-all')).toHaveCount(0);
 });
 
 for (const [lang, width] of [['ko', 360], ['en', 360], ['zh', 360], ['ja', 360], ['ko', 1280]] as const) {
@@ -251,3 +263,25 @@ for (const [lang, width] of [['ko', 360], ['en', 360], ['zh', 360], ['ja', 360],
     expect(box && box.x >= 0 && box.x + box.width <= width + 1).toBeTruthy();
   });
 }
+
+test('when no flight has a confirmed side the card says so, not that the terminal figure is missing', async ({ page }) => {
+  const unconfirmed = [flight('U1', 'T1', '13', '15:05'), flight('U2', 'T1', '13', '15:30'), flight('U3', 'T1', '', '16:10')];
+  const prep = await open(page, {
+    side: null,
+    mutate: (summary) => ({ ...summary, airport: { ...summary.airport, sides: airportSides(DATE, 'TODAY', HALL_ROWS, unconfirmed, [], false, false) } }),
+  });
+  const card = prep.getByTestId('flight-split');
+  await expect(card.getByTestId('split-flights')).toContainText('동편 0편');
+  await expect(card.getByTestId('split-shares')).toContainText('비율을 계산하지 않았습니다');
+  await expect(card.getByTestId('split-no-estimate')).toHaveText(splitCopy.noConfirmedEstimate.ko);
+  await expect(card.getByTestId('split-estimate')).toHaveCount(0);
+});
+
+test('the basis panel names both the official text and the official map as evidence', async ({ page }) => {
+  const prep = await open(page, { side: null });
+  const basis = prep.getByTestId('sides-basis');
+  await basis.locator('summary').click();
+  await expect(basis).toContainText('공식 지도');
+  await expect(basis).toContainText('예상 출국객 참고 추정');
+  await expect(basis.getByRole('link', { name: '공항 공식 지도' })).toHaveAttribute('href', /airport\.kr\/geomap/);
+});

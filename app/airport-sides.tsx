@@ -94,7 +94,7 @@ function FlightSplitCard({ lang, summary, sides, terminal, nowIso }: { lang: Lan
         <p className="prep-note" data-testid="split-estimate-basis">{estimateBasisLine({ terminal, ...s.expected }, lang)}</p>
         <p className="prep-note" data-testid="split-note">{splitCopy.estimateNote[lang]}</p>
       </>
-      : <p className="prep-note" data-testid="split-no-estimate">{splitCopy.noEstimate[lang]}</p>}
+      : <p className="prep-note" data-testid="split-no-estimate">{(s.eastPct === null ? splitCopy.noConfirmedEstimate : splitCopy.noEstimate)[lang]}</p>}
   </div>;
 }
 
@@ -115,6 +115,7 @@ export function AirportSidesBlock({ lang, summary, terminal, side, hours, nowIso
   })();
   const upcomingHours = today ? hourRows.filter((row) => row.hour >= nowHour) : hourRows;
   const splitHours = new Map(flightSplitHours);
+  const splitStatus = splitFromSummary(summary, sides, terminal, nowIso).status;
   const hourLine = (row: (typeof hourRows)[number]) => {
     const hour = splitHours.get(row.hour);
     return hour ? hourBody(hour, lang) : `${hourSpan(row.hour, lang)} · ${copy.total[lang]} ${row.byArea[terminal].total}${copy.flights[lang]}`;
@@ -127,7 +128,11 @@ export function AirportSidesBlock({ lang, summary, terminal, side, hours, nowIso
       ? <HallDay lang={lang} day={sides.halls[terminal]} other={sides.halls[terminal === 'T1' ? 'T2' : 'T1']} side={side} serviceDate={serviceDate} hours={hours} nowIso={nowIso} today={today}/>
       : <p className="prep-note" data-testid="halls-withheld">{copy.withheld[lang]} <a href="https://www.airport.kr/ap_ko/883/subview.do" target="_blank" rel="noopener noreferrer">{copy.officialPage[lang]}</a></p>}
     <h3>{copy.gateTitle[lang]}</h3>
-    {gates ? <>
+    {gates && splitStatus === 'STALE' ? <>
+      {/* Old flight records are not shown as counts anywhere in the block; only when they were collected. */}
+      <p className="prep-note" data-testid="gates-stale">{splitCopy.unavailable.STALE[lang]}</p>
+      {gates.retrievedAt && <p className="prep-note" data-testid="gates-basis">{sides.gateBasis === 'OFFICIAL_DEPARTURE_SCHEDULE' ? copy.schedule[lang] : copy.collected[lang]} {prepTime(gates.retrievedAt, serviceDate, lang)}</p>}
+    </> : gates ? <>
       <p data-testid="gates-areas">{(['T1', 'T2', 'CONCOURSE', 'UNKNOWN'] as const).map((area) => `${copy.area[area][lang]} ${gates.byArea[area].total}${copy.flights[lang]}`).join(' · ')}</p>
       <p data-testid="gates-sides"><strong>{copy.area[terminal][lang]}</strong> {countsLine(gates.byArea[terminal], lang)}</p>
       {(() => {
@@ -153,6 +158,7 @@ export function AirportSidesBlock({ lang, summary, terminal, side, hours, nowIso
     <details className="prep-evidence" data-testid="sides-basis"><summary>{copy.basisTitle[lang]}</summary>
       <p>{copy.basisHalls[lang]}</p>
       <p>{copy.basisGates[lang]}</p>
+      <p>{copy.basisEstimate[lang]}</p>
       <p>{copy.basisLinks[lang]}: {OFFICIAL_LINKS.map((link, index) => <span key={link.href}>{index ? ' · ' : ''}<a href={link.href} target="_blank" rel="noopener noreferrer">{link.label[lang]}</a></span>)}</p>
     </details>
   </div>;

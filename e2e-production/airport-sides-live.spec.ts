@@ -41,7 +41,12 @@ for (const width of [1280, 360]) {
     const sides = prep.getByTestId("airport-sides");
     const states: Record<string, string> = {};
     log(`${width} notice`, await sides.getByTestId("sides-notice").textContent());
-    log(`${width} halls`, (await sides.getByTestId("halls-withheld").count()) ? "WITHHELD" : await sides.getByTestId("halls-sides").textContent());
+    log(`${width} halls`, (await sides.getByTestId("halls-withheld").count()) ? "WITHHELD" : (await sides.getByTestId("halls-sides").count()) ? await sides.getByTestId("halls-sides").textContent() : "NO_HALL_NOTICE_YET");
+    // What the API itself says about the day: the card must agree with it, so a
+    // regression to "no data" cannot pass as the designed empty state.
+    const apiSummary = await (await page.request.get("/api/live/summary")).json();
+    const apiGates = apiSummary?.airport?.sides?.gates ?? null;
+    log(`${width} api`, { date: apiSummary?.serviceDateKst, relation: apiSummary?.dayRelation, flights: { T1: apiGates?.byArea?.T1?.total ?? null, T2: apiGates?.byArea?.T2?.total ?? null } });
 
     for (const terminal of ["T1", "T2"] as const) {
       for (const side of ["터미널 전체", "동편", "서편"] as const) {
@@ -55,6 +60,9 @@ for (const width of [1280, 360]) {
         await expect(card).toBeVisible();
         const state = await card.getAttribute("data-state");
         states[terminal] = String(state);
+        const apiTotal = Number(apiGates?.byArea?.[terminal]?.total ?? 0);
+        if (apiTotal > 0) expect(["OK", "STALE"], `API has ${apiTotal} ${terminal} flights, so the card cannot say there are none`).toContain(state);
+        else expect(state, `API has no ${terminal} flights, so the card cannot show a comparison`).not.toBe("OK");
         log(`${width} ${terminal} ${side} split state`, `${state} | ${(await card.innerText()).replace(/\s+/g, " ")}`);
         if (state === "OK") {
           await expect(card.getByTestId("split-flights")).toContainText("동편");
@@ -84,7 +92,8 @@ for (const width of [1280, 360]) {
 
     const share = prep.getByTestId("prep-share");
     await share.getByRole("button", { name: "문구 복사" }).click();
-    const text = await page.evaluate(() => navigator.clipboard.readText()).catch(() => "");
+    const text = await page.evaluate(() => navigator.clipboard.readText());
+    expect(text.length, "the copied text must actually reach the clipboard").toBeGreaterThan(50);
     log(`${width} share`, text);
     expect(text).toContain("인천공항 T2 서편");
     // The copied text carries the comparison exactly when the card shows it.
@@ -94,6 +103,8 @@ for (const width of [1280, 360]) {
     await share.getByRole("button", { name: "이미지 저장" }).click();
     const file = await download;
     log(`${width} png`, file ? file.suggestedFilename() : "NO_DOWNLOAD");
+    expect(file, "the image button must download a file").not.toBeNull();
+    expect(file?.suggestedFilename()).toMatch(/\.png$/);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBeTruthy();
     log(`${width} page errors`, errors);
     expect(errors).toEqual([]);
