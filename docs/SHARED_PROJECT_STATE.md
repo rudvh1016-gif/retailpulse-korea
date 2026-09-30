@@ -339,3 +339,25 @@ If evidence is missing, say BLOCKED / PENDING / NOT VERIFIED.
   `docs/DATA_SOURCES.md`, "Airline ranking and airline country reference").
 - Visual: the commercial payment range is now `₩min ~ ₩max` (the bare en
   dash read as a strike-through on phones) and `--surface` is pure white.
+
+## Airport departure map, day radar, official notices (2026-09-30 KST)
+
+- **#237 (merged 28ead6a):** departure map on the official gate positions
+  (`config/airport-gate-positions.v1.json`), time window (whole day / next
+  1·3·6 h / custom), east/west counts through the same `summarizeGateSides`
+  as the comparison card, unplaced flights listed apart, gate tap lists its
+  flights; destination groups from `config/airport-destinations.v1.json`
+  (airport name↔code, IATA city, KORETAIL country review; groups never overlap).
+- **#239:** "오늘 달라진 것" (≤3, fixed rule scores, same-weekday / since last
+  check / CN·JP holidays / within-day peak) and "비슷했던 날" (≤3, numbers not a
+  similarity %). History is a `profile` inside the existing
+  `airport_daily_composition` payload, recomputed by the existing collectors;
+  `/api/live/airport-days` reads ≤63 PK rows. No new schedule or provider.
+- **#238:** official notices from two airport.kr sources, manual run only,
+  `config/official-notices.review.json` **HELD** (site copyright policy) and not
+  shown. Owner decides publication.
+- **Forecast experiment:** not started — no outcome data, ~31 days of flight
+  history, and new tables/schedules were out of scope
+  (`docs/OFFICIAL_NOTICES_2026-09-30.md` §2).
+- Unchanged: `NEXT_PUBLIC_AIRPORT_HALL_SIDES` OFF; the airport-notice
+  consultation is not done; flights are never described as visitors.
