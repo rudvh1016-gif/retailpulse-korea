@@ -388,7 +388,9 @@ async function loadSummary(date: string | null, month: string | undefined, key: 
     const query = new URLSearchParams();
     if (date) query.set("date", date);
     if (month) query.set("month", month);
-    const url = `/api/live/summary${query.size ? `?${query}` : ""}`;
+    // toString(), not .size: URLSearchParams.size only exists in Chrome 113+, Firefox 112+ and Safari 17+.
+    const queryText = query.toString();
+    const url = `/api/live/summary${queryText ? `?${queryText}` : ""}`;
     pending = fetch(url, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(15_000) })
       .then(async (response) => {
         if (!response.ok) return null;

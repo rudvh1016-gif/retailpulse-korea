@@ -2,7 +2,7 @@ import { getDb } from "../../../../db";
 import zoneMapFile from "../../../../config/airport-zone-map.v1.json";
 import { buildZoneMapIndex, resolveZoneMapping, type AirportZoneMapFile } from "../../../../lib/airport-zone-map";
 import { buildFacilityOperationsBrief } from "../../../../lib/facility-operations";
-import { kstDayOf } from "../../../../lib/kst";
+import { kstDayOf, kstNowIsoOf } from "../../../../lib/kst";
 
 export const dynamic = "force-dynamic";
 
@@ -83,7 +83,11 @@ export async function GET(request: Request) {
     });
     const terminal = mapping.terminal;
     const serviceDate = kstDayOf(generatedAt);
-    const windowEnd = new Date(Date.parse(generatedAt) + LOOK_AHEAD_MINUTES * 60_000).toISOString();
+    // Stored departure times carry a +09:00 offset, so the window bounds are
+    // built in the same offset space (a UTC "Z" bound compared as text would
+    // select flights that left up to nine hours ago).
+    const windowStart = kstNowIsoOf(generatedAt);
+    const windowEnd = kstNowIsoOf(new Date(Date.parse(generatedAt) + LOOK_AHEAD_MINUTES * 60_000).toISOString());
 
     // A facility with no recognised terminal gets no terminal numbers at all:
     // there is no terminal to attribute them to, and attributing them anyway
@@ -93,7 +97,7 @@ export async function GET(request: Request) {
       FROM airport_flights
       WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at <= ? AND terminal = ?
       ORDER BY scheduled_at LIMIT ?`,
-    ).bind(generatedAt, windowEnd, terminal, FLIGHT_ROW_LIMIT).all<Row>()).results ?? []) : [];
+    ).bind(windowStart, windowEnd, terminal, FLIGHT_ROW_LIMIT).all<Row>()).results ?? []) : [];
 
     const forecastBands = terminal ? await safeAll<Row>(async () => (await client.prepare(
       `SELECT target_start_at AS targetStartAt, target_end_at AS targetEndAt,

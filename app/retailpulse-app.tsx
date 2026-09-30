@@ -394,7 +394,8 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     if (serviceDate) params.set('date',serviceDate);
     if (nextView === 'predictions') params.set('area',nextArea);
     if (nextView === 'airport' && nextTerminal !== 'all') params.set('terminal',nextTerminal);
-    const nextPath = routeFor(nextLang, nextView, nextArea) + (params.size ? `?${params}` : '');
+    const paramsText = params.toString(); // not .size: older Safari/Chrome lack URLSearchParams.size
+    const nextPath = routeFor(nextLang, nextView, nextArea) + (paramsText ? `?${paramsText}` : '');
     if (window.location.pathname + window.location.search !== nextPath) window.history.pushState({}, "", nextPath);
   }
 
