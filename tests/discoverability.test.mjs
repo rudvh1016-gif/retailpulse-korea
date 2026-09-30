@@ -296,6 +296,21 @@ test("the check issues only GET requests and never carries a credential", async 
   }
 });
 
+test("the summary probe reads a real cache key: the gateway keeps it, so it is not the shared plain entry", async () => {
+  // The gateway drops every query the summary route does not read, so a probe
+  // like ?discoverability=<time> would land on the shared entry and could show a
+  // copy an older build produced. The probe's month is a real parameter.
+  const { canonicalSummaryUrl } = await import("../worker/summary-cache-key.ts");
+  const seen = [];
+  const site = healthySite({});
+  await runDiscoverabilityChecks({ origin: ORIGIN, fetch: (url, init) => { seen.push(String(url)); return site(url, init); } });
+  const probe = seen.find((url) => url.includes("/api/live/summary"));
+  assert.ok(probe, "the summary API is probed");
+  assert.equal(canonicalSummaryUrl(new URL(probe)), probe, "nothing in the probe URL is dropped by the gateway");
+  assert.match(probe, /\?month=20\d{2}-\d{2}$/);
+  assert.doesNotMatch(probe, /discoverability=/);
+});
+
 // ── The metadata this build declares, checked at the source ────────────────
 // The tests above prove the live checker catches a broken site. These prove
 // this checkout is not the broken site.

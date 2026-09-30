@@ -444,6 +444,14 @@ test("production smoke verifies Store Dynamics coverage, health, and one isolate
   assert.match(smoke, /cacheProbe=\$\{cacheProbeKey\}/);
   assert.match(smoke, /summary Edge Cache moves from cold to HIT/);
   assert.match(smoke, /cfCacheStatus === "HIT"/);
+  // Unknown query strings share the plain cache entry (worker/summary-cache-key.ts),
+  // so the cold key is a real `month`, and the smoke proves the sharing on the edge.
+  assert.match(smoke, /const coldUrl = `\$\{origin\}\/api\/live\/summary\?month=\$\{coldMonth\}`/);
+  assert.match(smoke, /const summary = await fetch\(coldUrl,/, "the uncached first read is the cold key");
+  assert.match(smoke, /const availability = currentBody\?\.dateAvailability/, "the picker's populated days come from the current-month read");
+  assert.match(smoke, /a query the route ignores shares the cached summary/);
+  assert.doesNotMatch(smoke, /api\/live\/summary\?cacheProbe=\$\{cacheProbeKey\}/,
+    "an ignored query is no longer a cold key; it would make the cold-to-HIT check meaningless");
 });
 
 test("read-budget evidence fails closed on missing indexes, scans, errors, or an incomplete run", () => {

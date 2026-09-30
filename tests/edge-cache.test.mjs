@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { shouldRouteToSummaryCache, SUMMARY_CACHE_PATH } from "../worker/summary-cache-routing.ts";
+import { canonicalSummaryRequest } from "../worker/summary-cache-key.ts";
 import {
   isCacheableSummary,
   summaryCacheControl,
@@ -93,10 +94,10 @@ test("no other route is ever handed to the cached entrypoint", () => {
 });
 
 test("the routing decision ignores the query string so dates stay distinct", () => {
-  // The gateway forwards the request unchanged and Cloudflare's default cache
-  // key includes the full query string. Routing therefore keys off the path
-  // only; stripping or normalizing `date` here would collapse two different
-  // service dates onto one cached body.
+  // Cloudflare's default cache key includes the full query string. Routing
+  // therefore keys off the path only; stripping or normalizing `date` here would
+  // collapse two different service dates onto one cached body. (The gateway
+  // reduces the query in worker/summary-cache-key.ts, keeping `date` and `month`.)
   // Comments discuss the query string on purpose; only executable code matters.
   const stripComments = (source) => source
     .replace(/\/\*[\s\S]*?\*\//g, "")
@@ -105,9 +106,20 @@ test("the routing decision ignores the query string so dates stay distinct", () 
   assert.doesNotMatch(routing, /searchParams|split\(["']\?["']\)/,
     "the router must not touch the query string");
 
+  // The request handed to the cached entrypoint is the original one whenever its
+  // query is already `date`/`month` only, and otherwise the same request with the
+  // parameters the route ignores removed. `date` and `month` are never altered.
   const worker = readFileSync("worker/index.ts", "utf8");
-  assert.match(worker, /summaryCache\.fetch\(request\)/,
-    "the original request, query string included, must be forwarded verbatim");
+  assert.match(worker, /summaryCache\.fetch\(canonicalSummaryRequest\(request, url\)\)/,
+    "the cached entrypoint is asked through the canonical-key helper, nothing else");
+  const original = new Request("https://koretaildata.com/api/live/summary?date=2026-09-01&month=2026-09");
+  assert.equal(canonicalSummaryRequest(original, new URL(original.url)), original,
+    "a request that already carries only date and month is forwarded as the very same request");
+  const dayOne = canonicalSummaryRequest(new Request("https://koretaildata.com/api/live/summary?date=2026-09-01&x=1"), new URL("https://koretaildata.com/api/live/summary?date=2026-09-01&x=1"));
+  const dayTwo = canonicalSummaryRequest(new Request("https://koretaildata.com/api/live/summary?date=2026-09-02&x=1"), new URL("https://koretaildata.com/api/live/summary?date=2026-09-02&x=1"));
+  assert.equal(new URL(dayOne.url).searchParams.get("date"), "2026-09-01");
+  assert.equal(new URL(dayTwo.url).searchParams.get("date"), "2026-09-02");
+  assert.notEqual(dayOne.url, dayTwo.url, "two different service dates never share a cache key");
 });
 
 const healthyArea = { realtime: { congestionLevel: 2 }, weather: [{ targetAt: "2026-09-02T10:00:00+09:00" }] };
