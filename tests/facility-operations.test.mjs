@@ -278,3 +278,14 @@ test("the departure window is bound in the +09:00 offset the rows are stored in"
   const wrong = db.prepare("SELECT scheduled_at FROM airport_flights WHERE scheduled_at >= ? AND scheduled_at <= ?").all(generatedAt, new Date(Date.parse(generatedAt) + 120 * 60_000).toISOString());
   assert.ok(wrong.some((row) => row.scheduled_at < "2026-09-30T14:10"), "the old UTC bind returned flights that had already left");
 });
+
+test("a queue reading older than its refresh window is not this store's current queue", () => {
+  const at = (minutesAgo) => new Date(Date.parse(NOW) - minutesAgo * 60_000).toISOString();
+  const reading = (minutesAgo) => [{ terminal: "T1", zone: "1", waitTimeMinutes: 45, waitingCount: 300, observedAt: at(minutesAgo) }];
+  assert.equal(brief({ checkpoints: reading(5) }).checkpoint.waitTimeMinutes, 45, "a 5-minute-old reading is current");
+  const old = brief({ checkpoints: reading(600) });
+  assert.equal(old.checkpoint, null, "a 10-hour-old reading (collector outage) must not drive the reference");
+  assert.ok(old.missingEvidence.includes("CHECKPOINT"));
+  assert.notEqual(old.operatingReference, "INFLOW_WAITING");
+  assert.equal(brief({ checkpoints: [{ terminal: "T1", zone: "1", waitTimeMinutes: 45, waitingCount: 300, observedAt: "not-a-date" }] }).checkpoint, null);
+});

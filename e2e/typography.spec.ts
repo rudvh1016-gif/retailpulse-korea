@@ -185,7 +185,7 @@ for (const locale of ["ko", "en", "zh", "ja"] as const) {
     await page.route("**/api/airport/facility-operations*", async (route) => {
       await route.fulfill({
         contentType: "application/json",
-        body: JSON.stringify({ mode: "airport-facility-operations", facility: PROVIDER_FONT_FACILITY, brief: null }),
+        body: JSON.stringify({ mode: "facility-operations", facility: PROVIDER_FONT_FACILITY, brief: null }),
       });
     });
     await page.goto(`/${locale}/airport`);

@@ -2300,6 +2300,8 @@ const facilityText = {
   brands: { ko: "취급 품목·브랜드", en: "Items and brands", zh: "经营品类·品牌", ja: "取扱品目・ブランド" },
   empty: { ko: "이 조건에 해당하는 공식 시설 정보가 없습니다.", en: "No official facility matches these filters.", zh: "没有符合该条件的官方设施信息。", ja: "この条件に該当する公式施設情報はありません。" },
   loading: { ko: "공식 시설 정보를 불러오는 중입니다.", en: "Loading the official facility directory.", zh: "正在载入官方设施信息。", ja: "公式施設情報を読み込んでいます。" },
+  // A read that failed is not "no matching facility": the routes answer 200 with mode "degraded" on purpose.
+  loadFailed: { ko: "공식 시설 정보를 지금 불러오지 못했습니다. 없는 것이 아니니 잠시 뒤 다시 열어 주세요.", en: "The official facility directory could not be loaded right now. That does not mean nothing matches; please try again shortly.", zh: "暂时无法载入官方设施信息。并不代表没有结果，请稍后再试。", ja: "公式施設情報を今は読み込めません。該当なしという意味ではありません。しばらくしてからもう一度お試しください。" },
   more: { ko: "더 보기", en: "Show more", zh: "查看更多", ja: "もっと見る" },
   count: { ko: (n: number) => `${n}곳 표시`, en: (n: number) => `${n} shown`, zh: (n: number) => `显示 ${n} 处`, ja: (n: number) => `${n}件を表示` },
   unknown: { ko: "확인 불가", en: "Unavailable", zh: "暂无法确认", ja: "確認不可" },
@@ -2518,13 +2520,16 @@ export function FacilityDirectory({ lang, terminal }: { lang: Lang; terminal: "a
   // The answered request is tracked with its own key and compared during
   // render, so changing a filter shows "loading" without clearing state from
   // inside the effect — and a slow earlier answer can never overwrite a newer.
-  const [loaded, setLoaded] = useState<{ key: string; rows: FacilityRow[]; hasMore: boolean } | null>(null);
+  const [loaded, setLoaded] = useState<{ key: string; rows: FacilityRow[]; hasMore: boolean; failed: boolean } | null>(null);
   useEffect(() => {
     let active = true;
     fetch(`/api/airport/facilities?${requestKey}`, { headers: { accept: "application/json" } })
-      .then(async (response) => (response.ok ? await response.json() as { facilities?: FacilityRow[]; hasMore?: boolean } : { facilities: [], hasMore: false }))
-      .catch(() => ({ facilities: [] as FacilityRow[], hasMore: false }))
-      .then((payload) => { if (active) setLoaded({ key: requestKey, rows: payload.facilities ?? [], hasMore: Boolean(payload.hasMore) }); });
+      .then(async (response) => {
+        const json = response.ok ? await response.json() as { mode?: string; facilities?: FacilityRow[]; hasMore?: boolean } : null;
+        return json && json.mode === "airport-facilities" ? { facilities: json.facilities, hasMore: json.hasMore, failed: false } : { facilities: [] as FacilityRow[], hasMore: false, failed: true };
+      })
+      .catch(() => ({ facilities: [] as FacilityRow[], hasMore: false, failed: true }))
+      .then((payload) => { if (active) setLoaded({ key: requestKey, rows: payload.facilities ?? [], hasMore: Boolean(payload.hasMore), failed: payload.failed }); });
     return () => { active = false; };
   }, [requestKey]);
 
@@ -2533,7 +2538,7 @@ export function FacilityDirectory({ lang, terminal }: { lang: Lang; terminal: "a
   return <section className="airport-facilities" aria-labelledby="airport-facilities-title">
     <div className="section-head">
       <div><p className="eyebrow">OFFICIAL FACILITY DIRECTORY</p><h2 id="airport-facilities-title">{facilityText.title[lang]}</h2></div>
-      {state && <span className="official-label">{facilityText.count[lang](rows.length)}</span>}
+      {state && !state.failed && <span className="official-label">{facilityText.count[lang](rows.length)}</span>}
     </div>
     {/*
       * The basis, before the filters. Both lines are always on screen: the
@@ -2593,6 +2598,7 @@ export function FacilityDirectory({ lang, terminal }: { lang: Lang; terminal: "a
     </div>
 
     {state === null ? <p className="airport-empty-line">{facilityText.loading[lang]}</p>
+      : state.failed ? <p className="airport-empty-line" role="status" data-testid="facility-load-failed">{facilityText.loadFailed[lang]}</p>
       : rows.length === 0 ? <p className="airport-empty-line">{facilityText.empty[lang]}</p>
         : <ul className="facility-list">
           {rows.map((row) => <li key={row.facilityId} className="facility-card">
@@ -2738,8 +2744,8 @@ export function MyStoreBriefing({ lang }: { lang: Lang }) {
   const [facilityId, setFacilityId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<FacilityRow[] | null>(null);
-  const [operations, setOperations] = useState<OperationsResponse | null>(null);
+  const [results, setResults] = useState<FacilityRow[] | "failed" | null>(null);
+  const [operations, setOperations] = useState<OperationsResponse | "failed" | null>(null);
 
   // Deferred to a task, matching how the app reads its other stored
   // preferences: a synchronous setState inside an effect cascades a render.
@@ -2774,9 +2780,12 @@ export function MyStoreBriefing({ lang }: { lang: Lang }) {
     const timer = window.setTimeout(() => {
       if (idle) { if (active) setResults(null); return; }
       fetch(`/api/airport/facilities?q=${encodeURIComponent(trimmed)}&limit=20`, { headers: { accept: "application/json" } })
-        .then(async (response) => (response.ok ? await response.json() as { facilities?: FacilityRow[] } : { facilities: [] }))
-        .catch(() => ({ facilities: [] as FacilityRow[] }))
-        .then((payload) => { if (active) setResults(payload.facilities ?? []); });
+        .then(async (response) => {
+          const json = response.ok ? await response.json() as { mode?: string; facilities?: FacilityRow[] } : null;
+          return json && json.mode === "airport-facilities" ? (json.facilities ?? []) : "failed" as const;
+        })
+        .catch(() => "failed" as const)
+        .then((found) => { if (active) setResults(found); });
     }, idle ? 0 : 250);
     return () => { active = false; window.clearTimeout(timer); };
   }, [trimmed, facilityId]);
@@ -2788,9 +2797,13 @@ export function MyStoreBriefing({ lang }: { lang: Lang }) {
       setOperations(null);
       if (!facilityId) return;
       fetch(`/api/airport/facility-operations?facilityId=${encodeURIComponent(facilityId)}`, { headers: { accept: "application/json" } })
-        .then(async (response) => await response.json() as OperationsResponse)
-        .catch(() => null)
-        .then((payload) => { if (active && payload) setOperations(payload); });
+        .then(async (response) => {
+          // 404 with mode "facility-not-found" is a real answer (the store does not exist); anything else that is not the brief is a failed read.
+          const json = await response.json().catch(() => null) as OperationsResponse | null;
+          return json && (json.mode === "facility-operations" || json.mode === "facility-not-found") ? json : "failed" as const;
+        })
+        .catch(() => "failed" as const)
+        .then((payload) => { if (active) setOperations(payload); });
     }, 0);
     return () => { active = false; window.clearTimeout(timer); };
   }, [facilityId]);
@@ -2807,7 +2820,8 @@ export function MyStoreBriefing({ lang }: { lang: Lang }) {
         <span className="sr-only">{myStoreText.search[lang]}</span>
         <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={myStoreText.search[lang]} />
       </label>
-      {results !== null && (results.length === 0
+      {results === "failed" && <p className="airport-empty-line" role="status" data-testid="my-store-search-failed">{facilityText.loadFailed[lang]}</p>}
+      {results !== null && results !== "failed" && (results.length === 0
         ? <p className="airport-empty-line">{myStoreText.empty[lang]}</p>
         : <ul className="my-store-results">
           {results.map((row) => <li key={row.facilityId}>
@@ -2828,8 +2842,9 @@ export function MyStoreBriefing({ lang }: { lang: Lang }) {
 }
 
 /** The snapshot itself: official header first, then only evidence-backed context. */
-function MyStoreSnapshot({ lang, operations }: { lang: Lang; operations: OperationsResponse | null }) {
+function MyStoreSnapshot({ lang, operations }: { lang: Lang; operations: OperationsResponse | "failed" | null }) {
   if (!operations) return <p className="airport-empty-line">{myStoreText.loading[lang]}</p>;
+  if (operations === "failed") return <p className="airport-empty-line" role="status" data-testid="my-store-failed">{facilityText.loadFailed[lang]}</p>;
   const { facility, brief } = operations;
   if (!facility) return <p className="airport-empty-line">{facilityText.empty[lang]}</p>;
   const locale = airportLocale(lang);
