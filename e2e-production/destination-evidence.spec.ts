@@ -49,3 +49,28 @@ test("airport.kr pages that list destinations and notices", async ({ page }) => 
     for (const link of links.slice(0, 120)) console.log(`SITE-LINK ${JSON.stringify(link)}`);
   }
 });
+
+test("airport.kr route map and notice board contents", async ({ page }) => {
+  test.skip(process.env.RPK_GEOMAP_EVIDENCE !== "1", "evidence run only");
+  test.setTimeout(240_000);
+  const json: Array<{ url: string; body: string }> = [];
+  page.on("response", async (response) => {
+    const type = response.headers()["content-type"] ?? "";
+    if (!/json|javascript|text\/plain/.test(type) || /\.js(\?|$)/.test(response.url())) return;
+    const body = await response.text().catch(() => "");
+    if (body && body.length < 400_000) json.push({ url: response.url(), body });
+  });
+  for (const url of ["https://www.airport.kr/ap_ko/6600/subview.do", "https://www.airport.kr/ap_ko/1011/subview.do"]) {
+    json.length = 0;
+    await page.goto(url, { waitUntil: "networkidle", timeout: 90_000 }).catch(() => null);
+    await page.waitForTimeout(6_000);
+    const text = await page.evaluate(() => (document.querySelector("#contents, #content, main, .contents, body") as HTMLElement | null)?.innerText ?? "");
+    console.log(`PAGE ${url} title ${await page.title().catch(() => "?")} textLength ${text.length}`);
+    for (const line of text.split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 700)) console.log(`PAGE-TEXT ${line.slice(0, 200)}`);
+    const links = await page.evaluate(() => Array.from(document.querySelectorAll("a")).map((a) => ({ text: (a.textContent ?? "").replace(/\s+/g, " ").trim(), href: a.href }))
+      .filter((link) => link.text && /artclView|subview|view\.do|\/bbs\//.test(link.href)).slice(0, 80));
+    for (const link of links) console.log(`PAGE-LINK ${JSON.stringify(link)}`);
+    for (const response of json.slice(0, 12)) console.log(`PAGE-XHR ${response.url} ${response.body.slice(0, 3000).replace(/\s+/g, " ")}`);
+    await page.screenshot({ path: `production-visual-results/airportkr-${url.split("/")[4]}.png`, fullPage: true }).catch(() => null);
+  }
+});
