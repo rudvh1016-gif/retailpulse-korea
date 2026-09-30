@@ -1,0 +1,195 @@
+{
+ "version": "official-notices.review.v1",
+ "checkedOn": "2026-09-30",
+ "publication": "HELD",
+ "heldBecause": "The airport site's copyright policy (https://www.airport.kr/ap_ko/1033/subview.do, read 2026-09-30) says materials it publishes are copyrighted, prohibits unauthorised copying and distribution, and asks for prior agreement for use that earns revenue. Until the owner decides (or agrees terms), these records are for review only and are not shown on the site. Only titles, dates, links and our own short fact lines are kept; no body text is republished.",
+ "sources": {
+  "AIRPORT_NOTICE_BOARD": {
+   "title": "인천국제공항 공지사항 (RSS)",
+   "url": "https://www.airport.kr/bbs/ap_ko/175/rssList.do?row=50",
+   "page": "https://www.airport.kr/ap_ko/1011/subview.do"
+  },
+  "AIRPORT_URGENT_BANNER": {
+   "title": "인천국제공항 긴급 알림 배너",
+   "url": "https://www.airport.kr/imageSlide/ap_ko/91/getJsonImageSlideArtclList.do",
+   "page": "https://www.airport.kr/ap_ko/index.do"
+  }
+ },
+ "notices": [
+  {
+   "source": "AIRPORT_NOTICE_BOARD",
+   "sourceId": "139586",
+   "title": "여객 참여형 걷기 기부 캠페인 [인천공항 희망 한 걸음] 및 참여 이벤트 안내",
+   "postedAt": "2026-09-15",
+   "period": {
+    "from": null,
+    "to": null,
+    "resumesOn": null,
+    "basis": "NONE",
+    "quote": null
+   },
+   "topics": [],
+   "terminals": [],
+   "url": "https://www.airport.kr/bbs/ap_ko/175/139586/artclView.do",
+   "contentHash": "ff8ab5701c2d2b42a333c86e68d31be7c75a3b604d084c9e26d31aa2b633ccf9",
+   "checkedAt": "2026-09-30T12:45:00.000Z",
+   "status": "UNKNOWN_PERIOD",
+   "fact": "여객 참여 걷기 기부 캠페인 안내(행사 기간은 제목·요약에 없음)."
+  },
+  {
+   "source": "AIRPORT_NOTICE_BOARD",
+   "sourceId": "139376",
+   "title": "보조배터리 기내반입 기준 안내 (26. 4. 20.~)",
+   "postedAt": "2026-05-18",
+   "period": {
+    "from": "2026-04-20",
+    "to": null,
+    "resumesOn": null,
+    "basis": "TITLE",
+    "quote": "(26. 4. 20.~)"
+   },
+   "topics": [
+    "SECURITY"
+   ],
+   "terminals": [],
+   "url": "https://www.airport.kr/bbs/ap_ko/175/139376/artclView.do",
+   "contentHash": "671c5bdfa306646f17ed640d4e963ba401d40605ea1312f90dd9f0ccba9c1e30",
+   "checkedAt": "2026-09-30T12:45:00.000Z",
+   "status": "ACTIVE",
+   "fact": "보조배터리 기내반입 기준 안내, 2026-04-20부터 적용(제목 표기)."
+  },
+  {
+   "source": "AIRPORT_NOTICE_BOARD",
+   "sourceId": "138734",
+   "title": "인천공항 다자녀 가구 우선출국 서비스 도입(2025.6.10.~)",
+   "postedAt": "2025-05-26",
+   "period": {
+    "from": "2025-06-10",
+    "to": null,
+    "resumesOn": null,
+    "basis": "TITLE",
+    "quote": "(2025.6.10.~)"
+   },
+   "topics": [
+    "DEPARTURE"
+   ],
+   "terminals": [],
+   "url": "https://www.airport.kr/bbs/ap_ko/175/138734/artclView.do",
+   "contentHash": "84cad6e0332aa88920916236200a6b617172d875254fe67bb6489de5423eb871",
+   "checkedAt": "2026-09-30T12:45:00.000Z",
+   "status": "ACTIVE",
+   "fact": "3자녀 이상 가구 우선출국 서비스, 2025-06-10부터."
+  },
+  {
+   "source": "AIRPORT_NOTICE_BOARD",
+   "sourceId": "138657",
+   "title": "보조배터리 보안검색 안내",
+   "postedAt": "2025-04-10",
+   "period": {
+    "from": null,
+    "to": null,
+    "resumesOn": null,
+    "basis": "NONE",
+    "quote": null
+   },
+   "topics": [
+    "SECURITY"
+   ],
+   "terminals": [],
+   "url": "https://www.airport.kr/bbs/ap_ko/175/138657/artclView.do",
+   "contentHash": "477b1ce5229e34b554bac62271466279275771b058b466f324f808d28a35e27b",
+   "checkedAt": "2026-09-30T12:45:00.000Z",
+   "status": "UNKNOWN_PERIOD",
+   "fact": "보조배터리 보안검색 절차 안내(적용 기간 표기 없음)."
+  },
+  {
+   "source": "AIRPORT_NOTICE_BOARD",
+   "sourceId": "138580",
+   "title": "보조배터리 및 전자담배 기내반입 절차 안내",
+   "postedAt": "2025-02-20",
+   "period": {
+    "from": "2025-03-01",
+    "to": null,
+    "resumesOn": null,
+    "basis": "BODY",
+    "quote": "3월 1일부터"
+   },
+   "topics": [
+    "SECURITY"
+   ],
+   "terminals": [],
+   "url": "https://www.airport.kr/bbs/ap_ko/175/138580/artclView.do",
+   "contentHash": "27736c1b2479ecb404e09331c98e326e63cdd8d1ce38485f8dd9ae3ff2cea9a0",
+   "checkedAt": "2026-09-30T12:45:00.000Z",
+   "status": "ACTIVE",
+   "fact": "보조배터리·전자담배 기내반입 절차, 3월 1일부터(게시 2025-02-20 기준 2025-03-01)."
+  },
+  {
+   "source": "AIRPORT_NOTICE_BOARD",
+   "sourceId": "138514",
+   "title": "난기류 사고예방을 위한 좌석벨트 착용 안내",
+   "postedAt": "2025-01-07",
+   "period": {
+    "from": null,
+    "to": null,
+    "resumesOn": null,
+    "basis": "NONE",
+    "quote": null
+   },
+   "topics": [],
+   "terminals": [],
+   "url": "https://www.airport.kr/bbs/ap_ko/175/138514/artclView.do",
+   "contentHash": "24637b97e7732f774c1dec39ad6a5e476d148cb4f0f7db856bf2ce3b4c814421",
+   "checkedAt": "2026-09-30T12:45:00.000Z",
+   "status": "UNKNOWN_PERIOD",
+   "fact": "난기류 대비 좌석벨트 착용 안내(기간 없음)."
+  },
+  {
+   "source": "AIRPORT_URGENT_BANNER",
+   "sourceId": "1415",
+   "title": "자기부상열차 정기검사에 따른 운행중단 안내",
+   "postedAt": null,
+   "period": {
+    "from": "2026-09-28",
+    "to": "2026-10-02",
+    "resumesOn": "2026-10-03",
+    "basis": "BODY",
+    "quote": "9월28일(월) ~ 10월2일"
+   },
+   "topics": [
+    "TRANSPORT"
+   ],
+   "terminals": [],
+   "url": "https://www.airport.kr/ap_ko/index.do",
+   "contentHash": "2a61b227a72e1722c2544d9da08978378bdf882f304a9aa072d530094725c18a",
+   "checkedAt": "2026-09-30T12:45:00.000Z",
+   "status": "ACTIVE",
+   "fact": "공항 자기부상열차 운행 중단 9월 28일~10월 2일, 10월 3일 재개."
+  },
+  {
+   "source": "AIRPORT_URGENT_BANNER",
+   "sourceId": "1416",
+   "title": "[안내] 추석 및 10월 연휴 주차장 혼잡 예고",
+   "postedAt": null,
+   "period": {
+    "from": null,
+    "to": null,
+    "resumesOn": null,
+    "basis": "NONE",
+    "quote": null
+   },
+   "topics": [
+    "TRANSPORT"
+   ],
+   "terminals": [
+    "T1",
+    "T2"
+   ],
+   "url": "https://www.airport.kr/ap_ko/index.do",
+   "contentHash": "e84a9ad1f808dca0697e8ccace823af8d248750a96b352f79b48b339d2fcfb3e",
+   "checkedAt": "2026-09-30T12:45:00.000Z",
+   "status": "UNKNOWN_PERIOD",
+   "fact": "추석·10월 연휴 기간 주차장 혼잡 예고(기간 날짜는 공지에 없음)."
+  }
+ ]
+}
