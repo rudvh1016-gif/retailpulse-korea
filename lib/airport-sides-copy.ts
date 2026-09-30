@@ -83,6 +83,7 @@ export const sidesCopy = {
   ),
   // The departure map's own words live in lib/airport-departure-map-copy.ts, which loads with the map.
   mapTitle: row("공항 출발편 지도", "Airport departure map", "机场出发航班地图", "空港出発便マップ"),
+  radarLoading: row("오늘 달라진 것과 조건이 가까운 과거 날짜를 불러오는 중입니다.", "Loading what is different today and similar days.", "正在读取今天的不同之处和相近的日子。", "今日違うことと近かった日を読み込んでいます。"),
   mapLoading: row("출발편 지도를 불러오는 중입니다.", "Loading the departure map.", "正在读取出发航班地图。", "出発便マップを読み込んでいます。"),
   basisTitle: row("동·서편 기준과 공식 근거", "How east and west are set, with sources", "东西侧的划分依据与官方来源", "東西の区分基準と公式根拠"),
   basisHalls: row(

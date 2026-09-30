@@ -19,7 +19,7 @@ import { AirportSidesBlock } from './airport-sides';
 import { FeelingLogBlock, WeeklyReviewBlock } from './weekly-review';
 import { trackPersonalEvent } from '../lib/personal-analytics';
 import { placeKey } from '../lib/last-check';
-import { holidaysOn } from '../lib/holiday-calendar';
+import { holidaysOn, isPublished } from '../lib/holiday-calendar';
 
 /** Analytics context: only enumerated values, never hours, names or free text. */
 export function prepAnalytics(lang: Lang, place: PrepPlace, serviceDate: string, todayKst: string) {
@@ -98,6 +98,9 @@ function Conditions({ lang, place, preferences, saved, storageFailed, industry, 
   </div>;
 }
 
+/** CN/JP official holiday status of a date, or null outside the published calendar years. */
+const cnJpHoliday = (day: string) => isPublished('CN', day) && isPublished('JP', day) ? holidaysOn(day).length > 0 : null;
+
 export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
   lang: Lang; area: PrepArea; industry: IndustryId; onIndustryChange: (value: IndustryId) => void; date: string | null;
 }) {
@@ -148,7 +151,7 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
           : prep.status === 'PAST' || prep.status === 'ENDED' ? null : <p className="prep-empty">{prepCopy.noFacts[lang]}</p>}
         {prep.coverage.map((entry) => coverageLine(entry, serviceDate, lang)).filter(Boolean).map((line, index) => <p key={index} className="prep-coverage">{line}</p>)}
       </div>
-      {place.kind === 'airport' && <AirportSidesBlock lang={lang} summary={summary} terminal={place.terminal} side={place.side ?? null} hours={preferences.hours} nowIso={nowIso} holidays={officialHolidays}/>}
+      {place.kind === 'airport' && <AirportSidesBlock lang={lang} summary={summary} terminal={place.terminal} side={place.side ?? null} hours={preferences.hours} nowIso={nowIso} holidays={officialHolidays} isHoliday={cnJpHoliday}/>}
       {prep.status !== 'PAST' && <UsualComparisonBlock lang={lang} place={place} today={summary.dayRelation === 'TODAY'}/>}
       <LastCheckBlock lang={lang} snapshot={snapshot} serviceDate={serviceDate} nowIso={nowIso}/>
       <div className="prep-block">
