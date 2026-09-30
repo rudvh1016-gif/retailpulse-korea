@@ -7,7 +7,7 @@ import { usePresentationClock } from './area-demand-card';
 import { saveBusinessPreferences, useBusinessPreferences } from './business-preferences';
 import { buildBusinessPrep, prepInputFromSummary, type BusinessHours, type PrepArea, type PrepPlace } from '../lib/business-prep';
 import { HOUR_CHOICES, type BusinessPreferences } from '../lib/business-preferences';
-import { actionText, coverageLine, evidenceText, factLine, hoursLabel, placeName, prepCopy, sideNames, statusLine } from '../lib/business-prep-copy';
+import { actionText, coverageLine, evidenceText, factLine, hoursLabel, isWholeDayFact, placeName, prepCopy, sideNames, statusLine } from '../lib/business-prep-copy';
 import { industryProfiles, type IndustryId } from '../lib/industry-guidance';
 import { snapshotOf } from '../lib/last-check';
 import { LastCheckBlock, UsualComparisonBlock } from './business-compare';
@@ -142,8 +142,9 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
     {!summary || !prep ? <LiveLoadMessage loading={summary === undefined || !ready} lang={lang}/> : <>
       <div className="prep-block">
         <h3>{prepCopy.factsTitle[lang]}</h3>
-        {prep.facts.length
-          ? <ul className="prep-facts" data-testid="prep-facts">{prep.facts.map((fact, index) => <li key={index}>{factLine(fact, serviceDate, lang)}</li>)}</ul>
+        {/* The whole-day east/west flight comparison is the card at the top of the airport block (same sentences as the shared text and image). */}
+        {prep.facts.some((fact) => !isWholeDayFact(fact))
+          ? <ul className="prep-facts" data-testid="prep-facts">{prep.facts.filter((fact) => !isWholeDayFact(fact)).map((fact, index) => <li key={index}>{factLine(fact, serviceDate, lang)}</li>)}</ul>
           : prep.status === 'PAST' || prep.status === 'ENDED' ? null : <p className="prep-empty">{prepCopy.noFacts[lang]}</p>}
         {prep.coverage.map((entry) => coverageLine(entry, serviceDate, lang)).filter(Boolean).map((line, index) => <p key={index} className="prep-coverage">{line}</p>)}
       </div>

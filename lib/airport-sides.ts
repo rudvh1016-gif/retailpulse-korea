@@ -6,11 +6,14 @@
  *      counts people. A5 publishes one expected-passenger figure per hall per
  *      hour; a side is the sum of its halls.
  *   2. Boarding gates (탑승구) — where A1 flights leave from. A side is a count
- *      of physical flights at gates whose side the airport's own text names.
+ *      of physical flights at gates whose side is evidenced: named by the
+ *      airport's own text (OFFICIAL_TEXT), or placed from the gate's point on
+ *      the airport's official map (OFFICIAL_MAP_POSITION, KORETAIL-computed).
  *
  * Hall numbers, gate numbers, entrance doors and check-in rows are different
  * numbering systems. Only config/airport-sides.v1.json decides a side, and
- * it only holds what official text states. Nothing here estimates a person
+ * it only holds gates with per-gate evidence (official text or official map
+ * position). Nothing here estimates a person
  * count from flights, seats or shares, and nothing moves a passenger count
  * from the hall's hour to a flight's departure hour.
  */
@@ -162,7 +165,7 @@ export function unverifiedReasonOf(area: BoardingArea, gate: unknown): Unverifie
   return "NOT_IN_TABLE";
 }
 
-/** A gate's side only when official text names it; every other gate is UNVERIFIED. */
+/** A gate's side only when the table evidences it (official text or official map position); every other gate is UNVERIFIED. */
 export function gateSideOf(area: BoardingArea, gate: unknown): GateSide {
   if (area === "UNKNOWN") return "UNVERIFIED";
   const key = String(gate ?? "").trim();

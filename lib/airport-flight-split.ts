@@ -53,10 +53,19 @@ export interface FlightSplit {
   unverifiedPct: number | null;
   larger: "EAST" | "WEST" | "EQUAL" | null;
   hours: SplitHour[];
+  /** When the newest flight row last changed (shown to the reader). */
   retrievedAt: string | null;
+  /**
+   * When the flight source was last collected successfully. Rows are written
+   * changed-only, so a row's own stamp stops moving on a quiet day; freshness
+   * is judged on this stamp when the summary carries one.
+   */
+  checkedAt: string | null;
   basis: NonNullable<AirportSidesBlock["gateBasis"]>;
   /** Terminal-wide expected departures x flight share; east + west equals the terminal total exactly. */
   expected: { total: number; east: number; west: number } | null;
+  /** When the airport's expected-departures rows last changed (shown beside the estimate). */
+  expectedIssuedAt: string | null;
 }
 
 export type SplitResult =
@@ -89,6 +98,8 @@ export function flightSplitOf(
   terminal: SplitTerminal,
   basis: FlightSplit["basis"],
   expectedTotal: number | null,
+  checkedAt: string | null = day.retrievedAt,
+  expectedIssuedAt: string | null = null,
 ): FlightSplit | null {
   const counts = day.byArea[terminal];
   if (!counts.total) return null;
@@ -105,7 +116,8 @@ export function flightSplitOf(
     eastPct: shares?.eastPct ?? null,
     westPct: shares?.westPct ?? null,
     unverifiedPct: oneDecimal(counts.UNVERIFIED, counts.total),
-    larger: counts.EAST + counts.WEST === 0 ? null : counts.EAST > counts.WEST ? "EAST" : counts.WEST > counts.EAST ? "WEST" : "EQUAL",
+    // Judged on the percentages the reader sees: 50% and 50% is never "more on the west".
+    larger: shares === null ? null : shares.eastPct > shares.westPct ? "EAST" : shares.westPct > shares.eastPct ? "WEST" : "EQUAL",
     hours: day.byHour.map((row) => {
       const hour = row.byArea[terminal];
       const hourShares = sharePercents(hour.EAST, hour.WEST);
@@ -113,8 +125,10 @@ export function flightSplitOf(
         eastPct: hourShares?.eastPct ?? null, westPct: hourShares?.westPct ?? null };
     }).filter((row) => row.total > 0),
     retrievedAt: day.retrievedAt,
+    checkedAt,
     basis,
     expected: parts && expectedTotal !== null ? { total: expectedTotal, east: parts.east, west: parts.west } : null,
+    expectedIssuedAt,
   };
 }
 
@@ -127,6 +141,14 @@ interface SummaryLike {
     forecastCoverage?: { byTerminal?: Record<string, string> };
     passengerForecastRetrievedAtByTerminal?: Record<string, string | null>;
   };
+  /** Source health: when each source last collected successfully. */
+  sources?: ReadonlyArray<{ sourceId: string; retrievedAt: string | null }>;
+}
+
+/** The source-level collection time when the summary has one, else the rows' own stamp. */
+export function collectionStamp(summary: Pick<SummaryLike, "sources">, sourceId: string, rowStamp: string | null): string | null {
+  const stamp = summary.sources?.find((source) => source.sourceId === sourceId)?.retrievedAt;
+  return stamp ? stamp : rowStamp;
 }
 
 const stale = (retrievedAt: string | null, nowMs: number, dayRelation: string) =>
@@ -141,15 +163,17 @@ export function splitFromSummary(summary: SummaryLike, sides: AirportSidesBlock 
   if (!gates || !sides?.gateBasis) return { status: "NONE" };
   if (gates.date !== summary.serviceDateKst) return { status: "DATE_MISMATCH" };
   const now = Date.parse(nowIso);
-  if (stale(gates.retrievedAt, now, summary.dayRelation)) return { status: "STALE" };
+  const flightsCheckedAt = collectionStamp(summary, "INCHEON_FLIGHT_DETAIL", gates.retrievedAt);
+  if (stale(flightsCheckedAt, now, summary.dayRelation)) return { status: "STALE" };
   // The terminal-wide expected departures count only when the airport's own
   // day is complete, is for this date and is not older than its window.
   const airport = summary.airport;
   const sameDay = airport?.serviceDateKst === summary.serviceDateKst;
   const bands = sameDay ? airport?.passengerForecastTimelineByTerminal?.[terminal] ?? [] : [];
   const complete = sameDay && airport?.forecastCoverage?.byTerminal?.[terminal] === "COMPLETE" && bands.length > 0;
-  const retrieved = sameDay ? airport?.passengerForecastRetrievedAtByTerminal?.[terminal] ?? null : null;
+  const retrieved = sameDay ? collectionStamp(summary, "INCHEON_PASSENGER_FORECAST", airport?.passengerForecastRetrievedAtByTerminal?.[terminal] ?? null) : null;
   const sum = complete && !stale(retrieved, now, summary.dayRelation) ? bands.reduce((total, band) => total + band.expectedPassengers, 0) : null;
-  const split = flightSplitOf(gates, terminal, sides.gateBasis, sum !== null && Number.isFinite(sum) ? sum : null);
+  const split = flightSplitOf(gates, terminal, sides.gateBasis, sum !== null && Number.isFinite(sum) ? sum : null, flightsCheckedAt,
+    sameDay ? airport?.passengerForecastRetrievedAtByTerminal?.[terminal] ?? retrieved : null);
   return split ? { status: "OK", split } : { status: "NO_TERMINAL_FLIGHTS" };
 }

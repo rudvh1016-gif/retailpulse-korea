@@ -33,6 +33,7 @@ export const prepCopy = {
   deviceOnly: row("이 기기에만 저장되며 서버로 보내지 않습니다.", "Saved on this device only; never sent to a server.", "仅保存在本设备，不会发送到服务器。", "この端末にのみ保存され、サーバーには送信されません。"),
   storageBlocked: row("이 브라우저가 저장을 막아 이번 방문에만 적용됩니다.", "This browser blocks storage, so this applies to this visit only.", "此浏览器禁止存储，仅本次访问有效。", "このブラウザは保存を許可していないため、今回の訪問のみ有効です。"),
   crossesMidnight: row("다음 날까지 영업", "Open past midnight", "营业至次日", "翌日まで営業"),
+  referenceTitle: row("하루 전체 참고 (영업시간과 무관)", "Whole-day reference (not limited to your hours)", "全天参考（不限于营业时间）", "終日の参考（営業時間とは別）"),
   factsTitle: row("영업시간 안에서 확인된 사실", "Official facts inside your hours", "营业时间内确认的事实", "営業時間内で確認できた事実"),
   actionsTitle: row("준비할 일", "What to prepare", "需要准备的事", "準備すること"),
   evidence: row("근거 보기", "Show the basis", "查看依据", "根拠を見る"),
@@ -79,7 +80,7 @@ const limitCopy: Record<PrepSource, Row> = {
   KMA_FORECAST: row("기상청 격자 예보입니다. 날씨가 매출에 주는 영향은 판단하지 않습니다.", "A KMA grid forecast. It says nothing about the effect of weather on sales.", "为气象厅网格预报，不判断天气对销售的影响。", "気象庁の格子予報です。天気が売上に与える影響は判断しません。"),
   TOURAPI_EVENTS: row("공식 행사 기간 정보입니다. 행사 방문객 수는 알 수 없습니다.", "Official event dates only; event attendance is unknown.", "仅为官方活动期间，无法得知活动访客数。", "公式の開催期間のみで、来場者数は分かりません。"),
   A5_FORECAST: row("공항이 발표한 출국 예상 승객입니다. 매장 방문객 수가 아니며, 항공사로 승객 국적을 알 수는 없습니다.", "The airport's expected departing passengers — not store visitors, and airline does not tell passenger nationality.", "机场发布的预计出境旅客，并非到店人数，也不能由航空公司推断旅客国籍。", "空港発表の出国予想旅客で、来店客数ではなく、航空会社から旅客の国籍は分かりません。"),
-  A1_FLIGHTS: row("비행기 출발편 수이며 사람 수가 아닙니다. 예정 출발 시각 기준이고, 공식 문구로 위치가 확인된 탑승구만 동·서편으로 셉니다.", "A count of departing flights, not people. It uses scheduled departure times, and only gates whose side official text names are counted as east or west.", "为出发航班数，并非人数。按计划出发时间统计，只有官方文字确认位置的登机口才计入东侧或西侧。", "出発便の数で、人数ではありません。予定出発時刻に基づき、公式の文言で位置が確認できた搭乗口だけを東側・西側に数えます。"),
+  A1_FLIGHTS: row("비행기 출발편 수이며 사람 수가 아닙니다. 예정 출발 시각 기준이고, 공식 위치 문구나 공식 지도의 탑승구 위치로 동·서편이 확인된 탑승구만 동편·서편으로 셉니다.", "A count of departing flights, not people. It uses scheduled departure times, and only gates whose east or west side is confirmed by the airport's location text or by the gate's position on its official map are counted as east or west.", "为出发航班数，并非人数。按计划出发时间统计，只有依据机场官方位置文字或官方地图中登机口位置确认了东侧或西侧的登机口，才计入东侧或西侧。", "出発便の数で、人数ではありません。予定出発時刻に基づき、空港の公式な位置の文言、または公式地図上の搭乗口の位置で東西が確認できた搭乗口だけを東側・西側に数えます。"),
   HOLIDAY_CALENDAR: row("공식 공휴일 정보입니다. 공휴일에 손님이 늘거나 준다고 판단하지 않습니다.", "Official holiday dates. They do not say whether customers rise or fall.", "为官方假日信息，不判断假日客人增减。", "公式の祝日情報です。客数の増減は判断しません。"),
 };
 
@@ -219,7 +220,7 @@ export function factLine(fact: PrepFact, serviceDate: string, lang: PrepLang): s
     case "FLIGHT_SPLIT":
       return `${flightSentence(fact.split, lang)} (${sourceName("A1_FLIGHTS", lang)}${issued(fact.issuedAt, serviceDate, lang)})`;
     case "FLIGHT_SPLIT_ESTIMATE":
-      return `${estimateSentence(fact.estimate, lang)} (${sourceName("A5_FORECAST", lang)} × ${sourceName("A1_FLIGHTS", lang)})`;
+      return `${estimateSentence(fact.estimate, lang)} (${sourceName("A5_FORECAST", lang)}${issued(fact.forecastIssuedAt, serviceDate, lang)} × ${sourceName("A1_FLIGHTS", lang)}${issued(fact.issuedAt, serviceDate, lang)})`;
     case "AIRPORT_TOTAL":
       if (fact.side) return row(
         `영업시간 ${sideNames[fact.side].ko} 출국장 예상 이용객 합계 약 ${number(fact.count, lang)}명 (${fact.bands}개 시간대)`,
@@ -421,6 +422,14 @@ export function coverageLine(entry: PrepCoverage, serviceDate: string, lang: Pre
       )[lang];
   }
 }
+
+/**
+ * Facts that describe the whole day, not the store's hours: the east/west
+ * flight comparison and the reference estimate. They are listed apart from
+ * "facts inside your hours" on the screen (the airport block shows them as
+ * a card) and in the shared text and image.
+ */
+export const isWholeDayFact = (fact: PrepFact) => fact.kind === "FLIGHT_SPLIT" || fact.kind === "FLIGHT_SPLIT_ESTIMATE";
 
 /** Everything the screen says, in reading order, for one language. */
 export function prepSentences(prep: BusinessPrep, serviceDate: string, industry: IndustryId | null, lang: PrepLang) {
