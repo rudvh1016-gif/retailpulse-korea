@@ -42,15 +42,16 @@ for (const width of [360, 1280]) {
         expect(inMap, `${side}: map and card agree`).toBe(inCard);
       }
     }
-    const groups = await map.getByTestId("map-groups").innerText().catch(() => "");
-    log(`${width} groups`, groups.replace(/\s+/g, " "));
-    log(`${width} groups basis`, await map.getByTestId("map-groups-basis").innerText().catch(() => "NONE"));
     if (await map.getByTestId("map-empty").count()) {
       // Just after midnight KST, before the day's first collection: the designed empty state.
+      // Checked before the groups table, which is not rendered on an empty day.
       log(`${width} empty`, await map.getByTestId("map-empty").innerText());
+      expect(await map.getByTestId("map-groups").count(), "no destination table without flights").toBe(0);
       expect(errors).toEqual([]);
       return;
     }
+    log(`${width} groups`, (await map.getByTestId("map-groups").innerText()).replace(/\s+/g, " "));
+    log(`${width} groups basis`, await map.getByTestId("map-groups-basis").innerText());
     const drawn = await map.locator("[data-flights]").evaluateAll((nodes) => nodes.reduce((sum, node) => sum + Number(node.getAttribute("data-flights")), 0));
     const listed = Number((await map.getByTestId("map-flights").locator("summary").innerText()).match(/(\d+)\s*$/)?.[1] ?? NaN);
     const unplaced = await map.getByTestId("map-unplaced").count() ? Number((await map.getByTestId("map-unplaced").locator("summary").innerText()).match(/(\d+)\s*$/)?.[1] ?? NaN) : 0;
