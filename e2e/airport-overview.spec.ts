@@ -20,20 +20,21 @@ async function open(page: Page, { lang = 'ko', width = 390, suffix = '' } = {}) 
   await page.setViewportSize({ width, height: 900 });
   const summary = { ...SUMMARY_FIXTURE, airport: { ...SUMMARY_FIXTURE.airport, sides: airportSides(DATE, 'TODAY', [], FLIGHTS, [], false, false) } };
   await page.route('**/api/live/summary*', routeSummary(summary));
-  await page.route('**/api/live/usual*', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
-  await page.route('**/api/live/airport-days*', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ mode: 'airport-days', date: DATE, rowsRead: 0, withoutProfile: 0, history: [] }) }));
   const flightRequests: string[] = [];
+  const historyRequests: string[] = [];
+  await page.route('**/api/live/usual*', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
+  await page.route('**/api/live/airport-days*', (route) => { historyRequests.push(route.request().url()); return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ mode: 'airport-days', date: DATE, rowsRead: 0, withoutProfile: 0, history: [] }) }); });
   await page.route('**/api/live/flights*', (route) => {
     flightRequests.push(route.request().url());
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ mode: 'live-flights', basis: 'COLLECTED_FLIGHT_RECORDS', serviceDateKst: DATE, todayKst: DATE, flights: FLIGHTS, truncated: false, retrievedAt: '2026-08-31T05:00:00Z' }) });
   });
   await page.goto(`/${lang}/airport${suffix}`);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
-  return { flightRequests };
+  return { flightRequests, historyRequests };
 }
 
 test('the Airport page departures tab shows east/west, the open gate map and destination regions', async ({ page }) => {
-  const { flightRequests } = await open(page);
+  const { flightRequests, historyRequests } = await open(page);
   const overview = page.getByTestId('airport-departure-overview');
   await expect(overview).toBeVisible();
   await expect(overview).toHaveAttribute('data-terminals', 'T1,T2');
@@ -45,6 +46,11 @@ test('the Airport page departures tab shows east/west, the open gate map and des
   }
   await expect(overview.getByTestId('overview-T2').getByTestId('map-counts')).toContainText('편');
   expect(flightRequests.length, 'one flights read per date, shared by both terminals').toBe(1);
+  for (const terminal of ['T1', 'T2']) {
+    await overview.getByTestId(`overview-${terminal}`).getByTestId('day-radar-section').scrollIntoViewIfNeeded();
+    await expect(overview.getByTestId(`overview-${terminal}`).getByTestId('radar-no-history')).toBeVisible();
+  }
+  expect(historyRequests.length, 'one stored-history read per date, shared by both terminals').toBe(1);
   // The intro says what the counts are not; the data blocks never call flights customers.
   for (const terminal of ['T1', 'T2']) await expect(overview.getByTestId(`overview-${terminal}`)).not.toContainText('고객');
 });
