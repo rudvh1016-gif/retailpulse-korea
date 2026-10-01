@@ -35,18 +35,36 @@ function writeLastSeen(entry: LastSeen) {
 
 type History = { status: 'OK'; days: TerminalDay[]; stored: number } | { status: 'FAILED' };
 
+type HistoryBody = { mode: string; history: Array<Record<ViewTerminal, TerminalDay>> };
+
+// One /api/live/airport-days read per date for the whole page visit: the answer
+// carries both terminals, so "all" (T1 and T2 blocks) must not read it twice.
+// A failure is forgotten so a later open can try again.
+const historyReads = new Map<string, Promise<HistoryBody | null>>();
+function loadHistory(date: string): Promise<HistoryBody | null> {
+  let request = historyReads.get(date);
+  if (!request) {
+    request = fetch(`/api/live/airport-days?date=${encodeURIComponent(date)}`, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(15_000) })
+      .then(async (response) => {
+        const body = response.ok ? await response.json() as HistoryBody : null;
+        return body?.mode === 'airport-days' ? body : null;
+      })
+      .catch(() => null);
+    historyReads.set(date, request);
+    void request.then((body) => { if (!body) historyReads.delete(date); });
+  }
+  return request;
+}
+
 function useHistory(date: string, terminal: ViewTerminal): History | undefined {
   const [state, setState] = useState<{ key: string; value: History } | undefined>(undefined);
   const key = `${date}:${terminal}`;
   useEffect(() => {
     let live = true;
-    fetch(`/api/live/airport-days?date=${encodeURIComponent(date)}`, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(15_000) })
-      .then(async (response) => {
-        const body = response.ok ? await response.json() as { mode: string; history: Array<Record<ViewTerminal, TerminalDay>> } : null;
-        return body?.mode === 'airport-days' ? { status: 'OK' as const, days: body.history.map((day) => day[terminal]), stored: body.history.length } : { status: 'FAILED' as const };
-      })
-      .catch(() => ({ status: 'FAILED' as const }))
-      .then((value) => { if (live) setState({ key, value }); });
+    void loadHistory(date).then((body) => {
+      const value: History = body ? { status: 'OK', days: body.history.map((day) => day[terminal]), stored: body.history.length } : { status: 'FAILED' };
+      if (live) setState({ key, value });
+    });
     return () => { live = false; };
   }, [date, terminal, key]);
   return state && state.key === key ? state.value : undefined;
