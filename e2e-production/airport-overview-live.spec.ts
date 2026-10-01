@@ -22,18 +22,24 @@ for (const width of [360, 1280]) {
     await overview.scrollIntoViewIfNeeded();
     await expect(overview).toBeVisible();
     for (const terminal of ["T1", "T2"]) {
+      if (terminal === "T2") await overview.getByTestId("overview-switch").getByRole("button", { name: /T2$/ }).click();
       const block = overview.getByTestId(`overview-${terminal}`);
       await expect(block.getByTestId("flight-split")).toBeVisible({ timeout: 20_000 });
-      log(`${width} ${terminal} split`, await block.getByTestId("split-flights").innerText().catch(() => "n/a"));
+      log(`${width} ${terminal} split`, (await block.getByTestId("flight-split").innerText()).replace(/\s+/g, " ").slice(0, 260));
       await expect(block.getByTestId("departure-map").or(block.getByTestId("map-failed"))).toBeVisible({ timeout: 20_000 });
       log(`${width} ${terminal} counts`, await block.getByTestId("map-counts").innerText().catch(() => "n/a"));
-      log(`${width} ${terminal} groups`, (await block.getByTestId("map-groups").innerText().catch(() => "n/a")).replace(/\s+/g, " "));
+      log(`${width} ${terminal} basis`, (await block.locator("p.prep-note").filter({ hasText: "기준" }).allInnerTexts()).slice(-2));
+      log(`${width} ${terminal} empty`, (await block.getByTestId("map-empty").count()) ? await block.getByTestId("map-empty").innerText() : "NOT_EMPTY");
+      log(`${width} ${terminal} groups`, (await block.getByTestId("map-groups").innerText().catch(() => "n/a")).replace(/\s+/g, " ").slice(0, 400));
       const radar = block.getByTestId("day-radar-section");
       await radar.scrollIntoViewIfNeeded();
       const outcome = radar.getByTestId("day-radar").or(radar.getByTestId("radar-failed")).or(radar.getByTestId("radar-no-current"));
       await expect(outcome).toBeVisible({ timeout: 20_000 });
-      log(`${width} ${terminal} radar`, (await radar.innerText()).replace(/\s+/g, " ").slice(0, 700));
+      log(`${width} ${terminal} radar`, (await radar.innerText()).replace(/\s+/g, " ").slice(0, 400));
     }
+    const guide = page.getByTestId("industry-guide");
+    log(`${width} guide chars`, (await guide.innerText()).length);
+    log(`${width} guide head`, (await guide.innerText()).replace(/\s+/g, " ").slice(0, 700));
     log(`${width} reads`, reads);
     await overview.screenshot({ path: `production-visual-results/airport-overview-${width}.png` });
     // The month chart: a one-day bar is never a block.
