@@ -50,8 +50,8 @@ export function AirportDepartureOverview({ lang, terminal, date }: { lang: Lang;
   const holidays = officialHolidaysOn(summary.serviceDateKst);
   return frame(<>
     <p className="section-intro">{copy.overviewIntro[lang]}</p>
-    {terminal === 'all' && <div role="tablist" aria-label="Terminal" data-testid="overview-switch" style={{ display: 'flex', gap: 20, borderBottom: '1px solid var(--line)' }}>
-      {(['T1', 'T2'] as const).map((item) => <button key={item} type="button" role="tab" aria-selected={picked === item} onClick={() => setPicked(item)}
+    {terminal === 'all' && <div role="group" aria-label={copy.overviewSwitch[lang]} data-testid="overview-switch" style={{ display: 'flex', gap: 20, borderBottom: '1px solid var(--line)' }}>
+      {(['T1', 'T2'] as const).map((item) => <button key={item} type="button" aria-pressed={picked === item} aria-label={`${copy.overviewSwitchTo[lang]} ${item}`} onClick={() => setPicked(item)}
         style={{ minHeight: 44, padding: '0 2px', border: 0, background: 'transparent', cursor: 'pointer', fontSize: 11, fontWeight: 600, letterSpacing: '.08em',
           color: picked === item ? 'var(--ink)' : '#888', borderBottom: picked === item ? '2px solid var(--blue)' : '2px solid transparent', marginBottom: -1 }}>{item}</button>)}
     </div>}

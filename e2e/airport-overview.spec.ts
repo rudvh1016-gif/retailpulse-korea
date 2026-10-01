@@ -48,7 +48,7 @@ test('the Airport page departures tab shows east/west, the open gate map and des
   await t1.getByTestId('day-radar-section').scrollIntoViewIfNeeded();
   await expect(t1.getByTestId('radar-no-history')).toBeVisible();
   // Switching to T2 shows T2 only, reusing the same two reads.
-  await overview.getByTestId('overview-switch').getByRole('tab', { name: 'T2' }).click();
+  await overview.getByTestId('overview-switch').getByRole('button', { name: /T2$/ }).click();
   await expect(overview).toHaveAttribute('data-terminals', 'T2');
   const t2 = overview.getByTestId('overview-T2');
   await expect(t2.getByTestId('departure-map')).toBeVisible();
