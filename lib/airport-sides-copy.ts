@@ -90,7 +90,7 @@ export const sidesCopy = {
     "搭乗口の位置で分けた東側・西側の出発便数、空港の公式地図上の搭乗口の配置、行き先地域ごとの構成です。便数の基準で、来訪者や顧客の数ではありません。",
   ),
   overviewSwitch: row("터미널 선택", "Choose a terminal", "选择航站楼", "ターミナルを選択"),
-  overviewSwitchTo: row("아래 구역을 바꿈:", "Show below:", "切换下方:", "下の表示:"),
+  overviewSwitchTo: row("아래에 표시:", "Show below:", "切换下方:", "下の表示:"),
   overviewJump: row("출발편 동·서편·목적지 지역 ↓", "Departures by east/west side and region ↓", "出发航班东西侧与目的地地区 ↓", "出発便の東西・行き先地域 ↓"),
   mapTitle: row("공항 출발편 지도", "Airport departure map", "机场出发航班地图", "空港出発便マップ"),
   radarLoading: row("오늘 달라진 것과 조건이 가까운 과거 날짜를 불러오는 중입니다.", "Loading what is different today and similar days.", "正在读取今天的不同之处和相近的日子。", "今日違うことと近かった日を読み込んでいます。"),
