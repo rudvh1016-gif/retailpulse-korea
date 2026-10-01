@@ -37,6 +37,8 @@ import { parsePreferences, PREFERENCE_KEY } from "../lib/personal-briefing";
 import { SiteUsageGuide } from "./site-usage-guide";
 import { IndustryGuide } from "./industry-guide";
 import { BusinessPrep } from "./business-prep";
+import { AirportDepartureOverview } from "./airport-departure-overview";
+import { sidesCopy } from "../lib/airport-sides-copy";
 import { saveBusinessPreferences, useBusinessPreferences } from "./business-preferences";
 import { airportAnswerText, areaAnswerText, type TodayAnswer, type TodayAnswerArea } from "../lib/today-answer";
 const PersonalHome = lazy(() => import('./personal-home'));
@@ -639,9 +641,11 @@ function AirportView({
         <DateScopeNote lang={lang} date={date} scope={section === "arrivals" ? "arrivals" : "departures"} />
       </>}
 
+      {section === "now" && <a className="operating-jump" href="#airport-departure-overview" data-testid="overview-jump">{sidesCopy.overviewJump[lang]}</a>}
       {(section === "now" || section === "arrivals") && <a className="operating-jump" href="#airport-industry-guide">{localText(lang, { ko: "업종별 공항 매장 운영 가이드 ↓", en: "Airport store operating guide ↓", zh: "按业态查看机场店铺指南 ↓", ja: "業種別の空港店舗ガイド ↓" })}</a>}
 
       {section === "now" && <AirportTodaySummary lang={lang} terminal={terminal} date={date} />}
+      {section === "now" && <AirportDepartureOverview lang={lang} terminal={terminal} date={date} />}
       {section === "arrivals" && <AirportArrivalSummary lang={lang} terminal={terminal} date={date} />}
       {section === "flights" && <FlightBoard lang={lang} terminal={terminal} date={date} />}
       {section === "stores" && <FacilityDirectory lang={lang} terminal={terminal} />}

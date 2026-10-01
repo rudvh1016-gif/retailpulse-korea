@@ -19,7 +19,7 @@ import { AirportSidesBlock } from './airport-sides';
 import { FeelingLogBlock, WeeklyReviewBlock } from './weekly-review';
 import { trackPersonalEvent } from '../lib/personal-analytics';
 import { placeKey } from '../lib/last-check';
-import { holidaysOn, isPublished } from '../lib/holiday-calendar';
+import { cnJpHoliday, officialHolidaysOn } from '../lib/airport-prep-holidays';
 
 /** Analytics context: only enumerated values, never hours, names or free text. */
 export function prepAnalytics(lang: Lang, place: PrepPlace, serviceDate: string, todayKst: string) {
@@ -98,9 +98,6 @@ function Conditions({ lang, place, preferences, saved, storageFailed, industry, 
   </div>;
 }
 
-/** CN/JP official holiday status of a date, or null outside the published calendar years. */
-const cnJpHoliday = (day: string) => isPublished('CN', day) && isPublished('JP', day) ? holidaysOn(day).length > 0 : null;
-
 export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
   lang: Lang; area: PrepArea; industry: IndustryId; onIndustryChange: (value: IndustryId) => void; date: string | null;
 }) {
@@ -114,12 +111,8 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
   const now = Number.isFinite(generated) && Math.abs(clock - generated) > 2 * 3_600_000 ? generated : clock;
   const place = prepPlaceOf(preferences, area);
   const nowIso = new Date(now).toISOString();
-  // China's and Japan's official holidays on the service date (never an
-  // adjusted working day), from the verified calendar; Korea's come in the summary.
-  const officialHolidays = summary ? holidaysOn(summary.serviceDateKst).map((day) => ({
-    country: day.country, date: summary.serviceDateKst, name: day.name,
-    source: day.country === 'CN' ? 'gov.cn 国办发明电〔2025〕7号' : '内閣府 国民の祝日',
-  })) : [];
+  // China's and Japan's official holidays on the service date; Korea's come in the summary.
+  const officialHolidays = summary ? officialHolidaysOn(summary.serviceDateKst) : [];
   const input = summary && ready ? prepInputFromSummary(summary, place, preferences.hours, nowIso, officialHolidays) : null;
   const prep = input ? buildBusinessPrep(input) : null;
   const snapshot = input && prep && prep.status !== 'PAST' && prep.status !== 'ENDED' ? snapshotOf(input, prep, nowIso) : null;

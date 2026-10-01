@@ -21,7 +21,7 @@ const DayRadar = lazy(() => import('./airport-day-radar'));
 type HolidayRef = ReadonlyArray<{ country: string; name: string }>;
 
 /** Loads the day comparison once the block is on screen, so a visit that never reaches it reads nothing. */
-function DayRadarSection({ lang, summary, terminal, nowIso, holidays, isHoliday }: {
+export function DayRadarSection({ lang, summary, terminal, nowIso, holidays, isHoliday }: {
   lang: Lang; summary: LiveSummary; terminal: PrepTerminal; nowIso: string; holidays: HolidayRef; isHoliday: (day: string) => boolean | null;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -41,9 +41,10 @@ function DayRadarSection({ lang, summary, terminal, nowIso, holidays, isHoliday 
   </div>;
 }
 
-function DepartureMapSection({ lang, summary, terminal, nowIso, holidays }: { lang: Lang; summary: LiveSummary; terminal: PrepTerminal; nowIso: string; holidays: ReadonlyArray<{ country: string; name: string }> }) {
-  const [open, setOpen] = useState(false);
-  return <details className="prep-block prep-evidence" data-testid="departure-map-section" onToggle={(event) => setOpen((event.currentTarget as HTMLDetailsElement).open)}>
+/** `defaultOpen` is for the airport page, where the map is the point of the section; inside the store briefing it stays closed until asked for. */
+export function DepartureMapSection({ lang, summary, terminal, nowIso, holidays, defaultOpen = false }: { lang: Lang; summary: LiveSummary; terminal: PrepTerminal; nowIso: string; holidays: ReadonlyArray<{ country: string; name: string }>; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return <details open={open} className="prep-block prep-evidence" data-testid="departure-map-section" onToggle={(event) => setOpen((event.currentTarget as HTMLDetailsElement).open)}>
     <summary><h3 style={{ margin: 0 }}>{copy.mapTitle[lang]}</h3></summary>
     {open && <Suspense fallback={<p className="prep-note">{copy.mapLoading[lang]}</p>}>
       <DepartureMap lang={lang} date={summary.serviceDateKst} todayKst={summary.todayKst} dayRelation={summary.dayRelation} terminal={terminal} nowIso={nowIso} holidays={holidays}/>
@@ -111,7 +112,7 @@ const kstDay = (ms: number) => new Date(ms + 9 * 3_600_000).toISOString().slice(
  * block. Flights are counted by evidenced gate side; the person figures are a
  * reference split of the terminal-wide expectation, not the hall figures.
  */
-function FlightSplitCard({ lang, summary, sides, terminal, nowIso }: { lang: Lang; summary: LiveSummary; sides: SidesBlock; terminal: PrepTerminal; nowIso: string }) {
+export function FlightSplitCard({ lang, summary, sides, terminal, nowIso }: { lang: Lang; summary: LiveSummary; sides: SidesBlock; terminal: PrepTerminal; nowIso: string }) {
   const result = splitFromSummary(summary, sides, terminal, nowIso);
   if (result.status !== 'OK') return <div className="prep-block" data-testid="flight-split" data-state={result.status}><p className="prep-note">{splitCopy.unavailable[result.status][lang]}</p></div>;
   const s = result.split;

@@ -82,6 +82,14 @@ export const sidesCopy = {
     "搭乗口ごとの実際の人数は公式に提供されていないため表示しません。人数で示すのは上部の参考推定だけで、1便あたりの乗客数が同じという前提としており、機材の大きさや搭乗率は反映していません。",
   ),
   // The departure map's own words live in lib/airport-departure-map-copy.ts, which loads with the map.
+  overviewTitle: row("출발편 동·서편과 목적지 지역", "Departures by east/west side and destination region", "出发航班：东西侧与目的地地区", "出発便：東側・西側と行き先地域"),
+  overviewIntro: row(
+    "게이트 위치로 나눈 동편·서편 출발편 수, 공항 공식 지도 위의 탑승구 배치, 목적지 지역별 구성입니다. 항공편 기준이며 방문객·고객 수가 아닙니다.",
+    "Departing flights split by gate side, their gates on the airport's official map, and the mix of destination regions. Counts are flights, not visitors or customers.",
+    "按登机口位置划分的东侧、西侧出发航班数，机场官方地图上的登机口位置，以及目的地地区构成。以航班为准，不是访客或顾客人数。",
+    "搭乗口の位置で分けた東側・西側の出発便数、空港の公式地図上の搭乗口の配置、行き先地域ごとの構成です。便数の基準で、来訪者や顧客の数ではありません。",
+  ),
+  overviewJump: row("출발편 동·서편·목적지 지역 ↓", "Departures by east/west side and region ↓", "出发航班东西侧与目的地地区 ↓", "出発便の東西・行き先地域 ↓"),
   mapTitle: row("공항 출발편 지도", "Airport departure map", "机场出发航班地图", "空港出発便マップ"),
   radarLoading: row("오늘 달라진 것과 조건이 가까운 과거 날짜를 불러오는 중입니다.", "Loading what is different today and similar days.", "正在读取今天的不同之处和相近的日子。", "今日違うことと近かった日を読み込んでいます。"),
   mapLoading: row("출발편 지도를 불러오는 중입니다.", "Loading the departure map.", "正在读取出发航班地图。", "出発便マップを読み込んでいます。"),
