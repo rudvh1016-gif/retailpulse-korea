@@ -4,19 +4,22 @@ import { readDepartureSchedule } from "../../../../lib/departure-schedule";
 
 export const dynamic = "force-dynamic";
 
+/** The airport's held departure schedule of one date, shaped like recorded flight rows. */
+async function readHeldSchedule(client: Pick<D1Database, 'prepare'>, serviceDate: string, dayRelation: string) {
+  const snapshots = (await client.prepare('SELECT payload, retrieved_at AS retrievedAt FROM airport_departure_schedule WHERE service_date = ? LIMIT 1')
+    .bind(serviceDate).all<{payload: string; retrievedAt: string}>()).results ?? [];
+  const rows = readDepartureSchedule(snapshots[0], serviceDate).map(row => ({
+    physicalFlightId: row.physicalFlightId, flightNumber: row.operatingFlight, airlineCode: row.airlineCode ?? null, airportCode: row.airportCode ?? null,
+    direction: 'departure', terminal: row.terminal, gate: row.gate ?? null, checkinCounter: row.checkinCounter ?? null,
+    status: row.status ?? 'unknown', scheduledAt: `${serviceDate}T${row.scheduledTime}:00+09:00`,
+  })).sort((a,b) => a.scheduledAt.localeCompare(b.scheduledAt) || a.flightNumber.localeCompare(b.flightNumber));
+  return { basis: 'OFFICIAL_DEPARTURE_SCHEDULE', dayRelation, flights: rows.slice(0,1200), truncated: rows.length > 1200, retrievedAt: snapshots[0]?.retrievedAt ?? null };
+}
+
 /** One indexed date snapshot (future) or indexed day range (recorded flights). */
 export async function readFlightsForDate(client: Pick<D1Database, 'prepare'>, serviceDate: string, today: string) {
   const dayRelation = relateKstDay(serviceDate, today);
-  if (dayRelation === 'FUTURE') {
-    const snapshots = (await client.prepare('SELECT payload, retrieved_at AS retrievedAt FROM airport_departure_schedule WHERE service_date = ? LIMIT 1')
-      .bind(serviceDate).all<{payload: string; retrievedAt: string}>()).results ?? [];
-    const rows = readDepartureSchedule(snapshots[0], serviceDate).map(row => ({
-      physicalFlightId: row.physicalFlightId, flightNumber: row.operatingFlight, airlineCode: row.airlineCode ?? null, airportCode: row.airportCode ?? null,
-      direction: 'departure', terminal: row.terminal, gate: row.gate ?? null, checkinCounter: row.checkinCounter ?? null,
-      status: row.status ?? 'unknown', scheduledAt: `${serviceDate}T${row.scheduledTime}:00+09:00`,
-    })).sort((a,b) => a.scheduledAt.localeCompare(b.scheduledAt) || a.flightNumber.localeCompare(b.flightNumber));
-    return { basis: 'OFFICIAL_DEPARTURE_SCHEDULE', dayRelation, flights: rows.slice(0,1200), truncated: rows.length > 1200, retrievedAt: snapshots[0]?.retrievedAt ?? null };
-  }
+  if (dayRelation === 'FUTURE') return readHeldSchedule(client, serviceDate, dayRelation);
   const rows = (await client.prepare(
     `SELECT physical_flight_id AS physicalFlightId, flight_number AS flightNumber, airline_code AS airlineCode,
       airport_code AS airportCode, direction, terminal, gate,
@@ -25,6 +28,13 @@ export async function readFlightsForDate(client: Pick<D1Database, 'prepare'>, se
     WHERE direction IN ('departure', 'arrival') AND scheduled_at >= ? AND scheduled_at < ?
     ORDER BY scheduled_at, flight_number LIMIT 1201`,
   ).bind(serviceDate, shiftKstDay(serviceDate, 1)).all<Record<string, unknown>>()).results ?? [];
+  // Today before its first collection has no recorded flights yet; the airport's
+  // schedule for the day is already held until the first scan replaces it, so
+  // show that (labelled as the schedule) instead of an empty day.
+  if (dayRelation === 'TODAY' && rows.length === 0) {
+    const held = await readHeldSchedule(client, serviceDate, dayRelation);
+    if (held.flights.length) return held;
+  }
   return { basis: 'COLLECTED_FLIGHT_RECORDS', dayRelation, flights: rows.slice(0,1200), truncated: rows.length > 1200,
     retrievedAt: rows.map(row => String(row.retrievedAt ?? '')).filter(Boolean).sort().at(-1) ?? null };
 }

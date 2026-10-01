@@ -1697,15 +1697,13 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
   const [active, setActive] = useState<string | null>(null);
   if (!days.length) return null;
   const width = 100, height = 100;
-  // Capped at the width a bar has with 15 days (4 units). Without the cap a
-  // month with one or two days so far (the 1st, the 2nd) drew a bar 60% / 30%
-  // of the plot wide, which read as a solid black block.
-  const barWidth = Math.min(Math.max(1.5, (width / Math.max(days.length, 1)) * 0.6), 4);
-  // Inset by half a bar so the first and last bars are drawn WHOLE. Centring
-  // them on the plot edge clipped half of each, which quietly understated the
-  // two days a reader looks at most: the 1st and today.
-  const inset = barWidth / 2;
-  const span = width - inset * 2;
+  // The month is laid out in fixed slots, filled from the left, never stretched
+  // to the plot: with two days (the 2nd) the first and last bar used to sit at
+  // opposite edges, and with one day the bar was 60% of the plot wide. At least
+  // 15 slots, so the first half of the month reads as a month still filling up.
+  const slots = Math.max(days.length, 15);
+  const slot = width / slots;
+  const barWidth = Math.min(Math.max(1.5, slot * 0.6), 4);
   const maxDay = days.reduce((best, day) => Math.max(best, day.total ?? 0), 0);
 
   // The running total is still COMPUTED — the readout below prints the selected
@@ -1714,7 +1712,7 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
   // the same cumulative value is one line below in words, so a third rendering
   // of it as a diagonal repeated what the card already said twice.
   const cumulative = runningTotals(days);
-  const x = (index: number) => days.length > 1 ? inset + (index * span) / (days.length - 1) : inset + span / 2;
+  const x = (index: number) => slot * (index + 0.5);
   // One mark, so it uses the plot. The bars were held to the lower 74% to leave
   // the upper quarter for the line that climbed through it; with the line gone
   // that reserved band is just a permanently empty strip above the tallest day.
@@ -1723,7 +1721,10 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
   const activeIndex = active ? days.findIndex((day) => day.date === active) : -1;
   const shown = activeIndex >= 0 ? activeIndex : days.length - 1;
   const shownDay = days[shown];
-  const ticks = [...new Set([0, 4, 9, days.length - 1].filter((index) => index >= 0 && index < days.length))];
+  // Day-of-month labels (the month is named by the card): the 1st, every fifth
+  // day, and today when it is not crowding the one before it.
+  const ticks = days.length <= 9 ? days.map((_, index) => index) : [0, 4, 9, 14, 19, 24, 29].filter((index) => index < days.length);
+  if (days.length > 9 && days.length - 1 - ticks[ticks.length - 1] >= 2) ticks.push(days.length - 1);
 
   return <figure className="airport-month-chart">
     {/* One series, named by the caption. A legend existed to tell two marks
@@ -1739,13 +1740,13 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
               x={x(index) - barWidth / 2} y={barY(day.total)} width={barWidth} height={Math.max(1, height - barY(day.total))} />)}
       </svg>
       <div className="airport-month-picks" role="group" aria-label={mtdCopy.daily[lang]}>
-        {days.map((day) => <button key={day.date} type="button" aria-pressed={day.date === shownDay.date}
+        {days.map((day) => <button key={day.date} type="button" aria-pressed={day.date === shownDay.date} style={{ flex: `0 0 ${100 / slots}%` }}
           onClick={() => setActive(day.date)}
           aria-label={`${shortDay(day.date)} · ${day.total === null ? airportTodayText.unavailable[lang] : `${Math.round(day.total).toLocaleString(numberLocale)}${unit}`}`} />)}
       </div>
     </div>
     <div className="airport-month-ticks" aria-hidden="true">
-      {ticks.map((index) => <span key={index} style={{ left: `${(x(index) / width) * 100}%` }}>{shortDay(days[index].date)}</span>)}
+      {ticks.map((index) => <span key={index} style={{ left: `${Math.min(97.5, Math.max(2.5, (x(index) / width) * 100))}%`, transform: 'translateX(-50%)' }}>{Number(days[index].date.slice(8, 10))}</span>)}
     </div>
     <p className="airport-month-readout" aria-live="polite">
       <span>{shortDay(shownDay.date)}</span>

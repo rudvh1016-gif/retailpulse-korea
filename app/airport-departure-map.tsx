@@ -66,6 +66,19 @@ function BuildingMap({ lang, building, map, flights, selected, onSelect }: {
   </figure>;
 }
 
+/**
+ * A list that sits in a closed <details> draws its rows only once opened: a
+ * whole day is hundreds of flights, and a closed list used to cost most of the
+ * page's elements (and the phone's time) for nothing.
+ */
+function OpenableList({ summary, testId, children, ...rest }: { summary: React.ReactNode; testId: string; children: () => React.ReactNode } & { className?: string }) {
+  const [open, setOpen] = useState(false);
+  return <details className={rest.className} data-testid={testId} onToggle={(event) => setOpen((event.currentTarget as HTMLDetailsElement).open)}>
+    <summary>{summary}</summary>
+    {open && children()}
+  </details>;
+}
+
 function FlightRows({ lang, flights, testId }: { lang: Lang; flights: readonly MapFlight[]; testId: string }) {
   return <ul className="prep-side-hours" data-testid={testId}>
     {flights.map((flight) => <li key={`${flight.id}:${flight.day}`} data-group={flight.group}>
@@ -169,15 +182,12 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
         {atGate.length ? <FlightRows lang={lang} flights={atGate} testId="map-gate-list"/> : <p className="prep-note">{copy.noFlightsAtGate[lang]}</p>}
       </div>}
 
-      {unplaced.length > 0 && <details className="prep-evidence" data-testid="map-unplaced">
-        <summary>{copy.unplacedTitle[lang]} {unplaced.length}</summary>
+      {unplaced.length > 0 && <OpenableList className="prep-evidence" testId="map-unplaced" summary={<>{copy.unplacedTitle[lang]} {unplaced.length}</>}>{() => <>
         <p className="prep-note">{copy.noGate[lang]} {map.unplaced.noGate.filter((flight) => !filter || flight.group === filter).length} · {copy.notOnMap[lang]} {map.unplaced.notOnMap.filter((flight) => !filter || flight.group === filter).length}</p>
         <FlightRows lang={lang} flights={unplaced} testId="map-unplaced-list"/>
-      </details>}
-      <details className="prep-evidence" data-testid="map-flights">
-        <summary>{copy.flightList[lang]} {shown.length}</summary>
-        <FlightRows lang={lang} flights={shown} testId="map-flight-list"/>
-      </details>
+      </>}</OpenableList>}
+      <OpenableList className="prep-evidence" testId="map-flights" summary={<>{copy.flightList[lang]} {shown.length}</>}>{() =>
+        <FlightRows lang={lang} flights={shown} testId="map-flight-list"/>}</OpenableList>
     </>}
 
     <p className="prep-note">{basis}{current.payload.retrievedAt ? ` · ${copy.collected[lang]} ${kstClock(String(current.payload.retrievedAt), date)}` : ''} · {copy.notPeople[lang]}</p>

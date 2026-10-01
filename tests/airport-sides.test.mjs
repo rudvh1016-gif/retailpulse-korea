@@ -248,3 +248,19 @@ test("a capped flight read is never a whole day, and a future day uses the offic
   assert.equal(future.gates.retrievedAt, "2026-09-28T09:00:00Z");
   assert.equal(airportSides(DATE, "FUTURE", [], [], [], false, false).gatesUnavailable, "NO_RECORDS");
 });
+
+test("today before its first collection uses the held schedule; recorded flights always win", () => {
+  const scheduled = [{ physicalFlightId: "X", terminal: "T2", gate: "274", scheduledTime: "07:30", status: "scheduled" }];
+  const early = airportSides(DATE, "TODAY", [], [], scheduled, true, false, "2026-09-28T09:00:00Z");
+  assert.equal(early.gateBasis, "OFFICIAL_DEPARTURE_SCHEDULE");
+  assert.equal(early.gates.byArea.T2.EAST, 1);
+  assert.equal(early.gates.retrievedAt, "2026-09-28T09:00:00Z");
+  // No schedule held either: still an honest "no records".
+  assert.equal(airportSides(DATE, "TODAY", [], [], [], false, false).gatesUnavailable, "NO_RECORDS");
+  // Recorded flights exist: the schedule is ignored.
+  const recorded = airportSides(DATE, "TODAY", [], [flight("R", "T1", "9", "08:10")], scheduled, true, false);
+  assert.equal(recorded.gateBasis, "COLLECTED_FLIGHT_RECORDS");
+  assert.equal(recorded.gates.byArea.T2.total, 0);
+  // A past day never uses a schedule.
+  assert.equal(airportSides(DATE, "PAST", [], [], scheduled, true, false).gatesUnavailable, "NO_RECORDS");
+});
