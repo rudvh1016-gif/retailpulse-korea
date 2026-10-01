@@ -259,3 +259,33 @@ for (const lang of ["ko", "en", "zh", "ja"] as const) {
     });
   }
 }
+
+// On the 1st of a month the chart has ONE day. Its bar was sized as 60% of the
+// plot divided by the day count, i.e. 60% of the plot: a solid black block.
+const FIRST_DAY = (() => {
+  const clone = JSON.parse(JSON.stringify(WITH_TRANSFER));
+  for (const key of ["all", "T1", "T2"]) {
+    const month = clone.airport.monthToDate[key];
+    month.current = { ...month.current, start: "2026-09-01", end: "2026-09-01", total: month.current.days[0].total, expectedDays: 1, completeDays: 1, days: month.current.days.slice(0, 1) };
+    month.previous = { ...month.previous, end: "2026-08-01", expectedDays: 1, completeDays: 1 };
+  }
+  return clone;
+})();
+
+for (const lang of ["ko", "en"] as const) {
+  for (const width of [390, 1280]) {
+    test(`the first day of a month draws a slim bar, not a block · ${lang} · ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 1000 });
+      await page.route("**/api/live/summary**", routeSummary(FIRST_DAY));
+      await page.goto(`/${lang}/airport`);
+      await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+      const bar = page.locator(".airport-month-bar");
+      await expect(bar).toHaveCount(1);
+      const [barBox, plotBox] = await Promise.all([bar.boundingBox(), page.locator(".airport-month-plot").boundingBox()]);
+      expect(barBox && plotBox).toBeTruthy();
+      expect(barBox!.width, "one day's bar is at most ~5% of the plot").toBeLessThanOrEqual(plotBox!.width * 0.05);
+      expect(barBox!.width, "and still visible").toBeGreaterThan(4);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    });
+  }
+}

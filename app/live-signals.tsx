@@ -1697,7 +1697,10 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
   const [active, setActive] = useState<string | null>(null);
   if (!days.length) return null;
   const width = 100, height = 100;
-  const barWidth = Math.max(1.5, (width / Math.max(days.length, 1)) * 0.6);
+  // Capped at the width a bar has with 15 days (4 units). Without the cap a
+  // month with one or two days so far (the 1st, the 2nd) drew a bar 60% / 30%
+  // of the plot wide, which read as a solid black block.
+  const barWidth = Math.min(Math.max(1.5, (width / Math.max(days.length, 1)) * 0.6), 4);
   // Inset by half a bar so the first and last bars are drawn WHOLE. Centring
   // them on the plot edge clipped half of each, which quietly understated the
   // two days a reader looks at most: the 1st and today.
