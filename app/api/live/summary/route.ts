@@ -675,6 +675,10 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   const airlineRanking = summarizeAirlineRanking(flightRows as unknown as AirlineRankingFlightRow[], lookupAirline, 300);
   const officialSchedule = dayRelation === 'FUTURE' ? readDepartureSchedule(departureScheduleRows[0], serviceDate) : [];
   const hasOfficialSchedule = dayRelation === 'FUTURE' && departureScheduleRows.length > 0;
+  // Today before the first collection: the held schedule stands in for the missing records (sides only).
+  const sidesScheduleOnly = dayRelation === 'TODAY' && flightRows.length === 0 && departureScheduleRows.length > 0;
+  const sidesSchedule = sidesScheduleOnly ? readDepartureSchedule(departureScheduleRows[0], serviceDate) : officialSchedule;
+  const hasSidesSchedule = hasOfficialSchedule || (sidesScheduleOnly && sidesSchedule.length > 0);
   const partialSchedule = dayRelation !== 'PAST' && serviceDate <= shiftKstDay(kstToday, 1) ? scheduledRows as unknown as ScheduledBriefingRow[] : [];
   const scheduledBriefing = summarizeScheduledBriefing(hasOfficialSchedule ? officialSchedule : partialSchedule, serviceDate, lookupAirline,
     hasOfficialSchedule ? 'OFFICIAL_DEPARTURE_SCHEDULE' : 'PARTIAL_SCHEDULE');
@@ -806,8 +810,8 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       departuresTrackedToday: flightsToday.departuresTrackedToday,
       departuresTrackedTodayByTerminal,
       flightScope: { ...flightScopeCounts(flightRows), capped: flightRows.length >= 2000 },
-      sides: airportSides(serviceDate, dayRelation, hallRows, flightRows, officialSchedule, hasOfficialSchedule, undefined,
-        hasOfficialSchedule ? String(departureScheduleRows[0]?.retrievedAt ?? '') || null : null),
+      sides: airportSides(serviceDate, dayRelation, hallRows, flightRows, sidesSchedule, hasSidesSchedule, undefined,
+        hasSidesSchedule ? String(departureScheduleRows[0]?.retrievedAt ?? '') || null : null),
       departuresTrackedTodayRetrievedAt: flightsToday.retrievedAt,
       topDepartureGate: flightsToday.topDepartureGate?.gate ?? null,
       topDepartureGateTerminal: flightsToday.topDepartureGate?.terminal ?? null,

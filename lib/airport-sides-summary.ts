@@ -45,7 +45,10 @@ export function airportSides(
   let rows: SideFlightRow[] = [];
   let gateBasis: AirportSidesBlock["gateBasis"] = null;
   let gatesUnavailable: AirportSidesBlock["gatesUnavailable"] = null;
-  if (dayRelation === "FUTURE") {
+  // Today before the day's first collection has no recorded flights yet, but the
+  // airport's own schedule for the day is already held (it is replaced by the
+  // records at the first scan). That is a labelled schedule, not an empty day.
+  if (dayRelation === "FUTURE" || (dayRelation === "TODAY" && flightRows.length === 0)) {
     if (hasSchedule) {
       gateBasis = "OFFICIAL_DEPARTURE_SCHEDULE";
       rows = schedule.map((row) => ({ physicalFlightId: row.physicalFlightId, terminal: row.terminal, gate: row.gate ?? null,

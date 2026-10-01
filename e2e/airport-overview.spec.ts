@@ -16,9 +16,11 @@ const FLIGHTS = [
   flight('T1', '27', '15:10', '싱가포르'),
 ];
 
-async function open(page: Page, { lang = 'ko', width = 390, suffix = '' } = {}) {
+async function open(page: Page, { lang = 'ko', width = 390, suffix = '', scheduleOnly = false } = {}) {
   await page.setViewportSize({ width, height: 900 });
-  const summary = { ...SUMMARY_FIXTURE, airport: { ...SUMMARY_FIXTURE.airport, sides: airportSides(DATE, 'TODAY', [], FLIGHTS, [], false, false) } };
+  // scheduleOnly: today before its first collection (no recorded flights; the held schedule stands in).
+  const scheduled = FLIGHTS.map((row) => ({ physicalFlightId: row.physicalFlightId, terminal: row.terminal, gate: row.gate, scheduledTime: row.scheduledAt.slice(11, 16), status: 'scheduled' }));
+  const summary = { ...SUMMARY_FIXTURE, airport: { ...SUMMARY_FIXTURE.airport, sides: scheduleOnly ? airportSides(DATE, 'TODAY', [], [], scheduled, true, false, '2026-08-30T13:00:00Z') : airportSides(DATE, 'TODAY', [], FLIGHTS, [], false, false) } };
   await page.route('**/api/live/summary*', routeSummary(summary));
   const flightRequests: string[] = [];
   const historyRequests: string[] = [];
@@ -26,33 +28,51 @@ async function open(page: Page, { lang = 'ko', width = 390, suffix = '' } = {}) 
   await page.route('**/api/live/airport-days*', (route) => { historyRequests.push(route.request().url()); return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ mode: 'airport-days', date: DATE, rowsRead: 0, withoutProfile: 0, history: [] }) }); });
   await page.route('**/api/live/flights*', (route) => {
     flightRequests.push(route.request().url());
-    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ mode: 'live-flights', basis: 'COLLECTED_FLIGHT_RECORDS', serviceDateKst: DATE, todayKst: DATE, flights: FLIGHTS, truncated: false, retrievedAt: '2026-08-31T05:00:00Z' }) });
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ mode: 'live-flights', basis: scheduleOnly ? 'OFFICIAL_DEPARTURE_SCHEDULE' : 'COLLECTED_FLIGHT_RECORDS', serviceDateKst: DATE, todayKst: DATE, flights: FLIGHTS, truncated: false, retrievedAt: '2026-08-31T05:00:00Z' }) });
   });
   await page.goto(`/${lang}/airport${suffix}`);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   return { flightRequests, historyRequests };
 }
 
-test('the Airport page departures tab shows east/west, the open gate map and destination regions', async ({ page }) => {
+test('the Airport page departures tab shows east/west, the open gate map and destination regions, one terminal at a time', async ({ page }) => {
   const { flightRequests, historyRequests } = await open(page);
   const overview = page.getByTestId('airport-departure-overview');
-  await expect(overview).toBeVisible();
-  await expect(overview).toHaveAttribute('data-terminals', 'T1,T2');
-  for (const terminal of ['T1', 'T2']) {
-    const block = overview.getByTestId(`overview-${terminal}`);
-    await expect(block.getByTestId('flight-split')).toBeVisible();
-    await expect(block.getByTestId('departure-map')).toBeVisible();
-    await expect(block.getByTestId('map-groups')).toBeVisible();
-  }
-  await expect(overview.getByTestId('overview-T2').getByTestId('map-counts')).toContainText('편');
+  await overview.scrollIntoViewIfNeeded();
+  await expect(overview).toHaveAttribute('data-terminals', 'T1');
+  const t1 = overview.getByTestId('overview-T1');
+  await expect(t1.getByTestId('flight-split')).toBeVisible();
+  await expect(t1.getByTestId('departure-map')).toBeVisible();
+  await expect(t1.getByTestId('map-groups')).toBeVisible();
+  await expect(overview.getByTestId('overview-T2')).toHaveCount(0);
+  await t1.getByTestId('day-radar-section').scrollIntoViewIfNeeded();
+  await expect(t1.getByTestId('radar-no-history')).toBeVisible();
+  // Switching to T2 shows T2 only, reusing the same two reads.
+  await overview.getByTestId('overview-switch').getByRole('tab', { name: 'T2' }).click();
+  await expect(overview).toHaveAttribute('data-terminals', 'T2');
+  const t2 = overview.getByTestId('overview-T2');
+  await expect(t2.getByTestId('departure-map')).toBeVisible();
+  await expect(t2.getByTestId('map-counts')).toContainText('편');
+  await expect(overview.getByTestId('overview-T1')).toHaveCount(0);
+  await t2.getByTestId('day-radar-section').scrollIntoViewIfNeeded();
+  await expect(t2.getByTestId('radar-no-history')).toBeVisible();
   expect(flightRequests.length, 'one flights read per date, shared by both terminals').toBe(1);
-  for (const terminal of ['T1', 'T2']) {
-    await overview.getByTestId(`overview-${terminal}`).getByTestId('day-radar-section').scrollIntoViewIfNeeded();
-    await expect(overview.getByTestId(`overview-${terminal}`).getByTestId('radar-no-history')).toBeVisible();
-  }
   expect(historyRequests.length, 'one stored-history read per date, shared by both terminals').toBe(1);
   // The intro says what the counts are not; the data blocks never call flights customers.
-  for (const terminal of ['T1', 'T2']) await expect(overview.getByTestId(`overview-${terminal}`)).not.toContainText('고객');
+  await expect(t2).not.toContainText('고객');
+});
+
+test('today before its first collection: the held schedule fills the map, labelled as the schedule', async ({ page }) => {
+  await open(page, { scheduleOnly: true });
+  await page.locator('.terminal-selector').getByRole('tab', { name: 'T2' }).click();
+  const overview = page.getByTestId('airport-departure-overview');
+  await overview.scrollIntoViewIfNeeded();
+  const block = overview.getByTestId('overview-T2');
+  await expect(block.getByTestId('departure-map')).toBeVisible();
+  await expect(block.getByTestId('map-empty')).toHaveCount(0);
+  await expect(block.getByTestId('map-counts')).not.toContainText('동편 0편 · 서편 0편');
+  await expect(block).toContainText('공식 출발 예정표 기준');
+  await expect(block.getByTestId('flight-split')).toHaveAttribute('data-state', 'OK');
 });
 
 test('the jump link at the top of the departures tab reaches it', async ({ page }) => {
@@ -61,14 +81,18 @@ test('the jump link at the top of the departures tab reaches it', async ({ page 
   await expect(jump).toBeVisible();
   await jump.click();
   await expect(page).toHaveURL(/#airport-departure-overview$/);
+  await expect(page.getByTestId('overview-T1').getByTestId('flight-split')).toBeVisible();
 });
 
-test('choosing one terminal shows only that terminal', async ({ page }) => {
+test('choosing one terminal shows only that terminal, with no switch', async ({ page }) => {
   await open(page);
-  await page.locator('.terminal-selector').getByRole('tab', { name: 'T1' }).click();
+  await page.locator('.terminal-selector').getByRole('tab', { name: 'T2' }).click();
   const overview = page.getByTestId('airport-departure-overview');
-  await expect(overview).toHaveAttribute('data-terminals', 'T1');
-  await expect(overview.getByTestId('overview-T2')).toHaveCount(0);
+  await overview.scrollIntoViewIfNeeded();
+  await expect(overview).toHaveAttribute('data-terminals', 'T2');
+  await expect(overview.getByTestId('overview-T2')).toBeVisible();
+  await expect(overview.getByTestId('overview-switch')).toHaveCount(0);
+  await expect(overview.getByTestId('overview-T1')).toHaveCount(0);
 });
 
 test('other tabs do not carry it', async ({ page }) => {
@@ -81,7 +105,8 @@ for (const [lang, width] of [['ko', 360], ['en', 360], ['zh', 360], ['ja', 360],
   test(`fits with no missing glyph: ${lang} at ${width}px`, async ({ page }) => {
     await open(page, { lang, width });
     const overview = page.getByTestId('airport-departure-overview');
-    await expect(overview.getByTestId('overview-T2').getByTestId('departure-map')).toBeVisible();
+    await overview.scrollIntoViewIfNeeded();
+    await expect(overview.getByTestId('overview-T1').getByTestId('departure-map')).toBeVisible();
     expect(await tofuCharacters(overview)).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
     await overview.screenshot({ path: `test-results/airport-overview-${lang}-${width}.png` });

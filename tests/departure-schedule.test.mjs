@@ -88,3 +88,39 @@ test('production-shaped held schedules stay changed-only, bounded, and cap the f
     assert.equal(board.flights.length,1200);assert.equal(board.truncated,true);
   } finally {sqlite.close();}
 });
+
+test('today before its first collection shows the held schedule, labelled; recorded flights win once they exist', async () => {
+  const sqlite = new DatabaseSync(':memory:');
+  sqlite.exec(readFileSync('drizzle/0018_airport_departure_schedule.sql', 'utf8'));
+  sqlite.exec(`CREATE TABLE airport_flights (physical_flight_id TEXT, flight_number TEXT, airline_code TEXT, airport_code TEXT, direction TEXT, terminal TEXT,
+    gate TEXT, checkin_counter TEXT, status TEXT, scheduled_at TEXT, retrieved_at TEXT)`);
+  const db = { prepare: (sql) => ({ bind: (...params) => ({ all: async () => ({ results: sqlite.prepare(sql).all(...params) }) }) }) };
+  const today = '2026-10-02';
+  const snapshot = JSON.stringify([
+    { physicalFlightId: 'B', terminal: 'T2', operatingFlight: 'KE2', scheduledTime: '09:30', airportCode: '오사카/ 간사이', gate: '274', status: 'scheduled' },
+    { physicalFlightId: 'A', terminal: 'T1', operatingFlight: 'KE1', scheduledTime: '08:10', airportCode: '도쿄/나리타', gate: '9', status: 'scheduled' },
+  ]);
+  sqlite.prepare('INSERT INTO airport_departure_schedule (service_date, payload, retrieved_at) VALUES (?,?,?)').run(today, snapshot, '2026-10-01T13:00:00Z');
+  try {
+    const before = await readFlightsForDate(db, today, today);
+    assert.equal(before.basis, 'OFFICIAL_DEPARTURE_SCHEDULE');
+    assert.equal(before.dayRelation, 'TODAY');
+    assert.deepEqual(before.flights.map((flight) => flight.flightNumber), ['KE1', 'KE2'], 'sorted by scheduled time');
+    assert.equal(before.flights[0].scheduledAt, '2026-10-02T08:10:00+09:00');
+    assert.equal(before.retrievedAt, '2026-10-01T13:00:00Z');
+    // No held schedule and no records: an honest empty day, labelled as records.
+    sqlite.prepare('DELETE FROM airport_departure_schedule').run();
+    const none = await readFlightsForDate(db, today, today);
+    assert.equal(none.basis, 'COLLECTED_FLIGHT_RECORDS');
+    assert.deepEqual(none.flights, []);
+    // Once the day has recorded flights they are used, never the schedule.
+    sqlite.prepare('INSERT INTO airport_departure_schedule (service_date, payload, retrieved_at) VALUES (?,?,?)').run(today, snapshot, '2026-10-01T13:00:00Z');
+    sqlite.prepare('INSERT INTO airport_flights VALUES (?,?,?,?,?,?,?,?,?,?,?)').run('R1', 'KE9', '대한항공', '후쿠오카', 'departure', 'T2', '231', null, 'scheduled', '2026-10-02T07:00:00+09:00', '2026-10-01T19:10:00Z');
+    const after = await readFlightsForDate(db, today, today);
+    assert.equal(after.basis, 'COLLECTED_FLIGHT_RECORDS');
+    assert.deepEqual(after.flights.map((flight) => flight.flightNumber), ['KE9']);
+    // A past day never borrows a schedule.
+    sqlite.prepare('INSERT INTO airport_departure_schedule (service_date, payload, retrieved_at) VALUES (?,?,?)').run('2026-10-01', snapshot, '2026-10-01T00:00:00Z');
+    assert.equal((await readFlightsForDate(db, '2026-10-01', today)).basis, 'COLLECTED_FLIGHT_RECORDS');
+  } finally { sqlite.close(); }
+});

@@ -25,7 +25,7 @@ export function IndustryGuide({ lang, industry, onIndustryChange, airport }: {
         ? text(lang, '공항 매장, 이렇게 준비하세요', 'Prepare your airport store', '机场店铺准备指南', '空港店舗の準備ガイド')
         : text(lang, '우리 업종에 맞는 실행 가이드', 'Put the signals to work for your store', '适合本业态的执行指南', '業種に合った実行ガイド')}</h2>
     </div></div>
-    <p className="truth-note">{text(lang, '아래는 일반 운영 제안이며 매출·방문자 수 예측이 아닙니다. 선택한 날짜의 공식 자료와 실제 매장 기록을 함께 확인하세요.', 'These are general operating suggestions, not sales or store-visitor forecasts. Check official data for the selected date alongside your own store records.', '以下为一般运营建议，并非销售额或到店人数预测。请结合所选日期的官方资料与门店实际记录判断。', '一般的な運営提案であり、売上・来店人数の予測ではありません。選択日の公式資料と自店の記録を併せて確認してください。')}</p>
+    <p className="truth-note">{text(lang, '일반 운영 제안이며 매출·방문자 수 예측이 아닙니다.', 'General operating suggestions, not sales or store-visitor forecasts.', '一般运营建议，并非销售额或到店人数预测。', '一般的な運営提案であり、売上・来店人数の予測ではありません。')}</p>
     <div className="industry-tabs" role="group" aria-label={text(lang, '업종 선택', 'Select a business type', '选择业态', '業種を選択')}>
       {(Object.keys(industryProfiles) as IndustryId[]).map(value => <button key={value} type="button" className={industry === value ? 'active' : ''} aria-pressed={industry === value} onClick={() => onIndustryChange(value)}>{industryProfiles[value].label[lang]}</button>)}
     </div>
@@ -36,16 +36,14 @@ export function IndustryGuide({ lang, industry, onIndustryChange, airport }: {
           {(Object.keys(airportStoreAreas) as AirportStoreArea[]).map(value => <option key={value} value={value}>{airportStoreAreas[value].label[lang]}</option>)}
         </select>
       </div>
-      <p className="truth-note">{text(lang, '내 매장이 있는 구역을 고르면 아래 안내 문구만 달라집니다. 위쪽의 터미널·출국/입국 숫자는 그대로입니다.', 'This selects location guidance only. It does not change the terminal or departure/arrival data above.', '此菜单仅选择区域说明，不改变上方航站楼或出入境数据。', '区域別案内の選択です。上のターミナル・出入国データ選択は変わりません。')}</p>
-      <p><strong>{text(lang, '이 구역에서 볼 것', 'What to read', '查看资料', '確認する資料')}</strong>{area.signal[lang]}</p>
       <p>{area.action[lang]}</p>
-      <p className="airport-industry-note"><strong>{profile.label[lang]}</strong>{playbook.airport[lang]}</p>
+      <p className="airport-industry-note">{playbook.airport[lang]}</p>
       <div className="operating-links">
         <a href="https://www.airport.kr/ap_ko/905/subview.do" target="_blank" rel="noopener noreferrer">{text(lang, '인천공항 반입 제한 안내 (한국어)', 'Airport carriage guidance (Korean)', '机场携带限制指南（韩语）', '空港持込制限案内（韓国語）')} ↗</a>
         <a href="https://www.airport.kr/ap_ko/1014/subview.do" target="_blank" rel="noopener noreferrer">{text(lang, '면세 액체류·환승 FAQ (한국어)', 'Duty-free liquids / transfer FAQ (Korean)', '免税液体与转机常见问题（韩语）', '免税液体・乗継FAQ（韓国語）')} ↗</a>
       </div>
     </div>}
-    <div className="operating-focus"><h3>{profile.label[lang]}</h3><p>{playbook.focus[lang]}</p></div>
+    <div className="operating-focus"><p>{playbook.focus[lang]}</p></div>
     <div className="operating-priorities" key={industry}>
       {playbook.priorities.map((priority, index) => <article className="operating-priority" key={index}>
         <h4>{priority.title[lang]}</h4>

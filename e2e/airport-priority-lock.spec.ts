@@ -260,32 +260,45 @@ for (const lang of ["ko", "en", "zh", "ja"] as const) {
   }
 }
 
-// On the 1st of a month the chart has ONE day. Its bar was sized as 60% of the
-// plot divided by the day count, i.e. 60% of the plot: a solid black block.
-const FIRST_DAY = (() => {
+// Early in a month the chart has one or two days. One bar used to be sized as
+// 60% of the plot (a solid black block); two bars used to sit at opposite
+// edges of the plot. Both must read as the start of a month filling from the left.
+const FIRST_DAYS = (count: number) => {
   const clone = JSON.parse(JSON.stringify(WITH_TRANSFER));
   for (const key of ["all", "T1", "T2"]) {
     const month = clone.airport.monthToDate[key];
-    month.current = { ...month.current, start: "2026-09-01", end: "2026-09-01", total: month.current.days[0].total, expectedDays: 1, completeDays: 1, days: month.current.days.slice(0, 1) };
-    month.previous = { ...month.previous, end: "2026-08-01", expectedDays: 1, completeDays: 1 };
+    const days = month.current.days.slice(0, count);
+    month.current = { ...month.current, start: "2026-09-01", end: days[count - 1].date, total: days.reduce((sum: number, day: { total: number }) => sum + day.total, 0), expectedDays: count, completeDays: count, days };
+    month.previous = { ...month.previous, end: `2026-08-0${count}`, expectedDays: count, completeDays: count };
   }
   return clone;
-})();
+};
 
-for (const lang of ["ko", "en"] as const) {
-  for (const width of [390, 1280]) {
-    test(`the first day of a month draws a slim bar, not a block · ${lang} · ${width}px`, async ({ page }) => {
-      await page.setViewportSize({ width, height: 1000 });
-      await page.route("**/api/live/summary**", routeSummary(FIRST_DAY));
-      await page.goto(`/${lang}/airport`);
-      await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
-      const bar = page.locator(".airport-month-bar");
-      await expect(bar).toHaveCount(1);
-      const [barBox, plotBox] = await Promise.all([bar.boundingBox(), page.locator(".airport-month-plot").boundingBox()]);
-      expect(barBox && plotBox).toBeTruthy();
-      expect(barBox!.width, "one day's bar is at most ~5% of the plot").toBeLessThanOrEqual(plotBox!.width * 0.05);
-      expect(barBox!.width, "and still visible").toBeGreaterThan(4);
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    });
+for (const count of [1, 2]) {
+  for (const lang of ["ko", "en"] as const) {
+    for (const width of [390, 1280]) {
+      test(`${count} day(s) into the month: slim bars filling from the left · ${lang} · ${width}px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.route("**/api/live/summary**", routeSummary(FIRST_DAYS(count)));
+        await page.goto(`/${lang}/airport`);
+        await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+        const bars = page.locator(".airport-month-bar");
+        await expect(bars).toHaveCount(count);
+        const plot = (await page.locator(".airport-month-plot").boundingBox())!;
+        const boxes = [];
+        for (let index = 0; index < count; index++) boxes.push((await bars.nth(index).boundingBox())!);
+        for (const box of boxes) {
+          expect(box.width, "a day's bar is at most ~5% of the plot").toBeLessThanOrEqual(plot.width * 0.05);
+          expect(box.width, "and still visible").toBeGreaterThan(4);
+        }
+        // Everything sits in the left part of the plot, side by side.
+        expect(boxes[count - 1].x + boxes[count - 1].width - plot.x, "bars fill from the left, not to the far edge").toBeLessThanOrEqual(plot.width * 0.2);
+        if (count === 2) expect(boxes[1].x - (boxes[0].x + boxes[0].width), "neighbouring days sit next to each other").toBeLessThanOrEqual(plot.width * 0.08);
+        // Labels never overlap each other or leave the plot.
+        const labels = await page.locator(".airport-month-ticks span").evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return [r.left, r.right, el.textContent]; }));
+        for (let index = 1; index < labels.length; index++) expect(labels[index][0] as number, `label ${labels[index][2]} clear of ${labels[index - 1][2]}`).toBeGreaterThan(labels[index - 1][1] as number);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      });
+    }
   }
 }
