@@ -15,9 +15,10 @@ import type { Lang } from "./retailpulse-data";
  * through the hourly bands. Hours already behind the reader are dense cloud,
  * hours ahead are translucent so the sky shows through; the peak is one warm
  * point; the present minute is a soft column of light with its time and a
- * dot on the cloud's edge. On the whole-airport view each terminal's own
- * forecast runs as a thin line inside the cloud. Pointing or touching
- * anywhere reads that hour; every band is also a keyboard stop.
+ * dot on the cloud's edge. On the whole-airport view T1 is a denser cloud
+ * inside the whole, so the strip above it is T2 (the whole is T1 + T2, band
+ * for band). Pointing or touching anywhere reads that hour; every band is
+ * also a keyboard stop.
  *
  * What it does not do: it draws only the bands the airport published, so a
  * gap in coverage is a gap in the curve; the curve never rises above or
@@ -123,7 +124,6 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakSt
     if (!svg || reducedMotion() || layout.segments.length === 0) return;
     const lines = Array.from(svg.querySelectorAll<SVGPathElement>(".airport-flow-line"));
     const areas = Array.from(svg.querySelectorAll<SVGPathElement>(".airport-flow-area"));
-    const layerLines = Array.from(svg.querySelectorAll<SVGPathElement>(".airport-flow-layer"));
     const marks = Array.from(svg.querySelectorAll<SVGGElement>(".airport-flow-mark"));
     const ring = ringRef.current;
     const lengths = lines.map((line) => line.getTotalLength());
@@ -131,14 +131,13 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakSt
       const draw = clamp01(progress / 0.6);
       lines.forEach((line, index) => { line.style.strokeDasharray = `${lengths[index]}`; line.style.strokeDashoffset = `${lengths[index] * (1 - draw)}`; });
       areas.forEach((area) => { area.style.opacity = String(draw); area.style.transform = `scaleY(${0.35 + 0.65 * draw})`; });
-      layerLines.forEach((line) => { line.style.opacity = String(clamp01((progress - 0.3) / 0.4)); });
       const settleIn = clamp01((progress - 0.55) / 0.35);
       marks.forEach((mark) => { mark.style.opacity = String(settleIn); mark.style.transform = `translateY(${(1 - settleIn) * 8}px)`; });
       if (ring) { const ringOut = clamp01((progress - 0.6) / 0.4); ring.style.opacity = String(0.55 * (1 - ringOut)); ring.setAttribute("r", String(5 + 16 * ringOut)); }
     };
     const settle = () => {
       lines.forEach((line) => { line.style.strokeDasharray = ""; line.style.strokeDashoffset = ""; });
-      [...areas, ...layerLines].forEach((element) => { element.style.opacity = ""; element.style.transform = ""; });
+      areas.forEach((element) => { element.style.opacity = ""; element.style.transform = ""; });
       marks.forEach((mark) => { mark.style.opacity = ""; mark.style.transform = ""; });
       if (ring) { ring.style.opacity = ""; ring.setAttribute("r", "5"); }
     };
@@ -166,7 +165,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakSt
   const tip = hover ? (() => {
     const band = layout.bands[hover.index];
     const lines = [`${clock(band.start)}–${clock(band.end)} KST`, `${people(band.value)}${unit}`];
-    if (layout.layers.length) lines.push(layout.layers.map((layer) => `${layer.key} ${people(layer.values[hover.index])}`).join(" · "));
+    if (layout.stacked) lines.push(layout.layers.map((layer) => `${layer.key} ${people(layer.values[hover.index])}`).join(" · "));
     const w = Math.max(...lines.map(textWidth)) + 20, h = 12 + lines.length * 15;
     const x = clampX(hover.x, w / 2);
     const above = hover.y - 16 - h >= top - 30;
@@ -189,7 +188,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakSt
         </linearGradient>
         {layout.now && <clipPath id={`${id}past`}><rect x={left} y={0} width={Math.max(0, layout.now.x - left)} height={height} /></clipPath>}
       </defs>
-      <rect className="airport-flow-sky" x={0} y={0} width={width} height={height} rx={16} fill={`url(#${id}sky)`} />
+      <rect className="airport-flow-sky" x={0} y={0} width={width} height={height} rx={20} fill={`url(#${id}sky)`} />
 
       {/* Value gridlines, labelled at the right so they never collide with the curve's start. */}
       <g className="airport-flow-grid">
@@ -213,7 +212,13 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakSt
         {layout.segments.map((segment, index) => <path key={`past-glow-${index}`} className="airport-flow-edge" d={segment.line} />)}
         {layout.segments.map((segment, index) => <path key={`past-line-${index}`} className="airport-flow-line" d={segment.line} />)}
       </g>}
-      {layout.layers.map((layer) => layer.segments.map((segment, index) => <path key={`${layer.key}-${index}`} className={`airport-flow-layer airport-flow-layer-${layer.key.toLowerCase()}`} d={segment.line} />))}
+      {/* T1 as a denser cloud inside the whole: the strip above it is T2, because the whole is T1 + T2. */}
+      {layout.stacked && <g className={layout.now ? "airport-flow-ahead" : undefined}>
+        {layout.layers[0].segments.map((segment, index) => <path key={`stack-${index}`} className="airport-flow-area airport-flow-stack" d={segment.area} />)}
+      </g>}
+      {layout.stacked && layout.now && <g className="airport-flow-past" clipPath={`url(#${id}past)`}>
+        {layout.layers[0].segments.map((segment, index) => <path key={`past-stack-${index}`} className="airport-flow-area airport-flow-stack" d={segment.area} />)}
+      </g>}
 
       <line className="av-rule airport-flow-base" x1={left} x2={right} y1={base} y2={base} />
       <g className="airport-flow-hours">
@@ -234,7 +239,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakSt
             textAnchor={layout.now.x > right - 70 ? "end" : "start"}>{people(nowBand.value)}{unit}</text>}
         </>}
         <g className="airport-flow-now-pill">
-          <rect x={pillX - pillWidth / 2} y={top - 38} width={pillWidth} height={22} rx={11} />
+          <rect x={pillX - pillWidth / 2} y={top - 39} width={pillWidth} height={24} rx={12} />
           <text className="airport-flow-now-label" x={pillX} y={top - 23} textAnchor="middle">{nowLabel}</text>
         </g>
       </g>}
@@ -257,7 +262,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakSt
     <ul className="av-legend airport-flow-legend">
       {layout.now && <li><i className="past" />{copy.past[lang]}</li>}
       {layout.now && <li><i className="ahead" />{copy.ahead[lang]}</li>}
-      {layout.layers.map((layer) => <li key={layer.key}><i className={`layer layer-${layer.key.toLowerCase()}`} />{layer.key}</li>)}
+      {layout.stacked && layout.layers.map((layer, index) => <li key={layer.key}><i className={index === 0 ? "stack-lower" : "stack-upper"} />{layer.key}</li>)}
     </ul>
   </figure>;
 }

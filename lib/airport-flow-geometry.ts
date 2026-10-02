@@ -74,6 +74,8 @@ export type FlowLayout = {
   dayStart: number; maxBand: number;
   segments: FlowSegment[];
   layers: Array<{ key: string; segments: FlowSegment[]; values: number[] }>;
+  /** True when the layers add up to the whole, band for band, so they can be drawn stacked inside it. */
+  stacked: boolean;
   bands: FlowBandBox[];
   grid: Array<{ value: number; y: number }>;
   peak: { x: number; y: number; value: number; start: string } | null;
@@ -121,9 +123,11 @@ export function flowLayout({ timeline, layers = null, width, height, peakStartAt
   });
   const segments = toSegments(sorted);
 
-  // Terminal layers are drawn only when every band of the whole-airport
-  // timeline has a matching band in that terminal's own timeline, so the thin
-  // lines sit under the same hours and the same scale as the total.
+  // Terminal layers are kept only when every band of the whole-airport
+  // timeline has a matching band in that terminal's own timeline, so they sit
+  // under the same hours and the same scale as the total. The whole-airport
+  // forecast is T1 + T2 band for band (lib/airport-today-summary.ts), which
+  // `stacked` verifies before the figure draws one inside the other.
   const layerList = Object.entries(layers ?? {}).flatMap(([key, bands]) => {
     const own = sortBands(bands ?? []);
     if (!own.length || sorted.length === 0) return [];
@@ -132,6 +136,9 @@ export function flowLayout({ timeline, layers = null, width, height, peakStartAt
     const aligned = sorted.map((band) => starts.get(band.targetStartAt)!);
     return [{ key, segments: toSegments(aligned), values: aligned.map((band) => band.expectedPassengers) }];
   });
+
+  const stacked = layerList.length >= 2 && sorted.every((band, index) =>
+    Math.abs(layerList.reduce((sum, layer) => sum + layer.values[index], 0) - band.expectedPassengers) <= 1);
 
   const bands: FlowBandBox[] = sorted.map((band) => {
     const startX = x(Date.parse(band.targetStartAt)), endX = x(Date.parse(band.targetEndAt));
@@ -161,5 +168,5 @@ export function flowLayout({ timeline, layers = null, width, height, peakStartAt
   })() : null;
 
   const ticks = sorted.length ? FLOW_HOURS.map((hour) => ({ hour, x: x(dayStart + hour * HOUR) })) : [];
-  return { width, height, left, right, top, base, dayStart, maxBand, segments, layers: layerList, bands, grid, peak, now, ticks };
+  return { width, height, left, right, top, base, dayStart, maxBand, segments, layers: layerList, stacked, bands, grid, peak, now, ticks };
 }

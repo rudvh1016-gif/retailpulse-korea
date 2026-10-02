@@ -67,6 +67,19 @@ test("the peak is the band the summary named, marked once, at the top of its own
   assert.equal(layout.base - layout.top >= 110, true, "the rule has room to be seen on a phone (≥110px) at this height");
 });
 
+test("terminal layers stack inside the whole only when they add up to it, band for band", () => {
+  const t1 = fullDay.map((band) => ({ ...band, expectedPassengers: Math.round(band.expectedPassengers * 0.6) }));
+  const t2 = fullDay.map((band, index) => ({ ...band, expectedPassengers: band.expectedPassengers - t1[index].expectedPassengers }));
+  const exact = flowLayout({ timeline: fullDay, layers: { T1: t1, T2: t2 }, width: WIDTH, height: HEIGHT, peakStartAt: null, nowBandStart: null, nowBandProgress: null });
+  assert.equal(exact.stacked, true);
+  assert.deepEqual(exact.layers.map((layer) => layer.key), ["T1", "T2"]);
+  const off = flowLayout({ timeline: fullDay, layers: { T1: t1, T2: t2.map((band) => ({ ...band, expectedPassengers: band.expectedPassengers + 50 })) }, width: WIDTH, height: HEIGHT, peakStartAt: null, nowBandStart: null, nowBandProgress: null });
+  assert.equal(off.stacked, false, "a layer that does not add up is never drawn as a share of the whole");
+  const misaligned = flowLayout({ timeline: fullDay, layers: { T1: t1.slice(1), T2: t2 }, width: WIDTH, height: HEIGHT, peakStartAt: null, nowBandStart: null, nowBandProgress: null });
+  assert.equal(misaligned.layers.length, 1, "a terminal missing a band of the whole is dropped");
+  assert.equal(misaligned.stacked, false);
+});
+
 test("the smooth curve never overshoots the two values it joins", () => {
   const { monotonePath } = awaitGeometry;
   const d = monotonePath([[0, 100], [10, 100], [20, 20], [30, 20]]);
