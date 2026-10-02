@@ -617,7 +617,7 @@ test("incomplete A5 daily coverage never renders as a full-day total or peak", a
   await expect(page.locator(".airport-forecast .flow-note")).toContainText("일부");
   await expect(page.locator(".airport-current-brief")).toContainText("공식 예상 승객 일부 누락 · 피크 판단 안 함");
   await expect(page.locator(".airport-forecast .flow-note")).toContainText("전체");
-  await expect(page.locator(".airport-timeline")).toBeVisible();
+  await expect(page.locator(".airport-flow")).toBeVisible();
   await expect(page.locator(".airport-today-grid").getByText("47,320명", { exact: true })).toHaveCount(0);
 
   await page.getByRole("tab", { name: "T2" }).click();
@@ -922,7 +922,7 @@ test("commercial and event controls preserve their meaning in KO EN ZH JA", asyn
  * markup. That bug was invisible to a probe that injected its own two-child
  * markup, so this measures the REAL rendered DOM.
  */
-test("the passenger-flow chart uses the section width on desktop and never scrolls vertically", async ({ page }) => {
+test("the passenger-flow figure uses the section width on desktop and the whole day fits a phone", async ({ page }) => {
   const wide = JSON.parse(JSON.stringify(SUMMARY_FIXTURE));
   wide.airport.passengerForecastTimeline = Array.from({ length: 24 }, (_, hour) => ({
     targetStartAt: `2026-08-31T${String(hour).padStart(2, "0")}:00:00+09:00`,
@@ -932,26 +932,33 @@ test("the passenger-flow chart uses the section width on desktop and never scrol
   await page.route("**/api/live/summary*", routeSummary(wide));
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/ko/airport");
-  const bars = page.locator(".airport-timeline-bars");
-  await expect(bars).toBeVisible();
-  const metrics = await bars.evaluate((el) => ({
+  const figure = page.locator(".airport-flow");
+  await expect(figure).toBeVisible();
+  const metrics = await figure.evaluate((el) => ({
     width: el.getBoundingClientRect().width,
+    svgWidth: el.querySelector("svg")!.getBoundingClientRect().width,
     vertical: el.scrollHeight > el.clientHeight + 1,
-    bands: el.children.length,
+    bands: el.querySelectorAll(".airport-flow-band").length,
   }));
   expect(metrics.bands).toBe(24);
   expect(metrics.width).toBeGreaterThan(900);
+  expect(metrics.svgWidth).toBeGreaterThan(850);
   expect(metrics.vertical).toBe(false);
 
+  // 2026-10-02: the day is one figure, so a phone shows all 24 hours at once
+  // instead of a strip the reader had to drag.
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
-  const mobile = await page.locator(".airport-timeline-bars").evaluate((el) => ({
+  await expect(page.locator(".airport-flow")).toBeVisible();
+  const mobile = await page.locator(".airport-flow").evaluate((el) => ({
     horizontal: el.scrollWidth > el.clientWidth + 1,
     vertical: el.scrollHeight > el.clientHeight + 1,
+    bands: el.querySelectorAll(".airport-flow-band").length,
     pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
   }));
-  expect(mobile.horizontal).toBe(true);
+  expect(mobile.horizontal).toBe(false);
   expect(mobile.vertical).toBe(false);
+  expect(mobile.bands).toBe(24);
   expect(mobile.pageOverflow).toBeLessThanOrEqual(1);
 });
 
@@ -963,11 +970,12 @@ test("the passenger-flow chart uses the section width on desktop and never scrol
 test("the current-time marker appears on today's chart only", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.goto("/ko/airport");
-  const now = page.locator(".airport-timeline-bars p.now");
+  const now = page.locator(".airport-flow .airport-flow-now");
   await expect(now).toHaveCount(1);
   await expect(now).toHaveAttribute("data-now-label", "현재 시각 14:10");
-  await expect(now.locator("span")).toHaveText("14:00");
-  await expect(page.locator(".airport-timeline")).toHaveAttribute("aria-label", /현재 시각 14:10/);
+  await expect(page.locator(".airport-flow .airport-flow-now-label")).toHaveText("현재 시각 14:10");
+  await expect(page.locator(".airport-flow .airport-flow-band.now")).toHaveAttribute("data-start", "2026-08-31T14:00:00+09:00");
+  await expect(page.locator(".airport-flow")).toHaveAttribute("aria-label", /현재 시각 14:10/);
 
   for (const [date, relation] of [["2026-08-30", "PAST"], ["2026-09-01", "FUTURE"]] as const) {
     const other = JSON.parse(JSON.stringify(SUMMARY_FIXTURE));
@@ -981,8 +989,9 @@ test("the current-time marker appears on today's chart only", async ({ page }) =
     }));
     await page.route("**/api/live/summary*", routeSummary(other));
     await page.goto(`/ko/airport?date=${date}`);
-    await expect(page.locator(".airport-timeline-bars")).toBeVisible();
-    await expect(page.locator(".airport-timeline-bars p.now")).toHaveCount(0);
+    await expect(page.locator(".airport-flow")).toBeVisible();
+    await expect(page.locator(".airport-flow .airport-flow-now")).toHaveCount(0);
+    await expect(page.locator(".airport-flow .airport-flow-band.now")).toHaveCount(0);
   }
 });
 
@@ -1421,27 +1430,29 @@ test("the composition module has intentional spacing and compact rows from mobil
 });
 
 /**
- * 예보 차트는 지금 시간대에서 열린다.
+ * 지금 시각이 화면 안에 있다.
  *
  * 하루가 화면에 다 안 들어가서 늘 00:00 에서 열렸고, 오후에 보는 사람은
- * 새벽 막대를 보고 직접 끌어야 했다.
+ * 새벽 막대를 보고 직접 끌어야 했다. 2026-10-02 부터 하루가 한 그림이라
+ * 끌 것이 없고, 지금 시각 선은 그림 안에 그대로 보인다.
  */
-test("the forecast chart opens scrolled to the current hour", async ({ page }) => {
+test("the forecast figure shows the current minute inside the phone viewport without scrolling", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko/airport");
 
-  const bars = page.locator(".airport-timeline-bars");
-  await expect(bars).toBeVisible();
-  const now = bars.locator("p.now");
-  await expect(now).toBeVisible();
+  const figure = page.locator(".airport-flow");
+  await expect(figure).toBeVisible();
+  // The rule is a stroked vertical <line>: a zero-width geometry box, so
+  // Playwright's "visible" does not apply; count it and measure it instead.
+  await expect(figure.locator(".airport-flow-now")).toHaveCount(1);
 
-  // 현재 시간대 막대가 보이는 영역 안에 들어와 있다.
-  const inView = await bars.evaluate((element) => {
-    const current = element.querySelector<HTMLElement>("p.now");
-    if (!current) return false;
-    const left = current.offsetLeft - element.scrollLeft;
-    return left >= 0 && left + current.clientWidth <= element.clientWidth + 1;
+  const inView = await figure.evaluate((element) => {
+    const rule = element.querySelector<SVGLineElement>(".airport-flow-now");
+    if (!rule) return false;
+    const box = rule.getBoundingClientRect();
+    const frame = element.getBoundingClientRect();
+    return box.left >= frame.left && box.right <= frame.right + 1 && element.scrollWidth <= element.clientWidth + 1;
   });
   expect(inView).toBe(true);
 });

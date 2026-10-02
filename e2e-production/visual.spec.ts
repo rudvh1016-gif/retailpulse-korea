@@ -525,23 +525,25 @@ test("production airport composition is one compact tabbed module at every requi
         await expect(dailyTotal).toContainText("금일 출국장 공식 예상 승객");
       }
     }
-    const bars = page.locator(".airport-timeline-bars");
-    const now = bars.locator("p.now");
+    const figure = page.locator(".airport-flow");
+    const now = figure.locator(".airport-flow-now");
     if (await now.count()) {
-      const inView = await bars.evaluate((element) => {
-        const current = element.querySelector<HTMLElement>("p.now");
-        if (!current) return false;
-        const left = current.offsetLeft - element.scrollLeft;
-        return left >= 0 && left + current.clientWidth <= element.clientWidth + 1;
+      const marker = await figure.evaluate((element) => {
+        const rule = element.querySelector<SVGLineElement>(".airport-flow-now")!;
+        const style = getComputedStyle(rule);
+        const box = rule.getBoundingClientRect();
+        const frame = element.getBoundingClientRect();
+        return {
+          height: box.height, strokeWidth: parseFloat(style.strokeWidth), stroke: style.stroke,
+          inside: box.left >= frame.left && box.right <= frame.right + 1,
+          label: rule.getAttribute("data-now-label"),
+          bands: element.querySelectorAll(".airport-flow-band").length,
+        };
       });
-      expect(inView).toBe(true);
-      const marker = await now.evaluate(el => {
-        const rule = getComputedStyle(el, "::before");
-        return { height: parseFloat(rule.height), width: parseFloat(rule.width), background: rule.backgroundImage, label: el.getAttribute("data-now-label") };
-      });
-      expect(marker.height).toBeGreaterThan(110);
-      expect(marker.width).toBeGreaterThanOrEqual(1);
-      expect(marker.background).toContain("repeating-linear-gradient");
+      expect(marker.inside).toBe(true);
+      expect(marker.height).toBeGreaterThan(100);
+      expect(marker.strokeWidth).toBeGreaterThanOrEqual(1);
+      expect(marker.stroke).toBe("rgb(63, 74, 92)");
       console.log(`AIRPORT_CURRENT_MARKER ${JSON.stringify({ viewport: width, ...marker })}`);
       await testInfo.attach(`airport-marker-${width}.png`, { body: await page.locator(".airport-forecast").screenshot(), contentType: "image/png" });
     }

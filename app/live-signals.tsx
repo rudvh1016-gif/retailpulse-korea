@@ -1,6 +1,8 @@
 "use client";
 import { demandCopy, demandLevel, AreaDemandCard, usePresentationClock } from "./area-demand-card";
 import { passengerCopy } from "../lib/passenger-copy";
+import { AirportFlowFigure } from "./airport-flow-figure";
+import { CountUpNumber } from "./count-up-number";
 import { passengerReferenceSum } from "../lib/passenger-reference-sum";
 import { usableComparison, validPopulationRange, kstStamp, kstDay, peopleRange, populationFlow } from "../lib/demand-presentation";
 import { pc } from '../lib/personal-copy';
@@ -9,7 +11,7 @@ import {flightBoardingLocation} from "../lib/flight-scope";
 import { SeoulContextCard, HolidayContext, contextText } from "./operational-context";
 import type { SeoulContext } from "../lib/seoul-context";
 import type { compareComposition } from "../lib/airport-composition-history";
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Lang } from "./retailpulse-data";
 import { friendlyCheckpointName, rankCurrentDepartureHallCheckpoints } from "../lib/airport-today-summary";
 import {
@@ -1435,50 +1437,6 @@ function TerminalBriefingCards({ lang, airport, nowIso, dayRelation }: {
  * `scrollLeft`, never `scrollIntoView`: the latter scrolls the PAGE too,
  * which would drag the reader away from the summary above.
  */
-function AirportForecastChart({
-  timeline, peakStartAt, nowBandStart, nowBandProgress, nowLabel, maxBand, numberLocale, label,
-}: {
-  timeline: ForecastBand[];
-  peakStartAt: string | null;
-  nowBandStart: string | null;
-  nowBandProgress: number | null;
-  nowLabel: string;
-  maxBand: number;
-  numberLocale: string;
-  label: string;
-}) {
-  const barsRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    const bars = barsRef.current;
-    if (!bars || !nowBandStart) return;
-    const current = bars.querySelector<HTMLElement>("p.now");
-    if (!current) return;
-    bars.scrollLeft = Math.max(0, current.offsetLeft - (bars.clientWidth - current.clientWidth) / 2);
-  }, [nowBandStart, timeline.length]);
-
-  const slots = [...timeline].sort((a,b)=>a.targetStartAt.localeCompare(b.targetStartAt)).flatMap((row,index,all) => {
-    const previous = all[index-1];
-    const gap = previous ? Math.min(24, Math.max(0, Math.floor((Date.parse(row.targetStartAt)-Date.parse(previous.targetEndAt))/3600000))) : 0;
-    return [...Array.from({length:gap},(_,i)=>({gapAt:new Date(Date.parse(previous!.targetEndAt)+i*3600000).toISOString()})), row];
-  });
-  return <div className="airport-timeline" role="group" aria-label={label}>
-    <div className="airport-timeline-bars" ref={barsRef}>{slots.map((row) => "gapAt" in row ? <p className="airport-band-gap" key={row.gapAt} aria-label={`${formatKstClock(row.gapAt)} —`}><span>{formatKstClock(row.gapAt)}</span><b>—</b></p> : <p
-      key={row.targetStartAt}
-      tabIndex={0}
-      aria-label={`${kstStamp(row.targetStartAt)}–${kstStamp(row.targetEndAt)} KST · ${Math.round(row.expectedPassengers).toLocaleString(numberLocale)}`}
-      className={[peakStartAt === row.targetStartAt ? "peak" : "", nowBandStart === row.targetStartAt ? "now" : ""].filter(Boolean).join(" ")}
-      data-now-label={nowBandStart === row.targetStartAt ? nowLabel : undefined}
-      style={nowBandStart === row.targetStartAt && nowBandProgress !== null
-        ? { "--now-offset": `${nowBandProgress * 100}%` } as CSSProperties
-        : undefined}
-    >
-      <i style={{ height: `${row.expectedPassengers / maxBand * 100}%` }} />
-      <span>{formatKstClock(row.targetStartAt)}</span>
-      <b>{Math.round(row.expectedPassengers).toLocaleString(numberLocale)}</b>
-    </p>)}</div>
-  </div>;
-}
-
 function FlightScopeNote({airport,lang}:{airport:LiveSummary["airport"];lang:Lang}) {
   const counts=airport.flightScope;
   if(!counts || !counts.total)return null;
@@ -1566,7 +1524,6 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
     ? Math.min(1, Math.max(0, (Date.parse(nowIso) - Date.parse(nowBand.targetStartAt)) / nowBandDuration))
     : null;
   const nowLabel = `${airportTodayText.nowMarker[lang]} ${formatKstClock(nowIso)}`;
-  const maxBand = Math.max(1, ...timeline.map((row) => row.expectedPassengers));
 
   const people = (value: number) => `${Math.round(value).toLocaleString(numberLocale)}${peopleUnit}`;
 
@@ -1608,13 +1565,12 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
       </div>
       <p className="flow-note">{summary.serviceDateKst} · {scopeLabel} · {timeline.length ? `${kstStamp(timeline[0].targetStartAt)}–${kstStamp(timeline.at(-1)!.targetEndAt)} KST · ${timeline.length} ${contextText(lang,"개 확인 시간대","available bands","个已确认时段","確認済み時間帯")}` : airportTodayText.unavailable[lang]}{isPartial ? ` · ${airportTodayText.partialBody[lang]}` : ""}</p>
       {timeline.length > 0
-        ? <AirportForecastChart
+        ? <AirportFlowFigure
           timeline={timeline}
           peakStartAt={peak?.targetStartAt ?? null}
           nowBandStart={nowBandStart}
           nowBandProgress={nowBandProgress}
           nowLabel={nowLabel}
-          maxBand={maxBand}
           numberLocale={numberLocale}
           label={`${arrivalSectionText.flowTitle[lang]}. ${arrivalSectionText.flowOnly[lang]}${nowBandStart ? `. ${nowLabel}` : ""}`}
         />
@@ -1843,13 +1799,13 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
       {referenceSum ? <>
         <strong className="airport-brief-total" data-basis="ARITHMETIC_ONLY" data-testid="airport-sum-total">
           <span className="airport-metric-label">{passengerCopy[summary.dayRelation === "TODAY" ? "summedToday" : "summedSelected"][lang]}</span>{" "}
-          <span className="airport-metric-value">{referenceSum.total.toLocaleString(numberLocale)}{peopleUnit}</span>
+          <span className={flow ? "airport-metric-value av-display" : "airport-metric-value"}><CountUpNumber value={referenceSum.total} locale={numberLocale} /><small>{peopleUnit}</small></span>
         </strong>
         <AirportSumFormula hall={referenceSum.hall} transfer={referenceSum.transfer} total={referenceSum.total}
           lang={lang} numberLocale={numberLocale} unit={peopleUnit} isToday={summary.dayRelation === "TODAY"} />
         <small className="passenger-transfer-limitation">{passengerCopy.arithmeticNote[lang]}</small>
       </> : expectedTotal !== null && forecastStatus === "COMPLETE"
-        ? <><strong className="airport-brief-total"><span className="airport-metric-label">{passengerCopy[summary.dayRelation === "TODAY" ? "today" : "selected"][lang]}</span>{" "}<span className="airport-metric-value">{Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}</span></strong>
+        ? <><strong className="airport-brief-total"><span className="airport-metric-label">{passengerCopy[summary.dayRelation === "TODAY" ? "today" : "selected"][lang]}</span>{" "}<span className={flow ? "airport-metric-value av-display" : "airport-metric-value"}><CountUpNumber value={Math.round(expectedTotal)} locale={numberLocale} /><small>{peopleUnit}</small></span></strong>
           <small className="passenger-transfer-limitation">{passengerCopy.limitation[lang]}</small></>
         : <p className="airport-data-missing">{forecastStatus === "PARTIAL" ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]}</p>}
       <small className="departure-hall-scope-note">{summary.serviceDateKst} · {scopeLabel} · {passengerCopy.scope[lang]}</small>
@@ -1976,7 +1932,6 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     (airport.congestion ?? []).map((row) => ({ ...row, waitTimeRaw: row.waitTimeRaw ?? null })),
   ) as Record<string, LiveCongestionRow[]>;
   const checkpointTerminals = Object.keys(rankedCheckpoints).filter((key) => isAll || key === terminal);
-  const maxBand = Math.max(1, ...timeline.map((row) => row.expectedPassengers));
   // The current-time marker exists only for TODAY. A past or future service
   // date has no "now" inside it, and drawing one would invent a moment in a
   // day the clock is not in. Bands the marker has passed stay forecasts.
@@ -2016,13 +1971,12 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
       <div className="airport-detail-head"><div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-forecast-title">{airportTodayText.forecastTitle[lang]}</h3></div><p>{airportTodayText.forecastOnly[lang]}</p></div>
       <p className="flow-note">{summary.serviceDateKst} · {scopeLabel} · {timeline.length ? `${kstStamp(timeline[0].targetStartAt)}–${kstStamp(timeline.at(-1)!.targetEndAt)} KST · ${timeline.length} ${contextText(lang,"개 확인 시간대","available bands","个已确认时段","確認済み時間帯")}` : airportTodayText.unavailable[lang]}{isForecastPartial ? ` · ${airportTodayText.partialBody[lang]}` : ''}</p>
       {timeline.length > 0
-        ? <AirportForecastChart
+        ? <AirportFlowFigure
           timeline={timeline}
           peakStartAt={peak?.targetStartAt ?? null}
           nowBandStart={nowBandStart}
           nowBandProgress={nowBandProgress}
           nowLabel={nowLabel}
-          maxBand={maxBand}
           numberLocale={numberLocale}
           label={`${airportTodayText.forecastTitle[lang]}. ${airportTodayText.forecastOnly[lang]}${nowBandStart ? `. ${nowLabel}` : ""}`}
         />

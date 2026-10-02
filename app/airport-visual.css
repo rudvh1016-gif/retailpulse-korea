@@ -61,3 +61,27 @@
 @media (prefers-reduced-motion: reduce) {
   .av-animate, .av-animate * { animation: none !important; transition: none !important; }
 }
+
+/*
+ * The 24-hour flow figure (app/airport-flow-figure.tsx): one line through the
+ * day's hourly forecast, the area under it, the peak, and a rule at the exact
+ * minute. Everything is SVG geometry with a stroke or a fill, never a CSS
+ * border on an empty box: WebKit (every browser on iOS) declined to paint the
+ * old zero-width bordered marker, and a stroked <line> has no such edge case.
+ */
+.airport-flow { margin: 16px 0 0; }
+.airport-flow svg { overflow: visible; }
+.airport-flow text { font-family: inherit; }
+.airport-flow-area { fill: var(--sky-200); }
+.airport-flow-line { fill: none; stroke: var(--dusk); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.airport-flow-hours text { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.airport-flow-now-label { fill: var(--slate); font-size: 11px; font-weight: var(--weight-strong); letter-spacing: .02em; }
+.airport-flow-peak circle { fill: var(--cloud-600); stroke: var(--haze); stroke-width: 2; }
+.airport-flow-peak text { fill: var(--dusk-deep); font-size: 11px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
+/* Hit areas: one per hourly band, invisible until pointed at or focused. */
+.airport-flow-band { fill: transparent; outline: none; }
+.airport-flow-band:hover, .airport-flow-band:focus-visible { fill: var(--dusk); fill-opacity: .08; }
+.airport-flow-band:focus-visible { stroke: var(--slate); stroke-width: 1.5; }
+
+/* The day's one big number, only where the flow figure sits under it. */
+.airport-today .airport-brief-total .av-display { display: block; margin-top: 6px; font-size: clamp(34px, 8vw, 56px); line-height: 1.05; letter-spacing: -.03em; }

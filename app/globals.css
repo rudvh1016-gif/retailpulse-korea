@@ -1346,56 +1346,6 @@ nav.bottom-nav { display: none; }
 .airport-checkpoint-terminal article > p { margin: 0; font-size: 10px; text-align: right; white-space: nowrap; }
 .airport-checkpoint-terminal article > p small { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
 .airport-checkpoint-terminal article.is-busiest { box-shadow: inset 2px 0 0 var(--ink); }
-/*
- * One column. The chart markup has a single child — the band row — and a
- * two-column template with a fixed 190px first track put that whole row into
- * the 190px track: 24 bands squeezed into a strip the width of a label,
- * every hour and value overprinting the next. The label track had no
- * occupant, so it is gone.
- */
-.airport-timeline { display: block; min-width: 0; padding: 28px 0; border-bottom: 1px solid var(--ink); }
-/*
- * The 24 hourly bands used to be laid out as `flex: 1 0 42px` with a 5px gap
- * inside a fixed 158px box with `overflow-x: auto`. That needs at least
- * 24*42 + 23*5 = 1123px, while the chart column was about 1004px, so a
- * horizontal scrollbar always appeared — and because the box height was fixed,
- * that scrollbar ate into it and produced a vertical scrollbar as well. The
- * bars were clipped between the two.
- *
- * A grid of 24 equal shrinkable columns has no minimum width to overflow, so
- * the chart simply fits whatever column it is given, and the box grows with
- * its content rather than trapping it.
- */
-/* The horizontal padding is not decoration: the 현재 시각 label is centred on
-   its band and is wider than one 44px column, so on the first or last band it
-   overhangs the content box and `overflow-x: auto` clips it to half a label.
-   Padding is part of the scrollable area, so the overhang lands inside it and
-   the label stays whole wherever the marker falls. */
-.airport-timeline-bars { position: relative; min-width: 0; height: auto; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(44px, 1fr); align-items: stretch; gap: 5px; overflow-x: auto; overscroll-behavior-x: contain; padding: 14px 28px 6px; }
-.airport-timeline-bars p { position: relative; min-width: 0; height: 158px; margin: 0; display: grid; grid-template-rows: 1fr auto auto; gap: 5px; align-items: end; text-align: center; }
-/*
- * Current-time marker, today only. A thin rule on the left edge of the band
- * the clock is inside, with a small label above it, so the reader sees which
- * bands are already behind them. Past bands keep their forecast styling: they
- * remain forecasts, not observations.
- */
-/* Explicit height: do not depend on an empty absolute grid item's automatic
- * stretch between top/bottom (the label can survive while its rule collapses).
- * Keep the rule full-height even when this hour's forecast bar is tiny. */
-/* The 현재 시각 marker is a PAINTED BOX, not a border on a zero-width box.
-   It used to be `width: 0` with `border-left: 1.5px dashed`. Chromium draws
-   that; WebKit — every browser on iOS — frequently does not paint a border on
-   a box with no width at all, which is why the owner saw the line on a desktop
-   and never on their phone, on both 출국 and 입국. A repeating gradient is a
-   real 2px-wide box with a background, so there is no zero-size edge case to
-   fall through, it is crisper on a high-DPI screen, and it costs no request.
-   `margin-left` re-centres it on the offset the border used to sit at. */
-.airport-timeline-bars p.now::before { content: ""; position: absolute; z-index: 2; left: var(--now-offset, 0%); top: -8px; height: calc(100% - 28px); width: 2px; margin-left: -1px; background: repeating-linear-gradient(to bottom, var(--ink) 0 4px, transparent 4px 8px); pointer-events: none; }
-.airport-timeline-bars p.now::after { content: attr(data-now-label); position: absolute; z-index: 3; left: var(--now-offset, 0%); top: -14px; transform: translateX(-50%); padding: 2px 6px; background: var(--ink); color: var(--paper); font-size: 10px; font-weight: var(--weight-strong); letter-spacing: .04em; white-space: nowrap; border-radius: 3px; pointer-events: none; }
-.airport-timeline-bars i { width: 100%; max-width: 48px; min-height: 2px; justify-self: center; display: block; background: #d9d9d9; border-top: 1px solid var(--muted); }
-.airport-timeline-bars .peak i { background: var(--ink); border-color: var(--ink); }
-.airport-timeline-bars span { color: var(--muted); font-size: 10px; white-space: nowrap; }
-.airport-timeline-bars b { font-size: 10px; font-weight: var(--weight-regular); }
 .airport-forecast-state { min-height: 150px; padding: 30px 0; display: grid; grid-template-columns: minmax(210px, .7fr) minmax(280px, 1fr); gap: 12px 32px; align-content: center; border-bottom: 1px solid var(--ink); }
 .airport-forecast-state strong { font-size: 20px; letter-spacing: -.025em; }
 .airport-forecast-state p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
@@ -1435,7 +1385,6 @@ nav.bottom-nav { display: none; }
 .airport-checkpoint-terminal h4 { padding: 0; }
 .airport-checkpoint-terminal article { padding: 13px 0; grid-template-columns: 24px minmax(0, 1fr) auto; gap: 10px; }
 .airport-checkpoint-terminal article > p { grid-column: 2 / -1; text-align: left; }
-.airport-timeline-bars p { height: 145px; }
 .airport-forecast-state { min-height: 0; padding: 24px 0; grid-template-columns: 1fr; gap: 10px; }
 .airport-forecast-state strong { font-size: 17px; }
 .airport-forecast-state small { grid-column: 1; }
@@ -2769,8 +2718,6 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .airport-wait-brief p { margin: 0; font-size: 13px; }
 .airport-wait-brief p:first-child { color: var(--muted); }
 .airport-forecast > .flow-note { font-size: 13px; line-height: 1.6; color: var(--muted); }
-.airport-timeline-bars p:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
-.airport-band-gap { border-inline: 1px dashed var(--line); }
 .date-nav button, .area-tabs button, .terminal-selector button, .airport-context-nav button { min-height: 44px; font-size: 14px; }
 .date-nav { padding: 8px 0; margin: 0 0 8px; }
 .date-nav-picker { font-size: 12px; }

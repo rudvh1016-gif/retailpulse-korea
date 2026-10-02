@@ -218,7 +218,10 @@ for (const width of [360, 390]) test(`owner UI lock across main screens ${width}
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     if (!route || route === '/airport') {
       await expect(page.locator('.airport-metric-value')).toBeVisible();
-      await expect(page.locator('.airport-metric-value')).toHaveCSS('font-size', route ? '17px' : '16px');
+      // The airport page leads with the day's one big number (2026-10-02 visual
+      // rules); the personal home keeps the plain 16px figure.
+      if (route) expect(await page.locator('.airport-metric-value').evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(34);
+      else await expect(page.locator('.airport-metric-value')).toHaveCSS('font-size', '16px');
     }
     const controls = page.locator('.personal-switches .personal-inline button, .area-tabs button, .terminal-selector button, .airport-context-nav button, .prediction-view .segmented button');
     for (const style of await controls.evaluateAll(els => els.map(el => { const s = getComputedStyle(el); return { top:s.borderTopWidth, left:s.borderLeftWidth, right:s.borderRightWidth, bottom:s.borderBottomWidth, background:s.backgroundColor, height:el.getBoundingClientRect().height }; }))) {

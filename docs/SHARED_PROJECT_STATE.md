@@ -372,3 +372,10 @@ If evidence is missing, say BLOCKED / PENDING / NOT VERIFIED.
 - Motion is GSAP 3.15 (Standard no-charge licence), loaded only when a figure
   first animates (`lib/motion.ts`); `tests/visual-foundation.test.mjs` forbids a
   static import so the first load stays at its current size.
+
+## Visual phase 2: 24-hour flow figure + count-up total (2026-10-02 KST)
+
+- The airport 출국·입국 hourly forecast is one SVG figure over the whole KST day (`app/airport-flow-figure.tsx`, geometry in `lib/airport-flow-geometry.ts`): line through the hourly bands, pastel area, peak dot, and a stroked rule at the exact minute (today only). It replaces the 24-bar strip that scrolled sideways on a phone; the strip's CSS left `app/globals.css`.
+- The day total on the airport page is the one big number and counts up when data arrives (`app/count-up-number.tsx`); the personal home keeps its plain figure.
+- Small reveals run on requestAnimationFrame (`tween` in `lib/motion.ts`); GSAP stays lazy for later sequenced figures.
+- Owner UI Lock: `app/live-signals.tsx` and `app/globals.css` changed and need re-approval in `tests/fixtures/phase2-locks.json`.
