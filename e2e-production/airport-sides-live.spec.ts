@@ -66,14 +66,19 @@ for (const width of [1280, 360]) {
         log(`${width} ${terminal} ${side} split state`, `${state} | ${(await card.innerText()).replace(/\s+/g, " ")}`);
         if (state === "OK") {
           await expect(card.getByTestId("split-flights")).toContainText("동편");
-          await expect(card.getByTestId("split-shares")).toContainText("동·서 위치가 확인된 항공편 기준");
+          // The day's gates are evidenced (the ratio has a basis), or none has a
+          // confirmed side yet — the held schedule before the first scan carries
+          // few or no gates — and the card says so instead of inventing a ratio.
+          const counts = apiGates?.byArea?.[terminal];
+          const confirmed = Number(counts?.EAST ?? 0) + Number(counts?.WEST ?? 0);
+          await expect(card.getByTestId("split-shares")).toContainText(confirmed > 0 ? "동·서 위치가 확인된 항공편 기준" : "동·서 위치가 확인된 항공편이 없어");
+          log(`${width} ${terminal} ${side} basis`, `${apiSummary?.airport?.sides?.gateBasis ?? "n/a"} · confirmed ${confirmed}/${Number(counts?.total ?? 0)}`);
           if (await card.getByTestId("split-estimate").count()) {
             await expect(card.getByTestId("split-note")).toContainText("실제 동·서편 승객 수가 아닙니다");
             // The people are spread over every flight of the same scope: what the
             // API could not place on a side, and (T1 only) the concourse, appear
             // as their own items instead of being folded into east and west.
             const estimate = await card.getByTestId("split-estimate").innerText();
-            const counts = apiGates?.byArea?.[terminal];
             if (Number(counts?.UNVERIFIED ?? 0) > 0) expect(estimate, "unconfirmed flights keep their own share").toContain("위치 미확인");
             if (Number(counts?.CENTER ?? 0) > 0) expect(estimate).toContain("중앙");
             if (terminal === "T1" && Number(apiGates?.byArea?.CONCOURSE?.total ?? 0) > 0) expect(estimate, "T1's figure includes concourse passengers").toContain("탑승동");
