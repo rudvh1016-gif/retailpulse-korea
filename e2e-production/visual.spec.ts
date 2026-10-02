@@ -31,6 +31,8 @@ const registeredCountryCodes = [...new Set(Object.values(AIRLINE_REGISTRY)
 const paintedBackground = async (page: import("@playwright/test").Page, selector: string) => page.evaluate((sel) => {
   const out: string[] = [];
   for (const start of Array.from(document.querySelectorAll(sel)).slice(0, 4)) {
+    // The airport dusk poster band (owner decision 2026-10-02, PR #246) is a figure, not a page surface.
+    if (start.closest(".airport-hero")) continue;
     let node: Element | null = start;
     while (node) {
       const style = getComputedStyle(node);
@@ -98,7 +100,12 @@ for (const locale of locales) {
         }
         // Pixel samples at safe empty positions: page gutter (left edge, mid
         // height) and the top-right corner of the header, never on text.
-        const left = await samplePixel(page, 2, 450);
+        // On the airport page the dusk poster band bleeds to the page edge; sample the gutter just above it.
+        const gutterY = await page.evaluate(() => {
+          const band = document.querySelector(".airport-hero")?.getBoundingClientRect();
+          return band && band.top <= 450 && band.bottom >= 450 ? Math.max(90, Math.floor(band.top) - 6) : 450;
+        });
+        const left = await samplePixel(page, 2, gutterY);
         const corner = await samplePixel(page, width - 3, 3);
         expect(left, `${locale}${route} gutter pixel`).toEqual([255, 255, 255]);
         expect(corner, `${locale}${route} header corner pixel`).toEqual([255, 255, 255]);
