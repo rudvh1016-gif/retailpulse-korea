@@ -292,3 +292,26 @@ test("today before its first collection uses the held schedule; recorded flights
   // A past day never uses a schedule.
   assert.equal(airportSides(DATE, "PAST", [], [], scheduled, true, false).gatesUnavailable, "NO_RECORDS");
 });
+
+// Every departure gate the Production flight records used from 2026-09-30 to
+// 2026-10-02 (read-only run 37041398188, 137 distinct terminal/gate values).
+// Each must resolve to a side: this is what keeps "탑승구 미정" at zero on a
+// real day rather than on a fixture.
+const PRODUCTION_GATES_2026_10_02 = {
+  T1: [1, 10, 11, 14, 15, 16, 17, 18, 19, 20, 21, 23, 24, 26, 27, 28, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 42, 43, 45, 46, 47, 48, 49, 50, 6, 7, 8, 9],
+  T2: [208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 224, 225, 231, 232, 233, 234, 235, 236, 238, 239, 241, 242, 243, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 260, 261, 263, 264, 265, 266, 267, 268, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 290, 291],
+  CONCOURSE: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 117, 118, 119, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132],
+};
+
+test("every gate Production used over three real days resolves to a side (2026-10-02 run 37041398188)", () => {
+  for (const [area, gates] of Object.entries(PRODUCTION_GATES_2026_10_02)) {
+    for (const gate of gates) {
+      const side = gateSideOf(area, String(gate));
+      assert.ok(["EAST", "WEST", "CENTER"].includes(side), `${area} ${gate} → ${side}`);
+    }
+  }
+  // The concourse rows arrive with no terminal and a three-digit gate; that path must resolve too.
+  for (const gate of PRODUCTION_GATES_2026_10_02.CONCOURSE) {
+    assert.equal(boardingAreaOf({ terminal: null, gate: String(gate) }), "CONCOURSE", `gate ${gate} with no terminal`);
+  }
+});
