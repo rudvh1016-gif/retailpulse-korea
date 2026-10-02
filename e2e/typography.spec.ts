@@ -998,7 +998,8 @@ for (const section of ["출국", "입국"] as const) {
 
     // A real stroke. A zero-width box is the exact shape WebKit refuses to paint.
     expect(marker!.strokeWidth, "the marker must have a real stroke width").toBeGreaterThanOrEqual(1);
-    expect(marker!.stroke, "the rule is dusk blue on the sky").toBe("rgb(75, 107, 158)");
+    // 출국 sits on the dusk poster (white rule); 입국 keeps the standalone sky figure (dusk rule).
+    expect(marker!.stroke, "the rule is painted ink, not a border").toBe(section === "출국" ? "rgb(255, 255, 255)" : "rgb(75, 107, 158)");
     expect(marker!.height, "the marker must span the plot").toBeGreaterThan(100);
     expect(marker!.borderLeftWidth, "a border is what stopped rendering on iOS; do not go back to it").toBe(0);
     expect(marker!.label).toBe("현재 시각 14:10");

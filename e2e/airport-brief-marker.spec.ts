@@ -33,8 +33,8 @@ for (const clock of ["11:57", "21:03", "23:59"]) {
       await expect(brief).toContainText("출발 운항");
       const style = await brief.locator("strong").first().evaluate(el => ({ weight: getComputedStyle(el).fontWeight, color: getComputedStyle(el).color }));
       expect(Number(style.weight)).toBeGreaterThanOrEqual(600);
-      // Dusk-deep ink on the sky panel (2026-10-02), not the page black.
-      expect(style.color).toBe("rgb(51, 77, 120)");
+      // White on the dusk poster (2026-10-02), not the page black.
+      expect(style.color).toBe("rgb(255, 255, 255)");
       // The one big number: at least 34px on the airport page.
       expect(await brief.locator(".airport-metric-value").first().evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(34);
 
@@ -53,7 +53,7 @@ for (const clock of ["11:57", "21:03", "23:59"]) {
           visible: style.display !== "none" && style.visibility === "visible" && Number(style.opacity) === 1,
           // A real stroke, not a border on an empty box (the shape WebKit —
           // every browser on iOS — declined to paint on the owner's phone).
-          stroked: parseFloat(style.strokeWidth) >= 1 && style.stroke === "rgb(75, 107, 158)",
+          stroked: parseFloat(style.strokeWidth) >= 1 && style.stroke === "rgb(255, 255, 255)",
           inside: box.left >= frame.left && box.right <= frame.right,
           labelInside: label.left >= frame.left - 1 && label.right <= frame.right + 1,
         };

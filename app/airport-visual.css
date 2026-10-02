@@ -29,6 +29,9 @@
   --cloud-600: #d98a63;
   --haze: #fbf7f2;
   --slate: #3f4a5c;
+  /* The poster sky: the navy above the dusk and the rose band where it meets the peach. */
+  --night: #1b2a45;
+  --rose: #c9a0a6;
   /* Motion: one speed for data arriving, one for small state changes. */
   --motion-reveal: 560ms;
   --motion-state: 240ms;
@@ -116,48 +119,55 @@
 .airport-today .airport-brief-total .av-display small { font-weight: 450; }
 
 /*
- * The airport lead as one atmosphere (owner review 2026-10-02, after the
- * card version read as a form: "modern and emotional, like the frames I
- * gave; try a different direction"). No card: the dusk sky runs edge to
- * edge behind one large, thin number; everything explanatory is small and
- * quiet; the day's cloud bank is a silhouette along the horizon with no
- * grid, value labels or legend — the shape is the data, the column of light
- * is the time, and touching the sky reads any hour. The truth labels keep
- * their places in the DOM (the sum leads, the limitation follows at once);
- * only their weight changes. This is the one CSS gradient in the visual
- * layer; the page outside stays paper white.
+ * The airport lead as a dusk poster (owner choice 2026-10-02, direction B):
+ * the sky runs edge to edge from the navy above the sunset, through the
+ * blue and the rose band, to the peach horizon; one large thin white number;
+ * every explanatory line small and quiet in white; the day's cloud bank a
+ * glowing white silhouette along the horizon with no grid, value labels or
+ * legend — the shape is the data, the column of light is the time, and
+ * touching the sky reads any hour. The truth labels keep their places in the
+ * DOM (the sum leads, the limitation follows at once); only their colour and
+ * weight change. This is the one CSS gradient in the visual layer; the page
+ * outside stays paper white.
  */
-.airport-today .airport-hero { position: relative; margin: -24px calc(-1 * var(--gutter)) 0; padding: 40px var(--gutter) 0; color: var(--dusk-deep); background: linear-gradient(180deg, rgba(127, 163, 209, .5) 0%, var(--sky-200) 30%, var(--sky-100) 52%, var(--cloud-100) 72%, var(--cloud-200) 90%, rgba(239, 179, 143, .75) 100%); }
-.airport-today .airport-hero > .eyebrow { color: var(--dusk-deep); opacity: .55; font-size: 11px; letter-spacing: .08em; }
-.airport-today .airport-hero .airport-brief-total { margin: 22px 0 0; }
-.airport-today .airport-hero .airport-metric-label { color: var(--dusk-deep); opacity: .7; font-size: 13px; font-weight: 500; letter-spacing: -.01em; }
-.airport-today .airport-hero .av-display { color: var(--dusk-deep); margin-top: 2px; font-size: clamp(72px, 16vw, 132px); font-weight: 300; letter-spacing: -.055em; line-height: .98; }
-.airport-today .airport-hero .av-display small { font-size: .2em; font-weight: 400; letter-spacing: 0; color: var(--dusk-deep); opacity: .55; margin-left: .3em; }
-.airport-today .airport-hero .airport-sum-formula { margin: 18px 0 0; padding: 12px 0; border-top: 1px solid rgba(51, 77, 120, .14); border-bottom: 0; max-width: 420px; }
-.airport-today .airport-hero .airport-sum-row, .airport-today .airport-hero .airport-sum-value, .airport-today .airport-hero .airport-sum-label { color: var(--dusk-deep); }
-.airport-today .airport-hero .airport-sum-label, .airport-today .airport-hero .airport-sum-value { font-size: 12px; font-weight: 500; }
-.airport-today .airport-hero .airport-sum-row[data-kind="total"] .airport-sum-value { font-size: 13px; }
-.airport-today .airport-hero .passenger-transfer-limitation, .airport-today .airport-hero .departure-hall-scope-note, .airport-today .airport-hero .airport-data-missing { display: block; color: var(--dusk-deep); opacity: .6; font-size: 12px; line-height: 1.55; max-width: 52ch; margin-top: 10px; }
-.airport-today .airport-hero .departure-hall-scope-note { margin-top: 4px; opacity: .5; }
+.airport-today .airport-hero { position: relative; margin: -24px calc(-1 * var(--gutter)) 0; padding: 44px var(--gutter) 0; color: var(--paper); background: linear-gradient(180deg, var(--night) 0%, var(--dusk-deep) 26%, var(--dusk) 46%, var(--sky-500) 58%, var(--rose) 74%, var(--cloud-400) 90%, var(--cloud-200) 100%); }
+.airport-today .airport-hero > .eyebrow { color: var(--paper); opacity: .55; font-size: 11px; letter-spacing: .08em; }
+.airport-today .airport-hero .airport-brief-total { margin: 22px 0 0; color: var(--paper); }
+.airport-today .airport-hero .airport-metric-label { color: var(--paper); opacity: .72; font-size: 13px; font-weight: 500; letter-spacing: -.01em; }
+.airport-today .airport-hero .av-display { color: var(--paper); margin-top: 2px; font-size: clamp(72px, 16vw, 132px); font-weight: 300; letter-spacing: -.055em; line-height: .98; }
+.airport-today .airport-hero .av-display small { font-size: .2em; font-weight: 400; letter-spacing: 0; color: var(--paper); opacity: .55; margin-left: .3em; }
+.airport-today .airport-hero .airport-sum-formula { margin: 18px 0 0; padding: 12px 0; border-top: 1px solid rgba(255, 255, 255, .22); border-bottom: 0; max-width: 420px; }
+.airport-today .airport-hero .airport-sum-row, .airport-today .airport-hero .airport-sum-value, .airport-today .airport-hero .airport-sum-label { color: var(--paper); }
+.airport-today .airport-hero .airport-sum-label, .airport-today .airport-hero .airport-sum-value { font-size: 12px; font-weight: 500; opacity: .85; }
+.airport-today .airport-hero .airport-sum-row[data-kind="total"] .airport-sum-value { font-size: 13px; opacity: 1; }
+.airport-today .airport-hero .passenger-transfer-limitation, .airport-today .airport-hero .departure-hall-scope-note, .airport-today .airport-hero .airport-data-missing { display: block; color: var(--paper); opacity: .66; font-size: 12px; line-height: 1.55; max-width: 52ch; margin-top: 10px; }
+.airport-today .airport-hero .departure-hall-scope-note { margin-top: 4px; opacity: .55; }
 /* The flow section inside the band: figure first, its caption last, nothing else. */
 .airport-today .airport-hero .airport-detail-section.airport-forecast { display: flex; flex-direction: column; margin-top: 28px; border-top: 0; }
 .airport-today .airport-hero .airport-forecast .airport-detail-head { order: 2; min-height: 0; margin: 0; padding: 0; border-bottom: 0; display: block; }
 .airport-today .airport-hero .airport-forecast .airport-detail-head .eyebrow { display: none; }
-.airport-today .airport-hero .airport-forecast .airport-detail-head h3 { margin: 0 0 2px; font-size: 13px; font-weight: 600; letter-spacing: -.01em; color: var(--dusk-deep); opacity: .8; }
-.airport-today .airport-hero .airport-forecast .airport-detail-head > p { max-width: 56ch; font-size: 12px; line-height: 1.6; color: var(--dusk-deep); opacity: .6; }
-.airport-today .airport-hero .airport-forecast > .flow-note { order: 3; margin: 2px 0 0; padding-bottom: 22px; max-width: 56ch; font-size: 12px; line-height: 1.6; color: var(--dusk-deep); opacity: .55; }
+.airport-today .airport-hero .airport-forecast .airport-detail-head h3 { margin: 0 0 2px; font-size: 13px; font-weight: 600; letter-spacing: -.01em; color: var(--dusk-deep); opacity: .9; }
+.airport-today .airport-hero .airport-forecast .airport-detail-head > p { max-width: 56ch; font-size: 12px; line-height: 1.6; color: var(--dusk-deep); opacity: .7; }
+.airport-today .airport-hero .airport-forecast > .flow-note { order: 3; margin: 2px 0 0; padding-bottom: 22px; max-width: 56ch; font-size: 12px; line-height: 1.6; color: var(--dusk-deep); opacity: .65; }
 .airport-today .airport-hero .airport-forecast-state { order: 1; border-bottom: 0; padding: 12px 0 24px; }
-.airport-today .airport-hero .airport-forecast-state strong, .airport-today .airport-hero .airport-forecast-state p, .airport-today .airport-hero .airport-forecast-state small { color: var(--dusk-deep); }
-/* Silhouette: the cloud bank and the column of light, edge to edge. */
+.airport-today .airport-hero .airport-forecast-state strong, .airport-today .airport-hero .airport-forecast-state p, .airport-today .airport-hero .airport-forecast-state small { color: var(--paper); }
+/* Silhouette: glowing clouds and the column of light, edge to edge. */
 .airport-today .airport-hero .av-figure.airport-flow { order: 1; margin: 0 calc(-1 * var(--gutter)) 8px; padding: 0; }
 .airport-today .airport-hero .airport-flow-sky, .airport-today .airport-hero .airport-flow-grid, .airport-today .airport-hero .airport-flow-stack, .airport-today .airport-hero .airport-flow-legend, .airport-today .airport-hero .airport-flow-base { display: none; }
-.airport-today .airport-hero .airport-flow-area { fill-opacity: .9; }
+.airport-today .airport-hero .airport-flow-area { fill-opacity: .92; }
 .airport-today .airport-hero .airport-flow-ahead .airport-flow-area { fill-opacity: .3; }
-.airport-today .airport-hero .airport-flow-line { stroke-opacity: .6; }
-.airport-today .airport-hero .airport-flow-hours text { fill-opacity: .45; font-size: 10px; }
-.airport-today .airport-hero .airport-flow-peak text { fill-opacity: .7; font-weight: 500; }
-.airport-today .airport-hero .airport-flow-now-pill rect { fill-opacity: .7; }
+.airport-today .airport-hero .airport-flow-edge { stroke-width: 9; stroke-opacity: .35; }
+.airport-today .airport-hero .airport-flow-line { stroke: var(--paper); stroke-opacity: .95; }
+.airport-today .airport-hero .airport-flow-ahead .airport-flow-line { stroke-opacity: .55; }
+.airport-today .airport-hero .airport-flow-hours text { fill: var(--dusk-deep); fill-opacity: .6; font-size: 10px; }
+.airport-today .airport-hero .airport-flow-peak circle { fill: var(--cloud-400); stroke: var(--paper); }
+.airport-today .airport-hero .airport-flow-peak text { fill: var(--paper); fill-opacity: .85; font-weight: 500; }
+.airport-today .airport-hero .airport-flow-now-light { fill-opacity: .16; }
+.airport-today .airport-hero .av-now.airport-flow-now { stroke: var(--paper); stroke-opacity: .8; }
+.airport-today .airport-hero .airport-flow-now-dot { stroke: var(--dusk-deep); }
+.airport-today .airport-hero .airport-flow-now-value { fill: var(--paper); }
+.airport-today .airport-hero .airport-flow-now-pill rect { fill-opacity: .94; }
 @media (max-width: 640px) {
-  .airport-today .airport-hero { margin: -21px -18px 0; padding: 30px 18px 0; }
+  .airport-today .airport-hero { margin: -21px -18px 0; padding: 34px 18px 0; }
   .airport-today .airport-hero .av-figure.airport-flow { margin: 0 -18px 6px; }
 }
