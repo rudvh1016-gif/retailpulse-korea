@@ -8,6 +8,7 @@ import { DayRadarSection, DepartureMapSection, FlightSplitCard } from './airport
 import { cnJpHoliday, officialHolidaysOn } from '../lib/airport-prep-holidays';
 import type { AirportSidesBlock as SidesBlock } from '../lib/airport-sides-summary';
 import { sidesCopy as copy } from '../lib/airport-sides-copy';
+import './airport-visual.css';
 
 type Terminal = 'T1' | 'T2';
 

@@ -361,3 +361,14 @@ If evidence is missing, say BLOCKED / PENDING / NOT VERIFIED.
   (`docs/OFFICIAL_NOTICES_2026-09-30.md` §2).
 - Unchanged: `NEXT_PUBLIC_AIRPORT_HALL_SIDES` OFF; the airport-notice
   consultation is not done; flights are never described as visitors.
+
+## Visual direction: airport first, pastel figures (2026-10-02 KST)
+
+- Owner decision 2026-10-02: the airport is the front door; the Seoul areas stay
+  (pages, collectors, data untouched) but move behind it. Figures inside airport
+  sections use a pastel dusk palette (`app/airport-visual.css`); the page ground
+  and body type keep the 2026-09-03 white system. Rules, palette, motion and the
+  five-step order are in `docs/VISUAL_LANGUAGE_2026-10-02.md`.
+- Motion is GSAP 3.15 (Standard no-charge licence), loaded only when a figure
+  first animates (`lib/motion.ts`); `tests/visual-foundation.test.mjs` forbids a
+  static import so the first load stays at its current size.
