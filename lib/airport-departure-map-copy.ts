@@ -21,10 +21,10 @@ export const mapCopy = {
   title: row("공항 출발편 지도", "Airport departure map", "机场出发航班地图", "空港出発便マップ"),
   open: row("공항 출발편 지도 열기", "Open the departure map", "打开出发航班地图", "出発便マップを開く"),
   intro: row(
-    "탑승구 위치에 출발 항공편 수를 표시한 배치도입니다. 사람 수, 보행 흐름, 매장 방문객이 아닙니다.",
-    "A schematic of departing flights at their gates. It does not show people, walking flow or shop visitors.",
-    "在登机口位置标出出发航班数的示意图。不是人数、人流或门店客流。",
-    "搭乗口の位置に出発便の数を示した概略図です。人数、人の流れ、店舗の来店客ではありません。",
+    "탑승구마다 오늘 출발편 수를 점의 크기로 나타냅니다. 사람 수가 아닙니다.",
+    "Each gate's dot is sized by its departures today. Flights, not people.",
+    "每个登机口的圆点大小表示今天的出发航班数。是航班数，不是人数。",
+    "搭乗口ごとの点の大きさが今日の出発便数です。人数ではありません。",
   ),
   loading: row("항공편 자료를 불러오는 중입니다.", "Loading the flight records.", "正在读取航班资料。", "便の資料を読み込んでいます。"),
   failed: row("항공편 자료를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.", "The flight records could not be loaded. Please try again shortly.", "未能读取航班资料，请稍后再试。", "便の資料を読み込めませんでした。しばらくしてからお試しください。"),
@@ -56,17 +56,17 @@ export const mapCopy = {
     EAST: row("동편", "East", "东侧", "東側"),
     WEST: row("서편", "West", "西侧", "西側"),
     CENTER: row("중앙", "Centre", "中央", "中央"),
-    UNVERIFIED: row("위치 미확인", "Side not confirmed", "位置未确认", "位置未確認"),
+    UNVERIFIED: row("탑승구 미정", "Gate not set", "登机口未定", "搭乗口未定"),
   },
   concourse: row("탑승동", "Concourse", "登机楼", "搭乗棟"),
   building: { T1: row("T1 본관", "T1 main building", "T1主楼", "T1本館"), T2: row("T2", "T2", "T2", "T2"), CONCOURSE: row("탑승동", "Concourse", "登机楼", "搭乗棟") },
   unknownBuilding: row("건물 미확인", "Building unknown", "所在建筑未确认", "建物未確認"),
   axis: row("서편 ← → 동편 (업무용 구분)", "West ← → East (KORETAIL working split)", "西侧 ← → 东侧（业务划分）", "西側 ← → 東側（業務用区分）"),
   schematic: row(
-    "공항 공식 지도 자료의 탑승구 좌표로 그린 KORETAIL 배치도입니다. 거리·동선·혼잡을 나타내지 않습니다.",
-    "KORETAIL's own schematic, drawn from gate coordinates in the airport's official map data. It shows no distance, route or crowding.",
-    "根据机场官方地图资料中的登机口位置制作的KORETAIL示意图，不表示距离、动线或拥挤。",
-    "空港公式地図資料の搭乗口の位置をもとに作ったKORETAILの概略図です。距離・動線・混雑は示しません。",
+    "공항 공식 지도의 탑승구 위치로 그렸습니다. 거리와 혼잡은 나타내지 않습니다.",
+    "Drawn from gate positions on the airport's official map. It shows no distance or crowding.",
+    "按机场官方地图的登机口位置绘制，不表示距离和拥挤。",
+    "空港公式地図の搭乗口の位置で描いています。距離や混雑は示しません。",
   ),
   gate: row("탑승구", "Gate", "登机口", "搭乗口"),
   noFlightsAtGate: row("선택한 시간에 이 탑승구 출발편이 없습니다.", "No departures from this gate in the chosen time.", "所选时段该登机口没有出发航班。", "選んだ時間にこの搭乗口の出発便はありません。"),
@@ -75,10 +75,10 @@ export const mapCopy = {
   notOnMap: row("공식 지도에 위치가 없는 탑승구", "Gate not on the official map", "官方地图上没有位置的登机口", "公式地図に位置がない搭乗口"),
   destinations: row("목적지 지역별", "By destination region", "按目的地区域", "行き先地域別"),
   destinationNote: (total: number, unknown: number, lang: Lang) => row(
-    `비율은 선택 시간 출발편 ${num(total, "ko")}편 기준(목적지 지역 미확인 ${num(unknown, "ko")}편 포함). 동·서 비율과 분모가 다릅니다. 목적지는 탑승객 국적이 아닙니다.`,
-    `Shares are of ${flights(total, "en")} in the chosen time (including ${num(unknown, "en")} with the region not confirmed), a different base from the east/west ratio. A destination is not the passengers' nationality.`,
-    `比例以所选时段的 ${num(total, "zh")} 班出发航班为基数（含目的地区域未确认 ${num(unknown, "zh")} 班），与东西比例的基数不同。目的地不是旅客国籍。`,
-    `比率は選んだ時間の出発便${num(total, "ja")}便が基準（行き先地域未確認${num(unknown, "ja")}便を含む）で、東西の比率とは基準が異なります。行き先は乗客の国籍ではありません。`,
+    `선택한 시간의 출발편 ${num(total, "ko")}편을 목적지 지역으로 나눈 것입니다(지역 미확인 ${num(unknown, "ko")}편 포함). 목적지는 탑승객의 국적이 아닙니다.`,
+    `The ${flights(total, "en")} in the chosen time, by destination region (including ${num(unknown, "en")} with the region not confirmed). A destination is not the passengers' nationality.`,
+    `把所选时段的 ${num(total, "zh")} 班出发航班按目的地区域划分（含区域未确认 ${num(unknown, "zh")} 班）。目的地不是旅客国籍。`,
+    `選んだ時間の出発便${num(total, "ja")}便を行き先地域で分けました（地域未確認${num(unknown, "ja")}便を含む）。行き先は乗客の国籍ではありません。`,
   )[lang],
   filter: row("선택한 목적지만 보기", "Show only this region", "只看该区域", "この地域だけ表示"),
   clearFilter: row("전체 목적지", "All destinations", "全部目的地", "すべての行き先"),
@@ -108,39 +108,40 @@ export const mapCopy = {
   } as Record<DestinationGroup, Row>,
 };
 
-/** "동편 12편 · 서편 9편 · 중앙 1편 · 위치 미확인 3편 · 탑승동 4편" for the window. */
+/** "동편 12편 · 서편 9편 · 탑승구 미정 3편 · 탑승동 4편" for the window; centre and unset only when they exist. */
 export function windowCountsLine(map: DepartureMap, lang: Lang): string {
-  const parts = (["EAST", "WEST", "CENTER", "UNVERIFIED"] as const).map((side) => `${mapCopy.side[side][lang]} ${flights(map.sides[side], lang)}`);
+  const parts = [`${mapCopy.side.EAST[lang]} ${flights(map.sides.EAST, lang)}`, `${mapCopy.side.WEST[lang]} ${flights(map.sides.WEST, lang)}`];
+  if (map.sides.CENTER > 0) parts.push(`${mapCopy.side.CENTER[lang]} ${flights(map.sides.CENTER, lang)}`);
+  if (map.sides.UNVERIFIED > 0) parts.push(`${mapCopy.side.UNVERIFIED[lang]} ${flights(map.sides.UNVERIFIED, lang)}`);
   if (map.concourse !== null) parts.push(`${mapCopy.concourse[lang]} ${flights(map.concourse, lang)}`);
   if (map.unknownBuilding > 0) parts.push(`${mapCopy.unknownBuilding[lang]} ${flights(map.unknownBuilding, lang)}`);
   return parts.join(" · ");
 }
 
 /**
- * "확인된 항공편 기준 동편이 3편 더 많음", with the caution kept in the sentence
- * itself when the unconfirmed flights alone could reverse it.
+ * "동편이 3편 더 많습니다.", with the caution kept in the sentence itself when
+ * the flights without a gate alone could reverse it.
  */
 export function leadLine(map: DepartureMap, lang: Lang): string {
   const lead = sideLead(map.sides);
-  if (!lead) return row("동·서 위치가 확인된 출발편이 없어 비교하지 않습니다.", "No departure has a confirmed side, so no comparison is made.", "没有东西位置已确认的出发航班，因此不作比较。", "東西の位置が確認できた出発便がないため比較しません。")[lang];
-  const basis = row("확인된 항공편 기준", "Among confirmed flights", "按已确认的航班", "確認できた便の基準で");
+  if (!lead) return row("탑승구가 정해진 출발편이 아직 없어 비교하지 않습니다.", "No departure has a gate yet, so no comparison is made.", "还没有已分配登机口的出发航班，因此不作比较。", "搭乗口が決まった出発便がまだないため比較しません。")[lang];
   const body = lead.larger === "EQUAL"
-    ? row("동편과 서편이 같음", "east and west are equal", "东西相同", "東西は同数")[lang]
+    ? row("동편과 서편이 같습니다.", "East and west are equal.", "东西相同。", "東西は同数です。")[lang]
     : row(
-      `${mapCopy.side[lead.larger].ko}이 ${num(lead.by, "ko")}편 더 많음`,
-      `${lead.larger === "EAST" ? "east" : "west"} has ${flights(lead.by, "en")} more`,
-      `${mapCopy.side[lead.larger].zh}多 ${num(lead.by, "zh")} 班`,
-      `${mapCopy.side[lead.larger].ja}が${num(lead.by, "ja")}便多い`,
+      `${mapCopy.side[lead.larger].ko}이 ${num(lead.by, "ko")}편 더 많습니다.`,
+      `${lead.larger === "EAST" ? "East" : "West"} has ${flights(lead.by, "en")} more.`,
+      `${mapCopy.side[lead.larger].zh}多 ${num(lead.by, "zh")} 班。`,
+      `${mapCopy.side[lead.larger].ja}が${num(lead.by, "ja")}便多いです。`,
     )[lang];
   const caution = leadCouldFlip(map.sides)
-    ? row(
-      ` (위치 미확인 ${num(map.sides.UNVERIFIED, "ko")}편에 따라 달라질 수 있음)`,
-      ` (the ${num(map.sides.UNVERIFIED, "en")} with an unconfirmed side could change this)`,
-      `（可能因位置未确认的 ${num(map.sides.UNVERIFIED, "zh")} 班而改变）`,
-      `（位置未確認の${num(map.sides.UNVERIFIED, "ja")}便によって変わり得る）`,
-    )[lang]
+    ? ` ${row(
+      `아직 탑승구가 정해지지 않은 ${num(map.sides.UNVERIFIED, "ko")}편에 따라 달라질 수 있습니다.`,
+      `The ${num(map.sides.UNVERIFIED, "en")} without a gate yet could change this.`,
+      `可能因尚未分配登机口的 ${num(map.sides.UNVERIFIED, "zh")} 班而改变。`,
+      `まだ搭乗口が決まっていない${num(map.sides.UNVERIFIED, "ja")}便によって変わることがあります。`,
+    )[lang]}`
     : "";
-  return lang === "en" ? `${basis.en}, ${body}${caution}` : `${basis[lang]} ${body}${caution}`;
+  return `${body}${caution}`;
 }
 
 export function windowText(window: MapWindow, lang: Lang): string {

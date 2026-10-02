@@ -2,6 +2,7 @@
 import { demandCopy, demandLevel, AreaDemandCard, usePresentationClock } from "./area-demand-card";
 import { passengerCopy } from "../lib/passenger-copy";
 import { AirportFlowFigure } from "./airport-flow-figure";
+import { AirportDepartureOverview } from "./airport-departure-overview";
 import { CountUpNumber } from "./count-up-number";
 import { passengerReferenceSum } from "../lib/passenger-reference-sum";
 import { usableComparison, validPopulationRange, kstStamp, kstDay, peopleRange, populationFlow } from "../lib/demand-presentation";
@@ -2019,7 +2020,9 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         </div>}
     </section>
     }/>
-
+    {/* Owner request 2026-10-02: the east/west, gate-map and destination block
+        is decision-critical, so it sits right under the day's passenger figures. */}
+    <AirportDepartureOverview lang={lang} terminal={terminal} date={date} />
 
     <details className="airport-summary-details"><summary>{contextText(lang,"터미널별 상세·집계 기준 보기","Terminal details and counting basis","航站楼详情与统计标准","ターミナル詳細・集計基準を見る")}</summary>
     {isAll && <TerminalBriefingCards lang={lang} airport={airport} nowIso={nowIso} dayRelation={summary?.dayRelation ?? "TODAY"} />}

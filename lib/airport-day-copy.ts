@@ -93,7 +93,7 @@ export const dayCopy = {
   thatDay: row("그날", "That day", "当天", "その日"),
   rows: {
     total: row("출발편 수", "Departures", "出发航班数", "出発便数"),
-    east: row("동편 비중(확인된 항공편 기준)", "East share (confirmed flights)", "东侧比例（按已确认航班）", "東側比率（確認できた便基準）"),
+    east: row("동편 비중(탑승구가 정해진 출발편 기준)", "East share (departures with a gate)", "东侧比例（按已分配登机口的出发航班）", "東側比率（搭乗口が決まった出発便基準）"),
     peak: row("가장 많은 시간대", "Busiest hour", "最多时段", "最も多い時間帯"),
     groups: row("목적지 지역 상위", "Top destination regions", "主要目的地区域", "上位の行き先地域"),
   },

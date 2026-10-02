@@ -114,24 +114,48 @@ const kstDay = (ms: number) => new Date(ms + 9 * 3_600_000).toISOString().slice(
  */
 export function FlightSplitCard({ lang, summary, sides, terminal, nowIso }: { lang: Lang; summary: LiveSummary; sides: SidesBlock; terminal: PrepTerminal; nowIso: string }) {
   const result = splitFromSummary(summary, sides, terminal, nowIso);
-  if (result.status !== 'OK') return <div className="prep-block" data-testid="flight-split" data-state={result.status}><p className="prep-note">{splitCopy.unavailable[result.status][lang]}</p></div>;
+  if (result.status !== 'OK') return <div className="prep-block av-split" data-testid="flight-split" data-state={result.status}><p className="prep-note">{splitCopy.unavailable[result.status][lang]}</p></div>;
   const s = result.split;
   const today = kstDay(Date.parse(nowIso));
   const when = summary.serviceDateKst === today ? 'TODAY' : summary.serviceDateKst === kstDay(Date.parse(nowIso) + 86_400_000) ? 'TOMORROW' : 'DATE';
-  const bar = { display: 'flex', height: 10, borderRadius: 5, overflow: 'hidden', background: 'var(--line)', margin: '8px 0' } as const;
-  return <div className="prep-block" data-testid="flight-split" data-state="OK" data-larger={s.larger ?? 'NONE'}>
+  const people = (value: number) => `${count(value, lang)}${copy.people[lang]}`;
+  const unit = copy.flights[lang];
+  const estimate = s.expected && s.eastPct !== null ? s.expected : null;
+  // The two sides as the figure: each side's flights large, its share, and the
+  // reference estimate in people under it; the bar between them is the split
+  // of confirmed flights only, with a surface gap so the two fills never touch.
+  const side = (key: 'EAST' | 'WEST') => {
+    const flights = key === 'EAST' ? s.east : s.west;
+    const pct = key === 'EAST' ? s.eastPct : s.westPct;
+    const part = estimate ? (key === 'EAST' ? estimate.east : estimate.west) : null;
+    return <div className={`av-split-side ${key.toLowerCase()}`} data-side={key}>
+      <span className="av-split-label"><i aria-hidden="true"/>{copy.side[key][lang]}</span>
+      <strong className="av-split-num">{count(flights, lang)}<small>{unit.trim()}</small></strong>
+      {pct !== null && <span className="av-split-pct">{copy.side[key][lang]} {pct}%</span>}
+      {part && <span className="av-split-people">{copy.expected[lang]} {people(part.people)}</span>}
+    </div>;
+  };
+  return <div className="prep-block av-split" data-testid="flight-split" data-state="OK" data-larger={s.larger ?? 'NONE'}>
     <h3>{splitCopy.heading(terminal, when, lang)}</h3>
-    <p data-testid="split-flights"><strong>{flightsBody(s, lang)}</strong></p>
-    {s.eastPct !== null && <div style={bar} role="img" aria-label={`${copy.side.EAST[lang]} ${s.eastPct}% ${copy.side.WEST[lang]} ${s.westPct}%`}>
-      <span style={{ width: `${s.eastPct}%`, background: 'var(--blue)' }}/><span style={{ width: `${s.westPct}%`, background: 'var(--green)' }}/>
-    </div>}
+    <p data-testid="split-flights" className="av-split-lead"><strong>{flightsBody(s, lang)}</strong></p>
+    <div className="av-split-figure">
+      {side('EAST')}
+      {side('WEST')}
+      {s.eastPct !== null && <div className="av-split-bar" role="img" aria-label={`${copy.side.EAST[lang]} ${s.eastPct}% ${copy.side.WEST[lang]} ${s.westPct}%`}>
+        <span className="east" style={{ width: `${s.eastPct}%` }}/><span className="west" style={{ width: `${s.westPct}%` }}/>
+      </div>}
+      {(s.unverified > 0 || s.center > 0) && <p className="av-split-rest">
+        {s.center > 0 && <span><i className="centre" aria-hidden="true"/>{copy.side.CENTER[lang]} {count(s.center, lang)}{unit}{estimate ? ` · ${people(estimate.center.people)}` : ''}</span>}
+        {s.unverified > 0 && <span><i className="unverified" aria-hidden="true"/>{copy.side.UNVERIFIED[lang]} {count(s.unverified, lang)}{unit}{s.unverifiedPct !== null ? ` · ${s.unverifiedPct}%` : ''}{estimate ? ` · ${people(estimate.unverified.people)}` : ''}</span>}
+      </p>}
+    </div>
     <p className="prep-note" data-testid="split-shares">{sharesBody(s, lang)}</p>
-    <h4 style={{ margin: '12px 0 0' }}>{splitCopy.estimateHeading[lang]}</h4>
-    {s.expected && s.eastPct !== null
+    <h4 className="av-split-sub">{splitCopy.estimateHeading[lang]}</h4>
+    {estimate
       ? <>
-        <p data-testid="split-estimate"><strong>{estimateBody({ terminal, ...s.expected }, lang)}</strong></p>
-        <p className="prep-note" data-testid="split-estimate-basis">{estimateBasisLine({ terminal, ...s.expected }, lang)}</p>
-        <p className="prep-note" data-testid="split-note">{estimateNote({ terminal, ...s.expected }, lang)}</p>
+        <p data-testid="split-estimate" className="av-split-estimate"><strong>{estimateBody({ terminal, ...estimate }, lang)}</strong></p>
+        <p className="prep-note" data-testid="split-estimate-basis">{estimateBasisLine({ terminal, ...estimate }, lang)}</p>
+        <p className="prep-note" data-testid="split-note">{estimateNote({ terminal, ...estimate }, lang)}</p>
       </>
       : <p className="prep-note" data-testid="split-no-estimate">{(s.eastPct === null ? splitCopy.noConfirmedEstimate : splitCopy.noEstimate)[lang]}</p>}
   </div>;

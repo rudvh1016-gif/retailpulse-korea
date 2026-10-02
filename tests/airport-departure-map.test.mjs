@@ -66,7 +66,7 @@ test("every flight is either drawn at a known gate or listed apart, never both a
   assert.deepEqual(t2.unplaced.notOnMap.map((flight) => flight.gate).sort(), ["228", "23A"], "no official position: never drawn at a guessed place");
   const g291 = t2.flights.find((flight) => flight.gate === "291");
   assert.ok(g291.position, "291 is on the airport's own map, so it is drawn");
-  assert.equal(g291.side, "UNVERIFIED", "drawn, but its side stays unconfirmed");
+  assert.equal(g291.side, "EAST", "drawn, and east of the building's centre line by the midpoint rule");
   assert.equal(t2.unplaced.noGate.length, 1);
   const t1 = departureMap({ date: DATE, nextDate: NEXT, terminal: "T1", window: DAY, rows });
   assert.equal(t1.concourse, 2, "T1 includes the concourse as its own building");
@@ -158,18 +158,18 @@ test("the destination table covers every destination seen in the stored departur
   assert.equal(destinationOf("김해").group, "DOMESTIC");
 });
 
-test("the lead sentence keeps 'among confirmed flights', and warns when the unconfirmed could reverse it", () => {
+test("the lead sentence is a plain sentence, and warns when the flights without a gate could reverse it", () => {
   const sides = (EAST, WEST, UNVERIFIED) => ({ EAST, WEST, CENTER: 0, UNVERIFIED, total: EAST + WEST + UNVERIFIED });
   assert.deepEqual(sideLead(sides(12, 9, 0)), { larger: "EAST", by: 3 });
   assert.equal(sideLead(sides(0, 0, 4)), null);
   assert.equal(leadCouldFlip(sides(12, 9, 2)), false);
   assert.equal(leadCouldFlip(sides(12, 9, 3)), true);
   const map = (s) => ({ sides: s, concourse: null, unknownBuilding: 0 });
-  assert.equal(leadLine(map(sides(12, 9, 0)), "ko"), "확인된 항공편 기준 동편이 3편 더 많음");
-  assert.equal(leadLine(map(sides(12, 9, 5)), "ko"), "확인된 항공편 기준 동편이 3편 더 많음 (위치 미확인 5편에 따라 달라질 수 있음)");
-  assert.equal(leadLine(map(sides(4, 4, 0)), "ko"), "확인된 항공편 기준 동편과 서편이 같음");
+  assert.equal(leadLine(map(sides(12, 9, 0)), "ko"), "동편이 3편 더 많습니다.");
+  assert.equal(leadLine(map(sides(12, 9, 5)), "ko"), "동편이 3편 더 많습니다. 아직 탑승구가 정해지지 않은 5편에 따라 달라질 수 있습니다.");
+  assert.equal(leadLine(map(sides(4, 4, 0)), "ko"), "동편과 서편이 같습니다.");
   assert.match(leadLine(map(sides(0, 0, 3)), "ko"), /비교하지 않습니다/);
-  assert.equal(leadLine(map(sides(2, 7, 0)), "en"), "Among confirmed flights, west has 5 flights more");
+  assert.equal(leadLine(map(sides(2, 7, 0)), "en"), "West has 5 flights more.");
 });
 
 test("the copied text carries date, terminal, window, filter, counts, gaps and the limit", () => {

@@ -229,10 +229,10 @@ test("flight records older than the publication window are not used", () => {
 
 test("the partial wording names its scope in the headline, in all four languages", () => {
   const fact = { kind: "GATE_PEAK", count: 3, startAt: "2026-09-28T09:00:00+09:00", endAt: "2026-09-28T10:00:00+09:00", issuedAt: null, side: "EAST", basis: "COLLECTED_FLIGHT_RECORDS", partial: true, unverifiedInHour: 17, unverifiedInHours: 40 };
-  assert.match(factLine(fact, "2026-09-28", "ko"), /^위치가 확인된 동편 탑승구 항공편 중 가장 많은 시간 .* 3편 \(위치 미확인 40편 제외, 그중 같은 시간 17편 · 동편 전체의 가장 많은 시간은 아직 알 수 없습니다\)/);
-  assert.match(factLine(fact, "2026-09-28", "en"), /^Among flights at gates confirmed on the east side/);
-  assert.match(factLine(fact, "2026-09-28", "zh"), /^在位置已确认的东侧登机口航班中/);
-  assert.match(factLine(fact, "2026-09-28", "ja"), /^位置が確認できた東側の搭乗口の便のうち/);
+  assert.match(factLine(fact, "2026-09-28", "ko"), /^탑승구가 정해진 동편 출발편 중 가장 많은 시간 .* 3편 \(탑승구 미정 40편 제외, 그중 같은 시간 17편 · 동편 전체의 가장 많은 시간은 아직 알 수 없습니다\)/);
+  assert.match(factLine(fact, "2026-09-28", "en"), /^Among east side departures that already have a gate/);
+  assert.match(factLine(fact, "2026-09-28", "zh"), /^在已分配登机口的东侧出发航班中/);
+  assert.match(factLine(fact, "2026-09-28", "ja"), /^搭乗口が決まった東側の出発便のうち/);
   assert.doesNotMatch(factLine(fact, "2026-09-28", "ko"), /^동편 출발편이 가장 많은 시간/);
 });
 

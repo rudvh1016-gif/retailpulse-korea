@@ -8,7 +8,8 @@ import { DayRadarSection, DepartureMapSection, FlightSplitCard } from './airport
 import { cnJpHoliday, officialHolidaysOn } from '../lib/airport-prep-holidays';
 import type { AirportSidesBlock as SidesBlock } from '../lib/airport-sides-summary';
 import { sidesCopy as copy } from '../lib/airport-sides-copy';
-import './airport-visual.css';
+// Styles: app/airport-visual.css, imported once by app/retailpulse-app.tsx (this
+// module is now loaded by live-signals.tsx, which the node tests import).
 
 type Terminal = 'T1' | 'T2';
 
@@ -51,10 +52,8 @@ export function AirportDepartureOverview({ lang, terminal, date }: { lang: Lang;
   const holidays = officialHolidaysOn(summary.serviceDateKst);
   return frame(<>
     <p className="section-intro">{copy.overviewIntro[lang]}</p>
-    {terminal === 'all' && <div role="group" aria-label={copy.overviewSwitch[lang]} data-testid="overview-switch" style={{ display: 'flex', gap: 20, borderBottom: '1px solid var(--line)' }}>
-      {(['T1', 'T2'] as const).map((item) => <button key={item} type="button" aria-pressed={picked === item} aria-label={`${copy.overviewSwitchTo[lang]} ${item}`} onClick={() => setPicked(item)}
-        style={{ minHeight: 44, padding: '0 2px', border: 0, background: 'transparent', cursor: 'pointer', fontSize: 11, fontWeight: 600, letterSpacing: '.08em',
-          color: picked === item ? 'var(--ink)' : '#888', borderBottom: picked === item ? '2px solid var(--blue)' : '2px solid transparent', marginBottom: -1 }}>{item}</button>)}
+    {terminal === 'all' && <div role="group" className="av-overview-switch" aria-label={copy.overviewSwitch[lang]} data-testid="overview-switch">
+      {(['T1', 'T2'] as const).map((item) => <button key={item} type="button" aria-pressed={picked === item} aria-label={`${copy.overviewSwitchTo[lang]} ${item}`} onClick={() => setPicked(item)}>{item}</button>)}
     </div>}
     {!sides
       ? <p className="prep-note" data-testid="overview-no-flights">{copy.noFlights[lang]}</p>

@@ -57,14 +57,14 @@ test('until the notice condition is met, hall sides are withheld and point to th
   await expect(sides.getByTestId('halls-withheld').getByRole('link')).toHaveAttribute('href', 'https://www.airport.kr/ap_ko/883/subview.do');
   // Codeshares once, cancelled apart, the concourse and T2 kept separate.
   await expect(sides.getByTestId('gates-areas')).toHaveText('T1 본관 5편 · T2 1편 · 탑승동 1편 · 터미널 미확인 0편');
-  await expect(sides.getByTestId('gates-sides')).toContainText('동편 2편 · 서편 1편 · 중앙 1편 · 위치 미확인 1편');
+  await expect(sides.getByTestId('gates-sides')).toContainText('동편 2편 · 서편 1편 · 중앙 1편 · 탑승구 미정 1편');
   await expect(sides).toContainText('결항편은 합계에서 제외했습니다 (1편)');
   // T1 has 4 of 5 flights at a gate with an evidenced side: the east count is partial.
-  await expect(sides.getByTestId('gates-coverage')).toHaveText('위치가 확인된 탑승구의 편수 4/5편 (80%) · 위치 미확인 1편: 위치표에 없는 탑승구 1');
+  await expect(sides.getByTestId('gates-coverage')).toHaveText('동·서편이 정해진 출발편 4/5편 (80%) · 탑승구 미정 1편: 공식 지도에 없는 탑승구 1');
   await expect(sides.getByTestId('gates-partial')).toHaveText(sidesCopy.sideCountsNote.ko);
   // So the fact names its own scope and is never "the east side's busiest hour"…
   const facts = prep.getByTestId('prep-facts');
-  await expect(facts).toContainText('위치가 확인된 동편 탑승구 항공편 중 가장 많은 시간 15:00–16:00 · 2편 (위치 미확인 1편 제외, 그중 같은 시간 0편 · 동편 전체의 가장 많은 시간은 아직 알 수 없습니다)');
+  await expect(facts).toContainText('탑승구가 정해진 동편 출발편 중 가장 많은 시간 15:00–16:00 · 2편 (탑승구 미정 1편 제외, 그중 같은 시간 0편 · 동편 전체의 가장 많은 시간은 아직 알 수 없습니다)');
   await expect(facts).not.toContainText('탑승구 기준 출발편이 가장 많은 시간');
   // …and it never becomes a staffing or stock action; the general checklist stays.
   await expect(prep.getByTestId('prep-actions').locator('li[data-rule="GATE_PEAK"]')).toHaveCount(0);
@@ -115,7 +115,7 @@ test('the staff share names the date, terminal, side, expectation basis and flig
   expect(text).toContain('2026-08-31 (월) · 인천공항 T1 동편');
   expect(text).toContain('동편 출국장 예상 이용객이 가장 많은 시간');
   // The copy text carries the same partial scope as the screen (and the PNG, which renders the same lines).
-  expect(text).toContain('위치가 확인된 동편 탑승구 항공편 중 가장 많은 시간 15:00–16:00 · 2편 (위치 미확인 1편 제외');
+  expect(text).toContain('탑승구가 정해진 동편 출발편 중 가장 많은 시간 15:00–16:00 · 2편 (탑승구 미정 1편 제외');
   expect(text).not.toContain('탑승구 기준 출발편이 가장 많은 시간');
   expect(text).toContain(sidesCopy.notice.ko);
   expect(text).toContain('인천공항 운항 정보 (탑승구 기준 출발편)');
@@ -170,15 +170,15 @@ test('the comparison is the first thing in the airport block: flights, ratio, an
   const card = sides.getByTestId('flight-split');
   await expect(card.locator('h3')).toHaveText('T1 오늘 출발편');
   // Fixture: 2 east, 1 west, 1 centre, 1 unconfirmed of 5 T1 departures (codeshares once, cancelled apart).
-  await expect(card.getByTestId('split-flights')).toHaveText('동편 2편 67% · 서편 1편 33% · 중앙 1편 · 위치 미확인 1편(전체의 20%)');
-  await expect(card.getByTestId('split-shares')).toHaveText('동·서 위치가 확인된 항공편 기준 (3편): 동편 67% · 서편 33% (동편이 더 많음)');
+  await expect(card.getByTestId('split-flights')).toHaveText('동편 2편 (67%) · 서편 1편 (33%) · 중앙 1편 · 탑승구 미정 1편 (전체의 20%)');
+  await expect(card.getByTestId('split-shares')).toHaveText('탑승구가 정해진 3편 기준으로 동편 67%, 서편 33%. 동편이 더 많습니다.');
   // The people are spread over ALL 6 flights of the T1 scope (5 T1 gates + 1 concourse), 100-rounded per group.
   const hundreds = (value: number) => Math.round(value / 100) * 100;
   const fmt = (value: number) => value.toLocaleString('ko-KR');
   await expect(card.getByTestId('split-estimate')).toHaveText(
-    `동편 약 ${fmt(hundreds((T1_EXPECTED * 2) / 6))}명 · 서편 약 ${fmt(hundreds(T1_EXPECTED / 6))}명 · 중앙 약 ${fmt(hundreds(T1_EXPECTED / 6))}명 · 위치 미확인 약 ${fmt(hundreds(T1_EXPECTED / 6))}명 · 탑승동 약 ${fmt(hundreds(T1_EXPECTED / 6))}명`,
+    `동편 약 ${fmt(hundreds((T1_EXPECTED * 2) / 6))}명 · 서편 약 ${fmt(hundreds(T1_EXPECTED / 6))}명 · 중앙 약 ${fmt(hundreds(T1_EXPECTED / 6))}명 · 탑승구 미정 약 ${fmt(hundreds(T1_EXPECTED / 6))}명 · 탑승동 약 ${fmt(hundreds(T1_EXPECTED / 6))}명`,
   );
-  await expect(card.getByTestId('split-estimate-basis')).toHaveText(`터미널 전체 예상 ${fmt(T1_EXPECTED)}명 기준 · 같은 범위 출발편 6편(T1 본관 5편 + 탑승동 1편)으로 나눈 추정`);
+  await expect(card.getByTestId('split-estimate-basis')).toHaveText(`공항이 발표한 T1 예상 출국객 ${fmt(T1_EXPECTED)}명을 출발편 6편(T1 본관 5편 + 탑승동 1편)에 같은 수로 나눈 참고값입니다.`);
   await expect(card.getByTestId('split-note')).toHaveText(`${splitCopy.estimateNote.ko} ${splitCopy.concourseNote.ko}`);
   // Hours: each with east/west counts and shares.
   await expect(sides.getByTestId('gates-all').locator('li').first()).toHaveText('15–16시 · 합계 3편 · 동 2편 / 서 1편 (동 67% · 서 33%)');
@@ -194,12 +194,12 @@ test('the terminal switch and the side choice change the right things', async ({
   await prep.getByRole('button', { name: prepCopy.save.ko, exact: true }).click();
   await expect(card.locator('h3')).toHaveText('T2 오늘 출발편');
   // T2 has one east flight and none in the west: 100 / 0, nothing assigned by force.
-  await expect(card.getByTestId('split-shares')).toContainText('동편 100% · 서편 0%');
+  await expect(card.getByTestId('split-shares')).toContainText('동편 100%, 서편 0%');
   await prep.getByRole('button', { name: prepCopy.change.ko }).click();
   await prep.getByTestId('prep-side').getByLabel('서편').check();
   await prep.getByRole('button', { name: prepCopy.save.ko, exact: true }).click();
   await expect(card.locator('h3')).toHaveText('T2 오늘 출발편');
-  await expect(card.getByTestId('split-flights')).toContainText('동편 1편 100% · 서편 0편 0%');
+  await expect(card.getByTestId('split-flights')).toContainText('동편 1편 (100%) · 서편 0편 (0%)');
 });
 
 test('screen, copied text and image carry the same lines, and the whole-day lines sit apart from the store hours', async ({ page }) => {
@@ -219,7 +219,7 @@ test('screen, copied text and image carry the same lines, and the whole-day line
   expect(text).toContain(estimate);
   expect(text).toContain(splitCopy.estimateNote.ko);
   expect(text).toContain(splitCopy.concourseNote.ko);
-  expect(text).toContain('편당 승객 수가 같다는 가정의 참고값');
+  expect(text).toContain('같은 수로 나눈 참고값입니다');
   expect(text.indexOf('■ 하루 전체 참고 (영업시간과 무관)')).toBeGreaterThan(text.indexOf('■ 영업시간 안에서 확인된 사실'));
   expect(text.indexOf('■ 하루 전체 참고 (영업시간과 무관)')).toBeLessThan(text.indexOf('■ 준비할 일'));
   expect(text).toMatch(/출처: .*인천공항 공식 출국 예상.*인천공항 운항 정보/);
@@ -277,7 +277,7 @@ test('when no flight has a confirmed side the card says so, not that the termina
   });
   const card = prep.getByTestId('flight-split');
   await expect(card.getByTestId('split-flights')).toContainText('동편 0편');
-  await expect(card.getByTestId('split-shares')).toContainText('비율을 계산하지 않았습니다');
+  await expect(card.getByTestId('split-shares')).toContainText('비율을 내지 않았습니다');
   await expect(card.getByTestId('split-no-estimate')).toHaveText(splitCopy.noConfirmedEstimate.ko);
   await expect(card.getByTestId('split-estimate')).toHaveCount(0);
 });
@@ -287,6 +287,6 @@ test('the basis panel names both the official text and the official map as evide
   const basis = prep.getByTestId('sides-basis');
   await basis.locator('summary').click();
   await expect(basis).toContainText('공식 지도');
-  await expect(basis).toContainText('예상 출국객 참고 추정');
+  await expect(basis).toContainText('예상 출국객은 참고값입니다');
   await expect(basis.getByRole('link', { name: '공항 공식 지도' })).toHaveAttribute('href', /airport\.kr\/geomap/);
 });

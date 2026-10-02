@@ -130,11 +130,11 @@
  * weight change. This is the one CSS gradient in the visual layer; the page
  * outside stays paper white.
  */
-.airport-today .airport-hero { position: relative; margin: -24px calc(-1 * var(--gutter)) 0; padding: 44px var(--gutter) 0; color: var(--paper); background: linear-gradient(180deg, var(--night) 0%, var(--dusk-deep) 26%, var(--dusk) 46%, var(--sky-500) 58%, var(--rose) 74%, var(--cloud-400) 90%, var(--cloud-200) 100%); }
+.airport-today .airport-hero { position: relative; margin: -24px calc(-1 * var(--gutter)) 0; padding: 34px var(--gutter) 0; color: var(--paper); background: linear-gradient(180deg, var(--dusk-deep) 0%, var(--dusk) 30%, var(--sky-500) 50%, var(--rose) 70%, var(--cloud-400) 88%, var(--cloud-200) 100%); }
 .airport-today .airport-hero > .eyebrow { color: var(--paper); opacity: .55; font-size: 11px; letter-spacing: .08em; }
-.airport-today .airport-hero .airport-brief-total { margin: 22px 0 0; color: var(--paper); }
+.airport-today .airport-hero .airport-brief-total { margin: 16px 0 0; color: var(--paper); }
 .airport-today .airport-hero .airport-metric-label { color: var(--paper); opacity: .72; font-size: 13px; font-weight: 500; letter-spacing: -.01em; }
-.airport-today .airport-hero .av-display { color: var(--paper); margin-top: 2px; font-size: clamp(72px, 16vw, 132px); font-weight: 300; letter-spacing: -.055em; line-height: .98; }
+.airport-today .airport-hero .av-display { color: var(--paper); margin-top: 2px; font-size: clamp(56px, 11vw, 88px); font-weight: 300; letter-spacing: -.05em; line-height: 1; }
 .airport-today .airport-hero .av-display small { font-size: .2em; font-weight: 400; letter-spacing: 0; color: var(--paper); opacity: .55; margin-left: .3em; }
 .airport-today .airport-hero .airport-sum-formula { margin: 18px 0 0; padding: 12px 0; border-top: 1px solid rgba(255, 255, 255, .22); border-bottom: 0; max-width: 420px; }
 .airport-today .airport-hero .airport-sum-row, .airport-today .airport-hero .airport-sum-value, .airport-today .airport-hero .airport-sum-label { color: var(--paper); }
@@ -143,7 +143,7 @@
 .airport-today .airport-hero .passenger-transfer-limitation, .airport-today .airport-hero .departure-hall-scope-note, .airport-today .airport-hero .airport-data-missing { display: block; color: var(--paper); opacity: .66; font-size: 12px; line-height: 1.55; max-width: 52ch; margin-top: 10px; }
 .airport-today .airport-hero .departure-hall-scope-note { margin-top: 4px; opacity: .55; }
 /* The flow section inside the band: figure first, its caption last, nothing else. */
-.airport-today .airport-hero .airport-detail-section.airport-forecast { display: flex; flex-direction: column; margin-top: 28px; border-top: 0; }
+.airport-today .airport-hero .airport-detail-section.airport-forecast { display: flex; flex-direction: column; margin-top: 18px; border-top: 0; }
 .airport-today .airport-hero .airport-forecast .airport-detail-head { order: 2; min-height: 0; margin: 0; padding: 0; border-bottom: 0; display: block; }
 .airport-today .airport-hero .airport-forecast .airport-detail-head .eyebrow { display: none; }
 .airport-today .airport-hero .airport-forecast .airport-detail-head h3 { margin: 0 0 2px; font-size: 13px; font-weight: 600; letter-spacing: -.01em; color: var(--dusk-deep); opacity: .9; }
@@ -169,10 +169,112 @@
 .airport-today .airport-hero .airport-flow-now-pill rect { fill-opacity: .94; }
 /* The band bleeds exactly as far as the page shell pads (globals.css: var(--gutter) above 820px, 18px to 820px, 14px to 365px). */
 @media (max-width: 820px) {
-  .airport-today .airport-hero { margin: -21px -18px 0; padding: 34px 18px 0; }
+  .airport-today .airport-hero { margin: -21px -18px 0; padding: 28px 18px 0; }
   .airport-today .airport-hero .av-figure.airport-flow { margin: 0 -18px 6px; }
 }
 @media (max-width: 365px) {
   .airport-today .airport-hero { margin: -21px -14px 0; padding: 30px 14px 0; }
   .airport-today .airport-hero .av-figure.airport-flow { margin: 0 -14px 6px; }
 }
+
+/*
+ * The departures block under the lead (owner request 2026-10-02: decision-
+ * critical, so it sits right under the passenger figures and must look as
+ * considered as the band above it). Three figures in the same pastel system:
+ * the east/west split as two numbers and a gapped bar, the gate map as piers
+ * of area-scaled dots, and the destination mix as a single-hue bar list.
+ * Marks: east = dusk, west = cloud-600, centre = sky-500, side not confirmed =
+ * hatched haze. The pastel chroma sits below the dataviz validator's floor by
+ * design; identity is never colour alone — each mark carries its word, the
+ * legend, its position on the pier, or its own number.
+ */
+.airport-departure-overview { margin-top: 34px; }
+.airport-departure-overview .section-head { border-bottom: 0; padding-bottom: 6px; }
+.airport-departure-overview .section-intro { margin: 6px 0 14px; }
+.av-overview-switch { display: inline-flex; gap: 4px; padding: 3px; margin: 0 0 14px; border-radius: 999px; background: var(--sky-100); }
+.av-overview-switch button { min-height: 36px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; color: var(--dusk-deep); font: inherit; font-size: 12px; font-weight: 600; letter-spacing: .04em; cursor: pointer; }
+.av-overview-switch button[aria-pressed="true"] { background: var(--paper); color: var(--dusk-deep); }
+.av-overview-switch button:focus-visible { outline: 2px solid var(--dusk); outline-offset: 1px; }
+
+/* East / west split */
+.av-split { margin-top: 14px; }
+.av-split h3 { font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+.av-split .av-split-lead { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+.av-split .av-split-lead strong { font-weight: 400; color: var(--muted); }
+.av-split-figure { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; margin: 14px 0 8px; padding: 20px 20px 16px; border-radius: 18px; background: var(--haze); }
+.av-split-side { display: grid; gap: 2px; }
+.av-split-side.west { text-align: right; justify-items: end; }
+.av-split-label { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: var(--dusk-deep); }
+.av-split-label i { width: 12px; height: 12px; border-radius: 3px; background: var(--dusk); }
+.av-split-side.west .av-split-label i { background: var(--cloud-600); }
+.av-split-side.west .av-split-label { flex-direction: row-reverse; }
+.av-split-num { font-size: clamp(44px, 10vw, 68px); line-height: 1; font-weight: 400; letter-spacing: -.035em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.av-split-num small { font-size: .38em; font-weight: 500; letter-spacing: 0; color: var(--muted); margin-left: .15em; }
+.av-split-pct { font-size: 16px; font-weight: 700; color: var(--dusk-deep); }
+.av-split-people { font-size: 13px; color: var(--muted); }
+.av-split-bar { grid-column: 1 / -1; display: flex; gap: 3px; height: 22px; border-radius: 11px; overflow: hidden; }
+.av-split-bar span { display: block; height: 100%; }
+.av-split-bar .east { background: var(--dusk); border-radius: 11px 0 0 11px; }
+.av-split-bar .west { background: var(--cloud-600); border-radius: 0 11px 11px 0; }
+.av-split-rest { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 0; font-size: 13px; color: var(--muted); }
+.av-split-rest span { display: inline-flex; align-items: center; gap: 6px; }
+.av-split-rest i { width: 10px; height: 10px; border-radius: 3px; }
+.av-split-rest i.centre { background: var(--sky-500); }
+.av-split-rest i.unverified { background: var(--haze); border: 1px dashed var(--slate); }
+.av-split-sub { margin: 14px 0 2px; font-size: 12px; font-weight: 600; color: var(--dusk-deep); }
+.av-split-estimate { margin: 0; font-size: 13px; }
+.av-split-estimate strong { font-weight: 500; color: var(--ink); }
+
+/* Gate map */
+.av-map-wrap { margin: 14px 0 6px; padding: 0; }
+.av-map { margin: 0; }
+.av-map + .av-map { margin-top: 14px; }
+.av-map figcaption { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--dusk-deep); }
+.av-map svg { overflow: visible; margin: 0 auto; }
+.av-map-zone { fill: var(--haze); }
+.av-map-zone.west { fill: var(--cloud-100); }
+.av-map-zone.east { fill: var(--sky-100); }
+.av-map-zone-label { font-weight: 700; letter-spacing: -.01em; fill: var(--ink); }
+.av-map-zone-label.east { fill: var(--dusk-deep); }
+.av-map-spine { fill: none; stroke: var(--paper); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+.av-map-hatch { stroke: var(--slate); stroke-width: 1; }
+.av-map-gate circle { transform-box: fill-box; transform-origin: center; animation: av-grow var(--motion-reveal) var(--ease-out) both; }
+.av-map-gate.east circle { fill: var(--dusk); }
+.av-map-gate.west circle { fill: var(--cloud-600); }
+.av-map-gate.center circle { fill: var(--sky-500); }
+.av-map-gate.unverified circle { stroke: var(--slate); stroke-width: .6; }
+.av-map-gate.empty circle { fill: var(--sky-300); animation: none; }
+.av-map-gate.selected circle { stroke: var(--ink); stroke-width: 1.2; }
+.av-map-gate:focus-visible { outline: none; }
+.av-map-gate:focus-visible circle { stroke: var(--ink); stroke-width: 1.2; }
+.av-map-gate text { fill: var(--paper); font-weight: 700; font-variant-numeric: tabular-nums; }
+.av-map-gate.unverified text, .av-map-gate.west text, .av-map-gate.center text { fill: var(--ink); }
+.av-map-legend { margin-top: 10px; color: var(--dusk-deep); }
+.av-map-caption { margin: 10px 0 0; font-size: 14px; font-weight: 600; line-height: 1.6; color: var(--ink); }
+.av-map-caption + .av-map-caption { margin-top: 2px; font-weight: 400; color: var(--dusk-deep); }
+.av-map-legend i.east { background: var(--dusk); }
+.av-map-legend i.west { background: var(--cloud-600); }
+.av-map-legend i.centre { background: var(--sky-500); }
+.av-map-legend i.unverified { background: var(--haze); border: 1px dashed var(--slate); }
+@keyframes av-grow { from { transform: scale(0); } to { transform: scale(1); } }
+
+/* Destination mix: one hue, a bar per region, counts beside it */
+.av-dest-title { margin: 16px 0 4px; font-size: 13px; font-weight: 600; color: var(--dusk-deep); }
+.av-dest { width: 100%; border-collapse: collapse; font-size: 12px; }
+.av-dest tr { border-top: 1px solid var(--sky-100); }
+.av-dest th { width: 34%; padding: 7px 0; text-align: left; font-weight: 400; }
+.av-dest th button { border: 0; padding: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.av-dest tr.active th button { color: var(--dusk-deep); font-weight: 600; text-decoration: underline; }
+.av-dest th button:focus-visible { outline: 2px solid var(--dusk); outline-offset: 2px; }
+.av-dest-bar { padding: 7px 10px 7px 0; }
+.av-dest-bar span { display: block; height: 8px; min-width: 2px; border-radius: 4px; background: var(--sky-300); }
+.av-dest tr.active .av-dest-bar span { background: var(--dusk); }
+.av-dest-value { width: 5.5em; padding: 7px 0; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.av-dest-value small { font-size: 11px; color: var(--muted); }
+.av-dest-sides { width: 7em; padding: 7px 0 7px 10px; text-align: right; white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) {
+  .av-split-figure { padding: 14px 14px 12px; gap: 8px 10px; }
+  .av-dest th { width: 42%; }
+  .av-dest-sides { display: none; }
+}
+

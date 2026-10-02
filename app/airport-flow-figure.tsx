@@ -3,9 +3,9 @@ import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState, type Po
 import { FLOW_HOURS, flowLayout, type FlowBand } from "../lib/airport-flow-geometry";
 import { REVEAL_MS, reducedMotion, tween } from "../lib/motion";
 import type { Lang } from "./retailpulse-data";
-// Styles live in app/airport-visual.css, imported once by
-// app/airport-departure-overview.tsx (always in the app bundle). Importing it
-// here too would break the node tests that load live-signals.tsx.
+// Styles live in app/airport-visual.css, imported once by app/retailpulse-app.tsx
+// (always in the app bundle). Importing it here would break the node tests that
+// load live-signals.tsx.
 
 /**
  * The hour-by-hour shape of the day's official forecast, drawn as the sky a
@@ -66,7 +66,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakSt
     observer.observe(figure);
     return () => observer.disconnect();
   }, []);
-  const height = width < 560 ? 236 : 272;
+  const height = width < 560 ? 232 : 264;
   const layout = useMemo(() => flowLayout({ timeline, layers, width, height, peakStartAt, nowBandStart, nowBandProgress }),
     [timeline, layers, width, height, peakStartAt, nowBandStart, nowBandProgress]);
 
@@ -160,7 +160,17 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakSt
   const nowY = nowBand ? top + (1 - Math.min(1, nowBand.value / layout.maxBand)) * (base - top) : null;
 
   const peakText = layout.peak ? `${copy.peak[lang]} ${people(layout.peak.value)}` : "";
-  const peakAnchor = layout.peak ? (layout.peak.x > right - 60 ? "end" : layout.peak.x < left + 60 ? "start" : "middle") : "middle";
+  // When the peak and the now column are close, the peak label steps to the
+  // side away from the now pill and the now value takes the other side, so the
+  // two never cover each other.
+  const nearPeak = Boolean(layout.peak && layout.now && Math.abs(layout.peak.x - layout.now.x) < 96);
+  const peakRight = layout.peak && layout.now ? layout.peak.x >= layout.now.x : true;
+  const peakAnchor: "start" | "middle" | "end" = layout.peak
+    ? nearPeak ? (peakRight ? "start" : "end") : (layout.peak.x > right - 60 ? "end" : layout.peak.x < left + 60 ? "start" : "middle")
+    : "middle";
+  const peakLabelX = layout.peak ? (nearPeak ? layout.peak.x + (peakRight ? 11 : -11) : clampX(layout.peak.x, 0)) : 0;
+  const peakLabelY = layout.peak ? (nearPeak ? layout.peak.y - 7 : Math.max(top - 6, layout.peak.y - 12)) : 0;
+  const nowValueLeft = layout.now ? (nearPeak ? peakRight : layout.now.x > right - 70) : false;
 
   const tip = hover ? (() => {
     const band = layout.bands[hover.index];
@@ -227,7 +237,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakSt
 
       {layout.peak && <g className="airport-flow-mark airport-flow-peak" data-start={layout.peak.start}>
         <circle cx={layout.peak.x} cy={layout.peak.y} r={4} />
-        <text x={clampX(layout.peak.x, 0)} y={Math.max(top - 6, layout.peak.y - 12)} textAnchor={peakAnchor}>{peakText}</text>
+        <text x={peakLabelX} y={peakLabelY} textAnchor={peakAnchor}>{peakText}</text>
       </g>}
       {layout.now && <g className="airport-flow-mark airport-flow-now-group">
         <rect className="airport-flow-now-light" x={layout.now.x - 9} y={top - 16} width={18} height={base - top + 16} rx={9} />
@@ -235,8 +245,8 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakSt
         {nowY !== null && <>
           <circle ref={(element) => { ringRef.current = element; nowDotRefs.current[0] = element; }} className="airport-flow-now-ring" cx={layout.now.x} cy={nowY} r={5} />
           <circle ref={(element) => { nowDotRefs.current[1] = element; }} className="airport-flow-now-dot" cx={layout.now.x} cy={nowY} r={4.5} />
-          {nowBand && !hover && <text ref={(element) => { nowDotRefs.current[2] = element; }} className="airport-flow-now-value" x={layout.now.x > right - 70 ? layout.now.x - 10 : layout.now.x + 10} y={nowY - 9}
-            textAnchor={layout.now.x > right - 70 ? "end" : "start"}>{people(nowBand.value)}{unit}</text>}
+          {nowBand && !hover && <text ref={(element) => { nowDotRefs.current[2] = element; }} className="airport-flow-now-value" x={nowValueLeft ? layout.now.x - 10 : layout.now.x + 10} y={nowY - 9}
+            textAnchor={nowValueLeft ? "end" : "start"}>{people(nowBand.value)}{unit}</text>}
         </>}
         <g className="airport-flow-now-pill">
           <rect x={pillX - pillWidth / 2} y={top - 39} width={pillWidth} height={24} rx={12} />

@@ -54,9 +54,9 @@ async function openMap(page: Page, options: Parameters<typeof open>[1] = {}) {
 
 test('the whole day agrees with the comparison card, flight for flight', async ({ page }) => {
   const { sides, map, flightRequests } = await openMap(page);
-  await expect(map.getByTestId('map-counts')).toHaveText('동편 3편 · 서편 2편 · 중앙 0편 · 위치 미확인 4편 · 건물 미확인 1편');
-  await expect(sides.getByTestId('split-flights')).toContainText('동편 3편 60% · 서편 2편 40% · 중앙 0편 · 위치 미확인 4편');
-  await expect(map.getByTestId('map-lead')).toHaveText('확인된 항공편 기준 동편이 1편 더 많음 (위치 미확인 4편에 따라 달라질 수 있음)');
+  await expect(map.getByTestId('map-counts')).toHaveText('동편 3편 · 서편 3편 · 중앙 1편 · 탑승구 미정 2편 · 건물 미확인 1편');
+  await expect(sides.getByTestId('split-flights')).toContainText('동편 3편 (50%) · 서편 3편 (50%) · 중앙 1편 · 탑승구 미정 2편 (전체의 22.2%)');
+  await expect(map.getByTestId('map-lead')).toHaveText('동편과 서편이 같습니다. 아직 탑승구가 정해지지 않은 2편에 따라 달라질 수 있습니다.');
   expect(flightRequests).toHaveLength(1);
   // Dots add up to the flights that have an official gate position; the rest are listed apart.
   const drawn = await map.locator('[data-flights]').evaluateAll((nodes) => nodes.reduce((sum, node) => sum + Number(node.getAttribute('data-flights')), 0));
@@ -71,7 +71,7 @@ test('the time selection moves the counts, the dots and the list together', asyn
   const { map } = await openMap(page);
   await map.getByRole('button', { name: '지금부터 1시간' }).click();
   await expect(map).toHaveAttribute('data-window', '850-910');
-  await expect(map.getByTestId('map-counts')).toHaveText('동편 2편 · 서편 1편 · 중앙 0편 · 위치 미확인 1편 · 건물 미확인 1편');
+  await expect(map.getByTestId('map-counts')).toHaveText('동편 2편 · 서편 2편 · 건물 미확인 1편');
   await map.getByTestId('map-flights').locator('summary').click();
   await expect(map.getByTestId('map-flight-list').locator('li')).toHaveCount(4);
   const drawn = await map.locator('[data-flights]').evaluateAll((nodes) => nodes.reduce((sum, node) => sum + Number(node.getAttribute('data-flights')), 0));
@@ -80,7 +80,7 @@ test('the time selection moves the counts, the dots and the list together', asyn
   await map.getByTestId('map-from').selectOption('16');
   await map.getByTestId('map-to').selectOption('18');
   await expect(map).toHaveAttribute('data-window', '960-1080');
-  await expect(map.getByTestId('map-counts')).toHaveText('동편 0편 · 서편 1편 · 중앙 0편 · 위치 미확인 1편');
+  await expect(map.getByTestId('map-counts')).toHaveText('동편 0편 · 서편 1편 · 탑승구 미정 1편');
 });
 
 test('a destination region filters the map and the list; shares keep their own base', async ({ page }) => {
@@ -88,7 +88,7 @@ test('a destination region filters the map and the list; shares keep their own b
   const groups = map.getByTestId('map-groups');
   await expect(groups.locator('tr[data-group="JP"]')).toContainText('3편 · 33.3%');
   await expect(groups.locator('tr[data-group="UNKNOWN"]')).toContainText('1편');
-  await expect(map.getByTestId('map-groups-basis')).toContainText('출발편 9편 기준(목적지 지역 미확인 1편 포함)');
+  await expect(map.getByTestId('map-groups-basis')).toContainText('출발편 9편을 목적지 지역으로 나눈 것입니다(지역 미확인 1편 포함)');
   await groups.getByRole('button', { name: '일본' }).click();
   await expect(map).toHaveAttribute('data-filter', 'JP');
   await map.getByTestId('map-flights').locator('summary').click();
@@ -121,7 +121,7 @@ test('T1 shows the concourse as its own building and counts it apart', async ({ 
   const { map } = await openMap(page, { terminal: 'T1' });
   await expect(map.getByTestId('map-T1')).toBeVisible();
   await expect(map.getByTestId('map-CONCOURSE')).toBeVisible();
-  await expect(map.getByTestId('map-counts')).toHaveText('동편 1편 · 서편 1편 · 중앙 1편 · 위치 미확인 0편 · 탑승동 1편 · 건물 미확인 1편');
+  await expect(map.getByTestId('map-counts')).toHaveText('동편 1편 · 서편 1편 · 중앙 1편 · 탑승동 1편 · 건물 미확인 1편');
 });
 
 test('the copied text carries the date, window, filter and limits', async ({ page }) => {
@@ -133,7 +133,7 @@ test('the copied text carries the date, window, filter and limits', async ({ pag
   const text = await page.evaluate(() => navigator.clipboard.readText());
   expect(text).toContain('2026-08-31 T2 · 14:10–17:10');
   expect(text).toContain('목적지 필터: 일본');
-  expect(text).toContain('확인된 항공편 기준');
+  expect(text).toContain('서편이 1편 더 많습니다.');
   expect(text).toContain('항공편 수이며 사람 수나 매장 방문객이 아닙니다.');
 });
 

@@ -14,8 +14,8 @@ const NOW = "2026-09-29T10:00:00+09:00";
 let seq = 0;
 const flight = (terminal, gate, time, extra = {}) => ({ physicalFlightId: `F${++seq}`, terminal, gate, scheduledAt: `${DATE}T${time}:00+09:00`, status: "scheduled", retrievedAt: "2026-09-29T00:57:00Z", ...extra });
 const many = (n, terminal, gate, time) => Array.from({ length: n }, () => flight(terminal, gate, time));
-// T2 east gates 274, west gates 231 (both officially named), unverified 208 (between the bounds), a no-gate flight.
-const T2_EXAMPLE = [...many(120, "T2", "274", "09:10"), ...many(80, "T2", "231", "09:40"), ...many(20, "T2", "208", "09:50")];
+// T2 east gates 274, west gates 231 (both officially named); 228 has no point on the official map, so it stays unverified.
+const T2_EXAMPLE = [...many(120, "T2", "274", "09:10"), ...many(80, "T2", "231", "09:40"), ...many(20, "T2", "228", "09:50")];
 const day = (rows) => summarizeGateSides(rows, DATE);
 
 const parts = (estimate) => ({ east: estimate.east.people, west: estimate.west.people, center: estimate.center.people, unverified: estimate.unverified.people, concourse: estimate.concourse?.people ?? null });
@@ -29,9 +29,9 @@ test("the example: 120 east, 80 west, 20 unconfirmed → 60/40 ratio; 40,000 is 
   assert.equal(split.expected.flights, 220);
   assert.deepEqual(parts(split.expected), { east: 21_800, west: 14_500, center: 0, unverified: 3_600, concourse: null });
   assert.deepEqual([split.expected.east.flights, split.expected.west.flights, split.expected.unverified.flights], [120, 80, 20]);
-  assert.equal(flightsBody(split, "ko"), "동편 120편 60% · 서편 80편 40% · 중앙 0편 · 위치 미확인 20편(전체의 9.1%)");
-  assert.equal(sharesBody(split, "ko"), "동·서 위치가 확인된 항공편 기준 (200편): 동편 60% · 서편 40% (동편이 더 많음)");
-  assert.equal(estimateBody({ terminal: "T2", ...split.expected }, "ko"), "동편 약 21,800명 · 서편 약 14,500명 · 위치 미확인 약 3,600명");
+  assert.equal(flightsBody(split, "ko"), "동편 120편 (60%) · 서편 80편 (40%) · 탑승구 미정 20편 (전체의 9.1%)");
+  assert.equal(sharesBody(split, "ko"), "탑승구가 정해진 200편 기준으로 동편 60%, 서편 40%. 동편이 더 많습니다.");
+  assert.equal(estimateBody({ terminal: "T2", ...split.expected }, "ko"), "동편 약 21,800명 · 서편 약 14,500명 · 탑승구 미정 약 3,600명");
   assert.notEqual(split.expected.east.people + split.expected.west.people, 40_000, "the unconfirmed share is not pushed into east and west to make them add up");
 });
 
@@ -41,7 +41,7 @@ test("west larger, and equal", () => {
   const equal = flightSplitOf(day([...many(5, "T2", "274", "09:00"), ...many(5, "T2", "231", "09:00")]), "T2", "COLLECTED_FLIGHT_RECORDS", 1001);
   assert.deepEqual([equal.eastPct, equal.westPct, equal.larger], [50, 50, "EQUAL"]);
   assert.deepEqual([equal.expected.east.people, equal.expected.west.people], [500, 500], "equal flights, equal people");
-  assert.match(sharesBody(equal, "ko"), /동·서 차이 작음/);
+  assert.match(sharesBody(equal, "ko"), /동편과 서편이 거의 같습니다/);
 });
 
 test("centre and unconfirmed flights stay out of the ratio but keep their own share of the people", () => {
@@ -52,17 +52,17 @@ test("centre and unconfirmed flights stay out of the ratio but keep their own sh
   assert.equal(split.expected.flights, 23, "all 23 flights of the scope divide the people");
   assert.deepEqual(parts(split.expected), { east: 2_100, west: 700, center: 1_400, unverified: 3_800, concourse: 0 });
   assert.equal(split.unverifiedPct, 47.8);
-  assert.match(flightsBody(split, "ko"), /중앙 4편 · 위치 미확인 11편\(전체의 47\.8%\)/);
-  assert.equal(estimateBody({ terminal: "T1", ...split.expected }, "ko"), "동편 약 2,100명 · 서편 약 700명 · 중앙 약 1,400명 · 위치 미확인 약 3,800명");
+  assert.match(flightsBody(split, "ko"), /중앙 4편 · 탑승구 미정 11편 \(전체의 47\.8%\)/);
+  assert.equal(estimateBody({ terminal: "T1", ...split.expected }, "ko"), "동편 약 2,100명 · 서편 약 700명 · 중앙 약 1,400명 · 탑승구 미정 약 3,800명");
 });
 
 test("a side with no flights, or no confirmed flight at all", () => {
   const westless = flightSplitOf(day(many(7, "T2", "274", "09:00")), "T2", "COLLECTED_FLIGHT_RECORDS", 500);
   assert.deepEqual([westless.eastPct, westless.westPct, westless.expected.east.people, westless.expected.west.people], [100, 0, 500, 0]);
   assert.equal(estimateBody({ terminal: "T2", ...westless.expected }, "ko"), "동편 약 500명 · 서편 0명", "a side with no flight is exactly none, not 'about 0'");
-  const none = flightSplitOf(day(many(7, "T2", "208", "09:00")), "T2", "COLLECTED_FLIGHT_RECORDS", 500);
+  const none = flightSplitOf(day(many(7, "T2", "228", "09:00")), "T2", "COLLECTED_FLIGHT_RECORDS", 500);
   assert.deepEqual([none.eastPct, none.westPct, none.larger, none.expected], [null, null, null, null], "nothing is assigned by force");
-  assert.match(sharesBody(none, "ko"), /비율을 계산하지 않았습니다/);
+  assert.match(sharesBody(none, "ko"), /비율을 내지 않았습니다/);
   assert.equal(flightSplitOf(day(many(3, "T1", "9", "09:00")), "T2", "COLLECTED_FLIGHT_RECORDS", 500), null, "another terminal's flights never count");
 });
 
@@ -99,27 +99,27 @@ test("rounding: every figure is to the nearest 100 and nothing is moved between 
 });
 
 test("a group too small to reach 100 people is 'under 100', not 'about 0' and not moved elsewhere", () => {
-  const rows = [...many(1, "T2", "274", "09:00"), ...many(400, "T2", "231", "09:00"), ...many(1, "T2", "208", "09:00")];
+  const rows = [...many(1, "T2", "274", "09:00"), ...many(400, "T2", "231", "09:00"), ...many(1, "T2", "228", "09:00")];
   const split = flightSplitOf(day(rows), "T2", "COLLECTED_FLIGHT_RECORDS", 4_020);
   assert.deepEqual([split.expected.east.flights, split.expected.east.people, split.expected.unverified.flights, split.expected.unverified.people], [1, 0, 1, 0]);
-  assert.equal(estimateBody({ terminal: "T2", ...split.expected }, "ko"), "동편 100명 미만 · 서편 약 4,000명 · 위치 미확인 100명 미만");
-  assert.equal(estimateBody({ terminal: "T2", ...split.expected }, "en"), "East under 100 · West about 4,000 · Side not confirmed under 100");
+  assert.equal(estimateBody({ terminal: "T2", ...split.expected }, "ko"), "동편 100명 미만 · 서편 약 4,000명 · 탑승구 미정 100명 미만");
+  assert.equal(estimateBody({ terminal: "T2", ...split.expected }, "en"), "East under 100 · West about 4,000 · Gate not set under 100");
   assert.match(estimateBody({ terminal: "T2", ...split.expected }, "zh"), /东侧 不足100人/);
   assert.match(estimateBody({ terminal: "T2", ...split.expected }, "ja"), /東側 100人より少ない/);
 });
 
 test("the equal-passengers-per-flight assumption and the rounding are stated in the short note, in every language", () => {
-  assert.equal(splitCopy.estimateNote.ko, "실제 동·서편 승객 수가 아닙니다. 편당 승객 수가 같다는 가정의 참고값이며 백 명 단위로 반올림했습니다.");
-  assert.match(splitCopy.estimateNote.en, /every flight carries the same number of passengers, rounded to the nearest hundred/);
-  assert.match(splitCopy.estimateNote.zh, /每班航班旅客数相同的参考值，按百人取整/);
-  assert.match(splitCopy.estimateNote.ja, /1便あたりの乗客数が同じという前提の参考値で、百人単位に四捨五入/);
+  assert.equal(splitCopy.estimateNote.ko, "항공기 크기와 탑승률은 반영하지 않았고 100명 단위로 반올림했습니다. 실제 승객 수가 아닙니다.");
+  assert.match(splitCopy.estimateNote.en, /rounded to the nearest 100\. Not actual passenger counts/);
+  assert.match(splitCopy.estimateNote.zh, /按百人取整。不是实际旅客数/);
+  assert.match(splitCopy.estimateNote.ja, /100人単位に四捨五入しています。実際の乗客数ではありません/);
   for (const lang of ["ko", "en", "zh", "ja"]) assert.ok(splitCopy.estimateNote[lang].length < (lang === "en" ? 180 : 110), `${lang}: short enough to sit under the number (${splitCopy.estimateNote[lang].length})`);
 });
 
 test("a terminal total of zero is 'none', not 'under 100'", () => {
-  const rows = [...many(3, "T2", "274", "09:00"), ...many(2, "T2", "231", "09:00"), ...many(1, "T2", "208", "09:00")];
+  const rows = [...many(3, "T2", "274", "09:00"), ...many(2, "T2", "231", "09:00"), ...many(1, "T2", "228", "09:00")];
   const split = flightSplitOf(day(rows), "T2", "COLLECTED_FLIGHT_RECORDS", 0);
-  assert.equal(estimateBody({ terminal: "T2", ...split.expected }, "ko"), "동편 0명 · 서편 0명 · 위치 미확인 0명");
+  assert.equal(estimateBody({ terminal: "T2", ...split.expected }, "ko"), "동편 0명 · 서편 0명 · 탑승구 미정 0명");
 });
 
 test("T1: the headcount includes concourse-bound passengers, so concourse flights are in the divisor and shown as their own item", () => {
@@ -132,7 +132,7 @@ test("T1: the headcount includes concourse-bound passengers, so concourse flight
   assert.deepEqual(parts(split.expected), { east: 30_000, west: 10_000, center: 0, unverified: 0, concourse: 10_000 });
   assert.equal(estimateBody({ terminal: "T1", ...split.expected }, "ko"), "동편 약 30,000명 · 서편 약 10,000명 · 탑승동 약 10,000명");
   assert.match(estimateNote({ terminal: "T1", ...split.expected }, "ko"), /T1 예상 출국객에는 탑승동으로 가는 승객이 포함된 것으로 보고/);
-  assert.equal(estimateBasisLine({ terminal: "T1", ...split.expected }, "ko"), "터미널 전체 예상 50,000명 기준 · 같은 범위 출발편 100편(T1 본관 80편 + 탑승동 20편)으로 나눈 추정", "the two buildings are shown so the count reconciles with the card's T1 total");
+  assert.equal(estimateBasisLine({ terminal: "T1", ...split.expected }, "ko"), "공항이 발표한 T1 예상 출국객 50,000명을 출발편 100편(T1 본관 80편 + 탑승동 20편)에 같은 수로 나눈 참고값입니다.", "the two buildings are shown so the count reconciles with the card's T1 total");
   assert.equal(estimateBody({ terminal: "T1", ...split.expected }, "en"), "East about 30,000 · West about 10,000 · Concourse about 10,000");
   // T2 has no concourse: its scope is its own gates, and its note does not mention one.
   const t2 = flightSplitOf(day([...many(60, "T2", "274", "09:00"), ...many(20, "T2", "231", "09:00"), ...many(20, "", "110", "10:00")]), "T2", "COLLECTED_FLIGHT_RECORDS", 50_000);
@@ -149,17 +149,17 @@ test("flights whose building is unknown are in neither scope: left out of the di
   assert.equal(split.expected.flights, 40);
   assert.equal(split.expected.outsideScope, 5);
   assert.deepEqual(parts(split.expected), { east: 3_000, west: 1_000, center: 0, unverified: 0, concourse: null });
-  assert.equal(estimateBasisLine({ terminal: "T2", ...split.expected }, "ko"), "터미널 전체 예상 4,000명 기준 · 같은 범위 출발편 40편으로 나눈 추정 · 터미널 미확인 5편 제외");
+  assert.equal(estimateBasisLine({ terminal: "T2", ...split.expected }, "ko"), "공항이 발표한 T2 예상 출국객 4,000명을 출발편 40편에 같은 수로 나눈 참고값입니다. 건물을 알 수 없는 5편은 제외했습니다.");
   const clean = flightSplitOf(day(T2_EXAMPLE), "T2", "COLLECTED_FLIGHT_RECORDS", 4_000);
   assert.equal(clean.expected.outsideScope, 0);
-  assert.doesNotMatch(estimateBasisLine({ terminal: "T2", ...clean.expected }, "ko"), /미확인 \d+편 제외/);
+  assert.doesNotMatch(estimateBasisLine({ terminal: "T2", ...clean.expected }, "ko"), /알 수 없는 \d+편/);
 });
 
 test("hourly lines carry counts, shares and the unconfirmed ones", () => {
-  const rows = [...many(8, "T2", "274", "08:10"), ...many(4, "T2", "231", "08:40"), ...many(11, "T2", "274", "09:10"), ...many(7, "T2", "231", "09:20"), flight("T2", "208", "09:30"), ...many(6, "T2", "274", "10:00"), ...many(12, "T2", "231", "10:05")];
+  const rows = [...many(8, "T2", "274", "08:10"), ...many(4, "T2", "231", "08:40"), ...many(11, "T2", "274", "09:10"), ...many(7, "T2", "231", "09:20"), flight("T2", "228", "09:30"), ...many(6, "T2", "274", "10:00"), ...many(12, "T2", "231", "10:05")];
   const split = flightSplitOf(day(rows), "T2", "COLLECTED_FLIGHT_RECORDS", null);
   assert.equal(hourBody(split.hours[0], "ko"), "08–09시 · 합계 12편 · 동 8편 / 서 4편 (동 67% · 서 33%)");
-  assert.equal(hourBody(split.hours[1], "ko"), "09–10시 · 합계 19편 · 동 11편 / 서 7편 (동 61% · 서 39%) · 미확인 1편");
+  assert.equal(hourBody(split.hours[1], "ko"), "09–10시 · 합계 19편 · 동 11편 / 서 7편 (동 61% · 서 39%) · 미정 1편");
   assert.equal(hourBody(split.hours[2], "en"), "10:00–11:00 · total 18 flights · E 6 flights / W 12 flights (E 33% · W 67%)");
   assert.equal(split.expected, null, "no terminal-wide figure → no estimate");
 });
@@ -244,8 +244,8 @@ test("the prep facts, the copied text and the image carry the same numbers as th
     assert.ok(factLine(estimateFact, DATE, lang).includes(splitCopy.estimateNote[lang]), `${lang}: the short warning travels with the number`);
     assert.ok(factLine(estimateFact, DATE, lang).includes(estimateBasisLine({ terminal: "T2", ...split.expected }, lang)), `${lang}: what was divided over how many flights travels with the number`);
   }
-  assert.match(factLine(flightsFact, DATE, "ko"), /동편 120편 60% · 서편 80편 40% · 중앙 0편 · 위치 미확인 20편\(전체의 9\.1%\)\. 동·서 위치가 확인된 항공편 기준/);
-  assert.match(factLine(estimateFact, DATE, "ko"), /예상 출국객\(하루 전체\): 동편 약 13,100명 · 서편 약 8,700명 · 위치 미확인 약 2,200명 \(터미널 전체 예상 24,000명 기준 · 같은 범위 출발편 220편으로 나눈 추정\)\. 실제 동·서편 승객 수가 아닙니다/);
+  assert.match(factLine(flightsFact, DATE, "ko"), /동편 120편 \(60%\) · 서편 80편 \(40%\) · 탑승구 미정 20편 \(전체의 9\.1%\)\. 탑승구가 정해진 200편 기준으로/);
+  assert.match(factLine(estimateFact, DATE, "ko"), /예상 출국객\(하루 전체\): 동편 약 13,100명 · 서편 약 8,700명 · 탑승구 미정 약 2,200명\. 공항이 발표한 T2 예상 출국객 24,000명을 출발편 220편에 같은 수로 나눈 참고값입니다\. 항공기 크기와/);
   assert.equal(prep.actions.some((action) => /SPLIT/.test(action.rule)), false, "it is a comparison, never a staffing or stock action");
 });
 

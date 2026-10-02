@@ -204,10 +204,10 @@ export function factLine(fact: PrepFact, serviceDate: string, lang: PrepLang): s
         const inHours = fact.unverifiedInHours ?? inHour;
         const [ko, en, zh, ja] = [sideNames[fact.side].ko, sideNames[fact.side].en.toLowerCase(), sideNames[fact.side].zh, sideNames[fact.side].ja];
         return row(
-          `위치가 확인된 ${ko} 탑승구 항공편 중 가장 많은 시간 ${span} · ${fact.count}편 (위치 미확인 ${inHours}편 제외, 그중 같은 시간 ${inHour}편 · ${ko} 전체의 가장 많은 시간은 아직 알 수 없습니다)`,
-          `Among flights at gates confirmed on the ${en}, the most in ${span} · ${fact.count} (${inHours} flight(s) with an unconfirmed side left out, ${inHour} of them that hour · the ${en}'s busiest hour is not known yet)`,
-          `在位置已确认的${zh}登机口航班中最多的时段 ${span} · ${fact.count}班（未计入位置未确认的${inHours}班，其中同一时段${inHour}班 · ${zh}整体最多的时段尚无法确定）`,
-          `位置が確認できた${ja}の搭乗口の便のうち最も多い時間 ${span} · ${fact.count}便（位置未確認の${inHours}便は除外、うち同じ時間${inHour}便 · ${ja}全体で最も多い時間はまだ分かりません）`,
+          `탑승구가 정해진 ${ko} 출발편 중 가장 많은 시간 ${span} · ${fact.count}편 (탑승구 미정 ${inHours}편 제외, 그중 같은 시간 ${inHour}편 · ${ko} 전체의 가장 많은 시간은 아직 알 수 없습니다)`,
+          `Among ${en} departures that already have a gate, the most in ${span} · ${fact.count} (${inHours} flight(s) with no gate yet left out, ${inHour} of them that hour · the ${en}'s busiest hour is not known yet)`,
+          `在已分配登机口的${zh}出发航班中最多的时段 ${span} · ${fact.count}班（未计入登机口未定的${inHours}班，其中同一时段${inHour}班 · ${zh}整体最多的时段尚无法确定）`,
+          `搭乗口が決まった${ja}の出発便のうち最も多い時間 ${span} · ${fact.count}便（搭乗口未定の${inHours}便は除外、うち同じ時間${inHour}便 · ${ja}全体で最も多い時間はまだ分かりません）`,
         )[lang] + source;
       }
       return row(
@@ -387,7 +387,7 @@ export function evidenceText(action: PrepAction, serviceDate: string, lang: Prep
     issued: action.issuedAt ? prepTime(action.issuedAt, serviceDate, lang) : row("시각 정보 없음", "No time given", "无时间信息", "時刻情報なし")[lang],
     target: action.startAt && action.endAt ? prepSpan(action.startAt, action.endAt, serviceDate, lang) : row("날짜 전체", "The whole date", "整日", "日付全体")[lang],
     limit: limitLine(action.source, lang) + (action.value.kind === "FLIGHTS" && action.value.verifiedShare !== null
-      ? row(` 위치가 확인된 탑승구의 편수 비율 ${Math.round(action.value.verifiedShare * 100)}%.`, ` Flights at a gate with a confirmed side: ${Math.round(action.value.verifiedShare * 100)}%.`, ` 位置已确认的登机口航班比例 ${Math.round(action.value.verifiedShare * 100)}%。`, ` 位置が確認できた搭乗口の便の割合 ${Math.round(action.value.verifiedShare * 100)}%。`)[lang] : ""),
+      ? row(` 탑승구가 정해진 출발편 비율 ${Math.round(action.value.verifiedShare * 100)}%.`, ` Departures that already have a gate: ${Math.round(action.value.verifiedShare * 100)}%.`, ` 已分配登机口的出发航班比例 ${Math.round(action.value.verifiedShare * 100)}%。`, ` 搭乗口が決まった出発便の割合 ${Math.round(action.value.verifiedShare * 100)}%。`)[lang] : ""),
   };
 }
 

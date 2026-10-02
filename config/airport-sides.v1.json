@@ -1,13 +1,14 @@
 {
   "version": "airport-sides.v1",
-  "checkedOn": "2026-09-29",
+  "checkedOn": "2026-10-02",
   "notes": [
     "Hall sides: the airport's own facility location text names each departure hall with its terminal side (quoted in evidence). The owner's instruction described the official accessibility maps (https://www.airport.kr/ap_ko/908/subview.do) with the same split (T1 1-3 east / 4-6 west, T2 2 east / 1 west); that description is recorded as the owner's instruction, not as a reading KORETAIL verified. OCR of those map images was not reliable and is not used.",
     "The T2 texts ('1번 출국장 서편', '2번 출국장 동편') could also be read as a side within the hall. The airport's own congestion service names every T1 hall with both an east and a west part ('출국장 1 동편', '출국장 1 서편', …, icnplus.airport.kr departures/gates, read 2026-09-29), so '출국장 N 동편/서편' is a within-hall name there. Hall sides stay withheld from the public (NEXT_PUBLIC_AIRPORT_HALL_SIDES) until the notice wording is agreed.",
     "A5 fields: data.go.kr 15095066 lists the items as T1 출국장1..6, 출국장 합계, T2 출국장1, 2, 합계; the V5.0 field names are t1dg1..t1dg6, t1dgsum1, t2dg1, t2dg2, t2dgsum2 (docs/DATA_SOURCES.md). Production (run 36518271601) showed the official aggregate equal to the sum of the six (T1) and two (T2) hall fields in all 96 hour bands checked; t1dg5 and t1dg6 are separate fields, never a combined one.",
     "Gate sides have two bases, both official and both per gate. OFFICIAL_TEXT: official text names the gate with 동편/서편/중앙. OFFICIAL_MAP_POSITION: the airport's interactive map (https://www.airport.kr/geomap/ap_ko/view.do) loads its own gate points with coordinates (https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1, spoiInfors). In each building the east direction is the line from the mean position of the OFFICIAL_TEXT west gates to that of the OFFICIAL_TEXT east gates (T1 55.8°, T2 52.1°, 탑승동 54.2° from north). A gate is east only when it lies at least as far east along that line as the innermost officially east gate, west only when at least as far west as the innermost officially west gate. Every gate between the two stays UNVERIFIED; T1 26-28 stay CENTER. No gate number range is filled in, no side is taken from an airline, and a gate outside the published range (T2 291 on the map) is not added. The OFFICIAL_TEXT gates themselves separate cleanly on that line (0 mismatches), and none of the map's other points labelled 동편/서편 lies on the opposite side of a bound except the within-hall names '출국장 N 동편/서편'. These positions were read by KORETAIL from the official map data on 2026-09-29 (Production Visual Check run 36557391138); they are not an owner confirmation.",
     "The published gate ranges are 1-50 (T1), 101-132 (탑승동) and 208-290 (T2) (https://www.airport.kr/ap_ko/886/subview.do). A T2 '1번 게이트' in the facility text is an entrance, not a boarding gate, and is not used.",
-    "The 탑승동 (Concourse) is its own building; its east/west gates are never counted as T1 east/west."
+    "The 탑승동 (Concourse) is its own building; its east/west gates are never counted as T1 east/west.",
+    "2026-10-02 (owner instruction: east/west must be definite for every drawn gate): a third basis, OFFICIAL_MAP_MIDPOINT, places every gate that has an official map position but no OFFICIAL_TEXT and lies between the two innermost official bounds. In each building the central axis is the midpoint between the mean x of the OFFICIAL_TEXT west gates and that of the OFFICIAL_TEXT east gates; a gate within ±15% of the building's x-span of that axis is CENTER, otherwise EAST or WEST by which side of the axis it lies on. T2: centre 462m, band ±132m (centre gates 249–252); Concourse: centre 459m, band ±139m (centre gates 113–119). Gates with no map position, and flights with no gate yet, stay UNVERIFIED; no gate number range is filled in and no side is taken from an airline."
   ],
   "halls": [
     {
@@ -1073,6 +1074,278 @@
       "basis": "OFFICIAL_MAP_POSITION",
       "evidence": "공식 지도 '탑승구 132' 위치 37.453544, 126.440656 · 동서 축 위치 276m ≤ 공식 문구 서편 123번 탑승구 503m → 132번 서편",
       "source": "https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1 (spoiInfors poi 34507, loaded by https://www.airport.kr/geomap/ap_ko/view.do?alertType=0&tmnlId=P01&type=2; map data creationTime 2026-09-29T09:08:05; read 2026-09-29, Production Visual Check run 36557391138)"
+    },
+    {
+      "area": "T2",
+      "gate": "208",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 208' 동서 축 위치 233m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 208번 서편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "209",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 209' 동서 축 위치 229m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 209번 서편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "210",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 210' 동서 축 위치 209m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 210번 서편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "211",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 211' 동서 축 위치 183m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 211번 서편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "212",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 212' 동서 축 위치 179m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 212번 서편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "213",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 213' 동서 축 위치 157m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 213번 서편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "214",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 214' 동서 축 위치 139m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 214번 서편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "215",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 215' 동서 축 위치 131m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 215번 서편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "226",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 226' 동서 축 위치 135m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 226번 서편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "227",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 227' 동서 축 위치 135m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 227번 서편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "230",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 230' 동서 축 위치 134m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 230번 서편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "247",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 247' 동서 축 위치 153m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 247번 서편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "248",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 248' 동서 축 위치 255m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 248번 서편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "249",
+      "side": "CENTER",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 249' 동서 축 위치 347m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 249번 중앙",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "250",
+      "side": "CENTER",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 250' 동서 축 위치 420m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 250번 중앙",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "251",
+      "side": "CENTER",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 251' 동서 축 위치 490m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 251번 중앙",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "252",
+      "side": "CENTER",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 252' 동서 축 위치 563m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 252번 중앙",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "253",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 253' 동서 축 위치 654m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 253번 동편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "254",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 254' 동서 축 위치 784m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 254번 동편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "269",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 269' 동서 축 위치 793m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 269번 동편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "273",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 273' 동서 축 위치 793m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 273번 동편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "289",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 289' 동서 축 위치 772m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 289번 동편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "290",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 290' 동서 축 위치 751m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 290번 동편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "291",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 291' 동서 축 위치 745m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 291번 동편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "111",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 111' 동서 축 위치 664m · 건물 중앙 459m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±139m → 111번 동편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "113",
+      "side": "CENTER",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 113' 동서 축 위치 591m · 건물 중앙 459m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±139m → 113번 중앙",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "114",
+      "side": "CENTER",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 114' 동서 축 위치 591m · 건물 중앙 459m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±139m → 114번 중앙",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "115",
+      "side": "CENTER",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 115' 동서 축 위치 504m · 건물 중앙 459m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±139m → 115번 중앙",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "117",
+      "side": "CENTER",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 117' 동서 축 위치 418m · 건물 중앙 459m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±139m → 117번 중앙",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "118",
+      "side": "CENTER",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 118' 동서 축 위치 418m · 건물 중앙 459m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±139m → 118번 중앙",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "119",
+      "side": "CENTER",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 119' 동서 축 위치 413m · 건물 중앙 459m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±139m → 119번 중앙",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "121",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 121' 동서 축 위치 300m · 건물 중앙 459m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±139m → 121번 서편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "122",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 122' 동서 축 위치 300m · 건물 중앙 459m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±139m → 122번 서편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "CONCOURSE",
+      "gate": "124",
+      "side": "WEST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 124' 동서 축 위치 227m · 건물 중앙 459m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±139m → 124번 서편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
     }
   ]
 }
