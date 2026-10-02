@@ -711,6 +711,24 @@ const arrivalSectionText = {
   },
 } as const;
 
+/**
+ * One sentence saying which hours of the day the figure covers, e.g.
+ * "2026-08-31 전체 공항 기준, 00:00부터 24:00까지 24개 시간대를 확인했습니다."
+ * The date stays as written in the service date so a reader can match it to
+ * the picker; the band count is the honest measure of coverage.
+ */
+function flowCoverageSentence(lang: Lang, serviceDate: string, scope: string, timeline: ForecastBand[]): string {
+  if (!timeline.length) return `${serviceDate} ${scope} · ${airportTodayText.unavailable[lang]}`;
+  const end = formatKstClock(timeline.at(-1)!.targetEndAt);
+  const span = `${formatKstClock(timeline[0].targetStartAt)}–${end === "00:00" ? "24:00" : end}`;
+  const count = timeline.length;
+  return contextText(lang,
+    `${serviceDate} ${scope} 기준, ${span.replace("–", "부터 ")}까지 ${count}개 시간대를 확인했습니다.`,
+    `${serviceDate}, ${scope}: ${count} hourly bands confirmed, ${span} KST.`,
+    `${serviceDate} ${scope}：已确认${span}（KST）的${count}个时段。`,
+    `${serviceDate} ${scope}：${span}（KST）の${count}個の時間帯を確認しました。`);
+}
+
 const airportTodayText = {
   title: { ko: "한눈에 보기", en: "At a glance", zh: "概览", ja: "概要" },
   // Means "the latest retrieval AMONG airport datasets" — never that every
@@ -743,7 +761,7 @@ const airportTodayText = {
   waiting: { ko: "명 대기", en: " waiting", zh: "人等候", ja: "人待機" },
   waitLabel: { ko: "대기시간", en: "Wait", zh: "等候时间", ja: "待ち時間" },
   peopleLabel: { ko: "대기인원", en: "People", zh: "等候人数", ja: "待機人数" },
-  forecastOnly: { ko: "공식 예상 승객 · 실제 대기인원 아님", en: "Official departure-hall passenger forecast · not actual waiting", zh: "官方预计旅客 · 非实际等候人数", ja: "公式予想旅客 · 実際の待機人数ではありません" },
+  forecastOnly: { ko: "인천공항이 발표한 시간대별 예상 승객이며, 실제 대기 인원이 아닙니다.", en: "Incheon Airport's own hourly passenger forecast, not an observed queue.", zh: "仁川机场发布的分时段预计旅客，并非实际等候人数。", ja: "仁川空港が発表した時間帯別の予想旅客で、実際の待機人数ではありません。" },
   nowMarker: { ko: "현재 시각", en: "Now", zh: "当前时间", ja: "現在時刻" },
   scope: {
     ko: { all: "전체 공항", T1: "제1터미널", T2: "제2터미널" },
@@ -1563,7 +1581,7 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
         <div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-arrival-flow-title">{arrivalSectionText.flowTitle[lang]}</h3></div>
         <p>{arrivalSectionText.flowOnly[lang]}</p>
       </div>
-      <p className="flow-note">{summary.serviceDateKst} · {scopeLabel} · {timeline.length ? `${kstStamp(timeline[0].targetStartAt)}–${kstStamp(timeline.at(-1)!.targetEndAt)} KST · ${timeline.length} ${contextText(lang,"개 확인 시간대","available bands","个已确认时段","確認済み時間帯")}` : airportTodayText.unavailable[lang]}{isPartial ? ` · ${airportTodayText.partialBody[lang]}` : ""}</p>
+      <p className="flow-note">{flowCoverageSentence(lang, summary.serviceDateKst, scopeLabel, timeline)}{isPartial ? ` ${airportTodayText.partialBody[lang]}` : ""}</p>
       {timeline.length > 0
         ? <AirportFlowFigure
           timeline={timeline}
@@ -1814,7 +1832,7 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
         ? <><strong className="airport-brief-total"><span className="airport-metric-label">{passengerCopy[summary.dayRelation === "TODAY" ? "today" : "selected"][lang]}</span>{" "}<span className={flow ? "airport-metric-value av-display" : "airport-metric-value"}><CountUpNumber value={Math.round(expectedTotal)} locale={numberLocale} animate={Boolean(flow)} /><small>{peopleUnit}</small></span></strong>
           <small className="passenger-transfer-limitation">{passengerCopy.limitation[lang]}</small></>
         : <p className="airport-data-missing">{forecastStatus === "PARTIAL" ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]}</p>}
-      <small className="departure-hall-scope-note">{summary.serviceDateKst} · {scopeLabel} · {passengerCopy.scope[lang]}</small>
+      <small className="departure-hall-scope-note">{passengerCopy.scopeSentence[lang](summary.serviceDateKst, scopeLabel)}</small>
       {/* LOCK 4: the hour-by-hour shape of the day, directly under the day's
           size. Supplied by the airport page; the personal home passes none. */}
       {flow}
@@ -1981,7 +1999,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     <AirportAtAGlance summary={summary} lang={lang} terminal={terminal} flow={
     <section className="airport-detail-section airport-forecast" aria-labelledby="airport-forecast-title">
       <div className="airport-detail-head"><div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-forecast-title">{airportTodayText.forecastTitle[lang]}</h3></div><p>{airportTodayText.forecastOnly[lang]}</p></div>
-      <p className="flow-note">{summary.serviceDateKst} · {scopeLabel} · {timeline.length ? `${kstStamp(timeline[0].targetStartAt)}–${kstStamp(timeline.at(-1)!.targetEndAt)} KST · ${timeline.length} ${contextText(lang,"개 확인 시간대","available bands","个已确认时段","確認済み時間帯")}` : airportTodayText.unavailable[lang]}{isForecastPartial ? ` · ${airportTodayText.partialBody[lang]}` : ''}</p>
+      <p className="flow-note">{flowCoverageSentence(lang, summary.serviceDateKst, scopeLabel, timeline)}{isForecastPartial ? ` ${airportTodayText.partialBody[lang]}` : ''}</p>
       {timeline.length > 0
         ? <AirportFlowFigure
           timeline={timeline}
