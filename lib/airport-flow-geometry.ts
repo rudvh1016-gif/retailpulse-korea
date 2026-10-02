@@ -25,7 +25,7 @@ export function kstDayStart(iso: string): number {
 }
 
 export const FLOW_HOURS = [0, 6, 12, 18, 24] as const;
-export const FLOW_PAD = { left: 8, right: 8, top: 44, bottom: 26 } as const;
+export const FLOW_PAD = { left: 18, right: 18, top: 52, bottom: 34 } as const;
 
 const round = (n: number) => Math.round(n * 10) / 10;
 

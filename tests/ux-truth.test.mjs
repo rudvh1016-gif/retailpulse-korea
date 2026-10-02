@@ -190,7 +190,7 @@ test("the current-time rule follows the exact minute inside its forecast band", 
    * painted 2px box. A stroked <line> has a real width and no empty-box edge
    * case, on either engine; a border must never come back.
    */
-  assert.match(visual, /\.av-now \{[^}]*stroke: var\(--slate\)[^}]*stroke-width: 1\.5/);
+  assert.match(visual, /\.av-now \{[^}]*stroke: var\(--dusk\)[^}]*stroke-width: 1\.5/);
   assert.doesNotMatch(visual, /border-left/, "a border on an empty box is exactly what stopped rendering on iOS");
   assert.match(figure, /const pillX = layout\.now \? clampX\(layout\.now\.x, pillWidth \/ 2\) : 0/, "the label is centred on the rule and only pulled in at the edges");
 });

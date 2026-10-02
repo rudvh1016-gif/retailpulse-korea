@@ -50,7 +50,7 @@
 .av-centre { fill: var(--sky-300); }
 .av-unverified { fill: url(#av-hatch); }
 .av-rule { stroke: var(--line); stroke-width: 1; }
-.av-now { stroke: var(--slate); stroke-width: 1.5; stroke-dasharray: 2 3; }
+.av-now { stroke: var(--dusk); stroke-width: 1.5; stroke-dasharray: 3 3; }
 
 /* Legend chips: a swatch and a word, no boxes. */
 .av-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 0; padding: 0; list-style: none; font-size: 12px; color: var(--muted); }
@@ -63,47 +63,51 @@
 }
 
 /*
- * The 24-hour flow figure (app/airport-flow-figure.tsx): one smooth curve
- * through the day's hourly forecast, the area under it fading from dusk to
- * cloud (an SVG gradient on the data area only, never on the page), the peak,
- * and a rule at the exact minute. Everything is SVG geometry with a stroke or
- * a fill, never a CSS border on an empty box: WebKit (every browser on iOS)
+ * The 24-hour flow figure (app/airport-flow-figure.tsx): a dusk sky (SVG
+ * gradient inside the figure only, never on the page) with the day's hourly
+ * forecast as a bank of white cloud along the horizon, the peak, and a column
+ * of light at the exact minute. Everything is SVG geometry with a stroke or a
+ * fill, never a CSS border on an empty box: WebKit (every browser on iOS)
  * declined to paint the old zero-width bordered marker, and a stroked <line>
  * has no such edge case.
  */
-.airport-flow { margin: 16px 0 0; }
+.av-figure.airport-flow { margin: 16px 0 0; padding: 0; background: transparent; }
 .airport-flow svg { overflow: visible; touch-action: pan-y; }
 .airport-flow text { font-family: inherit; }
-.airport-flow-grid line { stroke: var(--sky-200); stroke-width: 1; }
-.airport-flow-grid text { fill: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
-.airport-flow-line { fill: none; stroke: var(--dusk-deep); stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
-.airport-flow-ahead .airport-flow-area { opacity: .38; }
-.airport-flow-ahead .airport-flow-line { stroke-opacity: .45; }
+.airport-flow-grid line { stroke: var(--paper); stroke-opacity: .6; stroke-width: 1; }
+.airport-flow-grid text { fill: var(--dusk-deep); fill-opacity: .7; font-size: 10px; font-variant-numeric: tabular-nums; }
+/* Clouds: white, dense behind the reader, translucent ahead. They rise from the horizon once. */
+.airport-flow-area { fill: var(--paper); fill-opacity: 1; transform-box: fill-box; transform-origin: 50% 100%; }
+.airport-flow-edge { fill: none; stroke: var(--paper); stroke-width: 5; stroke-opacity: .7; stroke-linejoin: round; stroke-linecap: round; }
+.airport-flow-line { fill: none; stroke: var(--dusk); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+.airport-flow-ahead .airport-flow-area { fill-opacity: .36; }
+.airport-flow-ahead .airport-flow-line { stroke-opacity: .5; }
 .airport-flow-layer { fill: none; stroke-width: 1.25; stroke-linejoin: round; stroke-linecap: round; }
-.airport-flow-layer-t1 { stroke: var(--dusk-deep); stroke-opacity: .55; }
-.airport-flow-layer-t2 { stroke: var(--cloud-600); stroke-opacity: .9; }
-.airport-flow-base { stroke: var(--sky-300); }
-.airport-flow-hours text { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.airport-flow-layer-t1 { stroke: var(--dusk-deep); stroke-opacity: .5; }
+.airport-flow-layer-t2 { stroke: var(--cloud-600); stroke-opacity: .85; }
+.airport-flow-base { stroke: var(--paper); stroke-opacity: .9; stroke-width: 1.5; }
+.airport-flow-hours text { fill: var(--dusk-deep); fill-opacity: .8; font-size: 11px; font-variant-numeric: tabular-nums; }
 .airport-flow-mark { transform-box: fill-box; }
-.airport-flow-peak circle { fill: var(--cloud-600); stroke: var(--haze); stroke-width: 2; }
-.airport-flow-peak text { fill: var(--cloud-600); font-size: 11px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
-.airport-flow-now-ring { fill: none; stroke: var(--slate); stroke-width: 1.5; opacity: 0; }
-.airport-flow-now-dot { fill: var(--slate); stroke: var(--haze); stroke-width: 2.5; }
-.airport-flow-now-value { fill: var(--slate); font-size: 12px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
-.airport-flow-now-pill rect { fill: var(--slate); }
-.airport-flow-now-label { fill: var(--haze); font-size: 11px; font-weight: var(--weight-strong); letter-spacing: .02em; }
-/* Reading an hour: a crosshair, a dot on the curve and a small card. */
-.airport-flow-tip line { stroke: var(--slate); stroke-width: 1; stroke-opacity: .35; }
-.airport-flow-tip circle { fill: var(--haze); stroke: var(--dusk-deep); stroke-width: 2; }
-.airport-flow-tip rect { fill: var(--ink); fill-opacity: .92; }
-.airport-flow-tip text { fill: var(--paper); font-size: 11px; font-variant-numeric: tabular-nums; }
+.airport-flow-peak circle { fill: var(--cloud-600); stroke: var(--paper); stroke-width: 2; }
+.airport-flow-peak text { fill: var(--dusk-deep); font-size: 11px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
+.airport-flow-now-light { fill: var(--paper); fill-opacity: .32; }
+.airport-flow-now-ring { fill: none; stroke: var(--dusk-deep); stroke-width: 1.5; opacity: 0; }
+.airport-flow-now-dot { fill: var(--paper); stroke: var(--dusk-deep); stroke-width: 2; }
+.airport-flow-now-value { fill: var(--dusk-deep); font-size: 12px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
+.airport-flow-now-pill rect { fill: var(--paper); fill-opacity: .92; stroke: var(--sky-300); stroke-width: .75; }
+.airport-flow-now-label { fill: var(--dusk-deep); font-size: 11px; font-weight: var(--weight-strong); letter-spacing: .01em; }
+/* Reading an hour: a crosshair, a dot on the cloud's edge and a small card. */
+.airport-flow-tip line { stroke: var(--dusk-deep); stroke-width: 1; stroke-opacity: .35; }
+.airport-flow-tip circle { fill: var(--paper); stroke: var(--dusk-deep); stroke-width: 2; }
+.airport-flow-tip rect { fill: var(--paper); fill-opacity: .96; stroke: var(--sky-300); stroke-width: .75; }
+.airport-flow-tip text { fill: var(--dusk-deep); font-size: 11px; font-variant-numeric: tabular-nums; }
 .airport-flow-tip text.strong { font-size: 12px; font-weight: var(--weight-strong); }
 /* Keyboard stops: one per hourly band, invisible until focused. */
 .airport-flow-band { fill: transparent; outline: none; }
-.airport-flow-band:focus-visible { fill: var(--dusk); fill-opacity: .08; stroke: var(--slate); stroke-width: 1.5; }
-.airport-flow-legend { margin-top: 8px; }
-.airport-flow-legend i.past { background: var(--dusk); }
-.airport-flow-legend i.ahead { background: var(--sky-200); }
+.airport-flow-band:focus-visible { fill: var(--dusk); fill-opacity: .08; stroke: var(--dusk-deep); stroke-width: 1.5; }
+.airport-flow-legend { margin-top: 10px; padding: 0 4px; }
+.airport-flow-legend i.past { background: var(--paper); border: 1px solid var(--sky-300); }
+.airport-flow-legend i.ahead { background: var(--sky-100); border: 1px solid var(--sky-300); }
 .airport-flow-legend i.layer { width: 16px; height: 2px; border-radius: 1px; }
 .airport-flow-legend i.layer-t1 { background: var(--dusk-deep); opacity: .6; }
 .airport-flow-legend i.layer-t2 { background: var(--cloud-600); }

@@ -52,7 +52,7 @@ for (const clock of ["11:57", "21:03", "23:59"]) {
           visible: style.display !== "none" && style.visibility === "visible" && Number(style.opacity) === 1,
           // A real stroke, not a border on an empty box (the shape WebKit —
           // every browser on iOS — declined to paint on the owner's phone).
-          stroked: parseFloat(style.strokeWidth) >= 1 && style.stroke === "rgb(63, 74, 92)",
+          stroked: parseFloat(style.strokeWidth) >= 1 && style.stroke === "rgb(75, 107, 158)",
           inside: box.left >= frame.left && box.right <= frame.right,
           labelInside: label.left >= frame.left - 1 && label.right <= frame.right + 1,
         };

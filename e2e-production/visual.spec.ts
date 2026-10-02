@@ -543,7 +543,7 @@ test("production airport composition is one compact tabbed module at every requi
       expect(marker.inside).toBe(true);
       expect(marker.height).toBeGreaterThan(100);
       expect(marker.strokeWidth).toBeGreaterThanOrEqual(1);
-      expect(marker.stroke).toBe("rgb(63, 74, 92)");
+      expect(marker.stroke).toBe("rgb(75, 107, 158)");
       console.log(`AIRPORT_CURRENT_MARKER ${JSON.stringify({ viewport: width, ...marker })}`);
       await testInfo.attach(`airport-marker-${width}.png`, { body: await page.locator(".airport-forecast").screenshot(), contentType: "image/png" });
     }

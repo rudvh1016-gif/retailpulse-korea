@@ -81,7 +81,7 @@ test("the figure is drawn with strokes and fills, never a CSS border on an empty
   assert.match(figure, /<line className="av-now airport-flow-now"[^>]*data-now-label=\{nowLabel\}/s, "the rule is an SVG line carrying its own label");
   assert.match(figure, /ResizeObserver/, "the figure measures its width instead of scrolling sideways");
   assert.match(figure, /tabIndex=\{0\}[\s\S]*aria-label=\{`\$\{clock\(band\.start\)\}–\$\{clock\(band\.end\)\} KST/, "each band is reachable by keyboard with its hours and value");
-  assert.match(visual, /\.av-now \{[^}]*stroke: var\(--slate\)[^}]*stroke-width: 1\.5/);
+  assert.match(visual, /\.av-now \{[^}]*stroke: var\(--dusk\)[^}]*stroke-width: 1\.5/);
   assert.doesNotMatch(visual, /border-left/, "no bordered zero-width marker: WebKit did not paint that");
   assert.doesNotMatch(figure, /from ["']gsap["']/);
 });
