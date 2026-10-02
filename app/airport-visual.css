@@ -167,7 +167,12 @@
 .airport-today .airport-hero .airport-flow-now-dot { stroke: var(--dusk-deep); }
 .airport-today .airport-hero .airport-flow-now-value { fill: var(--paper); }
 .airport-today .airport-hero .airport-flow-now-pill rect { fill-opacity: .94; }
-@media (max-width: 640px) {
+/* The band bleeds exactly as far as the page shell pads (globals.css: var(--gutter) above 820px, 18px to 820px, 14px to 365px). */
+@media (max-width: 820px) {
   .airport-today .airport-hero { margin: -21px -18px 0; padding: 34px 18px 0; }
   .airport-today .airport-hero .av-figure.airport-flow { margin: 0 -18px 6px; }
+}
+@media (max-width: 365px) {
+  .airport-today .airport-hero { margin: -21px -14px 0; padding: 30px 14px 0; }
+  .airport-today .airport-hero .av-figure.airport-flow { margin: 0 -14px 6px; }
 }
