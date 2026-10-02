@@ -1,0 +1,63 @@
+/*
+ * Airport visual layer — tokens and base rules for the pictured airport
+ * screens (owner decision 2026-10-02: airport first, pastel dusk palette).
+ *
+ * This file adds to app/globals.css; it does not override it. The page ground
+ * stays paper white and the body type stays as it is. The pastel palette is
+ * for data marks, figure backgrounds and motion inside airport sections only,
+ * so the rest of the site keeps its neutral white system. It supersedes the
+ * 2026-09-03 "no warm token" rule for airport figures only, by owner decision;
+ * see docs/VISUAL_LANGUAGE_2026-10-02.md.
+ *
+ * Palette, sampled from the owner's reference frames (a dusk sky over clouds):
+ *   sky     cool light blue of the upper sky
+ *   dusk    the deeper blue where the sky meets the horizon — the accent
+ *   cloud   the peach of lit cloud tops — the warm counterpart
+ *   haze    the pale cream between — figure grounds, never the page
+ *   slate   the cap's navy — ink on pastel grounds
+ */
+:root {
+  --sky-100: #eef3fa;
+  --sky-200: #d7e3f3;
+  --sky-300: #afc7e8;
+  --sky-500: #7fa3d1;
+  --dusk: #4b6b9e;
+  --dusk-deep: #334d78;
+  --cloud-100: #fbf1e8;
+  --cloud-200: #f6d3bb;
+  --cloud-400: #efb38f;
+  --cloud-600: #d98a63;
+  --haze: #fbf7f2;
+  --slate: #3f4a5c;
+  /* Motion: one speed for data arriving, one for small state changes. */
+  --motion-reveal: 560ms;
+  --motion-state: 240ms;
+  --ease-out: cubic-bezier(.22, .61, .36, 1);
+}
+
+/* A figure sits on a faint haze ground with a hairline, never a shadow or a gradient. */
+.av-figure { margin: 0; padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--haze); }
+.av-figure > figcaption { margin: 0 0 10px; font-size: 12px; color: var(--muted); line-height: 1.5; }
+.av-figure svg { display: block; width: 100%; height: auto; }
+
+/* Display figures: the one big number a reader looks at first. */
+.av-display { font-size: clamp(40px, 9vw, 72px); line-height: 1; letter-spacing: -.03em; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; color: var(--ink); }
+.av-display small { font-size: .32em; font-weight: var(--weight-regular); letter-spacing: 0; color: var(--muted); margin-left: .25em; }
+
+/* Marks: east is dusk blue, west is cloud peach, unconfirmed is hatched haze. */
+.av-east { fill: var(--dusk); }
+.av-west { fill: var(--cloud-400); }
+.av-centre { fill: var(--sky-300); }
+.av-unverified { fill: url(#av-hatch); }
+.av-rule { stroke: var(--line); stroke-width: 1; }
+.av-now { stroke: var(--slate); stroke-width: 1.5; stroke-dasharray: 2 3; }
+
+/* Legend chips: a swatch and a word, no boxes. */
+.av-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 0; padding: 0; list-style: none; font-size: 12px; color: var(--muted); }
+.av-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.av-legend i { width: 10px; height: 10px; border-radius: 2px; }
+
+/* Motion is shown only while data arrives; readers who asked for less motion get the final state at once. */
+@media (prefers-reduced-motion: reduce) {
+  .av-animate, .av-animate * { animation: none !important; transition: none !important; }
+}
