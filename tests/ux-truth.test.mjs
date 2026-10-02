@@ -192,7 +192,7 @@ test("the current-time rule follows the exact minute inside its forecast band", 
    */
   assert.match(visual, /\.av-now \{[^}]*stroke: var\(--slate\)[^}]*stroke-width: 1\.5/);
   assert.doesNotMatch(visual, /border-left/, "a border on an empty box is exactly what stopped rendering on iOS");
-  assert.match(figure, /<text className="airport-flow-now-label" x=\{layout\.now\.x\}/, "the label shares the rule's x");
+  assert.match(figure, /const pillX = layout\.now \? clampX\(layout\.now\.x, pillWidth \/ 2\) : 0/, "the label is centred on the rule and only pulled in at the edges");
 });
 
 test("the custom month range is a compact grouped control on phone and desktop", () => {
@@ -627,7 +627,7 @@ test("예보 그림은 하루 전체가 한 번에 보이고, 가로 스크롤�
   assert.doesNotMatch(visual, /\.airport-flow[^{]*\{[^}]*overflow-x: auto/, "스타일에서도");
   assert.match(figure, /viewBox=\{`0 0 \$\{width\} \$\{height\}`\}/, "그림은 측정한 폭에 맞춰 그려진다");
   // 오늘이 아니면 현재 시간대가 없으므로 선도 없다.
-  assert.match(figure, /\{layout\.now && <g className="airport-flow-now-group">/);
+  assert.match(figure, /\{layout\.now && <g className="airport-flow-mark airport-flow-now-group">/);
 });
 
 /**

@@ -22,7 +22,7 @@
 | `--haze` | #fbf7f2 | 그림 바탕. 페이지 바탕에는 쓰지 않는다 |
 | `--slate` | #3f4a5c | 파스텔 위의 글자·현재 시각 선 |
 
-규칙: 그라데이션·그림자 금지. 한 그림에 동(dusk)·서(cloud)·중앙(sky)·미확인(빗금) 네 가지만. 사이트 공통 `--blue`(#214cff)는 그림 안에서 쓰지 않는다(파스텔과 충돌).
+규칙: 페이지·카드·배경에 그라데이션·그림자 금지. 그림 안의 **자료 면**(흐름선 아래 면)에만 SVG 수직 페이드(dusk → cloud)를 허용한다 — 2026-10-02 소유자 판정("훨씬 더 프로페셔널하게") 뒤 2단계에서 넣었다. 한 그림에 동(dusk)·서(cloud)·중앙(sky)·미확인(빗금) 네 가지만. 사이트 공통 `--blue`(#214cff)는 그림 안에서 쓰지 않는다(파스텔과 충돌).
 
 ## 3. 글자
 
@@ -37,6 +37,17 @@
 - GSAP은 그림이 처음 움직일 때만 불러온다(동적 import). 첫 화면 JS에 포함되지 않는다 — `tests/visual-foundation.test.mjs`가 정적 import를 막는다.
 - 작은 드러냄(숫자 카운트업, 선이 그려짐)은 `lib/motion.ts`의 `tween`(requestAnimationFrame)으로 자료가 도착한 순간 바로 시작한다. 라이브러리를 기다리지 않는다. GSAP은 순서가 있는 그림(3단계 하루 재생부터)에만 쓴다.
 - `prefers-reduced-motion`이면 최종 상태를 바로 그린다.
+
+## 4b. 설치한 디자인 스킬 (2026-10-02)
+
+소유자 지시("필수 깃허브 스킬을 받고 작업")에 따라 `.claude/skills/`에 두었다. 공항 화면을 만지는 세션은 먼저 읽는다.
+
+| 스킬 | 출처 | 라이선스 | 쓰임 |
+|---|---|---|---|
+| `frontend-design` | github.com/anthropics/skills (frontend-design/SKILL.md) | Apache-2.0 | 템플릿 티를 피하는 판단 기준. "큰 숫자+작은 라벨+그라데이션"이 기본값이라는 경고, 대문자 눈썹·중점(·) 메타 문자열·#111 먹색이 AI 티라는 목록 포함 — 이 사이트의 기존 체계와 겹치는 부분은 5단계(서울 정리)에서 다룬다 |
+| `web-design-guidelines` | github.com/vercel-labs/web-interface-guidelines (command.md) | MIT | UI PR 전 점검표: 키보드·포커스·reduced-motion·transform/opacity만 움직이기·layout read 금지 등 |
+
+받지 못한 것: `ui-ux-pro-max`(nextlevelbuilder)는 CLI(`npx ui-ux-pro-max-cli init --ai claude`)가 외부 코드를 실행하므로 이 세션의 권한 분류기가 막았다. 소유자가 직접 `/plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill` → `/plugin install ui-ux-pro-max@ui-ux-pro-max-skill`로 넣을 수 있다.
 
 ## 5. "AI 사이트 티"를 피하는 규칙
 
@@ -53,7 +64,7 @@
 ## 7. 순서
 
 1. 이 문서 + 토큰 + motion 유틸 (화면 변화 없음) — 이 PR.
-2. "오늘의 출국" 첫 화면: 큰 숫자 카운트업 + 24시간 흐름선 + 지금 표시. (`app/airport-flow-figure.tsx`, `app/count-up-number.tsx`; 가로 스크롤 막대 차트를 대체)
+2. "오늘의 출국" 첫 화면: 큰 숫자 카운트업 + 24시간 흐름 그림(단조 3차 곡선, 자료 면 페이드, 지난/남은 시간대 구분, 피크, 현재 분 자+점, 전체 보기에서 T1·T2 가는 선, 포인터·터치·키보드로 시간대 읽기). (`app/airport-flow-figure.tsx`, `lib/airport-flow-geometry.ts`, `app/count-up-number.tsx`; 가로 스크롤 막대 차트를 대체)
 3. 동·서편 터미널 실루엣 + 하루 출발편 재생.
 4. 국적별 순위·목적지 지역 그림.
 5. 메뉴 재배치: 공항 첫 화면, 서울 뒤로.

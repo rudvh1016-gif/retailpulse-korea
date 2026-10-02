@@ -36,7 +36,7 @@
 }
 
 /* A figure sits on a faint haze ground with a hairline, never a shadow or a gradient. */
-.av-figure { margin: 0; padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--haze); }
+.av-figure { margin: 0; padding: 16px; border-radius: 12px; background: var(--haze); }
 .av-figure > figcaption { margin: 0 0 10px; font-size: 12px; color: var(--muted); line-height: 1.5; }
 .av-figure svg { display: block; width: 100%; height: auto; }
 
@@ -63,25 +63,50 @@
 }
 
 /*
- * The 24-hour flow figure (app/airport-flow-figure.tsx): one line through the
- * day's hourly forecast, the area under it, the peak, and a rule at the exact
- * minute. Everything is SVG geometry with a stroke or a fill, never a CSS
- * border on an empty box: WebKit (every browser on iOS) declined to paint the
- * old zero-width bordered marker, and a stroked <line> has no such edge case.
+ * The 24-hour flow figure (app/airport-flow-figure.tsx): one smooth curve
+ * through the day's hourly forecast, the area under it fading from dusk to
+ * cloud (an SVG gradient on the data area only, never on the page), the peak,
+ * and a rule at the exact minute. Everything is SVG geometry with a stroke or
+ * a fill, never a CSS border on an empty box: WebKit (every browser on iOS)
+ * declined to paint the old zero-width bordered marker, and a stroked <line>
+ * has no such edge case.
  */
 .airport-flow { margin: 16px 0 0; }
-.airport-flow svg { overflow: visible; }
+.airport-flow svg { overflow: visible; touch-action: pan-y; }
 .airport-flow text { font-family: inherit; }
-.airport-flow-area { fill: var(--sky-200); }
-.airport-flow-line { fill: none; stroke: var(--dusk); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.airport-flow-grid line { stroke: var(--sky-200); stroke-width: 1; }
+.airport-flow-grid text { fill: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.airport-flow-line { fill: none; stroke: var(--dusk-deep); stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
+.airport-flow-ahead .airport-flow-area { opacity: .38; }
+.airport-flow-ahead .airport-flow-line { stroke-opacity: .45; }
+.airport-flow-layer { fill: none; stroke-width: 1.25; stroke-linejoin: round; stroke-linecap: round; }
+.airport-flow-layer-t1 { stroke: var(--dusk-deep); stroke-opacity: .55; }
+.airport-flow-layer-t2 { stroke: var(--cloud-600); stroke-opacity: .9; }
+.airport-flow-base { stroke: var(--sky-300); }
 .airport-flow-hours text { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
-.airport-flow-now-label { fill: var(--slate); font-size: 11px; font-weight: var(--weight-strong); letter-spacing: .02em; }
+.airport-flow-mark { transform-box: fill-box; }
 .airport-flow-peak circle { fill: var(--cloud-600); stroke: var(--haze); stroke-width: 2; }
-.airport-flow-peak text { fill: var(--dusk-deep); font-size: 11px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
-/* Hit areas: one per hourly band, invisible until pointed at or focused. */
+.airport-flow-peak text { fill: var(--cloud-600); font-size: 11px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
+.airport-flow-now-ring { fill: none; stroke: var(--slate); stroke-width: 1.5; opacity: 0; }
+.airport-flow-now-dot { fill: var(--slate); stroke: var(--haze); stroke-width: 2.5; }
+.airport-flow-now-value { fill: var(--slate); font-size: 12px; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
+.airport-flow-now-pill rect { fill: var(--slate); }
+.airport-flow-now-label { fill: var(--haze); font-size: 11px; font-weight: var(--weight-strong); letter-spacing: .02em; }
+/* Reading an hour: a crosshair, a dot on the curve and a small card. */
+.airport-flow-tip line { stroke: var(--slate); stroke-width: 1; stroke-opacity: .35; }
+.airport-flow-tip circle { fill: var(--haze); stroke: var(--dusk-deep); stroke-width: 2; }
+.airport-flow-tip rect { fill: var(--ink); fill-opacity: .92; }
+.airport-flow-tip text { fill: var(--paper); font-size: 11px; font-variant-numeric: tabular-nums; }
+.airport-flow-tip text.strong { font-size: 12px; font-weight: var(--weight-strong); }
+/* Keyboard stops: one per hourly band, invisible until focused. */
 .airport-flow-band { fill: transparent; outline: none; }
-.airport-flow-band:hover, .airport-flow-band:focus-visible { fill: var(--dusk); fill-opacity: .08; }
-.airport-flow-band:focus-visible { stroke: var(--slate); stroke-width: 1.5; }
+.airport-flow-band:focus-visible { fill: var(--dusk); fill-opacity: .08; stroke: var(--slate); stroke-width: 1.5; }
+.airport-flow-legend { margin-top: 8px; }
+.airport-flow-legend i.past { background: var(--dusk); }
+.airport-flow-legend i.ahead { background: var(--sky-200); }
+.airport-flow-legend i.layer { width: 16px; height: 2px; border-radius: 1px; }
+.airport-flow-legend i.layer-t1 { background: var(--dusk-deep); opacity: .6; }
+.airport-flow-legend i.layer-t2 { background: var(--cloud-600); }
 
 /* The day's one big number, only where the flow figure sits under it. */
 .airport-today .airport-brief-total .av-display { display: block; margin-top: 6px; font-size: clamp(34px, 8vw, 56px); line-height: 1.05; letter-spacing: -.03em; }

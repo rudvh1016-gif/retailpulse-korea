@@ -375,7 +375,8 @@ If evidence is missing, say BLOCKED / PENDING / NOT VERIFIED.
 
 ## Visual phase 2: 24-hour flow figure + count-up total (2026-10-02 KST)
 
-- The airport 출국·입국 hourly forecast is one SVG figure over the whole KST day (`app/airport-flow-figure.tsx`, geometry in `lib/airport-flow-geometry.ts`): line through the hourly bands, pastel area, peak dot, and a stroked rule at the exact minute (today only). It replaces the 24-bar strip that scrolled sideways on a phone; the strip's CSS left `app/globals.css`.
+- The airport 출국·입국 hourly forecast is one SVG figure over the whole KST day (`app/airport-flow-figure.tsx`, geometry in `lib/airport-flow-geometry.ts`): a monotone cubic curve through the hourly bands (never above or below the two values it joins), a dusk→cloud fade under it, elapsed hours vivid and hours ahead pale, the peak named, a stroked rule plus a dot on the curve at the exact minute (today only), T1·T2 thin lines on the whole-airport view, and a pointer/touch/keyboard readout per band. It replaces the 24-bar strip that scrolled sideways on a phone; the strip's CSS left `app/globals.css`.
+- Design skills vendored under `.claude/skills/` (frontend-design, web-design-guidelines); see docs/VISUAL_LANGUAGE_2026-10-02.md §4b.
 - The day total on the airport page is the one big number and counts up when data arrives (`app/count-up-number.tsx`); the personal home keeps its plain figure.
 - Small reveals run on requestAnimationFrame (`tween` in `lib/motion.ts`); GSAP stays lazy for later sequenced figures.
 - Owner UI Lock: `app/live-signals.tsx` and `app/globals.css` changed and need re-approval in `tests/fixtures/phase2-locks.json`.

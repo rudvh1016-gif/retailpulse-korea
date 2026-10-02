@@ -1567,6 +1567,8 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
       {timeline.length > 0
         ? <AirportFlowFigure
           timeline={timeline}
+          layers={isAll ? arrival?.passengerForecastTimelineByTerminal ?? null : null}
+          lang={lang}
           peakStartAt={peak?.targetStartAt ?? null}
           nowBandStart={nowBandStart}
           nowBandProgress={nowBandProgress}
@@ -1799,13 +1801,13 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
       {referenceSum ? <>
         <strong className="airport-brief-total" data-basis="ARITHMETIC_ONLY" data-testid="airport-sum-total">
           <span className="airport-metric-label">{passengerCopy[summary.dayRelation === "TODAY" ? "summedToday" : "summedSelected"][lang]}</span>{" "}
-          <span className={flow ? "airport-metric-value av-display" : "airport-metric-value"}><CountUpNumber value={referenceSum.total} locale={numberLocale} /><small>{peopleUnit}</small></span>
+          <span className={flow ? "airport-metric-value av-display" : "airport-metric-value"}><CountUpNumber value={referenceSum.total} locale={numberLocale} animate={Boolean(flow)} /><small>{peopleUnit}</small></span>
         </strong>
         <AirportSumFormula hall={referenceSum.hall} transfer={referenceSum.transfer} total={referenceSum.total}
           lang={lang} numberLocale={numberLocale} unit={peopleUnit} isToday={summary.dayRelation === "TODAY"} />
         <small className="passenger-transfer-limitation">{passengerCopy.arithmeticNote[lang]}</small>
       </> : expectedTotal !== null && forecastStatus === "COMPLETE"
-        ? <><strong className="airport-brief-total"><span className="airport-metric-label">{passengerCopy[summary.dayRelation === "TODAY" ? "today" : "selected"][lang]}</span>{" "}<span className={flow ? "airport-metric-value av-display" : "airport-metric-value"}><CountUpNumber value={Math.round(expectedTotal)} locale={numberLocale} /><small>{peopleUnit}</small></span></strong>
+        ? <><strong className="airport-brief-total"><span className="airport-metric-label">{passengerCopy[summary.dayRelation === "TODAY" ? "today" : "selected"][lang]}</span>{" "}<span className={flow ? "airport-metric-value av-display" : "airport-metric-value"}><CountUpNumber value={Math.round(expectedTotal)} locale={numberLocale} animate={Boolean(flow)} /><small>{peopleUnit}</small></span></strong>
           <small className="passenger-transfer-limitation">{passengerCopy.limitation[lang]}</small></>
         : <p className="airport-data-missing">{forecastStatus === "PARTIAL" ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]}</p>}
       <small className="departure-hall-scope-note">{summary.serviceDateKst} · {scopeLabel} · {passengerCopy.scope[lang]}</small>
@@ -1973,6 +1975,8 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
       {timeline.length > 0
         ? <AirportFlowFigure
           timeline={timeline}
+          layers={isAll ? airport.passengerForecastTimelineByTerminal ?? null : null}
+          lang={lang}
           peakStartAt={peak?.targetStartAt ?? null}
           nowBandStart={nowBandStart}
           nowBandProgress={nowBandProgress}

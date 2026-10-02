@@ -1,27 +1,48 @@
 "use client";
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { FLOW_HOURS, flowLayout, type FlowBand } from "../lib/airport-flow-geometry";
 import { REVEAL_MS, reducedMotion, tween } from "../lib/motion";
+import type { Lang } from "./retailpulse-data";
 // Styles live in app/airport-visual.css, imported once by
 // app/airport-departure-overview.tsx (always in the app bundle). Importing it
 // here too would break the node tests that load live-signals.tsx.
 
 /**
  * The hour-by-hour shape of the day's official forecast, drawn as one figure
- * over the whole KST day: a line through the hourly bands, the area under it,
- * the peak marked, and today's exact minute as a rule with its time. It
- * replaces the strip of 24 bars that scrolled sideways on a phone.
+ * over the whole KST day: a smooth curve through the hourly bands, the area
+ * under it fading from dusk to cloud, the hours already behind the reader in
+ * full colour and the hours ahead pale, the peak named, and today's exact
+ * minute as a rule with its time and a dot on the curve. On the whole-airport
+ * view each terminal's own forecast runs as a thin line under the total.
+ * Pointing or touching anywhere reads that hour; every band is also a
+ * keyboard stop with its hours and value.
  *
  * What it does not do: it draws only the bands the airport published, so a
- * gap in coverage is a gap in the line; it never smooths across hours that
- * have no value; and the rule exists only when the caller found a band that
- * contains the present minute, which it does for TODAY alone.
+ * gap in coverage is a gap in the curve; the curve never rises above or
+ * falls below the two values it joins (monotone cubic); and the rule exists
+ * only when the caller found a band containing the present minute, which it
+ * does for TODAY alone.
  *
- * Motion: when the data arrives the line draws itself and the area fades in
- * over one reveal. Readers who asked for less motion see the finished figure.
+ * Motion: when the data arrives the curve draws itself, the area fills, then
+ * the markers settle in and the present-minute dot sends out one ring. Readers
+ * who asked for less motion see the finished figure at once.
  */
-export function AirportFlowFigure({ timeline, peakStartAt, nowBandStart, nowBandProgress, nowLabel, numberLocale, label }: {
-  timeline: FlowBand[];
+const copy = {
+  past: { ko: "지난 시간대", en: "Elapsed hours", zh: "已过时段", ja: "経過した時間帯" },
+  ahead: { ko: "남은 시간대", en: "Hours ahead", zh: "剩余时段", ja: "残りの時間帯" },
+  peak: { ko: "피크", en: "Peak", zh: "高峰", ja: "ピーク" },
+  unit: { ko: "명", en: "", zh: "人", ja: "人" },
+} as const;
+
+const REVEAL_TOTAL_MS = REVEAL_MS * 2;
+const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
+/** Rough text width at 11px: CJK glyphs are square, Latin digits are narrow. */
+const textWidth = (text: string) => [...text].reduce((sum, ch) => sum + (ch > "⺀" ? 11 : /[0-9]/.test(ch) ? 6.4 : /[ ·–:]/.test(ch) ? 3.4 : 6.2), 0);
+
+export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakStartAt, nowBandStart, nowBandProgress, nowLabel, numberLocale, label }: {
+  timeline: ReadonlyArray<FlowBand>;
+  layers?: Record<string, ReadonlyArray<FlowBand> | undefined> | null;
+  lang?: Lang;
   peakStartAt: string | null;
   nowBandStart: string | null;
   nowBandProgress: number | null;
@@ -29,7 +50,9 @@ export function AirportFlowFigure({ timeline, peakStartAt, nowBandStart, nowBand
   numberLocale: string;
   label: string;
 }) {
+  const id = useId().replace(/:/g, "");
   const figureRef = useRef<HTMLElement | null>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const [width, setWidth] = useState(720);
   useLayoutEffect(() => {
     const figure = figureRef.current;
@@ -40,78 +63,192 @@ export function AirportFlowFigure({ timeline, peakStartAt, nowBandStart, nowBand
     observer.observe(figure);
     return () => observer.disconnect();
   }, []);
-  const height = width < 560 ? 190 : 220;
-  const layout = useMemo(() => flowLayout({ timeline, width, height, peakStartAt, nowBandStart, nowBandProgress }),
-    [timeline, width, height, peakStartAt, nowBandStart, nowBandProgress]);
+  const height = width < 560 ? 210 : 250;
+  const layout = useMemo(() => flowLayout({ timeline, layers, width, height, peakStartAt, nowBandStart, nowBandProgress }),
+    [timeline, layers, width, height, peakStartAt, nowBandStart, nowBandProgress]);
+
+  // The curve's exact y at an x, read off the drawn path so dots sit on the
+  // curve itself rather than on a straight line between band centres.
+  const lineRefs = useRef<Array<SVGPathElement | null>>([]);
+  const pointOnCurve = useCallback((x: number): number | null => {
+    const index = layout.segments.findIndex((segment) => x >= segment.x0 - 0.01 && x <= segment.x1 + 0.01);
+    const path = index >= 0 ? lineRefs.current[index] : null;
+    if (!path) return null;
+    let lo = 0, hi = path.getTotalLength();
+    for (let step = 0; step < 24; step += 1) {
+      const mid = (lo + hi) / 2;
+      if (path.getPointAtLength(mid).x < x) lo = mid; else hi = mid;
+    }
+    return path.getPointAtLength((lo + hi) / 2).y;
+  }, [layout.segments]);
+
+  // The present-minute dot is rendered at its band's value and then snapped
+  // onto the drawn curve by hand, so no state changes after layout.
+  const nowDotRefs = useRef<Array<SVGCircleElement | SVGTextElement | null>>([]);
+  useLayoutEffect(() => {
+    if (!layout.now) return;
+    const onCurve = pointOnCurve(layout.now.x);
+    if (onCurve === null) return;
+    for (const element of nowDotRefs.current) {
+      if (!element) continue;
+      if (element instanceof SVGCircleElement) element.setAttribute("cy", String(onCurve));
+      else element.setAttribute("y", String(onCurve - 9));
+    }
+  }, [layout, pointOnCurve]);
+
+  const [hover, setHover] = useState<{ index: number; x: number; y: number } | null>(null);
+  const hoverBand = useCallback((index: number) => {
+    const band = layout.bands[index];
+    if (!band) { setHover(null); return; }
+    setHover({ index, x: band.mid, y: pointOnCurve(band.mid) ?? layout.base });
+  }, [layout, pointOnCurve]);
+  const onPointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const box = svg.getBoundingClientRect();
+    const x = (event.clientX - box.left) * (width / Math.max(1, box.width));
+    const index = layout.bands.findIndex((band) => x >= band.x && x < band.x + band.width);
+    if (index < 0) setHover(null); else if (index !== hover?.index) hoverBand(index);
+  };
 
   // Reveal once per data set. Inline styles are set and cleared by hand so a
   // re-render (a resize, the clock moving the rule) never leaves a half-drawn
-  // line behind, and reduced motion skips all of it.
-  const lineRefs = useRef<Array<SVGPathElement | null>>([]);
-  const areaRef = useRef<SVGGElement | null>(null);
-  const marksRef = useRef<SVGGElement | null>(null);
+  // curve behind, and reduced motion skips all of it.
+  const ringRef = useRef<SVGCircleElement | null>(null);
   const signature = timeline.map((band) => `${band.targetStartAt}:${band.expectedPassengers}`).join("|");
   useLayoutEffect(() => {
-    const lines = lineRefs.current.filter((line): line is SVGPathElement => Boolean(line));
-    const area = areaRef.current, marks = marksRef.current;
-    if (reducedMotion() || lines.length === 0) return;
+    const svg = svgRef.current;
+    if (!svg || reducedMotion() || layout.segments.length === 0) return;
+    const lines = Array.from(svg.querySelectorAll<SVGPathElement>(".airport-flow-line"));
+    const areas = Array.from(svg.querySelectorAll<SVGPathElement>(".airport-flow-area"));
+    const layerLines = Array.from(svg.querySelectorAll<SVGPathElement>(".airport-flow-layer"));
+    const marks = Array.from(svg.querySelectorAll<SVGGElement>(".airport-flow-mark"));
+    const ring = ringRef.current;
     const lengths = lines.map((line) => line.getTotalLength());
     const paint = (progress: number) => {
-      lines.forEach((line, index) => {
-        line.style.strokeDasharray = `${lengths[index]}`;
-        line.style.strokeDashoffset = `${lengths[index] * (1 - progress)}`;
-      });
-      if (area) area.style.opacity = String(progress);
-      if (marks) marks.style.opacity = String(Math.max(0, (progress - 0.55) / 0.45));
+      const draw = clamp01(progress / 0.6);
+      lines.forEach((line, index) => { line.style.strokeDasharray = `${lengths[index]}`; line.style.strokeDashoffset = `${lengths[index] * (1 - draw)}`; });
+      areas.forEach((area) => { area.style.opacity = String(draw); });
+      layerLines.forEach((line) => { line.style.opacity = String(clamp01((progress - 0.3) / 0.4)); });
+      const settleIn = clamp01((progress - 0.55) / 0.35);
+      marks.forEach((mark) => { mark.style.opacity = String(settleIn); mark.style.transform = `translateY(${(1 - settleIn) * 8}px)`; });
+      if (ring) { const ringOut = clamp01((progress - 0.6) / 0.4); ring.style.opacity = String(0.55 * (1 - ringOut)); ring.setAttribute("r", String(5 + 16 * ringOut)); }
     };
     const settle = () => {
       lines.forEach((line) => { line.style.strokeDasharray = ""; line.style.strokeDashoffset = ""; });
-      if (area) area.style.opacity = "";
-      if (marks) marks.style.opacity = "";
+      [...areas, ...layerLines].forEach((element) => { element.style.opacity = ""; });
+      marks.forEach((mark) => { mark.style.opacity = ""; mark.style.transform = ""; });
+      if (ring) { ring.style.opacity = ""; ring.setAttribute("r", "5"); }
     };
     paint(0);
-    const cancel = tween(REVEAL_MS, paint, settle);
+    const cancel = tween(REVEAL_TOTAL_MS, paint, settle);
     return () => { cancel(); settle(); };
-  }, [signature]);
+  }, [signature, layout.segments.length]);
 
   const clock = (iso: string) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(iso));
   const people = (value: number) => Math.round(value).toLocaleString(numberLocale);
-  // The time label is centred on the rule and pulled inside the figure near
-  // either edge, so 23:59 does not hang off the right-hand side.
-  const nowAnchor = layout.now ? (layout.now.x < layout.left + 60 ? "start" : layout.now.x > layout.right - 60 ? "end" : "middle") : "middle";
-  const peakLabelY = layout.peak ? Math.max(layout.top - 10, layout.peak.y - 10) : 0;
+  const unit = copy.unit[lang];
+  const { left, right, top, base } = layout;
+  const clampX = (x: number, half: number) => Math.min(right - half, Math.max(left + half, x));
+
+  // The present-minute pill is centred on the rule and pulled inside the
+  // figure near either edge, so 23:59 does not hang off the right-hand side.
+  const pillWidth = textWidth(nowLabel) + 18;
+  const pillX = layout.now ? clampX(layout.now.x, pillWidth / 2) : 0;
+  const nowBand = layout.now ? layout.bands[layout.now.index] : null;
+  const nowY = nowBand ? top + (1 - Math.min(1, nowBand.value / layout.maxBand)) * (base - top) : null;
+
+  const peakText = layout.peak ? `${copy.peak[lang]} ${people(layout.peak.value)}` : "";
+  const peakAnchor = layout.peak ? (layout.peak.x > right - 60 ? "end" : layout.peak.x < left + 60 ? "start" : "middle") : "middle";
+
+  const tip = hover ? (() => {
+    const band = layout.bands[hover.index];
+    const lines = [`${clock(band.start)}–${clock(band.end)} KST`, `${people(band.value)}${unit}`];
+    if (layout.layers.length) lines.push(layout.layers.map((layer) => `${layer.key} ${people(layer.values[hover.index])}`).join(" · "));
+    const w = Math.max(...lines.map(textWidth)) + 20, h = 12 + lines.length * 15;
+    const x = clampX(hover.x, w / 2);
+    const above = hover.y - 16 - h >= top - 30;
+    const y = above ? hover.y - 16 - h : Math.min(base - h, hover.y + 16);
+    return { lines, w, h, x, y };
+  })() : null;
 
   return <figure className="av-figure airport-flow" ref={figureRef} role="group" aria-label={label} data-bands={layout.bands.length}>
-    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="false" role="img" aria-label={label}
-      data-day-left={layout.left} data-day-width={layout.right - layout.left}>
-      <g ref={areaRef}>
-        {layout.segments.map((segment, index) => <path key={`area-${index}`} className="airport-flow-area" d={segment.area} />)}
-      </g>
-      {layout.segments.map((segment, index) => <path key={`line-${index}`} className="airport-flow-line" d={segment.line}
-        ref={(element) => { lineRefs.current[index] = element; }} />)}
-      <line className="av-rule" x1={layout.left} x2={layout.right} y1={layout.base} y2={layout.base} />
-      <g className="airport-flow-hours">
-        {layout.ticks.map((tick) => <g key={tick.hour}>
-          <line className="av-rule" x1={tick.x} x2={tick.x} y1={layout.base} y2={layout.base + 4} />
-          <text x={tick.x} y={layout.base + 18} textAnchor={tick.hour === FLOW_HOURS[0] ? "start" : tick.hour === FLOW_HOURS.at(-1) ? "end" : "middle"}>{String(tick.hour).padStart(2, "0")}</text>
+    <svg ref={svgRef} width="100%" height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={label}
+      data-day-left={left} data-day-width={right - left}
+      onPointerMove={onPointerMove} onPointerLeave={() => setHover(null)} onPointerCancel={() => setHover(null)}>
+      <defs>
+        <linearGradient id={`${id}fill`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" style={{ stopColor: "var(--dusk)", stopOpacity: 0.62 }} />
+          <stop offset="0.58" style={{ stopColor: "var(--cloud-200)", stopOpacity: 0.7 }} />
+          <stop offset="1" style={{ stopColor: "var(--cloud-100)", stopOpacity: 0.1 }} />
+        </linearGradient>
+        {layout.now && <clipPath id={`${id}past`}><rect x={left} y={0} width={Math.max(0, layout.now.x - left)} height={height} /></clipPath>}
+      </defs>
+
+      {/* Value gridlines, labelled at the right so they never collide with the curve's start. */}
+      <g className="airport-flow-grid">
+        {layout.grid.map((row) => <g key={row.value}>
+          <line x1={left} x2={right} y1={row.y} y2={row.y} />
+          <text x={right} y={row.y - 4} textAnchor="end">{people(row.value)}</text>
         </g>)}
+        {layout.ticks.filter((tick) => tick.hour !== 0 && tick.hour !== 24).map((tick) => <line key={tick.hour} x1={tick.x} x2={tick.x} y1={top} y2={base} />)}
       </g>
-      <g ref={marksRef}>
-        {layout.peak && <g className="airport-flow-peak" data-start={layout.peak.start}>
-          <circle cx={layout.peak.x} cy={layout.peak.y} r={4} />
-          <text x={layout.peak.x} y={peakLabelY} textAnchor={layout.peak.x > layout.right - 48 ? "end" : layout.peak.x < layout.left + 48 ? "start" : "middle"}>{people(layout.peak.value)}</text>
-        </g>}
-        {layout.now && <g className="airport-flow-now-group">
-          <line className="av-now airport-flow-now" x1={layout.now.x} x2={layout.now.x} y1={layout.top - 14} y2={layout.base} data-now-label={nowLabel} />
-          <text className="airport-flow-now-label" x={layout.now.x} y={layout.top - 20} textAnchor={nowAnchor}>{nowLabel}</text>
-        </g>}
+
+      {/* The whole day, pale when a present minute splits it … */}
+      <g className={layout.now ? "airport-flow-ahead" : undefined}>
+        {layout.segments.map((segment, index) => <path key={`area-${index}`} className="airport-flow-area" d={segment.area} fill={`url(#${id}fill)`} />)}
+        {layout.segments.map((segment, index) => <path key={`line-${index}`} className="airport-flow-line" d={segment.line}
+          ref={(element) => { lineRefs.current[index] = element; }} />)}
       </g>
-      {/* One hit area per published band, for a pointer or a keyboard. */}
-      {layout.bands.map((band) => <rect key={band.start} className={["airport-flow-band", band.now ? "now" : "", band.peak ? "peak" : ""].filter(Boolean).join(" ")}
-        x={band.x} y={layout.top} width={band.width} height={layout.base - layout.top} tabIndex={0}
+      {/* … and the hours already behind the reader in full colour on top. */}
+      {layout.now && <g className="airport-flow-past" clipPath={`url(#${id}past)`}>
+        {layout.segments.map((segment, index) => <path key={`past-area-${index}`} className="airport-flow-area" d={segment.area} fill={`url(#${id}fill)`} />)}
+        {layout.segments.map((segment, index) => <path key={`past-line-${index}`} className="airport-flow-line" d={segment.line} />)}
+      </g>}
+      {layout.layers.map((layer) => layer.segments.map((segment, index) => <path key={`${layer.key}-${index}`} className={`airport-flow-layer airport-flow-layer-${layer.key.toLowerCase()}`} d={segment.line} />))}
+
+      <line className="av-rule airport-flow-base" x1={left} x2={right} y1={base} y2={base} />
+      <g className="airport-flow-hours">
+        {layout.ticks.map((tick) => <text key={tick.hour} x={tick.x} y={base + 17} textAnchor={tick.hour === FLOW_HOURS[0] ? "start" : tick.hour === FLOW_HOURS.at(-1) ? "end" : "middle"}>{String(tick.hour).padStart(2, "0")}</text>)}
+      </g>
+
+      {layout.peak && <g className="airport-flow-mark airport-flow-peak" data-start={layout.peak.start}>
+        <circle cx={layout.peak.x} cy={layout.peak.y} r={4} />
+        <text x={clampX(layout.peak.x, 0)} y={Math.max(top - 6, layout.peak.y - 12)} textAnchor={peakAnchor}>{peakText}</text>
+      </g>}
+      {layout.now && <g className="airport-flow-mark airport-flow-now-group">
+        <line className="av-now airport-flow-now" x1={layout.now.x} x2={layout.now.x} y1={top - 14} y2={base} data-now-label={nowLabel} />
+        {nowY !== null && <>
+          <circle ref={(element) => { ringRef.current = element; nowDotRefs.current[0] = element; }} className="airport-flow-now-ring" cx={layout.now.x} cy={nowY} r={5} />
+          <circle ref={(element) => { nowDotRefs.current[1] = element; }} className="airport-flow-now-dot" cx={layout.now.x} cy={nowY} r={4.5} />
+          {nowBand && !hover && <text ref={(element) => { nowDotRefs.current[2] = element; }} className="airport-flow-now-value" x={layout.now.x > right - 70 ? layout.now.x - 10 : layout.now.x + 10} y={nowY - 9}
+            textAnchor={layout.now.x > right - 70 ? "end" : "start"}>{people(nowBand.value)}{unit}</text>}
+        </>}
+        <g className="airport-flow-now-pill">
+          <rect x={pillX - pillWidth / 2} y={top - 36} width={pillWidth} height={21} rx={10.5} />
+          <text className="airport-flow-now-label" x={pillX} y={top - 21.5} textAnchor="middle">{nowLabel}</text>
+        </g>
+      </g>}
+
+      {hover && tip && <g className="airport-flow-tip" pointerEvents="none">
+        <line x1={hover.x} x2={hover.x} y1={top} y2={base} />
+        <circle cx={hover.x} cy={hover.y} r={4.5} />
+        <rect x={tip.x - tip.w / 2} y={tip.y} width={tip.w} height={tip.h} rx={8} />
+        {tip.lines.map((line, index) => <text key={index} x={tip.x} y={tip.y + 17 + index * 15} textAnchor="middle" className={index === 1 ? "strong" : undefined}>{line}</text>)}
+      </g>}
+
+      {/* One keyboard stop per published band; pointer reading happens on the whole figure. */}
+      {layout.bands.map((band, index) => <rect key={band.start} className={["airport-flow-band", band.now ? "now" : "", band.peak ? "peak" : ""].filter(Boolean).join(" ")}
+        x={band.x} y={top} width={band.width} height={base - top} tabIndex={0} pointerEvents="none"
+        onFocus={() => hoverBand(index)} onBlur={() => setHover(null)}
         data-start={band.start} aria-label={`${clock(band.start)}–${clock(band.end)} KST · ${people(band.value)}`}>
         <title>{`${clock(band.start)}–${clock(band.end)} KST · ${people(band.value)}`}</title>
       </rect>)}
     </svg>
+    <ul className="av-legend airport-flow-legend">
+      {layout.now && <li><i className="past" />{copy.past[lang]}</li>}
+      {layout.now && <li><i className="ahead" />{copy.ahead[lang]}</li>}
+      {layout.layers.map((layer) => <li key={layer.key}><i className={`layer layer-${layer.key.toLowerCase()}`} />{layer.key}</li>)}
+    </ul>
   </figure>;
 }

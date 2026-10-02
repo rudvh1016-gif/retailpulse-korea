@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { FLOW_HOURS, flowLayout, kstDayStart } from "../lib/airport-flow-geometry.ts";
+import * as awaitGeometry from "../lib/airport-flow-geometry.ts";
+const { FLOW_HOURS, flowLayout, kstDayStart } = awaitGeometry;
 
 const band = (hour, value, day = "2026-08-31") => ({
   targetStartAt: `${day}T${String(hour).padStart(2, "0")}:00:00+09:00`,
@@ -29,9 +30,10 @@ test("two published bands are a short stretch of line, not a line across the who
   const timeline = [band(14, 5110), band(15, 6320)];
   const layout = flowLayout({ timeline, width: WIDTH, height: HEIGHT, peakStartAt: null, nowBandStart: null, nowBandProgress: null });
   assert.equal(layout.segments.length, 1);
-  const xs = [...layout.segments[0].line.matchAll(/[ML]([\d.]+),/g)].map((m) => Number(m[1]));
-  assert.ok(Math.abs(xs[0] - (layout.left + plot(layout) * 14 / 24)) < 0.2, "the line starts at 14:00");
-  assert.ok(Math.abs(xs.at(-1) - (layout.left + plot(layout) * 16 / 24)) < 0.2, "and ends at 16:00");
+  const nums = layout.segments[0].line.match(/-?[\d.]+/g).map(Number);
+  assert.ok(Math.abs(nums[0] - (layout.left + plot(layout) * 14 / 24)) < 0.2, "the line starts at 14:00");
+  assert.ok(Math.abs(nums.at(-2) - (layout.left + plot(layout) * 16 / 24)) < 0.2, "and ends at 16:00");
+  assert.match(layout.segments[0].line, /^M[\d.,]+( C[-\d., ]+)+$/, "a smooth cubic, not a polyline");
   assert.equal(layout.bands.length, 2);
 });
 
@@ -63,6 +65,14 @@ test("the peak is the band the summary named, marked once, at the top of its own
   assert.equal(layout.peak.y, layout.top, "the largest band touches the top of the plot");
   assert.equal(layout.bands.filter((row) => row.peak).length, 1);
   assert.equal(layout.base - layout.top >= 110, true, "the rule has room to be seen on a phone (≥110px) at this height");
+});
+
+test("the smooth curve never overshoots the two values it joins", () => {
+  const { monotonePath } = awaitGeometry;
+  const d = monotonePath([[0, 100], [10, 100], [20, 20], [30, 20]]);
+  // Every control point y stays within [20, 100]: no dip below the low plateau, no bump above the high one.
+  const ys = d.match(/-?[\d.]+/g).map(Number).filter((_, index) => index % 2 === 1);
+  assert.ok(ys.every((y) => y >= 20 && y <= 100), d);
 });
 
 test("the figure is drawn with strokes and fills, never a CSS border on an empty box", () => {
