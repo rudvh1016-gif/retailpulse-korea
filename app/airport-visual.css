@@ -114,3 +114,40 @@
 /* The day's one big number, only where the flow figure sits under it. */
 .airport-today .airport-brief-total .av-display { display: block; margin-top: 6px; font-size: clamp(36px, 8.5vw, 60px); line-height: 1.02; font-weight: 540; letter-spacing: -.04em; }
 .airport-today .airport-brief-total .av-display small { font-weight: 450; }
+
+/*
+ * The airport lead as one picture (owner review 2026-10-02: "too much white;
+ * develop it like a premium design site"). The scope, the day's one number,
+ * its formula and limitation, and the flow figure share a dusk-sky panel —
+ * the way a weather app sets the temperature over the sky it describes —
+ * and the cloud bank forms the panel's own horizon. This is the one CSS
+ * gradient in the visual layer; the page outside stays paper white.
+ */
+.airport-today .airport-hero { position: relative; margin: 8px 0 0; padding: 26px 26px 0; border-radius: 24px; overflow: hidden; color: var(--dusk-deep); background: linear-gradient(180deg, rgba(127, 163, 209, .55) 0%, var(--sky-200) 34%, var(--sky-100) 56%, var(--cloud-200) 84%, rgba(239, 179, 143, .9) 100%); }
+.airport-today .airport-hero > .eyebrow { color: var(--dusk-deep); opacity: .62; letter-spacing: .1em; }
+.airport-today .airport-hero .airport-brief-total { margin: 14px 0 0; }
+.airport-today .airport-hero .airport-metric-label { color: var(--dusk-deep); opacity: .78; font-size: 13px; }
+.airport-today .airport-hero .av-display { color: var(--dusk-deep); font-size: clamp(44px, 9.5vw, 72px); font-weight: 560; letter-spacing: -.045em; line-height: 1; margin-top: 8px; }
+.airport-today .airport-hero .av-display small { color: var(--dusk-deep); opacity: .6; }
+.airport-today .airport-hero .airport-sum-formula, .airport-today .airport-hero .airport-sum-row, .airport-today .airport-hero .airport-sum-value, .airport-today .airport-hero .airport-sum-label { color: var(--dusk-deep); border-color: rgba(51, 77, 120, .18); }
+.airport-today .airport-hero .passenger-transfer-limitation, .airport-today .airport-hero .departure-hall-scope-note, .airport-today .airport-hero .airport-data-missing { display: block; color: var(--dusk-deep); opacity: .72; font-size: 13px; line-height: 1.55; max-width: 60ch; }
+.airport-today .airport-hero .departure-hall-scope-note { margin-top: 6px; font-size: 12px; opacity: .6; }
+/* The flow section inside the panel: no rules, no chrome, one quiet caption row. */
+.airport-today .airport-hero .airport-detail-section { margin-top: 26px; border-top: 0; }
+.airport-today .airport-hero .airport-detail-head { min-height: 0; padding: 0; border-bottom: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; }
+.airport-today .airport-hero .airport-detail-head .eyebrow { display: none; }
+.airport-today .airport-hero .airport-detail-head h3 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.02em; color: var(--dusk-deep); }
+.airport-today .airport-hero .airport-detail-head > p { max-width: none; font-size: 12px; color: var(--dusk-deep); opacity: .65; }
+.airport-today .airport-hero .airport-forecast > .flow-note { margin: 4px 0 0; font-size: 12px; color: var(--dusk-deep); opacity: .6; }
+.airport-today .airport-hero .airport-forecast-state { border-bottom: 0; padding: 20px 0 28px; }
+.airport-today .airport-hero .airport-forecast-state strong, .airport-today .airport-hero .airport-forecast-state p, .airport-today .airport-hero .airport-forecast-state small { color: var(--dusk-deep); }
+/* The figure bleeds to the panel's edges and uses the panel's sky as its own. */
+.airport-today .airport-hero .av-figure.airport-flow { margin: 6px -26px 0; padding: 0 0 14px; }
+.airport-today .airport-hero .airport-flow-sky { display: none; }
+.airport-today .airport-hero .airport-flow-legend { margin: 8px 26px 0; padding: 0; opacity: .7; }
+@media (max-width: 640px) {
+  .airport-today .airport-hero { padding: 22px 18px 0; border-radius: 20px; }
+  .airport-today .airport-hero .av-figure.airport-flow { margin: 4px -18px 0; }
+  .airport-today .airport-hero .airport-flow-legend { margin: 6px 18px 0; }
+}
+

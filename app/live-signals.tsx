@@ -1786,7 +1786,11 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
   const queueIsStale = checkpoint && (checkpoint.freshness === "STALE" || presentationNow - Date.parse(checkpoint.observedAt) > 20 * 60_000);
   const queueValue = checkpoint?.waitTimeRaw ?? (checkpoint?.waitTimeMinutes !== null && checkpoint?.waitTimeMinutes !== undefined ? String(checkpoint.waitTimeMinutes) : null);
 
-  return <section className="current-brief airport-current-brief" aria-label={`${scopeLabel} ${dayLabel}`}>
+  // The day's size and its hour-by-hour shape are one picture on the airport
+  // page: the lead (scope, total, formula, limitation, the flow figure) sits on
+  // the dusk-sky panel (app/airport-visual.css .airport-hero). The personal
+  // home passes no flow and keeps the plain lead.
+  const lead = <>
       <p className="eyebrow">{scopeLabel} · {dayLabel}</p>
       {showPassengers&&<>
       {/* OWNER PRIORITY LOCK 1-3 (2026-09-14). The arithmetic sum of the two
@@ -1814,6 +1818,12 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
       {/* LOCK 4: the hour-by-hour shape of the day, directly under the day's
           size. Supplied by the airport page; the personal home passes none. */}
       {flow}
+      </>}
+  </>;
+
+  return <section className="current-brief airport-current-brief" aria-label={`${scopeLabel} ${dayLabel}`}>
+      {flow ? <div className="airport-hero">{lead}</div> : lead}
+      {showPassengers&&<>
       {/* The three questions a reader asks of a daily total, on one line and in
           one scope: what is happening in this hour, when does the day peak, and
           is that bigger or smaller than the same weekday last week. Every cell

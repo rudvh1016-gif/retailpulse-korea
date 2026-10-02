@@ -33,7 +33,8 @@ for (const clock of ["11:57", "21:03", "23:59"]) {
       await expect(brief).toContainText("출발 운항");
       const style = await brief.locator("strong").first().evaluate(el => ({ weight: getComputedStyle(el).fontWeight, color: getComputedStyle(el).color }));
       expect(Number(style.weight)).toBeGreaterThanOrEqual(600);
-      expect(style.color).toBe("rgb(17, 17, 17)");
+      // Dusk-deep ink on the sky panel (2026-10-02), not the page black.
+      expect(style.color).toBe("rgb(51, 77, 120)");
       // The one big number: at least 34px on the airport page.
       expect(await brief.locator(".airport-metric-value").first().evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(34);
 

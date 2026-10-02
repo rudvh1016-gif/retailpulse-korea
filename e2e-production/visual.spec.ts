@@ -511,7 +511,7 @@ test("production airport composition is one compact tabbed module at every requi
     await expect(page.locator(".airport-current-brief")).toContainText("출국장 공식 예상 승객");
     const dailyTotal = page.locator(".airport-brief-total");
     if (await dailyTotal.count()) {
-      await expect(page.locator(".airport-current-brief > strong").first()).toHaveClass("airport-brief-total");
+      await expect(page.locator(".airport-current-brief strong").first()).toHaveClass("airport-brief-total");
       // 2026-09-14: the arithmetic sum leads and the hall figure moved into the
       // formula below it, so the headline says which of the two it is.
       const formula = page.locator('[data-testid="airport-sum-formula"]');
