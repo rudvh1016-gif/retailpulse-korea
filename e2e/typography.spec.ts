@@ -519,7 +519,7 @@ test("the airport screen separates 출국 and 입국, and 입국 shows arrival p
 
   // The hourly arrival flow, from the same statement the departure page reads.
   await expect(page.locator("#airport-arrival-flow-title")).toContainText("공식 예상 입국객 흐름");
-  await expect(page.locator(".airport-forecast .airport-timeline-bars p")).toHaveCount(2);
+  await expect(page.locator(".airport-forecast .airport-flow-band")).toHaveCount(2);
 
   // Per terminal, and nothing departure-only anywhere on the screen.
   await expect(page.locator(".airport-arrival-terminals")).toContainText("25,700명");
@@ -679,7 +679,7 @@ test("입국 renders the stored forecast on a past date, not only today", async 
   await expect(brief.locator("h2")).toContainText("선택일 전체 공식 예상 입국객");
   await expect(brief).toContainText("41,300명");
   await expect(brief).not.toContainText("금일 전체");
-  await expect(page.locator(".airport-forecast .airport-timeline-bars p")).toHaveCount(2);
+  await expect(page.locator(".airport-forecast .airport-flow-band")).toHaveCount(2);
   await expect(page.locator(".airport-arrival-terminals")).toContainText("25,700명");
 });
 
@@ -949,39 +949,39 @@ test("each locale preloads exactly one shell font, and it is its own", async ({ 
 });
 
 /**
- * The 현재 시각 marker has to be a PAINTED BOX, not a border on a zero-width one.
+ * The 현재 시각 marker has to be PAINTED GEOMETRY, never a border on an empty box.
  *
- * It was `width: 0` with `border-left: 1.5px dashed`. Chromium draws that, so
- * the desktop showed a line and every test passed — and WebKit, which is every
- * browser on iOS, frequently does not paint a border on a box with no width at
- * all. The owner saw the marker on a computer and never on their phone, on
- * both 출국 and 입국, and said so three times.
+ * It was once `width: 0` with `border-left: 1.5px dashed`. Chromium draws
+ * that, so the desktop showed a line and every test passed — and WebKit,
+ * which is every browser on iOS, frequently does not paint a border on a box
+ * with no width at all. The owner saw the marker on a computer and never on
+ * their phone, on both 출국 and 입국, and said so three times.
  *
- * Asserting "a line is visible" in Chromium would keep passing through exactly
- * that regression, because Chromium never had it. So this asserts the SHAPE of
- * the thing instead: a real width, and a painted background rather than a
- * border. That property is what makes it render on both engines, and it is
- * what must not be quietly reverted.
+ * The marker is now a stroked SVG <line> inside the flow figure. Asserting
+ * "a line is visible" in Chromium would keep passing through the old
+ * regression, so this asserts the SHAPE: a stroke with a real width, an ink
+ * colour, a height that spans the plot, and no CSS border anywhere near it.
  */
 async function nowMarker(page: import("@playwright/test").Page) {
   return page.evaluate(() => {
-    const marker = document.querySelector<HTMLElement>(".airport-timeline-bars p.now");
+    const marker = document.querySelector<SVGLineElement>(".airport-flow .airport-flow-now");
     if (!marker) return null;
-    const before = getComputedStyle(marker, "::before");
+    const style = getComputedStyle(marker);
+    const box = marker.getBoundingClientRect();
     return {
-      width: parseFloat(before.width),
-      height: parseFloat(before.height),
-      backgroundImage: before.backgroundImage,
-      borderLeftWidth: parseFloat(before.borderLeftWidth),
-      visibility: before.visibility,
-      opacity: Number(before.opacity),
-      zIndex: before.zIndex,
+      strokeWidth: parseFloat(style.strokeWidth),
+      stroke: style.stroke,
+      height: box.height,
+      borderLeftWidth: parseFloat(style.borderLeftWidth),
+      visibility: style.visibility,
+      opacity: Number(style.opacity),
+      label: marker.getAttribute("data-now-label"),
     };
   });
 }
 
 for (const section of ["출국", "입국"] as const) {
-  test(`the 현재 시각 marker is a painted box on ${section}, at phone width`, async ({ page }) => {
+  test(`the 현재 시각 marker is a stroked line on ${section}, at phone width`, async ({ page }) => {
     await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
     await page.setViewportSize({ width: 390, height: 900 });
     await page.goto("/ko/airport");
@@ -989,21 +989,24 @@ for (const section of ["출국", "입국"] as const) {
     if (section === "입국") {
       await page.locator(".airport-context-nav").getByRole("button", { name: "입국", exact: true }).click();
     }
-    await expect(page.locator(".airport-timeline-bars p.now").first()).toBeVisible();
+    // A vertical <line> has a zero-width geometry box, which Playwright calls
+    // "hidden" even though its stroke is painted; count it and check its shape.
+    await expect(page.locator(".airport-flow .airport-flow-now")).toHaveCount(1);
 
     const marker = await nowMarker(page);
     expect(marker, `${section} has no current-time band to mark`).toBeTruthy();
 
-    // A real box. A zero-width box is the exact shape WebKit refuses to paint.
-    expect(marker!.width, "the marker must have a real width, not be a border on a zero-width box").toBeGreaterThan(0);
-    expect(marker!.height, "the marker must span the chart").toBeGreaterThan(40);
-
-    // Painted as a background, so there is no border-on-empty-box edge case.
-    expect(marker!.backgroundImage, "the marker must be painted, not drawn as a border").not.toBe("none");
+    // A real stroke. A zero-width box is the exact shape WebKit refuses to paint.
+    expect(marker!.strokeWidth, "the marker must have a real stroke width").toBeGreaterThanOrEqual(1);
+    // 출국 sits on the dusk poster (white rule); 입국 keeps the standalone sky figure (dusk rule).
+    expect(marker!.stroke, "the rule is painted ink, not a border").toBe(section === "출국" ? "rgb(255, 255, 255)" : "rgb(75, 107, 158)");
+    expect(marker!.height, "the marker must span the plot").toBeGreaterThan(100);
     expect(marker!.borderLeftWidth, "a border is what stopped rendering on iOS; do not go back to it").toBe(0);
+    expect(marker!.label).toBe("현재 시각 14:10");
 
     expect(marker!.visibility).toBe("visible");
-    expect(marker!.opacity).toBeGreaterThan(0);
+    // The reveal fades the marker in over half a second; wait for it to settle.
+    await expect.poll(async () => (await nowMarker(page))!.opacity).toBe(1);
   });
 }
 

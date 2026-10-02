@@ -2,7 +2,8 @@ import { test, expect } from "@playwright/test";
 import { SUMMARY_FIXTURE, routeSummary } from "./summary-fixture";
 
 // Reproduce the owner's late-evening phone screenshot, plus a minute close to
-// the next hour and the final band. Never assert only that a label exists.
+// the next hour and the final band. Never assert only that a label exists:
+// the rule has to stand at the right minute, inside the figure, on a phone.
 for (const clock of ["11:57", "21:03", "23:59"]) {
   test(`daily total leads and a full-height minute rule survives terminal switches at ${clock}`, async ({ page }) => {
     const payload = structuredClone(SUMMARY_FIXTURE);
@@ -19,9 +20,11 @@ for (const clock of ["11:57", "21:03", "23:59"]) {
     await page.goto("/ko/airport");
     await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
 
+    const [hours, minutes] = clock.split(":").map(Number);
     for (const [terminal, total] of [["전체", "47,320"], ["T2", "17,220"], ["T1", "30,100"], ["전체", "47,320"]]) {
       await page.getByRole("tab", { name: terminal, exact: true }).click();
       const brief = page.locator(".airport-current-brief");
+      // The number counts up when it arrives; the assertion retries until it settles.
       await expect(brief.locator("strong").first()).toHaveText(`금일 출국장 공식 예상 승객 ${total}명`);
       // 현재 시간대는 한눈에 보기 줄의 첫 칸이다. 예전에는 요약의 두 번째
       // <strong> 이었는데, 그 줄이 바로 위 칸을 그대로 반복하고 있어 없앴다.
@@ -30,35 +33,41 @@ for (const clock of ["11:57", "21:03", "23:59"]) {
       await expect(brief).toContainText("출발 운항");
       const style = await brief.locator("strong").first().evaluate(el => ({ weight: getComputedStyle(el).fontWeight, color: getComputedStyle(el).color }));
       expect(Number(style.weight)).toBeGreaterThanOrEqual(600);
-      expect(style.color).toBe("rgb(17, 17, 17)");
+      // White on the dusk poster (2026-10-02), not the page black.
+      expect(style.color).toBe("rgb(255, 255, 255)");
+      // The one big number: at least 34px on the airport page.
+      expect(await brief.locator(".airport-metric-value").first().evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(34);
 
-      const now = page.locator(".airport-timeline-bars p.now");
+      const now = page.locator(".airport-flow .airport-flow-now");
       await expect(now).toHaveAttribute("data-now-label", `현재 시각 ${clock}`);
+      await expect(page.locator(".airport-flow .airport-flow-now-label")).toHaveText(`현재 시각 ${clock}`);
       await expect.poll(() => now.evaluate(el => {
-        const line = getComputedStyle(el, "::before");
-        const label = getComputedStyle(el, "::after");
-        const bars = el.parentElement!;
+        const style = getComputedStyle(el);
+        const svg = el.closest("svg")!;
+        const figure = el.closest("figure")!;
         const box = el.getBoundingClientRect();
-        const viewport = bars.getBoundingClientRect();
-        const x = box.left + parseFloat(line.left);
+        const frame = figure.getBoundingClientRect();
+        const label = svg.querySelector<SVGTextElement>(".airport-flow-now-label")!.getBoundingClientRect();
         return {
-          tall: parseFloat(line.height) >= 110,
-          visible: line.display !== "none" && line.visibility === "visible" && Number(line.opacity) > 0,
-          // A painted box, not a border. `width: 0` with `border-left: dashed`
-          // is what this used to assert, and it is the shape WebKit — every
-          // browser on iOS — frequently declines to paint: the rule showed on
-          // a desktop and never on the owner's phone while this test passed.
-          dashed: parseFloat(line.width) >= 1 && line.backgroundImage.includes("repeating-linear-gradient"),
-          dark: line.backgroundImage.includes("rgb(17, 17, 17)"),
-          aligned: Math.abs(parseFloat(label.left) - parseFloat(line.left)) < 1,
-          inside: x >= viewport.left && x <= viewport.right,
+          tall: box.height >= 110,
+          visible: style.display !== "none" && style.visibility === "visible" && Number(style.opacity) === 1,
+          // A real stroke, not a border on an empty box (the shape WebKit —
+          // every browser on iOS — declined to paint on the owner's phone).
+          stroked: parseFloat(style.strokeWidth) >= 1 && style.stroke === "rgb(255, 255, 255)",
+          inside: box.left >= frame.left && box.right <= frame.right,
+          labelInside: label.left >= frame.left - 1 && label.right <= frame.right + 1,
         };
-      })).toEqual({ tall: true, visible: true, dashed: true, dark: true, aligned: true, inside: true });
-      const left = await now.evaluate(el => parseFloat(getComputedStyle(el, "::before").left) / el.getBoundingClientRect().width);
-      expect(left).toBeCloseTo(Number(clock.slice(3)) / 60, 2);
+      })).toEqual({ tall: true, visible: true, stroked: true, inside: true, labelInside: true });
+      // The rule stands at the exact minute of a 24-hour axis.
+      const fraction = await now.evaluate(el => {
+        const svg = el.closest("svg")!;
+        const left = Number(svg.getAttribute("data-day-left")), width = Number(svg.getAttribute("data-day-width"));
+        return (Number(el.getAttribute("x1")) - left) / width;
+      });
+      expect(fraction).toBeCloseTo((hours + minutes / 60) / 24, 3);
     }
     await page.setViewportSize({ width: 1440, height: 900 });
-    expect(await page.locator(".airport-timeline-bars p.now").evaluate(el => parseFloat(getComputedStyle(el, "::before").height))).toBeGreaterThan(120);
+    await expect.poll(() => page.locator(".airport-flow .airport-flow-now").evaluate(el => el.getBoundingClientRect().height)).toBeGreaterThan(120);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 }

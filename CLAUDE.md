@@ -14,6 +14,8 @@ Preferred descriptor:
 
 `RetailPulse Korea` is now a legacy public name. New public-facing UI, SEO, marketing copy and documentation should use `KORETAIL` unless a compatibility reason temporarily requires the legacy identifier.
 
+For visual/UI work on airport screens, first read `docs/VISUAL_LANGUAGE_2026-10-02.md` and the design skills vendored in `.claude/skills/` (`frontend-design`, `web-design-guidelines`); review the changed UI files against `web-design-guidelines` before opening the PR.
+
 For branding/naming work, read:
 
 - `docs/BRAND_DECISION_KORETAIL.md`

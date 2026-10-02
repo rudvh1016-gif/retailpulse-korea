@@ -28,6 +28,8 @@ const surfaces = [
 const paintedBackground = async (page: import("@playwright/test").Page, selector: string) => page.evaluate((sel) => {
   const results: string[] = [];
   for (const start of Array.from(document.querySelectorAll(sel)).slice(0, 6)) {
+    // The airport sky panel (owner decision 2026-10-02) is a figure, not a page surface.
+    if (start.closest(".airport-hero")) continue;
     let node: Element | null = start;
     while (node) {
       const style = getComputedStyle(node);
@@ -78,7 +80,7 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
           const filter = rule.style.getPropertyValue("backdrop-filter");
           const sel = rule.selectorText;
           // Semantic exceptions: modal scrim, chart bars, tab underlines, accent lines.
-          const semantic = /modal-backdrop|-bars i|::after|::before|\bi\b|button\.active|\.compare-bars|\.history-bars|\.airport-timeline/.test(sel);
+          const semantic = /modal-backdrop|-bars i|::after|::before|\bi\b|button\.active|\.compare-bars|\.history-bars|\.av-|\.airport-flow|\.airport-hero/.test(sel);
           if (semantic) continue;
           if (/rgba\(255, ?255, ?255, ?0?\.\d+\)/.test(bg)) bad.push(`${sel} → ${bg}`);
           if (filter && filter !== "none") bad.push(`${sel} → backdrop-filter ${filter}`);

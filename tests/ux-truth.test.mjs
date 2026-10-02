@@ -145,81 +145,54 @@ test("event cards describe the selected date, not an unproven live operating sta
   assert.doesNotMatch(eventCard, /진행 중|\bRunning\b|进行中|開催中|오늘 포함|\bToday\b/u);
 });
 
+const figure = readFileSync("app/airport-flow-figure.tsx", "utf8");
+const geometry = readFileSync("lib/airport-flow-geometry.ts", "utf8");
+const visual = readFileSync("app/airport-visual.css", "utf8");
+
 /**
- * The chart used to be laid out as 24 bands of `flex: 1 0 42px` with a 5px
- * gap — at least 24*42 + 23*5 = 1123px — inside a chart column of roughly
- * 1004px and a fixed 158px height with `overflow-x: auto`. The horizontal
- * scrollbar that forced ate into the fixed height and produced a second,
- * vertical scrollbar; the bars were clipped between them.
+ * The hourly forecast used to be 24 bars in a strip that scrolled sideways on
+ * a phone (and, before that, clipped itself between two scrollbars). It is now
+ * one SVG figure over the whole KST day (app/airport-flow-figure.tsx), sized
+ * to its container, so nothing here scrolls, squeezes or drops a band. The
+ * geometry is pure and tested in tests/airport-flow.test.mjs; these tests pin
+ * what the page itself must keep true.
  */
-test("the chart row is laid out flat in its own single-column container", () => {
-  // The chart markup has one child, the band row. A two-column template with
-  // a fixed 190px first track put that row into the 190px track: 24 bands in a
-  // strip the width of a label. The container must never regain a fixed
-  // first track it has no occupant for.
-  const timeline = styles.split("\n").find((line) => line.startsWith(".airport-timeline {"));
-  assert.ok(timeline, "the timeline container rule must exist");
-  assert.doesNotMatch(timeline, /grid-template-columns: *190px/, "no fixed label track for a child that does not exist");
-  assert.doesNotMatch(styles, /\.airport-timeline \{[^}]*grid-template-columns: 190px/);
-});
-
-test("bands keep a readable minimum width and the row scrolls sideways instead of squeezing", () => {
-  const bars = styles.split("\n").find((line) => line.startsWith(".airport-timeline-bars {"));
-  assert.ok(bars);
-  assert.match(bars, /grid-auto-columns: minmax\(44px, 1fr\)/, "a band narrower than its own value label is unreadable");
-  assert.match(bars, /overflow-x: auto/, "24 official bands are kept; a narrow viewport scrolls, never drops or squeezes them");
-  assert.doesNotMatch(bars, /flex: 1 0 42px/);
-});
-
-test("a fixed height is never combined with horizontal scrolling", () => {
-  // This pairing is the exact cause of the nested vertical scrollbar: the
-  // scrollbar consumes height the box was not given room for.
-  const bars = styles.split("\n").find((line) => line.startsWith(".airport-timeline-bars {"));
-  assert.match(bars, /height: auto/, "the scrolling row must not also have a fixed height");
-  assert.match(styles, /\.airport-timeline-bars p \{ position: relative; min-width: 0; height: 158px/,
-    "the band height lives on the bands themselves instead");
+test("the hourly forecast is one figure over the whole day, not a scrolling strip", () => {
+  assert.doesNotMatch(styles, /\.airport-timeline/, "the band strip and its scroll rules are gone from the stylesheet");
+  assert.doesNotMatch(signals, /airport-timeline/, "and from the markup");
+  assert.match(signals, /<AirportFlowFigure/);
+  assert.match(figure, /ResizeObserver/, "the figure measures its own width instead of scrolling");
+  assert.match(geometry, /export const FLOW_HOURS = \[0, 6, 12, 18, 24\]/, "the axis is the day, 00 to 24");
+  assert.match(geometry, /kstDayStart/, "midnight is KST midnight, not the browser's");
 });
 
 test("the current-time marker is drawn for today only and never rewrites past bands", () => {
   assert.match(signals, /summary\?\.dayRelation === "TODAY"/, "a past or future date has no 'now' inside it");
-  assert.match(signals, /nowBandStart === row\.targetStartAt \? "now" : ""/);
-  assert.match(signals, /data-now-label=/);
+  assert.match(signals, /const nowBandStart = nowBand\?\.targetStartAt \?\? null/);
   for (const label of ["현재 시각", "当前时间", "現在時刻"]) assert.ok(signals.includes(label), `${label} must exist`);
-  // The marker is a class and a pseudo-element; the bar itself is untouched,
-  // so a band behind the marker keeps its forecast styling.
-  assert.match(styles, /\.airport-timeline-bars p\.now::before/);
-  assert.doesNotMatch(styles, /p\.now i \{/, "past bars must not be restyled as observations");
+  // The marker is a separate line and label; the area and line under it keep
+  // their forecast styling, so a band behind the marker stays a forecast.
+  assert.match(figure, /<line className="av-now airport-flow-now"[^>]*data-now-label=\{nowLabel\}/s);
+  assert.match(geometry, /now: band\.targetStartAt === nowBandStart/);
+  assert.doesNotMatch(visual, /airport-flow-band\.now \{[^}]*fill:/, "the band under the rule is not restyled as an observation");
 });
 
 test("the current-time rule follows the exact minute inside its forecast band", () => {
   assert.match(signals, /const nowBandDuration = nowBand \? Date\.parse\(nowBand\.targetEndAt\) - Date\.parse\(nowBand\.targetStartAt\) : 0/);
   assert.match(signals, /const nowBandProgress = nowBand && nowBandDuration > 0/);
-  assert.match(signals, /"--now-offset": `\$\{nowBandProgress \* 100\}%`/);
-  assert.match(styles, /\.airport-timeline-bars p\.now::before \{[^}]*left: var\(--now-offset, 0%\)/s,
-    "the rule must sit at the exact minute, not at the band edge");
-  assert.match(styles, /\.airport-timeline-bars p\.now::before \{[^}]*height: calc\(100% - 28px\)/,
-    "empty absolute grid marker must have explicit height, not automatic top/bottom stretch");
+  assert.match(geometry, /x\(start \+ progress \* \(end - start\)\)/, "the rule sits at the exact minute, not at the band edge");
 
   /*
-   * The rule is a PAINTED BOX, and this used to pin the opposite.
-   *
-   * It asserted `width: 0` with `border-left: 1.5px dashed` — which is what
-   * the marker was, and what WebKit (every browser on iOS) frequently refuses
-   * to paint: a border on a box with no width at all. The line showed on a
-   * desktop and never on the owner's phone, on both 출국 and 입국, while this
-   * test held the broken shape in place.
-   *
-   * What the marker actually has to be is a box with a real width and a
-   * background. The explicit height above is still required for the same
-   * reason it always was.
+   * The rule is an SVG STROKE, and the shape matters as much as it did when
+   * it was CSS. The marker was once `width: 0` with `border-left: dashed`,
+   * which WebKit (every browser on iOS) frequently refused to paint: the
+   * line showed on a desktop and never on the owner's phone. It then became a
+   * painted 2px box. A stroked <line> has a real width and no empty-box edge
+   * case, on either engine; a border must never come back.
    */
-  const marker = /\.airport-timeline-bars p\.now::before \{([^}]*)\}/.exec(styles)?.[1] ?? "";
-  assert.match(marker, /width: [1-9]/, "a zero-width marker is the shape iOS does not paint");
-  assert.match(marker, /background: repeating-linear-gradient/,
-    "the dashes must be painted as a background, not drawn as a border");
-  assert.doesNotMatch(marker, /border-left:/,
-    "a border on this box is exactly what stopped rendering on iOS");
-  assert.match(styles, /\.airport-timeline-bars p\.now::after \{[^}]*left: var\(--now-offset, 0%\)[^}]*transform: translateX\(-50%\)/s);
+  assert.match(visual, /\.av-now \{[^}]*stroke: var\(--dusk\)[^}]*stroke-width: 1\.5/);
+  assert.doesNotMatch(visual, /border-left/, "a border on an empty box is exactly what stopped rendering on iOS");
+  assert.match(figure, /const pillX = layout\.now \? clampX\(layout\.now\.x, pillWidth \/ 2\) : 0/, "the label is centred on the rule and only pulled in at the edges");
 });
 
 test("the custom month range is a compact grouped control on phone and desktop", () => {
@@ -640,26 +613,21 @@ test("항공사 등록 국가는 승객 국적으로 보이지 않는다", () =>
 });
 
 /**
- * 예보 차트는 읽는 사람이 서 있는 시간대에서 열린다.
+ * 예보 그림은 읽는 사람이 서 있는 시간대를 처음부터 보여 준다.
  *
- * 막대가 가로로 스크롤되고 하루가 휴대폰 화면에 다 안 들어가서, 차트는
- * 늘 00:00 에서 열렸다. 17:27 에 보는 사람은 새벽 시간대를 보고 직접
- * 끌어야 자기 시간을 찾았다 — 그 한 시간대가 차트가 존재하는 이유인데.
- *
- * scrollIntoView 가 아니라 scrollLeft 를 쓴다. 전자는 페이지까지 같이
- * 스크롤해서 방금 읽던 요약에서 사용자를 끌어내린다.
+ * 막대가 가로로 스크롤되던 때는 하루가 휴대폰 화면에 다 안 들어가서 차트가
+ * 늘 00:00 에서 열렸고, 17:27 에 보는 사람은 직접 끌어야 자기 시간을
+ * 찾았다. 그래서 한동안 scrollLeft 로 현재 시간대까지 밀어 두었다.
+ * 2026-10-02 부터 하루 24시간이 한 그림(SVG)으로 그려져 폭에 맞게 줄어들기
+ * 때문에 끌 것이 없고, 밀어 두는 코드도 없어야 한다 — 남아 있으면 그림이
+ * 다시 스크롤되기 시작했다는 뜻이다.
  */
-test("예보 차트는 현재 시간대로 가로 스크롤해서 열린다", () => {
-  // 구조 분해 매개변수의 닫는 중괄호는 "\n}: {" 라서, 함수 자체가 닫히는
-  // "\n}\n" 까지 읽는다.
-  const chart = signals.match(/function AirportForecastChart\([\s\S]*?\r?\n\}\r?\n/)?.[0] ?? "";
-  assert.ok(chart.length > 0, "차트가 자기 컴포넌트여야 훅을 가질 수 있다");
-  assert.match(chart, /bars\.scrollLeft = Math\.max\(0,/);
-  assert.match(chart, /querySelector<HTMLElement>\("p\.now"\)/);
-  assert.ok(!/scrollIntoView/.test(chart),
-    "scrollIntoView 는 페이지까지 스크롤해서 읽던 자리를 잃게 만든다");
-  // 오늘이 아니면 현재 시간대가 없으므로 아무것도 하지 않는다.
-  assert.match(chart, /if \(!bars \|\| !nowBandStart\) return;/);
+test("예보 그림은 하루 전체가 한 번에 보이고, 가로 스크롤도 밀어 두기도 없다", () => {
+  assert.doesNotMatch(figure, /scrollLeft|scrollIntoView|overflow-x/, "그림 안에 스크롤이 있으면 안 된다");
+  assert.doesNotMatch(visual, /\.airport-flow[^{]*\{[^}]*overflow-x: auto/, "스타일에서도");
+  assert.match(figure, /viewBox=\{`0 0 \$\{width\} \$\{height\}`\}/, "그림은 측정한 폭에 맞춰 그려진다");
+  // 오늘이 아니면 현재 시간대가 없으므로 선도 없다.
+  assert.match(figure, /\{layout\.now && <g className="airport-flow-mark airport-flow-now-group">/);
 });
 
 /**

@@ -79,7 +79,7 @@ for (const state of ['forecast-only', 'missing', 'stale', 'comparison-overlap', 
     await page.route('**/api/live/summary*', routeSummary(data));
     await page.goto(state === 'partial-airport' ? '/ko/airport' : '/ko/myeongdong');
     if (state === 'partial-airport') {
-      await expect(page.locator('.airport-timeline')).toBeVisible();
+      await expect(page.locator('.airport-flow')).toBeVisible();
       await expect(page.locator('.airport-brief-total')).toHaveCount(0);
       await expect(page.locator('.airport-current-brief')).toContainText('이후 확인된 시간대 중 최대');
       // 불완전한 하루에서는 피크를 판단하지 않는다. 한눈에 보기 줄의 피크

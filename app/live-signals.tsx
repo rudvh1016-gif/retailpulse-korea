@@ -1,6 +1,8 @@
 "use client";
 import { demandCopy, demandLevel, AreaDemandCard, usePresentationClock } from "./area-demand-card";
 import { passengerCopy } from "../lib/passenger-copy";
+import { AirportFlowFigure } from "./airport-flow-figure";
+import { CountUpNumber } from "./count-up-number";
 import { passengerReferenceSum } from "../lib/passenger-reference-sum";
 import { usableComparison, validPopulationRange, kstStamp, kstDay, peopleRange, populationFlow } from "../lib/demand-presentation";
 import { pc } from '../lib/personal-copy';
@@ -9,7 +11,7 @@ import {flightBoardingLocation} from "../lib/flight-scope";
 import { SeoulContextCard, HolidayContext, contextText } from "./operational-context";
 import type { SeoulContext } from "../lib/seoul-context";
 import type { compareComposition } from "../lib/airport-composition-history";
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Lang } from "./retailpulse-data";
 import { friendlyCheckpointName, rankCurrentDepartureHallCheckpoints } from "../lib/airport-today-summary";
 import {
@@ -709,6 +711,24 @@ const arrivalSectionText = {
   },
 } as const;
 
+/**
+ * One sentence saying which hours of the day the figure covers, e.g.
+ * "2026-08-31 전체 공항 기준, 00:00부터 24:00까지 24개 시간대를 확인했습니다."
+ * The date stays as written in the service date so a reader can match it to
+ * the picker; the band count is the honest measure of coverage.
+ */
+function flowCoverageSentence(lang: Lang, serviceDate: string, scope: string, timeline: ForecastBand[]): string {
+  if (!timeline.length) return `${serviceDate} ${scope} · ${airportTodayText.unavailable[lang]}`;
+  const end = formatKstClock(timeline.at(-1)!.targetEndAt);
+  const span = `${formatKstClock(timeline[0].targetStartAt)}–${end === "00:00" ? "24:00" : end}`;
+  const count = timeline.length;
+  return contextText(lang,
+    `${serviceDate} ${scope} 기준, ${span.replace("–", "부터 ")}까지 ${count}개 시간대를 확인했습니다.`,
+    `${serviceDate}, ${scope}: ${count} hourly bands confirmed, ${span} KST.`,
+    `${serviceDate} ${scope}：已确认${span}（KST）的${count}个时段。`,
+    `${serviceDate} ${scope}：${span}（KST）の${count}個の時間帯を確認しました。`);
+}
+
 const airportTodayText = {
   title: { ko: "한눈에 보기", en: "At a glance", zh: "概览", ja: "概要" },
   // Means "the latest retrieval AMONG airport datasets" — never that every
@@ -741,7 +761,7 @@ const airportTodayText = {
   waiting: { ko: "명 대기", en: " waiting", zh: "人等候", ja: "人待機" },
   waitLabel: { ko: "대기시간", en: "Wait", zh: "等候时间", ja: "待ち時間" },
   peopleLabel: { ko: "대기인원", en: "People", zh: "等候人数", ja: "待機人数" },
-  forecastOnly: { ko: "공식 예상 승객 · 실제 대기인원 아님", en: "Official departure-hall passenger forecast · not actual waiting", zh: "官方预计旅客 · 非实际等候人数", ja: "公式予想旅客 · 実際の待機人数ではありません" },
+  forecastOnly: { ko: "인천공항이 발표한 시간대별 예상 승객이며, 실제 대기 인원이 아닙니다.", en: "Incheon Airport's own hourly passenger forecast, not an observed queue.", zh: "仁川机场发布的分时段预计旅客，并非实际等候人数。", ja: "仁川空港が発表した時間帯別の予想旅客で、実際の待機人数ではありません。" },
   nowMarker: { ko: "현재 시각", en: "Now", zh: "当前时间", ja: "現在時刻" },
   scope: {
     ko: { all: "전체 공항", T1: "제1터미널", T2: "제2터미널" },
@@ -1435,50 +1455,6 @@ function TerminalBriefingCards({ lang, airport, nowIso, dayRelation }: {
  * `scrollLeft`, never `scrollIntoView`: the latter scrolls the PAGE too,
  * which would drag the reader away from the summary above.
  */
-function AirportForecastChart({
-  timeline, peakStartAt, nowBandStart, nowBandProgress, nowLabel, maxBand, numberLocale, label,
-}: {
-  timeline: ForecastBand[];
-  peakStartAt: string | null;
-  nowBandStart: string | null;
-  nowBandProgress: number | null;
-  nowLabel: string;
-  maxBand: number;
-  numberLocale: string;
-  label: string;
-}) {
-  const barsRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    const bars = barsRef.current;
-    if (!bars || !nowBandStart) return;
-    const current = bars.querySelector<HTMLElement>("p.now");
-    if (!current) return;
-    bars.scrollLeft = Math.max(0, current.offsetLeft - (bars.clientWidth - current.clientWidth) / 2);
-  }, [nowBandStart, timeline.length]);
-
-  const slots = [...timeline].sort((a,b)=>a.targetStartAt.localeCompare(b.targetStartAt)).flatMap((row,index,all) => {
-    const previous = all[index-1];
-    const gap = previous ? Math.min(24, Math.max(0, Math.floor((Date.parse(row.targetStartAt)-Date.parse(previous.targetEndAt))/3600000))) : 0;
-    return [...Array.from({length:gap},(_,i)=>({gapAt:new Date(Date.parse(previous!.targetEndAt)+i*3600000).toISOString()})), row];
-  });
-  return <div className="airport-timeline" role="group" aria-label={label}>
-    <div className="airport-timeline-bars" ref={barsRef}>{slots.map((row) => "gapAt" in row ? <p className="airport-band-gap" key={row.gapAt} aria-label={`${formatKstClock(row.gapAt)} —`}><span>{formatKstClock(row.gapAt)}</span><b>—</b></p> : <p
-      key={row.targetStartAt}
-      tabIndex={0}
-      aria-label={`${kstStamp(row.targetStartAt)}–${kstStamp(row.targetEndAt)} KST · ${Math.round(row.expectedPassengers).toLocaleString(numberLocale)}`}
-      className={[peakStartAt === row.targetStartAt ? "peak" : "", nowBandStart === row.targetStartAt ? "now" : ""].filter(Boolean).join(" ")}
-      data-now-label={nowBandStart === row.targetStartAt ? nowLabel : undefined}
-      style={nowBandStart === row.targetStartAt && nowBandProgress !== null
-        ? { "--now-offset": `${nowBandProgress * 100}%` } as CSSProperties
-        : undefined}
-    >
-      <i style={{ height: `${row.expectedPassengers / maxBand * 100}%` }} />
-      <span>{formatKstClock(row.targetStartAt)}</span>
-      <b>{Math.round(row.expectedPassengers).toLocaleString(numberLocale)}</b>
-    </p>)}</div>
-  </div>;
-}
-
 function FlightScopeNote({airport,lang}:{airport:LiveSummary["airport"];lang:Lang}) {
   const counts=airport.flightScope;
   if(!counts || !counts.total)return null;
@@ -1566,7 +1542,6 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
     ? Math.min(1, Math.max(0, (Date.parse(nowIso) - Date.parse(nowBand.targetStartAt)) / nowBandDuration))
     : null;
   const nowLabel = `${airportTodayText.nowMarker[lang]} ${formatKstClock(nowIso)}`;
-  const maxBand = Math.max(1, ...timeline.map((row) => row.expectedPassengers));
 
   const people = (value: number) => `${Math.round(value).toLocaleString(numberLocale)}${peopleUnit}`;
 
@@ -1606,15 +1581,16 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
         <div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-arrival-flow-title">{arrivalSectionText.flowTitle[lang]}</h3></div>
         <p>{arrivalSectionText.flowOnly[lang]}</p>
       </div>
-      <p className="flow-note">{summary.serviceDateKst} · {scopeLabel} · {timeline.length ? `${kstStamp(timeline[0].targetStartAt)}–${kstStamp(timeline.at(-1)!.targetEndAt)} KST · ${timeline.length} ${contextText(lang,"개 확인 시간대","available bands","个已确认时段","確認済み時間帯")}` : airportTodayText.unavailable[lang]}{isPartial ? ` · ${airportTodayText.partialBody[lang]}` : ""}</p>
+      <p className="flow-note">{flowCoverageSentence(lang, summary.serviceDateKst, scopeLabel, timeline)}{isPartial ? ` ${airportTodayText.partialBody[lang]}` : ""}</p>
       {timeline.length > 0
-        ? <AirportForecastChart
+        ? <AirportFlowFigure
           timeline={timeline}
+          layers={isAll ? arrival?.passengerForecastTimelineByTerminal ?? null : null}
+          lang={lang}
           peakStartAt={peak?.targetStartAt ?? null}
           nowBandStart={nowBandStart}
           nowBandProgress={nowBandProgress}
           nowLabel={nowLabel}
-          maxBand={maxBand}
           numberLocale={numberLocale}
           label={`${arrivalSectionText.flowTitle[lang]}. ${arrivalSectionText.flowOnly[lang]}${nowBandStart ? `. ${nowLabel}` : ""}`}
         />
@@ -1828,7 +1804,11 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
   const queueIsStale = checkpoint && (checkpoint.freshness === "STALE" || presentationNow - Date.parse(checkpoint.observedAt) > 20 * 60_000);
   const queueValue = checkpoint?.waitTimeRaw ?? (checkpoint?.waitTimeMinutes !== null && checkpoint?.waitTimeMinutes !== undefined ? String(checkpoint.waitTimeMinutes) : null);
 
-  return <section className="current-brief airport-current-brief" aria-label={`${scopeLabel} ${dayLabel}`}>
+  // The day's size and its hour-by-hour shape are one picture on the airport
+  // page: the lead (scope, total, formula, limitation, the flow figure) sits on
+  // the dusk-sky panel (app/airport-visual.css .airport-hero). The personal
+  // home passes no flow and keeps the plain lead.
+  const lead = <>
       <p className="eyebrow">{scopeLabel} · {dayLabel}</p>
       {showPassengers&&<>
       {/* OWNER PRIORITY LOCK 1-3 (2026-09-14). The arithmetic sum of the two
@@ -1843,19 +1823,25 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
       {referenceSum ? <>
         <strong className="airport-brief-total" data-basis="ARITHMETIC_ONLY" data-testid="airport-sum-total">
           <span className="airport-metric-label">{passengerCopy[summary.dayRelation === "TODAY" ? "summedToday" : "summedSelected"][lang]}</span>{" "}
-          <span className="airport-metric-value">{referenceSum.total.toLocaleString(numberLocale)}{peopleUnit}</span>
+          <span className={flow ? "airport-metric-value av-display" : "airport-metric-value"}><CountUpNumber value={referenceSum.total} locale={numberLocale} animate={Boolean(flow)} /><small>{peopleUnit}</small></span>
         </strong>
         <AirportSumFormula hall={referenceSum.hall} transfer={referenceSum.transfer} total={referenceSum.total}
           lang={lang} numberLocale={numberLocale} unit={peopleUnit} isToday={summary.dayRelation === "TODAY"} />
         <small className="passenger-transfer-limitation">{passengerCopy.arithmeticNote[lang]}</small>
       </> : expectedTotal !== null && forecastStatus === "COMPLETE"
-        ? <><strong className="airport-brief-total"><span className="airport-metric-label">{passengerCopy[summary.dayRelation === "TODAY" ? "today" : "selected"][lang]}</span>{" "}<span className="airport-metric-value">{Math.round(expectedTotal).toLocaleString(numberLocale)}{peopleUnit}</span></strong>
+        ? <><strong className="airport-brief-total"><span className="airport-metric-label">{passengerCopy[summary.dayRelation === "TODAY" ? "today" : "selected"][lang]}</span>{" "}<span className={flow ? "airport-metric-value av-display" : "airport-metric-value"}><CountUpNumber value={Math.round(expectedTotal)} locale={numberLocale} animate={Boolean(flow)} /><small>{peopleUnit}</small></span></strong>
           <small className="passenger-transfer-limitation">{passengerCopy.limitation[lang]}</small></>
         : <p className="airport-data-missing">{forecastStatus === "PARTIAL" ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]}</p>}
-      <small className="departure-hall-scope-note">{summary.serviceDateKst} · {scopeLabel} · {passengerCopy.scope[lang]}</small>
+      <small className="departure-hall-scope-note">{passengerCopy.scopeSentence[lang](summary.serviceDateKst, scopeLabel)}</small>
       {/* LOCK 4: the hour-by-hour shape of the day, directly under the day's
           size. Supplied by the airport page; the personal home passes none. */}
       {flow}
+      </>}
+  </>;
+
+  return <section className="current-brief airport-current-brief" aria-label={`${scopeLabel} ${dayLabel}`}>
+      {flow ? <div className="airport-hero">{lead}</div> : lead}
+      {showPassengers&&<>
       {/* The three questions a reader asks of a daily total, on one line and in
           one scope: what is happening in this hour, when does the day peak, and
           is that bigger or smaller than the same weekday last week. Every cell
@@ -1976,7 +1962,6 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     (airport.congestion ?? []).map((row) => ({ ...row, waitTimeRaw: row.waitTimeRaw ?? null })),
   ) as Record<string, LiveCongestionRow[]>;
   const checkpointTerminals = Object.keys(rankedCheckpoints).filter((key) => isAll || key === terminal);
-  const maxBand = Math.max(1, ...timeline.map((row) => row.expectedPassengers));
   // The current-time marker exists only for TODAY. A past or future service
   // date has no "now" inside it, and drawing one would invent a moment in a
   // day the clock is not in. Bands the marker has passed stay forecasts.
@@ -2014,15 +1999,16 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     <AirportAtAGlance summary={summary} lang={lang} terminal={terminal} flow={
     <section className="airport-detail-section airport-forecast" aria-labelledby="airport-forecast-title">
       <div className="airport-detail-head"><div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-forecast-title">{airportTodayText.forecastTitle[lang]}</h3></div><p>{airportTodayText.forecastOnly[lang]}</p></div>
-      <p className="flow-note">{summary.serviceDateKst} · {scopeLabel} · {timeline.length ? `${kstStamp(timeline[0].targetStartAt)}–${kstStamp(timeline.at(-1)!.targetEndAt)} KST · ${timeline.length} ${contextText(lang,"개 확인 시간대","available bands","个已确认时段","確認済み時間帯")}` : airportTodayText.unavailable[lang]}{isForecastPartial ? ` · ${airportTodayText.partialBody[lang]}` : ''}</p>
+      <p className="flow-note">{flowCoverageSentence(lang, summary.serviceDateKst, scopeLabel, timeline)}{isForecastPartial ? ` ${airportTodayText.partialBody[lang]}` : ''}</p>
       {timeline.length > 0
-        ? <AirportForecastChart
+        ? <AirportFlowFigure
           timeline={timeline}
+          layers={isAll ? airport.passengerForecastTimelineByTerminal ?? null : null}
+          lang={lang}
           peakStartAt={peak?.targetStartAt ?? null}
           nowBandStart={nowBandStart}
           nowBandProgress={nowBandProgress}
           nowLabel={nowLabel}
-          maxBand={maxBand}
           numberLocale={numberLocale}
           label={`${airportTodayText.forecastTitle[lang]}. ${airportTodayText.forecastOnly[lang]}${nowBandStart ? `. ${nowLabel}` : ""}`}
         />

@@ -13,8 +13,11 @@ test("the airport visual tokens exist, and the page ground is not one of them", 
   }
   // Pastel is for figures. The page itself keeps globals.css's paper white.
   assert.doesNotMatch(css, /\bbody\s*\{|\bhtml\s*\{|--paper:/);
-  // No gradients or shadows anywhere in the visual layer.
-  assert.doesNotMatch(css, /gradient\(|box-shadow/);
+  // No shadows anywhere in the visual layer, and the only gradient is the
+  // airport sky panel's (owner decision 2026-10-02: the dusk-sky reference).
+  assert.doesNotMatch(css, /box-shadow/);
+  const gradients = css.split("\n").filter((line) => /gradient\(/.test(line));
+  assert.deepEqual(gradients.map((line) => line.slice(0, line.indexOf("{")).trim()), [".airport-today .airport-hero"]);
   assert.match(css, /prefers-reduced-motion: reduce/);
 });
 

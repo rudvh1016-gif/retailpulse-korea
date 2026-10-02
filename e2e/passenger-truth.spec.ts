@@ -44,8 +44,11 @@ for (const lang of ['ko','en','zh','ja'] as const) {
       for (const foreign of ['5,110','6,320',terminal==='T1'?'2,900':'3,500']) await expect(glance).not.toContainText(foreign);
       const full=page.locator('.airport-current-brief');
       await expect(full).toContainText(passengerCopy[tomorrow?'summedSelected':'summedToday'][lang]);
-      await expect(full.locator('.departure-hall-scope-note').first()).toContainText(passengerCopy.scope[lang]);
-      expect(scope).toContain(passengerCopy.scope[lang]);
+      // The on-page scope line is a sentence since 2026-10-02 (scopeSentence); the share text keeps the short form.
+      const scopeNote=full.locator('.departure-hall-scope-note').first();
+      await expect(scopeNote).toContainText(tomorrow?'2026-09-01':'2026-08-31');
+      await expect(scopeNote).toContainText(passengerCopy.scopeSentence[lang]('D','S').split('S').pop()!.trim());
+      expect(scope).toContain(passengerCopy.scopeSentence[lang]('D','S').split('S').pop()!.trim());
       await expect(full).toContainText(passengerCopy.arithmeticNote[lang]);
       await expect(full.locator('[data-testid="airport-sum-total"]')).toContainText(terminal==='T1'?'30,659':'27,705');
       await expect(full.locator('[data-testid="airport-sum-formula"]')).toContainText(terminal==='T1'?'30,100':'17,220');
