@@ -36,6 +36,7 @@ import { SiteUsageGuide } from "./site-usage-guide";
 import { IndustryGuide } from "./industry-guide";
 import { BusinessPrep } from "./business-prep";
 import { AirportDepartureOverview } from "./airport-departure-overview";
+import { AirportConcourse } from './airport-concourse';
 import { sidesCopy } from "../lib/airport-sides-copy";
 import { saveBusinessPreferences, useBusinessPreferences } from "./business-preferences";
 import { airportAnswerText, areaAnswerText, type TodayAnswer, type TodayAnswerArea } from "../lib/today-answer";
@@ -287,6 +288,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   const [homeVisible, setHomeVisible] = useState(initialScope === "airport-home" || (initialScope === "home" && initialView === "today"));
   const [selected, setSelected] = useState<AreaId>(initialArea);
   const [terminal, setTerminal] = useState<Terminal>("all");
+  const [concourse,setConcourse]=useState(false);
   const [airportSection, setAirportSection] = useState<AirportSection>("now");
   const [industry, setIndustry] = useState<IndustryId>("beauty");
   const [preferencesReady, setPreferencesReady] = useState(false);
@@ -316,6 +318,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         if (/^\d{4}-\d{2}-\d{2}$/.test(query.get('date') ?? '')) setServiceDate(query.get('date'));
         if (query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
         if (['all','T1','T2'].includes(query.get('terminal') ?? '')) setTerminal(query.get('terminal') as Terminal);
+        setConcourse(query.get('building')==='CONCOURSE');
         if (query.get('section') === 'mystore' || window.location.hash === '#mystore') setAirportSection('stores');
         setPreferencesReady(true);
       }
@@ -371,6 +374,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       setServiceDate(/^\d{4}-\d{2}-\d{2}$/.test(query.get('date') ?? '') ? query.get('date') : null);
       if (query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
       setTerminal(['T1','T2'].includes(query.get('terminal') ?? '') ? query.get('terminal') as Terminal : 'all');
+      setConcourse(query.get('building')==='CONCOURSE');
       const [, locale, slug, routeArea] = window.location.pathname.split("/");
       setHomeVisible(!slug);
       if (!slug) { setView("airport"); setAirportSection("now"); }
@@ -385,11 +389,12 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  function updateUrl(nextLang: Lang, nextView: View, nextArea: AreaId, nextTerminal: Terminal = terminal, preserveHome = false) {
+  function updateUrl(nextLang: Lang, nextView: View, nextArea: AreaId, nextTerminal: Terminal = terminal, preserveHome = false, nextConcourse=concourse) {
     const params = new URLSearchParams();
     if (serviceDate) params.set('date',serviceDate);
     if (nextView === 'predictions') params.set('area',nextArea);
-    if (nextView === 'airport' && nextTerminal !== 'all') params.set('terminal',nextTerminal);
+    if(nextView==='airport'&&nextConcourse)params.set('building','CONCOURSE');
+    else if (nextView === 'airport' && nextTerminal !== 'all') params.set('terminal',nextTerminal);
     const paramsText = params.toString(); // not .size: older Safari/Chrome lack URLSearchParams.size
     const nextPath = (preserveHome ? `/${nextLang}` : routeFor(nextLang, nextView, nextArea)) + (paramsText ? `?${paramsText}` : '');
     if (window.location.pathname + window.location.search !== nextPath) window.history.pushState({}, "", nextPath);
@@ -414,10 +419,11 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     if (view === "today" || view === "tourism-desk" || view === "predictions") updateUrl(lang, view, next);
   }
 
-  function navigate(next: View, nextTerminal: Terminal = terminal) {
+  function navigate(next: View, nextTerminal: Terminal = terminal, nextConcourse=concourse) {
     setHomeVisible(false);
     setView(next);
-    updateUrl(lang, next, selected, nextTerminal);
+    setConcourse(next==='airport'&&nextConcourse);
+    updateUrl(lang, next, selected, nextTerminal,false,nextConcourse);
     window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   }
 
@@ -425,14 +431,16 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     setHomeVisible(true);
     setView('airport');
     setAirportSection('now');
-    if(window.location.pathname !== `/${lang}`) window.history.pushState({}, '', `/${lang}${serviceDate ? `?date=${serviceDate}` : ''}`);
+    setConcourse(false);
+    const homePath=`/${lang}${serviceDate ? `?date=${serviceDate}` : ''}`;
+    if(window.location.pathname+window.location.search!==homePath)window.history.pushState({},'',homePath);
     window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
   }
 
   function openAirport(section: AirportSection, preferredTerminal?: Terminal) {
     if (preferredTerminal) setTerminal(preferredTerminal);
     setAirportSection(section);
-    navigate("airport", preferredTerminal ?? terminal);
+    navigate("airport", preferredTerminal ?? terminal,false);
   }
 
   return (
@@ -493,7 +501,9 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             setIndustry={setIndustry}
             lang={lang}
             terminal={terminal}
-            setTerminal={next => { setTerminal(next); updateUrl(lang, "airport", selected, next, homeVisible); }}
+            setTerminal={next => { setConcourse(false);setTerminal(next); updateUrl(lang, "airport", selected, next, homeVisible,false); }}
+            concourse={concourse}
+            setConcourse={next=>{setConcourse(next);updateUrl(lang,'airport',selected,terminal,homeVisible,next);}}
             section={airportSection}
             setSection={setAirportSection}
             date={serviceDate}
@@ -553,11 +563,12 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 }
 
 function AirportView({
-  lang, terminal, setTerminal, section, setSection, date, setDate, industry, setIndustry, todayAnswer,
+  lang, terminal, setTerminal, concourse, setConcourse, section, setSection, date, setDate, industry, setIndustry, todayAnswer,
 }: {
   todayAnswer: TodayAnswer | null;
   industry: IndustryId; setIndustry: (value: IndustryId) => void;
   lang: Lang; terminal: Terminal; setTerminal: (value: Terminal) => void;
+  concourse:boolean;setConcourse:(value:boolean)=>void;
   section: AirportSection; setSection: (value: AirportSection) => void;
   date: string | null; setDate: (value: string | null) => void;
 }) {
@@ -602,15 +613,16 @@ function AirportView({
           <p className="eyebrow">INCHEON AIRPORT · OFFICIAL · KST</p>
           <h1>{localText(lang, { ko: "인천공항", en: "Incheon Airport", zh: "仁川机场", ja: "仁川空港" })}</h1>
           <p>{localText(lang, { ko: "출국장 공식 예상 승객·입국객, 실제 출발 운항, 현재 출국장 대기를 서로 섞지 않고 따로 보여줍니다.", en: "Official departure-hall passenger forecast and arrivals, physical departing flights and current departure-hall waits—kept separate, never blended.", zh: "分别显示出境大厅与入境检查预计人数、实际出发航班与当前出境区等候，互不混用。", ja: "公式予想の出国場利用者・入国審査利用者、実出発便、現在の出国場待ちを混ぜずに分けて表示します。" })}</p>
-          {date === null && <TodayAnswerLines lines={[airportAnswerText(todayAnswer, lang)]} />}
+          {!concourse&&date === null && <TodayAnswerLines lines={[airportAnswerText(todayAnswer, lang)]} />}
         </div>
       </div>
 
       <div className="terminal-selector" role="tablist" aria-label="Terminal">
-        {(["all", "T1", "T2"] as Terminal[]).map((item) => <button key={item} className={terminal === item ? "active" : ""} onClick={() => setTerminal(item)} role="tab" aria-selected={terminal === item}>{item === "all" ? localText(lang, { ko: "전체", en: "ALL", zh: "全部", ja: "全体" }) : item}</button>)}
+        {(["all", "T1", "T2"] as Terminal[]).map((item) => <button key={item} className={!concourse&&terminal === item ? "active" : ""} onClick={() => setTerminal(item)} role="tab" aria-selected={!concourse&&terminal === item}>{item === "all" ? localText(lang, { ko: "전체", en: "ALL", zh: "全部", ja: "全体" }) : item}</button>)}
+        <button className={concourse?'active':''} onClick={()=>setConcourse(true)} role="tab" aria-selected={concourse}>{localText(lang,{ko:'탑승동',en:'Concourse',zh:'登机楼',ja:'搭乗棟'})}</button>
       </div>
 
-      <nav className="airport-context-nav" aria-label={localText(lang, { ko: "공항 정보 구분", en: "Airport sections", zh: "机场信息分类", ja: "空港情報の分類" })}>
+      {!concourse&&<nav className="airport-context-nav" aria-label={localText(lang, { ko: "공항 정보 구분", en: "Airport sections", zh: "机场信息分类", ja: "空港情報の分類" })}>
         {/*
           * "지금" said WHEN, which was never the choice a reader is making
           * here — the two screens differ by DIRECTION, and the arrival one
@@ -625,25 +637,26 @@ function AirportView({
 
                   : localText(lang, { ko: "과거", en: "HISTORY", zh: "历史", ja: "履歴" })}
         </button>)}
-      </nav>
+      </nav>}
 
-      {section !== "history" && section !== "stores" && <>
-        <DateNavigator lang={lang} date={date} onChange={setDate} airportDates />
-        <DateScopeNote lang={lang} date={date} scope={section === "arrivals" ? "arrivals" : "departures"} />
-      </>}
+      {(concourse||(section !== "history" && section !== "stores")) && <div className={`airport-date-reserved${concourse?' airport-date-concourse':''}`}>
+        <DateNavigator lang={lang} date={date} onChange={setDate} airportDates={!concourse} />
+        {!concourse&&<DateScopeNote lang={lang} date={date} scope={section === "arrivals" ? "arrivals" : "departures"} />}
+      </div>}
 
-      {section === "now" && <a className="operating-jump" href="#airport-departure-overview" data-testid="overview-jump">{sidesCopy.overviewJump[lang]}</a>}
-      {(section === "now" || section === "arrivals") && <a className="operating-jump" href="#airport-industry-guide">{localText(lang, { ko: "업종별 공항 매장 운영 가이드 ↓", en: "Airport store operating guide ↓", zh: "按业态查看机场店铺指南 ↓", ja: "業種別の空港店舗ガイド ↓" })}</a>}
+      {!concourse&&section === "now" && <a className="operating-jump" href="#airport-departure-overview" data-testid="overview-jump">{sidesCopy.overviewJump[lang]}</a>}
+      {!concourse&&(section === "now" || section === "arrivals") && <a className="operating-jump" href="#airport-industry-guide">{localText(lang, { ko: "업종별 공항 매장 운영 가이드 ↓", en: "Airport store operating guide ↓", zh: "按业态查看机场店铺指南 ↓", ja: "業種別の空港店舗ガイド ↓" })}</a>}
 
-      {section === "now" && <AirportTodaySummary lang={lang} terminal={terminal} date={date} />}
-      {section === "now" && <AirportDepartureOverview lang={lang} terminal={terminal} date={date} />}
-      {section === "arrivals" && <AirportArrivalSummary lang={lang} terminal={terminal} date={date} />}
-      {section === "flights" && <FlightBoard lang={lang} terminal={terminal} date={date} />}
-      {section === "stores" && <FacilityDirectory lang={lang} terminal={terminal} />}
+      {concourse&&<AirportConcourse lang={lang} date={date}/>}
+      {!concourse&&section === "now" && <AirportTodaySummary lang={lang} terminal={terminal} date={date} />}
+      {!concourse&&section === "now" && <AirportDepartureOverview lang={lang} terminal={terminal} date={date} />}
+      {!concourse&&section === "arrivals" && <AirportArrivalSummary lang={lang} terminal={terminal} date={date} />}
+      {!concourse&&section === "flights" && <FlightBoard lang={lang} terminal={terminal} date={date} />}
+      {!concourse&&section === "stores" && <FacilityDirectory lang={lang} terminal={terminal} />}
 
-      {(section === "now" || section === "arrivals") && <IndustryGuide key={section} lang={lang} industry={industry} onIndustryChange={setIndustry} airport={{ terminal, direction: section === "arrivals" ? "arrival" : "departure" }} />}
+      {!concourse&&(section === "now" || section === "arrivals") && <IndustryGuide key={section} lang={lang} industry={industry} onIndustryChange={setIndustry} airport={{ terminal, direction: section === "arrivals" ? "arrival" : "departure" }} />}
 
-      {section === "history" && <section className="airport-history" aria-labelledby="airport-history-title">
+      {!concourse&&section === "history" && <section className="airport-history" aria-labelledby="airport-history-title">
         <div className="section-head">
           <div><p className="eyebrow">OFFICIAL MONTHLY STATISTICS</p><h2 id="airport-history-title">{localText(lang, { ko: "공식 월별 여객 실적", en: "Official monthly passenger results", zh: "官方月度旅客实绩", ja: "公式月次旅客実績" })}</h2></div>
           <span className="official-label">OFFICIAL HISTORICAL</span>

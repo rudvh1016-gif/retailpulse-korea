@@ -1,6 +1,6 @@
-# Airport-first accuracy follow-up — draft
+# Airport-first accuracy follow-up
 
-Base: `ef0ad56442d3ae7f9c60a38fd9dff612f6287937`, fetched and verified on 2026-10-03. This follow-up is not merged or deployed.
+Base: `ef0ad56442d3ae7f9c60a38fd9dff612f6287937`, fetched and verified on 2026-10-03. PR249 was subsequently merged as `d6eb196b8560e4581bd1079da2714b22d5bcf317` and deployed by normal workflow 37139101078 at 17:06 UTC. Worker version: `c8405493-0286-4ccc-bb0e-8d7978b2c70e`. This document's implementation notes describe that release; the distinct-building v5 follow-up is documented separately.
 
 Implemented:
 
@@ -32,8 +32,8 @@ Full local E2E: 447 passed / 6 failed, then all 94 tests in the affected four sp
 
 Source normalization correction: the official A1 weekly-flight documentation https://www.data.go.kr/data/15095074/openapi.do defines P02 as concourse. A1 normalization formerly dropped P02 to null; it now preserves CONCOURSE even without a gate, with unchanged physical-flight identity and no schema/scheduler changes. Cargo/unknown codes remain unknown. Three focused provenance regressions pass. Existing historical snapshots lost the original code, so this change cannot retroactively identify the 189 null/null records without original source evidence. Normal authorized complete scans can update them changed-only. Of the existing 267 T2 unverified rows, all 267 have null gates; none are a missing lookup-table entry. No inferred passenger allocation or new collector run was introduced.
 
-Release authorization: owner confirmed normal public merge/deploy after successful verification (2026-10-03 delegated transcript: “ㅇㅇ승인해 변경하고나서 버그나 사이즈 폰트점검해 폰트의 크기와 디자인은 기존사이트를유지해 알지?”). This is not authorization to bypass checks; PR stays draft until they pass. Current public main remains ef0ad56442d3ae7f9c60a38fd9dff612f6287937.
+Release authorization: owner confirmed normal public merge/deploy after successful verification (2026-10-03 delegated transcript: “ㅇㅇ승인해 변경하고나서 버그나 사이즈 폰트점검해 폰트의 크기와 디자인은 기존사이트를유지해 알지?”). This is not authorization to bypass checks; PR stays draft until they pass. PR249 was merged as d6eb196b8560e4581bd1079da2714b22d5bcf317 and deployed by workflow 37139101078.
 
-Fresh pre-deployment baseline (public main ef0ad564, 390x844, cold cache, CPU4x, RTT150ms, 1.6Mbps down / 750kbps up, 10s after DCL, three runs per route): root median LCP 4400ms / CLS 0.2668 / observed blocking 267ms; airport deep link 2372ms / CLS 0.0383 / blocking 485ms. Blocking is long-task excess, not Lighthouse TBT. Network outliers are retained; post-deploy matched measurements still required. No font asset/family/size/weight edits.
+Fresh pre-deployment baseline (public main ef0ad564, 390x844, cold cache, CPU4x, RTT150ms, 1.6Mbps down / 750kbps up, 10s after DCL, three runs per route): root median LCP 4400ms / CLS 0.2668 / observed blocking 267ms; airport deep link 2372ms / CLS 0.0383 / blocking 485ms. Blocking is long-task excess, not Lighthouse TBT. Network outliers are retained; post-deploy measurements recorded below. No font asset/family/size/weight edits.
 
-Latest protected UI checks remain enabled and passed. The uncropped approved image plus terminal title repeat-switch suite passed 4/4 after the final CSS adjustment. A complete final-source E2E rerun and remote PR CI are queued; release remains gated on them.
+Latest protected UI checks remain enabled and passed. The uncropped approved image plus terminal title repeat-switch suite passed 4/4 after the final CSS adjustment. The final-source local E2E run passed 453/453; remote PR CI and main CI passed before normal deployment. Distinct-building v5 work uses a separate branch and release.

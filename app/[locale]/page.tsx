@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import RetailPulseApp from "../retailpulse-app";
 import { loadTodayAnswer } from "../../lib/today-answer-server";
 import { buildMetadata, pageStructuredData, seoLocales, type SeoLocale } from "../seo-config";
+import {preloadShellFont} from '../shell-font-preload';
 
 /**
  * Starts the summary request from the HTML head, so it overlaps the JS
@@ -38,17 +39,6 @@ function preloadLiveSummary() {
  * `crossOrigin: "anonymous"` is required, not optional — fonts are always
  * fetched in CORS mode, and a preload without it is fetched a second time.
  */
-const SHELL_FONT: Record<SeoLocale, string> = {
-  ko: "/fonts/koretail-sans-variable.woff2",
-  en: "/fonts/koretail-sans-variable.woff2",
-  ja: "/fonts/noto-sans-jp-400.woff2",
-  zh: "/fonts/noto-sans-sc-400.woff2",
-};
-
-function preloadShellFont(locale: SeoLocale) {
-  preload(SHELL_FONT[locale], { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
-}
-
 export function generateStaticParams() { return seoLocales.map((locale) => ({ locale })); }
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {

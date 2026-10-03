@@ -30,6 +30,7 @@ import { destinationOf, type DestinationGroup, type DestinationEntry, DESTINATIO
 
 export type MapTerminal = "T1" | "T2";
 export type MapBuilding = "T1" | "T2" | "CONCOURSE";
+export type FlightBuildingScope = 'all' | MapBuilding;
 
 export interface MapFlightRow extends SideFlightRow {
   flightNumber?: unknown;
@@ -83,6 +84,8 @@ export interface GroupRow {
 
 export interface DepartureMap {
   terminal: MapTerminal;
+  /** Explicit physical-building scope; absent means the established T1/T2 terminal grouping. */
+  buildingScope?: FlightBuildingScope;
   window: MapWindow;
   /** The part of the window after midnight: covered by the next day's rows, missing, or not asked. */
   nextDay: "NOT_NEEDED" | "COVERED" | "MISSING";
@@ -157,6 +160,7 @@ export function departureMap(input: {
   date: string;
   nextDate: string;
   terminal: MapTerminal;
+  buildingScope?: FlightBuildingScope;
   window: MapWindow;
   rows: readonly MapFlightRow[];
   /** The next day's rows; null when they could not be read. Only used past midnight. */
@@ -179,13 +183,14 @@ export function departureMap(input: {
     return { EAST: total.EAST + counts.EAST, WEST: total.WEST + counts.WEST, CENTER: total.CENTER + counts.CENTER, UNVERIFIED: total.UNVERIFIED + counts.UNVERIFIED, total: total.total + counts.total };
   }, { ...emptySides(), total: 0 });
 
-  const buildings = buildingsOf(terminal);
+  const scope=input.buildingScope;
+  const buildings:MapBuilding[]=scope==='all'?['T1','T2','CONCOURSE']:scope?[scope]:buildingsOf(terminal);
   const flights: MapFlight[] = [];
   for (const [rows, day, rowDate] of [[today, "SERVICE_DATE", date], [tomorrow, "NEXT_DAY", nextDate]] as const) {
     for (const row of collapse(rows, rowDate)) {
       if (String(row.status ?? "") === "cancelled") continue;
       const building = boardingAreaOf(row);
-      if (!buildings.includes(building as MapBuilding)) continue;
+      if (!(scope==='all'&&building==='UNKNOWN')&&!buildings.includes(building as MapBuilding)) continue;
       const code = row.airportCode === null || row.airportCode === undefined || String(row.airportCode).trim() === "" ? null : String(row.airportCode).trim();
       const destination = destinationOf(code);
       const gate = String(row.gate ?? "").trim() || null;
@@ -223,14 +228,15 @@ export function departureMap(input: {
     groups.set(flight.group, entry);
   }
   const order = (group: DestinationGroup) => DESTINATION_GROUPS.indexOf(group);
-  const main = sum(terminal);
+  const main = scope==='all'?(['T1','T2','CONCOURSE','UNKNOWN'] as const).map(sum).reduce((a,b)=>({EAST:a.EAST+b.EAST,WEST:a.WEST+b.WEST,CENTER:a.CENTER+b.CENTER,UNVERIFIED:a.UNVERIFIED+b.UNVERIFIED,total:a.total+b.total}),{...emptySides(),total:0}):sum(scope??terminal);
   return {
     terminal,
+    ...(scope?{buildingScope:scope}:{}),
     window,
     nextDay,
     flights,
     sides: main,
-    concourse: terminal === "T1" ? sum("CONCOURSE").total : null,
+    concourse: scope ? null : terminal === "T1" ? sum("CONCOURSE").total : null,
     unknownBuilding: sum("UNKNOWN").total,
     cancelled: counted.reduce((total, day) => total + day.cancelled, 0),
     gates,

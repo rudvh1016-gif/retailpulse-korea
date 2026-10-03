@@ -12,11 +12,13 @@ import type { Lang } from './retailpulse-data';
 import { shiftKstDay } from '../lib/kst';
 import {
   buildingsOf, customWindow, departureMap, minuteOfDay, presetWindow,
-  type DepartureMap, type MapBuilding, type MapFlight, type MapTerminal, type MapWindow, type WindowPreset,
+  type DepartureMap, type MapBuilding, type MapFlight, type MapTerminal, type MapWindow, type WindowPreset, type FlightBuildingScope,
 } from '../lib/airport-departure-map';
 import { flightLine, groupShare, statusText, leadLine, mapCopy as copy, mapShareText, windowCountsLine, windowText } from '../lib/airport-departure-map-copy';
 import type { DestinationGroup } from '../lib/airport-destinations';
 import { AirportConceptModel } from './airport-concept-model';
+import { AirportZoneCountries } from './airport-zone-countries';
+import { airportModelScope } from '../lib/airport-model-scope';
 
 /** "14:05" in KST, with the date in front when it is not the service date. */
 function kstClock(iso: string, date: string): string {
@@ -88,16 +90,20 @@ function FlightRows({ lang, flights, testId }: { lang: Lang; flights: readonly M
   </ul>;
 }
 
-export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, terminal, nowIso, holidays }: {
+export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, terminal, nowIso, holidays, defaultBuildingScope }: {
   lang: Lang; date: string; todayKst: string; dayRelation: 'PAST' | 'TODAY' | 'FUTURE'; terminal: MapTerminal; nowIso: string;
   /** China's and Japan's official holidays on the date, from the page's own calendar lookup. */
   holidays: ReadonlyArray<{ country: string; name: string }>;
+  defaultBuildingScope?:FlightBuildingScope;
 }) {
   const nowDateKst = new Date(Date.parse(nowIso) + 9 * 3_600_000).toISOString().slice(0, 10);
   // A last-good summary can straddle midnight. Its old TODAY label must not
   // make the new day's 00:02 look like 00:02 (+1) on the previous date.
   const today = dayRelation === 'TODAY' && date === todayKst && date === nowDateKst;
   const [preset, setPreset] = useState<WindowPreset>('DAY');
+  const scopeContext=`${terminal}:${defaultBuildingScope??'terminal'}`;
+  const [buildingSelection,setBuildingSelection]=useState<{context:string;scope:FlightBuildingScope}|null>(null);
+  const buildingScope=buildingSelection?.context===scopeContext?buildingSelection.scope:defaultBuildingScope;
   const [custom, setCustom] = useState<[number, number]>([9, 18]);
   const [filter, setFilter] = useState<DestinationGroup | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -109,8 +115,8 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
   const current = useFlights(date);
   const next = useFlights(span.endMin > 1440 ? nextDate : null);
   const map = useMemo(() => current?.status === 'OK'
-    ? departureMap({ date, nextDate, terminal, window: span, rows: current.payload.flights, nextRows: next?.status === 'OK' && (next.payload.flights.length > 0 || next.payload.retrievedAt) ? next.payload.flights : null })
-    : null, [current, next, date, nextDate, terminal, span.startMin, span.endMin]); // eslint-disable-line react-hooks/exhaustive-deps
+    ? departureMap({ date, nextDate, terminal, buildingScope, window: span, rows: current.payload.flights, nextRows: next?.status === 'OK' && (next.payload.flights.length > 0 || next.payload.retrievedAt) ? next.payload.flights : null })
+    : null, [current, next, date, nextDate, terminal, buildingScope, span.startMin, span.endMin]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (current === undefined) return <p className="prep-note" data-testid="map-loading">{copy.loading[lang]}</p>;
   if (current.status === 'FAILED' || !map) return <p className="prep-note" data-testid="map-failed">{copy.failed[lang]}</p>;
@@ -138,7 +144,12 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
   const presets: WindowPreset[] = today ? ['DAY', 'NEXT1', 'NEXT3', 'NEXT6', 'CUSTOM'] : ['DAY', 'CUSTOM'];
 
   return <div data-testid="departure-map" data-window={`${span.startMin}-${span.endMin}`} data-filter={filter ?? 'ALL'}>
+    <div className="terminal-selector" role="group" aria-label={{ko:'출발편 건물 구분',en:'Departure building scope',zh:'出发航班建筑范围',ja:'出発便の建物範囲'}[lang]}>
+      {(['all','T1','T2','CONCOURSE'] as const).map(scope=><button type="button" key={scope} aria-pressed={buildingScope===scope} onClick={()=>{setBuildingSelection({context:scopeContext,scope});setSelected(null);setFilter(null);}}>{airportModelScope(scope,lang)}</button>)}
+    </div>
+    {buildingScope&&<p className="prep-note">{{ko:'건물별 편수: T1 본관·T2·탑승동을 별도 집계합니다. 전체에는 건물 미정도 포함하며 탑승동 여객 예보는 따로 제공되지 않습니다.',en:'Physical buildings: T1 main, T2 and concourse are counted separately. All includes unknown buildings. No separate concourse passenger forecast is provided.',zh:'按T1主楼、T2、登机楼分别统计。全部包含建筑未定航班。不提供登机楼独立旅客预测。',ja:'T1本館・T2・搭乗棟を別々に集計。全体は建物未定便も含みます。搭乗棟単独の旅客予想は提供されません。'}[lang]}</p>}
     {map.nextDay !== 'MISSING' && <AirportConceptModel map={map} lang={lang}/>}
+    {map.nextDay !== 'MISSING' && <AirportZoneCountries map={map} lang={lang}/>}
     <div className="date-nav-shortcuts" role="group" aria-label={copy.time[lang]} style={{ flexWrap: 'wrap' }}>
       {presets.map((value) => <button key={value} type="button" aria-pressed={preset === value} data-preset={value} style={{ whiteSpace: 'nowrap', flex: '0 0 auto' }}
         onClick={() => { setPreset(value); setSelected(null); }}>{copy.presets[value][lang]}</button>)}
@@ -188,7 +199,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
         {' '}<span className="prep-note">({copy.filtered[lang]}: {copy.groups[filter][lang]} · {shown.length})</span></p>}
 
       <OpenableList testId="map-official-coordinates" summary={copy.axis[lang]}>{() => <>
-      {buildingsOf(terminal).map((building) => <BuildingMap key={building} lang={lang} building={building} map={map} flights={shown} selected={selected} onSelect={setSelected}/>)}
+      {(buildingScope==='all'?['T1','T2','CONCOURSE'] as const:buildingScope?[buildingScope]:buildingsOf(terminal)).map((building) => <BuildingMap key={building} lang={lang} building={building} map={map} flights={shown} selected={selected} onSelect={setSelected}/>)}
       <p className="prep-note">{copy.schematic[lang]}</p>
       {selected && <div data-testid="map-gate-flights">
         <h4 style={{ margin: '10px 0 0' }}>{copy.gate[lang]} {selected.split(':')[1]} · {copy.building[selected.split(':')[0] as MapBuilding][lang]}</h4>

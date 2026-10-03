@@ -60,7 +60,7 @@ export function AirportDepartureOverview({ lang, terminal, date }: { lang: Lang;
       ? <p className="prep-note" data-testid="overview-no-flights">{copy.noFlights[lang]}</p>
       : <div key={shown} data-testid={`overview-${shown}`}>
         <FlightSplitCard lang={lang} summary={summary} sides={sides} terminal={shown} nowIso={nowIso}/>
-        <DepartureMapSection lang={lang} summary={summary} terminal={shown} nowIso={nowIso} holidays={holidays} defaultOpen/>
+        <DepartureMapSection lang={lang} summary={summary} terminal={shown} nowIso={nowIso} holidays={holidays} defaultOpen defaultBuildingScope={terminal}/>
         <DayRadarSection lang={lang} summary={summary} terminal={shown} nowIso={nowIso} holidays={holidays} isHoliday={cnJpHoliday}/>
       </div>}
     <p className="prep-note" data-testid="sides-notice">{copy.notice[lang]}</p>

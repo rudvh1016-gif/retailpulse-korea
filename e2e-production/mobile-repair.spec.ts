@@ -9,38 +9,20 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   await expect(page.locator('.demand-home')).toBeVisible();
   await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
   await page.screenshot({ path: info.outputPath(`public-${width}.png`) });
-  await page.getByRole('button', { name: '내 브리핑 설정', exact: true }).click();
-  await expect(page.getByTestId('personal-onboarding')).toBeVisible();
-  await page.screenshot({ path: info.outputPath(`setup-${width}.png`) });
-  await page.getByRole('button', { name: '취소', exact: true }).click();
-  await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
-  await expect(page.locator('.demand-home')).toBeVisible();
-  await page.evaluate(key => localStorage.setItem(key, JSON.stringify({ version: 1, role: 'manager', location: 'myeongdong', terminal: 'T2', interests: ['weather'], day: 'today', analytics: false })), PREFERENCE_KEY);
+  await expect(page.getByRole('button',{name:'내 브리핑 설정',exact:true})).toHaveCount(0);
+  await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+  const stored=JSON.stringify({version:1,role:'manager',location:'airport',terminal:'T2',interests:['passengers','crowding'],day:'today',analytics:false});
+  await page.evaluate(({key,stored})=>localStorage.setItem(key,stored),{key:PREFERENCE_KEY,stored});
   await page.reload();
-  await expect(page.locator('.personal-place')).toContainText('명동');
-  await expect(page.locator('[data-view-location]')).toHaveCount(1);
-  await expect(page.locator('.personal-facts [data-interest]')).toHaveCount(1);
-  await expect(page.locator('.personal-facts [data-interest]')).toHaveAttribute('data-interest', 'weather');
-  await expect(page.locator('.demand-home, .area-current-brief')).toHaveCount(0);
-  await page.screenshot({ path: info.outputPath(`personal-${width}.png`) });
-  await page.evaluate(key => localStorage.setItem(key, JSON.stringify({ version: 1, role: 'manager', location: 'airport', terminal: 'T2', interests: ['passengers', 'crowding'], day: 'today', analytics: false })), PREFERENCE_KEY);
-  await page.reload();
-  await expect(page.locator('.personal-place')).toContainText('T2');
-  // Place and terminal switches keep the underline style. The date buttons in
-  // the same bar are boxed on purpose since #211, exactly as the pre-merge
-  // check e2e/mobile-briefing-repair.spec.ts asserts.
-  for (const style of await page.locator('.personal-switches .personal-inline button').evaluateAll(els => els.map(el => { const s = getComputedStyle(el); return { left: s.borderLeftWidth, right: s.borderRightWidth, top: s.borderTopWidth, bottom: s.borderBottomWidth, background: s.backgroundColor }; }))) {
-    expect(style.left).toBe('0px'); expect(style.right).toBe('0px'); expect(style.top).toBe('0px');
-    expect(style.bottom).toBe('1px'); expect(style.background).toBe('rgb(255, 255, 255)');
-  }
-  for (const control of await page.locator('.date-nav-shortcuts button').all()) {
-    await expect(control).toHaveCSS('border-top-width', '1px');
-    await expect(control).toHaveCSS('border-left-width', '1px');
+  await expect(page.locator('.airport-current-brief')).toBeVisible();
+  expect(await page.evaluate(key=>localStorage.getItem(key),PREFERENCE_KEY)).toBe(stored);
+  await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+  for(const control of await page.locator('.date-nav-shortcuts button').all()){
+    await expect(control).toHaveCSS('border-top-width','1px');
+    await expect(control).toHaveCSS('border-left-width','1px');
     expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(48);
   }
-  const airportNumber = page.locator('.airport-metric-value');
-  if (await airportNumber.count()) await expect(airportNumber).toHaveCSS('font-size', '16px');
-  await page.screenshot({ path: info.outputPath(`personal-airport-${width}.png`) });
+  await page.screenshot({path:info.outputPath(`airport-home-${width}.png`)});
   await page.goto('/ko/hongdae');
   await expect(page.locator('.population-chart')).toBeVisible();
   await page.evaluate(() => document.fonts.ready);

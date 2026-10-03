@@ -284,7 +284,7 @@ test("departure composition is one accessible tab group with gate, airline and r
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.goto("/ko/airport");
   const composition = page.locator(".airport-composition");
-  const tabs = composition.getByRole("tablist", { name: "오늘 출발편 구성 보기" });
+  const tabs = composition.getByRole("tablist", { name: "선택일 출발편 구성 보기" });
   const gateTab = tabs.getByRole("tab", { name: "게이트", exact: true });
   const airlineTab = tabs.getByRole("tab", { name: "항공사", exact: true });
   const countryTab = tabs.getByRole("tab", { name: "등록 국가", exact: true });

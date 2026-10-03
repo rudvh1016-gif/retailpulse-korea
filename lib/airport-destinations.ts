@@ -54,10 +54,12 @@ const BY_NAME = new Map(TABLE.destinations.map((entry) => [normalizeDestination(
   ...entry,
   group: TABLE.groupOf[entry.country],
 } as DestinationEntry]));
+/** Labels and evidenced IATA codes resolve to the same reviewed entry; no country is guessed. */
+const BY_IATA = new Map(TABLE.destinations.map(entry=>[entry.iata.toUpperCase(),{...entry,group:TABLE.groupOf[entry.country]} as DestinationEntry]));
 
 export function destinationOf(stored: string | null | undefined): DestinationEntry | null {
   if (!stored) return null;
-  const entry = BY_NAME.get(normalizeDestination(stored));
+  const entry = BY_NAME.get(normalizeDestination(stored)) ?? BY_IATA.get(stored.trim().toUpperCase());
   return entry && entry.group ? entry : null;
 }
 

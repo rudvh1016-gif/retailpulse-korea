@@ -3,6 +3,8 @@ import type { DepartureMap } from '../lib/airport-departure-map';
 import { mapCopy as copy, windowText } from '../lib/airport-departure-map-copy';
 import './airport-models.css';
 import { airportModelScope } from '../lib/airport-model-scope';
+import { AirportSceneModel } from './airport-scene-model';
+import modelViews from '../config/airport-concept-v5.json';
 
 const note = {
   ko: '공항 개념 모형입니다. 색은 구역을 설명하며 공식 건물 경계나 실제 게이트 위치가 아닙니다. 동서 비율은 동+서 편수, 목적지 비율은 선택 범위 전체 편수가 분모입니다.',
@@ -12,17 +14,18 @@ const note = {
 };
 
 export function AirportConceptModel({ map, lang }: { map: DepartureMap; lang: Lang }) {
+  const scope=map.buildingScope??map.terminal;
   const denominator = map.sides.EAST + map.sides.WEST;
   const unit = { ko: '편', en: ' flights', zh: '班', ja: '便' }[lang];
   const share = (side: 'EAST' | 'WEST' | 'CENTER') => side === 'CENTER' || denominator === 0 ? '' : `${(map.sides[side] / denominator * 100).toFixed(1)}%`;
   return <figure className="airport-concept-model" data-testid="airport-concept-model">
-    <figcaption data-testid="airport-map-model-scope" data-terminal={map.terminal}>{airportModelScope(map.terminal,lang)} · {copy.building[map.terminal][lang]} · {windowText(map.window, lang)}</figcaption>
-    <div className="airport-concept-picture">
-      {/* The owner-approved D render is data-free. Labels always come from the current window calculation. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/airport-models/approved-D-900.webp" srcSet="/airport-models/approved-D-480.webp 480w, /airport-models/approved-D-900.webp 900w, /airport-models/approved-D-1800.webp 1800w" sizes="(max-width: 820px) calc(100vw - 36px), 700px" width="1800" height="1000" alt="" loading="lazy" decoding="async"/>
-      {(['WEST', 'CENTER', 'EAST'] as const).map(side => <div key={side} className="airport-concept-label" data-side={side}><strong>{copy.side[side][lang]}</strong>{map.sides[side]}{unit}{share(side) ? ` · ${share(side)}` : ''}</div>)}
-    </div>
+    <figcaption data-testid="airport-map-model-scope" data-terminal={scope}>{airportModelScope(scope,lang)} · {scope==='all'?'':copy.building[scope][lang]} · {windowText(map.window, lang)}</figcaption>
+    <AirportSceneModel scope={scope} lang={lang} className="airport-concept-picture">
+      {scope!=='all'&&(['WEST', 'CENTER', 'EAST'] as const).map(side => {
+        const view=modelViews.views[scope];const point=view.labels[side];
+        return <div key={side} className="airport-concept-label" data-side={side} style={{left:`${point[0]/view.width*100}%`,top:`${point[1]/view.height*100}%`,right:'auto',transform:'translateX(-50%)'}}><strong>{copy.side[side][lang]}</strong>{map.sides[side]}{unit}{share(side) ? ` · ${share(side)}` : ''}</div>;
+      })}
+    </AirportSceneModel>
     <div className="airport-concept-counts">{(['WEST', 'CENTER', 'EAST'] as const).map(side => <div key={side}>{copy.side[side][lang]}<strong>{map.sides[side]}{unit}</strong><small>{share(side) || '—'}</small></div>)}</div>
     <details className="prep-evidence"><summary>{{ko:'모형·집계 기준',en:'Model and counting basis',zh:'模型与统计基准',ja:'模型・集計基準'}[lang]}</summary><p className="prep-note">{note[lang]}</p></details>
     <p className="prep-note">{copy.side.UNVERIFIED[lang]} {map.sides.UNVERIFIED}{unit}{map.concourse !== null ? ` · ${copy.concourse[lang]} ${map.concourse}${unit}` : ''}</p>
