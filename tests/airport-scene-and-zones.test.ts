@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {airportScene} from '../lib/airport-scene';
-import {zoneCountries} from '../lib/airport-zone-countries';
+import {zoneCountries,zoneCountryShare} from '../lib/airport-zone-countries';
 import {departureMap,type MapFlight} from '../lib/airport-departure-map';
 import {destinationOf} from '../lib/airport-destinations';
 test('scene uses airport timezone at both day boundaries, independent of device timezone',()=>{
@@ -11,6 +11,10 @@ test('country leaders include every third-place tie, unknowns and zero zones; to
  const flights=[] as MapFlight[];
  for(const [country,count] of [['JP',5],['CN',4],['US',3],['VN',3],[null,1]] as const)for(let n=0;n<count;n++)flights.push({side:'WEST',destination:country?{country}:null} as MapFlight);
  const zones=zoneCountries(flights);assert.equal(zones[0].total,16);assert.deepEqual(zones[0].leaders.map(c=>c.country),['JP','CN','US','VN']);assert.equal(zones[0].countries.reduce((s,c)=>s+c.flights,0),16);assert.equal(zones.slice(1).reduce((s,z)=>s+z.total,0),0);
+});
+test('country percentages retain unknowns in the zone denominator and do not force rounding to 100',()=>{
+ const west=zoneCountries([{side:'WEST',destination:{country:'JP'}},{side:'WEST',destination:{country:'JP'}},{side:'WEST',destination:null}] as MapFlight[])[0];
+ assert.equal(zoneCountryShare(west.leaders[0].flights,west.total),'66.7%');assert.equal(zoneCountryShare(west.unknown,west.total),'33.3%');assert.equal(zoneCountryShare(9,24),'37.5%');assert.equal(zoneCountryShare(0,0),'—');assert.equal(zoneCountryShare(1,3),'33.3%');assert.equal([1,1,1].map(n=>zoneCountryShare(n,3)).join(','),'33.3%,33.3%,33.3%');
 });
 test('explicit building scopes preserve unknown and deduplicate codeshares without changing legacy T1 grouping',()=>{
  const date='2026-10-04';const base={scheduledAt:date+'T10:00:00+09:00',retrievedAt:date+'T01:00:00Z',status:'scheduled',direction:'departure'};

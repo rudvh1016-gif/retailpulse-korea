@@ -39,6 +39,13 @@ test('all-building country totals reconcile; physical building switches and time
  await map.locator('[data-preset="CUSTOM"]').click();await map.getByTestId('map-from').selectOption('11');await map.getByTestId('map-to').selectOption('12');await expect.poll(total).toBe(0);
  expect(reads).toBe(1);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
+for(const lang of ['ko','en','zh','ja'] as const)test(`country percentages use their own full zone denominator ${lang}`,async({page})=>{
+ await page.setViewportSize({width:360,height:844});await page.emulateMedia({reducedMotion:'reduce'});
+ const rows=[{...flights[0],gate:'29',physicalFlightId:'jp1'},{...flights[0],gate:'29',physicalFlightId:'jp2',flightNumber:'KE11'},{...flights[0],gate:'29',physicalFlightId:'unknown-country',flightNumber:'KE12',airportCode:'NO-VERIFIED-AIRPORT'},flights[3]];
+ const summary={...SUMMARY_FIXTURE,airport:{...SUMMARY_FIXTURE.airport,sides:airportSides(date,'TODAY',[],rows,[],false,false)}};
+ await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',basis:'OFFICIAL_DEPARTURE_SCHEDULE',flights:rows,truncated:false,retrievedAt:base.retrievedAt}}));
+ await page.goto(`/${lang}/airport`);const overview=page.getByTestId('airport-departure-overview');await overview.scrollIntoViewIfNeeded();const map=overview.getByTestId('departure-map');const west=map.getByTestId('map-zone-countries').locator('[data-side="WEST"][data-total]');await expect(west.locator('h5')).toContainText('75.0%');await expect(west.locator('[data-country="JP"] strong')).toContainText('66.7%');await expect(west.locator('[data-country="UNKNOWN"] strong')).toContainText('33.3%');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});
 test('concourse mobile reading order and country cards remain clear of fixed navigation',async({page})=>{
  await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});
  await page.route('**/api/live/summary*',r=>r.fulfill({json:SUMMARY_FIXTURE}));

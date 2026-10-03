@@ -1,5 +1,9 @@
 import type {MapFlight} from './airport-departure-map';
 export interface ZoneCountry {country:string|null;flights:number}
+/** Country share uses every flight in its own zone, including unknown destinations. */
+export function zoneCountryShare(count:number,zoneTotal:number):string {
+  return zoneTotal>0?`${(count/zoneTotal*100).toFixed(1)}%`:'—';
+}
 export function zoneCountries(flights:readonly MapFlight[]) {
   return (['WEST','CENTER','EAST','UNVERIFIED'] as const).map(side=>{
     const rows=flights.filter(f=>f.side===side);const counts=new Map<string|null,number>();
