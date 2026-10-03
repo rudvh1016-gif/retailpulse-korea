@@ -112,7 +112,7 @@ export const mapCopy = {
 export function windowCountsLine(map: DepartureMap, lang: Lang): string {
   const parts = (["EAST", "WEST", "CENTER", "UNVERIFIED"] as const).map((side) => `${mapCopy.side[side][lang]} ${flights(map.sides[side], lang)}`);
   if (map.concourse !== null) parts.push(`${mapCopy.concourse[lang]} ${flights(map.concourse, lang)}`);
-  if (map.unknownBuilding > 0) parts.push(`${mapCopy.unknownBuilding[lang]} ${flights(map.unknownBuilding, lang)}`);
+  if (map.unknownBuilding > 0) parts.push(`${mapCopy.unknownBuilding[lang]} ${flights(map.unknownBuilding, lang)}${map.buildingScope==='all'?` (${row('위치 미확인에 포함','included in unverified location','包含于位置未定','位置未確認に含む')[lang]})`:''}`);
   return parts.join(" · ");
 }
 
@@ -189,7 +189,7 @@ export function flightLine(flight: MapFlight, lang: Lang): string {
 /** The copied text: date, terminal, window, filter, counts, lead, destinations, what could not be placed, and the limit. */
 export function mapShareText(map: DepartureMap, input: { date: string; filter: DestinationGroup | null; basis: string; url: string }, lang: Lang): string {
   const lines = [
-    `KORETAIL · ${mapCopy.title[lang]} · ${input.date} ${map.terminal} · ${windowText(map.window, lang)}`,
+    `KORETAIL · ${mapCopy.title[lang]} · ${input.date} ${map.buildingScope ?? map.terminal} · ${windowText(map.window, lang)}`,
     windowCountsLine(map, lang),
     leadLine(map, lang),
     `${mapCopy.destinations[lang]}: ${groupsLine(map, lang) || "—"}`,

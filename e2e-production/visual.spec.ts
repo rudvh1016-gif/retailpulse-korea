@@ -208,8 +208,8 @@ for (const width of viewports) {
     } else {
       const bottomNav = page.locator("nav.bottom-nav");
       await expect(bottomNav).toBeVisible();
-      await expect(bottomNav.locator("a")).toHaveCount(6);
-      await expect(bottomNav.getByRole("link", { name: /내\s*브리핑/ })).toBeVisible();
+      await expect(bottomNav.locator("a")).toHaveCount(5);
+      await expect(bottomNav.getByRole("link", { name: /내\s*브리핑/ })).toHaveCount(0);
       await bottomNav.getByRole("link", { name: /더보기/ }).click();
       await expect(page).toHaveURL(/\/ko\/more$/);
       await expect(page.locator(".tourism-link-block")).toHaveCount(0);
@@ -455,21 +455,13 @@ test("production Airport provider and registry text has complete four-language g
       contentType: "image/png",
     });
 
-    await page.evaluate(() => localStorage.removeItem("koretail-my-facility"));
-    await page.locator(".airport-context-nav button").filter({ hasText: airportMyStoreLabels[locale] }).click();
-    const searchable = facilities.find((row) => row.terminal === "T1" && row.nameKo && [...row.nameKo].length >= 2);
-    expect(searchable?.nameKo).toBeTruthy();
-    await page.locator(".my-store input[type='search']").fill(searchable!.nameKo!);
-    const result = page.locator(".my-store-results button").first();
-    await expect(result).toBeVisible({ timeout: 30_000 });
-    await result.click();
-    const selectedStore = page.locator(".my-store-brief");
-    await expect(selectedStore).toBeVisible({ timeout: 30_000 });
-    expect(await tofuCharacters(selectedStore), `${locale} live selected-store briefing has tofu`).toEqual([]);
-    await testInfo.attach(`airport-selected-store-${locale}-390.png`, {
-      body: await page.screenshot({ fullPage: true, animations: "disabled", caret: "hide" }),
-      contentType: "image/png",
-    });
+    const saved=JSON.stringify({version:1,facilityId:facilities.find(row=>row.terminal==='T1')!.facilityId});
+    await page.evaluate(saved=>localStorage.setItem('koretail-my-facility',saved),saved);
+    await expect(page.locator('.airport-context-nav button').filter({hasText:airportMyStoreLabels[locale]})).toHaveCount(0);
+    await expect(page.locator('.my-store')).toHaveCount(0);
+    expect(await page.evaluate(()=>localStorage.getItem('koretail-my-facility'))).toBe(saved);
+    expect(await tofuCharacters(directory),`${locale} live directory and provider labels have tofu`).toEqual([]);
+    await testInfo.attach(`airport-preserved-facility-${locale}-390.png`,{body:await page.screenshot({fullPage:true,animations:'disabled',caret:'hide'}),contentType:'image/png'});
   }
 });
 
@@ -487,7 +479,7 @@ test("production airport composition is one compact tabbed module at every requi
     await page.locator(".terminal-selector").getByRole("tab", { name: "T2", exact: true }).click();
 
     const composition = page.locator(".airport-composition");
-    const tablist = composition.getByRole("tablist", { name: "오늘 출발편 구성 보기" });
+    const tablist = composition.getByRole("tablist", { name: "선택일 출발편 구성 보기" });
     await expect(tablist.getByRole("tab")).toHaveCount(3);
     await expect(composition.locator(".airport-composition-scope")).toContainText("제2터미널");
     expect((await composition.innerText()).match(/제2터미널/g)?.length ?? 0).toBe(1);

@@ -4,6 +4,7 @@ import { FLOW_HOURS, flowLayout, type FlowBand } from "../lib/airport-flow-geome
 import { REVEAL_MS, reducedMotion, tween } from "../lib/motion";
 import type { Lang } from "./retailpulse-data";
 import { airportModelScope } from '../lib/airport-model-scope';
+import { AirportSceneModel } from './airport-scene-model';
 // Styles live in app/airport-visual.css, imported once by
 // app/airport-departure-overview.tsx (always in the app bundle). Importing it
 // here too would break the node tests that load live-signals.tsx.
@@ -178,10 +179,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
 
   return <figure className="av-figure airport-flow" ref={figureRef} role="group" aria-label={label} data-bands={layout.bands.length}>
     <p className="airport-model-scope" data-testid="airport-model-scope" data-terminal={terminal}>{airportModelScope(terminal,lang)}</p>
-    <div className="airport-hourly-concept" aria-hidden="true">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/airport-models/approved-D-900.webp" srcSet="/airport-models/approved-D-480.webp 480w, /airport-models/approved-D-900.webp 900w" sizes="(max-width: 820px) 100vw, 700px" width="900" height="500" alt="" loading="lazy" decoding="async"/>
-    </div>
+    <AirportSceneModel scope={terminal} lang={lang} className="airport-hourly-concept"/>
     {/* No role="img" here: the figure itself is the labelled group, and the band
         rects inside are real keyboard stops that an image role would hide. */}
     <svg ref={svgRef} width="100%" height={height} viewBox={`0 0 ${width} ${height}`}

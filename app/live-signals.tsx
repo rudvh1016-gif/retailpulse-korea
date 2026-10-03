@@ -817,7 +817,7 @@ const airportTodayText = {
     zh: (scope: string) => `${scope} · 今日实际出发航班口径`,
     ja: (scope: string) => `${scope} · 本日の実運航出発便基準`,
   },
-  compositionTabsLabel: { ko: "오늘 출발편 구성 보기", en: "Choose a departure composition view", zh: "选择今日出发航班构成视图", ja: "出発便構成の表示を選択" },
+  compositionTabsLabel: { ko: "선택일 출발편 구성 보기", en: "Choose the selected date's departure composition view", zh: "选择所选日期出发航班构成视图", ja: "選択日の出発便構成の表示を選択" },
   compositionTabs: {
     gates: { ko: "게이트", en: "Gates", zh: "登机口", ja: "ゲート" },
     airlines: { ko: "항공사", en: "Airlines", zh: "航空公司", ja: "航空会社" },

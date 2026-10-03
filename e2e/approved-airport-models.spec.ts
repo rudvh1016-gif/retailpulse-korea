@@ -55,7 +55,8 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [360,390,430,1280]) 
     await expect(overview.getByTestId('airport-concept-model')).toContainText('T2');
     const img=overview.locator('.airport-concept-picture img');
     await expect.poll(()=>img.evaluate((el:HTMLImageElement)=>el.complete&&el.naturalWidth>0)).toBe(true);
-    expect(await img.evaluate((el:HTMLImageElement)=>el.currentSrc)).toMatch(width<=430?/approved-D-480.webp/:/approved-D-900.webp/);
+    expect(await img.evaluate((el:HTMLImageElement)=>el.currentSrc)).toMatch(/\/v5\/T2_day\.webp$/);
+    expect(await img.evaluate((el:HTMLImageElement)=>({width:el.naturalWidth,height:el.naturalHeight}))).toEqual({width:1440,height:760});
     await expect(overview.getByTestId('map-groups')).toHaveCount(0);
     await expect(overview.getByTestId('map-T2')).toHaveCount(0);
     await overview.getByTestId('map-destinations').locator('summary').click();

@@ -3,7 +3,7 @@
   "protectedFiles": {
     "app/[locale]/[slug]/page.tsx": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1",
     "app/[locale]/not-found.tsx": "620e62c747a4a0d4b8af1558492c74e961f2a4f0d55caa2c960c508395a41ff0",
-    "app/[locale]/page.tsx": "f6634845d6426c9428bf1bb189a47a80ae2c32d25fc41cbb952237ad03cb296e",
+    "app/[locale]/page.tsx": "861f9697b315e6b0b54e1663c4089f4a6a6330d1298acc3066e0e657b6cafb98",
     "app/[locale]/tourism-desk/[area]/page.tsx": "b74c40a03d7ff4ec57a8314f4c11825467212d48634bebf057d078d3ae360b35",
     "app/[locale]/tourism-desk/page.tsx": "2738ee0e7cfb960016184b8dd9a99112312719819cd3b8d05e96a89e83320b37",
     "app/api/airport/facilities/route.ts": "ebc9dea6df03d842ee8fbb1e640158276a506658cc364190a32fd99cf712639d",
@@ -19,14 +19,14 @@
     "app/globals.css": "86432fd8a64c35bf560587ae82d1b6fe0f262712557f59c3bcc8fff719caf114",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
     "app/layout.tsx": "5046b7a098cbea56b3c315af2033bbc3d846462584f2c27b97f8dc1bb4c49ec7",
-    "app/live-signals.tsx": "f5f69ca0f6752048341315b6871a9ceefbc65951f7e98956e95b005c267d0176",
+    "app/live-signals.tsx": "cfac8f6ea48d7fb6e40a4c77f140a95e15091c90c2dc0b538d38e8a9debdc12b",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "a01bb0bda26fcd8af56869bbabbc6ffcaac1057b9a2cb7c8798643dc6cd79d21",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "b9ccbfae7aac67f7aafd4e5ad2eb6739df50f166fa6723befa40db8742a08314",
-    "app/retailpulse-app.tsx": "4b0794428f2e5ab209303e00e3d786423745a4ca3af177c154f7f91e64bdb258",
+    "app/retailpulse-app.tsx": "c7497557ee9e868840f6b7f84d01d5b1a845c5bcee0d4e82b7841f0ff7ff5df2",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
@@ -118,6 +118,41 @@
         "file": "app/live-signals.tsx",
         "previous": "fdb51c87224ba10e0d9eaa2b4b9bd41d95b8810a157c308ec6b9b86aa2773930",
         "approved": "f5f69ca0f6752048341315b6871a9ceefbc65951f7e98956e95b005c267d0176"
+      }
+    ]
+  },
+  "ownerBuildingScopeApproval20261003": {
+    "reason": "Owner explicitly requested approved v5 distinct terminal/concourse scenes and all/T1/T2/concourse selection; unavailable concourse passenger/wait data must remain unavailable. Existing font family/size tokens and all enforcement tests retained.",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "63ed2fcf440121e8d655fc6bd3653b0bff97a4b8b63c04f972cb5f1427ccb68e",
+        "approved": "c7497557ee9e868840f6b7f84d01d5b1a845c5bcee0d4e82b7841f0ff7ff5df2"
+      },
+      {
+        "file": "app/[locale]/page.tsx",
+        "previous": "f6634845d6426c9428bf1bb189a47a80ae2c32d25fc41cbb952237ad03cb296e",
+        "approved": "861f9697b315e6b0b54e1663c4089f4a6a6330d1298acc3066e0e657b6cafb98"
+      },
+      {
+        "file": "app/[locale]/[slug]/page.tsx",
+        "previous": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1",
+        "approved": "ec78dc3ec8cf39872a56d4a7a53d6e1537d7f1aba2a4b5def0e4862187f18757"
+      },
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "f5f69ca0f6752048341315b6871a9ceefbc65951f7e98956e95b005c267d0176",
+        "approved": "cfac8f6ea48d7fb6e40a4c77f140a95e15091c90c2dc0b538d38e8a9debdc12b"
+      }
+    ]
+  },
+  "ownerPerformanceCorrection20261003": {
+    "reason": "Owner requested measured LCP regression repair. Remove only the newly added deep-route font preload; retain original font files, sizes and root preload. Active lock checks unchanged.",
+    "changes": [
+      {
+        "file": "app/[locale]/[slug]/page.tsx",
+        "previous": "ec78dc3ec8cf39872a56d4a7a53d6e1537d7f1aba2a4b5def0e4862187f18757",
+        "approved": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1"
       }
     ]
   }
