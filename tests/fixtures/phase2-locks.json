@@ -1,7 +1,7 @@
 {
   "base": "65907c971b5e279da48525875df6c972ab998c64",
   "protectedFiles": {
-    "app/[locale]/[slug]/page.tsx": "ec78dc3ec8cf39872a56d4a7a53d6e1537d7f1aba2a4b5def0e4862187f18757",
+    "app/[locale]/[slug]/page.tsx": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1",
     "app/[locale]/not-found.tsx": "620e62c747a4a0d4b8af1558492c74e961f2a4f0d55caa2c960c508395a41ff0",
     "app/[locale]/page.tsx": "861f9697b315e6b0b54e1663c4089f4a6a6330d1298acc3066e0e657b6cafb98",
     "app/[locale]/tourism-desk/[area]/page.tsx": "b74c40a03d7ff4ec57a8314f4c11825467212d48634bebf057d078d3ae360b35",
@@ -143,6 +143,16 @@
         "file": "app/live-signals.tsx",
         "previous": "f5f69ca0f6752048341315b6871a9ceefbc65951f7e98956e95b005c267d0176",
         "approved": "cfac8f6ea48d7fb6e40a4c77f140a95e15091c90c2dc0b538d38e8a9debdc12b"
+      }
+    ]
+  },
+  "ownerPerformanceCorrection20261003": {
+    "reason": "Owner requested measured LCP regression repair. Remove only the newly added deep-route font preload; retain original font files, sizes and root preload. Active lock checks unchanged.",
+    "changes": [
+      {
+        "file": "app/[locale]/[slug]/page.tsx",
+        "previous": "ec78dc3ec8cf39872a56d4a7a53d6e1537d7f1aba2a4b5def0e4862187f18757",
+        "approved": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1"
       }
     ]
   }

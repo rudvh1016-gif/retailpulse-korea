@@ -22,16 +22,16 @@ export function AirportConcourse({lang,date}:{lang:Lang;date:string|null}) {
  const filtered=map?.flights.filter(f=>`${f.flightNumber} ${f.destinationCode??''} ${f.destination?.en??''}`.toLocaleUpperCase().includes(query.trim().toLocaleUpperCase()))??[];
  return <section data-testid="airport-concourse" className="airport-concourse">
   <h2 className="airport-model-scope" data-testid="airport-model-scope" data-terminal="CONCOURSE">{airportModelScope('CONCOURSE',lang)}</h2>
-  <AirportSceneModel scope="CONCOURSE" lang={lang}/>
-  <p className="prep-note" data-testid="concourse-unsupported">{c.unsupported}</p>
   {!loaded?<LiveLoadMessage loading lang={lang}/>:loaded.status==='FAILED'?<p role="status">{c.failed}</p>:loaded.payload.truncated?<p role="status">{c.partial}</p>:!loaded.payload.retrievedAt&&loaded.payload.flights.length===0?<p role="status">{unavailable[lang]}</p>:map&&<>
    <p>{loaded.payload.basis==='OFFICIAL_DEPARTURE_SCHEDULE'?c.schedule:c.records}: <strong data-testid="concourse-flight-count">{map.flights.length}</strong> · {serviceDate} KST</p>
-   <p className="prep-note">{c.basis}</p>
-   <AirportZoneCountries map={map} lang={lang}/>
+   <AirportZoneCountries map={map} lang={lang} basis={c.basis}/>
+   <AirportSceneModel scope="CONCOURSE" lang={lang}/>
    <label>{c.search} <input type="search" value={query} onChange={e=>setQuery(e.target.value)}/></label>
    {!map.flights.length&&<p>{c.empty}</p>}
    <details data-testid="concourse-flight-list" open={listOpen} onToggle={event=>setListOpen(event.currentTarget.open)}><summary>{c.all} ({filtered.length})</summary>{listOpen&&<ul>{filtered.map(f=><li key={`${f.day}:${f.id}`}>{f.scheduledAt.slice(11,16)} KST · {f.flightNumber} · {lang==='ko'?f.destinationCode:f.destination?.en??f.destinationCode??'—'} · {f.gate??'—'}</li>)}</ul>}</details>
    <p className="prep-note">{loaded.payload.retrievedAt??'—'} · <a href="https://www.airport.kr" target="_blank" rel="noreferrer">Incheon Airport</a></p>
   </>}
+  <p className="prep-note" data-testid="concourse-unsupported">{{ko:'탑승동 승객 예보·검색대 대기 미제공',en:'Concourse passenger forecast and security wait unavailable',zh:'登机楼旅客预测和安检等待未提供',ja:'搭乗棟の旅客予測・保安待ちは未提供'}[lang]}</p>
+  <details className="prep-evidence"><summary>{{ko:'제공 범위',en:'Data coverage',zh:'提供范围',ja:'提供範囲'}[lang]}</summary><p className="prep-note">{c.unsupported}</p></details>
  </section>;
 }

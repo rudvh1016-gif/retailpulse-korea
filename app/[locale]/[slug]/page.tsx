@@ -5,7 +5,6 @@ import RetailPulseApp from "../../retailpulse-app";
 import { shareAnswerText } from "../../../lib/today-answer";
 import { loadTodayAnswer } from "../../../lib/today-answer-server";
 import { buildMetadata, pageStructuredData, seoLocales, standaloneSeoSlugs, type SeoLocale, type SeoSlug } from "../../seo-config";
-import {preloadShellFont} from '../../shell-font-preload';
 
 /**
  * Starts the summary request from the HTML head, so it overlaps the JS
@@ -48,7 +47,6 @@ export default async function LocalePage({ params }: { params: Promise<{ locale:
   const view = isArea ? "today" : slug as "predictions" | "forecast" | "airport" | "business" | "about" | "more";
   const area = isArea ? slug as typeof areaSlugs[number] : "myeongdong";
   preloadLiveSummary();
-  preloadShellFont(locale as SeoLocale);
   // Only the pages whose question this answers pay for the read.
   const todayAnswer = isArea || slug === "airport" ? await loadTodayAnswer() : null;
   return <>

@@ -30,6 +30,6 @@ export function AirportSceneModel({scope,lang,className='',children}:{scope:Airp
       {scope==='all'&&Object.entries(view.labels).map(([name,point])=><span className="airport-scene-anchor" key={name} style={{left:`${point[0]/view.width*100}%`,top:`${point[1]/view.height*100}%`}}>{name==='CONCOURSE'?{ko:'탑승동',en:'Concourse',zh:'登机楼',ja:'搭乗棟'}[lang]:name}</span>)}
       {children}
     </div>
-    <p className="prep-note airport-scene-note">{concept[lang]} {lighting[lang]}</p>
+    <details className="prep-evidence airport-scene-note"><summary>{{ko:'집계 기준 · 모형과 조명',en:'Counting basis · model and lighting',zh:'统计口径 · 模型与光照',ja:'集計基準 · 模型と照明'}[lang]}</summary><p className="prep-note">{concept[lang]} {lighting[lang]}</p></details>
   </>;
 }

@@ -39,6 +39,16 @@ test('all-building country totals reconcile; physical building switches and time
  await map.locator('[data-preset="CUSTOM"]').click();await map.getByTestId('map-from').selectOption('11');await map.getByTestId('map-to').selectOption('12');await expect.poll(total).toBe(0);
  expect(reads).toBe(1);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
+test('concourse mobile reading order and country cards remain clear of fixed navigation',async({page})=>{
+ await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});
+ await page.route('**/api/live/summary*',r=>r.fulfill({json:SUMMARY_FIXTURE}));
+ await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',basis:'OFFICIAL_DEPARTURE_SCHEDULE',flights,truncated:false,retrievedAt:base.retrievedAt}}));
+ await page.goto('/ko/airport?building=CONCOURSE');const conc=page.getByTestId('airport-concourse');const countries=conc.getByTestId('map-zone-countries');await expect(conc.getByTestId('concourse-flight-count')).toHaveText('1');
+ expect(await conc.evaluate(el=>{const count=el.querySelector('[data-testid="concourse-flight-count"]')!;const chart=el.querySelector('[data-testid="map-zone-countries"]')!;const model=el.querySelector('[data-building="CONCOURSE"]')!;return Boolean(count.compareDocumentPosition(chart)&Node.DOCUMENT_POSITION_FOLLOWING)&&Boolean(chart.compareDocumentPosition(model)&Node.DOCUMENT_POSITION_FOLLOWING);})).toBe(true);
+ await expect(countries.locator('details.prep-evidence')).not.toHaveAttribute('open','');await countries.getByText('집계 기준',{exact:true}).focus();await page.keyboard.press('Enter');await expect(countries).toContainText('P02');await page.keyboard.press('Enter');
+ const last=countries.locator('[data-side][data-total]').last();await last.evaluate(el=>el.scrollIntoView({block:'start'}));expect((await last.boundingBox())!.width).toBeGreaterThan(300);await expect.poll(async()=>{const card=await last.boundingBox();const nav=await page.locator('nav.bottom-nav').boundingBox();return card!.y+card!.height-nav!.y;}).toBeLessThan(0);
+ await page.evaluate(()=>scrollTo(0,document.documentElement.scrollHeight));expect(await page.evaluate(()=>parseFloat(getComputedStyle(document.querySelector('.page-shell')!).paddingBottom))).toBeGreaterThan(await page.locator('nav.bottom-nav').evaluate(el=>el.getBoundingClientRect().height));
+});
 for(const kind of ['FAILED','PARTIAL','ZERO','UNAVAILABLE','WRONG_DAY'] as const)test(`concourse ${kind} never invents passenger forecasts or flight totals`,async({page})=>{
  await page.route('**/api/live/summary*',r=>r.fulfill({json:SUMMARY_FIXTURE}));
  await page.route('**/api/live/flights*',r=>r.fulfill({status:kind==='FAILED'?503:200,json:{mode:'live-flights',serviceDateKst:kind==='WRONG_DAY'?'2026-09-01':date,flights:kind==='UNAVAILABLE'?[]:kind==='ZERO'?[flights[3]]:flights,truncated:kind==='PARTIAL',retrievedAt:kind==='UNAVAILABLE'?null:base.retrievedAt}}));
