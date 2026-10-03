@@ -1896,7 +1896,7 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
               ? <b className="airport-glance-change">{comparisonValue(mtd.change)}</b>
               : <small>{mtd.previousAbsentReason === "NO_SUCH_DAY" ? mtdCopy.noSuchDay[lang] : mtdCopy.bothComplete[lang]}</small>}</dd></div>
         </dl>
-        <AirportMonthComparison current={mtd.current.total} previous={mtd.previous?.total ?? null}/>
+        <AirportMonthComparison current={mtd.current.total} previous={mtd.previous?.total ?? null} currentLabel={shortRange(mtd.current.start, mtd.current.end)} previousLabel={mtd.previous ? shortRange(mtd.previous.start, mtd.previous.end) : ''} numberLocale={numberLocale} unit={peopleUnit}/>
         <AirportMonthChart days={mtd.current.days} lang={lang} numberLocale={numberLocale} unit={peopleUnit} />
       </section>}
       <div className="transfer-forecast" data-testid="transfer-forecast">

@@ -16,6 +16,18 @@
 .airport-today.airport-approved .airport-hero .airport-flow-peak text,
 .airport-today.airport-approved .airport-hero .airport-flow-now-value { fill: #000; }
 .airport-today.airport-approved .airport-hero .av-now.airport-flow-now { stroke: #000; }
+.airport-today.airport-approved .airport-hero :is(.airport-forecast-state strong, .airport-forecast-state p, .airport-forecast-state small, .airport-detail-head h3, .airport-detail-head > p, .flow-note, .airport-hourly-model-note, .airport-flow-legend) { color: #000; opacity: 1; }
+.airport-today.airport-approved .airport-hero :is(.airport-flow-hours text, .airport-flow-grid text, .airport-flow-now-label, .airport-flow-tip text) { fill: #000; fill-opacity: 1; }
+.airport-today.airport-approved .airport-hero .airport-flow-tip rect,
+.airport-today.airport-approved .airport-hero .airport-flow-now-pill rect { fill: #fff; stroke: #d4e2e8; }
+.airport-today.airport-approved .airport-hero .airport-flow-now-dot { stroke: #000; }
+.airport-hourly-concept { aspect-ratio: 9 / 3; max-height: 200px; }
+.airport-hourly-concept img { width: 100%; height: 100%; object-fit: contain; }
+.airport-hourly-model-note { margin: 0 var(--gutter); }
+.airport-today.airport-approved .airport-hero .airport-flow-area { fill-opacity: .1; }
+.airport-today.airport-approved .airport-hero .airport-flow-edge { stroke-opacity: .1; }
+.airport-today.airport-approved .airport-hero .airport-flow-line { stroke-opacity: .25; }
+.airport-today.airport-approved .airport-hero .airport-flow-legend { display: flex; padding-inline: var(--gutter); }
 .airport-gate-model h4 { margin: 12px 0; font-size: 16px; line-height: 1.4; letter-spacing: -.015em; }
 .gate-leader-number { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; }
 .gate-leader-number > strong { font-size: 14px; font-weight: var(--weight-strong); }
@@ -57,6 +69,7 @@
 .airport-month-side { fill: #81b3cd; }
 .airport-month-cap { fill: #e5f5fc; }
 .airport-month-compare-model { display: block; width: min(100%, 360px); height: auto; margin: 14px auto; }
+.airport-month-compare-model text { font-family: inherit; }
 .similar-calendar { float: left; width: 56px; height: 70px; margin: 0 12px 6px 0; }
 .similar-calendar text { font-family: inherit; font-size: 12px; fill: #000; }
 @media (max-width: 365px) { .airport-concept-label { font-size: 11px; padding: 3px; } }

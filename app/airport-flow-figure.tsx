@@ -35,6 +35,7 @@ const copy = {
   ahead: { ko: "남은 시간대", en: "Hours ahead", zh: "剩余时段", ja: "残りの時間帯" },
   peak: { ko: "피크", en: "Peak", zh: "高峰", ja: "ピーク" },
   unit: { ko: "명", en: "", zh: "人", ja: "人" },
+  concept: { ko: "공항 그림은 개념 모형이며 막대 높이는 공식 예상 승객 수입니다.", en: "The airport image is conceptual; bar heights show official forecast passengers.", zh: "机场图像是概念模型；柱高表示官方预测旅客数。", ja: "空港の図は概念模型です。柱の高さは公式予測旅客数です。" },
 } as const;
 
 const REVEAL_TOTAL_MS = REVEAL_MS * 2;
@@ -174,6 +175,10 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakSt
   })() : null;
 
   return <figure className="av-figure airport-flow" ref={figureRef} role="group" aria-label={label} data-bands={layout.bands.length}>
+    <div className="airport-hourly-concept" aria-hidden="true">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/airport-models/approved-D-900.webp" srcSet="/airport-models/approved-D-480.webp 480w, /airport-models/approved-D-900.webp 900w" sizes="(max-width: 820px) 100vw, 700px" width="900" height="500" alt="" loading="lazy" decoding="async"/>
+    </div>
     {/* No role="img" here: the figure itself is the labelled group, and the band
         rects inside are real keyboard stops that an image role would hide. */}
     <svg ref={svgRef} width="100%" height={height} viewBox={`0 0 ${width} ${height}`}
@@ -220,6 +225,20 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakSt
         {layout.layers[0].segments.map((segment, index) => <path key={`past-stack-${index}`} className="airport-flow-area airport-flow-stack" d={segment.area} />)}
       </g>}
 
+      <g className="airport-hourly-prisms" aria-hidden="true" pointerEvents="none">
+        {layout.bands.map((band, index) => {
+          const barHeight = band.value / layout.maxBand * (base - top);
+          const x = band.x + band.width * .2, w = band.width * .55, depth = Math.min(5, band.width * .16);
+          const y = base - barHeight;
+          const lower = layout.stacked ? layout.layers[0].values[index] / layout.maxBand * (base - top) : 0;
+          return barHeight > 0 && <g key={band.start} data-start={band.start} data-value={band.value} data-height={barHeight}>
+            <rect x={x} y={y} width={w} height={barHeight} fill="#a9d5ec"/>
+            {lower > 0 && <rect x={x} y={base - lower} width={w} height={lower} fill="#81b3cd"/>}
+            <path d={`M${x+w},${y} l${depth},${-depth} v${barHeight} l${-depth},${depth} Z`} fill="#81b3cd"/>
+            <path d={`M${x},${y} h${w} l${depth},${-depth} h${-w} Z`} fill="#e5f5fc"/>
+          </g>;
+        })}
+      </g>
       <line className="av-rule airport-flow-base" x1={left} x2={right} y1={base} y2={base} />
       <g className="airport-flow-hours">
         {layout.ticks.map((tick) => <text key={tick.hour} x={tick.x} y={base + 17} textAnchor={tick.hour === FLOW_HOURS[0] ? "start" : tick.hour === FLOW_HOURS.at(-1) ? "end" : "middle"}>{String(tick.hour).padStart(2, "0")}</text>)}
@@ -264,5 +283,6 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakSt
       {layout.now && <li><i className="ahead" />{copy.ahead[lang]}</li>}
       {layout.stacked && layout.layers.map((layer, index) => <li key={layer.key}><i className={index === 0 ? "stack-lower" : "stack-upper"} />{layer.key}</li>)}
     </ul>
+    <p className="prep-note airport-hourly-model-note">{copy.concept[lang]}</p>
   </figure>;
 }

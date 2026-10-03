@@ -111,12 +111,15 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
 
   if (current === undefined) return <p className="prep-note" data-testid="map-loading">{copy.loading[lang]}</p>;
   if (current.status === 'FAILED' || !map) return <p className="prep-note" data-testid="map-failed">{copy.failed[lang]}</p>;
-  if (current.payload.truncated) return <p className="prep-note" role="status" data-testid="map-partial">{{
+  if (current.payload.truncated || (span.endMin > 1440 && next?.status === 'OK' && next.payload.truncated)) return <>
+    <p className="prep-note" role="status" data-testid="map-partial">{{
     ko: '항공편 일부만 반환되어 동서·목적지 전체 비교를 확정할 수 없습니다. 항공편 화면에서 기록을 확인하세요.',
     en: 'Partial flight records: complete east/west and destination comparisons cannot be established. Check the flight board for records.',
     zh: '仅返回部分航班，无法确认完整的东西侧及目的地比较。请查看航班记录。',
     ja: '一部の便のみのため、東西・目的地の全体比較を確定できません。便の記録を確認してください。',
-  }[lang]}</p>;
+  }[lang]}</p>
+    {!current.payload.truncated && <button type="button" className="prep-link" data-testid="map-partial-reset" onClick={() => setPreset('DAY')}>{copy.presets.DAY[lang]}</button>}
+  </>;
 
   const shown = filter ? map.flights.filter((flight) => flight.group === filter) : map.flights;
   const atGate = selected ? shown.filter((flight) => `${flight.building}:${flight.gate}` === selected) : [];

@@ -19,7 +19,7 @@
     "app/globals.css": "86432fd8a64c35bf560587ae82d1b6fe0f262712557f59c3bcc8fff719caf114",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
     "app/layout.tsx": "5046b7a098cbea56b3c315af2033bbc3d846462584f2c27b97f8dc1bb4c49ec7",
-    "app/live-signals.tsx": "471ba0cc5bef5d10781ef8977596332ff61ef131b93cabc16ee6d348b6d821c7",
+    "app/live-signals.tsx": "4ecd519fd0b99f4b7c16a7e1df2cf8e80af3ff397d1867fd4a3c9c213dc54241",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "a01bb0bda26fcd8af56869bbabbc6ffcaac1057b9a2cb7c8798643dc6cd79d21",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
@@ -88,7 +88,7 @@
   "visualApproval20261003": {
     "file": "app/live-signals.tsx",
     "previous": "aa307e814a7f265e7ac3bd2d70976d6d7365f60b6af611888f9de76ad3635717",
-    "approved": "471ba0cc5bef5d10781ef8977596332ff61ef131b93cabc16ee6d348b6d821c7",
+    "approved": "4ecd519fd0b99f4b7c16a7e1df2cf8e80af3ff397d1867fd4a3c9c213dc54241",
     "reason": "Owner-approved C/D airport design and site-wide asset implementation; existing typography and data preserved. Explicit owner approval to change, test, merge and publish received in delegated task on 2026-10-03. Only this changed protected file refreshed; hash enforcement remains active."
   }
 }
