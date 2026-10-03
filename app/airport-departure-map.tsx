@@ -16,6 +16,7 @@ import {
 } from '../lib/airport-departure-map';
 import { flightLine, groupShare, statusText, leadLine, mapCopy as copy, mapShareText, windowCountsLine, windowText } from '../lib/airport-departure-map-copy';
 import type { DestinationGroup } from '../lib/airport-destinations';
+import { AirportConceptModel } from './airport-concept-model';
 
 /** "14:05" in KST, with the date in front when it is not the service date. */
 function kstClock(iso: string, date: string): string {
@@ -110,6 +111,15 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
 
   if (current === undefined) return <p className="prep-note" data-testid="map-loading">{copy.loading[lang]}</p>;
   if (current.status === 'FAILED' || !map) return <p className="prep-note" data-testid="map-failed">{copy.failed[lang]}</p>;
+  if (current.payload.truncated || (span.endMin > 1440 && next?.status === 'OK' && next.payload.truncated)) return <>
+    <p className="prep-note" role="status" data-testid="map-partial">{{
+    ko: '항공편 일부만 반환되어 동서·목적지 전체 비교를 확정할 수 없습니다. 항공편 화면에서 기록을 확인하세요.',
+    en: 'Partial flight records: complete east/west and destination comparisons cannot be established. Check the flight board for records.',
+    zh: '仅返回部分航班，无法确认完整的东西侧及目的地比较。请查看航班记录。',
+    ja: '一部の便のみのため、東西・目的地の全体比較を確定できません。便の記録を確認してください。',
+  }[lang]}</p>
+    {!current.payload.truncated && <button type="button" className="prep-link" data-testid="map-partial-reset" onClick={() => setPreset('DAY')}>{copy.presets.DAY[lang]}</button>}
+  </>;
 
   const shown = filter ? map.flights.filter((flight) => flight.group === filter) : map.flights;
   const atGate = selected ? shown.filter((flight) => `${flight.building}:${flight.gate}` === selected) : [];
@@ -126,6 +136,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
 
   return <div data-testid="departure-map" data-window={`${span.startMin}-${span.endMin}`} data-filter={filter ?? 'ALL'}>
     <p className="prep-note">{copy.intro[lang]}</p>
+    <AirportConceptModel map={map} lang={lang}/>
     <div className="date-nav-shortcuts" role="group" aria-label={copy.time[lang]} style={{ flexWrap: 'wrap' }}>
       {presets.map((value) => <button key={value} type="button" aria-pressed={preset === value} data-preset={value} style={{ whiteSpace: 'nowrap', flex: '0 0 auto' }}
         onClick={() => { setPreset(value); setSelected(null); }}>{copy.presets[value][lang]}</button>)}
@@ -146,7 +157,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
     <p data-testid="map-lead">{leadLine(map, lang)}</p>
 
     {!map.flights.length ? <p className="prep-note" data-testid="map-empty">{copy.empty[lang]}</p> : <>
-      <h4 style={{ margin: '12px 0 0' }}>{copy.destinations[lang]}</h4>
+      <OpenableList testId="map-destinations" summary={copy.destinations[lang]}>{() => <>
       <table data-testid="map-groups" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
         <tbody>
           {map.groups.map((row) => {
@@ -170,17 +181,19 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
         </tbody>
       </table>
       <p className="prep-note" data-testid="map-groups-basis">{copy.destinationNote(map.flights.length, map.unknownDestination, lang)}</p>
+      </>}</OpenableList>
       {filter && <p><button type="button" className="prep-link" onClick={() => setFilter(null)} data-testid="map-clear-filter"
         style={{ border: 0, padding: 0, background: 'transparent', color: 'var(--blue)', cursor: 'pointer', font: 'inherit' }}>{copy.clearFilter[lang]}</button>
         {' '}<span className="prep-note">({copy.filtered[lang]}: {copy.groups[filter][lang]} · {shown.length})</span></p>}
 
-      <p className="prep-note" style={{ marginTop: 12 }}>{copy.axis[lang]}</p>
+      <OpenableList testId="map-official-coordinates" summary={copy.axis[lang]}>{() => <>
       {buildingsOf(terminal).map((building) => <BuildingMap key={building} lang={lang} building={building} map={map} flights={shown} selected={selected} onSelect={setSelected}/>)}
       <p className="prep-note">{copy.schematic[lang]}</p>
       {selected && <div data-testid="map-gate-flights">
         <h4 style={{ margin: '10px 0 0' }}>{copy.gate[lang]} {selected.split(':')[1]} · {copy.building[selected.split(':')[0] as MapBuilding][lang]}</h4>
         {atGate.length ? <FlightRows lang={lang} flights={atGate} testId="map-gate-list"/> : <p className="prep-note">{copy.noFlightsAtGate[lang]}</p>}
       </div>}
+      </>}</OpenableList>
 
       {unplaced.length > 0 && <OpenableList className="prep-evidence" testId="map-unplaced" summary={<>{copy.unplacedTitle[lang]} {unplaced.length}</>}>{() => <>
         <p className="prep-note">{copy.noGate[lang]} {map.unplaced.noGate.filter((flight) => !filter || flight.group === filter).length} · {copy.notOnMap[lang]} {map.unplaced.notOnMap.filter((flight) => !filter || flight.group === filter).length}</p>
@@ -196,4 +209,3 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
     {copied === 'FAILED' && <><p className="prep-note" role="status">{copy.copyFailed[lang]}</p><pre data-testid="map-share-text" style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>{share}</pre></>}
   </div>;
 }
-

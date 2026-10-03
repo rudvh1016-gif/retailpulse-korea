@@ -81,7 +81,7 @@ function repositoryFiles(root, out = []) {
       repositoryFiles(path, out);
       continue;
     }
-    if (/\.(ts|tsx|mjs|js|yml|yaml)$/.test(path) && statSync(path).size < 2_000_000) out.push(path);
+    if (/\.(ts|tsx|mjs|js|yml|yaml)$/.test(path) && statSync(path).size < 2_000_000) out.push(path.replaceAll('\\', '/'));
   }
   return out;
 }

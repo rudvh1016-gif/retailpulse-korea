@@ -2,6 +2,7 @@
 import { demandCopy, demandLevel, AreaDemandCard, usePresentationClock } from "./area-demand-card";
 import { passengerCopy } from "../lib/passenger-copy";
 import { AirportFlowFigure } from "./airport-flow-figure";
+import { AirportMonthComparison } from './airport-month-comparison';
 import { CountUpNumber } from "./count-up-number";
 import { passengerReferenceSum } from "../lib/passenger-reference-sum";
 import { usableComparison, validPopulationRange, kstStamp, kstDay, peopleRange, populationFlow } from "../lib/demand-presentation";
@@ -11,7 +12,8 @@ import {flightBoardingLocation} from "../lib/flight-scope";
 import { SeoulContextCard, HolidayContext, contextText } from "./operational-context";
 import type { SeoulContext } from "../lib/seoul-context";
 import type { compareComposition } from "../lib/airport-composition-history";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
+const AirportGatePillars = lazy(() => import("./airport-gate-pillars"));
 import type { Lang } from "./retailpulse-data";
 import { friendlyCheckpointName, rankCurrentDepartureHallCheckpoints } from "../lib/airport-today-summary";
 import {
@@ -1712,8 +1714,11 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
       <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
         {days.map((day, index) => day.total === null
           ? <rect key={day.date} className="airport-month-gap" x={x(index) - barWidth / 2} y={height - 1.5} width={barWidth} height={1.5} />
-          : <rect key={day.date} className="airport-month-bar" data-selected={day.date === shownDay.date || undefined}
-              x={x(index) - barWidth / 2} y={barY(day.total)} width={barWidth} height={Math.max(1, height - barY(day.total))} />)}
+          : <g key={day.date}><rect className="airport-month-bar" data-selected={day.date === shownDay.date || undefined}
+              x={x(index) - barWidth / 2} y={barY(day.total)} width={barWidth} height={Math.max(0, height - barY(day.total))} />
+              {day.total > 0 && <><path className="airport-month-side" d={`M${x(index)+barWidth/2} ${barY(day.total)} l.8 -1.2 V${height-1.2} l-.8 1.2 Z`}/>
+                <path className="airport-month-cap" d={`M${x(index)-barWidth/2} ${barY(day.total)} l.8 -1.2 h${barWidth} l-.8 1.2 Z`}/></>}
+            </g>)}
       </svg>
       <div className="airport-month-picks" role="group" aria-label={mtdCopy.daily[lang]}>
         {days.map((day) => <button key={day.date} type="button" aria-pressed={day.date === shownDay.date} style={{ flex: `0 0 ${100 / slots}%` }}
@@ -1891,6 +1896,7 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
               ? <b className="airport-glance-change">{comparisonValue(mtd.change)}</b>
               : <small>{mtd.previousAbsentReason === "NO_SUCH_DAY" ? mtdCopy.noSuchDay[lang] : mtdCopy.bothComplete[lang]}</small>}</dd></div>
         </dl>
+        <AirportMonthComparison current={mtd.current.total} previous={mtd.previous?.total ?? null} currentLabel={shortRange(mtd.current.start, mtd.current.end)} previousLabel={mtd.previous ? shortRange(mtd.previous.start, mtd.previous.end) : ''} numberLocale={numberLocale} unit={peopleUnit}/>
         <AirportMonthChart days={mtd.current.days} lang={lang} numberLocale={numberLocale} unit={peopleUnit} />
       </section>}
       <div className="transfer-forecast" data-testid="transfer-forecast">
@@ -1924,7 +1930,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   const summary = useLiveSummary(date);
   const presentationNow = usePresentationClock(summary?.generatedAt ?? "");
   const airport = summary?.airport;
-  if (!summary) return <LiveLoadMessage loading={summary === undefined} lang={lang} />;
+  if (!summary) return <div className={summary === undefined ? "airport-summary-reserved" : undefined}><LiveLoadMessage loading={summary === undefined} lang={lang} /></div>;
   if (!airport) return <div className="airport-unavailable" role="status"><strong>{airportTodayText.unavailable[lang]}</strong></div>;
   const numberLocale = airportLocale(lang);
   const peopleUnit = { ko: "명", en: " people", zh: "人", ja: "人" }[lang];
@@ -1951,11 +1957,6 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   const gateCollected = collectedText(gateRetrievedAt);
 
   const scopeLabel = airportTodayText.scope[lang][terminal];
-  const gateList = isAll ? airport.busyDepartureGates ?? [] : airport.busyDepartureGatesByTerminal?.[terminal] ?? [];
-  // Bars are read against the busiest gate, not against the day's total: the
-  // question is which gate leads, and a share-of-total scale would flatten
-  // all five into slivers. Guarded so an all-zero list cannot divide by zero.
-  const topGateFlights = Math.max(1, ...gateList.map((row) => row.flights));
   const ranking = isAll ? airport.airlineRanking?.all ?? null : airport.airlineRanking?.byTerminal?.[terminal] ?? null;
   const noFlightsText = summary?.dayRelation === "PAST" ? airportTodayText.noFlightsForDate[lang] : airportTodayText.noFlightsToday[lang];
   const rankedCheckpoints = rankCurrentDepartureHallCheckpoints(
@@ -1990,7 +1991,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   const distinctSectionFreshness = [...new Set([passengerRetrievedAt, flightsRetrievedAt, gateRetrievedAt].map(plainText).filter((value): value is string => Boolean(value)))];
   const perMetric = (value: string | null) => (sharesOneFreshness ? null : value);
 
-  return <section className="airport-today" aria-label={airportTodayText.title[lang]}>
+  return <section className="airport-today airport-approved" aria-label={airportTodayText.title[lang]}>
     {/* LOCK 4. The day's official size and the hour-by-hour shape of that same
         size are one question, so they are one block — and the chart has to sit
         INSIDE the brief to land between the limitation note and the at-a-glance
@@ -2086,35 +2087,9 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         tabIndex={0}
         aria-labelledby="airport-composition-tab-gates"
       >
-        <div className="airport-composition-panel-head"><h4>{airportTodayText.gatesTitle[lang]}</h4><p>{airportTodayText.gatesNote[lang]}</p></div>
-        {/*
-          * The ranking IS the chart.
-          *
-          * The owner asked to see, at a glance, which gates send the most
-          * flights. A second chart under the same five rows would render the
-          * same five numbers twice and cost a second layout pass; a bar
-          * drawn inside each row says it once. The bar is scaled to the
-          * leader, so rank 01 is always full width and the rest are read
-          * against it — which is the comparison the question asks for.
-          *
-          * Pure CSS width, computed at render from numbers the page already
-          * holds: no chart library, no measurement, no extra request, and
-          * nothing to run after paint.
-          */}
-        {gateList.length ? <ol className="airport-gate-list airport-gate-chart">
-          <li className="airport-gate-head" aria-hidden="true"><span>{airportTodayText.rankLabel[lang]}</span><strong>{isAll ? airportTodayText.terminalGateColumn[lang] : airportTodayText.gateColumn[lang]}</strong><b>{airportTodayText.departuresColumn[lang]}</b></li>
-          {gateList.map((row, index) => <li className="airport-gate-row" key={`${row.terminal ?? "unknown"}-${row.gate}`}>
-            <span>{String(index + 1).padStart(2, "0")}</span>
-            <strong>{isAll && row.terminal ? <i>{row.terminal}</i> : null}Gate {row.gate}</strong>
-            <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}</b>
-            <em
-              className="airport-gate-bar"
-              style={{ width: `${Math.max(2, Math.round((row.flights / topGateFlights) * 100))}%` }}
-              aria-hidden="true"
-            />
-          </li>)}
-        </ol> : <p className="airport-empty-line">{flightsCount === null ? noFlightsText : airportTodayText.noGateList[lang]}</p>}
-        {gateList.length > 0 && <p className="airport-gate-chart-note">{airportTodayText.gateChartNote[lang]}</p>}
+        <Suspense fallback={<p className="airport-empty-line">{noFlightsText}</p>}>
+          <AirportGatePillars key={`${terminal}:${summary.serviceDateKst}`} lang={lang} terminal={terminal} date={summary.serviceDateKst}/>
+        </Suspense>
       </section>}
 
       {compositionView === "airlines" && <section
@@ -2947,6 +2922,9 @@ export function HomeTodayBrief({ lang, selected, onSelect, date = null }: { lang
         const row = summary.areas[area]?.realtime;
         const valid = validPopulationRange(row) && kstDay(row!.observedAt) === summary.serviceDateKst;
         return <button key={area} className={selected === area ? 'selected' : ''} aria-pressed={selected === area} onClick={() => onSelect(area)}>
+          {/* Decorative district concepts, independent of measured population and official maps. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="district-menu-model" src={`/airport-models/district-${area}.webp`} width="1200" height="900" alt="" loading="lazy" decoding="async"/>
           <span>{areaNames[area][lang]}</span><strong>{valid ? demandLevel(row!.congestionLevel, lang) : demandCopy.missing[lang]}</strong>
           <small>{valid ? `${peopleRange(row!,lang)}${text.foreignPeople[lang]} · ${kstStamp(row!.observedAt)} ${demandCopy.observed[lang]}` : '—'}</small>
         </button>;

@@ -19,7 +19,7 @@ export function loadFlights(date: string): Promise<Loaded> {
     request = fetch(`/api/live/flights?date=${encodeURIComponent(date)}`, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(15_000) })
       .then(async (response) => {
         const payload = response.ok ? await response.json() as FlightsPayload : null;
-        return payload?.mode === 'live-flights' ? { status: 'OK' as const, payload } : { status: 'FAILED' as const };
+        return payload?.mode === 'live-flights' && Array.isArray(payload.flights) ? { status: 'OK' as const, payload } : { status: 'FAILED' as const };
       })
       .catch(() => ({ status: 'FAILED' as const }));
     pending.set(date, request);

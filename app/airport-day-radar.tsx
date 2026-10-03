@@ -135,6 +135,15 @@ export default function DayRadarBlock({ lang, date, dayRelation, terminal, nowIs
         const lines = similarLines(item, current, lang);
         const isOpen = open === item.day.day;
         return <li key={item.day.day} data-day={item.day.day}>
+          <svg className="similar-calendar" viewBox="0 0 56 70" width="56" height="70" aria-hidden="true">
+            <path d="M4 12 L45 12 L51 6 L10 6 Z" fill="#e5f5fc"/>
+            <path d="M45 12 L51 6 L51 58 L45 64 Z" fill="#81b3cd"/>
+            <path d="M4 12 H45 V64 H4 Z" fill="#d5ecf8"/>
+            <path d="M4 12 H45 V22 H4 Z" fill="#b5d8d0"/>
+            <path d="M13 5 V16 M34 5 V16" stroke="#81b3cd" strokeWidth="3"/>
+            <text x="24" y="36" textAnchor="middle">{Number(item.day.day.slice(5,7))}</text>
+            <text x="24" y="53" textAnchor="middle">{Number(item.day.day.slice(8,10))}</text>
+          </svg>
           <strong>{copy.similarLabel[lang]}: {dayLabel(item.day.day, lang)}</strong>
           <br/>{copy.alike[lang]}: {lines.alike}
           <br/>{copy.differ[lang]}: {lines.differ}

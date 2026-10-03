@@ -4,6 +4,7 @@ import { useId, useState } from 'react';
 import type { Lang, Terminal } from './retailpulse-data';
 import { checklistPhaseLabels, checklistPhaseOrder, industryProfiles, type IndustryId } from '../lib/industry-guidance';
 import { airportStoreAreas, industryPlaybooks, type AirportStoreArea } from '../lib/industry-playbooks';
+import './airport-models.css';
 
 const text = (lang: Lang, ko: string, en: string, zh: string, ja: string) => ({ ko, en, zh, ja })[lang];
 
@@ -29,6 +30,11 @@ export function IndustryGuide({ lang, industry, onIndustryChange, airport }: {
     <div className="industry-tabs" role="group" aria-label={text(lang, '업종 선택', 'Select a business type', '选择业态', '業種を選択')}>
       {(Object.keys(industryProfiles) as IndustryId[]).map(value => <button key={value} type="button" className={industry === value ? 'active' : ''} aria-pressed={industry === value} onClick={() => onIndustryChange(value)}>{industryProfiles[value].label[lang]}</button>)}
     </div>
+    {airport && <figure className="airport-shop-model">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={`/airport-models/shop-${industry}.webp`} width="1200" height="900" alt="" loading="lazy" decoding="async"/>
+      <figcaption className="prep-note">{text(lang, '업종별 개념 매장 모형 · 실제 공항 매장 위치가 아닙니다.', 'Concept store model by business type, not an actual airport store location.', '行业概念店铺模型，并非实际机场店铺位置。', '業種別の概念店舗模型です。実際の空港店舗の位置ではありません。')}</figcaption>
+    </figure>}
     {airport && <div className="airport-operating-context">
       <div className="operating-location">
         <label htmlFor={`${id}-location`}>{text(lang, '내 매장 위치', 'My store area', '我的店铺区域', '店舗の区域')}</label>

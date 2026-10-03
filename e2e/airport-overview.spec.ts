@@ -43,6 +43,8 @@ test('the Airport page departures tab shows east/west, the open gate map and des
   const t1 = overview.getByTestId('overview-T1');
   await expect(t1.getByTestId('flight-split')).toBeVisible();
   await expect(t1.getByTestId('departure-map')).toBeVisible();
+  await expect(t1.getByTestId('map-groups')).not.toBeVisible();
+  await t1.getByTestId('map-destinations').locator('summary').click();
   await expect(t1.getByTestId('map-groups')).toBeVisible();
   await expect(overview.getByTestId('overview-T2')).toHaveCount(0);
   await t1.getByTestId('day-radar-section').scrollIntoViewIfNeeded();
