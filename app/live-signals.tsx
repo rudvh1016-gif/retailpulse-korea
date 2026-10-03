@@ -1589,6 +1589,7 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
       {timeline.length > 0
         ? <AirportFlowFigure
           timeline={timeline}
+          terminal={terminal}
           layers={isAll ? arrival?.passengerForecastTimelineByTerminal ?? null : null}
           lang={lang}
           peakStartAt={peak?.targetStartAt ?? null}
@@ -2007,6 +2008,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         ? <AirportFlowFigure
           timeline={timeline}
           layers={isAll ? airport.passengerForecastTimelineByTerminal ?? null : null}
+          terminal={terminal}
           lang={lang}
           peakStartAt={peak?.targetStartAt ?? null}
           nowBandStart={nowBandStart}

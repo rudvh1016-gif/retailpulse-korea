@@ -19,7 +19,7 @@
     "app/globals.css": "86432fd8a64c35bf560587ae82d1b6fe0f262712557f59c3bcc8fff719caf114",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
     "app/layout.tsx": "5046b7a098cbea56b3c315af2033bbc3d846462584f2c27b97f8dc1bb4c49ec7",
-    "app/live-signals.tsx": "fdb51c87224ba10e0d9eaa2b4b9bd41d95b8810a157c308ec6b9b86aa2773930",
+    "app/live-signals.tsx": "f5f69ca0f6752048341315b6871a9ceefbc65951f7e98956e95b005c267d0176",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "a01bb0bda26fcd8af56869bbabbc6ffcaac1057b9a2cb7c8798643dc6cd79d21",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
@@ -108,6 +108,16 @@
         "file": "app/retailpulse-app.tsx",
         "previous": "4ce44aaae785fd2a8605f56d59538f2602f00a2b0fec92ef2073243bdf2ba5b6",
         "approved": "4b0794428f2e5ab209303e00e3d786423745a4ca3af177c154f7f91e64bdb258"
+      }
+    ]
+  },
+  "ownerTerminalLabelApproval20261003": {
+    "reason": "Owner explicitly requested localized terminal identity immediately above the concept airport model and synchronized terminal data. Existing typography preserved; protected-file hash enforcement remains active.",
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "fdb51c87224ba10e0d9eaa2b4b9bd41d95b8810a157c308ec6b9b86aa2773930",
+        "approved": "f5f69ca0f6752048341315b6871a9ceefbc65951f7e98956e95b005c267d0176"
       }
     ]
   }
