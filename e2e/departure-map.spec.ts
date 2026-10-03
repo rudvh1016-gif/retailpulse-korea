@@ -49,6 +49,10 @@ async function openMap(page: Page, options: Parameters<typeof open>[1] = {}) {
   await opened.sides.getByTestId('departure-map-section').locator('summary').click();
   const map = opened.sides.getByTestId('departure-map');
   await expect(map).toBeVisible();
+  await expect(map.getByTestId('map-groups')).not.toBeVisible();
+  await map.getByTestId('map-destinations').locator('summary').click();
+  await expect(map.getByTestId('map-T2')).toHaveCount(0);
+  await map.getByTestId('map-official-coordinates').locator('summary').click();
   return { ...opened, map };
 }
 

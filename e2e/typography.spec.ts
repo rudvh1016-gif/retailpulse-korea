@@ -1,3 +1,4 @@
+import { routeGateFlights } from './gate-model-fixture';
 import { expect, test } from "@playwright/test";
 
 import { lookupAirline } from "../lib/airline-country";
@@ -545,34 +546,17 @@ test("the airport screen separates 출국 and 입국, and 입국 shows arrival p
  * and the note under the chart says so, because a reader who assumes
  * "share of all flights" would misread every row but the first.
  */
-test("the busiest-gate ranking is drawn as a chart scaled to its leader", async ({ page }) => {
+test("the approved gate comparison retains live counts and the public typography", async ({ page }) => {
+  await routeGateFlights(page);
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  await page.goto("/ko/airport");
-  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
-
-  const rows = page.locator(".airport-gate-chart .airport-gate-row");
-  await expect(rows.first()).toBeVisible();
-
-  const bars = await page.evaluate(() => Array.from(
-    document.querySelectorAll<HTMLElement>(".airport-gate-chart .airport-gate-row"),
-  ).map((row) => ({
-    flights: Number((row.querySelector("b")?.textContent ?? "").replace(/[^0-9]/g, "")),
-    width: row.querySelector<HTMLElement>(".airport-gate-bar")!.getBoundingClientRect().width,
-    track: row.getBoundingClientRect().width,
-  })));
-
-  expect(bars.length).toBeGreaterThan(1);
-  // Rank 01 fills the row; it is the scale everything else is read against.
-  expect(bars[0].width / bars[0].track).toBeGreaterThan(0.98);
-  // Every bar is proportional to its own count, and never longer than the leader's.
-  for (const bar of bars) {
-    const expected = bar.flights / bars[0].flights;
-    expect(Math.abs(bar.width / bars[0].width - expected)).toBeLessThan(0.03);
-  }
-  // Ranked descending, so the chart and the numbers can never disagree.
-  for (let i = 1; i < bars.length; i += 1) expect(bars[i].flights).toBeLessThanOrEqual(bars[i - 1].flights);
-
-  await expect(page.locator(".airport-gate-chart-note")).toContainText("전체 출발편 중 비중이 아닙니다");
+  await page.goto('/ko/airport');
+  const model=page.getByTestId('gate-pillar-model');
+  await expect(model.locator('.gate-pillar').first()).toHaveAttribute('data-flights','18');
+  await expect(model.locator('.gate-pillar').first()).toHaveAttribute('data-gate','27');
+  await expect(model).toContainText('실제 위치');
+  const fonts=await model.locator('h4').evaluate(el=>{const s=getComputedStyle(el);return {size:s.fontSize,family:s.fontFamily};});
+  expect(fonts.size).toBe('16px');
+  expect(fonts.family).toContain('KORETAIL Sans Variable');
 });
 
 /**
@@ -612,7 +596,7 @@ function loadsChartLibrary(rawUrl: string): boolean {
     segment.split(/[.\-_@]/).some((token) => CHART_LIBRARY_TOKENS.has(token)));
 }
 
-test("the gate chart adds no script, no library and no request", async ({ page }) => {
+test("the gate model shares the full flight read without a chart or 3D library", async ({ page }) => {
   // The matcher itself is worth asserting: it is the reason this guard means
   // anything, and the reason it stopped crying wolf at a dep hash.
   expect(loadsChartLibrary("http://x/node_modules/d3/dist/d3.js")).toBe(true);
@@ -621,6 +605,7 @@ test("the gate chart adds no script, no library and no request", async ({ page }
   expect(loadsChartLibrary("http://x/node_modules/.vite/deps/chunk-CO3PsZeE.js?v=a2fd3205")).toBe(false);
   expect(loadsChartLibrary("http://x/node_modules/vinext/dist/utils/hash.js?v=a2fd3205")).toBe(false);
 
+  await routeGateFlights(page);
   const extraRequests: string[] = [];
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   page.on("request", (request) => {
@@ -628,15 +613,11 @@ test("the gate chart adds no script, no library and no request", async ({ page }
   });
   await page.goto("/ko/airport");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
-  await expect(page.locator(".airport-gate-chart .airport-gate-row").first()).toBeVisible();
+  await expect(page.locator(".gate-pillar").first()).toBeVisible();
 
   expect(extraRequests, `a charting library was loaded: ${extraRequests.join(", ")}`).toEqual([]);
-  // Drawn by CSS width alone — no canvas, no svg, no inline script.
-  expect(await page.locator(".airport-gate-chart canvas, .airport-gate-chart svg").count()).toBe(0);
-  const widthsAreInline = await page.evaluate(() => Array.from(
-    document.querySelectorAll<HTMLElement>(".airport-gate-bar"),
-  ).every((bar) => /^\d+(\.\d+)?%$/.test(bar.style.width)));
-  expect(widthsAreInline, "each bar's width is a plain percentage set at render").toBe(true);
+  await expect(page.locator('.airport-gate-model canvas')).toHaveCount(0);
+  await expect(page.locator('.gate-pillar svg').first()).toBeVisible();
 });
 
 /**
@@ -999,7 +980,7 @@ for (const section of ["출국", "입국"] as const) {
     // A real stroke. A zero-width box is the exact shape WebKit refuses to paint.
     expect(marker!.strokeWidth, "the marker must have a real stroke width").toBeGreaterThanOrEqual(1);
     // 출국 sits on the dusk poster (white rule); 입국 keeps the standalone sky figure (dusk rule).
-    expect(marker!.stroke, "the rule is painted ink, not a border").toBe(section === "출국" ? "rgb(255, 255, 255)" : "rgb(75, 107, 158)");
+    expect(marker!.stroke, "the rule is painted ink, not a border").toBe(section === "출국" ? "rgb(0, 0, 0)" : "rgb(75, 107, 158)");
     expect(marker!.height, "the marker must span the plot").toBeGreaterThan(100);
     expect(marker!.borderLeftWidth, "a border is what stopped rendering on iOS; do not go back to it").toBe(0);
     expect(marker!.label).toBe("현재 시각 14:10");

@@ -594,7 +594,7 @@ test("오늘 출발편 구성은 반복 머리말 없이 세 탭을 품는 한 �
   assert.doesNotMatch(summary, /PHYSICAL DEPARTURES|OPERATING AIRLINES|airlinesJump|airport-jump-link/);
 
   // 단일 터미널에서는 행마다 같은 terminal을 반복하지 않는다.
-  assert.match(summary, /isAll && row\.terminal/);
+  assert.match(summary, /AirportGatePillars[^\n]+terminal=\{terminal\}/);
   // 제목·설명·panel은 min-height가 없는 전용 규칙이고, 넓은 화면에서도
   // 행의 의미 단위가 860px 안에 머문다.
   assert.match(styles, /\.airport-composition-head \{[^}]*width: min\(100%, 860px\)/);

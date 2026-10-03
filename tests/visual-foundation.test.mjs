@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import { REVEAL_MS, STATE_MS, countUp, reducedMotion } from "../lib/motion.ts";
@@ -32,8 +33,8 @@ test("GSAP is never imported statically by page code (it loads only when a figur
       if (/^\s*import\s+[^;]*from\s+["']gsap(\/[^"']*)?["']/m.test(text)) offenders.push(path);
     }
   };
-  walk(new URL("../app", import.meta.url).pathname);
-  walk(new URL("../lib", import.meta.url).pathname);
+  walk(fileURLToPath(new URL("../app", import.meta.url)));
+  walk(fileURLToPath(new URL("../lib", import.meta.url)));
   assert.deepEqual(offenders, []);
   assert.match(readFileSync(new URL("../lib/motion.ts", import.meta.url), "utf8"), /import\("gsap"\)/);
 });

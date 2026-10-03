@@ -450,11 +450,11 @@ test("A5 arrival forecast replaces Seoul departure rows with compact, coverage-s
 test("airport detail UI uses editorial rows, friendly checkpoints and honest partial-state copy", async () => {
   const signals = await read("../app/live-signals.tsx");
   const css = await read("../app/globals.css");
-  assert.match(signals, /busyDepartureGatesByTerminal/);
+  assert.match(signals, /AirportGatePillars/);
   assert.match(signals, /friendlyCheckpointName\(row\.zone, lang\)/);
   assert.match(signals, /rankCurrentDepartureHallCheckpoints/);
   assert.match(signals, /일부 시간대가 누락되어 하루 전체 합계와 피크는 표시하지 않습니다/);
-  assert.match(signals, /className="airport-gate-row"/);
+  assert.match(await read("../app/airport-gate-pillars.tsx"), /data-testid="gate-pillar-model"/);
   assert.match(css, /\.airport-composition-panel/);
   assert.match(css, /\.airport-gate-row/);
 });
@@ -463,17 +463,18 @@ test("airport detail UI uses editorial rows, friendly checkpoints and honest par
  * The busiest-gate list must rank several gates, not crown a single winner:
  * one gate out of hundreds of departures says almost nothing on its own.
  */
-test("the busiest-gate list is a ranking with terminal, gate and flight count", async () => {
+test("the approved gate model ranks complete API rows and retains every tied leader", async () => {
   const signals = await read("../app/live-signals.tsx");
   const summary = await read("../lib/airport-today-summary.ts");
   assert.match(summary, /busyDepartureGates: coverage >= minimumCoverage \? ranked\.slice\(0, 5\) : \[\]/);
-  assert.match(signals, /gateList\.map\(\(row, index\)/);
-  assert.match(signals, /String\(index \+ 1\)\.padStart\(2, "0"\)/);
-  assert.match(signals, /Gate \{row\.gate\}/);
+  const model = await read("../app/airport-gate-pillars.tsx");
+  assert.match(signals, /AirportGatePillars/);
+  assert.match(model, /useFlights\(date\)/);
+  assert.match(model, /leadingGates\(gates\)/);
   assert.match(signals, /terminalGateColumn/);
   assert.match(signals, /departuresColumn/);
   // Coverage gating stays: a ranking built on partial gate data is withheld.
-  assert.match(signals, /noGateList/);
+  assert.match(model, /loaded\.payload\.truncated/);
 });
 
 test("current briefs use existing official forecasts and deterministic editorial copy without runtime AI", async () => {

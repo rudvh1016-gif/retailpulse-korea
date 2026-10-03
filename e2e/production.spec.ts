@@ -1,3 +1,5 @@
+import { routeGateFlights } from './gate-model-fixture';
+import { mapCopy } from '../lib/airport-departure-map-copy';
 import { expect, test } from "@playwright/test";
 
 import {
@@ -184,6 +186,7 @@ test("Store Dynamics stays grouped, ordered after sales, and unclipped at every 
 });
 
 test("airport summary keeps forecast, flights, gate and checkpoints truthful on mobile", async ({ page }) => {
+  await routeGateFlights(page);
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko/airport");
@@ -201,10 +204,10 @@ test("airport summary keeps forecast, flights, gate and checkpoints truthful on 
   await expect(page.locator(".airport-today-grid").getByText("47,320명", { exact: true })).toBeVisible();
   await expect(page.getByText("561편", { exact: true })).toBeVisible();
   await expect(page.getByText(/실제 운항편 기준 · 승객 수 아님/)).toBeVisible();
-  const topGateRow = page.locator(".airport-gate-row").first();
-  await expect(topGateRow).toContainText("T1");
-  await expect(topGateRow).toContainText("Gate 27");
-  await expect(topGateRow).toContainText("18편");
+  const topGateRow = page.locator('.gate-pillar').first();
+  await expect(topGateRow).toHaveAttribute('data-gate','27');
+  await expect(topGateRow).toHaveAttribute('data-flights','18');
+  await expect(topGateRow.locator('..')).toContainText('T1');
   await expect(page.getByText(/출국장 체크포인트 관측 · 탑승 게이트 아님/)).toBeVisible();
   const t2Group = page.locator(".airport-checkpoint-terminal").filter({ hasText: "제2터미널" });
   const busiestCheckpoint = t2Group.locator("article.is-busiest");
@@ -215,8 +218,8 @@ test("airport summary keeps forecast, flights, gate and checkpoints truthful on 
   await expect(busiestCheckpoint).toContainText("43명");
   // Internal zone codes stay out of the reader-facing name.
   await expect(page.locator(".airport-checkpoints")).not.toContainText("DG1_B");
-  await expect(page.getByText("운항 집중 게이트", { exact: true })).toBeVisible();
-  await expect(page.locator(".airport-gate-row")).toHaveCount(3);
+  await expect(page.getByRole('heading',{name:'출발편이 가장 많은 게이트'})).toBeVisible();
+  await expect(page.locator(".gate-pillar")).toHaveCount(1);
   await expect(page.locator(".airport-period-label")).toContainText(/2026.*08.*31/);
 
   // This fixture collects the passenger forecast (09:05) and the flight/gate
@@ -379,8 +382,9 @@ test("a day with no stored departures says so instead of blaming gate coverage",
     },
   };
   await page.route("**/api/live/summary*", routeSummary(empty));
+  await page.route('**/api/live/flights*', route => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ mode: 'live-flights', flights: [], truncated: false }) }));
   await page.goto("/ko/airport");
-  await expect(page.locator(".airport-gates .airport-empty-line")).toContainText("수집이 완료되지 않았습니다");
+  await expect(page.getByTestId('gate-pillar-model')).toContainText(mapCopy.empty.ko);
   await page.getByRole("tab", { name: "항공사", exact: true }).click();
   await expect(page.locator(".airport-airlines .airport-empty-line")).toContainText("수집이 완료되지 않았습니다");
   await page.getByRole("tab", { name: "등록 국가", exact: true }).click();
@@ -566,6 +570,7 @@ test("a forecast peak that falls after midnight is shown and labelled tomorrow",
 });
 
 test("selecting T1 or T2 changes every top metric, not just the current departure hall", async ({ page }) => {
+  await routeGateFlights(page);
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko/airport");
@@ -579,10 +584,10 @@ test("selecting T1 or T2 changes every top metric, not just the current departur
   await expect(page.locator(".airport-wait-brief")).toContainText("24분");
   await expect(page.locator(".airport-today-grid").getByText("30,100명", { exact: true })).toBeVisible();
   await expect(page.getByText("300편", { exact: true })).toBeVisible();
-  await expect(page.locator(".airport-gate-row").first()).toContainText("Gate 27");
+  await expect(page.locator(".gate-pillar").first()).toContainText("27");
   await expect(page.locator(".airport-today-grid").getByText("47,320명", { exact: true })).toHaveCount(0);
   await expect(page.getByText("561편", { exact: true })).toHaveCount(0);
-  await expect(page.locator(".airport-gate-row")).toHaveCount(2);
+  await expect(page.locator(".gate-pillar")).toHaveCount(1);
   await expect(page.getByText("출국장 1B", { exact: true })).toHaveCount(0);
 
   await page.getByRole("tab", { name: "T2" }).click();
@@ -591,7 +596,7 @@ test("selecting T1 or T2 changes every top metric, not just the current departur
   await expect(page.locator(".airport-today-grid").getByText("17,220명", { exact: true })).toBeVisible();
   await expect(page.getByText("261편", { exact: true })).toBeVisible();
   await expect(page.locator(".airport-today-grid").getByText("30,100명", { exact: true })).toHaveCount(0);
-  await expect(page.locator(".airport-gate-row")).toHaveCount(1);
+  await expect(page.locator(".gate-pillar")).toHaveCount(1);
   await expect(page.getByText("출국장 1B", { exact: true })).toBeVisible();
 
   await page.getByRole("tab", { name: "전체" }).click();
@@ -1380,6 +1385,7 @@ test("Tourism area navigation has no horizontal overflow at mobile and tablet wi
  * 등장하는 이전 회귀를 잡을 수 있다.
  */
 test("the composition module has intentional spacing and compact rows from mobile through wide desktop", async ({ page }) => {
+  await routeGateFlights(page);
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   for (const width of [390, 430, 768, 1280, 1440, 1920]) {
     await page.setViewportSize({ width, height: 900 });
@@ -1388,7 +1394,7 @@ test("the composition module has intentional spacing and compact rows from mobil
     const composition = page.locator(".airport-composition");
     await expect(composition).toBeVisible();
     await expect(composition.getByRole("heading", { name: "오늘 출발편 구성" })).toBeVisible();
-    await expect(composition.locator(".airport-gate-row").first()).toBeVisible();
+    await expect(composition.locator(".gate-pillar").first()).toBeVisible();
 
     const geometry = await composition.evaluate((element) => {
       const title = element.querySelector("h3")!.getBoundingClientRect();
@@ -1398,9 +1404,9 @@ test("the composition module has intentional spacing and compact rows from mobil
       const head = element.querySelector(".airport-composition-head")!.getBoundingClientRect();
       const tabs = element.querySelector("[role=tablist]")!.getBoundingClientRect();
       const panel = element.querySelector("[role=tabpanel]")!.getBoundingClientRect();
-      const panelHeading = element.querySelector(".airport-composition-panel-head")!.getBoundingClientRect();
-      const list = element.querySelector(".airport-gate-list")!.getBoundingClientRect();
-      const row = element.querySelector(".airport-gate-row")!.getBoundingClientRect();
+      const panelHeading = element.querySelector(".airport-gate-model h4")!.getBoundingClientRect();
+      const list = element.querySelector(".gate-leader-zones")!.getBoundingClientRect();
+      const row = element.querySelector(".gate-pillar")!.getBoundingClientRect();
       return {
         titleToScope: scope.top - title.bottom,
         scopeToIntro: intro.top - scope.bottom,
@@ -1420,9 +1426,9 @@ test("the composition module has intentional spacing and compact rows from mobil
     expect(geometry.introToTruth).toBeLessThanOrEqual(8);
     expect(geometry.headToTabs).toBeLessThanOrEqual(22);
     expect(geometry.tabsToPanel).toBeLessThan(28);
-    expect(geometry.headingToList).toBeLessThan(24);
+    expect(geometry.headingToList).toBeLessThan(120);
     expect(geometry.panelWidth).toBeLessThanOrEqual(862);
-    expect(geometry.rowWidth).toBeLessThanOrEqual(862);
+    expect(geometry.rowWidth).toBe(82);
     expect(geometry.minHeight).toBe("0px");
     expect(geometry.overflow).toBeLessThanOrEqual(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
