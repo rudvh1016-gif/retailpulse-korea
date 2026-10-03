@@ -41,6 +41,7 @@ const copy = {
 } as const;
 
 const REVEAL_TOTAL_MS = REVEAL_MS * 2;
+const kstClock = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false });
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 /** Rough text width at 11px: CJK glyphs are square, Latin digits are narrow. */
 const textWidth = (text: string) => [...text].reduce((sum, ch) => sum + (ch > "⺀" ? 11 : /[0-9]/.test(ch) ? 6.4 : /[ ·–:]/.test(ch) ? 3.4 : 6.2), 0);
@@ -150,8 +151,9 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
     return () => { cancel(); settle(); };
   }, [signature, layout.segments.length]);
 
-  const clock = (iso: string) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(iso));
-  const people = (value: number) => Math.round(value).toLocaleString(numberLocale);
+  const numberFormat = useMemo(() => new Intl.NumberFormat(numberLocale), [numberLocale]);
+  const clock = (iso: string) => kstClock.format(new Date(iso));
+  const people = (value: number) => numberFormat.format(Math.round(value));
   const unit = copy.unit[lang];
   const { left, right, top, base } = layout;
   const clampX = (x: number, half: number) => Math.min(right - half, Math.max(left + half, x));
