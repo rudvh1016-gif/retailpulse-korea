@@ -1,6 +1,6 @@
 import {test,expect,chromium,type Page} from '@playwright/test';
 import {SUMMARY_FIXTURE} from './summary-fixture';
-import {pc,type PersonalLang} from '../lib/personal-copy';
+import {pc} from '../lib/personal-copy';
 async function fixture(page:Page) {
   await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
   await page.route('**/api/live/summary*',async route=>{
@@ -8,58 +8,18 @@ async function fixture(page:Page) {
     await route.fulfill({json:{...SUMMARY_FIXTURE,serviceDateKst:date,dayRelation:date===SUMMARY_FIXTURE.todayKst?'TODAY':date<SUMMARY_FIXTURE.todayKst?'PAST':'FUTURE',airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:date}}});
   });
 }
-async function setup(page:Page,lang:PersonalLang='ko',location='airport') {
-  // A first visit now answers with the public summary, so the questionnaire is
-  // opened on request. When setup() is reached from 설정 변경 the form is
-  // already up, and this is a no-op.
-  const form=page.getByTestId('personal-onboarding');
-  if(!await form.count()) await page.getByRole('button',{name:pc('startSetup',lang),exact:true}).click();
-  await expect(form).toBeVisible();
-  await form.locator('[data-role="manager"]').click();
-  await form.getByRole('button',{name:pc('next',lang),exact:true}).click();
-  await form.locator(`[data-location="${location}"]`).click();
-  if(location!=='airport') await form.locator('[data-location="airport"]').click();
-  if(location==='airport') await form.getByRole('button',{name:'T1',exact:true}).click();
-  await form.getByRole('button',{name:pc('next',lang),exact:true}).click();
-  await form.getByRole('button',{name:pc('next',lang),exact:true}).click();
-  await expect(form.locator('[data-day="tomorrow"]')).toHaveAttribute('aria-pressed','true');
-  await form.getByRole('button',{name:pc('finish',lang),exact:true}).click();
-  await expect(page.getByTestId('personal-briefing')).toContainText(pc('managerTomorrow',lang));
-  // The manager's default horizon is tomorrow, and the briefing title already
-  // said so. The work list below it did not: it was headed "오늘 준비할 것"
-  // under a briefing explicitly titled tomorrow's, telling a store manager to
-  // prepare for the wrong day. A wrong date is a P0 in
-  // docs/UI_TRIAL_20260912_20260926.md, and nothing asserted this heading.
-  //
-  // The section only exists where the fixture actually yields work: airport
-  // and Myeongdong do, Seongsu and Hongdae do not. So this checks the heading
-  // wherever it appears — across four languages and every caller of setup() —
-  // and the test below pins the case that must always render it, so the
-  // condition here can never quietly become vacuous everywhere.
-  const preparation = page.locator('.personal-preparation h3');
-  if(await preparation.count()) await expect(preparation).toHaveText(pc('prepareTomorrow',lang));
-}
+
 test('a first visit answers with the information, not a questionnaire',async({page})=>{
-  // The home is the sitemap's priority-1.0 URL. It used to render a four-step
-  // role question with the public summary collapsed underneath, so a reader —
-  // and a crawler — met a settings screen instead of the data.
-  await fixture(page);await page.goto('/ko');
-  await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
-  await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-  // The public summary is there in full, not behind a fold-out.
-  await expect(page.locator('details.personal-existing')).toHaveCount(0);
-  await expect(page.getByRole('heading',{name:'서울과 공항의 흐름'})).toBeVisible();
-  await expect(page.getByText('2026-08-31 · KST',{exact:true})).toBeVisible();
-  // Nothing is asked first: no role, no analytics consent.
-  await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
-  // Setting one up is a choice, and cancelling comes back to the information.
-  const start=page.getByRole('button',{name:pc('startSetup','ko'),exact:true});
-  await expect(start).toBeVisible();
-  await start.click();
-  await expect(page.getByTestId('personal-onboarding')).toBeVisible();
-  await page.getByRole('button',{name:'취소',exact:true}).click();
-  await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
-  await expect(page.getByRole('heading',{name:'서울과 공항의 흐름'})).toBeVisible();
+    // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
+    await fixture(page);
+    await page.goto('/ko');
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+    await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+    await expect(page.locator('.airport-today')).toBeVisible();
+    await expect(page.locator('details.personal-existing')).toHaveCount(0);
+    await expect(page.locator('.demand-home')).toBeVisible();
+    await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true })).toHaveCount(0);
 });
 
 test('a deep link is never diverted to the home or the setup screen',async({page})=>{
@@ -70,79 +30,104 @@ test('a deep link is never diverted to the home or the setup screen',async({page
   }
 });
 
-test('a manager default briefing heads its work list with tomorrow, not today',async({page})=>{
-  // The non-vacuous anchor for the conditional in setup(): the manager/airport
-  // default is the case that always produces work, so the section must be
-  // there AND must name the day the items were built for.
-  await fixture(page);await page.goto('/ko');await setup(page);
-  await expect(page.getByTestId('personal-briefing')).toContainText('내일 영업 브리핑');
-  const preparation=page.locator('.personal-preparation h3');
-  await expect(preparation).toHaveCount(1);
-  await expect(preparation).toHaveText('내일 준비할 것');
-  await expect(preparation).not.toHaveText('오늘 준비할 것');
+test('saved manager horizon is preserved while airport date controls remain explicit',async({page})=>{
+    // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
+    await fixture(page);
+    await page.goto('/ko');
+    const stored = JSON.stringify({ version: 1, role: 'manager', location: 'airport', terminal: 'T2', selectedLocations: ['airport', 'hongdae'], selectedTerminals: ['T2', 'T1'], interests: ['passengers', 'weather'], day: 'tomorrow', selectedDays: ['tomorrow', 'today', 'yesterday'], analytics: false });
+    await page.evaluate(value => localStorage.setItem('koretail-personal-v1', value), stored);
+    await page.reload();
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+    await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+    await expect(page.locator('.airport-today')).toBeVisible();
+    expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
+    await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-08-31');
+    await page.locator('.date-nav-shortcuts button').last().click();
+    await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-09-01');
+    await expect(page.locator('.airport-today')).toContainText('2026-09-01');
+    await expect(page.locator('.personal-preparation')).toHaveCount(0);
 });
 
 for(const lang of ['ko','en','zh','ja'] as const) for(const width of [390,768,1280,1920]) {
-  test(`personal setup and briefing ${lang} ${width}`,async({page})=>{
-    await page.setViewportSize({width,height:900});await fixture(page);await page.goto(`/${lang}`);
-    await setup(page,lang);
-    await expect(page.getByTestId('personal-briefing')).toContainText('2026-09-01');
-    await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
-    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
-    await page.reload();await expect(page.getByTestId('personal-briefing')).toBeVisible();
+  test(`hidden briefing preserves settings and airport dates ${lang} ${width}`,async({page})=>{
+    // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
+    await page.setViewportSize({ width, height: 900 });
+    await fixture(page);
+    await page.goto(`/${lang}`);
+    const stored = JSON.stringify({ version: 1, role: 'manager', location: 'airport', terminal: 'T2', selectedLocations: ['airport', 'hongdae'], selectedTerminals: ['T2', 'T1'], interests: ['passengers', 'weather'], day: 'tomorrow', selectedDays: ['tomorrow', 'today', 'yesterday'], analytics: false });
+    await page.evaluate(value => localStorage.setItem('koretail-personal-v1', value), stored);
+    await page.reload();
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
-  });
+    await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+    await expect(page.locator('.airport-today')).toBeVisible();
+    expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
+    await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+    await page.locator('.date-nav-shortcuts button').last().click();
+    await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-09-01');
+    await page.reload();
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+    await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+    await expect(page.locator('.airport-today')).toBeVisible();
+    expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
+});
 }
-test('reopening with persisted browser state, editing, feedback and reset',async({page,browser})=>{
-  await fixture(page);await page.goto('/ko');await setup(page);
-  const state=await page.context().storageState();
-  const context=await browser.newContext({storageState:state});const reopened=await context.newPage();
-  await fixture(reopened);await reopened.goto('/ko');await expect(reopened.getByTestId('personal-briefing')).toBeVisible();
-  await reopened.getByRole('button',{name:'도움됐어요',exact:true}).click();
-  await reopened.reload();await expect(reopened.getByRole('button',{name:'도움됐어요',exact:true})).toBeDisabled();
-  await reopened.getByText('내 설정 보기',{exact:true}).click();
-  await reopened.getByRole('button',{name:'설정 변경',exact:true}).click();
-  await setup(reopened,'ko','seongsu');
-  await expect(reopened.getByTestId('personal-briefing')).toContainText('성수');
-  await reopened.getByText('내 설정 보기',{exact:true}).click();
-  await reopened.getByRole('button',{name:'처음부터 다시 설정',exact:true}).click();
-  await expect(reopened.getByTestId('personal-onboarding')).toHaveCount(0);
-  await expect(reopened.getByRole('heading',{name:'서울과 공항의 흐름'})).toBeVisible();
-  await expect(reopened.getByRole('button',{name:pc('startSetup','ko'),exact:true})).toBeVisible();
-  await context.close();
+test('reopening browser state preserves hidden briefing settings without feedback or reset actions',async({page,browser})=>{
+    // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
+    await fixture(page);
+    await page.goto('/ko');
+    const stored = JSON.stringify({ version: 1, role: 'manager', location: 'airport', terminal: 'T2', selectedLocations: ['airport', 'hongdae'], selectedTerminals: ['T2', 'T1'], interests: ['passengers', 'weather'], day: 'tomorrow', selectedDays: ['tomorrow', 'today', 'yesterday'], analytics: false });
+    await page.evaluate(value => localStorage.setItem('koretail-personal-v1', value), stored);
+    const state = await page.context().storageState();
+    const context = await browser.newContext({ storageState: state });
+    const reopened = await context.newPage();
+    await fixture(reopened);
+    await reopened.goto('/ko');
+    await expect(reopened.locator('.airport-today')).toBeVisible();
+    expect(await reopened.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
+    await expect(reopened.getByTestId('personal-briefing')).toHaveCount(0);
+    await expect(reopened.locator('.personal-feedback, .personal-onboarding')).toHaveCount(0);
+    await reopened.reload();
+    expect(await reopened.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
+    await context.close();
 });
 
 test('multiple locations, terminals and all three days persist and switch to the matching date',async({page})=>{
-  await page.setViewportSize({width:390,height:900});await fixture(page);await page.goto('/ko');
-  await page.getByRole('button',{name:pc('startSetup','ko'),exact:true}).click();
-  const f=page.getByTestId('personal-onboarding');await f.locator('[data-role="manager"]').click();
-  await f.getByRole('button',{name:pc('next','ko'),exact:true}).click();
-  await f.locator('[data-location="seongsu"]').click();
-  await expect(f.locator('[data-location="airport"]')).toHaveAttribute('aria-pressed','true');
-  await f.getByRole('button',{name:'T1',exact:true}).click();await f.getByRole('button',{name:'T2',exact:true}).click();
-  await f.getByRole('button',{name:pc('next','ko'),exact:true}).click();
-  await expect(f.getByRole('checkbox',{name:pc('weather','ko'),exact:true})).toBeVisible();
-  await f.getByRole('button',{name:pc('next','ko'),exact:true}).click();
-  await f.locator('[data-day="yesterday"]').click();await f.locator('[data-day="today"]').click();
-  for(const day of ['yesterday','today','tomorrow'])await expect(f.locator(`[data-day="${day}"]`)).toHaveAttribute('aria-pressed','true');
-  await f.getByRole('button',{name:pc('finish','ko'),exact:true}).click();
-  await page.locator('[data-view-day="yesterday"]').click();
-  await expect(page.getByTestId('personal-briefing')).toContainText('2026-08-30');
-  await page.locator('[data-view-terminal="T2"]').click();
-  await expect(page.locator('.personal-place')).toContainText('T2');
-  await page.locator('[data-view-location="seongsu"]').click();
-  await expect(page.locator('.personal-place')).toContainText('성수');
-  await expect(page.locator('.personal-facts')).not.toContainText(pc('flights','ko'));
-  await page.reload();
-  await expect(page.locator('[data-view-location]')).toHaveCount(2);
-  await expect(page.locator('[data-view-day]')).toHaveCount(3);
-  await expect(page.locator('[data-view-terminal]')).toHaveCount(2);
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+    // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
+    await page.setViewportSize({ width: 390, height: 900 });
+    await fixture(page);
+    await page.goto('/ko');
+    const stored = JSON.stringify({ version: 1, role: 'manager', location: 'airport', terminal: 'T2', selectedLocations: ['airport', 'hongdae'], selectedTerminals: ['T2', 'T1'], interests: ['passengers', 'weather'], day: 'tomorrow', selectedDays: ['tomorrow', 'today', 'yesterday'], analytics: false });
+    await page.evaluate(value => localStorage.setItem('koretail-personal-v1', value), stored);
+    await page.reload();
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+    await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+    await expect(page.locator('.airport-today')).toBeVisible();
+    for (const [index, date] of [[0, '2026-08-30'], [2, '2026-09-01'], [1, '2026-08-31']] as const) {
+        await page.locator('.date-nav-shortcuts button').nth(index).click();
+        await expect(page.locator('.date-nav-picker input')).toHaveValue(date);
+        await page.getByRole('tab', { name: 'T2', exact: true }).click();
+        await expect(page.locator('.airport-glance-strip')).toHaveAttribute('data-scope', 'T2');
+        expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
+    }
+    await page.goto('/ko/hongdae');
+    await expect(page.locator('.area-current-brief')).toBeVisible();
+    await page.reload();
+    expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 });
-test('corrupt or denied storage leaves setup usable and shows save limitation',async({page})=>{
-  await page.addInitScript(()=>{Storage.prototype.setItem=function(){throw new DOMException('denied','SecurityError');};});
-  await fixture(page);await page.goto('/ko');await setup(page);
-  await expect(page.getByText('이 기기에 저장하지 못했어요.',{exact:false})).toBeVisible();
+test('denied storage leaves airport date and terminal controls usable',async({page})=>{
+    // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
+    await page.addInitScript(() => { Storage.prototype.setItem = function () { throw new DOMException('denied', 'SecurityError'); }; });
+    await fixture(page);
+    await page.goto('/ko');
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+    await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+    await expect(page.locator('.airport-today')).toBeVisible();
+    await page.locator('.date-nav-shortcuts button').last().click();
+    await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-09-01');
+    await page.getByRole('tab', { name: 'T2', exact: true }).click();
+    await expect(page.locator('.airport-glance-strip')).toHaveAttribute('data-scope', 'T2');
 });
 test('public detail routes remain directly available without onboarding',async({page})=>{
   await fixture(page);await page.goto('/ko/airport');
@@ -150,61 +135,85 @@ test('public detail routes remain directly available without onboarding',async({
   await expect(page.locator('h1')).toBeVisible();
 });
 test('settings survive closing and relaunching a persistent browser',async({},testInfo)=>{
-  const profile=testInfo.outputPath('device-profile');
-  let context=await chromium.launchPersistentContext(profile,{headless:true});
-  let page=await context.newPage();await fixture(page);await page.goto('http://127.0.0.1:4173/ko');await setup(page);
-  await context.close();
-  context=await chromium.launchPersistentContext(profile,{headless:true});
-  page=await context.newPage();await fixture(page);await page.goto('http://127.0.0.1:4173/ko');
-  await expect(page.getByTestId('personal-briefing')).toContainText('내일 영업 브리핑');
-  await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
-  await context.close();
+    // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
+    const profile = testInfo.outputPath('device-profile');
+    const baseURL = String(testInfo.project.use.baseURL);
+    let context = await chromium.launchPersistentContext(profile, { headless: true });
+    let page = await context.newPage();
+    await fixture(page);
+    await page.goto(baseURL + '/ko');
+    const stored = JSON.stringify({ version: 1, role: 'manager', location: 'airport', terminal: 'T2', selectedLocations: ['airport', 'hongdae'], selectedTerminals: ['T2', 'T1'], interests: ['passengers', 'weather'], day: 'tomorrow', selectedDays: ['tomorrow', 'today', 'yesterday'], analytics: false });
+    await page.evaluate(value => localStorage.setItem('koretail-personal-v1', value), stored);
+    await context.close();
+    context = await chromium.launchPersistentContext(profile, { headless: true });
+    page = await context.newPage();
+    await fixture(page);
+    await page.goto(baseURL + '/ko');
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+    await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+    await expect(page.locator('.airport-today')).toBeVisible();
+    expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
+    await context.close();
 });
-test('brand returns to the personal home while Seoul navigation retains the area route',async({page})=>{
-  await fixture(page);await page.goto('/ko');await setup(page);
-  await page.locator('.top-nav').getByRole('link',{name:'서울',exact:true}).click();
-  await expect(page).toHaveURL(/\/ko\/myeongdong$/);
-  await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-  await page.getByRole('button',{name:'KORETAIL home',exact:true}).click();
-  await expect(page).toHaveURL(/\/ko$/);
-
-  await expect(page.getByTestId('personal-briefing')).toBeVisible();
-  await expect(page).toHaveTitle('인천공항·명동·홍대·성수·이태원 오늘·내일 브리핑 | KORETAIL');
+test('brand returns to airport-first root while Seoul navigation retains the area route',async({page})=>{
+    // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
+    await fixture(page);
+    await page.goto('/ko');
+    const stored = JSON.stringify({ version: 1, role: 'manager', location: 'airport', terminal: 'T2', selectedLocations: ['airport', 'hongdae'], selectedTerminals: ['T2', 'T1'], interests: ['passengers', 'weather'], day: 'tomorrow', selectedDays: ['tomorrow', 'today', 'yesterday'], analytics: false });
+    await page.evaluate(value => localStorage.setItem('koretail-personal-v1', value), stored);
+    await page.reload();
+    await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
+    await page.locator('.top-nav a[href="/ko/airport"]').click();
+    await expect(page).toHaveURL(new RegExp("/ko/airport$"));
+    await page.getByRole('button', { name: 'KORETAIL home', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp("/ko$"));
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+    await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+    await expect(page.locator('.airport-today')).toBeVisible();
+    expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
+    await page.locator('.top-nav a[href="/ko/myeongdong"]').click();
+    await expect(page).toHaveURL(new RegExp("/ko/myeongdong$"));
+    await expect(page.locator('.area-current-brief')).toBeVisible();
 });
 
-test('mobile briefing can be reopened from airport with one active navigation item',async({page})=>{
-  await page.setViewportSize({width:390,height:844});
-  await fixture(page);await page.goto('/ko');await setup(page);
-  const nav=page.locator('nav.bottom-nav');
-  await expect(nav.locator('[aria-current="page"]')).toHaveText('내 브리핑');
-  await nav.getByRole('link',{name:'공항',exact:true}).click();
-  await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-  await nav.getByRole('link',{name:'내 브리핑',exact:true}).click();
-  await expect(page.getByTestId('personal-briefing')).toBeVisible();
-  await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
-  await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
-
-  await nav.getByRole('link',{name:'공항',exact:true}).click();
-  await page.goBack();
-  await expect(page.getByTestId('personal-briefing')).toBeVisible();
-  await expect(page.locator('.demand-home')).toHaveCount(0);
-  await nav.getByRole('link',{name:'내 브리핑',exact:true}).click();
-  await expect(page.getByTestId('personal-briefing')).toBeVisible();
+test('mobile back navigation returns to airport-first root with one active item',async({page})=>{
+    // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await fixture(page);
+    await page.goto('/ko');
+    const stored = JSON.stringify({ version: 1, role: 'manager', location: 'airport', terminal: 'T2', selectedLocations: ['airport', 'hongdae'], selectedTerminals: ['T2', 'T1'], interests: ['passengers', 'weather'], day: 'tomorrow', selectedDays: ['tomorrow', 'today', 'yesterday'], analytics: false });
+    await page.evaluate(value => localStorage.setItem('koretail-personal-v1', value), stored);
+    await page.reload();
+    await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
+    const nav = page.locator('nav.bottom-nav');
+    await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
+    await expect(nav.locator('a')).toHaveCount(5);
+    await nav.locator('a[href="/ko/myeongdong"]').click();
+    await expect(page.locator('.area-current-brief')).toBeVisible();
+    await page.goBack();
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+    await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+    await expect(page.locator('.airport-today')).toBeVisible();
+    await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
+    expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
 });
 
-test('personal airport briefing shares the airport at-a-glance explanation and keeps KST out of large text',async({page})=>{
-  await page.setViewportSize({width:390,height:844});
-  await fixture(page);await page.goto('/ko');await setup(page);
-  const brief=page.getByTestId('personal-briefing');
-  const overview=brief.locator('.airport-current-brief');
-  await expect(overview).toBeVisible();
-  await expect(overview).toContainText('선택일 출국장 공식 예상 승객');
-  await expect(overview).toContainText('선택일 피크');
-  await expect(overview).not.toContainText('오늘 피크');
-  await expect(brief.locator('.personal-timezone')).toHaveText('한국시간 기준');
-  await expect(brief.locator('.personal-facts strong').filter({hasText:'KST'})).toHaveCount(0);
-  const before=await overview.innerText();
-  await page.locator('nav.bottom-nav').getByRole('link',{name:'공항',exact:true}).click();
-  await page.locator('nav.bottom-nav').getByRole('link',{name:'내 브리핑',exact:true}).click();
-  await expect(brief.locator('.airport-current-brief')).toHaveText(before,{useInnerText:true});
+test('airport root and deep link share selected-day meaning and keep KST out of large values',async({page})=>{
+    // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await fixture(page);
+    await page.goto('/ko');
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+    await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+    await expect(page.locator('.airport-today')).toBeVisible();
+    await page.locator('.date-nav-shortcuts button').last().click();
+    const overview = page.locator('.airport-current-brief');
+    await expect(overview).toBeVisible();
+    await expect(overview).toContainText('2026-09-01');
+    await expect(overview).toContainText('출국장');
+    await expect(page.locator('.airport-metric-value').filter({ hasText: 'KST' })).toHaveCount(0);
+    await expect(page.locator('.airport-metric-value')).toContainText('47,320');
+    const before = await overview.innerText();
+    await page.goto('/ko/airport?date=2026-09-01');
+    await expect(page.locator('.airport-current-brief')).toHaveText(before, { useInnerText: true });
 });

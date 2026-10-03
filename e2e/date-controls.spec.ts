@@ -40,12 +40,15 @@ for (const width of [375,390,430,1280]) for (const lang of ['ko','en','zh','ja']
   if(lang==='ko')await page.screenshot({path:info.outputPath(`date-public-${width}.png`)});
   await page.evaluate(key=>localStorage.setItem(key,JSON.stringify({version:1,role:'manager',location:'myeongdong',terminal:'T2',interests:['weather'],day:'today',selectedDays:['today','yesterday','tomorrow'],analytics:false})),PREFERENCE_KEY);
   await page.goto(`/${lang}`);
-  const personal=page.locator('.personal-day-switches button');
+  // The removed briefing no longer owns root date controls; exercise the airport's existing controls.
+  const personal=page.locator('.date-nav-shortcuts button');
   await expect(personal).toHaveCount(3);
   expect((await personal.first().boundingBox())!.height).toBeGreaterThanOrEqual(48);
   await personal.last().focus();await personal.last().press('Space');
   await expect(personal.last()).toHaveAttribute('aria-pressed','true');
-  await expect(page.getByTestId('personal-briefing')).toContainText('2026-09-01');
+  await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-09-01');
+  await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+  expect(JSON.parse((await page.evaluate(key=>localStorage.getItem(key),PREFERENCE_KEY))!)).toMatchObject({terminal:'T2',interests:['weather']});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   if(lang==='ko')await page.screenshot({path:info.outputPath(`date-personal-${width}.png`)});
  });

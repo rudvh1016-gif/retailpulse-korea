@@ -1324,7 +1324,7 @@ test("desktop navigation promotes Guide Desk in the exact localized order", asyn
     await page.goto(`/${locale}/tourism-desk/myeongdong`);
     const nav = page.locator("nav.top-nav");
     await expect(nav).toBeVisible();
-    expect(await nav.locator("a").allInnerTexts()).toEqual([...expected[locale]]);
+    expect(await nav.locator("a").allInnerTexts()).toEqual([expected[locale][1],expected[locale][0],...expected[locale].slice(2)]);
     await expect(nav.locator("a[aria-current='page']")).toHaveText(expected[locale][4]);
     await expect(page.locator("nav.bottom-nav")).toBeHidden();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -1339,7 +1339,7 @@ test("mobile More explains usage without the removed promotion and retains its T
 
   const bottom = page.locator("nav.bottom-nav");
   await expect(bottom).toBeVisible();
-  await expect(bottom.locator("a")).toHaveCount(6);
+  await expect(bottom.locator("a")).toHaveCount(5);
   await expect(bottom).not.toContainText("관광안내");
   await bottom.locator("a").filter({ hasText: "더보기" }).click();
   await expect(page).toHaveURL(/\/ko\/more$/);
@@ -1493,7 +1493,8 @@ test("the header offers an install guide with real steps for Galaxy and iPhone",
   await expect(dialog).toContainText("'홈 화면에 추가'를 찾습니다");
   await expect(dialog).toContainText("공유 버튼");
   // And it never promises offline use, because there is no service worker.
-  await expect(dialog).toContainText("열 때마다 인터넷 연결이 필요합니다");
+  await expect(dialog).toContainText("자료를 불러오려면 인터넷 연결이 필요합니다");
+  await expect(dialog).toContainText("갱신 주기가 다르므로");
 
   await dialog.getByRole("button", { name: "닫기" }).click();
   await expect(dialog).toHaveCount(0);

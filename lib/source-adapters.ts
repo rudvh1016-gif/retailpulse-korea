@@ -285,7 +285,7 @@ export interface CanonicalAirportFlight extends CanonicalRecord {
   codeshare: string | null;
   airlineCode: string | null;
   airportCode: string | null;
-  terminal: "T1" | "T2" | null;
+  terminal: "T1" | "T2" | "CONCOURSE" | null;
   gate: string | null;
   checkinCounter: string | null;
   status: "scheduled" | "on_time" | "delayed" | "cancelled" | "unknown";
@@ -301,7 +301,9 @@ export async function normalizeAirportFlight(raw: unknown, direction: "departure
   const masterFlightNumber = optionalString(record, ["masterFlightId"]);
   const flightNumber = masterFlightNumber ?? marketingFlightNumber;
   const rawTerminal = optionalString(record, ["terminalId", "terminalid", "terminal", "terminalNo"]);
-  const terminal: "T1" | "T2" | null = ["P01", "T1", "1"].includes(rawTerminal ?? "") ? "T1" : ["P03", "T2", "2"].includes(rawTerminal ?? "") ? "T2" : null;
+  // A1 official terminalid P02 is the boarding concourse, even before a gate is assigned.
+  // Preserve that source building; never turn it into a passenger-hall estimate.
+  const terminal: "T1" | "T2" | "CONCOURSE" | null = ["P01", "T1", "1"].includes(rawTerminal ?? "") ? "T1" : ["P03", "T2", "2"].includes(rawTerminal ?? "") ? "T2" : rawTerminal === "P02" ? "CONCOURSE" : null;
   const rawStatus = optionalString(record, ["remark", "status", "flightStatus"])?.toLowerCase() ?? "";
   const status = rawStatus.includes("cancel") || rawStatus.includes("결항") ? "cancelled" : rawStatus.includes("delay") || rawStatus.includes("지연") ? "delayed" : rawStatus.includes("on time") || rawStatus.includes("정상") ? "on_time" : rawStatus ? "scheduled" : "unknown";
   const changedValue = optionalString(record, ["estimatedDateTime", "changedDateTime", "changedAt"]);

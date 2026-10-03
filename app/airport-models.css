@@ -76,7 +76,7 @@
 
 /* Owner screenshot review: larger readable building, compact graphs, unchanged text tokens. */
 .airport-hourly-concept { aspect-ratio: 9 / 5; max-height: 230px; overflow: hidden; margin-bottom: 12px; }
-.airport-hourly-concept img { object-fit: contain; transform: scale(1.28); }
+.airport-hourly-concept img { object-fit: contain; transform: none; }
 .airport-today.airport-approved .airport-flow { margin-top: 12px; }
 .airport-mtd { background: #f7fafc; border-radius: 10px; padding: 12px; }
 .airport-mtd-compare { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
