@@ -17,7 +17,7 @@ async function fixture(page: Page) {
   });
 }
 
-test('personal briefing gives every Seoul area an at-a-glance explanation', async ({ page }) => {
+test('Seoul deep links retain every area at-a-glance explanation after briefing removal', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(({ key }) => {
     localStorage.setItem(key, JSON.stringify({
@@ -34,20 +34,20 @@ test('personal briefing gives every Seoul area an at-a-glance explanation', asyn
     }));
   }, { key: PREFERENCE_KEY });
   await fixture(page);
-  await page.goto('/ko');
+  await page.goto('/ko/myeongdong');
 
-  const brief = page.getByTestId('personal-briefing');
-  const glance = brief.locator('.current-brief');
+  await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+  const glance = page.locator('.current-brief');
   await expect(glance).toBeVisible();
   await expect(glance).toContainText('현재 추정 인구');
   await expect(glance).toContainText('23,000–25,000');
 
-  await page.locator('[data-view-location="hongdae"]').click();
+  await page.goto('/ko/hongdae');
   await expect(glance).toContainText('18,000–20,000');
   await expect(glance).toContainText('서울시 공식 예측');
 
-  await page.locator('[data-view-location="seongsu"]').click();
+  await page.goto('/ko/seongsu');
   await expect(glance).toContainText('12,000–14,000');
-  await expect(page.locator('.personal-place')).toContainText('성수');
+  await expect(page.locator('h1')).toContainText('성수');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 });

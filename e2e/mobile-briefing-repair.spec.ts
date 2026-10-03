@@ -23,86 +23,67 @@ async function fixture(page: Page, payload: unknown = SUMMARY_FIXTURE) {
   });
 }
 
-test('new personal home shows public information before optional setup', async ({ page }) => {
-  await fixture(page);
-  await page.goto('/ko');
-  await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
-  await expect(page.locator('.demand-home')).toBeVisible();
-  await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
-  await page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true }).click();
-  await expect(page.getByTestId('personal-onboarding')).toBeVisible();
+test('airport-first home shows public information with briefing setup hidden', async ({ page }) => {
+    // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
+    await fixture(page);
+    await page.goto('/ko');
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+    await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+    await expect(page.locator('.airport-today')).toBeVisible();
+    await expect(page.locator('.demand-home')).toBeVisible();
+    await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true })).toHaveCount(0);
 });
 
-test('saving Myeongdong and weather only excludes every unselected area and interest', async ({ page }) => {
-  await fixture(page); await page.goto('/ko');
-  await page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true }).click();
-  const form = page.getByTestId('personal-onboarding');
-  await form.locator('[data-role="manager"]').click();
-  await form.getByRole('button', { name: '다음', exact: true }).click();
-  await form.locator('[data-location="myeongdong"]').click();
-  await form.locator('[data-location="airport"]').click();
-  await form.getByRole('button', { name: '다음', exact: true }).click();
-  for (const box of await form.getByRole('checkbox').all()) await box.uncheck();
-  await form.getByRole('checkbox', { name: pc('weather', 'ko'), exact: true }).check();
-  await form.getByRole('button', { name: '다음', exact: true }).click();
-  await form.locator('[data-day="today"]').click();
-  await form.locator('[data-day="tomorrow"]').click();
-  await form.getByRole('button', { name: pc('finish', 'ko'), exact: true }).click();
-  await expect(page.locator('[data-view-location]')).toHaveCount(1);
-  await expect(page.locator('[data-view-location]')).toHaveAttribute('data-view-location', 'myeongdong');
-  await expect(page.locator('[data-view-day]')).toHaveCount(1);
-  await expect(page.locator('[data-view-day]')).toHaveAttribute('data-view-day', 'today');
-  await expect(page.locator('.personal-place')).toContainText('명동');
-  await expect(page.locator('.personal-facts [data-interest]')).toHaveCount(1);
-  await expect(page.locator('.personal-facts [data-interest]')).toHaveAttribute('data-interest', 'weather');
-  await expect(page.locator('.demand-home, .area-current-brief, .airport-current-brief')).toHaveCount(0);
-  await expect(page.getByTestId('personal-briefing')).not.toContainText(/홍대|성수|인천공항|내일/);
-  await page.reload();
-  await expect(page.locator('.personal-place')).toContainText('명동');
-  await expect(page.locator('.personal-facts [data-interest]')).toHaveCount(1);
+test('saved Myeongdong weather preferences survive hidden briefing entry', async ({ page }) => {
+    // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
+    await seed(page, preferences);
+    await fixture(page);
+    await page.goto('/ko');
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+    await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+    await expect(page.locator('.airport-today')).toBeVisible();
+    expect(await page.evaluate(key => localStorage.getItem(key), PREFERENCE_KEY)).toBe(JSON.stringify(preferences));
+    await page.goto('/ko/myeongdong');
+    await expect(page.locator('.area-current-brief')).toBeVisible();
+    await page.reload();
+    expect(await page.evaluate(key => localStorage.getItem(key), PREFERENCE_KEY)).toBe(JSON.stringify(preferences));
+    await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
 });
 
-test('saved Hongdae and airport restrict switches, preserve T2 and prefill edits', async ({ page }) => {
-  const p: PersonalPreferences = { ...preferences, location: 'hongdae', selectedLocations: ['hongdae', 'airport'], selectedDays: ['today', 'yesterday', 'tomorrow'], selectedTerminals: ['T2'], interests: ['passengers', 'crowding', 'weather'] };
-  await seed(page, p); await fixture(page); await page.goto('/ko');
-  await expect(page.locator('[data-view-location]')).toHaveCount(2);
-  await expect(page.locator('[data-view-location="myeongdong"], [data-view-location="seongsu"]')).toHaveCount(0);
-  await page.locator('[data-view-location="airport"]').click();
-  await expect(page.locator('[data-view-terminal]')).toHaveCount(1);
-  await expect(page.locator('.personal-place')).toContainText('T2');
-  await expect(page.locator('.airport-current-brief')).not.toContainText('출발 운항');
-  for (const [day, date] of [['yesterday', '2026-08-30'], ['tomorrow', '2026-09-01'], ['today', '2026-08-31']]) {
-    await page.locator(`[data-view-day="${day}"]`).click();
-    await expect(page.locator('.personal-place')).toContainText(date);
-  }
-  await page.getByRole('button', { name: '설정 변경', exact: true }).click();
-  const form = page.getByTestId('personal-onboarding');
-  await expect(form.locator('[data-role="manager"]')).toHaveAttribute('aria-pressed', 'true');
-  await form.getByRole('button', { name: '다음', exact: true }).click();
-  for (const location of ['hongdae', 'airport']) await expect(form.locator(`[data-location="${location}"]`)).toHaveAttribute('aria-pressed', 'true');
-  await expect(form.getByRole('button', { name: 'T2', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await form.locator('[data-location="myeongdong"]').click();
-  await form.locator('[data-location="hongdae"]').click();
-  await form.locator('[data-location="airport"]').click();
-  await form.getByRole('button', { name: '다음', exact: true }).click();
-  await expect(form.getByRole('checkbox', { name: pc('weather', 'ko'), exact: true })).toBeChecked();
-  await form.getByRole('button', { name: '다음', exact: true }).click();
-  await form.getByRole('button', { name: pc('finish', 'ko'), exact: true }).click();
-  await expect(page.locator('[data-view-location]')).toHaveCount(1);
-  await expect(page.locator('.personal-place')).toContainText('명동');
-  await page.reload();
-  await expect(page.locator('.personal-place')).toContainText('명동');
+test('saved Hongdae airport preferences survive explicit terminal and date switches', async ({ page }) => {
+    // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
+    const p: PersonalPreferences = { ...preferences, location: 'hongdae', selectedLocations: ['hongdae', 'airport'], selectedDays: ['today', 'yesterday', 'tomorrow'], selectedTerminals: ['T2'], interests: ['passengers', 'crowding', 'weather'] };
+    await seed(page, p);
+    await fixture(page);
+    await page.goto('/ko');
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+    await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+    await expect(page.locator('.airport-today')).toBeVisible();
+    await page.getByRole('tab', { name: 'T2', exact: true }).click();
+    await expect(page.locator('.airport-glance-strip')).toHaveAttribute('data-scope', 'T2');
+    for (const [index, date] of [[0, '2026-08-30'], [2, '2026-09-01'], [1, '2026-08-31']] as const) {
+        await page.locator('.date-nav-shortcuts button').nth(index).click();
+        await expect(page.locator('.date-nav-picker input')).toHaveValue(date);
+    }
+    await page.reload();
+    expect(await page.evaluate(key => localStorage.getItem(key), PREFERENCE_KEY)).toBe(JSON.stringify(p));
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
 });
 
-test('passenger-only airport keeps reference arithmetic but hides queue and flight interests', async ({ page }) => {
-  await seed(page, { ...preferences, location: 'airport', interests: ['passengers'] });
-  await fixture(page); await page.goto('/ko');
-  await expect(page.locator('.airport-brief-total')).toBeVisible();
-  await expect(page.locator('.passenger-transfer-limitation')).toBeVisible();
-  await expect(page.locator('.airport-wait-brief')).toHaveCount(0);
-  await expect(page.locator('.airport-current-brief')).not.toContainText('대기 최장');
-  await expect(page.locator('.airport-current-brief')).not.toContainText('출발 운항');
-  await expect(page.locator('.personal-facts [data-interest]')).toHaveCount(1);
+test('hidden passenger preferences remain stored without inventing missing transfer arithmetic', async ({ page }) => {
+    // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
+    const p = { ...preferences, location: 'airport' as const, interests: ['passengers' as const] };
+    await seed(page, p);
+    await fixture(page);
+    await page.goto('/ko');
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+    await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+    await expect(page.locator('.airport-today')).toBeVisible();
+    await expect(page.locator('.airport-brief-total')).toBeVisible();
+    await expect(page.locator('.passenger-transfer-limitation')).toBeVisible();
+    await expect(page.locator('[data-basis="ARITHMETIC_ONLY"]')).toHaveCount(0);
+    expect(await page.evaluate(key => localStorage.getItem(key), PREFERENCE_KEY)).toBe(JSON.stringify(p));
 });
 
 // Dense observations and sparse overnight forecasts reproduce the collision.
@@ -180,22 +161,31 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-08-31');
     await page.evaluate(({ key, p }) => localStorage.setItem(key, JSON.stringify(p)), { key: PREFERENCE_KEY, p: allDayPreferences });
     await page.goto(`/${lang}`);
-    await expect(page.locator('.personal-day-switches button')).toHaveCount(3);
-    const days = await page.locator('.personal-day-switches button').evaluateAll(els => els.map(el => { const r = el.getBoundingClientRect(); return { x: r.x, right: r.right, y: r.y }; }));
+    await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+    expect(await page.evaluate(key=>localStorage.getItem(key),PREFERENCE_KEY)).toBe(JSON.stringify(allDayPreferences));
+    await expect(page.locator('.date-nav-shortcuts button')).toHaveCount(3);
+    const days = await page.locator('.date-nav-shortcuts button').evaluateAll(els => els.map(el => { const r = el.getBoundingClientRect(); return { x: r.x, right: r.right, y: r.y }; }));
     days.forEach((r, i) => { expect(r.right).toBeLessThanOrEqual(width); expect(r.y).toBe(days[0].y); if (i) expect(r.x).toBeGreaterThanOrEqual(days[i - 1].right); });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
 }
 
-for (const width of [390, 1440]) test(`personal home screenshots ${width}`, async ({ page }, info) => {
-  await page.setViewportSize({ width, height: 900 }); await fixture(page); await page.goto('/ko');
-  await page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true }).click();
-  await expect(page.getByTestId('personal-onboarding')).toBeVisible();
-  await page.screenshot({ path: info.outputPath(`setup-${width}.png`) });
-  await page.evaluate(({ key, p }) => { localStorage.setItem(key, JSON.stringify(p)); }, { key: PREFERENCE_KEY, p: preferences });
-  await page.reload();
-  await expect(page.getByTestId('personal-briefing')).toBeVisible();
-  await page.screenshot({ path: info.outputPath(`personal-${width}.png`) });
+for (const width of [390, 1440]) test(`airport-first home screenshots ${width}`, async ({ page }, info) => {
+    // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
+    await page.setViewportSize({ width, height: 900 });
+    await fixture(page);
+    await page.goto('/ko');
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+    await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+    await expect(page.locator('.airport-today')).toBeVisible();
+    await page.screenshot({ path: info.outputPath(`airport-first-${width}.png`) });
+    await page.evaluate(({ key, p }) => localStorage.setItem(key, JSON.stringify(p)), { key: PREFERENCE_KEY, p: preferences });
+    await page.reload();
+    await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+    await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
+    await expect(page.locator('.airport-today')).toBeVisible();
+    expect(await page.evaluate(key => localStorage.getItem(key), PREFERENCE_KEY)).toBe(JSON.stringify(preferences));
+    await page.screenshot({ path: info.outputPath(`preserved-settings-${width}.png`) });
 });
 
 for (const width of [360, 390]) test(`owner UI lock across main screens ${width}`, async ({ page }, info) => {
@@ -220,8 +210,8 @@ for (const width of [360, 390]) test(`owner UI lock across main screens ${width}
       await expect(page.locator('.airport-metric-value')).toBeVisible();
       // The airport page leads with the day's one big number (2026-10-02 visual
       // rules); the personal home keeps the plain 16px figure.
-      if (route) expect(await page.locator('.airport-metric-value').evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(34);
-      else await expect(page.locator('.airport-metric-value')).toHaveCSS('font-size', '16px');
+      // Root now renders the same approved airport view as its deep link.
+      expect(await page.locator('.airport-metric-value').evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(34);
     }
     const controls = page.locator('.personal-switches .personal-inline button, .area-tabs button, .terminal-selector button, .airport-context-nav button, .prediction-view .segmented button');
     for (const style of await controls.evaluateAll(els => els.map(el => { const s = getComputedStyle(el); return { top:s.borderTopWidth, left:s.borderLeftWidth, right:s.borderRightWidth, bottom:s.borderBottomWidth, background:s.backgroundColor, height:el.getBoundingClientRect().height }; }))) {

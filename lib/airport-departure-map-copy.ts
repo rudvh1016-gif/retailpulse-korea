@@ -121,6 +121,12 @@ export function windowCountsLine(map: DepartureMap, lang: Lang): string {
  * itself when the unconfirmed flights alone could reverse it.
  */
 export function leadLine(map: DepartureMap, lang: Lang): string {
+  if (map.sides.total === 0 && map.unknownBuilding > 0) return row(
+    `터미널 미확인 출발 예정 ${flights(map.unknownBuilding, "ko")} · 선택 터미널 배정 확인 중`,
+    `${flights(map.unknownBuilding, "en")} scheduled with an unconfirmed terminal · selected-terminal assignment pending`,
+    `航站楼待确认的计划出发 ${flights(map.unknownBuilding, "zh")} · 所选航站楼归属待确认`,
+    `ターミナル未確認の出発予定${flights(map.unknownBuilding, "ja")} · 選択ターミナルへの割当未確認`,
+  )[lang];
   const lead = sideLead(map.sides);
   if (!lead) return row("동·서 위치가 확인된 출발편이 없어 비교하지 않습니다.", "No departure has a confirmed side, so no comparison is made.", "没有东西位置已确认的出发航班，因此不作比较。", "東西の位置が確認できた出発便がないため比較しません。")[lang];
   const basis = row("확인된 항공편 기준", "Among confirmed flights", "按已确认的航班", "確認できた便の基準で");

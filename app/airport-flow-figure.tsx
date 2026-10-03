@@ -3,6 +3,7 @@ import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState, type Po
 import { FLOW_HOURS, flowLayout, type FlowBand } from "../lib/airport-flow-geometry";
 import { REVEAL_MS, reducedMotion, tween } from "../lib/motion";
 import type { Lang } from "./retailpulse-data";
+import { airportModelScope } from '../lib/airport-model-scope';
 // Styles live in app/airport-visual.css, imported once by
 // app/airport-departure-overview.tsx (always in the app bundle). Importing it
 // here too would break the node tests that load live-signals.tsx.
@@ -43,10 +44,11 @@ const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 /** Rough text width at 11px: CJK glyphs are square, Latin digits are narrow. */
 const textWidth = (text: string) => [...text].reduce((sum, ch) => sum + (ch > "⺀" ? 11 : /[0-9]/.test(ch) ? 6.4 : /[ ·–:]/.test(ch) ? 3.4 : 6.2), 0);
 
-export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakStartAt, nowBandStart, nowBandProgress, nowLabel, numberLocale, label }: {
+export function AirportFlowFigure({ timeline, layers = null, lang = "ko", terminal = 'all', peakStartAt, nowBandStart, nowBandProgress, nowLabel, numberLocale, label }: {
   timeline: ReadonlyArray<FlowBand>;
   layers?: Record<string, ReadonlyArray<FlowBand> | undefined> | null;
   lang?: Lang;
+  terminal?: 'all' | 'T1' | 'T2';
   peakStartAt: string | null;
   nowBandStart: string | null;
   nowBandProgress: number | null;
@@ -67,7 +69,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakSt
     observer.observe(figure);
     return () => observer.disconnect();
   }, []);
-  const height = width < 560 ? 236 : 272;
+  const height = width < 560 ? 184 : 224;
   const layout = useMemo(() => flowLayout({ timeline, layers, width, height, peakStartAt, nowBandStart, nowBandProgress }),
     [timeline, layers, width, height, peakStartAt, nowBandStart, nowBandProgress]);
 
@@ -175,6 +177,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakSt
   })() : null;
 
   return <figure className="av-figure airport-flow" ref={figureRef} role="group" aria-label={label} data-bands={layout.bands.length}>
+    <p className="airport-model-scope" data-testid="airport-model-scope" data-terminal={terminal}>{airportModelScope(terminal,lang)}</p>
     <div className="airport-hourly-concept" aria-hidden="true">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/airport-models/approved-D-900.webp" srcSet="/airport-models/approved-D-480.webp 480w, /airport-models/approved-D-900.webp 900w" sizes="(max-width: 820px) 100vw, 700px" width="900" height="500" alt="" loading="lazy" decoding="async"/>

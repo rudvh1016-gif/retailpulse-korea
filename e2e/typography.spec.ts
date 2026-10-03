@@ -170,7 +170,7 @@ const airportMyStoreLabel = { ko: "내 매장", en: "MY STORE", zh: "我的店�
 const facilityNameLanguage = { ko: "ko", en: "en", zh: "zh", ja: "ja" } as const;
 
 for (const locale of ["ko", "en", "zh", "ja"] as const) {
-  test(`${locale} Airport directory and selected-store provider text contain no tofu`, async ({ page }) => {
+  test(`${locale} Airport directory provider text contains no tofu and hidden store selection survives`, async ({ page }) => {
     await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
     await page.route("**/api/airport/facilities*", async (route) => {
       await route.fulfill({
@@ -201,16 +201,16 @@ for (const locale of ["ko", "en", "zh", "ja"] as const) {
       .toHaveAttribute("lang", locale === "en" ? "en" : "ko");
     expect(await tofuCharacters(directory)).toEqual([]);
 
-    await page.locator(".airport-context-nav button").filter({ hasText: airportMyStoreLabel[locale] }).click();
-    await page.locator(".my-store input[type='search']").fill("Provider");
-    const result = page.locator(".my-store-results button").first();
-    await expect(result).toBeVisible();
-    await result.click();
-    const selectedStore = page.locator(".my-store-brief");
-    await expect(selectedStore).toBeVisible();
-    await expect(selectedStore.locator("h3 .airport-provider-text"))
-      .toHaveAttribute("lang", facilityNameLanguage[locale]);
-    expect(await tofuCharacters(selectedStore)).toEqual([]);
+    // The owner hid My Store; keep provider typography assertions on the retained directory.
+    await expect(page.locator(".airport-context-nav button").filter({ hasText: airportMyStoreLabel[locale] })).toHaveCount(0);
+    await page.evaluate(() => localStorage.setItem('koretail-my-facility','provider-font-fixture'));
+    await page.reload();
+    await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+    await page.locator(".airport-context-nav button").filter({ hasText: airportStoreLabel[locale] }).click();
+    await expect(directory.locator(".facility-card h3 .airport-provider-text")).toHaveAttribute("lang", facilityNameLanguage[locale]);
+    expect(await tofuCharacters(directory)).toEqual([]);
+    expect(await page.evaluate(()=>localStorage.getItem('koretail-my-facility'))).toBe('provider-font-fixture');
+    await expect(page.locator('.my-store-brief')).toHaveCount(0);
   });
 }
 

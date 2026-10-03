@@ -1,7 +1,9 @@
 "use client";
+import { airportCompositionCopy } from '../lib/airport-composition-copy';
 import { demandCopy, demandLevel, AreaDemandCard, usePresentationClock } from "./area-demand-card";
 import { passengerCopy } from "../lib/passenger-copy";
 import { AirportFlowFigure } from "./airport-flow-figure";
+import { FlightCountPrism } from './flight-count-prism';
 import { AirportMonthComparison } from './airport-month-comparison';
 import { CountUpNumber } from "./count-up-number";
 import { passengerReferenceSum } from "../lib/passenger-reference-sum";
@@ -1587,6 +1589,7 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
       {timeline.length > 0
         ? <AirportFlowFigure
           timeline={timeline}
+          terminal={terminal}
           layers={isAll ? arrival?.passengerForecastTimelineByTerminal ?? null : null}
           lang={lang}
           peakStartAt={peak?.targetStartAt ?? null}
@@ -2005,6 +2008,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         ? <AirportFlowFigure
           timeline={timeline}
           layers={isAll ? airport.passengerForecastTimelineByTerminal ?? null : null}
+          terminal={terminal}
           lang={lang}
           peakStartAt={peak?.targetStartAt ?? null}
           nowBandStart={nowBandStart}
@@ -2048,9 +2052,9 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     <section className="airport-composition" aria-labelledby="airport-composition-title">
       <div className="airport-composition-head">
         <div>
-          <h3 id="airport-composition-title">{airportTodayText.compositionTitle[lang]}</h3>
-          <p className="airport-composition-scope">{airportTodayText.compositionScope[lang](scopeLabel)}</p>
-          <p>{airportTodayText.compositionIntro[lang]}</p>
+          <h3 id="airport-composition-title">{airportCompositionCopy(lang, summary.dayRelation, summary.serviceDateKst, scopeLabel).title}</h3>
+          <p className="airport-composition-scope">{airportCompositionCopy(lang, summary.dayRelation, summary.serviceDateKst, scopeLabel).scope}</p>
+          <p>{airportCompositionCopy(lang, summary.dayRelation, summary.serviceDateKst, scopeLabel).intro}</p>
           <small>{airportTodayText.compositionTruth[lang]}</small>
         </div>
       </div>
@@ -2099,13 +2103,13 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         tabIndex={0}
         aria-labelledby="airport-composition-tab-airlines"
       >
-        <div className="airport-composition-panel-head"><h4>{airportTodayText.airlinesTitle[lang]}</h4><p>{airportTodayText.airlinesNote[lang]}</p></div>
+        <div className="airport-composition-panel-head"><h4>{airportTodayText.airlinesTitle[lang]}</h4><p>{airportCompositionCopy(lang, summary.dayRelation, summary.serviceDateKst, scopeLabel).intro}</p></div>
         {ranking && ranking.airlines.length ? <>
           <ol className="airport-gate-list airport-airline-list">
             <li className="airport-gate-head" aria-hidden="true"><span>{airportTodayText.rankLabel[lang]}</span><strong>{airportTodayText.airlineColumn[lang]}</strong><b>{airportTodayText.departureShareColumn[lang]}</b></li>
             {ranking.airlines.map((row, index) => <li className="airport-rank-row airport-airline-row" key={row.iata ?? `label-${index}`}>
               <span>{String(index + 1).padStart(2, "0")}</span>
-              <strong>{row.iata ? <i>{row.iata}</i> : null}{airlineDisplayName(row, lang)}<em>{row.country ? regionName(row.country, lang) : airportTodayText.countryUnverified[lang]}</em></strong>
+              <strong>{row.iata ? <i>{row.iata}</i> : null}{airlineDisplayName(row, lang)}<em>{row.country ? regionName(row.country, lang) : airportTodayText.countryUnverified[lang]}</em><FlightCountPrism flights={row.flights} maximum={Math.max(...ranking.airlines.map(item=>item.flights))}/></strong>
               <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}<small>{formatShare(row.share)}</small></b>
             </li>)}
           </ol>
@@ -2126,7 +2130,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
             <li className="airport-gate-head" aria-hidden="true"><span>{airportTodayText.rankLabel[lang]}</span><strong>{airportTodayText.countryColumn[lang]}</strong><b>{airportTodayText.departureShareColumn[lang]}</b></li>
             {ranking.countries.map((row, index) => <li className="airport-rank-row airport-country-row" key={row.country ?? "unverified"}>
               <span>{String(index + 1).padStart(2, "0")}</span>
-              <strong>{row.country ? <i>{row.country}</i> : null}{row.country ? regionName(row.country, lang) : airportTodayText.countryUnverified[lang]}<em>{row.airlines.toLocaleString(numberLocale)}{airportTodayText.airlinesUnit[lang]}</em></strong>
+              <strong>{row.country ? <i>{row.country}</i> : null}{row.country ? regionName(row.country, lang) : airportTodayText.countryUnverified[lang]}<em>{row.airlines.toLocaleString(numberLocale)}{airportTodayText.airlinesUnit[lang]}</em><FlightCountPrism flights={row.flights} maximum={Math.max(...ranking.countries.map(item=>item.flights))}/></strong>
               <b>{row.flights.toLocaleString(numberLocale)}{flightUnit}<small>{formatShare(row.share)}</small></b>
             </li>)}
           </ol> : <p className="airport-empty-line">{flightsCount === null ? noFlightsText : airportTodayText.noAirlineList[lang]}</p>}
@@ -2895,7 +2899,7 @@ function MyStoreSnapshot({ lang, operations }: { lang: Lang; operations: Operati
 }
 
 /** The four Seoul areas, each opening with its own official brief. */
-export function HomeTodayBrief({ lang, selected, onSelect, date = null }: { lang: Lang; selected: AreaId; onSelect: (area: AreaId) => void; date?: string | null }) {
+export function HomeTodayBrief({ lang, selected, onSelect, date = null, includeAirport = true }: { lang: Lang; selected: AreaId; onSelect: (area: AreaId) => void; date?: string | null; includeAirport?: boolean }) {
   const summary = useLiveSummary(date);
   const now = usePresentationClock(summary?.generatedAt ?? "");
   if (!summary) return <div className="demand-loading"><LiveLoadMessage loading={summary === undefined} lang={lang}/></div>;
@@ -2932,7 +2936,7 @@ export function HomeTodayBrief({ lang, selected, onSelect, date = null }: { lang
       <p className="flow-note">{contextText(lang,"각 측정 구역의 범위가 달라, 인구 크기로 지역의 인기나 혼잡 밀도를 비교하지 않습니다.","Measured areas differ. Headcounts are not a ranking of popularity or crowd density.","测量区域范围不同，人数不能作为人气或拥挤密度排名。","測定区域が異なるため、人口の大きさで人気や混雑密度は比較できません。")}</p>
     </section>
     {changes.length > 0 && <section className="demand-changes"><h2>{contextText(lang,"주목할 변화","Changes to watch","值得关注的变化","注目する変化")}</h2><ul>{changes.map(change => <li key={change.area}><strong>{areaNames[change.area][lang]}</strong><p>{change.line}</p></li>)}</ul></section>}
-    <section className="home-airport"><div className="demand-section-head"><h2>{contextText(lang,"인천공항","Incheon Airport","仁川机场","仁川空港")}</h2><a href={`/${lang}/airport${dateSuffix}`}>{contextText(lang,"공항 자세히 보기","Explore airport","机场详情","空港の詳細")} →</a></div><AirportAtAGlance summary={summary} lang={lang}/></section>
+    {includeAirport && <section className="home-airport"><div className="demand-section-head"><h2>{contextText(lang,"인천공항","Incheon Airport","仁川机场","仁川空港")}</h2><a href={`/${lang}/airport${dateSuffix}`}>{contextText(lang,"공항 자세히 보기","Explore airport","机场详情","空港の詳細")} →</a></div><AirportAtAGlance summary={summary} lang={lang}/></section>}
     <section className="home-support"><h2>{contextText(lang,"날씨와 주변 일정","Weather and nearby events","天气与周边日程","天気と周辺の予定")}</h2>
       {supportLines.length ? supportLines.map(line => <p key={line}>{line}</p>) : <p>{contextText(lang,"선택 날짜에 확인된 보조자료가 없습니다.","No supporting data for the selected date.","所选日期暂无辅助资料。","選択日の補足資料はありません。")}</p>}
       <p className="flow-note">{contextText(lang,"기상청 예보·공식 행사기간 기준. 실제 운영시간은 상세 화면의 공식 안내를 확인하세요.","KMA forecasts and official event periods. Check official links in the area details for operating hours.","按气象厅预测与官方活动期间，实际营业时间请查看地区详情内的官方信息。","気象庁予報・公式イベント期間。実際の開催時間はエリア詳細の公式案内をご確認ください。")}</p>

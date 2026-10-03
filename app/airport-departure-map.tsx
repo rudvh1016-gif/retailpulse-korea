@@ -93,7 +93,10 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
   /** China's and Japan's official holidays on the date, from the page's own calendar lookup. */
   holidays: ReadonlyArray<{ country: string; name: string }>;
 }) {
-  const today = dayRelation === 'TODAY' && date === todayKst;
+  const nowDateKst = new Date(Date.parse(nowIso) + 9 * 3_600_000).toISOString().slice(0, 10);
+  // A last-good summary can straddle midnight. Its old TODAY label must not
+  // make the new day's 00:02 look like 00:02 (+1) on the previous date.
+  const today = dayRelation === 'TODAY' && date === todayKst && date === nowDateKst;
   const [preset, setPreset] = useState<WindowPreset>('DAY');
   const [custom, setCustom] = useState<[number, number]>([9, 18]);
   const [filter, setFilter] = useState<DestinationGroup | null>(null);
@@ -106,7 +109,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
   const current = useFlights(date);
   const next = useFlights(span.endMin > 1440 ? nextDate : null);
   const map = useMemo(() => current?.status === 'OK'
-    ? departureMap({ date, nextDate, terminal, window: span, rows: current.payload.flights, nextRows: next === undefined ? null : next.status === 'OK' ? next.payload.flights : [] })
+    ? departureMap({ date, nextDate, terminal, window: span, rows: current.payload.flights, nextRows: next?.status === 'OK' && (next.payload.flights.length > 0 || next.payload.retrievedAt) ? next.payload.flights : null })
     : null, [current, next, date, nextDate, terminal, span.startMin, span.endMin]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (current === undefined) return <p className="prep-note" data-testid="map-loading">{copy.loading[lang]}</p>;
@@ -135,8 +138,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
   const presets: WindowPreset[] = today ? ['DAY', 'NEXT1', 'NEXT3', 'NEXT6', 'CUSTOM'] : ['DAY', 'CUSTOM'];
 
   return <div data-testid="departure-map" data-window={`${span.startMin}-${span.endMin}`} data-filter={filter ?? 'ALL'}>
-    <p className="prep-note">{copy.intro[lang]}</p>
-    <AirportConceptModel map={map} lang={lang}/>
+    {map.nextDay !== 'MISSING' && <AirportConceptModel map={map} lang={lang}/>}
     <div className="date-nav-shortcuts" role="group" aria-label={copy.time[lang]} style={{ flexWrap: 'wrap' }}>
       {presets.map((value) => <button key={value} type="button" aria-pressed={preset === value} data-preset={value} style={{ whiteSpace: 'nowrap', flex: '0 0 auto' }}
         onClick={() => { setPreset(value); setSelected(null); }}>{copy.presets[value][lang]}</button>)}
@@ -150,13 +152,12 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
       </select></label>
     </p>}
     <p className="prep-note">{windowText(map.window, lang)} · {copy.scheduled[lang]}</p>
-    {map.nextDay === 'MISSING' && <p className="prep-note" data-testid="map-next-missing">{copy.nextDayMissing[lang]}</p>}
-    {map.nextDay === 'COVERED' && <p className="prep-note" data-testid="map-next-covered">{copy.nextDayCovered[lang]}</p>}
+    {map.nextDay === 'MISSING' && <p className="prep-note" data-testid="map-next-missing" role="status">{copy.nextDayMissing[lang]}</p>}
 
-    <p data-testid="map-counts"><strong>{windowCountsLine(map, lang)}</strong></p>
-    <p data-testid="map-lead">{leadLine(map, lang)}</p>
+    {map.nextDay !== 'MISSING' && <p data-testid="map-counts"><strong>{windowCountsLine(map, lang)}</strong></p>}
+    {map.nextDay !== 'MISSING' && (map.flights.length > 0 || map.unknownBuilding > 0) && <p data-testid="map-lead">{leadLine(map, lang)}</p>}
 
-    {!map.flights.length ? <p className="prep-note" data-testid="map-empty">{copy.empty[lang]}</p> : <>
+    {!map.flights.length ? map.nextDay !== 'MISSING' && map.unknownBuilding === 0 && <p className="prep-note" data-testid="map-empty">{copy.empty[lang]}</p> : <>
       <OpenableList testId="map-destinations" summary={copy.destinations[lang]}>{() => <>
       <table data-testid="map-groups" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
         <tbody>
@@ -203,7 +204,10 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
         <FlightRows lang={lang} flights={shown} testId="map-flight-list"/>}</OpenableList>
     </>}
 
-    <p className="prep-note">{basis}{current.payload.retrievedAt ? ` · ${copy.collected[lang]} ${kstClock(String(current.payload.retrievedAt), date)}` : ''} · {copy.notPeople[lang]}</p>
+    <p className="prep-note">{date} KST{current.payload.retrievedAt ? ` · ${copy.collected[lang]} ${kstClock(String(current.payload.retrievedAt), date)}` : ''}</p>
+    <details className="prep-evidence"><summary>{{ko:'출처·집계 기준',en:'Sources and counting basis',zh:'来源与统计基准',ja:'出典・集計基準'}[lang]}</summary><p className="prep-note">{copy.intro[lang]}</p><p className="prep-note">{basis} · {copy.notPeople[lang]}</p>
+      {map.nextDay === 'COVERED' && <p className="prep-note" data-testid="map-next-covered">{copy.nextDayCovered[lang]}</p>}
+    </details>
     <p><button type="button" className="install-app-button" onClick={copyText} data-testid="map-copy">{copy.copy[lang]}</button>
       {copied === 'OK' && <span className="prep-note" role="status"> {copy.copied[lang]}</span>}</p>
     {copied === 'FAILED' && <><p className="prep-note" role="status">{copy.copyFailed[lang]}</p><pre data-testid="map-share-text" style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>{share}</pre></>}

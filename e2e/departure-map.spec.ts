@@ -58,9 +58,9 @@ async function openMap(page: Page, options: Parameters<typeof open>[1] = {}) {
 
 test('the whole day agrees with the comparison card, flight for flight', async ({ page }) => {
   const { sides, map, flightRequests } = await openMap(page);
-  await expect(map.getByTestId('map-counts')).toHaveText('동편 3편 · 서편 2편 · 중앙 0편 · 위치 미확인 4편 · 건물 미확인 1편');
-  await expect(sides.getByTestId('split-flights')).toContainText('동편 3편 60% · 서편 2편 40% · 중앙 0편 · 위치 미확인 4편');
-  await expect(map.getByTestId('map-lead')).toHaveText('확인된 항공편 기준 동편이 1편 더 많음 (위치 미확인 4편에 따라 달라질 수 있음)');
+  await expect(map.getByTestId('map-counts')).toHaveText('동편 3편 · 서편 3편 · 중앙 1편 · 위치 미확인 2편 · 건물 미확인 1편');
+  await expect(sides.getByTestId('split-flights')).toContainText('동편 3편 50% · 서편 3편 50% · 중앙 1편 · 위치 미확인 2편');
+  await expect(map.getByTestId('map-lead')).toHaveText('확인된 항공편 기준 동편과 서편이 같음 (위치 미확인 2편에 따라 달라질 수 있음)');
   expect(flightRequests).toHaveLength(1);
   // Dots add up to the flights that have an official gate position; the rest are listed apart.
   const drawn = await map.locator('[data-flights]').evaluateAll((nodes) => nodes.reduce((sum, node) => sum + Number(node.getAttribute('data-flights')), 0));
@@ -75,7 +75,7 @@ test('the time selection moves the counts, the dots and the list together', asyn
   const { map } = await openMap(page);
   await map.getByRole('button', { name: '지금부터 1시간' }).click();
   await expect(map).toHaveAttribute('data-window', '850-910');
-  await expect(map.getByTestId('map-counts')).toHaveText('동편 2편 · 서편 1편 · 중앙 0편 · 위치 미확인 1편 · 건물 미확인 1편');
+  await expect(map.getByTestId('map-counts')).toHaveText('동편 2편 · 서편 2편 · 중앙 0편 · 위치 미확인 0편 · 건물 미확인 1편');
   await map.getByTestId('map-flights').locator('summary').click();
   await expect(map.getByTestId('map-flight-list').locator('li')).toHaveCount(4);
   const drawn = await map.locator('[data-flights]').evaluateAll((nodes) => nodes.reduce((sum, node) => sum + Number(node.getAttribute('data-flights')), 0));

@@ -1,3 +1,4 @@
+import { holidayComparisonCopy } from './holiday-comparison-copy';
 /**
  * Words for "what is different today" and "days like today" (four languages).
  * Every sentence says what was compared with what, and how many days; none
@@ -161,9 +162,10 @@ const share = (day: TerminalDay) => {
 /** "가까운 점: 출발편 수(오늘 575 · 그날 580), 시간대 분포" / "다른 점: …" */
 export function similarLines(item: SimilarDay, current: TerminalDay, lang: Lang): { alike: string; differ: string; busiest: string | null } {
   const detail = (name: SimilarDay["components"][number]["name"]) => {
+    if (name === "HOLIDAY") return holidayComparisonCopy(current.day, item.day.day, lang);
     const label = dayCopy.component[name][lang];
-    if (name === "TOTAL") return `${label}(${dayCopy.today[lang]} ${num(current.total, lang)} · ${dayCopy.thatDay[lang]} ${num(item.day.total, lang)})`;
-    if (name === "EAST_SHARE") return `${label}(${dayCopy.today[lang]} ${share(current)} · ${dayCopy.thatDay[lang]} ${share(item.day)})`;
+    if (name === "TOTAL") return `${label}(${current.day} ${num(current.total, lang)} · ${item.day.day} ${num(item.day.total, lang)})`;
+    if (name === "EAST_SHARE") return `${label}(${current.day} ${share(current)} · ${item.day.day} ${share(item.day)})`;
     return label;
   };
   const sorted = [...item.components].sort((a, b) => a.distance - b.distance);
