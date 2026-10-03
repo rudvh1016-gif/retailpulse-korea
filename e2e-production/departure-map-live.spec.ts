@@ -50,6 +50,10 @@ for (const width of [360, 1280]) {
       expect(errors).toEqual([]);
       return;
     }
+    await expect(map.getByTestId("map-groups")).toHaveCount(0);
+    await map.getByTestId("map-destinations").locator("summary").click();
+    await expect(map.getByTestId("map-groups")).toBeVisible();
+    await map.getByTestId("map-official-coordinates").locator("summary").click();
     log(`${width} groups`, (await map.getByTestId("map-groups").innerText()).replace(/\s+/g, " "));
     log(`${width} groups basis`, await map.getByTestId("map-groups-basis").innerText());
     const drawn = await map.locator("[data-flights]").evaluateAll((nodes) => nodes.reduce((sum, node) => sum + Number(node.getAttribute("data-flights")), 0));

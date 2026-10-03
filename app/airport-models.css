@@ -73,3 +73,18 @@
 .similar-calendar { float: left; width: 56px; height: 70px; margin: 0 12px 6px 0; }
 .similar-calendar text { font-family: inherit; font-size: 12px; fill: #000; }
 @media (max-width: 365px) { .airport-concept-label { font-size: 11px; padding: 3px; } }
+
+/* Owner screenshot review: larger readable building, compact graphs, unchanged text tokens. */
+.airport-hourly-concept { aspect-ratio: 9 / 5; max-height: 230px; overflow: hidden; margin-bottom: 12px; }
+.airport-hourly-concept img { object-fit: contain; transform: scale(1.28); }
+.airport-today.airport-approved .airport-flow { margin-top: 12px; }
+.airport-mtd { background: #f7fafc; border-radius: 10px; padding: 12px; }
+.airport-mtd-compare { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
+.airport-month-compare-model { margin: 8px auto; }
+.airport-month-bar { fill: #c6e5f6; }
+.airport-month-bar[data-selected] { fill: #a9d5ec; }
+.home-seoul-secondary { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line); }
+nav.bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (max-width: 820px) { .airport-hourly-concept { max-height: 200px; } }
+
+.flight-count-prism { display: block; width: 100%; max-width: 200px; height: 20px; margin-top: 6px; }

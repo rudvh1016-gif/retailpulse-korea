@@ -67,7 +67,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", peakSt
     observer.observe(figure);
     return () => observer.disconnect();
   }, []);
-  const height = width < 560 ? 236 : 272;
+  const height = width < 560 ? 184 : 224;
   const layout = useMemo(() => flowLayout({ timeline, layers, width, height, peakStartAt, nowBandStart, nowBandProgress }),
     [timeline, layers, width, height, peakStartAt, nowBandStart, nowBandProgress]);
 

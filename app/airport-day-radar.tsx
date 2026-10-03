@@ -152,7 +152,7 @@ export default function DayRadarBlock({ lang, date, dayRelation, terminal, nowIs
             style={{ border: 0, padding: '8px 0', background: 'transparent', color: 'var(--blue)', cursor: 'pointer', font: 'inherit' }}>{copy.compareTable[lang]}</button>
           {isOpen && <div data-testid="similar-table">
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-              <thead><tr><th/><th style={{ textAlign: 'right' }}>{copy.today[lang]}</th><th style={{ textAlign: 'right' }}>{dayLabel(item.day.day, lang)}</th></tr></thead>
+              <thead><tr><th/><th style={{ textAlign: 'right' }}>{dayLabel(current.day, lang)}</th><th style={{ textAlign: 'right' }}>{dayLabel(item.day.day, lang)}</th></tr></thead>
               <tbody>
                 <tr><th scope="row" style={{ textAlign: 'left', fontWeight: 400 }}>{copy.rows.total[lang]}</th><td style={{ textAlign: 'right' }}>{current.total}</td><td style={{ textAlign: 'right' }}>{item.day.total}</td></tr>
                 <tr><th scope="row" style={{ textAlign: 'left', fontWeight: 400 }}>{copy.rows.east[lang]}</th><td style={{ textAlign: 'right' }}>{dayEastShare(current)}</td><td style={{ textAlign: 'right' }}>{item.day.sidesVersion === current.sidesVersion ? dayEastShare(item.day) : '—'}</td></tr>

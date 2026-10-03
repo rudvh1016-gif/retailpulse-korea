@@ -3,7 +3,7 @@
   "protectedFiles": {
     "app/[locale]/[slug]/page.tsx": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1",
     "app/[locale]/not-found.tsx": "620e62c747a4a0d4b8af1558492c74e961f2a4f0d55caa2c960c508395a41ff0",
-    "app/[locale]/page.tsx": "2d86e8cbda4feb8497813a8bb022e03518a7ba6b9682a92ee7fad8afd18e841d",
+    "app/[locale]/page.tsx": "f6634845d6426c9428bf1bb189a47a80ae2c32d25fc41cbb952237ad03cb296e",
     "app/[locale]/tourism-desk/[area]/page.tsx": "b74c40a03d7ff4ec57a8314f4c11825467212d48634bebf057d078d3ae360b35",
     "app/[locale]/tourism-desk/page.tsx": "2738ee0e7cfb960016184b8dd9a99112312719819cd3b8d05e96a89e83320b37",
     "app/api/airport/facilities/route.ts": "ebc9dea6df03d842ee8fbb1e640158276a506658cc364190a32fd99cf712639d",
@@ -19,14 +19,14 @@
     "app/globals.css": "86432fd8a64c35bf560587ae82d1b6fe0f262712557f59c3bcc8fff719caf114",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
     "app/layout.tsx": "5046b7a098cbea56b3c315af2033bbc3d846462584f2c27b97f8dc1bb4c49ec7",
-    "app/live-signals.tsx": "4ecd519fd0b99f4b7c16a7e1df2cf8e80af3ff397d1867fd4a3c9c213dc54241",
+    "app/live-signals.tsx": "fdb51c87224ba10e0d9eaa2b4b9bd41d95b8810a157c308ec6b9b86aa2773930",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "a01bb0bda26fcd8af56869bbabbc6ffcaac1057b9a2cb7c8798643dc6cd79d21",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "b9ccbfae7aac67f7aafd4e5ad2eb6739df50f166fa6723befa40db8742a08314",
-    "app/retailpulse-app.tsx": "4ce44aaae785fd2a8605f56d59538f2602f00a2b0fec92ef2073243bdf2ba5b6",
+    "app/retailpulse-app.tsx": "4b0794428f2e5ab209303e00e3d786423745a4ca3af177c154f7f91e64bdb258",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
@@ -90,5 +90,25 @@
     "previous": "aa307e814a7f265e7ac3bd2d70976d6d7365f60b6af611888f9de76ad3635717",
     "approved": "4ecd519fd0b99f4b7c16a7e1df2cf8e80af3ff397d1867fd4a3c9c213dc54241",
     "reason": "Owner-approved C/D airport design and site-wide asset implementation; existing typography and data preserved. Explicit owner approval to change, test, merge and publish received in delegated task on 2026-10-03. Only this changed protected file refreshed; hash enforcement remains active."
+  },
+  "ownerFollowupApproval20261003": {
+    "reason": "Owner explicitly requested airport-first home/navigation, My Briefing and My Store entry removal with stored data preserved, selected-date and holiday truth wording, and screenshot-backed compact visuals. Existing font sizes/families/weights preserved. Only changed approved UI files refreshed; hash enforcement remains active.",
+    "changes": [
+      {
+        "file": "app/[locale]/page.tsx",
+        "previous": "2d86e8cbda4feb8497813a8bb022e03518a7ba6b9682a92ee7fad8afd18e841d",
+        "approved": "f6634845d6426c9428bf1bb189a47a80ae2c32d25fc41cbb952237ad03cb296e"
+      },
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "4ecd519fd0b99f4b7c16a7e1df2cf8e80af3ff397d1867fd4a3c9c213dc54241",
+        "approved": "fdb51c87224ba10e0d9eaa2b4b9bd41d95b8810a157c308ec6b9b86aa2773930"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "4ce44aaae785fd2a8605f56d59538f2602f00a2b0fec92ef2073243bdf2ba5b6",
+        "approved": "4b0794428f2e5ab209303e00e3d786423745a4ca3af177c154f7f91e64bdb258"
+      }
+    ]
   }
 }

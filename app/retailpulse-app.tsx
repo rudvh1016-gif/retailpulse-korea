@@ -1,9 +1,8 @@
 "use client";
 import { passengerCopy } from "../lib/passenger-copy";
-import { pc } from '../lib/personal-copy';
 import { activeSourceCatalog,sourceName,sourceUse,CollectionStatus } from "./source-status";
 
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { type IndustryId, industryProfiles } from "../lib/industry-guidance";
 import {
   airportAnnual,
@@ -25,7 +24,6 @@ import LiveSignals, {
   DateNavigator,
   DateScopeNote,
   FacilityDirectory,
-  MyStoreBriefing,
   FlightBoard,
   HomeTodayBrief,
   KstTodayChip,
@@ -41,16 +39,12 @@ import { AirportDepartureOverview } from "./airport-departure-overview";
 import { sidesCopy } from "../lib/airport-sides-copy";
 import { saveBusinessPreferences, useBusinessPreferences } from "./business-preferences";
 import { airportAnswerText, areaAnswerText, type TodayAnswer, type TodayAnswerArea } from "../lib/today-answer";
-const PersonalHome = lazy(() => import('./personal-home'));
 
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
 
-function HomeBriefingWrapper({active,lang,children,openRequest}:{active:boolean;lang:Lang;children:React.ReactNode;openRequest:number}) {
-  return active ? <Suspense fallback={<div className="personal-loading" aria-busy="true"><p>{pc('myBriefing',lang)}</p></div>}><PersonalHome lang={lang} openRequest={openRequest}>{children}</PersonalHome></Suspense> : <>{children}</>;
-}
 
 type View = "today" | "airport" | "business" | "forecast" | "predictions" | "tourism-desk" | "about" | "more";
-type AirportSection = "now" | "arrivals" | "flights" | "stores" | "mystore" | "history";
+type AirportSection = "now" | "arrivals" | "flights" | "stores" | "history";
 type AreaId = "myeongdong" | "hongdae" | "seongsu" | "itaewon";
 
 // Area identity only. There is deliberately no "best time" here: a recommended
@@ -255,12 +249,13 @@ type RetailPulseProps = {
   initialArea?: AreaId;
   initialRoute?: boolean;
   /**
-   * "home" is `/{lang}`: the Seoul overview with the three-area brief list.
+   * "airport-home" is `/{lang}`: airport first, with Seoul summaries below.
+   * "home" is a legacy component scope; explicit Seoul routes use "area".
    * "area" is `/{lang}/{area}`: that area's own page, with its own H1 and
    * without the overview list, so the two routes are no longer the same page
    * under two URLs.
    */
-  initialScope?: "home" | "area";
+  initialScope?: "home" | "airport-home" | "area";
   /**
    * Today's answer, read on the server (lib/today-answer.ts) so the first HTML
    * already states it. Absent or null renders nothing.
@@ -289,8 +284,7 @@ function routeFor(lang: Lang, view: View, area: AreaId) {
 export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false, initialScope = "home", todayAnswer = null }: RetailPulseProps = {}) {
   const [lang, setLang] = useState<Lang>(initialLang);
   const [view, setView] = useState<View>(initialView);
-  const [homeVisible, setHomeVisible] = useState(initialScope === "home" && initialView === "today");
-  const [personalOpenRequest, setPersonalOpenRequest] = useState(0);
+  const [homeVisible, setHomeVisible] = useState(initialScope === "airport-home" || (initialScope === "home" && initialView === "today"));
   const [selected, setSelected] = useState<AreaId>(initialArea);
   const [terminal, setTerminal] = useState<Terminal>("all");
   const [airportSection, setAirportSection] = useState<AirportSection>("now");
@@ -309,12 +303,12 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         if (saved) {
           const value = JSON.parse(saved) as Partial<{ lang: Lang; area: AreaId; terminal: Terminal; industry: IndustryId }>;
           if (!initialRoute && value.lang && ["ko", "en", "zh", "ja"].includes(value.lang)) setLang(value.lang);
-          if ((!initialRoute || (initialScope === "home" && initialView === "today")) && value.area && Object.hasOwn(areaInfo, value.area)) setSelected(value.area);
+          if ((!initialRoute || ((initialScope === "home" && initialView === "today") || initialScope === "airport-home")) && value.area && Object.hasOwn(areaInfo, value.area)) setSelected(value.area);
           if (value.terminal && ["all", "T1", "T2"].includes(value.terminal)) setTerminal(value.terminal);
           if (value.industry && Object.hasOwn(industryProfiles, value.industry)) setIndustry(value.industry);
         }
         const personal = parsePreferences(window.localStorage.getItem(PREFERENCE_KEY));
-        if (initialScope === "home" && initialView === "today" && personal && Object.hasOwn(areaInfo, personal.location)) setSelected(personal.location as AreaId);
+        if ((initialScope === "home" || initialScope === "airport-home") && personal && Object.hasOwn(areaInfo, personal.location)) setSelected(personal.location as AreaId);
       } catch {
         // Device-local preferences are optional; the product works without storage.
       } finally {
@@ -322,6 +316,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         if (/^\d{4}-\d{2}-\d{2}$/.test(query.get('date') ?? '')) setServiceDate(query.get('date'));
         if (query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
         if (['all','T1','T2'].includes(query.get('terminal') ?? '')) setTerminal(query.get('terminal') as Terminal);
+        if (query.get('section') === 'mystore' || window.location.hash === '#mystore') setAirportSection('stores');
         setPreferencesReady(true);
       }
     }, 0);
@@ -372,14 +367,13 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
   useEffect(() => {
     const onPopState = () => {
-      setPersonalOpenRequest(0);
       const query = new URLSearchParams(window.location.search);
       setServiceDate(/^\d{4}-\d{2}-\d{2}$/.test(query.get('date') ?? '') ? query.get('date') : null);
       if (query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
       setTerminal(['T1','T2'].includes(query.get('terminal') ?? '') ? query.get('terminal') as Terminal : 'all');
       const [, locale, slug, routeArea] = window.location.pathname.split("/");
       setHomeVisible(!slug);
-      if (!slug) setView("today");
+      if (!slug) { setView("airport"); setAirportSection("now"); }
       if (["ko", "en", "zh", "ja"].includes(locale)) setLang(locale as Lang);
       if (slug && Object.hasOwn(areaInfo, slug)) { setSelected(slug as AreaId); setView("today"); }
       else if (slug === "tourism-desk" && routeArea && Object.hasOwn(areaInfo, routeArea)) {
@@ -391,13 +385,13 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  function updateUrl(nextLang: Lang, nextView: View, nextArea: AreaId, nextTerminal: Terminal = terminal) {
+  function updateUrl(nextLang: Lang, nextView: View, nextArea: AreaId, nextTerminal: Terminal = terminal, preserveHome = false) {
     const params = new URLSearchParams();
     if (serviceDate) params.set('date',serviceDate);
     if (nextView === 'predictions') params.set('area',nextArea);
     if (nextView === 'airport' && nextTerminal !== 'all') params.set('terminal',nextTerminal);
     const paramsText = params.toString(); // not .size: older Safari/Chrome lack URLSearchParams.size
-    const nextPath = routeFor(nextLang, nextView, nextArea) + (paramsText ? `?${paramsText}` : '');
+    const nextPath = (preserveHome ? `/${nextLang}` : routeFor(nextLang, nextView, nextArea)) + (paramsText ? `?${paramsText}` : '');
     if (window.location.pathname + window.location.search !== nextPath) window.history.pushState({}, "", nextPath);
   }
 
@@ -415,24 +409,22 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   }
 
   function selectArea(next: AreaId) {
-    setPersonalOpenRequest(0);
     setHomeVisible(false);
     setSelected(next);
     if (view === "today" || view === "tourism-desk" || view === "predictions") updateUrl(lang, view, next);
   }
 
   function navigate(next: View, nextTerminal: Terminal = terminal) {
-    setPersonalOpenRequest(0);
     setHomeVisible(false);
     setView(next);
     updateUrl(lang, next, selected, nextTerminal);
     window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   }
 
-  function goHome(openBriefing = false) {
-    setPersonalOpenRequest(value => openBriefing ? value + 1 : 0);
+  function goHome() {
     setHomeVisible(true);
-    setView('today');
+    setView('airport');
+    setAirportSection('now');
     if(window.location.pathname !== `/${lang}`) window.history.pushState({}, '', `/${lang}${serviceDate ? `?date=${serviceDate}` : ''}`);
     window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
   }
@@ -451,7 +443,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           <span>KORETAIL</span><span className="brand-descriptor">Retail Demand Signals for Korea</span>
         </button>
         <nav className="top-nav" aria-label="Primary">
-          {(["today", "airport", "business", "predictions", "tourism-desk", "forecast", "about", "more"] as View[]).map((item) => (
+          {(["airport", "today", "business", "predictions", "tourism-desk", "forecast", "about", "more"] as View[]).map((item) => (
             <a key={item} href={routeFor(lang, item, selected)} className={view === item ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} aria-current={view === item ? "page" : undefined}>{t[item]}</a>
           ))}
         </nav>
@@ -473,7 +465,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
       <main className="page-shell">
         {view === "today" && (
-          <HomeBriefingWrapper active={homeVisible} lang={lang} openRequest={personalOpenRequest}>
+          <>
             <section className="hero demand-hero" aria-labelledby="hero-title">
               <div className="hero-copy">
                 <h1 id="hero-title">{homeVisible ? localText(lang, {ko:"서울과 공항의 흐름",en:"Seoul & airport, at a glance",zh:"首尔与机场的流动",ja:"ソウルと空港の流れ"}) : areaHeadline[lang](areaLocalName(selected, lang))}</h1>
@@ -490,22 +482,25 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             <DateScopeNote lang={lang} date={serviceDate} />
             {homeVisible ? <HomeTodayBrief lang={lang} selected={selected} onSelect={setSelected} date={serviceDate} /> : <LiveSignals lang={lang} area={selected} date={serviceDate} />}
             {betaSignupEnabled && <BetaSignup lang={lang} />}
-          </HomeBriefingWrapper>
+          </>
         )}
 
         {view === "airport" && (
+          <>
           <AirportView
             todayAnswer={todayAnswer}
             industry={industry}
             setIndustry={setIndustry}
             lang={lang}
             terminal={terminal}
-            setTerminal={next => { setTerminal(next); updateUrl(lang, "airport", selected, next); }}
+            setTerminal={next => { setTerminal(next); updateUrl(lang, "airport", selected, next, homeVisible); }}
             section={airportSection}
             setSection={setAirportSection}
             date={serviceDate}
             setDate={changeDate}
           />
+          {homeVisible && <section className="home-seoul-secondary" aria-labelledby="home-seoul-title"><div className="demand-section-head"><h2 id="home-seoul-title">{t.today}</h2></div><HomeTodayBrief lang={lang} selected={selected} onSelect={setSelected} date={serviceDate} includeAirport={false} /></section>}
+          </>
         )}
         {view === "business" && <BusinessView lang={lang} selected={selected} setSelected={selectArea} industry={industry} setIndustry={setIndustry} date={serviceDate} setDate={changeDate} setProOpen={setProOpen} />}
         {view === "predictions" && <PredictionView lang={lang} area={selected} onArea={selectArea} />}
@@ -538,17 +533,13 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       </main>
 
       <nav className="bottom-nav" aria-label="Primary">
-        <a href={`/${lang}`} className={homeVisible ? 'active' : ''} aria-current={homeVisible ? 'page' : undefined} onClick={event=>{event.preventDefault();goHome(true);}}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>
-          <span>{pc('myBriefing',lang)}</span>
-        </a>
-        {(["today", "airport", "business", "predictions", "more"] as View[]).map((item) => (
+        {(["airport", "today", "business", "predictions", "more"] as View[]).map((item) => (
           <a
             key={item}
             href={routeFor(lang, item, selected)}
-            className={!homeVisible && (view === item || (view === "tourism-desk" && item === "more")) ? "active" : ""}
+            className={(view === item || (view === "tourism-desk" && item === "more")) ? "active" : ""}
             onClick={(event) => { event.preventDefault(); navigate(item); }}
-            aria-current={homeVisible ? undefined : view === item ? "page" : view === "tourism-desk" && item === "more" ? "location" : undefined}
+            aria-current={view === item ? "page" : view === "tourism-desk" && item === "more" ? "location" : undefined}
           >
             <Icon name={item} />
             <span>{t[item].toUpperCase()}</span>
@@ -626,17 +617,17 @@ function AirportView({
           * had no way in at all. 출국 / 입국 sit next to each other because
           * that is the only thing that separates them.
           */}
-        {(["now", "arrivals", "flights", "stores", "mystore", "history"] as AirportSection[]).map((item) => <button key={item} className={section === item ? "active" : ""} onClick={() => setSection(item)} aria-current={section === item ? "page" : undefined}>
+        {(["now", "arrivals", "flights", "stores", "history"] as AirportSection[]).map((item) => <button key={item} className={section === item ? "active" : ""} onClick={() => setSection(item)} aria-current={section === item ? "page" : undefined}>
           {item === "now" ? localText(lang, { ko: "출국", en: "DEPARTURES", zh: "出境", ja: "出国" })
             : item === "arrivals" ? localText(lang, { ko: "입국", en: "ARRIVALS", zh: "入境", ja: "入国" })
             : item === "flights" ? localText(lang, { ko: "항공편", en: "FLIGHTS", zh: "航班", ja: "フライト" })
               : item === "stores" ? localText(lang, { ko: "매장·시설", en: "STORES", zh: "店铺·设施", ja: "店舗・施設" })
-                : item === "mystore" ? localText(lang, { ko: "내 매장", en: "MY STORE", zh: "我的店铺", ja: "自分の店舗" })
+
                   : localText(lang, { ko: "과거", en: "HISTORY", zh: "历史", ja: "履歴" })}
         </button>)}
       </nav>
 
-      {section !== "history" && section !== "stores" && section !== "mystore" && <>
+      {section !== "history" && section !== "stores" && <>
         <DateNavigator lang={lang} date={date} onChange={setDate} airportDates />
         <DateScopeNote lang={lang} date={date} scope={section === "arrivals" ? "arrivals" : "departures"} />
       </>}
@@ -649,7 +640,7 @@ function AirportView({
       {section === "arrivals" && <AirportArrivalSummary lang={lang} terminal={terminal} date={date} />}
       {section === "flights" && <FlightBoard lang={lang} terminal={terminal} date={date} />}
       {section === "stores" && <FacilityDirectory lang={lang} terminal={terminal} />}
-      {section === "mystore" && <MyStoreBriefing lang={lang} />}
+
       {(section === "now" || section === "arrivals") && <IndustryGuide key={section} lang={lang} industry={industry} onIndustryChange={setIndustry} airport={{ terminal, direction: section === "arrivals" ? "arrival" : "departure" }} />}
 
       {section === "history" && <section className="airport-history" aria-labelledby="airport-history-title">

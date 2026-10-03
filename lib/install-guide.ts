@@ -137,8 +137,8 @@ const GUIDE: Record<InstallLang, InstallGuide> = {
     questions: [
       { question: "메뉴에 '앱 설치'가 없어요", answer: "'홈 화면에 추가'를 누르시면 됩니다. 결과는 같습니다. 두 항목 모두 없다면 카카오톡이나 인스타그램 안의 브라우저일 가능성이 큽니다. 크롬이나 사파리로 다시 열어주세요." },
       { question: "설치하면 요금이 나가나요?", answer: "아니요. KORETAIL은 무료이고, 설치에 가입·결제·광고가 없습니다. 앱 용량도 거의 차지하지 않습니다." },
-      { question: "인터넷이 없어도 볼 수 있나요?", answer: "아니요. 화면에 나오는 숫자는 모두 공식 실시간 자료라서, 열 때마다 인터넷 연결이 필요합니다." },
-      { question: "지우고 싶어요", answer: "홈 화면의 아이콘을 길게 누른 뒤 '삭제' 또는 '앱 제거'를 누르시면 됩니다. 저장된 개인정보는 없습니다." },
+      { question: "인터넷이 없어도 볼 수 있나요?", answer: "자료를 불러오려면 인터넷 연결이 필요합니다. 관측·공식 예측·과거 통계는 기준 시각과 갱신 주기가 다르므로 각 지표의 출처와 시각을 확인하세요." },
+      { question: "지우고 싶어요", answer: "홈 화면의 아이콘을 길게 누른 뒤 '삭제' 또는 '앱 제거'를 누르세요. 아이콘 제거만으로 브라우저에 저장된 사이트 설정·기록이 지워지는 것은 아닙니다. 해당 데이터는 브라우저의 사이트 데이터 설정에서 관리할 수 있습니다." },
     ],
     closeLabel: "닫기",
     doneTitle: "잘 됐는지 확인하는 법",
@@ -211,8 +211,8 @@ const GUIDE: Record<InstallLang, InstallGuide> = {
     questions: [
       { question: "There is no \"Install app\" in the menu", answer: "Use \"Add to Home screen\" — the result is the same. If neither is there, you are probably inside another app's browser; reopen the page in Chrome or Safari." },
       { question: "Does installing cost anything?", answer: "No. KORETAIL is free, and installing involves no sign-up, no payment and no ads. It uses almost no storage." },
-      { question: "Does it work offline?", answer: "No. Every number on screen is live official data, so an internet connection is needed each time you open it." },
-      { question: "How do I remove it?", answer: "Press and hold the home-screen icon and choose Delete or Uninstall. No personal data is stored." },
+      { question: "Does it work offline?", answer: "An internet connection is needed to load data. Observations, official forecasts and historical statistics have different reference times and refresh intervals; check each metric's source and timestamp." },
+      { question: "How do I remove it?", answer: "Press and hold the home-screen icon and choose Delete or Uninstall. Removing the icon does not necessarily clear site settings or records stored in your browser. Manage those through the browser's site-data settings." },
     ],
     closeLabel: "Close",
     doneTitle: "How to tell it worked",
@@ -285,8 +285,8 @@ const GUIDE: Record<InstallLang, InstallGuide> = {
     questions: [
       { question: "菜单里没有「安装应用」", answer: "点击「添加到主屏幕」即可，结果相同。若两者都没有，通常是在其他应用内置浏览器中，请用 Chrome 或 Safari 重新打开。" },
       { question: "安装需要收费吗？", answer: "不需要。KORETAIL 免费使用，安装过程没有注册、付费或广告，也几乎不占存储空间。" },
-      { question: "没有网络也能看吗？", answer: "不能。屏幕上的数字均为官方实时资料，每次打开都需要联网。" },
-      { question: "想要删除", answer: "长按主屏幕上的图标，选择删除或卸载即可。不会留下个人信息。" },
+      { question: "没有网络也能看吗？", answer: "加载资料需要联网。观测、官方预测和历史统计的基准时间与更新周期不同，请查看各指标的来源和时间。" },
+      { question: "想要删除", answer: "长按主屏幕上的图标，选择删除或卸载。移除图标不一定会清除浏览器保存的网站设置或记录，可在浏览器的网站数据设置中管理。" },
     ],
     closeLabel: "关闭",
     doneTitle: "如何确认安装成功",
@@ -359,8 +359,8 @@ const GUIDE: Record<InstallLang, InstallGuide> = {
     questions: [
       { question: "メニューに「アプリをインストール」がありません", answer: "「ホーム画面に追加」で同じ結果になります。どちらも無い場合は他アプリ内のブラウザの可能性が高いので、Chrome または Safari で開き直してください。" },
       { question: "インストールに費用はかかりますか", answer: "かかりません。KORETAIL は無料で、登録・支払い・広告はありません。容量もほとんど使いません。" },
-      { question: "オフラインでも見られますか", answer: "見られません。画面の数値はすべて公式のリアルタイム資料のため、開くたびにインターネット接続が必要です。" },
-      { question: "削除したいです", answer: "ホーム画面のアイコンを長押しして削除またはアンインストールを選んでください。個人情報は保存されていません。" },
+      { question: "オフラインでも見られますか", answer: "資料の読み込みにはインターネット接続が必要です。観測・公式予測・過去統計は基準時刻と更新間隔が異なるため、各指標の出典と時刻を確認してください。" },
+      { question: "削除したいです", answer: "ホーム画面のアイコンを長押しして削除またはアンインストールを選んでください。アイコンを削除しても、ブラウザに保存されたサイト設定や記録が消えるとは限りません。ブラウザのサイトデータ設定で管理できます。" },
     ],
     closeLabel: "閉じる",
     doneTitle: "うまくいったかの確認",

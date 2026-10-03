@@ -63,7 +63,7 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
   preloadLiveSummary();
   preloadShellFont(locale as SeoLocale);
   return <>
-    <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialScope="home" todayAnswer={await loadTodayAnswer()} />
+    <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialView="airport" initialScope="airport-home" todayAnswer={await loadTodayAnswer()} />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale)) }} />
   </>;
 }

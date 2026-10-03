@@ -182,7 +182,7 @@ test("similar days: reproducible, never the day itself or a later day, missing p
   assert.equal(first[0].distance, 0);
   assert.ok(first.every((item) => item.missing.includes("HOLIDAY")), "no holiday lookup: left out, not 0");
   const lines = similarLines(first[0], current, "ko");
-  assert.match(lines.alike, /출발편 수\(오늘 30 · 그날 30\)/);
+  assert.match(lines.alike, /출발편 수\(2026-09-30 30 · 2026-09-23 30\)/);
   assert.equal(lines.busiest, "09–10시 30편");
   assert.equal(similarDays({ current, history: history.slice(0, 1) }).length, 1, "not padded to three");
   const noHours = { ...history[0], day: "2026-09-15", hours: history[0].hours.map(() => 0) };

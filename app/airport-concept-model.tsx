@@ -23,7 +23,7 @@ export function AirportConceptModel({ map, lang }: { map: DepartureMap; lang: La
       {(['WEST', 'CENTER', 'EAST'] as const).map(side => <div key={side} className="airport-concept-label" data-side={side}><strong>{copy.side[side][lang]}</strong>{map.sides[side]}{unit}{share(side) ? ` · ${share(side)}` : ''}</div>)}
     </div>
     <div className="airport-concept-counts">{(['WEST', 'CENTER', 'EAST'] as const).map(side => <div key={side}>{copy.side[side][lang]}<strong>{map.sides[side]}{unit}</strong><small>{share(side) || '—'}</small></div>)}</div>
-    <p className="prep-note">{note[lang]}</p>
+    <details className="prep-evidence"><summary>{{ko:'모형·집계 기준',en:'Model and counting basis',zh:'模型与统计基准',ja:'模型・集計基準'}[lang]}</summary><p className="prep-note">{note[lang]}</p></details>
     <p className="prep-note">{copy.side.UNVERIFIED[lang]} {map.sides.UNVERIFIED}{unit}{map.concourse !== null ? ` · ${copy.concourse[lang]} ${map.concourse}${unit}` : ''}</p>
   </figure>;
 }

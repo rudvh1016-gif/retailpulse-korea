@@ -14,8 +14,8 @@ const NOW = "2026-09-29T10:00:00+09:00";
 let seq = 0;
 const flight = (terminal, gate, time, extra = {}) => ({ physicalFlightId: `F${++seq}`, terminal, gate, scheduledAt: `${DATE}T${time}:00+09:00`, status: "scheduled", retrievedAt: "2026-09-29T00:57:00Z", ...extra });
 const many = (n, terminal, gate, time) => Array.from({ length: n }, () => flight(terminal, gate, time));
-// T2 east gates 274, west gates 231 (both officially named), unverified 208 (between the bounds), a no-gate flight.
-const T2_EXAMPLE = [...many(120, "T2", "274", "09:10"), ...many(80, "T2", "231", "09:40"), ...many(20, "T2", "208", "09:50")];
+// T2 east gates 274, west gates 231 (both officially named), unverified 228 (no official coordinate), a no-gate flight.
+const T2_EXAMPLE = [...many(120, "T2", "274", "09:10"), ...many(80, "T2", "231", "09:40"), ...many(20, "T2", "228", "09:50")];
 const day = (rows) => summarizeGateSides(rows, DATE);
 
 const parts = (estimate) => ({ east: estimate.east.people, west: estimate.west.people, center: estimate.center.people, unverified: estimate.unverified.people, concourse: estimate.concourse?.people ?? null });
@@ -60,7 +60,7 @@ test("a side with no flights, or no confirmed flight at all", () => {
   const westless = flightSplitOf(day(many(7, "T2", "274", "09:00")), "T2", "COLLECTED_FLIGHT_RECORDS", 500);
   assert.deepEqual([westless.eastPct, westless.westPct, westless.expected.east.people, westless.expected.west.people], [100, 0, 500, 0]);
   assert.equal(estimateBody({ terminal: "T2", ...westless.expected }, "ko"), "동편 약 500명 · 서편 0명", "a side with no flight is exactly none, not 'about 0'");
-  const none = flightSplitOf(day(many(7, "T2", "208", "09:00")), "T2", "COLLECTED_FLIGHT_RECORDS", 500);
+  const none = flightSplitOf(day(many(7, "T2", "228", "09:00")), "T2", "COLLECTED_FLIGHT_RECORDS", 500);
   assert.deepEqual([none.eastPct, none.westPct, none.larger, none.expected], [null, null, null, null], "nothing is assigned by force");
   assert.match(sharesBody(none, "ko"), /비율을 계산하지 않았습니다/);
   assert.equal(flightSplitOf(day(many(3, "T1", "9", "09:00")), "T2", "COLLECTED_FLIGHT_RECORDS", 500), null, "another terminal's flights never count");
@@ -99,7 +99,7 @@ test("rounding: every figure is to the nearest 100 and nothing is moved between 
 });
 
 test("a group too small to reach 100 people is 'under 100', not 'about 0' and not moved elsewhere", () => {
-  const rows = [...many(1, "T2", "274", "09:00"), ...many(400, "T2", "231", "09:00"), ...many(1, "T2", "208", "09:00")];
+  const rows = [...many(1, "T2", "274", "09:00"), ...many(400, "T2", "231", "09:00"), ...many(1, "T2", "228", "09:00")];
   const split = flightSplitOf(day(rows), "T2", "COLLECTED_FLIGHT_RECORDS", 4_020);
   assert.deepEqual([split.expected.east.flights, split.expected.east.people, split.expected.unverified.flights, split.expected.unverified.people], [1, 0, 1, 0]);
   assert.equal(estimateBody({ terminal: "T2", ...split.expected }, "ko"), "동편 100명 미만 · 서편 약 4,000명 · 위치 미확인 100명 미만");
@@ -117,7 +117,7 @@ test("the equal-passengers-per-flight assumption and the rounding are stated in 
 });
 
 test("a terminal total of zero is 'none', not 'under 100'", () => {
-  const rows = [...many(3, "T2", "274", "09:00"), ...many(2, "T2", "231", "09:00"), ...many(1, "T2", "208", "09:00")];
+  const rows = [...many(3, "T2", "274", "09:00"), ...many(2, "T2", "231", "09:00"), ...many(1, "T2", "228", "09:00")];
   const split = flightSplitOf(day(rows), "T2", "COLLECTED_FLIGHT_RECORDS", 0);
   assert.equal(estimateBody({ terminal: "T2", ...split.expected }, "ko"), "동편 0명 · 서편 0명 · 위치 미확인 0명");
 });
@@ -156,7 +156,7 @@ test("flights whose building is unknown are in neither scope: left out of the di
 });
 
 test("hourly lines carry counts, shares and the unconfirmed ones", () => {
-  const rows = [...many(8, "T2", "274", "08:10"), ...many(4, "T2", "231", "08:40"), ...many(11, "T2", "274", "09:10"), ...many(7, "T2", "231", "09:20"), flight("T2", "208", "09:30"), ...many(6, "T2", "274", "10:00"), ...many(12, "T2", "231", "10:05")];
+  const rows = [...many(8, "T2", "274", "08:10"), ...many(4, "T2", "231", "08:40"), ...many(11, "T2", "274", "09:10"), ...many(7, "T2", "231", "09:20"), flight("T2", "228", "09:30"), ...many(6, "T2", "274", "10:00"), ...many(12, "T2", "231", "10:05")];
   const split = flightSplitOf(day(rows), "T2", "COLLECTED_FLIGHT_RECORDS", null);
   assert.equal(hourBody(split.hours[0], "ko"), "08–09시 · 합계 12편 · 동 8편 / 서 4편 (동 67% · 서 33%)");
   assert.equal(hourBody(split.hours[1], "ko"), "09–10시 · 합계 19편 · 동 11편 / 서 7편 (동 61% · 서 39%) · 미확인 1편");

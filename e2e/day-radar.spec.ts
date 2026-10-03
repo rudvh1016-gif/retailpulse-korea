@@ -75,7 +75,7 @@ test('days like today: numbers, not a similarity score, and the table opens', as
   const similar = section.getByTestId('similar-days').locator('li');
   await expect(similar.first()).toHaveAttribute('data-day', '2026-08-25');
   await expect(similar.first()).toContainText('가까운 날: 2026-08-25');
-  await expect(similar.first()).toContainText('출발편 수(오늘 36 · 그날 36)');
+  await expect(similar.first()).toContainText('출발편 수(2026-08-31 36 · 2026-08-25 36)');
   await expect(similar.first()).toContainText('그날 기록에서 가장 많은 출발 시간대: 09–10시 20편');
   await similar.first().getByTestId('similar-open').click();
   await expect(similar.first().getByTestId('similar-table')).toBeVisible();
