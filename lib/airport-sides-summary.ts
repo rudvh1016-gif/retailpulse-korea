@@ -11,9 +11,26 @@
  * response entirely (not merely hidden in the page). Gate-side flight counts
  * carry no such condition.
  */
-import { AIRPORT_SIDES_VERSION, summarizeGateSides, summarizeHallSides, type GateSideDay, type HallForecastRow, type HallSideDay, type SideFlightRow } from "./airport-sides";
+import { AIRPORT_SIDES_VERSION, hallSideOf, summarizeGateSides, summarizeHallSides, type GateSideDay, type HallForecastRow, type HallSideDay, type SideFlightRow } from "./airport-sides";
 
 export const AIRPORT_HALL_SIDES_PUBLIC = process.env.NEXT_PUBLIC_AIRPORT_HALL_SIDES === "true";
+
+/** Reuse already-read A5 totals; never add a query or substitute observed waits. */
+export function withOfficialHallTotals(
+  components: ReadonlyArray<Record<string, unknown>>,
+  aggregates: ReadonlyArray<Record<string, unknown>>,
+): Array<Record<string, unknown>> {
+  return [
+    ...components.filter(row => row.direction === "departure" && row.isAggregate === 0
+      && hallSideOf(String(row.terminal), String(row.zone)) !== null),
+    ...aggregates.filter(row => row.direction === "departure" && row.isAggregate === 1
+      && (row.terminal === "T1" || row.terminal === "T2")
+      && (row.zone === undefined || row.zone === (row.terminal === "T1" ? "t1dgsum1" : "t2dgsum2")))
+      // The canonical writer has exactly one official departure-total field per terminal.
+      // Supply its identity privately rather than changing the existing aggregate SELECT/payload.
+      .map(row => ({...row, zone: row.terminal === "T1" ? "t1dgsum1" : "t2dgsum2"})),
+  ];
+}
 
 export interface AirportSidesBlock {
   version: string;

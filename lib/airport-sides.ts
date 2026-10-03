@@ -19,6 +19,7 @@
  */
 import sides from "../config/airport-sides.v1.json" with { type: "json" };
 import { flightBoardingLocation } from "./flight-scope";
+import { shiftKstDay } from "./kst";
 
 export type HallSide = "EAST" | "WEST";
 export type GateSide = "EAST" | "WEST" | "CENTER" | "UNVERIFIED";
@@ -42,6 +43,7 @@ export function hallsOn(terminal: SideTerminal, side: HallSide): number[] {
 }
 
 export interface HallForecastRow {
+  direction?: string;
   terminal: string;
   zone: string;
   isAggregate: number | boolean;
@@ -78,6 +80,8 @@ export interface HallSideDay {
   peakBand: HallBand | null;
   /** Newest row retrieval time among the bands used. A5 publishes no issue time, so none is invented. */
   retrievedAt: string | null;
+  /** A zero here is not evidence of no actual demand at the mobility-priority exit. */
+  limitations: Array<"T1_HALL_6_OUTSIDE_EXPECTED_CONGESTION">;
 }
 
 function kstHour(iso: string): number {
@@ -93,26 +97,41 @@ function kstHour(iso: string): number {
  * (never 0); an official 0 stays 0.
  */
 export function summarizeHallSides(rows: readonly HallForecastRow[], terminal: SideTerminal, date: string): HallSideDay {
-  const own = rows.filter((row) => row.terminal === terminal && row.targetDate === date && row.expectedPassengers !== null && Number.isFinite(Number(row.expectedPassengers)));
-  const byBand = new Map<string, HallForecastRow[]>();
-  for (const row of own) byBand.set(row.timeBandRaw, [...(byBand.get(row.timeBandRaw) ?? []), row]);
   const halls = sides.halls.filter((hall) => hall.terminal === terminal);
+  const fields = new Set<string>([AGGREGATE_FIELD[terminal], ...halls.map(hall => hall.field)]);
+  const own = rows.filter(row => row.terminal === terminal && row.targetDate === date
+    && (row.direction === undefined || row.direction === "departure") && fields.has(row.zone)
+    && /^(?:[01]\d|2[0-3])_\d{2}$/.test(row.timeBandRaw));
+  const byBand = new Map<string, HallForecastRow[]>();
+  // 23_00 and 23_24 name the same hour; duplicates must not be summed or picked arbitrarily.
+  for (const row of own) {
+    const hour = row.timeBandRaw.slice(0, 2);
+    byBand.set(hour, [...(byBand.get(hour) ?? []), row]);
+  }
   const bands: HallBand[] = [...byBand.values()].map((inBand) => {
     const first = inBand[0];
-    const aggregate = inBand.find((row) => row.zone === AGGREGATE_FIELD[terminal] && Boolean(row.isAggregate));
-    const total = aggregate ? Number(aggregate.expectedPassengers) : null;
+    const hour = Number(first.timeBandRaw.slice(0, 2));
+    const startAt = `${date}T${String(hour).padStart(2, "0")}:00:00+09:00`;
+    const endAt = hour === 23 ? `${shiftKstDay(date, 1)}T00:00:00+09:00`
+      : `${date}T${String(hour + 1).padStart(2, "0")}:00:00+09:00`;
+    const intervalsMatch = inBand.every(row => row.targetStartAt === startAt && row.targetEndAt === endAt
+      && (Number(row.timeBandRaw.slice(3)) === hour + 1 || (hour === 23 && row.timeBandRaw.slice(3) === "00")));
+    const count = (row: HallForecastRow | undefined) => typeof row?.expectedPassengers === "number"
+      && Number.isFinite(row.expectedPassengers) && row.expectedPassengers >= 0 ? row.expectedPassengers : null;
+    const aggregate = inBand.filter(row => row.zone === AGGREGATE_FIELD[terminal] && Boolean(row.isAggregate));
+    const total = aggregate.length === 1 ? count(aggregate[0]) : null;
     const value = (field: string) => {
-      const row = inBand.find((candidate) => candidate.zone === field && !candidate.isAggregate);
-      return row ? Number(row.expectedPassengers) : null;
+      const candidates = inBand.filter(row => row.zone === field && !row.isAggregate);
+      return candidates.length === 1 ? count(candidates[0]) : null;
     };
     const values = halls.map((hall) => ({ side: hall.side, value: value(hall.field) }));
-    const complete = values.every((entry) => entry.value !== null);
+    const complete = intervalsMatch && values.every((entry) => entry.value !== null);
     const east = values.filter((entry) => entry.side === "EAST").reduce((sum, entry) => sum + (entry.value ?? 0), 0);
     const west = values.filter((entry) => entry.side === "WEST").reduce((sum, entry) => sum + (entry.value ?? 0), 0);
     const sidesConsistent = complete && total !== null && Math.abs(east + west - total) < 0.5;
     return {
-      startAt: first.targetStartAt,
-      endAt: first.targetEndAt,
+      startAt,
+      endAt,
       total,
       east: sidesConsistent ? east : null,
       west: sidesConsistent ? west : null,
@@ -136,6 +155,7 @@ export function summarizeHallSides(rows: readonly HallForecastRow[], terminal: S
     confirmed,
     peakBand,
     retrievedAt: retrieved.at(-1) ?? null,
+    limitations: terminal === "T1" ? ["T1_HALL_6_OUTSIDE_EXPECTED_CONGESTION"] : [],
   };
 }
 
