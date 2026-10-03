@@ -1,6 +1,6 @@
 import { readDepartureSchedule } from '../../../../lib/departure-schedule';
 import { flightScopeCounts } from "../../../../lib/flight-scope";
-import { AIRPORT_HALL_SIDES_PUBLIC, airportSides } from "../../../../lib/airport-sides-summary";
+import { AIRPORT_HALL_SIDES_PUBLIC, airportSides, withOfficialHallTotals } from "../../../../lib/airport-sides-summary";
 import { summarizeScheduledBriefing, type ScheduledBriefingRow } from "../../../../lib/scheduled-briefing";
 import { compareComposition } from "../../../../lib/airport-composition-history";
 import type { AirlineRankingSummary } from "../../../../lib/airline-ranking";
@@ -450,7 +450,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     // east/west split (lib/airport-sides.ts), never for a total. One covering
     // index seek: 8 halls x 24 bands at most.
     hallRows: [client.prepare(
-      `SELECT terminal, zone, is_aggregate AS isAggregate, target_date AS targetDate, time_band_raw AS timeBandRaw,
+      `SELECT terminal, direction, zone, is_aggregate AS isAggregate, target_date AS targetDate, time_band_raw AS timeBandRaw,
         target_start_at AS targetStartAt, target_end_at AS targetEndAt,
         expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
       FROM airport_passenger_forecast
@@ -810,7 +810,9 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       departuresTrackedToday: flightsToday.departuresTrackedToday,
       departuresTrackedTodayByTerminal,
       flightScope: { ...flightScopeCounts(flightRows), capped: flightRows.length >= 2000 },
-      sides: airportSides(serviceDate, dayRelation, hallRows, flightRows, sidesSchedule, hasSidesSchedule, undefined,
+      sides: airportSides(serviceDate, dayRelation,
+        AIRPORT_HALL_SIDES_PUBLIC ? withOfficialHallTotals(hallRows, passengerForecastRows) : [],
+        flightRows, sidesSchedule, hasSidesSchedule, undefined,
         hasSidesSchedule ? String(departureScheduleRows[0]?.retrievedAt ?? '') || null : null),
       departuresTrackedTodayRetrievedAt: flightsToday.retrievedAt,
       topDepartureGate: flightsToday.topDepartureGate?.gate ?? null,
