@@ -14,12 +14,12 @@
     "app/api/live/flights/route.ts": "fb7bbfc1132359dceb4d315997eaf26bfc5b27d3f03f2bb9b8be4fe46718c1bd",
     "app/api/live/predictions/route.ts": "b82f003bd3d77c293a379c4dbd0bf5e2aa449b19e54a65119ef2e4f291cdfced",
     "app/api/live/summary/route.ts": "ce08a54a232816dfa63143a9101dbc268a849bc11900293e6df5e7f43e53898b",
-    "app/area-demand-card.tsx": "b24e36ec1935544b6a1f2db60e6a0bfb2b585d1deb3af10e2224e7d42d3c16b1",
+    "app/area-demand-card.tsx": "3f756ec1244db4e6045484bcdbc8a469df2388c53ad9c842b105d1347e7dfc57",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
-    "app/globals.css": "86432fd8a64c35bf560587ae82d1b6fe0f262712557f59c3bcc8fff719caf114",
+    "app/globals.css": "f097e621395f7dad932b85ed1b8e06b231e44005fa10ade2ab6a00f11c716b7a",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
     "app/layout.tsx": "5046b7a098cbea56b3c315af2033bbc3d846462584f2c27b97f8dc1bb4c49ec7",
-    "app/live-signals.tsx": "cfac8f6ea48d7fb6e40a4c77f140a95e15091c90c2dc0b538d38e8a9debdc12b",
+    "app/live-signals.tsx": "903ad3f52049b485e098a7ed0528290d0bae08825de0b28a497eab4ab0441b5c",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "a01bb0bda26fcd8af56869bbabbc6ffcaac1057b9a2cb7c8798643dc6cd79d21",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
@@ -153,6 +153,26 @@
         "file": "app/[locale]/[slug]/page.tsx",
         "previous": "ec78dc3ec8cf39872a56d4a7a53d6e1537d7f1aba2a4b5def0e4862187f18757",
         "approved": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1"
+      }
+    ]
+  },
+  "ownerAirportReadingRefinement20261003": {
+    "reason": "Explicit owner requests: connected date controls, grouped complete flight lists, per-zone gate leaders, text spacing, compact bold primary figures, monthly common-axis point comparison, separate Seoul observation/forecast ribbon, and arrivals/departures visual consistency. Selection and data calculations are preserved. Protected-file enforcement remains active. Draft-only review; no merge/deploy or hall-publication approval.",
+    "changes": [
+      {
+        "file": "app/globals.css",
+        "previous": "86432fd8a64c35bf560587ae82d1b6fe0f262712557f59c3bcc8fff719caf114",
+        "approved": "f097e621395f7dad932b85ed1b8e06b231e44005fa10ade2ab6a00f11c716b7a"
+      },
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "cfac8f6ea48d7fb6e40a4c77f140a95e15091c90c2dc0b538d38e8a9debdc12b",
+        "approved": "903ad3f52049b485e098a7ed0528290d0bae08825de0b28a497eab4ab0441b5c"
+      },
+      {
+        "file": "app/area-demand-card.tsx",
+        "previous": "b24e36ec1935544b6a1f2db60e6a0bfb2b585d1deb3af10e2224e7d42d3c16b1",
+        "approved": "3f756ec1244db4e6045484bcdbc8a469df2388c53ad9c842b105d1347e7dfc57"
       }
     ]
   }

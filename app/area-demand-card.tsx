@@ -78,6 +78,7 @@ function useChartGeometry(points: FlowPoint[], width: number) {
 
 export function PopulationFlow({ points, lang, now }: { points: FlowPoint[]; lang: Lang; now: number }) {
   const id = useId(), figure = useRef<HTMLElement>(null);
+  const ribbonId = `${id.replace(/:/g, '')}-forecast-ribbon`;
   const [width, setWidth] = useState(640);
   const [selected, setSelected] = useState<string | null>(null);
   useEffect(() => {
@@ -96,7 +97,7 @@ export function PopulationFlow({ points, lang, now }: { points: FlowPoint[]; lan
   const active = points.find(p => `${p.kind}:${p.at}` === selected) ?? latest ?? points[0];
   const { min, max, left, right, plotWidth, x, timeAtClientX, nearestPoint } = useChartGeometry(points, width);
   const ceiling = Math.max(1, ...points.map(p => p.populationMax)) * 1.1;
-  const y = (value: number) => 168 - value / ceiling * 130;
+  const y = (value: number) => 142 - value / ceiling * 104;
   const path = (segment: FlowPoint[], bound: 'populationMin' | 'populationMax') => segment.map((p, i) => `${i ? 'L' : 'M'}${x(p.time)},${y(p[bound])}`).join(' ');
   const ticks = populationTicks(min, max, plotWidth);
   const unit = { ko: '명', en: ' people', zh: '人', ja: '人' }[lang];
@@ -137,18 +138,21 @@ export function PopulationFlow({ points, lang, now }: { points: FlowPoint[]; lan
         <span className="flow-readout-meta"><span className="flow-selected-time">{kstStamp(active.time).slice(6)} · {demandCopy[active.kind === 'forecast' ? 'forecast' : 'observed'][lang]}</span><small>{kstDay(active.time)} · KST</small></span>
         <strong title={`${peopleRange(active, lang)}${unit}`}>{compact.format(active.populationMin)}–{compact.format(active.populationMax)} {unit.trim()}</strong>
       </output>
-      <svg className="population-chart" viewBox={`0 0 ${width} 216`} aria-hidden="true"
+      <svg className="population-chart" viewBox={`0 0 ${width} 190`} aria-hidden="true"
         onPointerDown={event => { event.currentTarget.setPointerCapture(event.pointerId); selectAt(event.clientX, event.currentTarget.getBoundingClientRect()); }}
         onPointerMove={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) selectAt(event.clientX, event.currentTarget.getBoundingClientRect()); }}
         onPointerUp={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }}>
+        <defs><linearGradient id={ribbonId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#badbd9" stopOpacity=".65"/><stop offset="1" stopColor="#edf7f7" stopOpacity=".3"/>
+        </linearGradient></defs>
         {[0, ceiling / 2, ceiling].map(value => <g key={value}><line className="flow-grid" x1={left} x2={right} y1={y(value)} y2={y(value)}/><text className="flow-y-label" x={left - 8} y={y(value) + 4} textAnchor="end">{compactPeople(Math.round(value), lang)}</text></g>)}
         {rows.map((segment, index) => <g key={index} className={`flow-${segment[0].kind}`}>
-          {segment.length > 1 ? <><path className="flow-range" d={`${path(segment, 'populationMax')} ${[...segment].reverse().map(p => `L${x(p.time)},${y(p.populationMin)}`).join(' ')} Z`}/>{/* Outline the upper edge of the range, never a fabricated midpoint. */}<path className="flow-bound" d={path(segment, 'populationMax')}/></> : <line className="flow-bound flow-interval" x1={x(segment[0].time)} x2={x(segment[0].time)} y1={y(segment[0].populationMin)} y2={y(segment[0].populationMax)}/>}
+          {segment.length > 1 ? <><path className="flow-range" fill={segment[0].kind === 'forecast' ? `url(#${ribbonId})` : undefined} d={`${path(segment, 'populationMax')} ${[...segment].reverse().map(p => `L${x(p.time)},${y(p.populationMin)}`).join(' ')} Z`}/>{/* Exact bounds, never a fabricated midpoint or an observed-to-forecast bridge. */}<path className="flow-bound" d={path(segment, 'populationMax')}/>{segment[0].kind === 'forecast' && <path className="flow-bound flow-lower-bound" d={path(segment, 'populationMin')}/>}</> : <line className="flow-bound flow-interval" x1={x(segment[0].time)} x2={x(segment[0].time)} y1={y(segment[0].populationMin)} y2={y(segment[0].populationMax)}/>}
         </g>)}
-        {now >= min && now <= max && <g className="flow-now"><line x1={x(now)} x2={x(now)} y1="28" y2="168"/>{!nowIsSelected && <text x={nowX} y="18" textAnchor="middle">{demandCopy.now[lang]}</text>}</g>}
-        {selected && active && <g className="flow-selection"><line x1={x(active.time)} x2={x(active.time)} y1="28" y2="168"/></g>}
+        {now >= min && now <= max && <g className="flow-now"><line x1={x(now)} x2={x(now)} y1="28" y2="142"/>{!nowIsSelected && <text x={nowX} y="18" textAnchor="middle">{demandCopy.now[lang]}</text>}</g>}
+        {selected && active && <g className="flow-selection"><line x1={x(active.time)} x2={x(active.time)} y1="28" y2="142"/></g>}
         {[...new Set([latest, active])].filter((p): p is FlowPoint => Boolean(p)).map(p => <g key={`${p.kind}:${p.at}`} className={`flow-${p.kind} flow-marker`}><line x1={x(p.time)} x2={x(p.time)} y1={y(p.populationMin)} y2={y(p.populationMax)}/><circle cx={x(p.time)} cy={y(p.populationMax)} r="1.5"/></g>)}
-        {ticks.map(time => <text className="flow-tick" data-time={time} key={time} x={x(time)} y="190" textAnchor={time === min ? 'start' : time === max ? 'end' : 'middle'}><tspan x={x(time)}>{kstStamp(time).slice(6)}</tspan>{kstDay(time) !== kstDay(min) && kstStamp(time).slice(6) === '00:00' && <tspan className="flow-tick-date" x={x(time)} dy="18">{Number(kstDay(time).slice(5, 7))}/{Number(kstDay(time).slice(8))}</tspan>}</text>)}
+        {ticks.map(time => <text className="flow-tick" data-time={time} key={time} x={x(time)} y="164" textAnchor={time === min ? 'start' : time === max ? 'end' : 'middle'}><tspan x={x(time)}>{kstStamp(time).slice(6)}</tspan>{kstDay(time) !== kstDay(min) && kstStamp(time).slice(6) === '00:00' && <tspan className="flow-tick-date" x={x(time)} dy="18">{Number(kstDay(time).slice(5, 7))}/{Number(kstDay(time).slice(8))}</tspan>}</text>)}
       </svg>
       <div className="flow-inspector">
         {/* A custom slider, not a native <input type="range">: a native range

@@ -7,6 +7,7 @@
  * the time or the destination filter never asks the server again.
  */
 import { useMemo, useState, type KeyboardEvent } from 'react';
+import { AirportFlightBrowser } from './airport-flight-browser';
 import { useFlights } from './flights-client';
 import type { Lang } from './retailpulse-data';
 import { shiftKstDay } from '../lib/kst';
@@ -211,8 +212,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
         <p className="prep-note">{copy.noGate[lang]} {map.unplaced.noGate.filter((flight) => !filter || flight.group === filter).length} · {copy.notOnMap[lang]} {map.unplaced.notOnMap.filter((flight) => !filter || flight.group === filter).length}</p>
         <FlightRows lang={lang} flights={unplaced} testId="map-unplaced-list"/>
       </>}</OpenableList>}
-      <OpenableList className="prep-evidence" testId="map-flights" summary={<>{copy.flightList[lang]} {shown.length}</>}>{() =>
-        <FlightRows lang={lang} flights={shown} testId="map-flight-list"/>}</OpenableList>
+      <AirportFlightBrowser lang={lang} flights={shown} testId="map-flights"/>
     </>}
 
     <p className="prep-note">{date} KST{current.payload.retrievedAt ? ` · ${copy.collected[lang]} ${kstClock(String(current.payload.retrievedAt), date)}` : ''}</p>

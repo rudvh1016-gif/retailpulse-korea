@@ -59,7 +59,7 @@ async function openMap(page: Page, options: Parameters<typeof open>[1] = {}) {
 test('the whole day agrees with the comparison card, flight for flight', async ({ page }) => {
   const { sides, map, flightRequests } = await openMap(page);
   await expect(map.getByTestId('map-counts')).toHaveText('동편 3편 · 서편 3편 · 중앙 1편 · 위치 미확인 2편 · 건물 미확인 1편');
-  await expect(sides.getByTestId('split-flights')).toContainText('동편 3편 50% · 서편 3편 50% · 중앙 1편 · 위치 미확인 2편');
+  await expect(sides.getByTestId('split-flights').locator('[data-side=EAST]')).toContainText('3편');await expect(sides.getByTestId('split-shares')).toContainText('동편 50% · 서편 50%');
   await expect(map.getByTestId('map-lead')).toHaveText('확인된 항공편 기준 동편과 서편이 같음 (위치 미확인 2편에 따라 달라질 수 있음)');
   expect(flightRequests).toHaveLength(1);
   // Dots add up to the flights that have an official gate position; the rest are listed apart.
@@ -76,8 +76,8 @@ test('the time selection moves the counts, the dots and the list together', asyn
   await map.getByRole('button', { name: '지금부터 1시간' }).click();
   await expect(map).toHaveAttribute('data-window', '850-910');
   await expect(map.getByTestId('map-counts')).toHaveText('동편 2편 · 서편 2편 · 중앙 0편 · 위치 미확인 0편 · 건물 미확인 1편');
-  await map.getByTestId('map-flights').locator('summary').click();
-  await expect(map.getByTestId('map-flight-list').locator('li')).toHaveCount(4);
+  await map.getByTestId('map-flights').locator(':scope > summary').click(); for (const hour of await map.locator('.airport-flight-hour > summary').all()) await hour.click();
+  await expect(map.getByTestId('map-flights-rows').locator('li')).toHaveCount(4);
   const drawn = await map.locator('[data-flights]').evaluateAll((nodes) => nodes.reduce((sum, node) => sum + Number(node.getAttribute('data-flights')), 0));
   expect(drawn).toBe(4);
   await map.getByRole('button', { name: '직접 선택' }).click();
@@ -95,9 +95,9 @@ test('a destination region filters the map and the list; shares keep their own b
   await expect(map.getByTestId('map-groups-basis')).toContainText('출발편 9편 기준(목적지 지역 미확인 1편 포함)');
   await groups.getByRole('button', { name: '일본' }).click();
   await expect(map).toHaveAttribute('data-filter', 'JP');
-  await map.getByTestId('map-flights').locator('summary').click();
-  await expect(map.getByTestId('map-flight-list').locator('li')).toHaveCount(3);
-  await expect(map.getByTestId('map-flight-list').locator('li[data-group]:not([data-group="JP"])')).toHaveCount(0);
+  await map.getByTestId('map-flights').locator(':scope > summary').click(); for (const hour of await map.locator('.airport-flight-hour > summary').all()) await hour.click();
+  await expect(map.getByTestId('map-flights-rows').locator('li')).toHaveCount(3);
+  await expect(map.getByTestId('map-flights-rows').locator('li[data-group]:not([data-group="JP"])')).toHaveCount(0);
   // The side counts stay the whole selection; the filter is named, not hidden.
   await expect(map.getByTestId('map-counts')).toContainText('동편 3편');
   await map.getByTestId('map-clear-filter').click();
@@ -144,7 +144,7 @@ test('the copied text carries the date, window, filter and limits', async ({ pag
 for (const [lang, width] of [['ko', 360], ['en', 360], ['zh', 360], ['ja', 360], ['ko', 1280]] as const) {
   test(`the map fits and has no missing glyph: ${lang} at ${width}px`, async ({ page }) => {
     const { map } = await openMap(page, { lang, width });
-    await map.getByTestId('map-flights').locator('summary').click();
+    await map.getByTestId('map-flights').locator(':scope > summary').click(); for (const hour of await map.locator('.airport-flight-hour > summary').all()) await hour.click();
     expect(await tofuCharacters(map)).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
     await map.screenshot({ path: `test-results/departure-map-${lang}-${width}.png` });

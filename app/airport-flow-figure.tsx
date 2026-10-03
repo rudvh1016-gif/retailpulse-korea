@@ -100,7 +100,11 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
     for (const element of nowDotRefs.current) {
       if (!element) continue;
       if (element instanceof SVGCircleElement) element.setAttribute("cy", String(onCurve));
-      else element.setAttribute("y", String(onCurve - 9));
+      else {
+        const nearPeak = layout.peak && Math.abs(layout.peak.x - layout.now.x) < 80 && Math.abs(layout.peak.y - onCurve) < 24;
+        const labelY = nearPeak ? (onCurve + 22 <= layout.base - 10 ? onCurve + 22 : onCurve - 30) : onCurve - 9;
+        element.setAttribute("y", String(labelY));
+      }
     }
   }, [layout, pointOnCurve]);
 

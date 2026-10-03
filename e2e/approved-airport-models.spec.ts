@@ -40,9 +40,9 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [360,390,430,1280]) 
     await expect(model.getByTestId('gate-selected')).toContainText('215');
     await expect(model.getByTestId('gate-selected').locator('li')).toHaveCount(17);
     await search.fill('no-such-gate');await expect(model.locator('.gate-full-list li')).toHaveCount(0);
-    await search.fill('');await model.locator('select').selectOption('WEST');
+    await search.fill('');await model.locator('[data-zone=WEST]').click();
     expect(await model.locator('.gate-full-list button').count()).toBeGreaterThan(0);
-    await model.locator('select').selectOption('ALL');
+    await model.locator('[data-zone=ALL]').click();
     // The existing summary's top-five counts deliberately differ. Complete rows win.
     await expect(model).not.toContainText('18 flights');
     expect(await tofuCharacters(model)).toEqual([]);
