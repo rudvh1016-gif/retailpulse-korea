@@ -180,11 +180,30 @@ test('the comparison is the first thing in the airport block: flights, ratio, an
   );
   await expect(card.getByTestId('split-estimate-basis')).toHaveText(`터미널 전체 예상 ${fmt(T1_EXPECTED)}명 기준 · 같은 범위 출발편 6편(T1 본관 5편 + 탑승동 1편)으로 나눈 추정`);
   await expect(card.getByTestId('split-note')).toHaveText(`${splitCopy.estimateNote.ko} ${splitCopy.concourseNote.ko}`);
+  const details = card.getByTestId('split-estimate-details');
+  await expect(details).toHaveJSProperty('open', false);
+  await details.locator('summary').focus();
+  await page.keyboard.press('Enter');
+  await expect(details).toHaveJSProperty('open', true);
   // Hours: each with east/west counts and shares.
   await expect(sides.getByTestId('gates-all').locator('li').first()).toHaveText('15–16시 · 합계 3편 · 동 2편 / 서 1편 (동 67% · 서 33%)');
   // The hall split stays withheld; the estimate is not the hall figure.
   await expect(sides.getByTestId('halls-withheld')).toBeVisible();
 });
+
+for (const width of [320, 390, 430]) {
+  test(`reference explanation stays collapsed and keyboard-accessible at ${width}px`, async ({ page }) => {
+    const prep = await open(page, { width, side: null });
+    const card = prep.getByTestId('flight-split');
+    await expect(card.getByTestId('split-estimate')).toBeVisible();
+    const details = card.getByTestId('split-estimate-details');
+    await expect(details).toHaveJSProperty('open', false);
+    await details.locator('summary').focus();
+    await page.keyboard.press('Enter');
+    await expect(details).toHaveJSProperty('open', true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+  });
+}
 
 test('the terminal switch and the side choice change the right things', async ({ page }) => {
   const prep = await open(page, { side: null });
