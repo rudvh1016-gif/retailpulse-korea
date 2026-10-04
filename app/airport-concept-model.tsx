@@ -32,10 +32,12 @@ export function AirportConceptModel({ map, lang }: { map: DepartureMap; lang: La
       })}
     </AirportSceneModel>
     <div className="airport-concept-counts">{(['WEST', 'CENTER', 'EAST'] as const).map(side => <div key={side} data-side={side}>{copy.side[side][lang]}<span className="airport-concept-gate-range" data-testid={`zone-range-${side}`}>{ranges(side)}</span><strong>{map.sides[side]}{unit}</strong><small>{share(side)}</small></div>)}</div>
-    <p className="prep-note" data-testid="model-share-basis">{text.concept} {text.basis} ({denominator}{unit}) {text.rounding}</p>
-    <AirportGateRegionRegister scope={scope} lang={lang}/>
-    {map.flights.some(f=>f.side==='UNVERIFIED'&&f.gate) && <p className="prep-note" data-testid="model-unverified-gate-numbers">{{ko:'선택한 시간의 위치 미확인 운항 게이트',en:'Unverified active gates in the selected window',zh:'所选时段位置未确认的运行登机口',ja:'選択時間の位置未確認運航搭乗口'}[lang]}: {[...new Set(map.flights.filter(f=>f.side==='UNVERIFIED'&&f.gate).map(f=>`${f.building} ${f.gate}`))].join(', ')}</p>}
-    <details className="prep-evidence"><summary>{{ko:'모형·집계 기준',en:'Model and counting basis',zh:'模型与统计基准',ja:'模型・集計基準'}[lang]}</summary><p className="prep-note">{text.concept} {airportLightingBasis(lang)}</p></details>
+    <p className="prep-note" data-testid="model-zone-note">{{ko:'동·서·중앙은 코리테일 분류 기준입니다.',en:'East, west and central zones use KORETAIL classification.',zh:'东、西、中央区域按KORETAIL标准划分。',ja:'東・西・中央はKORETAILの分類基準です。'}[lang]}</p>
+    <AirportGateRegionRegister scope={scope} lang={lang}>
+      <p className="prep-note" data-testid="model-share-basis">{text.concept} {text.basis} ({denominator}{unit}) {text.rounding}</p>
+      {map.flights.some(f=>f.side==='UNVERIFIED'&&f.gate) && <p className="prep-note" data-testid="model-unverified-gate-numbers">{{ko:'선택한 시간의 위치 미확인 운항 게이트',en:'Unverified active gates in the selected window',zh:'所选时段位置未确认的运行登机口',ja:'選択時間の位置未確認運航搭乗口'}[lang]}: {[...new Set(map.flights.filter(f=>f.side==='UNVERIFIED'&&f.gate).map(f=>`${f.building} ${f.gate}`))].join(', ')}</p>}
+      <p className="prep-note">{airportLightingBasis(lang)}</p>
+    </AirportGateRegionRegister>
     <p className="prep-note" data-testid="model-unverified-share">{copy.side.UNVERIFIED[lang]} {map.sides.UNVERIFIED}{unit} · {share('UNVERIFIED')}{map.concourse !== null ? ` · ${copy.concourse[lang]} ${map.concourse}${unit}` : ''}</p>
   </figure>;
 }
