@@ -2,7 +2,6 @@
 import {useEffect,useId,useRef,useState,type KeyboardEvent} from 'react';
 import type {Lang} from './retailpulse-data';
 import {isValidKstDay,shiftKstDay} from '../lib/kst';
-import './airport-date-calendar.css';
 
 const locales={ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'};
 const text={
@@ -15,7 +14,8 @@ export function AirportDateCalendar({lang,selected,today,onChange,known,onMonth,
  const [open,setOpen]=useState(false),[month,setMonth]=useState(selected.slice(0,7));
  const trigger=useRef<HTMLButtonElement>(null),dialog=useRef<HTMLDialogElement>(null),pending=useRef<string|null>(null);const id=useId(),historyKey=`date-calendar-${id}`;const c=text[lang];
  const latest=useRef({onChange,onMonth});useEffect(()=>{latest.current={onChange,onMonth};},[onChange,onMonth]);
- const formatted=new Intl.DateTimeFormat(locales[lang],{timeZone:'Asia/Seoul',year:'numeric',month:'long',day:'numeric',weekday:'short'}).format(new Date(`${selected}T12:00:00+09:00`));
+ const selectedDay=new Date(`${selected}T12:00:00+09:00`);
+ const formatted=new Intl.DateTimeFormat(locales[lang],{timeZone:'Asia/Seoul',year:'numeric',month:'long',day:'numeric'}).format(selectedDay)+` (${new Intl.DateTimeFormat(locales[lang],{timeZone:'Asia/Seoul',weekday:'short'}).format(selectedDay)})`;
  function openPicker(){setMonth(selected.slice(0,7));onMonth(selected.slice(0,7));pending.current=null;history.pushState({...history.state,koretailDateCalendar:historyKey},'',location.href);setOpen(true);}
  function closePicker(value?:string){pending.current=value??null;if(history.state?.koretailDateCalendar===historyKey)history.back();else finishClose();}
  function finishClose(){dialog.current?.close();setOpen(false);latest.current.onMonth(null);trigger.current?.focus();const next=pending.current;pending.current=null;if(next)latest.current.onChange(next);}
@@ -40,7 +40,7 @@ export function AirportDateCalendar({lang,selected,today,onChange,known,onMonth,
  function moveDay(event:KeyboardEvent<HTMLButtonElement>,date:string){const delta={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}[event.key];if(delta===undefined)return;event.preventDefault();const next=shiftKstDay(date,delta);if(!isValidKstDay(next)||next<'0001-01-01'||next>'9999-12-31')return;if(next.slice(0,7)!==month)changeMonth(next.slice(0,7));requestAnimationFrame(()=>dialog.current?.querySelector<HTMLButtonElement>(`[data-date="${next}"]`)?.focus());}
  return <div className="date-nav-picker date-calendar">
   <button type="button" ref={trigger} className="date-calendar-trigger" data-testid="date-calendar-trigger" data-date={selected} aria-haspopup="dialog" aria-expanded={open} aria-controls={id} onClick={openPicker}>
-   <img src="/calendar/calendar-icon.webp" alt="" width="40" height="40"/><span><small>{c.pick}</small><time dateTime={selected}>{formatted}</time></span><span aria-hidden="true">⌄</span>
+   <img src="/calendar/calendar-32px-1x.webp" srcSet="/calendar/calendar-32px-1x.webp 1x, /calendar/calendar-32px-2x.webp 2x, /calendar/calendar-32px-3x.webp 3x" alt="" width="32" height="32"/><span><small>{c.pick}</small><time dateTime={selected}>{formatted}</time></span><span className="date-calendar-chevron" aria-hidden="true"/>
   </button>
   {open&&<dialog ref={dialog} id={id} className="date-calendar-dialog" aria-label={c.pick} data-testid="date-calendar-dialog" onCancel={event=>{event.preventDefault();closePicker();}} onClick={event=>{if(event.target===event.currentTarget){const r=event.currentTarget.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)closePicker();}}}>
    <div className="date-calendar-handle" aria-hidden="true"/>

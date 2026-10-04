@@ -18,7 +18,7 @@
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "f097e621395f7dad932b85ed1b8e06b231e44005fa10ade2ab6a00f11c716b7a",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
-    "app/layout.tsx": "5046b7a098cbea56b3c315af2033bbc3d846462584f2c27b97f8dc1bb4c49ec7",
+    "app/layout.tsx": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
     "app/live-signals.tsx": "146b28c66a08f1f253fb09c7a862087582bc3c06969f673c58457afbc01e1832",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "a01bb0bda26fcd8af56869bbabbc6ffcaac1057b9a2cb7c8798643dc6cd79d21",
@@ -283,6 +283,26 @@
         "file": "app/retailpulse-app.tsx",
         "previous": "c628d0a2a80ec52da0ece9df391d4d5d17034bfea46b280ef0c51f16d8fe3cab",
         "approved": "acc3a98e9d3806f3a68864f7857b5bfc4d749f2018e8d960183093aee19bb28c"
+      }
+    ]
+  },
+  "ownerModernCalendarStyles20261004": {
+    "reason": "Explicit owner date redesign: load scoped calendar CSS from the existing root stylesheet boundary so data-unit imports remain free of browser CSS. No markup, font, SEO, source or scheduler changes; active byte checks remain.",
+    "changes": [
+      {
+        "file": "app/layout.tsx",
+        "previous": "5046b7a098cbea56b3c315af2033bbc3d846462584f2c27b97f8dc1bb4c49ec7",
+        "approved": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e"
+      }
+    ]
+  },
+  "ownerCalendarIntegration20261004Final": {
+    "reason": "Explicit owner request: combine preserved passenger PR255, zone PR256 and airport calendar in an isolated review branch. Preserve both independent owner records and all fonts/source contracts. Only authorized app/layout integration hashes change; protection checks stay active. No public merge/deployment.",
+    "changes": [
+      {
+        "file": "app/layout.tsx",
+        "previous": "5046b7a098cbea56b3c315af2033bbc3d846462584f2c27b97f8dc1bb4c49ec7",
+        "approved": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e"
       }
     ]
   }
