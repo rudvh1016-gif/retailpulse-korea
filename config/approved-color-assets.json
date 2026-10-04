@@ -1,0 +1,143 @@
+{
+  "approvedOn": "2026-10-04",
+  "sources": {
+    "airport": "libfile_2640542455a08191bb864f703198dda0",
+    "district": "libfile_eea402b261f481918e7fd3adf458d07f",
+    "interiors": "libfile_05693b3ff1f881918153d4088cdc1784"
+  },
+  "illustrationsOnly": true,
+  "assets": [
+    {
+      "kind": "airport",
+      "name": "T1_day.webp",
+      "bytes": 27718,
+      "sha256": "d9e84f0a625f3094b66ce0f1271c625f6a75cf9ad3a2b5a26ec03a6c4405bf4b"
+    },
+    {
+      "kind": "airport",
+      "name": "T1_night.webp",
+      "bytes": 30518,
+      "sha256": "36479fe3bd72885ad22ce072579eb93c6f9c05212c0336b399eaaa6422b5f6eb"
+    },
+    {
+      "kind": "airport",
+      "name": "T2_day.webp",
+      "bytes": 42292,
+      "sha256": "52f15ba4f417045f5218cc2b1a388cb2956860e9617cf673977bbe550c214570"
+    },
+    {
+      "kind": "airport",
+      "name": "T2_night.webp",
+      "bytes": 38666,
+      "sha256": "bf4cb515dfb979d59a430b3f697cc66287eebaa1ba991b2b0620b559d0589e3c"
+    },
+    {
+      "kind": "airport",
+      "name": "CONCOURSE_day.webp",
+      "bytes": 24276,
+      "sha256": "905e91ce2eee828ef4bc1ad666e286d17139788cbca1a854af3177a4ab069f38"
+    },
+    {
+      "kind": "airport",
+      "name": "CONCOURSE_night.webp",
+      "bytes": 24264,
+      "sha256": "58db7299e199c923ec8384f0bc3a1b50a077f4bf86de26cddba431588c63474c"
+    },
+    {
+      "kind": "airport",
+      "name": "OVERVIEW_day.webp",
+      "bytes": 48362,
+      "sha256": "77911a8a0fc949be7e5fd59815f12f06666cd2ad3a2d8ca72b49606af36c3235"
+    },
+    {
+      "kind": "airport",
+      "name": "OVERVIEW_night.webp",
+      "bytes": 46310,
+      "sha256": "52794fa2c43154dde72d4557e6daa0c815b7fbccb520c16452e7ee9815eed413"
+    },
+    {
+      "kind": "district",
+      "key": "myeongdong",
+      "name": "district-myeongdong.webp",
+      "bytes": 24718,
+      "sha256": "15a7e0e82c19507c3b897c463199f83237abf00dde17367127c24de7c91329d3"
+    },
+    {
+      "kind": "district",
+      "key": "hongdae",
+      "name": "district-hongdae.webp",
+      "bytes": 21540,
+      "sha256": "1d6f513d861cd72705527d96c7a59b57cde829c5cc241a9e442e4f9548afbde5"
+    },
+    {
+      "kind": "district",
+      "key": "seongsu",
+      "name": "district-seongsu.webp",
+      "bytes": 26842,
+      "sha256": "4b0f2e0a24b3042275855f6054ae2960c80f544534df084fe8d19f0916881159"
+    },
+    {
+      "kind": "district",
+      "key": "itaewon",
+      "name": "district-itaewon.webp",
+      "bytes": 24688,
+      "sha256": "50dc158df1e85fe4755ec25f00e84833ad00e3617601b6bc8f533f67c3d27126"
+    },
+    {
+      "kind": "shop",
+      "key": "beauty",
+      "name": "shop-beauty.webp",
+      "bytes": 16648,
+      "sha256": "2b632703f0f0b4986e4a4d77f9da84d6ad99e566d570df816001a93c84a8ccc1"
+    },
+    {
+      "kind": "shop",
+      "key": "fashion",
+      "name": "shop-fashion.webp",
+      "bytes": 17038,
+      "sha256": "150f37b23077b6f3f0aacee52e3856ff1e5c1bc4228c11260a8a11fa1e5d5293"
+    },
+    {
+      "kind": "shop",
+      "key": "food",
+      "name": "shop-food.webp",
+      "bytes": 15714,
+      "sha256": "a8885d4f802c83c9b47709289fb89572d3a73d3353ddc22a7739344377044c73"
+    },
+    {
+      "kind": "shop",
+      "key": "convenience",
+      "name": "shop-convenience.webp",
+      "bytes": 18896,
+      "sha256": "472ef35025114bb557446184676e92667f09b7cb2842c19bf40c5aff8a5d08ba"
+    },
+    {
+      "kind": "shop",
+      "key": "tourism",
+      "name": "shop-tourism.webp",
+      "bytes": 13234,
+      "sha256": "36e47ce0f171cba539bc473be64b0b418e219ba55b753d3c89b299d638c80fe2"
+    },
+    {
+      "kind": "shop",
+      "key": "popup",
+      "name": "shop-popup.webp",
+      "bytes": 13584,
+      "sha256": "018e80468e3c0407b357600d48aa2f01612f8fb3de51be9f0879f5288260b2b4"
+    },
+    {
+      "kind": "shop",
+      "key": "liquor",
+      "name": "shop-liquor.webp",
+      "bytes": 17894,
+      "sha256": "cf42df1a9c5d81048d8721b54306222759a1f2f8eafdc775f39b9d28d31a160b"
+    },
+    {
+      "kind": "shop",
+      "key": "luxury",
+      "name": "shop-luxury.webp",
+      "bytes": 15916,
+      "sha256": "873073fdc6171d370188b4c6df073b4c7796414efc462de0d3ca8448cea53bbf"
+    }
+  ]
+}

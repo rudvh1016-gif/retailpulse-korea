@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import views from '../config/airport-concept-v5.json';
+import views from '../config/airport-concept-v7.json';
 import previewViews from '../config/airport-concept-v6c.preview.json';
 import { airportScene } from '../lib/airport-scene';
 import type { Lang } from './retailpulse-data';
@@ -27,9 +27,8 @@ export function airportLightingBasis(lang:Lang) { return lighting[lang]; }
 export function AirportSceneModel({scope,lang,className='',showBasis=true,children}:{scope:AirportSceneScope;lang:Lang;className?:string;showBasis?:boolean;children?:React.ReactNode}) {
   const [scene,setScene]=useState(()=>airportScene(Date.now()));
   useEffect(()=>{const update=()=>setScene(airportScene(Date.now()));update();const timer=setInterval(update,60_000);return()=>clearInterval(timer);},[]);
-  const key=scope==='all'?'OVERVIEW_2ROW':scope;
   const view=airportSceneView(scope);
-  const src=previewRoot ? `/@fs/${previewRoot}/${scope === 'all' ? 'OVERVIEW' : scope}_${scene}.webp` : `/airport-models/v5/${key}_${scene}.webp`;
+  const src=previewRoot ? `/@fs/${previewRoot}/${scope === 'all' ? 'OVERVIEW' : scope}_${scene}.webp` : `/airport-models/v7/${scope === 'all' ? 'OVERVIEW' : scope}_${scene}.webp`;
   return <>
     <div className={`airport-scene-picture ${className}`} style={{aspectRatio:`${view.width}/${view.height}`}} data-scene={scene} data-building={scope}>
       {/* Only the selected building and lighting image is requested. */}
