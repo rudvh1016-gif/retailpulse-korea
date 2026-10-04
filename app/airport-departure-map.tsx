@@ -21,6 +21,7 @@ import { flightLine, groupShare, statusText, leadLine, mapCopy as copy, mapShare
 import type { DestinationGroup } from '../lib/airport-destinations';
 import { AirportConceptModel } from './airport-concept-model';
 import { AirportZoneCountries } from './airport-zone-countries';
+import { zoneShareCopy } from '../lib/airport-zone-share-copy';
 import { airportModelScope } from '../lib/airport-model-scope';
 
 /** "14:05" in KST, with the date in front when it is not the service date. */
@@ -134,6 +135,8 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
   }[lang]}</p>
     {!current.payload.truncated && <button type="button" className="prep-link" data-testid="map-partial-reset" onClick={() => setPreset('DAY')}>{copy.presets.DAY[lang]}</button>}
   </>;
+
+  if (!current.payload.retrievedAt && current.payload.flights.length === 0) return <p className="prep-note" role="status" data-testid="map-unavailable">{zoneShareCopy[lang].unavailable}</p>;
 
   const shown = filter ? map.flights.filter((flight) => flight.group === filter) : map.flights;
   const atGate = selected ? shown.filter((flight) => `${flight.building}:${flight.gate}` === selected) : [];
