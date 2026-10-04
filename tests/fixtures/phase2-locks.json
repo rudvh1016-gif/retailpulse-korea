@@ -26,7 +26,7 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "b9ccbfae7aac67f7aafd4e5ad2eb6739df50f166fa6723befa40db8742a08314",
-    "app/retailpulse-app.tsx": "3aa1492a086bf26f053c3885976e9b24f716bbe617e4fcf0e68ac2f3fcc261c1",
+    "app/retailpulse-app.tsx": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
@@ -348,6 +348,16 @@
         "file": "app/operational-context.tsx",
         "previous": "a01bb0bda26fcd8af56869bbabbc6ffcaac1057b9a2cb7c8798643dc6cd79d21",
         "approved": "6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83"
+      }
+    ]
+  },
+  "ownerAirportMobileControls20261004": {
+    "reason": "Owner-authorized 2026-10-04 airport mobile refinement: label the top-level All tab with its T1/T2 scope while keeping physical concourse accounting separate in the departure map. Only the tab text in app/retailpulse-app.tsx changed. The original Owner UI Lock test and all other protected hashes remain active and unchanged.",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "3aa1492a086bf26f053c3885976e9b24f716bbe617e4fcf0e68ac2f3fcc261c1",
+        "approved": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5"
       }
     ]
   }

@@ -121,7 +121,7 @@ test('selected dates and terminal scopes survive links, reload and back', async 
   await expect(page).toHaveURL(/terminal=T2/);
   await page.reload();
   await expect(page.getByRole('tab',{name:'T2',exact:true})).toHaveAttribute('aria-selected','true');
-  await page.getByRole('tab',{name:'전체',exact:true}).click();
+  await page.locator('#airport-data-flow').getByRole('tab',{name:'전체 T1·T2',exact:true}).click();
   await expect(page).not.toHaveURL(/terminal=/);
   await page.goBack();
   await expect(page.getByRole('tab',{name:'T2',exact:true})).toHaveAttribute('aria-selected','true');
