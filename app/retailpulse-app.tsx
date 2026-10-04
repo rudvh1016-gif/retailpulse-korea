@@ -3,6 +3,7 @@ import { passengerCopy } from "../lib/passenger-copy";
 import { activeSourceCatalog,sourceName,sourceUse,CollectionStatus } from "./source-status";
 
 import { useEffect, useMemo, useState } from "react";
+import {useBottomNavigationViewport} from "./use-bottom-navigation-viewport";
 import { type IndustryId, industryProfiles } from "../lib/industry-guidance";
 import {
   airportAnnual,
@@ -287,6 +288,7 @@ function routeFor(lang: Lang, view: View, area: AreaId) {
 }
 
 export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false, initialScope = "home", todayAnswer = null }: RetailPulseProps = {}) {
+  const bottomNavigationRef = useBottomNavigationViewport();
   const [lang, setLang] = useState<Lang>(initialLang);
   const [view, setView] = useState<View>(initialView);
   const [homeVisible, setHomeVisible] = useState(initialScope === "airport-home" || (initialScope === "home" && initialView === "today"));
@@ -546,7 +548,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         </footer>
       </main>
 
-      <nav className="bottom-nav" aria-label="Primary">
+      <nav ref={bottomNavigationRef} className="bottom-nav" aria-label="Primary">
         {(["airport", "today", "business", "predictions", "more"] as View[]).map((item) => (
           <a
             key={item}
