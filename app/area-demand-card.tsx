@@ -6,6 +6,7 @@ import type { LiveSummary } from './live-signals';
 import { buildAreaCurrentBrief } from '../lib/current-brief';
 import { comparisonText } from '../lib/period-comparison';
 import { describeObservationAge } from '../lib/observation-freshness';
+import {PopulationRangeMaterial} from './population-range-material';
 import { compactPeople, flowSegments, kstDay, kstStamp, peopleRange, populationFlow, populationTicks, usableComparison, validPopulationRange, type FlowPoint } from '../lib/demand-presentation';
 
 export const demandCopy = {
@@ -143,6 +144,7 @@ export function PopulationFlow({ points, lang, now }: { points: FlowPoint[]; lan
         onPointerUp={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }}>
         {[0, ceiling / 2, ceiling].map(value => <g key={value}><line className="flow-grid" x1={left} x2={right} y1={y(value)} y2={y(value)}/><text className="flow-y-label" x={left - 8} y={y(value) + 4} textAnchor="end">{compactPeople(Math.round(value), lang)}</text></g>)}
         {rows.map((segment, index) => <g key={index} className={`flow-${segment[0].kind}`}>
+          <PopulationRangeMaterial segment={segment} x={x} y={y}/>
           {segment.length > 1 ? <><path className="flow-range" d={`${path(segment, 'populationMax')} ${[...segment].reverse().map(p => `L${x(p.time)},${y(p.populationMin)}`).join(' ')} Z`}/>{/* Outline the upper edge of the range, never a fabricated midpoint. */}<path className="flow-bound" d={path(segment, 'populationMax')}/></> : <line className="flow-bound flow-interval" x1={x(segment[0].time)} x2={x(segment[0].time)} y1={y(segment[0].populationMin)} y2={y(segment[0].populationMax)}/>}
         </g>)}
         {now >= min && now <= max && <g className="flow-now"><line x1={x(now)} x2={x(now)} y1="28" y2="168"/>{!nowIsSelected && <text x={nowX} y="18" textAnchor="middle">{demandCopy.now[lang]}</text>}</g>}
@@ -178,6 +180,7 @@ export function PopulationFlow({ points, lang, now }: { points: FlowPoint[]; lan
       {!observed.length && <p className="flow-note">{demandCopy.missing[lang]}</p>}
       {forecasts.length > 0 ? <p className="flow-note">{demandCopy.forecast[lang]} · {kstStamp(forecasts[0].at)}–{kstStamp(forecasts.at(-1)!.at)} KST<br/>{[...new Set(forecasts.map(p => p.issuedAt ? `${demandCopy.issued[lang]} ${kstStamp(p.issuedAt)} KST` : demandCopy.unknownIssue[lang]))].join(' · ')}</p> : <p className="flow-note">{demandCopy.noForecast[lang]}</p>}
     </div>
+    {points.length>0&&<details className="flow-material-note"><summary>{{ko:'차트 표현 안내',en:'Chart depth and ranges',zh:'图表深度与范围',ja:'グラフの奥行きと範囲'}[lang]}</summary><p>{{ko:'옆면은 재질 표현입니다. 수치는 정면의 최소~최대 범위와 시간 축을 기준으로 읽습니다. 관측과 공식 예측은 따로 표시하며, 자료가 없는 구간은 연결하지 않습니다.',en:'Side faces show material depth only. Read values from the original front-face minimum–maximum range and time axis. Observations and official forecasts stay separate; missing intervals are not connected.',zh:'侧面仅表示材质深度。数值以正面原始最小至最大范围和时间轴为准。观测与官方预测分别显示，缺失时段不连接。',ja:'側面は素材の奥行きだけを表します。数値は正面の元の最小～最大範囲と時間軸で読みます。観測と公式予測は別々に表示し、欠測区間はつなぎません。'}[lang]}</p></details>}
   </figure>;
 }
 
