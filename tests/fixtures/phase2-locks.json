@@ -1,7 +1,7 @@
 {
   "base": "65907c971b5e279da48525875df6c972ab998c64",
   "protectedFiles": {
-    "app/[locale]/[slug]/page.tsx": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1",
+    "app/[locale]/[slug]/page.tsx": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545",
     "app/[locale]/not-found.tsx": "620e62c747a4a0d4b8af1558492c74e961f2a4f0d55caa2c960c508395a41ff0",
     "app/[locale]/page.tsx": "861f9697b315e6b0b54e1663c4089f4a6a6330d1298acc3066e0e657b6cafb98",
     "app/[locale]/tourism-desk/[area]/page.tsx": "b74c40a03d7ff4ec57a8314f4c11825467212d48634bebf057d078d3ae360b35",
@@ -18,7 +18,7 @@
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
-    "app/layout.tsx": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
+    "app/layout.tsx": "c0a649360ad8b28b74a8d338e2d3404e2fb76bd536740b3ffa7d38747cc701ac",
     "app/live-signals.tsx": "2fd7161863e3a8925489dd1b488e4f3495cda013164c45811181572f91a77389",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83",
@@ -26,10 +26,10 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "b9ccbfae7aac67f7aafd4e5ad2eb6739df50f166fa6723befa40db8742a08314",
-    "app/retailpulse-app.tsx": "3aa1492a086bf26f053c3885976e9b24f716bbe617e4fcf0e68ac2f3fcc261c1",
+    "app/retailpulse-app.tsx": "4433b2d0689f30cc6077ff3b0a74e466eab55ae4dfedfd09a48eb4141eb8a04b",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
-    "app/seo-config.ts": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
+    "app/seo-config.ts": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b",
     "app/site-usage-guide.tsx": "34ac91ba8e1d48849f766622bca163353dc1c9a09439b54aadb28c1d7b882460",
     "app/sitemap.ts": "ab2329b032b269477ffad4b69258004b1b577b323735eccbf92518cbec258880",
     "app/source-status.tsx": "a4832ec2982ec76631341f8a8aea477d98dd45128234ca7f6ee1002ea16196dd",
@@ -348,6 +348,31 @@
         "file": "app/operational-context.tsx",
         "previous": "a01bb0bda26fcd8af56869bbabbc6ffcaac1057b9a2cb7c8798643dc6cd79d21",
         "approved": "6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83"
+      }
+    ]
+  },
+  "ownerApprovedOgShare20261004": {
+    "reason": "Scoped owner approval for the airplane/runway OG update: refresh only four protected share-metadata source SHA-256 baselines. The protected path list, historical approval records, active tests, typography and product logic remain unchanged.",
+    "changes": [
+      {
+        "file": "app/[locale]/[slug]/page.tsx",
+        "previous": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1",
+        "approved": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545"
+      },
+      {
+        "file": "app/layout.tsx",
+        "previous": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
+        "approved": "c0a649360ad8b28b74a8d338e2d3404e2fb76bd536740b3ffa7d38747cc701ac"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "3aa1492a086bf26f053c3885976e9b24f716bbe617e4fcf0e68ac2f3fcc261c1",
+        "approved": "4433b2d0689f30cc6077ff3b0a74e466eab55ae4dfedfd09a48eb4141eb8a04b"
+      },
+      {
+        "file": "app/seo-config.ts",
+        "previous": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
+        "approved": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b"
       }
     ]
   }
