@@ -617,7 +617,7 @@ test("the gate model shares the full flight read without a chart or 3D library",
 
   expect(extraRequests, `a charting library was loaded: ${extraRequests.join(", ")}`).toEqual([]);
   await expect(page.locator('.airport-gate-model canvas')).toHaveCount(0);
-  await expect(page.locator('.gate-pillar svg').first()).toBeVisible();
+  await expect(page.locator('.gate-zone-bar').first()).toBeVisible();
 });
 
 /**

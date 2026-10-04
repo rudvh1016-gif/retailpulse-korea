@@ -76,7 +76,9 @@ test('the time selection moves the counts, the dots and the list together', asyn
   await map.getByRole('button', { name: '지금부터 1시간' }).click();
   await expect(map).toHaveAttribute('data-window', '850-910');
   await expect(map.getByTestId('map-counts')).toHaveText('동편 2편 · 서편 2편 · 중앙 0편 · 위치 미확인 0편 · 건물 미확인 1편');
-  await map.getByTestId('map-flights').locator(':scope > summary').click(); for (const hour of await map.locator('.airport-flight-hour > summary').all()) await hour.click();
+  await map.getByTestId('map-flights').locator(':scope > summary').click();
+  await expect(map.locator('.airport-flight-hour > summary').first()).toBeVisible();
+  for (const hour of await map.locator('.airport-flight-hour > summary').all()) await hour.click();
   await expect(map.getByTestId('map-flights-rows').locator('li')).toHaveCount(4);
   const drawn = await map.locator('[data-flights]').evaluateAll((nodes) => nodes.reduce((sum, node) => sum + Number(node.getAttribute('data-flights')), 0));
   expect(drawn).toBe(4);
@@ -95,7 +97,9 @@ test('a destination region filters the map and the list; shares keep their own b
   await expect(map.getByTestId('map-groups-basis')).toContainText('출발편 9편 기준(목적지 지역 미확인 1편 포함)');
   await groups.getByRole('button', { name: '일본' }).click();
   await expect(map).toHaveAttribute('data-filter', 'JP');
-  await map.getByTestId('map-flights').locator(':scope > summary').click(); for (const hour of await map.locator('.airport-flight-hour > summary').all()) await hour.click();
+  await map.getByTestId('map-flights').locator(':scope > summary').click();
+  await expect(map.locator('.airport-flight-hour > summary').first()).toBeVisible();
+  for (const hour of await map.locator('.airport-flight-hour > summary').all()) await hour.click();
   await expect(map.getByTestId('map-flights-rows').locator('li')).toHaveCount(3);
   await expect(map.getByTestId('map-flights-rows').locator('li[data-group]:not([data-group="JP"])')).toHaveCount(0);
   // The side counts stay the whole selection; the filter is named, not hidden.
