@@ -19,7 +19,7 @@
     "app/globals.css": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
     "app/layout.tsx": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
-    "app/live-signals.tsx": "2fd7161863e3a8925489dd1b488e4f3495cda013164c45811181572f91a77389",
+    "app/live-signals.tsx": "73a68b4da19f835f7946aa0fefd83fce4e0e71df01c517d5e1302953b332f060",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
@@ -358,6 +358,16 @@
         "file": "app/retailpulse-app.tsx",
         "previous": "3aa1492a086bf26f053c3885976e9b24f716bbe617e4fcf0e68ac2f3fcc261c1",
         "approved": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5"
+      }
+    ]
+  },
+  "ownerDailyForecastComparison20261004": {
+    "reason": "Owner requested that the existing daily official passenger-forecast bars show their date, value and relationship at a glance. A same-unit baseline and labels are added for short runs without drawing a cumulative series or treating missing days as zero. Existing colors, typography, protected-file list and UI Lock assertions remain active. This is local UI development only; no merge or deployment approval is implied.",
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "2fd7161863e3a8925489dd1b488e4f3495cda013164c45811181572f91a77389",
+        "approved": "73a68b4da19f835f7946aa0fefd83fce4e0e71df01c517d5e1302953b332f060"
       }
     ]
   }

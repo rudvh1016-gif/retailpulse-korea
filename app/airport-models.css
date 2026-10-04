@@ -208,6 +208,12 @@ nav.bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .gate-leader-zones > section[data-side=UNVERIFIED] > p { min-height: 0; margin: 0; }
 
 .airport-month-plot { height: 70px; }
+.airport-month-chart[data-short-series="true"] .airport-month-plot { height: 108px; }
+.airport-month-baseline { stroke: #cbd9df; stroke-width: .7; vector-effect: non-scaling-stroke; }
+.airport-month-value-labels { position: absolute; inset: 0; pointer-events: none; }
+.airport-month-value-labels span { position: absolute; transform: translate(-50%, -100%); font-size: 11px; line-height: 1.25; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.airport-month-value-labels span[data-missing] { color: var(--muted); }
+.airport-month-picks button:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
 .gate-zone-bar { height: 28px; }
 
 #airport-departure-model-slot { min-height: 260px; order: 2; }
