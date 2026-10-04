@@ -75,6 +75,8 @@ Focused browser suite: 35 passed after final collapse behavior, four languages,
 320/390/430/1280px, keyboard details, repeated selections, terminal changes,
 optional eligibility, external official link values, loaded 128px dimensions,
 transparent and visible pixels for all seven new images, no horizontal overflow.
+Existing calendar/zone/passenger integration E2E: 16/16 passed, four languages
+at 360/390/430/1280px, with its image assertion updated for the actual 2+2 assets.
 Screenshots are saved in `test-results/passenger-guide-{320,390,430}.png` and
 the standard CI artifact includes them. English fallback and asset byte contract
 unit tests pass. Typecheck, lint (warnings only) and verified build pass.
