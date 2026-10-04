@@ -667,7 +667,7 @@ test("date navigation switches the service date and explains what a date cannot 
   await expect.poll(() => requested.includes("2026-09-01")).toBe(true);
 
   // A recent-month availability list must not block older stored dates.
-  const picker = page.locator('.date-nav-picker input[type="date"]');
+  const picker = page.locator('.date-nav-picker input[type="date"], [data-testid="date-calendar-trigger"]');
   await expect(picker).not.toHaveAttribute("min");
   await expect(picker).not.toHaveAttribute("max");
 });

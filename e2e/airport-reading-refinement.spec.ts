@@ -1,4 +1,5 @@
 import {test, expect} from '@playwright/test';
+import {chooseDate} from './date-selection';
 import {SUMMARY_FIXTURE, routeSummary} from './summary-fixture';
 
 const date = '2026-08-31';
@@ -31,8 +32,7 @@ for (const lang of ['ko','en','zh','ja'] as const) for (const width of [360,390,
     await expect(dates.locator('button').nth(2)).toHaveAttribute('aria-pressed','true');
     await dates.locator('button').nth(1).click();
     await expect(dates.locator('button').nth(1)).toHaveAttribute('aria-pressed','true');
-    const input=page.locator('.date-nav-picker input').first();
-    await input.fill('2026-09-10'); await input.dispatchEvent('change');
+    await chooseDate(page,'2026-09-10');
     await expect(page).toHaveURL(/date=2026-09-10/);
     await dates.locator('button').nth(1).click();
     await page.locator('.airport-view>.terminal-selector button').nth(3).click();

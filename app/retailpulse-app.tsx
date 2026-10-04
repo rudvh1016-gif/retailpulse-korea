@@ -3,6 +3,7 @@ import { passengerCopy } from "../lib/passenger-copy";
 import { activeSourceCatalog,sourceName,sourceUse,CollectionStatus } from "./source-status";
 
 import { useEffect, useMemo, useState } from "react";
+import {useBottomNavigationViewport} from "./use-bottom-navigation-viewport";
 import { type IndustryId, industryProfiles } from "../lib/industry-guidance";
 import {
   airportAnnual,
@@ -37,6 +38,10 @@ import { IndustryGuide } from "./industry-guide";
 import { BusinessPrep } from "./business-prep";
 import { AirportDepartureOverview } from "./airport-departure-overview";
 import { AirportConcourse } from './airport-concourse';
+import { AirportTaxRefundGuide } from './airport-tax-refund-guide';
+import { AirportDeparturePreparation } from './airport-departure-preparation';
+import { departurePreparationCopy } from './airport-departure-preparation-copy';
+import './airport-tax-refund-guide.css';
 import { sidesCopy } from "../lib/airport-sides-copy";
 import { saveBusinessPreferences, useBusinessPreferences } from "./business-preferences";
 import { airportAnswerText, areaAnswerText, type TodayAnswer, type TodayAnswerArea } from "../lib/today-answer";
@@ -283,6 +288,7 @@ function routeFor(lang: Lang, view: View, area: AreaId) {
 }
 
 export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false, initialScope = "home", todayAnswer = null }: RetailPulseProps = {}) {
+  const bottomNavigationRef = useBottomNavigationViewport();
   const [lang, setLang] = useState<Lang>(initialLang);
   const [view, setView] = useState<View>(initialView);
   const [homeVisible, setHomeVisible] = useState(initialScope === "airport-home" || (initialScope === "home" && initialView === "today"));
@@ -542,7 +548,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         </footer>
       </main>
 
-      <nav className="bottom-nav" aria-label="Primary">
+      <nav ref={bottomNavigationRef} className="bottom-nav" aria-label="Primary">
         {(["airport", "today", "business", "predictions", "more"] as View[]).map((item) => (
           <a
             key={item}
@@ -617,7 +623,9 @@ function AirportView({
         </div>
       </div>
 
-      <div className="terminal-selector" role="tablist" aria-label="Terminal">
+      {(concourse||section === "now")&&<nav className="airport-purpose-links" aria-label={departurePreparationCopy[lang].title}><a href="#airport-departure-preparation" onClick={()=>{const guide=document.getElementById('airport-departure-preparation');if(guide instanceof HTMLDetailsElement)guide.open=true;}}>{departurePreparationCopy[lang].title}</a><a href="#airport-data-flow">{departurePreparationCopy[lang].flow}</a></nav>}
+      {(concourse||section === "now")&&<AirportDeparturePreparation lang={lang}/>}
+      <div id="airport-data-flow" className="terminal-selector" role="tablist" aria-label="Terminal">
         {(["all", "T1", "T2"] as Terminal[]).map((item) => <button key={item} className={!concourse&&terminal === item ? "active" : ""} onClick={() => setTerminal(item)} role="tab" aria-selected={!concourse&&terminal === item}>{item === "all" ? localText(lang, { ko: "전체", en: "ALL", zh: "全部", ja: "全体" }) : item}</button>)}
         <button className={concourse?'active':''} onClick={()=>setConcourse(true)} role="tab" aria-selected={concourse}>{localText(lang,{ko:'탑승동',en:'Concourse',zh:'登机楼',ja:'搭乗棟'})}</button>
       </div>
@@ -640,7 +648,7 @@ function AirportView({
       </nav>}
 
       {(concourse||(section !== "history" && section !== "stores")) && <div className={`airport-date-reserved${concourse?' airport-date-concourse':''}`}>
-        <DateNavigator lang={lang} date={date} onChange={setDate} airportDates={!concourse} />
+        <DateNavigator lang={lang} date={date} onChange={setDate} airportDates={!concourse} modernCalendar />
         {!concourse&&<DateScopeNote lang={lang} date={date} scope={section === "arrivals" ? "arrivals" : "departures"} />}
       </div>}
 
@@ -653,6 +661,7 @@ function AirportView({
       {!concourse&&section === "arrivals" && <AirportArrivalSummary lang={lang} terminal={terminal} date={date} />}
       {!concourse&&section === "flights" && <FlightBoard lang={lang} terminal={terminal} date={date} />}
       {!concourse&&section === "stores" && <FacilityDirectory lang={lang} terminal={terminal} />}
+      {!concourse&&section === "stores"&&<AirportTaxRefundGuide lang={lang} terminal={terminal}/>}
 
       {!concourse&&(section === "now" || section === "arrivals") && <IndustryGuide key={section} lang={lang} industry={industry} onIndustryChange={setIndustry} airport={{ terminal, direction: section === "arrivals" ? "arrival" : "departure" }} />}
 

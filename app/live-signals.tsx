@@ -1,4 +1,5 @@
 "use client";
+import { AirportDateCalendar } from './airport-date-calendar';
 import { airportCompositionCopy } from '../lib/airport-composition-copy';
 import { demandCopy, demandLevel, AreaDemandCard, usePresentationClock } from "./area-demand-card";
 import { passengerCopy } from "../lib/passenger-copy";
@@ -1169,8 +1170,8 @@ function shiftDay(day: string, delta: number): string {
  * Retain only navigation context on a failed date request, never its numbers.
  */
 export function DateNavigator({
-  lang, date, onChange, historyHref, airportDates = false,
-}: { lang: Lang; date: string | null; onChange: (date: string | null) => void; historyHref?: string; airportDates?: boolean }) {
+  lang, date, onChange, historyHref, airportDates = false, modernCalendar = false,
+}: { lang: Lang; date: string | null; onChange: (date: string | null) => void; historyHref?: string; airportDates?: boolean; modernCalendar?: boolean }) {
   const summary = useLiveSummary(date);
   const [navigation, setNavigation] = useState(summary);
   if (summary && summary !== navigation) setNavigation(summary);
@@ -1236,7 +1237,7 @@ export function DateNavigator({
       }).format(new Date(`${value}T12:00:00+09:00`))}</time></button>)}
     </div>
     <div className="date-nav-tools">
-    <label className="date-nav-picker">
+    {modernCalendar ? <AirportCalendarWithAvailability lang={lang} date={date} selected={selected} today={today} onChange={value=>onChange(value===today?null:value)}/> : <label className="date-nav-picker">
       <span>{dateNavText.pick[lang]}</span>
       <input
         type="date"
@@ -1247,11 +1248,19 @@ export function DateNavigator({
           onChange(next === today ? null : next);
         }}
       />
-    </label>
+    </label>}
     {historyHref && <a className="period-outlook-link" href={historyHref}>7DAYS · {contextText(lang,"지난 기록","Past records","历史记录","過去の記録")}</a>}
     </div>
     {airportDates && <StoredAirportDates lang={lang} date={date} selected={selected} onChange={onChange} />}
   </nav>;
+}
+
+function AirportCalendarWithAvailability({lang,date,selected,today,onChange}:{lang:Lang;date:string|null;selected:string;today:string;onChange:(date:string)=>void}) {
+  const [month,setMonth]=useState<string|null>(null);
+  const summary=useLiveSummary(date,month??undefined);
+  const availability=summary?.dateAvailability;
+  const known=[...new Set([...(availability?.airportFlights??[]),...(availability?.airportPassengerForecast??[]),...(availability?.airportDepartureSchedule??[])])].filter(day=>day.startsWith(month??selected.slice(0,7)));
+  return <AirportDateCalendar lang={lang} selected={selected} today={today} onChange={onChange} known={known} onMonth={setMonth} availabilityState={summary===undefined?'LOADING':summary===null||summary.clientRefresh?.failedAt?'FAILED':'READY'}/>;
 }
 
 const storedDateText = {
