@@ -84,7 +84,7 @@ test("primary navigation, terminal filter, back and refresh work", async ({ page
   await expect(page.locator("nav.bottom-nav")).toBeHidden();
   await page.locator("nav.top-nav a").filter({ hasText: "공항" }).click();
   await expect(page).toHaveURL(/\/ko\/airport$/);
-  await page.getByRole("tab", { name: "T2" }).click();
+  await page.locator("#airport-data-flow").getByRole("tab", { name: "T2", exact: true }).click();
   await page.locator(".airport-context-nav").getByRole("button", { name: "항공편" }).click();
   await expect(page.getByRole("heading", { name: /항공편·도시 검색/ })).toBeVisible();
   await page.goBack();
@@ -578,7 +578,7 @@ test("selecting T1 or T2 changes every top metric, not just the current departur
   await expect(page.locator(".airport-today-grid").getByText("47,320명", { exact: true })).toBeVisible();
   await expect(page.getByText("561편", { exact: true })).toBeVisible();
 
-  await page.getByRole("tab", { name: "T1" }).click();
+  await page.locator("#airport-data-flow").getByRole("tab", { name: "T1", exact: true }).click();
   await expect(page.locator(".airport-current-brief")).toContainText("현재 대기 관측 · T1 출국장 P01");
   await expect(page.locator(".airport-wait-brief")).toContainText("24분");
   await expect(page.locator(".airport-today-grid").getByText("30,100명", { exact: true })).toBeVisible();
@@ -589,7 +589,7 @@ test("selecting T1 or T2 changes every top metric, not just the current departur
   await expect(page.locator('[data-overall-leader="true"] .gate-pillar')).toHaveCount(1);
   await expect(page.getByText("출국장 1B", { exact: true })).toHaveCount(0);
 
-  await page.getByRole("tab", { name: "T2" }).click();
+  await page.locator("#airport-data-flow").getByRole("tab", { name: "T2", exact: true }).click();
   await expect(page.locator(".airport-current-brief")).toContainText("현재 대기 관측 · T2 출국장 1B");
   await expect(page.locator(".airport-wait-brief")).toContainText("60+분");
   await expect(page.locator(".airport-today-grid").getByText("17,220명", { exact: true })).toBeVisible();
@@ -598,7 +598,7 @@ test("selecting T1 or T2 changes every top metric, not just the current departur
   await expect(page.locator('[data-overall-leader="true"] .gate-pillar')).toHaveCount(1);
   await expect(page.getByText("출국장 1B", { exact: true })).toBeVisible();
 
-  await page.getByRole("tab", { name: "전체" }).click();
+  await page.locator("#airport-data-flow").getByRole("tab", { name: "전체 T1·T2", exact: true }).click();
   await expect(page.locator(".airport-today-grid").getByText("47,320명", { exact: true })).toBeVisible();
 });
 
@@ -624,7 +624,7 @@ test("incomplete A5 daily coverage never renders as a full-day total or peak", a
   await expect(page.locator(".airport-flow")).toBeVisible();
   await expect(page.locator(".airport-today-grid").getByText("47,320명", { exact: true })).toHaveCount(0);
 
-  await page.getByRole("tab", { name: "T2" }).click();
+  await page.locator("#airport-data-flow").getByRole("tab", { name: "T2", exact: true }).click();
   await expect(page.locator(".airport-today-grid").getByText("17,220명", { exact: true })).toBeVisible();
 });
 
@@ -697,7 +697,7 @@ test("the flight board lists official flight rows and filters by search and term
   await expect(page.getByText("OZ102")).toBeVisible();
 
   await page.getByRole("searchbox").fill("");
-  await page.getByRole("tab", { name: "T1" }).click();
+  await page.locator("#airport-data-flow").getByRole("tab", { name: "T1", exact: true }).click();
   await expect(page.locator(".flight-rows li")).toHaveCount(1);
   await expect(page.getByText("OZ102")).toBeVisible();
 });
