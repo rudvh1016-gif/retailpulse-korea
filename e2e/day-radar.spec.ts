@@ -28,7 +28,7 @@ const HISTORY = [7, 14, 21, 28].map((back, index) => {
   HISTORY.push({ T1: terminalDay(profile, 'T1'), T2: terminalDay(profile, 'T2') });
 }
 
-async function open(page: Page, { lang = 'ko', width = 390, history = HISTORY as unknown[] | null } = {}) {
+async function open(page: Page, { lang = 'ko', width = 390, history = HISTORY as unknown[] | null, truncated = false } = {}) {
   await page.setViewportSize({ width, height: 900 });
   await page.addInitScript((stored) => localStorage.setItem('koretail-business-v1', stored), JSON.stringify({ version: 1, place: 'airport', terminal: 'T2', side: null, hours: null }));
   const summary = { ...SUMMARY_FIXTURE, airport: { ...SUMMARY_FIXTURE.airport, sides: airportSides(DATE, 'TODAY', [], TODAY_ROWS, [], false, false) } };
@@ -37,7 +37,7 @@ async function open(page: Page, { lang = 'ko', width = 390, history = HISTORY as
   const requests: string[] = [];
   await page.route('**/api/live/flights*', (route) => {
     requests.push(route.request().url());
-    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ mode: 'live-flights', basis: 'COLLECTED_FLIGHT_RECORDS', flights: TODAY_ROWS, truncated: false, retrievedAt: '2026-08-31T05:00:00Z' }) });
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ mode: 'live-flights', basis: 'COLLECTED_FLIGHT_RECORDS', flights: TODAY_ROWS, truncated, retrievedAt: '2026-08-31T05:00:00Z' }) });
   });
   await page.route('**/api/live/airport-days*', (route) => {
     requests.push(route.request().url());
@@ -76,8 +76,11 @@ test('days like today: numbers, not a similarity score, and the table opens', as
   await expect(similar.first()).toHaveAttribute('data-day', '2026-08-25');
   await expect(similar.first()).toContainText('가까운 날: 2026-08-25');
   await expect(similar.first()).toContainText('출발편 수(2026-08-31 36 · 2026-08-25 36)');
-  await expect(similar.first()).toContainText('그날 기록에서 가장 많은 출발 시간대: 09–10시 20편');
+  await expect(section.getByTestId('similar-scope')).toContainText('2026-08-03~2026-08-25');
+  await expect(section.getByTestId('similar-scope')).toContainText('같은 요일만 고른 것은 아닙니다');
+  await expect(similar.first()).toContainText('요일(2026-08-31 (월) / 2026-08-25 (화))');
   await similar.first().getByTestId('similar-open').click();
+  await expect(similar.first()).toContainText('그날 기록에서 가장 많은 출발 시간대: 09–10시 20편');
   await expect(similar.first().getByTestId('similar-table')).toBeVisible();
   await expect(similar.first().getByTestId('similar-hours')).toBeVisible();
 });
@@ -94,7 +97,23 @@ test('history that cannot be read says it could not compare', async ({ page }) =
   await expect(section.getByTestId('radar-failed')).toBeVisible();
 });
 
-for (const [lang, width] of [['ko', 360], ['en', 360], ['zh', 360], ['ja', 360], ['ko', 1280]] as const) {
+test('partial flight data is not described as a day with no departures', async ({ page }) => {
+  const { section } = await open(page, { truncated: true });
+  await expect(section.getByTestId('radar-incomplete')).toBeVisible();
+  await expect(section.getByTestId('radar-no-current')).toHaveCount(0);
+});
+
+test('unavailable side data is disclosed without calling it no difference', async ({ page }) => {
+  const differentTable = HISTORY.map((entry) => ({ ...entry, T2: { ...entry.T2, sidesVersion: 'older-gate-table' } }));
+  const { section } = await open(page, { history: differentTable, width: 320 });
+  const first = section.getByTestId('similar-days').locator('li').first();
+  await first.getByTestId('similar-open').click();
+  await expect(first.getByTestId('similar-missing')).toContainText('자료가 없어 비교에서 제외');
+  await expect(first.getByTestId('similar-missing')).toContainText('동편 비중');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+});
+
+for (const [lang, width] of [['ko', 320], ['ko', 390], ['ko', 430], ['en', 390], ['zh', 390], ['ja', 390]] as const) {
   test(`the comparison fits and has no missing glyph: ${lang} at ${width}px`, async ({ page }) => {
     const { section } = await open(page, { lang, width });
     await expect(section.getByTestId('day-radar')).toBeVisible();

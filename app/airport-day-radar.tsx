@@ -109,17 +109,20 @@ export default function DayRadarBlock({ lang, date, dayRelation, terminal, nowIs
 
   if (flights === undefined || history === undefined) return <p className="prep-note" data-testid="radar-loading">{copy.loading[lang]}</p>;
   if (history.status === 'FAILED' || flights.status === 'FAILED') return <p className="prep-note" data-testid="radar-failed">{copy.failed[lang]}</p>;
+  if (flights.payload.truncated) return <p className="prep-note" data-testid="radar-incomplete">{copy.incomplete[lang]}</p>;
   if (!current) return <p className="prep-note" data-testid="radar-no-current">{copy.noCurrent[lang]}</p>;
 
   const complete = history.days.filter((day) => day.complete);
   const { items, weekdayDays } = radar({ current, history: history.days, lastSeen: lastSeen && lastSeen.checkedAt < nowIso ? lastSeen : null, terminal, holidays });
   const similar = similarDays({ current, history: history.days, isHoliday });
+  const eligible = history.days.filter((day) => day.complete && day.day < current.day && day.total > 0 && day.hours.some((value) => value > 0))
+    .sort((a, b) => a.day.localeCompare(b.day));
   const comparable = items.some((item) => item.kind.startsWith('WEEKDAY'));
 
   return <div data-testid="day-radar">
     <h3>{copy.radarTitle[lang]}</h3>
     <ol className="prep-facts" data-testid="radar-items">
-      {items.map((item, index) => <li key={index} data-kind={item.kind}>{radarLine(item, terminal, lang, kstClock)}</li>)}
+      {items.map((item, index) => <li key={index} data-kind={item.kind}>{radarLine(item, terminal, lang, kstClock, current.day)}</li>)}
     </ol>
     {!weekdayDays.length && <p className="prep-note" data-testid="radar-no-history">{copy.noHistory(complete.length, lang)}</p>}
     {weekdayDays.length > 0 && !comparable && <p className="prep-note" data-testid="radar-within">{copy.withinRange(weekdayDays.length, lang)}</p>}
@@ -130,7 +133,8 @@ export default function DayRadarBlock({ lang, date, dayRelation, terminal, nowIs
     </details>
 
     <h3 style={{ marginTop: 18 }}>{copy.similarTitle[lang]}</h3>
-    {!similar.length ? <p className="prep-note" data-testid="similar-none">{copy.similarNone(complete.length, lang)}</p>
+    <p className="prep-note" data-testid="similar-scope">{copy.similarScope(current.day, eligible[0]?.day ?? null, eligible.at(-1)?.day ?? null, eligible.length, lang)}</p>
+    {!similar.length ? <p className="prep-note" data-testid="similar-none">{copy.similarNone(eligible.length, lang)}</p>
       : <ol className="prep-facts" data-testid="similar-days">{similar.map((item) => {
         const lines = similarLines(item, current, lang);
         const isOpen = open === item.day.day;
@@ -147,10 +151,11 @@ export default function DayRadarBlock({ lang, date, dayRelation, terminal, nowIs
           <strong>{copy.similarLabel[lang]}: {dayLabel(item.day.day, lang)}</strong>
           <br/>{copy.alike[lang]}: {lines.alike}
           <br/>{copy.differ[lang]}: {lines.differ}
-          {lines.busiest && <><br/>{copy.busiest[lang]}: {lines.busiest}</>}
           <br/><button type="button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : item.day.day)} data-testid="similar-open"
             style={{ border: 0, padding: '8px 0', background: 'transparent', color: 'var(--blue)', cursor: 'pointer', font: 'inherit' }}>{copy.compareTable[lang]}</button>
           {isOpen && <div data-testid="similar-table">
+            {lines.busiest && <p className="prep-note">{copy.busiest[lang]}: {lines.busiest}</p>}
+            {item.missing.length > 0 && <p className="prep-note" data-testid="similar-missing">{copy.missingComparison[lang]}: {item.missing.map((name) => name === 'HOLIDAY' ? copy.holidayEvidence[lang] : copy.component[name as keyof typeof copy.component][lang]).join(', ')}</p>}
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead><tr><th/><th style={{ textAlign: 'right' }}>{dayLabel(current.day, lang)}</th><th style={{ textAlign: 'right' }}>{dayLabel(item.day.day, lang)}</th></tr></thead>
               <tbody>
