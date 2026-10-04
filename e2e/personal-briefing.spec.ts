@@ -1,3 +1,4 @@
+import {expectDateSelection} from './date-selection';
 import {test,expect,chromium,type Page} from '@playwright/test';
 import {SUMMARY_FIXTURE} from './summary-fixture';
 import {pc} from '../lib/personal-copy';
@@ -41,9 +42,9 @@ test('saved manager horizon is preserved while airport date controls remain expl
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
     await expect(page.locator('.airport-today')).toBeVisible();
     expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
-    await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-08-31');
+    await expectDateSelection(page, '2026-08-31');
     await page.locator('.date-nav-shortcuts button').last().click();
-    await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-09-01');
+    await expectDateSelection(page, '2026-09-01');
     await expect(page.locator('.airport-today')).toContainText('2026-09-01');
     await expect(page.locator('.personal-preparation')).toHaveCount(0);
 });
@@ -64,7 +65,7 @@ for(const lang of ['ko','en','zh','ja'] as const) for(const width of [390,768,12
     await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
     await page.locator('.date-nav-shortcuts button').last().click();
-    await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-09-01');
+    await expectDateSelection(page, '2026-09-01');
     await page.reload();
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
@@ -105,7 +106,7 @@ test('multiple locations, terminals and all three days persist and switch to the
     await expect(page.locator('.airport-today')).toBeVisible();
     for (const [index, date] of [[0, '2026-08-30'], [2, '2026-09-01'], [1, '2026-08-31']] as const) {
         await page.locator('.date-nav-shortcuts button').nth(index).click();
-        await expect(page.locator('.date-nav-picker input')).toHaveValue(date);
+        await expectDateSelection(page, date);
         await page.getByRole('tab', { name: 'T2', exact: true }).click();
         await expect(page.locator('.airport-glance-strip')).toHaveAttribute('data-scope', 'T2');
         expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
@@ -125,7 +126,7 @@ test('denied storage leaves airport date and terminal controls usable',async({pa
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
     await expect(page.locator('.airport-today')).toBeVisible();
     await page.locator('.date-nav-shortcuts button').last().click();
-    await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-09-01');
+    await expectDateSelection(page, '2026-09-01');
     await page.getByRole('tab', { name: 'T2', exact: true }).click();
     await expect(page.locator('.airport-glance-strip')).toHaveAttribute('data-scope', 'T2');
 });

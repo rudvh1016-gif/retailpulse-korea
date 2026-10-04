@@ -19,14 +19,14 @@
     "app/globals.css": "f097e621395f7dad932b85ed1b8e06b231e44005fa10ade2ab6a00f11c716b7a",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
     "app/layout.tsx": "5046b7a098cbea56b3c315af2033bbc3d846462584f2c27b97f8dc1bb4c49ec7",
-    "app/live-signals.tsx": "20e5b6d6ca89a75338e1515a942350ff9ae5bbe3b74a0304548a072bc1ac26a3",
+    "app/live-signals.tsx": "146b28c66a08f1f253fb09c7a862087582bc3c06969f673c58457afbc01e1832",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "a01bb0bda26fcd8af56869bbabbc6ffcaac1057b9a2cb7c8798643dc6cd79d21",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "b9ccbfae7aac67f7aafd4e5ad2eb6739df50f166fa6723befa40db8742a08314",
-    "app/retailpulse-app.tsx": "c7497557ee9e868840f6b7f84d01d5b1a845c5bcee0d4e82b7841f0ff7ff5df2",
+    "app/retailpulse-app.tsx": "5dae01ce0e25414edd7125ce08d8201774acacae7591d26484aad44794b82a80",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
@@ -193,6 +193,21 @@
         "file": "app/live-signals.tsx",
         "previous": "a264702ba4a5756a6c17d45e97cb3b77048ae27bb88811fb8df16af8beaafd02",
         "approved": "20e5b6d6ca89a75338e1515a942350ff9ae5bbe3b74a0304548a072bc1ac26a3"
+      }
+    ]
+  },
+  "ownerModernCalendar20261004": {
+    "reason": "Explicit owner request replaces airport native date input with modern date button, Blender icon, mobile calendar sheet and desktop popover. Date/held-record truth, KST server clock, manual month travel, keyboard/focus/back and source contracts remain. Active UI lock enforcement retained; no deployment.",
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "20e5b6d6ca89a75338e1515a942350ff9ae5bbe3b74a0304548a072bc1ac26a3",
+        "approved": "146b28c66a08f1f253fb09c7a862087582bc3c06969f673c58457afbc01e1832"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "c7497557ee9e868840f6b7f84d01d5b1a845c5bcee0d4e82b7841f0ff7ff5df2",
+        "approved": "5dae01ce0e25414edd7125ce08d8201774acacae7591d26484aad44794b82a80"
       }
     ]
   }
