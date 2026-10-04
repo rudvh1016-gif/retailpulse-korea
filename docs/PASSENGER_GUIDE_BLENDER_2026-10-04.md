@@ -5,6 +5,11 @@ Independent branch: `feat/passenger-guide-blender`. This change reuses the
 existing departure preparation, 108-combination rule engine and tax refund guide.
 PR266/267/268, top-level audience rearrangement, terminal tabs and their tests
 are outside this change.
+The branch was subsequently synchronized with current main
+`80e057eff336dabbe792f550db1aedf685d17936` after another workflow merged PR268.
+Its mobile controls and exact terminal-label tests are preserved unchanged;
+PR269's diff against that current main still contains only the 24 passenger
+guide/evidence/test files.
 
 The existing entry now explains its five-step contents. Basic departure has
 five short HTML titles and one sentence each, with native details for additional
@@ -77,6 +82,11 @@ optional eligibility, external official link values, loaded 128px dimensions,
 transparent and visible pixels for all seven new images, no horizontal overflow.
 Existing calendar/zone/passenger integration E2E: 16/16 passed, four languages
 at 360/390/430/1280px, with its image assertion updated for the actual 2+2 assets.
+After synchronization with main `80e057e`: all 1,145 unit tests, typecheck,
+build and 42 rendered-HTML tests passed again. The combined related browser
+suite, including the unchanged PR268 mobile-controls tests, passed 57/57.
+Actual rapid double-clicks were also verified at 320px to keep exactly one
+guide body and one selected refund phase.
 Screenshots are saved in `test-results/passenger-guide-{320,390,430}.png` and
 the standard CI artifact includes them. English fallback and asset byte contract
 unit tests pass. Typecheck, lint (warnings only) and verified build pass.
