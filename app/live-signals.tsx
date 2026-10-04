@@ -3797,7 +3797,7 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
     if (!requestDate) return;
     let active = true;
     const url = `/api/live/flights?date=${encodeURIComponent(requestDate)}`;
-    fetch(url, { headers: { accept: "application/json" } })
+    fetch(url, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(15_000) })
       .then(async (response) => (response.ok ? await response.json() as { mode?: string; serviceDateKst?: string; flights?: LiveFlightRow[]; truncated?: boolean; basis?: string; retrievedAt?: string | null } : null))
       .catch(() => null)
       .then((payload) => {
