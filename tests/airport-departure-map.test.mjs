@@ -66,7 +66,7 @@ test("every flight is either drawn at a known gate or listed apart, never both a
   assert.deepEqual(t2.unplaced.notOnMap.map((flight) => flight.gate).sort(), ["228", "23A"], "no official position: never drawn at a guessed place");
   const g291 = t2.flights.find((flight) => flight.gate === "291");
   assert.ok(g291.position, "291 is on the airport's own map, so it is drawn");
-  assert.equal(g291.side, "UNVERIFIED", "drawn, but its side stays unconfirmed");
+  assert.equal(g291.side, "EAST", "retained POI 61286 and the restored reviewed midpoint entry agree");
   assert.equal(t2.unplaced.noGate.length, 1);
   const t1 = departureMap({ date: DATE, nextDate: NEXT, terminal: "T1", window: DAY, rows });
   assert.equal(t1.concourse, 2, "T1 includes the concourse as its own building");

@@ -33,14 +33,14 @@ function Pillar({ item, max, lang, onSelect, compact = false }: { item: RankedGa
   const height = max > 0 ? item.flights / max * 64 : 0;
   const y = 90 - height;
   return <button type="button" className="gate-pillar" onClick={onSelect} aria-label={`${item.building} ${mapCopy.gate[lang]} ${item.gate}, ${item.flights}${lang === 'en' ? ' flights' : lang === 'ko' ? '편' : lang === 'zh' ? '班' : '便'}`} data-flights={item.flights} data-gate={item.gate}>
-    <svg viewBox="0 0 82 116" width="82" height="116" aria-hidden="true">
+    {!compact && <svg viewBox="0 0 82 116" width="82" height="116" aria-hidden="true">
       <path d="M6 95 L63 95 L78 85 L22 85 Z" fill="#eef5f6"/>
       {height > 0 && <><path d={`M18 ${y} L59 ${y} L59 90 L18 90 Z`} fill={item.side === 'EAST' ? '#b5d8d0' : '#b7ddea'}/>
         <path d={`M59 ${y} L69 ${y - 7} L69 83 L59 90 Z`} fill="#a4c4d0"/>
         <path d={`M18 ${y} L28 ${y - 7} L69 ${y - 7} L59 ${y} Z`} fill="#e5f5fc"/></>}
       {!compact && <><text x="41" y="109" textAnchor="middle" fill="#000" fontSize="12">{item.gate}</text>
       <text x="41" y={Math.max(16, y - 14)} textAnchor="middle" fill="#000" fontSize="14">{item.flights}</text></>}
-    </svg>
+    </svg>}
     {compact && <span>{item.gate}</span>}
   </button>;
 }
@@ -72,7 +72,7 @@ export default function AirportGatePillars({ lang, terminal, date }: { lang: Lan
         {leaders.length ? <><p className="gate-leader-number"><span>{copy.most[lang]}</span> <strong>{max.toLocaleString(locale)}</strong>{unit} {leaders.length > 1 && <span>{copy.leaders[lang]} {leaders.length}</span>}</p>
           <div className="gate-leader-zones">{(['WEST', 'CENTER', 'EAST', 'UNVERIFIED'] as const).map(side => {
             const rows = leadingGates(gates.filter(g => g.side === side));
-            return <section key={side} data-side={side}><h5>{mapCopy.side[side][lang]}</h5>{rows.length ? <><p>{rows[0].flights}{unit}{rows.length > 1 ? ` · ${copy.leaders[lang]} ${rows.length}` : ''}</p><div className="gate-pillar-row">{rows.map(item => <div key={item.key} data-overall-leader={item.flights === max}><small>{item.building}</small><Pillar compact item={item} max={max} lang={lang} onSelect={() => select(item.key)}/></div>)}</div></> : <p>{copy.zero[lang]}</p>}</section>;
+            return <section key={side} data-side={side}><h5>{mapCopy.side[side][lang]}</h5>{rows.length ? <><p><strong>{rows[0].flights}</strong>{unit}{rows.length > 1 && <small>{copy.leaders[lang]} {rows.length}</small>}</p><svg className="gate-zone-bar" viewBox="0 0 80 44" aria-hidden="true"><path d={`M10 ${34-28*rows[0].flights/Math.max(1,max)} H60 V34 H10 Z`} fill={side === 'EAST' ? '#b6d8d0' : '#b7ddea'}/><path d={`M60 ${34-28*rows[0].flights/Math.max(1,max)} l8 -4 V30 l-8 4 Z`} fill="#a4c4d0"/><path d={`M10 ${34-28*rows[0].flights/Math.max(1,max)} l8 -4 h50 l-8 4 Z`} fill="#effaff"/></svg><div className="gate-pillar-row">{rows.map(item => <div key={item.key} data-overall-leader={item.flights === max}><small className="gate-chip-building">{item.building}</small><Pillar compact item={item} max={max} lang={lang} onSelect={() => select(item.key)}/></div>)}</div></> : <p>{copy.zero[lang]}</p>}</section>;
           })}</div></> : <p>{mapCopy.empty[lang]}</p>}
       </>}
       <p className="prep-note">{copy.note[lang]}</p>

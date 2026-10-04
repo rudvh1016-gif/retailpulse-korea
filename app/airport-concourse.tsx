@@ -6,7 +6,7 @@ import {useFlights} from './flights-client';
 import {departureMap} from '../lib/airport-departure-map';
 import {shiftKstDay} from '../lib/kst';
 import {AirportFlightBrowser} from './airport-flight-browser';
-import {AirportSceneModel} from './airport-scene-model';
+import {AirportConceptModel} from './airport-concept-model';
 import {AirportZoneCountries} from './airport-zone-countries';
 import {airportModelScope} from '../lib/airport-model-scope';
 const text={
@@ -25,8 +25,8 @@ export function AirportConcourse({lang,date}:{lang:Lang;date:string|null}) {
   <h2 className="airport-model-scope" data-testid="airport-model-scope" data-terminal="CONCOURSE">{airportModelScope('CONCOURSE',lang)}</h2>
   {!loaded?<LiveLoadMessage loading lang={lang}/>:loaded.status==='FAILED'?<p role="status">{c.failed}</p>:loaded.payload.truncated?<p role="status">{c.partial}</p>:!loaded.payload.retrievedAt&&loaded.payload.flights.length===0?<p role="status">{unavailable[lang]}</p>:map&&<>
    <p>{loaded.payload.basis==='OFFICIAL_DEPARTURE_SCHEDULE'?c.schedule:c.records}: <strong data-testid="concourse-flight-count">{map.flights.length}</strong> · {serviceDate} KST</p>
+   <AirportConceptModel map={map} lang={lang}/>
    <AirportZoneCountries map={map} lang={lang} basis={c.basis}/>
-   <AirportSceneModel scope="CONCOURSE" lang={lang}/>
    {!map.flights.length&&<p>{c.empty}</p>}
    <AirportFlightBrowser flights={map.flights} lang={lang} testId="concourse-flight-list"/>
    <p className="prep-note">{loaded.payload.retrievedAt??'—'} · <a href="https://www.airport.kr" target="_blank" rel="noreferrer">Incheon Airport</a></p>

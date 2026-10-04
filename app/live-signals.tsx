@@ -1681,7 +1681,7 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
   // Each available date receives equal space; missing values remain gaps.
   const slots = days.length;
   const slot = width / slots;
-  const barWidth = 0.45;
+  const barWidth = Math.min(7, slot * 0.3);
   const maxDay = days.reduce((best, day) => Math.max(best, day.total ?? 0), 0);
 
   // The running total is still COMPUTED — the readout below prints the selected
@@ -1714,9 +1714,9 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
       <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
         {days.map((day, index) => day.total === null
           ? <rect key={day.date} className="airport-month-gap" x={x(index) - barWidth / 2} y={height - 1.5} width={barWidth} height={1.5} />
-          : <g key={day.date}><rect className="airport-month-bar" data-selected={day.date === shownDay.date || undefined}
-              x={x(index) - barWidth / 2} y={barY(day.total)} width={barWidth} height={Math.max(0, height - barY(day.total))} />
-              <path className="airport-month-dot" d={`M${x(index)} ${barY(day.total)} h.001`} strokeLinecap="round" vectorEffect="non-scaling-stroke" data-value={day.total}/>
+          : <g key={day.date}><rect className="airport-month-soft-depth" x={x(index) - barWidth / 2 + .7} y={barY(day.total) + 2} width={barWidth} height={Math.max(0, height - barY(day.total) - 2)} rx={Math.min(1.5, barWidth/2)} ry={6} fill="#a6c5ce"/><rect className="airport-month-bar" data-value={day.total} data-selected={day.date === shownDay.date || undefined}
+              x={x(index) - barWidth / 2} y={barY(day.total)} width={barWidth} height={Math.max(0, height - barY(day.total))} rx={Math.min(1.5, barWidth / 2)} ry={6} />
+              {day.total > 0 && <path className="airport-month-soft-highlight" d={`M${x(index)-barWidth/2+1.2} ${barY(day.total)+2} h${Math.max(0,barWidth-2.4)}`} stroke="#fff" strokeWidth="1.2" strokeLinecap="round"/>}
             </g>)}
       </svg>
       <div className="airport-month-picks" role="group" aria-label={mtdCopy.daily[lang]}>
@@ -2012,12 +2012,14 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
           nowLabel={nowLabel}
           numberLocale={numberLocale}
           label={`${airportTodayText.forecastTitle[lang]}. ${airportTodayText.forecastOnly[lang]}${nowBandStart ? `. ${nowLabel}` : ""}`}
+          showModel={false}
         />
         : <div className={`airport-forecast-state ${isForecastPartial ? "partial" : "unavailable"}`}>
           <strong>{isForecastPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]}</strong>
           <p>{isForecastPartial ? airportTodayText.partialBody[lang] : airportTodayText.unavailableBody[lang]}</p>
           {passengerCollected && <small>{passengerCollected}</small>}
         </div>}
+      <div id="airport-departure-model-slot" data-testid="airport-departure-model-slot"/>
     </section>
     }/>
 

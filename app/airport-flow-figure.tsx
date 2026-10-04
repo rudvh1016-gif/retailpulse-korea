@@ -46,11 +46,12 @@ const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 /** Rough text width at 11px: CJK glyphs are square, Latin digits are narrow. */
 const textWidth = (text: string) => [...text].reduce((sum, ch) => sum + (ch > "⺀" ? 11 : /[0-9]/.test(ch) ? 6.4 : /[ ·–:]/.test(ch) ? 3.4 : 6.2), 0);
 
-export function AirportFlowFigure({ timeline, layers = null, lang = "ko", terminal = 'all', peakStartAt, nowBandStart, nowBandProgress, nowLabel, numberLocale, label }: {
+export function AirportFlowFigure({ timeline, layers = null, lang = "ko", terminal = 'all', showModel = true, peakStartAt, nowBandStart, nowBandProgress, nowLabel, numberLocale, label }: {
   timeline: ReadonlyArray<FlowBand>;
   layers?: Record<string, ReadonlyArray<FlowBand> | undefined> | null;
   lang?: Lang;
   terminal?: 'all' | 'T1' | 'T2';
+  showModel?: boolean;
   peakStartAt: string | null;
   nowBandStart: string | null;
   nowBandProgress: number | null;
@@ -185,7 +186,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
 
   return <figure className="av-figure airport-flow" ref={figureRef} role="group" aria-label={label} data-bands={layout.bands.length}>
     <p className="airport-model-scope" data-testid="airport-model-scope" data-terminal={terminal}>{airportModelScope(terminal,lang)}</p>
-    <AirportSceneModel scope={terminal} lang={lang} className="airport-hourly-concept"/>
+    {showModel && <AirportSceneModel scope={terminal} lang={lang} className="airport-hourly-concept"/>}
     {/* No role="img" here: the figure itself is the labelled group, and the band
         rects inside are real keyboard stops that an image role would hide. */}
     <svg ref={svgRef} width="100%" height={height} viewBox={`0 0 ${width} ${height}`}
@@ -290,6 +291,6 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
       {layout.now && <li><i className="ahead" />{copy.ahead[lang]}</li>}
       {layout.stacked && layout.layers.map((layer, index) => <li key={layer.key}><i className={index === 0 ? "stack-lower" : "stack-upper"} />{layer.key}</li>)}
     </ul>
-    <p className="prep-note airport-hourly-model-note">{copy.concept[lang]}</p>
+    {showModel && <p className="prep-note airport-hourly-model-note">{copy.concept[lang]}</p>}
   </figure>;
 }

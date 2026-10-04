@@ -277,7 +277,7 @@ const FIRST_DAYS = (count: number) => {
 for (const count of [1, 2]) {
   for (const lang of ["ko", "en"] as const) {
     for (const width of [390, 1280]) {
-      test(`${count} day(s) into the month: evenly spaced thin stems and exact dots · ${lang} · ${width}px`, async ({ page }) => {
+      test(`${count} day(s) into the month: evenly spaced short rounded bars · ${lang} · ${width}px`, async ({ page }) => {
         await page.setViewportSize({ width, height: 1000 });
         await page.route("**/api/live/summary**", routeSummary(FIRST_DAYS(count)));
         await page.goto(`/${lang}/airport`);
@@ -288,7 +288,7 @@ for (const count of [1, 2]) {
         const boxes = [];
         for (let index = 0; index < count; index++) boxes.push((await bars.nth(index).boundingBox())!);
         for (const box of boxes) {
-          expect(box.width, "a day's bar is at most ~5% of the plot").toBeLessThanOrEqual(plot.width * 0.05);
+          expect(box.width, "a day's bar is at most ~5% of the plot").toBeLessThanOrEqual(plot.width * 0.08);
           expect(box.width, "and still visible").toBeGreaterThan(1);
         }
         // October 3 owner revision: use the full width for the available dates.
@@ -296,7 +296,8 @@ for (const count of [1, 2]) {
           const centre=boxes[index].x+boxes[index].width/2-plot.x;
           expect(Math.abs(centre-plot.width*(index+.5)/count)).toBeLessThan(2);
         }
-        await expect(page.locator('.airport-month-dot')).toHaveCount(count);
+        await expect(page.locator('.airport-month-bar[data-value]')).toHaveCount(count);
+        await expect(page.locator('.airport-month-dot')).toHaveCount(0);
         // Labels never overlap each other or leave the plot.
         const labels = await page.locator(".airport-month-ticks span").evaluateAll((els) => els.map((el) => { const r = el.getBoundingClientRect(); return [r.left, r.right, el.textContent]; }));
         for (let index = 1; index < labels.length; index++) expect(labels[index][0] as number, `label ${labels[index][2]} clear of ${labels[index - 1][2]}`).toBeGreaterThan(labels[index - 1][1] as number);

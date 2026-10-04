@@ -1,5 +1,5 @@
 {
-  "version": "airport-sides.v1-20261003",
+  "version": "airport-sides.v3-reviewed-291-20261004",
   "checkedOn": "2026-09-29",
   "notes": [
     "Hall sides: the airport's own facility location text names each departure hall with its terminal side (quoted in evidence). The owner's instruction described the official accessibility maps (https://www.airport.kr/ap_ko/908/subview.do) with the same split (T1 1-3 east / 4-6 west, T2 2 east / 1 west); that description is recorded as the owner's instruction, not as a reading KORETAIL verified. OCR of those map images was not reliable and is not used.",
@@ -8,7 +8,8 @@
     "Gate sides have two bases, both official and both per gate. OFFICIAL_TEXT: official text names the gate with 동편/서편/중앙. OFFICIAL_MAP_POSITION: the airport's interactive map (https://www.airport.kr/geomap/ap_ko/view.do) loads its own gate points with coordinates (https://icnmap.airport.kr:18080/API/v2_0/nodes/no-auth/web/1, spoiInfors). In each building the east direction is the line from the mean position of the OFFICIAL_TEXT west gates to that of the OFFICIAL_TEXT east gates (T1 55.8°, T2 52.1°, 탑승동 54.2° from north). A gate is east only when it lies at least as far east along that line as the innermost officially east gate, west only when at least as far west as the innermost officially west gate. Every gate between the two stays UNVERIFIED; T1 26-28 stay CENTER. No gate number range is filled in, no side is taken from an airline, and a gate outside the published range (T2 291 on the map) is not added. The OFFICIAL_TEXT gates themselves separate cleanly on that line (0 mismatches), and none of the map's other points labelled 동편/서편 lies on the opposite side of a bound except the within-hall names '출국장 N 동편/서편'. These positions were read by KORETAIL from the official map data on 2026-09-29 (Production Visual Check run 36557391138); they are not an owner confirmation.",
     "The published gate ranges are 1-50 (T1), 101-132 (탑승동) and 208-290 (T2) (https://www.airport.kr/ap_ko/886/subview.do). A T2 '1번 게이트' in the facility text is an entrance, not a boarding gate, and is not used.",
     "The 탑승동 (Concourse) is its own building; its east/west gates are never counted as T1 east/west.",
-    "2026-10-03: restore 34 per-gate OFFICIAL_MAP_MIDPOINT records reviewed in c7f3eaf9ba3982015e2bd90191f5bf79777b5114 and approved by the owner on 2026-10-02. These are KORETAIL-calculated regions from official POI coordinates read on 2026-09-29, not official east/west text designations. The midpoint of the official text anchor means and a central band of ±15% of building x-span classify T2 (axis 462, band 132) and Concourse (axis 459, band 139). Missing coordinates and gates outside published boarding ranges remain UNVERIFIED. Fresh endpoint access on 2026-10-03 returned 401, so this is not a fresh coordinate verification. Hall passenger side estimates remain withheld. The reviewed commit includes T2:291 despite its own published-range note; that one entry is deliberately excluded, leaving 33 restored mappings."
+    "2026-10-03: restore 34 per-gate OFFICIAL_MAP_MIDPOINT records reviewed in c7f3eaf9ba3982015e2bd90191f5bf79777b5114 and approved by the owner on 2026-10-02. These are KORETAIL-calculated regions from official POI coordinates read on 2026-09-29, not official east/west text designations. The midpoint of the official text anchor means and a central band of ±15% of building x-span classify T2 (axis 462, band 132) and Concourse (axis 459, band 139). Missing coordinates and gates outside published boarding ranges remain UNVERIFIED. Fresh endpoint access on 2026-10-03 returned 401, so this is not a fresh coordinate verification. Hall passenger side estimates remain withheld. The reviewed commit includes T2:291 despite its own published-range note; that one entry is deliberately excluded, leaving 33 restored mappings.",
+    "2026-10-04: owner explicitly requested regression repair for T2:291. Restore the exact c7f3eaf OFFICIAL_MAP_MIDPOINT entry, supported by official-map POI 61286 at x=745, y=1043 in the retained coordinate file. This is one evidenced exception to the published boarding-number range, not a range expansion, a fresh coordinate verification or an official east/west text designation. The historical 2026-10-03 exclusion note above is superseded only for this gate. Hall passenger disclosure remains withheld."
   ],
   "halls": [
     {
@@ -1337,6 +1338,14 @@
       "side": "EAST",
       "basis": "OFFICIAL_MAP_MIDPOINT",
       "evidence": "공식 지도 '탑승구 290' 동서 축 위치 751m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 290번 동편",
+      "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
+    },
+    {
+      "area": "T2",
+      "gate": "291",
+      "side": "EAST",
+      "basis": "OFFICIAL_MAP_MIDPOINT",
+      "evidence": "공식 지도 '탑승구 291' 동서 축 위치 745m · 건물 중앙 462m(공식 문구 서편·동편 탑승구 평균의 중간) · 중앙 띠 ±132m → 291번 동편",
       "source": "config/airport-gate-positions.v1.json (icnmap.airport.kr spoiInfors, read 2026-09-29) · KORETAIL working rule 2026-10-02"
     }
   ]

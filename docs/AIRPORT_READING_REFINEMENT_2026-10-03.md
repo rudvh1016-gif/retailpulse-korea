@@ -8,7 +8,7 @@ Review-only branch based on origin/main `75d8121e975f92d9ab8f06b02e5459f6ae8ace9
 - Flight lists start collapsed with complete counts. Opening shows hours and counts, then 20 rows per opened hour, with search, row details, show-more and focus-safe collapse. This reduces the simultaneously mounted list without truncating the underlying data.
 - All WEST/CENTER/EAST regional leaders and every tie remain visible. Overall leaders are highlighted, unverified locations are separate, and complete gate lists retain search, zone filters and staged access. Missing retrieval is distinguished from confirmed zero.
 - The daily primary airport number uses the owner's approved compact 36–40px bold exception; normal body typography remains unchanged. Insets and current/peak label spacing are tightened.
-- Monthly comparison uses equal-sized points on a common zero-based dynamic axis with direct values. Daily values are equally spaced thin stems and round points; missing dates and cumulative calculations remain unchanged. No previous-month daily series was invented.
+- Monthly comparison uses the selected horizontal capsule draft A: a common zero baseline, dynamic shared scale and direct exact values. Daily values are short rounded pastel bars with subtle depth; missing dates and cumulative calculations remain unchanged. The rejected point/stem trial and alternate draft B remain in prior history/artifacts. No previous-month daily series was invented.
 - Seoul observations retain solid black exact bounds and official forecasts use a separate pastel ribbon with both supplied bounds. No observed-to-forecast bridge or midpoint is fabricated. Source, issue time, KST, slider keyboard/touch controls and gaps remain intact.
 - Arrivals and departures share the white/black/pastel chart treatment.
 
@@ -16,9 +16,20 @@ Review-only branch based on origin/main `75d8121e975f92d9ab8f06b02e5459f6ae8ace9
 
 The existing flight-proportion passenger reference estimate is preserved from main. Its equal-passengers-per-flight assumption, caveats and existing calculations are unchanged; it is not an official east/west passenger count. The verified east/west denominator remains separate from the whole-flight denominator. Registered country does not become passenger nationality; flight counts do not become people or waiting time. Public official-hall disclosure remains off/withheld.
 
-A captured public API response supplied 577 flight rows, including 147 concourse flights, 156 ranked gates overall and 79 T2 gates. These values were used for local verification only and are not hardcoded in product code. All rows remained reachable. Approved v6/v6b replacement artwork is awaiting parent review; this PR does not replace model assets or use the faint pearl raster mockup.
+A captured public API response supplied 577 flight rows, including 147 concourse flights, 156 ranked gates overall and 79 T2 gates. These values were used for local verification only and are not hardcoded in product code. All rows remain reachable.
 
-## Verification and evidence
+## Owner follow-ups on 2026-10-04
+
+- Gate search blank-list regression: the staged first 20 rows had inherited `content-visibility:auto` paint deferral inside the scrolling list. Their content now paints immediately with `content-visibility:visible`; staging and show-more remain intact. Three equal-height regional cards show one broad proportional bar per occupied zone and all tied gate chips, rather than one decorative prism per tie.
+- T2 gate 291: restore exactly the reviewed `c7f3eaf` coordinate-based EAST record at the owner's explicit request. Retained official-map POI 61286 is x=745/y=1043, read 2026-09-29. The earlier #249 exclusion was based on the published 208–290 range; this repair is one evidenced exception and does not expand arbitrary ranges. The classification is KORETAIL-computed `OFFICIAL_MAP_MIDPOINT`, not official east/west text. No fresh coordinate verification is claimed. The captured current 577-row response changes T2 EAST119/WEST131/CENTER21/UNVERIFIED1 to EAST120/WEST131/CENTER21/UNVERIFIED0, total272 unchanged.
+- Remove the decorative departure model above the passenger chart. The existing single zone-labelled model/counts and destination countries are rendered into a slot immediately below that chart, using the same map state and flight data. Original lower placement has no duplicate model. Business brief maps retain their original context. Physical building and time filters update the moved model and countries without another data request; the concourse keeps its unsupported passenger forecast notice.
+- Exact registered gate groups are generated from the union of retained official coordinate keys and the active per-gate classification records. Only consecutive numbers are compressed; gaps and singletons remain visible. All mode separates T1/T2/Concourse, includes CENTER, and displays unverified registered positions separately. Expanded evidence distinguishes official airport text from KORETAIL calculation on official map coordinates. This register is expressly separate from active-gate flight rankings.
+- v6c is locally integrated with actual rendered WebP assets and matching cropped projection anchors. `VITE_AIRPORT_MODEL_PREVIEW_ROOT` selects those assets only in Vite DEV; production and unset development configuration retain existing v5. No engine/dependency or permanent asset replacement is introduced. Original artwork and `.blend` files are preserved. Local preview assets total approximately 296KiB across eight images. Approved source bundle: `libfile_b396e20abd8c8191b60f5f9f0a3da6f4`; anchors: `libfile_7c1c913f3484819194164dca8fa59962`. Set the preview variable to the local directory containing `T1_day.webp`/`T1_night.webp`, T2, CONCOURSE and OVERVIEW pairs.
+- Arrivals use the actual 18px page inset without a second inner gutter. Monthly capsule A remains a review draft; the user approved v6c for local integration only. Public merging/deployment remains pending.
+
+Latest Library previews: T2 moved model/registered numbers `libfile_19b961be64088191ad7eec2201a5e74b`; T1 `libfile_b31e5f2322388191b770f74766046c00`; all `libfile_86fdb5b47f008191a69b3a898108d84d`; concourse `libfile_647b2a1ff40081918a6cd376cff057b6`. Gate list paint `libfile_5a951e4e25fc8191ad076733f01cc831`; repaired291 `libfile_8d954e02e21c8191a7d4321ad203fef1`; capsule A `libfile_8b57d6042a4c81919b6eae6b4d496e4d`.
+
+## Earlier committed verification and evidence (2679262; before the follow-ups)
 
 - Lint, typecheck and verified production build passed.
 - Unit suite: 1,119 passed; the final protected-file/operational lock check additionally passed 44 tests. UILock enforcement stays enabled with explicit owner-authorized hash transitions.
@@ -56,4 +67,4 @@ No dependency, 3D engine, provider fetch or data-read path was added. Existing r
 
 ## Stop point
 
-Keep this PR draft for visual review and current-SHA CI. New artwork needs separate approval. Merge/public deployment require the parent's pending explicit user approval and have not been executed.
+Keep this PR draft for visual review and current-SHA CI. v6c has local design approval; the capsule comparison is a local review draft. Merge/public deployment require the parent's pending explicit user approval and have not been executed.
