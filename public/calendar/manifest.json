@@ -1,0 +1,132 @@
+{
+  "actual_blender": "5.2.1 LTS",
+  "one_design": true,
+  "role": "Supplementary date selection button icon; interactive accessible calendar remains HTML",
+  "no_font_objects": true,
+  "no_numbers_or_fixed_date_or_logo": true,
+  "native_render_size": [
+    96,
+    96
+  ],
+  "transparent_background": true,
+  "style": "Thin rounded white paper, matte sky-blue header, two open bindings, six empty grid cells, soft procedural contact-shadow expression rendered in Blender",
+  "render_engine": "CYCLES",
+  "camera_ortho": 2.75,
+  "exports": [
+    {
+      "base_css_px": 24,
+      "scale": 1,
+      "pixels": 24,
+      "png": "calendar-24px-1x.png",
+      "webp": "calendar-24px-1x.webp"
+    },
+    {
+      "base_css_px": 24,
+      "scale": 2,
+      "pixels": 48,
+      "png": "calendar-24px-2x.png",
+      "webp": "calendar-24px-2x.webp"
+    },
+    {
+      "base_css_px": 24,
+      "scale": 3,
+      "pixels": 72,
+      "png": "calendar-24px-3x.png",
+      "webp": "calendar-24px-3x.webp"
+    },
+    {
+      "base_css_px": 32,
+      "scale": 1,
+      "pixels": 32,
+      "png": "calendar-32px-1x.png",
+      "webp": "calendar-32px-1x.webp"
+    },
+    {
+      "base_css_px": 32,
+      "scale": 2,
+      "pixels": 64,
+      "png": "calendar-32px-2x.png",
+      "webp": "calendar-32px-2x.webp"
+    },
+    {
+      "base_css_px": 32,
+      "scale": 3,
+      "pixels": 96,
+      "png": "calendar-32px-3x.png",
+      "webp": "calendar-32px-3x.webp"
+    }
+  ],
+  "original_webp": "calendar-96-original.webp",
+  "recommended_css_size": 32,
+  "secondary_css_size": 24,
+  "image_is_decorative": true,
+  "accessible_button_name_and_focus_states_must_be_html": true,
+  "image_verified": {
+    "calendar-24px-1x": {
+      "size": [
+        24,
+        24
+      ],
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "webp_bytes": 990
+    },
+    "calendar-24px-2x": {
+      "size": [
+        48,
+        48
+      ],
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "webp_bytes": 2216
+    },
+    "calendar-24px-3x": {
+      "size": [
+        72,
+        72
+      ],
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "webp_bytes": 3972
+    },
+    "calendar-32px-1x": {
+      "size": [
+        32,
+        32
+      ],
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "webp_bytes": 1368
+    },
+    "calendar-32px-2x": {
+      "size": [
+        64,
+        64
+      ],
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "webp_bytes": 3206
+    },
+    "calendar-32px-3x": {
+      "size": [
+        96,
+        96
+      ],
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "webp_bytes": 5276
+    }
+  }
+}

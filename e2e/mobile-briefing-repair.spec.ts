@@ -1,3 +1,4 @@
+import {expectDateSelection} from './date-selection';
 import { test, expect, type Page } from '@playwright/test';
 import { SUMMARY_FIXTURE } from './summary-fixture';
 import { PREFERENCE_KEY, parsePreferences, type PersonalPreferences } from '../lib/personal-briefing';
@@ -64,7 +65,7 @@ test('saved Hongdae airport preferences survive explicit terminal and date switc
     await expect(page.locator('.airport-glance-strip')).toHaveAttribute('data-scope', 'T2');
     for (const [index, date] of [[0, '2026-08-30'], [2, '2026-09-01'], [1, '2026-08-31']] as const) {
         await page.locator('.date-nav-shortcuts button').nth(index).click();
-        await expect(page.locator('.date-nav-picker input')).toHaveValue(date);
+        await expectDateSelection(page, date);
     }
     await page.reload();
     expect(await page.evaluate(key => localStorage.getItem(key), PREFERENCE_KEY)).toBe(JSON.stringify(p));
@@ -154,11 +155,11 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     if (lang === 'ko') await page.screenshot({ path: info.outputPath(`hongdae-safe-area-${width}.png`), fullPage: true });
     await page.locator('.date-nav-shortcuts button').first().click();
-    await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-08-30');
+    await expectDateSelection(page, '2026-08-30');
     await page.locator('.date-nav-shortcuts button').last().click();
-    await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-09-01');
+    await expectDateSelection(page, '2026-09-01');
     await page.locator('.date-nav-shortcuts button').nth(1).click();
-    await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-08-31');
+    await expectDateSelection(page, '2026-08-31');
     await page.evaluate(({ key, p }) => localStorage.setItem(key, JSON.stringify(p)), { key: PREFERENCE_KEY, p: allDayPreferences });
     await page.goto(`/${lang}`);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
