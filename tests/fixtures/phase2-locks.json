@@ -26,7 +26,7 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "b9ccbfae7aac67f7aafd4e5ad2eb6739df50f166fa6723befa40db8742a08314",
-    "app/retailpulse-app.tsx": "c7497557ee9e868840f6b7f84d01d5b1a845c5bcee0d4e82b7841f0ff7ff5df2",
+    "app/retailpulse-app.tsx": "4b065980b08bde40a21529c3a5047d1fae84434afeeec2fda62ae8af0e9773c1",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
@@ -153,6 +153,16 @@
         "file": "app/[locale]/[slug]/page.tsx",
         "previous": "ec78dc3ec8cf39872a56d4a7a53d6e1537d7f1aba2a4b5def0e4862187f18757",
         "approved": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1"
+      }
+    ]
+  },
+  "ownerMobileBottomNav20261004": {
+    "reason": "Explicit owner mobile bug repair: keep bottom navigation at the visible viewport bottom while iOS toolbars/keyboard change. Only its ref/hook integration is authorized. All source, font, typography and active UI lock tests are preserved. No public merge/deployment.",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "c7497557ee9e868840f6b7f84d01d5b1a845c5bcee0d4e82b7841f0ff7ff5df2",
+        "approved": "4b065980b08bde40a21529c3a5047d1fae84434afeeec2fda62ae8af0e9773c1"
       }
     ]
   }
