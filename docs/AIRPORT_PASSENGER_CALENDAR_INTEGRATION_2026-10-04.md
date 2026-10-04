@@ -32,7 +32,7 @@ The original same-condition reading benchmark at 390×844, Chromium CPU 4x, redu
 
 All work ends at reviewable draft PRs and exact-head checks. PR254/252/253 merge rejection is respected; no further merge attempt, alternative deployment or permission bypass was used. A separately authorized public release and post-release real-device/production checks remain outstanding. Blog and artifact organization are intentionally deferred until implementation/review is complete.
 
-## Final stop-point evidence
+## Historical stop-point evidence at 562b375
 
 Parent requested the turn to stop without expanding scope. Final full local browser run: **592 executed, 580 passed, 12 failed**. All 12 are the new repeated modal-close regression at `e2e/airport-integrated-preparation.spec.ts:19`, mobile 360/390/430px across ko/en/zh/ja. After selecting a date, reopening the calendar, focusing the month input and pressing Escape, the calendar trigger disappears because the browser navigates away. Trace shows the URL walking from the selected-date URL to the prior airport URL and then `about:blank`. The history/cancel interaction is not yet fixed or fully diagnosed. Existing 580 tests were not disabled or weakened. This combined draft is **blocked**, not ready for merge or release.
 
@@ -52,3 +52,23 @@ Eight latest integrated screenshots were directly inspected and saved to Library
 | 08-flight-scroll-navigation-mobile.png | `libfile_8fd4ea344c988191a368c1a4753d83f3` |
 
 Resume at the repeated calendar-close bug. Keep the standalone source branches, active UI-lock checks and original fonts unchanged. Do not infer an iOS PASS from Chromium/API-contract checks. Public merge/deployment remains blocked and was never retried.
+
+## Calendar-close correction after the authorized resume
+
+Only the reported repeated-close/history defect was changed. Direct browser instrumentation of the original code confirmed two native dialog `cancel` events from one Escape with the month input focused. Both called `history.back()` before the first `popstate`, consuming the modal entry and then the previous date/page entry. Repeating this reached `about:blank`.
+
+The calendar now records CLOSED/OPEN/CLOSING in a synchronous ref. It accepts a close request once, retains its first pending selected date, and ignores additional cancel requests while history traversal completes. Closing completion is also idempotent. The history listener remains installed while the dialog is closed so Forward to this calendar's own entry reopens it without pushing another entry. The dialog restores its selected month/day and trigger focus while the ordinary confirmed-date Back/Forward history remains intact.
+
+The original `e2e/airport-integrated-preparation.spec.ts` was not edited or relaxed. Its 12 formerly failing mobile cases now pass. The existing 16 calendar tests were strengthened with month-browse cancellation, Forward reopening, Back cancellation, confirmed-date Back/Forward restoration and two cancel events in the same turn. All 32 focused cases passed across ko/en/zh/ja and 360/390/430/1280. Final complete test counts and exact remote CI head are recorded in the PR when verified.
+
+No new UI, styles, data/API, navigation-menu or source changes. The iOS middle-navigation symptom remains unconfirmed and real Safari/WebKit remains unverified, exactly as before. [Dialog cancel event reference](https://developer.mozilla.org/en-US/docs/Web/API/HTMLDialogElement/cancel_event) documents the cancellable close request; the duplicate count above is measured local browser evidence, not a claimed specification guarantee.
+
+Final corrected local run: **592/592 browser tests passed** (6.6 minutes, four workers), including the unchanged 12 formerly failing cases. Unit 1,130/1,130 and rendered HTML 42/42 passed. Build, typecheck, lint and secret scan passed; lint retains only the two existing image warnings. After instrumentation, three consecutive month-focus/Escape rounds each received two native cancel events but only one back traversal; all retained the committed `2026-08-30` date URL. Exact-head remote CI is verified and recorded in the PR after push, never inferred from these local results.
+
+Three new actual correction screenshots were inspected and saved to Library. They use the captured public 2026-10-04 response, not a published deployment. The calendar source file SHA-256 is `f4857a469935476d9606f8a4f68fe2f1d3d9eb1a07335558118cdfa39b423c36`; the capture manifest records the exact URLs and selected date/focus at confirm, reopen, Escape, Forward and Back. The existing Today control intentionally uses the server-today URL without a date query; historical-date URL restoration is covered in the browser suite.
+
+| Correction screenshot | Library ID |
+| --- | --- |
+| 01-reopened-calendar-month-focus.png | `libfile_adbb832345748191b6552f23b0e87695` |
+| 02-after-escape-date-and-focus-retained.png | `libfile_7b1a7a0c9c2881919fbfed6d6463d55c` |
+| 03-forward-reopens-selected-calendar.png | `libfile_22f93901e56c81919d1fe65ac52f2925` |

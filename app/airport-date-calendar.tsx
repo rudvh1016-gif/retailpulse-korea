@@ -1,5 +1,5 @@
 'use client';
-import {useEffect,useId,useRef,useState,type KeyboardEvent} from 'react';
+import {useCallback,useEffect,useId,useRef,useState,type KeyboardEvent} from 'react';
 import type {Lang} from './retailpulse-data';
 import {isValidKstDay,shiftKstDay} from '../lib/kst';
 
@@ -13,22 +13,30 @@ const text={
 export function AirportDateCalendar({lang,selected,today,onChange,known,onMonth,availabilityState}:{lang:Lang;selected:string;today:string;onChange:(date:string)=>void;known:readonly string[];onMonth:(month:string|null)=>void;availabilityState:'READY'|'LOADING'|'FAILED'}) {
  const [open,setOpen]=useState(false),[month,setMonth]=useState(selected.slice(0,7));
  const trigger=useRef<HTMLButtonElement>(null),dialog=useRef<HTMLDialogElement>(null),pending=useRef<string|null>(null);const id=useId(),historyKey=`date-calendar-${id}`;const c=text[lang];
- const latest=useRef({onChange,onMonth});useEffect(()=>{latest.current={onChange,onMonth};},[onChange,onMonth]);
+ const phase=useRef<'CLOSED'|'OPEN'|'CLOSING'>('CLOSED');
+ const latest=useRef({onChange,onMonth,selected});useEffect(()=>{latest.current={onChange,onMonth,selected};},[onChange,onMonth,selected]);
  const selectedDay=new Date(`${selected}T12:00:00+09:00`);
  const formatted=new Intl.DateTimeFormat(locales[lang],{timeZone:'Asia/Seoul',year:'numeric',month:'long',day:'numeric'}).format(selectedDay)+` (${new Intl.DateTimeFormat(locales[lang],{timeZone:'Asia/Seoul',weekday:'short'}).format(selectedDay)})`;
- function openPicker(){setMonth(selected.slice(0,7));onMonth(selected.slice(0,7));pending.current=null;history.pushState({...history.state,koretailDateCalendar:historyKey},'',location.href);setOpen(true);}
- function closePicker(value?:string){pending.current=value??null;if(history.state?.koretailDateCalendar===historyKey)history.back();else finishClose();}
- function finishClose(){dialog.current?.close();setOpen(false);latest.current.onMonth(null);trigger.current?.focus();const next=pending.current;pending.current=null;if(next)latest.current.onChange(next);}
+ const beginOpen=useCallback(()=>{phase.current='OPEN';const month=latest.current.selected.slice(0,7);setMonth(month);latest.current.onMonth(month);pending.current=null;setOpen(true);},[]);
+ const finishClose=useCallback(()=>{if(phase.current==='CLOSED')return;phase.current='CLOSED';dialog.current?.close();setOpen(false);latest.current.onMonth(null);trigger.current?.focus();const next=pending.current;pending.current=null;if(next)latest.current.onChange(next);},[]);
+ function openPicker(){if(phase.current!=='CLOSED')return;beginOpen();history.pushState({...history.state,koretailDateCalendar:historyKey},'',location.href);}
+ function closePicker(value?:string){
+  // A native month input can deliver two dialog cancel events for one Escape.
+  // Consume this modal's temporary history entry exactly once, before popstate.
+  if(phase.current!=='OPEN')return;phase.current='CLOSING';pending.current=value??null;
+  if(history.state?.koretailDateCalendar===historyKey)history.back();else finishClose();
+ }
+ useEffect(()=>{
+  const onHistory=()=>{if(history.state?.koretailDateCalendar===historyKey){if(phase.current==='CLOSED')beginOpen();}else finishClose();};
+  window.addEventListener('popstate',onHistory);return()=>window.removeEventListener('popstate',onHistory);
+ },[historyKey,beginOpen,finishClose]);
  useEffect(()=>{
   if(!open)return;
   const node=dialog.current!;node.showModal();
   const rect=trigger.current!.getBoundingClientRect();node.style.setProperty('--calendar-top',`${Math.min(rect.bottom+8,Math.max(12,innerHeight-580))}px`);node.style.setProperty('--calendar-left',`${Math.max(12,Math.min(rect.left,innerWidth-400))}px`);
-  node.querySelector<HTMLButtonElement>(`[data-date="${selected}"]`)?.focus();
-  const back=()=>finishClose();window.addEventListener('popstate',back);
+  node.querySelector<HTMLButtonElement>(`[data-date="${latest.current.selected}"]`)?.focus();
   const previousOverflow=document.body.style.overflow;document.body.style.overflow='hidden';
-  return()=>{window.removeEventListener('popstate',back);document.body.style.overflow=previousOverflow;};
-  // The modal lifecycle intentionally uses the values captured when opened.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return()=>{document.body.style.overflow=previousOverflow;};
  },[open]);
  const year=Number(month.slice(0,4)),m=Number(month.slice(5,7));
  const first=new Date(`${month}-01T12:00:00Z`),offset=first.getUTCDay();

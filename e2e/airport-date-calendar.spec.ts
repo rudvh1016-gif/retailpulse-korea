@@ -16,5 +16,16 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [360,390,430,1280])te
  await page.keyboard.press('Escape');await expect(dialog).toHaveCount(0);await expect(trigger).toBeFocused();
  await trigger.click();await page.goBack();await expect(dialog).toHaveCount(0);await expect(trigger).toBeFocused();await expectDateSelection(page,'2026-08-31');
  await chooseDate(page,'2026-09-02');await expect(page).toHaveURL(/date=2026-09-02/);await expect(trigger).toBeFocused();await trigger.click();await dialog.locator('button[data-date="2026-09-02"]').press('ArrowLeft');await expect(dialog.locator('button[data-date="2026-09-01"]')).toBeFocused();await page.keyboard.press('Escape');
+ await expect(trigger).toBeFocused();const selectedUrl=page.url();
+ // Cancel month browsing without changing the committed date or stepping into
+ // the previous page. Keep the existing repeated-close failure test unchanged.
+ await trigger.click();await dialog.locator('input[type=month]').fill('2026-10');await page.keyboard.press('Escape');await expect(dialog).toHaveCount(0);await expect(trigger).toBeFocused();await expectDateSelection(page,'2026-09-02');await expect(page).toHaveURL(selectedUrl);
+ // Forward returns to the owned modal entry; Back cancels it once.
+ await page.goForward();await expect(dialog).toBeVisible();await expect(dialog.locator('input[type=month]')).toHaveValue('2026-09');await expect(dialog.locator('button[data-date="2026-09-02"]')).toBeFocused();await expect(page).toHaveURL(selectedUrl);
+ await page.goBack();await expect(dialog).toHaveCount(0);await expect(trigger).toBeFocused();await expectDateSelection(page,'2026-09-02');
+ // Confirmed date navigation remains ordinary browser history.
+ await page.goBack();await expectDateSelection(page,'2026-08-31');await expect(dialog).toHaveCount(0);
+ await page.goForward();await expectDateSelection(page,'2026-09-02');await expect(dialog).toHaveCount(0);await expect(page).toHaveURL(selectedUrl);
+ await trigger.click();await expect(dialog).toBeVisible();await dialog.evaluate(node=>{node.dispatchEvent(new Event('cancel',{cancelable:true}));node.dispatchEvent(new Event('cancel',{cancelable:true}));});await expect(dialog).toHaveCount(0);await expect(trigger).toBeFocused();await expectDateSelection(page,'2026-09-02');await expect(page).toHaveURL(selectedUrl);
  expect(errors).toEqual([]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
