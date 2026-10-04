@@ -31,6 +31,12 @@ test('holiday comparison names each date and country with an actual calendar sta
   assert.match(holidayDateStatus('2026-05-06','JP','ko'),/대체휴일/);
   assert.match(holidayDateStatus('2027-10-03','CN','ko'),/확인 불가/);
 });
+test('one-country holiday names only that country and never invents the other',()=>{
+  const result=holidayComparisonCopy('2026-10-03','2026-09-29','ko');
+  assert.match(result,/2026-10-03: 중국 국경절/);
+  assert.match(result,/2026-09-29: 중국 공휴일 아님/);
+  assert.doesNotMatch(result,/일본/);
+});
 test('all restored midpoint mappings retain official POI provenance and computed-region boundaries',()=>{
   const sides=JSON.parse(readFileSync(new URL('../config/airport-sides.v1.json',import.meta.url),'utf8'));
   const positions=JSON.parse(readFileSync(new URL('../config/airport-gate-positions.v1.json',import.meta.url),'utf8'));
