@@ -3,7 +3,7 @@ import {routeSummary,SUMMARY_FIXTURE} from './summary-fixture';
 import {taxRefundCopy} from '../app/airport-tax-refund-copy';
 import {tofuCharacters} from './font-glyphs';
 
-for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430,1280])test(`tax refund ${lang} ${width}: conditional inspection and source conflict`,async({page})=>{
+for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,390,430,1280])test(`tax refund ${lang} ${width}: conditional inspection and source conflict`,async({page})=>{
  await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});const c=taxRefundCopy[lang];const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',flights:[],truncated:false,retrievedAt:'2026-08-31T03:00:00Z'}}));
  await page.goto(`/${lang}/airport?terminal=T2`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
