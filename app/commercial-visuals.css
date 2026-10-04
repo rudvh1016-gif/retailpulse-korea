@@ -1,0 +1,32 @@
+.commercial-signal-card .commercial-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 12px; font-variant-numeric: tabular-nums; }
+.commercial-signal-card .commercial-metrics > div:first-child { grid-column: 1 / -1; border-bottom: 1px solid var(--line); }
+.commercial-signal-card .commercial-signal-content :is(p,dt,small), .operational-context .consumption-categories :is(small,p,span):not(.toggle-hint) { color: #000; }
+.commercial-method { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 8px; }
+.commercial-method summary { cursor: pointer; min-height: 28px; font: inherit; }
+.commercial-method :focus-visible, .commercial-chart-controls :focus-visible { outline: 2px solid #000; outline-offset: 3px; }
+.commercial-chart-controls { display: flex; flex-wrap: wrap; gap: 16px; margin: 12px 0 6px; }
+.commercial-chart-controls button { border: 0; border-bottom: 1px solid transparent; border-radius: 0; color: #000; background: transparent; font: inherit; padding: 8px 0; min-height: 44px; cursor: pointer; touch-action: manipulation; }
+.commercial-chart-controls button[aria-pressed="true"] { border-bottom-color: #000; font-weight: var(--weight-strong); }
+.operational-context .consumption-categories .commercial-chart-scale { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; }
+.operational-context .context-category-list li.context-category-visual { display: grid; grid-template-columns: 48px minmax(0,1fr); gap: 12px; align-items: start; }
+.commercial-category-icon { width: 48px; height: 48px; display: grid; place-items: center; }
+.commercial-category-icon img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.commercial-category-icon svg { width: 36px; height: 36px; fill: #f4f7f6; stroke: #70847c; stroke-width: 1.3; }
+.commercial-category-copy { min-width: 0; }
+.commercial-category-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; }
+.commercial-category-heading strong { overflow-wrap: anywhere; }
+.commercial-category-heading span { font-size: inherit; }
+.operational-context .consumption-categories .commercial-category-values { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; font-variant-numeric: tabular-nums; }
+.commercial-category-values b { font-weight: var(--weight-strong); }
+.commercial-value-prism { display: block; width: 100%; height: 28px; margin-top: 4px; overflow: visible; }
+.commercial-prism-axis { fill: none; stroke: #c6d0cb; stroke-width: .5; }
+.commercial-value-prism[data-metric="payments"] { --commercial-front: #93b5d1; --commercial-top: #dbe8f1; --commercial-side: #648da9; }
+.commercial-value-prism[data-metric="amount"] { --commercial-front: #bad6cd; --commercial-top: #e1eee9; --commercial-side: #79ada6; }
+.commercial-prism-front { fill: var(--commercial-front); }
+.commercial-prism-top { fill: var(--commercial-top); }
+.commercial-prism-side { fill: var(--commercial-side); }
+.commercial-prism-end { fill: none; stroke: var(--commercial-side); stroke-width: .5; }
+.commercial-prism-uncertainty { fill: #edf4f0; }
+.commercial-prism-hatch { fill: none; stroke: #a7c6b6; stroke-width: .5; }
+.commercial-chart-unavailable { min-height: 28px; }
+.operational-context .commercial-category-empty { margin: 12px 0; }
