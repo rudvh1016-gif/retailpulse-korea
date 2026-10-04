@@ -224,3 +224,22 @@ nav.bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .airport-gate-region-register li small { display: block; }
 
 .airport-concept-gate-range{display:block;font-size:11px;line-height:1.5;overflow-wrap:anywhere;margin:3px 0;font-weight:400;}
+
+/* Keep building names whole while preserving the existing 44px text tabs. */
+.airport-view > .terminal-selector button:first-child { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2; }
+.airport-view > .terminal-selector button:first-child small { font-size: 12px; font-weight: inherit; }
+[data-testid="departure-map"] > .terminal-selector { gap: 8px; justify-content: space-between; }
+[data-testid="departure-map"] > .terminal-selector button { min-width: 0; padding-inline: 6px; }
+[data-testid="departure-map"] > .terminal-selector button:first-child small { font-size: 12px; }
+[data-testid="departure-map"] > .terminal-selector button:last-child { min-width: 56px; white-space: nowrap; }
+@media (max-width: 410px) {
+  [data-testid="departure-map"] > .terminal-selector button:first-child { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2; }
+}
+@media (max-width: 359px) {
+  [data-testid="departure-map"] > .terminal-selector { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 8px; }
+  [data-testid="departure-map"] > .date-nav-shortcuts { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  [data-testid="departure-map"] > .date-nav-shortcuts button:nth-child(-n+3) { grid-column: span 2; }
+  [data-testid="departure-map"] > .date-nav-shortcuts button:nth-child(n+4) { grid-column: span 3; }
+}
+
+.gate-leader-zones > section[data-side=UNVERIFIED] > p { padding-left: 10px; border-left: 1px solid var(--line); }

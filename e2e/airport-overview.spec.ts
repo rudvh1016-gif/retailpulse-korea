@@ -66,7 +66,7 @@ test('the Airport page departures tab shows east/west, the open gate map and des
 
 test('today before its first collection: the held schedule fills the map, labelled as the schedule', async ({ page }) => {
   await open(page, { scheduleOnly: true });
-  await page.locator('.terminal-selector').getByRole('tab', { name: 'T2' }).click();
+  await page.locator('.terminal-selector').getByRole('tab', { name: 'T2', exact: true }).click();
   const overview = page.getByTestId('airport-departure-overview');
   await overview.scrollIntoViewIfNeeded();
   const block = overview.getByTestId('overview-T2');
@@ -88,7 +88,7 @@ test('the jump link at the top of the departures tab reaches it', async ({ page 
 
 test('choosing one terminal shows only that terminal, with no switch', async ({ page }) => {
   await open(page);
-  await page.locator('.terminal-selector').getByRole('tab', { name: 'T2' }).click();
+  await page.locator('.terminal-selector').getByRole('tab', { name: 'T2', exact: true }).click();
   const overview = page.getByTestId('airport-departure-overview');
   await overview.scrollIntoViewIfNeeded();
   await expect(overview).toHaveAttribute('data-terminals', 'T2');
