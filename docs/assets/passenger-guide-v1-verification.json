@@ -1,0 +1,79 @@
+[
+  {
+    "asset": "terminal",
+    "bytes": 99352,
+    "objects": 12,
+    "meshes": 8,
+    "camera": true,
+    "resolution": [
+      512,
+      512
+    ]
+  },
+  {
+    "asset": "checkin",
+    "bytes": 106824,
+    "objects": 22,
+    "meshes": 18,
+    "camera": true,
+    "resolution": [
+      512,
+      512
+    ]
+  },
+  {
+    "asset": "security",
+    "bytes": 104935,
+    "objects": 22,
+    "meshes": 18,
+    "camera": true,
+    "resolution": [
+      512,
+      512
+    ]
+  },
+  {
+    "asset": "immigration",
+    "bytes": 101710,
+    "objects": 18,
+    "meshes": 14,
+    "camera": true,
+    "resolution": [
+      512,
+      512
+    ]
+  },
+  {
+    "asset": "boarding",
+    "bytes": 117206,
+    "objects": 31,
+    "meshes": 27,
+    "camera": true,
+    "resolution": [
+      512,
+      512
+    ]
+  },
+  {
+    "asset": "refund_register",
+    "bytes": 101486,
+    "objects": 15,
+    "meshes": 11,
+    "camera": true,
+    "resolution": [
+      512,
+      512
+    ]
+  },
+  {
+    "asset": "refund_receive",
+    "bytes": 120409,
+    "objects": 14,
+    "meshes": 10,
+    "camera": true,
+    "resolution": [
+      512,
+      512
+    ]
+  }
+]

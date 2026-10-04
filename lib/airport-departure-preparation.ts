@@ -5,8 +5,8 @@ export type DepartureStepId='CONFIRM'|'CHECK_IN'|'CHECK_IN_TAX'|'CHECKED_CUSTOMS
 export interface DeparturePreparationStep {id:DepartureStepId;phase:'BEFORE_SECURITY'|'SECURITY'|'AFTER_SECURITY';conditional:boolean;source:'AIRPORT'|'CUSTOMS'|'REFUND'|'DUTY_FREE';}
 export const departurePreparationEvidence={
  AIRPORT:{url:'https://www.airport.kr/ap_en/1413/subview.do',checkedAt:'2026-10-04',sourceUpdatedOn:null},
- CUSTOMS:{url:'https://www.customs.go.kr/incheon_airport/cm/cntnts/cntntsView.do?cntntsId=6688&mi=12546',checkedAt:'2026-10-04',sourceUpdatedOn:null},
- REFUND:{url:'https://www.airport.kr/ap_en/1425/subview.do',checkedAt:'2026-10-04',sourceUpdatedOn:null},
+ CUSTOMS:{url:'https://customs.go.kr/incheon_airport/cm/cntnts/cntntsView.do?cntntsId=6688&mi=12547',checkedAt:'2026-10-04',sourceUpdatedOn:null},
+ REFUND:{url:'https://www.airport.kr/ap_ko/898/subview.do',checkedAt:'2026-10-04',sourceUpdatedOn:null},
  DUTY_FREE:{url:'https://www.airport.kr/ap_en/1531/subview.do',checkedAt:'2026-10-04',sourceUpdatedOn:null},
 } as const;
 /** International departure general case only. No estimated times or eligibility inference. */

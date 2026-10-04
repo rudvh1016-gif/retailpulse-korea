@@ -1,0 +1,277 @@
+{
+  "version": "passenger guide icons v1",
+  "actual_blender": "5.2.1 LTS / Cycles 80",
+  "transparent_WebP": true,
+  "size": [
+    512,
+    512
+  ],
+  "assets": {
+    "terminal": {
+      "title_ko": "출발터미널 확인",
+      "png": "terminal-transparent.png",
+      "raw_blender_png": "terminal.png",
+      "blend": "terminal.blend",
+      "webp": "terminal.webp",
+      "webp_bytes": 29658,
+      "responsive": {
+        "64": {
+          "file": "terminal-64.webp",
+          "bytes": 2868
+        },
+        "128": {
+          "file": "terminal-128.webp",
+          "bytes": 5726
+        },
+        "256": {
+          "file": "terminal-256.webp",
+          "bytes": 13784
+        }
+      },
+      "HTML_labels": {
+        "T1": {
+          "object": "Terminal 1 blank label face",
+          "world_point": [
+            -0.66,
+            -0.147,
+            1.91
+          ],
+          "text": "T1",
+          "normalized_anchor": [
+            0.32113906741142273,
+            0.29085052013397217
+          ]
+        },
+        "T2": {
+          "object": "Terminal 2 blank label face",
+          "world_point": [
+            0.66,
+            -0.147,
+            1.91
+          ],
+          "text": "T2",
+          "normalized_anchor": [
+            0.6443108916282654,
+            0.35641735792160034
+          ]
+        }
+      },
+      "caption_anchor": [
+        0.5,
+        0.94
+      ],
+      "export_shadow_edge_fade_px": 32,
+      "central_model_pixels_unchanged": true,
+      "silhouette": "paired large blank sign boards"
+    },
+    "checkin": {
+      "title_ko": "체크인·가방 인계",
+      "png": "checkin-transparent.png",
+      "raw_blender_png": "checkin.png",
+      "blend": "checkin.blend",
+      "webp": "checkin.webp",
+      "webp_bytes": 29808,
+      "responsive": {
+        "64": {
+          "file": "checkin-64.webp",
+          "bytes": 2806
+        },
+        "128": {
+          "file": "checkin-128.webp",
+          "bytes": 5778
+        },
+        "256": {
+          "file": "checkin-256.webp",
+          "bytes": 13216
+        }
+      },
+      "HTML_labels": {},
+      "caption_anchor": [
+        0.5,
+        0.94
+      ],
+      "export_shadow_edge_fade_px": 32,
+      "central_model_pixels_unchanged": true,
+      "silhouette": "slanted touch kiosk + upright rolling bag on belt"
+    },
+    "security": {
+      "title_ko": "보안검색",
+      "png": "security-transparent.png",
+      "raw_blender_png": "security.png",
+      "blend": "security.blend",
+      "webp": "security.webp",
+      "webp_bytes": 32872,
+      "responsive": {
+        "64": {
+          "file": "security-64.webp",
+          "bytes": 2584
+        },
+        "128": {
+          "file": "security-128.webp",
+          "bytes": 5596
+        },
+        "256": {
+          "file": "security-256.webp",
+          "bytes": 12962
+        }
+      },
+      "HTML_labels": {},
+      "caption_anchor": [
+        0.5,
+        0.94
+      ],
+      "export_shadow_edge_fade_px": 32,
+      "central_model_pixels_unchanged": true,
+      "silhouette": "hollow X-ray tunnel + detector arch + tray"
+    },
+    "immigration": {
+      "title_ko": "출국심사",
+      "png": "immigration-transparent.png",
+      "raw_blender_png": "immigration.png",
+      "blend": "immigration.blend",
+      "webp": "immigration.webp",
+      "webp_bytes": 24304,
+      "responsive": {
+        "64": {
+          "file": "immigration-64.webp",
+          "bytes": 2204
+        },
+        "128": {
+          "file": "immigration-128.webp",
+          "bytes": 4388
+        },
+        "256": {
+          "file": "immigration-256.webp",
+          "bytes": 9942
+        }
+      },
+      "HTML_labels": {},
+      "caption_anchor": [
+        0.5,
+        0.94
+      ],
+      "export_shadow_edge_fade_px": 32,
+      "central_model_pixels_unchanged": true,
+      "silhouette": "unmarked passport + paired slim e-gate barriers"
+    },
+    "boarding": {
+      "title_ko": "탑승게이트",
+      "png": "boarding-transparent.png",
+      "raw_blender_png": "boarding.png",
+      "blend": "boarding.blend",
+      "webp": "boarding.webp",
+      "webp_bytes": 30304,
+      "responsive": {
+        "64": {
+          "file": "boarding-64.webp",
+          "bytes": 2500
+        },
+        "128": {
+          "file": "boarding-128.webp",
+          "bytes": 5432
+        },
+        "256": {
+          "file": "boarding-256.webp",
+          "bytes": 12508
+        }
+      },
+      "HTML_labels": {},
+      "caption_anchor": [
+        0.5,
+        0.94
+      ],
+      "export_shadow_edge_fade_px": 32,
+      "central_model_pixels_unchanged": true,
+      "silhouette": "airliner + side-connected glazed jetbridge"
+    },
+    "refund_register": {
+      "title_ko": "환급서류·등록",
+      "png": "refund_register-transparent.png",
+      "raw_blender_png": "refund_register.png",
+      "blend": "refund_register.blend",
+      "webp": "refund_register.webp",
+      "webp_bytes": 31668,
+      "responsive": {
+        "64": {
+          "file": "refund_register-64.webp",
+          "bytes": 2894
+        },
+        "128": {
+          "file": "refund_register-128.webp",
+          "bytes": 6082
+        },
+        "256": {
+          "file": "refund_register-256.webp",
+          "bytes": 14260
+        }
+      },
+      "HTML_labels": {},
+      "caption_anchor": [
+        0.5,
+        0.94
+      ],
+      "export_shadow_edge_fade_px": 32,
+      "central_model_pixels_unchanged": true,
+      "silhouette": "large clipped blank forms + document scan kiosk"
+    },
+    "refund_receive": {
+      "title_ko": "환급금 수령",
+      "png": "refund_receive-transparent.png",
+      "raw_blender_png": "refund_receive.png",
+      "blend": "refund_receive.blend",
+      "webp": "refund_receive.webp",
+      "webp_bytes": 25210,
+      "responsive": {
+        "64": {
+          "file": "refund_receive-64.webp",
+          "bytes": 1996
+        },
+        "128": {
+          "file": "refund_receive-128.webp",
+          "bytes": 4494
+        },
+        "256": {
+          "file": "refund_receive-256.webp",
+          "bytes": 10602
+        }
+      },
+      "HTML_labels": {},
+      "caption_anchor": [
+        0.5,
+        0.94
+      ],
+      "export_shadow_edge_fade_px": 32,
+      "central_model_pixels_unchanged": true,
+      "silhouette": "low receiving tray + blank tokens/note/card"
+    }
+  },
+  "general_departure_keys": [
+    "terminal",
+    "checkin",
+    "security",
+    "immigration",
+    "boarding"
+  ],
+  "optional_tax_refund_keys": [
+    "refund_register",
+    "refund_receive"
+  ],
+  "refund_rules": {
+    "not_required_for_all": true,
+    "register_and_check_before_checked_bag_handover": true,
+    "customs_only_if_selected": true,
+    "collect_after_departure_immigration": true
+  },
+  "no_location_hours_gate_number_map": true,
+  "no_free_return_shuttle": true,
+  "no_personal_data_emblems_QR": true,
+  "text_in_HTML_only": true,
+  "sources": [
+    "https://www.airport.kr/ap_ko/898/subview.do",
+    "https://www.airport.kr/ap_en/1413/subview.do"
+  ],
+  "verification": [
+    "saved-verification.json",
+    "pixel-verification.json"
+  ]
+}
