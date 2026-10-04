@@ -178,3 +178,7 @@ nav.bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .airport-flow > .airport-model-scope { padding-inline: 18px; }
 .prep-block .airport-scene-note { margin-inline: 0; }
 .airport-flow .airport-scene-note { margin-inline: 18px; margin-bottom: 12px; }
+
+.gate-search label { position: relative; }
+.gate-search .gate-search-icon { position: absolute; left: 11px; bottom: 14px; fill: none; stroke: #527580; stroke-width: 1.5; pointer-events: none; }
+.gate-search input { padding-left: 34px; }

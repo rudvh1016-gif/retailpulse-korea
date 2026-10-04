@@ -77,7 +77,7 @@ export default function AirportGatePillars({ lang, terminal, date }: { lang: Lan
       </>}
       <p className="prep-note">{copy.note[lang]}</p>
       <details open={open} onToggle={event => setOpen(event.currentTarget.open)} data-testid="gate-all-list"><summary>{copy.all[lang]} ({gates.length})</summary>
-        {open && <><div className="gate-search"><label>{copy.search[lang]}<input ref={searchRef} type="search" name="gate-search" placeholder={copy.placeholder[lang]} autoComplete="off" value={search} onChange={e => { setSearch(e.target.value); setVisible(20); }}/></label>
+        {open && <><div className="gate-search"><label>{copy.search[lang]}<svg className="gate-search-icon" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="5"/><path d="m12 12 5 5"/></svg><input ref={searchRef} type="search" name="gate-search" placeholder={copy.placeholder[lang]} autoComplete="off" value={search} onChange={e => { setSearch(e.target.value); setVisible(20); }}/></label>
           {search && <button type="button" className="gate-clear" onClick={() => {setSearch('');setVisible(20);searchRef.current?.focus();}}>{copy.clear[lang]}</button>}</div>
           <div className="gate-zone-filters" role="group" aria-label={copy.zone[lang]}>{(['ALL','WEST','CENTER','EAST','UNVERIFIED','CONCOURSE'] as const).map(value => <button type="button" key={value} data-zone={value} aria-pressed={zone === value} onClick={() => {setZone(value);setVisible(20);}}>{value === 'ALL' ? copy.allZones[lang] : value === 'CONCOURSE' ? mapCopy.building.CONCOURSE[lang] : mapCopy.side[value][lang]}</button>)}</div>
           <p className="prep-note" role="status">{list.length} / {gates.length}</p>
