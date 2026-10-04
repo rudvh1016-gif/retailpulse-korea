@@ -17,13 +17,29 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   await expect(page.locator('.airport-current-brief')).toBeVisible();
   expect(await page.evaluate(key=>localStorage.getItem(key),PREFERENCE_KEY)).toBe(stored);
   await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-  for(const control of await page.locator('.date-nav-shortcuts button').all()){
-    await expect(control).toHaveCSS('border-top-width','1px');
-    await expect(control).toHaveCSS('border-left-width','1px');
+  const dateButtons = page.locator('.date-nav-shortcuts button');
+  await expect(dateButtons).toHaveCount(3);
+  await expect(dateButtons.nth(1)).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.date-nav-shortcuts')).toHaveCSS('border-top-width', '1px');
+  for(const control of await dateButtons.all()){
+    await expect(control).toHaveCSS('border-top-width','0px');
+    await expect(control).toHaveAccessibleName(/.+/);
     expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(48);
   }
+  await dateButtons.last().focus();
+  expect(await dateButtons.last().evaluate(el => getComputedStyle(el).outlineStyle)).not.toBe('none');
+  await dateButtons.last().press('Enter');
+  await expect(dateButtons.last()).toHaveAttribute('aria-pressed', 'true');
+  await dateButtons.nth(1).press('Space');
+  await expect(dateButtons.nth(1)).toHaveAttribute('aria-pressed', 'true');
   await page.screenshot({path:info.outputPath(`airport-home-${width}.png`)});
   await page.goto('/ko/hongdae');
+  await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
+  const history = page.locator('.population-history-disclosure');
+  await expect(history).not.toHaveAttribute('open');
+  await expect(page.locator('.population-chart')).toBeHidden();
+  await history.locator(':scope > summary').press('Enter');
+  await expect(history).toHaveAttribute('open');
   await expect(page.locator('.population-chart')).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
   const labels = await page.locator('.flow-tick').evaluateAll(els => els.map(el => { const r = el.getBoundingClientRect(); return { left: r.left, right: r.right }; }));
@@ -34,12 +50,22 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   // are what a reader would notice, and the lines below still forbid both.
   expect(labels.length).toBeLessThanOrEqual(5);
   labels.forEach((r, i) => { expect(r.left).toBeGreaterThanOrEqual(0); expect(r.right).toBeLessThanOrEqual(width); if (i) expect(r.left).toBeGreaterThan(labels[i - 1].right); });
-  const header = await page.locator('.topbar').boundingBox(), title = await page.locator('h1').boundingBox();
-  expect(title!.y).toBeGreaterThanOrEqual(header!.y + header!.height);
+  // Opening a below-fold disclosure may scroll the focused summary into view.
+  // Compare the title and sticky header at the top, in the same layout frame.
+  const headingGeometry = await page.evaluate(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    return {
+      scrollY,
+      headerBottom: document.querySelector('.topbar')!.getBoundingClientRect().bottom,
+      titleTop: document.querySelector('h1')!.getBoundingClientRect().top,
+    };
+  });
+  expect(headingGeometry.scrollY).toBe(0);
+  expect(headingGeometry.titleTop).toBeGreaterThanOrEqual(headingGeometry.headerBottom);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath(`hongdae-${width}.png`) });
   const populationNumber = page.locator('.demand-number strong');
-  if (await populationNumber.count()) await expect(populationNumber).toHaveCSS('font-size', '17px');
+  if (await populationNumber.count()) await expect(populationNumber).toHaveCSS('font-size', '29px');
   const observed = page.locator('.flow-observed');
   if (await observed.count()) await expect(observed.first()).toHaveCSS('stroke', 'rgb(17, 17, 17)');
   await page.locator('.population-chart').scrollIntoViewIfNeeded();
@@ -69,10 +95,16 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   const picker = page.locator('.date-nav-picker input');
   const today = await picker.inputValue();
   for (const index of [0, 2]) {
-    await page.locator('.date-nav-shortcuts button').nth(index).click();
+    const button = page.locator('.date-nav-shortcuts button').nth(index);
+    const date = await button.locator('time').getAttribute('datetime');
+    expect(date, 'each shortcut identifies its service date').not.toBeNull();
+    await button.click();
     await expect(picker).not.toHaveValue(today);
+    await expect(picker).toHaveValue(date!);
+    await expect(button).toHaveAttribute('aria-pressed', 'true');
   }
   await page.locator('.date-nav-shortcuts button').nth(1).click();
   await expect(picker).toHaveValue(today);
+  await expect(page.locator('.date-nav-shortcuts button').nth(1)).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
 });
