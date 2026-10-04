@@ -245,7 +245,7 @@ test("the prep facts, the copied text and the image carry the same numbers as th
     assert.ok(factLine(estimateFact, DATE, lang).includes(estimateBasisLine({ terminal: "T2", ...split.expected }, lang)), `${lang}: what was divided over how many flights travels with the number`);
   }
   assert.match(factLine(flightsFact, DATE, "ko"), /동편 120편 60% · 서편 80편 40% · 중앙 0편 · 위치 미확인 20편\(전체의 9\.1%\)\. 동·서 위치가 확인된 항공편 기준/);
-  assert.match(factLine(estimateFact, DATE, "ko"), /예상 출국객\(하루 전체\): 동편 약 13,100명 · 서편 약 8,700명 · 위치 미확인 약 2,200명 \(터미널 전체 예상 24,000명 기준 · 같은 범위 출발편 220편으로 나눈 추정\)\. 실제 동·서편 승객 수가 아닙니다/);
+  assert.match(factLine(estimateFact, DATE, "ko"), /항공편 비율로 나눈 참고값\(하루 전체\): 동편 약 13,100명 · 서편 약 8,700명 · 위치 미확인 약 2,200명 \(터미널 전체 예상 24,000명 기준 · 같은 범위 출발편 220편으로 나눈 추정\)\. 실제 동·서편 승객 수가 아닙니다/);
   assert.equal(prep.actions.some((action) => /SPLIT/.test(action.rule)), false, "it is a comparison, never a staffing or stock action");
 });
 
@@ -310,7 +310,7 @@ test("the share lists the whole-day comparison apart from the store hours, with 
   const at = (needle) => text.indexOf(needle);
   assert.ok(at("■ 영업시간 안에서 확인된 사실") < at("■ 하루 전체 참고 (영업시간과 무관)"));
   assert.ok(at("■ 하루 전체 참고 (영업시간과 무관)") < at("T2 출발편(하루 전체)"), "the flight line sits under the whole-day heading");
-  assert.ok(at("■ 하루 전체 참고 (영업시간과 무관)") < at("예상 출국객(하루 전체)"));
+  assert.ok(at("■ 하루 전체 참고 (영업시간과 무관)") < at("항공편 비율로 나눈 참고값(하루 전체)"));
   assert.ok(at("■ 하루 전체 참고 (영업시간과 무관)") < at("■ 준비할 일"));
   assert.match(text, /자료 기준: .*인천공항 공식 출국 예상 .* · 인천공항 운항 정보/);
   assert.match(text, /출처: .*인천공항 공식 출국 예상.*인천공항 운항 정보/);

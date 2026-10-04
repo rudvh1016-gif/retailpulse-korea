@@ -30,12 +30,13 @@ const unit = row("편", " flights", "班", "便");
 const person = row("명", "", "人", "人");
 
 export const splitCopy = {
+  estimateDetails: row("배분 기준과 주의사항", "How this reference is calculated", "参考值的计算依据", "参考値の計算根拠"),
   heading: (terminal: string, when: "TODAY" | "TOMORROW" | "DATE", lang: Lang) => ({
     TODAY: row(`${terminal} 오늘 출발편`, `${terminal} departures today`, `${terminal} 今日出发航班`, `${terminal} 本日の出発便`),
     TOMORROW: row(`${terminal} 내일 출발편`, `${terminal} departures tomorrow`, `${terminal} 明日出发航班`, `${terminal} 明日の出発便`),
     DATE: row(`${terminal} 선택한 날 출발편`, `${terminal} departures on the chosen day`, `${terminal} 所选日期出发航班`, `${terminal} 選択日の出発便`),
   })[when][lang],
-  estimateHeading: row("항공편 비율로 본 예상 출국객", "Expected departing passengers by flight ratio", "按航班比例的预计出境旅客", "便数の比率で見た出国予想客"),
+  estimateHeading: row("항공편 비율로 나눈 참고값", "Reference split by flight ratio", "按航班比例分配的参考值", "便数の比率で配分した参考値"),
   estimateNote: row(
     "실제 동·서편 승객 수가 아닙니다. 편당 승객 수가 같다는 가정의 참고값이며 백 명 단위로 반올림했습니다.",
     "Not the actual passengers on each side. A reference value that assumes every flight carries the same number of passengers, rounded to the nearest hundred.",

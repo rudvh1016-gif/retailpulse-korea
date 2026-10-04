@@ -16,7 +16,7 @@ const FLIGHTS = [
   flight('T1', '27', '15:10', '싱가포르'),
 ];
 
-async function open(page: Page, { lang = 'ko', width = 390, suffix = '', scheduleOnly = false } = {}) {
+async function open(page: Page, { lang = 'ko', width = 390, suffix = '', scheduleOnly = false, flightFailure = false } = {}) {
   await page.setViewportSize({ width, height: 900 });
   // scheduleOnly: today before its first collection (no recorded flights; the held schedule stands in).
   const scheduled = FLIGHTS.map((row) => ({ physicalFlightId: row.physicalFlightId, terminal: row.terminal, gate: row.gate, scheduledTime: row.scheduledAt.slice(11, 16), status: 'scheduled' }));
@@ -28,7 +28,9 @@ async function open(page: Page, { lang = 'ko', width = 390, suffix = '', schedul
   await page.route('**/api/live/airport-days*', (route) => { historyRequests.push(route.request().url()); return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ mode: 'airport-days', date: DATE, rowsRead: 0, withoutProfile: 0, history: [] }) }); });
   await page.route('**/api/live/flights*', (route) => {
     flightRequests.push(route.request().url());
-    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ mode: 'live-flights', basis: scheduleOnly ? 'OFFICIAL_DEPARTURE_SCHEDULE' : 'COLLECTED_FLIGHT_RECORDS', serviceDateKst: DATE, todayKst: DATE, flights: FLIGHTS, truncated: false, retrievedAt: '2026-08-31T05:00:00Z' }) });
+    if (flightFailure) return route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+    const apiFlights = [...FLIGHTS, { ...FLIGHTS[0], physicalFlightId: 'ARRIVAL-ONLY', direction: 'arrival' }];
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ mode: 'live-flights', basis: scheduleOnly ? 'OFFICIAL_DEPARTURE_SCHEDULE' : 'COLLECTED_FLIGHT_RECORDS', serviceDateKst: DATE, todayKst: DATE, flights: apiFlights, truncated: false, retrievedAt: '2026-08-31T05:00:00Z' }) });
   });
   await page.goto(`/${lang}/airport${suffix}`);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
@@ -75,6 +77,13 @@ test('today before its first collection: the held schedule fills the map, labell
   await expect(block.getByTestId('map-counts')).not.toContainText('동편 0편 · 서편 0편');
   await expect(block).toContainText('공식 출발 예정표 기준');
   await expect(block.getByTestId('flight-split')).toHaveAttribute('data-state', 'OK');
+  await expect(page.getByTestId('airport-top-reference')).toHaveAttribute('data-state', 'READY');
+});
+
+test('a failed flight read leaves no stale top reference', async ({ page }) => {
+  await open(page, { lang: 'en', flightFailure: true });
+  await expect(page.getByTestId('overview-T1').getByTestId('map-failed')).toBeVisible();
+  await expect(page.getByTestId('airport-top-reference')).toHaveCount(0);
 });
 
 test('the jump link at the top of the departures tab reaches it', async ({ page }) => {
@@ -112,5 +121,52 @@ for (const [lang, width] of [['ko', 360], ['en', 360], ['zh', 360], ['ja', 360],
     expect(await tofuCharacters(overview)).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
     await overview.screenshot({ path: `test-results/airport-overview-${lang}-${width}.png` });
+  });
+}
+
+test('the reference is next to the top model and uses separate full-day terminal bases', async ({ page }) => {
+  await open(page, { lang: 'en' });
+  const slot = page.getByTestId('airport-departure-model-slot');
+  const reference = slot.getByTestId('airport-top-reference');
+  await expect(reference).toHaveAttribute('data-state', 'READY');
+  await expect(reference.getByTestId('top-reference-T1')).toBeVisible();
+  await expect(reference.getByTestId('top-reference-T2')).toBeVisible();
+  await expect(reference).toContainText('T1 and T2 are calculated separately');
+  await expect(page.getByTestId('overview-T1').getByTestId('split-estimate')).toHaveCount(0);
+  await expect(page.getByTestId('overview-T1').getByTestId('split-shares')).toBeVisible();
+  await expect(page.getByTestId('overview-T1').getByTestId('flight-split')).toContainText('All departures');
+  const order = await slot.evaluate((node) => Array.from(node.children).map((child) => child.getAttribute('data-testid')));
+  expect(order.slice(0, 3)).toEqual(['airport-concept-model', 'airport-top-reference', 'map-zone-countries']);
+  await slot.screenshot({ path: 'test-results/airport-top-reference-en-390.png' });
+});
+
+test('a selected time or concourse alone withholds the figure; whole-day action restores it', async ({ page }) => {
+  await open(page, { lang: 'en' });
+  const reference = page.getByTestId('airport-top-reference');
+  const map = page.getByTestId('overview-T1').getByTestId('departure-map');
+  await expect(reference).toHaveAttribute('data-state', 'READY');
+  await map.locator('[data-preset="CUSTOM"]').click();
+  await expect(reference).toHaveAttribute('data-state', 'time');
+  await expect(reference.getByTestId('top-reference-T1')).toHaveCount(0);
+  await reference.getByRole('button', { name: 'View whole day' }).click();
+  await expect(reference).toHaveAttribute('data-state', 'READY');
+  await map.getByRole('button', { name: 'Concourse', exact: true }).click();
+  await expect(reference).toHaveAttribute('data-state', 'concourse');
+  await expect(reference.getByTestId('top-reference-T1')).toHaveCount(0);
+  await reference.getByRole('button', { name: 'View T1 whole day' }).click();
+  await expect(reference).toHaveAttribute('data-state', 'READY');
+  await expect(reference.getByTestId('top-reference-T1')).toBeVisible();
+  await expect(reference.getByTestId('top-reference-T2')).toHaveCount(0);
+});
+
+for (const width of [320, 390, 430]) {
+  test(`top reference stays readable and keyboard reachable at ${width}px`, async ({ page }) => {
+    await open(page, { lang: 'en', width });
+    const reference = page.getByTestId('airport-top-reference');
+    await expect(reference).toHaveAttribute('data-state', 'READY');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+    await reference.locator('summary').first().focus();
+    await page.keyboard.press('Enter');
+    await expect(reference.locator('details').first()).toHaveAttribute('open', '');
   });
 }
