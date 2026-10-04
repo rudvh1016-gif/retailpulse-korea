@@ -296,48 +296,11 @@ for (const width of [360, 390, 430] as const) {
  * pressed it. It now has a box of its own, a small "눌러서 펼치기" beside the
  * label, and real space before the block underneath.
  */
-test("the category toggle looks pressable and is separated from the weather block", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  await page.setViewportSize({ width: 390, height: 900 });
-  await page.goto("/ko/myeongdong");
-  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
-
-  const toggle = page.locator(".operational-context .event-list-toggle");
-  await expect(toggle).toBeVisible();
-  await expect(toggle).toContainText("업종 12개 전체 보기");
-  // The hint the owner asked for, and it is inside the button so tapping
-  // the small print works too.
-  await expect(toggle.locator(".toggle-hint")).toHaveText("눌러서 펼치기");
-
-  // A box, not a rule: all four borders, so it cannot read as a divider.
-  const borders = await toggle.evaluate((el) => {
-    const style = getComputedStyle(el);
-    return [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth];
-  });
-  expect(borders).toEqual(["1px", "1px", "1px", "1px"]);
-
-  // The weather block is its own section: a rule of its own, and real space
-  // between the button and its first word. Measured to the TEXT, because
-  // that is the distance a reader sees.
-  const separation = await page.evaluate(() => {
-    const button = document.querySelector(".operational-context .event-list-toggle");
-    const weather = document.querySelector<HTMLElement>(".context-environment");
-    const heading = weather?.querySelector("strong");
-    if (!button || !weather || !heading) return null;
-    return {
-      toBlock: weather.getBoundingClientRect().top - button.getBoundingClientRect().bottom,
-      toText: heading.getBoundingClientRect().top - button.getBoundingClientRect().bottom,
-      rule: getComputedStyle(weather).borderTopWidth,
-    };
-  });
-  expect(separation?.rule, "the weather block needs a rule of its own").toBe("1px");
-  expect(separation?.toBlock ?? 0).toBeGreaterThanOrEqual(24);
-  expect(separation?.toText ?? 0).toBeGreaterThanOrEqual(44);
-
-  // And it actually expands, with the hint following the state.
-  await toggle.click();
-  await expect(page.locator(".context-category-list li")).toHaveCount(12);
-  await expect(toggle.locator(".toggle-hint")).toHaveText("눌러서 접기");
+test("all category details remain keyboard operable and separated from weather",async({page})=>{
+ await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));await page.setViewportSize({width:390,height:900});await page.goto('/ko/myeongdong');
+ const details=page.locator('.commercial-full-details'),toggle=details.locator('summary');await expect(page.locator('.commercial-miniature-card')).toHaveCount(12);await expect(toggle).toBeVisible();expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ const separation=await page.evaluate(()=>{const toggle=document.querySelector('.commercial-full-details>summary')!,weather=document.querySelector('.context-environment')!;return {gap:weather.getBoundingClientRect().top-toggle.getBoundingClientRect().bottom,rule:getComputedStyle(weather).borderTopWidth};});expect(separation.rule).toBe('1px');expect(separation.gap).toBeGreaterThanOrEqual(24);
+ await toggle.focus();await page.keyboard.press('Enter');await expect(details).toHaveAttribute('open','');await expect(details.locator('li')).toHaveCount(12);await page.keyboard.press('Enter');await expect(details).not.toHaveAttribute('open','');
 });
 
 /**
@@ -456,37 +419,12 @@ test("a stale observation is stamped with the time it was taken and explains the
  * one. An absent button is indistinguishable from a removed feature, so the
  * count is now stated whatever the provider published.
  */
-test("the category count is on screen even when Seoul publishes a single category", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary({
-    ...SUMMARY_FIXTURE,
-    areas: {
-      ...SUMMARY_FIXTURE.areas,
-      myeongdong: {
-        ...SUMMARY_FIXTURE.areas.myeongdong,
-        context: { ...MYEONGDONG_CONTEXT, categories: MYEONGDONG_CONTEXT.categories.slice(0, 1) },
-      },
-    },
-  }));
-  await page.goto("/ko/myeongdong");
-  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
-
-  await expect(page.locator(".context-category-list li")).toHaveCount(1);
-  await expect(page.locator(".context-category-count"))
-    .toHaveText("서울시가 지금 공개한 업종 1개를 모두 표시했습니다");
-  // There is genuinely nothing to expand, so no control is offered — but the
-  // reader is told why, which is the whole difference from a deleted feature.
-  await expect(page.locator(".context-more .event-list-toggle")).toHaveCount(0);
+test("the category count is on screen even when Seoul publishes a single category",async({page})=>{
+ await page.route('**/api/live/summary*',routeSummary({...SUMMARY_FIXTURE,areas:{...SUMMARY_FIXTURE.areas,myeongdong:{...SUMMARY_FIXTURE.areas.myeongdong,context:{...MYEONGDONG_CONTEXT,categories:MYEONGDONG_CONTEXT.categories.slice(0,1)}}}}));await page.goto('/ko/myeongdong');await expect(page.locator('.commercial-miniature-card')).toHaveCount(1);await expect(page.locator('.context-category-count')).toContainText('1개');await expect(page.locator('.commercial-full-details')).not.toHaveAttribute('open','');await expect(page.locator('.commercial-share')).toHaveText('100%');
 });
 
-test("the count stays truthful while the full list is collapsed and expanded", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  await page.goto("/ko/myeongdong");
-  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
-
-  const count = page.locator(".context-category-count");
-  await expect(count).toHaveText("서울시가 지금 공개한 업종 12개 중 3개를 표시했습니다");
-  await page.locator(".context-more .event-list-toggle").click();
-  await expect(count).toHaveText("서울시가 지금 공개한 업종 12개를 모두 표시했습니다");
+test("the count stays truthful while full amount details are collapsed and expanded",async({page})=>{
+ await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));await page.goto('/ko/myeongdong');const count=page.locator('.context-category-count'),details=page.locator('.commercial-full-details');await expect(count).toContainText('12개');await expect(page.locator('.commercial-miniature-card')).toHaveCount(12);await expect(details).not.toHaveAttribute('open','');await details.locator('summary').click();await expect(details.locator('li')).toHaveCount(12);await expect(count).toContainText('12개');await expect(page.locator('.commercial-miniature-card')).toHaveCount(12);
 });
 
 /**
@@ -583,6 +521,7 @@ test("the approved gate comparison retains live counts and the public typography
 const CHART_LIBRARY_TOKENS = new Set([
   "chart", "charts", "chartjs", "d3", "plotly", "echarts", "highcharts",
   "recharts", "apexcharts", "nivo", "victory", "billboard", "amcharts",
+  "three", "babylon", "babylonjs",
 ]);
 
 function loadsChartLibrary(rawUrl: string): boolean {
@@ -592,6 +531,9 @@ function loadsChartLibrary(rawUrl: string): boolean {
   } catch {
     pathname = rawUrl;
   }
+  // Vite serves our own typed calculation helpers as source modules. A file
+  // called commercial-category-chart.ts is not an npm charting dependency.
+  if (!pathname.includes('/node_modules/') && /\.(?:ts|tsx)$/.test(pathname)) return false;
   return pathname.toLowerCase().split("/").some((segment) =>
     segment.split(/[.\-_@]/).some((token) => CHART_LIBRARY_TOKENS.has(token)));
 }
@@ -604,6 +546,9 @@ test("the gate model shares the full flight read without a chart or 3D library",
   expect(loadsChartLibrary("http://x/node_modules/echarts/index.js")).toBe(true);
   expect(loadsChartLibrary("http://x/node_modules/.vite/deps/chunk-CO3PsZeE.js?v=a2fd3205")).toBe(false);
   expect(loadsChartLibrary("http://x/node_modules/vinext/dist/utils/hash.js?v=a2fd3205")).toBe(false);
+  expect(loadsChartLibrary("http://x/lib/commercial-category-chart.ts")).toBe(false);
+  expect(loadsChartLibrary("http://x/node_modules/three/src/core/Object3D.ts")).toBe(true);
+  expect(loadsChartLibrary("https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.js")).toBe(true);
 
   await routeGateFlights(page);
   const extraRequests: string[] = [];

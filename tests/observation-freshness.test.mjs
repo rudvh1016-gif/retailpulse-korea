@@ -106,39 +106,22 @@ test("the context card never labels a reading 'now' unconditionally", () => {
   assert.ok(source.includes("explainObservationVsForecast"), "the card must explain the gap it shows");
 });
 
-/**
- * The category count, and why it is unconditional.
- *
- * The "업종 N개 전체 보기" control only has work to do above three categories,
- * so on a night when Seoul published a single one the button was correctly
- * absent — and the owner read that absence as a feature someone had deleted.
- * The count now renders whatever the provider published, so an empty-looking
- * night reads as data rather than as a missing button.
- */
-test("the category block always states how many categories Seoul published", () => {
-  const source = readFileSync("app/operational-context.tsx", "utf8");
-  const block = source.slice(source.indexOf('<div className="context-more">'));
-  assert.ok(block.startsWith('<div className="context-more">'), "the control block must exist");
-
-  const count = block.indexOf('className="context-category-count"');
-  const toggle = block.indexOf("event-list-toggle");
-  assert.ok(count > 0, "the published count must be rendered");
-  assert.ok(toggle > count, "the count comes first, so it survives when the toggle does not");
-
-  // The count must not sit behind the same length gate as the toggle.
-  const gated = block.slice(0, count);
-  assert.ok(!/total\s*>\s*3/.test(gated),
-    "the count must render for one category as well as for twelve");
-  assert.match(block.slice(count, toggle + 40), /total\s*>\s*3\s*&&/,
-    "only the expand control stays gated on there being something to expand");
+// Owner-approved all-category miniature grid: count stays truthful for one, many and missing data.
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {CommercialComposition} from '../app/commercial-composition.tsx';
+test('the category block states every published category without hiding small lists',()=>{
+ for(const count of [0,1,12,31])for(const lang of ['ko','en','zh','ja']){
+  const context={commercialAt:null,weather:null,categories:Array.from({length:count},(_,i)=>({group:'Group',category:'Category '+i,payments:i,amountMin:10,amountMax:20,level:null}))};
+  const html=renderToStaticMarkup(React.createElement(CommercialComposition,{context,lang}));
+  assert.equal((html.match(/class="commercial-miniature-card"/g)||[]).length,count);
+  const stated=html.match(/class="context-category-count">([^<]+)/)?.[1];assert.ok(stated);assert.ok(stated.includes(String(count)));
+  assert.ok(html.includes('commercial-full-details'));
+ }
 });
-
-test("the count is truthful about how many of the published categories are on screen", () => {
-  const source = readFileSync("app/operational-context.tsx", "utf8");
-  assert.match(source, /const total=context\.categories\.length;/, "total is what the provider published");
-  assert.match(source, /const shown=categories\.length;/, "shown is what the list actually renders");
-  assert.match(source, /shown>=total/, "the wording must branch on whether anything is hidden");
-  for (const lang of ["개를 모두 표시했습니다", "Showing all", "已显示首尔市当前公布的全部", "をすべて表示しています"]) {
-    assert.ok(source.includes(lang), `the all-shown wording is missing for one locale: ${lang}`);
-  }
+test('all published category names and exact amounts remain available in details',()=>{
+ const categories=Array.from({length:12},(_,i)=>({group:'Group',category:'Category '+i,payments:i,amountMin:100+i,amountMax:300+i,level:null}));
+ const html=renderToStaticMarkup(React.createElement(CommercialComposition,{context:{commercialAt:'2026-08-31T14:05:00+09:00',weather:null,categories},lang:'en'}));
+ for(const row of categories){assert.ok(html.includes(row.category));assert.ok(html.includes('$')||html.includes('₩'));}
+ assert.ok(html.includes('08-31 14:05 KST'));assert.ok(html.includes('minim'));
 });

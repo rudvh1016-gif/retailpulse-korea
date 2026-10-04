@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import views from '../config/airport-concept-v7.json';
+import views from '../config/airport-concept-v8.json';
 import previewViews from '../config/airport-concept-v6c.preview.json';
 import { airportScene } from '../lib/airport-scene';
 import type { Lang } from './retailpulse-data';
@@ -28,12 +28,13 @@ export function AirportSceneModel({scope,lang,className='',showBasis=true,childr
   const [scene,setScene]=useState(()=>airportScene(Date.now()));
   useEffect(()=>{const update=()=>setScene(airportScene(Date.now()));update();const timer=setInterval(update,60_000);return()=>clearInterval(timer);},[]);
   const view=airportSceneView(scope);
-  const src=previewRoot ? `/@fs/${previewRoot}/${scope === 'all' ? 'OVERVIEW' : scope}_${scene}.webp` : `/airport-models/v7/${scope === 'all' ? 'OVERVIEW' : scope}_${scene}.webp`;
+  const stem=`/airport-models/v8/${scope === 'all' ? 'OVERVIEW' : scope}_${scene}`;
+  const src=previewRoot ? `/@fs/${previewRoot}/${scope === 'all' ? 'OVERVIEW' : scope}_${scene}.webp` : `${stem}.webp`;
   return <>
     <div className={`airport-scene-picture ${className}`} style={{aspectRatio:`${view.width}/${view.height}`}} data-scene={scene} data-building={scope}>
       {/* Only the selected building and lighting image is requested. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} width={view.width} height={view.height} alt="" loading="lazy" decoding="async"/>
+      <img src={src} srcSet={previewRoot?undefined:`${stem}-480.webp 480w, ${stem}-900.webp 900w, ${stem}.webp ${view.width}w`} sizes="(max-width: 600px) calc(100vw - 32px), (max-width: 1100px) 80vw, 900px" width={view.width} height={view.height} alt="" loading="lazy" decoding="async"/>
       {scope==='all'&&Object.entries(view.labels).map(([name,point])=><span className="airport-scene-anchor" key={name} style={{left:`${point[0]/view.width*100}%`,top:`${point[1]/view.height*100}%`}}>{name==='CONCOURSE'?{ko:'탑승동',en:'Concourse',zh:'登机楼',ja:'搭乗棟'}[lang]:name}</span>)}
       {children}
     </div>

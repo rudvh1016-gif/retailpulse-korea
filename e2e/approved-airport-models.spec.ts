@@ -61,8 +61,11 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [360,390,430,1280]) 
     await expect(page.getByTestId('airport-concept-model')).toContainText('T2');
     const img=page.getByTestId('airport-departure-model-slot').locator('.airport-concept-picture img');
     await expect.poll(()=>img.evaluate((el:HTMLImageElement)=>el.complete&&el.naturalWidth>0)).toBe(true);
-    expect(await img.evaluate((el:HTMLImageElement)=>el.currentSrc)).toMatch(/\/v7\/T2_day\.webp$/);
-    expect(await img.evaluate((el:HTMLImageElement)=>({width:el.naturalWidth,height:el.naturalHeight}))).toEqual({width:1440,height:870});
+    expect(await img.evaluate((el:HTMLImageElement)=>el.currentSrc)).toMatch(/\/v8\/T2_day(?:-480|-900)?\.webp$/);
+    const dimensions=await img.evaluate((el:HTMLImageElement)=>({width:el.naturalWidth,height:el.naturalHeight,reservedWidth:el.width,reservedHeight:el.height}));
+    // Width descriptors make naturalWidth density-corrected CSS pixels, not the encoded WebP width.
+    expect(dimensions.width).toBeGreaterThan(0);expect(dimensions.height/dimensions.width).toBeCloseTo(760/1440,2);
+    await expect(img).toHaveAttribute('width','1440');await expect(img).toHaveAttribute('height','760');
     await expect(overview.getByTestId('map-groups')).toHaveCount(0);
     await expect(overview.getByTestId('map-T2')).toHaveCount(0);
     await overview.getByTestId('map-destinations').locator('summary').click();
@@ -80,6 +83,12 @@ for(const kind of ['FAILED','PARTIAL','ZERO']) test(`gate model handles ${kind} 
   const {model}=await open(page,{kind});
   await expect(model.locator('.gate-leader-zones .gate-pillar')).toHaveCount(0);
   if(kind==='FAILED'||kind==='PARTIAL')await expect(model.getByRole('status')).toBeVisible();
+  if(kind==='FAILED'||kind==='PARTIAL'){
+    const illustration=page.getByTestId('airport-departure-model-slot').locator('.airport-concept-picture');
+    await illustration.scrollIntoViewIfNeeded();await expect(illustration).toBeVisible();
+    await expect(illustration.locator('.airport-concept-label')).toHaveCount(0);
+    await expect(page.getByTestId('airport-concept-model')).toHaveCount(0);
+  }
   if(kind==='ZERO'){
     await model.getByTestId('gate-all-list').locator('summary').click();
     await model.locator('.gate-full-list button').first().click();

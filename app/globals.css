@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "./commercial-visuals.css";
 @import "./population-materials.css";
+@import "./commercial-composition.css";
+@import "./population-outlook.css";
 
 /* Project-local OFL subsets keep fonts out of the Worker bundle. The primary
    glyph sets are generated from all four localized product-copy sources. A

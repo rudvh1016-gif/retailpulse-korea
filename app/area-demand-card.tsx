@@ -7,6 +7,7 @@ import { buildAreaCurrentBrief } from '../lib/current-brief';
 import { comparisonText } from '../lib/period-comparison';
 import { describeObservationAge } from '../lib/observation-freshness';
 import {PopulationRangeMaterial} from './population-range-material';
+import {PopulationOutlook} from './population-outlook';
 import { compactPeople, flowSegments, kstDay, kstStamp, peopleRange, populationFlow, populationTicks, usableComparison, validPopulationRange, type FlowPoint } from '../lib/demand-presentation';
 
 export const demandCopy = {
@@ -194,6 +195,7 @@ export function AreaDemandCard({ summary, area, lang, linkHref, linkLabel }: { s
   const points = populationFlow({ ...block, serviceDate: summary.serviceDateKst, isToday: summary.dayRelation === 'TODAY', now });
   const realtime = validPopulationRange(block?.realtime) && kstDay(block!.realtime!.observedAt) === summary.serviceDateKst && Date.parse(block!.realtime!.observedAt) <= now ? block!.realtime! : null;
   const age = realtime ? describeObservationAge(realtime.observedAt, new Date(now).toISOString(), lang) : null;
+  const ageMinutes=realtime?Math.max(0,Math.floor((now-Date.parse(realtime.observedAt))/60_000)):null;
   const isCurrent = summary.dayRelation === 'TODAY' && kstDay(now) === summary.serviceDateKst && age?.isNow && realtime?.freshness !== 'STALE';
   const comparison = usableComparison(realtime, 7), monthComparison = usableComparison(realtime, 28);
   const brief = buildAreaCurrentBrief({ realtime, realtimeForecast: points.filter(p => p.kind === 'forecast').map(p => ({ ...p, targetAt: p.at, congestionLevel: block?.realtimeForecast.find(r => r.targetAt === p.at)?.congestionLevel ?? 0 })), weather: [], eventCount: 0, nowIso: new Date(now).toISOString() });
@@ -204,15 +206,17 @@ export function AreaDemandCard({ summary, area, lang, linkHref, linkLabel }: { s
   return <section className="current-brief area-current-brief demand-card" data-testid="area-demand-card" aria-labelledby={`${id}-title`}>
     <header className="demand-card-head"><h2 id={`${id}-title`}>{demandAreaNames[area][lang]}</h2><span className="demand-data-state">{demandCopy[!realtime ? 'missing' : isCurrent ? 'observed' : 'previous'][lang]}</span></header>
     <div className="demand-card-body"><div className="demand-reading">
-      <p className="demand-level" data-level={realtime?.congestionLevel ?? 0}>{realtime ? demandLevel(realtime.congestionLevel, lang) : demandCopy.missing[lang]}</p>
+      <p className="demand-level" data-level={realtime?.congestionLevel ?? 0}>{realtime ? lang==='ko'&&realtime.congestionLabel?realtime.congestionLabel:demandLevel(realtime.congestionLevel, lang) : demandCopy.missing[lang]}</p>
       <p className="demand-metric-label">{demandCopy[isCurrent ? 'current' : 'recorded'][lang]}</p>
       <p className="demand-number">{realtime ? <><strong>{peopleRange(realtime, lang)}</strong><span>{unit}</span></> : <strong>—</strong>}</p>
       {realtime && <p className="demand-time">{kstStamp(realtime.observedAt)} KST {demandCopy.observed[lang]}{age?.ago ? ` · ${age.ago}` : ''}</p>}
+      {ageMinutes!==null&&<p className="demand-freshness">{({ko:`${kstStamp(now)} KST 기준 ${ageMinutes}분 앞서 확인한 인원입니다.`,en:`Observed ${ageMinutes} minutes before ${kstStamp(now)} KST.`,zh:`比${kstStamp(now)} KST早${ageMinutes}分钟观测的人数。`,ja:`${kstStamp(now)} KSTより${ageMinutes}分前に確認した人数です。`})[lang]}</p>}
       <p className="demand-comparison">{comparison ? comparisonText(comparison, lang, 7) : demandCopy.compareMissing[lang]}</p>
       {comparison && comparison.minPercent <= 0 && comparison.maxPercent >= 0 && <p className="flow-note">{demandCopy.uncertain[lang]}</p>}
-    </div><PopulationFlow points={points} lang={lang} now={now}/></div>
+    </div><PopulationOutlook points={points} current={realtime} lang={lang} now={now}/></div>
+    <details className="population-history-disclosure"><summary>{demandCopy.flow[lang]} · {demandCopy.details[lang]}</summary><PopulationFlow points={points} lang={lang} now={now}/></details>
     <p className="demand-takeaway">{peakSentence}</p>
-    <p className="demand-source">{demandCopy.source[lang]} · {demandCopy.rangeNote[lang]}</p>
+    <p className="demand-source">{demandCopy.source[lang]}{realtime?.retrievedAt?` · ${demandCopy.collected[lang]} ${kstStamp(realtime.retrievedAt)} KST`:''} · {demandCopy.rangeNote[lang]}</p>
     <div className="demand-card-footer"><details><summary>{demandCopy.details[lang]}</summary>
       <p>{demandCopy.source[lang]} · {summary.serviceDateKst} · KST</p>
       {monthComparison && <p>{comparisonText(monthComparison, lang, 28)}</p>}

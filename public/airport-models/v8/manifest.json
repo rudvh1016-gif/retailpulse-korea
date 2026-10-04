@@ -1,0 +1,655 @@
+{
+  "source": "airport_daynight_v5",
+  "terminal_geometry_preserved": true,
+  "camera_crop_anchors_preserved": true,
+  "concept_comparison": true,
+  "geographic_layout": false,
+  "changes": "Restrained white/sky roofs, blue curtain glazing and small mint accents. Existing jet bridges, aircraft, engines, tugs, baggage equipment and apron markings retained. Aircraft tails/winglets gain matching blue material. No data labels baked into the render.",
+  "views": {
+    "T2": {
+      "verification": {
+        "geometry": "7761280517b4d2b42a76ded8cccb777e8bf41f090b724c03048f5db59084adf1",
+        "camera": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.6342005133628845,
+            -0.7731686234474182,
+            -24.0
+          ],
+          [
+            0.0,
+            0.7731686234474182,
+            0.6342005133628845,
+            26.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "ortho": 21.5,
+        "resolution": [
+          1440,
+          860
+        ]
+      },
+      "identical_day_night_geometry_camera_size": true,
+      "anchors_source": "v4 unchanged",
+      "crop_xyxy": [
+        0,
+        40,
+        1440,
+        800
+      ],
+      "width": 1440,
+      "height": 760,
+      "labels": {
+        "WEST": [
+          456.2850487232208,
+          23.642836093902588
+        ],
+        "CENTER": [
+          692.562096118927,
+          343.7863116264343
+        ],
+        "EAST": [
+          1043.994197845459,
+          92.07354474067688
+        ]
+      },
+      "items": [
+        {
+          "name": "WEST",
+          "rect": [
+            200.32417058944702,
+            35.64283609390259,
+            511.9217562675476,
+            338.7636685371399
+          ]
+        },
+        {
+          "name": "CENTER",
+          "rect": [
+            521.743597984314,
+            355.7863116264343,
+            341.6369962692261,
+            206.92047655582428
+          ]
+        },
+        {
+          "name": "EAST",
+          "rect": [
+            787.4018096923828,
+            104.07354474067688,
+            513.1847763061523,
+            339.3651020526886
+          ]
+        }
+      ],
+      "files": {
+        "day": {
+          "file": "T2_day.webp",
+          "bytes": 43306
+        },
+        "night": {
+          "file": "T2_night.webp",
+          "bytes": 45308
+        }
+      },
+      "day_night_anchors_identical": true,
+      "restoration": {
+        "day": {
+          "geometry_before": "e5651416729fcbea316a3c8aa9fa688665babfbe69fa0e11483cc1a6d366f186",
+          "geometry_after": "e5651416729fcbea316a3c8aa9fa688665babfbe69fa0e11483cc1a6d366f186",
+          "identical": true
+        },
+        "night": {
+          "geometry_before": "e5651416729fcbea316a3c8aa9fa688665babfbe69fa0e11483cc1a6d366f186",
+          "geometry_after": "e5651416729fcbea316a3c8aa9fa688665babfbe69fa0e11483cc1a6d366f186",
+          "identical": true
+        }
+      },
+      "responsive_files": {
+        "T2_day-480.webp": {
+          "width": 480,
+          "height": 253,
+          "bytes": 10856,
+          "sha256": "d7a80b1920657224475cdfaf3a0d07e011c0352324bd632e94599da06e5453b4"
+        },
+        "T2_day-900.webp": {
+          "width": 900,
+          "height": 475,
+          "bytes": 24362,
+          "sha256": "41f2b8b1771e506b0ebccb3fb29e013b659f90fce3874e9ae2a389a696ed591f"
+        },
+        "T2_day.webp": {
+          "width": 1440,
+          "height": 760,
+          "bytes": 44148,
+          "sha256": "de7cb4bb6ff97090475d3b52cc5c45502b2fd7e56be3201d775d8393996ea641"
+        },
+        "T2_night-480.webp": {
+          "width": 480,
+          "height": 253,
+          "bytes": 11078,
+          "sha256": "ac9581d7a3e6f468fbcbc1ad9dbef27b17ca5d3958181edbdd2cf0cabce06ec0"
+        },
+        "T2_night-900.webp": {
+          "width": 900,
+          "height": 475,
+          "bytes": 25070,
+          "sha256": "2fdcaa6b103f9f774cac5285817fd557b974d2685abc4546c7caff89fae134a1"
+        },
+        "T2_night.webp": {
+          "width": 1440,
+          "height": 760,
+          "bytes": 44986,
+          "sha256": "aa0080d41a27de90377464a1aec10c6aa8cfb2de7f088ed032e77addd32637cf"
+        }
+      }
+    },
+    "T1": {
+      "verification": {
+        "geometry": "4d030fbb0c04339344c3924c6895e0ea3a8c69d7be81d17c6fac515080cb10f3",
+        "camera": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.6342005133628845,
+            -0.7731686234474182,
+            -24.0
+          ],
+          [
+            0.0,
+            0.7731686234474182,
+            0.6342005133628845,
+            26.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "ortho": 21.5,
+        "resolution": [
+          1440,
+          860
+        ]
+      },
+      "identical_day_night_geometry_camera_size": true,
+      "anchors_source": "v4 unchanged",
+      "crop_xyxy": [
+        0,
+        40,
+        1440,
+        800
+      ],
+      "width": 1440,
+      "height": 760,
+      "labels": {
+        "WEST": [
+          456.2850487232208,
+          23.642836093902588
+        ],
+        "CENTER": [
+          688.2169604301453,
+          385.04758286476135
+        ],
+        "EAST": [
+          1043.994197845459,
+          92.07354474067688
+        ]
+      },
+      "items": [
+        {
+          "name": "WEST",
+          "rect": [
+            200.32417058944702,
+            35.64283609390259,
+            511.9217562675476,
+            338.7636685371399
+          ]
+        },
+        {
+          "name": "CENTER",
+          "rect": [
+            540.5836057662964,
+            397.04758286476135,
+            295.26670932769775,
+            165.4855364561081
+          ]
+        },
+        {
+          "name": "EAST",
+          "rect": [
+            787.4018096923828,
+            104.07354474067688,
+            513.1847763061523,
+            339.3651020526886
+          ]
+        }
+      ],
+      "files": {
+        "day": {
+          "file": "T1_day.webp",
+          "bytes": 42938
+        },
+        "night": {
+          "file": "T1_night.webp",
+          "bytes": 44768
+        }
+      },
+      "day_night_anchors_identical": true,
+      "restoration": {
+        "day": {
+          "geometry_before": "48e8cfd76335efb75a47649c149aad48db36a88c943bee896503cb3d14fe6274",
+          "geometry_after": "48e8cfd76335efb75a47649c149aad48db36a88c943bee896503cb3d14fe6274",
+          "identical": true
+        },
+        "night": {
+          "geometry_before": "48e8cfd76335efb75a47649c149aad48db36a88c943bee896503cb3d14fe6274",
+          "geometry_after": "48e8cfd76335efb75a47649c149aad48db36a88c943bee896503cb3d14fe6274",
+          "identical": true
+        }
+      },
+      "responsive_files": {
+        "T1_day-480.webp": {
+          "width": 480,
+          "height": 253,
+          "bytes": 10710,
+          "sha256": "2f05f57ed6d32610d2c0a069e2bfde118dfae3179b6afe269d82dd766578fb28"
+        },
+        "T1_day-900.webp": {
+          "width": 900,
+          "height": 475,
+          "bytes": 24108,
+          "sha256": "3942316ad3b1a9b1cebbf4398ae8739839746a3c93480b63d67153d4ce18f4e5"
+        },
+        "T1_day.webp": {
+          "width": 1440,
+          "height": 760,
+          "bytes": 44140,
+          "sha256": "f65ecf209dff47f779ba1b1b4f749d1a0c3e003c1e3d57ee8ca8c13362f67dd7"
+        },
+        "T1_night-480.webp": {
+          "width": 480,
+          "height": 253,
+          "bytes": 10926,
+          "sha256": "82f1f83a0bff3e8688a29d220f6f0656b4d3779eebb6f653d9f04ef86812051b"
+        },
+        "T1_night-900.webp": {
+          "width": 900,
+          "height": 475,
+          "bytes": 24874,
+          "sha256": "a762ce54f2b6e2f638c39aac3f3d37eb3f904d08362222702f671529dd46f291"
+        },
+        "T1_night.webp": {
+          "width": 1440,
+          "height": 760,
+          "bytes": 44306,
+          "sha256": "99e82f60eb2234a6091af705cb591ee5b10bc6b4ab1d39754719e7eb1acb9821"
+        }
+      }
+    },
+    "CONCOURSE": {
+      "verification": {
+        "geometry": "ab9ef46ab02b49ec635a494ec4fefb07654169e48d0bc4b4a77343b532715f6e",
+        "camera": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.6613959670066833,
+            -0.750036895275116,
+            -22.0
+          ],
+          [
+            0.0,
+            0.750036895275116,
+            0.6613959670066833,
+            20.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "ortho": 17.799999237060547,
+        "resolution": [
+          1440,
+          860
+        ]
+      },
+      "identical_day_night_geometry_camera_size": true,
+      "anchors_source": "v4 unchanged",
+      "crop_xyxy": [
+        100,
+        20,
+        1340,
+        820
+      ],
+      "width": 1240,
+      "height": 800,
+      "labels": {
+        "WEST": [
+          280.3673541545868,
+          254.82258248329163
+        ],
+        "CENTER": [
+          619.9999785423279,
+          274.666864156723
+        ],
+        "EAST": [
+          959.6326780319214,
+          254.82258248329163
+        ]
+      },
+      "items": [
+        {
+          "name": "WEST",
+          "rect": [
+            110.33704996109009,
+            266.8225824832916,
+            340.0606083869934,
+            182.769176363945
+          ]
+        },
+        {
+          "name": "CENTER",
+          "rect": [
+            450.1123571395874,
+            286.666864156723,
+            339.77524280548096,
+            166.11636757850647
+          ]
+        },
+        {
+          "name": "EAST",
+          "rect": [
+            789.6023845672607,
+            266.8225824832916,
+            340.0605869293213,
+            182.769176363945
+          ]
+        }
+      ],
+      "files": {
+        "day": {
+          "file": "CONCOURSE_day.webp",
+          "bytes": 20408
+        },
+        "night": {
+          "file": "CONCOURSE_night.webp",
+          "bytes": 18290
+        }
+      },
+      "day_night_anchors_identical": true,
+      "restoration": {
+        "day": {
+          "geometry_before": "c2d9776912ab0944b95733a7ae033fe64f6e46e1dc061f0cc4048767545f8926",
+          "geometry_after": "c2d9776912ab0944b95733a7ae033fe64f6e46e1dc061f0cc4048767545f8926",
+          "identical": true
+        },
+        "night": {
+          "geometry_before": "c2d9776912ab0944b95733a7ae033fe64f6e46e1dc061f0cc4048767545f8926",
+          "geometry_after": "c2d9776912ab0944b95733a7ae033fe64f6e46e1dc061f0cc4048767545f8926",
+          "identical": true
+        }
+      },
+      "responsive_files": {
+        "CONCOURSE_day-480.webp": {
+          "width": 480,
+          "height": 310,
+          "bytes": 6524,
+          "sha256": "25e090c723acb578651e2aafe562056cdc7d2b3386cdc4fcfcdb9e299285e675"
+        },
+        "CONCOURSE_day-900.webp": {
+          "width": 900,
+          "height": 581,
+          "bytes": 13908,
+          "sha256": "9f4721428524131c0f9cbf54a5a2fae44ac232bf776a8c42777ef934bcfe5ad1"
+        },
+        "CONCOURSE_day.webp": {
+          "width": 1240,
+          "height": 800,
+          "bytes": 20782,
+          "sha256": "5b2d0cb9eb6b8f78091964a36f3ce597162838f74e43416960ded591543d0c48"
+        },
+        "CONCOURSE_night-480.webp": {
+          "width": 480,
+          "height": 310,
+          "bytes": 5934,
+          "sha256": "69beeebc88f3f714ec1df8a1d0a8268fe2e09df9c58b3695a2b501eeb9ac924d"
+        },
+        "CONCOURSE_night-900.webp": {
+          "width": 900,
+          "height": 581,
+          "bytes": 13042,
+          "sha256": "18aa7641e047e82d0876bcede38339030f1cc9b155654c1345fe7fc9605121cd"
+        },
+        "CONCOURSE_night.webp": {
+          "width": 1240,
+          "height": 800,
+          "bytes": 18858,
+          "sha256": "514613365dd7c879f424795e821d7ae74942a9793c6a2f2f15cf89100848d59c"
+        }
+      }
+    },
+    "OVERVIEW_2ROW": {
+      "verification": {
+        "geometry": "c9ed7383589581ebac44b4919d3e571ef57cc5a78d373c2572b61c6deaec5aac",
+        "camera": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.6839410662651062,
+            -0.7295372486114502,
+            -36.0
+          ],
+          [
+            0.0,
+            0.7295372486114502,
+            0.6839410662651062,
+            34.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "ortho": 25.0,
+        "resolution": [
+          1440,
+          1080
+        ]
+      },
+      "identical_day_night_geometry_camera_size": true,
+      "labels": {
+        "T1": [
+          364.37406465411186,
+          21.527812480926514
+        ],
+        "T2": [
+          1084.3741035461426,
+          21.527812480926514
+        ],
+        "CONCOURSE": [
+          719.9999785423279,
+          501.8814170360565
+        ]
+      },
+      "items": [
+        {
+          "name": "T1",
+          "rect": [
+            17.817901074886322,
+            35.527812480926514,
+            693.1123271584511,
+            346.09888315200806
+          ]
+        },
+        {
+          "name": "T2",
+          "rect": [
+            737.8179359436035,
+            35.527812480926514,
+            693.1123352050781,
+            346.09888315200806
+          ]
+        },
+        {
+          "name": "CONCOURSE",
+          "rect": [
+            518.0400037765503,
+            515.8814170360565,
+            403.9199495315552,
+            281.31718665361404
+          ]
+        }
+      ],
+      "crop_xyxy": [
+        0,
+        156,
+        1440,
+        979
+      ],
+      "same_building_scale": 0.55,
+      "raw_anchors": {
+        "labels": {
+          "T1": [
+            364.37406465411186,
+            177.5278124809265
+          ],
+          "T2": [
+            1084.3741035461426,
+            177.5278124809265
+          ],
+          "CONCOURSE": [
+            719.9999785423279,
+            657.8814170360565
+          ]
+        },
+        "items": [
+          {
+            "name": "T1",
+            "rect": [
+              17.817901074886322,
+              191.5278124809265,
+              693.1123271584511,
+              346.09888315200806
+            ]
+          },
+          {
+            "name": "T2",
+            "rect": [
+              737.8179359436035,
+              191.5278124809265,
+              693.1123352050781,
+              346.09888315200806
+            ]
+          },
+          {
+            "name": "CONCOURSE",
+            "rect": [
+              518.0400037765503,
+              671.8814170360565,
+              403.9199495315552,
+              281.31718665361404
+            ]
+          }
+        ]
+      },
+      "width": 1440,
+      "height": 823,
+      "files": {
+        "day": {
+          "file": "OVERVIEW_2ROW_day.webp",
+          "bytes": 30982
+        },
+        "night": {
+          "file": "OVERVIEW_2ROW_night.webp",
+          "bytes": 29310
+        }
+      },
+      "day_night_anchors_identical": true,
+      "restoration": {
+        "day": {
+          "geometry_before": "8bfd3c3b6b75a5452fe6a4454eeb76b1d11f7532397cdc386368fdf4d69df0ae",
+          "geometry_after": "8bfd3c3b6b75a5452fe6a4454eeb76b1d11f7532397cdc386368fdf4d69df0ae",
+          "identical": true
+        },
+        "night": {
+          "geometry_before": "8bfd3c3b6b75a5452fe6a4454eeb76b1d11f7532397cdc386368fdf4d69df0ae",
+          "geometry_after": "8bfd3c3b6b75a5452fe6a4454eeb76b1d11f7532397cdc386368fdf4d69df0ae",
+          "identical": true
+        }
+      },
+      "responsive_files": {
+        "OVERVIEW_day-480.webp": {
+          "width": 480,
+          "height": 274,
+          "bytes": 7106,
+          "sha256": "6f0fd1c50ff9f36705312efa873ab85194bceae024dfe7bd62d09ebe9806cde4"
+        },
+        "OVERVIEW_day-900.webp": {
+          "width": 900,
+          "height": 514,
+          "bytes": 16998,
+          "sha256": "25d0b898451cfa4c987e1a48f82d41d075ee7e8da92650f284b67e59eaf447db"
+        },
+        "OVERVIEW_day.webp": {
+          "width": 1440,
+          "height": 823,
+          "bytes": 31800,
+          "sha256": "2482d7588cc3769711a6bb3231a37970d73995d003a0f611a19b8ab5de1ea020"
+        },
+        "OVERVIEW_night-480.webp": {
+          "width": 480,
+          "height": 274,
+          "bytes": 6948,
+          "sha256": "b7b23966e592a3c465dc2ec4b373db7485a99b70f3f731576aa94ba0c0f996f7"
+        },
+        "OVERVIEW_night-900.webp": {
+          "width": 900,
+          "height": 514,
+          "bytes": 16366,
+          "sha256": "c61545c4b79b280b15a28d6c4dec644e1baad2d2a566f14e7792c1bdf6421598"
+        },
+        "OVERVIEW_night.webp": {
+          "width": 1440,
+          "height": 823,
+          "bytes": 30198,
+          "sha256": "bb4d0bab2f6e27690928055233753245efc8dd5f6c7e1290bff1eb164b93b8b2"
+        }
+      }
+    }
+  }
+}

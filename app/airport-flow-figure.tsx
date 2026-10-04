@@ -40,6 +40,13 @@ const copy = {
   concept: { ko: "공항 그림은 개념 모형이며 막대 높이는 공식 예상 승객 수입니다.", en: "The airport image is conceptual; bar heights show official forecast passengers.", zh: "机场图像是概念模型；柱高表示官方预测旅客数。", ja: "空港の図は概念模型です。柱の高さは公式予測旅客数です。" },
 } as const;
 
+const finishColors = {
+ elapsed: {front:['#bed8e7','#84aec9','#739db9'],side:['#789fb6','#577d99'],cap:['#e5f0f6','#afcddf']},
+ ahead: {front:['#e3eef3','#bfd6e2','#a8c5d7'],side:['#a6c3d3','#87a9bf'],cap:['#f4f8fb','#d5e5ee']},
+ now: {front:['#d5e9df','#9dc5b4','#80ae9f'],side:['#85b09e','#638f80'],cap:['#eef7f1','#b8d8c9']},
+ peak: {front:['#a9cde2','#6c9ebb','#5786a5'],side:['#608ba6','#426b88'],cap:['#dcecf6','#a4c6dd']},
+ layer: {front:['#cfe3dc','#a0c6b9','#85aa9e'],side:['#8baea0','#6e9286'],cap:['#ebf4ef','#bfd8cc']}
+} as const;
 const REVEAL_TOTAL_MS = REVEAL_MS * 2;
 const kstClock = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false });
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
@@ -193,6 +200,12 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
       data-day-left={left} data-day-width={right - left}
       onPointerMove={onPointerMove} onPointerLeave={() => setHover(null)} onPointerCancel={() => setHover(null)}>
       <defs>
+ {Object.entries(finishColors).map(([key,color])=><g key={key}>
+  <linearGradient id={`${id}satin-${key}-front`} x1="0" y1="0" x2="1" y2=".22"><stop stopColor={color.front[0]}/><stop offset=".25" stopColor={color.front[1]}/><stop offset="1" stopColor={color.front[2]}/></linearGradient>
+  <linearGradient id={`${id}satin-${key}-side`} x1="0" y1="0" x2="1" y2="1"><stop stopColor={color.side[0]}/><stop offset="1" stopColor={color.side[1]}/></linearGradient>
+  <linearGradient id={`${id}satin-${key}-cap`} x1="0" y1="0" x2="1" y2="1"><stop stopColor={color.cap[0]}/><stop offset="1" stopColor={color.cap[1]}/></linearGradient>
+ </g>)}
+
         <linearGradient id={`${id}sky`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" style={{ stopColor: "var(--sky-500)", stopOpacity: 0.62 }} />
           <stop offset="0.42" style={{ stopColor: "var(--sky-200)", stopOpacity: 1 }} />
@@ -238,12 +251,15 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
           const barHeight = band.value / layout.maxBand * (base - top);
           const x = band.x + band.width * .2, w = band.width * .55, depth = Math.min(5, band.width * .16);
           const y = base - barHeight;
+          const finish = band.peak ? "peak" : band.now && !layout.stacked ? "now" : layout.now && band.x >= layout.now.x ? "ahead" : "elapsed";
           const lower = layout.stacked ? layout.layers[0].values[index] / layout.maxBand * (base - top) : 0;
-          return barHeight > 0 && <g key={band.start} data-start={band.start} data-value={band.value} data-height={barHeight}>
-            <rect x={x} y={y} width={w} height={barHeight} fill="#a9d5ec"/>
-            {lower > 0 && <rect x={x} y={base - lower} width={w} height={lower} fill="#81b3cd"/>}
-            <path d={`M${x+w},${y} l${depth},${-depth} v${barHeight} l${-depth},${depth} Z`} fill="#81b3cd"/>
-            <path d={`M${x},${y} h${w} l${depth},${-depth} h${-w} Z`} fill="#e5f5fc"/>
+          return barHeight > 0 && <g key={band.start} data-start={band.start} data-value={band.value} data-height={barHeight} data-finish={finish}>
+            <rect x={x} y={y} width={w} height={barHeight} style={{fill:`url(#${id}satin-${finish}-front)`}}/>
+            {lower > 0 && <rect x={x} y={base - lower} width={w} height={lower} style={{fill:`url(#${id}satin-layer-front)`}}/>}
+            <path d={`M${x+w},${y} l${depth},${-depth} v${barHeight} l${-depth},${depth} Z`} style={{fill:`url(#${id}satin-${finish}-side)`}}/>
+            <path d={`M${x},${y} h${w} l${depth},${-depth} h${-w} Z`} style={{fill:`url(#${id}satin-${finish}-cap)`}}/>
+            {barHeight>1.2 && <><path d={`M${x+.45},${y+.6} V${base-.45}`} style={{fill:"none",stroke:"#fff",strokeOpacity:.42,strokeWidth:.65}}/>
+            <path d={`M${x+.45},${y+.5} H${x+w-.3}`} style={{fill:"none",stroke:"#fff",strokeOpacity:.55,strokeWidth:.65}}/></>}
           </g>;
         })}
       </g>

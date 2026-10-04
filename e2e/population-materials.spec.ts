@@ -11,11 +11,14 @@ for(const width of [360,390,430,1280])for(const lang of ['ko','en','zh','ja'] as
  area.realtimeForecast=[{...pointStatus,targetAt:'2026-08-31T15:00:00+09:00',issuedAt:'2026-08-31T14:00:00+09:00',populationMin:300,populationMax:500,congestionLevel:2},{...pointStatus,targetAt:'2026-08-31T16:00:00+09:00',issuedAt:'2026-08-31T14:00:00+09:00',populationMin:400,populationMax:600,congestionLevel:2}];
  await page.route('**/api/live/summary*',r=>r.fulfill({json:data}));
  await page.goto(`/${lang}/hongdae`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('population-outlook')).toBeVisible();
+ await page.locator('.population-history-disclosure>summary').click();
  const flow=page.locator('.population-flow').first();const chart=flow.locator('.population-chart');
  await expect(chart.locator('.population-range-material')).toHaveCount(3);
  await expect(chart.locator('.flow-observed > path.flow-range')).toHaveCount(1);
  await expect(chart.locator('.flow-observed > line.flow-interval')).toHaveCount(1);
- await expect(chart.locator('.flow-forecast > path.flow-bound')).toHaveCSS('stroke-dasharray','4px, 5px');
+ await expect(chart.locator('.flow-forecast > path.flow-bound')).toHaveCount(2);
+ for(const bound of await chart.locator('.flow-forecast > path.flow-bound').all())await expect(bound).toHaveCSS('stroke-dasharray','4px, 5px');
  const depth=await chart.locator('.population-material-end').last().getAttribute('points');const points=depth!.split(' ').map(p=>p.split(',').map(Number));
  expect(points[1][0]-points[0][0]).toBeCloseTo(4);expect(points[1][1]-points[0][1]).toBeCloseTo(-4);
  const front=await chart.locator('.flow-forecast > path.flow-range').getAttribute('d');
@@ -28,9 +31,9 @@ for(const width of [360,390,430,1280])for(const lang of ['ko','en','zh','ja'] as
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(errors).toEqual([]);
  // Zero and missing are distinct; neither receives invented material volume.
  area.observedSeries=[{...pointStatus,observedAt:'2026-08-31T13:55:00+09:00',populationMin:0,populationMax:0}];area.realtimeForecast=[];
- await page.reload();await expect(flow.locator('.population-range-material')).toHaveCount(0);
+ await page.reload();await page.locator('.population-history-disclosure>summary').click();await expect(flow.locator('.population-range-material')).toHaveCount(0);
  await expect(flow.getByRole('slider')).toHaveAttribute('aria-valuetext',/0.*0/);
- area.observedSeries=[];await page.reload();await expect(flow.locator('.population-chart')).toHaveCount(0);
+ area.observedSeries=[];await page.reload();await page.locator('.population-history-disclosure>summary').click();await expect(flow.locator('.population-chart')).toHaveCount(0);
  await expect(flow.locator('.demand-empty')).toBeVisible();
 });
 

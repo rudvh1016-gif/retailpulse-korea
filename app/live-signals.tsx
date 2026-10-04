@@ -61,6 +61,7 @@ interface LiveRealtime {
   populationMin: number;
   populationMax: number;
   observedAt: string;
+  retrievedAt?: string;
   freshness: "LIVE" | "STALE";
 }
 

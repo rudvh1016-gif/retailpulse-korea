@@ -14,14 +14,14 @@
     "app/api/live/flights/route.ts": "fb7bbfc1132359dceb4d315997eaf26bfc5b27d3f03f2bb9b8be4fe46718c1bd",
     "app/api/live/predictions/route.ts": "b82f003bd3d77c293a379c4dbd0bf5e2aa449b19e54a65119ef2e4f291cdfced",
     "app/api/live/summary/route.ts": "ce08a54a232816dfa63143a9101dbc268a849bc11900293e6df5e7f43e53898b",
-    "app/area-demand-card.tsx": "3f756ec1244db4e6045484bcdbc8a469df2388c53ad9c842b105d1347e7dfc57",
+    "app/area-demand-card.tsx": "975767a5e71d40a2f3b37942003c6bb94bf816bfb3d8d3f2405fa0d4581004bd",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
-    "app/globals.css": "f097e621395f7dad932b85ed1b8e06b231e44005fa10ade2ab6a00f11c716b7a",
+    "app/globals.css": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
     "app/layout.tsx": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
-    "app/live-signals.tsx": "146b28c66a08f1f253fb09c7a862087582bc3c06969f673c58457afbc01e1832",
+    "app/live-signals.tsx": "2fd7161863e3a8925489dd1b488e4f3495cda013164c45811181572f91a77389",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
-    "app/operational-context.tsx": "a01bb0bda26fcd8af56869bbabbc6ffcaac1057b9a2cb7c8798643dc6cd79d21",
+    "app/operational-context.tsx": "6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
@@ -323,6 +323,31 @@
         "file": "app/retailpulse-app.tsx",
         "previous": "acc3a98e9d3806f3a68864f7857b5bfc4d749f2018e8d960183093aee19bb28c",
         "approved": "3aa1492a086bf26f053c3885976e9b24f716bbe617e4fcf0e68ac2f3fcc261c1"
+      }
+    ]
+  },
+  "ownerFinalApprovedUi20261004": {
+    "reason": "Explicit owner approval 2026-10-04: \"기존공항의틀을 유지하되 색갈과 추가기능물을 설치해 그리고 기록갱신 모두다하고 병합까지해\". The owner authorized the normal protected baseline SHA-256 update and owner approval record for app/operational-context.tsx, app/live-signals.tsx, app/area-demand-card.tsx and app/globals.css. Integrates all published consumption categories and approved miniature/satin donut, current-first Seoul with small official future ranges and preserved history/details, original 24-hour airport bars and restored original airport geometry/materials. Existing typography/fonts, source/API/forecast/scheduler contracts, protected file list, cron values and active Owner UI Lock tests remain enforced. Preserves prior Claude and owner records. Normal final PR/CI/merge/release is now approved; no force, test disabling or protection bypass.",
+    "changes": [
+      {
+        "file": "app/area-demand-card.tsx",
+        "previous": "3f756ec1244db4e6045484bcdbc8a469df2388c53ad9c842b105d1347e7dfc57",
+        "approved": "975767a5e71d40a2f3b37942003c6bb94bf816bfb3d8d3f2405fa0d4581004bd"
+      },
+      {
+        "file": "app/globals.css",
+        "previous": "f097e621395f7dad932b85ed1b8e06b231e44005fa10ade2ab6a00f11c716b7a",
+        "approved": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4"
+      },
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "146b28c66a08f1f253fb09c7a862087582bc3c06969f673c58457afbc01e1832",
+        "approved": "2fd7161863e3a8925489dd1b488e4f3495cda013164c45811181572f91a77389"
+      },
+      {
+        "file": "app/operational-context.tsx",
+        "previous": "a01bb0bda26fcd8af56869bbabbc6ffcaac1057b9a2cb7c8798643dc6cd79d21",
+        "approved": "6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83"
       }
     ]
   }

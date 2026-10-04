@@ -105,6 +105,8 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     await page.setViewportSize({ width, height: 844 });
     await fixture(page, chartFixture());
     await page.goto(`/${lang}/hongdae`);
+    await expect(page.getByTestId('population-outlook')).toBeVisible();
+    await page.locator('.population-history-disclosure>summary').click();
     await expect(page.locator('.population-chart')).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     // Apply insets before focus/drag can trigger browser scroll anchoring.
@@ -125,7 +127,7 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     await expect(page.locator('.flow-tick-date')).toHaveText('9/1');
     await expect(page.locator('.flow-observed circle')).toHaveCount(1);
     await expect(page.locator('.flow-observed').first()).toHaveCSS('stroke', 'rgb(17, 17, 17)');
-    await expect(page.locator('.demand-number strong')).toHaveCSS('font-size', '17px');
+    await expect(page.locator('.demand-number strong')).toHaveCSS('font-size', '29px');
     await expect(page.locator('.flow-now rect')).toHaveCount(0);
     const buttons = await page.locator('.date-nav-shortcuts button').evaluateAll(els => els.map(el => { const r = el.getBoundingClientRect(), s = getComputedStyle(el); return { x: r.x, right: r.right, y: r.y, bottom: r.bottom, height: r.height, border: s.borderTopWidth }; }));
     expect(buttons).toHaveLength(3);
