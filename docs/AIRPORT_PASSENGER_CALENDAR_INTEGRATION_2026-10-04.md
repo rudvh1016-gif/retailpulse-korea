@@ -72,3 +72,5 @@ Three new actual correction screenshots were inspected and saved to Library. The
 | 01-reopened-calendar-month-focus.png | `libfile_adbb832345748191b6552f23b0e87695` |
 | 02-after-escape-date-and-focus-retained.png | `libfile_7b1a7a0c9c2881919fbfed6d6463d55c` |
 | 03-forward-reopens-selected-calendar.png | `libfile_22f93901e56c81919d1fe65ac52f2925` |
+
+Exact correction head `8e79dfe74022da9fb0fda53039b02003d9aba9ea` reached the full 592-case remote browser suite after its other checks passed, including 1,130 unit and 42 rendered HTML tests. [CI run 37179202674](https://github.com/rudvh1016-gif/retailpulse-korea/actions/runs/37179202674) was cancelled by the existing **20-minute job timeout**, confirmed by the check annotation `The job has exceeded the maximum execution time of 20m0s`. This is not a browser-suite PASS. The CI job budget is raised to 30 minutes so the unchanged full suite can finish; no checks, assertions, UI locks, retries or worker counts are removed or weakened. The subsequent exact-head run is reported in the PR after completion.
