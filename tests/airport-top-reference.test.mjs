@@ -44,6 +44,11 @@ test('time selection and concourse-only scope have no terminal-wide denominator'
   assert.equal(references({ scope: 'CONCOURSE' }), null);
 });
 
+test('arrival rows in the shared flights API cannot enter the departure denominator', () => {
+  const arrival = { ...rows[0], physicalFlightId: 'ARRIVAL', direction: 'arrival', gate: '9' };
+  assert.deepEqual(references({ source: { ...source, flights: [...rows, arrival] } }).map((row) => Boolean(row.estimate)), [true, true]);
+});
+
 test('date, source freshness, truncation, basis, and exact flight set must agree', () => {
   assert.equal(references({ date: '2026-09-01' }), null);
   assert.equal(references({ source: { ...source, serviceDateKst: '2026-09-01' } }), null);

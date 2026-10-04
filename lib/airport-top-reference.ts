@@ -18,7 +18,10 @@ export function topReferences(input: { summary: Summary; sides: AirportSidesBloc
   const terminals: SplitTerminal[] = scope === 'T1' || scope === 'T2' ? [scope] : ['T1', 'T2'];
   // Count the same source once; building a second full gate map per terminal
   // would duplicate work on every tab/window interaction.
-  const day = summarizeGateSides(source.flights, date);
+  // /api/live/flights also carries arrival rows; the official comparison and
+  // departure map both use departures only.
+  const departures = source.flights.filter((row) => row.direction === undefined || row.direction === 'departure');
+  const day = summarizeGateSides(departures, date);
   return terminals.map((terminal) => {
     const result = splitFromSummary(summary, sides, terminal, nowIso);
     if (result.status !== 'OK' || result.split.basis !== source.basis) return { terminal, estimate: null };
