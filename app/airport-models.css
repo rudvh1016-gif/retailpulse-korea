@@ -222,3 +222,5 @@ nav.bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .airport-gate-region-register ul { padding-left: 18px; }
 .airport-gate-region-register li { font-size: 12px; margin-bottom: 10px; overflow-wrap: anywhere; }
 .airport-gate-region-register li small { display: block; }
+
+.airport-concept-gate-range{display:block;font-size:11px;line-height:1.5;overflow-wrap:anywhere;margin:3px 0;font-weight:400;}
