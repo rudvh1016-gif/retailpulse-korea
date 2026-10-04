@@ -22,7 +22,7 @@ for (const clock of ["11:57", "21:03", "23:59"]) {
 
     const [hours, minutes] = clock.split(":").map(Number);
     for (const [terminal, total] of [["전체", "47,320"], ["T2", "17,220"], ["T1", "30,100"], ["전체", "47,320"]]) {
-      await page.getByRole("tab", { name: terminal, exact: true }).click();
+      await page.locator("#airport-data-flow").getByRole("tab", { name: terminal === "전체" ? "전체 T1·T2" : terminal, exact: true }).click();
       const brief = page.locator(".airport-current-brief");
       // The number counts up when it arrives; the assertion retries until it settles.
       await expect(brief.locator("strong").first()).toHaveText(`금일 출국장 공식 예상 승객 ${total}명`);
