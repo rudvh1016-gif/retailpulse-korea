@@ -37,6 +37,10 @@ import { IndustryGuide } from "./industry-guide";
 import { BusinessPrep } from "./business-prep";
 import { AirportDepartureOverview } from "./airport-departure-overview";
 import { AirportConcourse } from './airport-concourse';
+import { AirportTaxRefundGuide } from './airport-tax-refund-guide';
+import { AirportDeparturePreparation } from './airport-departure-preparation';
+import { departurePreparationCopy } from './airport-departure-preparation-copy';
+import './airport-tax-refund-guide.css';
 import { sidesCopy } from "../lib/airport-sides-copy";
 import { saveBusinessPreferences, useBusinessPreferences } from "./business-preferences";
 import { airportAnswerText, areaAnswerText, type TodayAnswer, type TodayAnswerArea } from "../lib/today-answer";
@@ -617,7 +621,9 @@ function AirportView({
         </div>
       </div>
 
-      <div className="terminal-selector" role="tablist" aria-label="Terminal">
+      {(concourse||section === "now")&&<nav className="airport-purpose-links" aria-label={departurePreparationCopy[lang].title}><a href="#airport-departure-preparation" onClick={()=>{const guide=document.getElementById('airport-departure-preparation');if(guide instanceof HTMLDetailsElement)guide.open=true;}}>{departurePreparationCopy[lang].title}</a><a href="#airport-data-flow">{departurePreparationCopy[lang].flow}</a></nav>}
+      {(concourse||section === "now")&&<AirportDeparturePreparation lang={lang}/>}
+      <div id="airport-data-flow" className="terminal-selector" role="tablist" aria-label="Terminal">
         {(["all", "T1", "T2"] as Terminal[]).map((item) => <button key={item} className={!concourse&&terminal === item ? "active" : ""} onClick={() => setTerminal(item)} role="tab" aria-selected={!concourse&&terminal === item}>{item === "all" ? localText(lang, { ko: "전체", en: "ALL", zh: "全部", ja: "全体" }) : item}</button>)}
         <button className={concourse?'active':''} onClick={()=>setConcourse(true)} role="tab" aria-selected={concourse}>{localText(lang,{ko:'탑승동',en:'Concourse',zh:'登机楼',ja:'搭乗棟'})}</button>
       </div>
@@ -653,6 +659,7 @@ function AirportView({
       {!concourse&&section === "arrivals" && <AirportArrivalSummary lang={lang} terminal={terminal} date={date} />}
       {!concourse&&section === "flights" && <FlightBoard lang={lang} terminal={terminal} date={date} />}
       {!concourse&&section === "stores" && <FacilityDirectory lang={lang} terminal={terminal} />}
+      {!concourse&&section === "stores"&&<AirportTaxRefundGuide lang={lang} terminal={terminal}/>}
 
       {!concourse&&(section === "now" || section === "arrivals") && <IndustryGuide key={section} lang={lang} industry={industry} onIndustryChange={setIndustry} airport={{ terminal, direction: section === "arrivals" ? "arrival" : "departure" }} />}
 

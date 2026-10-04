@@ -1,5 +1,20 @@
 # Local font asset provenance
 
+## 2026-10-04 separate passenger tax-refund preview
+
+The subsequent departure-rule copy adds SC U+68AD/U+7968 (2272→2274)
+and JP U+512A/U+7D4C (1881→1883), preserving all previous codepoints.
+Final sizes: SC 284732/288808; JP 221876/223940 bytes. Same pinned sources,
+tools, families, weights, licenses and budgets. Korean is still unchanged.
+
+Pinned Noto CJK 2.004 sources and SHA-256 values below were verified again.
+FontTools 4.66.0/Brotli 1.2.0 added the union of the previous cmap and only
+new locale copy. SC adds U+6258/U+63CF/U+65C1 (2269→2272 points per weight),
+JP adds U+6E80 (1880→1881). Existing glyphs, family names and 400/600 weights
+remain. SC sizes 284644/288504 bytes; JP 221432/223784, below 320 KB each.
+KORETAIL Sans is unchanged. Active owner locks record the four new hashes.
+This font refresh belongs to the separate passenger-preview branch, not PR254.
+
 The files under `public/fonts/` are static web assets and are not part of the
 Worker JavaScript bundle. They are covered by the SIL Open Font License 1.1
 texts in this directory.
