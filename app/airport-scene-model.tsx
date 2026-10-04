@@ -28,13 +28,15 @@ export function AirportSceneModel({scope,lang,className='',showBasis=true,childr
   const [scene,setScene]=useState(()=>airportScene(Date.now()));
   useEffect(()=>{const update=()=>setScene(airportScene(Date.now()));update();const timer=setInterval(update,60_000);return()=>clearInterval(timer);},[]);
   const view=airportSceneView(scope);
-  const stem=`/airport-models/v8/${scope === 'all' ? 'OVERVIEW' : scope}_${scene}`;
+  const detailedT2=scope==='T2'&&scene==='day';
+  const stem=detailedT2?'/airport-models/v12/T2_day':`/airport-models/v8/${scope === 'all' ? 'OVERVIEW' : scope}_${scene}`;
   const src=previewRoot ? `/@fs/${previewRoot}/${scope === 'all' ? 'OVERVIEW' : scope}_${scene}.webp` : `${stem}.webp`;
+  const srcSet=detailedT2?`${stem}-390.webp 390w, ${stem}-900.webp 900w, ${stem}.webp ${view.width}w`:`${stem}-480.webp 480w, ${stem}-900.webp 900w, ${stem}.webp ${view.width}w`;
   return <>
     <div className={`airport-scene-picture ${className}`} style={{aspectRatio:`${view.width}/${view.height}`}} data-scene={scene} data-building={scope}>
       {/* Only the selected building and lighting image is requested. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} srcSet={previewRoot?undefined:`${stem}-480.webp 480w, ${stem}-900.webp 900w, ${stem}.webp ${view.width}w`} sizes="(max-width: 600px) calc(100vw - 32px), (max-width: 1100px) 80vw, 900px" width={view.width} height={view.height} alt="" loading="lazy" decoding="async"/>
+      <img src={src} srcSet={previewRoot?undefined:srcSet} sizes="(max-width: 600px) calc(100vw - 32px), (max-width: 1100px) 80vw, 900px" width={view.width} height={view.height} alt="" loading="lazy" decoding="async"/>
       {scope==='all'&&Object.entries(view.labels).map(([name,point])=><span className="airport-scene-anchor" key={name} style={{left:`${point[0]/view.width*100}%`,top:`${point[1]/view.height*100}%`}}>{name==='CONCOURSE'?{ko:'탑승동',en:'Concourse',zh:'登机楼',ja:'搭乗棟'}[lang]:name}</span>)}
       {children}
     </div>
