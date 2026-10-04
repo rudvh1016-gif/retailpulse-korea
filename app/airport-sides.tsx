@@ -48,7 +48,7 @@ export function DepartureMapSection({ lang, summary, terminal, nowIso, holidays,
   return <details open={open} className="prep-block prep-evidence" data-testid="departure-map-section" onToggle={(event) => setOpen((event.currentTarget as HTMLDetailsElement).open)}>
     <summary><h3 style={{ margin: 0 }}>{copy.mapTitle[lang]}</h3></summary>
     {open && <Suspense fallback={<p className="prep-note">{copy.mapLoading[lang]}</p>}>
-      <DepartureMap lang={lang} date={summary.serviceDateKst} todayKst={summary.todayKst} dayRelation={summary.dayRelation} terminal={terminal} nowIso={nowIso} holidays={holidays} defaultBuildingScope={defaultBuildingScope} modelPlacement={modelPlacement}/>
+      <DepartureMap lang={lang} date={summary.serviceDateKst} todayKst={summary.todayKst} dayRelation={summary.dayRelation} terminal={terminal} nowIso={nowIso} holidays={holidays} defaultBuildingScope={defaultBuildingScope} modelPlacement={modelPlacement} referenceSummary={modelPlacement ? summary : undefined}/>
     </Suspense>}
   </details>;
 }
@@ -113,7 +113,7 @@ const kstDay = (ms: number) => new Date(ms + 9 * 3_600_000).toISOString().slice(
  * block. Flights are counted by evidenced gate side; the person figures are a
  * reference split of the terminal-wide expectation, not the hall figures.
  */
-export function FlightSplitCard({ lang, summary, sides, terminal, nowIso, showDistribution = true }: { lang: Lang; summary: LiveSummary; sides: SidesBlock; terminal: PrepTerminal; nowIso: string; showDistribution?: boolean }) {
+export function FlightSplitCard({ lang, summary, sides, terminal, nowIso, showDistribution = true, showEstimate = true }: { lang: Lang; summary: LiveSummary; sides: SidesBlock; terminal: PrepTerminal; nowIso: string; showDistribution?: boolean; showEstimate?: boolean }) {
   const result = splitFromSummary(summary, sides, terminal, nowIso);
   if (result.status !== 'OK') return <div className="prep-block" data-testid="flight-split" data-state={result.status}><p className="prep-note">{splitCopy.unavailable[result.status][lang]}</p></div>;
   const s = result.split;
@@ -135,7 +135,7 @@ export function FlightSplitCard({ lang, summary, sides, terminal, nowIso, showDi
     </div>)}</dl>
     <p className="prep-note">{{ko:'분포 막대는 전체 출발편',en:'Distribution uses all departures',zh:'分布以全部出发航班为基准',ja:'分布は全出発便が基準'}[lang]} {count(s.total,lang)}{copy.flights[lang]}</p>
     <p className="prep-note" data-testid="split-shares">{sharesBody(s, lang)}</p>
-    <h4 style={{ margin: '12px 0 0' }}>{splitCopy.estimateHeading[lang]}</h4>
+    {showEstimate && <><h4 style={{ margin: '12px 0 0' }}>{splitCopy.estimateHeading[lang]}</h4>
     {s.expected && s.eastPct !== null
       ? <>
         <p data-testid="split-estimate"><strong>{estimateBody({ terminal, ...s.expected }, lang)}</strong></p>
@@ -145,7 +145,7 @@ export function FlightSplitCard({ lang, summary, sides, terminal, nowIso, showDi
           <p className="prep-note" data-testid="split-note">{estimateNote({ terminal, ...s.expected }, lang)}</p>
         </details>
       </>
-      : <p className="prep-note" data-testid="split-no-estimate">{(s.eastPct === null ? splitCopy.noConfirmedEstimate : splitCopy.noEstimate)[lang]}</p>}
+      : <p className="prep-note" data-testid="split-no-estimate">{(s.eastPct === null ? splitCopy.noConfirmedEstimate : splitCopy.noEstimate)[lang]}</p>}</>}
   </div>;
 }
 
