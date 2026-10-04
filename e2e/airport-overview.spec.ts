@@ -134,6 +134,7 @@ test('the reference is next to the top model and uses separate full-day terminal
   await expect(reference).toContainText('T1 and T2 are calculated separately');
   await expect(page.getByTestId('overview-T1').getByTestId('split-estimate')).toHaveCount(0);
   await expect(page.getByTestId('overview-T1').getByTestId('split-shares')).toBeVisible();
+  await expect(page.getByTestId('overview-T1').getByTestId('flight-split')).toContainText('All departures');
   const order = await slot.evaluate((node) => Array.from(node.children).map((child) => child.getAttribute('data-testid')));
   expect(order.slice(0, 3)).toEqual(['airport-concept-model', 'airport-top-reference', 'map-zone-countries']);
   await slot.screenshot({ path: 'test-results/airport-top-reference-en-390.png' });

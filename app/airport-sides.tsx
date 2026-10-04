@@ -133,7 +133,9 @@ export function FlightSplitCard({ lang, summary, sides, terminal, nowIso, showDi
     <dl className="flight-side-values" data-testid="split-flights">{parts.map(part => <div key={part.side} data-side={part.side}>
       <dt><i style={{background:part.color}} aria-hidden="true"/>{copy.side[part.side][lang]}</dt><dd>{count(part.value, lang)}{copy.flights[lang]}</dd>
     </div>)}</dl>
-    <p className="prep-note">{{ko:'분포 막대는 전체 출발편',en:'Distribution uses all departures',zh:'分布以全部出发航班为基准',ja:'分布は全出発便が基準'}[lang]} {count(s.total,lang)}{copy.flights[lang]}</p>
+    <p className="prep-note">{(showDistribution
+      ? {ko:'분포 막대는 전체 출발편',en:'Distribution uses all departures',zh:'分布以全部出发航班为基准',ja:'分布は全出発便が基準'}
+      : {ko:'전체 출발편',en:'All departures',zh:'全部出发航班',ja:'全出発便'})[lang]} {count(s.total,lang)}{copy.flights[lang]}</p>
     <p className="prep-note" data-testid="split-shares">{sharesBody(s, lang)}</p>
     {showEstimate && <><h4 style={{ margin: '12px 0 0' }}>{splitCopy.estimateHeading[lang]}</h4>
     {s.expected && s.eastPct !== null
