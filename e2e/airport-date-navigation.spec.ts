@@ -1,3 +1,4 @@
+import {expectDateSelection,chooseDate} from './date-selection';
 import { test, expect } from '@playwright/test';
 import { SUMMARY_FIXTURE } from './summary-fixture';
 import { tofuCharacters } from './font-glyphs';
@@ -74,15 +75,15 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) for (const width of lang =
     const stored = nav.getByLabel(labels[lang].select, { exact: true });
     await expect(stored.locator(`option[value="${oldDate}"]`)).toContainText(labels[lang].forecast);
     await stored.selectOption(oldDate);
-    await expect(nav.locator('input[type="date"]')).toHaveValue(oldDate);
+    await expectDateSelection(page, oldDate);
     await expect(page.locator('.date-scope-note')).toContainText(labels[lang].past);
     await expect(page.locator('.airport-current-brief')).not.toContainText('99,991');
-    await expect(nav.locator('input[type="date"]')).not.toHaveAttribute('min');
+    await expect(nav.getByTestId('date-calendar-trigger')).not.toHaveAttribute('min');
 
     await nav.getByLabel(labels[lang].month, { exact: true }).fill('2026-09');
     await expect(stored.locator(`option[value="${futureDate}"]`)).toContainText(labels[lang].planned);
     await stored.selectOption(futureDate);
-    await expect(nav.locator('input[type="date"]')).toHaveValue(futureDate);
+    await expectDateSelection(page, futureDate);
     await expect(page.locator('.date-scope-note')).toContainText(labels[lang].planned);
     await expect(page.locator('.airport-current-brief')).not.toContainText('99,991');
     await page.locator('.airport-context-nav').getByRole('button', { name: { ko: '항공편', en: 'FLIGHTS', zh: '航班', ja: 'フライト' }[lang], exact: true }).click();
@@ -94,8 +95,8 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) for (const width of lang =
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
     await page.screenshot({ path: info.outputPath(`held-dates-${lang}-${width}.png`) });
 
-    await nav.locator('input[type="date"]').fill('2026-09-30');
-    await expect(nav.locator('input[type="date"]')).toHaveValue('2026-09-30');
+    await chooseDate(page, '2026-09-30');
+    await expectDateSelection(page, '2026-09-30');
     await expect(page.locator('.date-scope-note')).not.toContainText('99,991');
     expect(errors).toEqual([]);
     // Viewing a month uses one shared summary call, never a provider call per date.
@@ -123,11 +124,11 @@ for (const fixedDate of [false, true]) test(`KST midnight renews shortcuts and $
   const nav = page.locator('.date-nav');
   if (fixedDate) {
     await nav.getByRole('button', { name: '내일', exact: true }).click();
-    await expect(nav.locator('input[type="date"]')).toHaveValue('2026-09-22');
+    await expectDateSelection(page, '2026-09-22');
   }
   rolled = true;
   await page.clock.fastForward(11_000);
-  await expect(nav.locator('input[type="date"]')).toHaveValue('2026-09-22');
+  await expectDateSelection(page, '2026-09-22');
   await expect(nav.getByRole('button', { name: '오늘', exact: true })).toHaveClass(/active/);
   await nav.getByRole('button', { name: '내일', exact: true }).click();
   await expect.poll(() => requests.includes('2026-09-23')).toBe(true);
@@ -152,13 +153,13 @@ for (const fixedDate of [false, true]) test(`KST midnight refresh failure still 
   const nav = page.locator('.date-nav');
   if (fixedDate) {
     await nav.getByRole('button', { name: '내일', exact: true }).click();
-    await expect(nav.locator('input[type="date"]')).toHaveValue('2026-09-22');
+    await expectDateSelection(page, '2026-09-22');
   }
   fail = true;
   const beforeMidnight = requests.length;
   await page.clock.fastForward(11_000);
   await expect.poll(() => requests.length).toBe(beforeMidnight + 1);
-  await expect(nav.locator('input[type="date"]')).toHaveValue('2026-09-22');
+  await expectDateSelection(page, '2026-09-22');
   await expect(nav.getByRole('button', { name: '오늘', exact: true })).toHaveClass(/active/);
   if (fixedDate) await expect(page.getByTestId('summary-refresh-failed')).toBeVisible();
   else await expect(page.locator('.airport-brief-total')).toHaveCount(0);
@@ -169,7 +170,7 @@ for (const fixedDate of [false, true]) test(`KST midnight refresh failure still 
   await expect(nav.getByRole('button', { name: '오늘', exact: true })).toHaveClass(/active/);
   await nav.getByRole('button', { name: '내일', exact: true }).click();
   await expect.poll(() => requests.includes('2026-09-23')).toBe(true);
-  await expect(nav.locator('input[type="date"]')).toHaveValue('2026-09-23');
+  await expectDateSelection(page, '2026-09-23');
 });
 
 test('month request failure is an error, and arrivals use their own collection time', async ({ page }) => {

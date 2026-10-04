@@ -1,0 +1,13 @@
+# Airport zone percentages and adjacent gate ranges
+
+The concept model now gives west, central, east and unverified locations the same denominator: `map.sides.total`, including unverified flights. The existing selected building/date/window aggregation and legacy T1-main versus concourse contract are unchanged. A 272-flight T2 sample with west 131, central 21 and east 120 displays 48.2%, 7.7% and 44.1%; unverified zero displays 0.0%. These example values are tests/review evidence, never production constants.
+
+Zero total has no calculated percentage. An empty payload without a retrieval timestamp is unavailable, not confirmed zero. Existing loading, failed, partial, next-day completeness and unverified gate safeguards remain. Country rows display their share of all flights in their own zone, including unknown destinations; zone headings use the full selected flight set. Visible rounding notes explain possible totals different from 100%.
+
+Each zone name has its registered gate intervals directly below it. Intervals are generated from the current config and preserve gaps: T2 east is 253–270, 273–291. They are distinct from active gates/rankings. Adjacent copy identifies KORETAIL classifications based on official map positions and explicitly identifies the central zone as KORETAIL's classification. Existing expanded evidence distinguishes official text from coordinate calculations. The conceptual scene is not an official coordinate map.
+
+No collector, forecast, country registry, billing, deployment, runtime 3D engine or public v6c asset switch changes. This independent stacked draft is based on PR254's 7a54d366; passenger PR255 is separate. PR254's public merge was rejected by automatic approval review, including the single authorized retry using the exact forwarded question/answer. No merge/deployment or bypass occurred.
+
+Local review uses the previously captured 577-row public response and production v5 assets. T2 272-flight images: mobile `libfile_497d5f9b056081918f9a67f92611804c`, desktop `libfile_3674a51ca3108191a4f34c9f5d3ce71a`. Both actual rasters were inspected; these are local previews.
+
+Validation: three new arithmetic unit tests; Korean font coverage; typecheck/lint; 17 final browser tests across four languages and widths 360/390/430/1280 with repeated all/T1/T2/concourse transitions, real glyph raster, unknown locations, country denominators, reserved gate gaps, zero-window, unavailable retrieval, reduced motion, console and overflow. The existing model-placement test also passed (18 combined before the final range assertion). Full build/unit/HTML and exact-head remote CI are recorded in the PR after completion. Protection tests remain enabled.

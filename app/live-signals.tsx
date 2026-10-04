@@ -1,4 +1,5 @@
 "use client";
+import { AirportDateCalendar } from './airport-date-calendar';
 import { airportCompositionCopy } from '../lib/airport-composition-copy';
 import { demandCopy, demandLevel, AreaDemandCard, usePresentationClock } from "./area-demand-card";
 import { passengerCopy } from "../lib/passenger-copy";
@@ -60,6 +61,7 @@ interface LiveRealtime {
   populationMin: number;
   populationMax: number;
   observedAt: string;
+  retrievedAt?: string;
   freshness: "LIVE" | "STALE";
 }
 
@@ -1169,8 +1171,8 @@ function shiftDay(day: string, delta: number): string {
  * Retain only navigation context on a failed date request, never its numbers.
  */
 export function DateNavigator({
-  lang, date, onChange, historyHref, airportDates = false,
-}: { lang: Lang; date: string | null; onChange: (date: string | null) => void; historyHref?: string; airportDates?: boolean }) {
+  lang, date, onChange, historyHref, airportDates = false, modernCalendar = false,
+}: { lang: Lang; date: string | null; onChange: (date: string | null) => void; historyHref?: string; airportDates?: boolean; modernCalendar?: boolean }) {
   const summary = useLiveSummary(date);
   const [navigation, setNavigation] = useState(summary);
   if (summary && summary !== navigation) setNavigation(summary);
@@ -1236,7 +1238,7 @@ export function DateNavigator({
       }).format(new Date(`${value}T12:00:00+09:00`))}</time></button>)}
     </div>
     <div className="date-nav-tools">
-    <label className="date-nav-picker">
+    {modernCalendar ? <AirportCalendarWithAvailability lang={lang} date={date} selected={selected} today={today} onChange={value=>onChange(value===today?null:value)}/> : <label className="date-nav-picker">
       <span>{dateNavText.pick[lang]}</span>
       <input
         type="date"
@@ -1247,11 +1249,19 @@ export function DateNavigator({
           onChange(next === today ? null : next);
         }}
       />
-    </label>
+    </label>}
     {historyHref && <a className="period-outlook-link" href={historyHref}>7DAYS · {contextText(lang,"지난 기록","Past records","历史记录","過去の記録")}</a>}
     </div>
     {airportDates && <StoredAirportDates lang={lang} date={date} selected={selected} onChange={onChange} />}
   </nav>;
+}
+
+function AirportCalendarWithAvailability({lang,date,selected,today,onChange}:{lang:Lang;date:string|null;selected:string;today:string;onChange:(date:string)=>void}) {
+  const [month,setMonth]=useState<string|null>(null);
+  const summary=useLiveSummary(date,month??undefined);
+  const availability=summary?.dateAvailability;
+  const known=[...new Set([...(availability?.airportFlights??[]),...(availability?.airportPassengerForecast??[]),...(availability?.airportDepartureSchedule??[])])].filter(day=>day.startsWith(month??selected.slice(0,7)));
+  return <AirportDateCalendar lang={lang} selected={selected} today={today} onChange={onChange} known={known} onMonth={setMonth} availabilityState={summary===undefined?'LOADING':summary===null||summary.clientRefresh?.failedAt?'FAILED':'READY'}/>;
 }
 
 const storedDateText = {
@@ -1678,13 +1688,10 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
   const [active, setActive] = useState<string | null>(null);
   if (!days.length) return null;
   const width = 100, height = 100;
-  // The month is laid out in fixed slots, filled from the left, never stretched
-  // to the plot: with two days (the 2nd) the first and last bar used to sit at
-  // opposite edges, and with one day the bar was 60% of the plot wide. At least
-  // 15 slots, so the first half of the month reads as a month still filling up.
-  const slots = Math.max(days.length, 15);
+  // Each available date receives equal space; missing values remain gaps.
+  const slots = days.length;
   const slot = width / slots;
-  const barWidth = Math.min(Math.max(1.5, slot * 0.6), 4);
+  const barWidth = Math.min(7, slot * 0.3);
   const maxDay = days.reduce((best, day) => Math.max(best, day.total ?? 0), 0);
 
   // The running total is still COMPUTED — the readout below prints the selected
@@ -1717,10 +1724,9 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
       <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
         {days.map((day, index) => day.total === null
           ? <rect key={day.date} className="airport-month-gap" x={x(index) - barWidth / 2} y={height - 1.5} width={barWidth} height={1.5} />
-          : <g key={day.date}><rect className="airport-month-bar" data-selected={day.date === shownDay.date || undefined}
-              x={x(index) - barWidth / 2} y={barY(day.total)} width={barWidth} height={Math.max(0, height - barY(day.total))} />
-              {day.total > 0 && <><path className="airport-month-side" d={`M${x(index)+barWidth/2} ${barY(day.total)} l.8 -1.2 V${height-1.2} l-.8 1.2 Z`}/>
-                <path className="airport-month-cap" d={`M${x(index)-barWidth/2} ${barY(day.total)} l.8 -1.2 h${barWidth} l-.8 1.2 Z`}/></>}
+          : <g key={day.date}><rect className="airport-month-soft-depth" x={x(index) - barWidth / 2 + .7} y={barY(day.total) + 2} width={barWidth} height={Math.max(0, height - barY(day.total) - 2)} rx={Math.min(1.5, barWidth/2)} ry={6} fill="#a6c5ce"/><rect className="airport-month-bar" data-value={day.total} data-selected={day.date === shownDay.date || undefined}
+              x={x(index) - barWidth / 2} y={barY(day.total)} width={barWidth} height={Math.max(0, height - barY(day.total))} rx={Math.min(1.5, barWidth / 2)} ry={6} />
+              {day.total > 0 && <path className="airport-month-soft-highlight" d={`M${x(index)-barWidth/2+1.2} ${barY(day.total)+2} h${Math.max(0,barWidth-2.4)}`} stroke="#fff" strokeWidth="1.2" strokeLinecap="round"/>}
             </g>)}
       </svg>
       <div className="airport-month-picks" role="group" aria-label={mtdCopy.daily[lang]}>
@@ -2016,12 +2022,14 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
           nowLabel={nowLabel}
           numberLocale={numberLocale}
           label={`${airportTodayText.forecastTitle[lang]}. ${airportTodayText.forecastOnly[lang]}${nowBandStart ? `. ${nowLabel}` : ""}`}
+          showModel={false}
         />
         : <div className={`airport-forecast-state ${isForecastPartial ? "partial" : "unavailable"}`}>
           <strong>{isForecastPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]}</strong>
           <p>{isForecastPartial ? airportTodayText.partialBody[lang] : airportTodayText.unavailableBody[lang]}</p>
           {passengerCollected && <small>{passengerCollected}</small>}
         </div>}
+      <div id="airport-departure-model-slot" data-testid="airport-departure-model-slot"/>
     </section>
     }/>
 
@@ -3343,14 +3351,16 @@ function CommercialSignalCard({ signal, lang }: { signal: CommercialSignalRow; l
     </div>
     <div className="commercial-signal-content">
       <p className="commercial-basis">{text.commercialBasis[lang]}</p>
-      <p className="commercial-status">{lang === "ko" ? "서울시 제공 소비활동 상태" : signal.statusLabel} · <strong>{signal.activityContext ?? signal.statusValue}</strong></p>
       <dl className="commercial-metrics">
         {metrics.map((metric) => <div key={metric.label}><dt>{metric.label}</dt><dd>{metric.value}</dd></div>)}
       </dl>
+      <p className="commercial-status">{lang === "ko" ? "서울시 제공 소비활동 상태" : signal.statusLabel} · <strong>{signal.activityContext ?? signal.statusValue}</strong></p>
       <p className="commercial-times">{signal.referenceValue} · {signal.retrievalValue}</p>
       {signal.comparisons.length ? signal.comparisons.map((line) => <p className="period-comparison" key={line}>{line}</p>) : <p className="commercial-times">{({ ko: "동일 시간대 과거 자료 부족 · 전주·4주 전 비교 불가", en: "Matching historical time window unavailable for weekly comparisons", zh: "缺少同一时段历史资料，无法进行周比较", ja: "同時刻の過去資料不足のため週比較不可" })[lang]}</p>}
-      <p className="commercial-attribution">{({ ko: "소비활동은 과거 평균 결제금액 등을 고려한 서울시 4단계 등급입니다. 과거 평균 금액이나 증감률 자체가 아니며, 건당 평균은 현재 금액을 현재 건수로 나눈 값입니다.", en: "Seoul’s four activity levels consider past average payments. They are not historical mean amounts or growth rates; the per-payment average uses this window’s amount and count.", zh: "首尔市四级消费活跃度参考过去平均支付金额，不代表历史均额或增减率；每笔平均额按当前时段金额和笔数计算。", ja: "ソウル市の4段階指標は過去の平均決済額などを考慮します。過去の平均額や増減率そのものではなく、1件平均は現在の金額と件数から算出します。" })[lang]}</p>
       <p className="commercial-attribution">{text.sourceSeoul[lang]} · {signal.attribution}</p>
+      <details className="commercial-method"><summary>{({ko:"활동 등급·건당 평균의 의미",en:"Activity levels and per-payment averages",zh:"活跃度与每笔平均额的含义",ja:"活動指標と1件平均の意味"})[lang]}</summary>
+       <p className="commercial-attribution">{({ ko: "소비활동은 과거 평균 결제금액 등을 고려한 서울시 4단계 등급입니다. 과거 평균 금액이나 증감률 자체가 아니며, 건당 평균은 현재 금액을 현재 건수로 나눈 값입니다.", en: "Seoul’s four activity levels consider past average payments. They are not historical mean amounts or growth rates; the per-payment average uses this window’s amount and count.", zh: "首尔市四级消费活跃度参考过去平均支付金额，不代表历史均额或增减率；每笔平均额按当前时段金额和笔数计算。", ja: "ソウル市の4段階指標は過去の平均決済額などを考慮します。過去の平均額や増減率そのものではなく、1件平均は現在の金額と件数から算出します。" })[lang]}</p>
+      </details>
     </div>
   </article>;
 }

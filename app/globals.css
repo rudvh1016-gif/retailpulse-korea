@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@import "./commercial-visuals.css";
+@import "./population-materials.css";
+@import "./commercial-composition.css";
+@import "./population-outlook.css";
 
 /* Project-local OFL subsets keep fonts out of the Worker bundle. The primary
    glyph sets are generated from all four localized product-copy sources. A
@@ -2850,21 +2854,27 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 /* Owner-approved 2026-09-23 date controls only. Other selection controls keep
    their existing hairline treatment; no type scale or date semantics change. */
 .date-nav { gap: 10px 16px; }
-.date-nav-shortcuts { gap: 6px; }
+.date-nav-shortcuts { gap: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
 .app :is(.date-nav, .personal-switches) .date-nav-shortcuts button {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 2px; min-height: 52px; min-width: 72px; padding: 6px 12px;
-  border: 1px solid var(--line); border-radius: 6px;
-  background: var(--paper); color: var(--ink); line-height: 1.35;
+  position: relative; border: 0; border-radius: 0;
+  background: transparent; color: var(--ink); line-height: 1.35;
+  touch-action: manipulation;
 }
 .app :is(.date-nav, .personal-switches) .date-nav-shortcuts button:is(.active, [aria-pressed="true"]) {
-  background: #f0f5ff; border-color: var(--blue); color: var(--blue);
+  background: #eef6fc; color: var(--ink);
   font-weight: var(--weight-strong);
 }
-.app :is(.date-nav, .personal-switches) .date-nav-shortcuts button:hover { border-color: var(--muted); }
+.app :is(.date-nav, .personal-switches) .date-nav-shortcuts button + button { border-left: 1px solid var(--line); }
+.app :is(.date-nav, .personal-switches) .date-nav-shortcuts button:first-child { border-radius: 7px 0 0 7px; }
+.app :is(.date-nav, .personal-switches) .date-nav-shortcuts button:last-child { border-radius: 0 7px 7px 0; }
+.app :is(.date-nav, .personal-switches) .date-nav-shortcuts button:is(.active, [aria-pressed="true"])::after { content: ""; position: absolute; bottom: 5px; left: 25%; right: 25%; height: 2px; background: var(--ink); border-radius: 1px; }
+.app :is(.date-nav, .personal-switches) .date-nav-shortcuts button:hover { background: #f7fafc; }
+.app :is(.date-nav, .personal-switches) .date-nav-shortcuts button:is(.active, [aria-pressed="true"]):hover { background: #e5f1fa; }
 .app :is(.date-nav, .personal-switches) .date-nav-shortcuts button:focus-visible,
 .app .date-nav-picker input:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
-.date-nav-shortcuts time { font-size: 11px; font-weight: var(--weight-regular); color: var(--muted); }
+.date-nav-shortcuts time { font-size: 11px; font-weight: var(--weight-regular); color: var(--ink); }
 .date-nav-tools { gap: 8px 16px; }
 .date-nav-picker { gap: 6px; }
 .date-nav-picker > span { font-size: 11px; letter-spacing: 0; text-transform: none; }
@@ -2883,3 +2893,44 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
    page rather than a banner. */
 .today-answer { margin-top: 12px; }
 .today-answer p { margin: 4px 0 0; font-size: 14px; line-height: 1.6; color: var(--ink, #111); }
+
+/* Airport flight browsing: one quiet hour at a time, no truncated inventory. */
+.airport-flight-browser { margin-top: 16px; border-top: 1px solid var(--line); font-size: 12px; }
+.airport-flight-browser > summary, .airport-flight-hour > summary { min-height: 44px; padding: 12px 0; cursor: pointer; color: var(--ink); }
+.airport-flight-search { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
+.airport-flight-search input { min-height: 44px; min-width: 0; width: min(100%, 320px); padding: 8px; border: 1px solid var(--line); border-radius: 6px; font: inherit; color: var(--ink); background: var(--paper); }
+.airport-flight-hour { border-top: 1px solid var(--line); }
+.airport-flight-hour > summary span { float: right; font-variant-numeric: tabular-nums; }
+.airport-flight-rows { padding: 0; margin: 0; list-style: none; }
+.airport-flight-rows > li { border-top: 1px solid var(--line); }
+.airport-flight-row > summary { display: grid; grid-template-columns: 80px 70px minmax(0,1fr) 100px; align-items: center; gap: 8px; min-height: 44px; padding: 8px 0; cursor: pointer; }
+.airport-flight-row > summary > span { min-width: 0; overflow-wrap: anywhere; }
+.airport-flight-time { font-variant-numeric: tabular-nums; }
+.airport-flight-more { min-height: 44px; margin-right: 12px; border: 0; background: transparent; color: var(--ink); font: inherit; text-decoration: underline; cursor: pointer; touch-action: manipulation; }
+.airport-flight-browser :is(summary, input, button):focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+@media (max-width: 479px) {
+ .airport-flight-row > summary { grid-template-columns: 72px minmax(0,1fr); gap: 4px 12px; }
+}
+
+/* Seoul observations and official forecast keep their exact separate bounds. */
+.population-flow { padding-top: 12px; }
+.population-chart { height: 190px; margin-top: 12px; }
+.flow-observed { stroke: var(--ink); fill: #b6ccd5; }
+.flow-observed .flow-bound { stroke-width: 1.5; }
+.flow-forecast { stroke: #6caaa5; fill: #baddda; }
+.flow-forecast .flow-range { opacity: .65; }
+.flow-forecast .flow-bound { stroke-width: 1.4; stroke-dasharray: 4 5; opacity: 1; }
+.flow-forecast .flow-lower-bound { opacity: .7; }
+.flow-readout strong { font-weight: 700; }
+.flow-slider { height: 44px; min-height: 44px; }
+.flow-slider-track { background: #d5e4e8; }
+.flow-slider-thumb { width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: #7eb4b0; border: 2px solid #fff; box-shadow: 0 1px 3px #b9d2d8; }
+.flow-notes { margin-top: 12px; }
+.flow-head { row-gap: 8px; }
+
+.prediction-view .outlook-value { font-size: clamp(18px, 2.5vw, 24px); font-weight: 700; line-height: 1.4; margin: 12px 0; }
+
+.flow-observed .flow-bound { stroke-dasharray: none; opacity: 1; }
+.flow-legend { color: var(--ink); }
+.flow-legend i.forecast { border-color: #6caaa5; }
+.population-chart text { fill: var(--ink); }

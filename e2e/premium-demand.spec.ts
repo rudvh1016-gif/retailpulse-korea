@@ -26,6 +26,9 @@ for (const width of [390, 1440]) {
       expect(requests.filter(url => new URL(url).pathname === '/api/live/summary').length).toBeLessThanOrEqual(1);
       if (!baseline && route !== '/airport') {
         await expect(page.getByTestId('area-demand-card').first()).toBeVisible();
+        await expect(page.getByTestId('population-outlook').first()).toBeVisible();
+        await expect(page.locator('.population-history-disclosure').first()).not.toHaveAttribute('open','');
+        await page.locator('.population-history-disclosure>summary').first().click();
         await expect(page.locator('.population-chart').first()).toBeVisible();
         if (route) {
           const y = await page.locator('.demand-number').first().evaluate(el => el.getBoundingClientRect().bottom);

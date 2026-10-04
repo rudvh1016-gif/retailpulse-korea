@@ -1,0 +1,134 @@
+{
+  "sourceContract": "libfile_4846fefab42881919ca44d328360dbdb",
+  "sourceWebZip": "libfile_048937762ac4819195453e3012cb0f00",
+  "illustrationsOnly": true,
+  "totalBytes": 10408,
+  "assets": [
+    {
+      "category": "한식",
+      "key": "korean_food",
+      "src": "/commercial-icons/korean_food-64.webp",
+      "width": 64,
+      "height": 64,
+      "bytes": 736,
+      "sha256": "0beec7ffd90baaa31b5300019abff68fa9bc0ddec84237c560582d9c5e82fff5"
+    },
+    {
+      "category": "일식/중식/양식",
+      "key": "world_food",
+      "src": "/commercial-icons/world_food-64.webp",
+      "width": 64,
+      "height": 64,
+      "bytes": 472,
+      "sha256": "71e369086c5edd10256489328fc40315715d629eeefe2ee778e96702650f8a64"
+    },
+    {
+      "category": "제과/커피/패스트푸드",
+      "key": "cafe_bakery",
+      "src": "/commercial-icons/cafe_bakery-64.webp",
+      "width": 64,
+      "height": 64,
+      "bytes": 786,
+      "sha256": "07fac99e45bce733afc5aa065edfef387db796b0fb6a70c76ed70da344ff5e61"
+    },
+    {
+      "category": "기타요식",
+      "key": "other_dining",
+      "src": "/commercial-icons/other_dining-64.webp",
+      "width": 64,
+      "height": 64,
+      "bytes": 486,
+      "sha256": "a4b6c388161949ac32ba8099a44d9c117892366ab976fe87a73b44a7f578ab39"
+    },
+    {
+      "category": "할인점/슈퍼마켓",
+      "key": "grocery",
+      "src": "/commercial-icons/grocery-64.webp",
+      "width": 64,
+      "height": 64,
+      "bytes": 1236,
+      "sha256": "4aa591ec112e2366b9b18f2da450053973c7cab8ce87a03263f7a6c226012bbf"
+    },
+    {
+      "category": "편의점",
+      "key": "convenience",
+      "src": "/commercial-icons/convenience-64.webp",
+      "width": 64,
+      "height": 64,
+      "bytes": 894,
+      "sha256": "2e53798db02e2be7a9ff45ccd892ec1ff3cffa72eef2ddecfcf01fdfa0851070"
+    },
+    {
+      "category": "의복/의류",
+      "key": "clothing",
+      "src": "/commercial-icons/clothing-64.webp",
+      "width": 64,
+      "height": 64,
+      "bytes": 734,
+      "sha256": "f7c075ce6dc0480c78420ac7f2df0dfdacfbf24764d468e2a1201d96c0d648db"
+    },
+    {
+      "category": "패션/잡화",
+      "key": "accessories",
+      "src": "/commercial-icons/accessories-64.webp",
+      "width": 64,
+      "height": 64,
+      "bytes": 720,
+      "sha256": "f1c782117775b61370cc4cbb4ed57dc95b553bed51013d4b5e9b9b3531a30a0f"
+    },
+    {
+      "category": "스포츠/문화/레저",
+      "key": "recreation",
+      "src": "/commercial-icons/recreation-64.webp",
+      "width": 64,
+      "height": 64,
+      "bytes": 770,
+      "sha256": "16058a3f6fc5623645caa68cae1facb0900803c1ebdf0fecb4d394e63f56e9f3"
+    },
+    {
+      "category": "화장품",
+      "key": "cosmetics",
+      "src": "/commercial-icons/cosmetics-64.webp",
+      "width": 64,
+      "height": 64,
+      "bytes": 918,
+      "sha256": "aaf15ba7781f79ef82e16d07eaa8f3c8949fd17172f89de44d043571583ff069"
+    },
+    {
+      "category": "약국",
+      "key": "pharmacy",
+      "src": "/commercial-icons/pharmacy-64.webp",
+      "width": 64,
+      "height": 64,
+      "bytes": 668,
+      "sha256": "e8f361075425c1fb2280301def2e977c02269b94d6e1019136debadc91a85614"
+    },
+    {
+      "category": "유흥",
+      "key": "nightlife",
+      "src": "/commercial-icons/nightlife-64.webp",
+      "width": 64,
+      "height": 64,
+      "bytes": 662,
+      "sha256": "a29e4219de08a2e3d6af604199eb85ed21117a33f2a6f032ca17fc08c784e1ea"
+    },
+    {
+      "category": "미용서비스",
+      "key": "beauty_service",
+      "src": "/commercial-icons/beauty_service-64.webp",
+      "width": 64,
+      "height": 64,
+      "bytes": 646,
+      "sha256": "2ae27dfe504c03d1030465407339fb429098020abf92ef916cdcc79826257e50"
+    },
+    {
+      "category": null,
+      "key": "fallback",
+      "src": "/commercial-icons/fallback-64.webp",
+      "width": 64,
+      "height": 64,
+      "bytes": 680,
+      "sha256": "28dd65977ef32a624a12cf0bcc9b269d9ad82ef950943e7ff055ce27e26cde46"
+    }
+  ]
+}

@@ -34,6 +34,7 @@ for (const locale of locales) {
       await expect(demand).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
       await demand.screenshot({ path: `${OUT}/${locale}-${viewport.name}-seoul-card.png` });
+      await demand.locator(".population-history-disclosure>summary").click();
       const flow = demand.locator(".population-flow");
       if (await flow.count()) await flow.screenshot({ path: `${OUT}/${locale}-${viewport.name}-seoul-chart.png` });
 

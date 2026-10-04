@@ -1,0 +1,11 @@
+/* Approved chart-material palette. The original data face and dashed forecast edge stay in place. */
+.population-chart .population-range-material { stroke: none; }
+.population-chart .flow-observed .population-material-top { fill: #e1ded7; }
+.population-chart .flow-observed .population-material-end { fill: #bab6ab; }
+.population-chart .flow-forecast .population-material-top { fill: #bad6cd; opacity: .75; }
+.population-chart .flow-forecast .population-material-end { fill: #79ada6; opacity: .55; }
+.flow-material-note { margin-top: 8px; }
+.flow-material-note summary { min-height: 28px; cursor: pointer; }
+.flow-material-note summary:focus-visible { outline: 2px solid #000; outline-offset: 3px; }
+.population-flow .flow-inspector { margin-top: 0; }
+.population-flow .flow-slider-thumb { width: 6px; height: 18px; margin-left: -3px; background: #bad6cd; border: 1px solid #7f8582; box-shadow: 2px -2px 0 #e1ded7; }

@@ -6,6 +6,8 @@ import type { LiveSummary } from './live-signals';
 import { buildAreaCurrentBrief } from '../lib/current-brief';
 import { comparisonText } from '../lib/period-comparison';
 import { describeObservationAge } from '../lib/observation-freshness';
+import {PopulationRangeMaterial} from './population-range-material';
+import {PopulationOutlook} from './population-outlook';
 import { compactPeople, flowSegments, kstDay, kstStamp, peopleRange, populationFlow, populationTicks, usableComparison, validPopulationRange, type FlowPoint } from '../lib/demand-presentation';
 
 export const demandCopy = {
@@ -78,6 +80,7 @@ function useChartGeometry(points: FlowPoint[], width: number) {
 
 export function PopulationFlow({ points, lang, now }: { points: FlowPoint[]; lang: Lang; now: number }) {
   const id = useId(), figure = useRef<HTMLElement>(null);
+  const ribbonId = `${id.replace(/:/g, '')}-forecast-ribbon`;
   const [width, setWidth] = useState(640);
   const [selected, setSelected] = useState<string | null>(null);
   useEffect(() => {
@@ -96,7 +99,7 @@ export function PopulationFlow({ points, lang, now }: { points: FlowPoint[]; lan
   const active = points.find(p => `${p.kind}:${p.at}` === selected) ?? latest ?? points[0];
   const { min, max, left, right, plotWidth, x, timeAtClientX, nearestPoint } = useChartGeometry(points, width);
   const ceiling = Math.max(1, ...points.map(p => p.populationMax)) * 1.1;
-  const y = (value: number) => 168 - value / ceiling * 130;
+  const y = (value: number) => 142 - value / ceiling * 104;
   const path = (segment: FlowPoint[], bound: 'populationMin' | 'populationMax') => segment.map((p, i) => `${i ? 'L' : 'M'}${x(p.time)},${y(p[bound])}`).join(' ');
   const ticks = populationTicks(min, max, plotWidth);
   const unit = { ko: '명', en: ' people', zh: '人', ja: '人' }[lang];
@@ -137,18 +140,22 @@ export function PopulationFlow({ points, lang, now }: { points: FlowPoint[]; lan
         <span className="flow-readout-meta"><span className="flow-selected-time">{kstStamp(active.time).slice(6)} · {demandCopy[active.kind === 'forecast' ? 'forecast' : 'observed'][lang]}</span><small>{kstDay(active.time)} · KST</small></span>
         <strong title={`${peopleRange(active, lang)}${unit}`}>{compact.format(active.populationMin)}–{compact.format(active.populationMax)} {unit.trim()}</strong>
       </output>
-      <svg className="population-chart" viewBox={`0 0 ${width} 216`} aria-hidden="true"
+      <svg className="population-chart" viewBox={`0 0 ${width} 190`} aria-hidden="true"
         onPointerDown={event => { event.currentTarget.setPointerCapture(event.pointerId); selectAt(event.clientX, event.currentTarget.getBoundingClientRect()); }}
         onPointerMove={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) selectAt(event.clientX, event.currentTarget.getBoundingClientRect()); }}
         onPointerUp={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }}>
+        <defs><linearGradient id={ribbonId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#badbd9" stopOpacity=".65"/><stop offset="1" stopColor="#edf7f7" stopOpacity=".3"/>
+        </linearGradient></defs>
         {[0, ceiling / 2, ceiling].map(value => <g key={value}><line className="flow-grid" x1={left} x2={right} y1={y(value)} y2={y(value)}/><text className="flow-y-label" x={left - 8} y={y(value) + 4} textAnchor="end">{compactPeople(Math.round(value), lang)}</text></g>)}
         {rows.map((segment, index) => <g key={index} className={`flow-${segment[0].kind}`}>
-          {segment.length > 1 ? <><path className="flow-range" d={`${path(segment, 'populationMax')} ${[...segment].reverse().map(p => `L${x(p.time)},${y(p.populationMin)}`).join(' ')} Z`}/>{/* Outline the upper edge of the range, never a fabricated midpoint. */}<path className="flow-bound" d={path(segment, 'populationMax')}/></> : <line className="flow-bound flow-interval" x1={x(segment[0].time)} x2={x(segment[0].time)} y1={y(segment[0].populationMin)} y2={y(segment[0].populationMax)}/>}
+          <PopulationRangeMaterial segment={segment} x={x} y={y}/>
+          {segment.length > 1 ? <><path className="flow-range" fill={segment[0].kind === 'forecast' ? `url(#${ribbonId})` : undefined} d={`${path(segment, 'populationMax')} ${[...segment].reverse().map(p => `L${x(p.time)},${y(p.populationMin)}`).join(' ')} Z`}/>{/* Exact bounds, never a fabricated midpoint or an observed-to-forecast bridge. */}<path className="flow-bound" d={path(segment, 'populationMax')}/>{segment[0].kind === 'forecast' && <path className="flow-bound flow-lower-bound" d={path(segment, 'populationMin')}/>}</> : <line className="flow-bound flow-interval" x1={x(segment[0].time)} x2={x(segment[0].time)} y1={y(segment[0].populationMin)} y2={y(segment[0].populationMax)}/>}
         </g>)}
-        {now >= min && now <= max && <g className="flow-now"><line x1={x(now)} x2={x(now)} y1="28" y2="168"/>{!nowIsSelected && <text x={nowX} y="18" textAnchor="middle">{demandCopy.now[lang]}</text>}</g>}
-        {selected && active && <g className="flow-selection"><line x1={x(active.time)} x2={x(active.time)} y1="28" y2="168"/></g>}
+        {now >= min && now <= max && <g className="flow-now"><line x1={x(now)} x2={x(now)} y1="28" y2="142"/>{!nowIsSelected && <text x={nowX} y="18" textAnchor="middle">{demandCopy.now[lang]}</text>}</g>}
+        {selected && active && <g className="flow-selection"><line x1={x(active.time)} x2={x(active.time)} y1="28" y2="142"/></g>}
         {[...new Set([latest, active])].filter((p): p is FlowPoint => Boolean(p)).map(p => <g key={`${p.kind}:${p.at}`} className={`flow-${p.kind} flow-marker`}><line x1={x(p.time)} x2={x(p.time)} y1={y(p.populationMin)} y2={y(p.populationMax)}/><circle cx={x(p.time)} cy={y(p.populationMax)} r="1.5"/></g>)}
-        {ticks.map(time => <text className="flow-tick" data-time={time} key={time} x={x(time)} y="190" textAnchor={time === min ? 'start' : time === max ? 'end' : 'middle'}><tspan x={x(time)}>{kstStamp(time).slice(6)}</tspan>{kstDay(time) !== kstDay(min) && kstStamp(time).slice(6) === '00:00' && <tspan className="flow-tick-date" x={x(time)} dy="18">{Number(kstDay(time).slice(5, 7))}/{Number(kstDay(time).slice(8))}</tspan>}</text>)}
+        {ticks.map(time => <text className="flow-tick" data-time={time} key={time} x={x(time)} y="164" textAnchor={time === min ? 'start' : time === max ? 'end' : 'middle'}><tspan x={x(time)}>{kstStamp(time).slice(6)}</tspan>{kstDay(time) !== kstDay(min) && kstStamp(time).slice(6) === '00:00' && <tspan className="flow-tick-date" x={x(time)} dy="18">{Number(kstDay(time).slice(5, 7))}/{Number(kstDay(time).slice(8))}</tspan>}</text>)}
       </svg>
       <div className="flow-inspector">
         {/* A custom slider, not a native <input type="range">: a native range
@@ -178,6 +185,7 @@ export function PopulationFlow({ points, lang, now }: { points: FlowPoint[]; lan
       {!observed.length && <p className="flow-note">{demandCopy.missing[lang]}</p>}
       {forecasts.length > 0 ? <p className="flow-note">{demandCopy.forecast[lang]} · {kstStamp(forecasts[0].at)}–{kstStamp(forecasts.at(-1)!.at)} KST<br/>{[...new Set(forecasts.map(p => p.issuedAt ? `${demandCopy.issued[lang]} ${kstStamp(p.issuedAt)} KST` : demandCopy.unknownIssue[lang]))].join(' · ')}</p> : <p className="flow-note">{demandCopy.noForecast[lang]}</p>}
     </div>
+    {points.length>0&&<details className="flow-material-note"><summary>{{ko:'차트 표현 안내',en:'Chart depth and ranges',zh:'图表深度与范围',ja:'グラフの奥行きと範囲'}[lang]}</summary><p>{{ko:'옆면은 재질 표현입니다. 수치는 정면의 최소~최대 범위와 시간 축을 기준으로 읽습니다. 관측과 공식 예측은 따로 표시하며, 자료가 없는 구간은 연결하지 않습니다.',en:'Side faces show material depth only. Read values from the original front-face minimum–maximum range and time axis. Observations and official forecasts stay separate; missing intervals are not connected.',zh:'侧面仅表示材质深度。数值以正面原始最小至最大范围和时间轴为准。观测与官方预测分别显示，缺失时段不连接。',ja:'側面は素材の奥行きだけを表します。数値は正面の元の最小～最大範囲と時間軸で読みます。観測と公式予測は別々に表示し、欠測区間はつなぎません。'}[lang]}</p></details>}
   </figure>;
 }
 
@@ -187,6 +195,7 @@ export function AreaDemandCard({ summary, area, lang, linkHref, linkLabel }: { s
   const points = populationFlow({ ...block, serviceDate: summary.serviceDateKst, isToday: summary.dayRelation === 'TODAY', now });
   const realtime = validPopulationRange(block?.realtime) && kstDay(block!.realtime!.observedAt) === summary.serviceDateKst && Date.parse(block!.realtime!.observedAt) <= now ? block!.realtime! : null;
   const age = realtime ? describeObservationAge(realtime.observedAt, new Date(now).toISOString(), lang) : null;
+  const ageMinutes=realtime?Math.max(0,Math.floor((now-Date.parse(realtime.observedAt))/60_000)):null;
   const isCurrent = summary.dayRelation === 'TODAY' && kstDay(now) === summary.serviceDateKst && age?.isNow && realtime?.freshness !== 'STALE';
   const comparison = usableComparison(realtime, 7), monthComparison = usableComparison(realtime, 28);
   const brief = buildAreaCurrentBrief({ realtime, realtimeForecast: points.filter(p => p.kind === 'forecast').map(p => ({ ...p, targetAt: p.at, congestionLevel: block?.realtimeForecast.find(r => r.targetAt === p.at)?.congestionLevel ?? 0 })), weather: [], eventCount: 0, nowIso: new Date(now).toISOString() });
@@ -197,15 +206,17 @@ export function AreaDemandCard({ summary, area, lang, linkHref, linkLabel }: { s
   return <section className="current-brief area-current-brief demand-card" data-testid="area-demand-card" aria-labelledby={`${id}-title`}>
     <header className="demand-card-head"><h2 id={`${id}-title`}>{demandAreaNames[area][lang]}</h2><span className="demand-data-state">{demandCopy[!realtime ? 'missing' : isCurrent ? 'observed' : 'previous'][lang]}</span></header>
     <div className="demand-card-body"><div className="demand-reading">
-      <p className="demand-level" data-level={realtime?.congestionLevel ?? 0}>{realtime ? demandLevel(realtime.congestionLevel, lang) : demandCopy.missing[lang]}</p>
+      <p className="demand-level" data-level={realtime?.congestionLevel ?? 0}>{realtime ? lang==='ko'&&realtime.congestionLabel?realtime.congestionLabel:demandLevel(realtime.congestionLevel, lang) : demandCopy.missing[lang]}</p>
       <p className="demand-metric-label">{demandCopy[isCurrent ? 'current' : 'recorded'][lang]}</p>
       <p className="demand-number">{realtime ? <><strong>{peopleRange(realtime, lang)}</strong><span>{unit}</span></> : <strong>—</strong>}</p>
       {realtime && <p className="demand-time">{kstStamp(realtime.observedAt)} KST {demandCopy.observed[lang]}{age?.ago ? ` · ${age.ago}` : ''}</p>}
+      {ageMinutes!==null&&<p className="demand-freshness">{({ko:`${kstStamp(now)} KST 기준 ${ageMinutes}분 앞서 확인한 인원입니다.`,en:`Observed ${ageMinutes} minutes before ${kstStamp(now)} KST.`,zh:`比${kstStamp(now)} KST早${ageMinutes}分钟观测的人数。`,ja:`${kstStamp(now)} KSTより${ageMinutes}分前に確認した人数です。`})[lang]}</p>}
       <p className="demand-comparison">{comparison ? comparisonText(comparison, lang, 7) : demandCopy.compareMissing[lang]}</p>
       {comparison && comparison.minPercent <= 0 && comparison.maxPercent >= 0 && <p className="flow-note">{demandCopy.uncertain[lang]}</p>}
-    </div><PopulationFlow points={points} lang={lang} now={now}/></div>
+    </div><PopulationOutlook points={points} current={realtime} lang={lang} now={now}/></div>
+    <details className="population-history-disclosure"><summary>{demandCopy.flow[lang]} · {demandCopy.details[lang]}</summary><PopulationFlow points={points} lang={lang} now={now}/></details>
     <p className="demand-takeaway">{peakSentence}</p>
-    <p className="demand-source">{demandCopy.source[lang]} · {demandCopy.rangeNote[lang]}</p>
+    <p className="demand-source">{demandCopy.source[lang]}{realtime?.retrievedAt?` · ${demandCopy.collected[lang]} ${kstStamp(realtime.retrievedAt)} KST`:''} · {demandCopy.rangeNote[lang]}</p>
     <div className="demand-card-footer"><details><summary>{demandCopy.details[lang]}</summary>
       <p>{demandCopy.source[lang]} · {summary.serviceDateKst} · KST</p>
       {monthComparison && <p>{comparisonText(monthComparison, lang, 28)}</p>}

@@ -64,7 +64,7 @@ test('next-day partial records cannot establish cross-midnight comparisons', asy
   await page.route('**/api/live/summary*', routeSummary(summary));
   await page.route('**/api/live/flights*', route => {
     const next = new URL(route.request().url()).searchParams.get('date') !== date;
-    return route.fulfill({ json: { mode: 'live-flights', basis: 'OFFICIAL_DEPARTURE_SCHEDULE', flights: next ? [row] : [], truncated: next } });
+    return route.fulfill({ json: { mode: 'live-flights', basis: 'OFFICIAL_DEPARTURE_SCHEDULE', flights: next ? [row] : [], truncated: next, retrievedAt: `${date}T22:50:00+09:00` } });
   });
   await page.goto('/en/airport?terminal=T2');
   await page.getByTestId('airport-departure-overview').scrollIntoViewIfNeeded();

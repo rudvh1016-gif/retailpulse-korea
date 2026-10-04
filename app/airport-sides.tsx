@@ -42,12 +42,12 @@ export function DayRadarSection({ lang, summary, terminal, nowIso, holidays, isH
 }
 
 /** `defaultOpen` is for the airport page, where the map is the point of the section; inside the store briefing it stays closed until asked for. */
-export function DepartureMapSection({ lang, summary, terminal, nowIso, holidays, defaultOpen = false, defaultBuildingScope }: { lang: Lang; summary: LiveSummary; terminal: PrepTerminal; nowIso: string; holidays: ReadonlyArray<{ country: string; name: string }>; defaultOpen?: boolean;defaultBuildingScope?:'all'|'T1'|'T2'|'CONCOURSE' }) {
+export function DepartureMapSection({ lang, summary, terminal, nowIso, holidays, defaultOpen = false, defaultBuildingScope, modelPlacement }: { lang: Lang; summary: LiveSummary; terminal: PrepTerminal; nowIso: string; holidays: ReadonlyArray<{ country: string; name: string }>; defaultOpen?: boolean;defaultBuildingScope?:'all'|'T1'|'T2'|'CONCOURSE'; modelPlacement?: string }) {
   const [open, setOpen] = useState(defaultOpen);
   return <details open={open} className="prep-block prep-evidence" data-testid="departure-map-section" onToggle={(event) => setOpen((event.currentTarget as HTMLDetailsElement).open)}>
     <summary><h3 style={{ margin: 0 }}>{copy.mapTitle[lang]}</h3></summary>
     {open && <Suspense fallback={<p className="prep-note">{copy.mapLoading[lang]}</p>}>
-      <DepartureMap lang={lang} date={summary.serviceDateKst} todayKst={summary.todayKst} dayRelation={summary.dayRelation} terminal={terminal} nowIso={nowIso} holidays={holidays} defaultBuildingScope={defaultBuildingScope}/>
+      <DepartureMap lang={lang} date={summary.serviceDateKst} todayKst={summary.todayKst} dayRelation={summary.dayRelation} terminal={terminal} nowIso={nowIso} holidays={holidays} defaultBuildingScope={defaultBuildingScope} modelPlacement={modelPlacement}/>
     </Suspense>}
   </details>;
 }
@@ -118,13 +118,21 @@ export function FlightSplitCard({ lang, summary, sides, terminal, nowIso }: { la
   const s = result.split;
   const today = kstDay(Date.parse(nowIso));
   const when = summary.serviceDateKst === today ? 'TODAY' : summary.serviceDateKst === kstDay(Date.parse(nowIso) + 86_400_000) ? 'TOMORROW' : 'DATE';
-  const bar = { display: 'flex', height: 10, borderRadius: 5, overflow: 'hidden', background: 'var(--line)', margin: '8px 0' } as const;
+  const parts = [
+    {side: 'WEST', value: s.west, color: '#badbea'},
+    {side: 'CENTER', value: s.center, color: '#d3e2e8'},
+    {side: 'EAST', value: s.east, color: '#bddcd4'},
+    {side: 'UNVERIFIED', value: s.unverified, color: '#e7ecef'},
+  ] as const;
   return <div className="prep-block" data-testid="flight-split" data-state="OK" data-larger={s.larger ?? 'NONE'}>
     <h3>{splitCopy.heading(terminal, when, lang)}</h3>
-    <p data-testid="split-flights"><strong>{flightsBody(s, lang)}</strong></p>
-    {s.eastPct !== null && <div style={bar} role="img" aria-label={`${copy.side.EAST[lang]} ${s.eastPct}% ${copy.side.WEST[lang]} ${s.westPct}%`}>
-      <span style={{ width: `${s.eastPct}%`, background: 'var(--blue)' }}/><span style={{ width: `${s.westPct}%`, background: 'var(--green)' }}/>
-    </div>}
+    <div className="flight-side-distribution" role="img" aria-label={flightsBody(s, lang)}>
+      {parts.map(part => <span key={part.side} style={{width: `${s.total > 0 ? part.value / s.total * 100 : 0}%`, background: part.color}} />)}
+    </div>
+    <dl className="flight-side-values" data-testid="split-flights">{parts.map(part => <div key={part.side} data-side={part.side}>
+      <dt><i style={{background:part.color}} aria-hidden="true"/>{copy.side[part.side][lang]}</dt><dd>{count(part.value, lang)}{copy.flights[lang]}</dd>
+    </div>)}</dl>
+    <p className="prep-note">{{ko:'분포 막대는 전체 출발편',en:'Distribution uses all departures',zh:'分布以全部出发航班为基准',ja:'分布は全出発便が基準'}[lang]} {count(s.total,lang)}{copy.flights[lang]}</p>
     <p className="prep-note" data-testid="split-shares">{sharesBody(s, lang)}</p>
     <h4 style={{ margin: '12px 0 0' }}>{splitCopy.estimateHeading[lang]}</h4>
     {s.expected && s.eastPct !== null

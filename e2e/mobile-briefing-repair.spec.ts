@@ -1,3 +1,4 @@
+import {expectDateSelection} from './date-selection';
 import { test, expect, type Page } from '@playwright/test';
 import { SUMMARY_FIXTURE } from './summary-fixture';
 import { PREFERENCE_KEY, parsePreferences, type PersonalPreferences } from '../lib/personal-briefing';
@@ -64,7 +65,7 @@ test('saved Hongdae airport preferences survive explicit terminal and date switc
     await expect(page.locator('.airport-glance-strip')).toHaveAttribute('data-scope', 'T2');
     for (const [index, date] of [[0, '2026-08-30'], [2, '2026-09-01'], [1, '2026-08-31']] as const) {
         await page.locator('.date-nav-shortcuts button').nth(index).click();
-        await expect(page.locator('.date-nav-picker input')).toHaveValue(date);
+        await expectDateSelection(page, date);
     }
     await page.reload();
     expect(await page.evaluate(key => localStorage.getItem(key), PREFERENCE_KEY)).toBe(JSON.stringify(p));
@@ -104,6 +105,8 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     await page.setViewportSize({ width, height: 844 });
     await fixture(page, chartFixture());
     await page.goto(`/${lang}/hongdae`);
+    await expect(page.getByTestId('population-outlook')).toBeVisible();
+    await page.locator('.population-history-disclosure>summary').click();
     await expect(page.locator('.population-chart')).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
     // Apply insets before focus/drag can trigger browser scroll anchoring.
@@ -124,11 +127,11 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     await expect(page.locator('.flow-tick-date')).toHaveText('9/1');
     await expect(page.locator('.flow-observed circle')).toHaveCount(1);
     await expect(page.locator('.flow-observed').first()).toHaveCSS('stroke', 'rgb(17, 17, 17)');
-    await expect(page.locator('.demand-number strong')).toHaveCSS('font-size', '17px');
+    await expect(page.locator('.demand-number strong')).toHaveCSS('font-size', '29px');
     await expect(page.locator('.flow-now rect')).toHaveCount(0);
     const buttons = await page.locator('.date-nav-shortcuts button').evaluateAll(els => els.map(el => { const r = el.getBoundingClientRect(), s = getComputedStyle(el); return { x: r.x, right: r.right, y: r.y, bottom: r.bottom, height: r.height, border: s.borderTopWidth }; }));
     expect(buttons).toHaveLength(3);
-    buttons.forEach((r, i) => { expect(r.height).toBeGreaterThanOrEqual(48); expect(r.border).toBe('1px'); if (i) expect(r.x).toBeGreaterThanOrEqual(buttons[i - 1].right); });
+    buttons.forEach((r, i) => { expect(r.height).toBeGreaterThanOrEqual(48); expect(r.border).toBe('0px'); if (i) expect(r.x).toBeGreaterThanOrEqual(buttons[i - 1].right); });
     const tools = await page.locator('.date-nav-tools').boundingBox();
     expect(tools!.y).toBeGreaterThanOrEqual(buttons[0].bottom);
     const slider = page.getByRole('slider');
@@ -138,7 +141,7 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     await expect(slider).toHaveAttribute('aria-valuetext', /09-01 03:00/);
     await expect(page.locator('.flow-forecast .flow-bound').first()).toHaveCSS('stroke-dasharray', '4px, 5px');
     // Each contiguous segment retains its exact range band and only one quiet edge.
-    expect(await page.locator('path.flow-bound').count()).toBe(await page.locator('path.flow-range').count());
+    expect(await page.locator('.flow-forecast path.flow-bound').count()).toBe(2 * await page.locator('.flow-forecast path.flow-range').count());
     const chart = await page.locator('.population-chart').boundingBox();
     await page.locator('.population-chart').click({ position: { x: 46, y: 100 } });
     await expect(slider).toHaveAttribute('aria-valuenow', '0');
@@ -154,11 +157,11 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     if (lang === 'ko') await page.screenshot({ path: info.outputPath(`hongdae-safe-area-${width}.png`), fullPage: true });
     await page.locator('.date-nav-shortcuts button').first().click();
-    await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-08-30');
+    await expectDateSelection(page, '2026-08-30');
     await page.locator('.date-nav-shortcuts button').last().click();
-    await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-09-01');
+    await expectDateSelection(page, '2026-09-01');
     await page.locator('.date-nav-shortcuts button').nth(1).click();
-    await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-08-31');
+    await expectDateSelection(page, '2026-08-31');
     await page.evaluate(({ key, p }) => localStorage.setItem(key, JSON.stringify(p)), { key: PREFERENCE_KEY, p: allDayPreferences });
     await page.goto(`/${lang}`);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
@@ -219,8 +222,8 @@ for (const width of [360, 390]) test(`owner UI lock across main screens ${width}
       expect(style.bottom).toBe('1px'); expect(style.background).toBe('rgb(255, 255, 255)'); expect(style.height).toBeGreaterThanOrEqual(44);
     }
     for (const control of await page.locator('.date-nav-shortcuts button').all()) {
-      await expect(control).toHaveCSS('border-top-width', '1px');
-      await expect(control).toHaveCSS('border-left-width', '1px');
+      await expect(control).toHaveCSS('border-top-width', '0px');
+      await expect(page.locator('.date-nav-shortcuts')).toHaveCSS('border-top-width', '1px');
       expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(48);
     }
     if (!route || route === '/airport' || route === '/hongdae') {

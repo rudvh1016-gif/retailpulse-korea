@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
+import "./airport-date-calendar.css";
 import { isStagingDeployment, pageTitle, pageDescription, siteOrigin, socialImage } from "./seo-config";
 
 export const metadata: Metadata = {

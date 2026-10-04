@@ -1,8 +1,7 @@
 'use client';
-import { useState } from 'react';
 import type { Lang } from './retailpulse-data';
 import type { SeoulContext } from '../lib/seoul-context';
-import { commercialActivityContext } from '../lib/commercial-context';
+import {CommercialComposition} from './commercial-composition';
 import { kstDay } from '../lib/demand-presentation';
 import { AIR_GRADE_TEXT, readAirGrade } from '../lib/weather-guide';
 import { describeObservationAge, explainObservationVsForecast } from '../lib/observation-freshness';
@@ -19,45 +18,11 @@ export const contextText=(lang:Lang,ko:string,en:string,zh:string,ja:string)=>({
  * render would disagree between the server pass and hydration.
  */
 export function SeoulContextCard({context,lang,nowIso}:{context?:SeoulContext & {retrievedAt?:string}|null;lang:Lang;nowIso?:string}) {
-  const [expanded,setExpanded]=useState(false);
   if(!context) return null;
   const t=(ko:string,en:string,zh:string,ja:string)=>contextText(lang,ko,en,zh,ja);
   const weather=context.weather;
-  const total=context.categories.length;
-  const categories=expanded?context.categories:context.categories.slice(0,3);
-  const shown=categories.length;
-  const number=(value:number)=>value.toLocaleString(lang==='ko'?'ko-KR':lang==='ja'?'ja-JP':lang==='zh'?'zh-CN':'en-US');
   return <div className="operational-context">
-    {!!context.categories.length && <div>
-      <h3>{t('어떤 업종에서 소비하나요?','Activity by business category','哪些行业消费活跃？','どの業種で消費されていますか？')}</h3>
-      <small>{t('서울시·신한카드 내국인 소비 · 관측 시각 기준 10분','Seoul/Shinhan domestic-card activity · 10-minute observation window','首尔市·新韩卡韩国居民消费 · 最近10分钟','ソウル市・新韓カード国内消費 · 直近10分')} · {context.commercialAt?`${context.commercialAt.slice(5,16).replace('T',' ')} KST`:t('관측 시각 미제공','Observation time not supplied','未提供观测时间','観測時刻の提供なし')}</small>
-      <ul className="context-category-list">{categories.map((row,i)=><li key={`${row.group}:${row.category}:${i}`}>
-        <strong>{row.category}</strong><span>{commercialActivityContext(row.level??"",lang)??row.level??'—'}</span>
-        <small>{row.amountMin!==null&&row.amountMax!==null?`₩${number(row.amountMin)} ~ ₩${number(row.amountMax)}`:'—'}{row.payments!==null?` · ${number(row.payments)}${t('건',' payments','笔','件')}`:''}</small>
-      </li>)}</ul>
-      {/*
-        * The count is stated unconditionally, and that is the point.
-        *
-        * The toggle only has work to do above three categories, so on a night
-        * when Seoul published a single one it was correct for the button to be
-        * absent — and it read to the owner as a feature someone had deleted.
-        * A count that is always on screen turns that into what it is: the
-        * provider published one category, and one category is being shown.
-        *
-        * The hint sits inside the button, so tapping the small print works
-        * too. Without it the owner found the control read as a heading for
-        * the block underneath rather than as something to press.
-        */}
-      <div className="context-more">
-        <p className="context-category-count">{shown>=total
-          ?t(`서울시가 지금 공개한 업종 ${total}개를 모두 표시했습니다`,`Showing all ${total} categor${total===1?'y':'ies'} Seoul is publishing right now`,`已显示首尔市当前公布的全部${total}个行业`,`ソウル市が現在公開している${total}業種をすべて表示しています`)
-          :t(`서울시가 지금 공개한 업종 ${total}개 중 ${shown}개를 표시했습니다`,`Showing ${shown} of the ${total} categories Seoul is publishing right now`,`已显示首尔市当前公布的${total}个行业中的${shown}个`,`ソウル市が現在公開している${total}業種のうち${shown}件を表示しています`)}</p>
-        {total>3&&<button type="button" className="event-list-toggle" aria-expanded={expanded} onClick={()=>setExpanded(!expanded)}>
-          <span>{expanded?t('접기','Show less','收起','閉じる'):t(`업종 ${total}개 전체 보기`,`All ${total} categories`,`查看全部${total}个行业`,`${total}業種をすべて見る`)}</span>
-          <small className="toggle-hint">{expanded?t('눌러서 접기','Tap to close','点击收起','タップで閉じる'):t('눌러서 펼치기','Tap to open','点击展开','タップで開く')}</small>
-        </button>}
-      </div>
-    </div>}
+    <CommercialComposition context={context} lang={lang}/>
     {/*
       * Reads as an OBSERVATION, next to a KMA FORECAST that lists the same
       * three metrics with different numbers. The owner saw 29.4°C here and

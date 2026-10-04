@@ -34,15 +34,21 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [360,390,430,1280]) 
     expect(counts).toEqual(Array(8).fill(17));
     await expect(model.getByTestId('gate-all-list').locator('input')).toHaveCount(0);
     await model.getByTestId('gate-all-list').locator('summary').click();
+    const initialRows=model.locator('.gate-full-list li'); await expect(initialRows).toHaveCount(20);
+    for(const row of await initialRows.all()) await expect(row).toHaveCSS('content-visibility','visible');
+    const regions=model.locator('.gate-leader-zones >section:not([data-side=UNVERIFIED])');
+    const heights=await regions.evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().height));
+    expect(Math.max(...heights)-Math.min(...heights)).toBeLessThan(2);
+    await expect(model.locator('.gate-leader-zones .gate-zone-bar')).toHaveCount(2);
     const search=model.locator('input[type=search]');await search.fill('215');
     await expect(model.locator('.gate-full-list li')).toHaveCount(1);
     const item=model.locator('.gate-full-list button').first();await item.focus();await page.keyboard.press('Enter');
     await expect(model.getByTestId('gate-selected')).toContainText('215');
     await expect(model.getByTestId('gate-selected').locator('li')).toHaveCount(17);
     await search.fill('no-such-gate');await expect(model.locator('.gate-full-list li')).toHaveCount(0);
-    await search.fill('');await model.locator('select').selectOption('WEST');
+    await search.fill('');await model.locator('[data-zone=WEST]').click();
     expect(await model.locator('.gate-full-list button').count()).toBeGreaterThan(0);
-    await model.locator('select').selectOption('ALL');
+    await model.locator('[data-zone=ALL]').click();
     // The existing summary's top-five counts deliberately differ. Complete rows win.
     await expect(model).not.toContainText('18 flights');
     expect(await tofuCharacters(model)).toEqual([]);
@@ -52,11 +58,14 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [360,390,430,1280]) 
     await model.getByTestId('gate-all-list').locator('summary').click();
     await page.getByTestId('airport-departure-overview').scrollIntoViewIfNeeded();
     const overview=page.getByTestId('airport-departure-overview');
-    await expect(overview.getByTestId('airport-concept-model')).toContainText('T2');
-    const img=overview.locator('.airport-concept-picture img');
+    await expect(page.getByTestId('airport-concept-model')).toContainText('T2');
+    const img=page.getByTestId('airport-departure-model-slot').locator('.airport-concept-picture img');
     await expect.poll(()=>img.evaluate((el:HTMLImageElement)=>el.complete&&el.naturalWidth>0)).toBe(true);
-    expect(await img.evaluate((el:HTMLImageElement)=>el.currentSrc)).toMatch(/\/v5\/T2_day\.webp$/);
-    expect(await img.evaluate((el:HTMLImageElement)=>({width:el.naturalWidth,height:el.naturalHeight}))).toEqual({width:1440,height:760});
+    expect(await img.evaluate((el:HTMLImageElement)=>el.currentSrc)).toMatch(/\/v8\/T2_day(?:-480|-900)?\.webp$/);
+    const dimensions=await img.evaluate((el:HTMLImageElement)=>({width:el.naturalWidth,height:el.naturalHeight,reservedWidth:el.width,reservedHeight:el.height}));
+    // Width descriptors make naturalWidth density-corrected CSS pixels, not the encoded WebP width.
+    expect(dimensions.width).toBeGreaterThan(0);expect(dimensions.height/dimensions.width).toBeCloseTo(760/1440,2);
+    await expect(img).toHaveAttribute('width','1440');await expect(img).toHaveAttribute('height','760');
     await expect(overview.getByTestId('map-groups')).toHaveCount(0);
     await expect(overview.getByTestId('map-T2')).toHaveCount(0);
     await overview.getByTestId('map-destinations').locator('summary').click();
@@ -74,6 +83,12 @@ for(const kind of ['FAILED','PARTIAL','ZERO']) test(`gate model handles ${kind} 
   const {model}=await open(page,{kind});
   await expect(model.locator('.gate-leader-zones .gate-pillar')).toHaveCount(0);
   if(kind==='FAILED'||kind==='PARTIAL')await expect(model.getByRole('status')).toBeVisible();
+  if(kind==='FAILED'||kind==='PARTIAL'){
+    const illustration=page.getByTestId('airport-departure-model-slot').locator('.airport-concept-picture');
+    await illustration.scrollIntoViewIfNeeded();await expect(illustration).toBeVisible();
+    await expect(illustration.locator('.airport-concept-label')).toHaveCount(0);
+    await expect(page.getByTestId('airport-concept-model')).toHaveCount(0);
+  }
   if(kind==='ZERO'){
     await model.getByTestId('gate-all-list').locator('summary').click();
     await model.locator('.gate-full-list button').first().click();

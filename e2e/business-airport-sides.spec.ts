@@ -170,7 +170,7 @@ test('the comparison is the first thing in the airport block: flights, ratio, an
   const card = sides.getByTestId('flight-split');
   await expect(card.locator('h3')).toHaveText('T1 오늘 출발편');
   // Fixture: 2 east, 1 west, 1 centre, 1 unconfirmed of 5 T1 departures (codeshares once, cancelled apart).
-  await expect(card.getByTestId('split-flights')).toHaveText('동편 2편 67% · 서편 1편 33% · 중앙 1편 · 위치 미확인 1편(전체의 20%)');
+  await expect(card.getByTestId('split-flights').locator('[data-side=EAST]')).toContainText('2편');await expect(card.locator('.flight-side-distribution')).toHaveAttribute('aria-label','동편 2편 67% · 서편 1편 33% · 중앙 1편 · 위치 미확인 1편(전체의 20%)');
   await expect(card.getByTestId('split-shares')).toHaveText('동·서 위치가 확인된 항공편 기준 (3편): 동편 67% · 서편 33% (동편이 더 많음)');
   // The people are spread over ALL 6 flights of the T1 scope (5 T1 gates + 1 concourse), 100-rounded per group.
   const hundreds = (value: number) => Math.round(value / 100) * 100;
@@ -199,14 +199,14 @@ test('the terminal switch and the side choice change the right things', async ({
   await prep.getByTestId('prep-side').getByLabel('서편').check();
   await prep.getByRole('button', { name: prepCopy.save.ko, exact: true }).click();
   await expect(card.locator('h3')).toHaveText('T2 오늘 출발편');
-  await expect(card.getByTestId('split-flights')).toContainText('동편 1편 100% · 서편 0편 0%');
+  await expect(card.getByTestId('split-flights').locator('[data-side=EAST]')).toContainText('1편');await expect(card.getByTestId('split-flights').locator('[data-side=WEST]')).toContainText('0편');
 });
 
 test('screen, copied text and image carry the same lines, and the whole-day lines sit apart from the store hours', async ({ page }) => {
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   const prep = await open(page, { side: null });
   const card = prep.getByTestId('flight-split');
-  const flights = (await card.getByTestId('split-flights').textContent()) as string;
+  const flights = (await card.locator('.flight-side-distribution').getAttribute('aria-label')) as string;
   const shares = (await card.getByTestId('split-shares').textContent()) as string;
   const estimate = (await card.getByTestId('split-estimate').textContent()) as string;
   // The whole-day lines are the card; the "inside your hours" list holds only in-hours facts.
@@ -276,7 +276,7 @@ test('when no flight has a confirmed side the card says so, not that the termina
     mutate: (summary) => ({ ...summary, airport: { ...summary.airport, sides: airportSides(DATE, 'TODAY', HALL_ROWS, unconfirmed, [], false, false) } }),
   });
   const card = prep.getByTestId('flight-split');
-  await expect(card.getByTestId('split-flights')).toContainText('동편 0편');
+  await expect(card.getByTestId('split-flights').locator('[data-side=EAST]')).toContainText('0편');
   await expect(card.getByTestId('split-shares')).toContainText('비율을 계산하지 않았습니다');
   await expect(card.getByTestId('split-no-estimate')).toHaveText(splitCopy.noConfirmedEstimate.ko);
   await expect(card.getByTestId('split-estimate')).toHaveCount(0);

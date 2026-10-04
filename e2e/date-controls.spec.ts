@@ -1,3 +1,4 @@
+import {expectDateSelection} from './date-selection';
 import { expect, test } from '@playwright/test';
 import { SUMMARY_FIXTURE } from './summary-fixture';
 import { PREFERENCE_KEY } from '../lib/personal-briefing';
@@ -19,18 +20,20 @@ for (const width of [375,390,430,1280]) for (const lang of ['ko','en','zh','ja']
   await expect(buttons.nth(1).locator('time')).toHaveAttribute('datetime','2026-08-31');
   for (const button of await buttons.all()) {
    expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(48);
-   await expect(button).toHaveCSS('border-top-width','1px');
+   await expect(button).toHaveCSS('border-top-width','0px');
   }
   const selectedColor=await buttons.nth(1).evaluate(el=>getComputedStyle(el).backgroundColor);
   expect(selectedColor).not.toBe('rgb(255, 255, 255)');
-  await expect(buttons.nth(0)).toHaveCSS('background-color','rgb(255, 255, 255)');
+  await expect(page.locator('.date-nav-shortcuts')).toHaveCSS('border-top-width','1px');
+  await expect(page.locator('.date-nav-shortcuts')).toHaveCSS('background-color','rgb(255, 255, 255)');
+  await expect(buttons.nth(0)).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
   await buttons.nth(2).focus();
   expect(await buttons.nth(2).evaluate(el=>getComputedStyle(el).outlineStyle)).not.toBe('none');
   await buttons.nth(2).press('Enter');
-  await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-09-01');
+  await expectDateSelection(page, '2026-09-01');
   await expect(buttons.nth(2)).toHaveAttribute('aria-pressed','true');
   await buttons.nth(1).click();
-  await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-08-31');
+  await expectDateSelection(page, '2026-08-31');
   await page.locator('.date-nav-picker input').fill('2026-08-30');
   await expect(buttons.nth(0)).toHaveAttribute('aria-pressed','true');
   expect(dates).toContain('2026-09-01');
@@ -46,7 +49,7 @@ for (const width of [375,390,430,1280]) for (const lang of ['ko','en','zh','ja']
   expect((await personal.first().boundingBox())!.height).toBeGreaterThanOrEqual(48);
   await personal.last().focus();await personal.last().press('Space');
   await expect(personal.last()).toHaveAttribute('aria-pressed','true');
-  await expect(page.locator('.date-nav-picker input')).toHaveValue('2026-09-01');
+  await expectDateSelection(page, '2026-09-01');
   await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
   expect(JSON.parse((await page.evaluate(key=>localStorage.getItem(key),PREFERENCE_KEY))!)).toMatchObject({terminal:'T2',interests:['weather']});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);

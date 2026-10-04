@@ -40,17 +40,25 @@ const copy = {
   concept: { ko: "공항 그림은 개념 모형이며 막대 높이는 공식 예상 승객 수입니다.", en: "The airport image is conceptual; bar heights show official forecast passengers.", zh: "机场图像是概念模型；柱高表示官方预测旅客数。", ja: "空港の図は概念模型です。柱の高さは公式予測旅客数です。" },
 } as const;
 
+const finishColors = {
+ elapsed: {front:['#bed8e7','#84aec9','#739db9'],side:['#789fb6','#577d99'],cap:['#e5f0f6','#afcddf']},
+ ahead: {front:['#e3eef3','#bfd6e2','#a8c5d7'],side:['#a6c3d3','#87a9bf'],cap:['#f4f8fb','#d5e5ee']},
+ now: {front:['#d5e9df','#9dc5b4','#80ae9f'],side:['#85b09e','#638f80'],cap:['#eef7f1','#b8d8c9']},
+ peak: {front:['#a9cde2','#6c9ebb','#5786a5'],side:['#608ba6','#426b88'],cap:['#dcecf6','#a4c6dd']},
+ layer: {front:['#cfe3dc','#a0c6b9','#85aa9e'],side:['#8baea0','#6e9286'],cap:['#ebf4ef','#bfd8cc']}
+} as const;
 const REVEAL_TOTAL_MS = REVEAL_MS * 2;
 const kstClock = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false });
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 /** Rough text width at 11px: CJK glyphs are square, Latin digits are narrow. */
 const textWidth = (text: string) => [...text].reduce((sum, ch) => sum + (ch > "⺀" ? 11 : /[0-9]/.test(ch) ? 6.4 : /[ ·–:]/.test(ch) ? 3.4 : 6.2), 0);
 
-export function AirportFlowFigure({ timeline, layers = null, lang = "ko", terminal = 'all', peakStartAt, nowBandStart, nowBandProgress, nowLabel, numberLocale, label }: {
+export function AirportFlowFigure({ timeline, layers = null, lang = "ko", terminal = 'all', showModel = true, peakStartAt, nowBandStart, nowBandProgress, nowLabel, numberLocale, label }: {
   timeline: ReadonlyArray<FlowBand>;
   layers?: Record<string, ReadonlyArray<FlowBand> | undefined> | null;
   lang?: Lang;
   terminal?: 'all' | 'T1' | 'T2';
+  showModel?: boolean;
   peakStartAt: string | null;
   nowBandStart: string | null;
   nowBandProgress: number | null;
@@ -100,7 +108,11 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
     for (const element of nowDotRefs.current) {
       if (!element) continue;
       if (element instanceof SVGCircleElement) element.setAttribute("cy", String(onCurve));
-      else element.setAttribute("y", String(onCurve - 9));
+      else {
+        const nearPeak = layout.peak && Math.abs(layout.peak.x - layout.now.x) < 80 && Math.abs(layout.peak.y - onCurve) < 24;
+        const labelY = nearPeak ? (onCurve + 22 <= layout.base - 10 ? onCurve + 22 : onCurve - 30) : onCurve - 9;
+        element.setAttribute("y", String(labelY));
+      }
     }
   }, [layout, pointOnCurve]);
 
@@ -181,13 +193,19 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
 
   return <figure className="av-figure airport-flow" ref={figureRef} role="group" aria-label={label} data-bands={layout.bands.length}>
     <p className="airport-model-scope" data-testid="airport-model-scope" data-terminal={terminal}>{airportModelScope(terminal,lang)}</p>
-    <AirportSceneModel scope={terminal} lang={lang} className="airport-hourly-concept"/>
+    {showModel && <AirportSceneModel scope={terminal} lang={lang} className="airport-hourly-concept"/>}
     {/* No role="img" here: the figure itself is the labelled group, and the band
         rects inside are real keyboard stops that an image role would hide. */}
     <svg ref={svgRef} width="100%" height={height} viewBox={`0 0 ${width} ${height}`}
       data-day-left={left} data-day-width={right - left}
       onPointerMove={onPointerMove} onPointerLeave={() => setHover(null)} onPointerCancel={() => setHover(null)}>
       <defs>
+ {Object.entries(finishColors).map(([key,color])=><g key={key}>
+  <linearGradient id={`${id}satin-${key}-front`} x1="0" y1="0" x2="1" y2=".22"><stop stopColor={color.front[0]}/><stop offset=".25" stopColor={color.front[1]}/><stop offset="1" stopColor={color.front[2]}/></linearGradient>
+  <linearGradient id={`${id}satin-${key}-side`} x1="0" y1="0" x2="1" y2="1"><stop stopColor={color.side[0]}/><stop offset="1" stopColor={color.side[1]}/></linearGradient>
+  <linearGradient id={`${id}satin-${key}-cap`} x1="0" y1="0" x2="1" y2="1"><stop stopColor={color.cap[0]}/><stop offset="1" stopColor={color.cap[1]}/></linearGradient>
+ </g>)}
+
         <linearGradient id={`${id}sky`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" style={{ stopColor: "var(--sky-500)", stopOpacity: 0.62 }} />
           <stop offset="0.42" style={{ stopColor: "var(--sky-200)", stopOpacity: 1 }} />
@@ -233,12 +251,15 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
           const barHeight = band.value / layout.maxBand * (base - top);
           const x = band.x + band.width * .2, w = band.width * .55, depth = Math.min(5, band.width * .16);
           const y = base - barHeight;
+          const finish = band.peak ? "peak" : band.now && !layout.stacked ? "now" : layout.now && band.x >= layout.now.x ? "ahead" : "elapsed";
           const lower = layout.stacked ? layout.layers[0].values[index] / layout.maxBand * (base - top) : 0;
-          return barHeight > 0 && <g key={band.start} data-start={band.start} data-value={band.value} data-height={barHeight}>
-            <rect x={x} y={y} width={w} height={barHeight} fill="#a9d5ec"/>
-            {lower > 0 && <rect x={x} y={base - lower} width={w} height={lower} fill="#81b3cd"/>}
-            <path d={`M${x+w},${y} l${depth},${-depth} v${barHeight} l${-depth},${depth} Z`} fill="#81b3cd"/>
-            <path d={`M${x},${y} h${w} l${depth},${-depth} h${-w} Z`} fill="#e5f5fc"/>
+          return barHeight > 0 && <g key={band.start} data-start={band.start} data-value={band.value} data-height={barHeight} data-finish={finish}>
+            <rect x={x} y={y} width={w} height={barHeight} style={{fill:`url(#${id}satin-${finish}-front)`}}/>
+            {lower > 0 && <rect x={x} y={base - lower} width={w} height={lower} style={{fill:`url(#${id}satin-layer-front)`}}/>}
+            <path d={`M${x+w},${y} l${depth},${-depth} v${barHeight} l${-depth},${depth} Z`} style={{fill:`url(#${id}satin-${finish}-side)`}}/>
+            <path d={`M${x},${y} h${w} l${depth},${-depth} h${-w} Z`} style={{fill:`url(#${id}satin-${finish}-cap)`}}/>
+            {barHeight>1.2 && <><path d={`M${x+.45},${y+.6} V${base-.45}`} style={{fill:"none",stroke:"#fff",strokeOpacity:.42,strokeWidth:.65}}/>
+            <path d={`M${x+.45},${y+.5} H${x+w-.3}`} style={{fill:"none",stroke:"#fff",strokeOpacity:.55,strokeWidth:.65}}/></>}
           </g>;
         })}
       </g>
@@ -286,6 +307,6 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
       {layout.now && <li><i className="ahead" />{copy.ahead[lang]}</li>}
       {layout.stacked && layout.layers.map((layer, index) => <li key={layer.key}><i className={index === 0 ? "stack-lower" : "stack-upper"} />{layer.key}</li>)}
     </ul>
-    <p className="prep-note airport-hourly-model-note">{copy.concept[lang]}</p>
+    {showModel && <p className="prep-note airport-hourly-model-note">{copy.concept[lang]}</p>}
   </figure>;
 }
