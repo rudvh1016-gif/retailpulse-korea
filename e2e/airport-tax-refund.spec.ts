@@ -7,6 +7,7 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
  await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});const c=taxRefundCopy[lang];const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',flights:[],truncated:false,retrievedAt:'2026-08-31T03:00:00Z'}}));
  await page.goto(`/${lang}/airport?terminal=T2`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ const preparation=page.getByTestId('departure-preparation');await preparation.locator(':scope > summary').click();await preparation.getByTestId('prep-route').selectOption('T2');await preparation.getByTestId('prep-taxRefund').selectOption('YES');
  const guide=page.getByTestId('tax-refund-guide');await expect(guide).toHaveCount(1);await expect(guide.locator('img')).toHaveCount(0);
  await guide.locator(':scope > summary').focus();await page.keyboard.press('Enter');await expect(guide.locator('.tax-refund-body')).toHaveAttribute('data-terminal','T2');
  await expect(guide.locator('[data-step=PREPARE] img')).toHaveAttribute('src',/PREPARE.webp$/);

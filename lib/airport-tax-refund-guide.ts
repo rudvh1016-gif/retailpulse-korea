@@ -23,5 +23,5 @@ export const airportTaxRefundLocations:readonly AirportTaxRefundLocation[]=[
  {terminal:'CONCOURSE',process:'REFUND_COLLECTION',securitySide:'AFTER_SECURITY',location:'CENTRAL_PHARMACY',points:[],source:'AIRPORT_GUIDE',deskHours:null,kioskHours:'24h',conflicting:false},
 ];
 // Versioned, swappable illustrations explain procedure, never airport positions.
-export const taxRefundVisuals={version:'v1',width:1200,height:760,conceptOnly:true,officialLocationOverlay:false,
- prepare:'/tax-refund/v1/PREPARE.webp',register:'/tax-refund/v1/KIOSK_REGISTRATION.webp',inspect:'/tax-refund/v1/CONDITIONAL_INSPECTION.webp',refund:'/tax-refund/v1/REFUND_COUNTER.webp'} as const;
+export const taxRefundVisuals={version:'v2',width:1200,height:760,conceptOnly:true,officialLocationOverlay:false,
+ prepare:'/tax-refund/v2/PREPARE.webp',register:'/tax-refund/v2/KIOSK_REGISTRATION.webp',inspect:'/tax-refund/v2/CONDITIONAL_INSPECTION.webp',refund:'/tax-refund/v2/REFUND_COUNTER.webp'} as const;
