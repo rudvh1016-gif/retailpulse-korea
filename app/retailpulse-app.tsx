@@ -37,6 +37,8 @@ import { IndustryGuide } from "./industry-guide";
 import { BusinessPrep } from "./business-prep";
 import { AirportDepartureOverview } from "./airport-departure-overview";
 import { AirportConcourse } from './airport-concourse';
+import { AirportTaxRefundGuide } from './airport-tax-refund-guide';
+import './airport-tax-refund-guide.css';
 import { sidesCopy } from "../lib/airport-sides-copy";
 import { saveBusinessPreferences, useBusinessPreferences } from "./business-preferences";
 import { airportAnswerText, areaAnswerText, type TodayAnswer, type TodayAnswerArea } from "../lib/today-answer";
@@ -653,6 +655,7 @@ function AirportView({
       {!concourse&&section === "arrivals" && <AirportArrivalSummary lang={lang} terminal={terminal} date={date} />}
       {!concourse&&section === "flights" && <FlightBoard lang={lang} terminal={terminal} date={date} />}
       {!concourse&&section === "stores" && <FacilityDirectory lang={lang} terminal={terminal} />}
+      {(concourse||section === "now"||section === "stores")&&<AirportTaxRefundGuide lang={lang} terminal={concourse?'CONCOURSE':terminal}/>}
 
       {!concourse&&(section === "now" || section === "arrivals") && <IndustryGuide key={section} lang={lang} industry={industry} onIndustryChange={setIndustry} airport={{ terminal, direction: section === "arrivals" ? "arrival" : "departure" }} />}
 

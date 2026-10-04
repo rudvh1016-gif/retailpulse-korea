@@ -26,7 +26,7 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "b9ccbfae7aac67f7aafd4e5ad2eb6739df50f166fa6723befa40db8742a08314",
-    "app/retailpulse-app.tsx": "c7497557ee9e868840f6b7f84d01d5b1a845c5bcee0d4e82b7841f0ff7ff5df2",
+    "app/retailpulse-app.tsx": "5e5572e24219638daae715890cbced3bd4b2cd97dcd1302d24db5885fc88411e",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
@@ -41,10 +41,10 @@
     "public/favicon.svg": "e6d2e59b7b5bbb0342e0fb496dfc262decbfe4426bbb7b047aec8d467d1dc6f7",
     "public/file.svg": "1e0ae4d1a1ddfa36752988647b731e4abf150c414d069ec83c96fb0aaeff0307",
     "public/fonts/koretail-sans-variable.woff2": "7a0ba49fcc55f74e60974b257ae020a82568ca830affb8d482d5116b68297fdf",
-    "public/fonts/noto-sans-jp-400.woff2": "003bdf3a5606dfcf8b4eb55cca2df9de0cbce3f8de99692461b9374179b143d4",
-    "public/fonts/noto-sans-jp-600.woff2": "600d00bce0f86889223b4d46de6e5e3871a7cef96f207a795743b31cad2c8335",
-    "public/fonts/noto-sans-sc-400.woff2": "b678b36b22dece249b01befb8cee23b03c85ad8e57a7228ed1d094202d016bb1",
-    "public/fonts/noto-sans-sc-600.woff2": "65db63b5ff573234e4787805ce07034d956f258fa7b454a6283c6c0193e62e3f",
+    "public/fonts/noto-sans-jp-400.woff2": "6019fa2a7012ff6e51714abcb0a4cc6d0b9f27e04d9b7cd58639ed39adb704cc",
+    "public/fonts/noto-sans-jp-600.woff2": "d561b159c80f3ee8ff135653ea7a001fbf4bc4174effed18d3a78cdfe1953bfb",
+    "public/fonts/noto-sans-sc-400.woff2": "55623793f284ec5fbae8cab7e8d0d798168bf4c1ff94d7a1c97ae8fbc72b58ab",
+    "public/fonts/noto-sans-sc-600.woff2": "31a6e982ea97ddbc0059aec67bf0f69b15e91f4ce09f9d10e4eb8cf3fe59efe4",
     "public/globe.svg": "d051a8c47936990a9085693d307bb7cea1bc1b6d7ed956bcbaacf674f4ec96b9",
     "public/icon-192.png": "6fc7c1058c3456abe73cf62ace7de422d2f1f533dbbabc3909f9aee19dc57c60",
     "public/icon-512.png": "9a2fc9de289156a55100e46b87d8ef7af753cb3a0de1801d0663215ff67e2b0f",
@@ -193,6 +193,36 @@
         "file": "app/live-signals.tsx",
         "previous": "a264702ba4a5756a6c17d45e97cb3b77048ae27bb88811fb8df16af8beaafd02",
         "approved": "20e5b6d6ca89a75338e1515a942350ff9ae5bbe3b74a0304548a072bc1ac26a3"
+      }
+    ]
+  },
+  "ownerTaxRefundGuide20261004": {
+    "reason": "Explicit owner follow-up authorizes a small evidence-based multilingual passenger tax-refund guide, conditional customs inspection and T2 source conflicts. Existing typography and all active lock enforcement are retained. Draft-only; no merge/deploy.",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "c7497557ee9e868840f6b7f84d01d5b1a845c5bcee0d4e82b7841f0ff7ff5df2",
+        "approved": "5e5572e24219638daae715890cbced3bd4b2cd97dcd1302d24db5885fc88411e"
+      },
+      {
+        "file": "public/fonts/noto-sans-sc-400.woff2",
+        "previous": "b678b36b22dece249b01befb8cee23b03c85ad8e57a7228ed1d094202d016bb1",
+        "approved": "55623793f284ec5fbae8cab7e8d0d798168bf4c1ff94d7a1c97ae8fbc72b58ab"
+      },
+      {
+        "file": "public/fonts/noto-sans-sc-600.woff2",
+        "previous": "65db63b5ff573234e4787805ce07034d956f258fa7b454a6283c6c0193e62e3f",
+        "approved": "31a6e982ea97ddbc0059aec67bf0f69b15e91f4ce09f9d10e4eb8cf3fe59efe4"
+      },
+      {
+        "file": "public/fonts/noto-sans-jp-400.woff2",
+        "previous": "003bdf3a5606dfcf8b4eb55cca2df9de0cbce3f8de99692461b9374179b143d4",
+        "approved": "6019fa2a7012ff6e51714abcb0a4cc6d0b9f27e04d9b7cd58639ed39adb704cc"
+      },
+      {
+        "file": "public/fonts/noto-sans-jp-600.woff2",
+        "previous": "600d00bce0f86889223b4d46de6e5e3871a7cef96f207a795743b31cad2c8335",
+        "approved": "d561b159c80f3ee8ff135653ea7a001fbf4bc4174effed18d3a78cdfe1953bfb"
       }
     ]
   }

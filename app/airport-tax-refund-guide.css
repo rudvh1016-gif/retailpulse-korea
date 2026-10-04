@@ -1,0 +1,22 @@
+.airport-tax-refund {margin:20px 0;padding:14px 0;border-top:1px solid var(--line,#e5e7eb);border-bottom:1px solid var(--line,#e5e7eb);color:var(--ink,#111);}
+.airport-tax-refund summary {cursor:pointer;font-weight:600;}
+.tax-refund-body {padding-top:14px;}
+.tax-refund-body p {line-height:1.65;overflow-wrap:anywhere;}
+.tax-refund-body h3 {font-size:inherit;font-weight:600;margin:10px 0 6px;}
+.tax-refund-body label {display:flex;align-items:center;gap:12px;}
+.tax-refund-body select {min-height:44px;color:inherit;background:white;border:1px solid #d9dee3;padding:6px 12px;border-radius:4px;font:inherit;}
+.tax-refund-procedure {display:grid;grid-template-columns:1fr 1fr;gap:12px 20px;margin:12px 0;}
+.tax-refund-procedure img {display:block;width:100%;height:auto;max-height:150px;object-fit:contain;aspect-ratio:1200/760;}
+.tax-refund-inspection {border-left:2px solid #b8d9e9;padding-left:12px;grid-column:1/-1;}
+.tax-refund-inspection img {float:right;width:120px;max-width:35%;}
+.tax-refund-security {grid-column:1/-1;margin:0;padding:8px 0;border-top:1px solid #e5e7eb;}
+.tax-refund-procedure [data-step="REFUND_COLLECTION"] {grid-column:1/-1;}
+.tax-refund-procedure [data-step="REFUND_COLLECTION"] img {float:right;width:150px;max-width:40%;}
+.tax-refund-tabs {display:flex;gap:14px;flex-wrap:wrap;margin:8px 0;}
+.tax-refund-tabs button {min-height:44px;padding:8px 0;background:none;border:0;border-bottom:1px solid transparent;font:inherit;color:inherit;cursor:pointer;}
+.tax-refund-tabs button[aria-pressed="true"] {border-bottom-color:#111;font-weight:600;}
+.tax-refund-body > details {margin-top:12px;}
+.tax-refund-locations {padding:8px 0;}
+.tax-refund-locations [data-testid="tax-t2-conflict"] {border-left:2px solid #b8d9e9;padding-left:10px;}
+.airport-tax-refund :is(button,select,summary,a):focus-visible {outline:2px solid #365c79;outline-offset:3px;}
+@media (max-width:430px) {.tax-refund-procedure {gap:12px;} .tax-refund-procedure img {max-height:105px;} .tax-refund-inspection img {width:100px;}}
