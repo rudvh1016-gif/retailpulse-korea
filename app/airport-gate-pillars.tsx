@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { Lang } from './retailpulse-data';
 import { useFlights } from './flights-client';
 import { departureMap } from '../lib/airport-departure-map';
@@ -20,21 +20,28 @@ const copy = {
   unknownBuilding: { ko: '건물 미정 (터미널 비교 제외)', en: 'Building unknown (outside terminal comparison)', zh: '建筑未定（不计入航站楼比较）', ja: '建物未定（ターミナル比較対象外）' },
   zone: { ko: '구역', en: 'Zone', zh: '区域', ja: '区域' },
   allZones: { ko: '전체 구역', en: 'All zones', zh: '全部区域', ja: '全区域' },
+  clear: { ko: '지우기', en: 'Clear', zh: '清除', ja: 'クリア' },
+  placeholder: { ko: '게이트 번호 또는 터미널', en: 'Gate number or terminal', zh: '登机口号码或航站楼', ja: 'ゲート番号またはターミナル' },
+  most: { ko: '전역 최다', en: 'Overall highest', zh: '全域最多', ja: '全体最多' },
+  more: { ko: '더 보기', en: 'Show more', zh: '查看更多', ja: 'さらに表示' },
+  zero: { ko: '확인된 출발편 0편', en: '0 confirmed departures', zh: '已确认出发航班0班', ja: '確認済み出発便0便' },
+  unavailable: {ko:'이 날짜의 항공편 자료를 확보하지 못했습니다. 확인된 0편이 아닙니다.',en:'Flight data for this date is unavailable; this is not a confirmed zero.',zh:'未获取该日期航班资料，并非已确认的零班。',ja:'この日の便データは未取得です。確認済み0便ではありません。'},
   details: { ko: '항공편 상세', en: 'Flight details', zh: '航班详情', ja: '便の詳細' },
 };
 
-function Pillar({ item, max, lang, onSelect }: { item: RankedGate; max: number; lang: Lang; onSelect: () => void }) {
-  const height = max > 0 ? item.flights / max * 104 : 0;
-  const y = 146 - height;
+function Pillar({ item, max, lang, onSelect, compact = false }: { item: RankedGate; max: number; lang: Lang; onSelect: () => void; compact?: boolean }) {
+  const height = max > 0 ? item.flights / max * 64 : 0;
+  const y = 90 - height;
   return <button type="button" className="gate-pillar" onClick={onSelect} aria-label={`${item.building} ${mapCopy.gate[lang]} ${item.gate}, ${item.flights}${lang === 'en' ? ' flights' : lang === 'ko' ? '편' : lang === 'zh' ? '班' : '便'}`} data-flights={item.flights} data-gate={item.gate}>
-    <svg viewBox="0 0 82 176" width="82" height="176" aria-hidden="true">
-      <path d="M6 151 L63 151 L78 141 L22 141 Z" fill="#eef2f4"/>
-      {height > 0 && <><path d={`M18 ${y} L59 ${y} L59 146 L18 146 Z`} fill={item.side === 'EAST' ? '#b5d8d0' : '#a9d5ec'}/>
-        <path d={`M59 ${y} L69 ${y - 7} L69 139 L59 146 Z`} fill="#81b3cd"/>
+    {!compact && <svg viewBox="0 0 82 116" width="82" height="116" aria-hidden="true">
+      <path d="M6 95 L63 95 L78 85 L22 85 Z" fill="#eef5f6"/>
+      {height > 0 && <><path d={`M18 ${y} L59 ${y} L59 90 L18 90 Z`} fill={item.side === 'EAST' ? '#b5d8d0' : '#b7ddea'}/>
+        <path d={`M59 ${y} L69 ${y - 7} L69 83 L59 90 Z`} fill="#a4c4d0"/>
         <path d={`M18 ${y} L28 ${y - 7} L69 ${y - 7} L59 ${y} Z`} fill="#e5f5fc"/></>}
-      <text x="41" y="165" textAnchor="middle" fill="#000" fontSize="12">{item.gate}</text>
-      <text x="41" y={Math.max(16, y - 14)} textAnchor="middle" fill="#000" fontSize="14">{item.flights}</text>
-    </svg>
+      {!compact && <><text x="41" y="109" textAnchor="middle" fill="#000" fontSize="12">{item.gate}</text>
+      <text x="41" y={Math.max(16, y - 14)} textAnchor="middle" fill="#000" fontSize="14">{item.flights}</text></>}
+    </svg>}
+    {compact && <span>{item.gate}</span>}
   </button>;
 }
 
@@ -44,6 +51,8 @@ export default function AirportGatePillars({ lang, terminal, date }: { lang: Lan
   const [search, setSearch] = useState('');
   const [zone, setZone] = useState('ALL');
   const [selected, setSelected] = useState<string | null>(null);
+  const [visible, setVisible] = useState(20);
+  const searchRef = useRef<HTMLInputElement>(null);
   const maps = useMemo(() => loaded?.status === 'OK' ? (terminal === 'all' ? ['T1', 'T2'] as const : [terminal]).map(t => departureMap({ date, nextDate: date, terminal: t, window: { startMin: 0, endMin: 1440 }, rows: loaded.payload.flights })) : [], [loaded, date, terminal]);
   const gates = useMemo(() => rankMapGates(maps), [maps]);
   const leaders = leadingGates(gates);
@@ -58,19 +67,21 @@ export default function AirportGatePillars({ lang, terminal, date }: { lang: Lan
   const select = (key: string) => { setSelected(selected === key ? null : key); };
   return <div className="airport-gate-model" key={`${terminal}:${date}`} data-testid="gate-pillar-model">
     <h4>{copy.title[lang]}</h4>
-    {!loaded ? <p role="status">{mapCopy.loading[lang]}</p> : loaded.status === 'FAILED' ? <p role="status">{mapCopy.failed[lang]}</p> : <>
+    {!loaded ? <p role="status">{mapCopy.loading[lang]}</p> : loaded.status === 'FAILED' ? <p role="status">{mapCopy.failed[lang]}</p> : !loaded.payload.retrievedAt && loaded.payload.flights.length === 0 ? <p role="status">{copy.unavailable[lang]}</p> : <>
       {loaded.payload.truncated ? <p role="status">{copy.partial[lang]}</p> : <>
-        {leaders.length ? <><p className="gate-leader-number"><strong>{max.toLocaleString(locale)}</strong>{unit} <span>{copy.leaders[lang]} {leaders.length}</span></p>
+        {leaders.length ? <><p className="gate-leader-number"><span>{copy.most[lang]}</span> <strong>{max.toLocaleString(locale)}</strong>{unit} {leaders.length > 1 && <span>{copy.leaders[lang]} {leaders.length}</span>}</p>
           <div className="gate-leader-zones">{(['WEST', 'CENTER', 'EAST', 'UNVERIFIED'] as const).map(side => {
-            const rows = leaders.filter(g => g.side === side);
-            return rows.length > 0 && <section key={side}><h5>{mapCopy.side[side][lang]}</h5><div className="gate-pillar-row">{rows.map(item => <div key={item.key}><small>{item.building}</small><Pillar item={item} max={max} lang={lang} onSelect={() => select(item.key)}/></div>)}</div></section>;
+            const rows = leadingGates(gates.filter(g => g.side === side));
+            return <section key={side} data-side={side}><h5>{mapCopy.side[side][lang]}</h5>{rows.length ? <><p><strong>{rows[0].flights}</strong>{unit}{rows.length > 1 && <small>{copy.leaders[lang]} {rows.length}</small>}</p><svg className="gate-zone-bar" viewBox="0 0 80 44" aria-hidden="true"><path d={`M10 ${34-28*rows[0].flights/Math.max(1,max)} H60 V34 H10 Z`} fill={side === 'EAST' ? '#b6d8d0' : '#b7ddea'}/><path d={`M60 ${34-28*rows[0].flights/Math.max(1,max)} l8 -4 V30 l-8 4 Z`} fill="#a4c4d0"/><path d={`M10 ${34-28*rows[0].flights/Math.max(1,max)} l8 -4 h50 l-8 4 Z`} fill="#effaff"/></svg><div className="gate-pillar-row">{rows.map(item => <div key={item.key} data-overall-leader={item.flights === max}><small className="gate-chip-building">{item.building}</small><Pillar compact item={item} max={max} lang={lang} onSelect={() => select(item.key)}/></div>)}</div></> : <p>{copy.zero[lang]}</p>}</section>;
           })}</div></> : <p>{mapCopy.empty[lang]}</p>}
       </>}
       <p className="prep-note">{copy.note[lang]}</p>
       <details open={open} onToggle={event => setOpen(event.currentTarget.open)} data-testid="gate-all-list"><summary>{copy.all[lang]} ({gates.length})</summary>
-        {open && <><div className="gate-search"><label>{copy.search[lang]}<input type="search" name="gate-search" autoComplete="off" value={search} onChange={e => setSearch(e.target.value)}/></label>
-          <label>{copy.zone[lang]}<select value={zone} onChange={e => setZone(e.target.value)}><option value="ALL">{copy.allZones[lang]}</option>{(['WEST', 'CENTER', 'EAST', 'UNVERIFIED'] as const).map(side => <option key={side} value={side}>{mapCopy.side[side][lang]}</option>)}<option value="CONCOURSE">{mapCopy.building.CONCOURSE[lang]}</option></select></label></div>
-          <ul className="gate-full-list">{list.map(gate => <li key={gate.key}><button type="button" onClick={() => select(gate.key)} aria-pressed={selected === gate.key}>{gate.building} · {gate.gate} · {mapCopy.side[gate.side][lang]}<strong>{gate.flights}{unit}</strong></button></li>)}</ul>{!list.length && <p role="status">{mapCopy.empty[lang]}</p>}
+        {open && <><div className="gate-search"><label>{copy.search[lang]}<svg className="gate-search-icon" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="5"/><path d="m12 12 5 5"/></svg><input ref={searchRef} type="search" name="gate-search" placeholder={copy.placeholder[lang]} autoComplete="off" value={search} onChange={e => { setSearch(e.target.value); setVisible(20); }}/></label>
+          {search && <button type="button" className="gate-clear" onClick={() => {setSearch('');setVisible(20);searchRef.current?.focus();}}>{copy.clear[lang]}</button>}</div>
+          <div className="gate-zone-filters" role="group" aria-label={copy.zone[lang]}>{(['ALL','WEST','CENTER','EAST','UNVERIFIED','CONCOURSE'] as const).map(value => <button type="button" key={value} data-zone={value} aria-pressed={zone === value} onClick={() => {setZone(value);setVisible(20);}}>{value === 'ALL' ? copy.allZones[lang] : value === 'CONCOURSE' ? mapCopy.building.CONCOURSE[lang] : mapCopy.side[value][lang]}</button>)}</div>
+          <p className="prep-note" role="status">{list.length} / {gates.length}</p>
+          <ul className="gate-full-list">{list.slice(0,visible).map(gate => <li key={gate.key}><button type="button" onClick={() => select(gate.key)} aria-pressed={selected === gate.key}>{gate.building} · {gate.gate} · {mapCopy.side[gate.side][lang]}<strong>{gate.flights}{unit}</strong></button></li>)}</ul>{visible < list.length && <button className="airport-flight-more" type="button" onClick={() => setVisible(n=>n+20)}>{copy.more[lang]} ({list.length-visible})</button>}{!list.length && <p role="status">{mapCopy.empty[lang]}</p>}
         </>}
       </details>
       {picked && <section className="gate-selected" data-testid="gate-selected" aria-live="polite"><h5>{picked.building} · {picked.gate} · {copy.details[lang]}</h5><Pillar item={picked} max={Math.max(max, picked.flights)} lang={lang} onSelect={() => select(picked.key)}/><ul>{selectedFlights.map(f => <li key={`${f.day}:${f.id}`}>{f.flightNumber} · {f.scheduledAt.slice(11, 16)} KST · {f.destinationCode ?? '—'}</li>)}</ul>{!selectedFlights.length && <p>{mapCopy.noFlightsAtGate[lang]}</p>}</section>}

@@ -19,11 +19,13 @@ for (const width of [375,390,430,1280]) for (const lang of ['ko','en','zh','ja']
   await expect(buttons.nth(1).locator('time')).toHaveAttribute('datetime','2026-08-31');
   for (const button of await buttons.all()) {
    expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(48);
-   await expect(button).toHaveCSS('border-top-width','1px');
+   await expect(button).toHaveCSS('border-top-width','0px');
   }
   const selectedColor=await buttons.nth(1).evaluate(el=>getComputedStyle(el).backgroundColor);
   expect(selectedColor).not.toBe('rgb(255, 255, 255)');
-  await expect(buttons.nth(0)).toHaveCSS('background-color','rgb(255, 255, 255)');
+  await expect(page.locator('.date-nav-shortcuts')).toHaveCSS('border-top-width','1px');
+  await expect(page.locator('.date-nav-shortcuts')).toHaveCSS('background-color','rgb(255, 255, 255)');
+  await expect(buttons.nth(0)).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
   await buttons.nth(2).focus();
   expect(await buttons.nth(2).evaluate(el=>getComputedStyle(el).outlineStyle)).not.toBe('none');
   await buttons.nth(2).press('Enter');

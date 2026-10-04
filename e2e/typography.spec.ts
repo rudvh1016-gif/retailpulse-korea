@@ -551,8 +551,8 @@ test("the approved gate comparison retains live counts and the public typography
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.goto('/ko/airport');
   const model=page.getByTestId('gate-pillar-model');
-  await expect(model.locator('.gate-pillar').first()).toHaveAttribute('data-flights','18');
-  await expect(model.locator('.gate-pillar').first()).toHaveAttribute('data-gate','27');
+  await expect(model.locator('[data-overall-leader="true"] .gate-pillar').first()).toHaveAttribute('data-flights','18');
+  await expect(model.locator('[data-overall-leader="true"] .gate-pillar').first()).toHaveAttribute('data-gate','27');
   await expect(model).toContainText('실제 위치');
   const fonts=await model.locator('h4').evaluate(el=>{const s=getComputedStyle(el);return {size:s.fontSize,family:s.fontFamily};});
   expect(fonts.size).toBe('16px');
@@ -613,11 +613,11 @@ test("the gate model shares the full flight read without a chart or 3D library",
   });
   await page.goto("/ko/airport");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
-  await expect(page.locator(".gate-pillar").first()).toBeVisible();
+  await expect(page.locator('[data-overall-leader="true"] .gate-pillar').first()).toBeVisible();
 
   expect(extraRequests, `a charting library was loaded: ${extraRequests.join(", ")}`).toEqual([]);
   await expect(page.locator('.airport-gate-model canvas')).toHaveCount(0);
-  await expect(page.locator('.gate-pillar svg').first()).toBeVisible();
+  await expect(page.locator('.gate-zone-bar').first()).toBeVisible();
 });
 
 /**

@@ -292,7 +292,10 @@ test("uses one locale-aware font family and only supported UI weights", async ()
   assert.match(css, /--weight-regular:\s*400/);
   assert.match(css, /--weight-strong:\s*600/);
 
-  const uiCss = css.replace(/@font-face\s*{[^}]*}/gs, "");
+  // October 3 owner exception: only compact headline/readout numbers use 700.
+  const headlineRules = /(?:\.flow-readout strong|\.prediction-view \.outlook-value)\s*{[^}]*font-weight:\s*700;[^}]*}/g;
+  assert.equal([...css.matchAll(headlineRules)].length, 2, "bold exception is limited to the two approved number roles");
+  const uiCss = css.replace(/@font-face\s*{[^}]*}/gs, "").replace(headlineRules, "");
   const declarations = [...uiCss.matchAll(/font-weight:\s*([^;]+);/g)]
     .map((match) => match[1].trim());
   assert.ok(declarations.length > 20, "the guard must inspect the real UI stylesheet");

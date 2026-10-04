@@ -1,11 +1,12 @@
 'use client';
-import {useMemo,useState} from 'react';
+import {useMemo} from 'react';
 import type {Lang} from './retailpulse-data';
 import {LiveLoadMessage,useLiveSummary} from './live-signals';
 import {useFlights} from './flights-client';
 import {departureMap} from '../lib/airport-departure-map';
 import {shiftKstDay} from '../lib/kst';
-import {AirportSceneModel} from './airport-scene-model';
+import {AirportFlightBrowser} from './airport-flight-browser';
+import {AirportConceptModel} from './airport-concept-model';
 import {AirportZoneCountries} from './airport-zone-countries';
 import {airportModelScope} from '../lib/airport-model-scope';
 const text={
@@ -16,19 +17,18 @@ const text={
 };
 const unavailable={ko:'이 날짜의 출발편 자료를 확보하지 못했습니다. 확인된 0편이 아닙니다.',en:'Departure data for this date is unavailable. This is not a confirmed zero.',zh:'未获取该日期的出发航班资料，不是已确认的零班。',ja:'この日の出発便データは未取得です。確認済みの0便ではありません。'};
 export function AirportConcourse({lang,date}:{lang:Lang;date:string|null}) {
- const summary=useLiveSummary(date);const serviceDate=date??summary?.serviceDateKst??null;const loaded=useFlights(serviceDate);const [query,setQuery]=useState('');const [listOpen,setListOpen]=useState(false);
+ const summary=useLiveSummary(date);const serviceDate=date??summary?.serviceDateKst??null;const loaded=useFlights(serviceDate);
  const map=useMemo(()=>serviceDate&&loaded?.status==='OK'?departureMap({date:serviceDate,nextDate:shiftKstDay(serviceDate,1),terminal:'T1',buildingScope:'CONCOURSE',window:{startMin:0,endMin:1440},rows:loaded.payload.flights}):null,[serviceDate,loaded]);
  const c=text[lang];
- const filtered=map?.flights.filter(f=>`${f.flightNumber} ${f.destinationCode??''} ${f.destination?.en??''}`.toLocaleUpperCase().includes(query.trim().toLocaleUpperCase()))??[];
+
  return <section data-testid="airport-concourse" className="airport-concourse">
   <h2 className="airport-model-scope" data-testid="airport-model-scope" data-terminal="CONCOURSE">{airportModelScope('CONCOURSE',lang)}</h2>
   {!loaded?<LiveLoadMessage loading lang={lang}/>:loaded.status==='FAILED'?<p role="status">{c.failed}</p>:loaded.payload.truncated?<p role="status">{c.partial}</p>:!loaded.payload.retrievedAt&&loaded.payload.flights.length===0?<p role="status">{unavailable[lang]}</p>:map&&<>
    <p>{loaded.payload.basis==='OFFICIAL_DEPARTURE_SCHEDULE'?c.schedule:c.records}: <strong data-testid="concourse-flight-count">{map.flights.length}</strong> · {serviceDate} KST</p>
+   <AirportConceptModel map={map} lang={lang}/>
    <AirportZoneCountries map={map} lang={lang} basis={c.basis}/>
-   <AirportSceneModel scope="CONCOURSE" lang={lang}/>
-   <label>{c.search} <input type="search" value={query} onChange={e=>setQuery(e.target.value)}/></label>
    {!map.flights.length&&<p>{c.empty}</p>}
-   <details data-testid="concourse-flight-list" open={listOpen} onToggle={event=>setListOpen(event.currentTarget.open)}><summary>{c.all} ({filtered.length})</summary>{listOpen&&<ul>{filtered.map(f=><li key={`${f.day}:${f.id}`}>{f.scheduledAt.slice(11,16)} KST · {f.flightNumber} · {lang==='ko'?f.destinationCode:f.destination?.en??f.destinationCode??'—'} · {f.gate??'—'}</li>)}</ul>}</details>
+   <AirportFlightBrowser flights={map.flights} lang={lang} testId="concourse-flight-list"/>
    <p className="prep-note">{loaded.payload.retrievedAt??'—'} · <a href="https://www.airport.kr" target="_blank" rel="noreferrer">Incheon Airport</a></p>
   </>}
   <p className="prep-note" data-testid="concourse-unsupported">{{ko:'탑승동 승객 예보·검색대 대기 미제공',en:'Concourse passenger forecast and security wait unavailable',zh:'登机楼旅客预测和安检等待未提供',ja:'搭乗棟の旅客予測・保安待ちは未提供'}[lang]}</p>

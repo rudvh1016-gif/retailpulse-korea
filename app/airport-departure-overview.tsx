@@ -9,6 +9,7 @@ import { cnJpHoliday, officialHolidaysOn } from '../lib/airport-prep-holidays';
 import type { AirportSidesBlock as SidesBlock } from '../lib/airport-sides-summary';
 import { sidesCopy as copy } from '../lib/airport-sides-copy';
 import './airport-visual.css';
+import { useAirportModelTarget } from './use-airport-model-target';
 
 type Terminal = 'T1' | 'T2';
 
@@ -28,21 +29,23 @@ export function AirportDepartureOverview({ lang, terminal, date }: { lang: Lang;
   const clock = usePresentationClock(summary?.generatedAt ?? new Date(0).toISOString());
   const ref = useRef<HTMLElement>(null);
   const [near, setNear] = useState(false);
+  const modelTarget = useAirportModelTarget('airport-departure-model-slot');
+  const ready = near || Boolean(modelTarget);
   const [picked, setPicked] = useState<Terminal>('T1');
   useEffect(() => {
     const node = ref.current;
-    if (!node || near) return;
+    if (!node || ready) return;
     const observer = new IntersectionObserver((entries) => { if (entries.some((entry) => entry.isIntersecting)) setNear(true); }, { rootMargin: '300px' });
     observer.observe(node);
     return () => observer.disconnect();
-  }, [near]);
+  }, [ready]);
   const shown: Terminal = terminal === 'all' ? picked : terminal;
   const head = <div className="section-head"><div>
     <p className="eyebrow">KORETAIL · FLIGHTS</p>
     <h2>{copy.overviewTitle[lang]}</h2>
   </div></div>;
-  const frame = (body: React.ReactNode) => <section ref={ref} className="airport-departure-overview" id="airport-departure-overview" data-testid="airport-departure-overview" data-terminals={near ? shown : ''}>{head}{body}</section>;
-  if (!near || !summary) return frame(<LiveLoadMessage loading={summary !== null} lang={lang}/>);
+  const frame = (body: React.ReactNode) => <section ref={ref} className="airport-departure-overview" id="airport-departure-overview" data-testid="airport-departure-overview" data-terminals={ready ? shown : ''}>{head}{body}</section>;
+  if (!ready || !summary) return frame(<LiveLoadMessage loading={summary !== null} lang={lang}/>);
   // The device clock only moves "now" forward between refreshes; a device set hours off is ignored.
   const generated = Date.parse(summary.generatedAt);
   const now = Number.isFinite(generated) && Math.abs(clock - generated) > 2 * 3_600_000 ? generated : clock;
@@ -57,10 +60,10 @@ export function AirportDepartureOverview({ lang, terminal, date }: { lang: Lang;
           color: picked === item ? 'var(--ink)' : '#888', borderBottom: picked === item ? '2px solid var(--blue)' : '2px solid transparent', marginBottom: -1 }}>{item}</button>)}
     </div>}
     {!sides
-      ? <p className="prep-note" data-testid="overview-no-flights">{copy.noFlights[lang]}</p>
+      ? <><p className="prep-note" data-testid="overview-no-flights">{copy.noFlights[lang]}</p><DepartureMapSection lang={lang} summary={summary} terminal={shown} nowIso={nowIso} holidays={holidays} defaultOpen defaultBuildingScope={terminal} modelPlacement="airport-departure-model-slot"/></>
       : <div key={shown} data-testid={`overview-${shown}`}>
         <FlightSplitCard lang={lang} summary={summary} sides={sides} terminal={shown} nowIso={nowIso}/>
-        <DepartureMapSection lang={lang} summary={summary} terminal={shown} nowIso={nowIso} holidays={holidays} defaultOpen defaultBuildingScope={terminal}/>
+        <DepartureMapSection lang={lang} summary={summary} terminal={shown} nowIso={nowIso} holidays={holidays} defaultOpen defaultBuildingScope={terminal} modelPlacement="airport-departure-model-slot"/>
         <DayRadarSection lang={lang} summary={summary} terminal={shown} nowIso={nowIso} holidays={holidays} isHoliday={cnJpHoliday}/>
       </div>}
     <p className="prep-note" data-testid="sides-notice">{copy.notice[lang]}</p>

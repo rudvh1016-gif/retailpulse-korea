@@ -35,7 +35,7 @@ test('all restored midpoint mappings retain official POI provenance and computed
   const sides=JSON.parse(readFileSync(new URL('../config/airport-sides.v1.json',import.meta.url),'utf8'));
   const positions=JSON.parse(readFileSync(new URL('../config/airport-gate-positions.v1.json',import.meta.url),'utf8'));
   const added=sides.gates.filter((g:{basis:string})=>g.basis==='OFFICIAL_MAP_MIDPOINT');
-  assert.equal(added.length,33); assert.equal(gateSideOf('T2','215'),'WEST');
+  assert.equal(added.length,34); assert.equal(gateSideOf('T2','215'),'WEST');
   for(const g of added){
     const point=positions.buildings[g.area].gates[g.gate]; assert.ok(point);
     const axis=g.area==='T2'?462:459, band=g.area==='T2'?132:139;
@@ -44,6 +44,6 @@ test('all restored midpoint mappings retain official POI provenance and computed
     assert.match(g.source,/icnmap\.airport\.kr/);
     assert.equal(gateSideOf(g.area,g.gate),expected);
   }
-  assert.equal(gateSideOf('T2','291'),'UNVERIFIED'); assert.equal(gateSideOf('T1','13'),'UNVERIFIED');
+  assert.equal(gateSideOf('T2','291'),'EAST'); assert.equal(gateSideOf('T1','13'),'UNVERIFIED');
   assert.notEqual(sides.version,'airport-sides.v1','changed table cannot compare historical side shares as the same definition');
 });

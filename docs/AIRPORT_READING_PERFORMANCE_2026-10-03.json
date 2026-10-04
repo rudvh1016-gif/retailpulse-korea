@@ -1,0 +1,121 @@
+{
+  "environment": "Local dev, 390x844 Chromium, reduced motion, CDP CPU 4x, warm modules, identical captured 577-row public API response; expansion timing, not deployed LCP",
+  "samples": [
+    {
+      "round": 1,
+      "variant": "main",
+      "ms": 170,
+      "closedRows": 0,
+      "outerOpenedRows": 147,
+      "hourGroups": 0,
+      "firstHourRows": null,
+      "flightReads": 1
+    },
+    {
+      "round": 1,
+      "variant": "refined",
+      "ms": 44,
+      "closedRows": 0,
+      "outerOpenedRows": 0,
+      "hourGroups": 22,
+      "firstHourRows": 4,
+      "flightReads": 1
+    },
+    {
+      "round": 2,
+      "variant": "main",
+      "ms": 85,
+      "closedRows": 0,
+      "outerOpenedRows": 147,
+      "hourGroups": 0,
+      "firstHourRows": null,
+      "flightReads": 1
+    },
+    {
+      "round": 2,
+      "variant": "refined",
+      "ms": 42,
+      "closedRows": 0,
+      "outerOpenedRows": 0,
+      "hourGroups": 22,
+      "firstHourRows": 4,
+      "flightReads": 1
+    },
+    {
+      "round": 3,
+      "variant": "main",
+      "ms": 153,
+      "closedRows": 0,
+      "outerOpenedRows": 147,
+      "hourGroups": 0,
+      "firstHourRows": null,
+      "flightReads": 1
+    },
+    {
+      "round": 3,
+      "variant": "refined",
+      "ms": 40,
+      "closedRows": 0,
+      "outerOpenedRows": 0,
+      "hourGroups": 22,
+      "firstHourRows": 4,
+      "flightReads": 1
+    },
+    {
+      "round": 4,
+      "variant": "main",
+      "ms": 188,
+      "closedRows": 0,
+      "outerOpenedRows": 147,
+      "hourGroups": 0,
+      "firstHourRows": null,
+      "flightReads": 1
+    },
+    {
+      "round": 4,
+      "variant": "refined",
+      "ms": 41,
+      "closedRows": 0,
+      "outerOpenedRows": 0,
+      "hourGroups": 22,
+      "firstHourRows": 4,
+      "flightReads": 1
+    },
+    {
+      "round": 5,
+      "variant": "main",
+      "ms": 131,
+      "closedRows": 0,
+      "outerOpenedRows": 147,
+      "hourGroups": 0,
+      "firstHourRows": null,
+      "flightReads": 1
+    },
+    {
+      "round": 5,
+      "variant": "refined",
+      "ms": 29,
+      "closedRows": 0,
+      "outerOpenedRows": 0,
+      "hourGroups": 22,
+      "firstHourRows": 4,
+      "flightReads": 1
+    }
+  ],
+  "main": {
+    "medianExpansionMs": 153,
+    "closedRows": 0,
+    "outerOpenedRows": 147,
+    "hourGroups": 0,
+    "firstHourRows": null,
+    "flightReads": 1
+  },
+  "refined": {
+    "medianExpansionMs": 41,
+    "closedRows": 0,
+    "outerOpenedRows": 0,
+    "hourGroups": 22,
+    "firstHourRows": 4,
+    "flightReads": 1
+  }
+}

@@ -8,6 +8,8 @@ import {
 const config = JSON.parse(readFileSync(new URL("../config/airport-sides.v1.json", import.meta.url), "utf8"));
 const zoneMap = JSON.parse(readFileSync(new URL("../config/airport-zone-map.v1.json", import.meta.url), "utf8"));
 
+const gatePositions = JSON.parse(readFileSync(new URL("../config/airport-gate-positions.v1.json", import.meta.url), "utf8"));
+
 const pad = (hour) => String(hour).padStart(2, "0");
 function band(date, hour, terminal, values, extra = {}) {
   const next = hour === 23 ? "24" : pad(hour + 1);
@@ -93,7 +95,7 @@ test("gates: only officially named gates have a side; center stays center; the r
   assert.equal(gateSideOf("T2", "274"), "EAST");
   assert.equal(gateSideOf("T2", "225"), "WEST");
   assert.equal(gateSideOf("T2", "1"), "UNVERIFIED", "the T2 '1번 게이트' text is an entrance, not a boarding gate");
-  assert.equal(gateSideOf("T2", "291"), "UNVERIFIED");
+  assert.equal(gateSideOf("T2", "291"), "EAST", "exact owner-reviewed coordinate record restored");
   assert.equal(gateSideOf("CONCOURSE", "107"), "EAST");
   assert.equal(gateSideOf("T1", "107"), "UNVERIFIED", "a concourse gate is never a T1 main-building side");
   assert.equal(gateSideOf("UNKNOWN", "9"), "UNVERIFIED");
@@ -140,7 +142,10 @@ test("a gate placed from the official map lies beyond an officially named gate o
     assert.ok(official && official.basis === "OFFICIAL_TEXT" && official.side === gate.side, `${gate.area} ${gate.gate}: anchor ${anchor} is not an officially ${word} gate`);
   }
   // The published range is respected even where the map shows more (T2 291).
-  assert.equal(config.gates.some((row) => row.area === "T2" && row.gate === "291"), false);
+  const restored = config.gates.find((row) => row.area === "T2" && row.gate === "291");
+  assert.equal(restored.side, "EAST");
+  assert.equal(restored.basis, "OFFICIAL_MAP_MIDPOINT");
+  assert.deepEqual(gatePositions.buildings.T2.gates["291"], { x:745, y:1043, poi:61286 });
 });
 
 const flight = (id, terminal, gate, time, extra = {}) => ({ physicalFlightId: id, terminal, gate, scheduledAt: `${DATE}T${time}:00+09:00`, status: "scheduled", retrievedAt: "2026-09-29T01:00:00Z", ...extra });
@@ -179,7 +184,7 @@ test("an unverified flight says why: no gate, a gate missing from the table, or 
   assert.equal(unverifiedReasonOf("T2", "9"), "CONFLICT");
   assert.equal(unverifiedReasonOf("CONCOURSE", "150"), "NOT_IN_TABLE", "a number outside every published range is not another building's gate");
   assert.equal(unverifiedReasonOf("CONCOURSE", "209"), "CONFLICT", "a T2 number at the concourse is a real disagreement");
-  assert.equal(unverifiedReasonOf("T2", "291"), "NOT_IN_TABLE", "291 is on the airport's own map though outside the published range page");
+  assert.equal(unverifiedReasonOf("T2", "291"), null, "retained official POI and exact restored mapping evidence this one exception");
   assert.equal(unverifiedReasonOf("T1", "23A"), "NOT_IN_TABLE", "a suffixed gate is not a disagreement");
   assert.equal(unverifiedReasonOf("UNKNOWN", "9"), "NO_TERMINAL");
   const day = summarizeGateSides([

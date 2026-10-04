@@ -7,6 +7,9 @@
  * the time or the destination filter never asks the server again.
  */
 import { useMemo, useState, type KeyboardEvent } from 'react';
+import { createPortal } from 'react-dom';
+import { useAirportModelTarget } from './use-airport-model-target';
+import { AirportFlightBrowser } from './airport-flight-browser';
 import { useFlights } from './flights-client';
 import type { Lang } from './retailpulse-data';
 import { shiftKstDay } from '../lib/kst';
@@ -90,12 +93,14 @@ function FlightRows({ lang, flights, testId }: { lang: Lang; flights: readonly M
   </ul>;
 }
 
-export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, terminal, nowIso, holidays, defaultBuildingScope }: {
+export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, terminal, nowIso, holidays, defaultBuildingScope, modelPlacement }: {
   lang: Lang; date: string; todayKst: string; dayRelation: 'PAST' | 'TODAY' | 'FUTURE'; terminal: MapTerminal; nowIso: string;
   /** China's and Japan's official holidays on the date, from the page's own calendar lookup. */
   holidays: ReadonlyArray<{ country: string; name: string }>;
   defaultBuildingScope?:FlightBuildingScope;
+  modelPlacement?:string;
 }) {
+  const modelTarget=useAirportModelTarget(modelPlacement);
   const nowDateKst = new Date(Date.parse(nowIso) + 9 * 3_600_000).toISOString().slice(0, 10);
   // A last-good summary can straddle midnight. Its old TODAY label must not
   // make the new day's 00:02 look like 00:02 (+1) on the previous date.
@@ -148,8 +153,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
       {(['all','T1','T2','CONCOURSE'] as const).map(scope=><button type="button" key={scope} aria-pressed={buildingScope===scope} onClick={()=>{setBuildingSelection({context:scopeContext,scope});setSelected(null);setFilter(null);}}>{airportModelScope(scope,lang)}</button>)}
     </div>
     {buildingScope&&<p className="prep-note">{{ko:'건물별 편수: T1 본관·T2·탑승동을 별도 집계합니다. 전체에는 건물 미정도 포함하며 탑승동 여객 예보는 따로 제공되지 않습니다.',en:'Physical buildings: T1 main, T2 and concourse are counted separately. All includes unknown buildings. No separate concourse passenger forecast is provided.',zh:'按T1主楼、T2、登机楼分别统计。全部包含建筑未定航班。不提供登机楼独立旅客预测。',ja:'T1本館・T2・搭乗棟を別々に集計。全体は建物未定便も含みます。搭乗棟単独の旅客予想は提供されません。'}[lang]}</p>}
-    {map.nextDay !== 'MISSING' && <AirportConceptModel map={map} lang={lang}/>}
-    {map.nextDay !== 'MISSING' && <AirportZoneCountries map={map} lang={lang}/>}
+    {map.nextDay !== 'MISSING' && (modelPlacement ? modelTarget && createPortal(<><AirportConceptModel map={map} lang={lang}/><AirportZoneCountries map={map} lang={lang}/></>,modelTarget) : <><AirportConceptModel map={map} lang={lang}/><AirportZoneCountries map={map} lang={lang}/></>)}
     <div className="date-nav-shortcuts" role="group" aria-label={copy.time[lang]} style={{ flexWrap: 'wrap' }}>
       {presets.map((value) => <button key={value} type="button" aria-pressed={preset === value} data-preset={value} style={{ whiteSpace: 'nowrap', flex: '0 0 auto' }}
         onClick={() => { setPreset(value); setSelected(null); }}>{copy.presets[value][lang]}</button>)}
@@ -211,8 +215,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
         <p className="prep-note">{copy.noGate[lang]} {map.unplaced.noGate.filter((flight) => !filter || flight.group === filter).length} · {copy.notOnMap[lang]} {map.unplaced.notOnMap.filter((flight) => !filter || flight.group === filter).length}</p>
         <FlightRows lang={lang} flights={unplaced} testId="map-unplaced-list"/>
       </>}</OpenableList>}
-      <OpenableList className="prep-evidence" testId="map-flights" summary={<>{copy.flightList[lang]} {shown.length}</>}>{() =>
-        <FlightRows lang={lang} flights={shown} testId="map-flight-list"/>}</OpenableList>
+      <AirportFlightBrowser lang={lang} flights={shown} testId="map-flights"/>
     </>}
 
     <p className="prep-note">{date} KST{current.payload.retrievedAt ? ` · ${copy.collected[lang]} ${kstClock(String(current.payload.retrievedAt), date)}` : ''}</p>

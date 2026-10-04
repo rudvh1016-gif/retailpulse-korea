@@ -128,7 +128,7 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     await expect(page.locator('.flow-now rect')).toHaveCount(0);
     const buttons = await page.locator('.date-nav-shortcuts button').evaluateAll(els => els.map(el => { const r = el.getBoundingClientRect(), s = getComputedStyle(el); return { x: r.x, right: r.right, y: r.y, bottom: r.bottom, height: r.height, border: s.borderTopWidth }; }));
     expect(buttons).toHaveLength(3);
-    buttons.forEach((r, i) => { expect(r.height).toBeGreaterThanOrEqual(48); expect(r.border).toBe('1px'); if (i) expect(r.x).toBeGreaterThanOrEqual(buttons[i - 1].right); });
+    buttons.forEach((r, i) => { expect(r.height).toBeGreaterThanOrEqual(48); expect(r.border).toBe('0px'); if (i) expect(r.x).toBeGreaterThanOrEqual(buttons[i - 1].right); });
     const tools = await page.locator('.date-nav-tools').boundingBox();
     expect(tools!.y).toBeGreaterThanOrEqual(buttons[0].bottom);
     const slider = page.getByRole('slider');
@@ -138,7 +138,7 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     await expect(slider).toHaveAttribute('aria-valuetext', /09-01 03:00/);
     await expect(page.locator('.flow-forecast .flow-bound').first()).toHaveCSS('stroke-dasharray', '4px, 5px');
     // Each contiguous segment retains its exact range band and only one quiet edge.
-    expect(await page.locator('path.flow-bound').count()).toBe(await page.locator('path.flow-range').count());
+    expect(await page.locator('.flow-forecast path.flow-bound').count()).toBe(2 * await page.locator('.flow-forecast path.flow-range').count());
     const chart = await page.locator('.population-chart').boundingBox();
     await page.locator('.population-chart').click({ position: { x: 46, y: 100 } });
     await expect(slider).toHaveAttribute('aria-valuenow', '0');
@@ -219,8 +219,8 @@ for (const width of [360, 390]) test(`owner UI lock across main screens ${width}
       expect(style.bottom).toBe('1px'); expect(style.background).toBe('rgb(255, 255, 255)'); expect(style.height).toBeGreaterThanOrEqual(44);
     }
     for (const control of await page.locator('.date-nav-shortcuts button').all()) {
-      await expect(control).toHaveCSS('border-top-width', '1px');
-      await expect(control).toHaveCSS('border-left-width', '1px');
+      await expect(control).toHaveCSS('border-top-width', '0px');
+      await expect(page.locator('.date-nav-shortcuts')).toHaveCSS('border-top-width', '1px');
       expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(48);
     }
     if (!route || route === '/airport' || route === '/hongdae') {
