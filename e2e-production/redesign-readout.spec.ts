@@ -18,8 +18,8 @@
  * a correct screen sooner or later. Structure, emptiness and geometry are
  * stable; the figures are not.
  *
- * Read-only: page views only. No clicks, no storage writes, no form posts —
- * nothing that could change a preference or a stored row.
+ * Read-only: page views and opening the existing history disclosure only.
+ * No storage writes or form posts that could change a preference or stored row.
  */
 import { test, expect } from "@playwright/test";
 
@@ -188,15 +188,25 @@ for (const locale of ["ko", "en", "zh", "ja"] as const) {
       // Seoul: the chart readout, which now sits above the plot it describes.
       await page.goto(`/${locale}/hongdae`);
       await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+      const history = page.locator(".population-history-disclosure");
+      await expect(history).not.toHaveAttribute("open");
+      await expect(page.locator(".population-chart")).toBeHidden();
+      await history.locator(":scope > summary").press("Enter");
+      await expect(history).toHaveAttribute("open");
       await expect(page.locator(".population-chart")).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
       const readout = page.locator(".flow-readout").first();
       await expect(readout).toBeVisible();
       console.log(`READOUT ${locale} ${viewport.name} ${JSON.stringify((await readout.textContent() ?? "").trim())}`);
-      const [readoutBox, chartBox] = [await readout.boundingBox(), await page.locator(".population-chart").boundingBox()];
-      expect(readoutBox!.y + readoutBox!.height,
+      // Measure both in one frame: late live-data layout and scroll anchoring
+      // can move the page between two separate boundingBox protocol calls.
+      const geometry = await page.locator(".population-flow").evaluate(figure => ({
+        readoutBottom: figure.querySelector(".flow-readout")!.getBoundingClientRect().bottom,
+        chartTop: figure.querySelector(".population-chart")!.getBoundingClientRect().top,
+      }));
+      expect(geometry.readoutBottom,
         "the readout must sit above the plot; that is the whole point of moving it")
-        .toBeLessThanOrEqual(chartBox!.y + 1);
+        .toBeLessThanOrEqual(geometry.chartTop + 1);
       expect(await overflowing(page, ".flow-readout, .flow-head, .flow-notes"), "no clipped chart text").toEqual([]);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.screenshot({ path: info.outputPath(`seoul-${locale}-${viewport.name}.png`) });
