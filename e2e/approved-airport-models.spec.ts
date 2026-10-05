@@ -25,7 +25,7 @@ async function open(page: Page,{lang='ko',width=390,kind='OK'}={}) {
   return {model,requests};
 }
 
-for(const lang of ['ko','en','zh','ja']) for(const width of [360,390,430,1280]) {
+for(const lang of ['ko','en','zh','ja']) for(const width of [320,390,430,1280]) {
   test(`approved live models preserve all ties and fit ${lang} ${width}`,async({page})=>{
     const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
     const {model,requests}=await open(page,{lang,width});
@@ -36,10 +36,14 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [360,390,430,1280]) 
     await model.getByTestId('gate-all-list').locator('summary').click();
     const initialRows=model.locator('.gate-full-list li'); await expect(initialRows).toHaveCount(20);
     for(const row of await initialRows.all()) await expect(row).toHaveCSS('content-visibility','visible');
-    const regions=model.locator('.gate-leader-zones >section:not([data-side=UNVERIFIED])');
-    const heights=await regions.evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().height));
-    expect(Math.max(...heights)-Math.min(...heights)).toBeLessThan(2);
-    await expect(model.locator('.gate-leader-zones .gate-zone-bar')).toHaveCount(2);
+    const images=model.locator('.gate-leader-zones .gate-visual-card img');
+    expect(await images.count()).toBeGreaterThan(0);
+    await images.first().scrollIntoViewIfNeeded();
+    await expect.poll(()=>images.first().evaluate((node:HTMLImageElement)=>node.complete && node.naturalWidth>0)).toBe(true);
+    await expect(model.locator('.gate-leader-zones .gate-visual-count')).toHaveCount(8);
+    await model.locator('.gate-leader-zones .gate-pillar').first().focus();
+    await page.keyboard.press('Enter');
+    await expect(model.getByTestId('gate-selected')).toBeVisible();
     const search=model.locator('input[type=search]');await search.fill('215');
     await expect(model.locator('.gate-full-list li')).toHaveCount(1);
     const item=model.locator('.gate-full-list button').first();await item.focus();await page.keyboard.press('Enter');
@@ -78,6 +82,14 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [360,390,430,1280]) 
     await overview.screenshot({path:`test-results/approved-D-${lang}-${width}.png`});
   });
 }
+
+test('gate counts remain readable when illustration requests fail',async({page})=>{
+  await page.route('**/visuals/gates/*.webp',route=>route.fulfill({status:404,body:''}));
+  const {model}=await open(page,{width:320});
+  await expect(model.locator('.gate-leader-zones .gate-pillar')).toHaveCount(8);
+  await expect(model.locator('.gate-leader-zones .gate-visual-count').first()).toContainText('17');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
 
 for(const kind of ['FAILED','PARTIAL','ZERO']) test(`gate model handles ${kind} without a false leader`,async({page})=>{
   const {model}=await open(page,{kind});
