@@ -10,7 +10,7 @@ const flights=Object.entries(counts).flatMap(([country,count])=>{
 });
 flights.push({...flights[0],physicalFlightId:'unknown',flightNumber:'TESTUNKNOWN',airportCode:'not-evidenced'});
 
-for(const width of [320,390,430])test(`destination flags and all-country disclosure ${width}`,async({page})=>{
+for(const width of [320,390,430,1280])test(`destination flags and all-country disclosure ${width}`,async({page})=>{
  await page.setViewportSize({width,height:844});await page.emulateMedia({reducedMotion:'reduce'});
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
@@ -18,6 +18,21 @@ for(const width of [320,390,430])test(`destination flags and all-country disclos
  await page.goto('/ko/airport?terminal=T1');
  const zone=page.getByTestId('map-zone-countries').locator('[data-side=WEST]');
  await expect(zone).toHaveAttribute('data-total','12');
+ const comparison=page.getByTestId('country-zone-comparison');
+ const positions=await comparison.locator('[data-side]').evaluateAll(nodes=>nodes.slice(0,3).map(node=>({side:node.getAttribute('data-side'),x:node.getBoundingClientRect().x,y:node.getBoundingClientRect().y,width:node.getBoundingClientRect().width})));
+ expect(positions.map(position=>position.side)).toEqual(['WEST','CENTER','EAST']);
+ expect(positions[0].y).toBe(positions[1].y);expect(positions[1].y).toBe(positions[2].y);
+ expect(positions[1].x).toBeGreaterThan(positions[0].x+positions[0].width);
+ expect(positions[2].x).toBeGreaterThan(positions[1].x+positions[1].width);
+ if(width<800){
+  await expect(page.getByText('서편 · 중앙 · 동편 — 좌우로 넘겨 비교')).toBeVisible();
+  await comparison.focus();await page.keyboard.press('ArrowRight');
+  await expect.poll(()=>comparison.evaluate(node=>node.scrollLeft)).toBeGreaterThan(0);
+ }
+ await expect(comparison.locator('[data-side=CENTER]')).toHaveAttribute('data-total','0');
+ await expect(comparison.locator('[data-side=EAST]')).toHaveAttribute('data-total','0');
+ await expect(page.getByTestId('map-zone-countries').locator('[data-side=UNVERIFIED]')).toHaveAttribute('data-total','0');
+ await expect(comparison.locator('[data-side]')).toHaveCount(3);
  await expect(zone.locator('li[data-country=JP]')).toHaveAttribute('data-share','33.3');
  await expect(zone.locator('li[data-country=UNKNOWN]')).toHaveAttribute('data-share','8.3');
  await expect(zone.locator('li[data-country=CN]')).toContainText('중국행');
