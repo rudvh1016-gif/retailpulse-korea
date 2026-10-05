@@ -12,6 +12,9 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`every verified destinatio
  await page.route('**/api/live/summary*',routeSummary(summary));await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',flights,truncated:false,retrievedAt:flights[0].retrievedAt}}));
  await page.goto(`/${lang}/airport?terminal=T1`);await page.getByTestId('airport-departure-overview').scrollIntoViewIfNeeded();const countries=page.getByTestId('map-zone-countries');await expect(countries).toBeVisible();
  await expect(countries.locator('li[data-country]')).toHaveCount(destinations.length);
+ await expect(countries.locator('li[data-country] img')).toHaveCount(destinations.length);
  expect(await tofuCharacters(countries)).toEqual([]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
- const domains=await countries.locator('svg').evaluateAll(nodes=>[...new Set(nodes.map(n=>n.getAttribute('data-domain-max')))]);expect(domains).toEqual(['1']);
+ await expect(countries.locator('.airport-country-prism')).toHaveCount(0);
+ for(const code of ['CN','JP','US','VN'])await expect(countries.locator(`li[data-country=${code}] img`)).toHaveAttribute('src',`/images/airport-flags/${code}.webp`);
+ await expect(countries.locator('li[data-country=KR] img')).toHaveAttribute('src','/images/airport-flags/fallback/kr.svg');
 });

@@ -182,6 +182,7 @@ test("similar days: reproducible, never the day itself or a later day, missing p
   assert.equal(first[0].distance, 0);
   assert.ok(first.every((item) => item.missing.includes("HOLIDAY")), "no holiday lookup: left out, not 0");
   const lines = similarLines(first[0], current, "ko");
+  assert.equal(lines.differ, "두드러진 차이 없음", "no difference is distinct from unavailable data");
   assert.match(lines.alike, /출발편 수\(2026-09-30 30 · 2026-09-23 30\)/);
   assert.equal(lines.busiest, "09–10시 30편");
   assert.equal(similarDays({ current, history: history.slice(0, 1) }).length, 1, "not padded to three");
@@ -194,6 +195,7 @@ test("similar days: reproducible, never the day itself or a later day, missing p
   // A same-shaped day of another weekday is still closer than a same-weekday day of a clearly different size.
   const tuesday = t2(dayRows("2026-09-29", { east: 20, west: 10 }), "2026-09-29");
   assert.equal(similarDays({ current, history: [tuesday, history[2]] })[0].day.day, "2026-09-29");
+  assert.match(similarLines(similarDays({ current, history: [tuesday] })[0], current, "ko").differ, /요일\(2026-09-30 \(수\) \/ 2026-09-29 \(화\)\)/);
 });
 
 test("standing reports rank, range and verdict without inventing percentiles", () => {

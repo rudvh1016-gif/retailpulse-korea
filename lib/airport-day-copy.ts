@@ -1,4 +1,5 @@
 import { holidayComparisonCopy } from './holiday-comparison-copy';
+import { localHolidayName } from './holiday-calendar';
 /**
  * Words for "what is different today" and "days like today" (four languages).
  * Every sentence says what was compared with what, and how many days; none
@@ -37,11 +38,31 @@ const GROUP: Record<DestinationGroup, Row> = {
 };
 
 export const dayCopy = {
+  incomplete: row("항공편 기록이 일부만 도착해 날짜를 비교할 수 없습니다.", "Flight records are incomplete, so these dates cannot be compared.", "航班记录尚未完整，无法比较这些日期。", "便の記録が一部しか届いていないため、日付を比較できません。"),
+  noAlike: row("큰 공통점 없음", "No strong match", "没有明显的相同点", "目立つ共通点なし"),
+  noDiffer: row("두드러진 차이 없음", "No notable difference", "没有明显差异", "目立つ違いなし"),
+  missingComparison: row("자료가 없어 비교에서 제외", "Excluded because data is unavailable", "因资料缺失未纳入比较", "資料がないため比較から除外"),
+  holidayEvidence: row("중국·일본 공휴일 자료", "China/Japan holiday records", "中国和日本的节假日资料", "中国・日本の祝日資料"),
+  similarScope: (selected: string, from: string | null, to: string | null, count: number, lang: Lang) => {
+    const date = dayLabel(selected, lang);
+    if (!from || !to) return row(
+      `선택일 ${date} · 비교 가능한 과거 기록이 없습니다.`,
+      `Selected ${date} · no comparable past records.`,
+      `所选日期 ${date} · 没有可比较的历史记录。`,
+      `選択日 ${date} · 比較できる過去の記録はありません。`,
+    )[lang];
+    return row(
+      `선택일 ${date} · 과거 기록 ${from}~${to} 중 비교 가능한 ${count}일을 출발편 수와 시간대 분포 등으로 비교했습니다. 같은 요일만 고른 것은 아닙니다.`,
+      `Selected ${date} · ${count} comparable days from ${from} to ${to}, ranked by flight counts, hourly spread and other available signals. The days need not share a weekday.`,
+      `所选日期 ${date} · 比较 ${from} 至 ${to} 之间 ${count} 天可用记录的航班数、时段分布等；不只选同一星期。`,
+      `選択日 ${date} · ${from}〜${to}の比較可能な${count}日を便数・時間帯の分布などで比較しました。同じ曜日だけを選んだものではありません。`,
+    )[lang];
+  },
   radarTitle: row("오늘 달라진 것", "What is different today", "今天的不同之处", "今日違うこと"),
   similarTitle: row("오늘과 조건이 가까운 과거 날짜", "Days with conditions like today", "条件与今天相近的日子", "今日と条件が近かった日"),
   loading: row("과거 기록과 비교하는 중입니다.", "Comparing with past records.", "正在与过去的记录比较。", "過去の記録と比べています。"),
   failed: row("과거 기록을 불러오지 못해 비교하지 않았습니다.", "Past records could not be loaded, so nothing is compared.", "未能读取过去的记录，因此不作比较。", "過去の記録を読み込めなかったため比較していません。"),
-  noCurrent: row("이 날짜의 출발편 기록이 아직 없어 비교하지 않습니다.", "No departures are recorded for this date yet, so nothing is compared.", "该日期尚无出发航班记录，因此不作比较。", "この日付の出発便記録がまだないため比較しません。"),
+  noCurrent: row("이 날짜의 항공편 기록을 확인하지 못해 비교할 수 없습니다.", "No flight record is confirmed for this date, so it cannot be compared.", "未能确认该日期的航班记录，因此无法比较。", "この日付の便の記録を確認できないため、比較できません。"),
   noHistory: (stored: number, lang: Lang) => row(
     `비교할 과거 기록이 부족합니다(완료된 날 ${stored}일). 날마다 쌓이면 비교가 시작됩니다.`,
     `Not enough past records to compare (${stored} complete day(s)). Comparison starts as days accumulate.`,
@@ -74,16 +95,16 @@ export const dayCopy = {
     "過去に近かったからといって今日も同じことが起きるわけではありません。便の分布の比較であり、店舗の混雑や売上ではありません。",
   ),
   similarRule: row(
-    "비교 항목(각 0~1): 출발편 수 차이 비율, 시간대 분포 차이, 동편 비중 차이(같은 위치표일 때), 목적지 지역 구성 차이는 같은 비중, 요일 같음 여부와 중국·일본 공휴일 여부는 절반 비중. 비교할 수 없는 항목은 0으로 채우지 않고 제외합니다. 점수는 순서를 정하는 데만 쓰며 정확도가 아닙니다.",
-    "Compared (each 0–1): relative difference in departures, difference in hourly spread, difference in east share (same gate table) and difference in destination mix at equal weight; same weekday or not and CN/JP holiday or not at half weight. What cannot be compared is left out, never filled with 0. The number only orders the days; it is not an accuracy.",
-    "比较项目（各0~1）：出发航班数的差异比例、时段分布差异、东侧比例差异（同一位置表时）、目的地区域构成差异权重相同；是否同一星期几、是否中国或日本公共假日为一半权重。无法比较的项目不以0填补而是剔除。分数只用于排序，并非准确度。",
-    "比較項目（各0〜1）：出発便数の差の割合、時間帯分布の差、東側比率の差（同じ位置表のとき）、行き先地域の構成の差は同じ重み、同じ曜日かどうかと中国・日本の祝日かどうかは半分の重み。比べられない項目は0で埋めずに除きます。数値は順番を決めるためだけのもので、精度ではありません。",
+    "비교 점수는 출발편 수 차이, 시간대 분포, 동편 비중(같은 게이트 위치표일 때), 목적지 지역 구성의 차이를 같은 비중으로 합칩니다. 요일 일치 여부와 두 나라 중 한 곳이라도 공식 공휴일인지 여부는 각각 절반 비중입니다. 확인된 공휴일 차이는 나라·날짜·휴일명으로 표시합니다. 자료가 없는 항목은 점수에서 제외하며, 점수는 날짜 순위용이지 예측 정확도가 아닙니다.",
+    "The ranking combines differences in flight count, hourly spread, east share (only with the same gate table) and destination mix at equal weight. Weekday match and whether either China or Japan has an official holiday each carry half weight. A confirmed holiday difference names the country, date and holiday. Missing data is omitted; the score ranks past days and is not predictive accuracy.",
+    "排序同等计入航班数、时段分布、东侧比例（仅限相同登机口位置表）和目的地区域构成的差异。星期是否相同，以及中国或日本是否至少一国为官方假日，各按一半权重计算。已确认的假日差异会注明国家、日期和名称。缺失资料不计入；分数只用于排序，并非预测准确率。",
+    "順位には便数、時間帯の分布、東側の割合（同じゲート位置表の場合）、行き先地域の構成差を同じ重みで使います。曜日の一致と、中国か日本のどちらかが公式の祝日かどうかは、それぞれ半分の重みです。確認できた祝日の違いは国・日付・名称を示します。欠けた資料は除き、点数は順位用で予測精度ではありません。",
   ),
   similarNone: (n: number, lang: Lang) => row(
-    `비교할 수 있는 완료된 과거 날짜가 ${n}일이라 가까운 날을 고르지 않았습니다.`,
-    `Only ${n} complete past day(s) can be compared, so no similar day is chosen.`,
-    `可比较的已完成过去日期只有 ${n} 天，因此未选出相近的日子。`,
-    `比べられる完了した過去の日付が${n}日のため、近い日は選んでいません。`,
+    `비교 가능한 과거 날짜가 ${n}일이라 가까운 날을 표시할 수 없습니다.`,
+    `No similar day can be shown: ${n} comparable past day(s).`,
+    `无法显示相近日期：可比较的历史记录为 ${n} 天。`,
+    `近い日を表示できません。比較可能な過去の記録は${n}日です。`,
   )[lang],
   similarLabel: row("가까운 날", "Similar day", "相近的日子", "近かった日"),
   alike: row("가까운 점", "Alike", "相近之处", "近い点"),
@@ -129,7 +150,7 @@ function standingSentence(label: string, s: Standing, unit: (value: number) => s
   )[lang];
 }
 
-export function radarLine(item: RadarItem, terminal: string, lang: Lang, checkedClock: (iso: string) => string): string {
+export function radarLine(item: RadarItem, terminal: string, lang: Lang, checkedClock: (iso: string) => string, selectedDay?: string): string {
   switch (item.kind) {
     case "WEEKDAY_TOTAL":
       return standingSentence(`${terminal} ${dayCopy.rows.total[lang]}`, item.standing, (value) => fl(value, lang), lang, item.days.length);
@@ -143,7 +164,7 @@ export function radarLine(item: RadarItem, terminal: string, lang: Lang, checked
       return row(`이 기기에서 지난번 확인(${checkedClock(item.checkedAt)}) 이후 달라진 값: ${list}`, `Changed since this device last looked (${checkedClock(item.checkedAt)}): ${list}`, `本设备上次查看（${checkedClock(item.checkedAt)}）后变化的值：${list}`, `この端末で前回確認（${checkedClock(item.checkedAt)}）した後に変わった値：${list}`)[lang];
     }
     case "HOLIDAY":
-      return `${(dayCopy.country[item.country] ?? row(item.country, item.country, item.country, item.country))[lang]} ${item.name} · ${dayCopy.holidayRef[lang]}`;
+      return `${selectedDay ? `${dayLabel(selectedDay, lang)} · ` : ''}${(dayCopy.country[item.country] ?? row(item.country, item.country, item.country, item.country))[lang]} ${item.country === 'CN' || item.country === 'JP' ? localHolidayName(item.name, lang, item.country) : item.name} · ${dayCopy.holidayRef[lang]}`;
     case "WITHIN_DAY_PEAK":
       return row(
         `오늘 기록에서 가장 많은 출발 시간대: ${hourSpan(item.hour, lang)} ${fl(item.flights, lang)} (오늘 안에서의 비교)`,
@@ -164,6 +185,7 @@ export function similarLines(item: SimilarDay, current: TerminalDay, lang: Lang)
   const detail = (name: SimilarDay["components"][number]["name"]) => {
     if (name === "HOLIDAY") return holidayComparisonCopy(current.day, item.day.day, lang);
     const label = dayCopy.component[name][lang];
+    if (name === "WEEKDAY") return `${label}(${dayLabel(current.day, lang)} / ${dayLabel(item.day.day, lang)})`;
     if (name === "TOTAL") return `${label}(${current.day} ${num(current.total, lang)} · ${item.day.day} ${num(item.day.total, lang)})`;
     if (name === "EAST_SHARE") return `${label}(${current.day} ${share(current)} · ${item.day.day} ${share(item.day)})`;
     return label;
@@ -171,13 +193,13 @@ export function similarLines(item: SimilarDay, current: TerminalDay, lang: Lang)
   const sorted = [...item.components].sort((a, b) => a.distance - b.distance);
   // Measured parts first: a shared weekday or holiday status is listed after them.
   const calendar = (name: string) => name === "WEEKDAY" || name === "HOLIDAY";
-  const alike = sorted.filter((component) => component.distance <= 0.15)
+  const alike = sorted.filter((component) => component.distance <= 0.15 && component.name !== "HOLIDAY")
     .sort((a, b) => Number(calendar(a.name)) - Number(calendar(b.name)) || a.distance - b.distance).slice(0, 3);
   const differ = [...sorted].reverse().filter((component) => component.distance > 0.15).slice(0, 2);
   const peak = busiestHour(item.day);
   return {
-    alike: alike.length ? alike.map((component) => detail(component.name)).join(", ") : "—",
-    differ: differ.length ? differ.map((component) => detail(component.name)).join(", ") : "—",
+    alike: alike.length ? alike.map((component) => detail(component.name)).join(", ") : dayCopy.noAlike[lang],
+    differ: differ.length ? differ.map((component) => detail(component.name)).join(", ") : dayCopy.noDiffer[lang],
     busiest: peak ? `${hourSpan(peak.hour, lang)} ${fl(peak.flights, lang)}` : null,
   };
 }

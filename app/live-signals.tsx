@@ -1671,7 +1671,7 @@ function runningTotals(days: readonly MtdDay[]): (number | null)[] {
 }
 
 /**
- * Daily forecast bars with the month's running total over them.
+ * Daily forecast bars; the month's running total stays in the text readout.
  *
  * Two rules the drawing must not break:
  *
@@ -1688,11 +1688,12 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
   const [active, setActive] = useState<string | null>(null);
   if (!days.length) return null;
   const width = 100, height = 100;
-  // Each available date receives equal space; missing values remain gaps.
+  // Each calendar date receives equal space; missing values remain gaps.
   const slots = days.length;
   const slot = width / slots;
   const barWidth = Math.min(7, slot * 0.3);
   const maxDay = days.reduce((best, day) => Math.max(best, day.total ?? 0), 0);
+  const showEachValue = days.length <= 5;
 
   // The running total is still COMPUTED — the readout below prints the selected
   // day's cumulative figure — it is simply no longer DRAWN. The owner removed
@@ -1704,7 +1705,9 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
   // One mark, so it uses the plot. The bars were held to the lower 74% to leave
   // the upper quarter for the line that climbed through it; with the line gone
   // that reserved band is just a permanently empty strip above the tallest day.
-  const barY = (value: number) => height - (maxDay > 0 ? (value / maxDay) * (height * 0.92) : 0);
+  // A short run has room for a value above every bar. Longer months keep the
+  // full plot height and let the selected day's readout carry the exact value.
+  const barY = (value: number) => height - (maxDay > 0 ? (value / maxDay) * (height * (showEachValue ? 0.62 : 0.92)) : 0);
 
   const activeIndex = active ? days.findIndex((day) => day.date === active) : -1;
   const shown = activeIndex >= 0 ? activeIndex : days.length - 1;
@@ -1714,14 +1717,15 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
   const ticks = days.length <= 9 ? days.map((_, index) => index) : [0, 4, 9, 14, 19, 24, 29].filter((index) => index < days.length);
   if (days.length > 9 && days.length - 1 - ticks[ticks.length - 1] >= 2) ticks.push(days.length - 1);
 
-  return <figure className="airport-month-chart">
+  return <figure className="airport-month-chart" data-short-series={showEachValue}>
     {/* One series, named by the caption. A legend existed to tell two marks
         apart; with a single mark it restates the caption and nothing else. */}
     <figcaption>
-      <span>{mtdCopy.daily[lang]}</span>
+      <span>{mtdCopy.daily[lang]} ({unit.trim()})</span>
     </figcaption>
     <div className="airport-month-plot">
       <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+        <line className="airport-month-baseline" x1="0" x2={width} y1={height - 0.5} y2={height - 0.5}/>
         {days.map((day, index) => day.total === null
           ? <rect key={day.date} className="airport-month-gap" x={x(index) - barWidth / 2} y={height - 1.5} width={barWidth} height={1.5} />
           : <g key={day.date}><rect className="airport-month-soft-depth" x={x(index) - barWidth / 2 + .7} y={barY(day.total) + 2} width={barWidth} height={Math.max(0, height - barY(day.total) - 2)} rx={Math.min(1.5, barWidth/2)} ry={6} fill="#a6c5ce"/><rect className="airport-month-bar" data-value={day.total} data-selected={day.date === shownDay.date || undefined}
@@ -1729,6 +1733,12 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
               {day.total > 0 && <path className="airport-month-soft-highlight" d={`M${x(index)-barWidth/2+1.2} ${barY(day.total)+2} h${Math.max(0,barWidth-2.4)}`} stroke="#fff" strokeWidth="1.2" strokeLinecap="round"/>}
             </g>)}
       </svg>
+      {showEachValue && <div className="airport-month-value-labels" aria-hidden="true">
+        {days.map((day, index) => <span key={day.date} data-date={day.date} data-missing={day.total === null || undefined}
+          style={{ left: `${x(index)}%`, top: `${day.total === null ? 84 : Math.max(0, barY(day.total) - 3)}%` }}>
+          {day.total === null ? '—' : Math.round(day.total).toLocaleString(numberLocale)}
+        </span>)}
+      </div>}
       <div className="airport-month-picks" role="group" aria-label={mtdCopy.daily[lang]}>
         {days.map((day) => <button key={day.date} type="button" aria-pressed={day.date === shownDay.date} style={{ flex: `0 0 ${100 / slots}%` }}
           onClick={() => setActive(day.date)}
@@ -1736,7 +1746,7 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
       </div>
     </div>
     <div className="airport-month-ticks" aria-hidden="true">
-      {ticks.map((index) => <span key={index} style={{ left: `${Math.min(97.5, Math.max(2.5, (x(index) / width) * 100))}%`, transform: 'translateX(-50%)' }}>{Number(days[index].date.slice(8, 10))}</span>)}
+      {ticks.map((index) => <span key={index} style={{ left: `${Math.min(97.5, Math.max(2.5, (x(index) / width) * 100))}%`, transform: 'translateX(-50%)' }}>{showEachValue ? shortDay(days[index].date) : Number(days[index].date.slice(8, 10))}</span>)}
     </div>
     <p className="airport-month-readout" aria-live="polite">
       <span>{shortDay(shownDay.date)}</span>
