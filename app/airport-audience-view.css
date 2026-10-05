@@ -1,0 +1,14 @@
+.airport-audience-choice {display:flex;flex-wrap:wrap;gap:24px;border-bottom:1px solid var(--line);color:var(--ink);}
+.airport-audience-choice button {min-height:44px;padding:12px 0;border:0;border-bottom:2px solid transparent;background:transparent;color:inherit;font:inherit;font-weight:var(--weight-strong);cursor:pointer;}
+.airport-audience-choice button[aria-pressed="true"] {border-bottom-color:var(--ink);}
+.airport-audience-choice button:focus-visible,.airport-passenger-tool summary:focus-visible {outline:2px solid #365c79;outline-offset:3px;}
+.airport-audience-panel[hidden] {display:none;}
+.airport-passenger-content {color:var(--ink);}
+.airport-passenger-tool {padding:14px 0;border-bottom:1px solid var(--line);}
+.airport-passenger-tool > summary {min-height:44px;padding:12px 0;font-weight:var(--weight-strong);cursor:pointer;}
+.airport-passenger-tool p {line-height:1.65;overflow-wrap:anywhere;}
+.airport-passenger-tool .terminal-selector button {color:var(--ink);}
+/* The existing top terminal row moved into this panel; preserve its approved layout. */
+#airport-staff-panel > .terminal-selector {margin-bottom:16px;}
+#airport-staff-panel > .terminal-selector button:first-child {display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;}
+#airport-staff-panel > .terminal-selector button:first-child small {font-size:12px;font-weight:inherit;}

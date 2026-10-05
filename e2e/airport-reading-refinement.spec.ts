@@ -18,7 +18,7 @@ for (const lang of ['ko','en','zh','ja'] as const) for (const width of [360,390,
     await page.emulateMedia({reducedMotion:'reduce'});
     await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
     await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',basis:'COLLECTED_FLIGHT_RECORDS',flights,truncated:false,retrievedAt:`${date}T03:00:00Z`}}));
-    await page.goto(`/${lang}/airport`);
+    await page.goto(`/${lang}/airport?audience=staff`);
     const dates=page.locator('.date-nav-shortcuts').first();
     await expect(dates.locator('button')).toHaveCount(3);
     for(const button of await dates.locator('button').all()) {
@@ -35,7 +35,7 @@ for (const lang of ['ko','en','zh','ja'] as const) for (const width of [360,390,
     await chooseDate(page,'2026-09-10');
     await expect(page).toHaveURL(/date=2026-09-10/);
     await dates.locator('button').nth(1).click();
-    await page.locator('.airport-view>.terminal-selector button').nth(3).click();
+    await page.locator('#airport-staff-panel>.terminal-selector button').nth(3).click();
     const list=page.getByTestId('concourse-flight-list');
     await expect(list).not.toHaveAttribute('open','');
     await expect(list.locator('input')).toHaveCount(0);

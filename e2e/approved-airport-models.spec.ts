@@ -18,7 +18,7 @@ async function open(page: Page,{lang='ko',width=390,kind='OK'}={}) {
     return route.fulfill({status:kind==='FAILED'?503:200,contentType:'application/json',body:JSON.stringify({mode:'live-flights',basis:'COLLECTED_FLIGHT_RECORDS',flights:kind==='ZERO'?[]:records,truncated:kind==='PARTIAL',retrievedAt:`${DATE}T03:00:00Z`})});
   });
   await page.route('**/api/live/airport-days*',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({mode:'airport-days',history:[]})}));
-  await page.goto(`/${lang}/airport?terminal=T2`);
+  await page.goto(`/${lang}/airport?audience=staff&terminal=T2`);
   const model=page.getByTestId('gate-pillar-model');
   await model.scrollIntoViewIfNeeded();
   await expect(model).toBeVisible();

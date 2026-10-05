@@ -36,7 +36,7 @@ function noAirportData(date: string): LiveSummary {
 }
 
 async function openAirport(page: Page) {
-  await page.goto('/ko/airport');
+  await page.goto('/ko/airport?audience=staff');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   await expect(page.locator('.airport-current-brief')).toBeVisible();
 }

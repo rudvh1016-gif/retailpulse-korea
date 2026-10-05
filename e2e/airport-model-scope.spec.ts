@@ -8,7 +8,7 @@ for(const lang of ['ko','en','zh','ja'] as const) {
     await page.emulateMedia({reducedMotion:'reduce'});
     await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
     await routeGateFlights(page);
-    await page.goto(`/${lang}/airport`);
+    await page.goto(`/${lang}/airport?audience=staff`);
     const figure=page.locator('.airport-hero .airport-flow');
     const label=figure.getByTestId('airport-model-scope');
     for(const terminal of ['all','T1','T2','T1','all','T2','all'] as const){

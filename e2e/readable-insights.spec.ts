@@ -5,7 +5,7 @@ test("pending airport data says loading; a completed error says retrieval failed
   let release!: () => void;
   const pending = new Promise<void>(resolve => { release = resolve; });
   await page.route("**/api/live/summary*", async route => { await pending; await route.fulfill({ status: 503, body: "{}" }); });
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   await expect(page.getByText("로딩 중, 잠시 기다려주세요.").first()).toBeVisible();
   await expect(page.locator(".airport-unavailable")).toHaveCount(0);
   release();
@@ -16,7 +16,7 @@ test("pending airport data says loading; a completed error says retrieval failed
 test("the flight list starts compact and can reveal records beyond the old 80-row wall", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.route("**/api/live/flights*", routeSummary({ mode: "live-flights", flights: Array.from({ length: 91 }, (_, i) => ({ ...FLIGHT_ROWS[0], flightNumber: `KE${1000 + i}` })) }));
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await expect(page.locator(".airport-current-brief")).toBeVisible();
   await page.locator(".airport-context-nav").getByRole("button", { name: "항공편", exact: true }).click();

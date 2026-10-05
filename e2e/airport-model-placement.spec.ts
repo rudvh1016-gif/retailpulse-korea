@@ -6,7 +6,7 @@ test('one moved model follows time filters and exposes exact gate evidence witho
  const flights=['291','252','215','999'].map((gate,i)=>({physicalFlightId:`placement-${i}`,flightNumber:`TEST${i}`,terminal:'T2',gate,direction:'departure',scheduledAt:'2026-08-31T09:10:00+09:00',retrievedAt:'2026-08-31T03:00:00Z',status:'scheduled',airportCode:'NRT'}));
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));let reads=0;
  await page.route('**/api/live/flights*',r=>{reads++;return r.fulfill({json:{mode:'live-flights',basis:'COLLECTED_FLIGHT_RECORDS',flights,truncated:false,retrievedAt:'2026-08-31T03:00:00Z'}});});
- await page.goto('/ko/airport?terminal=T2');
+ await page.goto('/ko/airport?audience=staff&terminal=T2');
  const model=page.getByTestId('airport-concept-model');await expect(model).toHaveCount(1);
  await expect(page.locator('.airport-flow img')).toHaveCount(0);
  await expect(page.getByTestId('airport-departure-overview').getByTestId('airport-concept-model')).toHaveCount(0);

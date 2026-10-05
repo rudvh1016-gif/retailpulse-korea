@@ -66,7 +66,7 @@ test("business checklist uses one regular and one strong weight", async ({ page 
 for (const width of [320, 375, 390, 430, 768]) {
   test(`mobile ${width}px has no page-level horizontal overflow`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
-    await page.goto("/ko/airport");
+    await page.goto("/ko/airport?audience=staff");
     await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
@@ -117,7 +117,7 @@ test("airport truth labels are complete in all four locales", async ({ page }) =
     ja: "公式予想の出国場利用者・入国審査利用者、実出発便、現在の出国場待ちを混ぜずに分けて表示します。",
   } as const;
   for (const locale of Object.keys(intro) as Array<keyof typeof intro>) {
-    await page.goto(`/${locale}/airport`);
+    await page.goto(`/${locale}/airport?audience=staff`);
     await expect(page.getByText(intro[locale], { exact: true })).toBeVisible();
   }
 });
@@ -188,7 +188,7 @@ test("airport summary keeps forecast, flights, gate and checkpoints truthful on 
   await routeGateFlights(page);
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   // 첫 줄은 지금 시간대의 출국장 공식 예상 승객, 대기는 짧은 보조 줄.
   await expect(page.locator(".airport-current-brief")).toContainText("출국장 공식 예상 승객");
   await expect(page.locator(".airport-current-brief")).toContainText("현재 대기 관측 · T2 출국장 1B");
@@ -254,7 +254,7 @@ test("terminal briefing shows one labelled card per terminal and names the longe
     ja: { title: "いま注目する場所", attention: "T2 · 観測された待ちが最も長いターミナル", queue: "観測", next: "公式予想", flights: "集計" },
   } as const;
   for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
-    await page.goto(`/${locale}/airport`);
+    await page.goto(`/${locale}/airport?audience=staff`);
     await page.locator(".airport-summary-details > summary").click();
     const briefing = page.locator('[data-signal-key="terminal-briefing"]');
     await expect(briefing).toBeVisible();
@@ -272,7 +272,7 @@ test("terminal briefing shows one labelled card per terminal and names the longe
     await expect(briefing).not.toContainText(/%|점수|score|指数|スコア/);
   }
   // A single-terminal scope focuses the grid on that terminal; the cards are not repeated there.
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await page.locator(".terminal-selector button").filter({ hasText: /^T1$/ }).click();
   await expect(page.getByRole("tab", { name: "T1", exact: true })).toHaveAttribute("aria-selected", "true");
@@ -281,7 +281,7 @@ test("terminal briefing shows one labelled card per terminal and names the longe
 
 test("departure composition is one accessible tab group with gate, airline and registered-country views", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   const composition = page.locator(".airport-composition");
   const tabs = composition.getByRole("tablist", { name: "선택일 출발편 구성 보기" });
   const gateTab = tabs.getByRole("tab", { name: "게이트", exact: true });
@@ -346,13 +346,13 @@ test("departure composition is one accessible tab group with gate, airline and r
   await expect(gateTab).toHaveAttribute("aria-selected", "true");
 
   // English readers get the reference-table name and a localized region name.
-  await page.goto("/en/airport");
+  await page.goto("/en/airport?audience=staff");
   await page.getByRole("tab", { name: "Airlines", exact: true }).click();
   const keRow = page.locator(".airport-airline-row").filter({ hasText: "KE" });
   await expect(keRow).toContainText("Korean Air");
   await expect(keRow).toContainText("South Korea");
   // Terminal scope narrows the ranking to that terminal's own operators.
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   // Wait for the hydrated all-terminal list before clicking, so the click reaches React.
   await page.getByRole("tab", { name: "항공사", exact: true }).click();
   await expect(page.locator(".airport-airline-row")).toHaveCount(3);
@@ -382,7 +382,7 @@ test("a day with no stored departures says so instead of blaming gate coverage",
   };
   await page.route("**/api/live/summary*", routeSummary(empty));
   await page.route('**/api/live/flights*', route => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ mode: 'live-flights', flights: [], truncated: false }) }));
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   await expect(page.getByTestId('gate-pillar-model')).toContainText('확인된 0편이 아닙니다');
   await page.getByRole("tab", { name: "항공사", exact: true }).click();
   await expect(page.locator(".airport-airlines .airport-empty-line")).toContainText("수집이 완료되지 않았습니다");
@@ -398,7 +398,7 @@ test("a day with no stored departures says so instead of blaming gate coverage",
 test("the airport page reads summary -> next -> composition -> observation table, in that order", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   const top = async (selector: string) => {
     const box = await page.locator(selector).first().boundingBox();
     if (!box) throw new Error(`${selector} is not rendered`);
@@ -433,7 +433,7 @@ test("the airport page reads summary -> next -> composition -> observation table
 test("the summary states this hour's official expected departing passengers and where it is heading", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   const brief = page.locator(".airport-current-brief");
   await expect(brief).toBeVisible();
   // 하루 전체를 먼저, 현재 시간대를 두 번째로 강조한다. 현재 시간대는 이제
@@ -460,7 +460,7 @@ test("the summary states this hour's official expected departing passengers and 
 test("remaining expected departures is shown for a complete day and withheld for a partial one", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   await page.locator(".airport-summary-details > summary").click();
   await expect(page.getByText("현재 시간대부터 자정까지", { exact: true })).toBeVisible();
   await expect(page.getByText("11,430명", { exact: true })).toBeVisible();
@@ -572,7 +572,7 @@ test("selecting T1 or T2 changes every top metric, not just the current departur
   await routeGateFlights(page);
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   await page.locator(".airport-summary-details > summary").click();
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await expect(page.locator(".airport-today-grid").getByText("47,320명", { exact: true })).toBeVisible();
@@ -614,7 +614,7 @@ test("incomplete A5 daily coverage never renders as a full-day total or peak", a
   partial.airport.forecastCoverage = { all: "PARTIAL", byTerminal: { T1: "PARTIAL", T2: "COMPLETE" } };
   await page.route("**/api/live/summary*", routeSummary(partial));
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   await page.locator(".airport-summary-details > summary").click();
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await expect(page.locator(".airport-today-grid article").filter({ hasText: "출국장 공식 예상 승객" }).getByText("전체 시간대 확인 불가", { exact: true })).toBeVisible();
@@ -651,7 +651,7 @@ test("date navigation switches the service date and explains what a date cannot 
     await route.fulfill({ contentType: "application/json", body: JSON.stringify(payload) });
   });
 
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await expect(page.locator(".date-nav")).toBeVisible();
   await expect(page.getByRole("button", { name: "오늘" })).toHaveClass(/active/);
@@ -680,7 +680,7 @@ test("the flight board lists official flight rows and filters by search and term
     serviceDateKst: "2026-08-31",
     flights: FLIGHT_ROWS,
   }));
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await page.locator(".airport-context-nav").getByRole("button", { name: "항공편" }).click();
   await expect(page.locator(".flight-rows li")).toHaveCount(2);
@@ -735,7 +735,7 @@ test("blocked localStorage does not break the application", async ({ context, pa
 
 test("large values and long CJK labels remain contained", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 844 });
-  await page.goto("/ja/airport");
+  await page.goto("/ja/airport?audience=staff");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await page.getByRole("button", { name: "履歴" }).click();
   await expect(page.getByText(/3,364,748/).first()).toBeVisible();
@@ -935,7 +935,7 @@ test("the passenger-flow figure uses the section width on desktop and the whole 
   }));
   await page.route("**/api/live/summary*", routeSummary(wide));
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   const figure = page.locator(".airport-flow");
   await expect(figure).toBeVisible();
   const metrics = await figure.evaluate((el) => ({
@@ -973,7 +973,7 @@ test("the passenger-flow figure uses the section width on desktop and the whole 
  */
 test("the current-time marker appears on today's chart only", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   const now = page.locator(".airport-flow .airport-flow-now");
   await expect(now).toHaveCount(1);
   await expect(now).toHaveAttribute("data-now-label", "현재 시각 14:10");
@@ -992,7 +992,7 @@ test("the current-time marker appears on today's chart only", async ({ page }) =
       targetEndAt: band.targetEndAt.replace("2026-08-31", date),
     }));
     await page.route("**/api/live/summary*", routeSummary(other));
-    await page.goto(`/ko/airport?date=${date}`);
+    await page.goto(`/ko/airport?audience=staff&date=${date}`);
     await expect(page.locator(".airport-flow")).toBeVisible();
     await expect(page.locator(".airport-flow .airport-flow-now")).toHaveCount(0);
     await expect(page.locator(".airport-flow .airport-flow-band.now")).toHaveCount(0);
@@ -1011,7 +1011,7 @@ test("the facility directory browses official stores and never claims a store is
     await route.fulfill({ contentType: "application/json", body: JSON.stringify({ mode: "airport-facilities", facilities: rows, hasMore: false, basis: "OFFICIAL_PUBLISHED_HOURS" }) });
   });
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   // The tab only switches once React has taken over the server-rendered page.
   await expect(page.locator(".app[data-hydrated='true']")).toBeVisible();
   await page.locator(".airport-context-nav button").filter({ hasText: "매장·시설" }).click();
@@ -1031,7 +1031,7 @@ test("the facility directory browses official stores and never claims a store is
   await expect(directory.locator(".facility-card").first()).toContainText("온누리약국");
   await expect(directory.locator(".facility-card").first()).toContainText("확인 불가");
   // English readers get the official English name and location.
-  await page.goto("/en/airport");
+  await page.goto("/en/airport?audience=staff");
   await expect(page.locator(".app[data-hydrated='true']")).toBeVisible();
   await page.locator(".airport-context-nav button").filter({ hasText: "STORES" }).click();
   await expect(page.locator(".facility-card").first()).toContainText("Shilla Duty Free");
@@ -1388,7 +1388,7 @@ test("the composition module has intentional spacing and compact rows from mobil
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   for (const width of [390, 430, 768, 1280, 1440, 1920]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/ko/airport");
+    await page.goto("/ko/airport?audience=staff");
 
     const composition = page.locator(".airport-composition");
     await expect(composition).toBeVisible();
@@ -1445,7 +1445,7 @@ test("the composition module has intentional spacing and compact rows from mobil
 test("the forecast figure shows the current minute inside the phone viewport without scrolling", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
 
   const figure = page.locator(".airport-flow");
   await expect(figure).toBeVisible();

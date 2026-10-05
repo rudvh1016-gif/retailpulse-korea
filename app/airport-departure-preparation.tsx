@@ -7,13 +7,13 @@ import {AirportTaxRefundGuide} from './airport-tax-refund-guide';
 import {PassengerGuideImage,type PassengerGuideAsset} from './passenger-guide-image';
 import {getPassengerGuideCopy} from './passenger-guide-copy';
 
-export function AirportDeparturePreparation({lang}:{lang:Lang}) {
- const [open,setOpen]=useState(false),[input,setInput]=useState<DeparturePreparationInput>({route:'UNKNOWN',checkedBaggage:'UNKNOWN',taxRefund:'UNKNOWN',dutyFreePickup:'UNKNOWN'});
+export function AirportDeparturePreparation({lang,defaultOpen=false}:{lang:Lang;defaultOpen?:boolean}) {
+ const [open,setOpen]=useState(defaultOpen),[input,setInput]=useState<DeparturePreparationInput>({route:'UNKNOWN',checkedBaggage:'UNKNOWN',taxRefund:'UNKNOWN',dutyFreePickup:'UNKNOWN'});
  const c=departurePreparationCopy[lang]??departurePreparationCopy.en,g=getPassengerGuideCopy(lang),plan=departurePreparation(input);
  const basic=[['terminal',c.confirm],['checkin',input.taxRefund==='YES'?c.checkinTax:c.checkin],['security',c.securityStep],['immigration',c.immigration],['boarding',c.gate]] as const;
  const update=(key:keyof DeparturePreparationInput,value:DepartureRoute|DepartureChoice)=>setInput(current=>({...current,[key]:value}));
  const stepText:Record<DepartureStepId,string>={CONFIRM:c.confirm,CHECK_IN:c.checkin,CHECK_IN_TAX:c.checkinTax,CHECKED_CUSTOMS:c.checkedCustoms,BAG_DROP:c.drop,SECURITY:c.securityStep,IMMIGRATION:c.immigration,REFUND:c.refund,PICKUP:c.pickupStep,GATE:c.gate};
- return <details id="airport-departure-preparation" className="airport-departure-preparation" data-testid="departure-preparation" onToggle={event=>setOpen(event.currentTarget.open)}>
+ return <details id="airport-departure-preparation" className="airport-departure-preparation" data-testid="departure-preparation" open={open} onToggle={event=>setOpen(event.currentTarget.open)}>
   <summary>{c.title}<span className="passenger-guide-entry">{g.overview}</span></summary>{open&&<div className="departure-preparation-body">
    <p className="prep-note">{c.scope}</p><p>{c.intro}</p>
    <h3 className="passenger-guide-heading">{g.overview}</h3>

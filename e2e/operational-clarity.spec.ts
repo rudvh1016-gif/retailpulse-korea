@@ -6,7 +6,7 @@ test('airport starts compact, explains unmatched flights and expands truthful ne
  payload.airport.flightScope={total:561,T1:300,T2:250,CONCOURSE:10,other:0,unassigned:1,conflicting:0,capped:false};
  await page.route('**/api/live/summary*',routeSummary(payload));
  await page.setViewportSize({width:390,height:844});
- await page.goto('/ko/airport');
+ await page.goto('/ko/airport?audience=staff');
  await expect(page.locator('.airport-current-brief')).toContainText('탑승동 10편');
  await expect(page.locator('.passenger-scope-note')).toContainText('T1에서 출국 수속 후 탑승동');
  await expect(page.locator('.airport-current-brief')).toContainText('탑승 위치 확인 중 1편');
@@ -44,7 +44,7 @@ test('prediction shows a limited scorecard and exact missing weekday inputs',asy
 test('first load preloads one shared summary and uses the small Korean shell font',async({page})=>{
  let requests=0;
  await page.route('**/api/live/summary*',async route=>{requests++;await routeSummary(SUMMARY_FIXTURE)(route);});
- await page.goto('/ko/airport');
+ await page.goto('/ko/airport?audience=staff');
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await expect(page.locator('.airport-current-brief')).toBeVisible();
  await expect(page.locator('link[rel="preload"][as="fetch"][href="/api/live/summary"]')).toHaveCount(1);

@@ -17,7 +17,7 @@ for (const clock of ["11:57", "21:03", "23:59"]) {
     payload.airport.passengerForecastTimelineByTerminal = { T1: bands, T2: bands };
     await page.route("**/api/live/summary*", routeSummary(payload));
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/ko/airport");
+    await page.goto("/ko/airport?audience=staff");
     await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
 
     const [hours, minutes] = clock.split(":").map(Number);

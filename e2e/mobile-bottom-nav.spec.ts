@@ -6,7 +6,7 @@ async function open(page:Page,lang='ko') {
  await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
  await page.route('**/api/live/summary*',r=>r.fulfill({json:SUMMARY_FIXTURE}));
  await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',flights:[],truncated:false,retrievedAt:SUMMARY_FIXTURE.generatedAt}}));
- await page.goto(`/${lang}/airport`);
+ await page.goto(`/${lang}/airport?audience=staff`);
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
 }
 async function bottomGap(page:Page){return page.locator('.bottom-nav').evaluate(nav=>{const v=visualViewport;return Math.abs((v?v.offsetTop+v.height:innerHeight)-nav.getBoundingClientRect().bottom);});}

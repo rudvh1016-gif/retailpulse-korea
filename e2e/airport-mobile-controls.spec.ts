@@ -17,9 +17,9 @@ for (const width of [320,390,430]) test(`airport mobile selectors and gate text 
   const summary={...SUMMARY_FIXTURE,airport:{...SUMMARY_FIXTURE.airport,sides:airportSides(date,'TODAY',[],flights,[],false,false)}};
   await page.route('**/api/live/summary*',route=>route.fulfill({json:summary}));
   await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',basis:'OFFICIAL_DEPARTURE_SCHEDULE',flights,truncated:false,retrievedAt:base.retrievedAt}}));
-  await page.goto('/ko/airport');
+  await page.goto('/ko/airport?audience=staff');
 
-  const top=page.locator('.airport-view > .terminal-selector');
+  const top=page.locator('#airport-staff-panel > .terminal-selector');
   await expect(top.getByRole('tab').first()).toContainText('T1·T2');
   await expect(top.getByRole('tab').first()).toHaveAttribute('aria-selected','true');
   const overview=page.getByTestId('airport-departure-overview');
@@ -74,7 +74,7 @@ for (const lang of ['en','zh','ja'] as const) test(`building labels remain conta
   await page.setViewportSize({width:390,height:844});
   await page.route('**/api/live/summary*',route=>route.fulfill({json:SUMMARY_FIXTURE}));
   await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',basis:'OFFICIAL_DEPARTURE_SCHEDULE',flights,truncated:false,retrievedAt:base.retrievedAt}}));
-  await page.goto(`/${lang}/airport`);
+  await page.goto(`/${lang}/airport?audience=staff`);
   const map=page.getByTestId('airport-departure-overview').getByTestId('departure-map');
   await expect(map.locator(':scope > .terminal-selector button').last()).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);

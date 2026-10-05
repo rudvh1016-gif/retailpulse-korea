@@ -10,7 +10,7 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [360,390,430,1280]) 
   for(const [terminal,gates] of [['T1',['45','45','27','3','']],['CONCOURSE',['103','128','114']],['UNKNOWN',['']]] as const) for(const gate of gates){const i=flights.length;flights.push({...flights[0],physicalFlightId:`share-${i}`,flightNumber:`TEST${i}`,terminal,gate});}
   await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));let reads=0;
   await page.route('**/api/live/flights*',r=>{reads++;return r.fulfill({json:{mode:'live-flights',basis:'COLLECTED_FLIGHT_RECORDS',flights,truncated:false,retrievedAt:'2026-08-31T03:00:00Z'}});});
-  await page.goto(`/${lang}/airport?terminal=T2`);
+  await page.goto(`/${lang}/airport?audience=staff&terminal=T2`);
   const model=page.getByTestId('airport-concept-model');await expect(model).toHaveAttribute('data-denominator','5');
   await expect(model.getByTestId('zone-range-EAST')).toHaveText('(253–270, 273–291)');
   await expect(model.locator('.airport-concept-counts [data-side=WEST] small')).toHaveText('40.0%');
@@ -37,7 +37,7 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [360,390,430,1280]) 
 test('missing retrieval is unavailable, not a confirmed zero',async({page})=>{
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
  await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',basis:'COLLECTED_FLIGHT_RECORDS',flights:[],truncated:false,retrievedAt:null}}));
- await page.goto('/en/airport?terminal=T2');
+ await page.goto('/en/airport?audience=staff&terminal=T2');
  await expect(page.getByTestId('map-unavailable')).toContainText('not a confirmed zero');
  await expect(page.getByTestId('airport-concept-model')).toHaveCount(0);
 });

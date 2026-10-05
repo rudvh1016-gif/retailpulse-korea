@@ -8,7 +8,7 @@ for(const width of [320,390,430])test(`Blender passenger guide ${width}: readabl
  await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',flights:[],truncated:false,retrievedAt:'2026-08-31T03:00:00Z'}}));
  await page.goto('/ko/airport');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  const prep=page.getByTestId('departure-preparation'),steps=prep.getByTestId('passenger-basic-steps');
- await prep.locator(':scope > summary').focus();await page.keyboard.press('Enter');
+ await expect(prep).toHaveAttribute('open','');
  await expect(steps.locator(':scope > li')).toHaveCount(5);
  await expect(steps.locator('h4')).toHaveText(passengerGuideCopy.ko.titles.map((title,i)=>`${i+1} · ${title}`));
  await expect(steps.locator('.passenger-terminal-label')).toHaveText(['T1','T2']);

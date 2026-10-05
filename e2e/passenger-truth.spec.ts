@@ -27,7 +27,7 @@ for (const lang of ['ko','en','zh','ja'] as const) {
     await expect(personal.locator('[data-testid="airport-sum-formula"]')).toContainText('47,320');
     await expect(personal.locator('[data-testid="airport-sum-formula"]')).toContainText('11,044');
     const scope=await personal.locator('.departure-hall-scope-note').first().textContent();
-    await page.goto(`/${lang}/airport`);
+    await page.goto(`/${lang}/airport?audience=staff`);
     await expect(page.locator(".app")).toHaveAttribute("data-hydrated","true");
     if (tomorrow) await page.getByRole('button',{name:{ko:'내일',en:'Tomorrow',zh:'明天',ja:'明日'}[lang],exact:true}).click();
     // 숫자 혼용 금지. 한눈에 보기 줄의 칸들은 선택한 터미널 자기 필드만 읽어야
@@ -61,7 +61,7 @@ for (const lang of ['ko','en','zh','ja'] as const) {
   });
   test(`${lang} missing transfer is visible and never zero`,async({page})=>{
     await page.route('**/api/live/summary*',r=>r.fulfill({json:SUMMARY_FIXTURE}));
-    await page.goto(`/${lang}/airport`);
+    await page.goto(`/${lang}/airport?audience=staff`);
     await expect(page.locator(".app")).toHaveAttribute("data-hydrated","true");
     const transfer=page.getByTestId('transfer-forecast');
     await expect(transfer).toContainText(passengerCopy.unavailable[lang]);
