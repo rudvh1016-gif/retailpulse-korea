@@ -50,7 +50,8 @@ for (const width of [320,390,430]) test(`airport mobile selectors and gate text 
   await map.getByTestId('map-to').selectOption('12');
   await expect.poll(total).toBe(0);
   if (width===320) {
-    const boxes=await Promise.all((await presets.all()).map(button=>button.boundingBox()));
+    // Read one layout frame: separate CDP calls can span a late layout update.
+    const boxes=await presets.evaluateAll(buttons=>buttons.map(button=>button.getBoundingClientRect().toJSON()));
     expect(boxes[0]!.y).toBe(boxes[1]!.y);
     expect(boxes[1]!.y).toBe(boxes[2]!.y);
     expect(boxes[3]!.y).toBe(boxes[4]!.y);

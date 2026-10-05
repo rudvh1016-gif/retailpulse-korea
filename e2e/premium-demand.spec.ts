@@ -16,7 +16,7 @@ for (const width of [390, 1440]) {
       await page.clock.install({ time: new Date(payload.generatedAt) });
       await page.route('**/api/live/summary*', routeSummary(payload));
       await page.setViewportSize({ width, height: 900 });
-      await page.goto(`/ko${route}`);
+      await page.goto(`/ko${route}${route === '/airport' ? '?audience=staff' : ''}`);
       await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
       await expect(page.locator(route === '/airport' ? '.airport-current-brief' : '.area-current-brief').first()).toBeVisible();
       await page.evaluate(() => document.fonts.ready);

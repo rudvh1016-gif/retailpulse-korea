@@ -197,7 +197,7 @@ for (const width of [360, 390]) test(`owner UI lock across main screens ${width}
   const saved: PersonalPreferences = { ...allDayPreferences, location: 'airport', selectedLocations: ['airport', 'hongdae'], selectedTerminals: ['T2', 'T1'], interests: ['passengers', 'crowding'] };
   await seed(page, saved); await fixture(page, chartFixture());
   for (const route of ['', '/hongdae', '/airport', '/predictions', '/forecast', '/more']) {
-    await page.goto(`/ko${route}`);
+    await page.goto(`/ko${route}${route === '/airport' ? '?audience=staff' : ''}`);
     await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
     await page.addStyleTag({ content: ':root { --safe-area-top: 59px; --safe-area-bottom: 34px; } html { scroll-behavior: auto; }' });
     await expect(page.locator('.site-header')).toHaveCount(1);

@@ -84,12 +84,13 @@ test("primary navigation, terminal filter, back and refresh work", async ({ page
   await expect(page.locator("nav.bottom-nav")).toBeHidden();
   await page.locator("nav.top-nav a").filter({ hasText: "공항" }).click();
   await expect(page).toHaveURL(/\/ko\/airport$/);
+  await page.getByRole('button', { name: '직원용', exact: true }).click();
   await page.locator("#airport-data-flow").getByRole("tab", { name: "T2", exact: true }).click();
   await page.locator(".airport-context-nav").getByRole("button", { name: "항공편" }).click();
   await expect(page.getByRole("heading", { name: /항공편·도시 검색/ })).toBeVisible();
   await page.goBack();
   await page.reload();
-  await expect(page.locator("h1")).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 
 /**

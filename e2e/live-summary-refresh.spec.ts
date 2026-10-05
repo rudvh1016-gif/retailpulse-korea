@@ -179,7 +179,7 @@ test('a late tomorrow response cannot replace the newly selected today', async (
   // Browser history changes the selection even while the slow day's request
   // is pending; the old completion must not repaint that selected date.
   await page.evaluate(() => {
-    history.pushState(null, '', '/ko/airport?date=2026-08-31');
+    history.pushState(null, '', '/ko/airport?audience=staff&date=2026-08-31');
     dispatchEvent(new PopStateEvent('popstate'));
   });
   await expect(page.locator('.airport-brief-total')).toContainText('47,320');

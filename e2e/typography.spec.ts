@@ -783,7 +783,7 @@ test("no Korean line ever breaks in the middle of a word", async ({ page }) => {
 
   for (const width of [360, 390, 430]) {
     await page.setViewportSize({ width, height: 900 });
-    for (const path of ["/ko/myeongdong", "/ko/airport"]) {
+    for (const path of ["/ko/myeongdong", "/ko/airport?audience=staff"]) {
       await page.goto(path);
       await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
 
