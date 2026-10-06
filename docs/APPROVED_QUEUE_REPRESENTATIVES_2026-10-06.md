@@ -17,3 +17,7 @@ Implementation/draft PR only. No merge, public deployment, key/account change or
 ## Exact-head CI font coverage correction
 
 Initial commit e960a7b801d336c9f559d06ac52a5ac939278c0b CI37478002578 stopped at unit1173 PASS /1FAIL /1174 total: the new Korean explanation contained two unsupported syllables. Reworded the even-middle and60+ comparison sentences with equivalent supported copy. No font asset, font fixture, test assertion, protected-source hash, layout, observation or rank logic changed. Font coverage2/2 and representative selector7/7 pass; focused lint and fresh native vinext build pass. The new source commit receives normal CI rather than rerunning unchanged failed code.
+
+## Existing mobile test selector correction
+
+Head a52f01de CI37479353066 passed1174 unit/42 HTML, then had753 E2E first-pass,1 failed and1 flaky (automatic retry). The mobile summary test looked for a T2-only heading in the all-terminal representative group. It now locates the same longest-wait article in the checkpoint section and explicitly requires exactly one article and its T2 label, retaining60+ wait/43 people/observation assertions. This normal selector update changes no product source or protected hash. Targeted browser test1/1 passed with zero retries; typecheck, focused lint and diff check pass. The unrelated travel-records cancellation test passed its automatic retry; it remains recorded as flaky rather than first-pass. Full CI must verify this new head.
