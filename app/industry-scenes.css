@@ -1,0 +1,18 @@
+/* Seoul store illustrations share the existing type scale and white page. */
+#store-industry-guide { color: #000; }
+#store-industry-guide .industry-tabs button { color: #000; min-height: 44px; touch-action: manipulation; }
+#store-industry-guide .industry-tabs button.active::after { background: #000; }
+#store-industry-guide :is(button, summary):focus-visible { outline-color: #000; }
+.store-operating-scene { display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); gap: 24px; align-items: center; margin: 18px 0 24px; }
+.store-industry-model { margin: 0; min-width: 0; }
+.store-industry-model img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: contain; }
+.store-industry-model figcaption { overflow-wrap: anywhere; }
+.store-operating-scene .operating-focus { margin: 0; min-width: 0; }
+#store-industry-guide .operating-priority details p { color: #000; }
+#store-industry-guide summary { min-height: 44px; display: list-item; align-content: center; touch-action: manipulation; }
+#store-industry-guide .operating-priority details { margin-top: 6px; }
+#store-industry-guide .operating-record { padding: 6px 0; }
+@media (max-width: 760px) {
+  .store-operating-scene { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .store-industry-model { max-width: 440px; }
+}

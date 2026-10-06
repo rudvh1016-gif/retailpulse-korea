@@ -19,7 +19,7 @@
     "app/globals.css": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
     "app/layout.tsx": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
-    "app/live-signals.tsx": "73a68b4da19f835f7946aa0fefd83fce4e0e71df01c517d5e1302953b332f060",
+    "app/live-signals.tsx": "eaf2709b09abd8b88996aea680ae07df1745277f04849407e9d4ebd1aae45509",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
@@ -385,6 +385,16 @@
         "previous": null,
         "approved": "629cb24104891ab96ba6726b8946b1b5f5db832f6f13e3017dd08be211adad51",
         "reason": "New extracted chart stays covered by the existing Owner UI Lock assertion."
+      }
+    ]
+  },
+  "ownerAirportQueueLayout20261006": {
+    "reason": "2026-10-06 delegated airport queue task: connect the existing queue-color-v2 Blender WebP assets to the existing departure checkpoint list and preserve its data, terminal grouping and folding. Only the checkpoint markup in app/live-signals.tsx changes. Existing lock assertions, protected file membership, prior records and scheduler protections remain active. This record does not include or authorize previously blocked PR274, PR276 or PR278 changes or publication. All numbers, timestamps, raw wait ranges and missing/stale handling remain on the existing data path.",
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "73a68b4da19f835f7946aa0fefd83fce4e0e71df01c517d5e1302953b332f060",
+        "approved": "eaf2709b09abd8b88996aea680ae07df1745277f04849407e9d4ebd1aae45509"
       }
     ]
   },
