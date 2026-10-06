@@ -12,7 +12,7 @@ import { usableComparison, validPopulationRange, kstStamp, kstDay, peopleRange, 
 import { pc } from '../lib/personal-copy';
 import {flightBoardingLocation} from "../lib/flight-scope";
 
-import { SeoulContextCard, HolidayContext, contextText } from "./operational-context";
+import { SeoulContextCard, SeoulObservationScene, HolidayContext, contextText } from "./operational-context";
 import type { SeoulContext } from "../lib/seoul-context";
 import type { compareComposition } from "../lib/airport-composition-history";
 import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
@@ -39,6 +39,8 @@ import { buildFacilityCopyText, type CopyableFacility } from "../lib/facility-sh
 import { formatRepresentativeStations } from "../lib/subway-ridership";
 import { buildTerminalBriefings, type TerminalBriefing } from "../lib/terminal-briefing";
 import { buildWeatherGuide, worseAirGrade } from "../lib/weather-guide";
+import { WeatherScene } from './weather-scene';
+import type { WeatherMetricKind } from './weather-metric-scene';
 import { describeObservationAge } from "../lib/observation-freshness";
 import { comparisonText, comparisonValue, type RangeChange } from "../lib/period-comparison";
 import type { MonthToDate, MtdDay } from "../lib/airport-mtd";
@@ -3281,6 +3283,7 @@ interface SignalRow {
   value: string;
   note: string;
   detail?: string;
+  weather?: { issuedAt: readonly string[]; targetAt: readonly string[]; showScene: boolean; kinds: readonly WeatherMetricKind[] };
   /**
    * For a source that publishes on a cycle: which period the number
    * describes, and whether that is the provider's newest publication or a
@@ -3333,12 +3336,16 @@ const signalStructureText = {
 } as const;
 
 function SignalRowCard({ row, lang }: { row: SignalRow; lang: Lang }) {
-  return <article className="signal-row" data-signal-key={row.key}>
+  return <article className={`signal-row${row.weather ? ' signal-weather' : ''}`} data-signal-key={row.key}>
     <div className="signal-row-label">
       <span className="signal-time-state">{row.timeState}</span>
       <h4>{row.label}</h4>
     </div>
     <div className="signal-row-content">
+      {row.weather ? <WeatherScene lang={lang} forecast={null} forecastFacts={row.value.split(' · ')}
+        forecastTitle={null} source={row.note} guide={row.detail} issuedAt={row.weather.issuedAt}
+        targetAt={row.weather.targetAt} showScene={row.weather.showScene} metricScenes forecastKinds={row.weather.kinds}/>
+      : <>
       <b className="signal-row-value">{row.value}</b>
       {row.detail && <p className="signal-row-detail">{row.detail}</p>}
       {row.period && <p className="signal-row-period">
@@ -3347,6 +3354,7 @@ function SignalRowCard({ row, lang }: { row: SignalRow; lang: Lang }) {
         {row.period.cadenceNote && <small>{row.period.cadenceNote}</small>}
       </p>}
       <small className="signal-row-source">{row.note}{row.state === "STALE" ? ` · ${text.stale[lang]}` : ""}</small>
+      </>}
     </div>
   </article>;
 }
@@ -3582,12 +3590,16 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
   if (block?.weather.length) {
     const next12 = block.weather.slice(0, 12);
     const maxPop = Math.max(...next12.map((row) => row.precipitationProbability ?? 0));
+    // A published zero is a fact; an absent POP field cannot become 0%.
+    const hasProbability = next12.some(row => row.precipitationProbability !== null && row.precipitationProbability !== undefined);
     const firstTemp = next12.find((row) => row.temperatureTenthC !== null)?.temperatureTenthC;
     const condition = next12.find((row) => row.conditionCode)?.conditionCode;
     const parts: string[] = [];
-    if (condition && conditionLabels[condition]) parts.push(conditionLabels[condition][lang]);
-    if (firstTemp !== null && firstTemp !== undefined) parts.push(`${(firstTemp / 10).toFixed(0)}°C`);
-    parts.push(`${text.rainChance[lang]} ${maxPop}%`);
+    const kinds: WeatherMetricKind[] = [];
+    const fact = (kind: WeatherMetricKind, value: string) => { kinds.push(kind); parts.push(value); };
+    if (condition && conditionLabels[condition]) fact(condition === 'clear' ? 'sun' : condition === 'snow' ? 'snow' : condition === 'rain' || condition === 'shower' ? 'rain' : 'cloud', conditionLabels[condition][lang]);
+    if (firstTemp !== null && firstTemp !== undefined) fact('temperature', `${(firstTemp / 10).toFixed(0)}°C`);
+    if (hasProbability) fact('rain', `${text.rainChance[lang]} ${maxPop}%`);
 
     // Richer categories from the same KMA response. Each is shown only where
     // the provider actually published it: a missing category is left out
@@ -3617,11 +3629,11 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     const humidityMeasured = observationIsNow && observation?.humidity !== null && observation?.humidity !== undefined;
     const windMeasured = observationIsNow && observation?.wind !== null && observation?.wind !== undefined;
 
-    if (humidity !== undefined && !humidityMeasured) parts.push(`${text.humidity[lang]} ${humidity}%`);
-    if (wind !== undefined && !windMeasured) parts.push(`${text.wind[lang]} ${(wind / 10).toFixed(1)}m/s`);
-    if (rainfall) parts.push(`${text.rainfall[lang]} ${(rainfall.precipitationAmountTenthMm! / 10).toFixed(1)}mm`);
-    if (dayLow !== undefined) parts.push(`${text.dayLow[lang]} ${(dayLow / 10).toFixed(0)}°C`);
-    if (dayHigh !== undefined) parts.push(`${text.dayHigh[lang]} ${(dayHigh / 10).toFixed(0)}°C`);
+    if (humidity !== undefined && !humidityMeasured) fact('humidity', `${text.humidity[lang]} ${humidity}%`);
+    if (wind !== undefined && !windMeasured) fact('wind', `${text.wind[lang]} ${(wind / 10).toFixed(1)}m/s`);
+    if (rainfall) fact('rain', `${text.rainfall[lang]} ${(rainfall.precipitationAmountTenthMm! / 10).toFixed(1)}mm`);
+    if (dayLow !== undefined) fact('temperature', `${text.dayLow[lang]} ${(dayLow / 10).toFixed(0)}°C`);
+    if (dayHigh !== undefined) fact('temperature', `${text.dayHigh[lang]} ${(dayHigh / 10).toFixed(0)}°C`);
 
     // One practical line under the numbers. 맑음 · 24°C · 강수확률 is correct
     // and useless to someone deciding whether to take a jacket; this says what
@@ -3634,14 +3646,14 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       temperatureTenthC: firstTemp ?? null,
       dailyMinTemperatureTenthC: dayLow ?? null,
       dailyMaxTemperatureTenthC: dayHigh ?? null,
-      precipitationProbability: next12.some((row) => row.precipitationProbability !== null) ? maxPop : null,
+      precipitationProbability: hasProbability ? maxPop : null,
       precipitationTypeCode: next12.find((row) => row.precipitationTypeCode)?.precipitationTypeCode ?? null,
       humidityPercent: humidity ?? null,
       windSpeedTenthMps: wind ?? null,
     }, lang, { pm10Grade: airGrades?.pm10Grade ?? null, pm25Grade: airGrades?.pm25Grade ?? null });
     const quotedAir = Boolean(worseAirGrade(airGrades?.pm10Grade, airGrades?.pm25Grade));
 
-    rows.push({
+    if (parts.length || guide) rows.push({
       key: "weather",
       group: "now",
       timeState: signalStructureText.timeState.forecast[lang],
@@ -3649,6 +3661,16 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       value: parts.join(" · "),
       detail: guide ?? undefined,
       note: quotedAir ? `${text.sourceKma[lang]} · ${text.sourceAirQuality[lang]}` : text.sourceKma[lang],
+      weather: {
+        kinds,
+        issuedAt: next12.flatMap(row => {
+          const issued = (row as LiveWeatherRow & { issuedAt?: string }).issuedAt;
+          return issued ? [issued] : [];
+        }),
+        targetAt: next12.map(row => row.targetAt),
+        showScene: ![observation?.temperature, observation?.humidity, observation?.wind, observation?.pm10, observation?.pm25]
+          .some(value => value !== null && value !== undefined),
+      },
     });
   }
 
@@ -3747,7 +3769,10 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
           if (!groupRows.length && !hasSpecial) return null;
           const groupCopy = signalStructureText.groups[groupId];
           const firstNow = groupId === "now" ? groupRows.filter((row) => row.key === "realtime") : [];
-          const remainingNow = groupId === "now" ? groupRows.filter((row) => row.key !== "realtime") : [];
+            const weatherRow = groupId === "now" ? groupRows.find((row) => row.key === "weather") : undefined;
+            const remainingNow = groupId === "now" ? groupRows.filter((row) => row.key !== "realtime" && row.key !== "weather") : [];
+            const observedWeather = block?.context?.weather;
+            const hasObservation = [observedWeather?.temperature, observedWeather?.humidity, observedWeather?.wind, observedWeather?.pm10, observedWeather?.pm25].some(value => value !== null && value !== undefined);
           return <section className={`signal-group signal-group-${groupId}`} key={groupId}>
             <header className="signal-group-head">
               <h3 className="signal-group-title">{groupCopy.title[lang]}</h3>
@@ -3757,7 +3782,12 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
               {groupId === "now" ? <>
                 {firstNow.map((row) => <SignalRowCard key={row.key} row={row} lang={lang} />)}
                 {commercialRow && <CommercialSignalCard signal={commercialRow} lang={lang} />}
-                <SeoulContextCard context={block?.context} lang={lang} nowIso={summary.generatedAt} />
+                <SeoulContextCard context={block?.context} lang={lang} nowIso={summary.generatedAt} showWeather={false}/>
+                {(hasObservation || weatherRow) && <section className="seoul-weather-panel" aria-labelledby={`seoul-weather-${area}`}>
+                  <h3 id={`seoul-weather-${area}`}>{contextText(lang,'날씨·주변 환경','Weather and surroundings','天气与周边环境','天気・周辺環境')}</h3>
+                  <SeoulObservationScene context={block?.context} lang={lang} nowIso={summary.generatedAt} metricScenes/>
+                  {weatherRow && <SignalRowCard row={{...weatherRow,label:contextText(lang,'공식 예보','Official forecast','官方预报','公式予報')}} lang={lang}/>}
+                </section>}
                 {remainingNow.map((row) => <SignalRowCard key={row.key} row={row} lang={lang} />)}
               </> : null}
               {groupId === "today-next" && events.length > 0 && <EventSignalPanel

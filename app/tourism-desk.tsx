@@ -17,7 +17,6 @@ import {
 import {
   buildEventCopyText,
   eventPeriodStatusLabel,
-  eventPreview,
   officialEventPeriod,
   prepareEventsForPresentation,
   safeOfficialEventHomepage,
@@ -34,7 +33,12 @@ import {
   type TourismDeskLine,
   type TourismSubwayComparison,
 } from "../lib/tourism-desk-brief";
-import { buildWeatherGuide, formatWeatherDetails, type WeatherGuideInput } from "../lib/weather-guide";
+import { buildWeatherGuide, type WeatherGuideInput } from "../lib/weather-guide";
+import { SignalScene } from './signal-scene';
+import { WeatherScene } from './weather-scene';
+import './tourism-scenes.css';
+
+const sceneText = (lang: Lang, ko: string, en: string, zh: string, ja: string) => ({ ko, en, zh, ja })[lang];
 
 export type TourismAreaId = "myeongdong" | "hongdae" | "seongsu" | "itaewon";
 
@@ -460,7 +464,7 @@ function PeriodNote({ period }: { period: SourcePeriodDescription }) {
   </div>;
 }
 
-function BriefLine({ line, weatherDetails }: { line: TourismDeskLine; weatherDetails: string }) {
+function BriefLine({ line, lang }: { line: TourismDeskLine; lang: Lang }) {
   const marked = line.koreanText;
   const canMark = Boolean(marked && (marked.position === "start"
     ? line.text.startsWith(marked.value)
@@ -471,12 +475,15 @@ function BriefLine({ line, weatherDetails }: { line: TourismDeskLine; weatherDet
   const after = canMark && marked?.position === "start"
     ? line.text.slice(marked.value.length)
     : "";
-  return <li className="tourism-brief-line">
-    <strong>{before}{canMark && marked && <span
+  return <li className="tourism-brief-line" data-brief={line.key}>
+    <SignalScene kind={line.key === 'event' ? 'event' : line.key === 'subway' ? 'subway' : 'crowd'}/>
+    <div className="tourism-brief-content"><strong>{before}{canMark && marked && <span
       className={line.key === "event" ? "tourism-official-ko" : undefined}
       lang="ko"
     >{marked.value}</span>}{after}</strong>
-    <small>{line.basis}{line.key === "weather" && weatherDetails ? ` · ${weatherDetails}` : ""}</small>
+    <details className="tourism-brief-detail"><summary>{sceneText(lang, '자료와 설명', 'Source and explanation', '资料与说明', '資料と説明')}</summary>
+      <small>{line.basis}</small>
+    </details></div>
   </li>;
 }
 
@@ -488,8 +495,6 @@ function EventCard({ event, lang, featured }: { event: GuideEvent; lang: Lang; f
     .filter((value, index, values): value is string => Boolean(value) && values.indexOf(value) === index)
     .join(" · ");
   const overview = event.overview?.trim() ?? "";
-  const preview = eventPreview(overview);
-  const showFullDescription = Boolean(overview && overview !== preview);
   const homepage = safeOfficialEventHomepage(event.homepage);
   const distance = formatDistance(event.distanceM, lang);
 
@@ -505,9 +510,10 @@ function EventCard({ event, lang, featured }: { event: GuideEvent; lang: Lang; f
 
   return <article className={`tourism-event${featured ? " tourism-event-featured" : ""}`}>
     <header className="tourism-event-header">
-      <span className="tourism-event-status">{eventPeriodStatusLabel(event.status, lang)}</span>
+      <SignalScene kind="event"/>
+      <div><span className="tourism-event-status">{eventPeriodStatusLabel(event.status, lang)}</span>
       <h3 className="tourism-official-ko" lang="ko">{event.title}</h3>
-      {event.categoryName && <p className="tourism-event-category tourism-official-ko" lang="ko">{event.categoryName}</p>}
+      {event.categoryName && <p className="tourism-event-category tourism-official-ko" lang="ko">{event.categoryName}</p>}</div>
     </header>
     <dl className="tourism-event-facts">
       {period && <div><dt>{copy.eventPeriod}</dt><dd>{period}</dd></div>}
@@ -515,8 +521,7 @@ function EventCard({ event, lang, featured }: { event: GuideEvent; lang: Lang; f
       {distance && <div><dt>{copy.eventDistance}</dt><dd>{distance}</dd></div>}
       <div><dt>{copy.eventSource}</dt><dd>{copy.ktoSource}</dd></div>
     </dl>
-    {preview && <p className="tourism-event-preview tourism-official-ko" lang="ko">{preview}</p>}
-    {showFullDescription && <details className="tourism-event-description">
+    {overview && <details className="tourism-event-description">
       <summary>{copy.eventFull}</summary>
       <p className="tourism-official-ko" lang="ko">{overview}</p>
     </details>}
@@ -606,7 +611,6 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
   const weatherGuide = guides[lang] ?? null;
   const environment = block?.context?.weather;
   const airFacts = environment ? [environment.pm10!==null?`PM10 ${environment.pm10}μg/m³`:null,environment.pm25!==null?`PM2.5 ${environment.pm25}μg/m³`:null].filter(Boolean).join(' · ') : '';
-  const weatherDetails = [formatWeatherDetails(weatherInput(block?.weather ?? []), lang), airFacts ? `${airFacts} · ${environment?.observedAt.slice(5,16).replace('T',' ')} KST` : ''].filter(Boolean).join(' · ');
   const areaBrief = buildAreaCurrentBrief({
     realtime: block?.realtime?.freshness === "LIVE" ? block.realtime : null,
     realtimeForecast: block?.realtimeForecast ?? [],
@@ -704,7 +708,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
     });
   };
 
-  return <section className="tourism-desk" aria-labelledby="tourism-desk-title">
+  return <section className="tourism-desk tourism-scenes" aria-labelledby="tourism-desk-title">
     <header className="tourism-desk-head">
       <div>
         <p className="tourism-desk-kicker">KORETAIL · Tourism Desk</p>
@@ -731,12 +735,28 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
     {summary && <HolidayContext months={summary.holidays} date={summary.serviceDateKst} lang={lang} />}
     {!summary ? <LiveLoadMessage loading={summary === undefined} lang={lang} /> : <>
       <section className="tourism-guide-section tourism-shift-brief" aria-labelledby="tourism-brief-title">
-        <header className="tourism-section-head">
-          <h2 id="tourism-brief-title">{copy.sectionBrief}</h2>
-          <p>{copy.briefIntro}</p>
+        <header className="tourism-section-head tourism-brief-scene-head">
+          <figure className="tourism-district-scene">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`/airport-models/district-${area}.webp`} width="1200" height="900" alt="" loading="lazy" decoding="async"/>
+            <figcaption>{sceneText(lang, '지역 공간 모형', 'Area-space model', '地区空间模型', 'エリア空間の模型')}</figcaption>
+          </figure>
+          <div><h2 id="tourism-brief-title">{copy.sectionBrief}</h2><p>{copy.briefIntro}</p></div>
         </header>
         {brief.length
-          ? <ol className="tourism-brief-list">{brief.map((line) => <BriefLine key={line.key} line={line} weatherDetails={weatherDetails} />)}</ol>
+          ? <ol className="tourism-brief-list" key={`${area}:${lang}`}>{brief.map((line) => line.key === 'weather'
+            ? <li className="tourism-brief-line tourism-brief-weather" data-brief="weather" key={line.key}><WeatherScene lang={lang}
+              forecast={weatherInput(block?.weather ?? [])} source={line.basis} guide={line.text}
+              issuedAt={(block?.weather ?? []).slice(0, 12).flatMap(row => {
+                const issued = (row as GuideWeatherRow & { issuedAt?: string }).issuedAt;
+                return issued ? [issued] : [];
+              })}
+              targetAt={(block?.weather ?? []).slice(0, 12).map(row => row.targetAt)}
+              observation={environment && airFacts ? {
+                facts: airFacts.split(' · '), observedAt: environment.observedAt,
+                source: sceneText(lang, '서울시 도시데이터', 'Seoul city data', '首尔市城市数据', 'ソウル市都市データ'),
+              } : null}/></li>
+            : <BriefLine key={line.key} line={line} lang={lang}/>)}</ol>
           : <p className="tourism-empty">{copy.unavailable}</p>}
       </section>
 

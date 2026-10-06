@@ -197,9 +197,9 @@ def event(m):
     box('Blank programme board', (-.97, -.62, 1.29), (.56, .10, .30), m['white'], .025)
 
 
-IMAGES.mkdir(parents=True, exist_ok=True)
-SOURCES.mkdir(parents=True, exist_ok=True)
-for name, compose in [('crowd', crowd), ('rain', rain), ('temperature', temperature), ('holiday', holiday), ('event', event)]:
+def render_scene(name, compose):
+    IMAGES.mkdir(parents=True, exist_ok=True)
+    SOURCES.mkdir(parents=True, exist_ok=True)
     mats = setup(name)
     compose(mats)
     bpy.ops.wm.save_as_mainfile(filepath=str(SOURCES / f'{name}.blend'))
@@ -209,3 +209,8 @@ for name, compose in [('crowd', crowd), ('rain', rain), ('temperature', temperat
     image.scale(320, 240)
     image.save_render(str(IMAGES / f'{name}-320.webp'), scene=bpy.context.scene)
     print(f'SIGNAL_SCENE_READY {name}')
+
+
+if __name__ == '__main__':
+    for name, compose in [('crowd', crowd), ('rain', rain), ('temperature', temperature), ('holiday', holiday), ('event', event)]:
+        render_scene(name, compose)

@@ -1,0 +1,18 @@
+.seoul-weather-panel { padding: 18px 0; border-bottom: 1px solid var(--line); color: #000; }
+.seoul-weather-panel > h3 { margin: 0 0 12px; font-size: 14px; font-weight: var(--weight-strong); line-height: 1.5; }
+.seoul-weather-panel .context-environment { margin: 0; }
+.seoul-weather-panel .signal-weather { display: block; border-bottom: 0; padding: 12px 0 0; }
+.seoul-weather-panel .signal-weather .signal-row-label { margin-bottom: 6px; }
+.seoul-weather-panel .signal-weather .signal-time-state { display: none; }
+.seoul-weather-panel .weather-scene-content { max-width: none; }
+.seoul-weather-panel .weather-scene-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 16px; margin: 8px 0; }
+.seoul-weather-panel .weather-scene-values li { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 0; }
+.seoul-weather-panel .weather-scene-values li > span { min-width: 0; }
+.weather-metric-scene { flex: 0 0 56px; width: 56px; height: 42px; object-fit: contain; }
+@media (max-width: 760px) {
+  .seoul-weather-panel .weather-scene-values { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .weather-metric-scene { flex-basis: 48px; width: 48px; height: 36px; }
+}
+@media (max-width: 350px) {
+  .seoul-weather-panel .weather-scene-values { grid-template-columns: minmax(0, 1fr); }
+}
