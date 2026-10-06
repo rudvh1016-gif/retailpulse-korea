@@ -705,6 +705,11 @@ test("the flight board lists official flight rows and filters by search and term
 test("insights explains every metric instead of leading with a bare index", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.goto("/ko/forecast");
+  const reference = page.locator(".records-reference");
+  await expect(reference).not.toHaveAttribute("open", "");
+  await reference.locator("summary").focus();
+  await page.keyboard.press("Enter");
+  await expect(reference).toHaveAttribute("open", "");
   await expect(page.locator(".metric-explainer").first()).toBeVisible();
   for (const label of ["무엇인가요", "높으면", "출처", "왜 보나요"]) {
     await expect(page.locator(".metric-explainer").first().getByText(label, { exact: true })).toBeVisible();
