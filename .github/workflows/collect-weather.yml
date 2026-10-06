@@ -22,6 +22,7 @@ on:
         options:
           - forecast
           - metar-contract-once
+          - metar-diagnostic30-once
 
 permissions:
   contents: read
@@ -32,7 +33,7 @@ concurrency:
 
 jobs:
   collect:
-    if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && inputs.mode != 'metar-contract-once'
+    if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && inputs.mode != 'metar-contract-once' && inputs.mode != 'metar-diagnostic30-once'
     runs-on: ubuntu-latest
     # Three grids × (3 × 10s requests + 5s/30s waits + bounded jitter) ≤198s
     # provider-path maximum, plus setup/D1 margin. The job remains bounded.
@@ -66,4 +67,20 @@ jobs:
         run: node scripts/probe-rksi-metar-once.mjs
         env:
           METAR_CONTRACT_ONCE: "1"
+          DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
+
+  metar-diagnostic30-once:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'metar-diagnostic30-once'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+      - name: One additional RKSI request, transport stages only
+        run: node scripts/diagnose-rksi-metar-once.mjs
+        env:
+          METAR_DIAGNOSTIC_ADDITIONAL_ONCE: "1"
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}

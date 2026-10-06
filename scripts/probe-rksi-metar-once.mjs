@@ -2,15 +2,16 @@ import {pathToFileURL} from 'node:url';
 
 const ENDPOINT='https://apis.data.go.kr/1360000/AmmIwxxmService/getMetar';
 const LIMIT=1_048_576,TIMEOUT=10_000;
-const fields=['msgText','om:phenomenonTime','om:featureOfInterest','iwxxm:airTemperature','iwxxm:dewpointTemperature','iwxxm:qnh','iwxxm:surfaceWind','iwxxm:prevailingVisibility'];
+const fields=['msgText','om:phenomenonTime','om:featureOfInterest','iwxxm:airTemperature','iwxxm:dewpointTemperature','iwxxm:qnh','iwxxm:meanWindDirection','iwxxm:meanWindSpeed','iwxxm:windGustSpeed','iwxxm:AerodromeHorizontal Visibility'];
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x)?x:null;
 const code=x=>typeof x==='string'&&/^\d{2}$/.test(x)?x:null;
 const integer=x=>/^[0-9]+$/.test(String(x))&&Number.isSafeInteger(Number(x))?Number(x):null;
 const time=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(x)&&Number.isFinite(Date.parse(x))&&new Date(x).toISOString().slice(0,19)===x.slice(0,19)?x:null;
 
 /** One fixed official request. Returns allowlisted metadata, never payload, URL or exceptions. */
-export async function probeRksiOnce({serviceKey,fetchImpl=globalThis.fetch}) {
-  const result={source:'RKSI_METAR_CONTRACT_CHECK',station:'RKSI',requestCount:0,timeoutMs:TIMEOUT,maxBodyBytes:LIMIT,status:'UNVERIFIED',httpStatus:null,providerCode:null};
+export async function probeRksiOnce({serviceKey,fetchImpl=globalThis.fetch,timeoutMs=TIMEOUT}) {
+  if(![10_000,30_000].includes(timeoutMs))throw Error('Unsupported bounded diagnostic deadline');
+  const result={source:'RKSI_METAR_CONTRACT_CHECK',station:'RKSI',requestCount:0,timeoutMs,maxBodyBytes:LIMIT,status:'UNVERIFIED',httpStatus:null,providerCode:null};
   if(typeof serviceKey!=='string'||!serviceKey.trim()||serviceKey.length>4096)return{...result,status:'CREDENTIAL_NOT_CONFIGURED'};
   let key=serviceKey.trim();
   try{if(/%[0-9a-f]{2}/i.test(key))key=decodeURIComponent(key);}catch{return{...result,status:'INVALID_CREDENTIAL_FORMAT'};}
@@ -18,7 +19,7 @@ export async function probeRksiOnce({serviceKey,fetchImpl=globalThis.fetch}) {
   for(const[k,v]of Object.entries({ServiceKey:key,pageNo:'1',numOfRows:'100',dataType:'JSON',icao:'RKSI'}))url.searchParams.set(k,v);
   try{
     result.requestCount=1;
-    const response=await fetchImpl(url,{method:'GET',redirect:'error',signal:AbortSignal.timeout(TIMEOUT)});
+    const response=await fetchImpl(url,{method:'GET',redirect:'error',signal:AbortSignal.timeout(timeoutMs)});
     result.httpStatus=response.status;
     const reader=response.body?.getReader();
     if(!reader)return{...result,status:'EMPTY_RESPONSE'};
