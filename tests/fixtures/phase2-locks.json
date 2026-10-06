@@ -19,7 +19,7 @@
     "app/globals.css": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
     "app/layout.tsx": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
-    "app/live-signals.tsx": "eaf2709b09abd8b88996aea680ae07df1745277f04849407e9d4ebd1aae45509",
+    "app/live-signals.tsx": "1510ae35fd7d96e6e9ea0dff9eb04e3952bb1d9983300c449960bf01142aadc3",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
@@ -405,6 +405,29 @@
         "file": "app/live-signals.tsx",
         "previous": "73a68b4da19f835f7946aa0fefd83fce4e0e71df01c517d5e1302953b332f060",
         "approved": "eaf2709b09abd8b88996aea680ae07df1745277f04849407e9d4ebd1aae45509"
+      }
+    ]
+  },
+  "ownerQueueRepresentativesApproval20261006": {
+    "reason": "Owner accepted the latest three-card departure queue design (longest, actual central ranked row, shortest), mobile and desktop in one row with complete-list disclosure, T2 wait colors and finite heat. Zero remains a reported value with operating-status caution; stale/missing/closed observations remain in the full list. Explicit approved-scope baseline preparation received via lead on 2026-10-06. Only this protected file is refreshed; all existing enforcement assertions, 53 protected paths, prior owner records, fonts, source/API/scheduler contracts remain active. Draft implementation only; this record does not resolve the separate public execution approval blocker.",
+    "ownerApprovalMessage": "Sentinel_9b0b70df660c81919f5c0af99e384105",
+    "implementationRequest": "Sentinel_67e5023f1d8c8191a85c6d68f677de21",
+    "base": "ef0e98c79ab92bafe5418c8baea0e62329d0c126",
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "eaf2709b09abd8b88996aea680ae07df1745277f04849407e9d4ebd1aae45509",
+        "approved": "1510ae35fd7d96e6e9ea0dff9eb04e3952bb1d9983300c449960bf01142aadc3"
+      }
+    ],
+    "referenceLibrary": [
+      {
+        "id": "libfile_2891fb448d7481919d9151a2e2e2a6d6",
+        "version": 1
+      },
+      {
+        "id": "libfile_e70b205fb9488191a87f831ba5b44d5a",
+        "version": 1
       }
     ]
   }
