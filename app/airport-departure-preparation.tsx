@@ -20,7 +20,7 @@ export function AirportDeparturePreparation({lang}:{lang:Lang}) {
  const stepText:Record<DepartureStepId,string>={CONFIRM:c.confirm,CHECK_IN:c.checkin,CHECK_IN_TAX:c.checkinTax,CHECKED_CUSTOMS:c.checkedCustoms,BAG_DROP:c.drop,SECURITY:c.securityStep,IMMIGRATION:c.immigration,REFUND:c.refund,PICKUP:c.pickupStep,GATE:c.gate};
  return <details id="airport-departure-preparation" className={`airport-departure-preparation ${styles.guide}`} data-testid="departure-preparation" onToggle={event=>setOpen(event.currentTarget.open)}>
   <summary className={styles.entry} data-testid="departure-guide-entry">
-   <span className={styles.copy}><span className={styles.title}>{entry.title}</span><span className={styles.action}><span className={styles.actionText}>{open?entry.close:entry.open}</span><svg className={styles.indicator} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="m5 9 7 7 7-7"/></svg></span></span>
+   <span className={styles.copy}><span className={styles.buttonLabel}><span className={styles.title}>{entry.title}</span><svg className={styles.indicator} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="m5 9 7 7 7-7"/></svg></span><span className={styles.actionText}>{open?entry.close:entry.open}</span></span>
    <span className={styles.scene} aria-hidden="true"><Image src="/visuals/travel-records/v1/departure.webp" width={960} height={720} unoptimized alt="" priority/></span>
   </summary>{open&&<div className="departure-preparation-body">
    <p className="prep-note">{c.scope}</p><p>{c.intro}</p>

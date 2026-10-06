@@ -19,7 +19,6 @@
 .tax-refund-locations {padding:8px 0;}
 .tax-refund-locations [data-testid="tax-t2-conflict"] {border-left:2px solid #b8d9e9;padding-left:10px;}
 .airport-tax-refund :is(button,select,summary,a):focus-visible {outline:2px solid #365c79;outline-offset:3px;}
-.airport-purpose-links {display:flex;gap:20px;margin:16px 0;font-weight:600;}
 .airport-departure-preparation {margin:20px 0;padding:14px 0;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;}
 .airport-departure-preparation > summary {cursor:pointer;font-weight:600;min-height:44px;display:list-item;padding:12px 0;}
 .departure-preparation-body {padding-top:10px;}

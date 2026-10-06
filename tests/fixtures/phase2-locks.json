@@ -26,7 +26,7 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "b9ccbfae7aac67f7aafd4e5ad2eb6739df50f166fa6723befa40db8742a08314",
-    "app/retailpulse-app.tsx": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+    "app/retailpulse-app.tsx": "76302e9d7d4f4d97ab18cd0d0d7fa1a3f117763189229d90c813521050cf1b04",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
@@ -385,6 +385,16 @@
         "previous": null,
         "approved": "629cb24104891ab96ba6726b8946b1b5f5db832f6f13e3017dd08be211adad51",
         "reason": "New extracted chart stays covered by the existing Owner UI Lock assertion."
+      }
+    ]
+  },
+  "ownerDepartureEntryCompact20261006": {
+    "reason": "Owner requested a smaller departure-guide text button and removal of the redundant same-page airport-flow jump link. The departure shortcut is consolidated into the native guide summary. Only the old shortcut row and its unused import change in app/retailpulse-app.tsx; all other protected hashes, cron locks and the original enforcement test remain unchanged.",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+        "approved": "76302e9d7d4f4d97ab18cd0d0d7fa1a3f117763189229d90c813521050cf1b04"
       }
     ]
   }
