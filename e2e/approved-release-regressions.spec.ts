@@ -9,7 +9,7 @@ test('monthly prisms visibly associate each real range with its own value', asyn
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.route('**/api/live/summary*', routeSummary(summary));
-  await page.goto('/en/airport');
+  await page.goto('/en/airport?audience=staff');
   const bars = page.locator('.airport-month-compare-model > g');
   await expect(bars).toHaveCount(2);
   await expect(bars.nth(0)).toContainText('7/1');
@@ -30,7 +30,7 @@ for (const lang of ['ko', 'en', 'zh', 'ja']) for (const state of ['PARTIAL', 'UN
     await page.setViewportSize({ width: 360, height: 844 });
     await page.route('**/api/live/summary*', routeSummary(summary));
     await page.route('**/api/live/flights*', route => route.fulfill({ json: { mode: 'live-flights', flights: [], truncated: false } }));
-    await page.goto(`/${lang}/airport`);
+    await page.goto(`/${lang}/airport?audience=staff`);
     const notice = page.locator('.airport-hero .airport-forecast-state');
     await expect(notice).toBeVisible();
     const colors = await notice.locator('strong,p,small').evaluateAll(elements => elements.map(el => getComputedStyle(el).color));
@@ -42,7 +42,7 @@ for (const lang of ['ko', 'en', 'zh', 'ja']) for (const state of ['PARTIAL', 'UN
 test('hourly prisms use published values and the black keyboard tooltip', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
-  await page.goto('/en/airport');
+  await page.goto('/en/airport?audience=staff');
   const figure = page.locator('.airport-hero .airport-flow');
   await expect(figure.locator('.airport-hourly-prisms > g')).toHaveCount(2);
   const bars = await figure.locator('.airport-hourly-prisms > g').evaluateAll(elements => elements.map(el => ({ value: Number(el.getAttribute('data-value')), height: Number(el.getAttribute('data-height')) })));
@@ -66,7 +66,7 @@ test('next-day partial records cannot establish cross-midnight comparisons', asy
     const next = new URL(route.request().url()).searchParams.get('date') !== date;
     return route.fulfill({ json: { mode: 'live-flights', basis: 'OFFICIAL_DEPARTURE_SCHEDULE', flights: next ? [row] : [], truncated: next, retrievedAt: `${date}T22:50:00+09:00` } });
   });
-  await page.goto('/en/airport?terminal=T2');
+  await page.goto('/en/airport?audience=staff&terminal=T2');
   await page.getByTestId('airport-departure-overview').scrollIntoViewIfNeeded();
   await expect(page.getByTestId('airport-concept-model')).toBeVisible();
   await page.getByTestId('departure-map').locator('[data-preset="NEXT3"]').click();

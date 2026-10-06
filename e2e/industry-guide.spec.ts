@@ -31,7 +31,7 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) for (const width of [390, 
     await page.screenshot({ path: info.outputPath(`business-${lang}-${width}.png`) });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 
-    await page.goto(`/${lang}/airport`);
+    await page.goto(`/${lang}/airport?audience=staff`);
     await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
     const airport = page.getByTestId('industry-guide');
     const select = airport.locator('select');

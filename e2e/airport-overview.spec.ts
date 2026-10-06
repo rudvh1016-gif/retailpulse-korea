@@ -32,7 +32,7 @@ async function open(page: Page, { lang = 'ko', width = 390, suffix = '', schedul
     const apiFlights = [...FLIGHTS, { ...FLIGHTS[0], physicalFlightId: 'ARRIVAL-ONLY', direction: 'arrival' }];
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ mode: 'live-flights', basis: scheduleOnly ? 'OFFICIAL_DEPARTURE_SCHEDULE' : 'COLLECTED_FLIGHT_RECORDS', serviceDateKst: DATE, todayKst: DATE, flights: apiFlights, truncated: false, retrievedAt: '2026-08-31T05:00:00Z' }) });
   });
-  await page.goto(`/${lang}/airport${suffix}`);
+  await page.goto(`/${lang}/airport${suffix}${suffix ? '&' : '?'}audience=staff`);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   return { flightRequests, historyRequests };
 }

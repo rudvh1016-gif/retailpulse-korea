@@ -131,7 +131,7 @@ test('denied storage leaves airport date and terminal controls usable',async({pa
     await expect(page.locator('.airport-glance-strip')).toHaveAttribute('data-scope', 'T2');
 });
 test('public detail routes remain directly available without onboarding',async({page})=>{
-  await fixture(page);await page.goto('/ko/airport');
+  await fixture(page);await page.goto('/ko/airport?audience=staff');
   await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
   await expect(page.locator('h1')).toBeVisible();
 });
@@ -215,6 +215,6 @@ test('airport root and deep link share selected-day meaning and keep KST out of 
     await expect(page.locator('.airport-metric-value').filter({ hasText: 'KST' })).toHaveCount(0);
     await expect(page.locator('.airport-metric-value')).toContainText('47,320');
     const before = await overview.innerText();
-    await page.goto('/ko/airport?date=2026-09-01');
+    await page.goto('/ko/airport?audience=staff&date=2026-09-01');
     await expect(page.locator('.airport-current-brief')).toHaveText(before, { useInnerText: true });
 });

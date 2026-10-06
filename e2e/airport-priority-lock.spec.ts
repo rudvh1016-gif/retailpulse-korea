@@ -53,7 +53,7 @@ for (const lang of ["ko", "en", "zh", "ja"] as const) {
     test(`airport priority lock holds · ${lang} · ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 1000 });
       await page.route("**/api/live/summary**", routeSummary(WITH_TRANSFER));
-      await page.goto(`/${lang}/airport`);
+      await page.goto(`/${lang}/airport?audience=staff`);
       await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
 
       // 1-3: the sum leads, is shown as arithmetic, and carries its limitation.
@@ -178,7 +178,7 @@ for (const lang of ["ko", "en", "zh", "ja"] as const) {
 test("month to date reads the selected terminal's own month, never a neighbour's", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 1000 });
   await page.route("**/api/live/summary**", routeSummary(WITH_TRANSFER));
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   const mtd = page.locator('[data-testid="airport-mtd"]');
   await expect(mtd).toHaveAttribute("data-scope", "all");
@@ -219,7 +219,7 @@ for (const lang of ["ko", "en", "zh", "ja"] as const) {
     test(`a month with a missing day reads as incomplete, not small · ${lang} · ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 1000 });
       await page.route("**/api/live/summary**", routeSummary(GAPPED));
-      await page.goto(`/${lang}/airport`);
+      await page.goto(`/${lang}/airport?audience=staff`);
       await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
       const mtd = page.locator('[data-testid="airport-mtd"]');
 
@@ -280,7 +280,7 @@ for (const count of [1, 2]) {
       test(`${count} day(s) into the month: evenly spaced short rounded bars · ${lang} · ${width}px`, async ({ page }) => {
         await page.setViewportSize({ width, height: 1000 });
         await page.route("**/api/live/summary**", routeSummary(FIRST_DAYS(count)));
-        await page.goto(`/${lang}/airport`);
+        await page.goto(`/${lang}/airport?audience=staff`);
         await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
         const bars = page.locator(".airport-month-bar");
         await expect(bars).toHaveCount(count);

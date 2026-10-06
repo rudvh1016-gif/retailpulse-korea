@@ -40,6 +40,9 @@ import { AirportDepartureOverview } from "./airport-departure-overview";
 import { AirportConcourse } from './airport-concourse';
 import { AirportTaxRefundGuide } from './airport-tax-refund-guide';
 import { AirportDeparturePreparation } from './airport-departure-preparation';
+import { AirportAudienceView } from './airport-audience-view';
+import { AirportPassengerView } from './airport-passenger-view';
+import { airportAudienceCopy } from '../lib/airport-audience';
 import { departurePreparationCopy } from './airport-departure-preparation-copy';
 import './airport-tax-refund-guide.css';
 import { sidesCopy } from "../lib/airport-sides-copy";
@@ -398,6 +401,8 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   function updateUrl(nextLang: Lang, nextView: View, nextArea: AreaId, nextTerminal: Terminal = terminal, preserveHome = false, nextConcourse=concourse) {
     const params = new URLSearchParams();
     if (serviceDate) params.set('date',serviceDate);
+    const audience = new URLSearchParams(window.location.search).get('audience');
+    if (nextView === 'airport' && (audience === 'passenger' || audience === 'staff')) params.set('audience',audience);
     if (nextView === 'predictions') params.set('area',nextArea);
     if(nextView==='airport'&&nextConcourse)params.set('building','CONCOURSE');
     else if (nextView === 'airport' && nextTerminal !== 'all') params.set('terminal',nextTerminal);
@@ -506,6 +511,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             industry={industry}
             setIndustry={setIndustry}
             lang={lang}
+            audienceSelection={!homeVisible}
             terminal={terminal}
             setTerminal={next => { setConcourse(false);setTerminal(next); updateUrl(lang, "airport", selected, next, homeVisible,false); }}
             concourse={concourse}
@@ -569,8 +575,9 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 }
 
 function AirportView({
-  lang, terminal, setTerminal, concourse, setConcourse, section, setSection, date, setDate, industry, setIndustry, todayAnswer,
+  lang, audienceSelection, terminal, setTerminal, concourse, setConcourse, section, setSection, date, setDate, industry, setIndustry, todayAnswer,
 }: {
+  audienceSelection: boolean;
   todayAnswer: TodayAnswer | null;
   industry: IndustryId; setIndustry: (value: IndustryId) => void;
   lang: Lang; terminal: Terminal; setTerminal: (value: Terminal) => void;
@@ -614,6 +621,14 @@ function AirportView({
 
   return (
     <section className="view-section airport-view">
+      <AirportAudienceView lang={lang} enabled={audienceSelection} passenger={<>
+        <div className="view-intro"><div>
+          <p className="eyebrow">INCHEON AIRPORT · OFFICIAL · KST</p>
+          <h1>{localText(lang, { ko: "인천공항", en: "Incheon Airport", zh: "仁川机场", ja: "仁川空港" })}</h1>
+          <p>{airportAudienceCopy(lang).intro}</p>
+        </div></div>
+        <AirportPassengerView lang={lang} terminal={terminal} setTerminal={setTerminal} date={date} setDate={setDate}/>
+      </>}>
       <div className="view-intro">
         <div>
           <p className="eyebrow">INCHEON AIRPORT · OFFICIAL · KST</p>
@@ -623,8 +638,8 @@ function AirportView({
         </div>
       </div>
 
-      {(concourse||section === "now")&&<nav className="airport-purpose-links" aria-label={departurePreparationCopy[lang].title}><a href="#airport-departure-preparation" onClick={()=>{const guide=document.getElementById('airport-departure-preparation');if(guide instanceof HTMLDetailsElement)guide.open=true;}}>{departurePreparationCopy[lang].title}</a><a href="#airport-data-flow">{departurePreparationCopy[lang].flow}</a></nav>}
-      {(concourse||section === "now")&&<AirportDeparturePreparation lang={lang}/>}
+      {!audienceSelection&&(concourse||section === "now")&&<nav className="airport-purpose-links" aria-label={departurePreparationCopy[lang].title}><a href="#airport-departure-preparation" onClick={()=>{const guide=document.getElementById('airport-departure-preparation');if(guide instanceof HTMLDetailsElement)guide.open=true;}}>{departurePreparationCopy[lang].title}</a><a href="#airport-data-flow">{departurePreparationCopy[lang].flow}</a></nav>}
+      {!audienceSelection&&(concourse||section === "now")&&<AirportDeparturePreparation lang={lang}/>}
       <div id="airport-data-flow" className="terminal-selector" role="tablist" aria-label="Terminal">
         {(["all", "T1", "T2"] as Terminal[]).map((item) => <button key={item} className={!concourse&&terminal === item ? "active" : ""} onClick={() => setTerminal(item)} role="tab" aria-selected={!concourse&&terminal === item}>{item === "all" ? <><span>{localText(lang, { ko: "전체", en: "ALL", zh: "全部", ja: "全体" })}</span><small>T1·T2</small></> : item}</button>)}
         <button className={concourse?'active':''} onClick={()=>setConcourse(true)} role="tab" aria-selected={concourse}>{localText(lang,{ko:'탑승동',en:'Concourse',zh:'登机楼',ja:'搭乗棟'})}</button>
@@ -712,6 +727,7 @@ function AirportView({
           <ol>{airportAnnual.map((row) => <li key={row.year}><span>{row.year}</span><b>{formatCount(lang, row.passengers)}</b></li>)}</ol>
         </div>
       </section>}
+      </AirportAudienceView>
     </section>
   );
 }

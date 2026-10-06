@@ -10,7 +10,7 @@ const EMPTY = "해당하는 공식 시설 정보가 없습니다";
 test("a degraded directory answer is shown as a failed load, not as no results", async ({ page }) => {
   await page.route("**/api/airport/facilities*", (route) => route.fulfill({ contentType: "application/json", body: JSON.stringify({ mode: "degraded", facilities: [], hasMore: false }) }));
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   await expect(page.locator(".app[data-hydrated='true']")).toBeVisible();
   await page.locator(".airport-context-nav button").filter({ hasText: "매장·시설" }).click();
   const directory = page.locator(".airport-facilities");
@@ -23,7 +23,7 @@ test("a network error and a 500 are failed loads too", async ({ page }) => {
   let calls = 0;
   await page.route("**/api/airport/facilities*", (route) => (++calls === 1 ? route.abort() : route.fulfill({ status: 500, contentType: "application/json", body: "{}" })));
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   await expect(page.locator(".app[data-hydrated='true']")).toBeVisible();
   await page.locator(".airport-context-nav button").filter({ hasText: "매장·시설" }).click();
   const directory = page.locator(".airport-facilities");
@@ -36,7 +36,7 @@ test("a network error and a 500 are failed loads too", async ({ page }) => {
 test("a real empty answer is still 'no match'", async ({ page }) => {
   await page.route("**/api/airport/facilities*", (route) => route.fulfill({ contentType: "application/json", body: JSON.stringify({ mode: "airport-facilities", facilities: [], hasMore: false }) }));
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  await page.goto("/ko/airport");
+  await page.goto("/ko/airport?audience=staff");
   await expect(page.locator(".app[data-hydrated='true']")).toBeVisible();
   await page.locator(".airport-context-nav button").filter({ hasText: "매장·시설" }).click();
   const directory = page.locator(".airport-facilities");

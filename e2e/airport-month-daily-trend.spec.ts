@@ -39,7 +39,7 @@ for (const width of [320, 390, 430]) {
     await page.setViewportSize({ width, height: 900 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.route('**/api/live/summary**', routeSummary(fiveDays()));
-    await page.goto('/ko/airport');
+    await page.goto('/ko/airport?audience=staff');
     const month = page.getByTestId('airport-mtd');
     const chart = month.locator('.airport-month-chart');
     await expect(chart).toHaveAttribute('data-short-series', 'true');
@@ -62,7 +62,7 @@ for (const width of [320, 390, 430]) {
 test('a missing day is a gap rather than a zero and stops the running total', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 });
   await page.route('**/api/live/summary**', routeSummary(fiveDays(true)));
-  await page.goto('/ko/airport');
+  await page.goto('/ko/airport?audience=staff');
   const chart = page.getByTestId('airport-mtd').locator('.airport-month-chart');
   await expect(chart.locator('.airport-month-bar')).toHaveCount(4);
   await expect(chart.locator('.airport-month-value-labels span[data-date="2026-09-03"]')).toHaveText('—');
@@ -76,7 +76,7 @@ test('a missing day is a gap rather than a zero and stops the running total', as
 test('a longer month keeps every bar and uses the selected readout instead of crowded labels', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 });
   await page.route('**/api/live/summary**', routeSummary(SUMMARY_FIXTURE));
-  await page.goto('/ko/airport');
+  await page.goto('/ko/airport?audience=staff');
   const chart = page.getByTestId('airport-mtd').locator('.airport-month-chart');
   await expect(chart).toHaveAttribute('data-short-series', 'false');
   await expect(chart.locator('.airport-month-bar')).toHaveCount(13);

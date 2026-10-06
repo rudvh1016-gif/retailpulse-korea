@@ -15,7 +15,7 @@ for(const width of [320,390,430])test(`destination flags and all-country disclos
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
  await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',basis:'COLLECTED_FLIGHT_RECORDS',flights,truncated:false,retrievedAt:flights[0].retrievedAt}}));
- await page.goto('/ko/airport?terminal=T1');
+ await page.goto('/ko/airport?audience=staff&terminal=T1');
  const zone=page.getByTestId('map-zone-countries').locator('[data-side=WEST]');
  await expect(zone).toHaveAttribute('data-total','12');
  await expect(zone.locator('li[data-country=JP]')).toHaveAttribute('data-share','33.3');

@@ -16,7 +16,7 @@ for (const width of [390, 1440]) {
       await page.clock.install({ time: new Date(payload.generatedAt) });
       await page.route('**/api/live/summary*', routeSummary(payload));
       await page.setViewportSize({ width, height: 900 });
-      await page.goto(`/ko${route}`);
+      await page.goto(`/ko${route}${route === '/airport' ? '?audience=staff' : ''}`);
       await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
       await expect(page.locator(route === '/airport' ? '.airport-current-brief' : '.area-current-brief').first()).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
@@ -80,7 +80,7 @@ for (const state of ['forecast-only', 'missing', 'stale', 'comparison-overlap', 
       data.airport.passengerForecastTimeline = [data.airport.passengerForecastTimeline[0], data.airport.passengerForecastTimeline.at(-1)!];
     }
     await page.route('**/api/live/summary*', routeSummary(data));
-    await page.goto(state === 'partial-airport' ? '/ko/airport' : '/ko/myeongdong');
+    await page.goto(state === 'partial-airport' ? '/ko/airport?audience=staff' : '/ko/myeongdong');
     if (state === 'partial-airport') {
       await expect(page.locator('.airport-flow')).toBeVisible();
       await expect(page.locator('.airport-brief-total')).toHaveCount(0);
@@ -115,7 +115,7 @@ test('selected dates and terminal scopes survive links, reload and back', async 
   await page.goto(`/ko?date=${selectedDate}`);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
   await expect(page.locator('.demand-card-footer > a').first()).toHaveAttribute('href',`/ko/myeongdong?date=${selectedDate}`);
-  await page.goto(`/ko/airport?terminal=T1&date=${selectedDate}`);
+  await page.goto(`/ko/airport?audience=staff&terminal=T1&date=${selectedDate}`);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
   await page.getByRole('tab',{name:'T2',exact:true}).click();
   await expect(page).toHaveURL(/terminal=T2/);

@@ -66,7 +66,7 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) for (const width of lang =
         flights: date === futureDate ? [{ flightNumber: 'KE902', airlineCode: 'KE', airportCode: 'NRT', direction: 'departure', terminal: 'T1', gate: null, checkinCounter: null, status: 'scheduled', scheduledAt: `${date}T08:00:00+09:00` }] : [],
       } });
     });
-    await page.goto(`/${lang}/airport`);
+    await page.goto(`/${lang}/airport?audience=staff`);
     await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
     const nav = page.locator('.date-nav');
     await nav.getByText(labels[lang].dates, { exact: true }).click();
@@ -119,7 +119,7 @@ for (const fixedDate of [false, true]) test(`KST midnight renews shortcuts and $
     payload.dayRelation = date < current ? 'PAST' : date > current ? 'FUTURE' : 'TODAY';
     await route.fulfill({ json: payload });
   });
-  await page.goto('/ko/airport');
+  await page.goto('/ko/airport?audience=staff');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   const nav = page.locator('.date-nav');
   if (fixedDate) {
@@ -148,7 +148,7 @@ for (const fixedDate of [false, true]) test(`KST midnight refresh failure still 
     payload.generatedAt = '2026-09-21T14:59:50Z';
     await route.fulfill({ json: payload });
   });
-  await page.goto('/ko/airport');
+  await page.goto('/ko/airport?audience=staff');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   const nav = page.locator('.date-nav');
   if (fixedDate) {
@@ -182,7 +182,7 @@ test('month request failure is an error, and arrivals use their own collection t
     Object.assign(payload.airport.arrivalForecast, { forecastCoverage: { all: 'COMPLETE', byTerminal: {} }, passengerForecastRetrievedAt: '2026-09-21T02:55:00Z' });
     await route.fulfill({ json: payload });
   });
-  await page.goto('/ko/airport');
+  await page.goto('/ko/airport?audience=staff');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   await page.locator('.airport-context-nav').getByRole('button', { name: '입국', exact: true }).click();
   await expect(page.locator('.date-scope-note')).toContainText('11:55 KST');

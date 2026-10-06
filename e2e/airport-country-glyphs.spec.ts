@@ -10,7 +10,7 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`every verified destinatio
  await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});
  const summary={...SUMMARY_FIXTURE,airport:{...SUMMARY_FIXTURE.airport,sides:airportSides(date,'TODAY',[],flights,[],false,false)}};
  await page.route('**/api/live/summary*',routeSummary(summary));await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',flights,truncated:false,retrievedAt:flights[0].retrievedAt}}));
- await page.goto(`/${lang}/airport?terminal=T1`);await page.getByTestId('airport-departure-overview').scrollIntoViewIfNeeded();const countries=page.getByTestId('map-zone-countries');await expect(countries).toBeVisible();
+ await page.goto(`/${lang}/airport?audience=staff&terminal=T1`);await page.getByTestId('airport-departure-overview').scrollIntoViewIfNeeded();const countries=page.getByTestId('map-zone-countries');await expect(countries).toBeVisible();
  await expect(countries.locator('li[data-country]')).toHaveCount(destinations.length);
  await expect(countries.locator('li[data-country] img')).toHaveCount(destinations.length);
  expect(await tofuCharacters(countries)).toEqual([]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);

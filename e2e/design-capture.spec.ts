@@ -39,7 +39,7 @@ for (const locale of locales) {
       if (await flow.count()) await flow.screenshot({ path: `${OUT}/${locale}-${viewport.name}-seoul-chart.png` });
 
       // Airport headline + hourly forecast chart.
-      await page.goto(`/${locale}/airport`);
+      await page.goto(`/${locale}/airport?audience=staff`);
       const brief = page.locator(".airport-current-brief").first();
       await expect(brief).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
