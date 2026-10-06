@@ -14,6 +14,14 @@ name: Collect Weather Forecasts
 # GitHub schedule here would duplicate W1 provider calls.
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Existing forecast collection or one bounded RKSI contract check
+        type: choice
+        default: forecast
+        options:
+          - forecast
+          - metar-contract-once
 
 permissions:
   contents: read
@@ -24,7 +32,7 @@ concurrency:
 
 jobs:
   collect:
-    if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
+    if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && inputs.mode != 'metar-contract-once'
     runs-on: ubuntu-latest
     # Three grids × (3 × 10s requests + 5s/30s waits + bounded jitter) ≤198s
     # provider-path maximum, plus setup/D1 margin. The job remains bounded.
@@ -42,4 +50,20 @@ jobs:
           ENABLE_PRODUCTION_COLLECTOR: "true"
           RPK_PRODUCTION_SOURCES: weather
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+          DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
+
+  metar-contract-once:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'metar-contract-once'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+      - name: One bounded RKSI contract request, safe metadata only
+        run: node scripts/probe-rksi-metar-once.mjs
+        env:
+          METAR_CONTRACT_ONCE: "1"
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
