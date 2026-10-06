@@ -3,7 +3,6 @@
 .seoul-weather-panel .context-environment { margin: 0; }
 .seoul-weather-panel .signal-weather { display: block; border-bottom: 0; padding: 12px 0 0; }
 .seoul-weather-panel .signal-weather .signal-row-label { margin-bottom: 6px; }
-.seoul-weather-panel .signal-weather .signal-time-state { display: none; }
 .seoul-weather-panel .weather-scene-content { max-width: none; }
 .seoul-weather-panel .weather-scene-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 16px; margin: 8px 0; }
 .seoul-weather-panel .weather-scene-values li { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 0; }

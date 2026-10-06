@@ -3786,7 +3786,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
                 {(hasObservation || weatherRow) && <section className="seoul-weather-panel" aria-labelledby={`seoul-weather-${area}`}>
                   <h3 id={`seoul-weather-${area}`}>{contextText(lang,'날씨·주변 환경','Weather and surroundings','天气与周边环境','天気・周辺環境')}</h3>
                   <SeoulObservationScene context={block?.context} lang={lang} nowIso={summary.generatedAt} metricScenes/>
-                  {weatherRow && <SignalRowCard row={{...weatherRow,label:contextText(lang,'공식 예보','Official forecast','官方预报','公式予報')}} lang={lang}/>}
+                  {weatherRow && <SignalRowCard row={{...weatherRow,label:contextText(lang,'공식 날씨 예보','Official weather forecast','官方天气预报','公式天気予報')}} lang={lang}/>}
                 </section>}
                 {remainingNow.map((row) => <SignalRowCard key={row.key} row={row} lang={lang} />)}
               </> : null}
