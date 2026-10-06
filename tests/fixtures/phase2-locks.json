@@ -19,13 +19,13 @@
     "app/globals.css": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
     "app/layout.tsx": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
-    "app/live-signals.tsx": "73a68b4da19f835f7946aa0fefd83fce4e0e71df01c517d5e1302953b332f060",
+    "app/live-signals.tsx": "eaf2709b09abd8b88996aea680ae07df1745277f04849407e9d4ebd1aae45509",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
-    "app/prediction-view.tsx": "b9ccbfae7aac67f7aafd4e5ad2eb6739df50f166fa6723befa40db8742a08314",
+    "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
     "app/retailpulse-app.tsx": "3ce5cf78fdd6db32a7dd35abbb39f9af0ebd94493318d691824abdf6cbdadc6a",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
@@ -382,6 +382,16 @@
       }
     ]
   },
+  "ownerPredictionEvidenceDisclosure20261006": {
+    "reason": "Owner request Sentinel_d47b33b622548191b99a81eb91a92e40 (2026-10-06), delegated and explicitly resumed by the lead: hide the nonessential prediction-history and scorecard area. Wrap the existing data and verification controls in a default-closed native Data and forecast accuracy disclosure; keep forecast/observation truth labels visible and preserve the existing score deep link. Refresh only app/prediction-view.tsx through the normal protected baseline record procedure. The chart, data sources, prediction calculations, schedulers, other protected hashes, prior approval records and all enforcement tests remain unchanged. This is a separate new scope, not a retry of blocked airport changes. Merge/deployment remains coordinated with the lead.",
+    "changes": [
+      {
+        "file": "app/prediction-view.tsx",
+        "previous": "b9ccbfae7aac67f7aafd4e5ad2eb6739df50f166fa6723befa40db8742a08314",
+        "approved": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042"
+      }
+    ]
+  },
   "ownerSeoulConnectedRangeChart20261006": {
     "reason": "Owner explicitly approved applying the final Seoul chart to the app (2026-10-06 03:59:35 UTC, Sentinel_314768f0993c8191a2bc2e6992b83ab2; resumed in Sentinel_d8b23a365a4081918a708f89dcf8f0c4). Delegation authorizes the normal protected record procedure for this new chart scope only. Extract the shared chart into PopulationFlowChart, preserving source min/max, fonts, APIs and schedulers. Only app/area-demand-card.tsx is refreshed; all prior records, other protected hashes, cron locks and enforcement tests stay unchanged. No previously blocked change is included. Merge/deployment remains coordinated by the lead thread. The extracted app/population-flow.tsx is added to the same active byte lock, so extraction does not reduce chart protection.",
     "changes": [
@@ -395,6 +405,16 @@
         "previous": null,
         "approved": "629cb24104891ab96ba6726b8946b1b5f5db832f6f13e3017dd08be211adad51",
         "reason": "New extracted chart stays covered by the existing Owner UI Lock assertion."
+      }
+    ]
+  },
+  "ownerAirportQueueLayout20261006": {
+    "reason": "2026-10-06 delegated airport queue task: connect the existing queue-color-v2 Blender WebP assets to the existing departure checkpoint list and preserve its data, terminal grouping and folding. Only the checkpoint markup in app/live-signals.tsx changes. Existing lock assertions, protected file membership, prior records and scheduler protections remain active. This record does not include or authorize previously blocked PR274, PR276 or PR278 changes or publication. All numbers, timestamps, raw wait ranges and missing/stale handling remain on the existing data path.",
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "73a68b4da19f835f7946aa0fefd83fce4e0e71df01c517d5e1302953b332f060",
+        "approved": "eaf2709b09abd8b88996aea680ae07df1745277f04849407e9d4ebd1aae45509"
       }
     ]
   }

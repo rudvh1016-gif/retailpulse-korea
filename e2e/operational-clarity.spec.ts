@@ -36,6 +36,7 @@ test('prediction shows a limited scorecard and exact missing weekday inputs',asy
  coverage:{days:7,latestAt:null,missingDays:[],dailyHours:[],readiness:{targetDate:'2026-09-06',hours:[{hour:10,ready:false,compatible:true,missingWeeks:1,sampleDates:['2026-08-30']}]}},
  records:[{targetAt:'2026-09-05T10:00:00+09:00',predicted:1600,actual:1800,createdAt:'2026-09-04T09:30:00Z',actualAt:'2026-09-05T10:05:00+09:00'}]}));
  await page.goto('/ko/predictions');
+ await page.getByText('자료·예측 정확도',{exact:true}).click();
  await expect(page.locator('.prediction-score')).toContainText('평균 차이 약 200명');
  await page.locator('.prediction-readiness summary').click();
  await expect(page.locator('.prediction-readiness')).toContainText('1주 확보 · 1주 더 필요');

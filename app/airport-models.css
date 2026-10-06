@@ -1,5 +1,23 @@
 .airport-gate-model, .airport-concept-model { color: #000; font-variant-numeric: tabular-nums; }
 .airport-summary-reserved { min-height: 100vh; }
+/* Checkpoint identities stay grouped by terminal; each card uses the same data-free scene. */
+.airport-checkpoint-groups.airport-queue-comparison { grid-template-columns: minmax(0, 1fr); }
+.airport-queue-comparison .airport-checkpoint-terminal + .airport-checkpoint-terminal { border-left: 0; border-top: 1px solid var(--line); }
+.airport-queue-comparison .airport-checkpoint-terminal h4 { padding-inline: 0; }
+.airport-queue-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+.airport-queue-comparison .airport-checkpoint-terminal article { position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 8px; min-width: 0; padding: 12px 0; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.airport-queue-comparison .airport-checkpoint-terminal article.is-busiest { box-shadow: none; border-bottom-color: var(--ink); }
+.airport-queue-comparison .checkpoint-rank { position: absolute; top: 14px; right: 0; }
+.airport-queue-comparison article > div { min-height: 42px; padding-right: 24px; overflow-wrap: anywhere; }
+.airport-queue-comparison .airport-checkpoint-terminal article div small { color: #000; }
+.airport-queue-comparison .airport-queue-model { display: block; align-self: center; width: 96px; height: 72px; object-fit: contain; }
+.airport-queue-comparison .airport-checkpoint-terminal article > b,
+.airport-queue-comparison .airport-checkpoint-terminal article > p { text-align: left; white-space: normal; overflow-wrap: anywhere; }
+.airport-queue-comparison .airport-checkpoint-terminal article :is(strong, b, p, i, small) { color: #000; }
+@media (min-width: 821px) {
+  .airport-queue-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 24px; }
+  .airport-queue-comparison .airport-queue-model { width: 128px; height: 96px; }
+}
 .airport-gate-model { min-height: 300px; }
 .airport-shop-model { margin: 20px 0; max-width: 700px; }
 .airport-shop-model img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: contain; }
@@ -81,6 +99,25 @@
 .airport-mtd { background: #f7fafc; border-radius: 10px; padding: 12px; }
 .airport-mtd-compare { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
 .airport-month-compare-model { margin: 8px auto; }
+.airport-month-compare-wide { display: none; }
+/* Desktop compares periods beside their totals; keep the mobile chart and type sizes. */
+@media (min-width: 821px) {
+  .airport-current-brief .airport-mtd { display: grid; grid-template-columns: minmax(240px, .8fr) minmax(0, 1.2fr); column-gap: 32px; align-items: start; }
+  .airport-mtd > .airport-mtd-head { grid-column: 1; grid-row: 1; }
+  .airport-mtd > :is(.airport-mtd-total, .airport-mtd-missing) { grid-column: 1; grid-row: 2; }
+  .airport-mtd > .airport-mtd-note { grid-column: 1; grid-row: 3; }
+  .airport-mtd > .airport-mtd-compare { grid-column: 1; grid-row: 4; }
+  .airport-mtd > .airport-month-compare-model { display: none; }
+  .airport-mtd > .airport-month-compare-wide { display: block; grid-column: 2; grid-row: 1 / 5; width: 100%; min-width: 0; margin-block: 4px 8px; color: #000; font-variant-numeric: tabular-nums; }
+  .airport-month-compare-row + .airport-month-compare-row { margin-top: 18px; }
+  .airport-month-compare-row > div:first-child { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; }
+  .airport-month-compare-row b { font-size: 14px; font-weight: 700; }
+  .airport-month-compare-track { margin-top: 6px; height: 18px; }
+  .airport-month-compare-track span { display: block; height: 16px; border-radius: 8px; background: #b7ddea; box-shadow: 0 2px #a6c5ce, inset 0 3px 0 -1px #ffffffcc; }
+  .airport-month-compare-track span[data-period=current] { background: #b6d8d0; }
+  .airport-month-compare-wide > small { display: block; margin-top: 6px; font-size: 12px; }
+  .airport-mtd > .airport-month-chart { grid-column: 1 / -1; }
+}
 .airport-month-bar { fill: #c6e5f6; }
 .airport-month-bar[data-selected] { fill: #a9d5ec; }
 .home-seoul-secondary { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line); }
