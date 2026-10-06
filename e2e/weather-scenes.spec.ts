@@ -18,12 +18,19 @@ for (const lang of ['ko', 'en', 'zh', 'ja']) for (const width of [320, 390, 430]
     await expect(forecast).toContainText('60%');
     await expect(forecast).not.toContainText('65%');
     await expect(forecast).not.toContainText('2.5m/s');
-    await expect(page.locator('.signal-group-now .weather-scene img')).toHaveCount(1);
-    const image = observation.locator('img');
-    await image.scrollIntoViewIfNeeded();
-    await image.evaluate(element => (element as HTMLImageElement).decode());
-    await expect(image).toHaveAttribute('loading', 'lazy');
-    await expect(image).toHaveAttribute('alt', '');
+    const panel = page.locator('.seoul-weather-panel');
+    await expect(panel).toHaveCount(1);
+    await expect(panel.locator('> h3')).toBeVisible();
+    await expect(panel.locator('.context-environment')).toHaveCount(1);
+    await expect(panel.locator('[data-signal-key="weather"]')).toHaveCount(1);
+    await expect(observation.locator('img')).toHaveCount(5);
+    await expect(forecast.locator('img')).toHaveCount(3);
+    for (const image of await panel.locator('img').all()) {
+      await image.scrollIntoViewIfNeeded();
+      await image.evaluate(element => (element as HTMLImageElement).decode());
+      await expect(image).toHaveAttribute('loading', 'lazy');
+      await expect(image).toHaveAttribute('alt', '');
+    }
     await expect(forecast.locator('details')).not.toHaveAttribute('open', '');
     const toggle = forecast.locator('summary');
     await toggle.focus();
@@ -61,7 +68,8 @@ test('stale weather observation retains its clock, explanation and forecast fall
   const forecast = page.locator('[data-signal-key="weather"]');
   await expect(forecast).toContainText('습도 65%');
   await expect(forecast).toContainText('바람 2.5m/s');
-  await expect(page.locator('.signal-group-now .weather-scene img')).toHaveCount(1);
+  await expect(forecast.locator('img')).toHaveCount(5);
+  await expect(page.locator('.seoul-weather-panel')).toHaveCount(1);
 });
 
 for (const probability of [0, null]) test(`forecast without observation preserves probability ${probability}`, async ({ page }) => {
@@ -79,8 +87,10 @@ for (const probability of [0, null]) test(`forecast without observation preserve
   await expect(forecast).toContainText('14:00');
   if (probability === 0) await expect(forecast).toContainText('강수확률 최대 0%');
   else await expect(forecast).not.toContainText('강수확률 최대');
-  await expect(forecast.locator('img')).toHaveCount(1);
-  await forecast.locator('img').evaluate(el => (el as HTMLImageElement).decode());
+  await expect(forecast.locator('img')).toHaveCount(probability === 0 ? 3 : 2);
+  await expect(forecast.locator('img[src*="/sun-"]')).toHaveCount(1);
+  await expect(forecast.locator('img[src*="/rain-"]')).toHaveCount(probability === 0 ? 1 : 0);
+  await forecast.locator('img').first().evaluate(el => (el as HTMLImageElement).decode());
   await expect(page.locator('.context-environment img')).toHaveCount(0);
 });
 
