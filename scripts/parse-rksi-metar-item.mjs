@@ -2,7 +2,7 @@
 const own=(x,k)=>Object.prototype.hasOwnProperty.call(x,k);
 const obj=x=>x!==null&&typeof x==='object'&&!Array.isArray(x)?x:null;
 const local=k=>String(k).replace(/^.*:/,'');
-const known=new Set(['item','METAR','SPECI','msgText','metarMsg','xml','message','observation','OM_Observation','phenomenonTime','TimeInstant','timePosition','featureOfInterest','SF_SpatialSamplingFeature','sampledFeature','AirportHeliport','timeSlice','AirportHeliportTimeSlice','designator','locationIndicatorICAO','result','MeteorologicalAerodromeObservationRecord','airTemperature','dewpointTemperature','qnh','surfaceWind','AerodromeSurfaceWind','meanWindDirection','meanWindSpeed','windGustSpeed','visibility','AerodromeHorizontalVisibility','prevailingVisibility','prevailingVisibilityOperator','content','#text','_text','_','$t','value','uom']);
+const known=new Set(['item','METAR','SPECI','msgText','metarMsg','xml','message','observation','OM_Observation','phenomenonTime','observationTime','issueTime','aerodrome','TimeInstant','timePosition','featureOfInterest','SF_SpatialSamplingFeature','sampledFeature','AirportHeliport','timeSlice','AirportHeliportTimeSlice','designator','locationIndicatorICAO','result','MeteorologicalAerodromeObservationRecord','MeteorologicalAerodromeObservation','airTemperature','dewpointTemperature','qnh','surfaceWind','AerodromeSurfaceWind','meanWindDirection','meanWindSpeed','windGustSpeed','visibility','AerodromeHorizontalVisibility','prevailingVisibility','prevailingVisibilityOperator','content','#text','_text','_','$t','value','uom']);
 const safeKey=k=>known.has(local(k))&&/^(?:(?:iwxxm|om|gml|aixm|sams|sf|metce):)?[A-Za-z_][\w.-]*$/.test(k)?k:known.has(k)?k:'[OTHER]';
 const type=v=>v===null?'null':Array.isArray(v)?'array':typeof v;
 const kids=(node,name)=>node?.children?.filter(x=>x.name===name)??[];
@@ -10,7 +10,7 @@ const descendants=(node,name)=>{const out=[];const walk=n=>{if(n.name===name)out
 const one=a=>a.length===1?a[0]:null;
 const scalar=n=>n&&n.children.length===0&&typeof n.text==='string'?n.text.trim():null;
 const textKeys=new Set(['content','#text','_text','_','$t','value']);
-const attrKeys=new Set(['uom','status','permissibleUsage','nilReason','nil','href','id','cloudAndVisibilityOK']);
+const attrKeys=new Set(['uom','status','reportStatus','permissibleUsage','nilReason','nil','href','id','cloudAndVisibilityOK']);
 
 function validTime(s){
  if(typeof s!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(s))return null;
@@ -64,6 +64,11 @@ const reportMessage=node=>one([...kids(node,'msgText')]);
 function structurePaths(root){
  const paths=[];const walk=node=>{if(paths.length>=64)return;if(known.has(node.name)){paths.push({path:node.path,type:node.sourceType});if(node.attrs.uom)paths.push({path:`${node.path}.@uom`,type:'string'});}for(const child of node.children)walk(child);};walk(root);return paths.slice(0,64);
 }
+function timePosition(property,root){
+ let instant=one(kids(property,'TimeInstant'));
+ if(!instant&&property?.attrs.href?.startsWith('#'))instant=one(descendants(root,'TimeInstant').filter(n=>n.attrs.id===property.attrs.href.slice(1)));
+ return one(kids(instant,'timePosition'));
+}
 
 function observationFromTree(root){
  const messageNode=reportMessage(root),message=scalar(messageNode);
@@ -73,16 +78,20 @@ function observationFromTree(root){
  if(tac&&tac[1]!==reportType)return{reason:'CONFLICTING_REPORT_TYPE'};
  if(root.attrs.status==='MISSING'||(message&&/\sNIL(?:\s|=|$)/.test(message)))return{reason:'NO_OBSERVATION'};
  if(root.attrs.permissibleUsage&&root.attrs.permissibleUsage!=='OPERATIONAL')return{reason:'NON_OPERATIONAL_REPORT'};
- let observedNode,timeValue,station;
- const obs=flat?null:one(kids(one(kids(root,'observation')),'OM_Observation'));
- if(flat){observedNode=one(kids(root,'phenomenonTime'));timeValue=scalar(observedNode);station=tac?.[2];}
+ let observedNode,timeValue,station,result,observationLayout;
+ if(flat){observedNode=one(kids(root,'phenomenonTime'));timeValue=scalar(observedNode);station=tac?.[2];result=root;observationLayout='FLAT_LEGACY';}
  else{
-  if(!obs)return{reason:'OBSERVATION_BRANCH_UNVERIFIED'};
-  const phenomenon=one(kids(obs,'phenomenonTime'));
-  let instant=one(kids(phenomenon,'TimeInstant'));
-  if(!instant&&phenomenon?.attrs.href?.startsWith('#'))instant=one(descendants(root,'TimeInstant').filter(n=>n.attrs.id===phenomenon.attrs.href.slice(1)));
-  observedNode=one(kids(instant,'timePosition'));timeValue=scalar(observedNode);
-  const feature=one(kids(obs,'featureOfInterest')),airport=one(descendants(feature,'AirportHeliportTimeSlice'));
+  const property=one(kids(root,'observation'));
+  if(property?.attrs.nil==='true'||property?.attrs.nilReason)return{reason:'NO_OBSERVATION'};
+  const legacy=one(kids(property,'OM_Observation')),modern=one(kids(property,'MeteorologicalAerodromeObservation'));
+  if(legacy&&modern)return{reason:'AMBIGUOUS_OBSERVATION_LAYOUT'};
+  if(!legacy&&!modern)return{reason:'OBSERVATION_BRANCH_UNVERIFIED'};
+  observationLayout=modern?'DIRECT_IWXXM':'OM_IWXXM';
+  observedNode=timePosition(one(kids(modern?root:legacy,modern?'observationTime':'phenomenonTime')),root);timeValue=scalar(observedNode);
+  result=modern??one(kids(one(kids(legacy,'result')),'MeteorologicalAerodromeObservationRecord'));
+  let feature=one(kids(modern?root:legacy,modern?'aerodrome':'featureOfInterest'));
+  if(!feature?.children.length&&feature?.attrs.href?.startsWith('#'))feature=one(descendants(root,'AirportHeliport').filter(n=>n.attrs.id===feature.attrs.href.slice(1)));
+  const airport=one(descendants(feature,'AirportHeliportTimeSlice'));
   const codes=[...kids(airport,'locationIndicatorICAO'),...kids(airport,'designator')].map(scalar).filter(v=>/^[A-Z]{4}$/.test(v??''));
   const stations=[...new Set(codes)];if(stations.length>1)return{reason:'CONFLICTING_STATION'};station=stations[0]??tac?.[2];
   if(tac&&station&&tac[2]!==station)return{reason:'CONFLICTING_STATION'};
@@ -90,7 +99,6 @@ function observationFromTree(root){
  if(station!=='RKSI')return{reason:'STATION_UNVERIFIED_OR_OTHER'};
  const observedAt=validTime(timeValue);if(!observedAt)return{reason:'OBSERVATION_TIME_UNVERIFIED'};
  if(tac){const d=new Date(observedAt);if(Number(tac[3])!==d.getUTCDate()||Number(tac[4])!==d.getUTCHours()||Number(tac[5])!==d.getUTCMinutes())return{reason:'TAC_TIME_CONFLICT'};}
- const result=flat?root:one(kids(one(kids(obs,'result')),'MeteorologicalAerodromeObservationRecord'));
  const values={},fieldPaths=[];if(messageNode)fieldPaths.push({field:'msgText',path:messageNode.path,type:messageNode.sourceType});
  fieldPaths.push({field:'observedAt',path:observedNode.path,type:observedNode.sourceType});
  for(const[name,[allowed,min,max]]of Object.entries(measures)){
@@ -102,7 +110,7 @@ function observationFromTree(root){
   const qualifier=name==='prevailingVisibility'?scalar(one(descendants(result,'prevailingVisibilityOperator'))):null;
   values[name]={value,unit,path:node.path,...(['ABOVE','BELOW'].includes(qualifier)?{qualifier}:{})};
  }
- return{observation:{station,reportType,observedAt,measurements:values,measurementScope:'GROUND_OBSERVATION',turbulenceRisk:'NOT_INFERRED'},fieldPaths};
+ return{observationLayout,observation:{station,reportType,observedAt,measurements:values,measurementScope:'GROUND_OBSERVATION',turbulenceRisk:'NOT_INFERRED'},fieldPaths};
 }
 
 /** Only safe paths/types and validated public fields leave this function. */
