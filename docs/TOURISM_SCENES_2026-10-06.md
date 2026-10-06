@@ -49,6 +49,21 @@ ZIP 없이 읽을 수 있는 검토 PNG 9개를 [docs/screenshots/tourism-scenes
 8. KORETAIL-tourism-event-390.png
 9. KORETAIL-tourism-subway-model.png
 
-현재 Library skill에서 제공한 helper 3개 전체를 새 전용 로컬 폴더로 읽었다. 공식 LibraryUploadWorkflow를 한 배치로 호출했고, Windows에서 허용된 사용자 Temp를 지정했다. 별도 전송/prepare/finalize를 수행하거나 helper를 변경하지 않았다. 처음에는 helper가 받지 않는 MIME 입력을 넣어 저장 전 스키마 검사에서 중단됐고, 해당 필드만 제거했다. 그 뒤 공식 helper의 인증된 도구 검색에서 `HostedAppsError: Library prepare_uploads is not available`로 중단됐다. Library prepare/finalize 호출이나 저장 결과는 없으며 새 Library ID는 발급되지 않았다. 직접 create 도구로 우회하거나 기존 참고 첨부를 다시 전송하지 않았다. 주 담당이 정상 지원 환경에서 이 9개 PNG를 Library에 저장해야 한다.
+공식 helper의 인증된 검색이 `HostedAppsError: Library prepare_uploads is not available`로 중단됐다. 권한 거절이나 저장 요청 이후의 불확정 결과는 없었다. 사용자 추가 지시와 현재 Library skill의 prepared tools unavailable / all creates 절차에 따라 `create_library_file(files=[...])` 한 배치를 호출했다. 개별 PNG 9개 모두 status=succeeded, image/png, version 0으로 저장됐다.
+- KORETAIL-tourism-myeongdong-320-brief.png: `libfile_318fa1442b548191be9966f5b2c4d72c` (version 0, 76096 bytes)
+- KORETAIL-tourism-myeongdong-390-brief.png: `libfile_260916070928819194140a6e009ce200` (version 0, 80651 bytes)
+- KORETAIL-tourism-myeongdong-430-brief.png: `libfile_f77f2f9507f481918a394b9a43e049c5` (version 0, 80749 bytes)
+- KORETAIL-tourism-hongdae-390-brief.png: `libfile_472ff66995908191b7c330092f797d75` (version 0, 76926 bytes)
+- KORETAIL-tourism-seongsu-390-brief.png: `libfile_fddcd8ce8d2c8191987bf5da0a0b01dc` (version 0, 81401 bytes)
+- KORETAIL-tourism-itaewon-390-brief.png: `libfile_715e3bb7d40081918945367151dff8b2` (version 0, 78104 bytes)
+- KORETAIL-tourism-weather-390.png: `libfile_0cde65ae9d608191994971fa9baea297` (version 0, 31998 bytes)
+- KORETAIL-tourism-event-390.png: `libfile_805ded33a2d081918020dc7ff672ffed` (version 0, 37578 bytes)
+- KORETAIL-tourism-subway-model.png: `libfile_5184ba2df16c8191a04c9835a6c1b89b` (version 0, 272229 bytes)
 
-기존 준비 화면 Library `libfile_7ca095b66dc48191bfff236e064767c4`는 기존 ZIP의 ID이며 위 PNG 9개의 저장 ID로 사용하지 않는다.
+각 원본 경로에 공식 metadata helper를 호출했으나 Windows에서 `AttributeError: module 'os' has no attribute 'setxattr'`로 로컬 메타데이터 적용 9개는 실패했다. 이는 Library 저장 성공과 별개다. 반환 ID·file_id·이름·버전·원본 경로는 작업 환경의 tourism-library-identities.json에 보존했다. 같은 파일을 다시 업로드하지 않았다.
+
+## 원격 CI에서 발견한 출처 요소 수정
+
+head 49d4d9f의 run 37454113302는 secret/lint/types/unit/build/HTML/audit 뒤 전체 E2E에서 실패했다. 결과는 731 passed, 1 failed, 1 flaky였다. 실패 위치는 e2e/production.spec.ts:1099의 각 관광 브리핑 출처 small 검증이었다. WeatherScene의 예보 출처만 p 태그여서 해당 검증이 실패했다. 출처를 의미에 맞는 small로 바꾸고 display:block을 명시했다. 공용 production.spec.ts와 다른 담당의 여행기록은 수정하지 않았다.
+
+해당 관광 라우팅·7부분 안내·자료 누락의 기존 E2E 3개를 다시 실행하여 3/3 PASS. 여행기록 취소 이동 사례는 기존 원격 실행에서 재시도 후 통과한 flaky이며 이번 수정 대상이 아니다. 새 head의 원격 CI 최종 결과는 PR 본문에 기록한다.

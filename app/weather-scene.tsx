@@ -41,7 +41,7 @@ export function WeatherScene({ lang, forecast, source, issuedAt = [], targetAt =
       {(forecastFacts.length > 0 || guide) && <section className="weather-scene-forecast" aria-label={text(lang, '날씨 예보', 'Weather forecast', '天气预报', '天気予報')}>
         <h3>{text(lang, '날씨 예보', 'Weather forecast', '天气预报', '天気予報')}</h3>
         <ul className="weather-scene-values">{forecastFacts.map(value => <li key={value}>{value}</li>)}</ul>
-        <p className="weather-scene-source">{source}</p>
+        <small className="weather-scene-source">{source}</small>
       </section>}
       {observation && observedFacts.length > 0 && <section className="weather-scene-observation" aria-label={text(lang, '대기질 관측', 'Air-quality observation', '空气质量观测', '大気質の観測')}>
         <h4>{text(lang, '대기질 관측', 'Air-quality observation', '空气质量观测', '大気質の観測')}</h4>
