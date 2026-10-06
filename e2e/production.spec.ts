@@ -559,7 +559,7 @@ test("a forecast peak that falls after midnight is shown and labelled tomorrow",
     { targetAt: "2026-09-01T04:00:00+09:00", congestionLevel: 4, congestionLabel: "붐빔", populationMin: 30000, populationMax: 33000 },
   ];
   await page.route("**/api/live/summary*", routeSummary(evening));
-  await page.goto("/ko");
+  await page.goto("/ko/myeongdong");
   const myeongdong = page.getByTestId("area-demand-card").first();
   await expect(myeongdong).toContainText("내일 04:00");
   await expect(myeongdong).not.toContainText("확인할 수 없습니다");
