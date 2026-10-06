@@ -4,7 +4,6 @@ import views from '../config/airport-concept-v14.json';
 import previewViews from '../config/airport-concept-v6c.preview.json';
 import { airportScene } from '../lib/airport-scene';
 import type { Lang } from './retailpulse-data';
-import './airport-scene-model.css';
 
 export type AirportSceneScope = 'all' | 'T1' | 'T2' | 'CONCOURSE';
 const previewRoot = import.meta.env?.DEV ? (import.meta.env as { VITE_AIRPORT_MODEL_PREVIEW_ROOT?: string }).VITE_AIRPORT_MODEL_PREVIEW_ROOT : '';
