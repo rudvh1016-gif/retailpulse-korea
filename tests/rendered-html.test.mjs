@@ -713,7 +713,7 @@ test("keeps developer readiness history out of the public product", async () => 
   assert.doesNotMatch(page, /LIVE RUNTIME DATA API/);
   assert.doesNotMatch(page, /현재 직접 호출 0개/);
   assert.match(page, /fetch\("\/api\/beta-signups"/);
-  assert.match(live, /fetch\(url, \{ headers: \{ accept: "application\/json" \} \}\)/);
+  assert.match(live, /fetch\(url, \{ headers: \{ accept: "application\/json" \}, signal: AbortSignal\.timeout\(15_000\) \}\)/);
   assert.doesNotMatch(page, /fetch\(\s*["']https?:/i);
   assert.match(matrix, /방문 시 직접 호출하는 외부 관광·공항·서울 데이터 API \| \*\*0개\*\*/);
 });
@@ -783,7 +783,7 @@ test("the flight board renders stored official flight rows from its own endpoint
   const flightsRoute = await read("../app/api/live/flights/route.ts");
   const summaryRoute = await read("../app/api/live/summary/route.ts");
   assert.match(signals, /export function FlightBoard/);
-  assert.match(signals, /fetch\(url, \{ headers: \{ accept: "application\/json" \} \}\)/);
+  assert.match(signals, /fetch\(url, \{ headers: \{ accept: "application\/json" \}, signal: AbortSignal\.timeout\(15_000\) \}\)/);
   assert.match(signals, /\/api\/live\/flights/);
   assert.match(flightsRoute, /FROM airport_flights/);
   assert.match(flightsRoute, /flight_number AS flightNumber/);

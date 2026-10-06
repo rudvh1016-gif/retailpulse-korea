@@ -19,7 +19,7 @@
     "app/globals.css": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
     "app/layout.tsx": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
-    "app/live-signals.tsx": "73a68b4da19f835f7946aa0fefd83fce4e0e71df01c517d5e1302953b332f060",
+    "app/live-signals.tsx": "72fd15ede9e45e481d5f14274686cfb4f74982baa34136f04fcd0e22f12ead45",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
@@ -368,6 +368,16 @@
         "file": "app/live-signals.tsx",
         "previous": "2fd7161863e3a8925489dd1b488e4f3495cda013164c45811181572f91a77389",
         "approved": "73a68b4da19f835f7946aa0fefd83fce4e0e71df01c517d5e1302953b332f060"
+      }
+    ]
+  },
+  "ownerFlightBoardTimeout20261005": {
+    "reason": "Owner explicitly approved the approval-record update and final publication for the stalled-flight loading repair in PR #274, replying \"ㅇㅇㅇ싹다 허용할게요\" to the question naming that repair. This record applies only to FlightBoard's one-line 15-second AbortSignal.timeout request bound in app/live-signals.tsx. The existing failure message remains distinct from a successful empty flight record. Latest-main daily charts, all other protected hashes, protected-file list, prior owner records and active byte-identical/scheduler assertions are retained. This independent PR does not include or retry PR #266/#267/#276, and no protection or merge-review bypass is authorized.",
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "73a68b4da19f835f7946aa0fefd83fce4e0e71df01c517d5e1302953b332f060",
+        "approved": "72fd15ede9e45e481d5f14274686cfb4f74982baa34136f04fcd0e22f12ead45"
       }
     ]
   }
