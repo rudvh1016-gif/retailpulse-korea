@@ -14,7 +14,7 @@
     "app/api/live/flights/route.ts": "fb7bbfc1132359dceb4d315997eaf26bfc5b27d3f03f2bb9b8be4fe46718c1bd",
     "app/api/live/predictions/route.ts": "b82f003bd3d77c293a379c4dbd0bf5e2aa449b19e54a65119ef2e4f291cdfced",
     "app/api/live/summary/route.ts": "ce08a54a232816dfa63143a9101dbc268a849bc11900293e6df5e7f43e53898b",
-    "app/area-demand-card.tsx": "975767a5e71d40a2f3b37942003c6bb94bf816bfb3d8d3f2405fa0d4581004bd",
+    "app/area-demand-card.tsx": "9f480850246b31fbb8cec5f75fb9b69eb382cb6e504ebd6c536cb43793384f4c",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
@@ -52,7 +52,8 @@
     "public/manifest.webmanifest": "b645aca0f55d875dd6f8f72cfaa2eaf4a0ae05aad72019bc13e841e2570f8534",
     "public/og-image.png": "aa6fcb5fe90f7d167fe1e754e6735781c9126868dd2993694db936c8cc6705bb",
     "public/window.svg": "decf1cf7bb22b5c99c4857cfcd5718ce5465c4454166317589c83fc73df74b66",
-    "wrangler.production.jsonc": "7e07dd03ac29221dabcb1cb0ae30b4920bd65714f15fc3e2d867ee83cb2956fe"
+    "wrangler.production.jsonc": "7e07dd03ac29221dabcb1cb0ae30b4920bd65714f15fc3e2d867ee83cb2956fe",
+    "app/population-flow.tsx": "629cb24104891ab96ba6726b8946b1b5f5db832f6f13e3017dd08be211adad51"
   },
   "crons": {
     "measure-read-budget.yml": [],
@@ -368,6 +369,22 @@
         "file": "app/live-signals.tsx",
         "previous": "2fd7161863e3a8925489dd1b488e4f3495cda013164c45811181572f91a77389",
         "approved": "73a68b4da19f835f7946aa0fefd83fce4e0e71df01c517d5e1302953b332f060"
+      }
+    ]
+  },
+  "ownerSeoulConnectedRangeChart20261006": {
+    "reason": "Owner explicitly approved applying the final Seoul chart to the app (2026-10-06 03:59:35 UTC, Sentinel_314768f0993c8191a2bc2e6992b83ab2; resumed in Sentinel_d8b23a365a4081918a708f89dcf8f0c4). Delegation authorizes the normal protected record procedure for this new chart scope only. Extract the shared chart into PopulationFlowChart, preserving source min/max, fonts, APIs and schedulers. Only app/area-demand-card.tsx is refreshed; all prior records, other protected hashes, cron locks and enforcement tests stay unchanged. No previously blocked change is included. Merge/deployment remains coordinated by the lead thread. The extracted app/population-flow.tsx is added to the same active byte lock, so extraction does not reduce chart protection.",
+    "changes": [
+      {
+        "file": "app/area-demand-card.tsx",
+        "previous": "975767a5e71d40a2f3b37942003c6bb94bf816bfb3d8d3f2405fa0d4581004bd",
+        "approved": "9f480850246b31fbb8cec5f75fb9b69eb382cb6e504ebd6c536cb43793384f4c"
+      },
+      {
+        "file": "app/population-flow.tsx",
+        "previous": null,
+        "approved": "629cb24104891ab96ba6726b8946b1b5f5db832f6f13e3017dd08be211adad51",
+        "reason": "New extracted chart stays covered by the existing Owner UI Lock assertion."
       }
     ]
   }

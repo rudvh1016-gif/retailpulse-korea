@@ -34,10 +34,10 @@ for (const width of [390, 1440]) {
           const y = await page.locator('.demand-number').first().evaluate(el => el.getBoundingClientRect().bottom);
           expect(y).toBeLessThan(700);
         }
-        const slider = page.getByRole('slider').first();
-        await slider.focus();
-        await slider.press('ArrowRight');
-        await expect(slider).toHaveAttribute('aria-valuetext', /KST/);
+        const select = page.locator('.flow-time-control select').first();
+        await select.focus();
+        await select.press('ArrowDown');
+        await expect(page.locator('.flow-readout').first()).toHaveAttribute('aria-label', /KST/);
       }
       console.log('DESIGN_SCREEN', JSON.stringify({ width, route, recorded: !!recorded, requests }));
     });
