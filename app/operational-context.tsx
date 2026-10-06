@@ -6,6 +6,7 @@ import { kstDay } from '../lib/demand-presentation';
 import { AIR_GRADE_TEXT, readAirGrade } from '../lib/weather-guide';
 import { describeObservationAge, explainObservationVsForecast } from '../lib/observation-freshness';
 import { WeatherScene } from './weather-scene';
+import type { WeatherMetricKind } from './weather-metric-scene';
 
 /** Seoul's own grade word, localized. An unrecognised label is shown as published. */
 function airGradeWord(publishedGrade: string, lang: Lang): string {
@@ -18,9 +19,8 @@ export const contextText=(lang:Lang,ko:string,en:string,zh:string,ja:string)=>({
  * `Date.now()`: this card renders on the server too, and a clock read during
  * render would disagree between the server pass and hydration.
  */
-export function SeoulContextCard({context,lang,nowIso}:{context?:SeoulContext & {retrievedAt?:string}|null;lang:Lang;nowIso?:string}) {
+export function SeoulContextCard({context,lang,nowIso,showWeather=true}:{context?:SeoulContext & {retrievedAt?:string}|null;lang:Lang;nowIso?:string;showWeather?:boolean}) {
   if(!context) return null;
-  const t=(ko:string,en:string,zh:string,ja:string)=>contextText(lang,ko,en,zh,ja);
   const weather=context.weather;
   return <div className="operational-context">
     <CommercialComposition context={context} lang={lang}/>
@@ -43,22 +43,29 @@ export function SeoulContextCard({context,lang,nowIso}:{context?:SeoulContext & 
       * moment it was taken and the card says, in one line, why the forecast
       * underneath disagrees.
       */}
-    {weather&&(()=>{
+    {weather&&showWeather&&<SeoulObservationScene context={context} lang={lang} nowIso={nowIso}/>}
+  </div>;
+}
+
+/** Original Seoul measurements and freshness wording, shared by the combined panel. */
+export function SeoulObservationScene({context,lang,nowIso,metricScenes=false}:{context?:SeoulContext & {retrievedAt?:string}|null;lang:Lang;nowIso?:string;metricScenes?:boolean}) {
+  const weather=context?.weather;
+  if(!weather||!context) return null;
+  const t=(ko:string,en:string,zh:string,ja:string)=>contextText(lang,ko,en,zh,ja);
       const age=describeObservationAge(weather.observedAt,nowIso??context.retrievedAt??'',lang);
       const stamp=age.isNow?t('지금','Now','当前','現在'):age.clock?`${age.clock} ${t('관측','observed','观测','観測')}`:t('관측','Observed','观测','観測');
       const gap=explainObservationVsForecast(age,lang);
-      const facts = [weather.temperature!==null?`${stamp} ${weather.temperature}°C`:null,
-          weather.humidity!==null?`${t('습도','Humidity','湿度','湿度')} ${weather.humidity}%`:null,
-          weather.wind!==null?`${t('바람','Wind','风','風')} ${weather.wind}m/s`:null,
-          weather.pm10!==null?`${t('미세먼지','PM10','可吸入颗粒物 PM10','PM10')}${weather.pm10Grade?` ${airGradeWord(weather.pm10Grade,lang)}`:''} ${weather.pm10}μg/m³`:null,
-          weather.pm25!==null?`${t('초미세먼지','PM2.5','细颗粒物 PM2.5','PM2.5')}${weather.pm25Grade?` ${airGradeWord(weather.pm25Grade,lang)}`:''} ${weather.pm25}μg/m³`:null].filter((value): value is string => Boolean(value));
-      return <div className="context-environment"><WeatherScene lang={lang} forecast={null} source="" observation={{
-        facts, observedAt: weather.observedAt, explanation: gap,
-        title: t('주변 환경 관측','Local environment observation','当前周边环境','現在の周辺環境'),
+      const entries: {kind:WeatherMetricKind;value:string}[] = [];
+      if(weather.temperature!==null) entries.push({kind:'temperature',value:`${stamp} ${weather.temperature}°C`});
+      if(weather.humidity!==null) entries.push({kind:'humidity',value:`${t('습도','Humidity','湿度','湿度')} ${weather.humidity}%`});
+      if(weather.wind!==null) entries.push({kind:'wind',value:`${t('바람','Wind','风','風')} ${weather.wind}m/s`});
+      if(weather.pm10!==null) entries.push({kind:'air',value:`${t('미세먼지','PM10','可吸入颗粒物 PM10','PM10')}${weather.pm10Grade?` ${airGradeWord(weather.pm10Grade,lang)}`:''} ${weather.pm10}μg/m³`});
+      if(weather.pm25!==null) entries.push({kind:'air',value:`${t('초미세먼지','PM2.5','细颗粒物 PM2.5','PM2.5')}${weather.pm25Grade?` ${airGradeWord(weather.pm25Grade,lang)}`:''} ${weather.pm25}μg/m³`});
+      return <div className="context-environment"><WeatherScene lang={lang} forecast={null} source="" metricScenes={metricScenes} observation={{
+        facts:entries.map(entry=>entry.value),kinds:entries.map(entry=>entry.kind), observedAt: weather.observedAt, explanation: gap,
+        title: metricScenes?(age.isNow?t('현재 관측','Current observation','当前观测','現在の観測'):t('최근 관측','Latest observation','最近观测','直近の観測')):t('주변 환경 관측','Local environment observation','当前周边环境','現在の周辺環境'),
         source: t('서울시 실시간 도시데이터 · 관측','Seoul real-time city data · observed','首尔市实时城市数据 · 观测','ソウル市リアルタイム都市データ · 観測'),
       }}/></div>;
-    })()}
-  </div>;
 }
 export function HolidayContext({months,date,lang}:{months?:Array<{month:string;days:Array<{date:string;name:string}>;retrievedAt:string}>;date:string;lang:Lang}) {
   const record=months?.find(row=>row.month===date.slice(0,7));
