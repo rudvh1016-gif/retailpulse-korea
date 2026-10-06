@@ -9,12 +9,12 @@ for(const width of [360,390,430,1280])for(const lang of ['ko','en','zh','ja'] as
  await page.clock.install({time:new Date('2026-10-04T03:00:00Z')});
  await page.route('**/api/live/summary*',r=>r.fulfill({json:SUMMARY_FIXTURE}));
  await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',basis:'OFFICIAL_DEPARTURE_SCHEDULE',flights,truncated:false,retrievedAt:base.retrievedAt}}));
- const requested:string[]=[];page.on('request',r=>{if(r.url().includes('/airport-models/v8/'))requested.push(r.url());});
+ const requested:string[]=[];page.on('request',r=>{if(r.url().includes('/airport-models/'))requested.push(r.url());});
  await page.goto(`/${lang}/airport`);
  const tabs=page.locator('.airport-view>.terminal-selector button');
  const image=page.locator('.airport-hero .airport-concept-picture img').first();
  await expect(image).toHaveAttribute('src','/airport-models/v8/OVERVIEW_day.webp');
- for(const scope of ['T1','T2','T1','all'] as const){await tabs.nth(scope==='all'?0:scope==='T1'?1:2).click();await expect(image).toHaveAttribute('src',`/airport-models/v8/${scope==='all'?'OVERVIEW':scope}_day.webp`);}
+ for(const scope of ['T1','T2','T1','all'] as const){await tabs.nth(scope==='all'?0:scope==='T1'?1:2).click();await expect(image).toHaveAttribute('src',scope==='T2'?'/airport-models/v12/T2_day.webp':`/airport-models/v8/${scope==='all'?'OVERVIEW':scope}_day.webp`);if(scope==='T2'&&width===390){await expect(image).toHaveAttribute('srcset',/T2_day-390\.webp 390w/);await expect.poll(()=>image.evaluate(el=>new URL((el as HTMLImageElement).currentSrc).pathname)).toBe('/airport-models/v12/T2_day-390.webp');}}
  const box=await image.boundingBox();expect(box).not.toBeNull();if(width<=430)expect(box!.height).toBeLessThan(260);
  const dimensions=await image.evaluate(el=>{const img=el as HTMLImageElement;const c=img.closest('.airport-concept-picture')!.getBoundingClientRect();const i=img.getBoundingClientRect();return{top:i.top-c.top,bottom:c.bottom-i.bottom,width:img.naturalWidth,height:img.naturalHeight};});expect(dimensions.top).toBeGreaterThanOrEqual(-1);expect(dimensions.bottom).toBeGreaterThanOrEqual(-1);
  await tabs.nth(3).click();const conc=page.getByTestId('airport-concourse');await expect(conc).toBeVisible();await expect(conc.getByTestId('concourse-flight-count')).toHaveText('1');await expect(conc.locator('[data-building="CONCOURSE"] img')).toHaveAttribute('src','/airport-models/v8/CONCOURSE_day.webp');await expect(conc.getByTestId('concourse-unsupported')).toBeVisible();await expect(page.locator('.airport-current-brief')).toHaveCount(0);
@@ -23,8 +23,9 @@ for(const width of [360,390,430,1280])for(const lang of ['ko','en','zh','ja'] as
   await tabs.nth(1).click();await expect(page.getByTestId('airport-concourse')).toHaveCount(0);await expect(image).toHaveAttribute('src','/airport-models/v8/T1_day.webp');
   await page.goBack();await expect(page.getByTestId('airport-concourse')).toBeVisible();await page.goForward();await expect(page.getByTestId('airport-concourse')).toHaveCount(0);
  await page.clock.setSystemTime(new Date('2026-10-04T09:00:00Z'));await page.clock.runFor(60_001);await expect(image).toHaveAttribute('src','/airport-models/v8/T1_night.webp');
- expect(requested.some(url=>url.includes('OVERVIEW_STACK'))).toBe(false);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  if(lang==='ko')await page.locator('.airport-flow').first().screenshot({path:`outputs/v5-${width}-T1-night.png`});
+ if(lang==='ko'&&width===390){await tabs.nth(2).click();await expect(image).toHaveAttribute('src','/airport-models/v8/T2_night.webp');await page.clock.setSystemTime(new Date('2026-10-04T03:00:00Z'));await page.clock.runFor(60_001);await expect(image).toHaveAttribute('src','/airport-models/v12/T2_day.webp');}
+ expect(requested.some(url=>url.includes('OVERVIEW_STACK'))).toBe(false);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
 test('all-building country totals reconcile; physical building switches and time filters reuse the source',async({page})=>{
  await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});
