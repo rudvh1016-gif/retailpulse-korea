@@ -2,6 +2,10 @@ import { test, expect } from '@playwright/test';
 import { SUMMARY_FIXTURE, MYEONGDONG_CONTEXT, routeSummary } from './summary-fixture';
 import { tofuCharacters } from './font-glyphs';
 
+const forecastHeadings: Record<string, string> = {
+  ko: '공식 날씨 예보', en: 'Official weather forecast', zh: '官方天气预报', ja: '公式天気予報',
+};
+
 for (const lang of ['ko', 'en', 'zh', 'ja']) for (const width of [320, 390, 430]) {
   test(`weather scene preserves fresh observation and forecast ${lang}/${width}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
@@ -21,6 +25,8 @@ for (const lang of ['ko', 'en', 'zh', 'ja']) for (const width of [320, 390, 430]
     const panel = page.locator('.seoul-weather-panel');
     await expect(panel).toHaveCount(1);
     await expect(panel.locator('> h3')).toBeVisible();
+    await expect(forecast.locator('.signal-time-state')).toBeVisible();
+    await expect(forecast.getByRole('heading', { level: 4, name: forecastHeadings[lang], exact: true })).toBeVisible();
     await expect(panel.locator('.context-environment')).toHaveCount(1);
     await expect(panel.locator('[data-signal-key="weather"]')).toHaveCount(1);
     await expect(observation.locator('img')).toHaveCount(5);
