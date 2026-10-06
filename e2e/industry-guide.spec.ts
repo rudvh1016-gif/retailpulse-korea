@@ -13,15 +13,19 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) for (const width of [390, 
     await page.goto(`/${lang}/business`);
     await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
     const guide = page.getByTestId('industry-guide');
-    for (const id of ['beauty', 'fashion', 'food', 'convenience', 'popup', 'tourism'] as const) {
+    for (const id of ['beauty', 'fashion', 'food', 'convenience', 'popup', 'tourism', 'liquor', 'luxury'] as const) {
       await guide.getByRole('button', { name: industryProfiles[id].label[lang], exact: true }).click();
-      for (const row of industryPlaybooks[id].priorities) {
+      for (const [index, row] of industryPlaybooks[id].priorities.entries()) {
         await expect(guide.getByRole('heading', { name: row.title[lang], exact: true })).toBeVisible();
+        const detail = guide.locator('.operating-priority details').nth(index);
+        await expect(detail).not.toHaveAttribute('open', '');
+        await detail.locator('summary').click();
         await expect(guide.getByText(row.action[lang], { exact: true })).toBeVisible();
+        await expect(guide.getByText(row.reason[lang], { exact: true })).toBeVisible();
       }
       await expect(guide).toContainText(industryPlaybooks[id].record[lang]);
       await expect(guide.locator('.operating-priority')).toHaveCount(3);
-      for (const summary of await guide.locator('details > summary').all()) await summary.click();
+      await guide.locator('.operating-checklist > summary').click();
       expect(await tofuCharacters(guide)).toEqual([]);
     }
     await guide.getByRole('button', { name: industryProfiles.beauty.label[lang], exact: true }).click();
@@ -64,4 +68,35 @@ test('general preparation remains identifiable when current data is missing', as
   await expect(guide).toContainText('매출·방문자 수 예측이 아닙니다');
   await expect(guide.getByRole('heading', { name: '품목보다 색상·용량 단위로 재고 확인' })).toBeVisible();
   await expect(guide).not.toContainText('LIVE');
+});
+
+for (const width of [320, 390, 430]) test(`store scenes and keyboard disclosures ${width}`, async ({ page }, info) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.setViewportSize({ width, height: 900 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+  await page.goto('/ko/business');
+  await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
+  const guide = page.getByTestId('industry-guide');
+  for (const id of ['beauty', 'convenience'] as const) {
+    await guide.getByRole('button', { name: industryProfiles[id].label.ko, exact: true }).click();
+    const image = guide.locator('.store-industry-model img');
+    await image.scrollIntoViewIfNeeded();
+    await expect(image).toHaveAttribute('loading', 'lazy');
+    await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBeTruthy();
+    expect(await image.evaluate((img: HTMLImageElement) => img.currentSrc)).toContain(`/visuals/industry/v1/${id}-`);
+    const detail = guide.locator('.operating-priority details').first();
+    await expect(detail).not.toHaveAttribute('open', '');
+    await detail.locator('summary').focus();
+    await page.keyboard.press('Enter');
+    await expect(guide.getByText(industryPlaybooks[id].priorities[0].action.ko, { exact: true })).toBeVisible();
+    await page.keyboard.press('Enter');
+    await expect(detail).not.toHaveAttribute('open', '');
+    await guide.scrollIntoViewIfNeeded();
+    await guide.screenshot({ path: info.outputPath(`${id}-${width}.png`) });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+    expect(await guide.locator('.operating-priority h4').first().evaluate(el => getComputedStyle(el).color)).toBe('rgb(0, 0, 0)');
+  }
+  expect(errors).toEqual([]);
 });
