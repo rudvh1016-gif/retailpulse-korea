@@ -6,6 +6,8 @@ import { passengerCopy } from "../lib/passenger-copy";
 import { AirportFlowFigure } from "./airport-flow-figure";
 import { FlightCountPrism } from './flight-count-prism';
 import { AirportMonthComparison } from './airport-month-comparison';
+import { AirportQueueScene } from './airport-queue-scene';
+import { displayedQueueMinutes, queueKey, queueRepresentativeCopy, selectQueueRepresentatives } from '../lib/airport-queue-representatives';
 import { CountUpNumber } from "./count-up-number";
 import { passengerReferenceSum } from "../lib/passenger-reference-sum";
 import { usableComparison, validPopulationRange, kstStamp, kstDay, peopleRange, populationFlow } from "../lib/demand-presentation";
@@ -1941,9 +1943,8 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
 }
 
 export function AirportTodaySummary({ lang, terminal = "all", date = null }: { lang: Lang; terminal?: "all" | "T1" | "T2"; date?: string | null }) {
-  // Eight full-height checkpoint rows per terminal cost more vertical space
-  // than they earn: what a reader needs first is the one queue that is longest
-  // right now. The rest stay one keystroke away rather than always on screen.
+  // Compare up to three actual fresh observations first; the complete list
+  // keeps every original value and remains one keystroke away.
   const [showAllCheckpoints, setShowAllCheckpoints] = useState(false);
   const [compositionView, setCompositionView] = useState<"gates" | "airlines" | "countries">("gates");
   const summary = useLiveSummary(date);
@@ -1982,6 +1983,11 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     (airport.congestion ?? []).map((row) => ({ ...row, waitTimeRaw: row.waitTimeRaw ?? null })),
   ) as Record<string, LiveCongestionRow[]>;
   const checkpointTerminals = Object.keys(rankedCheckpoints).filter((key) => isAll || key === terminal);
+  const representativeCopy = queueRepresentativeCopy(lang);
+  const representatives = selectQueueRepresentatives(checkpointTerminals.flatMap(key => rankedCheckpoints[key]), presentationNow);
+  const checkpointGroups = showAllCheckpoints
+    ? checkpointTerminals.map(terminalId => ({terminalId, rows:rankedCheckpoints[terminalId]}))
+    : [{terminalId:terminal, rows:representatives.items.map(item=>item.row)}];
   // The current-time marker exists only for TODAY. A past or future service
   // date has no "now" inside it, and drawing one would invent a moment in a
   // day the clock is not in. Bands the marker has passed stay forecasts.
@@ -1996,6 +2002,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   const nowLabel = `${airportTodayText.nowMarker[lang]} ${formatKstClock(nowIso)}`;
   const waitUnit = { ko: "분", en: " min", zh: "分钟", ja: "分" }[lang];
   const waitText = (row: LiveCongestionRow) => {
+    if (row.waitTimeRaw && !/\d/.test(row.waitTimeRaw)) return row.waitTimeRaw;
     if (row.waitTimeRaw) return /분|min|分钟|分/i.test(row.waitTimeRaw) ? row.waitTimeRaw : `${row.waitTimeRaw}${waitUnit}`;
     return row.waitTimeMinutes !== null ? `${row.waitTimeMinutes}${waitUnit}` : airportTodayText.unavailable[lang];
   };
@@ -2160,24 +2167,19 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
 
     <section className="airport-detail-section airport-checkpoints" aria-labelledby="airport-checkpoints-title">
       <div className="airport-detail-head"><div><p className="eyebrow">CURRENT OBSERVATION · {scopeLabel}</p><h3 id="airport-checkpoints-title">{airportTodayText.current[lang]}</h3></div><p>{airportTodayText.currentNote[lang]}</p></div>
-      {checkpointTerminals.length ? <div id="airport-checkpoint-groups" className="airport-checkpoint-groups airport-queue-comparison">{checkpointTerminals.map((terminalId) => {
-        const busiest = airport.currentBusiestDepartureHallByTerminal?.[terminalId];
+      {checkpointTerminals.length ? <div id="airport-checkpoint-groups" className="airport-checkpoint-groups airport-queue-comparison">{checkpointGroups.map(({terminalId, rows}) => {
         return <div className="airport-checkpoint-terminal" key={terminalId}>
-          <h4><span>{terminalId}</span>{airportTodayText.scope[lang][terminalId as "T1" | "T2"] ?? terminalId}</h4>
-          <div className="airport-queue-cards">{(showAllCheckpoints
-            ? rankedCheckpoints[terminalId]
-            : rankedCheckpoints[terminalId].filter((row) => (busiest ? busiest.zone === row.zone : false))
-                .concat(busiest ? [] : rankedCheckpoints[terminalId].slice(0, 1))
-          ).map((row) => {
-            const index = rankedCheckpoints[terminalId].indexOf(row);
-            const isBusiest = busiest?.zone === row.zone;
-            return <article className={isBusiest ? "is-busiest" : ""} key={`${terminalId}-${row.zone}`}>
-              <span className="checkpoint-rank">{String(index + 1).padStart(2, "0")}</span>
-              <div><strong>{friendlyCheckpointName(row.zone, lang)}</strong>{isBusiest && <small>{airportTodayText.longest[lang]}</small>}</div>
-              {/* The same fixed scene illustrates every checkpoint; people and colors do not encode queue size. */}
-              {/* eslint-disable-next-line @next/next/no-img-element -- small, local, responsive Blender export */}
-              <img className="airport-queue-model" src="/visuals/airport-queue/queue-checkpoint-192.webp" srcSet="/visuals/airport-queue/queue-checkpoint-192.webp 192w, /visuals/airport-queue/queue-checkpoint-384.webp 384w" sizes="(min-width: 821px) 128px, 96px" width="192" height="144" alt="" loading="lazy" decoding="async" />
+          <h4><span>{terminalId === "all" ? "T1 · T2" : terminalId}</span>{airportTodayText.scope[lang][terminalId as "all" | "T1" | "T2"] ?? terminalId}</h4>
+          {!showAllCheckpoints && !rows.length && <p className="airport-empty-line">{representativeCopy.none}</p>}
+          <div className={`airport-queue-cards${showAllCheckpoints ? '' : ' is-representative'}`}>{rows.map((row,index) => {
+            const representative = representatives.items.find(item=>queueKey(item.row)===queueKey(row));
+            const isBusiest = representative?.role === 'long';
+            return <article className={isBusiest ? "is-busiest" : ""} key={`${queueKey(row)}-${index}`}>
+              {showAllCheckpoints && <span className="checkpoint-rank">{String(index + 1).padStart(2, "0")}</span>}
+              <div>{!showAllCheckpoints && representative && <small className="checkpoint-role">{representativeCopy[representative.role]}{representative.tied && !representatives.equal ? ` · ${representativeCopy.tie}` : ''}</small>}<strong>{!showAllCheckpoints && isAll ? `${row.terminal} · ` : ''}{friendlyCheckpointName(row.zone, lang)}</strong>{showAllCheckpoints && isBusiest && <small>{airportTodayText.longest[lang]}</small>}</div>
+              <AirportQueueScene reading={row} now={presentationNow} lang={lang}/>
               <b><i>{airportTodayText.waitLabel[lang]}</i>{waitText(row)}</b>
+              {displayedQueueMinutes(row) === 0 && <small className="airport-queue-zero-note">{representativeCopy.zero}</small>}
               <p><i>{airportTodayText.peopleLabel[lang]}</i>{row.waitingCount === null ? airportTodayText.unavailable[lang] : `${row.waitingCount.toLocaleString(numberLocale)}${airportTodayText.waiting[lang]}`}<small>{formatHumanFreshness(row.observedAt, nowIso, lang, "observed")}{row.freshness === "STALE" ? ` · ${text.stale[lang]}` : ""}</small></p>
             </article>;
           })}</div>
@@ -2189,8 +2191,9 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         aria-expanded={showAllCheckpoints}
         aria-controls="airport-checkpoint-groups"
         onClick={() => setShowAllCheckpoints((open) => !open)}
-      >{showAllCheckpoints ? airportTodayText.showLongestOnly[lang] : airportTodayText.showAllCheckpoints[lang]}</button>}
-      {checkpointTerminals.length > 0 && <p className="airport-detail-foot">{contextText(lang, "사람·장비는 설명용 모형입니다. 실제 대기는 숫자로 확인하세요.", "People and equipment are illustrative. Read the numbers for observed queues.", "人物与设备仅为示意模型，请以数字查看实际等候情况。", "人・設備は説明用模型です。実際の待ちは数値をご確認ください。")}</p>}
+      >{showAllCheckpoints ? representativeCopy.collapse : airportTodayText.showAllCheckpoints[lang]}</button>}
+      {!showAllCheckpoints && representatives.count > 0 && <p className="airport-detail-foot">{representatives.equal ? `${representativeCopy.equal} ` : ''}{representatives.count < 3 ? `${representativeCopy.few} ` : ''}{representativeCopy.basis}{representatives.hasLowerBound ? ` ${representativeCopy.lower}` : ''}</p>}
+      {checkpointTerminals.length > 0 && <p className="airport-detail-foot">{contextText(lang, "사람·장비는 설명용 모형입니다. 색은 T2 대기시간 기준이며 실제 대기는 숫자로 확인하세요.", "People and equipment are illustrative. Color follows T2 wait-time categories; read the observed numbers.", "人物与设备仅为示意模型。颜色依据T2等候时间等级，实际等候请查看数字。", "人・設備は説明用模型です。色はT2の待ち時間区分を表し、実際の待ちは数値で確認できます。")}</p>}
       <p className="airport-detail-foot">{airportTodayText.nowOnly[lang]}</p>
     </section>
 
