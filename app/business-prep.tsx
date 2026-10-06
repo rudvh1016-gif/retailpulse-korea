@@ -5,9 +5,9 @@ import type { Lang } from './retailpulse-data';
 import { useLiveSummary, LiveLoadMessage } from './live-signals';
 import { usePresentationClock } from './area-demand-card';
 import { saveBusinessPreferences, useBusinessPreferences } from './business-preferences';
-import { buildBusinessPrep, prepInputFromSummary, type BusinessHours, type PrepArea, type PrepPlace } from '../lib/business-prep';
+import { buildBusinessPrep, prepInputFromSummary, type BusinessHours, type PrepArea, type PrepFact, type PrepPlace, type PrepSource } from '../lib/business-prep';
 import { HOUR_CHOICES, type BusinessPreferences } from '../lib/business-preferences';
-import { actionText, coverageLine, evidenceText, factLine, hoursLabel, isWholeDayFact, placeName, prepCopy, sideNames, statusLine } from '../lib/business-prep-copy';
+import { actionText, coverageLine, evidenceText, factLine, hoursLabel, isWholeDayFact, levelName, limitLine, placeName, prepCopy, prepSpan, sideNames, statusLine } from '../lib/business-prep-copy';
 import { industryProfiles, type IndustryId } from '../lib/industry-guidance';
 import { snapshotOf } from '../lib/last-check';
 import { LastCheckBlock, UsualComparisonBlock } from './business-compare';
@@ -20,6 +20,54 @@ import { FeelingLogBlock, WeeklyReviewBlock } from './weekly-review';
 import { trackPersonalEvent } from '../lib/personal-analytics';
 import { placeKey } from '../lib/last-check';
 import { cnJpHoliday, officialHolidaysOn } from '../lib/airport-prep-holidays';
+import { SignalScene, type SignalSceneKind } from './signal-scene';
+import './prep-scenes.css';
+
+const prepText = (lang: Lang, ko: string, en: string, zh: string, ja: string) => ({ ko, en, zh, ja })[lang];
+
+function AreaPrepFact({ fact, serviceDate, lang }: { fact: PrepFact; serviceDate: string; lang: Lang }) {
+  let scene: SignalSceneKind;
+  let title: string;
+  let value: string;
+  let source: PrepSource;
+  switch (fact.kind) {
+    case 'CROWD_MAX':
+      scene = 'crowd'; source = 'SEOUL_FORECAST';
+      title = prepText(lang, '최고 혼잡 예측', 'Highest crowd forecast', '最高拥挤预测', '最高混雑予測');
+      value = `${levelName(fact.level, lang)} · ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)}`;
+      break;
+    case 'RAIN_MAX':
+      scene = 'rain'; source = 'KMA_FORECAST';
+      title = prepText(lang, '최고 강수확률', 'Highest rain probability', '最高降水概率', '最高降水確率');
+      value = `${fact.percent}% · ${prepSpan(fact.startAt, fact.endAt, serviceDate, lang)}`;
+      break;
+    case 'TEMPERATURE_RANGE':
+      scene = 'temperature'; source = 'KMA_FORECAST';
+      title = prepText(lang, '기온 예보', 'Temperature forecast', '气温预报', '気温予報');
+      value = fact.minC === fact.maxC ? `${fact.minC}°C` : `${fact.minC}–${fact.maxC}°C`;
+      break;
+    case 'EVENTS':
+      scene = 'event'; source = 'TOURAPI_EVENTS';
+      title = prepText(lang, '근처 공식 행사', 'Official events nearby', '附近官方活动', '近くの公式イベント');
+      value = prepText(lang, `${fact.count}건`, `${fact.count} event(s)`, `${fact.count}项`, `${fact.count}件`);
+      break;
+    case 'HOLIDAY':
+      scene = 'holiday'; source = 'HOLIDAY_CALENDAR';
+      title = prepText(lang, '공식 공휴일', 'Official public holiday', '官方假日', '公式の祝日');
+      value = factLine(fact, serviceDate, lang);
+      break;
+    default:
+      return <>{factLine(fact, serviceDate, lang)}</>;
+  }
+  return <>
+    <SignalScene kind={scene}/>
+    <div><h4 className="prep-fact-title">{title}</h4><p className="prep-fact-value">{value}</p>
+      <details className="prep-fact-detail"><summary>{prepText(lang, '자료와 한계', 'Source and limits', '资料与局限', '資料と限界')}</summary>
+        <p>{factLine(fact, serviceDate, lang)}</p><p>{limitLine(source, lang)}</p>
+      </details>
+    </div>
+  </>;
+}
 
 /** Analytics context: only enumerated values, never hours, names or free text. */
 export function prepAnalytics(lang: Lang, place: PrepPlace, serviceDate: string, todayKst: string) {
@@ -128,7 +176,7 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
     // viewKey already names everything this depends on.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewKey]);
-  return <section className="business-prep" data-testid="business-prep" aria-labelledby={`${id}-title`}>
+  return <section className="business-prep" data-testid="business-prep" data-place={place.kind} aria-labelledby={`${id}-title`}>
     <div className="section-head"><div>
       <p className="eyebrow">KORETAIL · {prepCopy.eyebrow[lang]}</p>
       <h2 id={`${id}-title`}>{prepCopy.title[lang]}</h2>
@@ -140,7 +188,9 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
         <h3>{prepCopy.factsTitle[lang]}</h3>
         {/* The whole-day east/west flight comparison is the card at the top of the airport block (same sentences as the shared text and image). */}
         {prep.facts.some((fact) => !isWholeDayFact(fact))
-          ? <ul className="prep-facts" data-testid="prep-facts">{prep.facts.filter((fact) => !isWholeDayFact(fact)).map((fact, index) => <li key={index}>{factLine(fact, serviceDate, lang)}</li>)}</ul>
+          ? <ul className="prep-facts" data-testid="prep-facts" key={`${serviceDate}:${place.kind === 'area' ? place.area : place.terminal}:${preferences.hours?.open ?? ''}:${preferences.hours?.close ?? ''}`}>{prep.facts.filter((fact) => !isWholeDayFact(fact)).map((fact, index) => <li key={index} data-fact={fact.kind}>{place.kind === 'area'
+            ? <AreaPrepFact fact={fact} serviceDate={serviceDate} lang={lang}/>
+            : factLine(fact, serviceDate, lang)}</li>)}</ul>
           : prep.status === 'PAST' || prep.status === 'ENDED' ? null : <p className="prep-empty">{prepCopy.noFacts[lang]}</p>}
         {prep.coverage.map((entry) => coverageLine(entry, serviceDate, lang)).filter(Boolean).map((line, index) => <p key={index} className="prep-coverage">{line}</p>)}
       </div>
@@ -154,9 +204,13 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
           const evidence = evidenceText(action, serviceDate, lang);
           return <li key={index} data-rule={action.rule}>
             <p className="prep-action-title">{text.title}</p>
-            <p>{text.body}</p>
-            {text.industryHint && <p className="prep-industry-hint"><strong>{prepCopy.industryCheck[lang]}</strong> {text.industryHint}</p>}
-            <details className="prep-evidence"><summary>{prepCopy.evidence[lang]}</summary><dl>
+            {place.kind === 'airport' && <><p>{text.body}</p>
+              {text.industryHint && <p className="prep-industry-hint"><strong>{prepCopy.industryCheck[lang]}</strong> {text.industryHint}</p>}</>}
+            <details className={`prep-evidence${place.kind === 'area' ? ' prep-action-detail' : ''}`}><summary>{place.kind === 'area'
+              ? prepText(lang, '실행 방법과 근거', 'Steps and basis', '执行方法与依据', '実行方法と根拠') : prepCopy.evidence[lang]}</summary>
+              {place.kind === 'area' && <><p>{text.body}</p>
+                {text.industryHint && <p className="prep-industry-hint"><strong>{prepCopy.industryCheck[lang]}</strong> {text.industryHint}</p>}</>}
+              <dl>
               <dt>{prepCopy.condition[lang]}</dt><dd>{evidence.condition}</dd>
               <dt>{prepCopy.dataUsed[lang]}</dt><dd>{evidence.data}</dd>
               <dt>{prepCopy.issuedAt[lang]}</dt><dd>{evidence.issued}</dd>
