@@ -1,0 +1,73 @@
+import {expect,test,type Locator} from '@playwright/test';
+import {SUMMARY_FIXTURE} from './summary-fixture';
+import type {LiveSummary} from '../app/live-signals';
+import {kstStamp,peopleRange} from '../lib/demand-presentation';
+import type {Lang} from '../app/retailpulse-data';
+
+const date='2026-08-31';
+const issuedAt=`${date}T14:00:00+09:00`;
+const targets=[`${date}T17:00:00+09:00`,`${date}T18:00:00+09:00`,'2026-09-01T02:00:00+09:00'];
+type Forecast=NonNullable<LiveSummary['areas']['myeongdong']>['realtimeForecast'][number];
+const forecast=(base:number):Forecast[]=>targets.map((targetAt,index)=>({targetAt,issuedAt,populationMin:base+index*2_000,populationMax:base+index*2_000+1_000,congestionLevel:2,congestionLabel:'fixture'}));
+const cases:Array<{width:number;lang:Lang}>=[320,390,430,1280].map(width=>({width,lang:'ko'}));
+cases.push(...(['en','zh','ja'] as const).map(lang=>({width:390,lang})));
+
+for(const {width,lang} of cases)test(`observed and selected forecast stay distinct and synchronized ${lang} ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:900});
+ await page.clock.install({time:new Date('2026-08-31T05:10:00Z')});
+ const data=structuredClone(SUMMARY_FIXTURE) as unknown as LiveSummary;
+ const myeongdong=data.areas.myeongdong!,hongdae=data.areas.hongdae!;
+ myeongdong.realtime={...myeongdong.realtime!,observedAt:`${date}T13:05:00+09:00`,retrievedAt:`${date}T14:09:00+09:00`,populationMin:2_100,populationMax:2_300};
+ hongdae.realtime={...hongdae.realtime!,observedAt:`${date}T13:20:00+09:00`,retrievedAt:`${date}T14:09:00+09:00`,populationMin:4_100,populationMax:4_300};
+ myeongdong.realtimeForecast=forecast(10_000);hongdae.realtimeForecast=forecast(20_000);
+ let requests=0;
+ await page.route('**/api/live/summary*',route=>{requests++;return route.fulfill({json:data});});
+ await page.goto(`/${lang}`);
+ const card=page.getByTestId('area-demand-card').first(),outlook=card.getByTestId('population-outlook');
+ const observed=card.locator('.demand-number'),observedTime=card.locator('.demand-time time');
+ const reading=outlook.locator('.outlook-selection'),range=reading.locator('.outlook-selection-range');
+ await expect(card.locator('.demand-metric-label')).toHaveText({ko:'최근 관측 인구',en:'Latest observed population',zh:'最近观测人口',ja:'直近の観測人口'}[lang]);
+ await expect(observed).toContainText(peopleRange(myeongdong.realtime,lang));
+ await expect(observedTime).toHaveAttribute('datetime',myeongdong.realtime.observedAt);
+ await expect(observedTime).toHaveText('08-31 13:05 KST');
+ await expect(observedTime).toHaveCSS('font-weight','600');await expect(observedTime).toHaveCSS('color','rgb(0, 0, 0)');
+ await expect(range).toHaveCSS('font-size','26px');await expect(range).toHaveCSS('font-weight','600');await expect(range).toHaveCSS('color','rgb(0, 0, 0)');
+ if(lang==='ko')await card.locator('.demand-reading').screenshot({path:`../ui-headings-evidence-20261006/observed-reading-${width}.png`});
+ async function selected(button:Locator,point:Forecast) {
+  await expect(button).toHaveAttribute('aria-pressed','true');
+  await expect(range).toContainText(peopleRange(point,lang));
+  await expect(reading.locator('time')).toHaveAttribute('datetime',point.targetAt);
+  await expect(reading.locator('time')).toHaveText(`${kstStamp(point.targetAt)} KST`);
+  const marker=outlook.locator('[data-selected-range]');
+  await expect(marker).toHaveAttribute('data-selected-at',point.targetAt);
+  const geometry=await marker.evaluate(el=>{const svg=(el as SVGGraphicsElement).ownerSVGElement!;return {ceiling:Number(svg.getAttribute('data-ceiling')),start:Number(svg.getAttribute('data-domain-start')),end:Number(svg.getAttribute('data-domain-end')),width:svg.viewBox.baseVal.width,x:Number(el.getAttribute('x1')),y1:Number(el.getAttribute('y1')),y2:Number(el.getAttribute('y2'))};});
+  expect(geometry.x).toBeCloseTo(46+(Date.parse(point.targetAt)-geometry.start)/(geometry.end-geometry.start)*(geometry.width-60),3);
+  expect(geometry.y1).toBeCloseTo(244-point.populationMax/geometry.ceiling*212,3);
+  expect(geometry.y2).toBeCloseTo(244-point.populationMin/geometry.ceiling*212,3);
+ }
+ const buttons=outlook.locator('.outlook-times button');
+ await buttons.last().click();await selected(buttons.last(),myeongdong.realtimeForecast[2]);
+ await expect(observed).toContainText('2,100–2,300');await expect(observedTime).toHaveText('08-31 13:05 KST');
+ await buttons.nth(1).focus();await page.keyboard.press('Enter');await selected(buttons.nth(1),myeongdong.realtimeForecast[1]);
+ await expect(buttons.nth(1)).toBeFocused();await expect(buttons.nth(1)).toHaveCSS('outline-style','solid');
+ await buttons.last().focus();await page.keyboard.press('Space');await selected(buttons.last(),myeongdong.realtimeForecast[2]);
+ if(lang==='ko')await outlook.screenshot({path:`../ui-headings-evidence-20261006/selected-forecast-${width}.png`});
+ await page.locator('.home-area-briefs button').nth(1).click();
+ await expect(observed).toContainText('4,100–4,300');await expect(observedTime).toHaveText('08-31 13:20 KST');
+ // The area may retain a valid selected time or choose its first one; every reading must use the new area.
+ const activeTime=await reading.locator('time').getAttribute('datetime');
+ const activeIndex=hongdae.realtimeForecast.findIndex(point=>point.targetAt===activeTime);
+ expect(activeIndex).toBeGreaterThanOrEqual(0);await selected(buttons.nth(activeIndex),hongdae.realtimeForecast[activeIndex]);
+ await buttons.last().click();await selected(buttons.last(),hongdae.realtimeForecast[2]);
+ const beforeRefresh=requests;
+ hongdae.realtimeForecast[2]={...hongdae.realtimeForecast[2],populationMin:27_000,populationMax:28_000};
+ hongdae.realtime={...hongdae.realtime,observedAt:`${date}T13:35:00+09:00`,retrievedAt:`${date}T14:14:00+09:00`,populationMin:4_400,populationMax:4_600};
+ await page.clock.fastForward(301_000);
+ await expect.poll(()=>requests).toBeGreaterThan(beforeRefresh);
+ await selected(buttons.last(),hongdae.realtimeForecast[2]);
+ await expect(observed).toContainText('4,400–4,600');await expect(observedTime).toHaveText('08-31 13:35 KST');
+ const beforeRemoval=requests;hongdae.realtimeForecast=hongdae.realtimeForecast.slice(0,2);
+ await page.clock.fastForward(301_000);await expect.poll(()=>requests).toBeGreaterThan(beforeRemoval);
+ await expect(buttons).toHaveCount(2);await selected(buttons.first(),hongdae.realtimeForecast[0]);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});

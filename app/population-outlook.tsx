@@ -35,9 +35,14 @@ export function PopulationOutlook({points,current,lang,now}:{points:FlowPoint[];
     </g>;})}
     {ticks.map(time=><text key={time} x={x(time)} y={bottom+18} textAnchor={time===start?'start':time===end?'end':'middle'}>{kstStamp(time).slice(6)}</text>)}
     {forecasts.filter(p=>kstStamp(p.at).slice(6)==='00:00').map(p=><g key={p.at}><line x1={x(p.time)} x2={x(p.time)} y1={top-4} y2={bottom} stroke="#dee6eb" strokeDasharray="2 3"/><text x={Math.min(right-34,x(p.time)+4)} y="18">{kstStamp(p.at).slice(0,5)}</text></g>)}
-    {active&&<><line x1={x(active.time)} x2={x(active.time)} y1={y(active.populationMax)-7} y2={bottom} stroke="#7598ad" strokeOpacity=".45"/><line data-selected-range x1={x(active.time)} x2={x(active.time)} y1={y(active.populationMax)} y2={y(active.populationMin)} stroke="#497f9f" strokeWidth="3.5" strokeLinecap="round"/></>}
+    {active&&<><line x1={x(active.time)} x2={x(active.time)} y1={y(active.populationMax)-7} y2={bottom} stroke="#7598ad" strokeOpacity=".45"/><line data-selected-range data-selected-at={active.at} x1={x(active.time)} x2={x(active.time)} y1={y(active.populationMax)} y2={y(active.populationMin)} stroke="#497f9f" strokeWidth="3.5" strokeLinecap="round"/></>}
    </svg>
-   <div className="outlook-selection" aria-live="polite"><strong>{kstStamp(active.at)} KST</strong><span>{t('예상','Forecast','预测','予想')} {peopleRange(active,lang)}</span><p>{comparison}</p></div>
+   <div className="outlook-selection" aria-live="polite">
+    <span className="outlook-selection-label">{t('선택 시간의 예상 인구','Forecast population at selected time','所选时间的预测人口','選択時刻の予想人口')}</span>
+    <strong className="outlook-selection-range">{peopleRange(active,lang)}<small>{t('명',' people','人','人')}</small></strong>
+    <strong className="outlook-selection-time"><time dateTime={active.at}>{kstStamp(active.at)} KST</time></strong>
+    <p>{comparison}</p>
+   </div>
    <div className="outlook-times" role="group" aria-label={t('예상 시간 선택','Select forecast time','选择预测时间','予想時刻を選択')}>
     {forecasts.map(p=><button key={p.at} type="button" aria-pressed={active.at===p.at} onClick={()=>setSelected(p.at)}><strong>{kstStamp(p.at).slice(6)}</strong><small>{kstDay(p.at)===kstDay(now)?t('오늘','Today','今天','今日'):kstStamp(p.at).slice(0,5)}</small></button>)}
    </div>
