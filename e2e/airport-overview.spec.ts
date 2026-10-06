@@ -131,7 +131,12 @@ test('the reference is next to the top model and uses separate full-day terminal
   await expect(reference).toHaveAttribute('data-state', 'READY');
   await expect(reference.getByTestId('top-reference-T1')).toBeVisible();
   await expect(reference.getByTestId('top-reference-T2')).toBeVisible();
-  await expect(reference).toContainText('T1 and T2 are calculated separately');
+  const notes = slot.getByTestId('airport-comparison-notes');
+  await expect(notes).not.toHaveAttribute('open', '');
+  await notes.locator('summary').click();
+  await expect(notes).toContainText('T1 and T2 are calculated separately');
+  await expect(notes).toContainText('nearest hundred');
+  await notes.locator('summary').click();
   await expect(page.getByTestId('overview-T1').getByTestId('split-estimate')).toHaveCount(0);
   await expect(page.getByTestId('overview-T1').getByTestId('split-shares')).toBeVisible();
   await expect(page.getByTestId('overview-T1').getByTestId('flight-split')).toContainText('All departures');
@@ -165,8 +170,38 @@ for (const width of [320, 390, 430]) {
     const reference = page.getByTestId('airport-top-reference');
     await expect(reference).toHaveAttribute('data-state', 'READY');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
-    await reference.locator('summary').first().focus();
+    const notes = page.getByTestId('airport-comparison-notes');
+    await notes.locator('summary').focus();
     await page.keyboard.press('Enter');
-    await expect(reference.locator('details').first()).toHaveAttribute('open', '');
+    await expect(notes).toHaveAttribute('open', '');
+  });
+}
+
+for (const [lang, title, label] of [['ko', '인천공항', '주의사항'], ['en', 'Incheon Airport', 'Notes'], ['zh', '仁川机场', '注意事项'], ['ja', '仁川空港', '注意事項']] as const) {
+  test(`concise airport header and one closed comparison note: ${lang}`, async ({ page }) => {
+    await open(page, { lang });
+    const intro = page.locator('.airport-view > .view-intro');
+    await expect(intro.getByRole('heading', { name: title, exact: true })).toBeVisible();
+    await expect(intro.locator('p')).toHaveCount(1); // Existing eyebrow only; no hidden duplicate prose.
+    await expect(intro.locator('.today-answer-lines')).toHaveCount(0);
+    await expect(page.locator('.airport-purpose-links a')).toHaveCount(2);
+    const slot = page.getByTestId('airport-departure-model-slot');
+    const notes = slot.getByTestId('airport-comparison-notes');
+    await expect(notes).toHaveCount(1);
+    await expect(notes.locator('summary')).toHaveText(label);
+    await expect(notes).not.toHaveAttribute('open', '');
+    await expect(slot.getByTestId('airport-top-reference').locator('details')).toHaveCount(0);
+    await expect(slot.getByTestId('country-share-basis')).not.toBeVisible();
+    await expect(slot.getByTestId('top-reference-T1')).toBeVisible();
+    await expect(slot.getByTestId('map-zone-countries').locator('[data-side=WEST] h5')).toBeVisible();
+    await notes.locator('summary').focus();
+    await page.keyboard.press('Enter');
+    await expect(slot.getByTestId('country-share-basis')).toBeVisible();
+    await page.keyboard.press('Space');
+    await expect(notes).not.toHaveAttribute('open', '');
+    await notes.locator('summary').click();
+    await expect(notes).toHaveAttribute('open', '');
+    await notes.locator('summary').click();
+    await expect(notes).not.toHaveAttribute('open', '');
   });
 }

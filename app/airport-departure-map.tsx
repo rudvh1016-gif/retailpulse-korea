@@ -24,7 +24,7 @@ import type { DestinationGroup } from '../lib/airport-destinations';
 import { AirportConceptModel } from './airport-concept-model';
 import { AirportSceneModel } from './airport-scene-model';
 import { AirportZoneCountries } from './airport-zone-countries';
-import { AirportTopReference } from './airport-top-reference';
+import { AirportTopReference, AirportReferenceNotes } from './airport-top-reference';
 import { topReferences } from '../lib/airport-top-reference';
 import { zoneShareCopy } from '../lib/airport-zone-share-copy';
 import { airportModelScope } from '../lib/airport-model-scope';
@@ -177,7 +177,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
       })}
     </div>
     {buildingScope&&<p className="prep-note">{{ko:'건물별 편수: T1 본관·T2·탑승동을 별도 집계합니다. 전체에는 건물 미정도 포함하며 탑승동 여객 예보는 따로 제공되지 않습니다.',en:'Physical buildings: T1 main, T2 and concourse are counted separately. All includes unknown buildings. No separate concourse passenger forecast is provided.',zh:'按T1主楼、T2、登机楼分别统计。全部包含建筑未定航班。不提供登机楼独立旅客预测。',ja:'T1本館・T2・搭乗棟を別々に集計。全体は建物未定便も含みます。搭乗棟単独の旅客予想は提供されません。'}[lang]}</p>}
-    {map.nextDay !== 'MISSING' ? (modelPlacement ? modelTarget && createPortal(<><AirportConceptModel map={map} lang={lang}/>{topReference}<AirportZoneCountries map={map} lang={lang}/></>,modelTarget) : <><AirportConceptModel map={map} lang={lang}/><AirportZoneCountries map={map} lang={lang}/></>) : unavailableModel}
+    {map.nextDay !== 'MISSING' ? (modelPlacement ? modelTarget && createPortal(<><AirportConceptModel map={map} lang={lang}/>{topReference}<AirportZoneCountries map={map} lang={lang} referenceNotes={referenceSummary && <AirportReferenceNotes lang={lang} scope={buildingScope ?? terminal} wholeDay={wholeDaySelected} entries={reference}/>}/></>,modelTarget) : <><AirportConceptModel map={map} lang={lang}/><AirportZoneCountries map={map} lang={lang}/></>) : unavailableModel}
     <div className="date-nav-shortcuts" role="group" aria-label={copy.time[lang]} style={{ flexWrap: 'wrap' }}>
       {presets.map((value) => <button key={value} type="button" aria-pressed={preset === value} data-preset={value} style={{ whiteSpace: 'nowrap', flex: '0 0 auto' }}
         onClick={() => { setPreset(value); setSelected(null); }}>{copy.presets[value][lang]}</button>)}

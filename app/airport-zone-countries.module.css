@@ -25,3 +25,21 @@
 .moreCountries { margin-top: 8px; }
 .moreCountries summary { cursor: pointer; padding-block: 4px; touch-action: manipulation; }
 .moreCountries summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.comparison {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-block: 4px 12px;
+}
+.comparison:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.comparison .grid {
+  grid-template-columns: repeat(3, minmax(260px, 1fr));
+  gap: 20px;
+}
+.zone { min-width: 0; border-top: 1px solid var(--line); padding-top: 12px; }
+.unverified { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.unverified ul { max-width: 400px; }
+.scrollHint { color: #000; }
+@media (min-width: 1100px) { .scrollHint { display: none; } }

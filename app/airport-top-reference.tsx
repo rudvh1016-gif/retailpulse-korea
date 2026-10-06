@@ -1,10 +1,9 @@
 import type { Lang } from './retailpulse-data';
 import type { TopReference } from '../lib/airport-top-reference';
-import { estimateBasisLine, estimateBody, estimateNote, splitCopy } from '../lib/airport-flight-split-copy';
+import { estimateBasisLine, estimateBody, splitCopy } from '../lib/airport-flight-split-copy';
 import './airport-split-details.css';
 
 const words = {
-  notObserved: { ko: '실제 동·서편 출국객 관측값이 아닙니다.', en: 'Not observed east/west passenger counts.', zh: '并非观测到的东、西区旅客人数。', ja: '東西別の実測旅客数ではありません。' },
   all: { ko: '전체 화면에서는 T1·T2를 각각 계산하며 합산 배분하지 않습니다.', en: 'T1 and T2 are calculated separately; no combined allocation.', zh: 'T1与T2分别计算，不合并分配。', ja: 'T1とT2を別々に計算し、合算配分しません。' },
   time: { ko: '선택한 시간대에는 공식 승객 분모가 없습니다. 하루 전체에서 확인하세요.', en: 'No official passenger denominator for this time window. Check the whole day.', zh: '所选时段没有官方旅客分母。请查看全天。', ja: '選択した時間帯には公式の旅客分母がありません。終日で確認してください。' },
   concourse: { ko: '탑승동 단독에는 공식 승객 분모가 없습니다. T1 하루 전체에서 확인하세요.', en: 'No separate official passenger denominator for the concourse. Check T1 for the whole day.', zh: '登机楼没有单独的官方旅客分母。请查看T1全天。', ja: '搭乗棟単独の公式旅客分母はありません。T1の終日で確認してください。' },
@@ -22,18 +21,30 @@ export function AirportTopReference({ lang, date, scope, wholeDay, entries, onWh
     <h3>{splitCopy.estimateHeading[lang]} <small>{date} KST</small></h3>
     {reason ? <p role="status">{words[reason][lang]}{' '}<button type="button" className="prep-link" onClick={reason === 'concourse' ? onT1Day : onWholeDay}>{words[reason === 'concourse' ? 't1Day' : 'wholeDay'][lang]}</button></p>
       : <>
-        {scope === 'all' && <p className="prep-note">{words.all[lang]}</p>}
         {entries?.map(({ terminal, estimate }) => estimate
           ? <div className="airport-top-reference-row" data-testid={`top-reference-${terminal}`} key={terminal}>
               <p><strong>{terminal} · {estimateBody({ terminal, ...estimate }, lang)}</strong></p>
-              <details className="prep-evidence prep-estimate-details"><summary>{splitCopy.estimateDetails[lang]}</summary>
-                <p className="prep-note">{estimateBasisLine({ terminal, ...estimate }, lang)}</p>
-                <p className="prep-note">{estimateNote({ terminal, ...estimate }, lang)}</p>
-              </details>
             </div>
           : <p className="prep-note" data-testid={`top-reference-${terminal}-unavailable`} key={terminal}>{terminal} · {words.unavailable[lang]}</p>)}
         {!entries && <p className="prep-note" role="status">{words.unavailable[lang]}</p>}
-        {entries?.some((entry) => entry.estimate) && <p className="prep-note">{words.notObserved[lang]}</p>}
       </>}
   </section>;
+}
+
+/** Rendered inside the comparison's single disclosure, beside the country basis. */
+export function AirportReferenceNotes({ lang, scope, wholeDay, entries }: {
+  lang: Lang; scope: 'all' | 'T1' | 'T2' | 'CONCOURSE' | undefined; wholeDay: boolean; entries: TopReference[] | null;
+}) {
+  if (!wholeDay || scope === 'CONCOURSE' || !entries?.some((entry) => entry.estimate)) return null;
+  return <>
+    <p className="prep-note">{{
+      ko: '공식 예상 출국객 수를 구역별 항공편 비율로 나눈 참고값입니다. 실제 구역별 출국객 수와 다를 수 있습니다. 편당 승객 수가 같다고 가정하며 백 명 단위로 반올림합니다.',
+      en: 'The official departure forecast is split by each zone’s share of flights. This reference can differ from actual zone passenger counts. It assumes equal passengers per flight and rounds to the nearest hundred.',
+      zh: '按各区航班比例分配官方预计出境人数，仅供参考，可能与各区实际人数不同。假设每班旅客数相同，按百人取整。',
+      ja: '公式の出国予想客数をエリア別の便数比率で配分した参考値です。実際のエリア別人数とは異なる場合があります。1便あたりの旅客数を同じと仮定し、百人単位に四捨五入します。',
+    }[lang]}</p>
+    {scope === 'all' && <p className="prep-note">{words.all[lang]}</p>}
+    {entries.map(({ terminal, estimate }) => estimate && <p className="prep-note" key={terminal}>{estimateBasisLine({ terminal, ...estimate }, lang)}</p>)}
+    {entries.some(({ estimate }) => (estimate?.concourse?.flights ?? 0) > 0) && <p className="prep-note">{splitCopy.concourseNote[lang]}</p>}
+  </>;
 }
