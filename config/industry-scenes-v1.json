@@ -1,0 +1,28 @@
+{
+  "renderer": "Blender 5.2.1 LTS / Cycles / 64 samples / AgX",
+  "illustrationOnly": true,
+  "sourceArchive": "docs/assets/industry-guide-v1-blender.zip",
+  "reusedSource": "config/approved-color-assets.json",
+  "assets": [
+    {
+      "name": "beauty-480.webp",
+      "bytes": 13850,
+      "sha256": "b54051527ee3957093082c855b202d1b0109c00fb54b346630723ec12035c1c3"
+    },
+    {
+      "name": "beauty-960.webp",
+      "bytes": 35888,
+      "sha256": "9b5c7dc74a7c97618f37e70f87210ca82c093e4a747a065e7dc988276fc2b80e"
+    },
+    {
+      "name": "convenience-480.webp",
+      "bytes": 11506,
+      "sha256": "ea2f47a5511bf0d3f9fd62f4eecf6aa01eeb093a2a3d5efc6267cc004b43c274"
+    },
+    {
+      "name": "convenience-960.webp",
+      "bytes": 29196,
+      "sha256": "2c87f3f3bb13479e8e5506c0905408f21909ad5d77a4ccc73b2a7e9de67384cf"
+    }
+  ]
+}

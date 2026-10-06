@@ -5,6 +5,7 @@ import type { Lang, Terminal } from './retailpulse-data';
 import { checklistPhaseLabels, checklistPhaseOrder, industryProfiles, type IndustryId } from '../lib/industry-guidance';
 import { airportStoreAreas, industryPlaybooks, type AirportStoreArea } from '../lib/industry-playbooks';
 import './airport-models.css';
+import './industry-scenes.css';
 
 const text = (lang: Lang, ko: string, en: string, zh: string, ja: string) => ({ ko, en, zh, ja })[lang];
 
@@ -19,6 +20,7 @@ export function IndustryGuide({ lang, industry, onIndustryChange, airport }: {
   const profile = industryProfiles[industry];
   const playbook = industryPlaybooks[industry];
   const area = airportStoreAreas[storeArea];
+  const hasNewScene = industry === 'beauty' || industry === 'convenience';
   return <section id={airport ? 'airport-industry-guide' : 'store-industry-guide'} className="industry-section operating-guide" data-testid="industry-guide" aria-labelledby={`${id}-title`}>
     <div className="section-head"><div>
       <p className="eyebrow">KORETAIL · {text(lang, '상시 운영 참고', 'GENERAL OPERATING GUIDE', '日常运营参考', '日常運営の参考')}</p>
@@ -49,15 +51,28 @@ export function IndustryGuide({ lang, industry, onIndustryChange, airport }: {
         <a href="https://www.airport.kr/ap_ko/1014/subview.do" target="_blank" rel="noopener noreferrer">{text(lang, '면세 액체류·환승 FAQ (한국어)', 'Duty-free liquids / transfer FAQ (Korean)', '免税液体与转机常见问题（韩语）', '免税液体・乗継FAQ（韓国語）')} ↗</a>
       </div>
     </div>}
-    <div className="operating-focus"><p>{playbook.focus[lang]}</p></div>
+    {!airport && <div className="store-operating-scene" key={`${industry}-scene`}>
+      <figure className="store-industry-model">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={hasNewScene ? `/visuals/industry/v1/${industry}-960.webp` : `/airport-models/shop-${industry}.webp`}
+          srcSet={hasNewScene ? `/visuals/industry/v1/${industry}-480.webp 480w, /visuals/industry/v1/${industry}-960.webp 960w` : undefined}
+          sizes="(max-width: 760px) calc(100vw - 48px), 440px" width="960" height="720" alt="" loading="lazy" decoding="async"/>
+        <figcaption className="prep-note">{text(lang, '운영 공간 예시 · 실제 매장 배치가 아닙니다.', 'Example operating space, not an actual store layout.', '运营空间示意，并非实际店铺布局。', '運営空間の例です。実際の店舗配置ではありません。')}</figcaption>
+      </figure>
+      <div className="operating-focus"><h3>{profile.label[lang]}</h3><p>{playbook.focus[lang]}</p></div>
+    </div>}
+    {airport && <div className="operating-focus"><p>{playbook.focus[lang]}</p></div>}
     <div className="operating-priorities" key={industry}>
       {playbook.priorities.map((priority, index) => <article className="operating-priority" key={index}>
         <h4>{priority.title[lang]}</h4>
-        <p>{priority.action[lang]}</p>
-        <details><summary>{text(lang, '판단 근거와 주의점', 'Reasoning and limits', '判断依据与注意点', '判断の理由と注意点')}</summary><p>{priority.reason[lang]}</p></details>
+        {airport ? <><p>{priority.action[lang]}</p>
+          <details><summary>{text(lang, '판단 근거와 주의점', 'Reasoning and limits', '判断依据与注意点', '判断の理由と注意点')}</summary><p>{priority.reason[lang]}</p></details></>
+          : <details><summary>{text(lang, '실행 방법과 주의점', 'Steps and limits', '执行方法与注意点', '実行方法と注意点')}</summary>
+            <p>{priority.action[lang]}</p><p>{priority.reason[lang]}</p></details>}
       </article>)}
     </div>
-    <div className="operating-record"><h4>{text(lang, '마감 때 남길 기록', 'What to record at close', '打烊时记录', '閉店時に残す記録')}</h4><p>{playbook.record[lang]}</p></div>
+    {airport ? <div className="operating-record"><h4>{text(lang, '마감 때 남길 기록', 'What to record at close', '打烊时记录', '閉店時に残す記録')}</h4><p>{playbook.record[lang]}</p></div>
+      : <details className="operating-record" key={`${industry}-record`}><summary>{text(lang, '마감 때 남길 기록', 'What to record at close', '打烊时记录', '閉店時に残す記録')}</summary><p>{playbook.record[lang]}</p></details>}
     <details className="operating-checklist" key={`${industry}-checklist`}>
       <summary>{text(lang, '오픈 전 · 혼잡 시간 · 마감 체크리스트', 'Opening · busy period · closing checklist', '开店前·繁忙时段·打烊清单', '開店前・混雑時・閉店のチェックリスト')}</summary>
       <div className="checklist-groups">{checklistPhaseOrder.map(phase => <section className="checklist-phase" key={phase}>
