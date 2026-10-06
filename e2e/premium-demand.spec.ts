@@ -18,13 +18,15 @@ for (const width of [390, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(`/ko${route}`);
       await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
-      await expect(page.locator(route === '/airport' ? '.airport-current-brief' : '.area-current-brief').first()).toBeVisible();
+      const isAirport = route === '' || route === '/airport';
+      await expect(page.locator(isAirport ? '.airport-current-brief' : '.area-current-brief').first()).toBeVisible();
+      if (isAirport) await expect(page.getByTestId('area-demand-card')).toHaveCount(0);
       await page.evaluate(() => document.fonts.ready);
       await page.evaluate(() => window.scrollTo({top:0,behavior:'instant'}));
       await page.screenshot({ path: info.outputPath(`${baseline ? 'before' : 'after'}-${route.slice(1) || 'home'}-${width}.png`) });
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       expect(requests.filter(url => new URL(url).pathname === '/api/live/summary').length).toBeLessThanOrEqual(1);
-      if (!baseline && route !== '/airport') {
+      if (!baseline && !isAirport) {
         await expect(page.getByTestId('area-demand-card').first()).toBeVisible();
         await expect(page.getByTestId('population-outlook').first()).toBeVisible();
         await expect(page.locator('.population-history-disclosure').first()).not.toHaveAttribute('open','');
@@ -45,10 +47,10 @@ for (const width of [390, 1440]) {
 }
 
 for (const lang of ['ko', 'en', 'zh', 'ja']) {
-  test(`compact public overview and navigation in ${lang}`, async ({ page }) => {
+  test(`compact district overview and navigation in ${lang}`, async ({ page }) => {
     await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
     await page.setViewportSize({ width: 360, height: 844 });
-    await page.goto(`/${lang}`);
+    await page.goto(`/${lang}/forecast`);
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     const card = page.getByTestId('area-demand-card').first();
     await expect(card).toBeVisible();
@@ -112,7 +114,7 @@ test('selected dates and terminal scopes survive links, reload and back', async 
   const selectedDate = SUMMARY_FIXTURE.serviceDateKst;
   await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
   await page.route('**/api/live/predictions*', routeSummary({targetDate:'2026-09-01',run:null,coverage:null,records:[]}));
-  await page.goto(`/ko?date=${selectedDate}`);
+  await page.goto(`/ko/forecast?date=${selectedDate}`);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
   await expect(page.locator('.demand-card-footer > a').first()).toHaveAttribute('href',`/ko/myeongdong?date=${selectedDate}`);
   await page.goto(`/ko/airport?terminal=T1&date=${selectedDate}`);

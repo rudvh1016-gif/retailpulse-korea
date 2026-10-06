@@ -15,14 +15,15 @@ for (const lang of ['ko','en','zh','ja']) for (const width of [360,390,430,1280]
     await expect(page.locator('nav.bottom-nav a')).toHaveCount(5);
     await expect(page.locator('nav.top-nav a').first()).toHaveAttribute('href',`/${lang}/airport`);
     await expect(page.locator('nav.bottom-nav a').first()).toHaveAttribute('aria-current','page');
-    await expect(page.locator('.demand-home')).toHaveCount(1);
-    expect(await page.locator('.airport-today').evaluate(airport=>airport.compareDocumentPosition(document.querySelector('.demand-home')!)&Node.DOCUMENT_POSITION_FOLLOWING)).toBeTruthy();
+    await expect(page.locator('.demand-home')).toHaveCount(0);
+    await expect(page.getByTestId('area-demand-card')).toHaveCount(0);
     expect(await page.evaluate(key=>localStorage.getItem(key),PREFERENCE_KEY)).toBe(stored);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
     const seoulNavigation = width > 820 ? 'nav.top-nav' : 'nav.bottom-nav';
     await page.locator(`${seoulNavigation} a[href="/${lang}/hongdae"]`).click();
     await expect(page).toHaveURL(new RegExp(`/${lang}/hongdae$`));
     await expect(page.locator('.area-current-brief')).toBeVisible();
+    await expect(page.getByTestId('area-demand-card')).toBeVisible();
     await page.goBack(); await expect(page.locator('.airport-today')).toBeVisible();
     await page.getByRole('button',{name:'KORETAIL home'}).click();
     await expect(page).toHaveURL(new RegExp(`/${lang}$`));

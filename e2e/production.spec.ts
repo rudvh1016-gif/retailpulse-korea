@@ -491,10 +491,10 @@ test("remaining expected departures is shown for a complete day and withheld for
   await expect(page.getByText("전체 시간대 확인 불가").first()).toBeVisible();
 });
 
-test("home gives deterministic current briefs for all three Seoul areas", async ({ page }) => {
+test("district overview gives deterministic current briefs for all three Seoul areas", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ko");
+  await page.goto("/ko/forecast");
   await expect(page.getByRole("heading", { name: "다른 상권 살펴보기" })).toBeVisible();
   const briefs = page.locator(".home-area-briefs");
   await expect(page.getByTestId('area-demand-card').first()).toContainText('현재 추정 인구');
@@ -518,15 +518,13 @@ test("Seoul renders compact arrival forecasts in four languages and no departure
   } as const;
 
   for (const [locale, labels] of Object.entries(expected)) {
-    await page.goto(`/${locale}`);
-    await page.locator(".demand-card-footer > a").first().click();
+    await page.goto(`/${locale}/myeongdong`);
     const rows = page.locator(".signal-groups");
     for (const label of labels) await expect(rows.getByText(label, { exact: true })).toBeVisible();
     await expect(rows).toContainText(locale === "ko" ? "41,300명" : "41,300");
   }
 
-  await page.goto("/ko");
-  await page.locator(".demand-card-footer > a").first().click();
+  await page.goto("/ko/myeongdong");
   const rows = page.locator(".signal-groups");
   await expect(rows).toContainText("서울의 특정 지역과 직접 연결되지 않는 배경 참고");
   await expect(rows).toContainText("실제 서울 방문객 수 아님");
@@ -540,8 +538,7 @@ test("partial arrival coverage hides the whole-day total and peak", async ({ pag
   partial.airport.arrivalForecast.peakExpectedTimeBand = null;
   partial.airport.arrivalForecast.forecastCoverage = { all: "PARTIAL", byTerminal: { T1: "PARTIAL", T2: "COMPLETE" } };
   await page.route("**/api/live/summary*", routeSummary(partial));
-  await page.goto("/ko");
-  await page.locator(".demand-card-footer > a").first().click();
+  await page.goto("/ko/myeongdong");
   const rows = page.locator(".signal-groups");
   await expect(rows.getByText("오늘 예상 입국객", { exact: true })).toHaveCount(0);
   await expect(rows.getByText("오늘 예상 입국 피크", { exact: true })).toHaveCount(0);

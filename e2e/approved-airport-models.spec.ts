@@ -72,6 +72,7 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [320,390,430,1280]) 
     await expect(img).toHaveAttribute('width','1440');await expect(img).toHaveAttribute('height','760');
     await expect(overview.getByTestId('map-groups')).toHaveCount(0);
     await expect(overview.getByTestId('map-T2')).toHaveCount(0);
+    await overview.getByTestId('departure-map-section').locator(':scope > summary').click();
     await overview.getByTestId('map-destinations').locator('summary').click();
     await expect(overview.getByTestId('map-groups')).toBeVisible();
     await overview.getByTestId('map-official-coordinates').locator('summary').click();
