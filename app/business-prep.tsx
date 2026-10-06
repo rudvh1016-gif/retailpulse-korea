@@ -20,13 +20,13 @@ import { FeelingLogBlock, WeeklyReviewBlock } from './weekly-review';
 import { trackPersonalEvent } from '../lib/personal-analytics';
 import { placeKey } from '../lib/last-check';
 import { cnJpHoliday, officialHolidaysOn } from '../lib/airport-prep-holidays';
-import { SignalScene, type SignalSceneKind } from './signal-scene';
+import { PrepSymbolScene, type PrepSymbolKind } from './prep-symbol-scene';
 import './prep-scenes.css';
 
 const prepText = (lang: Lang, ko: string, en: string, zh: string, ja: string) => ({ ko, en, zh, ja })[lang];
 
 function AreaPrepFact({ fact, serviceDate, lang }: { fact: PrepFact; serviceDate: string; lang: Lang }) {
-  let scene: SignalSceneKind;
+  let scene: PrepSymbolKind;
   let title: string;
   let value: string;
   let source: PrepSource;
@@ -60,7 +60,7 @@ function AreaPrepFact({ fact, serviceDate, lang }: { fact: PrepFact; serviceDate
       return <>{factLine(fact, serviceDate, lang)}</>;
   }
   return <>
-    <SignalScene kind={scene}/>
+    <PrepSymbolScene kind={scene} lang={lang}/>
     <div><h4 className="prep-fact-title">{title}</h4><p className="prep-fact-value">{value}</p>
       <details className="prep-fact-detail"><summary>{prepText(lang, '자료와 한계', 'Source and limits', '资料与局限', '資料と限界')}</summary>
         <p>{factLine(fact, serviceDate, lang)}</p><p>{limitLine(source, lang)}</p>
