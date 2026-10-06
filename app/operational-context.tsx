@@ -5,6 +5,8 @@ import {CommercialComposition} from './commercial-composition';
 import { kstDay } from '../lib/demand-presentation';
 import { AIR_GRADE_TEXT, readAirGrade } from '../lib/weather-guide';
 import { describeObservationAge, explainObservationVsForecast } from '../lib/observation-freshness';
+import { WeatherScene } from './weather-scene';
+import './seoul-weather-scenes.css';
 
 /** Seoul's own grade word, localized. An unrecognised label is shown as published. */
 function airGradeWord(publishedGrade: string, lang: Lang): string {
@@ -46,15 +48,16 @@ export function SeoulContextCard({context,lang,nowIso}:{context?:SeoulContext & 
       const age=describeObservationAge(weather.observedAt,nowIso??context.retrievedAt??'',lang);
       const stamp=age.isNow?t('지금','Now','当前','現在'):age.clock?`${age.clock} ${t('관측','observed','观测','観測')}`:t('관측','Observed','观测','観測');
       const gap=explainObservationVsForecast(age,lang);
-      return <p className="context-environment"><strong>{t('주변 환경 관측','Local environment observation','当前周边环境','現在の周辺環境')}</strong><br/>
-        {[weather.temperature!==null?`${stamp} ${weather.temperature}°C`:null,
+      const facts = [weather.temperature!==null?`${stamp} ${weather.temperature}°C`:null,
           weather.humidity!==null?`${t('습도','Humidity','湿度','湿度')} ${weather.humidity}%`:null,
           weather.wind!==null?`${t('바람','Wind','风','風')} ${weather.wind}m/s`:null,
           weather.pm10!==null?`${t('미세먼지','PM10','可吸入颗粒物 PM10','PM10')}${weather.pm10Grade?` ${airGradeWord(weather.pm10Grade,lang)}`:''} ${weather.pm10}μg/m³`:null,
-          weather.pm25!==null?`${t('초미세먼지','PM2.5','细颗粒物 PM2.5','PM2.5')}${weather.pm25Grade?` ${airGradeWord(weather.pm25Grade,lang)}`:''} ${weather.pm25}μg/m³`:null].filter(Boolean).join(' · ')}
-        {gap&&<small className="context-observation-gap">{gap}</small>}
-        <small>{t('서울시 실시간 도시데이터 · 관측','Seoul real-time city data · observed','首尔市实时城市数据 · 观测','ソウル市リアルタイム都市データ · 観測')} {weather.observedAt.slice(5,16).replace('T',' ')} KST</small>
-      </p>;
+          weather.pm25!==null?`${t('초미세먼지','PM2.5','细颗粒物 PM2.5','PM2.5')}${weather.pm25Grade?` ${airGradeWord(weather.pm25Grade,lang)}`:''} ${weather.pm25}μg/m³`:null].filter((value): value is string => Boolean(value));
+      return <div className="context-environment"><WeatherScene lang={lang} forecast={null} source="" observation={{
+        facts, observedAt: weather.observedAt, explanation: gap,
+        title: t('주변 환경 관측','Local environment observation','当前周边环境','現在の周辺環境'),
+        source: t('서울시 실시간 도시데이터 · 관측','Seoul real-time city data · observed','首尔市实时城市数据 · 观测','ソウル市リアルタイム都市データ · 観測'),
+      }}/></div>;
     })()}
   </div>;
 }
