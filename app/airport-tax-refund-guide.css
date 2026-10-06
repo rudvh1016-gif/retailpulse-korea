@@ -34,5 +34,23 @@
 .departure-preparation-plan a {font-size:inherit;}
 .departure-customs-directed {border-left:2px solid #b8d9e9;padding-left:10px;}
 .airport-departure-preparation :is(summary,select,a):focus-visible {outline:2px solid #365c79;outline-offset:3px;}
+.passenger-guide-entry {display:block;font-weight:400;margin-top:4px;}
+.passenger-guide-heading {font-size:inherit;font-weight:600;}
+.passenger-guide-steps {list-style:none;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin:16px 0;color:var(--ink,#111);}
+.passenger-guide-steps > li {min-width:0;border-top:1px solid #e5e7eb;padding-top:8px;}
+.passenger-guide-steps h4 {font-size:inherit;font-weight:600;margin:6px 0;}
+.passenger-guide-steps p {margin:6px 0;}
+.passenger-guide-steps summary {cursor:pointer;min-height:44px;padding:10px 0;}
+.passenger-guide-image {display:block;position:relative;width:128px;max-width:100%;aspect-ratio:1;}
+.passenger-guide-image img {display:block;width:100%;height:auto;}
+.passenger-terminal-label {position:absolute;transform:translate(-50%,-50%);color:#111;font-weight:600;line-height:1;}
+.passenger-terminal-label-t1 {left:32.1139%;top:29.0851%;}
+.passenger-terminal-label-t2 {left:64.4311%;top:35.6417%;}
+.departure-preparation-plan > summary {cursor:pointer;min-height:44px;padding:10px 0;font-weight:600;}
+.departure-refund-eligibility {border-left:2px solid #e5e7eb;padding-left:10px;}
+.passenger-guide-steps a:hover {text-decoration:underline;}
+.tax-refund-procedure .passenger-guide-image img {max-height:none;aspect-ratio:1;float:none;max-width:100%;width:100%;}
+.tax-refund-procedure [data-step="REFUND_COLLECTION"] > .passenger-guide-image {float:right;max-width:40%;}
+@media(max-width:760px) {.passenger-guide-steps {grid-template-columns:1fr;} .passenger-guide-steps > li {display:grid;grid-template-columns:96px minmax(0,1fr);gap:0 12px;} .passenger-guide-steps .passenger-guide-image {grid-row:1/4;width:96px;} .passenger-guide-steps h4,.passenger-guide-steps p,.passenger-guide-steps details {grid-column:2;} }
 @media (max-width:430px) {.departure-preparation-inputs {grid-template-columns:1fr;gap:12px;}}
 @media (max-width:430px) {.tax-refund-procedure {gap:12px;} .tax-refund-procedure img {max-height:105px;} .tax-refund-inspection img {width:100px;}}

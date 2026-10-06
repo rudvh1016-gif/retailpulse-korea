@@ -58,3 +58,35 @@ test('a date boundary near the chart edge replaces a colliding label', () => {
   assert.ok(ticks.includes(Date.parse('2026-09-13T00:00:00+09:00')));
   assert.ok(!ticks.includes(start));
 });
+
+test('collector-spaced observations connect unchanged source bounds; long or explicit gaps break', () => {
+  const base=Date.parse('2026-09-12T12:00:00+09:00');
+  const observedSeries=[0,15,35,65,100,115].map((minutes,index)=>({observedAt:new Date(base+minutes*60_000).toISOString(),populationMin:100+index,populationMax:200+index}));
+  const input={observedSeries,serviceDate:'2026-09-12',isToday:true,now};
+  const points=populationFlow(input);
+  assert.deepEqual(flowSegments(points).map(group=>group.length),[4,2]);
+  assert.deepEqual(points.map(p=>[p.populationMin,p.populationMax]),observedSeries.map(p=>[p.populationMin,p.populationMax]));
+  assert.deepEqual(flowSegments(points.map((p,i)=>i===2?{...p,gapBefore:true}:p)).map(group=>group.length),[2,2,2]);
+  assert.deepEqual(flowSegments(points.map((p,i)=>({...p,sourceId:i<2?'a':'b'}))).map(group=>group.length),[2,2,2]);
+  assert.deepEqual(flowSegments(points.map((p,i)=>({...p,schemaVersion:i<2?'v1':'v2'}))).map(group=>group.length),[2,2,2]);
+});
+
+test('filtering an invalid observation must not join its neighbors, including a duplicate realtime row',()=>{
+  const observedSeries=[0,15,30,45].map((minutes,index)=>({observedAt:new Date(Date.parse('2026-09-12T12:00:00+09:00')+minutes*60_000).toISOString(),populationMin:100,populationMax:index===1?50:200}));
+  const points=populationFlow({observedSeries,realtime:observedSeries[2],serviceDate:'2026-09-12',isToday:true,now});
+  assert.equal(points.length,3);
+  assert.deepEqual(flowSegments(points).map(group=>group.length),[1,2]);
+});
+
+test('forecast hourly cohorts, source kinds, zero ranges and KST day boundaries remain separate',()=>{
+  const input={serviceDate:'2026-09-12',isToday:true,now};
+  const points=populationFlow({...input,realtime:{observedAt,...range},realtimeForecast:[
+    {targetAt:'2026-09-13T00:00:00+09:00',issuedAt:observedAt,populationMin:0,populationMax:0},
+    {targetAt:'2026-09-13T01:00:00+09:00',issuedAt:observedAt,...range},
+    {targetAt:'2026-09-13T02:00:00+09:00',issuedAt:'2026-09-12T23:15:00+09:00',...range},
+    {targetAt:'2026-09-13T04:00:00+09:00',issuedAt:observedAt,...range},
+  ]});
+  assert.deepEqual(flowSegments(points).map(group=>group.length),[1,2,1,1]);
+  const midnight=Date.parse('2026-09-13T00:00:00+09:00');
+  assert.equal(flowSegments([midnight-15*60_000,midnight].map(time=>({time,at:new Date(time).toISOString(),kind:'observed' as const,...range}))).length,2);
+});

@@ -14,19 +14,19 @@
     "app/api/live/flights/route.ts": "fb7bbfc1132359dceb4d315997eaf26bfc5b27d3f03f2bb9b8be4fe46718c1bd",
     "app/api/live/predictions/route.ts": "b82f003bd3d77c293a379c4dbd0bf5e2aa449b19e54a65119ef2e4f291cdfced",
     "app/api/live/summary/route.ts": "ce08a54a232816dfa63143a9101dbc268a849bc11900293e6df5e7f43e53898b",
-    "app/area-demand-card.tsx": "975767a5e71d40a2f3b37942003c6bb94bf816bfb3d8d3f2405fa0d4581004bd",
+    "app/area-demand-card.tsx": "9f480850246b31fbb8cec5f75fb9b69eb382cb6e504ebd6c536cb43793384f4c",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
     "app/layout.tsx": "c0a649360ad8b28b74a8d338e2d3404e2fb76bd536740b3ffa7d38747cc701ac",
-    "app/live-signals.tsx": "2fd7161863e3a8925489dd1b488e4f3495cda013164c45811181572f91a77389",
+    "app/live-signals.tsx": "73a68b4da19f835f7946aa0fefd83fce4e0e71df01c517d5e1302953b332f060",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "b9ccbfae7aac67f7aafd4e5ad2eb6739df50f166fa6723befa40db8742a08314",
-    "app/retailpulse-app.tsx": "4433b2d0689f30cc6077ff3b0a74e466eab55ae4dfedfd09a48eb4141eb8a04b",
+    "app/retailpulse-app.tsx": "8f03e234b74699b74d8d86d978bb98deee8a9658a1dfdf713ee188af72d0fbef",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b",
@@ -52,7 +52,8 @@
     "public/manifest.webmanifest": "b645aca0f55d875dd6f8f72cfaa2eaf4a0ae05aad72019bc13e841e2570f8534",
     "public/og-image.png": "aa6fcb5fe90f7d167fe1e754e6735781c9126868dd2993694db936c8cc6705bb",
     "public/window.svg": "decf1cf7bb22b5c99c4857cfcd5718ce5465c4454166317589c83fc73df74b66",
-    "wrangler.production.jsonc": "7e07dd03ac29221dabcb1cb0ae30b4920bd65714f15fc3e2d867ee83cb2956fe"
+    "wrangler.production.jsonc": "7e07dd03ac29221dabcb1cb0ae30b4920bd65714f15fc3e2d867ee83cb2956fe",
+    "app/population-flow.tsx": "629cb24104891ab96ba6726b8946b1b5f5db832f6f13e3017dd08be211adad51"
   },
   "crons": {
     "measure-read-budget.yml": [],
@@ -351,6 +352,42 @@
       }
     ]
   },
+  "ownerAirportMobileControls20261004": {
+    "reason": "Owner-authorized 2026-10-04 airport mobile refinement: label the top-level All tab with its T1/T2 scope while keeping physical concourse accounting separate in the departure map. Only the tab text in app/retailpulse-app.tsx changed. The original Owner UI Lock test and all other protected hashes remain active and unchanged.",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "3aa1492a086bf26f053c3885976e9b24f716bbe617e4fcf0e68ac2f3fcc261c1",
+        "approved": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5"
+      }
+    ]
+  },
+  "ownerDailyForecastComparison20261004": {
+    "reason": "Owner requested that the existing daily official passenger-forecast bars show their date, value and relationship at a glance. A same-unit baseline and labels are added for short runs without drawing a cumulative series or treating missing days as zero. Existing colors, typography, protected-file list and UI Lock assertions remain active. This is local UI development only; no merge or deployment approval is implied.",
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "2fd7161863e3a8925489dd1b488e4f3495cda013164c45811181572f91a77389",
+        "approved": "73a68b4da19f835f7946aa0fefd83fce4e0e71df01c517d5e1302953b332f060"
+      }
+    ]
+  },
+  "ownerSeoulConnectedRangeChart20261006": {
+    "reason": "Owner explicitly approved applying the final Seoul chart to the app (2026-10-06 03:59:35 UTC, Sentinel_314768f0993c8191a2bc2e6992b83ab2; resumed in Sentinel_d8b23a365a4081918a708f89dcf8f0c4). Delegation authorizes the normal protected record procedure for this new chart scope only. Extract the shared chart into PopulationFlowChart, preserving source min/max, fonts, APIs and schedulers. Only app/area-demand-card.tsx is refreshed; all prior records, other protected hashes, cron locks and enforcement tests stay unchanged. No previously blocked change is included. Merge/deployment remains coordinated by the lead thread. The extracted app/population-flow.tsx is added to the same active byte lock, so extraction does not reduce chart protection.",
+    "changes": [
+      {
+        "file": "app/area-demand-card.tsx",
+        "previous": "975767a5e71d40a2f3b37942003c6bb94bf816bfb3d8d3f2405fa0d4581004bd",
+        "approved": "9f480850246b31fbb8cec5f75fb9b69eb382cb6e504ebd6c536cb43793384f4c"
+      },
+      {
+        "file": "app/population-flow.tsx",
+        "previous": null,
+        "approved": "629cb24104891ab96ba6726b8946b1b5f5db832f6f13e3017dd08be211adad51",
+        "reason": "New extracted chart stays covered by the existing Owner UI Lock assertion."
+      }
+    ]
+  },
   "ownerApprovedOgShare20261004": {
     "reason": "Scoped owner approval for the airplane/runway OG update: refresh only four protected share-metadata source SHA-256 baselines. The protected path list, historical approval records, active tests, typography and product logic remain unchanged.",
     "changes": [
@@ -373,6 +410,58 @@
         "file": "app/seo-config.ts",
         "previous": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
         "approved": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b"
+      }
+    ]
+  },
+  "ogShareMainReconciliation20261005": {
+    "reason": "Local conflict repair within the previously approved four-path OG share scope. Preserve the existing main All (T1+T2) label and all historical owner records; reconcile the source hash after applying only the original OG metadata edits. This record is provenance for the delegated local repair, not an approval to push, merge or deploy.",
+    "mainSha": "28390c5794f9f753025487e1ecf9ff60c64de5c4",
+    "ogHeadSha": "dd89db38499aec81293404b53231533365136778",
+    "originalScopeRecord": "ownerApprovedOgShare20261004",
+    "preservedMainScopeRecord": "ownerAirportMobileControls20261004",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "mainApproved": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+        "ogApproved": "4433b2d0689f30cc6077ff3b0a74e466eab55ae4dfedfd09a48eb4141eb8a04b",
+        "reconciled": "8f03e234b74699b74d8d86d978bb98deee8a9658a1dfdf713ee188af72d0fbef"
+      }
+    ]
+  },
+  "ogShareMainReconciliation20261006": {
+    "reason": "Local preparation of the same PR266 OG scope against current main. All four metadata files and the approved image are byte-identical to the previously tested local repair. Preserve the new Seoul chart lock and every main/OG historical record. This provenance record does not authorize public merge or deployment.",
+    "mainSha": "565c0341cfd2cea1ff9d2eaccdd68283f7179701",
+    "ogHeadSha": "dd89db38499aec81293404b53231533365136778",
+    "originalScopeRecord": "ownerApprovedOgShare20261004",
+    "preservedMainScopeRecord": "ownerSeoulConnectedRangeChart20261006",
+    "changes": [
+      {
+        "file": "app/[locale]/[slug]/page.tsx",
+        "mainApproved": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1",
+        "ogApproved": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545",
+        "reconciled": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545",
+        "identicalToPreviousRepair": true
+      },
+      {
+        "file": "app/layout.tsx",
+        "mainApproved": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
+        "ogApproved": "c0a649360ad8b28b74a8d338e2d3404e2fb76bd536740b3ffa7d38747cc701ac",
+        "reconciled": "c0a649360ad8b28b74a8d338e2d3404e2fb76bd536740b3ffa7d38747cc701ac",
+        "identicalToPreviousRepair": true
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "mainApproved": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+        "ogApproved": "4433b2d0689f30cc6077ff3b0a74e466eab55ae4dfedfd09a48eb4141eb8a04b",
+        "reconciled": "8f03e234b74699b74d8d86d978bb98deee8a9658a1dfdf713ee188af72d0fbef",
+        "identicalToPreviousRepair": true
+      },
+      {
+        "file": "app/seo-config.ts",
+        "mainApproved": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
+        "ogApproved": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b",
+        "reconciled": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b",
+        "identicalToPreviousRepair": true
       }
     ]
   }

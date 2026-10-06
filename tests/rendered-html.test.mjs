@@ -961,3 +961,27 @@ test("fonts are cached but never immutable, and hashed assets are", async () => 
   assert.ok(shipped.every((name) => name.endsWith(".woff2")),
     `public/fonts holds a file the /fonts/* rule was not written for: ${shipped.join(", ")}`);
 });
+
+for (const locale of ["ko", "en", "zh", "ja"]) {
+  test(`travel records ${locale} share the approved card and keep private-record indexing disabled`, async () => {
+    const response = await renderPath(`/${locale}/travel-records`, locale === "zh" ? "zh-CN" : locale);
+    assert.equal(response.status, 200);
+    const head = (await response.text()).split("</head>")[0];
+    const meta = (key) => {
+      const tag = (head.match(/<meta\b[^>]*>/g) ?? []).find((item) => item.includes(`property="${key}"`) || item.includes(`name="${key}"`));
+      assert.ok(tag, key);
+      return tag.match(/content="([^"]*)"/)?.[1] ?? "";
+    };
+    assert.match(meta("robots"), /noindex/);
+    assert.ok(meta("description").length > 5);
+    assert.equal(meta("og:title"), "KORETAIL");
+    assert.equal(meta("twitter:title"), "KORETAIL");
+    assert.equal(meta("og:description").trim(), "");
+    assert.equal(meta("twitter:description").trim(), "");
+    for (const key of ["og:image", "twitter:image"]) {
+      const url = new URL(meta(key));
+      assert.equal(url.origin, process.env.NEXT_PUBLIC_SITE_ORIGIN ?? "http://localhost:3000");
+      assert.equal(url.pathname, "/og-airport-b-20261004.jpg");
+    }
+  });
+}

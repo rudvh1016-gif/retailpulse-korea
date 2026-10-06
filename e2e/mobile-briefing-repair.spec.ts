@@ -126,7 +126,7 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     await expect(page.locator('.flow-tick-date')).toHaveCount(1);
     await expect(page.locator('.flow-tick-date')).toHaveText('9/1');
     await expect(page.locator('.flow-observed circle')).toHaveCount(1);
-    await expect(page.locator('.flow-observed').first()).toHaveCSS('stroke', 'rgb(17, 17, 17)');
+    await expect(page.locator('.flow-observed').first()).toHaveCSS('stroke', 'rgb(100, 148, 179)');
     await expect(page.locator('.demand-number strong')).toHaveCSS('font-size', '29px');
     await expect(page.locator('.flow-now rect')).toHaveCount(0);
     const buttons = await page.locator('.date-nav-shortcuts button').evaluateAll(els => els.map(el => { const r = el.getBoundingClientRect(), s = getComputedStyle(el); return { x: r.x, right: r.right, y: r.y, bottom: r.bottom, height: r.height, border: s.borderTopWidth }; }));
@@ -134,25 +134,21 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     buttons.forEach((r, i) => { expect(r.height).toBeGreaterThanOrEqual(48); expect(r.border).toBe('0px'); if (i) expect(r.x).toBeGreaterThanOrEqual(buttons[i - 1].right); });
     const tools = await page.locator('.date-nav-tools').boundingBox();
     expect(tools!.y).toBeGreaterThanOrEqual(buttons[0].bottom);
-    const slider = page.getByRole('slider');
-    await slider.press('Home');
-    await expect(slider).toHaveAttribute('aria-valuetext', /96,000–98,000/);
-    await slider.press('End');
-    await expect(slider).toHaveAttribute('aria-valuetext', /09-01 03:00/);
-    await expect(page.locator('.flow-forecast .flow-bound').first()).toHaveCSS('stroke-dasharray', '4px, 5px');
-    // Each contiguous segment retains its exact range band and only one quiet edge.
+    const select = page.locator('.flow-time-control select');
+    await select.press('Home');
+    await expect(page.locator('.flow-readout')).toHaveAttribute('aria-label', /96,000–98,000/);
+    await select.press('End');
+    await expect(page.locator('.flow-readout')).toHaveAttribute('aria-label', /09-01 03:00/);
+    await expect(page.locator('.flow-forecast .flow-bound').first()).toHaveCSS('stroke-dasharray', '3px, 2px');
+    // Each contiguous segment retains both exact minimum and maximum boundaries.
     expect(await page.locator('.flow-forecast path.flow-bound').count()).toBe(2 * await page.locator('.flow-forecast path.flow-range').count());
     const chart = await page.locator('.population-chart').boundingBox();
     await page.locator('.population-chart').click({ position: { x: 46, y: 100 } });
-    await expect(slider).toHaveAttribute('aria-valuenow', '0');
-    // The custom handle must sit at the same real screen x as the chart's own
-    // selection line, however irregular the observed/forecast cadence is
-    // (5-minute observations mixed with hourly overnight forecast rows).
-    // A native <input type="range"> would put the thumb at index/(length-1)
-    // instead of at the point's actual time, which is the bug this replaces.
-    const thumbBox = await page.locator('.flow-slider-thumb').boundingBox();
+    await expect(select).toHaveValue('observed:2026-08-31T00:10:00.000Z');
+    // Native time selection and pointer selection share source timestamps;
+    // no control maps irregularly spaced observations to equal-width indices.
     const selectionBox = await page.locator('.flow-selection line').boundingBox();
-    expect(Math.abs((thumbBox!.x + thumbBox!.width / 2) - (selectionBox!.x + selectionBox!.width / 2))).toBeLessThanOrEqual(2);
+    expect(Math.abs(selectionBox!.x-chart!.x-46)).toBeLessThanOrEqual(2);
     expect(chart!.width).toBeLessThan(width);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     if (lang === 'ko') await page.screenshot({ path: info.outputPath(`hongdae-safe-area-${width}.png`), fullPage: true });
@@ -231,7 +227,7 @@ for (const width of [360, 390]) test(`owner UI lock across main screens ${width}
       await page.screenshot({ path: info.outputPath(`owner-${route.slice(1) || 'personal'}-${width}.png`) });
     }
     if (route === '/hongdae') {
-      await page.locator('.flow-inspector').scrollIntoViewIfNeeded();
+      await page.locator('.flow-time-control').scrollIntoViewIfNeeded();
       await page.screenshot({ path: info.outputPath(`owner-chart-${width}.png`) });
     }
   }

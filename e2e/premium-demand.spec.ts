@@ -34,10 +34,10 @@ for (const width of [390, 1440]) {
           const y = await page.locator('.demand-number').first().evaluate(el => el.getBoundingClientRect().bottom);
           expect(y).toBeLessThan(700);
         }
-        const slider = page.getByRole('slider').first();
-        await slider.focus();
-        await slider.press('ArrowRight');
-        await expect(slider).toHaveAttribute('aria-valuetext', /KST/);
+        const select = page.locator('.flow-time-control select').first();
+        await select.focus();
+        await select.press('ArrowDown');
+        await expect(page.locator('.flow-readout').first()).toHaveAttribute('aria-label', /KST/);
       }
       console.log('DESIGN_SCREEN', JSON.stringify({ width, route, recorded: !!recorded, requests }));
     });
@@ -121,7 +121,7 @@ test('selected dates and terminal scopes survive links, reload and back', async 
   await expect(page).toHaveURL(/terminal=T2/);
   await page.reload();
   await expect(page.getByRole('tab',{name:'T2',exact:true})).toHaveAttribute('aria-selected','true');
-  await page.getByRole('tab',{name:'전체',exact:true}).click();
+  await page.locator('#airport-data-flow').getByRole('tab',{name:'전체 T1·T2',exact:true}).click();
   await expect(page).not.toHaveURL(/terminal=/);
   await page.goBack();
   await expect(page.getByRole('tab',{name:'T2',exact:true})).toHaveAttribute('aria-selected','true');

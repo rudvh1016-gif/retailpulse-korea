@@ -1,11 +1,42 @@
-/* Approved chart-material palette. The original data face and dashed forecast edge stay in place. */
-.population-chart .population-range-material { stroke: none; }
-.population-chart .flow-observed .population-material-top { fill: #e1ded7; }
-.population-chart .flow-observed .population-material-end { fill: #bab6ab; }
-.population-chart .flow-forecast .population-material-top { fill: #bad6cd; opacity: .75; }
-.population-chart .flow-forecast .population-material-end { fill: #79ada6; opacity: .55; }
-.flow-material-note { margin-top: 8px; }
-.flow-material-note summary { min-height: 28px; cursor: pointer; }
-.flow-material-note summary:focus-visible { outline: 2px solid #000; outline-offset: 3px; }
-.population-flow .flow-inspector { margin-top: 0; }
-.population-flow .flow-slider-thumb { width: 6px; height: 18px; margin-left: -3px; background: #bad6cd; border: 1px solid #7f8582; box-shadow: 2px -2px 0 #e1ded7; }
+/* Owner-approved Seoul range material. Scoped so other charts retain their style. */
+.population-flow-connected .population-chart { height: auto; }
+.population-flow-connected .population-chart text { fill: #000; }
+.population-flow-connected .flow-observed,
+.population-flow-connected .flow-forecast { stroke: #6494b3; fill: none; }
+.population-flow-connected .population-range-material { stroke: none; opacity: .58; }
+.population-flow-connected .population-range-material polygon { shape-rendering: crispEdges; }
+.population-flow-connected .flow-range { fill: none; stroke: none; opacity: 1; }
+.population-flow-connected .flow-observed .flow-bound { stroke-width: .35; stroke-dasharray: none; opacity: 1; }
+.population-flow-connected .flow-forecast .flow-bound { stroke-width: .5; stroke-dasharray: 3 2; opacity: 1; }
+.population-flow-connected .flow-bound.flow-interval { stroke-width: 1; stroke-dasharray: none; }
+.population-flow-connected .flow-marker circle { fill: #fff; stroke-width: 1.3; }
+.population-flow-connected .flow-grid { stroke: #e5ebef; stroke-width: .65; }
+.population-flow-connected .flow-day-boundary { stroke: #dce6ec; stroke-width: .7; }
+.population-flow-connected .flow-now line { stroke: #8ab0c8; stroke-width: .7; stroke-dasharray: 2 3; }
+.population-flow-connected .flow-legend,
+.population-flow-connected .flow-legend-unit,
+.population-flow-connected .flow-readout-meta,
+.population-flow-connected .flow-readout small,
+.population-flow-connected .flow-readout strong,
+.population-flow-connected .flow-note { color: #000; }
+.population-flow-connected .flow-legend { margin-top: 12px; }
+.population-flow-connected .flow-legend i { height: 7px; background: #c6dbe8; border: 1px solid #6494b3; border-radius: 3px; }
+.population-flow-connected .flow-legend i.forecast { border-style: dashed; }
+.population-flow-connected .flow-view-controls { display: flex; flex-wrap: wrap; gap: 8px 22px; border-bottom: 1px solid #e6ebee; }
+.population-flow-connected .flow-view-controls button { min-height: 44px; padding: 8px 0; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: #fff; color: #000; font: inherit; cursor: pointer; }
+.population-flow-connected .flow-view-controls button[aria-pressed="true"] { border-bottom-color: #8fb4cc; font-weight: var(--weight-strong); }
+.population-flow-connected .flow-time-control { display: grid; grid-template-columns: 44px minmax(0,1fr) 44px; gap: 8px; align-items: stretch; border-top: 1px solid #dde4e8; padding-top: 12px; }
+.population-flow-connected .flow-time-control > div { display: flex; flex-direction: column; min-width: 0; }
+.population-flow-connected .flow-time-control label { font-size: 12px; padding-left: 4px; color: #000; }
+.population-flow-connected .flow-time-control button,
+.population-flow-connected .flow-time-control select { min-height: 44px; min-width: 0; max-width: 100%; color: #000; background: #fff; border: 1px solid #dce5eb; border-radius: 5px; font: inherit; cursor: pointer; touch-action: manipulation; }
+.population-flow-connected .flow-time-control select { width: 100%; padding: 4px; border: 0; }
+.population-flow-connected button:disabled { opacity: .35; cursor: default; }
+.population-flow-connected button:focus-visible,
+.population-flow-connected select:focus-visible,
+.population-flow-connected summary:focus-visible { outline: 2px solid #6494b3; outline-offset: 3px; }
+.population-flow-connected .flow-time-extent { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin-top: 8px; font-size: 12px; color: #000; }
+.population-flow-connected .flow-material-note { margin-top: 8px; color: #000; }
+.population-flow-connected .flow-material-note summary { min-height: 44px; padding: 10px 0; cursor: pointer; }
+.population-flow-connected .flow-table-wrap td,
+.population-flow-connected .flow-table-wrap th { padding: 8px 4px; font-weight: normal; overflow-wrap: anywhere; }
