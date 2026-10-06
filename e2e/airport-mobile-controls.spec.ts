@@ -58,11 +58,18 @@ for (const width of [320,390,430]) test(`airport mobile selectors and gate text 
     expect(boxes[3]!.y).toBeGreaterThan(boxes[0]!.y);
   }
 
-  const unknown=page.locator('.gate-leader-zones > section[data-side="UNVERIFIED"]').first();
-  await expect(unknown).toBeVisible();
-  expect(await unknown.locator('p').evaluate(el=>getComputedStyle(el).borderLeftWidth)).toBe('1px');
+  await expect(page.locator('.gate-leader-zones > section[data-side="UNVERIFIED"]')).toHaveCount(0);
+  const unknown=page.getByTestId('gate-unverified-details');
+  await expect(unknown.locator('summary')).toHaveText('※ 위치 미확인 1편');
+  await expect(unknown).not.toHaveAttribute('open','');
+  await expect(unknown.locator('li')).not.toBeVisible();
+  await unknown.locator('summary').focus();await page.keyboard.press('Enter');
+  await expect(unknown.locator('li')).toHaveCount(1);
+  await expect(unknown.locator('li')).toContainText('KE2');
+  await page.keyboard.press('Space');await expect(unknown).not.toHaveAttribute('open','');
   await top.getByRole('tab',{name:'T2',exact:true}).click();
   await expect(top.getByRole('tab',{name:'T2',exact:true})).toHaveAttribute('aria-selected','true');
+  await expect(unknown).toHaveCount(0);
   await top.getByRole('tab').first().click();
   await page.locator('.airport-context-nav').getByRole('button',{name:'입국',exact:true}).click();
   await expect(top.getByRole('tab').first()).toHaveAttribute('aria-selected','true');

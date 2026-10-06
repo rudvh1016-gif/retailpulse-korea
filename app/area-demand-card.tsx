@@ -18,6 +18,7 @@ export const demandCopy = {
   missing: { ko: '관측자료 없음', en: 'No observation', zh: '无观测资料', ja: '観測資料なし' },
   current: { ko: '현재 추정 인구', en: 'Estimated population now', zh: '当前推定人口', ja: '現在の推定人口' },
   recorded: { ko: '관측 시점 추정 인구', en: 'Population at observation', zh: '观测时点推定人口', ja: '観測時点の推定人口' },
+  latest: { ko: '최근 관측 인구', en: 'Latest observed population', zh: '最近观测人口', ja: '直近の観測人口' },
   compareMissing: { ko: '전주 동요일 비교자료 없음', en: 'Same weekday last week: comparison unavailable', zh: '上周同星期比较资料不足', ja: '先週同曜日の比較資料なし' },
   uncertain: { ko: '범위가 겹쳐 증가·감소를 확정할 수 없습니다.', en: 'Overlapping ranges do not establish an increase or decrease.', zh: '区间重叠，无法确定增减。', ja: '範囲が重なるため増減を断定できません。' },
   flow: { ko: '관측과 앞으로의 흐름', en: 'Observed and upcoming flow', zh: '观测与未来趋势', ja: '観測とこれからの流れ' },
@@ -81,9 +82,9 @@ export function AreaDemandCard({ summary, area, lang, linkHref, linkLabel }: { s
     <header className="demand-card-head"><h2 id={`${id}-title`}>{demandAreaNames[area][lang]}</h2><span className="demand-data-state">{demandCopy[!realtime ? 'missing' : isCurrent ? 'observed' : 'previous'][lang]}</span></header>
     <div className="demand-card-body"><div className="demand-reading">
       <p className="demand-level" data-level={realtime?.congestionLevel ?? 0}>{realtime ? lang==='ko'&&realtime.congestionLabel?realtime.congestionLabel:demandLevel(realtime.congestionLevel, lang) : demandCopy.missing[lang]}</p>
-      <p className="demand-metric-label">{demandCopy[isCurrent ? 'current' : 'recorded'][lang]}</p>
+      <p className="demand-metric-label">{demandCopy.latest[lang]}</p>
       <p className="demand-number">{realtime ? <><strong>{peopleRange(realtime, lang)}</strong><span>{unit}</span></> : <strong>—</strong>}</p>
-      {realtime && <p className="demand-time">{kstStamp(realtime.observedAt)} KST {demandCopy.observed[lang]}{age?.ago ? ` · ${age.ago}` : ''}</p>}
+      {realtime && <p className="demand-time"><strong><time dateTime={realtime.observedAt}>{kstStamp(realtime.observedAt)} KST</time> {demandCopy.observed[lang]}</strong>{age?.ago ? ` · ${age.ago}` : ''}</p>}
       {ageMinutes!==null&&<p className="demand-freshness">{({ko:`${kstStamp(now)} KST 기준 ${ageMinutes}분 앞서 확인한 인원입니다.`,en:`Observed ${ageMinutes} minutes before ${kstStamp(now)} KST.`,zh:`比${kstStamp(now)} KST早${ageMinutes}分钟观测的人数。`,ja:`${kstStamp(now)} KSTより${ageMinutes}分前に確認した人数です。`})[lang]}</p>}
       <p className="demand-comparison">{comparison ? comparisonText(comparison, lang, 7) : demandCopy.compareMissing[lang]}</p>
       {comparison && comparison.minPercent <= 0 && comparison.maxPercent >= 0 && <p className="flow-note">{demandCopy.uncertain[lang]}</p>}

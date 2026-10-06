@@ -35,6 +35,7 @@ test('a usual comparison states the verdict in range terms and shows its basis',
 test('a new area says it is still collecting instead of borrowing another area', async ({ page }) => {
   const prep = await open(page, usual('itaewon', { basis: 'COLLECTING', verdict: null, range: null, validDays: 0, weeks: [] }));
   await page.locator('.business-view .area-tabs').getByRole('tab', { name: '이태원' }).click();
+  await prep.getByTestId('usual-comparison').locator(':scope > summary').click();
   await expect(prep.getByTestId('usual-headline')).toHaveText(compareCopy.collecting.ko);
 });
 
@@ -45,6 +46,9 @@ test('only last week available is labelled as last week', async ({ page }) => {
 
 test('a failed comparison request is reported, not guessed', async ({ page }) => {
   const prep = await open(page, { error: 'usual_comparison_unavailable' }, 503);
+  await expect(prep.getByTestId('usual-comparison').locator('summary')).toContainText(compareCopy.loadFailed.ko);
+  await expect(prep.getByTestId('usual-comparison')).not.toHaveAttribute('open', '');
+  await prep.getByTestId('usual-comparison').locator('summary').click();
   await expect(prep.getByTestId('usual-comparison')).toContainText(compareCopy.unavailable.ko);
   await expect(prep.getByTestId('prep-actions')).toBeVisible();
 });
@@ -52,11 +56,13 @@ test('a failed comparison request is reported, not guessed', async ({ page }) =>
 test('the airport is never compared with usual', async ({ page }) => {
   const prep = await open(page, usual('myeongdong'));
   await page.locator('.business-view .area-tabs').getByRole('tab', { name: '인천공항' }).click();
-  await expect(prep.getByTestId('usual-comparison')).toContainText(compareCopy.airport.ko);
+  await expect(prep.getByTestId('usual-comparison')).toHaveCount(0);
 });
 
 test('the first look says so, and a later look shows only real value changes', async ({ page }) => {
   const prep = await open(page, usual('myeongdong'));
+  await expect(prep.getByTestId('last-check-first')).not.toBeVisible();
+  await prep.getByTestId('last-check').locator('summary').click();
   await expect(prep.getByTestId('last-check-first')).toBeVisible();
   // Pretend the previous look saw 17:00 as "moderate" and no crowd action.
   await expect.poll(() => page.evaluate(() => localStorage.getItem('koretail-last-check-v1'))).not.toBeNull();
@@ -76,6 +82,8 @@ test('the first look says so, and a later look shows only real value changes', a
   // A reload with nothing new reports no change rather than repeating the old one.
   await page.reload();
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
+  await expect(page.getByTestId('last-check-headline')).not.toBeVisible();
+  await page.getByTestId('last-check').locator('summary').click();
   await expect(page.getByTestId('last-check-headline')).toContainText('달라진 공식 값은 없습니다');
 });
 

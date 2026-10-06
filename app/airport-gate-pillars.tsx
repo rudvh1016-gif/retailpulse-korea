@@ -8,6 +8,7 @@ import { rankMapGates, leadingGates, type RankedGate } from '../lib/airport-gate
 import { mapCopy } from '../lib/airport-departure-map-copy';
 import { kstStamp } from '../lib/demand-presentation';
 import './airport-models.css';
+import styles from './compact-disclosure.module.css';
 
 const copy = {
   title: { ko: '출발편이 가장 많은 게이트', en: 'Gates with the most departures', zh: '出发航班最多的登机口', ja: '出発便が最も多いゲート' },
@@ -62,6 +63,7 @@ export default function AirportGatePillars({ lang, terminal, date }: { lang: Lan
   const query = search.trim().toLowerCase();
   const list = gates.filter(g => (zone === 'ALL' || g.side === zone || g.building === zone) && (!query || `${g.building} ${g.gate}`.toLowerCase().includes(query)));
   const flights = maps.flatMap(map => map.flights);
+  const unverified = flights.filter(flight => flight.side === 'UNVERIFIED');
   const selectedFlights = flights.filter(f => `${f.building}:${f.gate}` === selected);
   const picked = gates.find(g => g.key === selected);
   const select = (key: string) => { setSelected(selected === key ? null : key); };
@@ -71,11 +73,15 @@ export default function AirportGatePillars({ lang, terminal, date }: { lang: Lan
       {loaded.payload.truncated ? <p role="status">{copy.partial[lang]}</p> : <>
         {leaders.length ? <><p className="gate-leader-number"><span>{copy.most[lang]}</span> <strong>{max.toLocaleString(locale)}</strong>{unit}</p>
           <p className="gate-leader-names">{mapCopy.gate[lang]} {leaders.map(item => terminal === 'all' ? `${item.building} ${item.gate}` : item.gate).join(' · ')}{leaders.length > 1 ? ` (${copy.leaders[lang]})` : ''}</p>
-          <div className="gate-leader-zones">{(['WEST', 'CENTER', 'EAST', 'UNVERIFIED'] as const).map(side => {
+          <div className="gate-leader-zones">{(['WEST', 'CENTER', 'EAST'] as const).map(side => {
             const rows = leadingGates(gates.filter(g => g.side === side));
             return <section key={side} data-side={side}><div className="gate-zone-heading"><h5>{mapCopy.side[side][lang]}</h5>{rows.length > 1 && <small>{copy.leaders[lang]} {rows.length}{lang === 'ko' ? '곳' : lang === 'ja' ? 'か所' : lang === 'zh' ? '处' : ''}</small>}</div>{rows.length ? <div className="gate-pillar-row">{rows.map(item => <div key={item.key} data-overall-leader={item.flights === max}><Pillar item={item} lang={lang} showBuilding={terminal === 'all'} rank={item.flights === max ? 'overall' : 'zone'} onSelect={() => select(item.key)}/></div>)}</div> : <p>{copy.zero[lang]}</p>}</section>;
           })}</div></> : <p>{mapCopy.empty[lang]}</p>}
       </>}
+      {unverified.length > 0 && <details className={`prep-evidence ${styles.disclosure}`} data-testid="gate-unverified-details">
+        <summary style={{ fontWeight: 'var(--weight-regular)' }}>※ {mapCopy.side.UNVERIFIED[lang]} {unverified.length}{unit}<span className={styles.toggle} aria-hidden="true" /></summary>
+        <ul>{unverified.map(flight => <li key={`${flight.day}:${flight.id}`}>{flight.flightNumber} · {flight.building} · {flight.gate ?? copy.unknown[lang]} · {flight.scheduledAt.slice(11, 16)} KST</li>)}</ul>
+      </details>}
       <p className="prep-note">{copy.note[lang]}</p>
       <details open={open} onToggle={event => setOpen(event.currentTarget.open)} data-testid="gate-all-list"><summary>{copy.all[lang]} ({gates.length})</summary>
         {open && <><div className="gate-search"><label>{copy.search[lang]}<svg className="gate-search-icon" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="5"/><path d="m12 12 5 5"/></svg><input ref={searchRef} type="search" name="gate-search" placeholder={copy.placeholder[lang]} autoComplete="off" value={search} onChange={e => { setSearch(e.target.value); setVisible(20); }}/></label>

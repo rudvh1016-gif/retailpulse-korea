@@ -10,6 +10,8 @@ type Row = Record<PrepLang, string>;
 const row = (ko: string, en: string, zh: string, ja: string): Row => ({ ko, en, zh, ja });
 
 export const compareCopy = {
+  noData: row("비교 자료 없음", "No comparison data", "无比较资料", "比較資料なし"),
+  loadFailed: row("불러오기 실패", "Could not load", "加载失败", "読み込み失敗"),
   usualTitle: row("평소와 비교", "Compared with usual", "与平常相比", "普段との比較"),
   lastTitle: row("지난번 확인 이후", "Since you last looked", "自上次查看以来", "前回の確認以降"),
   collecting: row("평소 비교를 위한 기록을 모으고 있습니다.", "Still collecting records for a usual comparison.", "正在积累用于平常比较的记录。", "普段と比較するための記録を集めています。"),

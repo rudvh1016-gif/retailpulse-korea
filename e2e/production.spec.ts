@@ -497,7 +497,7 @@ test("home gives deterministic current briefs for all three Seoul areas", async 
   await page.goto("/ko");
   await expect(page.getByRole("heading", { name: "다른 상권 살펴보기" })).toBeVisible();
   const briefs = page.locator(".home-area-briefs");
-  await expect(page.getByTestId('area-demand-card').first()).toContainText('현재 추정 인구');
+  await expect(page.getByTestId('area-demand-card').first().locator('.demand-metric-label')).toHaveText('최근 관측 인구');
   await expect(briefs.getByRole('button', { name: /명동/ })).toContainText('23,000–25,000명');
   await expect(briefs.getByRole('button', { name: /명동/ })).toContainText('약간 붐빔');
   await expect(page.locator('.home-support')).toContainText('비 가능성 60%');
