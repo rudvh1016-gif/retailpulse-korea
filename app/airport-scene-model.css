@@ -1,0 +1,16 @@
+.airport-scene-overview-v14 {
+  --airport-overview-ratio: var(--airport-overview-wide-ratio);
+}
+.airport-scene-overview-v14 .airport-scene-anchor {
+  --airport-anchor-x: var(--airport-anchor-wide-x);
+  --airport-anchor-y: var(--airport-anchor-wide-y);
+}
+@media (max-width: 600px) {
+  .airport-scene-overview-v14 {
+    --airport-overview-ratio: var(--airport-overview-mobile-ratio);
+  }
+  .airport-scene-overview-v14 .airport-scene-anchor {
+    --airport-anchor-x: var(--airport-anchor-mobile-x);
+    --airport-anchor-y: var(--airport-anchor-mobile-y);
+  }
+}

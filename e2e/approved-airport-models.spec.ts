@@ -65,11 +65,11 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [320,390,430,1280]) 
     await expect(page.getByTestId('airport-concept-model')).toContainText('T2');
     const img=page.getByTestId('airport-departure-model-slot').locator('.airport-concept-picture img');
     await expect.poll(()=>img.evaluate((el:HTMLImageElement)=>el.complete&&el.naturalWidth>0)).toBe(true);
-    expect(await img.evaluate((el:HTMLImageElement)=>el.currentSrc)).toMatch(/\/v8\/T2_day(?:-480|-900)?\.webp$/);
+    expect(await img.evaluate((el:HTMLImageElement)=>el.currentSrc)).toMatch(/\/v14\/T2_day(?:-390|-900)?\.webp$/);
     const dimensions=await img.evaluate((el:HTMLImageElement)=>({width:el.naturalWidth,height:el.naturalHeight,reservedWidth:el.width,reservedHeight:el.height}));
     // Width descriptors make naturalWidth density-corrected CSS pixels, not the encoded WebP width.
-    expect(dimensions.width).toBeGreaterThan(0);expect(dimensions.height/dimensions.width).toBeCloseTo(760/1440,2);
-    await expect(img).toHaveAttribute('width','1440');await expect(img).toHaveAttribute('height','760');
+    expect(dimensions.width).toBeGreaterThan(0);expect(dimensions.height/dimensions.width).toBeCloseTo(1073/1784,2);
+    await expect(img).toHaveAttribute('width','1784');await expect(img).toHaveAttribute('height','1073');
     await expect(overview.getByTestId('map-groups')).toHaveCount(0);
     await expect(overview.getByTestId('map-T2')).toHaveCount(0);
     await overview.getByTestId('map-destinations').locator('summary').click();

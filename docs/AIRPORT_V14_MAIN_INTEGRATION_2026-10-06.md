@@ -1,0 +1,11 @@
+# Approved v14 scene integration
+
+This draft integrates the separate local v14 implementation (`5a8d4a99f9cc8e6e38e54b57dd3d6148c292092c`) onto fetched main `ef0e98c79ab92bafe5418c8baea0e62329d0c126`. It contains no copied change from blocked PR267/276/278/288/291 and is not an alternate publication route. Merge and deployment are excluded.
+
+The source renderer, 30 WebP assets, data-driven DOM counts, translations, classification and source notices are preserved. This changes concept-building images, not the initial airport hero. Official geographic coordinates remain separate. Day/night use current Korea time and do not represent observation freshness. Counts, gate ranges and full-denominator percentages remain below the image; duplicate image overlays are removed. No data maximum of six, passenger-nationality inference, east/west passenger estimate, new engine, provider call, scheduler or dependency is introduced.
+
+The owner source has 49 passing relevant unit/UI Lock checks, 19 focused browser checks and 16 measured building/light/viewport QA combinations. Fixture captures are not production data. Unchanged source evidence is reused; the latest-main integration runs lint, typecheck, the active UI Lock and native vinext build, then required exact-head CI. The reflow browser check also includes 360px in addition to 390/430/600/601/1280px, verifying image selection, reserved geometry, labels, one data read and console errors.
+
+All existing protected files, cron locks and assertion source remain unchanged. No other pending PR is included. Latest whole-site mobile performance and published behavior have not been measured for this draft. Earlier performance evidence belongs to its original commit and is not a speed claim for v14.
+
+Ready source archive: Library `libfile_0e32f4bd17348191a2263c4c350d644b` v0. Approved day T2 `libfile_712203e05c8481919127cd596cbd143e` v1; day T1 `libfile_1158911499d081919ef9ad0e26ad014b` v1. Night/overview derivative provenance and modeling limits remain in `AIRPORT_V14_SCENES_HANDOFF.md`.
