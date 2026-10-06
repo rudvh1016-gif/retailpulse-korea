@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useState } from 'react';
 import type { Lang } from './retailpulse-data';
 import type { LiveSummary } from './live-signals';
 import { buildAreaCurrentBrief } from '../lib/current-brief';
 import { comparisonText } from '../lib/period-comparison';
 import { describeObservationAge } from '../lib/observation-freshness';
-import {PopulationRangeMaterial} from './population-range-material';
+import {PopulationFlowChart} from './population-flow';
 import {PopulationOutlook} from './population-outlook';
-import { compactPeople, flowSegments, kstDay, kstStamp, peopleRange, populationFlow, populationTicks, usableComparison, validPopulationRange, type FlowPoint } from '../lib/demand-presentation';
+import { kstDay, kstStamp, peopleRange, populationFlow, usableComparison, validPopulationRange, type FlowPoint } from '../lib/demand-presentation';
 
 export const demandCopy = {
   selected: { ko: '선택 지역', en: 'Selected area', zh: '所选地区', ja: '選択エリア' },
@@ -59,134 +59,8 @@ export function usePresentationClock(reference: string): number {
   return time ?? Date.parse(reference);
 }
 
-/**
- * Single time->pixel mapping, shared by the plotted shapes, the now/selection
- * lines, the selection handle and every pointer/touch/keyboard entry point.
- * Nothing computes a chart position from a data-point index; index is used
- * only for keyboard step order (Section 4/10 of the chart audit).
- */
-function useChartGeometry(points: FlowPoint[], width: number) {
-  const min = points[0]?.time ?? 0, max = points.at(-1)?.time ?? 0;
-  const domainStart = min === max ? min - 1_800_000 : min, domainEnd = min === max ? max + 1_800_000 : max;
-  const left = 46, right = width - 14, plotWidth = right - left;
-  const x = (time: number) => left + Math.max(0, Math.min(1, (time - domainStart) / (domainEnd - domainStart))) * plotWidth;
-  const timeAtClientX = (clientX: number, rect: { left: number; width: number }) => {
-    const position = (clientX - rect.left) / rect.width * width;
-    return domainStart + Math.max(0, Math.min(1, (position - left) / plotWidth)) * (domainEnd - domainStart);
-  };
-  const nearestPoint = (time: number) => points.reduce((best, p) => Math.abs(p.time - time) < Math.abs(best.time - time) ? p : best);
-  return { min, max, domainStart, domainEnd, left, right, plotWidth, x, timeAtClientX, nearestPoint };
-}
-
-export function PopulationFlow({ points, lang, now }: { points: FlowPoint[]; lang: Lang; now: number }) {
-  const id = useId(), figure = useRef<HTMLElement>(null);
-  const ribbonId = `${id.replace(/:/g, '')}-forecast-ribbon`;
-  const [width, setWidth] = useState(640);
-  const [selected, setSelected] = useState<string | null>(null);
-  useEffect(() => {
-    const element = figure.current;
-    if (!element) return;
-    const observer = new ResizeObserver(([entry]) => setWidth(Math.max(240, Math.round(entry.contentRect.width))));
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-  const rows = useMemo(() => flowSegments(points), [points]);
-  const forecasts = points.filter(p => p.kind === 'forecast');
-  const observed = points.filter(p => p.kind === 'observed');
-  const latest = observed.at(-1);
-  // A point that disappears (fresher data replaces it, or the screen changes
-  // day/area) falls back to the latest observation rather than a stale time.
-  const active = points.find(p => `${p.kind}:${p.at}` === selected) ?? latest ?? points[0];
-  const { min, max, left, right, plotWidth, x, timeAtClientX, nearestPoint } = useChartGeometry(points, width);
-  const ceiling = Math.max(1, ...points.map(p => p.populationMax)) * 1.1;
-  const y = (value: number) => 142 - value / ceiling * 104;
-  const path = (segment: FlowPoint[], bound: 'populationMin' | 'populationMax') => segment.map((p, i) => `${i ? 'L' : 'M'}${x(p.time)},${y(p[bound])}`).join(' ');
-  const ticks = populationTicks(min, max, plotWidth);
-  const unit = { ko: '명', en: ' people', zh: '人', ja: '人' }[lang];
-  const compact = new Intl.NumberFormat(lang === 'zh' ? 'zh-CN' : lang, { notation: 'compact', maximumFractionDigits: 6 });
-  const nowX = Math.max(left + 22, Math.min(right - 22, x(now)));
-  const activeIndex = active ? points.indexOf(active) : -1;
-  const nowIsSelected = Boolean(active) && selected !== null && Math.abs(x(active!.time) - x(now)) < 1;
-  function selectAt(clientX: number, rect: { left: number; width: number }) {
-    const point = nearestPoint(timeAtClientX(clientX, rect));
-    setSelected(`${point.kind}:${point.at}`);
-  }
-  function stepTo(index: number) {
-    const point = points[Math.max(0, Math.min(points.length - 1, index))];
-    setSelected(`${point.kind}:${point.at}`);
-  }
-  function onSliderKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (points.length < 2) return;
-    switch (event.key) {
-      case 'ArrowRight': case 'ArrowUp': event.preventDefault(); stepTo(activeIndex + 1); return;
-      case 'ArrowLeft': case 'ArrowDown': event.preventDefault(); stepTo(activeIndex - 1); return;
-      case 'Home': event.preventDefault(); stepTo(0); return;
-      case 'End': event.preventDefault(); stepTo(points.length - 1); return;
-    }
-  }
-  const valueText = points.length ? `${kstStamp(active.time)} KST · ${demandCopy[active.kind === 'forecast' ? 'forecast' : 'observed'][lang]} ${peopleRange(active, lang)}${unit}` : '';
-  return <figure ref={figure} className="population-flow" aria-labelledby={`${id}-title`}>
-    {/* Caption and legend share one row. Stacked separately they read as two
-        headings before the reader reaches a single number. */}
-    <div className="flow-head">
-      <figcaption id={`${id}-title`}>{demandCopy.flow[lang]}</figcaption>
-      <div className="flow-legend"><span><i className="observed" />{demandCopy.observed[lang]}</span><span><i className="forecast" />{demandCopy.forecast[lang]}</span><span className="flow-legend-unit">{unit.trim()} · KST</span></div>
-    </div>
-    {!points.length ? <p className="demand-empty">{demandCopy.noFlow[lang]}</p> : <>
-      {/* The selection readout sits directly above the plot rather than under
-          the handle. Below the control it put three separate zones — chart,
-          handle, text — between the eye and the number it had just selected. */}
-      <output className="flow-readout" aria-live="polite" htmlFor={`${id}-time`}>
-        <span className="flow-readout-meta"><span className="flow-selected-time">{kstStamp(active.time).slice(6)} · {demandCopy[active.kind === 'forecast' ? 'forecast' : 'observed'][lang]}</span><small>{kstDay(active.time)} · KST</small></span>
-        <strong title={`${peopleRange(active, lang)}${unit}`}>{compact.format(active.populationMin)}–{compact.format(active.populationMax)} {unit.trim()}</strong>
-      </output>
-      <svg className="population-chart" viewBox={`0 0 ${width} 190`} aria-hidden="true"
-        onPointerDown={event => { event.currentTarget.setPointerCapture(event.pointerId); selectAt(event.clientX, event.currentTarget.getBoundingClientRect()); }}
-        onPointerMove={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) selectAt(event.clientX, event.currentTarget.getBoundingClientRect()); }}
-        onPointerUp={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }}>
-        <defs><linearGradient id={ribbonId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#badbd9" stopOpacity=".65"/><stop offset="1" stopColor="#edf7f7" stopOpacity=".3"/>
-        </linearGradient></defs>
-        {[0, ceiling / 2, ceiling].map(value => <g key={value}><line className="flow-grid" x1={left} x2={right} y1={y(value)} y2={y(value)}/><text className="flow-y-label" x={left - 8} y={y(value) + 4} textAnchor="end">{compactPeople(Math.round(value), lang)}</text></g>)}
-        {rows.map((segment, index) => <g key={index} className={`flow-${segment[0].kind}`}>
-          <PopulationRangeMaterial segment={segment} x={x} y={y}/>
-          {segment.length > 1 ? <><path className="flow-range" fill={segment[0].kind === 'forecast' ? `url(#${ribbonId})` : undefined} d={`${path(segment, 'populationMax')} ${[...segment].reverse().map(p => `L${x(p.time)},${y(p.populationMin)}`).join(' ')} Z`}/>{/* Exact bounds, never a fabricated midpoint or an observed-to-forecast bridge. */}<path className="flow-bound" d={path(segment, 'populationMax')}/>{segment[0].kind === 'forecast' && <path className="flow-bound flow-lower-bound" d={path(segment, 'populationMin')}/>}</> : <line className="flow-bound flow-interval" x1={x(segment[0].time)} x2={x(segment[0].time)} y1={y(segment[0].populationMin)} y2={y(segment[0].populationMax)}/>}
-        </g>)}
-        {now >= min && now <= max && <g className="flow-now"><line x1={x(now)} x2={x(now)} y1="28" y2="142"/>{!nowIsSelected && <text x={nowX} y="18" textAnchor="middle">{demandCopy.now[lang]}</text>}</g>}
-        {selected && active && <g className="flow-selection"><line x1={x(active.time)} x2={x(active.time)} y1="28" y2="142"/></g>}
-        {[...new Set([latest, active])].filter((p): p is FlowPoint => Boolean(p)).map(p => <g key={`${p.kind}:${p.at}`} className={`flow-${p.kind} flow-marker`}><line x1={x(p.time)} x2={x(p.time)} y1={y(p.populationMin)} y2={y(p.populationMax)}/><circle cx={x(p.time)} cy={y(p.populationMax)} r="1.5"/></g>)}
-        {ticks.map(time => <text className="flow-tick" data-time={time} key={time} x={x(time)} y="164" textAnchor={time === min ? 'start' : time === max ? 'end' : 'middle'}><tspan x={x(time)}>{kstStamp(time).slice(6)}</tspan>{kstDay(time) !== kstDay(min) && kstStamp(time).slice(6) === '00:00' && <tspan className="flow-tick-date" x={x(time)} dy="18">{Number(kstDay(time).slice(5, 7))}/{Number(kstDay(time).slice(8))}</tspan>}</text>)}
-      </svg>
-      <div className="flow-inspector">
-        {/* A custom slider, not a native <input type="range">: a native range
-            input always maps its thumb linearly across index 0..length-1, so
-            an irregular observed/forecast cadence (5-minute vs hourly rows)
-            put the thumb somewhere other than the chart's own time-based
-            selection line. This draws the handle at the exact same x(time)
-            pixel the SVG uses, so pointer, touch and keyboard selection can
-            never disagree with what is drawn. */}
-        <div id={`${id}-time`} className="flow-slider" role="slider" tabIndex={points.length > 1 ? 0 : -1}
-          aria-disabled={points.length <= 1} aria-label={demandCopy.timeSelect[lang]}
-          aria-valuemin={0} aria-valuemax={Math.max(0, points.length - 1)} aria-valuenow={activeIndex}
-          aria-valuetext={valueText} aria-orientation="horizontal"
-          onKeyDown={onSliderKeyDown}
-          onPointerDown={event => { if (points.length < 2) return; event.currentTarget.setPointerCapture(event.pointerId); selectAt(event.clientX, event.currentTarget.getBoundingClientRect()); }}
-          onPointerMove={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) selectAt(event.clientX, event.currentTarget.getBoundingClientRect()); }}
-          onPointerUp={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }}>
-          <span className="flow-slider-track" style={{ left, right: width - right }} aria-hidden="true"/>
-          <span className="flow-slider-thumb" style={{ left: x(active.time) }} aria-hidden="true"/>
-        </div>
-      </div>
-    </>}
-    {/* One block, one margin. Three sibling paragraphs each carrying their own
-        spacing was most of the loose whitespace under this chart. */}
-    <div className="flow-notes">
-      {observed.length === 1 && <p className="flow-note">{demandCopy.noHistory[lang]}</p>}
-      {!observed.length && <p className="flow-note">{demandCopy.missing[lang]}</p>}
-      {forecasts.length > 0 ? <p className="flow-note">{demandCopy.forecast[lang]} · {kstStamp(forecasts[0].at)}–{kstStamp(forecasts.at(-1)!.at)} KST<br/>{[...new Set(forecasts.map(p => p.issuedAt ? `${demandCopy.issued[lang]} ${kstStamp(p.issuedAt)} KST` : demandCopy.unknownIssue[lang]))].join(' · ')}</p> : <p className="flow-note">{demandCopy.noForecast[lang]}</p>}
-    </div>
-    {points.length>0&&<details className="flow-material-note"><summary>{{ko:'차트 표현 안내',en:'Chart depth and ranges',zh:'图表深度与范围',ja:'グラフの奥行きと範囲'}[lang]}</summary><p>{{ko:'옆면은 재질 표현입니다. 수치는 정면의 최소~최대 범위와 시간 축을 기준으로 읽습니다. 관측과 공식 예측은 따로 표시하며, 자료가 없는 구간은 연결하지 않습니다.',en:'Side faces show material depth only. Read values from the original front-face minimum–maximum range and time axis. Observations and official forecasts stay separate; missing intervals are not connected.',zh:'侧面仅表示材质深度。数值以正面原始最小至最大范围和时间轴为准。观测与官方预测分别显示，缺失时段不连接。',ja:'側面は素材の奥行きだけを表します。数値は正面の元の最小～最大範囲と時間軸で読みます。観測と公式予測は別々に表示し、欠測区間はつなぎません。'}[lang]}</p></details>}
-  </figure>;
+export function PopulationFlow({points,lang,now}:{points:FlowPoint[];lang:Lang;now:number}) {
+  return <PopulationFlowChart points={points} lang={lang} now={now} copy={demandCopy}/>;
 }
 
 export function AreaDemandCard({ summary, area, lang, linkHref, linkLabel }: { summary: LiveSummary; area: keyof typeof demandAreaNames; lang: Lang; linkHref?: string; linkLabel?: string }) {
