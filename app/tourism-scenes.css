@@ -1,3 +1,6 @@
+@import './weather-scenes.css';
+@import './seoul-weather-scenes.css';
+
 .tourism-desk.tourism-scenes .tourism-area-active::after { background: #000; }
 .tourism-scenes .tourism-brief-scene-head { grid-template-columns: 112px minmax(0, 1fr); align-items: center; gap: 16px; }
 .tourism-scenes .tourism-brief-scene-head h2 { color: #000; }
