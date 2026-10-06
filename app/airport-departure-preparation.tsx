@@ -6,6 +6,7 @@ import {departurePreparationCopy} from './airport-departure-preparation-copy';
 import {AirportTaxRefundGuide} from './airport-tax-refund-guide';
 import {PassengerGuideImage,type PassengerGuideAsset} from './passenger-guide-image';
 import {getPassengerGuideCopy} from './passenger-guide-copy';
+import {travelRecordsCopy} from './travel-records-copy';
 
 export function AirportDeparturePreparation({lang}:{lang:Lang}) {
  const [open,setOpen]=useState(false),[input,setInput]=useState<DeparturePreparationInput>({route:'UNKNOWN',checkedBaggage:'UNKNOWN',taxRefund:'UNKNOWN',dutyFreePickup:'UNKNOWN'});
@@ -22,6 +23,7 @@ export function AirportDeparturePreparation({lang}:{lang:Lang}) {
     <details><summary>{g.details}</summary><p>{detail}</p><a href={departurePreparationEvidence.AIRPORT.url} target="_blank" rel="noreferrer">{c.official} ↗</a></details>
    </li>)}</ol>
    <p className="prep-note" data-testid="passenger-learning-note">{g.learning}</p>
+   <p className="prep-note"><a href={`/${lang}/travel-records`} data-testid="travel-records-entry">{travelRecordsCopy[lang].entry}</a></p>
    <div className="departure-preparation-inputs"><label>{c.route}<select value={input.route} data-testid="prep-route" onChange={event=>update('route',event.target.value as DepartureRoute)}><option value="UNKNOWN">{c.unknown}</option><option value="T1">{c.t1}</option><option value="T2">{c.t2}</option><option value="T1_CONCOURSE">{c.concourse}</option></select></label>
     {(['checkedBaggage','taxRefund','dutyFreePickup'] as const).map(key=><label key={key}>{({checkedBaggage:c.baggage,taxRefund:c.tax,dutyFreePickup:c.pickup})[key]}<select value={input[key]} data-testid={`prep-${key}`} onChange={event=>update(key,event.target.value as DepartureChoice)}><option value="UNKNOWN">{c.unknown}</option><option value="YES">{c.yes}</option><option value="NO">{c.no}</option></select></label>)}
    </div>
