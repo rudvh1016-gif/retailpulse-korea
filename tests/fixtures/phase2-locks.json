@@ -13,7 +13,7 @@
     "app/api/live/events/route.ts": "f85c532f05c89b1412fbd77a04ff88d5d3b9f8587ddbebad00dbe1c3df9ed7a4",
     "app/api/live/flights/route.ts": "fb7bbfc1132359dceb4d315997eaf26bfc5b27d3f03f2bb9b8be4fe46718c1bd",
     "app/api/live/predictions/route.ts": "b82f003bd3d77c293a379c4dbd0bf5e2aa449b19e54a65119ef2e4f291cdfced",
-    "app/api/live/summary/route.ts": "ce08a54a232816dfa63143a9101dbc268a849bc11900293e6df5e7f43e53898b",
+    "app/api/live/summary/route.ts": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8",
     "app/area-demand-card.tsx": "9f480850246b31fbb8cec5f75fb9b69eb382cb6e504ebd6c536cb43793384f4c",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
@@ -26,7 +26,7 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+    "app/retailpulse-app.tsx": "436a16217bf98d16db719177469279137d5f356e7912e6d4ed1398a2f424c72e",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
@@ -405,6 +405,21 @@
         "file": "app/live-signals.tsx",
         "previous": "73a68b4da19f835f7946aa0fefd83fce4e0e71df01c517d5e1302953b332f060",
         "approved": "eaf2709b09abd8b88996aea680ae07df1745277f04849407e9d4ebd1aae45509"
+      }
+    ]
+  },
+  "ownerMonthlyRecords20261006": {
+    "reason": "Owner requested completing the KORETAIL site implementation and the separate monthly-records view. The lead delegation explicitly authorizes latest-main integration, the normal protected baseline record, commit/push/draft PR and required CI for the existing local monthly-records implementation. Scope is only the /forecast monthly stored-observation view and /api/live/summary?view=records read branch. Refresh exactly app/retailpulse-app.tsx and app/api/live/summary/route.ts. Preserve existing sources, min/max truth, prior approval history, all protected file membership, cron values and active enforcement assertions. No blocked PR267/276/278/288/291 content is included. No merge, deployment, provider activation or new scheduler is authorized by this record.",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+        "approved": "436a16217bf98d16db719177469279137d5f356e7912e6d4ed1398a2f424c72e"
+      },
+      {
+        "file": "app/api/live/summary/route.ts",
+        "previous": "ce08a54a232816dfa63143a9101dbc268a849bc11900293e6df5e7f43e53898b",
+        "approved": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8"
       }
     ]
   }
