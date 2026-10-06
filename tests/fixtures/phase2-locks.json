@@ -26,7 +26,7 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "b9ccbfae7aac67f7aafd4e5ad2eb6739df50f166fa6723befa40db8742a08314",
-    "app/retailpulse-app.tsx": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+    "app/retailpulse-app.tsx": "3ce5cf78fdd6db32a7dd35abbb39f9af0ebd94493318d691824abdf6cbdadc6a",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
@@ -349,6 +349,16 @@
         "file": "app/operational-context.tsx",
         "previous": "a01bb0bda26fcd8af56869bbabbc6ffcaac1057b9a2cb7c8798643dc6cd79d21",
         "approved": "6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83"
+      }
+    ]
+  },
+  "ownerAirportBodyScope20261006": {
+    "reason": "Owner request Sentinel_fddc74efab4881919071e2882f9fd26d, delegated 2026-10-06: remove the Seoul district body from the airport page, preserving the global Seoul menu and its original pages/data. Only the home-seoul-secondary render inside view===airport and its now-unneeded fragment are removed from app/retailpulse-app.tsx. This is a distinct new request; PR278's airport heading copy and TodayAnswer changes are not copied. Refresh this file's approved hash through the normal record procedure; all other protected hashes, prior approval records, cron locks and active enforcement tests stay intact. No live-signals.tsx change; queue and monthly desktop placement remain with their assigned owner.",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+        "approved": "3ce5cf78fdd6db32a7dd35abbb39f9af0ebd94493318d691824abdf6cbdadc6a"
       }
     ]
   },

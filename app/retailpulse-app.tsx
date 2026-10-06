@@ -500,7 +500,6 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         )}
 
         {view === "airport" && (
-          <>
           <AirportView
             todayAnswer={todayAnswer}
             industry={industry}
@@ -515,8 +514,6 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             date={serviceDate}
             setDate={changeDate}
           />
-          {homeVisible && <section className="home-seoul-secondary" aria-labelledby="home-seoul-title"><div className="demand-section-head"><h2 id="home-seoul-title">{t.today}</h2></div><HomeTodayBrief lang={lang} selected={selected} onSelect={setSelected} date={serviceDate} includeAirport={false} /></section>}
-          </>
         )}
         {view === "business" && <BusinessView lang={lang} selected={selected} setSelected={selectArea} industry={industry} setIndustry={setIndustry} date={serviceDate} setDate={changeDate} setProOpen={setProOpen} />}
         {view === "predictions" && <PredictionView lang={lang} area={selected} onArea={selectArea} />}

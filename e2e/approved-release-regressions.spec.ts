@@ -69,6 +69,7 @@ test('next-day partial records cannot establish cross-midnight comparisons', asy
   await page.goto('/en/airport?terminal=T2');
   await page.getByTestId('airport-departure-overview').scrollIntoViewIfNeeded();
   await expect(page.getByTestId('airport-concept-model')).toBeVisible();
+  await page.getByTestId('departure-map-section').locator(':scope > summary').click();
   await page.getByTestId('departure-map').locator('[data-preset="NEXT3"]').click();
   await expect(page.getByTestId('map-partial')).toBeVisible();
   await expect(page.getByTestId('airport-concept-model')).toHaveCount(0);
