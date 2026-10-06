@@ -1,0 +1,23 @@
+.disclosure:global(.prediction-history) {
+  padding: 0;
+}
+
+.disclosure > summary {
+  min-height: 44px;
+  color: var(--ink, #111);
+  touch-action: manipulation;
+}
+
+.disclosure > summary:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.disclosure > summary:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.disclosure :global(#prediction-score) {
+  scroll-margin-top: 100px;
+}
