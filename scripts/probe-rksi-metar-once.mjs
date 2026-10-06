@@ -1,12 +1,11 @@
 import {pathToFileURL} from 'node:url';
+import {inspectRksiMetarItem} from './parse-rksi-metar-item.mjs';
 
 const ENDPOINT='https://apis.data.go.kr/1360000/AmmIwxxmService/getMetar';
 const LIMIT=1_048_576,TIMEOUT=10_000;
-const fields=['msgText','om:phenomenonTime','om:featureOfInterest','iwxxm:airTemperature','iwxxm:dewpointTemperature','iwxxm:qnh','iwxxm:meanWindDirection','iwxxm:meanWindSpeed','iwxxm:windGustSpeed','iwxxm:AerodromeHorizontal Visibility'];
 const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x)?x:null;
 const code=x=>typeof x==='string'&&/^\d{2}$/.test(x)?x:null;
 const integer=x=>/^[0-9]+$/.test(String(x))&&Number.isSafeInteger(Number(x))?Number(x):null;
-const time=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(x)&&Number.isFinite(Date.parse(x))&&new Date(x).toISOString().slice(0,19)===x.slice(0,19)?x:null;
 
 /** One fixed official request. Returns allowlisted metadata, never payload, URL or exceptions. */
 export async function probeRksiOnce({serviceKey,fetchImpl=globalThis.fetch,timeoutMs=TIMEOUT}) {
@@ -41,14 +40,15 @@ export async function probeRksiOnce({serviceKey,fetchImpl=globalThis.fetch,timeo
     if([401,403].includes(response.status)||['20','21','30','31'].includes(result.providerCode))return{...result,status:'AUTH_BLOCKED',format:'JSON'};
     if(response.status!==200||result.providerCode!=='00')return{...result,status:response.status===429||['22','23'].includes(result.providerCode)?'RATE_LIMITED':'PROVIDER_ERROR',format:'JSON'};
     const total=integer(body?.totalCount),page=integer(body?.pageNo),rows=integer(body?.numOfRows),raw=object(body?.items)?.item;
-    const items=Array.isArray(raw)?raw:object(raw)?[raw]:[];
+    const items=Array.isArray(raw)?raw:object(raw)||typeof raw==='string'?[raw]:[];
     if(items.length>100)return{...result,status:'SHAPE_UNVERIFIED',format:'JSON',receivedCount:items.length};
-    const matches=items.filter(item=>typeof object(item)?.msgText==='string'&&/\b(?:METAR|SPECI)\s+RKSI\b/.test(item.msgText));
-    const observedTimes=[...new Set(matches.map(item=>time(item['om:phenomenonTime'])).filter(Boolean))];
-    const fieldTypes=Object.fromEntries(fields.map(f=>[f,[...new Set(matches.map(item=>item[f]===null?'null':Array.isArray(item[f])?'array':typeof item[f]))]]));
+    const decoded=items.map((item,index)=>inspectRksiMetarItem(item,index));
+    const matches=decoded.filter(item=>item.observation?.station==='RKSI');
+    const observedTimes=[...new Set(matches.map(item=>item.observation.observedAt))];
     const complete=page===1&&rows!==null&&rows>=1&&rows<=100&&total!==null&&total<=rows&&items.length===total;
-    const status=complete&&total===0?'NO_DATA':complete&&matches.length>0&&matches.length===items.length&&matches.every(item=>time(item['om:phenomenonTime']))?'VERIFIED_CONTRACT':'SHAPE_UNVERIFIED';
-    return{...result,status,format:'JSON',totalCount:total,receivedCount:items.length,matchedStationCount:matches.length,observationTimes:observedTimes,fieldTypes};
+    const status=complete&&total===0?'NO_DATA':complete&&matches.length>0&&matches.length===items.length?'VERIFIED_CONTRACT':'SHAPE_UNVERIFIED';
+    const shape=decoded.map(item=>{const metadata={...item};delete metadata.observation;return metadata;});
+    return{...result,status,format:'JSON',totalCount:total,receivedCount:items.length,matchedStationCount:matches.length,observationTimes:observedTimes,shape,observations:matches.map(item=>item.observation)};
   }catch(error){return{...result,status:['AbortError','TimeoutError'].includes(error?.name)?'REQUEST_TIMEOUT':'REQUEST_FAILED'};}
 }
 
