@@ -219,7 +219,9 @@ test("the checkpoint list is collapsed by default behind a real button", () => {
     "eight tall rows must not be the default state");
   assert.match(signals, /<button\s+type="button"\s+className="airport-checkpoint-toggle"/);
   assert.match(signals, /aria-expanded=\{showAllCheckpoints\}/);
-  assert.match(signals, /aria-controls="airport-checkpoints-title"/);
+  assert.match(signals, /aria-controls="airport-checkpoint-groups"/);
+  assert.match(signals, /id="airport-checkpoint-groups"/,
+    "the button must control the expandable list, not its heading");
   assert.match(styles, /\.airport-checkpoint-toggle:focus-visible \{ outline:/,
     "a keyboard user must be able to see the focused control");
   for (const label of ["전체 출국장 보기", "Show all checkpoints", "查看全部出境检查口", "すべての出国場を表示"]) {

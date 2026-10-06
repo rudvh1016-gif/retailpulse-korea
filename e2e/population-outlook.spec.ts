@@ -9,6 +9,8 @@ test('outlook separates official/reference, shows missing history, and stays usa
  await expect(page.getByRole('heading',{name:'언제 붐빌까요?'})).toBeVisible();
  await expect(page.getByText('비교할 같은 요일 기록을 모으고 있습니다.',{exact:false})).toBeVisible();
  await expect(page.locator('.prediction-history')).toContainText('10일');
+ await expect(page.locator('.prediction-history h2')).not.toBeVisible();
+ await page.getByText('자료·예측 정확도',{exact:true}).click();
  await page.getByText('날짜별 수집 상태',{exact:true}).click();
  await expect(page.locator('.prediction-history')).toContainText('12/24');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBeTruthy();
@@ -23,6 +25,7 @@ test('reference forecast reveals contributing dates and later observations',asyn
  await expect(page.locator('.outlook-value').last()).toContainText('1,600');
  await page.getByText('시간별 예상과 기준 날짜 보기',{exact:true}).click();
  await expect(page.getByText('2026-08-30 · 2026-08-23')).toBeVisible();
+ await page.getByText('자료·예측 정확도',{exact:true}).click();
  await page.getByText('지난 예상과 실제 관측 비교',{exact:true}).click();
  await expect(page.locator('.prediction-history')).toContainText('관측 1,800');
 });

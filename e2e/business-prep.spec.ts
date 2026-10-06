@@ -3,6 +3,7 @@ import { SUMMARY_FIXTURE, routeSummary } from './summary-fixture';
 import { tofuCharacters } from './font-glyphs';
 import { prepCopy, statusLine } from '../lib/business-prep-copy';
 import { industryProfiles } from '../lib/industry-guidance';
+import type { PrepWeatherRow } from '../lib/business-prep';
 
 // SUMMARY_FIXTURE is 2026-08-31 14:10 KST. Myeongdong has an official
 // "busy" band at 17:00 (issued 14:00), a 60% rain hour at 18:00 and two
@@ -52,7 +53,7 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) {
   });
 }
 
-for (const width of [360, 430, 1280]) {
+for (const width of [320, 360, 430, 1280]) {
   test(`prep briefing fits ${width}px without horizontal scroll`, async ({ page }) => {
     const prep = await open(page, 'ko', width);
     await prep.getByRole('button', { name: prepCopy.change.ko }).click();
@@ -160,4 +161,64 @@ test('a tourist personal setting leaves the business briefing intact', async ({ 
   })));
   const prep = await open(page);
   await expect(prep.getByTestId('prep-actions').locator('> li')).toHaveCount(3);
+});
+
+for (const width of [320, 390, 430]) {
+  test(`Seoul preparation models keep data in HTML and keyboard details at ${width}px`, async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', error => errors.push(error.message));
+    const prep = await open(page, 'ko', width);
+    await expect(prep).toHaveAttribute('data-place', 'area');
+    await expect(prep.locator('[data-fact="CROWD_MAX"] .prep-fact-value')).toContainText('17:00–18:00');
+    await expect(prep.locator('[data-fact="RAIN_MAX"] .prep-fact-value')).toContainText('60%');
+    await expect(prep.locator('[data-fact="EVENTS"] .prep-fact-value')).toHaveText('2건');
+    const imageCount = await prep.locator('.signal-scene img').count();
+    expect(imageCount).toBeGreaterThanOrEqual(3);
+    for (const image of await prep.locator('.signal-scene img').all()) {
+      await image.scrollIntoViewIfNeeded();
+      await image.evaluate((element) => (element as HTMLImageElement).decode());
+      await expect(image).toHaveAttribute('loading', 'lazy');
+      await expect(image).toHaveAttribute('alt', '');
+      // With width-descriptor srcset, naturalWidth is density-corrected.
+      expect(await image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    }
+    const fact = prep.locator('[data-fact="RAIN_MAX"]');
+    await expect(fact.locator('details')).not.toHaveAttribute('open', '');
+    await fact.locator('summary').focus();
+    await page.keyboard.press('Enter');
+    await expect(fact.locator('details')).toHaveAttribute('open', '');
+    await expect(fact.locator('details')).toContainText('기상청 단기예보');
+    await page.keyboard.press('Enter');
+    await expect(fact.locator('details')).not.toHaveAttribute('open', '');
+    const action = prep.locator('.prep-actions > li').first();
+    await expect(action.locator('.prep-action-detail')).not.toHaveAttribute('open', '');
+    await action.locator('summary').focus();
+    await page.keyboard.press('Enter');
+    await expect(action.locator('dl')).toBeVisible();
+    await expect(action.locator('.prep-industry-hint')).toBeVisible();
+    expect(await prep.locator('.prep-fact-title').first().evaluate((element) => getComputedStyle(element).color)).toBe('rgb(0, 0, 0)');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+    expect(await tofuCharacters(prep)).toEqual([]);
+    expect(errors).toEqual([]);
+  });
+}
+
+test('zero rain stays zero and absent weather creates no weather models', async ({ page }) => {
+  const weather = (SUMMARY_FIXTURE.areas.myeongdong.weather as PrepWeatherRow[]).map(row => ({ ...row, precipitationProbability: 0 }));
+  await page.route('**/api/live/summary*', routeSummary({ ...SUMMARY_FIXTURE, areas: {
+    ...SUMMARY_FIXTURE.areas, myeongdong: { ...SUMMARY_FIXTURE.areas.myeongdong, weather },
+  } }));
+  await page.goto('/ko/business');
+  const prep = page.getByTestId('business-prep');
+  await expect(prep.locator('[data-fact="RAIN_MAX"] .prep-fact-value')).toContainText('0%');
+  await expect(prep.locator('.prep-actions > li[data-rule="RAIN"]')).toHaveCount(0);
+  await page.unroute('**/api/live/summary*');
+  await page.route('**/api/live/summary*', routeSummary({ ...SUMMARY_FIXTURE, areas: {
+    ...SUMMARY_FIXTURE.areas, myeongdong: { ...SUMMARY_FIXTURE.areas.myeongdong, weather: [] },
+  } }));
+  await page.reload();
+  await expect(prep.locator('[data-fact="RAIN_MAX"], [data-fact="TEMPERATURE_RANGE"]')).toHaveCount(0);
+  await expect(prep.locator('img[src*="/rain-"], img[src*="/temperature-"]')).toHaveCount(0);
+  await expect(prep.locator('.prep-coverage').filter({ hasText: '기상청 단기예보' })).toBeVisible();
+  await expect(prep.locator('.prep-actions > li[data-rule="RAIN"]')).toHaveCount(0);
 });

@@ -3,7 +3,13 @@ export function AirportMonthComparison({ current, previous, currentLabel, previo
   if (current === null || previous === null) return null;
   const max = Math.max(current, previous) * 1.1;
   const width = (value: number) => max > 0 ? value / max * 312 : 0;
-  return <svg className="airport-month-compare-model" viewBox="0 0 360 120" width="360" height="120" aria-hidden="true">
+  return <><div className="airport-month-compare-wide" aria-hidden="true">
+    {[previous, current].map((value, index) => <div className="airport-month-compare-row" key={index}>
+      <div><span>{index ? currentLabel : previousLabel}</span><b>{Math.round(value).toLocaleString(numberLocale)}{unit}</b></div>
+      <div className="airport-month-compare-track"><span data-period={index ? 'current' : 'previous'} data-value={value} style={{width: `${max > 0 ? value / max * 100 : 0}%`}} /></div>
+    </div>)}
+    <small>0</small>
+  </div><svg className="airport-month-compare-model" viewBox="0 0 360 120" width="360" height="120" aria-hidden="true">
     {[previous, current].map((value, index) => {
       const w = width(value), y = 25 + index * 52;
       return <g key={index} data-value={value}>
@@ -15,5 +21,5 @@ export function AirportMonthComparison({ current, previous, currentLabel, previo
       </g>;
     })}
     <text x="24" y="112" fill="#000" fontSize="12">0</text>
-  </svg>;
+  </svg></>;
 }
