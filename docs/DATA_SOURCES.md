@@ -262,7 +262,8 @@ authentication or scheduler classification.
 A4 datasets remain under the project's conservative 1,000/day-class separate
 dataset budget. W1 remains far below its documented 10,000/day quota. A1's
 bounded paged scan, A5, and S1 keep their existing request policies. HTTP 429
-`Retry-After` is honored up to 60 seconds. HTTP 400/401/403/404/422, provider
+`Retry-After` within the 60-second wait window is honored. A longer cooldown
+stops that request with `retryDeferred=true` instead of retrying early. HTTP 400/401/403/404/422, provider
 auth codes, successful malformed JSON, schema and deterministic validation
 errors do not retry.
 

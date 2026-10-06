@@ -95,6 +95,56 @@ function a5Page(items, totalCount) {
   return { response: { header: { resultCode: "00", resultMsg: "NORMAL SERVICE" }, body: { items, totalCount } } };
 }
 
+test("A5 distinguishes empty day data from malformed envelopes without parser retries", async (context) => {
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; });
+  for (const [items, expectedClass] of [[[], "NO_DATA"], ["", "NO_DATA"], [{}, "SCHEMA"]]) {
+    let calls = 0;
+    globalThis.fetch = async () => { calls += 1; return Response.json(a5Page(items, 0)); };
+    const result = await collectAirportPassengerForecast({ DATA_GO_KR_SERVICE_KEY: "fixture" });
+    assert.equal(result.status, "ERROR");
+    assert.equal(calls, 2, "one response per day, no re-fetch after empty data or schema failure");
+    assert.match(result.detail, new RegExp(`failureClass=${expectedClass}`));
+  }
+});
+
+for (const [terminal, collector, sourceId, validItem] of [
+  ["T1", collectAirportCongestion, "INCHEON_DEPARTURE_CONGESTION", { terminalId: "P01", gateId: "A", waitTime: "5", waitLength: "10", occurtime: "202608301640" }],
+  ["T2", collectAirportCongestionT2, "INCHEON_DEPARTURE_CONGESTION_T2", t2Item({ occurtime: "202608301640" })],
+]) {
+  test(`A4-${terminal} records empty/invalid responses without retrying or replacing past observations`, async (context) => {
+    const { database, databasePath } = freshDatabase(`${terminal}-empty-invalid`);
+    const originalFetch = globalThis.fetch;
+    context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+    const env = { DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture" };
+    globalThis.fetch = async () => Response.json(t2Page([validItem], 1));
+    await collector(env);
+    const before = database.prepare("SELECT * FROM airport_congestion WHERE source_id = ?").all(sourceId);
+    const prior = database.prepare("SELECT last_event_at, last_retrieved_at FROM source_health WHERE source_id = ?").get(sourceId);
+    for (const [items, expectedClass] of [[[], "NO_DATA"], ["", "NO_DATA"], [{ item: [] }, "NO_DATA"], [{}, "SCHEMA"], [[{ ...validItem, occurtime: "invalid" }], "SCHEMA"]]) {
+      let calls = 0;
+      globalThis.fetch = async () => { calls += 1; return Response.json(t2Page(items, 0)); };
+      const result = await collector(env);
+      assert.equal(calls, 1, "a valid empty response or bad schema is not a transient request failure");
+      assert.equal(result.status, "ERROR");
+      assert.match(result.detail, new RegExp(`failureClass=${expectedClass}`));
+      assert.match(result.detail, /requestedAt=\d{4}-\d{2}-\d{2}T/);
+      assert.deepEqual(database.prepare("SELECT * FROM airport_congestion WHERE source_id = ?").all(sourceId), before);
+      const current = database.prepare("SELECT last_event_at, last_retrieved_at, status FROM source_health WHERE source_id = ?").get(sourceId);
+      assert.equal(current.status, "ERROR");
+      assert.equal(current.last_event_at, prior.last_event_at);
+      assert.equal(current.last_retrieved_at, prior.last_retrieved_at);
+    }
+    // A later current value retains its real source time: the 40-minute gap
+    // is left unfilled, and repeating that response produces no duplicate.
+    globalThis.fetch = async () => Response.json(t2Page([{ ...validItem, occurtime: "202608301720" }], 1));
+    assert.equal((await collector(env)).records, 1);
+    assert.equal((await collector(env)).records, 0);
+    assert.deepEqual(database.prepare("SELECT observed_at FROM airport_congestion WHERE source_id = ? ORDER BY observed_at").all(sourceId).map((row) => row.observed_at),
+      ["2026-08-30T16:40:00+09:00", "2026-08-30T17:20:00+09:00"]);
+  });
+}
+
 // ---------------------------------------------------------------------------
 // A4-T2 normalizer-level tests
 // ---------------------------------------------------------------------------

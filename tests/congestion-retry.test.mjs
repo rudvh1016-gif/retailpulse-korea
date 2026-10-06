@@ -11,7 +11,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const { decideCongestionRetry, isFreshRunnerFailure, RETRYABLE_A4_SOURCES } =
+const { decideCongestionRetry, isFreshRunnerFailure, RETRYABLE_A4_SOURCES, shouldRetryForecast } =
   await import("../lib/congestion-retry.ts");
 
 const line = (object) => JSON.stringify(object);
@@ -33,6 +33,45 @@ const MEMORY = line({ operationalMemory: "PERSISTED", source: "airport_congestio
 
 const log = (...lines) => [MEMORY, ...lines].join("\n") + "\n";
 const verdictFor = (decision, source) => decision.decisions.find((item) => item.source === source)?.verdict;
+
+test("the existing A5 job ladder retries classified transient failures only", () => {
+  const result = (status, detail, source = "airport_passenger_forecast") => line({ source, status, detail });
+  for (const detail of [
+    "failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT attempts=2 retryExhausted=true",
+    "failureClass=TIMEOUT attempts=2 retryExhausted=true",
+    "failureClass=HTTP httpStatus=503 attempts=2 retryExhausted=true",
+  ]) {
+    assert.equal(shouldRetryForecast(result("ERROR", detail)), true);
+    assert.equal(shouldRetryForecast(result("ERROR", detail, "airport_passenger_forecast_recovery")), true);
+    assert.equal(shouldRetryForecast(result("PARTIAL", detail)), false, "D1-targeted recovery owns the missing day");
+    assert.equal(shouldRetryForecast(result("SUCCESS", detail)), false);
+  }
+  for (const detail of [
+    "failureClass=AUTH causeCode=FORECAST_RESULT_30", "failureClass=SCHEMA", "failureClass=VALIDATION",
+    "failureClass=NO_DATA", "failureClass=MALFORMED_JSON", "failureClass=HTTP httpStatus=429",
+    "failureClass=HTTP httpStatus=403", "failureClass=HTTP httpStatus=503 retryDeferred=true",
+    "failureClass=NETWORK | failureClass=AUTH", "failureClass=NETWORK | row: forecast_adate_format",
+    "failureClass=NETWORK | failureClass=NO_DATA", "coverage incomplete", "",
+  ]) assert.equal(shouldRetryForecast(result("ERROR", detail)), false, detail);
+  assert.equal(shouldRetryForecast(""), false);
+  assert.equal(shouldRetryForecast(log(T1_TIMEOUT)), false);
+  assert.equal(shouldRetryForecast(log(result("ERROR", "failureClass=NETWORK"), result("SUCCESS", "covered"))), false);
+});
+
+test("A5 workflow retries consume their own result classification and stay spaced/bounded", async () => {
+  for (const file of ["collect-forecast.yml", "collect-forecast-recovery.yml"]) {
+    const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
+    assert.match(workflow, /needs\.collect\.outputs\.retry_forecast == 'true'/);
+    assert.match(workflow, /needs\.retry_1\.outputs\.retry_forecast == 'true'/);
+    assert.equal((workflow.match(/uses: \.\/\.github\/workflows\/collect-attempt\.yml/g) ?? []).length, 3);
+  }
+  const shared = await readFile(new URL("../.github/workflows/collect-attempt.yml", import.meta.url), "utf8");
+  assert.match(shared, /set -o pipefail/);
+  assert.match(shared, /jobs\.collect\.outputs\.retry_forecast/);
+  assert.match(shared, /scripts\/decide-congestion-retry\.ts .*--forecast/);
+  assert.match(shared, /inputs\.attempt > 1 && startsWith\(inputs\.sources, 'airport_passenger_forecast'\)/);
+  assert.match(shared, /run: sleep 10/);
+});
 
 test("A4 healthy and Seoul failing asks for zero extra A4 requests", () => {
   // The bug this closes: the old gate saw only the job's red badge, so a

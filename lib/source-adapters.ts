@@ -12,19 +12,21 @@ export class SourceFetchError extends Error {
   public readonly attempts: number;
   public readonly elapsedMs: number;
   public readonly retryExhausted: boolean;
+  public readonly retryDeferred: boolean;
 
   constructor(
     public readonly code: "TIMEOUT" | "HTTP" | "MALFORMED_JSON" | "SCHEMA" | "NETWORK",
     public readonly status?: number,
     /** Connection-layer cause (ENOTFOUND, ECONNRESET, ...) when the platform reports one. */
     public readonly causeCode?: string,
-    context: { attempts?: number; elapsedMs?: number; retryExhausted?: boolean } = {},
+    context: { attempts?: number; elapsedMs?: number; retryExhausted?: boolean; retryDeferred?: boolean } = {},
   ) {
     super(causeCode ? `${code}_${causeCode}` : code);
     this.name = "SourceFetchError";
     this.attempts = Math.max(1, Math.trunc(context.attempts ?? 1));
     this.elapsedMs = Math.max(0, Math.trunc(context.elapsedMs ?? 0));
     this.retryExhausted = context.retryExhausted === true;
+    this.retryDeferred = context.retryDeferred === true;
   }
 }
 
@@ -203,6 +205,15 @@ export async function fetchOfficialJson(url: URL, options: FetchOfficialJsonOpti
     }
 
     const baseDelay = options.retryDelaysMs?.[attempt] ?? (legacyDelayMs * (2 ** attempt));
+    // A local wait ceiling is not permission to retry before the provider's
+    // cooldown ends. Leave this request failed for a later collection window.
+    const maxWait = Math.max(0, Math.min(options.maxRetryAfterMs ?? MAX_RETRY_DELAY_MS, MAX_RETRY_DELAY_MS));
+    const providerWait = retryAfterDelayMs(retryAfter, nowMs());
+    if (providerWait !== null && providerWait > maxWait) {
+      throw new SourceFetchError(failure!.code, failure!.status, failure!.causeCode, {
+        attempts: attempt + 1, elapsedMs: nowMs() - startedAt, retryDeferred: true,
+      });
+    }
     const delay = boundedRetryDelayMs(baseDelay, {
       retryAfter,
       jitterMs: options.jitterMs,
@@ -227,6 +238,7 @@ export function safeSourceFailureDetail(error: unknown): string {
       `attempts=${error.attempts}`,
       `elapsedMs=${Math.min(error.elapsedMs, 3_600_000)}`,
       `retryExhausted=${error.retryExhausted}`,
+      ...(error.retryDeferred ? ["retryDeferred=true"] : []),
     ];
     return parts.join(" ");
   }
@@ -236,6 +248,8 @@ export function safeSourceFailureDetail(error: unknown): string {
     : "COLLECTOR_ERROR";
   const failureClass = /(?:^|_)RESULT_30$|SERVICE_KEY/.test(causeCode)
     ? "AUTH"
+    : causeCode.includes("NO_DATA") || causeCode.endsWith("_EMPTY")
+      ? "NO_DATA"
     : causeCode.includes("PROVIDER")
       ? "PROVIDER"
       : causeCode.includes("SCHEMA") || causeCode.includes("CONTRACT")
