@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "blender": "5.2.1 LTS",
+  "engine": "Cycles",
+  "samples": 64,
+  "colorManagement": "Standard",
+  "exposure": -0.35,
+  "transparent": true,
+  "quality": 88,
+  "maxBytesPerImage": 32768,
+  "meaning": "Payment amount, transaction count and same-window average topic sculptures, no numeric values, scale or ratio in pixels.",
+  "images": [
+    {
+      "path": "public/visuals/commercial/v1/amount-320.webp",
+      "bytes": 6166,
+      "sha256": "7f39030ef01e60e8b9f23db472449104f6c0c2f36fa2b8d34b49f875409e6464",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/commercial/v1/amount-640.webp",
+      "bytes": 14444,
+      "sha256": "9660959a89fbd6a4ac39c227fc0d4bccf7041f661e1fe4d600515681f53bbc66",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "path": "public/visuals/commercial/v1/average-320.webp",
+      "bytes": 4726,
+      "sha256": "fca5bccfd2bb5f2c4f0430075b01985de7822f0d0dc26a00fda112637c81a7be",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/commercial/v1/average-640.webp",
+      "bytes": 10784,
+      "sha256": "40904b921c3ee23adce897dc593f595fda6266ac21603f38483519d8cbf8ea46",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "path": "public/visuals/commercial/v1/count-320.webp",
+      "bytes": 5060,
+      "sha256": "13e7dc44f86be50288ec7e1eee1b670a17747d48bac811f036df13f9320eb57f",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/commercial/v1/count-640.webp",
+      "bytes": 10802,
+      "sha256": "afc6ab41474c8dc9b684038a898f9cb47abfbb2a36a4738d7dbca6b2fa42d956",
+      "width": 640,
+      "height": 480
+    }
+  ]
+}

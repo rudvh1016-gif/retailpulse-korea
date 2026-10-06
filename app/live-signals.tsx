@@ -44,6 +44,7 @@ import { comparisonText, comparisonValue, type RangeChange } from "../lib/period
 import type { MonthToDate, MtdDay } from "../lib/airport-mtd";
 import { mtdCopy, shortDay, shortRange } from "../lib/airport-mtd-copy";
 import { averagePaymentRange, commercialActivityContext } from "../lib/commercial-context";
+import { CommercialMetricScene, type CommercialMetricKind } from './commercial-metric-scene';
 
 import { useEventPagination, EventPaginationControls } from "./event-pagination";
 
@@ -3352,12 +3353,12 @@ function SignalRowCard({ row, lang }: { row: SignalRow; lang: Lang }) {
 }
 
 function CommercialSignalCard({ signal, lang }: { signal: CommercialSignalRow; lang: Lang }) {
-  const metrics = [
-    { label: signal.amountLabel, value: signal.amountValue ?? signal.privacyMessage },
-    ...(signal.countValue ? [{ label: signal.countLabel, value: signal.countValue }] : []),
-    ...(signal.averagePayment ? [{ label: ({ ko: "건당 평균 결제액 · 같은 10분 기준", en: "Average per payment · same 10-minute window", zh: "每笔平均支付额 · 同一10分钟", ja: "1件あたり平均決済額・同じ10分間" })[lang], value: signal.averagePayment }] : []),
+  const metrics: { kind: CommercialMetricKind; label: string; value: string | null }[] = [
+    { kind: 'amount', label: signal.amountLabel, value: signal.amountValue ?? signal.privacyMessage },
+    ...(signal.countValue ? [{ kind: 'count' as const, label: signal.countLabel, value: signal.countValue }] : []),
+    ...(signal.averagePayment ? [{ kind: 'average' as const, label: ({ ko: "건당 평균 결제액", en: "Average per payment", zh: "每笔平均支付额", ja: "1件あたり平均決済額" })[lang], value: signal.averagePayment }] : []),
   ];
-  return <article className="commercial-signal-card">
+  return <article className="commercial-signal-card commercial-scenes">
     <div className="commercial-signal-label">
       <span className="signal-time-state">{signalStructureText.timeState.recent[lang]}</span>
       <h4>{signal.label}</h4>
@@ -3366,13 +3367,14 @@ function CommercialSignalCard({ signal, lang }: { signal: CommercialSignalRow; l
     <div className="commercial-signal-content">
       <p className="commercial-basis">{text.commercialBasis[lang]}</p>
       <dl className="commercial-metrics">
-        {metrics.map((metric) => <div key={metric.label}><dt>{metric.label}</dt><dd>{metric.value}</dd></div>)}
+        {metrics.map((metric) => <div key={metric.kind} data-metric-kind={metric.kind}><dt><CommercialMetricScene kind={metric.kind}/>{metric.label}</dt><dd>{metric.value}</dd></div>)}
       </dl>
       <p className="commercial-status">{lang === "ko" ? "서울시 제공 소비활동 상태" : signal.statusLabel} · <strong>{signal.activityContext ?? signal.statusValue}</strong></p>
       <p className="commercial-times">{signal.referenceValue} · {signal.retrievalValue}</p>
-      {signal.comparisons.length ? signal.comparisons.map((line) => <p className="period-comparison" key={line}>{line}</p>) : <p className="commercial-times">{({ ko: "동일 시간대 과거 자료 부족 · 전주·4주 전 비교 불가", en: "Matching historical time window unavailable for weekly comparisons", zh: "缺少同一时段历史资料，无法进行周比较", ja: "同時刻の過去資料不足のため週比較不可" })[lang]}</p>}
-      <p className="commercial-attribution">{text.sourceSeoul[lang]} · {signal.attribution}</p>
-      <details className="commercial-method"><summary>{({ko:"활동 등급·건당 평균의 의미",en:"Activity levels and per-payment averages",zh:"活跃度与每笔平均额的含义",ja:"活動指標と1件平均の意味"})[lang]}</summary>
+      <details className="commercial-method"><summary>{({ko:"비교·출처·계산 설명",en:"Comparisons, sources and calculation",zh:"比较、来源与计算说明",ja:"比較・出典・計算の説明"})[lang]}</summary>
+       {signal.comparisons.length ? signal.comparisons.map((line) => <p className="period-comparison" key={line}>{line}</p>) : <p className="commercial-times">{({ ko: "동일 시간대 과거 자료 부족 · 전주·4주 전 비교 불가", en: "Matching historical time window unavailable for weekly comparisons", zh: "缺少同一时段历史资料，无法进行周比较", ja: "同時刻の過去資料不足のため週比較不可" })[lang]}</p>}
+       <p className="commercial-attribution">{text.sourceSeoul[lang]} · {signal.attribution}</p>
+       {signal.averagePayment && <p className="commercial-attribution">{({ ko: "건당 평균 결제액 · 같은 10분 기준", en: "Average per payment · same 10-minute window", zh: "每笔平均支付额 · 同一10分钟", ja: "1件あたり平均決済額・同じ10分間" })[lang]}</p>}
        <p className="commercial-attribution">{({ ko: "소비활동은 과거 평균 결제금액 등을 고려한 서울시 4단계 등급입니다. 과거 평균 금액이나 증감률 자체가 아니며, 건당 평균은 현재 금액을 현재 건수로 나눈 값입니다.", en: "Seoul’s four activity levels consider past average payments. They are not historical mean amounts or growth rates; the per-payment average uses this window’s amount and count.", zh: "首尔市四级消费活跃度参考过去平均支付金额，不代表历史均额或增减率；每笔平均额按当前时段金额和笔数计算。", ja: "ソウル市の4段階指標は過去の平均決済額などを考慮します。過去の平均額や増減率そのものではなく、1件平均は現在の金額と件数から算出します。" })[lang]}</p>
       </details>
     </div>

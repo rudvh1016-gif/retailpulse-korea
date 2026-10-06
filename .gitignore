@@ -32,6 +32,7 @@
 /node_modules
 /out/
 /outputs/
+/scripts/__pycache__/
 /playwright-report/
 /test-results/
 /work/
