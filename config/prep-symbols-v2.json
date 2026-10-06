@@ -1,0 +1,84 @@
+{
+  "version": 2,
+  "blender": "5.2.1 LTS",
+  "engine": "Cycles",
+  "samples": 64,
+  "colorManagement": "Standard",
+  "exposure": -0.35,
+  "transparent": true,
+  "quality": 88,
+  "maxBytesPerImage": 32768,
+  "meaning": "Fixed information-category sculptures. No readings, dates, country labels or text in pixels. Rain cloud denotes rain-probability information, including a real zero probability.",
+  "images": [
+    {
+      "path": "public/visuals/prep-symbols/v2/crowd-320.webp",
+      "bytes": 6416,
+      "sha256": "4914e9137397ae673664243a2afb18a525763165292608e042009c661277bda1",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/prep-symbols/v2/crowd-640.webp",
+      "bytes": 14482,
+      "sha256": "715cd9b0858b39f0a206b961d858ddc9001d0cf68664a546c503509a8cfab894",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "path": "public/visuals/prep-symbols/v2/event-320.webp",
+      "bytes": 7760,
+      "sha256": "8cf8d25868f515db38584b58fb47aeefc2dc70900c11cdf8781837c5eb266a1a",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/prep-symbols/v2/event-640.webp",
+      "bytes": 17914,
+      "sha256": "55a06b0c45f17823e0b62c6a94f0d829d2449bbc92e6cc91f8d18f8b3d09300c",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "path": "public/visuals/prep-symbols/v2/holiday-320.webp",
+      "bytes": 5748,
+      "sha256": "020f6af6da5f1ab658f5809eb381434c9d2c21cdad7f5ee194c5078d06a31471",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/prep-symbols/v2/holiday-640.webp",
+      "bytes": 13518,
+      "sha256": "1e328c9f78071e4f4a228d31dcc01be2ec0f03a18054b64874adf3ad66aa6a23",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "path": "public/visuals/prep-symbols/v2/rain-320.webp",
+      "bytes": 5148,
+      "sha256": "7e35c14ae605f7107bc251ddac47318e1abdc8c888d16114c26893c81a410878",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/prep-symbols/v2/rain-640.webp",
+      "bytes": 11490,
+      "sha256": "bd73a34acba9e45792a59ca9d13b229b9da3c94726702b300b0df51c4601916e",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "path": "public/visuals/prep-symbols/v2/temperature-320.webp",
+      "bytes": 5380,
+      "sha256": "9de20245a636cffbacc584a293caa6c8bb74cb24775c3588a0cafdbc4f74f256",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/prep-symbols/v2/temperature-640.webp",
+      "bytes": 11962,
+      "sha256": "a28a82780d8396bb7862871a93a76b4eb71f167bb7b7a72f400510b6c23eb3d8",
+      "width": 640,
+      "height": 480
+    }
+  ]
+}
