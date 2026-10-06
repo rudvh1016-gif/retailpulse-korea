@@ -471,19 +471,7 @@ test("the airport screen separates 출국 and 입국, and 입국 shows arrival p
   }
 });
 
-/**
- * 게이트 순위를 한눈에 — the ranking drawn as a chart.
- *
- * Owner request, 2026-09-06: "게이트별 항공편을 순위별로 차트로 … 한눈에
- * 어떤 항공편이 주로 많이 나가는지 보여지면 좋겠어." Five numbers in a
- * column answer "how many" but not "which one dominates"; a bar scaled to
- * the leader answers it without reading a single digit.
- *
- * The bar is measured against the BUSIEST gate, not against the day's total
- * departures — a share-of-total scale would flatten all five into slivers —
- * and the note under the chart says so, because a reader who assumes
- * "share of all flights" would misread every row but the first.
- */
+/** The data-free gate illustrations keep real flight counts and public type tokens readable. */
 test("the approved gate comparison retains live counts and the public typography", async ({ page }) => {
   await routeGateFlights(page);
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
@@ -491,19 +479,13 @@ test("the approved gate comparison retains live counts and the public typography
   const model=page.getByTestId('gate-pillar-model');
   await expect(model.locator('[data-overall-leader="true"] .gate-pillar').first()).toHaveAttribute('data-flights','18');
   await expect(model.locator('[data-overall-leader="true"] .gate-pillar').first()).toHaveAttribute('data-gate','27');
-  await expect(model).toContainText('실제 위치');
+  await expect(model).toContainText('그림은 설명용입니다');
   const fonts=await model.locator('h4').evaluate(el=>{const s=getComputedStyle(el);return {size:s.fontSize,family:s.fontFamily};});
   expect(fonts.size).toBe('16px');
   expect(fonts.family).toContain('KORETAIL Sans Variable');
 });
 
-/**
- * The chart costs nothing to run.
- *
- * A phone renders this, so the bars must be plain CSS width set at render:
- * no chart library, no post-paint measurement, no second request. If a
- * future change reaches for a canvas or a layout pass, this fails.
- */
+/** Gate art is static and the comparison adds no chart library or data request. */
 /**
  * A charting library is recognised by a PATH SEGMENT, never by a substring.
  *
@@ -562,7 +544,10 @@ test("the gate model shares the full flight read without a chart or 3D library",
 
   expect(extraRequests, `a charting library was loaded: ${extraRequests.join(", ")}`).toEqual([]);
   await expect(page.locator('.airport-gate-model canvas')).toHaveCount(0);
-  await expect(page.locator('.gate-zone-bar').first()).toBeVisible();
+  const gateArt=page.locator('.gate-leader-zones .gate-visual-card img').first();
+  await gateArt.scrollIntoViewIfNeeded();
+  await expect.poll(()=>gateArt.evaluate((img:HTMLImageElement)=>img.complete && img.naturalWidth>0)).toBe(true);
+  await expect(page.locator('.gate-leader-zones .gate-visual-count').first()).toBeVisible();
 });
 
 /**
