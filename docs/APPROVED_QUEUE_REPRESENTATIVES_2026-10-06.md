@@ -1,6 +1,6 @@
 # Approved three representative queue integration — 2026-10-06
 
-Base ef0e98c79ab92bafe5418c8baea0e62329d0c126; original latest owner archive airport-queue-representatives-local-20261006.zip. Source files are byte-identical to the reviewed owner archive. The earlier heat-only draft hash is deliberately not the baseline.
+Base ef0e98c79ab92bafe5418c8baea0e62329d0c126; original latest owner archive airport-queue-representatives-local-20261006.zip. Eleven of twelve source files are byte-identical to the reviewed owner archive. The remaining representative-copy module differs only in two Korean explanatory sentences corrected for the shipped font subset; selection logic and all other locales are unchanged. The earlier heat-only draft hash is deliberately not the baseline.
 
 Owner accepted the current three-card screenshot in message Sentinel_9b0b70df660c81919f5c0af99e384105 after implementation request Sentinel_67e5023f1d8c8191a85c6d68f677de21. The normal record updates only app/live-signals.tsx from eaf2709b09abd8b88996aea680ae07df1745277f04849407e9d4ebd1aae45509 to 1510ae35fd7d96e6e9ea0dff9eb04e3952bb1d9983300c449960bf01142aadc3. All53 protected paths, all prior approval history, cron records and enforcement assertions remain intact; every other protected byte remains unchanged. No UI lock is disabled, skipped or loosened.
 
@@ -13,3 +13,7 @@ Existing font sizes, black values, actual people counts/timestamps, full-list ro
 Existing frontend-design and refreshed Web Interface Guidelines were used for code review. The approved design is preserved rather than redesigned. The first-screen priority card and departure button at the header date's left are queued separately and are not included. Previously blocked PR276/278 changes are not imported.
 
 Implementation/draft PR only. No merge, public deployment, key/account change or approval bypass is performed.
+
+## Exact-head CI font coverage correction
+
+Initial commit e960a7b801d336c9f559d06ac52a5ac939278c0b CI37478002578 stopped at unit1173 PASS /1FAIL /1174 total: the new Korean explanation contained two unsupported syllables. Reworded the even-middle and60+ comparison sentences with equivalent supported copy. No font asset, font fixture, test assertion, protected-source hash, layout, observation or rank logic changed. Font coverage2/2 and representative selector7/7 pass; focused lint and fresh native vinext build pass. The new source commit receives normal CI rather than rerunning unchanged failed code.
