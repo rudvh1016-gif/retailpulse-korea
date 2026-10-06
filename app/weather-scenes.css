@@ -1,0 +1,28 @@
+.weather-scene {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+  color: #000;
+}
+.weather-scene .signal-scene { display: block; width: 112px; aspect-ratio: 4 / 3; }
+.weather-scene .signal-scene img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.weather-scene-content { min-width: 0; }
+.weather-scene h3 { margin: 0; color: #000; font-size: 14px; font-weight: var(--weight-strong); line-height: 1.5; }
+.weather-scene h4 { margin: 0; color: #000; font-size: 11px; font-weight: var(--weight-strong); line-height: 1.55; }
+.weather-scene-values { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 6px 0; padding: 0; list-style: none; }
+.weather-scene-values li { color: #000; font-size: 12px; line-height: 1.65; overflow-wrap: anywhere; }
+.weather-scene-source { margin: 4px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; overflow-wrap: anywhere; }
+.weather-scene-observation { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+.weather-scene-details { margin-top: 4px; }
+.weather-scene-details summary { display: flex; align-items: center; gap: 8px; width: fit-content; min-height: 44px; color: #000; font-size: 11px; font-weight: var(--weight-strong); cursor: pointer; list-style: none; }
+.weather-scene-details summary::-webkit-details-marker { display: none; }
+.weather-scene-details summary::after { content: '+'; font-size: 16px; font-weight: 400; }
+.weather-scene-details[open] > summary::after { content: '−'; }
+.weather-scene-details summary:focus-visible { outline: 2px solid #000; outline-offset: 3px; }
+.weather-scene-details p { margin: 4px 0 8px; color: #000; font-size: 12px; line-height: 1.65; overflow-wrap: anywhere; }
+.weather-scene-details .weather-scene-guidance { font-size: 14px; font-weight: var(--weight-strong); line-height: 1.5; }
+@media (max-width: 760px) {
+  .weather-scene { grid-template-columns: 92px minmax(0, 1fr); gap: 12px; }
+  .weather-scene .signal-scene { width: 92px; }
+}

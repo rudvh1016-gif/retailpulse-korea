@@ -1,4 +1,4 @@
-export type SignalSceneKind = 'crowd' | 'rain' | 'temperature' | 'holiday' | 'event';
+export type SignalSceneKind = 'crowd' | 'rain' | 'temperature' | 'holiday' | 'event' | 'subway';
 
 /** A static object model; the adjacent HTML, never the picture, carries data. */
 export function SignalScene({ kind }: { kind: SignalSceneKind }) {
