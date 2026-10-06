@@ -6,7 +6,6 @@ import { kstDay } from '../lib/demand-presentation';
 import { AIR_GRADE_TEXT, readAirGrade } from '../lib/weather-guide';
 import { describeObservationAge, explainObservationVsForecast } from '../lib/observation-freshness';
 import { WeatherScene } from './weather-scene';
-import './seoul-weather-scenes.css';
 
 /** Seoul's own grade word, localized. An unrecognised label is shown as published. */
 function airGradeWord(publishedGrade: string, lang: Lang): string {

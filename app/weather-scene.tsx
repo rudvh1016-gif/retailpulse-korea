@@ -1,7 +1,6 @@
 import type { Lang } from './retailpulse-data';
 import { formatWeatherDetails, type WeatherGuideInput } from '../lib/weather-guide';
 import { SignalScene } from './signal-scene';
-import './weather-scenes.css';
 
 const text = (lang: Lang, ko: string, en: string, zh: string, ja: string) => ({ ko, en, zh, ja })[lang];
 const locale = { ko: 'ko-KR', en: 'en-GB', zh: 'zh-CN', ja: 'ja-JP' };

@@ -8,8 +8,8 @@
 - 공통 컴포넌트는 PR291에 있으므로 그 관광안내 브랜치 위에 후속 변경을 만들었다. PR291 병합 후 main으로 순서대로 인계한다.
 - 공항 PR284와 PR288의 실제 diff를 확인했다. 대상인 `app/live-signals.tsx`, `app/operational-context.tsx`는 해당 PR에 포함되지 않는다. 공항 설명·출국준비·서울 예측 차트·여행기록을 편집하지 않았다.
 - 보호 파일은 위 두 개뿐이다. phase2-locks.json에서 두 SHA256만 정상 갱신했으며 다른 해시·승인 기록·cron·검사 구현은 유지한다.
-- live-signals: `eaf2709b09abd8b88996aea680ae07df1745277f04849407e9d4ebd1aae45509` → `4ec8d0f0783ca0be92b5e4c4d706d9da28c9be6cd95c50fd7294bf8ee30a25aa`.
-- operational-context: `6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83` → `a2a0da4db16caaafb2967517fa4cb9da4e65938b82699999fc90e0c491dc4a40`.
+- live-signals: `eaf2709b09abd8b88996aea680ae07df1745277f04849407e9d4ebd1aae45509` → `1dadbeb1c75e5012a67ec5f0c4908cea194be8be89731f9a3cbd318e2483f6cf`.
+- operational-context: `6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83` → `ee6f09e5074e295d9320bd4898fe5faf9415b1f8063eaee020f0e70ea9e80650`.
 - PR267/276/278 변경을 가져오거나 다른 PR로 포함하지 않는다.
 
 ## 자료와 표시
@@ -52,3 +52,8 @@ SeoulContextCard의 기존 서울시 관측 기온·습도·풍속·PM10/PM2.5·
 - KORETAIL-seoul-seongsu-forecast-390.png: `libfile_ceca5a16648081918ecb7ef79a4876eb` (version 0, 11055 bytes)
 - KORETAIL-seoul-itaewon-observed-390.png: `libfile_62387ef327bc819189b8a5799c12b07e` (version 0, 16441 bytes)
 - KORETAIL-seoul-itaewon-forecast-390.png: `libfile_c1c1bc0786608191b7e1d6b32758693a` (version 0, 11055 bytes)
+## 원격 CI의 CSS import 수정
+
+head 8b271a5의 run 37458642586은 secret/lint/types/parser 이후 전체 unit에서 1120 passed / 2 failed였다. 기존 tests/airport-today-summary.test.mjs와 tests/product-signals.test.ts가 live-signals의 함수를 직접 가져오면서 추가된 seoul-weather-scenes.css를 Node가 읽지 못해 ERR_UNKNOWN_FILE_EXTENSION이 발생했다.
+
+재사용 가능한 WeatherScene과 두 소스 파일에서 CSS import를 제거하고, 기존 화면 스타일 app/tourism-scenes.css의 상단 @import로 weather-scenes.css와 seoul-weather-scenes.css를 로드한다. RetailPulseApp의 기존 TourismDeskView 정적 import가 모든 해당 화면에서 이 스타일을 로드한다. 다른 담당의 layout/retailpulse-app, 테스트 구현·CI·의존성을 변경하지 않는다. 실패한 두 unit 파일은 43/43 PASS. 실제 브라우저·빌드와 전체 unit의 최종 결과는 PR 본문에 기록한다.

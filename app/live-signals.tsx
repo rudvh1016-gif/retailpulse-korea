@@ -40,7 +40,6 @@ import { formatRepresentativeStations } from "../lib/subway-ridership";
 import { buildTerminalBriefings, type TerminalBriefing } from "../lib/terminal-briefing";
 import { buildWeatherGuide, worseAirGrade } from "../lib/weather-guide";
 import { WeatherScene } from './weather-scene';
-import './seoul-weather-scenes.css';
 import { describeObservationAge } from "../lib/observation-freshness";
 import { comparisonText, comparisonValue, type RangeChange } from "../lib/period-comparison";
 import type { MonthToDate, MtdDay } from "../lib/airport-mtd";
