@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "blender": "5.2.1 LTS",
+  "engine": "Cycles",
+  "samples": 48,
+  "colorManagement": "AgX",
+  "transparent": true,
+  "quality": 86,
+  "maxBytesPerImage": 32768,
+  "meaning": "Operating object illustrations; no data, weather conditions, dates or lettering in pixels",
+  "images": [
+    {
+      "path": "public/visuals/signals/v1/crowd-320.webp",
+      "bytes": 5166,
+      "sha256": "280e5414c0cea983fca4b6897b709d1839ee73964b45cb497545b4bd052ae767",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/signals/v1/crowd-640.webp",
+      "bytes": 11648,
+      "sha256": "58692e8bc3505e613e691284ec046748b1996eecb4fc18a209a12f3a91b659ce",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "path": "public/visuals/signals/v1/event-320.webp",
+      "bytes": 6786,
+      "sha256": "09b8752a0a24581570eb8fe3497f266fc02fbd347b0d1c9aa3b68a454224d941",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/signals/v1/event-640.webp",
+      "bytes": 15768,
+      "sha256": "467478af6a876e634927afdc189842dfc787b7e3980ccb90344e005c9eb5e3bd",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "path": "public/visuals/signals/v1/holiday-320.webp",
+      "bytes": 4908,
+      "sha256": "139e882a1d597b82dde75d510dad38bfd524dc620c6054e7b8d13ca7e34b850b",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/signals/v1/holiday-640.webp",
+      "bytes": 11654,
+      "sha256": "4916ca626fb15b4b00e2453f2c55541a56ed5dd94cfb53365631189a78564127",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "path": "public/visuals/signals/v1/rain-320.webp",
+      "bytes": 5296,
+      "sha256": "ad4d72e6cb283c0a87cce6c9dd09791bc7df219e25adac0118979c474e6497a5",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/signals/v1/rain-640.webp",
+      "bytes": 12890,
+      "sha256": "8fb587616399ebc71f359982349bbf779c367fc0c9d9cb78185b7f9673dfcd87",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "path": "public/visuals/signals/v1/temperature-320.webp",
+      "bytes": 3796,
+      "sha256": "5d7f927d77c6bee2f2b8e23f9267da783cacdf7c907a73ad7c6644f6a190c20a",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/signals/v1/temperature-640.webp",
+      "bytes": 8890,
+      "sha256": "53fc7411ea35c28b3721e54cd10aa55f3207b60ba89e183fb23b4a4426bc21af",
+      "width": 640,
+      "height": 480
+    }
+  ]
+}
