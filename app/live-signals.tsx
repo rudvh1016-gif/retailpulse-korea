@@ -2160,11 +2160,11 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
 
     <section className="airport-detail-section airport-checkpoints" aria-labelledby="airport-checkpoints-title">
       <div className="airport-detail-head"><div><p className="eyebrow">CURRENT OBSERVATION · {scopeLabel}</p><h3 id="airport-checkpoints-title">{airportTodayText.current[lang]}</h3></div><p>{airportTodayText.currentNote[lang]}</p></div>
-      {checkpointTerminals.length ? <div className="airport-checkpoint-groups">{checkpointTerminals.map((terminalId) => {
+      {checkpointTerminals.length ? <div id="airport-checkpoint-groups" className="airport-checkpoint-groups airport-queue-comparison">{checkpointTerminals.map((terminalId) => {
         const busiest = airport.currentBusiestDepartureHallByTerminal?.[terminalId];
         return <div className="airport-checkpoint-terminal" key={terminalId}>
           <h4><span>{terminalId}</span>{airportTodayText.scope[lang][terminalId as "T1" | "T2"] ?? terminalId}</h4>
-          <div>{(showAllCheckpoints
+          <div className="airport-queue-cards">{(showAllCheckpoints
             ? rankedCheckpoints[terminalId]
             : rankedCheckpoints[terminalId].filter((row) => (busiest ? busiest.zone === row.zone : false))
                 .concat(busiest ? [] : rankedCheckpoints[terminalId].slice(0, 1))
@@ -2174,6 +2174,9 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
             return <article className={isBusiest ? "is-busiest" : ""} key={`${terminalId}-${row.zone}`}>
               <span className="checkpoint-rank">{String(index + 1).padStart(2, "0")}</span>
               <div><strong>{friendlyCheckpointName(row.zone, lang)}</strong>{isBusiest && <small>{airportTodayText.longest[lang]}</small>}</div>
+              {/* The same fixed scene illustrates every checkpoint; people and colors do not encode queue size. */}
+              {/* eslint-disable-next-line @next/next/no-img-element -- small, local, responsive Blender export */}
+              <img className="airport-queue-model" src="/visuals/airport-queue/queue-checkpoint-192.webp" srcSet="/visuals/airport-queue/queue-checkpoint-192.webp 192w, /visuals/airport-queue/queue-checkpoint-384.webp 384w" sizes="(min-width: 821px) 128px, 96px" width="192" height="144" alt="" loading="lazy" decoding="async" />
               <b><i>{airportTodayText.waitLabel[lang]}</i>{waitText(row)}</b>
               <p><i>{airportTodayText.peopleLabel[lang]}</i>{row.waitingCount === null ? airportTodayText.unavailable[lang] : `${row.waitingCount.toLocaleString(numberLocale)}${airportTodayText.waiting[lang]}`}<small>{formatHumanFreshness(row.observedAt, nowIso, lang, "observed")}{row.freshness === "STALE" ? ` · ${text.stale[lang]}` : ""}</small></p>
             </article>;
@@ -2184,9 +2187,10 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         type="button"
         className="airport-checkpoint-toggle"
         aria-expanded={showAllCheckpoints}
-        aria-controls="airport-checkpoints-title"
+        aria-controls="airport-checkpoint-groups"
         onClick={() => setShowAllCheckpoints((open) => !open)}
       >{showAllCheckpoints ? airportTodayText.showLongestOnly[lang] : airportTodayText.showAllCheckpoints[lang]}</button>}
+      {checkpointTerminals.length > 0 && <p className="airport-detail-foot">{contextText(lang, "사람·장비는 설명용 모형입니다. 실제 대기는 숫자로 확인하세요.", "People and equipment are illustrative. Read the numbers for observed queues.", "人物与设备仅为示意模型，请以数字查看实际等候情况。", "人・設備は説明用模型です。実際の待ちは数値をご確認ください。")}</p>}
       <p className="airport-detail-foot">{airportTodayText.nowOnly[lang]}</p>
     </section>
 

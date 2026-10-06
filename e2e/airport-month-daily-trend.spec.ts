@@ -42,6 +42,8 @@ for (const width of [320, 390, 430]) {
     await page.goto('/ko/airport');
     const month = page.getByTestId('airport-mtd');
     const chart = month.locator('.airport-month-chart');
+    await expect(month.locator('.airport-month-compare-wide')).not.toBeVisible();
+    await expect(month.locator('.airport-month-compare-model')).toBeVisible();
     await expect(chart).toHaveAttribute('data-short-series', 'true');
     await expect(chart.locator('.airport-month-value-labels span')).toHaveText(['100,000', '104,000', '98,000', '101,000', '103,000']);
     await expect(chart.locator('.airport-month-ticks span')).toHaveText(['9/1', '9/2', '9/3', '9/4', '9/5']);
@@ -72,6 +74,36 @@ test('a missing day is a gap rather than a zero and stops the running total', as
   await expect(missing).toHaveAttribute('aria-pressed', 'true');
   await expect(chart.locator('.airport-month-readout')).not.toContainText('0명');
 });
+
+for (const width of [821, 1280, 1600]) {
+  test(`desktop monthly comparison uses the card width without enlarging text at ${width}px`, async ({page}) => {
+    await page.setViewportSize({width,height:900});
+    await page.emulateMedia({reducedMotion:'reduce'});
+    await page.route('**/api/live/summary**',routeSummary(fiveDays()));
+    await page.goto('/ko/airport');
+    const month=page.getByTestId('airport-mtd');
+    const comparison=month.locator('.airport-month-compare-wide');
+    await expect(comparison).toBeVisible();
+    await expect(month.locator('.airport-month-compare-model')).not.toBeVisible();
+    await expect(comparison.locator('b')).toHaveText(['480,000명','506,000명']);
+    await expect(month.locator('.airport-mtd-total')).toHaveText('506,000명');
+    const geometry=await month.evaluate(element=>{
+      const bounds=(selector:string)=>element.querySelector(selector)!.getBoundingClientRect();
+      const head=bounds('.airport-mtd-head'),total=bounds('.airport-mtd-total'),bars=bounds('.airport-month-compare-wide'),chart=bounds('.airport-month-chart');
+      return {headX:head.x,totalX:total.x,barsX:bars.x,barsWidth:bars.width,width:element.clientWidth,chartTop:chart.top,barsBottom:bars.bottom,overflow:element.scrollWidth>element.clientWidth+1};
+    });
+    expect(geometry.totalX).toBe(geometry.headX);
+    expect(geometry.barsX).toBeGreaterThan(geometry.totalX);
+    expect(geometry.barsWidth).toBeGreaterThan(geometry.width*.45);
+    expect(geometry.chartTop).toBeGreaterThanOrEqual(geometry.barsBottom);
+    expect(geometry.overflow).toBe(false);
+    expect(await comparison.locator('b').first().evaluate(element=>getComputedStyle(element).fontSize)).toBe('14px');
+    const bars=comparison.locator('.airport-month-compare-track span');
+    const ratios=await bars.evaluateAll(elements=>elements.map(element=>parseFloat((element as HTMLElement).style.width)));
+    expect(ratios[0]/ratios[1]).toBeCloseTo(480_000/506_000,5);
+    await month.screenshot({path:`test-results/month-desktop-${width}.png`,style:'header, .bottom-nav, .airport-context-nav {visibility:hidden !important;}'});
+  });
+}
 
 test('a longer month keeps every bar and uses the selected readout instead of crowded labels', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 });
