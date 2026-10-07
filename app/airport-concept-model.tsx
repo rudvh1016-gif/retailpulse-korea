@@ -25,13 +25,14 @@ export function AirportConceptModel({ map, lang }: { map: DepartureMap; lang: La
   const share = (side: 'EAST' | 'WEST' | 'CENTER' | 'UNVERIFIED') => shares[side] === null ? text.zero : `${shares[side].toFixed(1)}%`;
   return <figure className="airport-concept-model" data-testid="airport-concept-model" data-denominator={denominator}>
     <figcaption data-testid="airport-map-model-scope" data-terminal={scope}>{airportModelScope(scope,lang)} · {windowText(map.window, lang)}</figcaption>
+    <AirportSceneModel scope={scope} lang={lang} className="airport-concept-picture" showBasis={false}>
     <div className="airport-concept-counts" role="group" aria-label={{ko:'선택한 시간의 세 구역 요약',en:'Three-zone summary for the selected time',zh:'所选时段的三区汇总',ja:'選択時間の三区域のまとめ'}[lang]}>
       {(['WEST', 'CENTER', 'EAST'] as const).map(side => <div key={side} data-side={side}>
         <span className="airport-concept-zone-name">{copy.side[side][lang]}</span>
         <span className="airport-concept-zone-values"><strong>{map.sides[side]}{unit}</strong><small>{share(side)}</small></span>
       </div>)}
     </div>
-    <AirportSceneModel scope={scope} lang={lang} className="airport-concept-picture" showBasis={false}/>
+    </AirportSceneModel>
     <div className="airport-concept-ranges">{(['WEST', 'CENTER', 'EAST'] as const).map(side => <div key={side} data-side={side}>{copy.side[side][lang]}<span className="airport-concept-gate-range" data-testid={`zone-range-${side}`}>{ranges(side)}</span></div>)}</div>
     <p className="prep-note" data-testid="model-zone-note">{{ko:'동·서·중앙은 코리테일 분류 기준입니다.',en:'East, west and central zones use KORETAIL classification.',zh:'东、西、中央区域按KORETAIL标准划分。',ja:'東・西・中央はKORETAILの分類基準です。'}[lang]}</p>
     <AirportGateRegionRegister scope={scope} lang={lang}>
