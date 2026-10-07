@@ -100,9 +100,6 @@ export function resetTodayAnswerMemo(): void {
   memo = null;
 }
 
-const hhmm = (iso: string) => iso.slice(11, 16);
-const band = (b: ForecastBand) => `${hhmm(b.targetStartAt)}–${hhmm(b.targetEndAt) === "00:00" ? "24:00" : hhmm(b.targetEndAt)}`;
-
 const levelText: Record<Lang, string[]> = {
   ko: ["", "여유", "보통", "약간 붐빔", "붐빔"],
   en: ["", "quiet", "moderate", "slightly busy", "busy"],
@@ -116,33 +113,6 @@ const areaName: Record<TodayAnswerArea, Record<Lang, string>> = {
   seongsu: { ko: "성수", en: "Seongsu", zh: "圣水", ja: "聖水" },
   itaewon: { ko: "이태원", en: "Itaewon", zh: "梨泰院", ja: "梨泰院" },
 };
-
-/**
- * Official expected departing passengers — never "congestion" or "wait time";
- * the peak is the hour the airport's own forecast expects the most departures.
- */
-function airportPeakParts(answer: TodayAnswer | null | undefined, lang: Lang): string[] {
-  const peak = answer?.airportPeak;
-  if (!peak) return [];
-  return (["T1", "T2"] as const).flatMap((t) => {
-    const b = peak[t];
-    if (!b) return [];
-    const n = b.expectedPassengers.toLocaleString(lang === "zh" ? "zh-CN" : lang);
-    return [{ ko: `${t} ${band(b)} (약 ${n}명)`, en: `${t} ${band(b)} (about ${n})`, zh: `${t} ${band(b)}（约${n}人）`, ja: `${t} ${band(b)}（約${n}人）` }[lang]];
-  });
-}
-
-export function airportAnswerText(answer: TodayAnswer | null | undefined, lang: Lang): string | null {
-  const parts = airportPeakParts(answer, lang);
-  if (!parts.length) return null;
-  const date = answer!.serviceDate.slice(5).replace("-", "/");
-  return {
-    ko: `오늘(${date}) 인천공항 출국 예상 승객이 가장 많은 시간: ${parts.join(" · ")} — 인천공항 공식 예고`,
-    en: `Today (${date}), Incheon Airport's busiest departure hour by official forecast: ${parts.join(" · ")}`,
-    zh: `今天（${date}）仁川机场官方预告出境人数最多的时段：${parts.join(" · ")}`,
-    ja: `今日（${date}）仁川空港の公式予告で出国者が最も多い時間：${parts.join(" · ")}`,
-  }[lang];
-}
 
 export function areaAnswerText(answer: TodayAnswer | null | undefined, lang: Lang, only?: TodayAnswerArea): string | null {
   if (!answer) return null;
@@ -180,17 +150,8 @@ function calendarDay(day: string, lang: Lang): string {
  */
 export function shareAnswerText(answer: TodayAnswer | null | undefined, lang: Lang, page: "airport" | TodayAnswerArea): string | null {
   if (!answer) return null;
-  if (page === "airport") {
-    const parts = airportPeakParts(answer, lang);
-    if (!parts.length) return null;
-    const day = calendarDay(answer.serviceDate, lang);
-    return {
-      ko: `${day} 인천공항 출국 예상 승객이 가장 많은 시간: ${parts.join(" · ")} — 인천공항 공식 예고`,
-      en: `${day}: Incheon Airport's busiest departure hour by official forecast: ${parts.join(" · ")}`,
-      zh: `${day}仁川机场官方预告出境人数最多的时段：${parts.join(" · ")}`,
-      ja: `${day}の仁川空港、公式予告で出国者が最も多い時間：${parts.join(" · ")}`,
-    }[lang];
-  }
+  // The owner removed the airport peak paragraph site-wide, including previews.
+  if (page === "airport") return null;
   const now = answer.areas[page];
   if (!now) return null;
   const day = calendarDay(now.observedAt.slice(0, 10), lang);

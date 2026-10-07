@@ -45,7 +45,7 @@ import { AirportDeparturePreparation } from './airport-departure-preparation';
 import './airport-tax-refund-guide.css';
 import { sidesCopy } from "../lib/airport-sides-copy";
 import { saveBusinessPreferences, useBusinessPreferences } from "./business-preferences";
-import { airportAnswerText, areaAnswerText, type TodayAnswer, type TodayAnswerArea } from "../lib/today-answer";
+import { areaAnswerText, type TodayAnswer, type TodayAnswerArea } from "../lib/today-answer";
 
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
 
@@ -483,7 +483,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
               <div className="hero-copy">
                 <h1 id="hero-title">{homeVisible ? localText(lang, {ko:"서울과 공항의 흐름",en:"Seoul & airport, at a glance",zh:"首尔与机场的流动",ja:"ソウルと空港の流れ"}) : areaHeadline[lang](areaLocalName(selected, lang))}</h1>
                 <p className="hero-line">{localText(lang,{ko:"서울 4개 상권과 인천공항, 지금과 앞으로의 흐름",en:"Four Seoul districts and Incheon Airport. Now and next.",zh:"首尔4个商圈与仁川机场，当前与未来趋势",ja:"ソウル4商圏と仁川空港、現在とこれからの流れ"})}</p>
-                <TodayAnswerLines lines={homeVisible ? [areaAnswerText(todayAnswer, lang), airportAnswerText(todayAnswer, lang)] : [areaAnswerText(todayAnswer, lang, selected as TodayAnswerArea)]} />
+                <TodayAnswerLines lines={[areaAnswerText(todayAnswer, lang, homeVisible ? undefined : selected as TodayAnswerArea)]} />
               </div>
             </section>
             {!homeVisible && (
@@ -500,7 +500,6 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
         {view === "airport" && (
           <AirportView
-            todayAnswer={todayAnswer}
             industry={industry}
             setIndustry={setIndustry}
             lang={lang}
@@ -565,9 +564,8 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 }
 
 function AirportView({
-  lang, terminal, setTerminal, concourse, setConcourse, section, setSection, date, setDate, industry, setIndustry, todayAnswer,
+  lang, terminal, setTerminal, concourse, setConcourse, section, setSection, date, setDate, industry, setIndustry,
 }: {
-  todayAnswer: TodayAnswer | null;
   industry: IndustryId; setIndustry: (value: IndustryId) => void;
   lang: Lang; terminal: Terminal; setTerminal: (value: Terminal) => void;
   concourse:boolean;setConcourse:(value:boolean)=>void;
@@ -614,8 +612,6 @@ function AirportView({
         <div>
           <p className="eyebrow">INCHEON AIRPORT · OFFICIAL · KST</p>
           <h1>{localText(lang, { ko: "인천공항", en: "Incheon Airport", zh: "仁川机场", ja: "仁川空港" })}</h1>
-          <p>{localText(lang, { ko: "출국장 공식 예상 승객·입국객, 실제 출발 운항, 현재 출국장 대기를 서로 섞지 않고 따로 보여줍니다.", en: "Official departure-hall passenger forecast and arrivals, physical departing flights and current departure-hall waits—kept separate, never blended.", zh: "分别显示出境大厅与入境检查预计人数、实际出发航班与当前出境区等候，互不混用。", ja: "公式予想の出国場利用者・入国審査利用者、実出発便、現在の出国場待ちを混ぜずに分けて表示します。" })}</p>
-          {!concourse&&date === null && <TodayAnswerLines lines={[airportAnswerText(todayAnswer, lang)]} />}
         </div>
       </div>
 

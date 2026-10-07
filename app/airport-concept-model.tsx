@@ -19,6 +19,7 @@ export function AirportConceptModel({ map, lang }: { map: DepartureMap; lang: La
     return gates ? (scope === 'all' ? copy.building[building][lang] + ' ' : '') + '(' + gates + ')' : '';
   }).filter(Boolean).join(' · ');
   const denominator = map.sides.total;
+  const gatesPending = denominator > 0 && map.sides.EAST + map.sides.WEST + map.sides.CENTER === 0;
   const shares = selectedZoneShares(map.sides);
   const text = zoneShareCopy[lang];
   const unit = { ko: '편', en: ' flights', zh: '班', ja: '便' }[lang];
@@ -26,8 +27,8 @@ export function AirportConceptModel({ map, lang }: { map: DepartureMap; lang: La
   return <figure className="airport-concept-model" data-testid="airport-concept-model" data-denominator={denominator}>
     <figcaption data-testid="airport-map-model-scope" data-terminal={scope}>{airportModelScope(scope,lang)} · {windowText(map.window, lang)}</figcaption>
     <AirportSceneModel scope={scope} lang={lang} className="airport-concept-picture" showBasis={false}>
-    <div className="airport-concept-counts" role="group" aria-label={{ko:'선택한 시간의 세 구역 요약',en:'Three-zone summary for the selected time',zh:'所选时段的三区汇总',ja:'選択時間の三区域のまとめ'}[lang]}>
-      {(['WEST', 'CENTER', 'EAST'] as const).map(side => <div key={side} data-side={side}>
+    <div className="airport-concept-counts" role="group" aria-label={gatesPending?text.gatesPending:{ko:'선택한 시간의 세 구역 요약',en:'Three-zone summary for the selected time',zh:'所选时段的三区汇总',ja:'選択時間の三区域のまとめ'}[lang]}>
+      {gatesPending ? <div data-testid="model-gates-pending" style={{gridColumn:'1 / -1'}}><span className="airport-concept-zone-name">{{ko:'전체 출발편',en:'Total departure flights',zh:'全部出发航班',ja:'全出発便'}[lang]}</span><span className="airport-concept-zone-values"><strong>{denominator.toLocaleString(lang==='zh'?'zh-CN':lang)}{unit}</strong><small>{text.gatesPending}</small></span></div> : (['WEST', 'CENTER', 'EAST'] as const).map(side => <div key={side} data-side={side}>
         <span className="airport-concept-zone-name">{copy.side[side][lang]}</span>
         <span className="airport-concept-zone-values"><strong>{map.sides[side]}{unit}</strong><small>{share(side)}</small></span>
       </div>)}
