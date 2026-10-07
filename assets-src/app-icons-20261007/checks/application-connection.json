@@ -1,0 +1,47 @@
+{
+  "checkedAt": "2026-10-07T07:40:33.094Z",
+  "phase": "local app-icon connection",
+  "originalConnectionCallRetriedOnce": true,
+  "executionAllowed": true,
+  "originalProtectedCount": 53,
+  "currentProtectedCount": 61,
+  "originalMembersAllRetained": true,
+  "refreshedExisting": [
+    "app/layout.tsx",
+    "public/apple-touch-icon.png",
+    "public/favicon.svg",
+    "public/icon-192.png",
+    "public/icon-512.png",
+    "public/icon-maskable-512.png",
+    "public/manifest.webmanifest"
+  ],
+  "addedProtected": [
+    "public/favicon.ico",
+    "public/apple-touch-icon-20261007.png",
+    "public/favicon-20261007.svg",
+    "public/favicon-20261007.ico",
+    "public/icon-192-20261007.png",
+    "public/icon-512-20261007.png",
+    "public/icon-maskable-512-20261007.png",
+    "public/manifest-20261007.webmanifest"
+  ],
+  "priorRecordsAndCronsUnchanged": true,
+  "ownerUiLockTest": "PASS",
+  "installAndIconTests": {
+    "passed": 17,
+    "failed": 0
+  },
+  "typecheck": "PASS",
+  "lint": "PASS; 7 existing warnings",
+  "build": "PASS",
+  "httpMetadataLinks": 6,
+  "httpAssets": 14,
+  "browserDecoded": 6,
+  "coreCardChanged": false,
+  "linkSharePr266Changed": false,
+  "applicationConnectedLocally": true,
+  "productionPublished": false,
+  "physicalDeviceVerified": false,
+  "installedIconAutoRefreshClaimed": false,
+  "mandatoryCi": "Check the PR exact HEAD"
+}

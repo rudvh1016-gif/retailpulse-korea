@@ -1,0 +1,185 @@
+{
+  "checkedAt": "2026-10-07T07:38:22.897Z",
+  "result": "PASS",
+  "route": "/ko/airport",
+  "metadataLinks": [
+    {
+      "rel": "shortcut icon",
+      "href": "http://127.0.0.1:4207/favicon-20261007.ico",
+      "type": "",
+      "sizes": ""
+    },
+    {
+      "rel": "icon",
+      "href": "http://127.0.0.1:4207/favicon-20261007.ico",
+      "type": "image/x-icon",
+      "sizes": "16x16 32x32 48x48"
+    },
+    {
+      "rel": "icon",
+      "href": "http://127.0.0.1:4207/favicon-20261007.svg",
+      "type": "image/svg+xml",
+      "sizes": ""
+    },
+    {
+      "rel": "icon",
+      "href": "http://127.0.0.1:4207/icon-192-20261007.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "rel": "apple-touch-icon",
+      "href": "http://127.0.0.1:4207/apple-touch-icon-20261007.png",
+      "type": "image/png",
+      "sizes": "180x180"
+    },
+    {
+      "rel": "manifest",
+      "href": "http://127.0.0.1:4207/manifest-20261007.webmanifest",
+      "type": "",
+      "sizes": ""
+    }
+  ],
+  "httpAssets": [
+    {
+      "file": "favicon-20261007.ico",
+      "status": 200,
+      "contentType": "image/x-icon",
+      "bytes": 4329,
+      "sha256": "8d78d5708cdecec4ec251689c1887cb944936361ad03878d8344e7bcae058432"
+    },
+    {
+      "file": "favicon-20261007.svg",
+      "status": 200,
+      "contentType": "image/svg+xml",
+      "bytes": 14527,
+      "sha256": "68ff8a9e81edf6529b14e70291e8edaa5b236adb361930b3e1ab8c1c239c77e4"
+    },
+    {
+      "file": "apple-touch-icon-20261007.png",
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 19858,
+      "sha256": "b11d62bc23ef6522c8f7e5f74aa06a956555e0bae6beb7eb507e2672ebadacba"
+    },
+    {
+      "file": "icon-192-20261007.png",
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 22513,
+      "sha256": "f73cbc50e977716fd4768364ef66408ef7da803a55aa9bff5bc4ae66450bf0cd"
+    },
+    {
+      "file": "icon-512-20261007.png",
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 169058,
+      "sha256": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc"
+    },
+    {
+      "file": "icon-maskable-512-20261007.png",
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 169058,
+      "sha256": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc"
+    },
+    {
+      "file": "manifest-20261007.webmanifest",
+      "status": 200,
+      "contentType": "application/manifest+json",
+      "bytes": 869,
+      "sha256": "6bad81a6e70af19a2c27c1a321513406823d3cea3e78aecacdbc3607647e99be"
+    },
+    {
+      "file": "favicon.svg",
+      "status": 200,
+      "contentType": "image/svg+xml",
+      "bytes": 14527,
+      "sha256": "68ff8a9e81edf6529b14e70291e8edaa5b236adb361930b3e1ab8c1c239c77e4"
+    },
+    {
+      "file": "favicon.ico",
+      "status": 200,
+      "contentType": "image/x-icon",
+      "bytes": 4329,
+      "sha256": "8d78d5708cdecec4ec251689c1887cb944936361ad03878d8344e7bcae058432"
+    },
+    {
+      "file": "apple-touch-icon.png",
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 19858,
+      "sha256": "b11d62bc23ef6522c8f7e5f74aa06a956555e0bae6beb7eb507e2672ebadacba"
+    },
+    {
+      "file": "icon-192.png",
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 22513,
+      "sha256": "f73cbc50e977716fd4768364ef66408ef7da803a55aa9bff5bc4ae66450bf0cd"
+    },
+    {
+      "file": "icon-512.png",
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 169058,
+      "sha256": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc"
+    },
+    {
+      "file": "icon-maskable-512.png",
+      "status": 200,
+      "contentType": "image/png",
+      "bytes": 169058,
+      "sha256": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc"
+    },
+    {
+      "file": "manifest.webmanifest",
+      "status": 200,
+      "contentType": "application/manifest+json",
+      "bytes": 869,
+      "sha256": "6bad81a6e70af19a2c27c1a321513406823d3cea3e78aecacdbc3607647e99be"
+    }
+  ],
+  "browserDecoded": [
+    {
+      "file": "favicon-20261007.svg",
+      "width": 150,
+      "height": 150,
+      "loaded": true
+    },
+    {
+      "file": "favicon-20261007.ico",
+      "width": 48,
+      "height": 48,
+      "loaded": true
+    },
+    {
+      "file": "apple-touch-icon-20261007.png",
+      "width": 180,
+      "height": 180,
+      "loaded": true
+    },
+    {
+      "file": "icon-192-20261007.png",
+      "width": 192,
+      "height": 192,
+      "loaded": true
+    },
+    {
+      "file": "icon-512-20261007.png",
+      "width": 512,
+      "height": 512,
+      "loaded": true
+    },
+    {
+      "file": "icon-maskable-512-20261007.png",
+      "width": 512,
+      "height": 512,
+      "loaded": true
+    }
+  ],
+  "applicationConnectedLocally": true,
+  "productionPublished": false,
+  "physicalDeviceVerified": false,
+  "installedIconAutoRefreshClaimed": false
+}

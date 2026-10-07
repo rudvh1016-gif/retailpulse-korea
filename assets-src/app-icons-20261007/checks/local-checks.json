@@ -1,0 +1,17 @@
+{
+  "assetValidation": "PASS: preserved Blender source and raster/mask/ICO/SVG/manifest validation from source commit",
+  "ownerUiLock": "PASS: original active assertion",
+  "protectedFilesChecked": 61,
+  "originalProtectedMembersRetained": 53,
+  "refreshedExistingIconFiles": 7,
+  "addedProtectedIconFiles": 8,
+  "installAndIconTestsPassed": 17,
+  "typecheck": "PASS",
+  "lint": "PASS; existing warnings",
+  "build": "PASS",
+  "httpAndBrowserConnection": "PASS: 6 metadata links, 14 HTTP assets, 6 browser decodes",
+  "applicationConnectedLocally": true,
+  "productionPublished": false,
+  "physicalDeviceVerified": false,
+  "mandatoryRemoteCi": "Check the PR exact HEAD"
+}

@@ -1,0 +1,25 @@
+{
+  "actualBlender": "5.2.1 LTS",
+  "engine": "CYCLES",
+  "device": "CPU",
+  "sourceBlend": "model/source-flight-B.blend",
+  "sourceBlendSha256": "7fbbc69ddc8b02f2e560fe98ae916ae07b56f1f49e104e8932ca537f90130c2a",
+  "sourcePng": "model/source-flight-B.png",
+  "sourcePngSha256": "df0afac5089a54036bfd4af599b83144275174c66b7ad861ea416dd4c9ff4288",
+  "previousAppApprovalClaimed": false,
+  "reusedGeometryAndMaterials": true,
+  "newContent": "only camera framing and render/export settings; no new lettering",
+  "originalCameraScale": 5.699999809265137,
+  "finalCameraScale": 6.2718505859375,
+  "originalProjectedRadius": 0.4236250224883436,
+  "finalProjectedRadius": 0.3850000199235994,
+  "guaranteedSafeRadius": 0.4,
+  "fullSquareRgb": [
+    1024,
+    1024
+  ],
+  "textObjects": 0,
+  "meshCount": 18,
+  "outputBlend": "model/koretail-app-icon.blend",
+  "outputPng": "render/koretail-flight-runway-1024.png"
+}
