@@ -43,7 +43,11 @@ test('v14 overview reflows across 600px without rereading data or covering label
       }
       if (width <= 600) expect(positions[1]!.y).toBeGreaterThan(positions[0]!.y + 30);
       else expect(positions[1]!.y).toBeCloseTo(positions[0]!.y, 0);
-      expect((await model.locator('.airport-concept-counts').boundingBox())!.y).toBeGreaterThanOrEqual(box.y + box.height);
+      const counts = (await picture.locator('.airport-concept-counts').boundingBox())!;
+      expect(Math.abs(counts.y + counts.height / 2 - (box.y + box.height / 2))).toBeLessThanOrEqual(1);
+      expect(counts.y).toBeGreaterThanOrEqual(box.y);
+      expect(counts.y + counts.height).toBeLessThanOrEqual(box.y + box.height);
+      await expect(model.locator(':scope > .airport-concept-counts')).toHaveCount(0);
       await expect(model.locator('.airport-concept-label')).toHaveCount(0);
       await expect(model).toHaveAttribute('data-denominator', '1');
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
