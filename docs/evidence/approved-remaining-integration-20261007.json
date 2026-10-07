@@ -126,7 +126,8 @@
       "lazyMapControlsMounted": true,
       "enterAndSpacePassed": true
     },
-    "canonicalSecretScan": "Windows local 180s execution limit exceeded; exact-head mandatory CI must run canonical complete-history scan"
+    "canonicalSecretScan": "Windows local 180s execution limit exceeded; exact-head mandatory CI must run canonical complete-history scan",
+    "originalProductionMapCasesLocallyWithFixture": 2
   },
   "focusRegression": {
     "existingProductionRun": 37591354894,
@@ -160,5 +161,28 @@
   ],
   "agentMerges": 0,
   "manualDeployments": 0,
-  "manualWorkflowRuns": 0
+  "manualWorkflowRuns": 0,
+  "additionalCountingBasisRegression": {
+    "existingAutomaticProductionRun": 37597382119,
+    "existingMain": "7f8e50b2a042151bfce838fe4bbab739cad90fdc",
+    "failedCases": 2,
+    "widths": [
+      360,
+      1280
+    ],
+    "cause": "map-counts is intentionally folded inside map-counting-basis; innerText read without opening is empty.",
+    "fix": "Assert default closed, open its native summary by Enter, assert visible counts, then retain every original whole-day scope, source/card/map count and conservation assertion.",
+    "localOriginalSpecResult": {
+      "passed": true,
+      "summary": [
+        "  2 passed (12.8s)"
+      ],
+      "existingProductionSpecAssertionsUnchanged": true,
+      "onlyImportPathsAndLocalFixtureInjected": true,
+      "publicAuditRerun": false,
+      "at": "2026-10-07T09:11:09.554Z"
+    },
+    "fullProductionAuditRerun": false,
+    "productCSSChanged": false
+  }
 }
