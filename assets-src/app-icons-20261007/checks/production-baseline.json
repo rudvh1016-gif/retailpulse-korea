@@ -1,0 +1,62 @@
+{
+  "checkedAt": "2026-10-07T05:51:05.166Z",
+  "page": "https://koretaildata.com/ko/airport",
+  "iconLinks": [
+    "<link rel=\"shortcut icon\" href=\"https://koretaildata.com/favicon.svg\"/>",
+    "<link rel=\"icon\" href=\"https://koretaildata.com/favicon.svg\" type=\"image/svg+xml\"/>",
+    "<link rel=\"icon\" href=\"https://koretaildata.com/icon-192.png\" sizes=\"192x192\" type=\"image/png\"/>",
+    "<link rel=\"apple-touch-icon\" href=\"https://koretaildata.com/apple-touch-icon.png\" sizes=\"180x180\" type=\"image/png\"/>",
+    "<link rel=\"manifest\" href=\"https://koretaildata.com/manifest.webmanifest\"/>"
+  ],
+  "files": [
+    {
+      "file": "/manifest.webmanifest",
+      "status": 200,
+      "type": "application/manifest+json",
+      "cacheControl": "public, max-age=86400",
+      "bytes": 833,
+      "sha256": "b645aca0f55d875dd6f8f72cfaa2eaf4a0ae05aad72019bc13e841e2570f8534"
+    },
+    {
+      "file": "/favicon.svg",
+      "status": 200,
+      "type": "image/svg+xml",
+      "cacheControl": "public, max-age=604800",
+      "bytes": 712,
+      "sha256": "e6d2e59b7b5bbb0342e0fb496dfc262decbfe4426bbb7b047aec8d467d1dc6f7"
+    },
+    {
+      "file": "/apple-touch-icon.png",
+      "status": 200,
+      "type": "image/png",
+      "cacheControl": "public, max-age=604800",
+      "bytes": 2157,
+      "sha256": "3373811ae07fa1ce01c2b6186280afef6b33f79787f4faa2fb0a8885621c854a"
+    },
+    {
+      "file": "/icon-192.png",
+      "status": 200,
+      "type": "image/png",
+      "cacheControl": "public, max-age=604800",
+      "bytes": 2223,
+      "sha256": "6fc7c1058c3456abe73cf62ace7de422d2f1f533dbbabc3909f9aee19dc57c60"
+    },
+    {
+      "file": "/icon-512.png",
+      "status": 200,
+      "type": "image/png",
+      "cacheControl": "public, max-age=604800",
+      "bytes": 7232,
+      "sha256": "9a2fc9de289156a55100e46b87d8ef7af753cb3a0de1801d0663215ff67e2b0f"
+    },
+    {
+      "file": "/icon-maskable-512.png",
+      "status": 200,
+      "type": "image/png",
+      "cacheControl": "public, max-age=604800",
+      "bytes": 5863,
+      "sha256": "70cbdff3004fa8e55dce161cd00ec4e5b918e7d9f88d480dbf9ecef749b50987"
+    }
+  ],
+  "productionChangedByThisTask": false
+}

@@ -1,0 +1,11 @@
+{
+  "assetValidation": "PASS: 8 raster sizes, RGB, PNG hashes, 3 ICO frames, SVG embedded PNG, manifest identity/roles, alias byte equality, projected safe radius",
+  "ownerUiLock": "PASS: node --experimental-sqlite --import tsx --test --test-name-pattern=Owner UI Lock tests/operational-phase2.test.mjs",
+  "protectedFilesChecked": 53,
+  "protectedFilesChanged": [],
+  "secretScan": "PASS: working tree and reachable Git history",
+  "browserPreview": "PASS: actual Chrome 390px and 1280px, 10 decoded images per viewport, no horizontal overflow or execution errors",
+  "physicalDeviceVerified": false,
+  "applicationConnectionCompleted": false,
+  "mandatoryRemoteCi": "Check the exact PR commit; not claimed locally"
+}
