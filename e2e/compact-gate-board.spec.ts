@@ -48,7 +48,7 @@ for (const width of [320, 390, 430, 1280]) test(`three gate representatives reta
     await expect.poll(() => img.evaluate((el:HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
   }
   await board.evaluate(el => window.scrollBy(0, el.getBoundingClientRect().top - 180));
-  await board.screenshot({path:`../compact-gate-board-evidence-20261007/compact-board-${width}.png`});
+  await board.screenshot({path:`test-results/compact-board-${width}.png`});
   const disclosure = board.getByTestId('gate-all-list');
   const summary = disclosure.locator('summary');
   await expect(summary).toContainText('다른 탑승구 보기');
@@ -62,7 +62,7 @@ for (const width of [320, 390, 430, 1280]) test(`three gate representatives reta
   await expect(disclosure).toHaveAttribute('open');
   for (const [gate, count] of gateCounts) await expect(disclosure.locator('.gate-full-list li').filter({hasText:`T2 · ${gate} ·`})).toContainText(`${count}편`);
   await expect(disclosure.locator('img')).toHaveCount(0);
-  await disclosure.screenshot({path:`../compact-gate-board-evidence-20261007/compact-list-${width}.png`});
+  await disclosure.screenshot({path:`test-results/compact-list-${width}.png`});
   await page.keyboard.press('Space');
   await expect(disclosure).not.toHaveAttribute('open');
   await summary.tap();
