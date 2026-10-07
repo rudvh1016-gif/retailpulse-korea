@@ -37,13 +37,16 @@ async function open(page: Page, { lang = 'ko', width = 390, suffix = '', schedul
   return { flightRequests, historyRequests };
 }
 
-test('the Airport page departures tab shows east/west, the open gate map and destination regions, one terminal at a time', async ({ page }) => {
+test('the Airport page keeps one top summary and opens detailed maps one terminal at a time', async ({ page }) => {
   const { flightRequests, historyRequests } = await open(page);
   const overview = page.getByTestId('airport-departure-overview');
   await overview.scrollIntoViewIfNeeded();
   await expect(overview).toHaveAttribute('data-terminals', 'T1');
   const t1 = overview.getByTestId('overview-T1');
-  await expect(t1.getByTestId('flight-split')).toBeVisible();
+  await expect(t1.getByTestId('flight-split')).toHaveCount(0);
+  await expect(page.getByTestId('airport-concept-model')).toBeVisible();
+  await expect(t1.getByTestId('departure-map')).not.toBeVisible();
+  await t1.getByTestId('departure-map-section').locator(':scope > summary').click();
   await expect(t1.getByTestId('departure-map')).toBeVisible();
   await expect(t1.getByTestId('map-groups')).not.toBeVisible();
   await t1.getByTestId('map-destinations').locator('summary').click();
@@ -55,6 +58,7 @@ test('the Airport page departures tab shows east/west, the open gate map and des
   await overview.getByTestId('overview-switch').getByRole('button', { name: /T2$/ }).click();
   await expect(overview).toHaveAttribute('data-terminals', 'T2');
   const t2 = overview.getByTestId('overview-T2');
+  await t2.getByTestId('departure-map-section').locator(':scope > summary').click();
   await expect(t2.getByTestId('departure-map')).toBeVisible();
   await expect(t2.getByTestId('map-counts')).toContainText('편');
   await expect(overview.getByTestId('overview-T1')).toHaveCount(0);
@@ -72,16 +76,19 @@ test('today before its first collection: the held schedule fills the map, labell
   const overview = page.getByTestId('airport-departure-overview');
   await overview.scrollIntoViewIfNeeded();
   const block = overview.getByTestId('overview-T2');
+  await block.getByTestId('departure-map-section').locator(':scope > summary').click();
   await expect(block.getByTestId('departure-map')).toBeVisible();
   await expect(block.getByTestId('map-empty')).toHaveCount(0);
   await expect(block.getByTestId('map-counts')).not.toContainText('동편 0편 · 서편 0편');
   await expect(block).toContainText('공식 출발 예정표 기준');
-  await expect(block.getByTestId('flight-split')).toHaveAttribute('data-state', 'OK');
+  await expect(block.getByTestId('flight-split')).toHaveCount(0);
+  await expect(page.getByTestId('airport-concept-model')).toBeVisible();
   await expect(page.getByTestId('airport-top-reference')).toHaveAttribute('data-state', 'READY');
 });
 
 test('a failed flight read leaves no stale top reference', async ({ page }) => {
   await open(page, { lang: 'en', flightFailure: true });
+  await page.getByTestId('overview-T1').getByTestId('departure-map-section').locator(':scope > summary').click();
   await expect(page.getByTestId('overview-T1').getByTestId('map-failed')).toBeVisible();
   await expect(page.getByTestId('airport-top-reference')).toHaveCount(0);
 });
@@ -92,7 +99,7 @@ test('the jump link at the top of the departures tab reaches it', async ({ page 
   await expect(jump).toBeVisible();
   await jump.click();
   await expect(page).toHaveURL(/#airport-departure-overview$/);
-  await expect(page.getByTestId('overview-T1').getByTestId('flight-split')).toBeVisible();
+  await expect(page.getByTestId('overview-T1').getByTestId('departure-map-section').locator(':scope > summary')).toBeVisible();
 });
 
 test('choosing one terminal shows only that terminal, with no switch', async ({ page }) => {
@@ -117,6 +124,7 @@ for (const [lang, width] of [['ko', 360], ['en', 360], ['zh', 360], ['ja', 360],
     await open(page, { lang, width });
     const overview = page.getByTestId('airport-departure-overview');
     await overview.scrollIntoViewIfNeeded();
+    await overview.getByTestId('departure-map-section').locator(':scope > summary').click();
     await expect(overview.getByTestId('overview-T1').getByTestId('departure-map')).toBeVisible();
     expect(await tofuCharacters(overview)).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
@@ -133,8 +141,9 @@ test('the reference is next to the top model and uses separate full-day terminal
   await expect(reference.getByTestId('top-reference-T2')).toBeVisible();
   await expect(reference).toContainText('T1 and T2 are calculated separately');
   await expect(page.getByTestId('overview-T1').getByTestId('split-estimate')).toHaveCount(0);
-  await expect(page.getByTestId('overview-T1').getByTestId('split-shares')).toBeVisible();
-  await expect(page.getByTestId('overview-T1').getByTestId('flight-split')).toContainText('All departures');
+  await expect(page.getByTestId('overview-T1').getByTestId('split-shares')).toHaveCount(0);
+  await expect(page.getByTestId('overview-T1').getByTestId('flight-split')).toHaveCount(0);
+  await expect(slot.getByTestId('airport-concept-model')).toBeVisible();
   const order = await slot.evaluate((node) => Array.from(node.children).map((child) => child.getAttribute('data-testid')));
   expect(order.slice(0, 3)).toEqual(['airport-concept-model', 'airport-top-reference', 'map-zone-countries']);
   await slot.screenshot({ path: 'test-results/airport-top-reference-en-390.png' });
@@ -145,6 +154,7 @@ test('a selected time or concourse alone withholds the figure; whole-day action 
   const reference = page.getByTestId('airport-top-reference');
   const map = page.getByTestId('overview-T1').getByTestId('departure-map');
   await expect(reference).toHaveAttribute('data-state', 'READY');
+  await page.getByTestId('overview-T1').getByTestId('departure-map-section').locator(':scope > summary').click();
   await map.locator('[data-preset="CUSTOM"]').click();
   await expect(reference).toHaveAttribute('data-state', 'time');
   await expect(reference.getByTestId('top-reference-T1')).toHaveCount(0);
