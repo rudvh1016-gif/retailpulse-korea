@@ -1,8 +1,19 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { SUMMARY_FIXTURE, routeSummary } from './summary-fixture';
 import type { LiveSummary } from '../app/live-signals';
 import { rangeChange } from '../lib/period-comparison';
+import { recordsFixture } from './monthly-records-fixture';
+import type { RecordArea } from '../lib/monthly-records';
+
+async function routeRecordsAndSummary(page: Page) {
+  await page.route('**/api/live/summary*', async route => {
+    const params = new URL(route.request().url()).searchParams;
+    if (params.get('view') === 'records') {
+      await route.fulfill({ json: recordsFixture((params.get('area') ?? 'myeongdong') as RecordArea, params.get('month') ?? '2026-10') });
+    } else await routeSummary(SUMMARY_FIXTURE)(route);
+  });
+}
 
 const baseline = process.env.KORETAIL_DESIGN_BASELINE === 'true';
 const recorded = process.env.KORETAIL_RECORDED_SUMMARY;
@@ -47,22 +58,30 @@ for (const width of [390, 1440]) {
 }
 
 for (const lang of ['ko', 'en', 'zh', 'ja']) {
-  test(`compact district overview and navigation in ${lang}`, async ({ page }) => {
-    await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+  test(`monthly records and compact district navigation in ${lang}`, async ({ page }) => {
+    await routeRecordsAndSummary(page);
     await page.setViewportSize({ width: 360, height: 844 });
     await page.goto(`/${lang}/forecast`);
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
+    await expect(page.getByTestId('monthly-records-result')).toBeVisible();
+    await expect(page.getByTestId('record-month-2026-10')).toContainText('27,000–29,000');
+    await page.locator(`.bottom-nav a[href="/${lang}/myeongdong"]`).click();
     const card = page.getByTestId('area-demand-card').first();
     await expect(card).toBeVisible();
 
-    await page.locator('.home-area-briefs button').nth(1).click();
+    await page.locator('.area-tabs').getByRole('tab').nth(1).click();
     await expect(card.locator('h2')).toHaveText({ko:'홍대',en:'Hongdae',zh:'弘大',ja:'弘大'}[lang]!);
-    await page.locator('.demand-card-footer > a').first().click();
     await expect(page).toHaveURL(new RegExp(`/${lang}/hongdae`));
+    await page.reload();
+    await expect(card.locator('h2')).toHaveText({ko:'홍대',en:'Hongdae',zh:'弘大',ja:'弘大'}[lang]!);
+    await expect(page.locator('.area-tabs').getByRole('tab').nth(1)).toHaveAttribute('aria-selected','true');
+    await page.goBack();
+    await expect(card.locator('h2')).toHaveText({ko:'명동',en:'Myeongdong',zh:'明洞',ja:'明洞'}[lang]!);
     await page.goBack();
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await expect(page.locator('.demand-home')).toBeVisible();
+    await expect(page.getByTestId('monthly-records-result')).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`/${lang}/forecast`));
   });
 }
 
@@ -109,14 +128,25 @@ for (const state of ['forecast-only', 'missing', 'stale', 'comparison-overlap', 
 
 
 test('selected dates and terminal scopes survive links, reload and back', async ({ page }) => {
+  await page.setViewportSize({width:390,height:844});
   // The selected date must match the fixture's actual service date; the
   // summary reader now correctly rejects a response for another day.
   const selectedDate = SUMMARY_FIXTURE.serviceDateKst;
-  await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+  await routeRecordsAndSummary(page);
   await page.route('**/api/live/predictions*', routeSummary({targetDate:'2026-09-01',run:null,coverage:null,records:[]}));
   await page.goto(`/ko/forecast?date=${selectedDate}`);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
-  await expect(page.locator('.demand-card-footer > a').first()).toHaveAttribute('href',`/ko/myeongdong?date=${selectedDate}`);
+  await expect(page.getByTestId('monthly-records-result')).toBeVisible();
+  await page.locator('.bottom-nav a[href="/ko/myeongdong"]').click();
+  await expect(page).toHaveURL(`/ko/myeongdong?date=${selectedDate}`);
+  await expect(page.getByTestId('area-demand-card').first()).toBeVisible();
+  await page.goBack();
+  await expect(page).toHaveURL(`/ko/forecast?date=${selectedDate}`);
+  await expect(page.getByTestId('monthly-records-result')).toBeVisible();
+  await page.locator('.bottom-nav a[href="/ko/myeongdong"]').click();
+  await page.reload();
+  await expect(page).toHaveURL(`/ko/myeongdong?date=${selectedDate}`);
+  await expect(page.getByTestId('area-demand-card').first()).toBeVisible();
   await page.goto(`/ko/airport?terminal=T1&date=${selectedDate}`);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
   await page.getByRole('tab',{name:'T2',exact:true}).click();

@@ -13,7 +13,7 @@
     "app/api/live/events/route.ts": "f85c532f05c89b1412fbd77a04ff88d5d3b9f8587ddbebad00dbe1c3df9ed7a4",
     "app/api/live/flights/route.ts": "fb7bbfc1132359dceb4d315997eaf26bfc5b27d3f03f2bb9b8be4fe46718c1bd",
     "app/api/live/predictions/route.ts": "b82f003bd3d77c293a379c4dbd0bf5e2aa449b19e54a65119ef2e4f291cdfced",
-    "app/api/live/summary/route.ts": "ce08a54a232816dfa63143a9101dbc268a849bc11900293e6df5e7f43e53898b",
+    "app/api/live/summary/route.ts": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8",
     "app/area-demand-card.tsx": "9f480850246b31fbb8cec5f75fb9b69eb382cb6e504ebd6c536cb43793384f4c",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
@@ -26,7 +26,7 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "32b378d167bb9579ad48e742e83ef8523b7959ddbcaef25b524a103feaa09d56",
+    "app/retailpulse-app.tsx": "4a9dc15ca8fa65f56289c22039bc4c426bece94df9800744924c7b43acb9b020",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
@@ -408,6 +408,21 @@
       }
     ]
   },
+  "ownerMonthlyRecords20261006": {
+    "reason": "Owner requested completing the KORETAIL site implementation and the separate monthly-records view. The lead delegation explicitly authorizes latest-main integration, the normal protected baseline record, commit/push/draft PR and required CI for the existing local monthly-records implementation. Scope is only the /forecast monthly stored-observation view and /api/live/summary?view=records read branch. Refresh exactly app/retailpulse-app.tsx and app/api/live/summary/route.ts. Preserve existing sources, min/max truth, prior approval history, all protected file membership, cron values and active enforcement assertions. No blocked PR267/276/278/288/291 content is included. No merge, deployment, provider activation or new scheduler is authorized by this record.",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+        "approved": "436a16217bf98d16db719177469279137d5f356e7912e6d4ed1398a2f424c72e"
+      },
+      {
+        "file": "app/api/live/summary/route.ts",
+        "previous": "ce08a54a232816dfa63143a9101dbc268a849bc11900293e6df5e7f43e53898b",
+        "approved": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8"
+      }
+    ]
+  },
   "ownerAirportBodyScope20261006": {
     "reason": "Owner request Sentinel_fddc74efab4881919071e2882f9fd26d, delegated 2026-10-06: remove the Seoul district body from the airport page, preserving the global Seoul menu and its original pages/data. Only the home-seoul-secondary render inside view===airport and its now-unneeded fragment are removed from app/retailpulse-app.tsx. This is a distinct new request; PR278's airport heading copy and TodayAnswer changes are not copied. Refresh this file's approved hash through the normal record procedure; all other protected hashes, prior approval records, cron locks and active enforcement tests stay intact. No live-signals.tsx change; queue and monthly desktop placement remain with their assigned owner.",
     "changes": [
@@ -442,6 +457,30 @@
         "original": "3ce5cf78fdd6db32a7dd35abbb39f9af0ebd94493318d691824abdf6cbdadc6a",
         "predecessor": "76302e9d7d4f4d97ab18cd0d0d7fa1a3f117763189229d90c813521050cf1b04",
         "combined": "32b378d167bb9579ad48e742e83ef8523b7959ddbcaef25b524a103feaa09d56"
+      }
+    ]
+  },
+  "approvedOriginalPr303SequentialIntegration20261007": {
+    "reason": "Normal combination of existing approved original PR scopes for the user-requested sequence 284 -> 288 -> 303 -> 266 with published main 23ae0818. Preserve every prior approval record and all 53 active protected paths, base and cron locks. Hashes describe only the actual combination of these already-approved Git refs. No new design, core priority/header-card proposal, protection removal, assertion bypass, public merge or deployment.",
+    "sourceRefs": [
+      "23ae0818cf172e7c28a137fe9831c0d9628549f1",
+      "f76b5ea38d5a4e298764b8750ca68fa7da75f848",
+      "cc08cfd63bb3a77e93f53a2ee2d6eac85dbf735a"
+    ],
+    "changes": [
+      {
+        "file": "app/api/live/summary/route.ts",
+        "published": "ce08a54a232816dfa63143a9101dbc268a849bc11900293e6df5e7f43e53898b",
+        "original": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8",
+        "predecessor": "ce08a54a232816dfa63143a9101dbc268a849bc11900293e6df5e7f43e53898b",
+        "combined": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "published": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+        "original": "436a16217bf98d16db719177469279137d5f356e7912e6d4ed1398a2f424c72e",
+        "predecessor": "32b378d167bb9579ad48e742e83ef8523b7959ddbcaef25b524a103feaa09d56",
+        "combined": "4a9dc15ca8fa65f56289c22039bc4c426bece94df9800744924c7b43acb9b020"
       }
     ]
   }

@@ -491,20 +491,26 @@ test("remaining expected departures is shown for a complete day and withheld for
   await expect(page.getByText("전체 시간대 확인 불가").first()).toBeVisible();
 });
 
-test("district overview gives deterministic current briefs for all three Seoul areas", async ({ page }) => {
+test("Seoul district tabs preserve current ranges, weather, events and stale sources", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ko/forecast");
-  await expect(page.getByRole("heading", { name: "다른 상권 살펴보기" })).toBeVisible();
-  const briefs = page.locator(".home-area-briefs");
-  await expect(page.getByTestId('area-demand-card').first()).toContainText('현재 추정 인구');
-  await expect(briefs.getByRole('button', { name: /명동/ })).toContainText('23,000–25,000명');
-  await expect(briefs.getByRole('button', { name: /명동/ })).toContainText('약간 붐빔');
-  await expect(page.locator('.home-support')).toContainText('비 가능성 60%');
-  await briefs.getByRole('button', { name: /홍대/ }).click();
-  await expect(page.locator('.home-support')).toContainText('홍대 거리공연');
-  await briefs.getByRole('button', { name: /성수/ }).click();
-  await expect(page.getByTestId('area-demand-card').first()).toContainText('이전 자료');
+  await page.goto("/ko/myeongdong");
+  const tabs = page.locator('.area-tabs'), card = page.getByTestId('area-demand-card').first();
+  await expect(tabs.getByRole('tab')).toHaveCount(4);
+  await expect(card).toContainText('현재 추정 인구');
+  await expect(card).toContainText('23,000–25,000');
+  await expect(card).toContainText('약간 붐빔');
+  await expect(page.locator('.signal-groups')).toContainText('강수확률 최대 60%');
+  await tabs.getByRole('tab', { name: '홍대', exact: true }).click();
+  await expect(page).toHaveURL(/\/ko\/hongdae/);
+  await expect(card.locator('h2')).toHaveText('홍대');
+  await expect(page.locator('.event-signal-panel')).toContainText('홍대 거리공연');
+  await tabs.getByRole('tab', { name: '성수', exact: true }).click();
+  await expect(page).toHaveURL(/\/ko\/seongsu/);
+  await expect(card.locator('h2')).toHaveText('성수');
+  await expect(card).toContainText('이전 자료');
+  await expect(card).toContainText('12,000–14,000');
+  await expect(card).toContainText('서울시 실시간 도시데이터');
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
 
@@ -702,6 +708,11 @@ test("the flight board lists official flight rows and filters by search and term
 test("insights explains every metric instead of leading with a bare index", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.goto("/ko/forecast");
+  const reference = page.locator(".records-reference");
+  await expect(reference).not.toHaveAttribute("open", "");
+  await reference.locator("summary").focus();
+  await page.keyboard.press("Enter");
+  await expect(reference).toHaveAttribute("open", "");
   await expect(page.locator(".metric-explainer").first()).toBeVisible();
   for (const label of ["무엇인가요", "높으면", "출처", "왜 보나요"]) {
     await expect(page.locator(".metric-explainer").first().getByText(label, { exact: true })).toBeVisible();

@@ -1,4 +1,6 @@
 import { readDepartureSchedule } from '../../../../lib/departure-schedule';
+import { RECORD_AREAS, validRecordMonth, type RecordArea } from '../../../../lib/monthly-records';
+import { readMonthlyRecords, type RecordsClient } from '../../../../lib/monthly-records-read';
 import { flightScopeCounts } from "../../../../lib/flight-scope";
 import { AIRPORT_HALL_SIDES_PUBLIC, airportSides } from "../../../../lib/airport-sides-summary";
 import { summarizeScheduledBriefing, type ScheduledBriefingRow } from "../../../../lib/scheduled-briefing";
@@ -183,6 +185,23 @@ export async function safeAll<T>(run: () => Promise<T[]>): Promise<T[]> {
 
 export async function GET(request: Request) {
   const generatedAt = new Date().toISOString();
+  const params = new URL(request.url).searchParams;
+  // Monthly records reuse this endpoint, with an isolated bounded read. Ordinary summaries are unchanged.
+  if (params.get('view') === 'records') {
+    const area = params.get('area') ?? '';
+    const month = params.get('month') ?? kstDayOf(generatedAt).slice(0, 7);
+    const headers = { 'x-robots-tag': CONTENT_API_ROBOTS_TAG, 'cache-control': 'no-store' };
+    if (!RECORD_AREAS.includes(area as RecordArea) || !validRecordMonth(month) || month > kstDayOf(generatedAt).slice(0, 7)) {
+      return Response.json({ error: 'invalid_records_selection' }, { status: 400, headers });
+    }
+    try {
+      const client = (await getDb()).$client;
+      const records = await readMonthlyRecords(client as unknown as RecordsClient, area as RecordArea, month, generatedAt);
+      return Response.json(records, { headers: { ...headers, 'cache-control': 'public, max-age=300' } });
+    } catch {
+      return Response.json({ error: 'records_unavailable' }, { status: 503, headers });
+    }
+  }
   const now = Date.parse(generatedAt);
   // Canonical KST-sourced rows store +09:00 offsets; compare lexicographically
   // in the same offset space rather than against the UTC string.
