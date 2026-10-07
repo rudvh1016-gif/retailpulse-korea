@@ -81,9 +81,13 @@
 .airport-concept-label[data-side="CENTER"] { top: 50%; left: 45%; }
 .airport-concept-label[data-side="EAST"] { top: 25%; right: 12%; }
 .airport-concept-counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
-.airport-concept-counts > div { border-top: 1px solid #9cc8df; padding: 8px 2px; }
-.airport-concept-counts strong { display: block; font-size: 14px; font-weight: var(--weight-strong); }
-.airport-concept-counts small { display: block; }
+.airport-concept-counts > div { min-width: 0; padding: 4px 0; color: #000; }
+.airport-concept-zone-name { display: block; color: #000; font-weight: var(--weight-strong); }
+.airport-concept-zone-values { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; }
+.airport-concept-counts strong { display: block; font-size: 14px; font-weight: var(--weight-strong); white-space: nowrap; }
+.airport-concept-counts small { display: block; color: #000; white-space: nowrap; }
+.airport-concept-ranges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 8px 0; }
+.airport-concept-ranges > div { min-width: 0; border-top: 1px solid var(--line); padding: 4px 0; }
 .airport-month-side { fill: #81b3cd; }
 .airport-month-cap { fill: #e5f5fc; }
 .airport-month-compare-model { display: block; width: min(100%, 360px); height: auto; margin: 14px auto; }
