@@ -29,21 +29,25 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [320,390,430,1280]) 
   test(`approved live models preserve all ties and fit ${lang} ${width}`,async({page})=>{
     const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
     const {model,requests}=await open(page,{lang,width});
-    await expect(model.locator('.gate-leader-zones .gate-pillar')).toHaveCount(8);
+    await expect(model.locator('.gate-leader-zones .gate-pillar')).toHaveCount(2);
     const counts=await model.locator('.gate-leader-zones .gate-pillar').evaluateAll(nodes=>nodes.map(node=>Number(node.getAttribute('data-flights'))));
-    expect(counts).toEqual(Array(8).fill(17));
+    expect(counts).toEqual(Array(2).fill(17));
+    expect(await model.locator('.gate-leader-zones .gate-pillar').evaluateAll(nodes=>nodes.map(node=>node.getAttribute('data-gate')))).toEqual(['208','263']);
     await expect(model.getByTestId('gate-all-list').locator('input')).toHaveCount(0);
     await model.getByTestId('gate-all-list').locator('summary').click();
     const initialRows=model.locator('.gate-full-list li'); await expect(initialRows).toHaveCount(20);
+    // Every joint leader remains in the text list, including those without a representative image.
+    for(const gate of GATES) await expect(initialRows.filter({hasText:`T2 · ${gate} ·`})).toContainText('17');
     for(const row of await initialRows.all()) await expect(row).toHaveCSS('content-visibility','visible');
     const images=model.locator('.gate-leader-zones .gate-visual-card img');
     expect(await images.count()).toBeGreaterThan(0);
     await images.first().scrollIntoViewIfNeeded();
     await expect.poll(()=>images.first().evaluate((node:HTMLImageElement)=>node.complete && node.naturalWidth>0)).toBe(true);
-    await expect(model.locator('.gate-leader-zones .gate-visual-count')).toHaveCount(8);
+    await expect(model.locator('.gate-leader-zones .gate-visual-count')).toHaveCount(2);
     await model.locator('.gate-leader-zones .gate-pillar').first().focus();
     await page.keyboard.press('Enter');
     await expect(model.getByTestId('gate-selected')).toBeVisible();
+    await expect(model.getByTestId('gate-selected').locator('img')).toHaveCount(0);
     const search=model.locator('input[type=search]');await search.fill('215');
     await expect(model.locator('.gate-full-list li')).toHaveCount(1);
     const item=model.locator('.gate-full-list button').first();await item.focus();await page.keyboard.press('Enter');
@@ -86,7 +90,7 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [320,390,430,1280]) 
 test('gate counts remain readable when illustration requests fail',async({page})=>{
   await page.route('**/visuals/gates/*.webp',route=>route.fulfill({status:404,body:''}));
   const {model}=await open(page,{width:320});
-  await expect(model.locator('.gate-leader-zones .gate-pillar')).toHaveCount(8);
+  await expect(model.locator('.gate-leader-zones .gate-pillar')).toHaveCount(2);
   await expect(model.locator('.gate-leader-zones .gate-visual-count').first()).toContainText('17');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
@@ -105,7 +109,8 @@ for(const kind of ['FAILED','PARTIAL','ZERO']) test(`gate model handles ${kind} 
     await model.getByTestId('gate-all-list').locator('summary').click();
     await model.locator('.gate-full-list button').first().click();
     await expect(model.getByTestId('gate-selected').locator('li')).toHaveCount(0);
-    await expect(model.getByTestId('gate-selected').locator('.gate-pillar')).toHaveAttribute('data-flights','0');
+    await expect(model.getByTestId('gate-selected').locator('[data-flights]')).toHaveAttribute('data-flights','0');
+    await expect(model.getByTestId('gate-selected').locator('img')).toHaveCount(0);
   }
 });
 
@@ -116,7 +121,7 @@ test('terminal switches reset the open gate, retain counts and share the read',a
   for(const terminal of ['T1','T2','T1','T2']){
     await page.locator('.terminal-selector').getByRole('tab',{name:terminal,exact:true}).click();
     await expect(model.getByTestId('gate-selected')).toHaveCount(0);
-    await expect(model.locator('.gate-leader-zones .gate-pillar')).toHaveCount(terminal==='T2'?8:0);
+    await expect(model.locator('.gate-leader-zones .gate-pillar')).toHaveCount(terminal==='T2'?2:0);
   }
   expect(requests).toHaveLength(1);
   await page.goBack();
