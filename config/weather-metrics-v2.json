@@ -1,0 +1,148 @@
+{
+  "version": 2,
+  "blender": "5.2.1 LTS",
+  "engine": "Cycles",
+  "samples": 64,
+  "colorManagement": "Standard",
+  "exposure": -0.35,
+  "transparent": true,
+  "quality": 88,
+  "maxBytesPerImage": 32768,
+  "meaning": "Topic icons; sun/cloud/snow selected only from explicit official condition. Numeric facts, grade and clocks remain HTML.",
+  "images": [
+    {
+      "path": "public/visuals/weather/v2/air-320.webp",
+      "bytes": 5316,
+      "sha256": "f1c0bfb41b2a66dd3755d2dad5b08a38ccfadbad32c7f23eb79b7d691517dc14",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/weather/v2/air-640.webp",
+      "bytes": 11696,
+      "sha256": "0318d7c66dec3dcf084ddd785e5c9a98ff61be3172b4ccd8d78410c6dac446e6",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "path": "public/visuals/weather/v2/cloud-320.webp",
+      "bytes": 4084,
+      "sha256": "b5908bbd1877fbcc56e625ff64c2fce846ab8cc057dde8d3afa8df03be114107",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/weather/v2/cloud-640.webp",
+      "bytes": 9162,
+      "sha256": "066ba385c13749350fc0af859c811ee9e164b085aadb09367fdff79aff0d0599",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "path": "public/visuals/weather/v2/humidity-320.webp",
+      "bytes": 4382,
+      "sha256": "9271ffc3f2dffb301a4df9a0daa3f04e396d2482cc8bde4a17afd6e9172f5b82",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/weather/v2/humidity-640.webp",
+      "bytes": 9802,
+      "sha256": "8cd254cad5a44c360339923fb566eeb03a349237a09598bdf61d580856bec9e9",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "path": "public/visuals/weather/v2/rain-320.webp",
+      "bytes": 5148,
+      "sha256": "7e35c14ae605f7107bc251ddac47318e1abdc8c888d16114c26893c81a410878",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/weather/v2/rain-640.webp",
+      "bytes": 11490,
+      "sha256": "bd73a34acba9e45792a59ca9d13b229b9da3c94726702b300b0df51c4601916e",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "path": "public/visuals/weather/v2/snow-320.webp",
+      "bytes": 4710,
+      "sha256": "bb868f76c4309c57436c0f442c6d7dfc7a5587bc9cc3a5398bbd4d954b90fd31",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/weather/v2/snow-640.webp",
+      "bytes": 10466,
+      "sha256": "a74155f52e02555672d9399986b45137e9d0d83f35209f68e72a2763b69a136a",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "path": "public/visuals/weather/v2/sun-320.webp",
+      "bytes": 6586,
+      "sha256": "9837feca4b75e5a1ef4946ab69ff5294709bb02ce4c862d06f9c9b631a8e4927",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/weather/v2/sun-640.webp",
+      "bytes": 14772,
+      "sha256": "246b22dfe997f932f3b69098ef360a2ac925597c9532176f47385eb9978471a6",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "path": "public/visuals/weather/v2/temperature-320.webp",
+      "bytes": 5380,
+      "sha256": "9de20245a636cffbacc584a293caa6c8bb74cb24775c3588a0cafdbc4f74f256",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/weather/v2/temperature-640.webp",
+      "bytes": 11962,
+      "sha256": "a28a82780d8396bb7862871a93a76b4eb71f167bb7b7a72f400510b6c23eb3d8",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "path": "public/visuals/weather/v2/wind-320.webp",
+      "bytes": 5900,
+      "sha256": "4b24559346c441b52424a3004aad737e0c793426bb446507a5dca4601b9c52e5",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/weather/v2/wind-640.webp",
+      "bytes": 13208,
+      "sha256": "53eb772a45b477b5f52aac137ce2b3c7b5aa401492f32c4176a917c8e5299959",
+      "width": 640,
+      "height": 480
+    }
+  ],
+  "reused": [
+    {
+      "source": "prep-symbols-worktree/public/visuals/prep-symbols/v2/temperature-320.webp",
+      "target": "public/visuals/weather/v2/temperature-320.webp",
+      "sha256": "9de20245a636cffbacc584a293caa6c8bb74cb24775c3588a0cafdbc4f74f256"
+    },
+    {
+      "source": "prep-symbols-worktree/public/visuals/prep-symbols/v2/temperature-640.webp",
+      "target": "public/visuals/weather/v2/temperature-640.webp",
+      "sha256": "a28a82780d8396bb7862871a93a76b4eb71f167bb7b7a72f400510b6c23eb3d8"
+    },
+    {
+      "source": "prep-symbols-worktree/public/visuals/prep-symbols/v2/rain-320.webp",
+      "target": "public/visuals/weather/v2/rain-320.webp",
+      "sha256": "7e35c14ae605f7107bc251ddac47318e1abdc8c888d16114c26893c81a410878"
+    },
+    {
+      "source": "prep-symbols-worktree/public/visuals/prep-symbols/v2/rain-640.webp",
+      "target": "public/visuals/weather/v2/rain-640.webp",
+      "sha256": "bd73a34acba9e45792a59ca9d13b229b9da3c94726702b300b0df51c4601916e"
+    }
+  ]
+}

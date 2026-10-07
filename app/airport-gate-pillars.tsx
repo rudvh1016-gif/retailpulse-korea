@@ -9,6 +9,7 @@ import { mapCopy } from '../lib/airport-departure-map-copy';
 import { kstStamp } from '../lib/demand-presentation';
 import './airport-models.css';
 import styles from './airport-gate-pillars.module.css';
+import compactStyles from './compact-disclosure.module.css';
 
 const copy = {
   title: { ko: '출발편이 가장 많은 게이트', en: 'Gates with the most departures', zh: '出发航班最多的登机口', ja: '出発便が最も多いゲート' },
@@ -49,6 +50,7 @@ function Pillar({ item, lang, onSelect, showBuilding = false, rank, selected }: 
 export default function AirportGatePillars({ lang, terminal, date }: { lang: Lang; terminal: 'all' | 'T1' | 'T2'; date: string }) {
   const loaded = useFlights(date);
   const [open, setOpen] = useState(false);
+  const [unverifiedOpen, setUnverifiedOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [zone, setZone] = useState('ALL');
   const [selected, setSelected] = useState<string | null>(null);
@@ -58,12 +60,12 @@ export default function AirportGatePillars({ lang, terminal, date }: { lang: Lan
   const gates = useMemo(() => rankMapGates(maps), [maps]);
   const leaders = leadingGates(gates);
   const max = leaders[0]?.flights ?? 0;
-  const unverifiedFlights = gates.filter(g => g.side === 'UNVERIFIED').reduce((sum, g) => sum + g.flights, 0);
   const locale = { ko: 'ko-KR', en: 'en-US', zh: 'zh-CN', ja: 'ja-JP' }[lang];
   const unit = { ko: '편', en: ' flights', zh: '班', ja: '便' }[lang];
   const query = search.trim().toLowerCase();
   const list = gates.filter(g => (zone === 'ALL' || g.side === zone || g.building === zone) && (!query || `${g.building} ${g.gate}`.toLowerCase().includes(query)));
   const flights = maps.flatMap(map => map.flights);
+  const unverified = flights.filter(flight => flight.side === 'UNVERIFIED');
   const selectedFlights = flights.filter(f => `${f.building}:${f.gate}` === selected);
   const picked = gates.find(g => g.key === selected);
   const select = (key: string) => { setSelected(selected === key ? null : key); };
@@ -79,7 +81,10 @@ export default function AirportGatePillars({ lang, terminal, date }: { lang: Lan
             return <section key={side} data-side={side}><div className="gate-zone-heading"><h5>{mapCopy.side[side][lang]}</h5>{rows.length > 1 && <small>{copy.leaders[lang]} {rows.length}{lang === 'ko' ? '곳' : lang === 'ja' ? 'か所' : lang === 'zh' ? '处' : ''}</small>}</div>{representative ? <div className="gate-pillar-row"><div data-overall-leader={representative.flights === max}><Pillar item={representative} lang={lang} showBuilding={terminal === 'all'} rank={representative.flights === max ? 'overall' : 'zone'} selected={selected === representative.key} onSelect={() => select(representative.key)}/></div></div> : <p>{copy.zero[lang]}</p>}</section>;
           })}</div></> : <p>{mapCopy.empty[lang]}</p>}
       </>}
-      {unverifiedFlights > 0 && <p className="prep-note" data-testid="gate-unverified-count">{mapCopy.side.UNVERIFIED[lang]}: {unverifiedFlights}{unit}</p>}
+      {unverified.length > 0 && <details className={`prep-evidence ${compactStyles.disclosure}`} data-testid="gate-unverified-details" onToggle={event => setUnverifiedOpen(event.currentTarget.open)}>
+        <summary style={{fontWeight:'var(--weight-regular)'}}>※ {mapCopy.side.UNVERIFIED[lang]} {unverified.length}{unit}<span className={compactStyles.toggle} aria-hidden="true"/></summary>
+        {unverifiedOpen && <ul>{unverified.map(flight => <li key={`${flight.day}:${flight.id}`}>{flight.flightNumber} · {flight.building} · {flight.gate ?? copy.unknown[lang]} · {flight.scheduledAt.slice(11,16)} KST</li>)}</ul>}
+      </details>}
       <details className={styles.list} open={open} onToggle={event => setOpen(event.currentTarget.open)} data-testid="gate-all-list"><summary>{copy.all[lang]} ({gates.length})</summary>
         {open && <>{!loaded.payload.truncated && leaders.length > 0 && <p className="gate-leader-names">{copy.most[lang]} · {mapCopy.gate[lang]} {leaders.map(item => terminal === 'all' ? `${item.building} ${item.gate}` : item.gate).join(' · ')}{leaders.length > 1 ? ` (${copy.leaders[lang]})` : ''}</p>}<p className="prep-note">{copy.note[lang]}</p><div className="gate-search"><label>{copy.search[lang]}<svg className="gate-search-icon" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="5"/><path d="m12 12 5 5"/></svg><input ref={searchRef} type="search" name="gate-search" placeholder={copy.placeholder[lang]} autoComplete="off" value={search} onChange={e => { setSearch(e.target.value); setVisible(20); }}/></label>
           {search && <button type="button" className="gate-clear" onClick={() => {setSearch('');setVisible(20);searchRef.current?.focus();}}>{copy.clear[lang]}</button>}</div>

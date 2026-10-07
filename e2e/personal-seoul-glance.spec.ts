@@ -39,7 +39,7 @@ test('Seoul deep links retain every area at-a-glance explanation after briefing 
   await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
   const glance = page.locator('.current-brief');
   await expect(glance).toBeVisible();
-  await expect(glance).toContainText('현재 추정 인구');
+  await expect(glance.locator('.demand-metric-label')).toHaveText('최근 관측 인구');
   await expect(glance).toContainText('23,000–25,000');
 
   await page.goto('/ko/hongdae');

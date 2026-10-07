@@ -1,0 +1,12 @@
+@import './weather-scenes.css';
+@import './weather-unified.css';
+
+.context-environment .weather-scene-observation h4 { color: #000; font-size: .9375rem; font-weight: var(--weight-strong); line-height: 1.8; }
+.context-environment .weather-scene-values li { font-size: .9375rem; line-height: 1.8; }
+.context-environment .weather-scene-details p { font-size: 11px; }
+.signal-weather .weather-scene-values li { font-size: 16px; font-weight: var(--weight-regular); line-height: 1.4; }
+.signal-weather .weather-scene-guidance { font-size: 13px; font-weight: var(--weight-regular); line-height: 1.5; }
+.signal-weather .signal-row-label h4 { color: #000; }
+@media (max-width: 760px) {
+  .signal-weather .weather-scene-values li { font-size: 15px; }
+}

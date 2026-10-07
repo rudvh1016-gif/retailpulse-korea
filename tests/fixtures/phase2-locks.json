@@ -14,14 +14,14 @@
     "app/api/live/flights/route.ts": "fb7bbfc1132359dceb4d315997eaf26bfc5b27d3f03f2bb9b8be4fe46718c1bd",
     "app/api/live/predictions/route.ts": "b82f003bd3d77c293a379c4dbd0bf5e2aa449b19e54a65119ef2e4f291cdfced",
     "app/api/live/summary/route.ts": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8",
-    "app/area-demand-card.tsx": "9f480850246b31fbb8cec5f75fb9b69eb382cb6e504ebd6c536cb43793384f4c",
+    "app/area-demand-card.tsx": "78254205092521a36a61fe35aa3ff57c8d91ef1921199cad353c0792dc251dab",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
     "app/layout.tsx": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
-    "app/live-signals.tsx": "eaf2709b09abd8b88996aea680ae07df1745277f04849407e9d4ebd1aae45509",
+    "app/live-signals.tsx": "b164e9c231b76a53b2efdf3a9576b6516e5c184bf0be0376f30fb4621ee31856",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
-    "app/operational-context.tsx": "6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83",
+    "app/operational-context.tsx": "d2fcba67493abf4fa0ba40d4fc98096f9b2860af6d959102850449eab323641a",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
@@ -709,6 +709,34 @@
         "approvedOG": "c0a649360ad8b28b74a8d338e2d3404e2fb76bd536740b3ffa7d38747cc701ac",
         "approvedIcons": "636646ecdf879831fc2ba4a9c9fbcf3cd9f98d8e0e170e38f70e87ef1dffb2ac",
         "approvedCombined": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41"
+      }
+    ]
+  },
+  "ownerApprovedAllowedVisualMetricsIntegration20261007": {
+    "reason": "Owner requested one review PR for separable Seoul weather292/298, commercial297, airport queue299 and chart/copy296. Exclude original291 tourism/subway and twice-rejected public actions; preserve current308 header, three gate images and all61 enforced files. Exact hash update only for the three already owner-authorized modified protected sources; enforcement test unchanged.",
+    "sourceMain": "f7a94d6e4599de958713d3d254e61972d1e0b94f",
+    "sources": {
+      "292": "ac536ebc8c148ccf0264f00868851928250cbbc9",
+      "296": "504c9d9884b0411169ad507199457a8e30bf4a1e",
+      "297": "67cbccd5d64658bbe2622131c823139490786a94",
+      "298": "0ec00d8f29c58618c3eaf72bf2c359fb6689c7df",
+      "299": "4773fb47934a32c20697773ae73f707b2e809ca2"
+    },
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "eaf2709b09abd8b88996aea680ae07df1745277f04849407e9d4ebd1aae45509",
+        "approved": "b164e9c231b76a53b2efdf3a9576b6516e5c184bf0be0376f30fb4621ee31856"
+      },
+      {
+        "file": "app/operational-context.tsx",
+        "previous": "6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83",
+        "approved": "d2fcba67493abf4fa0ba40d4fc98096f9b2860af6d959102850449eab323641a"
+      },
+      {
+        "file": "app/area-demand-card.tsx",
+        "previous": "9f480850246b31fbb8cec5f75fb9b69eb382cb6e504ebd6c536cb43793384f4c",
+        "approved": "78254205092521a36a61fe35aa3ff57c8d91ef1921199cad353c0792dc251dab"
       }
     ]
   }
