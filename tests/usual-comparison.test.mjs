@@ -8,7 +8,7 @@ import {
   compareWithUsual,
   holidayDates,
   holidayMonthsFor,
-  usualBaselineStatement,
+  usualBaselineStatements,
   usualHolidaySql,
 } from "../lib/usual-comparison.ts";
 
@@ -41,8 +41,9 @@ test("every statement is an index search on the real schema", () => {
   const scans = (sql, binds) => db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all(...binds).map((row) => String(row.detail))
     .filter((detail) => /^SCAN (seoul_realtime_area|holiday_months)\b/.test(detail));
   assert.deepEqual(scans(USUAL_LATEST_SQL, ["myeongdong"]), []);
-  const baseline = usualBaselineStatement("myeongdong", NOW);
-  assert.deepEqual(scans(baseline.sql, baseline.binds), []);
+  for (const baseline of usualBaselineStatements("myeongdong", NOW)) {
+    assert.deepEqual(scans(baseline.sql, baseline.binds), []);
+  }
   const months = holidayMonthsFor(NOW);
   assert.deepEqual(scans(usualHolidaySql(months.length), months), []);
 });
@@ -125,8 +126,8 @@ test("the statements return the readings the comparison needs from real rows", (
     insert.run(`r${id += 1}`, 20_000, 22_000, iso, iso);
   }
   const current = db.prepare(USUAL_LATEST_SQL).get("myeongdong");
-  const baseline = usualBaselineStatement("myeongdong", current.observedAt);
-  const candidates = db.prepare(baseline.sql).all(...baseline.binds);
+  const baselines = usualBaselineStatements("myeongdong", current.observedAt);
+  const candidates = baselines.flatMap(({ sql, binds }) => db.prepare(sql).all(...binds));
   assert.ok(candidates.length >= 8 && candidates.length <= 32, `bounded: ${candidates.length} rows`);
   const result = compareWithUsual({ area: "myeongdong", current, candidates, holidays: new Set(), todayKst: "2026-09-28", generatedAt: NOW });
   assert.equal(result.basis, "USUAL");

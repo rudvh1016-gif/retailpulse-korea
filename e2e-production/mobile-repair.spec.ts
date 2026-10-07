@@ -7,7 +7,8 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   await page.setViewportSize({ width, height: 844 });
   await page.goto('/ko');
   await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
-  await expect(page.locator('.demand-home')).toBeVisible();
+  await expect(page.locator('.airport-today')).toBeVisible();
+  await expect(page.getByTestId('area-demand-card')).toHaveCount(0);
   await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
   await page.screenshot({ path: info.outputPath(`public-${width}.png`) });
   await expect(page.getByRole('button',{name:'내 브리핑 설정',exact:true})).toHaveCount(0);

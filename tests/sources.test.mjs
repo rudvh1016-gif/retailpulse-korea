@@ -547,6 +547,32 @@ test("Seoul realtime collector uses one integrated request per area and isolates
   assert.doesNotMatch(commercialHealth.detail, /fixture/);
 });
 
+test("Seoul population empty data and malformed schema stay distinct without repeating successful area requests", async (context) => {
+  const { database, databasePath } = openDatabase("seoul-empty-schema");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+  for (const [value, expectedClass] of [[[], "NO_DATA"], ["malformed", "SCHEMA"], [[null], "SCHEMA"]]) {
+    let calls = 0;
+    globalThis.fetch = async (input) => {
+      calls += 1;
+      const fixture = seoulIntegratedFixture();
+      const poi = String(input).split("/").at(-1);
+      fixture.CITYDATA.AREA_CD = poi;
+      fixture.CITYDATA.LIVE_PPLTN_STTS = value;
+      return Response.json(fixture);
+    };
+    const result = await collectSeoulRealtime({ DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: "fixture" });
+    assert.equal(result.status, "PARTIAL", "commercial data from the same response still succeeds");
+    assert.match(result.detail, /requestedAt=\d{4}-\d{2}-\d{2}T/);
+    assert.match(result.detail, new RegExp(`failureClass=${expectedClass}`));
+    assert.equal(calls, 4, "each area response is consumed once; parser failures do not re-fetch it");
+    const population = database.prepare("SELECT status, detail FROM source_health WHERE source_id = ?").get("SEOUL_CITYDATA_PPLTN");
+    assert.equal(population.status, "ERROR");
+    assert.match(population.detail, new RegExp(`failureClass=${expectedClass}`));
+    assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_realtime_area").get().count, 0);
+  }
+});
+
 test("estimated sales collector probes quarters, sweeps pages and filters client-side", async (context) => {
   const { database, databasePath } = openDatabase("sales");
   const originalFetch = globalThis.fetch;

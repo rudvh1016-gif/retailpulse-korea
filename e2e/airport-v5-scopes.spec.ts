@@ -9,20 +9,22 @@ for(const width of [360,390,430,1280])for(const lang of ['ko','en','zh','ja'] as
  await page.clock.install({time:new Date('2026-10-04T03:00:00Z')});
  await page.route('**/api/live/summary*',r=>r.fulfill({json:SUMMARY_FIXTURE}));
  await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',basis:'OFFICIAL_DEPARTURE_SCHEDULE',flights,truncated:false,retrievedAt:base.retrievedAt}}));
- const requested:string[]=[];page.on('request',r=>{if(r.url().includes('/airport-models/v8/'))requested.push(r.url());});
+ const requested:string[]=[];page.on('request',r=>{if(r.url().includes('/airport-models/v14/'))requested.push(r.url());});
  await page.goto(`/${lang}/airport`);
  const tabs=page.locator('.airport-view>.terminal-selector button');
  const image=page.locator('.airport-hero .airport-concept-picture img').first();
- await expect(image).toHaveAttribute('src','/airport-models/v8/OVERVIEW_day.webp');
- for(const scope of ['T1','T2','T1','all'] as const){await tabs.nth(scope==='all'?0:scope==='T1'?1:2).click();await expect(image).toHaveAttribute('src',`/airport-models/v8/${scope==='all'?'OVERVIEW':scope}_day.webp`);}
- const box=await image.boundingBox();expect(box).not.toBeNull();if(width<=430)expect(box!.height).toBeLessThan(260);
+ await expect(image).toHaveAttribute('src','/airport-models/v14/OVERVIEW_LANDSCAPE_day.webp');
+ for(const scope of ['T1','T2','T1','all'] as const){await tabs.nth(scope==='all'?0:scope==='T1'?1:2).click();await expect(image).toHaveAttribute('src',`/airport-models/v14/${scope==='all'?'OVERVIEW_LANDSCAPE':scope}_day.webp`);}
+ await image.scrollIntoViewIfNeeded();await expect.poll(()=>image.evaluate((el:HTMLImageElement)=>el.complete&&el.naturalWidth>0)).toBe(true);
+ await expect.poll(()=>image.evaluate((el:HTMLImageElement)=>el.currentSrc)).toMatch(new RegExp(`/v14/OVERVIEW_${width<=600?'MOBILE':'LANDSCAPE'}_day-(390|900)\\.webp$`));
+ const box=await image.boundingBox();expect(box).not.toBeNull();expect(box!.height/box!.width).toBeCloseTo(width<=600?1720/1200:1300/2400,2);
  const dimensions=await image.evaluate(el=>{const img=el as HTMLImageElement;const c=img.closest('.airport-concept-picture')!.getBoundingClientRect();const i=img.getBoundingClientRect();return{top:i.top-c.top,bottom:c.bottom-i.bottom,width:img.naturalWidth,height:img.naturalHeight};});expect(dimensions.top).toBeGreaterThanOrEqual(-1);expect(dimensions.bottom).toBeGreaterThanOrEqual(-1);
- await tabs.nth(3).click();const conc=page.getByTestId('airport-concourse');await expect(conc).toBeVisible();await expect(conc.getByTestId('concourse-flight-count')).toHaveText('1');await expect(conc.locator('[data-building="CONCOURSE"] img')).toHaveAttribute('src','/airport-models/v8/CONCOURSE_day.webp');await expect(conc.getByTestId('concourse-unsupported')).toBeVisible();await expect(page.locator('.airport-current-brief')).toHaveCount(0);
+ await tabs.nth(3).click();const conc=page.getByTestId('airport-concourse');await expect(conc).toBeVisible();await expect(conc.getByTestId('concourse-flight-count')).toHaveText('1');await expect(conc.locator('[data-building="CONCOURSE"] img')).toHaveAttribute('src','/airport-models/v14/CONCOURSE_day.webp');await expect(conc.getByTestId('concourse-unsupported')).toBeVisible();await expect(page.locator('.airport-current-brief')).toHaveCount(0);
   await conc.getByTestId('concourse-flight-list').locator(':scope > summary').click();await conc.locator('input[type="search"]').fill('KE2');await conc.locator('.airport-flight-hour > summary').click();await expect(conc.getByTestId('concourse-flight-list')).toContainText('KE2');await conc.locator('input[type="search"]').fill('KE1');await expect(conc.locator('.airport-flight-hour')).toHaveCount(0);
   await expect(page).toHaveURL(/building=CONCOURSE/);await page.reload();await expect(page.getByTestId('airport-concourse')).toBeVisible();
-  await tabs.nth(1).click();await expect(page.getByTestId('airport-concourse')).toHaveCount(0);await expect(image).toHaveAttribute('src','/airport-models/v8/T1_day.webp');
+  await tabs.nth(1).click();await expect(page.getByTestId('airport-concourse')).toHaveCount(0);await expect(image).toHaveAttribute('src','/airport-models/v14/T1_day.webp');
   await page.goBack();await expect(page.getByTestId('airport-concourse')).toBeVisible();await page.goForward();await expect(page.getByTestId('airport-concourse')).toHaveCount(0);
- await page.clock.setSystemTime(new Date('2026-10-04T09:00:00Z'));await page.clock.runFor(60_001);await expect(image).toHaveAttribute('src','/airport-models/v8/T1_night.webp');
+ await page.clock.setSystemTime(new Date('2026-10-04T09:00:00Z'));await page.clock.runFor(60_001);await expect(image).toHaveAttribute('src','/airport-models/v14/T1_night.webp');
  expect(requested.some(url=>url.includes('OVERVIEW_STACK'))).toBe(false);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  if(lang==='ko')await page.locator('.airport-flow').first().screenshot({path:`outputs/v5-${width}-T1-night.png`});
 });
@@ -31,10 +33,10 @@ test('all-building country totals reconcile; physical building switches and time
  const summary={...SUMMARY_FIXTURE,airport:{...SUMMARY_FIXTURE.airport,sides:airportSides(date,'TODAY',[],flights,[],false,false)}};
  await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));let reads=0;
  await page.route('**/api/live/flights*',r=>{reads++;return r.fulfill({json:{mode:'live-flights',basis:'OFFICIAL_DEPARTURE_SCHEDULE',flights,truncated:false,retrievedAt:base.retrievedAt}});});
- await page.goto('/ko/airport');const overview=page.getByTestId('airport-departure-overview');await overview.scrollIntoViewIfNeeded();const map=overview.getByTestId('departure-map');await expect(map).toBeVisible();
+ await page.goto('/ko/airport');const overview=page.getByTestId('airport-departure-overview');await overview.scrollIntoViewIfNeeded();await overview.getByTestId('departure-map-section').locator(':scope > summary').click();const map=overview.getByTestId('departure-map');await expect(map).toBeVisible();
  const zones=page.getByTestId('map-zone-countries');
  const total=()=>zones.locator('[data-side][data-total]').evaluateAll(nodes=>nodes.reduce((s,n)=>s+Number(n.getAttribute('data-total')),0));
- await expect.poll(total).toBe(4);await expect(page.getByTestId('airport-departure-model-slot').locator('[data-building="all"] img')).toHaveAttribute('src',/OVERVIEW_(day|night)\.webp$/);
+ await expect.poll(total).toBe(4);await expect(page.getByTestId('airport-departure-model-slot').locator('[data-building="all"] img')).toHaveAttribute('src',/OVERVIEW_LANDSCAPE_(day|night)\.webp$/);
  for(const [index,scope]of [[1,'T1'],[2,'T2'],[3,'CONCOURSE'],[0,'all']] as const){await map.locator('.terminal-selector button').nth(index).click();await expect.poll(total).toBe(scope==='all'?4:1);await expect(page.getByTestId('airport-map-model-scope')).toHaveAttribute('data-terminal',scope);}
  await map.locator('[data-preset="CUSTOM"]').click();await map.getByTestId('map-from').selectOption('11');await map.getByTestId('map-to').selectOption('12');await expect.poll(total).toBe(0);
  expect(reads).toBe(1);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);

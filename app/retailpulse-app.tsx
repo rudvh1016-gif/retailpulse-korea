@@ -42,7 +42,6 @@ import { AirportDepartureOverview } from "./airport-departure-overview";
 import { AirportConcourse } from './airport-concourse';
 import { AirportTaxRefundGuide } from './airport-tax-refund-guide';
 import { AirportDeparturePreparation } from './airport-departure-preparation';
-import { departurePreparationCopy } from './airport-departure-preparation-copy';
 import './airport-tax-refund-guide.css';
 import { sidesCopy } from "../lib/airport-sides-copy";
 import { saveBusinessPreferences, useBusinessPreferences } from "./business-preferences";
@@ -502,7 +501,6 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         )}
 
         {view === "airport" && (
-          <>
           <AirportView
             todayAnswer={todayAnswer}
             industry={industry}
@@ -517,8 +515,6 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             date={serviceDate}
             setDate={changeDate}
           />
-          {homeVisible && <section className="home-seoul-secondary" aria-labelledby="home-seoul-title"><div className="demand-section-head"><h2 id="home-seoul-title">{t.today}</h2></div><HomeTodayBrief lang={lang} selected={selected} onSelect={setSelected} date={serviceDate} includeAirport={false} /></section>}
-          </>
         )}
         {view === "business" && <BusinessView lang={lang} selected={selected} setSelected={selectArea} industry={industry} setIndustry={setIndustry} date={serviceDate} setDate={changeDate} setProOpen={setProOpen} />}
         {view === "predictions" && <PredictionView lang={lang} area={selected} onArea={selectArea} />}
@@ -625,7 +621,6 @@ function AirportView({
         </div>
       </div>
 
-      {(concourse||section === "now")&&<nav className="airport-purpose-links" aria-label={departurePreparationCopy[lang].title}><a href="#airport-departure-preparation" onClick={()=>{const guide=document.getElementById('airport-departure-preparation');if(guide instanceof HTMLDetailsElement)guide.open=true;}}>{departurePreparationCopy[lang].title}</a><a href="#airport-data-flow">{departurePreparationCopy[lang].flow}</a></nav>}
       {(concourse||section === "now")&&<AirportDeparturePreparation lang={lang}/>}
       <div id="airport-data-flow" className="terminal-selector" role="tablist" aria-label="Terminal">
         {(["all", "T1", "T2"] as Terminal[]).map((item) => <button key={item} className={!concourse&&terminal === item ? "active" : ""} onClick={() => setTerminal(item)} role="tab" aria-selected={!concourse&&terminal === item}>{item === "all" ? <><span>{localText(lang, { ko: "전체", en: "ALL", zh: "全部", ja: "全体" })}</span><small>T1·T2</small></> : item}</button>)}

@@ -1,0 +1,14 @@
+details.guide { padding: 0; border: 0; }
+details.guide > summary.entry { display: inline-grid; grid-template-columns: minmax(0,1fr) 80px; width: min(100%,420px); align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--ink); border-radius: 4px; background: var(--paper); color: var(--ink); list-style: none; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: #e8e8e8; }
+.entry::-webkit-details-marker { display: none; }
+.copy { display: grid; gap: 4px; min-width: 0; }
+.buttonLabel { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.title { font-size: var(--type-body); line-height: 1.4; font-weight: var(--weight-strong); }
+.actionText { font-size: var(--type-body); line-height: 1.45; font-weight: var(--weight-regular); }
+.indicator { width: 18px; height: 18px; flex: 0 0 18px; }
+.guide[open] .indicator { transform: rotate(180deg); }
+.scene { display: block; min-width: 0; aspect-ratio: 4 / 3; }
+.scene img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 60%; }
+details.guide > summary.entry:hover { background: #f4f4f4; }
+details.guide > summary.entry:active { background: #f8f8f8; }
+details.guide > summary.entry:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }

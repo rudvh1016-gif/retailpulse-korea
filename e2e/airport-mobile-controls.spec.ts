@@ -25,6 +25,7 @@ for (const width of [320,390,430]) test(`airport mobile selectors and gate text 
   const overview=page.getByTestId('airport-departure-overview');
   await overview.scrollIntoViewIfNeeded();
   const map=overview.getByTestId('departure-map');
+  await overview.getByTestId('departure-map-section').locator(':scope > summary').click();
   const buildingTabs=map.locator(':scope > .terminal-selector button');
   await expect(buildingTabs.first()).toContainText('T1·T2·탑승동');
   await expect(buildingTabs.last()).toHaveText('탑승동');
@@ -77,6 +78,7 @@ for (const lang of ['en','zh','ja'] as const) test(`building labels remain conta
   await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',basis:'OFFICIAL_DEPARTURE_SCHEDULE',flights,truncated:false,retrievedAt:base.retrievedAt}}));
   await page.goto(`/${lang}/airport`);
   const map=page.getByTestId('airport-departure-overview').getByTestId('departure-map');
+  await page.getByTestId('airport-departure-overview').getByTestId('departure-map-section').locator(':scope > summary').click();
   await expect(map.locator(':scope > .terminal-selector button').last()).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });

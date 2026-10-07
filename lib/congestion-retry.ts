@@ -82,6 +82,22 @@ export function parseCollectorResults(log: string): ResultLine[] {
   return results;
 }
 
+/** Reuse the existing A5 job ladder only for a classified transient failure.
+ * PARTIAL is repaired by the D1-targeted :53 window; a healthy day is not
+ * repeated here. Throttling/deferred cooldowns never earn a fresh runner.
+ */
+export function shouldRetryForecast(log: string): boolean {
+  const result = parseCollectorResults(log).filter((item) =>
+    item.source === "airport_passenger_forecast" || item.source === "airport_passenger_forecast_recovery",
+  ).at(-1);
+  if (result?.status !== "ERROR" || !result.detail
+    || result.detail.includes("retryDeferred=true") || result.detail.includes("row:")) return false;
+  const failures = [...result.detail.matchAll(/failureClass=([A-Za-z0-9_]+)(.*?)(?=failureClass=|$)/g)];
+  return failures.length > 0 && failures.every(([, kind, context]) =>
+    kind === "NETWORK" || kind === "TIMEOUT" || (kind === "HTTP" && /httpStatus=5\d\d\b/.test(context)),
+  );
+}
+
 /**
  * Is this failure the one a different egress address actually fixes?
  *
