@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { preload } from "react-dom";
 import { notFound } from "next/navigation";
 import RetailPulseApp from "../../retailpulse-app";
-import { shareAnswerText } from "../../../lib/today-answer";
 import { loadTodayAnswer } from "../../../lib/today-answer-server";
 import { buildMetadata, pageStructuredData, seoLocales, standaloneSeoSlugs, type SeoLocale, type SeoSlug } from "../../seo-config";
 
@@ -27,17 +26,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { locale, slug } = await params;
   if (!seoLocales.includes(locale as SeoLocale) || !standaloneSeoSlugs.includes(slug as typeof standaloneSeoSlugs[number])) return {};
-  const metadata = buildMetadata(locale as SeoLocale, slug as SeoSlug);
-  // A shared link previews the page's answer with its date. The search
-  // description (<meta name="description">) stays the static one.
-  const sharePage = slug === "airport" || areaSlugs.includes(slug as typeof areaSlugs[number]) ? slug as "airport" | typeof areaSlugs[number] : null;
-  const share = sharePage ? shareAnswerText(await loadTodayAnswer(), locale as SeoLocale, sharePage) : null;
-  if (!share) return metadata;
-  return {
-    ...metadata,
-    openGraph: { ...metadata.openGraph, description: share },
-    twitter: { ...metadata.twitter, description: share },
-  };
+  return buildMetadata(locale as SeoLocale, slug as SeoSlug);
 }
 
 export default async function LocalePage({ params }: { params: Promise<{ locale: string; slug: string }> }) {

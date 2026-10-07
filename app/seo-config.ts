@@ -21,11 +21,13 @@ function normalizeOrigin(value: string | undefined): string {
 export const siteOrigin = normalizeOrigin(configuredOrigin);
 
 /**
- * One static social-preview image for every page. It is a committed PNG
- * rendered from the white-first wordmark card (`public/og-image.png`), so a
- * share preview never depends on a runtime render or a third-party host.
+ * The approved airplane/runway share image has a versioned URL so social
+ * crawlers can fetch the new card without reusing the previous image cache.
  */
-export const socialImage = { url: "/og-image.png", width: 1200, height: 630, alt: "KORETAIL — Retail Demand Signals for Korea" } as const;
+export const socialImage = { url: `${siteOrigin}/og-airport-b-20261004.jpg`, width: 1200, height: 630, type: "image/jpeg", alt: "KORETAIL" } as const;
+// An empty string makes vinext copy the long SEO description into share tags.
+// One space renders an intentionally blank card description while SEO stays intact.
+export const shareDescription = " ";
 export const seoLocales = ["ko", "en", "zh", "ja"] as const;
 export type SeoLocale = typeof seoLocales[number];
 /**
@@ -139,11 +141,11 @@ export function buildMetadata(locale: SeoLocale, slug?: SeoSlug, tourismArea: To
     description,
     alternates: { canonical: path, languages: { ...equivalents, "x-default": seoPath("en", slug, tourismArea) } },
     openGraph: {
-      title, description, url: path, siteName: "KORETAIL", type: "website",
+      title: "KORETAIL", description: shareDescription, url: path, siteName: "KORETAIL", type: "website",
       locale: locale === "ko" ? "ko_KR" : locale === "zh" ? "zh_CN" : locale === "ja" ? "ja_JP" : "en_US",
       images: [socialImage],
     },
-    twitter: { card: "summary_large_image", title, description, images: [socialImage.url] },
+    twitter: { card: "summary_large_image", title: "KORETAIL", description: shareDescription, images: [socialImage.url] },
   };
 }
 

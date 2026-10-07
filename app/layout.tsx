@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
 import "./airport-date-calendar.css";
-import { isStagingDeployment, pageTitle, pageDescription, siteOrigin, socialImage } from "./seo-config";
+import { isStagingDeployment, pageTitle, pageDescription, siteOrigin, socialImage, shareDescription } from "./seo-config";
 
 export const metadata: Metadata = {
   verification: {
@@ -27,12 +27,11 @@ export const metadata: Metadata = {
     : { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } },
   alternates: { canonical: "/ko", languages: { "ko-KR": "/ko", en: "/en", "zh-CN": "/zh", "ja-JP": "/ja", "x-default": "/en" } },
   openGraph: {
-    title: pageTitle('ko'),
-    description: pageDescription('ko'),
+    title: "KORETAIL", description: shareDescription,
     url: "/ko", siteName: "KORETAIL", type: "website", locale: "ko_KR",
     images: [socialImage],
   },
-  twitter: { card: "summary_large_image", title: pageTitle('ko'), description: pageDescription('ko'), images: [socialImage.url] },
+  twitter: { card: "summary_large_image", title: "KORETAIL", description: shareDescription, images: [socialImage.url] },
 };
 
 // White-first: the browser chrome and PWA splash match the page, which is

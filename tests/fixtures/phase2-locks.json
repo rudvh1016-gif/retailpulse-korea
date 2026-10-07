@@ -1,7 +1,7 @@
 {
   "base": "65907c971b5e279da48525875df6c972ab998c64",
   "protectedFiles": {
-    "app/[locale]/[slug]/page.tsx": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1",
+    "app/[locale]/[slug]/page.tsx": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545",
     "app/[locale]/not-found.tsx": "620e62c747a4a0d4b8af1558492c74e961f2a4f0d55caa2c960c508395a41ff0",
     "app/[locale]/page.tsx": "861f9697b315e6b0b54e1663c4089f4a6a6330d1298acc3066e0e657b6cafb98",
     "app/[locale]/tourism-desk/[area]/page.tsx": "b74c40a03d7ff4ec57a8314f4c11825467212d48634bebf057d078d3ae360b35",
@@ -18,7 +18,7 @@
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
-    "app/layout.tsx": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
+    "app/layout.tsx": "c0a649360ad8b28b74a8d338e2d3404e2fb76bd536740b3ffa7d38747cc701ac",
     "app/live-signals.tsx": "eaf2709b09abd8b88996aea680ae07df1745277f04849407e9d4ebd1aae45509",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83",
@@ -26,10 +26,10 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "4a9dc15ca8fa65f56289c22039bc4c426bece94df9800744924c7b43acb9b020",
+    "app/retailpulse-app.tsx": "f9a332c11c4348c4aa4d6414a4e8dcc372b8cceb053cd18d4ede07b945eed34a",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
-    "app/seo-config.ts": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
+    "app/seo-config.ts": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b",
     "app/site-usage-guide.tsx": "34ac91ba8e1d48849f766622bca163353dc1c9a09439b54aadb28c1d7b882460",
     "app/sitemap.ts": "ab2329b032b269477ffad4b69258004b1b577b323735eccbf92518cbec258880",
     "app/source-status.tsx": "a4832ec2982ec76631341f8a8aea477d98dd45128234ca7f6ee1002ea16196dd",
@@ -408,6 +408,83 @@
       }
     ]
   },
+  "ownerApprovedOgShare20261004": {
+    "reason": "Scoped owner approval for the airplane/runway OG update: refresh only four protected share-metadata source SHA-256 baselines. The protected path list, historical approval records, active tests, typography and product logic remain unchanged.",
+    "changes": [
+      {
+        "file": "app/[locale]/[slug]/page.tsx",
+        "previous": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1",
+        "approved": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545"
+      },
+      {
+        "file": "app/layout.tsx",
+        "previous": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
+        "approved": "c0a649360ad8b28b74a8d338e2d3404e2fb76bd536740b3ffa7d38747cc701ac"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "3aa1492a086bf26f053c3885976e9b24f716bbe617e4fcf0e68ac2f3fcc261c1",
+        "approved": "4433b2d0689f30cc6077ff3b0a74e466eab55ae4dfedfd09a48eb4141eb8a04b"
+      },
+      {
+        "file": "app/seo-config.ts",
+        "previous": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
+        "approved": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b"
+      }
+    ]
+  },
+  "ogShareMainReconciliation20261005": {
+    "reason": "Local conflict repair within the previously approved four-path OG share scope. Preserve the existing main All (T1+T2) label and all historical owner records; reconcile the source hash after applying only the original OG metadata edits. This record is provenance for the delegated local repair, not an approval to push, merge or deploy.",
+    "mainSha": "28390c5794f9f753025487e1ecf9ff60c64de5c4",
+    "ogHeadSha": "dd89db38499aec81293404b53231533365136778",
+    "originalScopeRecord": "ownerApprovedOgShare20261004",
+    "preservedMainScopeRecord": "ownerAirportMobileControls20261004",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "mainApproved": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+        "ogApproved": "4433b2d0689f30cc6077ff3b0a74e466eab55ae4dfedfd09a48eb4141eb8a04b",
+        "reconciled": "8f03e234b74699b74d8d86d978bb98deee8a9658a1dfdf713ee188af72d0fbef"
+      }
+    ]
+  },
+  "ogShareMainReconciliation20261006": {
+    "reason": "Local preparation of the same PR266 OG scope against current main. All four metadata files and the approved image are byte-identical to the previously tested local repair. Preserve the new Seoul chart lock and every main/OG historical record. This provenance record does not authorize public merge or deployment.",
+    "mainSha": "565c0341cfd2cea1ff9d2eaccdd68283f7179701",
+    "ogHeadSha": "dd89db38499aec81293404b53231533365136778",
+    "originalScopeRecord": "ownerApprovedOgShare20261004",
+    "preservedMainScopeRecord": "ownerSeoulConnectedRangeChart20261006",
+    "changes": [
+      {
+        "file": "app/[locale]/[slug]/page.tsx",
+        "mainApproved": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1",
+        "ogApproved": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545",
+        "reconciled": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545",
+        "identicalToPreviousRepair": true
+      },
+      {
+        "file": "app/layout.tsx",
+        "mainApproved": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
+        "ogApproved": "c0a649360ad8b28b74a8d338e2d3404e2fb76bd536740b3ffa7d38747cc701ac",
+        "reconciled": "c0a649360ad8b28b74a8d338e2d3404e2fb76bd536740b3ffa7d38747cc701ac",
+        "identicalToPreviousRepair": true
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "mainApproved": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+        "ogApproved": "4433b2d0689f30cc6077ff3b0a74e466eab55ae4dfedfd09a48eb4141eb8a04b",
+        "reconciled": "8f03e234b74699b74d8d86d978bb98deee8a9658a1dfdf713ee188af72d0fbef",
+        "identicalToPreviousRepair": true
+      },
+      {
+        "file": "app/seo-config.ts",
+        "mainApproved": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
+        "ogApproved": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b",
+        "reconciled": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b",
+        "identicalToPreviousRepair": true
+      }
+    ]
+  },
   "ownerMonthlyRecords20261006": {
     "reason": "Owner requested completing the KORETAIL site implementation and the separate monthly-records view. The lead delegation explicitly authorizes latest-main integration, the normal protected baseline record, commit/push/draft PR and required CI for the existing local monthly-records implementation. Scope is only the /forecast monthly stored-observation view and /api/live/summary?view=records read branch. Refresh exactly app/retailpulse-app.tsx and app/api/live/summary/route.ts. Preserve existing sources, min/max truth, prior approval history, all protected file membership, cron values and active enforcement assertions. No blocked PR267/276/278/288/291 content is included. No merge, deployment, provider activation or new scheduler is authorized by this record.",
     "changes": [
@@ -481,6 +558,51 @@
         "original": "436a16217bf98d16db719177469279137d5f356e7912e6d4ed1398a2f424c72e",
         "predecessor": "32b378d167bb9579ad48e742e83ef8523b7959ddbcaef25b524a103feaa09d56",
         "combined": "4a9dc15ca8fa65f56289c22039bc4c426bece94df9800744924c7b43acb9b020"
+      }
+    ]
+  },
+  "approvedOriginalPr266SequentialIntegration20261007": {
+    "reason": "Normal combination of existing approved original PR scopes for the user-requested sequence 284 -> 288 -> 303 -> 266 with published main 23ae0818. Preserve every prior approval record and all 53 active protected paths, base and cron locks. Hashes describe only the actual combination of these already-approved Git refs. No new design, core priority/header-card proposal, protection removal, assertion bypass, public merge or deployment.",
+    "sourceRefs": [
+      "23ae0818cf172e7c28a137fe9831c0d9628549f1",
+      "84fc61c48a2c99a7d5ecbe302e9d5430ff19b4c5",
+      "d776c8f47343043e65eb3e56f4c11f5e797e2b4e"
+    ],
+    "changes": [
+      {
+        "file": "app/[locale]/[slug]/page.tsx",
+        "published": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1",
+        "original": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545",
+        "predecessor": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1",
+        "combined": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545"
+      },
+      {
+        "file": "app/api/live/summary/route.ts",
+        "published": "ce08a54a232816dfa63143a9101dbc268a849bc11900293e6df5e7f43e53898b",
+        "original": "ce08a54a232816dfa63143a9101dbc268a849bc11900293e6df5e7f43e53898b",
+        "predecessor": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8",
+        "combined": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8"
+      },
+      {
+        "file": "app/layout.tsx",
+        "published": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
+        "original": "c0a649360ad8b28b74a8d338e2d3404e2fb76bd536740b3ffa7d38747cc701ac",
+        "predecessor": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
+        "combined": "c0a649360ad8b28b74a8d338e2d3404e2fb76bd536740b3ffa7d38747cc701ac"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "published": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+        "original": "8f03e234b74699b74d8d86d978bb98deee8a9658a1dfdf713ee188af72d0fbef",
+        "predecessor": "4a9dc15ca8fa65f56289c22039bc4c426bece94df9800744924c7b43acb9b020",
+        "combined": "f9a332c11c4348c4aa4d6414a4e8dcc372b8cceb053cd18d4ede07b945eed34a"
+      },
+      {
+        "file": "app/seo-config.ts",
+        "published": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
+        "original": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b",
+        "predecessor": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
+        "combined": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b"
       }
     ]
   }

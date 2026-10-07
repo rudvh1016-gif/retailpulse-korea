@@ -359,11 +359,9 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       document.querySelector<HTMLMetaElement>(selector)?.setAttribute("content", value);
     };
     setMeta('meta[name="description"]', description);
-    setMeta('meta[property="og:title"]', title);
-    setMeta('meta[property="og:description"]', description);
+    setMeta('meta[property="og:title"]', "KORETAIL");
     setMeta('meta[property="og:url"]', `${siteOrigin}${canonicalPath}`);
-    setMeta('meta[name="twitter:title"]', title);
-    setMeta('meta[name="twitter:description"]', description);
+    setMeta('meta[name="twitter:title"]', "KORETAIL");
     document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute("href", `${siteOrigin}${canonicalPath}`);
 
     const languageTags: Record<(typeof seoLocales)[number], string> = { ko: "ko-KR", en: "en", zh: "zh-CN", ja: "ja-JP" };
