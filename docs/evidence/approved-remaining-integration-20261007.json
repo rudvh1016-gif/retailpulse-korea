@@ -184,5 +184,19 @@
     },
     "fullProductionAuditRerun": false,
     "productCSSChanged": false
+  },
+  "fullCITimeBudgetCorrection": {
+    "interruptedRun": 37599031040,
+    "headBeforeCorrection": "65e3fa447dc05c94e023a04613bb90e376a18872",
+    "annotation": "The job has exceeded the maximum execution time of 30m0s",
+    "fullBrowserCases": 791,
+    "previousJobLimitMinutes": 30,
+    "newJobLimitMinutes": 45,
+    "onlyTimeoutAndCommentChanged": true,
+    "testCommandsAndConditionsUnchanged": true,
+    "protectedFilesStill61AndAllHashesMatch": true,
+    "manualRerun": false,
+    "manualCancellation": false,
+    "newCITrigger": "normal synchronize event from required scope fix push"
   }
 }
