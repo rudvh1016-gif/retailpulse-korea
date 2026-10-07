@@ -19,14 +19,14 @@
     "app/globals.css": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
     "app/layout.tsx": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
-    "app/live-signals.tsx": "b164e9c231b76a53b2efdf3a9576b6516e5c184bf0be0376f30fb4621ee31856",
+    "app/live-signals.tsx": "b5ce612574bf7f12518ad04a2a433ea4e0bab8a5daa271169d4ec030678ab4d3",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "d2fcba67493abf4fa0ba40d4fc98096f9b2860af6d959102850449eab323641a",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "f9a332c11c4348c4aa4d6414a4e8dcc372b8cceb053cd18d4ede07b945eed34a",
+    "app/retailpulse-app.tsx": "e2eb77f48084b0ad8eceb1f40920459aa01f29106946092b6134409c105b8ab4",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b",
@@ -737,6 +737,27 @@
         "file": "app/area-demand-card.tsx",
         "previous": "9f480850246b31fbb8cec5f75fb9b69eb382cb6e504ebd6c536cb43793384f4c",
         "approved": "78254205092521a36a61fe35aa3ff57c8d91ef1921199cad353c0792dc251dab"
+      }
+    ]
+  },
+  "ownerApprovedMidnightFlightsWeatherCopy20261008": {
+    "sourceMain": "bf9362466145c2f2e047b8c74daedac6fbd72e54",
+    "reason": "New owner request received 2026-10-07T17:47Z: remove the two specified airport paragraphs site-wide in every locale, correct midnight retained-flight responses and all-unverified zone presentation, and show airport weather below current departure halls. This update records only the exact new requested paragraph removal in app/retailpulse-app.tsx and truthful unavailable airport weather placement in app/live-signals.tsx. No earlier twice-rejected core-card/header proposal is copied or retried. All61 protected entries, original enforcement test, cron schedules, font styles and data/provider activation boundaries remain enforced. Review PR only; no merge or deployment.",
+    "ownerRequests": [
+      "이부분 사이트전체에서빼",
+      "12시 지났는데 오늘 자료가 안 보임 해결",
+      "공항날씨 현재출국장아래에 보이게"
+    ],
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "b164e9c231b76a53b2efdf3a9576b6516e5c184bf0be0376f30fb4621ee31856",
+        "approved": "b5ce612574bf7f12518ad04a2a433ea4e0bab8a5daa271169d4ec030678ab4d3"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "f9a332c11c4348c4aa4d6414a4e8dcc372b8cceb053cd18d4ede07b945eed34a",
+        "approved": "e2eb77f48084b0ad8eceb1f40920459aa01f29106946092b6134409c105b8ab4"
       }
     ]
   }

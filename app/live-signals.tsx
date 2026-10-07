@@ -7,6 +7,7 @@ import { AirportFlowFigure } from "./airport-flow-figure";
 import { FlightCountPrism } from './flight-count-prism';
 import { AirportMonthComparison } from './airport-month-comparison';
 import { AirportQueueScene } from './airport-queue-scene';
+import { AirportWeather } from './airport-weather';
 import { displayedQueueMinutes, queueKey, queueRepresentativeCopy, selectQueueRepresentatives } from '../lib/airport-queue-representatives';
 import { CountUpNumber } from "./count-up-number";
 import { passengerReferenceSum } from "../lib/passenger-reference-sum";
@@ -2199,7 +2200,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
       {checkpointTerminals.length > 0 && <p className="airport-detail-foot">{contextText(lang, "사람·장비는 설명용 모형입니다. 색은 T2 대기시간 기준이며 실제 대기는 숫자로 확인하세요.", "People and equipment are illustrative. Color follows T2 wait-time categories; read the observed numbers.", "人物与设备仅为示意模型。颜色依据T2等候时间等级，实际等候请查看数字。", "人・設備は説明用模型です。色はT2の待ち時間区分を表し、実際の待ちは数値で確認できます。")}</p>}
       <p className="airport-detail-foot">{airportTodayText.nowOnly[lang]}</p>
     </section>
-
+    <AirportWeather lang={lang}/>
   </section>;
 }
 

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { SUMMARY_FIXTURE } from './summary-fixture';
 
-test('v14 overview reflows across 600px without rereading data or covering labels', async ({ page }) => {
+test('v14 overview reflows without extra reads and keeps the scheduled two-minute refresh', async ({ page }) => {
   const date = '2026-08-31';
   const flights = [{ physicalFlightId: 'v14-t1', flightNumber: 'KE1', terminal: 'T1', gate: '1',
     direction: 'departure', scheduledAt: `${date}T10:00:00+09:00`, retrievedAt: `${date}T01:00:00Z`, status: 'scheduled', airportCode: 'NRT' }];
@@ -24,6 +24,10 @@ test('v14 overview reflows across 600px without rereading data or covering label
   for (const phase of ['day', 'night'] as const) {
     await page.clock.setSystemTime(new Date(phase === 'day' ? '2026-10-04T03:00:00Z' : '2026-10-04T09:00:00Z'));
     await page.clock.runFor(60_001);
+    // Crossing two minutes deliberately refreshes mounted flight readers.
+    // Resizing within either phase must not add a separate request.
+    await expect.poll(() => reads).toBe(phase === 'day' ? 1 : 2);
+    const phaseReads = reads;
     for (const width of [360, 390, 1280, 600, 601, 430]) {
       await page.setViewportSize({ width, height: 900 });
       await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.currentSrc)).toMatch(
@@ -51,8 +55,9 @@ test('v14 overview reflows across 600px without rereading data or covering label
       await expect(model.locator('.airport-concept-label')).toHaveCount(0);
       await expect(model).toHaveAttribute('data-denominator', '1');
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+      expect(reads).toBe(phaseReads);
     }
   }
-  expect(reads).toBe(1);
+  expect(reads).toBe(2);
   expect(errors).toEqual([]);
 });
