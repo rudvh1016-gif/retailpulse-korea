@@ -1,0 +1,30 @@
+.tourism-desk.tourism-scenes .tourism-area-active::after { background: #000; }
+.tourism-scenes .tourism-brief-scene-head { grid-template-columns: 112px minmax(0, 1fr); align-items: center; gap: 16px; }
+.tourism-scenes .tourism-brief-scene-head h2 { color: #000; }
+.tourism-scenes .tourism-district-scene { margin: 0; width: 112px; }
+.tourism-scenes .tourism-district-scene img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: contain; }
+.tourism-scenes .tourism-district-scene figcaption { color: var(--muted); font-size: 10px; line-height: 1.5; }
+.tourism-scenes .tourism-brief-line { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 16px; align-items: start; padding: 14px 0; }
+.tourism-scenes .tourism-brief-line::before { content: none; }
+.tourism-scenes .tourism-brief-content { min-width: 0; }
+.tourism-scenes .signal-scene { display: block; width: 112px; aspect-ratio: 4 / 3; }
+.tourism-scenes .signal-scene img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.tourism-scenes .tourism-brief-content strong { color: #000; }
+.tourism-scenes .tourism-brief-detail summary { min-height: 44px; width: fit-content; display: flex; align-items: center; gap: 8px; color: #000; font-size: 11px; font-weight: var(--weight-strong); cursor: pointer; list-style: none; }
+.tourism-scenes .tourism-brief-detail summary::-webkit-details-marker { display: none; }
+.tourism-scenes .tourism-brief-detail summary::after { content: '+'; font-size: 16px; font-weight: 400; }
+.tourism-scenes .tourism-brief-detail[open] > summary::after { content: '−'; }
+.tourism-scenes .tourism-brief-detail summary:focus-visible { outline: 2px solid #000; outline-offset: 3px; }
+.tourism-scenes .tourism-brief-weather { display: block; }
+.tourism-scenes .tourism-event-header { display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: start; gap: 16px; }
+.tourism-scenes .tourism-event-header h3,
+.tourism-scenes .tourism-event-status { color: #000; }
+.tourism-scenes .tourism-event-description summary { color: #000; }
+.tourism-scenes .tourism-event-description summary:focus-visible { outline: 2px solid #000; outline-offset: 3px; }
+@media (max-width: 760px) {
+  .tourism-scenes .tourism-brief-scene-head,
+  .tourism-scenes .tourism-brief-line,
+  .tourism-scenes .tourism-event-header { grid-template-columns: 92px minmax(0, 1fr); gap: 12px; }
+  .tourism-scenes .tourism-district-scene,
+  .tourism-scenes .signal-scene { width: 92px; }
+}

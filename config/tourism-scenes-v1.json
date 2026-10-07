@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "blender": "5.2.1 LTS",
+  "engine": "Cycles",
+  "samples": 48,
+  "colorManagement": "AgX",
+  "transparent": true,
+  "maxBytesPerImage": 32768,
+  "totalNewRuntimeBytes": 18866,
+  "meaning": "Neutral transit objects; all passenger, weather, event and time facts remain in HTML",
+  "images": [
+    {
+      "path": "public/visuals/signals/v1/subway-320.webp",
+      "bytes": 5796,
+      "sha256": "73df6583b145d0c38bc32b0c99c52b253dd637063b66771bf67487ec4bf20d0f",
+      "width": 320,
+      "height": 240
+    },
+    {
+      "path": "public/visuals/signals/v1/subway-640.webp",
+      "bytes": 13070,
+      "sha256": "ea751029ed12a1ccffd3588a4ec5cb4e196420a4d72b56b3dc5c77b06a670615",
+      "width": 640,
+      "height": 480
+    }
+  ],
+  "reused": [
+    {
+      "path": "public/visuals/signals/v1/crowd-320.webp",
+      "bytes": 5166,
+      "sha256": "280e5414c0cea983fca4b6897b709d1839ee73964b45cb497545b4bd052ae767"
+    },
+    {
+      "path": "public/visuals/signals/v1/crowd-640.webp",
+      "bytes": 11648,
+      "sha256": "58692e8bc3505e613e691284ec046748b1996eecb4fc18a209a12f3a91b659ce"
+    },
+    {
+      "path": "public/visuals/signals/v1/event-320.webp",
+      "bytes": 6786,
+      "sha256": "09b8752a0a24581570eb8fe3497f266fc02fbd347b0d1c9aa3b68a454224d941"
+    },
+    {
+      "path": "public/visuals/signals/v1/event-640.webp",
+      "bytes": 15768,
+      "sha256": "467478af6a876e634927afdc189842dfc787b7e3980ccb90344e005c9eb5e3bd"
+    },
+    {
+      "path": "public/visuals/signals/v1/temperature-320.webp",
+      "bytes": 3796,
+      "sha256": "5d7f927d77c6bee2f2b8e23f9267da783cacdf7c907a73ad7c6644f6a190c20a"
+    },
+    {
+      "path": "public/visuals/signals/v1/temperature-640.webp",
+      "bytes": 8890,
+      "sha256": "53fc7411ea35c28b3721e54cd10aa55f3207b60ba89e183fb23b4a4426bc21af"
+    },
+    {
+      "path": "public/airport-models/district-myeongdong.webp",
+      "bytes": 24718,
+      "sha256": "15a7e0e82c19507c3b897c463199f83237abf00dde17367127c24de7c91329d3"
+    },
+    {
+      "path": "public/airport-models/district-hongdae.webp",
+      "bytes": 21540,
+      "sha256": "1d6f513d861cd72705527d96c7a59b57cde829c5cc241a9e442e4f9548afbde5"
+    },
+    {
+      "path": "public/airport-models/district-seongsu.webp",
+      "bytes": 26842,
+      "sha256": "4b0f2e0a24b3042275855f6054ae2960c80f544534df084fe8d19f0916881159"
+    },
+    {
+      "path": "public/airport-models/district-itaewon.webp",
+      "bytes": 24688,
+      "sha256": "50dc158df1e85fe4755ec25f00e84833ad00e3617601b6bc8f533f67c3d27126"
+    }
+  ],
+  "reviewSnapshotGeneratedAt": "2026-10-06T09:27:06.677Z",
+  "editableSources": "docs/assets/tourism-transit-v1-blender.zip"
+}
