@@ -107,9 +107,7 @@ test("no sample or demo placeholder text is visible in any locale", async ({ pag
   }
 });
 
-test("airport truth labels are complete in all four locales", async ({ page }) => {
-  // Arrivals joined the screen as their own section, so the intro names
-  // both directions.
+test("owner-removed airport intro is absent in all four locales", async ({ page }) => {
   const intro = {
     ko: "출국장 공식 예상 승객·입국객, 실제 출발 운항, 현재 출국장 대기를 서로 섞지 않고 따로 보여줍니다.",
     en: "Official departure-hall passenger forecast and arrivals, physical departing flights and current departure-hall waits—kept separate, never blended.",
@@ -118,7 +116,8 @@ test("airport truth labels are complete in all four locales", async ({ page }) =
   } as const;
   for (const locale of Object.keys(intro) as Array<keyof typeof intro>) {
     await page.goto(`/${locale}/airport`);
-    await expect(page.getByText(intro[locale], { exact: true })).toBeVisible();
+    await expect(page.getByText(intro[locale], { exact: true })).toHaveCount(0);
+    await expect(page.locator('.airport-view .view-intro .today-answer')).toHaveCount(0);
   }
 });
 

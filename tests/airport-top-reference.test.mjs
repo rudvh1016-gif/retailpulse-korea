@@ -68,3 +68,13 @@ test('incomplete official forecast or stale summary withholds only the affected 
   const oldGates = { ...sides, gates: { ...sides.gates, date: '2026-08-30' } };
   assert.deepEqual(references({ sides: oldGates }).map((row) => row.estimate), [null, null]);
 });
+
+test('a complete official forecast with missing T2 gates reports the gate cause and allocates no passengers', () => {
+  const held=rows.map(row=>row.terminal==='T2'?{...row,gate:null}:row);
+  const heldSides=airportSides(date,'TODAY',[],held,[],false,false);
+  const entries=references({sides:heldSides,source:{...source,flights:held}});
+  assert.equal(entries[0].estimate.total,4000,'the independent T1 forecast is preserved');
+  assert.equal(entries[1].estimate,null);
+  assert.equal(entries[1].unavailableReason,'GATES_PENDING');
+  assert.equal(summary.airport.passengerForecastTimelineByTerminal.T2[0].expectedPassengers,3000);
+});
