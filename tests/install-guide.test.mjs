@@ -152,7 +152,7 @@ test("the icon files exist and really are the sizes the manifest claims", async 
 
 test("iOS is given its own icon and a standalone app title", async () => {
   const layout = await read("../app/layout.tsx");
-  assert.match(layout, /apple: \[\{ url: "\/apple-touch-icon\.png"/,
+  assert.match(layout, /apple: \[\{ url: "\/apple-touch-icon-20261007\.png"/,
     "iOS ignores manifest icons when adding to the home screen");
   assert.match(layout, /appleWebApp: \{ capable: true, title: "KORETAIL"/);
 });

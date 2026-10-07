@@ -18,7 +18,7 @@
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
-    "app/layout.tsx": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
+    "app/layout.tsx": "636646ecdf879831fc2ba4a9c9fbcf3cd9f98d8e0e170e38f70e87ef1dffb2ac",
     "app/live-signals.tsx": "eaf2709b09abd8b88996aea680ae07df1745277f04849407e9d4ebd1aae45509",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83",
@@ -37,8 +37,8 @@
     "app/tourism-visitor-show.tsx": "e30883e6efce51f33f839a38b78afe4a1127d87c9ba2cdb7bbac4de189179a10",
     "lib/realtime-dispatch.ts": "dba7bb0e688ec073df674bd5e5cfbb62c3810d8ad5ec181ed06e8bbe449d0a35",
     "public/_headers": "a10cad25ce8bd0c0b7c92225180a71718fc3d2bf5329ac714bf7b2ac6e22676f",
-    "public/apple-touch-icon.png": "3373811ae07fa1ce01c2b6186280afef6b33f79787f4faa2fb0a8885621c854a",
-    "public/favicon.svg": "e6d2e59b7b5bbb0342e0fb496dfc262decbfe4426bbb7b047aec8d467d1dc6f7",
+    "public/apple-touch-icon.png": "b11d62bc23ef6522c8f7e5f74aa06a956555e0bae6beb7eb507e2672ebadacba",
+    "public/favicon.svg": "68ff8a9e81edf6529b14e70291e8edaa5b236adb361930b3e1ab8c1c239c77e4",
     "public/file.svg": "1e0ae4d1a1ddfa36752988647b731e4abf150c414d069ec83c96fb0aaeff0307",
     "public/fonts/koretail-sans-variable.woff2": "7a0ba49fcc55f74e60974b257ae020a82568ca830affb8d482d5116b68297fdf",
     "public/fonts/noto-sans-jp-400.woff2": "837c91258289bf5d11da9a77ca497dfbd8d31295067978aa4bfcfc21e8044108",
@@ -46,14 +46,22 @@
     "public/fonts/noto-sans-sc-400.woff2": "72208fa263ebab0d3a2dd59e7a0570b0024825e36e690cb55ec75ff99283bc2d",
     "public/fonts/noto-sans-sc-600.woff2": "682b236f8c46b1416cf1529c0c3080bd1f4b4334e35f1705c534bb2cc613708d",
     "public/globe.svg": "d051a8c47936990a9085693d307bb7cea1bc1b6d7ed956bcbaacf674f4ec96b9",
-    "public/icon-192.png": "6fc7c1058c3456abe73cf62ace7de422d2f1f533dbbabc3909f9aee19dc57c60",
-    "public/icon-512.png": "9a2fc9de289156a55100e46b87d8ef7af753cb3a0de1801d0663215ff67e2b0f",
-    "public/icon-maskable-512.png": "70cbdff3004fa8e55dce161cd00ec4e5b918e7d9f88d480dbf9ecef749b50987",
-    "public/manifest.webmanifest": "b645aca0f55d875dd6f8f72cfaa2eaf4a0ae05aad72019bc13e841e2570f8534",
+    "public/icon-192.png": "f73cbc50e977716fd4768364ef66408ef7da803a55aa9bff5bc4ae66450bf0cd",
+    "public/icon-512.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
+    "public/icon-maskable-512.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
+    "public/manifest.webmanifest": "6bad81a6e70af19a2c27c1a321513406823d3cea3e78aecacdbc3607647e99be",
     "public/og-image.png": "aa6fcb5fe90f7d167fe1e754e6735781c9126868dd2993694db936c8cc6705bb",
     "public/window.svg": "decf1cf7bb22b5c99c4857cfcd5718ce5465c4454166317589c83fc73df74b66",
     "wrangler.production.jsonc": "7e07dd03ac29221dabcb1cb0ae30b4920bd65714f15fc3e2d867ee83cb2956fe",
-    "app/population-flow.tsx": "629cb24104891ab96ba6726b8946b1b5f5db832f6f13e3017dd08be211adad51"
+    "app/population-flow.tsx": "629cb24104891ab96ba6726b8946b1b5f5db832f6f13e3017dd08be211adad51",
+    "public/favicon.ico": "8d78d5708cdecec4ec251689c1887cb944936361ad03878d8344e7bcae058432",
+    "public/apple-touch-icon-20261007.png": "b11d62bc23ef6522c8f7e5f74aa06a956555e0bae6beb7eb507e2672ebadacba",
+    "public/favicon-20261007.svg": "68ff8a9e81edf6529b14e70291e8edaa5b236adb361930b3e1ab8c1c239c77e4",
+    "public/favicon-20261007.ico": "8d78d5708cdecec4ec251689c1887cb944936361ad03878d8344e7bcae058432",
+    "public/icon-192-20261007.png": "f73cbc50e977716fd4768364ef66408ef7da803a55aa9bff5bc4ae66450bf0cd",
+    "public/icon-512-20261007.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
+    "public/icon-maskable-512-20261007.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
+    "public/manifest-20261007.webmanifest": "6bad81a6e70af19a2c27c1a321513406823d3cea3e78aecacdbc3607647e99be"
   },
   "crons": {
     "measure-read-budget.yml": [],
@@ -405,6 +413,86 @@
         "file": "app/live-signals.tsx",
         "previous": "73a68b4da19f835f7946aa0fefd83fce4e0e71df01c517d5e1302953b332f060",
         "approved": "eaf2709b09abd8b88996aea680ae07df1745277f04849407e9d4ebd1aae45509"
+      }
+    ]
+  },
+  "ownerBlenderAppIcons20261007": {
+    "reason": "Blender flight/runway icon family, versioned favicon/Apple Touch/manifest URLs, legacy aliases and retained active byte protection. Application identity and unrelated UI remain unchanged.",
+    "changes": [
+      {
+        "file": "app/layout.tsx",
+        "previous": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
+        "approved": "636646ecdf879831fc2ba4a9c9fbcf3cd9f98d8e0e170e38f70e87ef1dffb2ac"
+      },
+      {
+        "file": "public/apple-touch-icon.png",
+        "previous": "3373811ae07fa1ce01c2b6186280afef6b33f79787f4faa2fb0a8885621c854a",
+        "approved": "b11d62bc23ef6522c8f7e5f74aa06a956555e0bae6beb7eb507e2672ebadacba"
+      },
+      {
+        "file": "public/favicon.svg",
+        "previous": "e6d2e59b7b5bbb0342e0fb496dfc262decbfe4426bbb7b047aec8d467d1dc6f7",
+        "approved": "68ff8a9e81edf6529b14e70291e8edaa5b236adb361930b3e1ab8c1c239c77e4"
+      },
+      {
+        "file": "public/icon-192.png",
+        "previous": "6fc7c1058c3456abe73cf62ace7de422d2f1f533dbbabc3909f9aee19dc57c60",
+        "approved": "f73cbc50e977716fd4768364ef66408ef7da803a55aa9bff5bc4ae66450bf0cd"
+      },
+      {
+        "file": "public/icon-512.png",
+        "previous": "9a2fc9de289156a55100e46b87d8ef7af753cb3a0de1801d0663215ff67e2b0f",
+        "approved": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc"
+      },
+      {
+        "file": "public/icon-maskable-512.png",
+        "previous": "70cbdff3004fa8e55dce161cd00ec4e5b918e7d9f88d480dbf9ecef749b50987",
+        "approved": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc"
+      },
+      {
+        "file": "public/manifest.webmanifest",
+        "previous": "b645aca0f55d875dd6f8f72cfaa2eaf4a0ae05aad72019bc13e841e2570f8534",
+        "approved": "6bad81a6e70af19a2c27c1a321513406823d3cea3e78aecacdbc3607647e99be"
+      },
+      {
+        "file": "public/favicon.ico",
+        "previous": null,
+        "approved": "8d78d5708cdecec4ec251689c1887cb944936361ad03878d8344e7bcae058432"
+      },
+      {
+        "file": "public/apple-touch-icon-20261007.png",
+        "previous": null,
+        "approved": "b11d62bc23ef6522c8f7e5f74aa06a956555e0bae6beb7eb507e2672ebadacba"
+      },
+      {
+        "file": "public/favicon-20261007.svg",
+        "previous": null,
+        "approved": "68ff8a9e81edf6529b14e70291e8edaa5b236adb361930b3e1ab8c1c239c77e4"
+      },
+      {
+        "file": "public/favicon-20261007.ico",
+        "previous": null,
+        "approved": "8d78d5708cdecec4ec251689c1887cb944936361ad03878d8344e7bcae058432"
+      },
+      {
+        "file": "public/icon-192-20261007.png",
+        "previous": null,
+        "approved": "f73cbc50e977716fd4768364ef66408ef7da803a55aa9bff5bc4ae66450bf0cd"
+      },
+      {
+        "file": "public/icon-512-20261007.png",
+        "previous": null,
+        "approved": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc"
+      },
+      {
+        "file": "public/icon-maskable-512-20261007.png",
+        "previous": null,
+        "approved": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc"
+      },
+      {
+        "file": "public/manifest-20261007.webmanifest",
+        "previous": null,
+        "approved": "6bad81a6e70af19a2c27c1a321513406823d3cea3e78aecacdbc3607647e99be"
       }
     ]
   }

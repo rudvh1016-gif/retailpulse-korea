@@ -13,13 +13,13 @@ export const metadata: Metadata = {
   title: pageTitle('ko'),
   description: pageDescription('ko'),
   icons: {
-    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }, { url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
-    shortcut: "/favicon.svg",
+    icon: [{ url: "/favicon-20261007.ico", sizes: "16x16 32x32 48x48", type: "image/x-icon" }, { url: "/favicon-20261007.svg", type: "image/svg+xml" }, { url: "/icon-192-20261007.png", sizes: "192x192", type: "image/png" }],
+    shortcut: "/favicon-20261007.ico",
     // iOS ignores the manifest icons when adding to the home screen and
     // reads this one instead; without it the icon is a blurry screenshot.
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    apple: [{ url: "/apple-touch-icon-20261007.png", sizes: "180x180", type: "image/png" }],
   },
-  manifest: "/manifest.webmanifest",
+  manifest: "/manifest-20261007.webmanifest",
   // Opens full screen from the iPhone home screen, under the product name.
   appleWebApp: { capable: true, title: "KORETAIL", statusBarStyle: "default" },
   robots: isStagingDeployment
