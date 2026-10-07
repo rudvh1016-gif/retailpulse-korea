@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
 import "./airport-date-calendar.css";
-import { isStagingDeployment, pageTitle, pageDescription, siteOrigin, socialImage } from "./seo-config";
+import { isStagingDeployment, pageTitle, pageDescription, siteOrigin, socialImage, shareDescription } from "./seo-config";
 
 export const metadata: Metadata = {
   verification: {
@@ -13,13 +13,13 @@ export const metadata: Metadata = {
   title: pageTitle('ko'),
   description: pageDescription('ko'),
   icons: {
-    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }, { url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
-    shortcut: "/favicon.svg",
+    icon: [{ url: "/favicon-20261007.ico", sizes: "16x16 32x32 48x48", type: "image/x-icon" }, { url: "/favicon-20261007.svg", type: "image/svg+xml" }, { url: "/icon-192-20261007.png", sizes: "192x192", type: "image/png" }],
+    shortcut: "/favicon-20261007.ico",
     // iOS ignores the manifest icons when adding to the home screen and
     // reads this one instead; without it the icon is a blurry screenshot.
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    apple: [{ url: "/apple-touch-icon-20261007.png", sizes: "180x180", type: "image/png" }],
   },
-  manifest: "/manifest.webmanifest",
+  manifest: "/manifest-20261007.webmanifest",
   // Opens full screen from the iPhone home screen, under the product name.
   appleWebApp: { capable: true, title: "KORETAIL", statusBarStyle: "default" },
   robots: isStagingDeployment
@@ -27,12 +27,11 @@ export const metadata: Metadata = {
     : { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } },
   alternates: { canonical: "/ko", languages: { "ko-KR": "/ko", en: "/en", "zh-CN": "/zh", "ja-JP": "/ja", "x-default": "/en" } },
   openGraph: {
-    title: pageTitle('ko'),
-    description: pageDescription('ko'),
+    title: "KORETAIL", description: shareDescription,
     url: "/ko", siteName: "KORETAIL", type: "website", locale: "ko_KR",
     images: [socialImage],
   },
-  twitter: { card: "summary_large_image", title: pageTitle('ko'), description: pageDescription('ko'), images: [socialImage.url] },
+  twitter: { card: "summary_large_image", title: "KORETAIL", description: shareDescription, images: [socialImage.url] },
 };
 
 // White-first: the browser chrome and PWA splash match the page, which is

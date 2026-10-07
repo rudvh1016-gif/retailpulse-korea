@@ -266,6 +266,10 @@ for (const width of [360, 390, 430] as const) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/ko/forecast");
     await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+    const reference = page.locator(".records-reference");
+    await expect(reference).not.toHaveAttribute("open", "");
+    await reference.locator("summary").click();
+    await expect(reference).toHaveAttribute("open", "");
     const rows = page.locator(".stat-rows b");
     await expect(rows.first()).toBeVisible();
 

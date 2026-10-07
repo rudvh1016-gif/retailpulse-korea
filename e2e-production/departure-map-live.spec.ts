@@ -43,6 +43,13 @@ for (const width of [360, 1280]) {
     // side counts are main-building counts; concourse flights stay separate.
     await expect(map.locator('.terminal-selector button[aria-pressed="true"]')).toHaveCount(0);
 
+    // Approved image-internal totals keep the detailed counting basis folded.
+    // Open it before reading its text; hidden innerText is empty by design.
+    const countingBasis = map.getByTestId("map-counting-basis");
+    await expect(countingBasis).not.toHaveAttribute("open");
+    await countingBasis.locator(":scope > summary").press("Enter");
+    await expect(map.getByTestId("map-counts")).toBeVisible();
+
     // Whole day: the map's side counts are the comparison card's.
     const counts = await map.getByTestId("map-counts").innerText();
     log(`${width} whole-day counts`, counts);

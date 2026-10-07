@@ -20,9 +20,9 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    # The complete 592-case browser suite exceeded the former 20-minute job
-    # budget in run 37179202674. Keep every check and allow it to finish.
-    timeout-minutes: 30
+    # The complete 791-case integration suite hit the 30-minute job limit in
+    # run 37599031040. Keep every check and allow setup plus browsers to finish.
+    timeout-minutes: 45
     env:
       NEXT_PUBLIC_SITE_ORIGIN: https://rpk-ci.invalid
       RPK_DEPLOYMENT_STAGE: staging

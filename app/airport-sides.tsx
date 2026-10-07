@@ -42,12 +42,12 @@ export function DayRadarSection({ lang, summary, terminal, nowIso, holidays, isH
   </div>;
 }
 
-/** `defaultOpen` is for the airport page, where the map is the point of the section; inside the store briefing it stays closed until asked for. */
+/** Keep a portal's top summary mounted while its lower map details are closed. Standalone store details still load only when opened. */
 export function DepartureMapSection({ lang, summary, terminal, nowIso, holidays, defaultOpen = false, defaultBuildingScope, modelPlacement }: { lang: Lang; summary: LiveSummary; terminal: PrepTerminal; nowIso: string; holidays: ReadonlyArray<{ country: string; name: string }>; defaultOpen?: boolean;defaultBuildingScope?:'all'|'T1'|'T2'|'CONCOURSE'; modelPlacement?: string }) {
   const [open, setOpen] = useState(defaultOpen);
   return <details open={open} className="prep-block prep-evidence" data-testid="departure-map-section" onToggle={(event) => setOpen((event.currentTarget as HTMLDetailsElement).open)}>
-    <summary><h3 style={{ margin: 0 }}>{copy.mapTitle[lang]}</h3></summary>
-    {open && <Suspense fallback={<p className="prep-note">{copy.mapLoading[lang]}</p>}>
+    <summary><h3 style={{ margin: 0 }}>{copy.mapTitle[lang]}</h3><span aria-hidden="true" style={{marginLeft:'auto'}}>{open?'−':'+'}</span></summary>
+    {(open || Boolean(modelPlacement)) && <Suspense fallback={<p className="prep-note">{copy.mapLoading[lang]}</p>}>
       <DepartureMap lang={lang} date={summary.serviceDateKst} todayKst={summary.todayKst} dayRelation={summary.dayRelation} terminal={terminal} nowIso={nowIso} holidays={holidays} defaultBuildingScope={defaultBuildingScope} modelPlacement={modelPlacement} referenceSummary={modelPlacement ? summary : undefined}/>
     </Suspense>}
   </details>;

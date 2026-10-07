@@ -1,0 +1,103 @@
+{
+  "source": "real Blender Cycles CPU render",
+  "version": "20261007",
+  "icons": [
+    {
+      "file": "apple-touch-icon.png",
+      "size": [
+        180,
+        180
+      ],
+      "mode": "RGB",
+      "bytes": 19858,
+      "sha256": "b11d62bc23ef6522c8f7e5f74aa06a956555e0bae6beb7eb507e2672ebadacba"
+    },
+    {
+      "file": "icon-192.png",
+      "size": [
+        192,
+        192
+      ],
+      "mode": "RGB",
+      "bytes": 22513,
+      "sha256": "f73cbc50e977716fd4768364ef66408ef7da803a55aa9bff5bc4ae66450bf0cd"
+    },
+    {
+      "file": "icon-512.png",
+      "size": [
+        512,
+        512
+      ],
+      "mode": "RGB",
+      "bytes": 169058,
+      "sha256": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc"
+    },
+    {
+      "file": "icon-maskable-512.png",
+      "size": [
+        512,
+        512
+      ],
+      "mode": "RGB",
+      "bytes": 169058,
+      "sha256": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc"
+    },
+    {
+      "file": "favicon-16.png",
+      "size": [
+        16,
+        16
+      ],
+      "mode": "RGB",
+      "bytes": 519,
+      "sha256": "76fc79952672f4c5a3d4a61c6cce7546cb6c9a946eaf957bc22d21525a8de01b"
+    },
+    {
+      "file": "favicon-32.png",
+      "size": [
+        32,
+        32
+      ],
+      "mode": "RGB",
+      "bytes": 1325,
+      "sha256": "6f33bde879b9fe445e6bfbaf9aae5b94219a2295ec6d9b00fee377f673ac1947"
+    },
+    {
+      "file": "favicon-48.png",
+      "size": [
+        48,
+        48
+      ],
+      "mode": "RGB",
+      "bytes": 2333,
+      "sha256": "b977a72d8b953c66de2e4817942da7aa31508f651e6a2379e55e73fe06400da8"
+    },
+    {
+      "file": "favicon-128.png",
+      "size": [
+        128,
+        128
+      ],
+      "mode": "RGB",
+      "bytes": 10778,
+      "sha256": "dda010130d40b22516380515eb4146b20983a62f152945da8c42476421b96a7f"
+    }
+  ],
+  "versionedAliases": {
+    "apple-touch-icon.png": "apple-touch-icon-20261007.png",
+    "favicon.svg": "favicon-20261007.svg",
+    "favicon.ico": "favicon-20261007.ico",
+    "icon-192.png": "icon-192-20261007.png",
+    "icon-512.png": "icon-512-20261007.png",
+    "icon-maskable-512.png": "icon-maskable-512-20261007.png"
+  },
+  "manifestName": "KORETAIL",
+  "manifestId": "/",
+  "unchangedApplicationIdentity": true,
+  "bakedCornerMask": false,
+  "opaqueBackground": true,
+  "textBakedIntoIcon": false,
+  "iPhonePhysicalDeviceVerified": false,
+  "installedIconAutoRefreshClaimed": false,
+  "linkShareImageChanged": false
+}

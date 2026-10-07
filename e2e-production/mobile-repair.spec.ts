@@ -7,7 +7,8 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   await page.setViewportSize({ width, height: 844 });
   await page.goto('/ko');
   await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
-  await expect(page.locator('.demand-home')).toBeVisible();
+  await expect(page.locator('.airport-today')).toBeVisible();
+  await expect(page.getByTestId('area-demand-card')).toHaveCount(0);
   await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
   await page.screenshot({ path: info.outputPath(`public-${width}.png`) });
   await expect(page.getByRole('button',{name:'내 브리핑 설정',exact:true})).toHaveCount(0);
@@ -18,16 +19,21 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   await expect(page.locator('.airport-current-brief')).toBeVisible();
   expect(await page.evaluate(key=>localStorage.getItem(key),PREFERENCE_KEY)).toBe(stored);
   await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-  const dateButtons = page.locator('.date-nav-shortcuts button');
+  // The lazy departure map also has date-nav-shortcuts. Scope the home date
+  // controls so mounting its time presets cannot retarget .last() mid-check.
+  const dateButtons = page.locator('.airport-date-reserved .date-nav-shortcuts button');
   await expect(dateButtons).toHaveCount(3);
   await expect(dateButtons.nth(1)).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.date-nav-shortcuts')).toHaveCSS('border-top-width', '1px');
+  await expect(page.locator('.airport-date-reserved .date-nav-shortcuts')).toHaveCSS('border-top-width', '1px');
   for(const control of await dateButtons.all()){
     await expect(control).toHaveCSS('border-top-width','0px');
     await expect(control).toHaveAccessibleName(/.+/);
     expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(48);
   }
   await dateButtons.last().focus();
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Shift+Tab');
+  await expect(dateButtons.last()).toBeFocused();
   expect(await dateButtons.last().evaluate(el => getComputedStyle(el).outlineStyle)).not.toBe('none');
   await dateButtons.last().press('Enter');
   await expect(dateButtons.last()).toHaveAttribute('aria-pressed', 'true');

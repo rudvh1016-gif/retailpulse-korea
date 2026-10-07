@@ -43,6 +43,7 @@ for(const width of [320,390,430])test(`destination flags and all-country disclos
  await page.keyboard.press('Enter');await expect(disclosure).not.toHaveAttribute('open','');
  await page.keyboard.press('Enter');await expect(disclosure).toHaveAttribute('open','');
  const map=page.getByTestId('departure-map');
+ await page.getByTestId('departure-map-section').locator(':scope > summary').click();
  await map.locator('.terminal-selector button').nth(2).click();await expect(zone).toHaveAttribute('data-total','0');
  await map.locator('.terminal-selector button').nth(1).click();await expect(zone).toHaveAttribute('data-total','12');
  await map.locator('[data-preset=CUSTOM]').click();await map.getByTestId('map-from').selectOption('11');await map.getByTestId('map-to').selectOption('12');

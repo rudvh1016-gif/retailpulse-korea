@@ -1,0 +1,120 @@
+[
+  {
+    "width": 390,
+    "file": "previews/app-icons-browser-390.png",
+    "errors": [],
+    "overflow": false,
+    "images": [
+      {
+        "displayed": 120,
+        "naturalWidth": 1024,
+        "loaded": true
+      },
+      {
+        "displayed": 120,
+        "naturalWidth": 1024,
+        "loaded": true
+      },
+      {
+        "displayed": 120,
+        "naturalWidth": 1024,
+        "loaded": true
+      },
+      {
+        "displayed": 120,
+        "naturalWidth": 1024,
+        "loaded": true
+      },
+      {
+        "displayed": 16,
+        "naturalWidth": 1024,
+        "loaded": true
+      },
+      {
+        "displayed": 32,
+        "naturalWidth": 1024,
+        "loaded": true
+      },
+      {
+        "displayed": 48,
+        "naturalWidth": 1024,
+        "loaded": true
+      },
+      {
+        "displayed": 60,
+        "naturalWidth": 1024,
+        "loaded": true
+      },
+      {
+        "displayed": 120,
+        "naturalWidth": 1024,
+        "loaded": true
+      },
+      {
+        "displayed": 180,
+        "naturalWidth": 1024,
+        "loaded": true
+      }
+    ],
+    "physicalDevice": false
+  },
+  {
+    "width": 1280,
+    "file": "previews/app-icons-browser-1280.png",
+    "errors": [],
+    "overflow": false,
+    "images": [
+      {
+        "displayed": 120,
+        "naturalWidth": 1024,
+        "loaded": true
+      },
+      {
+        "displayed": 120,
+        "naturalWidth": 1024,
+        "loaded": true
+      },
+      {
+        "displayed": 120,
+        "naturalWidth": 1024,
+        "loaded": true
+      },
+      {
+        "displayed": 120,
+        "naturalWidth": 1024,
+        "loaded": true
+      },
+      {
+        "displayed": 16,
+        "naturalWidth": 1024,
+        "loaded": true
+      },
+      {
+        "displayed": 32,
+        "naturalWidth": 1024,
+        "loaded": true
+      },
+      {
+        "displayed": 48,
+        "naturalWidth": 1024,
+        "loaded": true
+      },
+      {
+        "displayed": 60,
+        "naturalWidth": 1024,
+        "loaded": true
+      },
+      {
+        "displayed": 120,
+        "naturalWidth": 1024,
+        "loaded": true
+      },
+      {
+        "displayed": 180,
+        "naturalWidth": 1024,
+        "loaded": true
+      }
+    ],
+    "physicalDevice": false
+  }
+]

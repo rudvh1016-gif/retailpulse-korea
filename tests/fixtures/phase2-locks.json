@@ -1,7 +1,7 @@
 {
   "base": "65907c971b5e279da48525875df6c972ab998c64",
   "protectedFiles": {
-    "app/[locale]/[slug]/page.tsx": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1",
+    "app/[locale]/[slug]/page.tsx": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545",
     "app/[locale]/not-found.tsx": "620e62c747a4a0d4b8af1558492c74e961f2a4f0d55caa2c960c508395a41ff0",
     "app/[locale]/page.tsx": "861f9697b315e6b0b54e1663c4089f4a6a6330d1298acc3066e0e657b6cafb98",
     "app/[locale]/tourism-desk/[area]/page.tsx": "b74c40a03d7ff4ec57a8314f4c11825467212d48634bebf057d078d3ae360b35",
@@ -13,12 +13,12 @@
     "app/api/live/events/route.ts": "f85c532f05c89b1412fbd77a04ff88d5d3b9f8587ddbebad00dbe1c3df9ed7a4",
     "app/api/live/flights/route.ts": "fb7bbfc1132359dceb4d315997eaf26bfc5b27d3f03f2bb9b8be4fe46718c1bd",
     "app/api/live/predictions/route.ts": "b82f003bd3d77c293a379c4dbd0bf5e2aa449b19e54a65119ef2e4f291cdfced",
-    "app/api/live/summary/route.ts": "ce08a54a232816dfa63143a9101dbc268a849bc11900293e6df5e7f43e53898b",
+    "app/api/live/summary/route.ts": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8",
     "app/area-demand-card.tsx": "9f480850246b31fbb8cec5f75fb9b69eb382cb6e504ebd6c536cb43793384f4c",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
-    "app/layout.tsx": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
+    "app/layout.tsx": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
     "app/live-signals.tsx": "eaf2709b09abd8b88996aea680ae07df1745277f04849407e9d4ebd1aae45509",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "6613999313746e4118e44dc8e843b276eb6f2b6ec76615a9e57a8361cd5a1f83",
@@ -26,10 +26,10 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "76302e9d7d4f4d97ab18cd0d0d7fa1a3f117763189229d90c813521050cf1b04",
+    "app/retailpulse-app.tsx": "f9a332c11c4348c4aa4d6414a4e8dcc372b8cceb053cd18d4ede07b945eed34a",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
-    "app/seo-config.ts": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
+    "app/seo-config.ts": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b",
     "app/site-usage-guide.tsx": "34ac91ba8e1d48849f766622bca163353dc1c9a09439b54aadb28c1d7b882460",
     "app/sitemap.ts": "ab2329b032b269477ffad4b69258004b1b577b323735eccbf92518cbec258880",
     "app/source-status.tsx": "a4832ec2982ec76631341f8a8aea477d98dd45128234ca7f6ee1002ea16196dd",
@@ -37,8 +37,8 @@
     "app/tourism-visitor-show.tsx": "e30883e6efce51f33f839a38b78afe4a1127d87c9ba2cdb7bbac4de189179a10",
     "lib/realtime-dispatch.ts": "dba7bb0e688ec073df674bd5e5cfbb62c3810d8ad5ec181ed06e8bbe449d0a35",
     "public/_headers": "a10cad25ce8bd0c0b7c92225180a71718fc3d2bf5329ac714bf7b2ac6e22676f",
-    "public/apple-touch-icon.png": "3373811ae07fa1ce01c2b6186280afef6b33f79787f4faa2fb0a8885621c854a",
-    "public/favicon.svg": "e6d2e59b7b5bbb0342e0fb496dfc262decbfe4426bbb7b047aec8d467d1dc6f7",
+    "public/apple-touch-icon.png": "b11d62bc23ef6522c8f7e5f74aa06a956555e0bae6beb7eb507e2672ebadacba",
+    "public/favicon.svg": "68ff8a9e81edf6529b14e70291e8edaa5b236adb361930b3e1ab8c1c239c77e4",
     "public/file.svg": "1e0ae4d1a1ddfa36752988647b731e4abf150c414d069ec83c96fb0aaeff0307",
     "public/fonts/koretail-sans-variable.woff2": "7a0ba49fcc55f74e60974b257ae020a82568ca830affb8d482d5116b68297fdf",
     "public/fonts/noto-sans-jp-400.woff2": "837c91258289bf5d11da9a77ca497dfbd8d31295067978aa4bfcfc21e8044108",
@@ -46,14 +46,22 @@
     "public/fonts/noto-sans-sc-400.woff2": "72208fa263ebab0d3a2dd59e7a0570b0024825e36e690cb55ec75ff99283bc2d",
     "public/fonts/noto-sans-sc-600.woff2": "682b236f8c46b1416cf1529c0c3080bd1f4b4334e35f1705c534bb2cc613708d",
     "public/globe.svg": "d051a8c47936990a9085693d307bb7cea1bc1b6d7ed956bcbaacf674f4ec96b9",
-    "public/icon-192.png": "6fc7c1058c3456abe73cf62ace7de422d2f1f533dbbabc3909f9aee19dc57c60",
-    "public/icon-512.png": "9a2fc9de289156a55100e46b87d8ef7af753cb3a0de1801d0663215ff67e2b0f",
-    "public/icon-maskable-512.png": "70cbdff3004fa8e55dce161cd00ec4e5b918e7d9f88d480dbf9ecef749b50987",
-    "public/manifest.webmanifest": "b645aca0f55d875dd6f8f72cfaa2eaf4a0ae05aad72019bc13e841e2570f8534",
+    "public/icon-192.png": "f73cbc50e977716fd4768364ef66408ef7da803a55aa9bff5bc4ae66450bf0cd",
+    "public/icon-512.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
+    "public/icon-maskable-512.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
+    "public/manifest.webmanifest": "6bad81a6e70af19a2c27c1a321513406823d3cea3e78aecacdbc3607647e99be",
     "public/og-image.png": "aa6fcb5fe90f7d167fe1e754e6735781c9126868dd2993694db936c8cc6705bb",
     "public/window.svg": "decf1cf7bb22b5c99c4857cfcd5718ce5465c4454166317589c83fc73df74b66",
     "wrangler.production.jsonc": "7e07dd03ac29221dabcb1cb0ae30b4920bd65714f15fc3e2d867ee83cb2956fe",
-    "app/population-flow.tsx": "629cb24104891ab96ba6726b8946b1b5f5db832f6f13e3017dd08be211adad51"
+    "app/population-flow.tsx": "629cb24104891ab96ba6726b8946b1b5f5db832f6f13e3017dd08be211adad51",
+    "public/favicon.ico": "8d78d5708cdecec4ec251689c1887cb944936361ad03878d8344e7bcae058432",
+    "public/apple-touch-icon-20261007.png": "b11d62bc23ef6522c8f7e5f74aa06a956555e0bae6beb7eb507e2672ebadacba",
+    "public/favicon-20261007.svg": "68ff8a9e81edf6529b14e70291e8edaa5b236adb361930b3e1ab8c1c239c77e4",
+    "public/favicon-20261007.ico": "8d78d5708cdecec4ec251689c1887cb944936361ad03878d8344e7bcae058432",
+    "public/icon-192-20261007.png": "f73cbc50e977716fd4768364ef66408ef7da803a55aa9bff5bc4ae66450bf0cd",
+    "public/icon-512-20261007.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
+    "public/icon-maskable-512-20261007.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
+    "public/manifest-20261007.webmanifest": "6bad81a6e70af19a2c27c1a321513406823d3cea3e78aecacdbc3607647e99be"
   },
   "crons": {
     "measure-read-budget.yml": [],
@@ -408,6 +416,108 @@
       }
     ]
   },
+  "ownerApprovedOgShare20261004": {
+    "reason": "Scoped owner approval for the airplane/runway OG update: refresh only four protected share-metadata source SHA-256 baselines. The protected path list, historical approval records, active tests, typography and product logic remain unchanged.",
+    "changes": [
+      {
+        "file": "app/[locale]/[slug]/page.tsx",
+        "previous": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1",
+        "approved": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545"
+      },
+      {
+        "file": "app/layout.tsx",
+        "previous": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
+        "approved": "c0a649360ad8b28b74a8d338e2d3404e2fb76bd536740b3ffa7d38747cc701ac"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "3aa1492a086bf26f053c3885976e9b24f716bbe617e4fcf0e68ac2f3fcc261c1",
+        "approved": "4433b2d0689f30cc6077ff3b0a74e466eab55ae4dfedfd09a48eb4141eb8a04b"
+      },
+      {
+        "file": "app/seo-config.ts",
+        "previous": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
+        "approved": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b"
+      }
+    ]
+  },
+  "ogShareMainReconciliation20261005": {
+    "reason": "Local conflict repair within the previously approved four-path OG share scope. Preserve the existing main All (T1+T2) label and all historical owner records; reconcile the source hash after applying only the original OG metadata edits. This record is provenance for the delegated local repair, not an approval to push, merge or deploy.",
+    "mainSha": "28390c5794f9f753025487e1ecf9ff60c64de5c4",
+    "ogHeadSha": "dd89db38499aec81293404b53231533365136778",
+    "originalScopeRecord": "ownerApprovedOgShare20261004",
+    "preservedMainScopeRecord": "ownerAirportMobileControls20261004",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "mainApproved": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+        "ogApproved": "4433b2d0689f30cc6077ff3b0a74e466eab55ae4dfedfd09a48eb4141eb8a04b",
+        "reconciled": "8f03e234b74699b74d8d86d978bb98deee8a9658a1dfdf713ee188af72d0fbef"
+      }
+    ]
+  },
+  "ogShareMainReconciliation20261006": {
+    "reason": "Local preparation of the same PR266 OG scope against current main. All four metadata files and the approved image are byte-identical to the previously tested local repair. Preserve the new Seoul chart lock and every main/OG historical record. This provenance record does not authorize public merge or deployment.",
+    "mainSha": "565c0341cfd2cea1ff9d2eaccdd68283f7179701",
+    "ogHeadSha": "dd89db38499aec81293404b53231533365136778",
+    "originalScopeRecord": "ownerApprovedOgShare20261004",
+    "preservedMainScopeRecord": "ownerSeoulConnectedRangeChart20261006",
+    "changes": [
+      {
+        "file": "app/[locale]/[slug]/page.tsx",
+        "mainApproved": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1",
+        "ogApproved": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545",
+        "reconciled": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545",
+        "identicalToPreviousRepair": true
+      },
+      {
+        "file": "app/layout.tsx",
+        "mainApproved": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
+        "ogApproved": "c0a649360ad8b28b74a8d338e2d3404e2fb76bd536740b3ffa7d38747cc701ac",
+        "reconciled": "c0a649360ad8b28b74a8d338e2d3404e2fb76bd536740b3ffa7d38747cc701ac",
+        "identicalToPreviousRepair": true
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "mainApproved": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+        "ogApproved": "4433b2d0689f30cc6077ff3b0a74e466eab55ae4dfedfd09a48eb4141eb8a04b",
+        "reconciled": "8f03e234b74699b74d8d86d978bb98deee8a9658a1dfdf713ee188af72d0fbef",
+        "identicalToPreviousRepair": true
+      },
+      {
+        "file": "app/seo-config.ts",
+        "mainApproved": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
+        "ogApproved": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b",
+        "reconciled": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b",
+        "identicalToPreviousRepair": true
+      }
+    ]
+  },
+  "ownerMonthlyRecords20261006": {
+    "reason": "Owner requested completing the KORETAIL site implementation and the separate monthly-records view. The lead delegation explicitly authorizes latest-main integration, the normal protected baseline record, commit/push/draft PR and required CI for the existing local monthly-records implementation. Scope is only the /forecast monthly stored-observation view and /api/live/summary?view=records read branch. Refresh exactly app/retailpulse-app.tsx and app/api/live/summary/route.ts. Preserve existing sources, min/max truth, prior approval history, all protected file membership, cron values and active enforcement assertions. No blocked PR267/276/278/288/291 content is included. No merge, deployment, provider activation or new scheduler is authorized by this record.",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+        "approved": "436a16217bf98d16db719177469279137d5f356e7912e6d4ed1398a2f424c72e"
+      },
+      {
+        "file": "app/api/live/summary/route.ts",
+        "previous": "ce08a54a232816dfa63143a9101dbc268a849bc11900293e6df5e7f43e53898b",
+        "approved": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8"
+      }
+    ]
+  },
+  "ownerAirportBodyScope20261006": {
+    "reason": "Owner request Sentinel_fddc74efab4881919071e2882f9fd26d, delegated 2026-10-06: remove the Seoul district body from the airport page, preserving the global Seoul menu and its original pages/data. Only the home-seoul-secondary render inside view===airport and its now-unneeded fragment are removed from app/retailpulse-app.tsx. This is a distinct new request; PR278's airport heading copy and TodayAnswer changes are not copied. Refresh this file's approved hash through the normal record procedure; all other protected hashes, prior approval records, cron locks and active enforcement tests stay intact. No live-signals.tsx change; queue and monthly desktop placement remain with their assigned owner.",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+        "approved": "3ce5cf78fdd6db32a7dd35abbb39f9af0ebd94493318d691824abdf6cbdadc6a"
+      }
+    ]
+  },
   "ownerDepartureEntryCompact20261006": {
     "reason": "Owner requested a smaller departure-guide text button and removal of the redundant same-page airport-flow jump link. The departure shortcut is consolidated into the native guide summary. Only the old shortcut row and its unused import change in app/retailpulse-app.tsx; all other protected hashes, cron locks and the original enforcement test remain unchanged.",
     "changes": [
@@ -415,6 +525,190 @@
         "file": "app/retailpulse-app.tsx",
         "previous": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
         "approved": "76302e9d7d4f4d97ab18cd0d0d7fa1a3f117763189229d90c813521050cf1b04"
+      }
+    ]
+  },
+  "approvedOriginalPr288SequentialIntegration20261007": {
+    "reason": "Normal combination of existing approved original PR scopes for the user-requested sequence 284 -> 288 -> 303 -> 266 with published main 23ae0818. Preserve every prior approval record and all 53 active protected paths, base and cron locks. Hashes describe only the actual combination of these already-approved Git refs. No new design, core priority/header-card proposal, protection removal, assertion bypass, public merge or deployment.",
+    "sourceRefs": [
+      "23ae0818cf172e7c28a137fe9831c0d9628549f1",
+      "b175c5485d852286d131576b01b0da6033e4f865",
+      "fdec90378e5e952641ecd04d4fa4141884a79239"
+    ],
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "published": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+        "original": "3ce5cf78fdd6db32a7dd35abbb39f9af0ebd94493318d691824abdf6cbdadc6a",
+        "predecessor": "76302e9d7d4f4d97ab18cd0d0d7fa1a3f117763189229d90c813521050cf1b04",
+        "combined": "32b378d167bb9579ad48e742e83ef8523b7959ddbcaef25b524a103feaa09d56"
+      }
+    ]
+  },
+  "approvedOriginalPr303SequentialIntegration20261007": {
+    "reason": "Normal combination of existing approved original PR scopes for the user-requested sequence 284 -> 288 -> 303 -> 266 with published main 23ae0818. Preserve every prior approval record and all 53 active protected paths, base and cron locks. Hashes describe only the actual combination of these already-approved Git refs. No new design, core priority/header-card proposal, protection removal, assertion bypass, public merge or deployment.",
+    "sourceRefs": [
+      "23ae0818cf172e7c28a137fe9831c0d9628549f1",
+      "f76b5ea38d5a4e298764b8750ca68fa7da75f848",
+      "cc08cfd63bb3a77e93f53a2ee2d6eac85dbf735a"
+    ],
+    "changes": [
+      {
+        "file": "app/api/live/summary/route.ts",
+        "published": "ce08a54a232816dfa63143a9101dbc268a849bc11900293e6df5e7f43e53898b",
+        "original": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8",
+        "predecessor": "ce08a54a232816dfa63143a9101dbc268a849bc11900293e6df5e7f43e53898b",
+        "combined": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "published": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+        "original": "436a16217bf98d16db719177469279137d5f356e7912e6d4ed1398a2f424c72e",
+        "predecessor": "32b378d167bb9579ad48e742e83ef8523b7959ddbcaef25b524a103feaa09d56",
+        "combined": "4a9dc15ca8fa65f56289c22039bc4c426bece94df9800744924c7b43acb9b020"
+      }
+    ]
+  },
+  "approvedOriginalPr266SequentialIntegration20261007": {
+    "reason": "Normal combination of existing approved original PR scopes for the user-requested sequence 284 -> 288 -> 303 -> 266 with published main 23ae0818. Preserve every prior approval record and all 53 active protected paths, base and cron locks. Hashes describe only the actual combination of these already-approved Git refs. No new design, core priority/header-card proposal, protection removal, assertion bypass, public merge or deployment.",
+    "sourceRefs": [
+      "23ae0818cf172e7c28a137fe9831c0d9628549f1",
+      "84fc61c48a2c99a7d5ecbe302e9d5430ff19b4c5",
+      "d776c8f47343043e65eb3e56f4c11f5e797e2b4e"
+    ],
+    "changes": [
+      {
+        "file": "app/[locale]/[slug]/page.tsx",
+        "published": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1",
+        "original": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545",
+        "predecessor": "ec07dd5f407351f264d48682c2e8ea27e130412b64db995a67bd75f8630d70a1",
+        "combined": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545"
+      },
+      {
+        "file": "app/api/live/summary/route.ts",
+        "published": "ce08a54a232816dfa63143a9101dbc268a849bc11900293e6df5e7f43e53898b",
+        "original": "ce08a54a232816dfa63143a9101dbc268a849bc11900293e6df5e7f43e53898b",
+        "predecessor": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8",
+        "combined": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8"
+      },
+      {
+        "file": "app/layout.tsx",
+        "published": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
+        "original": "c0a649360ad8b28b74a8d338e2d3404e2fb76bd536740b3ffa7d38747cc701ac",
+        "predecessor": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
+        "combined": "c0a649360ad8b28b74a8d338e2d3404e2fb76bd536740b3ffa7d38747cc701ac"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "published": "2ed6669aec005dc9bef2ab6d6f2aa8aa61400becffdb2bde0f4bf349912551c5",
+        "original": "8f03e234b74699b74d8d86d978bb98deee8a9658a1dfdf713ee188af72d0fbef",
+        "predecessor": "4a9dc15ca8fa65f56289c22039bc4c426bece94df9800744924c7b43acb9b020",
+        "combined": "f9a332c11c4348c4aa4d6414a4e8dcc372b8cceb053cd18d4ede07b945eed34a"
+      },
+      {
+        "file": "app/seo-config.ts",
+        "published": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
+        "original": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b",
+        "predecessor": "9004f63895782badabcbe64cd702c9a98928653f02b30157bb7069daa31dd5e0",
+        "combined": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b"
+      }
+    ]
+  },
+  "ownerBlenderAppIcons20261007": {
+    "reason": "Blender flight/runway icon family, versioned favicon/Apple Touch/manifest URLs, legacy aliases and retained active byte protection. Application identity and unrelated UI remain unchanged.",
+    "changes": [
+      {
+        "file": "app/layout.tsx",
+        "previous": "fca5df98b8f0d4d15f2945891ff624683782aa36374a7e81ea95ff94af49480e",
+        "approved": "636646ecdf879831fc2ba4a9c9fbcf3cd9f98d8e0e170e38f70e87ef1dffb2ac"
+      },
+      {
+        "file": "public/apple-touch-icon.png",
+        "previous": "3373811ae07fa1ce01c2b6186280afef6b33f79787f4faa2fb0a8885621c854a",
+        "approved": "b11d62bc23ef6522c8f7e5f74aa06a956555e0bae6beb7eb507e2672ebadacba"
+      },
+      {
+        "file": "public/favicon.svg",
+        "previous": "e6d2e59b7b5bbb0342e0fb496dfc262decbfe4426bbb7b047aec8d467d1dc6f7",
+        "approved": "68ff8a9e81edf6529b14e70291e8edaa5b236adb361930b3e1ab8c1c239c77e4"
+      },
+      {
+        "file": "public/icon-192.png",
+        "previous": "6fc7c1058c3456abe73cf62ace7de422d2f1f533dbbabc3909f9aee19dc57c60",
+        "approved": "f73cbc50e977716fd4768364ef66408ef7da803a55aa9bff5bc4ae66450bf0cd"
+      },
+      {
+        "file": "public/icon-512.png",
+        "previous": "9a2fc9de289156a55100e46b87d8ef7af753cb3a0de1801d0663215ff67e2b0f",
+        "approved": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc"
+      },
+      {
+        "file": "public/icon-maskable-512.png",
+        "previous": "70cbdff3004fa8e55dce161cd00ec4e5b918e7d9f88d480dbf9ecef749b50987",
+        "approved": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc"
+      },
+      {
+        "file": "public/manifest.webmanifest",
+        "previous": "b645aca0f55d875dd6f8f72cfaa2eaf4a0ae05aad72019bc13e841e2570f8534",
+        "approved": "6bad81a6e70af19a2c27c1a321513406823d3cea3e78aecacdbc3607647e99be"
+      },
+      {
+        "file": "public/favicon.ico",
+        "previous": null,
+        "approved": "8d78d5708cdecec4ec251689c1887cb944936361ad03878d8344e7bcae058432"
+      },
+      {
+        "file": "public/apple-touch-icon-20261007.png",
+        "previous": null,
+        "approved": "b11d62bc23ef6522c8f7e5f74aa06a956555e0bae6beb7eb507e2672ebadacba"
+      },
+      {
+        "file": "public/favicon-20261007.svg",
+        "previous": null,
+        "approved": "68ff8a9e81edf6529b14e70291e8edaa5b236adb361930b3e1ab8c1c239c77e4"
+      },
+      {
+        "file": "public/favicon-20261007.ico",
+        "previous": null,
+        "approved": "8d78d5708cdecec4ec251689c1887cb944936361ad03878d8344e7bcae058432"
+      },
+      {
+        "file": "public/icon-192-20261007.png",
+        "previous": null,
+        "approved": "f73cbc50e977716fd4768364ef66408ef7da803a55aa9bff5bc4ae66450bf0cd"
+      },
+      {
+        "file": "public/icon-512-20261007.png",
+        "previous": null,
+        "approved": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc"
+      },
+      {
+        "file": "public/icon-maskable-512-20261007.png",
+        "previous": null,
+        "approved": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc"
+      },
+      {
+        "file": "public/manifest-20261007.webmanifest",
+        "previous": null,
+        "approved": "6bad81a6e70af19a2c27c1a321513406823d3cea3e78aecacdbc3607647e99be"
+      }
+    ]
+  },
+  "ownerApprovedRemainingIntegration20261007": {
+    "reason": "User requested a single integration PR for original approved body scope288, monthly records303, OG266 and app icons307, preserving current main305+306+284. Existing protected53 and approved icon8 additions remain, and the original enforcement test is unchanged. Resolve only app/layout.tsx hash from the actual normal merge of approved OG metadata and approved icon URLs.",
+    "sourceMain": "7f8e50b2a042151bfce838fe4bbab739cad90fdc",
+    "sources": {
+      "266": "f0d765a6dacbcd70722539e0e86b3fb9eff84989",
+      "288": "cc08cfd63bb3a77e93f53a2ee2d6eac85dbf735a",
+      "303": "8a13c947015fe51943ef9e311a3e4cd26de0e9d7",
+      "307": "411b469651d0f578f7d34b3738031f0c5bcce018"
+    },
+    "changes": [
+      {
+        "file": "app/layout.tsx",
+        "approvedOG": "c0a649360ad8b28b74a8d338e2d3404e2fb76bd536740b3ffa7d38747cc701ac",
+        "approvedIcons": "636646ecdf879831fc2ba4a9c9fbcf3cd9f98d8e0e170e38f70e87ef1dffb2ac",
+        "approvedCombined": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41"
       }
     ]
   }

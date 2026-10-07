@@ -18,7 +18,8 @@ test('a first visit answers with the information, not a questionnaire',async({pa
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
     await expect(page.locator('.airport-today')).toBeVisible();
     await expect(page.locator('details.personal-existing')).toHaveCount(0);
-    await expect(page.locator('.demand-home')).toBeVisible();
+    await expect(page.locator('.demand-home')).toHaveCount(0);
+    await expect(page.locator('.top-nav a[href="/ko/myeongdong"]')).toHaveCount(1);
     await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
     await expect(page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true })).toHaveCount(0);
 });
