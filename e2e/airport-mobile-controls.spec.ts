@@ -58,9 +58,8 @@ for (const width of [320,390,430]) test(`airport mobile selectors and gate text 
     expect(boxes[3]!.y).toBeGreaterThan(boxes[0]!.y);
   }
 
-  const unknown=page.locator('.gate-leader-zones > section[data-side="UNVERIFIED"]').first();
-  await expect(unknown).toBeVisible();
-  expect(await unknown.locator('p').evaluate(el=>getComputedStyle(el).borderLeftWidth)).toBe('1px');
+  await expect(page.locator('.gate-leader-zones > section[data-side="UNVERIFIED"]')).toHaveCount(0);
+  await expect(page.getByTestId('gate-unverified-count')).toHaveCount(0);
   await top.getByRole('tab',{name:'T2',exact:true}).click();
   await expect(top.getByRole('tab',{name:'T2',exact:true})).toHaveAttribute('aria-selected','true');
   await top.getByRole('tab').first().click();

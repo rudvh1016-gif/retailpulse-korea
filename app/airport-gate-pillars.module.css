@@ -1,0 +1,44 @@
+.board :global(.gate-leader-zones) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.board :global(.gate-leader-zones > section[data-side=EAST]) {
+  grid-column: auto;
+}
+
+.board :global(.gate-zone-heading) {
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 2px;
+  min-height: 54px;
+  text-align: center;
+}
+
+.board :global(.gate-zone-heading h5),
+.board :global(.gate-zone-heading small) {
+  text-align: center;
+}
+
+.board :global(.gate-leader-zones .gate-pillar-row > div) {
+  max-width: 144px;
+}
+
+.board button,
+.list > summary {
+  touch-action: manipulation;
+}
+
+.board button:focus-visible,
+.list > summary:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+}
+
+.list > summary {
+  min-height: 44px;
+  padding-block: 12px;
+  box-sizing: border-box;
+  color: #000;
+  cursor: pointer;
+}
