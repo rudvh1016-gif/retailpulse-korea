@@ -18,9 +18,9 @@ name: Collect Airport Passenger Forecast
 #
 # SELF-HEALING ACROSS RUNNERS — added after A5 lost an entire day.
 #
-# Every failure in that outage was NETWORK_UND_ERR_CONNECT_TIMEOUT with
-# `requests 0`: the TCP connection to apis.data.go.kr never completed, so the
-# provider never saw us. Minutes after the last of them, the credential-free
+# A measured outage had NETWORK_UND_ERR_CONNECT_TIMEOUT failures. Failed fetch
+# attempts count against our budget; the provider's own accounting is unknown.
+# Minutes after the last of them, the credential-free
 # smoke reached seven endpoints on that same host from a GitHub runner in
 # under two seconds each. Retrying inside the job cannot help with that — it
 # keeps the same runner and the same egress address, which is why the
@@ -28,7 +28,9 @@ name: Collect Airport Passenger Forecast
 # same window. A fresh JOB is a fresh runner, and that is the one thing an
 # in-process retry can never be.
 #
-# So a failed attempt is followed by up to two more, each its own job.
+# A classified network/timeout/5xx failure permits up to two more attempts,
+# each its own job with at least a 10-second pause. Auth/schema/empty data,
+# HTTP 429, deferred Retry-After and unknown outcomes never start another job.
 #
 # They cost nothing on a healthy run, and they cannot become a blind repeat:
 # an attempt only starts after the previous one failed OUTRIGHT, which for
@@ -61,7 +63,7 @@ jobs:
 
   retry_1:
     needs: collect
-    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.collect.result == 'failure' }}
+    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.collect.result == 'failure' && needs.collect.outputs.retry_forecast == 'true' }}
     uses: ./.github/workflows/collect-attempt.yml
     with:
       sources: airport_passenger_forecast
@@ -70,7 +72,7 @@ jobs:
 
   retry_2:
     needs: [collect, retry_1]
-    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.retry_1.result == 'failure' }}
+    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.retry_1.result == 'failure' && needs.retry_1.outputs.retry_forecast == 'true' }}
     uses: ./.github/workflows/collect-attempt.yml
     with:
       sources: airport_passenger_forecast

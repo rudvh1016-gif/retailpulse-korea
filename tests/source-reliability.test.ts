@@ -119,6 +119,31 @@ test("HTTP 429 honors bounded Retry-After", async () => {
   assert.deepEqual(delays, [12_000]);
 });
 
+for (const status of [429, 503]) {
+  for (const retryAfter of ["120", "Thu, 01 Jan 1970 00:02:00 GMT"]) {
+    test(`HTTP ${status} defers Retry-After outside the wait window (${retryAfter})`, async () => {
+      const sequence = sequenceFetch([new Response("wait", { status, headers: { "retry-after": retryAfter } })]);
+      const { options, delays } = testPolicy({ fetchImpl: sequence.fetchImpl });
+      await assert.rejects(fetchOfficialJson(URL_FIXTURE, options), (error: unknown) => {
+        assert.ok(error instanceof SourceFetchError);
+        assert.equal(error.status, status);
+        assert.equal(error.attempts, 1);
+        assert.equal(error.retryDeferred, true);
+        assert.match(safeSourceFailureDetail(error), /retryDeferred=true/);
+        return true;
+      });
+      assert.equal(sequence.calls(), 1, "never shorten a provider's 120-second cooldown to 60 seconds");
+      assert.deepEqual(delays, []);
+    });
+  }
+}
+
+test("NO_DATA and invalid source data have separate safe failure classes", () => {
+  assert.match(safeSourceFailureDetail(new Error("congestion_no_data")), /failureClass=NO_DATA/);
+  assert.match(safeSourceFailureDetail(new Error("seoul_population_empty")), /failureClass=NO_DATA/);
+  assert.match(safeSourceFailureDetail(new Error("seoul_population_schema")), /failureClass=SCHEMA/);
+});
+
 test("retry exhaustion reports bounded attempts and elapsed recovery window", async () => {
   const sequence = sequenceFetch([networkError()]);
   const { options, delays } = testPolicy({ fetchImpl: sequence.fetchImpl });
