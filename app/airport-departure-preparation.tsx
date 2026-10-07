@@ -1,5 +1,8 @@
 'use client';
 import {useState} from 'react';
+import Image from 'next/image';
+import {departureGuideEntryCopy} from './departure-guide-entry-copy';
+import styles from './departure-guide-entry.module.css';
 import type {Lang} from './retailpulse-data';
 import {departurePreparation,departurePreparationEvidence,type DeparturePreparationInput,type DepartureStepId,type DepartureRoute,type DepartureChoice} from '../lib/airport-departure-preparation';
 import {departurePreparationCopy} from './airport-departure-preparation-copy';
@@ -10,12 +13,16 @@ import {travelRecordsCopy} from './travel-records-copy';
 
 export function AirportDeparturePreparation({lang}:{lang:Lang}) {
  const [open,setOpen]=useState(false),[input,setInput]=useState<DeparturePreparationInput>({route:'UNKNOWN',checkedBaggage:'UNKNOWN',taxRefund:'UNKNOWN',dutyFreePickup:'UNKNOWN'});
+ const entry=departureGuideEntryCopy[lang];
  const c=departurePreparationCopy[lang]??departurePreparationCopy.en,g=getPassengerGuideCopy(lang),plan=departurePreparation(input);
  const basic=[['terminal',c.confirm],['checkin',input.taxRefund==='YES'?c.checkinTax:c.checkin],['security',c.securityStep],['immigration',c.immigration],['boarding',c.gate]] as const;
  const update=(key:keyof DeparturePreparationInput,value:DepartureRoute|DepartureChoice)=>setInput(current=>({...current,[key]:value}));
  const stepText:Record<DepartureStepId,string>={CONFIRM:c.confirm,CHECK_IN:c.checkin,CHECK_IN_TAX:c.checkinTax,CHECKED_CUSTOMS:c.checkedCustoms,BAG_DROP:c.drop,SECURITY:c.securityStep,IMMIGRATION:c.immigration,REFUND:c.refund,PICKUP:c.pickupStep,GATE:c.gate};
- return <details id="airport-departure-preparation" className="airport-departure-preparation" data-testid="departure-preparation" onToggle={event=>setOpen(event.currentTarget.open)}>
-  <summary>{c.title}<span className="passenger-guide-entry">{g.overview}</span></summary>{open&&<div className="departure-preparation-body">
+ return <details id="airport-departure-preparation" className={`airport-departure-preparation ${styles.guide}`} data-testid="departure-preparation" onToggle={event=>setOpen(event.currentTarget.open)}>
+  <summary className={styles.entry} data-testid="departure-guide-entry">
+   <span className={styles.copy}><span className={styles.buttonLabel}><span className={styles.title}>{entry.title}</span><svg className={styles.indicator} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="m5 9 7 7 7-7"/></svg></span><span className={styles.actionText}>{open?entry.close:entry.open}</span></span>
+   <span className={styles.scene} aria-hidden="true"><Image src="/visuals/travel-records/v1/departure.webp" width={960} height={720} unoptimized alt="" priority/></span>
+  </summary>{open&&<div className="departure-preparation-body">
    <p className="prep-note">{c.scope}</p><p>{c.intro}</p>
    <h3 className="passenger-guide-heading">{g.overview}</h3>
    <ol className="passenger-guide-steps" data-testid="passenger-basic-steps">{basic.map(([asset,detail],index)=><li key={asset}>
