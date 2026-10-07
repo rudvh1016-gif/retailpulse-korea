@@ -9,6 +9,7 @@ import { cnJpHoliday, officialHolidaysOn } from '../lib/airport-prep-holidays';
 import type { AirportSidesBlock as SidesBlock } from '../lib/airport-sides-summary';
 import { sidesCopy as copy } from '../lib/airport-sides-copy';
 import './airport-visual.css';
+import './airport-scene-model.css';
 import { useAirportModelTarget } from './use-airport-model-target';
 
 type Terminal = 'T1' | 'T2';

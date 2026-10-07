@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { PREFERENCE_KEY } from '../lib/personal-briefing';
+import type {LiveSummary} from '../app/live-signals';
 
 // Uses public Production responses and local preferences only; sends no feedback.
 for (const width of [360, 390]) test(`personalization and chart repair on Production ${width}`, async ({ page }, info) => {
@@ -34,7 +35,9 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   await dateButtons.nth(1).press('Space');
   await expect(dateButtons.nth(1)).toHaveAttribute('aria-pressed', 'true');
   await page.screenshot({path:info.outputPath(`airport-home-${width}.png`)});
+  const summaryResponse=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/live/summary'&&response.status()===200);
   await page.goto('/ko/hongdae');
+  const publicSummary=await (await summaryResponse).json() as LiveSummary;
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   const history = page.locator('.population-history-disclosure');
   await expect(history).not.toHaveAttribute('open');
@@ -67,25 +70,53 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   await page.screenshot({ path: info.outputPath(`hongdae-${width}.png`) });
   const populationNumber = page.locator('.demand-number strong');
   if (await populationNumber.count()) await expect(populationNumber).toHaveCSS('font-size', '29px');
-  const observed = page.locator('.flow-observed');
-  if (await observed.count()) await expect(observed.first()).toHaveCSS('stroke', 'rgb(17, 17, 17)');
+  const flow=page.locator('.population-flow-connected'),chart=flow.locator('.population-chart');
+  await expect(flow).toBeVisible();
+  const bounds=chart.locator('.flow-bound');
+  expect(await bounds.count()).toBeGreaterThan(0);
+  for(const bound of await bounds.all())await expect(bound).toHaveCSS('stroke','rgb(100, 148, 179)');
+  for(const bound of await chart.locator('.flow-observed .flow-bound').all())await expect(bound).toHaveCSS('stroke-dasharray','none');
+  for(const bound of await chart.locator('.flow-forecast .flow-bound').all())await expect(bound).toHaveCSS('stroke-dasharray','3px, 2px');
+  await expect(chart.locator('.flow-marker circle')).toHaveCSS('fill','rgb(255, 255, 255)');
+  await expect(chart.locator('.flow-marker circle')).toHaveCSS('stroke','rgb(100, 148, 179)');
   await page.locator('.population-chart').scrollIntoViewIfNeeded();
-  await page.getByRole('slider').press('End');
-  await expect(page.getByRole('slider')).toHaveAttribute('aria-valuetext', /KST/);
-  // The handle and the chart's own selection line must share one real screen x
-  // on the LIVE site, at every position an operator can actually reach — not
-  // only where a fixture happens to place them. Production carries the cadence
-  // a fixture cannot: 5-minute observations, hourly overnight forecast rows and
-  // real gaps. An index-based thumb tracks index/(length-1) while the line
-  // tracks the point's actual time, so the two drift apart exactly there.
-  const thumb = page.locator('.flow-slider-thumb'), selection = page.locator('.flow-selection line');
-  for (const key of ['Home', 'ArrowRight', 'ArrowRight', 'ArrowRight', 'End', 'ArrowLeft', 'ArrowLeft', 'ArrowLeft']) {
-    await page.getByRole('slider').press(key);
-    const at = await page.getByRole('slider').getAttribute('aria-valuetext');
-    const [handle, line] = [await thumb.boundingBox(), await selection.boundingBox()];
-    expect(handle, `handle missing at ${at}`).not.toBeNull();
-    expect(line, `selection line missing at ${at}`).not.toBeNull();
-    expect(Math.abs((handle!.x + handle!.width / 2) - (line!.x + line!.width / 2)), `handle vs selection at ${at}`).toBeLessThanOrEqual(2);
+  const area=publicSummary.areas.hongdae!;
+  const original=new Map<string,{populationMin:number|null;populationMax:number|null}>();
+  for(const row of area.observedSeries??[])original.set(`observed:${Date.parse(row.observedAt)}`,row);
+  if(area.realtime)original.set(`observed:${Date.parse(area.realtime.observedAt)}`,area.realtime);
+  for(const row of area.realtimeForecast??[])original.set(`forecast:${Date.parse(row.targetAt)}`,row);
+  // PR281 uses a native time selector. Keep checking real timestamp geometry
+  // and both original bounds, including connections and gaps in public data.
+  const ranges=await chart.locator('[data-range-times]').evaluateAll(groups=>groups.map(group=>({
+    kind:group.classList.contains('flow-forecast')?'forecast':'observed',
+    times:group.getAttribute('data-range-times')!.split(',').map(Number),
+    paths:[...group.querySelectorAll('path.flow-bound')].map(path=>path.getAttribute('d')!),
+  })));
+  for(const range of ranges){
+    for(const time of range.times)expect(original.has(`${range.kind}:${time}`),'each plotted time comes from the displayed public response').toBe(true);
+    if(range.times.length>1){
+      expect(range.paths).toHaveLength(2);
+      for(const path of range.paths)expect((path.match(/L/g)??[]).length).toBe(range.times.length-1);
+      for(let i=1;i<range.times.length;i++)expect(range.times[i]-range.times[i-1]).toBeLessThanOrEqual(range.kind==='observed'?30*60_000:60*60_000);
+    }
+  }
+  const selector=flow.getByLabel('차트 시간 선택');
+  const options=await selector.locator('option').count();
+  expect(options).toBeGreaterThan(0);
+  for(const index of [...new Set([0,1,2,3,options-1,options-2,options-3,options-4].filter(index=>index>=0&&index<options))]){
+    await selector.selectOption({index});
+    const value=await selector.inputValue(),separator=value.indexOf(':'),time=Date.parse(value.slice(separator+1));
+    const point=original.get(`${value.slice(0,separator)}:${time}`);
+    expect(point,'selected range must exist in the original response').toBeDefined();
+    expect(point!.populationMin).not.toBeNull();expect(point!.populationMax).not.toBeNull();
+    await expect(flow.locator('.flow-readout strong')).toHaveText(`${point!.populationMin!.toLocaleString('ko-KR')}–${point!.populationMax!.toLocaleString('ko-KR')}명`);
+    const geometry=await chart.evaluate((svg,at)=>{
+      const grid=svg.querySelector('.flow-grid')!,left=Number(grid.getAttribute('x1')),right=Number(grid.getAttribute('x2'));
+      const start=Number(svg.getAttribute('data-domain-start')),end=Number(svg.getAttribute('data-domain-end'));
+      return {expected:left+(at-start)/(end-start)*(right-left),selection:Number(svg.querySelector('.flow-selection line')!.getAttribute('x1')),marker:Number(svg.querySelector('.flow-marker circle')!.getAttribute('cx'))};
+    },time);
+    expect(geometry.selection).toBeCloseTo(geometry.expected,5);
+    expect(geometry.marker).toBeCloseTo(geometry.expected,5);
   }
   await page.screenshot({ path: info.outputPath(`chart-${width}.png`) });
   await page.locator('.population-flow').screenshot({ path: info.outputPath(`chart-panel-${width}.png`) });

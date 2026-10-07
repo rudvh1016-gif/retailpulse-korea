@@ -1,0 +1,61 @@
+.business-prep[data-place="area"] .prep-facts > li {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+  padding: 14px 0;
+  color: #000;
+}
+.signal-scene {
+  display: block;
+  width: 112px;
+  aspect-ratio: 4 / 3;
+}
+.signal-scene img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.prep-symbol { display: block; min-width: 0; }
+.prep-symbol-caption { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+.business-prep[data-place="area"] .prep-fact-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.65;
+}
+.business-prep[data-place="area"] .prep-fact-value {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.business-prep[data-place="area"] .prep-fact-detail summary,
+.business-prep[data-place="area"] .prep-action-detail summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  width: fit-content;
+  color: #000;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+.business-prep[data-place="area"] .prep-fact-detail summary::-webkit-details-marker,
+.business-prep[data-place="area"] .prep-action-detail summary::-webkit-details-marker { display: none; }
+.business-prep[data-place="area"] .prep-fact-detail summary::after,
+.business-prep[data-place="area"] .prep-action-detail summary::after { content: '+'; font-size: 16px; font-weight: 400; }
+.business-prep[data-place="area"] .prep-fact-detail[open] > summary::after,
+.business-prep[data-place="area"] .prep-action-detail[open] > summary::after { content: '−'; }
+.business-prep[data-place="area"] summary:focus-visible { outline: 2px solid #000; outline-offset: 3px; }
+.business-prep[data-place="area"] .prep-fact-detail p { margin: 4px 0 8px; font-size: 12px; line-height: 1.7; }
+.business-prep[data-place="area"] .prep-action-title,
+.business-prep[data-place="area"] .prep-action-detail p { color: #000; }
+.business-prep[data-place="area"] .prep-action-detail .prep-industry-hint { color: var(--muted); }
+@media (max-width: 760px) {
+  .business-prep[data-place="area"] .prep-facts > li { grid-template-columns: 92px minmax(0, 1fr); gap: 12px; }
+  .signal-scene { width: 92px; }
+}

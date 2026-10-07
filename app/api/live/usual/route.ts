@@ -6,7 +6,7 @@ import {
   compareWithUsual,
   holidayDates,
   holidayMonthsFor,
-  usualBaselineStatement,
+  usualBaselineStatements,
   usualHolidaySql,
   type UsualRow,
 } from '../../../../lib/usual-comparison';
@@ -32,16 +32,17 @@ export async function GET(request: Request) {
     if (!current || typeof current.observedAt !== 'string') {
       return Response.json(compareWithUsual({ area, current: null, candidates: [], holidays: null, todayKst, generatedAt }), { headers: { ...headers, 'cache-control': 'public, max-age=120' } });
     }
-    const baseline = usualBaselineStatement(area, current.observedAt);
+    const baselines = usualBaselineStatements(area, current.observedAt);
     const months = holidayMonthsFor(current.observedAt);
-    const [candidates, holidayRows] = await db.batch([
-      db.prepare(baseline.sql).bind(...baseline.binds),
+    const results = await db.batch([
+      ...baselines.map(({ sql, binds }) => db.prepare(sql).bind(...binds)),
       db.prepare(usualHolidaySql(months.length)).bind(...months),
     ]);
+    const holidayRows = results[baselines.length];
     const result = compareWithUsual({
       area,
       current,
-      candidates: (candidates.results ?? []) as UsualRow[],
+      candidates: results.slice(0, baselines.length).flatMap((result) => result.results ?? []) as UsualRow[],
       holidays: holidayDates((holidayRows.results ?? []) as Array<{ month?: unknown; payload?: unknown }>, months),
       todayKst,
       generatedAt,

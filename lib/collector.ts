@@ -17,6 +17,7 @@ import {
   normalizeWeatherForecast,
   redactSeoulUrl,
   safeSourceFailureDetail,
+  SourceFetchError,
   type CanonicalAirportCongestion,
   type CanonicalAirportFlight,
   type CanonicalAirportPassengerForecastRow,
@@ -486,9 +487,9 @@ function seoulIntegratedCitydata(payload: unknown): Record<string, unknown> {
 
 function integratedPopulationRecord(citydata: Record<string, unknown>): Record<string, unknown> {
   const rows = citydata.LIVE_PPLTN_STTS;
-  if (!Array.isArray(rows) || !rows[0] || typeof rows[0] !== "object" || Array.isArray(rows[0])) {
-    throw new Error("seoul_population_empty");
-  }
+  if (!Array.isArray(rows)) throw new Error("seoul_population_schema");
+  if (rows.length === 0) throw new Error("seoul_population_empty");
+  if (!rows[0] || typeof rows[0] !== "object" || Array.isArray(rows[0])) throw new Error("seoul_population_schema");
   return {
     ...(rows[0] as Record<string, unknown>),
     AREA_CD: citydata.AREA_CD,
@@ -501,6 +502,7 @@ function integratedPopulationRecord(citydata: Record<string, unknown>): Record<s
 export async function collectSeoulRealtime(env: CollectorEnv): Promise<CollectorResult> {
   const populationSourceId = "SEOUL_CITYDATA_PPLTN";
   const commercialSourceId = "SEOUL_CITYDATA_CMRCL";
+  const collectionRequestedAt = nowIso();
   if (!env.SEOUL_OPEN_DATA_KEY) {
     for (const sourceId of [populationSourceId, commercialSourceId]) {
       await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "SEOUL_OPEN_DATA_KEY is not configured");
@@ -521,11 +523,12 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
     const mapping = areaMappings[areaId];
     const url = new URL(`http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/citydata/1/5/${mapping.seoulPoiCode}`);
     let citydata: Record<string, unknown>;
+    const requestedAt = nowIso();
     try {
-      const payload = await fetchOfficialJson(url, { timeoutMs: 8_000, retries: 1 });
+      const payload = await fetchOfficialJson(url, { timeoutMs: 8_000, retries: 1, retryDelaysMs: [2_000], jitterMs: 500 });
       citydata = seoulIntegratedCitydata(payload);
     } catch (error) {
-      const detail = failureDetail(areaId, error);
+      const detail = `${failureDetail(areaId, error)} requestedAt=${requestedAt}`;
       populationFailures.push(detail);
       commercialFailures.push(detail);
       continue;
@@ -623,6 +626,7 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
 
   const populationWritten = env.DB && populationStatements.length ? await runBatches(env.DB, populationStatements) : NO_D1_WRITES;
   const commercialWritten = env.DB && commercialStatements.length ? await runBatches(env.DB, commercialStatements) : NO_D1_WRITES;
+  const sourceDetails: string[] = [];
 
   const finalize = async (
     sourceId: string,
@@ -632,7 +636,8 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
     lastRecord: HealthSnapshot | undefined,
   ): Promise<"SUCCESS" | "PARTIAL" | "ERROR"> => {
     const okCount = publicAreaIds.length - failures.length;
-    const detail = `areas ok ${okCount}/${publicAreaIds.length}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
+    const detail = `requestedAt=${collectionRequestedAt}; areas ok ${okCount}/${publicAreaIds.length}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
+    sourceDetails.push(`${sourceId}: ${detail}`);
     const collectorStatus = okCount === publicAreaIds.length ? "SUCCESS" : okCount > 0 ? "PARTIAL" : "ERROR";
     const hasUsable = okCount > 0 || await hasStoredRow(env.DB, `SELECT 1 FROM ${table} LIMIT 1`);
     const health: SourceHealthStatus = okCount === publicAreaIds.length ? "LIVE" : hasUsable ? "STALE" : "ERROR";
@@ -646,7 +651,7 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
   const status = populationStatus === "SUCCESS" && commercialStatus === "SUCCESS"
     ? "SUCCESS"
     : populationStatus === "ERROR" && commercialStatus === "ERROR" ? "ERROR" : "PARTIAL";
-  return { status, records: populationWritten.changedRows + commercialWritten.changedRows };
+  return { status, records: populationWritten.changedRows + commercialWritten.changedRows, detail: sourceDetails.join(" | ") };
 }
 
 const SEOUL_FOREIGN_PERIOD_LOOKBACK_DAYS = 62;
@@ -1803,9 +1808,22 @@ export async function collectTourismEvents(env: CollectorEnv, now = new Date()):
   }
 }
 
+/** Empty provider lists are distinct from malformed envelopes/rows. */
+function officialResponseItems(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (value === "") return [];
+  if (!value || typeof value !== "object" || !("item" in value)) throw new SourceFetchError("SCHEMA");
+  const item = (value as { item: unknown }).item;
+  if (Array.isArray(item)) return item;
+  if (item === "" || item === null) return [];
+  if (item && typeof item === "object") return [item];
+  throw new SourceFetchError("SCHEMA");
+}
+
 // A4 — departure-hall congestion; T2 stays N/A unless officially returned.
 export async function collectAirportCongestion(env: CollectorEnv): Promise<CollectorResult> {
   const sourceId = "INCHEON_DEPARTURE_CONGESTION";
+  const requestedAt = nowIso();
   if (!env.DATA_GO_KR_SERVICE_KEY) {
     await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "DATA_GO_KR_SERVICE_KEY is not configured");
     await writeSourceHealth(env.DB, sourceId, "MISSING", "DATA_GO_KR_SERVICE_KEY is not configured");
@@ -1827,9 +1845,9 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
       const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown } } } };
       const resultCode = root?.response?.header?.resultCode;
       if (resultCode !== "00") throw new Error(`congestion_result_${String(resultCode ?? "missing")}`);
-      const bodyItems = root?.response?.body?.items;
-      const rawItems = Array.isArray(bodyItems) ? bodyItems : bodyItems?.item;
-      const items = Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
+      if (!root.response?.body || root.response.body.items === undefined) throw new SourceFetchError("SCHEMA");
+      const items = officialResponseItems(root.response.body.items);
+      if (items.length === 0) throw new Error("congestion_no_data");
       terminalCounts.push(`${terminalId}:${items.length}`);
       const retrievedAt = nowIso();
       for (const item of items) {
@@ -1853,7 +1871,7 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
     }
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
-  const detail = `terminals ${terminalCounts.join(", ") || "none"}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
+  const detail = `requestedAt=${requestedAt}; terminals ${terminalCounts.join(", ") || "none"}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
   if (failures.length === 1) {
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
@@ -1880,6 +1898,7 @@ const A4_T2_MAX_PAGES = 3;
  */
 export async function collectAirportCongestionT2(env: CollectorEnv): Promise<CollectorResult> {
   const sourceId = "INCHEON_DEPARTURE_CONGESTION_T2";
+  const requestedAt = nowIso();
   if (!env.DATA_GO_KR_SERVICE_KEY) {
     await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "DATA_GO_KR_SERVICE_KEY is not configured");
     await writeSourceHealth(env.DB, sourceId, "MISSING", "DATA_GO_KR_SERVICE_KEY is not configured");
@@ -1910,9 +1929,8 @@ export async function collectAirportCongestionT2(env: CollectorEnv): Promise<Col
       const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown }; totalCount?: number } } };
       const resultCode = root?.response?.header?.resultCode;
       if (resultCode !== "00") throw new Error(`congestion_t2_result_${String(resultCode ?? "missing")}`);
-      const bodyItems = root?.response?.body?.items;
-      const rawItems = Array.isArray(bodyItems) ? bodyItems : bodyItems?.item;
-      const items = Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
+      if (!root.response?.body || root.response.body.items === undefined) throw new SourceFetchError("SCHEMA");
+      const items = officialResponseItems(root.response.body.items);
       pagesFetched += 1;
       totalCount = typeof root?.response?.body?.totalCount === "number" ? root.response.body.totalCount : totalCount;
       for (const item of items) {
@@ -1939,7 +1957,7 @@ export async function collectAirportCongestionT2(env: CollectorEnv): Promise<Col
       if (totalCount === null || pageNo * A4_T2_PAGE_SIZE >= totalCount || items.length < A4_T2_PAGE_SIZE) break;
     }
   } catch (error) {
-    const detail = safeSourceFailureDetail(error);
+    const detail = `requestedAt=${requestedAt}; ${safeSourceFailureDetail(error)}`;
     // A provider ERROR here must never touch existing T1/T2 rows already in
     // D1 — only source_health/collector_runs are written, so the last-good
     // congestion rows remain exactly as they were.
@@ -1948,11 +1966,12 @@ export async function collectAirportCongestionT2(env: CollectorEnv): Promise<Col
     return { status: "ERROR", records: 0, detail };
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
-  const detail = `pages ${pagesFetched}; totalCount ${totalCount ?? "unknown"}; normalized ${normalizedCount}; ${describeWrites(written)}${rowFailures.length ? `; row failures ${rowFailures.length}` : ""}`;
+  const detail = `requestedAt=${requestedAt}; pages ${pagesFetched}; totalCount ${totalCount ?? "unknown"}; normalized ${normalizedCount}; ${describeWrites(written)}${rowFailures.length ? `; row failures ${rowFailures.length}: ${rowFailures[0]}` : ""}`;
   if (normalizedCount === 0) {
-    await writeCollectorStatus(env.DB, sourceId, "ERROR", "congestion_t2_no_data");
-    await writeSourceHealth(env.DB, sourceId, "ERROR", "congestion_t2_no_data");
-    return { status: "ERROR", records: 0, detail: "congestion_t2_no_data" };
+    const failure = rowFailures.length ? detail : `${detail}; ${safeSourceFailureDetail(new Error("congestion_t2_no_data"))}`;
+    await writeCollectorStatus(env.DB, sourceId, "ERROR", failure);
+    await writeSourceHealth(env.DB, sourceId, "ERROR", failure);
+    return { status: "ERROR", records: 0, detail: failure };
   }
   await writeCollectorStatus(env.DB, sourceId, rowFailures.length ? "PARTIAL" : "SUCCESS", detail, normalizedCount, written.changedRows);
   await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastRow ? { eventAt: lastRow.observedAt, retrievedAt: lastRow.retrievedAt, schemaVersion: lastRow.schemaVersion } : undefined);
@@ -2186,14 +2205,14 @@ export async function collectAirportPassengerForecast(
          * down still fails, still preserves last-good rows, and still marks
          * source health STALE.
          */
-        const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 1, retryDelayMs: 500, fetchImpl: countedFetch });
+        const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 1, retryDelaysMs: [2_000], jitterMs: 500, fetchImpl: countedFetch });
         responseCount += 1;
         const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown }; totalCount?: number } } };
         const resultCode = root?.response?.header?.resultCode;
         if (resultCode !== "00") throw new Error(`forecast_result_${String(resultCode ?? "missing")}`);
-        const bodyItems = root?.response?.body?.items;
-        const rawItems = Array.isArray(bodyItems) ? bodyItems : bodyItems?.item;
-        const items = Array.isArray(rawItems) ? rawItems : rawItems ? [rawItems] : [];
+        if (!root.response?.body || root.response.body.items === undefined) throw new SourceFetchError("SCHEMA");
+        const items = officialResponseItems(root.response.body.items);
+        if (items.length === 0) throw new Error("forecast_no_data");
         totalCount = typeof root?.response?.body?.totalCount === "number" ? root.response.body.totalCount : totalCount;
         for (const item of items) {
           let rows: CanonicalAirportPassengerForecastRow[];
