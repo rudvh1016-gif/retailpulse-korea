@@ -200,5 +200,15 @@
       "version": 0,
       "scope": "local mocked source fixtures; not deployed"
     }
-  ]
+  ],
+  "integrationCiCorrection": {
+    "originalHead": "9b551933be79887b608a0dee7fea946b20f97e68",
+    "runId": 37615049787,
+    "unit": "1216/1216PASS",
+    "html": "46/46PASS",
+    "e2e": "865passed,1failed,1flaky",
+    "failure": "Existing compact gate board test still queried obsolete gate-unverified-count. Updated only to current approved native disclosure with stronger keyboard, count and actual TEST999 content checks. All unknown filter/details/3-image assertions remain.",
+    "flaky": "Existing travel unsaved-form test read URL synchronously before hashchange confirmation restored it. Use the same finalURL via Playwright auto-wait; draft-content contract and30s/8s limits remain.",
+    "local": "Related32 cases:31PASS;1 desktop navigation failed before rendering with Windows ERR_NO_BUFFER_SPACE. That1 case PASS unchanged at a separate local port. No source, lock enforcement, skip or workflow changes."
+  }
 }

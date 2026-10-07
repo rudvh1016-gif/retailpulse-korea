@@ -92,7 +92,16 @@ for (const width of [320, 390, 430, 1280]) test(`three gate representatives reta
 
 test('unpositioned gate records remain accessible without a fourth image', async ({page}) => {
   const board = await open(page, 320, 'ko', true);
-  await expect(board.getByTestId('gate-unverified-count')).toHaveText('위치 미확인: 1편');
+  const note=board.getByTestId('gate-unverified-details');
+  await expect(note.locator('summary')).toHaveText('※ 위치 미확인 1편');
+  await expect(note).not.toHaveAttribute('open','');
+  await expect(note.locator('li')).toHaveCount(0);
+  await note.locator('summary').focus();
+  await page.keyboard.press('Enter');
+  await expect(note.locator('li')).toHaveCount(1);
+  await expect(note.locator('li')).toContainText('TEST999');
+  await page.keyboard.press('Space');
+  await expect(note).not.toHaveAttribute('open','');
   await board.getByTestId('gate-all-list').locator('summary').click();
   await board.locator('[data-zone=UNVERIFIED]').click();
   await expect(board.locator('.gate-full-list li')).toHaveCount(1);

@@ -80,5 +80,5 @@ test('stale edit revision fails visibly and preserves the draft',async({page})=>
  await page.locator('#save').click();await expect(page.locator('#form-error')).toContainText('다른 창');await expect(page.locator('#memo')).toHaveValue('Synthetic stale draft');expect(await recordCount(page)).toBe(1);
 });
 test('cancelling navigation keeps the unsaved form',async({page})=>{
- await page.goto('/ko/travel-records#/new');await page.locator('#memo').fill('Synthetic unsaved draft');page.once('dialog',d=>d.dismiss());await page.locator('form a[href="#/"]').click();await expect(page.locator('#memo')).toHaveValue('Synthetic unsaved draft');expect(new URL(page.url()).hash).toBe('#/new');
+ await page.goto('/ko/travel-records#/new');await page.locator('#memo').fill('Synthetic unsaved draft');page.once('dialog',d=>d.dismiss());await page.locator('form a[href="#/"]').click();await expect(page.locator('#memo')).toHaveValue('Synthetic unsaved draft');await expect(page).toHaveURL(/\/ko\/travel-records#\/new$/);
 });
