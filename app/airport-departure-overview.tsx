@@ -4,11 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 import type { Lang } from './retailpulse-data';
 import { LiveLoadMessage, useLiveSummary } from './live-signals';
 import { usePresentationClock } from './area-demand-card';
-import { DayRadarSection, DepartureMapSection, FlightSplitCard } from './airport-sides';
+import { DayRadarSection, DepartureMapSection } from './airport-sides';
 import { cnJpHoliday, officialHolidaysOn } from '../lib/airport-prep-holidays';
 import type { AirportSidesBlock as SidesBlock } from '../lib/airport-sides-summary';
 import { sidesCopy as copy } from '../lib/airport-sides-copy';
 import './airport-visual.css';
+import './airport-scene-model.css';
 import { useAirportModelTarget } from './use-airport-model-target';
 
 type Terminal = 'T1' | 'T2';
@@ -60,10 +61,9 @@ export function AirportDepartureOverview({ lang, terminal, date }: { lang: Lang;
           color: picked === item ? 'var(--ink)' : '#888', borderBottom: picked === item ? '2px solid var(--blue)' : '2px solid transparent', marginBottom: -1 }}>{item}</button>)}
     </div>}
     {!sides
-      ? <><p className="prep-note" data-testid="overview-no-flights">{copy.noFlights[lang]}</p><DepartureMapSection lang={lang} summary={summary} terminal={shown} nowIso={nowIso} holidays={holidays} defaultOpen defaultBuildingScope={terminal} modelPlacement="airport-departure-model-slot"/></>
+      ? <><p className="prep-note" data-testid="overview-no-flights">{copy.noFlights[lang]}</p><DepartureMapSection lang={lang} summary={summary} terminal={shown} nowIso={nowIso} holidays={holidays} defaultBuildingScope={terminal} modelPlacement="airport-departure-model-slot"/></>
       : <div key={shown} data-testid={`overview-${shown}`}>
-        <FlightSplitCard lang={lang} summary={summary} sides={sides} terminal={shown} nowIso={nowIso} showDistribution={false} showEstimate={false}/>
-        <DepartureMapSection lang={lang} summary={summary} terminal={shown} nowIso={nowIso} holidays={holidays} defaultOpen defaultBuildingScope={terminal} modelPlacement="airport-departure-model-slot"/>
+        <DepartureMapSection lang={lang} summary={summary} terminal={shown} nowIso={nowIso} holidays={holidays} defaultBuildingScope={terminal} modelPlacement="airport-departure-model-slot"/>
         <DayRadarSection lang={lang} summary={summary} terminal={shown} nowIso={nowIso} holidays={holidays} isHoliday={cnJpHoliday}/>
       </div>}
     <p className="prep-note" data-testid="sides-notice">{copy.notice[lang]}</p>

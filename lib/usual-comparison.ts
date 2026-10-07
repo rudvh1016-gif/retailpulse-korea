@@ -30,19 +30,19 @@ export const USUAL_LATEST_SQL = `SELECT area, area_code AS areaCode, source_id A
   population_min AS populationMin, population_max AS populationMax, observed_at AS observedAt
 FROM seoul_realtime_area WHERE area = ? ORDER BY observed_at DESC LIMIT 1`;
 
-/** One bounded seek per past week, in one statement. */
-export function usualBaselineStatement(area: string, observedAt: string, weeks = USUAL_WEEKS): { sql: string; binds: Array<string | number> } {
+/** One bounded statement per past week: D1 allows at most five UNION terms. */
+export function usualBaselineStatements(area: string, observedAt: string, weeks = USUAL_WEEKS): Array<{ sql: string; binds: Array<string | number> }> {
   const at = Date.parse(observedAt);
   if (!Number.isFinite(at) || !Number.isInteger(weeks) || weeks < 1 || weeks > 12) throw new Error("invalid_usual_window");
-  const parts: string[] = [], binds: Array<string | number> = [];
+  const statements = [];
   for (let week = 1; week <= weeks; week += 1) {
     const target = at - week * 7 * DAY_MS;
-    parts.push(`SELECT * FROM (SELECT ? AS weekOffset, area_code AS areaCode, source_id AS sourceId, schema_version AS schemaVersion,
+    statements.push({ sql: `SELECT * FROM (SELECT ? AS weekOffset, area_code AS areaCode, source_id AS sourceId, schema_version AS schemaVersion,
       quality_status AS qualityStatus, population_min AS populationMin, population_max AS populationMax, observed_at AS observedAt
-      FROM seoul_realtime_area WHERE area = ? AND observed_at >= ? AND observed_at <= ? ORDER BY observed_at LIMIT 4)`);
-    binds.push(week, area, kstIso(target - SLOT_TOLERANCE_MS), kstIso(target + SLOT_TOLERANCE_MS));
+      FROM seoul_realtime_area WHERE area = ? AND observed_at >= ? AND observed_at <= ? ORDER BY observed_at LIMIT 4)`,
+    binds: [week, area, kstIso(target - SLOT_TOLERANCE_MS), kstIso(target + SLOT_TOLERANCE_MS)] });
   }
-  return { sql: parts.join(" UNION ALL "), binds };
+  return statements;
 }
 
 /** The months the past weeks fall in, so holidays can be checked for each date. */

@@ -27,6 +27,7 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [360,390,430,1280]) 
    if(centerShare)await expect(model.locator('.airport-concept-counts [data-side=CENTER] small')).toHaveText(centerShare);
    if(!total)await expect(model.locator('.airport-concept-counts small').first()).not.toContainText('%');
   }
+  await page.getByTestId('departure-map-section').locator(':scope > summary').click();
   const map=page.getByTestId('departure-map');await map.locator('[data-preset=CUSTOM]').click();await map.getByTestId('map-from').selectOption('10');await map.getByTestId('map-to').selectOption('11');
   await expect(model).toHaveAttribute('data-denominator','0');
   await expect(model.locator('.airport-concept-counts small').first()).not.toContainText('%');

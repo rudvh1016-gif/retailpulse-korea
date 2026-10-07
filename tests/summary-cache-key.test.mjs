@@ -174,11 +174,11 @@ test("the gateway asks the cached entrypoint only through the canonical helper, 
  * be collapsed onto one cached body and served to everybody. This fails the day
  * that changes, so the key rule is updated together with the route.
  */
-test("the summary route still reads only the date and month parameters, and nothing from headers", () => {
+test("the summary route only reads the declared date/month/view/area parameters, and nothing from headers", () => {
   const source = readFileSync("app/api/live/summary/route.ts", "utf8")
     .replace(/\/\*[\s\S]*?\*\//g, "").replace(/^[ \t]*\/\/.*$/gm, "");
-  const keys = [...source.matchAll(/searchParams\.get\(\s*["']([^"']+)["']\s*\)/g)].map((match) => match[1]).sort();
-  assert.deepEqual(keys, ["date", "month"], "update worker/summary-cache-key.ts together with any new parameter");
+  const keys = [...source.matchAll(/(?:searchParams|params)\.get\(\s*["']([^"']+)["']\s*\)/g)].map((match) => match[1]).sort();
+  assert.deepEqual(keys, ["area", "date", "month", "month", "view"], "update worker/summary-cache-key.ts together with any new parameter");
   assert.doesNotMatch(source, /searchParams\.(getAll|entries|keys|values|forEach|has)\b|Object\.fromEntries\(\s*[\w.]*searchParams|\.search\b|\.searchParams\s*\)/,
     "no other way of reading the query string");
   assert.doesNotMatch(source, /request\.headers|request\.cf\b|headers\.get\(|cookies?\b/i,

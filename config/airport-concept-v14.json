@@ -1,0 +1,97 @@
+{
+  "conceptComparison": true,
+  "geographicLayout": false,
+  "source": "Approved v14 geometry; lighting-only night and frame comparison layouts",
+  "views": {
+    "T1": {
+      "width": 1575,
+      "height": 931,
+      "labels": {
+        "WEST": [
+          1081.772,
+          296.159
+        ],
+        "CENTER": [
+          630.973,
+          273.122
+        ],
+        "EAST": [
+          495.677,
+          502.962
+        ]
+      }
+    },
+    "T2": {
+      "width": 1784,
+      "height": 1073,
+      "labels": {
+        "WEST": [
+          641.4,
+          365.7
+        ],
+        "CENTER": [
+          1008.19,
+          381.849
+        ],
+        "EAST": [
+          1244.323,
+          560.801
+        ]
+      }
+    },
+    "CONCOURSE": {
+      "width": 1742,
+      "height": 704,
+      "labels": {
+        "WEST": [
+          379.988,
+          164.943
+        ],
+        "CENTER": [
+          871.0,
+          326.394
+        ],
+        "EAST": [
+          1362.012,
+          470.46
+        ]
+      }
+    },
+    "OVERVIEW_2ROW": {
+      "width": 2400,
+      "height": 1300,
+      "labels": {
+        "T1": [
+          550.5,
+          8
+        ],
+        "T2": [
+          1700,
+          8
+        ],
+        "CONCOURSE": [
+          1200,
+          775
+        ]
+      }
+    }
+  },
+  "mobileOverview": {
+    "width": 1200,
+    "height": 1720,
+    "labels": {
+      "T1": [
+        600,
+        8
+      ],
+      "T2": [
+        600,
+        575
+      ],
+      "CONCOURSE": [
+        600,
+        1260
+      ]
+    }
+  }
+}

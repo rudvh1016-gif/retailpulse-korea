@@ -17,6 +17,8 @@
   height: 100%;
   object-fit: contain;
 }
+.prep-symbol { display: block; min-width: 0; }
+.prep-symbol-caption { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; line-height: 1.4; }
 .business-prep[data-place="area"] .prep-fact-title {
   margin: 0;
   font-size: 13px;

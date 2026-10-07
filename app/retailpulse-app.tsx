@@ -1,5 +1,7 @@
 "use client";
 import { passengerCopy } from "../lib/passenger-copy";
+import { MonthlyRecordsView } from './monthly-records';
+import { recordText } from './monthly-records-copy';
 import { activeSourceCatalog,sourceName,sourceUse,CollectionStatus } from "./source-status";
 
 import { useEffect, useMemo, useState } from "react";
@@ -40,7 +42,6 @@ import { AirportDepartureOverview } from "./airport-departure-overview";
 import { AirportConcourse } from './airport-concourse';
 import { AirportTaxRefundGuide } from './airport-tax-refund-guide';
 import { AirportDeparturePreparation } from './airport-departure-preparation';
-import { departurePreparationCopy } from './airport-departure-preparation-copy';
 import './airport-tax-refund-guide.css';
 import { sidesCopy } from "../lib/airport-sides-copy";
 import { saveBusinessPreferences, useBusinessPreferences } from "./business-preferences";
@@ -498,7 +499,6 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         )}
 
         {view === "airport" && (
-          <>
           <AirportView
             todayAnswer={todayAnswer}
             industry={industry}
@@ -513,12 +513,10 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             date={serviceDate}
             setDate={changeDate}
           />
-          {homeVisible && <section className="home-seoul-secondary" aria-labelledby="home-seoul-title"><div className="demand-section-head"><h2 id="home-seoul-title">{t.today}</h2></div><HomeTodayBrief lang={lang} selected={selected} onSelect={setSelected} date={serviceDate} includeAirport={false} /></section>}
-          </>
         )}
         {view === "business" && <BusinessView lang={lang} selected={selected} setSelected={selectArea} industry={industry} setIndustry={setIndustry} date={serviceDate} setDate={changeDate} setProOpen={setProOpen} />}
         {view === "predictions" && <PredictionView lang={lang} area={selected} onArea={selectArea} />}
-        {view === "forecast" && <InsightsView lang={lang} selected={selected} setSelected={selectArea} date={serviceDate} />}
+        {view === "forecast" && <InsightsView lang={lang} selected={selected} setSelected={selectArea} />}
         {view === "tourism-desk" && <TourismDeskView lang={lang} area={selected} onAreaChange={selectArea} />}
         {view === "about" && <AboutView lang={lang} onAirport={() => openAirport("now")} onSeoul={() => navigate("today")} />}
         {view === "more" && <MoreView
@@ -621,7 +619,6 @@ function AirportView({
         </div>
       </div>
 
-      {(concourse||section === "now")&&<nav className="airport-purpose-links" aria-label={departurePreparationCopy[lang].title}><a href="#airport-departure-preparation" onClick={()=>{const guide=document.getElementById('airport-departure-preparation');if(guide instanceof HTMLDetailsElement)guide.open=true;}}>{departurePreparationCopy[lang].title}</a><a href="#airport-data-flow">{departurePreparationCopy[lang].flow}</a></nav>}
       {(concourse||section === "now")&&<AirportDeparturePreparation lang={lang}/>}
       <div id="airport-data-flow" className="terminal-selector" role="tablist" aria-label="Terminal">
         {(["all", "T1", "T2"] as Terminal[]).map((item) => <button key={item} className={!concourse&&terminal === item ? "active" : ""} onClick={() => setTerminal(item)} role="tab" aria-selected={!concourse&&terminal === item}>{item === "all" ? <><span>{localText(lang, { ko: "전체", en: "ALL", zh: "全部", ja: "全体" })}</span><small>T1·T2</small></> : item}</button>)}
@@ -903,7 +900,7 @@ function ForeignHistoryStats({ lang, selected }: { lang: Lang; selected: Foreign
  * nothing they could act on or check. Every block here is an official figure
  * with a plain-language explanation of what it means and where it came from.
  */
-function InsightsView({ lang, selected, setSelected, date }: { lang: Lang; selected: AreaId; setSelected: (id: AreaId) => void; date: string | null }) {
+function InsightsView({ lang, selected, setSelected }: { lang: Lang; selected: AreaId; setSelected: (id: AreaId) => void }) {
   const recentAirport = airportMonthly.slice(-3);
   const priorAirport = airportMonthly.slice(-6, -3);
   const recentAirportTotal = recentAirport.reduce((sum, item) => sum + airportValue(item, "all", "departure"), 0);
@@ -922,23 +919,14 @@ function InsightsView({ lang, selected, setSelected, date }: { lang: Lang; selec
       <div className="view-intro">
         <div>
           <p className="eyebrow">OFFICIAL RECORDS</p>
-          <h1>{localText(lang, { ko: "숫자 하나가\n무슨 뜻인지부터", en: "Start with what\nthe number means", zh: "先弄清一个\n数字的含义", ja: "その数字が\n何を意味するかから" })}</h1>
-          <p>{localText(lang, {
-            ko: "각 지표마다 무엇을 뜻하는지, 높으면 어떤 상황인지, 어떤 공식 자료에서 왔는지를 함께 적었습니다.",
-            en: "Every figure comes with what it means, what a high value indicates, and which official record it came from.",
-            zh: "每个指标都附有含义说明、数值偏高时的情况，以及所依据的官方资料。",
-            ja: "各指標に、意味・高いときの状況・出典の公式資料を併記しています。",
-          })}</p>
+          <h1>{recordText('title', lang)}</h1>
+          <p>{recordText('intro', lang)}</p>
         </div>
       </div>
 
-      <section className="insight-block" aria-labelledby="insight-now-title">
-        <div className="section-head">
-          <div><p className="eyebrow">01 · RIGHT NOW</p><h2 id="insight-now-title">{localText(lang, { ko: "지금 지역 상황", en: "Areas right now", zh: "各地区当前状况", ja: "エリアの現在" })}</h2></div>
-        </div>
-        <HomeTodayBrief lang={lang} selected={selected} onSelect={setSelected} date={date} />
-      </section>
+      <MonthlyRecordsView lang={lang} area={selected} onArea={setSelected} />
 
+      <details className="records-reference records-details"><summary>{recordText('reference', lang)}</summary>
       <section className="insight-block" aria-labelledby="insight-terminal-title">
         <div className="section-head">
           <div><p className="eyebrow">02 · T1 VS T2 · OFFICIAL HISTORICAL</p><h2 id="insight-terminal-title">{localText(lang, { ko: "터미널별 출국객 비중", en: "Departure share by terminal", zh: "各航站楼出境占比", ja: "ターミナル別の出国者比率" })}</h2></div>
@@ -997,6 +985,7 @@ function InsightsView({ lang, selected, setSelected, date }: { lang: Lang; selec
           ja: "将来自前の予測を出す場合も、結果が判明する前に保存した予測だけで成績を算出します。後から過去データを当てはめて精度を作ることはしません。",
         })}</p>
       </section>
+      </details>
     </section>
   );
 }
