@@ -22,7 +22,7 @@ for (const lang of ['ko', 'en', 'zh', 'ja']) for (const width of [320, 390, 430,
     await page.goto(`/${lang}/airport?terminal=T2`);
     const section = page.locator('.airport-checkpoints');
     const cards = section.locator('article');
-    await expect(cards).toHaveCount(1);
+    await expect(cards).toHaveCount(3);
     const toggle = section.getByRole('button');
     await toggle.focus(); await page.keyboard.press('Enter');
     await expect(toggle).toHaveAttribute('aria-expanded','true');
@@ -48,7 +48,7 @@ for (const lang of ['ko', 'en', 'zh', 'ja']) for (const width of [320, 390, 430,
     await toggle.click(); await toggle.click();
     await expect(cards).toHaveCount(8);
     await toggle.focus(); await page.keyboard.press('Space');
-    await expect(cards).toHaveCount(1);
+    await expect(cards).toHaveCount(3);
     await expect(toggle).toBeFocused();
     await page.locator('.airport-view > .terminal-selector').getByRole('tab',{name:'T1',exact:true}).click();
     await expect(section.locator('.airport-checkpoint-terminal h4')).toContainText('T1');

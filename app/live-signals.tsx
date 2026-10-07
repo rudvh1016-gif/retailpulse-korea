@@ -6,13 +6,15 @@ import { passengerCopy } from "../lib/passenger-copy";
 import { AirportFlowFigure } from "./airport-flow-figure";
 import { FlightCountPrism } from './flight-count-prism';
 import { AirportMonthComparison } from './airport-month-comparison';
+import { AirportQueueScene } from './airport-queue-scene';
+import { displayedQueueMinutes, queueKey, queueRepresentativeCopy, selectQueueRepresentatives } from '../lib/airport-queue-representatives';
 import { CountUpNumber } from "./count-up-number";
 import { passengerReferenceSum } from "../lib/passenger-reference-sum";
 import { usableComparison, validPopulationRange, kstStamp, kstDay, peopleRange, populationFlow } from "../lib/demand-presentation";
 import { pc } from '../lib/personal-copy';
 import {flightBoardingLocation} from "../lib/flight-scope";
 
-import { SeoulContextCard, HolidayContext, contextText } from "./operational-context";
+import { SeoulContextCard, SeoulObservationScene, HolidayContext, contextText } from "./operational-context";
 import type { SeoulContext } from "../lib/seoul-context";
 import type { compareComposition } from "../lib/airport-composition-history";
 import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
@@ -39,11 +41,14 @@ import { buildFacilityCopyText, type CopyableFacility } from "../lib/facility-sh
 import { formatRepresentativeStations } from "../lib/subway-ridership";
 import { buildTerminalBriefings, type TerminalBriefing } from "../lib/terminal-briefing";
 import { buildWeatherGuide, worseAirGrade } from "../lib/weather-guide";
+import { WeatherScene } from './weather-scene';
+import type { WeatherMetricKind } from './weather-metric-scene';
 import { describeObservationAge } from "../lib/observation-freshness";
 import { comparisonText, comparisonValue, type RangeChange } from "../lib/period-comparison";
 import type { MonthToDate, MtdDay } from "../lib/airport-mtd";
 import { mtdCopy, shortDay, shortRange } from "../lib/airport-mtd-copy";
 import { averagePaymentRange, commercialActivityContext } from "../lib/commercial-context";
+import { CommercialMetricScene, type CommercialMetricKind } from './commercial-metric-scene';
 
 import { useEventPagination, EventPaginationControls } from "./event-pagination";
 
@@ -1941,9 +1946,8 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
 }
 
 export function AirportTodaySummary({ lang, terminal = "all", date = null }: { lang: Lang; terminal?: "all" | "T1" | "T2"; date?: string | null }) {
-  // Eight full-height checkpoint rows per terminal cost more vertical space
-  // than they earn: what a reader needs first is the one queue that is longest
-  // right now. The rest stay one keystroke away rather than always on screen.
+  // Compare up to three actual fresh observations first; the complete list
+  // keeps every original value and remains one keystroke away.
   const [showAllCheckpoints, setShowAllCheckpoints] = useState(false);
   const [compositionView, setCompositionView] = useState<"gates" | "airlines" | "countries">("gates");
   const summary = useLiveSummary(date);
@@ -1982,6 +1986,11 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     (airport.congestion ?? []).map((row) => ({ ...row, waitTimeRaw: row.waitTimeRaw ?? null })),
   ) as Record<string, LiveCongestionRow[]>;
   const checkpointTerminals = Object.keys(rankedCheckpoints).filter((key) => isAll || key === terminal);
+  const representativeCopy = queueRepresentativeCopy(lang);
+  const representatives = selectQueueRepresentatives(checkpointTerminals.flatMap(key => rankedCheckpoints[key]), presentationNow);
+  const checkpointGroups = showAllCheckpoints
+    ? checkpointTerminals.map(terminalId => ({terminalId, rows:rankedCheckpoints[terminalId]}))
+    : [{terminalId:terminal, rows:representatives.items.map(item=>item.row)}];
   // The current-time marker exists only for TODAY. A past or future service
   // date has no "now" inside it, and drawing one would invent a moment in a
   // day the clock is not in. Bands the marker has passed stay forecasts.
@@ -1996,6 +2005,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   const nowLabel = `${airportTodayText.nowMarker[lang]} ${formatKstClock(nowIso)}`;
   const waitUnit = { ko: "분", en: " min", zh: "分钟", ja: "分" }[lang];
   const waitText = (row: LiveCongestionRow) => {
+    if (row.waitTimeRaw && !/\d/.test(row.waitTimeRaw)) return row.waitTimeRaw;
     if (row.waitTimeRaw) return /분|min|分钟|分/i.test(row.waitTimeRaw) ? row.waitTimeRaw : `${row.waitTimeRaw}${waitUnit}`;
     return row.waitTimeMinutes !== null ? `${row.waitTimeMinutes}${waitUnit}` : airportTodayText.unavailable[lang];
   };
@@ -2160,24 +2170,19 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
 
     <section className="airport-detail-section airport-checkpoints" aria-labelledby="airport-checkpoints-title">
       <div className="airport-detail-head"><div><p className="eyebrow">CURRENT OBSERVATION · {scopeLabel}</p><h3 id="airport-checkpoints-title">{airportTodayText.current[lang]}</h3></div><p>{airportTodayText.currentNote[lang]}</p></div>
-      {checkpointTerminals.length ? <div id="airport-checkpoint-groups" className="airport-checkpoint-groups airport-queue-comparison">{checkpointTerminals.map((terminalId) => {
-        const busiest = airport.currentBusiestDepartureHallByTerminal?.[terminalId];
+      {checkpointTerminals.length ? <div id="airport-checkpoint-groups" className="airport-checkpoint-groups airport-queue-comparison">{checkpointGroups.map(({terminalId, rows}) => {
         return <div className="airport-checkpoint-terminal" key={terminalId}>
-          <h4><span>{terminalId}</span>{airportTodayText.scope[lang][terminalId as "T1" | "T2"] ?? terminalId}</h4>
-          <div className="airport-queue-cards">{(showAllCheckpoints
-            ? rankedCheckpoints[terminalId]
-            : rankedCheckpoints[terminalId].filter((row) => (busiest ? busiest.zone === row.zone : false))
-                .concat(busiest ? [] : rankedCheckpoints[terminalId].slice(0, 1))
-          ).map((row) => {
-            const index = rankedCheckpoints[terminalId].indexOf(row);
-            const isBusiest = busiest?.zone === row.zone;
-            return <article className={isBusiest ? "is-busiest" : ""} key={`${terminalId}-${row.zone}`}>
-              <span className="checkpoint-rank">{String(index + 1).padStart(2, "0")}</span>
-              <div><strong>{friendlyCheckpointName(row.zone, lang)}</strong>{isBusiest && <small>{airportTodayText.longest[lang]}</small>}</div>
-              {/* The same fixed scene illustrates every checkpoint; people and colors do not encode queue size. */}
-              {/* eslint-disable-next-line @next/next/no-img-element -- small, local, responsive Blender export */}
-              <img className="airport-queue-model" src="/visuals/airport-queue/queue-checkpoint-192.webp" srcSet="/visuals/airport-queue/queue-checkpoint-192.webp 192w, /visuals/airport-queue/queue-checkpoint-384.webp 384w" sizes="(min-width: 821px) 128px, 96px" width="192" height="144" alt="" loading="lazy" decoding="async" />
+          <h4><span>{terminalId === "all" ? "T1 · T2" : terminalId}</span>{airportTodayText.scope[lang][terminalId as "all" | "T1" | "T2"] ?? terminalId}</h4>
+          {!showAllCheckpoints && !rows.length && <p className="airport-empty-line">{representativeCopy.none}</p>}
+          <div className={`airport-queue-cards${showAllCheckpoints ? '' : ' is-representative'}`}>{rows.map((row,index) => {
+            const representative = representatives.items.find(item=>queueKey(item.row)===queueKey(row));
+            const isBusiest = representative?.role === 'long';
+            return <article className={isBusiest ? "is-busiest" : ""} key={`${queueKey(row)}-${index}`}>
+              {showAllCheckpoints && <span className="checkpoint-rank">{String(index + 1).padStart(2, "0")}</span>}
+              <div>{!showAllCheckpoints && representative && <small className="checkpoint-role">{representativeCopy[representative.role]}{representative.tied && !representatives.equal ? ` · ${representativeCopy.tie}` : ''}</small>}<strong>{!showAllCheckpoints && isAll ? `${row.terminal} · ` : ''}{friendlyCheckpointName(row.zone, lang)}</strong>{showAllCheckpoints && isBusiest && <small>{airportTodayText.longest[lang]}</small>}</div>
+              <AirportQueueScene reading={row} now={presentationNow} lang={lang}/>
               <b><i>{airportTodayText.waitLabel[lang]}</i>{waitText(row)}</b>
+              {displayedQueueMinutes(row) === 0 && <small className="airport-queue-zero-note">{representativeCopy.zero}</small>}
               <p><i>{airportTodayText.peopleLabel[lang]}</i>{row.waitingCount === null ? airportTodayText.unavailable[lang] : `${row.waitingCount.toLocaleString(numberLocale)}${airportTodayText.waiting[lang]}`}<small>{formatHumanFreshness(row.observedAt, nowIso, lang, "observed")}{row.freshness === "STALE" ? ` · ${text.stale[lang]}` : ""}</small></p>
             </article>;
           })}</div>
@@ -2189,8 +2194,9 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         aria-expanded={showAllCheckpoints}
         aria-controls="airport-checkpoint-groups"
         onClick={() => setShowAllCheckpoints((open) => !open)}
-      >{showAllCheckpoints ? airportTodayText.showLongestOnly[lang] : airportTodayText.showAllCheckpoints[lang]}</button>}
-      {checkpointTerminals.length > 0 && <p className="airport-detail-foot">{contextText(lang, "사람·장비는 설명용 모형입니다. 실제 대기는 숫자로 확인하세요.", "People and equipment are illustrative. Read the numbers for observed queues.", "人物与设备仅为示意模型，请以数字查看实际等候情况。", "人・設備は説明用模型です。実際の待ちは数値をご確認ください。")}</p>}
+      >{showAllCheckpoints ? representativeCopy.collapse : airportTodayText.showAllCheckpoints[lang]}</button>}
+      {!showAllCheckpoints && representatives.count > 0 && <p className="airport-detail-foot">{representatives.equal ? `${representativeCopy.equal} ` : ''}{representatives.count < 3 ? `${representativeCopy.few} ` : ''}{representativeCopy.basis}{representatives.hasLowerBound ? ` ${representativeCopy.lower}` : ''}</p>}
+      {checkpointTerminals.length > 0 && <p className="airport-detail-foot">{contextText(lang, "사람·장비는 설명용 모형입니다. 색은 T2 대기시간 기준이며 실제 대기는 숫자로 확인하세요.", "People and equipment are illustrative. Color follows T2 wait-time categories; read the observed numbers.", "人物与设备仅为示意模型。颜色依据T2等候时间等级，实际等候请查看数字。", "人・設備は説明用模型です。色はT2の待ち時間区分を表し、実際の待ちは数値で確認できます。")}</p>}
       <p className="airport-detail-foot">{airportTodayText.nowOnly[lang]}</p>
     </section>
 
@@ -3281,6 +3287,7 @@ interface SignalRow {
   value: string;
   note: string;
   detail?: string;
+  weather?: { issuedAt: readonly string[]; targetAt: readonly string[]; showScene: boolean; kinds: readonly WeatherMetricKind[] };
   /**
    * For a source that publishes on a cycle: which period the number
    * describes, and whether that is the provider's newest publication or a
@@ -3333,12 +3340,16 @@ const signalStructureText = {
 } as const;
 
 function SignalRowCard({ row, lang }: { row: SignalRow; lang: Lang }) {
-  return <article className="signal-row" data-signal-key={row.key}>
+  return <article className={`signal-row${row.weather ? ' signal-weather' : ''}`} data-signal-key={row.key}>
     <div className="signal-row-label">
       <span className="signal-time-state">{row.timeState}</span>
       <h4>{row.label}</h4>
     </div>
     <div className="signal-row-content">
+      {row.weather ? <WeatherScene lang={lang} forecast={null} forecastFacts={row.value.split(' · ')}
+        forecastTitle={null} source={row.note} guide={row.detail} issuedAt={row.weather.issuedAt}
+        targetAt={row.weather.targetAt} showScene={row.weather.showScene} metricScenes forecastKinds={row.weather.kinds}/>
+      : <>
       <b className="signal-row-value">{row.value}</b>
       {row.detail && <p className="signal-row-detail">{row.detail}</p>}
       {row.period && <p className="signal-row-period">
@@ -3347,17 +3358,18 @@ function SignalRowCard({ row, lang }: { row: SignalRow; lang: Lang }) {
         {row.period.cadenceNote && <small>{row.period.cadenceNote}</small>}
       </p>}
       <small className="signal-row-source">{row.note}{row.state === "STALE" ? ` · ${text.stale[lang]}` : ""}</small>
+      </>}
     </div>
   </article>;
 }
 
 function CommercialSignalCard({ signal, lang }: { signal: CommercialSignalRow; lang: Lang }) {
-  const metrics = [
-    { label: signal.amountLabel, value: signal.amountValue ?? signal.privacyMessage },
-    ...(signal.countValue ? [{ label: signal.countLabel, value: signal.countValue }] : []),
-    ...(signal.averagePayment ? [{ label: ({ ko: "건당 평균 결제액 · 같은 10분 기준", en: "Average per payment · same 10-minute window", zh: "每笔平均支付额 · 同一10分钟", ja: "1件あたり平均決済額・同じ10分間" })[lang], value: signal.averagePayment }] : []),
+  const metrics: { kind: CommercialMetricKind; label: string; value: string | null }[] = [
+    { kind: 'amount', label: signal.amountLabel, value: signal.amountValue ?? signal.privacyMessage },
+    ...(signal.countValue ? [{ kind: 'count' as const, label: signal.countLabel, value: signal.countValue }] : []),
+    ...(signal.averagePayment ? [{ kind: 'average' as const, label: ({ ko: "건당 평균 결제액", en: "Average per payment", zh: "每笔平均支付额", ja: "1件あたり平均決済額" })[lang], value: signal.averagePayment }] : []),
   ];
-  return <article className="commercial-signal-card">
+  return <article className="commercial-signal-card commercial-scenes">
     <div className="commercial-signal-label">
       <span className="signal-time-state">{signalStructureText.timeState.recent[lang]}</span>
       <h4>{signal.label}</h4>
@@ -3366,13 +3378,14 @@ function CommercialSignalCard({ signal, lang }: { signal: CommercialSignalRow; l
     <div className="commercial-signal-content">
       <p className="commercial-basis">{text.commercialBasis[lang]}</p>
       <dl className="commercial-metrics">
-        {metrics.map((metric) => <div key={metric.label}><dt>{metric.label}</dt><dd>{metric.value}</dd></div>)}
+        {metrics.map((metric) => <div key={metric.kind} data-metric-kind={metric.kind}><dt><CommercialMetricScene kind={metric.kind}/>{metric.label}</dt><dd>{metric.value}</dd></div>)}
       </dl>
       <p className="commercial-status">{lang === "ko" ? "서울시 제공 소비활동 상태" : signal.statusLabel} · <strong>{signal.activityContext ?? signal.statusValue}</strong></p>
       <p className="commercial-times">{signal.referenceValue} · {signal.retrievalValue}</p>
-      {signal.comparisons.length ? signal.comparisons.map((line) => <p className="period-comparison" key={line}>{line}</p>) : <p className="commercial-times">{({ ko: "동일 시간대 과거 자료 부족 · 전주·4주 전 비교 불가", en: "Matching historical time window unavailable for weekly comparisons", zh: "缺少同一时段历史资料，无法进行周比较", ja: "同時刻の過去資料不足のため週比較不可" })[lang]}</p>}
-      <p className="commercial-attribution">{text.sourceSeoul[lang]} · {signal.attribution}</p>
-      <details className="commercial-method"><summary>{({ko:"활동 등급·건당 평균의 의미",en:"Activity levels and per-payment averages",zh:"活跃度与每笔平均额的含义",ja:"活動指標と1件平均の意味"})[lang]}</summary>
+      <details className="commercial-method"><summary>{({ko:"비교·출처·계산 설명",en:"Comparisons, sources and calculation",zh:"比较、来源与计算说明",ja:"比較・出典・計算の説明"})[lang]}</summary>
+       {signal.comparisons.length ? signal.comparisons.map((line) => <p className="period-comparison" key={line}>{line}</p>) : <p className="commercial-times">{({ ko: "동일 시간대 과거 자료 부족 · 전주·4주 전 비교 불가", en: "Matching historical time window unavailable for weekly comparisons", zh: "缺少同一时段历史资料，无法进行周比较", ja: "同時刻の過去資料不足のため週比較不可" })[lang]}</p>}
+       <p className="commercial-attribution">{text.sourceSeoul[lang]} · {signal.attribution}</p>
+       {signal.averagePayment && <p className="commercial-attribution">{({ ko: "건당 평균 결제액 · 같은 10분 기준", en: "Average per payment · same 10-minute window", zh: "每笔平均支付额 · 同一10分钟", ja: "1件あたり平均決済額・同じ10分間" })[lang]}</p>}
        <p className="commercial-attribution">{({ ko: "소비활동은 과거 평균 결제금액 등을 고려한 서울시 4단계 등급입니다. 과거 평균 금액이나 증감률 자체가 아니며, 건당 평균은 현재 금액을 현재 건수로 나눈 값입니다.", en: "Seoul’s four activity levels consider past average payments. They are not historical mean amounts or growth rates; the per-payment average uses this window’s amount and count.", zh: "首尔市四级消费活跃度参考过去平均支付金额，不代表历史均额或增减率；每笔平均额按当前时段金额和笔数计算。", ja: "ソウル市の4段階指標は過去の平均決済額などを考慮します。過去の平均額や増減率そのものではなく、1件平均は現在の金額と件数から算出します。" })[lang]}</p>
       </details>
     </div>
@@ -3582,12 +3595,16 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
   if (block?.weather.length) {
     const next12 = block.weather.slice(0, 12);
     const maxPop = Math.max(...next12.map((row) => row.precipitationProbability ?? 0));
+    // A published zero is a fact; an absent POP field cannot become 0%.
+    const hasProbability = next12.some(row => row.precipitationProbability !== null && row.precipitationProbability !== undefined);
     const firstTemp = next12.find((row) => row.temperatureTenthC !== null)?.temperatureTenthC;
     const condition = next12.find((row) => row.conditionCode)?.conditionCode;
     const parts: string[] = [];
-    if (condition && conditionLabels[condition]) parts.push(conditionLabels[condition][lang]);
-    if (firstTemp !== null && firstTemp !== undefined) parts.push(`${(firstTemp / 10).toFixed(0)}°C`);
-    parts.push(`${text.rainChance[lang]} ${maxPop}%`);
+    const kinds: WeatherMetricKind[] = [];
+    const fact = (kind: WeatherMetricKind, value: string) => { kinds.push(kind); parts.push(value); };
+    if (condition && conditionLabels[condition]) fact(condition === 'clear' ? 'sun' : condition === 'snow' ? 'snow' : condition === 'rain' || condition === 'shower' ? 'rain' : 'cloud', conditionLabels[condition][lang]);
+    if (firstTemp !== null && firstTemp !== undefined) fact('temperature', `${(firstTemp / 10).toFixed(0)}°C`);
+    if (hasProbability) fact('rain', `${text.rainChance[lang]} ${maxPop}%`);
 
     // Richer categories from the same KMA response. Each is shown only where
     // the provider actually published it: a missing category is left out
@@ -3617,11 +3634,11 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     const humidityMeasured = observationIsNow && observation?.humidity !== null && observation?.humidity !== undefined;
     const windMeasured = observationIsNow && observation?.wind !== null && observation?.wind !== undefined;
 
-    if (humidity !== undefined && !humidityMeasured) parts.push(`${text.humidity[lang]} ${humidity}%`);
-    if (wind !== undefined && !windMeasured) parts.push(`${text.wind[lang]} ${(wind / 10).toFixed(1)}m/s`);
-    if (rainfall) parts.push(`${text.rainfall[lang]} ${(rainfall.precipitationAmountTenthMm! / 10).toFixed(1)}mm`);
-    if (dayLow !== undefined) parts.push(`${text.dayLow[lang]} ${(dayLow / 10).toFixed(0)}°C`);
-    if (dayHigh !== undefined) parts.push(`${text.dayHigh[lang]} ${(dayHigh / 10).toFixed(0)}°C`);
+    if (humidity !== undefined && !humidityMeasured) fact('humidity', `${text.humidity[lang]} ${humidity}%`);
+    if (wind !== undefined && !windMeasured) fact('wind', `${text.wind[lang]} ${(wind / 10).toFixed(1)}m/s`);
+    if (rainfall) fact('rain', `${text.rainfall[lang]} ${(rainfall.precipitationAmountTenthMm! / 10).toFixed(1)}mm`);
+    if (dayLow !== undefined) fact('temperature', `${text.dayLow[lang]} ${(dayLow / 10).toFixed(0)}°C`);
+    if (dayHigh !== undefined) fact('temperature', `${text.dayHigh[lang]} ${(dayHigh / 10).toFixed(0)}°C`);
 
     // One practical line under the numbers. 맑음 · 24°C · 강수확률 is correct
     // and useless to someone deciding whether to take a jacket; this says what
@@ -3634,14 +3651,14 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       temperatureTenthC: firstTemp ?? null,
       dailyMinTemperatureTenthC: dayLow ?? null,
       dailyMaxTemperatureTenthC: dayHigh ?? null,
-      precipitationProbability: next12.some((row) => row.precipitationProbability !== null) ? maxPop : null,
+      precipitationProbability: hasProbability ? maxPop : null,
       precipitationTypeCode: next12.find((row) => row.precipitationTypeCode)?.precipitationTypeCode ?? null,
       humidityPercent: humidity ?? null,
       windSpeedTenthMps: wind ?? null,
     }, lang, { pm10Grade: airGrades?.pm10Grade ?? null, pm25Grade: airGrades?.pm25Grade ?? null });
     const quotedAir = Boolean(worseAirGrade(airGrades?.pm10Grade, airGrades?.pm25Grade));
 
-    rows.push({
+    if (parts.length || guide) rows.push({
       key: "weather",
       group: "now",
       timeState: signalStructureText.timeState.forecast[lang],
@@ -3649,6 +3666,16 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       value: parts.join(" · "),
       detail: guide ?? undefined,
       note: quotedAir ? `${text.sourceKma[lang]} · ${text.sourceAirQuality[lang]}` : text.sourceKma[lang],
+      weather: {
+        kinds,
+        issuedAt: next12.flatMap(row => {
+          const issued = (row as LiveWeatherRow & { issuedAt?: string }).issuedAt;
+          return issued ? [issued] : [];
+        }),
+        targetAt: next12.map(row => row.targetAt),
+        showScene: ![observation?.temperature, observation?.humidity, observation?.wind, observation?.pm10, observation?.pm25]
+          .some(value => value !== null && value !== undefined),
+      },
     });
   }
 
@@ -3747,7 +3774,10 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
           if (!groupRows.length && !hasSpecial) return null;
           const groupCopy = signalStructureText.groups[groupId];
           const firstNow = groupId === "now" ? groupRows.filter((row) => row.key === "realtime") : [];
-          const remainingNow = groupId === "now" ? groupRows.filter((row) => row.key !== "realtime") : [];
+            const weatherRow = groupId === "now" ? groupRows.find((row) => row.key === "weather") : undefined;
+            const remainingNow = groupId === "now" ? groupRows.filter((row) => row.key !== "realtime" && row.key !== "weather") : [];
+            const observedWeather = block?.context?.weather;
+            const hasObservation = [observedWeather?.temperature, observedWeather?.humidity, observedWeather?.wind, observedWeather?.pm10, observedWeather?.pm25].some(value => value !== null && value !== undefined);
           return <section className={`signal-group signal-group-${groupId}`} key={groupId}>
             <header className="signal-group-head">
               <h3 className="signal-group-title">{groupCopy.title[lang]}</h3>
@@ -3757,7 +3787,12 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
               {groupId === "now" ? <>
                 {firstNow.map((row) => <SignalRowCard key={row.key} row={row} lang={lang} />)}
                 {commercialRow && <CommercialSignalCard signal={commercialRow} lang={lang} />}
-                <SeoulContextCard context={block?.context} lang={lang} nowIso={summary.generatedAt} />
+                <SeoulContextCard context={block?.context} lang={lang} nowIso={summary.generatedAt} showWeather={false}/>
+                {(hasObservation || weatherRow) && <section className="seoul-weather-panel" aria-labelledby={`seoul-weather-${area}`}>
+                  <h3 id={`seoul-weather-${area}`}>{contextText(lang,'날씨·주변 환경','Weather and surroundings','天气与周边环境','天気・周辺環境')}</h3>
+                  <SeoulObservationScene context={block?.context} lang={lang} nowIso={summary.generatedAt} metricScenes/>
+                  {weatherRow && <SignalRowCard row={{...weatherRow,label:contextText(lang,'공식 날씨 예보','Official weather forecast','官方天气预报','公式天気予報')}} lang={lang}/>}
+                </section>}
                 {remainingNow.map((row) => <SignalRowCard key={row.key} row={row} lang={lang} />)}
               </> : null}
               {groupId === "today-next" && events.length > 0 && <EventSignalPanel

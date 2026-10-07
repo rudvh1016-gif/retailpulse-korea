@@ -1,0 +1,5 @@
+.disclosure > summary { touch-action: manipulation; }
+.disclosure > summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.toggle { margin-left: 8px; }
+.toggle::after { content: '+'; }
+.disclosure[open] > summary .toggle::after { content: '−'; }

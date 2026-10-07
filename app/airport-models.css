@@ -14,9 +14,42 @@
 .airport-queue-comparison .airport-checkpoint-terminal article > b,
 .airport-queue-comparison .airport-checkpoint-terminal article > p { text-align: left; white-space: normal; overflow-wrap: anywhere; }
 .airport-queue-comparison .airport-checkpoint-terminal article :is(strong, b, p, i, small) { color: #000; }
+.airport-queue-scene { display: block; --queue-wash: #f4f4f4; --queue-edge: #b8b8b8; }
+.airport-queue-scene[data-heat="clear"] { --queue-wash: #fff0e4; --queue-edge: #edc6a5; }
+.airport-queue-scene[data-heat="normal"] { --queue-wash: #ffe0b8; --queue-edge: #f39b35; }
+.airport-queue-scene[data-heat="busy"] { --queue-wash: #ffc2a1; --queue-edge: #e56935; }
+.airport-queue-scene[data-heat="very-busy"] { --queue-wash: #ef9690; --queue-edge: #b82028; }
+.airport-queue-scene-visual { position: relative; display: flex; align-items: center; justify-content: center; height: 72px; overflow: hidden; isolation: isolate; border-bottom: 3px solid var(--queue-edge); background: linear-gradient(0deg, var(--queue-wash), #fff 100%); }
+.airport-queue-state { display: block; margin-top: 4px; }
+.airport-queue-zero-note { display: block; line-height: 1.5; overflow-wrap: anywhere; }
+.airport-queue-comparison .airport-queue-cards.is-representative { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 8px; }
+.airport-queue-comparison .is-representative article > div { padding-right: 0; min-height: 52px; }
+.airport-queue-comparison .is-representative .checkpoint-role { margin: 0 0 6px; }
+.airport-queue-comparison .is-representative .airport-queue-model { width: min(100%, 96px); height: 72px; }
+@media (max-width: 820px) {
+  .airport-queue-comparison .is-representative .airport-queue-model { width: min(100%, 72px); height: 54px; }
+  .is-representative .airport-queue-scene-visual { height: 60px; }
+}
+.airport-queue-heat { position: absolute; inset: 0; pointer-events: none; }
+.airport-queue-heat > span { position: absolute; left: 32%; bottom: 8px; width: 16px; height: 40px; border-left: 2px solid var(--queue-edge); border-radius: 50%; opacity: 0; }
+.airport-queue-heat > span:nth-child(2) { left: 49%; }
+.airport-queue-heat > span:nth-child(3) { left: 66%; }
+.airport-queue-scene[data-motion="running"] .airport-queue-heat > span { animation: airport-queue-heat-rise 1800ms ease-out 1; }
+.airport-queue-scene[data-motion="running"] .airport-queue-heat > span:nth-child(2) { animation-delay: 160ms; }
+.airport-queue-scene[data-motion="running"] .airport-queue-heat > span:nth-child(3) { animation-delay: 320ms; }
+@keyframes airport-queue-heat-rise {
+  0% { opacity: 0; transform: translate3d(0, 12px, 0) scaleX(.85); }
+  30% { opacity: .32; }
+  70% { opacity: .22; }
+  100% { opacity: 0; transform: translate3d(4px, -30px, 0) scaleX(1.15); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .airport-queue-scene[data-motion="running"] .airport-queue-heat > span { animation: none; }
+}
 @media (min-width: 821px) {
   .airport-queue-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 24px; }
   .airport-queue-comparison .airport-queue-model { width: 128px; height: 96px; }
+  .airport-queue-scene-visual { height: 96px; }
 }
 .airport-gate-model { min-height: 300px; }
 .airport-shop-model { margin: 20px 0; max-width: 700px; }

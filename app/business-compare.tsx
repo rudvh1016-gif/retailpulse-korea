@@ -7,6 +7,7 @@ import type { UsualComparison } from '../lib/usual-comparison';
 import { LAST_CHECK_KEY, diffSnapshots, findPrevious, parseLedger, withSnapshot, type CheckSnapshot } from '../lib/last-check';
 import { changeLine, compareCopy, lastCheckHeadline, usualDetail, usualHeadline } from '../lib/compare-copy';
 import { prepCopy } from '../lib/business-prep-copy';
+import styles from './compact-disclosure.module.css';
 
 // One request per area per five minutes, shared by every mount; a failed
 // request is remembered for a minute so a broken endpoint is not hammered.
@@ -46,9 +47,9 @@ export function useUsualComparison(area: PrepArea | null): UsualComparison | nul
 export function UsualComparisonBlock({ lang, place, today }: { lang: Lang; place: PrepPlace; today: boolean }) {
   const area = place.kind === 'area' && today ? place.area : null;
   const result = useUsualComparison(area);
+  if (place.kind === 'airport') return null;
   let body;
-  if (place.kind === 'airport') body = <p className="prep-note">{compareCopy.airport[lang]}</p>;
-  else if (!today) body = <p className="prep-note">{compareCopy.noCurrent[lang]}</p>;
+  if (!today) body = <p className="prep-note">{compareCopy.noCurrent[lang]}</p>;
   else if (result === undefined) body = <p className="prep-note" role="status">{prepCopy.loading[lang]}</p>;
   else if (result === null) body = <p className="prep-note">{compareCopy.unavailable[lang]}</p>;
   else body = <>
@@ -57,6 +58,14 @@ export function UsualComparisonBlock({ lang, place, today }: { lang: Lang; place
       <ul className="prep-compare-detail">{usualDetail(result, lang).map((line, index) => <li key={index}>{line}</li>)}</ul>
     </details>}
   </>;
+  if (!today || !result || result.basis === 'NO_CURRENT' || result.basis === 'COLLECTING') {
+    const status = !today ? compareCopy.noData[lang] : result === null ? compareCopy.loadFailed[lang]
+      : result === undefined ? prepCopy.loading[lang] : compareCopy.noData[lang];
+    return <details className={`prep-evidence prep-compare ${styles.disclosure}`} data-testid="usual-comparison">
+      <summary>{compareCopy.usualTitle[lang]} · {status}<span className={styles.toggle} aria-hidden="true" /></summary>
+      {body}
+    </details>;
+  }
   return <div className="prep-block prep-compare" data-testid="usual-comparison">
     <h3>{compareCopy.usualTitle[lang]}</h3>
     {body}
@@ -103,14 +112,21 @@ export function LastCheckBlock({ lang, snapshot, serviceDate, nowIso }: { lang: 
   if (!snapshot || !state || !state.available) return null;
   const previous = state.previous;
   const changes = previous ? diffSnapshots(previous, snapshot, nowIso) : [];
-  return <div className="prep-block prep-last-check" data-testid="last-check">
-    <h3>{compareCopy.lastTitle[lang]}</h3>
-    {!previous
+  const body = !previous
       ? <p className="prep-note" data-testid="last-check-first">{compareCopy.first[lang]}</p>
       : <>
         <p className="prep-compare-headline" data-testid="last-check-headline">{lastCheckHeadline(changes, previous.checkedAt, serviceDate, lang)}</p>
         {changes.length > 0 && <ul className="prep-facts" data-testid="last-check-changes">{changes.map((change, index) => <li key={index}>{changeLine(change, serviceDate, lang)}</li>)}</ul>}
-      </>}
-    <p className="prep-note">{compareCopy.deviceOnly[lang]}</p>
+      </>;
+  const deviceNote = <p className="prep-note">{compareCopy.deviceOnly[lang]}</p>;
+  if (!changes.length) return <details className={`prep-evidence prep-last-check ${styles.disclosure}`} data-testid="last-check">
+    <summary>{compareCopy.lastTitle[lang]}<span className={styles.toggle} aria-hidden="true" /></summary>
+    {body}
+    {deviceNote}
+  </details>;
+  return <div className="prep-block prep-last-check" data-testid="last-check">
+    <h3>{compareCopy.lastTitle[lang]}</h3>
+    {body}
+    <details className={`prep-evidence ${styles.disclosure}`}><summary>{prepCopy.evidence[lang]}<span className={styles.toggle} aria-hidden="true" /></summary>{deviceNote}</details>
   </div>;
 }

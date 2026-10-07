@@ -208,8 +208,9 @@ test("airport summary keeps forecast, flights, gate and checkpoints truthful on 
   await expect(topGateRow).toHaveAttribute('data-flights','18');
   await expect(topGateRow.locator('..')).toContainText('T1');
   await expect(page.getByText(/출국장 체크포인트 관측 · 탑승 게이트 아님/)).toBeVisible();
-  const t2Group = page.locator(".airport-checkpoint-terminal").filter({ hasText: "제2터미널" });
-  const busiestCheckpoint = t2Group.locator("article.is-busiest");
+  const busiestCheckpoint = page.locator(".airport-checkpoints article.is-busiest");
+  await expect(busiestCheckpoint).toHaveCount(1);
+  await expect(busiestCheckpoint.locator("strong")).toContainText("T2");
   await expect(busiestCheckpoint).toContainText("출국장 1B");
   await expect(busiestCheckpoint).toContainText("대기시간");
   await expect(busiestCheckpoint).toContainText("60+분");
@@ -497,7 +498,7 @@ test("Seoul district tabs preserve current ranges, weather, events and stale sou
   await page.goto("/ko/myeongdong");
   const tabs = page.locator('.area-tabs'), card = page.getByTestId('area-demand-card').first();
   await expect(tabs.getByRole('tab')).toHaveCount(4);
-  await expect(card).toContainText('현재 추정 인구');
+  await expect(card.locator('.demand-metric-label')).toHaveText('최근 관측 인구');
   await expect(card).toContainText('23,000–25,000');
   await expect(card).toContainText('약간 붐빔');
   await expect(page.locator('.signal-groups')).toContainText('강수확률 최대 60%');
