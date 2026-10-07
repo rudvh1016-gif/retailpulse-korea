@@ -39,4 +39,10 @@ Server collection/Cloudflare/D1/scheduler/cost architecture는 바뀌지 않았�
 
 PR 필수 CI는 생성 후 확인한 상태를 PR 본문에 기록한다. Draft는 병합/배포하지 않는다. main이 이후 바뀌면 통합 담당자가 해당 diff와 필수 CI를 검토한다.
 
+## 필수 CI 후속 수정
+
+정확한 초기 head `5303c6276a8ef187ba2f907613303bc4e5bff175`의 [CI 37667812546](https://github.com/rudvh1016-gif/retailpulse-korea/actions/runs/37667812546)은 unit 단계에서 1개 실패했다. 새 `travel-records-actions-copy.ts`의 한국어 `잊`, `뛰`가 기존 `koretail-sans-variable.woff2` subset에 없어 `font-coverage.test.mjs`가 거부했다. 같은 의미를 유지하도록 “사본을 삭제합니다”, “복원 시 추가하지 않으므로”로 고쳤다. 글꼴·fixture·검사·보호 설정은 변경하지 않았다.
+
+실패했던 원본 font coverage suite 2/2가 통과했다. 수정 파일 ESLint와 diff check도 확인했다. 이미 통과한 기능 검사는 단순 반복하지 않았으며, 새 PR head의 필수 CI는 기존 workflow 전체를 그대로 실행한다. 최종 상태·실행 링크는 PR 본문에 기록한다.
+
 남은 차단: Mac·Xcode/SDK·Apple membership/판매자 명의/국가 범위, 최종 앱 범위와 4.2 utility 증거, Capacitor/iOS project·native file/photo adapter·권한/privacy manifest·서명 archive, 실제 iPhone Safari/WKWebView·HEIC picker·지속성·offline cold launch, 운영자 승인 개인정보/지원 URL·보관기간과 최종 App Privacy 신고. Windows 검증은 이 항목들의 PASS가 아니다.
