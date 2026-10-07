@@ -1,0 +1,164 @@
+{
+  "at": "2026-10-07T08:58:39.572Z",
+  "purpose": "One remaining approved release PR on actual user-merged main. No agent public merge or deployment.",
+  "baseMain": "7f8e50b2a042151bfce838fe4bbab739cad90fdc",
+  "baseMergedPRs": [
+    305,
+    306,
+    284
+  ],
+  "approvedSources": {
+    "266": "f0d765a6dacbcd70722539e0e86b3fb9eff84989",
+    "288": "cc08cfd63bb3a77e93f53a2ee2d6eac85dbf735a",
+    "303": "8a13c947015fe51943ef9e311a3e4cd26de0e9d7",
+    "307": "411b469651d0f578f7d34b3738031f0c5bcce018"
+  },
+  "originalPRsRetainedOpen": true,
+  "sourceMergeCommit": "7f237e5c9fcd5439e6a052700eede529d6cc5956",
+  "protection": {
+    "count": 61,
+    "allActualByteHashesMatch": true,
+    "original53Retained": true,
+    "approvedIconAdditional8Retained": true,
+    "enforcementTestUnchanged": true,
+    "cronsUnchanged": true,
+    "normalCombinedLayoutHash": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
+    "exceptionAdded": false
+  },
+  "preservedMainFiles": [
+    "app/airport-gate-pillars.tsx",
+    "app/airport-gate-pillars.module.css",
+    "app/airport-concept-model.tsx",
+    "app/airport-models.css",
+    "app/airport-departure-map.tsx",
+    "tests/operational-phase2.test.mjs",
+    "wrangler.production.jsonc"
+  ],
+  "localValidation": {
+    "checks": {
+      "lint": {
+        "passed": true,
+        "command": [
+          "node_modules/eslint/bin/eslint.js",
+          ".",
+          "--ignore-pattern",
+          "dist",
+          "--ignore-pattern",
+          ".next",
+          "--ignore-pattern",
+          ".playwright-browsers"
+        ],
+        "finishedAt": "2026-10-07T08:41:48.012Z"
+      },
+      "typecheck": {
+        "passed": true,
+        "command": [
+          "node_modules/typescript/bin/tsc",
+          "--noEmit"
+        ],
+        "finishedAt": "2026-10-07T08:41:43.373Z"
+      },
+      "unit": {
+        "passed": true,
+        "command": [
+          "--experimental-sqlite",
+          "--import",
+          "tsx",
+          "--test",
+          "tests/operational-phase2.test.mjs",
+          "tests/monthly-records.test.mjs",
+          "tests/summary-cache-key.test.mjs",
+          "tests/app-icons-assets.test.mjs",
+          "tests/install-guide.test.mjs",
+          "tests/social-share-metadata.test.mjs"
+        ],
+        "finishedAt": "2026-10-07T08:41:37.864Z"
+      },
+      "build": {
+        "passed": true,
+        "command": [
+          "node_modules/vinext/dist/cli.js",
+          "build"
+        ],
+        "finishedAt": "2026-10-07T08:44:22.011Z"
+      },
+      "rendered": {
+        "passed": true,
+        "command": [
+          "--experimental-sqlite",
+          "--import",
+          "tsx",
+          "--test",
+          "tests/rendered-html.test.mjs"
+        ],
+        "finishedAt": "2026-10-07T08:48:36.748Z"
+      }
+    },
+    "relatedUnit": 94,
+    "renderedHTML": 46,
+    "relatedBrowser": 25,
+    "viewports": [
+      360,
+      390,
+      430,
+      1280
+    ],
+    "languages": [
+      "ko",
+      "en",
+      "zh",
+      "ja"
+    ],
+    "originalBrowserAssertionsUnchanged": true,
+    "httpAssets": 15,
+    "decodedImages": 7,
+    "dateFocus": {
+      "programmatic": {
+        "outline": "none",
+        "focusVisible": false,
+        "active": true
+      },
+      "keyboard": {
+        "outline": "solid",
+        "focusVisible": true,
+        "active": true
+      },
+      "lazyMapControlsMounted": true,
+      "enterAndSpacePassed": true
+    },
+    "canonicalSecretScan": "Windows local 180s execution limit exceeded; exact-head mandatory CI must run canonical complete-history scan"
+  },
+  "focusRegression": {
+    "existingProductionRun": 37591354894,
+    "existingJob": 112693349539,
+    "traceFocusCall": "call@753 selected home tomorrow",
+    "traceEvaluationCall": "call@755 selected lazy-map CUSTOM directly-select",
+    "cause": "Unscoped .date-nav-shortcuts button .last() changed target when lazy map mounted.",
+    "fix": "Scope existing production test to .airport-date-reserved controls; retain all assertions and add real Tab/Shift+Tab and focus assertion. No product CSS change.",
+    "fullProductionAuditRepeated": false
+  },
+  "designReview": {
+    "guidelines": "https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md",
+    "nativeKeyboardControls": true,
+    "labelsAndLiveLoadingStates": true,
+    "abortStaleRequests": true,
+    "approvedWhiteBackgroundAndExistingFontPreserved": true,
+    "extra3DEngineAdded": false,
+    "sourceImagesRerendered": false
+  },
+  "performance": {
+    "newBenchmarkPerformed": false,
+    "savedBeforeLcpMedianMs": 2912,
+    "savedAfter305LcpMedianMs": 5344,
+    "speedImprovementClaimed": false,
+    "classificationProposalImplemented": false
+  },
+  "limitations": [
+    "Exact-head full CI pending at preparation time.",
+    "Physical iPhone installation and already-installed icon refresh unverified.",
+    "Original PR288/303/266 report dirty remotely despite exact-SHA local clean merges; GitHub discrepancy not attributed to squash."
+  ],
+  "agentMerges": 0,
+  "manualDeployments": 0,
+  "manualWorkflowRuns": 0
+}
