@@ -78,3 +78,19 @@ test('a complete official forecast with missing T2 gates reports the gate cause 
   assert.equal(entries[1].unavailableReason,'GATES_PENDING');
   assert.equal(summary.airport.passengerForecastTimelineByTerminal.T2[0].expectedPassengers,3000);
 });
+
+test('flights arriving before the gate summary refresh are mismatched, not a missing official forecast',()=>{
+  const held=rows.map(row=>row.terminal==='T2'?{...row,gate:null}:row);
+  const heldSides=airportSides(date,'TODAY',[],held,[],false,false);
+  const result=references({sides:heldSides})[1];
+  assert.equal(result.estimate,null);
+  assert.equal(result.unavailableReason,'SOURCE_MISMATCH');
+});
+
+test('central-only flights with a complete official forecast have no east/west comparison',()=>{
+  const central=rows.map(row=>row.terminal==='T2'?{...row,gate:'252'}:row);
+  const centralSides=airportSides(date,'TODAY',[],central,[],false,false);
+  const result=references({sides:centralSides,source:{...source,flights:central}})[1];
+  assert.equal(result.estimate,null);
+  assert.equal(result.unavailableReason,'NO_SIDE_COMPARISON');
+});

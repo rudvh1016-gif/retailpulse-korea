@@ -68,3 +68,15 @@ test('a slow old-date response cannot overwrite a newer selection',async({page})
  await expect(page.getByTestId('airport-concept-model')).toHaveAttribute('data-denominator','1');
  await expect(page.getByTestId('airport-concept-model').locator('[data-side=EAST] strong').first()).toContainText('1');
 });
+
+for(const lang of ['ko','en','zh','ja'] as const)for(const cause of ['SOURCE_MISMATCH','NO_SIDE_COMPARISON'])test(`reference cause is accurate with an available official forecast ${cause} ${lang}`,async({page})=>{
+ await page.setViewportSize({width:390,height:900});
+ const rows=flights(cause==='SOURCE_MISMATCH'?['215','252','291']:['252','252','252']);
+ await page.route('**/api/live/summary*',routeSummary(summary(cause==='SOURCE_MISMATCH'?flights([null,null,null]):rows)));
+ await page.route('**/api/live/flights*',r=>r.fulfill({json:source(rows)}));
+ await page.goto(`/${lang}/airport?terminal=T2`);
+ const reference=page.getByTestId('top-reference-T2-unavailable');await expect(reference).toHaveAttribute('data-reason',cause);
+ await expect(reference).not.toContainText(/공식 예상 승객 자료를 확인할 수 없어|official passenger forecast.*unavailable|最新的官方旅客预测|最新公式旅客予想/);
+ await expect(page.locator('.airport-forecast')).toContainText('2,900');
+ expect(await tofuCharacters(reference)).toEqual([]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});
