@@ -85,7 +85,7 @@
 .airport-concept-zone-name { display: block; color: #000; font-weight: var(--weight-strong); }
 .airport-concept-zone-values { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; }
 .airport-concept-counts strong { display: block; font-size: 14px; font-weight: var(--weight-strong); white-space: nowrap; }
-.airport-concept-counts small { display: block; color: #000; white-space: nowrap; }
+.airport-concept-counts small { display: block; color: #000; overflow-wrap: anywhere; }
 .airport-concept-ranges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 8px 0; }
 .airport-concept-ranges > div { min-width: 0; border-top: 1px solid var(--line); padding: 4px 0; }
 .airport-month-side { fill: #81b3cd; }
