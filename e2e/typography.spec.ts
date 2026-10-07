@@ -479,7 +479,11 @@ test("the approved gate comparison retains live counts and the public typography
   const model=page.getByTestId('gate-pillar-model');
   await expect(model.locator('[data-overall-leader="true"] .gate-pillar').first()).toHaveAttribute('data-flights','18');
   await expect(model.locator('[data-overall-leader="true"] .gate-pillar').first()).toHaveAttribute('data-gate','27');
-  await expect(model).toContainText('그림은 설명용입니다');
+  const disclosure=model.getByTestId('gate-all-list');
+  await expect(disclosure).not.toHaveAttribute('open');
+  await expect(model.getByText('그림은 설명용입니다',{exact:false})).toHaveCount(0);
+  await disclosure.locator('summary').click();
+  await expect(disclosure).toContainText('그림은 설명용입니다');
   const fonts=await model.locator('h4').evaluate(el=>{const s=getComputedStyle(el);return {size:s.fontSize,family:s.fontFamily};});
   expect(fonts.size).toBe('16px');
   expect(fonts.family).toContain('KORETAIL Sans Variable');
