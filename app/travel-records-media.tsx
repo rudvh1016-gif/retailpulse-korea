@@ -1,5 +1,4 @@
 'use client';
-import Image from 'next/image';
 import {useEffect,useRef} from 'react';
 import type {Lang} from './retailpulse-data';
 import type {StoredPhoto} from '../lib/travel-records/types';
@@ -22,7 +21,10 @@ export function TravelArt({photo,lang,eager=false}:{photo:StoredPhoto|null;lang:
   <img ref={ref} width={photo.width} height={photo.height} alt={c.photoAlt} loading={eager?'eager':'lazy'} decoding="async"/>
  );
  return <figure className={styles.art}>
-  {photo?localPhoto:<Image src={travelConcept.src} width={travelConcept.width} height={travelConcept.height} unoptimized alt={c.conceptAlt} priority={eager}/>}
+  {photo?localPhoto:(
+   // eslint-disable-next-line @next/next/no-img-element -- The same local, unoptimized illustration is bundled for web and standalone clients.
+   <img src={travelConcept.src} width={travelConcept.width} height={travelConcept.height} alt={c.conceptAlt} loading={eager?'eager':'lazy'} fetchPriority={eager?'high':'auto'}/>
+  )}
   {!photo&&<figcaption>{c.illustration}</figcaption>}
  </figure>;
 }
