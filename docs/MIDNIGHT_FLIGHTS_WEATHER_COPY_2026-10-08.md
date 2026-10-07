@@ -24,6 +24,10 @@ The two requested paragraphs were removed from the airport screen, home answer a
 - The unchanged canonical secret scanner hit the180s native wrapper timeout. A separate native equivalent scanned all978 reachable revisions and the working tree using all five unchanged canonical ERE alternatives/exclusions combined per Git invocation: no findings. The original repository scanner remains the CI check.
 - Built app entry asset:741002→740142 bytes; local gzip263684→263257 bytes. This small entry-asset change does not establish a public LCP improvement. Public before/after mobile performance is pending approved merge/deployment; no speed-complete claim is made.
 
+## Full CI follow-up
+
+The exact `c847a79` run [37667023087](https://github.com/rudvh1016-gif/retailpulse-korea/actions/runs/37667023087) passed the canonical secret scanner, lint/typecheck, all1221 unit tests, health/build, all46 rendered checks and dependency audit. Browser results were891 passed and2 failed. Both failed expectations still described the previous product behavior: no refresh after the test advances more than120s, and three0% zones when every gate is unverified. The existing scene test now requires exactly one scheduled refresh and no additional request during each resize phase, while retaining every geometry/label/overflow check. The existing unknown-building test still requires the whole denominator and100% unverified count; it additionally requires the actual total, pending label and absence of three invented comparisons. Enforcement, fixtures, fonts and product sources were not changed in this follow-up. Both existing files passed all18 local browser checks with no retry; lint/typecheck passed. A first local attempt had no running preview server and was not a functional result. The next head's normal full CI is recorded in the PR when complete.
+
 ## Reviewed screenshots saved to Library
 
 | Screenshot | Library ID |
