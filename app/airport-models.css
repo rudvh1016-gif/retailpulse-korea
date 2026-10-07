@@ -81,7 +81,7 @@
 .airport-concept-label[data-side="CENTER"] { top: 50%; left: 45%; }
 .airport-concept-label[data-side="EAST"] { top: 25%; right: 12%; }
 .airport-concept-counts { position: absolute; inset-inline: 3%; top: 50%; transform: translateY(-50%); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0; pointer-events: none; }
-.airport-concept-counts > div { justify-self: center; width: fit-content; min-width: 0; max-width: 100%; padding: 4px 6px; color: #000; background: rgb(255 255 255 / 90%); border-radius: 4px; text-align: center; }
+.airport-concept-counts > div { justify-self: center; width: fit-content; min-width: 0; max-width: 100%; padding: 4px 6px; color: #000; background: #fff; border-radius: 4px; text-align: center; }
 .airport-concept-zone-name { display: block; color: #000; font-weight: var(--weight-strong); }
 .airport-concept-zone-values { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 2px 6px; }
 .airport-concept-counts strong { display: block; font-size: 14px; font-weight: var(--weight-strong); overflow-wrap: anywhere; }

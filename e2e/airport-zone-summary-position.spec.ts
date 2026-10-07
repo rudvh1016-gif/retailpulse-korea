@@ -15,7 +15,7 @@ async function expectCenteredOverlay(model:Locator){
  expect(row.y).toBeGreaterThanOrEqual(frame.y);expect(row.y+row.height).toBeLessThanOrEqual(frame.y+frame.height);
  for(const cell of await counts.locator(':scope >div').all()){
   expect(await cell.evaluate(el=>el.scrollWidth<=el.clientWidth+1&&el.scrollHeight<=el.clientHeight+1)).toBe(true);
-  expect(await cell.evaluate(el=>getComputedStyle(el).backgroundColor)).toBe('rgba(255, 255, 255, 0.9)');
+  expect(await cell.evaluate(el=>getComputedStyle(el).backgroundColor)).toBe('rgb(255, 255, 255)');
  }
  return{frame,row};
 }
