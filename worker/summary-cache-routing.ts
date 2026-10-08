@@ -12,8 +12,9 @@
  * default entrypoint and reaches the application exactly as it does today.
  */
 
-/** The single path served through the cached entrypoint. */
+/** Public bounded reads served through the existing cached entrypoint. */
 export const SUMMARY_CACHE_PATH = "/api/live/summary";
+export const DUTY_FREE_CACHE_PATH = "/api/live/duty-free-exchange";
 
 /** Methods that may be served from a shared cache. */
 const CACHEABLE_METHODS = new Set(["GET", "HEAD"]);
@@ -29,5 +30,5 @@ const CACHEABLE_METHODS = new Set(["GET", "HEAD"]);
  */
 export function shouldRouteToSummaryCache(method: string, pathname: string): boolean {
   if (!CACHEABLE_METHODS.has(method.toUpperCase())) return false;
-  return pathname === SUMMARY_CACHE_PATH;
+  return pathname === SUMMARY_CACHE_PATH || pathname === DUTY_FREE_CACHE_PATH;
 }

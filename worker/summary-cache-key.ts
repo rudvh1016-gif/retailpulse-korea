@@ -42,6 +42,8 @@ function validMonth(value: string | null): string | null {
  * so `?date=bad&date=2026-09-01` is "today" here just as it is in the route.
  */
 export function canonicalSummaryUrl(url: URL): string {
+  // FX is a single current stored snapshot; the client applies its selected date.
+  if (url.pathname === '/api/live/duty-free-exchange') return `${url.origin}${url.pathname}`;
   if (url.searchParams.get('view') === 'records') {
     const query = new URLSearchParams({ view: 'records' });
     const area = url.searchParams.get('area') ?? '';
