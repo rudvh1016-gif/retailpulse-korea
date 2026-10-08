@@ -226,6 +226,7 @@ test("the storage diagnostic is read-only, manual, and prints no secret", () => 
   assert.doesNotMatch(workflow, /schedule:/, "the owner asked for no new standing diagnostic schedule");
   assert.match(workflow, /- storage/);
   assert.match(workflow, /if: inputs\.scope == 'storage'\n\s+run: npx tsx scripts\/measure-production-storage\.ts/);
-  assert.match(workflow, /if: inputs\.scope != 'storage' && inputs\.scope != 'airport_sides'\n\s+run: npx tsx scripts\/measure-production-read-budget\.ts/);
+  assert.match(workflow, /if: inputs\.scope != 'storage' && inputs\.scope != 'airport_sides' && inputs\.scope != 'commercial_coverage'\n\s+run: npx tsx scripts\/measure-production-read-budget\.ts/);
+  assert.match(workflow, /if: inputs\.scope == 'commercial_coverage'\n\s+run: npx tsx scripts\/audit-commercial-coverage\.ts/);
   assert.deepEqual([...new Set(workflow.match(/secrets\.[A-Z0-9_]+/g))], ["secrets.CLOUDFLARE_D1_WRITE_TOKEN"]);
 });

@@ -1340,7 +1340,7 @@ test("mobile More explains usage without the removed promotion and retains its T
 
   const bottom = page.locator("nav.bottom-nav");
   await expect(bottom).toBeVisible();
-  await expect(bottom.locator("a")).toHaveCount(5);
+  await expect(bottom.locator("a")).toHaveCount(6);
   await expect(bottom).not.toContainText("관광안내");
   await bottom.locator("a").filter({ hasText: "더보기" }).click();
   await expect(page).toHaveURL(/\/ko\/more$/);
@@ -1474,12 +1474,12 @@ test("the forecast figure shows the current minute inside the phone viewport wit
  * the button is reachable in the header, the guide opens with real steps
  * for both phones, and it closes again.
  */
-test("the header offers an install guide with real steps for Galaxy and iPhone", async ({ page }) => {
+test("the date row offers an install guide with real steps for Galaxy and iPhone", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.goto("/ko");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
 
-  const button = page.locator(".topbar .install-app-button");
+  const button = page.locator(".date-nav-tools .install-app-button");
   await expect(button).toBeVisible();
   await button.click();
 
@@ -1507,7 +1507,7 @@ test("the install guide keeps keyboard focus inside and restores the trigger", a
   await page.goto("/ko");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
 
-  const trigger = page.locator(".topbar .install-app-button");
+  const trigger = page.locator(".date-nav-tools .install-app-button");
   await trigger.focus();
   await trigger.press("Enter");
 
@@ -1538,7 +1538,7 @@ test("the install guide is written in every locale, not only Korean", async ({ p
   ] as const) {
     await page.goto(`/${locale}`);
     await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
-    await page.locator(".topbar .install-app-button").click();
+    await page.locator(".date-nav-tools .install-app-button").click();
     const dialog = page.locator(".install-modal");
     await expect(dialog).toBeVisible();
     await expect(dialog).toContainText(marker);
@@ -1562,7 +1562,7 @@ test("the guide leads with the reader's own device and still lists the others", 
     await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
     await page.goto("/ko");
     await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
-    await page.locator(".topbar .install-app-button").click();
+    await page.locator(".date-nav-tools .install-app-button").click();
     const headings = page.locator(".install-modal .install-section h3");
     await expect(headings.first()).toHaveText(first);
     await expect(headings, "every section stays on screen whatever the device is").toHaveCount(6);

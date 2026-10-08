@@ -46,6 +46,7 @@
 .seoul-comparison a:hover { text-decoration-thickness:2px; }
 .date-nav-tools>.install-app-button { flex:none; }
 .date-nav-tools>.date-calendar { flex:1; min-width:0; width:auto; }
+.date-nav .install-modal button { font-size:13px; }
 .app nav.bottom-nav { grid-template-columns:repeat(6,minmax(0,1fr)); }
 :is(.date-nav-tools,.comparison-date) .install-app-button { display:inline-flex; align-items:center; justify-content:center; min-width:44px; min-height:44px; padding:0; border:0; letter-spacing:0; }
 :is(.date-nav-tools,.comparison-date) .install-app-label { display:none; }

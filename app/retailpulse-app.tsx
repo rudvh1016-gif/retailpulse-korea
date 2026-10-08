@@ -33,6 +33,7 @@ import LiveSignals, {
 } from "./live-signals";
 import { TourismDeskView } from "./tourism-desk";
 import {WhereToView,ConsumptionView} from './seoul-comparison';
+import {PredictionEvidence} from './prediction-evidence';
 import { parsePreferences, PREFERENCE_KEY } from "../lib/personal-briefing";
 import { SiteUsageGuide } from "./site-usage-guide";
 import { IndustryGuide } from "./industry-guide";
@@ -399,7 +400,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   function updateUrl(nextLang: Lang, nextView: View, nextArea: AreaId, nextTerminal: Terminal = terminal, preserveHome = false, nextConcourse=concourse) {
     const params = new URLSearchParams();
     if (serviceDate && nextView!=='where-to' && nextView!=='consumption') params.set('date',serviceDate);
-    if (nextView === 'consumption') {params.set('area',nextArea);const month=new URLSearchParams(window.location.search).get('month');if(month)params.set('month',month);}
+    if (nextView === 'consumption' || nextView === 'forecast') {params.set('area',nextArea);const month=new URLSearchParams(window.location.search).get('month');if(month)params.set('month',month);}
     if(nextView==='airport'&&nextConcourse)params.set('building','CONCOURSE');
     else if (nextView === 'airport' && nextTerminal !== 'all') params.set('terminal',nextTerminal);
     const paramsText = params.toString(); // not .size: older Safari/Chrome lack URLSearchParams.size
@@ -423,7 +424,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   function selectArea(next: AreaId) {
     setHomeVisible(false);
     setSelected(next);
-    if (view === "today" || view === "tourism-desk" || view === "consumption") updateUrl(lang, view, next);
+    if (view === "today" || view === "tourism-desk" || view === "consumption" || view === "forecast") updateUrl(lang, view, next);
   }
 
   function navigate(next: View, nextTerminal: Terminal = terminal, nextConcourse=concourse) {
@@ -493,7 +494,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
                 {(Object.keys(areaInfo) as AreaId[]).map((id) => <button key={id} className={selected === id ? "active" : ""} onClick={() => selectArea(id)} role="tab" aria-selected={selected === id}>{areaLocalName(id, lang)}</button>)}
               </div>
             )}
-            <DateNavigator lang={lang} date={serviceDate} onChange={changeDate} historyHref={`/${lang}/forecast`} />
+            <DateNavigator lang={lang} date={serviceDate} onChange={changeDate} historyHref={`/${lang}/forecast?area=${selected}#prediction-score`} />
             <DateScopeNote lang={lang} date={serviceDate} />
             {homeVisible ? <HomeTodayBrief lang={lang} selected={selected} onSelect={setSelected} date={serviceDate} /> : <LiveSignals lang={lang} area={selected} date={serviceDate} />}
             {betaSignupEnabled && <BetaSignup lang={lang} />}
@@ -926,6 +927,7 @@ function InsightsView({ lang, selected, setSelected }: { lang: Lang; selected: A
       </div>
 
       <MonthlyRecordsView lang={lang} area={selected} onArea={setSelected} />
+      <PredictionEvidence lang={lang} area={selected}/>
 
       <details className="records-reference records-details"><summary>{recordText('reference', lang)}</summary>
       <section className="insight-block" aria-labelledby="insight-terminal-title">
@@ -1000,7 +1002,7 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
       eyebrow: "01 · WHAT",
       title: localText(lang, { ko: "KORETAIL은 무엇인가요?", en: "What is KORETAIL?", zh: "KORETAIL 是什么？", ja: "KORETAIL とは？" }),
       body: localText(lang, {
-        ko: "서울의 대표 쇼핑 지역과 인천공항에 관한 공개 공식 자료와 출처가 표시된 참조자료를 한 화면에 모읍니다. 원자료와 KORETAIL이 계산한 비교값을 구분해 표시하며, 과거 기록 기반 참고 예상은 예측 메뉴에서 별도로 구분합니다.",
+        ko: "서울의 대표 쇼핑 지역과 인천공항에 관한 공개 공식 자료와 출처가 표시된 참조자료를 한 화면에 모읍니다. 원자료와 KORETAIL이 계산한 비교값을 구분해 표시하며, 과거 예상·실제 관측 비교는 기록 화면에서 확인할 수 있습니다.",
         en: "KORETAIL brings public official data and clearly labelled reference data about Seoul’s main shopping areas and Incheon Airport into one view. Source values and KORETAIL-calculated comparisons are identified separately; historical-baseline estimates are separately labelled.",
         zh: "KORETAIL 将首尔主要购物区与仁川机场的公开官方数据及明确标注来源的参考资料汇总到一个页面。来源数值与 KORETAIL 计算的比较值会分开标示，历史基线参考预测另行标注。",
         ja: "KORETAILは、ソウルの主要ショッピングエリアと仁川空港について、公開された公式データと出典を明記した参照データを一画面にまとめます。出典の数値とKORETAILが算出した比較値を区別し、過去記録に基づく参考予測は別に表示します。",

@@ -38,7 +38,7 @@ for (const width of [375,390,430,1280]) for (const lang of ['ko','en','zh','ja']
   await expect(buttons.nth(0)).toHaveAttribute('aria-pressed','true');
   expect(dates).toContain('2026-09-01');
   expect(dates).toContain('2026-08-30');
-  await expect(page.locator('.period-outlook-link')).toHaveAttribute('href',new RegExp(`/${lang}/predictions\\?area=myeongdong#prediction-score$`));
+  await expect(page.locator('.period-outlook-link')).toHaveAttribute('href',new RegExp(`/${lang}/forecast\\?area=myeongdong#prediction-score$`));
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   if(lang==='ko')await page.screenshot({path:info.outputPath(`date-public-${width}.png`)});
   await page.evaluate(key=>localStorage.setItem(key,JSON.stringify({version:1,role:'manager',location:'myeongdong',terminal:'T2',interests:['weather'],day:'today',selectedDays:['today','yesterday','tomorrow'],analytics:false})),PREFERENCE_KEY);
