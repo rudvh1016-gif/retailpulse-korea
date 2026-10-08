@@ -42,6 +42,7 @@ import { AirportDepartureOverview } from "./airport-departure-overview";
 import { AirportConcourse } from './airport-concourse';
 import { AirportTaxRefundGuide } from './airport-tax-refund-guide';
 import { AirportDeparturePreparation } from './airport-departure-preparation';
+import { AirportDutyFreeExchange } from './airport-duty-free-exchange';
 import './airport-tax-refund-guide.css';
 import { sidesCopy } from "../lib/airport-sides-copy";
 import { saveBusinessPreferences, useBusinessPreferences } from "./business-preferences";
@@ -463,6 +464,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         <div className="header-meta">
           <KstTodayChip lang={lang} date={serviceDate} />
           <InstallAppButton lang={lang} />
+          <AirportDutyFreeExchange lang={lang} date={serviceDate}/>
           <label className="language-control">
             <span className="sr-only">Language</span>
             <select value={lang} onChange={(event) => changeLanguage(event.target.value as Lang)} aria-label="Language">

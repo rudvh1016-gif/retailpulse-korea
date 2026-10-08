@@ -1,0 +1,13 @@
+.airport-reference-pillars{margin:8px 0 0;color:var(--ink)}
+.reference-pillar-list{display:flex;align-items:stretch;gap:8px;list-style:none;margin:0;padding:0}
+.reference-pillar-list>li{display:flex;flex:1 1 0;min-width:0;flex-direction:column;align-items:center;text-align:center;font-variant-numeric:tabular-nums}
+.reference-pillar-value{min-height:38px;width:100%;font:inherit;font-weight:600;overflow-wrap:anywhere;line-height:1.35}
+.reference-pillar-space{display:flex;width:100%;height:164px;align-items:flex-end;justify-content:center}
+.reference-pillar{display:flex;flex-direction:column;width:54px;max-width:100%;height:var(--estimate-height)}
+.reference-pillar-cap,.reference-pillar-base{display:block;flex:0 0 auto;height:min(20px,calc(var(--estimate-height)*.5));background-size:100% 100%;background-repeat:no-repeat}
+.reference-pillar-cap{background-image:url('/airport/reference-estimate/reference-pillar-cap.webp')}
+.reference-pillar-wall{display:block;flex:1 1 auto;min-height:0;background-image:url('/airport/reference-estimate/reference-pillar-wall.webp');background-size:100% 100%}
+.reference-pillar-base{background-image:url('/airport/reference-estimate/reference-pillar-base.webp')}
+.reference-pillar-zone{margin-top:5px;overflow-wrap:anywhere}
+.reference-pillar-list small{font:inherit;font-size:12px;color:var(--muted)}
+.airport-reference-pillars figcaption{margin-top:6px;font-variant-numeric:tabular-nums}

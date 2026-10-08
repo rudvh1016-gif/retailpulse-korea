@@ -63,7 +63,8 @@ test('saved Hongdae airport preferences survive explicit terminal and date switc
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
     await expect(page.locator('.airport-today')).toBeVisible();
     await page.getByRole('tab', { name: 'T2', exact: true }).click();
-    await expect(page.locator('.airport-glance-strip')).toHaveAttribute('data-scope', 'T2');
+    await expect(page.locator('.airport-glance-strip')).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: 'T2', exact: true })).toHaveAttribute('aria-selected', 'true');
     for (const [index, date] of [[0, '2026-08-30'], [2, '2026-09-01'], [1, '2026-08-31']] as const) {
         await page.locator('.date-nav-shortcuts button').nth(index).click();
         await expectDateSelection(page, date);

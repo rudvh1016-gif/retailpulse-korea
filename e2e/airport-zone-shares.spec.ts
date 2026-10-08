@@ -23,8 +23,13 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [360,390,430,1280]) 
   for(const [index,total,westShare,centerShare] of [[0,14,'35.7%','21.4%'],[1,5,'40.0%','20.0%'],[3,3,'33.3%','33.3%'],[2,5,'40.0%','20.0%'],[0,14,'35.7%','21.4%'],[2,5,'40.0%','20.0%']] as const){
    await page.locator('.terminal-selector button').nth(index).click();
    await expect(model).toHaveAttribute('data-denominator',String(total));
-   if(westShare)await expect(model.locator('.airport-concept-counts [data-side=WEST] small')).toHaveText(westShare);
-   if(centerShare)await expect(model.locator('.airport-concept-counts [data-side=CENTER] small')).toHaveText(centerShare);
+   if(index===0){
+    await expect(model.locator('.airport-concept-counts')).toHaveCount(3);
+    for(const [building,n,w,c]of[['T1',5,'40.0%','20.0%'],['T2',5,'40.0%','20.0%'],['CONCOURSE',3,'33.3%','33.3%']] as const){const row=model.locator(`.airport-concept-counts[data-building=${building}]`);await expect(row).toHaveAttribute('data-denominator',String(n));await expect(row.locator('[data-side=WEST] small')).toHaveText(w);await expect(row.locator('[data-side=CENTER] small')).toHaveText(c);}
+   }else{
+    if(westShare)await expect(model.locator('.airport-concept-counts [data-side=WEST] small')).toHaveText(westShare);
+    if(centerShare)await expect(model.locator('.airport-concept-counts [data-side=CENTER] small')).toHaveText(centerShare);
+   }
    if(!total)await expect(model.locator('.airport-concept-counts small').first()).not.toContainText('%');
   }
   await page.getByTestId('departure-map-section').locator(':scope > summary').click();

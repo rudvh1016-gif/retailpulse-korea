@@ -194,8 +194,7 @@ test("airport summary keeps forecast, flights, gate and checkpoints truthful on 
   await expect(page.locator(".airport-wait-brief")).toContainText("60+분");
   await expect(page.locator(".airport-current-brief")).toContainText("출발 운항 561편");
   await expect(page.locator(".airport-current-brief")).not.toContainText("출발 561편");
-  await expect(page.locator(".airport-glance-strip")).toContainText("전주 동요일 대비");
-  await expect(page.locator(".airport-glance-strip")).toContainText("비교 자료 없음");
+  await expect(page.locator(".airport-glance-strip, .airport-near-term, .airport-upcoming-peak")).toHaveCount(0);
   await expect(page.locator(".airport-today-grid")).not.toBeVisible();
   await page.locator(".airport-summary-details > summary").click();
   await expect(page.locator(".airport-today-grid").getByText("출국장 공식 예상 승객", { exact: true })).toBeVisible();
@@ -440,17 +439,11 @@ test("the summary states this hour's official expected departing passengers and 
   // 한눈에 보기 줄의 첫 칸이며, 값과 시간대를 나눠서 싣는다.
   const headline = brief.locator("strong").first();
   await expect(headline).toHaveText("금일 출국장 공식 예상 승객 47,320명");
-  const nowCell = brief.locator(".airport-glance-strip > div").first();
-  await expect(nowCell).toContainText("현재 시간대 · 공식 예상");
-  await expect(nowCell.locator("b")).toHaveText("5,110명");
-  await expect(nowCell).toContainText("14:00–15:00 KST");
+  await expect(brief.locator(".airport-glance-strip, .airport-near-term, .airport-upcoming-peak")).toHaveCount(0);
+  await expect(page.locator(".airport-forecast")).toContainText("6,320");
   await expect(headline).not.toContainText("대기");
   await expect(brief).toContainText("현재 대기 관측");
-  // 예상치를 관측이라고 부르지 않는다.
   await expect(brief).not.toContainText("관측 출국객");
-  await expect(nowCell).not.toContainText("관측");
-  // 바로 아래 보조 줄이 같은 숫자를 다시 찍지 않는다.
-  await expect(brief.locator(".airport-near-term").first()).not.toContainText("5,110");
 });
 
 /**
@@ -464,7 +457,7 @@ test("remaining expected departures is shown for a complete day and withheld for
   await page.locator(".airport-summary-details > summary").click();
   await expect(page.getByText("현재 시간대부터 자정까지", { exact: true })).toBeVisible();
   await expect(page.getByText("11,430명", { exact: true })).toBeVisible();
-  await expect(page.locator(".airport-current-brief")).toContainText("14:00 이후 시간대 합계 11,430명");
+  await expect(page.locator(".airport-current-brief .airport-near-term")).toHaveCount(0);
 
   // Two different times sit on this one card: the window the sum covers
   // (14:00–24:00) and the moment the forecast was fetched (09:05). Both used
@@ -622,7 +615,8 @@ test("incomplete A5 daily coverage never renders as a full-day total or peak", a
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await expect(page.locator(".airport-today-grid article").filter({ hasText: "출국장 공식 예상 승객" }).getByText("전체 시간대 확인 불가", { exact: true })).toBeVisible();
   await expect(page.locator(".airport-forecast .flow-note")).toContainText("일부");
-  await expect(page.locator(".airport-current-brief")).toContainText("공식 예상 승객 일부 누락 · 피크 판단 안 함");
+  await expect(page.locator(".airport-current-brief .airport-data-missing")).toHaveText("전체 시간대 확인 불가");
+  await expect(page.locator(".airport-glance-strip, .airport-near-term, .airport-upcoming-peak")).toHaveCount(0);
   await expect(page.locator(".airport-forecast .flow-note")).toContainText("전체");
   await expect(page.locator(".airport-flow")).toBeVisible();
   await expect(page.locator(".airport-today-grid").getByText("47,320명", { exact: true })).toHaveCount(0);

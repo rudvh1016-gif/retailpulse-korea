@@ -1,9 +1,14 @@
 import type { Lang } from './retailpulse-data';
 import type { TopReference } from '../lib/airport-top-reference';
-import { estimateBasisLine, estimateBody, estimateNote, splitCopy } from '../lib/airport-flight-split-copy';
+import { estimateBasisLine, estimateNote, splitCopy } from '../lib/airport-flight-split-copy';
+import { referencePillars } from '../lib/airport-reference-pillars';
+import { AirportReferencePillars } from './airport-reference-pillars';
 import './airport-split-details.css';
 
 const words = {
+  heading: { ko: '항공편 비율로 계산한 추정', en: 'Estimate from flight proportions', zh: '按航班比例计算的估算', ja: '便数の割合から計算した推定' },
+  unverified: { ko: '위치 미확인 또는 건물 미정 항공편이 있어 구역별 승객 추정을 보류합니다.', en: 'Unverified gate locations or unknown buildings: passenger estimates by zone are withheld.', zh: '存在位置未确认或建筑未定航班，暂不显示分区旅客估算。', ja: '位置未確認または建物未定の便があるため、区域別の旅客推定は保留します。' },
+  nationality: { ko: '실제 구역별 승객 수·승객 국적을 나타내지 않습니다.', en: 'Not actual passenger counts by zone or passenger nationalities.', zh: '不代表实际分区旅客人数或旅客国籍。', ja: '区域別の実際の旅客数や旅客の国籍を示しません。' },
   notObserved: { ko: '실제 동·서편 출국객 관측값이 아닙니다.', en: 'Not observed east/west passenger counts.', zh: '并非观测到的东、西区旅客人数。', ja: '東西別の実測旅客数ではありません。' },
   all: { ko: '전체 화면에서는 T1·T2를 각각 계산하며 합산 배분하지 않습니다.', en: 'T1 and T2 are calculated separately; no combined allocation.', zh: 'T1与T2分别计算，不合并分配。', ja: 'T1とT2を別々に計算し、合算配分しません。' },
   time: { ko: '선택한 시간대에는 공식 승객 분모가 없습니다. 하루 전체에서 확인하세요.', en: 'No official passenger denominator for this time window. Check the whole day.', zh: '所选时段没有官方旅客分母。请查看全天。', ja: '選択した時間帯には公式の旅客分母がありません。終日で確認してください。' },
@@ -22,22 +27,26 @@ export function AirportTopReference({ lang, date, scope, wholeDay, entries, onWh
   entries: TopReference[] | null; onWholeDay: () => void; onT1Day: () => void;
 }) {
   const reason = scope === 'CONCOURSE' ? 'concourse' : !wholeDay ? 'time' : null;
-  return <section className="airport-top-reference" data-testid="airport-top-reference" data-state={reason ?? (entries?.some((entry) => entry.estimate) ? 'READY' : 'UNAVAILABLE')}>
-    <h3>{splitCopy.estimateHeading[lang]} <small>{date} KST</small></h3>
+  const presentation = entries?.map(entry => ({...entry, pillars:entry.estimate ? referencePillars(entry.estimate) : null}));
+  const maximum = Math.max(0,...(presentation?.flatMap(entry=>entry.pillars?.map(part=>part.rawPeople)??[])??[]));
+  const ready = presentation?.some(entry=>entry.pillars);
+  return <section className="airport-top-reference" data-testid="airport-top-reference" data-state={reason ?? (ready ? 'READY' : 'UNAVAILABLE')}>
+    <h3>{words.heading[lang]} <small>{date} KST</small></h3>
     {reason ? <p role="status">{words[reason][lang]}{' '}<button type="button" className="prep-link" onClick={reason === 'concourse' ? onT1Day : onWholeDay}>{words[reason === 'concourse' ? 't1Day' : 'wholeDay'][lang]}</button></p>
       : <>
         {scope === 'all' && <p className="prep-note">{words.all[lang]}</p>}
-        {entries?.map(({ terminal, estimate, unavailableReason }) => estimate
+        {presentation?.map(({ terminal, estimate, unavailableReason, pillars }) => estimate && pillars
           ? <div className="airport-top-reference-row" data-testid={`top-reference-${terminal}`} key={terminal}>
-              <p><strong>{terminal} · {estimateBody({ terminal, ...estimate }, lang)}</strong></p>
+              <p><strong>{terminal}</strong></p>
+              <AirportReferencePillars lang={lang} pillars={pillars} maximum={maximum}/>
               <details className="prep-evidence prep-estimate-details"><summary>{splitCopy.estimateDetails[lang]}</summary>
                 <p className="prep-note">{estimateBasisLine({ terminal, ...estimate }, lang)}</p>
                 <p className="prep-note">{estimateNote({ terminal, ...estimate }, lang)}</p>
               </details>
             </div>
-          : <p className="prep-note" data-testid={`top-reference-${terminal}-unavailable`} data-reason={unavailableReason} key={terminal}>{terminal} · {words[unavailableReason ?? 'unavailable'][lang]}</p>)}
+          : <p className="prep-note" data-testid={`top-reference-${terminal}-unavailable`} data-reason={estimate ? 'UNVERIFIED_LOCATION' : unavailableReason} key={terminal}>{terminal} · {estimate ? words.unverified[lang] : words[unavailableReason ?? 'unavailable'][lang]}</p>)}
         {!entries && <p className="prep-note" role="status">{words.unavailable[lang]}</p>}
-        {entries?.some((entry) => entry.estimate) && <p className="prep-note">{words.notObserved[lang]}</p>}
+        {ready && <p className="prep-note">{words.notObserved[lang]} {words.nationality[lang]}</p>}
       </>}
   </section>;
 }
