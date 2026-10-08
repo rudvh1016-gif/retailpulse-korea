@@ -1,0 +1,109 @@
+{
+  "sourceBase": "c179d76dcf9bd449426c584b548f08f1628ab8d4",
+  "beforeAfterChecks": [
+    {
+      "width": 360,
+      "kpiTextUnchanged": true,
+      "monthsUnchanged": true,
+      "activeControlsUnchanged": true
+    },
+    {
+      "width": 390,
+      "kpiTextUnchanged": true,
+      "monthsUnchanged": true,
+      "activeControlsUnchanged": true
+    },
+    {
+      "width": 430,
+      "kpiTextUnchanged": true,
+      "monthsUnchanged": true,
+      "activeControlsUnchanged": true
+    },
+    {
+      "width": 1280,
+      "kpiTextUnchanged": true,
+      "monthsUnchanged": true,
+      "activeControlsUnchanged": true
+    }
+  ],
+  "afterMatrix": [
+    {
+      "lang": "ko",
+      "width": 360
+    },
+    {
+      "lang": "ko",
+      "width": 390
+    },
+    {
+      "lang": "ko",
+      "width": 430
+    },
+    {
+      "lang": "ko",
+      "width": 1280
+    },
+    {
+      "lang": "en",
+      "width": 360
+    },
+    {
+      "lang": "en",
+      "width": 390
+    },
+    {
+      "lang": "en",
+      "width": 430
+    },
+    {
+      "lang": "en",
+      "width": 1280
+    },
+    {
+      "lang": "zh",
+      "width": 360
+    },
+    {
+      "lang": "zh",
+      "width": 390
+    },
+    {
+      "lang": "zh",
+      "width": 430
+    },
+    {
+      "lang": "zh",
+      "width": 1280
+    },
+    {
+      "lang": "ja",
+      "width": 360
+    },
+    {
+      "lang": "ja",
+      "width": 390
+    },
+    {
+      "lang": "ja",
+      "width": 430
+    },
+    {
+      "lang": "ja",
+      "width": 1280
+    }
+  ],
+  "bordersRemoved": true,
+  "mobileLayout": "full-width total / average+change / full-width peak month",
+  "overflow": false,
+  "pageErrors": 0,
+  "fixtureUnchanged": true,
+  "fixtureSha": "6cca131bf61bad933a28e6ca8e6b18f99500cf92b2c1fe30504a2ec6f27c1f7d",
+  "protectedMismatch": [
+    "app/[locale]/[slug]/page.tsx",
+    "app/live-signals.tsx",
+    "app/retailpulse-app.tsx",
+    "app/seo-config.ts"
+  ],
+  "baselineUpdate": "blocked by automatic approval review; no modification",
+  "librarySave": "native prepared upload helper unavailable; no new Library IDs"
+}

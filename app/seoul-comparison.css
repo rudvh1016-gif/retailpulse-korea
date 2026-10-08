@@ -1,3 +1,4 @@
+@import './airport-history-polish.css';
 .seoul-comparison { color:#000; padding:24px 0; }
 .comparison-heading { margin-bottom:20px; max-width:74ch; }
 .comparison-heading h1 { font:inherit; font-size:clamp(24px,4vw,34px); font-weight:600; letter-spacing:-.035em; text-wrap:balance; margin:0 0 10px; }
