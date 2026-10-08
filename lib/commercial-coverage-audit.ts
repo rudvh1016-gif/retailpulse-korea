@@ -9,6 +9,7 @@ export function assertCommercialAuditReadOnly(sql:string) {
 }
 const bounded=`SELECT observed_at,payload FROM seoul_context
   WHERE area=? AND observed_at>=? AND observed_at<? ORDER BY observed_at LIMIT ${COMMERCIAL_AUDIT_ROW_CAP+1}`;
+export const commercialAuditObservationsSql=bounded;
 export const commercialAuditContextSql=`WITH raw AS (${bounded})
  SELECT COUNT(*) AS rawRows,MIN(observed_at) AS firstContextAt,MAX(observed_at) AS lastContextAt,
  MIN(json_extract(payload,'$.commercialAt')) AS firstCommercialAt,

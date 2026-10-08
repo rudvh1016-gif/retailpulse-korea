@@ -3,7 +3,8 @@ import {writeFileSync} from 'node:fs';
 import {CloudflareD1RestDatabase} from '../lib/d1-rest';
 import {resolveProductionDatabaseConfig} from './production-database';
 import {assertCommercialAuditReadOnly,COMMERCIAL_AUDIT_AREAS,COMMERCIAL_AUDIT_ROW_CAP,
- commercialAuditContextSql,commercialAuditCategoriesSql} from '../lib/commercial-coverage-audit';
+ commercialAuditObservationsSql} from '../lib/commercial-coverage-audit';
+import type {SeoulContext,CategoryActivity} from '../lib/seoul-context';
 const at=new Date(),today=new Date(at.getTime()+9*3_600_000).toISOString().slice(0,10);
 const lower=new Date(at.getTime()-90*86_400_000+9*3_600_000).toISOString().slice(0,10);
 const upper=new Date(at.getTime()+86_400_000+9*3_600_000).toISOString().slice(0,10);
@@ -24,17 +25,36 @@ async function read(sql:string,binds:unknown[]){
 }
 try{
  for(const area of COMMERCIAL_AUDIT_AREAS){
-  const binds=[area,lower,upper];const plan=await read('EXPLAIN QUERY PLAN '+commercialAuditContextSql,binds);
+  const binds=[area,lower,upper];const plan=await read('EXPLAIN QUERY PLAN '+commercialAuditObservationsSql,binds);
   if(!plan.some(row=>/SEARCH seoul_context USING.*INDEX/i.test(String(row.detail)))
     ||plan.some(row=>/SCAN seoul_context\b/i.test(String(row.detail))))throw new Error('COMMERCIAL_AUDIT_UNBOUNDED_PLAN');
-  const [context]=await read(commercialAuditContextSql,binds);
-  if(Number(context.rawRows)>COMMERCIAL_AUDIT_ROW_CAP)throw new Error('COMMERCIAL_AUDIT_SOURCE_ROW_CAP');
-  const categories=await read(commercialAuditCategoriesSql,[...binds,completedDays]);
-  const summary=categories.map(row=>{const {completedPrefixHours,...rest}=row;const keys=new Set((JSON.parse(String(completedPrefixHours)) as Array<string|null>).filter(Boolean));
-   const previous=categories.find(value=>value.category===row.category&&value.month===previousMonth);
-   const older=new Set(previous?(JSON.parse(String(previous.completedPrefixHours)) as Array<string|null>).filter(Boolean):[]);
-   return {...rest,completedPrefixHours:keys.size,matchedPreviousPrefixHours:row.month===currentMonth?[...keys].filter(key=>older.has(key)).length:null};});
-  areas.push({area,context,categories:summary});persist();
+  // One bounded indexed scan. JSON and coverage computation run on Actions.
+  const raw=await read(commercialAuditObservationsSql,binds);
+  if(raw.length>COMMERCIAL_AUDIT_ROW_CAP)throw new Error('COMMERCIAL_AUDIT_SOURCE_ROW_CAP');
+  const canonical=new Map<string,{at:string;category:CategoryActivity;copies:number}>();
+  const clocks=new Set<string>();let missingCommercialClock=0,emptyCategories=0,largestCategoryList=0;
+  for(const row of raw){const context=JSON.parse(String(row.payload)) as SeoulContext;
+   if(!context.commercialAt){missingCommercialClock++;continue;}clocks.add(context.commercialAt);
+   largestCategoryList=Math.max(largestCategoryList,context.categories.length);if(!context.categories.length)emptyCategories++;
+   for(const category of context.categories){const key=context.commercialAt+'|'+category.category;
+    canonical.set(key,{at:context.commercialAt,category,copies:(canonical.get(key)?.copies??0)+1});}
+  }
+  const groups=new Map<string,Array<{at:string;category:CategoryActivity;copies:number}>>();
+  for(const value of canonical.values()){const key=value.category.category+'|'+value.at.slice(0,7);groups.set(key,[...(groups.get(key)??[]),value]);}
+  const categories=[...groups.values()].map(values=>{
+   const first=values[0],times=values.map(value=>value.at).sort();
+   const prefixHours=[...new Set(values.filter(value=>Number(value.at.slice(8,10))<=completedDays&&value.category.payments!==null).map(value=>value.at.slice(8,13)))];
+   return {category:first.category.category,categoryGroup:first.category.group,month:first.at.slice(0,7),firstAt:times[0],lastAt:times.at(-1),
+    uniqueObservations:values.length,duplicateCopies:values.reduce((sum,value)=>sum+value.copies-1,0),
+    unavailablePayments:values.filter(value=>value.category.payments===null).length,
+    publishedZeroPayments:values.filter(value=>value.category.payments===0).length,
+    unavailableAmountRange:values.filter(value=>value.category.amountMin===null||value.category.amountMax===null).length,
+    observedDays:new Set(times.map(time=>time.slice(0,10))).size,observedHours:new Set(times.map(time=>time.slice(0,13))).size,prefixHours};});
+  const summary=categories.map(({prefixHours,...row})=>{const previous=categories.find(value=>value.category===row.category&&value.month===previousMonth);
+   return {...row,completedPrefixHours:prefixHours.length,matchedPreviousPrefixHours:row.month===currentMonth?prefixHours.filter(key=>previous?.prefixHours.includes(key)).length:null};});
+  const times=[...clocks].sort();areas.push({area,context:{rawRows:raw.length,firstContextAt:raw[0]?.observed_at??null,
+   lastContextAt:raw.at(-1)?.observed_at??null,firstCommercialAt:times[0]??null,lastCommercialAt:times.at(-1)??null,
+   uniqueCommercialClocks:clocks.size,missingCommercialClock,emptyCategories,largestCategoryList},categories:summary});persist();
  }
  console.log(JSON.stringify(output(),null,2));
 }catch(error){persist();console.log(JSON.stringify(output(),null,2));throw error;}
