@@ -51,7 +51,10 @@ try{
     unavailableAmountRange:values.filter(value=>value.category.amountMin===null||value.category.amountMax===null).length,
     observedDays:new Set(times.map(time=>time.slice(0,10))).size,observedHours:new Set(times.map(time=>time.slice(0,13))).size,prefixHours};});
   const summary=categories.map(({prefixHours,...row})=>{const previous=categories.find(value=>value.category===row.category&&value.month===previousMonth);
-   return {...row,completedPrefixHours:prefixHours.length,matchedPreviousPrefixHours:row.month===currentMonth?prefixHours.filter(key=>previous?.prefixHours.includes(key)).length:null};});
+   const monthClocks=[...clocks].filter(clock=>clock.startsWith(row.month)).length;
+   return {...row,uniqueMonthClocks:monthClocks,absentCategoryReadings:monthClocks-row.uniqueObservations,
+    unavailableOrAbsentRatio:monthClocks?(monthClocks-row.uniqueObservations+row.unavailablePayments)/monthClocks:null,
+    completedPrefixHours:prefixHours.length,matchedPreviousPrefixHours:row.month===currentMonth?prefixHours.filter(key=>previous?.prefixHours.includes(key)).length:null};});
   const times=[...clocks].sort();areas.push({area,context:{rawRows:raw.length,firstContextAt:raw[0]?.observed_at??null,
    lastContextAt:raw.at(-1)?.observed_at??null,firstCommercialAt:times[0]??null,lastCommercialAt:times.at(-1)??null,
    uniqueCommercialClocks:clocks.size,missingCommercialClock,emptyCategories,largestCategoryList},categories:summary});persist();
