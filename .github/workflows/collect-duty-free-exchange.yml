@@ -1,7 +1,7 @@
 name: Collect Duty-free Exchange
 
-# Startup after the existing automatic production deploy; daily refresh uses
-# collect-production.yml. No new recurring schedule, visitor fetch or retries.
+# Startup after the existing automatic production deploy; recurring refresh uses
+# collect-realtime.yml with the durable one-hour guard. No new cron or visitor fetch.
 on:
   workflow_run:
     workflows: [Deploy Cloudflare]

@@ -161,3 +161,26 @@ jobs:
       timeout_minutes: 6
       a4_max_attempts_per_request: "1"
     secrets: inherit
+
+  # Reuse the existing trigger; the durable one-hour lease limits provider reads.
+  # Independent of airport/Seoul failures. No second timed owner or new secret.
+  duty_free_exchange:
+    if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
+    concurrency:
+      group: duty-free-exchange-production
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Refresh official duty-free exchange snapshots
+        run: node --import tsx scripts/collect-duty-free-exchange.ts
+        env:
+          ENABLE_PRODUCTION_COLLECTOR: 'true'
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}

@@ -1,0 +1,86 @@
+{
+  "environment": "local Miniflare/workerd D1, synthetic source HTML; no production writes or provider requests",
+  "measurements": [
+    {
+      "label": "first collection",
+      "providerRequests": 1,
+      "rowsRead": 6,
+      "rowsWritten": 7,
+      "unmeasured": 0,
+      "statements": 5,
+      "result": [
+        {
+          "vendor": "shilla",
+          "status": "SUCCESS",
+          "providerRequests": 1,
+          "changedRows": 1
+        }
+      ]
+    },
+    {
+      "label": "not due",
+      "providerRequests": 0,
+      "rowsRead": 3,
+      "rowsWritten": 0,
+      "unmeasured": 0,
+      "statements": 2,
+      "result": [
+        {
+          "vendor": "shilla",
+          "status": "SKIPPED_NOT_DUE",
+          "providerRequests": 0,
+          "changedRows": 0
+        }
+      ]
+    },
+    {
+      "label": "same semantic rate",
+      "providerRequests": 1,
+      "rowsRead": 11,
+      "rowsWritten": 2,
+      "unmeasured": 0,
+      "statements": 5,
+      "result": [
+        {
+          "vendor": "shilla",
+          "status": "SUCCESS",
+          "providerRequests": 1,
+          "changedRows": 0
+        }
+      ]
+    },
+    {
+      "label": "new day",
+      "providerRequests": 1,
+      "rowsRead": 10,
+      "rowsWritten": 5,
+      "unmeasured": 0,
+      "statements": 5,
+      "result": [
+        {
+          "vendor": "shilla",
+          "status": "SUCCESS",
+          "providerRequests": 1,
+          "changedRows": 1
+        }
+      ]
+    },
+    {
+      "label": "public stored read",
+      "providerRequests": 0,
+      "rowsRead": 4,
+      "rowsWritten": 0,
+      "unmeasured": 0,
+      "statements": 2,
+      "result": null
+    }
+  ],
+  "plan": [
+    {
+      "id": 4,
+      "parent": 0,
+      "notused": 49,
+      "detail": "SEARCH duty_free_exchange_daily USING INDEX sqlite_autoindex_duty_free_exchange_daily_1 (vendor=? AND service_date_kst>? AND service_date_kst<?)"
+    }
+  ]
+}

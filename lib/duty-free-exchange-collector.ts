@@ -1,4 +1,4 @@
-import { activeDutyFreeVendors, dutyFreeSources, kstExchangeDate, type DutyFreeVendor } from './duty-free-exchange';
+import { activeDutyFreeVendors, dutyFreeSources, kstExchangeDate, shiftExchangeDate, type DutyFreeVendor } from './duty-free-exchange';
 import { claimDutyFreeAttempt, saveDutyFreeFailure, saveDutyFreeSuccess } from './duty-free-exchange-store';
 
 export const DUTY_FREE_HTML_MAX_BYTES = 2 * 1024 * 1024;
@@ -45,25 +45,36 @@ function widgetsFromHtml(vendor: DutyFreeVendor, html: string) {
   return widgets;
 }
 
-export function parseDutyFreeHtml(vendor: DutyFreeVendor, html: string, serviceDateKst: string) {
-  const widgets=widgetsFromHtml(vendor,html), values:number[]=[];
-  for(const widget of widgets) {
+export function parseDutyFreeDatedHtml(vendor: DutyFreeVendor, html: string, todayKst: string) {
+  const byDate=new Map<string,{serviceDateKst:string;krwPerUnit:number;dateEvidence:'CURRENT_WIDGET'|'EXPLICIT_SOURCE_DATE'}>();
+  for(const widget of widgetsFromHtml(vendor,html)) {
     const context=entities(widget.context);
-    const dollar=/(?:\bUSD\s*1\b(?!\.)|\b1\s*USD\b|\$\s*1\b(?!\.)|\b1\s*\$)/i.test(context);
-    if(!dollar)continue;
-    const dates=[...context.matchAll(/\b(20\d{2})[./-](\d{2})[./-](\d{2})\b/g)].map(match=>`${match[1]}-${match[2]}-${match[3]}`);
-    if(dates.some(date=>date!==serviceDateKst))throw new RateFailure('SOURCE_DATE_MISMATCH',true);
+    if(!/(?:\bUSD\s*1\b(?!\.)|\b1\s*USD\b|\$\s*1\b(?!\.)|\b1\s*\$)/i.test(context))continue;
+    const dates=[...new Set([...context.matchAll(/\b(20\d{2})[./-](\d{2})[./-](\d{2})\b/g)].map(match=>`${match[1]}-${match[2]}-${match[3]}`))];
+    if(dates.length>1||(!dates.length&&/(?:내일|\uC775일|어제|전일|tomorrow|yesterday|翌日|明日)/i.test(context)))throw new RateFailure('SOURCE_DATE_MISMATCH',true);
+    const serviceDateKst=dates[0]??todayKst;
+    if(!shiftExchangeDate(serviceDateKst,0)||(serviceDateKst!==todayKst&&serviceDateKst!==shiftExchangeDate(todayKst,1)))throw new RateFailure('SOURCE_DATE_MISMATCH',true);
+    if(serviceDateKst!==todayKst&&!/(?:내일|\uC775일|tomorrow|翌日|明日|적용|effective)/i.test(context))throw new RateFailure('SOURCE_DATE_MISMATCH',true);
+    const values:number[]=[];
     for(const target of widget.targets) {
       const numberPattern='((?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d{1,2})?)';
-      const pattern=vendor==='shilla'?new RegExp(`^(?:USD\\s*1|1\\s*USD|\\$\\s*1|1\\s*\\$)\\s*[=:]\\s*${numberPattern}\\s*(?:원|KRW|₩)$`,'i')
-        :new RegExp(`^${numberPattern}$`);
+      const pattern=vendor==='shilla'?new RegExp(`^(?:USD\\s*1|1\\s*USD|\\$\\s*1|1\\s*\\$)\\s*[=:]\\s*${numberPattern}\\s*(?:원|KRW|₩)$`,'i'):new RegExp(`^${numberPattern}$`);
       const match=pattern.exec(target),value=match?Number(match[1].replaceAll(',','')):NaN;
       if(!Number.isFinite(value)||value<=0)throw new RateFailure('SELECTOR_UNVERIFIED',true);
       values.push(value);
     }
+    if(!values.length||new Set(values).size!==1)throw new RateFailure('SELECTOR_UNVERIFIED',true);
+    const existing=byDate.get(serviceDateKst);
+    if(existing&&existing.krwPerUnit!==values[0])throw new RateFailure('SELECTOR_UNVERIFIED',true);
+    byDate.set(serviceDateKst,{serviceDateKst,krwPerUnit:values[0],dateEvidence:dates.length?'EXPLICIT_SOURCE_DATE':'CURRENT_WIDGET'});
   }
-  if(!values.length||new Set(values).size!==1)throw new RateFailure('SELECTOR_UNVERIFIED',true);
-  return values[0];
+  if(!byDate.size)throw new RateFailure('SELECTOR_UNVERIFIED',true);
+  return [...byDate.values()].sort((a,b)=>a.serviceDateKst.localeCompare(b.serviceDateKst));
+}
+export function parseDutyFreeHtml(vendor: DutyFreeVendor, html: string, serviceDateKst: string) {
+  const current=parseDutyFreeDatedHtml(vendor,html,serviceDateKst).find(row=>row.serviceDateKst===serviceDateKst);
+  if(!current)throw new RateFailure('SOURCE_DATE_MISMATCH',true);
+  return current.krwPerUnit;
 }
 
 async function readHtml(response: Response) {
@@ -87,14 +98,16 @@ export async function collectDutyFreeExchange(db: Pick<D1Database,'prepare'|'bat
   for(const vendor of vendors) {
     const lease=crypto.randomUUID();let providerRequests=0;
     try{
+      const ready=await db.prepare('SELECT vendor FROM duty_free_exchange_daily WHERE vendor=? LIMIT 1').bind(vendor).all();
+      if(!ready.success)throw new Error('D1_READ_FAILED');
       if(!await claimDutyFreeAttempt(db,vendor,clock(),lease)){outcomes.push({vendor,status:'SKIPPED_NOT_DUE',providerRequests:0,changedRows:0});continue;}
       providerRequests=1;
       const response=await fetchImpl(dutyFreeSources[vendor],{headers:{accept:'text/html'},redirect:'manual',signal:AbortSignal.timeout(DUTY_FREE_FETCH_TIMEOUT_MS)});
       if(response.status!==200){await response.body?.cancel();throw new RateFailure(`HTTP_${response.status}`,response.status!==429&&response.status<500);}
       const html=await readHtml(response),verifiedAt=clock().toISOString(),serviceDateKst=kstExchangeDate(Date.parse(verifiedAt))!;
-      const krwPerUnit=parseDutyFreeHtml(vendor,html,serviceDateKst);
-      const saved=await saveDutyFreeSuccess(db,{vendor,serviceDateKst,currency:'USD',krwPerUnit,verifiedAt,
-        sourceUrl:dutyFreeSources[vendor],verified:true,scope:'INTERNET_SHOP'},lease);
+      const parsed=parseDutyFreeDatedHtml(vendor,html,serviceDateKst);
+      const rows=parsed.map(row=>({...row,vendor,currency:'USD' as const,verifiedAt,sourceUrl:dutyFreeSources[vendor],verified:true as const,scope:'INTERNET_SHOP' as const}));
+      const saved=await saveDutyFreeSuccess(db,rows[0],lease,rows.slice(1));
       outcomes.push({vendor,status:saved.leaseOwned?'SUCCESS':'SUPERSEDED',providerRequests,changedRows:saved.changedRows});
     }catch(error){
       const failure=error instanceof RateFailure?error:new RateFailure(providerRequests?'NETWORK_OR_STORAGE_ERROR':'STORAGE_UNAVAILABLE',false);
