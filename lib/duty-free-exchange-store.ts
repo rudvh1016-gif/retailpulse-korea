@@ -1,4 +1,4 @@
-import { activeDutyFreeVendors, kstExchangeDate, verifiedDutyFreeObservation, type DutyFreeExchangeSnapshot, type DutyFreeObservation, type DutyFreeVendor, type DutyFreeAttemptStatus } from './duty-free-exchange';
+import { activeDutyFreeVendors, kstExchangeDate, mergeDutyFreeSnapshot, shiftExchangeDate, verifiedDutyFreeObservation, type DutyFreeExchangeSnapshot, type DutyFreeObservation, type DutyFreeVendor, type DutyFreeAttemptStatus } from './duty-free-exchange';
 
 export const DUTY_FREE_MIN_INTERVAL_MS = 3_600_000;
 export const DUTY_FREE_BLOCK_INTERVAL_MS = 24 * 3_600_000;
@@ -27,33 +27,43 @@ export async function claimDutyFreeAttempt(db: Store, vendor: DutyFreeVendor, no
   return result.meta.changes === 1;
 }
 
-export async function saveDutyFreeSuccess(db: Store, observation: DutyFreeObservation, leaseId: string) {
-  const valid = verifiedDutyFreeObservation(observation, Date.parse(observation.verifiedAt));
-  if (!valid) throw new Error('INVALID_OBSERVATION');
-  const {vendor, serviceDateKst, currency, krwPerUnit, verifiedAt, sourceUrl, scope} = observation;
-  // Retrieval time is deliberately absent from semantic identity.
-  const semantic = JSON.stringify([vendor, serviceDateKst, currency, krwPerUnit, sourceUrl, scope]);
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(semantic));
-  const hash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2,'0')).join('');
-  const next = new Date(Date.parse(verifiedAt) + DUTY_FREE_MIN_INTERVAL_MS).toISOString();
-  const results = await db.batch([
-    db.prepare(`INSERT INTO duty_free_exchange_current
-      (vendor, service_date_kst, currency, krw_per_unit, first_verified_at, source_url, scope, source_hash)
-      SELECT ?, ?, ?, ?, ?, ?, ?, ? WHERE EXISTS
-        (SELECT 1 FROM duty_free_exchange_attempt WHERE vendor=? AND lease_id=?)
-      ON CONFLICT(vendor) DO UPDATE SET service_date_kst=excluded.service_date_kst,
-        currency=excluded.currency, krw_per_unit=excluded.krw_per_unit, first_verified_at=excluded.first_verified_at,
-        source_url=excluded.source_url, scope=excluded.scope, source_hash=excluded.source_hash
-      WHERE duty_free_exchange_current.source_hash <> excluded.source_hash`)
-      .bind(vendor, serviceDateKst, currency, krwPerUnit, verifiedAt, sourceUrl, scope, hash, vendor, leaseId),
-    db.prepare(`UPDATE duty_free_exchange_attempt SET status='SUCCESS', error_code=NULL,
-      last_success_at=?, next_due_at=?, lease_id=NULL, lease_until=''
-      WHERE vendor=? AND lease_id=? AND EXISTS
-        (SELECT 1 FROM duty_free_exchange_current WHERE vendor=? AND source_hash=?)`)
-      .bind(verifiedAt, next, vendor, leaseId, vendor, hash),
-  ]);
-  if (results.some(result => !result.success)) throw new Error('D1_SAVE_FAILED');
-  return {changedRows: results[0].meta?.changes ?? null, leaseOwned: results[1].meta?.changes === 1};
+export async function saveDutyFreeSuccess(db: Store, observation: DutyFreeObservation, leaseId: string, additional: DutyFreeObservation[] = []) {
+  const rows=[observation,...additional], at=Date.parse(observation.verifiedAt);
+  if(rows.length>3||new Set(rows.map(row=>row.serviceDateKst)).size!==rows.length
+    ||rows.some(row=>row.vendor!==observation.vendor||row.verifiedAt!==observation.verifiedAt||!verifiedDutyFreeObservation(row,at)))throw new Error('INVALID_OBSERVATION');
+  const hashes=await Promise.all(rows.map(async row=>{
+    const semantic=JSON.stringify([row.vendor,row.serviceDateKst,row.currency,row.krwPerUnit,row.sourceUrl,row.scope]);
+    const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(semantic));
+    return Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+  }));
+  const {vendor,verifiedAt}=observation,next=new Date(at+DUTY_FREE_MIN_INTERVAL_MS).toISOString();
+  const current=rows.find(row=>row.serviceDateKst===kstExchangeDate(at));
+  const statements=rows.map((row,index)=>db.prepare(`INSERT INTO duty_free_exchange_daily
+    (vendor,service_date_kst,currency,krw_per_unit,first_verified_at,source_url,scope,date_evidence,source_hash)
+    SELECT ?,?,?,?,?,?,?,?,? WHERE EXISTS
+      (SELECT 1 FROM duty_free_exchange_attempt WHERE vendor=? AND lease_id=?)
+    ON CONFLICT(vendor,service_date_kst) DO UPDATE SET currency=excluded.currency,
+      krw_per_unit=excluded.krw_per_unit,first_verified_at=excluded.first_verified_at,
+      source_url=excluded.source_url,scope=excluded.scope,date_evidence=excluded.date_evidence,source_hash=excluded.source_hash
+    WHERE duty_free_exchange_daily.source_hash <> excluded.source_hash`)
+    .bind(row.vendor,row.serviceDateKst,row.currency,row.krwPerUnit,row.verifiedAt,row.sourceUrl,row.scope,row.dateEvidence??'CURRENT_WIDGET',hashes[index],vendor,leaseId));
+  if(current)statements.push(db.prepare(`INSERT INTO duty_free_exchange_current
+    (vendor,service_date_kst,currency,krw_per_unit,first_verified_at,source_url,scope,source_hash)
+    SELECT ?,?,?,?,?,?,?,? WHERE EXISTS
+      (SELECT 1 FROM duty_free_exchange_attempt WHERE vendor=? AND lease_id=?)
+    ON CONFLICT(vendor) DO UPDATE SET service_date_kst=excluded.service_date_kst,
+      currency=excluded.currency,krw_per_unit=excluded.krw_per_unit,first_verified_at=excluded.first_verified_at,
+      source_url=excluded.source_url,scope=excluded.scope,source_hash=excluded.source_hash
+    WHERE duty_free_exchange_current.source_hash <> excluded.source_hash`)
+    .bind(vendor,current.serviceDateKst,current.currency,current.krwPerUnit,verifiedAt,current.sourceUrl,current.scope,hashes[rows.indexOf(current)],vendor,leaseId));
+  statements.push(db.prepare(`UPDATE duty_free_exchange_attempt SET status='SUCCESS',error_code=NULL,
+    last_success_at=CASE WHEN ? THEN ? ELSE last_success_at END,next_due_at=?,lease_id=NULL,lease_until=''
+    WHERE vendor=? AND lease_id=? AND EXISTS
+      (SELECT 1 FROM duty_free_exchange_daily WHERE vendor=? AND service_date_kst=? AND source_hash=?)`)
+    .bind(current?1:0,verifiedAt,next,vendor,leaseId,vendor,observation.serviceDateKst,hashes[0]));
+  const results=await db.batch(statements);
+  if(results.some(result=>!result.success))throw new Error('D1_SAVE_FAILED');
+  return {changedRows:results.slice(0,rows.length).reduce((sum,result)=>sum+(result.meta?.changes??0),0),leaseOwned:results.at(-1)?.meta?.changes===1};
 }
 
 export async function saveDutyFreeFailure(db: Store, vendor: DutyFreeVendor, leaseId: string, at: Date, errorCode: string, blocked: boolean) {
@@ -93,5 +103,21 @@ export async function readDutyFreeSnapshot(db: Pick<D1Database, 'prepare'>, now:
     return {vendor:source.vendor, observation,lastAttemptAt:timeOrNull(row.attempt_at),lastAttemptStatus:status,
       errorCode:row.error_code && /^[A-Z0-9_]{1,64}$/.test(row.error_code) ? row.error_code : null,nextAttemptAt:timeOrNull(row.next_due_at)};
   });
+  try {
+    const today=kstExchangeDate(now.getTime())!;
+    const daily=await db.prepare(`SELECT vendor,service_date_kst,currency,krw_per_unit,first_verified_at,source_url,scope,date_evidence
+      FROM duty_free_exchange_daily WHERE vendor='shilla' AND service_date_kst BETWEEN ? AND ? LIMIT 3`)
+      .bind(shiftExchangeDate(today,-1),shiftExchangeDate(today,1)).all<Stored & {date_evidence:string}>();
+    if(!daily.success)throw new Error('D1_READ_FAILED');
+    const observations=(daily.results??[]).flatMap(row=>{
+      const valid=verifiedDutyFreeObservation({vendor:row.vendor,serviceDateKst:row.service_date_kst,currency:row.currency,
+        krwPerUnit:row.krw_per_unit,verifiedAt:row.first_verified_at,sourceUrl:row.source_url,scope:row.scope,verified:true,
+        dateEvidence:row.date_evidence},now.getTime());
+      return valid?[valid]:[];
+    });
+    return mergeDutyFreeSnapshot(null,{...snapshot,sources:snapshot.sources.map(source=>({...source,observations}))},now.getTime());
+  }catch(error) {
+    if(!/no such table:\s*duty_free_exchange_daily/i.test(error instanceof Error?error.message:''))throw error;
+  }
   return snapshot;
 }

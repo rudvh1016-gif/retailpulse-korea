@@ -1,0 +1,17 @@
+{
+  "environment": "same Node24.17 native vinext build, same installed dependencies",
+  "base": "22b7b0c28fdce1712b0c0fcbfa83023c4e1f64ce",
+  "before": {
+    "allClientJsGzipBytes": 465265,
+    "allClientCssGzipBytes": 55716
+  },
+  "after": {
+    "allClientJsGzipBytes": 465963,
+    "allClientCssGzipBytes": 55811
+  },
+  "delta": {
+    "js": 698,
+    "css": 95
+  },
+  "limitation": "all client assets, not initial request bytes; no PSI/LCP/CLS measured"
+}

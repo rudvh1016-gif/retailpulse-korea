@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {readFileSync} from 'node:fs';
 import {DatabaseSync} from 'node:sqlite';
-import {collectDutyFreeExchange,parseDutyFreeHtml} from '../lib/duty-free-exchange-collector.ts';
+import {collectDutyFreeExchange,parseDutyFreeHtml,parseDutyFreeDatedHtml} from '../lib/duty-free-exchange-collector.ts';
 import {claimDutyFreeAttempt,saveDutyFreeSuccess,readDutyFreeSnapshot,DUTY_FREE_BLOCK_INTERVAL_MS} from '../lib/duty-free-exchange-store.ts';
-import {dutyFreePresentation,dutyFreeSources,kstExchangeDate} from '../lib/duty-free-exchange.ts';
+import {dutyFreePresentation,dutyFreeDatedPresentation,dutyFreeSources,kstExchangeDate,mergeDutyFreeSnapshot,dutyFreeReadDelay} from '../lib/duty-free-exchange.ts';
 import {dutyFreeCacheControl} from '../app/api/live/duty-free-exchange/route.ts';
 import {shouldRouteToSummaryCache} from '../worker/summary-cache-routing.ts';
 import {canonicalSummaryUrl} from '../worker/summary-cache-key.ts';
@@ -19,6 +19,7 @@ const ssg=(value='1,344.50')=>`<div class="todayRate">오늘의 환율 1$ = <em>
 const html=value=>new Response(value,{headers:{'content-type':'text/html; charset=utf-8'}});
 function localDb(t){
  const sql=new DatabaseSync(':memory:');sql.exec(readFileSync(new URL('../drizzle/0022_duty_free_exchange.sql',import.meta.url),'utf8'));
+ sql.exec(readFileSync(new URL('../drizzle/0024_duty_free_exchange_daily.sql',import.meta.url),'utf8'));
  t.after(()=>sql.close());
  const prepare=(text)=>{let params=[];const item={bind(...values){params=values;return item;},async all(){return {success:true,results:sql.prepare(text).all(...params)};},async run(){const result=sql.prepare(text).run(...params);return {success:true,meta:{changes:Number(result.changes)}};}};return item;};
  const db={prepare,async batch(items){sql.exec('BEGIN');try{const result=[];for(const item of items)result.push(await item.run());sql.exec('COMMIT');return result;}catch(error){sql.exec('ROLLBACK');throw error;}}};
@@ -64,7 +65,7 @@ test('406 has one request, no retry or workaround, 24-hour guard, and preserves 
  const [failed]=await collectDutyFreeExchange(db,options);assert.equal(failed.status,'BLOCKED');assert.equal(failed.errorCode,'HTTP_406');assert.equal(calls,1);
  const snapshot=await readDutyFreeSnapshot(db,new Date(clock));assert.equal(snapshot.sources[0].observation.verifiedAt,new Date(now).toISOString());
  assert.equal(Date.parse(snapshot.sources[0].nextAttemptAt),clock+DUTY_FREE_BLOCK_INTERVAL_MS);
- assert.equal(dutyFreePresentation(snapshot,clock)[0].current,false);
+ assert.equal(dutyFreePresentation(snapshot,clock)[0].current,true);
  clock+=3_600_000;await collectDutyFreeExchange(db,options);assert.equal(calls,1);
 });
 
@@ -134,6 +135,7 @@ test('real local workerd D1: collector storage reaches the actual public GET han
  const mf=new Miniflare({modules:true,script:compiled.outputFiles[0].text,compatibilityDate:'2026-05-22',d1Databases:['DB']});t.after(()=>mf.dispose());
  const db=await mf.getD1Database('DB');
  for(const sql of readFileSync(new URL('../drizzle/0022_duty_free_exchange.sql',import.meta.url),'utf8').split('--> statement-breakpoint'))if(sql.trim())await db.prepare(sql).run();
+ for(const sql of readFileSync(new URL('../drizzle/0024_duty_free_exchange_daily.sql',import.meta.url),'utf8').split('--> statement-breakpoint'))if(sql.trim())await db.prepare(sql).run();
  const at=new Date();let calls=0;
  const results=await collectDutyFreeExchange(db,{now:()=>at,fetchImpl:async url=>{calls++;return html(url===dutyFreeSources.shilla?shilla():ssg());}});
  assert.ok(results.every(result=>result.status==='SUCCESS'));assert.equal(calls,1);
@@ -142,4 +144,59 @@ test('real local workerd D1: collector storage reaches the actual public GET han
  assert.deepEqual(dutyFreePresentation(snapshot,Date.now()).map(row=>row.krwPerUnit),[1343.4]);
  assert.equal(response.headers.get('cache-control'),'public, max-age=60, s-maxage=300');
  await mf.dispatchFetch('http://localhost/api/live/duty-free-exchange?x=ignored');assert.equal(calls,1);
+});
+
+test('real SQL retains yesterday and dated tomorrow without replacing today or inventing history',async t=>{
+ const {db,sql}=localDb(t);let clock=now;
+ await collectDutyFreeExchange(db,{fetchImpl:async()=>html(shilla('1,340.00')),now:()=>new Date(clock)});
+ clock=Date.parse('2026-10-08T15:07:00Z');
+ const widgets=shilla('1,339.20')+shilla('1,338.00').replace('오늘의 환율','2026-10-10 익일 환율');
+ const [result]=await collectDutyFreeExchange(db,{fetchImpl:async()=>html(widgets),now:()=>new Date(clock)});
+ assert.equal(result.status,'SUCCESS');assert.equal(result.changedRows,2);
+ const snapshot=await readDutyFreeSnapshot(db,new Date(clock));
+ assert.deepEqual(dutyFreeDatedPresentation(snapshot,clock).map(row=>[row.serviceDateKst,row.krwPerUnit,row.current]),[
+  ['2026-10-08',1340,false],['2026-10-09',1339.2,true],['2026-10-10',1338,false]]);
+ assert.equal(sql.prepare('SELECT COUNT(*) AS n FROM duty_free_exchange_daily').get().n,3);
+ assert.equal(snapshot.sources[0].observation.serviceDateKst,'2026-10-09');
+ const after=await readDutyFreeSnapshot(db,new Date('2026-10-09T15:00:01Z'));
+ assert.equal(after.sources[0].observation.krwPerUnit,1338);
+ assert.equal(after.sources[0].observation.verifiedAt,new Date(clock).toISOString());
+});
+test('tomorrow alone is stored without changing today’s verification clock',async t=>{
+ const {db}=localDb(t);
+ await collectDutyFreeExchange(db,{fetchImpl:async()=>html(shilla()),now:()=>new Date(now)});
+ const next=now+3_600_001;
+ await collectDutyFreeExchange(db,{fetchImpl:async()=>html(shilla('1,338.00').replace('오늘의 환율','2026-10-09 익일 환율')),now:()=>new Date(next)});
+ const snapshot=await readDutyFreeSnapshot(db,new Date(next));
+ assert.equal(snapshot.sources[0].observation.verifiedAt,new Date(now).toISOString());
+ assert.equal(dutyFreeDatedPresentation(snapshot,next).find(row=>row.serviceDateKst==='2026-10-09').dateEvidence,'EXPLICIT_SOURCE_DATE');
+});
+test('missing additive migration is readable and performs zero provider requests on collection',async t=>{
+ const {db,sql}=localDb(t);
+ await collectDutyFreeExchange(db,{fetchImpl:async()=>html(shilla()),now:()=>new Date(now)});
+ sql.exec('DROP TABLE duty_free_exchange_daily');
+ assert.equal((await readDutyFreeSnapshot(db,new Date(now))).sources[0].observation.krwPerUnit,1343.4);
+ let calls=0;const [result]=await collectDutyFreeExchange(db,{fetchImpl:async()=>{calls++;return html(shilla());},now:()=>new Date(now+3_600_001)});
+ assert.equal(calls,0);assert.equal(result.errorCode,'STORAGE_UNAVAILABLE');
+});
+test('explicit tomorrow date is required; conflicts and invalid calendars never manufacture a dated rate',()=>{
+ assert.equal(parseDutyFreeDatedHtml('shilla',shilla(),'2026-10-08')[0].dateEvidence,'CURRENT_WIDGET');
+ for(const label of ['익일 환율','2026-10-09 오늘의 환율','2026-10-10 환율','2026-02-30 환율','2026-10-08 2026-10-09 환율'])
+  assert.throws(()=>parseDutyFreeDatedHtml('shilla',shilla().replace('오늘의 환율',label),'2026-10-08'));
+ assert.equal(parseDutyFreeDatedHtml('shilla',shilla().replace('오늘의 환율','2026.10.09 익일 환율'),'2026-10-08')[0].serviceDateKst,'2026-10-09');
+});
+test('validated local retention keeps original dates/clocks, drops stale rows, and bounds midnight reads',()=>{
+ const base={mode:'duty-free-exchange',collectionMode:'AUTOMATED',generatedAt:new Date(now).toISOString(),todayKst:'2026-10-08',
+  sources:[{vendor:'shilla',observation:observation('shilla'),lastAttemptStatus:'SUCCESS',lastAttemptAt:null,errorCode:null,nextAttemptAt:null}]};
+ const failed={...base,sources:[{...base.sources[0],observation:null,lastAttemptStatus:'ERROR'}]};
+ assert.equal(mergeDutyFreeSnapshot(base,failed,now).sources[0].observation.verifiedAt,new Date(now).toISOString());
+ assert.equal(mergeDutyFreeSnapshot(base,failed,now+3*86_400_000).sources[0].observation,null);
+ const midnight=Date.parse('2026-10-08T15:00:00Z');
+ assert.equal(dutyFreeReadDelay(midnight,false,0,11),60_000);
+ assert.equal(dutyFreeReadDelay(midnight,false,0,12),900_000);
+ assert.equal(dutyFreeReadDelay(midnight+15*60_000,false,0,0),900_000);
+ assert.equal(dutyFreeReadDelay(now,true,1,0),30_000);
+ assert.equal(dutyFreeReadDelay(now,true,2,0),90_000);
+ assert.equal(dutyFreeReadDelay(now,true,3,0),900_000);
+ assert.equal(dutyFreeCacheControl(midnight,true,false),'public, max-age=5, s-maxage=15');
 });

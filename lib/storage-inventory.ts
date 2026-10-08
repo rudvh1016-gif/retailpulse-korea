@@ -73,6 +73,9 @@ export const STORAGE_TABLES: readonly TableInventory[] = [
     readers: "Stored official duty-free exchange snapshot API", insertedAt: "first_verified_at" },
   { table: "duty_free_exchange_attempt", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
     readers: "Collector due guard, lease and latest attempt status", insertedAt: "attempt_at" },
+  { table: "duty_free_exchange_daily", recordClass: "C_AGGREGATE", retentionDays: null, prunedBy: null, readWindowDays: 1,
+    readers: "Yesterday/today/explicitly published tomorrow exchange rates; one changed-only row per vendor/day", insertedAt: "first_verified_at",
+    daily: { column: "service_date_kst", kind: "day", leading: { column: "vendor", values: ["shilla", "shinsegae"] } } },
   // B — detailed observations, the tables that grow with every collection.
   { table: "seoul_realtime_area", recordClass: "B_OBSERVATION_DETAIL", retentionDays: null, prunedBy: null, readWindowDays: 29,
     readers: "현재 인구, 오늘 관측 흐름, 7일·28일 전 비교, 내일 참고 예상 입력(28일)",
