@@ -12,7 +12,7 @@ for(const width of[360,390,430,1280])for(const lang of['ko','en','zh','ja'] as c
  await expect(model).toHaveAttribute('data-denominator','10');
  for(const [building,total,shares]of [['T1',4,['50.0%','25.0%','25.0%']],['T2',3,['33.3%','0.0%','33.3%']],['CONCOURSE',2,['50.0%','0.0%','50.0%']]] as const){const group=model.locator(`.airport-concept-counts[data-building=${building}]`);await expect(group).toHaveAttribute('data-denominator',String(total));await expect(group.locator('small')).toHaveText([...shares]);}
  await expect(model.getByTestId('model-unverified-share')).toContainText('20.0%');
- await expect(page.locator('.airport-glance-strip, .airport-near-term, .airport-upcoming-peak')).toHaveCount(0);await expect(page.getByTestId('airport-top-reference')).toHaveCount(0);
+ await expect(page.locator('.airport-glance-strip, .airport-near-term, .airport-upcoming-peak')).toHaveCount(0);await expect(page.getByTestId('airport-top-reference')).toHaveAttribute('data-state','UNAVAILABLE');await expect(page.getByTestId('airport-reference-pillars')).toHaveCount(0);
  await expect(page.locator('.airport-forecast')).toBeVisible();await expect(page.getByTestId('map-zone-countries')).toBeVisible();
  const picture=model.locator('.airport-concept-picture'),image=picture.locator('img');await image.scrollIntoViewIfNeeded();await expect.poll(()=>image.evaluate((i:HTMLImageElement)=>i.complete&&i.naturalWidth>0)).toBe(true);
  const frame=(await image.boundingBox())!,boxes=await Promise.all((await picture.locator('.airport-concept-counts').all()).map(r=>r.boundingBox()));

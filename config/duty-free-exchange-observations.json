@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "collectionMode": "MANUAL_OBSERVATION",
+  "observations": [
+    {
+      "vendor": "shilla",
+      "serviceDateKst": "2026-10-08",
+      "currency": "USD",
+      "krwPerUnit": 1343.4,
+      "verifiedAt": "2026-10-08T02:49:39.401Z",
+      "sourceUrl": "https://www.shilladfs.com/estore/kr/ko/",
+      "sourceSelector": ".exchange .sum",
+      "evidence": "Direct read-only official HTML, HTTP 200; $1=1,343.40원",
+      "evidenceSha256": "11d274cfcb26de32622b9a611cdada96746e15c7678e713eadb80f0a9a7c481d",
+      "verified": true,
+      "scope": "INTERNET_SHOP"
+    },
+    {
+      "vendor": "shinsegae",
+      "serviceDateKst": "2026-10-08",
+      "currency": "USD",
+      "krwPerUnit": 1343.4,
+      "verifiedAt": "2026-10-08T02:33:52Z",
+      "sourceUrl": "https://www.ssgdfs.com/kr/main/initMain/",
+      "sourceSelector": ".todayRate em",
+      "evidence": "Official HTML observation supplied by the parent research task at 11:33:52 KST. This implementation environment's later read returned HTTP 406 and was not retried.",
+      "verified": true,
+      "scope": "INTERNET_SHOP"
+    }
+  ]
+}

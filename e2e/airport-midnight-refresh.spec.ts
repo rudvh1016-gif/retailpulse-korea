@@ -24,7 +24,7 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
  await expect(model.getByTestId('model-gates-pending')).toContainText('3');
  await expect(model.locator('.airport-concept-counts [data-side]')).toHaveCount(0);
  await expect(page.getByTestId('map-zone-countries').locator('.airport-zone-country-grid [data-side]')).toHaveCount(0);
- await expect(page.getByTestId('airport-top-reference')).toHaveCount(0);
+ await expect(page.getByTestId('top-reference-T2-unavailable')).toHaveAttribute('data-reason','GATES_PENDING');
  await expect(page.locator('.airport-forecast')).toContainText('2,900');
  await expect(page.locator('.airport-view .view-intro p:not(.eyebrow)')).toHaveCount(0);
  await expect(page.locator('body')).not.toContainText(/오늘\(.*\) 인천공항 출국 예상 승객이 가장 많은 시간|Incheon Airport's busiest departure hour|仁川机场官方预告出境人数最多的时段|公式予告で出国者が最も多い時間/);
@@ -69,13 +69,14 @@ test('a slow old-date response cannot overwrite a newer selection',async({page})
  await expect(page.getByTestId('airport-concept-model').locator('[data-side=EAST] strong').first()).toContainText('1');
 });
 
-for(const lang of ['ko','en','zh','ja'] as const)for(const cause of ['SOURCE_MISMATCH','NO_SIDE_COMPARISON'])test(`removed reference stays absent and official forecast survives ${cause} ${lang}`,async({page})=>{
+for(const lang of ['ko','en','zh','ja'] as const)for(const cause of ['SOURCE_MISMATCH','NO_SIDE_COMPARISON'])test(`reference cause is accurate with an available official forecast ${cause} ${lang}`,async({page})=>{
  await page.setViewportSize({width:390,height:900});
  const rows=flights(cause==='SOURCE_MISMATCH'?['215','252','291']:['252','252','252']);
  await page.route('**/api/live/summary*',routeSummary(summary(cause==='SOURCE_MISMATCH'?flights([null,null,null]):rows)));
  await page.route('**/api/live/flights*',r=>r.fulfill({json:source(rows)}));
  await page.goto(`/${lang}/airport?terminal=T2`);
- await expect(page.getByTestId('airport-top-reference')).toHaveCount(0);
+ const reference=page.getByTestId('top-reference-T2-unavailable');await expect(reference).toHaveAttribute('data-reason',cause);
+ await expect(reference).not.toContainText(/공식 예상 승객 자료를 확인할 수 없어|official passenger forecast.*unavailable|最新的官方旅客预测|最新公式旅客予想/);
  await expect(page.locator('.airport-forecast')).toContainText('2,900');
- expect(await tofuCharacters(page.getByTestId('airport-concept-model'))).toEqual([]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ expect(await tofuCharacters(reference)).toEqual([]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });

@@ -1,0 +1,12 @@
+.airport-duty-free-exchange{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-content:start;align-items:baseline;column-gap:14px;row-gap:4px;min-height:64px;margin:0 0 12px;padding:8px 0;border-block:1px solid var(--line);color:var(--ink);font:inherit}
+.duty-free-rate-line{display:flex;flex-wrap:wrap;align-content:start;align-items:baseline;gap:4px 12px;min-width:0;min-height:20px;font-variant-numeric:tabular-nums}
+.duty-free-rate-line strong{font-weight:600}
+.duty-free-rate{white-space:nowrap;font-variant-numeric:tabular-nums}
+.duty-free-rate-sources{min-width:0}
+.duty-free-rate-sources summary{cursor:pointer;font:inherit;font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.duty-free-rate-sources ul{margin:4px 0;padding-left:18px;font-size:12px}
+.duty-free-rate-sources a{color:var(--ink);text-underline-offset:3px}
+.duty-free-rate-sources a:hover{color:var(--blue)}
+.duty-free-rate-sources summary:focus-visible,.duty-free-rate-sources a:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.duty-free-checked{grid-column:1/-1;min-height:18px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+@media(max-width:600px){.airport-duty-free-exchange{grid-template-columns:minmax(0,1fr);min-height:96px;column-gap:8px}.duty-free-rate-line{min-height:40px}}

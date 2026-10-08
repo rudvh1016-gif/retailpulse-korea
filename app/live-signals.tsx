@@ -999,6 +999,7 @@ function localizeAirportBrief(
    */
   forecastCollectedAt: string | null = null,
   nowIso: string | null = null,
+  collectionFailureOnly = false,
 ): string[] {
   const locale = airportLocale(lang);
   // Collection counts as behind when the last success is older than the
@@ -1085,6 +1086,7 @@ function localizeAirportBrief(
     return { ko: "이 날짜의 공식 예상 승객 자료 없음", en: "No official passenger forecast for this date", zh: "该日期无官方预计旅客数据", ja: "この日付の公式予想旅客データなし" }[lang];
   })();
 
+  if (collectionFailureOnly) return collectionBehind && brief.forecastCoverage === 'UNAVAILABLE' ? [peakLine] : [];
   // The queue, kept but demoted: one checkpoint's wait is a fact about that
   // checkpoint, not about the terminal's day.
   const waitLine = (() => {
@@ -1800,6 +1802,9 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
     departures: flightsCount,
     topGate,
   });
+  const forecastCollectionFailure = localizeAirportBrief(airportBrief, lang, null,
+    summary.sources?.find(source => source.sourceId === 'INCHEON_PASSENGER_FORECAST')?.retrievedAt ?? null,
+    nowIso, true)[0];
   const comparisons = airport.periodComparisons?.[terminal];
   const passengerChanges = ([7, 28] as const).flatMap((days) => comparisons?.[days]?.passengers ? [comparisonText(comparisons[days]!.passengers!, lang, days)] : []);
   // No placeholder for a missing 7-day comparison: the grid's third cell says
@@ -1855,6 +1860,7 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
   return <section className="current-brief airport-current-brief" aria-label={`${scopeLabel} ${dayLabel}`}>
       {flow ? <div className="airport-hero">{lead}</div> : lead}
       {showPassengers&&<>
+      {forecastCollectionFailure && <p className="prep-note" role="status" data-testid="airport-forecast-collection-failure">{forecastCollectionFailure}</p>}
       {/* OWNER PRIORITY LOCK 6-8: this month so far, the same span of the month
           before, and the shape of how it accumulated. Scope-isolated like every
           other figure here — T2 sums T2's own days and nothing else. */}
