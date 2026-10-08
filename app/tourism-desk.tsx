@@ -1,15 +1,11 @@
 "use client";
 
 import { HolidayContext } from "./operational-context";
-import { useRef, useState, type MouseEvent } from "react";
+import { useState } from "react";
 
 import { useEventPagination, EventPaginationControls } from "./event-pagination";
 import type { Lang } from "./retailpulse-data";
 import { useLiveSummary, LiveLoadMessage } from "./live-signals";
-import {
-  TourismVisitorShow,
-  type TourismVisitorShowContent,
-} from "./tourism-visitor-show";
 import {
   buildAreaCurrentBrief,
   formatHumanFreshness,
@@ -55,14 +51,12 @@ const COPY = {
     sectionTransport: "교통 흐름 참고",
     sectionCurrent: "지금 지역 상황",
     sectionBackground: "관광 흐름 배경 참고",
-    sectionVisitor: "관광객에게 보여주기",
     sectionLimits: "자료 기준과 한계",
     briefIntro: "손님을 받기 전에 먼저 확인할 3–5가지입니다.",
     guideIntro: "공식 기간과 위치를 먼저 보고, 실제 운영 여부와 시간은 공식 안내에서 확인하세요.",
     transportIntro: "대표역 하차 흐름을 실제 저장 이력과 비교합니다.",
     currentIntro: "브리핑의 혼잡 상태를 공식 생활인구 범위와 관측시각으로 풀어 봅니다.",
     backgroundIntro: "즉시 안내 판단보다 느린 통계와 공항 신호는 배경 정보로만 봅니다.",
-    visitorIntro: "직원이 보고 있던 화면은 그대로 두고, 선택한 공식 행사 정보를 큰 글씨로 보여줍니다.",
     limitsIntro: "각 숫자가 뜻하는 범위와 표시하지 않는 비교를 확인하세요.",
     loading: "공식 자료를 불러오는 중입니다.",
     unavailable: "현재 확인 가능한 공식 자료가 없습니다.",
@@ -96,12 +90,13 @@ const COPY = {
     foreignPurpose: "외국인 목적별 이동",
     shoppingPurpose: "쇼핑 목적",
     tourismPurpose: "관광 목적",
-    movements: "추정 이동",
+    movements: "추정 이동 규모",
+    mobilityCadence: "월별 공개",
     people: "명",
     foreignSource: "서울시 OA-23018",
     foreignCaveat: "단기체류 외국인 생활인구이며 관광객 수가 아닙니다.",
     purposeSource: "서울시 OA-22378",
-    purposeCaveat: "월간 통계 추정 이동이며 실시간 관광객·방문객·구매·매출이 아닙니다.",
+    purposeCaveat: "월별 공개 파일에서 표시된 기준일 하루의 도착 이동 규모를 합한 추정값입니다. 공식 원문의 단위 확인 전까지 인원으로 표시하지 않습니다. 실시간 관광객·순방문객·구매·매출이 아닙니다.",
     airportArrival: "인천공항 입국 예보",
     airportNextBand: "다음 공식 시간대 예상 입국객",
     airportDay: "오늘 공식 예상 입국객",
@@ -109,7 +104,6 @@ const COPY = {
     airportCaveat: "인천공항 입국 예보는 이 지역 방문객이나 관광객 수가 아닙니다.",
     observed: "관측 시각",
     collected: "수집",
-    visitorShow: "이 행사 보여주기",
     ktoSource: "한국관광공사 TourAPI",
   },
   en: {
@@ -121,14 +115,12 @@ const COPY = {
     sectionTransport: "Transport flow reference",
     sectionCurrent: "Area conditions now",
     sectionBackground: "Tourism-flow background",
-    sectionVisitor: "Show a visitor",
     sectionLimits: "Sources and limits",
     briefIntro: "The three to five things to check before receiving visitors.",
     guideIntro: "Check the official period and location first, then confirm actual operation and hours on the official page.",
     transportIntro: "Compares representative-station alightings only with observations KORETAIL has actually stored.",
     currentIntro: "The official living-population range and observation time explain the crowd status in the briefing.",
     backgroundIntro: "Slower statistics and airport signals sit here as context, not as immediate guide decisions.",
-    visitorIntro: "Keep the staff interface unchanged and show selected official event facts in large type.",
     limitsIntro: "Check what each figure covers and which comparisons are withheld.",
     loading: "Loading official data.",
     unavailable: "No official data is currently available.",
@@ -162,12 +154,13 @@ const COPY = {
     foreignPurpose: "Foreign mobility by purpose",
     shoppingPurpose: "Shopping purpose",
     tourismPurpose: "Tourism purpose",
-    movements: "estimated movements",
+    movements: "estimated movement volume",
+    mobilityCadence: "Released monthly",
     people: "people",
     foreignSource: "Seoul OA-23018",
     foreignCaveat: "This is short-stay foreign living population, not a tourist count.",
     purposeSource: "Seoul OA-22378",
-    purposeCaveat: "A monthly statistical movement estimate, not real-time tourists, visitors, purchases or sales.",
+    purposeCaveat: "An estimated sum of arrivals for the displayed single day, from a file released monthly. The official unit has not been verified, so this is not labelled as people. It is not real-time tourists, unique visitors, purchases or sales.",
     airportArrival: "Incheon Airport arrival forecast",
     airportNextBand: "Expected arrivals in the next official band",
     airportDay: "Official expected arrivals today",
@@ -175,7 +168,6 @@ const COPY = {
     airportCaveat: "The Incheon arrival forecast is not a count of visitors or tourists to this area.",
     observed: "Observed",
     collected: "Collected",
-    visitorShow: "Show this event",
     ktoSource: "Korea Tourism Organization (KTO) TourAPI",
   },
   zh: {
@@ -187,14 +179,12 @@ const COPY = {
     sectionTransport: "交通流动参考",
     sectionCurrent: "当前地区情况",
     sectionBackground: "旅游流动背景参考",
-    sectionVisitor: "向游客展示",
     sectionLimits: "资料依据与限制",
     briefIntro: "接待游客前先确认的三至五项重点。",
     guideIntro: "先确认官方活动期间与地点，实际举办情况和时间请查看官方页面。",
     transportIntro: "仅用 KORETAIL 实际保存的记录比较代表车站的下车次数。",
     currentIntro: "以官方生活人口区间与观测时间说明简报中的拥挤状态。",
     backgroundIntro: "更新较慢的统计与机场信号仅作为背景，不作为即时咨询判断。",
-    visitorIntro: "工作人员可保持当前界面不变，并用大字向游客展示所选官方活动信息。",
     limitsIntro: "请确认每项数字的范围，以及未显示哪些比较。",
     loading: "正在载入官方数据。",
     unavailable: "目前没有可确认的官方资料。",
@@ -228,12 +218,13 @@ const COPY = {
     foreignPurpose: "外国人分目的移动",
     shoppingPurpose: "购物目的",
     tourismPurpose: "观光目的",
-    movements: "推算移动",
+    movements: "推算移动规模",
+    mobilityCadence: "每月发布",
     people: "人",
     foreignSource: "首尔市 OA-23018",
     foreignCaveat: "这是短期停留外国人生活人口，并非游客人数。",
     purposeSource: "首尔市 OA-22378",
-    purposeCaveat: "这是月度统计推算移动，并非实时游客、访客、购买或销售额。",
+    purposeCaveat: "这是每月发布文件中所示基准日一天的到达移动规模推算合计。官方原文单位尚未确认，因此不标为人数。并非实时游客、独立访客、购买或销售额。",
     airportArrival: "仁川机场入境预测",
     airportNextBand: "下一官方时段预计入境旅客",
     airportDay: "今日官方预计入境旅客",
@@ -241,7 +232,6 @@ const COPY = {
     airportCaveat: "仁川机场入境预测并非该地区访客或游客人数。",
     observed: "观测时间",
     collected: "采集",
-    visitorShow: "展示此活动",
     ktoSource: "韩国观光公社 TourAPI",
   },
   ja: {
@@ -253,14 +243,12 @@ const COPY = {
     sectionTransport: "交通の流れ（参考）",
     sectionCurrent: "現在のエリア状況",
     sectionBackground: "観光の流れ（背景参考）",
-    sectionVisitor: "観光客に見せる",
     sectionLimits: "データの基準と限界",
     briefIntro: "来訪者を迎える前に確認する3～5項目です。",
     guideIntro: "公式イベント期間と場所を確認し、実際の開催状況と時間は公式ページでご確認ください。",
     transportIntro: "KORETAIL が実際に保存した観測だけで代表駅の降車件数を比較します。",
     currentIntro: "公式の生活人口レンジと観測時刻で、ブリーフィングの混雑状況を詳しく示します。",
     backgroundIntro: "更新の遅い統計と空港シグナルは、即時の案内判断ではなく背景情報として示します。",
-    visitorIntro: "スタッフが見ている画面はそのままに、選んだ公式イベント情報を大きな文字で見せます。",
     limitsIntro: "各数値の範囲と、表示しない比較をご確認ください。",
     loading: "公式データを読み込んでいます。",
     unavailable: "現在確認できる公式データはありません。",
@@ -294,12 +282,13 @@ const COPY = {
     foreignPurpose: "外国人の目的別移動",
     shoppingPurpose: "買い物目的",
     tourismPurpose: "観光目的",
-    movements: "推定移動",
+    movements: "推定移動規模",
+    mobilityCadence: "月ごとに公開",
     people: "人",
     foreignSource: "ソウル市 OA-23018",
     foreignCaveat: "短期滞在外国人生活人口であり、観光客数ではありません。",
     purposeSource: "ソウル市 OA-22378",
-    purposeCaveat: "月次統計の推定移動であり、リアルタイムの観光客・来訪者・購入・売上ではありません。",
+    purposeCaveat: "月ごとに公開されるファイルから、表示された基準日一日の到着移動規模を合計した推定値です。公式原文の単位を確認できていないため、人数とは表示しません。リアルタイムの観光客・ユニーク来訪者・購入・売上ではありません。",
     airportArrival: "仁川空港の入国予測",
     airportNextBand: "次の公式時間帯の予想入国者数",
     airportDay: "本日の公式予想入国者数",
@@ -307,7 +296,6 @@ const COPY = {
     airportCaveat: "仁川空港の入国予測は、このエリアの来訪者数や観光客数ではありません。",
     observed: "観測時刻",
     collected: "取得",
-    visitorShow: "このイベントを見せる",
     ktoSource: "韓国観光公社 TourAPI",
   },
 } as const;
@@ -583,8 +571,6 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
   const block = summary?.areas?.[area] ?? null;
   const areaName = areaNames[area][lang];
   const copy: DeskCopy = COPY[lang];
-  const visitorTriggerRef = useRef<HTMLElement | null>(null);
-  const [visitorContent, setVisitorContent] = useState<TourismVisitorShowContent | null>(null);
 
   const preparedEvents: GuideEvent[] = !block?.events?.length || !summary?.todayKst
     ? []
@@ -654,13 +640,21 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
       nowIso: summary.generatedAt,
     }, lang)
     : null;
-  const mobilityPeriod = block?.foreignPurposeMobility && summary
+  const mobilitySourcePeriod = block?.foreignPurposeMobility && summary
     ? describeSourcePeriod({
       cadence: "MONTHLY",
       referencePeriod: block.foreignPurposeMobility.referenceDate,
       retrievedAt: lastCollected("SEOUL_FOREIGN_PURPOSE_MOBILITY"),
       nowIso: summary.generatedAt,
     }, lang)
+    : null;
+  // The source is released monthly; its stored aggregate covers the displayed day only.
+  const mobilityPeriod = mobilitySourcePeriod && block?.foreignPurposeMobility
+    ? {
+      ...mobilitySourcePeriod,
+      cadenceLabel: copy.mobilityCadence,
+      periodLabel: formatDayPeriod(block.foreignPurposeMobility.referenceDate, lang) ?? mobilitySourcePeriod.periodLabel,
+    }
     : null;
 
   const subway = block?.subwayRidership ?? null;
@@ -689,20 +683,6 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
   const hasForeignPurpose = Boolean(block?.foreignPurposeMobility
     && (block.foreignPurposeMobility.shopping !== null || block.foreignPurposeMobility.tourism !== null));
   const hasBackground = Boolean(block?.foreignPresence || hasForeignPurpose || arrivalBand || arrivalDayTotal !== null);
-
-  const openVisitor = (event: MouseEvent<HTMLButtonElement>, row: GuideEvent) => {
-    const period = officialEventPeriod(row);
-    if (!period) return;
-    visitorTriggerRef.current = event.currentTarget;
-    setVisitorContent({
-      officialEventTitleKo: row.title,
-      officialEventPeriod: period,
-      officialEventAddressKo: [row.address?.trim(), row.addressDetail?.trim()].filter(Boolean).join(" · ") || null,
-      officialEventUrl: row.homepage,
-      officialEventSource: "Korea Tourism Organization (KTO) TourAPI",
-      deterministicWeatherNote: guides,
-    });
-  };
 
   return <section className="tourism-desk" aria-labelledby="tourism-desk-title">
     <header className="tourism-desk-head">
@@ -860,23 +840,6 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
         </div> : <p className="tourism-empty">{copy.unavailable}</p>}
       </section>
 
-      <section className="tourism-guide-section" aria-labelledby="tourism-visitor-title">
-        <header className="tourism-section-head">
-          <h2 id="tourism-visitor-title">{copy.sectionVisitor}</h2>
-          <p>{copy.visitorIntro}</p>
-        </header>
-        {preparedEvents.length ? <ul className="tourism-visitor-launches">
-          {eventPage.visible.map((event) => <li key={event.contentId ?? `${event.title}-${event.eventStart}`}>
-            <span className="tourism-official-ko" lang="ko">{event.title}</span>
-            <button
-              type="button"
-              onClick={(clickEvent) => openVisitor(clickEvent, event)}
-              aria-label={`${copy.visitorShow}: ${event.title}`}
-            >{copy.visitorShow}</button>
-          </li>)}
-        </ul> : <p className="tourism-empty">{copy.noEvents}</p>}
-      </section>
-
       <section className="tourism-guide-section" aria-labelledby="tourism-limits-title">
         <header className="tourism-section-head">
           <h2 id="tourism-limits-title">{copy.sectionLimits}</h2>
@@ -888,12 +851,5 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
       </section>
     </>}
 
-    <TourismVisitorShow
-      open={visitorContent !== null}
-      content={visitorContent}
-      triggerRef={visitorTriggerRef}
-      initialLanguage={lang}
-      onRequestClose={() => setVisitorContent(null)}
-    />
   </section>;
 }

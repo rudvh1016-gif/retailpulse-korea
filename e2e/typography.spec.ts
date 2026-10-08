@@ -118,21 +118,14 @@ for (const locale of ["ko", "en", "zh", "ja"] as const) {
     expect(await tofuCharacters(dialog)).toEqual([]);
   });
 
-  test(`${locale} Tourism Desk and Visitor Show contain no missing-glyph boxes`, async ({ page }) => {
+  test(`${locale} Tourism Desk contains no missing-glyph boxes`, async ({ page }) => {
     await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
     await page.goto(`/${locale}/tourism-desk/myeongdong`);
     await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
     const desk = page.locator(".tourism-desk");
     expect(await tofuCharacters(desk)).toEqual([]);
 
-    const launch = desk.locator(".tourism-visitor-launches button").first();
-    await expect(launch).toBeVisible();
-    await launch.click();
-    const dialog = page.locator("dialog.tourism-visitor-show");
-    await expect(dialog).toBeVisible();
-    await dialog.locator(`button[lang="${locale}"]`).click();
-    await expect(dialog).toHaveAttribute("lang", locale);
-    expect(await tofuCharacters(dialog)).toEqual([]);
+    await expect(desk.locator(".tourism-visitor-launches, dialog.tourism-visitor-show")).toHaveCount(0);
   });
 }
 

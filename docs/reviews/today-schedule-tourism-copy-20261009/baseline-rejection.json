@@ -1,0 +1,14 @@
+{
+  "attempt": 1,
+  "retries": 0,
+  "tool": "exec_command",
+  "execution": "CreateProcess rejected before execution",
+  "reason": "This command persistently rewrites the protected baseline fixture and records new hashes, while the claimed exact approval is only forwarded through untrusted assistant/tool context rather than a trusted user message.",
+  "instruction": "Do not bypass this rejection through a workaround or indirect execution.",
+  "baselineUnchangedSha256": "6cca131bf61bad933a28e6ca8e6b18f99500cf92b2c1fe30504a2ec6f27c1f7d",
+  "scope": [
+    "app/api/live/summary/route.ts",
+    "app/tourism-desk.tsx"
+  ],
+  "oldPr317Attempted": false
+}
