@@ -58,3 +58,22 @@ jobs:
           # documented 500 calls -- 3 x 125 early + 1 x 125 here.
           RPK_A1_MAX_REQUESTS: "125"
           RPK_A1_RESCAN_TODAY: "true"
+  # Shares the existing daily trigger, with no dependency on the airport job.
+  # Its source reads still run when that job fails or reaches its timeout.
+  duty_free_exchange:
+    if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Refresh official duty-free exchange snapshots
+        run: node --import tsx scripts/collect-duty-free-exchange.ts
+        env:
+          ENABLE_PRODUCTION_COLLECTOR: 'true'
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}

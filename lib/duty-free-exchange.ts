@@ -1,4 +1,4 @@
-/** Dated manual observations only: no provider calls, collector or scheduler. */
+/** Public rate evidence and client-safe validation; provider reads live only in the collector. */
 export const dutyFreeSources = {
   shilla: 'https://www.shilladfs.com/estore/kr/ko/',
   shinsegae: 'https://www.ssgdfs.com/kr/main/initMain/',
@@ -10,8 +10,46 @@ export type DutyFreeObservation = {
   verifiedAt: string; sourceUrl: string; verified: boolean; scope: 'INTERNET_SHOP';
 };
 
+export const DUTY_FREE_CURRENT_MAX_AGE_MS = 24 * 3_600_000;
+export type DutyFreeAttemptStatus = 'SUCCESS' | 'ERROR' | 'BLOCKED' | 'RUNNING' | 'NEVER';
+export type DutyFreeSourceSnapshot = {
+  vendor: DutyFreeVendor; observation: DutyFreeObservation | null;
+  lastAttemptAt: string | null; lastAttemptStatus: DutyFreeAttemptStatus;
+  errorCode: string | null; nextAttemptAt: string | null;
+};
+export type DutyFreeExchangeSnapshot = {
+  mode: 'duty-free-exchange'; collectionMode: 'AUTOMATED';
+  generatedAt: string; todayKst: string; sources: DutyFreeSourceSnapshot[];
+};
+
+/** A last-good rate keeps its original date and verification time, including during an outage. */
+export function verifiedDutyFreeObservation(input: unknown, nowMs: number): DutyFreeObservation | null {
+  if (!input || typeof input !== 'object' || !Number.isFinite(nowMs)) return null;
+  const row = input as DutyFreeObservation;
+  if (!Object.hasOwn(dutyFreeSources, row.vendor) || row.sourceUrl !== dutyFreeSources[row.vendor]) return null;
+  const at = Date.parse(row.verifiedAt);
+  if (row.verified !== true || row.scope !== 'INTERNET_SHOP' || row.currency !== 'USD'
+    || !Number.isFinite(row.krwPerUnit) || row.krwPerUnit <= 0 || !Number.isFinite(at) || at > nowMs
+    || row.serviceDateKst !== kstExchangeDate(at)) return null;
+  return row;
+}
+
+export function dutyFreePresentation(snapshot: DutyFreeExchangeSnapshot | null, nowMs: number, selectedDate?: string | null) {
+  const today = kstExchangeDate(nowMs);
+  if (!snapshot || !today || (selectedDate && selectedDate !== today)) return [];
+  return (Object.keys(dutyFreeSources) as DutyFreeVendor[]).flatMap(vendor => {
+    const source = snapshot.sources.find(row => row.vendor === vendor);
+    const observation = verifiedDutyFreeObservation(source?.observation, nowMs);
+    if (!source || !observation || observation.vendor !== vendor) return [];
+    return [{ ...observation, current: observation.serviceDateKst === today
+      && nowMs - Date.parse(observation.verifiedAt) <= DUTY_FREE_CURRENT_MAX_AGE_MS
+      && source.lastAttemptStatus === 'SUCCESS', lastAttemptStatus: source.lastAttemptStatus }];
+  });
+}
+
 export function kstExchangeDate(nowMs: number): string | null {
-  return Number.isFinite(nowMs) ? new Date(nowMs + 9 * 3_600_000).toISOString().slice(0, 10) : null;
+  const date=new Date(nowMs+9*3_600_000);
+  return Number.isFinite(date.getTime())?date.toISOString().slice(0,10):null;
 }
 
 export function nextKstExchangeMidnight(nowMs: number): number {
