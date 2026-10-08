@@ -6,7 +6,10 @@ import { AirportReferencePillars } from './airport-reference-pillars';
 import './airport-split-details.css';
 
 const words = {
-  heading: { ko: '항공편 비율로 계산한 추정', en: 'Estimate from flight proportions', zh: '按航班比例计算的估算', ja: '便数の割合から計算した推定' },
+  scopeAll: { ko:'전체 · T1·T2', en:'All · T1·T2', zh:'全部 · T1·T2', ja:'全体 · T1·T2' },
+  scopeT1: { ko:'T1 · 본관·탑승동', en:'T1 · main building and concourse', zh:'T1 · 主楼与登机楼', ja:'T1 · 本館・搭乗棟' },
+  scopeConcourse: { ko:'탑승동', en:'Concourse', zh:'登机楼', ja:'搭乗棟' },
+  heading: { ko: '터미널별 구역 승객 추정', en: 'Passenger estimates by terminal and zone', zh: '各航站楼分区旅客估算', ja: 'ターミナル別・区域別の旅客推定' },
   unverified: { ko: '위치 미확인 또는 건물 미정 항공편이 있어 구역별 승객 추정을 보류합니다.', en: 'Unverified gate locations or unknown buildings: passenger estimates by zone are withheld.', zh: '存在位置未确认或建筑未定航班，暂不显示分区旅客估算。', ja: '位置未確認または建物未定の便があるため、区域別の旅客推定は保留します。' },
   nationality: { ko: '실제 구역별 승객 수·승객 국적을 나타내지 않습니다.', en: 'Not actual passenger counts by zone or passenger nationalities.', zh: '不代表实际分区旅客人数或旅客国籍。', ja: '区域別の実際の旅客数や旅客の国籍を示しません。' },
   notObserved: { ko: '실제 동·서편 출국객 관측값이 아닙니다.', en: 'Not observed east/west passenger counts.', zh: '并非观测到的东、西区旅客人数。', ja: '東西別の実測旅客数ではありません。' },
@@ -30,21 +33,26 @@ export function AirportTopReference({ lang, date, scope, wholeDay, entries, onWh
   const presentation = entries?.map(entry => ({...entry, pillars:entry.estimate ? referencePillars(entry.estimate) : null}));
   const maximum = Math.max(0,...(presentation?.flatMap(entry=>entry.pillars?.map(part=>part.rawPeople)??[])??[]));
   const ready = presentation?.some(entry=>entry.pillars);
-  return <section className="airport-top-reference" data-testid="airport-top-reference" data-state={reason ?? (ready ? 'READY' : 'UNAVAILABLE')}>
-    <h3>{words.heading[lang]} <small>{date} KST</small></h3>
+  const partial = ready && presentation?.some(entry=>!entry.pillars);
+  const scopeText = scope === 'T1' ? words.scopeT1[lang] : scope === 'T2' ? 'T2' : scope === 'CONCOURSE' ? words.scopeConcourse[lang] : words.scopeAll[lang];
+  return <section className="airport-top-reference" data-testid="airport-top-reference" data-state={reason ?? (partial ? 'PARTIAL' : ready ? 'READY' : 'UNAVAILABLE')} data-scope={scope ?? 'all'}>
+    <h3 data-testid="top-reference-heading">{words.heading[lang]} · {scopeText} <small>{date} KST</small></h3>
     {reason ? <p role="status">{words[reason][lang]}{' '}<button type="button" className="prep-link" onClick={reason === 'concourse' ? onT1Day : onWholeDay}>{words[reason === 'concourse' ? 't1Day' : 'wholeDay'][lang]}</button></p>
       : <>
         {scope === 'all' && <p className="prep-note">{words.all[lang]}</p>}
         {presentation?.map(({ terminal, estimate, unavailableReason, pillars }) => estimate && pillars
           ? <div className="airport-top-reference-row" data-testid={`top-reference-${terminal}`} key={terminal}>
-              <p><strong>{terminal}</strong></p>
+              <p><strong>{terminal === 'T1' ? words.scopeT1[lang] : terminal}</strong></p>
               <AirportReferencePillars lang={lang} pillars={pillars} maximum={maximum}/>
               <details className="prep-evidence prep-estimate-details"><summary>{splitCopy.estimateDetails[lang]}</summary>
                 <p className="prep-note">{estimateBasisLine({ terminal, ...estimate }, lang)}</p>
                 <p className="prep-note">{estimateNote({ terminal, ...estimate }, lang)}</p>
               </details>
             </div>
-          : <p className="prep-note" data-testid={`top-reference-${terminal}-unavailable`} data-reason={estimate ? 'UNVERIFIED_LOCATION' : unavailableReason} key={terminal}>{terminal} · {estimate ? words.unverified[lang] : words[unavailableReason ?? 'unavailable'][lang]}</p>)}
+          : <div className="airport-top-reference-row" data-testid={`top-reference-${terminal}-unavailable`} data-reason={estimate ? 'UNVERIFIED_LOCATION' : unavailableReason} key={terminal}>
+              <p><strong>{terminal === 'T1' ? words.scopeT1[lang] : terminal}</strong></p>
+              <p className="prep-note" role="status">{estimate ? words.unverified[lang] : words[unavailableReason ?? 'unavailable'][lang]}</p>
+            </div>)}
         {!entries && <p className="prep-note" role="status">{words.unavailable[lang]}</p>}
         {ready && <p className="prep-note">{words.notObserved[lang]} {words.nationality[lang]}</p>}
       </>}

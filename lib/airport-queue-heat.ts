@@ -15,9 +15,10 @@ const QUEUE_FRESH_MS = 20 * 60_000;
 /**
  * T2 contract: <20 / 20–<40 / 40–<60 / >=60 minutes (docs/DATA_SOURCES.md).
  * Only exact minutes and the documented 60+ lower bound are categorized.
- * Waiting people never determine color; T1 has no verified category contract.
+ * Waiting people never determine color. T1 uses these same minute bands as
+ * KORETAIL visual criteria; they are not official T1 grades.
  */
-export function queueHeat(reading: QueueHeatReading, now: number): { level: QueueHeatLevel; state: QueueHeatState } {
+export function queueHeat(reading: QueueHeatReading, now: number): { level: QueueHeatLevel; state: QueueHeatState; basis?: 'KORETAIL_MINUTES' } {
   const raw = reading.waitTimeRaw?.trim() ?? '';
   if (/^(?:운영\s*안\s*함|미운영|운영\s*종료|closed|not\s+operating)$/i.test(raw)) {
     return {level:'neutral', state:'closed'};
@@ -30,8 +31,12 @@ export function queueHeat(reading: QueueHeatReading, now: number): { level: Queu
   const minutes = raw === '60+' ? 60 : raw && !/^\d+$/.test(raw) ? null
     : reading.waitTimeMinutes ?? (raw ? Number(raw) : null);
   if (minutes === null || !Number.isFinite(minutes) || minutes < 0) return {level:'neutral', state:'missing'};
+  const level = minutes < 20 ? 'clear' : minutes < 40 ? 'normal' : minutes < 60 ? 'busy' : 'very-busy';
+  if (reading.terminal === 'T1' && /^[2-5][EW]$/.test(reading.zone)) {
+    return {level, state:'current', basis:'KORETAIL_MINUTES'};
+  }
   if (reading.terminal !== 'T2' || !/^DG[12]_[ABCD]$/.test(reading.zone)) return {level:'neutral', state:'unverified'};
-  return {level:minutes < 20 ? 'clear' : minutes < 40 ? 'normal' : minutes < 60 ? 'busy' : 'very-busy', state:'current'};
+  return {level, state:'current'};
 }
 
 const labels = {
@@ -43,5 +48,9 @@ const labels = {
 
 export function queueHeatLabel(heat: ReturnType<typeof queueHeat>, lang: string): string {
   const copy = labels[lang as keyof typeof labels] ?? labels.en;
+  if (heat.basis === 'KORETAIL_MINUTES' && heat.level !== 'neutral') {
+    const band = {clear:'<20', normal:'20–<40', busy:'40–<60', 'very-busy':'60+'}[heat.level];
+    return `${band}${{ko:'분 · 코리테일 색상 기준',en:' min · KORETAIL color criteria',zh:'分钟 · KORETAIL配色标准',ja:'分 · KORETAIL色分け基準'}[lang as 'ko'|'en'|'zh'|'ja'] ?? ' min · KORETAIL color criteria'}`;
+  }
   return heat.level === 'neutral' ? copy[heat.state as Exclude<QueueHeatState, 'current'>] : copy[heat.level];
 }

@@ -27,6 +27,9 @@ name: Collection Attempt
 on:
   workflow_call:
     outputs:
+      retry_airport:
+        description: This attempt's own A1 fetch failure permits the next existing job
+        value: ${{ jobs.collect.outputs.retry_airport }}
       retry_forecast:
         description: This attempt's A5 failure is transient and permits the next existing job
         value: ${{ jobs.collect.outputs.retry_forecast }}
@@ -75,6 +78,7 @@ jobs:
     timeout-minutes: ${{ inputs.timeout_minutes }}
     environment: production
     outputs:
+      retry_airport: ${{ steps.airport_retry_decision.outputs.retry_airport }}
       retry_forecast: ${{ steps.retry_decision.outputs.retry_forecast }}
     steps:
       - uses: actions/checkout@v4
@@ -101,6 +105,10 @@ jobs:
           RPK_A1_MAX_REQUESTS: ${{ inputs.a1_max_requests }}
           RPK_A1_RESCAN_TODAY: ${{ inputs.a1_rescan_today }}
           RPK_A4_MAX_ATTEMPTS_PER_REQUEST: ${{ inputs.a4_max_attempts_per_request }}
+      - name: Classify this A1 attempt before spending a fresh runner
+        id: airport_retry_decision
+        if: ${{ always() && startsWith(inputs.sources, 'airport_recent') }}
+        run: npx tsx scripts/decide-congestion-retry.ts "$RUNNER_TEMP/collector.log" --airport
       - name: Classify this A5 attempt before spending a fresh runner
         id: retry_decision
         if: ${{ always() && startsWith(inputs.sources, 'airport_passenger_forecast') }}
