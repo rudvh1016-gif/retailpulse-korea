@@ -5,6 +5,8 @@ export const dutyFreeSources = {
 } as const;
 
 export type DutyFreeVendor = keyof typeof dutyFreeSources;
+/** Collection and public reads use only active vendors; stored historical evidence remains valid. */
+export const activeDutyFreeVendors = ['shilla'] as const;
 export type DutyFreeObservation = {
   vendor: DutyFreeVendor; serviceDateKst: string; currency: 'USD'; krwPerUnit: number;
   verifiedAt: string; sourceUrl: string; verified: boolean; scope: 'INTERNET_SHOP';
@@ -37,11 +39,11 @@ export function verifiedDutyFreeObservation(input: unknown, nowMs: number): Duty
 export function dutyFreePresentation(snapshot: DutyFreeExchangeSnapshot | null, nowMs: number, selectedDate?: string | null) {
   const today = kstExchangeDate(nowMs);
   if (!snapshot || !today || (selectedDate && selectedDate !== today)) return [];
-  return (Object.keys(dutyFreeSources) as DutyFreeVendor[]).flatMap(vendor => {
+  return activeDutyFreeVendors.flatMap(vendor => {
     const source = snapshot.sources.find(row => row.vendor === vendor);
     const observation = verifiedDutyFreeObservation(source?.observation, nowMs);
     if (!source || !observation || observation.vendor !== vendor) return [];
-    return [{ ...observation, current: observation.serviceDateKst === today
+    return [{ ...observation, vendor, current: observation.serviceDateKst === today
       && nowMs - Date.parse(observation.verifiedAt) <= DUTY_FREE_CURRENT_MAX_AGE_MS
       && source.lastAttemptStatus === 'SUCCESS', lastAttemptStatus: source.lastAttemptStatus }];
   });

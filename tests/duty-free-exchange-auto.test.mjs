@@ -35,15 +35,15 @@ test('official selectors accept only unambiguous dollar rates and ignore product
  assert.throws(()=>parseDutyFreeHtml('shinsegae',ssg().replace('1$','100$'),'2026-10-08'));
 });
 
-test('real SQL: successful sources are independent and duplicate invocations spend zero requests',async t=>{
+test('real SQL: only Shilla is collected and duplicate invocations spend zero requests',async t=>{
  const {db}=localDb(t);let calls=0;
  const fetchImpl=async url=>{calls++;return html(url===dutyFreeSources.shilla?shilla():ssg());};
  const first=await collectDutyFreeExchange(db,{fetchImpl,now:()=>new Date(now)});
- assert.deepEqual(first.map(x=>[x.status,x.changedRows]),[['SUCCESS',1],['SUCCESS',1]]);assert.equal(calls,2);
+ assert.deepEqual(first.map(x=>[x.vendor,x.status,x.changedRows]),[['shilla','SUCCESS',1]]);assert.equal(calls,1);
  const snapshot=await readDutyFreeSnapshot(db,new Date(now));
- assert.deepEqual(dutyFreePresentation(snapshot,now).map(x=>[x.vendor,x.krwPerUnit,x.current]),[['shilla',1343.4,true],['shinsegae',1344.5,true]]);
+ assert.deepEqual(dutyFreePresentation(snapshot,now).map(x=>[x.vendor,x.krwPerUnit,x.current]),[['shilla',1343.4,true]]);
  const next=await collectDutyFreeExchange(db,{fetchImpl,now:()=>new Date(now+1000)});
- assert.ok(next.every(x=>x.status==='SKIPPED_NOT_DUE'&&x.providerRequests===0));assert.equal(calls,2);
+ assert.ok(next.every(x=>x.status==='SKIPPED_NOT_DUE'&&x.providerRequests===0));assert.equal(calls,1);
 });
 
 test('same semantic rate writes zero canonical rows but preserves real latest successful verification',async t=>{
@@ -68,11 +68,22 @@ test('406 has one request, no retry or workaround, 24-hour guard, and preserves 
  clock+=3_600_000;await collectDutyFreeExchange(db,options);assert.equal(calls,1);
 });
 
-test('one blocked provider cannot prevent the other vendor from updating',async t=>{
- const {db}=localDb(t);
- const result=await collectDutyFreeExchange(db,{now:()=>new Date(now),fetchImpl:async url=>url===dutyFreeSources.shilla?html(shilla()):new Response('blocked',{status:406})});
- assert.deepEqual(result.map(x=>x.status),['SUCCESS','BLOCKED']);
- const snapshot=await readDutyFreeSnapshot(db,new Date(now));assert.equal(snapshot.sources[0].observation.krwPerUnit,1343.4);assert.equal(snapshot.sources[1].observation,null);
+test('retired Shinsegae records are preserved while collection, API and presentation use only Shilla',async t=>{
+ const {db,sql}=localDb(t);
+ await claimDutyFreeAttempt(db,'shinsegae',new Date(now),'historical');
+ await saveDutyFreeSuccess(db,observation('shinsegae',now,1344.5),'historical');
+ const stored=()=>['duty_free_exchange_current','duty_free_exchange_attempt'].map(table=>({...sql.prepare(`SELECT * FROM ${table} WHERE vendor='shinsegae'`).get()}));
+ const before=stored();let calls=0;
+ const result=await collectDutyFreeExchange(db,{now:()=>new Date(now),fetchImpl:async url=>{calls++;assert.equal(url,dutyFreeSources.shilla);return html(shilla());}});
+ assert.deepEqual(result.map(x=>[x.vendor,x.status]),[['shilla','SUCCESS']]);assert.equal(calls,1);
+ const snapshot=await readDutyFreeSnapshot(db,new Date(now));assert.equal(snapshot.sources.length,1);assert.equal(snapshot.sources[0].observation.krwPerUnit,1343.4);
+ const legacy={vendor:'shinsegae',observation:observation('shinsegae',now,1344.5),lastAttemptStatus:'SUCCESS'};
+ assert.deepEqual(dutyFreePresentation({...snapshot,sources:[...snapshot.sources,legacy]},now).map(x=>x.vendor),['shilla']);
+ assert.deepEqual(stored(),before);
+ let inactiveReads=0;
+ await assert.rejects(collectDutyFreeExchange({prepare(){inactiveReads++;throw new Error('must not read');}},
+  {vendors:['shilla','shinsegae'],fetchImpl:async()=>{throw new Error('must not fetch');}}),/INACTIVE_VENDOR/);
+ assert.equal(inactiveReads,0);assert.deepEqual(stored(),before);
 });
 
 test('live lease and expired older lease cannot create duplicate requests or overwrite newer evidence',async t=>{
@@ -125,10 +136,10 @@ test('real local workerd D1: collector storage reaches the actual public GET han
  for(const sql of readFileSync(new URL('../drizzle/0022_duty_free_exchange.sql',import.meta.url),'utf8').split('--> statement-breakpoint'))if(sql.trim())await db.prepare(sql).run();
  const at=new Date();let calls=0;
  const results=await collectDutyFreeExchange(db,{now:()=>at,fetchImpl:async url=>{calls++;return html(url===dutyFreeSources.shilla?shilla():ssg());}});
- assert.ok(results.every(result=>result.status==='SUCCESS'));assert.equal(calls,2);
+ assert.ok(results.every(result=>result.status==='SUCCESS'));assert.equal(calls,1);
  const response=await mf.dispatchFetch('http://localhost/api/live/duty-free-exchange');assert.equal(response.status,200);
- const snapshot=await response.json();assert.equal(snapshot.collectionMode,'AUTOMATED');assert.equal(snapshot.sources.length,2);
- assert.deepEqual(dutyFreePresentation(snapshot,Date.now()).map(row=>row.krwPerUnit),[1343.4,1344.5]);
+ const snapshot=await response.json();assert.equal(snapshot.collectionMode,'AUTOMATED');assert.equal(snapshot.sources.length,1);
+ assert.deepEqual(dutyFreePresentation(snapshot,Date.now()).map(row=>row.krwPerUnit),[1343.4]);
  assert.equal(response.headers.get('cache-control'),'public, max-age=60, s-maxage=300');
- await mf.dispatchFetch('http://localhost/api/live/duty-free-exchange?x=ignored');assert.equal(calls,2);
+ await mf.dispatchFetch('http://localhost/api/live/duty-free-exchange?x=ignored');assert.equal(calls,1);
 });

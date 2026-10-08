@@ -1,7 +1,6 @@
-# 모바일 환율 한 줄 배치 — 기준 승인 대기
+# 신라 환율 한 줄 배치와 작은 모바일 설치 버튼
 
-자동 환율 PR315의 source `8c78507222f0b2b9710644678a985102b0252cc1` 위의 별도 후속 브랜치다.
-PR315의 source/CI를 변경하지 않는다. 제품 배포, 병합, 기준 hash 변경은 수행하지 않았다.
+사용자가 병합한 PR315의 최신 main `7143ef7d475f8578ba466686266259f242026451`을 정상 merge한 후속 브랜치다. 직접 병합·배포는 하지 않는다.
 
 사용자가 “1usd = 의 =가 너무 짧아서 뭔가 잘린듯해.. 가로에 한눈에 들어오게못할까?
 앱처럼설치 버튼크기는 줄여도돼 더작게 그리고 공간을확보해”라고 요청했다.
@@ -24,25 +23,34 @@ PR315의 source/CI를 변경하지 않는다. 제품 배포, 병합, 기준 hash
 ![390px 한 줄 환율](assets/duty-free-header-inline-390.png)
 
 ko/en/zh/ja × 360/390/430/1280px와 기존 자정·재조회·네트워크/저장소 실패 등
-환율 화면 26개 검사가 모두 통과했다. 등호 min-width/transform 없음, 실제 Range rect의 한 줄,
+옛 두 업체 캐시 응답을 포함한 환율 화면 27개 검사가 모두 통과했다. 등호 min-width/transform 없음, 실제 Range rect의 한 줄,
 언어 선택과 겹침 없음, 터치 크기, glyph/overflow, 키보드/설치를 검증한다.
-typecheck, 변경 TSX lint, production build 통과. 새 기준을 적용한 전체 CI는 아직 없다.
+typecheck, 전체 lint(오류 0/기존 경고 7), production build와 rendered HTML 46개가 통과했다. 최종 CI 결과는 PR에 기록한다.
 
 첨부 `libfile_4e4bd9a903448191a40a3626b37fbc88`은 공식 Library materialize에서
 HTTP 403으로 파일을 받지 못했다. Library image read도 픽셀 대신 포인터/설명만 반환했다.
 첨부의 픽셀을 봤다고 주장하지 않는다. 위 새 캡처의 실제 픽셀은 직접 검토했다.
 
-## 멈추는 지점
+## 소유자 승인과 보호 기준
 
-원본 `tests/operational-phase2.test.mjs:123`는 보호 파일 각각의 SHA-256 일치를 요구한다.
-원본 테스트를 실행하면 현재 `app/globals.css` 변경 때문에 FAIL이며 다른 59개 보호 파일은 그대로다.
-`tests/fixtures/phase2-locks.json` 및 기존 검사/skip/retry/cron은 수정하지 않았다.
-이 두 파일의 정상 보호 기준 갱신을 승인받기 전에는 후속 PR의 완료/병합 가능 상태라고 보고하지 않는다.
+부모 스레드 01a0fd0d-cf77-70ee-b6c3-0d341a4930ec가 전달한
+Sentinel_db704c3429e881918aa0a05ef864f295의 소유자 답변은
+“신세계는버리고 신라만가져와 구리고 디자인 검사기준 승인해”다.
+작은 설치 버튼/한 줄 환율의 두 보호 파일에 대한 정상 기준 갱신을 승인한 답변이다.
 
-|보호 파일|기존 기준|현재 검토안|
-|---|---|---|
-|app/globals.css|cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4|42c61ee811f638e410c3088d96cdd1efbfb928b4e2a6473e10ec1510b0197d04|
-|app/install-app.tsx|68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365|36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22|
+fixture의 ownerApprovedShillaOnlyInlineHeader20261008에 근거와 실제 SHA-256을 기록했다.
+app/globals.css와 app/install-app.tsx 두 hash만 갱신했다. 다른 59개 hash,
+61개 파일 목록, 과거 승인 기록, cron 및 원본 enforcement assertion은 그대로 유지한다.
+원본 보호 검사와 저장 분류·환율 검사 73개 및 전체 단위 검사 1,239개가 모두 통과했다. 검사 끄기/skip/retry 변경은 없다.
 
-승인 후의 정상 절차는 이 두 값만 승인 기록과 함께 갱신하고 원본 보호 검사,
-관련 빌드/화면 및 exact-head CI를 확인하는 것이다. 원래 보호 목록과 다른 값/기록은 보존한다.
+## 신라 단일 수집·공개 경로
+
+신세계는 자동 collector 기본 대상, 공개 API 조회 및 화면 목록에서 제외한다.
+명시적으로 신세계를 collector에 전달해도 DB나 제공자 요청 전에 거부한다.
+기존 신세계 CURRENT/attempt 행과 과거 관측 파일은 삭제하지 않는다.
+실제 SQLite 검사에서 행 전체가 변경 없이 보존됨을 확인한다.
+기존 두 업체 API 캐시가 남아 있어도 UI는 신라만 선택하며 신세계 실패로 신라 값을 감추지 않는다.
+
+신라의 공식 selector 검증, 1시간/차단 24시간 guard, 중복 lease, 동일 값 write 0,
+실제 확인 UTC/KST, 이전값과 실패 표시, 자정 갱신 및 공유 cache 정책은 유지한다.
+최종 PR의 전체 CI 성공 및 draft=false/mergeable 상태를 확인한 뒤 멈춘다. 직접 병합·배포하지 않는다.

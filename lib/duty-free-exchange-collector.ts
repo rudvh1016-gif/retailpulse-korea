@@ -1,4 +1,4 @@
-import { dutyFreeSources, kstExchangeDate, type DutyFreeVendor } from './duty-free-exchange';
+import { activeDutyFreeVendors, dutyFreeSources, kstExchangeDate, type DutyFreeVendor } from './duty-free-exchange';
 import { claimDutyFreeAttempt, saveDutyFreeFailure, saveDutyFreeSuccess } from './duty-free-exchange-store';
 
 export const DUTY_FREE_HTML_MAX_BYTES = 2 * 1024 * 1024;
@@ -82,8 +82,9 @@ async function readHtml(response: Response) {
 export async function collectDutyFreeExchange(db: Pick<D1Database,'prepare'|'batch'>, options:{fetchImpl?:typeof fetch;now?:()=>Date;vendors?:DutyFreeVendor[]}={}) {
   const fetchImpl=options.fetchImpl??fetch,clock=options.now??(()=>new Date());
   const outcomes:Array<{vendor:DutyFreeVendor;status:string;providerRequests:number;changedRows:number|null;errorCode?:string}>=[];
-  for(const vendor of options.vendors??Object.keys(dutyFreeSources) as DutyFreeVendor[]) {
-    if(!Object.hasOwn(dutyFreeSources,vendor))throw new Error('UNKNOWN_VENDOR');
+  const vendors=options.vendors??activeDutyFreeVendors;
+  if(vendors.some(vendor=>!activeDutyFreeVendors.some(active=>active===vendor)))throw new Error('INACTIVE_VENDOR');
+  for(const vendor of vendors) {
     const lease=crypto.randomUUID();let providerRequests=0;
     try{
       if(!await claimDutyFreeAttempt(db,vendor,clock(),lease)){outcomes.push({vendor,status:'SKIPPED_NOT_DUE',providerRequests:0,changedRows:0});continue;}

@@ -1,14 +1,14 @@
 'use client';
 import { useEffect, useState } from 'react';
 import type { Lang } from './retailpulse-data';
-import { dutyFreePresentation, dutyFreeSources, kstExchangeDate, nextKstExchangeMidnight, type DutyFreeExchangeSnapshot } from '../lib/duty-free-exchange';
+import { activeDutyFreeVendors, dutyFreePresentation, dutyFreeSources, kstExchangeDate, nextKstExchangeMidnight, type DutyFreeExchangeSnapshot } from '../lib/duty-free-exchange';
 import './airport-duty-free-exchange.css';
 
 const copy = {
-  ko: { title: '면세환율', internet: '인터넷점 참고', checked: '확인', source: '공식 출처', unavailable: '선택한 날짜의 확인 환율 없음', caution: '인터넷점 표시 환율입니다. 공항 현장 매장의 동일 적용 여부는 확인되지 않았으며, 최종 결제 금액은 달라질 수 있습니다.', shilla: '신라', shinsegae: '신세계' },
-  en: { title: 'Duty-free exchange', internet: 'Online-shop reference', checked: 'Checked', source: 'Official sources', unavailable: 'No verified rate for the selected date', caution: 'Displayed online-shop rates. The same rate at airport stores is unverified; the final payment may differ.', shilla: 'Shilla', shinsegae: 'Shinsegae' },
-  zh: { title: '免税汇率', internet: '网上店参考', checked: '确认', source: '官方来源', unavailable: '所选日期暂无已确认汇率', caution: '网上店显示汇率。尚未确认机场实体店是否适用相同汇率，最终支付金额可能不同。', shilla: '新罗', shinsegae: '新世界' },
-  ja: { title: '免税レート', internet: 'オンライン店の参考', checked: '確認', source: '公式出典', unavailable: '選択日の確認済みレートなし', caution: 'オンライン店の表示レートです。空港実店舗での同率適用は未確認で、最終決済額は異なる場合があります。', shilla: '新羅', shinsegae: '新世界' },
+  ko: { title: '면세환율', internet: '인터넷점 참고', checked: '확인', source: '공식 출처', unavailable: '선택한 날짜의 확인 환율 없음', caution: '인터넷점 표시 환율입니다. 공항 현장 매장의 동일 적용 여부는 확인되지 않았으며, 최종 결제 금액은 달라질 수 있습니다.', shilla: '신라' },
+  en: { title: 'Duty-free exchange', internet: 'Online-shop reference', checked: 'Checked', source: 'Official sources', unavailable: 'No verified rate for the selected date', caution: 'Displayed online-shop rates. The same rate at airport stores is unverified; the final payment may differ.', shilla: 'Shilla' },
+  zh: { title: '免税汇率', internet: '网上店参考', checked: '确认', source: '官方来源', unavailable: '所选日期暂无已确认汇率', caution: '网上店显示汇率。尚未确认机场实体店是否适用相同汇率，最终支付金额可能不同。', shilla: '新罗' },
+  ja: { title: '免税レート', internet: 'オンライン店の参考', checked: '確認', source: '公式出典', unavailable: '選択日の確認済みレートなし', caution: 'オンライン店の表示レートです。空港実店舗での同率適用は未確認で、最終決済額は異なる場合があります。', shilla: '新羅' },
 } as const;
 const locales = { ko: 'ko-KR', en: 'en-US', zh: 'zh-CN', ja: 'ja-JP' } as const;
 const unavailableShort = { ko: '확인 환율 없음', en: 'No verified rate', zh: '暂无确认汇率', ja: '確認レートなし' } as const;
@@ -45,10 +45,14 @@ export function AirportDutyFreeExchange({ lang, date }: { lang: Lang; date: stri
         if(!response.ok)throw new Error('rate_read_failed');
         const data=await response.json() as DutyFreeExchangeSnapshot;
         if(data?.mode!=='duty-free-exchange'||data.collectionMode!=='AUTOMATED'||!Array.isArray(data.sources)
-          ||data.sources.length!==2||new Set(data.sources.map(source=>source?.vendor)).size!==2
+          ||data.sources.length<1||data.sources.length>Object.keys(dutyFreeSources).length
+          ||new Set(data.sources.map(source=>source?.vendor)).size!==data.sources.length
           ||data.sources.some(source=>!source||!Object.hasOwn(dutyFreeSources,source.vendor)))throw new Error('rate_shape_invalid');
-        if(data.sources.some(source=>source.errorCode==='STORAGE_UNAVAILABLE'))throw new Error('rate_storage_unavailable');
-        if(!disposed){setSnapshot(data);setReadFailed(false);setNow(Date.now());}
+        // A pre-deployment shared-cache response may still contain the retired vendor.
+        const sources=data.sources.filter(source=>activeDutyFreeVendors.some(vendor=>vendor===source.vendor));
+        if(sources.length!==activeDutyFreeVendors.length)throw new Error('rate_shape_invalid');
+        if(sources.some(source=>source.errorCode==='STORAGE_UNAVAILABLE'))throw new Error('rate_storage_unavailable');
+        if(!disposed){setSnapshot({...data,sources});setReadFailed(false);setNow(Date.now());}
       }catch{if(!disposed)setReadFailed(true);}
       finally{clearTimeout(requestTimeout);inFlight=false;if(!disposed)setNow(Date.now());schedule();}
     };
@@ -80,7 +84,7 @@ export function AirportDutyFreeExchange({ lang, date }: { lang: Lang; date: stri
         {readFailed&&<p className="prep-note" role="status">{auto.readFailed}</p>}
         {!common && rows.map(row => <p className="duty-free-rate" data-testid="duty-free-rate" key={row.vendor}>{words[row.vendor]} · 1 USD = {number.format(row.krwPerUnit)} KRW</p>)}
         <p className="prep-note">{words.caution}</p>
-        <ul>{(Object.keys(dutyFreeSources) as Array<keyof typeof dutyFreeSources>).map(vendor => {
+        <ul>{activeDutyFreeVendors.map(vendor => {
           const row = rows.find(value => value.vendor === vendor);
           const source=snapshot?.sources.find(value=>value.vendor===vendor);
           const failed=source?.lastAttemptStatus==='ERROR'||source?.lastAttemptStatus==='BLOCKED';

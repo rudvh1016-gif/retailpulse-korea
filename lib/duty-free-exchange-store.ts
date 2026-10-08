@@ -1,4 +1,4 @@
-import { dutyFreeSources, kstExchangeDate, verifiedDutyFreeObservation, type DutyFreeExchangeSnapshot, type DutyFreeObservation, type DutyFreeVendor, type DutyFreeAttemptStatus } from './duty-free-exchange';
+import { activeDutyFreeVendors, kstExchangeDate, verifiedDutyFreeObservation, type DutyFreeExchangeSnapshot, type DutyFreeObservation, type DutyFreeVendor, type DutyFreeAttemptStatus } from './duty-free-exchange';
 
 export const DUTY_FREE_MIN_INTERVAL_MS = 3_600_000;
 export const DUTY_FREE_BLOCK_INTERVAL_MS = 24 * 3_600_000;
@@ -69,16 +69,16 @@ export async function saveDutyFreeFailure(db: Store, vendor: DutyFreeVendor, lea
 const timeOrNull = (input: string | null) => input && Number.isFinite(Date.parse(input)) ? input : null;
 export function unavailableDutyFreeSnapshot(now: Date): DutyFreeExchangeSnapshot {
   return {mode:'duty-free-exchange', collectionMode:'AUTOMATED', generatedAt:now.toISOString(),
-    todayKst:kstExchangeDate(now.getTime())!, sources:(Object.keys(dutyFreeSources) as DutyFreeVendor[]).map(vendor =>
+    todayKst:kstExchangeDate(now.getTime())!, sources:activeDutyFreeVendors.map(vendor =>
       ({vendor, observation:null, lastAttemptAt:null, lastAttemptStatus:'NEVER', errorCode:'STORAGE_UNAVAILABLE', nextAttemptAt:null}))};
 }
 
-/** One bounded read, two source rows, no network or collection on a visitor's request. */
+/** One bounded active-source read; historical inactive rows remain stored. No provider request. */
 export async function readDutyFreeSnapshot(db: Pick<D1Database, 'prepare'>, now: Date): Promise<DutyFreeExchangeSnapshot> {
   const query = await db.prepare(`SELECT a.vendor, a.status, a.attempt_at, a.last_success_at, a.error_code, a.next_due_at,
     c.service_date_kst, c.currency, c.krw_per_unit, c.first_verified_at, c.source_url, c.scope
     FROM duty_free_exchange_attempt a LEFT JOIN duty_free_exchange_current c ON c.vendor=a.vendor
-    WHERE a.vendor IN ('shilla','shinsegae') ORDER BY a.vendor LIMIT 2`).all<Stored>();
+    WHERE a.vendor='shilla' LIMIT 1`).all<Stored>();
   if (!query.success) throw new Error('D1_READ_FAILED');
   const snapshot = unavailableDutyFreeSnapshot(now);
   snapshot.sources = snapshot.sources.map(source => {
