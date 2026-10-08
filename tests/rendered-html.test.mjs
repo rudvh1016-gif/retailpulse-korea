@@ -646,24 +646,11 @@ test("the airport summary states this hour's expected departing passengers, labe
   // The last band of the day has no successor to compare against.
   assert.match(brief, /nextExpectedPassengers: next \? next\.expectedPassengers : null/);
 
-  // 2026-09-13: this hour moved UP, from the brief's first line into the first
-  // cell of the at-a-glance grid, where it is set in larger type. The line it
-  // replaced printed the same figure again one row lower, in smaller type.
-  const strip = signals.match(/<dl className="airport-glance-strip"([\s\S]*?)<\/dl>/)?.[1] ?? "";
-  assert.ok(strip.length > 0, "the at-a-glance grid must exist");
-  // The first cell reads the band and nothing else — no borrowed neighbour.
-  assert.match(strip, /nowBand \? <><b>\{Math\.round\(nowBand\.expectedPassengers\)/);
-  assert.match(strip, /formatKstBand\(nowBand\.targetStartAt,nowBand\.targetEndAt\)/);
-  for (const official of ["현재 시간대 · 공식 예상", "This hour · official forecast", "当前时段 · 官方预计", "現在の時間帯 · 公式予想"]) {
-    assert.ok(strip.includes(official),
-      `${official} must say the number is an official expectation, in every locale`);
-  }
-  // An expectation is never dressed as an observation or a KORETAIL count.
-  assert.doesNotMatch(strip, /관측|observed|観測|观测/,
-    "a forecast band must not borrow observation wording");
-  // And it LEADS the brief: this hour first, the supporting lines below it.
-  assert.ok(signals.indexOf('className="airport-glance-strip"') < signals.indexOf("{dayLines.map("),
-    "the grid carrying this hour comes before the lines that support it");
+  // Owner requested removal of the separate summary; the chart and source helpers remain.
+  const glance = signals.slice(signals.indexOf("export function AirportAtAGlance"), signals.indexOf("export function AirportTodaySummary"));
+  assert.doesNotMatch(glance, /airport-glance-strip|airport-near-term|airport-upcoming-peak/);
+  assert.match(glance, /\{flow\}/);
+  assert.match(glance, /airport-mtd/);
   assert.match(signals, /\[trendLine, waitLine, restLine\]/);
   // Nothing below the grid restates the cell above it. Scoped to the departure
   // brief builder: the ARRIVAL screen has its own unrelated nowLine, and it has

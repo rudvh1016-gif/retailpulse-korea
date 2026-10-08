@@ -109,7 +109,8 @@ test('multiple locations, terminals and all three days persist and switch to the
         await page.locator('.date-nav-shortcuts button').nth(index).click();
         await expectDateSelection(page, date);
         await page.getByRole('tab', { name: 'T2', exact: true }).click();
-        await expect(page.locator('.airport-glance-strip')).toHaveAttribute('data-scope', 'T2');
+        await expect(page.locator('.airport-glance-strip')).toHaveCount(0);
+        await expect(page.locator('.airport-current-brief .departure-hall-scope-note')).toContainText('제2터미널');
         expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
     }
     await page.goto('/ko/hongdae');
@@ -129,7 +130,8 @@ test('denied storage leaves airport date and terminal controls usable',async({pa
     await page.locator('.date-nav-shortcuts button').last().click();
     await expectDateSelection(page, '2026-09-01');
     await page.getByRole('tab', { name: 'T2', exact: true }).click();
-    await expect(page.locator('.airport-glance-strip')).toHaveAttribute('data-scope', 'T2');
+    await expect(page.locator('.airport-glance-strip')).toHaveCount(0);
+    await expect(page.locator('.airport-current-brief .departure-hall-scope-note')).toContainText('제2터미널');
 });
 test('public detail routes remain directly available without onboarding',async({page})=>{
   await fixture(page);await page.goto('/ko/airport');

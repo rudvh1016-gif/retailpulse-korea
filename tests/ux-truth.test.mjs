@@ -445,21 +445,12 @@ test("공항 페이지는 요약 → 예보 차트 → 상세 격자 → 구성 
  * 네 언어 모두 "공식 예상" 이라고 말한다.
  */
 test("하루 전체 합계 다음에는 지금 시간대 출국장 공식 예상 승객, 대기는 보조 줄로 내려간다", () => {
-  assert.ok(signals.indexOf('className="airport-brief-total"') < signals.indexOf('{dayLines.map('),
-    "선택한 터미널의 하루 합계를 현재 시간대보다 먼저 강조한다");
+  const glance = signals.slice(signals.indexOf("export function AirportAtAGlance"), signals.indexOf("export function AirportTodaySummary"));
+  assert.doesNotMatch(glance, /airport-glance-strip|airport-near-term|airport-upcoming-peak/);
+  assert.match(glance, /airport-brief-total/);
+  assert.match(glance, /\{flow\}/);
   const localize = signals.match(/function localizeAirportBrief\([\s\S]*?\n\}/)?.[0] ?? "";
   assert.ok(localize.length > 0);
-
-  // 2026-09-13: 지금 시간대 값은 여전히 맨 앞이지만, 자리가 바뀌었다. 이제
-  // 한눈에 보기 그리드의 첫 칸이고, 그 아래 줄들은 그리드가 담지 못하는
-  // 것(피크 대비 비율, 다음 시간대, 대기, 남은 합계)만 말한다. 예전 첫 줄은
-  // 바로 위 칸과 똑같은 숫자를 더 작은 글씨로 한 번 더 찍고 있었다.
-  assert.ok(signals.indexOf('className="airport-glance-strip"') < signals.indexOf('{dayLines.map('),
-    "지금 시간대 값을 담은 그리드가 보조 줄보다 먼저 나와야 한다");
-  assert.match(signals, /<dt>\{contextText\(lang,"현재 시간대 · 공식 예상"/,
-    "그리드 첫 칸이 지금 시간대의 공식 예상이어야 한다");
-  assert.match(signals, /nowBand \? <><b>\{Math\.round\(nowBand\.expectedPassengers\)/,
-    "그리드 첫 칸 숫자는 지금 시간대 예상 승객이어야 한다");
 
   // 줄 순서가 코드로 고정되어 있다: 피크 대비 → 대기 → 남은 예상.
   assert.match(localize, /\[trendLine, waitLine, restLine\]/,

@@ -43,7 +43,6 @@ const ORDER = [
   '[data-testid="airport-sum-formula"]',
   ".passenger-transfer-limitation",
   ".airport-forecast",
-  ".airport-glance-strip",
   '[data-testid="airport-mtd"]',
   ".airport-month-chart",
 ] as const;

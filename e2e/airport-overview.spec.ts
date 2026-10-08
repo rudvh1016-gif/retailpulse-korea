@@ -83,7 +83,7 @@ test('today before its first collection: the held schedule fills the map, labell
   await expect(block).toContainText('공식 출발 예정표 기준');
   await expect(block.getByTestId('flight-split')).toHaveCount(0);
   await expect(page.getByTestId('airport-concept-model')).toBeVisible();
-  await expect(page.getByTestId('airport-top-reference')).toHaveAttribute('data-state', 'READY');
+  await expect(page.getByTestId('airport-top-reference')).toHaveCount(0);
 });
 
 test('a failed flight read leaves no stale top reference', async ({ page }) => {
@@ -132,51 +132,39 @@ for (const [lang, width] of [['ko', 360], ['en', 360], ['zh', 360], ['ja', 360],
   });
 }
 
-test('the reference is next to the top model and uses separate full-day terminal bases', async ({ page }) => {
+test('the model leads country information without derived passenger allocation', async ({ page }) => {
   await open(page, { lang: 'en' });
   const slot = page.getByTestId('airport-departure-model-slot');
-  const reference = slot.getByTestId('airport-top-reference');
-  await expect(reference).toHaveAttribute('data-state', 'READY');
-  await expect(reference.getByTestId('top-reference-T1')).toBeVisible();
-  await expect(reference.getByTestId('top-reference-T2')).toBeVisible();
-  await expect(reference).toContainText('T1 and T2 are calculated separately');
-  await expect(page.getByTestId('overview-T1').getByTestId('split-estimate')).toHaveCount(0);
-  await expect(page.getByTestId('overview-T1').getByTestId('split-shares')).toHaveCount(0);
-  await expect(page.getByTestId('overview-T1').getByTestId('flight-split')).toHaveCount(0);
+  await expect(slot.getByTestId('airport-top-reference')).toHaveCount(0);
+  for(const id of ['split-estimate','split-shares','flight-split'])await expect(page.getByTestId('overview-T1').getByTestId(id)).toHaveCount(0);
   await expect(slot.getByTestId('airport-concept-model')).toBeVisible();
-  const order = await slot.evaluate((node) => Array.from(node.children).map((child) => child.getAttribute('data-testid')));
-  expect(order.slice(0, 3)).toEqual(['airport-concept-model', 'airport-top-reference', 'map-zone-countries']);
-  await slot.screenshot({ path: 'test-results/airport-top-reference-en-390.png' });
+  await expect(slot.getByTestId('map-zone-countries')).toBeVisible();
+  const order = await slot.evaluate(node => Array.from(node.children).map(child => child.getAttribute('data-testid')));
+  expect(order.slice(0, 2)).toEqual(['airport-concept-model', 'map-zone-countries']);
 });
-
-test('a selected time or concourse alone withholds the figure; whole-day action restores it', async ({ page }) => {
+test('time and physical-building switches retain real counts without restoring reference cards', async ({ page }) => {
   await open(page, { lang: 'en' });
-  const reference = page.getByTestId('airport-top-reference');
   const map = page.getByTestId('overview-T1').getByTestId('departure-map');
-  await expect(reference).toHaveAttribute('data-state', 'READY');
   await page.getByTestId('overview-T1').getByTestId('departure-map-section').locator(':scope > summary').click();
   await map.locator('[data-preset="CUSTOM"]').click();
-  await expect(reference).toHaveAttribute('data-state', 'time');
-  await expect(reference.getByTestId('top-reference-T1')).toHaveCount(0);
-  await reference.getByRole('button', { name: 'View whole day' }).click();
-  await expect(reference).toHaveAttribute('data-state', 'READY');
+  await expect(page.getByTestId('airport-top-reference')).toHaveCount(0);
+  await map.locator('[data-preset="DAY"]').click();
   await map.getByRole('button', { name: 'Concourse', exact: true }).click();
-  await expect(reference).toHaveAttribute('data-state', 'concourse');
-  await expect(reference.getByTestId('top-reference-T1')).toHaveCount(0);
-  await reference.getByRole('button', { name: 'View T1 whole day' }).click();
-  await expect(reference).toHaveAttribute('data-state', 'READY');
-  await expect(reference.getByTestId('top-reference-T1')).toBeVisible();
-  await expect(reference.getByTestId('top-reference-T2')).toHaveCount(0);
+  await expect(page.getByTestId('airport-map-model-scope')).toHaveAttribute('data-terminal','CONCOURSE');
+  await expect(page.getByTestId('airport-top-reference')).toHaveCount(0);
+  await map.locator('.terminal-selector button').nth(1).click();
+  await expect(page.getByTestId('airport-map-model-scope')).toHaveAttribute('data-terminal','T1');
+  await expect(page.getByTestId('airport-top-reference')).toHaveCount(0);
 });
 
 for (const width of [320, 390, 430]) {
-  test(`top reference stays readable and keyboard reachable at ${width}px`, async ({ page }) => {
+  test(`real country evidence stays readable and keyboard reachable at ${width}px`, async ({ page }) => {
     await open(page, { lang: 'en', width });
-    const reference = page.getByTestId('airport-top-reference');
-    await expect(reference).toHaveAttribute('data-state', 'READY');
+    await expect(page.getByTestId('airport-top-reference')).toHaveCount(0);
+    const reference = page.getByTestId('map-zone-countries');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
-    await reference.locator('summary').first().focus();
+    await reference.locator('details.prep-evidence > summary').first().focus();
     await page.keyboard.press('Enter');
-    await expect(reference.locator('details').first()).toHaveAttribute('open', '');
+    await expect(reference.locator('details.prep-evidence').first()).toHaveAttribute('open', '');
   });
 }

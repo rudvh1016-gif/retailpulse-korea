@@ -35,15 +35,15 @@ for (const lang of ['ko','en','zh','ja'] as const) {
     // 6,320, T1 3,500, T2 2,900), 탭을 옮겼을 때 앞 범위의 숫자가 남아 있으면
     // 그건 이웃 범위의 값을 빌려 쓴 것이다.
     const glance=page.locator('.airport-glance-strip');
-    await expect(glance).toHaveAttribute('data-scope','all');
-    if (!tomorrow) await expect(glance).toContainText('5,110');
-    await expect(glance).toContainText('6,320');
+    await expect(glance).toHaveCount(0);
+    const forecast=page.locator('.airport-forecast');
+    await expect(forecast).toContainText('6,320');
     for (const terminal of ['T1','T2']) {
       await page.getByRole('tab',{name:terminal,exact:true}).click();
       await expect(page.getByRole('tab',{name:terminal,exact:true})).toHaveAttribute('aria-selected','true');
-      await expect(glance).toHaveAttribute('data-scope',terminal);
-      await expect(glance).toContainText(terminal==='T1'?'3,500':'2,900');
-      for (const foreign of ['5,110','6,320',terminal==='T1'?'2,900':'3,500']) await expect(glance).not.toContainText(foreign);
+      await expect(glance).toHaveCount(0);
+      await expect(forecast).toContainText(terminal==='T1'?'3,500':'2,900');
+      for (const foreign of ['6,320',terminal==='T1'?'2,900':'3,500']) await expect(forecast).not.toContainText(foreign);
       const full=page.locator('.airport-current-brief');
       await expect(full).toContainText(passengerCopy[tomorrow?'summedSelected':'summedToday'][lang]);
       // The on-page scope line is a sentence since 2026-10-02 (scopeSentence); the share text keeps the short form.

@@ -1771,7 +1771,6 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
   const expectedTotal=isAll?airport.todayExpectedPassengersTotal:airport.todayExpectedPassengersByTerminal?.[terminal]??null;
   const flightsCount=isAll?airport.departuresTrackedToday:airport.departuresTrackedTodayByTerminal?.[terminal]??null;
   const peak=isAll?airport.peakExpectedTimeBand:airport.peakExpectedTimeBandByTerminal?.[terminal]??null;
-  const remaining=summary.dayRelation==="TODAY"?(isAll?airport.remainingExpectedPassengers:airport.remainingExpectedPassengersByTerminal?.[terminal]??null):null;
   const timeline=isAll?airport.passengerForecastTimeline:airport.passengerForecastTimelineByTerminal?.[terminal]??[];
   const forecastStatus=isAll?airport.forecastCoverage?.all:airport.forecastCoverage?.byTerminal?.[terminal];
   const referenceSum=passengerReferenceSum(expectedTotal,forecastStatus,summary.serviceDateKst,terminal,airport.transferForecast);
@@ -1801,11 +1800,6 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
     departures: flightsCount,
     topGate,
   });
-  const airportBriefLines = localizeAirportBrief(
-    { ...airportBrief, checkpoint: null }, lang, remaining,
-    summary?.sources?.find((source) => source.sourceId === "INCHEON_PASSENGER_FORECAST")?.retrievedAt ?? null,
-    summary?.generatedAt ?? null,
-  );
   const comparisons = airport.periodComparisons?.[terminal];
   const passengerChanges = ([7, 28] as const).flatMap((days) => comparisons?.[days]?.passengers ? [comparisonText(comparisons[days]!.passengers!, lang, days)] : []);
   // No placeholder for a missing 7-day comparison: the grid's third cell says
@@ -1818,17 +1812,6 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
   const officialSchedule=schedule?.basis==='OFFICIAL_DEPARTURE_SCHEDULE';
   const planned=isAll?schedule?.ranking.all:schedule?.ranking.byTerminal[terminal];
   const dayLabel=summary.dayRelation==="TODAY"?areaBriefText.nowLabel[lang]:contextText(lang,"선택일 요약","Selected day summary","所选日期概览","選択日の概要");
-  // A past or future date has no "today" to peak in. Both halves are written
-  // out rather than patched into one another by string replacement, which is
-  // how the lines below still do it and is why their Japanese drifted apart.
-  // Not airportTodayText.peak: that is the tile label ("예상 피크"), which
-  // names neither the day nor the basis, and a grid cell this prominent has
-  // to say that the figure is the airport's own forecast.
-  const peakLabel=summary.dayRelation==="TODAY"
-    ?contextText(lang,"오늘 피크 · 공식 예상","Today's peak · official forecast","今日高峰 · 官方预计","本日のピーク · 公式予想")
-    :contextText(lang,"선택일 피크 · 공식 예상","Selected day's peak · official forecast","所选日期高峰 · 官方预计","選択日のピーク · 公式予想");
-  const dayLines=airportBriefLines.map(line=>summary.dayRelation==="TODAY"?line:line.replace(contextText(lang,"오늘 피크","Today's peak","今日高峰","本日ピーク"),contextText(lang,"선택일 피크","Selected day's peak","所选日期高峰","選択日のピーク")));
-  const upcomingPeak = [...timeline].filter(row => Number.isFinite(row.expectedPassengers) && (summary.dayRelation === "FUTURE" || (summary.dayRelation === "TODAY" && Date.parse(row.targetStartAt) >= Date.parse(nowIso)))).sort((a,b)=>b.expectedPassengers-a.expectedPassengers)[0];
   const mtd = airport.monthToDate?.[terminal] ?? null;
   const checkpoint = airportBrief.checkpoint;
   const queueIsStale = checkpoint && (checkpoint.freshness === "STALE" || presentationNow - Date.parse(checkpoint.observedAt) > 20 * 60_000);
@@ -1872,31 +1855,6 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
   return <section className="current-brief airport-current-brief" aria-label={`${scopeLabel} ${dayLabel}`}>
       {flow ? <div className="airport-hero">{lead}</div> : lead}
       {showPassengers&&<>
-      {/* The three questions a reader asks of a daily total, on one line and in
-          one scope: what is happening in this hour, when does the day peak, and
-          is that bigger or smaller than the same weekday last week. Every cell
-          reads the SELECTED terminal's own field, so T1 never shows a T1+T2
-          number. A cell whose source is unavailable says so instead of
-          borrowing a neighbouring figure. */}
-      <dl className="airport-glance-strip" data-scope={terminal}>
-        <div><dt>{contextText(lang,"현재 시간대 · 공식 예상","This hour · official forecast","当前时段 · 官方预计","現在の時間帯 · 公式予想")}</dt>
-          <dd>{nowBand ? <><b>{Math.round(nowBand.expectedPassengers).toLocaleString(numberLocale)}{peopleUnit}</b><small>{formatKstBand(nowBand.targetStartAt,nowBand.targetEndAt)}</small></> : <small>{summary.dayRelation === "TODAY" ? airportTodayText.unavailable[lang] : contextText(lang,"오늘이 아닙니다","Not today","非今日","本日ではありません")}</small>}</dd></div>
-        <div><dt>{peakLabel}</dt>
-          <dd>{peak ? <><b>{Math.round(peak.expectedPassengers).toLocaleString(numberLocale)}{peopleUnit}</b><small>{formatKstBand(peak.targetStartAt,peak.targetEndAt)}</small></> : <small>{airportTodayText.unavailable[lang]}</small>}</dd></div>
-        <div><dt>{contextText(lang,"전주 동요일 대비","Vs. same weekday last week","较上周同星期","前週同曜日比")}</dt>
-          <dd>{comparisons?.[7]?.passengers ? <b className="airport-glance-change">{comparisonValue(comparisons[7]!.passengers!)}</b> : <small>{contextText(lang,"비교 자료 없음","Comparison unavailable","缺少比较资料","比較資料なし")}</small>}</dd></div>
-      </dl>
-      {/* All one weight now. The first line used to be bold 16px because it
-          carried this hour's headline figure; the grid above carries that, so
-          keeping the bold here would have put the emphasis on whichever
-          supporting fact happened to come first. */}
-      {dayLines.map(line => <p className="airport-near-term" key={line}>{line}</p>)}
-      {/* Only when the largest band still ahead is NOT the day's peak — that is,
-          once the peak has passed. While the peak is still ahead the two are the
-          same band, and the grid above already shows it; printing it again under
-          a different heading made one fact look like two. A missing peak leaves
-          the grid cell empty, so the upcoming maximum is new information again. */}
-      {upcomingPeak && upcomingPeak.targetStartAt !== peak?.targetStartAt && <p className="airport-upcoming-peak"><span>{contextText(lang,"이후 확인된 시간대 중 최대","Largest among upcoming available bands","未来已确认时段中最高","今後の確認済み時間帯の中で最多")}</span><b>{formatKstBand(upcomingPeak.targetStartAt,upcomingPeak.targetEndAt)} · {upcomingPeak.expectedPassengers.toLocaleString(numberLocale)}{peopleUnit}</b></p>}
       {/* OWNER PRIORITY LOCK 6-8: this month so far, the same span of the month
           before, and the shape of how it accumulated. Scope-isolated like every
           other figure here — T2 sums T2's own days and nothing else. */}

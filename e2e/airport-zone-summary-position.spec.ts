@@ -9,10 +9,9 @@ async function expectCenteredOverlay(model:Locator){
  const picture=model.locator('.airport-concept-picture'),image=picture.locator('img'),counts=picture.locator('.airport-concept-counts');
  await expect.poll(()=>image.evaluate((i:HTMLImageElement)=>i.complete&&i.naturalWidth>0)).toBe(true);
  await expect(model.locator(':scope > .airport-concept-counts')).toHaveCount(0);
- const frame=(await image.boundingBox())!,row=(await counts.boundingBox())!;
- expect(Math.abs(row.y+row.height/2-(frame.y+frame.height/2))).toBeLessThanOrEqual(1);
- expect(row.x).toBeGreaterThanOrEqual(frame.x);expect(row.x+row.width).toBeLessThanOrEqual(frame.x+frame.width);
- expect(row.y).toBeGreaterThanOrEqual(frame.y);expect(row.y+row.height).toBeLessThanOrEqual(frame.y+frame.height);
+ const frame=(await image.boundingBox())!,row=(await counts.first().boundingBox())!;
+ const all=await picture.getAttribute('data-building')==='all',mobile=await model.page().evaluate(()=>innerWidth<=600);
+ for(const group of await counts.all()){const box=(await group.boundingBox())!,building=await group.getAttribute('data-building');const center=all?(mobile?(building==='T1'?0.18:building==='T2'?0.53:0.86):(building==='CONCOURSE'?0.84:0.32)):0.5;expect(Math.abs(box.y+box.height/2-(frame.y+frame.height*center))).toBeLessThanOrEqual(1);expect(box.x).toBeGreaterThanOrEqual(frame.x);expect(box.x+box.width).toBeLessThanOrEqual(frame.x+frame.width);expect(box.y).toBeGreaterThanOrEqual(frame.y);expect(box.y+box.height).toBeLessThanOrEqual(frame.y+frame.height);}
  for(const cell of await counts.locator(':scope >div').all()){
   expect(await cell.evaluate(el=>el.scrollWidth<=el.clientWidth+1&&el.scrollHeight<=el.clientHeight+1)).toBe(true);
   expect(await cell.evaluate(el=>getComputedStyle(el).backgroundColor)).toBe('rgb(255, 255, 255)');
@@ -46,7 +45,7 @@ for(const width of[320,390,430,1280])test(`all four building views keep the summ
  for(const[index,scope,n]of[[0,'all',277],[1,'T1',3],[2,'T2',271],[3,'CONCOURSE',3]] as const){
   await selector.nth(index).click();const model=(scope==='CONCOURSE'?page.getByTestId('airport-concourse'):page.getByTestId('airport-departure-model-slot')).getByTestId('airport-concept-model');
   await expect(model).toHaveAttribute('data-denominator',String(n));await expect(model.locator('.airport-concept-picture')).toHaveAttribute('data-building',scope);await expectCenteredOverlay(model);
-  const counts=model.locator('.airport-concept-counts');await expect(counts.locator(':scope >div')).toHaveCount(3);
+  const counts=model.locator('.airport-concept-counts');await expect(counts.locator(':scope >div')).toHaveCount(scope==='all'?9:3);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   await model.screenshot({path:info.outputPath(`inside-image-${scope}-${width}.png`)});
  }
@@ -60,7 +59,7 @@ test('whole-building denominator, zero, terminals and date remain truthful',asyn
 });
 
 test('unknown buildings remain in the all-building denominator and apart from the three zones',async({page})=>{
- const unknown={physicalFlightId:'UNKNOWN',terminal:null,gate:null,status:'scheduled',direction:'departure',scheduledAt:`${date}T15:00:00+09:00`,retrievedAt:`${date}T05:00:00Z`};await page.route('**/api/live/flights*',routeSummary({mode:'live-flights',serviceDateKst:date,todayKst:date,flights:[unknown],retrievedAt:`${date}T05:00:00Z`,truncated:false}));await page.goto('/ko/airport');await page.locator('.airport-view >.terminal-selector button').nth(0).click();const model=page.getByTestId('airport-departure-model-slot').getByTestId('airport-concept-model');await expect(model).toHaveAttribute('data-denominator','1');await expect(model.getByTestId('model-unverified-share')).toContainText('1편 · 100.0%');const counts=model.locator('.airport-concept-counts');await expect(counts.getByTestId('model-gates-pending').locator('strong')).toHaveText('1편');await expect(counts.locator('small')).toHaveText('게이트 위치 확인 전');await expect(counts.locator('[data-side]')).toHaveCount(0);await expect(counts).not.toContainText('0.0%');
+ const unknown={physicalFlightId:'UNKNOWN',terminal:null,gate:null,status:'scheduled',direction:'departure',scheduledAt:`${date}T15:00:00+09:00`,retrievedAt:`${date}T05:00:00Z`};await page.route('**/api/live/flights*',routeSummary({mode:'live-flights',serviceDateKst:date,todayKst:date,flights:[unknown],retrievedAt:`${date}T05:00:00Z`,truncated:false}));await page.goto('/ko/airport');await page.locator('.airport-view >.terminal-selector button').nth(0).click();const model=page.getByTestId('airport-departure-model-slot').getByTestId('airport-concept-model');await expect(model).toHaveAttribute('data-denominator','1');await expect(model.getByTestId('model-unverified-share')).toContainText('1편 · 100.0%');const counts=model.locator('.airport-concept-counts');await expect(counts).toHaveCount(3);for(const row of await counts.all()){await expect(row).toHaveAttribute('data-denominator','0');await expect(row.locator('strong')).toHaveText(['0편','0편','0편']);await expect(row.locator('small')).toHaveText(['비율 계산 안 함','비율 계산 안 함','비율 계산 안 함']);}await expect(counts.getByTestId('model-gates-pending')).toHaveCount(0);
 });
 
 for(const lang of['en','zh','ja'])test(`summary keeps all three labels and dynamic percentages ${lang}`,async({page})=>{await page.setViewportSize({width:320,height:900});await page.goto(`/${lang}/airport?terminal=T2`);const model=page.getByTestId('airport-departure-model-slot').getByTestId('airport-concept-model'),counts=model.locator('.airport-concept-counts');await expect(counts.locator(':scope >div')).toHaveCount(3);await expect(counts.locator('small')).toHaveText(['49.1%','5.9%','45.0%']);await expectCenteredOverlay(model);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);});
