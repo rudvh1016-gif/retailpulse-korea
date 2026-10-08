@@ -16,8 +16,8 @@
     "app/api/live/summary/route.ts": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8",
     "app/area-demand-card.tsx": "78254205092521a36a61fe35aa3ff57c8d91ef1921199cad353c0792dc251dab",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
-    "app/globals.css": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
-    "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
+    "app/globals.css": "42c61ee811f638e410c3088d96cdd1efbfb928b4e2a6473e10ec1510b0197d04",
+    "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
     "app/layout.tsx": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
     "app/live-signals.tsx": "75888c628f76c15fe6a0c71501742aa74462d5541cb5d2b113e6a9816e82c2a4",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
@@ -794,6 +794,30 @@
         "file": "app/live-signals.tsx",
         "previous": "149d433a9fc89efeac146e395c90ae70058498242d6fdacc196d331c36fddcbc",
         "approved": "75888c628f76c15fe6a0c71501742aa74462d5541cb5d2b113e6a9816e82c2a4"
+      }
+    ]
+  },
+  "ownerApprovedShillaOnlyInlineHeader20261008": {
+    "recordedAt": "2026-10-08T09:58:05.908Z",
+    "sourceMain": "7143ef7d475f8578ba466686266259f242026451",
+    "sourceHeadBeforeBaseline": "129ea1f3397d1a1a349d2e56aed2cd5dcdf5f1b0",
+    "authorizationEvidence": {
+      "sourceThreadId": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "ownerMessageId": "Sentinel_db704c3429e881918aa0a05ef864f295",
+      "assistantQuestionScope": "Approve the normal design-test baseline update only for app/globals.css and app/install-app.tsx, for a smaller mobile Install label and single-line FX equation; retain the original checks.",
+      "ownerAnswer": "신세계는버리고 신라만가져와 구리고 디자인 검사기준 승인해"
+    },
+    "reason": "Explicit owner approval for this exact normal baseline update. Only the two protected source hashes change for the smaller Install badge with its original accessible label and 44px hit area, and the one-line FX equation. All61 protected paths, other59 hashes, previous approval records, crons and original enforcement remain. Shinsegae is excluded from active collection and public presentation; its existing stored evidence is retained. No direct merge or deployment authorization is implied.",
+    "changes": [
+      {
+        "file": "app/globals.css",
+        "previous": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
+        "approved": "42c61ee811f638e410c3088d96cdd1efbfb928b4e2a6473e10ec1510b0197d04"
+      },
+      {
+        "file": "app/install-app.tsx",
+        "previous": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
+        "approved": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22"
       }
     ]
   }
