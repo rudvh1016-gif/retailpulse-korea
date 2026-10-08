@@ -705,8 +705,8 @@ function AirportView({
         </ol>
 
         <div className="annual-strip">
-          <p className="eyebrow">{localText(lang, { ko: "연간 여객", en: "ANNUAL PASSENGERS", zh: "年度旅客", ja: "年間旅客" })}</p>
-          <ol>{airportAnnual.map((row) => <li key={row.year}><span>{row.year}</span><b>{formatCount(lang, row.passengers)}</b></li>)}</ol>
+          <p className="eyebrow">{localText(lang, { ko: "연간 여객", en: "ANNUAL PASSENGERS", zh: "年度旅客", ja: "年間旅客" })}{" "}<span className="annual-scope">{localText(lang, { ko: "T1·T2 합계", en: "T1·T2 TOTAL", zh: "T1·T2 合计", ja: "T1·T2 合計" })}</span></p>
+          <ol>{airportAnnual.map((row) => <li key={row.year}><span>{row.year}{row.year < 2018 ? " · T1" : ""}</span><b>{formatCount(lang, row.passengers)}</b></li>)}</ol>
         </div>
       </section>}
     </section>

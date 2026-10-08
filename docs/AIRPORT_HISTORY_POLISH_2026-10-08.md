@@ -26,3 +26,11 @@
 이 변경은 기존 초안 PR에 보존한다. 기준선 정상 갱신·해당 커밋의 CI 전체 통과 전에는 Ready로 변경하지 않는다. 병합·배포·운영 migration·운영 집계는 실행하지 않는다. 이를 재개하려면 이 실행 세션에서 네 파일의 기준선 갱신을 직접 승인해야 한다.
 
 Library 저장은 네이티브 실행 환경의 지원 경로를 사용할 수 없어 실패했다. 새 Library ID는 없으며, 원본과 결과 이미지는 이 저장소와 로컬 outputs에 보존한다.
+
+## 연간 표 범위 표시 보완
+
+app/retailpulse-data.ts의 airportAnnual은 터미널별 구조가 없는 공항 전체 연간 여객이고, 기존 annual-strip은 선택 terminal/direction으로 필터하지 않는다. docs/archive/work-v6.1/historical-backfill-plan.md에도 연간 전체여객으로 기록돼 있다. 제목 옆에 T1·T2 합계를 네 언어로 짧게 표시했다. 같은 기록상 T2 통계는 2018년부터이므로 2010 행에는 T1만 짧게 표시하여 개항 전 값을 T2의 0으로 추정하지 않는다. airportAnnual과 계산은 변경하지 않았다.
+
+ko/en/zh/ja × 전체/T1/T2 12개 선택을 360px에서 확인하여 연간 수치가 동일하고 범위 표시·2010 예외가 유지됨을 확인했다. 넘침·pageerror 없음. 기존 과거 E2E 4개와 typecheck 및 해당 파일 lint를 실행하여 통과했다. 이 작은 보완은 기존 불일치 파일 retailpulse-app.tsx의 hash를 추가로 바꾸지만 보호 파일 목록은 네 파일 그대로이며 기준선 갱신은 여전히 차단된 상태다.
+
+연간 범위 표시까지 포함한 같은 조건의 전체 client gzip은 JS 471031→471083B(+52), CSS 56681→56907B(+226)다. 비교 JSON에 실행 환경을 기록했다. 초기 다운로드·LCP·PSI 값이 아니다. 폰트 coverage 2개도 통과했다.

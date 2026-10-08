@@ -1,0 +1,26 @@
+{
+  "before": {
+    "js": 471031,
+    "css": 56681,
+    "kind": "all client gzip files; not initial-page download",
+    "source": "c179d76 runtime stylesheet"
+  },
+  "after": {
+    "js": 471083,
+    "css": 56907
+  },
+  "delta": {
+    "js": 52,
+    "css": 226
+  },
+  "kind": "all client gzip files; not initial-page download",
+  "sameEnvironmentAs": "history-bundle-comparison.json",
+  "lcp": "unmeasured",
+  "psi": "unmeasured",
+  "environment": {
+    "CLOUDFLARE_CF_FETCH_ENABLED": false,
+    "NEXT_PUBLIC_SITE_ORIGIN": "https://rpk-ci.invalid",
+    "RPK_DEPLOYMENT_STAGE": "staging",
+    "NEXT_PUBLIC_ENABLE_BETA_SIGNUP": false
+  }
+}

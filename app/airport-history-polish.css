@@ -23,3 +23,5 @@
  .airport-history .history-kpis>div:last-child { grid-column:1/-1; }
  .airport-history .history-kpis>div+div { padding-left:0; }
 }
+
+.airport-history .annual-scope { margin-inline-start:10px; }
