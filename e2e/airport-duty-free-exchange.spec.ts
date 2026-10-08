@@ -16,7 +16,7 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of[360,390,430,
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  const vendorRequests:string[]=[];page.on('request',r=>{if(/shilladfs|ssgdfs|hddfs/.test(r.url()))vendorRequests.push(r.url());});
  await page.goto(`/${lang}/airport`);const strip=page.getByTestId('airport-duty-free-exchange');
- await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');await expect(strip.getByTestId('duty-free-rate')).toHaveText('1 USD = 1,343.40 KRW');
+ await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');await expect(strip.getByTestId('duty-free-rate')).toHaveText(lang==='ko'?'1 USD = 1,343.40원':'1 USD = 1,343.40 KRW');
   expect(await strip.evaluate(node=>node.closest('.topbar') !== null && node.previousElementSibling?.classList.contains('install-app-button'))).toBe(true);
   const install=page.locator('.topbar .install-app-button'),language=page.getByLabel('Language',{exact:true});
   const positions=await Promise.all([install.boundingBox(),strip.boundingBox(),language.boundingBox()]);
@@ -24,6 +24,13 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of[360,390,430,
   const [installBox,rateBox,languageBox]=positions as Array<{x:number;y:number;width:number;height:number}>;
   expect(installBox.x+installBox.width).toBeLessThanOrEqual(rateBox.x+1);expect(rateBox.x+rateBox.width).toBeLessThanOrEqual(languageBox.x+1);
   expect(Math.abs(installBox.y+installBox.height/2-rateBox.y-rateBox.height/2)).toBeLessThan(4);
+  const equation=strip.locator('summary .duty-free-rate'),equals=strip.locator('.duty-free-rate-equals');
+  const [equationBox,equalsBox]=await Promise.all([equation.boundingBox(),equals.boundingBox()]);
+  expect(equationBox).not.toBeNull();expect(equalsBox).not.toBeNull();expect(equalsBox!.width).toBeGreaterThanOrEqual(5);
+  expect(equationBox!.x+equationBox!.width).toBeLessThanOrEqual(languageBox.x+1);
+  expect(await equals.evaluate(el=>getComputedStyle(el).transform)).toBe('none');
+  expect(await equation.evaluate(el=>{const range=document.createRange();range.selectNodeContents(el);const tops=[...range.getClientRects()].map(r=>r.top);return Math.max(...tops)-Math.min(...tops)<4;})).toBe(true);
+  if(width<=820){expect(installBox.width).toBeGreaterThanOrEqual(44);expect(installBox.height).toBeGreaterThanOrEqual(44);expect((await install.locator('.install-app-compact-label').boundingBox())!.height).toBeLessThan(32);}
  await strip.locator('summary').focus();await page.keyboard.press('Enter');await expect(strip.locator('details')).toHaveAttribute('open');
   const detailBox=await strip.locator('.duty-free-rate-detail').boundingBox();expect(detailBox).not.toBeNull();expect(detailBox!.x).toBeGreaterThanOrEqual(0);expect(detailBox!.x+detailBox!.width).toBeLessThanOrEqual(width+1);
  await expect(strip.locator('a[href="https://www.shilladfs.com/estore/kr/ko/"]')).toHaveCount(1);await expect(strip.locator('a[href="https://www.ssgdfs.com/kr/main/initMain/"]')).toHaveCount(1);
@@ -65,9 +72,9 @@ test('stored API rates refresh while mounted and repeated focus makes no extra r
  await page.clock.install({time:new Date('2026-10-08T03:00:00Z')});await fixtures(page);let reads=0;
  await page.route('**/api/live/duty-free-exchange',r=>{reads++;const value=reads===1?1343.4:1348.27;return r.fulfill({json:{...autoSnapshot,sources:autoSnapshot.sources.map(source=>({...source,observation:{...source.observation,krwPerUnit:value}}))}});});
  const providerRequests:string[]=[];page.on('request',r=>{if(/shilladfs|ssgdfs|hddfs/.test(r.url()))providerRequests.push(r.url());});
- await page.goto('/ko/airport');const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip.getByTestId('duty-free-rate')).toHaveText('1 USD = 1,343.40 KRW');
+ await page.goto('/ko/airport');const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip.getByTestId('duty-free-rate')).toHaveText('1 USD = 1,343.40원');
  await page.evaluate(()=>{for(let i=0;i<5;i++)window.dispatchEvent(new Event('focus'));});expect(reads).toBe(1);
- await page.clock.runFor(15*60_000+100);await expect(strip.getByTestId('duty-free-rate')).toHaveText('1 USD = 1,348.27 KRW');expect(reads).toBe(2);expect(providerRequests).toEqual([]);
+ await page.clock.runFor(15*60_000+100);await expect(strip.getByTestId('duty-free-rate')).toHaveText('1 USD = 1,348.27원');expect(reads).toBe(2);expect(providerRequests).toEqual([]);
 });
 
 for(const lang of ['ko','en','zh','ja'] as const)test(`failed collection preserves visibly dated previous evidence ${lang}`,async({page})=>{

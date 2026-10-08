@@ -71,7 +71,7 @@ export function AirportDutyFreeExchange({ lang, date }: { lang: Lang; date: stri
       <summary>
         <span className="duty-free-rate-line" aria-live="polite">
           <strong>{previous?auto.previousShort:words.title}</strong>
-          {common ? <span className="duty-free-rate" data-testid="duty-free-rate">1 USD = <span className="duty-free-rate-value">{number.format(rows[0].krwPerUnit)} KRW</span></span>
+          {common ? <span className="duty-free-rate" data-testid="duty-free-rate">1 USD <span className="duty-free-rate-equals">=</span> <span className="duty-free-rate-value">{number.format(rows[0].krwPerUnit)}{lang==='ko'?'원':' KRW'}</span></span>
             : <span className="prep-note" aria-label={rows.length ? undefined : words.unavailable}>{rows.length ? rows.map(row => words[row.vendor]).join('·') : (!snapshot&&!readFailed?auto.pending:unavailableShort[lang])}</span>}
         </span>
       </summary>

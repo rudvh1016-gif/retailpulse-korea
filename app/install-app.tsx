@@ -90,6 +90,7 @@ export function InstallAppButton({ lang }: { lang: InstallLang }) {
   const {ready,preferences} = usePersonalPreferences();
   useEffect(() => { if(ready) setAnalyticsConsent(preferences?.analytics ?? false); }, [ready,preferences?.analytics]);
   const guide = installGuide(lang);
+  const compactLabel = { ko: '앱 설치', en: 'Install', zh: '安装', ja: '追加' }[lang];
   const [open, setOpen] = useState(false);
   const guideSeen = useRef(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -176,12 +177,14 @@ export function InstallAppButton({ lang }: { lang: InstallLang }) {
       ref={triggerRef}
       type="button"
       className="install-app-button"
+      aria-label={guide.buttonLabel}
       onClick={() => { setOpen(true); if (!guideSeen.current) { guideSeen.current = true; trackPersonalEvent('pwa_install_prompt_seen', {language:lang}); } }}
       aria-haspopup="dialog"
       aria-controls="install-dialog"
       aria-expanded={open}
     >
-      {guide.buttonLabel}
+      <span className="install-app-label">{guide.buttonLabel}</span>
+      <span className="install-app-compact-label" aria-hidden="true">{compactLabel}</span>
     </button>
     {open && <div className="modal-backdrop" onClick={() => setOpen(false)}>
       <div
