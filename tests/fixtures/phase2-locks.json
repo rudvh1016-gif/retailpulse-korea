@@ -19,7 +19,7 @@
     "app/globals.css": "cf09c40da3cc7eba578c6c627ac9630ec38fe26447d90f28ee567e887f5d36a4",
     "app/install-app.tsx": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
     "app/layout.tsx": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
-    "app/live-signals.tsx": "b5ce612574bf7f12518ad04a2a433ea4e0bab8a5daa271169d4ec030678ab4d3",
+    "app/live-signals.tsx": "149d433a9fc89efeac146e395c90ae70058498242d6fdacc196d331c36fddcbc",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "d2fcba67493abf4fa0ba40d4fc98096f9b2860af6d959102850449eab323641a",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
@@ -758,6 +758,18 @@
         "file": "app/retailpulse-app.tsx",
         "previous": "f9a332c11c4348c4aa4d6414a4e8dcc372b8cceb053cd18d4ede07b945eed34a",
         "approved": "e2eb77f48084b0ad8eceb1f40920459aa01f29106946092b6134409c105b8ab4"
+      }
+    ]
+  },
+  "ownerApprovedBuildingSharesSummaryRemoval20261008": {
+    "sourceMain": "21c2990e0d440eb4d30bae633f93520d85cf7b09",
+    "sourceHead": "051035289a8c0da20a4861caf674137b9824ca94",
+    "reason": "Owner explicitly approved updating the baseline record for PR313’s requested summary removal: 응응 갱신허용해. This record updates only app/live-signals.tsx for the deletion of IMG_0960’s separate current-hour/peak/weekday text summary and its near-term/upcoming lines. Sum, formula, chart, MTD, comparisons, waits, weather and calculations remain. This authorization does not extend to the earlier twice-rejected priority card/header proposal, which is neither copied nor retried, or to exchange rates. All61 protected entries and original enforcement remain active; other60 protected files and crons are byte-identical. Draft PR only, no merge/deployment.",
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "b5ce612574bf7f12518ad04a2a433ea4e0bab8a5daa271169d4ec030678ab4d3",
+        "approved": "149d433a9fc89efeac146e395c90ae70058498242d6fdacc196d331c36fddcbc"
       }
     ]
   }
