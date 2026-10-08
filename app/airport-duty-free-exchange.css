@@ -1,12 +1,16 @@
-.airport-duty-free-exchange{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-content:start;align-items:baseline;column-gap:14px;row-gap:4px;min-height:64px;margin:0 0 12px;padding:8px 0;border-block:1px solid var(--line);color:var(--ink);font:inherit}
-.duty-free-rate-line{display:flex;flex-wrap:wrap;align-content:start;align-items:baseline;gap:4px 12px;min-width:0;min-height:20px;font-variant-numeric:tabular-nums}
-.duty-free-rate-line strong{font-weight:600}
-.duty-free-rate{white-space:nowrap;font-variant-numeric:tabular-nums}
-.duty-free-rate-sources{min-width:0}
-.duty-free-rate-sources summary{cursor:pointer;font:inherit;font-size:12px;color:var(--muted);overflow-wrap:anywhere}
-.duty-free-rate-sources ul{margin:4px 0;padding-left:18px;font-size:12px}
-.duty-free-rate-sources a{color:var(--ink);text-underline-offset:3px}
-.duty-free-rate-sources a:hover{color:var(--blue)}
-.duty-free-rate-sources summary:focus-visible,.duty-free-rate-sources a:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
-.duty-free-checked{grid-column:1/-1;min-height:18px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
-@media(max-width:600px){.airport-duty-free-exchange{grid-template-columns:minmax(0,1fr);min-height:96px;column-gap:8px}.duty-free-rate-line{min-height:40px}}
+.airport-duty-free-exchange{position:relative;flex:0 1 104px;min-width:86px;color:var(--ink);font:inherit;font-size:11px}
+.duty-free-rate-sources>summary{position:relative;display:flex;align-items:center;min-height:48px;cursor:pointer;font:inherit;list-style:none}
+.duty-free-rate-sources>summary::-webkit-details-marker{display:none}
+.duty-free-rate-sources>summary::after{content:"";position:absolute;right:0;top:7px;width:4px;height:4px;border-right:1px solid var(--muted);border-bottom:1px solid var(--muted);transform:rotate(45deg)}
+.duty-free-rate-line{display:grid;gap:1px;min-width:0;line-height:1.3;font-variant-numeric:tabular-nums}
+.duty-free-rate-line strong{padding-right:8px;font-weight:var(--weight-strong)}
+.duty-free-rate{font-variant-numeric:tabular-nums}
+.duty-free-rate-value{display:block;white-space:nowrap}
+.duty-free-rate-line .prep-note{margin:0;font:inherit;color:var(--muted);overflow-wrap:anywhere}
+.duty-free-rate-detail{position:absolute;right:0;top:calc(100% + 6px);z-index:50;width:min(300px,calc(100vw - 36px));padding:12px;border:1px solid var(--line);background:var(--paper);font-size:12px;line-height:1.6}
+.duty-free-rate-detail p{margin:0 0 8px}
+.duty-free-rate-detail ul{margin:8px 0 0;padding-left:18px}
+.duty-free-rate-detail a{color:var(--ink);text-underline-offset:3px}
+.duty-free-rate-detail a:hover{color:var(--blue)}
+.duty-free-rate-sources>summary:focus-visible,.duty-free-rate-detail a:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+@media(max-width:820px){.duty-free-rate-detail{position:fixed;left:18px;right:18px;top:calc(60px + var(--safe-area-top) + 6px);width:auto}}

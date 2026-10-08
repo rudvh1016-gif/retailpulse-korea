@@ -12,9 +12,10 @@ const copy = {
   ja: { title: '免税レート', internet: 'オンライン店の参考', checked: '確認', source: '公式出典', unavailable: '選択日の確認済みレートなし', caution: 'オンライン店の表示レートです。空港実店舗での同率適用は未確認で、最終決済額は異なる場合があります。', shilla: '新羅', shinsegae: '新世界' },
 } as const;
 const locales = { ko: 'ko-KR', en: 'en-US', zh: 'zh-CN', ja: 'ja-JP' } as const;
+const unavailableShort = { ko: '확인 환율 없음', en: 'No verified rate', zh: '暂无确认汇率', ja: '確認レートなし' } as const;
 
 export function AirportDutyFreeExchange({ lang, date }: { lang: Lang; date: string | null }) {
-  // Start withheld on server and first client render; reserve the strip's space.
+  // Start withheld on server and first client render; reserve the header control's space.
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
@@ -31,22 +32,28 @@ export function AirportDutyFreeExchange({ lang, date }: { lang: Lang; date: stri
   const words = copy[lang];
   const number = new Intl.NumberFormat(locales[lang], { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const clock = new Intl.DateTimeFormat(locales[lang], { timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-  const common = rows.length > 1 && rows.every(row => row.krwPerUnit === rows[0].krwPerUnit);
+  const common = rows.length > 0 && rows.every(row => row.krwPerUnit === rows[0].krwPerUnit);
   return <aside className="airport-duty-free-exchange" data-testid="airport-duty-free-exchange" data-state={rows.length ? 'VERIFIED_TODAY' : 'UNAVAILABLE'} aria-label={words.title}>
-    <div className="duty-free-rate-line" aria-live="polite">
-      <strong>{words.title}</strong>
-      {rows.length ? common ? <span className="duty-free-rate" data-testid="duty-free-rate">1 USD = {number.format(rows[0].krwPerUnit)} KRW</span>
-        : rows.map(row => <span className="duty-free-rate" data-testid="duty-free-rate" key={row.vendor}>{words[row.vendor]} · 1 USD = {number.format(row.krwPerUnit)} KRW</span>)
-        : <span className="prep-note">{words.unavailable}</span>}
-    </div>
-    <details className="duty-free-rate-sources">
-      <summary>{rows.length ? rows.map(row => words[row.vendor]).join('·') + ' · ' : ''}{words.internet} · {words.source}</summary>
-      <p className="prep-note">{words.caution}</p>
-      <ul>{(Object.keys(dutyFreeSources) as Array<keyof typeof dutyFreeSources>).map(vendor => {
-        const row = rows.find(value => value.vendor === vendor);
-        return <li key={vendor}><a href={dutyFreeSources[vendor]} target="_blank" rel="noopener noreferrer">{words[vendor]}</a>{row && <> · {words.checked} <time dateTime={row.verifiedAt}>{clock.format(new Date(row.verifiedAt))} KST</time></>}</li>;
-      })}</ul>
+    <details className="duty-free-rate-sources" onKeyDown={event => {
+      if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); }
+    }}>
+      <summary>
+        <span className="duty-free-rate-line" aria-live="polite">
+          <strong>{words.title}</strong>
+          {common ? <span className="duty-free-rate" data-testid="duty-free-rate">1 USD = <span className="duty-free-rate-value">{number.format(rows[0].krwPerUnit)} KRW</span></span>
+            : <span className="prep-note" aria-label={rows.length ? undefined : words.unavailable}>{rows.length ? rows.map(row => words[row.vendor]).join('·') : unavailableShort[lang]}</span>}
+        </span>
+      </summary>
+      <div className="duty-free-rate-detail">
+        <p className="prep-note">{words.internet} · {words.source}</p>
+        {!common && rows.map(row => <p className="duty-free-rate" data-testid="duty-free-rate" key={row.vendor}>{words[row.vendor]} · 1 USD = {number.format(row.krwPerUnit)} KRW</p>)}
+        <p className="prep-note">{words.caution}</p>
+        <ul>{(Object.keys(dutyFreeSources) as Array<keyof typeof dutyFreeSources>).map(vendor => {
+          const row = rows.find(value => value.vendor === vendor);
+          return <li key={vendor}><a href={dutyFreeSources[vendor]} target="_blank" rel="noopener noreferrer">{words[vendor]}</a>{row && <> · {words.checked} <time dateTime={row.verifiedAt}>{clock.format(new Date(row.verifiedAt))} KST</time></>}</li>;
+        })}</ul>
+        {!rows.length && <p className="prep-note">{words.unavailable}</p>}
+      </div>
     </details>
-    <span className="duty-free-checked prep-note" aria-hidden={rows.length === 0}>{rows.length > 0 ? <>{words.checked} {rows.map(row => clock.format(new Date(row.verifiedAt))).filter((value, index, all) => all.indexOf(value) === index).join(' / ')} KST</> : null}</span>
   </aside>;
 }

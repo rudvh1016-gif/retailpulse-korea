@@ -464,6 +464,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         <div className="header-meta">
           <KstTodayChip lang={lang} date={serviceDate} />
           <InstallAppButton lang={lang} />
+          <AirportDutyFreeExchange lang={lang} date={serviceDate}/>
           <label className="language-control">
             <span className="sr-only">Language</span>
             <select value={lang} onChange={(event) => changeLanguage(event.target.value as Lang)} aria-label="Language">
@@ -616,7 +617,6 @@ function AirportView({
         </div>
       </div>
 
-      <AirportDutyFreeExchange lang={lang} date={date}/>
       {(concourse||section === "now")&&<AirportDeparturePreparation lang={lang}/>}
       <div id="airport-data-flow" className="terminal-selector" role="tablist" aria-label="Terminal">
         {(["all", "T1", "T2"] as Terminal[]).map((item) => <button key={item} className={!concourse&&terminal === item ? "active" : ""} onClick={() => setTerminal(item)} role="tab" aria-selected={!concourse&&terminal === item}>{item === "all" ? <><span>{localText(lang, { ko: "전체", en: "ALL", zh: "全部", ja: "全体" })}</span><small>T1·T2</small></> : item}</button>)}
