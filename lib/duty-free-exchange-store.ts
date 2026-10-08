@@ -14,13 +14,15 @@ type Stored = {
 /** A database-side lease is the request budget; no successful claim means no provider request. */
 export async function claimDutyFreeAttempt(db: Store, vendor: DutyFreeVendor, now: Date, leaseId: string) {
   const at = now.toISOString(), until = new Date(now.getTime() + DUTY_FREE_LEASE_MS).toISOString();
+  // Persist the request budget before HTTP; a crashed run cannot reset it when its lease expires.
+  const next = new Date(now.getTime() + DUTY_FREE_MIN_INTERVAL_MS).toISOString();
   const result = await db.prepare(`INSERT INTO duty_free_exchange_attempt
     (vendor, attempt_at, status, next_due_at, lease_id, lease_until)
     VALUES (?, ?, 'RUNNING', ?, ?, ?)
     ON CONFLICT(vendor) DO UPDATE SET attempt_at=excluded.attempt_at, status='RUNNING',
-      error_code=NULL, lease_id=excluded.lease_id, lease_until=excluded.lease_until
+      error_code=NULL, next_due_at=excluded.next_due_at, lease_id=excluded.lease_id, lease_until=excluded.lease_until
     WHERE duty_free_exchange_attempt.next_due_at <= ? AND duty_free_exchange_attempt.lease_until <= ?`)
-    .bind(vendor, at, at, leaseId, until, at, at).run();
+    .bind(vendor, at, next, leaseId, until, at, at).run();
   if (!result.success || typeof result.meta?.changes !== 'number') throw new Error('D1_CLAIM_UNMEASURED');
   return result.meta.changes === 1;
 }

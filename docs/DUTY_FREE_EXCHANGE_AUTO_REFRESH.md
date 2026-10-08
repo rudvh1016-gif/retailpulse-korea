@@ -18,6 +18,7 @@
 - 업체별 canonical CURRENT 1행과 운영 attempt/lease 1행을 유지한다.
   같은 날짜·통화·환율·출처·범위는 canonical write 0회이며 실제 재검증 시각은 운영 행에 기록한다.
   CAS lease와 소유권 조건이 중복 실행·늦게 끝난 과거 실행의 덮어쓰기를 막는다.
+  HTTP 이전 claim 시점에 다음 요청 가능 시각을 저장하여 실행이 끊겨 lease가 만료되어도 1시간 요청 제한을 유지한다.
 - 공개 읽기 API는 저장값만 읽는다. 기존 named cache entrypoint를 재사용한다.
   쿼리는 환율 읽기 결과를 바꾸지 않으므로 하나의 canonical URL로 정규화한다.
   최대 shared TTL 300초/browser TTL 60초, KST 자정까지 남은 시간으로 TTL을 줄인다.

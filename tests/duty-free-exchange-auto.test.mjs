@@ -79,10 +79,11 @@ test('live lease and expired older lease cannot create duplicate requests or ove
  const {db}=localDb(t);
  assert.equal(await claimDutyFreeAttempt(db,'shilla',new Date(now),'old'),true);
  assert.equal(await claimDutyFreeAttempt(db,'shilla',new Date(now+100),'duplicate'),false);
- assert.equal(await claimDutyFreeAttempt(db,'shilla',new Date(now+120_001),'new'),true);
+  assert.equal(await claimDutyFreeAttempt(db,'shilla',new Date(now+120_001),'expired_but_not_due'),false);
+  assert.equal(await claimDutyFreeAttempt(db,'shilla',new Date(now+3_600_001),'new'),true);
  const older=await saveDutyFreeSuccess(db,observation('shilla',now,1340),'old');assert.equal(older.changedRows,0);assert.equal(older.leaseOwned,false);
- const latest=await saveDutyFreeSuccess(db,observation('shilla',now+120_002,1345),'new');assert.equal(latest.leaseOwned,true);
- assert.equal((await readDutyFreeSnapshot(db,new Date(now+120_003))).sources[0].observation.krwPerUnit,1345);
+  const latest=await saveDutyFreeSuccess(db,observation('shilla',now+3_600_002,1345),'new');assert.equal(latest.leaseOwned,true);
+  assert.equal((await readDutyFreeSnapshot(db,new Date(now+3_600_003))).sources[0].observation.krwPerUnit,1345);
 });
 
 test('bad content, excessive bodies and invalid selector never replace a verified price',async t=>{
