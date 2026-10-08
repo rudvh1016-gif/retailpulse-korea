@@ -1315,10 +1315,10 @@ test("desktop navigation promotes Guide Desk in the exact localized order", asyn
   await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 1280, height: 900 });
   const expected = {
-    ko: ["서울", "공항", "매장", "예측", "관광안내", "기록", "소개", "더보기"],
-    en: ["Seoul", "Airport", "Business", "Outlook", "Guide Desk", "Records", "About", "More"],
-    zh: ["首尔", "机场", "门店", "预测", "旅游咨询", "记录", "关于", "更多"],
-    ja: ["ソウル", "空港", "店舗", "予測", "観光案内", "記録", "紹介", "その他"],
+    ko: ["서울", "공항", "매장", "오늘 어디 갈까", "요즘 뜨는 소비", "관광안내", "기록", "소개", "더보기"],
+    en: ["Seoul", "Airport", "Business", "Where to go", "Consumption", "Guide Desk", "Records", "About", "More"],
+    zh: ["首尔", "机场", "门店", "今天去哪里", "近期消费", "旅游咨询", "记录", "关于", "更多"],
+    ja: ["ソウル", "空港", "店舗", "今日はどこへ", "最近の消費", "観光案内", "記録", "紹介", "その他"],
   } as const;
 
   for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
@@ -1326,7 +1326,7 @@ test("desktop navigation promotes Guide Desk in the exact localized order", asyn
     const nav = page.locator("nav.top-nav");
     await expect(nav).toBeVisible();
     expect(await nav.locator("a").allInnerTexts()).toEqual([expected[locale][1],expected[locale][0],...expected[locale].slice(2)]);
-    await expect(nav.locator("a[aria-current='page']")).toHaveText(expected[locale][4]);
+    await expect(nav.locator("a[aria-current='page']")).toHaveText(expected[locale][5]);
     await expect(page.locator("nav.bottom-nav")).toBeHidden();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `${locale} desktop header must not overflow`).toBeLessThanOrEqual(1);

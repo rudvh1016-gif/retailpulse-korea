@@ -41,11 +41,11 @@ const copy = {
 } as const;
 
 const finishColors = {
- elapsed: {front:['#bed8e7','#84aec9','#739db9'],side:['#789fb6','#577d99'],cap:['#e5f0f6','#afcddf']},
- ahead: {front:['#e3eef3','#bfd6e2','#a8c5d7'],side:['#a6c3d3','#87a9bf'],cap:['#f4f8fb','#d5e5ee']},
- now: {front:['#d5e9df','#9dc5b4','#80ae9f'],side:['#85b09e','#638f80'],cap:['#eef7f1','#b8d8c9']},
- peak: {front:['#a9cde2','#6c9ebb','#5786a5'],side:['#608ba6','#426b88'],cap:['#dcecf6','#a4c6dd']},
- layer: {front:['#cfe3dc','#a0c6b9','#85aa9e'],side:['#8baea0','#6e9286'],cap:['#ebf4ef','#bfd8cc']}
+ elapsed: {front:['#c5d3f2','#8ba2dc','#728bcb'],side:['#7890cb','#5875b8'],cap:['#ecf0fb','#bcccf0']},
+ ahead: {front:['#ebeffa','#c5d2ed','#adc0e5'],side:['#a8bce2','#8ca5d5'],cap:['#f8f9ff','#dce4f7']},
+ now: {front:['#d1def6','#93ace3','#7392ce'],side:['#809bce','#5678b5'],cap:['#eef3fc','#bdd0ee']},
+ peak: {front:['#b4c6ed','#819ed8','#6386c4'],side:['#6a8ac2','#496daf'],cap:['#e8eefb','#b7ccef']},
+ layer: {front:['#e8e1f6','#c8bce4','#b29fd6'],side:['#b09ace','#917bb7'],cap:['#f6f2fc','#ddd1ee']}
 } as const;
 const REVEAL_TOTAL_MS = REVEAL_MS * 2;
 const kstClock = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false });
@@ -249,7 +249,8 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
       <g className="airport-hourly-prisms" aria-hidden="true" pointerEvents="none">
         {layout.bands.map((band, index) => {
           const barHeight = band.value / layout.maxBand * (base - top);
-          const x = band.x + band.width * .2, w = band.width * .55, depth = Math.min(5, band.width * .16);
+          const mobile=width<560;
+          const x = band.x + band.width * (mobile?.24:.2), w = band.width * (mobile?.38:.55), depth = Math.min(mobile?2:5, band.width * (mobile?.10:.16));
           const y = base - barHeight;
           const finish = band.peak ? "peak" : band.now && !layout.stacked ? "now" : layout.now && band.x >= layout.now.x ? "ahead" : "elapsed";
           const lower = layout.stacked ? layout.layers[0].values[index] / layout.maxBand * (base - top) : 0;
