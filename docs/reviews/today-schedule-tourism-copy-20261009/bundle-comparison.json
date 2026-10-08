@@ -1,0 +1,29 @@
+{
+  "environment": "same Node24.17 native vinext build and installed dependencies; Node default gzip settings",
+  "base": "22b7b0c28fdce1712b0c0fcbfa83023c4e1f64ce",
+  "before": {
+    "js": {
+      "files": 20,
+      "gzipBytes": 465265
+    },
+    "css": {
+      "files": 7,
+      "gzipBytes": 55716
+    }
+  },
+  "after": {
+    "js": {
+      "files": 20,
+      "gzipBytes": 463574
+    },
+    "css": {
+      "files": 7,
+      "gzipBytes": 55716
+    }
+  },
+  "delta": {
+    "js": -1691,
+    "css": 0
+  },
+  "limitation": "all client assets, not initial route transfer or PSI/LCP/CLS"
+}

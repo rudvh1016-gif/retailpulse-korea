@@ -376,3 +376,98 @@ test("a day with no collected flight is never compared as -100% against a past d
     unlinkSync(databasePath);
   }
 });
+
+
+// The held official next-day schedule becomes TODAY at midnight before the first A1 scan.
+function heldSchedule(database, date, payload = JSON.stringify(Array.from({ length: 585 }, (_, i) => ({
+  physicalFlightId: 'held-' + i,
+  operatingFlight: 'KE' + (i + 1),
+  terminal: i < 108 ? 'T1' : i < 310 ? 'CONCOURSE' : 'T2',
+  scheduledTime: i === 0 ? '00:10' : i === 584 ? '23:55' : '12:00',
+})))) {
+  database.prepare('INSERT INTO airport_departure_schedule VALUES (?,?,?)')
+    .run(date, payload, '2026-09-03T13:43:00Z');
+}
+
+function onePartialSchedule(database, date) {
+  const columns = database.prepare('PRAGMA table_info(airport_scheduled_flights)').all();
+  const values = {
+    id: 'partial-1', physical_schedule_id: 'partial-1', operating_flight: 'KE999',
+    terminal: 'T1', scheduled_time: '09:00',
+    weekdays: JSON.stringify(['SUN','MON','TUE','WED','THU','FRI','SAT']),
+    valid_from: date, valid_to: date, retrieved_at: '2026-09-03T13:43:00Z',
+  };
+  database.prepare('INSERT INTO airport_scheduled_flights (' + columns.map(c => c.name).join(',') +
+    ') VALUES (' + columns.map(() => '?').join(',') + ')')
+    .run(...columns.map(c => values[c.name] ?? (/INT|REAL|NUM/i.test(c.type) ? 0 : c.name)));
+}
+
+test('TODAY before its first collected flight uses every held official departure in the briefing', async () => {
+  const { database, databasePath } = openDatabase('today-held-briefing');
+  try {
+    const clock = clockFor('2026-09-03T15:14:00Z');
+    heldSchedule(database, clock.kstToday);
+    onePartialSchedule(database, clock.kstToday);
+    const client = new LocalD1Database(database);
+    const body = await (await summarizeLiveSummary(client, clock)).json();
+    const airport = body.airport;
+    assert.equal(body.dayRelation, 'TODAY');
+    assert.equal(airport.scheduledBriefing.basis, 'OFFICIAL_DEPARTURE_SCHEDULE');
+    assert.equal(airport.scheduledBriefing.ranking.all.totalFlights, 585);
+    assert.deepEqual(airport.scheduled.map(row => [row.terminal, row.flights]),
+      [['T1',108],['CONCOURSE',202],['T2',275]]);
+    assert.equal(airport.scheduled[0].firstTime, '00:10');
+    assert.equal(airport.scheduled[2].lastTime, '23:55');
+    assert.equal(airport.scheduled[0].retrievedAt, '2026-09-03T13:43:00Z');
+    assert.equal(airport.departuresTrackedToday, null, 'a schedule is never an actual operation count');
+    assert.equal(airport.todayExpectedPassengersTotal, null, 'flight counts never become people');
+    assert.equal(client.trips.length, 1, 'no extra D1 round trip');
+    assert.equal(client.trips[0].count, 30, 'no extra statement');
+  } finally { database.close(); unlinkSync(databasePath); }
+});
+
+test('empty or malformed held TODAY payload falls back to the existing partial schedule', async () => {
+  for (const [name, payload] of [['empty','[]'],['invalid','{invalid']]) {
+    const { database, databasePath } = openDatabase('today-held-' + name);
+    try {
+      const clock = clockFor();
+      heldSchedule(database, clock.kstToday, payload);
+      onePartialSchedule(database, clock.kstToday);
+      const airport = (await (await summarizeLiveSummary(new LocalD1Database(database), clock)).json()).airport;
+      assert.equal(airport.scheduledBriefing.basis, 'PARTIAL_SCHEDULE');
+      assert.equal(airport.scheduledBriefing.ranking.all.totalFlights, 1);
+    } finally { database.close(); unlinkSync(databasePath); }
+  }
+});
+
+test('TODAY with a collected flight retains the partial briefing instead of relabelling the held schedule as actual', async () => {
+  const { database, databasePath } = openDatabase('today-held-after-scan');
+  try {
+    const clock = clockFor();
+    heldSchedule(database, clock.kstToday);
+    onePartialSchedule(database, clock.kstToday);
+    database.prepare("INSERT INTO airport_flights (id,source_id,record_origin,direction,flight_number,terminal,gate,status,scheduled_at,event_at,retrieved_at,freshness,schema_version,quality_status,source_hash,physical_flight_id) VALUES ('actual','INCHEON_FLIGHT_DETAIL','LIVE','departure','KE1','T2','250','on_time',?,?,'2026-09-04T04:00:00Z','LIVE','v1','VALID','actual','actual')")
+      .run(clock.kstToday+'T08:00:00+09:00',clock.kstToday+'T08:00:00+09:00');
+    const airport = (await (await summarizeLiveSummary(new LocalD1Database(database), clock)).json()).airport;
+    assert.equal(airport.departuresTrackedToday, 1);
+    assert.equal(airport.scheduledBriefing.basis, 'PARTIAL_SCHEDULE');
+    assert.equal(airport.scheduledBriefing.ranking.all.totalFlights, 1);
+  } finally { database.close(); unlinkSync(databasePath); }
+});
+
+test('held schedule FUTURE behavior remains official while PAST never resurrects a schedule', async () => {
+  for (const [relation, delta, expected] of [['FUTURE',1,585],['PAST',-1,0]]) {
+    const { database, databasePath } = openDatabase('held-' + relation);
+    try {
+      const base = clockFor();
+      const date = shiftKstDay(base.kstToday, delta);
+      heldSchedule(database, date);
+      onePartialSchedule(database, date);
+      const clock = { ...base, serviceDate: date, dayRelation: relation, dayStartAt: kstDayBounds(date).startAt };
+      const airport = (await (await summarizeLiveSummary(new LocalD1Database(database), clock)).json()).airport;
+      assert.equal(airport.scheduledBriefing.ranking.all.totalFlights, expected);
+      assert.equal(airport.scheduledBriefing.basis, relation === 'FUTURE' ? 'OFFICIAL_DEPARTURE_SCHEDULE' : 'PARTIAL_SCHEDULE');
+      assert.equal(airport.departuresTrackedToday, null);
+    } finally { database.close(); unlinkSync(databasePath); }
+  }
+});

@@ -1,0 +1,17 @@
+{
+  "protectedFiles": 61,
+  "mismatches": [
+    {
+      "file": "app/api/live/summary/route.ts",
+      "expected": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8",
+      "actual": "229e239cfcbe46f0ab24e0afc3129168d0052b9c2c0a6c90bc8127572c72b199"
+    },
+    {
+      "file": "app/tourism-desk.tsx",
+      "expected": "7bc8f2376311b8ea2ea53a7ccd42d37ddf928087a7ba4b2e230b68a064ff33e3",
+      "actual": "9136892360c522c0e5e29c7d45275ee81a671e36d579177c6c2f97d8923f4f2a"
+    }
+  ],
+  "baselineUnchanged": true,
+  "enforcementUnchanged": true
+}
