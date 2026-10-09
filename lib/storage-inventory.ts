@@ -68,6 +68,11 @@ const AREAS = ["myeongdong", "hongdae", "seongsu", "itaewon"] as const;
 const BY_AREA = { column: "area", values: AREAS } as const;
 
 export const STORAGE_TABLES: readonly TableInventory[] = [
+  // Prepared METAR storage: one RKSI current row and one bounded attempt row.
+  { table: "airport_metar_current", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
+    readers: "Stored RKSI ground observation API; no raw snapshot history", insertedAt: "retrieved_at" },
+  { table: "airport_metar_attempt", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
+    readers: "Prepared hourly request budget and latest attempt; collector not activated", insertedAt: "claimed_at" },
   // Bounded latest state: two vendors per table, no retained HTML or history.
   { table: "duty_free_exchange_current", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
     readers: "Stored official duty-free exchange snapshot API", insertedAt: "first_verified_at" },

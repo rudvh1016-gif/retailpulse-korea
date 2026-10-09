@@ -63,15 +63,51 @@ test (1 pass); unchanged credential-pattern checks on new files. The lock and
 its approval hashes were preserved. Existing parser suites and prior passed
 audits were not repeated just for reporting.
 
-Production imports of the new module: none. The frontend, API routes, database,
-collector runners, workflows, scheduler and existing airport placeholder were
-not changed. UI builds/E2E and runtime serving latency are therefore not new
-local verification claims; normal PR CI remains authoritative for its result.
+The expanded candidate adds `airport-metar-store.ts`, the prepared migration
+`0025_airport_metar.sql`, `/api/airport/weather`, and the existing `AirportWeather`
+component already below current departure halls. The protected placement file
+needs no weather edit. The route returns stored RKSI observations only: no
+provider call, key access, migration or write on a visitor request. Unprepared,
+empty or invalid storage stays unavailable. The bounded primary-key join
+returns at most one row; actual Cloudflare row-read/CPU usage is not measured.
 
-Before public connection: review source reuse terms/account quota and cadence,
-wire canonical changed-only storage with actual concurrent-write tests, select
-one approved existing scheduler owner, then connect stored read data and UI
-under the original file-specific approval procedure. Those actions are not
-completed by this PR. The pending Seongsu/arrival/Seoul-model UI approval bundle
-is separate and remains untouched. Owner-controlled merge/release is still
-required; this branch must not deploy independently.
+Canonical storage retains one current row and one attempt row, both classified
+as A_CURRENT in the existing inventory. Semantic duplicates write zero
+canonical rows and keep the original observation/retrieval clock. Attempt
+metadata remains separate. A database claim commits the hourly budget before
+a future loader runs; expired/crashed leases cannot reset it, stale leases
+cannot overwrite new data, and blocking auth/quota outcomes defer 24 hours.
+SQLite tests include two independent database connections. No operational DB
+migration or write was performed, and no raw history/backfill is introduced.
+
+The prepared collector has no production importer or enabled invocation.
+Existing 15-minute realtime opportunities could use this persistent one-hour
+guard for at most 24 single-request loader invocations/day with no immediate
+retries or new scheduler. The existing weather workflow runs eight times/day;
+its three-hour gaps exceed the provisional 90-minute freshness threshold, so
+that alternative cannot sustain a current label. Neither path is activated.
+The supplied account quota needs operational verification; the existing
+one-shot request allowance remains exhausted. Normal UI-lock approval is not
+authorization for new METAR requests or continuous collection.
+
+The client reads the stored API once and keeps units, observation time and
+retrieval time distinct. Freshness uses the server response clock plus elapsed
+monotonic browser time, so an incorrect device clock cannot extend it. An exact
+expiry timer turns current into stale without a new provider or API request.
+Reserved space, tabular numerals and inherited typography keep the layout
+stable. All four languages, 360/390/430/1280 widths, keyboard details, reduced
+motion, zero, missing, malformed, failed, stale and expiry states are covered.
+Local browser proof uses the captured safe observation fixture, not a public
+production connection. Original fixture clock helpers are preserved.
+
+Public METAR connection still requires source reuse terms/account quota and
+cadence approval, approved operational migration/current-data write, actual
+D1/Worker measurements, and one existing runner integration. Normal release
+approval is also required. No source activation, settings change, new key,
+additional provider request, merge or deployment was performed.
+
+The separate retained-day/arrival/Seoul-model bundle received specific owner
+approval on 2026-10-09. Its exact two protected hashes were updated normally,
+with all61 protected paths, other59 hashes, historical approvals, cron values
+and original assertion preserved. See `approvals/requested-integration-20261009.json`.
+It is consolidated into this candidate so the owner receives one merge request.

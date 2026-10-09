@@ -376,3 +376,47 @@ test("a day with no collected flight is never compared as -100% against a past d
     unlinkSync(databasePath);
   }
 });
+
+test('a selected past Seoul day returns its own retained observations and baseline, never today', async () => {
+  const database = new DatabaseSync(':memory:');
+  try {
+    for (const file of migrations) database.exec(readFileSync(file, 'utf8').replaceAll('--> statement-breakpoint', ''));
+    const insert = database.prepare(`INSERT INTO seoul_realtime_area
+      (id,source_id,record_origin,area,area_code,area_name,congestion_level,congestion_label,population_min,population_max,observed_at,retrieved_at,freshness,schema_version,quality_status,source_hash)
+      VALUES (?,?,'LIVE','seongsu','POI068','성수',1,'여유',?,?,?,'2026-10-09T00:00:00Z','LIVE','seoul-realtime-v1',?,?)`);
+    for (const [id,at,min,max,quality,source] of [
+      ['baseline','2026-10-01T23:50:00+09:00',1000,1500,'VALID','SEOUL_CITYDATA_PPLTN'],
+      ['early','2026-10-08T09:00:00+09:00',10000,12000,'VALID','SEOUL_CITYDATA_PPLTN'],
+      ['last','2026-10-08T23:50:00+09:00',0,500,'VALID','SEOUL_CITYDATA_PPLTN'],
+      ['invalid','2026-10-08T23:55:00+09:00',100,200,'INVALID','SEOUL_CITYDATA_PPLTN'],
+      ['other-source','2026-10-08T23:59:00+09:00',100,200,'VALID','OTHER_SOURCE'],
+      ['midnight','2026-10-09T00:00:00+09:00',30000,40000,'VALID','SEOUL_CITYDATA_PPLTN'],
+      ['now','2026-10-09T09:00:00+09:00',60000,70000,'VALID','SEOUL_CITYDATA_PPLTN'],
+    ]) insert.run(id,source,min,max,at,quality,id);
+    const client=new LocalD1Database(database),prepared=[];
+    const prepare=client.prepare.bind(client);client.prepare=sql=>{const statement=prepare(sql);prepared.push(statement);return statement;};
+    const clock={...clockFor('2026-10-09T00:30:00Z'),serviceDate:'2026-10-08',dayRelation:'PAST',dayStartAt:'2026-10-08T00:00:00+09:00'};
+    const body=await (await summarizeLiveSummary(client,clock)).json();
+    const seongsu=body.areas.seongsu;
+    assert.equal(body.serviceDateKst,'2026-10-08');
+    assert.equal(seongsu.realtime.observedAt,'2026-10-08T23:50:00+09:00');
+    assert.equal(seongsu.realtime.populationMin,0);assert.equal(seongsu.realtime.populationMax,500);
+    assert.equal(seongsu.realtime.freshness,'STALE');
+    assert.equal(seongsu.realtime.comparisons['7'].baselineAt,'2026-10-01T23:50:00+09:00');
+    assert.deepEqual(seongsu.observedSeries.map(row=>row.observedAt),['2026-10-08T09:00:00+09:00','2026-10-08T23:50:00+09:00']);
+    assert.deepEqual(seongsu.realtimeForecast,[]);
+    assert.equal(client.trips.length,1);assert.equal(client.trips[0].kind,'batch');assert.ok(client.trips[0].count<50);
+    const queries=prepared.filter(s=>s.sql.includes('FROM seoul_realtime_area')&&s.sql.includes('ORDER BY observed_at DESC LIMIT'));
+    for(const statement of queries){
+      const plan=database.prepare('EXPLAIN QUERY PLAN '+statement.sql).all(...statement.values).map(row=>row.detail).join('\n');
+      assert.match(plan,/SEARCH seoul_realtime_area USING INDEX/);assert.doesNotMatch(plan,/SCAN seoul_realtime_area/);
+    }
+    const today=await (await summarizeLiveSummary(new LocalD1Database(database),clockFor('2026-10-09T00:30:00Z'))).json();
+    assert.equal(today.areas.seongsu.realtime.observedAt,'2026-10-09T09:00:00+09:00');
+    assert.deepEqual(today.areas.seongsu.observedSeries.map(row=>row.observedAt),['2026-10-09T09:00:00+09:00']);
+    const missing=await (await summarizeLiveSummary(new LocalD1Database(database),{...clock,serviceDate:'2026-10-07',dayStartAt:'2026-10-07T00:00:00+09:00'})).json();
+    assert.equal(missing.areas.seongsu.realtime,null);assert.deepEqual(missing.areas.seongsu.observedSeries,[]);
+    const future=await (await summarizeLiveSummary(new LocalD1Database(database),{...clock,serviceDate:'2026-10-10',dayStartAt:'2026-10-10T00:00:00+09:00',dayRelation:'FUTURE'})).json();
+    assert.equal(future.areas.seongsu.realtime,null);assert.deepEqual(future.areas.seongsu.observedSeries,[]);
+  } finally { database.close(); }
+});

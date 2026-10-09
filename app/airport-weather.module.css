@@ -1,0 +1,10 @@
+.body { min-block-size: 150px; color: #000; }
+.metrics { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px 12px; margin: 10px 0; }
+.metrics dt { color: inherit; }
+.metrics dd { margin: 4px 0 0; min-inline-size: 7ch; font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
+.metrics small { font-size: inherit; font-weight: normal; }
+.basis { margin: 6px 0; overflow-wrap: anywhere; }
+.details { margin-block-start: 8px; }
+.details summary { min-block-size: 44px; display: flex; align-items: center; cursor: pointer; }
+.details summary:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.details a { display: inline-flex; align-items: center; min-block-size: 44px; color: inherit; }

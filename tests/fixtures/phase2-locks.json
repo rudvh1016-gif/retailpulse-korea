@@ -13,13 +13,13 @@
     "app/api/live/events/route.ts": "f85c532f05c89b1412fbd77a04ff88d5d3b9f8587ddbebad00dbe1c3df9ed7a4",
     "app/api/live/flights/route.ts": "fb7bbfc1132359dceb4d315997eaf26bfc5b27d3f03f2bb9b8be4fe46718c1bd",
     "app/api/live/predictions/route.ts": "b82f003bd3d77c293a379c4dbd0bf5e2aa449b19e54a65119ef2e4f291cdfced",
-    "app/api/live/summary/route.ts": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8",
+    "app/api/live/summary/route.ts": "147b9c17727c1041e424fe89e9305878c8a9d794e7c531a36c49f81ae24b99b1",
     "app/area-demand-card.tsx": "78254205092521a36a61fe35aa3ff57c8d91ef1921199cad353c0792dc251dab",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "42c61ee811f638e410c3088d96cdd1efbfb928b4e2a6473e10ec1510b0197d04",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
     "app/layout.tsx": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
-    "app/live-signals.tsx": "75888c628f76c15fe6a0c71501742aa74462d5541cb5d2b113e6a9816e82c2a4",
+    "app/live-signals.tsx": "ea7bf2f25b0563eb40d4e1b9cc489c2fe41ef19fc94cd393ac53f016c63fe680",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "d2fcba67493abf4fa0ba40d4fc98096f9b2860af6d959102850449eab323641a",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
@@ -818,6 +818,42 @@
         "file": "app/install-app.tsx",
         "previous": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
         "approved": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22"
+      }
+    ]
+  },
+  "ownerApprovedRetainedDayArrivalAndSeoulModels20261009": {
+    "recordedAt": "2026-10-09T03:12:00.171Z",
+    "sourceMain": "71b88933866222e5ba4f3e491a2feca8ce982319",
+    "approvalEvidenceFile": "docs/approvals/requested-integration-20261009.json",
+    "authorizationEvidence": {
+      "sourceThreadId": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "assistantMessageId": "Sentinel_e838771c50cc819185808c390914d047",
+      "assistantAtUtc": "2026-10-09T02:40:55Z",
+      "assistantQuestion": "남은 반영 승인은 한 번에 묶을게. ① 성수의 어제 기록 복구 ② 요청한 입국 문구 삭제·서울 블렌더 연결에 맞춰 변경 기준을 갱신해도 될까? 기존 보호 검사는 유지하고, 이 수정 범위만 승인 기록에 넣는 거야.",
+      "ownerMessageId": "Sentinel_618f9f38f8908191b68eed3f203811a7",
+      "ownerAtUtc": "2026-10-09T03:07:57Z",
+      "ownerAnswer": "싹다갱신해",
+      "approvedProtectedFiles": [
+        "app/api/live/summary/route.ts",
+        "app/live-signals.tsx"
+      ],
+      "normalApprovalFixture": "tests/fixtures/phase2-locks.json",
+      "scope": "Restore retained selected-day Seoul observations; remove the requested arrival sentence and revise its heading; mount the approved Seoul Blender models using the existing summary; record only matching changed protected-file hashes.",
+      "keepProtectedListAndEnforcement": true,
+      "noMergeOrDeployment": true,
+      "noAdditionalMETARCallsOrActivation": true
+    },
+    "reason": "Normal hash bookkeeping only for the newly approved retained-day observations, requested arrival copy removal and Seoul Blender model mount. All61 protected paths, other59 protected hashes, crons, original enforcement and prior approval records remain. Previous unrelated rejected changes are not copied. No METAR source-call expansion, production activation, merge or deployment.",
+    "changes": [
+      {
+        "file": "app/api/live/summary/route.ts",
+        "previous": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8",
+        "approved": "147b9c17727c1041e424fe89e9305878c8a9d794e7c531a36c49f81ae24b99b1"
+      },
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "75888c628f76c15fe6a0c71501742aa74462d5541cb5d2b113e6a9816e82c2a4",
+        "approved": "ea7bf2f25b0563eb40d4e1b9cc489c2fe41ef19fc94cd393ac53f016c63fe680"
       }
     ]
   }

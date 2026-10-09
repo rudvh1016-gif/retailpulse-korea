@@ -10,7 +10,7 @@ export const METAR_FRESH_MINUTES = 90;
 export type AirportMetarStatus = 'OK' | 'NO_DATA' | 'AUTH_BLOCKED' | 'RATE_LIMITED'
   | 'PROVIDER_ERROR' | 'TIMEOUT' | 'NETWORK_ERROR' | 'SCHEMA_UNVERIFIED'
   | 'INCOMPLETE_RESPONSE' | 'OBSERVATION_TIME_INVALID' | 'CONFLICTING_REPORTS'
-  | 'RETRIEVAL_TIME_INVALID';
+  | 'RETRIEVAL_TIME_INVALID' | 'OUT_OF_ORDER';
 export interface AirportMetarMeasurement {
   value: number;
   unit: string;
@@ -130,4 +130,28 @@ export function airportMetarProjection(current: AirportMetarAttempt | null, late
     fogState: 'UNKNOWN' as const, turbulenceRisk: 'NOT_INFERRED' as const,
     cacheControl: status === 'CURRENT' && windVerified ? `public, max-age=${Math.min(60, remainingSeconds)}` : 'no-store',
   };
+}
+
+/** Validate serialized canonical data before storage/serving. Never trust JSON casts. */
+export function verifiedStoredMetarAttempt(input: unknown): AirportMetarAttempt | null {
+  const row=object(input), retrievedAt=utc(row?.retrievedAt);
+  const statuses: AirportMetarStatus[]=['OK','NO_DATA','AUTH_BLOCKED','RATE_LIMITED','PROVIDER_ERROR','TIMEOUT','NETWORK_ERROR','SCHEMA_UNVERIFIED','INCOMPLETE_RESPONSE','OBSERVATION_TIME_INVALID','CONFLICTING_REPORTS','RETRIEVAL_TIME_INVALID','OUT_OF_ORDER'];
+  if(!retrievedAt||!statuses.includes(row?.status as AirportMetarStatus))return null;
+  const status=row!.status as AirportMetarStatus;
+  if(status!=='OK')return {status,retrievedAt,observation:null};
+  const observation=object(row?.observation), observedAt=utc(observation?.observedAt);
+  if(!observation||observation.sourceId!==AIRPORT_METAR_SOURCE||observation.station!=='RKSI'
+    ||!['METAR','SPECI'].includes(String(observation.reportType))||!observedAt
+    ||Date.parse(observedAt)>Date.parse(retrievedAt)+5*MINUTE_MS
+    ||observation.measurementScope!=='GROUND_OBSERVATION'||observation.turbulenceRisk!=='NOT_INFERRED')return null;
+  const original=object(observation.measurements);if(!original)return null;
+  const bounds: Record<AirportMetarField,[string[],number,number]>={airTemperature:[['Cel'],-100,100],dewpointTemperature:[['Cel'],-100,100],qnh:[['hPa'],100,1200],meanWindDirection:[['deg'],0,360],meanWindSpeed:[['m/s','[kn_i]'],0,500],windGustSpeed:[['m/s','[kn_i]'],0,500],prevailingVisibility:[['m'],0,100000]};
+  const measurements: AirportMetarObservation['measurements']={};
+  for(const [name,[units,min,max]]of Object.entries(bounds)){
+    if(original[name]===undefined)continue;const value=object(original[name]);
+    if(!value||typeof value.value!=='number'||!Number.isFinite(value.value)||value.value<min||value.value>max||!units.includes(String(value.unit)))return null;
+    if(value.qualifier!==undefined&&(name!=='prevailingVisibility'||!['ABOVE','BELOW'].includes(String(value.qualifier))))return null;
+    measurements[name as AirportMetarField]={value:value.value,unit:String(value.unit),...(value.qualifier?{qualifier:value.qualifier as 'ABOVE'|'BELOW'}:{})};
+  }
+  return {status,retrievedAt,observation:{sourceId:AIRPORT_METAR_SOURCE,station:'RKSI',reportType:observation.reportType as 'METAR'|'SPECI',observedAt,measurements,measurementScope:'GROUND_OBSERVATION',turbulenceRisk:'NOT_INFERRED'}};
 }

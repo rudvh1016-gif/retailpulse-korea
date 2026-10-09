@@ -32,7 +32,7 @@ export function queueHeat(reading: QueueHeatReading, now: number): { level: Queu
     : reading.waitTimeMinutes ?? (raw ? Number(raw) : null);
   if (minutes === null || !Number.isFinite(minutes) || minutes < 0) return {level:'neutral', state:'missing'};
   const level = minutes < 20 ? 'clear' : minutes < 40 ? 'normal' : minutes < 60 ? 'busy' : 'very-busy';
-  if (reading.terminal === 'T1' && /^[2-5][EW]$/.test(reading.zone)) {
+  if (reading.terminal === 'T1' && /^(?:DG[2-5]_[EW]|[2-5][EW])$/.test(reading.zone)) {
     return {level, state:'current', basis:'KORETAIL_MINUTES'};
   }
   if (reading.terminal !== 'T2' || !/^DG[12]_[ABCD]$/.test(reading.zone)) return {level:'neutral', state:'unverified'};
