@@ -1,0 +1,56 @@
+{
+  "recordedAt": "2026-10-09T12:56:47.002019+00:00",
+  "authorizationEvidence": {
+    "ownerRequest": "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+    "clarifiedScope": "Owner follow-ups authorize Seoul glance visit-time forecasts/events/payment shares, baggage choice and separate travel entry, specified airport copy/material/chart changes, one Seoul forecast weather card with PM readings retained, historical definitions/dates, always-open store actions, store feeling-entry removal, tourism show/copy removal, monthly population wording/selectors and usage-guide paragraphs. Implementation, validation and draft PR only.",
+    "approvedProtectedFiles": [
+      "app/globals.css",
+      "app/live-signals.tsx",
+      "app/operational-context.tsx",
+      "app/retailpulse-app.tsx",
+      "app/seo-config.ts",
+      "app/site-usage-guide.tsx",
+      "app/tourism-desk.tsx"
+    ],
+    "keepProtectedListAndEnforcement": true,
+    "agentMergeOrDeploymentApproved": false
+  },
+  "reason": "Normal scoped hash bookkeeping for the explicit owner follow-ups; retain all 61 protected paths, prior approval records, original enforcement tests and scheduler expressions. No prediction/statistical calculation redesign, source activation, merge or deployment.",
+  "changes": [
+    {
+      "file": "app/globals.css",
+      "previous": "42c61ee811f638e410c3088d96cdd1efbfb928b4e2a6473e10ec1510b0197d04",
+      "approved": "a1344d20a9e458e22b7a5703f7a961813d4a8b9ccd63dbed8c4b288bad5ca840"
+    },
+    {
+      "file": "app/live-signals.tsx",
+      "previous": "918ecd9275d335c01f1577695a1c2632526aa64f290acecfea0389122b3e5f9a",
+      "approved": "db960eabf8cee38388ceeb11523cc80e3762f9accd2a2668f9335a185c9c2957"
+    },
+    {
+      "file": "app/operational-context.tsx",
+      "previous": "d2fcba67493abf4fa0ba40d4fc98096f9b2860af6d959102850449eab323641a",
+      "approved": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6"
+    },
+    {
+      "file": "app/retailpulse-app.tsx",
+      "previous": "4fff045b01ced3d192be7e0dd478ab5372bbb9c024322c5ab79903d0033bdc1d",
+      "approved": "dd0affc7e2210bf0c207520bf99cacb06a8bc3e4485b3d3eb2babe2dfbf28fb8"
+    },
+    {
+      "file": "app/seo-config.ts",
+      "previous": "88706de549837235cd8a3f1731abb2a28808b4a3a6102a59913ee40fbb9651e1",
+      "approved": "48c26a8642d0dae4ebea5988064ffaf58611b9982d5d06f5ee0593d6416234b8"
+    },
+    {
+      "file": "app/site-usage-guide.tsx",
+      "previous": "34ac91ba8e1d48849f766622bca163353dc1c9a09439b54aadb28c1d7b882460",
+      "approved": "4b49e1bd31a91e35f7d0b56b6d1670d94cf644bcc47bcb257508a2a0f6cc64f1"
+    },
+    {
+      "file": "app/tourism-desk.tsx",
+      "previous": "7bc8f2376311b8ea2ea53a7ccd42d37ddf928087a7ba4b2e230b68a064ff33e3",
+      "approved": "b4a2e069adc6ed21fa3d6e93571d8a7344bae2b8570ec58613ddf5238d50ab5f"
+    }
+  ]
+}

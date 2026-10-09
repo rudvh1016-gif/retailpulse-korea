@@ -9,7 +9,7 @@
  * profiles). Everything else is computed here. The only thing kept is this
  * device's last look at the same date and terminal, for "changed since".
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import type { Lang } from './retailpulse-data';
 import { useFlights } from './flights-client';
 import { dailyFlightProfile, type ProfileRow } from '../lib/airport-day-profile';
@@ -76,12 +76,17 @@ function kstClock(iso: string): string {
 }
 
 function HourBars({ lang, current, other }: { lang: Lang; current: TerminalDay; other: TerminalDay }) {
+  const id = useId().replace(/:/g, '');
   const max = Math.max(1, ...current.hours, ...other.hours);
   const width = 480, height = 90, bar = width / 24;
   return <svg viewBox={`0 0 ${width} ${height + 16}`} width="100%" role="img" data-testid="similar-hours"
     aria-label={`${copy.today[lang]} / ${copy.thatDay[lang]}`} style={{ display: 'block', maxWidth: 520 }}>
-    {current.hours.map((value, hour) => <rect key={`c${hour}`} x={hour * bar + 1} y={height - (value / max) * height} width={bar / 2 - 1} height={(value / max) * height} fill="var(--blue)"/>)}
-    {other.hours.map((value, hour) => <rect key={`o${hour}`} x={hour * bar + bar / 2} y={height - (value / max) * height} width={bar / 2 - 1} height={(value / max) * height} fill="var(--muted)"/>)}
+    <defs>{[['current','#c4e6f3','#f3fbfe'],['other','#bedbd2','#f3faf7']].map(([name,bottom,top])=><linearGradient key={name} id={`${id}-${name}`} x1="0" y1="1" x2="0" y2="0"><stop offset="0" stopColor={bottom}/><stop offset="1" stopColor={top}/></linearGradient>)}</defs>
+    {[[current,'current'],[other,'other']].map(([day,name])=>(day as TerminalDay).hours.map((value,hour)=>{
+      const x=hour*bar+(name==='current'?1:bar/2), y=height-value/max*height, w=bar/2-1, h=value/max*height, cap=Math.min(3,h);
+      return <g key={`${name}-${hour}`}><title>{name==='current'?copy.today[lang]:copy.thatDay[lang]} {String(hour).padStart(2,'0')}: {value}</title><rect x={x} y={y} width={w} height={h} fill={`url(#${id}-${name})`}/>{value>0&&<><path d={`M${x+w-2} ${y}h2v${h}h-2Z`} fill={name==='current'?'#9fc7d8':'#9dbdb1'}/><path d={`M${x} ${y}h${w}l-2 ${cap}h${2-w}Z`} fill="#fff" opacity=".85"/></>}</g>;
+    }))}
+    <line x1="0" x2={width} y1={height} y2={height} stroke="var(--line)"/>
     {[0, 6, 12, 18, 23].map((hour) => <text key={hour} x={hour * bar + 2} y={height + 13} fontSize={11} fill="var(--muted)">{String(hour).padStart(2, '0')}</text>)}
   </svg>;
 }
@@ -122,7 +127,7 @@ export default function DayRadarBlock({ lang, date, dayRelation, terminal, nowIs
   return <div data-testid="day-radar">
     <h3>{copy.radarTitle[lang]}</h3>
     <ol className="prep-facts" data-testid="radar-items">
-      {items.map((item, index) => <li key={index} data-kind={item.kind}>{radarLine(item, terminal, lang, kstClock, current.day)}</li>)}
+      {items.map((item, index) => <li key={index} data-kind={item.kind}><strong>{radarLine(item, terminal, lang, kstClock, current.day)}</strong></li>)}
     </ol>
     {!weekdayDays.length && <p className="prep-note" data-testid="radar-no-history">{copy.noHistory(complete.length, lang)}</p>}
     {weekdayDays.length > 0 && !comparable && <p className="prep-note" data-testid="radar-within">{copy.withinRange(weekdayDays.length, lang)}</p>}
@@ -149,7 +154,7 @@ export default function DayRadarBlock({ lang, date, dayRelation, terminal, nowIs
             <text x="24" y="53" textAnchor="middle">{Number(item.day.day.slice(8,10))}</text>
           </svg>
           <strong>{copy.similarLabel[lang]}: {dayLabel(item.day.day, lang)}</strong>
-          <br/>{copy.alike[lang]}: {lines.alike}
+          <br/>{copy.alike[lang]}: <strong>{lines.alike}</strong>
           <br/>{copy.differ[lang]}: {lines.differ}
           <br/><button type="button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : item.day.day)} data-testid="similar-open"
             style={{ border: 0, padding: '8px 0', background: 'transparent', color: 'var(--blue)', cursor: 'pointer', font: 'inherit' }}>{copy.compareTable[lang]}</button>
@@ -169,10 +174,6 @@ export default function DayRadarBlock({ lang, date, dayRelation, terminal, nowIs
           </div>}
         </li>;
       })}</ol>}
-    <details className="prep-evidence"><summary>{copy.evidence[lang]}</summary>
-      <p className="prep-note">{copy.similarRule[lang]}</p>
-    </details>
-    <p className="prep-note">{copy.similarNote[lang]}</p>
   </div>;
 }
 

@@ -1,4 +1,5 @@
 "use client";
+import './airport-history-polish.css';
 import { passengerCopy } from "../lib/passenger-copy";
 import { MonthlyRecordsView } from './monthly-records';
 import { recordText } from './monthly-records-copy';
@@ -78,28 +79,28 @@ const copy = {
   ko: {
     hero: "지금 서울은\n어떻게 움직이고 있나요?",
     sub: "공식 데이터만 모아 명동·홍대·성수·이태원와 인천공항의 지금과 다음을 보여줍니다.",
-    today: "서울", airport: "공항", business: "매장", forecast: "기록", 'where-to': "오늘 어디 갈까", consumption:"요즘 뜨는 소비", "tourism-desk": "관광안내", about: "소개", more: "더보기",
+    today: "서울", airport: "공항", business: "매장", forecast: "기록", 'where-to': "서울 한눈에", consumption:"요즘 뜨는 소비", "tourism-desk": "관광안내", about: "소개", more: "더보기",
     kst: "모든 시간은 한국 표준시(KST)입니다.",
     truth: "공식 발표값과 KORETAIL의 비교·참고 예상을 구분하며, 확인되지 않은 값은 만들어 채우지 않습니다.",
   },
   en: {
     hero: "How is Seoul\nmoving right now?",
     sub: "Official data only, showing what Myeongdong, Hongdae, Seongsu, Itaewon and Incheon Airport look like now and next.",
-    today: "Seoul", airport: "Airport", business: "Business", forecast: "Records", 'where-to': "Where to go", consumption:"Consumption", "tourism-desk": "Guide Desk", about: "About", more: "More",
+    today: "Seoul", airport: "Airport", business: "Business", forecast: "Records", 'where-to': "Seoul at a glance", consumption:"Consumption", "tourism-desk": "Guide Desk", about: "About", more: "More",
     kst: "All times are Korea Standard Time (KST).",
     truth: "Every value shown is published by an official body. Nothing unverified is filled in.",
   },
   zh: {
     hero: "此刻的首尔\n正在如何流动？",
     sub: "仅汇总官方数据，呈现明洞、弘大、圣水、梨泰院与仁川机场的当前与接下来。",
-    today: "首尔", airport: "机场", business: "门店", forecast: "记录", 'where-to': "今天去哪里", consumption:"近期消费", "tourism-desk": "旅游咨询", about: "关于", more: "更多",
+    today: "首尔", airport: "机场", business: "门店", forecast: "记录", 'where-to': "首尔一览", consumption:"近期消费", "tourism-desk": "旅游咨询", about: "关于", more: "更多",
     kst: "所有时间均为韩国标准时间（KST）。",
     truth: "所显示的数值均由官方机构发布，未经确认的数值不会被填充。",
   },
   ja: {
     hero: "いまソウルは\nどう動いていますか？",
     sub: "公式データだけを集め、明洞・弘大・聖水・梨泰院と仁川空港の現在とこれからを表示します。",
-    today: "ソウル", airport: "空港", business: "店舗", forecast: "記録", 'where-to': "今日はどこへ", consumption:"最近の消費", "tourism-desk": "観光案内", about: "紹介", more: "その他",
+    today: "ソウル", airport: "空港", business: "店舗", forecast: "記録", 'where-to': "ソウルひと目で", consumption:"最近の消費", "tourism-desk": "観光案内", about: "紹介", more: "その他",
     kst: "すべての時刻は韓国標準時（KST）です。",
     truth: "表示される値はすべて公式機関が発表したものです。確認できない値は作って埋めません。",
   },
@@ -561,7 +562,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             aria-label={t[item]}
           >
             <Icon name={item} />
-            <span>{item==='where-to'?localText(lang,{ko:'어디 갈까',en:'Where to go',zh:'去哪里',ja:'どこへ'}):item==='consumption'?localText(lang,{ko:'소비 흐름',en:'Spending',zh:'消费',ja:'消費'}):t[item].toUpperCase()}</span>
+            <span>{item==='where-to'?localText(lang,{ko:'서울 한눈에',en:'Seoul glance',zh:'首尔一览',ja:'ソウル一覧'}):item==='consumption'?localText(lang,{ko:'소비 흐름',en:'Spending',zh:'消费',ja:'消費'}):t[item].toUpperCase()}</span>
           </a>
         ))}
       </nav>
@@ -978,10 +979,10 @@ function InsightsView({ lang, selected, setSelected }: { lang: Lang; selected: A
           <div><p className="eyebrow">04 · TRACK RECORD</p><h2 id="insight-accuracy-title">{localText(lang, { ko: "예측 성적표는 아직 없습니다", en: "There is no accuracy record yet", zh: "目前还没有预测成绩", ja: "予測の成績はまだありません" })}</h2></div>
         </div>
         <p className="section-intro">{localText(lang, {
-          ko: "서울 지역 상세의 앞으로 시간대는 서울시 공식 예상입니다. 별도의 예측 메뉴는 오늘 어디 갈까로 바뀌었으며, 기존 예상·관측·계산 기록은 그대로 보존합니다. 정확도 성적은 주장하지 않습니다.",
-          en: "Upcoming hours in Seoul area details use Seoul’s official forecast. Where to go replaces the separate Outlook menu; existing forecast, observation and calculation records are preserved. No accuracy claim is made.",
-          zh: "首尔地区详情的后续时段使用首尔市官方预报。今天去哪里取代独立预测菜单，原预测、观测与计算记录保留，不声称准确率。",
-          ja: "ソウルのエリア詳細の今後の時間帯はソウル市公式予報です。別の予測メニューは今日はどこへに変わり、既存の予測・観測・計算記録は保全。精度は主張しません。",
+          ko: "서울 지역 상세의 앞으로 시간대는 서울시 공식 예상입니다. 별도의 예측 메뉴는 서울 한눈에로 바뀌었으며, 기존 예상·관측·계산 기록은 그대로 보존합니다. 정확도 성적은 주장하지 않습니다.",
+          en: "Upcoming hours in Seoul area details use Seoul’s official forecast. Seoul at a glance replaces the separate Outlook menu; existing forecast, observation and calculation records are preserved. No accuracy claim is made.",
+          zh: "首尔地区详情的后续时段使用首尔市官方预报。首尔一览取代独立预测菜单，原预测、观测与计算记录保留，不声称准确率。",
+          ja: "ソウルのエリア詳細の今後の時間帯はソウル市公式予報です。別の予測メニューはソウルひと目でに変わり、既存の予測・観測・計算記録は保全。精度は主張しません。",
         })}</p>
         <p className="section-intro">{localText(lang, {
           ko: "언젠가 자체 예측을 내놓게 되면, 결과가 나오기 전에 저장해 둔 예측만으로 성적을 계산합니다. 과거 데이터를 나중에 끼워 맞춰 정확도를 만들어내지 않습니다.",

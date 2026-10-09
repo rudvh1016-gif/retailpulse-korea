@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { SUMMARY_FIXTURE, routeSummary } from './summary-fixture';
 import { tofuCharacters } from './font-glyphs';
 import { weekCopy } from '../lib/week-copy';
-import { reviewCopy, feelingLabels } from '../lib/review-copy';
+import { reviewCopy } from '../lib/review-copy';
 
 // The fixture moved to 2026-09-28 (a Monday): China's National Day holiday
 // (10/01–10/07, State Council notice) falls inside the week ahead.
@@ -67,30 +67,29 @@ test('the weekly review names its categories and never calls card activity sales
   await expect(review).toContainText('지난주 같은 요일 대비');
 });
 
-test('a feeling is recorded, kept, edited and deleted on this device only', async ({ page }) => {
+test('the removed feeling entry preserves existing device records and the weekly review', async ({ page }) => {
+  const saved = [{ date: '2026-09-28', place: 'area:myeongdong', industry: 'beauty', feeling: 'BUSIER' }];
+  await page.addInitScript((records) => {
+    localStorage.setItem('koretail-feeling-v1', JSON.stringify(records));
+  }, saved);
   const prep = await open(page);
-  const log = prep.getByTestId('feeling-log');
-  await log.getByRole('button', { name: feelingLabels.BUSIER.ko }).click();
-  await expect(log.getByRole('button', { name: feelingLabels.BUSIER.ko })).toHaveAttribute('aria-pressed', 'true');
-  await expect(log).toContainText(reviewCopy.saved.ko);
-  expect(JSON.parse(await page.evaluate(() => localStorage.getItem('koretail-feeling-v1') ?? '[]'))).toEqual([
-    { date: '2026-09-28', place: 'area:myeongdong', industry: 'beauty', feeling: 'BUSIER' },
-  ]);
-  await log.getByRole('button', { name: feelingLabels.USUAL.ko }).click();
+  await expect(prep.getByTestId('feeling-log')).toHaveCount(0);
+  await prep.getByTestId('weekly-review').locator('summary').first().click();
+  await expect(prep.getByTestId('weekly-review')).toContainText(reviewCopy.categoriesNote.ko);
+  expect(JSON.parse(await page.evaluate(() => localStorage.getItem('koretail-feeling-v1') ?? '[]'))).toEqual(saved);
   await page.reload();
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
-  const again = page.getByTestId('feeling-log');
-  await expect(again.getByRole('button', { name: feelingLabels.USUAL.ko })).toHaveAttribute('aria-pressed', 'true');
-  await again.locator('summary').click();
-  await again.getByRole('button', { name: reviewCopy.remove.ko }).click();
-  expect(JSON.parse(await page.evaluate(() => localStorage.getItem('koretail-feeling-v1') ?? '[]'))).toEqual([]);
+  await expect(page.getByTestId('feeling-log')).toHaveCount(0);
+  expect(JSON.parse(await page.evaluate(() => localStorage.getItem('koretail-feeling-v1') ?? '[]'))).toEqual(saved);
 });
 
-test('a feeling cannot be recorded when storage is blocked, and says so', async ({ page }) => {
+test('the weekly review remains available with the removed entry and blocked storage', async ({ page }) => {
   await page.addInitScript(() => {
     const deny = () => { throw new DOMException('blocked', 'SecurityError'); };
     Object.defineProperty(window, 'localStorage', { configurable: true, get: () => ({ getItem: deny, setItem: deny, removeItem: deny, key: deny, clear: deny, length: 0 }) });
   });
   const prep = await open(page);
-  await expect(prep.getByTestId('feeling-log')).toContainText(reviewCopy.storageBlocked.ko);
+  await expect(prep.getByTestId('feeling-log')).toHaveCount(0);
+  await prep.getByTestId('weekly-review').locator('summary').first().click();
+  await expect(prep.getByTestId('weekly-review')).toContainText(reviewCopy.categoriesNote.ko);
 });

@@ -67,12 +67,9 @@ export function IndustryGuide({ lang, industry, onIndustryChange, airport }: {
         <h4>{priority.title[lang]}</h4>
         {airport ? <><p>{priority.action[lang]}</p>
           <details><summary>{text(lang, '판단 근거와 주의점', 'Reasoning and limits', '判断依据与注意点', '判断の理由と注意点')}</summary><p>{priority.reason[lang]}</p></details></>
-          : <details><summary>{text(lang, '실행 방법과 주의점', 'Steps and limits', '执行方法与注意点', '実行方法と注意点')}</summary>
-            <p>{priority.action[lang]}</p><p>{priority.reason[lang]}</p></details>}
+          : <><p>{priority.action[lang]}</p><p>{priority.reason[lang]}</p></>}
       </article>)}
     </div>
-    {airport ? <div className="operating-record"><h4>{text(lang, '마감 때 남길 기록', 'What to record at close', '打烊时记录', '閉店時に残す記録')}</h4><p>{playbook.record[lang]}</p></div>
-      : <details className="operating-record" key={`${industry}-record`}><summary>{text(lang, '마감 때 남길 기록', 'What to record at close', '打烊时记录', '閉店時に残す記録')}</summary><p>{playbook.record[lang]}</p></details>}
     <details className="operating-checklist" key={`${industry}-checklist`}>
       <summary>{text(lang, '오픈 전 · 혼잡 시간 · 마감 체크리스트', 'Opening · busy period · closing checklist', '开店前·繁忙时段·打烊清单', '開店前・混雑時・閉店のチェックリスト')}</summary>
       <div className="checklist-groups">{checklistPhaseOrder.map(phase => <section className="checklist-phase" key={phase}>

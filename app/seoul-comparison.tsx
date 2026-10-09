@@ -7,6 +7,7 @@ import type {AreaId} from '../lib/areas';
 import type {publicCommercialMonth} from '../lib/commercial-monthly';
 import {commercialCategoryIcons,commercialCategoryFallback} from './commercial-category-icons';
 import './seoul-comparison.css';
+import {validGlanceForecasts,freshGlanceObservation,sameGlanceClocks,eventsOnGlanceDay,glancePaymentShares} from '../lib/seoul-glance';
 const names={myeongdong:{ko:'명동',en:'Myeongdong',zh:'明洞',ja:'明洞'},seongsu:{ko:'성수',en:'Seongsu',zh:'圣水',ja:'聖水'},hongdae:{ko:'홍대',en:'Hongdae',zh:'弘大',ja:'弘大'},itaewon:{ko:'이태원',en:'Itaewon',zh:'梨泰院',ja:'梨泰院'}};
 const areas=['myeongdong','seongsu','hongdae','itaewon'] as const;
 const locales={ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'};
@@ -15,35 +16,49 @@ const stamp=(at:string|null|undefined,lang:Lang)=>at&&Number.isFinite(Date.parse
 const levels=[null,{ko:'여유',en:'Calm',zh:'宽松',ja:'余裕'},{ko:'보통',en:'Normal',zh:'一般',ja:'普通'},{ko:'약간 붐빔',en:'Somewhat busy',zh:'略拥挤',ja:'やや混雑'},{ko:'붐빔',en:'Crowded',zh:'拥挤',ja:'混雑'}];
 
 export function WhereToView({lang}:{lang:Lang}){
- const summary=useLiveSummary(),[pace,setPace]=useState<'all'|'quiet'|'busy'>('all');
- const clocks=areas.map(area=>summary?.areas[area]?.realtime?.observedAt);
- const fresh=areas.map(area=>{const row=summary?.areas[area]?.realtime;const age=row&&summary?Date.parse(summary.generatedAt)-Date.parse(row.observedAt):Infinity;return !!row&&!summary?.clientRefresh&&row.freshness==='LIVE'&&age>=0&&age<=30*60_000;});
- const comparable=fresh.every(Boolean)&&new Set(clocks).size===1;
+ const summary=useLiveSummary(),[pace,setPace]=useState<'all'|'quiet'|'busy'>('all'),[visit,setVisit]=useState('now');
+ const now=summary?.generatedAt??'',refreshing=!!summary?.clientRefresh;
+ const forecasts=areas.map(area=>validGlanceForecasts(summary?.areas[area]?.realtimeForecast??[],now,refreshing));
+ const choices=[...new Set(forecasts.flatMap(rows=>rows.map(row=>row.targetAt)))].sort((a,b)=>Date.parse(a)-Date.parse(b));
+ const rows=areas.map((area,index)=>visit==='now'?summary?.areas[area]?.realtime:forecasts[index].find(row=>row.targetAt===visit));
+ const fresh=areas.map((area,index)=>visit==='now'?freshGlanceObservation(summary?.areas[area]?.realtime,now,refreshing):!!rows[index]);
+ const comparable=sameGlanceClocks(rows.map((row,index)=>({clock:visit==='now'?summary?.areas[areas[index]]?.realtime?.observedAt:forecasts[index].find(value=>value.targetAt===visit)?.issuedAt,valid:fresh[index]})));
+ const selectedDay=visit==='now'?summary?.todayKst??'':visit.slice(0,10);
+ const number=new Intl.NumberFormat(locales[lang],{maximumFractionDigits:1});
  return <section className="seoul-comparison" aria-labelledby="where-to-title">
-  <header className="comparison-heading"><h1 id="where-to-title">{t(lang,'오늘 어디 갈까','Where to go today','今天去哪里','今日はどこへ')}</h1><p>{t(lang,'명동·성수·홍대·이태원의 혼잡과 날씨를 함께 보고 골라보세요.','Compare crowds and weather in four Seoul districts.','对比首尔四个地区的拥挤与天气。','ソウル4エリアの混雑と天気を比べて選びましょう。')}</p></header>
+  <header className="comparison-heading"><h1 id="where-to-title">{t(lang,'서울 한눈에','Seoul at a glance','首尔一览','ソウルひと目で')}</h1><p>{t(lang,'방문할 시간의 혼잡·행사·소비 흐름을 네 지역에서 비교하세요.','Compare crowds, events and card activity in four districts at your visit time.','对比四个地区在到访时段的拥挤、活动和消费。','訪問時刻の混雑・イベント・消費を4エリアで比べましょう。')}</p></header>
+  <div className="comparison-date"><label>{t(lang,'방문 시간','Visit time','到访时间','訪問時刻')}<select value={visit} onChange={event=>setVisit(event.target.value)} data-testid="seoul-visit-time"><option value="now">{t(lang,'지금 · 관측','Now · observed','现在 · 观测','今・観測')}</option>{visit!=='now'&&!choices.includes(visit)&&<option value={visit} disabled>{stamp(visit,lang)} · {t(lang,'예보 없음','Unavailable','暂无预报','予報なし')}</option>}{choices.map(at=><option key={at} value={at}>{stamp(at,lang)} · {t(lang,'공식 예상','Official forecast','官方预计','公式予想')}</option>)}</select></label></div>
   <div className="area-tabs comparison-pace" role="group" aria-label={t(lang,'원하는 분위기','Preferred pace','偏好氛围','希望する雰囲気')}>
    {(['all','quiet','busy'] as const).map(value=><button key={value} type="button" className={pace===value?'active':''} aria-pressed={pace===value} onClick={()=>setPace(value)}>{value==='all'?t(lang,'모두 비교','Compare all','全部比较','すべて比較'):value==='quiet'?t(lang,'한산한 곳','Calmer places','安静一些','空いている場所'):t(lang,'붐비는 곳','Busier places','热闹一些','にぎやかな場所')}</button>)}
   </div>
-  <p className="comparison-basis" role="status">{summary===undefined?t(lang,'공식 자료 불러오는 중…','Loading official data…','正在读取官方资料…','公式データを読み込み中…'):summary===null?t(lang,'자료를 불러오지 못했습니다. 지역 상세에서 연결 상태를 확인하세요.','Could not load data. Check connection status in the area details.','无法读取资料，请在地区详情查看连接状态。','読み込めませんでした。エリア詳細で接続状況を確認してください。'):comparable?t(lang,'같은 관측시각의 공식 혼잡 단계로 비교합니다.','Compared using official crowd grades at the same observation time.','按相同观测时间的官方拥挤等级对比。','同じ観測時刻の公式混雑段階を比較します。'):t(lang,'지역별 관측시각이 다르거나 지연된 자료가 있습니다. 순위를 매기지 않습니다.','Observation times differ or data is delayed. No ranking is shown.','观测时间不同或资料延迟，不进行排名。','観測時刻が異なるか遅延しています。順位は表示しません。')}</p>
+  <p className="comparison-basis" role="status">{summary===undefined?t(lang,'공식 자료 불러오는 중…','Loading official data…','正在读取官方资料…','公式データを読み込み中…'):summary===null?t(lang,'자료를 불러오지 못했습니다. 지역 상세에서 연결 상태를 확인하세요.','Could not load data. Check the area details.','无法读取资料，请查看地区详情。','読み込めませんでした。エリア詳細をご確認ください。'):comparable?(visit==='now'?t(lang,'같은 관측시각의 공식 혼잡 단계로 비교합니다.','Official crowd grades at the same observation time.','相同观测时间的官方拥挤等级。','同じ観測時刻の公式混雑段階です。'):t(lang,'같은 발표시각·방문시간의 공식 예상입니다.','Official forecasts with matching issue and visit times.','发布时间与到访时间相同的官方预计。','同じ発表・訪問時刻の公式予想です。')):t(lang,'시각이 다르거나 자료가 부족해 순위를 매기지 않습니다.','Times differ or data is missing. No ranking is shown.','时间不同或资料不足，不进行排名。','時刻が異なるか資料不足のため順位は表示しません。')}</p>
   <div className="district-choice-grid">
-   {areas.map((area,index)=>{const block=summary?.areas[area],row=block?.realtime,level=row?.congestionLevel??0,weather=block?.context?.weather;
-    const weatherAge=weather&&summary?Date.parse(summary.generatedAt)-Date.parse(weather.observedAt):Infinity;
-    const forecast=block?.weather.find(value=>Date.parse(value.targetAt)>=Date.parse(summary?.generatedAt??'')-3_600_000);
+   {areas.map((area,index)=>{const block=summary?.areas[area],row=rows[index],level=row?.congestionLevel??0;
     const match=comparable&&((pace==='quiet'&&level===1)||(pace==='busy'&&level>=3));
+    const current=block?.realtime,quieter=freshGlanceObservation(current,now,refreshing)?forecasts[index].filter(value=>value.congestionLevel<current!.congestionLevel).slice(0,2):[];
+    const events=eventsOnGlanceDay(block?.events??[],selectedDay);
+    const commercial=block?.commercial,context=block?.context;
+    const commercialAge=Date.parse(now)-Date.parse(commercial?.observedAt??'');
+    const shares=!refreshing&&commercial?.freshness==='LIVE'&&commercialAge>=0&&commercialAge<=30*60_000&&context?.commercialAt===commercial.observedAt?glancePaymentShares(context.categories):[];
     return <article className="district-choice" data-area={area} data-preference-match={match} key={area}>
      <img className="district-choice-model" src={`/visuals/seoul-comparison/${area}-320.webp`} srcSet={`/visuals/seoul-comparison/${area}-320.webp 320w, /visuals/seoul-comparison/${area}-640.webp 640w`} sizes="(max-width: 600px) 46vw, (max-width: 960px) 44vw, 22vw" width="640" height="514" alt="" decoding="async" loading={index<2?'eager':'lazy'}/>
-     <div className="district-choice-name"><h2>{names[area][lang]}</h2><strong>{levels[level]?.[lang]??t(lang,'확인 불가','Unavailable','无法确认','確認できません')}</strong></div>
-     <p className="district-choice-reason">{!fresh[index]?t(lang,'최신 혼잡 확인 후 선택하세요.','Check a fresh crowd reading before choosing.','请先确认最新拥挤情况。','最新の混雑を確認してから選んでください。'):level===1?t(lang,'한산한 분위기를 찾을 때 살펴보세요.','Consider it when you want a calmer atmosphere.','想找安静氛围时可以看看。','空いた雰囲気を探すときに。'):level>=3?t(lang,'붐비는 분위기를 찾을 때 살펴보세요.','Consider it when you want a busier atmosphere.','想找热闹氛围时可以看看。','にぎやかな雰囲気を探すときに。'):t(lang,'현재 공식 혼잡 단계는 보통입니다.','The official crowd grade is normal.','当前官方拥挤等级为一般。','現在の公式混雑段階は普通です。')}</p>
-     <small>{t(lang,'서울시 혼잡 관측','Seoul crowd observation','首尔市拥挤观测','ソウル市混雑観測')} · {stamp(row?.observedAt,lang)}{row&&!fresh[index]?` · ${t(lang,'지연','Delayed','延迟','遅延')}`:''}</small>
-     <dl className="district-choice-weather"><div><dt>{!summary?.clientRefresh&&weatherAge>=0&&weatherAge<=60*60_000?t(lang,'현재 날씨 관측','Current weather observation','当前天气观测','現在の天気観測'):t(lang,'최근 날씨 관측','Latest weather observation','最近天气观测','直近の天気観測')}</dt><dd>{weather?.temperature!=null?`${weather.temperature}°C`:t(lang,'자료 없음','No data','暂无资料','資料なし')}{weather?.humidity!=null?` · ${t(lang,'습도','Humidity','湿度','湿度')} ${weather.humidity}%`:''}</dd></div></dl>
-     <small>{t(lang,'서울시','Seoul','首尔市','ソウル市')} · {stamp(weather?.observedAt,lang)}</small>
-     {forecast&&<p className="district-choice-forecast">{t(lang,'기상청 예보','KMA forecast','气象厅预报','気象庁予報')} · {stamp(forecast.targetAt,lang)}<br/>{forecast.temperatureTenthC!==null?`${forecast.temperatureTenthC/10}°C · `:''}{forecast.precipitationProbability!==null?`${t(lang,'강수확률','Rain chance','降水概率','降水確率')} ${forecast.precipitationProbability}%`:t(lang,'강수확률 미제공','Rain chance unavailable','未提供降水概率','降水確率未提供')}</p>}
-     <a href={`/${lang}/${area}`}>{t(lang,'지역 상세·앞으로의 시간대','Area details & upcoming hours','地区详情与后续时段','エリア詳細・今後の時間帯')}</a>
+     <div className="district-choice-name"><h2>{names[area][lang]}</h2><strong>{fresh[index]?levels[level]?.[lang]:t(lang,'확인 불가','Unavailable','无法确认','確認できません')}</strong></div>
+     <small>{visit==='now'?t(lang,'혼잡 관측','Crowd observation','拥挤观测','混雑観測'):t(lang,'혼잡 예상','Crowd forecast','拥挤预计','混雑予想')} · {stamp(visit==='now'?current?.observedAt:forecasts[index].find(value=>value.targetAt===visit)?.targetAt,lang)}{row&&!fresh[index]?` · ${t(lang,'지연','Delayed','延迟','遅延')}`:''}</small>
+     {visit!=='now'&&<small>{t(lang,'예보 발표','Forecast issued','预报发布','予報発表')} · {stamp(forecasts[index].find(value=>value.targetAt===visit)?.issuedAt,lang)}</small>}
+     <div className="district-glance-section"><h3>{t(lang,'지금보다 덜 붐빌 시간','Calmer than now','比现在更空的时段','今より空く時刻')}</h3><p>{quieter.length?quieter.map(value=>`${stamp(value.targetAt,lang)} · ${levels[value.congestionLevel]?.[lang]}`).join(' / '):t(lang,'확인 가능한 예상 없음','No confirmed forecast','暂无可确认预计','確認できる予想なし')}</p></div>
+     <div className="district-glance-section"><h3>{t(lang,'방문일 주변 행사','Events on your visit date','到访日周边活动','訪問日の周辺イベント')}</h3><p><strong>{events.length}</strong> {t(lang,'개 · 공식 등록','official listings','项 · 官方登记','件・公式登録')}</p>{events.length>0&&<ul>{events.slice(0,2).map((event,eventIndex)=><li key={event.contentId??eventIndex}>{event.title}</li>)}</ul>}</div>
+     <div className="district-glance-section"><h3>{t(lang,'최근 10분 소비 구성','Recent 10-minute payment mix','最近10分钟支付构成','直近10分の決済構成')}</h3>{shares.length?<ul className="district-payment-shares">{shares.slice(0,3).map(value=>{const icon=commercialCategoryIcons[value.category]??commercialCategoryFallback;return <li key={value.category}><img src={icon.src} width="32" height="32" alt="" loading="lazy" decoding="async"/><span>{glanceCategoryLabel(value.category,lang)} <strong>{number.format(value.share)}%</strong></span></li>;})}</ul>:<p>{t(lang,'비교 자료 부족','Insufficient data','比较资料不足','比較資料不足')}</p>}<small>{t(lang,'제공된 업종의 결제 건수 비중','Share of published industry payment counts','已公布行业的支付笔数占比','提供業種の決済件数比率')} · {stamp(context?.commercialAt,lang)}</small></div>
+     <a href={`/${lang}/${area}`}>{t(lang,'지역 상세·전체 행사','Area details & all events','地区详情与全部活动','エリア詳細・全イベント')}</a>
     </article>;
    })}
   </div>
-  <details className="comparison-details"><summary>{t(lang,'비교 기준과 자료의 한계','Comparison basis & limits','比较标准与资料限制','比較基準と資料の限界')}</summary><p>{t(lang,'혼잡은 서울시 공식 단계이며 지역 크기와 인구를 점수로 바꾸지 않습니다. 날씨 관측과 예보는 서로 다른 시각·지점의 자료입니다. 모형은 지역을 구별하는 개념 그림이며 실제 지도·매출·추천 순위를 뜻하지 않습니다.','Crowds use Seoul’s official grades. Area size and population are not converted into scores. Observations and forecasts have distinct times and locations. Models identify districts conceptually; they do not encode maps, sales or recommendation rankings.','拥挤使用首尔市官方等级，地区面积与人口不会转换成评分。天气观测和预报的时间与地点各异。模型是地区概念图，不表示地图、销售额或推荐排名。','混雑はソウル市の公式段階です。面積や人口をスコアには変えません。天気の観測と予報は時刻・地点が異なります。模型は概念図で、地図・売上・おすすめ順位を示しません。')}</p></details>
+  <details className="comparison-details"><summary>{t(lang,'비교 기준과 자료의 한계','Comparison basis & limits','比较标准与资料限制','比較基準と資料の限界')}</summary><p>{t(lang,'혼잡은 서울시 공식 단계입니다. 예보가 발표된 범위 안에서만 시간을 고를 수 있습니다. 소비 구성은 지금 제공된 신한카드 내국인 결제 건수이며 방문 시간의 예측이 아닙니다. 비공개 업종은 제외되어 전체 소비 비중과 다를 수 있습니다. 행사명은 공식 등록 원문입니다.','Crowds use Seoul’s official grades within the published forecast horizon. Payment shares use currently published Shinhan domestic-card counts, not a forecast for your visit. Suppressed industries are excluded. Event names retain the official original.','拥挤使用首尔市官方等级，仅可选择已发布预报的时段。消费构成是当前公布的新韩卡韩国国内支付笔数，并非到访时预测。未公开行业除外。活动名称保留官方原文。','混雑はソウル市の公式段階で、発表された予報の時刻のみ選べます。決済構成は現在提供された新韓カード国内決済件数で、訪問時刻の予想ではありません。非公開業種は除外。イベント名は公式原文です。')}</p></details>
  </section>;
+}
+
+function glanceCategoryLabel(category:string,lang:Lang){
+ const labels:Record<string,readonly [string,string,string]>={'한식':['Korean food','韩餐','韓国料理'],'일식/중식/양식':['World food','各国料理','各国料理'],'제과/커피/패스트푸드':['Cafés & bakeries','咖啡与烘焙','カフェ・ベーカリー'],'기타요식':['Other food','其他餐饮','その他の飲食'],'할인점/슈퍼마켓':['Groceries','超市','スーパー'],'편의점':['Convenience stores','便利店','コンビニ'],'의복/의류':['Clothing','服装','衣類'],'패션/잡화':['Accessories','服饰杂货','服飾雑貨'],'스포츠/문화/레저':['Leisure','文化休闲','レジャー'],'화장품':['Cosmetics','化妆品','化粧品'],'약국':['Pharmacies','药店','薬局'],'유흥':['Nightlife','夜生活','ナイトライフ'],'미용서비스':['Beauty','美容','美容'],'병원':['Clinics','医院','病院'],'여행':['Travel','旅行','旅行']};
+ return lang==='ko'?category:labels[category]?.[({en:0,zh:1,ja:2})[lang]]??category;
 }
 
 type MonthData=ReturnType<typeof publicCommercialMonth>;

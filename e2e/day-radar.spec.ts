@@ -57,7 +57,7 @@ test('what is different today: same-weekday range, the fixed rule, and its evide
   await expect(radar).toBeVisible();
   const items = radar.getByTestId('radar-items').locator('li');
   await expect(items.first()).toHaveAttribute('data-kind', 'WEEKDAY_TOTAL');
-  await expect(items.first()).toHaveText('T2 출발편 수 36편: 평소(같은 요일 최근 4일, 20편–23편)보다 많음');
+  await expect(items.first()).toHaveText('T2 출발편 수 · 과거 같은 요일 4일 20편–23편 · 오늘 36편, 13편 많음');
   await expect(items).toHaveCount(3);
   await expect(radar.getByTestId('radar-items')).not.toContainText('고객');
   await radar.locator('details').first().locator('summary').click();

@@ -17,19 +17,16 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) for (const width of [390, 
       await guide.getByRole('button', { name: industryProfiles[id].label[lang], exact: true }).click();
       for (const [index, row] of industryPlaybooks[id].priorities.entries()) {
         await expect(guide.getByRole('heading', { name: row.title[lang], exact: true })).toBeVisible();
-        const detail = guide.locator('.operating-priority details').nth(index);
-        await expect(detail).not.toHaveAttribute('open', '');
-        await detail.locator('summary').click();
+        await expect(guide.locator('.operating-priority').nth(index).locator('details')).toHaveCount(0);
         await expect(guide.getByText(row.action[lang], { exact: true })).toBeVisible();
         await expect(guide.getByText(row.reason[lang], { exact: true })).toBeVisible();
       }
-      await expect(guide).toContainText(industryPlaybooks[id].record[lang]);
+      await expect(guide.locator('.operating-record')).toHaveCount(0);
       await expect(guide.locator('.operating-priority')).toHaveCount(3);
       await guide.locator('.operating-checklist > summary').click();
       expect(await tofuCharacters(guide)).toEqual([]);
     }
     await guide.getByRole('button', { name: industryProfiles.beauty.label[lang], exact: true }).click();
-    await guide.locator('.operating-priority details').first().locator('summary').click();
     await expect(guide.getByText(industryPlaybooks.beauty.priorities[0].reason[lang], { exact: true })).toBeVisible();
     await guide.scrollIntoViewIfNeeded();
     await page.screenshot({ path: info.outputPath(`business-${lang}-${width}.png`) });
@@ -86,7 +83,7 @@ for (const width of [320, 390, 430]) test(`store scenes and keyboard disclosures
     await expect(image).toHaveAttribute('loading', 'lazy');
     await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBeTruthy();
     expect(await image.evaluate((img: HTMLImageElement) => img.currentSrc)).toContain(`/visuals/industry/v1/${id}-`);
-    const detail = guide.locator('.operating-priority details').first();
+    const detail = guide.locator('.operating-checklist');
     await expect(detail).not.toHaveAttribute('open', '');
     await detail.locator('summary').focus();
     await page.keyboard.press('Enter');

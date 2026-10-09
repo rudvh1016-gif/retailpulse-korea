@@ -25,8 +25,10 @@ for(const lang of ['ko','en','zh','ja'] as Lang[]) for(const width of [320,360,3
     await expect(page.locator('h1')).toHaveText(recordText('title',lang));
     await expect(page.locator('.insight-now-title, .home-today-brief, .airport-today')).toHaveCount(0);
     await expect(page.getByTestId('record-month-2026-10')).toContainText('27,000–29,000');
-    await expect(page.getByTestId('record-month-2026-10')).toContainText('4 / 5');
-    await expect(page.getByTestId('record-month-2026-09')).toContainText('28 / 30');
+    await expect(page.getByTestId('record-month-2026-10').locator('.records-coverage')).toHaveAttribute('data-observed-days','4');
+    await expect(page.getByTestId('record-month-2026-10').locator('.records-coverage')).toHaveAttribute('data-eligible-days','5');
+    await expect(page.getByTestId('record-month-2026-09').locator('.records-coverage')).toHaveAttribute('data-observed-days','28');
+    await expect(page.getByTestId('record-month-2026-09').locator('.records-coverage')).toHaveAttribute('data-eligible-days','30');
     await expect(section).toContainText('2026-10-05 KST');
     expect(await section.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);

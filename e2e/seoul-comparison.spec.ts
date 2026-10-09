@@ -70,3 +70,22 @@ test('rapid district and month changes cannot show a late response from a previo
  await expect(page).toHaveURL(/area=hongdae.*month=2026-08/);await expect(page.locator('.consumption-category')).toHaveCount(3);
  await expect(page.locator('.consumption-legend')).toContainText('2026-08');await expect(page.getByRole('tab',{name:'홍대',exact:true})).toHaveAttribute('aria-selected','true');
 });
+
+test('visit time compares official forecasts, matching events and published payment shares without weather',async({page})=>{
+ const data=structuredClone(SUMMARY_FIXTURE) as LiveSummary;
+ const source=structuredClone(data.areas.myeongdong!),target='2026-08-31T15:00:00+09:00';
+ for(const [index,area] of (['myeongdong','seongsu','hongdae','itaewon'] as const).entries())data.areas[area]={...structuredClone(source),
+  realtime:{...source.realtime!,observedAt:data.generatedAt,congestionLevel:4,freshness:'LIVE'},
+  realtimeForecast:[{targetAt:target,issuedAt:data.generatedAt,congestionLevel:index===0?1:2,congestionLabel:'fixture',populationMin:100,populationMax:200}],
+  commercial:{...source.commercial!,observedAt:data.generatedAt,freshness:'LIVE'},
+  context:{commercialAt:data.generatedAt,retrievedAt:data.generatedAt,weather:null,categories:[{group:'food',category:'한식',level:null,payments:1,amountMin:100,amountMax:200},{group:'food',category:'제과/커피/패스트푸드',level:null,payments:3,amountMin:300,amountMax:400}]},
+  events:[{title:'선택일 행사',eventStart:data.todayKst,eventEnd:data.todayKst,distanceM:100},{title:'지난 행사',eventStart:'2026-08-01',eventEnd:'2026-08-02',distanceM:100}]};
+ await page.route('**/api/live/summary*',routeSummary(data));await page.setViewportSize({width:390,height:900});await page.goto('/ko/where-to');
+ await expect(page.locator('h1')).toHaveText('서울 한눈에');await expect(page.locator('.district-choice-weather,.district-choice-forecast')).toHaveCount(0);
+ const first=page.locator('[data-area="myeongdong"]');await expect(first).toContainText('75%');await expect(first).toContainText('선택일 행사');await expect(first).not.toContainText('지난 행사');
+ await page.getByTestId('seoul-visit-time').selectOption(target);await expect(first.locator('.district-choice-name strong')).toHaveText('여유');
+ await expect(page.locator('.comparison-basis')).toContainText('같은 발표시각');await page.getByRole('button',{name:'한산한 곳',exact:true}).click();await expect(page.locator('[data-preference-match="true"]')).toHaveAttribute('data-area','myeongdong');
+ data.areas.hongdae!.realtimeForecast=[];await page.reload();await page.getByTestId('seoul-visit-time').selectOption(target);
+ await expect(page.locator('[data-area="hongdae"] .district-choice-name strong')).toHaveText('확인 불가');await expect(page.locator('.comparison-basis')).toContainText('순위를 매기지 않습니다');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});

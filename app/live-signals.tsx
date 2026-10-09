@@ -1,4 +1,5 @@
 "use client";
+import Image from 'next/image';
 import { AirportDateCalendar } from './airport-date-calendar';
 import { airportCompositionCopy } from '../lib/airport-composition-copy';
 import { demandCopy, demandLevel, AreaDemandCard, usePresentationClock } from "./area-demand-card";
@@ -1805,7 +1806,7 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
   // "비교 자료 없음" in its own right, and this line repeated it word for word
   // six rows further down. The real comparisons stay here because they carry
   // the baseline timestamp the grid has no room for.
-  const flightChanges = ([7, 28] as const).flatMap((days) => comparisons?.[days]?.flightRecords ? [comparisonText(comparisons[days]!.flightRecords!, lang, days)] : []);
+  const flightChanges = ([7, 28] as const).flatMap((days) => comparisons?.[days]?.flightRecords ? [{days,change:comparisons[days]!.flightRecords!}] : []);
   const recordsOnly = ({ ko: "수집된 출발편 기록 기준 · 전체 운항 증감과 다를 수 있음", en: "Collected departing-flight records; not a complete operational census", zh: "按已采集出发航班记录，非完整运行统计", ja: "収集済み出発便記録による比較・全運航の増減とは異なる場合あり" })[lang];
   const schedule=airport.scheduledBriefing?.serviceDateKst===summary.serviceDateKst&&summary.dayRelation!=="PAST"?airport.scheduledBriefing:null;
   const officialSchedule=schedule?.basis==='OFFICIAL_DEPARTURE_SCHEDULE';
@@ -1890,11 +1891,15 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
 
       </>}
       {showCrowding && checkpoint && <aside className="airport-wait-brief"><p>{queueIsStale ? contextText(lang,"이전 대기 관측","Previous queue observation","先前等候观测","以前の待ち状況の観測") : contextText(lang,"현재 대기 관측","Current queue observation","当前等候观测","現在の待ち状況の観測")} · {checkpoint.terminal} {friendlyCheckpointName(checkpoint.zone,lang)}</p><p>{queueValue ? `${queueValue}${/분|min|分钟|分/i.test(queueValue) ? '' : {ko:'분',en:' min',zh:'分钟',ja:'分'}[lang]}` : checkpoint.waitingCount !== null ? `${checkpoint.waitingCount.toLocaleString(numberLocale)}${peopleUnit}` : airportTodayText.unavailable[lang]} · {kstStamp(checkpoint.observedAt)} KST {demandCopy.observed[lang]}</p></aside>}
-      {showPassengers && expectedTotal !== null && passengerChanges.length > 0 && <p>{airportTodayText.expected[lang]} · {passengerChanges.join(" · ")}</p>}
-      {showFlights && flightsCount !== null && <p>{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}{flightChanges.length ? ` · ${flightChanges.join(" · ")}` : ""}</p>}
+      {showPassengers && expectedTotal !== null && passengerChanges.length > 0 && <p>{airportTodayText.expected[lang]} · <strong>{passengerChanges.join(" · ")}</strong></p>}
+      {showFlights && flightsCount !== null && <p>{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}{flightChanges.map(({days,change})=>{
+        const exact=change.baselineMin!==undefined&&change.baselineMin===change.baselineMax && (change.baselineMin ?? 0)>0&&Number.isSafeInteger(change.baselineMin);
+        const prefix=days===7?contextText(lang,'전주 동요일','Same weekday last week','上周同星期','先週同曜日'):contextText(lang,'4주 전 같은 요일','Same weekday 4 weeks ago','4周前同星期','4週前同曜日');
+        return <span key={days} style={days===28?{fontWeight:'var(--weight-strong)'}:undefined}> · {prefix}{exact?` ${change.baselineMin!.toLocaleString(numberLocale)}${flightUnit}${contextText(lang,'보다',' compared with','相比','比')}`:''} <strong className="airport-comparison-change">{comparisonValue(change)}</strong> {days===28?<strong>({change.baselineAt.slice(0,10)})</strong>:<>({change.baselineAt.slice(0,10)})</>}</span>;
+      })}</p>}
       {showFlights && flightsCount===null&&<>{officialSchedule&&planned&&planned.totalFlights>0?<><p>{pc('officialScheduledFlights',lang)} {planned.totalFlights.toLocaleString(numberLocale)}{flightUnit}</p><small>{pc('officialScheduleBasis',lang)}</small></>:<><p>{pc('schedulePending',lang)}</p>{planned&&planned.totalFlights>0&&<small>{pc('scheduledFlights',lang)} {planned.totalFlights.toLocaleString(numberLocale)}{flightUnit} · {pc('scheduleBasis',lang)}</small>}</>}</>}
       {showFlights && isAll && <FlightScopeNote airport={airport} lang={lang} />}
-      {showFlights && flightChanges.length > 0 && <small>{recordsOnly}</small>}
+      {showFlights && flightChanges.length > 0 && <details className="airport-record-scope"><summary>{contextText(lang,'항공편 자료 범위','Flight coverage','航班资料范围','便の資料範囲')}</summary><p>{recordsOnly}</p></details>}
       <small>{[showPassengers && passengerCollected ? `${airportTodayText.expected[lang]} · ${passengerCollected}` : null, showFlights && flightsCollected ? `${airportTodayText.flights[lang]} · ${flightsCollected}` : null].filter(Boolean).join(" / ")}</small>
       {showPassengers && (isAll || terminal === "T1") && <small className="passenger-scope-note">{contextText(lang,
         "출국장 예상 승객은 출국장 기준입니다. T1에서 출국 수속 후 탑승동으로 이동하는 승객도 T1 범위이며, 탑승동 인원을 따로 더하지 않습니다.",
@@ -2154,8 +2159,6 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         aria-controls="airport-checkpoint-groups"
         onClick={() => setShowAllCheckpoints((open) => !open)}
       >{showAllCheckpoints ? representativeCopy.collapse : airportTodayText.showAllCheckpoints[lang]}</button>}
-      {!showAllCheckpoints && representatives.count > 0 && <p className="airport-detail-foot">{representatives.equal ? `${representativeCopy.equal} ` : ''}{representatives.count < 3 ? `${representativeCopy.few} ` : ''}{representativeCopy.basis}{representatives.hasLowerBound ? ` ${representativeCopy.lower}` : ''}</p>}
-      {checkpointTerminals.length > 0 && <p className="airport-detail-foot">{contextText(lang, "사람·장비는 설명용 모형입니다. 색은 T2 대기시간 기준이며 실제 대기는 숫자로 확인하세요.", "People and equipment are illustrative. Color follows T2 wait-time categories; read the observed numbers.", "人物与设备仅为示意模型。颜色依据T2等候时间等级，实际等候请查看数字。", "人・設備は説明用模型です。色はT2の待ち時間区分を表し、実際の待ちは数値で確認できます。")}</p>}
       <p className="airport-detail-foot">{airportTodayText.nowOnly[lang]}</p>
     </section>
     <AirportWeather lang={lang}/>
@@ -3309,7 +3312,7 @@ function SignalRowCard({ row, lang }: { row: SignalRow; lang: Lang }) {
         forecastTitle={null} source={row.note} guide={row.detail} issuedAt={row.weather.issuedAt}
         targetAt={row.weather.targetAt} showScene={row.weather.showScene} metricScenes forecastKinds={row.weather.kinds}/>
       : <>
-      <b className="signal-row-value">{row.value}</b>
+      <b className="signal-row-value">{row.key==="foreign_purpose_mobility"&&<span className="clarity-purpose-scenes" aria-hidden="true"><Image unoptimized src="/visuals/clarity/v1/shopping-bag-256.webp" width="48" height="48" alt="" loading="lazy" decoding="async"/><Image unoptimized src="/visuals/clarity/v1/tourism-camera-256.webp" width="48" height="48" alt="" loading="lazy" decoding="async"/></span>}{row.value}</b>
       {row.detail && <p className="signal-row-detail">{row.detail}</p>}
       {row.period && <p className="signal-row-period">
         <span>{row.period.cadenceLabel} · {signalStructureText.referencePeriod[lang]} {row.period.periodLabel}</span>
@@ -3520,7 +3523,8 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       timeState: signalStructureText.timeState.delayed[lang],
       label: text.foreignPresence[lang],
       value: `${formatPeopleValue(lang, block.foreignPresence.value)} ${text.foreignPeople[lang]}`,
-      note: `${text.foreignNote[lang]} · ${formatHumanFreshness(block.foreignPresence.referenceAt, summary.generatedAt, lang)} · ${productId}`,
+      note: `${kstStamp(block.foreignPresence.referenceAt)} KST · ${text.foreignNote[lang]} · ${productId}`,
+      detail: contextText(lang,'해당 시각에 머문 단기체류 외국인 추정 인구 · 같은 시각의 과거 비교 자료 부족','Estimated short-stay foreign people present at that hour · matching historical comparison unavailable','该时刻短期停留外国人在场人口推算 · 同时刻历史比较资料不足','その時刻に滞在した短期滞在外国人の推定人口・同時刻の過去比較資料不足'),
       period: describeSourcePeriod({
         cadence: "DAILY",
         referencePeriod: block.foreignPresence.referenceAt,
@@ -3541,7 +3545,8 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       timeState: signalStructureText.timeState.delayed[lang],
       label: text.foreignPurpose[lang],
       value: `${parts.join(" · ")} ${text.movementUnit[lang]}`,
-      note: `${text.foreignPurposeNote[lang]} · ${mobility.datasetId}`,
+      note: `${mobility.referenceDate} · ${text.foreignPurposeNote[lang]} · ${mobility.datasetId}`,
+      detail: contextText(lang,'해당일 도착 행정동의 추정 이동량 · 중복 이동 포함 · 같은 조건의 과거 비교 자료 부족. 쇼핑 목적은 백화점·프리미엄 아울렛 기준입니다.','Estimated movements into the mapped districts that day; repeat movements included. Matching past comparison unavailable. Shopping covers department stores and premium outlets.','该日进入所选行政区的推算移动量，包含重复移动。相同条件历史比较资料不足。购物指百货商场与高端奥特莱斯。','当日の対象行政洞への推定移動量・重複移動を含みます。同条件の過去比較資料不足。買い物目的は百貨店・プレミアムアウトレット基準です。'),
       period: describeSourcePeriod({
         cadence: "MONTHLY",
         referencePeriod: mobility.referenceDate,
@@ -3579,22 +3584,9 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     const dayLow = firstOf((row) => row.dailyMinTemperatureTenthC);
     const dayHigh = firstOf((row) => row.dailyMaxTemperatureTenthC);
 
-    // The observation card above prints measured humidity and wind from
-    // Seoul's city sensors. While that reading is current, KMA's forecast of
-    // the same two values for the same hour is the weaker of two answers to
-    // one question, and showing both is exactly the duplicated weather block
-    // the owner reported. So they are dropped here only while the observation
-    // is fresh; the moment it goes stale or missing, KMA is the only source
-    // for them and they come back.
     const observation = block?.context?.weather ?? null;
-    const observationIsNow = observation
-      ? describeObservationAge(observation.observedAt, summary.generatedAt, lang).isNow
-      : false;
-    const humidityMeasured = observationIsNow && observation?.humidity !== null && observation?.humidity !== undefined;
-    const windMeasured = observationIsNow && observation?.wind !== null && observation?.wind !== undefined;
-
-    if (humidity !== undefined && !humidityMeasured) fact('humidity', `${text.humidity[lang]} ${humidity}%`);
-    if (wind !== undefined && !windMeasured) fact('wind', `${text.wind[lang]} ${(wind / 10).toFixed(1)}m/s`);
+    if (humidity !== undefined) fact('humidity', `${text.humidity[lang]} ${humidity}%`);
+    if (wind !== undefined) fact('wind', `${text.wind[lang]} ${(wind / 10).toFixed(1)}m/s`);
     if (rainfall) fact('rain', `${text.rainfall[lang]} ${(rainfall.precipitationAmountTenthMm! / 10).toFixed(1)}mm`);
     if (dayLow !== undefined) fact('temperature', `${text.dayLow[lang]} ${(dayLow / 10).toFixed(0)}°C`);
     if (dayHigh !== undefined) fact('temperature', `${text.dayHigh[lang]} ${(dayHigh / 10).toFixed(0)}°C`);
@@ -3605,7 +3597,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     // The air-quality half comes from Seoul's real-time city data, not from
     // KMA — a different source and a different reading, so the row's note
     // names both rather than letting one sentence imply one provider.
-    const airGrades = observation;
+    const airGrades = observation && describeObservationAge(observation.observedAt, summary.generatedAt, lang).isNow ? observation : null;
     const guide = buildWeatherGuide({
       temperatureTenthC: firstTemp ?? null,
       dailyMinTemperatureTenthC: dayLow ?? null,
@@ -3646,6 +3638,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       label: text.sales[lang],
       value: formatKrwCompact(lang, block.sales.totalAmount),
       note: `${text.sourceSales[lang]} · ${text.salesNote[lang]}`,
+      detail: contextText(lang,'해당 분기의 추정 매출 합계 · 같은 범위의 과거 비교 자료 부족','Estimated sales total for the reference quarter · matching past comparison unavailable','该季度推算销售额合计 · 相同范围历史比较资料不足','基準四半期の推定売上合計・同範囲の過去比較資料不足'),
       period: describeSourcePeriod({
         cadence: "QUARTERLY",
         referencePeriod: block.sales.quarterCode,
@@ -3737,7 +3730,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
             const weatherRow = groupId === "now" ? groupRows.find((row) => row.key === "weather") : undefined;
             const remainingNow = groupId === "now" ? groupRows.filter((row) => row.key !== "realtime" && row.key !== "weather") : [];
             const observedWeather = block?.context?.weather;
-            const hasObservation = [observedWeather?.temperature, observedWeather?.humidity, observedWeather?.wind, observedWeather?.pm10, observedWeather?.pm25].some(value => value !== null && value !== undefined);
+            const hasObservation = [observedWeather?.pm10, observedWeather?.pm25].some(value => value !== null && value !== undefined);
           return <section className={`signal-group signal-group-${groupId}`} key={groupId}>
             <header className="signal-group-head">
               <h3 className="signal-group-title">{groupCopy.title[lang]}</h3>
@@ -3749,9 +3742,9 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
                 {commercialRow && <CommercialSignalCard signal={commercialRow} lang={lang} />}
                 <SeoulContextCard context={block?.context} lang={lang} nowIso={summary.generatedAt} showWeather={false}/>
                 {(hasObservation || weatherRow) && <section className="seoul-weather-panel" aria-labelledby={`seoul-weather-${area}`}>
-                  <h3 id={`seoul-weather-${area}`}>{contextText(lang,'날씨·주변 환경','Weather and surroundings','天气与周边环境','天気・周辺環境')}</h3>
-                  <SeoulObservationScene context={block?.context} lang={lang} nowIso={summary.generatedAt} metricScenes/>
-                  {weatherRow && <SignalRowCard row={{...weatherRow,label:contextText(lang,'기상청 예보','KMA forecast','气象厅预报','気象庁予報')}} lang={lang}/>}
+                  <h3 id={`seoul-weather-${area}`}>{contextText(lang,'날씨','Weather','天气','天気')}</h3>
+                  <SeoulObservationScene context={block?.context} lang={lang} nowIso={summary.generatedAt} metricScenes airOnly/>
+                  {weatherRow && <SignalRowCard row={{...weatherRow,label:contextText(lang,'날씨','Weather','天气','天気')}} lang={lang}/>}
                 </section>}
                 {remainingNow.map((row) => <SignalRowCard key={row.key} row={row} lang={lang} />)}
               </> : null}

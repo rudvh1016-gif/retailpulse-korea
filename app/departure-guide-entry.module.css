@@ -1,4 +1,17 @@
-details.guide { padding: 0; border: 0; }
+.launcher { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; align-items:start; max-width:856px; margin:20px 0 18px; }
+details.guide { padding: 0; margin:0; border: 0; grid-column:1; grid-row:1; }
+details.guide[open] { grid-column:1/-1; }
+details.guide[open] > summary.entry { width:calc((100% - 16px)/2); }
+.tripEntry { grid-column:2; grid-row:1; align-self:start; display:grid; grid-template-columns:minmax(0,1fr) 80px; gap:12px; align-items:center; padding:10px 12px; min-height:82px; color:var(--ink); background:#f3f8fb; border-radius:4px; box-shadow:0 3px 9px rgb(70 105 132 / 9%); text-decoration:none; z-index:1; }
+.tripEntry strong { font-weight:var(--weight-strong); line-height:1.5; }
+.tripEntry img { width:80px; height:60px; object-fit:contain; }
+.tripEntry:focus-visible { outline:2px solid var(--ink); outline-offset:3px; }
+.baggageChoices { display:flex; flex-wrap:wrap; gap:12px; margin:16px 0; }
+.baggageChoices button { display:flex; align-items:center; gap:8px; min-height:64px; padding:8px 12px; color:var(--ink); background:#f3f8fb; border:0; border-bottom:2px solid transparent; border-radius:4px; box-shadow:0 3px 8px rgb(70 105 132 / 8%); font:inherit; cursor:pointer; }
+.baggageChoices button[aria-pressed=true] { background:#e7f3ef; border-bottom-color:#567d6f; }
+.baggageChoices button:focus-visible { outline:2px solid var(--ink); outline-offset:3px; }
+.baggageChoices img { object-fit:contain; }
+.baggageStatus { padding:12px 0; line-height:1.7; }
 details.guide > summary.entry { display: inline-grid; grid-template-columns: minmax(0,1fr) 80px; width: min(100%,420px); align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--ink); border-radius: 4px; background: var(--paper); color: var(--ink); list-style: none; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: #e8e8e8; }
 .entry::-webkit-details-marker { display: none; }
 .copy { display: grid; gap: 4px; min-width: 0; }
@@ -9,6 +22,7 @@ details.guide > summary.entry { display: inline-grid; grid-template-columns: min
 .guide[open] .indicator { transform: rotate(180deg); }
 .scene { display: block; min-width: 0; aspect-ratio: 4 / 3; }
 .scene img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 60%; }
+@media(max-width:600px) { details.guide > summary.entry,.tripEntry { grid-template-columns:minmax(0,1fr) 48px; gap:6px; padding:10px 8px; } .tripEntry img { width:48px; height:48px; } .actionText { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; } }
 details.guide > summary.entry:hover { background: #f4f4f4; }
 details.guide > summary.entry:active { background: #f8f8f8; }
 details.guide > summary.entry:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
