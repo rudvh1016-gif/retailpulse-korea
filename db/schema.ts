@@ -539,3 +539,8 @@ export const forecastMaintenance = sqliteTable('forecast_maintenance', {
 export const areaDataCoverage = sqliteTable('area_data_coverage', {
  area:text('area').primaryKey(),calculatedAt:text('calculated_at').notNull(),payload:text('payload').notNull(),
 });
+
+export const seoulCommercialMonths = sqliteTable('seoul_commercial_months', {
+ area:text('area').notNull(),month:text('month').notNull(),payload:text('payload').notNull(),
+ sourceHash:text('source_hash').notNull(),calculatedAt:text('calculated_at').notNull(),
+},table=>[primaryKey({columns:[table.area,table.month]})]);

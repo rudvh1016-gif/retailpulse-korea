@@ -59,9 +59,8 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`official outlook peak sta
   {...pointStatus,targetAt:'2026-09-01T00:00:00+09:00',issuedAt:'2026-08-31T14:00:00+09:00',populationMin:12000,populationMax:14000,congestionLevel:1},
  ];
  await page.route('**/api/live/summary*',r=>r.fulfill({json:data}));
- await page.route('**/api/live/predictions*',r=>r.fulfill({json:{targetDate:'2026-09-01',run:null,coverage:null,records:[]}}));
- await page.goto(`/${lang}/predictions`);const official=page.locator('.outlook-grid>article').first();
- await expect(official.locator('.outlook-value')).toContainText('17:00');await expect(official.locator('.outlook-value')).toContainText('88,000–90,000');
- const select=official.getByRole('combobox');await select.press('End');await expect(official.locator('output')).toHaveAttribute('aria-label',/09-01 00:00 KST.*12,000.*14,000/);
- await expect(official.locator('.flow-notes')).toContainText('08-31 14:00 KST');
+ await page.goto(`/${lang}/myeongdong`);const official=page.getByTestId('population-outlook');
+ await expect(official.locator('.outlook-selection-time')).toContainText('17:00');await expect(official.locator('.outlook-selection-range')).toContainText('88,000–90,000');
+ const last=official.getByRole('button').last();await last.focus();await last.press('Enter');await expect(official.locator('.outlook-selection')).toContainText('09-01 00:00 KST');await expect(official.locator('.outlook-selection-range')).toContainText('12,000–14,000');
+ await expect(official.locator('.outlook-source')).toContainText('08-31 14:00 KST');
 });

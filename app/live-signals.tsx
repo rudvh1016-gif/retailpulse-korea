@@ -51,6 +51,7 @@ import type { MonthToDate, MtdDay } from "../lib/airport-mtd";
 import { mtdCopy, shortDay, shortRange } from "../lib/airport-mtd-copy";
 import { averagePaymentRange, commercialActivityContext } from "../lib/commercial-context";
 import { CommercialMetricScene, type CommercialMetricKind } from './commercial-metric-scene';
+import {InstallAppButton} from './install-app';
 
 import { useEventPagination, EventPaginationControls } from "./event-pagination";
 
@@ -1241,6 +1242,7 @@ export function DateNavigator({
       }).format(new Date(`${value}T12:00:00+09:00`))}</time></button>)}
     </div>
     <div className="date-nav-tools">
+    <InstallAppButton lang={lang}/>
     {modernCalendar ? <AirportCalendarWithAvailability lang={lang} date={date} selected={selected} today={today} onChange={value=>onChange(value===today?null:value)}/> : <label className="date-nav-picker">
       <span>{dateNavText.pick[lang]}</span>
       <input
@@ -3751,7 +3753,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
                 {(hasObservation || weatherRow) && <section className="seoul-weather-panel" aria-labelledby={`seoul-weather-${area}`}>
                   <h3 id={`seoul-weather-${area}`}>{contextText(lang,'날씨·주변 환경','Weather and surroundings','天气与周边环境','天気・周辺環境')}</h3>
                   <SeoulObservationScene context={block?.context} lang={lang} nowIso={summary.generatedAt} metricScenes/>
-                  {weatherRow && <SignalRowCard row={{...weatherRow,label:contextText(lang,'공식 날씨 예보','Official weather forecast','官方天气预报','公式天気予報')}} lang={lang}/>}
+                  {weatherRow && <SignalRowCard row={{...weatherRow,label:contextText(lang,'기상청 예보','KMA forecast','气象厅预报','気象庁予報')}} lang={lang}/>}
                 </section>}
                 {remainingNow.map((row) => <SignalRowCard key={row.key} row={row} lang={lang} />)}
               </> : null}

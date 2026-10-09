@@ -151,10 +151,10 @@ test('selected dates and terminal scopes survive links, reload and back', async 
   await expect(page).not.toHaveURL(/terminal=/);
   await page.goBack();
   await expect(page.getByRole('tab',{name:'T2',exact:true})).toHaveAttribute('aria-selected','true');
-  await page.goto('/ko/predictions?area=hongdae');
+  await page.goto('/ko/consumption?area=hongdae');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
-  await page.locator('.prediction-view .segmented').getByRole('button',{name:'성수',exact:true}).click();
+  await page.locator('.consumption-comparison .area-tabs').getByRole('tab',{name:'성수',exact:true}).click();
   await expect(page).toHaveURL(/area=seongsu/);
   await page.reload();
-  await expect(page.locator('.prediction-view .segmented').getByRole('button',{name:'성수',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(page.locator('.consumption-comparison .area-tabs').getByRole('tab',{name:'성수',exact:true})).toHaveAttribute('aria-selected','true');
 });

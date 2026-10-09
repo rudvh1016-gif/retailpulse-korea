@@ -2,6 +2,7 @@ import { safeSourceFailureDetail } from "../lib/source-adapters";
 import { collectHolidays } from "../lib/holidays";
 import { collectAirportComposition } from "../lib/airport-composition-history";
 import { runPopulationPredictions } from "../lib/population-predictions";
+import { refreshCommercialMonths } from '../lib/commercial-monthly-store';
 /**
  * Selectable Production collector runner.
  *
@@ -129,6 +130,8 @@ if ((now.getUTCHours() + 9) % 24 === 3) {
 
 // Additional user-authorized context stays in the existing runner; no duplicate scheduler.
 if (requested.includes("airport_recent")) {
+  try { console.log(JSON.stringify({context:'commercial_months',...await refreshCommercialMonths(env.DB)})); }
+  catch { console.error(JSON.stringify({context:'commercial_months',status:'ERROR',lastGoodPreserved:true})); process.exitCode=1; }
   for (const [name,run] of [
     ["airport_composition",()=>collectAirportComposition(env.DB)],
     ["holidays",()=>collectHolidays(env.DB,env.DATA_GO_KR_SERVICE_KEY)],
