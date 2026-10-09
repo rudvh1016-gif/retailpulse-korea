@@ -1,0 +1,29 @@
+name: Check Approved Facility Contracts
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        type: choice
+        required: true
+        options: [parking, lockers]
+permissions:
+  contents: read
+concurrency:
+  group: approved-facility-contract-${{ inputs.source }}
+  cancel-in-progress: false
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+      - name: Check existing key against the approved service once
+        run: node scripts/check-approved-facility-contracts.mjs
+        env:
+          RPK_FACILITY_CONTRACT_SCOPE: ${{ inputs.source }}
+          DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
+          SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
