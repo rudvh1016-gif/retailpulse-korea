@@ -1,0 +1,14 @@
+{
+  "sourceThreadId": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+  "ownerMessageId": "Sentinel_b3ccd11efc788191aad085f8f9bde5fc",
+  "ownerAtUtc": "2026-10-09T08:33:52Z",
+  "ownerRequest": "뭔소리야 원래위치였던 면세환율 왼쪽에배치해",
+  "clarifiedScope": "Restore the installation button in the shared top header immediately before duty-free exchange on all relevant pages and viewport sizes; remove date/month-row duplicates. Preserve exchange digits and equals, all other features, data and prior approvals.",
+  "previousDateLeftInstructionSuperseded": true,
+  "referencePublicMain": "71b88933866222e5ba4f3e491a2feca8ce982319",
+  "sourceMain": "305aa467b814af92f5de633d89a915619d6c38e0",
+  "approvedProtectedFiles": ["app/live-signals.tsx", "app/retailpulse-app.tsx"],
+  "normalApprovalFixture": "tests/fixtures/phase2-locks.json",
+  "keepProtectedListAndEnforcement": true,
+  "agentMergeOrDeploymentApproved": false
+}

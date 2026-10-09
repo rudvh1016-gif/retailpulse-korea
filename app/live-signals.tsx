@@ -51,7 +51,6 @@ import type { MonthToDate, MtdDay } from "../lib/airport-mtd";
 import { mtdCopy, shortDay, shortRange } from "../lib/airport-mtd-copy";
 import { averagePaymentRange, commercialActivityContext } from "../lib/commercial-context";
 import { CommercialMetricScene, type CommercialMetricKind } from './commercial-metric-scene';
-import {InstallAppButton} from './install-app';
 
 import { useEventPagination, EventPaginationControls } from "./event-pagination";
 
@@ -1242,7 +1241,6 @@ export function DateNavigator({
       }).format(new Date(`${value}T12:00:00+09:00`))}</time></button>)}
     </div>
     <div className="date-nav-tools">
-    <InstallAppButton lang={lang}/>
     {modernCalendar ? <AirportCalendarWithAvailability lang={lang} date={date} selected={selected} today={today} onChange={value=>onChange(value===today?null:value)}/> : <label className="date-nav-picker">
       <span>{dateNavText.pick[lang]}</span>
       <input

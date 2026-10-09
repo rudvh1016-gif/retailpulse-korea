@@ -26,12 +26,12 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
  await expect(page.locator('.install-app-button')).toHaveCount(1);expect(errors).toEqual([]);
  if(lang==='ko'){await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:info.outputPath(`consumption-fixture-${width}.png`)});}
 });
-test('old URL redirects; install remains left of the airport calendar with its full guide',async({page})=>{
+test('old URL redirects; shared header install stays before exchange with its full guide',async({page})=>{
  await page.setViewportSize({width:390,height:900});await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
  await page.goto('/ko/predictions');await expect(page).toHaveURL(/\/ko\/where-to/);
- await page.goto('/ko/airport');const install=page.locator('.date-nav-tools .install-app-button');await expect(install).toBeVisible();await expect(page.locator('.header-meta .install-app-button')).toHaveCount(0);
- const button=await install.boundingBox(),calendar=await page.locator('.date-nav-tools > :nth-child(2)').boundingBox();expect(button!.height).toBeGreaterThanOrEqual(44);
- expect(button!.x).toBeLessThan(calendar!.x);
+ await page.goto('/ko/airport');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');const install=page.locator('.header-meta .install-app-button');await expect(install).toBeVisible();await expect(page.locator('.date-nav-tools .install-app-button')).toHaveCount(0);
+ const button=await install.boundingBox(),exchange=await page.getByTestId('airport-duty-free-exchange').boundingBox();expect(button!.height).toBeGreaterThanOrEqual(44);
+ expect(button!.x+button!.width).toBeLessThanOrEqual(exchange!.x+1);
  await install.click();await expect(page.locator('.install-modal')).toBeVisible();await page.keyboard.press('Escape');await expect(install).toBeFocused();
 });
 test('failed monthly request is explicit and can recover without a false zero',async({page})=>{

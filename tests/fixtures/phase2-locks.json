@@ -19,14 +19,14 @@
     "app/globals.css": "42c61ee811f638e410c3088d96cdd1efbfb928b4e2a6473e10ec1510b0197d04",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
     "app/layout.tsx": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
-    "app/live-signals.tsx": "e58de75e8c4d655c590563bd05768fcde21f010923d3abe41d0470b088879581",
+    "app/live-signals.tsx": "918ecd9275d335c01f1577695a1c2632526aa64f290acecfea0389122b3e5f9a",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "d2fcba67493abf4fa0ba40d4fc98096f9b2860af6d959102850449eab323641a",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "8be334b5132a4c7571237d7f32ece188de2fcf9c5fba4429c706e1b015998de0",
+    "app/retailpulse-app.tsx": "4fff045b01ced3d192be7e0dd478ab5372bbb9c024322c5ab79903d0033bdc1d",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "88706de549837235cd8a3f1731abb2a28808b4a3a6102a59913ee40fbb9651e1",
@@ -919,6 +919,40 @@
         "file": "app/seo-config.ts",
         "previous": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b",
         "approved": "88706de549837235cd8a3f1731abb2a28808b4a3a6102a59913ee40fbb9651e1"
+      }
+    ]
+  },
+  "ownerApprovedInstallBeforeExchange20261009": {
+    "recordedAt": "2026-10-09T08:40:10.951Z",
+    "approvalEvidenceFile": "docs/approvals/install-before-exchange-20261009.json",
+    "authorizationEvidence": {
+      "sourceThreadId": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "ownerMessageId": "Sentinel_b3ccd11efc788191aad085f8f9bde5fc",
+      "ownerAtUtc": "2026-10-09T08:33:52Z",
+      "ownerRequest": "뭔소리야 원래위치였던 면세환율 왼쪽에배치해",
+      "clarifiedScope": "Restore the installation button in the shared top header immediately before duty-free exchange on all relevant pages and viewport sizes; remove date/month-row duplicates. Preserve exchange digits and equals, all other features, data and prior approvals.",
+      "previousDateLeftInstructionSuperseded": true,
+      "referencePublicMain": "71b88933866222e5ba4f3e491a2feca8ce982319",
+      "sourceMain": "305aa467b814af92f5de633d89a915619d6c38e0",
+      "approvedProtectedFiles": [
+        "app/live-signals.tsx",
+        "app/retailpulse-app.tsx"
+      ],
+      "normalApprovalFixture": "tests/fixtures/phase2-locks.json",
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Normal hash bookkeeping solely for the owner-requested shared-header installation placement restoration; preserve menus, data, forecasting, all protected members, original tests and historical approvals.",
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "e58de75e8c4d655c590563bd05768fcde21f010923d3abe41d0470b088879581",
+        "approved": "918ecd9275d335c01f1577695a1c2632526aa64f290acecfea0389122b3e5f9a"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "8be334b5132a4c7571237d7f32ece188de2fcf9c5fba4429c706e1b015998de0",
+        "approved": "4fff045b01ced3d192be7e0dd478ab5372bbb9c024322c5ab79903d0033bdc1d"
       }
     ]
   }
