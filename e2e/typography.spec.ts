@@ -37,7 +37,7 @@ const openGuide = async (page: import("@playwright/test").Page, locale: string) 
   await page.goto(`/${locale}`);
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await page.waitForFunction(() => document.fonts.ready.then(() => true));
-  await page.locator(".topbar .install-app-button").click();
+  await page.locator(".date-nav-tools .install-app-button").click();
   const dialog = page.locator(".install-modal");
   await expect(dialog).toBeVisible();
   return dialog;
@@ -360,7 +360,7 @@ test("the weather guide names dust and wind, and the observation is marked as no
   await expect(environment).not.toContainText("기상청 예보라서");
 
   // Forecast guide: the existing sentence, plus the appended clause.
-  const guide = page.locator(".signal-row", { hasText: "날씨" }).first();
+  const guide = page.locator('[data-signal-key="weather"]');
   await expect(guide).toContainText("미세먼지는");
   await expect(guide).toContainText("바람은");
 
@@ -410,7 +410,7 @@ test("a stale observation is stamped with the time it was taken and explains the
 
   // With no current measurement to defer to, KMA is the only source for
   // humidity and wind, so they come back rather than silently vanishing.
-  const guide = page.locator(".signal-row", { hasText: "날씨" }).first();
+  const guide = page.locator('[data-signal-key="weather"]');
   await expect(guide).toContainText("습도 65%");
   await expect(guide).toContainText("바람 2.5m/s");
 });
@@ -457,11 +457,12 @@ test("the airport screen separates 출국 and 입국, and 입국 shows arrival p
   await expect(brief).toBeVisible();
   await expect(brief).toContainText("공식 예상 입국객");
   await expect(brief).toContainText("41,300명");
-  // It is a forecast about the airport, never a count of people reaching Seoul.
-  await expect(brief).toContainText("서울로 이동하는 인원 수가 아닙니다");
+  // Owner removed the explanatory sentence; the forecast title and source time remain.
+  await expect(brief).not.toContainText("서울로 이동하는 인원 수가 아닙니다");
+  await expect(brief).toContainText("09:05");
 
   // The hourly arrival flow, from the same statement the departure page reads.
-  await expect(page.locator("#airport-arrival-flow-title")).toContainText("공식 예상 입국객 흐름");
+  await expect(page.locator("#airport-arrival-flow-title")).toContainText("시간대별 예상 입국객");
   await expect(page.locator(".airport-forecast .airport-flow-band")).toHaveCount(2);
 
   // Per terminal, and nothing departure-only anywhere on the screen.

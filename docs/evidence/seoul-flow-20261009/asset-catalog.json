@@ -1,0 +1,23 @@
+{
+  "kind": "PUBLIC_REVIEW_ASSETS",
+  "source": "Procedurally generated Blender 5.2.1 scenes",
+  "geometryEncodesMetrics": false,
+  "actualCoordinates": false,
+  "webp": [
+    {
+      "width": 640,
+      "bytes": 36528
+    },
+    {
+      "width": 960,
+      "bytes": 59160
+    },
+    {
+      "width": 1440,
+      "bytes": 97038
+    }
+  ],
+  "masterScenes": "Local editable deliverable retained; master PNG and blend metadata excluded from public repository",
+  "librarySaved": false,
+  "productionMounted": false
+}

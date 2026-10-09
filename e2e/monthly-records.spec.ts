@@ -68,7 +68,7 @@ test('month changes discard a slower earlier response and leave controls usable 
   await page.goto('/ko/forecast'); await expect(page.getByTestId('monthly-records-result')).toBeVisible();
   const month=page.getByRole('combobox',{name:'조회 월',exact:true});
   await month.selectOption('2026-09'); await month.selectOption('2026-08');
-  await expect(page.getByRole('status')).toContainText('불러오지 못했습니다'); await expect(month).toBeEnabled();
+  await expect(page.locator('.monthly-records').getByRole('status')).toContainText('불러오지 못했습니다'); await expect(month).toBeEnabled();
   await page.getByRole('button',{name:'다시 불러오기'}).click(); await expect(page.getByTestId('record-month-2026-07')).toBeVisible();
   release!(); await expect(month).toHaveValue('2026-08');
   await expect(page.getByTestId('record-month-2026-07')).toBeVisible();
@@ -82,7 +82,7 @@ test('empty history and older incompatible API payloads stay explicit, with no i
     data.current.days=data.current.days.map(day=>({...day,hours:0,min:null,max:null,status:'MISSING'}));
     await route.fulfill({contentType:'application/json',body:JSON.stringify(older?SUMMARY_FIXTURE:data)});
   });
-  await page.goto('/ko/forecast'); await expect(page.getByRole('status')).toContainText('불러오지 못했습니다');
+  await page.goto('/ko/forecast'); await expect(page.locator('.monthly-records').getByRole('status')).toContainText('불러오지 못했습니다');
   older=false; await page.getByRole('button',{name:'다시 불러오기'}).click();
   await expect(page.getByTestId('record-month-2026-10')).toContainText('—');
   await expect(page.getByTestId('record-month-2026-10')).not.toContainText('0–0');

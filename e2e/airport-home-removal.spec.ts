@@ -12,7 +12,7 @@ for (const lang of ['ko','en','zh','ja']) for (const width of [360,390,430,1280]
     await expect(page.locator('.airport-today')).toBeVisible();
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-    await expect(page.locator('nav.bottom-nav a')).toHaveCount(5);
+    await expect(page.locator('nav.bottom-nav a')).toHaveCount(6);
     await expect(page.locator('nav.top-nav a').first()).toHaveAttribute('href',`/${lang}/airport`);
     await expect(page.locator('nav.bottom-nav a').first()).toHaveAttribute('aria-current','page');
     await expect(page.locator('.demand-home')).toHaveCount(0);

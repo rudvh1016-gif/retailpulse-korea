@@ -1,0 +1,18 @@
+{
+  "sourceThreadId": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+  "assistantMessageId": "Sentinel_e838771c50cc819185808c390914d047",
+  "assistantAtUtc": "2026-10-09T02:40:55Z",
+  "assistantQuestion": "남은 반영 승인은 한 번에 묶을게. ① 성수의 어제 기록 복구 ② 요청한 입국 문구 삭제·서울 블렌더 연결에 맞춰 변경 기준을 갱신해도 될까? 기존 보호 검사는 유지하고, 이 수정 범위만 승인 기록에 넣는 거야.",
+  "ownerMessageId": "Sentinel_618f9f38f8908191b68eed3f203811a7",
+  "ownerAtUtc": "2026-10-09T03:07:57Z",
+  "ownerAnswer": "싹다갱신해",
+  "approvedProtectedFiles": [
+    "app/api/live/summary/route.ts",
+    "app/live-signals.tsx"
+  ],
+  "normalApprovalFixture": "tests/fixtures/phase2-locks.json",
+  "scope": "Restore retained selected-day Seoul observations; remove the requested arrival sentence and revise its heading; mount the approved Seoul Blender models using the existing summary; record only matching changed protected-file hashes.",
+  "keepProtectedListAndEnforcement": true,
+  "noMergeOrDeployment": true,
+  "noAdditionalMETARCallsOrActivation": true
+}

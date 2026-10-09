@@ -259,7 +259,11 @@ export type SummaryClient = ReadClient & { prepare(sql: string): D1PreparedState
  */
 export async function summarizeLiveSummary(client: SummaryClient, clock: SummaryClock): Promise<Response> {
   const { generatedAt, now, kstNowIso, kstToday, kstHourStart, serviceDate, dayRelation, dayStartAt } = clock;
-  const observedStartAt = [dayStartAt, kstNowIsoOf(new Date(now - 6 * 3_600_000).toISOString())].sort().at(-1)!;
+  const selectedDayEndAt = kstDayBounds(serviceDate).endAt;
+  const observedStartAt = dayRelation === "PAST" ? dayStartAt
+    : [dayStartAt, kstNowIsoOf(new Date(now - 6 * 3_600_000).toISOString())].sort().at(-1)!;
+  const observedEndAt = dayRelation === "PAST" ? selectedDayEndAt : kstNowIso;
+  const observedLimit = dayRelation === "PAST" ? 289 : 73;
   // null when the previous month has no same-numbered day; the second statement
   // is then not issued at all rather than bound to an invented date.
   const previousMonthEnd = previousMonthSameDay(serviceDate);
@@ -279,23 +283,29 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       withAreaBaselines(latestPerKey(AREAS, () => `SELECT area, area_code AS areaCode, source_id AS sourceId, schema_version AS schemaVersion, quality_status AS qualityStatus, congestion_level AS congestionLevel, congestion_label AS congestionLabel,
         population_min AS populationMin, population_max AS populationMax,
         observed_at AS observedAt, retrieved_at AS retrievedAt
-      FROM seoul_realtime_area WHERE area = ? ORDER BY observed_at DESC LIMIT 1`), "seoul_realtime_area", "population_min", "population_max"),
-    ).bind(...AREAS)],
+      FROM seoul_realtime_area WHERE area = ?
+        ${dayRelation === "PAST" ? `AND observed_at >= ? AND observed_at < ?
+          AND source_id = 'SEOUL_CITYDATA_PPLTN' AND record_origin = 'LIVE' AND quality_status = 'VALID'
+          AND population_min >= 0 AND population_max >= population_min` : ""}
+        ORDER BY observed_at DESC LIMIT 1`), "seoul_realtime_area", "population_min", "population_max"),
+    ).bind(...AREAS.flatMap(area => dayRelation === "PAST" ? [area, dayStartAt, selectedDayEndAt] : [area]))],
 
     // Existing stored observations were never returned to observedSeries, so
     // the chart stayed at one point regardless of successful collection.
-    // Read only today's last six hours, at most 73 original five-minute rows
-    // per area, through the existing (area, observed_at) index and D1 batch.
+    // Today keeps its last six hours (73 original five-minute rows). An explicitly
+    // selected past day reads only that KST day (at most 289 rows per area),
+    // through the existing indexed range and same D1 batch. No current-day fallback.
     observedSeriesRows: [client.prepare(
       latestPerKey(AREAS, () => `SELECT area, area_code AS areaCode, source_id AS sourceId, schema_version AS schemaVersion,
         congestion_level AS congestionLevel, congestion_label AS congestionLabel,
         population_min AS populationMin, population_max AS populationMax, observed_at AS observedAt
       FROM seoul_realtime_area
-      WHERE area = ? AND ? = 'TODAY' AND observed_at >= ? AND observed_at <= ?
+      WHERE area = ? AND ? IN ('TODAY', 'PAST') AND observed_at >= ?
+        AND observed_at ${dayRelation === "PAST" ? "<" : "<="} ?
         AND source_id = 'SEOUL_CITYDATA_PPLTN' AND record_origin = 'LIVE' AND quality_status = 'VALID'
         AND population_min >= 0 AND population_max >= population_min
-      ORDER BY observed_at DESC LIMIT 73`),
-    ).bind(...AREAS.flatMap(area => [area, dayRelation, observedStartAt, kstNowIso]))],
+      ORDER BY observed_at DESC LIMIT ${observedLimit}`),
+    ).bind(...AREAS.flatMap(area => [area, dayRelation, observedStartAt, observedEndAt]))],
 
     commercialRows: [client.prepare(
       withAreaBaselines(latestPerKey(AREAS, () => `SELECT area, source_id AS sourceId, schema_version AS schemaVersion, commercial_level AS commercialLevel,
@@ -570,7 +580,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     .sort();
 
   const areas = Object.fromEntries(AREAS.map((area) => {
-    const realtime = dayRelation === "TODAY" ? realtimeRows.find((row) => row.area === area) ?? null : null;
+    const realtime = dayRelation === "FUTURE" ? null : realtimeRows.find((row) => row.area === area) ?? null;
     const commercial = commercialRows.find((row) => row.area === area) ?? null;
     const foreignPresence = foreignPresenceRows.find((row) => row.area === area) ?? null;
     const purposeRows = foreignPurposeRows.filter((row) => row.area === area);

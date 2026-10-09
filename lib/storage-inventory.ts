@@ -68,6 +68,11 @@ const AREAS = ["myeongdong", "hongdae", "seongsu", "itaewon"] as const;
 const BY_AREA = { column: "area", values: AREAS } as const;
 
 export const STORAGE_TABLES: readonly TableInventory[] = [
+  // Prepared METAR storage: one RKSI current row and one bounded attempt row.
+  { table: "airport_metar_current", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
+    readers: "Stored RKSI ground observation API; no raw snapshot history", insertedAt: "retrieved_at" },
+  { table: "airport_metar_attempt", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
+    readers: "Prepared hourly request budget and latest attempt; collector not activated", insertedAt: "claimed_at" },
   // Bounded latest state: two vendors per table, no retained HTML or history.
   { table: "duty_free_exchange_current", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
     readers: "Stored official duty-free exchange snapshot API", insertedAt: "first_verified_at" },
@@ -86,8 +91,8 @@ export const STORAGE_TABLES: readonly TableInventory[] = [
   { table: "seoul_realtime_forecast", recordClass: "B_OBSERVATION_DETAIL", retentionDays: null, prunedBy: null, readWindowDays: null,
     readers: "최신 발표본의 12시간 공식 예측만 화면에 사용",
     insertedAt: "retrieved_at", daily: { column: "issued_at", kind: "instant", leading: BY_AREA } },
-  { table: "seoul_context", recordClass: "B_OBSERVATION_DETAIL", retentionDays: 90, prunedBy: "lib/population-predictions.ts (하루 최대 400행)", readWindowDays: null,
-    readers: "최신 업종별 소비·대기질 맥락",
+  { table: "seoul_context", recordClass: "B_OBSERVATION_DETAIL", retentionDays: 90, prunedBy: "lib/population-predictions.ts (하루 최대 400행)", readWindowDays: 62,
+    readers: "최신 업종별 소비·대기질 맥락, 완료된 현재·전월의 월별 관측 평균 요약",
     insertedAt: "retrieved_at", daily: { column: "observed_at", kind: "instant", leading: BY_AREA } },
   { table: "weather_forecast", recordClass: "B_OBSERVATION_DETAIL", retentionDays: null, prunedBy: null, readWindowDays: null,
     readers: "최신 발표본의 기상청 단기예보만 화면에 사용",
@@ -114,6 +119,8 @@ export const STORAGE_TABLES: readonly TableInventory[] = [
   { table: "tourism_events", recordClass: "B_OBSERVATION_DETAIL", retentionDays: null, prunedBy: null, readWindowDays: null,
     readers: "오늘부터 30일 안의 행사 (행사별 1행, 변경 시 갱신)", insertedAt: "retrieved_at" },
   // C — official periodic aggregates and compact daily facts.
+  { table: "seoul_commercial_months", recordClass: "C_AGGREGATE", retentionDays: null, prunedBy: null, readWindowDays: null,
+    readers: "지역·월별 소비 관측 평균 비교, 과거 요약 보존 (최신 2개월 내부 시간 배열만 유지)", insertedAt: "calculated_at" },
   { table: "seoul_subway_ridership", recordClass: "C_AGGREGATE", retentionDays: null, prunedBy: null, readWindowDays: 35,
     readers: "대표역 승하차 추세 (전일·지난주 같은 요일·4주 평균)", insertedAt: "retrieved_at" },
   { table: "seoul_estimated_sales", recordClass: "C_AGGREGATE", retentionDays: null, prunedBy: null, readWindowDays: null,

@@ -1,0 +1,53 @@
+{
+  "at": "2026-10-09T02:52:44.101Z",
+  "run": 37876242438,
+  "url": "https://github.com/rudvh1016-gif/retailpulse-korea/actions/runs/37876242438",
+  "head": "8bef7e75ab57d816bbcb88f341ee0e9da4ee9d34",
+  "conclusion": "success",
+  "contractStatus": "VERIFIED_CONTRACT",
+  "httpStatus": 200,
+  "providerCode": "00",
+  "requestCount": 1,
+  "priorGETs": 4,
+  "totalGETs": 5,
+  "remainingGETs": 0,
+  "retries": 0,
+  "elapsedMs": 1416,
+  "actualObservation": {
+    "station": "RKSI",
+    "observedAt": "2026-10-09T02:30:00Z",
+    "measurements": {
+      "airTemperature": {
+        "value": 22,
+        "unit": "Cel"
+      },
+      "dewpointTemperature": {
+        "value": 15,
+        "unit": "Cel"
+      },
+      "qnh": {
+        "value": 1024,
+        "unit": "hPa"
+      },
+      "meanWindDirection": {
+        "value": 290,
+        "unit": "deg"
+      },
+      "meanWindSpeed": {
+        "value": 6,
+        "unit": "[kn_i]"
+      }
+    }
+  },
+  "layout": "DIRECT_IWXXM",
+  "otherJobsSkipped": true,
+  "rawPayloadRetained": false,
+  "newCredentials": false,
+  "D1Writes": 0,
+  "productionActivated": false,
+  "publicMETARConnected": false,
+  "groundWindOnly": true,
+  "turbulenceRisk": "NOT_INFERRED",
+  "previousFailure": "37491179068 REQUEST_TIMEOUT after DNS, TCP connection unobserved",
+  "currentFailureReproduced": false
+}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { preload } from "react-dom";
-import { notFound } from "next/navigation";
+import { notFound,permanentRedirect } from "next/navigation";
 import RetailPulseApp from "../../retailpulse-app";
 import { loadTodayAnswer } from "../../../lib/today-answer-server";
 import { buildMetadata, pageStructuredData, seoLocales, standaloneSeoSlugs, type SeoLocale, type SeoSlug } from "../../seo-config";
@@ -32,8 +32,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function LocalePage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug } = await params;
   if (!seoLocales.includes(locale as SeoLocale) || !standaloneSeoSlugs.includes(slug as typeof standaloneSeoSlugs[number])) notFound();
+  if(slug==='predictions')permanentRedirect(`/${locale}/where-to`);
   const isArea = areaSlugs.includes(slug as typeof areaSlugs[number]);
-  const view = isArea ? "today" : slug as "predictions" | "forecast" | "airport" | "business" | "about" | "more";
+  const view = isArea ? "today" : slug as "where-to" | "consumption" | "forecast" | "airport" | "business" | "about" | "more";
   const area = isArea ? slug as typeof areaSlugs[number] : "myeongdong";
   preloadLiveSummary();
   // Only the pages whose question this answers pay for the read.

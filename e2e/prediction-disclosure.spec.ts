@@ -22,7 +22,7 @@ for(const [lang,width] of [['ko',320],['ko',390],['ko',430],['en',390],['zh',390
  test(`prediction evidence stays compact and keyboard/touch accessible ${lang} ${width}`,async({page},info)=>{
   await page.setViewportSize({width,height:900});
   const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
-  await page.goto(`/${lang}/predictions`);
+  await page.goto(`/${lang}/forecast`);
   const history=page.locator('details.prediction-history'),summary=history.locator(':scope > summary');
   await expect(summary).toHaveText(labels[lang]);
   await expect(history).not.toHaveAttribute('open','');
@@ -33,7 +33,7 @@ for(const [lang,width] of [['ko',320],['ko',390],['ko',430],['en',390],['zh',390
   expect((await summary.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   if(lang==='ko'){
-   await expect(page.getByText('서울시 발표 예상 · 실제 관측 아님',{exact:false})).toBeVisible();
+   await expect(page.locator('.outlook-grid')).toHaveCount(0);
    await summary.scrollIntoViewIfNeeded();
    await page.screenshot({path:info.outputPath(`prediction-closed-${width}.png`)});
   }
@@ -63,7 +63,7 @@ test('score link opens async evidence and still works after closing it',async({p
  let release!:()=>void;
  const ready=new Promise<void>(resolve=>{release=resolve;});
  await page.route('**/api/live/predictions*',async route=>{await ready;await route.fulfill({json:payload});});
- await page.goto('/ko/predictions#prediction-score');
+ await page.goto('/ko/forecast#prediction-score');
  await expect(page.locator('.prediction-history')).toHaveCount(0);
  release();
  const score=page.locator('#prediction-score'),summary=page.locator('.prediction-history > summary');
@@ -79,14 +79,14 @@ test('score link opens async evidence and still works after closing it',async({p
 test('existing Seoul history link reaches the preserved scorecard',async({page})=>{
  await page.goto('/ko/myeongdong');
  await page.locator('.period-outlook-link').click();
- await expect(page).toHaveURL(/\/ko\/predictions\?area=myeongdong#prediction-score$/);
+ await expect(page).toHaveURL(/\/ko\/forecast\?area=myeongdong#prediction-score$/);
  await expect(page.locator('#prediction-score')).toBeVisible();
  await expect(page.locator('#prediction-score')).toBeInViewport();
 });
 
 test('missing coverage does not render an empty disclosure',async({page})=>{
  await page.route('**/api/live/predictions*',routeSummary({...payload,coverage:null,records:[]}));
- await page.goto('/ko/predictions');
- await expect(page.getByText('비교할 같은 요일 기록을 모으고 있습니다.',{exact:false})).toBeVisible();
+ await page.goto('/ko/forecast');
+ await expect(page.getByText('아직 보유한 관측·예측 비교 기록이 없습니다.',{exact:true})).toBeVisible();
  await expect(page.locator('.prediction-history')).toHaveCount(0);
 });

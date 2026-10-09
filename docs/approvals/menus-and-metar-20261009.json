@@ -1,0 +1,36 @@
+{
+  "sourceThreadId": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+  "assistantMessageId": "Sentinel_66e0704ee3ec8191aa9213ed29798d5e",
+  "assistantAtUtc": "2026-10-09T04:58:19Z",
+  "assistantQuestion": "수정본 전체 검사가 끝났어. 성수 어제 기록, 서울 블렌더, 편의점 비율 간격, 입국 문구 삭제, T1 색상 보완까지 통과했어.\n\n이번 반영에는 공항 날씨를 저장할 공간도 추가돼. 실제 날씨가 계속 나오려면 자동 수집 연결까지 필요해.\n\n아까 물은 두 새 메뉴의 변경 기준 갱신과 함께, 날씨 저장 공간 추가·무료 허용량 안에서 시간당 최대 1회 자동 수집도 승인할까? 유료 결제는 없어.",
+  "ownerMessageId": "Sentinel_d2db8c74a7a88191b8f2b0f07c5f7670",
+  "ownerAtUtc": "2026-10-09T05:09:48Z",
+  "ownerAnswer": "ㅇㅇ 승인해",
+  "secondaryOwnerMessageId": "Sentinel_523d21d6bf388191a0b0299ff6b4de35",
+  "secondaryOwnerAtUtc": "2026-10-09T05:09:56Z",
+  "secondaryOwnerAnswer": "갱신해",
+  "secondaryReplyToMessageId": "Sentinel_225d164b332081919844ef719a7a8f0f",
+  "approvedProtectedFiles": [
+    "app/[locale]/[slug]/page.tsx",
+    "app/live-signals.tsx",
+    "app/retailpulse-app.tsx",
+    "app/seo-config.ts"
+  ],
+  "normalApprovalFixture": "tests/fixtures/phase2-locks.json",
+  "keepProtectedListAndEnforcement": true,
+  "scope": "Integrate prepared Where to Go Today and observed consumption screens, their menus/routing/search titles and preserved forecast evidence into the approved latest candidate. Update only matching four protected hashes through normal approval review.",
+  "METAR": {
+    "storageMigration": "0025_airport_metar.sql",
+    "continuousUseApprovedConditionally": true,
+    "actualAccountFreeQuotaVerificationRequired": true,
+    "maxAttemptsPerHour": 1,
+    "maxAttemptsPerDay": 24,
+    "retriesConsumeSameBudget": true,
+    "existingCredentialOnly": true,
+    "newKeysOrPermissionsOrPaidServicesApproved": false,
+    "currentAccountQuota": "UNVERIFIED",
+    "runtimeActivationBeforeQuotaVerification": false
+  },
+  "agentMergeOrDeploymentApproved": false,
+  "ownerFinalMerge": true
+}

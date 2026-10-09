@@ -1,0 +1,72 @@
+{
+  "actualBlender": true,
+  "source": "district-refined-v2.blend",
+  "conceptual": true,
+  "dataBaked": false,
+  "assets": [
+    {
+      "area": "myeongdong",
+      "width": 320,
+      "height": 257,
+      "file": "myeongdong-320.webp",
+      "bytes": 3884,
+      "sha256": "932176accb717d35dbc63855855314cc28ba585e4c01e67e8af24afa23995f2a"
+    },
+    {
+      "area": "myeongdong",
+      "width": 640,
+      "height": 514,
+      "file": "myeongdong-640.webp",
+      "bytes": 9082,
+      "sha256": "3a5964c6d8d6ed136d7d8831b782dfe772b8e1e089d34b3148c11cbcf82b9215"
+    },
+    {
+      "area": "seongsu",
+      "width": 320,
+      "height": 257,
+      "file": "seongsu-320.webp",
+      "bytes": 2922,
+      "sha256": "a0609d3a008af205f3d236bbe1e0ae9fab001e0454783121819f5357df9210b5"
+    },
+    {
+      "area": "seongsu",
+      "width": 640,
+      "height": 514,
+      "file": "seongsu-640.webp",
+      "bytes": 7404,
+      "sha256": "edc9753ef7b62134a4f565a34bf644cd1843e5cc14a6b787d3418cf3c2a19f1e"
+    },
+    {
+      "area": "hongdae",
+      "width": 320,
+      "height": 257,
+      "file": "hongdae-320.webp",
+      "bytes": 2892,
+      "sha256": "feadedbbb4c76aeacbb388284b867e8ac75cfc677c8b2d5115e758bbdaee5357"
+    },
+    {
+      "area": "hongdae",
+      "width": 640,
+      "height": 514,
+      "file": "hongdae-640.webp",
+      "bytes": 6934,
+      "sha256": "d8febdc6f5e4c2969350793c6d275fb9074aaf7fa0602c5e88851be7e6a0e316"
+    },
+    {
+      "area": "itaewon",
+      "width": 320,
+      "height": 257,
+      "file": "itaewon-320.webp",
+      "bytes": 3344,
+      "sha256": "8e84e1ee8832be2babc668c7c231863456111a198e6913fc773a10d52c5ecd3b"
+    },
+    {
+      "area": "itaewon",
+      "width": 640,
+      "height": 514,
+      "file": "itaewon-640.webp",
+      "bytes": 8212,
+      "sha256": "920e4ac09c415de9848f11f2e509d154918d86b14483c1752e3182ef4f415077"
+    }
+  ]
+}

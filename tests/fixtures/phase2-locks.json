@@ -1,7 +1,7 @@
 {
   "base": "65907c971b5e279da48525875df6c972ab998c64",
   "protectedFiles": {
-    "app/[locale]/[slug]/page.tsx": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545",
+    "app/[locale]/[slug]/page.tsx": "abccff8db7c692c80ed5c29acd56254a75957c9c4b1b6fe84c744a98047ca57d",
     "app/[locale]/not-found.tsx": "620e62c747a4a0d4b8af1558492c74e961f2a4f0d55caa2c960c508395a41ff0",
     "app/[locale]/page.tsx": "861f9697b315e6b0b54e1663c4089f4a6a6330d1298acc3066e0e657b6cafb98",
     "app/[locale]/tourism-desk/[area]/page.tsx": "b74c40a03d7ff4ec57a8314f4c11825467212d48634bebf057d078d3ae360b35",
@@ -13,23 +13,23 @@
     "app/api/live/events/route.ts": "f85c532f05c89b1412fbd77a04ff88d5d3b9f8587ddbebad00dbe1c3df9ed7a4",
     "app/api/live/flights/route.ts": "fb7bbfc1132359dceb4d315997eaf26bfc5b27d3f03f2bb9b8be4fe46718c1bd",
     "app/api/live/predictions/route.ts": "b82f003bd3d77c293a379c4dbd0bf5e2aa449b19e54a65119ef2e4f291cdfced",
-    "app/api/live/summary/route.ts": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8",
+    "app/api/live/summary/route.ts": "147b9c17727c1041e424fe89e9305878c8a9d794e7c531a36c49f81ae24b99b1",
     "app/area-demand-card.tsx": "78254205092521a36a61fe35aa3ff57c8d91ef1921199cad353c0792dc251dab",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "42c61ee811f638e410c3088d96cdd1efbfb928b4e2a6473e10ec1510b0197d04",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
     "app/layout.tsx": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
-    "app/live-signals.tsx": "75888c628f76c15fe6a0c71501742aa74462d5541cb5d2b113e6a9816e82c2a4",
+    "app/live-signals.tsx": "e58de75e8c4d655c590563bd05768fcde21f010923d3abe41d0470b088879581",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "d2fcba67493abf4fa0ba40d4fc98096f9b2860af6d959102850449eab323641a",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "4ba6e7fbeda0720d37de5120502c1d08fe8d331ccc84409b7e20aaaaca651309",
+    "app/retailpulse-app.tsx": "8be334b5132a4c7571237d7f32ece188de2fcf9c5fba4429c706e1b015998de0",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
-    "app/seo-config.ts": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b",
+    "app/seo-config.ts": "88706de549837235cd8a3f1731abb2a28808b4a3a6102a59913ee40fbb9651e1",
     "app/site-usage-guide.tsx": "34ac91ba8e1d48849f766622bca163353dc1c9a09439b54aadb28c1d7b882460",
     "app/sitemap.ts": "ab2329b032b269477ffad4b69258004b1b577b323735eccbf92518cbec258880",
     "app/source-status.tsx": "a4832ec2982ec76631341f8a8aea477d98dd45128234ca7f6ee1002ea16196dd",
@@ -818,6 +818,107 @@
         "file": "app/install-app.tsx",
         "previous": "68df45129e118a68e1cfaa04dae8628da063dd6c8ca360a5b4576d3256696365",
         "approved": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22"
+      }
+    ]
+  },
+  "ownerApprovedRetainedDayArrivalAndSeoulModels20261009": {
+    "recordedAt": "2026-10-09T03:12:00.171Z",
+    "sourceMain": "71b88933866222e5ba4f3e491a2feca8ce982319",
+    "approvalEvidenceFile": "docs/approvals/requested-integration-20261009.json",
+    "authorizationEvidence": {
+      "sourceThreadId": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "assistantMessageId": "Sentinel_e838771c50cc819185808c390914d047",
+      "assistantAtUtc": "2026-10-09T02:40:55Z",
+      "assistantQuestion": "남은 반영 승인은 한 번에 묶을게. ① 성수의 어제 기록 복구 ② 요청한 입국 문구 삭제·서울 블렌더 연결에 맞춰 변경 기준을 갱신해도 될까? 기존 보호 검사는 유지하고, 이 수정 범위만 승인 기록에 넣는 거야.",
+      "ownerMessageId": "Sentinel_618f9f38f8908191b68eed3f203811a7",
+      "ownerAtUtc": "2026-10-09T03:07:57Z",
+      "ownerAnswer": "싹다갱신해",
+      "approvedProtectedFiles": [
+        "app/api/live/summary/route.ts",
+        "app/live-signals.tsx"
+      ],
+      "normalApprovalFixture": "tests/fixtures/phase2-locks.json",
+      "scope": "Restore retained selected-day Seoul observations; remove the requested arrival sentence and revise its heading; mount the approved Seoul Blender models using the existing summary; record only matching changed protected-file hashes.",
+      "keepProtectedListAndEnforcement": true,
+      "noMergeOrDeployment": true,
+      "noAdditionalMETARCallsOrActivation": true
+    },
+    "reason": "Normal hash bookkeeping only for the newly approved retained-day observations, requested arrival copy removal and Seoul Blender model mount. All61 protected paths, other59 protected hashes, crons, original enforcement and prior approval records remain. Previous unrelated rejected changes are not copied. No METAR source-call expansion, production activation, merge or deployment.",
+    "changes": [
+      {
+        "file": "app/api/live/summary/route.ts",
+        "previous": "b450bb04e4adb3bd388ebf5c29dc5fbf9d8a4cd0d8cb8a573b04f3710d6b34f8",
+        "approved": "147b9c17727c1041e424fe89e9305878c8a9d794e7c531a36c49f81ae24b99b1"
+      },
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "75888c628f76c15fe6a0c71501742aa74462d5541cb5d2b113e6a9816e82c2a4",
+        "approved": "ea7bf2f25b0563eb40d4e1b9cc489c2fe41ef19fc94cd393ac53f016c63fe680"
+      }
+    ]
+  },
+  "ownerApprovedMenusAndMetar20261009": {
+    "recordedAt": "2026-10-09T05:15:55.803Z",
+    "sourceMain": "71b88933866222e5ba4f3e491a2feca8ce982319",
+    "sourceCandidate": "cf44d987ab63aeed3b26065f178f231db33cca3d",
+    "approvalEvidenceFile": "docs/approvals/menus-and-metar-20261009.json",
+    "authorizationEvidence": {
+      "sourceThreadId": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "assistantMessageId": "Sentinel_66e0704ee3ec8191aa9213ed29798d5e",
+      "assistantAtUtc": "2026-10-09T04:58:19Z",
+      "assistantQuestion": "수정본 전체 검사가 끝났어. 성수 어제 기록, 서울 블렌더, 편의점 비율 간격, 입국 문구 삭제, T1 색상 보완까지 통과했어.\n\n이번 반영에는 공항 날씨를 저장할 공간도 추가돼. 실제 날씨가 계속 나오려면 자동 수집 연결까지 필요해.\n\n아까 물은 두 새 메뉴의 변경 기준 갱신과 함께, 날씨 저장 공간 추가·무료 허용량 안에서 시간당 최대 1회 자동 수집도 승인할까? 유료 결제는 없어.",
+      "ownerMessageId": "Sentinel_d2db8c74a7a88191b8f2b0f07c5f7670",
+      "ownerAtUtc": "2026-10-09T05:09:48Z",
+      "ownerAnswer": "ㅇㅇ 승인해",
+      "secondaryOwnerMessageId": "Sentinel_523d21d6bf388191a0b0299ff6b4de35",
+      "secondaryOwnerAtUtc": "2026-10-09T05:09:56Z",
+      "secondaryOwnerAnswer": "갱신해",
+      "secondaryReplyToMessageId": "Sentinel_225d164b332081919844ef719a7a8f0f",
+      "approvedProtectedFiles": [
+        "app/[locale]/[slug]/page.tsx",
+        "app/live-signals.tsx",
+        "app/retailpulse-app.tsx",
+        "app/seo-config.ts"
+      ],
+      "normalApprovalFixture": "tests/fixtures/phase2-locks.json",
+      "keepProtectedListAndEnforcement": true,
+      "scope": "Integrate prepared Where to Go Today and observed consumption screens, their menus/routing/search titles and preserved forecast evidence into the approved latest candidate. Update only matching four protected hashes through normal approval review.",
+      "METAR": {
+        "storageMigration": "0025_airport_metar.sql",
+        "continuousUseApprovedConditionally": true,
+        "actualAccountFreeQuotaVerificationRequired": true,
+        "maxAttemptsPerHour": 1,
+        "maxAttemptsPerDay": 24,
+        "retriesConsumeSameBudget": true,
+        "existingCredentialOnly": true,
+        "newKeysOrPermissionsOrPaidServicesApproved": false,
+        "currentAccountQuota": "UNVERIFIED",
+        "runtimeActivationBeforeQuotaVerification": false
+      },
+      "agentMergeOrDeploymentApproved": false,
+      "ownerFinalMerge": true
+    },
+    "reason": "Normal hash bookkeeping for explicitly approved prepared two screens, menus/routing/search titles, existing evidence access and shared controls. Preserve the latest approved Seoul mounts/arrival copy and all prior approval history. METAR continuous use remains conditional on verified actual account free quota. No new key/permission/payment or agent merge/deployment.",
+    "changes": [
+      {
+        "file": "app/[locale]/[slug]/page.tsx",
+        "previous": "f0d127f59d42824729005f2ed108105535580aaa9356ffcf31d369a99b185545",
+        "approved": "abccff8db7c692c80ed5c29acd56254a75957c9c4b1b6fe84c744a98047ca57d"
+      },
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "ea7bf2f25b0563eb40d4e1b9cc489c2fe41ef19fc94cd393ac53f016c63fe680",
+        "approved": "e58de75e8c4d655c590563bd05768fcde21f010923d3abe41d0470b088879581"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "4ba6e7fbeda0720d37de5120502c1d08fe8d331ccc84409b7e20aaaaca651309",
+        "approved": "8be334b5132a4c7571237d7f32ece188de2fcf9c5fba4429c706e1b015998de0"
+      },
+      {
+        "file": "app/seo-config.ts",
+        "previous": "8eb316a3b3918053eb4cf2c7290c0d02037ecc989d64bd7d95ec0e35b7a09d1b",
+        "approved": "88706de549837235cd8a3f1731abb2a28808b4a3a6102a59913ee40fbb9651e1"
       }
     ]
   }

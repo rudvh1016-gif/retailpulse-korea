@@ -1,0 +1,28 @@
+{
+  "at": "2026-10-09T03:46:43.197Z",
+  "condition": {
+    "environment": "Local Vite development server and Chromium",
+    "viewport": "390x900",
+    "cpuSlowdown": 4,
+    "browserCache": "disabled",
+    "summary": "same deterministic summary fixture",
+    "weather": "after uses the captured safe RKSI fixture"
+  },
+  "before": {
+    "capturedAt": "2026-10-09T03:16:28.940Z",
+    "lcpMs": 4932,
+    "cls": 0.0018428199192782526,
+    "overflow": false,
+    "weatherHeightPx": 143.5
+  },
+  "after": {
+    "capturedAt": "2026-10-09T03:46:43.197Z",
+    "lcpMs": 1760,
+    "cls": 0.001574136692782526,
+    "overflow": false,
+    "weatherHeightPx": 259.5
+  },
+  "networkBytes": "UNMEASURED",
+  "productionPsi": "NOT_RUN",
+  "interpretation": "Development-server compile/warm state is uncontrolled. These are diagnostic samples, not a production benchmark or causal speed improvement claim."
+}
