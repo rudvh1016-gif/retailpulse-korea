@@ -19,14 +19,14 @@
     "app/globals.css": "a1344d20a9e458e22b7a5703f7a961813d4a8b9ccd63dbed8c4b288bad5ca840",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
     "app/layout.tsx": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
-    "app/live-signals.tsx": "db960eabf8cee38388ceeb11523cc80e3762f9accd2a2668f9335a185c9c2957",
+    "app/live-signals.tsx": "0e7c5547fe38f2366786c2ec6f6858e488af4834cbfb7a09ef36cce6a09e18a8",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "dd0affc7e2210bf0c207520bf99cacb06a8bc3e4485b3d3eb2babe2dfbf28fb8",
+    "app/retailpulse-app.tsx": "8800eefdd2bfa2352c3cfce5b6138fdf830852d1ce35765c9e3c9d67313f7c13",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "48c26a8642d0dae4ebea5988064ffaf58611b9982d5d06f5ee0593d6416234b8",
@@ -1012,5 +1012,32 @@
       }
     ],
     "approvalEvidenceFile": "docs/approvals/seoul-airport-clarity-20261009.json"
+  },
+  "ownerApprovedFacilitiesFinalTargets20261009": {
+    "recordedAt": "2026-10-09T14:56:11.671846+00:00",
+    "authorizationEvidence": {
+      "ownerRequest": "모두 허용해 너가 말한모든것들 싹다허용해",
+      "clarifiedScope": "Separate follow-up bundle: published Seoul toilet directory and honest parking/locker availability states; gate-area filters above the flight controls, gate-area row metadata, removal of the business NEXT promotion and its preview, and moving the redundant bottom coordinate toggle into the retained sources/details panel. Offline response parser preparation only; no additional provider GET or database SELECT. Ready PR326 only after its CI passes; owner performs final merge.",
+      "approvedProtectedFiles": [
+        "app/live-signals.tsx",
+        "app/retailpulse-app.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Normal scoped owner approval bookkeeping. Retain all 61 protected paths, prior records, original enforcement test and cron expressions.",
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "db960eabf8cee38388ceeb11523cc80e3762f9accd2a2668f9335a185c9c2957",
+        "approved": "0e7c5547fe38f2366786c2ec6f6858e488af4834cbfb7a09ef36cce6a09e18a8"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "dd0affc7e2210bf0c207520bf99cacb06a8bc3e4485b3d3eb2babe2dfbf28fb8",
+        "approved": "8800eefdd2bfa2352c3cfce5b6138fdf830852d1ce35765c9e3c9d67313f7c13"
+      }
+    ],
+    "approvalEvidenceFile": "docs/approvals/facilities-final-targets-20261009.json"
   }
 }

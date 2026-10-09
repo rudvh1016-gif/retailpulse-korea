@@ -1,5 +1,7 @@
 "use client";
 import './airport-history-polish.css';
+import { AirportParkingGuide } from './facility-guide';
+import './facility-guide.css';
 import { passengerCopy } from "../lib/passenger-copy";
 import { MonthlyRecordsView } from './monthly-records';
 import { recordText } from './monthly-records-copy';
@@ -303,7 +305,6 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   const [airportSection, setAirportSection] = useState<AirportSection>("now");
   const [industry, setIndustry] = useState<IndustryId>("beauty");
   const [preferencesReady, setPreferencesReady] = useState(false);
-  const [proOpen, setProOpen] = useState(false);
   // null means "whatever today is in KST, as the server reports it" — the
   // client never guesses a date from the device clock.
   const [serviceDate, setServiceDate] = useState<string | null>(null);
@@ -519,7 +520,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             setDate={changeDate}
           />
         )}
-        {view === "business" && <BusinessView lang={lang} selected={selected} setSelected={selectArea} industry={industry} setIndustry={setIndustry} date={serviceDate} setDate={changeDate} setProOpen={setProOpen} />}
+        {view === "business" && <BusinessView lang={lang} selected={selected} setSelected={selectArea} industry={industry} setIndustry={setIndustry} date={serviceDate} setDate={changeDate} />}
         {view === 'where-to' && <WhereToView lang={lang}/>}
         {view === 'consumption' && <ConsumptionView lang={lang} area={selected} onArea={selectArea}/>}
         {view === "forecast" && <InsightsView lang={lang} selected={selected} setSelected={selectArea} />}
@@ -567,7 +568,6 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         ))}
       </nav>
 
-      {proOpen && <ProModal lang={lang} onClose={() => setProOpen(false)} />}
     </div>
   );
 }
@@ -660,7 +660,7 @@ function AirportView({
       {!concourse&&section === "now" && <AirportDepartureOverview lang={lang} terminal={terminal} date={date} />}
       {!concourse&&section === "arrivals" && <AirportArrivalSummary lang={lang} terminal={terminal} date={date} />}
       {!concourse&&section === "flights" && <FlightBoard lang={lang} terminal={terminal} date={date} />}
-      {!concourse&&section === "stores" && <FacilityDirectory lang={lang} terminal={terminal} />}
+      {!concourse&&section === "stores" && <><AirportParkingGuide lang={lang} /><FacilityDirectory lang={lang} terminal={terminal} /></>}
       {!concourse&&section === "stores"&&<AirportTaxRefundGuide lang={lang} terminal={terminal}/>}
 
       {!concourse&&(section === "now" || section === "arrivals") && <IndustryGuide key={section} lang={lang} industry={industry} onIndustryChange={setIndustry} airport={{ terminal, direction: section === "arrivals" ? "arrival" : "departure" }} />}
@@ -717,12 +717,11 @@ function AirportView({
 }
 
 function BusinessView({
-  lang, selected, setSelected, industry, setIndustry, date, setDate, setProOpen,
+  lang, selected, setSelected, industry, setIndustry, date, setDate,
 }: {
   lang: Lang; selected: AreaId; setSelected: (id: AreaId) => void;
   industry: IndustryId; setIndustry: (id: IndustryId) => void;
   date: string | null; setDate: (value: string | null) => void;
-  setProOpen: (open: boolean) => void;
 }) {
   const [mode, setMode] = useState<"briefing" | "history">("briefing");
   // The airport is a place for the briefing only; the area tab keeps its own
@@ -776,10 +775,6 @@ function BusinessView({
 
         <IndustryGuide lang={lang} industry={industry} onIndustryChange={setIndustry} airport={atAirport ? { terminal: business.terminal, direction: "departure" } : undefined} />
 
-        <section className="business-pro">
-          <div><p className="eyebrow">KORETAIL · NEXT</p><h2>{localText(lang, { ko: "매일 문 열기 전, 한 장으로", en: "One page before you open", zh: "每天开店前，一页简报", ja: "開店前に、一枚で" })}</h2><p>{localText(lang, { ko: "업종·지역별 알림과 내려받기를 준비하고 있습니다.", en: "Alerts and exports by business type and area are in preparation.", zh: "正在准备按业态与地区的提醒与导出功能。", ja: "業種・エリア別の通知とエクスポートを準備しています。" })}</p></div>
-          <button onClick={() => setProOpen(true)}>{localText(lang, { ko: "미리보기 열기", en: "OPEN PREVIEW", zh: "打开预览", ja: "プレビューを開く" })} ↗</button>
-        </section>
       </>}
     </section>
   );
@@ -1161,22 +1156,6 @@ function MoreView({
       </section>
     </section>
   );
-}
-
-function ProModal({ lang, onClose }: { lang: Lang; onClose: () => void }) {
-  return <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="pro-title" onClick={onClose}>
-    <div className="modal" onClick={(event) => event.stopPropagation()}>
-      <p className="eyebrow">KORETAIL · NEXT</p>
-      <h2 id="pro-title">{localText(lang, { ko: "준비 중인 기능", en: "In preparation", zh: "正在准备的功能", ja: "準備中の機能" })}</h2>
-      <ul>
-        <li>{localText(lang, { ko: "지역·터미널별 혼잡 알림", en: "Congestion alerts by area and terminal", zh: "按地区与航站楼的拥挤提醒", ja: "エリア・ターミナル別の混雑通知" })}</li>
-        <li>{localText(lang, { ko: "공식 과거 기록 내려받기", en: "Official history export", zh: "官方历史记录导出", ja: "公式の過去記録のエクスポート" })}</li>
-        <li>{localText(lang, { ko: "업종별 아침 브리핑", en: "Morning briefing by business type", zh: "分业态晨间简报", ja: "業種別の朝ブリーフ" })}</li>
-      </ul>
-      <p>{localText(lang, { ko: "일정은 아직 확정되지 않았습니다.", en: "No date is fixed yet.", zh: "时间尚未确定。", ja: "時期は未定です。" })}</p>
-      <button onClick={onClose}>{localText(lang, { ko: "닫기", en: "CLOSE", zh: "关闭", ja: "閉じる" })}</button>
-    </div>
-  </div>;
 }
 
 /** Server-read answer lines; nothing renders when there is no answer. */

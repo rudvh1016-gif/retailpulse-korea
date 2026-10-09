@@ -52,6 +52,7 @@ async function openMap(page: Page, options: Parameters<typeof open>[1] = {}) {
   await expect(map.getByTestId('map-groups')).not.toBeVisible();
   await map.getByTestId('map-destinations').locator('summary').click();
   await expect(map.getByTestId('map-T2')).toHaveCount(0);
+  await map.getByTestId('map-counting-basis').locator(':scope > summary').click();
   await map.getByTestId('map-official-coordinates').locator('summary').click();
   return { ...opened, map };
 }

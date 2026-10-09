@@ -16,6 +16,9 @@ import { passengerReferenceSum } from "../lib/passenger-reference-sum";
 import { usableComparison, validPopulationRange, kstStamp, kstDay, peopleRange, populationFlow } from "../lib/demand-presentation";
 import { pc } from '../lib/personal-copy';
 import {flightBoardingLocation} from "../lib/flight-scope";
+import { boardingAreaOf, gateSideOf, type GateSide } from "../lib/airport-sides";
+import { mapCopy } from "../lib/airport-departure-map-copy";
+import { SeoulFacilityGuide } from "./facility-guide";
 
 import { SeoulContextCard, SeoulObservationScene, HolidayContext, contextText } from "./operational-context";
 import type { SeoulContext } from "../lib/seoul-context";
@@ -3711,6 +3714,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     <section className="live-signals" aria-labelledby="live-signals-title">
       <AreaDemandCard summary={summary} area={area} lang={lang}/>
       <SeoulFlowModels summary={summary} area={area} lang={lang}/>
+      <SeoulFacilityGuide area={area} lang={lang}/>
       <div className="section-head">
         <div>
           <p className="eyebrow">{text.eyebrow}</p>
@@ -3788,6 +3792,7 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
   const [visibleCount, setVisibleCount] = useState(10);
   const [direction, setDirection] = useState<"departure" | "arrival">("departure");
   const [query, setQuery] = useState("");
+  const [zone, setZone] = useState<"ALL" | GateSide>("ALL");
   const [loaded, setLoaded] = useState<{ date: string; rows: LiveFlightRow[]; failed: boolean; truncated: boolean; basis?: string; retrievedAt?: string | null } | null>(null);
   // Changing the date must not leave the previous day's flights on screen, so
   // the loaded date is tracked alongside the rows and compared during render
@@ -3816,10 +3821,11 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
     return (flights ?? []).filter((flight) => {
       if (flight.direction !== direction) return false;
       if (terminal !== "all" && flight.terminal !== terminal) return false;
+      if (zone !== "ALL" && gateSideOf(boardingAreaOf(flight), flight.gate) !== zone) return false;
       if (!needle) return true;
       return `${flight.flightNumber} ${flight.airlineCode ?? ""} ${flight.airportCode ?? ""}`.toUpperCase().includes(needle);
     });
-  }, [flights, direction, terminal, query]);
+  }, [flights, direction, terminal, query, zone]);
   if (flights === null || loaded?.failed) return <section className="flight-board" aria-labelledby="flight-board-title"><div className="section-head"><h2 id="flight-board-title">{flightBoardText.search[lang]}</h2></div><LiveLoadMessage loading={flights === null} lang={lang} /></section>;
   const visible = scoped.slice(0, visibleCount);
   const planned = loaded?.basis === 'OFFICIAL_DEPARTURE_SCHEDULE';
@@ -3840,6 +3846,7 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
       '已获取的计划出发航班 · 可能变更或取消，并非确认的运行结果。',
       '取得済みの出発予定便・変更や欠航の可能性があり、確定運航結果ではありません。')}{loaded?.retrievedAt ? ` · ${kstStamp(loaded.retrievedAt)} KST` : ''}</p>}
     {summary && <HolidayContext months={summary.holidays} date={summary.serviceDateKst} lang={lang} />}
+    <div className="flight-summary-area">
     {ranking && ranking.totalFlights > 0 && <div className="current-brief flight-summary">
       <strong>{({ ko: "선택 터미널 출발 운항", en: "Departures in the selected scope", zh: "所选范围的出发航班", ja: "選択範囲の出発運航" })[lang]} {ranking.totalFlights}{unit}{changes ? ` · ${comparisonText(changes, lang, 7)}` : ""}</strong>
       {terminal === "all" && summary && <FlightScopeNote airport={summary.airport} lang={lang} />}
@@ -3851,6 +3858,10 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
       </details>}
       <small>{contextText(lang,'수집된 출발 운항 기록 비교 · 공동운항 중복 제외. 등록 국가는 승객 국적이 아닙니다.','Comparison of collected departure records, excluding codeshare duplicates. Registration country is not passenger nationality.','比较已收集的出发记录，排除代码共享重复。注册国家并非乘客国籍。','収集済み出発記録の比較・共同運航重複除外。登録国は旅客国籍ではありません。')}{!composition&&` · ${contextText(lang,'국가별 비교 기록 수집 중','Collecting country comparison history','收集各国比较记录中','国別比較記録を収集中')}`}</small>
     </div>}
+    <div className="flight-zone-controls" role="group" aria-label={contextText(lang,'탑승구 구역','Gate area','登机口区域','搭乗口エリア')} data-testid="flight-zone-controls">
+      {(['ALL','WEST','CENTER','EAST','UNVERIFIED'] as const).map(value => <button type="button" key={value} aria-pressed={zone === value} onClick={() => { setZone(value); setVisibleCount(10); }}>{value === 'ALL' ? contextText(lang,'전체','All','全部','すべて') : mapCopy.side[value][lang]}</button>)}
+    </div>
+    </div>
     <div className="flight-board-controls">
       <div className="flight-direction" role="group">
         {(["departure", "arrival"] as const).map((value) => <button
@@ -3873,7 +3884,7 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
             <b>{formatKstClock(flight.scheduledAt)}</b>
             <strong>{flight.flightNumber}</strong>
             <span>{flight.airportCode ?? ""}</span>
-            <i>{[flightBoardingLocation(flight) === "CONCOURSE" ? contextText(lang,"탑승동","Concourse","登机楼","コンコース") : flight.terminal, flight.gate ? `${flightBoardText.gate[lang]} ${flight.gate}` : null, flight.checkinCounter ? `${flightBoardText.counter[lang]} ${flight.checkinCounter}` : null].filter(Boolean).join(" · ")}</i>
+            <i>{[flightBoardingLocation(flight) === "CONCOURSE" ? contextText(lang,"탑승동","Concourse","登机楼","コンコース") : flight.terminal, flight.gate ? `${flightBoardText.gate[lang]} ${flight.gate}` : null, mapCopy.side[gateSideOf(boardingAreaOf(flight), flight.gate)][lang], flight.checkinCounter ? `${flightBoardText.counter[lang]} ${flight.checkinCounter}` : null].filter(Boolean).join(" · ")}</i>
             <small>{flight.status}</small>
           </li>)}</ol>
           {visible.length < scoped.length && <button type="button" className="event-list-toggle" onClick={() => setVisibleCount(count => count + 20)}>{({ ko: "항공편 20개 더 보기", en: "Show 20 more flights", zh: "再查看20班", ja: "さらに20便を見る" })[lang]}</button>}
