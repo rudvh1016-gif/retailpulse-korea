@@ -122,9 +122,9 @@ test("same weekday: only complete past days, and 'usual' only from four days", (
   const { items } = radar({ current, history, terminal: "T2" });
   const total = items.find((item) => item.kind === "WEEKDAY_TOTAL");
   assert.equal(total.standing.usual, false);
-  assert.equal(radarLine(total, "T2", "ko", () => ""), "T2 출발편 수 30편: 확인된 같은 요일 3일과 오늘 중 1번째로 많음 (20편–20편)");
+  assert.equal(radarLine(total, "T2", "ko", () => ""), "T2 출발편 수 · 과거 같은 요일 3일 20편 · 오늘 30편, 10편 많음");
   const usual = radar({ current, history: [...history, t2(dayRows(weeksBack(5), { east: 12, west: 10 }), weeksBack(5))], terminal: "T2" }).items.find((item) => item.kind === "WEEKDAY_TOTAL");
-  assert.match(radarLine(usual, "T2", "ko", () => ""), /평소\(같은 요일 최근 4일, 20편–22편\)보다 많음/);
+  assert.match(radarLine(usual, "T2", "ko", () => ""), /과거 같은 요일 4일 20편–22편 · 오늘 30편, 8편 많음/);
 });
 
 test("a value inside the past range is not listed, and the busiest hour never says 'more than usual'", () => {

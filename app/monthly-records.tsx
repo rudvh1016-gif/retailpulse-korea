@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import type { Lang } from './retailpulse-data';
 import { comparisonValue } from '../lib/period-comparison';
@@ -34,8 +35,9 @@ function MonthValue({ value, label, lang }: { value: RecordMonth; label: string;
   const t = (key: Parameters<typeof recordText>[0]) => recordText(key, lang);
   return <div className="records-month-value" data-testid={`record-month-${value.month}`}>
     <span>{label} · {value.month}</span>
+    <p className="records-average-label"><b>{t('metric')}</b></p>
     <strong>{range(value.min, value.max, lang)}{value.min !== null && <small> {t('unit')}</small>}</strong>
-    <p>{value.includedDays} / {value.expectedDays} {t('days')} {t('included')}</p>
+    <p className="records-coverage" data-observed-days={value.includedDays} data-eligible-days={value.expectedDays}><b>{({ko:'관측 완료',en:'Complete hourly coverage',zh:'完整观测',ja:'全時間帯観測済み'})[lang]} {value.includedDays}{t('days')}</b> / {({ko:'대상',en:'Eligible',zh:'应观测',ja:'対象'})[lang]} {value.expectedDays}{t('days')}</p>
     <p>{value.cutoff ? `${t('cutoff')} ${value.cutoff} KST` : t('none')}</p>
   </div>;
 }
@@ -88,8 +90,8 @@ export function MonthlyRecordsView({ lang, area, onArea }: { lang: Lang; area: R
   const selectedMonth = month || catalog?.current.month || '';
   return <section className="monthly-records insight-block" aria-labelledby="records-metric-title">
     <div className="records-controls">
-      <label>{t('area')}<select value={area} onChange={event => onArea(event.target.value as RecordArea)}>{RECORD_AREAS.map(id => <option key={id} value={id}>{areaNames[id][lang] ?? areaNames[id].en}</option>)}</select></label>
-      <label>{t('month')}<select value={selectedMonth} disabled={!choices.length} onChange={event => setMonth(event.target.value)}>{!choices.length && <option value="">—</option>}{choices.map(value => <option key={value} value={value}>{value}</option>)}</select></label>
+      <label><span>{t('area')}</span><Image unoptimized className="records-select-scene" src={`/visuals/seoul-comparison/${area}-320.webp`} width="44" height="44" alt="" aria-hidden="true" loading="lazy" decoding="async"/><select value={area} onChange={event => onArea(event.target.value as RecordArea)}>{RECORD_AREAS.map(id => <option key={id} value={id}>{areaNames[id][lang] ?? areaNames[id].en}</option>)}</select></label>
+      <label><span>{t('month')}</span><Image unoptimized className="records-select-scene" src="/visuals/clarity/v1/calendar-256.webp" width="44" height="44" alt="" aria-hidden="true" loading="lazy" decoding="async"/><select value={selectedMonth} disabled={!choices.length} onChange={event => setMonth(event.target.value)}>{!choices.length && <option value="">—</option>}{choices.map(value => <option key={value} value={value}>{value}</option>)}</select></label>
     </div>
     <div className="section-head"><div><p className="eyebrow">SEOUL · MONTHLY RECORDS</p><h2 id="records-metric-title">{t('metric')}</h2></div></div>
     <p className="records-note">{t('peopleNote')}</p>

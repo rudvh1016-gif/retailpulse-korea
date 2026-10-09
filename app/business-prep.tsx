@@ -16,7 +16,7 @@ import { buildShareDocument, shareLink } from '../lib/prep-share';
 import { siteOrigin } from './seo-config';
 import { WeekAheadBlock } from './week-ahead';
 import { AirportSidesBlock } from './airport-sides';
-import { FeelingLogBlock, WeeklyReviewBlock } from './weekly-review';
+import { WeeklyReviewBlock } from './weekly-review';
 import { trackPersonalEvent } from '../lib/personal-analytics';
 import { placeKey } from '../lib/last-check';
 import { cnJpHoliday, officialHolidaysOn } from '../lib/airport-prep-holidays';
@@ -204,12 +204,10 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
           const evidence = evidenceText(action, serviceDate, lang);
           return <li key={index} data-rule={action.rule}>
             <p className="prep-action-title">{text.title}</p>
-            {place.kind === 'airport' && <><p>{text.body}</p>
-              {text.industryHint && <p className="prep-industry-hint"><strong>{prepCopy.industryCheck[lang]}</strong> {text.industryHint}</p>}</>}
+            <p>{text.body}</p>
+            {text.industryHint && <p className="prep-industry-hint"><strong>{prepCopy.industryCheck[lang]}</strong> {text.industryHint}</p>}
             <details className={`prep-evidence${place.kind === 'area' ? ' prep-action-detail' : ''}`}><summary>{place.kind === 'area'
-              ? prepText(lang, '실행 방법과 근거', 'Steps and basis', '执行方法与依据', '実行方法と根拠') : prepCopy.evidence[lang]}</summary>
-              {place.kind === 'area' && <><p>{text.body}</p>
-                {text.industryHint && <p className="prep-industry-hint"><strong>{prepCopy.industryCheck[lang]}</strong> {text.industryHint}</p>}</>}
+              ? prepText(lang, '근거', 'Basis', '依据', '根拠') : prepCopy.evidence[lang]}</summary>
               <dl>
               <dt>{prepCopy.condition[lang]}</dt><dd>{evidence.condition}</dd>
               <dt>{prepCopy.dataUsed[lang]}</dt><dd>{evidence.data}</dd>
@@ -232,7 +230,6 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
       />}
       {summary.dayRelation === 'TODAY' && <WeekAheadBlock lang={lang} summary={summary} place={place}/>}
       {summary.dayRelation !== 'PAST' && <WeeklyReviewBlock lang={lang} summary={summary} place={place} industry={industry}/>}
-      {summary.dayRelation === 'TODAY' && <FeelingLogBlock lang={lang} place={place} industry={industry} today={summary.todayKst}/>}
     </>}
   </section>;
 }

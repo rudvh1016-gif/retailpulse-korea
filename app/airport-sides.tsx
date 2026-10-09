@@ -179,7 +179,6 @@ export function AirportSidesBlock({ lang, summary, terminal, side, hours, nowIso
     <FlightSplitCard lang={lang} summary={summary} sides={sides} terminal={terminal} nowIso={nowIso}/>
     <DepartureMapSection lang={lang} summary={summary} terminal={terminal} nowIso={nowIso} holidays={holidays}/>
     <DayRadarSection lang={lang} summary={summary} terminal={terminal} nowIso={nowIso} holidays={holidays} isHoliday={isHoliday}/>
-    <p className="prep-note" data-testid="sides-notice">{copy.notice[lang]}</p>
     <h3>{copy.hallTitle[lang]}</h3>
     {sides.halls
       ? <HallDay lang={lang} day={sides.halls[terminal]} other={sides.halls[terminal === 'T1' ? 'T2' : 'T1']} side={side} serviceDate={serviceDate} hours={hours} nowIso={nowIso} today={today}/>

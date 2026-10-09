@@ -107,7 +107,7 @@ export const dayCopy = {
     `近い日を表示できません。比較可能な過去の記録は${n}日です。`,
   )[lang],
   similarLabel: row("가까운 날", "Similar day", "相近的日子", "近かった日"),
-  alike: row("가까운 점", "Alike", "相近之处", "近い点"),
+  alike: row("가까운 날로 고른 이유", "Why this day is similar", "与这天相似的原因", "この日と似ている理由"),
   differ: row("다른 점", "Different", "不同之处", "違う点"),
   busiest: row("그날 기록에서 가장 많은 출발 시간대", "Busiest departure hour in that day's record", "当天记录中出发航班最多的时段", "その日の記録で最も出発便が多い時間帯"),
   compareTable: row("비교표와 시간대 분포 보기", "Open the comparison and hourly spread", "查看比较表和时段分布", "比較表と時間帯分布を見る"),
@@ -132,21 +132,14 @@ export const dayCopy = {
 };
 
 function standingSentence(label: string, s: Standing, unit: (value: number) => string, lang: Lang, n: number): string {
-  const range = `${unit(s.min)}–${unit(s.max)}`;
+  const range = s.min===s.max ? unit(s.min) : `${unit(s.min)}–${unit(s.max)}`;
   const more = s.verdict === "ABOVE";
-  if (s.usual) {
-    return row(
-      `${label} ${unit(s.value)}: 평소(같은 요일 최근 ${n}일, ${range})보다 ${more ? "많음" : "적음"}`,
-      `${label} ${unit(s.value)}: ${more ? "above" : "below"} the usual range (same weekday, last ${n} days: ${range})`,
-      `${label} ${unit(s.value)}：${more ? "高于" : "低于"}平时（同一星期几最近 ${n} 天：${range}）`,
-      `${label} ${unit(s.value)}：いつも（同じ曜日の直近${n}日：${range}）より${more ? "多い" : "少ない"}`,
-    )[lang];
-  }
+  const difference=more?s.value-s.max:s.min-s.value;
   return row(
-    `${label} ${unit(s.value)}: 확인된 같은 요일 ${n}일과 오늘 중 ${s.rank}번째로 많음 (${range})`,
-    `${label} ${unit(s.value)}: ranks ${s.rank} of ${s.of} among today and the ${n} confirmed same-weekday day(s) (${range})`,
-    `${label} ${unit(s.value)}：在今天与已确认的同一星期几 ${n} 天中排第 ${s.rank} 多（${range}）`,
-    `${label} ${unit(s.value)}：今日と確認できた同じ曜日${n}日の中で${s.rank}番目に多い（${range}）`,
+    `${label} · 과거 같은 요일 ${n}일 ${range} · 오늘 ${unit(s.value)}, ${unit(difference)} ${more?'많음':'적음'}`,
+    `${label} · ${n} stored same-weekday day(s): ${range} · today ${unit(s.value)}, ${unit(difference)} ${more?'above':'below'} that range`,
+    `${label} · 已有同星期${n}天 ${range} · 今天${unit(s.value)}，${more?'多':'少'}${unit(difference)}`,
+    `${label}・保存済み同曜日${n}日 ${range}・今日${unit(s.value)}、${unit(difference)}${more?'多い':'少ない'}`,
   )[lang];
 }
 
@@ -182,12 +175,14 @@ const share = (day: TerminalDay) => {
 
 /** "가까운 점: 출발편 수(오늘 575 · 그날 580), 시간대 분포" / "다른 점: …" */
 export function similarLines(item: SimilarDay, current: TerminalDay, lang: Lang): { alike: string; differ: string; busiest: string | null } {
-  const detail = (name: SimilarDay["components"][number]["name"]) => {
+  const detail = (name: SimilarDay["components"][number]["name"], alike: boolean) => {
     if (name === "HOLIDAY") return holidayComparisonCopy(current.day, item.day.day, lang);
     const label = dayCopy.component[name][lang];
     if (name === "WEEKDAY") return `${label}(${dayLabel(current.day, lang)} / ${dayLabel(item.day.day, lang)})`;
     if (name === "TOTAL") return `${label}(${current.day} ${num(current.total, lang)} · ${item.day.day} ${num(item.day.total, lang)})`;
-    if (name === "EAST_SHARE") return `${label}(${current.day} ${share(current)} · ${item.day.day} ${share(item.day)})`;
+    if (name === "EAST_SHARE") {const same=eastShare(current)===eastShare(item.day);return row(`동편 출발 비율이 ${same?'같아요':alike?'차이가 작아요':'달라요'}: ${current.day} ${share(current)} · ${item.day.day} ${share(item.day)}`,`East departure shares are ${same?'equal':alike?'similar':'different'}: ${current.day} ${share(current)} · ${item.day.day} ${share(item.day)}`,`东侧出发比例${same?'相同':alike?'相近':'不同'}：${current.day} ${share(current)} · ${item.day.day} ${share(item.day)}`,`東側出発割合が${same?'同じ':alike?'近い':'異なります'}：${current.day} ${share(current)}・${item.day.day} ${share(item.day)}`)[lang];}
+    if (name === "DESTINATIONS") return alike ? row('목적지 지역 구성이 가까워요','Flights depart to similar regions','前往相似地区','似た地域へ出発しています')[lang] : row('출발 목적지의 지역 구성이 달라요','The destination-region mix differs','目的地区域构成不同','行き先地域の構成が異なります')[lang];
+    if (name === "HOURS") return alike ? row('항공편이 몰리는 시간대가 가까워요','Flights cluster at similar hours','航班集中的时段相近','便が集中する時間帯が似ています')[lang] : row('항공편이 몰리는 시간대가 달라요','Flights cluster at different hours','航班集中的时段不同','便が集中する時間帯が異なります')[lang];
     return label;
   };
   const sorted = [...item.components].sort((a, b) => a.distance - b.distance);
@@ -198,8 +193,8 @@ export function similarLines(item: SimilarDay, current: TerminalDay, lang: Lang)
   const differ = [...sorted].reverse().filter((component) => component.distance > 0.15).slice(0, 2);
   const peak = busiestHour(item.day);
   return {
-    alike: alike.length ? alike.map((component) => detail(component.name)).join(", ") : dayCopy.noAlike[lang],
-    differ: differ.length ? differ.map((component) => detail(component.name)).join(", ") : dayCopy.noDiffer[lang],
+    alike: alike.length ? alike.map((component) => detail(component.name, true)).join(", ") : dayCopy.noAlike[lang],
+    differ: differ.length ? differ.map((component) => detail(component.name, false)).join(", ") : dayCopy.noDiffer[lang],
     busiest: peak ? `${hourSpan(peak.hour, lang)} ${fl(peak.flights, lang)}` : null,
   };
 }

@@ -3,11 +3,11 @@ import { SUMMARY_FIXTURE, MYEONGDONG_CONTEXT, routeSummary } from './summary-fix
 import { tofuCharacters } from './font-glyphs';
 
 const forecastHeadings: Record<string, string> = {
-  ko: '기상청 예보', en: 'KMA forecast', zh: '气象厅预报', ja: '気象庁予報',
+  ko: '날씨', en: 'Weather', zh: '天气', ja: '天気',
 };
 
 for (const lang of ['ko', 'en', 'zh', 'ja']) for (const width of [320, 390, 430]) {
-  test(`weather scene preserves fresh observation and forecast ${lang}/${width}`, async ({ page }) => {
+  test(`weather keeps one forecast and independent PM readings ${lang}/${width}`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -15,13 +15,13 @@ for (const lang of ['ko', 'en', 'zh', 'ja']) for (const width of [320, 390, 430]
     await page.goto(`/${lang}/myeongdong`);
     const observation = page.locator('.context-environment');
     const forecast = page.locator('[data-signal-key="weather"]');
-    await expect(observation).toContainText('29.4°C');
-    await expect(observation).toContainText('44%');
+    await expect(observation).not.toContainText('29.4°C');
+    await expect(observation).not.toContainText('44%');
     await expect(observation).toContainText('7μg/m³');
     await expect(forecast).toContainText('27°C');
     await expect(forecast).toContainText('60%');
-    await expect(forecast).not.toContainText('65%');
-    await expect(forecast).not.toContainText('2.5m/s');
+    await expect(forecast).toContainText('65%');
+    await expect(forecast).toContainText('2.5m/s');
     const panel = page.locator('.seoul-weather-panel');
     await expect(panel).toHaveCount(1);
     await expect(panel.locator('> h3')).toBeVisible();
@@ -29,8 +29,8 @@ for (const lang of ['ko', 'en', 'zh', 'ja']) for (const width of [320, 390, 430]
     await expect(forecast.getByRole('heading', { level: 4, name: forecastHeadings[lang], exact: true })).toBeVisible();
     await expect(panel.locator('.context-environment')).toHaveCount(1);
     await expect(panel.locator('[data-signal-key="weather"]')).toHaveCount(1);
-    await expect(observation.locator('img')).toHaveCount(5);
-    await expect(forecast.locator('img')).toHaveCount(3);
+    await expect(observation.locator('img')).toHaveCount(2);
+    await expect(forecast.locator('img')).toHaveCount(5);
     for (const image of await panel.locator('img').all()) {
       await image.scrollIntoViewIfNeeded();
       await image.evaluate(element => (element as HTMLImageElement).decode());
@@ -53,7 +53,7 @@ for (const lang of ['ko', 'en', 'zh', 'ja']) for (const width of [320, 390, 430]
   });
 }
 
-test('stale weather observation retains its clock, explanation and forecast fallback fields', async ({ page }) => {
+test('stale air readings retain their clock beside the sole KMA forecast', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 1000 });
   await page.route('**/api/live/summary*', routeSummary({ ...SUMMARY_FIXTURE, areas: {
     ...SUMMARY_FIXTURE.areas, myeongdong: { ...SUMMARY_FIXTURE.areas.myeongdong,
@@ -63,14 +63,10 @@ test('stale weather observation retains its clock, explanation and forecast fall
   await page.goto('/ko/myeongdong');
   const observation = page.locator('.context-environment');
   await expect(observation).not.toContainText('지금 29.4°C');
-  await expect(observation).toContainText('08-30 14:50 관측 29.4°C');
-  const explanation = observation.locator('details');
-  await expect(explanation).not.toHaveAttribute('open', '');
-  await explanation.locator('summary').focus();
-  await page.keyboard.press('Space');
-  await expect(explanation.locator('p')).toBeVisible();
-  await expect(explanation).toContainText('23시간 20분 전 관측된 값입니다');
-  await expect(explanation).toContainText('기상청 예보라서 숫자가 다릅니다');
+  await expect(observation).not.toContainText('29.4°C');
+  await expect(observation).toContainText('7μg/m³');
+  await expect(observation).toContainText('08. 30.');
+  await expect(observation).toContainText('14:50');
   const forecast = page.locator('[data-signal-key="weather"]');
   await expect(forecast).toContainText('습도 65%');
   await expect(forecast).toContainText('바람 2.5m/s');

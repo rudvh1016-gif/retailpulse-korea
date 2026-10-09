@@ -1,4 +1,5 @@
 'use client';
+import { contextText } from './operational-context';
 
 /**
  * The airport departure map (loaded only when a reader opens it; see
@@ -226,7 +227,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
         style={{ border: 0, padding: 0, background: 'transparent', color: 'var(--blue)', cursor: 'pointer', font: 'inherit' }}>{copy.clearFilter[lang]}</button>
         {' '}<span className="prep-note">({copy.filtered[lang]}: {copy.groups[filter][lang]} · {shown.length})</span></p>}
 
-      <OpenableList testId="map-official-coordinates" summary={copy.axis[lang]}>{() => <>
+      <OpenableList testId="map-official-coordinates" summary={contextText(lang,'공식 지도 탑승구 좌표','Gate coordinates on official maps','官方地图登机口坐标','公式地図の搭乗口座標')}>{() => <>
       {(buildingScope==='all'?['T1','T2','CONCOURSE'] as const:buildingScope?[buildingScope]:buildingsOf(terminal)).map((building) => <BuildingMap key={building} lang={lang} building={building} map={map} flights={shown} selected={selected} onSelect={setSelected}/>)}
       <p className="prep-note">{copy.schematic[lang]}</p>
       {selected && <div data-testid="map-gate-flights">

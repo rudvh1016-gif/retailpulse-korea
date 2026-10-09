@@ -75,7 +75,7 @@ export function pageTitle(locale: SeoLocale, slug?: SeoSlug, tourismArea: Touris
     }[locale];
   }
   const titles: Record<Exclude<SeoSlug, keyof typeof names | "tourism-desk">, Record<SeoLocale, string>> = {
-    'where-to':{ko:'오늘 어디 갈까 · 서울 4개 지역 비교 | KORETAIL',en:'Where to Go Today · Four Seoul Districts | KORETAIL',zh:'今天去哪里 · 首尔四区比较 | KORETAIL',ja:'今日はどこへ・ソウル4エリア比較 | KORETAIL'},
+    'where-to':{ko:'서울 한눈에 · 서울 4개 지역 비교 | KORETAIL',en:'Seoul at a Glance · Four Seoul Districts | KORETAIL',zh:'首尔一览 · 首尔四区比较 | KORETAIL',ja:'ソウルひと目で・ソウル4エリア比較 | KORETAIL'},
     consumption:{ko:'요즘 뜨는 소비 · 업종별 관측 변화 | KORETAIL',en:'Observed Consumption Changes by Industry | KORETAIL',zh:'近期消费 · 各行业观测变化 | KORETAIL',ja:'最近の消費・業種別観測の変化 | KORETAIL'},
     airport: { ko: "인천공항 T1·T2 출국장 예고·항공편·혼잡도 | KORETAIL", en: "Incheon Airport T1·T2 Departure-Hall Forecasts & Flights | KORETAIL", zh: "仁川机场T1·T2出境大厅预报与航班 | KORETAIL", ja: "仁川空港T1・T2 出国場予告・フライト・混雑 | KORETAIL" },
     predictions: { ko: "지역 인구 예측·기록 관리 | KORETAIL", en: "Population Outlook & Records | KORETAIL", zh: "区域人口预测与记录 | KORETAIL", ja: "地域人口の予測と記録 | KORETAIL" },

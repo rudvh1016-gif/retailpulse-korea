@@ -1,21 +1,16 @@
 "use client";
+import Image from 'next/image';
 
 import { HolidayContext } from "./operational-context";
-import { useRef, useState, type MouseEvent } from "react";
 
 import { useEventPagination, EventPaginationControls } from "./event-pagination";
 import type { Lang } from "./retailpulse-data";
 import { useLiveSummary, LiveLoadMessage } from "./live-signals";
 import {
-  TourismVisitorShow,
-  type TourismVisitorShowContent,
-} from "./tourism-visitor-show";
-import {
   buildAreaCurrentBrief,
   formatHumanFreshness,
 } from "../lib/current-brief";
 import {
-  buildEventCopyText,
   eventPeriodStatusLabel,
   eventPreview,
   officialEventPeriod,
@@ -101,7 +96,7 @@ const COPY = {
     foreignSource: "서울시 OA-23018",
     foreignCaveat: "단기체류 외국인 생활인구이며 관광객 수가 아닙니다.",
     purposeSource: "서울시 OA-22378",
-    purposeCaveat: "월간 통계 추정 이동이며 실시간 관광객·방문객·구매·매출이 아닙니다.",
+    purposeCaveat: "월 1회 공개되는 해당일 추정 이동량 · 중복 이동 포함. 쇼핑 목적은 백화점·프리미엄 아울렛 기준입니다.",
     airportArrival: "인천공항 입국 예보",
     airportNextBand: "다음 공식 시간대 예상 입국객",
     airportDay: "오늘 공식 예상 입국객",
@@ -167,7 +162,7 @@ const COPY = {
     foreignSource: "Seoul OA-23018",
     foreignCaveat: "This is short-stay foreign living population, not a tourist count.",
     purposeSource: "Seoul OA-22378",
-    purposeCaveat: "A monthly statistical movement estimate, not real-time tourists, visitors, purchases or sales.",
+    purposeCaveat: "Estimated movements on the reference day, published monthly; repeat movements included. Shopping covers department stores and premium outlets.",
     airportArrival: "Incheon Airport arrival forecast",
     airportNextBand: "Expected arrivals in the next official band",
     airportDay: "Official expected arrivals today",
@@ -233,7 +228,7 @@ const COPY = {
     foreignSource: "首尔市 OA-23018",
     foreignCaveat: "这是短期停留外国人生活人口，并非游客人数。",
     purposeSource: "首尔市 OA-22378",
-    purposeCaveat: "这是月度统计推算移动，并非实时游客、访客、购买或销售额。",
+    purposeCaveat: "月度发布的该日推算移动量，含重复移动。购物指百货商场与高端奥特莱斯。",
     airportArrival: "仁川机场入境预测",
     airportNextBand: "下一官方时段预计入境旅客",
     airportDay: "今日官方预计入境旅客",
@@ -299,7 +294,7 @@ const COPY = {
     foreignSource: "ソウル市 OA-23018",
     foreignCaveat: "短期滞在外国人生活人口であり、観光客数ではありません。",
     purposeSource: "ソウル市 OA-22378",
-    purposeCaveat: "月次統計の推定移動であり、リアルタイムの観光客・来訪者・購入・売上ではありません。",
+    purposeCaveat: "毎月公表される基準日の推定移動量・重複移動を含みます。買い物目的は百貨店・プレミアムアウトレット基準です。",
     airportArrival: "仁川空港の入国予測",
     airportNextBand: "次の公式時間帯の予想入国者数",
     airportDay: "本日の公式予想入国者数",
@@ -482,7 +477,6 @@ function BriefLine({ line, weatherDetails }: { line: TourismDeskLine; weatherDet
 
 function EventCard({ event, lang, featured }: { event: GuideEvent; lang: Lang; featured: boolean }) {
   const copy = COPY[lang];
-  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const period = officialEventPeriod(event);
   const address = [event.address?.trim(), event.addressDetail?.trim()]
     .filter((value, index, values): value is string => Boolean(value) && values.indexOf(value) === index)
@@ -492,16 +486,6 @@ function EventCard({ event, lang, featured }: { event: GuideEvent; lang: Lang; f
   const showFullDescription = Boolean(overview && overview !== preview);
   const homepage = safeOfficialEventHomepage(event.homepage);
   const distance = formatDistance(event.distanceM, lang);
-
-  const copyInformation = async () => {
-    try {
-      if (!navigator.clipboard) throw new Error("clipboard_unavailable");
-      await navigator.clipboard.writeText(buildEventCopyText(event, lang));
-      setCopyState("copied");
-    } catch {
-      setCopyState("failed");
-    }
-  };
 
   return <article className={`tourism-event${featured ? " tourism-event-featured" : ""}`}>
     <header className="tourism-event-header">
@@ -527,10 +511,6 @@ function EventCard({ event, lang, featured }: { event: GuideEvent; lang: Lang; f
         rel="noopener noreferrer"
         aria-label={`${copy.eventPage}: ${event.title}`}
       >{copy.eventPage} <span aria-hidden="true">↗</span></a>}
-      <button type="button" onClick={copyInformation} aria-label={`${copy.eventCopy}: ${event.title}`}>{copy.eventCopy}</button>
-      <span className="tourism-event-copy-state" role="status" aria-live="polite">
-        {copyState === "copied" ? copy.copied : copyState === "failed" ? copy.copyFailed : ""}
-      </span>
     </div>
   </article>;
 }
@@ -583,9 +563,6 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
   const block = summary?.areas?.[area] ?? null;
   const areaName = areaNames[area][lang];
   const copy: DeskCopy = COPY[lang];
-  const visitorTriggerRef = useRef<HTMLElement | null>(null);
-  const [visitorContent, setVisitorContent] = useState<TourismVisitorShowContent | null>(null);
-
   const preparedEvents: GuideEvent[] = !block?.events?.length || !summary?.todayKst
     ? []
     : prepareEventsForPresentation(block.events.map((row) => ({
@@ -689,20 +666,6 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
   const hasForeignPurpose = Boolean(block?.foreignPurposeMobility
     && (block.foreignPurposeMobility.shopping !== null || block.foreignPurposeMobility.tourism !== null));
   const hasBackground = Boolean(block?.foreignPresence || hasForeignPurpose || arrivalBand || arrivalDayTotal !== null);
-
-  const openVisitor = (event: MouseEvent<HTMLButtonElement>, row: GuideEvent) => {
-    const period = officialEventPeriod(row);
-    if (!period) return;
-    visitorTriggerRef.current = event.currentTarget;
-    setVisitorContent({
-      officialEventTitleKo: row.title,
-      officialEventPeriod: period,
-      officialEventAddressKo: [row.address?.trim(), row.addressDetail?.trim()].filter(Boolean).join(" · ") || null,
-      officialEventUrl: row.homepage,
-      officialEventSource: "Korea Tourism Organization (KTO) TourAPI",
-      deterministicWeatherNote: guides,
-    });
-  };
 
   return <section className="tourism-desk" aria-labelledby="tourism-desk-title">
     <header className="tourism-desk-head">
@@ -821,7 +784,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
           {block?.foreignPresence && <article className="tourism-background-item">
             <h3>{copy.foreignPresence}</h3>
             <p className="tourism-background-value">{numberText(block.foreignPresence.value, lang)} {copy.people}</p>
-            {foreignPeriod && <PeriodNote period={foreignPeriod} />}
+            <p className="tourism-background-period">{formatKstDateTime(block.foreignPresence.referenceAt,lang)} KST</p>{foreignPeriod && <PeriodNote period={foreignPeriod} />}
             <p className="tourism-source">{copy.foreignSource}</p>
             <p className="tourism-limit-note">{copy.foreignCaveat}</p>
           </article>}
@@ -829,15 +792,15 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
             <h3>{copy.foreignPurpose}</h3>
             <dl className="tourism-background-values">
               {block.foreignPurposeMobility.shopping !== null && <div>
-                <dt>{copy.shoppingPurpose}</dt>
+                <dt><Image unoptimized src="/visuals/clarity/v1/shopping-bag-256.webp" width="48" height="48" alt="" aria-hidden="true" loading="lazy" decoding="async"/>{copy.shoppingPurpose}</dt>
                 <dd>{numberText(block.foreignPurposeMobility.shopping, lang)} {copy.movements}</dd>
               </div>}
               {block.foreignPurposeMobility.tourism !== null && <div>
-                <dt>{copy.tourismPurpose}</dt>
+                <dt><Image unoptimized src="/visuals/clarity/v1/tourism-camera-256.webp" width="48" height="48" alt="" aria-hidden="true" loading="lazy" decoding="async"/>{copy.tourismPurpose}</dt>
                 <dd>{numberText(block.foreignPurposeMobility.tourism, lang)} {copy.movements}</dd>
               </div>}
             </dl>
-            {mobilityPeriod && <PeriodNote period={mobilityPeriod} />}
+            <p className="tourism-background-period">{block.foreignPurposeMobility.referenceDate}</p>{mobilityPeriod && <PeriodNote period={mobilityPeriod} />}
             <p className="tourism-source">{copy.purposeSource}</p>
             <p className="tourism-limit-note">{copy.purposeCaveat}</p>
           </article>}
@@ -860,23 +823,6 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
         </div> : <p className="tourism-empty">{copy.unavailable}</p>}
       </section>
 
-      <section className="tourism-guide-section" aria-labelledby="tourism-visitor-title">
-        <header className="tourism-section-head">
-          <h2 id="tourism-visitor-title">{copy.sectionVisitor}</h2>
-          <p>{copy.visitorIntro}</p>
-        </header>
-        {preparedEvents.length ? <ul className="tourism-visitor-launches">
-          {eventPage.visible.map((event) => <li key={event.contentId ?? `${event.title}-${event.eventStart}`}>
-            <span className="tourism-official-ko" lang="ko">{event.title}</span>
-            <button
-              type="button"
-              onClick={(clickEvent) => openVisitor(clickEvent, event)}
-              aria-label={`${copy.visitorShow}: ${event.title}`}
-            >{copy.visitorShow}</button>
-          </li>)}
-        </ul> : <p className="tourism-empty">{copy.noEvents}</p>}
-      </section>
-
       <section className="tourism-guide-section" aria-labelledby="tourism-limits-title">
         <header className="tourism-section-head">
           <h2 id="tourism-limits-title">{copy.sectionLimits}</h2>
@@ -888,12 +834,5 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
       </section>
     </>}
 
-    <TourismVisitorShow
-      open={visitorContent !== null}
-      content={visitorContent}
-      triggerRef={visitorTriggerRef}
-      initialLanguage={lang}
-      onRequestClose={() => setVisitorContent(null)}
-    />
   </section>;
 }

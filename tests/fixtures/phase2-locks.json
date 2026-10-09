@@ -16,24 +16,24 @@
     "app/api/live/summary/route.ts": "147b9c17727c1041e424fe89e9305878c8a9d794e7c531a36c49f81ae24b99b1",
     "app/area-demand-card.tsx": "78254205092521a36a61fe35aa3ff57c8d91ef1921199cad353c0792dc251dab",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
-    "app/globals.css": "42c61ee811f638e410c3088d96cdd1efbfb928b4e2a6473e10ec1510b0197d04",
+    "app/globals.css": "a1344d20a9e458e22b7a5703f7a961813d4a8b9ccd63dbed8c4b288bad5ca840",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
     "app/layout.tsx": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
-    "app/live-signals.tsx": "918ecd9275d335c01f1577695a1c2632526aa64f290acecfea0389122b3e5f9a",
+    "app/live-signals.tsx": "db960eabf8cee38388ceeb11523cc80e3762f9accd2a2668f9335a185c9c2957",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
-    "app/operational-context.tsx": "d2fcba67493abf4fa0ba40d4fc98096f9b2860af6d959102850449eab323641a",
+    "app/operational-context.tsx": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "4fff045b01ced3d192be7e0dd478ab5372bbb9c024322c5ab79903d0033bdc1d",
+    "app/retailpulse-app.tsx": "dd0affc7e2210bf0c207520bf99cacb06a8bc3e4485b3d3eb2babe2dfbf28fb8",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
-    "app/seo-config.ts": "88706de549837235cd8a3f1731abb2a28808b4a3a6102a59913ee40fbb9651e1",
-    "app/site-usage-guide.tsx": "34ac91ba8e1d48849f766622bca163353dc1c9a09439b54aadb28c1d7b882460",
+    "app/seo-config.ts": "48c26a8642d0dae4ebea5988064ffaf58611b9982d5d06f5ee0593d6416234b8",
+    "app/site-usage-guide.tsx": "4b49e1bd31a91e35f7d0b56b6d1670d94cf644bcc47bcb257508a2a0f6cc64f1",
     "app/sitemap.ts": "ab2329b032b269477ffad4b69258004b1b577b323735eccbf92518cbec258880",
     "app/source-status.tsx": "a4832ec2982ec76631341f8a8aea477d98dd45128234ca7f6ee1002ea16196dd",
-    "app/tourism-desk.tsx": "7bc8f2376311b8ea2ea53a7ccd42d37ddf928087a7ba4b2e230b68a064ff33e3",
+    "app/tourism-desk.tsx": "b4a2e069adc6ed21fa3d6e93571d8a7344bae2b8570ec58613ddf5238d50ab5f",
     "app/tourism-visitor-show.tsx": "e30883e6efce51f33f839a38b78afe4a1127d87c9ba2cdb7bbac4de189179a10",
     "lib/realtime-dispatch.ts": "dba7bb0e688ec073df674bd5e5cfbb62c3810d8ad5ec181ed06e8bbe449d0a35",
     "public/_headers": "a10cad25ce8bd0c0b7c92225180a71718fc3d2bf5329ac714bf7b2ac6e22676f",
@@ -955,5 +955,62 @@
         "approved": "4fff045b01ced3d192be7e0dd478ab5372bbb9c024322c5ab79903d0033bdc1d"
       }
     ]
+  },
+  "ownerApprovedSeoulAirportClarity20261009": {
+    "recordedAt": "2026-10-09T12:56:47.002019+00:00",
+    "authorizationEvidence": {
+      "ownerRequest": "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+      "clarifiedScope": "Owner follow-ups authorize Seoul glance visit-time forecasts/events/payment shares, baggage choice and separate travel entry, specified airport copy/material/chart changes, one Seoul forecast weather card with PM readings retained, historical definitions/dates, always-open store actions, store feeling-entry removal, tourism show/copy removal, monthly population wording/selectors and usage-guide paragraphs. Implementation, validation and draft PR only.",
+      "approvedProtectedFiles": [
+        "app/globals.css",
+        "app/live-signals.tsx",
+        "app/operational-context.tsx",
+        "app/retailpulse-app.tsx",
+        "app/seo-config.ts",
+        "app/site-usage-guide.tsx",
+        "app/tourism-desk.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Normal scoped hash bookkeeping for the explicit owner follow-ups; retain all 61 protected paths, prior approval records, original enforcement tests and scheduler expressions. No prediction/statistical calculation redesign, source activation, merge or deployment.",
+    "changes": [
+      {
+        "file": "app/globals.css",
+        "previous": "42c61ee811f638e410c3088d96cdd1efbfb928b4e2a6473e10ec1510b0197d04",
+        "approved": "a1344d20a9e458e22b7a5703f7a961813d4a8b9ccd63dbed8c4b288bad5ca840"
+      },
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "918ecd9275d335c01f1577695a1c2632526aa64f290acecfea0389122b3e5f9a",
+        "approved": "db960eabf8cee38388ceeb11523cc80e3762f9accd2a2668f9335a185c9c2957"
+      },
+      {
+        "file": "app/operational-context.tsx",
+        "previous": "d2fcba67493abf4fa0ba40d4fc98096f9b2860af6d959102850449eab323641a",
+        "approved": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "4fff045b01ced3d192be7e0dd478ab5372bbb9c024322c5ab79903d0033bdc1d",
+        "approved": "dd0affc7e2210bf0c207520bf99cacb06a8bc3e4485b3d3eb2babe2dfbf28fb8"
+      },
+      {
+        "file": "app/seo-config.ts",
+        "previous": "88706de549837235cd8a3f1731abb2a28808b4a3a6102a59913ee40fbb9651e1",
+        "approved": "48c26a8642d0dae4ebea5988064ffaf58611b9982d5d06f5ee0593d6416234b8"
+      },
+      {
+        "file": "app/site-usage-guide.tsx",
+        "previous": "34ac91ba8e1d48849f766622bca163353dc1c9a09439b54aadb28c1d7b882460",
+        "approved": "4b49e1bd31a91e35f7d0b56b6d1670d94cf644bcc47bcb257508a2a0f6cc64f1"
+      },
+      {
+        "file": "app/tourism-desk.tsx",
+        "previous": "7bc8f2376311b8ea2ea53a7ccd42d37ddf928087a7ba4b2e230b68a064ff33e3",
+        "approved": "b4a2e069adc6ed21fa3d6e93571d8a7344bae2b8570ec58613ddf5238d50ab5f"
+      }
+    ],
+    "approvalEvidenceFile": "docs/approvals/seoul-airport-clarity-20261009.json"
   }
 }

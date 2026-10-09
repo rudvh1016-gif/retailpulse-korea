@@ -2939,3 +2939,8 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .flow-legend { color: var(--ink); }
 .flow-legend i.forecast { border-color: #6caaa5; }
 .population-chart text { fill: var(--ink); }
+
+/* Owner-approved compact material accents; number geometry stays data-driven. */
+.airport-comparison-change { font-weight: var(--weight-strong); }
+.clarity-purpose-scenes { display: inline-flex; vertical-align: middle; gap: 2px; margin-right: 8px; }
+.clarity-purpose-scenes img,.tourism-background-item dt img { object-fit: contain; }

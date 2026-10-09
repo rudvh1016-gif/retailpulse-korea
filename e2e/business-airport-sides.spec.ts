@@ -52,7 +52,7 @@ test('until the notice condition is met, hall sides are withheld and point to th
   const prep = await open(page);
   await expect(prep.getByTestId('prep-place')).toHaveText('인천공항 T1 동편');
   const sides = prep.getByTestId('airport-sides');
-  await expect(sides.getByTestId('sides-notice')).toHaveText(sidesCopy.notice.ko);
+  await expect(sides.getByTestId('sides-notice')).toHaveCount(0);
   await expect(sides.getByTestId('halls-withheld')).toContainText('안내문구 협의');
   await expect(sides.getByTestId('halls-withheld').getByRole('link')).toHaveAttribute('href', 'https://www.airport.kr/ap_ko/883/subview.do');
   // Codeshares once, cancelled apart, the concourse and T2 kept separate.
@@ -146,7 +146,7 @@ for (const lang of ['en', 'zh', 'ja'] as const) {
     const prep = await open(page, { lang, width: 360, hallsPublic: true });
     const sides = prep.getByTestId('airport-sides');
     await sides.locator('details').last().locator('summary').click();
-    await expect(sides.getByTestId('sides-notice')).toHaveText(sidesCopy.notice[lang]);
+    await expect(sides.getByTestId('sides-notice')).toHaveCount(0);
     expect(await tofuCharacters(sides)).toEqual([]);
     expect(await tofuCharacters(prep.getByTestId('prep-facts'))).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();

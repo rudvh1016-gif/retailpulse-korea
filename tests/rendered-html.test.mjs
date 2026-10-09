@@ -664,8 +664,8 @@ test("the airport summary states this hour's expected departing passengers, labe
 test("timestamps state what they mean and a forecast band never borrows observation wording", async () => {
   const signals = await read("../app/live-signals.tsx");
   // Foreign presence carries an OBSERVATION time published with delay, so it
-  // goes through the human freshness formatter (today / yesterday / older).
-  assert.match(signals, /formatHumanFreshness\(block\.foreignPresence\.referenceAt/);
+  // uses an explicit KST source timestamp; delayed historical data cannot look current.
+  assert.match(signals, /kstStamp\(block\.foreignPresence\.referenceAt\)/);
   // The arrival forecast describes a TARGET band and separately labels when
   // the official forecast was collected; neither is called an observation.
   assert.match(signals, /formatKstBand\(band\.targetStartAt, band\.targetEndAt\)/);

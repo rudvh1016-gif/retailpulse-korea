@@ -48,14 +48,25 @@ const copy = {
   },
 };
 
+function ReadingParagraphs({ text }: { text: string }) {
+  const sentences = text.split(/(?<=[.!?。])\s*/).filter(Boolean);
+  const paragraphs = sentences.reduce<string[]>((all, sentence, index) => {
+    if (index % 2 === 0) all.push(sentence);
+    else all[all.length - 1] += ` ${sentence}`;
+    return all;
+  }, []);
+  const keywords = /(현재 관측|공식 예상|과거.*?실적|같은 대상·기간|관측 기준과 수집 시각|약 15분|every 15 minutes|Current observations|official forecasts|historical actuals|comparable periods and scopes|observation and collection time|当前观测|官方预测|历史实绩|約?15分|15分钟|観測と取得の時刻|現在観測|公式予測|過去実績)/gi;
+  return <>{paragraphs.map((paragraph, index) => <p key={index}>{paragraph.split(keywords).map((part, at) => at % 2 ? <strong key={at}>{part}</strong> : part)}</p>)}</>;
+}
+
 export function SiteUsageGuide({ lang }: { lang: Lang }) {
   const t = copy[lang];
   return <section className="site-usage-guide" aria-labelledby="site-usage-title">
     <h2 id="site-usage-title">{t.title}</h2>
     <p>{t.intro}</p>
     <dl>{t.uses.map(([who, how]) => <div key={who}><dt>{who}</dt><dd>{how}</dd></div>)}</dl>
-    <h3>{t.methodTitle}</h3><p>{t.method}</p><p>{passengerCopy.scope[lang]} · {passengerCopy.limitation[lang]}</p><p>{passengerCopy.noSum[lang]}</p>
-    <h3>{t.updateTitle}</h3><p>{t.updates}</p>
+    <h3>{t.methodTitle}</h3><ReadingParagraphs text={t.method}/><p>{passengerCopy.scope[lang]} · {passengerCopy.limitation[lang]}</p><p>{passengerCopy.noSum[lang]}</p>
+    <h3>{t.updateTitle}</h3><ReadingParagraphs text={t.updates}/>
     <p className="site-usage-limit">{t.limit}</p>
   </section>;
 }

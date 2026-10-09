@@ -84,10 +84,10 @@ export const sidesCopy = {
   // The departure map's own words live in lib/airport-departure-map-copy.ts, which loads with the map.
   overviewTitle: row("출발편 동·서편과 목적지 지역", "Departures by east/west side and destination region", "出发航班：东西侧与目的地地区", "出発便：東側・西側と行き先地域"),
   overviewIntro: row(
-    "게이트 위치로 나눈 동편·서편 출발편 수, 공항 공식 지도 위의 탑승구 배치, 목적지 지역별 구성입니다. 항공편 기준이며 방문객·고객 수가 아닙니다.",
-    "Departing flights split by gate side, their gates on the airport's official map, and the mix of destination regions. Counts are flights, not visitors or customers.",
-    "按登机口位置划分的东侧、西侧出发航班数，机场官方地图上的登机口位置，以及目的地地区构成。以航班为准，不是访客或顾客人数。",
-    "搭乗口の位置で分けた東側・西側の出発便数、空港の公式地図上の搭乗口の配置、行き先地域ごとの構成です。便数の基準で、来訪者や顧客の数ではありません。",
+    "게이트 위치로 나눈 동편·서편 출발편 수, 공항 공식 지도 위의 탑승구 배치, 목적지 지역별 구성입니다.",
+    "Departing flights split by gate side, their gates on the airport's official map, and the mix of destination regions.",
+    "按登机口位置划分的东侧、西侧出发航班数，机场官方地图上的登机口位置，以及目的地地区构成。",
+    "搭乗口の位置で分けた東側・西側の出発便数、空港の公式地図上の搭乗口の配置、行き先地域ごとの構成です。",
   ),
   overviewSwitch: row("터미널 선택", "Choose a terminal", "选择航站楼", "ターミナルを選択"),
   overviewSwitchTo: row("아래에 표시:", "Show below:", "切换下方:", "下の表示:"),

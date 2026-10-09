@@ -14,6 +14,15 @@
 .district-choice h2,.consumption-category h2 { font:inherit; font-weight:600; margin:8px 0; overflow-wrap:anywhere; }
 .district-choice-name strong { font-weight:500; white-space:nowrap; }
 .district-choice-reason { margin:8px 0; min-height:3em; line-height:1.5; }
+.district-glance-section { margin-top:20px; }
+.district-glance-section h3 { font:inherit; font-weight:600; margin:0 0 8px; }
+.district-glance-section p,.district-glance-section li { line-height:1.6; overflow-wrap:anywhere; }
+.district-glance-section p { margin:6px 0; }
+.district-glance-section ul { padding-left:18px; margin:6px 0; }
+.district-glance-section .district-payment-shares { list-style:none; padding:0; }
+.district-payment-shares li { display:flex; align-items:center; gap:6px; margin:6px 0; }
+.district-payment-shares img { object-fit:contain; flex:none; }
+.district-payment-shares strong { font-variant-numeric:tabular-nums; }
 .district-choice small,.consumption-category small,.consumption-comparison>small { display:block; line-height:1.6; }
 .district-choice-weather { margin:18px 0 4px; }
 .district-choice-weather dt { margin-bottom:4px; }
