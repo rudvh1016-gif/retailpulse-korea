@@ -24,7 +24,9 @@ jobs:
     # run 37599031040. Keep every check and allow setup plus browsers to finish.
     timeout-minutes: 45
     env:
-      NEXT_PUBLIC_SITE_ORIGIN: https://rpk-ci.invalid
+      # Match the Playwright server so built metadata/icons remain same-origin.
+      # This verification build is never used for a production deployment.
+      NEXT_PUBLIC_SITE_ORIGIN: http://127.0.0.1:4173
       RPK_DEPLOYMENT_STAGE: staging
       NEXT_PUBLIC_ENABLE_BETA_SIGNUP: "false"
     steps:
