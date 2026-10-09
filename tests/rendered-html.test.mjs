@@ -473,7 +473,8 @@ test("the approved gate model ranks complete API rows and retains every tied lea
   assert.match(summary, /busyDepartureGates: coverage >= minimumCoverage \? ranked\.slice\(0, 5\) : \[\]/);
   const model = await read("../app/airport-gate-pillars.tsx");
   assert.match(signals, /AirportGatePillars/);
-  assert.match(model, /useFlights\(date\)/);
+  // Keep the date and exact terminal scope for a held-schedule gap.
+  assert.match(model, /useFlights\(date, terminal\)/);
   assert.match(model, /leadingGates\(gates\)/);
   assert.match(signals, /terminalGateColumn/);
   assert.match(signals, /departuresColumn/);
