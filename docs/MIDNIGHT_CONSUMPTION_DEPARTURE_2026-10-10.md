@@ -40,6 +40,8 @@ Affected safety/guide unit scope: 21 passed; budget/settlement/zero-call guards:
 
 Same local consumption comparison: Chromium390x900/DPR3, fixed fixture clock, reduced motion, three fresh contexts, no CPU/network throttle. Warm LCP106→108ms; CLS0.4743614573 unchanged. Icon resolution improved; production speed improvement is not established. Earlier PR326 local Seoul-glance CLS0.071685→0.036986 belongs to a different route/test and is not substituted for this result. Prior PSI57/LCP4.4s/CLS0.353 is historical, not this change's baseline.
 
+The first combined-head CI found one uncovered Korean syllable in the new refund-goods label (1,314/1,315 unit cases passed). The wording was changed without altering meaning or the font/coverage fixture, and the original two font checks pass. A real 390px/DPR3 browser request comparison opening that guide fetched only the same 226,772-byte shell font before and after; no font-download saving is claimed for that capture. Normal CI validates the correction.
+
 Parking and locker live availability/source-clock semantics remain unverified, and monthly diagnostic internal coverage remains unverified. The previously approved one-off diagnostics are not repeated. New attachment downloads were rejected by Library with HTTP403; their actual pixels could not be inspected. Existing approved local Blender source pixels and generated preview pixels were inspected. No access bypass was attempted.
 
 PR326's owner merge and normal automatic deployment were publicly verified. The changes in this follow-up remain unreflected until the owner merges PR327 and the normal release workflow completes. No agent merge/deploy is performed.
