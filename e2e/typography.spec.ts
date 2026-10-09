@@ -37,7 +37,7 @@ const openGuide = async (page: import("@playwright/test").Page, locale: string) 
   await page.goto(`/${locale}`);
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await page.waitForFunction(() => document.fonts.ready.then(() => true));
-  await page.locator(".topbar .install-app-button").click();
+  await page.locator(".date-nav-tools .install-app-button").click();
   const dialog = page.locator(".install-modal");
   await expect(dialog).toBeVisible();
   return dialog;

@@ -108,11 +108,11 @@
 .airport-flow-band { fill: transparent; outline: none; }
 .airport-flow-band:focus-visible { fill: var(--dusk); fill-opacity: .08; stroke: var(--dusk-deep); stroke-width: 1.5; }
 .airport-flow-legend { margin-top: 10px; padding: 0 4px; }
-.airport-flow-legend { color: var(--dusk-deep); opacity: .75; }
-.airport-flow-legend i.past { background: var(--paper); border: 1px solid var(--sky-300); }
-.airport-flow-legend i.ahead { background: var(--sky-100); border: 1px solid var(--sky-300); }
-.airport-flow-legend i.stack-lower { background: var(--paper); border: 1px solid var(--sky-300); }
-.airport-flow-legend i.stack-upper { background: var(--paper); opacity: .6; border: 1px solid var(--sky-300); }
+.airport-flow-legend { color:#000; opacity:1; }
+.airport-flow-legend i.past { background:#8ba2dc; border:1px solid #5875b8; }
+.airport-flow-legend i.ahead { background:#dce4f7; border:1px dashed #5875b8; }
+.airport-flow-legend i.stack-lower { background:#c8bce4; border:1px solid #917bb7; }
+.airport-flow-legend i.stack-upper { background:#8ba2dc; opacity:1; border:1px solid #5875b8; }
 
 /* The day's one big number, only where the flow figure sits under it. */
 .airport-today .airport-brief-total .av-display { display: block; margin-top: 6px; font-size: clamp(36px, 8.5vw, 60px); line-height: 1.02; font-weight: 540; letter-spacing: -.04em; }

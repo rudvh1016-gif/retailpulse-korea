@@ -17,13 +17,14 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of[360,390,430,
  const vendorRequests:string[]=[];page.on('request',r=>{if(/shilladfs|ssgdfs|hddfs/.test(r.url()))vendorRequests.push(r.url());});
  await page.goto(`/${lang}/airport`);const strip=page.getByTestId('airport-duty-free-exchange');
  await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');await expect(strip.getByTestId('duty-free-rate')).toHaveText(lang==='ko'?'1 USD = 1,343.40원':'1 USD = 1,343.40 KRW');
-  expect(await strip.evaluate(node=>node.closest('.topbar') !== null && node.previousElementSibling?.classList.contains('install-app-button'))).toBe(true);
-  const install=page.locator('.topbar .install-app-button'),language=page.getByLabel('Language',{exact:true});
+  expect(await strip.evaluate(node=>node.closest('.topbar') !== null)).toBe(true);
+  await expect(page.locator('.topbar .install-app-button')).toHaveCount(0);
+  const install=page.locator('.date-nav-tools .install-app-button'),language=page.getByLabel('Language',{exact:true});
   const positions=await Promise.all([install.boundingBox(),strip.boundingBox(),language.boundingBox()]);
   expect(positions.every(Boolean)).toBe(true);
   const [installBox,rateBox,languageBox]=positions as Array<{x:number;y:number;width:number;height:number}>;
-  expect(installBox.x+installBox.width).toBeLessThanOrEqual(rateBox.x+1);expect(rateBox.x+rateBox.width).toBeLessThanOrEqual(languageBox.x+1);
-  expect(Math.abs(installBox.y+installBox.height/2-rateBox.y-rateBox.height/2)).toBeLessThan(4);
+  expect(rateBox.x+rateBox.width).toBeLessThanOrEqual(languageBox.x+1);
+  expect(installBox.y).toBeGreaterThanOrEqual(rateBox.y+rateBox.height);
   const equation=strip.locator('summary .duty-free-rate'),equals=strip.locator('.duty-free-rate-equals');
   const [equationBox,equalsBox]=await Promise.all([equation.boundingBox(),equals.boundingBox()]);
   expect(equationBox).not.toBeNull();expect(equalsBox).not.toBeNull();expect(equalsBox!.width).toBeGreaterThanOrEqual(5);

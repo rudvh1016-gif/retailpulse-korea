@@ -238,11 +238,13 @@ test("the guide uses no symbol the bundled font subsets do not carry", () => {
   }
 });
 
-test("the button sits beside the date chip in the header, on every screen size", async () => {
+test("the install guide sits before the calendar and is available on every screen size", async () => {
   const app = await read("../app/retailpulse-app.tsx");
+  const signals = await read("../app/live-signals.tsx");
   const css = await read("../app/globals.css");
-  assert.match(app, /<KstTodayChip lang=\{lang\} date=\{serviceDate\} \/>\s*\n\s*<InstallAppButton lang=\{lang\} \/>/,
-    "the owner asked for it next to the date");
+  assert.doesNotMatch(app, /<InstallAppButton lang=\{lang\} \/>/, "the owner moved the guide out of the header");
+  assert.match(signals, /className="date-nav-tools">\s*<InstallAppButton lang=\{lang\}\/?>\s*\{modernCalendar \? <AirportCalendarWithAvailability/,
+    "the owner asked for the guide to the left of the calendar");
   assert.match(css, /\.install-app-button \{/);
   // The date chip is hidden below 820px; the install button must not be,
   // because a phone is where installing matters.

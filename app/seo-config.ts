@@ -35,7 +35,7 @@ export type SeoLocale = typeof seoLocales[number];
  * out of this list because its indexable pages have an additional area
  * segment; the old flat URL is a permanent redirect, not duplicate content.
  */
-export const standaloneSeoSlugs = ["myeongdong", "hongdae", "seongsu", "itaewon", "airport", "forecast", "predictions", "business", "about", "more"] as const;
+export const standaloneSeoSlugs = ["myeongdong", "hongdae", "seongsu", "itaewon", "airport", "forecast", "predictions", "where-to", "consumption", "business", "about", "more"] as const;
 export const tourismDeskAreas = ["myeongdong", "hongdae", "seongsu", "itaewon"] as const;
 export type TourismDeskArea = typeof tourismDeskAreas[number];
 export const seoSlugs = [...standaloneSeoSlugs, "tourism-desk"] as const;
@@ -75,6 +75,8 @@ export function pageTitle(locale: SeoLocale, slug?: SeoSlug, tourismArea: Touris
     }[locale];
   }
   const titles: Record<Exclude<SeoSlug, keyof typeof names | "tourism-desk">, Record<SeoLocale, string>> = {
+    'where-to':{ko:'오늘 어디 갈까 · 서울 4개 지역 비교 | KORETAIL',en:'Where to Go Today · Four Seoul Districts | KORETAIL',zh:'今天去哪里 · 首尔四区比较 | KORETAIL',ja:'今日はどこへ・ソウル4エリア比較 | KORETAIL'},
+    consumption:{ko:'요즘 뜨는 소비 · 업종별 관측 변화 | KORETAIL',en:'Observed Consumption Changes by Industry | KORETAIL',zh:'近期消费 · 各行业观测变化 | KORETAIL',ja:'最近の消費・業種別観測の変化 | KORETAIL'},
     airport: { ko: "인천공항 T1·T2 출국장 예고·항공편·혼잡도 | KORETAIL", en: "Incheon Airport T1·T2 Departure-Hall Forecasts & Flights | KORETAIL", zh: "仁川机场T1·T2出境大厅预报与航班 | KORETAIL", ja: "仁川空港T1・T2 出国場予告・フライト・混雑 | KORETAIL" },
     predictions: { ko: "지역 인구 예측·기록 관리 | KORETAIL", en: "Population Outlook & Records | KORETAIL", zh: "区域人口预测与记录 | KORETAIL", ja: "地域人口の予測と記録 | KORETAIL" },
     forecast: { ko: "서울·인천공항 공식 기록과 숫자 설명 | KORETAIL", en: "Seoul & Incheon Official Records Explained | KORETAIL", zh: "首尔与仁川机场官方记录与数据说明 | KORETAIL", ja: "ソウル・仁川空港の公式記録と数値の説明 | KORETAIL" },
@@ -111,6 +113,8 @@ export function pageDescription(locale: SeoLocale, slug?: SeoSlug, tourismArea: 
     }[locale];
   }
   const descriptions: Record<Exclude<SeoSlug, keyof typeof names | "tourism-desk">, Record<SeoLocale, string>> = {
+    'where-to':{ko:'명동·성수·홍대·이태원의 현재 공식 혼잡과 실제 제공되는 날씨를 기준시각과 함께 비교하고 지역 상세로 이동하세요.',en:'Compare official crowd conditions and available weather in Myeongdong, Seongsu, Hongdae and Itaewon, with source times and links to area details.',zh:'比较明洞、圣水、弘大、梨泰院官方拥挤情况与已有天气资料，查看基准时间及地区详情。',ja:'明洞・聖水・弘大・梨泰院の公式混雑と提供されている天気を基準時刻とともに比較し、エリア詳細へ。'},
+    consumption:{ko:'지역별 모든 보유 업종의 월간 카드 결제 관측을 같은 날짜·시간에 맞춰 비교합니다. 결측·보유 기간·금액 범위를 구분하며 전체 매출로 해석하지 않습니다.',en:'Compare retained industry card-payment observations by month at matching days and hours. Missing data, coverage and amount ranges remain explicit; these are not total sales.',zh:'将地区各已收录行业的月度银行卡支付观测按相同日期与小时比较，区分缺失、期间与金额范围，非全量销售额。',ja:'地域別の全保有業種の月次カード決済観測を同じ日付・時間で比較。欠損・保有期間・金額範囲を明示し、売上全数とは解釈しません。'},
     airport: { ko: "인천공항 전체·T1·T2의 출국장 공식 예상 승객과 피크, 실제 출발 운항과 집중 게이트, 현재 출국장 대기, 월별 공식 실적을 확인하세요.", en: "Official departure-hall passenger forecast and peak, physical departing flights and busiest gates, current departure-hall waits and official monthly history for all terminals, T1 and T2.", zh: "查看仁川机场整体、T1、T2的出境大厅官方预计人数与高峰、实际出发航班与集中登机口、当前出境区等候，以及月度官方实绩。", ja: "仁川空港全体・T1・T2の出国場公式予想旅客とピーク、実出発便と集中ゲート、現在の出国場待ち、月次公式実績を確認できます。" },
     predictions: { ko: "서울시 공식 예측으로 앞으로 가장 붐빌 시간을 확인하고, 명동·홍대·성수·이태원의 내일 인구 흐름 참고 예상과 최근 28일 관측 기록이 얼마나 쌓였는지 함께 보세요.", en: "See the busiest hour ahead in Seoul's official forecast, KORETAIL's reference outlook for tomorrow in Myeongdong, Hongdae, Seongsu and Itaewon, and how much of the last 28 days is actually on record.", zh: "通过首尔市官方预测查看未来最拥挤的时段，并了解明洞、弘大、圣水、梨泰院明日人口趋势的参考预测，以及最近28天观测记录的累积情况。", ja: "ソウル市公式予測で今後最も混雑する時間を確認し、明洞・弘大・聖水・梨泰院の明日の人口の流れの参考予測と、直近28日の観測記録の蓄積状況を合わせて確認できます。" },
     forecast: { ko: "각 지표가 무엇을 뜻하는지, 높으면 어떤 상황인지, 어떤 공식 자료에서 왔는지를 설명과 함께 확인하세요. T1·T2 비중과 지역 외국인 생활인구 흐름을 포함합니다.", en: "Every figure with what it means, what a high value indicates and which official record it came from — including T1/T2 share and area foreign-population history.", zh: "每个指标都附含义、数值偏高时的情况与官方出处说明，包含T1/T2占比与各地区外国人生活人口趋势。", ja: "各指標の意味・高いときの状況・出典を説明付きで確認できます。T1・T2の比率とエリア別外国人生活人口の推移を含みます。" },

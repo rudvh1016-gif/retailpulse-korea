@@ -1315,10 +1315,10 @@ test("desktop navigation promotes Guide Desk in the exact localized order", asyn
   await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 1280, height: 900 });
   const expected = {
-    ko: ["서울", "공항", "매장", "예측", "관광안내", "기록", "소개", "더보기"],
-    en: ["Seoul", "Airport", "Business", "Outlook", "Guide Desk", "Records", "About", "More"],
-    zh: ["首尔", "机场", "门店", "预测", "旅游咨询", "记录", "关于", "更多"],
-    ja: ["ソウル", "空港", "店舗", "予測", "観光案内", "記録", "紹介", "その他"],
+    ko: ["서울", "공항", "매장", "오늘 어디 갈까", "요즘 뜨는 소비", "관광안내", "기록", "소개", "더보기"],
+    en: ["Seoul", "Airport", "Business", "Where to go", "Consumption", "Guide Desk", "Records", "About", "More"],
+    zh: ["首尔", "机场", "门店", "今天去哪里", "近期消费", "旅游咨询", "记录", "关于", "更多"],
+    ja: ["ソウル", "空港", "店舗", "今日はどこへ", "最近の消費", "観光案内", "記録", "紹介", "その他"],
   } as const;
 
   for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
@@ -1326,7 +1326,7 @@ test("desktop navigation promotes Guide Desk in the exact localized order", asyn
     const nav = page.locator("nav.top-nav");
     await expect(nav).toBeVisible();
     expect(await nav.locator("a").allInnerTexts()).toEqual([expected[locale][1],expected[locale][0],...expected[locale].slice(2)]);
-    await expect(nav.locator("a[aria-current='page']")).toHaveText(expected[locale][4]);
+    await expect(nav.locator("a[aria-current='page']")).toHaveText(expected[locale][5]);
     await expect(page.locator("nav.bottom-nav")).toBeHidden();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `${locale} desktop header must not overflow`).toBeLessThanOrEqual(1);
@@ -1340,7 +1340,7 @@ test("mobile More explains usage without the removed promotion and retains its T
 
   const bottom = page.locator("nav.bottom-nav");
   await expect(bottom).toBeVisible();
-  await expect(bottom.locator("a")).toHaveCount(5);
+  await expect(bottom.locator("a")).toHaveCount(6);
   await expect(bottom).not.toContainText("관광안내");
   await bottom.locator("a").filter({ hasText: "더보기" }).click();
   await expect(page).toHaveURL(/\/ko\/more$/);
@@ -1474,12 +1474,12 @@ test("the forecast figure shows the current minute inside the phone viewport wit
  * the button is reachable in the header, the guide opens with real steps
  * for both phones, and it closes again.
  */
-test("the header offers an install guide with real steps for Galaxy and iPhone", async ({ page }) => {
+test("the date row offers an install guide with real steps for Galaxy and iPhone", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.goto("/ko");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
 
-  const button = page.locator(".topbar .install-app-button");
+  const button = page.locator(".date-nav-tools .install-app-button");
   await expect(button).toBeVisible();
   await button.click();
 
@@ -1507,7 +1507,7 @@ test("the install guide keeps keyboard focus inside and restores the trigger", a
   await page.goto("/ko");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
 
-  const trigger = page.locator(".topbar .install-app-button");
+  const trigger = page.locator(".date-nav-tools .install-app-button");
   await trigger.focus();
   await trigger.press("Enter");
 
@@ -1538,7 +1538,7 @@ test("the install guide is written in every locale, not only Korean", async ({ p
   ] as const) {
     await page.goto(`/${locale}`);
     await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
-    await page.locator(".topbar .install-app-button").click();
+    await page.locator(".date-nav-tools .install-app-button").click();
     const dialog = page.locator(".install-modal");
     await expect(dialog).toBeVisible();
     await expect(dialog).toContainText(marker);
@@ -1562,7 +1562,7 @@ test("the guide leads with the reader's own device and still lists the others", 
     await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
     await page.goto("/ko");
     await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
-    await page.locator(".topbar .install-app-button").click();
+    await page.locator(".date-nav-tools .install-app-button").click();
     const headings = page.locator(".install-modal .install-section h3");
     await expect(headings.first()).toHaveText(first);
     await expect(headings, "every section stays on screen whatever the device is").toHaveCount(6);
