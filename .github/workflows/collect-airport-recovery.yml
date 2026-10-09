@@ -34,8 +34,10 @@ name: Collect Airport Departures (Early Window)
 #
 # A scan walks the D-3..today window at 100 rows a page, so 125 leaves margin
 # over the ~118 pages the dataset actually needs. An attempt blocked at connect
-# issues NO requests at all, which is why the retries are nearly free in
-# practice as well as bounded on paper.
+# still consumes a request attempt; the 125 ceiling counts failed calls too.
+# Only this attempt's classified transient A1 FETCH failure earns a retry.
+# Auth/schema/empty data, throttling, storage and unrelated context failures
+# stop the ladder. A1 SUCCESS/SKIPPED never repeats A2 just for holidays 403.
 #
 # The 06:07 group deliberately rescans rather than skipping: gate assignments
 # firm up during the morning, and the busiest-gate ranking is what this screen
@@ -72,7 +74,7 @@ jobs:
 
   retry_1:
     needs: collect
-    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.collect.result == 'failure' }}
+    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.collect.result == 'failure' && needs.collect.outputs.retry_airport == 'true' }}
     uses: ./.github/workflows/collect-attempt.yml
     with:
       sources: airport_recent,airport_enrichment
@@ -83,7 +85,7 @@ jobs:
 
   retry_2:
     needs: [collect, retry_1]
-    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.retry_1.result == 'failure' }}
+    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.retry_1.result == 'failure' && needs.retry_1.outputs.retry_airport == 'true' }}
     uses: ./.github/workflows/collect-attempt.yml
     with:
       sources: airport_recent,airport_enrichment

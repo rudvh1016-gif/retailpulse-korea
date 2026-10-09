@@ -26,7 +26,7 @@ const { seoLocales, seoPath, standaloneSeoSlugs, tourismDeskAreas, pageTitle, pa
   await import("../app/seo-config.ts");
 
 // The fixture site serves whatever origin THIS build is configured for. CI
-// builds against https://rpk-ci.invalid, so hardcoding the production host
+// builds against its isolated localhost verification origin, so hardcoding the production host
 // here would make the fixture disagree with the sitemap it is checking.
 const ORIGIN = siteOrigin;
 

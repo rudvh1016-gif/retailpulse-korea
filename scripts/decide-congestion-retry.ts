@@ -9,7 +9,7 @@
  * `retry_sources`, which spends nothing — the safe direction.
  */
 import { appendFileSync, readFileSync } from "node:fs";
-import { decideCongestionRetry, RETRYABLE_A4_SOURCES, shouldRetryForecast } from "../lib/congestion-retry";
+import { decideCongestionRetry, RETRYABLE_A4_SOURCES, shouldRetryForecast, shouldRetryAirport } from "../lib/congestion-retry";
 
 const path = process.argv[2];
 let log = "";
@@ -19,7 +19,11 @@ try {
   console.log("collector log unreadable; no fresh runner will be requested");
 }
 
-if (process.argv[3] === "--forecast") {
+if (process.argv[3] === "--airport") {
+  const retry = shouldRetryAirport(log);
+  console.log(`retry_airport=${retry}`);
+  if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `retry_airport=${retry}\n`);
+} else if (process.argv[3] === "--forecast") {
   const retry = shouldRetryForecast(log);
   console.log(`retry_forecast=${retry}`);
   if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `retry_forecast=${retry}\n`);

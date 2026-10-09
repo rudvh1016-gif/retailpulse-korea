@@ -90,6 +90,16 @@ export function shouldRetryForecast(log: string): boolean {
   const result = parseCollectorResults(log).filter((item) =>
     item.source === "airport_passenger_forecast" || item.source === "airport_passenger_forecast_recovery",
   ).at(-1);
+  return classifiedTransientFailure(result);
+}
+
+/** A1 success plus a context failure (e.g. holidays 403) never repeats A1/A2. */
+export function shouldRetryAirport(log: string): boolean {
+  const result = parseCollectorResults(log).filter((item) => item.source === "airport_recent").at(-1);
+  return !!result?.detail?.includes("failureStage=FETCH") && classifiedTransientFailure(result);
+}
+
+function classifiedTransientFailure(result: ResultLine | undefined): boolean {
   if (result?.status !== "ERROR" || !result.detail
     || result.detail.includes("retryDeferred=true") || result.detail.includes("row:")) return false;
   const failures = [...result.detail.matchAll(/failureClass=([A-Za-z0-9_]+)(.*?)(?=failureClass=|$)/g)];

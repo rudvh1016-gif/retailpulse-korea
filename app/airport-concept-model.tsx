@@ -11,7 +11,7 @@ import { AirportGateRegionRegister } from './airport-gate-region-register';
 
 
 
-export function AirportConceptModel({ map, lang }: { map: DepartureMap; lang: Lang }) {
+export function AirportConceptModel({ map, lang, evidence }: { map: DepartureMap; lang: Lang; evidence?: string }) {
   const scope=map.buildingScope??map.terminal;
   const buildings: RegisteredBuilding[] = scope === 'all' ? ['T1','T2','CONCOURSE'] : [scope];
   const ranges = (side: 'WEST' | 'CENTER' | 'EAST') => buildings.map(building => {
@@ -26,6 +26,7 @@ export function AirportConceptModel({ map, lang }: { map: DepartureMap; lang: La
   const share = (side: 'EAST' | 'WEST' | 'CENTER' | 'UNVERIFIED') => shares[side] === null ? text.zero : `${shares[side].toFixed(1)}%`;
   return <figure className="airport-concept-model" data-testid="airport-concept-model" data-denominator={denominator}>
     <figcaption data-testid="airport-map-model-scope" data-terminal={scope}>{airportModelScope(scope,lang)} · {windowText(map.window, lang)}</figcaption>
+    {evidence && <p className="prep-note" data-testid="model-source-evidence">{evidence}</p>}
     <AirportSceneModel scope={scope} lang={lang} className="airport-concept-picture" showBasis={false}>
     {buildings.map(building => {
       const counts = perBuilding ? perBuilding[building] : map.sides;

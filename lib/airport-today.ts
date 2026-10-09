@@ -363,8 +363,17 @@ interface CollectorRunDetailRow {
  * pattern — a shallow legacy success can never satisfy this guard. Reads
  * the most recent successful runs only, so this stays a small bounded query.
  */
+/** Shared read protocol implemented by both Worker D1 and the Actions REST adapter. */
+export interface A1HistoryReadDatabase {
+  prepare(sql: string): {
+    bind(...values: unknown[]): {
+      run(): Promise<{ results?: unknown[] }>;
+    };
+  };
+}
+
 export async function hasCompleteA1RecentHistoryToday(
-  db: D1Database | undefined,
+  db: A1HistoryReadDatabase | undefined,
   targetDate: string,
 ): Promise<boolean> {
   if (!db) return false;
@@ -384,17 +393,19 @@ export async function collectAirportFlightsToday(
   env: AirportTodayEnv,
   now = new Date(),
   fetcher: OfficialFetcher = fetchOfficialJson,
-): Promise<{ status: string; records: number; trackedToday: number; pagesFetched: number }> {
+): Promise<{ status: string; records: number; trackedToday: number; pagesFetched: number; detail?: string }> {
   if (!env.DATA_GO_KR_SERVICE_KEY) {
     await writeSourceHealth(env.DB, SOURCE_ID, "MISSING", "DATA_GO_KR_SERVICE_KEY is not configured");
     return { status: "NEEDS_KEY", records: 0, trackedToday: 0, pagesFetched: 0 };
   }
 
   const targetDate = kstDate(now);
+  let failureStage: 'FETCH' | 'STORE' = 'FETCH';
   try {
     const fetched = await fetchA1DeparturesForDate(env.DATA_GO_KR_SERVICE_KEY, targetDate, fetcher, { maxRequests: env.A1_MAX_REQUESTS });
     if (!fetched.records.length) throw new Error(`a1_today_no_rows_${targetDate}`);
     if (!fetched.trackedToday) throw new Error(`a1_today_no_current_rows_${targetDate}`);
+    failureStage = 'STORE';
     const scheduleStatements = prepareDepartureSchedules(env.DB, targetDate, fetched.futureRecords);
     const changedRows = await persistTodayFlights(env.DB, fetched.records);
     const scheduleWrites = env.DB ? await runD1Batches(env.DB, scheduleStatements) : NO_D1_WRITES;
@@ -408,11 +419,11 @@ export async function collectAirportFlightsToday(
       pagesFetched: fetched.pagesFetched,
     };
   } catch (error) {
-    const detail = safeSourceFailureDetail(error);
+    const detail = `failureStage=${failureStage} ${safeSourceFailureDetail(error)}`;
     console.error("airport_today_collector_failed", { sourceId: SOURCE_ID, error: detail.slice(0, 200) });
     // A failed refresh changes health, never the last-good rows or timestamps.
     await writeCollectorStatus(env.DB, SOURCE_ID, "ERROR", detail);
     await writeSourceHealth(env.DB, SOURCE_ID, "ERROR", detail);
-    return { status: "ERROR", records: 0, trackedToday: 0, pagesFetched: 0 };
+    return { status: "ERROR", records: 0, trackedToday: 0, pagesFetched: 0, detail };
   }
 }
