@@ -32,6 +32,7 @@ import LiveSignals, {
   KstTodayChip,
 } from "./live-signals";
 import { TourismDeskView } from "./tourism-desk";
+import { InstallAppButton } from "./install-app";
 import {WhereToView,ConsumptionView} from './seoul-comparison';
 import {PredictionEvidence} from './prediction-evidence';
 import { parsePreferences, PREFERENCE_KEY } from "../lib/personal-briefing";
@@ -465,6 +466,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         </nav>
         <div className="header-meta">
           <KstTodayChip lang={lang} date={view==='where-to'||view==='consumption'?null:serviceDate} />
+          <InstallAppButton lang={lang} />
           <AirportDutyFreeExchange lang={lang} date={serviceDate}/>
           <label className="language-control">
             <span className="sr-only">Language</span>

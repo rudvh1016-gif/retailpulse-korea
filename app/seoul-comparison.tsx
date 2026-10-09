@@ -2,8 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- Precomputed responsive WebPs; no on-demand image transforms. */
 import {useEffect,useState} from 'react';
 import type {Lang} from './retailpulse-data';
-import {useLiveSummary,KstTodayChip} from './live-signals';
-import {InstallAppButton} from './install-app';
+import {useLiveSummary} from './live-signals';
 import type {AreaId} from '../lib/areas';
 import type {publicCommercialMonth} from '../lib/commercial-monthly';
 import {commercialCategoryIcons,commercialCategoryFallback} from './commercial-category-icons';
@@ -22,7 +21,6 @@ export function WhereToView({lang}:{lang:Lang}){
  const comparable=fresh.every(Boolean)&&new Set(clocks).size===1;
  return <section className="seoul-comparison" aria-labelledby="where-to-title">
   <header className="comparison-heading"><h1 id="where-to-title">{t(lang,'오늘 어디 갈까','Where to go today','今天去哪里','今日はどこへ')}</h1><p>{t(lang,'명동·성수·홍대·이태원의 혼잡과 날씨를 함께 보고 골라보세요.','Compare crowds and weather in four Seoul districts.','对比首尔四个地区的拥挤与天气。','ソウル4エリアの混雑と天気を比べて選びましょう。')}</p></header>
-  <div className="comparison-date"><InstallAppButton lang={lang}/><KstTodayChip lang={lang}/></div>
   <div className="area-tabs comparison-pace" role="group" aria-label={t(lang,'원하는 분위기','Preferred pace','偏好氛围','希望する雰囲気')}>
    {(['all','quiet','busy'] as const).map(value=><button key={value} type="button" className={pace===value?'active':''} aria-pressed={pace===value} onClick={()=>setPace(value)}>{value==='all'?t(lang,'모두 비교','Compare all','全部比较','すべて比較'):value==='quiet'?t(lang,'한산한 곳','Calmer places','安静一些','空いている場所'):t(lang,'붐비는 곳','Busier places','热闹一些','にぎやかな場所')}</button>)}
   </div>
@@ -66,7 +64,7 @@ export function ConsumptionView({lang,area,onArea}:{lang:Lang;area:AreaId;onArea
  return <section className="seoul-comparison consumption-comparison" aria-labelledby="consumption-title">
   <header className="comparison-heading"><h1 id="consumption-title">{t(lang,'요즘 뜨는 소비','Consumption changes','近期消费变化','最近の消費の変化')}</h1><p>{t(lang,'같은 날짜·시간에 관측된 업종별 카드 결제 흐름을 비교합니다.','Compare observed card activity by industry at matching days and hours.','对比相同日期与小时观测到的各行业银行卡支付趋势。','同じ日付・時間に観測した業種別カード決済の流れを比較します。')}</p></header>
   <div className="area-tabs" role="tablist" aria-label={t(lang,'지역 선택','Select district','选择地区','エリア選択')}>{areas.map(value=><button key={value} type="button" role="tab" className={area===value?'active':''} aria-selected={area===value} onClick={()=>onArea(value)}>{names[value][lang]}</button>)}</div>
-  <div className="comparison-date"><InstallAppButton lang={lang}/><label>{t(lang,'비교월','Month','比较月份','比較月')} <select name="commercialMonth" aria-label={t(lang,'비교월','Comparison month','比较月份','比較月')} value={selectedMonth??''} onChange={event=>changeMonth(event.target.value)}>{[...new Set([...(selectedMonth?[selectedMonth]:[]),...(response?.months??[])])].sort().reverse().map(value=><option key={value} value={value}>{value}</option>)}</select></label></div>
+  <div className="comparison-date"><label>{t(lang,'비교월','Month','比较月份','比較月')} <select name="commercialMonth" aria-label={t(lang,'비교월','Comparison month','比较月份','比較月')} value={selectedMonth??''} onChange={event=>changeMonth(event.target.value)}>{[...new Set([...(selectedMonth?[selectedMonth]:[]),...(response?.months??[])])].sort().reverse().map(value=><option key={value} value={value}>{value}</option>)}</select></label></div>
   <p className="comparison-basis">{t(lang,'서울시·신한카드 내국인 결제 추정 · 관측된 10분 창의 평균 · 전체 매출 아님','Seoul / Shinhan Card domestic-consumer estimates · means of observed 10-minute windows · not total sales','首尔市／新韩卡境内消费者支付推算 · 已观测10分钟窗口的平均值 · 非全量销售额','ソウル市・新韓カード国内消費者の推定 · 観測した10分窓の平均 · 売上全数ではありません')}</p>
   {!data?<p role="status" className="comparison-empty">{response===undefined?t(lang,'월별 자료 불러오는 중…','Loading monthly data…','正在读取月度资料…','月次資料を読み込み中…'):t(lang,'이 월의 요약 자료를 아직 확인할 수 없습니다. 다른 월을 선택하거나 다시 확인하세요.','This month’s summary is unavailable. Choose another month or retry.','暂无法确认本月汇总，请选择其他月份或重试。','この月の要約は未確認です。別の月を選ぶか再確認してください。')}<button type="button" onClick={()=>setRetry(value=>value+1)}>{t(lang,'다시 확인','Retry','重试','再確認')}</button></p>:<>
    <p>{data.month} · {data.throughDate??t(lang,'완료된 날짜 없음','No completed days','暂无已完成日期','完了日なし')} · {t(lang,'전월 같은 일자·시간과 비교','compared with matching days / hours in the previous month','与上月相同日期及小时比较','前月の同じ日付・時間と比較')}</p>

@@ -238,13 +238,14 @@ test("the guide uses no symbol the bundled font subsets do not carry", () => {
   }
 });
 
-test("the install guide sits before the calendar and is available on every screen size", async () => {
+test("the install guide sits immediately before duty-free exchange in the shared header on every screen size", async () => {
   const app = await read("../app/retailpulse-app.tsx");
   const signals = await read("../app/live-signals.tsx");
   const css = await read("../app/globals.css");
-  assert.doesNotMatch(app, /<InstallAppButton lang=\{lang\} \/>/, "the owner moved the guide out of the header");
-  assert.match(signals, /className="date-nav-tools">\s*<InstallAppButton lang=\{lang\}\/?>\s*\{modernCalendar \? <AirportCalendarWithAvailability/,
-    "the owner asked for the guide to the left of the calendar");
+  assert.match(app, /className="header-meta">[\s\S]*?<InstallAppButton lang=\{lang\} \/>\s*<AirportDutyFreeExchange lang=\{lang\}/,
+    "the owner restored the guide immediately before duty-free exchange in the shared header");
+  assert.doesNotMatch(signals, /<InstallAppButton\b/,
+    "the superseded date-row placement must not leave a duplicate guide");
   assert.match(css, /\.install-app-button \{/);
   // The date chip is hidden below 820px; the install button must not be,
   // because a phone is where installing matters.
