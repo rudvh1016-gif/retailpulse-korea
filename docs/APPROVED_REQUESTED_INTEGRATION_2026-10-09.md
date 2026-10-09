@@ -37,3 +37,15 @@ request allowance, keys, permissions, continuous collection or release scope.
 METAR actual provider evidence and prepared storage/API/UI limitations are in
 `METAR_VERIFIED_BOUNDARY_2026-10-09.md`. Full checks and exact remote head belong
 to the final PR record; earlier PR323 CI success applies to its earlier head only.
+
+The first expanded CI on e91f39d passed1238 units and failed4. Two imported
+components attempted to load CSS modules in Node. They now use scoped classes
+delivered through the already imported unprotected composition stylesheet;
+the original CSS review sources remain. The official documentation link is
+returned as source metadata by the stored API. The original provider guard is
+unchanged, and the browser still fetches only the same-origin stored endpoint.
+The existing read-budget diagnostic now guards the complete conditional
+realtime query template. Its TODAY measurement SQL and all29 statement guards
+remain; no production diagnostic is executed or past-day cost claimed.
+The original four failing checks pass after these scoped integration fixes,
+without another protected source/hash change or any original test edit.

@@ -152,7 +152,9 @@ const HOT_QUERIES: HotQuery[] = [
         observed_at AS observedAt, retrieved_at AS retrievedAt
       FROM seoul_realtime_area WHERE area = ? ORDER BY observed_at DESC LIMIT 1`), "seoul_realtime_area", "population_min", "population_max"),
     binds: [...AREAS],
-    guard: "FROM seoul_realtime_area WHERE area = ? ORDER BY observed_at DESC LIMIT 1",
+    // This diagnostic measures TODAY only. Past-day row-read cost remains unmeasured.
+    // Guard the complete conditional template; TODAY still uses the SQL above.
+    guard: "FROM seoul_realtime_area WHERE area = ?\n        ${dayRelation === \"PAST\" ? `AND observed_at >= ? AND observed_at < ?\n          AND source_id = 'SEOUL_CITYDATA_PPLTN' AND record_origin = 'LIVE' AND quality_status = 'VALID'\n          AND population_min >= 0 AND population_max >= population_min` : \"\"}\n        ORDER BY observed_at DESC LIMIT 1",
     table: "seoul_realtime_area",
   },
   {

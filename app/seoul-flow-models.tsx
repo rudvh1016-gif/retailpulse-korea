@@ -2,7 +2,8 @@
 import type {Lang} from './retailpulse-data';
 import type {LiveSummary} from './live-signals';
 import {fromSummary,type SeoulFlowArea} from '../lib/seoul-flow-data.mjs';
-import styles from './seoul-flow-models.module.css';
+// Styles are supplied by the existing global CSS, so Node renderers can import this component.
+const styles={"image":"seoul-flow-image","models":"seoul-flow-models","row":"seoul-flow-row","content":"seoul-flow-content","metrics":"seoul-flow-metrics","basis":"seoul-flow-basis","note":"seoul-flow-note"};
 
 const locales={ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'};
 const copy={

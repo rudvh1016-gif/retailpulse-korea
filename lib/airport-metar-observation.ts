@@ -123,6 +123,7 @@ export function airportMetarProjection(current: AirportMetarAttempt | null, late
   const windVerified = typeof observation?.measurements.meanWindSpeed?.value === 'number';
   return {
     sourceId: AIRPORT_METAR_SOURCE, station: 'RKSI' as const, status,
+    sourceUrl: 'https://www.data.go.kr/data/15059455/openapi.do',
     observation, retrievedAt: usable ? retrievedAt : null,
     attemptedAt: coherent ? latestTime : null,
     latestAttemptStatus: coherent ? latestAttempt!.status : 'UNVERIFIED',

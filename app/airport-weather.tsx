@@ -2,7 +2,8 @@
 import {useEffect,useRef,useState} from 'react';
 import type { Lang } from './retailpulse-data';
 import type {AirportMetarSnapshot} from '../lib/airport-metar-store';
-import styles from './airport-weather.module.css';
+// Styles are supplied by the existing global CSS, so Node renderers can import this component.
+const styles={"body":"airport-weather-body","basis":"airport-weather-basis","metrics":"airport-weather-metrics","details":"airport-weather-details"};
 
 const copy={
  ko:{ground:'인천공항 지상 관측 · RKSI',loading:'관측 자료 확인 중',stale:'오래된 관측',wind:'지상풍',temperature:'기온',observed:'관측 시각',retrieved:'조회 시각',details:'상세 정보',direction:'방향',dewpoint:'이슬점',visibility:'시정',source:'공식 출처',scope:'지상 관측이며 항공편의 안전을 판단하는 자료가 아닙니다.'},
@@ -23,6 +24,8 @@ export function AirportWeather({ lang }: { lang: Lang }) {
     fetch('/api/airport/weather',{signal:controller.signal}).then(async response=>{
       if(!response.ok)throw Error('READ_FAILED');const body=await response.json();
       if(body.mode!=='airport-metar'||body.station!=='RKSI'||body.sourceId!=='KMA_RKSI_METAR'||!Number.isFinite(Date.parse(body.generatedAt)))throw Error('UNVERIFIED_RESPONSE');
+      const sourceUrl=new URL(body.sourceUrl);
+      if(sourceUrl.protocol!=='https:'||sourceUrl.username||sourceUrl.password)throw Error('UNVERIFIED_SOURCE');
       const observation=body.observation;
       const units:Record<string,string[]>={airTemperature:['Cel'],dewpointTemperature:['Cel'],qnh:['hPa'],meanWindDirection:['deg'],meanWindSpeed:['[kn_i]','m/s'],windGustSpeed:['[kn_i]','m/s'],prevailingVisibility:['m']};
       if(observation!=null&&(observation.station!=='RKSI'||observation.measurementScope!=='GROUND_OBSERVATION'
@@ -70,7 +73,7 @@ export function AirportWeather({ lang }: { lang: Lang }) {
           <div><dt>QNH</dt><dd>{number(observation.measurements.qnh?.value)}{observation.measurements.qnh&&' hPa'}</dd></div>
           <div><dt>{t.visibility}</dt><dd>{observation.measurements.prevailingVisibility?.qualifier==='ABOVE'?'>':observation.measurements.prevailingVisibility?.qualifier==='BELOW'?'<':''}{number(observation.measurements.prevailingVisibility?.value)}{observation.measurements.prevailingVisibility&&' m'}</dd></div>
         </dl><p className={styles.basis}>kt = knots · {t.scope}</p>
-        <a href="https://www.data.go.kr/data/15059455/openapi.do" target="_blank" rel="noopener noreferrer">{t.source} · METAR</a>
+        <a href={snapshot!.sourceUrl} target="_blank" rel="noopener noreferrer">{t.source} · METAR</a>
       </details>
     </>}
     </div>
