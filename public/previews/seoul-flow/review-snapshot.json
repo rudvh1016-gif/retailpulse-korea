@@ -1,0 +1,35 @@
+{
+  "kind": "CAPTURED_EXISTING_API_REVIEW",
+  "notLive": true,
+  "district": "itaewon",
+  "generatedAt": "2026-10-09T00:34:31.087Z",
+  "station": {
+    "stationName": "이태원|6호선",
+    "referenceDate": "2026-10-07",
+    "boardingCount": 11392,
+    "alightingCount": 12037,
+    "selectedStationCount": 1,
+    "unit": "people",
+    "provider": "OA-22723",
+    "retrievedAt": "2026-10-08T00:55:47.355Z",
+    "aggregation": "DAILY"
+  },
+  "foreignLivingPopulation": {
+    "value": 960.57,
+    "unit": "people_estimate",
+    "referenceAt": "2026-08-26T23:00:00+09:00",
+    "provider": "OA-23018:Spop250mFornTempDong",
+    "retrievedAt": "2026-09-28T00:17:47.199Z",
+    "aggregation": "HOURLY_REFERENCE"
+  },
+  "tourismPurposeMovement": {
+    "value": 346.5,
+    "referenceDate": "2026-09-30",
+    "releaseMonth": "2026-09",
+    "originalUnit": null,
+    "unitVerified": false,
+    "provider": "OA-22378",
+    "retrievedAt": "2026-10-06T01:43:53.007Z",
+    "aggregation": "OFFICIAL_BATCH_FILE"
+  }
+}

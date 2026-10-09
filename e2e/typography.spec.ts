@@ -457,11 +457,12 @@ test("the airport screen separates 출국 and 입국, and 입국 shows arrival p
   await expect(brief).toBeVisible();
   await expect(brief).toContainText("공식 예상 입국객");
   await expect(brief).toContainText("41,300명");
-  // It is a forecast about the airport, never a count of people reaching Seoul.
-  await expect(brief).toContainText("서울로 이동하는 인원 수가 아닙니다");
+  // Owner removed the explanatory sentence; the forecast title and source time remain.
+  await expect(brief).not.toContainText("서울로 이동하는 인원 수가 아닙니다");
+  await expect(brief).toContainText("09:05");
 
   // The hourly arrival flow, from the same statement the departure page reads.
-  await expect(page.locator("#airport-arrival-flow-title")).toContainText("공식 예상 입국객 흐름");
+  await expect(page.locator("#airport-arrival-flow-title")).toContainText("시간대별 예상 입국객");
   await expect(page.locator(".airport-forecast .airport-flow-band")).toHaveCount(2);
 
   // Per terminal, and nothing departure-only anywhere on the screen.

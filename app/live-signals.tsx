@@ -698,15 +698,9 @@ const arrivalSectionText = {
   // said so. The arrival one said 금일 whatever date was selected.
   selectedDayTotal: { ko: "선택일 전체 공식 예상 입국객", en: "Selected day's total official expected arrivals", zh: "所选日期全天官方预计入境旅客", ja: "選択日合計の公式予想入国旅客" },
   peak: { ko: "오늘 피크", en: "Today's peak", zh: "今日高峰", ja: "本日のピーク" },
-  flowTitle: { ko: "공식 예상 입국객 흐름", en: "Official expected arrival flow", zh: "官方预计入境客流", ja: "公式予想入国者の流れ" },
+  flowTitle: { ko: "시간대별 예상 입국객", en: "Expected arrivals by hour", zh: "分时段预计入境旅客", ja: "時間帯別の予想入国旅客" },
   flowOnly: { ko: "공식 예상 승객 · 실제 입국 인원 아님", en: "Official departure-hall passenger forecast · not an observed arrival count", zh: "官方预计旅客 · 非实际入境人数", ja: "公式予想旅客 · 実際の入国人数ではありません" },
   byTerminal: { ko: "터미널별 공식 예상 입국객", en: "Official expected arrivals by terminal", zh: "各航站楼官方预计入境旅客", ja: "ターミナル別の公式予想入国旅客" },
-  basis: {
-    ko: "인천공항이 발표한 시간대별 예상 입국객입니다. 서울로 이동하는 인원 수가 아닙니다",
-    en: "Incheon Airport's own hourly arrival forecast · not a count of people travelling into Seoul",
-    zh: "仁川机场发布的分时段预计入境旅客 · 并非前往首尔的人数",
-    ja: "仁川空港が発表した時間帯別の予想入国旅客です · ソウルへ移動する人数ではありません",
-  },
   source: { ko: "인천국제공항공사 승객예고", en: "Incheon International Airport Corporation passenger forecast", zh: "仁川国际机场公社旅客预告", ja: "仁川国際空港公社の旅客予告" },
   // Collection lag, named as ours. Never "the airport published nothing".
   behindTitle: {
@@ -1593,7 +1587,6 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
       <ul className="airport-arrival-lines">
         {peak && <li>{arrivalSectionText.peak[lang]} {formatKstBand(peak.targetStartAt, peak.targetEndAt).replace(" KST", "")} · {people(peak.expectedPassengers)}</li>}
         {headline === null && <li className="airport-arrival-basis">{emptyBody}</li>}
-        <li className="airport-arrival-basis">{arrivalSectionText.basis[lang]}</li>
         {collected && <li className="airport-arrival-basis">{arrivalSectionText.source[lang]} · {collected}</li>}
       </ul>
     </section>
