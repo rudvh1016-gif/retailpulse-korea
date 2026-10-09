@@ -314,10 +314,11 @@ test("ships every product surface in four languages without a runtime LLM depend
   const product = `${page}\n${data}\n${guidance}`;
   for (const required of [
     "InsightsView", "AirportView", "BusinessView", "BusinessHistoryView",
-    "AboutView", "MoreView", "ProModal", "MetricExplainer",
+    "AboutView", "MoreView", "BusinessPrep", "IndustryGuide", "MetricExplainer",
     "AirportTodaySummary", "HomeTodayBrief", "FlightBoard", "DateNavigator",
     "简体中文", "日本語",
   ]) assert.match(page, new RegExp(required));
+  assert.doesNotMatch(page, /ProModal|business-pro|KORETAIL · NEXT/);
   for (const feature of [
     "출국장 공식 예상 승객", "OFFICIAL HISTORICAL", "T1", "T2",
     "뷰티·화장품", "패션·잡화", "식음료·카페",
