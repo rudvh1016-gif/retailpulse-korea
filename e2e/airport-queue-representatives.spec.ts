@@ -62,11 +62,13 @@ test('equal observations do not invent differences; partial data keeps only avai
   const section=await open(page,sample([6,6,6,6,6,6,6,6]));
   await expect(section.locator('article')).toHaveCount(3);
   await expect(section.locator('.checkpoint-role').filter({hasText:'동일 대기시간'})).toHaveCount(3);
-  await expect(section).toContainText('대기시간 표시가 모두 같습니다');
+  await expect(section).toContainText('현재 출국장 대기는 실시간 관측이라 언제나 지금 시점만 보여줍니다');
+  await expect(section).not.toContainText('대기시간 표시가 모두 같습니다');
   await page.locator('#airport-data-flow').getByRole('tab',{name:'T1',exact:true}).click();
   await expect(section.locator('article')).toHaveCount(2);
   await expect(section.locator('.checkpoint-role').filter({hasText:'중간'})).toHaveCount(0);
-  await expect(section).toContainText('비교 가능한 출국장만 표시');
+  await expect(section.locator('article b')).toHaveCount(2);
+  await expect(section).not.toContainText('비교 가능한 출국장만 표시');
 });
 
 test('all scope compares just three halls and labels their terminals',async({page})=>{

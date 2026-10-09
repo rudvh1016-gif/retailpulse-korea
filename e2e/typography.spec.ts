@@ -118,21 +118,18 @@ for (const locale of ["ko", "en", "zh", "ja"] as const) {
     expect(await tofuCharacters(dialog)).toEqual([]);
   });
 
-  test(`${locale} Tourism Desk and Visitor Show contain no missing-glyph boxes`, async ({ page }) => {
+  test(`${locale} Tourism Desk details contain no missing-glyph boxes after show removal`, async ({ page }) => {
     await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
     await page.goto(`/${locale}/tourism-desk/myeongdong`);
     await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
     const desk = page.locator(".tourism-desk");
     expect(await tofuCharacters(desk)).toEqual([]);
 
-    const launch = desk.locator(".tourism-visitor-launches button").first();
-    await expect(launch).toBeVisible();
-    await launch.click();
-    const dialog = page.locator("dialog.tourism-visitor-show");
-    await expect(dialog).toBeVisible();
-    await dialog.locator(`button[lang="${locale}"]`).click();
-    await expect(dialog).toHaveAttribute("lang", locale);
-    expect(await tofuCharacters(dialog)).toEqual([]);
+    await expect(desk.locator(".tourism-visitor-launches, dialog.tourism-visitor-show")).toHaveCount(0);
+    for (const detail of await desk.locator("details").all()) {
+      await detail.locator("summary").first().click();
+    }
+    expect(await tofuCharacters(desk)).toEqual([]);
   });
 }
 
@@ -344,14 +341,16 @@ test("a stale forecast collection is named as ours, not as the provider having n
  * The weather line answers the two questions the numbers never did, and the
  * observation block stops reading as a second, contradictory forecast.
  */
-test("the weather guide names dust and wind, and the observation is marked as now", async ({ page }) => {
+test("the weather forecast keeps humidity and wind while air readings retain their own source clock", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.goto("/ko/myeongdong");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
 
-  // Observation: its own numbers, opening with 지금, dust spelled out.
+  // Independent air observations retain their clock; Seoul temperature comes from the forecast.
   const environment = page.locator(".context-environment");
-  await expect(environment).toContainText("지금 29.4°C");
+  await expect(environment).toContainText("대기질 관측");
+  await expect(environment).toContainText(/08\.\s*31\.\s*14:05 KST/);
+  await expect(environment).not.toContainText("29.4°C");
   await expect(environment).toContainText("미세먼지 좋음");
   await expect(environment).toContainText("초미세먼지 좋음");
   // The raw parenthesised form the owner read as noise is gone.
@@ -364,12 +363,9 @@ test("the weather guide names dust and wind, and the observation is marked as no
   await expect(guide).toContainText("미세먼지는");
   await expect(guide).toContainText("바람은");
 
-  // Humidity and wind are MEASURED right above. Printing KMA's forecast of
-  // the same two values a few lines down is the overlap the owner reported,
-  // so while the observation is current the forecast row leaves them out.
-  await expect(environment).toContainText("습도 44%");
-  await expect(guide).not.toContainText("습도 65%");
-  await expect(guide).not.toContainText("바람 2.5m/s");
+  await expect(environment).not.toContainText("습도 44%");
+  await expect(guide).toContainText("습도 65%");
+  await expect(guide).toContainText("바람 2.5m/s");
 });
 
 /**
@@ -382,7 +378,7 @@ test("the weather guide names dust and wind, and the observation is marked as no
  * sitting directly above a live forecast, is what turns two honest sources
  * into one broken-looking weather block.
  */
-test("a stale observation is stamped with the time it was taken and explains the forecast beneath it", async ({ page }) => {
+test("stale air readings keep their source time and do not replace the weather forecast", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary({
     ...SUMMARY_FIXTURE,
     areas: {
@@ -403,16 +399,15 @@ test("a stale observation is stamped with the time it was taken and explains the
   const environment = page.locator(".context-environment");
   // The one word that caused the confusion must be gone from the number.
   await expect(environment).not.toContainText("지금 29.4°C");
-  await expect(environment).toContainText("08-30 14:50 관측 29.4°C");
-  // And the screen says, in one line, why the row below disagrees.
-  await expect(environment).toContainText("23시간 20분 전 관측된 값입니다");
-  await expect(environment).toContainText("기상청 예보라서 숫자가 다릅니다");
+  await expect(environment).toContainText(/08\.\s*30\.\s*14:50 KST/);
+  await expect(environment).toContainText("7μg/m³");
+  await expect(environment).not.toContainText("29.4°C");
 
-  // With no current measurement to defer to, KMA is the only source for
-  // humidity and wind, so they come back rather than silently vanishing.
+  // Stale air observations remain readable but cannot supply current preparation guidance.
   const guide = page.locator('[data-signal-key="weather"]');
   await expect(guide).toContainText("습도 65%");
   await expect(guide).toContainText("바람 2.5m/s");
+  await expect(guide).not.toContainText(/미세먼지는\s*좋음/);
 });
 
 /**

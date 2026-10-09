@@ -1144,20 +1144,19 @@ test("the three Tourism Desk routes render only their selected area's data", asy
   }
 });
 
-test("Tourism Desk follows the seven-part guide workflow and shows only evidence-backed subway comparisons", async ({ page }) => {
+test("Tourism Desk retains six guide sections and evidence-backed subway comparisons after show removal", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
   await page.goto("/ko/tourism-desk/myeongdong");
   const desk = page.locator(".tourism-desk");
   const sectionHeadings = desk.locator(".tourism-guide-section > .tourism-section-head h2");
 
-  await expect(sectionHeadings).toHaveCount(7);
+  await expect(sectionHeadings).toHaveCount(6);
   expect(await sectionHeadings.allInnerTexts()).toEqual([
     "오늘 근무 브리핑",
     "오늘 안내할 것",
     "교통 흐름 참고",
     "지금 지역 상황",
     "관광 흐름 배경 참고",
-    "관광객에게 보여주기",
     "자료 기준과 한계",
   ]);
 
@@ -1209,10 +1208,9 @@ test("Tourism Desk treats missing trend, stale realtime and all-null purpose dat
   await expect(page.locator(".tourism-shift-brief .tourism-brief-line")).toHaveCount(4);
 });
 
-test("Tourism event cards state official-period truth and copy only the allowlisted official facts", async ({ page, context }) => {
+test("Tourism event cards retain official facts and safe links after copy removal", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
   await page.goto("/ko/tourism-desk/myeongdong");
-  await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: new URL(page.url()).origin });
 
   const cards = page.locator(".tourism-event");
   await expect(cards).toHaveCount(3);
@@ -1224,59 +1222,30 @@ test("Tourism event cards state official-period truth and copy only the allowlis
   await expect(page.locator(".tourism-event-caveat")).toContainText("실제 운영 중인지");
   await expect(page.locator(".tourism-events")).not.toContainText("진행 중");
 
-  await first.getByRole("button", { name: "정보 복사: 명동 공연 예술제" }).click();
-  await expect(first.getByRole("status")).toHaveText("복사했습니다");
-  const copied = await page.evaluate(() => navigator.clipboard.readText());
-  expect(copied).toContain("행사명: 명동 공연 예술제");
-  expect(copied).toContain("공식 행사기간: 2026-08-20 – 2026-09-10");
-  expect(copied).toContain("주소: 서울특별시 중구 명동길 14 · 1층");
-  expect(copied).toContain("공식 안내: https://example.org/event-one");
-  expect(copied).toContain("출처: 한국관광공사 TourAPI");
-  expect(copied).toContain("실제 운영 여부나 운영시간을 뜻하지 않습니다");
-  expect(copied).not.toContain("관객과 소통");
-  expect(copied).not.toContain("공연: ");
+  await expect(first.locator("h3")).toContainText("명동 공연 예술제");
+  await expect(first.getByRole("link", { name: /공식 안내 확인/ })).toHaveAttribute("href", "https://example.org/event-one");
+  await expect(cards.locator(".tourism-event-actions button")).toHaveCount(0);
 
   const unsafe = cards.filter({ hasText: "도심 전시" });
   await expect(unsafe.getByRole("link", { name: /공식 안내 확인/ })).toHaveCount(0);
 });
 
-test("Visitor Show keeps the URL and official Korean proper name while supporting four languages and focus restoration", async ({ page }) => {
+test("Tourism Desk preserves official Korean event names and keyboard links in four languages after show removal", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ko/tourism-desk/myeongdong");
-  const launch = page.locator(".tourism-visitor-launches li").filter({ hasText: "명동 공연 예술제" })
-    .getByRole("button", { name: "이 행사 보여주기: 명동 공연 예술제" });
-  const before = page.url();
-  await launch.click();
-
-  const dialog = page.locator("dialog.tourism-visitor-show");
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole("group", { name: "표시 언어" }).getByRole("button")).toHaveCount(4);
-  await dialog.getByRole("button", { name: "English" }).click();
-  await expect(dialog.getByRole("heading", { level: 2, name: "Visitor information" })).toBeVisible();
-  await expect(dialog.locator("dd[lang='ko']").first()).toHaveText("명동 공연 예술제");
-  await expect(dialog).toContainText("An official foreign-language name has not been verified");
-  expect(page.url()).toBe(before);
-
-  const overflow = await dialog.evaluate((element) => ({
-    dialog: element.scrollWidth - element.clientWidth,
-    page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-  }));
-  expect(overflow.dialog).toBeLessThanOrEqual(1);
-  expect(overflow.page).toBeLessThanOrEqual(1);
-
-  await page.keyboard.press("Escape");
-  await expect(dialog).toBeHidden();
-  await expect(launch).toBeFocused();
-  expect(page.url()).toBe(before);
-
-  await launch.click();
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole("button", { name: "닫기" })).toBeVisible();
-  await dialog.getByRole("button", { name: "닫기" }).click();
-  await expect(dialog).toBeHidden();
-  await expect(launch).toBeFocused();
-  expect(page.url()).toBe(before);
+  for (const lang of ["ko", "en", "zh", "ja"]) {
+    await page.goto(`/${lang}/tourism-desk/myeongdong`);
+    await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+    const desk = page.locator(".tourism-desk"), first = desk.locator(".tourism-event").first();
+    await expect(first.locator("h3")).toContainText("명동 공연 예술제");
+    await expect(desk.locator(".tourism-visitor-launches, dialog.tourism-visitor-show")).toHaveCount(0);
+    const official = first.locator(".tourism-event-actions a").first();
+    await expect(official).toHaveAttribute("href", "https://example.org/event-one");
+    await official.focus();
+    await expect(official).toBeFocused();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    await expect(page).toHaveURL(new RegExp(`/${lang}/tourism-desk/myeongdong$`));
+  }
 });
 
 test("Tourism area links support keyboard, browser history and locale-preserving URLs", async ({ page }) => {
