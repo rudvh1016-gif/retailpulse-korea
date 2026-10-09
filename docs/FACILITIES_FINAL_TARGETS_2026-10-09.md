@@ -1,6 +1,6 @@
 # Published facilities and remaining UI targets
 
-This separate change preserves the PR326 implementation and is synchronized to actual main `1f2c972c8187ffb790808a520026fd5cdf0334cf` after the owner merged PR326 at 15:24:04 UTC. PR326 passed CI37943915353 (1,293 unit, 46 rendered, 1,075 browser cases) and was marked Ready for review. GitHub confirmed OPEN, MERGEABLE and CLEAN. Main was still `4417c78e144928844aaa1e85f5baad10d1249fa3` at the readiness check. The owner performs the final merge; this change does not deploy.
+The facilities implementation preserves the owner-merged PR326 above actual main `1f2c972c8187ffb790808a520026fd5cdf0334cf`. It is retained in the single combined draft PR327 together with the midnight, consumption and departure-guide follow-up described in `MIDNIGHT_CONSUMPTION_DEPARTURE_2026-10-10.md`. The owner performs final GitHub Merge; this work does not deploy.
 
 ## Behavior
 
@@ -32,4 +32,4 @@ Local typecheck, scoped ESLint, native production build and diff check passed. N
 
 New browser scope covers four languages and360/390/430/1280px, gate filters/search/unknown/all/terminal/direction switching, empty results, keyboard, reduced motion, actual toilet search/coordinates/pagination, unavailable locker/parking states, glyphs, console and overflow. Separate failure/lazy-fetch and promotion-removal cases passed. Existing affected map/model/position/directory cases were48/53 initially; five failures caused by the new image optimization error were corrected and all five passed. Already passing unrelated suites were not manually repeated. The new image route error was fixed by serving small pre-rendered WebP directly. The local server's public origin was also corrected for console/CSP verification.
 
-This is a draft follow-up PR based on main. Its first CI37950773471 passed secret/lint/typecheck/unit/health/build; rendered tests were45/46 because the surface-presence assertion still required the explicitly removed ProModal. That assertion now checks retained BusinessPrep and IndustryGuide and absence of the NEXT promotion; the single affected case passed locally. The correction push triggers normal head CI, reported separately. No manual full CI rerun. No merge, deployment or source activation.
+The facilities head `be5f97aaa3eb824dc18f32924120f6ce4ea64177` passed CI37952066129. The combined follow-up receives normal new-head CI after its push; the actual result is recorded in PR327. No manual full CI rerun, agent merge or deployment. Live parking/locker source semantics and monthly diagnostic coverage remain unverified.

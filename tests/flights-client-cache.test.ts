@@ -58,3 +58,9 @@ test('failure and a wrong-date response are retryable, never confirmed empty fli
     assert.equal(reads,3);
   } finally {globalThis.fetch=originalFetch;}
 });
+
+test('a held next-day flight cache is bypassed at KST midnight, with no extra same-day stream',async()=>{
+ const originalFetch=globalThis.fetch,originalNow=Date.now;let now=Date.parse('2026-10-09T14:59:59Z');const urls:string[]=[];
+ Date.now=()=>now;globalThis.fetch=async url=>{urls.push(String(url));return new Response(JSON.stringify({mode:'live-flights',serviceDateKst:'2026-10-10',basis:urls.length===1?'OFFICIAL_DEPARTURE_SCHEDULE':'COLLECTED_FLIGHT_RECORDS',flights:[]}));};
+ try{const before=await loadFlights('2026-10-10');assert.equal(before.status==='OK'&&before.payload.basis,'OFFICIAL_DEPARTURE_SCHEDULE');await loadFlights('2026-10-10');assert.equal(urls.length,1);now+=2000;const after=await loadFlights('2026-10-10');assert.equal(after.status==='OK'&&after.payload.basis,'COLLECTED_FLIGHT_RECORDS');assert.equal(urls.length,2);assert.ok(urls[0].includes('_day=2026-10-09'));assert.ok(urls[1].includes('_day=2026-10-10'));}finally{globalThis.fetch=originalFetch;Date.now=originalNow;}
+});

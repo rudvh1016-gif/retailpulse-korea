@@ -1,0 +1,42 @@
+{
+  "recordedAt": "2026-10-09T17:12:47.347859+00:00",
+  "authorizationEvidence": {
+    "ownerRequests": [
+      "현재 01시인데 02시부터만 나오는 시간대 문제 해결",
+      "T2 당일 항공편 복구, 다음날 사전 수집·KST 자정 전환·실패 시 제한 재시도",
+      "소비 업종 아이콘 선명도·같은 표시 수치의 내림차순, 미제공 마지막",
+      "출국 준비·여행 기록 두 버튼의 기존 위치 및 동일 크기 유지",
+      "출국 준비 전체 선택 화면을 동일 Blender 디자인과 실제 상태·공식 주제 안내로 통일, 중복 선택 제거",
+      "익일 신속 반영·정상 자료 보존·T1/T2/탑승동 부분 미공개 분리"
+    ],
+    "scope": "Current band plus next band; date-keyed client and midnight-safe response cache; held official schedules stay separate from counted operational records; move the existing A1 early cron from 04:07 to 00:07 KST; shared atomic request reservations; independent building schedule fallback and missing-date/terminal preservation; all existing guide choices unified without duplicate terminal/baggage selectors; unchanged source ownership and original lock enforcement. Agent merge/deploy remain forbidden."
+  },
+  "changes": [
+    {
+      "file": "app/api/live/flights/route.ts",
+      "previous": "fb7bbfc1132359dceb4d315997eaf26bfc5b27d3f03f2bb9b8be4fe46718c1bd",
+      "approved": "7263477a03181f96a3cf9a2109b2cb2ccb9d787c2ca6c9af6e8ff4e358288982"
+    },
+    {
+      "file": "app/api/live/summary/route.ts",
+      "previous": "147b9c17727c1041e424fe89e9305878c8a9d794e7c531a36c49f81ae24b99b1",
+      "approved": "479126e7c354ad419315b78f2ce0f3544f76bdfb79936136487d453e0b9e409d"
+    },
+    {
+      "file": "app/live-signals.tsx",
+      "previous": "0e7c5547fe38f2366786c2ec6f6858e488af4834cbfb7a09ef36cce6a09e18a8",
+      "approved": "94a894a2b404761a07faf6e697a339d82b196eb02ec14daee443f442b5f06cb4"
+    }
+  ],
+  "cronChange": {
+    "file": "collect-airport-recovery.yml",
+    "previous": [
+      "7 19 * * *"
+    ],
+    "approved": [
+      "7 15 * * *"
+    ],
+    "addedSchedule": false
+  },
+  "protectedPathCount": 61
+}

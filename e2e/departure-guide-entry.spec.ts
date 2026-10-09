@@ -17,8 +17,8 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,390,128
  await entry.focus();await page.keyboard.press('Shift');await expect(entry).toBeFocused();expect(await entry.evaluate(e=>getComputedStyle(e).outlineStyle)).toBe('solid');
  await page.keyboard.press('Enter');await expect(guide.getByTestId('passenger-basic-steps').locator(':scope >li')).toHaveCount(5);await expect(entry).toContainText(c.close);
  await expect(page.getByTestId('travel-records-entry')).toBeVisible();await expect(page.getByTestId('travel-records-entry')).toHaveAttribute('href',`/${lang}/travel-records`);
- await guide.getByTestId('prep-route').selectOption('T2');await entry.focus();await page.keyboard.press('Space');await expect(guide).not.toHaveAttribute('open');await expect(entry).toContainText(c.open);
- await entry.getByText(c.title,{exact:true}).click();await expect(guide).toHaveAttribute('open','');await expect(guide.getByTestId('prep-route')).toHaveValue('T2');
- await entry.getByText(c.title,{exact:true}).click();await expect(guide).not.toHaveAttribute('open');await image.click();await expect(guide).toHaveAttribute('open','');await expect(guide.getByTestId('prep-route')).toHaveValue('T2');
+ await guide.getByTestId('prep-route').locator('[data-testid$="-T2"]').click();await entry.focus();await page.keyboard.press('Space');await expect(guide).not.toHaveAttribute('open');await expect(entry).toContainText(c.open);
+ await entry.getByText(c.title,{exact:true}).click();await expect(guide).toHaveAttribute('open','');await expect(guide.getByTestId('prep-route')).toHaveAttribute('data-value','T2');
+ await entry.getByText(c.title,{exact:true}).click();await expect(guide).not.toHaveAttribute('open');await image.click();await expect(guide).toHaveAttribute('open','');await expect(guide.getByTestId('prep-route')).toHaveAttribute('data-value','T2');
  expect(await tofuCharacters(entry)).toEqual([]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
 });

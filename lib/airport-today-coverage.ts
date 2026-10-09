@@ -10,9 +10,9 @@ export interface AirportTodayCoverageInput {
 }
 export function airportTodayCoverage(input: AirportTodayCoverageInput) {
   const today = kstDate(new Date(input.nowIso));
-  // Internal alert grace for the existing 04:07 window (3 x 20 min), not a
+  // Internal alert grace for the existing 00:07 window (3 x 20 min), not a
   // promise about GitHub dispatch or the provider's publication time.
-  const pastGrace = Date.parse(input.nowIso) >= Date.parse(today + 'T05:15:00+09:00');
+  const pastGrace = Date.parse(input.nowIso) >= Date.parse(today + 'T01:15:00+09:00');
   const stamp = input.retrievedAt && Number.isFinite(Date.parse(input.retrievedAt)) ? input.retrievedAt : null;
   const currentStamp = !!stamp && kstDayOf(stamp) === today && Date.parse(stamp) <= Date.parse(input.nowIso);
   const state = !input.hasTodayRows ? 'MISSING_TODAY' : !input.completeScan ? 'COMPLETE_SCAN_UNVERIFIED'

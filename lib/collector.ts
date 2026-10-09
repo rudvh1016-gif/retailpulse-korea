@@ -1,3 +1,4 @@
+import {reserveAirportRequestBudget} from './airport-request-budget';
 import { normalizeSeoulContext, seoulContextObservedAt } from "./seoul-context";
 import {
   DATA_GO_KR_LOW_CALL_POLICY,
@@ -85,6 +86,8 @@ export interface CollectorEnv {
   retainChangeHistory?: boolean;
   /** Hard request budget for one A1 scan (recovery windows use a smaller one). */
   A1_MAX_REQUESTS?: number;
+  /** Production callers reserve their scan ceiling atomically before any provider request. */
+  A1_SHARED_REQUEST_BUDGET?: boolean;
   /** One window a day rescans today's A1 even when today is already recorded. */
   A1_RESCAN_TODAY?: boolean;
   /**
@@ -278,6 +281,12 @@ export async function collectAirportFlights(env: CollectorEnv): Promise<{ status
     await writeCollectorStatus(env.DB, "INCHEON_FLIGHT_DETAIL", "NEEDS_KEY", "DATA_GO_KR_SERVICE_KEY is not configured");
     await writeSourceHealth(env.DB, "INCHEON_FLIGHT_DETAIL", "MISSING", "DATA_GO_KR_SERVICE_KEY is not configured");
     return { status: "NEEDS_KEY", records: 0 };
+  }
+
+  if (env.A1_SHARED_REQUEST_BUDGET) {
+    let reserved = false;
+    try { reserved = !!env.DB && await reserveAirportRequestBudget(env.DB, nowIso(), 1); } catch { /* Fail closed before calling the provider. */ }
+    if (!reserved) return { status: 'SKIPPED_REQUEST_BUDGET', records: 0 };
   }
 
   const url = buildDataGoKrUrl(

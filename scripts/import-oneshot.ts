@@ -51,6 +51,7 @@ const restDatabase = new CloudflareD1RestDatabase(
 const database = restDatabase as unknown as D1Database;
 
 const env = {
+  A1_SHARED_REQUEST_BUDGET: true,
   DB: database,
   DATA_GO_KR_SERVICE_KEY: process.env.DATA_GO_KR_SERVICE_KEY?.trim() || undefined,
   SEOUL_OPEN_DATA_KEY: process.env.SEOUL_OPEN_DATA_KEY?.trim() || undefined,

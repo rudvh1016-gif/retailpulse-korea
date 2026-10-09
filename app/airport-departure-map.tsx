@@ -126,8 +126,8 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
   const span: MapWindow = preset === 'CUSTOM' ? (customWindow(custom[0], custom[1]) ?? { startMin: 0, endMin: 1440 })
     : presetWindow(preset === 'DAY' || !today ? 'DAY' : preset, nowMinute);
   const nextDate = shiftKstDay(date, 1);
-  const current = useFlights(date);
-  const next = useFlights(span.endMin > 1440 ? nextDate : null);
+  const current = useFlights(date, buildingScope ?? 'all');
+  const next = useFlights(span.endMin > 1440 ? nextDate : null, buildingScope ?? 'all');
   const map = useMemo(() => current?.status === 'OK'
     ? departureMap({ date, nextDate, terminal, buildingScope, window: span, rows: current.payload.flights, nextRows: next?.status === 'OK' && (next.payload.flights.length > 0 || next.payload.retrievedAt) ? next.payload.flights : null })
     : null, [current, next, date, nextDate, terminal, buildingScope, span.startMin, span.endMin]); // eslint-disable-line react-hooks/exhaustive-deps

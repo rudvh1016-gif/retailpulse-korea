@@ -39,7 +39,8 @@ test('actual Oct9 missing run and old Oct8 stamp cannot read as current',()=>{
  assert.equal(airportTodayCoverage({...healthy,retrievedAt:null}).alert,true);
 });
 test('grace does not alert before the early window; stored verified recovery becomes current',()=>{
- assert.equal(airportTodayCoverage({...healthy,nowIso:'2026-10-08T19:20:00Z',hasTodayRows:false,completeScan:false}).alert,false);
+ assert.equal(airportTodayCoverage({...healthy,nowIso:'2026-10-08T15:20:00Z',hasTodayRows:false,completeScan:false}).alert,false);
+ assert.equal(airportTodayCoverage({...healthy,nowIso:'2026-10-08T16:15:00Z',hasTodayRows:false,completeScan:false}).alert,true);
  const current=airportTodayCoverage({...healthy,nowIso:'2026-10-08T23:26:47Z'});
  assert.equal(current.state,'CURRENT');assert.equal(current.alert,false);
  assert.equal(airportTodayCoverage(healthy).state,'OLD_OR_UNVERIFIED_STAMP','a future collection stamp is not current proof');

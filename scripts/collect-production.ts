@@ -51,6 +51,7 @@ if (unknown.length) throw new Error(`unknown_sources_${unknown.join("_")}`);
 if (!requested.length) throw new Error("no_sources_selected");
 
 const env = {
+  A1_SHARED_REQUEST_BUDGET: true,
   DB: database as unknown as D1Database,
   // Individual collectors report NEEDS_KEY for their own source when a key
   // is absent; a source that does not need a given key must still run.

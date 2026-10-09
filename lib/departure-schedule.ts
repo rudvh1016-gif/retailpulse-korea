@@ -20,16 +20,20 @@ function schedulePayload(date: string, records: CanonicalAirportFlight[]): strin
   return payload;
 }
 
-function scheduleStatement(db: D1Database, date: string, payload: string, retrievedAt: string) {
+function scheduleStatement(db: D1Database, date: string, payload: string, retrievedAt: string, terminals: string[]) {
   return db.prepare(`INSERT INTO airport_departure_schedule (service_date,payload,retrieved_at)
     VALUES (?,?,?) ON CONFLICT(service_date) DO UPDATE SET payload=excluded.payload,retrieved_at=excluded.retrieved_at
-    WHERE airport_departure_schedule.payload <> excluded.payload`).bind(date,payload,retrievedAt);
+    WHERE airport_departure_schedule.payload <> excluded.payload
+    AND NOT EXISTS (SELECT 1 FROM json_each(airport_departure_schedule.payload) prior
+      WHERE NOT EXISTS (SELECT 1 FROM json_each(?) incoming
+        WHERE incoming.value=COALESCE(json_extract(prior.value,'$.terminal'),'UNVERIFIED')))`)
+    .bind(date,payload,retrievedAt,JSON.stringify(terminals));
 }
 
 /** Replace one known date; never remove another still-future date. */
 export async function persistDepartureSchedule(db: D1Database | undefined, date: string, records: CanonicalAirportFlight[]) {
   if (!db || !records.length) return NO_D1_WRITES;
-  return runD1Batches(db, [scheduleStatement(db, date, schedulePayload(date, records), records[0].retrievedAt)]);
+  return runD1Batches(db, [scheduleStatement(db, date, schedulePayload(date, records), records[0].retrievedAt, [...new Set(records.map(r=>r.terminal??'UNVERIFIED'))])]);
 }
 
 /** Validate the entire replacement before either history or schedules is written. */
@@ -45,14 +49,14 @@ export function prepareDepartureSchedules(db: D1Database | undefined, today: str
   }
   // Storage/statement guard, not a claim about the provider's publication horizon.
   if (dates.size > 31 || records.length > 15_000) throw new Error('departure_schedule_dates_bound');
-  const snapshots = [...dates].sort(([a],[b]) => a.localeCompare(b)).map(([date, rows]) => ({date, payload: schedulePayload(date, rows), retrievedAt: rows[0].retrievedAt}));
+  const snapshots = [...dates].sort(([a],[b]) => a.localeCompare(b)).map(([date, rows]) => ({date, payload: schedulePayload(date, rows), retrievedAt: rows[0].retrievedAt, terminals:[...new Set(rows.map(r=>r.terminal??'UNVERIFIED'))]}));
   if (snapshots.reduce((sum, row) => sum + new TextEncoder().encode(row.payload).byteLength, 0) > 3_000_000) throw new Error('departure_schedule_total_payload_bound');
   if (!db) return [];
-  const statements = snapshots.map(row => scheduleStatement(db, row.date, row.payload, row.retrievedAt));
-  // Dates absent from a proven complete population are withdrawn. Expired
-  // schedules are removed here; observed history is an entirely different table.
-  statements.push(db.prepare(`DELETE FROM airport_departure_schedule WHERE service_date <= ?${snapshots.length ? ` OR service_date NOT IN (${snapshots.map(() => '?').join(',')})` : ' OR service_date > ?'}`)
-    .bind(today, ...(snapshots.length ? snapshots.map(row => row.date) : [today])));
+  const statements = snapshots.map(row => scheduleStatement(db, row.date, row.payload, row.retrievedAt, row.terminals));
+  // Absence is not an explicit cancellation. Preserve missing dates and the
+  // current day's held schedule for terminal-specific collection gaps. Keep
+  // the existing expiry cleanup limited to past snapshots; history is separate.
+  statements.push(db.prepare('DELETE FROM airport_departure_schedule WHERE service_date < ?').bind(today));
   return statements;
 }
 

@@ -19,7 +19,7 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
  if(width<600){const rows=await page.locator('.bottom-nav a').evaluateAll(links=>links.map(link=>link.getBoundingClientRect().top));expect(new Set(rows).size).toBe(1);}
  if(lang==='ko'){await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:info.outputPath(`where-to-${width}.png`)});}
  await page.goto(`/${lang}/consumption`);await expect(page.locator('.consumption-category')).toHaveCount(15);
- await expect(page.locator('.consumption-category-list h2')).toHaveText(categoryNames.slice().sort((a,b)=>a.localeCompare(b,'ko')));
+ await expect(page.locator('.consumption-category-list h2')).toHaveText(categoryNames.slice().reverse().map(category=>category==='여행'?({ko:'여행 업종',en:'Travel industry',zh:'旅行行业',ja:'旅行業種'})[lang]:category));
  const zero=page.locator('[data-category="한식"]');await expect(zero.locator('strong')).not.toContainText('100%');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.locator('.consumption-category details summary').first().focus();await page.keyboard.press('Enter');await expect(page.locator('.consumption-category details').first()).toHaveAttribute('open','');

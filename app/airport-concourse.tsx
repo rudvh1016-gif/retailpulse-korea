@@ -17,7 +17,7 @@ const text={
 };
 const unavailable={ko:'이 날짜의 출발편 자료를 확보하지 못했습니다. 확인된 0편이 아닙니다.',en:'Departure data for this date is unavailable. This is not a confirmed zero.',zh:'未获取该日期的出发航班资料，不是已确认的零班。',ja:'この日の出発便データは未取得です。確認済みの0便ではありません。'};
 export function AirportConcourse({lang,date}:{lang:Lang;date:string|null}) {
- const summary=useLiveSummary(date);const serviceDate=date??summary?.serviceDateKst??null;const loaded=useFlights(serviceDate);
+ const summary=useLiveSummary(date);const serviceDate=date??summary?.serviceDateKst??null;const loaded=useFlights(serviceDate,'CONCOURSE');
  const map=useMemo(()=>serviceDate&&loaded?.status==='OK'?departureMap({date:serviceDate,nextDate:shiftKstDay(serviceDate,1),terminal:'T1',buildingScope:'CONCOURSE',window:{startMin:0,endMin:1440},rows:loaded.payload.flights}):null,[serviceDate,loaded]);
  const c=text[lang];
 

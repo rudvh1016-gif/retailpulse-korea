@@ -48,7 +48,7 @@ function Pillar({ item, lang, onSelect, showBuilding = false, rank, selected }: 
 }
 
 export default function AirportGatePillars({ lang, terminal, date }: { lang: Lang; terminal: 'all' | 'T1' | 'T2'; date: string }) {
-  const loaded = useFlights(date);
+  const loaded = useFlights(date, terminal);
   const [open, setOpen] = useState(false);
   const [unverifiedOpen, setUnverifiedOpen] = useState(false);
   const [search, setSearch] = useState('');

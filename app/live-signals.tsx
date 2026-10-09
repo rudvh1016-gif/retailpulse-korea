@@ -1,4 +1,5 @@
 "use client";
+import {type TerminalFlightFallback} from '../lib/airport-flight-scope';
 import Image from 'next/image';
 import { AirportDateCalendar } from './airport-date-calendar';
 import { airportCompositionCopy } from '../lib/airport-composition-copy';
@@ -405,7 +406,10 @@ async function loadSummary(date: string | null, month: string | undefined, key: 
   let pending = summaryPending.get(key);
   if (!pending) {
     const query = new URLSearchParams();
-    if (date) query.set("date", date);
+    if(date)query.set("date",date);
+    // Separate the default URL across browser midnight without asking the
+    // server to use a device-guessed service date on the initial response.
+    else query.set("_day",kstDay(new Date(Date.now()).toISOString()));
     if (month) query.set("month", month);
     // toString(), not .size: URLSearchParams.size only exists in Chrome 113+, Firefox 112+ and Safari 17+.
     const queryText = query.toString();
@@ -1415,7 +1419,7 @@ function TerminalBriefingCards({ lang, airport, nowIso, dayRelation }: {
     dayRelation,
     nowIso,
   });
-  if (!set.terminals.some((row) => row.evidenceTypes.length)) return null;
+  if (!set.terminals.some((row) => row.evidenceTypes.length || row.currentBand)) return null;
   const waitText = (row: TerminalBriefing) => {
     const checkpoint = row.checkpoint;
     if (!checkpoint) return null;
@@ -1446,6 +1450,8 @@ function TerminalBriefingCards({ lang, airport, nowIso, dayRelation }: {
         const queue = waitText(row);
         const cells: Array<{ key: string; label: string; value: string }> = [];
         if (queue) cells.push({ key: "queue", ...queue });
+        const current = bandText(row.currentBand);
+        if (current) cells.push({ key: "current", label: contextText(lang,"현재 시간대 · 공식 예상","Current interval · official forecast","当前时段 · 官方预计","現在の時間帯・公式予想"), value: current });
         const next = bandText(row.nextBand);
         if (next) cells.push({ key: "next", label: terminalBriefText.next[lang], value: next });
         const peak = bandText(row.peak);
@@ -1456,7 +1462,7 @@ function TerminalBriefingCards({ lang, airport, nowIso, dayRelation }: {
         return <article key={row.terminal} className={`terminal-brief-card${set.attention?.terminal === row.terminal ? " is-attention" : ""}`} data-terminal={row.terminal}>
           <h4>{row.terminal}</h4>
           {cells.length
-            ? <dl>{cells.map((cell) => <div key={cell.key}><dt>{cell.label}</dt><dd>{cell.value}</dd></div>)}</dl>
+            ? <dl>{cells.map((cell) => <div key={cell.key} data-metric={cell.key}><dt>{cell.label}</dt><dd>{cell.value}</dd></div>)}</dl>
             : <p className="terminal-brief-empty">{terminalBriefText.unavailable[lang]}</p>}
         </article>;
       })}
@@ -3793,11 +3799,13 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
   const [direction, setDirection] = useState<"departure" | "arrival">("departure");
   const [query, setQuery] = useState("");
   const [zone, setZone] = useState<"ALL" | GateSide>("ALL");
-  const [loaded, setLoaded] = useState<{ date: string; rows: LiveFlightRow[]; failed: boolean; truncated: boolean; basis?: string; retrievedAt?: string | null } | null>(null);
+  const [loaded, setLoaded] = useState<{ date: string; rows: LiveFlightRow[]; failed: boolean; truncated: boolean; basis?: string; retrievedAt?: string | null; terminalFallbacks?:Record<string,TerminalFlightFallback<LiveFlightRow>> } | null>(null);
   // Changing the date must not leave the previous day's flights on screen, so
   // the loaded date is tracked alongside the rows and compared during render
   // rather than cleared from inside the effect.
-  const flights = loaded && loaded.date === requestDate ? loaded.rows : null;
+  const fallback = terminal==='all'?undefined:loaded?.terminalFallbacks?.[terminal];
+  const selected = fallback ?? loaded;
+  const flights = loaded && loaded.date === requestDate ? fallback?.flights ?? loaded.rows : null;
   // Loaded here rather than with the summary: the board reads far more rows
   // than the rest of the product, so it is fetched only once this tab opens.
   useEffect(() => {
@@ -3805,14 +3813,14 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
     let active = true;
     const url = `/api/live/flights?date=${encodeURIComponent(requestDate)}`;
     fetch(url, { headers: { accept: "application/json" } })
-      .then(async (response) => (response.ok ? await response.json() as { mode?: string; serviceDateKst?: string; flights?: LiveFlightRow[]; truncated?: boolean; basis?: string; retrievedAt?: string | null } : null))
+      .then(async (response) => (response.ok ? await response.json() as { mode?: string; serviceDateKst?: string; flights?: LiveFlightRow[]; truncated?: boolean; basis?: string; retrievedAt?: string | null; terminalFallbacks?:Record<string,TerminalFlightFallback<LiveFlightRow>> } : null))
       .catch(() => null)
       .then((payload) => {
         if (!active) return;
         const failed = !payload || payload.mode !== 'live-flights' || (payload.serviceDateKst && payload.serviceDateKst !== requestDate);
         setLoaded(previous => failed && previous?.date === requestDate && !previous.failed
           ? previous
-          : { date: requestDate, rows: failed ? [] : payload?.flights ?? [], failed: Boolean(failed), truncated: payload?.truncated ?? false, basis: payload?.basis, retrievedAt: payload?.retrievedAt });
+          : { date: requestDate, rows: failed ? [] : payload?.flights ?? [], failed: Boolean(failed), truncated: payload?.truncated ?? false, basis: payload?.basis, retrievedAt: payload?.retrievedAt, terminalFallbacks:payload?.terminalFallbacks });
       });
     return () => { active = false; };
   }, [requestDate, summary?.generatedAt]);
@@ -3828,7 +3836,7 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
   }, [flights, direction, terminal, query, zone]);
   if (flights === null || loaded?.failed) return <section className="flight-board" aria-labelledby="flight-board-title"><div className="section-head"><h2 id="flight-board-title">{flightBoardText.search[lang]}</h2></div><LiveLoadMessage loading={flights === null} lang={lang} /></section>;
   const visible = scoped.slice(0, visibleCount);
-  const planned = loaded?.basis === 'OFFICIAL_DEPARTURE_SCHEDULE';
+  const planned = selected?.basis === 'OFFICIAL_DEPARTURE_SCHEDULE';
   const ranking = planned ? null : terminal === "all" ? summary?.airport.airlineRanking?.all : summary?.airport.airlineRanking?.byTerminal?.[terminal];
   const changes = summary?.airport.periodComparisons?.[terminal]?.[7]?.flightRecords;
   const composition = summary?.airport.periodComparisons?.[terminal]?.[7]?.composition;
@@ -3844,8 +3852,9 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
       '확보한 예정 출발편 · 변경·취소될 수 있으며 확정 운항 결과가 아닙니다.',
       'Held scheduled departures · may change or be cancelled; not confirmed operating results.',
       '已获取的计划出发航班 · 可能变更或取消，并非确认的运行结果。',
-      '取得済みの出発予定便・変更や欠航の可能性があり、確定運航結果ではありません。')}{loaded?.retrievedAt ? ` · ${kstStamp(loaded.retrievedAt)} KST` : ''}</p>}
-    {summary && <HolidayContext months={summary.holidays} date={summary.serviceDateKst} lang={lang} />}
+      '取得済みの出発予定便・変更や欠航の可能性があり、確定運航結果ではありません。')}{selected?.retrievedAt ? ` · ${kstStamp(selected.retrievedAt)} KST` : ''}</p>}
+    {terminal==='all'&&Object.keys(loaded?.terminalFallbacks??{}).length>0&&<p className="prep-note" data-testid="terminal-schedule-gap">{Object.keys(loaded?.terminalFallbacks??{}).join(' · ')} · {contextText(lang,'당일 출발 기록 미확인 · 해당 터미널을 선택하면 보유 공식 일정을 확인할 수 있습니다. 0편을 뜻하지 않습니다.','Today’s departure records unavailable; select the building to view its held official schedule. This is not zero flights.','当日出发记录未确认；选择航站楼查看已获取的官方计划，不表示零班。','本日の出発記録は未確認です。建物を選ぶと取得済みの公式予定を確認できます。0便ではありません。')}</p>}
+    {summary && <HolidayContext months={summary.holidays} date={summary.serviceDateKst} lang={lang} /> }
     <div className="flight-summary-area">
     {ranking && ranking.totalFlights > 0 && <div className="current-brief flight-summary">
       <strong>{({ ko: "선택 터미널 출발 운항", en: "Departures in the selected scope", zh: "所选范围的出发航班", ja: "選択範囲の出発運航" })[lang]} {ranking.totalFlights}{unit}{changes ? ` · ${comparisonText(changes, lang, 7)}` : ""}</strong>

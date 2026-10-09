@@ -1,9 +1,20 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildTerminalBriefings, selectNextBand } from "../lib/terminal-briefing.ts";
+import { buildTerminalBriefings, selectNextBand, selectCurrentBand } from "../lib/terminal-briefing.ts";
 
 const NOW = "2026-08-31T05:10:00Z"; // 14:10 KST
+
+test('current official intervals include zero at midnight, 01xx, exact boundaries and 23xx',()=>{
+ const rows=Array.from({length:24},(_,hour)=>({targetStartAt:`2026-10-10T${String(hour).padStart(2,'0')}:00:00+09:00`,targetEndAt:hour===23?'2026-10-11T00:00:00+09:00':`2026-10-10T${String(hour+1).padStart(2,'0')}:00:00+09:00`,expectedPassengers:hour===1?0:hour}));
+ for(const [time,hour] of [['00:02',0],['01:00',1],['01:02',1],['02:00',2],['23:59',23]]){
+  const now=`2026-10-10T${time}:00+09:00`;
+  assert.equal(selectCurrentBand(rows,now,'TODAY'),rows[hour]);assert.equal(selectNextBand(rows,now,'TODAY'),rows[hour+1]??null);
+ }
+ assert.equal(selectCurrentBand(rows,'2026-10-11T00:00:00+09:00','TODAY'),null);
+ assert.equal(selectCurrentBand(rows,'2026-10-10T01:02:00+09:00','FUTURE'),null);
+ assert.equal(selectCurrentBand(rows.filter((_,i)=>i!==1),'2026-10-10T01:02:00+09:00','TODAY'),null);
+});
 
 const band = (startHour, endHour, expected) => ({
   targetStartAt: `2026-08-31T${String(startHour).padStart(2, "0")}:00:00+09:00`,

@@ -16,6 +16,7 @@ const names:Record<string,Record<Lang,string>>={
  '패션/잡화':{ko:'패션·잡화',en:'Accessories',zh:'时尚·杂货',ja:'ファッション・雑貨'},
  '기타요식':{ko:'기타 음식',en:'Other dining',zh:'其他餐饮',ja:'その他の飲食'},
  '편의점':{ko:'편의점',en:'Convenience',zh:'便利店',ja:'コンビニ'},
+ '여행':{ko:'여행 업종',en:'Travel industry',zh:'旅行行业',ja:'旅行業種'},
  '한식':{ko:'한식',en:'Korean food',zh:'韩餐',ja:'韓国料理'},
  '약국':{ko:'약국',en:'Pharmacy',zh:'药店',ja:'薬局'},
  '화장품':{ko:'화장품',en:'Cosmetics',zh:'化妆品',ja:'化粧品'},
@@ -24,8 +25,9 @@ const tint=(hex:string,target:string,amount:number)=>'#'+hex.slice(1).match(/../
 function CategoryMiniature({src}:{src:string}) {
  const [failed,setFailed]=useState(false);
  // The category name and fixed image box survive a failed asset request.
- // eslint-disable-next-line @next/next/no-img-element
- return <img src={failed?'/commercial-icons/miniatures/fallback-128.webp':src} onError={()=>setFailed(true)} width="48" height="48" alt="" loading="lazy" decoding="async"/>;
+ const key=(failed?'fallback-128.webp':src.split('/').at(-1)!).replace('-128.webp','');
+ // eslint-disable-next-line @next/next/no-img-element -- Precomputed responsive WebPs need no runtime transform.
+ return <img srcSet={failed?undefined:`${src} 128w, /commercial-icons/sharp-v1/${key}-256.webp 256w`} sizes="(max-width:600px) 48px, 52px" src={failed?'/commercial-icons/miniatures/fallback-128.webp':src} onError={()=>setFailed(true)} width="48" height="48" alt="" loading="lazy" decoding="async"/>;
 }
 export function CommercialComposition({context,lang}:{context:SeoulContext;lang:Lang}) {
  const id=useId(),[selected,setSelected]=useState<string|null>(null),[metric,setMetric]=useState<CommercialChartMetric>('payments');

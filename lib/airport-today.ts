@@ -1,3 +1,4 @@
+import {reserveAirportRequestBudget,settleAirportRequestBudget} from './airport-request-budget';
 import { prepareDepartureSchedules } from './departure-schedule';
 import { isValidKstDay } from './kst';
 import { writeSourceHealth, writeCollectorStatus } from "./collector";
@@ -26,11 +27,10 @@ const ENDPOINT = "https://apis.data.go.kr/B551177/statusOfAllFltDeOdp/getFltDepa
  * D-3..D+6 comment was not a verified or guaranteed publication horizon;
  * they never enter observed airport_flights history. A3 is only a partial fallback.
  *
- * 150 pages = at most 15,000 source rows. Each sequential page may be retried
- * once only after a timeout/5xx, so one manual run has a strict worst-case
- * ceiling of 300 A1 calls, below A1's documented 500-call development quota.
- * The recurring collector remains disabled and must not use this fallback
- * without a separate cadence and quota review.
+ * Offline/default scans support at most 150 pages and 300 request attempts.
+ * Production entry points cap each job at 125, and reserve a shared rolling
+ * 24-hour ceiling of 500 before any request. Retain another 30 minutes for
+ * job duration. A failed complete scan never replaces last-good data.
  */
 export const A1_TODAY_PAGE_SIZE = 100;
 export const A1_TODAY_MAX_PAGES = 150;
@@ -41,13 +41,13 @@ interface AirportTodayEnv {
   DB?: D1Database;
   DATA_GO_KR_SERVICE_KEY?: string;
   /**
-   * Hard budget of provider requests for one scan, retries included. The
-   * daily recovery window runs with 200 so that a failed primary (≤300) plus
-   * its recovery can never exceed A1's documented 500 calls/day. Exceeding
-   * the budget aborts the scan before the request is made; nothing stored
-   * is touched.
+   * Hard per-scan budget including retries. Production uses at most 125 and
+   * the shared ledger prevents concurrent/manual jobs exceeding 500 within
+   * the conservative rolling window. Exhaustion preserves last-good rows.
    */
   A1_MAX_REQUESTS?: number;
+  /** Production callers reserve their scan ceiling atomically before any provider request. */
+  A1_SHARED_REQUEST_BUDGET?: boolean;
   /** One window a day rescans even when today is already recorded; see production-runner. */
   A1_RESCAN_TODAY?: boolean;
 }
@@ -389,6 +389,15 @@ export async function hasCompleteA1RecentHistoryToday(
   });
 }
 
+/** Publication pending is not a new collection failure or a new observation. */
+async function recordA1PublicationPending(db:D1Database|undefined,detail:string) {
+ if(!db)return;
+ await db.prepare(`INSERT INTO source_health (source_id,status,consecutive_failures,schema_version,detail,updated_at)
+  VALUES (?, 'STALE', 0, 'unavailable', ?, ?)
+  ON CONFLICT(source_id) DO UPDATE SET status='STALE',detail=excluded.detail,updated_at=excluded.updated_at`)
+  .bind(SOURCE_ID,detail.slice(0,500),new Date().toISOString()).run();
+}
+
 export async function collectAirportFlightsToday(
   env: AirportTodayEnv,
   now = new Date(),
@@ -400,12 +409,27 @@ export async function collectAirportFlightsToday(
   }
 
   const targetDate = kstDate(now);
+  const maxRequests=env.A1_SHARED_REQUEST_BUDGET?Math.min(125,env.A1_MAX_REQUESTS??125):env.A1_MAX_REQUESTS;
+  const reservationId=crypto.randomUUID();let issued=0;
+  if(env.A1_SHARED_REQUEST_BUDGET){
+    let reserved=false;try{reserved=!!env.DB&&await reserveAirportRequestBudget(env.DB,now.toISOString(),maxRequests!,reservationId);}catch{/* Unknown budget never permits a provider request. */}
+    if(!reserved)return {status:'SKIPPED_REQUEST_BUDGET',records:0,trackedToday:0,pagesFetched:0,detail:'A1 rolling-24h reservation unavailable; providerRequests=0; last-good rows preserved'};
+  }
   let failureStage: 'FETCH' | 'STORE' = 'FETCH';
   try {
-    const fetched = await fetchA1DeparturesForDate(env.DATA_GO_KR_SERVICE_KEY, targetDate, fetcher, { maxRequests: env.A1_MAX_REQUESTS });
-    if (!fetched.records.length) throw new Error(`a1_today_no_rows_${targetDate}`);
-    if (!fetched.trackedToday) throw new Error(`a1_today_no_current_rows_${targetDate}`);
+    const fetched = await fetchA1DeparturesForDate(env.DATA_GO_KR_SERVICE_KEY, targetDate, (url,options)=>{issued++;return fetcher(url,options);}, { maxRequests });
     failureStage = 'STORE';
+    if (!fetched.trackedToday) {
+      // A complete, successful external response can precede today's publication.
+      // Keep observed records and their clocks; independently retain valid future
+      // schedules without interpreting the absence as zero or a transport failure.
+      const schedules = prepareDepartureSchedules(env.DB, targetDate, fetched.futureRecords);
+      const written = env.DB ? await runD1Batches(env.DB, schedules) : NO_D1_WRITES;
+      const detail = `targetDate=${targetDate}; NOT_YET_PUBLISHED; requests ${fetched.requestsIssued}; future schedule writes ${written.changedRows}; observed last-good rows preserved`;
+      await writeCollectorStatus(env.DB, SOURCE_ID, 'NOT_YET_PUBLISHED', detail, fetched.totalCount, written.changedRows);
+      await recordA1PublicationPending(env.DB, detail);
+      return { status:'NOT_YET_PUBLISHED', records:written.changedRows, trackedToday:0, pagesFetched:fetched.pagesFetched, detail };
+    }
     const scheduleStatements = prepareDepartureSchedules(env.DB, targetDate, fetched.futureRecords);
     const changedRows = await persistTodayFlights(env.DB, fetched.records);
     const scheduleWrites = env.DB ? await runD1Batches(env.DB, scheduleStatements) : NO_D1_WRITES;
@@ -425,5 +449,7 @@ export async function collectAirportFlightsToday(
     await writeCollectorStatus(env.DB, SOURCE_ID, "ERROR", detail);
     await writeSourceHealth(env.DB, SOURCE_ID, "ERROR", detail);
     return { status: "ERROR", records: 0, trackedToday: 0, pagesFetched: 0, detail };
+  } finally {
+    if(env.A1_SHARED_REQUEST_BUDGET&&env.DB){try{await settleAirportRequestBudget(env.DB,reservationId,issued);}catch{/* Keep the full reservation if the ledger cannot confirm the exact count. */}}
   }
 }
