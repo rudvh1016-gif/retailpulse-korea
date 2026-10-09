@@ -49,9 +49,12 @@ export function useFlights(date: string | null, scope='all'): Loaded | undefined
   useEffect(() => {
     if (!date) return;
     let live = true;
+    let revision = 0;
     const update = (refresh = false) => {
       if (document.visibilityState === 'hidden') return;
-      void loadFlights(date, refresh).then((value) => { if (live) setState({ date, value }); });
+      const requestedRevision = ++revision;
+      // A late held response must not replace newer records of the same date.
+      void loadFlights(date, refresh).then((value) => { if (live && requestedRevision === revision) setState({ date, value }); });
     };
     const onFocus = () => update(true);
     const onVisible = () => { if (document.visibilityState === 'visible') update(true); };

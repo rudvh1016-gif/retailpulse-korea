@@ -19,7 +19,7 @@
     "app/globals.css": "a1344d20a9e458e22b7a5703f7a961813d4a8b9ccd63dbed8c4b288bad5ca840",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
     "app/layout.tsx": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
-    "app/live-signals.tsx": "94a894a2b404761a07faf6e697a339d82b196eb02ec14daee443f442b5f06cb4",
+    "app/live-signals.tsx": "2a6076c042403721b7c16399c3f5199d8931dab46d10e7674b8fa5e0f46c4d56",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
@@ -1081,5 +1081,22 @@
       "addedSchedule": false
     },
     "protectedPathCount": 61
+  },
+  "ownerApprovedMidnightInitialRequestCorrection20261010": {
+    "recordedAt": "2026-10-09T18:46:07.187519+00:00",
+    "authorizationEvidence": {
+      "ownerRequest": "Fix in-scope CI failures without lowering criteria; finish only necessary changes in PR327. Original owner authorization covers midnight continuity, bug checks and mobile request performance.",
+      "scope": "The existing summary and flight clients preserve midnight continuity: consume the existing bare-URL preload for the first summary, add a calendar-only URL key after rollover, and ignore older same-date flight responses after a newer refresh. Only live-signals is a protected hash correction; the flight client is unprotected. Retain server-day validation, date races, cache expiry, and the original one-initial-request browser criteria. No protected page/preload files, lock test or scheduler changed.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "94a894a2b404761a07faf6e697a339d82b196eb02ec14daee443f442b5f06cb4",
+        "approved": "2a6076c042403721b7c16399c3f5199d8931dab46d10e7674b8fa5e0f46c4d56"
+      }
+    ],
+    "protectedPathCount": 61,
+    "approvalEvidenceFile": "docs/approvals/midnight-initial-request-correction-20261010.json"
   }
 }

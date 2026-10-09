@@ -367,6 +367,7 @@ export interface LiveSummary {
 type SummaryCacheEntry = { value: LiveSummary | null; recheckAt: number };
 const summaryCache = new Map<string, SummaryCacheEntry>();
 const summaryPending = new Map<string, Promise<LiveSummary | null>>();
+let initialUndatedSummaryDay: string | undefined;
 const SUMMARY_RECHECK_MS = { empty: 60_000, partial: 120_000, normal: 300_000 };
 
 function summaryKey(date: string | null, month?: string): string {
@@ -407,9 +408,13 @@ async function loadSummary(date: string | null, month: string | undefined, key: 
   if (!pending) {
     const query = new URLSearchParams();
     if(date)query.set("date",date);
-    // Separate the default URL across browser midnight without asking the
-    // server to use a device-guessed service date on the initial response.
-    else query.set("_day",kstDay(new Date(Date.now()).toISOString()));
+    else {
+      const day = kstDay(new Date(Date.now()).toISOString());
+      initialUndatedSummaryDay ??= day;
+      // The first URL consumes the existing server preload. Only a calendar
+      // rollover needs a new URL; the cache key never overrides server today.
+      if (day !== initialUndatedSummaryDay) query.set("_day", day);
+    }
     if (month) query.set("month", month);
     // toString(), not .size: URLSearchParams.size only exists in Chrome 113+, Firefox 112+ and Safari 17+.
     const queryText = query.toString();

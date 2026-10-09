@@ -1,0 +1,17 @@
+{
+  "recordedAt": "2026-10-09T18:46:07.187519+00:00",
+  "authorizationEvidence": {
+    "ownerRequest": "Fix in-scope CI failures without lowering criteria; finish only necessary changes in PR327. Original owner authorization covers midnight continuity, bug checks and mobile request performance.",
+    "scope": "The existing summary and flight clients preserve midnight continuity: consume the existing bare-URL preload for the first summary, add a calendar-only URL key after rollover, and ignore older same-date flight responses after a newer refresh. Only live-signals is a protected hash correction; the flight client is unprotected. Retain server-day validation, date races, cache expiry, and the original one-initial-request browser criteria. No protected page/preload files, lock test or scheduler changed.",
+    "agentMergeOrDeploymentApproved": false
+  },
+  "changes": [
+    {
+      "file": "app/live-signals.tsx",
+      "previous": "94a894a2b404761a07faf6e697a339d82b196eb02ec14daee443f442b5f06cb4",
+      "approved": "2a6076c042403721b7c16399c3f5199d8931dab46d10e7674b8fa5e0f46c4d56"
+    }
+  ],
+  "protectedPathCount": 61,
+  "approvalEvidenceFile": "docs/approvals/midnight-initial-request-correction-20261010.json"
+}
