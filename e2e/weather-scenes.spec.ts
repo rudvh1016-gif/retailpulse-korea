@@ -3,7 +3,7 @@ import { SUMMARY_FIXTURE, MYEONGDONG_CONTEXT, routeSummary } from './summary-fix
 import { tofuCharacters } from './font-glyphs';
 
 const forecastHeadings: Record<string, string> = {
-  ko: '공식 날씨 예보', en: 'Official weather forecast', zh: '官方天气预报', ja: '公式天気予報',
+  ko: '기상청 예보', en: 'KMA forecast', zh: '气象厅预报', ja: '気象庁予報',
 };
 
 for (const lang of ['ko', 'en', 'zh', 'ja']) for (const width of [320, 390, 430]) {

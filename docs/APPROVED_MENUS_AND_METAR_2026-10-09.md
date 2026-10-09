@@ -48,3 +48,14 @@ new menu browser20 (four languages and360/390/430/1280; failure/retry, missing,
 zero, old URL, keyboard/reduced-motion and rapid changes), type/lint/native
 build. Final exact head/automatic CI result is recorded in PR323. Owner Merge
 remains the release step; agent merge/deployment/operational writes are absent.
+
+The first full integration CI37889095171 on b49b6aa completed with1289 units,
+46 rendered and the original lock passing, but1040 E2E passed /17 failed.
+Those17 failures were selectors expecting the old weather heading (14), five
+navigation links (1), or a page-wide unique status despite the preserved
+independent evidence panel (2). The exact weather row and monthly-records
+status are now scoped, the approved KMA headings and six navigation links are
+asserted, and the original numeric, stale, error/retry, keyboard, state and
+layout assertions remain. No tests were removed/skipped, no product source or
+protected fixture changed. All17 affected cases then passed in27 seconds;
+scoped lint and diff check passed. New-head automatic CI is recorded in PR323.

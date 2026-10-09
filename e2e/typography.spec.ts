@@ -360,7 +360,7 @@ test("the weather guide names dust and wind, and the observation is marked as no
   await expect(environment).not.toContainText("기상청 예보라서");
 
   // Forecast guide: the existing sentence, plus the appended clause.
-  const guide = page.locator(".signal-row", { hasText: "날씨" }).first();
+  const guide = page.locator('[data-signal-key="weather"]');
   await expect(guide).toContainText("미세먼지는");
   await expect(guide).toContainText("바람은");
 
@@ -410,7 +410,7 @@ test("a stale observation is stamped with the time it was taken and explains the
 
   // With no current measurement to defer to, KMA is the only source for
   // humidity and wind, so they come back rather than silently vanishing.
-  const guide = page.locator(".signal-row", { hasText: "날씨" }).first();
+  const guide = page.locator('[data-signal-key="weather"]');
   await expect(guide).toContainText("습도 65%");
   await expect(guide).toContainText("바람 2.5m/s");
 });

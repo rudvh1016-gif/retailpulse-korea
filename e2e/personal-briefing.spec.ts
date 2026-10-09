@@ -191,7 +191,9 @@ test('mobile back navigation returns to airport-first root with one active item'
     await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
     const nav = page.locator('nav.bottom-nav');
     await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
-    await expect(nav.locator('a')).toHaveCount(5);
+    await expect(nav.locator('a')).toHaveCount(6);
+    await expect(nav.locator('a[href="/ko/where-to"]')).toHaveCount(1);
+    await expect(nav.locator('a[href="/ko/consumption"]')).toHaveCount(1);
     await nav.locator('a[href="/ko/myeongdong"]').click();
     await expect(page.locator('.area-current-brief')).toBeVisible();
     await page.goBack();
