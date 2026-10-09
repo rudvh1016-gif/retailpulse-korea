@@ -45,3 +45,11 @@ test('all supported languages and fallback have readable labels for every state'
   }
   assert.equal(queueHeatLabel({level:'clear',state:'current'},'unsupported'),'Smooth');
 });
+
+test('T1 canonical summary IDs and display aliases use the approved minute criteria',()=>{
+ for(const zone of ['DG2_E','DG2_W','DG3_E','DG3_W','DG4_E','DG4_W','DG5_E','DG5_W','3W'])for(const [minutes,level] of [[6,'clear'],[35,'normal'],[40,'busy'],[60,'very-busy']] as const){
+  assert.deepEqual(queueHeat({...reading,terminal:'T1',zone,waitTimeMinutes:minutes,waitTimeRaw:String(minutes)},at),{level,state:'current',basis:'KORETAIL_MINUTES'});
+ }
+ for(const zone of ['DG1_E','DG6_W','DG3_A','DG7_W','P01'])assert.deepEqual(queueHeat({...reading,terminal:'T1',zone},at),{level:'neutral',state:'unverified'});
+ for(const patch of [{freshness:'STALE'},{waitTimeRaw:'운영 안 함'},{waitTimeMinutes:null,waitTimeRaw:null},{observedAt:'2026-10-06T13:11:00Z'}])assert.equal(queueHeat({...reading,terminal:'T1',zone:'DG3_W',...patch},at).level,'neutral');
+});
