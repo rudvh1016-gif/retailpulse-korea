@@ -1,0 +1,216 @@
+{
+  "conditions": {
+    "viewport": "390x900",
+    "dpr": 2,
+    "data": "identical fixed summary fixture",
+    "motion": "reduced",
+    "browser": "fresh Chromium context",
+    "baseline": "a87e0f0ba9c246f498cf254cf89f0d137802a205"
+  },
+  "before": {
+    "label": "before",
+    "fixture": true,
+    "width": 390,
+    "height": 900,
+    "dpr": 2,
+    "metrics": {
+      "height": 1236.1875,
+      "width": 354,
+      "images": 13,
+      "choices": 4,
+      "selected": 4,
+      "links": 4,
+      "controls": [
+        {
+          "label": "T1 본관 탑승",
+          "height": 112,
+          "width": 174
+        },
+        {
+          "label": "T2 탑승",
+          "height": 112,
+          "width": 174
+        },
+        {
+          "label": "T1 체크인 → 탑승동 탑승",
+          "height": 112,
+          "width": 174
+        },
+        {
+          "label": "모름 · 공식 안내 확인",
+          "height": 112,
+          "width": 174
+        },
+        {
+          "label": "있음",
+          "height": 131,
+          "width": 114
+        },
+        {
+          "label": "없음",
+          "height": 131,
+          "width": 114
+        },
+        {
+          "label": "모름 · 공식 안내 확인",
+          "height": 131,
+          "width": 114
+        },
+        {
+          "label": "있음",
+          "height": 131,
+          "width": 114
+        },
+        {
+          "label": "없음",
+          "height": 131,
+          "width": 114
+        },
+        {
+          "label": "모름 · 공식 안내 확인",
+          "height": 131,
+          "width": 114
+        },
+        {
+          "label": "있음",
+          "height": 131,
+          "width": 114
+        },
+        {
+          "label": "없음",
+          "height": 131,
+          "width": 114
+        },
+        {
+          "label": "모름 · 공식 안내 확인",
+          "height": 131,
+          "width": 114
+        }
+      ]
+    },
+    "choiceOffsetFromBody": 909.765625,
+    "overflow": false,
+    "errors": [],
+    "imageRequests": [
+      "/visuals/travel-records/v1/departure.webp",
+      "/visuals/clarity/v1/travel-record-256.webp",
+      "/airport-models/shop-beauty.webp",
+      "/calendar/calendar-32px-2x.webp",
+      "/visuals/airport-queue/queue-checkpoint-192.webp",
+      "/passenger-guide/v1/terminal-128.webp",
+      "/passenger-guide/v1/checkin-128.webp",
+      "/passenger-guide/v1/security-128.webp",
+      "/passenger-guide/v1/immigration-128.webp",
+      "/passenger-guide/v1/boarding-128.webp",
+      "/visuals/departure-choices/v1/terminal-t1-256.webp",
+      "/visuals/departure-choices/v1/terminal-t2-256.webp",
+      "/visuals/departure-choices/v1/concourse-256.webp",
+      "/visuals/departure-choices/v1/help-sign-256.webp",
+      "/visuals/clarity/v1/checked-bag-256.webp",
+      "/visuals/clarity/v1/cabin-bag-256.webp",
+      "/visuals/departure-choices/v1/refund-receipt-256.webp",
+      "/visuals/clarity/v1/shopping-bag-256.webp",
+      "/airport-models/v14/OVERVIEW_MOBILE_day-900.webp"
+    ]
+  },
+  "after": {
+    "label": "after",
+    "fixture": true,
+    "width": 390,
+    "height": 900,
+    "dpr": 2,
+    "metrics": {
+      "height": 562,
+      "width": 354,
+      "images": 0,
+      "choices": 4,
+      "selected": 4,
+      "links": 4,
+      "controls": [
+        {
+          "label": "T1 본관 탑승",
+          "height": 44,
+          "width": 175
+        },
+        {
+          "label": "T2 탑승",
+          "height": 44,
+          "width": 175
+        },
+        {
+          "label": "T1 체크인 → 탑승동 탑승",
+          "height": 44,
+          "width": 175
+        },
+        {
+          "label": "모름",
+          "height": 44,
+          "width": 175
+        },
+        {
+          "label": "있음",
+          "height": 44,
+          "width": 115.328125
+        },
+        {
+          "label": "없음",
+          "height": 44,
+          "width": 115.328125
+        },
+        {
+          "label": "모름",
+          "height": 44,
+          "width": 115.34375
+        },
+        {
+          "label": "있음",
+          "height": 44,
+          "width": 115.328125
+        },
+        {
+          "label": "없음",
+          "height": 44,
+          "width": 115.328125
+        },
+        {
+          "label": "모름",
+          "height": 44,
+          "width": 115.34375
+        },
+        {
+          "label": "있음",
+          "height": 44,
+          "width": 115.328125
+        },
+        {
+          "label": "없음",
+          "height": 44,
+          "width": 115.328125
+        },
+        {
+          "label": "모름",
+          "height": 44,
+          "width": 115.34375
+        }
+      ]
+    },
+    "choiceOffsetFromBody": 92.671875,
+    "overflow": false,
+    "errors": [],
+    "imageRequests": [
+      "/visuals/travel-records/v1/departure.webp",
+      "/visuals/clarity/v1/travel-record-256.webp",
+      "/airport-models/shop-beauty.webp",
+      "/calendar/calendar-32px-2x.webp",
+      "/visuals/airport-queue/queue-checkpoint-192.webp",
+      "/passenger-guide/v1/terminal-128.webp",
+      "/passenger-guide/v1/checkin-128.webp",
+      "/passenger-guide/v1/security-128.webp",
+      "/passenger-guide/v1/immigration-128.webp",
+      "/passenger-guide/v1/boarding-128.webp",
+      "/airport-models/v14/OVERVIEW_MOBILE_day-900.webp"
+    ]
+  },
+  "heightReductionPercent": 54.53764093230193,
+  "limits": "Local choice layout/request comparison; does not establish production Lighthouse or LCP improvement. No deployment."
+}

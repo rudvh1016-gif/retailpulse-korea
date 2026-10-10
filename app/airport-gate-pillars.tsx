@@ -96,7 +96,7 @@ export default function AirportGatePillars({ lang, terminal, date }: { lang: Lan
       {picked && <section className="gate-selected" data-testid="gate-selected" aria-live="polite"><h5>{picked.building} · {picked.gate} · {copy.details[lang]}</h5><p data-flights={picked.flights}><strong>{picked.flights}</strong>{unit}</p><ul>{selectedFlights.map(f => <li key={`${f.day}:${f.id}`}>{f.flightNumber} · {f.scheduledAt.slice(11, 16)} KST · {f.destinationCode ?? '—'}</li>)}</ul>{!selectedFlights.length && <p>{mapCopy.noFlightsAtGate[lang]}</p>}</section>}
       <p className="prep-note">{copy.unknown[lang]}: {flights.filter(f => !f.gate).length}{unit} · {loaded.payload.basis === 'OFFICIAL_DEPARTURE_SCHEDULE' ? mapCopy.basisSchedule[lang] : mapCopy.basisCollected[lang]}{loaded.payload.retrievedAt ? ` · ${kstStamp(loaded.payload.retrievedAt)} KST` : ''}</p>
       <p className="prep-note">{copy.unknownBuilding[lang]}: {maps[0]?.unknownBuilding ?? 0}{unit}</p>
-      <a href="https://www.airport.kr/geomap/ap_ko/view.do" target="_blank" rel="noopener noreferrer">{mapCopy.axis[lang]}</a>
+      <a className={styles.officialMap} href="https://www.airport.kr/geomap/ap_ko/view.do" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true"><path d="m2 4 5-2 6 2 5-2v14l-5 2-6-2-5 2V4Zm5-2v14m6-12v14"/></svg>{mapCopy.officialMap[lang]}</a>
     </>}
   </div>;
 }

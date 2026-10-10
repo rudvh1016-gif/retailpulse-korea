@@ -98,6 +98,8 @@ import {
   shiftKstDay,
 } from "../../../../lib/kst";
 
+import {SEOUL_REALTIME_STALE_MINUTES} from "../../../../lib/seoul-freshness";
+
 export const dynamic = "force-dynamic";
 
 type Row = Record<string, unknown>;
@@ -166,7 +168,7 @@ function areaComparisons(row: Row, min: string, max: string) {
 }
 
 /** Minutes after which a real-time observation is labelled STALE, not LIVE. */
-const REALTIME_STALE_MINUTES = 40;
+const REALTIME_STALE_MINUTES = SEOUL_REALTIME_STALE_MINUTES;
 
 function freshnessOf(observedAt: unknown, staleMinutes: number, now: number): "LIVE" | "STALE" {
   const observed = typeof observedAt === "string" ? Date.parse(observedAt) : Number.NaN;

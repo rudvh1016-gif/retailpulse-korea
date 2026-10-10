@@ -13,20 +13,20 @@
     "app/api/live/events/route.ts": "f85c532f05c89b1412fbd77a04ff88d5d3b9f8587ddbebad00dbe1c3df9ed7a4",
     "app/api/live/flights/route.ts": "7263477a03181f96a3cf9a2109b2cb2ccb9d787c2ca6c9af6e8ff4e358288982",
     "app/api/live/predictions/route.ts": "b82f003bd3d77c293a379c4dbd0bf5e2aa449b19e54a65119ef2e4f291cdfced",
-    "app/api/live/summary/route.ts": "479126e7c354ad419315b78f2ce0f3544f76bdfb79936136487d453e0b9e409d",
-    "app/area-demand-card.tsx": "78254205092521a36a61fe35aa3ff57c8d91ef1921199cad353c0792dc251dab",
+    "app/api/live/summary/route.ts": "96727d7ade580d6a59fa3bcd438a242dae54316060ea259c7d74de40dfee1f3e",
+    "app/area-demand-card.tsx": "8209a5fda381f6cf529b8635918e99ed158e6d7864280483083510ea16ba2be5",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "a1344d20a9e458e22b7a5703f7a961813d4a8b9ccd63dbed8c4b288bad5ca840",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
     "app/layout.tsx": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
-    "app/live-signals.tsx": "2a6076c042403721b7c16399c3f5199d8931dab46d10e7674b8fa5e0f46c4d56",
+    "app/live-signals.tsx": "2b1cce221be6c67b12b954c69a183a4131863dec2f5282f11516f7588dacc360",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "8800eefdd2bfa2352c3cfce5b6138fdf830852d1ce35765c9e3c9d67313f7c13",
+    "app/retailpulse-app.tsx": "082db8555ef29d28a1da6fffac1e6ee25d5d4e4418729d0fb6224b42eb4f8143",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "48c26a8642d0dae4ebea5988064ffaf58611b9982d5d06f5ee0593d6416234b8",
@@ -1098,5 +1098,51 @@
     ],
     "protectedPathCount": 61,
     "approvalEvidenceFile": "docs/approvals/midnight-initial-request-correction-20261010.json"
+  },
+  "ownerApprovedCompactRateGlance20261010": {
+    "recordedAt": "2026-10-10T02:29:35.693316+00:00",
+    "authorizationEvidence": {
+      "ownerRequests": [
+        "Repeated departure choice illustrations must become a compact clear choice UI, retaining core choices and conditional guidance.",
+        "Use the existing official airport-corporation map as a named compact button.",
+        "All displayed growth rates: increase +8.6%, decrease hollow upward △8.6%, exact zero 0%; percent-point differences retain %p. Record the rule for future work.",
+        "Fix Seoul glance unavailable congestion/forecast: distinguish source delay, freshness mismatch, last observation and collection status without duplicated provider calls."
+      ],
+      "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "scope": "Owner-requested presentation updates and existing summary freshness consistency only. Reuse the existing 40-minute summary contract; retain actual baselines, calculations, stale exclusions, midnight safeguards and all source clocks. No new airport monthly aggregate, collector activation, new scheduler, provider diagnostic, migration, draft release, merge or deployment.",
+      "approvedProtectedFiles": [
+        "app/api/live/summary/route.ts",
+        "app/area-demand-card.tsx",
+        "app/live-signals.tsx",
+        "app/retailpulse-app.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Normal scoped hash bookkeeping for explicit owner follow-ups. Preserve all prior records, 61 protected files, scheduler facts and the original UI Lock test.",
+    "changes": [
+      {
+        "file": "app/api/live/summary/route.ts",
+        "previous": "479126e7c354ad419315b78f2ce0f3544f76bdfb79936136487d453e0b9e409d",
+        "approved": "96727d7ade580d6a59fa3bcd438a242dae54316060ea259c7d74de40dfee1f3e"
+      },
+      {
+        "file": "app/area-demand-card.tsx",
+        "previous": "78254205092521a36a61fe35aa3ff57c8d91ef1921199cad353c0792dc251dab",
+        "approved": "8209a5fda381f6cf529b8635918e99ed158e6d7864280483083510ea16ba2be5"
+      },
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "2a6076c042403721b7c16399c3f5199d8931dab46d10e7674b8fa5e0f46c4d56",
+        "approved": "2b1cce221be6c67b12b954c69a183a4131863dec2f5282f11516f7588dacc360"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "8800eefdd2bfa2352c3cfce5b6138fdf830852d1ce35765c9e3c9d67313f7c13",
+        "approved": "082db8555ef29d28a1da6fffac1e6ee25d5d4e4418729d0fb6224b42eb4f8143"
+      }
+    ],
+    "protectedPathCount": 61,
+    "approvalEvidenceFile": "docs/approvals/compact-rate-glance-20261010.json"
   }
 }

@@ -22,7 +22,7 @@ export const mtdCopy = {
     ja: "今月累計 · 出国場公式予想旅客",
   },
   previous: { ko: "전월 동기간", en: "Same span last month", zh: "上月同期", ja: "前月同期間" },
-  change: { ko: "전월 동기간 대비", en: "Vs. same span last month", zh: "较上月同期", ja: "前月同期間比" },
+  change: { ko: "전월 동기간 대비 신장률", en: "Vs. same span last month", zh: "较上月同期", ja: "前月同期間比" },
   daily: {
     ko: "날짜별 출국장 공식 예상 승객",
     en: "Daily official departure-hall passenger forecast",

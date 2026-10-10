@@ -91,3 +91,7 @@ Before push:
 - run the applicable items in `docs/ZERO_COST_HYBRID_AUDIT.md`;
 - commit and push;
 - report exact commit SHA, changed files, tests run, remaining blockers, and any owner action required.
+
+## Owner-approved change-rate display (2026-10-10)
+
+Use `lib/change-rate.ts` for every displayed change rate: increases `+8.6%`, decreases `△8.6%` (hollow upward triangle), exact zero `0%`. Share differences use `%p` with the same signs. Never use filled ▲ or downward ▼ for decrease. Keep signed calculations unchanged; missing comparisons or a zero baseline remain unavailable. A genuine nonzero change below the printed resolution retains its direction and a less-than bound. Give decreases accessible decrease/역신장 semantics. Actual previous-month growth headings use `전월 대비 신장률`; weekly, matched-span, and average baselines retain their real definitions. Negative temperatures and other non-rate values keep their signs. This authorizes presentation corrections, not new airport monthly aggregation, collector activation, merge or deployment.

@@ -1,5 +1,6 @@
 "use client";
 import './airport-history-polish.css';
+import {ChangeRate} from './change-rate';
 import { AirportParkingGuide } from './facility-guide';
 import './facility-guide.css';
 import { passengerCopy } from "../lib/passenger-copy";
@@ -691,7 +692,7 @@ function AirportView({
         <div className="history-kpis">
           <div><span>{localText(lang, { ko: "선택 기간 합계", en: "PERIOD TOTAL", zh: "所选期间合计", ja: "選択期間の合計" })}</span><strong>{formatCount(lang, rangeTotal)}</strong><small>{periodLabel} · {terminal === "all" ? "ALL" : terminal}</small></div>
           <div><span>{localText(lang, { ko: "하루 평균", en: "DAILY AVERAGE", zh: "日均", ja: "1日平均" })}</span><strong>{formatCount(lang, rangeDailyAverage)}</strong><small>{rangeDays}{localText(lang, { ko: "일 기준", en: " days", zh: "天口径", ja: "日基準" })}</small></div>
-          <div><span>{localText(lang, { ko: "기간 처음 대비", en: "START-TO-END CHANGE", zh: "期初至期末变化", ja: "期間初比" })}</span><strong>{rangeChange === null ? "—" : `${rangeChange >= 0 ? "+" : ""}${rangeChange.toFixed(1)}%`}</strong><small>{rangeStartRow?.month ?? "—"} → {rangeEndRow?.month ?? "—"}</small></div>
+          <div><span>{localText(lang, { ko: "기간 처음 대비", en: "START-TO-END CHANGE", zh: "期初至期末变化", ja: "期間初比" })}</span><strong>{<ChangeRate value={rangeChange} lang={lang}/>}</strong><small>{rangeStartRow?.month ?? "—"} → {rangeEndRow?.month ?? "—"}</small></div>
           <div><span>{localText(lang, { ko: "하루평균 최고 월", en: "PEAK MONTH BY DAILY AVG.", zh: "日均峰值月", ja: "日平均ピーク月" })}</span><strong>{peakRow?.month ?? "—"}</strong><small>{peakRow ? formatCount(lang, Math.round(airportValue(peakRow, terminal, direction) / monthDays(peakRow.month))) : "—"}</small></div>
         </div>
 
@@ -851,7 +852,7 @@ function BusinessHistoryBody({ lang, selected, setSelected }: { lang: Lang; sele
     {rangeOpen && <MonthRangePicker lang={lang} start={draftStart} end={draftEnd} min={foreignMonthly[0].month} max={foreignMonthly.at(-1)!.month} onStart={setDraftStart} onEnd={setDraftEnd} onCancel={() => setRangeOpen(false)} onApply={(nextStart, nextEnd) => { setRangeStart(nextStart); setRangeEnd(nextEnd); setPeriod("custom"); setRangeOpen(false); }} />}
     <div className="history-kpis">
       <div><span>{localText(lang, { ko: "선택 기간 월평균", en: "PERIOD MONTHLY AVG.", zh: "所选期间月均", ja: "選択期間の月平均" })}</span><strong>{formatCount(lang, periodAverage)}</strong><small>{periodLabel}</small></div>
-      <div><span>{localText(lang, { ko: "기간 처음 대비", en: "START-TO-END CHANGE", zh: "期初至期末变化", ja: "期間初比" })}</span><strong>{periodChange === null ? "—" : `${periodChange >= 0 ? "+" : ""}${periodChange.toFixed(1)}%`}</strong><small>{startRow?.month ?? "—"} → {endRow?.month ?? "—"}</small></div>
+      <div><span>{localText(lang, { ko: "기간 처음 대비", en: "START-TO-END CHANGE", zh: "期初至期末变化", ja: "期間初比" })}</span><strong>{<ChangeRate value={periodChange} lang={lang}/>}</strong><small>{startRow?.month ?? "—"} → {endRow?.month ?? "—"}</small></div>
       <div><span>{localText(lang, { ko: "최고 월", en: "PEAK MONTH", zh: "峰值月", ja: "ピーク月" })}</span><strong>{peakRow?.month ?? "—"}</strong><small>{peakRow ? formatCount(lang, peakRow[selected]) : "—"}</small></div>
     </div>
     <ol className="history-bars" aria-label={localText(lang, { ko: "월별 추이", en: "Monthly trend", zh: "月度趋势", ja: "月次推移" })}>
@@ -886,8 +887,8 @@ function ForeignHistoryStats({ lang, selected }: { lang: Lang; selected: Foreign
   return <>
     <div className="stat-rows">
       <div><span>{localText(lang, { ko: "최신 월", en: "Latest month", zh: "最新月份", ja: "最新月" })}</span><b>{foreignRecent.month}</b><i>{formatCount(lang, foreignRecent[selected])}</i></div>
-      <div><span>{localText(lang, { ko: "전월 대비", en: "Vs. previous month", zh: "环比", ja: "前月比" })}</span><b>{foreignChange === null ? "—" : `${foreignChange >= 0 ? "+" : ""}${foreignChange.toFixed(1)}%`}</b><i>{foreignPrior.month} → {foreignRecent.month}</i></div>
-      <div><span>{localText(lang, { ko: "최근 12개월 평균 대비", en: "Vs. 12-month average", zh: "较近12个月平均", ja: "直近12か月平均比" })}</span><b>{vsAverage === null ? "—" : `${vsAverage >= 0 ? "+" : ""}${vsAverage.toFixed(1)}%`}</b><i>{formatCount(lang, twelveAverage)}</i></div>
+      <div><span>{localText(lang, { ko: "전월 대비 신장률", en: "Vs. previous month", zh: "环比", ja: "前月比" })}</span><b>{<ChangeRate value={foreignChange} lang={lang}/>}</b><i>{foreignPrior.month} → {foreignRecent.month}</i></div>
+      <div><span>{localText(lang, { ko: "최근 12개월 평균 대비", en: "Vs. 12-month average", zh: "较近12个月平均", ja: "直近12か月平均比" })}</span><b>{<ChangeRate value={vsAverage} lang={lang}/>}</b><i>{formatCount(lang, twelveAverage)}</i></div>
       <div><span>{localText(lang, { ko: "12개월 최고 / 최저", en: "12-month high / low", zh: "12个月最高／最低", ja: "12か月の最高／最低" })}</span><b>{maxRow.month} / {minRow.month}</b><i>{formatCount(lang, twelveMax)} / {formatCount(lang, twelveMin)}</i></div>
     </div>
   </>;
@@ -947,7 +948,7 @@ function InsightsView({ lang, selected, setSelected }: { lang: Lang; selected: A
         <ul className="reading-notes">
           <li><span>{localText(lang, { ko: "기준 기간", en: "Period", zh: "统计期间", ja: "対象期間" })}</span><b>{recentMonths}</b></li>
           <li><span>{localText(lang, { ko: "직전 3개월", en: "Previous three months", zh: "此前3个月", ja: "直前3か月" })}</span><b>{priorMonths} · T2 {priorT2Share.toFixed(1)}%</b></li>
-          <li><span>{localText(lang, { ko: "T2 변화", en: "T2 change", zh: "T2变化", ja: "T2の変化" })}</span><b>{shareDelta >= 0 ? "+" : ""}{shareDelta.toFixed(1)}%p</b></li>
+          <li><span>{localText(lang, { ko: "T2 변화", en: "T2 change", zh: "T2变化", ja: "T2の変化" })}</span><b><ChangeRate value={shareDelta} lang={lang} unit="%p"/></b></li>
         </ul>
       </section>
 

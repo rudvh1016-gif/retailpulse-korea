@@ -61,6 +61,7 @@ export const mapCopy = {
   concourse: row("탑승동", "Concourse", "登机楼", "搭乗棟"),
   building: { T1: row("T1 본관", "T1 main building", "T1主楼", "T1本館"), T2: row("T2", "T2", "T2", "T2"), CONCOURSE: row("탑승동", "Concourse", "登机楼", "搭乗棟") },
   unknownBuilding: row("건물 미확인", "Building unknown", "所在建筑未确认", "建物未確認"),
+  officialMap: row("인천공항공사 공식 지도 보기 ↗", "View the official Incheon Airport map ↗", "查看仁川机场公社官方地图 ↗", "仁川空港公社の公式マップを見る ↗"),
   axis: row("서편 ← → 동편 (업무용 구분)", "West ← → East (KORETAIL working split)", "西侧 ← → 东侧（业务划分）", "西側 ← → 東側（業務用区分）"),
   schematic: row(
     "공항 공식 지도 자료의 탑승구 좌표로 그린 KORETAIL 배치도입니다. 거리·동선·혼잡을 나타내지 않습니다.",

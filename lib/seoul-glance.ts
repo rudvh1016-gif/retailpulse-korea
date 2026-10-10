@@ -1,3 +1,5 @@
+import {SEOUL_REALTIME_STALE_MINUTES} from './seoul-freshness';
+
 /** Uses already-served official fields only. No population-derived crowd ranking. */
 export interface GlanceForecast {targetAt:string;congestionLevel:number;issuedAt?:string;retrievedAt?:string}
 export interface GlanceObservation {observedAt:string;congestionLevel:number;freshness:'LIVE'|'STALE'}
@@ -5,13 +7,13 @@ export function validGlanceForecasts(rows:readonly GlanceForecast[],now:string,r
  const clock=Date.parse(now);
  return rows.filter(row=>{const issued=Date.parse(row.issuedAt??''),target=Date.parse(row.targetAt);
   return !refreshing&&Number.isFinite(clock)&&Number.isFinite(issued)&&Number.isFinite(target)
-   &&issued<=clock&&clock-issued<=30*60_000&&target>=clock&&target<=issued+12*3_600_000
+   &&issued<=clock&&clock-issued<=SEOUL_REALTIME_STALE_MINUTES*60_000&&target>=clock&&target<=issued+12*3_600_000
    &&Number.isInteger(row.congestionLevel)&&row.congestionLevel>=1&&row.congestionLevel<=4;
  }).sort((a,b)=>Date.parse(a.targetAt)-Date.parse(b.targetAt));
 }
 export function freshGlanceObservation(row:GlanceObservation|null|undefined,now:string,refreshing=false){
  const age=Date.parse(now)-Date.parse(row?.observedAt??'');
- return !!row&&!refreshing&&row.freshness==='LIVE'&&age>=0&&age<=30*60_000
+ return !!row&&!refreshing&&row.freshness==='LIVE'&&age>=0&&age<=SEOUL_REALTIME_STALE_MINUTES*60_000
   &&Number.isInteger(row.congestionLevel)&&row.congestionLevel>=1&&row.congestionLevel<=4;
 }
 export function sameGlanceClocks(rows:readonly {clock:string|undefined;valid:boolean}[]){

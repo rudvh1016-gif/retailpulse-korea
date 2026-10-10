@@ -1,0 +1,46 @@
+{
+  "recordedAt": "2026-10-10T02:29:35.693316+00:00",
+  "authorizationEvidence": {
+    "ownerRequests": [
+      "Repeated departure choice illustrations must become a compact clear choice UI, retaining core choices and conditional guidance.",
+      "Use the existing official airport-corporation map as a named compact button.",
+      "All displayed growth rates: increase +8.6%, decrease hollow upward △8.6%, exact zero 0%; percent-point differences retain %p. Record the rule for future work.",
+      "Fix Seoul glance unavailable congestion/forecast: distinguish source delay, freshness mismatch, last observation and collection status without duplicated provider calls."
+    ],
+    "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+    "scope": "Owner-requested presentation updates and existing summary freshness consistency only. Reuse the existing 40-minute summary contract; retain actual baselines, calculations, stale exclusions, midnight safeguards and all source clocks. No new airport monthly aggregate, collector activation, new scheduler, provider diagnostic, migration, draft release, merge or deployment.",
+    "approvedProtectedFiles": [
+      "app/api/live/summary/route.ts",
+      "app/area-demand-card.tsx",
+      "app/live-signals.tsx",
+      "app/retailpulse-app.tsx"
+    ],
+    "keepProtectedListAndEnforcement": true,
+    "agentMergeOrDeploymentApproved": false
+  },
+  "reason": "Normal scoped hash bookkeeping for explicit owner follow-ups. Preserve all prior records, 61 protected files, scheduler facts and the original UI Lock test.",
+  "changes": [
+    {
+      "file": "app/api/live/summary/route.ts",
+      "previous": "479126e7c354ad419315b78f2ce0f3544f76bdfb79936136487d453e0b9e409d",
+      "approved": "96727d7ade580d6a59fa3bcd438a242dae54316060ea259c7d74de40dfee1f3e"
+    },
+    {
+      "file": "app/area-demand-card.tsx",
+      "previous": "78254205092521a36a61fe35aa3ff57c8d91ef1921199cad353c0792dc251dab",
+      "approved": "8209a5fda381f6cf529b8635918e99ed158e6d7864280483083510ea16ba2be5"
+    },
+    {
+      "file": "app/live-signals.tsx",
+      "previous": "2a6076c042403721b7c16399c3f5199d8931dab46d10e7674b8fa5e0f46c4d56",
+      "approved": "2b1cce221be6c67b12b954c69a183a4131863dec2f5282f11516f7588dacc360"
+    },
+    {
+      "file": "app/retailpulse-app.tsx",
+      "previous": "8800eefdd2bfa2352c3cfce5b6138fdf830852d1ce35765c9e3c9d67313f7c13",
+      "approved": "082db8555ef29d28a1da6fffac1e6ee25d5d4e4418729d0fb6224b42eb4f8143"
+    }
+  ],
+  "protectedPathCount": 61,
+  "approvalEvidenceFile": "docs/approvals/compact-rate-glance-20261010.json"
+}

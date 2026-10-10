@@ -1,5 +1,7 @@
 "use client";
 import {type TerminalFlightFallback} from '../lib/airport-flight-scope';
+import {RateText} from './change-rate';
+import {formatChangeRate} from '../lib/change-rate';
 import Image from 'next/image';
 import { AirportDateCalendar } from './airport-date-calendar';
 import { airportCompositionCopy } from '../lib/airport-composition-copy';
@@ -1891,7 +1893,7 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
               : <small>{mtd.previousAbsentReason === "NO_SUCH_DAY" ? mtdCopy.noSuchDay[lang] : mtdCopy.noCompare[lang]}</small>}</dd></div>
           <div><dt>{mtdCopy.change[lang]}</dt>
             <dd>{mtd.change
-              ? <b className="airport-glance-change">{comparisonValue(mtd.change)}</b>
+              ? <b className="airport-glance-change"><RateText text={comparisonValue(mtd.change)} lang={lang}/></b>
               : <small>{mtd.previousAbsentReason === "NO_SUCH_DAY" ? mtdCopy.noSuchDay[lang] : mtdCopy.bothComplete[lang]}</small>}</dd></div>
         </dl>
         <AirportMonthComparison current={mtd.current.total} previous={mtd.previous?.total ?? null} currentLabel={shortRange(mtd.current.start, mtd.current.end)} previousLabel={mtd.previous ? shortRange(mtd.previous.start, mtd.previous.end) : ''} numberLocale={numberLocale} unit={peopleUnit}/>
@@ -1905,11 +1907,11 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
 
       </>}
       {showCrowding && checkpoint && <aside className="airport-wait-brief"><p>{queueIsStale ? contextText(lang,"이전 대기 관측","Previous queue observation","先前等候观测","以前の待ち状況の観測") : contextText(lang,"현재 대기 관측","Current queue observation","当前等候观测","現在の待ち状況の観測")} · {checkpoint.terminal} {friendlyCheckpointName(checkpoint.zone,lang)}</p><p>{queueValue ? `${queueValue}${/분|min|分钟|分/i.test(queueValue) ? '' : {ko:'분',en:' min',zh:'分钟',ja:'分'}[lang]}` : checkpoint.waitingCount !== null ? `${checkpoint.waitingCount.toLocaleString(numberLocale)}${peopleUnit}` : airportTodayText.unavailable[lang]} · {kstStamp(checkpoint.observedAt)} KST {demandCopy.observed[lang]}</p></aside>}
-      {showPassengers && expectedTotal !== null && passengerChanges.length > 0 && <p>{airportTodayText.expected[lang]} · <strong>{passengerChanges.join(" · ")}</strong></p>}
+      {showPassengers && expectedTotal !== null && passengerChanges.length > 0 && <p>{airportTodayText.expected[lang]} · <strong><RateText text={passengerChanges.join(" · ")} lang={lang}/></strong></p>}
       {showFlights && flightsCount !== null && <p>{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}{flightChanges.map(({days,change})=>{
         const exact=change.baselineMin!==undefined&&change.baselineMin===change.baselineMax && (change.baselineMin ?? 0)>0&&Number.isSafeInteger(change.baselineMin);
         const prefix=days===7?contextText(lang,'전주 동요일','Same weekday last week','上周同星期','先週同曜日'):contextText(lang,'4주 전 같은 요일','Same weekday 4 weeks ago','4周前同星期','4週前同曜日');
-        return <span key={days} style={days===28?{fontWeight:'var(--weight-strong)'}:undefined}> · {prefix}{exact?` ${change.baselineMin!.toLocaleString(numberLocale)}${flightUnit}${contextText(lang,'보다',' compared with','相比','比')}`:''} <strong className="airport-comparison-change">{comparisonValue(change)}</strong> {days===28?<strong>({change.baselineAt.slice(0,10)})</strong>:<>({change.baselineAt.slice(0,10)})</>}</span>;
+        return <span key={days} style={days===28?{fontWeight:'var(--weight-strong)'}:undefined}> · {prefix}{exact?` ${change.baselineMin!.toLocaleString(numberLocale)}${flightUnit}${contextText(lang,'보다',' compared with','相比','比')}`:''} <strong className="airport-comparison-change"><RateText text={comparisonValue(change)} lang={lang}/></strong> {days===28?<strong>({change.baselineAt.slice(0,10)})</strong>:<>({change.baselineAt.slice(0,10)})</>}</span>;
       })}</p>}
       {showFlights && flightsCount===null&&<>{officialSchedule&&planned&&planned.totalFlights>0?<><p>{pc('officialScheduledFlights',lang)} {planned.totalFlights.toLocaleString(numberLocale)}{flightUnit}</p><small>{pc('officialScheduleBasis',lang)}</small></>:<><p>{pc('schedulePending',lang)}</p>{planned&&planned.totalFlights>0&&<small>{pc('scheduledFlights',lang)} {planned.totalFlights.toLocaleString(numberLocale)}{flightUnit} · {pc('scheduleBasis',lang)}</small>}</>}</>}
       {showFlights && isAll && <FlightScopeNote airport={airport} lang={lang} />}
@@ -2939,7 +2941,7 @@ export function HomeTodayBrief({ lang, selected, onSelect, date = null, includeA
       })}</div>
       <p className="flow-note">{contextText(lang,"각 측정 구역의 범위가 달라, 인구 크기로 지역의 인기나 혼잡 밀도를 비교하지 않습니다.","Measured areas differ. Headcounts are not a ranking of popularity or crowd density.","测量区域范围不同，人数不能作为人气或拥挤密度排名。","測定区域が異なるため、人口の大きさで人気や混雑密度は比較できません。")}</p>
     </section>
-    {changes.length > 0 && <section className="demand-changes"><h2>{contextText(lang,"주목할 변화","Changes to watch","值得关注的变化","注目する変化")}</h2><ul>{changes.map(change => <li key={change.area}><strong>{areaNames[change.area][lang]}</strong><p>{change.line}</p></li>)}</ul></section>}
+    {changes.length > 0 && <section className="demand-changes"><h2>{contextText(lang,"주목할 변화","Changes to watch","值得关注的变化","注目する変化")}</h2><ul>{changes.map(change => <li key={change.area}><strong>{areaNames[change.area][lang]}</strong><p><RateText text={change.line} lang={lang}/></p></li>)}</ul></section>}
     {includeAirport && <section className="home-airport"><div className="demand-section-head"><h2>{contextText(lang,"인천공항","Incheon Airport","仁川机场","仁川空港")}</h2><a href={`/${lang}/airport${dateSuffix}`}>{contextText(lang,"공항 자세히 보기","Explore airport","机场详情","空港の詳細")} →</a></div><AirportAtAGlance summary={summary} lang={lang}/></section>}
     <section className="home-support"><h2>{contextText(lang,"날씨와 주변 일정","Weather and nearby events","天气与周边日程","天気と周辺の予定")}</h2>
       {supportLines.length ? supportLines.map(line => <p key={line}>{line}</p>) : <p>{contextText(lang,"선택 날짜에 확인된 보조자료가 없습니다.","No supporting data for the selected date.","所选日期暂无辅助资料。","選択日の補足資料はありません。")}</p>}
@@ -3359,7 +3361,7 @@ function CommercialSignalCard({ signal, lang }: { signal: CommercialSignalRow; l
       <p className="commercial-status">{lang === "ko" ? "서울시 제공 소비활동 상태" : signal.statusLabel} · <strong>{signal.activityContext ?? signal.statusValue}</strong></p>
       <p className="commercial-times">{signal.referenceValue} · {signal.retrievalValue}</p>
       <details className="commercial-method"><summary>{({ko:"비교·출처·계산 설명",en:"Comparisons, sources and calculation",zh:"比较、来源与计算说明",ja:"比較・出典・計算の説明"})[lang]}</summary>
-       {signal.comparisons.length ? signal.comparisons.map((line) => <p className="period-comparison" key={line}>{line}</p>) : <p className="commercial-times">{({ ko: "동일 시간대 과거 자료 부족 · 전주·4주 전 비교 불가", en: "Matching historical time window unavailable for weekly comparisons", zh: "缺少同一时段历史资料，无法进行周比较", ja: "同時刻の過去資料不足のため週比較不可" })[lang]}</p>}
+       {signal.comparisons.length ? signal.comparisons.map((line) => <p className="period-comparison" key={line}><RateText text={line} lang={lang}/></p>) : <p className="commercial-times">{({ ko: "동일 시간대 과거 자료 부족 · 전주·4주 전 비교 불가", en: "Matching historical time window unavailable for weekly comparisons", zh: "缺少同一时段历史资料，无法进行周比较", ja: "同時刻の過去資料不足のため週比較不可" })[lang]}</p>}
        <p className="commercial-attribution">{text.sourceSeoul[lang]} · {signal.attribution}</p>
        {signal.averagePayment && <p className="commercial-attribution">{({ ko: "건당 평균 결제액 · 같은 10분 기준", en: "Average per payment · same 10-minute window", zh: "每笔平均支付额 · 同一10分钟", ja: "1件あたり平均決済額・同じ10分間" })[lang]}</p>}
        <p className="commercial-attribution">{({ ko: "소비활동은 과거 평균 결제금액 등을 고려한 서울시 4단계 등급입니다. 과거 평균 금액이나 증감률 자체가 아니며, 건당 평균은 현재 금액을 현재 건수로 나눈 값입니다.", en: "Seoul’s four activity levels consider past average payments. They are not historical mean amounts or growth rates; the per-payment average uses this window’s amount and count.", zh: "首尔市四级消费活跃度参考过去平均支付金额，不代表历史均额或增减率；每笔平均额按当前时段金额和笔数计算。", ja: "ソウル市の4段階指標は過去の平均決済額などを考慮します。過去の平均額や増減率そのものではなく、1件平均は現在の金額と件数から算出します。" })[lang]}</p>
@@ -3862,13 +3864,13 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
     {summary && <HolidayContext months={summary.holidays} date={summary.serviceDateKst} lang={lang} /> }
     <div className="flight-summary-area">
     {ranking && ranking.totalFlights > 0 && <div className="current-brief flight-summary">
-      <strong>{({ ko: "선택 터미널 출발 운항", en: "Departures in the selected scope", zh: "所选范围的出发航班", ja: "選択範囲の出発運航" })[lang]} {ranking.totalFlights}{unit}{changes ? ` · ${comparisonText(changes, lang, 7)}` : ""}</strong>
+      <strong>{({ ko: "선택 터미널 출발 운항", en: "Departures in the selected scope", zh: "所选范围的出发航班", ja: "選択範囲の出発運航" })[lang]} {ranking.totalFlights}{unit}{changes ? <> · <RateText text={comparisonText(changes, lang, 7)} lang={lang}/></> : ""}</strong>
       {terminal === "all" && summary && <FlightScopeNote airport={summary.airport} lang={lang} />}
       {airlineLine && <p>{airlineLine}</p>}
       {countryLine && <p>{({ ko: "항공사 등록 국가 순위", en: "Airline registration-country ranking", zh: "航空公司注册国家排名", ja: "航空会社登録国ランキング" })[lang]} · {countryLine}</p>}
       {composition && <details className="composition-changes"><summary>{contextText(lang,'전주 동요일 대비 항공사·국가별 변화','Airline/country changes vs. last weekday','较上周同日航空公司及国家变化','前週同曜日比の航空会社・国別変化')}</summary>
         <p>{composition.baselineDate} → {date || summary?.serviceDateKst}</p>
-        {(['airlines','countries'] as const).map(kind=><p key={kind}>{composition[kind].slice(0,5).map(row=>`${kind==='countries'?regionName(row.id,lang):row.id} ${row.previous} → ${row.current}${unit} (${row.delta>=0?'+':''}${row.delta}${unit}${row.percent===null?'':`, ${row.percent>=0?'+':''}${row.percent.toFixed(1)}%`})`).join(' · ')}</p>)}
+        {(['airlines','countries'] as const).map(kind=><p key={kind}><RateText lang={lang} text={composition[kind].slice(0,5).map(row=>`${kind==='countries'?regionName(row.id,lang):row.id} ${row.previous} → ${row.current}${unit} (${row.delta>=0?'+':''}${row.delta}${unit}${row.percent===null?'':`, ${formatChangeRate(row.percent)}`})`).join(' · ')}/></p>)}
       </details>}
       <small>{contextText(lang,'수집된 출발 운항 기록 비교 · 공동운항 중복 제외. 등록 국가는 승객 국적이 아닙니다.','Comparison of collected departure records, excluding codeshare duplicates. Registration country is not passenger nationality.','比较已收集的出发记录，排除代码共享重复。注册国家并非乘客国籍。','収集済み出発記録の比較・共同運航重複除外。登録国は旅客国籍ではありません。')}{!composition&&` · ${contextText(lang,'국가별 비교 기록 수집 중','Collecting country comparison history','收集各国比较记录中','国別比較記録を収集中')}`}</small>
     </div>}

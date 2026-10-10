@@ -42,3 +42,18 @@
   color: #000;
   cursor: pointer;
 }
+
+.officialMap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  border: 1px solid #d8d8d8;
+  color: inherit;
+  background: #fff;
+  font: inherit;
+  text-decoration: none;
+}
+.officialMap:focus-visible { outline: 2px solid #000; outline-offset: 2px; }

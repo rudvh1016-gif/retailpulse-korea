@@ -35,21 +35,25 @@ details.guide > summary.entry,.tripEntry { box-sizing:border-box; width:100%; he
 .title,.tripEntry strong { font-size:var(--type-body); line-height:1.4; }
 @media(max-width:600px){details.guide > summary.entry,.tripEntry { padding:8px; } }
 
-.choicePanel { display:grid; gap:20px; margin:20px 0; }
-.choiceGroup { min-width:0; padding:0; margin:12px 0; border:0; }
-.choiceGroup legend { margin-bottom:10px; padding:0; font-weight:var(--weight-strong); line-height:1.5; }
-.choiceOptions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+/* Owner: short text choices, with the source next to the current explanation. */
+.choicePanel { display:grid; gap:0; margin:12px 0 16px; }
+.choiceGroup { min-width:0; padding:6px 0; margin:0; border:0; border-bottom:1px solid #e5e5e5; }
+.choiceGroup legend { margin-bottom:4px; padding:0; font-weight:var(--weight-strong); line-height:1.5; }
+.choiceOptions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; }
 .choiceOptions[data-options="4"] { grid-template-columns:repeat(4,minmax(0,1fr)); }
 .choiceOptions[data-options="2"] { grid-template-columns:repeat(2,minmax(0,1fr)); }
-.choiceOptions button { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:6px; min-width:0; min-height:112px; padding:10px 8px; border:1px solid #e4edf2; border-radius:7px; background:#f7fafc; color:var(--ink); font:inherit; line-height:1.5; cursor:pointer; box-shadow:0 2px 6px rgb(70 105 132 / 5%); text-align:center; }
-.choiceOptions button img { width:64px; height:64px; object-fit:contain; }
-.choiceOptions button span { overflow-wrap:anywhere; }
-.choiceOptions button[aria-pressed="true"] { border-color:#547969; background:#eef7f3; box-shadow:inset 0 0 0 1px #547969; }
-.choiceOptions button:focus-visible { outline:2px solid var(--ink); outline-offset:3px; }
-.choiceMark { width:18px; height:18px; position:absolute; top:6px; right:6px; fill:#fff; stroke:#98aca4; stroke-width:1.5; }
+.choiceOptions button { display:flex; align-items:center; justify-content:center; gap:6px; min-width:0; min-height:44px; padding:6px 8px; border:0; border-bottom:2px solid transparent; border-radius:0; background:var(--paper); color:var(--ink); font:inherit; line-height:1.5; cursor:pointer; text-align:center; touch-action:manipulation; -webkit-tap-highlight-color:#e8e8e8; }
+.choiceOptions button span { min-width:0; overflow-wrap:anywhere; }
+.choiceOptions button[aria-pressed="true"] { border-bottom-color:var(--ink); font-weight:var(--weight-strong); }
+.choiceOptions button:hover { background:#f7f7f7; }
+.choiceOptions button:active { background:#eeeeee; }
+.choiceOptions button:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+.choiceMark { width:14px; height:14px; flex:0 0 14px; fill:none; stroke:#707070; stroke-width:1.5; }
 .choiceMark path { visibility:hidden; fill:none; }
-.choiceOptions button[aria-pressed="true"] .choiceMark { fill:#547969; stroke:#fff; }
-.choiceOptions button[aria-pressed="true"] .choiceMark path { visibility:visible; }
-.choiceExplanation { margin:10px 0 4px; line-height:1.65; }
-.choiceSource { display:inline-block; min-height:44px; padding:8px 0; color:var(--ink); line-height:1.6; }
-@media(max-width:600px){.choiceOptions { gap:6px; }.choiceOptions[data-options="4"] { grid-template-columns:repeat(2,minmax(0,1fr)); }.choiceOptions button { padding:10px 6px; }}
+.choiceOptions button[aria-pressed="true"] .choiceMark { fill:var(--ink); stroke:var(--ink); }
+.choiceOptions button[aria-pressed="true"] .choiceMark path { visibility:visible; stroke:var(--paper); }
+.choiceDetails { display:flex; align-items:center; gap:12px; margin-top:4px; }
+.choiceExplanation { min-width:0; flex:1; margin:0; line-height:1.5; }
+.choiceSource { display:inline-flex; align-items:center; flex-shrink:0; min-height:44px; padding:6px 0; color:var(--ink); line-height:1.5; white-space:nowrap; }
+.choiceSource:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+@media(max-width:600px){.choiceOptions[data-options="4"] { grid-template-columns:repeat(2,minmax(0,1fr)); }.choiceOptions button { padding:6px; }}

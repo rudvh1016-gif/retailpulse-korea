@@ -10,7 +10,7 @@ import {AirportTaxRefundGuide} from './airport-tax-refund-guide';
 import {PassengerGuideImage,type PassengerGuideAsset} from './passenger-guide-image';
 import {getPassengerGuideCopy} from './passenger-guide-copy';
 import {DepartureChoiceGroup} from './departure-choice-group';
-import {departureChoiceAssets as assets,departureChoiceCopy} from './departure-choice-copy';
+import {departureChoiceCopy} from './departure-choice-copy';
 import {departureStepOfficialLink} from '../lib/airport-departure-preparation';
 import {travelRecordsCopy} from './travel-records-copy';
 
@@ -31,23 +31,23 @@ export function AirportDeparturePreparation({lang}:{lang:Lang}) {
    <span className={styles.scene} aria-hidden="true"><Image src="/visuals/travel-records/v1/departure.webp" width={960} height={720} unoptimized alt="" priority/></span>
   </summary>{open&&<div className="departure-preparation-body">
    <p className="prep-note">{c.scope}</p><p>{c.intro}</p>
+   <div className={styles.choicePanel}>
+    <DepartureChoiceGroup label={c.route} value={input.route} testId="prep-route" onChange={value=>update('route',value)} description={c.confirm} href={departurePreparationEvidence.AIRPORT.url} linkLabel={c.official}
+     options={(['T1','T2','T1_CONCOURSE','UNKNOWN'] as const).map(value=>({value,label:({T1:c.t1,T2:c.t2,T1_CONCOURSE:c.concourse,UNKNOWN:short.unknown})[value]}))}/>
+    {(['checkedBaggage','taxRefund','dutyFreePickup'] as const).map(key=>{
+     const label=({checkedBaggage:c.baggage,taxRefund:c.tax,dutyFreePickup:c.pickup})[key];
+     const description=input[key]==='UNKNOWN'?short.unsure:({checkedBaggage:input[key]==='YES'?short.bagYes:short.bagNo,taxRefund:input[key]==='YES'?short.taxYes:short.taxNo,dutyFreePickup:input[key]==='YES'?short.pickupYes:short.pickupNo})[key];
+     const href=key==='checkedBaggage'?(input[key]==='NO'?departureStepOfficialLink.SECURITY:departureStepOfficialLink.BAG_DROP):key==='taxRefund'?departurePreparationEvidence.REFUND.url:departurePreparationEvidence.DUTY_FREE.url;
+     return <DepartureChoiceGroup key={key} label={label} value={input[key]} testId={`prep-${key}`} descriptionTestId={key==='checkedBaggage'?'prep-baggage-status':undefined} onChange={value=>update(key,value)} description={description} href={href} linkLabel={c.official}
+      options={(['YES','NO','UNKNOWN'] as const).map(value=>({value,label:value==='YES'?c.yes:value==='NO'?c.no:short.unknown,testId:key==='checkedBaggage'?`prep-baggage-${value}`:undefined}))}/>;
+    })}
+   </div>
    <h3 className="passenger-guide-heading">{g.overview}</h3>
    <ol className="passenger-guide-steps" data-testid="passenger-basic-steps">{basic.map(([asset,detail],index)=><li key={asset}>
     <PassengerGuideImage asset={asset as PassengerGuideAsset}/><h4>{index+1} · {g.titles[index]}</h4><p>{g.sentences[index]}</p>
     <details><summary>{g.details}</summary><p>{detail}</p><a href={departureStepOfficialLink[(['CONFIRM','CHECK_IN','SECURITY','IMMIGRATION','GATE'] as const)[index]]} target="_blank" rel="noreferrer">{c.official} ↗</a></details>
    </li>)}</ol>
    <p className="prep-note" data-testid="passenger-learning-note">{g.learning}</p>
-   <div className={styles.choicePanel}>
-    <DepartureChoiceGroup label={c.route} value={input.route} testId="prep-route" onChange={value=>update('route',value)} description={c.confirm} href={departurePreparationEvidence.AIRPORT.url} linkLabel={c.official}
-     options={(['T1','T2','T1_CONCOURSE','UNKNOWN'] as const).map(value=>({value,label:({T1:c.t1,T2:c.t2,T1_CONCOURSE:c.concourse,UNKNOWN:c.unknown})[value],image:assets[value]}))}/>
-    {(['checkedBaggage','taxRefund','dutyFreePickup'] as const).map(key=>{
-     const label=({checkedBaggage:c.baggage,taxRefund:c.tax,dutyFreePickup:c.pickup})[key];
-     const description=input[key]==='UNKNOWN'?short.unsure:({checkedBaggage:input[key]==='YES'?short.bagYes:short.bagNo,taxRefund:input[key]==='YES'?short.taxYes:short.taxNo,dutyFreePickup:input[key]==='YES'?short.pickupYes:short.pickupNo})[key];
-     const href=key==='checkedBaggage'?(input[key]==='NO'?departureStepOfficialLink.SECURITY:departureStepOfficialLink.BAG_DROP):key==='taxRefund'?departurePreparationEvidence.REFUND.url:departurePreparationEvidence.DUTY_FREE.url;
-     return <DepartureChoiceGroup key={key} label={label} value={input[key]} testId={`prep-${key}`} descriptionTestId={key==='checkedBaggage'?'prep-baggage-status':undefined} onChange={value=>update(key,value)} description={description} href={href} linkLabel={c.official}
-      options={(['YES','NO','UNKNOWN'] as const).map(value=>({value,label:value==='YES'?c.yes:value==='NO'?c.no:c.unknown,image:value==='UNKNOWN'?assets.UNKNOWN:key==='checkedBaggage'?(value==='YES'?assets.checked:assets.carry):key==='taxRefund'?assets.refund:assets.pickup,testId:key==='checkedBaggage'?`prep-baggage-${value}`:undefined}))}/>;
-    })}
-   </div>
    <p className="departure-refund-eligibility" data-testid="prep-refund-eligibility"><strong>{g.optional}</strong> · {g.eligibility} <a href={departurePreparationEvidence.CUSTOMS.url} target="_blank" rel="noreferrer">{c.official} ↗</a></p>
    {!plan.supported?<p data-testid="prep-unknown-route">{c.unknownRoute} <a href={departurePreparationEvidence.AIRPORT.url} target="_blank" rel="noreferrer">{c.official}</a></p>:<>
     {plan.unknown.length>0&&<p data-testid="prep-unknown-choices">{c.unknownNote}</p>}

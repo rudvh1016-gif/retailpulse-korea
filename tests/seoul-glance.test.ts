@@ -2,6 +2,16 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {validGlanceForecasts,freshGlanceObservation,sameGlanceClocks,eventsOnGlanceDay,glancePaymentShares} from '../lib/seoul-glance';
 const now='2026-10-09T10:00:00+09:00';
+
+test('glance uses the existing 40-minute summary contract; 42-minute readings remain delayed',()=>{
+ const observation={observedAt:'2026-10-09T09:22:00+09:00',congestionLevel:1,freshness:'LIVE' as const};
+ const forecast={issuedAt:observation.observedAt,targetAt:'2026-10-09T11:00:00+09:00',congestionLevel:2};
+ assert.equal(freshGlanceObservation(observation,now),true);
+ assert.equal(validGlanceForecasts([forecast],now).length,1);
+ assert.equal(freshGlanceObservation({...observation,observedAt:'2026-10-09T09:18:00+09:00'},now),false);
+ assert.equal(validGlanceForecasts([{...forecast,issuedAt:'2026-10-09T09:18:00+09:00'}],now).length,0);
+ assert.equal(freshGlanceObservation(observation,now,true),false);
+});
 test('official forecasts require a fresh issue and a valid published horizon',()=>{
  const row={targetAt:'2026-10-09T11:00:00+09:00',issuedAt:now,congestionLevel:2};
  assert.equal(validGlanceForecasts([row],now).length,1);
