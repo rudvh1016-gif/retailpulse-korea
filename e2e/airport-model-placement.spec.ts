@@ -20,7 +20,7 @@ test('one moved model follows time filters and exposes exact gate evidence witho
  await expect(register.locator('li[data-gate="271"]')).toHaveCount(0);
  await expect(register.locator('li[data-gate="272"]')).toHaveCount(0);
  await register.locator('summary').focus();await page.keyboard.press('Enter');
- await page.getByTestId('departure-map-section').locator(':scope > summary').click();
+ await expect(page.getByTestId('departure-map-section')).toHaveCount(0);
  const map=page.getByTestId('departure-map');await map.locator('[data-preset=CUSTOM]').click();await map.getByTestId('map-from').selectOption('10');await map.getByTestId('map-to').selectOption('11');
  await expect(model.locator('.airport-concept-counts [data-side=EAST]')).toContainText('0편');
  await expect(model.getByTestId('model-unverified-gate-numbers')).toHaveCount(0);

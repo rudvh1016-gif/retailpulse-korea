@@ -1,22 +1,21 @@
 'use client';
 import {useEffect,useState} from 'react';
 import type {Lang,Terminal} from './retailpulse-data';
-import {useLiveSummary} from './live-signals';
 import {ChangeRate} from './change-rate';
 import {AirportDestinationDailyChanges} from './airport-destination-daily-changes';
 import {MONTH_SCOPES,monthlyCategoryKeys,monthlyMetric,previousFlightMonth,type AirportFlightMonth,type AirportMonthlyRollups,type MonthCounts,type MonthScope} from '../lib/airport-monthly-flights';
 import './airport-monthly-flights.css';
 const t=(lang:Lang,ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
 interface Reply {status:string;month:string;months:string[];calculatedAt:string|null;data:AirportMonthlyRollups|null}
-export function AirportMonthlyFlights({lang,terminal,date}:{lang:Lang;terminal:'all'|Terminal|'CONCOURSE';date:string|null}){
- const summary=useLiveSummary(date),defaultMonth=(date??summary?.serviceDateKst)?.slice(0,7);
+export function AirportMonthlyFlights({lang,terminal,date}:{lang:Lang;terminal:'all'|Terminal|'CONCOURSE';date:string}){
+ const defaultMonth=date.slice(0,7);
  const [chosen,setChosen]=useState<string|null>(null),[retry,setRetry]=useState(0),[state,setState]=useState<{key:string;reply:Reply|null}|null>(null);
  const month=chosen??defaultMonth,scope:MonthScope=terminal==='all'?'ALL':terminal;
  const response=state&&state.key===month?state.reply:undefined;
  useEffect(()=>{if(!month)return;let active=true;const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
   void fetch(`/api/live/airport-months?month=${encodeURIComponent(month)}`,{signal:controller.signal}).then(async result=>result.ok?await result.json() as Reply:null).catch(()=>null).then(reply=>{if(active)setState({key:month,reply:reply?.month===month?reply:null});});
   return()=>{active=false;clearTimeout(timer);controller.abort();};
- },[month,retry,summary?.todayKst]);
+ },[month,retry,date]);
  const current=response?.data?.months.find(value=>value.month===month),previous=response?.data?.months.find(value=>value.month===previousFlightMonth(month??''));
  const fmt=new Intl.NumberFormat({ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'}[lang],{maximumFractionDigits:1});
  const countryNames=new Intl.DisplayNames([lang],{type:'region'});

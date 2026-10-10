@@ -1,7 +1,7 @@
 {
   "base": "65907c971b5e279da48525875df6c972ab998c64",
   "protectedFiles": {
-    "app/[locale]/[slug]/page.tsx": "abccff8db7c692c80ed5c29acd56254a75957c9c4b1b6fe84c744a98047ca57d",
+    "app/[locale]/[slug]/page.tsx": "13cb26587807d4a4618db40253ddf2c350b6fc727ed56690f0a2981ce96969ed",
     "app/[locale]/not-found.tsx": "620e62c747a4a0d4b8af1558492c74e961f2a4f0d55caa2c960c508395a41ff0",
     "app/[locale]/page.tsx": "861f9697b315e6b0b54e1663c4089f4a6a6330d1298acc3066e0e657b6cafb98",
     "app/[locale]/tourism-desk/[area]/page.tsx": "b74c40a03d7ff4ec57a8314f4c11825467212d48634bebf057d078d3ae360b35",
@@ -1323,5 +1323,28 @@
     ],
     "protectedPathCount": 61,
     "approvalEvidenceFile": "docs/approvals/airport-monthly-ci-recovery-20261010.json"
+  },
+  "airportFollowupCiRecovery20261010": {
+    "recordedAt": "2026-10-10T14:16:12.776Z",
+    "authorizationEvidence": {
+      "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "ownerRequest": "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+      "delegatedFollowup": "Parent on 2026-10-10 explicitly directed diagnosis and scoped correction of CI38054654484 failures. The already approved predictions-to-where-to replacement must retain its original locale-preserving redirect.",
+      "approvedProtectedFiles": [
+        "app/[locale]/[slug]/page.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Fix the actual 404 regression introduced by canonical-only sitemap filtering: validate the locale and preserve the existing predictions redirect before canonical page validation. Original Owner UI Lock, request-count limits, all protected paths, prior records and schedules remain unchanged. No merge, deployment, collector dispatch or remote data writes.",
+    "changes": [
+      {
+        "file": "app/[locale]/[slug]/page.tsx",
+        "previous": "abccff8db7c692c80ed5c29acd56254a75957c9c4b1b6fe84c744a98047ca57d",
+        "approved": "13cb26587807d4a4618db40253ddf2c350b6fc727ed56690f0a2981ce96969ed"
+      }
+    ],
+    "protectedPathCount": 61,
+    "approvalEvidenceFile": "docs/approvals/airport-followup-ci-recovery-20261010.json"
   }
 }

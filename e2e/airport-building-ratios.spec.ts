@@ -19,7 +19,7 @@ for(const width of[360,390,430,1280])for(const lang of['ko','en','zh','ja'] as c
  for(const b of boxes){expect(b!.x).toBeGreaterThanOrEqual(frame.x);expect(b!.y).toBeGreaterThanOrEqual(frame.y);expect(b!.x+b!.width).toBeLessThanOrEqual(frame.x+frame.width+1);expect(b!.y+b!.height).toBeLessThanOrEqual(frame.y+frame.height+1);}
  if(width<=600){expect(boxes[1]!.y).toBeGreaterThan(boxes[0]!.y+boxes[0]!.height);expect(boxes[2]!.y).toBeGreaterThan(boxes[1]!.y+boxes[1]!.height);}else expect(boxes[1]!.x).toBeGreaterThan(boxes[0]!.x+boxes[0]!.width);
  if(lang==='ko')await picture.screenshot({path:info.outputPath(`building-ratios-${width}.png`)});
- await page.getByTestId('departure-map-section').locator(':scope > summary').click();const map=page.getByTestId('departure-map');await map.locator('[data-preset=CUSTOM]').click();await map.getByTestId('map-from').selectOption('10');await map.getByTestId('map-to').selectOption('11');
+ const map=page.getByTestId('departure-map');await expect(map).toBeVisible();await expect(page.getByTestId('departure-map-section')).toHaveCount(0);await map.locator('[data-preset=CUSTOM]').click();await map.getByTestId('map-from').selectOption('10');await map.getByTestId('map-to').selectOption('11');
  await expect(model).toHaveAttribute('data-denominator','0');for(const group of await model.locator('.airport-concept-counts').all()){await expect(group).toHaveAttribute('data-denominator','0');await expect(group).not.toContainText('%');}
  await map.locator('[data-preset=DAY]').click();await expect(model).toHaveAttribute('data-denominator','10');expect(reads).toBe(1);expect(errors).toEqual([]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
