@@ -18,7 +18,7 @@
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "5fa7a470a6dcce6cbc819951b4dea3da4305fac55db4bd424ce78c4121b1d62b",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
-    "app/layout.tsx": "92d21b171f415fef9c86bc58396988123d4127e31ed4f218284ef29c6acc9334",
+    "app/layout.tsx": "c4c2506c841712a9b8a46c98f99fdea167df8f32e69cdb39f5a612874d600119",
     "app/live-signals.tsx": "1b5a72bf20d8df0bb66f70ecf588c57da547b66f375e5b3ab72f6292163cae29",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6",
@@ -1304,5 +1304,24 @@
     ],
     "protectedPathCount": 61,
     "approvalEvidenceFile": "docs/approvals/airport-monthly-font-preload-20261010.json"
+  },
+  "ownerApprovedAirportMonthlyCiRecovery20261010": {
+    "recordedAt": "2026-10-10T10:23:40.266Z",
+    "authorizationEvidence": {
+      "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "ownerRequest": "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+      "scope": "Fix browser failures from CI run 38041338089: eagerly load shared city weather and payment scene CSS formerly owned by the newly deferred preparation panel. Remove the extra manual Korean font preload: real Worker HTML already emits the locale-specific ReactDOM hint, unlike the private native Node performance harness. Preserve the existing font preload helper, family, weights and swap policy.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Actual CI failures established missing shared styles and duplicate font hints. Preserve all prior approval records, 61 protected paths and the original UI Lock test. Recovery after confirmed automatic CI timeout is authorized; no deployment or collector action.",
+    "changes": [
+      {
+        "file": "app/layout.tsx",
+        "previous": "92d21b171f415fef9c86bc58396988123d4127e31ed4f218284ef29c6acc9334",
+        "approved": "c4c2506c841712a9b8a46c98f99fdea167df8f32e69cdb39f5a612874d600119"
+      }
+    ],
+    "protectedPathCount": 61,
+    "approvalEvidenceFile": "docs/approvals/airport-monthly-ci-recovery-20261010.json"
   }
 }

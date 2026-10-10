@@ -20,7 +20,7 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`owner rate signs and decr
  await page.setViewportSize({width:390,height:900});await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
  await page.route('**/api/live/commercial-months*',route=>route.fulfill({json:{status:'READY',area:'myeongdong',month:'2026-08',months:['2026-08'],data:comparison}}));
  await page.goto(`/${lang}/consumption`);
- if(lang==='ko')await expect(page.locator('.consumption-comparison')).toContainText('전월 대비 신장률 · 같은 일자·시간 기준');
+ if(lang==='ko')await expect(page.locator('.comparison-basis')).toContainText('10분 결제 관측값의 평균 · 같은 날짜번호·시간끼리 비교');
  const decrease=page.locator('[data-category="한식"] .consumption-category-title strong');
  await expect(decrease).toHaveText('△50.0%');await expect(decrease.locator('span')).toHaveAttribute('aria-label',new RegExp({ko:'감소.*역신장',en:'decrease',zh:'下降',ja:'減少'}[lang]));
  await expect(decrease.getByRole('img')).toHaveAccessibleName(new RegExp({ko:'감소.*역신장',en:'decrease',zh:'下降',ja:'減少'}[lang]));

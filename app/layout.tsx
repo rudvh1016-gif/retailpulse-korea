@@ -3,6 +3,8 @@ import { headers } from "next/headers";
 import "./globals.css";
 import "./airport-date-calendar.css";
 import './airport-models.css';
+import './seoul-weather-scenes.css';
+import './commercial-scenes.css';
 import { isStagingDeployment, pageTitle, pageDescription, siteOrigin, socialImage, shareDescription } from "./seo-config";
 
 export const metadata: Metadata = {
@@ -51,10 +53,6 @@ export default async function RootLayout({
   const documentLanguage = supportedDocumentLanguages.has(requestedLanguage) ? requestedLanguage : "ko";
   return (
     <html lang={documentLanguage} suppressHydrationWarning>
-      <head>
-        {/* Emit the used font hint in HTML: the RSC preload call did not reach the built head. */}
-        {documentLanguage==='ko'&&<link rel="preload" href="/fonts/koretail-sans-variable.woff2" as="font" type="font/woff2" crossOrigin="anonymous"/>}
-      </head>
       <body>
         {children}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({

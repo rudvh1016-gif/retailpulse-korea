@@ -1,0 +1,19 @@
+{
+  "recordedAt": "2026-10-10T10:23:40.266Z",
+  "authorizationEvidence": {
+    "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+    "ownerRequest": "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+    "scope": "Fix browser failures from CI run 38041338089: eagerly load shared city weather and payment scene CSS formerly owned by the newly deferred preparation panel. Remove the extra manual Korean font preload: real Worker HTML already emits the locale-specific ReactDOM hint, unlike the private native Node performance harness. Preserve the existing font preload helper, family, weights and swap policy.",
+    "agentMergeOrDeploymentApproved": false
+  },
+  "reason": "Actual CI failures established missing shared styles and duplicate font hints. Preserve all prior approval records, 61 protected paths and the original UI Lock test. Recovery after confirmed automatic CI timeout is authorized; no deployment or collector action.",
+  "changes": [
+    {
+      "file": "app/layout.tsx",
+      "previous": "92d21b171f415fef9c86bc58396988123d4127e31ed4f218284ef29c6acc9334",
+      "approved": "c4c2506c841712a9b8a46c98f99fdea167df8f32e69cdb39f5a612874d600119"
+    }
+  ],
+  "protectedPathCount": 61,
+  "approvalEvidenceFile": "docs/approvals/airport-monthly-ci-recovery-20261010.json"
+}
