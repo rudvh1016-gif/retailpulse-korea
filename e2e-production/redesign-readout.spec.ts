@@ -48,19 +48,19 @@ for (const locale of ["ko", "en", "zh", "ja"] as const) {
     test(`live redesign reads correctly · ${locale} · ${viewport.name}`, async ({ page }, info) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
 
-      // Airport: the three-cell grid.
+      // Airport: the approved model carries the three zone counts for each building.
       await page.goto(`/${locale}/airport`);
       await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
-      const strip = page.locator(".airport-glance-strip").first();
+      const strip = page.getByTestId('airport-departure-model-slot');
       await expect(strip).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
-      const cells = await strip.locator("> div").evaluateAll(els => els.map(el => ({
-        label: (el.querySelector("dt")?.textContent ?? "").trim(),
-        value: (el.querySelector("dd")?.textContent ?? "").trim(),
-        band: (el.querySelector("dd small")?.textContent ?? "").trim(),
+      await expect.poll(()=>strip.locator('.airport-concept-counts > div').count(),{timeout:30_000}).toBeGreaterThan(0);
+      const cells = await strip.locator('.airport-concept-counts > div').evaluateAll(els => els.map(el => ({
+        label: (el.querySelector('.airport-concept-zone-name')?.textContent ?? '').trim(),
+        value: (el.querySelector('strong')?.textContent ?? '').trim(),
       })));
       console.log(`GLANCE ${locale} ${viewport.name} ${JSON.stringify(cells)}`);
-      expect(cells.length, "the grid must carry its three questions").toBe(3);
+      expect(cells.length, 'confirmed zone counts or an explicit pending state').toBeGreaterThan(0);
       for (const cell of cells) {
         expect(cell.label.length, "every cell names what it is").toBeGreaterThan(0);
         // Never an empty value. A cell with no data says so in words
@@ -69,23 +69,7 @@ for (const locale of ["ko", "en", "zh", "ja"] as const) {
         expect(cell.value.length, `${cell.label} must answer or say it cannot`).toBeGreaterThan(0);
       }
 
-      const support = await page.locator(".airport-current-brief .airport-near-term")
-        .evaluateAll(els => els.map(el => (el.textContent ?? "").trim()));
-      console.log(`SUPPORT ${locale} ${viewport.name} ${JSON.stringify(support)}`);
-      // The removed line restated the grid's first cell. Guard its return by the
-      // current hour's BAND, never by its count: two bands legitimately carry the
-      // same number — the next hour IS the peak through most of a morning ramp —
-      // so comparing figures would fail a correct screen at a predictable time of
-      // day. The band is unique to this cell: the supporting line's "next" band is
-      // by construction the following one, and the rest-of-day line carries a bare
-      // clock time, not a band. Skipped when there is no current hour to restate.
-      const nowBand = (cells[0]?.band ?? "").replace(/\s*KST\s*$/, "");
-      if (nowBand) {
-        for (const line of support) {
-          expect(line.includes(nowBand),
-            `a supporting line restates the grid's current-hour band ${nowBand}`).toBe(false);
-        }
-      }
+      await expect(page.locator('.airport-glance-strip, .airport-near-term, .airport-upcoming-peak')).toHaveCount(0);
 
       // The executive brief's own order, read from the live page (2026-09-14).
       // The sum leads, is shown as arithmetic, and carries its limitation; the
@@ -181,7 +165,7 @@ for (const locale of ["ko", "en", "zh", "ja"] as const) {
       } else {
         console.log(`MTD ${locale} ${viewport.name} "absent"`);
       }
-      expect(await overflowing(page, ".airport-glance-strip *"), "no clipped cell").toEqual([]);
+      expect(await overflowing(page, '.airport-concept-counts *'), 'no clipped model value').toEqual([]);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.screenshot({ path: info.outputPath(`airport-${locale}-${viewport.name}.png`) });
 

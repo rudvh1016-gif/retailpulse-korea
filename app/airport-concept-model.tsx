@@ -40,7 +40,7 @@ export function AirportConceptModel({ map, lang, evidence }: { map: DepartureMap
     })}
     </AirportSceneModel>
     <div className="airport-concept-ranges">{(['WEST', 'CENTER', 'EAST'] as const).map(side => <div key={side} data-side={side}>{copy.side[side][lang]}<span className="airport-concept-gate-range" data-testid={`zone-range-${side}`}>{ranges(side)}</span></div>)}</div>
-    <p className="prep-note" data-testid="model-zone-note">{{ko:'동·서·중앙은 코리테일 분류 기준입니다.',en:'East, west and central zones use KORETAIL classification.',zh:'东、西、中央区域按KORETAIL标准划分。',ja:'東・西・中央はKORETAILの分類基準です。'}[lang]}</p>
+    <p className="prep-note" data-testid="model-zone-note">{{ko:'동·서·중앙 구역 이름: 인천공항공사 위치 안내 기준 · 비율: 항공편 기준',en:'East / west / centre names: Incheon Airport location guidance · shares: flights',zh:'东／西／中央名称：仁川机场公社位置说明 · 比例：航班',ja:'東・西・中央の名称：仁川空港公社の位置案内 · 割合：便数'}[lang]}</p>
     <AirportGateRegionRegister scope={scope} lang={lang}>
       <p className="prep-note" data-testid="model-share-basis">{text.concept} {text.basis} ({denominator}{unit}) {text.rounding}</p>
       {perBuilding && <p className="prep-note" data-testid="model-building-share-basis">{{ko:'각 그림의 비율은 해당 건물의 전체 출발편 기준이며 위치 미확인 편을 포함합니다. 건물 미정은 어느 그림에도 배정하지 않습니다.',en:'Each picture uses its own building’s total departures, including unverified zones. Unknown buildings are not assigned to a picture.',zh:'每幅图的比例以该建筑的全部出发航班为分母，包含位置未确认航班。建筑未定航班不分配到任何图中。',ja:'各図の割合はその建物の全出発便が分母で、位置未確認便も含みます。建物未定の便は各図に割り当てません。'}[lang]} {buildings.map(building => `${copy.building[building][lang]} ${perBuilding[building].total}${unit}`).join(' · ')}</p>}

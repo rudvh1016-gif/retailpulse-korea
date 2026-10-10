@@ -35,10 +35,11 @@ export type SeoLocale = typeof seoLocales[number];
  * out of this list because its indexable pages have an additional area
  * segment; the old flat URL is a permanent redirect, not duplicate content.
  */
-export const standaloneSeoSlugs = ["myeongdong", "hongdae", "seongsu", "itaewon", "airport", "forecast", "predictions", "where-to", "consumption", "business", "about", "more"] as const;
+export const standaloneSeoSlugs = ["myeongdong", "hongdae", "seongsu", "itaewon", "airport", "forecast", "where-to", "consumption", "business", "about", "more"] as const;
 export const tourismDeskAreas = ["myeongdong", "hongdae", "seongsu", "itaewon"] as const;
 export type TourismDeskArea = typeof tourismDeskAreas[number];
-export const seoSlugs = [...standaloneSeoSlugs, "tourism-desk"] as const;
+// The old predictions URL remains a locale-preserving redirect; advertise only canonical pages.
+export const seoSlugs = [...standaloneSeoSlugs, "predictions", "tourism-desk"] as const;
 export type SeoSlug = typeof seoSlugs[number];
 
 const names = {

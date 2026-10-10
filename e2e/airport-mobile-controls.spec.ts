@@ -24,12 +24,15 @@ for (const width of [320,390,430]) test(`airport mobile selectors and gate text 
   await expect(top.getByRole('tab').first()).toHaveAttribute('aria-selected','true');
   const overview=page.getByTestId('airport-departure-overview');
   await overview.scrollIntoViewIfNeeded();
-  const map=overview.getByTestId('departure-map');
-  await overview.getByTestId('departure-map-section').locator(':scope > summary').click();
-  const buildingTabs=map.locator(':scope > .terminal-selector button');
-  await expect(buildingTabs.first()).toContainText('T1·T2·탑승동');
+  const map=page.getByTestId('departure-map');
+  await expect(map).toBeVisible();
+  await expect(overview.getByTestId('departure-map-section')).toHaveCount(0);
+  await expect(map.locator(':scope > .terminal-selector')).toHaveCount(0);
+  const buildingTabs=top.getByRole('tab');
+  await expect(buildingTabs.first()).toContainText('T1·T2');
   await expect(buildingTabs.last()).toHaveText('탑승동');
-  expect(await buildingTabs.last().evaluate(el=>getComputedStyle(el).whiteSpace)).toBe('nowrap');
+  const label=await buildingTabs.last().evaluate(el=>{const range=document.createRange();range.selectNodeContents(el);const text=range.getBoundingClientRect(),button=el.getBoundingClientRect();return {lines:range.getClientRects().length,textWidth:text.width,buttonWidth:button.width};});
+  expect(label.lines).toBe(1);expect(label.textWidth).toBeLessThanOrEqual(label.buttonWidth);
   expect((await buildingTabs.last().boundingBox())!.height).toBeLessThanOrEqual(44);
 
   const zones=page.getByTestId('map-zone-countries');
@@ -38,11 +41,13 @@ for (const width of [320,390,430]) test(`airport mobile selectors and gate text 
   for (const [index,count] of [[1,1],[2,1],[3,1],[0,4]] as const) {
     await buildingTabs.nth(index).focus();
     await page.keyboard.press('Space');
-    await expect(buildingTabs.nth(index)).toHaveAttribute('aria-pressed','true');
+    await expect(buildingTabs.nth(index)).toHaveAttribute('aria-selected','true');
     await expect.poll(total).toBe(count);
+    if(index===3)await expect(page.getByTestId('concourse-unsupported')).toBeVisible();
   }
 
   const presets=map.locator(':scope > .date-nav-shortcuts button');
+  await expect(presets).toHaveText(['하루 전체','1시간','3시간','6시간','직접 선택']);
   await presets.nth(1).click();
   await expect(presets.nth(1)).toHaveAttribute('aria-pressed','true');
   await presets.last().click();
@@ -52,11 +57,9 @@ for (const width of [320,390,430]) test(`airport mobile selectors and gate text 
   await expect.poll(total).toBe(0);
   if (width===320) {
     // Read one layout frame: separate protocol calls can straddle the browser's scroll adjustment.
-    const boxes=await presets.evaluateAll(buttons=>buttons.map(button=>({y:button.getBoundingClientRect().y})));
-    expect(boxes[0]!.y).toBe(boxes[1]!.y);
-    expect(boxes[1]!.y).toBe(boxes[2]!.y);
-    expect(boxes[3]!.y).toBe(boxes[4]!.y);
-    expect(boxes[3]!.y).toBeGreaterThan(boxes[0]!.y);
+    const boxes=await presets.evaluateAll(buttons=>buttons.map(button=>{const b=button.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,height:b.height};}));
+    for(const box of boxes){expect(box.x).toBeGreaterThanOrEqual(0);expect(box.right).toBeLessThanOrEqual(width);expect(box.height).toBeGreaterThanOrEqual(48);}
+    expect(boxes.at(-1)!.y).toBeGreaterThan(boxes[0]!.y);
   }
 
   await expect(page.locator('.gate-leader-zones > section[data-side="UNVERIFIED"]')).toHaveCount(0);
@@ -86,8 +89,9 @@ for (const lang of ['en','zh','ja'] as const) test(`building labels remain conta
   await page.route('**/api/live/summary*',route=>route.fulfill({json:SUMMARY_FIXTURE}));
   await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',basis:'OFFICIAL_DEPARTURE_SCHEDULE',flights,truncated:false,retrievedAt:base.retrievedAt}}));
   await page.goto(`/${lang}/airport`);
-  const map=page.getByTestId('airport-departure-overview').getByTestId('departure-map');
-  await page.getByTestId('airport-departure-overview').getByTestId('departure-map-section').locator(':scope > summary').click();
-  await expect(map.locator(':scope > .terminal-selector button').last()).toBeVisible();
+  const map=page.getByTestId('departure-map');
+  await expect(map).toBeVisible();
+  await expect(map.locator(':scope > .terminal-selector')).toHaveCount(0);
+  await expect(page.locator('.airport-view > .terminal-selector').getByRole('tab').last()).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });

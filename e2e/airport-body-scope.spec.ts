@@ -35,31 +35,34 @@ for(const lang of ['ko','en','zh','ja'])test(`airport body stays airport-only an
  }
 });
 
-for(const width of [320,390,430,1280])test(`one zone summary survives closed map details and selected hours ${width}`,async({page},info)=>{
+for(const width of [320,390,430,1280])test(`one zone summary survives closed source details and selected hours ${width}`,async({page},info)=>{
  await page.setViewportSize({width,height:900});
  let reads=0;page.on('request',request=>{if(new URL(request.url()).pathname==='/api/live/flights')reads++;});
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
  await page.goto('/ko/airport?terminal=T2');
  const overview=page.getByTestId('airport-departure-overview');
- const details=overview.getByTestId('departure-map-section'),summary=details.locator(':scope > summary');
- const model=page.getByTestId('airport-concept-model'),map=overview.getByTestId('departure-map');
+ const model=page.getByTestId('airport-concept-model'),map=page.getByTestId('departure-map');
+ const details=map.getByTestId('map-counting-basis'),summary=details.locator(':scope > summary');
  await expect(model).toHaveAttribute('data-denominator','3');
  await expect(model).toBeVisible();
  await expect(overview.getByTestId('flight-split')).toHaveCount(0);
  await expect(details).not.toHaveAttribute('open','');
- await expect(summary.locator('[aria-hidden=true]')).toHaveText('+');
- await expect(map).not.toBeVisible();
+ await expect(overview.getByTestId('departure-map-section')).toHaveCount(0);
+ await expect(map).toBeVisible();
+ await expect(map.getByTestId('map-counts')).not.toBeVisible();
  await summary.scrollIntoViewIfNeeded();
  expect((await summary.boundingBox())!.height).toBeGreaterThanOrEqual(44);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:info.outputPath(`airport-details-closed-${width}.png`)});
  await summary.focus();await page.keyboard.press('Enter');
  await expect(map).toBeVisible();
- await expect(summary.locator('[aria-hidden=true]')).toHaveText('−');
+ await expect(details).toHaveAttribute('open','');
+ await expect(map.getByTestId('map-counts')).toBeVisible();
  await expect(summary).toBeFocused();
  expect(await summary.evaluate(el=>getComputedStyle(el).outlineStyle)).not.toBe('none');
  await map.locator('[data-preset="NEXT3"]').click();
  await expect(model).toHaveAttribute('data-denominator','2');
+ await expect(map.getByTestId('model-whole-day')).toContainText('3편');
  await expect(map.getByTestId('map-counts')).toContainText('서편 0편');
  await expect(map.getByTestId('map-counts')).toContainText('동편 1편');
  await expect(map.getByTestId('map-counts')).toContainText('중앙 1편');
@@ -68,7 +71,9 @@ for(const width of [320,390,430,1280])test(`one zone summary survives closed map
  await expect(map.getByTestId('map-flights')).toBeVisible();
  await page.screenshot({path:info.outputPath(`airport-details-open-${width}.png`)});
  await summary.focus();await page.keyboard.press('Space');
- await expect(map).not.toBeVisible();
+ await expect(details).not.toHaveAttribute('open','');
+ await expect(map.getByTestId('map-counts')).not.toBeVisible();
+ await expect(map).toBeVisible();
  await expect(model).toHaveAttribute('data-denominator','2');
  await expect(model).toBeVisible();
  await summary.tap();

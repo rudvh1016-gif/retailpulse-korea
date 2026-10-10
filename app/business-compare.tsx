@@ -5,7 +5,7 @@ import type { Lang } from './retailpulse-data';
 import type { PrepArea, PrepPlace } from '../lib/business-prep';
 import type { UsualComparison } from '../lib/usual-comparison';
 import { LAST_CHECK_KEY, diffSnapshots, findPrevious, parseLedger, withSnapshot, type CheckSnapshot } from '../lib/last-check';
-import { changeLine, compareCopy, lastCheckHeadline, usualDetail, usualHeadline } from '../lib/compare-copy';
+import { changeLine, compareCopy, lastCheckHeadline, usualDetail, usualHeadlineParts } from '../lib/compare-copy';
 import { prepCopy } from '../lib/business-prep-copy';
 import styles from './compact-disclosure.module.css';
 
@@ -53,7 +53,7 @@ export function UsualComparisonBlock({ lang, place, today }: { lang: Lang; place
   else if (result === undefined) body = <p className="prep-note" role="status">{prepCopy.loading[lang]}</p>;
   else if (result === null) body = <p className="prep-note">{compareCopy.unavailable[lang]}</p>;
   else body = <>
-    <p className="prep-compare-headline" data-testid="usual-headline" data-basis={result.basis} data-verdict={result.verdict ?? ''}>{usualHeadline(result, lang)}</p>
+    <p className="prep-compare-headline" style={{fontWeight:'var(--weight-regular)'}} data-testid="usual-headline" data-basis={result.basis} data-verdict={result.verdict ?? ''}>{usualHeadlineParts(result, lang).map((part, index) => part.emphasis ? <strong key={index} style={{fontWeight:'var(--weight-strong)',fontVariantNumeric:'tabular-nums'}}>{part.text}</strong> : part.text)}</p>
     {result.basis !== 'NO_CURRENT' && <details className="prep-evidence"><summary>{prepCopy.evidence[lang]}</summary>
       <ul className="prep-compare-detail">{usualDetail(result, lang).map((line, index) => <li key={index}>{line}</li>)}</ul>
     </details>}

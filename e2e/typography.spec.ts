@@ -766,6 +766,11 @@ test("no Korean line ever breaks in the middle of a word", async ({ page }) => {
     ".section-intro",
     ".airport-arrival-brief h2",
     ".airport-arrival-current",
+    ".airport-current-brief > p",
+    ".airport-current-brief .prep-note",
+    ".passenger-scope-note",
+    "[data-testid=model-whole-day] > strong",
+    "[data-testid=model-selected-window] > strong",
     ".context-environment small",
     ".holiday-context small",
   ].join(", ");

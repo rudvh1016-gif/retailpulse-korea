@@ -31,8 +31,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function LocalePage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug } = await params;
-  if (!seoLocales.includes(locale as SeoLocale) || !standaloneSeoSlugs.includes(slug as typeof standaloneSeoSlugs[number])) notFound();
+  if (!seoLocales.includes(locale as SeoLocale)) notFound();
   if(slug==='predictions')permanentRedirect(`/${locale}/where-to`);
+  if (!standaloneSeoSlugs.includes(slug as typeof standaloneSeoSlugs[number])) notFound();
   const isArea = areaSlugs.includes(slug as typeof areaSlugs[number]);
   const view = isArea ? "today" : slug as "where-to" | "consumption" | "forecast" | "airport" | "business" | "about" | "more";
   const area = isArea ? slug as typeof areaSlugs[number] : "myeongdong";

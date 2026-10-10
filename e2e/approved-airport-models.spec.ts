@@ -65,7 +65,7 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [320,390,430,1280]) 
     expect(requests).toHaveLength(1);
     await model.getByTestId('gate-all-list').locator('summary').click();
     await page.getByTestId('airport-departure-overview').scrollIntoViewIfNeeded();
-    const overview=page.getByTestId('airport-departure-overview');
+    const overview=page.getByTestId('departure-map');
     await expect(page.getByTestId('airport-concept-model')).toContainText('T2');
     const img=page.getByTestId('airport-departure-model-slot').locator('.airport-concept-picture img');
     await expect.poll(()=>img.evaluate((el:HTMLImageElement)=>el.complete&&el.naturalWidth>0)).toBe(true);
@@ -76,10 +76,9 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [320,390,430,1280]) 
     await expect(img).toHaveAttribute('width','1784');await expect(img).toHaveAttribute('height','1073');
     await expect(overview.getByTestId('map-groups')).toHaveCount(0);
     await expect(overview.getByTestId('map-T2')).toHaveCount(0);
-    await overview.getByTestId('departure-map-section').locator(':scope > summary').click();
+    await overview.getByTestId('map-counting-basis').locator(':scope > summary').click();
     await overview.getByTestId('map-destinations').locator('summary').click();
     await expect(overview.getByTestId('map-groups')).toBeVisible();
-    await overview.getByTestId('map-counting-basis').locator(':scope > summary').click();
     await overview.getByTestId('map-official-coordinates').locator('summary').click();
     await expect(overview.getByTestId('map-T2')).toBeVisible();
     await expect(model.locator('a[href="https://www.airport.kr/geomap/ap_ko/view.do"]')).toHaveCount(1);

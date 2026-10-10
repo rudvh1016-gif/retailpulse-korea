@@ -1,0 +1,34 @@
+{
+  "recordedAt": "2026-10-10T12:49:25.872Z",
+  "authorizationEvidence": {
+    "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+    "ownerRequests": [
+      "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+      "첫 진입 하루 전체; 오늘 전체 편수와 선택 시간 편수 분리",
+      "중복 출발편 동·서편과 목적지 지역 섹션 삭제",
+      "국가별 항공편 · 전월 대비 일평균을 집계 기준 위에 표시"
+    ],
+    "delegatedScope": "Explicit owner follow-ups relayed by parent: population indicator/numeric emphasis, truthful airport provenance, upper-model time controls and whole-day totals, country×side monthly means. Fix stale canonical sitemap entry discovered after the already approved predictions→where-to menu replacement.",
+    "approvedProtectedFiles": [
+      "app/retailpulse-app.tsx",
+      "app/seo-config.ts"
+    ],
+    "keepProtectedListAndEnforcement": true,
+    "agentMergeOrDeploymentApproved": false
+  },
+  "reason": "Normal scoped approval bookkeeping: remove the duplicate lower jump and move the already approved monthly mount into the top model; stop advertising a permanent redirect as a canonical page. Keep all protected paths, prior approval history, original UI Lock test and cron expressions. No deployment, migration, collector dispatch or provider activation.",
+  "changes": [
+    {
+      "file": "app/retailpulse-app.tsx",
+      "previous": "d84285927eae08ba202c901da0e268423b083385140cfb265b137c220be859c5",
+      "approved": "b084858757d1506dcb1bf037689750ed91f6442b85a8a38f92445f127f952d1a"
+    },
+    {
+      "file": "app/seo-config.ts",
+      "previous": "48c26a8642d0dae4ebea5988064ffaf58611b9982d5d06f5ee0593d6416234b8",
+      "approved": "5b91fc95b4a6151e6cd53251cc4b34739b10256471759da01dc52c35b390779a"
+    }
+  ],
+  "protectedPathCount": 61,
+  "approvalEvidenceFile": "docs/approvals/airport-followup-20261010.json"
+}

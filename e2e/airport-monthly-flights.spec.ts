@@ -1,21 +1,24 @@
 import {test,expect} from '@playwright/test';
 import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
-import {buildAirportFlightMonth,type MonthFlightRow} from '../lib/airport-monthly-flights';
+import {AIRPORT_MONTH_VERSION,buildAirportFlightMonth,type MonthFlightRow} from '../lib/airport-monthly-flights';
 import {AIRPORT_SIDES_VERSION} from '../lib/airport-sides';
 import {DESTINATIONS_VERSION} from '../lib/airport-destinations';
 const row=(day:string,id:string,terminal:string,gate:string):MonthFlightRow=>({physicalFlightId:id,terminal,gate,operatingFlight:'KE703',airportCode:'NRT',status:'scheduled',scheduledAt:day+'T09:00:00+09:00',retrievedAt:day+'T01:00:00Z'});
 const summary={...SUMMARY_FIXTURE,todayKst:'2026-10-10',serviceDateKst:'2026-10-10',generatedAt:'2026-10-10T01:00:00Z',airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:'2026-10-10'}};
-const reply=(month='2026-10')=>({status:'READY',month,months:['2026-10','2026-09'],calculatedAt:'2026-10-10T01:00:00Z',data:{version:1,asOf:'2026-10-10',sidesVersion:AIRPORT_SIDES_VERSION,destinationsVersion:DESTINATIONS_VERSION,months:[
+const reply=(month='2026-10')=>({status:'READY',month,months:['2026-10','2026-09'],calculatedAt:'2026-10-10T01:00:00Z',data:{version:AIRPORT_MONTH_VERSION,asOf:'2026-10-10',sidesVersion:AIRPORT_SIDES_VERSION,destinationsVersion:DESTINATIONS_VERSION,months:[
  buildAirportFlightMonth('2026-10','2026-10-10',[row('2026-10-01','a','T2','274'),row('2026-10-01','b','T2','274'),row('2026-10-01','c','CONCOURSE','110')],new Set(['2026-10-01'])),
  buildAirportFlightMonth('2026-09','2026-10-10',[row('2026-09-01','d','T2','231'),row('2026-09-02','e','T2','274')],new Set(['2026-09-01','2026-09-02']))]}});
-for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430,1280])test(`daily-mean scope, complete lists and keyboard ${lang} ${width}`,async({page})=>{
+for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430,1280])test(`daily-mean scope, complete lists and keyboard ${lang} ${width}`,async({page},info)=>{
  await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
  await page.route('**/api/live/summary*',routeSummary(summary));await page.route('**/api/live/airport-months*',route=>route.fulfill({json:reply()}));
  await page.goto(`/${lang}/airport`);const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();
  await expect(section).toContainText('2026-09-01–2026-09-30');await expect(section).toContainText('2/30');await expect(section).toContainText('1/9');
  await expect(section).toContainText('+200.0%');
- await section.locator('details').nth(1).locator('summary').focus();await page.keyboard.press('Enter');await expect(section.locator('details').nth(1)).toHaveAttribute('open','');
- await expect(section.locator('details').nth(1).locator('tbody tr')).toHaveCount(1);
+ await expect(section.getByTestId('destination-daily-changes')).toBeVisible();
+ await expect(section.getByTestId('country-side-rates')).toHaveCount(1);
+ if(lang==='ko'&&width===390){await section.evaluate(el=>window.scrollTo(0,window.scrollY+el.getBoundingClientRect().top-180));await page.screenshot({path:info.outputPath('monthly-cross-fixture-390.png')});}
+ const countries=section.getByTestId('month-list-destinationCountries');await countries.locator('summary').focus();await page.keyboard.press('Enter');await expect(countries).toHaveAttribute('open','');
+ await expect(countries.locator('tbody tr')).toHaveCount(1);
  for(let repeat=0;repeat<2;repeat++){await page.getByRole('tab',{name:'T1',exact:true}).click();await page.getByRole('tab',{name:'T2',exact:true}).click();await expect(section).toContainText('+100.0%');}
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
 });
