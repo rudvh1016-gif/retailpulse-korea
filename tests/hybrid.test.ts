@@ -9,6 +9,7 @@ import { normalizeAirportFlight } from "../lib/source-adapters";
 import { readCloudflareConfig, validateCloudflareEnvironment } from "../scripts/validate-cloudflare-environment.mjs";
 import { PRODUCTION_CRONS, WORKERS_FREE_CRON_TRIGGER_LIMIT } from "../lib/realtime-dispatch";
 import { RETRYABLE_A4_SOURCES } from "../lib/congestion-retry";
+import { expandRealtimeCadence } from './helpers/realtime-cycle.mjs';
 
 test("semantic flight hash ignores retrieval time and unknown volatile fields", async () => {
   const base = { flightId: "KE703", scheduleDateTime: "202608251430", terminalid: "2", gate: "231", remark: "정상" };
@@ -215,6 +216,7 @@ function resolveSourceExpression(value: string): string[] {
 }
 
 function declaredSources(workflow: string): string[] {
+  workflow = expandRealtimeCadence(workflow);
   const declarations = [...workflow.matchAll(/^\s*(?:RPK_PRODUCTION_SOURCES|sources): (.+)$/gm)]
     .flatMap((match) => match[1].split(",").map((value) => value.trim()))
     .filter(Boolean)
@@ -401,7 +403,7 @@ test("Cloudflare is the single authoritative REALTIME scheduler and GitHub stays
   assert.doesNotMatch(realtime, /- cron:/, "no GitHub cron expression may remain in the realtime workflow");
   assert.match(realtime, /^\s*workflow_dispatch:/m, "the Cloudflare trigger dispatches this workflow, so it must stay dispatchable");
   // Collection semantics are untouched by activation: same three sources.
-  assert.match(realtime, /RPK_PRODUCTION_SOURCES: airport_congestion,airport_congestion_t2,seoul_realtime/);
+  assert.match(expandRealtimeCadence(realtime), /RPK_PRODUCTION_SOURCES: airport_congestion,airport_congestion_t2,seoul_realtime/);
 });
 
 test("Cloudflare is the single authoritative FORECAST scheduler and GitHub stays dispatchable", () => {
@@ -576,7 +578,7 @@ test("the realtime retry can never schedule a source its own cadence group does 
   // already declares, that new source would be running on a cadence nobody
   // reviewed.
   const workflow = await readFile(new URL("../.github/workflows/collect-realtime.yml", import.meta.url), "utf8");
-  const primary = [...workflow.matchAll(/^\s*RPK_PRODUCTION_SOURCES: (.+)$/gm)]
+  const primary = [...expandRealtimeCadence(workflow).matchAll(/^\s*RPK_PRODUCTION_SOURCES: (.+)$/gm)]
     .flatMap((match) => match[1].split(",").map((value) => value.trim()));
   for (const source of RETRYABLE_A4_SOURCES) {
     assert.ok(primary.includes(source), `${source} may be retried but is not collected by the realtime group`);

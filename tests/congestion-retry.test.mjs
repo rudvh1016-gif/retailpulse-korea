@@ -161,7 +161,7 @@ test("only allowlisted source names can ever reach the retry job", () => {
 
 // ── The workflow must actually use the decision ────────────────────────────
 
-const realtime = await readFile(new URL("../.github/workflows/collect-realtime.yml", import.meta.url), "utf8");
+const realtime = await readFile(new URL("../.github/workflows/collect-realtime-cycle.yml", import.meta.url), "utf8");
 const attempt = await readFile(new URL("../.github/workflows/collect-attempt.yml", import.meta.url), "utf8");
 
 test("the collect job publishes the decision and the retry job is gated on it", () => {
@@ -201,7 +201,7 @@ test("the shared attempt policy is unchanged for every other caller", async () =
   const files = await readdir(dir);
   const callers = [];
   for (const file of files) {
-    if (file === "collect-realtime.yml" || file === "collect-attempt.yml") continue;
+    if (file === "collect-realtime.yml" || file === "collect-realtime-cycle.yml" || file === "collect-attempt.yml") continue;
     const body = await readFile(new URL(file, dir), "utf8");
     if (body.includes("collect-attempt.yml")) callers.push([file, body]);
   }

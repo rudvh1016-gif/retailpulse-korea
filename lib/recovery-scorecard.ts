@@ -59,6 +59,9 @@ export function currentActionFor(failureClass:string):string {
  */
 export function shadowCandidatesFor(sourceId:string,failureClass:string,
   supportedActions:(sourceId:string)=>readonly string[]):string[] {
+  // A1 approval is one fixed missing-slot direct operation, never a generic
+  // policy candidate for STALE or another failure/adapter/job.
+  if(sourceId==='INCHEON_FLIGHT_DETAIL')return [];
   const current=currentActionFor(failureClass);
   return supportedActions(sourceId).filter(action=>action!==current&&action!=='NONE').sort();
 }

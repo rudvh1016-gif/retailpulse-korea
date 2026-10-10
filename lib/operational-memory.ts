@@ -153,7 +153,7 @@ export class OperationalMemory {
       executionId: String(row.execution_id), startedAt: String(row.started_at) }));
   }
 
-  async admit(request: AttemptRequest): Promise<{ admitted: boolean; attemptId: string; state: string; reason: string }> {
+  async admit(request: AttemptRequest, limits: { maxAttempts?: number } = {}): Promise<{ admitted: boolean; attemptId: string; state: string; reason: string }> {
     const {parts}=request;
     Object.values(parts).forEach(identity); identity(request.operation); identity(request.scheduledSlot); identity(request.runId);
     if(!/^\d{4}-\d{2}-\d{2}$/.test(request.targetDate)) throw new Error('invalid_recovery_date');
@@ -173,6 +173,10 @@ export class OperationalMemory {
     const used=await this.db.prepare(`SELECT COUNT(*) AS n FROM operational_recovery_attempts
       WHERE source_id=? AND logical_job=? AND target_date=? AND mode='CONTROLLED'`).bind(parts.sourceId,parts.logicalJob,request.targetDate).first<{n:number}>();
     const decision=decideRecovery(parts.failureClass,used?.n??0);
+    // A source-specific adapter may narrow the closed rule, never expand it.
+    if(limits.maxAttempts!==undefined&&(!Number.isSafeInteger(limits.maxAttempts)||limits.maxAttempts<1))
+      throw new Error('invalid_recovery_attempt_limit');
+    const maxAttempts=Math.min(decision.maxAttempts,limits.maxAttempts??decision.maxAttempts);
     const reject=async(reason:string)=>{
       await this.recordEvent({parts,kind:'HUMAN_REVIEW',runId:request.runId,at,evidence:reason});
       return {admitted:false,attemptId,state:'HUMAN_REVIEW_REQUIRED',reason};
@@ -188,7 +192,7 @@ export class OperationalMemory {
        AND NOT EXISTS(SELECT 1 FROM operational_recovery_attempts WHERE execution_id=? AND outcome IN ('RECOVERED','RECOVERY_PENDING'))
       ON CONFLICT(attempt_id) DO NOTHING`).bind(attemptId,executionId,incidentFingerprint(parts),parts.sourceId,parts.failureClass,parts.contractVersion,
         parts.logicalJob,request.targetDate,request.scheduledSlot,request.operation,parts.sourceId,parts.logicalJob,request.targetDate,at,
-        parts.sourceId,parts.logicalJob,request.targetDate,decision.maxAttempts,parts.sourceId,parts.logicalJob,executionId);
+        parts.sourceId,parts.logicalJob,request.targetDate,maxAttempts,parts.sourceId,parts.logicalJob,executionId);
     const result=await insert.run();
     if(!result.meta?.changes) return reject('persistent duplicate, in-flight lock or daily budget; elapsed time never unlocks');
     // If recording this event fails, the durable lock stays held. No provider call is admitted.

@@ -39,6 +39,18 @@ on:
         description: This attempt's A5 failure is transient and permits the next existing job
         value: ${{ jobs.collect.outputs.retry_forecast }}
     inputs:
+      a1_midnight_recovery:
+        type: boolean
+        required: false
+        default: false
+      a1_midnight_caller:
+        type: string
+        required: false
+        default: ""
+      a1_expected_target_date:
+        type: string
+        required: false
+        default: ""
       sources:
         description: RPK_PRODUCTION_SOURCES value for this attempt
         required: true
@@ -109,7 +121,11 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          npm run collect:production 2>&1 | tee "$RUNNER_TEMP/collector.log"
+          if [ "$RPK_A1_MIDNIGHT_RECOVERY" = "true" ]; then
+            node --import tsx scripts/collect-airport-midnight-direct.ts 2>&1 | tee "$RUNNER_TEMP/collector.log"
+          else
+            npm run collect:production 2>&1 | tee "$RUNNER_TEMP/collector.log"
+          fi
         env:
           ENABLE_PRODUCTION_COLLECTOR: "true"
           RPK_PRODUCTION_SOURCES: ${{ inputs.sources }}
@@ -118,10 +134,15 @@ jobs:
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
           RPK_A1_MAX_REQUESTS: ${{ inputs.a1_max_requests }}
           RPK_A1_RESCAN_TODAY: ${{ inputs.a1_rescan_today }}
+          RPK_A1_EXPECTED_TARGET_DATE: ${{ inputs.a1_expected_target_date }}
+          RPK_A1_MIDNIGHT_RECOVERY: ${{ inputs.a1_midnight_recovery }}
+          RPK_A1_MIDNIGHT_CALLER: ${{ inputs.a1_midnight_caller }}
+          RPK_CENTRAL_RECOVERY_OWNER_APPROVED: ${{ vars.RPK_CENTRAL_RECOVERY_OWNER_APPROVED }}
+          RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED: ${{ vars.RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED }}
           RPK_A4_MAX_ATTEMPTS_PER_REQUEST: ${{ inputs.a4_max_attempts_per_request }}
       - name: Classify this A1 attempt before spending a fresh runner
         id: airport_retry_decision
-        if: ${{ always() && startsWith(inputs.sources, 'airport_recent') }}
+        if: ${{ always() && inputs.a1_midnight_recovery != true && startsWith(inputs.sources, 'airport_recent') }}
         run: npx tsx scripts/decide-congestion-retry.ts "$RUNNER_TEMP/collector.log" --airport
       - name: Classify this A5 attempt before spending a fresh runner
         id: retry_decision

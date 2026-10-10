@@ -83,7 +83,11 @@ test('wiring retains three existing attempts, 125 requests each and the single r
  assert.match(early,/needs.collect.outputs.recheck_airport_publication == 'true'/);
  assert.match(early,/needs.retry_1.outputs.recheck_airport_publication == 'true'/);
  assert.equal((early.match(/a1_publication_recheck:/g)||[]).length,2);
- assert.equal((early.match(/&& 'airport_recent' \|\| 'airport_recent,airport_enrichment'/g)||[]).length,2);
+ const retryJobs=early.slice(early.indexOf('  retry_1:'));
+ assert.equal((retryJobs.match(/&& 'airport_recent' \|\| 'airport_recent,airport_enrichment'/g)||[]).length,2);
+ const firstJob=early.slice(early.indexOf('  collect:'),early.indexOf('  retry_1:'));
+ assert.match(firstJob,/inputs.a1_midnight_recovery == true && 'airport_recent' \|\| 'airport_recent,airport_enrichment'/);
+ assert.equal((early.match(/a1_expected_target_date:/g)||[]).length,3);
  assert.equal((early.match(/a1_max_requests: "125"/g)||[]).length,3);
  const shared=await readFile(new URL('../.github/workflows/collect-attempt.yml',import.meta.url),'utf8');
  assert.match(shared,/jobs.collect.outputs.retry_airport/);assert.match(shared,/decide-congestion-retry.ts .*--airport/);assert.match(shared,/set -o pipefail/);

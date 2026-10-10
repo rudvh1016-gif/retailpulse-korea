@@ -7,19 +7,25 @@ import { resolveCentralRecoveryActivation, runtimeCentralRecoveryEnabled, ownerA
 import { capabilityFor } from './recovery-capability';
 import type { CollectorEnv } from './collector';
 
-/** No recurring workflow calls this. Production execution is deliberately dormant.
- * Even after trial expiry, activation still needs a reviewed explicit configuration change. */
-export const CENTRAL_RECOVERY_EXECUTION_ENABLED = false;
+/** Owner-approved A1 direct midnight fallback only. The generic executor remains
+ * closed; repository runtime opt-in is applied last after this revision is reflected. */
+export const CENTRAL_RECOVERY_EXECUTION_ENABLED = true;
 
 /**
  * Resolves the gate from this repository's constant plus the runtime environment.
  *
- * `compiledEnabled` is the constant above and stays false until an owner-approved
- * pull request changes it. The other two come from the process environment, so a
+ * `compiledEnabled` is the reviewed constant above. The other two come from the environment, so a
  * deployment cannot open the gate on its own either — it can only supply one of
  * the three conditions a reviewed activation still needs.
  */
 export function centralRecoveryActivation(nowIso:string,env:Record<string,string|undefined>=process.env):CentralRecoveryActivation {
+  const gate=airportMidnightCentralActivation(nowIso,env);
+  return {...gate,allowed:false,blockedBy:[...gate.blockedBy,'A1_DIRECT_ONLY_SCOPE'],
+    reason:gate.reason+'; generic central recovery remains closed: A1 direct midnight caller only'};
+}
+/** Only the A1-specific gate consumes this. Other sources and injected generic
+ * executors cannot gain execution authority from the repository runtime flags. */
+export function airportMidnightCentralActivation(nowIso:string,env:Record<string,string|undefined>=process.env):CentralRecoveryActivation {
   return resolveCentralRecoveryActivation({compiledEnabled:CENTRAL_RECOVERY_EXECUTION_ENABLED,
     runtimeEnabled:runtimeCentralRecoveryEnabled(env),ownerApproved:ownerApprovedCentralRecovery(env),
     nowIso,trialEndExclusiveIso:TRIAL_END_EXCLUSIVE});
@@ -67,6 +73,8 @@ export async function executeControlledRecovery(memory:OperationalMemory,request
   // approve the failure class while this source has no adapter, no measured
   // budget, or no way to prove the repair reached the reader.
   const capability=capabilityFor(request.parts.sourceId);
+  if(request.parts.sourceId==='INCHEON_FLIGHT_DETAIL')
+    return {admitted:false,attemptId:'',state:'BLOCKED_A1_DIRECT_ONLY',reason:'A1 may run only through executeAirportMidnightDirect with its fixed caller/date/125 budget tuple',blockedBy:['A1_DIRECT_ONLY_SCOPE' as const]};
   if(!capability.controlledRecoveryEligible||!capability.supportedActions.includes(request.operation as never))
     return {admitted:false,attemptId:'',state:'BLOCKED_UNSUPPORTED_SOURCE',reason:capability.reason,blockedBy:['SOURCE_NOT_CONTROLLED_ELIGIBLE' as const]};
   const admission=await memory.admit(request);

@@ -3,6 +3,21 @@
  * completed jobs settle only to the exact attempts counted before each request.
  * Rolling 24 hours avoids assuming the provider's daily-reset timezone.
  */
+const REQUESTS_USED_SQL = `COALESCE((SELECT SUM(records_read) FROM collector_runs WHERE source_id='INCHEON_FLIGHT_REQUEST_BUDGET' AND started_at>?),0)
+   + COALESCE((SELECT SUM(CASE WHEN status='SUCCESS' AND detail LIKE 'recent %; requests %'
+       THEN CAST(substr(detail,instr(detail,'requests ')+9) AS INTEGER) ELSE 125 END)
+       FROM collector_runs WHERE source_id='INCHEON_FLIGHT_DETAIL' AND started_at>?
+       AND started_at<COALESCE((SELECT MIN(started_at) FROM collector_runs WHERE source_id='INCHEON_FLIGHT_REQUEST_BUDGET' AND started_at>?),?)
+       AND status IN ('SUCCESS','ERROR')),0)`;
+
+/** Read-only preflight; the collector's atomic admission below is authoritative. */
+export async function airportRequestBudgetAvailable(db:Pick<D1Database,'prepare'>,nowIso:string,maxRequests=125) {
+ if(!Number.isFinite(Date.parse(nowIso))||!Number.isSafeInteger(maxRequests)||maxRequests<1||maxRequests>125)return false;
+ const since=new Date(Date.parse(nowIso)-86_400_000-30*60_000).toISOString();
+ const row=await db.prepare(`SELECT ${REQUESTS_USED_SQL} AS used`).bind(since,since,since,nowIso).first<{used:number}>();
+ return !!row&&Number.isSafeInteger(row.used)&&row.used>=0&&row.used+maxRequests<=500;
+}
+
 export async function reserveAirportRequestBudget(db:Pick<D1Database,'prepare'>,nowIso:string,maxRequests:number,runId=crypto.randomUUID()) {
  if(!Number.isFinite(Date.parse(nowIso))||!Number.isSafeInteger(maxRequests)||maxRequests<1||maxRequests>125)return false;
  // Keep reservations another 30 minutes because calls may occur throughout
@@ -14,12 +29,7 @@ export async function reserveAirportRequestBudget(db:Pick<D1Database,'prepare'>,
  const result=await db.prepare(`INSERT INTO collector_runs
   (run_id,source_id,started_at,finished_at,status,records_read,records_written,detail)
   SELECT ?, 'INCHEON_FLIGHT_REQUEST_BUDGET', ?, ?, 'RESERVED', ?, 0, 'A1 rolling-24h request ceiling; reservation, not actual calls'
-  WHERE COALESCE((SELECT SUM(records_read) FROM collector_runs WHERE source_id='INCHEON_FLIGHT_REQUEST_BUDGET' AND started_at>?),0)
-   + COALESCE((SELECT SUM(CASE WHEN status='SUCCESS' AND detail LIKE 'recent %; requests %'
-       THEN CAST(substr(detail,instr(detail,'requests ')+9) AS INTEGER) ELSE 125 END)
-       FROM collector_runs WHERE source_id='INCHEON_FLIGHT_DETAIL' AND started_at>?
-       AND started_at<COALESCE((SELECT MIN(started_at) FROM collector_runs WHERE source_id='INCHEON_FLIGHT_REQUEST_BUDGET' AND started_at>?),?)
-       AND status IN ('SUCCESS','ERROR')),0) + ? <= 500
+  WHERE ${REQUESTS_USED_SQL} + ? <= 500
   RETURNING run_id`).bind(runId,uniqueAt,nowIso,maxRequests,since,since,since,nowIso,maxRequests).run();
  return (result.results??[]).some(row=>(row as {run_id?:string}).run_id===runId);
 }
