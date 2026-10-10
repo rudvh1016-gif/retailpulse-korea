@@ -72,13 +72,14 @@ test('what is different today: same-weekday range, the fixed rule, and its evide
 
 test('days like today: numbers, not a similarity score, and the table opens', async ({ page }) => {
   const { section } = await open(page);
-  const similar = section.getByTestId('similar-days').locator('li');
+  const similar = section.getByTestId('similar-days').locator(':scope > li');
   await expect(similar.first()).toHaveAttribute('data-day', '2026-08-25');
-  await expect(similar.first()).toContainText('가까운 날: 2026-08-25');
-  await expect(similar.first()).toContainText('출발편 수(2026-08-31 36 · 2026-08-25 36)');
+  await expect(similar.first()).toContainText('8월 25일');
+  await expect(similar.first()).toContainText('출발편 수: 오늘 36편 · 그날 36편');
   await expect(section.getByTestId('similar-scope')).toContainText('2026-08-03~2026-08-25');
   await expect(section.getByTestId('similar-scope')).toContainText('같은 요일만 고른 것은 아닙니다');
-  await expect(similar.first()).toContainText('요일(2026-08-31 (월) / 2026-08-25 (화))');
+  await expect(similar.first()).not.toContainText('두드러진 차이 없음');
+  await expect(similar.first().locator('.similar-highlights > li')).toHaveCount(3);
   await similar.first().getByTestId('similar-open').click();
   await expect(similar.first()).toContainText('그날 기록에서 가장 많은 출발 시간대: 09–10시 20편');
   await expect(similar.first().getByTestId('similar-table')).toBeVisible();

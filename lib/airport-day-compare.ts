@@ -220,7 +220,7 @@ export function similarDays(input: {
   limit?: number;
 }): SimilarDay[] {
   const { current } = input;
-  const groupsOf = (day: TerminalDay) => DESTINATION_GROUPS.map((group) => day.groups[group] ?? 0);
+  const groupsOf = (day: TerminalDay) => DESTINATION_GROUPS.filter(group=>group!=='UNKNOWN').map((group) => day.groups[group] ?? 0);
   const result: SimilarDay[] = [];
   for (const day of input.history) {
     if (!day.complete || day.day >= current.day || day.total <= 0 || current.total <= 0) continue;

@@ -1,7 +1,6 @@
 import type { Lang } from './retailpulse-data';
 import type { DepartureMap } from '../lib/airport-departure-map';
 import { mapCopy as copy, windowText } from '../lib/airport-departure-map-copy';
-import './airport-models.css';
 import { buildingZoneCounts, selectedZoneShares } from '../lib/airport-zone-shares';
 import { zoneShareCopy } from '../lib/airport-zone-share-copy';
 import { airportModelScope } from '../lib/airport-model-scope';

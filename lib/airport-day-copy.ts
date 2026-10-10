@@ -22,6 +22,14 @@ export function dayLabel(day: string, lang: Lang): string {
   return `${day} (${weekday})`;
 }
 
+export function shortDayLabel(day:string,reference:string,lang:Lang):string {
+ if(lang==='ko'){
+  const weekday=new Intl.DateTimeFormat(locale.ko,{timeZone:'Asia/Seoul',weekday:'short'}).format(new Date(day+'T12:00:00+09:00'));
+  return `${day.slice(0,4)!==reference.slice(0,4)?Number(day.slice(0,4))+'년 ':''}${Number(day.slice(5,7))}월 ${Number(day.slice(8,10))}일(${weekday})`;
+ }
+ return new Intl.DateTimeFormat(locale[lang],{timeZone:'Asia/Seoul',...(day.slice(0,4)!==reference.slice(0,4)?{year:'numeric' as const}:{}),month:'numeric',day:'numeric',weekday:'short'}).format(new Date(day+'T12:00:00+09:00'));
+}
+
 const GROUP: Record<DestinationGroup, Row> = {
   JP: row("일본행", "To Japan", "飞往日本", "日本行き"),
   CN: row("중국(본토)행", "To mainland China", "飞往中国大陆", "中国本土行き"),
@@ -38,6 +46,9 @@ const GROUP: Record<DestinationGroup, Row> = {
 };
 
 export const dayCopy = {
+  conciseSimilarTitle:row('오늘과 비슷한 항공편 구성','Flight mixes similar to today','与今天相似的航班构成','今日と似た便の構成'),
+  selectedSimilarTitle:row('선택일과 비슷한 항공편 구성','Flight mixes similar to the selected date','与所选日期相似的航班构成','選択日と似た便の構成'),
+  conciseCompare:row('자세히 비교','Compare details','详细比较','詳しく比較'),
   incomplete: row("항공편 기록이 일부만 도착해 날짜를 비교할 수 없습니다.", "Flight records are incomplete, so these dates cannot be compared.", "航班记录尚未完整，无法比较这些日期。", "便の記録が一部しか届いていないため、日付を比較できません。"),
   noAlike: row("큰 공통점 없음", "No strong match", "没有明显的相同点", "目立つ共通点なし"),
   noDiffer: row("두드러진 차이 없음", "No notable difference", "没有明显差异", "目立つ違いなし"),
@@ -205,3 +216,16 @@ export function topGroups(day: TerminalDay, lang: Lang): string {
 }
 
 export { hourSpan as dayHourSpan, share as dayEastShare };
+/** At most three measured facts. Unknown destinations never prove a match. */
+export function similarHighlights(item:SimilarDay,current:TerminalDay,lang:Lang) {
+ const has=(name:SimilarDay['components'][number]['name'])=>item.components.find(component=>component.name===name);
+ const facts:Array<{label:string;current:string;previous:string}|{text:string}>=[];
+ if(has('TOTAL'))facts.push({label:dayCopy.rows.total[lang],current:fl(current.total,lang),previous:fl(item.day.total,lang)});
+ if(has('EAST_SHARE')&&item.day.sidesVersion===current.sidesVersion&&eastShare(current)!==null&&eastShare(item.day)!==null)
+  facts.push({label:row('동편 비중','East share','东侧占比','東側割合')[lang],current:share(current),previous:share(item.day)});
+ const known=(day:TerminalDay)=>Object.entries(day.groups).filter(([key])=>key!=='UNKNOWN').reduce((sum,[,count])=>sum+(count??0),0);
+ if((has('DESTINATIONS')?.distance??1)<=.15&&known(current)>0&&known(item.day)>0)
+  facts.push({text:row('확인된 목적지 지역 구성도 비슷','Known destination-region mix is also similar','已确认目的地区域构成也相近','確認できた目的地地域の構成も似ています')[lang]});
+ else if((has('HOURS')?.distance??1)<=.15)facts.push({text:row('시간대별 출발편 분포도 비슷','Hourly departure mix is also similar','各小时出发航班分布也相近','時間帯別の出発便分布も似ています')[lang]});
+ return facts.slice(0,3);
+}

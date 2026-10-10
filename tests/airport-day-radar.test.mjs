@@ -77,7 +77,8 @@ test("the collector stores the profile with the composition, marks completeness 
     // One scan covering both days, run after 09-29 ended but during 09-30.
     db.prepare(`INSERT INTO collector_runs (run_id, source_id, status, started_at, finished_at, detail) VALUES ('r1', 'INCHEON_FLIGHT_DETAIL', 'SUCCESS', '2026-09-29T21:05:00.000Z', '2026-09-29T21:06:00.000Z', 'recent 2026-09-29..2026-09-30; ok')`).run();
     const first = await collectAirportComposition(d1(db), now);
-    assert.equal(first.records, 2);
+    assert.equal(first.records, 3, 'two daily profiles and one prepared month anchor');
+    assert.equal(first.monthly.records, 1);
     const stored = Object.fromEntries(db.prepare("SELECT day, payload FROM airport_daily_composition").all().map((r) => [r.day, JSON.parse(r.payload)]));
     assert.equal(stored["2026-09-29"].profile.complete, true, "a scan ran after the day ended");
     assert.equal(stored["2026-09-30"].profile.complete, false, "today is never a complete day");

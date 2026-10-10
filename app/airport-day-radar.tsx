@@ -14,7 +14,8 @@ import type { Lang } from './retailpulse-data';
 import { useFlights } from './flights-client';
 import { dailyFlightProfile, type ProfileRow } from '../lib/airport-day-profile';
 import { lastSeenOf, radar, similarDays, terminalDay, type LastSeen, type TerminalDay, type ViewTerminal } from '../lib/airport-day-compare';
-import { dayCopy as copy, dayEastShare, dayHourSpan, dayLabel, radarLine, similarLines, topGroups } from '../lib/airport-day-copy';
+import { dayCopy as copy, dayEastShare, dayHourSpan, dayLabel, shortDayLabel, radarLine, similarLines, similarHighlights, topGroups } from '../lib/airport-day-copy';
+import './airport-day-radar.css';
 
 const LAST_SEEN_KEY = 'koretail-airport-radar-v1';
 const LAST_SEEN_LIMIT = 12;
@@ -137,14 +138,17 @@ export default function DayRadarBlock({ lang, date, dayRelation, terminal, nowIs
       <p className="prep-note">{copy.basis[lang]}</p>
     </details>
 
-    <h3 style={{ marginTop: 18 }}>{copy.similarTitle[lang]}</h3>
-    <p className="prep-note" data-testid="similar-scope">{copy.similarScope(current.day, eligible[0]?.day ?? null, eligible.at(-1)?.day ?? null, eligible.length, lang)}</p>
+    <h3 style={{ marginTop: 18 }}>{dayRelation==='TODAY'?copy.conciseSimilarTitle[lang]:`${copy.selectedSimilarTitle[lang]} · ${current.day}`} · {terminal}</h3>
+    <details className="prep-evidence"><summary>{copy.evidence[lang]}</summary>
+      <p className="prep-note" data-testid="similar-scope">{copy.similarScope(current.day, eligible[0]?.day ?? null, eligible.at(-1)?.day ?? null, eligible.length, lang)}</p>
+      <p className="prep-note">{copy.similarRule[lang]}</p><p className="prep-note">{copy.similarNote[lang]}</p>
+    </details>
     {!similar.length ? <p className="prep-note" data-testid="similar-none">{copy.similarNone(eligible.length, lang)}</p>
       : <ol className="prep-facts" data-testid="similar-days">{similar.map((item) => {
         const lines = similarLines(item, current, lang);
         const isOpen = open === item.day.day;
         return <li key={item.day.day} data-day={item.day.day}>
-          <svg className="similar-calendar" viewBox="0 0 56 70" width="56" height="70" aria-hidden="true">
+          <svg className="similar-calendar" viewBox="0 0 56 70" width="28" height="35" aria-hidden="true">
             <path d="M4 12 L45 12 L51 6 L10 6 Z" fill="#e5f5fc"/>
             <path d="M45 12 L51 6 L51 58 L45 64 Z" fill="#81b3cd"/>
             <path d="M4 12 H45 V64 H4 Z" fill="#d5ecf8"/>
@@ -153,11 +157,10 @@ export default function DayRadarBlock({ lang, date, dayRelation, terminal, nowIs
             <text x="24" y="36" textAnchor="middle">{Number(item.day.day.slice(5,7))}</text>
             <text x="24" y="53" textAnchor="middle">{Number(item.day.day.slice(8,10))}</text>
           </svg>
-          <strong>{copy.similarLabel[lang]}: {dayLabel(item.day.day, lang)}</strong>
-          <br/>{copy.alike[lang]}: <strong>{lines.alike}</strong>
-          <br/>{copy.differ[lang]}: {lines.differ}
+          <strong>{shortDayLabel(item.day.day,current.day,lang)}</strong>
+          <ul className="similar-highlights">{similarHighlights(item,current,lang).map((fact,index)=><li key={index}>{'text' in fact?fact.text:<>{fact.label}: {dayRelation==='TODAY'?copy.today[lang]:shortDayLabel(current.day,current.day,lang)} <strong>{fact.current}</strong> · {copy.thatDay[lang]} <strong>{fact.previous}</strong></>}</li>)}</ul>
           <br/><button type="button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : item.day.day)} data-testid="similar-open"
-            style={{ border: 0, padding: '8px 0', background: 'transparent', color: 'var(--blue)', cursor: 'pointer', font: 'inherit' }}>{copy.compareTable[lang]}</button>
+            style={{ border: 0, padding: '8px 0',minHeight:44, background: 'transparent', color: 'var(--blue)', cursor: 'pointer', font: 'inherit' }}>{copy.conciseCompare[lang]}</button>
           {isOpen && <div data-testid="similar-table">
             {lines.busiest && <p className="prep-note">{copy.busiest[lang]}: {lines.busiest}</p>}
             {item.missing.length > 0 && <p className="prep-note" data-testid="similar-missing">{copy.missingComparison[lang]}: {item.missing.map((name) => name === 'HOLIDAY' ? copy.holidayEvidence[lang] : copy.component[name as keyof typeof copy.component][lang]).join(', ')}</p>}

@@ -20,9 +20,9 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    # The complete 791-case integration suite hit the 30-minute job limit in
-    # run 37599031040. Keep every check and allow setup plus browsers to finish.
-    timeout-minutes: 45
+    # Run 38041338089 reached the 45-minute limit during the 1,163-case
+    # integration suite. Preserve every check and allow setup and retries to finish.
+    timeout-minutes: 75
     env:
       # Match the Playwright server so built metadata/icons remain same-origin.
       # This verification build is never used for a production deployment.

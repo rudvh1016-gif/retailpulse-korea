@@ -18,7 +18,7 @@
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "5fa7a470a6dcce6cbc819951b4dea3da4305fac55db4bd424ce78c4121b1d62b",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
-    "app/layout.tsx": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
+    "app/layout.tsx": "c4c2506c841712a9b8a46c98f99fdea167df8f32e69cdb39f5a612874d600119",
     "app/live-signals.tsx": "1b5a72bf20d8df0bb66f70ecf588c57da547b66f375e5b3ab72f6292163cae29",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6",
@@ -26,7 +26,7 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "082db8555ef29d28a1da6fffac1e6ee25d5d4e4418729d0fb6224b42eb4f8143",
+    "app/retailpulse-app.tsx": "d84285927eae08ba202c901da0e268423b083385140cfb265b137c220be859c5",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "48c26a8642d0dae4ebea5988064ffaf58611b9982d5d06f5ee0593d6416234b8",
@@ -40,7 +40,7 @@
     "public/apple-touch-icon.png": "b11d62bc23ef6522c8f7e5f74aa06a956555e0bae6beb7eb507e2672ebadacba",
     "public/favicon.svg": "68ff8a9e81edf6529b14e70291e8edaa5b236adb361930b3e1ab8c1c239c77e4",
     "public/file.svg": "1e0ae4d1a1ddfa36752988647b731e4abf150c414d069ec83c96fb0aaeff0307",
-    "public/fonts/koretail-sans-variable.woff2": "7a0ba49fcc55f74e60974b257ae020a82568ca830affb8d482d5116b68297fdf",
+    "public/fonts/koretail-sans-variable.woff2": "a2286324764cf65841506a0a776e50fd4c3423da01cdd5f8f95c2c299ad0e911",
     "public/fonts/noto-sans-jp-400.woff2": "837c91258289bf5d11da9a77ca497dfbd8d31295067978aa4bfcfc21e8044108",
     "public/fonts/noto-sans-jp-600.woff2": "66d5ae131bf6996886537af8633608453b6583d4236e04938697314e93daca29",
     "public/fonts/noto-sans-sc-400.woff2": "72208fa263ebab0d3a2dd59e7a0570b0024825e36e690cb55ec75ff99283bc2d",
@@ -1213,5 +1213,115 @@
     ],
     "protectedPathCount": 61,
     "approvalEvidenceFile": "docs/approvals/airport-checkpoint-touch-correction-20261010.json"
+  },
+  "ownerApprovedAirportMonthlyPerformance20261010": {
+    "recordedAt": "2026-10-10T08:24:10.331Z",
+    "authorizationEvidence": {
+      "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "ownerRequests": [
+        "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+        "계속코딘을해야지",
+        "사이트속도개선은?",
+        "관측된시간기준이먼데? 정확한기준이 한눈에들어와야해"
+      ],
+      "delegatedScope": "Prepare retained-raw monthly DAILY MEAN departure comparisons with one current gate table; clarify consumption denominators and similar-day copy; measured mobile/desktop performance improvements; one draft PR. Owner merges directly.",
+      "approvedProtectedFiles": [
+        "app/layout.tsx",
+        "app/retailpulse-app.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Scoped approval bookkeeping for the explicitly requested monthly comparison mount and measured performance correction. Add the existing monthly component to departures; use SSR-enabled splitting of inactive screens and preload the same measured Korean font. Preserve fonts, first-screen data, all protected paths, original UI Lock test, prior approval records and cron configuration. No provider refresh, migration, collector activation, merge or deployment.",
+    "changes": [
+      {
+        "file": "app/layout.tsx",
+        "previous": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
+        "approved": "86d9c33516197ffb558104b3d19c94dc7eea585be248f8fc441c3b49dce18f4b"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "082db8555ef29d28a1da6fffac1e6ee25d5d4e4418729d0fb6224b42eb4f8143",
+        "approved": "d84285927eae08ba202c901da0e268423b083385140cfb265b137c220be859c5"
+      }
+    ],
+    "protectedPathCount": 61,
+    "approvalEvidenceFile": "docs/approvals/airport-monthly-performance-20261010.json"
+  },
+  "ownerApprovedAirportMonthlySharedStyles20261010": {
+    "recordedAt": "2026-10-10T08:42:04.691Z",
+    "authorizationEvidence": {
+      "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "ownerRequest": "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+      "scope": "Fix the observed production-build 404 modulepreload of a duplicated shared CSS stub after SSR-enabled inactive-screen splitting. Move the same airport-models stylesheet to the shared server layout once; remove three duplicate client imports. Preserve every CSS declaration and original UI Lock.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Measured console/network correction within the approved performance and bug scope. No style, size, color, model or information changes. All prior records and61protected paths remain.",
+    "changes": [
+      {
+        "file": "app/layout.tsx",
+        "previous": "86d9c33516197ffb558104b3d19c94dc7eea585be248f8fc441c3b49dce18f4b",
+        "approved": "d9ed220d1f9f81cba35811d7d8932c1e82bd7e8cb25212004d37ed52a2f2e7c7"
+      }
+    ],
+    "protectedPathCount": 61,
+    "approvalEvidenceFile": "docs/approvals/airport-monthly-shared-styles-20261010.json"
+  },
+  "ownerApprovedAirportMonthlyFontCoverage20261010": {
+    "recordedAt": "2026-10-10T08:55:53.313Z",
+    "authorizationEvidence": {
+      "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "ownerRequest": "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+      "scope": "Fix the failing font-coverage test for the explicitly requested Korean title 오늘과 비슷한 항공편 구성. Add only U+C2B7 to the previous font cmap, preserving every previous codepoint, existing family/name/variation tables and layout feature set; regenerate coverage from the actual new font. No new product font, font family or weight.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Avoid an extra fallback font download and swap introduced by the requested copy. Pinned Pretendard 1.3.9 source and SHA verified. FontTools 4.66.0/Brotli 1.2.0; 1508→1509 codepoints, 226772→227508 bytes. Original UI Lock enforcement, all61protected paths and all earlier records preserved.",
+    "changes": [
+      {
+        "file": "public/fonts/koretail-sans-variable.woff2",
+        "previous": "7a0ba49fcc55f74e60974b257ae020a82568ca830affb8d482d5116b68297fdf",
+        "approved": "a2286324764cf65841506a0a776e50fd4c3423da01cdd5f8f95c2c299ad0e911"
+      }
+    ],
+    "protectedPathCount": 61,
+    "approvalEvidenceFile": "docs/approvals/airport-monthly-font-coverage-20261010.json"
+  },
+  "ownerApprovedAirportMonthlyFontPreload20261010": {
+    "recordedAt": "2026-10-10T09:09:28.536Z",
+    "authorizationEvidence": {
+      "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "ownerRequest": "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+      "scope": "Make the previously approved same-font preload effective in the actual built HTML. Measurement showed no emitted hint and a 1.4-second discovery after CSS. Render one Korean-only font preload link in the server layout head instead of the ineffective RSC ReactDOM call. Preserve initial content, font family, weights and swap policy.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Correction based on recorded real requests and built HTML. No new font dependency or service. All prior approvals, original UI Lock enforcement and61protected paths preserved.",
+    "changes": [
+      {
+        "file": "app/layout.tsx",
+        "previous": "d9ed220d1f9f81cba35811d7d8932c1e82bd7e8cb25212004d37ed52a2f2e7c7",
+        "approved": "92d21b171f415fef9c86bc58396988123d4127e31ed4f218284ef29c6acc9334"
+      }
+    ],
+    "protectedPathCount": 61,
+    "approvalEvidenceFile": "docs/approvals/airport-monthly-font-preload-20261010.json"
+  },
+  "ownerApprovedAirportMonthlyCiRecovery20261010": {
+    "recordedAt": "2026-10-10T10:23:40.266Z",
+    "authorizationEvidence": {
+      "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "ownerRequest": "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+      "scope": "Fix browser failures from CI run 38041338089: eagerly load shared city weather and payment scene CSS formerly owned by the newly deferred preparation panel. Remove the extra manual Korean font preload: real Worker HTML already emits the locale-specific ReactDOM hint, unlike the private native Node performance harness. Preserve the existing font preload helper, family, weights and swap policy.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Actual CI failures established missing shared styles and duplicate font hints. Preserve all prior approval records, 61 protected paths and the original UI Lock test. Recovery after confirmed automatic CI timeout is authorized; no deployment or collector action.",
+    "changes": [
+      {
+        "file": "app/layout.tsx",
+        "previous": "92d21b171f415fef9c86bc58396988123d4127e31ed4f218284ef29c6acc9334",
+        "approved": "c4c2506c841712a9b8a46c98f99fdea167df8f32e69cdb39f5a612874d600119"
+      }
+    ],
+    "protectedPathCount": 61,
+    "approvalEvidenceFile": "docs/approvals/airport-monthly-ci-recovery-20261010.json"
   }
 }

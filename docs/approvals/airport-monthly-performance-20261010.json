@@ -1,0 +1,34 @@
+{
+  "recordedAt": "2026-10-10T08:24:10.331Z",
+  "authorizationEvidence": {
+    "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+    "ownerRequests": [
+      "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+      "계속코딘을해야지",
+      "사이트속도개선은?",
+      "관측된시간기준이먼데? 정확한기준이 한눈에들어와야해"
+    ],
+    "delegatedScope": "Prepare retained-raw monthly DAILY MEAN departure comparisons with one current gate table; clarify consumption denominators and similar-day copy; measured mobile/desktop performance improvements; one draft PR. Owner merges directly.",
+    "approvedProtectedFiles": [
+      "app/layout.tsx",
+      "app/retailpulse-app.tsx"
+    ],
+    "keepProtectedListAndEnforcement": true,
+    "agentMergeOrDeploymentApproved": false
+  },
+  "reason": "Scoped approval bookkeeping for the explicitly requested monthly comparison mount and measured performance correction. Add the existing monthly component to departures; use SSR-enabled splitting of inactive screens and preload the same measured Korean font. Preserve fonts, first-screen data, all protected paths, original UI Lock test, prior approval records and cron configuration. No provider refresh, migration, collector activation, merge or deployment.",
+  "changes": [
+    {
+      "file": "app/layout.tsx",
+      "previous": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
+      "approved": "86d9c33516197ffb558104b3d19c94dc7eea585be248f8fc441c3b49dce18f4b"
+    },
+    {
+      "file": "app/retailpulse-app.tsx",
+      "previous": "082db8555ef29d28a1da6fffac1e6ee25d5d4e4418729d0fb6224b42eb4f8143",
+      "approved": "d84285927eae08ba202c901da0e268423b083385140cfb265b137c220be859c5"
+    }
+  ],
+  "protectedPathCount": 61,
+  "approvalEvidenceFile": "docs/approvals/airport-monthly-performance-20261010.json"
+}

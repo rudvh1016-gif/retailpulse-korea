@@ -1,0 +1,19 @@
+{
+  "recordedAt": "2026-10-10T09:09:28.536Z",
+  "authorizationEvidence": {
+    "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+    "ownerRequest": "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+    "scope": "Make the previously approved same-font preload effective in the actual built HTML. Measurement showed no emitted hint and a 1.4-second discovery after CSS. Render one Korean-only font preload link in the server layout head instead of the ineffective RSC ReactDOM call. Preserve initial content, font family, weights and swap policy.",
+    "agentMergeOrDeploymentApproved": false
+  },
+  "reason": "Correction based on recorded real requests and built HTML. No new font dependency or service. All prior approvals, original UI Lock enforcement and61protected paths preserved.",
+  "changes": [
+    {
+      "file": "app/layout.tsx",
+      "previous": "d9ed220d1f9f81cba35811d7d8932c1e82bd7e8cb25212004d37ed52a2f2e7c7",
+      "approved": "92d21b171f415fef9c86bc58396988123d4127e31ed4f218284ef29c6acc9334"
+    }
+  ],
+  "protectedPathCount": 61,
+  "approvalEvidenceFile": "docs/approvals/airport-monthly-font-preload-20261010.json"
+}

@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
 import "./airport-date-calendar.css";
+import './airport-models.css';
+import './seoul-weather-scenes.css';
+import './commercial-scenes.css';
 import { isStagingDeployment, pageTitle, pageDescription, siteOrigin, socialImage, shareDescription } from "./seo-config";
 
 export const metadata: Metadata = {
@@ -48,7 +51,6 @@ export default async function RootLayout({
   const requestHeaders = await headers();
   const requestedLanguage = requestHeaders.get("x-rpk-document-language") ?? "ko";
   const documentLanguage = supportedDocumentLanguages.has(requestedLanguage) ? requestedLanguage : "ko";
-
   return (
     <html lang={documentLanguage} suppressHydrationWarning>
       <body>
