@@ -35,12 +35,18 @@ export async function prepareAirportMonths(db:Pick<D1Database,'prepare'>,today:s
  if(raw.success===false)throw Error('AIRPORT_MONTH_SOURCE_READ_FAILED');
  const rows=raw.results??[];
  if(rows.length>MONTH_RAW_LIMIT)return {status:'LIMIT' as const,records:0,rawRows:rows.length};
- const complete=new Set(parsed.flatMap(record=>profileOf(record.data)?.complete?[record.day]:[]));
+ // A previously prepared included day retains its scan witness when the
+ // bounded recent-run list ages out. Only that witness is reused: raw rows
+ // and counts are always folded again under the current classification.
+ const complete=new Set(parsed.flatMap(record=>[
+  ...(profileOf(record.data)?.complete?[record.day]:[]),
+  ...(rollupsOf(record.data)?.months.flatMap(month=>month.includedDays)??[]),
+ ]));
  for(let day=priorMonth+'-01';day<today;day=shiftKstDay(day,1)){
   const end=Date.parse(shiftKstDay(day,1)+'T00:00:00+09:00');
   if(scans.some(scan=>scan.from<=day&&scan.to>=day&&Date.parse(scan.startedAt)>=end))complete.add(day);
  }
- const monthlyRollups:AirportMonthlyRollups={version:AIRPORT_MONTH_VERSION,asOf:today,sidesVersion:AIRPORT_SIDES_VERSION,destinationsVersion:DESTINATIONS_VERSION,
+ const monthlyRollups:AirportMonthlyRollups={version:AIRPORT_MONTH_VERSION,asOf:today,preparedAt:new Date().toISOString(),sidesVersion:AIRPORT_SIDES_VERSION,destinationsVersion:DESTINATIONS_VERSION,
   months:[currentMonth,priorMonth].map(month=>buildAirportFlightMonth(month,today,rows,complete))};
  const payload={...anchor.data,monthlyRollups},hash=await compositionHash(payload);
  const written=await db.prepare(`UPDATE airport_daily_composition SET payload=?,source_hash=?,calculated_at=? WHERE day=? AND source_hash<>?`)

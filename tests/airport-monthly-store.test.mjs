@@ -40,3 +40,18 @@ test('missing completion evidence, failed source reads and a capped range cannot
  db.prepare=sql=>{const stmt=prepare(sql);if(sql.includes('FROM airport_flights'))stmt.all=async()=>({success:true,results:Array.from({length:MONTH_RAW_LIMIT+1},()=>({}))});return stmt;};
  assert.equal((await prepareAirportMonths(db,'2026-10-11',records(),scans)).status,'LIMIT');assert.equal(records()[0].payload,saved);db.raw.close();
 });
+
+test('prepared days keep their completion witness but never reuse old gate counts or the daily-row clock',async()=>{
+ const {db,records}=setup();await prepareAirportMonths(db,today,records(),scans);
+ const payload=JSON.parse(records()[0].payload);payload.monthlyRollups.sidesVersion='old-classification';
+ db.raw.prepare('UPDATE airport_daily_composition SET payload=?,calculated_at=?').run(JSON.stringify(payload),'2099-01-01T00:00:00Z');
+ db.raw.prepare("UPDATE airport_flights SET gate='231' WHERE id='early-1'").run();
+ await prepareAirportMonths(db,'2026-10-11',records(),[]);
+ const published=await readAirportMonths(db,'2026-10','2026-10-11'),previous=published.data.months[1];
+ assert.deepEqual(previous.includedDays,['2026-09-01','2026-09-02']);
+ assert.equal(previous.scopes.ALL.sides.EAST,0);assert.equal(previous.scopes.ALL.sides.WEST,2);
+ const preparedAt=published.data.preparedAt;assert.ok(Number.isFinite(Date.parse(preparedAt)));
+ db.raw.prepare('UPDATE airport_daily_composition SET calculated_at=?').run('2099-01-01T00:00:00Z');
+ assert.equal((await readAirportMonths(db,'2026-10','2026-10-11')).calculatedAt,preparedAt);
+ db.raw.close();
+});

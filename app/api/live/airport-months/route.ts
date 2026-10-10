@@ -14,7 +14,7 @@ export async function readAirportMonths(db:Pick<D1Database,'prepare'>,month:stri
  const current=prepared.find(row=>row.data.months.some(value=>value.month===month));
  const previous=prepared.find(row=>row.data.months.some(value=>value.month===previousFlightMonth(month)));
  const data:AirportMonthlyRollups|null=current?{...current.data,months:[current.data.months.find(value=>value.month===month)!,...(previous?[previous.data.months.find(value=>value.month===previousFlightMonth(month))!]:[])]}:null;
- return {status:data?'READY':'MISSING',month,calculatedAt:current?.calculatedAt??null,months:[...new Set(prepared.flatMap(row=>row.data.months.map(value=>value.month)))].sort().reverse(),data,rowsRead:rows.length};
+ return {status:data?'READY':'MISSING',month,calculatedAt:current?.data.preparedAt??null,months:[...new Set(prepared.flatMap(row=>row.data.months.map(value=>value.month)))].sort().reverse(),data,rowsRead:rows.length};
 }
 export async function GET(request:Request){
  const today=kstDayOf(new Date().toISOString()),month=new URL(request.url).searchParams.get('month')??today.slice(0,7);

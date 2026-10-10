@@ -20,7 +20,7 @@ export interface AirportFlightMonth {
  cancelled:number; airlineNames:Record<string,string|null>; scopes:Record<MonthScope,MonthCounts>;
 }
 export interface AirportMonthlyRollups {
- version:number; asOf:string; sidesVersion:string; destinationsVersion:string; months:AirportFlightMonth[];
+ version:number; asOf:string; preparedAt?:string; sidesVersion:string; destinationsVersion:string; months:AirportFlightMonth[];
 }
 export function previousFlightMonth(month:string) {
  return new Date(Date.UTC(Number(month.slice(0,4)),Number(month.slice(5,7))-2,1)).toISOString().slice(0,7);
