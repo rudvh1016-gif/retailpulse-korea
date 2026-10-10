@@ -1,6 +1,7 @@
 import { collectHolidays } from "../lib/holidays";
 import { collectAirportComposition } from "../lib/airport-composition-history";
 import { runPopulationPredictions } from "../lib/population-predictions";
+import { refreshCommercialMonths } from "../lib/commercial-monthly-store";
 import { safeSourceFailureDetail } from "../lib/source-adapters";
 /**
  * Manual, bounded, one-shot import of verified sources into D1.
@@ -135,6 +136,15 @@ async function readA1VerificationSnapshot(targetDate: string): Promise<A1Verific
 }
 
 const collectors: Record<string, () => Promise<OneShotResult>> = {
+  // Reuse the approved daily aggregate without collecting any provider source.
+  // The same-day marker skips completed areas and the original read cap stays intact.
+  commercial_months: async () => {
+    const before = restDatabase.usageSnapshot();
+    const result = await refreshCommercialMonths(database);
+    const after = restDatabase.usageSnapshot();
+    return { status: result.status, records: result.changedRows, providerRequests: result.providerRequests,
+      detail: `rawRowsRead=${result.readRows}; d1RowsRead=${after.rowsRead-before.rowsRead}; d1RowsWritten=${after.rowsWritten-before.rowsWritten}; measured=${after.unmeasuredStatements===before.unmeasuredStatements}` };
+  },
   airport_composition: () => collectAirportComposition(database),
   population_predictions: async () => { const result=await runPopulationPredictions(database);return {status:result.status,records:result.predictions}; },
   holidays: async () => {
