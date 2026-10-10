@@ -56,7 +56,9 @@ export async function prepareAirportMonths(db:Pick<D1Database,'prepare'>,today:s
  const monthlyRollups:AirportMonthlyRollups={version:AIRPORT_MONTH_VERSION,asOf:today,preparedAt:new Date().toISOString(),sidesVersion:AIRPORT_SIDES_VERSION,destinationsVersion:DESTINATIONS_VERSION,
   months:[currentMonth,priorMonth].map(month=>buildAirportFlightMonth(month,today,rows,complete))};
  const payload={...anchor.data,monthlyRollups},hash=await compositionHash(payload);
- const written=await db.prepare(`UPDATE airport_daily_composition SET payload=?,source_hash=?,calculated_at=? WHERE day=? AND source_hash<>?`)
-  .bind(JSON.stringify(payload),hash,new Date().toISOString(),anchor.day,hash).run();
+ const written=await db.prepare(`UPDATE airport_daily_composition SET payload=?,source_hash=?,calculated_at=? WHERE day=? AND source_hash<>? AND source_hash=?`)
+  .bind(JSON.stringify(payload),hash,new Date().toISOString(),anchor.day,hash,anchor.sourceHash).run();
+ if(written.success===false)throw Error('AIRPORT_MONTH_WRITE_FAILED');
+ if(Number(written.meta?.changes??0)===0)return {status:'CONFLICT' as const,records:0,rawRows:rows.length};
  return {status:'PREPARED' as const,records:Number(written.meta?.changes??0),rawRows:rows.length};
 }
