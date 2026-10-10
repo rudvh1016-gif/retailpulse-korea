@@ -18,6 +18,6 @@ export async function applyCustomsDocumentReview(item:OfficialNews,review:Custom
  const attachments=item.attachments!.map(value=>value.url===attachment.url?{...value,review:'verified' as const,sha256:hash,reviewedAt:review.reviewedAt}:value);
  const facts=[...item.facts];for(const text of review.facts)if(!facts.some(fact=>fact.text===text))facts.push({text,verifiedBySource:true});
  if(facts.length>12)throw Error('NEWS_DOCUMENT_FACT_LIMIT');
- return {...item,attachments,facts,attachmentNeedsReview:attachments.some(value=>value.review!=='verified'),
+ return {...item,attachments,facts,attachmentNeedsReview:item.attachmentListComplete===false||attachments.some(value=>value.review!=='verified'),
   ...(effectiveDate?{effectiveDate}:{}),...(deadline?{deadline}:{})};
 }

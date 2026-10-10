@@ -62,11 +62,14 @@ test('document review requires exact article, official attachment bytes, source 
  const url='https://www.customs.go.kr/common/nttFileDownload.do?fileKey='+key,record=item({attachments:[{url,name:'Fixture.pdf',review:'pending'}]});
  const review={articleId:'123',attachmentUrl:url,sha256:hash,reviewedAt:at,confirmedText:'Fixture: 시행일 2026-11-01. Verified source line.',facts:['Verified source line.'],effectiveDate:{date:'2026-11-01',evidence:'시행일 2026-11-01',verified:true}};
  const verified=await applyCustomsDocumentReview(record,review,bytes);assert.equal(verified.attachmentNeedsReview,false);assert.equal(verified.effectiveDate.date,'2026-11-01');assert.equal(verified.modifiedAt,undefined);
+ assert.equal((await applyCustomsDocumentReview({...record,attachmentListComplete:false},review,bytes)).attachmentNeedsReview,true);
  for(const change of [{articleId:'wrong'},{sha256:'bad'},{facts:['Invented line']},{effectiveDate:{date:'2026-11-01',evidence:'발행일 2026-11-01',verified:true}}])await assert.rejects(applyCustomsDocumentReview(record,{...review,...change},bytes));
 });
 test('metadata preserves named author, excludes photos/external links and never invents modification time',()=>{
  const metadata=customsArticleMetadata('<th>작성자</th><td>홍길동</td><a href="/common/nttFileDownload.do?fileKey='+key+'" title="Fixture.pdf 다운로드"></a><a href="https://evil.example/file.pdf" title="bad.pdf 다운로드"></a><a href="/common/nttFileDownload.do?fileKey='+key+'" title="photo.jpg 다운로드"></a>');
  assert.equal(metadata.namedAuthor,'홍길동');assert.equal(metadata.modifiedAt,null);assert.equal(metadata.attachments.length,1);assert.equal(metadata.attachments[0].review,'pending');assert.equal(officialCustomsLinks('<a data-id="123" data-url="bad" class="nttInfoBtn">').size,0);
  assert.equal(customsArticleMetadata('<th>수정일</th><td>2026.02.30 09:00:00</td>').modifiedAt,null);
+ const unsupported=customsArticleMetadata('<a href="/common/nttFileDownload.do?fileKey='+key+'" title="Fixture.hwp 다운로드"></a>');assert.equal(unsupported.attachments[0].review,'pending');
+ const overflow=customsArticleMetadata(Array.from({length:8},(_,i)=>'<a href="/common/nttFileDownload.do?fileKey='+i.toString(16).padStart(32,'0')+'" title="Fixture'+i+'.hwp 다운로드"></a>').join(''));assert.equal(overflow.attachments.length,6);assert.equal(overflow.attachmentsComplete,false);
  assert.equal(airportCustomsScope('원유 수입선 다변화 관세행정 지원대책 확대'),'unclassified');assert.equal(airportCustomsScope('2026년 9월 수출입 현황 [잠정치]'),'unclassified');assert.equal(airportCustomsScope('출국장 면세점 특허 공고'),'customs');
 });

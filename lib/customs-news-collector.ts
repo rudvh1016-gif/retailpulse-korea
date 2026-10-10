@@ -22,18 +22,20 @@ export function officialCustomsLinks(html:string){
  return links;
 }
 /** Attachment links come from this verified article only. Images are excluded;
- * PDF/HWPX content remains pending until a bound document review is supplied. */
+ * Every non-image document remains pending until a bound review is supplied;
+ * unparsed formats and overflow never imply that all documents were reviewed. */
 export function customsArticleMetadata(html:string){
  const field=(label:string)=>plain(html.match(new RegExp('<th[^>]*>'+label+'</th>\\s*<td[^>]*>([\\s\\S]*?)</td>','i'))?.[1]??'');
- const attachments:NewsAttachment[]=[];
+ const attachments:NewsAttachment[]=[],attachmentUrls=new Set<string>();let attachmentsComplete=true;
  for(const match of html.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*title=["']([^"']+)["'][^>]*>/gi)){
-  const name=decode(match[2]).replace(/ 다운로드$/,'');if(!/\.(pdf|hwpx)$/i.test(name))continue;
+  const name=decode(match[2]).replace(/ 다운로드$/,'');if(/\.(png|jpe?g|gif|webp|svg|bmp|tiff?)$/i.test(name))continue;
   try{const url=new URL(decode(match[1]),ORIGIN);if(url.origin!==ORIGIN||url.pathname!=='/common/nttFileDownload.do'||!/^[a-f0-9]{32}$/.test(url.searchParams.get('fileKey')??''))continue;
-   if(!attachments.some(a=>a.url===url.href))attachments.push({url:url.href,name,review:'pending'});
+   if(attachmentUrls.has(url.href))continue;attachmentUrls.add(url.href);
+   if(attachments.length<6)attachments.push({url:url.href,name,review:'pending'});else attachmentsComplete=false;
   }catch{/* Unverified link stays unavailable. */}
  }
  const modifiedAt=customsPublishedAt(field('수정일').replace(/\./g,'-'));
- return {namedAuthor:field('작성자')||undefined,modifiedAt,attachments:attachments.slice(0,6)};
+ return {namedAuthor:field('작성자')||undefined,modifiedAt,attachments,attachmentsComplete};
 }
 async function boundedText(response:Response){
  if(!response.ok)throw Error('NEWS_HTTP_'+response.status);
@@ -67,7 +69,7 @@ export async function collectCustomsNews(db:Pick<D1Database,'prepare'|'batch'>,o
    }
    const metadata=customsArticleMetadata(html),boundItem:CustomsFeedItem={...item,url:url.href};
    const prepared=await prepareCustomsNews(boundItem,html,now().toISOString(),{deepLinkVerified:true,namedAuthor:metadata.namedAuthor});
-   let reviewed:OfficialNews={...prepared,topic:airportCustomsScope(item.title),modifiedAt:metadata.modifiedAt,attachments:metadata.attachments,attachmentNeedsReview:metadata.attachments.length>0};
+   let reviewed:OfficialNews={...prepared,topic:airportCustomsScope(item.title),modifiedAt:metadata.modifiedAt,attachments:metadata.attachments,attachmentListComplete:metadata.attachmentsComplete,attachmentNeedsReview:metadata.attachments.length>0||!metadata.attachmentsComplete};
    for(const document of options.documentReviews??[])if(document.review.articleId===item.id)reviewed=await applyCustomsDocumentReview(reviewed,document.review,document.bytes);
    incoming.push(reviewed);
   }

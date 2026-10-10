@@ -22,7 +22,7 @@
 
 준비 SQL0026은 current최대200, 의미 변경 revision최대400, 항목 payload최대8KiB다. source+ID 기본키와 공개 조회 index를 사용한다. 같은 내용의 receivedAt/권리 확인 시각/첨부 검토 시각만 바뀌면 write0이다. 의미 변경에만 이전 payload를 revision으로 보존한다. 한 batch는 최대20건이며 DB trigger 용량 초과 시 전체가 실패한다. raw HTML/PDF/사진은 운영 DB에 저장하지 않는다. 용량 초과를 삭제·자동 compaction으로 해결하지 않으며 소유자의 별도 보관 결정이 필요하다. 상한 도달 시 변경/권한 갱신도 실패할 수 있으므로 운영 활성화 전에 용량 경고·fail-closed 제공 정책을 결정해야 한다.
 
-Node 준비 collector는 4개 공식 피드·정상 목록(8회)과 최대20개 정상 글, 합계최대28요청, 응답각1MiB/15초·redirect거부·재시도0이다. 동일 ID 중복 수집을 제외하고 글의 권리 표시가 사라진 경우 이전 공개 자료를 depublish하는 변경을 보존한다. 첨부는 최대4MiB의 별도 실제 검토를 받아야 한다. collector는 첨부를 자동 다운로드/AI 처리하지 않는다.
+Node 준비 collector는 4개 공식 피드·정상 목록(8회)과 최대20개 정상 글, 합계최대28요청, 응답각1MiB/15초·redirect거부·재시도0이다. 동일 ID 중복 수집을 제외하고 글의 권리 표시가 사라진 경우 이전 공개 자료를 depublish하는 변경을 보존한다. 첨부는 최대4MiB의 별도 실제 검토를 받아야 한다. collector는 첨부를 자동 다운로드/AI 처리하지 않는다. HWP 등 아직 추출하지 않은 형식도 pending으로 남기며, 문서가6개를 넘으면 전체 검토로 표시하지 않는다. 상한 내 문서를 모두 확인해도 누락 문서가 있는 항목의 검토 필요 상태는 유지한다.
 
 `CUSTOMS_NEWS_COLLECTION_REVIEWED=false`이며 생산 CLI는 compile gate와 별도 runtime 조건이 열리기 전 config/credential/HTTP/DB 접근 없이 DORMANT다. 스케줄·workflow를 추가하지 않았으며 A1 복구 승인과 별개다.
 

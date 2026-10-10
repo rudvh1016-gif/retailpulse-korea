@@ -12,6 +12,7 @@ export function validStoredNews(value:unknown):value is OfficialNews{
   &&typeof item.receivedAt==='string'&&Number.isFinite(Date.parse(item.receivedAt))&&typeof item.contentFingerprint==='string'
   &&typeof item.attachmentNeedsReview==='boolean'&&typeof item.relevantToRetail==='boolean'
   &&(item.modifiedAt==null||typeof item.modifiedAt==='string'&&Number.isFinite(Date.parse(item.modifiedAt)))
+  &&(item.attachmentListComplete==null||typeof item.attachmentListComplete==='boolean')
   &&(!item.attachments||Array.isArray(item.attachments)&&item.attachments.length<=6&&item.attachments.every(a=>a&&typeof a.name==='string'&&a.name.length<=500&&['pending','verified'].includes(a.review)&&typeof a.url==='string'&&a.url.startsWith('https://www.customs.go.kr/common/nttFileDownload.do?fileKey=')))
   &&[item.facts,item.changes,item.audience].every(list=>Array.isArray(list)&&list.length<=12&&list.every(fact=>fact&&typeof fact.text==='string'&&fact.text.length<=1200&&typeof fact.verifiedBySource==='boolean'));
 }

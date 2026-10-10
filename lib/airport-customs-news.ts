@@ -14,7 +14,7 @@ export interface OfficialNews {
  effectiveDate?:VerifiedNewsDate;deadline?:VerifiedNewsDate;
  facts:NewsFact[];changes:NewsFact[];audience:NewsFact[];attachmentNeedsReview:boolean;
  /** Official modification time, never ingestion time or a guessed effective date. */
- modifiedAt?:string|null;attachments?:NewsAttachment[];
+ modifiedAt?:string|null;attachments?:NewsAttachment[];attachmentListComplete?:boolean;
 }
 export interface NewsArchive {current:OfficialNews;revisions:OfficialNews[]}
 const topicWords=/관세|면세|보세|휴대품|통관|수출입|duty[ -]?free|customs/i;
