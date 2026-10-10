@@ -93,6 +93,10 @@ test('first-hour transient missing-date recovery is durable and bounded, while a
  const other=localDb(t);assert.equal(await claimDutyFreeAttempt(other.db,'shilla',new Date(start),'known'),true);
  await saveDutyFreeSuccess(other.db,observation('shilla',start),'known');
  assert.equal(await claimDutyFreeAttempt(other.db,'shilla',new Date(start+900_000),'too_soon'),false);
+ const throttled=localDb(t);await claimDutyFreeAttempt(throttled.db,'shilla',new Date(start),'throttled');
+ await saveDutyFreeFailure(throttled.db,'shilla','throttled',new Date(start),'HTTP_429',false);
+ assert.equal(await claimDutyFreeAttempt(throttled.db,'shilla',new Date(start+900_000),'respect_429'),false);
+ assert.equal(throttled.sql.prepare('SELECT next_due_at FROM duty_free_exchange_attempt').get().next_due_at,'2026-10-10T16:00:00.000Z');
 });
 
 test('midnight claims remain exclusive, crash budgets persist, and blocked previous-day attempts stay blocked',async t=>{

@@ -85,8 +85,9 @@ export async function saveDutyFreeSuccess(db: Store, observation: DutyFreeObserv
 
 export async function saveDutyFreeFailure(db: Store, vendor: DutyFreeVendor, leaseId: string, at: Date, errorCode: string, blocked: boolean) {
   if (!/^[A-Z0-9_]{1,64}$/.test(errorCode)) throw new Error('INVALID_ERROR_CODE');
-  const next = blocked ? new Date(at.getTime() + DUTY_FREE_BLOCK_INTERVAL_MS).toISOString() : dutyFreeNextAttempt(at, true);
-  const hourly = blocked ? next : dutyFreeNextAttempt(at, false);
+  const hourly = blocked ? new Date(at.getTime() + DUTY_FREE_BLOCK_INTERVAL_MS).toISOString() : dutyFreeNextAttempt(at, false);
+  // Throttling keeps its original hourly cooldown even when today's date is missing.
+  const next = blocked || errorCode === 'HTTP_429' ? hourly : dutyFreeNextAttempt(at, true);
   const result = await db.prepare(`UPDATE duty_free_exchange_attempt SET status=?, error_code=?,
     next_due_at=CASE WHEN EXISTS
       (SELECT 1 FROM duty_free_exchange_daily WHERE vendor=? AND service_date_kst=?) THEN ? ELSE ? END,
