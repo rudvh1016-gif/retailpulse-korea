@@ -12,7 +12,8 @@ import {getPassengerGuideCopy} from './passenger-guide-copy';
 import {DepartureChoiceGroup} from './departure-choice-group';
 import {departureChoiceCopy} from './departure-choice-copy';
 import {departureStepOfficialLink} from '../lib/airport-departure-preparation';
-import {travelRecordsCopy} from './travel-records-copy';
+import {airportNewsCopy} from '../lib/airport-customs-news-copy';
+import {AirportNewsMark} from './airport-news-mark';
 
 export function AirportDeparturePreparation({lang}:{lang:Lang}) {
  const [open,setOpen]=useState(false),[input,setInput]=useState<DeparturePreparationInput>({route:'UNKNOWN',checkedBaggage:'UNKNOWN',taxRefund:'UNKNOWN',dutyFreePickup:'UNKNOWN'});
@@ -59,5 +60,5 @@ export function AirportDeparturePreparation({lang}:{lang:Lang}) {
    </>}
    <p className="prep-note" data-testid="prep-limits">{c.limits}</p><p className="prep-note">{c.checked}</p>
   </div>}
- </details><a className={styles.tripEntry} href={`/${lang}/travel-records`} data-testid="travel-records-entry"><span><strong>{travelRecordsCopy[lang].entry}</strong></span><Image unoptimized src="/visuals/clarity/v1/travel-record-256.webp" width="80" height="80" alt="" decoding="async"/></a></div>;
+ </details><a className={styles.tripEntry} href={`/${lang}/airport-news`} data-testid="airport-customs-news-entry"><span><strong>{airportNewsCopy[lang].entry}</strong></span><span className={styles.newsMark} aria-hidden="true"><AirportNewsMark/></span></a></div>;
 }

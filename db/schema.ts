@@ -544,3 +544,14 @@ export const seoulCommercialMonths = sqliteTable('seoul_commercial_months', {
  area:text('area').notNull(),month:text('month').notNull(),payload:text('payload').notNull(),
  sourceHash:text('source_hash').notNull(),calculatedAt:text('calculated_at').notNull(),
 },table=>[primaryKey({columns:[table.area,table.month]})]);
+
+// Prepared news only. 0026 enforces byte/capacity limits; not applied remotely.
+export const officialNewsCurrent = sqliteTable('official_news_current', {
+ source:text('source').notNull(),sourceId:text('source_id').notNull(),topic:text('topic').notNull(),
+ publishedAt:text('published_at'),mayPublish:integer('may_publish').notNull(),semanticHash:text('semantic_hash').notNull(),
+ payload:text('payload').notNull(),receivedAt:text('received_at').notNull(),
+},table=>[primaryKey({columns:[table.source,table.sourceId]}),index('official_news_public_idx').on(table.mayPublish,table.topic,desc(table.publishedAt))]);
+export const officialNewsRevision = sqliteTable('official_news_revision', {
+ revisionId:integer('revision_id').primaryKey(),source:text('source').notNull(),sourceId:text('source_id').notNull(),
+ semanticHash:text('semantic_hash').notNull(),payload:text('payload').notNull(),receivedAt:text('received_at').notNull(),
+});

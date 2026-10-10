@@ -68,6 +68,12 @@ const AREAS = ["myeongdong", "hongdae", "seongsu", "itaewon"] as const;
 const BY_AREA = { column: "area", values: AREAS } as const;
 
 export const STORAGE_TABLES: readonly TableInventory[] = [
+  // Prepared official news: hard caps 200 current / 400 meaningful revisions;
+  // never prune travel records, predictions or old rights evidence for space.
+  { table: "official_news_current", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
+    readers: "Stored, item-cleared airport/customs news API; indexed public list <=50", insertedAt: "received_at" },
+  { table: "official_news_revision", recordClass: "B_OBSERVATION_DETAIL", retentionDays: null, prunedBy: null, readWindowDays: null,
+    readers: "Meaningful article/permission revisions for audit, hard cap400; no raw payload snapshots", insertedAt: "received_at" },
   // Prepared METAR storage: one RKSI current row and one bounded attempt row.
   { table: "airport_metar_current", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
     readers: "Stored RKSI ground observation API; no raw snapshot history", insertedAt: "retrieved_at" },

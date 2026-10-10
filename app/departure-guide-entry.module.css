@@ -5,6 +5,9 @@ details.guide[open] > summary.entry { width:calc((100% - 16px)/2); }
 .tripEntry { grid-column:2; grid-row:1; align-self:start; display:grid; grid-template-columns:minmax(0,1fr) 80px; gap:12px; align-items:center; padding:10px 12px; min-height:82px; color:var(--ink); background:#f3f8fb; border-radius:4px; box-shadow:0 3px 9px rgb(70 105 132 / 9%); text-decoration:none; z-index:1; }
 .tripEntry strong { font-weight:var(--weight-strong); line-height:1.5; }
 .tripEntry img { width:80px; height:60px; object-fit:contain; }
+.newsMark { display:block;width:80px;height:60px; }
+.newsMark svg { display:block;width:100%;height:100%; }
+@media(max-width:600px){.newsMark{width:48px;height:48px;}}
 .tripEntry:focus-visible { outline:2px solid var(--ink); outline-offset:3px; }
 .baggageChoices { display:flex; flex-wrap:wrap; gap:12px; margin:16px 0; }
 .baggageChoices button { display:flex; align-items:center; gap:8px; min-height:64px; padding:8px 12px; color:var(--ink); background:#f3f8fb; border:0; border-bottom:2px solid transparent; border-radius:4px; box-shadow:0 3px 8px rgb(70 105 132 / 8%); font:inherit; cursor:pointer; }

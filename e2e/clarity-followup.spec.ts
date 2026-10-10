@@ -3,14 +3,14 @@ import {routeSummary,SUMMARY_FIXTURE} from './summary-fixture';
 import {departureChoiceCopy} from '../app/departure-choice-copy';
 
 for(const lang of ['ko','en','zh','ja'] as const) for(const width of [360,390,430,1280]) {
- test(`clarity ${lang} ${width}: closed travel entry, baggage branches, retained header`,async({page})=>{
+ test(`clarity ${lang} ${width}: closed news entry, baggage branches, retained header`,async({page})=>{
   await page.setViewportSize({width,height:900}); await page.emulateMedia({reducedMotion:'reduce'});
   const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
   await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
   await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',flights:[],truncated:false,retrievedAt:SUMMARY_FIXTURE.generatedAt}}));
   await page.goto(`/${lang}/airport`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
-  const guide=page.getByTestId('departure-preparation'),entry=page.getByTestId('departure-guide-entry'),trip=page.getByTestId('travel-records-entry');
-  await expect(guide).not.toHaveAttribute('open');await expect(trip).toBeVisible();await expect(trip).toHaveAttribute('href',`/${lang}/travel-records`);
+  const guide=page.getByTestId('departure-preparation'),entry=page.getByTestId('departure-guide-entry'),trip=page.getByTestId('airport-customs-news-entry');
+  await expect(guide).not.toHaveAttribute('open');await expect(trip).toBeVisible();await expect(trip).toHaveAttribute('href',`/${lang}/airport-news`);
   const left=(await entry.boundingBox())!,right=(await trip.boundingBox())!;expect(right.x).toBeGreaterThanOrEqual(left.x+left.width-1);expect(Math.abs(right.y-left.y)).toBeLessThan(3);
   await entry.focus();await page.keyboard.press('Enter');const short=departureChoiceCopy(lang);
   await guide.getByTestId('prep-baggage-YES').click();await expect(guide.getByTestId('prep-baggage-status')).toContainText(short.bagYes);
@@ -24,7 +24,7 @@ for(const lang of ['ko','en','zh','ja'] as const) for(const width of [360,390,43
   await expect(guide.getByTestId('prep-baggage-status')).toContainText(short.bagNo);
   await entry.focus();await page.keyboard.press('Enter');await expect(guide).not.toHaveAttribute('open');await expect(trip).toBeVisible();
   await expect(page.getByRole('banner')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
-  if(lang==='ko'&&width===390){await trip.click();await expect(page).toHaveURL(/\/ko\/travel-records/);await expect(page.getByTestId('travel-records')).toHaveAttribute('data-hydrated','true');await expect(page.getByTestId('travel-empty')).toBeVisible();await expect(page.getByTestId('travel-card')).toHaveCount(0);}
+  if(lang==='ko'&&width===390){await trip.click();await expect(page).toHaveURL(/\/ko\/airport-news/);await expect(page.getByTestId('airport-customs-news')).toBeVisible();await page.locator('.airport-news-saved a').click();await expect(page).toHaveURL(/\/ko\/travel-records/);await expect(page.getByTestId('travel-records')).toHaveAttribute('data-hydrated','true');await expect(page.getByTestId('travel-empty')).toBeVisible();await expect(page.getByTestId('travel-card')).toHaveCount(0);}
  });
 }
 

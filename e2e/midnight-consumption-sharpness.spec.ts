@@ -19,7 +19,7 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
  const resolution=await image.evaluate(async element=>{const im=element as HTMLImageElement,source=new Image();source.src=im.currentSrc;await source.decode();const css=getComputedStyle(im);return {pixels:source.naturalWidth,required:im.getBoundingClientRect().width*devicePixelRatio,filter:css.filter,opacity:css.opacity,transform:css.transform};});
  expect(resolution.pixels).toBeGreaterThanOrEqual(resolution.required);expect(resolution).toMatchObject({filter:'none',opacity:'1',transform:'none'});
  await page.goto('/'+lang+'/airport');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
- const guide=page.getByTestId('departure-guide-entry'),travel=page.getByTestId('travel-records-entry');await guide.scrollIntoViewIfNeeded();
+ const guide=page.getByTestId('departure-guide-entry'),travel=page.getByTestId('airport-customs-news-entry');await guide.scrollIntoViewIfNeeded();
  const a=await guide.boundingBox(),b=await travel.boundingBox();expect(Math.abs(a!.width-b!.width)).toBeLessThan(1);expect(a!.height).toBe(b!.height);expect(a!.y).toBe(b!.y);expect(a!.height).toBeGreaterThanOrEqual(44);
  expect(await guide.evaluate(el=>getComputedStyle(el).backgroundColor)).toBe(await travel.evaluate(el=>getComputedStyle(el).backgroundColor));
  await guide.focus();await page.keyboard.press('Enter');await expect(page.locator('details').filter({has:guide})).toHaveAttribute('open','');

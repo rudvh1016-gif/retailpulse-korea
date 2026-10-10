@@ -26,6 +26,7 @@ export function parseCustomsRss(xml:string):CustomsFeedItem[]{
  return items;
 }
 function hidden(html:string,name:string){return [...html.matchAll(/<input\b[^>]*>/gi)].map(m=>m[0]).filter(tag=>new RegExp('\\bname=["\']'+name+'["\']').test(tag)).map(tag=>tag.match(/\bvalue=["']([^"']*)["']/)?.[1]).find(Boolean);}
+export function customsArticleIdentity(item:CustomsFeedItem,html:string){return hidden(html,'nttSn')===item.id&&text(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]??'')==='관세청-'+item.title;}
 /** A normal official article response, not an RSS entry or generic footer,
  * must bind KOGL type 1 to this exact title and article id. Other items stay private. */
 export function customsTypeOneEvidence(item:CustomsFeedItem,html:string):string|null{
@@ -39,7 +40,8 @@ export async function prepareCustomsNews(item:CustomsFeedItem,articleHtml:string
  if(!Number.isFinite(Date.parse(receivedAt)))throw Error('Invalid received timestamp');
  const licence=customsTypeOneEvidence(item,articleHtml),key=hidden(articleHtml,'nttSnUrl');
  const url=new URL(item.url);if(key&&/^[a-f0-9]{32}$/.test(key))url.searchParams.set('nttSnUrl',key);
- const attribution=['관세청',options.namedAuthor,item.publishedAt?.slice(0,4),item.title,url.href,licence].filter(Boolean).join(' · ');
+ const publishedYear=item.publishedAt?new Date(Date.parse(item.publishedAt)+9*3600000).getUTCFullYear():undefined;
+ const attribution=['관세청',options.namedAuthor,publishedYear,item.title,url.href,licence].filter(Boolean).join(' · ');
  return {source:'customs',sourceId:item.id,sourceName:'관세청',title:item.title,url:url.href,publishedAt:item.publishedAt,receivedAt,status:'review',topic:classifyNews('customs',item.title),relevantToRetail:false,
   ...(licence&&key&&options.deepLinkVerified?{clearance:{evidenceUrl:url.href,confirmedAt:receivedAt,commercialReuse:true as const,requiredPresentation:true as const,deepLink:true as const,attribution}}:{}),
   contentFingerprint:await sha256({title:item.title,publishedAt:item.publishedAt,licence,articleId:hidden(articleHtml,'nttSn'),key}),facts:[],changes:[],audience:[],attachmentNeedsReview:true};

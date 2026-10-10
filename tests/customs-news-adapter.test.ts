@@ -25,4 +25,5 @@ test('normal deep-link verification is required; no effective date, deadline or 
  const cleared=await prepareCustomsNews(item,fields+licence,'2026-10-10T01:00:00Z',{deepLinkVerified:true});assert.equal(mayPublishNews(cleared),true);
  assert.match(cleared.clearance!.attribution,/관세청.*2026.*Fixture.*licenseType1/);
  assert.equal(cleared.effectiveDate,undefined);assert.equal(cleared.deadline,undefined);assert.equal(cleared.relevantToRetail,false);assert.equal(cleared.status,'review');assert.equal(cleared.attachmentNeedsReview,true);
+ const newYear=await prepareCustomsNews({...item,publishedAt:'2025-12-31T15:05:00Z'},fields+licence,'2026-01-01T00:00:00Z',{deepLinkVerified:true,namedAuthor:'Fixture author'});assert.match(newYear.clearance!.attribution,/Fixture author.*2026/);
 });

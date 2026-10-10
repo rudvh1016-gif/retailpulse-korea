@@ -1,0 +1,28 @@
+import {test,expect} from '@playwright/test';
+import {airportNewsCopy} from '../lib/airport-customs-news-copy';
+import {travelRecordsCopy} from '../app/travel-records-copy';
+import {routeSummary,SUMMARY_FIXTURE} from './summary-fixture';
+import {tofuCharacters} from './font-glyphs';
+const rights={commercialReuse:true,requiredPresentation:true,deepLink:true,evidenceUrl:'https://www.customs.go.kr/fixture-only',confirmedAt:'2026-10-11T00:00:00Z',attribution:'Developer fixture only — not real news or a rights grant'} as const;
+const record={source:'customs',sourceId:'fixture-test',sourceName:'Developer fixture source',title:'개발 검증용 면세 공고 — 실제 뉴스 아님',url:'https://www.customs.go.kr/fixture-only',publishedAt:'2026-10-01T00:00:00Z',modifiedAt:'2026-10-02T00:00:00Z',receivedAt:'2026-10-11T00:00:00Z',status:'review',topic:'customs',relevantToRetail:false,clearance:rights,contentFingerprint:'fixture-only',facts:[{text:'개발용 검증 항목',verifiedBySource:true},{text:'미확인 내용은 표시하지 않음',verifiedBySource:false}],changes:[],audience:[],attachmentNeedsReview:true};
+for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430,1280])test(`airport news entry ${lang} ${width}: existing size, honest empty tabs and saved travel access`,async({page})=>{
+ await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',flights:[],truncated:false,retrievedAt:SUMMARY_FIXTURE.generatedAt}}));
+ let newsRequests=0;await page.route('**/api/airport/news',route=>{newsRequests++;return route.fulfill({json:{status:'MISSING',today:'2026-10-11',items:[]}});});
+ await page.goto(`/${lang}/airport`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');expect(newsRequests).toBe(0);
+ const entry=page.getByTestId('airport-customs-news-entry'),guide=page.getByTestId('departure-guide-entry');await entry.scrollIntoViewIfNeeded();await expect(entry).toHaveAttribute('href',`/${lang}/airport-news`);await expect(entry).toHaveText(airportNewsCopy[lang].entry);
+ const newsBox=(await entry.boundingBox())!,guideBox=(await guide.boundingBox())!;expect(newsBox.height).toBe(80);expect(Math.abs(newsBox.width-guideBox.width)).toBeLessThan(1);expect(Math.abs(newsBox.y-guideBox.y)).toBeLessThan(1);
+ const textBox=(await entry.locator('strong').boundingBox())!;expect(textBox.y).toBeGreaterThanOrEqual(newsBox.y);expect(textBox.y+textBox.height).toBeLessThanOrEqual(newsBox.y+newsBox.height);
+ expect(await tofuCharacters(entry)).toEqual([]);await entry.focus();await page.keyboard.press('Enter');await expect(page.getByRole('heading',{level:1})).toHaveText(airportNewsCopy[lang].title);await expect(page.getByRole('status')).toHaveText(airportNewsCopy[lang].empty);
+ expect(newsRequests).toBe(1);const tabs=page.getByRole('tab');await tabs.nth(0).focus();await page.keyboard.press('ArrowRight');await expect(tabs.nth(1)).toHaveAttribute('aria-selected','true');await expect(page.getByRole('status')).toHaveText(airportNewsCopy[lang].empty);await expect(page.locator('.airport-news-row')).toHaveCount(0);
+ expect(page.url()).toContain('#/customs');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(await tofuCharacters(page.locator('.airport-news'))).toEqual([]);await expect(page.getByRole('link',{name:travelRecordsCopy[lang].list,exact:true})).toHaveAttribute('href',`/${lang}/travel-records`);expect(errors).toEqual([]);
+});
+for(const lang of ['ko','en','zh','ja'] as const)test(`airport news ${lang}: fixture detail date roles, deep link, rights removal, retry and keyboard`,async({page})=>{
+ await page.setViewportSize({width:390,height:900});const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));let unavailable=true,revoked=false;
+ await page.route('**/api/airport/news',route=>route.fulfill({json:unavailable?{status:'UNAVAILABLE',items:[],today:'2026-10-11'}:{status:'STORED',items:revoked?[]:[record],today:'2026-10-11'}}));
+ await page.goto(`/${lang}/airport-news`);await expect(page.getByRole('alert')).toContainText(airportNewsCopy[lang].unavailable);await expect(page.getByText(airportNewsCopy[lang].empty,{exact:true})).toHaveCount(0);
+ unavailable=false;await page.getByRole('button',{name:airportNewsCopy[lang].retry,exact:true}).click();const row=page.locator('.airport-news-row');await expect(row).toBeVisible();await row.focus();await page.keyboard.press('Enter');await expect(page.locator('dialog[open]')).toBeVisible();expect(page.url()).toContain('customs%7Cfixture-test');
+ const detail=page.locator('dialog');await expect(detail).toContainText(airportNewsCopy[lang].published);await expect(detail).toContainText(airportNewsCopy[lang].modified);await expect(detail).toContainText(`${airportNewsCopy[lang].effective}: ${airportNewsCopy[lang].dateUnknown}`);await expect(detail).not.toContainText('미확인 내용은 표시하지 않음');await expect(detail.getByRole('link')).toHaveAttribute('href',record.url);expect(await tofuCharacters(detail)).toEqual([]);
+ await page.keyboard.press('Escape');await expect(page.locator('dialog[open]')).toHaveCount(0);await expect(row).toBeFocused();await page.goBack();await expect(page.locator('dialog[open]')).toBeVisible();
+ revoked=true;await page.reload();await expect(page.getByRole('status')).toHaveText(airportNewsCopy[lang].empty);await expect(page.locator('.airport-news-row')).toHaveCount(0);await expect(page.locator('dialog[open]')).toHaveCount(0);expect(errors).toEqual([]);
+});
