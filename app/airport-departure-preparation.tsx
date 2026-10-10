@@ -60,5 +60,5 @@ export function AirportDeparturePreparation({lang}:{lang:Lang}) {
    </>}
    <p className="prep-note" data-testid="prep-limits">{c.limits}</p><p className="prep-note">{c.checked}</p>
   </div>}
- </details><a className={styles.tripEntry} href={`/${lang}/airport-news`} data-testid="airport-customs-news-entry"><span><strong>{airportNewsCopy[lang].entry}</strong></span><span className={styles.newsMark} aria-hidden="true"><AirportNewsMark/></span></a></div>;
+ </details><a className={styles.tripEntry} href={`/${lang}/airport-news`} data-testid="airport-customs-news-entry"><span><strong>{airportNewsCopy[lang].entry}</strong></span><span className={styles.newsMark} aria-hidden="true"><AirportNewsMark entry/></span></a></div>;
 }

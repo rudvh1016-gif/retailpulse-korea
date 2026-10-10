@@ -27,7 +27,7 @@ export function AirportCustomsNews({items,today,lang='ko',onBack,syncUrl=false,s
  const rows=allowed.filter(item=>item.topic===topic);
  const facts=(title:string,values:OfficialNews['facts'])=><section><h3>{title}</h3>{values.some(value=>value.verifiedBySource)?<ul>{values.filter(value=>value.verifiedBySource).map((value,index)=><li className="airport-provider-text" lang="ko" key={index}>{value.text}</li>)}</ul>:<p>{copy.unknown}</p>}</section>;
  return <section className="airport-news" lang={lang==='zh'?'zh-CN':lang} aria-labelledby="airport-news-title">
-  <header><AirportNewsMark/><div><h1 id="airport-news-title">{copy.title}</h1><p>{copy.intro}</p></div>{onBack&&<button type="button" onClick={onBack}>{copy.back}</button>}</header>
+  <header><div><h1 id="airport-news-title">{copy.title}</h1><p>{copy.intro}</p></div>{onBack&&<button type="button" onClick={onBack}>{copy.back}</button>}</header>
   <div className="airport-news-tabs" role="tablist" aria-label={copy.tabs}>
    {(['airport','customs'] as const).map((value,index)=><button key={value} type="button" ref={element=>{tabs.current[index]=element;}} role="tab" id={'news-tab-'+value} aria-controls="airport-news-list" aria-selected={topic===value} tabIndex={topic===value?0:-1} onClick={()=>navigate(value)} onKeyDown={event=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?1:1-index;navigate((['airport','customs'] as const)[next]);tabs.current[next]?.focus();}}}><AirportNewsMark topic={value}/>{copy[value]}</button>)}
   </div>

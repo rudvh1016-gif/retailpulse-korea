@@ -6,7 +6,7 @@ details.guide[open] > summary.entry { width:calc((100% - 16px)/2); }
 .tripEntry strong { font-weight:var(--weight-strong); line-height:1.5; }
 .tripEntry img { width:80px; height:60px; object-fit:contain; }
 .newsMark { display:block;width:80px;height:60px; }
-.newsMark svg { display:block;width:100%;height:100%; }
+.newsMark img { display:block;width:100%;height:100%;object-fit:contain; }
 @media(max-width:600px){.newsMark{width:48px;height:48px;}}
 .tripEntry:focus-visible { outline:2px solid var(--ink); outline-offset:3px; }
 .baggageChoices { display:flex; flex-wrap:wrap; gap:12px; margin:16px 0; }
