@@ -2,6 +2,9 @@ import {mayPublishNews,sortNews,type OfficialNews} from './airport-customs-news'
 import {sha256} from './hash';
 type Store=Pick<D1Database,'prepare'|'batch'>;
 const MAX_PAYLOAD=8192;
+export function officialNewsSemanticHash(item:OfficialNews){
+ return sha256({...item,receivedAt:null,clearance:item.clearance?{...item.clearance,confirmedAt:null}:null,attachments:item.attachments?.map(a=>({...a,reviewedAt:null}))});
+}
 export function validStoredNews(value:unknown):value is OfficialNews{
  if(!value||typeof value!=='object')return false;
  const item=value as OfficialNews;
@@ -28,7 +31,7 @@ export async function storeOfficialNews(db:Store,incoming:readonly OfficialNews[
  const statements:D1PreparedStatement[]=[];
  for(const item of unique.values()){
   const payload=JSON.stringify(item);if(new TextEncoder().encode(payload).length>MAX_PAYLOAD)throw Error('NEWS_PAYLOAD_LIMIT');
-  const hash=await sha256({...item,receivedAt:null,clearance:item.clearance?{...item.clearance,confirmedAt:null}:null,attachments:item.attachments?.map(a=>({...a,reviewedAt:null}))});
+  const hash=await officialNewsSemanticHash(item);
   statements.push(db.prepare(`INSERT INTO official_news_revision(source,source_id,semantic_hash,payload,received_at)
    SELECT source,source_id,semantic_hash,payload,received_at FROM official_news_current
    WHERE source=? AND source_id=? AND semantic_hash<>?`).bind(item.source,item.sourceId,hash));

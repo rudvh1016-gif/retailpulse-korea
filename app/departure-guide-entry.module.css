@@ -24,7 +24,7 @@ details.guide > summary.entry { display: inline-grid; grid-template-columns: min
 .indicator { width: 18px; height: 18px; flex: 0 0 18px; }
 .guide[open] .indicator { transform: rotate(180deg); }
 .scene { display: block; min-width: 0; aspect-ratio: 4 / 3; }
-.scene img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 60%; }
+.scene img { display: block; width: 100%; height: 100%; object-fit: contain; }
 @media(max-width:600px) { details.guide > summary.entry,.tripEntry { grid-template-columns:minmax(0,1fr) 48px; gap:6px; padding:10px 8px; } .tripEntry img { width:48px; height:48px; } .actionText { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; } }
 details.guide > summary.entry:hover { background: #f4f4f4; }
 details.guide > summary.entry:active { background: #f8f8f8; }

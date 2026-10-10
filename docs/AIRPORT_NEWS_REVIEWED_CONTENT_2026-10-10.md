@@ -1,6 +1,6 @@
 # 확인된 기존 공식 뉴스와 작은 Blender 아이콘
 
-2026-10-10 UTC. PR329의 제한된 화면 보완과 읽기 전용 자료 검증 기록이다. 공개 병합·배포·운영 수집·원격 DB 쓰기는 실행하지 않았다. 원문 자료를 production 코드나 번들에 고정 seed로 넣지 않는다.
+2026-10-10 UTC. PR329의 제한된 화면 보완과 공식 자료 검증 기록이다. 사용자 후속 승인으로 SQL0026과 검토된 두 건의 일회성 운영 저장 경로를 추가했다. 공개 병합·배포·자동 수집은 실행하지 않는다. 실제 자료 입력은 전용 CLI에만 연결하며 화면 번들에 fixture나 기본 seed로 넣지 않는다.
 
 ## 자료 두 건
 
@@ -45,4 +45,10 @@ Library 이미지(모두 실제 픽셀 확인, version0):
 - Blender 공항 아이콘: `libfile_ac8574db6fb4819191598c095289a731`
 - Blender 관세·면세 아이콘: `libfile_b1831831349c8191bc3ab568dd1ea70c`
 
-로컬 산출물 루트는 `outputs/news-preparation-20261010`이며 원문·첨부 SHA, `related-reviewed-records.json`, `related-source-review.json`, `related-real-storage-evidence.json`, `related-real-browser-evidence.json`, `.blend` 두 개와 생성/내보내기 스크립트·WebP 용량 증거·Library identity sidecar를 보존한다. Windows의 POSIX xattr 미지원으로 Library ID/version은 sidecar에 기록했다. 원문/준비 기록은 production import 또는 seed로 연결하지 않았다.
+로컬 산출물 루트는 `outputs/news-preparation-20261010`이며 원문·첨부 SHA, `related-reviewed-records.json`, `related-source-review.json`, `related-real-storage-evidence.json`, `related-real-browser-evidence.json`, `.blend` 두 개와 생성/내보내기 스크립트·WebP 용량 증거·Library identity sidecar를 보존한다. Windows의 POSIX xattr 미지원으로 Library ID/version은 sidecar에 기록했다. 준비 기록 두 건만 승인된 전용 일회성 import에 연결했다. 자동 수집과 화면 seed는 없다.
+
+## 최신 사용자 그림 배치 및 운영 저장 승인
+
+사용자 요청 Sentinel_fe29852ed3fc8191849a41b4a4d94dce에 따라 기존 항공기 렌더는 왼쪽 출국 준비 가이드로 옮기고, 오른쪽 뉴스 진입에는 실제 Blender paper-news.blend의 하늘색·흰색 종이 렌더를 사용했다. 내부 두 탭 그림은 유지한다. 버튼 위치·80px 높이·너비·글자·열기 동작은 같다. 새 종이 WebP64/128/256은1,144/2,326/4,888B, 추가 파일 합계8,358B다. 이 파일을 모두 한 화면에서 다운로드하지 않는다. 기존 출국 그림25,566B 요청은 반응형 항공기 그림으로 바뀐다. 실제 PSI/LCP 개선 측정으로 해석하지 않는다.
+
+저장 승인 범위·용량 실측·기존62일 월 비교 원자료 보존은 NEWS_STORAGE_MINIMIZATION_2026-10-10.md에 기록한다. 원격 실행 여부와 최신 자동 검사 결과는 PR 및 실행 증거에서 구분한다.
