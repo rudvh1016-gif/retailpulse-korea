@@ -54,6 +54,15 @@ on:
   schedule:
     - cron: "7 15 * * *"
   workflow_dispatch:
+    inputs:
+      a1_midnight_recovery:
+        description: "Prepared A1-only fallback; no new provider budget"
+        type: boolean
+        default: false
+      a1_recovery_target_date:
+        description: "Required KST YYYY-MM-DD for the A1-only fallback"
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -66,10 +75,11 @@ concurrency:
 
 jobs:
   collect:
-    if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
+    if: ${{ vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && (inputs.a1_midnight_recovery != true || inputs.a1_recovery_target_date != '') }}
     uses: ./.github/workflows/collect-attempt.yml
     with:
-      sources: airport_recent,airport_enrichment
+      sources: ${{ inputs.a1_midnight_recovery == true && 'airport_recent' || 'airport_recent,airport_enrichment' }}
+      a1_expected_target_date: ${{ inputs.a1_midnight_recovery == true && inputs.a1_recovery_target_date || '' }}
       attempt: 1
       timeout_minutes: 20
       a1_max_requests: "125"
@@ -80,7 +90,8 @@ jobs:
     if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && ((needs.collect.result == 'failure' && needs.collect.outputs.retry_airport == 'true') || (contains(fromJSON('["success","failure"]'), needs.collect.result) && needs.collect.outputs.recheck_airport_publication == 'true')) }}
     uses: ./.github/workflows/collect-attempt.yml
     with:
-      sources: ${{ needs.collect.outputs.recheck_airport_publication == 'true' && 'airport_recent' || 'airport_recent,airport_enrichment' }}
+      sources: ${{ (inputs.a1_midnight_recovery == true || needs.collect.outputs.recheck_airport_publication == 'true') && 'airport_recent' || 'airport_recent,airport_enrichment' }}
+      a1_expected_target_date: ${{ inputs.a1_midnight_recovery == true && inputs.a1_recovery_target_date || '' }}
       attempt: 2
       timeout_minutes: ${{ needs.collect.outputs.recheck_airport_publication == 'true' && 25 || 20 }}
       a1_max_requests: "125"
@@ -92,7 +103,8 @@ jobs:
     if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && ((needs.retry_1.result == 'failure' && needs.retry_1.outputs.retry_airport == 'true') || (contains(fromJSON('["success","failure"]'), needs.retry_1.result) && needs.retry_1.outputs.recheck_airport_publication == 'true')) }}
     uses: ./.github/workflows/collect-attempt.yml
     with:
-      sources: ${{ needs.retry_1.outputs.recheck_airport_publication == 'true' && 'airport_recent' || 'airport_recent,airport_enrichment' }}
+      sources: ${{ (inputs.a1_midnight_recovery == true || needs.retry_1.outputs.recheck_airport_publication == 'true') && 'airport_recent' || 'airport_recent,airport_enrichment' }}
+      a1_expected_target_date: ${{ inputs.a1_midnight_recovery == true && inputs.a1_recovery_target_date || '' }}
       attempt: 3
       timeout_minutes: ${{ needs.retry_1.outputs.recheck_airport_publication == 'true' && 25 || 20 }}
       a1_max_requests: "125"

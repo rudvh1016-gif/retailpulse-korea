@@ -90,6 +90,8 @@ export interface CollectorEnv {
   A1_SHARED_REQUEST_BUDGET?: boolean;
   /** One window a day rescans today's A1 even when today is already recorded. */
   A1_RESCAN_TODAY?: boolean;
+  /** A queued fallback must never collect a different KST day. */
+  A1_EXPECTED_TARGET_DATE?: string;
   /**
    * Hard per-request attempt ceiling for the A4 congestion pair, set only by
    * the fresh-runner retry in `collect-realtime.yml`.

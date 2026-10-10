@@ -39,6 +39,10 @@ on:
         description: This attempt's A5 failure is transient and permits the next existing job
         value: ${{ jobs.collect.outputs.retry_forecast }}
     inputs:
+      a1_expected_target_date:
+        type: string
+        required: false
+        default: ""
       sources:
         description: RPK_PRODUCTION_SOURCES value for this attempt
         required: true
@@ -118,6 +122,7 @@ jobs:
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
           RPK_A1_MAX_REQUESTS: ${{ inputs.a1_max_requests }}
           RPK_A1_RESCAN_TODAY: ${{ inputs.a1_rescan_today }}
+          RPK_A1_EXPECTED_TARGET_DATE: ${{ inputs.a1_expected_target_date }}
           RPK_A4_MAX_ATTEMPTS_PER_REQUEST: ${{ inputs.a4_max_attempts_per_request }}
       - name: Classify this A1 attempt before spending a fresh runner
         id: airport_retry_decision

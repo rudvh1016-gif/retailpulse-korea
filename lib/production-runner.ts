@@ -33,6 +33,7 @@
  */
 import { collectAirportFacilities } from "./airport-facilities";
 import { collectAirportFlightsToday, hasCompleteA1RecentHistoryToday, kstDate } from "./airport-today";
+import { airportMidnightSourceBlocked } from './airport-recovery-protection';
 import {
   collectAirportCongestion,
   collectAirportCongestionT2,
@@ -100,9 +101,15 @@ const DEFAULT_RUNNERS = {
    */
   airport_recent: async (env: CollectorEnv, now: Date): Promise<ProductionSourceOutcome> => {
     const targetDate = kstDate(now);
+    if (env.A1_EXPECTED_TARGET_DATE && env.A1_EXPECTED_TARGET_DATE !== targetDate)
+      return { status: 'SKIPPED_RECOVERY_DATE_MISMATCH', records: 0, providerRequests: 0 };
     if (!env.A1_RESCAN_TODAY && await hasCompleteA1RecentHistoryToday(env.DB, targetDate)) {
       return { status: SKIPPED_ALREADY_COMPLETE_TODAY, records: 0 };
     }
+    // Native early/daily may have failed with auth/429 while this fallback waited.
+    // Recheck at execution time; the shared concurrency group alone cannot stop that retry.
+    if (env.A1_EXPECTED_TARGET_DATE && await airportMidnightSourceBlocked(env.DB))
+      return { status: 'SKIPPED_RECOVERY_SOURCE_PROTECTED', records: 0, providerRequests: 0 };
     return collectAirportFlightsToday(env, now);
   },
   airport_enrichment: (env: CollectorEnv) => collectAirportFlightEnrichment(env),
