@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import {preload} from 'react-dom';
 import "./globals.css";
 import "./airport-date-calendar.css";
+import './airport-models.css';
 import { isStagingDeployment, pageTitle, pageDescription, siteOrigin, socialImage, shareDescription } from "./seo-config";
 
 export const metadata: Metadata = {

@@ -7,7 +7,6 @@ import { departureMap } from '../lib/airport-departure-map';
 import { rankMapGates, leadingGates, type RankedGate } from '../lib/airport-gate-ranking';
 import { mapCopy } from '../lib/airport-departure-map-copy';
 import { kstStamp } from '../lib/demand-presentation';
-import './airport-models.css';
 import styles from './airport-gate-pillars.module.css';
 import compactStyles from './compact-disclosure.module.css';
 

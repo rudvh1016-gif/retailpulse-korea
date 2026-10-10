@@ -18,7 +18,7 @@
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "5fa7a470a6dcce6cbc819951b4dea3da4305fac55db4bd424ce78c4121b1d62b",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
-    "app/layout.tsx": "86d9c33516197ffb558104b3d19c94dc7eea585be248f8fc441c3b49dce18f4b",
+    "app/layout.tsx": "d9ed220d1f9f81cba35811d7d8932c1e82bd7e8cb25212004d37ed52a2f2e7c7",
     "app/live-signals.tsx": "1b5a72bf20d8df0bb66f70ecf588c57da547b66f375e5b3ab72f6292163cae29",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6",
@@ -1247,5 +1247,24 @@
     ],
     "protectedPathCount": 61,
     "approvalEvidenceFile": "docs/approvals/airport-monthly-performance-20261010.json"
+  },
+  "ownerApprovedAirportMonthlySharedStyles20261010": {
+    "recordedAt": "2026-10-10T08:42:04.691Z",
+    "authorizationEvidence": {
+      "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "ownerRequest": "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+      "scope": "Fix the observed production-build 404 modulepreload of a duplicated shared CSS stub after SSR-enabled inactive-screen splitting. Move the same airport-models stylesheet to the shared server layout once; remove three duplicate client imports. Preserve every CSS declaration and original UI Lock.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Measured console/network correction within the approved performance and bug scope. No style, size, color, model or information changes. All prior records and61protected paths remain.",
+    "changes": [
+      {
+        "file": "app/layout.tsx",
+        "previous": "86d9c33516197ffb558104b3d19c94dc7eea585be248f8fc441c3b49dce18f4b",
+        "approved": "d9ed220d1f9f81cba35811d7d8932c1e82bd7e8cb25212004d37ed52a2f2e7c7"
+      }
+    ],
+    "protectedPathCount": 61,
+    "approvalEvidenceFile": "docs/approvals/airport-monthly-shared-styles-20261010.json"
   }
 }

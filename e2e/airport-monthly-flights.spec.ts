@@ -16,13 +16,13 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
  await expect(section).toContainText('+200.0%');
  await section.locator('details').nth(1).locator('summary').focus();await page.keyboard.press('Enter');await expect(section.locator('details').nth(1)).toHaveAttribute('open','');
  await expect(section.locator('details').nth(1).locator('tbody tr')).toHaveCount(1);
- await page.getByRole('button',{name:'T2',exact:true}).first().click();await expect(section).toContainText('+100.0%');
+ for(let repeat=0;repeat<2;repeat++){await page.getByRole('tab',{name:'T1',exact:true}).click();await page.getByRole('tab',{name:'T2',exact:true}).click();await expect(section).toContainText('+100.0%');}
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
 });
 test('a slower old month cannot replace a new selection; failures and zero baselines are explicit',async({page})=>{
  await page.route('**/api/live/summary*',routeSummary(summary));
  await page.route('**/api/live/airport-months*',async route=>{const month=new URL(route.request().url()).searchParams.get('month');if(month==='2026-09')await new Promise(resolve=>setTimeout(resolve,300));await route.fulfill({json:reply(month??undefined)});});
  await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();await expect(section).toContainText('+200.0%');
- await section.locator('select').selectOption('2026-09');await section.locator('select').selectOption('2026-10');await expect(section.locator('select')).toHaveValue('2026-10');await expect(section).toContainText('+200.0%');
+ await section.locator('select').selectOption('2026-09');await section.locator('select').selectOption('2026-10');await page.waitForTimeout(400);await expect(section.locator('select')).toHaveValue('2026-10');await expect(section).toContainText('+200.0%');
  await page.route('**/api/live/airport-months*',route=>route.fulfill({status:503,json:{status:'UNAVAILABLE',data:null}}));await section.locator('select').selectOption('2026-09');await expect(section).toContainText('집계');await expect(section).not.toContainText('+200.0%');
 });

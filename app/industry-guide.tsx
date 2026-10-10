@@ -4,7 +4,6 @@ import { useId, useState } from 'react';
 import type { Lang, Terminal } from './retailpulse-data';
 import { checklistPhaseLabels, checklistPhaseOrder, industryProfiles, type IndustryId } from '../lib/industry-guidance';
 import { airportStoreAreas, industryPlaybooks, type AirportStoreArea } from '../lib/industry-playbooks';
-import './airport-models.css';
 import './industry-scenes.css';
 
 const text = (lang: Lang, ko: string, en: string, zh: string, ja: string) => ({ ko, en, zh, ja })[lang];

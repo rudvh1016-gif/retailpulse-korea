@@ -23,6 +23,10 @@ export function dayLabel(day: string, lang: Lang): string {
 }
 
 export function shortDayLabel(day:string,reference:string,lang:Lang):string {
+ if(lang==='ko'){
+  const weekday=new Intl.DateTimeFormat(locale.ko,{timeZone:'Asia/Seoul',weekday:'short'}).format(new Date(day+'T12:00:00+09:00'));
+  return `${day.slice(0,4)!==reference.slice(0,4)?Number(day.slice(0,4))+'년 ':''}${Number(day.slice(5,7))}월 ${Number(day.slice(8,10))}일(${weekday})`;
+ }
  return new Intl.DateTimeFormat(locale[lang],{timeZone:'Asia/Seoul',...(day.slice(0,4)!==reference.slice(0,4)?{year:'numeric' as const}:{}),month:'numeric',day:'numeric',weekday:'short'}).format(new Date(day+'T12:00:00+09:00'));
 }
 

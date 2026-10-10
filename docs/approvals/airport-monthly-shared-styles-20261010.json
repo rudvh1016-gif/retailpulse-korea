@@ -1,0 +1,19 @@
+{
+  "recordedAt": "2026-10-10T08:42:04.691Z",
+  "authorizationEvidence": {
+    "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+    "ownerRequest": "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+    "scope": "Fix the observed production-build 404 modulepreload of a duplicated shared CSS stub after SSR-enabled inactive-screen splitting. Move the same airport-models stylesheet to the shared server layout once; remove three duplicate client imports. Preserve every CSS declaration and original UI Lock.",
+    "agentMergeOrDeploymentApproved": false
+  },
+  "reason": "Measured console/network correction within the approved performance and bug scope. No style, size, color, model or information changes. All prior records and61protected paths remain.",
+  "changes": [
+    {
+      "file": "app/layout.tsx",
+      "previous": "86d9c33516197ffb558104b3d19c94dc7eea585be248f8fc441c3b49dce18f4b",
+      "approved": "d9ed220d1f9f81cba35811d7d8932c1e82bd7e8cb25212004d37ed52a2f2e7c7"
+    }
+  ],
+  "protectedPathCount": 61,
+  "approvalEvidenceFile": "docs/approvals/airport-monthly-shared-styles-20261010.json"
+}
