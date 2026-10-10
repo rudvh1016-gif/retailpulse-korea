@@ -3,7 +3,7 @@ import test from 'node:test';
 import {readFileSync} from 'node:fs';
 import {DatabaseSync} from 'node:sqlite';
 import {collectDutyFreeExchange,parseDutyFreeHtml,parseDutyFreeDatedHtml} from '../lib/duty-free-exchange-collector.ts';
-import {claimDutyFreeAttempt,saveDutyFreeSuccess,readDutyFreeSnapshot,DUTY_FREE_BLOCK_INTERVAL_MS} from '../lib/duty-free-exchange-store.ts';
+import {claimDutyFreeAttempt,saveDutyFreeSuccess,saveDutyFreeFailure,readDutyFreeSnapshot,DUTY_FREE_BLOCK_INTERVAL_MS} from '../lib/duty-free-exchange-store.ts';
 import {dutyFreePresentation,dutyFreeDatedPresentation,dutyFreeSources,kstExchangeDate,mergeDutyFreeSnapshot,dutyFreeReadDelay} from '../lib/duty-free-exchange.ts';
 import {dutyFreeCacheControl} from '../app/api/live/duty-free-exchange/route.ts';
 import {shouldRouteToSummaryCache} from '../worker/summary-cache-routing.ts';
@@ -55,6 +55,56 @@ test('same semantic rate writes zero canonical rows but preserves real latest su
  const record=sql.prepare('SELECT * FROM duty_free_exchange_current').get();assert.equal(record.first_verified_at,new Date(now).toISOString());
  const snapshot=await readDutyFreeSnapshot(db,new Date(clock));assert.equal(snapshot.sources[0].observation.verifiedAt,new Date(clock).toISOString());
  clock+=24*3_600_000;const [newDay]=await collectDutyFreeExchange(db,options);assert.equal(newDay.changedRows,1);
+});
+
+test('real midnight incident: yesterday 23:52 success cannot defer missing today until 00:52',async t=>{
+ const {db}=localDb(t);let clock=Date.parse('2026-10-10T14:52:54.577Z'),calls=0;
+ const options={now:()=>new Date(clock),fetchImpl:async()=>{calls++;return html(shilla());}};
+ await collectDutyFreeExchange(db,options);
+ clock=Date.parse('2026-10-10T15:07:49Z');
+ const [result]=await collectDutyFreeExchange(db,options);
+ assert.equal(result.status,'SUCCESS');assert.equal(result.changedRows,1);assert.equal(calls,2);
+ const snapshot=await readDutyFreeSnapshot(db,new Date(clock));
+ assert.equal(dutyFreeDatedPresentation(snapshot,clock).find(row=>row.current).serviceDateKst,'2026-10-11');
+ assert.equal(snapshot.sources[0].nextAttemptAt,'2026-10-10T16:07:49.000Z');
+ await collectDutyFreeExchange(db,options);assert.equal(calls,2);
+});
+
+test('a verified precollected tomorrow rate needs no midnight exception or relabeling',async t=>{
+ const {db}=localDb(t);const before=Date.parse('2026-10-10T14:52:54Z'),after=Date.parse('2026-10-10T15:07:49Z');
+ await claimDutyFreeAttempt(db,'shilla',new Date(before),'precollection');
+ const tomorrow={...observation('shilla',before,1340),serviceDateKst:'2026-10-11',dateEvidence:'EXPLICIT_SOURCE_DATE'};
+ await saveDutyFreeSuccess(db,observation('shilla',before),'precollection',[tomorrow]);
+ let calls=0;const [result]=await collectDutyFreeExchange(db,{now:()=>new Date(after),fetchImpl:async()=>{calls++;return html(shilla());}});
+ assert.equal(result.status,'SKIPPED_NOT_DUE');assert.equal(calls,0);
+ const row=dutyFreeDatedPresentation(await readDutyFreeSnapshot(db,new Date(after)),after).find(row=>row.current);
+ assert.equal(row.serviceDateKst,'2026-10-11');assert.equal(row.verifiedAt,new Date(before).toISOString());assert.equal(row.krwPerUnit,1340);
+});
+
+test('first-hour transient missing-date recovery is durable and bounded, while a known today keeps its hourly guard',async t=>{
+ const {db,sql}=localDb(t);const start=Date.parse('2026-10-10T15:00:00Z');let clock=start,calls=0;
+ const options={now:()=>new Date(clock),fetchImpl:async()=>{calls++;return new Response('temporary',{status:503});}};
+ for(let i=0;i<4;i++){
+  clock=start+i*900_000;assert.equal((await collectDutyFreeExchange(db,options))[0].status,'ERROR');
+  clock+=899_999;assert.equal((await collectDutyFreeExchange(db,options))[0].status,'SKIPPED_NOT_DUE');
+ }
+ assert.equal(calls,4);clock=start+3_600_000;await collectDutyFreeExchange(db,options);assert.equal(calls,5);
+ assert.equal(sql.prepare('SELECT next_due_at FROM duty_free_exchange_attempt').get().next_due_at,'2026-10-10T17:00:00.000Z');
+ const other=localDb(t);assert.equal(await claimDutyFreeAttempt(other.db,'shilla',new Date(start),'known'),true);
+ await saveDutyFreeSuccess(other.db,observation('shilla',start),'known');
+ assert.equal(await claimDutyFreeAttempt(other.db,'shilla',new Date(start+900_000),'too_soon'),false);
+});
+
+test('midnight claims remain exclusive, crash budgets persist, and blocked previous-day attempts stay blocked',async t=>{
+ const {db}=localDb(t);const before=Date.parse('2026-10-10T14:52:54Z'),after=Date.parse('2026-10-10T15:07:49Z');
+ await claimDutyFreeAttempt(db,'shilla',new Date(before),'previous');await saveDutyFreeSuccess(db,observation('shilla',before),'previous');
+ const claims=await Promise.all([claimDutyFreeAttempt(db,'shilla',new Date(after),'first'),claimDutyFreeAttempt(db,'shilla',new Date(after),'second')]);
+ assert.deepEqual(claims,[true,false]);
+ assert.equal(await claimDutyFreeAttempt(db,'shilla',new Date(after+120_001),'expired'),false);
+ assert.equal(await claimDutyFreeAttempt(db,'shilla',new Date(after+900_000),'due'),true);
+ const blocked=localDb(t);await claimDutyFreeAttempt(blocked.db,'shilla',new Date(before),'blocked');
+ await saveDutyFreeFailure(blocked.db,'shilla','blocked',new Date(before),'HTTP_406',true);
+ assert.equal(await claimDutyFreeAttempt(blocked.db,'shilla',new Date(after),'no_bypass'),false);
 });
 
 test('406 has one request, no retry or workaround, 24-hour guard, and preserves original last-good timestamp',async t=>{

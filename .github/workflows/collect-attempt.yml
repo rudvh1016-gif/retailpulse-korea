@@ -15,8 +15,10 @@ name: Collection Attempt
 # two seconds each. A fresh JOB is a fresh runner, and that is the one thing an
 # in-process retry can never be.
 #
-# Cost when healthy is zero: a caller only starts the next attempt after the
-# previous one failed outright. And a retry should always name the RECOVERY
+# Cost when healthy is zero: an error retry requires the previous failure.
+# Early A1 can also recheck a verified publication wait on the same two jobs,
+# five minutes apart, within its unchanged atomic rolling request ceiling.
+# And a retry should always name the RECOVERY
 # variant of a source where one exists — that path reads Production D1 first
 # and requests only what is actually missing, so a retry can never become a
 # blind repeat of a cycle that already stored its rows.
@@ -30,6 +32,9 @@ on:
       retry_airport:
         description: This attempt's own A1 fetch failure permits the next existing job
         value: ${{ jobs.collect.outputs.retry_airport }}
+      recheck_airport_publication:
+        description: A complete A1 scan awaits publication for the same early KST date
+        value: ${{ jobs.collect.outputs.recheck_airport_publication }}
       retry_forecast:
         description: This attempt's A5 failure is transient and permits the next existing job
         value: ${{ jobs.collect.outputs.retry_forecast }}
@@ -58,6 +63,11 @@ on:
         required: false
         default: false
         type: boolean
+      a1_publication_recheck:
+        description: Space a bounded publication recheck on an existing A1 job
+        required: false
+        default: false
+        type: boolean
       a4_max_attempts_per_request:
         description: >-
           Per-request attempt ceiling for the A4 congestion pair on this
@@ -79,6 +89,7 @@ jobs:
     environment: production
     outputs:
       retry_airport: ${{ steps.airport_retry_decision.outputs.retry_airport }}
+      recheck_airport_publication: ${{ steps.airport_retry_decision.outputs.recheck_airport_publication }}
       retry_forecast: ${{ steps.retry_decision.outputs.retry_forecast }}
     steps:
       - uses: actions/checkout@v4
@@ -90,6 +101,9 @@ jobs:
       - name: Space the existing A5 retry jobs
         if: ${{ inputs.attempt > 1 && startsWith(inputs.sources, 'airport_passenger_forecast') }}
         run: sleep 10
+      - name: Space the existing A1 publication checks
+        if: ${{ inputs.attempt > 1 && inputs.a1_publication_recheck }}
+        run: sleep 300
       - name: Collect ${{ inputs.sources }} (attempt ${{ inputs.attempt }})
         id: collect
         shell: bash
