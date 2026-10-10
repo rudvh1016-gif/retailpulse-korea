@@ -89,13 +89,13 @@ function repositoryFiles(root, out = []) {
 // ── A. Hard gate: no call path reaches a provider while dormant ──────────────
 
 test('A: the production gate is locked, and every one of its four conditions is reported', () => {
-  assert.equal(CENTRAL_RECOVERY_EXECUTION_ENABLED, false);
+  assert.equal(CENTRAL_RECOVERY_EXECUTION_ENABLED, true);
   const gate = centralRecoveryActivation('2026-10-01T00:00:00Z', {});
   assert.equal(gate.allowed, false);
-  assert.ok(gate.blockedBy.includes('COMPILED_DISABLED'));
+  assert.ok(gate.blockedBy.includes('A1_DIRECT_ONLY_SCOPE'));
   assert.ok(gate.blockedBy.includes('OWNER_APPROVAL_MISSING'));
   assert.ok(gate.blockedBy.includes('RUNTIME_DISABLED'));
-  assert.deepEqual(gate.evaluated, { trialOver: true, compiledEnabled: false, ownerApproved: false, runtimeEnabled: false });
+  assert.deepEqual(gate.evaluated, { trialOver: true, compiledEnabled: true, ownerApproved: false, runtimeEnabled: false });
 });
 
 test('A: the trial date is necessary and never sufficient', () => {
@@ -172,21 +172,32 @@ test('B: a valid incident plus a real-looking adapter still executes nothing whi
   assert.equal(counter.calls, 0);
 });
 
+test('A1 runtime flags authorise no generic executor for any production source',async()=>{
+ for(const sourceId of [...PRODUCTION_SOURCE_IDS,'UNREVIEWED_SOURCE']){
+  const {memory}=setup();const [counter,executor]=countingExecutor();
+  const result=await executeControlledRecovery(memory,{...request(),parts:{...parts,sourceId}},executor,{nowIso:later,env:{RPK_CENTRAL_RECOVERY_OWNER_APPROVED:'true',RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED:'true'}});
+  assert.equal(result.admitted,false,sourceId);assert.ok(result.blockedBy.includes('A1_DIRECT_ONLY_SCOPE'),sourceId);
+  assert.equal(counter.calls,0,sourceId);assert.equal(counter.verifies,0,sourceId);
+  assert.equal((await memory.attempts(sourceId,'2026-09-13')).length,0,sourceId);
+ }
+});
+
 // ── C/D. Rule and capability must BOTH approve (§8) ─────────────────────────
 
 test('C: rule approval alone never authorises a source; capability approval alone never authorises a failure class', () => {
   // EXECUTION_ERROR is approved by the rule table for every failure of that class.
   assert.equal(decideRecovery('EXECUTION_ERROR', 0).approved, true);
-  // A1 has a rule-approved class and no capability: the intersection refuses.
+  // A1 direct capability does not grant this generic planner a new provider budget.
   const a1 = resolveRecoveryDisposition({ sourceId: 'INCHEON_FLIGHT_DETAIL', failureClass: 'EXECUTION_ERROR',
     contractVersion: 'flight-v1', attemptsUsed: 0, inFlight: false, alreadyRecovered: false, centralGateAllowed: true });
   assert.equal(a1.ruleDecision.approved, true);
-  assert.equal(a1.finalDisposition, 'BLOCKED_UNSUPPORTED_SOURCE');
+  assert.equal(a1.finalDisposition, 'BLOCKED_BUDGET');
   assert.equal(a1.recommendedAction, 'NONE');
   // BLOCKED_BUDGET means this incident's ATTEMPT budget is spent, which is a
   // different fact from A1's provider ceiling being permanently allocated; the
   // latter is why the source is unsupported at all, and it travels in the reason.
-  assert.match(a1.blockReason, /500/);
+  assert.match(a1.blockReason, /DAILY_CEILING_FULLY_ALLOCATED/);
+  assert.match(a1.capability.reason, /500/);
   assert.equal(a1.capability.providerBudgetPolicy, 'DAILY_CEILING_FULLY_ALLOCATED');
   // KMA has capability and a class the rule does NOT cover: the intersection refuses too.
   const kma = resolveRecoveryDisposition({ sourceId: 'KMA_VILAGE_FCST', failureClass: 'INVALID_PAYLOAD',
@@ -202,7 +213,7 @@ test('D: an unsupported source cannot execute even with the gate wide open', asy
   await memory.recordEvent({ ...failure(), parts: unsupported });
   const [counter, executor] = countingExecutor();
   const result = await executeControlledRecovery(memory, { ...request(), parts: unsupported }, executor, { activation: OPEN_GATE });
-  assert.equal(result.state, 'BLOCKED_UNSUPPORTED_SOURCE');
+  assert.equal(result.state, 'BLOCKED_A1_DIRECT_ONLY');
   assert.equal(counter.calls, 0);
   assert.equal((await memory.attempts('INCHEON_FLIGHT_DETAIL', '2026-09-13')).length, 0);
 });
@@ -276,7 +287,11 @@ test('B: only a source with an adapter, a bounded budget and a verification path
     assert.ok(entry.adapter, `${entry.sourceId} must name an adapter`);
     assert.ok(entry.supportedActions.length, `${entry.sourceId} must support at least one action`);
     assert.notEqual(entry.publicVerification, 'UNKNOWN', `${entry.sourceId} must be provable end to end`);
-    assert.equal(entry.providerBudgetPolicy, 'BOUNDED_BY_MISSING_COVERAGE', `${entry.sourceId} must have a bounded budget`);
+    assert.equal(entry.providerBudgetPolicy, entry.sourceId==='INCHEON_FLIGHT_DETAIL'?'DAILY_CEILING_FULLY_ALLOCATED':'BOUNDED_BY_MISSING_COVERAGE', `${entry.sourceId} must preserve its bounded provider budget`);
+    if(entry.sourceId==='INCHEON_FLIGHT_DETAIL'){
+      assert.equal(entry.logicalJob,'collect-airport-recovery.yml');assert.equal(entry.adapter,'airport_recent');
+      assert.deepEqual(entry.supportedActions,['REDISPATCH_SAME_WORKFLOW']);assert.match(entry.reason,/max125\/run.*shared500/);
+    }
     assert.ok(entry.reason.length > 40, `${entry.sourceId} must carry its evidence`);
   }
 });
@@ -293,7 +308,7 @@ test('E: A4 congestion waits for its own next 15-minute cycle instead of adding 
 
 test('F: A1 is protected by its fully allocated daily ceiling', () => {
   const capability = capabilityFor('INCHEON_FLIGHT_DETAIL');
-  assert.equal(capability.controlledRecoveryEligible, false);
+  assert.equal(capability.controlledRecoveryEligible, true);
   assert.equal(capability.providerBudgetPolicy, 'DAILY_CEILING_FULLY_ALLOCATED');
   assert.match(capability.reason, /500/);
   // The workflow that owns the ceiling still documents it, so this is not folklore.
@@ -603,9 +618,9 @@ test('the plan surfaces stuck attempts and full capability coverage', () => {
   assert.equal(plan.capabilityCoverage.classified, PRODUCTION_SOURCE_IDS.length);
   assert.deepEqual(plan.capabilityCoverage.unclassified, []);
   assert.ok(plan.capabilityCoverage.observeOnly.includes('KASI_PUBLIC_HOLIDAYS'));
-  assert.deepEqual(plan.capabilityCoverage.controlledEligible, ['INCHEON_PASSENGER_FORECAST', 'KMA_VILAGE_FCST']);
+  assert.deepEqual(plan.capabilityCoverage.controlledEligible, ['INCHEON_FLIGHT_DETAIL', 'INCHEON_PASSENGER_FORECAST', 'KMA_VILAGE_FCST']);
   assert.ok(plan.capabilityCoverage.nextSlotOnly.includes('INCHEON_DEPARTURE_CONGESTION'));
-  assert.ok(plan.capabilityCoverage.humanReviewOnly.includes('INCHEON_FLIGHT_DETAIL'));
+  assert.ok(!plan.capabilityCoverage.humanReviewOnly.includes('INCHEON_FLIGHT_DETAIL'));
 });
 
 test('the real-world failure types resolve the way the direction requires', () => {

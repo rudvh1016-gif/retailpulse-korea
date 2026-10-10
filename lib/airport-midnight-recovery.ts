@@ -1,12 +1,12 @@
 /** Prepared A1 fallback. No scheduler, provider call, credential or permission grant. */
-import { centralRecoveryActivation } from './operational-recovery-runner';
+import { airportMidnightCentralActivation } from './operational-recovery-runner';
 import type { CentralRecoveryActivation } from './central-recovery-gate';
 import { OperationalMemory, type AttemptRequest, type StoredAttempt } from './operational-memory';
 import { kstDayOf, isValidKstDay } from './kst';
 import type { airportTodayCoverage } from './airport-today-coverage';
 import { capabilityFor } from './recovery-capability';
 
-export const A1_MIDNIGHT_RECOVERY_REVIEWED = false;
+export const A1_MIDNIGHT_RECOVERY_REVIEWED = true;
 export const A1_RECOVERY_WORKFLOW_ID = 349242009;
 export const A1_RECOVERY_WORKFLOW = 'collect-airport-recovery.yml';
 export const A1_SOURCE = 'INCHEON_FLIGHT_DETAIL';
@@ -27,9 +27,9 @@ export interface AirportRunSnapshot {
 }
 export interface AirportDispatchReceipt { accepted: boolean; runId: number | null; status: number | null }
 
-/** The existing gate AND an A1-specific review. Registry classification stays HUMAN_REVIEW_ONLY. */
+/** The existing conditions AND an owner-reviewed A1-only direct boundary. */
 export function airportMidnightRecoveryActivation(nowIso: string, env: Record<string, string | undefined> = process.env) {
-  const gate = centralRecoveryActivation(nowIso, env);
+  const gate = airportMidnightCentralActivation(nowIso, env);
   const capability = capabilityFor(A1_SOURCE);
   const sourceAllowed = capability.controlledRecoveryEligible && capability.supportedActions.includes('REDISPATCH_SAME_WORKFLOW');
   if (A1_MIDNIGHT_RECOVERY_REVIEWED && sourceAllowed) return gate;
@@ -133,6 +133,9 @@ export interface AirportRecoveryDependencies {
 /** Deep boundary; the activation override is a TEST SEAM and production never supplies it. */
 export async function executeAirportMidnightRecovery(deps: AirportRecoveryDependencies,
   options: { activation?: CentralRecoveryActivation } = {}) {
+  // Owner approved the reusable direct job only, with contents:read. Legacy
+  // HTTP dispatch remains closed before any read/admission/provider work.
+  if(!options.activation)return {state:'HTTP_DISPATCH_NOT_AUTHORIZED',reason:'A1 direct reusable job only; no actions:write grant',dispatches:0};
   const gate = options.activation ?? airportMidnightRecoveryActivation(deps.nowIso, deps.env);
   if (!gate.allowed) return { state: 'CENTRAL_RECOVERY_DORMANT', reason: gate.reason, dispatches: 0 };
   if (!deps.dispatchPermissionGranted) return { state: 'DISPATCH_PERMISSION_REQUIRED', reason: 'actions:write not granted', dispatches: 0 };

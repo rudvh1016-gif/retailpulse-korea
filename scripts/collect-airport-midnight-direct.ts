@@ -9,7 +9,8 @@ import { resolveProductionDatabaseConfig } from './production-database';
 import { airportMidnightReaders } from './airport-midnight-recovery';
 
 const nowIso = new Date().toISOString();
-// Check the unchanged closed gate before config, credentials, DB or provider access.
+// Check owner/runtime and the exact reviewed context before config, credentials,
+// DB or provider access. Runtime opt-in is applied only after this code is reflected.
 const gate = airportMidnightRecoveryActivation(nowIso);
 if (!gate.allowed) {
   console.log(JSON.stringify({ airportMidnightRecovery: 'CENTRAL_RECOVERY_DORMANT', providerRequests: 0, writes: 0 }));

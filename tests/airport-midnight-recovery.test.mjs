@@ -39,15 +39,13 @@ function setup(overrides = {}) {
 }
 const execute = deps => executeAirportMidnightRecovery(deps, { activation: OPEN_GATE });
 
-test('shipped gate remains locked even with both runtime flags; no reads, writes or dispatch', async () => {
-  assert.equal(A1_MIDNIGHT_RECOVERY_REVIEWED, false);
+test('owner-reviewed A1 conditions do not authorise the legacy HTTP transport', async () => {
+  assert.equal(A1_MIDNIGHT_RECOVERY_REVIEWED, true);
   const gate = airportMidnightRecoveryActivation(NOW, { RPK_CENTRAL_RECOVERY_OWNER_APPROVED: 'true', RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED: 'true' });
-  assert.equal(gate.allowed, false);
-  assert.ok(gate.blockedBy.includes('COMPILED_DISABLED'));
-  assert.ok(gate.blockedBy.includes('A1_REVIEW_REQUIRED'));
-  assert.ok(gate.blockedBy.includes('SOURCE_NOT_CONTROLLED_ELIGIBLE'));
+  assert.equal(gate.allowed, true);
+  assert.equal(airportMidnightRecoveryActivation(NOW, {}).allowed, false);
   const { db, deps, counter } = setup();
-  assert.equal((await executeAirportMidnightRecovery(deps)).state, 'CENTRAL_RECOVERY_DORMANT');
+  assert.equal((await executeAirportMidnightRecovery(deps)).state, 'HTTP_DISPATCH_NOT_AUTHORIZED');
   assert.equal(counter.posts, 0); assert.equal(db.calls.length, 0);
 });
 

@@ -1,5 +1,7 @@
 # A1 midnight fallback preparation — direct reusable jobs, execution blocked
 
+Historical preparation record. The later explicit owner approval, A1-only code scope and runtime-last sequence are documented in [AIRPORT_MIDNIGHT_ACTIVATION_2026-10-11.md](AIRPORT_MIDNIGHT_ACTIVATION_2026-10-11.md). Old false constants and registry descriptions below apply to the preparation head, not the activation revision.
+
 This is stacked on PR331 (`3812a0102e15df52b1b9b7757ea8da0d18ca0ae9`).
 PR330/331 are unchanged; reviewed main is
 `70ec17577c7ff9fb4b4beffae21c647a9e05532e`. No merge, deployment or

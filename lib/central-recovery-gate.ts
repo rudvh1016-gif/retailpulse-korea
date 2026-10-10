@@ -49,6 +49,7 @@ export type CentralRecoveryBlockReason =
   | "COMPILED_DISABLED"
   | "OWNER_APPROVAL_MISSING"
   | "RUNTIME_DISABLED"
+  | "A1_DIRECT_ONLY_SCOPE"
   | "ACTIVATION_CLOCK_UNREADABLE";
 
 export interface CentralRecoveryActivation {

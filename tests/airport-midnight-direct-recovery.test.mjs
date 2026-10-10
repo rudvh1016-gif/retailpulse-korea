@@ -36,11 +36,19 @@ function setup(overrides = {}) {
 }
 const execute = deps => executeAirportMidnightDirect(deps, { activation: OPEN });
 
-test('shipped candidate and collector gates stop before every read/write/provider even with runtime flags', async () => {
-  const { db, deps, calls } = setup({ env: { ...ENV, RPK_CENTRAL_RECOVERY_OWNER_APPROVED: 'true', RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED: 'true' } });
-  assert.equal((await airportMidnightCandidate(deps, NOW)).reason, 'CENTRAL_RECOVERY_DORMANT');
-  assert.equal((await executeAirportMidnightDirect(deps)).state, 'CENTRAL_RECOVERY_DORMANT');
-  assert.equal(db.calls.length, 0); assert.equal(calls.collectors, 0);
+test('missing either owner or runtime condition stops before every read/write/provider', async () => {
+  for(const flags of [{},{RPK_CENTRAL_RECOVERY_OWNER_APPROVED:'true'},{RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED:'true'}]){
+    const { db, deps, calls } = setup({ env: { ...ENV,...flags } });
+    assert.equal((await airportMidnightCandidate(deps, NOW)).reason, 'CENTRAL_RECOVERY_DORMANT');
+    assert.equal((await executeAirportMidnightDirect(deps)).state, 'CENTRAL_RECOVERY_DORMANT');
+    assert.equal(db.calls.length, 0); assert.equal(calls.collectors, 0);db.raw.close();
+  }
+});
+
+test('reviewed production conditions admit only the fixed A1 direct tuple without an activation override',async()=>{
+ const {db,deps,calls}=setup({env:{...ENV,RPK_CENTRAL_RECOVERY_OWNER_APPROVED:'true',RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED:'true'}});
+ const result=await executeAirportMidnightDirect(deps);assert.equal(result.state,'RECOVERED');assert.equal(calls.collectors,1);
+ assert.equal((await executeAirportMidnightDirect(deps)).state,'DAILY_ATTEMPT_ALREADY_SPENT');assert.equal(calls.collectors,1);db.raw.close();
 });
 
 test('fixed main/caller/source/date/attempt/budget tuple cannot be broadened by an input', async () => {
@@ -169,12 +177,14 @@ test('known provider429/auth/schema or full shared500 budget stops before admiss
   assert.equal(calls.collectors, 0);
 });
 
-test('production entry stops before credential configuration while all shipped gates stay closed', () => {
+test('production entry stops before credential configuration with runtime off or invalid direct context', () => {
   const child = spawnSync(process.execPath, ['--import', 'tsx', 'scripts/collect-airport-midnight-direct.ts'], {
-    env: { ...process.env, ...ENV, RPK_CENTRAL_RECOVERY_OWNER_APPROVED: 'true', RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED: 'true',
+    env: { ...process.env, ...ENV, RPK_CENTRAL_RECOVERY_OWNER_APPROVED: 'true', RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED: 'false',
       CLOUDFLARE_D1_WRITE_TOKEN: '' }, encoding: 'utf8', timeout: 10_000 });
   assert.equal(child.status, 0, child.stderr); assert.match(child.stdout, /CENTRAL_RECOVERY_DORMANT/);
   assert.match(child.stdout, /"providerRequests":0,"writes":0/);
+  const invalid=spawnSync(process.execPath,['--import','tsx','scripts/collect-airport-midnight-direct.ts'],{env:{...process.env,...ENV,RPK_CENTRAL_RECOVERY_OWNER_APPROVED:'true',RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED:'true',RPK_A1_EXPECTED_TARGET_DATE:'1900-01-01',CLOUDFLARE_D1_WRITE_TOKEN:''},encoding:'utf8',timeout:10000});
+  assert.equal(invalid.status,1);assert.match(invalid.stderr,/DIRECT_CONTEXT_UNVERIFIED; providerRequests=0 writes=0/);
 });
 
 test('reusable graph preserves the entire realtime cycle lock and keeps A1 outside it with read permissions', () => {
