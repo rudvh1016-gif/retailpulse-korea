@@ -1749,7 +1749,7 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
  * A compact row keeps the same official values — checkpoint, wait, waiting
  * count, observation time — in a fraction of the height.
  */
-.airport-checkpoint-toggle { margin: 14px 0 0; padding: 9px 15px; background: none; border: 1px solid var(--ink); border-radius: 2px; font: inherit; font-size: 12px; font-weight: var(--weight-strong); cursor: pointer; }
+.airport-checkpoint-toggle { min-block-size: 44px; margin: 14px 0 0; padding: 9px 15px; background: none; border: 1px solid var(--ink); border-radius: 2px; font: inherit; font-size: 12px; font-weight: var(--weight-strong); cursor: pointer; }
 .airport-checkpoint-toggle:hover { background: var(--ink); color: var(--paper); }
 .airport-checkpoint-toggle:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 

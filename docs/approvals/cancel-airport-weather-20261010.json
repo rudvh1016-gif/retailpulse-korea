@@ -1,0 +1,24 @@
+{
+  "recordedAt": "2026-10-10T03:43:03.514234+00:00",
+  "authorizationEvidence": {
+    "ownerRequest": "걍없애 넣지마",
+    "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+    "sourceMessage": "Sentinel_b47c34e7acc08191a53fa7076ff294db",
+    "scope": "Cancel airport METAR weather integration and remove only its unavailable airport observation screen. Keep Seoul weather, other airport information, stored data, existing keys and security configuration. No quota/login/key question or activation.",
+    "approvedProtectedFiles": [
+      "app/live-signals.tsx"
+    ],
+    "keepProtectedListAndEnforcement": true,
+    "agentMergeOrDeploymentApproved": false
+  },
+  "reason": "Normal scoped hash bookkeeping for the explicit owner cancellation. Only the AirportWeather import and mount are removed from live-signals. Preserve retained component/parser/storage/API code, all 61 protected paths, original UI Lock enforcement, previous approval records and scheduler facts. No data deletion, key or security change, source call, activation, draft release, merge or deployment.",
+  "changes": [
+    {
+      "file": "app/live-signals.tsx",
+      "previous": "2b1cce221be6c67b12b954c69a183a4131863dec2f5282f11516f7588dacc360",
+      "approved": "1b5a72bf20d8df0bb66f70ecf588c57da547b66f375e5b3ab72f6292163cae29"
+    }
+  ],
+  "protectedPathCount": 61,
+  "approvalEvidenceFile": "docs/approvals/cancel-airport-weather-20261010.json"
+}

@@ -11,7 +11,6 @@ import { AirportFlowFigure } from "./airport-flow-figure";
 import { FlightCountPrism } from './flight-count-prism';
 import { AirportMonthComparison } from './airport-month-comparison';
 import { AirportQueueScene } from './airport-queue-scene';
-import { AirportWeather } from './airport-weather';
 import { SeoulFlowModels } from './seoul-flow-models';
 import { displayedQueueMinutes, queueKey, queueRepresentativeCopy, selectQueueRepresentatives } from '../lib/airport-queue-representatives';
 import { CountUpNumber } from "./count-up-number";
@@ -2177,7 +2176,6 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
       >{showAllCheckpoints ? representativeCopy.collapse : airportTodayText.showAllCheckpoints[lang]}</button>}
       <p className="airport-detail-foot">{airportTodayText.nowOnly[lang]}</p>
     </section>
-    <AirportWeather lang={lang}/>
   </section>;
 }
 

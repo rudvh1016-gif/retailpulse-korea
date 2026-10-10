@@ -12,7 +12,7 @@ const summary=(rows:ReturnType<typeof flights>,day=date)=>({...SUMMARY_FIXTURE,s
  sides:airportSides(day,'TODAY',[],rows,[],false,false)}});
 const pending={ko:'게이트 위치 확인 전',en:'Gate locations not yet confirmed',zh:'登机口位置尚未确认',ja:'搭乗口の位置は未確認'};
 
-for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430,1280])test(`missing gates preserve flights and official forecast, copy removed, airport weather follows halls ${lang} ${width}`,async({page},info)=>{
+for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430,1280])test(`missing gates preserve flights and official forecast without cancelled weather ${lang} ${width}`,async({page},info)=>{
  await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  const rows=flights([null,null,null]);
@@ -28,15 +28,13 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
  await expect(page.locator('.airport-forecast')).toContainText('2,900');
  await expect(page.locator('.airport-view .view-intro p:not(.eyebrow)')).toHaveCount(0);
  await expect(page.locator('body')).not.toContainText(/오늘\(.*\) 인천공항 출국 예상 승객이 가장 많은 시간|Incheon Airport's busiest departure hour|仁川机场官方预告出境人数最多的时段|公式予告で出国者が最も多い時間/);
- const weather=page.getByTestId('airport-weather');await expect(weather).toHaveAttribute('data-state','UNAVAILABLE');
- expect(await weather.evaluate(node=>node.previousElementSibling?.classList.contains('airport-checkpoints'))).toBe(true);
- await expect(weather).not.toContainText(/°C|서울|Seoul|首尔|ソウル/);
- await expect(weather).toContainText({ko:'인천공항',en:'Incheon Airport',zh:'仁川机场',ja:'仁川空港'}[lang]);
+ await expect(page.getByTestId('airport-weather')).toHaveCount(0);
+ await expect(page.locator('.airport-checkpoints')).toBeVisible();
  const details=page.getByTestId('country-unverified-details');await details.locator('summary').press('Enter');await expect(details).toHaveAttribute('open');
  await details.locator('summary').press('Space');await expect(details).not.toHaveAttribute('open');
- expect(await tofuCharacters(model)).toEqual([]);expect(await tofuCharacters(weather)).toEqual([]);
+ expect(await tofuCharacters(model)).toEqual([]);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
- if(lang==='ko'&&[390,1280].includes(width)){await model.scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath(`midnight-model-${width}.png`)});await weather.scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath(`airport-weather-${width}.png`)});}
+ if(lang==='ko'&&[390,1280].includes(width)){await model.scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath(`midnight-model-${width}.png`)});}
 });
 
 test('mounted views refresh after TTL and focus, deduplicate and skip background polling',async({page})=>{
