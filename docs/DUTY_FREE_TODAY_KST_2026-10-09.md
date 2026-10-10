@@ -1,5 +1,7 @@
 # 오늘 KST 면세환율과 자정 가용성 수정 (2026-10-09)
 
+2026-10-11 실제 누락과 승인된 날짜별 due guard/유한 재확인은 [MIDNIGHT_COLLECTION_RECOVERY_2026-10-11.md](MIDNIGHT_COLLECTION_RECOVERY_2026-10-11.md)를 따른다. 아래 시간당/최대 24회 비용 설명은 이전 정책의 감사 기록이다.
+
 기준 main: `22b7b0c28fdce1712b0c0fcbfa83023c4e1f64ce`. 독립 브랜치 `fix/fx-today-kst-20261009`.
 PR317의 UI 잠금 기준 갱신 차단을 존중한다. 그 브랜치/fixture/보호 파일을 변경하지 않았다. 병합·공개 배포·운영 DB 마이그레이션·수동 운영 수집은 실행하지 않았다.
 

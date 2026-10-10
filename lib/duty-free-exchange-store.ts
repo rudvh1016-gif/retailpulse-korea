@@ -1,8 +1,16 @@
-import { activeDutyFreeVendors, kstExchangeDate, mergeDutyFreeSnapshot, shiftExchangeDate, verifiedDutyFreeObservation, type DutyFreeExchangeSnapshot, type DutyFreeObservation, type DutyFreeVendor, type DutyFreeAttemptStatus } from './duty-free-exchange';
+import { activeDutyFreeVendors, kstExchangeDate, nextKstExchangeMidnight, mergeDutyFreeSnapshot, shiftExchangeDate, verifiedDutyFreeObservation, type DutyFreeExchangeSnapshot, type DutyFreeObservation, type DutyFreeVendor, type DutyFreeAttemptStatus } from './duty-free-exchange';
 
 export const DUTY_FREE_MIN_INTERVAL_MS = 3_600_000;
 export const DUTY_FREE_BLOCK_INTERVAL_MS = 24 * 3_600_000;
 export const DUTY_FREE_LEASE_MS = 120_000;
+export const DUTY_FREE_MIDNIGHT_INTERVAL_MS = 15 * 60_000;
+/** Missing-date recovery is confined to the first KST hour; normal checks stay hourly. */
+export function dutyFreeNextAttempt(now: Date, missingToday: boolean) {
+  const start = nextKstExchangeMidnight(now.getTime()) - 86_400_000;
+  const interval = missingToday && now.getTime() - start < DUTY_FREE_MIN_INTERVAL_MS
+    ? DUTY_FREE_MIDNIGHT_INTERVAL_MS : DUTY_FREE_MIN_INTERVAL_MS;
+  return new Date(now.getTime() + interval).toISOString();
+}
 type Store = Pick<D1Database, 'prepare' | 'batch'>;
 type Stored = {
   vendor: DutyFreeVendor; status: DutyFreeAttemptStatus; attempt_at: string; last_success_at: string | null;
@@ -14,15 +22,20 @@ type Stored = {
 /** A database-side lease is the request budget; no successful claim means no provider request. */
 export async function claimDutyFreeAttempt(db: Store, vendor: DutyFreeVendor, now: Date, leaseId: string) {
   const at = now.toISOString(), until = new Date(now.getTime() + DUTY_FREE_LEASE_MS).toISOString();
+  const today = kstExchangeDate(now.getTime())!, start = new Date(nextKstExchangeMidnight(now.getTime()) - 86_400_000).toISOString();
   // Persist the request budget before HTTP; a crashed run cannot reset it when its lease expires.
-  const next = new Date(now.getTime() + DUTY_FREE_MIN_INTERVAL_MS).toISOString();
+  const next = dutyFreeNextAttempt(now, true), hourly = dutyFreeNextAttempt(now, false);
   const result = await db.prepare(`INSERT INTO duty_free_exchange_attempt
     (vendor, attempt_at, status, next_due_at, lease_id, lease_until)
-    VALUES (?, ?, 'RUNNING', ?, ?, ?)
+    VALUES (?, ?, 'RUNNING', CASE WHEN EXISTS
+      (SELECT 1 FROM duty_free_exchange_daily WHERE vendor=? AND service_date_kst=?) THEN ? ELSE ? END, ?, ?)
     ON CONFLICT(vendor) DO UPDATE SET attempt_at=excluded.attempt_at, status='RUNNING',
       error_code=NULL, next_due_at=excluded.next_due_at, lease_id=excluded.lease_id, lease_until=excluded.lease_until
-    WHERE duty_free_exchange_attempt.next_due_at <= ? AND duty_free_exchange_attempt.lease_until <= ?`)
-    .bind(vendor, at, next, leaseId, until, at, at).run();
+    WHERE duty_free_exchange_attempt.lease_until <= ? AND
+      (duty_free_exchange_attempt.next_due_at <= ? OR
+        (duty_free_exchange_attempt.status='SUCCESS' AND duty_free_exchange_attempt.attempt_at < ? AND NOT EXISTS
+          (SELECT 1 FROM duty_free_exchange_daily WHERE vendor=? AND service_date_kst=?)))`)
+    .bind(vendor, at, vendor, today, hourly, next, leaseId, until, at, at, start, vendor, today).run();
   if (!result.success || typeof result.meta?.changes !== 'number') throw new Error('D1_CLAIM_UNMEASURED');
   return result.meta.changes === 1;
 }
@@ -36,8 +49,9 @@ export async function saveDutyFreeSuccess(db: Store, observation: DutyFreeObserv
     const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(semantic));
     return Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
   }));
-  const {vendor,verifiedAt}=observation,next=new Date(at+DUTY_FREE_MIN_INTERVAL_MS).toISOString();
+  const {vendor,verifiedAt}=observation;
   const current=rows.find(row=>row.serviceDateKst===kstExchangeDate(at));
+  const next=dutyFreeNextAttempt(new Date(at),!current),hourly=dutyFreeNextAttempt(new Date(at),false);
   const statements=rows.map((row,index)=>db.prepare(`INSERT INTO duty_free_exchange_daily
     (vendor,service_date_kst,currency,krw_per_unit,first_verified_at,source_url,scope,date_evidence,source_hash)
     SELECT ?,?,?,?,?,?,?,?,? WHERE EXISTS
@@ -57,10 +71,13 @@ export async function saveDutyFreeSuccess(db: Store, observation: DutyFreeObserv
     WHERE duty_free_exchange_current.source_hash <> excluded.source_hash`)
     .bind(vendor,current.serviceDateKst,current.currency,current.krwPerUnit,verifiedAt,current.sourceUrl,current.scope,hashes[rows.indexOf(current)],vendor,leaseId));
   statements.push(db.prepare(`UPDATE duty_free_exchange_attempt SET status='SUCCESS',error_code=NULL,
-    last_success_at=CASE WHEN ? THEN ? ELSE last_success_at END,next_due_at=?,lease_id=NULL,lease_until=''
+    last_success_at=CASE WHEN ? THEN ? ELSE last_success_at END,
+    next_due_at=CASE WHEN EXISTS
+      (SELECT 1 FROM duty_free_exchange_daily WHERE vendor=? AND service_date_kst=?) THEN ? ELSE ? END,
+    lease_id=NULL,lease_until=''
     WHERE vendor=? AND lease_id=? AND EXISTS
       (SELECT 1 FROM duty_free_exchange_daily WHERE vendor=? AND service_date_kst=? AND source_hash=?)`)
-    .bind(current?1:0,verifiedAt,next,vendor,leaseId,vendor,observation.serviceDateKst,hashes[0]));
+    .bind(current?1:0,verifiedAt,vendor,kstExchangeDate(at),hourly,next,vendor,leaseId,vendor,observation.serviceDateKst,hashes[0]));
   const results=await db.batch(statements);
   if(results.some(result=>!result.success))throw new Error('D1_SAVE_FAILED');
   return {changedRows:results.slice(0,rows.length).reduce((sum,result)=>sum+(result.meta?.changes??0),0),leaseOwned:results.at(-1)?.meta?.changes===1};
@@ -68,10 +85,14 @@ export async function saveDutyFreeSuccess(db: Store, observation: DutyFreeObserv
 
 export async function saveDutyFreeFailure(db: Store, vendor: DutyFreeVendor, leaseId: string, at: Date, errorCode: string, blocked: boolean) {
   if (!/^[A-Z0-9_]{1,64}$/.test(errorCode)) throw new Error('INVALID_ERROR_CODE');
-  const next = new Date(at.getTime() + (blocked ? DUTY_FREE_BLOCK_INTERVAL_MS : DUTY_FREE_MIN_INTERVAL_MS)).toISOString();
+  const hourly = blocked ? new Date(at.getTime() + DUTY_FREE_BLOCK_INTERVAL_MS).toISOString() : dutyFreeNextAttempt(at, false);
+  // Throttling keeps its original hourly cooldown even when today's date is missing.
+  const next = blocked || errorCode === 'HTTP_429' ? hourly : dutyFreeNextAttempt(at, true);
   const result = await db.prepare(`UPDATE duty_free_exchange_attempt SET status=?, error_code=?,
-    next_due_at=?, lease_id=NULL, lease_until='' WHERE vendor=? AND lease_id=?`)
-    .bind(blocked ? 'BLOCKED' : 'ERROR', errorCode, next, vendor, leaseId).run();
+    next_due_at=CASE WHEN EXISTS
+      (SELECT 1 FROM duty_free_exchange_daily WHERE vendor=? AND service_date_kst=?) THEN ? ELSE ? END,
+    lease_id=NULL, lease_until='' WHERE vendor=? AND lease_id=?`)
+    .bind(blocked ? 'BLOCKED' : 'ERROR', errorCode, vendor, kstExchangeDate(at.getTime()), hourly, next, vendor, leaseId).run();
   if (!result.success) throw new Error('D1_FAILURE_SAVE_FAILED');
   return result.meta?.changes === 1;
 }

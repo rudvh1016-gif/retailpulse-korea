@@ -35,7 +35,10 @@ name: Collect Airport Departures (Early Window)
 # A scan walks the D-3..today window at 100 rows a page, so 125 leaves margin
 # over the ~118 pages the dataset actually needs. An attempt blocked at connect
 # still consumes a request attempt; the 125 ceiling counts failed calls too.
-# Only this attempt's classified transient A1 FETCH failure earns a retry.
+# Only this attempt's classified transient A1 FETCH failure earns an error retry.
+# A complete NOT_YET_PUBLISHED scan may instead use these same two jobs to
+# check publication again after five minutes. It checks A1 only, retains the
+# same-date success guard, and shares the unchanged rolling-24h 500-call cap.
 # Auth/schema/empty data, throttling, storage and unrelated context failures
 # stop the ladder. A1 SUCCESS/SKIPPED never repeats A2 just for holidays 403.
 #
@@ -74,22 +77,24 @@ jobs:
 
   retry_1:
     needs: collect
-    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.collect.result == 'failure' && needs.collect.outputs.retry_airport == 'true' }}
+    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && ((needs.collect.result == 'failure' && needs.collect.outputs.retry_airport == 'true') || (contains(fromJSON('["success","failure"]'), needs.collect.result) && needs.collect.outputs.recheck_airport_publication == 'true')) }}
     uses: ./.github/workflows/collect-attempt.yml
     with:
-      sources: airport_recent,airport_enrichment
+      sources: ${{ needs.collect.outputs.recheck_airport_publication == 'true' && 'airport_recent' || 'airport_recent,airport_enrichment' }}
       attempt: 2
-      timeout_minutes: 20
+      timeout_minutes: ${{ needs.collect.outputs.recheck_airport_publication == 'true' && 25 || 20 }}
       a1_max_requests: "125"
+      a1_publication_recheck: ${{ needs.collect.outputs.recheck_airport_publication == 'true' }}
     secrets: inherit
 
   retry_2:
     needs: [collect, retry_1]
-    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.retry_1.result == 'failure' && needs.retry_1.outputs.retry_airport == 'true' }}
+    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && ((needs.retry_1.result == 'failure' && needs.retry_1.outputs.retry_airport == 'true') || (contains(fromJSON('["success","failure"]'), needs.retry_1.result) && needs.retry_1.outputs.recheck_airport_publication == 'true')) }}
     uses: ./.github/workflows/collect-attempt.yml
     with:
-      sources: airport_recent,airport_enrichment
+      sources: ${{ needs.retry_1.outputs.recheck_airport_publication == 'true' && 'airport_recent' || 'airport_recent,airport_enrichment' }}
       attempt: 3
-      timeout_minutes: 20
+      timeout_minutes: ${{ needs.retry_1.outputs.recheck_airport_publication == 'true' && 25 || 20 }}
       a1_max_requests: "125"
+      a1_publication_recheck: ${{ needs.retry_1.outputs.recheck_airport_publication == 'true' }}
     secrets: inherit

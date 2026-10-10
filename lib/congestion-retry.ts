@@ -99,6 +99,19 @@ export function shouldRetryAirport(log: string): boolean {
   return !!result?.detail?.includes("failureStage=FETCH") && classifiedTransientFailure(result);
 }
 
+/** Publication is checked on the two existing jobs, spaced apart, within the same KST early window.
+ * This is a successful complete scan with no target-day rows, not a transient failure.
+ * The unchanged atomic rolling request budget remains authoritative for each check.
+ */
+export function shouldRecheckAirportPublication(log: string, now = new Date()): boolean {
+  const result = parseCollectorResults(log).filter((item) => item.source === 'airport_recent').at(-1);
+  if (result?.status !== 'NOT_YET_PUBLISHED') return false;
+  const detail = /^targetDate=(\d{4}-\d{2}-\d{2}); NOT_YET_PUBLISHED; requests (\d+); future schedule writes \d+; observed last-good rows preserved$/.exec(result.detail ?? '');
+  const local = new Date(now.getTime() + 9 * 3_600_000);
+  return !!detail && Number.isFinite(local.getTime()) && local.getUTCHours() < 3
+    && detail[1] === local.toISOString().slice(0,10) && Number(detail[2]) >= 1 && Number(detail[2]) <= 125;
+}
+
 function classifiedTransientFailure(result: ResultLine | undefined): boolean {
   if (result?.status !== "ERROR" || !result.detail
     || result.detail.includes("retryDeferred=true") || result.detail.includes("row:")) return false;
