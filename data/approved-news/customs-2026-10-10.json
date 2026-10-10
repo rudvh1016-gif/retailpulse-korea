@@ -1,0 +1,105 @@
+[
+  {
+    "source": "customs",
+    "sourceId": "10174903",
+    "sourceName": "관세청",
+    "title": "국민과 함께 뽑은 ’26년 관세청 적극행정 우수사례",
+    "url": "https://www.customs.go.kr/kcs/na/ntt/selectNttInfo.do?bbsId=1362&mi=2891&nttSn=10174903&nttSnUrl=02f1a911f786eb750b0034fd1b89c2a7",
+    "publishedAt": "2026-08-28T07:30:00.000Z",
+    "receivedAt": "2026-10-10T21:14:38.339Z",
+    "status": "announced",
+    "topic": "customs",
+    "relevantToRetail": true,
+    "modifiedAt": null,
+    "clearance": {
+      "evidenceUrl": "https://www.customs.go.kr/common/nttFileDownload.do?fileKey=543f1b9baa9874782ac80419c1f9f9b0",
+      "confirmedAt": "2026-10-10T21:14:38.339Z",
+      "commercialReuse": true,
+      "requiredPresentation": true,
+      "deepLink": true,
+      "attribution": "관세청 · 이준 · 2026 · 국민과 함께 뽑은 ’26년 관세청 적극행정 우수사례 · https://www.customs.go.kr/kcs/na/ntt/selectNttInfo.do?bbsId=1362&mi=2891&nttSn=10174903&nttSnUrl=02f1a911f786eb750b0034fd1b89c2a7 · 공공누리 제1유형(출처표시) · 자료 요약 · 권리 근거: https://www.customs.go.kr/common/nttFileDownload.do?fileKey=543f1b9baa9874782ac80419c1f9f9b0"
+    },
+    "contentFingerprint": "a7603f3dc85ba58ffc03e3903b31f3abe46ebe5a1a15b9d72707b0bf1e32c7de",
+    "facts": [
+      {
+        "text": "자료 요약: 2026년 8월 발표 자료에 소개된 기존 개선 사례입니다. 면세점 환불 시 납부기한 전이고 세관이 해당 관세를 징수하지 않은 경우 세금고지서를 취소할 수 있도록 절차를 마련했습니다(2026년 4월 시행).",
+        "verifiedBySource": true
+      },
+      {
+        "text": "같은 자료에는 출국 취소로 재입국하는 여행자에게 휴대품 면세범위(미화 800달러 이하)를 적용한 개선도 소개돼 있습니다(2026년 2월 시행).",
+        "verifiedBySource": true
+      }
+    ],
+    "changes": [],
+    "audience": [],
+    "attachments": [
+      {
+        "url": "https://www.customs.go.kr/common/nttFileDownload.do?fileKey=e998f4e676d273f791181a35221407d3",
+        "name": "260828 국민과 함께 뽑은 ’26년 관세청 적극행정 우수사례.hwpx",
+        "review": "pending"
+      },
+      {
+        "url": "https://www.customs.go.kr/common/nttFileDownload.do?fileKey=543f1b9baa9874782ac80419c1f9f9b0",
+        "name": "260828 국민과 함께 뽑은 ’26년 관세청 적극행정 우수사례.pdf",
+        "review": "verified",
+        "sha256": "3f0d15c78bb2bbb0978f7e486fc569d6886efade3ed25e69ab70df712f0600d2",
+        "reviewedAt": "2026-10-10T21:14:38.339Z"
+      }
+    ],
+    "attachmentListComplete": true,
+    "attachmentNeedsReview": true
+  },
+  {
+    "source": "customs",
+    "sourceId": "10168489",
+    "sourceName": "관세청",
+    "title": "관세청, 면세품 교환 문턱 낮춘다 ··· 이용객 편의 대폭 개선",
+    "url": "https://www.customs.go.kr/kcs/na/ntt/selectNttInfo.do?nttSn=10168489&nttSnUrl=0f5da1192552535ef4de3e6864a7bdb8",
+    "publishedAt": "2026-07-01T15:00:00.000Z",
+    "receivedAt": "2026-10-10T21:14:38.339Z",
+    "status": "announced",
+    "topic": "customs",
+    "relevantToRetail": true,
+    "modifiedAt": null,
+    "clearance": {
+      "evidenceUrl": "https://www.korea.kr/briefing/pressReleaseView.do?newsId=156769316&pWise=sub&pWiseSub=J2",
+      "confirmedAt": "2026-10-10T21:14:38.339Z",
+      "commercialReuse": true,
+      "requiredPresentation": true,
+      "deepLink": true,
+      "attribution": "관세청 · 이준 · 2026 · 관세청, 면세품 교환 문턱 낮춘다 ··· 이용객 편의 대폭 개선 · https://www.customs.go.kr/kcs/na/ntt/selectNttInfo.do?nttSn=10168489&nttSnUrl=0f5da1192552535ef4de3e6864a7bdb8 · 공공누리 제1유형(출처표시) · 자료 요약 · 권리 근거: https://www.korea.kr/briefing/pressReleaseView.do?newsId=156769316&pWise=sub&pWiseSub=J2"
+    },
+    "contentFingerprint": "89550ede62419493b73ac83c998de4442a08af94fda865f98f69f98b82bd8881",
+    "facts": [
+      {
+        "text": "자료 요약: 2026년 7월 2일 발표한 기존 제도 개선입니다. 7월 1일부터 면세범위(미화 800달러) 이내 물품은 입국 시 휴대품 신고 없이 국내 면세점 방문 또는 우편·택배로 교환할 수 있습니다.",
+        "verifiedBySource": true
+      },
+      {
+        "text": "교환은 불량·하자가 없는 동일 물품 또는 동일 모델의 색상·크기 등이 다른 물품에 한합니다. 면세범위를 초과한 물품은 입국 시 휴대품 신고 후 세금을 납부한 경우에만 국내 교환이 가능합니다. 면세점별 교환 정책을 확인해야 합니다.",
+        "verifiedBySource": true
+      }
+    ],
+    "changes": [],
+    "audience": [],
+    "attachments": [
+      {
+        "url": "https://www.customs.go.kr/common/nttFileDownload.do?fileKey=dd43e209d12e5a42ec76020856d45219",
+        "name": "260701 관세청, 면세품 교환 문턱 낮춘다 ··· 이용객 편의 대폭 개선.hwpx",
+        "review": "pending"
+      },
+      {
+        "url": "https://www.customs.go.kr/common/nttFileDownload.do?fileKey=717eda0506ef7685ff87149da87f3459",
+        "name": "260701 관세청, 면세품 교환 문턱 낮춘다 ··· 이용객 편의 대폭 개선.pdf",
+        "review": "pending"
+      }
+    ],
+    "attachmentListComplete": true,
+    "attachmentNeedsReview": true,
+    "effectiveDate": {
+      "date": "2026-07-01",
+      "evidence": "2026년 7월 2일 관세청 원문·정책브리핑 공식 전재: 「보세판매장 특허 및 운영에 관한 고시」 7월 1일부터 개정 시행",
+      "verified": true
+    }
+  }
+]

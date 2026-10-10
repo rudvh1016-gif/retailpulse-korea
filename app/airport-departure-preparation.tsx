@@ -1,6 +1,5 @@
 'use client';
 import {useCallback,useState} from 'react';
-import Image from 'next/image';
 import {departureGuideEntryCopy} from './departure-guide-entry-copy';
 import styles from './departure-guide-entry.module.css';
 import type {Lang} from './retailpulse-data';
@@ -12,7 +11,8 @@ import {getPassengerGuideCopy} from './passenger-guide-copy';
 import {DepartureChoiceGroup} from './departure-choice-group';
 import {departureChoiceCopy} from './departure-choice-copy';
 import {departureStepOfficialLink} from '../lib/airport-departure-preparation';
-import {travelRecordsCopy} from './travel-records-copy';
+import {airportNewsCopy} from '../lib/airport-customs-news-copy';
+import {AirportNewsMark} from './airport-news-mark';
 
 export function AirportDeparturePreparation({lang}:{lang:Lang}) {
  const [open,setOpen]=useState(false),[input,setInput]=useState<DeparturePreparationInput>({route:'UNKNOWN',checkedBaggage:'UNKNOWN',taxRefund:'UNKNOWN',dutyFreePickup:'UNKNOWN'});
@@ -28,7 +28,7 @@ export function AirportDeparturePreparation({lang}:{lang:Lang}) {
  return <div className={styles.launcher}><details ref={attachGuide} id="airport-departure-preparation" className={`airport-departure-preparation ${styles.guide}`} data-testid="departure-preparation" onToggle={event=>setOpen(event.currentTarget.open)}>
   <summary className={styles.entry} data-testid="departure-guide-entry">
    <span className={styles.copy}><span className={styles.buttonLabel}><span className={styles.title}>{entry.title}</span><svg className={styles.indicator} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="m5 9 7 7 7-7"/></svg></span><span className={styles.actionText}>{open?entry.close:entry.open}</span></span>
-   <span className={styles.scene} aria-hidden="true"><Image src="/visuals/travel-records/v1/departure.webp" width={960} height={720} unoptimized alt="" priority/></span>
+   <span className={styles.scene} aria-hidden="true"><AirportNewsMark entry/></span>
   </summary>{open&&<div className="departure-preparation-body">
    <p className="prep-note">{c.scope}</p><p>{c.intro}</p>
    <div className={styles.choicePanel}>
@@ -59,5 +59,5 @@ export function AirportDeparturePreparation({lang}:{lang:Lang}) {
    </>}
    <p className="prep-note" data-testid="prep-limits">{c.limits}</p><p className="prep-note">{c.checked}</p>
   </div>}
- </details><a className={styles.tripEntry} href={`/${lang}/travel-records`} data-testid="travel-records-entry"><span><strong>{travelRecordsCopy[lang].entry}</strong></span><Image unoptimized src="/visuals/clarity/v1/travel-record-256.webp" width="80" height="80" alt="" decoding="async"/></a></div>;
+ </details><a className={styles.tripEntry} href={`/${lang}/airport-news`} data-testid="airport-customs-news-entry"><span><strong>{airportNewsCopy[lang].entry}</strong></span><span className={styles.newsMark} aria-hidden="true"><AirportNewsMark entry paper/></span></a></div>;
 }

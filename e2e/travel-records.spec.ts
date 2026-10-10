@@ -24,7 +24,7 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,390,430
  });
 }
 test('existing main departure guide provides a keyboard-usable independent entry',async({page})=>{
- await page.goto('/ko/airport');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');const guide=page.getByTestId('departure-preparation');await guide.locator(':scope > summary').click();const link=page.getByTestId('travel-records-entry');await expect(link).toHaveAttribute('href','/ko/travel-records');await link.focus();await page.keyboard.press('Enter');await expect(page.getByTestId('travel-empty')).toBeVisible();
+ await page.goto('/ko/airport');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');const guide=page.getByTestId('departure-preparation');await guide.locator(':scope > summary').click();const link=page.getByTestId('airport-customs-news-entry');await expect(link).toHaveAttribute('href','/ko/airport-news');await link.focus();await page.keyboard.press('Enter');await expect(page.getByTestId('airport-customs-news')).toBeVisible();await page.getByRole('link',{name:travelRecordsCopy.ko.list,exact:true}).click();await expect(page.getByTestId('travel-empty')).toBeVisible();
 });
 test('add, reopen, edit, reload and locale change keep the same device record',async({page})=>{
  await add(page);const hash=new URL(page.url()).hash;await expect(page.getByTestId('detail-memo')).toHaveText('Synthetic integration QA');
