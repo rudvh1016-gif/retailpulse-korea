@@ -1,5 +1,17 @@
 # Local font asset provenance
 
+## 2026-10-10 monthly comparison copy
+
+The requested title `오늘과 비슷한 항공편 구성` adds Hangul U+C2B7 (`슷`).
+Using the pinned Pretendard 1.3.9 TTF and SHA-256 below, FontTools 4.66.0 /
+Brotli 1.2.0 subset the union of the previous cmap and that one codepoint.
+The previous layout feature set and all KORETAIL name/fvar records are retained.
+No previous codepoint, family, weight or variation instance is removed.
+The font grows from 226,772 to 227,508 bytes (1,508 to 1,509 codepoints);
+the coverage fixture is regenerated from the actual new cmap and file hash.
+This avoids a fallback slice download and font swap for the new title.
+The scoped font approval preserves the existing protected path list and UI Lock.
+
 ## 2026-10-04 separate passenger tax-refund preview
 
 The subsequent departure-rule copy adds SC U+68AD/U+7968 (2272→2274)

@@ -1,0 +1,19 @@
+{
+  "recordedAt": "2026-10-10T08:55:53.313Z",
+  "authorizationEvidence": {
+    "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+    "ownerRequest": "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+    "scope": "Fix the failing font-coverage test for the explicitly requested Korean title 오늘과 비슷한 항공편 구성. Add only U+C2B7 to the previous font cmap, preserving every previous codepoint, existing family/name/variation tables and layout feature set; regenerate coverage from the actual new font. No new product font, font family or weight.",
+    "agentMergeOrDeploymentApproved": false
+  },
+  "reason": "Avoid an extra fallback font download and swap introduced by the requested copy. Pinned Pretendard 1.3.9 source and SHA verified. FontTools 4.66.0/Brotli 1.2.0; 1508→1509 codepoints, 226772→227508 bytes. Original UI Lock enforcement, all61protected paths and all earlier records preserved.",
+  "changes": [
+    {
+      "file": "public/fonts/koretail-sans-variable.woff2",
+      "previous": "7a0ba49fcc55f74e60974b257ae020a82568ca830affb8d482d5116b68297fdf",
+      "approved": "a2286324764cf65841506a0a776e50fd4c3423da01cdd5f8f95c2c299ad0e911"
+    }
+  ],
+  "protectedPathCount": 61,
+  "approvalEvidenceFile": "docs/approvals/airport-monthly-font-coverage-20261010.json"
+}
