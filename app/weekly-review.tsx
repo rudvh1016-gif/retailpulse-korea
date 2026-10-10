@@ -9,6 +9,7 @@ import { useUsualComparison } from './business-compare';
 import { buildWeeklyReview } from '../lib/weekly-review';
 import { categoryName, feelingLabels, reviewCopy, tenthsPercent, verdictLabel } from '../lib/review-copy';
 import { commercialActivityContext } from '../lib/commercial-context';
+import {RateText} from './change-rate';
 import { comparisonValue } from '../lib/period-comparison';
 import { FEELINGS, FEELING_KEY, parseFeelings, recordFeeling, removeFeeling, type Feeling, type FeelingEntry } from '../lib/feeling-log';
 import { placeKey } from '../lib/last-check';
@@ -27,8 +28,8 @@ export function WeeklyReviewBlock({ lang, summary, place, industry }: { lang: La
     {review.subway && <div className="prep-review-part">
       <h4>{reviewCopy.subway[lang]}</h4>
       <ul>
-        <li>{reviewCopy.lastWeek[lang]}: {tenthsPercent(review.subway.lastWeekTenths, lang)}</li>
-        <li>{reviewCopy.fourWeek[lang]}: {tenthsPercent(review.subway.fourWeekTenths, lang)}</li>
+        <li>{reviewCopy.lastWeek[lang]}: <RateText text={tenthsPercent(review.subway.lastWeekTenths, lang)} lang={lang}/></li>
+        <li>{reviewCopy.fourWeek[lang]}: <RateText text={tenthsPercent(review.subway.fourWeekTenths, lang)} lang={lang}/></li>
       </ul>
       <p className="prep-note">{review.subway.referenceDate}{review.subway.stations ? ` · ${review.subway.stations}` : ''}</p>
     </div>}
@@ -55,7 +56,7 @@ export function WeeklyReviewBlock({ lang, summary, place, industry }: { lang: La
     </div>}
     {review.airport && <div className="prep-review-part">
       <h4>{reviewCopy.airport[lang]} · {review.airport.terminal}</h4>
-      <ul>{([7, 28] as const).map((days) => <li key={days}>{days}: {reviewCopy.passengers[lang]} {review.airport!.passengers[days] ? comparisonValue(review.airport!.passengers[days]!) : reviewCopy.unavailable[lang]} · {reviewCopy.flights[lang]} {review.airport!.flights[days] ? comparisonValue(review.airport!.flights[days]!) : reviewCopy.unavailable[lang]}</li>)}</ul>
+      <ul>{([7, 28] as const).map((days) => <li key={days}>{days}: {reviewCopy.passengers[lang]} {review.airport!.passengers[days] ? <RateText text={comparisonValue(review.airport!.passengers[days]!)} lang={lang}/> : reviewCopy.unavailable[lang]} · {reviewCopy.flights[lang]} {review.airport!.flights[days] ? <RateText text={comparisonValue(review.airport!.flights[days]!)} lang={lang}/> : reviewCopy.unavailable[lang]}</li>)}</ul>
     </div>}
   </details>;
 }

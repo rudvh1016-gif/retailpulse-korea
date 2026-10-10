@@ -1,3 +1,4 @@
+import {serviceDayCacheControl} from '../../../../lib/service-day-cache';
 import { getDb } from "../../../../db";
 import { isValidKstDay, kstDayOf, relateKstDay, shiftKstDay } from "../../../../lib/kst";
 import { readDepartureSchedule } from "../../../../lib/departure-schedule";
@@ -35,7 +36,18 @@ export async function readFlightsForDate(client: Pick<D1Database, 'prepare'>, se
     const held = await readHeldSchedule(client, serviceDate, dayRelation);
     if (held.flights.length) return held;
   }
-  return { basis: 'COLLECTED_FLIGHT_RECORDS', dayRelation, flights: rows.slice(0,1200), truncated: rows.length > 1200,
+  const terminalFallbacks: Record<string, {basis:'OFFICIAL_DEPARTURE_SCHEDULE'; flights:Record<string,unknown>[]; retrievedAt:string|null; truncated:boolean}> = {};
+  if (dayRelation === 'TODAY' && rows.length > 0 && rows.length <= 1200) {
+    const missing = ['T1','T2','CONCOURSE'].filter(terminal=>!rows.some(row=>row.direction==='departure'&&row.terminal===terminal));
+    if (missing.length) {
+      const held=await readHeldSchedule(client,serviceDate,dayRelation);
+      for (const terminal of missing) {
+        const flights=held.flights.filter(row=>row.terminal===terminal);
+        if (flights.length) terminalFallbacks[terminal]={basis:'OFFICIAL_DEPARTURE_SCHEDULE',flights,retrievedAt:held.retrievedAt,truncated:held.truncated};
+      }
+    }
+  }
+  return { basis: 'COLLECTED_FLIGHT_RECORDS', dayRelation, terminalFallbacks, flights: rows.slice(0,1200), truncated: rows.length > 1200,
     retrievedAt: rows.map(row => String(row.retrievedAt ?? '')).filter(Boolean).sort().at(-1) ?? null };
 }
 
@@ -70,7 +82,7 @@ export async function GET(request: Request) {
       serviceDateKst: serviceDate,
       todayKst: kstToday,
       ...result,
-    }, { headers: { "cache-control": "public, max-age=120, stale-while-revalidate=600" } });
+    }, { headers: { "cache-control": serviceDayCacheControl("public, max-age=120, stale-while-revalidate=600",generatedAt) } });
   } catch {
     // A failure here must not read as "no flights operated" — the board says
     // the record is unavailable rather than rendering an empty day.

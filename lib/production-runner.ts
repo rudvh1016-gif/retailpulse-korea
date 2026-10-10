@@ -87,8 +87,8 @@ const DEFAULT_RUNNERS = {
    * The same-day guard is what makes an extra A1 window free — and it is also
    * what would freeze the day at whatever the first scan saw.
    *
-   * A1 now runs early (04:07 KST) so today's departures are on screen before
-   * five in the morning. But gate assignments firm up during the day: a scan
+   * A1 now runs early (00:07 KST) so today's departures are on screen near
+   * the KST date change (scheduler delays remain possible). But gate assignments firm up during the day: a scan
    * that early can record flights whose gate the airport has not published
    * yet, and the busiest-gate ranking is exactly what the reader came for.
    * With the guard alone, the later window would skip and the day would keep

@@ -11,29 +11,29 @@
     "app/api/beta-signups/route.ts": "12fa56a8ad3c93968fb10744a1bf39781da6e1483772dce2c5b467586fb9c972",
     "app/api/health/route.ts": "06ad9419fed3d5824d78d4fbeee8b8ed7dc780d2e30af5d30ff79e33895906e2",
     "app/api/live/events/route.ts": "f85c532f05c89b1412fbd77a04ff88d5d3b9f8587ddbebad00dbe1c3df9ed7a4",
-    "app/api/live/flights/route.ts": "fb7bbfc1132359dceb4d315997eaf26bfc5b27d3f03f2bb9b8be4fe46718c1bd",
+    "app/api/live/flights/route.ts": "7263477a03181f96a3cf9a2109b2cb2ccb9d787c2ca6c9af6e8ff4e358288982",
     "app/api/live/predictions/route.ts": "b82f003bd3d77c293a379c4dbd0bf5e2aa449b19e54a65119ef2e4f291cdfced",
-    "app/api/live/summary/route.ts": "147b9c17727c1041e424fe89e9305878c8a9d794e7c531a36c49f81ae24b99b1",
-    "app/area-demand-card.tsx": "78254205092521a36a61fe35aa3ff57c8d91ef1921199cad353c0792dc251dab",
+    "app/api/live/summary/route.ts": "96727d7ade580d6a59fa3bcd438a242dae54316060ea259c7d74de40dfee1f3e",
+    "app/area-demand-card.tsx": "8209a5fda381f6cf529b8635918e99ed158e6d7864280483083510ea16ba2be5",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
-    "app/globals.css": "a1344d20a9e458e22b7a5703f7a961813d4a8b9ccd63dbed8c4b288bad5ca840",
+    "app/globals.css": "5fa7a470a6dcce6cbc819951b4dea3da4305fac55db4bd424ce78c4121b1d62b",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
     "app/layout.tsx": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
-    "app/live-signals.tsx": "db960eabf8cee38388ceeb11523cc80e3762f9accd2a2668f9335a185c9c2957",
+    "app/live-signals.tsx": "1b5a72bf20d8df0bb66f70ecf588c57da547b66f375e5b3ab72f6292163cae29",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "dd0affc7e2210bf0c207520bf99cacb06a8bc3e4485b3d3eb2babe2dfbf28fb8",
+    "app/retailpulse-app.tsx": "082db8555ef29d28a1da6fffac1e6ee25d5d4e4418729d0fb6224b42eb4f8143",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "48c26a8642d0dae4ebea5988064ffaf58611b9982d5d06f5ee0593d6416234b8",
     "app/site-usage-guide.tsx": "4b49e1bd31a91e35f7d0b56b6d1670d94cf644bcc47bcb257508a2a0f6cc64f1",
     "app/sitemap.ts": "ab2329b032b269477ffad4b69258004b1b577b323735eccbf92518cbec258880",
     "app/source-status.tsx": "a4832ec2982ec76631341f8a8aea477d98dd45128234ca7f6ee1002ea16196dd",
-    "app/tourism-desk.tsx": "b4a2e069adc6ed21fa3d6e93571d8a7344bae2b8570ec58613ddf5238d50ab5f",
+    "app/tourism-desk.tsx": "4c0e583789484875dd7a32621035bfc918177234a49d118cf200a68c57a14b00",
     "app/tourism-visitor-show.tsx": "e30883e6efce51f33f839a38b78afe4a1127d87c9ba2cdb7bbac4de189179a10",
     "lib/realtime-dispatch.ts": "dba7bb0e688ec073df674bd5e5cfbb62c3810d8ad5ec181ed06e8bbe449d0a35",
     "public/_headers": "a10cad25ce8bd0c0b7c92225180a71718fc3d2bf5329ac714bf7b2ac6e22676f",
@@ -73,7 +73,7 @@
     "collect-weather.yml": [],
     "site-smoke.yml": [],
     "collect-airport-recovery.yml": [
-      "7 19 * * *"
+      "7 15 * * *"
     ],
     "collect-production.yml": [
       "7 21 * * *"
@@ -1012,5 +1012,206 @@
       }
     ],
     "approvalEvidenceFile": "docs/approvals/seoul-airport-clarity-20261009.json"
+  },
+  "ownerApprovedFacilitiesFinalTargets20261009": {
+    "recordedAt": "2026-10-09T14:56:11.671846+00:00",
+    "authorizationEvidence": {
+      "ownerRequest": "모두 허용해 너가 말한모든것들 싹다허용해",
+      "clarifiedScope": "Separate follow-up bundle: published Seoul toilet directory and honest parking/locker availability states; gate-area filters above the flight controls, gate-area row metadata, removal of the business NEXT promotion and its preview, and moving the redundant bottom coordinate toggle into the retained sources/details panel. Offline response parser preparation only; no additional provider GET or database SELECT. Ready PR326 only after its CI passes; owner performs final merge.",
+      "approvedProtectedFiles": [
+        "app/live-signals.tsx",
+        "app/retailpulse-app.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Normal scoped owner approval bookkeeping. Retain all 61 protected paths, prior records, original enforcement test and cron expressions.",
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "db960eabf8cee38388ceeb11523cc80e3762f9accd2a2668f9335a185c9c2957",
+        "approved": "0e7c5547fe38f2366786c2ec6f6858e488af4834cbfb7a09ef36cce6a09e18a8"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "dd0affc7e2210bf0c207520bf99cacb06a8bc3e4485b3d3eb2babe2dfbf28fb8",
+        "approved": "8800eefdd2bfa2352c3cfce5b6138fdf830852d1ce35765c9e3c9d67313f7c13"
+      }
+    ],
+    "approvalEvidenceFile": "docs/approvals/facilities-final-targets-20261009.json"
+  },
+  "ownerApprovedMidnightConsumptionEntries20261010": {
+    "recordedAt": "2026-10-09T17:12:47.347859+00:00",
+    "authorizationEvidence": {
+      "ownerRequests": [
+        "현재 01시인데 02시부터만 나오는 시간대 문제 해결",
+        "T2 당일 항공편 복구, 다음날 사전 수집·KST 자정 전환·실패 시 제한 재시도",
+        "소비 업종 아이콘 선명도·같은 표시 수치의 내림차순, 미제공 마지막",
+        "출국 준비·여행 기록 두 버튼의 기존 위치 및 동일 크기 유지",
+        "출국 준비 전체 선택 화면을 동일 Blender 디자인과 실제 상태·공식 주제 안내로 통일, 중복 선택 제거",
+        "익일 신속 반영·정상 자료 보존·T1/T2/탑승동 부분 미공개 분리"
+      ],
+      "scope": "Current band plus next band; date-keyed client and midnight-safe response cache; held official schedules stay separate from counted operational records; move the existing A1 early cron from 04:07 to 00:07 KST; shared atomic request reservations; independent building schedule fallback and missing-date/terminal preservation; all existing guide choices unified without duplicate terminal/baggage selectors; unchanged source ownership and original lock enforcement. Agent merge/deploy remain forbidden."
+    },
+    "changes": [
+      {
+        "file": "app/api/live/flights/route.ts",
+        "previous": "fb7bbfc1132359dceb4d315997eaf26bfc5b27d3f03f2bb9b8be4fe46718c1bd",
+        "approved": "7263477a03181f96a3cf9a2109b2cb2ccb9d787c2ca6c9af6e8ff4e358288982"
+      },
+      {
+        "file": "app/api/live/summary/route.ts",
+        "previous": "147b9c17727c1041e424fe89e9305878c8a9d794e7c531a36c49f81ae24b99b1",
+        "approved": "479126e7c354ad419315b78f2ce0f3544f76bdfb79936136487d453e0b9e409d"
+      },
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "0e7c5547fe38f2366786c2ec6f6858e488af4834cbfb7a09ef36cce6a09e18a8",
+        "approved": "94a894a2b404761a07faf6e697a339d82b196eb02ec14daee443f442b5f06cb4"
+      }
+    ],
+    "cronChange": {
+      "file": "collect-airport-recovery.yml",
+      "previous": [
+        "7 19 * * *"
+      ],
+      "approved": [
+        "7 15 * * *"
+      ],
+      "addedSchedule": false
+    },
+    "protectedPathCount": 61
+  },
+  "ownerApprovedMidnightInitialRequestCorrection20261010": {
+    "recordedAt": "2026-10-09T18:46:07.187519+00:00",
+    "authorizationEvidence": {
+      "ownerRequest": "Fix in-scope CI failures without lowering criteria; finish only necessary changes in PR327. Original owner authorization covers midnight continuity, bug checks and mobile request performance.",
+      "scope": "The existing summary and flight clients preserve midnight continuity: consume the existing bare-URL preload for the first summary, add a calendar-only URL key after rollover, and ignore older same-date flight responses after a newer refresh. Only live-signals is a protected hash correction; the flight client is unprotected. Retain server-day validation, date races, cache expiry, and the original one-initial-request browser criteria. No protected page/preload files, lock test or scheduler changed.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "94a894a2b404761a07faf6e697a339d82b196eb02ec14daee443f442b5f06cb4",
+        "approved": "2a6076c042403721b7c16399c3f5199d8931dab46d10e7674b8fa5e0f46c4d56"
+      }
+    ],
+    "protectedPathCount": 61,
+    "approvalEvidenceFile": "docs/approvals/midnight-initial-request-correction-20261010.json"
+  },
+  "ownerApprovedCompactRateGlance20261010": {
+    "recordedAt": "2026-10-10T02:29:35.693316+00:00",
+    "authorizationEvidence": {
+      "ownerRequests": [
+        "Repeated departure choice illustrations must become a compact clear choice UI, retaining core choices and conditional guidance.",
+        "Use the existing official airport-corporation map as a named compact button.",
+        "All displayed growth rates: increase +8.6%, decrease hollow upward △8.6%, exact zero 0%; percent-point differences retain %p. Record the rule for future work.",
+        "Fix Seoul glance unavailable congestion/forecast: distinguish source delay, freshness mismatch, last observation and collection status without duplicated provider calls."
+      ],
+      "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "scope": "Owner-requested presentation updates and existing summary freshness consistency only. Reuse the existing 40-minute summary contract; retain actual baselines, calculations, stale exclusions, midnight safeguards and all source clocks. No new airport monthly aggregate, collector activation, new scheduler, provider diagnostic, migration, draft release, merge or deployment.",
+      "approvedProtectedFiles": [
+        "app/api/live/summary/route.ts",
+        "app/area-demand-card.tsx",
+        "app/live-signals.tsx",
+        "app/retailpulse-app.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Normal scoped hash bookkeeping for explicit owner follow-ups. Preserve all prior records, 61 protected files, scheduler facts and the original UI Lock test.",
+    "changes": [
+      {
+        "file": "app/api/live/summary/route.ts",
+        "previous": "479126e7c354ad419315b78f2ce0f3544f76bdfb79936136487d453e0b9e409d",
+        "approved": "96727d7ade580d6a59fa3bcd438a242dae54316060ea259c7d74de40dfee1f3e"
+      },
+      {
+        "file": "app/area-demand-card.tsx",
+        "previous": "78254205092521a36a61fe35aa3ff57c8d91ef1921199cad353c0792dc251dab",
+        "approved": "8209a5fda381f6cf529b8635918e99ed158e6d7864280483083510ea16ba2be5"
+      },
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "2a6076c042403721b7c16399c3f5199d8931dab46d10e7674b8fa5e0f46c4d56",
+        "approved": "2b1cce221be6c67b12b954c69a183a4131863dec2f5282f11516f7588dacc360"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "8800eefdd2bfa2352c3cfce5b6138fdf830852d1ce35765c9e3c9d67313f7c13",
+        "approved": "082db8555ef29d28a1da6fffac1e6ee25d5d4e4418729d0fb6224b42eb4f8143"
+      }
+    ],
+    "protectedPathCount": 61,
+    "approvalEvidenceFile": "docs/approvals/compact-rate-glance-20261010.json"
+  },
+  "ownerApprovedTourismRateCompletion20261010": {
+    "recordedAt": "2026-10-10T02:42:32.293150+00:00",
+    "authorizationEvidence": {
+      "ownerRequest": "All existing site growth rates use increase +8.6%, decrease hollow upward △8.6%, exact zero 0%, with accessible decrease semantics. This includes the supporting tourism desk and generated briefing.",
+      "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "approvedProtectedFiles": [
+        "app/tourism-desk.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Complete the already-authorized shared rate presentation on the supporting tourism desk. Keep subway baseline priority, Korean source-language markings, all calculations, date/coverage gates, other UI and original UI Lock enforcement. No collector, scheduler, draft release, merge or deployment.",
+    "changes": [
+      {
+        "file": "app/tourism-desk.tsx",
+        "previous": "b4a2e069adc6ed21fa3d6e93571d8a7344bae2b8570ec58613ddf5238d50ab5f",
+        "approved": "4c0e583789484875dd7a32621035bfc918177234a49d118cf200a68c57a14b00"
+      }
+    ],
+    "protectedPathCount": 61,
+    "approvalEvidenceFile": "docs/approvals/tourism-rate-completion-20261010.json"
+  },
+  "ownerApprovedAirportWeatherCancellation20261010": {
+    "recordedAt": "2026-10-10T03:43:03.514234+00:00",
+    "authorizationEvidence": {
+      "ownerRequest": "걍없애 넣지마",
+      "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "sourceMessage": "Sentinel_b47c34e7acc08191a53fa7076ff294db",
+      "scope": "Cancel airport METAR weather integration and remove only its unavailable airport observation screen. Keep Seoul weather, other airport information, stored data, existing keys and security configuration. No quota/login/key question or activation.",
+      "approvedProtectedFiles": [
+        "app/live-signals.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Normal scoped hash bookkeeping for the explicit owner cancellation. Only the AirportWeather import and mount are removed from live-signals. Preserve retained component/parser/storage/API code, all 61 protected paths, original UI Lock enforcement, previous approval records and scheduler facts. No data deletion, key or security change, source call, activation, draft release, merge or deployment.",
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "2b1cce221be6c67b12b954c69a183a4131863dec2f5282f11516f7588dacc360",
+        "approved": "1b5a72bf20d8df0bb66f70ecf588c57da547b66f375e5b3ab72f6292163cae29"
+      }
+    ],
+    "protectedPathCount": 61,
+    "approvalEvidenceFile": "docs/approvals/cancel-airport-weather-20261010.json"
+  },
+  "ownerApprovedAirportCheckpointTouchCorrection20261010": {
+    "recordedAt": "2026-10-10T03:46:51.254588+00:00",
+    "authorizationEvidence": {
+      "ownerRequest": "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+      "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "scope": "Correct the demonstrated accessibility defect found by affected mobile/keyboard verification: the existing airport departure-hall list toggle is 38px high, below its 44px touch-target check. Add only min-block-size:44px; retain font, text, padding, colors, information and original test requirement.",
+      "approvedProtectedFiles": [
+        "app/globals.css"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Normal scoped bookkeeping for the authorized bug/accessibility check. Fix actual control sizing instead of weakening the 44px assertion rejected by automatic approval review. The repository allows demonstrated accessibility corrections; no typography-scale change or redesign. Preserve all protected paths, cron facts and prior approval records. No data deletion, key or security change, source call, activation, draft release, merge or deployment.",
+    "changes": [
+      {
+        "file": "app/globals.css",
+        "previous": "a1344d20a9e458e22b7a5703f7a961813d4a8b9ccd63dbed8c4b288bad5ca840",
+        "approved": "5fa7a470a6dcce6cbc819951b4dea3da4305fac55db4bd424ce78c4121b1d62b"
+      }
+    ],
+    "protectedPathCount": 61,
+    "approvalEvidenceFile": "docs/approvals/airport-checkpoint-touch-correction-20261010.json"
   }
 }

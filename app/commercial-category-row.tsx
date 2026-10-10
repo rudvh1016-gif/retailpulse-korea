@@ -4,7 +4,7 @@ import type {Lang} from './retailpulse-data';
 import type {CategoryActivity} from '../lib/seoul-context';
 import {commercialActivityContext} from '../lib/commercial-context';
 import {commercialPrismRange,publishedPaymentCount,type CommercialChartAxes,type CommercialChartMetric} from '../lib/commercial-category-chart';
-import {commercialCategoryIcons,commercialCategoryFallback} from './commercial-category-icons';
+import {commercialCategoryIcons,commercialCategoryFallback,commercialIconSrcSet} from './commercial-category-icons';
 
 export const commercialLocales={ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'} as const;
 export function CommercialCategoryRow({row,lang,metric,axes}:{row:CategoryActivity;lang:Lang;metric:CommercialChartMetric;axes:CommercialChartAxes}) {
@@ -26,7 +26,7 @@ export function CommercialCategoryRow({row,lang,metric,axes}:{row:CategoryActivi
  const upper=geometry?.upper??0,lower=geometry?.lower??0;
  return <li className="context-category-visual" data-category={row.category}>
   <span className="commercial-category-icon" data-category-icon-key={row.category} aria-hidden="true">
-   {icon&&failedIcon!==icon.src?<img src={icon.src} width={icon.width} height={icon.height} alt="" loading="lazy" decoding="async" onError={()=>setFailedIcon(icon.src)}/>:
+   {icon&&failedIcon!==icon.src?<img src={icon.src} srcSet={commercialIconSrcSet(icon)} sizes="48px" width={icon.width} height={icon.height} alt="" loading="lazy" decoding="async" onError={()=>setFailedIcon(icon.src)}/>:
     <svg viewBox="0 0 48 48" focusable="false"><path d="M8 20h32v20H8zM6 20l4-12h28l4 12M16 20v20M30 27h6v6h-6M6 20c0 4 6 4 6 0 0 4 6 4 6 0 0 4 6 4 6 0 0 4 6 4 6 0 0 4 6 4 6 0 0 4 6 4 6 0"/></svg>}
   </span>
   <div className="commercial-category-copy">

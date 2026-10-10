@@ -1,0 +1,108 @@
+{
+  "checkedAt": "2026-10-10T02:18:15.865Z",
+  "publicHttp": 200,
+  "route": "/api/live/airport-days?date=2026-10-10",
+  "rowsRead": 43,
+  "withoutReadableProfile": 6,
+  "readableCompleteDays": 37,
+  "coverage": {
+    "2026-09": {
+      "completeDays": [
+        "2026-09-30",
+        "2026-09-29",
+        "2026-09-28",
+        "2026-09-27",
+        "2026-09-26",
+        "2026-09-25",
+        "2026-09-24",
+        "2026-09-23",
+        "2026-09-22",
+        "2026-09-21",
+        "2026-09-20",
+        "2026-09-19",
+        "2026-09-18",
+        "2026-09-17",
+        "2026-09-16",
+        "2026-09-15",
+        "2026-09-14",
+        "2026-09-13",
+        "2026-09-12",
+        "2026-09-11",
+        "2026-09-10",
+        "2026-09-09",
+        "2026-09-08",
+        "2026-09-07",
+        "2026-09-06",
+        "2026-09-05",
+        "2026-09-04",
+        "2026-09-03"
+      ],
+      "sideDefinitionVersions": [
+        "airport-sides.v1",
+        "airport-sides.v1-20261003",
+        "airport-sides.v3-reviewed-291-20261004"
+      ]
+    },
+    "2026-10": {
+      "completeDays": [
+        "2026-10-09",
+        "2026-10-08",
+        "2026-10-07",
+        "2026-10-06",
+        "2026-10-05",
+        "2026-10-04",
+        "2026-10-03",
+        "2026-10-02",
+        "2026-10-01"
+      ],
+      "sideDefinitionVersions": [
+        "airport-sides.v3-reviewed-291-20261004"
+      ]
+    }
+  },
+  "sideDefinitionRanges": {
+    "airport-sides.v3-reviewed-291-20261004": {
+      "first": "2026-09-07",
+      "last": "2026-10-09",
+      "days": 33
+    },
+    "airport-sides.v1-20261003": {
+      "first": "2026-09-06",
+      "last": "2026-09-06",
+      "days": 1
+    },
+    "airport-sides.v1": {
+      "first": "2026-09-03",
+      "last": "2026-09-05",
+      "days": 3
+    }
+  },
+  "feasibility": {
+    "schema": "Existing airport_daily_composition payload has airline and airline-registration-country aggregates plus per-building gate sides and destination airports. Monthly daily means can reuse stored complete profiles after verifying coverage and definitions.",
+    "september": "28 complete public day profiles plus retained raw records for September 1 (521 rows) and September 2 (548 rows), independently verified by the parent. A collected-departure monthly comparison is feasible after same-definition reclassification/deduplication and coverage checks; it is not evidence of completely confirmed actual operations.",
+    "october": "October 1 through 9 complete; October 10 in progress and excluded.",
+    "definitions": "Reclassify retained raw departures for both months with the same gate table; this can address mixed side versions. Preserve T1 main-building side counts vs T1 total including concourse. No reclassification was implemented or dispatched.",
+    "destinations": "Public day endpoint exposes destination region groups, not full destination-country or airline coverage. Registration country is not destination country or passenger nationality. Stored aggregate coverage not separately certified.",
+    "retention": "Inventory has no pruning rule/retention limit for airport_daily_composition. Rebuild window 0..28 days and public read window 63 days are not retention guarantees.",
+    "zero": "Collector skips empty raw days, so absence cannot certify a genuine complete zero day. Never fill missing days with zero.",
+    "calculation": "Daily mean = sum of comparable complete-day flight counts / included complete dates. Rate = (current mean / previous mean - 1)*100 when previous mean>0. Share changes are percentage points with an explicit denominator. Do not average unlike side versions or infer passengers from flights.",
+    "execution": "Read-only public response and repository inspection only; no new monthly UI, provider requests, database diagnostic or writes.",
+    "rawRetention": "Repository inventory shows no airport_flights deletion policy. A 31-day normal read window, 30-day change history, 28-day profile rebuild and 63-day public profile window are different mechanisms, not raw-data expiry guarantees."
+  },
+  "parentIndependentPublicInspection": {
+    "source": "Delegating parent read-only public flight responses; not queried again by this worker.",
+    "routes": {
+      "/api/live/flights?date=2026-09-01": {
+        "returnedRows": 521,
+        "truncated": false,
+        "basis": "COLLECTED_FLIGHT_RECORDS"
+      },
+      "/api/live/flights?date=2026-09-02": {
+        "returnedRows": 548,
+        "truncated": false,
+        "basis": "COLLECTED_FLIGHT_RECORDS"
+      }
+    },
+    "statusBoundary": "Mostly scheduled, some unknown; this proves retained collected departure records, not completed actual-operation coverage."
+  }
+}

@@ -4,6 +4,7 @@ import { useEffect, useId, useState } from 'react';
 import type { Lang } from './retailpulse-data';
 import type { LiveSummary } from './live-signals';
 import { buildAreaCurrentBrief } from '../lib/current-brief';
+import {RateText} from './change-rate';
 import { comparisonText } from '../lib/period-comparison';
 import { describeObservationAge } from '../lib/observation-freshness';
 import {PopulationFlowChart} from './population-flow';
@@ -86,7 +87,7 @@ export function AreaDemandCard({ summary, area, lang, linkHref, linkLabel }: { s
       <p className="demand-number">{realtime ? <><strong>{peopleRange(realtime, lang)}</strong><span>{unit}</span></> : <strong>—</strong>}</p>
       {realtime && <p className="demand-time"><strong><time dateTime={realtime.observedAt}>{kstStamp(realtime.observedAt)} KST</time> {demandCopy.observed[lang]}</strong>{age?.ago ? ` · ${age.ago}` : ''}</p>}
       {ageMinutes!==null&&<p className="demand-freshness">{({ko:`${kstStamp(now)} KST 기준 ${ageMinutes}분 앞서 확인한 인원입니다.`,en:`Observed ${ageMinutes} minutes before ${kstStamp(now)} KST.`,zh:`比${kstStamp(now)} KST早${ageMinutes}分钟观测的人数。`,ja:`${kstStamp(now)} KSTより${ageMinutes}分前に確認した人数です。`})[lang]}</p>}
-      <p className="demand-comparison">{comparison ? comparisonText(comparison, lang, 7) : demandCopy.compareMissing[lang]}</p>
+      <p className="demand-comparison">{comparison ? <RateText text={comparisonText(comparison, lang, 7)} lang={lang}/> : demandCopy.compareMissing[lang]}</p>
       {comparison && comparison.minPercent <= 0 && comparison.maxPercent >= 0 && <p className="flow-note">{demandCopy.uncertain[lang]}</p>}
     </div><PopulationOutlook points={points} current={realtime} lang={lang} now={now}/></div>
     <details className="population-history-disclosure"><summary>{demandCopy.flow[lang]} · {demandCopy.details[lang]}</summary><PopulationFlow points={points} lang={lang} now={now}/></details>
@@ -94,7 +95,7 @@ export function AreaDemandCard({ summary, area, lang, linkHref, linkLabel }: { s
     <p className="demand-source">{demandCopy.source[lang]}{realtime?.retrievedAt?` · ${demandCopy.collected[lang]} ${kstStamp(realtime.retrievedAt)} KST`:''} · {demandCopy.rangeNote[lang]}</p>
     <div className="demand-card-footer"><details><summary>{demandCopy.details[lang]}</summary>
       <p>{demandCopy.source[lang]} · {summary.serviceDateKst} · KST</p>
-      {monthComparison && <p>{comparisonText(monthComparison, lang, 28)}</p>}
+      {monthComparison && <p><RateText text={comparisonText(monthComparison, lang, 28)} lang={lang}/></p>}
       <p>{({ ko: '혼잡 단계는 서울시 제공 등급입니다. 선과 띠는 인구의 상·하한이며, 빠진 구간은 연결하지 않습니다.', en: 'Crowding levels are supplied by Seoul. Lines and bands retain upper/lower bounds; missing intervals are not connected.', zh: '拥挤程度采用首尔市等级，线与带保留上下限，不连接缺失区间。', ja: '混雑度はソウル市の等級です。線と帯は上下限を保ち、欠測区間は接続しません。' })[lang]}</p>
       {points.length > 0 && <div className="flow-table-wrap"><table><caption>{demandCopy.flow[lang]} · KST</caption><thead><tr><th>{demandCopy.timeSelect[lang]}</th><th>{demandCopy.observed[lang]} / {demandCopy.forecast[lang]}</th><th>{unit}</th></tr></thead><tbody>{points.map(p => <tr key={`${p.kind}:${p.at}`}><td>{kstStamp(p.at)}</td><td>{demandCopy[p.kind === 'forecast' ? 'forecast' : 'observed'][lang]}{p.issuedAt && <small>{demandCopy.issued[lang]} {kstStamp(p.issuedAt)}</small>}{p.retrievedAt && <small>{demandCopy.collected[lang]} {kstStamp(p.retrievedAt)}</small>}</td><td>{peopleRange(p, lang)}</td></tr>)}</tbody></table></div>}
     </details>{linkHref && <a className="current-brief-link" href={linkHref}>{linkLabel ?? demandCopy.detailLink[lang]} →</a>}</div>

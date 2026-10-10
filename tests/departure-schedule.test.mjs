@@ -38,7 +38,7 @@ test('official next-day snapshot is changed-only, replaces withdrawn flights, an
   } finally { sqlite.close(); }
 });
 
-test('complete multi-date scans replace cancelled and withdrawn schedules atomically, deduplicate, and measure bounded storage', async t => {
+test('complete multi-date scans apply explicit cancellations and preserve missing dates, deduplicate, and measure bounded storage', async t => {
   const sqlite = new DatabaseSync(':memory:');
   sqlite.exec(readFileSync('drizzle/0018_airport_departure_schedule.sql','utf8'));
   const batches=[];
@@ -59,13 +59,13 @@ test('complete multi-date scans replace cancelled and withdrawn schedules atomic
     assert.equal(future.flights[0].scheduledAt,'2026-09-20T08:00:00+09:00');
     assert.deepEqual((await readFlightsForDate(db,'2026-09-21',today)).flights,[]);
     await persistDepartureSchedules(db,today,[rows[0],{...rows[1],status:'cancelled'}]);
-    assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM airport_departure_schedule').get().n,2);
+    assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM airport_departure_schedule').get().n,3);
     assert.deepEqual((await readFlightsForDate(db,'2026-09-10',today)).flights,[]);
     assert.deepEqual(batches,[4,4,3]);
     const bytes=stored.reduce((n,r)=>n+Buffer.byteLength(r.payload),0);
     t.diagnostic(`INTERNAL_ESTIMATE: 3 held dates => 3 stored rows, 4 statements/1 batch, ${bytes} UTF-8 payload bytes; identical rescan changes 0 rows. D1 index-write billing not measured locally.`);
     await assert.rejects(persistDepartureSchedules(db,today,[flight('2026-09-07','bad')]),/not_future/);
-    assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM airport_departure_schedule').get().n,2);
+    assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM airport_departure_schedule').get().n,3);
   } finally {sqlite.close();}
 });
 
@@ -119,8 +119,26 @@ test('today before its first collection shows the held schedule, labelled; recor
     const after = await readFlightsForDate(db, today, today);
     assert.equal(after.basis, 'COLLECTED_FLIGHT_RECORDS');
     assert.deepEqual(after.flights.map((flight) => flight.flightNumber), ['KE9']);
+    assert.equal(after.terminalFallbacks.T1.basis,'OFFICIAL_DEPARTURE_SCHEDULE');
+    assert.deepEqual(after.terminalFallbacks.T1.flights.map(flight=>flight.flightNumber),['KE1']);
+    assert.equal(after.terminalFallbacks.T2,undefined,'good T2 records are never replaced by its schedule');
     // A past day never borrows a schedule.
     sqlite.prepare('INSERT INTO airport_departure_schedule (service_date, payload, retrieved_at) VALUES (?,?,?)').run('2026-10-01', snapshot, '2026-10-01T00:00:00Z');
     assert.equal((await readFlightsForDate(db, '2026-10-01', today)).basis, 'COLLECTED_FLIGHT_RECORDS');
   } finally { sqlite.close(); }
+});
+
+test('missing dates and a missing terminal preserve last-good schedules and their clocks through midnight',async()=>{
+ const sqlite=new DatabaseSync(':memory:');sqlite.exec(readFileSync('drizzle/0018_airport_departure_schedule.sql','utf8'));
+ const db={prepare:sql=>({bind:(...params)=>({sql,params})}),batch:async statements=>statements.map(({sql,params})=>({meta:{changes:Number(sqlite.prepare(sql).run(...params).changes)}}))};
+ const flight=(day,id,terminal)=>({physicalFlightId:id,terminal,flightNumber:id,scheduledAt:`${day}T09:00:00+09:00`,retrievedAt:'2026-10-09T13:00:00Z'});
+ try{
+  await persistDepartureSchedules(db,'2026-10-09',[flight('2026-10-10','KE1','T1'),flight('2026-10-10','KE2','T2'),flight('2026-10-10','KE3','CONCOURSE'),flight('2026-10-11','KE4','T2')]);
+  const original=sqlite.prepare('SELECT payload,retrieved_at AS retrievedAt FROM airport_departure_schedule WHERE service_date=?').get('2026-10-10');
+  await persistDepartureSchedule(db,'2026-10-10',[{...flight('2026-10-10','NEW1','T1'),retrievedAt:'2026-10-09T14:00:00Z'}]);
+  assert.deepEqual(sqlite.prepare('SELECT payload,retrieved_at AS retrievedAt FROM airport_departure_schedule WHERE service_date=?').get('2026-10-10'),original,'a partial terminal replacement cannot erase T2 or concourse');
+  await persistDepartureSchedules(db,'2026-10-10',[]);
+  assert.deepEqual(sqlite.prepare('SELECT service_date FROM airport_departure_schedule ORDER BY service_date').all().map(row=>row.service_date),['2026-10-10','2026-10-11']);
+  assert.deepEqual(readDepartureSchedule(original,'2026-10-10').map(row=>row.terminal),['T1','T2','CONCOURSE']);
+ }finally{sqlite.close();}
 });

@@ -2,6 +2,7 @@
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import type { Lang } from './retailpulse-data';
+import {RateText} from './change-rate';
 import { comparisonValue } from '../lib/period-comparison';
 import { RECORD_AREAS, type MonthlyRecords, type RecordArea, type RecordMonth } from '../lib/monthly-records';
 import { recordText } from './monthly-records-copy';
@@ -99,7 +100,7 @@ export function MonthlyRecordsView({ lang, area, onArea }: { lang: Lang; area: R
     {data && <div aria-live="polite" aria-atomic="false" data-testid="monthly-records-result">
       {data.current.month === data.currentMonth && <p className="records-note">{t('pending')}</p>}
       <div className="records-comparison"><MonthValue value={data.current} label={t('selected')} lang={lang} /><MonthValue value={data.previous} label={t('previous')} lang={lang} /></div>
-      <p className="records-change">{t('compare')} <b>{data.change ? comparisonValue(data.change) : '—'}</b></p>
+      <p className="records-change">{t('compare')} <b>{data.change ? <RateText text={comparisonValue(data.change)} lang={lang}/> : '—'}</b></p>
       {(!data.change || data.current.includedDays !== data.current.expectedDays || data.previous.includedDays !== data.previous.expectedDays || data.current.includedDays !== data.previous.includedDays) && <p className="records-note">{t(data.change ? 'comparing' : 'unavailableCompare')}</p>}
       <DailyRanges value={data.current} lang={lang} />
       <details className="records-details"><summary>{t('details')}</summary><p>{t('method')}</p><p>{t('comparisonMethod')}</p>

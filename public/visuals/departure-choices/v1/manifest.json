@@ -1,0 +1,63 @@
+{
+  "engine": "5.2.1 LTS",
+  "conceptOnly": true,
+  "runtime3d": false,
+  "assets": [
+    {
+      "name": "terminal-t1",
+      "width": 256,
+      "height": 256,
+      "bytes": 4374,
+      "sha256": "dbe7ae5e3884fee6fb97a9d03a233ef3ad0c484635ca8b5bae8d52f6ed602d2d",
+      "source": "assets-src/departure-choices-20261010/terminal-t1.blend"
+    },
+    {
+      "name": "terminal-t2",
+      "width": 256,
+      "height": 256,
+      "bytes": 4364,
+      "sha256": "72b59f67abb359feba821a95da7d7fe2bd08ff51aea1017cd07afc71ef257f53",
+      "source": "assets-src/departure-choices-20261010/terminal-t2.blend"
+    },
+    {
+      "name": "concourse",
+      "width": 256,
+      "height": 256,
+      "bytes": 4490,
+      "sha256": "22f3afbf70c54b5ca10872a6119197858a4e165ac4063aaddd4fe4091a146cc0",
+      "source": "assets-src/departure-choices-20261010/concourse.blend"
+    },
+    {
+      "name": "refund-receipt",
+      "width": 256,
+      "height": 256,
+      "bytes": 3820,
+      "sha256": "23ea1ec9f1fb3a9d241c46794bcaf308c69532f02a6f1171b46962893b16750e",
+      "source": "assets-src/departure-choices-20261010/refund-receipt.blend"
+    },
+    {
+      "name": "help-sign",
+      "width": 256,
+      "height": 256,
+      "bytes": 3412,
+      "sha256": "48293d49cf1ed7433549a7b906866740f27334be703c9e23bf3d4beac07c3cfe",
+      "source": "assets-src/departure-choices-20261010/help-sign.blend"
+    },
+    {
+      "name": "security-check",
+      "width": 256,
+      "height": 256,
+      "bytes": 4388,
+      "sha256": "77b3b85f0a73fcdbafeeb2173ebf0fd6961905556dc8c5e18c7209e88903f6dc",
+      "source": "assets-src/departure-choices-20261010/security-check.blend"
+    },
+    {
+      "name": "immigration-pass",
+      "width": 256,
+      "height": 256,
+      "bytes": 3666,
+      "sha256": "60d1ce941ebaf17ed451bb030ed300720546368be0009d55aa1c7f7851b36e04",
+      "source": "assets-src/departure-choices-20261010/immigration-pass.blend"
+    }
+  ]
+}

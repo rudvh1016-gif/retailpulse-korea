@@ -1,3 +1,5 @@
+import {formatChangeRate} from './change-rate';
+
 /**
  * The 10–30 second briefing a tourism-information worker reads before a
  * shift. It is deliberately a short decision surface rather than a catalogue
@@ -180,22 +182,13 @@ function preferredSubwayComparison(trend: TourismSubwayTrend): {
   return null;
 }
 
-function signedPercent(tenths: number, lang: DeskLang): string {
-  const magnitude = Math.abs(tenths) / 10;
-  const rendered = new Intl.NumberFormat(LOCALE[lang], {
-    minimumFractionDigits: Number.isInteger(magnitude) ? 0 : 1,
-    maximumFractionDigits: 1,
-  }).format(magnitude);
-  return `${tenths > 0 ? "+" : tenths < 0 ? "−" : ""}${rendered}%`;
-}
-
 function subwayLine(
   subway: NonNullable<TourismDeskInput["subway"]>,
   lang: DeskLang,
 ): TourismDeskLine | null {
   const selected = preferredSubwayComparison(subway.trend);
   if (!selected) return null;
-  const percent = signedPercent(selected.value.changeTenthsPercent, lang);
+  const percent = formatChangeRate(selected.value.changeTenthsPercent/10);
   const comparison = selected.kind === "sameWeekdayLastWeek"
     ? { ko: `지난주 같은 요일 대비 ${percent}`, en: `${percent} vs the same weekday last week`, zh: `较上周同一星期几 ${percent}`, ja: `先週の同じ曜日比 ${percent}` }[lang]
     : selected.kind === "recentSevenDayAverage"

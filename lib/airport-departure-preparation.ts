@@ -9,6 +9,19 @@ export const departurePreparationEvidence={
  REFUND:{url:'https://www.airport.kr/ap_ko/898/subview.do',checkedAt:'2026-10-04',sourceUpdatedOn:null},
  DUTY_FREE:{url:'https://www.airport.kr/ap_en/1531/subview.do',checkedAt:'2026-10-04',sourceUpdatedOn:null},
 } as const;
+/** Topic pages verified 2026-10-09; no generic homepage or inferred locations. */
+export const departureStepOfficialLink:Record<DepartureStepId,string>={
+ CONFIRM:departurePreparationEvidence.AIRPORT.url,
+ CHECK_IN:'https://www.airport.kr/ap_en/1421/subview.do',
+ CHECK_IN_TAX:departurePreparationEvidence.REFUND.url,
+ CHECKED_CUSTOMS:departurePreparationEvidence.CUSTOMS.url,
+ BAG_DROP:'https://www.airport.kr/ap_en/1421/subview.do',
+ SECURITY:'https://www.airport.kr/ap_en/1433/subview.do',
+ IMMIGRATION:'https://www.airport.kr/ap_en/1438/subview.do',
+ REFUND:departurePreparationEvidence.REFUND.url,
+ PICKUP:departurePreparationEvidence.DUTY_FREE.url,
+ GATE:departurePreparationEvidence.AIRPORT.url,
+};
 /** International departure general case only. No estimated times or eligibility inference. */
 export function departurePreparation(input:DeparturePreparationInput) {
  const steps:DeparturePreparationStep[]=[{id:'CONFIRM',phase:'BEFORE_SECURITY',conditional:false,source:'AIRPORT'}];

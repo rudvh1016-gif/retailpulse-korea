@@ -1,3 +1,5 @@
+import {formatChangeRate} from './change-rate';
+
 export interface RangeChange {
   baselineAt: string;
   minPercent: number;
@@ -26,14 +28,11 @@ export function rangeChange(currentMin: unknown, currentMax: unknown, baselineMi
  * change". `(+0.04).toFixed(1)` is "+0.0", which tells a reader the count held
  * steady when one more person was actually counted. Below the resolution the
  * sign is still known, so the bound is printed instead of a rounded zero:
- * `<+0.1%` and `>-0.1%` say "moved, by less than a tenth of a percent".
- * Exactly zero keeps "0.0%", because that one genuinely is no change.
+ * `<+0.1%` and `△<0.1%` say "moved, by less than a tenth of a percent".
+ * Exactly zero keeps "0%", because that one genuinely is no change.
  */
 export function comparisonValue(change: RangeChange): string {
-  const signed = (n: number) => {
-    if (n !== 0 && Math.abs(n) < 0.05) return n > 0 ? "<+0.1%" : ">-0.1%";
-    return `${n > 0 ? "+" : ""}${n.toFixed(1)}%`;
-  };
+  const signed = formatChangeRate;
   return Math.abs(change.minPercent - change.maxPercent) < 0.00001
     ? signed(change.minPercent) : `${signed(change.minPercent)} ~ ${signed(change.maxPercent)}`;
 }

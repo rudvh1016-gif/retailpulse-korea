@@ -1,4 +1,8 @@
 export interface CommercialCategoryIcon {src:string; width:number; height:number}
+export function commercialIconSrcSet(icon:CommercialCategoryIcon){
+ const key=icon.src.split('/').at(-1)!.replace('-64.webp','');
+ return `${icon.src} 64w, /commercial-icons/miniatures/${key}-128.webp 128w, /commercial-icons/sharp-v1/${key}-256.webp 256w`;
+}
 /** Exact provider business-category labels. Illustrations never determine chart values. */
 export const commercialCategoryIcons:Readonly<Record<string,CommercialCategoryIcon>>={
   "한식": {

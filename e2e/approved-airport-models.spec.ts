@@ -79,6 +79,7 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [320,390,430,1280]) 
     await overview.getByTestId('departure-map-section').locator(':scope > summary').click();
     await overview.getByTestId('map-destinations').locator('summary').click();
     await expect(overview.getByTestId('map-groups')).toBeVisible();
+    await overview.getByTestId('map-counting-basis').locator(':scope > summary').click();
     await overview.getByTestId('map-official-coordinates').locator('summary').click();
     await expect(overview.getByTestId('map-T2')).toBeVisible();
     await expect(model.locator('a[href="https://www.airport.kr/geomap/ap_ko/view.do"]')).toHaveCount(1);

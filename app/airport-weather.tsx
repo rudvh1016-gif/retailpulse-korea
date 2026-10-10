@@ -76,6 +76,7 @@ export function AirportWeather({ lang }: { lang: Lang }) {
         <a href={snapshot!.sourceUrl} target="_blank" rel="noopener noreferrer">{t.source} · METAR</a>
       </details>
     </>}
+    {!loading&&!observation&&snapshot?.status==='MISSING'&&snapshot.storage==='READY'&&<p className={styles.basis}>{({ko:'확인된 공항 관측값이 아직 없습니다.',en:'No confirmed airport observation is available yet.',zh:'尚无已确认的机场观测值。',ja:'確認済みの空港観測値はまだありません。'})[lang]} <a href={snapshot.sourceUrl} target="_blank" rel="noopener noreferrer">{t.source} · METAR ↗</a></p>}
     </div>
   </section>;
 }

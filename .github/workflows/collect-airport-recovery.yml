@@ -7,10 +7,10 @@ name: Collect Airport Departures (Early Window)
 # morning: "오늘 출발편 수집이 완료되지 않았습니다" with the next attempt four
 # hours out, on a screen whose whole purpose is today's gate ranking.
 #
-# It now runs FIRST, at 04:07 KST, and a failure is retried on a fresh runner
+# It now runs FIRST, at 00:07 KST, and a failure is retried on a fresh runner
 # within about a minute rather than four hours. Both halves matter:
 #
-#   · EARLY — today's departures are on screen before five in the morning
+#   · EARLY — today's departures are on screen just after the KST date changes
 #     instead of after six.
 #   · FRESH RUNNER — the failure this collector actually suffers is a blocked
 #     egress address (measured 2026-09-06: two of eight runners could not open
@@ -43,13 +43,13 @@ name: Collect Airport Departures (Early Window)
 # firm up during the morning, and the busiest-gate ranking is what this screen
 # is for. See lib/production-runner.ts.
 #
-# Cron is 04:07 KST (= 19:07 UTC the previous day). Off-minute per
+# Cron is 00:07 KST (= 15:07 UTC the previous day). Off-minute per
 # docs/ENGINEERING_DIRECTION.md. Scheduler ownership is unchanged: A1 lives in
 # GitHub Actions, so no Worker Cron is added and the five Production crons
 # stay exactly as they are.
 on:
   schedule:
-    - cron: "7 19 * * *"
+    - cron: "7 15 * * *"
   workflow_dispatch:
 
 permissions:

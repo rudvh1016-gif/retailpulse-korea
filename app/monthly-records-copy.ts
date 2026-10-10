@@ -6,7 +6,7 @@ export const recordsCopy = {
   area: row('지역', 'Area', '地区', 'エリア'), month: row('조회 월', 'Month', '查询月份', '対象月'),
   metric: row('시간대별 인구의 하루 평균', 'Daily mean of hourly population present', '每小时在场人口的日均值', '時間ごとの滞在人口の1日平均'),
   unit: row('명', 'people', '人', '人'), selected: row('선택한 달', 'Selected month', '所选月份', '選択した月'),
-  previous: row('전월', 'Previous month', '上月', '前月'), compare: row('전월 일평균 대비', 'Vs. previous daily mean', '与上月日均相比', '前月の日平均比'),
+  previous: row('전월', 'Previous month', '上月', '前月'), compare: row('전월 대비 신장률', 'Vs. previous daily mean', '与上月日均相比', '前月の日平均比'),
   included: row('포함', 'included', '计入', '算入'), days: row('일', ' days', '天', '日'),
   cutoff: row('집계 마감', 'Cutoff', '统计截止', '集計締切'), none: row('집계 가능한 날 없음', 'No complete days', '无完整日期', '集計可能な日なし'),
   pending: row('집계 중 · 오늘 제외', 'In progress · today excluded', '统计中 · 不含今天', '集計中・本日を除く'),

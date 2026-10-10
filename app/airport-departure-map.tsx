@@ -126,8 +126,8 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
   const span: MapWindow = preset === 'CUSTOM' ? (customWindow(custom[0], custom[1]) ?? { startMin: 0, endMin: 1440 })
     : presetWindow(preset === 'DAY' || !today ? 'DAY' : preset, nowMinute);
   const nextDate = shiftKstDay(date, 1);
-  const current = useFlights(date);
-  const next = useFlights(span.endMin > 1440 ? nextDate : null);
+  const current = useFlights(date, buildingScope ?? 'all');
+  const next = useFlights(span.endMin > 1440 ? nextDate : null, buildingScope ?? 'all');
   const map = useMemo(() => current?.status === 'OK'
     ? departureMap({ date, nextDate, terminal, buildingScope, window: span, rows: current.payload.flights, nextRows: next?.status === 'OK' && (next.payload.flights.length > 0 || next.payload.retrievedAt) ? next.payload.flights : null })
     : null, [current, next, date, nextDate, terminal, buildingScope, span.startMin, span.endMin]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -227,14 +227,6 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
         style={{ border: 0, padding: 0, background: 'transparent', color: 'var(--blue)', cursor: 'pointer', font: 'inherit' }}>{copy.clearFilter[lang]}</button>
         {' '}<span className="prep-note">({copy.filtered[lang]}: {copy.groups[filter][lang]} · {shown.length})</span></p>}
 
-      <OpenableList testId="map-official-coordinates" summary={contextText(lang,'공식 지도 탑승구 좌표','Gate coordinates on official maps','官方地图登机口坐标','公式地図の搭乗口座標')}>{() => <>
-      {(buildingScope==='all'?['T1','T2','CONCOURSE'] as const:buildingScope?[buildingScope]:buildingsOf(terminal)).map((building) => <BuildingMap key={building} lang={lang} building={building} map={map} flights={shown} selected={selected} onSelect={setSelected}/>)}
-      <p className="prep-note">{copy.schematic[lang]}</p>
-      {selected && <div data-testid="map-gate-flights">
-        <h4 style={{ margin: '10px 0 0' }}>{copy.gate[lang]} {selected.split(':')[1]} · {copy.building[selected.split(':')[0] as MapBuilding][lang]}</h4>
-        {atGate.length ? <FlightRows lang={lang} flights={atGate} testId="map-gate-list"/> : <p className="prep-note">{copy.noFlightsAtGate[lang]}</p>}
-      </div>}
-      </>}</OpenableList>
 
       {unplaced.length > 0 && <OpenableList className="prep-evidence" testId="map-unplaced" summary={<>{copy.unplacedTitle[lang]} {unplaced.length}</>}>{() => <>
         <p className="prep-note">{copy.noGate[lang]} {map.unplaced.noGate.filter((flight) => !filter || flight.group === filter).length} · {copy.notOnMap[lang]} {map.unplaced.notOnMap.filter((flight) => !filter || flight.group === filter).length}</p>
@@ -248,6 +240,16 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
       {map.nextDay !== 'MISSING' && <p className="prep-note" data-testid="map-counts">{windowCountsLine(map, lang)}</p>}
       {map.nextDay !== 'MISSING' && (map.flights.length > 0 || map.unknownBuilding > 0) && <p className="prep-note" data-testid="map-lead">{leadLine(map, lang)}</p>}
       {map.nextDay === 'COVERED' && <p className="prep-note" data-testid="map-next-covered">{copy.nextDayCovered[lang]}</p>}
+      {map.nextDay !== 'MISSING' && <>
+      <OpenableList testId="map-official-coordinates" summary={contextText(lang,'공식 지도 탑승구 좌표','Gate coordinates on official maps','官方地图登机口坐标','公式地図の搭乗口座標')}>{() => <>
+      {(buildingScope==='all'?['T1','T2','CONCOURSE'] as const:buildingScope?[buildingScope]:buildingsOf(terminal)).map((building) => <BuildingMap key={building} lang={lang} building={building} map={map} flights={shown} selected={selected} onSelect={setSelected}/>)}
+      <p className="prep-note">{copy.schematic[lang]}</p>
+      {selected && <div data-testid="map-gate-flights">
+        <h4 style={{ margin: '10px 0 0' }}>{copy.gate[lang]} {selected.split(':')[1]} · {copy.building[selected.split(':')[0] as MapBuilding][lang]}</h4>
+        {atGate.length ? <FlightRows lang={lang} flights={atGate} testId="map-gate-list"/> : <p className="prep-note">{copy.noFlightsAtGate[lang]}</p>}
+      </div>}
+      </>}</OpenableList>
+      </>}
     </details>
     <p><button type="button" className="install-app-button" onClick={copyText} data-testid="map-copy">{copy.copy[lang]}</button>
       {copied === 'OK' && <span className="prep-note" role="status"> {copy.copied[lang]}</span>}</p>

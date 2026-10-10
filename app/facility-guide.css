@@ -1,0 +1,25 @@
+.facility-guide{margin:32px 0;border-top:1px solid var(--ink);color:var(--ink);background:#fff}
+.facility-guide h3{margin:20px 0;font-size:1rem;font-weight:400}
+.facility-guide details{border-bottom:1px solid var(--line);padding:12px 0}
+.facility-guide summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:8px}
+.facility-guide summary::before{content:'+';flex:none}
+.facility-guide details[open]>summary::before{content:'−'}
+.facility-guide p{font-size:14px;line-height:1.6;margin:8px 0;overflow-wrap:anywhere}
+.facility-guide a{color:inherit;text-underline-offset:4px;display:inline-flex;align-items:center;min-height:44px}
+.facility-guide button,.facility-guide input{font:inherit;color:inherit;background:#fff;border:1px solid var(--line);min-height:44px;padding:8px 12px;border-radius:0}
+.facility-search{display:grid;gap:8px;font-size:14px;margin:16px 0}
+.facility-search input{width:100%;min-width:0}
+.facility-result-count,.facility-source{font-variant-numeric:tabular-nums}
+.facility-symbol{display:flex;align-items:center;gap:12px;margin:0;min-height:96px}
+.facility-symbol img{width:96px;height:96px;flex:none;object-fit:contain}
+.facility-symbol figcaption{font-size:12px;line-height:1.6;max-width:28em}
+.facility-toilet-rows{list-style:none;padding:0;margin:0}
+.facility-toilet-rows>li{padding:16px 0;border-top:1px solid var(--line)}
+.facility-toilet-rows strong{font-weight:400;font-size:15px}
+.facility-toilet-rows details{border-bottom:0;padding-bottom:0}
+.flight-zone-controls{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px;margin:12px 0 4px}
+.flight-zone-controls button{font:inherit;font-size:13px;color:var(--ink);background:#fff;border:0;border-bottom:2px solid transparent;min-height:44px;padding:8px 10px;cursor:pointer}
+.flight-zone-controls button[aria-pressed=true]{border-bottom-color:var(--ink)}
+
+.flight-summary-area{border-bottom:1px solid var(--ink)}
+.flight-summary-area>.flight-summary{border-bottom:0;padding-bottom:8px}

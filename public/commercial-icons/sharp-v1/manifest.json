@@ -1,0 +1,120 @@
+{
+  "source": "Existing reviewed shinhan_industry_icons_v1 Blender 512px renders",
+  "geometryChanged": false,
+  "textBaked": false,
+  "totalBytes": 57582,
+  "assets": [
+    {
+      "key": "accessories",
+      "width": 256,
+      "height": 256,
+      "bytes": 3810,
+      "sha256": "7e4bb58a9aeaf9415bf13c50086892739c79b963cf6e871bbd348ef03f81301d",
+      "reviewed512PngSha256": "110643b59f5f67b6de763103af880dd5a59a02b39b6c2e24f2c593ffb342c57c"
+    },
+    {
+      "key": "beauty_service",
+      "width": 256,
+      "height": 256,
+      "bytes": 3602,
+      "sha256": "805b6622792b5ab2ef025ec12300c37afd64614ca2f1e68d62cff6631e934bcf",
+      "reviewed512PngSha256": "85bb7cf1619872a6ed7e2329516f335f10b867db1ed2e4cceb76db021c424250"
+    },
+    {
+      "key": "cafe_bakery",
+      "width": 256,
+      "height": 256,
+      "bytes": 4048,
+      "sha256": "41abbe80d4943caa4aa5814f0cf091d10609e41ea6bc55b886f44f0e1a72bedb",
+      "reviewed512PngSha256": "5d35ce2eed2375b4f50fd752c72228cbaa3320726bb98d30901a93285bbd6c05"
+    },
+    {
+      "key": "clothing",
+      "width": 256,
+      "height": 256,
+      "bytes": 4588,
+      "sha256": "fba3f6b885eb4cba5301e3c311df1c6d4346b70b3e36bd4eb644f5fe0e9beb6a",
+      "reviewed512PngSha256": "3b1be09d8ad42b25888eb585a2a7b492b6d25b5caea452686d04be3449a61d1c"
+    },
+    {
+      "key": "convenience",
+      "width": 256,
+      "height": 256,
+      "bytes": 4252,
+      "sha256": "892c23368514f536fafc6f6fc37db17c46ddf20b1482d4a69bf649b7d1b02717",
+      "reviewed512PngSha256": "de786f27c080a79f5794d2453cba48bdc194abc1ef899bac59fa24a025d4688e"
+    },
+    {
+      "key": "cosmetics",
+      "width": 256,
+      "height": 256,
+      "bytes": 4656,
+      "sha256": "d90651b4017a4a22e2e8cd9f2caf64f8460d990562d31df5b02155b92884427e",
+      "reviewed512PngSha256": "6164040d3582f21953cdaa9e5980c902e73920949d02f18fa4b5d6bf957de760"
+    },
+    {
+      "key": "fallback",
+      "width": 256,
+      "height": 256,
+      "bytes": 3620,
+      "sha256": "a1327f8670e7e3433a3c9f50c3f97e1c93107cc861aadcf8c4f9b9610f881dea",
+      "reviewed512PngSha256": "0e5fa6b129468ad22084bb98c1d4d0a4c1b31779e8bfcce631db6dc9347e0a73"
+    },
+    {
+      "key": "grocery",
+      "width": 256,
+      "height": 256,
+      "bytes": 7602,
+      "sha256": "57d2141a97f0b08c5e68713ac854098b33134667860f6288dddcbc1f6dfaaab6",
+      "reviewed512PngSha256": "6d2da17e74ed1a4172262ced11875395e264bf5817be099e72185d9d78746491"
+    },
+    {
+      "key": "korean_food",
+      "width": 256,
+      "height": 256,
+      "bytes": 4564,
+      "sha256": "afaaeb392c431a650fd5569cadbd357d38bdb4a24de4b31e07707ddca0d3728e",
+      "reviewed512PngSha256": "fb65dee811e01a9c3bd37818a7356be1425d2064701791d0437ccb9b11396f05"
+    },
+    {
+      "key": "nightlife",
+      "width": 256,
+      "height": 256,
+      "bytes": 3682,
+      "sha256": "87d5b7cd68a42f2dab6aa0fada3ac5ecce8c92d04796ad0801adc53aa6ae2618",
+      "reviewed512PngSha256": "90095d224802d2380e236bb4e93f1a37aa0f504f2fdf0b5934039491e893571f"
+    },
+    {
+      "key": "other_dining",
+      "width": 256,
+      "height": 256,
+      "bytes": 2800,
+      "sha256": "282cfe2057e1c6919f0b1be4de146f2265d71c977da13d5e385149540a315494",
+      "reviewed512PngSha256": "be370c710554d8efcb40ab4a87585d0970e4f350cdd6a94dddba37c827268f6c"
+    },
+    {
+      "key": "pharmacy",
+      "width": 256,
+      "height": 256,
+      "bytes": 3456,
+      "sha256": "ee1ea2256ebd9d6e42f534bdaa89b3833debfbeb1276261c92d202bd80d054fc",
+      "reviewed512PngSha256": "a8e4e17f6098ebea2eb78b2582fbb5d98038b61044c64512d23225041689dd9f"
+    },
+    {
+      "key": "recreation",
+      "width": 256,
+      "height": 256,
+      "bytes": 4104,
+      "sha256": "107f1777aeb480ecc798efdfa89bf47f41f233901842f9fee7335a4c23b8d1a8",
+      "reviewed512PngSha256": "cd4152eed1063352c82a81f82183f67aafc2655bf73dff753e45694ccd44b840"
+    },
+    {
+      "key": "world_food",
+      "width": 256,
+      "height": 256,
+      "bytes": 2798,
+      "sha256": "a5998af601d291dc84561db236ff855d9cd696d6bea3a79218d11cca20b813da",
+      "reviewed512PngSha256": "7f5bc6807855009451c4ae97c9056d214e42c54e46ce02bb786a3f1d9e374c30"
+    }
+  ]
+}

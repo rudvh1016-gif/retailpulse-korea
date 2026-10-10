@@ -118,7 +118,7 @@ class MemoryD1 {
         return {meta:{changes,rows_written:changes}};
       }
       if (sql.includes('DELETE FROM airport_departure_schedule')) {
-        for(const day of this.schedules.keys()) if(day<=params[0]||!params.slice(1).includes(day)) this.schedules.delete(day);
+        for(const day of this.schedules.keys()) if(day<params[0]) this.schedules.delete(day);
         return {meta:{changes:0,rows_written:0}};
       }
       if (!sql.includes("INSERT INTO airport_flights")) return { meta: { rows_written: 0 } };
@@ -289,4 +289,10 @@ test("A1 transient recovery waits twenty seconds without increasing its two-atte
   }, { sleep: async ms => { delays.push(ms); } });
   assert.equal(result.requestsIssued, 2);
   assert.deepEqual(delays, [20000]);
+});
+
+test('an externally unpublished current day preserves good records and independently retains next-day schedules',async()=>{
+ const db=new MemoryD1();db.flights.set('last-good',{scheduledAt:'2026-10-09T08:00:00+09:00'});
+ let calls=0;const result=await collectAirportFlightsToday({DB:db,DATA_GO_KR_SERVICE_KEY:'fixture-key'},new Date('2026-10-09T15:00:01Z'),async()=>{calls++;return pagePayload([flight({flightId:'KE11',scheduleDatetime:'202610110900',terminalId:'P03'})],1);});
+ assert.equal(result.status,'NOT_YET_PUBLISHED');assert.equal(calls,1);assert.equal(result.trackedToday,0);assert.equal(db.flights.has('last-good'),true);assert.equal(db.schedules.has('2026-10-11'),true);assert.match(result.detail,/NOT_YET_PUBLISHED/);
 });

@@ -1,0 +1,23 @@
+{
+  "recordedAt": "2026-10-10T03:46:51.254588+00:00",
+  "authorizationEvidence": {
+    "ownerRequest": "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+    "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+    "scope": "Correct the demonstrated accessibility defect found by affected mobile/keyboard verification: the existing airport departure-hall list toggle is 38px high, below its 44px touch-target check. Add only min-block-size:44px; retain font, text, padding, colors, information and original test requirement.",
+    "approvedProtectedFiles": [
+      "app/globals.css"
+    ],
+    "keepProtectedListAndEnforcement": true,
+    "agentMergeOrDeploymentApproved": false
+  },
+  "reason": "Normal scoped bookkeeping for the authorized bug/accessibility check. Fix actual control sizing instead of weakening the 44px assertion rejected by automatic approval review. The repository allows demonstrated accessibility corrections; no typography-scale change or redesign. Preserve all protected paths, cron facts and prior approval records. No data deletion, key or security change, source call, activation, draft release, merge or deployment.",
+  "changes": [
+    {
+      "file": "app/globals.css",
+      "previous": "a1344d20a9e458e22b7a5703f7a961813d4a8b9ccd63dbed8c4b288bad5ca840",
+      "approved": "5fa7a470a6dcce6cbc819951b4dea3da4305fac55db4bd424ce78c4121b1d62b"
+    }
+  ],
+  "protectedPathCount": 61,
+  "approvalEvidenceFile": "docs/approvals/airport-checkpoint-touch-correction-20261010.json"
+}

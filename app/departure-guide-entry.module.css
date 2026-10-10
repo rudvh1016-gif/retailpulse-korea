@@ -26,3 +26,34 @@ details.guide > summary.entry { display: inline-grid; grid-template-columns: min
 details.guide > summary.entry:hover { background: #f4f4f4; }
 details.guide > summary.entry:active { background: #f8f8f8; }
 details.guide > summary.entry:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+/* Owner: equal entries in their existing two-column location. */
+details.guide > summary.entry,.tripEntry { box-sizing:border-box; width:100%; height:80px; min-height:80px; padding:8px 10px; border:0; background:#f3f8fb; box-shadow:0 3px 9px rgb(70 105 132 / 9%); align-items:center; }
+.actionText { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.buttonLabel { position:relative; }
+.indicator { position:absolute; right:0; top:-10px; width:12px; height:12px; }
+.title,.tripEntry strong { font-size:var(--type-body); line-height:1.4; }
+@media(max-width:600px){details.guide > summary.entry,.tripEntry { padding:8px; } }
+
+/* Owner: short text choices, with the source next to the current explanation. */
+.choicePanel { display:grid; gap:0; margin:12px 0 16px; }
+.choiceGroup { min-width:0; padding:6px 0; margin:0; border:0; border-bottom:1px solid #e5e5e5; }
+.choiceGroup legend { margin-bottom:4px; padding:0; font-weight:var(--weight-strong); line-height:1.5; }
+.choiceOptions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; }
+.choiceOptions[data-options="4"] { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.choiceOptions[data-options="2"] { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.choiceOptions button { display:flex; align-items:center; justify-content:center; gap:6px; min-width:0; min-height:44px; padding:6px 8px; border:0; border-bottom:2px solid transparent; border-radius:0; background:var(--paper); color:var(--ink); font:inherit; line-height:1.5; cursor:pointer; text-align:center; touch-action:manipulation; -webkit-tap-highlight-color:#e8e8e8; }
+.choiceOptions button span { min-width:0; overflow-wrap:anywhere; }
+.choiceOptions button[aria-pressed="true"] { border-bottom-color:var(--ink); font-weight:var(--weight-strong); }
+.choiceOptions button:hover { background:#f7f7f7; }
+.choiceOptions button:active { background:#eeeeee; }
+.choiceOptions button:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+.choiceMark { width:14px; height:14px; flex:0 0 14px; fill:none; stroke:#707070; stroke-width:1.5; }
+.choiceMark path { visibility:hidden; fill:none; }
+.choiceOptions button[aria-pressed="true"] .choiceMark { fill:var(--ink); stroke:var(--ink); }
+.choiceOptions button[aria-pressed="true"] .choiceMark path { visibility:visible; stroke:var(--paper); }
+.choiceDetails { display:flex; align-items:center; gap:12px; margin-top:4px; }
+.choiceExplanation { min-width:0; flex:1; margin:0; line-height:1.5; }
+.choiceSource { display:inline-flex; align-items:center; flex-shrink:0; min-height:44px; padding:6px 0; color:var(--ink); line-height:1.5; white-space:nowrap; }
+.choiceSource:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+@media(max-width:600px){.choiceOptions[data-options="4"] { grid-template-columns:repeat(2,minmax(0,1fr)); }.choiceOptions button { padding:6px; }}

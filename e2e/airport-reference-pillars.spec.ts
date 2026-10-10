@@ -14,6 +14,10 @@ async function open(page:import('@playwright/test').Page,lang='ko',rows=flights,
 for(const lang of ['ko','en','zh','ja'] as const)for(const width of[360,390,430,1280])test(`Blender pillars use current estimates, separate denominators and equal heights for ties ${lang} ${width}`,async({page},info)=>{
  await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await open(page,lang);
  const reference=page.getByTestId('airport-top-reference');await expect(reference).toHaveAttribute('data-state','READY');await expect(reference.getByTestId('airport-reference-pillars')).toHaveCount(2);
+ const map=page.getByTestId('gate-pillar-model').locator('a[href="https://www.airport.kr/geomap/ap_ko/view.do"]');
+ await expect(map).toHaveText({ko:'인천공항공사 공식 지도 보기 ↗',en:'View the official Incheon Airport map ↗',zh:'查看仁川机场公社官方地图 ↗',ja:'仁川空港公社の公式マップを見る ↗'}[lang]);
+ await expect(map).toHaveAttribute('target','_blank');await expect(map).toHaveAttribute('rel','noopener noreferrer');expect((await map.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ await map.focus();await expect(map).toBeFocused();
  const t1=reference.getByTestId('top-reference-T1');const t2=reference.getByTestId('top-reference-T2');
  await expect(t1.locator('[data-zone=CONCOURSE]')).toContainText('2');
  const e=t1.locator('[data-zone=EAST]'),w=t1.locator('[data-zone=WEST]');expect(await e.getAttribute('data-raw-value')).toEqual(await w.getAttribute('data-raw-value'));expect(await e.getAttribute('data-height')).toEqual(await w.getAttribute('data-height'));

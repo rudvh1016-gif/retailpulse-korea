@@ -555,8 +555,8 @@ test("A1 runs early, and the later window refreshes rather than skipping", async
   const early = await readFile(new URL("../.github/workflows/collect-airport-recovery.yml", import.meta.url), "utf8");
   const daily = await readFile(new URL("../.github/workflows/collect-production.yml", import.meta.url), "utf8");
 
-  // 04:07 KST is 19:07 UTC the previous day. Off-minute per ENGINEERING_DIRECTION.
-  assert.match(early, /- cron: "7 19 \* \* \*"/, "the early window must run at 04:07 KST");
+  // 00:07 KST is 19:07 UTC the previous day. Off-minute per ENGINEERING_DIRECTION.
+  assert.match(early, /- cron: "7 15 \* \* \*"/, "the early window must run at 00:07 KST");
   assert.match(daily, /- cron: "7 21 \* \* \*"/, "the daily group stays at 06:07 KST");
 
   // Gate assignments firm up through the morning, so exactly one window a day

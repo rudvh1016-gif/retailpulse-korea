@@ -1,3 +1,4 @@
+import { inspectFacilityEnvelope } from './facility-contract-envelope.mjs';
 // One read per newly approved provider. No D1, writes, retries, key/URL/payload logs.
 const selection = process.env.RPK_FACILITY_CONTRACT_SCOPE;
 if (!['parking', 'lockers'].includes(selection)) throw new Error('unknown_contract_scope');
@@ -23,24 +24,8 @@ if (!key?.trim()) {
     const raw = await response.text();
     if (raw.length > 2_000_000) throw new Error('response_too_large');
     const payload = JSON.parse(raw);
-    const safeKeys = value => value && typeof value === 'object' ? Object.keys(value).filter(key => /^[A-Za-z0-9_]{1,50}$/.test(key)).slice(0,60) : [];
-    envelopeKeys = safeKeys(payload);
-    const service = selection === 'parking' ? payload.response?.body : Object.entries(payload).find(([name]) => name.toLowerCase() === 'getfclckr')?.[1];
-    serviceKeys = safeKeys(service);
-    const reportedCode = selection === 'parking' ? payload.response?.header?.resultCode : service?.RESULT?.CODE ?? payload.RESULT?.CODE;
-    code = /^[A-Z0-9-]{1,20}$/.test(String(reportedCode)) ? String(reportedCode) : null;
-    const sourceRows = selection === 'parking' ? service?.items?.item : service?.row;
-    const items = Array.isArray(sourceRows) ? sourceRows : sourceRows && typeof sourceRows === 'object' ? [sourceRows] : [];
-    rows = items.length;
-    rowFields = safeKeys(items[0]);
-    const count = Number(selection === 'parking' ? service?.totalCount : service?.list_total_count);
-    total = Number.isSafeInteger(count) && count >= 0 ? count : null;
-    schemaValid = rows > 0 && total !== null && total <= 1000 && rows === total
-      && (selection === 'parking'
-        ? items.every(row => typeof row.floor === 'string' && /^\d+$/.test(String(row.parking)) && /^\d+$/.test(String(row.parkingarea)) && /^\d{14}(?:\.\d+)?$/.test(String(row.datetm)))
-        : items.every(row => typeof row === 'object' && row !== null && Object.keys(row).some(field => field.replaceAll('_','').toLowerCase() === 'totcrtrdt')));
-    status = (code === '00' || code === 'INFO-000') && schemaValid ? 'CONTRACT_OK' : 'CONTRACT_UNVERIFIED';
+    ({status,code,rows,total,schemaValid,envelopeKeys,serviceKeys,rowFields}=inspectFacilityEnvelope(payload,selection));
   } catch { /* Never echo request errors: they may contain the secret URL. */ }
   console.log(JSON.stringify({ source: selection, status, httpStatus, code, rows, total, schemaValid, envelopeKeys, serviceKeys, rowFields, providerRequests: 1, retries: 0, databaseReads: 0, databaseWrites: 0 }));
-  if (status !== 'CONTRACT_OK') process.exitCode = 1;
+  if (status !== 'STRUCTURE_OK') process.exitCode = 1;
 }

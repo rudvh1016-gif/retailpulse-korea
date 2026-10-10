@@ -53,6 +53,8 @@ export interface TerminalBriefing {
   checkpointBasis: "WAIT_TIME" | "WAITING_COUNT" | null;
   /** The official band that starts strictly after `nowIso` today (forecast). */
   nextBand: TerminalForecastBand | null;
+  /** Published whole interval containing now; zero is a valid value. */
+  currentBand: TerminalForecastBand | null;
   /** Today's official peak band; only when the day's bands are COMPLETE. */
   peak: AirportBriefPeak | null;
   coverage: BriefCoverage;
@@ -114,6 +116,11 @@ export function selectNextBand(timeline: TerminalForecastBand[], nowIso: string,
   return bands.find((band) => Date.parse(band.targetStartAt) > now) ?? null;
 }
 
+export function selectCurrentBand(timeline:TerminalForecastBand[],nowIso:string,dayRelation:TerminalBriefingInput["dayRelation"]):TerminalForecastBand|null {
+  const now=Date.parse(nowIso);if(dayRelation!=="TODAY"||!Number.isFinite(now))return null;
+  return timeline.filter(isValidBand).find(band=>Date.parse(band.targetStartAt)<=now&&now<Date.parse(band.targetEndAt))??null;
+}
+
 export function buildTerminalBriefings(input: TerminalBriefingInput): TerminalBriefingSet {
   const terminals = input.terminals.map((terminal) => {
     const selected = longestCheckpoint(input.congestion.filter((row) => row.terminal === terminal));
@@ -133,6 +140,7 @@ export function buildTerminalBriefings(input: TerminalBriefingInput): TerminalBr
       checkpoint: selected?.row ?? null,
       checkpointBasis: selected?.basis ?? null,
       nextBand,
+      currentBand:selectCurrentBand(input.timelineByTerminal[terminal]??[],input.nowIso,input.dayRelation),
       peak,
       coverage,
       remaining,

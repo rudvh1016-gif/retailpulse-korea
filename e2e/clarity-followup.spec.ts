@@ -1,6 +1,6 @@
 import {test,expect} from '@playwright/test';
 import {routeSummary,SUMMARY_FIXTURE} from './summary-fixture';
-import {departurePreparationCopy} from '../app/airport-departure-preparation-copy';
+import {departureChoiceCopy} from '../app/departure-choice-copy';
 
 for(const lang of ['ko','en','zh','ja'] as const) for(const width of [360,390,430,1280]) {
  test(`clarity ${lang} ${width}: closed travel entry, baggage branches, retained header`,async({page})=>{
@@ -12,16 +12,16 @@ for(const lang of ['ko','en','zh','ja'] as const) for(const width of [360,390,43
   const guide=page.getByTestId('departure-preparation'),entry=page.getByTestId('departure-guide-entry'),trip=page.getByTestId('travel-records-entry');
   await expect(guide).not.toHaveAttribute('open');await expect(trip).toBeVisible();await expect(trip).toHaveAttribute('href',`/${lang}/travel-records`);
   const left=(await entry.boundingBox())!,right=(await trip.boundingBox())!;expect(right.x).toBeGreaterThanOrEqual(left.x+left.width-1);expect(Math.abs(right.y-left.y)).toBeLessThan(3);
-  await entry.focus();await page.keyboard.press('Enter');const copy=departurePreparationCopy[lang];
-  await guide.getByTestId('prep-baggage-YES').click();await expect(guide.getByTestId('prep-baggage-status')).toContainText(copy.drop);
-  await guide.getByTestId('prep-route').selectOption('T2');
+  await entry.focus();await page.keyboard.press('Enter');const short=departureChoiceCopy(lang);
+  await guide.getByTestId('prep-baggage-YES').click();await expect(guide.getByTestId('prep-baggage-status')).toContainText(short.bagYes);
+  await guide.getByTestId('prep-route').locator('[data-testid$="-T2"]').click();
   for(const choice of ['NO','YES','NO','YES'] as const){
-   await guide.getByTestId(`prep-baggage-${choice}`).click();await expect(guide.getByTestId('prep-checkedBaggage')).toHaveValue(choice);
+   await guide.getByTestId(`prep-baggage-${choice}`).click();await expect(guide.getByTestId('prep-checkedBaggage')).toHaveAttribute('data-value',choice);
    await expect(guide.getByTestId(`prep-baggage-${choice}`)).toHaveAttribute('aria-pressed','true');await expect(guide.getByTestId('prep-plan')).toHaveAttribute('open','');
    await expect(guide.locator('[data-step="BAG_DROP"]')).toHaveCount(choice==='YES'?1:0);
   }
-  await guide.getByTestId('prep-checkedBaggage').selectOption('NO');await expect(guide.getByTestId('prep-baggage-NO')).toHaveAttribute('aria-pressed','true');
-  await expect(guide.getByTestId('prep-baggage-status')).toContainText(copy.securityStep);
+  await guide.getByTestId('prep-checkedBaggage').locator('[data-testid$="-NO"]').click();await expect(guide.getByTestId('prep-baggage-NO')).toHaveAttribute('aria-pressed','true');
+  await expect(guide.getByTestId('prep-baggage-status')).toContainText(short.bagNo);
   await entry.focus();await page.keyboard.press('Enter');await expect(guide).not.toHaveAttribute('open');await expect(trip).toBeVisible();
   await expect(page.getByRole('banner')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
   if(lang==='ko'&&width===390){await trip.click();await expect(page).toHaveURL(/\/ko\/travel-records/);await expect(page.getByTestId('travel-records')).toHaveAttribute('data-hydrated','true');await expect(page.getByTestId('travel-empty')).toBeVisible();await expect(page.getByTestId('travel-card')).toHaveCount(0);}

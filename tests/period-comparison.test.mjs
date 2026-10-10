@@ -17,13 +17,13 @@ test("28 days never pretends to mean previous calendar month", () => {
 });
 
 /**
- * 실제로 움직였는데 "0.0%" 로 보이면 안 된다.
+ * 실제로 움직였는데 "0%" 로 보이면 안 된다.
  *
  * 소유자 보고(2026-09-13): 한 명이 늘어난 날도 화면에는 0% 로 나온다.
  * (+0.04).toFixed(1) 은 "+0.0" 이라서, 읽는 사람은 "변화 없음" 으로 읽는다.
  * 표시 해상도보다 작은 변화라도 방향은 이미 알고 있으므로, 반올림한 0 대신
- * 경계값을 적는다: 0.1% 미만이면 "<+0.1%", 초과 감소면 ">-0.1%".
- * 정확히 0 일 때만 "0.0%" 다. 그때는 정말로 변화가 없기 때문이다.
+ * 경계값을 적는다: 0.1% 미만이면 "<+0.1%", 초과 감소면 "△<0.1%".
+ * 정확히 0 일 때만 "0%" 다. 그때는 정말로 변화가 없기 때문이다.
  */
 test("표시 해상도보다 작은 실제 변화는 0%가 아니라 경계값으로 적는다", () => {
   // 10,000명에서 1명 늘어난 경우: +0.01%.
@@ -31,9 +31,9 @@ test("표시 해상도보다 작은 실제 변화는 0%가 아니라 경계값�
   assert.equal(comparisonValue(oneMorePerson), "<+0.1%");
   assert.doesNotMatch(comparisonValue(oneMorePerson), /^\+?0\.0%$/);
   // 1명 줄어든 경우도 방향이 남는다.
-  assert.equal(comparisonValue(rangeChange(9999, 9999, 10000, 10000, "date")), ">-0.1%");
+  assert.equal(comparisonValue(rangeChange(9999, 9999, 10000, 10000, "date")), "△<0.1%");
   // 진짜로 같은 값이면 0.0%.
-  assert.equal(comparisonValue(rangeChange(10000, 10000, 10000, 10000, "date")), "0.0%");
+  assert.equal(comparisonValue(rangeChange(10000, 10000, 10000, 10000, "date")), "0%");
   // 해상도를 넘는 변화는 그대로 숫자로.
   assert.equal(comparisonValue(rangeChange(10500, 10500, 10000, 10000, "date")), "+5.0%");
   // 범위는 양끝 각각에 같은 규칙이 걸린다.

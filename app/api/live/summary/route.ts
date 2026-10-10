@@ -1,3 +1,4 @@
+import {serviceDayCacheControl} from '../../../../lib/service-day-cache';
 import { readDepartureSchedule } from '../../../../lib/departure-schedule';
 import { RECORD_AREAS, validRecordMonth, type RecordArea } from '../../../../lib/monthly-records';
 import { readMonthlyRecords, type RecordsClient } from '../../../../lib/monthly-records-read';
@@ -97,6 +98,8 @@ import {
   shiftKstDay,
 } from "../../../../lib/kst";
 
+import {SEOUL_REALTIME_STALE_MINUTES} from "../../../../lib/seoul-freshness";
+
 export const dynamic = "force-dynamic";
 
 type Row = Record<string, unknown>;
@@ -165,7 +168,7 @@ function areaComparisons(row: Row, min: string, max: string) {
 }
 
 /** Minutes after which a real-time observation is labelled STALE, not LIVE. */
-const REALTIME_STALE_MINUTES = 40;
+const REALTIME_STALE_MINUTES = SEOUL_REALTIME_STALE_MINUTES;
 
 function freshnessOf(observedAt: unknown, staleMinutes: number, now: number): "LIVE" | "STALE" {
   const observed = typeof observedAt === "string" ? Date.parse(observedAt) : Number.NaN;
@@ -702,15 +705,15 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   // country comes from a reference table, never from the provider, and is
   // reported as UNVERIFIED whenever the table cannot vouch for it.
   const airlineRanking = summarizeAirlineRanking(flightRows as unknown as AirlineRankingFlightRow[], lookupAirline, 300);
-  const officialSchedule = dayRelation === 'FUTURE' ? readDepartureSchedule(departureScheduleRows[0], serviceDate) : [];
-  const hasOfficialSchedule = dayRelation === 'FUTURE' && departureScheduleRows.length > 0;
+  const officialSchedule = dayRelation !== 'PAST' ? readDepartureSchedule(departureScheduleRows[0], serviceDate) : [];
+  const hasOfficialSchedule = dayRelation !== 'PAST' && officialSchedule.length > 0;
   // Today before the first collection: the held schedule stands in for the missing records (sides only).
   const sidesScheduleOnly = dayRelation === 'TODAY' && flightRows.length === 0 && departureScheduleRows.length > 0;
   const sidesSchedule = sidesScheduleOnly ? readDepartureSchedule(departureScheduleRows[0], serviceDate) : officialSchedule;
   const hasSidesSchedule = hasOfficialSchedule || (sidesScheduleOnly && sidesSchedule.length > 0);
   const partialSchedule = dayRelation !== 'PAST' && serviceDate <= shiftKstDay(kstToday, 1) ? scheduledRows as unknown as ScheduledBriefingRow[] : [];
-  const scheduledBriefing = summarizeScheduledBriefing(hasOfficialSchedule ? officialSchedule : partialSchedule, serviceDate, lookupAirline,
-    hasOfficialSchedule ? 'OFFICIAL_DEPARTURE_SCHEDULE' : 'PARTIAL_SCHEDULE');
+  const scheduledBriefing = summarizeScheduledBriefing(hasSidesSchedule ? sidesSchedule : partialSchedule, serviceDate, lookupAirline,
+    hasSidesSchedule ? 'OFFICIAL_DEPARTURE_SCHEDULE' : 'PARTIAL_SCHEDULE');
   const periodComparisons = Object.fromEntries(["all", "T1", "T2"].map((scope) => [scope,
     Object.fromEntries(([7, 28] as const).map((days) => {
       const baselineDate = shiftKstDay(serviceDate, -days);
@@ -895,7 +898,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     // Decided by the payload, not the status code: a 200 that carries no
     // sources or no area data is an outage in disguise and must never be
     // admitted to the shared edge cache.
-    headers: { "cache-control": readDegraded ? SUMMARY_NO_STORE : summaryCacheControl({ sources, areas }), "x-robots-tag": CONTENT_API_ROBOTS_TAG },
+    headers: { "cache-control": readDegraded ? SUMMARY_NO_STORE : serviceDayCacheControl(summaryCacheControl({ sources, areas }),generatedAt), "x-robots-tag": CONTENT_API_ROBOTS_TAG },
   });
 }
 

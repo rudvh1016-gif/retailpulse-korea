@@ -2,6 +2,7 @@
  * Words for the weekly industry review and the feeling log, in the four
  * product languages.
  */
+import {formatChangeRate} from './change-rate';
 import type { Feeling } from "./feeling-log";
 import type { RangeVerdict } from "./weekly-review";
 import type { PrepLang } from "./business-prep-copy";
@@ -72,5 +73,5 @@ export function categoryName(category: string, lang: PrepLang): string {
 /** Tenths of a percent from the official daily counts, with the sign spelled out. */
 export function tenthsPercent(value: number | null, lang: PrepLang): string {
   if (value === null) return reviewCopy.unavailable[lang];
-  return `${value > 0 ? "+" : ""}${(value / 10).toFixed(1)}%`;
+  return formatChangeRate(value / 10);
 }

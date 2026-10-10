@@ -15,8 +15,8 @@ for(const width of [320,390,430])test(`Blender passenger guide ${width}: readabl
  const detail=steps.locator('details').first();await detail.locator('summary').focus();await page.keyboard.press('Space');await expect(detail).toHaveAttribute('open','');await page.keyboard.press('Space');await expect(detail).not.toHaveAttribute('open','');
  await expect(prep.getByTestId('passenger-learning-note')).toHaveText(passengerGuideCopy.ko.learning);
  await expect(prep.getByTestId('prep-refund-eligibility')).toContainText(passengerGuideCopy.ko.eligibility);
- await prep.getByTestId('prep-route').selectOption('T1');await prep.getByTestId('prep-taxRefund').selectOption('NO');await expect(prep.getByTestId('tax-refund-guide')).toHaveCount(0);
- await prep.getByTestId('prep-taxRefund').selectOption('YES');const refund=prep.getByTestId('tax-refund-guide');await refund.locator(':scope > summary').click();
+ await prep.getByTestId('prep-route').locator('[data-testid$="-T1"]').click();await prep.getByTestId('prep-taxRefund').locator('[data-testid$="-NO"]').click();await expect(prep.getByTestId('tax-refund-guide')).toHaveCount(0);
+ await prep.getByTestId('prep-taxRefund').locator('[data-testid$="-YES"]').click();const refund=prep.getByTestId('tax-refund-guide');await refund.locator(':scope > summary').click();
  await expect(refund.locator('[data-step=KIOSK_REGISTRATION] img')).toHaveAttribute('src','/passenger-guide/v1/refund_register-128.webp');
  await expect(refund.locator('[data-step=REFUND_COLLECTION] img')).toHaveAttribute('src','/passenger-guide/v1/refund_receive-128.webp');
  const images=prep.locator('img[src*="/passenger-guide/v1/"]');await expect(images).toHaveCount(7);
@@ -25,7 +25,7 @@ for(const width of [320,390,430])test(`Blender passenger guide ${width}: readabl
   const pixels=await img.evaluate((el:HTMLImageElement)=>{const canvas=document.createElement('canvas');canvas.width=el.naturalWidth;canvas.height=el.naturalHeight;const ctx=canvas.getContext('2d')!;ctx.drawImage(el,0,0);const data=ctx.getImageData(0,0,canvas.width,canvas.height).data;let transparent=0,visible=0;for(let i=3;i<data.length;i+=4){if(data[i]===0)transparent++;if(data[i]>0)visible++;}return {width:el.naturalWidth,height:el.naturalHeight,transparent,visible};});
   expect(pixels.width).toBe(128);expect(pixels.height).toBe(128);expect(pixels.transparent).toBeGreaterThan(100);expect(pixels.visible).toBeGreaterThan(100);
  }
- const terminal=prep.getByTestId('prep-route');await terminal.selectOption('T2');await terminal.selectOption('T1_CONCOURSE');await terminal.selectOption('T1_CONCOURSE');await expect(prep.getByTestId('tax-refund-guide')).toHaveCount(1);
+ const terminal=prep.getByTestId('prep-route');await terminal.locator('[data-testid$="-T2"]').click();await terminal.locator('[data-testid$="-T1_CONCOURSE"]').click();await terminal.locator('[data-testid$="-T1_CONCOURSE"]').click();await expect(prep.getByTestId('tax-refund-guide')).toHaveCount(1);
  const links=await prep.locator('a[href^="https:"]').evaluateAll(els=>els.map(el=>el.getAttribute('href')!));expect(links).toContain('https://customs.go.kr/incheon_airport/cm/cntnts/cntntsView.do?cntntsId=6688&mi=12547');expect(links.every(url=>['www.airport.kr','customs.go.kr','english.visitkorea.or.kr'].includes(new URL(url).hostname))).toBe(true);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await prep.scrollIntoViewIfNeeded();await prep.screenshot({path:`test-results/passenger-guide-${width}.png`});
