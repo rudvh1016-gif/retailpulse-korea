@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { shouldRetryAirport } from '../lib/congestion-retry.ts';
+import { shouldRetryAirport, shouldRecheckAirportPublication } from '../lib/congestion-retry.ts';
 import { airportTodayCoverage, readAirportTodayCoverage } from '../lib/airport-today-coverage.ts';
 import { airportFlightEvidence } from '../lib/airport-flight-evidence.ts';
 import { collectAirportFlightsToday } from '../lib/airport-today.ts';
@@ -24,6 +24,19 @@ test('only classified transient A1 fetch failures qualify for the existing bound
  for(const failure of ['HTTP httpStatus=403','HTTP httpStatus=429','HTTP httpStatus=503 retryDeferred=true','AUTH','SCHEMA','VALIDATION','NO_DATA','NETWORK | failureClass=AUTH'])
   assert.equal(shouldRetryAirport(result('ERROR','failureStage=FETCH failureClass='+failure)),false,failure);
  for(const log of ['',result('ERROR',''),result('ERROR','failureClass=NETWORK'),result('ERROR','failureStage=FETCH failureClass=NETWORK')+'\n'+result('SUCCESS','')])assert.equal(shouldRetryAirport(log),false);
+});
+test('a verified publication wait earns a same-date early check, separately from error retries',()=>{
+ const at=new Date('2026-10-10T15:15:00Z');
+ const pending=result('NOT_YET_PUBLISHED','targetDate=2026-10-11; NOT_YET_PUBLISHED; requests 120; future schedule writes 0; observed last-good rows preserved');
+ assert.equal(shouldRetryAirport(pending),false);assert.equal(shouldRecheckAirportPublication(pending,at),true);
+ assert.equal(shouldRecheckAirportPublication(pending+'\n'+JSON.stringify({context:'holidays',status:'ERROR'}),at),true);
+ for(const status of ['ERROR','SUCCESS','SKIPPED_ALREADY_COMPLETE_TODAY','SKIPPED_REQUEST_BUDGET'])
+  assert.equal(shouldRecheckAirportPublication(pending.replace('"status":"NOT_YET_PUBLISHED"',`"status":"${status}"`),at),false);
+ assert.equal(shouldRecheckAirportPublication(pending+'\n'+result('SUCCESS',''),at),false);
+ for(const changed of [pending.replace('requests 120','requests 126'),pending.replace('requests 120','requests 0'),pending.replace('targetDate=2026-10-11','targetDate=2026-10-10'),result('NOT_YET_PUBLISHED','unknown')])
+  assert.equal(shouldRecheckAirportPublication(changed,at),false);
+ assert.equal(shouldRecheckAirportPublication(pending,new Date('2026-10-10T18:00:00Z')),false);
+ assert.equal(shouldRecheckAirportPublication(pending,new Date('invalid')),false);
 });
 test('A1 collector returns its own sanitized fetch-stage verdict for the workflow',async()=>{
  let calls=0;
@@ -67,9 +80,14 @@ test('same-date schedule delay and actual record source timestamps are explicit 
 test('wiring retains three existing attempts, 125 requests each and the single realtime trigger',async()=>{
  const early=await readFile(new URL('../.github/workflows/collect-airport-recovery.yml',import.meta.url),'utf8');
  assert.match(early,/needs.collect.outputs.retry_airport == 'true'/);assert.match(early,/needs.retry_1.outputs.retry_airport == 'true'/);
+ assert.match(early,/needs.collect.outputs.recheck_airport_publication == 'true'/);
+ assert.match(early,/needs.retry_1.outputs.recheck_airport_publication == 'true'/);
+ assert.equal((early.match(/a1_publication_recheck:/g)||[]).length,2);
+ assert.equal((early.match(/&& 'airport_recent' \|\| 'airport_recent,airport_enrichment'/g)||[]).length,2);
  assert.equal((early.match(/a1_max_requests: "125"/g)||[]).length,3);
  const shared=await readFile(new URL('../.github/workflows/collect-attempt.yml',import.meta.url),'utf8');
  assert.match(shared,/jobs.collect.outputs.retry_airport/);assert.match(shared,/decide-congestion-retry.ts .*--airport/);assert.match(shared,/set -o pipefail/);
+ assert.match(shared,/inputs.attempt > 1 && inputs.a1_publication_recheck/);assert.match(shared,/run: sleep 300/);
  const realtime=await readFile(new URL('../.github/workflows/collect-realtime.yml',import.meta.url),'utf8');
  assert.doesNotMatch(realtime,/^  schedule:/m);assert.match(realtime,/airport_today_coverage:/);assert.match(realtime,/scripts\/check-airport-today-coverage.ts/);
 });
