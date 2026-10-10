@@ -1,97 +1,114 @@
-# A1 midnight fallback preparation — execution blocked
+# A1 midnight fallback preparation — direct reusable jobs, execution blocked
 
-This change prepares the missing-first-run recovery that PR331's publication
-rechecks cannot start on their own. It is stacked on PR331, commit
-`3812a0102e15df52b1b9b7757ea8da0d18ca0ae9`; PR330 and PR331 are unchanged.
-The reviewed production main remains
-`70ec17577c7ff9fb4b4beffae21c647a9e05532e`.
+This is stacked on PR331 (`3812a0102e15df52b1b9b7757ea8da0d18ca0ae9`).
+PR330/331 are unchanged; reviewed main is
+`70ec17577c7ff9fb4b4beffae21c647a9e05532e`. No merge, deployment or
+operational activation is performed.
 
-## What is prepared
+## Current implementation
 
-The existing 15-minute coverage witness calls a guarded A1-only adapter. No new
-cron, Worker route, provider, secret, permission grant or database schema is added.
-The witness still reports missing coverage after 01:15 KST and does not convert
-held schedules into today's observations or erase the original failed run.
+The existing 15-minute witness performs read-only candidate checks and exports a
+fixed KST date. Its alert remains red after the 01:15 grace window; a missing
+observation never becomes zero flights or a current held schedule. No candidate
+acquires a recovery admission, including one whose queued job is replaced.
 
-When separately enabled, the adapter considers a missing early run only between
-01:15 and 03:00 KST. It checks the early workflow's bounded history and all five
-active GitHub status lists, including older active daily runs. Truncated,
-unreadable or contradictory evidence fails closed. An early run that already
-started, even if it failed, remains with its original retry ladder.
+A conditional `airport_midnight_recovery` job directly calls the existing
+`collect-attempt.yml`. No workflow-dispatch POST, `actions:write`, new token,
+secret, cron, Worker path or schema is required. The previous HTTP helpers are
+retained as isolated preparation/test code, with permission confirmation false;
+they are no longer called by production witness integration. Direct and HTTP
+attempts retain the SAME source/KST day/00:07/operation identity and daily budget.
+There is no automatic HTTP route running beside the direct job.
 
-`OperationalMemory.admit` atomically narrows the existing MISSED_RUN ceiling to
-one controlled attempt per A1 logical job/KST day. A persistent source/day/00:07/
-operation identity and existing in-flight lock survive process restarts.
-The adapter rechecks coverage, originals, source protection and remaining budget
-after admission. If this process proves it never attempted dispatch, it closes
-the aborted attempt while still consuming today's one-attempt budget; an unused
-admission cannot permanently block tomorrow. Crash or uncertain dispatch evidence
-holds the lock for human review. Elapsed time never releases a lock or causes a
-second dispatch.
+The actual reusable collector starts only after acquiring the existing
+`production-collector` concurrency group. It rechecks the central compiled,
+owner and runtime gate, A1 review/capability, exact repository/main/caller/job/
+run attempt, A1-only source, target date, single attempt, rescan=false and125
+request bound. It then checks current coverage, bounded original-run history,
+all active original statuses, known source protection and remaining shared budget.
+The original-run scan includes old active daily runs and fails closed on
+truncation or unavailable contracts. An early run already created today belongs
+to its own existing retry ladder and is never restarted by this fallback.
 
-Dispatch is one call to the allowlisted early workflow on main, with an A1-only
-input and a fixed KST target date. Both existing retry jobs retain that date and
-exclude enrichment for this fallback. The collector rechecks today's completed
-scan and auth/429/schema protection when it actually starts. A queued fallback
-cannot collect a different day. Late native early and fallback workflows share
-`production-collector`; the second successful same-day early scan skips at zero
-provider cost. The daily 06:07 refresh remains intentionally separate.
+Only then does `OperationalMemory.admit` acquire one atomic controlled admission
+for that day. All eligibility and protection conditions are checked again before
+the collector. A proven pre-collection abort closes its unused lock while keeping
+today's admission spent. A crashed, uncorrelated or uncertain child keeps its
+persistent lock, including across dates. Elapsed time does not unlock it.
 
-The read-only budget preflight and atomic reservation share the same SQL
-expression, including legacy calls. Job ceiling 125 and conservative rolling
-24h+30m shared ceiling 500 are unchanged. The collector reservation is
-authoritative; a preflight cannot reserve or increase quota.
+The adapter reuses `runSelectedProductionSources` for `airport_recent` only. The
+collector itself keeps the atomic conservative rolling24h+30m shared500 bound,
+actual request settlement, complete-scan skip, queued target date check and
+source429/auth/schema guard. On actual A1 SUCCESS it reuses the existing
+DB-only `collectAirportComposition` daily/monthly preparation. It adds no A2,
+holidays, commercial source requests, raw cleanup or prediction changes.
 
-Dispatch acceptance is RECOVERY_PENDING, never RECOVERED. A receipt stores the
-correlated run id in the existing incident event table. The lock finishes only
-after that exact workflow run is terminal and today's complete storage witness
-and public projection are verified. Timeout, 403, 429, uncorrelated responses,
-receipt persistence failure and mismatched runs preserve the lock and require
-human review. No automatic dispatch retry is added.
+A receipt records this exact parent run/attempt, fixed caller, callee job and
+commit identity. The in-process A1 result is measured independently of the
+parent's A4/Seoul outcome. A failed parent can contain a verified A1 child;
+a successful parent is never A1 evidence. Only the actual A1 result, measured
+request counter, current complete DB witness and verified public projection
+permit RECOVERED. A failed/unknown public read or receipt leaves human review;
+no provider or transport retry is added.
 
-## Current execution blockers — not changed by this PR
+## Realtime lock preservation
 
-- `CENTRAL_RECOVERY_EXECUTION_ENABLED=false`; the existing compiled/owner/runtime
-  approval gate is enforced before admission or network calls.
-- `A1_MIDNIGHT_RECOVERY_REVIEWED=false`. The generic registry still classifies
-  A1 as HUMAN_REVIEW_ONLY. Preparation is not source activation.
-- `A1_RECOVERY_DISPATCH_PERMISSION_GRANTED=false`. The witness workflow retains
-  `contents:read`; its automatic GITHUB_TOKEN is not evidence of `actions:write`.
-  GitHub Actions has no existing dispatch-token secret to reuse. The Worker-only
-  dispatch token is not copied or exposed.
+Keeping the old workflow-wide realtime lock around a20-minute A1 child would
+block later15-minute cycles. The original A4/Seoul primary and fresh retry are
+therefore moved unchanged into `collect-realtime-cycle.yml`. Their caller holds
+`production-collector-realtime` across BOTH jobs. The root workflow has no
+whole-run lock, while FX retains its own concurrency group and durable lease.
+The A1 child is independent and shares native early/daily's production group.
+The callees do not acquire their caller's same group again. Merely locking
+primary and retry separately would allow another cycle between them and is not
+used. GitHub may still replace pending work under its default queue policy;
+no pending candidate owns a D1 recovery admission.
 
-Actual activation would need a separately reviewed **witness-job-only**
-`actions:write` grant, the corresponding capability confirmation, A1 source
-review and existing central owner/runtime/compiled approval conditions.
-This task prohibits permission expansion, so none is made and no new credentials
-are requested. Production code never supplies the activation test seam.
-No A5/weather source is activated through this prepared A1 path.
+## Current activation blockers — unchanged
 
-Merging this preparation alone does not recover a missing first A1 run. PR331
-still handles publication waits only once its first workflow starts. Neither PR
-has been merged or deployed by this agent. Absolute availability is not claimed:
-provider publication and GitHub event delivery remain external dependencies.
+1. `CENTRAL_RECOVERY_EXECUTION_ENABLED=false` and existing owner/runtime approval
+   conditions remain enforced at the actual execution boundary. YAML explicitly
+   maps existing variables into production processes but does not change their
+   stored values or claim they are enabled.
+2. `A1_MIDNIGHT_RECOVERY_REVIEWED=false`; the generic A1 registry remains
+   HUMAN_REVIEW_ONLY, unsupported and ineligible. A future reviewed activation
+   must scope capability to this fixed A1 midnight adapter/logical job, not
+   broaden the generic executor or another source.
 
-## Verification and operational boundary
+GitHub permission expansion is NOT an activation requirement for this direct
+path. All workflows retain contents:read. Production never supplies the test
+activation override. Merging the preparation alone cannot activate the fallback.
+PR331 still handles publication waits after its first native workflow starts.
+GitHub delivery and provider publication remain external limits, not guarantees.
 
-Tests use actual migrated local SQLite plus fake GitHub/provider adapters. They
-cover closed gate/no permission with zero reads/writes/dispatch, concurrent
-admission, persistent receipt and restart, native arrival after admission,
-current-day completion, exhausted quota, 429/auth/schema failures, uncertain
-dispatch, queued date mismatch, and acceptance/storage/public verification.
-Existing central-gate, operational-memory, scheduler truth and runner tests run
-unchanged. Owner UI Lock and its approval fixtures remain in force.
+## Verification record
 
-Local targeted tests: 157 pass / 0 fail / 0 skipped. Typecheck, targeted lint and
-secret scan are recorded in the PR with exact results. Native Node build and
-normal CI results must be distinguished; no local check is a deployment.
+Historical HTTP preparation head `4cf58190b00897dd606565aad3829825eb6c37f4`:
+[CI38071933452](https://github.com/rudvh1016-gif/retailpulse-korea/actions/runs/38071933452)
+completed SUCCESS. Unit1353/HTML46/E2E1163 passed; E2E35.7minutes. That result
+is historical evidence and does not apply to the new direct implementation head.
 
-No manual production dispatch, remote database write/migration, permission or
-security setting change, paid service, deletion, merge or deployment is performed.
-The earlier diagnostic Issue was not created; its rejected publication is not
-retried or moved to another publication route. This document records only the
-requested implementation and review boundaries.
+Direct implementation: related unit197 passed; final child identity unit39 and
+final full local unit1370 passed,0 failed/0 skipped. Typecheck, related lint,
+reachable-history plus final-working-tree secret checks and the local empty-binding
+Native Node build passed. Normal full CI must be confirmed for the published final
+head separately and recorded in PR332. The original primary/retry job contents
+match the historical source after line-ending normalization. Actual migrated
+SQLite and fake provider/GitHub adapters verify gated zero-side-effects,
+read-only candidates, canceled pending/repeated delivery, simultaneous jobs,
+canonical once/day identity, native arrival, changed coverage/protection/budget,
+next-day unused admission, crash/receipt persistence locks, fixed caller/date,
+A1 result vs parent badge, measured requests and three-layer truth. Existing
+scheduler truth, source budgets, central gates and Owner UI Lock remain enforced.
+No approval fixtures or UI-lock tests are disabled or updated.
 
-GitHub contracts: [schedule delivery](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule),
-[active run status/public read API](https://docs.github.com/en/rest/actions/workflow-runs#list-workflow-runs-for-a-repository),
-[dispatch API](https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event).
+Operational activation has not been tested: no manual production dispatch,
+remote DB write/migration, new credentials, permission/security setting change,
+paid service, deletion, merge or deployment occurred. Local tests/build are not
+production verification or deployment. Future separately approved A1 writes
+are limited to existing recovery/receipt and budget records, changed flight/
+departure-schedule storage, source/collector records and DB-only preparation.
+
+Official contracts: [reusable caller permissions and concurrency](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations#supported-keywords-for-jobs-that-call-a-reusable-workflow),
+[run/job identity variables](https://docs.github.com/en/actions/reference/workflows-and-actions/variables),
+[schedule delivery](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).

@@ -43,123 +43,32 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: production-collector-realtime
-  cancel-in-progress: false
-
 jobs:
   collect:
     if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
-    runs-on: ubuntu-latest
-    # A shared gateway outage can consume ~178s for T1 and at most ~377s for
-    # T2's three bounded pages. Twelve minutes leaves setup/D1/S1 margin.
-    timeout-minutes: 12
-    environment: production
-    outputs:
-      # Which A4 sources — if any — this cycle's own results say a fresh
-      # egress address would fix. Empty means no extra runner starts.
-      retry_sources: ${{ steps.retry_decision.outputs.retry_sources }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22.13.1
-          cache: npm
-      - run: npm ci --ignore-scripts
-      - name: Collect the realtime group
-        id: collect
-        shell: bash
-        run: |
-          set -o pipefail
-          npm run collect:production 2>&1 | tee "$RUNNER_TEMP/collector.log"
-        env:
-          ENABLE_PRODUCTION_COLLECTOR: "true"
-          RPK_PRODUCTION_SOURCES: airport_congestion,airport_congestion_t2,seoul_realtime
-          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
-          DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
-          SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
-      # Reads THIS cycle's per-source results. `set -o pipefail` above keeps
-      # the collector's own failure as this job's failure, so the red badge
-      # and the operational ledger still record the original attempt exactly
-      # as before — this step only decides whether spending one more request
-      # could help. It never fails the job: an unreadable or inconclusive log
-      # yields an empty list, which starts nothing.
-      - name: Decide whether a fresh runner would fix anything
-        id: retry_decision
-        if: always()
-        run: npx tsx scripts/decide-congestion-retry.ts "$RUNNER_TEMP/collector.log"
+    # Hold the existing lock across BOTH primary and fresh retry, not the A1 child.
+    concurrency:
+      group: production-collector-realtime
+      cancel-in-progress: false
+    uses: ./.github/workflows/collect-realtime-cycle.yml
+    secrets: inherit
 
-  # ONE FRESH RUNNER, FOR THE SOURCES THIS CYCLE SAYS IT WOULD FIX.
-  #
-  # `collect-attempt.yml` was written FOR this collector — its header names the
-  # congestion collector as the case that "kept failing all four of its
-  # in-process retries while, minutes later, a different runner reached seven
-  # endpoints on that same host in under two seconds each."
-  #
-  # Measured on Production over 14.7 h (2026-09-14 20:39 – 2026-09-15 11:23 KST,
-  # 120 runs):
-  #   · T1 21/60 failed, T2 21/60 failed — always in the same run as each other
-  #   · every failure: failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT
-  #     retryExhausted=true. The in-job ladder rescued 0 of 21. It cannot: it
-  #     keeps the refused egress address.
-  #   · in 19 of those 21 runs `seoul_realtime` SUCCEEDED from the SAME runner
-  #     at the SAME moment, so the runner's network was fine and only this
-  #     provider host was unreachable
-  #
-  # WHAT STARTS IT. Not the job's red badge — that one bit covers T1, T2 and
-  # Seoul together, so gating on it re-requested both airport datasets when
-  # Seoul alone failed, when a key was rejected, when a schema moved, or when
-  # only one terminal was actually affected. `lib/congestion-retry.ts` reads
-  # THIS cycle's own per-source results and names only the A4 sources whose
-  # own failure was the connect timeout a different egress address fixes. T1
-  # only, T2 only, both, or neither. A source with no result line this cycle
-  # is RESULT_UNKNOWN and is not retried; a source that already succeeded is
-  # not retried; an old healthy value in D1 is never read as recovery.
-  #
-  # PROVIDER BUDGET, in provider REQUESTS — not collection calls. The earlier
-  # note here counted calls and was wrong by the size of the in-job ladders.
-  #
-  #   T1  dataset 15148225, 1,000/day dev quota.
-  #       normal cycle: 1 URL x up to 4 attempts (DATA_GO_KR_LOW_CALL_POLICY).
-  #       Healthy 1; a measured connect-timeout failure spends 4.
-  #       96 runs/day -> worst case 384/day (38.4%) BEFORE this retry existed.
-  #       bounded retry: 1 request, at most once per cycle -> +96/day.
-  #       CEILING 480/day = 48% of quota.
-  #   T2  dataset 15161098. Quota: no official number is readable from a
-  #       checkout, so the ceiling is stated as a request count, never as a
-  #       percentage — UNVERIFIED_QUOTA, not "safe".
-  #       normal cycle: pages x up to 3 attempts (DATA_GO_KR_PAGED_POLICY). A
-  #       throw exits the page loop, so a connect-timeout failure spends 3,
-  #       not 9. Production totalCount has been 8 — one page — so healthy is
-  #       1 request. 96 runs/day -> worst case 288/day at today's totalCount.
-  #       bounded retry: 1 page x 1 attempt = 1 request -> +96/day.
-  #       CEILING 384/day at today's totalCount. The pre-existing structural
-  #       maximum, if the dataset ever outgrows one page and every page needs
-  #       its full ladder, is 864/day for the normal cycle alone; this PR does
-  #       not change that and does not widen it.
-  #
-  # The retry is bounded to ONE request per source per cycle
-  # (`a4_max_attempts_per_request: 1`) precisely so it can never eat the quota
-  # the next 15-minute cycle needs. That bound costs nothing measurable: every
-  # observed fresh runner succeeded on its FIRST request, in about 10 seconds.
-  # A connect timeout is NOT assumed to cost the provider zero — it is counted
-  # at full price above, because this repository cannot read the provider's
-  # own accounting.
-  #
-  # ONE retry, never two: `collect-attempt.yml` starts nothing after itself,
-  # and the next scheduled cycle is only 15 minutes away. The original
-  # attempt's failure is never hidden — `set -o pipefail` keeps it as this
-  # job's failure, so the run badge and the operational ledger both still
-  # record it.
-  retry_congestion:
-    needs: collect
-    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.collect.result == 'failure' && needs.collect.outputs.retry_sources != '' }}
+  airport_midnight_recovery:
+    needs: airport_today_coverage
+    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && github.ref == 'refs/heads/main' && needs.airport_today_coverage.outputs.a1_recovery_eligible == 'true' && needs.airport_today_coverage.outputs.a1_target_date != '' }}
+    concurrency:
+      group: production-collector
+      cancel-in-progress: false
     uses: ./.github/workflows/collect-attempt.yml
     with:
-      sources: ${{ needs.collect.outputs.retry_sources }}
-      attempt: 2
-      timeout_minutes: 6
-      a4_max_attempts_per_request: "1"
+      sources: airport_recent
+      a1_midnight_recovery: true
+      a1_midnight_caller: airport_midnight_recovery
+      a1_expected_target_date: ${{ needs.airport_today_coverage.outputs.a1_target_date }}
+      attempt: 1
+      timeout_minutes: 20
+      a1_max_requests: "125"
+      a1_rescan_today: false
     secrets: inherit
 
   # Reuse the existing trigger; the durable one-hour lease limits provider reads.
@@ -188,6 +97,9 @@ jobs:
   # Read-only witness, independent of the collection jobs. Reuses their trigger
   # and existing credentials; never calls a provider or changes last-good health.
   airport_today_coverage:
+    outputs:
+      a1_recovery_eligible: ${{ steps.coverage.outputs.a1_recovery_eligible }}
+      a1_target_date: ${{ steps.coverage.outputs.a1_target_date }}
     if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 3
@@ -200,9 +112,9 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - name: Check today's stored A1 date and collection stamp
+        id: coverage
         run: npx tsx scripts/check-airport-today-coverage.ts
         env:
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
-          # Existing automatic token, unchanged contents:read permissions.
-          # Prepared fallback remains blocked; this does not grant actions:write.
-          GITHUB_TOKEN: ${{ github.token }}
+          RPK_CENTRAL_RECOVERY_OWNER_APPROVED: ${{ vars.RPK_CENTRAL_RECOVERY_OWNER_APPROVED }}
+          RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED: ${{ vars.RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED }}
