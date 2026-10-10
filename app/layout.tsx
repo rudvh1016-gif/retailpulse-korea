@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
+import {preload} from 'react-dom';
 import "./globals.css";
 import "./airport-date-calendar.css";
 import { isStagingDeployment, pageTitle, pageDescription, siteOrigin, socialImage, shareDescription } from "./seo-config";
@@ -48,6 +49,9 @@ export default async function RootLayout({
   const requestHeaders = await headers();
   const requestedLanguage = requestHeaders.get("x-rpk-document-language") ?? "ko";
   const documentLanguage = supportedDocumentLanguages.has(requestedLanguage) ? requestedLanguage : "ko";
+  // The measured Korean first viewport discovers this used face after CSS.
+  // Start the same font from the head; family, glyphs and swap policy stay intact.
+  if(documentLanguage==='ko')preload('/fonts/koretail-sans-variable.woff2',{as:'font',type:'font/woff2',crossOrigin:'anonymous'});
 
   return (
     <html lang={documentLanguage} suppressHydrationWarning>

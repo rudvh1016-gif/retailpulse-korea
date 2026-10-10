@@ -6,7 +6,8 @@ export interface CommercialMonthCategory {
  unavailablePayments:number;absentReadings:number;zeroReadings:number;
  hours:CommercialHour[];observedHours:number;
  comparison:{matchedHours:number;matchedDays:number;currentMean:number|null;previousMean:number|null;changePercent:number|null;
-  currentAmount:[number,number]|null;previousAmount:[number,number]|null};
+  currentAmount:[number,number]|null;previousAmount:[number,number]|null;
+  coverage?:{currentDates:string[];previousDates:string[];currentWindows:number;previousWindows:number}};
 }
 export interface CommercialMonth {
  version:number;month:string;previousMonth:string;completedDays:number;throughDate:string|null;
@@ -59,8 +60,28 @@ export function compareCommercialMonths(current:CommercialMonth,previous:Commerc
   const range=(older:boolean):[number,number]|null=>amounts.length?([5,6] as const).map(index=>amounts.reduce((sum,hour)=>{const value=older?old.get(hour[0])!:hour;return sum+value[index]/value[4];},0)/amounts.length) as [number,number]:null;
   return {...category,comparison:{matchedHours:matched.length,matchedDays:new Set(matched.map(hour=>hour[0].slice(0,2))).size,currentMean,previousMean,
    changePercent:currentMean!==null&&previousMean!==null&&previousMean>0?(currentMean/previousMean-1)*100:null,
-   currentAmount:range(false),previousAmount:range(true)}};
+   currentAmount:range(false),previousAmount:range(true),coverage:{
+    currentDates:[...new Set(matched.map(hour=>current.month+'-'+hour[0].slice(0,2)))].sort(),
+    previousDates:[...new Set(matched.map(hour=>previous.month+'-'+hour[0].slice(0,2)))].sort(),
+    currentWindows:matched.reduce((sum,hour)=>sum+hour[2],0),previousWindows:matched.reduce((sum,hour)=>sum+old.get(hour[0])![2],0),
+   }}};
  })};
 }
 /** Public payload contains compact results only, never hourly inventories. */
+export function commercialComparisonCoverage(current:CommercialMonth,previous:CommercialMonth|null):CommercialMonth {
+ if(!previous||!current.categories.some(row=>row.hours.length))return current;
+ const compared=compareCommercialMonths(current,previous);
+ return {...current,categories:current.categories.map((row,index)=>{
+  const original=row.comparison,derived=compared.categories[index].comparison;
+  const same=original.matchedHours===derived.matchedHours&&original.matchedDays===derived.matchedDays
+   &&original.currentMean===derived.currentMean&&original.previousMean===derived.previousMean;
+  return same?{...row,comparison:{...original,coverage:derived.coverage}}:row;
+ })};
+}
+export function commercialComparisonPeriod(month:Pick<CommercialMonth,'month'|'previousMonth'|'completedDays'|'throughDate'>) {
+ const priorEnd=new Date(Date.UTC(Number(month.previousMonth.slice(0,4)),Number(month.previousMonth.slice(5,7)),0)).getUTCDate();
+ const previousDays=Math.min(month.completedDays,priorEnd);
+ return {current:month.throughDate?[month.month+'-01',month.throughDate] as const:null,
+  previous:previousDays?[month.previousMonth+'-01',month.previousMonth+'-'+String(previousDays).padStart(2,'0')] as const:null};
+}
 export function publicCommercialMonth(month:CommercialMonth){return {...month,categories:month.categories.map(({hours,...category})=>{void hours;return category;})};}

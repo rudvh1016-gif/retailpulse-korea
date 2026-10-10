@@ -18,7 +18,7 @@
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "5fa7a470a6dcce6cbc819951b4dea3da4305fac55db4bd424ce78c4121b1d62b",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
-    "app/layout.tsx": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
+    "app/layout.tsx": "86d9c33516197ffb558104b3d19c94dc7eea585be248f8fc441c3b49dce18f4b",
     "app/live-signals.tsx": "1b5a72bf20d8df0bb66f70ecf588c57da547b66f375e5b3ab72f6292163cae29",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6",
@@ -26,7 +26,7 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "082db8555ef29d28a1da6fffac1e6ee25d5d4e4418729d0fb6224b42eb4f8143",
+    "app/retailpulse-app.tsx": "d84285927eae08ba202c901da0e268423b083385140cfb265b137c220be859c5",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "48c26a8642d0dae4ebea5988064ffaf58611b9982d5d06f5ee0593d6416234b8",
@@ -1213,5 +1213,39 @@
     ],
     "protectedPathCount": 61,
     "approvalEvidenceFile": "docs/approvals/airport-checkpoint-touch-correction-20261010.json"
+  },
+  "ownerApprovedAirportMonthlyPerformance20261010": {
+    "recordedAt": "2026-10-10T08:24:10.331Z",
+    "authorizationEvidence": {
+      "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "ownerRequests": [
+        "일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자",
+        "계속코딘을해야지",
+        "사이트속도개선은?",
+        "관측된시간기준이먼데? 정확한기준이 한눈에들어와야해"
+      ],
+      "delegatedScope": "Prepare retained-raw monthly DAILY MEAN departure comparisons with one current gate table; clarify consumption denominators and similar-day copy; measured mobile/desktop performance improvements; one draft PR. Owner merges directly.",
+      "approvedProtectedFiles": [
+        "app/layout.tsx",
+        "app/retailpulse-app.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Scoped approval bookkeeping for the explicitly requested monthly comparison mount and measured performance correction. Add the existing monthly component to departures; use SSR-enabled splitting of inactive screens and preload the same measured Korean font. Preserve fonts, first-screen data, all protected paths, original UI Lock test, prior approval records and cron configuration. No provider refresh, migration, collector activation, merge or deployment.",
+    "changes": [
+      {
+        "file": "app/layout.tsx",
+        "previous": "b4b4f6ddf17f0d0fa571b434825d12e5b6dc843b6414f6baf829eba70bd5ee41",
+        "approved": "86d9c33516197ffb558104b3d19c94dc7eea585be248f8fc441c3b49dce18f4b"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "082db8555ef29d28a1da6fffac1e6ee25d5d4e4418729d0fb6224b42eb4f8143",
+        "approved": "d84285927eae08ba202c901da0e268423b083385140cfb265b137c220be859c5"
+      }
+    ],
+    "protectedPathCount": 61,
+    "approvalEvidenceFile": "docs/approvals/airport-monthly-performance-20261010.json"
   }
 }

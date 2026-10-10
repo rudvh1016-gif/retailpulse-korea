@@ -4,7 +4,13 @@ import {ChangeRate} from './change-rate';
 import { AirportParkingGuide } from './facility-guide';
 import './facility-guide.css';
 import { passengerCopy } from "../lib/passenger-copy";
-import { MonthlyRecordsView } from './monthly-records';
+import dynamic from 'next/dynamic';
+// SSR remains enabled. These inactive screens do not belong to the airport's
+// first download; their initial content is still rendered on their own routes.
+const MonthlyRecordsView=dynamic(()=>import('./monthly-records').then(module=>module.MonthlyRecordsView));
+const TourismDeskView=dynamic(()=>import('./tourism-desk').then(module=>module.TourismDeskView));
+const PredictionEvidence=dynamic(()=>import('./prediction-evidence').then(module=>module.PredictionEvidence));
+const BusinessPrep=dynamic(()=>import('./business-prep').then(module=>module.BusinessPrep));
 import { recordText } from './monthly-records-copy';
 import { activeSourceCatalog,sourceName,sourceUse,CollectionStatus } from "./source-status";
 
@@ -35,15 +41,13 @@ import LiveSignals, {
   HomeTodayBrief,
   KstTodayChip,
 } from "./live-signals";
-import { TourismDeskView } from "./tourism-desk";
 import { InstallAppButton } from "./install-app";
 import {WhereToView,ConsumptionView} from './seoul-comparison';
-import {PredictionEvidence} from './prediction-evidence';
 import { parsePreferences, PREFERENCE_KEY } from "../lib/personal-briefing";
 import { SiteUsageGuide } from "./site-usage-guide";
 import { IndustryGuide } from "./industry-guide";
-import { BusinessPrep } from "./business-prep";
 import { AirportDepartureOverview } from "./airport-departure-overview";
+import { AirportMonthlyFlights } from './airport-monthly-flights';
 import { AirportConcourse } from './airport-concourse';
 import { AirportTaxRefundGuide } from './airport-tax-refund-guide';
 import { AirportDeparturePreparation } from './airport-departure-preparation';
@@ -659,6 +663,7 @@ function AirportView({
       {concourse&&<AirportConcourse lang={lang} date={date}/>}
       {!concourse&&section === "now" && <AirportTodaySummary lang={lang} terminal={terminal} date={date} />}
       {!concourse&&section === "now" && <AirportDepartureOverview lang={lang} terminal={terminal} date={date} />}
+      {!concourse&&section === "now" && <AirportMonthlyFlights lang={lang} terminal={terminal} date={date} />}
       {!concourse&&section === "arrivals" && <AirportArrivalSummary lang={lang} terminal={terminal} date={date} />}
       {!concourse&&section === "flights" && <FlightBoard lang={lang} terminal={terminal} date={date} />}
       {!concourse&&section === "stores" && <><AirportParkingGuide lang={lang} /><FacilityDirectory lang={lang} terminal={terminal} /></>}

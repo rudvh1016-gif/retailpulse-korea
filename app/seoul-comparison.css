@@ -35,6 +35,9 @@
 .comparison-empty { display:flex; gap:14px; flex-wrap:wrap; align-items:center; min-height:140px; }
 .comparison-empty button { min-height:44px; padding:8px 12px; font:inherit; background:#fff; color:#000; border:1px solid #bbb; }
 .consumption-legend { display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin:16px 0; }
+/* Reserve the results viewport while the indexed monthly read arrives. */
+.consumption-results { min-block-size:100svh; }
+.consumption-period { line-height:1.6; font-variant-numeric:tabular-nums; }
 .consumption-legend>span { display:inline-flex; align-items:center; gap:7px; }
 .consumption-legend i { width:16px; height:8px; display:inline-block; border:1px solid #607297; }
 .consumption-legend .previous { background:#dad5ee; }
