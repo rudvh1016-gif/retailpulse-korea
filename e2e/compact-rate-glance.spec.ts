@@ -5,10 +5,22 @@ import type {LiveSummary} from '../app/live-signals';
 const areas=['myeongdong','seongsu','hongdae','itaewon'] as const;
 const monthRows=(month:string,values:number[])=>[{observed_at:`${month}-01T10:10:00+09:00`,payload:JSON.stringify({commercialAt:`${month}-01T10:10:00+09:00`,categories:values.map((payments,i)=>({category:['한식','편의점','여행'][i],group:'fixture',payments,amountMin:10,amountMax:20}))})}];
 const comparison=publicCommercialMonth(compareCommercialMonths(buildCommercialMonth(monthRows('2026-08',[50,200,100]),'2026-08','2026-08-30'),buildCommercialMonth(monthRows('2026-07',[100,100,100]),'2026-07','2026-07-31')));
+for(const lang of ['ko','en','zh','ja'] as const)test(`tourism desk and brief retain hollow decrease and Korean source markings ${lang}`,async({page})=>{
+ const data=structuredClone(SUMMARY_FIXTURE) as LiveSummary;
+ data.areas.myeongdong!.subwayRidership!.trend!.sameWeekdayLastWeek!.changeTenthsPercent=-86;
+ await page.setViewportSize({width:390,height:900});await page.route('**/api/live/summary*',routeSummary(data));
+ await page.goto(`/${lang}/tourism-desk/myeongdong`);
+ const rate=page.locator('.tourism-subway-comparisons li').first().getByRole('img');await expect(rate).toHaveText('△8.6%');
+ await expect(rate).toHaveAccessibleName(new RegExp({ko:'감소.*역신장',en:'decrease',zh:'下降',ja:'減少'}[lang]));
+ await expect(page.locator('.tourism-shift-brief')).toContainText('△8.6%');
+ await expect(page.locator('.tourism-brief-line [lang="ko"]').first()).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
 for(const lang of ['ko','en','zh','ja'] as const)test(`owner rate signs and decrease speech ${lang}`,async({page})=>{
  await page.setViewportSize({width:390,height:900});await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
  await page.route('**/api/live/commercial-months*',route=>route.fulfill({json:{status:'READY',area:'myeongdong',month:'2026-08',months:['2026-08'],data:comparison}}));
  await page.goto(`/${lang}/consumption`);
+ if(lang==='ko')await expect(page.locator('.consumption-comparison')).toContainText('전월 대비 신장률 · 같은 일자·시간 기준');
  const decrease=page.locator('[data-category="한식"] .consumption-category-title strong');
  await expect(decrease).toHaveText('△50.0%');await expect(decrease.locator('span')).toHaveAttribute('aria-label',new RegExp({ko:'감소.*역신장',en:'decrease',zh:'下降',ja:'減少'}[lang]));
  await expect(decrease.getByRole('img')).toHaveAccessibleName(new RegExp({ko:'감소.*역신장',en:'decrease',zh:'下降',ja:'減少'}[lang]));

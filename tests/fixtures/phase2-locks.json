@@ -33,7 +33,7 @@
     "app/site-usage-guide.tsx": "4b49e1bd31a91e35f7d0b56b6d1670d94cf644bcc47bcb257508a2a0f6cc64f1",
     "app/sitemap.ts": "ab2329b032b269477ffad4b69258004b1b577b323735eccbf92518cbec258880",
     "app/source-status.tsx": "a4832ec2982ec76631341f8a8aea477d98dd45128234ca7f6ee1002ea16196dd",
-    "app/tourism-desk.tsx": "b4a2e069adc6ed21fa3d6e93571d8a7344bae2b8570ec58613ddf5238d50ab5f",
+    "app/tourism-desk.tsx": "4c0e583789484875dd7a32621035bfc918177234a49d118cf200a68c57a14b00",
     "app/tourism-visitor-show.tsx": "e30883e6efce51f33f839a38b78afe4a1127d87c9ba2cdb7bbac4de189179a10",
     "lib/realtime-dispatch.ts": "dba7bb0e688ec073df674bd5e5cfbb62c3810d8ad5ec181ed06e8bbe449d0a35",
     "public/_headers": "a10cad25ce8bd0c0b7c92225180a71718fc3d2bf5329ac714bf7b2ac6e22676f",
@@ -1144,5 +1144,27 @@
     ],
     "protectedPathCount": 61,
     "approvalEvidenceFile": "docs/approvals/compact-rate-glance-20261010.json"
+  },
+  "ownerApprovedTourismRateCompletion20261010": {
+    "recordedAt": "2026-10-10T02:42:32.293150+00:00",
+    "authorizationEvidence": {
+      "ownerRequest": "All existing site growth rates use increase +8.6%, decrease hollow upward △8.6%, exact zero 0%, with accessible decrease semantics. This includes the supporting tourism desk and generated briefing.",
+      "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "approvedProtectedFiles": [
+        "app/tourism-desk.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Complete the already-authorized shared rate presentation on the supporting tourism desk. Keep subway baseline priority, Korean source-language markings, all calculations, date/coverage gates, other UI and original UI Lock enforcement. No collector, scheduler, draft release, merge or deployment.",
+    "changes": [
+      {
+        "file": "app/tourism-desk.tsx",
+        "previous": "b4a2e069adc6ed21fa3d6e93571d8a7344bae2b8570ec58613ddf5238d50ab5f",
+        "approved": "4c0e583789484875dd7a32621035bfc918177234a49d118cf200a68c57a14b00"
+      }
+    ],
+    "protectedPathCount": 61,
+    "approvalEvidenceFile": "docs/approvals/tourism-rate-completion-20261010.json"
   }
 }

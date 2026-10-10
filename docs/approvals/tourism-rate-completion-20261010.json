@@ -1,0 +1,22 @@
+{
+  "recordedAt": "2026-10-10T02:42:32.293150+00:00",
+  "authorizationEvidence": {
+    "ownerRequest": "All existing site growth rates use increase +8.6%, decrease hollow upward △8.6%, exact zero 0%, with accessible decrease semantics. This includes the supporting tourism desk and generated briefing.",
+    "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+    "approvedProtectedFiles": [
+      "app/tourism-desk.tsx"
+    ],
+    "keepProtectedListAndEnforcement": true,
+    "agentMergeOrDeploymentApproved": false
+  },
+  "reason": "Complete the already-authorized shared rate presentation on the supporting tourism desk. Keep subway baseline priority, Korean source-language markings, all calculations, date/coverage gates, other UI and original UI Lock enforcement. No collector, scheduler, draft release, merge or deployment.",
+  "changes": [
+    {
+      "file": "app/tourism-desk.tsx",
+      "previous": "b4a2e069adc6ed21fa3d6e93571d8a7344bae2b8570ec58613ddf5238d50ab5f",
+      "approved": "4c0e583789484875dd7a32621035bfc918177234a49d118cf200a68c57a14b00"
+    }
+  ],
+  "protectedPathCount": 61,
+  "approvalEvidenceFile": "docs/approvals/tourism-rate-completion-20261010.json"
+}

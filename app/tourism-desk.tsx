@@ -1,4 +1,5 @@
 "use client";
+import {ChangeRate,RateText} from './change-rate';
 import Image from 'next/image';
 
 import { HolidayContext } from "./operational-context";
@@ -429,15 +430,6 @@ function formatDistance(distanceM: number | null, lang: Lang): string | null {
     : `${numberText(rounded, lang, 0)} m`;
 }
 
-function signedPercent(tenths: number, lang: Lang): string {
-  const value = Math.abs(tenths) / 10;
-  const rendered = new Intl.NumberFormat(localeFor(lang), {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  }).format(value);
-  return `${tenths > 0 ? "+" : tenths < 0 ? "−" : ""}${rendered}%`;
-}
-
 function usableComparison(value: TourismSubwayComparison | null, requiredDates: number): value is TourismSubwayComparison {
   return value !== null
     && value.baselineDates.length === requiredDates
@@ -455,7 +447,7 @@ function PeriodNote({ period }: { period: SourcePeriodDescription }) {
   </div>;
 }
 
-function BriefLine({ line, weatherDetails }: { line: TourismDeskLine; weatherDetails: string }) {
+function BriefLine({ line, weatherDetails, lang }: { line: TourismDeskLine; weatherDetails: string; lang:Lang }) {
   const marked = line.koreanText;
   const canMark = Boolean(marked && (marked.position === "start"
     ? line.text.startsWith(marked.value)
@@ -467,10 +459,10 @@ function BriefLine({ line, weatherDetails }: { line: TourismDeskLine; weatherDet
     ? line.text.slice(marked.value.length)
     : "";
   return <li className="tourism-brief-line">
-    <strong>{before}{canMark && marked && <span
+    <strong>{line.key==="subway"&&before?<RateText text={before} lang={lang}/>:before}{canMark && marked && <span
       className={line.key === "event" ? "tourism-official-ko" : undefined}
       lang="ko"
-    >{marked.value}</span>}{after}</strong>
+    >{marked.value}</span>}{line.key==="subway"&&after?<RateText text={after} lang={lang}/>:after}</strong>
     <small>{line.basis}{line.key === "weather" && weatherDetails ? ` · ${weatherDetails}` : ""}</small>
   </li>;
 }
@@ -699,7 +691,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
           <p>{copy.briefIntro}</p>
         </header>
         {brief.length
-          ? <ol className="tourism-brief-list">{brief.map((line) => <BriefLine key={line.key} line={line} weatherDetails={weatherDetails} />)}</ol>
+          ? <ol className="tourism-brief-list">{brief.map((line) => <BriefLine key={line.key} line={line} weatherDetails={weatherDetails} lang={lang} />)}</ol>
           : <p className="tourism-empty">{copy.unavailable}</p>}
       </section>
 
@@ -741,7 +733,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
           {comparisons.length ? <ul className="tourism-subway-comparisons">
             {comparisons.map((comparison) => <li key={comparison.key}>
               <span>{comparison.label}</span>
-              <strong>{signedPercent(comparison.value.changeTenthsPercent, lang)}</strong>
+              <strong><ChangeRate value={comparison.value.changeTenthsPercent/10} lang={lang}/></strong>
               {comparison.key === "recent-average" && <small>{copy.recentAverageNote}</small>}
             </li>)}
           </ul> : <p className="tourism-subway-history">{copy.historyBuilding}</p>}
