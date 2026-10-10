@@ -154,7 +154,6 @@ const tourismSectionHeadings = [
   "교통 흐름 참고",
   "지금 지역 상황",
   "관광 흐름 배경 참고",
-  "관광객에게 보여주기",
   "자료 기준과 한계",
 ] as const;
 
@@ -208,7 +207,7 @@ for (const width of viewports) {
     } else {
       const bottomNav = page.locator("nav.bottom-nav");
       await expect(bottomNav).toBeVisible();
-      await expect(bottomNav.locator("a")).toHaveCount(5);
+      await expect(bottomNav.locator("a")).toHaveCount(6);
       await expect(bottomNav.getByRole("link", { name: /내\s*브리핑/ })).toHaveCount(0);
       await bottomNav.getByRole("link", { name: /더보기/ }).click();
       await expect(page).toHaveURL(/\/ko\/more$/);

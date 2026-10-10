@@ -32,7 +32,6 @@ export function AirportDepartureOverview({ lang, terminal, date }: { lang: Lang;
   const [near, setNear] = useState(false);
   const modelTarget = useAirportModelTarget('airport-departure-model-slot');
   const ready = near || Boolean(modelTarget);
-  const [picked, setPicked] = useState<Terminal>('T1');
   useEffect(() => {
     const node = ref.current;
     if (!node || ready) return;
@@ -40,12 +39,8 @@ export function AirportDepartureOverview({ lang, terminal, date }: { lang: Lang;
     observer.observe(node);
     return () => observer.disconnect();
   }, [ready]);
-  const shown: Terminal = terminal === 'all' ? picked : terminal;
-  const head = <div className="section-head"><div>
-    <p className="eyebrow">KORETAIL · FLIGHTS</p>
-    <h2>{copy.overviewTitle[lang]}</h2>
-  </div></div>;
-  const frame = (body: React.ReactNode) => <section ref={ref} className="airport-departure-overview" id="airport-departure-overview" data-testid="airport-departure-overview" data-terminals={ready ? shown : ''}>{head}{body}</section>;
+  const shown: Terminal = terminal === 'all' ? 'T1' : terminal;
+  const frame = (body: React.ReactNode) => <section ref={ref} className="airport-departure-overview" data-testid="airport-departure-overview" data-terminals={ready ? terminal : ''}>{body}</section>;
   if (!ready || !summary) return frame(<LiveLoadMessage loading={summary !== null} lang={lang}/>);
   // The device clock only moves "now" forward between refreshes; a device set hours off is ignored.
   const generated = Date.parse(summary.generatedAt);
@@ -54,17 +49,12 @@ export function AirportDepartureOverview({ lang, terminal, date }: { lang: Lang;
   const sides = (summary.airport as typeof summary.airport & { sides?: SidesBlock }).sides;
   const holidays = officialHolidaysOn(summary.serviceDateKst);
   return frame(<>
-    <p className="section-intro">{copy.overviewIntro[lang]}</p>
-    {terminal === 'all' && <div role="group" aria-label={copy.overviewSwitch[lang]} data-testid="overview-switch" style={{ display: 'flex', gap: 20, borderBottom: '1px solid var(--line)' }}>
-      {(['T1', 'T2'] as const).map((item) => <button key={item} type="button" aria-pressed={picked === item} aria-label={`${copy.overviewSwitchTo[lang]} ${item}`} onClick={() => setPicked(item)}
-        style={{ minHeight: 44, padding: '0 2px', border: 0, background: 'transparent', cursor: 'pointer', fontSize: 11, fontWeight: 600, letterSpacing: '.08em',
-          color: picked === item ? 'var(--ink)' : '#888', borderBottom: picked === item ? '2px solid var(--blue)' : '2px solid transparent', marginBottom: -1 }}>{item}</button>)}
-    </div>}
     {!sides
       ? <><p className="prep-note" data-testid="overview-no-flights">{copy.noFlights[lang]}</p><DepartureMapSection lang={lang} summary={summary} terminal={shown} nowIso={nowIso} holidays={holidays} defaultBuildingScope={terminal} modelPlacement="airport-departure-model-slot"/></>
       : <div key={shown} data-testid={`overview-${shown}`}>
         <DepartureMapSection lang={lang} summary={summary} terminal={shown} nowIso={nowIso} holidays={holidays} defaultBuildingScope={terminal} modelPlacement="airport-departure-model-slot"/>
         <DayRadarSection lang={lang} summary={summary} terminal={shown} nowIso={nowIso} holidays={holidays} isHoliday={cnJpHoliday}/>
+        {terminal==='all'&&<DayRadarSection lang={lang} summary={summary} terminal="T2" nowIso={nowIso} holidays={holidays} isHoliday={cnJpHoliday}/>}
       </div>}
     <p className="prep-note" data-testid="sides-notice">{copy.notice[lang]}</p>
   </>);

@@ -47,13 +47,11 @@ import { parsePreferences, PREFERENCE_KEY } from "../lib/personal-briefing";
 import { SiteUsageGuide } from "./site-usage-guide";
 import { IndustryGuide } from "./industry-guide";
 import { AirportDepartureOverview } from "./airport-departure-overview";
-import { AirportMonthlyFlights } from './airport-monthly-flights';
 import { AirportConcourse } from './airport-concourse';
 import { AirportTaxRefundGuide } from './airport-tax-refund-guide';
 import { AirportDeparturePreparation } from './airport-departure-preparation';
 import { AirportDutyFreeExchange } from './airport-duty-free-exchange';
 import './airport-tax-refund-guide.css';
-import { sidesCopy } from "../lib/airport-sides-copy";
 import { saveBusinessPreferences, useBusinessPreferences } from "./business-preferences";
 import { areaAnswerText, type TodayAnswer, type TodayAnswerArea } from "../lib/today-answer";
 
@@ -657,13 +655,11 @@ function AirportView({
         {!concourse&&<DateScopeNote lang={lang} date={date} scope={section === "arrivals" ? "arrivals" : "departures"} />}
       </div>}
 
-      {!concourse&&section === "now" && <a className="operating-jump" href="#airport-departure-overview" data-testid="overview-jump">{sidesCopy.overviewJump[lang]}</a>}
       {!concourse&&(section === "now" || section === "arrivals") && <a className="operating-jump" href="#airport-industry-guide">{localText(lang, { ko: "업종별 공항 매장 운영 가이드 ↓", en: "Airport store operating guide ↓", zh: "按业态查看机场店铺指南 ↓", ja: "業種別の空港店舗ガイド ↓" })}</a>}
 
       {concourse&&<AirportConcourse lang={lang} date={date}/>}
       {!concourse&&section === "now" && <AirportTodaySummary lang={lang} terminal={terminal} date={date} />}
       {!concourse&&section === "now" && <AirportDepartureOverview lang={lang} terminal={terminal} date={date} />}
-      {!concourse&&section === "now" && <AirportMonthlyFlights lang={lang} terminal={terminal} date={date} />}
       {!concourse&&section === "arrivals" && <AirportArrivalSummary lang={lang} terminal={terminal} date={date} />}
       {!concourse&&section === "flights" && <FlightBoard lang={lang} terminal={terminal} date={date} />}
       {!concourse&&section === "stores" && <><AirportParkingGuide lang={lang} /><FacilityDirectory lang={lang} terminal={terminal} /></>}

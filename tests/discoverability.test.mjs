@@ -260,11 +260,11 @@ test("a description that merely repeats the title is caught", async () => {
   // The real defect this was written for: descriptions.predictions was a copy
   // of titles.predictions in all four locales, brand pipe included.
   const report = await run({
-    pageOverrides: (path) => (path === "/ko/predictions" ? { description: pageTitle("ko", "predictions") } : {}),
+    pageOverrides: (path) => (path === "/ko/where-to" ? { description: pageTitle("ko", "where-to") } : {}),
   });
   assert.equal(report.ok, false);
-  assert.ok(failing(report).includes("/ko/predictions description is not a copy of the title"));
-  assert.ok(failing(report).includes("/ko/predictions description is long enough to be a snippet"));
+  assert.ok(failing(report).includes("/ko/where-to description is not a copy of the title"));
+  assert.ok(failing(report).includes("/ko/where-to description is long enough to be a snippet"));
 });
 
 test("a stale edge serving another build's metadata is caught", async () => {

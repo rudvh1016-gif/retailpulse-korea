@@ -40,7 +40,10 @@ for (const width of [1280, 360]) {
     const prep = await openAirport(page, width);
     const sides = prep.getByTestId("airport-sides");
     const states: Record<string, string> = {};
-    log(`${width} notice`, await sides.getByTestId("sides-notice").textContent());
+    await sides.getByTestId('departure-map-section').locator(':scope > summary').click();
+    const map=sides.getByTestId('departure-map');
+    await expect(map.getByTestId('model-zone-note')).toBeVisible();
+    log(`${width} notice`, await map.getByTestId('model-zone-note').textContent());
     log(`${width} halls`, (await sides.getByTestId("halls-withheld").count()) ? "WITHHELD" : (await sides.getByTestId("halls-sides").count()) ? await sides.getByTestId("halls-sides").textContent() : "NO_HALL_NOTICE_YET");
     // What the API itself says about the day: the card must agree with it, so a
     // regression to "no data" cannot pass as the designed empty state.

@@ -6,13 +6,14 @@ import { operatingDesignator, type AirlineRankingFlightRow } from './airline-ran
 import type { ProfileRow } from './airport-day-profile';
 import { shiftKstDay } from './kst';
 
-export const AIRPORT_MONTH_VERSION = 1;
+export const AIRPORT_MONTH_VERSION = 2;
 export const MONTH_SCOPES = ['ALL', 'T1', 'T2', 'CONCOURSE', 'UNKNOWN'] as const;
 export type MonthScope = typeof MONTH_SCOPES[number];
 export type MonthFlightRow = ProfileRow & AirlineRankingFlightRow;
 export interface MonthCounts {
  total:number; sides:Record<'EAST'|'WEST'|'CENTER'|'UNVERIFIED',number>;
  airlines:Record<string,number>; registrationCountries:Record<string,number>; destinationCountries:Record<string,number>;
+ destinationSides?:Record<string,Record<'EAST'|'WEST'|'CENTER'|'UNVERIFIED',number>>;
 }
 export interface AirportFlightMonth {
  month:string; from:string; through:string|null; eligibleDays:number; includedDays:string[];
@@ -28,7 +29,7 @@ export function previousFlightMonth(month:string) {
 export function nextFlightMonth(month:string) {
  return new Date(Date.UTC(Number(month.slice(0,4)),Number(month.slice(5,7)),1)).toISOString().slice(0,7);
 }
-const empty=():MonthCounts=>({total:0,sides:{EAST:0,WEST:0,CENTER:0,UNVERIFIED:0},airlines:{},registrationCountries:{},destinationCountries:{}});
+const empty=():MonthCounts=>({total:0,sides:{EAST:0,WEST:0,CENTER:0,UNVERIFIED:0},airlines:{},registrationCountries:{},destinationCountries:{},destinationSides:{}});
 const increment=(map:Record<string,number>,key:string|null|undefined)=>{const k=key||'UNKNOWN';map[k]=(map[k]??0)+1;};
 /** Absence of a profile does not imply absence of raw records. A covering
  * successful post-day scan (or an existing complete profile) is still required.
@@ -55,8 +56,12 @@ export function buildAirportFlightMonth(month:string,today:string,rows:readonly 
    // it is never silently assigned to the east/west main-building denominator.
    const scopes:MonthScope[]=['ALL',area];if(area==='CONCOURSE')scopes.push('T1');
    for(const scope of scopes){const counts=result.scopes[scope];counts.total++;
-    counts.sides[scope==='T1'&&area==='CONCOURSE'?'UNVERIFIED':side]++;
+    const classifiedSide=scope==='T1'&&area==='CONCOURSE'?'UNVERIFIED':side;
+    counts.sides[classifiedSide]++;
     increment(counts.airlines,airline);increment(counts.registrationCountries,registry?.country);increment(counts.destinationCountries,destination?.country);
+    const country=destination?.country??'UNKNOWN';
+    const cross=counts.destinationSides![country]??={EAST:0,WEST:0,CENTER:0,UNVERIFIED:0};
+    cross[classifiedSide]++;
    }
   }
  }

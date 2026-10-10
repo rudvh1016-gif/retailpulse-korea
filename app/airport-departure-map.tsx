@@ -11,6 +11,7 @@ import { useMemo, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useAirportModelTarget } from './use-airport-model-target';
 import { AirportFlightBrowser } from './airport-flight-browser';
+import {AirportMonthlyFlights} from './airport-monthly-flights';
 import { useFlights } from './flights-client';
 import type { Lang } from './retailpulse-data';
 import type { LiveSummary } from './live-signals';
@@ -114,8 +115,12 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
   // A last-good summary can straddle midnight. Its old TODAY label must not
   // make the new day's 00:02 look like 00:02 (+1) on the previous date.
   const today = dayRelation === 'TODAY' && date === todayKst && date === nowDateKst;
-  const [preset, setPreset] = useState<WindowPreset>('DAY');
   const scopeContext=`${terminal}:${defaultBuildingScope??'terminal'}`;
+  const windowContext=`${date}:${scopeContext}`;
+  const [windowSelection,setWindowSelection]=useState<{context:string;preset:WindowPreset}|null>(null);
+  const chosenPreset=windowSelection?.context===windowContext?windowSelection.preset:'DAY';
+  const preset=!today&&chosenPreset!=='CUSTOM'?'DAY':chosenPreset;
+  const setPreset=(preset:WindowPreset)=>setWindowSelection({context:windowContext,preset});
   const [buildingSelection,setBuildingSelection]=useState<{context:string;scope:FlightBuildingScope}|null>(null);
   const buildingScope=buildingSelection?.context===scopeContext?buildingSelection.scope:defaultBuildingScope;
   const [custom, setCustom] = useState<[number, number]>([9, 18]);
@@ -131,6 +136,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
   const map = useMemo(() => current?.status === 'OK'
     ? departureMap({ date, nextDate, terminal, buildingScope, window: span, rows: current.payload.flights, nextRows: next?.status === 'OK' && (next.payload.flights.length > 0 || next.payload.retrievedAt) ? next.payload.flights : null })
     : null, [current, next, date, nextDate, terminal, buildingScope, span.startMin, span.endMin]); // eslint-disable-line react-hooks/exhaustive-deps
+  const wholeDayMap=useMemo(()=>current?.status==='OK'?departureMap({date,nextDate,terminal,buildingScope,window:{startMin:0,endMin:1440},rows:current.payload.flights}):null,[current,date,nextDate,terminal,buildingScope]);
   const wholeDaySelected = preset === 'DAY' && span.startMin === 0 && span.endMin === 1440;
   const reference = useMemo(() => referenceSummary && current?.status === 'OK' ? topReferences({ summary: referenceSummary,
     sides: (referenceSummary.airport as LiveSummary['airport'] & { sides?: SidesBlock }).sides,
@@ -139,7 +145,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
 
   // The architectural illustration is data-free. Keep it available while counts
   // are withheld; do not show zone counts, shares or official coordinates here.
-  const unavailableModel=modelTarget?createPortal(<AirportSceneModel scope={buildingScope??terminal} lang={lang} className="airport-concept-picture"/>,modelTarget):null;
+  const unavailableModel=modelTarget?createPortal(<><AirportSceneModel scope={buildingScope??terminal} lang={lang} className="airport-concept-picture"/><AirportMonthlyFlights lang={lang} terminal={buildingScope??terminal} date={date}/></>,modelTarget):null;
   if (current === undefined) return <>{unavailableModel}<p className="prep-note" data-testid="map-loading">{copy.loading[lang]}</p></>;
   if (current.status === 'FAILED' || !map) return <>{unavailableModel}<p className="prep-note" data-testid="map-failed">{copy.failed[lang]}</p></>;
   if (current.payload.truncated || (span.endMin > 1440 && next?.status === 'OK' && next.payload.truncated)) return <>{unavailableModel}
@@ -171,6 +177,39 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
   const topReference = referenceSummary && <AirportTopReference lang={lang} date={date} scope={buildingScope ?? terminal} wholeDay={wholeDaySelected} entries={reference}
     onWholeDay={() => { setPreset('DAY'); setSelected(null); }}
     onT1Day={() => { setPreset('DAY'); setBuildingSelection({ context: scopeContext, scope: 'T1' }); setSelected(null); setFilter(null); }}/>
+
+  // One visible owner of the model's time window. The old lower section no
+  // longer contains another terminal selector or a hidden copy of these controls.
+  if(modelPlacement&&wholeDayMap){
+    const unit=contextText(lang,'편',' flights','班','便');
+    const counts=(value:DepartureMap)=>['WEST','CENTER','EAST','UNVERIFIED'].map(side=>`${copy.side[side as keyof typeof copy.side][lang]} ${value.sides[side as keyof typeof value.sides]}${unit}`).join(' · ');
+    const nextHours=preset==='NEXT1'?1:preset==='NEXT3'?3:preset==='NEXT6'?6:null;
+    const selectedLabel=nextHours?contextText(lang,`앞으로 ${nextHours}시간`,`Next ${nextHours} hours`,`此后${nextHours}小时`,`今から${nextHours}時間`):copy.presets[preset][lang];
+    const sourceCheck=referenceSummary?.sources?.find(source=>source.sourceId==='INCHEON_FLIGHT_DETAIL')?.retrievedAt;
+    const successCheck=today&&current.payload.basis==='COLLECTED_FLIGHT_RECORDS'&&sourceCheck&&Number.isFinite(Date.parse(sourceCheck))?sourceCheck:null;
+    const validQueryAt=current.payload.generatedAt&&Number.isFinite(Date.parse(current.payload.generatedAt))?current.payload.generatedAt:null;
+    return modelTarget&&createPortal(<div data-testid="departure-map" data-window={`${span.startMin}-${span.endMin}`} data-filter="ALL">
+      <p data-testid="model-whole-day" className="prep-note"><strong style={{fontWeight:'var(--weight-strong)',color:'var(--ink)'}}>{today?contextText(lang,'오늘 전체 항공편','Today’s whole-day flights','今天全天航班','本日の全便'):contextText(lang,'선택일 전체 항공편','Selected day’s whole-day flights','所选日期全天航班','選択日の全便')} · {airportModelScope(buildingScope??terminal,lang)} · {wholeDayMap.sides.total}{unit}<br/>{counts(wholeDayMap)}</strong></p>
+      <div className="date-nav-shortcuts" role="group" aria-label={copy.time[lang]} style={{flexWrap:'wrap'}}>
+        <span>{contextText(lang,'시간 기준','Time basis','时间基准','時間の基準')}</span>
+        {presets.map(value=><button key={value} type="button" aria-pressed={preset===value} data-preset={value} style={{whiteSpace:'nowrap',flex:'0 0 auto'}} onClick={()=>{setPreset(value);setSelected(null);}}>{value==='NEXT1'?contextText(lang,'1시간','1 hour','1小时','1時間'):copy.presets[value][lang]}</button>)}
+      </div>
+      {preset==='CUSTOM'&&<p style={{display:'flex',gap:12,flexWrap:'wrap',alignItems:'center'}}><label>{copy.from[lang]} <select value={custom[0]} data-testid="map-from" onChange={event=>{const start=Number(event.target.value);setCustom([start,Math.max(start+1,custom[1])]);}}>{hours.slice(0,24).map(hour=><option key={hour} value={hour}>{String(hour).padStart(2,'0')}:00</option>)}</select></label><label>{copy.to[lang]} <select value={custom[1]} data-testid="map-to" onChange={event=>setCustom([custom[0],Number(event.target.value)])}>{hours.slice(custom[0]+1).map(hour=><option key={hour} value={hour}>{String(hour).padStart(2,'0')}:00</option>)}</select></label></p>}
+      <p data-testid="model-selected-window"><strong>{selectedLabel} · {map.nextDay==='MISSING'?contextText(lang,'확인된','Confirmed','已确认','確認済み'):contextText(lang,'총','Total','共','計')} {map.sides.total}{unit}</strong><br/><span className="prep-note">{date} KST · {windowText(map.window,lang)}{span.endMin>1440?` · ${nextDate}`:''} · {copy.scheduled[lang]}</span></p>
+      {map.nextDay==='MISSING'&&<p className="prep-note" role="status" data-testid="map-next-missing">{copy.nextDayMissing[lang]}</p>}
+      {map.nextDay!=='MISSING'?<AirportConceptModel map={map} lang={lang} evidence={evidence}/>:<AirportSceneModel scope={buildingScope??terminal} lang={lang} className="airport-concept-picture"/>}
+      <p className="prep-note" data-testid="model-check-times">{contextText(lang,'수집 성공 확인','Successful collection check','采集成功确认','収集成功の確認')}: {successCheck?kstClock(successCheck,date):'—'} · {contextText(lang,'화면 자료 조회','Page data read','页面资料查询','画面データ取得')}: {validQueryAt?kstClock(validQueryAt,date):'—'}</p>
+      <AirportFlightBrowser lang={lang} flights={map.flights} testId="map-flights"/>
+      <details className="prep-evidence" data-testid="map-counting-basis"><summary>{contextText(lang,'항공편 출처·공식 좌표','Flight sources and official coordinates','航班来源与官方坐标','便の出典・公式座標')}</summary><p>{basis} · {copy.notPeople[lang]}</p><p data-testid="map-counts">{windowCountsLine(map,lang)}</p><p data-testid="map-lead">{leadLine(map,lang)}</p>
+        <OpenableList testId="map-destinations" summary={copy.destinations[lang]}>{()=> <table data-testid="map-groups"><tbody>{map.groups.map(group=><tr key={group.group}><th scope="row">{copy.groups[group.group][lang]}</th><td>{group.flights}{unit}</td><td>{groupShare(group,map.flights.length)??'—'}%</td></tr>)}</tbody></table>}</OpenableList>
+        <OpenableList testId="map-official-coordinates" summary={contextText(lang,'공식 지도 탑승구 좌표','Gate coordinates on official maps','官方地图登机口坐标','公式地図の搭乗口座標')}>{()=> <>{(buildingScope==='all'?['T1','T2','CONCOURSE'] as const:buildingScope?[buildingScope]:buildingsOf(terminal)).map(building=><BuildingMap key={building} lang={lang} building={building} map={map} flights={map.flights} selected={selected} onSelect={setSelected}/>)}<p>{copy.schematic[lang]}</p>{selected&&<FlightRows lang={lang} flights={map.flights.filter(flight=>`${flight.building}:${flight.gate}`===selected)} testId="map-gate-list"/>}</>}</OpenableList>
+        <button type="button" className="install-app-button" onClick={copyText} data-testid="map-copy">{copy.copy[lang]}</button>{copied==='OK'&&<p role="status">{copy.copied[lang]}</p>}{copied==='FAILED'&&<><p role="status">{copy.copyFailed[lang]}</p><pre data-testid="map-share-text" style={{whiteSpace:'pre-wrap'}}>{share}</pre></>}
+      </details>
+      {topReference}
+      <AirportMonthlyFlights lang={lang} terminal={buildingScope??terminal} date={date}/>
+      {map.nextDay!=='MISSING'&&<AirportZoneCountries map={map} lang={lang}/>}
+    </div>,modelTarget);
+  }
 
   return <div data-testid="departure-map" data-window={`${span.startMin}-${span.endMin}`} data-filter={filter ?? 'ALL'}>
     <div className="terminal-selector" role="group" aria-label={{ko:'출발편 건물 구분',en:'Departure building scope',zh:'出发航班建筑范围',ja:'出発便の建物範囲'}[lang]}>

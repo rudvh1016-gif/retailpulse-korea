@@ -16,3 +16,12 @@
 .airport-month-table th:first-child {text-align:start;overflow-wrap:anywhere;min-width:65px;}
 .airport-month-table td {white-space:nowrap;}
 .airport-month-flights :is(button,select,summary,a):focus-visible {outline:2px solid #56766b;outline-offset:3px;}
+.airport-country-changes {margin-block:20px;}
+.airport-country-changes h4,.airport-country-changes h5 {font:inherit;font-weight:var(--weight-strong);margin:0;}
+.airport-country-changes>p {margin-block:6px;}
+.airport-country-changes ul {list-style:none;padding:0;margin:12px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px 24px;}
+.airport-country-changes li {min-width:0;border-top:1px solid #ddd;padding-block:12px;}
+.airport-country-heading {display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+.airport-country-heading h5 {display:flex;align-items:center;gap:6px;}
+.airport-country-changes li p {font-size:12px;margin-block:8px;}
+.airport-country-bars {display:block;width:100%;height:36px;max-width:330px;}

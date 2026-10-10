@@ -25,28 +25,50 @@ export const compareCopy = {
   deviceOnly: row("확인 기록은 이 기기에만 저장됩니다.", "Kept on this device only.", "查看记录仅保存在本设备。", "確認記録はこの端末にのみ保存されます。"),
 };
 
-const verdicts = {
-  USUAL: {
-    HIGHER: row("평소 비교 범위보다 높은 구간입니다.", "Higher than the usual range.", "高于平常的比较区间。", "普段の比較範囲より高い区間です。"),
-    OVERLAPS: row("평소 비교 범위와 겹칩니다.", "Overlaps the usual range.", "与平常的比较区间重叠。", "普段の比較範囲と重なります。"),
-    LOWER: row("평소 비교 범위보다 낮은 구간입니다.", "Lower than the usual range.", "低于平常的比较区间。", "普段の比較範囲より低い区間です。"),
-  },
-  LAST_WEEK: {
-    HIGHER: row("지난주 같은 시간대보다 높은 구간입니다.", "Higher than the same time last week.", "高于上周同一时段。", "先週の同じ時間帯より高い区間です。"),
-    OVERLAPS: row("지난주 같은 시간대와 겹칩니다.", "Overlaps the same time last week.", "与上周同一时段重叠。", "先週の同じ時間帯と重なります。"),
-    LOWER: row("지난주 같은 시간대보다 낮은 구간입니다.", "Lower than the same time last week.", "低于上周同一时段。", "先週の同じ時間帯より低い区間です。"),
-  },
-} as const;
-
 function people(value: number, lang: PrepLang): string {
   return new Intl.NumberFormat({ ko: "ko-KR", en: "en-US", zh: "zh-CN", ja: "ja-JP" }[lang]).format(value);
 }
 
-/** The headline for a comparison result. */
+export interface ComparisonTextPart { text: string; emphasis?: true }
+
+/** Observed population estimates, with both ranges intact; never a midpoint percentage. */
+export function usualHeadlineParts(result: UsualComparison, lang: PrepLang): ComparisonTextPart[] {
+  if (result.basis === "NO_CURRENT") return [{ text: compareCopy.noCurrent[lang] }];
+  if (result.basis === "COLLECTING" || !result.verdict || !result.current || !result.range) return [{ text: compareCopy.collecting[lang] }];
+  const current = result.current, baseline = result.range;
+  const currentDay = current.observedAt.slice(0, 10);
+  const currentClock = prepTime(current.observedAt, currentDay, lang);
+  const lastWeek = result.weeks.find((week) => week.weekOffset === 1 && week.status === "VALID");
+  const pastAt = lastWeek?.observedAt;
+  const pastStamp = pastAt
+    ? `${pastAt.slice(0, 4) === currentDay.slice(0, 4) ? pastAt.slice(5, 10).replace("-", "/") : pastAt.slice(0, 10)} ${prepTime(pastAt, pastAt.slice(0, 10), lang)}`
+    : row("같은 시각 ±10분", "same time ±10 min", "同一时刻±10分钟", "同時刻±10分")[lang];
+  const basis = result.basis === "LAST_WEEK"
+    ? row(`지난주 ${pastStamp}`, `last week (${pastStamp})`, `上周${pastStamp}`, `先週${pastStamp}`)[lang]
+    : row(`최근 8주 같은 요일·시각(±10분) ${result.validDays}일의 비교 범위`, `the range across ${result.validDays} matched weekdays/times (±10 min) in the past 8 weeks`, `近8周同星期同时刻（±10分钟）${result.validDays}天的比较范围`, `過去8週の同じ曜日・時刻（±10分）${result.validDays}日分の比較範囲`)[lang];
+  const range = (value: { min: number; max: number }) => `${people(value.min, lang)}~${people(value.max, lang)}${row("명", " people", "人", "人")[lang]}`;
+  const parts: ComparisonTextPart[] = [
+    { text: row(`서울시 체류인구 추정(오늘 ${currentClock} KST) `, `Seoul's estimated population present (today ${currentClock} KST) `, `首尔市现场人口估计（今天${currentClock} KST）`, `ソウル市の滞在人口推定（今日${currentClock} KST）`)[lang] },
+    { text: range(current), emphasis: true },
+    { text: row(`은 ${basis} `, ` vs ${basis} `, `，与${basis}`, `は${basis}`)[lang] },
+    { text: range(baseline), emphasis: true },
+  ];
+  const gap = result.verdict === "LOWER" ? baseline.min - current.max : current.min - baseline.max;
+  if (result.verdict === "OVERLAPS" || gap <= 0) {
+    parts.push({ text: row("과 겹칩니다.", "; the ranges overlap.", "的范围重叠。", "の範囲と重なります。")[lang] });
+  } else {
+    parts.push({ text: row("보다 최소 ", "; at least ", "相比至少", "より少なくとも")[lang] });
+    parts.push({ text: `${people(gap, lang)}${row("명", " people", "人", "人")[lang]}`, emphasis: true });
+    parts.push({ text: result.verdict === "LOWER"
+      ? row(" 적습니다.", " fewer people.", "少。", "少ない推定です。")[lang]
+      : row(" 많습니다.", " more people.", "多。", "多い推定です。")[lang] });
+  }
+  return parts;
+}
+
+/** The same plain text for consumers that do not render emphasis. */
 export function usualHeadline(result: UsualComparison, lang: PrepLang): string {
-  if (result.basis === "NO_CURRENT") return compareCopy.noCurrent[lang];
-  if (result.basis === "COLLECTING" || !result.verdict) return compareCopy.collecting[lang];
-  return verdicts[result.basis][result.verdict][lang];
+  return usualHeadlineParts(result, lang).map((part) => part.text).join("");
 }
 
 /** The numbers and dates behind it, for the expandable detail. */

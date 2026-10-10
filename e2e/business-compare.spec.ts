@@ -24,7 +24,8 @@ async function open(page: Page, usualBody: unknown, status = 200) {
 test('a usual comparison states the verdict in range terms and shows its basis', async ({ page }) => {
   const prep = await open(page, usual('myeongdong'));
   const block = prep.getByTestId('usual-comparison');
-  await expect(block.getByTestId('usual-headline')).toHaveText('평소 비교 범위보다 높은 구간입니다.');
+  await expect(block.getByTestId('usual-headline')).toHaveText('서울시 체류인구 추정(오늘 14:05 KST) 30,000~32,000명은 최근 8주 같은 요일·시각(±10분) 4일의 비교 범위 20,100~24,000명보다 최소 6,000명 많습니다.');
+  await expect(block.getByTestId('usual-headline').locator('strong')).toHaveText(['30,000~32,000명','20,100~24,000명','6,000명']);
   await block.locator('summary').click();
   await expect(block).toContainText('비교 범위 20,100~24,000명');
   await expect(block).toContainText(compareCopy.holidayUnchecked.ko);
@@ -40,8 +41,9 @@ test('a new area says it is still collecting instead of borrowing another area',
 });
 
 test('only last week available is labelled as last week', async ({ page }) => {
-  const prep = await open(page, usual('myeongdong', { basis: 'LAST_WEEK', verdict: 'OVERLAPS', validDays: 1 }));
-  await expect(prep.getByTestId('usual-headline')).toHaveText('지난주 같은 시간대와 겹칩니다.');
+  const prep = await open(page, usual('myeongdong', { basis: 'LAST_WEEK', verdict: 'OVERLAPS', validDays: 1, current: {observedAt:'2026-08-31T14:05:00+09:00',min:23000,max:25000,level:3},weeks:[{weekOffset:1,date:'2026-08-24',status:'VALID',observedAt:'2026-08-24T14:00:00+09:00',min:20100,max:24000}] }));
+  await expect(prep.getByTestId('usual-headline')).toHaveText('서울시 체류인구 추정(오늘 14:05 KST) 23,000~25,000명은 지난주 08/24 14:00 20,100~24,000명과 겹칩니다.');
+  await expect(prep.getByTestId('usual-headline')).not.toContainText('최소');
 });
 
 test('a failed comparison request is reported, not guessed', async ({ page }) => {

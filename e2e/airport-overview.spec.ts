@@ -37,30 +37,30 @@ async function open(page: Page, { lang = 'ko', width = 390, suffix = '', schedul
   return { flightRequests, historyRequests };
 }
 
-test('the Airport page keeps one top summary and opens detailed maps one terminal at a time', async ({ page }) => {
+test('the Airport page keeps one visible model and both daily histories with shared reads', async ({ page }) => {
   const { flightRequests, historyRequests } = await open(page);
   const overview = page.getByTestId('airport-departure-overview');
   await overview.scrollIntoViewIfNeeded();
-  await expect(overview).toHaveAttribute('data-terminals', 'T1');
+  await expect(overview).toHaveAttribute('data-terminals', 'all');
   const t1 = overview.getByTestId('overview-T1');
   await expect(t1.getByTestId('flight-split')).toHaveCount(0);
   await expect(page.getByTestId('airport-concept-model')).toBeVisible();
-  await expect(t1.getByTestId('departure-map')).not.toBeVisible();
-  await t1.getByTestId('departure-map-section').locator(':scope > summary').click();
-  await expect(t1.getByTestId('departure-map')).toBeVisible();
-  await expect(t1.getByTestId('map-groups')).not.toBeVisible();
-  await t1.getByTestId('map-destinations').locator('summary').click();
-  await expect(t1.getByTestId('map-groups')).toBeVisible();
+  const map=page.getByTestId('departure-map');
+  await expect(map).toBeVisible();
+  await expect(map.getByTestId('map-groups')).not.toBeVisible();
+  await map.getByTestId('map-counting-basis').locator(':scope > summary').click();
+  await map.getByTestId('map-destinations').locator('summary').click();
+  await expect(map.getByTestId('map-groups')).toBeVisible();
   await expect(overview.getByTestId('overview-T2')).toHaveCount(0);
-  await t1.getByTestId('day-radar-section').scrollIntoViewIfNeeded();
-  await expect(t1.getByTestId('radar-no-history')).toBeVisible();
+  await expect(t1.getByTestId('day-radar-section')).toHaveCount(2);
+  await t1.getByTestId('day-radar-section').first().scrollIntoViewIfNeeded();
+  await expect(t1.getByTestId('radar-no-history').first()).toBeVisible();
   // Switching to T2 shows T2 only, reusing the same two reads.
-  await overview.getByTestId('overview-switch').getByRole('button', { name: /T2$/ }).click();
+  await page.getByRole('tab', { name:'T2',exact:true }).click();
   await expect(overview).toHaveAttribute('data-terminals', 'T2');
   const t2 = overview.getByTestId('overview-T2');
-  await t2.getByTestId('departure-map-section').locator(':scope > summary').click();
-  await expect(t2.getByTestId('departure-map')).toBeVisible();
-  await expect(t2.getByTestId('map-counts')).toContainText('편');
+  await expect(map).toBeVisible();
+  await expect(map.getByTestId('model-whole-day')).toContainText('편');
   await expect(overview.getByTestId('overview-T1')).toHaveCount(0);
   await t2.getByTestId('day-radar-section').scrollIntoViewIfNeeded();
   await expect(t2.getByTestId('radar-no-history')).toBeVisible();
@@ -76,11 +76,11 @@ test('today before its first collection: the held schedule fills the map, labell
   const overview = page.getByTestId('airport-departure-overview');
   await overview.scrollIntoViewIfNeeded();
   const block = overview.getByTestId('overview-T2');
-  await block.getByTestId('departure-map-section').locator(':scope > summary').click();
-  await expect(block.getByTestId('departure-map')).toBeVisible();
-  await expect(block.getByTestId('map-empty')).toHaveCount(0);
-  await expect(block.getByTestId('map-counts')).not.toContainText('동편 0편 · 서편 0편');
-  await expect(block).toContainText('공식 출발 예정표 기준');
+  const map=page.getByTestId('departure-map');
+  await expect(map).toBeVisible();
+  await expect(map.getByTestId('map-empty')).toHaveCount(0);
+  await expect(map.getByTestId('model-whole-day')).not.toContainText('동편 0편 · 서편 0편');
+  await expect(map).toContainText('공식 출발 예정표 기준');
   await expect(block.getByTestId('flight-split')).toHaveCount(0);
   await expect(page.getByTestId('airport-concept-model')).toBeVisible();
   await expect(page.getByTestId('airport-top-reference')).toHaveAttribute('data-state', 'READY');
@@ -88,18 +88,17 @@ test('today before its first collection: the held schedule fills the map, labell
 
 test('a failed flight read leaves no stale top reference', async ({ page }) => {
   await open(page, { lang: 'en', flightFailure: true });
-  await page.getByTestId('overview-T1').getByTestId('departure-map-section').locator(':scope > summary').click();
   await expect(page.getByTestId('overview-T1').getByTestId('map-failed')).toBeVisible();
   await expect(page.getByTestId('airport-top-reference')).toHaveCount(0);
 });
 
-test('the jump link at the top of the departures tab reaches it', async ({ page }) => {
+test('the duplicate lower heading and jump are removed; time controls remain keyboard reachable', async ({ page }) => {
   await open(page);
   const jump = page.getByTestId('overview-jump');
-  await expect(jump).toBeVisible();
-  await jump.click();
-  await expect(page).toHaveURL(/#airport-departure-overview$/);
-  await expect(page.getByTestId('overview-T1').getByTestId('departure-map-section').locator(':scope > summary')).toBeVisible();
+  await expect(jump).toHaveCount(0);
+  await expect(page.getByRole('heading',{name:'출발편 동·서편과 목적지 지역',exact:true})).toHaveCount(0);
+  const day=page.getByTestId('departure-map').locator('[data-preset=DAY]');
+  await day.focus();await page.keyboard.press('Enter');await expect(day).toHaveAttribute('aria-pressed','true');
 });
 
 test('choosing one terminal shows only that terminal, with no switch', async ({ page }) => {
@@ -124,9 +123,8 @@ for (const [lang, width] of [['ko', 360], ['en', 360], ['zh', 360], ['ja', 360],
     await open(page, { lang, width });
     const overview = page.getByTestId('airport-departure-overview');
     await overview.scrollIntoViewIfNeeded();
-    await overview.getByTestId('departure-map-section').locator(':scope > summary').click();
-    await expect(overview.getByTestId('overview-T1').getByTestId('departure-map')).toBeVisible();
-    expect(await tofuCharacters(overview)).toEqual([]);
+    const map=page.getByTestId('departure-map');await expect(map).toBeVisible();
+    expect(await tofuCharacters(map)).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
     await overview.screenshot({ path: `test-results/airport-overview-${lang}-${width}.png` });
   });
@@ -143,26 +141,24 @@ test('the Blender reference follows the approved model with separate terminal de
   for(const id of ['split-estimate','split-shares','flight-split'])await expect(page.getByTestId('overview-T1').getByTestId(id)).toHaveCount(0);
   await expect(slot.getByTestId('airport-concept-model')).toBeVisible();
   await expect(slot.getByTestId('map-zone-countries')).toBeVisible();
-  const order = await slot.evaluate(node => Array.from(node.children).map(child => child.getAttribute('data-testid')));
-  expect(order.slice(0, 3)).toEqual(['airport-concept-model', 'airport-top-reference', 'map-zone-countries']);
+  const order=await slot.getByTestId('departure-map').evaluate(node=>Array.from(node.children).map(child=>child.getAttribute('data-testid')));
+  expect(order.indexOf('airport-concept-model')).toBeLessThan(order.indexOf('airport-top-reference'));
+  expect(order.indexOf('airport-month-flights')).toBeLessThan(order.indexOf('map-zone-countries'));
 });
 test('selected time and concourse withhold the estimate; explicit whole-day actions restore it', async ({ page }) => {
   await open(page, { lang: 'en' });
-  const map = page.getByTestId('overview-T1').getByTestId('departure-map');
+  const map = page.getByTestId('departure-map');
   const reference = page.getByTestId('airport-top-reference');
   await expect(reference).toHaveAttribute('data-state','READY');
-  await page.getByTestId('overview-T1').getByTestId('departure-map-section').locator(':scope > summary').click();
   await map.locator('[data-preset="CUSTOM"]').click();
   await expect(reference).toHaveAttribute('data-state','time');
   await expect(reference.getByTestId('airport-reference-pillars')).toHaveCount(0);
   await reference.getByRole('button',{name:'View whole day'}).click();
   await expect(reference).toHaveAttribute('data-state','READY');
-  await map.getByRole('button', { name: 'Concourse', exact: true }).click();
-  await expect(page.getByTestId('airport-map-model-scope')).toHaveAttribute('data-terminal','CONCOURSE');
-  await expect(reference).toHaveAttribute('data-state','concourse');
-  await expect(reference.getByTestId('airport-reference-pillars')).toHaveCount(0);
-  await reference.getByRole('button',{name:'View T1 whole day'}).click();
-  await expect(page.getByTestId('airport-map-model-scope')).toHaveAttribute('data-terminal','T1');
+  await page.getByRole('tab',{name:'Concourse',exact:true}).click();
+  await expect(page.getByTestId('airport-concourse')).toBeVisible();
+  await expect(reference).toHaveCount(0);
+  await page.getByRole('tab',{name:'T1',exact:true}).click();
   await expect(reference).toHaveAttribute('data-state','READY');
 });
 

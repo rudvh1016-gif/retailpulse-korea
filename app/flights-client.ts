@@ -9,7 +9,7 @@ import {scopedFlightPayload,type TerminalFlightFallback} from '../lib/airport-fl
 import {kstDayOf,shiftKstDay} from '../lib/kst';
 import type { MapFlightRow } from '../lib/airport-departure-map';
 
-export interface FlightsPayload { mode: string; serviceDateKst?:string; basis?: string; flights: MapFlightRow[]; retrievedAt?: string | null; truncated?: boolean; terminalFallbacks?:Record<string,TerminalFlightFallback<MapFlightRow>> }
+export interface FlightsPayload { mode: string; generatedAt?:string; serviceDateKst?:string; basis?: string; flights: MapFlightRow[]; retrievedAt?: string | null; truncated?: boolean; terminalFallbacks?:Record<string,TerminalFlightFallback<MapFlightRow>> }
 export type Loaded = { status: 'OK'; payload: FlightsPayload } | { status: 'FAILED' };
 
 const pending = new Map<string, Promise<Loaded>>();

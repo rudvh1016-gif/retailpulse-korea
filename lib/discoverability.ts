@@ -499,7 +499,7 @@ export async function runDiscoverabilityChecks(options: { origin: string; fetch?
   const urls = await checkSitemap(context);
   if (urls.length > 0) await checkSitemapUrlsResolve(context, urls);
   for (const locale of seoLocales) await checkPageIdentity(context, locale);
-  for (const slug of ["airport", "predictions", "business", "forecast"] as SeoSlug[]) {
+  for (const slug of ["airport", "where-to", "business", "forecast"] as SeoSlug[]) {
     await checkPageIdentity(context, "ko", slug);
   }
   await checkSocialPreview(context);

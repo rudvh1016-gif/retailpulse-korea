@@ -6,7 +6,7 @@ export const zoneShareCopy = {
     gatesPending: '게이트 위치 확인 전',
     country: '국가 비율: 해당 구역의 전체 항공편 기준, 목적지 미확인 포함.',
     unavailable: '이 날짜의 운항 자료가 아직 확인되지 않았습니다. 확인된 0편이 아닙니다.',
-    concept: '공식 지도 위치를 바탕으로 코리테일이 구분한 구역입니다. 중앙은 코리테일 분류이며, 모형은 실제 좌표가 아닙니다.',
+    concept: '구역 이름은 인천공항공사 위치 안내를 따릅니다. 탑승구별 공식 위치 문구와 공식 지도 좌표로 계산한 구분은 아래에 나눠 표시합니다. 좌표로 계산한 경계 전체가 공항공사의 공식 구역 지정은 아니며, 모형은 실제 좌표가 아닙니다.',
   },
   en: {
     basis: 'Zone shares: all flights in the same building, date and time window, including unverified locations.',
@@ -15,7 +15,7 @@ export const zoneShareCopy = {
     gatesPending: 'Gate locations not yet confirmed',
     country: 'Country shares: all flights in that zone, including unknown destinations.',
     unavailable: 'Flight records for this date have not been confirmed. This is not a confirmed zero.',
-    concept: 'KORETAIL zones based on official map positions. The central zone is a KORETAIL classification; this model does not show actual coordinates.',
+    concept: 'Zone names follow Incheon Airport location guidance. Official gate text and divisions calculated from official map coordinates are identified separately below. Calculated boundaries are not all official airport designations; the model does not show actual coordinates.',
   },
   zh: {
     basis: '区域比例：同一航站楼、日期和时段的全部航班，包括位置未确认的航班。',
@@ -24,7 +24,7 @@ export const zoneShareCopy = {
     gatesPending: '登机口位置尚未确认',
     country: '国家比例：该区域的全部航班，包括目的地未知的航班。',
     unavailable: '此日期的航班资料尚未确认，并非已确认的零航班。',
-    concept: 'KORETAIL根据官方地图位置划分的区域。中央区域由KORETAIL分类，模型并非实际坐标。',
+    concept: '区域名称遵循仁川机场公社的位置说明。下方分别标注官方登机口位置文字与按官方地图坐标计算的划分。计算边界并非全部由机场公社正式指定，模型并非实际坐标。',
   },
   ja: {
     basis: '区域の割合：同じ建物・日付・時間帯の全便が基準です。位置未確認の便も含みます。',
@@ -33,6 +33,6 @@ export const zoneShareCopy = {
     gatesPending: '搭乗口の位置は未確認',
     country: '国の割合：その区域の全便が基準です。目的地不明の便も含みます。',
     unavailable: 'この日付の運航資料はまだ確認できません。確認済みの0便ではありません。',
-    concept: '公式地図の位置を基にKORETAILが分けた区域です。中央はKORETAILの分類で、模型は実際の座標ではありません。',
+    concept: '区域名は仁川空港公社の位置案内に従います。搭乗口の公式文言と公式地図座標から算出した区分を下に分けて表示します。算出した境界全体が空港公社の公式指定ではなく、模型は実際の座標ではありません。',
   },
 };

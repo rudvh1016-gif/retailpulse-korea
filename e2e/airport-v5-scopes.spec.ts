@@ -33,11 +33,11 @@ test('all-building country totals reconcile; physical building switches and time
  const summary={...SUMMARY_FIXTURE,airport:{...SUMMARY_FIXTURE.airport,sides:airportSides(date,'TODAY',[],flights,[],false,false)}};
  await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));let reads=0;
  await page.route('**/api/live/flights*',r=>{reads++;return r.fulfill({json:{mode:'live-flights',basis:'OFFICIAL_DEPARTURE_SCHEDULE',flights,truncated:false,retrievedAt:base.retrievedAt}});});
- await page.goto('/ko/airport');const overview=page.getByTestId('airport-departure-overview');await overview.scrollIntoViewIfNeeded();await overview.getByTestId('departure-map-section').locator(':scope > summary').click();const map=overview.getByTestId('departure-map');await expect(map).toBeVisible();
+ await page.goto('/ko/airport');const overview=page.getByTestId('airport-departure-overview');await overview.scrollIntoViewIfNeeded();const map=page.getByTestId('departure-map');await expect(map).toBeVisible();
  const zones=page.getByTestId('map-zone-countries');
  const total=()=>zones.locator('[data-side][data-total]').evaluateAll(nodes=>nodes.reduce((s,n)=>s+Number(n.getAttribute('data-total')),0));
  await expect.poll(total).toBe(4);await expect(page.getByTestId('airport-departure-model-slot').locator('[data-building="all"] img')).toHaveAttribute('src',/OVERVIEW_LANDSCAPE_(day|night)\.webp$/);
- for(const [index,scope]of [[1,'T1'],[2,'T2'],[3,'CONCOURSE'],[0,'all']] as const){await map.locator('.terminal-selector button').nth(index).click();await expect.poll(total).toBe(scope==='all'?4:1);await expect(page.getByTestId('airport-map-model-scope')).toHaveAttribute('data-terminal',scope);}
+ for(const [index,scope]of [[1,'T1'],[2,'T2'],[3,'CONCOURSE'],[0,'all']] as const){await page.locator('.airport-view >.terminal-selector button').nth(index).click();await expect.poll(total).toBe(scope==='all'?4:1);await expect((scope==='CONCOURSE'?page.getByTestId('airport-concourse'):page.getByTestId('airport-departure-model-slot')).getByTestId('airport-concept-model').locator('.airport-concept-picture')).toHaveAttribute('data-building',scope);}
  await map.locator('[data-preset="CUSTOM"]').click();await map.getByTestId('map-from').selectOption('11');await map.getByTestId('map-to').selectOption('12');await expect.poll(total).toBe(0);
  expect(reads).toBe(1);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });

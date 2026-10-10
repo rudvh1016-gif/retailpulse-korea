@@ -2,7 +2,7 @@ import { AIRPORT_SIDES_VERSION } from './airport-sides';
 import { DESTINATIONS_VERSION } from './airport-destinations';
 import { profileOf } from './airport-day-profile';
 import { sha256 } from './hash';
-import { shiftKstDay } from './kst';
+import { isValidKstDay,shiftKstDay } from './kst';
 import { AIRPORT_MONTH_VERSION, buildAirportFlightMonth, previousFlightMonth, type AirportMonthlyRollups, type MonthFlightRow } from './airport-monthly-flights';
 
 export interface AirportCompositionRecord {day:string;payload:string;sourceHash:string}
@@ -16,6 +16,13 @@ export async function compositionHash(payload:Record<string,unknown>) {
 export function rollupsOf(payload:unknown):AirportMonthlyRollups|null {
  const rollups=(payload as {monthlyRollups?:AirportMonthlyRollups}|null)?.monthlyRollups;
  return rollups?.version===AIRPORT_MONTH_VERSION&&Array.isArray(rollups.months)?rollups:null;
+}
+/** v1's included dates remain completion witnesses when upgrading to cross counts.
+ * None of its counts or marginal totals are reused. */
+export function monthlyCompletionDays(payload:unknown):string[]{
+ const rollups=(payload as {monthlyRollups?:AirportMonthlyRollups}|null)?.monthlyRollups;
+ if(!rollups||![1,AIRPORT_MONTH_VERSION].includes(rollups.version)||!Array.isArray(rollups.months)||!isValidKstDay(rollups.asOf))return [];
+ return rollups.months.flatMap(month=>Array.isArray(month.includedDays)?month.includedDays.filter(day=>isValidKstDay(day)&&day.startsWith(month.month+'-')&&day<rollups.asOf):[]);
 }
 /** Once per completed-date cutoff in the existing Actions job. Indexed retained
  * raw rows only, <=40,000 departures, no providers, new tables or cron. A
@@ -40,7 +47,7 @@ export async function prepareAirportMonths(db:Pick<D1Database,'prepare'>,today:s
  // and counts are always folded again under the current classification.
  const complete=new Set(parsed.flatMap(record=>[
   ...(profileOf(record.data)?.complete?[record.day]:[]),
-  ...(rollupsOf(record.data)?.months.flatMap(month=>month.includedDays)??[]),
+  ...monthlyCompletionDays(record.data),
  ]));
  for(let day=priorMonth+'-01';day<today;day=shiftKstDay(day,1)){
   const end=Date.parse(shiftKstDay(day,1)+'T00:00:00+09:00');
