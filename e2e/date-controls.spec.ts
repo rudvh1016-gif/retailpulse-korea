@@ -84,3 +84,40 @@ test('typing a year in the free picker requests only the finished date and adds 
   await expect.poll(() => dates.slice(before)).toEqual([target]);
   expect(await page.evaluate(() => window.history.length)).toBe(history + 1);
 });
+
+test('typing a two-digit day or month requests only the finished date, once each', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const dates: string[] = [];
+  await page.route('**/api/live/summary*', async route => {
+    const date = new URL(route.request().url()).searchParams.get('date') ?? SUMMARY_FIXTURE.todayKst;
+    dates.push(date);
+    await route.fulfill({ json: { ...SUMMARY_FIXTURE, serviceDateKst: date, airport: { ...SUMMARY_FIXTURE.airport, serviceDateKst: date } } });
+  });
+  await page.goto('/ko/myeongdong');
+  await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
+  const input = page.locator('.date-nav-picker input[type=date]');
+  const [year, month] = SUMMARY_FIXTURE.todayKst.split('-');
+  const history = await page.evaluate(() => window.history.length);
+  // Chromium commits the 2nd on the way to the 25th.
+  let before = dates.length;
+  await input.focus();
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.type('25', { delay: 50 });
+  const day = `${year}-${month}-25`;
+  await expect(input).toHaveValue(day);
+  await expect.poll(() => dates.slice(before)).toEqual([day]);
+  await expect(page).toHaveURL(new RegExp(`date=${day}`));
+  // Enter applies a typed month at once; it passes January on the way to October.
+  before = dates.length;
+  // The finished day moved the caret on to the year; go back to the month.
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.type('10', { delay: 50 });
+  await page.keyboard.press('Enter');
+  const october = `${year}-10-25`;
+  await expect.poll(() => dates.slice(before)).toEqual([october]);
+  await expect(input).toHaveValue(october);
+  await page.waitForTimeout(1200);
+  expect(dates.slice(before)).toEqual([october]);
+  expect(await page.evaluate(() => window.history.length)).toBe(history + 2);
+});

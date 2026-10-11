@@ -15,7 +15,7 @@ import { SeoulFacilityGuide } from "./facility-guide";
 import { SeoulContextCard, SeoulObservationScene, contextText } from "./operational-context";
 import type { SeoulContext } from "../lib/seoul-context";
 import type { compareComposition } from "../lib/airport-composition-history";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Lang } from "./retailpulse-data";
 import { friendlyCheckpointName } from "../lib/airport-today-summary";
 import {
@@ -1070,13 +1070,17 @@ function shiftDay(day: string, delta: number): string {
 }
 
 /**
- * A free date input commits each keystroke that forms a valid date, so typing
- * a year passes through 0002, 0020 and 0202 before 2026. Dates before this
- * are not a selection: they stay in the field until the year is finished.
+ * A free date input commits each keystroke that forms a valid date: typing a
+ * year passes through 0002, 0020 and 0202 before 2026, and typing day 25
+ * passes the 2nd. Typed values stay in the field and become the selection
+ * once, on Enter, on leaving the field, or when typing pauses for the
+ * browser's own one-second segment window. A year below 1000 is never
+ * finished. Picker, arrow-key and mobile selections still apply at once.
  * It is deliberately not an input `min`: the picker stays unbounded so older
  * stored dates are never blocked.
  */
-const EARLIEST_TYPED_DAY = "2000-01-01";
+const TYPED_DATE_SETTLE_MS = 1_000;
+const unfinishedYear = (value: string) => value < "1000-01-01";
 
 /**
  * 어제 / 오늘 / 내일 / 날짜 선택.
@@ -1094,8 +1098,11 @@ export function DateNavigator({
   const [navigationClock, setNavigationClock] = useState<{
     serverAt: number; receivedAt: number; serverDay: string; today: string;
   } | null>(null);
-  // A partly typed year stays in the field without becoming the selection.
+  // Typed digits stay in the field without becoming the selection.
   const [typedDate, setTypedDate] = useState<string | null>(null);
+  const typedAt = useRef(Number.NEGATIVE_INFINITY);
+  const settle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(settle.current), []);
   const freshServerAt = summary && !summary.clientRefresh ? Date.parse(summary.generatedAt) : Number.NaN;
   const freshServerDay = summary && !summary.clientRefresh ? summary.todayKst : undefined;
   useEffect(() => {
@@ -1135,6 +1142,11 @@ export function DateNavigator({
   const today = freshServerDay && (!navigationClock || freshServerAt > navigationClock.serverAt)
     ? freshServerDay : navigationClock?.today ?? context.todayKst;
   const selected = date ?? today;
+  const commitDate = (value: string) => {
+    clearTimeout(settle.current);
+    setTypedDate(null);
+    if (!unfinishedYear(value) && value !== selected) onChange(value === today ? null : value);
+  };
   const shortcuts: Array<[string, string]> = [
     [shiftDay(today, -1), dateNavText.yesterday[lang]],
     [today, dateNavText.today[lang]],
@@ -1160,13 +1172,21 @@ export function DateNavigator({
       <input
         type="date"
         value={typedDate ?? selected}
-        onBlur={() => setTypedDate(null)}
+        onKeyDown={(event) => {
+          if (/^\d$/.test(event.key)) typedAt.current = event.timeStamp;
+          else if (event.key === "Enter" && typedDate !== null) commitDate(typedDate);
+        }}
+        onBlur={() => { if (typedDate !== null) commitDate(typedDate); }}
         onChange={(event) => {
           const next = event.target.value;
-          if (next && next < EARLIEST_TYPED_DAY) { setTypedDate(next); return; }
-          setTypedDate(null);
-          if (!next) return;
-          onChange(next === today ? null : next);
+          clearTimeout(settle.current);
+          if (!next) { setTypedDate(null); return; }
+          if (event.timeStamp - typedAt.current < TYPED_DATE_SETTLE_MS) {
+            setTypedDate(next);
+            if (!unfinishedYear(next)) settle.current = setTimeout(() => commitDate(next), TYPED_DATE_SETTLE_MS);
+            return;
+          }
+          commitDate(next);
         }}
       />
     </label>}
