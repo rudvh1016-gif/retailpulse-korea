@@ -37,10 +37,12 @@ test('old URL redirects; shared header install stays before exchange with its fu
 test('failed monthly request is explicit and can recover without a false zero',async({page})=>{
  await page.clock.install();
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));let failed=true;
- let reads=0;
- await page.route('**/api/live/commercial-months*',route=>{reads++;return route.fulfill({json:failed?{status:'UNAVAILABLE',area:'myeongdong',month:'2026-08',data:null,months:[]}:{status:'READY',area:'myeongdong',month:'2026-08',months:['2026-08'],data:publicCommercialMonth(current)}});});
+ let reads=0;const results=page.locator('.consumption-results');
+ // Observe this attempt's loading state before replying, so its settled state cannot be confused with the previous attempt.
+ await page.route('**/api/live/commercial-months*',async route=>{await expect(results).toHaveAttribute('aria-busy','true');reads++;return route.fulfill({json:failed?{status:'UNAVAILABLE',area:'myeongdong',month:'2026-08',data:null,months:[]}:{status:'READY',area:'myeongdong',month:'2026-08',months:['2026-08'],data:publicCommercialMonth(current)}});});
  await page.goto('/ko/consumption');await expect(page.locator('.comparison-empty')).toContainText('일시적으로 지연');await expect(page.locator('.consumption-category')).toHaveCount(0);
- await page.clock.runFor(2100);await expect.poll(()=>reads).toBe(2);await page.clock.runFor(10100);await expect.poll(()=>reads).toBe(3);
+ await page.clock.runFor(2100);await expect.poll(()=>reads).toBe(2);await expect(results).toHaveAttribute('aria-busy','false');
+ await page.clock.runFor(10100);await expect.poll(()=>reads).toBe(3);await expect(results).toHaveAttribute('aria-busy','false');
  await page.clock.runFor(30000);expect(reads).toBe(3);
  failed=false;await page.getByRole('button',{name:'자료 다시 확인',exact:true}).click();await expect(page.locator('.consumption-category')).toHaveCount(15);
 });

@@ -46,7 +46,7 @@ for (const width of [320,390,430]) test(`airport mobile selectors and gate text 
     if(index===3)await expect(page.getByTestId('concourse-unsupported')).toBeVisible();
   }
 
-  const presets=map.locator(':scope > .date-nav-shortcuts button');
+  const presets=map.locator(':scope > .airport-time-control > .airport-time-presets button');
   await expect(presets).toHaveText(['하루 전체','1시간','3시간','6시간','직접 선택']);
   await presets.nth(1).click();
   await expect(presets.nth(1)).toHaveAttribute('aria-pressed','true');
@@ -57,9 +57,12 @@ for (const width of [320,390,430]) test(`airport mobile selectors and gate text 
   await expect.poll(total).toBe(0);
   if (width===320) {
     // Read one layout frame: separate protocol calls can straddle the browser's scroll adjustment.
-    const boxes=await presets.evaluateAll(buttons=>buttons.map(button=>{const b=button.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,height:b.height};}));
+    const boxes=await presets.evaluateAll(buttons=>buttons.map(button=>{const b=button.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,width:b.width,height:b.height};}));
     for(const box of boxes){expect(box.x).toBeGreaterThanOrEqual(0);expect(box.right).toBeLessThanOrEqual(width);expect(box.height).toBeGreaterThanOrEqual(48);}
-    expect(boxes.at(-1)!.y).toBeGreaterThan(boxes[0]!.y);
+    for(const box of boxes){expect(box.y).toBe(boxes[0]!.y);expect(Math.abs(box.width-boxes[0]!.width)).toBeLessThanOrEqual(1);}
+    const track=await map.locator('.airport-time-presets').boundingBox();
+    expect(Math.abs(boxes[0]!.x-track!.x-3)).toBeLessThanOrEqual(1);
+    expect(Math.abs(track!.x+track!.width-boxes.at(-1)!.right-3)).toBeLessThanOrEqual(1);
   }
 
   await expect(page.locator('.gate-leader-zones > section[data-side="UNVERIFIED"]')).toHaveCount(0);
