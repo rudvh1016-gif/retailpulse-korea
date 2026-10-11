@@ -56,7 +56,12 @@ test("the ranking reads the master flight number, never a stored airline label",
 });
 
 test("airlineCode leaves the flights API as raw provider data, never as a rendered operator", async () => {
-  const signals = await read("../app/live-signals.tsx");
+  // The flight board moved to airport-live-signals.tsx on 2026-10-11. The file
+  // it left must not have kept a use behind, or "exactly one" below says nothing.
+  const seoulSignals = await read("../app/live-signals.tsx");
+  assert.equal([...seoulSignals.matchAll(/flight\.airlineCode/g)].length, 0,
+    "live-signals.tsx no longer renders flights and must not read airlineCode");
+  const signals = await read("../app/airport-live-signals.tsx");
   // It is allowed in the client-side search haystack — a wrong code there can
   // only change what a query matches, never assert who flies the aircraft.
   const uses = [...signals.matchAll(/flight\.airlineCode/g)];

@@ -194,7 +194,7 @@ test("the facilities endpoint can only ever render a gate the mapping proved", a
   // The index is built once from the committed record, so this costs no D1 read.
   assert.match(route, /buildZoneMapIndex\(zoneMapFile/);
 
-  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  const signals = await readFile(new URL("../app/airport-live-signals.tsx", import.meta.url), "utf8");
   assert.match(signals, /const verified = row\.mappingMethod !== "AMBIGUOUS";/);
   assert.match(signals, /const zones = verified \? \[/,
     "an ambiguous facility must compute no zones at all, not merely hide them");
@@ -263,7 +263,7 @@ test("a name search with no terminal searches every terminal, not just T1", asyn
 
   // And the screen that exposed the bug still sends no terminal — if it ever
   // starts sending one, this test's premise is gone and it should be revisited.
-  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  const signals = await readFile(new URL("../app/airport-live-signals.tsx", import.meta.url), "utf8");
   assert.match(signals, /\/api\/airport\/facilities\?q=\$\{encodeURIComponent\(trimmed\)\}&limit=20/,
     "My Store searches by name alone; that is the whole point of the fix");
 });

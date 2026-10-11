@@ -6,7 +6,10 @@ import test from "node:test";
 // On an older engine `params.size` is undefined, so a dated or monthly link
 // silently lost its query and showed today's data under the chosen date.
 test("no client code decides on URLSearchParams.size", async () => {
-  for (const file of ["../app/live-signals.tsx", "../app/retailpulse-app.tsx"]) {
+  for (const file of [
+    "../app/live-signals.tsx", "../app/airport-live-signals.tsx",
+    "../app/retailpulse-app.tsx", "../app/airport-view.tsx", "../app/month-range-picker.tsx",
+  ]) {
     const source = (await readFile(new URL(file, import.meta.url), "utf8")).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
     assert.doesNotMatch(source, /\b(?:query|params|searchParams)\.size\b/, file);
   }

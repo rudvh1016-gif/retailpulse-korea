@@ -56,3 +56,31 @@ for (const width of [375,390,430,1280]) for (const lang of ['ko','en','zh','ja']
   if(lang==='ko')await page.screenshot({path:info.outputPath(`date-personal-${width}.png`)});
  });
 }
+
+test('typing a year in the free picker requests only the finished date and adds one history entry', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const dates: string[] = [];
+  await page.route('**/api/live/summary*', async route => {
+    const date = new URL(route.request().url()).searchParams.get('date') ?? SUMMARY_FIXTURE.todayKst;
+    dates.push(date);
+    await route.fulfill({ json: { ...SUMMARY_FIXTURE, serviceDateKst: date, airport: { ...SUMMARY_FIXTURE.airport, serviceDateKst: date } } });
+  });
+  await page.goto('/ko/myeongdong');
+  await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
+  const input = page.locator('.date-nav-picker input[type=date]');
+  await expect(input).toHaveValue(SUMMARY_FIXTURE.todayKst);
+  // The picker stays unbounded: older stored dates are never blocked.
+  await expect(input).not.toHaveAttribute('min');
+  await expect(input).not.toHaveAttribute('max');
+  const before = dates.length, history = await page.evaluate(() => window.history.length);
+  // Chromium commits 0002, 0020 and 0202 while the year is being typed.
+  await input.focus();
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.type('2025', { delay: 50 });
+  const target = `2025${SUMMARY_FIXTURE.todayKst.slice(4)}`;
+  await expect(input).toHaveValue(target);
+  await expect(page).toHaveURL(new RegExp(`date=${target}`));
+  await expect.poll(() => dates.slice(before)).toEqual([target]);
+  expect(await page.evaluate(() => window.history.length)).toBe(history + 1);
+});

@@ -202,7 +202,7 @@ test("the A4 endpoint is bounded, seeks indexes, and never widens beyond its win
 });
 
 test("the operating reference never travels without the sentence saying what it is not", async () => {
-  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  const signals = await readFile(new URL("../app/airport-live-signals.tsx", import.meta.url), "utf8");
   const disclaimers = {
     ko: "공식 승객·항공편·출국장 데이터를 바탕으로 정리한 운영 참고이며 실제 매장 방문자 수나 매출을 의미하지 않습니다",
     en: "It does not mean store visitors or sales",
@@ -219,7 +219,7 @@ test("the operating reference never travels without the sentence saying what it 
 });
 
 test("A4's screen predicts nothing and scores nothing", async () => {
-  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  const signals = await readFile(new URL("../app/airport-live-signals.tsx", import.meta.url), "utf8");
   const block = signals.match(/const myStoreText = \{[\s\S]*?\n\} as const;/)?.[0] ?? "";
   assert.ok(block.length > 0);
   for (const forbidden of [
@@ -253,7 +253,7 @@ test("the printed briefing keeps the boundary and drops the navigation", async (
     "the print blanking rule must not apply to pages without the briefing");
   assert.match(print, /body:has\(\.my-store-brief\) \* \{ visibility: hidden; \}/);
   // The disclaimer is inside .my-store-brief, so it prints with the numbers.
-  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  const signals = await readFile(new URL("../app/airport-live-signals.tsx", import.meta.url), "utf8");
   const article = signals.match(/<article className="my-store-brief">[\s\S]*?\n  <\/article>/)?.[0] ?? "";
   assert.match(article, /my-store-disclaimer/, "a printout handed to someone else must carry the boundary");
 });

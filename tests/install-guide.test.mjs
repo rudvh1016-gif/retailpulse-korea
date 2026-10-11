@@ -166,7 +166,7 @@ test("iOS is given its own icon and a standalone app title", async () => {
  * fails and forces the guide to be corrected at the same time.
  */
 test("the guide's offline answer matches the fact that there is no service worker", async () => {
-  for (const path of ["../app/install-app.tsx", "../app/layout.tsx", "../app/retailpulse-app.tsx"]) {
+  for (const path of ["../app/install-app.tsx", "../app/layout.tsx", "../app/retailpulse-app.tsx", "../app/airport-view.tsx", "../app/month-range-picker.tsx"]) {
     assert.doesNotMatch(await read(path), /serviceWorker\.register/,
       "adding a service worker changes the offline answer this guide gives");
   }
@@ -241,10 +241,11 @@ test("the guide uses no symbol the bundled font subsets do not carry", () => {
 test("the install guide sits immediately before duty-free exchange in the shared header on every screen size", async () => {
   const app = await read("../app/retailpulse-app.tsx");
   const signals = await read("../app/live-signals.tsx");
+  const airportSignals = await read("../app/airport-live-signals.tsx");
   const css = await read("../app/globals.css");
   assert.match(app, /className="header-meta">[\s\S]*?<InstallAppButton lang=\{lang\} \/>\s*<AirportDutyFreeExchange lang=\{lang\}/,
     "the owner restored the guide immediately before duty-free exchange in the shared header");
-  assert.doesNotMatch(signals, /<InstallAppButton\b/,
+  assert.doesNotMatch(`${signals}\n${airportSignals}`, /<InstallAppButton\b/,
     "the superseded date-row placement must not leave a duplicate guide");
   assert.match(css, /\.install-app-button \{/);
   // The date chip is hidden below 820px; the install button must not be,
