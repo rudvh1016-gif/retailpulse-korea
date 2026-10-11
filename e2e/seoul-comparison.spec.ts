@@ -35,10 +35,14 @@ test('old URL redirects; shared header install stays before exchange with its fu
  await install.click();await expect(page.locator('.install-modal')).toBeVisible();await page.keyboard.press('Escape');await expect(install).toBeFocused();
 });
 test('failed monthly request is explicit and can recover without a false zero',async({page})=>{
+ await page.clock.install();
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));let failed=true;
- await page.route('**/api/live/commercial-months*',route=>route.fulfill({json:failed?{status:'UNAVAILABLE',data:null,months:[]}:{status:'READY',area:'myeongdong',month:'2026-08',months:['2026-08'],data:publicCommercialMonth(current)}}));
- await page.goto('/ko/consumption');await expect(page.locator('.comparison-empty')).toContainText('아직 확인할 수 없습니다');await expect(page.locator('.consumption-category')).toHaveCount(0);
- failed=false;await page.getByRole('button',{name:'다시 확인',exact:true}).click();await expect(page.locator('.consumption-category')).toHaveCount(15);
+ let reads=0;
+ await page.route('**/api/live/commercial-months*',route=>{reads++;return route.fulfill({json:failed?{status:'UNAVAILABLE',area:'myeongdong',month:'2026-08',data:null,months:[]}:{status:'READY',area:'myeongdong',month:'2026-08',months:['2026-08'],data:publicCommercialMonth(current)}});});
+ await page.goto('/ko/consumption');await expect(page.locator('.comparison-empty')).toContainText('일시적으로 지연');await expect(page.locator('.consumption-category')).toHaveCount(0);
+ await page.clock.runFor(2100);await expect.poll(()=>reads).toBe(2);await page.clock.runFor(10100);await expect.poll(()=>reads).toBe(3);
+ await page.clock.runFor(30000);expect(reads).toBe(3);
+ failed=false;await page.getByRole('button',{name:'자료 다시 확인',exact:true}).click();await expect(page.locator('.consumption-category')).toHaveCount(15);
 });
 
 test('district preferences require all four fresh same-time readings; missing remains unavailable',async({page})=>{

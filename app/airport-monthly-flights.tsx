@@ -1,21 +1,18 @@
 'use client';
-import {useEffect,useState} from 'react';
+import {useState} from 'react';
+import {usePreparedMonth} from './use-prepared-month';
 import type {Lang,Terminal} from './retailpulse-data';
 import {ChangeRate} from './change-rate';
 import {AirportDestinationDailyChanges} from './airport-destination-daily-changes';
 import {MONTH_SCOPES,monthlyCategoryKeys,monthlyMetric,previousFlightMonth,type AirportFlightMonth,type AirportMonthlyRollups,type MonthCounts,type MonthScope} from '../lib/airport-monthly-flights';
 import './airport-monthly-flights.css';
 const t=(lang:Lang,ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
-interface Reply {status:string;month:string;months:string[];calculatedAt:string|null;data:AirportMonthlyRollups|null}
+interface Reply {status:string;month:string;months:string[];calculatedAt:string|null;lastPreparedAt?:string|null;data:AirportMonthlyRollups|null}
 export function AirportMonthlyFlights({lang,terminal,date}:{lang:Lang;terminal:'all'|Terminal|'CONCOURSE';date:string}){
  const defaultMonth=date.slice(0,7);
- const [chosen,setChosen]=useState<string|null>(null),[retry,setRetry]=useState(0),[state,setState]=useState<{key:string;reply:Reply|null}|null>(null);
+ const [chosen,setChosen]=useState<string|null>(null);
  const month=chosen??defaultMonth,scope:MonthScope=terminal==='all'?'ALL':terminal;
- const response=state&&state.key===month?state.reply:undefined;
- useEffect(()=>{if(!month)return;let active=true;const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
-  void fetch(`/api/live/airport-months?month=${encodeURIComponent(month)}`,{signal:controller.signal}).then(async result=>result.ok?await result.json() as Reply:null).catch(()=>null).then(reply=>{if(active)setState({key:month,reply:reply?.month===month?reply:null});});
-  return()=>{active=false;clearTimeout(timer);controller.abort();};
- },[month,retry,date]);
+ const request=usePreparedMonth<Reply>(month,`/api/live/airport-months?month=${encodeURIComponent(month)}`,month,date),response=request.reply;
  const current=response?.data?.months.find(value=>value.month===month),previous=response?.data?.months.find(value=>value.month===previousFlightMonth(month??''));
  const fmt=new Intl.NumberFormat({ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'}[lang],{maximumFractionDigits:1});
  const countryNames=new Intl.DisplayNames([lang],{type:'region'});
@@ -30,7 +27,7 @@ export function AirportMonthlyFlights({lang,terminal,date}:{lang:Lang;terminal:'
  const share=(data:AirportFlightMonth|undefined,key:(counts:MonthCounts)=>number)=>data?.includedDays.length&&data.scopes[selected].total>0?key(data.scopes[selected])/data.scopes[selected].total*100:null;
  const shareRow=(label:string,key:(counts:MonthCounts)=>number)=>{const now=share(current,key),before=share(previous,key);return <tr key={label}><th scope="row">{label}</th><td>{percentage(before)}</td><td>{percentage(now)}</td><td><ChangeRate value={now!==null&&before!==null?now-before:null} lang={lang} unit="%p"/></td></tr>;};
  const eastWest=(data:AirportFlightMonth|undefined)=>{const counts=data?.scopes[selected],denominator=counts?counts.sides.EAST+counts.sides.WEST:0;return denominator?`${percentage(counts!.sides.EAST/denominator*100)} (${fmt.format(denominator)})`:'—';};
- const emptyMessage=response===undefined?t(lang,'월별 집계를 불러오는 중…','Loading monthly counts…','正在读取月度统计…','月別集計を読み込み中…'):response?.status==='MISSING'?t(lang,'저장된 월 집계가 없습니다. 정기 집계 후 확인해 주세요.','No prepared monthly count is available. Check after the regular aggregation.','无已存月度统计，请在定期汇总后查看。','保存された月別集計がありません。定期集計後にご確認ください。'):t(lang,'월 집계를 불러오지 못했습니다. 다시 확인해 주세요.','Monthly counts could not be loaded. Please retry.','未能读取月度统计，请重试。','月別集計を取得できませんでした。再確認してください。');
+ const emptyMessage=request.pending&&!response?t(lang,'월별 집계를 불러오는 중…','Loading monthly counts…','正在读取月度统计…','月別集計を読み込み中…'):request.failed?t(lang,'월 집계 연결이 일시적으로 지연됐습니다.','Monthly counts are temporarily unavailable.','月度统计连接暂时延迟。','月別集計の接続が一時的に遅延しています。'):response?.status==='PENDING_UPDATE'?t(lang,'기존 집계의 업데이트를 기다리고 있습니다. 다음 정기 작업에서 같은 기준으로 다시 집계합니다.','The stored count awaits an update in the next regular job.','现有统计等待下次定期任务更新。','保存集計は次の定期処理で更新予定です。'):t(lang,'이 월의 집계 자료가 아직 없습니다. 없는 날짜는 0으로 계산하지 않습니다.','No prepared count for this month yet. Missing dates are not counted as zero.','本月暂无汇总，缺失日期不计为0。','この月の集計はまだありません。欠測日は0として数えません。');
  const table=(rows:React.ReactNode,shares=false)=><div className="airport-month-table"><table><caption>{shares?t(lang,'선택 범위의 전체 집계 편수 중 비중','Share of all counted flights in this scope','所选范围全部计入航班占比','選択範囲の集計便全体に対する割合'):t(lang,'집계 편수 ÷ 실제 포함 날짜 수 · 편/일','Counted flights ÷ included dates · flights/day','计入航班 ÷ 实际计入日期 · 班/日','集計便数 ÷ 含めた日数 · 便/日')}</caption><thead><tr><th>{t(lang,'구분','Category','类别','項目')}</th><th>{previous?.month??t(lang,'전월','Previous','上月','前月')}</th><th>{month}</th><th>{t(lang,'변화','Change','变化','変化')}</th></tr></thead><tbody>{rows}</tbody></table></div>;
  const breakdown=(kind:'airlines'|'registrationCountries'|'destinationCountries',title:string)=><details data-testid={`month-list-${kind}`}><summary>{title}</summary>{table(monthlyCategoryKeys(current,previous,selected,kind).map(key=>{
   const name=current?.airlineNames[key]??previous?.airlineNames[key];
@@ -39,7 +36,8 @@ export function AirportMonthlyFlights({lang,terminal,date}:{lang:Lang;terminal:'
  return <section className="airport-month-flights" data-testid="airport-month-flights" aria-label={t(lang,'월별 출국 항공편 구성','Monthly departure mix','月度出境航班构成','月別出発便の構成')}>
   <h3>{t(lang,'국가별 항공편 · 전월 대비 일평균','Flights by country · daily mean vs previous month','各国航班 · 较上月日均','国別の便数・前月比の1日平均')} <small>{labels[selected]}</small></h3>
   <label>{t(lang,'비교 월','Comparison month','比较月份','比較する月')} <select value={month??''} onChange={event=>setChosen(event.target.value)}>{[...new Set([...(month?[month]:[]),...(response?.months??[])])].sort().reverse().map(value=><option key={value}>{value}</option>)}</select></label>
-  {!current?<p role="status">{emptyMessage}<button type="button" onClick={()=>setRetry(value=>value+1)}>{t(lang,'다시 확인','Retry','重试','再確認')}</button></p>:<>
+  {!current?<div className="airport-month-state" role="status"><p>{emptyMessage}</p>{request.attempt<3?<small>{t(lang,'잠시 후 자동으로 다시 확인합니다.','A bounded automatic check follows shortly.','稍后自动再次检查。','まもなく自動で再確認します。')}</small>:<button type="button" onClick={request.retry}>{t(lang,'자료 다시 확인','Check data again','再次检查资料','資料を再確認')}</button>}{response?.lastPreparedAt&&<small>{t(lang,'이전 집계 시각','Previous calculation','之前汇总时间','前の集計時刻')}: {response.lastPreparedAt}</small>}<a href={`/${lang}/more#collection-status`}>{t(lang,'수집 상태 보기','Collection status','查看采集状态','収集状況')}</a></div>:<>
+   {(request.pending||request.failed||request.retained)&&<p className="airport-month-state" role="status">{t(lang,'마지막 확인 집계를 표시합니다.','Showing the last confirmed count.','显示上次确认的汇总。','最後に確認した集計を表示しています。')} {response?.data?.asOf} KST · {response?.calculatedAt}</p>}
    {period(previous,previousFlightMonth(month!))}{period(current,month!)}
    <p>{t(lang,'출국편','Departures','出境航班','出発便')}: <strong>{value(total.previous)} → {value(total.current)}</strong> {t(lang,'편/일','flights/day','班/日','便/日')} · <ChangeRate value={total.percent} lang={lang}/></p>
    <AirportDestinationDailyChanges lang={lang} current={current} previous={previous} scope={selected}/>

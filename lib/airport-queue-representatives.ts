@@ -31,7 +31,7 @@ export function selectQueueRepresentatives<T extends QueueHeatReading>(rows: T[]
   }
   const candidates = [...latest.values()].flatMap(({row, ambiguous}) => {
     const state = queueHeat(row, now).state, minutes = displayedQueueMinutes(row);
-    return !ambiguous && row.terminal && row.zone && minutes !== null && (state === 'current' || state === 'unverified')
+    return !ambiguous && row.terminal && row.zone && minutes !== null && (state === 'current' || state === 'unverified' || state === 'zero')
       ? [{row, minutes}] : [];
   }).sort((a,b) => b.minutes-a.minutes || (queueKey(a.row)<queueKey(b.row)?-1:queueKey(a.row)>queueKey(b.row)?1:0));
   const count = candidates.length;
