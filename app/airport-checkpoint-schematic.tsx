@@ -30,8 +30,13 @@ export function AirportCheckpointSchematic({terminal,rows,now,lang}:{terminal:'T
     <div className="checkpoint-schematic-pair">{group.map(slot=>{
      const {heat,value,shown}=wait(slot.row);
      const name=terminal==='T1'?slot.key.endsWith('W')?t(lang,'서','W','西','西'):t(lang,'동','E','东','東'):slot.key;
-     return <div className="checkpoint-schematic-reading" key={slot.key} data-checkpoint={slot.key} data-state={heat.state} data-wait-level={heat.level} data-basis={heat.basis} aria-label={`${terminal} ${slot.key} · ${shown} ${value===null?'':minute} · ${queueHeatLabel(heat,lang)}`}>
+     const count=slot.row?.waitingCount;
+     const people=typeof count==='number'&&Number.isFinite(count)&&count>=0
+      ?t(lang,`대기 ${count.toLocaleString(locale)}명`,`Waiting ${count.toLocaleString(locale)}`,`等候 ${count.toLocaleString(locale)}人`,`待機 ${count.toLocaleString(locale)}人`)
+      :t(lang,'인원 미제공','Count unavailable','人数未提供','人数未提供');
+     return <div className="checkpoint-schematic-reading" key={slot.key} data-checkpoint={slot.key} data-state={heat.state} data-wait-level={heat.level} data-basis={heat.basis} aria-label={`${terminal} ${slot.key} · ${shown} ${value===null?'':minute} · ${people} · ${queueHeatLabel(heat,lang)}`}>
       <span>{name}</span><strong>{shown}{value!==null&&heat.state!=='closed'&&<small>{minute}</small>}{heat.state==='zero'&&<sup>*</sup>}</strong>
+      <small className="checkpoint-schematic-people">{people}</small>
      </div>;
     })}</div>
    </div>)}</div>
