@@ -7,6 +7,7 @@ for(const width of [390,1440])test(`historical change retains primary metric typ
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await page.locator('.airport-context-nav button').last().click();
  const metrics=page.locator('.airport-history .history-kpis');
+ await expect(metrics.locator(':scope > div > span')).toHaveText(['선택 기간 합계','일평균','월 총합 · 첫 달 대비','일평균 최고 월']);
  const rate=metrics.locator('strong > [role="img"]');
  await expect(rate).toBeVisible();
  const typography=await rate.evaluate(el=>({size:getComputedStyle(el).fontSize,parent:getComputedStyle(el.parentElement!).fontSize,weight:getComputedStyle(el).fontWeight}));

@@ -1250,7 +1250,9 @@ export async function collectEstimatedSales(env: CollectorEnv, now = new Date())
     await writeSourceHealth(env.DB, sourceId, "OFFICIAL_HISTORICAL", detail, lastRecord ? { retrievedAt: lastRecord.retrievedAt, schemaVersion: lastRecord.schemaVersion } : undefined);
     return { status: partial ? "PARTIAL" : "SUCCESS", records: written.changedRows };
   } catch (error) {
-    const detail = error instanceof Error ? redactSeoulUrl(error.message) : "collector_error";
+    // Structured like Store Dynamics, so the same connect timeout is classified
+    // the same way (failureClass=NETWORK) instead of as an unknown error.
+    const detail = safeSourceFailureDetail(error);
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
     return { status: "ERROR", records: 0 };

@@ -65,7 +65,7 @@ test("the same facility always copies to the same text", () => {
 });
 
 test("the freshness caveat is shown on screen too, in all four languages", async () => {
-  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  const signals = await readFile(new URL("../app/airport-live-signals.tsx", import.meta.url), "utf8");
   for (const lang of LANGS) {
     assert.ok(signals.includes(COPY_DISCLAIMER[lang].staleness), `${lang} caveat must be on screen`);
   }
@@ -78,7 +78,7 @@ test("the freshness caveat is shown on screen too, in all four languages", async
 });
 
 test("a copy that fails says so instead of pretending it worked", async () => {
-  const signals = await readFile(new URL("../app/live-signals.tsx", import.meta.url), "utf8");
+  const signals = await readFile(new URL("../app/airport-live-signals.tsx", import.meta.url), "utf8");
   assert.match(signals, /catch \{\s*setState\("failed"\);/);
   assert.match(signals, /state === "failed" \? facilityText\.copyFailed\[lang\]/);
   // Screen-reader users get the outcome too, not just sighted ones.

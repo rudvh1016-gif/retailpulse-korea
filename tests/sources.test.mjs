@@ -626,6 +626,28 @@ test("estimated sales collector probes quarters, sweeps pages and filters client
   assert.equal(database.prepare("SELECT record_origin FROM seoul_estimated_sales LIMIT 1").get().record_origin, "OFFICIAL_HISTORICAL");
 });
 
+const connectTimeout = () => Object.assign(new TypeError("fetch failed"), {
+  cause: Object.assign(new Error("Connect Timeout Error"), { code: "UND_ERR_CONNECT_TIMEOUT" }),
+});
+
+test("a connect timeout in the weekly estimated-sales check is recorded as a structured NETWORK failure", async (context) => {
+  // 2026-10-11: the raw "NETWORK_UND_ERR_CONNECT_TIMEOUT" text was stored here,
+  // so operations could not classify the same failure Store Dynamics recorded.
+  const { database, databasePath } = openDatabase("sales-network");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+  let calls = 0;
+  globalThis.fetch = async () => { calls += 1; throw connectTimeout(); };
+  const env = { DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: "fixture" };
+  const failed = await collectEstimatedSales(env, new Date("2026-08-27T15:00:00Z"));
+  assert.equal(failed.status, "ERROR");
+  assert.equal(calls, 1, "no in-process retry: the same runner keeps the refused egress address");
+  const health = database.prepare("SELECT status, detail FROM source_health WHERE source_id = 'SEOUL_ESTIMATED_SALES'").get();
+  assert.equal(health.status, "ERROR");
+  assert.match(health.detail, /^failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT attempts=1 /);
+  assert.doesNotMatch(health.detail, /fixture/);
+});
+
 test("store dynamics collector finds the newest quarter, writes all exact areas once, and preserves Last-good", async (context) => {
   const { database, databasePath } = openDatabase("store-dynamics");
   const originalFetch = globalThis.fetch;

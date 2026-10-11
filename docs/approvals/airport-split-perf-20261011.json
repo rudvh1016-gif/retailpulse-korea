@@ -1,0 +1,93 @@
+{
+  "recordedAt": "2026-10-11T14:03:14.575Z",
+  "authorizationEvidence": {
+    "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+    "ownerTaskRequest": "보호 파일 수정이 필요하면 파일과 변경 범위를 한 번에 제시해 승인받아. 보호 검사를 끄거나 승인 기록을 임의 갱신하지 마. 다른 작업자의 변경도 보존해. … 완료한 변경은 PR 하나로 묶어 직접 병합·기존 자동 배포·공개 화면 확인까지 진행해.",
+    "approvalQuestion": "보호 파일 4개를 바꿔야 해서 한 번에 승인 요청드립니다.\n\n① app/retailpulse-app.tsx (+23/−208): 공항 화면 코드(공항 화면·월 선택기·문구 함수)를 새 파일로 내용 그대로 옮기고, 서울·한눈에·소비 흐름·매장 화면에서는 공항 코드를 필요할 때만 불러오게 변경. 공항 스타일 import 6줄 추가(화면은 동일)\n② app/live-signals.tsx (+27/−1419): 공항 전용 블록을 app/airport-live-signals.tsx로 내용 그대로 이동하고 공용 타입·함수만 export. 서울 날짜 입력은 완성된 유효 날짜일 때만 조회·방문 기록 1회\n③ app/[locale]/page.tsx (+2/−1), ④ app/[locale]/[slug]/page.tsx (+2/−1): 공항 첫 화면·/airport 경로는 공항 코드를 바로 넣어 기존과 똑같이 표시\n+ 위 4개 해시 갱신과 승인 기록 1건(tests/fixtures/phase2-locks.json, docs/approvals/ 1개). 보호 목록·보호 검사는 그대로 유지\n\n효과(390px·CPU 4배 감속·1.6Mbps 동일 조건, 7회 중앙값): 서울 계열 4화면 JS 전송량 약 −106KB, 화면 조작 가능 시점 약 0.6~0.9초 단축, 공항 첫 화면은 변화 없음. 최종 재측정이 끝나면 PR에 수치를 기록하고, 효과가 없으면 해당 변경은 빼겠습니다.",
+    "ownerRequest": "4개 모두 승인 (권장)",
+    "followUpApprovalQuestion": "리뷰에서 보호 파일과 관련된 두 가지가 나와 한 번에 여쭤니다.\n\n① 날짜 입력 추가 수정 (app/live-signals.tsx, 앞서 승인하신 범위 안, +31/−11줄): 연도뿐 아니라 일·월 두 자리를 칠 때도(예: 25일 → 2일을 거쳐 25일) 조회·방문 기록이 2번 남는 것을 재현했습니다(main도 동일). 입력 중인 값은 칸에만 두고 Enter·칸 벗어남·입력 1초 멈춤 때 1회만 확정합니다. 달력 선택·모바일 선택은 지금처럼 즉시 반영. 테스트로 1회만 남는 것 확인.\n\n② 보호 범위 유지: 승인하신 분리로 공항 화면 코드 약 1,660줄이 보호 목록 밖 새 파일 4개(app/airport-live-signals.tsx, app/airport-view.tsx, app/month-range-picker.tsx, app/local-text.ts)로 옮겨집니다. 그대로 두면 main에서는 보호되던 이 코드가 보호 검사에서 빠집니다. 새 파일 4개를 보호 목록에 추가하면(61→65개) 보호 범위가 main과 같아집니다. 기존 항목·검사 방식은 그대로입니다.",
+    "followUpOwnerRequest": "①② 모두 승인 (권장)",
+    "scope": "Only the four protected files named in the question: move airport-only code verbatim out of app/retailpulse-app.tsx (to app/airport-view.tsx, app/month-range-picker.tsx, app/local-text.ts) and app/live-signals.tsx (to app/airport-live-signals.tsx), load it on demand on the Seoul routes, keep it eager on /{locale} and /{locale}/airport via the two locale pages, and commit typed Seoul dates once (year, month and day segments). Add the four files that now hold the moved airport code to the protected list so its coverage matches origin/main. Preserve all other protected files, prior approvals and the UI Lock test.",
+    "approvedProtectedFiles": [
+      "app/retailpulse-app.tsx",
+      "app/live-signals.tsx",
+      "app/[locale]/page.tsx",
+      "app/[locale]/[slug]/page.tsx"
+    ],
+    "addedProtectedFiles": [
+      "app/airport-live-signals.tsx",
+      "app/airport-view.tsx",
+      "app/local-text.ts",
+      "app/month-range-picker.tsx"
+    ],
+    "keepProtectedListAndEnforcement": true,
+    "agentMergeOrDeploymentApproved": true
+  },
+  "reason": "Record the explicit owner approvals for the measured Seoul-route code split and the typed-date fix. This bookkeeping changes four current protected-file hashes, adds the four files that now hold the moved airport code (keeping protection equal to origin/main) and appends this evidence; it does not relax or skip any test.",
+  "reviewedSourceCommit": "91468d99b8f7943be176eee0e843b54f2d8e6d6a",
+  "comparisonBase": "bdfea81869b1687c2e40cc1c0ad979fee57a5c2b",
+  "changes": [
+    {
+      "file": "app/retailpulse-app.tsx",
+      "previous": "07a488ffb2928050d437cc588d1030a4ae68d43b74865520ae8de6470ea6f7ab",
+      "approved": "c996907051a11a47a282a06b910cee756ccadb611edadce4eee1d83cde938d05",
+      "addedLines": 23,
+      "deletedLines": 208,
+      "unifiedDiffSha256": "e50646ff8d439ce8b84e5d232b9d1a5ddc670f5d7777cbbd732d1688e035777b",
+      "verbatimMoveTargets": [
+        "app/airport-view.tsx",
+        "app/month-range-picker.tsx",
+        "app/local-text.ts"
+      ]
+    },
+    {
+      "file": "app/live-signals.tsx",
+      "previous": "a828b31304fdaa93f75c2057e6e92f363070c4e50dcaace48bb09f91d9fed3b6",
+      "approved": "52d6d41d801cfc7dd4d4c55e077da25633f59ca6a2a9b57a528f686e68880f94",
+      "addedLines": 49,
+      "deletedLines": 1421,
+      "unifiedDiffSha256": "973a9c03b9226efe87f9cb671dd1e227b286c1d6611b7e3163b77dac39ba2664",
+      "verbatimMoveTargets": [
+        "app/airport-live-signals.tsx"
+      ]
+    },
+    {
+      "file": "app/[locale]/page.tsx",
+      "previous": "861f9697b315e6b0b54e1663c4089f4a6a6330d1298acc3066e0e657b6cafb98",
+      "approved": "091f9054d32209a82b862d6497c7502f6d1e788f1fa09aab835f4cfd8062a535",
+      "addedLines": 2,
+      "deletedLines": 1,
+      "unifiedDiffSha256": "64122f8dc095aa430ceeed80abdbc88e7e9fa883d95df0a29ef7a23d6b56e762",
+      "exactUnifiedDiff": "diff --git a/app/[locale]/page.tsx b/app/[locale]/page.tsx\nindex 674f58d..6afe832 100644\n--- a/app/[locale]/page.tsx\n+++ b/app/[locale]/page.tsx\n@@ -2,6 +2,7 @@ import type { Metadata } from \"next\";\n import { preload } from \"react-dom\";\n import { notFound } from \"next/navigation\";\n import RetailPulseApp from \"../retailpulse-app\";\n+import { AirportView } from \"../airport-view\";\n import { loadTodayAnswer } from \"../../lib/today-answer-server\";\n import { buildMetadata, pageStructuredData, seoLocales, type SeoLocale } from \"../seo-config\";\n import {preloadShellFont} from '../shell-font-preload';\n@@ -53,7 +54,7 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:\n   preloadLiveSummary();\n   preloadShellFont(locale as SeoLocale);\n   return <>\n-    <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialView=\"airport\" initialScope=\"airport-home\" todayAnswer={await loadTodayAnswer()} />\n+    <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialView=\"airport\" initialScope=\"airport-home\" todayAnswer={await loadTodayAnswer()} AirportView={AirportView} />\n     <script type=\"application/ld+json\" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale)) }} />\n   </>;\n }\n"
+    },
+    {
+      "file": "app/[locale]/[slug]/page.tsx",
+      "previous": "13cb26587807d4a4618db40253ddf2c350b6fc727ed56690f0a2981ce96969ed",
+      "approved": "02bc92efc2116e7251b72ba1216acb3e00de244dbf4d15aecd2cc2c9cef86ab0",
+      "addedLines": 2,
+      "deletedLines": 1,
+      "unifiedDiffSha256": "e2b6890cf2fd52e00b57532e3acd73582a981603e78735f92c1c8c1907938669",
+      "exactUnifiedDiff": "diff --git a/app/[locale]/[slug]/page.tsx b/app/[locale]/[slug]/page.tsx\nindex d55c835..fd0e5e1 100644\n--- a/app/[locale]/[slug]/page.tsx\n+++ b/app/[locale]/[slug]/page.tsx\n@@ -2,6 +2,7 @@ import type { Metadata } from \"next\";\n import { preload } from \"react-dom\";\n import { notFound,permanentRedirect } from \"next/navigation\";\n import RetailPulseApp from \"../../retailpulse-app\";\n+import { AirportView } from \"../../airport-view\";\n import { loadTodayAnswer } from \"../../../lib/today-answer-server\";\n import { buildMetadata, pageStructuredData, seoLocales, standaloneSeoSlugs, type SeoLocale, type SeoSlug } from \"../../seo-config\";\n \n@@ -41,7 +42,7 @@ export default async function LocalePage({ params }: { params: Promise<{ locale:\n   // Only the pages whose question this answers pay for the read.\n   const todayAnswer = isArea || slug === \"airport\" ? await loadTodayAnswer() : null;\n   return <>\n-    <RetailPulseApp initialLang={locale as SeoLocale} initialView={view} initialArea={area} initialRoute initialScope={isArea ? \"area\" : \"home\"} todayAnswer={todayAnswer} />\n+    <RetailPulseApp initialLang={locale as SeoLocale} initialView={view} initialArea={area} initialRoute initialScope={isArea ? \"area\" : \"home\"} todayAnswer={todayAnswer} AirportView={slug === \"airport\" ? AirportView : undefined} />\n     <script type=\"application/ld+json\" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale, slug as SeoSlug)) }} />\n   </>;\n }\n"
+    }
+  ],
+  "added": [
+    {
+      "file": "app/airport-live-signals.tsx",
+      "approved": "6c40204d0de60f7a393f2c1d01fde8b2d645d1a8a507757f17c0f481b92635d9"
+    },
+    {
+      "file": "app/airport-view.tsx",
+      "approved": "83fff12cb5821552d7e29fd2f06ac9d598f28517069513b918576fa8ba27cb03"
+    },
+    {
+      "file": "app/local-text.ts",
+      "approved": "82328cd1029e929b9a79cd1d58c325469ad829a262fa2e7935b65ca595dfb8d6"
+    },
+    {
+      "file": "app/month-range-picker.tsx",
+      "approved": "c358abc4ad12749384e82427ec9c1f16099200a0fa40f84eb469e53dbd7d9665"
+    }
+  ],
+  "protectedPathCount": 65,
+  "approvalEvidenceFile": "docs/approvals/airport-split-perf-20261011.json"
+}

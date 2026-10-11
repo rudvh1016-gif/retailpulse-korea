@@ -12,7 +12,7 @@ import { useMemo, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useAirportModelTarget } from './use-airport-model-target';
 import { AirportFlightBrowser } from './airport-flight-browser';
-import {AirportMonthlyFlights} from './airport-monthly-flights';
+import {AirportMonthlyFlights,useAirportMonthRequest} from './airport-monthly-flights';
 import { useFlights } from './flights-client';
 import type { Lang } from './retailpulse-data';
 import type { LiveSummary } from './live-signals';
@@ -112,6 +112,8 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
   referenceSummary?:LiveSummary;
 }) {
   const modelTarget=useAirportModelTarget(modelPlacement);
+  // One monthly read for this map, whichever of its layouts shows the block.
+  const monthly=useAirportMonthRequest(modelTarget?date:null);
   const nowDateKst = new Date(Date.parse(nowIso) + 9 * 3_600_000).toISOString().slice(0, 10);
   // A last-good summary can straddle midnight. Its old TODAY label must not
   // make the new day's 00:02 look like 00:02 (+1) on the previous date.
@@ -146,7 +148,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
 
   // The architectural illustration is data-free. Keep it available while counts
   // are withheld; do not show zone counts, shares or official coordinates here.
-  const unavailableModel=modelTarget?createPortal(<><AirportSceneModel scope={buildingScope??terminal} lang={lang} className="airport-concept-picture"/><AirportMonthlyFlights lang={lang} terminal={buildingScope??terminal} date={date}/></>,modelTarget):null;
+  const unavailableModel=modelTarget?createPortal(<><AirportSceneModel scope={buildingScope??terminal} lang={lang} className="airport-concept-picture"/><AirportMonthlyFlights lang={lang} terminal={buildingScope??terminal} date={date} monthly={monthly}/></>,modelTarget):null;
   if (current === undefined) return <>{unavailableModel}<p className="prep-note" data-testid="map-loading">{copy.loading[lang]}</p></>;
   if (current.status === 'FAILED' || !map) return <>{unavailableModel}<p className="prep-note" data-testid="map-failed">{copy.failed[lang]}</p></>;
   if (current.payload.truncated || (span.endMin > 1440 && next?.status === 'OK' && next.payload.truncated)) return <>{unavailableModel}
@@ -207,7 +209,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
         <button type="button" className="install-app-button" onClick={copyText} data-testid="map-copy">{copy.copy[lang]}</button>{copied==='OK'&&<p role="status">{copy.copied[lang]}</p>}{copied==='FAILED'&&<><p role="status">{copy.copyFailed[lang]}</p><pre data-testid="map-share-text" style={{whiteSpace:'pre-wrap'}}>{share}</pre></>}
       </details>
       {topReference}
-      <AirportMonthlyFlights lang={lang} terminal={buildingScope??terminal} date={date}/>
+      <AirportMonthlyFlights lang={lang} terminal={buildingScope??terminal} date={date} monthly={monthly}/>
       {map.nextDay!=='MISSING'&&<AirportZoneCountries map={map} lang={lang}/>}
     </div>,modelTarget);
   }

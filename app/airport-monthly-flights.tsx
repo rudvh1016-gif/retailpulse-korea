@@ -9,11 +9,21 @@ import {airportMonthComparisonBasis,airportMonthLabel} from '../lib/airport-mont
 import './airport-monthly-flights.css';
 const t=(lang:Lang,ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
 interface Reply {status:string;month:string;months:string[];calculatedAt:string|null;lastPreparedAt?:string|null;data:AirportMonthlyRollups|null}
-export function AirportMonthlyFlights({lang,terminal,date}:{lang:Lang;terminal:'all'|Terminal|'CONCOURSE';date:string}){
- const defaultMonth=date.slice(0,7);
- const [chosen,setChosen]=useState<string|null>(null);
- const month=chosen??defaultMonth,scope:MonthScope=terminal==='all'?'ALL':terminal;
- const request=usePreparedMonth<Reply>(month,`/api/live/airport-months?month=${encodeURIComponent(month)}`,month,date),response=request.reply;
+/** The chosen month and its read. The airport model owns it, so the block can
+ * move from the map's loading slot to the loaded layout without a second read. */
+export function useAirportMonthRequest(date:string|null){
+ // A choice belongs to the date it was made on: any date change starts from the new date's month.
+ const [chosen,choose]=useState<{date:string;month:string}|null>(null);
+ if(chosen&&chosen.date!==date)choose(null);
+ const month=date?chosen?.date===date?chosen.month:date.slice(0,7):'';
+ const setChosen=(value:string)=>{if(date)choose({date,month:value});};
+ const request=usePreparedMonth<Reply>(month,`/api/live/airport-months?month=${encodeURIComponent(month)}`,month,date??'');
+ return {month,setChosen,request};
+}
+export function AirportMonthlyFlights({lang,terminal,date,monthly}:{lang:Lang;terminal:'all'|Terminal|'CONCOURSE';date:string;monthly?:ReturnType<typeof useAirportMonthRequest>}){
+ const own=useAirportMonthRequest(monthly?null:date);
+ const {month,setChosen,request}=monthly??own;
+ const scope:MonthScope=terminal==='all'?'ALL':terminal,response=request.reply;
  const current=response?.data?.months.find(value=>value.month===month),previous=response?.data?.months.find(value=>value.month===previousFlightMonth(month??''));
  const fmt=new Intl.NumberFormat({ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'}[lang],{maximumFractionDigits:1});
  const countryNames=new Intl.DisplayNames([lang],{type:'region'});
