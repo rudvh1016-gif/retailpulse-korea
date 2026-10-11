@@ -48,3 +48,16 @@ test('legacy update and missing months use three bounded checks; failed refresh 
  await page.route('**/api/live/airport-months*',route=>route.fulfill({status:503,json:{status:'UNAVAILABLE',data:null}}));
  await section.locator('select').selectOption('2026-10');await expect(section).toContainText('마지막 확인 집계');await expect(section).toContainText('+200.0%');await expect(section).toContainText('2026-10-10');
 });
+
+test('the monthly block keeps one read when the flight map finishes loading around it',async({page})=>{
+ await page.setViewportSize({width:390,height:900});await page.emulateMedia({reducedMotion:'reduce'});
+ await page.route('**/api/live/summary*',routeSummary(summary));
+ // The map's loading slot and its loaded layout both render the monthly block; a slow
+ // month read is still on the wire when the flights arrive and the block moves.
+ const sent:string[]=[];page.on('request',request=>{if(request.url().includes('/api/live/airport-months'))sent.push(new URL(request.url()).search);});
+ await page.route('**/api/live/flights*',async route=>{await new Promise(resolve=>setTimeout(resolve,250));await route.fulfill({json:{mode:'live-flights',generatedAt:summary.generatedAt,serviceDateKst:'2026-10-10',flights:[],truncated:false,retrievedAt:summary.generatedAt}});});
+ await page.route('**/api/live/airport-months*',async route=>{await new Promise(resolve=>setTimeout(resolve,900));await route.fulfill({json:reply()});});
+ await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();
+ await expect(section).toContainText('+200.0%');await page.waitForTimeout(600);
+ expect(sent).toEqual(['?month=2026-10']);
+});
