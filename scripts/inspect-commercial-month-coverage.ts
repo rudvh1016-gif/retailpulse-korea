@@ -33,4 +33,4 @@ const months=result.results.map(row=>{
 const usage=db.usageSnapshot();
 if(usage.rowsWritten!==0||usage.unmeasuredStatements!==0||usage.rowsRead>50)throw new Error('READ_ONLY_USAGE_BOUND');
 console.log(JSON.stringify({research:'stored-commercial-month-coverage',at:new Date().toISOString(),providerRequests:0,dbWrites:0,
- aggregateRows:result.results.length,usage,semantics:'day/hour bins; paymentWindows are unique published source clocks, not full-day totals',months}));
+ aggregateRows:result.results.length,usage,semantics:'day/hour bins; paymentWindows are unique published source clocks, not full-day totals',months},null,2));

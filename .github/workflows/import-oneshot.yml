@@ -46,7 +46,7 @@ jobs:
         env:
           SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
       - name: Run bounded one-shot import
-        if: inputs.sources != 'probe_seoul_citydata_contract' && inputs.sources != 'probe_itaewon_sources' && inputs.sources != 'official_news_20261010'
+        if: inputs.sources != 'probe_seoul_citydata_contract' && inputs.sources != 'probe_itaewon_sources' && inputs.sources != 'official_news_20261010' && inputs.sources != 'airport_months_v2_20261011'
         run: npx tsx scripts/import-oneshot.ts
         env:
           RPK_ONESHOT_CONFIRM: ${{ inputs.confirm }}
@@ -59,6 +59,13 @@ jobs:
       - name: Import the two owner-approved Customs records and SQL0026 only
         if: inputs.sources == 'official_news_20261010'
         run: npx tsx scripts/approved-customs-news-import.ts
+        env:
+          RPK_ONESHOT_CONFIRM: ${{ inputs.confirm }}
+          RPK_ONESHOT_SOURCES: ${{ inputs.sources }}
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+      - name: Upgrade one stored airport-month extension after explicit owner approval only
+        if: inputs.sources == 'airport_months_v2_20261011'
+        run: npx tsx scripts/approved-airport-month-upgrade.ts
         env:
           RPK_ONESHOT_CONFIRM: ${{ inputs.confirm }}
           RPK_ONESHOT_SOURCES: ${{ inputs.sources }}

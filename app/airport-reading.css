@@ -1,0 +1,14 @@
+@import './reading-tokens.css';
+.airport-time-control {margin-block:16px;color:var(--ink);}
+.airport-time-control>span {display:block;font-size:var(--type-secondary);color:var(--muted);margin-bottom:6px;}
+.airport-time-control .airport-time-presets {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;background:#f5f5f5;padding:3px;border:0;border-radius:8px;}
+.airport-time-control .airport-time-presets button {font:inherit;font-weight:var(--weight-regular);min-width:0;min-height:44px;padding:7px 4px;border:0;background:transparent;color:var(--muted);border-radius:5px;touch-action:manipulation;}
+.airport-time-control .airport-time-presets button[aria-pressed="true"] {background:var(--paper);color:var(--ink);font-weight:var(--weight-strong);}
+.airport-time-control .airport-time-presets button:hover {color:var(--ink);}
+.airport-time-control .airport-time-presets button:focus-visible {outline:2px solid var(--blue);outline-offset:2px;}
+.airport-day-reference {margin-block:12px;font-size:var(--type-body);line-height:1.6;}
+.airport-day-reference strong {font-size:var(--type-key);font-weight:var(--weight-strong);}
+.airport-day-reference small {display:block;font-size:var(--type-secondary);color:var(--muted);font-weight:var(--weight-regular);}
+.airport-window-summary {font-size:var(--type-body);line-height:1.6;}
+.airport-window-summary strong {font-size:var(--type-key);font-weight:var(--weight-strong);}
+.airport-window-summary .prep-note {font-size:var(--type-secondary);color:var(--muted);}

@@ -1,0 +1,25 @@
+@import './reading-tokens.css';
+.checkpoint-schematic {margin:16px 0 20px;max-width:640px;color:var(--ink);font:inherit;font-variant-numeric:tabular-nums;container-type:inline-size;}
+.checkpoint-schematic figcaption {font-size:var(--type-key);line-height:1.4;}
+.checkpoint-schematic-stage {position:relative;min-height:210px;isolation:isolate;margin-top:12px;}
+.checkpoint-schematic-stage>img {display:block;width:100%;height:auto;aspect-ratio:12/5;object-fit:contain;}
+.checkpoint-schematic-groups {position:absolute;inset:72px 2.2% auto;inset-block-start:24cqw;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
+.checkpoint-schematic-group {min-width:0;transform:translateY(16px);}
+.checkpoint-schematic-group:nth-child(2),.checkpoint-schematic-group:nth-child(3) {transform:translateY(0);}
+.checkpoint-group-name {display:block;text-align:center;font-size:var(--type-key);font-weight:var(--weight-strong);margin-bottom:5px;}
+.checkpoint-schematic-pair {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px;}
+.checkpoint-schematic-reading {background:#f5f6f7;min-width:0;padding:6px 2px;border-radius:4px;text-align:center;line-height:1.4;}
+.checkpoint-schematic-reading>span {display:block;font-size:var(--type-secondary);}
+.checkpoint-schematic-reading strong {display:block;min-width:0;font-size:var(--type-key);font-weight:var(--weight-strong);white-space:nowrap;}
+.checkpoint-schematic-reading small {display:block;font-size:var(--type-secondary);font-weight:var(--weight-regular);}
+.checkpoint-schematic-reading sup {font-size:var(--type-secondary);}
+.checkpoint-schematic-reading[data-state="current"][data-wait-level="clear"] {background:#e0eff7;}
+.checkpoint-schematic-reading[data-state="current"][data-wait-level="normal"] {background:#ddf1eb;}
+.checkpoint-schematic-reading[data-state="current"][data-wait-level="busy"] {background:#ffe8d8;}
+.checkpoint-schematic-reading[data-state="current"][data-wait-level="very-busy"] {background:#f5dfe1;}
+.checkpoint-schematic-reading[data-state="stale"] {color:var(--muted);}
+.checkpoint-schematic :is(.checkpoint-schematic-time,.checkpoint-schematic-basis) {font-size:var(--type-secondary);font-weight:var(--weight-regular);color:var(--muted);line-height:1.6;margin:6px 0;}
+@media (min-width:600px) {.checkpoint-schematic-stage {min-height:280px;}.checkpoint-schematic-group {transform:translateY(25px);}}
+
+.airport-checkpoint-schematics {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:20px;}
+.checkpoint-schematic-reading[data-state=closed] strong {font-size:var(--type-body);}

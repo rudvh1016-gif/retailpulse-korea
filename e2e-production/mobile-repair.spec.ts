@@ -40,9 +40,15 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   await dateButtons.nth(1).press('Space');
   await expect(dateButtons.nth(1)).toHaveAttribute('aria-pressed', 'true');
   await page.screenshot({path:info.outputPath(`airport-home-${width}.png`)});
-  const summaryResponse=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/live/summary'&&response.status()===200);
+  // Read the matched response body immediately, while its CDP resource still
+  // belongs to this navigation. A prior document's pending refresh can finish
+  // as goto commits and its body becomes unavailable after the awaited goto.
+  const publicSummaryPromise=page.waitForResponse(response=>{
+    const referer=response.request().headers()['referer'];
+    return new URL(response.url()).pathname==='/api/live/summary'&&response.status()===200&&!!referer&&new URL(referer).pathname==='/ko/hongdae';
+  }).then(response=>response.json() as Promise<LiveSummary>);
   await page.goto('/ko/hongdae');
-  const publicSummary=await (await summaryResponse).json() as LiveSummary;
+  const publicSummary=await publicSummaryPromise;
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   const history = page.locator('.population-history-disclosure');
   await expect(history).not.toHaveAttribute('open');
