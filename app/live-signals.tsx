@@ -27,7 +27,7 @@ import type { SeoulContext } from "../lib/seoul-context";
 import type { compareComposition } from "../lib/airport-composition-history";
 import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 const AirportGatePillars = lazy(() => import("./airport-gate-pillars"));
-const AirportCheckpointSchematic = lazy(() => import('./airport-checkpoint-schematic').then(module=>({default:module.AirportCheckpointSchematic})));
+const AirportCheckpointSchematic = lazy(() => import('./airport-checkpoint-deferred'));
 import type { Lang } from "./retailpulse-data";
 import { friendlyCheckpointName, rankCurrentDepartureHallCheckpoints } from "../lib/airport-today-summary";
 import {
@@ -2150,7 +2150,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
 
     <section className="airport-detail-section airport-checkpoints" aria-labelledby="airport-checkpoints-title">
       <div className="airport-detail-head"><div><p className="eyebrow">CURRENT OBSERVATION · {scopeLabel}</p><h3 id="airport-checkpoints-title">{airportTodayText.current[lang]}</h3></div><p>{airportTodayText.currentNote[lang]}</p></div>
-      <Suspense fallback={<div style={{minBlockSize:340}} aria-busy="true"/>}><div className="airport-checkpoint-schematics">{(['T1','T2'] as const).filter(value=>isAll||value===terminal).map(value=><AirportCheckpointSchematic key={value} terminal={value} rows={rankedCheckpoints[value]??[]} now={presentationNow} lang={lang}/>)}</div></Suspense>
+      <Suspense fallback={<div style={{minBlockSize:340}} aria-busy="true"/>}><div className="airport-checkpoint-schematics" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,320px),1fr))',gap:20}}>{(['T1','T2'] as const).filter(value=>isAll||value===terminal).map(value=><AirportCheckpointSchematic key={value} terminal={value} rows={rankedCheckpoints[value]??[]} now={presentationNow} lang={lang}/>)}</div></Suspense>
       {checkpointTerminals.length ? <div id="airport-checkpoint-groups" className="airport-checkpoint-groups airport-queue-comparison">{checkpointGroups.map(({terminalId, rows}) => {
         return <div className="airport-checkpoint-terminal" key={terminalId}>
           <h4><span>{terminalId === "all" ? "T1 · T2" : terminalId}</span>{airportTodayText.scope[lang][terminalId as "all" | "T1" | "T2"] ?? terminalId}</h4>
