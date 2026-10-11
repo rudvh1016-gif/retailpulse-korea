@@ -31,9 +31,27 @@ const hosts={airport:'airport.kr',customs:'customs.go.kr',law:'law.go.kr'} as co
 export function officialNewsUrl(item:Pick<OfficialNews,'source'|'url'>):string|null {
  try{const url=new URL(item.url),host=hosts[item.source];return url.protocol==='https:'&&!url.username&&!url.password&&!url.port&&(url.hostname===host||url.hostname.endsWith('.'+host))?url.href:null;}catch{return null;}
 }
-export function mayPublishNews(item:OfficialNews):boolean {
+export function hasNewsClearance(item:OfficialNews):boolean {
  const rights=item.clearance;
  return !!(rights?.commercialReuse===true&&rights.requiredPresentation===true&&rights.deepLink===true&&typeof rights.evidenceUrl==='string'&&rights.evidenceUrl.trim()&&typeof rights.attribution==='string'&&rights.attribution.trim()&&Number.isFinite(Date.parse(rights.confirmedAt))&&officialNewsUrl(item));
+}
+/** Rights review permits document preparation; it does not approve publication. */
+export function mayPublishNews(item:OfficialNews&{collectionReview?:{hold:boolean}}):boolean {
+ return ['announced','proposed','corrected'].includes(item.status)&&hasNewsClearance(item)
+  &&(item.collectionReview===undefined||item.collectionReview?.hold===false);
+}
+function pick<T extends object,K extends keyof T>(value:T,keys:readonly K[]):Pick<T,K>{
+ return Object.fromEntries(keys.filter(key=>Object.prototype.hasOwnProperty.call(value,key)).map(key=>[key,value[key]])) as Pick<T,K>;
+}
+/** Explicit public fields only, including nested values. Private collection
+ * candidates and future storage metadata must never enter an API response. */
+export function publicNewsProjection(item:OfficialNews):OfficialNews {
+ const result=pick(item,['source','sourceId','sourceName','title','url','publishedAt','receivedAt','status','topic','relevantToRetail','clearance','contentFingerprint','effectiveDate','deadline','facts','changes','audience','attachmentNeedsReview','modifiedAt','attachments','attachmentListComplete']);
+ if(result.clearance)result.clearance=pick(result.clearance,['evidenceUrl','confirmedAt','commercialReuse','requiredPresentation','deepLink','attribution']);
+ for(const key of ['effectiveDate','deadline'] as const)if(result[key])result[key]=pick(result[key],['date','evidence','verified']);
+ for(const key of ['facts','changes','audience'] as const)result[key]=result[key].map(value=>pick(value,['text','verifiedBySource']));
+ if(result.attachments)result.attachments=result.attachments.map(value=>pick(value,['url','name','review','sha256','reviewedAt']));
+ return result;
 }
 /** Keep every received item, including unknown classification and restricted
  * articles. A changed permission or withdrawal is a revision, not a deletion. */

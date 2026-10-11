@@ -7,7 +7,7 @@ import {collectCustomsNews,officialCustomsLinks,customsArticleMetadata,airportCu
 import {applyCustomsDocumentReview} from '../lib/customs-news-document-review.ts';
 const at='2026-10-11T01:00:00Z';
 const rights={commercialReuse:true,requiredPresentation:true,deepLink:true,evidenceUrl:'https://www.customs.go.kr/fixture',confirmedAt:at,attribution:'Fixture only: no production news'};
-const item=(overrides={})=>({source:'customs',sourceId:'123',sourceName:'Fixture source',title:'Fixture 면세 공고',url:'https://www.customs.go.kr/kcs/na/ntt/selectNttInfo.do?nttSn=123',publishedAt:'2026-10-01T00:00:00Z',receivedAt:at,status:'review',topic:'customs',relevantToRetail:false,clearance:rights,contentFingerprint:'fixture',facts:[],changes:[],audience:[],attachmentNeedsReview:true,...overrides});
+const item=(overrides={})=>({source:'customs',sourceId:'123',sourceName:'Fixture source',title:'Fixture 면세 공고',url:'https://www.customs.go.kr/kcs/na/ntt/selectNttInfo.do?nttSn=123',publishedAt:'2026-10-01T00:00:00Z',receivedAt:at,status:'announced',topic:'customs',relevantToRetail:false,clearance:rights,contentFingerprint:'fixture',facts:[],changes:[],audience:[],attachmentNeedsReview:true,...overrides});
 const key='0123456789abcdef0123456789abcdef';
 const xml='<rss><item><title>Fixture 면세 공고</title><link>https://www.customs.go.kr/kcs/na/ntt/selectNttInfo.do?mi=2891&amp;nttSn=123</link><pubDate>2026-10-01 09:00:00.0</pubDate></item></rss>';
 const html=(licensed=true)=>'<title>관세청-Fixture 면세 공고</title><input name="nttSn" value="123"><input name="nttSnUrl" value="'+key+'"><th>작성자</th><td>Fixture author</td>'+ (licensed?'<div class="codeView01"><img src="/images/board/kogl/new_img_opentype01.png"><span>Fixture 면세 공고</span><a href="https://www.kogl.or.kr/info/licenseType1.do">출처</a></div>':'');
@@ -15,7 +15,7 @@ test('real SQLite changed-only archive excludes receipt and repeated rights conf
  const db=new SqliteD1();assert.deepEqual(await storeOfficialNews(db,[item(),item()]),{currentChanges:1,revisionChanges:0});
  assert.deepEqual(await storeOfficialNews(db,[item({receivedAt:'2026-10-12T01:00:00Z',clearance:{...rights,confirmedAt:'2026-10-12T01:00:00Z'}})]),{currentChanges:0,revisionChanges:0});
  assert.deepEqual(await storeOfficialNews(db,[item({modifiedAt:at,facts:[{text:'Changed source fact',verifiedBySource:true}]})]),{currentChanges:1,revisionChanges:1});
- assert.equal((await storedOfficialNews(db,'customs','123')).status,'review');db.raw.close();
+ assert.equal((await storedOfficialNews(db,'customs','123')).status,'announced');db.raw.close();
 });
 test('rights removal and unknown classification remain archived but leave public reads',async()=>{
  const db=new SqliteD1();await storeOfficialNews(db,[item()]);assert.equal((await readOfficialNews(db,'2026-10-11')).length,1);
@@ -42,10 +42,10 @@ test('closed collector and production entry use zero fetch/config/DB work',async
  const result=await collectCustomsNews({prepare(){throw Error('Unexpected DB');}}, {fetchImpl:()=>{throw Error('Unexpected provider');}});assert.equal(result.state,'DORMANT');assert.equal(result.requests,0);
  const run=spawnSync(process.execPath,['--import','tsx','scripts/collect-customs-news.ts'],{encoding:'utf8',env:{...process.env,RPK_CUSTOMS_NEWS_COLLECTION_ENABLED:'true',ENABLE_PRODUCTION_COLLECTOR:'true'}});assert.equal(run.status,0,run.stderr);assert.match(run.stdout,/DORMANT/);assert.match(run.stdout,/"writes":0/);
 });
-test('normal official public list links bind to article-specific rights; duplicate feeds do not duplicate writes',async()=>{
+test('normal official links create private review candidates; duplicate feeds do not duplicate writes',async()=>{
  const db=new SqliteD1();let licence=true,requests=0;
  const fetchImpl=async url=>{requests++;if(url.includes('selectBoardRss'))return new Response(xml);if(url.includes('selectNttList'))return new Response('<a class="nttInfoBtn" data-id="123" data-url="'+key+'">Fixture</a>');assert.match(url,new RegExp('nttSnUrl='+key));return new Response(html(licence));};
- const first=await collectCustomsNews(db,{activation:true,fetchImpl,now:()=>new Date(at)});assert.equal(first.currentChanges,1);assert.equal(first.requests,9);assert.equal((await readOfficialNews(db,'2026-10-11')).length,1);
+ const first=await collectCustomsNews(db,{activation:true,fetchImpl,now:()=>new Date(at)});assert.equal(first.currentChanges,1);assert.equal(first.requests,9);assert.equal((await readOfficialNews(db,'2026-10-11')).length,0);
  const second=await collectCustomsNews(db,{activation:true,fetchImpl,now:()=>new Date('2026-10-12T01:00:00Z')});assert.equal(second.currentChanges,0);assert.equal(second.revisionChanges,0);
  licence=false;await collectCustomsNews(db,{activation:true,fetchImpl});assert.equal((await readOfficialNews(db,'2026-10-11')).length,0);assert.equal(db.raw.prepare('SELECT COUNT(*) n FROM official_news_current').get().n,1);assert.equal(requests,27);db.raw.close();
 });
