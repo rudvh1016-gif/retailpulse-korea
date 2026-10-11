@@ -373,3 +373,17 @@ nav.bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .airport-flow[data-chart-material="ink-silver"] .airport-flow-now-pill rect { fill:#fff;stroke:#cbd2da; }
 .airport-flow[data-chart-material="ink-silver"] .airport-flow-legend i:is(.past,.stack-upper) { background:#43617f; }
 .airport-flow[data-chart-material="ink-silver"] .airport-flow-legend i:is(.ahead,.stack-lower) { background:#cbd2da; }
+
+/* Secondary explanations only: keep metric typography and interactive hit areas. */
+.airport-today :is([data-testid="model-zone-note"],[data-testid="model-unverified-share"],[data-testid="model-check-times"]),
+.airport-today .airport-current-brief > :is(p:has(> strong > [role="img"]),p:has(.airport-comparison-change),small),
+.airport-today .airport-record-scope,
+.airport-today .airport-section-freshness {
+  font-size:12px;line-height:1.5;margin-block:4px;color:#333;
+}
+.airport-today .airport-gate-region-register > summary,
+.airport-today .airport-record-scope > summary {font-size:12px;line-height:1.5;min-height:44px;display:flex;align-items:center;}
+.airport-today .airport-gate-region-register > a {display:inline-flex;align-items:center;min-height:44px;}
+@media(min-width:1024px) {
+  .airport-concept-picture.airport-scene-overview-v14[data-building="all"] {max-width:1200px;}
+}

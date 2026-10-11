@@ -1,3 +1,10 @@
-.prep-facts .similar-calendar {width:28px;height:35px;float:inline-end;margin-inline-start:8px;}
-.similar-highlights {list-style:none;padding:0;margin:8px 0;line-height:1.6;font-variant-numeric:tabular-nums;}
-.similar-highlights li {margin-block:3px;}
+.similar-date {display:flex;align-items:center;gap:8px;}
+.prep-facts .similar-calendar {width:28px;height:35px;float:none;margin:0;flex:none;}
+.similar-highlights {list-style:none;padding:0;margin:4px 0;line-height:1.5;font-variant-numeric:tabular-nums;}
+.prep-facts .similar-highlights > li {margin:0;padding-block:3px;border:0;}
+@media(min-width:821px) {
+  [data-testid="similar-days"] > li {display:grid;grid-template-columns:150px minmax(0,1fr);column-gap:16px;align-items:start;}
+  .prep-facts .similar-calendar {width:44px;height:55px;}
+  [data-testid="similar-days"] > li > :is(button,[data-testid="similar-table"]) {grid-column:2;justify-self:start;}
+  [data-testid="similar-days"] [data-testid="similar-table"] {width:100%;}
+}

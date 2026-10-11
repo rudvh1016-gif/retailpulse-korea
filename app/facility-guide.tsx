@@ -76,6 +76,8 @@ export function SeoulFacilityGuide({area,lang}: {area:SeoulFacilityArea;lang:Lan
   </section>;
 }
 
-export function AirportParkingGuide({lang}: {lang:Lang}) {
-  return <section className="facility-guide airport-parking-guide" data-testid="airport-parking-guide"><details><summary>{copy.parking[lang]}</summary><Symbol name="parking" lang={lang}/><p>{copy.parkingNote[lang]}</p><a href="https://www.airport.kr/ap_ko/955/subview.do" target="_blank" rel="noopener noreferrer">{copy.parkingLink[lang]} ↗</a></details></section>;
+export function AirportParkingGuide(_props: {lang:Lang}) {
+  // Keep the caller contract during the separately reviewed airport module split.
+  void _props;
+  return null;
 }
