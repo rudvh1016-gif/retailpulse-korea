@@ -1,0 +1,28 @@
+{
+  "recordedAt": "2026-10-11T01:34:10.102Z",
+  "authorizationEvidence": {
+    "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+    "approvalQuestion": "출국장 연결 승인 기록은 갱신했어. 추가로 영어·중국어·일본어 하단 설명이 자체 계산값까지 ‘공식 발표값’처럼 표현하고 있어서 바로잡았어.\n\n이 설명 3문장의 수정 승인 기록도 함께 갱신해도 될까? 이것까지 승인되면 묶어서 마지막 검사를 진행할 수 있어.",
+    "ownerRequest": "ㅇㅇ갱신해",
+    "ownerMessageId": "Sentinel_51cb7a1e1eac8191bffd8514d462b80b",
+    "scope": "Only the three reviewed English, Chinese and Japanese footer truth strings in app/retailpulse-app.tsx, distinguishing official published figures from KORETAIL comparisons and reference estimates. No other UI change, protected-file hash update, permission, operating setting, manual collection, remote repair, merge or deployment is authorized.",
+    "approvedProtectedFiles": [
+      "app/retailpulse-app.tsx"
+    ],
+    "keepProtectedListAndEnforcement": true,
+    "agentMergeOrDeploymentApproved": false
+  },
+  "reason": "Normal explicit owner-approved bookkeeping for the exact three-string correction. Preserve all 61 protected paths, every other fixture value, existing tests and all prior approval records, including the separate checkpoint integration approval.",
+  "reviewedSourceCommit": "96705b4d9165862becf6b07d182d9b75e702765d",
+  "comparisonBase": "e92c8f239b02d1a2a27fbd78b82eea76012bc3a4",
+  "changes": [
+    {
+      "file": "app/retailpulse-app.tsx",
+      "previous": "b084858757d1506dcb1bf037689750ed91f6442b85a8a38f92445f127f952d1a",
+      "approved": "07a488ffb2928050d437cc588d1030a4ae68d43b74865520ae8de6470ea6f7ab",
+      "exactUnifiedDiff": "diff --git a/app/retailpulse-app.tsx b/app/retailpulse-app.tsx\nindex 7ef0aefd..b673bb8f 100644\n--- a/app/retailpulse-app.tsx\n+++ b/app/retailpulse-app.tsx\n@@ -93,21 +93,21 @@ const copy = {\n     sub: \"Official data only, showing what Myeongdong, Hongdae, Seongsu, Itaewon and Incheon Airport look like now and next.\",\n     today: \"Seoul\", airport: \"Airport\", business: \"Business\", forecast: \"Records\", 'where-to': \"Seoul at a glance\", consumption:\"Consumption\", \"tourism-desk\": \"Guide Desk\", about: \"About\", more: \"More\",\n     kst: \"All times are Korea Standard Time (KST).\",\n-    truth: \"Every value shown is published by an official body. Nothing unverified is filled in.\",\n+    truth: \"Official figures are distinguished from KORETAIL comparisons and reference estimates. Nothing unverified is filled in.\",\n   },\n   zh: {\n     hero: \"此刻的首尔\\n正在如何流动？\",\n     sub: \"仅汇总官方数据，呈现明洞、弘大、圣水、梨泰院与仁川机场的当前与接下来。\",\n     today: \"首尔\", airport: \"机场\", business: \"门店\", forecast: \"记录\", 'where-to': \"首尔一览\", consumption:\"近期消费\", \"tourism-desk\": \"旅游咨询\", about: \"关于\", more: \"更多\",\n     kst: \"所有时间均为韩国标准时间（KST）。\",\n-    truth: \"所显示的数值均由官方机构发布，未经确认的数值不会被填充。\",\n+    truth: \"官方发布值与KORETAIL的比较及参考预测分别标明，不填补未经确认的数值。\",\n   },\n   ja: {\n     hero: \"いまソウルは\\nどう動いていますか？\",\n     sub: \"公式データだけを集め、明洞・弘大・聖水・梨泰院と仁川空港の現在とこれからを表示します。\",\n     today: \"ソウル\", airport: \"空港\", business: \"店舗\", forecast: \"記録\", 'where-to': \"ソウルひと目で\", consumption:\"最近の消費\", \"tourism-desk\": \"観光案内\", about: \"紹介\", more: \"その他\",\n     kst: \"すべての時刻は韓国標準時（KST）です。\",\n-    truth: \"表示される値はすべて公式機関が発表したものです。確認できない値は作って埋めません。\",\n+    truth: \"公式発表値とKORETAILの比較・参考予測を区別し、確認できない値は作って埋めません。\",\n   },\n } as const;\n \n"
+    }
+  ],
+  "protectedPathCount": 61,
+  "approvalEvidenceFile": "docs/approvals/footer-truth-copy-20261011.json"
+}
