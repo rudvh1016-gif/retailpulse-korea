@@ -1,4 +1,4 @@
-import {mayPublishNews,verifiedDate,type OfficialNews,type VerifiedNewsDate} from './airport-customs-news';
+import {hasNewsClearance,verifiedDate,type OfficialNews,type VerifiedNewsDate} from './airport-customs-news';
 /** Human/source document review bound to exact article, official attachment and
  * bytes. Never accept a title-only association or turn publication into effect. */
 export interface CustomsDocumentReview {
@@ -6,9 +6,19 @@ export interface CustomsDocumentReview {
  confirmedText:string;facts:readonly string[];
  effectiveDate?:VerifiedNewsDate;deadline?:VerifiedNewsDate;
 }
+/** A bound byte observation can prove a version changed without granting rights
+ * or approving any extracted fact. Keep the document pending for that review. */
+export async function observeCustomsDocumentVersion(item:OfficialNews,review:Pick<CustomsDocumentReview,'articleId'|'attachmentUrl'|'sha256'>,bytes:Uint8Array):Promise<OfficialNews>{
+ const attachment=item.attachments?.find(value=>value.url===review.attachmentUrl);
+ if(item.source!=='customs'||item.sourceId!==review.articleId||!attachment||!bytes.length||bytes.length>4*1024*1024
+  ||!/^https:\/\/www\.customs\.go\.kr\/common\/nttFileDownload\.do\?fileKey=[a-f0-9]{32}$/.test(review.attachmentUrl))throw Error('NEWS_DOCUMENT_VERSION_UNBOUND');
+ const digest=await crypto.subtle.digest('SHA-256',Uint8Array.from(bytes)),hash=[...new Uint8Array(digest)].map(byte=>byte.toString(16).padStart(2,'0')).join('');
+ if(hash!==review.sha256)throw Error('NEWS_DOCUMENT_HASH_MISMATCH');
+ return {...item,attachmentNeedsReview:true,attachments:item.attachments!.map(value=>value.url===attachment.url?{url:value.url,name:value.name,review:'pending' as const,sha256:hash}:value)};
+}
 export async function applyCustomsDocumentReview(item:OfficialNews,review:CustomsDocumentReview,bytes:Uint8Array):Promise<OfficialNews>{
  const attachment=item.attachments?.find(value=>value.url===review.attachmentUrl);
- if(item.source!=='customs'||!mayPublishNews(item)||item.sourceId!==review.articleId||!attachment||bytes.length>4*1024*1024||!bytes.length
+ if(item.source!=='customs'||!hasNewsClearance(item)||item.sourceId!==review.articleId||!attachment||bytes.length>4*1024*1024||!bytes.length
   ||!Number.isFinite(Date.parse(review.reviewedAt))||!review.confirmedText.trim()||review.confirmedText.length>40000||review.facts.length>6
   ||review.facts.some(text=>!text.trim()||text.length>600||!review.confirmedText.includes(text)))throw Error('NEWS_DOCUMENT_REVIEW_UNBOUND');
  const digest=await crypto.subtle.digest('SHA-256',Uint8Array.from(bytes)),hash=[...new Uint8Array(digest)].map(byte=>byte.toString(16).padStart(2,'0')).join('');

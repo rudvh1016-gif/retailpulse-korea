@@ -18,6 +18,5 @@ export default function AirportCustomsNewsClient({lang,today}:{lang:Lang;today:s
   <main id="airport-news-main" className="airport-news-main">
    {state==='loading'?<p role="status" aria-live="polite">{copy.loading}</p>:state==='error'?<div role="alert"><p>{copy.unavailable}</p><button type="button" onClick={()=>{setState('loading');setAttempt(n=>n+1);}}>{copy.retry}</button></div>:null}
    <AirportCustomsNews items={items} today={calendar} lang={lang} syncUrl suppressEmpty={state!=='ready'}/>
-   <nav className="airport-news-saved" aria-label={travelRecordsCopy[lang].title}><a href={`/${lang}/travel-records`}>{travelRecordsCopy[lang].list}</a></nav>
   </main></div>;
 }

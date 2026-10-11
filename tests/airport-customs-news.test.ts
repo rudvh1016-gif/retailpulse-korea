@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {classifyNews,mayPublishNews,retainNews,sortNews,verifiedDate,type OfficialNews} from '../lib/airport-customs-news';
+import {classifyNews,hasNewsClearance,mayPublishNews,publicNewsProjection,retainNews,sortNews,verifiedDate,type OfficialNews} from '../lib/airport-customs-news';
 // Synthetic test records only. No official article is republished or fetched.
 const item=(overrides:Partial<OfficialNews>={}):OfficialNews=>({source:'customs',sourceId:'fixture',sourceName:'Fixture',title:'면세 안내 fixture',url:'https://www.customs.go.kr/fixture',publishedAt:'2026-10-01',receivedAt:'2026-10-10T00:00:00Z',status:'announced',topic:'customs',relevantToRetail:true,contentFingerprint:'fixture-1',facts:[],changes:[],audience:[],attachmentNeedsReview:false,...overrides});
 test('feed presence and a known official hostname do not grant reuse or deep-link permission',()=>{
@@ -18,6 +18,24 @@ test('rights withdrawn later removes public eligibility while preserving both ve
  const withdrawn=retainNews(first,[{...original,clearance:undefined,status:'withdrawn',receivedAt:'2026-10-11T00:00:00Z'}]);
  assert.equal(mayPublishNews(withdrawn[0].current),false);assert.equal(mayPublishNews(withdrawn[0].revisions[0]),true);
  assert.equal(withdrawn[0].revisions.length,1);
+});
+test('rights clearance never overrides review, withdrawal or a private collection hold',()=>{
+ const clearance={commercialReuse:true,requiredPresentation:true,deepLink:true,evidenceUrl:'https://www.customs.go.kr/fixture-license',confirmedAt:'2026-10-10T00:00:00Z',attribution:'Synthetic fixture attribution'} as const;
+ for(const status of ['review','withdrawn'] as const){assert.equal(hasNewsClearance(item({clearance,status})),true);assert.equal(mayPublishNews(item({clearance,status})),false);}
+ for(const status of ['announced','proposed','corrected'] as const)assert.equal(mayPublishNews(item({clearance,status,attachmentNeedsReview:true})),true);
+ assert.equal(mayPublishNews({...item({clearance}),collectionReview:{hold:true}}),false);
+ assert.equal(mayPublishNews({...item({clearance}),collectionReview:{hold:false}}),true);
+ for(const collectionReview of [null,{}, {hold:'false'}])assert.equal(mayPublishNews({...item({clearance}),collectionReview} as unknown as OfficialNews),false);
+});
+test('public projection whitelists nested fields and preserves optional public key presence',()=>{
+ const clearance={commercialReuse:true,requiredPresentation:true,deepLink:true,evidenceUrl:'https://www.customs.go.kr/fixture-license',confirmedAt:'2026-10-10T00:00:00Z',attribution:'Synthetic fixture attribution'} as const;
+ const approved=item({clearance,modifiedAt:null,deadline:undefined,effectiveDate:{date:'2026-11-01',evidence:'Fixture verified date',verified:true},facts:[{text:'Approved source fact',verifiedBySource:true}],attachments:[{url:'https://www.customs.go.kr/common/nttFileDownload.do?fileKey=fixture',name:'Fixture.pdf',review:'pending'}]});
+ const privateRecord={...approved,collectionReview:{hold:false,candidate:{title:'Unapproved title'}},futurePrivate:'private',clearance:{...clearance,internalNote:'private'},effectiveDate:{...approved.effectiveDate!,internalNote:'private'},facts:approved.facts.map(fact=>({...fact,internalNote:'private'})),attachments:approved.attachments!.map(attachment=>({...attachment,internalNote:'private'}))};
+ assert.deepEqual(publicNewsProjection(privateRecord),approved);
+ assert.equal(Object.hasOwn(publicNewsProjection(approved),'deadline'),true);
+ assert.equal(Object.hasOwn(publicNewsProjection(item()),'deadline'),false);
+ assert.ok(JSON.stringify(privateRecord).includes('internalNote'));
+ assert.equal(JSON.stringify(publicNewsProjection(privateRecord)).includes('private'),false);
 });
 test('latest publication order uses actual instants and invalid calendar input never invents priority',()=>{
  const earlier=item({sourceId:'earlier',publishedAt:'2026-10-10T01:00:00+09:00'}),later=item({sourceId:'later',publishedAt:'2026-10-09T23:00:00Z'});

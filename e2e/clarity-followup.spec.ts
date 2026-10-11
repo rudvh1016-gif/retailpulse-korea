@@ -24,7 +24,7 @@ for(const lang of ['ko','en','zh','ja'] as const) for(const width of [360,390,43
   await expect(guide.getByTestId('prep-baggage-status')).toContainText(short.bagNo);
   await entry.focus();await page.keyboard.press('Enter');await expect(guide).not.toHaveAttribute('open');await expect(trip).toBeVisible();
   await expect(page.getByRole('banner')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
-  if(lang==='ko'&&width===390){await trip.click();await expect(page).toHaveURL(/\/ko\/airport-news/);await expect(page.getByTestId('airport-customs-news')).toBeVisible();await page.locator('.airport-news-saved a').click();await expect(page).toHaveURL(/\/ko\/travel-records/);await expect(page.getByTestId('travel-records')).toHaveAttribute('data-hydrated','true');await expect(page.getByTestId('travel-empty')).toBeVisible();await expect(page.getByTestId('travel-card')).toHaveCount(0);}
+  if(lang==='ko'&&width===390){await trip.click();await expect(page).toHaveURL(/\/ko\/airport-news/);await expect(page.getByTestId('airport-customs-news')).toBeVisible();await expect(page.locator('a[href*="/travel-records"]')).toHaveCount(0);await page.goto('/ko/travel-records');await expect(page).toHaveURL(/\/ko\/travel-records/);await expect(page.getByTestId('travel-records')).toHaveAttribute('data-hydrated','true');await expect(page.getByTestId('travel-empty')).toBeVisible();await expect(page.getByTestId('travel-card')).toHaveCount(0);}
  });
 }
 
