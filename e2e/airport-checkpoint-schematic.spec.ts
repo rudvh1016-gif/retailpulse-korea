@@ -20,6 +20,12 @@ for(const [lang,width] of [['ko',360],['ko',390],['ko',430],['ko',1280],['en',39
  expect(loadedDrawings).toEqual([]);await model.scrollIntoViewIfNeeded();
  await expect(model.locator('[data-checkpoint]')).toHaveCount(8);
  expect(await model.locator('[data-checkpoint]').evaluateAll(rows=>rows.map(row=>row.getAttribute('data-checkpoint')))).toEqual(['2D','2C','2B','2A','1D','1C','1B','1A']);
+ // Floor order on screen: 2D at the far left, 1A at the far right, one row, each tied to its lane.
+ const placed=await model.locator('[data-checkpoint]').evaluateAll(rows=>rows.map(row=>{const box=row.getBoundingClientRect();return {key:row.getAttribute('data-checkpoint'),left:box.left,top:box.top,right:box.right};}));
+ expect([...placed].sort((a,b)=>a.left-b.left).map(row=>row.key)).toEqual(['2D','2C','2B','2A','1D','1C','1B','1A']);
+ expect(new Set(placed.map(row=>Math.round(row.top))).size).toBe(1);
+ expect(placed.every((row,index)=>index===0||row.left>=placed[index-1].right-1)).toBe(true);
+ await expect(model.locator('.checkpoint-schematic-leaders path')).toHaveCount(8);
  await expect(model.locator('[data-checkpoint="1A"] strong')).toContainText('60+');
  await expect(model.locator('[data-checkpoint="1B"]')).toHaveAttribute('data-state','stale');
  await expect(model.locator('[data-checkpoint="1C"]')).toHaveAttribute('data-state','zero');
@@ -65,6 +71,9 @@ for(const width of [320,390])test(`checkpoint waiting counts T1 ${width}`,async(
   await expect(count).toBeVisible();await expect(count).toHaveText(label);
   await expect(model.locator(`[data-checkpoint="${key}"]`)).toHaveAttribute('aria-label',new RegExp(label));
  }
+ const order=await model.locator('[data-checkpoint]').evaluateAll(rows=>rows.map(row=>({key:row.getAttribute('data-checkpoint'),left:row.getBoundingClientRect().left})));
+ expect(order.sort((a,b)=>a.left-b.left).map(row=>row.key)).toEqual(['5W','5E','4W','4E','3W','3E','2W','2E']);
+ await expect(model.locator('[data-checkpoint="5W"] > span')).toHaveText('5 서');
  await expect(model.locator('.checkpoint-schematic-time')).toContainText('관측:');
  await expect(model.locator('.checkpoint-schematic-time')).toContainText('KST');
  await expect(page.locator('.airport-checkpoints .airport-queue-cards')).toHaveCount(0);

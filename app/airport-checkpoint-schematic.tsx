@@ -7,6 +7,12 @@ import './airport-checkpoint-schematic.css';
 
 const t=(lang:Lang,ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
 type CheckpointReading=QueueHeatReading & {waitingCount?:number|null};
+/** Floor marker in front of each lane of the base render (960×400), left to
+ * right in CHECKPOINT_GROUPS order. Both terminals use the same drawing. */
+const LANE_ANCHORS=[[139,279],[198,279],[346,238],[406,238],[553,240],[612,240],[760,279],[819,279]] as const;
+/** Each reading sits in one of eight equal columns under the drawing and is
+ * tied to its lane by a leader, so the left-to-right order is the floor order. */
+const leaderPath=(index:number)=>{const [x,y]=LANE_ANCHORS[index],column=(index+.5)*120;return `M${x} ${y+6}V352L${column} 400`;};
 
 export function AirportCheckpointSchematic({terminal,rows,now,lang}:{terminal:'T1'|'T2';rows:readonly CheckpointReading[];now:number;lang:Lang}) {
  const groups=checkpointLayout(terminal,rows),minute=t(lang,'분','min','分','分');
@@ -23,23 +29,26 @@ export function AirportCheckpointSchematic({terminal,rows,now,lang}:{terminal:'T
  return <figure className="checkpoint-schematic" data-testid="checkpoint-schematic" data-terminal={terminal}>
   <figcaption><strong>{terminal}</strong> {t(lang,'출국장 대기','Departure-hall waits','出境厅等候','出国場の待ち時間')}<small>{t(lang,'개념 모형 · 인물은 장식','Concept model · decorative people','概念模型 · 人物为装饰','模式図・人物は装飾')}</small></figcaption>
   <div className="checkpoint-schematic-stage">
-   {/* eslint-disable-next-line @next/next/no-img-element -- Original responsive Blender render; dimensions reserve space. */}
-   <img src="/visuals/airport-queue/checkpoint-base-480.webp" srcSet="/visuals/airport-queue/checkpoint-base-480.webp 480w, /visuals/airport-queue/checkpoint-base-960.webp 960w" sizes="(max-width:600px) calc(100vw - 36px), 640px" width="960" height="400" alt="" loading="lazy" decoding="async"/>
-   <div className="checkpoint-schematic-groups">{groups.map((group,index)=><div className="checkpoint-schematic-group" key={index}>
-    {terminal==='T1'&&<span className="checkpoint-group-name">{group[0].key.slice(0,1)}</span>}
-    <div className="checkpoint-schematic-pair">{group.map(slot=>{
-     const {heat,value,shown}=wait(slot.row);
-     const name=terminal==='T1'?slot.key.endsWith('W')?t(lang,'서','W','西','西'):t(lang,'동','E','东','東'):slot.key;
-     const count=slot.row?.waitingCount;
-     const people=typeof count==='number'&&Number.isFinite(count)&&count>=0
-      ?t(lang,`대기 ${count.toLocaleString(locale)}명`,`Waiting ${count.toLocaleString(locale)}`,`等候 ${count.toLocaleString(locale)}人`,`待機 ${count.toLocaleString(locale)}人`)
-      :t(lang,'인원 미제공','Count unavailable','人数未提供','人数未提供');
-     return <div className="checkpoint-schematic-reading" key={slot.key} data-checkpoint={slot.key} data-state={heat.state} data-wait-level={heat.level} data-basis={heat.basis} aria-label={`${terminal} ${slot.key} · ${shown} ${value===null?'':minute} · ${people} · ${queueHeatLabel(heat,lang)}`}>
-      <span>{name}</span><strong>{shown}{value!==null&&heat.state!=='closed'&&<small>{minute}</small>}{heat.state==='zero'&&<sup>*</sup>}</strong>
-      <small className="checkpoint-schematic-people">{people}</small>
-     </div>;
-    })}</div>
-   </div>)}</div>
+   <div className="checkpoint-schematic-drawing">
+    {/* eslint-disable-next-line @next/next/no-img-element -- Original responsive Blender render; dimensions reserve space. */}
+    <img src="/visuals/airport-queue/checkpoint-base-480.webp" srcSet="/visuals/airport-queue/checkpoint-base-480.webp 480w, /visuals/airport-queue/checkpoint-base-960.webp 960w" sizes="(max-width:600px) calc(100vw - 36px), 640px" width="960" height="400" alt="" loading="lazy" decoding="async"/>
+    <svg className="checkpoint-schematic-leaders" viewBox="0 0 960 400" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+     {LANE_ANCHORS.map(([x,y],index)=><g key={index}><path d={leaderPath(index)}/><circle cx={x} cy={y} r="7"/></g>)}
+    </svg>
+   </div>
+   <div className="checkpoint-schematic-readings">{groups.flat().map(slot=>{
+    const {heat,value,shown}=wait(slot.row);
+    const side=slot.key.endsWith('W')?t(lang,'서','W','西','西'):t(lang,'동','E','东','東');
+    const name=terminal==='T1'?`${slot.key.slice(0,1)} ${side}`:slot.key;
+    const count=slot.row?.waitingCount;
+    const people=typeof count==='number'&&Number.isFinite(count)&&count>=0
+     ?t(lang,`대기 ${count.toLocaleString(locale)}명`,`Waiting ${count.toLocaleString(locale)}`,`等候 ${count.toLocaleString(locale)}人`,`待機 ${count.toLocaleString(locale)}人`)
+     :t(lang,'인원 미제공','Count unavailable','人数未提供','人数未提供');
+    return <div className="checkpoint-schematic-reading" key={slot.key} data-checkpoint={slot.key} data-state={heat.state} data-wait-level={heat.level} data-basis={heat.basis} aria-label={`${terminal} ${slot.key} · ${shown} ${value===null?'':minute} · ${people} · ${queueHeatLabel(heat,lang)}`}>
+     <span>{name}</span><strong><span>{shown}{heat.state==='zero'&&<sup>*</sup>}</span>{value!==null&&heat.state!=='closed'&&<small>{minute}</small>}</strong>
+     <small className="checkpoint-schematic-people">{people}</small>
+    </div>;
+   })}</div>
   </div>
   <p className="checkpoint-schematic-time">{t(lang,'관측','Observed','观测','観測')}: {observed.length?observed.length===1?stamp(observed[0]):`${stamp(observed[0])} / ${stamp(observed.at(-1)!)}`:'—'} KST{observed.length>1?` · ${t(lang,'출국장별 시각 다름','Clocks differ by hall','各厅时刻不同','出国場ごとに時刻が異なります')}`:''}</p>
   <p className="checkpoint-schematic-basis">{t(lang,'— 미확인 · *0분은 운영 확인 · 오래된 값은 회색','— unconfirmed · *0 min: check operation · old values are grey','— 未确认 · *0分需确认运营 · 旧值为灰色','— 未確認 · *0分は運営を確認 · 古い値は灰色')}</p>
