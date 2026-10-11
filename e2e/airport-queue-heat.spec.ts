@@ -32,7 +32,7 @@ async function open(page: Page, width=1280, lang='ko', reducedMotion:'reduce'|'n
 for(const width of [320,390,430,1280]) test(`heat categories and original values/layout at ${width}px`,async({page})=>{
   const section=await open(page,width);
   const card=(zone:string)=>section.locator('article').filter({has:page.getByText(`출국장 ${zone}`,{exact:true})});
-  for(const [zone,level] of [['1A','clear'],['1B','normal'],['1C','busy'],['1D','very-busy'],['2A','neutral'],['2B','neutral'],['2C','neutral'],['2D','clear']]) {
+  for(const [zone,level] of [['1A','clear'],['1B','normal'],['1C','busy'],['1D','very-busy'],['2A','neutral'],['2B','neutral'],['2C','neutral'],['2D','neutral']]) {
     await expect(card(zone).locator('.airport-queue-scene')).toHaveAttribute('data-heat',level);
   }
   await expect(card('1A')).toContainText('6분'); await expect(card('1A')).toContainText('52명');
@@ -42,6 +42,8 @@ for(const width of [320,390,430,1280]) test(`heat categories and original values
   await expect(card('2C').locator('.airport-queue-state')).toHaveText('운영 안 함');
   await expect(card('2C').locator('b')).not.toContainText('운영 안 함분');
   await expect(card('2D')).toContainText('0분'); await expect(card('2D')).toContainText('0명');
+  await expect(card('2D').locator('.airport-queue-scene')).toHaveAttribute('data-state','zero');
+  await expect(card('2D').locator('.airport-queue-state')).toHaveText('0분 표시 · 운영 여부 확인');
   const positions=await section.locator('article').evaluateAll(elements=>elements.map(e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y,right:r.right}}));
   const columns=width>=821?4:2;
   expect(positions.slice(0,columns).every(p=>p.y===positions[0].y)).toBe(true);
@@ -100,7 +102,8 @@ test('background visibility and runtime reduced-motion changes cancel heat',asyn
 test('a LIVE response ages to neutral without inventing a new observation',async({page})=>{
   const section=await open(page);
   const aged=heatFixture();aged.generatedAt='2026-08-31T14:27:00+09:00';
-  // routeSummary fixes browser time to generatedAt, so advance that reference only.
+  // Fix the first presentation-clock sample before reload, as well as the routed response.
+  await page.clock.setFixedTime(new Date(aged.generatedAt));
   await page.unroute('**/api/live/summary**');
   await page.route('**/api/live/summary**',routeSummary(aged));
   await page.reload();
@@ -108,7 +111,10 @@ test('a LIVE response ages to neutral without inventing a new observation',async
   await expect(section).toContainText('비교할 최신 대기시간이 없습니다');
   await section.getByRole('button').click();
   await expect(section.locator('[data-heat="very-busy"]')).toHaveCount(0);
-  await expect(section.locator('[data-state="stale"]')).toHaveCount(7);
+  await expect(section.locator('article')).toHaveCount(8);
+  // All eight observations are old, including the closure; exclude schematic duplicates.
+  await expect(section.locator('.airport-queue-scene[data-state="stale"]')).toHaveCount(8);
+  await expect(section.locator('article').filter({has:page.getByText('출국장 2C',{exact:true})}).locator('b')).toContainText('운영 안 함');
   await expect(section).toContainText('14:06');
   await expect(section).toContainText('60+분');
 });

@@ -6,13 +6,18 @@ const at = Date.parse('2026-10-06T13:10:00Z');
 const reading: QueueHeatReading = {terminal:'T2', zone:'DG1_A', waitTimeMinutes:6, waitTimeRaw:'6', observedAt:'2026-10-06T13:07:00Z', freshness:'LIVE'};
 
 test('T2 contract boundaries: 6 minutes is clear, heat begins at 40, 60+ remains a lower bound', () => {
-  for (const [minutes, level] of [[0,'clear'],[6,'clear'],[19,'clear'],[20,'normal'],[39,'normal'],[40,'busy'],[59,'busy'],[60,'very-busy'],[120,'very-busy']] as const) {
+  for (const [minutes, level] of [[6,'clear'],[19,'clear'],[20,'normal'],[39,'normal'],[40,'busy'],[59,'busy'],[60,'very-busy'],[120,'very-busy']] as const) {
     assert.deepEqual(queueHeat({...reading,waitTimeMinutes:minutes,waitTimeRaw:String(minutes)},at),{level,state:'current'});
   }
   const range = {...reading,waitTimeMinutes:null,waitTimeRaw:'60+'};
   assert.equal(queueHeat(range,at).level,'very-busy');
   assert.equal(range.waitTimeMinutes,null);
   assert.equal(range.waitTimeRaw,'60+');
+});
+test('a reported zero is neutral and an old closure is a past observation',()=>{
+ assert.deepEqual(queueHeat({...reading,waitTimeMinutes:0,waitTimeRaw:'0'},at),{level:'neutral',state:'zero'});
+ assert.deepEqual(queueHeat({...reading,waitTimeRaw:'closed',freshness:'STALE'},at),{level:'neutral',state:'stale'});
+ assert.match(queueHeatLabel({level:'neutral',state:'zero'},'ko'),/운영 여부/);
 });
 
 test('absent, closed, stale, future and malformed observations never indicate congestion', () => {

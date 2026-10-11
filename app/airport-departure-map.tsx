@@ -1,4 +1,5 @@
 'use client';
+import './airport-reading.css';
 import { contextText } from './operational-context';
 
 /**
@@ -182,20 +183,20 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
   // longer contains another terminal selector or a hidden copy of these controls.
   if(modelPlacement&&wholeDayMap){
     const unit=contextText(lang,'편',' flights','班','便');
-    const counts=(value:DepartureMap)=>['WEST','CENTER','EAST','UNVERIFIED'].map(side=>`${copy.side[side as keyof typeof copy.side][lang]} ${value.sides[side as keyof typeof value.sides]}${unit}`).join(' · ');
+    const counts=(value:DepartureMap)=>['WEST','CENTER','EAST','UNVERIFIED'].filter(side=>side!=='UNVERIFIED'||value.sides.UNVERIFIED>0).map(side=>`${copy.side[side as keyof typeof copy.side][lang]} ${value.sides[side as keyof typeof value.sides]}${unit}`).join(' · ');
     const nextHours=preset==='NEXT1'?1:preset==='NEXT3'?3:preset==='NEXT6'?6:null;
     const selectedLabel=nextHours?contextText(lang,`앞으로 ${nextHours}시간`,`Next ${nextHours} hours`,`此后${nextHours}小时`,`今から${nextHours}時間`):copy.presets[preset][lang];
     const sourceCheck=referenceSummary?.sources?.find(source=>source.sourceId==='INCHEON_FLIGHT_DETAIL')?.retrievedAt;
     const successCheck=today&&current.payload.basis==='COLLECTED_FLIGHT_RECORDS'&&sourceCheck&&Number.isFinite(Date.parse(sourceCheck))?sourceCheck:null;
     const validQueryAt=current.payload.generatedAt&&Number.isFinite(Date.parse(current.payload.generatedAt))?current.payload.generatedAt:null;
     return modelTarget&&createPortal(<div data-testid="departure-map" data-window={`${span.startMin}-${span.endMin}`} data-filter="ALL">
-      <p data-testid="model-whole-day" className="prep-note"><strong style={{fontWeight:'var(--weight-strong)',color:'var(--ink)'}}>{today?contextText(lang,'오늘 전체 항공편','Today’s whole-day flights','今天全天航班','本日の全便'):contextText(lang,'선택일 전체 항공편','Selected day’s whole-day flights','所选日期全天航班','選択日の全便')} · {airportModelScope(buildingScope??terminal,lang)} · {wholeDayMap.sides.total}{unit}<br/>{counts(wholeDayMap)}</strong></p>
-      <div className="date-nav-shortcuts" role="group" aria-label={copy.time[lang]} style={{flexWrap:'wrap'}}>
+      <p data-testid="model-whole-day" className="airport-day-reference"><strong>{today?contextText(lang,'오늘 전체 항공편','Today’s whole-day flights','今天全天航班','本日の全便'):contextText(lang,'선택일 전체 항공편','Selected day’s whole-day flights','所选日期全天航班','選択日の全便')} · {wholeDayMap.sides.total}{unit}</strong><small>{airportModelScope(buildingScope??terminal,lang)} · {counts(wholeDayMap)}</small></p>
+      <div className="airport-time-control">
         <span>{contextText(lang,'시간 기준','Time basis','时间基准','時間の基準')}</span>
-        {presets.map(value=><button key={value} type="button" aria-pressed={preset===value} data-preset={value} style={{whiteSpace:'nowrap',flex:'0 0 auto',minHeight:48}} onClick={()=>{setPreset(value);setSelected(null);}}>{value==='NEXT1'?contextText(lang,'1시간','1 hour','1小时','1時間'):copy.presets[value][lang]}</button>)}
+        <div className="airport-time-presets" role="group" aria-label={copy.time[lang]}>{presets.map(value=><button key={value} type="button" aria-pressed={preset===value} data-preset={value} onClick={()=>{setPreset(value);setSelected(null);}}>{value==='NEXT1'?contextText(lang,'1시간','1 hour','1小时','1時間'):copy.presets[value][lang]}</button>)}</div>
       </div>
       {preset==='CUSTOM'&&<p style={{display:'flex',gap:12,flexWrap:'wrap',alignItems:'center'}}><label>{copy.from[lang]} <select value={custom[0]} data-testid="map-from" onChange={event=>{const start=Number(event.target.value);setCustom([start,Math.max(start+1,custom[1])]);}}>{hours.slice(0,24).map(hour=><option key={hour} value={hour}>{String(hour).padStart(2,'0')}:00</option>)}</select></label><label>{copy.to[lang]} <select value={custom[1]} data-testid="map-to" onChange={event=>setCustom([custom[0],Number(event.target.value)])}>{hours.slice(custom[0]+1).map(hour=><option key={hour} value={hour}>{String(hour).padStart(2,'0')}:00</option>)}</select></label></p>}
-      <p data-testid="model-selected-window"><strong>{selectedLabel} · {map.nextDay==='MISSING'?contextText(lang,'확인된','Confirmed','已确认','確認済み'):contextText(lang,'총','Total','共','計')} {map.sides.total}{unit}</strong><br/><span className="prep-note">{date} KST · {windowText(map.window,lang)}{span.endMin>1440?` · ${nextDate}`:''} · {copy.scheduled[lang]}</span></p>
+      <p className="airport-window-summary" data-testid="model-selected-window"><strong>{selectedLabel} · {map.nextDay==='MISSING'?contextText(lang,'확인된','Confirmed','已确认','確認済み'):contextText(lang,'총','Total','共','計')} {map.sides.total}{unit}</strong><br/><span className="prep-note">{date} KST · {windowText(map.window,lang)}{span.endMin>1440?` · ${nextDate}`:''} · {copy.scheduled[lang]}</span></p>
       {map.nextDay==='MISSING'&&<p className="prep-note" role="status" data-testid="map-next-missing">{copy.nextDayMissing[lang]}</p>}
       {map.nextDay!=='MISSING'?<AirportConceptModel map={map} lang={lang} evidence={evidence}/>:<AirportSceneModel scope={buildingScope??terminal} lang={lang} className="airport-concept-picture"/>}
       <p className="prep-note" data-testid="model-check-times">{contextText(lang,'수집 성공 확인','Successful collection check','采集成功确认','収集成功の確認')}: {successCheck?kstClock(successCheck,date):'—'} · {contextText(lang,'화면 자료 조회','Page data read','页面资料查询','画面データ取得')}: {validQueryAt?kstClock(validQueryAt,date):'—'}</p>

@@ -12,7 +12,7 @@ test('reported T1 waits get minute colors; head counts never determine their gra
 });
 test('T1 retains missing/stale/closed/unknown guards and the same minute boundaries',()=>{
  const base={terminal:'T1',zone:'3E',waitTimeMinutes:31,waitTimeRaw:'31',observedAt:at,freshness:'LIVE'};
- for(const [minutes,level] of [[0,'clear'],[19,'clear'],[20,'normal'],[39,'normal'],[40,'busy'],[59,'busy'],[60,'very-busy']] as const)assert.equal(queueHeat({...base,waitTimeMinutes:minutes,waitTimeRaw:String(minutes)},now).level,level);
+ for(const [minutes,level] of [[0,'neutral'],[19,'clear'],[20,'normal'],[39,'normal'],[40,'busy'],[59,'busy'],[60,'very-busy']] as const)assert.equal(queueHeat({...base,waitTimeMinutes:minutes,waitTimeRaw:String(minutes)},now).level,level);
  for(const patch of [{waitTimeMinutes:null,waitTimeRaw:null},{waitTimeRaw:'closed'},{freshness:'STALE'},{observedAt:'2026-10-09T08:29:00+09:00'},{zone:'P01'}])assert.equal(queueHeat({...base,...patch},now).level,'neutral');
  assert.equal(queueHeat({...base,terminal:'T2',zone:'DG1_A'},now).basis,undefined);
 });

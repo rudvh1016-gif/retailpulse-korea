@@ -1,16 +1,17 @@
-.airport-month-flights {margin-block:24px;color:#000;font-variant-numeric:tabular-nums;}
-.airport-month-flights h3 {font:inherit;font-weight:600;}
+@import './reading-tokens.css';
+.airport-month-flights {margin-block:24px;color:var(--ink);font:inherit;font-variant-numeric:tabular-nums;}
+.airport-month-flights h3 {font-size:var(--type-title);font-weight:var(--weight-strong);line-height:1.4;text-wrap:balance;}
 .airport-month-flights h3 small {font-weight:400;}
 .airport-month-flights label {display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .airport-month-flights select,.airport-month-flights button,.airport-month-flights summary {min-block-size:44px;font:inherit;cursor:pointer;}
-.airport-month-flights select,.airport-month-flights button {background:#fff;color:#000;border:1px solid #aaa;padding:8px;}
+.airport-month-flights select,.airport-month-flights button {background:var(--paper);color:var(--ink);border:0;border-bottom:1px solid var(--line);padding:8px;}
 .airport-month-flights select {border:0;border-bottom:1px solid #aaa;}
 .airport-month-flights p {line-height:1.6;overflow-wrap:anywhere;}
 .airport-month-period {margin-block:6px;}
 .airport-month-flights details {border-top:1px solid #ddd;padding-block:4px;}
 .airport-month-flights summary {align-content:center;}
 .airport-month-table {overflow-x:auto;}
-.airport-month-table table {width:100%;border-collapse:collapse;font:inherit;font-size:12px;}
+.airport-month-table table {width:100%;border-collapse:collapse;font:inherit;font-size:var(--type-secondary);}
 .airport-month-table caption {text-align:start;line-height:1.6;padding-block:8px;}
 .airport-month-table th,.airport-month-table td {text-align:end;padding:10px 5px;border-bottom:1px solid #eee;}
 .airport-month-table th:first-child {text-align:start;overflow-wrap:anywhere;min-width:65px;}
@@ -23,5 +24,9 @@
 .airport-country-changes li {min-width:0;border-top:1px solid #ddd;padding-block:12px;}
 .airport-country-heading {display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
 .airport-country-heading h5 {display:flex;align-items:center;gap:6px;}
-.airport-country-changes li p {font-size:12px;margin-block:8px;}
+.airport-country-changes li p {font-size:var(--type-secondary);margin-block:8px;}
 .airport-country-bars {display:block;width:100%;height:36px;max-width:330px;}
+.airport-month-state {padding-block:12px;font-size:var(--type-body);line-height:1.6;}
+.airport-month-state p {margin:0 0 6px;}
+.airport-month-state small {display:block;color:var(--muted);font-size:var(--type-secondary);}
+.airport-month-state a {display:inline-flex;align-items:center;min-height:44px;}

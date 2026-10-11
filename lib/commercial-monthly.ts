@@ -7,7 +7,8 @@ export interface CommercialMonthCategory {
  hours:CommercialHour[];observedHours:number;
  comparison:{matchedHours:number;matchedDays:number;currentMean:number|null;previousMean:number|null;changePercent:number|null;
   currentAmount:[number,number]|null;previousAmount:[number,number]|null;
-  coverage?:{currentDates:string[];previousDates:string[];currentWindows:number;previousWindows:number}};
+  coverage?:{currentDates:string[];previousDates:string[];currentWindows:number;previousWindows:number;hours?:string[];
+   amount?:{hours:string[];currentDates:string[];previousDates:string[];currentWindows:number;previousWindows:number}}};
 }
 export interface CommercialMonth {
  version:number;month:string;previousMonth:string;completedDays:number;throughDate:string|null;
@@ -64,6 +65,10 @@ export function compareCommercialMonths(current:CommercialMonth,previous:Commerc
     currentDates:[...new Set(matched.map(hour=>current.month+'-'+hour[0].slice(0,2)))].sort(),
     previousDates:[...new Set(matched.map(hour=>previous.month+'-'+hour[0].slice(0,2)))].sort(),
     currentWindows:matched.reduce((sum,hour)=>sum+hour[2],0),previousWindows:matched.reduce((sum,hour)=>sum+old.get(hour[0])![2],0),
+    hours:matched.map(hour=>hour[0]),amount:{hours:amounts.map(hour=>hour[0]),
+     currentDates:[...new Set(amounts.map(hour=>current.month+'-'+hour[0].slice(0,2)))].sort(),
+     previousDates:[...new Set(amounts.map(hour=>previous.month+'-'+hour[0].slice(0,2)))].sort(),
+     currentWindows:amounts.reduce((sum,hour)=>sum+hour[4],0),previousWindows:amounts.reduce((sum,hour)=>sum+old.get(hour[0])![4],0)},
    }}};
  })};
 }
@@ -74,7 +79,8 @@ export function commercialComparisonCoverage(current:CommercialMonth,previous:Co
  return {...current,categories:current.categories.map((row,index)=>{
   const original=row.comparison,derived=compared.categories[index].comparison;
   const same=original.matchedHours===derived.matchedHours&&original.matchedDays===derived.matchedDays
-   &&original.currentMean===derived.currentMean&&original.previousMean===derived.previousMean;
+   &&original.currentMean===derived.currentMean&&original.previousMean===derived.previousMean
+   &&JSON.stringify(original.currentAmount)===JSON.stringify(derived.currentAmount)&&JSON.stringify(original.previousAmount)===JSON.stringify(derived.previousAmount);
   return same?{...row,comparison:{...original,coverage:derived.coverage}}:row;
  })};
 }

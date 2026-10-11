@@ -55,3 +55,22 @@ test('prepared days keep their completion witness but never reuse old gate count
  assert.equal((await readAirportMonths(db,'2026-10','2026-10-11')).calculatedAt,preparedAt);
  db.raw.close();
 });
+
+test('version transition is pending rather than missing, and a failed SELECT cannot masquerade as no data',async()=>{
+ const {db,records}=setup();await prepareAirportMonths(db,today,records(),scans);
+ const payload=JSON.parse(records()[0].payload);payload.monthlyRollups.version=1;
+ db.raw.prepare('UPDATE airport_daily_composition SET payload=?').run(JSON.stringify(payload));
+ const response=await readAirportMonths(db,'2026-10',today);
+ assert.equal(response.status,'PENDING_UPDATE');assert.equal(response.data,null);assert.equal(response.lastPreparedAt,payload.monthlyRollups.preparedAt);
+ const prepare=db.prepare.bind(db);db.prepare=sql=>{const stmt=prepare(sql);stmt.all=async()=>({success:false,results:[]});return stmt;};
+ await assert.rejects(readAirportMonths(db,'2026-10',today),/READ_FAILED/);db.raw.close();
+});
+
+test('monthly generation cannot overwrite a concurrently changed daily anchor or report a failed write as prepared',async()=>{
+ const {db,records}=setup(),old=records();
+ db.raw.prepare('UPDATE airport_daily_composition SET source_hash=?').run('concurrent-newer');
+ assert.equal((await prepareAirportMonths(db,today,old,scans)).status,'CONFLICT');
+ assert.equal(JSON.parse(records()[0].payload).monthlyRollups,undefined);
+ const prepare=db.prepare.bind(db);db.prepare=sql=>{const stmt=prepare(sql);if(sql.startsWith('UPDATE airport_daily_composition'))stmt.run=async()=>({success:false,meta:{changes:0}});return stmt;};
+ await assert.rejects(prepareAirportMonths(db,today,records(),scans),/WRITE_FAILED/);db.raw.close();
+});

@@ -1,0 +1,7 @@
+/* Role aliases for the owner-requested data surfaces. The locked global
+ * family, scale, colors and layout remain byte-identical. */
+:where(.airport-month-flights,.consumption-comparison,.checkpoint-schematic,.airport-time-control,[data-testid="departure-map"]) {
+ --type-title:var(--type-section);
+ --type-key:17px;
+ --type-secondary:13px;
+}

@@ -79,6 +79,18 @@ export interface A1TodayFetchResult {
   futureRecords: CanonicalAirportFlight[];
 }
 
+export interface A1TodayCollectionResult {
+  status: string;
+  records: number;
+  trackedToday: number;
+  pagesFetched: number;
+  /** Exact attempts issued by this collector, including failed attempts/retries. */
+  providerRequests: number;
+  detail?: string;
+  /** A persistence failure may have committed some writes; never auto-recollect it. */
+  executionUncertain?: boolean;
+}
+
 type OfficialFetcher = (url: URL, options?: { timeoutMs?: number; retries?: number; retryDelayMs?: number }) => Promise<unknown>;
 
 export function kstDate(now = new Date()): string {
@@ -301,8 +313,7 @@ async function recordSuccess(
   db: D1Database | undefined,
   fetched: A1TodayFetchResult,
   changedRows: D1WriteCounts,
-): Promise<void> {
-  if (!db) return;
+): Promise<string> {
   const finishedAt = new Date().toISOString();
   const eventAt = fetched.records.reduce<string | null>((latest, record) => {
     if (!latest || record.scheduledAt > latest) return record.scheduledAt;
@@ -311,6 +322,7 @@ async function recordSuccess(
   const retrievedAt = fetched.records[0]?.retrievedAt ?? finishedAt;
   const futureDates = [...new Set(fetched.futureRecords.map(record => record.scheduledAt.slice(0,10)))].sort();
   const detail = `recent ${fetched.windowStartDate}..${fetched.targetDate}; future scheduled ${fetched.futureRecords.length} dates ${futureDates[0] ?? 'none'}..${futureDates.at(-1) ?? 'none'}; pages ${fetched.pagesFetched}; requests ${fetched.requestsIssued}; population ${fetched.totalCount}; range rows ${fetched.sourceRowsInRange}; today source rows ${fetched.sourceRowsForDate}; today unique physical ${fetched.trackedToday}; range unique physical ${fetched.records.length}; ${describeWrites(changedRows)}`;
+  if (!db) return detail;
 
   await db.prepare(`INSERT INTO source_health (
       source_id, status, last_event_at, last_published_at, last_retrieved_at,
@@ -341,6 +353,7 @@ async function recordSuccess(
       detail.slice(0, 500),
     )
     .run();
+  return detail;
 }
 
 const RECENT_HISTORY_DETAIL_PREFIX = "recent ";
@@ -402,10 +415,10 @@ export async function collectAirportFlightsToday(
   env: AirportTodayEnv,
   now = new Date(),
   fetcher: OfficialFetcher = fetchOfficialJson,
-): Promise<{ status: string; records: number; trackedToday: number; pagesFetched: number; detail?: string }> {
+): Promise<A1TodayCollectionResult> {
   if (!env.DATA_GO_KR_SERVICE_KEY) {
     await writeSourceHealth(env.DB, SOURCE_ID, "MISSING", "DATA_GO_KR_SERVICE_KEY is not configured");
-    return { status: "NEEDS_KEY", records: 0, trackedToday: 0, pagesFetched: 0 };
+    return { status: "NEEDS_KEY", records: 0, trackedToday: 0, pagesFetched: 0, providerRequests: 0 };
   }
 
   const targetDate = kstDate(now);
@@ -413,7 +426,7 @@ export async function collectAirportFlightsToday(
   const reservationId=crypto.randomUUID();let issued=0;
   if(env.A1_SHARED_REQUEST_BUDGET){
     let reserved=false;try{reserved=!!env.DB&&await reserveAirportRequestBudget(env.DB,now.toISOString(),maxRequests!,reservationId);}catch{/* Unknown budget never permits a provider request. */}
-    if(!reserved)return {status:'SKIPPED_REQUEST_BUDGET',records:0,trackedToday:0,pagesFetched:0,detail:'A1 rolling-24h reservation unavailable; providerRequests=0; last-good rows preserved'};
+    if(!reserved)return {status:'SKIPPED_REQUEST_BUDGET',records:0,trackedToday:0,pagesFetched:0,providerRequests:0,detail:'A1 rolling-24h reservation unavailable; providerRequests=0; last-good rows preserved'};
   }
   let failureStage: 'FETCH' | 'STORE' = 'FETCH';
   try {
@@ -428,19 +441,21 @@ export async function collectAirportFlightsToday(
       const detail = `targetDate=${targetDate}; NOT_YET_PUBLISHED; requests ${fetched.requestsIssued}; future schedule writes ${written.changedRows}; observed last-good rows preserved`;
       await writeCollectorStatus(env.DB, SOURCE_ID, 'NOT_YET_PUBLISHED', detail, fetched.totalCount, written.changedRows);
       await recordA1PublicationPending(env.DB, detail);
-      return { status:'NOT_YET_PUBLISHED', records:written.changedRows, trackedToday:0, pagesFetched:fetched.pagesFetched, detail };
+      return { status:'NOT_YET_PUBLISHED', records:written.changedRows, trackedToday:0, pagesFetched:fetched.pagesFetched, providerRequests:issued, detail };
     }
     const scheduleStatements = prepareDepartureSchedules(env.DB, targetDate, fetched.futureRecords);
     const changedRows = await persistTodayFlights(env.DB, fetched.records);
     const scheduleWrites = env.DB ? await runD1Batches(env.DB, scheduleStatements) : NO_D1_WRITES;
     changedRows.changedRows += scheduleWrites.changedRows;
     changedRows.storageWrites += scheduleWrites.storageWrites;
-    await recordSuccess(env.DB, fetched, changedRows);
+    const detail = await recordSuccess(env.DB, fetched, changedRows);
     return {
       status: "SUCCESS",
       records: changedRows.changedRows,
       trackedToday: fetched.trackedToday,
       pagesFetched: fetched.pagesFetched,
+      providerRequests: issued,
+      detail,
     };
   } catch (error) {
     const detail = `failureStage=${failureStage} ${safeSourceFailureDetail(error)}`;
@@ -448,7 +463,8 @@ export async function collectAirportFlightsToday(
     // A failed refresh changes health, never the last-good rows or timestamps.
     await writeCollectorStatus(env.DB, SOURCE_ID, "ERROR", detail);
     await writeSourceHealth(env.DB, SOURCE_ID, "ERROR", detail);
-    return { status: "ERROR", records: 0, trackedToday: 0, pagesFetched: 0, detail };
+    return { status: "ERROR", records: 0, trackedToday: 0, pagesFetched: 0, providerRequests: issued,
+      executionUncertain: failureStage === 'STORE', detail };
   } finally {
     if(env.A1_SHARED_REQUEST_BUDGET&&env.DB){try{await settleAirportRequestBudget(env.DB,reservationId,issued);}catch{/* Keep the full reservation if the ledger cannot confirm the exact count. */}}
   }

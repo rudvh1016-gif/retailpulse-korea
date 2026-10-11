@@ -58,7 +58,8 @@ export function airportDirectContext(env: Record<string, string | undefined>, no
 }
 
 function measuredRequests(result: ProductionSourceResult): number | null {
-  if (result.status === 'SKIPPED_ALREADY_COMPLETE_TODAY') return 0;
+  if (result.status === 'SKIPPED_ALREADY_COMPLETE_TODAY')
+    return result.providerRequests === undefined || result.providerRequests === 0 ? 0 : null;
   const detail = /(?:^|; )requests (\d+)(?:;|$)/.exec(result.detail ?? '');
   const value = result.providerRequests ?? (detail ? Number(detail[1]) : null);
   return value !== null && Number.isSafeInteger(value) && value >= 0 && value <= 125 ? value : null;
@@ -110,16 +111,28 @@ export async function executeAirportMidnightDirect(deps: AirportMidnightDirectDe
     // This in-process result belongs to this exact A1 child, never the parent badge.
     if (result.source !== 'airport_recent') return { state: 'HUMAN_REVIEW_CHILD_MISMATCH', child: context.runId };
     const providerRequests = measuredRequests(result);
-    if (result.status === 'SUCCESS' && providerRequests === null)
+    if (result.executionUncertain) return { state: 'HUMAN_REVIEW_UNCERTAIN_CHILD', child: context.runId, providerRequests };
+    if (providerRequests === null)
       return { state: 'HUMAN_REVIEW_UNMEASURED_CHILD', child: context.runId };
+    const ownSuccess = ['SUCCESS', 'SKIPPED_ALREADY_COMPLETE_TODAY'].includes(result.status);
+    const knownFailure = ['ERROR', 'NEEDS_KEY', 'NOT_YET_PUBLISHED', 'SKIPPED_REQUEST_BUDGET',
+      'SKIPPED_RECOVERY_DATE_MISMATCH', 'SKIPPED_RECOVERY_SOURCE_PROTECTED'].includes(result.status);
+    if (!ownSuccess && !knownFailure) return { state: 'HUMAN_REVIEW_CHILD_STATUS_UNVERIFIED', child: context.runId, providerRequests };
     const completedAt = deps.now();
     const completedContext = airportDirectContext(deps.env, completedAt);
     if (completedContext?.runId !== context.runId || completedContext.targetDate !== context.targetDate)
       return { state: 'HUMAN_REVIEW_CONTEXT_CHANGED', child: context.runId };
+    if (knownFailure) {
+      // The bounded child returned a measured, definite result. Complete this
+      // failed attempt without requiring unrelated public reads. Today remains
+      // spent; unknown execution/persistence above retains the cross-day lock.
+      await deps.memory.finish(admission.attemptId, completedAt,
+        { dataValid: false, storageValid: null, publicValid: null }, { providerRequests });
+      return { state: 'HUMAN_REVIEW_RECOVERY_UNVERIFIED', child: context.runId, providerRequests };
+    }
     const coverage = await deps.readCoverage(completedAt);
     const stored = coverage.today === context.targetDate && coverage.state === 'CURRENT';
     const evidence = await deps.verifyToday(context.targetDate, completedAt);
-    const ownSuccess = ['SUCCESS', 'SKIPPED_ALREADY_COMPLETE_TODAY'].includes(result.status);
     const verification = { dataValid: ownSuccess && stored && evidence.dataValid === true,
       storageValid: stored && evidence.storageValid === true, publicValid: evidence.publicValid };
     await deps.memory.finish(admission.attemptId, completedAt, verification, { providerRequests });

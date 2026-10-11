@@ -29,3 +29,19 @@ test('a slower old month cannot replace a new selection; failures and zero basel
  await section.locator('select').selectOption('2026-09');await section.locator('select').selectOption('2026-10');await page.waitForTimeout(400);await expect(section.locator('select')).toHaveValue('2026-10');await expect(section).toContainText('+200.0%');
  await page.route('**/api/live/airport-months*',route=>route.fulfill({status:503,json:{status:'UNAVAILABLE',data:null}}));await section.locator('select').selectOption('2026-09');await expect(section).toContainText('집계');await expect(section).not.toContainText('+200.0%');
 });
+
+test('legacy update and missing months use three bounded checks; failed refresh keeps the exact last-good month',async({page})=>{
+ await page.clock.install();await page.route('**/api/live/summary*',routeSummary(summary));
+ let reads=0,ready=false;
+ await page.route('**/api/live/airport-months*',route=>{reads++;const month=new URL(route.request().url()).searchParams.get('month')!;
+  if(ready&&month==='2026-10')return route.fulfill({json:reply()});
+  return route.fulfill({json:{status:month==='2026-10'?'PENDING_UPDATE':'MISSING',month,months:['2026-10','2026-09'],lastPreparedAt:'2026-10-10T00:00:00Z',data:null}});
+ });
+ await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();
+ await expect(section).toContainText('업데이트를 기다리고');await expect(section.getByRole('button',{name:'자료 다시 확인'})).toHaveCount(0);
+ await page.clock.runFor(2100);await expect.poll(()=>reads).toBe(2);await page.clock.runFor(10100);await expect.poll(()=>reads).toBe(3);await page.clock.runFor(30000);expect(reads).toBe(3);
+ ready=true;await section.getByRole('button',{name:'자료 다시 확인'}).click();await expect(section).toContainText('+200.0%');
+ await section.locator('select').selectOption('2026-09');await expect(section).toContainText('집계 자료가 아직 없습니다');await expect(section).not.toContainText('+200.0%');
+ await page.route('**/api/live/airport-months*',route=>route.fulfill({status:503,json:{status:'UNAVAILABLE',data:null}}));
+ await section.locator('select').selectOption('2026-10');await expect(section).toContainText('마지막 확인 집계');await expect(section).toContainText('+200.0%');await expect(section).toContainText('2026-10-10');
+});

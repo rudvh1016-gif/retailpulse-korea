@@ -11,6 +11,8 @@ function sample(values:Array<number|string>=["60+",50,45,40,30,20,10,6]) {
   return summary;
 }
 async function open(page:Page,summary=sample(),lang='ko',width=390) {
+  // Establish the fixture clock before hydration's first Date.now() sample.
+  await page.clock.setFixedTime(new Date(summary.generatedAt));
   await page.setViewportSize({width,height:950});
   await page.emulateMedia({reducedMotion:'reduce'});
   await page.route('**/api/live/summary**',routeSummary(summary));
