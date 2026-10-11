@@ -1160,6 +1160,9 @@ function recentQuarterCandidates(now: Date): string[] {
   return candidates;
 }
 
+/** Weekly Seoul quarter reads (estimated sales, Store Dynamics): one retry after a transient failure only. */
+const SEOUL_WEEKLY_RETRY_POLICY = { timeoutMs: 30_000, retries: 1, retryDelaysMs: [2_000], jitterMs: 500 } as const;
+
 // S3 — quarterly estimated sales. Live verification (2026-08-27) showed the
 // OpenAPI applies only the quarter positional filter and silently ignores the
 // trade-area segments, so one bounded page sweep per quarter collects all
@@ -1183,7 +1186,10 @@ export async function collectEstimatedSales(env: CollectorEnv, now = new Date())
   try {
     const fetchQuarterPage = async (quarterCode: string, start: number, end: number): Promise<Record<string, unknown>[]> => {
       const url = new URL(`http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/VwsmTrdarSelngQq/${start}/${end}/${quarterCode}`);
-      const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
+      // One bounded retry, as for citydata on the same host: on 2026-10-11 a
+      // single ~10 s TCP connect timeout on the first request cost this whole
+      // weekly check while the host answered other runners seconds later.
+      const payload = await fetchOfficialJson(url, SEOUL_WEEKLY_RETRY_POLICY);
       try {
         return seoulEnvelopeRows(payload, "VwsmTrdarSelngQq");
       } catch (error) {
@@ -1250,7 +1256,9 @@ export async function collectEstimatedSales(env: CollectorEnv, now = new Date())
     await writeSourceHealth(env.DB, sourceId, "OFFICIAL_HISTORICAL", detail, lastRecord ? { retrievedAt: lastRecord.retrievedAt, schemaVersion: lastRecord.schemaVersion } : undefined);
     return { status: partial ? "PARTIAL" : "SUCCESS", records: written.changedRows };
   } catch (error) {
-    const detail = error instanceof Error ? redactSeoulUrl(error.message) : "collector_error";
+    // Structured like Store Dynamics, so the same connect timeout is classified
+    // the same way (failureClass=NETWORK) instead of as an unknown error.
+    const detail = safeSourceFailureDetail(error);
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
     return { status: "ERROR", records: 0 };
@@ -1326,10 +1334,14 @@ export async function collectStoreDynamics(
   const mappings = Object.values(storeDynamicsMappings);
   const probeMapping = storeDynamicsMappings.myeongdong;
   let providerRequests = 0;
-  const fetchPage = async (quarterCode: string, tradeAreaCode: string, start: number, end: number) => {
+  // Counts every HTTP request, including the one bounded retry.
+  const countedFetch: typeof fetch = (input, init) => {
     providerRequests += 1;
+    return fetch(input, init);
+  };
+  const fetchPage = async (quarterCode: string, tradeAreaCode: string, start: number, end: number) => {
     const url = new URL(`http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/VwsmTrdarStorQq/${start}/${end}/${quarterCode}/${tradeAreaCode}`);
-    const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
+    const payload = await fetchOfficialJson(url, { ...SEOUL_WEEKLY_RETRY_POLICY, fetchImpl: countedFetch });
     return parseStoreDynamicsResponse(payload);
   };
 

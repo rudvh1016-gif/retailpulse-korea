@@ -626,6 +626,38 @@ test("estimated sales collector probes quarters, sweeps pages and filters client
   assert.equal(database.prepare("SELECT record_origin FROM seoul_estimated_sales LIMIT 1").get().record_origin, "OFFICIAL_HISTORICAL");
 });
 
+const connectTimeout = () => Object.assign(new TypeError("fetch failed"), {
+  cause: Object.assign(new Error("Connect Timeout Error"), { code: "UND_ERR_CONNECT_TIMEOUT" }),
+});
+
+test("one connect timeout no longer costs the weekly estimated-sales check, and a lasting one is classified as NETWORK", async (context) => {
+  const { database, databasePath } = openDatabase("sales-retry");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+  let calls = 0, failFirst = true, failAll = false;
+  globalThis.fetch = async (input) => {
+    calls += 1;
+    if (failAll || (failFirst && calls === 1)) throw connectTimeout();
+    const match = String(input).match(/VwsmTrdarSelngQq\/(\d+)\/(\d+)\/(\d{5})/);
+    if (match[3] !== "20261") return Response.json({ RESULT: { CODE: "INFO-200", MESSAGE: "해당하는 데이터가 없습니다." } });
+    return Response.json({ VwsmTrdarSelngQq: { list_total_count: 1, RESULT: { CODE: "INFO-000", MESSAGE: "정상 처리되었습니다" }, row: [estimatedSalesRow({ TRDAR_CD: "3001492" })] } });
+  };
+  const env = { DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: "fixture" };
+  const now = new Date("2026-08-27T15:00:00Z");
+  const recovered = await collectEstimatedSales(env, now);
+  assert.notEqual(recovered.status, "ERROR");
+  assert.ok(calls >= 2, "the timed-out first request is retried once");
+
+  failFirst = false; failAll = true; calls = 0;
+  const failed = await collectEstimatedSales(env, now);
+  assert.equal(failed.status, "ERROR");
+  assert.equal(calls, 2, "one retry, no more");
+  const health = database.prepare("SELECT status, detail FROM source_health WHERE source_id = 'SEOUL_ESTIMATED_SALES'").get();
+  assert.equal(health.status, "ERROR");
+  assert.match(health.detail, /^failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT attempts=2 /);
+  assert.doesNotMatch(health.detail, /fixture/);
+});
+
 test("store dynamics collector finds the newest quarter, writes all exact areas once, and preserves Last-good", async (context) => {
   const { database, databasePath } = openDatabase("store-dynamics");
   const originalFetch = globalThis.fetch;
@@ -650,6 +682,7 @@ test("store dynamics collector finds the newest quarter, writes all exact areas 
     });
   };
 
+  const providerFetch = globalThis.fetch;
   const env = { DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: "fixture-secret" };
   const first = await collectStoreDynamics(env, new Date("2026-09-03T01:00:00.000Z"));
   assert.deepEqual(
@@ -699,6 +732,18 @@ test("store dynamics collector finds the newest quarter, writes all exact areas 
   assert.equal(incompleteLastGood.status, "NEEDS_KEY");
   assert.equal(incompleteLastGood.sourceHealth, "ERROR");
   assert.equal(incompleteLastGood.lastGoodPreserved, false, "one orphan row is not complete four-area Last-good");
+
+  // 2026-10-11: one ~10 s connect timeout on the first request cost the weekly check.
+  // It is now retried once, and the retry is counted as a provider request.
+  database.exec("DELETE FROM seoul_store_dynamics");
+  let timedOut = false;
+  globalThis.fetch = async (...args) => {
+    if (!timedOut) { timedOut = true; throw connectTimeout(); }
+    return providerFetch(...args);
+  };
+  const recovered = await collectStoreDynamics(env, new Date("2026-09-03T01:00:00.000Z"));
+  assert.equal(recovered.status, "SUCCESS");
+  assert.equal(recovered.providerRequests, 7, "six reads plus the one retry");
 });
 
 test("store dynamics collector rejects identity drift or a missing area before any fact write", async (context) => {
