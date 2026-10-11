@@ -61,3 +61,23 @@ for(const [label,monthDelay,flightDelay] of [['month first',100,700],['flights f
  await expect(section).toContainText('+200.0%');await page.waitForTimeout(1000);
  expect(sent).toEqual(['?month=2026-10']);
 });
+
+// A chosen comparison month belongs to the date it was chosen on. Changing the date
+// starts from the new date's month, whether or not that date's summary is cached.
+test('a comparison month chosen for one date does not carry over to another date',async({page})=>{
+ await page.setViewportSize({width:390,height:900});await page.emulateMedia({reducedMotion:'reduce'});
+ await page.route('**/api/live/summary*',async route=>{const date=new URL(route.request().url()).searchParams.get('date')??summary.todayKst;await route.fulfill({json:{...summary,serviceDateKst:date,airport:{...summary.airport,serviceDateKst:date}}});});
+ await page.route('**/api/live/airport-months*',route=>route.fulfill({json:reply(new URL(route.request().url()).searchParams.get('month')??undefined)}));
+ await page.route('**/api/live/flights*',route=>{const date=new URL(route.request().url()).searchParams.get('date')??summary.todayKst;return route.fulfill({json:{mode:'live-flights',generatedAt:summary.generatedAt,serviceDateKst:date,flights:[],truncated:false,retrievedAt:summary.generatedAt}});});
+ await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();
+ const select=section.locator('select'),shortcuts=page.locator('.date-nav-shortcuts button');
+ await expect(select).toHaveValue('2026-10');
+ // Visit yesterday and come back, so both summaries are cached.
+ await shortcuts.nth(0).click();await expect(select).toHaveValue('2026-10');await shortcuts.nth(1).click();await expect(select).toHaveValue('2026-10');
+ await select.selectOption('2026-09');await expect(select).toHaveValue('2026-09');
+ // A cached date keeps the block mounted; the choice still must not follow.
+ await shortcuts.nth(0).click();await expect(select).toHaveValue('2026-10');
+ // Coming back starts fresh too, as it always did.
+ await shortcuts.nth(1).click();await expect(select).toHaveValue('2026-10');
+ await select.selectOption('2026-09');await shortcuts.nth(2).click();await expect(select).toHaveValue('2026-10');
+});

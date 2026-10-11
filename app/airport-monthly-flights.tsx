@@ -12,8 +12,11 @@ interface Reply {status:string;month:string;months:string[];calculatedAt:string|
 /** The chosen month and its read. The airport model owns it, so the block can
  * move from the map's loading slot to the loaded layout without a second read. */
 export function useAirportMonthRequest(date:string|null){
- const [chosen,setChosen]=useState<string|null>(null);
- const month=date?chosen??date.slice(0,7):'';
+ // A choice belongs to the date it was made on: any date change starts from the new date's month.
+ const [chosen,choose]=useState<{date:string;month:string}|null>(null);
+ if(chosen&&chosen.date!==date)choose(null);
+ const month=date?chosen?.date===date?chosen.month:date.slice(0,7):'';
+ const setChosen=(value:string)=>{if(date)choose({date,month:value});};
  const request=usePreparedMonth<Reply>(month,`/api/live/airport-months?month=${encodeURIComponent(month)}`,month,date??'');
  return {month,setChosen,request};
 }
