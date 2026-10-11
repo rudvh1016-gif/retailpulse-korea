@@ -50,6 +50,8 @@ test('failed data reads show unavailable rather than invented zero totals',async
  await expect(app.locator('.glance-status')).toHaveText('No verified data available.');
  await expect(app.locator('.glance-kpis strong').first()).toContainText('—');
  await expect(app.locator('.glance-ranking tbody tr')).toHaveCount(0);
+ await expect(app.locator('.glance-ranking thead th').nth(1)).toHaveText('—');
+ await expect(app.locator('.glance-ranking [role=status]')).toHaveText('No verified data available.');
 });
 
 for(const [lang,title,terminal,country] of [['zh','机场一览','航站楼','国家'],['ja','空港ひと目で','ターミナル','国']] as const)for(const width of [360,1440])test(`localized glance ${lang} ${width}`,async({page})=>{
