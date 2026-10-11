@@ -49,7 +49,8 @@ export function customsArticleMetadata(html:string){
  };
  // Saved provider HTML uses exactly one closed attachment row and list_file UL.
  // A missing/truncated/unknown region is not evidence that documents disappeared.
- const rows=[...source.matchAll(/<tr\b[^>]*>\s*<th\b[^>]*>\s*첨부파일\s*<\/th>\s*<td\b[^>]*>\s*(<ul\b[^>]*>)([\s\S]*?)<\/ul>\s*<\/td>\s*<\/tr>/gi)];
+ // External markup markers are escaped parser tokens, never rendered product copy.
+ const rows=[...source.matchAll(/<tr\b[^>]*>\s*<th\b[^>]*>\s*\uCCA8\uBD80\uD30C\uC77C\s*<\/th>\s*<td\b[^>]*>\s*(<ul\b[^>]*>)([\s\S]*?)<\/ul>\s*<\/td>\s*<\/tr>/gi)];
  const list=rows.length===1?rows[0]:undefined;
  let attachmentsComplete=!!list&&attributes(list[1]).get('class')?.split(/\s+/).includes('list_file')===true;
  if(list){
@@ -67,7 +68,7 @@ export function customsArticleMetadata(html:string){
     if(!preview)attachmentsComplete=false;
    }
   }
-  if(/첨부파일|list_file|nttFileDownload|다운로드|\bdownload\b/i.test(source.replace(list[0],'')))attachmentsComplete=false;
+  if(/\uCCA8\uBD80\uD30C\uC77C|list_file|nttFileDownload|다운로드|\bdownload\b/i.test(source.replace(list[0],'')))attachmentsComplete=false;
  }
  const attachments:NewsAttachment[]=[],attachmentUrls=new Map<string,string>();
  for(const values of anchors(source)){
