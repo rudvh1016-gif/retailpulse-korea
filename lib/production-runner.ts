@@ -70,6 +70,8 @@ export interface ProductionSourceOutcome {
   mode?: CollectionMode;
   /** Requests that actually reached the provider. 0 proves a free skip. */
   providerRequests?: number;
+  /** A thrown execution or partial persistence cannot authorize automatic recollection. */
+  executionUncertain?: boolean;
   /** What the run set source_health to. */
   sourceHealth?: string;
   /** True when stored rows were left intact by a failed attempt. */
@@ -104,7 +106,7 @@ const DEFAULT_RUNNERS = {
     if (env.A1_EXPECTED_TARGET_DATE && env.A1_EXPECTED_TARGET_DATE !== targetDate)
       return { status: 'SKIPPED_RECOVERY_DATE_MISMATCH', records: 0, providerRequests: 0 };
     if (!env.A1_RESCAN_TODAY && await hasCompleteA1RecentHistoryToday(env.DB, targetDate)) {
-      return { status: SKIPPED_ALREADY_COMPLETE_TODAY, records: 0 };
+      return { status: SKIPPED_ALREADY_COMPLETE_TODAY, records: 0, providerRequests: 0 };
     }
     // Native early/daily may have failed with auth/429 while this fallback waited.
     // Recheck at execution time; the shared concurrency group alone cannot stop that retry.
@@ -260,6 +262,7 @@ export async function runSelectedProductionSources(
         status: "ERROR",
         records: 0,
         detail: safeSourceFailureDetail(error),
+        ...(source === 'airport_recent' ? { executionUncertain: true } : {}),
       });
     }
   }

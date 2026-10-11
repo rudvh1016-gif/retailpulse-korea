@@ -93,21 +93,21 @@ const copy = {
     sub: "Official data only, showing what Myeongdong, Hongdae, Seongsu, Itaewon and Incheon Airport look like now and next.",
     today: "Seoul", airport: "Airport", business: "Business", forecast: "Records", 'where-to': "Seoul at a glance", consumption:"Consumption", "tourism-desk": "Guide Desk", about: "About", more: "More",
     kst: "All times are Korea Standard Time (KST).",
-    truth: "Every value shown is published by an official body. Nothing unverified is filled in.",
+    truth: "Official figures are distinguished from KORETAIL comparisons and reference estimates. Nothing unverified is filled in.",
   },
   zh: {
     hero: "此刻的首尔\n正在如何流动？",
     sub: "仅汇总官方数据，呈现明洞、弘大、圣水、梨泰院与仁川机场的当前与接下来。",
     today: "首尔", airport: "机场", business: "门店", forecast: "记录", 'where-to': "首尔一览", consumption:"近期消费", "tourism-desk": "旅游咨询", about: "关于", more: "更多",
     kst: "所有时间均为韩国标准时间（KST）。",
-    truth: "所显示的数值均由官方机构发布，未经确认的数值不会被填充。",
+    truth: "官方发布值与KORETAIL的比较及参考预测分别标明，不填补未经确认的数值。",
   },
   ja: {
     hero: "いまソウルは\nどう動いていますか？",
     sub: "公式データだけを集め、明洞・弘大・聖水・梨泰院と仁川空港の現在とこれからを表示します。",
     today: "ソウル", airport: "空港", business: "店舗", forecast: "記録", 'where-to': "ソウルひと目で", consumption:"最近の消費", "tourism-desk": "観光案内", about: "紹介", more: "その他",
     kst: "すべての時刻は韓国標準時（KST）です。",
-    truth: "表示される値はすべて公式機関が発表したものです。確認できない値は作って埋めません。",
+    truth: "公式発表値とKORETAILの比較・参考予測を区別し、確認できない値は作って埋めません。",
   },
 } as const;
 
