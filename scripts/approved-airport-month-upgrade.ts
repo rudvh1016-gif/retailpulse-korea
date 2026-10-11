@@ -5,6 +5,8 @@ import {resolveProductionDatabaseConfig} from './production-database';
 import {prepareAirportMonths,rollupsOf,type AirportCompositionRecord} from '../lib/airport-monthly-store';
 import {readAirportMonths} from '../app/api/live/airport-months/route';
 import {shiftKstDay} from '../lib/kst';
+import {AIRPORT_SIDES_VERSION} from '../lib/airport-sides';
+import {DESTINATIONS_VERSION} from '../lib/airport-destinations';
 const target='2026-10-11',source='airport_months_v2_20261011';
 if(process.env.RPK_ONESHOT_CONFIRM!=='IMPORT'||process.env.RPK_ONESHOT_SOURCES!==source)throw Error('MONTH_REPAIR_NOT_CONFIRMED');
 const config=resolveProductionDatabaseConfig('production');
@@ -25,7 +27,8 @@ const anchor=read.results[0];
 if(anchor?.day!==target)throw Error('MONTH_REPAIR_ANCHOR_CHANGED');
 const before=JSON.parse(anchor.payload) as Record<string,unknown>;
 const extension=before.monthlyRollups as {version?:number;asOf?:string}|undefined;
-if(rollupsOf(before)?.asOf===target){console.log(JSON.stringify({repair:source,status:'ALREADY_UPGRADED',providerRequests:0,usage:db.usageSnapshot()}));}
+const currentRollups=rollupsOf(before);
+if(currentRollups?.asOf===target&&currentRollups.sidesVersion===AIRPORT_SIDES_VERSION&&currentRollups.destinationsVersion===DESTINATIONS_VERSION){console.log(JSON.stringify({repair:source,status:'ALREADY_UPGRADED',providerRequests:0,usage:db.usageSnapshot()}));}
 else {
  if(extension?.version!==1||extension.asOf!==target)throw Error('MONTH_REPAIR_VERSION_CHANGED');
  let attempted=false;
