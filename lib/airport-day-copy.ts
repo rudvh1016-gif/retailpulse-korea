@@ -225,7 +225,7 @@ export function similarHighlights(item:SimilarDay,current:TerminalDay,lang:Lang)
   facts.push({label:row('동편 비중','East share','东侧占比','東側割合')[lang],current:share(current),previous:share(item.day)});
  const known=(day:TerminalDay)=>Object.entries(day.groups).filter(([key])=>key!=='UNKNOWN').reduce((sum,[,count])=>sum+(count??0),0);
  if((has('DESTINATIONS')?.distance??1)<=.15&&known(current)>0&&known(item.day)>0)
-  facts.push({text:row('확인된 목적지 지역 구성도 비슷','Known destination-region mix is also similar','已确认目的地区域构成也相近','確認できた目的地地域の構成も似ています')[lang]});
+  facts.push({text:row('선택일과 목적지 지역별 항공편 비율이 비슷해요','Flight shares by destination region are similar to the selected day','各目的地区域的航班占比与所选日期相近','目的地地域別の便数割合が選択日と似ています')[lang]});
  else if((has('HOURS')?.distance??1)<=.15)facts.push({text:row('시간대별 출발편 분포도 비슷','Hourly departure mix is also similar','各小时出发航班分布也相近','時間帯別の出発便分布も似ています')[lang]});
  return facts.slice(0,3);
 }
