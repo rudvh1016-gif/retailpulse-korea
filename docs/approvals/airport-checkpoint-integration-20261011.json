@@ -1,0 +1,28 @@
+{
+  "recordedAt": "2026-10-11T01:24:29.814Z",
+  "authorizationEvidence": {
+    "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+    "approvalQuestion": "남은 디자인 수정은 만들어졌지만, 출국장 그림을 연결한 부분의 기존 수정 승인 기록을 갱신해야 마지막 검사를 통과할 수 있어. 이 변경에 한해서 승인 기록도 갱신해도 될까?",
+    "ownerRequest": "ㅇㅇ갱신해",
+    "ownerMessageId": "Sentinel_f4e6533f2fa48191be5ed3f1d0cfefd2",
+    "scope": "Only the two added lines in app/live-signals.tsx: the lazy import of airport-checkpoint-deferred and its Suspense-wrapped checkpoint schematic integration. No other protected-file approval, permission, runtime setting, remote repair, merge or deployment is authorized.",
+    "approvedProtectedFiles": [
+      "app/live-signals.tsx"
+    ],
+    "keepProtectedListAndEnforcement": true,
+    "agentMergeOrDeploymentApproved": false
+  },
+  "reason": "Normal owner-approved bookkeeping for the exact reviewed two-line integration. Preserve all 61 protected paths, every other fixture value, existing UI Lock enforcement and previous approval records. The separately modified translated footer is outside this approval.",
+  "reviewedSourceCommit": "3b82eeb4413a3bfd9d4b9204b93cd255a6b756e8",
+  "comparisonBase": "e92c8f239b02d1a2a27fbd78b82eea76012bc3a4",
+  "changes": [
+    {
+      "file": "app/live-signals.tsx",
+      "previous": "1b5a72bf20d8df0bb66f70ecf588c57da547b66f375e5b3ab72f6292163cae29",
+      "approved": "a3409292e24efa78b0badd0a2e3be63205d931b504477780370d97f442ae883d",
+      "exactUnifiedDiff": "diff --git a/app/live-signals.tsx b/app/live-signals.tsx\nindex 601bbb32..208457e7 100644\n--- a/app/live-signals.tsx\n+++ b/app/live-signals.tsx\n@@ -27,6 +27,7 @@ import type { SeoulContext } from \"../lib/seoul-context\";\n import type { compareComposition } from \"../lib/airport-composition-history\";\n import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from \"react\";\n const AirportGatePillars = lazy(() => import(\"./airport-gate-pillars\"));\n+const AirportCheckpointSchematic = lazy(() => import('./airport-checkpoint-deferred'));\n import type { Lang } from \"./retailpulse-data\";\n import { friendlyCheckpointName, rankCurrentDepartureHallCheckpoints } from \"../lib/airport-today-summary\";\n import {\n@@ -2149,6 +2150,7 @@ export function AirportTodaySummary({ lang, terminal = \"all\", date = null }: { l\n \n     <section className=\"airport-detail-section airport-checkpoints\" aria-labelledby=\"airport-checkpoints-title\">\n       <div className=\"airport-detail-head\"><div><p className=\"eyebrow\">CURRENT OBSERVATION · {scopeLabel}</p><h3 id=\"airport-checkpoints-title\">{airportTodayText.current[lang]}</h3></div><p>{airportTodayText.currentNote[lang]}</p></div>\n+      <Suspense fallback={<div style={{minBlockSize:340}} aria-busy=\"true\"/>}><div className=\"airport-checkpoint-schematics\" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,320px),1fr))',gap:20}}>{(['T1','T2'] as const).filter(value=>isAll||value===terminal).map(value=><AirportCheckpointSchematic key={value} terminal={value} rows={rankedCheckpoints[value]??[]} now={presentationNow} lang={lang}/>)}</div></Suspense>\n       {checkpointTerminals.length ? <div id=\"airport-checkpoint-groups\" className=\"airport-checkpoint-groups airport-queue-comparison\">{checkpointGroups.map(({terminalId, rows}) => {\n         return <div className=\"airport-checkpoint-terminal\" key={terminalId}>\n           <h4><span>{terminalId === \"all\" ? \"T1 · T2\" : terminalId}</span>{airportTodayText.scope[lang][terminalId as \"all\" | \"T1\" | \"T2\"] ?? terminalId}</h4>\n"
+    }
+  ],
+  "protectedPathCount": 61,
+  "approvalEvidenceFile": "docs/approvals/airport-checkpoint-integration-20261011.json"
+}
