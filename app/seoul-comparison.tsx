@@ -73,12 +73,13 @@ interface MonthResponse {status:string;area:string;month:string;months:string[];
 export function ConsumptionView({lang,area,onArea}:{lang:Lang;area:AreaId;onArea:(area:AreaId)=>void}){
  const summary=useLiveSummary(),[month,setMonth]=useState<string|null>(null);
  const selectedMonth=month??summary?.todayKst.slice(0,7),key=area+'|'+selectedMonth;
- useEffect(()=>{const query=new URLSearchParams(window.location.search).get('month');if(query&&/^\d{4}-(0[1-9]|1[0-2])$/.test(query)){const timer=setTimeout(()=>setMonth(query),0);return()=>clearTimeout(timer);}},[]);
+ // Back/Forward restores the month its history entry recorded, as it already does for the area.
+ useEffect(()=>{const read=()=>{const query=new URLSearchParams(window.location.search).get('month');setMonth(query&&/^\d{4}-(0[1-9]|1[0-2])$/.test(query)?query:null);};const timer=setTimeout(read,0);window.addEventListener('popstate',read);return()=>{clearTimeout(timer);window.removeEventListener('popstate',read);};},[]);
  const request=usePreparedMonth<MonthResponse>(key,`/api/live/commercial-months?area=${area}&month=${selectedMonth}`,selectedMonth??'',''),response=request.reply;
  const data=response?.data,number=new Intl.NumberFormat(locales[lang],{maximumFractionDigits:1}),won=new Intl.NumberFormat(locales[lang],{style:'currency',currency:'KRW',maximumFractionDigits:0});
  const max=Math.max(1,...(data?.categories.flatMap(row=>[row.comparison.currentMean??0,row.comparison.previousMean??0])??[]));
  const monthLabel=(month:string)=>new Intl.DateTimeFormat(locales[lang],{month:'short',timeZone:'UTC'}).format(new Date(month+'-01T00:00:00Z'));
- const changeMonth=(value:string)=>{setMonth(value);const url=new URL(window.location.href);url.searchParams.set('month',value);window.history.replaceState({},'',url.pathname+url.search);};
+ const changeMonth=(value:string)=>{setMonth(value);const url=new URL(window.location.href);url.searchParams.set('area',area);url.searchParams.set('month',value);window.history.replaceState({},'',url.pathname+url.search);};
  return <section className="seoul-comparison consumption-comparison" aria-labelledby="consumption-title">
   <header className="comparison-heading"><h1 id="consumption-title">{t(lang,'요즘 뜨는 소비','Consumption changes','近期消费变化','最近の消費の変化')}</h1><p>{t(lang,'같은 날짜·시간에 관측된 업종별 카드 결제 흐름을 비교합니다.','Compare observed card activity by industry at matching days and hours.','对比相同日期与小时观测到的各行业银行卡支付趋势。','同じ日付・時間に観測した業種別カード決済の流れを比較します。')}</p></header>
   <div className="area-tabs" role="tablist" aria-label={t(lang,'지역 선택','Select district','选择地区','エリア選択')}>{areas.map(value=><button key={value} type="button" role="tab" className={area===value?'active':''} aria-selected={area===value} onClick={()=>onArea(value)}>{names[value][lang]}</button>)}</div>
