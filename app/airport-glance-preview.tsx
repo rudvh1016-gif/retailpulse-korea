@@ -1,0 +1,51 @@
+'use client';
+import {useMemo,useState} from 'react';
+import type {Lang} from './retailpulse-data';
+import {useLiveSummary} from './live-signals';
+import {useFlights} from './flights-client';
+import {usePreparedMonth} from './use-prepared-month';
+import {usePresentationClock} from './area-demand-card';
+import {ChangeRate} from './change-rate';
+import {glanceFlights,glanceCountryRanking,type GlanceScope} from '../lib/airport-glance';
+import {previousFlightMonth,type AirportMonthlyRollups} from '../lib/airport-monthly-flights';
+import {selectedZoneShares} from '../lib/airport-zone-shares';
+import {kstDayOf} from '../lib/kst';
+import './airport-glance-preview.css';
+interface MonthReply{status:string;month:string;data:AirportMonthlyRollups|null;calculatedAt:string|null}
+const copy={
+ ko:{title:'공항 한눈에',detail:'공항 상세',preview:'공개 반영 전 미리보기',all:'전체',today:'오늘',date:'날짜',total:'선택일 출발편',now:'현재 시간대',unit:'편',hourly:'시간대별 출발편',country:'목적지 국가별 출발편 신장률',basis:'실제 포함일 기준 · 전월 0편·비교 불가 제외',previous:'전월',current:'선택월',change:'증감률',ready:'출국 준비',readyNote:'수속·수하물·보안검색 안내',news:'공항·세관 소식',newsNote:'공식 출처와 발표 시각 확인',loading:'자료 확인 중…',missing:'확인 가능한 자료가 없습니다.',partial:'일부 기록입니다. 전체 합계로 표시하지 않습니다.',art:'승인된 공항 그림 연결 대기',concept:'전체 배치 개념도 · 거리 압축 · 공식 좌표가 아닙니다.',west:'서편',center:'중앙',east:'동편',unknown:'위치 미확인',concourse:'탑승동',selected:'선택 시간',collected:'항공편 자료 수집',monthTime:'월별 집계 시각',scope:'구역 비율은 각 건물 전체 출발편 기준이며 위치 미확인도 포함합니다.',rank:'신장률 상위 5개',wait:'대기 관측은 출국장별 상세에서 확인',scheduled:'출발 예정시각 기준 · 편수는 승객 수·실제 운항 실적이 아닙니다.'},
+ en:{title:'Airport at a glance',detail:'Airport details',preview:'Preview before publication',all:'All',today:'Today',date:'Date',total:'Selected-day departures',now:'Current hour',unit:'flights',hourly:'Departures by hour',country:'Daily departures by country',basis:'Included dates · zero or missing previous means excluded',previous:'Previous',current:'Selected',change:'Change',ready:'Prepare for departure',readyNote:'Check-in, baggage and security',news:'Airport & customs news',newsNote:'Official sources and publication times',loading:'Checking data…',missing:'No verified data available.',partial:'Partial records; no complete total shown.',art:'Approved airport artwork pending',concept:'Concept layout · distances compressed · not official coordinates.',west:'West',center:'Centre',east:'East',unknown:'Unverified',concourse:'Concourse',selected:'Selected hour',collected:'Flights collected',monthTime:'Monthly calculation',scope:'Zone shares use each building’s total departures, including unverified locations.',rank:'Top 5 change rates',wait:'See queue observations by checkpoint in details',scheduled:'Scheduled departure times · flights are not people or certified actual operations.'},
+} as const;
+export default function AirportGlancePreview({lang,artworkSrc=null}:{lang:Lang;artworkSrc?:string|null}){
+ const c=lang==='ko'?copy.ko:copy.en;
+ const [date,setDate]=useState<string|null>(null),[scope,setScope]=useState<GlanceScope>('all'),[hour,setHour]=useState<number|null>(null);
+ const summary=useLiveSummary(date),day=date??summary?.serviceDateKst??'';
+ const loaded=useFlights(day||null),clock=usePresentationClock(summary?.generatedAt??'1970-01-01T00:00:00Z');
+ const month=day.slice(0,7),monthRequest=usePreparedMonth<MonthReply>(month,`/api/live/airport-months?month=${encodeURIComponent(month)}`,month,day);
+ const payload=loaded?.status==='OK'?loaded.payload:null;
+ const ready=Boolean(payload&&!payload.truncated&&(payload.retrievedAt||payload.flights.length));
+ const data=useMemo(()=>ready&&payload?glanceFlights(day,payload.flights,scope):null,[ready,payload,day,scope]);
+ const current=monthRequest.reply?.data?.months.find(row=>row.month===month),previous=monthRequest.reply?.data?.months.find(row=>row.month===previousFlightMonth(month));
+ const ranking=glanceCountryRanking(current,previous,scope==='all'?'ALL':scope);
+ const names=new Intl.DisplayNames([lang],{type:'region'}),fmt=new Intl.NumberFormat(lang,{maximumFractionDigits:1});
+ const nowHour=day&&Number.isFinite(clock)&&kstDayOf(new Date(clock).toISOString())===day?new Date(clock+9*3_600_000).getUTCHours():null;
+ const clockText=Number.isFinite(clock)?new Intl.DateTimeFormat(lang,{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit',hour12:false}).format(clock):'—';
+ const stamp=(value:string|null|undefined)=>value&&Number.isFinite(Date.parse(value))?new Intl.DateTimeFormat(lang,{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value))+' KST':'—';
+ const details=`/${lang}/airport?terminal=${scope}${day?`&date=${day}`:''}`;
+ const max=Math.max(1,...data?.hours??[]),buildingNames={T1:'T1',CONCOURSE:c.concourse,T2:'T2'};
+ return <main className="glance-preview" data-testid="airport-glance-preview">
+  <header className="glance-header"><a href={`/${lang}/airport`} className="glance-brand">KORETAIL<span>Retail Demand Signals for Korea</span></a><nav aria-label="Main"><a href={details}>{c.detail}</a><a href={`/${lang}/myeongdong`}>{lang==='ko'?'서울':'Seoul'}</a></nav></header>
+  <div className="glance-heading"><h1>{c.title}</h1><small>{c.preview}</small></div>
+  <div className="glance-controls"><div role="group" aria-label="Terminal">{(['all','T1','T2'] as const).map(value=><button key={value} aria-pressed={scope===value} onClick={()=>{setScope(value);setHour(null);}}>{value==='all'?c.all:value}</button>)}</div><label>{c.date}<input type="date" value={day} onChange={event=>{if(event.target.value){setDate(event.target.value);setHour(null);}}}/></label><button onClick={()=>{setDate(null);setHour(null);}}>{c.today}</button><span>KST</span></div>
+  <section className="glance-kpis" aria-label="Summary"><div><span>{c.total} · {scope==='all'?c.all:scope}</span><strong>{data?fmt.format(data.total):'—'} <small>{c.unit}</small></strong></div><div><span>{c.now}{nowHour!==null?` · ${clockText} KST`:''}</span><strong>{data&&nowHour!==null?data.hours[nowHour]:'—'} <small>{c.unit}</small></strong></div><a href={`${details}#airport-data-flow`}>{c.wait} ↗</a></section>
+  {!ready&&<p role="status" className="glance-status">{summary===null?c.missing:loaded===undefined?c.loading:payload?.truncated?c.partial:c.missing}</p>}
+  <section className="glance-airport" aria-label="Airport layout"><div className="glance-art-frame" data-artwork={artworkSrc?'ready':'pending'}>
+   {artworkSrc?<img src={artworkSrc} width="1448" height="1086" alt="" decoding="async"/>:<div className="glance-art-pending">{c.art}</div>}
+   {(['T1','CONCOURSE','T2'] as const).map(building=>{const counts=data?.buildings[building],shares=counts?selectedZoneShares(counts):null;return <section key={building} className={`glance-building glance-building-${building}`} aria-label={buildingNames[building]} data-selected={scope==='all'||scope===building||(scope==='T1'&&building==='CONCOURSE')}><h2>{buildingNames[building]} <span>{counts?`${counts.total} ${c.unit}`:'—'}</span></h2><dl>{(['WEST','CENTER','EAST'] as const).map(side=><div key={side}><dt>{({WEST:c.west,CENTER:c.center,EAST:c.east})[side]}</dt><dd>{shares?.[side]!==null&&shares?.[side]!==undefined?`${fmt.format(shares[side]!)}%`:'—'}</dd></div>)}</dl><small>{c.unknown} {counts?`${counts.UNVERIFIED} ${c.unit}`:'—'}</small></section>;})}
+  </div><p>{c.concept}</p><p>{c.scope}</p>{data&&data.unverifiedBuilding>0&&<p>{lang==="ko"?"건물 미정":"Building unconfirmed"} {data.unverifiedBuilding} {c.unit}</p>}</section>
+  <div className="glance-lower"><section className="glance-hourly"><div className="glance-section-head"><h2>{c.hourly}</h2><a href={`${details}#airport-data-flow`}>{c.detail} ↗</a></div><p>{day||'—'} · {scope==='all'?c.all:scope}</p><div className="glance-bars" role="group" aria-label={c.hourly}>{Array.from({length:24},(_,index)=><button key={index} onClick={()=>setHour(index)} aria-pressed={hour===index} aria-label={`${String(index).padStart(2,'0')}:00 · ${data?data.hours[index]:'—'} ${c.unit}`} data-now={nowHour===index} data-ahead={nowHour!==null&&index>nowHour}><span style={{height:`${data?data.hours[index]/max*100:0}%`}}/>{index%3===0&&<small>{String(index).padStart(2,'0')}</small>}</button>)}</div><p className="glance-hour-readout">{hour!==null?`${c.selected} ${String(hour).padStart(2,'0')}:00–${String(hour+1).padStart(2,'0')}:00 · ${data?data.hours[hour]:'—'} ${c.unit}`:nowHour!==null?`${c.now} ${clockText} KST`:'00:00–24:00 KST'}</p><label className="glance-hour-picker">{c.selected}<select aria-label={c.selected} value={hour??""} onChange={event=>setHour(event.target.value===""?null:Number(event.target.value))}><option value="">—</option>{Array.from({length:24},(_,index)=><option key={index} value={index}>{String(index).padStart(2,"0")}:00–{String(index+1).padStart(2,"0")}:00</option>)}</select></label><small>{c.scheduled}</small></section>
+  <section className="glance-ranking"><div className="glance-section-head"><h2>{c.country}</h2><span>{c.rank}</span></div><p>{c.basis}</p><table><thead><tr><th>{lang==='ko'?'국가':'Country'}</th><th>{previous?.month??previousFlightMonth(month)}</th><th>{month||'—'}</th><th>{c.change}</th></tr></thead><tbody>{ranking.map(row=><tr key={row.country} data-country={row.country}><th scope="row">{names.of(row.country)??row.country}</th><td>{fmt.format(row.previous!)}</td><td>{fmt.format(row.current!)}</td><td><ChangeRate value={row.percent} lang={lang}/></td></tr>)}</tbody></table>{!ranking.length&&<p role="status">{monthRequest.pending?c.loading:c.missing}</p>}<small>{lang==='ko'?'일평균 · 편/일':'Daily mean · flights/day'}</small><p><a href={`${details}#airport-monthly-flights`}>{c.detail} ↗</a></p></section></div>
+  <nav className="glance-actions" aria-label="More airport information"><a href={`${details}#airport-departure-preparation`}><strong>{c.ready}</strong><span>{c.readyNote} ↗</span></a><a href={`/${lang}/airport-news`}><strong>{c.news}</strong><span>{c.newsNote} ↗</span></a></nav>
+  <footer><span>{c.collected} · {stamp(payload?.retrievedAt)}</span><span>{c.monthTime} · {stamp(monthRequest.reply?.calculatedAt)}</span><a href="https://www.airport.kr/geomap/ap_ko/view.do" target="_blank" rel="noreferrer">{lang==='ko'?'공식 공항 지도':'Official airport map'} ↗</a></footer>
+ </main>;
+}

@@ -1,0 +1,41 @@
+{
+  "scope": "Local actual-code preview only; no public merge or deployment; not part of PR341",
+  "approvals": ["Sentinel_6462d53997488191a8b9e86fb88f6127", "Sentinel_3b32c6bb7cb481919f45274d44420009"],
+  "base": "6e50fdc339098630ab4033a84a210176c93b2d28",
+  "route": "/ko/airport-glance-preview",
+  "latestArtwork": {
+    "libraryFileId": "libfile_59815a4d20bc8191abc8b10d52ef2e49",
+    "fileId": "file_00000000dd588207b727583bca9d3e15",
+    "filename": "exec-d3b4cf0c-f649-442a-9290-fd3ddbbb52e0.png",
+    "sizeBytes": 3323084,
+    "descriptionFromUser": "T1 / concourse / T2 with connected apron, runways and roads; compact whole-airport atmosphere",
+    "pixelsInspected": false,
+    "connected": false,
+    "supersedes": "libfile_837eb74b3f788191b81f51d3dccf1aba",
+    "blocker": "The current official Library transfer helper previously failed on native Windows: os.setxattr unavailable. No bypass, raw download, or partial-file consumption. Latest reference resolved through Library read but not materialized."
+  },
+  "implementation": [
+    "Reuse existing flight, month and clock hooks, departure scope and country daily-mean calculations",
+    "Single artwork slot; names and live values remain HTML; no 3D engine or new dependencies",
+    "24-hour flight chart, all/T1/T2, date, current-hour marker, accessible hour selector",
+    "Country top five by daily-mean month-over-month rate; zero or absent baseline excluded",
+    "Whole-building west/center/east shares include unknown locations in denominator",
+    "Detailed airport, monthly, departure preparation and news links; nonvisual monthly anchor only"
+  ],
+  "validation": {
+    "typecheck": "passed",
+    "unit": "2 passed",
+    "e2e": "6 passed: 360/390/430/1440 controls, date switching and past-day marker, API failure",
+    "lint": "no errors; one next/no-img-element warning for pending static artwork slot",
+    "screenshots": "Recorded public API snapshots, 1440 and 390, inspected; artwork missing so not final design",
+    "build": "not run for this separate incomplete preview",
+    "performanceBeforeAfter": "not measured; no performance improvement claimed"
+  },
+  "remaining": [
+    "Supported materialization of latest artwork; inspect actual pixels, create responsive assets and connect once",
+    "Final artwork-complete PC/mobile screenshots and user approval before public application",
+    "Chinese and Japanese currently fall back to English preview copy; localization incomplete",
+    "Rebase independent preview onto integrated main later while preserving Claude split",
+    "Final build, full CI and same-condition performance comparison after artwork integration"
+  ]
+}
