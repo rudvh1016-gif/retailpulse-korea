@@ -95,3 +95,20 @@ test('visit time compares official forecasts, matching events and published paym
  await expect(page.locator('[data-area="hongdae"] .district-choice-name strong')).toHaveText('확인 불가');await expect(page.locator('.comparison-basis')).toContainText('순위를 매기지 않습니다');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
+
+test('Back restores the month and district its history entry recorded',async({page})=>{
+ await page.setViewportSize({width:390,height:900});
+ await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
+ await page.route('**/api/live/commercial-months*',route=>{const url=new URL(route.request().url()),month=url.searchParams.get('month')!;return route.fulfill({json:{status:'READY',area:url.searchParams.get('area'),month,months:['2026-08','2026-07'],calculatedAt:SUMMARY_FIXTURE.generatedAt,data:{...publicCommercialMonth(current),month}}});});
+ await page.goto('/ko/consumption');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ const select=page.locator('select[name="commercialMonth"]'),tab=(name:string)=>page.locator('.consumption-comparison').getByRole('tab',{name,exact:true});
+ await expect(select).toHaveValue('2026-08');
+ await select.selectOption('2026-07');await expect(page).toHaveURL(/area=myeongdong&month=2026-07/);
+ await tab('홍대').click();await expect(page).toHaveURL(/area=hongdae&month=2026-07/);
+ await select.selectOption('2026-08');await expect(page).toHaveURL(/area=hongdae&month=2026-08/);
+ await page.goBack();
+ await expect(page).toHaveURL(/area=myeongdong&month=2026-07/);
+ await expect(select).toHaveValue('2026-07');await expect(tab('명동')).toHaveAttribute('aria-selected','true');
+ await page.goForward();
+ await expect(select).toHaveValue('2026-08');await expect(tab('홍대')).toHaveAttribute('aria-selected','true');
+});

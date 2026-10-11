@@ -80,6 +80,11 @@ function writeLedger(ledger: CheckSnapshot[]) {
   try { window.localStorage.setItem(LAST_CHECK_KEY, JSON.stringify(ledger)); } catch { /* storage is a convenience only */ }
 }
 
+// The earlier visit each condition was first compared with on this page load.
+// Switching place and back (or leaving 매장 and returning) must not compare
+// with the snapshot this same page load wrote seconds earlier.
+const pageLoadPrevious = new Map<string, { previous: CheckSnapshot | null; available: boolean }>();
+
 /**
  * Reads the previous snapshot for these conditions once, then keeps this
  * visit's snapshot current (on a new value, and every ten minutes while
@@ -94,10 +99,9 @@ function useLastCheck(snapshot: CheckSnapshot | null) {
     if (!snapshot || !identity) return;
     const timer = window.setTimeout(() => {
       const ledger = readLedger();
-      setState((current) => {
-        if (current?.identity === identity) return current;
-        return { identity, previous: ledger ? findPrevious(ledger, snapshot) : null, available: ledger !== null };
-      });
+      const first = pageLoadPrevious.get(identity) ?? { previous: ledger ? findPrevious(ledger, snapshot) : null, available: ledger !== null };
+      pageLoadPrevious.set(identity, first);
+      setState((current) => current?.identity === identity ? current : { identity, ...first });
       if (ledger) writeLedger(withSnapshot(ledger, snapshot));
     }, 0);
     return () => window.clearTimeout(timer);
