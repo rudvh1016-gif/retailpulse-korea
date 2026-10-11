@@ -780,6 +780,9 @@ test("no Korean line ever breaks in the middle of a word", async ({ page }) => {
     for (const path of ["/ko/myeongdong", "/ko/airport"]) {
       await page.goto(path);
       await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+      // Hydration can finish before the deferred district panel renders.
+      await expect(page.locator(path.endsWith('/myeongdong') ? '.demand-number strong' : '.passenger-scope-note')).toBeVisible();
+      await page.evaluate(() => document.fonts.ready.then(() => true));
 
       const measured = await renderedLines(page, SELECTOR);
       expect(measured.length, `${path} at ${width}px rendered nothing to measure`).toBeGreaterThan(0);
@@ -825,6 +828,8 @@ test("the area headline fits one line on a phone, at the owner's own numbers", a
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/ko/myeongdong");
     await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+    await expect(page.locator(".demand-number strong")).toHaveText("100,000–105,000");
+    await page.evaluate(() => document.fonts.ready.then(() => true));
 
     const [headline] = await renderedLines(page, ".demand-number strong");
     expect(headline, `no headline at ${width}px`).toBeTruthy();
@@ -902,6 +907,8 @@ async function nowMarker(page: import("@playwright/test").Page) {
 
 for (const section of ["출국", "입국"] as const) {
   test(`the 현재 시각 marker is a stroked line on ${section}, at phone width`, async ({ page }) => {
+    // The first presentation-clock render precedes the intercepted response.
+    await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
     await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
     await page.setViewportSize({ width: 390, height: 900 });
     await page.goto("/ko/airport");

@@ -15,6 +15,8 @@ for (const clock of ["11:57", "21:03", "23:59"]) {
     }));
     payload.airport.passengerForecastTimeline = bands;
     payload.airport.passengerForecastTimelineByTerminal = { T1: bands, T2: bands };
+    // The presentation clock starts at mount, before the summary response.
+    await page.clock.setFixedTime(new Date(payload.generatedAt));
     await page.route("**/api/live/summary*", routeSummary(payload));
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/ko/airport");

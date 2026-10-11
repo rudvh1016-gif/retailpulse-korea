@@ -987,6 +987,8 @@ test("the passenger-flow figure uses the section width on desktop and the whole 
  * because no "now" exists inside a day the clock is not in.
  */
 test("the current-time marker appears on today's chart only", async ({ page }) => {
+  // Mount and the fixture response must observe the same day and minute.
+  await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.goto("/ko/airport");
   const now = page.locator(".airport-flow .airport-flow-now");
@@ -1427,6 +1429,8 @@ test("the composition module has intentional spacing and compact rows from mobil
  * 끌 것이 없고, 지금 시각 선은 그림 안에 그대로 보인다.
  */
 test("the forecast figure shows the current minute inside the phone viewport without scrolling", async ({ page }) => {
+  // The presentation clock starts at mount, before the summary response.
+  await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko/airport");
