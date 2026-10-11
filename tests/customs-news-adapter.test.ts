@@ -1,6 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {customsPublishedAt,parseCustomsRss,customsTypeOneEvidence,prepareCustomsNews} from '../lib/customs-news-adapter';
-import {mayPublishNews} from '../lib/airport-customs-news';
+import {hasNewsClearance,mayPublishNews} from '../lib/airport-customs-news';
+import {applyCustomsDocumentReview} from '../lib/customs-news-document-review';
 const item={id:'123',title:'Fixture 면세 안내',url:'https://www.customs.go.kr/kcs/na/ntt/selectNttInfo.do?mi=2891&nttSn=123',publishedAt:'2026-10-01T09:00:00.000Z'};
 const fields='<input name="nttSn" value="123"><input name="nttSnUrl" value="0123456789abcdef0123456789abcdef">';
 const licence='<div class="codeView01"><img src="/images/board/kogl/new_img_opentype01.png"><span>관세청</span><span>“Fixture 면세 안내”</span><a href="http://www.kogl.or.kr/info/licenseType1.do">출처표시</a></div>';
@@ -22,8 +23,21 @@ test('type 1 is item-specific: footer, wrong title/id, other licences and no mar
 });
 test('normal deep-link verification is required; no effective date, deadline or retailer priority is guessed',async()=>{
  const privateItem=await prepareCustomsNews(item,fields+licence,'2026-10-10T01:00:00Z',{deepLinkVerified:false});assert.equal(mayPublishNews(privateItem),false);
- const cleared=await prepareCustomsNews(item,fields+licence,'2026-10-10T01:00:00Z',{deepLinkVerified:true});assert.equal(mayPublishNews(cleared),true);
+ const cleared=await prepareCustomsNews(item,fields+licence,'2026-10-10T01:00:00Z',{deepLinkVerified:true});assert.equal(hasNewsClearance(cleared),true);assert.equal(mayPublishNews(cleared),false);
  assert.match(cleared.clearance!.attribution,/관세청.*2026.*Fixture.*licenseType1/);
  assert.equal(cleared.effectiveDate,undefined);assert.equal(cleared.deadline,undefined);assert.equal(cleared.relevantToRetail,false);assert.equal(cleared.status,'review');assert.equal(cleared.attachmentNeedsReview,true);
  const newYear=await prepareCustomsNews({...item,publishedAt:'2025-12-31T15:05:00Z'},fields+licence,'2026-01-01T00:00:00Z',{deepLinkVerified:true,namedAuthor:'Fixture author'});assert.match(newYear.clearance!.attribution,/Fixture author.*2026/);
+});
+test('cleared candidates can receive an exact document review without being approved for publication',async()=>{
+ const candidate=await prepareCustomsNews(item,fields+licence,'2026-10-10T01:00:00Z',{deepLinkVerified:true});
+ const attachmentUrl='https://www.customs.go.kr/common/nttFileDownload.do?fileKey=0123456789abcdef0123456789abcdef';
+ const pending={...candidate,attachments:[{url:attachmentUrl,name:'Fixture.pdf',review:'pending' as const}],attachmentListComplete:true};
+ const bytes=new TextEncoder().encode('Synthetic document bytes');
+ const digest=await crypto.subtle.digest('SHA-256',bytes),sha256=[...new Uint8Array(digest)].map(byte=>byte.toString(16).padStart(2,'0')).join('');
+ const review={articleId:item.id,attachmentUrl,sha256,reviewedAt:'2026-10-10T01:00:00Z',confirmedText:'A verified condition. 시행일 2026-11-01',facts:['A verified condition.'],effectiveDate:{date:'2026-11-01',evidence:'시행일 2026-11-01',verified:true as const}};
+ const reviewed=await applyCustomsDocumentReview(pending,review,bytes);
+ assert.equal(reviewed.status,'review');assert.equal(mayPublishNews(reviewed),false);assert.equal(hasNewsClearance(reviewed),true);
+ assert.deepEqual(reviewed.facts,[{text:'A verified condition.',verifiedBySource:true}]);assert.equal(reviewed.attachments![0].sha256,sha256);assert.equal(reviewed.attachmentNeedsReview,false);assert.equal(reviewed.effectiveDate!.date,'2026-11-01');
+ await assert.rejects(applyCustomsDocumentReview({...pending,clearance:undefined},review,bytes),/NEWS_DOCUMENT_REVIEW_UNBOUND/);
+ await assert.rejects(applyCustomsDocumentReview(pending,{...review,sha256:'0'.repeat(64)},bytes),/NEWS_DOCUMENT_HASH_MISMATCH/);
 });
