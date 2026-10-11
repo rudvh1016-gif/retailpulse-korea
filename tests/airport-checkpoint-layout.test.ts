@@ -1,7 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {checkpointLayout} from '../lib/airport-checkpoint-layout';
+import {CHECKPOINT_SOURCE_URLS,checkpointLayout} from '../lib/airport-checkpoint-layout';
 const row=(terminal:string,zone:string,waitTimeMinutes:number,observedAt='2026-10-11T08:00:00+09:00')=>({terminal,zone,waitTimeMinutes,waitTimeRaw:String(waitTimeMinutes),observedAt,freshness:'LIVE'});
+
+test('official documentation links identify the separate terminal datasets without invoking provider APIs',()=>{
+ for(const [terminal,dataset] of [['T1','15148225'],['T2','15161098']] as const){
+  const url=new URL(CHECKPOINT_SOURCE_URLS[terminal]);
+  assert.equal(url.protocol,'https:');assert.equal(url.hostname,'www.data.go.kr');
+  assert.equal(url.pathname,`/data/${dataset}/openapi.do`);assert.equal(url.search,'');
+ }
+});
 test('T2 pairs use source identities and retain location order instead of wait ranking',()=>{
  const groups=checkpointLayout('T2',[row('T2','DG1_A',60),row('T2','DG2_D',0),row('T1','DG2_E',20)]);
  assert.deepEqual(groups.map(group=>group.map(slot=>slot.key)),[['2D','2C'],['2B','2A'],['1D','1C'],['1B','1A']]);

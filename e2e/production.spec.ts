@@ -206,14 +206,16 @@ test("airport summary keeps forecast, flights, gate and checkpoints truthful on 
   await expect(topGateRow).toHaveAttribute('data-flights','18');
   await expect(topGateRow.locator('..')).toContainText('T1');
   await expect(page.getByText(/출국장 체크포인트 관측 · 탑승 게이트 아님/)).toBeVisible();
-  const busiestCheckpoint = page.locator(".airport-checkpoints article.is-busiest");
+  const checkpointModel = page.locator('[data-testid="checkpoint-schematic"][data-terminal="T2"]');
+  await checkpointModel.scrollIntoViewIfNeeded();
+  await expect(checkpointModel.locator('figcaption')).toContainText('T2');
+  await checkpointModel.locator('summary').click();
+  const busiestCheckpoint = checkpointModel.locator('[data-observation="DG1_B"]');
   await expect(busiestCheckpoint).toHaveCount(1);
-  await expect(busiestCheckpoint.locator("strong")).toContainText("T2");
-  await expect(busiestCheckpoint).toContainText("출국장 1B");
-  await expect(busiestCheckpoint).toContainText("대기시간");
-  await expect(busiestCheckpoint).toContainText("60+분");
-  await expect(busiestCheckpoint).toContainText("대기인원");
-  await expect(busiestCheckpoint).toContainText("43명");
+  await expect(busiestCheckpoint).toContainText('\uCD9C\uAD6D\uC7A5 1B');
+  await expect(busiestCheckpoint).toContainText('60+\uBD84');
+  await expect(busiestCheckpoint).toContainText('\uB300\uAE30 \uC778\uC6D0');
+  await expect(busiestCheckpoint).toContainText('43\uBA85');
   // Internal zone codes stay out of the reader-facing name.
   await expect(page.locator(".airport-checkpoints")).not.toContainText("DG1_B");
   await expect(page.getByRole('heading',{name:'출발편이 가장 많은 게이트'})).toBeVisible();
@@ -420,7 +422,12 @@ test("the airport page reads summary -> next -> composition -> observation table
   expect(grid).toBeLessThan(composition);
   // 세 구성 보기는 하나의 탭 묶음 안에 있고, 표는 그 뒤에 남는다.
   expect(composition).toBeLessThan(checkpoints);
-  await expect(page.locator(".airport-checkpoints")).toContainText("대기시간");
+  const checkpointModel = page.locator('[data-testid="checkpoint-schematic"][data-terminal="T2"]');
+  await checkpointModel.scrollIntoViewIfNeeded();
+  await expect(checkpointModel.locator('figcaption')).toContainText('출국장 대기');
+  await checkpointModel.locator('summary').click();
+  await expect(checkpointModel.locator('[data-observation="DG1_B"]')).toContainText('60+분');
+  await expect(checkpointModel.locator('[data-observation="DG1_B"]')).toContainText('43명');
   await expect(page.getByRole("heading", { name: "출국장 공식 예상 승객 흐름" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "오늘 출발편 구성" })).toBeVisible();
 });
@@ -592,7 +599,13 @@ test("selecting T1 or T2 changes every top metric, not just the current departur
   await expect(page.getByText("261편", { exact: true })).toBeVisible();
   await expect(page.locator(".airport-today-grid").getByText("30,100명", { exact: true })).toHaveCount(0);
   await expect(page.locator('[data-overall-leader="true"] .gate-pillar')).toHaveCount(1);
-  await expect(page.getByText("출국장 1B", { exact: true })).toBeVisible();
+  const terminalCheckpoint = page.locator('[data-testid="checkpoint-schematic"][data-terminal="T2"]');
+  await terminalCheckpoint.scrollIntoViewIfNeeded();
+  await terminalCheckpoint.locator('summary').click();
+  const observation = terminalCheckpoint.locator('[data-observation="DG1_B"]');
+  await expect(observation.getByText('출국장 1B', { exact: true })).toBeVisible();
+  await expect(observation).toContainText('60+분');
+  await expect(observation).toContainText('43명');
 
   await page.locator("#airport-data-flow").getByRole("tab", { name: "전체 T1·T2", exact: true }).click();
   await expect(page.locator(".airport-today-grid").getByText("47,320명", { exact: true })).toBeVisible();
@@ -974,6 +987,8 @@ test("the passenger-flow figure uses the section width on desktop and the whole 
  * because no "now" exists inside a day the clock is not in.
  */
 test("the current-time marker appears on today's chart only", async ({ page }) => {
+  // Mount and the fixture response must observe the same day and minute.
+  await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.goto("/ko/airport");
   const now = page.locator(".airport-flow .airport-flow-now");
@@ -1414,6 +1429,8 @@ test("the composition module has intentional spacing and compact rows from mobil
  * 끌 것이 없고, 지금 시각 선은 그림 안에 그대로 보인다.
  */
 test("the forecast figure shows the current minute inside the phone viewport without scrolling", async ({ page }) => {
+  // The presentation clock starts at mount, before the summary response.
+  await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko/airport");

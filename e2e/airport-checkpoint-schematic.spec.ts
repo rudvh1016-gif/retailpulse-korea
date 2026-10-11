@@ -24,6 +24,9 @@ for(const [lang,width] of [['ko',360],['ko',390],['ko',430],['ko',1280],['en',39
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  expect(await model.evaluate(el=>el.getAnimations({subtree:true}).length)).toBe(0);
  await model.screenshot({path:info.outputPath(`checkpoint-${lang}-${width}.png`)});
- const full=page.locator('.airport-checkpoints');await full.getByRole('button').focus();await page.keyboard.press('Enter');await expect(full.locator('article')).toHaveCount(8);
+ const full=page.locator('.airport-checkpoints');await expect(full.locator('.airport-queue-cards')).toHaveCount(0);
+ const toggle=model.locator('summary');await toggle.focus();await page.keyboard.press('Enter');await expect(model.locator('details')).toHaveAttribute('open','');
+ await expect(model.locator('[data-observation]')).toHaveCount(8);await expect(model.locator('[data-observation]').first()).toBeVisible();
+ await expect(model.locator('a')).toHaveAttribute('href','https://www.data.go.kr/data/15161098/openapi.do');
  expect(errors).toEqual([]);
 });

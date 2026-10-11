@@ -37,13 +37,16 @@ test('consumption means name the observed window unit, common bins and retained 
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
  await page.route('**/api/live/commercial-months*',route=>{const url=new URL(route.request().url());return route.fulfill({json:{status:'READY',area:url.searchParams.get('area'),month:url.searchParams.get('month'),months:['2026-08','2026-07'],data:url.searchParams.get('area')==='hongdae'?legacy:month}});});
  await page.goto('/ko/consumption');
+ const periodDetails=page.locator('.consumption-comparison > .comparison-details');await expect(periodDetails).not.toHaveAttribute('open','');
+ await periodDetails.locator(':scope > summary').click();await expect(periodDetails).toHaveAttribute('open','');await expect(page.getByTestId('consumption-period')).toBeVisible();
  for(const date of ['2026-07-01','2026-07-30','2026-08-01','2026-08-30'])await expect(page.getByTestId('consumption-period')).toContainText(date);
+ await periodDetails.locator(':scope > summary').click();
  const card=page.locator('.consumption-category[data-category="한식"]');
- await expect(card.locator('.consumption-mean-label')).toHaveText('10분 결제 평균 · 공통 시간대 동일 가중');
+ await expect(card.locator('.consumption-mean-label')).toHaveText('10분 결제 평균 · 일평균 아님');
  await expect(card.locator('.consumption-mean')).toHaveText('7월 0건 → 8월 0건');
- await expect(card).toContainText(/공통 날짜\s*1\s*일\s*·\s*날짜×시간대\s*1개/);
  const details=card.locator('details');await expect(details).toHaveCount(1);await expect(details).not.toHaveAttribute('open','');
  await card.getByText('날짜·시간대와 계산 기준',{exact:true}).click();await expect(details).toHaveAttribute('open','');
+ await expect(details).toContainText('공통 날짜 1 · 날짜×시간대 1');
  await expect(card).toContainText('2026-07-01');await expect(card).toContainText('2026-08-01');
  await expect(details).toContainText('2026-07-01 / 2026-08-01: 10시대');
  await expect(details).toContainText('평균에 포함한 결제값 관측 수: 2026-07 1 → 2026-08 1');
@@ -51,4 +54,5 @@ test('consumption means name the observed window unit, common bins and retained 
  await page.getByRole('tab',{name:'홍대',exact:true}).click();
  await expect(card).toBeVisible();if(await details.getAttribute('open')===null)await card.getByText('날짜·시간대와 계산 기준',{exact:true}).click();
  await expect(details).toContainText('보존된 집계에서 정확한 포함 날짜·시간대 목록은 확인되지 않습니다.');
+ await expect(details).toContainText('공통 날짜 1 · 날짜×시간대 1');
 });

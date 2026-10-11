@@ -72,17 +72,32 @@ export function compareCommercialMonths(current:CommercialMonth,previous:Commerc
    }}};
  })};
 }
-/** Public payload contains compact results only, never hourly inventories. */
+const missingCoverageDetails=(row:CommercialMonthCategory)=>row.hours.length>0
+ &&(!row.comparison.coverage||row.comparison.coverage.hours===undefined||row.comparison.coverage.amount===undefined);
+export function needsCommercialComparisonCoverage(month:CommercialMonth){return month.categories.some(missingCoverageDetails);}
+/** Add missing evidence only when retained bins reproduce the saved comparison
+ * and every already published coverage field. Never replace existing evidence. */
 export function commercialComparisonCoverage(current:CommercialMonth,previous:CommercialMonth|null):CommercialMonth {
- if(!previous||!current.categories.some(row=>row.hours.length))return current;
+ if(!previous||previous.month!==current.previousMonth||!needsCommercialComparisonCoverage(current))return current;
  const compared=compareCommercialMonths(current,previous);
- return {...current,categories:current.categories.map((row,index)=>{
+ let changed=false;
+ const categories=current.categories.map((row,index)=>{
+  if(!missingCoverageDetails(row)||!previous.categories.find(older=>older.category===row.category)?.hours.length)return row;
   const original=row.comparison,derived=compared.categories[index].comparison;
   const same=original.matchedHours===derived.matchedHours&&original.matchedDays===derived.matchedDays
    &&original.currentMean===derived.currentMean&&original.previousMean===derived.previousMean
    &&JSON.stringify(original.currentAmount)===JSON.stringify(derived.currentAmount)&&JSON.stringify(original.previousAmount)===JSON.stringify(derived.previousAmount);
-  return same?{...row,comparison:{...original,coverage:derived.coverage}}:row;
- })};
+  const saved=original.coverage,evidence=derived.coverage;
+  if(!same||!evidence)return row;
+  if(saved&&(JSON.stringify(saved.currentDates)!==JSON.stringify(evidence.currentDates)
+    ||JSON.stringify(saved.previousDates)!==JSON.stringify(evidence.previousDates)
+    ||saved.currentWindows!==evidence.currentWindows||saved.previousWindows!==evidence.previousWindows
+    ||saved.hours!==undefined&&JSON.stringify(saved.hours)!==JSON.stringify(evidence.hours)
+    ||saved.amount!==undefined&&JSON.stringify(saved.amount)!==JSON.stringify(evidence.amount)))return row;
+  const coverage=saved?{...saved,...(saved.hours===undefined?{hours:evidence.hours}:{}),...(saved.amount===undefined?{amount:evidence.amount}:{})}:evidence;
+  changed=true;return {...row,comparison:{...original,coverage}};
+ });
+ return changed?{...current,categories}:current;
 }
 export function commercialComparisonPeriod(month:Pick<CommercialMonth,'month'|'previousMonth'|'completedDays'|'throughDate'>) {
  const priorEnd=new Date(Date.UTC(Number(month.previousMonth.slice(0,4)),Number(month.previousMonth.slice(5,7)),0)).getUTCDate();

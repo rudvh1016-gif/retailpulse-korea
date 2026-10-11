@@ -29,15 +29,19 @@ for(const [lang,width] of [['ko',360],['ko',390],['ko',430],['ko',1280],['en',39
   expect(expected.matchedDays).toBe(6);expect(expected.matchedHours).toBe(count);expect(expected.coverage!.currentWindows).toBe(count*2);
   expect(expected.coverage!.amount!.hours.length).toBeLessThan(count);
   const card=page.locator(`[data-category="${name}"]`),coverage=card.getByTestId('consumption-coverage'),details=coverage.locator('details');
-  await expect(card.locator('.consumption-category-content > small')).toContainText(String(count));
-  await expect(coverage).toContainText('2026-07: 01, 03, 05, 07, 09, 11');
-  await expect(coverage).toContainText('2026-08: 01, 03, 05, 07, 09, 11');
-  await expect(coverage.locator('.consumption-hours-preview li')).toHaveCount(3);
+  await expect(coverage.getByTestId('consumption-actual-period').locator('span')).toHaveText(['7/1, 7/3, 7/5, 7/7, 7/9, 7/11','8/1, 8/3, 8/5, 8/7, 8/9, 8/11']);
   await expect(card.locator('details')).toHaveCount(1);await expect(details).not.toHaveAttribute('open','');
   await card.scrollIntoViewIfNeeded();
   if(lang==='ko'&&width!==1280)await card.screenshot({path:info.outputPath(`fixture-${count}-bins-${width}-closed.png`)});
   await details.locator('summary').focus();await page.keyboard.press('Enter');await expect(details).toHaveAttribute('open','');
+  await expect(details).toContainText({ko:`공통 날짜 6 · 날짜×시간대 ${count}`,en:`Common dates 6 · date/hour bins ${count}`,zh:`共同日期 6 · 日期×小时 ${count}`,ja:`共通日付 6 · 日付×時間枠 ${count}`}[lang]);
+  await expect(details).toContainText('2026-07: 01, 03, 05, 07, 09, 11');
+  await expect(details).toContainText('2026-08: 01, 03, 05, 07, 09, 11');
   await expect(details.locator(':scope > ul').first().locator('li')).toHaveCount(6);
+  await expect(details.locator(':scope > ul').first().locator('li')).toHaveText(dates.map((day,index)=>{
+   const date=String(day).padStart(2,'0'),hours=Array.from({length:categories.find(category=>category.name===name)!.hours[index]},(_,hour)=>String(hour).padStart(2,'0'));
+   return `2026-07-${date} / 2026-08-${date}: ${hours.join(', ')}${{ko:'시대',en:'h',zh:'时段',ja:'時台'}[lang]}`;
+  }));
   await expect(details).toContainText('2026-07-11 / 2026-08-11');
   await expect(details).toContainText(String(count*2));
   expect(await details.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);

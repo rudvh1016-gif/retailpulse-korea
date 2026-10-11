@@ -44,6 +44,8 @@ test('records show the preserved limited scorecard and exact missing weekday inp
 
 test('first load preloads one shared summary and uses the small Korean shell font',async({page})=>{
  let requests=0;
+ // Establish the fixture day before the first cache key, not during its response.
+ await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
  await page.route('**/api/live/summary*',async route=>{requests++;await routeSummary(SUMMARY_FIXTURE)(route);});
  await page.goto('/ko/airport');
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');

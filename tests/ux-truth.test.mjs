@@ -214,18 +214,20 @@ test("the content width system exists and is used rather than one page-wide cap"
   assert.match(styles, /\.hero h1 \{ max-width: 660px/);
 });
 
-test("the checkpoint list is collapsed by default behind a real button", () => {
-  assert.match(signals, /const \[showAllCheckpoints, setShowAllCheckpoints\] = useState\(false\)/,
-    "eight tall rows must not be the default state");
-  assert.match(signals, /<button\s+type="button"\s+className="airport-checkpoint-toggle"/);
-  assert.match(signals, /aria-expanded=\{showAllCheckpoints\}/);
-  assert.match(signals, /aria-controls="airport-checkpoint-groups"/);
-  assert.match(signals, /id="airport-checkpoint-groups"/,
-    "the button must control the expandable list, not its heading");
-  assert.match(styles, /\.airport-checkpoint-toggle:focus-visible \{ outline:/,
+test("checkpoint observations use a native collapsed disclosure with visible keyboard focus", () => {
+  const schematic = readFileSync('app/airport-checkpoint-schematic.tsx', 'utf8');
+  const schematicStyles = readFileSync('app/airport-checkpoint-schematic.css', 'utf8');
+  assert.match(schematic, /<details className="checkpoint-schematic-details">/,
+    "the full observation list must be folded initially");
+  assert.match(schematic, /<summary>/, "native summary supplies keyboard and expanded semantics");
+  assert.match(schematic, /terminalRows\.map/, "all original terminal observations remain inspectable");
+  assert.match(schematic, /data-observation=\{row\.zone\}/);
+  assert.match(schematicStyles, /summary:focus-visible \{outline:/,
     "a keyboard user must be able to see the focused control");
-  for (const label of ["전체 출국장 보기", "Show all checkpoints", "查看全部出境检查口", "すべての出国場を表示"]) {
-    assert.ok(signals.includes(label), `${label} must exist`);
+  assert.doesNotMatch(signals, /className=\{`airport-queue-cards/,
+    "the owner-requested consolidation must not retain duplicate representative cards");
+  for (const label of ['People, times and source', '\uB300\uAE30 \uC778\uC6D0\u00B7\uC2DC\uAC01\u00B7\uCD9C\uCC98', '\u7B49\u5019\u4EBA\u6570\u3001\u65F6\u523B\u4E0E\u6765\u6E90', '\u5F85\u6A5F\u4EBA\u6570\u30FB\u6642\u523B\u30FB\u51FA\u5178']) {
+    assert.ok(schematic.includes(label), `${label} must exist`);
   }
 });
 
@@ -427,9 +429,11 @@ test("공항 페이지는 요약 → 예보 차트 → 상세 격자 → 구성 
   assert.ok(at('className="airport-composition-panel airport-airlines"') > composition);
   assert.ok(at('className="airport-composition-panel airport-countries"') > composition);
   // 표를 내렸을 뿐, 내용은 그대로다.
-  assert.ok(summary.includes("airportTodayText.waitLabel[lang]"), "대기 시간은 그대로 있어야 한다");
-  assert.ok(summary.includes("airportTodayText.peopleLabel[lang]"), "대기 인원은 그대로 있어야 한다");
-  assert.ok(summary.includes('formatHumanFreshness(row.observedAt, nowIso, lang, "observed")'), "관측 시각은 그대로 있어야 한다");
+  assert.ok(summary.includes('<AirportCheckpointSchematic'), 'observations stay integrated after composition');
+  const schematic = readFileSync('app/airport-checkpoint-schematic.tsx', 'utf8');
+  assert.ok(schematic.includes('displayedQueueMinutes(row)'), 'the original wait values stay available');
+  assert.ok(schematic.includes('row.waitingCount.toLocaleString(locale)'), 'the original waiting headcounts stay available');
+  assert.ok(schematic.includes('dateTime={row.observedAt}'), 'the official observation time stays available');
 });
 
 /**
