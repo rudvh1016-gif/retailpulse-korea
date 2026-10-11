@@ -143,7 +143,7 @@
 .airport-hourly-concept { max-height: none; margin-bottom: 4px; }
 .airport-hourly-concept img { object-fit: contain; transform: none; }
 .airport-today.airport-approved .airport-flow { margin-top: 12px; }
-.airport-mtd { background: #f7fafc; border-radius: 10px; padding: 12px; }
+.airport-mtd { background: transparent; border-radius: 0; padding: 12px 0; }
 .airport-mtd-compare { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
 .airport-month-compare-model { margin: 8px auto; }
 .airport-month-compare-wide { display: none; }
@@ -281,7 +281,7 @@ nav.bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .gate-leader-zones .gate-pillar > span { font-size: 12px; font-weight: 600; }
 [aria-labelledby="airport-arrival-flow-title"] .airport-flow > .airport-model-scope { padding-inline: 0; }
 [aria-labelledby="airport-arrival-flow-title"] .airport-flow > .airport-scene-note { margin-inline: 0; }
-.airport-mtd { background: #fbfdfe; }
+.airport-mtd { background: transparent; }
 .airport-month-dot { display: none; }
 
 .airport-month-compare-model { height: 120px; max-height: 120px; }
@@ -360,3 +360,16 @@ nav.bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .gate-leader-zones { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .gate-leader-zones > section[data-side=EAST] { grid-column: auto; }
 }
+
+/* Owner-selected ink blue / silver: preserve live geometry and interaction targets. */
+.airport-flow[data-chart-material="ink-silver"] { background:#fff; }
+.airport-flow[data-chart-material="ink-silver"] .airport-flow-sky { fill:#fff; }
+.airport-flow[data-chart-material="ink-silver"] :is(.airport-flow-now-light,.airport-flow-now-ring) { display:none; }
+.airport-today.airport-approved .airport-hero .airport-flow[data-chart-material="ink-silver"] .airport-flow-line,
+.airport-flow[data-chart-material="ink-silver"] .airport-flow-line { stroke:#43617f;stroke-opacity:.35;stroke-width:1; }
+.airport-today.airport-approved .airport-hero .airport-flow[data-chart-material="ink-silver"] .av-now,
+.airport-flow[data-chart-material="ink-silver"] .av-now { stroke:#43617f;stroke-width:1;stroke-dasharray:3 4; }
+.airport-today.airport-approved .airport-hero .airport-flow[data-chart-material="ink-silver"] .airport-flow-now-pill rect,
+.airport-flow[data-chart-material="ink-silver"] .airport-flow-now-pill rect { fill:#fff;stroke:#cbd2da; }
+.airport-flow[data-chart-material="ink-silver"] .airport-flow-legend i:is(.past,.stack-upper) { background:#43617f; }
+.airport-flow[data-chart-material="ink-silver"] .airport-flow-legend i:is(.ahead,.stack-lower) { background:#cbd2da; }

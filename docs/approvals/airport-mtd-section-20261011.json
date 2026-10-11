@@ -1,0 +1,23 @@
+{
+  "authorizationEvidence": {
+    "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+    "approvalQuestionMessageId": "Sentinel_8c5e96048f788191a15d576f83b31fb4",
+    "approvalQuestion": "월 누적 카드의 하늘색 배경을 없애고 제목을 위로 옮기는 수정은 보호된 화면 파일의 승인 기록 갱신이 필요해. 이 변경 범위만 갱신해도 될까? 클로드가 수정한 부분은 보존할게.",
+    "ownerMessageId": "Sentinel_cbd3aaa611708191b2240c1dbeb2c27d",
+    "ownerRequest": "ㅇㅇㅇ갱신허용하고 잉크블루실버로해",
+    "scope": "Only monthly forecast section heading wrapper in app/live-signals.tsx; exactly two added and two removed JSX lines. No chart changes in protected files. Preserve all other protected hashes, checks, Claude work and prior approvals. No merge or deployment."
+  },
+  "reviewedBase": "64b527ea996892d24fd235cc1d7970ae766a9321",
+  "changes": [
+    {
+      "file": "app/live-signals.tsx",
+      "previous": "a828b31304fdaa93f75c2057e6e92f363070c4e50dcaace48bb09f91d9fed3b6",
+      "approved": "026af80b0a80b4f98b9c144df7747b79d244056e9380241f0fa248f9b585d76f",
+      "addedLines": 2,
+      "deletedLines": 2,
+      "exactUnifiedDiff": "diff --git a/app/live-signals.tsx b/app/live-signals.tsx\nindex 1ec295a8..c38fac56 100644\n--- a/app/live-signals.tsx\n+++ b/app/live-signals.tsx\n@@ -1873,7 +1873,7 @@ export function AirportAtAGlance({summary,lang,terminal=\"all\",showPassengers=tru\n       {/* OWNER PRIORITY LOCK 6-8: this month so far, the same span of the month\n           before, and the shape of how it accumulated. Scope-isolated like every\n           other figure here — T2 sums T2's own days and nothing else. */}\n-      {mtd && <section className=\"airport-mtd\" data-scope={terminal} data-testid=\"airport-mtd\" aria-label={mtdCopy.heading[lang]}>\n+      {mtd && <><h3>{mtdCopy.sectionTitle[lang]}</h3><section className=\"airport-mtd\" data-scope={terminal} data-testid=\"airport-mtd\" aria-label={mtdCopy.heading[lang]}>\n         <p className=\"airport-mtd-head\"><span>{mtdCopy.heading[lang]}</span><small>{shortRange(mtd.current.start, mtd.current.end)}</small></p>\n         {mtd.current.total !== null\n           ? <strong className=\"airport-mtd-total\">{Math.round(mtd.current.total).toLocaleString(numberLocale)}{peopleUnit}</strong>\n@@ -1896,7 +1896,7 @@ export function AirportAtAGlance({summary,lang,terminal=\"all\",showPassengers=tru\n         </dl>\n         <AirportMonthComparison current={mtd.current.total} previous={mtd.previous?.total ?? null} currentLabel={shortRange(mtd.current.start, mtd.current.end)} previousLabel={mtd.previous ? shortRange(mtd.previous.start, mtd.previous.end) : ''} numberLocale={numberLocale} unit={peopleUnit}/>\n         <AirportMonthChart days={mtd.current.days} lang={lang} numberLocale={numberLocale} unit={peopleUnit} />\n-      </section>}\n+      </section></>}\n       <div className=\"transfer-forecast\" data-testid=\"transfer-forecast\">\n         {(airport.transferForecast ?? []).filter(r => r.serviceDate === summary.serviceDateKst && (isAll || r.terminal === terminal)).map(r =>\n           <small key={r.terminal} style={{display:'block'}}>{r.terminal} · {passengerCopy.transfer[lang]} {r.expectedTransferPassengers.toLocaleString(numberLocale)}{peopleUnit} · {formatHumanFreshness(r.retrievedAt,nowIso,lang,\"collected\")}</small>)}\n"
+    }
+  ],
+  "protectedPathCount": 61,
+  "agentMergeOrDeploymentApproved": false
+}

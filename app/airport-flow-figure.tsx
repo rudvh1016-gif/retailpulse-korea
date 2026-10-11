@@ -41,11 +41,11 @@ const copy = {
 } as const;
 
 const finishColors = {
- elapsed: {front:['#bed8e7','#84aec9','#739db9'],side:['#789fb6','#577d99'],cap:['#e5f0f6','#afcddf']},
- ahead: {front:['#e3eef3','#bfd6e2','#a8c5d7'],side:['#a6c3d3','#87a9bf'],cap:['#f4f8fb','#d5e5ee']},
- now: {front:['#d5e9df','#9dc5b4','#80ae9f'],side:['#85b09e','#638f80'],cap:['#eef7f1','#b8d8c9']},
- peak: {front:['#a9cde2','#6c9ebb','#5786a5'],side:['#608ba6','#426b88'],cap:['#dcecf6','#a4c6dd']},
- layer: {front:['#cfe3dc','#a0c6b9','#85aa9e'],side:['#8baea0','#6e9286'],cap:['#ebf4ef','#bfd8cc']}
+ elapsed: {front:['#4B6987','#43617F','#405D79'],side:['#3D5974','#38516B'],cap:['#D7DDE3','#CBD2DA']},
+ ahead: {front:['#D2D8DF','#CBD2DA','#C6CDD5'],side:['#BAC3CD','#B3BDC8'],cap:['#EDF0F3','#DFE4E9']},
+ now: {front:['#8DBCB0','#80B2A4','#76A798'],side:['#6B9A8C','#618D80'],cap:['#CDE2DA','#B9D8CC']},
+ peak: {front:['#4B6987','#43617F','#405D79'],side:['#3D5974','#38516B'],cap:['#D7DDE3','#CBD2DA']},
+ layer: {front:['#D2D8DF','#CBD2DA','#C6CDD5'],side:['#BAC3CD','#B3BDC8'],cap:['#EDF0F3','#DFE4E9']}
 } as const;
 const REVEAL_TOTAL_MS = REVEAL_MS * 2;
 const kstClock = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false });
@@ -191,7 +191,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
     return { lines, w, h, x, y };
   })() : null;
 
-  return <figure className="av-figure airport-flow" ref={figureRef} role="group" aria-label={label} data-bands={layout.bands.length}>
+  return <figure className="av-figure airport-flow" ref={figureRef} role="group" aria-label={label} data-bands={layout.bands.length} data-chart-material="ink-silver">
     <p className="airport-model-scope" data-testid="airport-model-scope" data-terminal={terminal}>{airportModelScope(terminal,lang)}</p>
     {showModel && <AirportSceneModel scope={terminal} lang={lang} className="airport-hourly-concept"/>}
     {/* No role="img" here: the figure itself is the labelled group, and the band
@@ -249,17 +249,15 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
       <g className="airport-hourly-prisms" aria-hidden="true" pointerEvents="none">
         {layout.bands.map((band, index) => {
           const barHeight = band.value / layout.maxBand * (base - top);
-          const x = band.x + band.width * .2, w = band.width * .55, depth = Math.min(5, band.width * .16);
+          const x = band.x + band.width * .21, w = band.width * .5, depth = Math.min(1.5, band.width * .08);
           const y = base - barHeight;
-          const finish = band.peak ? "peak" : band.now && !layout.stacked ? "now" : layout.now && band.x >= layout.now.x ? "ahead" : "elapsed";
+          const finish = band.now ? "now" : band.peak ? "peak" : layout.now && band.x >= layout.now.x ? "ahead" : "elapsed";
           const lower = layout.stacked ? layout.layers[0].values[index] / layout.maxBand * (base - top) : 0;
           return barHeight > 0 && <g key={band.start} data-start={band.start} data-value={band.value} data-height={barHeight} data-finish={finish}>
             <rect x={x} y={y} width={w} height={barHeight} style={{fill:`url(#${id}satin-${finish}-front)`}}/>
-            {lower > 0 && <rect x={x} y={base - lower} width={w} height={lower} style={{fill:`url(#${id}satin-layer-front)`}}/>}
+            {lower > 0 && <rect x={x} y={base - lower} width={w} height={lower} style={{fill:`url(#${id}satin-${band.now ? 'now-cap' : 'layer-front'})`}}/>}
             <path d={`M${x+w},${y} l${depth},${-depth} v${barHeight} l${-depth},${depth} Z`} style={{fill:`url(#${id}satin-${finish}-side)`}}/>
             <path d={`M${x},${y} h${w} l${depth},${-depth} h${-w} Z`} style={{fill:`url(#${id}satin-${finish}-cap)`}}/>
-            {barHeight>1.2 && <><path d={`M${x+.45},${y+.6} V${base-.45}`} style={{fill:"none",stroke:"#fff",strokeOpacity:.42,strokeWidth:.65}}/>
-            <path d={`M${x+.45},${y+.5} H${x+w-.3}`} style={{fill:"none",stroke:"#fff",strokeOpacity:.55,strokeWidth:.65}}/></>}
           </g>;
         })}
       </g>
@@ -269,7 +267,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
       </g>
 
       {layout.peak && <g className="airport-flow-mark airport-flow-peak" data-start={layout.peak.start}>
-        <circle cx={layout.peak.x} cy={layout.peak.y} r={4} />
+        <circle cx={layout.peak.x} cy={layout.peak.y} r={2.5} style={{fill:'#43617F'}} />
         <text x={clampX(layout.peak.x, 0)} y={Math.max(top - 6, layout.peak.y - 12)} textAnchor={peakAnchor}>{peakText}</text>
       </g>}
       {layout.now && <g className="airport-flow-mark airport-flow-now-group">
@@ -277,12 +275,12 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
         <line className="av-now airport-flow-now" x1={layout.now.x} x2={layout.now.x} y1={top - 14} y2={base} data-now-label={nowLabel} />
         {nowY !== null && <>
           <circle ref={(element) => { ringRef.current = element; nowDotRefs.current[0] = element; }} className="airport-flow-now-ring" cx={layout.now.x} cy={nowY} r={5} />
-          <circle ref={(element) => { nowDotRefs.current[1] = element; }} className="airport-flow-now-dot" cx={layout.now.x} cy={nowY} r={4.5} />
+          <circle ref={(element) => { nowDotRefs.current[1] = element; }} className="airport-flow-now-dot" cx={layout.now.x} cy={nowY} r={2} style={{fill:'#fff',stroke:'#43617F',strokeWidth:1}} />
           {nowBand && !hover && <text ref={(element) => { nowDotRefs.current[2] = element; }} className="airport-flow-now-value" x={layout.now.x > right - 70 ? layout.now.x - 10 : layout.now.x + 10} y={nowY - 9}
             textAnchor={layout.now.x > right - 70 ? "end" : "start"}>{people(nowBand.value)}{unit}</text>}
         </>}
         <g className="airport-flow-now-pill">
-          <rect x={pillX - pillWidth / 2} y={top - 39} width={pillWidth} height={24} rx={12} />
+          <rect x={pillX - pillWidth / 2} y={top - 39} width={pillWidth} height={24} rx={2} />
           <text className="airport-flow-now-label" x={pillX} y={top - 23} textAnchor="middle">{nowLabel}</text>
         </g>
       </g>}

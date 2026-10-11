@@ -1873,7 +1873,7 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
       {/* OWNER PRIORITY LOCK 6-8: this month so far, the same span of the month
           before, and the shape of how it accumulated. Scope-isolated like every
           other figure here — T2 sums T2's own days and nothing else. */}
-      {mtd && <section className="airport-mtd" data-scope={terminal} data-testid="airport-mtd" aria-label={mtdCopy.heading[lang]}>
+      {mtd && <><h3>{mtdCopy.sectionTitle[lang]}</h3><section className="airport-mtd" data-scope={terminal} data-testid="airport-mtd" aria-label={mtdCopy.heading[lang]}>
         <p className="airport-mtd-head"><span>{mtdCopy.heading[lang]}</span><small>{shortRange(mtd.current.start, mtd.current.end)}</small></p>
         {mtd.current.total !== null
           ? <strong className="airport-mtd-total">{Math.round(mtd.current.total).toLocaleString(numberLocale)}{peopleUnit}</strong>
@@ -1896,7 +1896,7 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
         </dl>
         <AirportMonthComparison current={mtd.current.total} previous={mtd.previous?.total ?? null} currentLabel={shortRange(mtd.current.start, mtd.current.end)} previousLabel={mtd.previous ? shortRange(mtd.previous.start, mtd.previous.end) : ''} numberLocale={numberLocale} unit={peopleUnit}/>
         <AirportMonthChart days={mtd.current.days} lang={lang} numberLocale={numberLocale} unit={peopleUnit} />
-      </section>}
+      </section></>}
       <div className="transfer-forecast" data-testid="transfer-forecast">
         {(airport.transferForecast ?? []).filter(r => r.serviceDate === summary.serviceDateKst && (isAll || r.terminal === terminal)).map(r =>
           <small key={r.terminal} style={{display:'block'}}>{r.terminal} · {passengerCopy.transfer[lang]} {r.expectedTransferPassengers.toLocaleString(numberLocale)}{peopleUnit} · {formatHumanFreshness(r.retrievedAt,nowIso,lang,"collected")}</small>)}
