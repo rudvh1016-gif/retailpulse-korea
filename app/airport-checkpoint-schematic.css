@@ -16,7 +16,7 @@
 .checkpoint-schematic-reading strong {display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;min-width:0;max-width:100%;font-size:var(--type-key);font-weight:var(--weight-strong);}
 .checkpoint-schematic-reading strong>span {white-space:nowrap;}
 .checkpoint-schematic-reading small,.checkpoint-schematic-reading sup {font-size:var(--type-secondary);font-weight:var(--weight-regular);}
-.checkpoint-schematic-people {display:block;max-width:100%;min-width:0;overflow-wrap:anywhere;}
+.checkpoint-schematic-people {display:block;max-width:100%;min-width:0;word-break:keep-all;overflow-wrap:anywhere;}
 .checkpoint-schematic-reading[data-state="current"][data-wait-level="clear"] {background:#e0eff7;}
 .checkpoint-schematic-reading[data-state="current"][data-wait-level="normal"] {background:#ddf1eb;}
 .checkpoint-schematic-reading[data-state="current"][data-wait-level="busy"] {background:#ffe8d8;}

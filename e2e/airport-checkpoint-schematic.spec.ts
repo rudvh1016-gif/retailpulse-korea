@@ -5,7 +5,7 @@ import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
 type CheckpointFixtureRow=Omit<(typeof SUMMARY_FIXTURE)['airport']['congestion'][number],'waitingCount'> & Pick<AirportCongestionSummaryRow,'waitingCount'>;
 type CheckpointFixture=Omit<typeof SUMMARY_FIXTURE,'airport'> & {airport:Omit<(typeof SUMMARY_FIXTURE)['airport'],'congestion'> & {congestion:CheckpointFixtureRow[]}};
 
-for(const [lang,width] of [['ko',360],['ko',390],['ko',430],['ko',1280],['en',390],['zh',390],['ja',390]] as const)test(`source-position checkpoint schematic ${lang} ${width}`,async({page},info)=>{
+for(const [lang,width] of [['ko',360],['ko',390],['ko',430],['ko',1280],['en',320],['en',390],['zh',390],['ja',390]] as const)test(`source-position checkpoint schematic ${lang} ${width}`,async({page},info)=>{
  const summary:CheckpointFixture=structuredClone(SUMMARY_FIXTURE),base=summary.airport.congestion.find(row=>row.terminal==='T2')!;
  await page.clock.setFixedTime(new Date(summary.generatedAt));
  const keys=['1A','1B','1C','1D','2A','2B','2C','2D'];
@@ -31,11 +31,16 @@ for(const [lang,width] of [['ko',360],['ko',390],['ko',430],['ko',1280],['en',39
  await expect(model.locator('[data-checkpoint="1C"]')).toHaveAttribute('data-state','zero');
  await expect(model.locator('[data-checkpoint="1C"]')).toHaveAttribute('data-wait-level','neutral');
  await expect(model.locator('[data-checkpoint="1D"]')).toHaveAttribute('data-state','closed');
- const countCopy={ko:['대기 128명','대기 0명','인원 미제공'],en:['Waiting 128','Waiting 0','Count unavailable'],zh:['等候 128人','等候 0人','人数未提供'],ja:['待機 128人','待機 0人','人数未提供']}[lang];
+ const countCopy={ko:['대기 128명','대기 0명','인원 미제공'],en:['128 in line','0 in line','No count'],zh:['等候 128人','等候 0人','人数未提供'],ja:['待機 128人','待機 0人','人数未提供']}[lang];
  await expect(model.locator('[data-checkpoint="1A"] .checkpoint-schematic-people')).toHaveText(countCopy[0]);
  await expect(model.locator('[data-checkpoint="1C"] .checkpoint-schematic-people')).toHaveText(countCopy[1]);
  await expect(model.locator('[data-checkpoint="1D"] .checkpoint-schematic-people')).toHaveText(countCopy[2]);
  await expect(model.locator('.checkpoint-schematic-people')).toHaveCount(8);
+ // A narrow lane may wrap a label between words, never inside one (Chinese and Japanese break between characters).
+ if(lang==='en'||lang==='ko')expect(await model.locator('.checkpoint-schematic-people').evaluateAll(labels=>labels.every(label=>{
+  const text=label.firstChild!;let at=0;
+  return (text.textContent??'').split(' ').every(word=>{const range=document.createRange();range.setStart(text,at);range.setEnd(text,at+word.length);at+=word.length+1;return word.length===0||range.getClientRects().length===1;});
+ }))).toBe(true);
  await expect(model.locator('details')).not.toHaveAttribute('open','');
  for(const key of keys)await expect(model.locator(`[data-checkpoint="${key}"] .checkpoint-schematic-people`)).toBeVisible();
  expect(await model.locator('[data-checkpoint]').evaluateAll(rows=>rows.every(row=>{

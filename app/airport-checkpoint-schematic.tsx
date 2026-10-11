@@ -41,12 +41,16 @@ export function AirportCheckpointSchematic({terminal,rows,now,lang}:{terminal:'T
     const side=slot.key.endsWith('W')?t(lang,'서','W','西','西'):t(lang,'동','E','东','東');
     const name=terminal==='T1'?`${slot.key.slice(0,1)} ${side}`:slot.key;
     const count=slot.row?.waitingCount;
-    const people=typeof count==='number'&&Number.isFinite(count)&&count>=0
-     ?t(lang,`대기 ${count.toLocaleString(locale)}명`,`Waiting ${count.toLocaleString(locale)}`,`等候 ${count.toLocaleString(locale)}人`,`待機 ${count.toLocaleString(locale)}人`)
+    const known=typeof count==='number'&&Number.isFinite(count)&&count>=0,n=known?count.toLocaleString(locale):'';
+    const people=known
+     ?t(lang,`대기 ${n}명`,`Waiting ${n}`,`等候 ${n}人`,`待機 ${n}人`)
      :t(lang,'인원 미제공','Count unavailable','人数未提供','人数未提供');
+    // A lane is about 35px wide on a 320px phone: English words longer than that
+    // would split mid-word, so the label shows short words and speaks in full.
+    const peopleShown=lang==='en'?known?`${n} in line`:'No count':people;
     return <div className="checkpoint-schematic-reading" key={slot.key} data-checkpoint={slot.key} data-state={heat.state} data-wait-level={heat.level} data-basis={heat.basis} aria-label={`${terminal} ${slot.key} · ${shown} ${value===null?'':minute} · ${people} · ${queueHeatLabel(heat,lang)}`}>
      <span>{name}</span><strong><span>{shown}{heat.state==='zero'&&<sup>*</sup>}</span>{value!==null&&heat.state!=='closed'&&<small>{minute}</small>}</strong>
-     <small className="checkpoint-schematic-people">{people}</small>
+     <small className="checkpoint-schematic-people">{peopleShown}</small>
     </div>;
    })}</div>
   </div>
