@@ -1,6 +1,9 @@
 {
   "scope": "Local actual-code preview only; no public merge or deployment; not part of PR341",
-  "approvals": ["Sentinel_6462d53997488191a8b9e86fb88f6127", "Sentinel_3b32c6bb7cb481919f45274d44420009"],
+  "approvals": [
+    "Sentinel_6462d53997488191a8b9e86fb88f6127",
+    "Sentinel_3b32c6bb7cb481919f45274d44420009"
+  ],
   "base": "6e50fdc339098630ab4033a84a210176c93b2d28",
   "route": "/ko/airport-glance-preview",
   "latestArtwork": {
@@ -12,7 +15,10 @@
     "pixelsInspected": false,
     "connected": false,
     "supersedes": "libfile_837eb74b3f788191b81f51d3dccf1aba",
-    "blocker": "The current official Library transfer helper previously failed on native Windows: os.setxattr unavailable. No bypass, raw download, or partial-file consumption. Latest reference resolved through Library read but not materialized."
+    "blocker": "The current official Library transfer helper previously failed on native Windows: os.setxattr unavailable. No bypass, raw download, or partial-file consumption. Latest reference resolved through Library read but not materialized.",
+    "verifiedRuntime": "win32; hasattr(os, setxattr) == False; verified without repeating transfer or modifying helper",
+    "officialTransferRoute": "Library prepare_materialize with exact file_id + library_file_id -> signed transfer object -> current library_file_transfer.py materialize. Earlier call raised AttributeError: module os has no attribute setxattr. No service error code returned.",
+    "alternativeRoutes": "Current materialization docs allow workspace_path when returned by prepare_materialize, otherwise the same official helper is required. Prior result was signed transfer. Library read returned image_asset_pointer, not local pixel bytes. No supported native-Windows substitute documented."
   },
   "implementation": [
     "Reuse existing flight, month and clock hooks, departure scope and country daily-mean calculations",
@@ -25,16 +31,16 @@
   "validation": {
     "typecheck": "passed",
     "unit": "2 passed",
-    "e2e": "6 passed: 360/390/430/1440 controls, date switching and past-day marker, API failure",
+    "e2e": "6 earlier functional cases passed; 4 additional Chinese/Japanese cases at 360/1440 passed after localization",
     "lint": "no errors; one next/no-img-element warning for pending static artwork slot",
     "screenshots": "Recorded public API snapshots, 1440 and 390, inspected; artwork missing so not final design",
     "build": "not run for this separate incomplete preview",
-    "performanceBeforeAfter": "not measured; no performance improvement claimed"
+    "performanceBeforeAfter": "not measured; no performance improvement claimed",
+    "localization": "Korean, English, Chinese and Japanese copy and accessibility labels implemented; typecheck and changed-file lint passed"
   },
   "remaining": [
     "Supported materialization of latest artwork; inspect actual pixels, create responsive assets and connect once",
     "Final artwork-complete PC/mobile screenshots and user approval before public application",
-    "Chinese and Japanese currently fall back to English preview copy; localization incomplete",
     "Rebase independent preview onto integrated main later while preserving Claude split",
     "Final build, full CI and same-condition performance comparison after artwork integration"
   ]

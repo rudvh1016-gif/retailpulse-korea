@@ -51,3 +51,18 @@ test('failed data reads show unavailable rather than invented zero totals',async
  await expect(app.locator('.glance-kpis strong').first()).toContainText('—');
  await expect(app.locator('.glance-ranking tbody tr')).toHaveCount(0);
 });
+
+for(const [lang,title,terminal,country] of [['zh','机场一览','航站楼','国家'],['ja','空港ひと目で','ターミナル','国']] as const)for(const width of [360,1440])test(`localized glance ${lang} ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:1000});await page.clock.setFixedTime(new Date(`${date}T10:15:00+09:00`));
+ await page.route('**/api/live/summary*',route=>route.fulfill({json:{...SUMMARY_FIXTURE,todayKst:date,serviceDateKst:date,airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:date},generatedAt:`${date}T10:15:00+09:00`}}));
+ await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',flights,retrievedAt:`${date}T00:00:00Z`,truncated:false}}));
+ await page.route('**/api/live/airport-months*',route=>route.fulfill({json:monthly}));
+ await page.goto(`/${lang}/airport-glance-preview`);const app=page.getByTestId('airport-glance-preview');
+ await expect(app.getByRole('heading',{name:title,exact:true})).toBeVisible();
+ await expect(app.getByRole('columnheader',{name:country,exact:true})).toBeVisible();
+ await expect(app.locator('.glance-ranking tbody tr')).toHaveCount(5);
+ await app.getByRole('group',{name:terminal,exact:true}).getByRole('button',{name:'T2',exact:true}).click();
+ await expect(app.locator('.glance-kpis strong').first()).toContainText('144');
+ expect(await app.textContent()).not.toMatch(/Airport at a glance|No verified data available|Approved airport artwork pending/);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});
