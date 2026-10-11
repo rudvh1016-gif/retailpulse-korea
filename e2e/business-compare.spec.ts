@@ -98,3 +98,23 @@ test('blocked storage hides the last-look block without breaking the briefing', 
   await expect(prep.getByTestId('prep-actions')).toBeVisible();
   await expect(prep.getByTestId('last-check')).toHaveCount(0);
 });
+
+test('switching place and back keeps the earlier visit as the comparison', async ({ page }) => {
+  await open(page, usual('myeongdong'));
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('koretail-last-check-v1'))).not.toBeNull();
+  await page.evaluate(() => {
+    const ledger = JSON.parse(localStorage.getItem('koretail-last-check-v1') ?? '[]');
+    ledger[0].checkedAt = '2026-08-31T04:30:00.000Z';
+    ledger[0].signature.crowd['2026-08-31T17:00:00+09:00'] = 2;
+    localStorage.setItem('koretail-last-check-v1', JSON.stringify(ledger));
+  });
+  await page.reload();
+  await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
+  await expect(page.getByTestId('last-check-headline')).toHaveText('지난 확인(13:30) 이후 달라진 점');
+  const tabs = page.locator('.business-view .area-tabs');
+  await tabs.getByRole('tab', { name: '홍대' }).click();
+  await expect(tabs.getByRole('tab', { name: '홍대' })).toHaveAttribute('aria-selected', 'true');
+  await tabs.getByRole('tab', { name: '명동' }).click();
+  await expect(page.getByTestId('last-check-headline')).toHaveText('지난 확인(13:30) 이후 달라진 점');
+  await expect(page.getByTestId('last-check-changes')).toContainText('17:00 혼잡 예측 보통 → 붐빔');
+});
