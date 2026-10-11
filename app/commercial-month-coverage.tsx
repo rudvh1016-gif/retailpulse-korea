@@ -1,6 +1,7 @@
 import type {ReactNode} from 'react';
 import type {Lang} from './retailpulse-data';
 import type {CommercialMonthCategory} from '../lib/commercial-monthly';
+import {comparisonDateMembership} from '../lib/comparison-date-membership';
 type Coverage=NonNullable<CommercialMonthCategory['comparison']['coverage']>;
 const t=(lang:Lang,ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
 function byDay(keys:readonly string[]) {
@@ -10,20 +11,20 @@ function byDay(keys:readonly string[]) {
 }
 /** Hour membership is known; exact ten-minute clocks are not retained in the
  * aggregate. Never turn a sampled hour or first/last clock into continuous time. */
-export function CommercialMonthCoverage({coverage,current,previous,lang,children}:{coverage?:Coverage;current:string;previous:string;lang:Lang;children?:ReactNode}) {
+export function CommercialMonthCoverage({coverage,current,previous,lang,matchedDays,matchedHours,children}:{coverage?:Coverage;current:string;previous:string;lang:Lang;matchedDays:number;matchedHours:number;children?:ReactNode}) {
  const days=byDay(coverage?.hours??[]);
  const hourUnit=t(lang,'시대','h','时段','時台');
  const number=new Intl.NumberFormat(({ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'})[lang]);
  const dateList=(values:string[])=>values.map(value=>value.slice(8)).join(', ')||'—';
+ const showYear=previous.slice(0,4)!==current.slice(0,4);
+ const previousDates=coverage?comparisonDateMembership(coverage.previousDates,showYear):null,currentDates=coverage?comparisonDateMembership(coverage.currentDates,showYear):null;
  return <div className="consumption-coverage" data-testid="consumption-coverage">
-  {coverage&&<>
-   <p>{t(lang,'포함 날짜·기준 시간대','Included dates and reference hours','包含日期与基准小时','含めた日付・基準時間')} (KST)</p>
-   <p>{previous}: {dateList(coverage.previousDates)}<br/>{current}: {dateList(coverage.currentDates)}</p>
-   {days.length>0?<ul className="consumption-hours-preview">{days.slice(0,2).map(([day,hours])=><li key={day}>{t(lang,`${day}일`,`${day}`,`${day}日`,`${day}日`)} · {hours.join(', ')}{hourUnit}</li>)}{days.length>2&&<li>+{number.format(days.length-2)} {t(lang,'개 날짜는 펼쳐 보기','more dates below','个日期展开查看','日分は詳細で確認')}</li>}</ul>:<p>{t(lang,'시간대 목록 미확인','Hour list unconfirmed','小时列表未确认','時間一覧は未確認')}</p>}
-  </>}
-  <small>{t(lang,'일부 10분 기록 · 하루 전체 아님','Sampled 10-minute records · not full days','部分10分钟记录 · 非整天','一部の10分記録・1日全体ではありません')}</small>
+  <p className="consumption-actual-period" data-testid="consumption-actual-period">{previousDates&&currentDates?<>{t(lang,'비교','Comparison','比较','比較')}: <span>{previousDates}</span> vs <span>{currentDates}</span> · {t(lang,'공통 시간대 기준','shared hours','共同小时基准','共通時間基準')} (KST)</>:coverage&&previousDates===''&&currentDates===''?t(lang,'공통 관측 없음','No shared observations','无共同观测','共通観測なし'):t(lang,'비교에 포함된 날짜 미확인','Included comparison dates unconfirmed','比较日期未确认','比較対象日は未確認')}</p>
   <details><summary>{t(lang,'날짜·시간대와 계산 기준','Dates, hours and calculation','日期、小时与计算依据','日付・時間と計算基準')}</summary>
+   <p>{t(lang,'공통 날짜','Common dates','共同日期','共通日付')} {number.format(matchedDays)} · {t(lang,'날짜×시간대','date/hour bins','日期×小时','日付×時間枠')} {number.format(matchedHours)}</p>
    {coverage?<>
+    <p>{t(lang,'포함 날짜·기준 시간대','Included dates and reference hours','包含日期与基准小时','含めた日付・基準時間')} (KST)<br/>{previous}: {dateList(coverage.previousDates)}<br/>{current}: {dateList(coverage.currentDates)}</p>
+    {!coverage.hours&&<p>{t(lang,'시간대 목록 미확인','Hour list unconfirmed','小时列表未确认','時間一覧は未確認')}</p>}
     <ul>{days.map(([day,hours])=><li key={day}>{previous}-{day} / {current}-{day}: {hours.join(', ')}{hourUnit}</li>)}</ul>
     <p>{t(lang,'평균에 포함한 결제값 관측 수','Payment readings in the mean','均值包含的支付观测数','平均に含めた決済値の観測数')}: {previous} {number.format(coverage.previousWindows)} → {current} {number.format(coverage.currentWindows)}</p>
    </>:<p>{t(lang,'보존된 집계에서 정확한 포함 날짜·시간대 목록은 확인되지 않습니다.','The retained aggregate does not confirm exact dates or hours.','保留汇总无法确认确切日期与小时列表。','保存集計では正確な日付・時間一覧を確認できません。')}</p>}

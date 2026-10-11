@@ -6,3 +6,11 @@ export const airportNewsCopy={
  zh:{entry:'仁川机场·海关新闻',published:'发布日期',modified:'修改日期',attachments:'附件',documentVerified:'文件已核实',loading:'正在加载资料…',unavailable:'无法加载资料，请重试。',retry:'重试',title:'仁川机场·海关新闻',intro:'官方公告与已核实的适用日期',back:'返回',tabs:'新闻分类',airport:'仁川机场',customs:'海关·免税',document:'文件内容待核实',publicationUnknown:'发布日期待核实',effective:'生效日期',deadline:'截止日期',empty:'暂无已核实且获准发布的资料。',close:'关闭',facts:'已核实的主要内容',changes:'变更内容',audience:'适用对象',unknown:'请核实原文',dateUnknown:'待核实',documentUnknown:'文件内容尚未核实，请查看原文。',original:'查看官方原文',status:{announced:'官方公告',proposed:'行政预告',corrected:'官方更正',withdrawn:'撤回',review:'原文待核实'}},
  ja:{entry:'仁川空港・税関ニュース',published:'発行日',modified:'更新日',attachments:'添付ファイル',documentVerified:'文書確認済み',loading:'資料を読み込み中…',unavailable:'資料を読み込めませんでした。再試行してください。',retry:'再試行',title:'仁川空港・税関ニュース',intro:'公式発表と確認済みの適用日',back:'戻る',tabs:'ニュース分類',airport:'仁川空港',customs:'税関・免税',document:'文書の確認が必要',publicationUnknown:'発表日は未確認',effective:'施行日',deadline:'締切',empty:'確認済みで掲載可能な資料はありません。',close:'閉じる',facts:'確認済みの主な内容',changes:'変更点',audience:'対象',unknown:'原文の確認が必要',dateUnknown:'未確認',documentUnknown:'文書の内容は未確認です。原文をご確認ください。',original:'公式の原文を見る',status:{announced:'公式発表',proposed:'行政予告',corrected:'公式訂正',withdrawn:'撤回',review:'原文の確認が必要'}},
 } as const satisfies Record<Lang,unknown>;
+
+/** Reader-facing links keep verified article text separate from attachment review. */
+export const airportNewsDetailCopy={
+ ko:{attachment:'문서',documentPending:'문서 미검토',reprint:'공식 전재 보기',reprintHelp:'문서가 열리지 않으면 본문을 확인한 공식 전재를 이용하세요.',rightsEvidence:'이용 조건 근거'},
+ en:{attachment:'Attachment',documentPending:'Attachment not reviewed',reprint:'Official republication',reprintHelp:'If an attachment does not open, read the verified text in the official republication.',rightsEvidence:'Reuse terms'},
+ zh:{attachment:'附件',documentPending:'附件尚未审核',reprint:'查看官方转载',reprintHelp:'若附件无法打开，可阅读已核实正文的官方转载。',rightsEvidence:'使用条件依据'},
+ ja:{attachment:'添付',documentPending:'添付は未確認',reprint:'公式転載を読む',reprintHelp:'添付を開けない場合は、本文を確認済みの公式転載をご覧ください。',rightsEvidence:'利用条件の根拠'},
+} as const satisfies Record<Lang,unknown>;

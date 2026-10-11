@@ -453,9 +453,12 @@ test("A5 arrival forecast replaces Seoul departure rows with compact, coverage-s
 
 test("airport detail UI uses editorial rows, friendly checkpoints and honest partial-state copy", async () => {
   const signals = await read("../app/live-signals.tsx");
+  const checkpoints = await read("../app/airport-checkpoint-schematic.tsx");
   const css = await read("../app/globals.css");
   assert.match(signals, /AirportGatePillars/);
-  assert.match(signals, /friendlyCheckpointName\(row\.zone, lang\)/);
+  assert.match(signals, /AirportCheckpointSchematic/);
+  assert.match(checkpoints, /friendlyCheckpointName\(row\.zone,\s*lang\)/);
+  assert.match(checkpoints, /terminalRows\.map/);
   assert.match(signals, /rankCurrentDepartureHallCheckpoints/);
   assert.match(signals, /일부 시간대가 누락되어 하루 전체 합계와 피크는 표시하지 않습니다/);
   assert.match(await read("../app/airport-gate-pillars.tsx"), /data-testid="gate-pillar-model"/);
@@ -568,7 +571,11 @@ test("a collection time and a summed window are never worded as the same thing",
   assert.match(brief, /export type FreshnessKind = "basis" \| "collected" \| "observed" \| "plain";/);
   // Retrievals say retrieval; provider observations say observation.
   assert.match(signals, /formatHumanFreshness\(value, nowIso, lang, "collected"\)/);
-  assert.match(signals, /formatHumanFreshness\(row\.observedAt, nowIso, lang, "observed"\)/);
+  const checkpoints = await read("../app/airport-checkpoint-schematic.tsx");
+  assert.match(checkpoints, /<time dateTime=\{row\.observedAt\}>\{stamp\(row\.observedAt\)\} KST<\/time>/);
+  assert.match(checkpoints, /terminalRows\.map\(row=>row\.observedAt\)/);
+  assert.match(checkpoints, /className="checkpoint-schematic-time"/);
+  assert.match(checkpoints, /'Observed'/);
 
   // The remaining card states the band it actually summed.
   assert.match(signals, /function formatRemainingWindow/);

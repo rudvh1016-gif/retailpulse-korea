@@ -12,7 +12,10 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
  await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
  await page.route('**/api/live/summary*',routeSummary(summary));await page.route('**/api/live/airport-months*',route=>route.fulfill({json:reply()}));
  await page.goto(`/${lang}/airport`);const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();
- await expect(section).toContainText('2026-09-01–2026-09-30');await expect(section).toContainText('2/30');await expect(section).toContainText('1/9');
+ const includedDates=section.locator('details').filter({has:page.locator('.airport-month-period')}),includedSummary=includedDates.locator(':scope > summary');
+ await includedSummary.click();await expect(includedDates).toHaveAttribute('open','');await expect(includedDates.locator('.airport-month-period').first()).toBeVisible();
+ await expect(includedDates).toContainText('2026-09-01–2026-09-30');await expect(includedDates).toContainText('2/30');await expect(includedDates).toContainText('1/9');
+ await includedSummary.click();
  await expect(section).toContainText('+200.0%');
  await expect(section.getByTestId('destination-daily-changes')).toBeVisible();
  await expect(section.getByTestId('country-side-rates')).toHaveCount(1);
