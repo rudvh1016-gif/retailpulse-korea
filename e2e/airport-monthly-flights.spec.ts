@@ -48,3 +48,36 @@ test('legacy update and missing months use three bounded checks; failed refresh 
  await page.route('**/api/live/airport-months*',route=>route.fulfill({status:503,json:{status:'UNAVAILABLE',data:null}}));
  await section.locator('select').selectOption('2026-10');await expect(section).toContainText('마지막 확인 집계');await expect(section).toContainText('+200.0%');await expect(section).toContainText('2026-10-10');
 });
+
+// The map's loading slot and its loaded layout both show the monthly block. Whether the
+// month reply lands before the flights (the usual case) or after, there is one read.
+for(const [label,monthDelay,flightDelay] of [['month first',100,700],['flights first',900,250]] as const)test(`the monthly block keeps one read when the flight map finishes loading (${label})`,async({page})=>{
+ await page.setViewportSize({width:390,height:900});await page.emulateMedia({reducedMotion:'reduce'});
+ await page.route('**/api/live/summary*',routeSummary(summary));
+ const sent:string[]=[];page.on('request',request=>{if(request.url().includes('/api/live/airport-months'))sent.push(new URL(request.url()).search);});
+ await page.route('**/api/live/flights*',async route=>{await new Promise(resolve=>setTimeout(resolve,flightDelay));await route.fulfill({json:{mode:'live-flights',generatedAt:summary.generatedAt,serviceDateKst:'2026-10-10',flights:[],truncated:false,retrievedAt:summary.generatedAt}});});
+ await page.route('**/api/live/airport-months*',async route=>{await new Promise(resolve=>setTimeout(resolve,monthDelay));await route.fulfill({json:reply()});});
+ await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();
+ await expect(section).toContainText('+200.0%');await page.waitForTimeout(1000);
+ expect(sent).toEqual(['?month=2026-10']);
+});
+
+// A chosen comparison month belongs to the date it was chosen on. Changing the date
+// starts from the new date's month, whether or not that date's summary is cached.
+test('a comparison month chosen for one date does not carry over to another date',async({page})=>{
+ await page.setViewportSize({width:390,height:900});await page.emulateMedia({reducedMotion:'reduce'});
+ await page.route('**/api/live/summary*',async route=>{const date=new URL(route.request().url()).searchParams.get('date')??summary.todayKst;await route.fulfill({json:{...summary,serviceDateKst:date,airport:{...summary.airport,serviceDateKst:date}}});});
+ await page.route('**/api/live/airport-months*',route=>route.fulfill({json:reply(new URL(route.request().url()).searchParams.get('month')??undefined)}));
+ await page.route('**/api/live/flights*',route=>{const date=new URL(route.request().url()).searchParams.get('date')??summary.todayKst;return route.fulfill({json:{mode:'live-flights',generatedAt:summary.generatedAt,serviceDateKst:date,flights:[],truncated:false,retrievedAt:summary.generatedAt}});});
+ await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();
+ const select=section.locator('select'),shortcuts=page.locator('.date-nav-shortcuts button');
+ await expect(select).toHaveValue('2026-10');
+ // Visit yesterday and come back, so both summaries are cached.
+ await shortcuts.nth(0).click();await expect(select).toHaveValue('2026-10');await shortcuts.nth(1).click();await expect(select).toHaveValue('2026-10');
+ await select.selectOption('2026-09');await expect(select).toHaveValue('2026-09');
+ // A cached date keeps the block mounted; the choice still must not follow.
+ await shortcuts.nth(0).click();await expect(select).toHaveValue('2026-10');
+ // Coming back starts fresh too, as it always did.
+ await shortcuts.nth(1).click();await expect(select).toHaveValue('2026-10');
+ await select.selectOption('2026-09');await shortcuts.nth(2).click();await expect(select).toHaveValue('2026-10');
+});

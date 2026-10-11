@@ -18,7 +18,7 @@ for(const width of [320,390,430,1280])for(const lang of ['ko','en','zh','ja'])te
  await expect(model.locator('[data-checkpoint="1A"] strong')).toContainText('60+');await expect(model.locator('[data-checkpoint="1D"] strong')).toContainText('40');await expect(model.locator('[data-checkpoint="2D"] strong')).toContainText('6');
  await expect(model.locator('[data-checkpoint="1A"]')).toHaveAttribute('data-wait-level','very-busy');await expect(model.locator('[data-checkpoint="1D"]')).toHaveAttribute('data-wait-level','busy');await expect(model.locator('[data-checkpoint="2D"]')).toHaveAttribute('data-wait-level','clear');
  await expect(model.locator('.checkpoint-schematic-time')).toContainText('14:06');
- const imageBottom=await model.locator('img').evaluate(el=>el.getBoundingClientRect().bottom),labelsTop=await model.locator('.checkpoint-schematic-groups').evaluate(el=>el.getBoundingClientRect().top);expect(labelsTop).toBeGreaterThanOrEqual(imageBottom-1);
+ const imageBottom=await model.locator('img').evaluate(el=>el.getBoundingClientRect().bottom),labelsTop=await model.locator('.checkpoint-schematic-readings').evaluate(el=>el.getBoundingClientRect().top);expect(labelsTop).toBeGreaterThanOrEqual(imageBottom-1);
  expect(await model.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
  const toggle=model.locator('summary');await toggle.focus();await page.keyboard.press('Enter');await expect(model.locator('[data-observation]')).toHaveCount(8);await expect(model.locator('[data-observation="DG1_D"]')).toContainText('97');
  await toggle.focus();await page.keyboard.press('Space');await expect(model.locator('[data-observation]').first()).toBeHidden();await expect(toggle).toBeFocused();

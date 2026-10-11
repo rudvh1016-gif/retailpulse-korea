@@ -2,8 +2,15 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const app = readFileSync("app/retailpulse-app.tsx", "utf8");
+const monthRangePicker = readFileSync("app/month-range-picker.tsx", "utf8");
 const signals = readFileSync("app/live-signals.tsx", "utf8");
+// The airport screens (departure and arrival summaries, facility directory,
+// flight board, My Store) were split out of live-signals.tsx into
+// app/airport-live-signals.tsx on 2026-10-11. Positive checks point at the file
+// that holds the code; wording guards that forbid a claim anywhere in the
+// signals code scan both halves, as they scanned the one file before.
+const airportSignals = readFileSync("app/airport-live-signals.tsx", "utf8");
+const allSignals = `${signals}\n${airportSignals}`;
 const demandCard = readFileSync("app/area-demand-card.tsx", "utf8");
 const styles = readFileSync("app/globals.css", "utf8");
 
@@ -24,7 +31,7 @@ test("the area population names itself as a current estimate", () => {
 test("the realtime population is never called a visitor count", () => {
   // "누적 방문객" is allowed in exactly one shape: saying the number is NOT
   // that. Anything else would be the claim this phase exists to prevent.
-  const claims = signals.split("\n").filter((line) =>
+  const claims = allSignals.split("\n").filter((line) =>
     /오늘 방문객|누적 방문객|일일 방문자|오늘 방문자 수/.test(line)
     && !/아님|ではありません|not today's cumulative|非今日累计/.test(line));
   assert.deepEqual(claims, [], "a visitor-count claim must only ever appear as a denial");
@@ -53,7 +60,7 @@ test("realtime commercial activity appears immediately after population with tru
     "基于新韩卡韩国境内消费者支付 · 非全量销售额 · 非外国消费者支出",
     "新韓カードの国内消費者決済に基づく · 売上全数ではありません · 外国人消費ではありません",
   ]) assert.ok(signals.includes(phrase), `${phrase} must remain visible`);
-  const areaSignals = signals.match(/export default function LiveSignals[\s\S]*?\nconst flightBoardText/)?.[0] ?? "";
+  const areaSignals = signals.match(/export default function LiveSignals[\s\S]*$/)?.[0] ?? "";
   assert.ok(areaSignals.indexOf("<AreaDemandCard") < areaSignals.indexOf("<CommercialSignalCard"));
   assert.ok(areaSignals.indexOf("buildCommercialSignalRow") < areaSignals.indexOf("block?.foreignPresence"));
   assert.doesNotMatch(areaSignals, /foreign spend|tourist spend|외국인 매출|관광객 매출/i);
@@ -66,7 +73,7 @@ test("foreign purpose mobility is historical, dated, and never presented as visi
     "실시간·방문객·구매·매출 아님",
     "not real-time activity, visitors, purchases, or sales",
   ]) assert.ok(signals.includes(phrase), `${phrase} must remain visible`);
-  const areaSignals = signals.match(/export default function LiveSignals[\s\S]*?\nconst flightBoardText/)?.[0] ?? "";
+  const areaSignals = signals.match(/export default function LiveSignals[\s\S]*$/)?.[0] ?? "";
   assert.ok(areaSignals.indexOf("block?.foreignPresence") < areaSignals.indexOf("block?.foreignPurposeMobility"));
   const mobilityBlock = areaSignals.match(/if \(block\?\.foreignPurposeMobility\) \{([\s\S]*?)\n  \}/)?.[1] ?? "";
   assert.match(mobilityBlock, /mobility\.referenceDate/);
@@ -80,7 +87,7 @@ test("subway signal preserves boarding/alighting truth in all four languages", (
     "실시간·고유 방문객·상권 방문객 수 아님",
     "not real-time, unique people, or commercial-area visitors",
   ]) assert.ok(signals.includes(phrase), `${phrase} must remain visible`);
-  const areaSignals = signals.match(/export default function LiveSignals[\s\S]*?\nconst flightBoardText/)?.[0] ?? "";
+  const areaSignals = signals.match(/export default function LiveSignals[\s\S]*$/)?.[0] ?? "";
   const subwayBlock = areaSignals.match(/if \(block\?\.subwayRidership\) \{([\s\S]*?)\n  \}/)?.[1] ?? "";
   assert.match(subwayBlock, /subway\.referenceDate/);
   assert.match(subwayBlock, /subway\.alightingCount/);
@@ -90,7 +97,7 @@ test("subway signal preserves boarding/alighting truth in all four languages", (
   // nothing about which station produced the number. Comments are stripped
   // first, since the code explains the change it made.
   assert.match(subwayBlock, /formatRepresentativeStations\(subway\.selectedStations\)/);
-  const shown = signals.replace(/(^|[^:])\/\/.*$/gm, "$1").replace(/\/\*[\s\S]*?\*\//g, " ");
+  const shown = allSignals.replace(/(^|[^:])\/\/.*$/gm, "$1").replace(/\/\*[\s\S]*?\*\//g, " ");
   for (const internal of ["선정 역", "Selected-station", "所选车站", "選定駅"]) {
     assert.equal(shown.includes(internal), false, `internal "${internal}" vocabulary must not reach the UI`);
   }
@@ -106,7 +113,7 @@ test("airport current observation and official forecast stay separately named", 
   }
   // These words may appear only where the product denies them, e.g.
   // "인천공항 공식 예상 · 실제 출국객 집계 아님".
-  const claims = signals.split("\n").filter((line) =>
+  const claims = allSignals.split("\n").filter((line) =>
     /실제 출국객|현재 실제 승객|실측 승객/.test(line)
     && !/아님|ではありません|not an actual|非实际/.test(line));
   assert.deepEqual(claims, [], "a forecast must never be worded as a measurement");
@@ -118,12 +125,12 @@ test("Seoul uses airport arrivals only as area-independent background context", 
   }
   assert.match(signals, /서울의 특정 지역과 직접 연결되지 않는 배경 참고/);
   assert.match(signals, /실제 서울 방문객 수 아님/);
-  assert.doesNotMatch(signals, /서울 소비 수요의 선행 참고 신호/);
-  const claims = signals.split("\n").filter((line) =>
+  assert.doesNotMatch(allSignals, /서울 소비 수요의 선행 참고 신호/);
+  const claims = allSignals.split("\n").filter((line) =>
     /실제 입국객|현재 입국객|실측 입국객/.test(line)
     && !/아님|ではありません|not actual|非实际/.test(line));
   assert.deepEqual(claims, [], "airport arrival forecasts must never read as observed arrivals");
-  assert.doesNotMatch(signals, /입국객[^\n]*명동에 유입/,
+  assert.doesNotMatch(allSignals, /입국객[^\n]*명동에 유입/,
     "airport arrivals must never be asserted as Myeongdong visitors");
 });
 
@@ -159,16 +166,16 @@ const visual = readFileSync("app/airport-visual.css", "utf8");
  */
 test("the hourly forecast is one figure over the whole day, not a scrolling strip", () => {
   assert.doesNotMatch(styles, /\.airport-timeline/, "the band strip and its scroll rules are gone from the stylesheet");
-  assert.doesNotMatch(signals, /airport-timeline/, "and from the markup");
-  assert.match(signals, /<AirportFlowFigure/);
+  assert.doesNotMatch(allSignals, /airport-timeline/, "and from the markup");
+  assert.match(airportSignals, /<AirportFlowFigure/);
   assert.match(figure, /ResizeObserver/, "the figure measures its own width instead of scrolling");
   assert.match(geometry, /export const FLOW_HOURS = \[0, 6, 12, 18, 24\]/, "the axis is the day, 00 to 24");
   assert.match(geometry, /kstDayStart/, "midnight is KST midnight, not the browser's");
 });
 
 test("the current-time marker is drawn for today only and never rewrites past bands", () => {
-  assert.match(signals, /summary\?\.dayRelation === "TODAY"/, "a past or future date has no 'now' inside it");
-  assert.match(signals, /const nowBandStart = nowBand\?\.targetStartAt \?\? null/);
+  assert.match(airportSignals, /summary\?\.dayRelation === "TODAY"/, "a past or future date has no 'now' inside it");
+  assert.match(airportSignals, /const nowBandStart = nowBand\?\.targetStartAt \?\? null/);
   for (const label of ["현재 시각", "当前时间", "現在時刻"]) assert.ok(signals.includes(label), `${label} must exist`);
   // The marker is a separate line and label; the area and line under it keep
   // their forecast styling, so a band behind the marker stays a forecast.
@@ -178,8 +185,8 @@ test("the current-time marker is drawn for today only and never rewrites past ba
 });
 
 test("the current-time rule follows the exact minute inside its forecast band", () => {
-  assert.match(signals, /const nowBandDuration = nowBand \? Date\.parse\(nowBand\.targetEndAt\) - Date\.parse\(nowBand\.targetStartAt\) : 0/);
-  assert.match(signals, /const nowBandProgress = nowBand && nowBandDuration > 0/);
+  assert.match(airportSignals, /const nowBandDuration = nowBand \? Date\.parse\(nowBand\.targetEndAt\) - Date\.parse\(nowBand\.targetStartAt\) : 0/);
+  assert.match(airportSignals, /const nowBandProgress = nowBand && nowBandDuration > 0/);
   assert.match(geometry, /x\(start \+ progress \* \(end - start\)\)/, "the rule sits at the exact minute, not at the band edge");
 
   /*
@@ -196,7 +203,7 @@ test("the current-time rule follows the exact minute inside its forecast band", 
 });
 
 test("the custom month range is a compact grouped control on phone and desktop", () => {
-  assert.match(app, /<form className="month-range"/);
+  assert.match(monthRangePicker, /<form className="month-range"/);
   assert.match(styles, /\.month-range \{[^}]*display: grid[^}]*border: 1px solid var\(--ink\)/s);
   assert.match(styles, /\.month-range-fields \{[^}]*grid-template-columns: minmax\(0, 1fr\) 18px minmax\(0, 1fr\)/s);
   assert.match(styles, /\.month-range-fields select \{[^}]*appearance: none[^}]*border-radius: 6px/s);
@@ -224,7 +231,7 @@ test("checkpoint observations use a native collapsed disclosure with visible key
   assert.match(schematic, /data-observation=\{row\.zone\}/);
   assert.match(schematicStyles, /summary:focus-visible \{outline:/,
     "a keyboard user must be able to see the focused control");
-  assert.doesNotMatch(signals, /className=\{`airport-queue-cards/,
+  assert.doesNotMatch(allSignals, /className=\{`airport-queue-cards/,
     "the owner-requested consolidation must not retain duplicate representative cards");
   for (const label of ['People, times and source', '\uB300\uAE30 \uC778\uC6D0\u00B7\uC2DC\uAC01\u00B7\uCD9C\uCC98', '\u7B49\u5019\u4EBA\u6570\u3001\u65F6\u523B\u4E0E\u6765\u6E90', '\u5F85\u6A5F\u4EBA\u6570\u30FB\u6642\u523B\u30FB\u51FA\u5178']) {
     assert.ok(schematic.includes(label), `${label} must exist`);
@@ -238,14 +245,14 @@ test("the event line carries official period and distance, and omits what is mis
     "an absent official field must drop out rather than render empty");
   // Nothing about the event may be derived from its title. Comments discuss
   // that rule on purpose, so only executable lines are examined.
-  const code = signals.split("\n").filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line)).join("\n");
+  const code = allSignals.split("\n").filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line)).join("\n");
   assert.doesNotMatch(code, /inferCategory|describeEvent|guessEvent/i,
     "an event description may only come from official data");
 });
 
 test("event wording stays neutral about cause", () => {
   for (const causal of ["행사 때문에", "행사로 인해 사람이", "때문에 사람이 많"]) {
-    assert.ok(!signals.includes(causal), `${causal} would claim causality the data cannot support`);
+    assert.ok(!allSignals.includes(causal), `${causal} would claim causality the data cannot support`);
   }
 });
 
@@ -281,7 +288,7 @@ test("Store Dynamics is a dedicated historical block with four-language limitati
   // The spreadsheet grid is gone: no cell-per-field grid, and the one rule
   // left is the divider before the quarter's change.
   for (const gridClass of ["store-dynamics-counts", "store-dynamics-changes", "store-dynamics-context"]) {
-    assert.equal(signals.includes(gridClass), false, `${gridClass} was the table layout and must be gone`);
+    assert.equal(allSignals.includes(gridClass), false, `${gridClass} was the table layout and must be gone`);
     assert.equal(styles.includes(gridClass), false, `${gridClass} styles must be gone`);
   }
   assert.match(styles, /\.store-dynamics-total > strong \{[^}]*font-size: clamp\(/,
@@ -325,7 +332,10 @@ const LOCALE_STRING = /(ko|en|zh|ja):\s*"((?:[^"\\]|\\.)*)"/g;
 
 test("no display heading ends in a terminal period, in any locale", () => {
   const offenders = [];
-  for (const file of ["app/retailpulse-app.tsx", "app/live-signals.tsx", "app/not-found.tsx"]) {
+  for (const file of [
+    "app/retailpulse-app.tsx", "app/airport-view.tsx", "app/month-range-picker.tsx",
+    "app/live-signals.tsx", "app/airport-live-signals.tsx", "app/not-found.tsx",
+  ]) {
     const source = readFileSync(file, "utf8");
     for (const block of source.matchAll(HEADING_BLOCK)) {
       for (const localized of block[2].matchAll(LOCALE_STRING)) {
@@ -408,7 +418,7 @@ test("ordinary missing-data and stale states are neutral, not alarms", () => {
  * 자료로 그 아래에 남는다. 격자를 지운 것이 아니라 순서를 바꾼 것이다.
  */
 test("공항 페이지는 요약 → 예보 차트 → 상세 격자 → 구성 → 관측 표 순서로 읽힌다", () => {
-  const summary = signals.match(/export function AirportTodaySummary[\s\S]*?\n\}/)?.[0] ?? "";
+  const summary = airportSignals.match(/export function AirportTodaySummary[\s\S]*?\n\}/)?.[0] ?? "";
   assert.ok(summary.length > 0);
   const at = (needle) => summary.indexOf(needle);
   const brief = at('<AirportAtAGlance summary={summary} lang={lang} terminal={terminal}');
@@ -449,7 +459,10 @@ test("공항 페이지는 요약 → 예보 차트 → 상세 격자 → 구성 
  * 네 언어 모두 "공식 예상" 이라고 말한다.
  */
 test("하루 전체 합계 다음에는 지금 시간대 출국장 공식 예상 승객, 대기는 보조 줄로 내려간다", () => {
-  const glance = signals.slice(signals.indexOf("export function AirportAtAGlance"), signals.indexOf("export function AirportTodaySummary"));
+  // AirportTodaySummary moved to airport-live-signals.tsx; the glance block is
+  // the whole AirportAtAGlance function, up to its closing brace at column 0.
+  const glance = signals.match(/export function AirportAtAGlance[\s\S]*?\n\}\n/)?.[0] ?? "";
+  assert.ok(glance.length > 0, "한눈에 보기 격자가 있어야 한다");
   assert.doesNotMatch(glance, /airport-glance-strip|airport-near-term|airport-upcoming-peak/);
   assert.match(glance, /airport-brief-total/);
   assert.match(glance, /\{flow\}/);
@@ -495,8 +508,8 @@ test("하루 전체 합계 다음에는 지금 시간대 출국장 공식 예상
  * 않는다. 특정 매장을 코드로 지우는 대신, 자료의 성격을 밝힌다.
  */
 test("시설 디렉터리는 공식 등록 자료임을 필터 위에서 먼저 밝힌다", () => {
-  const block = signals.match(/const facilityText = \{[\s\S]*?\n\} as const;/)?.[0]
-    ?? signals.match(/const facilityText = \{[\s\S]*?\n\};/)?.[0] ?? "";
+  const block = airportSignals.match(/const facilityText = \{[\s\S]*?\n\} as const;/)?.[0]
+    ?? airportSignals.match(/const facilityText = \{[\s\S]*?\n\};/)?.[0] ?? "";
   assert.ok(block.length > 0);
 
   // 네 언어 모두 "실시간 입점 현황이 아니다" 를 말한다.
@@ -509,9 +522,9 @@ test("시설 디렉터리는 공식 등록 자료임을 필터 위에서 먼저 
   assert.ok(block.includes("공급자가 개별 시설의 실제 변경일은 제공하지 않습니다"));
 
   // 필터보다 먼저 렌더링된다: 툴팁도, 더보기도, 푸터도 아니다.
-  const basis = signals.indexOf('className="facility-basis"');
-  const filters = signals.indexOf('className="facility-filters"');
-  const list = signals.indexOf('className="facility-list"');
+  const basis = airportSignals.indexOf('className="facility-basis"');
+  const filters = airportSignals.indexOf('className="facility-filters"');
+  const list = airportSignals.indexOf('className="facility-list"');
   assert.ok(basis > 0 && filters > 0 && list > 0);
   assert.ok(basis < filters, "근거는 필터보다 먼저 보여야 한다");
   assert.ok(basis < list, "근거는 결과보다 먼저 보여야 한다");
@@ -524,8 +537,8 @@ test("시설 디렉터리는 공식 등록 자료임을 필터 위에서 먼저 
  * 못한다. 그렇게 읽히는 라벨을 금지한다.
  */
 test("시설을 현재 영업/입점 상태로 부르지 않는다", () => {
-  const block = signals.match(/const facilityText = \{[\s\S]*?\n\} as const;/)?.[0]
-    ?? signals.match(/const facilityText = \{[\s\S]*?\n\};/)?.[0] ?? "";
+  const block = airportSignals.match(/const facilityText = \{[\s\S]*?\n\} as const;/)?.[0]
+    ?? airportSignals.match(/const facilityText = \{[\s\S]*?\n\};/)?.[0] ?? "";
   assert.ok(block.length > 0);
   for (const forbidden of ["현재 입점", "현재 영업", "운영 중", "영업 중입니다", "현재 매장"]) {
     assert.ok(!block.includes(forbidden), `"${forbidden}" 은 등록 자료가 증명하지 못하는 상태다`);
@@ -541,7 +554,7 @@ test("시설을 현재 영업/입점 상태로 부르지 않는다", () => {
  * 안내를 볼 수 없으므로, 근거가 브리핑 안에 함께 있어야 한다.
  */
 test("선택한 매장과 인쇄물에도 같은 근거가 남는다", () => {
-  const snapshot = signals.match(/function MyStoreSnapshot\([\s\S]*?\n\}/)?.[0] ?? "";
+  const snapshot = airportSignals.match(/function MyStoreSnapshot\([\s\S]*?\n\}/)?.[0] ?? "";
   assert.ok(snapshot.length > 0);
   assert.ok(snapshot.includes('className="facility-basis"'),
     "저장한 매장에도 같은 근거 블록이 있어야 한다");
@@ -562,14 +575,14 @@ test("선택한 매장과 인쇄물에도 같은 근거가 남는다", () => {
  * 전까지는, 기록을 그대로 보여주고 한계를 밝힌다.
  */
 test("사적 지식으로 특정 시설을 숨기거나 지우지 않는다", () => {
-  for (const source of [signals, styles]) {
+  for (const source of [signals, airportSignals, styles]) {
     // 공개 소스에 근무지·특정 브랜드를 지목한 로직이나 설명이 남으면
     // 안 된다. 공식 자료에 실려 오는 매장 이름은 데이터이지 코드가 아니다.
     assert.ok(!/신라|Shilla|SHILLA/.test(source),
       "특정 브랜드를 이름으로 지목한 코드나 주석이 있으면 안 된다");
   }
   // 시설을 이름/브랜드로 제외하는 하드코딩 목록이 없어야 한다.
-  assert.ok(!/(HIDDEN|BLOCKED|EXCLUDED|CLOSED)_FACILIT/i.test(signals));
+  assert.ok(!/(HIDDEN|BLOCKED|EXCLUDED|CLOSED)_FACILIT/i.test(allSignals));
 });
 
 /**
@@ -578,7 +591,7 @@ test("사적 지식으로 특정 시설을 숨기거나 지우지 않는다", ()
  * 다시 생기므로 구성 전용 head/panel만 허용한다.
  */
 test("오늘 출발편 구성은 반복 머리말 없이 세 탭을 품는 한 묶음이다", () => {
-  const summary = signals.match(/export function AirportTodaySummary[\s\S]*?\n\}/)?.[0] ?? "";
+  const summary = airportSignals.match(/export function AirportTodaySummary[\s\S]*?\n\}/)?.[0] ?? "";
   assert.match(summary, /className="airport-composition"/);
   assert.match(summary, /role="tablist"/);
   assert.match(summary, /\["gates", "airlines", "countries"\]/);
@@ -605,8 +618,8 @@ test("항공사 등록 국가는 승객 국적으로 보이지 않는다", () =>
     "승객의 국적이 아닙니다", "not passenger nationality",
     "并非旅客国籍", "旅客の国籍ではありません",
   ]) assert.ok(signals.includes(phrase), `${phrase} 가 있어야 한다`);
-  assert.ok(!signals.includes("승객 국적별 운항편"));
-  assert.ok(!signals.includes("국적별 운항편"));
+  assert.ok(!allSignals.includes("승객 국적별 운항편"));
+  assert.ok(!allSignals.includes("국적별 운항편"));
 });
 
 /**

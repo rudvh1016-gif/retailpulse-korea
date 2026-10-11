@@ -3,16 +3,20 @@
 .checkpoint-schematic figcaption {font-size:var(--type-key);line-height:1.4;}
 .checkpoint-schematic figcaption small {display:block;margin-top:4px;color:var(--muted);font-size:var(--type-secondary);font-weight:var(--weight-regular);}
 .checkpoint-schematic-stage {margin-top:8px;}
-.checkpoint-schematic-stage>img {display:block;width:100%;height:auto;aspect-ratio:12/5;object-fit:contain;}
-.checkpoint-schematic-groups {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
-.checkpoint-schematic-group {min-width:0;}
-.checkpoint-group-name {display:block;text-align:center;font-size:var(--type-key);font-weight:var(--weight-strong);margin-bottom:4px;}
-.checkpoint-schematic-pair {display:grid;gap:4px;}
-.checkpoint-schematic-reading {display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap;column-gap:4px;background:#f5f6f7;min-width:0;padding:5px 2px;border-radius:4px;text-align:center;line-height:1.4;}
-.checkpoint-schematic-reading>span {font-size:var(--type-secondary);}
-.checkpoint-schematic-reading strong {min-width:0;font-size:var(--type-key);font-weight:var(--weight-strong);white-space:nowrap;}
+.checkpoint-schematic-drawing {position:relative;}
+.checkpoint-schematic-drawing>img {display:block;width:100%;height:auto;aspect-ratio:12/5;object-fit:contain;}
+/* Leaders from each lane's floor marker to its reading; the readings are one
+ * row in floor order (left to right), so 1A is the right-most reading. */
+.checkpoint-schematic-leaders {position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;}
+.checkpoint-schematic-leaders path {fill:none;stroke:var(--muted);stroke-width:1;vector-effect:non-scaling-stroke;opacity:.55;}
+.checkpoint-schematic-leaders circle {fill:var(--ink);opacity:.55;}
+.checkpoint-schematic-readings {display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:1px;}
+.checkpoint-schematic-reading {display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px;background:#f5f6f7;min-width:0;padding:5px 0 6px;border-radius:4px;text-align:center;line-height:1.3;}
+.checkpoint-schematic-reading>span {font-size:var(--type-secondary);font-weight:var(--weight-strong);white-space:nowrap;}
+.checkpoint-schematic-reading strong {display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;min-width:0;max-width:100%;font-size:var(--type-key);font-weight:var(--weight-strong);}
+.checkpoint-schematic-reading strong>span {white-space:nowrap;}
 .checkpoint-schematic-reading small,.checkpoint-schematic-reading sup {font-size:var(--type-secondary);font-weight:var(--weight-regular);}
-.checkpoint-schematic-people {flex-basis:100%;min-width:0;overflow-wrap:anywhere;}
+.checkpoint-schematic-people {display:block;max-width:100%;min-width:0;word-break:keep-all;overflow-wrap:anywhere;}
 .checkpoint-schematic-reading[data-state="current"][data-wait-level="clear"] {background:#e0eff7;}
 .checkpoint-schematic-reading[data-state="current"][data-wait-level="normal"] {background:#ddf1eb;}
 .checkpoint-schematic-reading[data-state="current"][data-wait-level="busy"] {background:#ffe8d8;}

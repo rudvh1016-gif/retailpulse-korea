@@ -225,6 +225,21 @@ test("a legitimate idempotency skip is a success, not a failure", () => {
   assert.equal(verdict.walk.state, "HEALTHY");
 });
 
+test("a provider with no newer publication is not an execution error", () => {
+  // Foreign purpose mobility on 2026-10-11: SKIPPED_NO_NEW_PUBLICATION, read 0, wrote 0.
+  const verdict = evaluateSource(
+    healthyObservation({
+      lastRun: { ...healthyObservation().lastRun, status: "SKIPPED_NO_NEW_PUBLICATION", recordsRead: 0, recordsWritten: 0 },
+    }),
+    NOW,
+  );
+  assert.notEqual(verdict.walk.state, "EXECUTION_ERROR");
+  assert.notEqual(verdict.severity, "ERROR");
+  // A real failed run still is one.
+  const failed = evaluateSource(healthyObservation({ lastRun: { ...healthyObservation().lastRun, status: "ERROR", recordsRead: 0, recordsWritten: 0 } }), NOW);
+  assert.equal(failed.walk.state, "EXECUTION_ERROR");
+});
+
 test("partial pagination reports PARTIAL_DATA and an unreported extent is UNKNOWN", () => {
   assert.equal(evaluateSource(healthyObservation({ coverage: "PARTIAL" }), NOW).walk.state, "PARTIAL_DATA");
   assert.equal(evaluateSource(healthyObservation({ coverage: "UNKNOWN" }), NOW).walk.state, "UNKNOWN");

@@ -377,7 +377,9 @@ test("A5 missing retrieval timestamp renders as unavailable, never fabricated as
 test("KST period is exact and stale public readiness claims are removed", () => {
   assert.match(formatKstServicePeriod("2026-08-31", "ko"), /2026\. 08\. 31\.|2026\.08\.31/);
   assert.match(formatKstServicePeriod("2026-08-31", "ko"), /00:00–23:59 KST/);
-  const app = readFileSync(new URL("../app/retailpulse-app.tsx", import.meta.url), "utf8");
+  // The shell and the airport screens it loads on demand.
+  const app = ["retailpulse-app.tsx", "airport-view.tsx", "airport-live-signals.tsx"]
+    .map((file) => readFileSync(new URL(`../app/${file}`, import.meta.url), "utf8")).join("\n");
   assert.equal(app.includes("실시간 공항 데이터 연결 준비 중"), false);
   assert.equal(app.includes("site still calls zero live data APIs"), false);
   const signals = readFileSync(new URL("../app/live-signals.tsx", import.meta.url), "utf8");

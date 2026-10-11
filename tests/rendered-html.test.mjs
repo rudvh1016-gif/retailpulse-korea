@@ -99,6 +99,7 @@ test("public endpoints stay available and never fabricate zeros when a source is
 test("Store Dynamics ships as a stored, compact, four-language historical block", async () => {
   const route = await read("../app/api/live/summary/route.ts");
   const live = await read("../app/live-signals.tsx");
+  const airportSignals = await read("../app/airport-live-signals.tsx");
   for (const field of [
     "overall_store_count AS totalStoreCount", "ordinary_store_count AS ordinaryStoreCount",
     "franchise_store_count AS franchiseStoreCount", "opening_store_count AS openingCount",
@@ -117,7 +118,7 @@ test("Store Dynamics ships as a stored, compact, four-language historical block"
   // Phase B v1 publishes counts only. The stored *_rate_tenths_percent columns
   // are a KORETAIL-derived ratio, never an official area-wide 개/폐업률, so
   // neither the public API projection nor the UI may carry them.
-  assert.doesNotMatch(live, /RateTenthsPercent/, "the UI must not receive or render an area-wide rate");
+  assert.doesNotMatch(`${live}\n${airportSignals}`, /RateTenthsPercent/, "the UI must not receive or render an area-wide rate");
   const projection = route.slice(route.indexOf("isValidStoredStoreDynamics(area, row)"));
   assert.doesNotMatch(projection.slice(0, projection.indexOf("foreignPresence,")), /RateTenthsPercent/,
     "the public summary projection must not expose the derived ratio");
@@ -173,9 +174,15 @@ test("the three Tourism Desk pages render unique area SEO and headings", async (
  */
 test("no placeholder or sample values are presented as data anywhere in the product", async () => {
   const page = await read("../app/retailpulse-app.tsx");
+  const airportView = await read("../app/airport-view.tsx");
+  const monthRangePicker = await read("../app/month-range-picker.tsx");
   const live = await read("../app/live-signals.tsx");
+  const airportSignals = await read("../app/airport-live-signals.tsx");
   const data = await read("../app/retailpulse-data.ts");
-  const surface = `${page}\n${live}\n${data}`;
+  // The airport view and the month picker were split out of the shell, and the
+  // airport screens out of live-signals, on 2026-10-11: the surface is the sum.
+  const shell = `${page}\n${airportView}\n${monthRangePicker}`;
+  const surface = `${shell}\n${live}\n${airportSignals}\n${data}`;
 
   for (const banned of [
     "예시 오늘", "예시 내일", "예시 날짜", "예시 추천", "예시 수요지수", "예시 입력", "예시 데이터",
@@ -191,13 +198,14 @@ test("no placeholder or sample values are presented as data anywhere in the prod
   // The fabricated cohorts themselves are gone from the data module, not merely
   // hidden behind a flag that a later edit could flip back on.
   assert.doesNotMatch(data, /export const demoFlights/);
-  assert.doesNotMatch(page, /\{false && </, "dead false-gated UI must be deleted, not left in place");
+  assert.doesNotMatch(shell, /\{false && </, "dead false-gated UI must be deleted, not left in place");
   assert.doesNotMatch(surface, /api\.openai\.com|api\.anthropic\.com|generativelanguage\.googleapis\.com/i);
 });
 
 test("uses KORETAIL across the public brand surfaces", async () => {
   const publicBrand = [
     await read("../app/retailpulse-app.tsx"),
+    await read("../app/airport-view.tsx"),
     await read("../app/layout.tsx"),
     await read("../app/seo-config.ts"),
     await read("../public/manifest.webmanifest"),
@@ -224,11 +232,13 @@ test("uses KORETAIL across the public brand surfaces", async () => {
  */
 test("no decorative photograph of unverified origin is served", async () => {
   const page = await read("../app/retailpulse-app.tsx");
+  const airportView = await read("../app/airport-view.tsx");
+  const monthRangePicker = await read("../app/month-range-picker.tsx");
   const seo = await read("../app/seo-config.ts");
   const layout = await read("../app/layout.tsx");
   const styles = await read("../app/globals.css");
 
-  for (const source of [page, seo, layout, styles]) {
+  for (const source of [page, airportView, monthRangePicker, seo, layout, styles]) {
     for (const asset of ["seoul-hangang", "seoul-hanok", "retailpulse-korea-og"]) {
       assert.doesNotMatch(source, new RegExp(asset));
     }
@@ -307,17 +317,21 @@ test("uses one locale-aware font family and only supported UI weights", async ()
 
 test("ships every product surface in four languages without a runtime LLM dependency", async () => {
   const page = await read("../app/retailpulse-app.tsx");
+  // The airport screen is its own client component since 2026-10-11, mounted by
+  // the shell: the shell and that view together are the client surface.
+  const airportView = await read("../app/airport-view.tsx");
+  const shell = `${page}\n${airportView}`;
   const data = await read("../app/retailpulse-data.ts");
   // Business-type copy lives beside the other domain data rather than in the
-  // client component, so the four-language surface spans all three files.
+  // client components, so the four-language surface spans all of these files.
   const guidance = await read("../lib/industry-guidance.ts");
-  const product = `${page}\n${data}\n${guidance}`;
+  const product = `${shell}\n${data}\n${guidance}`;
   for (const required of [
     "InsightsView", "AirportView", "BusinessView", "BusinessHistoryView",
     "AboutView", "MoreView", "BusinessPrep", "IndustryGuide", "MetricExplainer",
     "AirportTodaySummary", "HomeTodayBrief", "FlightBoard", "DateNavigator",
     "简体中文", "日本語",
-  ]) assert.match(page, new RegExp(required));
+  ]) assert.match(shell, new RegExp(required));
   assert.doesNotMatch(page, /ProModal|business-pro|KORETAIL · NEXT/);
   for (const feature of [
     "출국장 공식 예상 승객", "OFFICIAL HISTORICAL", "T1", "T2",
@@ -399,7 +413,7 @@ test("labels the S2 signal as delayed official data in all four languages", asyn
     "실시간 아님", "not real-time", "非实时", "リアルタイムではありません",
   ]) assert.match(signals, new RegExp(phrase));
   assert.match(signals, /OFFICIAL DATA SIGNALS · KST/);
-  assert.doesNotMatch(signals, /OFFICIAL LIVE SIGNALS/);
+  assert.doesNotMatch(`${signals}\n${await read("../app/airport-live-signals.tsx")}`, /OFFICIAL LIVE SIGNALS/);
   assert.match(route, /FROM seoul_foreign_presence_area/);
   assert.match(route, /product_version AS productVersion/);
   assert.match(route, /record_origin AS freshness/);
@@ -418,19 +432,23 @@ test("labels the S2 signal as delayed official data in all four languages", asyn
 
 test("keeps departure congestion in Airport detail and removes it from Seoul demand signals", async () => {
   const signals = await read("../app/live-signals.tsx");
-  const areaSignals = signals.match(/export default function LiveSignals[\s\S]*?\nconst flightBoardText/)?.[0] ?? "";
+  const airportSignals = await read("../app/airport-live-signals.tsx");
+  // LiveSignals is the last declaration in the file since the airport screens
+  // moved to airport-live-signals.tsx, so the Seoul component runs to its end.
+  const areaSignals = signals.match(/export default function LiveSignals[\s\S]*$/)?.[0] ?? "";
   assert.ok(areaSignals.length > 0);
   assert.doesNotMatch(areaSignals, /congestionByTerminal|terminalOrder|key: `airport_|key: `forecast_|key: "airport_flights"/);
-  assert.match(signals, /rankCurrentDepartureHallCheckpoints/,
+  assert.match(airportSignals, /rankCurrentDepartureHallCheckpoints/,
     "Airport detail must retain its observed departure-checkpoint data");
-  assert.match(signals, /airportTodayText\.current\[lang\]/,
+  assert.match(airportSignals, /airportTodayText\.current\[lang\]/,
     "Airport detail must retain its departure-hall label");
 });
 
 test("A5 arrival forecast replaces Seoul departure rows with compact, coverage-safe inbound signals", async () => {
   const signals = await read("../app/live-signals.tsx");
   const route = await read("../app/api/live/summary/route.ts");
-  const areaSignals = signals.match(/export default function LiveSignals[\s\S]*?\nconst flightBoardText/)?.[0] ?? "";
+  const airportSignals = await read("../app/airport-live-signals.tsx");
+  const areaSignals = signals.match(/export default function LiveSignals[\s\S]*$/)?.[0] ?? "";
   assert.ok(areaSignals.length > 0);
   assert.match(route, /arrivalForecast/);
   assert.match(route, /passengerForecast: upcomingForecast/);
@@ -446,20 +464,21 @@ test("A5 arrival forecast replaces Seoul departure rows with compact, coverage-s
     "오늘 예상 입국 피크", "Expected arrival peak today", "今日预计入境高峰", "今日の予想入国ピーク",
     "서울의 특정 지역과 직접 연결되지 않는 배경 참고", "실제 서울 방문객 수 아님",
   ]) assert.match(signals, new RegExp(phrase));
-  assert.doesNotMatch(signals, /서울 소비 수요의 선행 참고 신호/);
+  assert.doesNotMatch(`${signals}\n${airportSignals}`, /서울 소비 수요의 선행 참고 신호/);
   assert.doesNotMatch(areaSignals, /실시간 입국객|현재 입국객|실제 입국객|실측 입국객/);
   assert.doesNotMatch(route, /\bfetch\(/, "the summary must reuse D1 and never add an airport provider call");
 });
 
 test("airport detail UI uses editorial rows, friendly checkpoints and honest partial-state copy", async () => {
   const signals = await read("../app/live-signals.tsx");
+  const airportSignals = await read("../app/airport-live-signals.tsx");
   const checkpoints = await read("../app/airport-checkpoint-schematic.tsx");
   const css = await read("../app/globals.css");
-  assert.match(signals, /AirportGatePillars/);
-  assert.match(signals, /AirportCheckpointSchematic/);
+  assert.match(airportSignals, /AirportGatePillars/);
+  assert.match(airportSignals, /AirportCheckpointSchematic/);
   assert.match(checkpoints, /friendlyCheckpointName\(row\.zone,\s*lang\)/);
   assert.match(checkpoints, /terminalRows\.map/);
-  assert.match(signals, /rankCurrentDepartureHallCheckpoints/);
+  assert.match(airportSignals, /rankCurrentDepartureHallCheckpoints/);
   assert.match(signals, /일부 시간대가 누락되어 하루 전체 합계와 피크는 표시하지 않습니다/);
   assert.match(await read("../app/airport-gate-pillars.tsx"), /data-testid="gate-pillar-model"/);
   assert.match(css, /\.airport-composition-panel/);
@@ -472,10 +491,11 @@ test("airport detail UI uses editorial rows, friendly checkpoints and honest par
  */
 test("the approved gate model ranks complete API rows and retains every tied leader", async () => {
   const signals = await read("../app/live-signals.tsx");
+  const airportSignals = await read("../app/airport-live-signals.tsx");
   const summary = await read("../lib/airport-today-summary.ts");
   assert.match(summary, /busyDepartureGates: coverage >= minimumCoverage \? ranked\.slice\(0, 5\) : \[\]/);
   const model = await read("../app/airport-gate-pillars.tsx");
-  assert.match(signals, /AirportGatePillars/);
+  assert.match(airportSignals, /AirportGatePillars/);
   // Keep the date and exact terminal scope for a held-schedule gap.
   assert.match(model, /useFlights\(date, terminal\)/);
   assert.match(model, /leadingGates\(gates\)/);
@@ -487,6 +507,7 @@ test("the approved gate model ranks complete API rows and retains every tied lea
 
 test("current briefs use existing official forecasts and deterministic editorial copy without runtime AI", async () => {
   const page = await read("../app/retailpulse-app.tsx");
+  const airportView = await read("../app/airport-view.tsx");
   const signals = await read("../app/live-signals.tsx");
   const route = await read("../app/api/live/summary/route.ts");
   const brief = await read("../lib/current-brief.ts");
@@ -498,7 +519,7 @@ test("current briefs use existing official forecasts and deterministic editorial
   assert.match(brief, /umbrellaProbability: 50/);
   assert.match(brief, /checkRainProbability: 30/);
   assert.doesNotMatch(brief, /OpenAI|Anthropic|Gemini|Cloudflare AI/);
-  assert.doesNotMatch(page, /20:42 KST|예시 날짜|SAMPLE DATE|示例日期|サンプル日付/);
+  assert.doesNotMatch(`${page}\n${airportView}`, /20:42 KST|예시 날짜|SAMPLE DATE|示例日期|サンプル日付/);
 });
 
 test("each Seoul area view opens with its shared range-preserving demand card", async () => {
@@ -531,6 +552,8 @@ test("the Seoul brief states which day a forecast peak falls on", async () => {
 
 test("the header date comes from the data on screen and long status text never uses the number size", async () => {
   const signals = await read("../app/live-signals.tsx");
+  // The departure summary grid lives in airport-live-signals.tsx since 2026-10-11.
+  const airportSignals = await read("../app/airport-live-signals.tsx");
   const css = await read("../app/globals.css");
   // The chip renders the service day the server reported, and stays silent
   // without data, so the page can never claim a date it did not receive.
@@ -540,15 +563,15 @@ test("the header date comes from the data on screen and long status text never u
 
   // A status sentence is not a number. Rendering it at the KPI number size
   // pushed "오늘 전체 시간대 확인 불가" onto a second line and into the next block.
-  assert.match(signals, /data-kind=\{expectedTotal === null \? "status" : "value"\}/);
-  assert.match(signals, /data-kind=\{peak \? "value" : "status"\}/);
+  assert.match(airportSignals, /data-kind=\{expectedTotal === null \? "status" : "value"\}/);
+  assert.match(airportSignals, /data-kind=\{peak \? "value" : "status"\}/);
   assert.match(css, /\.airport-today-grid strong\[data-kind="status"\]/);
   const statusRule = css.match(/\.airport-today-grid strong\[data-kind="status"\] \{([^}]*)\}/)?.[1] ?? "";
   assert.match(statusRule, /word-break: keep-all/);
   assert.match(statusRule, /line-height: 1\.4/);
 
-  assert.match(signals, /const sharesOneFreshness = distinctFreshness\.length <= 1;/);
-  assert.match(signals, /className="metric-freshness"/);
+  assert.match(airportSignals, /const sharesOneFreshness = distinctFreshness\.length <= 1;/);
+  assert.match(airportSignals, /className="metric-freshness"/);
   // Freshness stays the quietest text on the card, but the white-first type
   // floor is 10px: nothing on the site is drawn smaller than that any more.
   assert.match(css, /\.airport-today-grid small\.metric-freshness \{[^}]*font-size: 10px/);
@@ -566,11 +589,14 @@ test("the header date comes from the data on screen and long status text never u
  */
 test("a collection time and a summed window are never worded as the same thing", async () => {
   const signals = await read("../app/live-signals.tsx");
+  // The departure summary, where these stamps are rendered, moved to
+  // airport-live-signals.tsx on 2026-10-11.
+  const airportSignals = await read("../app/airport-live-signals.tsx");
   const brief = await read("../lib/current-brief.ts");
 
   assert.match(brief, /export type FreshnessKind = "basis" \| "collected" \| "observed" \| "plain";/);
   // Retrievals say retrieval; provider observations say observation.
-  assert.match(signals, /formatHumanFreshness\(value, nowIso, lang, "collected"\)/);
+  assert.match(airportSignals, /formatHumanFreshness\(value, nowIso, lang, "collected"\)/);
   const checkpoints = await read("../app/airport-checkpoint-schematic.tsx");
   assert.match(checkpoints, /<time dateTime=\{row\.observedAt\}>\{stamp\(row\.observedAt\)\} KST<\/time>/);
   assert.match(checkpoints, /terminalRows\.map\(row=>row\.observedAt\)/);
@@ -578,11 +604,11 @@ test("a collection time and a summed window are never worded as the same thing",
   assert.match(checkpoints, /'Observed'/);
 
   // The remaining card states the band it actually summed.
-  assert.match(signals, /function formatRemainingWindow/);
-  assert.match(signals, /airportTodayText\.remainingNote\[lang\]\(formatRemainingWindow\(remaining\)\)/);
+  assert.match(airportSignals, /function formatRemainingWindow/);
+  assert.match(airportSignals, /airportTodayText\.remainingNote\[lang\]\(formatRemainingWindow\(remaining\)\)/);
   // Midnight ends today; rendering it as 00:00 reads like a day starting.
-  assert.match(signals, /end === "00:00" \? "24:00" : end/);
-  assert.doesNotMatch(signals, /현재 시간대부터 24:00까지/,
+  assert.match(airportSignals, /end === "00:00" \? "24:00" : end/);
+  assert.doesNotMatch(`${signals}\n${airportSignals}`, /현재 시간대부터 24:00까지/,
     "the window must be the real band, not a phrase the reader has to resolve");
 });
 
@@ -604,7 +630,7 @@ test("a collection time and a summed window are never worded as the same thing",
  * its observed waiting count and its observation time are still on the page.
  */
 test("the airport page reads summary, then next, then composition, then the observation table", async () => {
-  const source = await read("../app/live-signals.tsx");
+  const source = await read("../app/airport-live-signals.tsx");
   // Scoped to the DEPARTURE component. The arrival screen reuses the same
   // `airport-forecast` section class, so a whole-file indexOf would measure
   // whichever component happens to be declared first — file order is not
@@ -656,7 +682,11 @@ test("the airport summary states this hour's expected departing passengers, labe
   assert.match(brief, /nextExpectedPassengers: next \? next\.expectedPassengers : null/);
 
   // Owner requested removal of the separate summary; the chart and source helpers remain.
-  const glance = signals.slice(signals.indexOf("export function AirportAtAGlance"), signals.indexOf("export function AirportTodaySummary"));
+  // AirportTodaySummary moved to airport-live-signals.tsx on 2026-10-11, so the
+  // glance block is the whole AirportAtAGlance function, up to its closing
+  // brace at column 0.
+  const glance = signals.match(/export function AirportAtAGlance[\s\S]*?\n\}\n/)?.[0] ?? "";
+  assert.ok(glance.length > 0, "the at-a-glance grid must exist");
   assert.doesNotMatch(glance, /airport-glance-strip|airport-near-term|airport-upcoming-peak/);
   assert.match(glance, /\{flow\}/);
   assert.match(glance, /airport-mtd/);
@@ -686,16 +716,22 @@ test("timestamps state what they mean and a forecast band never borrows observat
 
 test("applies a user-defined month range to airport and business history", async () => {
   const page = await read("../app/retailpulse-app.tsx");
+  // The picker is shared by both histories. The airport history moved into
+  // app/airport-view.tsx with the rest of the airport screen on 2026-10-11;
+  // the business history stays in the shell.
+  const airportView = await read("../app/airport-view.tsx");
+  const picker = await read("../app/month-range-picker.tsx");
   const css = await read("../app/globals.css");
-  assert.match(page, /function MonthRangePicker/);
-  assert.match(page, /name="startMonth"/);
-  assert.match(page, /name="endMonth"/);
+  assert.match(picker, /function MonthRangePicker/);
+  assert.match(picker, /name="startMonth"/);
+  assert.match(picker, /name="endMonth"/);
+  assert.match(airportView, /onApply=\{\(nextStart, nextEnd\) =>/);
   assert.match(page, /onApply=\{\(nextStart, nextEnd\) =>/);
-  assert.match(page, /if \(!invalid\) onApply\(start, end\)/);
-  assert.match(page, /setHistoryPeriod\("custom"\)/);
+  assert.match(picker, /if \(!invalid\) onApply\(start, end\)/);
+  assert.match(airportView, /setHistoryPeriod\("custom"\)/);
   assert.match(page, /setPeriod\("custom"\)/);
-  assert.match(page, /const invalid = end < start/);
-  assert.match(page, /rangeStartRow\.month !== rangeEndRow\.month/);
+  assert.match(picker, /const invalid = end < start/);
+  assert.match(airportView, /rangeStartRow\.month !== rangeEndRow\.month/);
   assert.match(page, /startRow\.month !== endRow\.month/);
   assert.match(page, /선택 기간 월평균/);
   assert.match(css, /\.month-range/);
@@ -704,13 +740,16 @@ test("applies a user-defined month range to airport and business history", async
 
 test("keeps developer readiness history out of the public product", async () => {
   const page = await read("../app/retailpulse-app.tsx");
-  const live = await read("../app/live-signals.tsx");
+  const airportView = await read("../app/airport-view.tsx");
+  const shell = `${page}\n${airportView}`;
+  // The flight board, whose fetch this is, moved to airport-live-signals.tsx.
+  const airportSignals = await read("../app/airport-live-signals.tsx");
   const matrix = await read("../docs/archive/work-v6.1/data-source-matrix.md");
-  assert.doesNotMatch(page, /LIVE RUNTIME DATA API/);
-  assert.doesNotMatch(page, /현재 직접 호출 0개/);
+  assert.doesNotMatch(shell, /LIVE RUNTIME DATA API/);
+  assert.doesNotMatch(shell, /현재 직접 호출 0개/);
   assert.match(page, /fetch\("\/api\/beta-signups"/);
-  assert.match(live, /fetch\(url, \{ headers: \{ accept: "application\/json" \} \}\)/);
-  assert.doesNotMatch(page, /fetch\(\s*["']https?:/i);
+  assert.match(airportSignals, /fetch\(url, \{ headers: \{ accept: "application\/json" \} \}\)/);
+  assert.doesNotMatch(shell, /fetch\(\s*["']https?:/i);
   assert.match(matrix, /방문 시 직접 호출하는 외부 관광·공항·서울 데이터 API \| \*\*0개\*\*/);
 });
 
@@ -720,6 +759,8 @@ test("keeps developer readiness history out of the public product", async () => 
  */
 test("publishes no forecast accuracy and explains the absence in plain language", async () => {
   const page = await read("../app/retailpulse-app.tsx");
+  const airportView = await read("../app/airport-view.tsx");
+  const shell = `${page}\n${airportView}`;
   const plan = await read("../docs/archive/work-v6.1/growth-validation-plan.md");
   assert.match(page, /예측 성적표는 아직 없습니다/);
   assert.match(page, /결과가 나오기 전에 저장해 둔 예측만으로 성적을 계산합니다/);
@@ -729,7 +770,7 @@ test("publishes no forecast accuracy and explains the absence in plain language"
     "FORECAST SCOREBOARD", "MAE · LAST 30", "BASELINE BEATEN", "기준모델 우위",
     "FORWARD PREDICTIONS", "FAST VERIFIED", "DEEP VERIFIED", "NOT VERIFIED",
     "TARGET_A", "TARGET_B", "TARGET_C", "TARGET_D",
-  ]) assert.doesNotMatch(page, new RegExp(banned.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `"${banned}" must not ship`);
+  ]) assert.doesNotMatch(shell, new RegExp(banned.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `"${banned}" must not ship`);
 });
 
 /** Every insights metric must say what it is, what high means, its source, and why to look. */
@@ -776,11 +817,12 @@ test("date navigation keeps KST shortcuts and offers month-bounded stored dates"
 /** The flight board must be the official record, not a fixture. */
 test("the flight board renders stored official flight rows from its own endpoint", async () => {
   const signals = await read("../app/live-signals.tsx");
+  const airportSignals = await read("../app/airport-live-signals.tsx");
   const flightsRoute = await read("../app/api/live/flights/route.ts");
   const summaryRoute = await read("../app/api/live/summary/route.ts");
-  assert.match(signals, /export function FlightBoard/);
-  assert.match(signals, /fetch\(url, \{ headers: \{ accept: "application\/json" \} \}\)/);
-  assert.match(signals, /\/api\/live\/flights/);
+  assert.match(airportSignals, /export function FlightBoard/);
+  assert.match(airportSignals, /fetch\(url, \{ headers: \{ accept: "application\/json" \} \}\)/);
+  assert.match(airportSignals, /\/api\/live\/flights/);
   assert.match(flightsRoute, /FROM airport_flights/);
   assert.match(flightsRoute, /flight_number AS flightNumber/);
   assert.match(flightsRoute, /checkin_counter AS checkinCounter/);
@@ -788,7 +830,7 @@ test("the flight board renders stored official flight rows from its own endpoint
   // folded back into the summary every visitor loads.
   assert.doesNotMatch(summaryRoute, /flight_number AS flightNumber/);
   // No hardcoded flight identity anywhere in the client.
-  assert.doesNotMatch(signals, /KE901|OZ102|LJ201|7C1101/);
+  assert.doesNotMatch(`${signals}\n${airportSignals}`, /KE901|OZ102|LJ201|7C1101/);
 });
 
 test("persists consented beta interest in D1 without a public list endpoint", async () => {
@@ -845,11 +887,14 @@ test("the About page explains the product without developer jargon", async () =>
  */
 test("no loanword jargon is used as reader-facing copy", async () => {
   const page = await read("../app/retailpulse-app.tsx");
+  const airportView = await read("../app/airport-view.tsx");
+  const monthRangePicker = await read("../app/month-range-picker.tsx");
   const live = await read("../app/live-signals.tsx");
+  const airportSignals = await read("../app/airport-live-signals.tsx");
   const seo = await read("../app/seo-config.ts");
   // Only quoted copy is checked. Internal identifiers such as RetailPulseProps
   // are technical names the brand decision deliberately leaves in place.
-  const copy = [page, live, seo]
+  const copy = [page, airportView, monthRangePicker, live, airportSignals, seo]
     .flatMap((source) => source.match(/"[^"\n]*"/g) ?? [])
     .join("\n");
   for (const jargon of [

@@ -151,8 +151,39 @@ jobs:
             `display ${installManifest?.display}; ${installManifest?.icons?.length ?? 0} icons`);
           check("the install button is server-rendered in the header",
             korean.includes("install-app-button"), "header button missing from the served HTML");
-          check("iOS is given its own home-screen icon",
-            korean.includes("/apple-touch-icon.png"), "apple-touch-icon link missing");
+          // Check the icons the served page actually declares, not a remembered
+          // file name: the 2026-10-07 icons are versioned
+          // (apple-touch-icon-20261007.png), so a fixed name went stale.
+          const linkTags = korean.match(/<link\b[^>]*>/gi) ?? [];
+          const linkAttr = (tag, name) => tag.match(new RegExp(`\\s${name}="([^"]*)"`, "i"))?.[1] ?? null;
+          const declared = (rel) => linkTags
+            .filter((tag) => (linkAttr(tag, "rel") ?? "").toLowerCase().split(/\s+/).includes(rel))
+            .map((tag) => linkAttr(tag, "href")).filter(Boolean);
+          const declaredImage = async (href, label) => {
+            const url = new URL(href, origin);
+            const image = await fetch(url, { signal: AbortSignal.timeout(15000) });
+            const type = image.headers.get("content-type") ?? "";
+            const bytes = (await image.arrayBuffer()).byteLength;
+            check(`declared ${label} ${url.pathname}`, image.status === 200 && type.startsWith("image/") && bytes > 0,
+              `status ${image.status}; ${type}; ${bytes}B`);
+          };
+          const appleIcons = declared("apple-touch-icon");
+          check("iOS is given its own home-screen icon", appleIcons.length > 0,
+            appleIcons.length ? `declared ${appleIcons.map((href) => new URL(href, origin).pathname).join(", ")}` : "apple-touch-icon link missing");
+          for (const href of appleIcons) await declaredImage(href, "apple-touch-icon");
+          for (const href of declared("icon")) await declaredImage(href, "icon");
+          const manifestLinks = declared("manifest");
+          check("the page declares one web app manifest", manifestLinks.length === 1, `${manifestLinks.length} manifest link(s)`);
+          if (manifestLinks.length === 1) {
+            const manifestUrl = new URL(manifestLinks[0], origin);
+            const declaredManifest = await (await fetch(manifestUrl, { signal: AbortSignal.timeout(15000) })).json().catch(() => null);
+            check("the declared manifest can install as an app",
+              declaredManifest?.display === "standalone"
+                && (declaredManifest?.icons ?? []).some((icon) => icon.sizes === "192x192")
+                && (declaredManifest?.icons ?? []).some((icon) => icon.purpose === "maskable"),
+              `${manifestUrl.pathname}; display ${declaredManifest?.display}; ${declaredManifest?.icons?.length ?? 0} icons`);
+            for (const icon of declaredManifest?.icons ?? []) await declaredImage(new URL(icon.src, manifestUrl).href, `manifest icon ${icon.sizes ?? ""}`.trim());
+          }
 
           const expectedStoreDynamics = {
             myeongdong: { code: "3001492", name: "명동 남대문 북창동 다동 무교동 관광특구", type: "U", typeName: "관광특구" },

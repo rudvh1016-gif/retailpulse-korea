@@ -98,6 +98,8 @@ export const DEFAULT_LEGITIMATE_SKIP_STATUSES = [
   "SKIPPED_ALREADY_HEALTHY",
   "SKIPPED_ALREADY_COMPLETE_TODAY",
   "SKIPPED_FRESH",
+  // The provider has not published a newer period; nothing failed (lib/collector.ts).
+  "SKIPPED_NO_NEW_PUBLICATION",
 ] as const;
 
 const SUCCESS_STATUSES = new Set(["OK", "SUCCESS", "COMPLETE", "COMPLETED"]);
