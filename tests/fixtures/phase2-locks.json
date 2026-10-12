@@ -26,7 +26,7 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "c996907051a11a47a282a06b910cee756ccadb611edadce4eee1d83cde938d05",
+    "app/retailpulse-app.tsx": "267d35994bf3af162be5b06f531ae58271c6f084d0f82bfeb909874a575b3598",
     "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "5b91fc95b4a6151e6cd53251cc4b34739b10256471759da01dc52c35b390779a",
@@ -1474,5 +1474,35 @@
     ],
     "protectedPathCount": 65,
     "approvalEvidenceFile": "docs/approvals/airport-split-perf-20261011.json"
+  },
+  "ownerApprovedAirportIntentPreload20261012": {
+    "recordedAt": "2026-10-12T02:39:03.723Z",
+    "authorizationEvidence": {
+      "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+      "ownerTaskRequest": "서울에서 공항으로 처음 이동할 때 느려지는 문제 … 서울 화면의 속도 개선은 유지하면서 공항을 누르면 빨리 열리게 개선해줘. 공항 코드를 모든 방문자에게 무조건 미리 받게 하지 말고, 버튼에 마우스를 올리거나 터치하는 등 이동 의도가 있을 때 먼저 준비하는 방법부터 검토해줘. … 보호 검사·보안·권한을 우회하지 마. … 이번 지시는 구현과 PR 준비까지다. 병합·배포는 결과 보고 후 승인받아.",
+      "approvalQuestion": "1번(서울→공항 첫 전환) 개선에 보호 파일 1개 수정이 필요해 승인을 요청드립니다.\n\n■ 파일: app/retailpulse-app.tsx (+21/−5줄)\n① 하단 탭 '공항', 데스크톱 상단 메뉴 '공항', KORETAIL 로고에 마우스를 올리거나 터치·키보드 포커스가 오면 공항 코드를 미리 받기 시작합니다. 손대지 않은 방문자는 아무것도 받지 않습니다.\n② 공항 코드가 이미 도착했으면 대기 화면 없이 바로 그립니다(React가 대기 화면을 거둘 때 생기는 약 0.3초 지연 제거).\n+ 승인 기록: tests/fixtures/phase2-locks.json 해시 1줄 + docs/approvals 파일 1개. 보호 목록·검사는 그대로입니다.\n\n■ 측정(공항 화면이 실제로 보인 시각, 7회 중앙값)\n- 모바일(390px, CPU 4배 감속, 1.6Mbps, 0.1초 터치): 1.26초 → 1.08초\n- 데스크톱(20Mbps, 0.25초 마우스 올림): 0.60초 → 0.33초 (PR342 이전 0.32초와 같은 수준)\n- 서울 화면 첫 표시·조작 가능 시점·요청 수·전송량: 변화 없음(+1KB 미만)\n- 추가 전송: 공항에 손대지 않으면 0. 올리거나 터치만 하고 이동하지 않으면 131KB(누를 때 받을 것과 같은 파일)\n\n■ 정정: 지난 보고의 '0.52초→1.50초'는 측정 도구의 확인 간격(최대 0.5초) 때문에 부풀려진 값이었습니다. 정밀 측정으로는 PR342 이전 0.44초 → 현재 1.25초입니다. 모바일에 남은 약 0.6초는 느린 회선에서 공항 코드 131KB를 받는 시간 자체라, 의도 기반 방식으로는 더 줄이기 어렵습니다.",
+      "ownerRequest": "승인 (권장)",
+      "scope": "Only app/retailpulse-app.tsx: load the on-demand airport view when the airport tab, desktop menu item or KORETAIL logo is pointed at, touched or focused, and render it directly once its code has arrived. No other protected file, prior approval or the UI Lock test changes.",
+      "approvedProtectedFiles": [
+        "app/retailpulse-app.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "Record the explicit owner approval for the measured intent preload. This bookkeeping changes one current protected-file hash and appends this evidence; it does not relax or skip any test.",
+    "reviewedSourceCommit": "bad9d84b3f4fe2a960b0e73e9d8428353832ea39",
+    "comparisonBase": "1c4adac2f9e6488b1dec667fa30fd05381c73370",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "c996907051a11a47a282a06b910cee756ccadb611edadce4eee1d83cde938d05",
+        "approved": "267d35994bf3af162be5b06f531ae58271c6f084d0f82bfeb909874a575b3598",
+        "addedLines": 21,
+        "deletedLines": 5,
+        "exactUnifiedDiff": "diff --git a/app/retailpulse-app.tsx b/app/retailpulse-app.tsx\nindex 8e559f9..ecaa203 100644\n--- a/app/retailpulse-app.tsx\n+++ b/app/retailpulse-app.tsx\n@@ -11,8 +11,20 @@ const TourismDeskView=dynamic(()=>import('./tourism-desk').then(module=>module.T\n const PredictionEvidence=dynamic(()=>import('./prediction-evidence').then(module=>module.PredictionEvidence));\n const BusinessPrep=dynamic(()=>import('./business-prep').then(module=>module.BusinessPrep));\n // The airport routes pass AirportView in from their server pages (see RetailPulseProps);\n-// this import is only reached when a Seoul route switches to the airport tab.\n-const LazyAirportView=dynamic(()=>import('./airport-view').then(module=>module.AirportView));\n+// on a Seoul route the airport code loads only when the airport is reached for.\n+let airportViewModule: typeof import('./airport-view') | undefined;\n+const loadAirportView=()=>import('./airport-view').then(module=>(airportViewModule=module));\n+const LazyAirportView=dynamic(()=>loadAirportView().then(module=>module.AirportView));\n+// Pointing at, touching or focusing a way to the airport starts that same load,\n+// so the tap does not wait for it. Visitors who never reach for it load nothing.\n+const prepareAirportView=()=>{loadAirportView().catch(()=>{});};\n+/** Once the airport code has arrived it renders directly: a component that\n+ * suspends first would hold the finished screen back by React's reveal delay.\n+ * The choice is fixed for the visit, so a mounted view never swaps components. */\n+function OnDemandAirportView(props: ComponentProps<typeof AirportViewComponent>) {\n+  const [Loaded] = useState(() => airportViewModule?.AirportView);\n+  return Loaded ? <Loaded {...props} /> : <LazyAirportView {...props} />;\n+}\n import { recordText } from './monthly-records-copy';\n import { activeSourceCatalog,sourceName,sourceUse,CollectionStatus } from \"./source-status\";\n \n@@ -255,8 +267,10 @@ function routeFor(lang: Lang, view: View, area: AreaId) {\n   return `${base}/${view}`;\n }\n \n-export default function Home({ initialLang = \"ko\", initialView = \"today\", initialArea = \"myeongdong\", initialRoute = false, initialScope = \"home\", todayAnswer = null, AirportView = LazyAirportView }: RetailPulseProps = {}) {\n+export default function Home({ initialLang = \"ko\", initialView = \"today\", initialArea = \"myeongdong\", initialRoute = false, initialScope = \"home\", todayAnswer = null, AirportView = OnDemandAirportView }: RetailPulseProps = {}) {\n   const bottomNavigationRef = useBottomNavigationViewport();\n+  // Airport routes already carry the airport code; only the on-demand copy needs preparing.\n+  const prepareAirport = AirportView === OnDemandAirportView ? prepareAirportView : undefined;\n   const [lang, setLang] = useState<Lang>(initialLang);\n   const [view, setView] = useState<View>(initialView);\n   const [homeVisible, setHomeVisible] = useState(initialScope === \"airport-home\" || (initialScope === \"home\" && initialView === \"today\"));\n@@ -419,12 +433,12 @@ export default function Home({ initialLang = \"ko\", initialView = \"today\", initia\n     <div className={\"app lang-\" + lang} data-hydrated={preferencesReady ? \"true\" : \"false\"}>\n       <div className=\"site-header\">\n       <header className=\"topbar\">\n-        <button className=\"brand brand-button\" onClick={() => goHome()} aria-label=\"KORETAIL home\">\n+        <button className=\"brand brand-button\" onClick={() => goHome()} onPointerEnter={prepareAirport} onFocus={prepareAirport} aria-label=\"KORETAIL home\">\n           <span>KORETAIL</span><span className=\"brand-descriptor\">Retail Demand Signals for Korea</span>\n         </button>\n         <nav className=\"top-nav\" aria-label=\"Primary\">\n           {([\"airport\", \"today\", \"business\", \"where-to\", \"consumption\", \"tourism-desk\", \"forecast\", \"about\", \"more\"] as View[]).map((item) => (\n-            <a key={item} href={routeFor(lang, item, selected)} className={view === item ? \"active\" : \"\"} onClick={(event) => { event.preventDefault(); navigate(item); }} aria-current={view === item ? \"page\" : undefined}>{t[item]}</a>\n+            <a key={item} href={routeFor(lang, item, selected)} className={view === item ? \"active\" : \"\"} onClick={(event) => { event.preventDefault(); navigate(item); }} onPointerEnter={item === \"airport\" ? prepareAirport : undefined} onFocus={item === \"airport\" ? prepareAirport : undefined} aria-current={view === item ? \"page\" : undefined}>{t[item]}</a>\n           ))}\n         </nav>\n         <div className=\"header-meta\">\n@@ -520,6 +534,8 @@ export default function Home({ initialLang = \"ko\", initialView = \"today\", initia\n             href={routeFor(lang, item, selected)}\n             className={(view === item || (view === \"tourism-desk\" && item === \"more\")) ? \"active\" : \"\"}\n             onClick={(event) => { event.preventDefault(); navigate(item); }}\n+            onPointerEnter={item === \"airport\" ? prepareAirport : undefined}\n+            onFocus={item === \"airport\" ? prepareAirport : undefined}\n             aria-current={view === item ? \"page\" : view === \"tourism-desk\" && item === \"more\" ? \"location\" : undefined}\n             aria-label={t[item]}\n           >\n"
+      }
+    ],
+    "protectedPathCount": 65,
+    "approvalEvidenceFile": "docs/approvals/airport-intent-preload-20261012.json"
   }
 }
