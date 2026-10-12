@@ -10,3 +10,12 @@
 @media(prefers-reduced-motion:reduce){.glance-preview *{scroll-behavior:auto}}
 .glance-header nav a{min-height:44px;display:flex;align-items:center}.glance-hour-picker{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:11px}.glance-hour-picker select{min-height:44px;background:white;border:1px solid #d8dfe5;padding:4px 8px;font:inherit;color:inherit}
 .glance-bars button>small{white-space:nowrap;width:max-content}.glance-art-pending{display:block;padding:10px;text-align:center;font-size:11px}
+.glance-art-frame[data-artwork=ready]{aspect-ratio:1448/1086;min-height:0}
+.glance-art-frame[data-artwork=ready]>img{display:block;height:auto;aspect-ratio:1448/1086}
+@media(max-width:700px){
+ .glance-art-frame[data-artwork=ready]{aspect-ratio:auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ .glance-art-frame[data-artwork=ready]>img{grid-column:1/-1}
+ .glance-art-frame[data-artwork=ready] .glance-building{position:static;transform:none;width:auto;min-width:0;padding:6px;background:#fff}
+ .glance-art-frame[data-artwork=ready] .glance-building dl{display:grid;gap:3px}
+ .glance-art-frame[data-artwork=ready] .glance-building dl>div{display:flex;justify-content:space-between;gap:3px}
+}

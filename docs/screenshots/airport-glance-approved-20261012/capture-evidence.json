@@ -1,0 +1,46 @@
+[
+  {
+    "width": 1440,
+    "sourceAt": "2026-10-12T06:43:09.299Z",
+    "total": "563 편",
+    "image": {
+      "src": "http://127.0.0.1:4202/images/airport-glance/approved-v1-1448.webp",
+      "naturalWidth": 1072,
+      "rendered": 1072
+    },
+    "errors": []
+  },
+  {
+    "width": 360,
+    "sourceAt": "2026-10-12T06:43:09.299Z",
+    "total": "563 편",
+    "image": {
+      "src": "http://127.0.0.1:4202/images/airport-glance/approved-v1-480.webp",
+      "naturalWidth": 328,
+      "rendered": 328
+    },
+    "errors": []
+  },
+  {
+    "width": 390,
+    "sourceAt": "2026-10-12T06:43:09.299Z",
+    "total": "563 편",
+    "image": {
+      "src": "http://127.0.0.1:4202/images/airport-glance/approved-v1-480.webp",
+      "naturalWidth": 358,
+      "rendered": 358
+    },
+    "errors": []
+  },
+  {
+    "width": 430,
+    "sourceAt": "2026-10-12T06:43:09.299Z",
+    "total": "563 편",
+    "image": {
+      "src": "http://127.0.0.1:4202/images/airport-glance/approved-v1-480.webp",
+      "naturalWidth": 398,
+      "rendered": 398
+    },
+    "errors": []
+  }
+]
