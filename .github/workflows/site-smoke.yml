@@ -434,3 +434,15 @@ jobs:
 
           if (failed) process.exitCode = 1;
           NODE
+      # Search evidence: what a crawler gets from each public page without
+      # running JavaScript (status, canonical, hreflang, robots, JSON-LD, and
+      # whether the server HTML names its sources, dates and observed/forecast
+      # labels). Read-only; the script comes from this workflow's own commit.
+      - uses: actions/checkout@v4
+        if: always()
+        with:
+          path: search-evidence
+          persist-credentials: false
+      - name: Record search evidence from the public site
+        if: always()
+        run: node search-evidence/scripts/seo-live-audit.mjs https://koretaildata.com | tee "$RUNNER_TEMP/search-evidence.jsonl"
