@@ -448,7 +448,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       </div>
 
       <main className="page-shell">
-        {view === "airport-glance" && <AirportGlance lang={lang} published artworkSrc="/images/airport-glance/approved-v1-1448.webp"/>}
+        {view === "airport-glance" && <AirportGlance lang={lang} published selectedDate={serviceDate} onDateChange={changeDate} artworkSrc="/images/airport-glance/approved-v1-1448.webp"/>}
         {view === "today" && (
           <>
             <section className="hero demand-hero" aria-labelledby="hero-title">

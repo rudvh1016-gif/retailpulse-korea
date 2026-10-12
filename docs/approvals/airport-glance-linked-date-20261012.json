@@ -1,0 +1,21 @@
+{
+  "scope": "Date-state integration bug fix within the approved airport glance publication and menu work",
+  "baseMain": "754ce4bda01de1589f275f1956dcac2b67162d40",
+  "approvalEvidenceFile": "docs/approvals/approved-release-navigation-20261012.json",
+  "reproduction": {
+    "url": "/ko/airport-glance?date=2026-10-01",
+    "beforeDisplayedDate": "2026-10-12",
+    "expectedDisplayedDate": "2026-10-01"
+  },
+  "reason": "Use the existing shared serviceDate/changeDate contract for the published route; standalone preview retains its local date. Preserve URL, menu navigation, browser history and locale changes. No new date source, API or collector.",
+  "changed": [
+    {
+      "file": "app/retailpulse-app.tsx",
+      "before": "160166c6690eb5063bc265a89b53291211832fe30be9724546d9bb178d6f726b",
+      "approved": "80e9a9aeaa873de3c072a7e6359c735f4880304345363536075e60fb8dbb2f3a"
+    }
+  ],
+  "exactUnifiedDiff": "diff --git a/app/retailpulse-app.tsx b/app/retailpulse-app.tsx\nindex 80580d9b..f6332793 100644\n--- a/app/retailpulse-app.tsx\n+++ b/app/retailpulse-app.tsx\n@@ -448,7 +448,7 @@ export default function Home({ initialLang = \"ko\", initialView = \"today\", initia\n       </div>\n \n       <main className=\"page-shell\">\n-        {view === \"airport-glance\" && <AirportGlance lang={lang} published artworkSrc=\"/images/airport-glance/approved-v1-1448.webp\"/>}\n+        {view === \"airport-glance\" && <AirportGlance lang={lang} published selectedDate={serviceDate} onDateChange={changeDate} artworkSrc=\"/images/airport-glance/approved-v1-1448.webp\"/>}\n         {view === \"today\" && (\n           <>\n             <section className=\"hero demand-hero\" aria-labelledby=\"hero-title\">\n",
+  "protectedPathCount": 65,
+  "checksPreserved": true
+}
