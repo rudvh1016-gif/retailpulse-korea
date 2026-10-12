@@ -1,4 +1,5 @@
 'use client';
+import {DeparturePlanSummary} from './departure-plan-summary';
 import {useCallback,useState} from 'react';
 import {departureGuideEntryCopy} from './departure-guide-entry-copy';
 import styles from './departure-guide-entry.module.css';
@@ -42,6 +43,7 @@ export function AirportDeparturePreparation({lang}:{lang:Lang}) {
       options={(['YES','NO','UNKNOWN'] as const).map(value=>({value,label:value==='YES'?c.yes:value==='NO'?c.no:short.unknown,testId:key==='checkedBaggage'?`prep-baggage-${value}`:undefined}))}/>;
     })}
    </div>
+   <DeparturePlanSummary input={input} plan={plan} lang={lang}/>
    <h3 className="passenger-guide-heading">{g.overview}</h3>
    <ol className="passenger-guide-steps" data-testid="passenger-basic-steps">{basic.map(([asset,detail],index)=><li key={asset}>
     <PassengerGuideImage asset={asset as PassengerGuideAsset}/><h4>{index+1} · {g.titles[index]}</h4><p>{g.sentences[index]}</p>

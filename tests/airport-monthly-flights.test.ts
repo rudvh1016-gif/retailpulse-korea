@@ -12,7 +12,7 @@ test('similar facts calculate flight differences and region shares without count
  const previous:TerminalDay={...current,day:'2026-10-03',total:295,groups:{JP:40,UNKNOWN:60}};
  const item={day:previous,components:[{name:'TOTAL',distance:0},{name:'EAST_SHARE',distance:0},{name:'DESTINATIONS',distance:0}],missing:[]} as unknown as SimilarDay;
  const facts=similarHighlights(item,current,'ko');
- assert.equal(facts.length,3);
+ assert.equal(facts.length,5);
  assert.ok('difference' in facts[0]&&facts[0].difference==='차이 12편');
  assert.ok('difference' in facts[1]&&facts[1].difference==='차이 0%p');
  assert.ok('current' in facts[2]&&facts[2].current==='100%'&&facts[2].previous==='100%');
@@ -42,6 +42,6 @@ test('similar cards never call two unknown destination mixes similar; dates omit
  const past=terminalDay(dailyFlightProfile([row('2026-09-12','b',{airportCode:'unknown'})],'2026-09-12',true),'T2');
  assert.equal(now.sidesVersion,AIRPORT_SIDES_VERSION);const [similar]=similarDays({current:now,history:[past]});
  assert.ok(similar.missing.includes('DESTINATIONS'));assert.ok(!similarHighlights(similar,now,'ko').some(fact=>'text'in fact&&fact.text.includes('목적지')));
- assert.ok(similarHighlights(similar,now,'ko').length<=3);assert.doesNotMatch(shortDayLabel(past.day,now.day,'ko'),/2026/);
+ assert.ok(similarHighlights(similar,now,'ko').length<=5);assert.doesNotMatch(shortDayLabel(past.day,now.day,'ko'),/2026/);
  assert.match(shortDayLabel('2025-09-12',now.day,'ko'),/2025/);
 });

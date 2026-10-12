@@ -6,6 +6,7 @@ import {fromSummary,type SeoulFlowArea} from '../lib/seoul-flow-data.mjs';
 const styles={"image":"seoul-flow-image","models":"seoul-flow-models","row":"seoul-flow-row","content":"seoul-flow-content","metrics":"seoul-flow-metrics","basis":"seoul-flow-basis","note":"seoul-flow-note"};
 
 const locales={ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'};
+const sourceName={ko:'서울 열린데이터광장',en:'Seoul Open Data',zh:'首尔开放数据广场',ja:'ソウル オープンデータ広場'};
 const copy={
  ko:{title:'이동과 외국인 흐름',station:'대표 지하철역 승하차',alighting:'하차',boarding:'승차',living:'단기외국인 생활인구',tourism:'관광 목적 이동',people:'명',estimate:'명 · 추정',missing:'자료 없음',date:'기준일',reference:'기준 시각',retrieved:'수집',release:'공식 파일 발표 월',unit:'원자료 단위 미확인',stationNote:'전체 이용객 집계 · 외국인 또는 매장 방문 수가 아닙니다.',livingNote:'한 시점의 인구 추정 · 하루 방문자 수로 합산하지 않습니다.',tourismNote:'공식 파일 집계 · 단위 확인 전 사람 수나 이동 건수로 해석하지 않습니다.',model:'개념 모형 · 실제 좌표·관측 경로가 아니며 모형의 수와 높이는 통계값을 나타내지 않습니다.'},
  en:{title:'Movement and foreign population',station:'Representative station ridership',alighting:'Alighting',boarding:'Boarding',living:'Short-stay foreign living population',tourism:'Tourism-purpose movement',people:'people',estimate:'people · est.',missing:'No data',date:'Reporting date',reference:'Reference time',retrieved:'Retrieved',release:'Official file release month',unit:'Original unit unverified',stationNote:'All passengers · not a count of foreign visitors or shop visits.',livingNote:'Population estimate at one time · do not sum as daily visitors.',tourismNote:'Official file aggregate · do not interpret as people or trips until the unit is verified.',model:'Concept model · not official coordinates or observed routes. Geometry does not encode statistical values.'},
@@ -35,21 +36,21 @@ export function SeoulFlowModels({summary,area,lang,publication}:{summary:LiveSum
    <ModelImage name="station"/>
    <div className={styles.content}><h4>{t.station}{station?.stationName?` · ${station.stationName.replaceAll('|',' · ')}`:''}</h4>
     <dl className={styles.metrics}><div><dt>{t.alighting}</dt><dd>{value(station?.alightingCount)}{station?.alightingCount!=null&&<small>{t.people}</small>}</dd></div><div><dt>{t.boarding}</dt><dd>{value(station?.boardingCount)}{station?.boardingCount!=null&&<small>{t.people}</small>}</dd></div></dl>
-    <p className={styles.basis}>{t.date} · {reference(station?.referenceDate??null,lang)} · {station?.provider??'—'}</p>
+    <p className={styles.basis}>{t.date} · {reference(station?.referenceDate??null,lang)} · {station?sourceName[lang]:'—'}</p>
     <p className={styles.basis}>{t.retrieved} · {reference(station?.retrievedAt??null,lang,true)}</p><p className={styles.note}>{t.stationNote}</p>
    </div>
   </div>
   <div className={styles.row} data-flow="living">
    <ModelImage name="living-population"/>
    <div className={styles.content}><h4>{t.living}</h4><dl className={styles.metrics}><div><dt>{t.living}</dt><dd>{value(living?.value)}{living?.value!=null&&<small>{t.estimate}</small>}</dd></div></dl>
-    <p className={styles.basis}>{t.reference} · {reference(living?.referenceAt??null,lang,true)} · {living?.provider??'—'}</p>
+    <p className={styles.basis}>{t.reference} · {reference(living?.referenceAt??null,lang,true)} · {living?sourceName[lang]:'—'}</p>
     <p className={styles.basis}>{t.retrieved} · {reference(living?.retrievedAt??null,lang,true)}</p><p className={styles.note}>{t.livingNote}</p>
    </div>
   </div>
   <div className={styles.row} data-flow="tourism">
    <ModelImage name="tourism-movement"/>
    <div className={styles.content}><h4>{t.tourism}</h4><dl className={styles.metrics}><div><dt>{t.unit}</dt><dd>{value(movement?.value)}</dd></div></dl>
-    <p className={styles.basis}>{t.date} · {reference(movement?.referenceDate??null,lang)} · {movement?.provider??'—'}</p>
+    <p className={styles.basis}>{t.date} · {reference(movement?.referenceDate??null,lang)} · {movement?sourceName[lang]:'—'}</p>
     <p className={styles.basis}>{t.release} · {movement?.releaseMonth??'—'} · {t.retrieved} · {reference(movement?.retrievedAt??null,lang,true)}</p><p className={styles.note}>{t.tourismNote}</p>
    </div>
   </div>
