@@ -26,3 +26,13 @@ Targeted validation: typecheck PASS; scoped ESLint0 errors/one existing static-i
 Draft only: this is a revised candidate, not final approval. Existing detail is not shortened, and no merge/deployment was run. Library delivery is handled by the parent; no duplicate upload attempted. Earlier capture folders are retained as historical evidence, superseded by the links above.
 
 Final review also verifies that a failed summary clock cannot label available flight records as “no upcoming departures”; that case is unavailable. Type/lint, the single added failure-path browser test and build passed after the guard. Normal-data captures above are unchanged.
+
+
+## 2026-10-12 follow-up: mobile spacing, shared flags, date fixture
+
+- Mobile <=700px: terminal overlays use 220px width with three equal direction/value columns and small vertical offsets. Font sizes are unchanged. Desktop keeps the existing 225px flex overlay layout and image dimensions.
+- Summary, country shares, and change Top 5 reuse the existing country flag assets on both desktop and mobile. Unknown/other and the domestic-destination category do not receive invented flags. No new data or detailed-page changes.
+- CI 38220071045 failed because the test summary fixture always returned October 11, including October 9/10 requests. `useLiveSummary` correctly rejects a response whose serviceDateKst does not match the selection. The fixture now responds with the requested date and PAST relation. Production guards were not relaxed.
+- A controlled pending-summary test verifies unavailable while flight data has already arrived, then no-upcoming only after the matching past-day summary arrives. Missing-summary clock protection remains tested.
+- Targeted verification: mobile 360 / desktop 1440 layout + rapid date changes + missing clock + deferred summary: 5 passed. Prior 7 viewport/localization checks passed. Native production build completed. Screenshots refreshed at 360/390/430/1440 with decoded flags, no overflow, and no page errors; see capture-evidence.json.
+- This remains an unpublished preview. No merge or deployment was performed.
