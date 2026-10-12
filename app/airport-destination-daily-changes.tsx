@@ -4,6 +4,7 @@ import {ChangeRate} from './change-rate';
 import {destinationDailyChanges} from '../lib/airport-destination-daily-changes';
 import {previousFlightMonth,type AirportFlightMonth,type MonthScope} from '../lib/airport-monthly-flights';
 import {airportMonthLabel} from '../lib/airport-month-labels';
+import {domesticDestinationLabel} from '../lib/airport-domestic-labels';
 const t=(lang:Lang,ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
 const blenderFlags=new Set(['CN','JP','US','VN']);
 const svgFlags=new Set('AE AT AU BN CA CH CZ DE DK ES ET FI FR GB GE GU HK HU ID IN IT KG KH KR KZ LA LK MM MN MO MP MX MY NL NP NZ PH PL PT QA SG TH TM TR TW UZ'.split(' '));
@@ -25,7 +26,7 @@ export function AirportDestinationDailyChanges({lang,current,previous,scope}:{la
   <p>{t(lang,'일평균 편수 · 전월 대비 신장률','Daily mean flights · change from the previous month','日均航班 · 较上月增长率','1日平均の便数・前月比増減率')}</p>
   {rows.length===0?<p role="status">{t(lang,'확인된 목적지 국가가 없습니다. 미정 편수는 전체 표에서 확인할 수 있습니다.','No confirmed destination country. Unconfirmed flights remain in the full table.','没有已确认目的地国家。未确认航班仍列于完整表格。','確認済みの目的地の国がありません。未確認便は全体表で確認できます。')}</p>:<ul id={listId}>
    {(expanded?rows:rows.slice(0,8)).map(row=><li key={row.country} data-country={row.country}>
-    <div className="airport-country-heading"><h5><Flag country={row.country}/> {names.of(row.country)??row.country}</h5><ChangeRate value={row.percent} lang={lang}/></div>
+    <div className="airport-country-heading"><h5>{row.country==='KR'?domesticDestinationLabel(lang):<><Flag country={row.country}/> {names.of(row.country)??row.country}</>}</h5><ChangeRate value={row.percent} lang={lang}/></div>
     <div className="airport-country-bars">
      {[{label:previousLabel,number:row.previous},{label:currentLabel,number:row.current}].map(({label,number},index)=><div key={index} className="airport-country-bar-row" data-period={index?'current':'previous'}>
       <span className="airport-country-bar-month">{label}</span>
