@@ -20,7 +20,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,360,390,430,1280
  await expect(rows).toHaveCount(8);await expect(rows.first()).toContainText('2B');await expect(rows.first()).toContainText('11');await expect(rows.first()).toContainText('308');await expect(rows.nth(1)).toContainText('289');await expect(rows.first()).toContainText('14:06');
  const geometry=await model.locator('[data-checkpoint]').evaluateAll(elements=>elements.map(el=>{const r=el.getBoundingClientRect();return{x:r.x,right:r.right,overflow:el.scrollWidth>el.clientWidth+1};}));
  expect(geometry.every(r=>r.x>=0&&r.right<=width&&!r.overflow)).toBe(true);expect(await section.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
- expect(await model.locator('[data-checkpoint] strong').first().evaluate(el=>getComputedStyle(el).fontSize)).toBe('17px');
+ expect(await model.locator('[data-checkpoint] strong').first().evaluate(el=>getComputedStyle(el).fontSize)).toBe(width<=820?'13px':'14px');
  await toggle.click();await toggle.click();await expect(rows.first()).toBeVisible();await toggle.focus();await page.keyboard.press('Space');await expect(rows.first()).toBeHidden();await expect(toggle).toBeFocused();
  if(lang==='ko')await model.screenshot({path:info.outputPath(`checkpoint-compact-${width}.png`)});
  await page.locator('.airport-view > .terminal-selector').getByRole('tab',{name:'T1',exact:true}).click();await expect(model).toHaveAttribute('data-terminal','T1');await model.scrollIntoViewIfNeeded();
