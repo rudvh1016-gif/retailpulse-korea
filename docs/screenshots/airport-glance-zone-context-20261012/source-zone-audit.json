@@ -1,0 +1,83 @@
+{
+  "sourceAt": "2026-10-12T06:43:09.299Z",
+  "windowTotal": 27,
+  "zoneCount": 9,
+  "zone": [
+    {
+      "id": "43bf02bf6d4cd3cb260d95c0610b458c9e8b15f020225bf8c317998311c9885b",
+      "flight": "LJ349",
+      "gate": "234",
+      "airport": "키타큐슈",
+      "country": "JP",
+      "time": "2026-10-12T15:45:00+09:00"
+    },
+    {
+      "id": "94c4a6a21487476bc0fe4c0413f3413cd5df89e7eb51ecea97d78efc418b4962",
+      "flight": "KE023",
+      "gate": "224",
+      "airport": "샌프란시스코",
+      "country": "US",
+      "time": "2026-10-12T16:00:00+09:00"
+    },
+    {
+      "id": "5d835625a6eebafaa0af489a3cfad781a8392d33240e1cce5dba132a1e89fb6c",
+      "flight": "LJ347",
+      "gate": "215",
+      "airport": "나고야",
+      "country": "JP",
+      "time": "2026-10-12T16:05:00+09:00"
+    },
+    {
+      "id": "e5ebdae8ce39074fe66ff8a48161dc6e5312da138794c3eb5690361846f5a1f4",
+      "flight": "KE2027",
+      "gate": "236",
+      "airport": "타이베이",
+      "country": "TW",
+      "time": "2026-10-12T16:10:00+09:00"
+    },
+    {
+      "id": "71a4845635d007d4e7972295247512e14517eab70ac02d8b6d5d89f2ff6b8cce",
+      "flight": "KE431",
+      "gate": "222",
+      "airport": "덴파사르",
+      "country": "ID",
+      "time": "2026-10-12T16:10:00+09:00"
+    },
+    {
+      "id": "63bb2eec528188af79474c3e092ec2c449ce2b4ce42050c85f590eb5cfd76746",
+      "flight": "LJ239",
+      "gate": "247",
+      "airport": "오사카/ 간사이",
+      "country": "JP",
+      "time": "2026-10-12T16:10:00+09:00"
+    },
+    {
+      "id": "726856451a167d73ae98ecdfca7979a4eccaafce9dbde6d02a87f0d4feffc864",
+      "flight": "KE427",
+      "gate": "235",
+      "airport": "쿠알라룸푸르",
+      "country": "MY",
+      "time": "2026-10-12T16:20:00+09:00"
+    },
+    {
+      "id": "acd233cde7d494fbf2ab2c16e214f551ba8ea500877198d7734b504561805ac7",
+      "flight": "KE795",
+      "gate": "219",
+      "airport": "후쿠오카",
+      "country": "JP",
+      "time": "2026-10-12T16:25:00+09:00"
+    },
+    {
+      "id": "da2a584b83ffebe78ca8e801d480aeed954568ee17887f43c204630850dfd468",
+      "flight": "KE041",
+      "gate": "220",
+      "airport": "시애틀/타코마",
+      "country": "US",
+      "time": "2026-10-12T16:40:00+09:00"
+    }
+  ],
+  "sameT2": {
+    "EAST": 6,
+    "CENTER": 2
+  }
+}

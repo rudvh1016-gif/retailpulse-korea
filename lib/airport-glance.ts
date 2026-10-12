@@ -53,7 +53,10 @@ export function glanceFutureWindow(day:string,flights:readonly MapFlight[],now:n
  for(const row of selected){const code=row.destination?.country??null;countries.set(code,(countries.get(code)??0)+1);}
  const zones=(['T1','CONCOURSE','T2'] as const).flatMap(building=>(['WEST','CENTER','EAST'] as const).map(side=>({building,side,flights:buildings[building][side]})));
  const maximum=Math.max(0,...zones.map(row=>row.flights));
- return {start:now,end,clipped:end<now+hours*3_600_000,total:selected.length,buildings,leaders:zones.filter(row=>row.flights===maximum&&maximum>0),unknownBuilding:selected.filter(row=>row.building==='UNKNOWN').length,countries:[...countries].map(([country,flights])=>({country,flights})).sort((a,b)=>b.flights-a.flights||(a.country??'').localeCompare(b.country??''))};
+ return {start:now,end,clipped:end<now+hours*3_600_000,total:selected.length,buildings,leaders:zones.filter(row=>row.flights===maximum&&maximum>0).map(zone=>{
+  const destinations=new Map<string|null,number>();for(const flight of selected){if(flight.building!==zone.building||flight.side!==zone.side)continue;const code=flight.destination?.country??null;destinations.set(code,(destinations.get(code)??0)+1);}
+  return {...zone,share:zone.flights/selected.length*100,countries:[...destinations].map(([country,flights])=>({country,flights})).sort((a,b)=>b.flights-a.flights||(a.country??'').localeCompare(b.country??''))};
+ }),unknownBuilding:selected.filter(row=>row.building==='UNKNOWN').length,countries:[...countries].map(([country,flights])=>({country,flights})).sort((a,b)=>b.flights-a.flights||(a.country??'').localeCompare(b.country??''))};
 }
 
 /** Adjacent equal-length windows in one verified day response; rank increases in flights, never percentages. */

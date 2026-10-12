@@ -74,3 +74,12 @@ test('adjacent destination unknown-only and no-increase states never invent a gr
  const day='2026-10-11',now=Date.parse(day+'T10:00:00+09:00'),flights=glanceFlights(day,[{...row(day,'unknown','XXX'),scheduledAt:day+'T11:30:00+09:00'}],'all').departures;
  const result=glanceDestinationIncrease(day,flights,now,1,true);assert.equal(result.status,'READY');if(result.status==='READY'){assert.equal(result.leaders.length,0);assert.equal(result.rows.length,0);assert.deepEqual(result.unknown,{before:0,after:1});}
 });
+
+test('representative zone context uses selected-scope denominator and exact zone/window destinations',()=>{
+ const day='2026-10-11',now=Date.parse(day+'T10:15:00+09:00'),template=glanceFlights(day,[row(day,'base')],'all').departures[0];let id=0;
+ const group=(n:number,building:typeof template.building,side:typeof template.side,country:string|null,time='10:30')=>Array.from({length:n},()=>({...template,id:String(id++),building,side,destination:country?{...template.destination!,country}:null,scheduledAt:`${day}T${time}:00+09:00`}));
+ const flights=[...group(4,'T2','WEST','JP'),...group(2,'T2','WEST','CN'),...group(1,'T2','WEST',null),...group(3,'T2','EAST','US'),...group(1,'T2','CENTER','VN'),...group(5,'T1','EAST','US'),...group(1,'UNKNOWN','UNVERIFIED',null),...group(9,'T2','WEST','US','09:30')];
+ const all=glanceFutureWindow(day,flights,now,1)!;assert.equal(all.total,17);assert.equal(all.leaders.length,1);assert.equal(all.leaders[0].flights,7);assert.equal(all.leaders[0].share,7/17*100);assert.deepEqual(all.leaders[0].countries,[{country:'JP',flights:4},{country:'CN',flights:2},{country:null,flights:1}]);assert.equal(all.buildings.T2.EAST,3);assert.equal(all.buildings.T2.CENTER,1);
+ const t2=glanceFutureWindow(day,flights.filter(f=>f.building==='T2'),now,1)!;assert.equal(t2.leaders[0].share,7/11*100);
+ const tied=glanceFutureWindow(day,[...flights,...group(2,'T1','EAST','CN')],now,1)!;assert.deepEqual(tied.leaders.map(row=>[row.building,row.side,row.flights]),[['T1','EAST',7],['T2','WEST',7]]);assert.equal(tied.leaders[0].countries.find(row=>row.country==='US')?.flights,5);
+});
