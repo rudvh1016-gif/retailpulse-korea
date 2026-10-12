@@ -30,12 +30,40 @@ export type SourceCadence = "REALTIME" | "DAILY" | "MONTHLY" | "QUARTERLY" | "EV
 export type PeriodLang = "ko" | "en" | "zh" | "ja";
 
 /**
- * How recently a collector must have succeeded before its stored period can
- * be presented as the provider's newest. Every periodic collector runs at
- * least daily, so two days is generous; past that the honest answer is that
- * KORETAIL does not know whether something newer exists.
+ * How recently a daily-checked collector must have succeeded before its
+ * stored period can be presented as the provider's newest. The daily and
+ * monthly sources are checked every day (collect-production.yml), so two days
+ * is generous; past that the honest answer is that KORETAIL does not know
+ * whether something newer exists. Quarterly sources follow their weekly check
+ * instead (below). The airport screens derive their own 12-hour forecast
+ * threshold from this value, so it stays 48 hours.
  */
 export const PERIOD_VOUCH_WINDOW_MS = 48 * 3_600_000;
+
+/**
+ * The quarterly sources (estimated sales, Store Dynamics) are checked once a
+ * week for a new quarter: collect-sales.yml, cron "7 22 * * 6", Saturday
+ * 22:07 UTC = Sunday 07:07 KST. Held to the 48-hour rule, a healthy weekly
+ * check read as "not collected recently" from Tuesday on.
+ *
+ * A quarterly period is vouched for while its last success is no older than
+ * the newest weekly check that should have finished by now. The grace covers
+ * GitHub's schedule delay (+1h40m to +2h44m observed) and the bounded
+ * fresh-runner retries; it does not stretch a failed or skipped check, which
+ * stops the vouch at that check's slot plus the grace rather than a week later.
+ */
+export const QUARTERLY_CHECK_SLOT_UTC = { weekday: 6, hour: 22, minute: 7 } as const;
+export const QUARTERLY_CHECK_GRACE_MS = 6 * 3_600_000;
+const DAY_MS = 86_400_000;
+
+/** Start of the newest weekly quarterly check whose grace has already passed. */
+export function latestDueQuarterlyCheck(nowMs: number): number {
+  const due = nowMs - QUARTERLY_CHECK_GRACE_MS;
+  const day = new Date(due);
+  const slotOnDay = Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), QUARTERLY_CHECK_SLOT_UTC.hour, QUARTERLY_CHECK_SLOT_UTC.minute);
+  const slot = slotOnDay - ((day.getUTCDay() - QUARTERLY_CHECK_SLOT_UTC.weekday + 7) % 7) * DAY_MS;
+  return slot > due ? slot - 7 * DAY_MS : slot;
+}
 
 export interface SourcePeriodInput {
   cadence: SourceCadence;
@@ -181,18 +209,19 @@ function formatPeriod(cadence: SourceCadence, value: string, lang: PeriodLang): 
  * withheld — which is the distinction between a provider that has not
  * published and a collector that has stopped working.
  */
-export function publicationStandpoint(retrievedAt: string | null, nowIso: string): PublicationStandpoint {
+export function publicationStandpoint(retrievedAt: string | null, nowIso: string, cadence?: SourceCadence): PublicationStandpoint {
   if (!retrievedAt) return "UNKNOWN";
   const retrieved = Date.parse(retrievedAt);
   const now = Date.parse(nowIso);
   if (!Number.isFinite(retrieved) || !Number.isFinite(now)) return "UNKNOWN";
+  if (cadence === "QUARTERLY") return retrieved >= latestDueQuarterlyCheck(now) ? "PROVIDER_NEWEST" : "COLLECTION_BEHIND";
   return now - retrieved <= PERIOD_VOUCH_WINDOW_MS ? "PROVIDER_NEWEST" : "COLLECTION_BEHIND";
 }
 
 export function describeSourcePeriod(input: SourcePeriodInput, lang: PeriodLang): SourcePeriodDescription | null {
   const periodLabel = formatPeriod(input.cadence, input.referencePeriod, lang);
   if (!periodLabel) return null;
-  const standpoint = publicationStandpoint(input.retrievedAt, input.nowIso);
+  const standpoint = publicationStandpoint(input.retrievedAt, input.nowIso, input.cadence);
   return {
     cadenceLabel: CADENCE_LABEL[input.cadence][lang],
     periodLabel,
