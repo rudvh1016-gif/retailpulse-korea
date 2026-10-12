@@ -51,7 +51,8 @@ export default function AirportGlancePreview({lang,artworkSrc=null}:{lang:Lang;a
  const names=new Intl.DisplayNames([lang],{type:'region'}),fmt=new Intl.NumberFormat(lang,{maximumFractionDigits:1});
  const isToday=Number.isFinite(clock)&&kstDayOf(new Date(clock).toISOString())===day&&summary?.dayRelation==='TODAY';
  const queues=isToday?summary?.airport.congestion??[]:[],wait=glanceLongestWait(queues.filter(row=>scope==='all'||row.terminal===scope),clock);
- const upcoming=data&&summary?glanceUpcoming(day,data.departures,clock):null;
+ const futureReady=Boolean(data&&summary&&Number.isFinite(clock)&&Number.isFinite(Date.parse(summary.generatedAt)));
+ const upcoming=futureReady&&data?glanceUpcoming(day,data.departures,clock):null;
  const stamp=(value:string|null|undefined)=>value&&Number.isFinite(Date.parse(value))?new Intl.DateTimeFormat(lang,{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value))+' KST':'—';
  const shortTime=(value:string)=>new Intl.DateTimeFormat(lang,{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));
  const minuteText=(minute:number)=>`${String(Math.floor(minute/60)).padStart(2,'0')}:${String(minute%60).padStart(2,'0')}`;
@@ -67,7 +68,7 @@ export default function AirportGlancePreview({lang,artworkSrc=null}:{lang:Lang;a
   <div className="glance-controls"><div role="group" aria-label={ui.terminal}>{(['all','T1','T2'] as const).map(value=><button key={value} aria-pressed={scope===value} onClick={()=>setScope(value)}>{value==='all'?c.all:value}</button>)}</div><label>{c.date}<input type="date" value={day} onChange={event=>{if(event.target.value)setDate(event.target.value);}}/></label><button onClick={()=>setDate(null)}>{c.today}</button><span>KST</span></div>
   <section className="glance-insights" aria-label={ui.summary}>
    <a href={`${details}#airport-checkpoints-title`} data-testid="glance-key-wait"><span>{ic.wait}</span><strong>{wait?`${wait.row.terminal} ${friendlyCheckpointName(wait.row.zone,lang)} · ${waitValue(wait)}`:ic.unavailable}</strong><small>{wait?`${shortTime(wait.row.observedAt)} KST · ${ic.waitBasis}${wait.tied?` · ${ic.tie}`:''}`:ic.waitBasis}</small></a>
-   <a href={`${details}#airport-departure-model-slot`} data-testid="glance-key-upcoming"><span>{ic.upcoming}</span><strong>{upcoming?`${minuteText(upcoming.startMin)}–${minuteText(upcoming.endMin)} · ${upcoming.flights} ${c.unit}`:data?ic.noUpcoming:ic.unavailable}</strong><small>{day||'—'} KST · {ic.upcomingBasis}{upcoming?.tied?` · ${ic.tie}`:''}</small></a>
+   <a href={`${details}#airport-departure-model-slot`} data-testid="glance-key-upcoming"><span>{ic.upcoming}</span><strong>{upcoming?`${minuteText(upcoming.startMin)}–${minuteText(upcoming.endMin)} · ${upcoming.flights} ${c.unit}`:futureReady?ic.noUpcoming:ic.unavailable}</strong><small>{day||'—'} KST · {ic.upcomingBasis}{upcoming?.tied?` · ${ic.tie}`:''}</small></a>
    <a href={`${details}#airport-monthly-flights`} data-testid="glance-key-growth"><span>{ic.growth}</span><strong>{growth?<>{countryName(growth.country)} <ChangeRate value={growth.percent} lang={lang}/>{ranking[1]?.percent===growth.percent?` · ${ic.tie}`:''}</>:ranking.length?ic.noGrowth:ic.unavailable}</strong><small>{previousMonth||'—'} → {month||'—'} · {ui.days} {previous?.includedDays.length??'—'} / {current?.includedDays.length??'—'} {ui.dayUnit}</small></a>
   </section>
   {!ready&&<p role="status" className="glance-status">{summary===null?c.missing:loaded===undefined?c.loading:payload?.truncated?c.partial:c.missing}</p>}
