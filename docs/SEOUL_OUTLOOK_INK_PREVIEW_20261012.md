@@ -14,3 +14,12 @@ Real local Chrome screenshots use the public summary retrieved at 2026-10-12T03:
 The supported Library upload connection is currently unavailable; no image Library IDs are claimed. These repository captures are review evidence, not public-site delivery. Merge/deployment requires review of the actual preview. No controlled before/after performance benchmark was run, so no speed improvement is claimed.
 
 Local checks passed: TypeScript, scoped ESLint, unchanged UI-lock, 11 demand/flow unit tests, native vinext build, 46 rendered HTML tests and 15 browser tests. Browser coverage includes exact source geometry, four languages, 320/390/430/1280px, keyboard selection, area navigation, live refresh and selected-time removal. Existing frontend-design and web-design-guidelines skills were applied without duplicate installation. No new motion, focus behavior or touch target changes.
+
+## Revised compact range candidate
+
+The previous chart was rejected and remains unpublished. This revision reduces the plot from292 to220 SVG pixels while keeping source min/max endpoints exactly proportional to the same zero/ceiling scale. The ink-blue upper/lower bounds and restrained fill show only the supplied range; there is no midpoint or fabricated central curve. A short mint vertical range with end caps marks the selected original min/max, replacing the long selection guide. Time buttons become compact text rows with a mint underline, and the selected exact range and KST time share a row. Midnight date text stays; the decorative vertical midnight line is removed. Forecast gaps and source/issue times are unchanged.
+
+- [Revised PC1440](screenshots/seoul-range-refined-20261012/seoul-range-refined-1440.png)
+- [Revised mobile390](screenshots/seoul-range-refined-20261012/seoul-range-refined-390.png)
+
+Same stored public snapshot12:16 KST, initial86000–88000 and last10000–12000 at October13 00:00. Browser pixels inspected. Targeted type/lint/build PASS, selection browser7 PASS (320/390/430/1280 and4 languages, min/max coordinates with the new plot height, keyboard, area changes, refresh and removal), UI-lock unchanged PASS. Tests update only the y-scale geometry for the smaller plot, preserving exact source-bound comparisons. No broad existing feature suite repeated. One revised candidate, no public merge/deployment, no image generation; parent handles Library delivery.

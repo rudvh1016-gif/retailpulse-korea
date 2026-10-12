@@ -17,7 +17,7 @@ export function PopulationOutlook({points,current,lang,now}:{points:FlowPoint[];
  const t=(ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
  const start=forecasts[0]?.time??0,end=forecasts.at(-1)?.time??start;
  const ceiling=Math.max(1,current?.populationMax??0,...forecasts.map(p=>p.populationMax));
- const left=46,right=width-14,top=32,bottom=244,plotWidth=right-left;
+ const left=46,right=width-14,top=32,bottom=184,plotWidth=right-left;
  const x=(time:number)=>left+(end===start ? 0.5 : (time-start)/(end-start))*plotWidth;
  const y=(value:number)=>bottom-value/ceiling*(bottom-top);
  const ticks=populationTicks(start,end,plotWidth);
@@ -27,15 +27,15 @@ export function PopulationOutlook({points,current,lang,now}:{points:FlowPoint[];
  return <section ref={container} className="population-outlook" aria-labelledby={`${id}-title`} data-testid="population-outlook">
   <div className="outlook-heading"><h3 id={`${id}-title`}>{t('앞으로','Coming hours','未来时段','これから')}</h3><span>{t('예상','Forecast','预测','予想')}</span></div>
   {forecasts.length?<>
-   <svg className="outlook-trend" viewBox={`0 0 ${width} 292`} data-ceiling={ceiling} data-domain-start={start} data-domain-end={end} role="img" aria-label={t('서울시 공식 예상 인원 최소~최대 범위','Seoul official forecast minimum–maximum population','首尔官方预测最少至最多人数','ソウル市公式予想人数の最小～最大範囲')}>
+   <svg className="outlook-trend" viewBox={`0 0 ${width} 220`} data-ceiling={ceiling} data-domain-start={start} data-domain-end={end} role="img" aria-label={t('서울시 공식 예상 인원 최소~최대 범위','Seoul official forecast minimum–maximum population','首尔官方预测最少至最多人数','ソウル市公式予想人数の最小～最大範囲')}>
     <line x1={left} x2={right} y1={bottom} y2={bottom} stroke="#e5ebef"/><line x1={left} x2={right} y1={top} y2={top} stroke="#edf1f4"/>
     <text x={left-8} y={top+4} textAnchor="end">{compactPeople(ceiling,lang)}</text><text x={left-8} y={bottom+4} textAnchor="end">0</text>
     {groups.map((group,index)=>{const upper=group.map(p=>`${x(p.time)},${y(p.populationMax)}`).join(' '),lower=group.map(p=>`${x(p.time)},${y(p.populationMin)}`).join(' ');return <g key={index}>
-     {group.length>1?<><polygon points={`${upper} ${[...group].reverse().map(p=>`${x(p.time)},${y(p.populationMin)}`).join(' ')}`} fill="#43617f" fillOpacity=".10"/><polyline points={upper} fill="none" stroke="#43617f" strokeWidth="1.2"/><polyline points={lower} fill="none" stroke="#7194b8" strokeWidth="1"/></>:<line x1={x(group[0].time)} x2={x(group[0].time)} y1={y(group[0].populationMax)} y2={y(group[0].populationMin)} stroke="#43617f" strokeWidth="1"/>}
+     {group.length>1?<><polygon points={`${upper} ${[...group].reverse().map(p=>`${x(p.time)},${y(p.populationMin)}`).join(' ')}`} fill="#43617f" fillOpacity=".12"/><polyline points={upper} fill="none" stroke="#43617f" strokeWidth="1.2"/><polyline points={lower} fill="none" stroke="#43617f" strokeWidth="1"/></>:<line x1={x(group[0].time)} x2={x(group[0].time)} y1={y(group[0].populationMax)} y2={y(group[0].populationMin)} stroke="#43617f" strokeWidth="1"/>}
     </g>;})}
     {ticks.map(time=><text key={time} x={x(time)} y={bottom+18} textAnchor={time===start?'start':time===end?'end':'middle'}>{kstStamp(time).slice(6)}</text>)}
-    {forecasts.filter(p=>kstStamp(p.at).slice(6)==='00:00').map(p=><g key={p.at}><line x1={x(p.time)} x2={x(p.time)} y1={top-4} y2={bottom} stroke="#dee6eb" strokeDasharray="2 3"/><text x={Math.min(right-34,x(p.time)+4)} y="18">{kstStamp(p.at).slice(0,5)}</text></g>)}
-    {active&&<><line x1={x(active.time)} x2={x(active.time)} y1={y(active.populationMax)-7} y2={bottom} stroke="#80b2a4" strokeOpacity=".5" strokeWidth=".8"/><line data-selected-range data-selected-at={active.at} x1={x(active.time)} x2={x(active.time)} y1={y(active.populationMax)} y2={y(active.populationMin)} stroke="#43617f" strokeWidth="1" strokeLinecap="round"/></>}
+    {forecasts.filter(p=>kstStamp(p.at).slice(6)==='00:00').map(p=><g key={p.at}><text x={Math.min(right-34,x(p.time)+4)} y="18">{kstStamp(p.at).slice(0,5)}</text></g>)}
+    {active&&<g className="outlook-active-range"><line data-selected-range data-selected-at={active.at} x1={x(active.time)} x2={x(active.time)} y1={y(active.populationMax)} y2={y(active.populationMin)} stroke="#487e6e" strokeWidth="2"/><line x1={x(active.time)-4} x2={x(active.time)+4} y1={y(active.populationMax)} y2={y(active.populationMax)} stroke="#487e6e" strokeWidth="1.5"/><line x1={x(active.time)-4} x2={x(active.time)+4} y1={y(active.populationMin)} y2={y(active.populationMin)} stroke="#487e6e" strokeWidth="1.5"/></g>}
    </svg>
    <div className="outlook-selection" aria-live="polite">
     <span className="outlook-selection-label">{t('선택 시간의 예상 인구','Forecast population at selected time','所选时间的预测人口','選択時刻の予想人口')}</span>
