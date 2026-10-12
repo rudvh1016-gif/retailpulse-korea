@@ -4,7 +4,6 @@ import {mayPublishNews,officialNewsUrl,sortNews,verifiedDate,type OfficialNews} 
 import {airportNewsCopy,airportNewsDetailCopy} from '../lib/airport-customs-news-copy';
 import type {Lang} from './retailpulse-data';
 import './airport-customs-news.css';
-import {AirportNewsMark} from './airport-news-mark';
 export {AirportNewsMark} from './airport-news-mark';
 
 /** The caller must supply verified,
@@ -22,17 +21,16 @@ function paragraphs(text:string):string[] {
 function attachmentFormat(name:string):string|null {return name.match(/\.(pdf|hwpx?|docx?|xlsx?|zip)$/i)?.[1].toUpperCase()??null;}
 export function AirportCustomsNews({items,today,lang='ko',onBack,syncUrl=false,suppressEmpty=false}:{items:readonly OfficialNews[];today:string;lang?:Lang;onBack?:()=>void;syncUrl?:boolean;suppressEmpty?:boolean}){
  const copy={...airportNewsCopy[lang],...airportNewsDetailCopy[lang]};
- const allowed=sortNews(items.filter(mayPublishNews),today),initial=allowed.some(item=>item.topic==='airport')?'airport':allowed.some(item=>item.topic==='customs')?'customs':'airport';
- const [selectedTopic,setTopic]=useState<'airport'|'customs'|null>(null);
+ const allowed=sortNews(items.filter(item=>item.topic==='customs'&&mayPublishNews(item)),today);
  const [selectedKey,setSelectedKey]=useState<string|null>(null);
  const subscribe=useCallback((notify:()=>void)=>{window.addEventListener('hashchange',notify);window.addEventListener('popstate',notify);return()=>{window.removeEventListener('hashchange',notify);window.removeEventListener('popstate',notify);};},[]);
  const hash=useSyncExternalStore(subscribe,()=>syncUrl?location.hash:'',()=>'');
- const parts=hash.match(/^#\/(airport|customs)(?:\/([^/]+))?$/);let urlKey:string|null=null;
+ const parts=hash.match(/^#\/(customs)(?:\/([^/]+))?$/);let urlKey:string|null=null;
  try{urlKey=parts?.[2]?decodeURIComponent(parts[2]):null;}catch{/* Bad deep links never select an article. */}
- const topic=(parts?.[1] as 'airport'|'customs'|undefined)??selectedTopic??initial;
+ const topic='customs' as const;
  const selected=allowed.find(item=>item.source+'|'+item.sourceId===(syncUrl?urlKey:selectedKey)&&item.topic===topic)??null;
- const navigate=(next:'airport'|'customs',key:string|null=null)=>{setTopic(next);setSelectedKey(key);const fragment='#/'+next+(key?'/'+encodeURIComponent(key):'');if(syncUrl&&location.hash!==fragment){window.history.pushState(null,'',fragment);window.dispatchEvent(new HashChangeEvent('hashchange'));}};
- const tabs=useRef<Array<HTMLButtonElement|null>>([]),dialog=useRef<HTMLDialogElement>(null);
+ const navigate=(next:'customs',key:string|null=null)=>{setSelectedKey(key);const fragment='#/'+next+(key?'/'+encodeURIComponent(key):'');if(syncUrl&&location.hash!==fragment){window.history.pushState(null,'',fragment);window.dispatchEvent(new HashChangeEvent('hashchange'));}};
+ const dialog=useRef<HTMLDialogElement>(null);
  useEffect(()=>{if(selected&&!dialog.current?.open)dialog.current?.showModal();else if(!selected&&dialog.current?.open)dialog.current.close();},[selected]);
  const rows=allowed.filter(item=>item.topic===topic);
  const facts=(title:string,values:OfficialNews['facts'])=>values.some(value=>value.verifiedBySource&&value.text.trim())?<section className="airport-news-facts"><h3>{title}</h3>{values.filter(value=>value.verifiedBySource&&value.text.trim()).flatMap(value=>paragraphs(value.text)).map((text,index)=><p className="airport-provider-text" lang="ko" key={index}>{text}</p>)}</section>:null;
@@ -40,10 +38,7 @@ export function AirportCustomsNews({items,today,lang='ko',onBack,syncUrl=false,s
  const rightsEvidence=selected?reprint??officialNewsUrl({source:selected.source,url:selected.clearance?.evidenceUrl??''}):null;
  return <section className="airport-news" lang={lang==='zh'?'zh-CN':lang} aria-labelledby="airport-news-title">
   <header><div><h1 id="airport-news-title">{copy.title}</h1><p>{copy.intro}</p></div>{onBack&&<button type="button" onClick={onBack}>{copy.back}</button>}</header>
-  <div className="airport-news-tabs" role="tablist" aria-label={copy.tabs}>
-   {(['airport','customs'] as const).map((value,index)=><button key={value} type="button" ref={element=>{tabs.current[index]=element;}} role="tab" id={'news-tab-'+value} aria-controls="airport-news-list" aria-selected={topic===value} tabIndex={topic===value?0:-1} onClick={()=>navigate(value)} onKeyDown={event=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?1:1-index;navigate((['airport','customs'] as const)[next]);tabs.current[next]?.focus();}}}><AirportNewsMark topic={value}/>{copy[value]}</button>)}
-  </div>
-  <div id="airport-news-list" role="tabpanel" aria-labelledby={'news-tab-'+topic}>
+  <div id="airport-news-list">
    {rows.length?<ul className="airport-news-list">{rows.map(item=><li key={item.source+'|'+item.sourceId}><button type="button" className="airport-news-row" onClick={()=>navigate(topic,item.source+'|'+item.sourceId)}><span className="airport-news-meta"><span>{copy[item.topic==='airport'?'airport':'customs']}</span><span>{copy.status[item.status]}</span></span><h2 className="airport-provider-text" lang="ko">{item.title}</h2><span className="airport-news-meta"><span>{copy.published}: <time dateTime={item.publishedAt??undefined}>{published(item.publishedAt,lang)}</time></span><span className="airport-provider-text" lang="ko">{item.sourceName}</span></span>{(verifiedDate(item.effectiveDate)||verifiedDate(item.deadline))&&<span className="airport-news-dates">{verifiedDate(item.effectiveDate)&&`${copy.effective} ${verifiedDate(item.effectiveDate)}`}{verifiedDate(item.effectiveDate)&&verifiedDate(item.deadline)?' · ':''}{verifiedDate(item.deadline)&&`${copy.deadline} ${verifiedDate(item.deadline)}`}</span>}</button></li>)}</ul>:!suppressEmpty&&<p role="status">{copy.empty}</p>}
   </div>
   <dialog ref={dialog} className="airport-news-detail" aria-labelledby="airport-news-detail-title" onClose={()=>{if(selected)navigate(topic);}} onCancel={event=>{event.preventDefault();navigate(topic);}}>{selected&&<>
