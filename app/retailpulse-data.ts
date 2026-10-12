@@ -24,6 +24,8 @@ export const airportMonthly: AirportMonth[] = [
   { month: "2026-05", all: { arrival: 3167868, departure: 3147132 }, T1: { arrival: 1460170, departure: 1458602 }, T2: { arrival: 1707698, departure: 1688530 } },
   { month: "2026-06", all: { arrival: 3024839, departure: 3011510 }, T1: { arrival: 1407985, departure: 1419626 }, T2: { arrival: 1616854, departure: 1591884 } },
   { month: "2026-07", all: { arrival: 3199990, departure: 3364748 }, T1: { arrival: 1554721, departure: 1639145 }, T2: { arrival: 1645269, departure: 1725603 } },
+  { month: "2026-08", all: { arrival: 3601429, departure: 3470815 }, T1: { arrival: 1798044, departure: 1719533 }, T2: { arrival: 1803385, departure: 1751282 } },
+  { month: "2026-09", all: { arrival: 3167685, departure: 3144533 }, T1: { arrival: 1578144, departure: 1538638 }, T2: { arrival: 1589541, departure: 1605895 } },
 ];
 
 export const airportAnnual = [

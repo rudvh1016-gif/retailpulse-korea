@@ -8,3 +8,6 @@
   [data-testid="similar-days"] > li > :is(button,[data-testid="similar-table"]) {grid-column:2;justify-self:start;}
   [data-testid="similar-days"] [data-testid="similar-table"] {width:100%;}
 }
+
+.prep-facts .similar-destination-note {font-size:var(--type-secondary);font-weight:var(--weight-regular);color:var(--muted);line-height:1.5;}
+@media(min-width:821px) {[data-testid="similar-days"] > li > .similar-destination-note {grid-column:2;}}
