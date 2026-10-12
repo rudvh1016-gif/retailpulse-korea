@@ -36,3 +36,29 @@ Final review also verifies that a failed summary clock cannot label available fl
 - A controlled pending-summary test verifies unavailable while flight data has already arrived, then no-upcoming only after the matching past-day summary arrives. Missing-summary clock protection remains tested.
 - Targeted verification: mobile 360 / desktop 1440 layout + rapid date changes + missing clock + deferred summary: 5 passed. Prior 7 viewport/localization checks passed. Native production build completed. Screenshots refreshed at 360/390/430/1440 with decoded flags, no overflow, and no page errors; see capture-evidence.json.
 - This remains an unpublished preview. No merge or deployment was performed.
+
+
+## 2026-10-12 worker-focused follow-up: smaller mobile plates and two future summaries
+
+User feedback: large white plates obscured the airport. Mobile containers are now transparent, shadow-free, 176px wide (was 220px), with zero outer padding; only individual text rows have an 88%-opacity narrow backplate. Fonts and three-column west/center/east alignment remain unchanged. At the same saved source time, combined overlay bounding area fell about 25%; T1/T2 height 71.27→67.27px, concourse 57.77→52.77px. Desktop retains 225px overlays with the same 93.5/78.5/93.5px heights, position, image size and background. Approved image assets remain unchanged.
+
+Removed only the glance-page departure-preparation link. The detailed airport guide remains intact; the customs/news link remains.
+
+Immediately above destination shares: whole selected-day departures versus the preceding month's included-day departure mean, in the same ALL/T1/T2 scope. Reuses monthlyMetric and published monthly totals, with T1 including concourse. Shows delta flights and percent, month and included-day count. Missing/current null, wrong previous month, no included days or zero prior mean yields comparison unavailable. Actual zero selected-day count with a positive verified baseline remains a valid decrease. Raw unrounded values drive the calculation; only display is rounded. Other selected dates are labelled selected-day, never today.
+
+Approved future summaries share one 1/3/6-hour selector. Initial state is explicitly 1 hour; the existing date/whole-day view is unchanged. Both cards filter the same deduplicated, non-cancelled departure records from verified current time (inclusive) to end time (exclusive). They show KST start/end, scope and selected-window count. Non-today dates, missing summary clock or missing/truncated flights are unavailable. Windows stop at midnight with an explicit next-day-coverage note; no next-day data is invented.
+
+- Zone card: all tied highest known building/side counts; west/center/east counts and shares separately for T1 main, concourse, T2. Each building denominator includes its unknown-side records; unknown buildings are separate. No passenger/retail-crowding inference.
+- Destination card: same window denominator, existing country flags, top five plus all cutoff ties; remaining destinations can be expanded. Unknown destination stays in denominator and receives no invented flag. Country is destination, not passenger nationality.
+
+Saved real response at 2026-10-12 15:43:09 KST renders 563 whole-day departures versus September included-day mean 552.9: +10.1 flights (+1.8%), 30 included prior dates. The independent 15:43–16:43 window has 27 departures; known leading zone T2 west 9; Japan 13/27 (48.1%). These are screenshot evidence, not production constants.
+
+Validation: 7 scoped unit tests pass (scope/dedupe, missing/zero baseline, future boundaries, ties, unknowns, midnight). 8 scoped browser cases pass (360/390/430/1440, English/Chinese/Japanese, shared 1/3/6 selection, terminal and past-date transition). Typecheck and native build pass; scoped lint has zero errors and two static-image advisories. Actual-source screenshots at all four widths: no overflow/page errors, decoded flags. Full screens plus focused airport/future-section captures and capture-evidence.json are in docs/screenshots/airport-glance-overlay-20261012. No full manual suite or prior-CI rerun added.
+
+### Deferred navigation requirement — do not implement before final glance approval
+
+User explicitly asked to remember only: after airport glance is finalized, replace the mobile store navigation button with airport glance, and use desktop/mobile order: Airport glance → Airport → Seoul glance → Seoul → Consumption flow → More. This is a later completion checklist item. No global navigation, store page or store feature was changed in this follow-up. Merge and deployment still require separate approval.
+
+### Data limits for subsequent candidate research
+
+Available here: selected-day scheduled departures, terminal/building/gate/side mapping, mapped destination countries, verified current queue observations, and monthly included-day flight aggregates. They support aircraft distribution/comparisons; they do not establish passenger nationality, actual visitors, staffing demand, store sales, or shop congestion. Future summaries currently consume only the selected day's verified flight response.

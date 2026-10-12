@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {glanceCountryRanking,glanceFlights,glanceLongestWait,glanceUpcoming} from '../lib/airport-glance';
+import {glanceFutureWindow,glanceDayComparison,glanceCountryRanking,glanceFlights,glanceLongestWait,glanceUpcoming} from '../lib/airport-glance';
 import {buildAirportFlightMonth,type MonthFlightRow} from '../lib/airport-monthly-flights';
 const row=(day:string,id:string,airportCode='NRT',terminal='T1',gate='45'):MonthFlightRow=>({physicalFlightId:id,operatingFlight:'TEST'+id,terminal,gate,airportCode,scheduledAt:day+'T10:00:00+09:00',retrievedAt:day+'T01:00:00Z',status:'scheduled'});
 test('glance reuses departure scope, collapses duplicates and includes concourse only with T1',()=>{
@@ -34,4 +34,22 @@ test('longest wait reuses shared freshness and duplicate rules; closed, zero and
  assert.equal(glanceLongestWait([row],now)?.minutes,12);assert.equal(glanceLongestWait([{...row,waitTimeMinutes:0,waitTimeRaw:'0'}],now),null);
  assert.equal(glanceLongestWait([row,{...row,observedAt:'2026-10-11T10:11:00+09:00',waitTimeRaw:'closed'}],now),null);assert.equal(glanceLongestWait([row],now+21*60000),null);
  assert.equal(glanceLongestWait([{...row,terminal:'CONCOURSE'}],now),null);assert.equal(glanceLongestWait([{...row,waitTimeRaw:'60+'}],now)?.minutes,60);
+});
+
+test('whole-day comparison uses same terminal included-day mean and preserves zero/missing boundaries',()=>{
+ const previous=buildAirportFlightMonth('2026-09','2026-10-11',[row('2026-09-01','a'),row('2026-09-01','b','NRT','CONCOURSE','110'),row('2026-09-02','c','NRT','T2','274')],new Set(['2026-09-01','2026-09-02']));
+ assert.deepEqual(glanceDayComparison('2026-10-11',3,previous,'ALL'),{mean:1.5,delta:1.5,percent:100,days:2});
+ assert.deepEqual(glanceDayComparison('2026-10-11',0,previous,'T1'),{mean:1,delta:-1,percent:-100,days:2});
+ assert.deepEqual(glanceDayComparison('2026-10-11',1,previous,'T2'),{mean:.5,delta:.5,percent:100,days:2});
+ for(const base of [undefined,{...previous,includedDays:[]},{...previous,month:'2026-08'}])assert.equal(glanceDayComparison('2026-10-11',3,base,'ALL'),null);
+ assert.equal(glanceDayComparison('2026-10-11',3,previous,'UNKNOWN'),null);assert.equal(glanceDayComparison('2026-10-11',null,previous,'ALL'),null);
+});
+
+test('shared future window excludes elapsed/end-boundary flights, preserves unknowns and caps at midnight',()=>{
+ const day='2026-10-11',at=(id:string,time:string,terminal='T1',gate='45',airportCode='NRT')=>({...row(day,id,airportCode,terminal,gate),scheduledAt:`${day}T${time}:00+09:00`});
+ const data=glanceFlights(day,[at('elapsed','10:00'),at('a','10:30'),at('b','10:45','T2','274'),at('unknown','11:00','UNKNOWN','','XXX'),at('end','11:15'),at('late','23:50')],'all');
+ const now=Date.parse(day+'T10:15:00+09:00'),window=glanceFutureWindow(day,data.departures,now,1)!;
+ assert.equal(window.total,3);assert.equal(window.unknownBuilding,1);assert.equal(window.countries.find(row=>row.country===null)?.flights,1);assert.equal(window.leaders.length,2);assert.equal(window.leaders[0].flights,1);
+ assert.equal(glanceFutureWindow(day,data.departures,now,3)?.total,4);assert.equal(glanceFutureWindow(day,[],now,1)?.total,0);assert.equal(glanceFutureWindow('2026-10-10',data.departures,now,1),null);assert.equal(glanceFutureWindow(day,data.departures,NaN,1),null);
+ const late=glanceFutureWindow(day,data.departures,Date.parse(day+'T23:30:00+09:00'),6)!;assert.equal(late.total,1);assert.equal(late.clipped,true);assert.equal(late.end,Date.parse('2026-10-12T00:00:00+09:00'));
 });
