@@ -30,7 +30,7 @@ for (const width of [390, 1440]) {
       await page.goto(`/ko${route}`);
       await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
       const isAirport = route === '' || route === '/airport';
-      await expect(page.locator(isAirport ? '.airport-current-brief' : '.area-current-brief').first()).toBeVisible();
+      await expect(page.locator(!route ? '.glance-preview' : isAirport ? '.airport-current-brief' : '.area-current-brief').first()).toBeVisible();
       if (isAirport) await expect(page.getByTestId('area-demand-card')).toHaveCount(0);
       await page.evaluate(() => document.fonts.ready);
       await page.evaluate(() => window.scrollTo({top:0,behavior:'instant'}));
