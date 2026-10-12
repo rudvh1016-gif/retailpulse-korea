@@ -31,7 +31,8 @@ for(const {width,lang} of cases)test(`observed and selected forecast stay distin
  await expect(observedTime).toHaveAttribute('datetime',myeongdong.realtime.observedAt);
  await expect(observedTime).toHaveText('08-31 13:05 KST');
  await expect(observedTime).toHaveCSS('font-weight','600');await expect(observedTime).toHaveCSS('color','rgb(0, 0, 0)');
- await expect(range).toHaveCSS('font-size','26px');await expect(range).toHaveCSS('font-weight','600');await expect(range).toHaveCSS('color','rgb(0, 0, 0)');
+ // Owner requested the selected forecast use the existing compact body token.
+ await expect(range).toHaveCSS('font-size',width<=820?'13px':'14px');await expect(range).toHaveCSS('font-weight','600');await expect(range).toHaveCSS('color','rgb(0, 0, 0)');
  if(lang==='ko')await card.locator('.demand-reading').screenshot({path:`../ui-headings-evidence-20261006/observed-reading-${width}.png`});
  async function selected(button:Locator,point:Forecast) {
   await expect(button).toHaveAttribute('aria-pressed','true');
