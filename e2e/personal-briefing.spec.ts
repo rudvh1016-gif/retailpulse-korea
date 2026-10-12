@@ -10,13 +10,19 @@ async function fixture(page:Page) {
   });
 }
 
+async function enterAirportDetail(page: Page) {
+  await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+  await page.locator(':is(.top-nav,.bottom-nav) a[href$="/airport"]:visible').click();
+  await expect(page.locator('.airport-today')).toBeVisible();
+}
+
 test('a first visit answers with the information, not a questionnaire',async({page})=>{
     // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
     await fixture(page);
     await page.goto('/ko');
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-    await expect(page.locator('.airport-today')).toBeVisible();
+    await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
     await expect(page.locator('details.personal-existing')).toHaveCount(0);
     await expect(page.locator('.demand-home')).toHaveCount(0);
     await expect(page.locator('.top-nav a[href="/ko/myeongdong"]')).toHaveCount(1);
@@ -41,7 +47,7 @@ test('saved manager horizon is preserved while airport date controls remain expl
     await page.reload();
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-    await expect(page.locator('.airport-today')).toBeVisible();
+    await enterAirportDetail(page);
     expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
     await expectDateSelection(page, '2026-08-31');
     await page.locator('.date-nav-shortcuts button').last().click();
@@ -61,7 +67,7 @@ for(const lang of ['ko','en','zh','ja'] as const) for(const width of [390,768,12
     await page.reload();
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-    await expect(page.locator('.airport-today')).toBeVisible();
+    await enterAirportDetail(page);
     expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
     await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
@@ -85,7 +91,7 @@ test('reopening browser state preserves hidden briefing settings without feedbac
     const reopened = await context.newPage();
     await fixture(reopened);
     await reopened.goto('/ko');
-    await expect(reopened.locator('.airport-today')).toBeVisible();
+    await expect(reopened.getByTestId('airport-glance-preview')).toBeVisible();
     expect(await reopened.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
     await expect(reopened.getByTestId('personal-briefing')).toHaveCount(0);
     await expect(reopened.locator('.personal-feedback, .personal-onboarding')).toHaveCount(0);
@@ -104,7 +110,7 @@ test('multiple locations, terminals and all three days persist and switch to the
     await page.reload();
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-    await expect(page.locator('.airport-today')).toBeVisible();
+    await enterAirportDetail(page);
     for (const [index, date] of [[0, '2026-08-30'], [2, '2026-09-01'], [1, '2026-08-31']] as const) {
         await page.locator('.date-nav-shortcuts button').nth(index).click();
         await expectDateSelection(page, date);
@@ -126,7 +132,7 @@ test('denied storage leaves airport date and terminal controls usable',async({pa
     await page.goto('/ko');
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-    await expect(page.locator('.airport-today')).toBeVisible();
+    await enterAirportDetail(page);
     await page.locator('.date-nav-shortcuts button').last().click();
     await expectDateSelection(page, '2026-09-01');
     await page.getByRole('tab', { name: 'T2', exact: true }).click();
@@ -155,11 +161,11 @@ test('settings survive closing and relaunching a persistent browser',async({},te
     await page.goto(baseURL + '/ko');
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-    await expect(page.locator('.airport-today')).toBeVisible();
+    await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
     expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
     await context.close();
 });
-test('brand returns to airport-first root while Seoul navigation retains the area route',async({page})=>{
+test('brand returns to airport-glance root while Seoul navigation retains the area route',async({page})=>{
     // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
     await fixture(page);
     await page.goto('/ko');
@@ -173,14 +179,14 @@ test('brand returns to airport-first root while Seoul navigation retains the are
     await expect(page).toHaveURL(new RegExp("/ko$"));
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-    await expect(page.locator('.airport-today')).toBeVisible();
+    await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
     expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
     await page.locator('.top-nav a[href="/ko/myeongdong"]').click();
     await expect(page).toHaveURL(new RegExp("/ko/myeongdong$"));
     await expect(page.locator('.area-current-brief')).toBeVisible();
 });
 
-test('mobile back navigation returns to airport-first root with one active item',async({page})=>{
+test('mobile back navigation returns to airport-glance root with one active item',async({page})=>{
     // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
     await page.setViewportSize({ width: 390, height: 844 });
     await fixture(page);
@@ -199,19 +205,19 @@ test('mobile back navigation returns to airport-first root with one active item'
     await page.goBack();
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-    await expect(page.locator('.airport-today')).toBeVisible();
+    await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
     await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
     expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
 });
 
-test('airport root and deep link share selected-day meaning and keep KST out of large values',async({page})=>{
+test('glance-to-detail navigation and deep link share selected-day meaning and keep KST out of large values',async({page})=>{
     // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
     await page.setViewportSize({ width: 390, height: 844 });
     await fixture(page);
     await page.goto('/ko');
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-    await expect(page.locator('.airport-today')).toBeVisible();
+    await enterAirportDetail(page);
     await page.locator('.date-nav-shortcuts button').last().click();
     const overview = page.locator('.airport-current-brief');
     await expect(overview).toBeVisible();
