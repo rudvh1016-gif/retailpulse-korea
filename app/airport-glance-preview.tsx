@@ -110,7 +110,6 @@ export default function AirportGlancePreview({lang,artworkSrc=null}:{lang:Lang;a
    {future?.clipped&&<small>{fc.midnight}</small>}
    <details className="glance-context"><summary>{compactCopy.rules}</summary><p>{fc.basis}</p><p>{fc.countryBasis}</p><p>{fc.zoneBasis}</p></details>
   </section>
-   <nav className="glance-actions" aria-label={ui.more}><a href={`/${lang}/airport-news`}><strong>{c.news}</strong><span>{c.newsNote} ↗</span></a></nav>
   <footer><span>{c.collected} · {stamp(payload?.retrievedAt)}</span><span>{c.monthTime} · {stamp(monthRequest.reply?.calculatedAt)}</span><a href="https://www.airport.kr/geomap/ap_ko/view.do" target="_blank" rel="noreferrer">{ui.map} ↗</a></footer>
  </main>;
 }

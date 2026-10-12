@@ -98,3 +98,14 @@ Deliverables (entire page, not a cropped section):
 - verification.json in that folder records source time, geometry, colors, periods, flags and errors.
 
 Limits: these are local Chrome responsive viewport checks using the saved actual response at 2026-10-12 15:43:09 KST, not a fresh live-data capture or physical-device Safari test. No new performance-score claim or full-suite manual rerun. No merge/deployment; conditional navigation checklist remains deferred, with PC store navigation preserved.
+
+
+## 2026-10-12 remove glance-only customs-news entry
+
+Latest explicit instruction supersedes earlier keep-news notes: removed the customs-news navigation block from Airport Glance on both PC and mobile. The departure-preparation entry remains absent. No news route/function, detailed airport page, global navigation, other layout/font/color, or destination calculation changed.
+
+User questioned the usefulness of Japan repeatedly being the largest destination. Proposed alternative: destinations increasing in the next equal-length window, ranked by change in flight count between current/next windows. This is a proposal awaiting approval and is NOT implemented; the existing destination window/count/share logic remains intact.
+
+Minimum verification: PC1440/mobile390 browser cases both pass, including absence of news and preparation links. Actual-response full-page capture checks also passed at 1440/390/360, with unchanged overlay geometry/fonts/black text, matching 1/3/6-hour card periods, visible flags, no overflow or page errors. Scoped lint zero errors/two existing static-image advisories; diff check passed. No calculation-suite rerun.
+
+Latest complete pages: docs/screenshots/airport-glance-no-news-20261012/airport-glance-pc-1440.png and airport-glance-mobile-390.png; 360px full page and verification.json are in the same folder. These supersede earlier captures containing the news link. Source remains the saved real response at 2026-10-12 15:43 KST. Public merge/deployment and conditional global menu changes remain unapproved/not performed.
