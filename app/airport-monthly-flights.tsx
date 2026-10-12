@@ -6,6 +6,7 @@ import {ChangeRate} from './change-rate';
 import {AirportDestinationDailyChanges} from './airport-destination-daily-changes';
 import {MONTH_SCOPES,monthlyCategoryKeys,monthlyMetric,previousFlightMonth,type AirportFlightMonth,type AirportMonthlyRollups,type MonthCounts,type MonthScope} from '../lib/airport-monthly-flights';
 import {airportMonthComparisonBasis,airportMonthLabel} from '../lib/airport-month-labels';
+import {domesticDestinationLabel} from '../lib/airport-domestic-labels';
 import './airport-monthly-flights.css';
 const t=(lang:Lang,ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
 interface Reply {status:string;month:string;months:string[];calculatedAt:string|null;lastPreparedAt?:string|null;data:AirportMonthlyRollups|null}
@@ -44,7 +45,7 @@ export function AirportMonthlyFlights({lang,terminal,date,monthly}:{lang:Lang;te
  const table=(rows:React.ReactNode,shares=false,showBasis=false)=><div className="airport-month-table"><table><caption>{showBasis&&<span className="airport-month-basis">{comparisonBasis}</span>}{shares?t(lang,'선택 범위의 전체 집계 편수 중 비중','Share of all counted flights in this scope','所选范围全部计入航班占比','選択範囲の集計便全体に対する割合'):t(lang,'일평균 편수 · 편/일','Daily mean · flights/day','日均航班 · 班/日','1日平均 · 便/日')}</caption><colgroup><col/><col className="airport-month-value-column"/><col className="airport-month-value-column"/><col className="airport-month-rate-column"/></colgroup><thead><tr><th scope="col">{t(lang,'구분','Category','类别','項目')}</th><th scope="col">{previousLabel}</th><th scope="col">{currentLabel}</th><th scope="col">{t(lang,'증감','Change','变化','変化')}</th></tr></thead><tbody>{rows}</tbody></table></div>;
  const breakdown=(kind:'airlines'|'registrationCountries'|'destinationCountries',title:string)=><details data-testid={`month-list-${kind}`}><summary>{title}</summary>{table(monthlyCategoryKeys(current,previous,selected,kind).map(key=>{
   const name=current?.airlineNames[key]??previous?.airlineNames[key];
-  return row(key==='UNKNOWN'?t(lang,'미정','Unconfirmed','未确认','未確認'):kind==='airlines'?<span className="airport-month-airline"><span className="airport-month-airline-code" translate="no">{key}</span>{name&&<span className="airport-month-airline-name">{name}</span>}</span>:countryNames.of(key)??key,counts=>counts[kind][key]??0,key);
+  return row(key==='UNKNOWN'?t(lang,'미정','Unconfirmed','未确认','未確認'):kind==='airlines'?<span className="airport-month-airline"><span className="airport-month-airline-code" translate="no">{key}</span>{name&&<span className="airport-month-airline-name">{name}</span>}</span>:kind==='destinationCountries'&&key==='KR'?domesticDestinationLabel(lang):countryNames.of(key)??key,counts=>counts[kind][key]??0,key);
  }),false,true)}</details>;
  return <section className="airport-month-flights" data-testid="airport-month-flights" aria-label={t(lang,'월별 출국 항공편 구성','Monthly departure mix','月度出境航班构成','月別出発便の構成')}>
   <h3>{t(lang,'국가별 항공편 · 전월 대비 일평균','Flights by country · daily mean vs previous month','各国航班 · 较上月日均','国別の便数・前月比の1日平均')} <small>{labels[selected]}</small></h3>
