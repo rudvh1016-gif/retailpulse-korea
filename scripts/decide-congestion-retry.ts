@@ -9,7 +9,7 @@
  * `retry_sources`, which spends nothing — the safe direction.
  */
 import { appendFileSync, readFileSync } from "node:fs";
-import { decideCongestionRetry, RETRYABLE_A4_SOURCES, shouldRetryForecast, shouldRetryAirport, shouldRecheckAirportPublication } from "../lib/congestion-retry";
+import { decideCongestionRetry, decideWeeklySeoulRetry, RETRYABLE_A4_SOURCES, RETRYABLE_WEEKLY_SEOUL_SOURCES, shouldRetryForecast, shouldRetryAirport, shouldRecheckAirportPublication } from "../lib/congestion-retry";
 
 const path = process.argv[2];
 let log = "";
@@ -25,6 +25,13 @@ if (process.argv[3] === "--airport") {
   console.log(`retry_airport=${retry}`);
   console.log(`recheck_airport_publication=${publication}`);
   if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `retry_airport=${retry}\nrecheck_airport_publication=${publication}\n`);
+} else if (process.argv[3] === "--weekly-seoul") {
+  const decision = decideWeeklySeoulRetry(log);
+  for (const item of decision.decisions) console.log(`${item.source}: ${item.verdict} — ${item.detail}`);
+  // Same allowlist defence as the A4 output below.
+  const value = decision.sources.filter((source) => (RETRYABLE_WEEKLY_SEOUL_SOURCES as readonly string[]).includes(source)).join(",");
+  console.log(`retry_weekly_seoul=${value || "(none)"}`);
+  if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `retry_weekly_seoul=${value}\n`);
 } else if (process.argv[3] === "--forecast") {
   const retry = shouldRetryForecast(log);
   console.log(`retry_forecast=${retry}`);

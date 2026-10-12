@@ -1180,8 +1180,12 @@ export async function collectEstimatedSales(env: CollectorEnv, now = new Date())
   let lastRecord: CanonicalEstimatedSales | undefined;
   const matchedAreas = new Set<string>();
   let written: D1WriteCounts = NO_D1_WRITES;
+  // Reported with the result: a failure on the very first request is the
+  // per-runner connect failure a fresh runner can fix (lib/congestion-retry.ts).
+  let providerRequests = 0;
   try {
     const fetchQuarterPage = async (quarterCode: string, start: number, end: number): Promise<Record<string, unknown>[]> => {
+      providerRequests += 1;
       const url = new URL(`http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/VwsmTrdarSelngQq/${start}/${end}/${quarterCode}`);
       const payload = await fetchOfficialJson(url, { timeoutMs: 30_000, retries: 0 });
       try {
@@ -1248,14 +1252,14 @@ export async function collectEstimatedSales(env: CollectorEnv, now = new Date())
     const partial = matchedAreas.size < publicAreaIds.length;
     await writeCollectorStatus(env.DB, sourceId, partial ? "PARTIAL" : "SUCCESS", detail, matchedAreas.size, written.changedRows);
     await writeSourceHealth(env.DB, sourceId, "OFFICIAL_HISTORICAL", detail, lastRecord ? { retrievedAt: lastRecord.retrievedAt, schemaVersion: lastRecord.schemaVersion } : undefined);
-    return { status: partial ? "PARTIAL" : "SUCCESS", records: written.changedRows };
+    return { status: partial ? "PARTIAL" : "SUCCESS", records: written.changedRows, detail, providerRequests };
   } catch (error) {
     // Structured like Store Dynamics, so the same connect timeout is classified
     // the same way (failureClass=NETWORK) instead of as an unknown error.
     const detail = safeSourceFailureDetail(error);
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
-    return { status: "ERROR", records: 0 };
+    return { status: "ERROR", records: 0, detail, providerRequests };
   }
 }
 

@@ -11,7 +11,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const { decideCongestionRetry, isFreshRunnerFailure, RETRYABLE_A4_SOURCES, shouldRetryForecast } =
+const { decideCongestionRetry, decideWeeklySeoulRetry, isFreshRunnerFailure, RETRYABLE_A4_SOURCES, RETRYABLE_WEEKLY_SEOUL_SOURCES, shouldRetryForecast } =
   await import("../lib/congestion-retry.ts");
 
 const line = (object) => JSON.stringify(object);
@@ -159,6 +159,68 @@ test("only allowlisted source names can ever reach the retry job", () => {
   assert.deepEqual(decision.sources, []);
 });
 
+// ── Weekly Seoul quarter checks (collect-sales.yml) ────────────────────────
+
+// Verbatim from run 38099853388 (2026-10-11 00:51 UTC): Store Dynamics died on
+// its first request. Estimated sales failed the same way that run but printed
+// no detail yet; this is the line it prints now (lib/collector.ts).
+const STORE_CONNECT_TIMEOUT = line({
+  source: "store_dynamics", status: "ERROR", providerRequests: 1, sourceHealth: "STALE", lastGoodPreserved: true,
+  detail: "failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT attempts=1 elapsedMs=10492 retryExhausted=true",
+});
+const SALES_CONNECT_TIMEOUT = line({
+  source: "seoul_sales", mode: "PRIMARY", status: "ERROR", changedRows: 0, providerRequests: 1,
+  detail: "failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT attempts=1 elapsedMs=10021 retryExhausted=true",
+});
+const seoulFailure = (source, detail, providerRequests = 1) =>
+  line({ source, mode: "PRIMARY", status: "ERROR", changedRows: 0, providerRequests, ...(detail === undefined ? {} : { detail }) });
+
+test("the weekly Seoul retry fires for the 2026-10-11 first-request connect timeout", () => {
+  const decision = decideWeeklySeoulRetry(log(SALES_CONNECT_TIMEOUT, STORE_CONNECT_TIMEOUT));
+  assert.deepEqual(decision.sources, ["seoul_sales", "store_dynamics"]);
+  assert.equal(verdictFor(decision, "seoul_sales"), "RETRY_FRESH_RUNNER");
+  assert.equal(verdictFor(decision, "store_dynamics"), "RETRY_FRESH_RUNNER");
+  // Only the source that failed is collected again.
+  const one = decideWeeklySeoulRetry(log(line({ source: "seoul_sales", status: "SUCCESS", changedRows: 0, providerRequests: 24 }), STORE_CONNECT_TIMEOUT));
+  assert.deepEqual(one.sources, ["store_dynamics"]);
+  assert.equal(verdictFor(one, "seoul_sales"), "ALREADY_HEALTHY");
+});
+
+test("auth, 403, quota, Seoul result codes and every other failure never earn a weekly Seoul retry", () => {
+  const cases = {
+    "no detail (the pre-fix sales line)": seoulFailure("seoul_sales", undefined),
+    "HTTP 401": seoulFailure("seoul_sales", "failureClass=HTTP httpStatus=401 attempts=1 elapsedMs=310 retryExhausted=true"),
+    "HTTP 403": seoulFailure("store_dynamics", "failureClass=HTTP httpStatus=403 attempts=1 elapsedMs=290 retryExhausted=true"),
+    "HTTP 429": seoulFailure("seoul_sales", "failureClass=HTTP httpStatus=429 attempts=1 elapsedMs=280 retryExhausted=true"),
+    "HTTP 503": seoulFailure("seoul_sales", "failureClass=HTTP httpStatus=503 attempts=1 elapsedMs=2000 retryExhausted=true"),
+    "invalid key (INFO-100)": seoulFailure("seoul_sales", "failureClass=VALIDATION causeCode=SEOUL_RESULT_INFO_100 attempts=1 elapsedMs=0 retryExhausted=false"),
+    "request limit (ERROR-337)": seoulFailure("store_dynamics", "failureClass=VALIDATION causeCode=SEOUL_RESULT_ERROR_337 attempts=1 elapsedMs=0 retryExhausted=false"),
+    "rate formula drift (2026-09-03)": seoulFailure("store_dynamics", "failureClass=VALIDATION causeCode=STORE_DYNAMICS_RATE_FORMULA attempts=1 elapsedMs=0 retryExhausted=false", 6),
+    "timeout after the connection opened": seoulFailure("seoul_sales", "failureClass=TIMEOUT attempts=1 elapsedMs=30000 retryExhausted=true"),
+    "connect timeout mixed with an auth failure": seoulFailure("seoul_sales", "failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT attempts=1; failureClass=AUTH causeCode=SERVICE_KEY attempts=1"),
+    "connect timeout after this runner was already answered": seoulFailure("seoul_sales", "failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT attempts=1 elapsedMs=10010 retryExhausted=true", 7),
+    "connect timeout with no request count": line({ source: "store_dynamics", status: "ERROR", detail: "failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT attempts=1" }),
+    "missing key": line({ source: "seoul_sales", status: "NEEDS_KEY", changedRows: 0, providerRequests: 0 }),
+  };
+  for (const [name, result] of Object.entries(cases)) {
+    const decision = decideWeeklySeoulRetry(log(result));
+    assert.deepEqual(decision.sources, [], name);
+  }
+  // PARTIAL kept what it got and is not a connect failure; no line is never a guess.
+  const partial = decideWeeklySeoulRetry(log(line({ source: "seoul_sales", status: "PARTIAL", changedRows: 3, providerRequests: 25 })));
+  assert.equal(verdictFor(partial, "seoul_sales"), "ALREADY_HEALTHY");
+  assert.equal(verdictFor(partial, "store_dynamics"), "RESULT_UNKNOWN");
+  assert.deepEqual(decideWeeklySeoulRetry("").sources, []);
+});
+
+test("the weekly Seoul decision names only its own two sources", () => {
+  assert.deepEqual([...RETRYABLE_WEEKLY_SEOUL_SOURCES], ["seoul_sales", "store_dynamics"]);
+  const decision = decideWeeklySeoulRetry(log(SEOUL_FAIL, T1_TIMEOUT, seoulFailure("seoul_sales; rm -rf /", "failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT")));
+  assert.deepEqual(decision.sources, []);
+  // A later success on the same log wins, as in decideCongestionRetry.
+  assert.deepEqual(decideWeeklySeoulRetry(log(STORE_CONNECT_TIMEOUT, line({ source: "store_dynamics", status: "SUCCESS", changedRows: 0, providerRequests: 7 }))).sources, []);
+});
+
 // ── The workflow must actually use the decision ────────────────────────────
 
 const realtime = await readFile(new URL("../.github/workflows/collect-realtime-cycle.yml", import.meta.url), "utf8");
@@ -210,4 +272,48 @@ test("the shared attempt policy is unchanged for every other caller", async () =
     assert.doesNotMatch(body, /a4_max_attempts_per_request/,
       `${file} must keep its own retry policy — this change is A4-only`);
   }
+});
+
+// ── collect-sales.yml must actually use the weekly Seoul decision ──────────
+
+const sales = await readFile(new URL("../.github/workflows/collect-sales.yml", import.meta.url), "utf8");
+
+test("the weekly Seoul collection publishes its decision and keeps its own failure visible", () => {
+  assert.match(sales, /set -o pipefail\n\s+npm run collect:production 2>&1 \| tee "\$RUNNER_TEMP\/collector\.log"/);
+  assert.match(sales, /scripts\/decide-congestion-retry\.ts "\$RUNNER_TEMP\/collector\.log" --weekly-seoul/);
+  assert.match(sales, /retry_weekly_seoul: \$\{\{ steps\.retry_decision\.outputs\.retry_weekly_seoul \}\}/);
+  assert.match(sales, /cron: "7 22 \* \* 6"/, "the weekly slot itself is unchanged");
+  assert.match(sales, /group: production-collector-sales\n\s+cancel-in-progress: false/,
+    "retries stay inside the run, so the weekly concurrency group still serializes them");
+});
+
+test("the weekly Seoul retry is at most two fresh runners, each gated on the previous attempt's own decision", () => {
+  const uses = sales.match(/uses: \.\/\.github\/workflows\/collect-attempt\.yml/g) ?? [];
+  assert.equal(uses.length, 2, "exactly two retries; there is no third");
+  assert.doesNotMatch(sales, /attempt: 4/);
+  const job = (name) => {
+    const start = sales.indexOf(`\n  ${name}:\n`);
+    assert.ok(start >= 0, `${name} job exists`);
+    const next = sales.slice(start + 1).search(/\n  [a-z0-9_]+:\n/);
+    return next < 0 ? sales.slice(start) : sales.slice(start, start + 1 + next);
+  };
+  for (const [name, previous, attemptNo] of [["retry_1", "collect", 2], ["retry_2", "retry_1", 3]]) {
+    const body = job(name);
+    assert.match(body, /github\.ref == 'refs\/heads\/main'/, `${name} never runs from a branch dispatch`);
+    assert.match(body, /vars\.ENABLE_PRODUCTION_COLLECTOR == 'true'/, `${name} keeps the production gate`);
+    assert.match(body, new RegExp(`needs\\.${previous}\\.result == 'failure'`), `${name} needs the previous attempt to have failed`);
+    assert.match(body, new RegExp(`needs\\.${previous}\\.outputs\\.retry_weekly_seoul != ''`), `${name} needs the previous attempt's connect-timeout verdict`);
+    assert.match(body, new RegExp(`sources: \\$\\{\\{ needs\\.${previous}\\.outputs\\.retry_weekly_seoul \\}\\}`), `${name} collects only what failed`);
+    assert.match(body, new RegExp(`attempt: ${attemptNo}\\n`));
+  }
+  assert.match(job("retry_2"), /needs: \[collect, retry_1\]/);
+});
+
+test("collect-attempt spaces the weekly Seoul retries and scopes the Seoul key to them", () => {
+  assert.match(attempt, /retry_weekly_seoul:\n\s+description: [^\n]+\n\s+value: \$\{\{ jobs\.collect\.outputs\.retry_weekly_seoul \}\}/);
+  assert.match(attempt, /retry_weekly_seoul: \$\{\{ steps\.weekly_seoul_retry_decision\.outputs\.retry_weekly_seoul \}\}/);
+  assert.match(attempt, /if: \$\{\{ inputs\.attempt > 1 && \(contains\(inputs\.sources, 'seoul_sales'\) \|\| contains\(inputs\.sources, 'store_dynamics'\)\) \}\}\n\s+run: sleep \$\{\{ inputs\.attempt == 2 && 60 \|\| 300 \}\}/);
+  assert.match(attempt, /SEOUL_OPEN_DATA_KEY: \$\{\{ \(contains\(inputs\.sources, 'seoul_sales'\) \|\| contains\(inputs\.sources, 'store_dynamics'\)\) && secrets\.SEOUL_OPEN_DATA_KEY \|\| '' \}\}/,
+    "every other caller of the shared attempt must keep receiving no Seoul key");
+  assert.equal((attempt.match(/SEOUL_OPEN_DATA_KEY:/g) ?? []).length, 1, "the key is assigned only by that one scoped line");
 });
