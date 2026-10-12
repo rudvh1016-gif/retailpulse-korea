@@ -1,0 +1,16 @@
+{
+  "scope": "Separate UI-only change; no PR344 modification, merge or deployment",
+  "base": "1c4adac2f9e6488b1dec667fa30fd05381c73370",
+  "ownerRequest": "사전 허락 없는 공항 소식 재게시 근거 미확보 시 공항 소식은 빼버려. 관세·면세 뉴스만 유지.",
+  "changes": [
+    "Remove airport tab and single-category tab duplication",
+    "Use Customs & Duty-Free News entry/page title in all four languages",
+    "Preserve approved customs records, original links, dates and detail behavior"
+  ],
+  "preserved": [
+    "News source records and database",
+    "API publication gates, clearance and collector permissions",
+    "PR344, PR343, glance and Claude checkpoint layout"
+  ],
+  "validation": "Typecheck and scoped lint passed; publication-rule unit7 passed; Owner UI Lock passed with all hashes unchanged; news-only E2E27 passed (4 locales, 320/360/390/430/1280 where applicable, original links/dates, legacy airport hash, retry and rights withdrawal)."
+}
