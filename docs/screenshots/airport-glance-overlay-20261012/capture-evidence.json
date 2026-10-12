@@ -21,7 +21,7 @@
       }
     ],
     "sourceAt": "2026-10-12T06:43:09.299Z",
-    "height": 1817,
+    "height": 1699,
     "flags": [
       {
         "src": "/images/airport-flags/fallback/mp.svg",
@@ -77,31 +77,31 @@
       },
       {
         "src": "/images/airport-flags/CN.webp",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/sg.svg",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/US.webp",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/id.svg",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/my.svg",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/tw.svg",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/uz.svg",
-        "decoded": true
+        "decoded": false
       }
     ],
     "includedDays": "포함일 · 전월 30 일 / 선택월 11 일",
@@ -119,23 +119,23 @@
     "futureWindow": "2026-10-12 15:43–16:43 KST · 전체 · 27 편",
     "panels": [
       {
-        "width": 176,
-        "height": 67.265625,
+        "width": 140,
+        "height": 34.390625,
         "background": "rgba(0, 0, 0, 0)"
       },
       {
-        "width": 176,
-        "height": 52.765625,
+        "width": 140,
+        "height": 24.796875,
         "background": "rgba(0, 0, 0, 0)"
       },
       {
-        "width": 176,
-        "height": 67.265625,
+        "width": 140,
+        "height": 34.390625,
         "background": "rgba(0, 0, 0, 0)"
       }
     ],
     "sourceAt": "2026-10-12T06:43:09.299Z",
-    "height": 2197,
+    "height": 1964,
     "flags": [
       {
         "src": "/images/airport-flags/fallback/mp.svg",
@@ -191,31 +191,31 @@
       },
       {
         "src": "/images/airport-flags/CN.webp",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/sg.svg",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/US.webp",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/id.svg",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/my.svg",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/tw.svg",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/uz.svg",
-        "decoded": true
+        "decoded": false
       }
     ],
     "includedDays": "포함일 · 전월 30 일 / 선택월 11 일",
@@ -233,23 +233,23 @@
     "futureWindow": "2026-10-12 15:43–16:43 KST · 전체 · 27 편",
     "panels": [
       {
-        "width": 176,
-        "height": 67.265625,
+        "width": 140,
+        "height": 34.390625,
         "background": "rgba(0, 0, 0, 0)"
       },
       {
-        "width": 176,
-        "height": 52.765625,
+        "width": 140,
+        "height": 24.796875,
         "background": "rgba(0, 0, 0, 0)"
       },
       {
-        "width": 176,
-        "height": 67.265625,
+        "width": 140,
+        "height": 34.390625,
         "background": "rgba(0, 0, 0, 0)"
       }
     ],
     "sourceAt": "2026-10-12T06:43:09.299Z",
-    "height": 2220,
+    "height": 1987,
     "flags": [
       {
         "src": "/images/airport-flags/fallback/mp.svg",
@@ -305,31 +305,31 @@
       },
       {
         "src": "/images/airport-flags/CN.webp",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/sg.svg",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/US.webp",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/id.svg",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/my.svg",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/tw.svg",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/uz.svg",
-        "decoded": true
+        "decoded": false
       }
     ],
     "includedDays": "포함일 · 전월 30 일 / 선택월 11 일",
@@ -347,23 +347,23 @@
     "futureWindow": "2026-10-12 15:43–16:43 KST · 전체 · 27 편",
     "panels": [
       {
-        "width": 176,
-        "height": 67.265625,
+        "width": 140,
+        "height": 34.390625,
         "background": "rgba(0, 0, 0, 0)"
       },
       {
-        "width": 176,
-        "height": 52.765625,
+        "width": 140,
+        "height": 24.796875,
         "background": "rgba(0, 0, 0, 0)"
       },
       {
-        "width": 176,
-        "height": 67.265625,
+        "width": 140,
+        "height": 34.390625,
         "background": "rgba(0, 0, 0, 0)"
       }
     ],
     "sourceAt": "2026-10-12T06:43:09.299Z",
-    "height": 2235,
+    "height": 2002,
     "flags": [
       {
         "src": "/images/airport-flags/fallback/mp.svg",
@@ -419,31 +419,31 @@
       },
       {
         "src": "/images/airport-flags/CN.webp",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/sg.svg",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/US.webp",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/id.svg",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/my.svg",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/tw.svg",
-        "decoded": true
+        "decoded": false
       },
       {
         "src": "/images/airport-flags/fallback/uz.svg",
-        "decoded": true
+        "decoded": false
       }
     ],
     "includedDays": "포함일 · 전월 30 일 / 선택월 11 일",

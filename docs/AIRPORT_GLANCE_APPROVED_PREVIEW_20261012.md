@@ -57,8 +57,27 @@ Validation: 7 scoped unit tests pass (scope/dedupe, missing/zero baseline, futur
 
 ### Deferred navigation requirement — do not implement before final glance approval
 
-User explicitly asked to remember only: after airport glance is finalized, replace the mobile store navigation button with airport glance, and use desktop/mobile order: Airport glance → Airport → Seoul glance → Seoul → Consumption flow → More. This is a later completion checklist item. No global navigation, store page or store feature was changed in this follow-up. Merge and deployment still require separate approval.
+User explicitly asked to remember only: after airport glance is finalized, replace only the mobile store navigation button with airport glance. Preserve the PC store button. Requested primary sequence: Airport glance → Airport → Seoul glance → Seoul → Consumption flow → More; the PC store placement between Consumption flow and More is a parent proposal, not a finalized instruction. This is a later completion checklist item. No global navigation, store page or store feature was changed in this follow-up. Merge and deployment still require separate approval.
 
 ### Data limits for subsequent candidate research
 
 Available here: selected-day scheduled departures, terminal/building/gate/side mapping, mapped destination countries, verified current queue observations, and monthly included-day flight aggregates. They support aircraft distribution/comparisons; they do not establish passenger nationality, actual visitors, staffing demand, store sales, or shop congestion. Future summaries currently consume only the selected day's verified flight response.
+
+
+## 2026-10-12 compact-label revision after 88598c7e
+
+The owner explicitly superseded the previous keep-font-size constraint: both mobile text and white area were still too large. Mobile overlays now use 140px width and one short inline direction/ratio row. Heading 12→10px, count 11→9px, direction 11→8px, ratio 12→9px, queue 10→8px. Only narrow text backplates remain (78% opacity); no large plate or shadow. Desktop image/overlay geometry and typography are unchanged.
+
+Same actual response, time, DPR1 and 390×844 viewport, before 88598c7e → after:
+- T1/T2: 176×67.27 → 140×34.39px (about 59.3% smaller bounding area).
+- Concourse: 176×52.77 → 140×24.80px (about 62.6% smaller area).
+- Combined bounding area: about 60.3% less. Image remains x12/y414.81, 366×274.5px.
+- PC remains 225px wide, 93.5/78.5/93.5px high with identical positions/font sizes; image 800×600px at the same position.
+
+The two Korean headings now exactly match the promise: 앞으로 가장 몰릴 구역 / 곧 몰리는 목적지. Representative known zones (all count ties) and leading destinations (all maximum ties) appear first, then flights/percentage, then a short time/basis line. Zone percentage remains the named building denominator; destination percentage remains the shared selected-window total. Detailed zone table, remaining destinations and longer counting caveats remain accessible in disclosures. No calculations, missing-data guards, future selector, or whole-day comparisons were changed.
+
+Evidence is under docs/screenshots/airport-glance-compact-20261012: before-88598c7e-390-viewport.png and after-390-viewport.png are both exactly 390×844, without magnifying the airport. Matching -full.png files show the entire page at the same width, including the two summaries. JSON files record measured geometry/font sizes. 1440px evidence verifies the unchanged PC airport. Existing overlay captures were also refreshed. Hidden country flags now intentionally lazy-load when their destination disclosure is opened.
+
+Scoped verification: 3 language cases and the synchronized future-window/detail disclosure case passed; the four viewport cases initially found an ambiguous keyboard test selector after adding the counting-basis disclosure. The selector now explicitly targets the existing airport concept disclosure, preserving the keyboard assertion, and those four viewport cases were rerun. No full manual suite, data changes or deployment.
+
+Final result: all 8 scoped browser cases pass (4 viewport cases after selector correction, 3 languages and future-window case). Typecheck/native build pass; scoped lint zero errors, two existing static-image advisories.
