@@ -6,6 +6,7 @@ import { passengerCopy } from "../lib/passenger-copy";
 import dynamic from 'next/dynamic';
 // SSR remains enabled. These inactive screens do not belong to the airport's
 // first download; their initial content is still rendered on their own routes.
+const AirportGlance=dynamic(()=>import('./airport-glance-preview'));
 const MonthlyRecordsView=dynamic(()=>import('./monthly-records').then(module=>module.MonthlyRecordsView));
 const TourismDeskView=dynamic(()=>import('./tourism-desk').then(module=>module.TourismDeskView));
 const PredictionEvidence=dynamic(()=>import('./prediction-evidence').then(module=>module.PredictionEvidence));
@@ -61,7 +62,7 @@ import { areaAnswerText, type TodayAnswer, type TodayAnswerArea } from "../lib/t
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
 
 
-type View = "today" | "airport" | "business" | "forecast" | "where-to" | "consumption" | "tourism-desk" | "about" | "more";
+type View = "airport-glance" | "today" | "airport" | "business" | "forecast" | "where-to" | "consumption" | "tourism-desk" | "about" | "more";
 type AirportSection = "now" | "arrivals" | "flights" | "stores" | "history";
 type AreaId = "myeongdong" | "hongdae" | "seongsu" | "itaewon";
 
@@ -83,28 +84,28 @@ const copy = {
   ko: {
     hero: "지금 서울은\n어떻게 움직이고 있나요?",
     sub: "공식 데이터만 모아 명동·홍대·성수·이태원와 인천공항의 지금과 다음을 보여줍니다.",
-    today: "서울", airport: "공항", business: "매장", forecast: "기록", 'where-to': "서울 한눈에", consumption:"요즘 뜨는 소비", "tourism-desk": "관광안내", about: "소개", more: "더보기",
+    'airport-glance': '공항 한눈에', today: "서울", airport: "공항", business: "매장", forecast: "기록", 'where-to': "서울 한눈에", consumption:"요즘 뜨는 소비", "tourism-desk": "관광안내", about: "소개", more: "더보기",
     kst: "모든 시간은 한국 표준시(KST)입니다.",
     truth: "공식 발표값과 KORETAIL의 비교·참고 예상을 구분하며, 확인되지 않은 값은 만들어 채우지 않습니다.",
   },
   en: {
     hero: "How is Seoul\nmoving right now?",
     sub: "Official data only, showing what Myeongdong, Hongdae, Seongsu, Itaewon and Incheon Airport look like now and next.",
-    today: "Seoul", airport: "Airport", business: "Business", forecast: "Records", 'where-to': "Seoul at a glance", consumption:"Consumption", "tourism-desk": "Guide Desk", about: "About", more: "More",
+    'airport-glance': 'Airport glance', today: "Seoul", airport: "Airport", business: "Business", forecast: "Records", 'where-to': "Seoul at a glance", consumption:"Consumption", "tourism-desk": "Guide Desk", about: "About", more: "More",
     kst: "All times are Korea Standard Time (KST).",
     truth: "Official figures are distinguished from KORETAIL comparisons and reference estimates. Nothing unverified is filled in.",
   },
   zh: {
     hero: "此刻的首尔\n正在如何流动？",
     sub: "仅汇总官方数据，呈现明洞、弘大、圣水、梨泰院与仁川机场的当前与接下来。",
-    today: "首尔", airport: "机场", business: "门店", forecast: "记录", 'where-to': "首尔一览", consumption:"近期消费", "tourism-desk": "旅游咨询", about: "关于", more: "更多",
+    'airport-glance': '机场一览', today: "首尔", airport: "机场", business: "门店", forecast: "记录", 'where-to': "首尔一览", consumption:"近期消费", "tourism-desk": "旅游咨询", about: "关于", more: "更多",
     kst: "所有时间均为韩国标准时间（KST）。",
     truth: "官方发布值与KORETAIL的比较及参考预测分别标明，不填补未经确认的数值。",
   },
   ja: {
     hero: "いまソウルは\nどう動いていますか？",
     sub: "公式データだけを集め、明洞・弘大・聖水・梨泰院と仁川空港の現在とこれからを表示します。",
-    today: "ソウル", airport: "空港", business: "店舗", forecast: "記録", 'where-to': "ソウルひと目で", consumption:"最近の消費", "tourism-desk": "観光案内", about: "紹介", more: "その他",
+    'airport-glance': '空港一覧', today: "ソウル", airport: "空港", business: "店舗", forecast: "記録", 'where-to': "ソウルひと目で", consumption:"最近の消費", "tourism-desk": "観光案内", about: "紹介", more: "その他",
     kst: "すべての時刻は韓国標準時（KST）です。",
     truth: "公式発表値とKORETAILの比較・参考予測を区別し、確認できない値は作って埋めません。",
   },
@@ -114,6 +115,7 @@ const copy = {
 function Icon({ name }: { name: View }) {
   const paths: Record<View, string> = {
     today: "M4 13h4v7H4zM10 8h4v12h-4zM16 4h4v16h-4z",
+    "airport-glance": "M3 4h18v16H3zM3 10h18M10 10v10",
     airport: "M2 15l20-7-6 12-3-4-4 3z",
     business: "M4 20V9l8-5 8 5v11H4zm6 0v-6h4v6",
     forecast: "M3 17l5-6 4 4 4-7 5 5",
@@ -270,6 +272,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   // client never guesses a date from the device clock.
   const [serviceDate, setServiceDate] = useState<string | null>(null);
   const t = copy[lang];
+  const navLabel=(item:View)=>item==='consumption'?localText(lang,{ko:'소비 흐름',en:'Spending',zh:'消费',ja:'消費'}):t[item];
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -355,7 +358,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         setSelected(routeArea as AreaId);
         setView("tourism-desk");
       } else if (slug==='predictions') setView('where-to');
-      else if (["today", "forecast", "where-to", "consumption", "airport", "business", "about", "more"].includes(slug)) setView(slug as View);
+      else if (["airport-glance", "today", "forecast", "where-to", "consumption", "airport", "business", "about", "more"].includes(slug)) setView(slug as View);
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
@@ -423,8 +426,8 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           <span>KORETAIL</span><span className="brand-descriptor">Retail Demand Signals for Korea</span>
         </button>
         <nav className="top-nav" aria-label="Primary">
-          {(["airport", "today", "business", "where-to", "consumption", "tourism-desk", "forecast", "about", "more"] as View[]).map((item) => (
-            <a key={item} href={routeFor(lang, item, selected)} className={view === item ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} aria-current={view === item ? "page" : undefined}>{t[item]}</a>
+          {(["airport-glance", "airport", "where-to", "today", "consumption", "business", "more"] as View[]).map((item) => (
+            <a key={item} href={routeFor(lang, item, selected)} className={view === item ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} aria-current={view === item ? "page" : undefined}>{navLabel(item)}</a>
           ))}
         </nav>
         <div className="header-meta">
@@ -445,6 +448,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       </div>
 
       <main className="page-shell">
+        {view === "airport-glance" && <AirportGlance lang={lang} published artworkSrc="/images/airport-glance/approved-v1-1448.webp"/>}
         {view === "today" && (
           <>
             <section className="hero demand-hero" aria-labelledby="hero-title">
@@ -514,14 +518,14 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       </main>
 
       <nav ref={bottomNavigationRef} className="bottom-nav" aria-label="Primary">
-        {(["airport", "today", "business", "where-to", "consumption", "more"] as View[]).map((item) => (
+        {(["airport-glance", "airport", "where-to", "today", "consumption", "more"] as View[]).map((item) => (
           <a
             key={item}
             href={routeFor(lang, item, selected)}
             className={(view === item || (view === "tourism-desk" && item === "more")) ? "active" : ""}
             onClick={(event) => { event.preventDefault(); navigate(item); }}
             aria-current={view === item ? "page" : view === "tourism-desk" && item === "more" ? "location" : undefined}
-            aria-label={t[item]}
+            aria-label={navLabel(item)}
           >
             <Icon name={item} />
             <span>{item==='where-to'?localText(lang,{ko:'서울 한눈에',en:'Seoul glance',zh:'首尔一览',ja:'ソウル一覧'}):item==='consumption'?localText(lang,{ko:'소비 흐름',en:'Spending',zh:'消费',ja:'消費'}):t[item].toUpperCase()}</span>
@@ -937,6 +941,9 @@ function MoreView({
         </div>
       </div>
 
+      <nav className="more-section-links" aria-label={localText(lang,{ko:'서비스 메뉴',en:'Service sections',zh:'服务菜单',ja:'サービスメニュー'})}>
+        {(['business','tourism-desk','forecast','about'] as const).map(item=><a key={item} href={routeFor(lang,item,selected)}>{copy[lang][item]}</a>)}
+      </nav>
       <SiteUsageGuide lang={lang} />
       <CollectionStatus lang={lang} />
 

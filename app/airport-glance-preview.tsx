@@ -42,7 +42,7 @@ const insightCopy={
  zh:{wait:'当前最长出境厅等候',waitBasis:'在已确认的最新观测中',upcoming:'未来出发航班集中时段',upcomingBasis:'计划出发班次 · 不代表旅客拥挤',growth:'较上月日均增幅最大的目的地',noGrowth:'暂无可比较的增长',noUpcoming:'暂无当前之后的计划出发航班',unavailable:'暂无可核实资料',minute:'分',observed:'观测',waitShort:'等候',tie:'并列',shared:'使用T1出境厅',growthTitle:'较上月日均变化 · 前5名'},
  ja:{wait:'現在最も長い出国場の待ち時間',waitBasis:'確認できる新しい観測の中で',upcoming:'今後の出発便が集中する時間帯',upcomingBasis:'出発予定便数 · 旅客の混雑ではありません',growth:'前月比で日平均が最も増えた目的地',noGrowth:'比較できる増加なし',noUpcoming:'現在以降の出発予定便なし',unavailable:'確認できる資料なし',minute:'分',observed:'観測',waitShort:'待ち',tie:'同順位',shared:'T1出国場を利用',growthTitle:'前月比の日平均増減 · 上位5件'},
 } as const;
-export default function AirportGlancePreview({lang,artworkSrc=null}:{lang:Lang;artworkSrc?:string|null}){
+export default function AirportGlancePreview({lang,artworkSrc=null,published=false}:{lang:Lang;artworkSrc?:string|null;published?:boolean}){
  const c=copy[lang],ui=interfaceCopy[lang],dc=destinationCopy[lang],ic=insightCopy[lang];
  const [futureHours,setFutureHours]=useState<1|3|6>(1);
  const [date,setDate]=useState<string|null>(null),[scope,setScope]=useState<GlanceScope>('all');
@@ -78,16 +78,17 @@ export default function AirportGlancePreview({lang,artworkSrc=null}:{lang:Lang;a
  const stamp=(value:string|null|undefined)=>value&&Number.isFinite(Date.parse(value))?new Intl.DateTimeFormat(lang,{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value))+' KST':'—';
  const shortTime=(value:string)=>new Intl.DateTimeFormat(lang,{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));
  const minuteText=(minute:number)=>`${String(Math.floor(minute/60)).padStart(2,'0')}:${String(minute%60).padStart(2,'0')}`;
- const details=`/${lang}/airport?terminal=${scope}${day?`&date=${day}`:''}`;
+ const details=`/${lang}/airport?${scope==='CONCOURSE'?'building=CONCOURSE':`terminal=${scope}`}${day?`&date=${day}`:''}`;
  const buildingNames={T1:mainLabel,CONCOURSE:c.concourse,T2:'T2'},countryName=(country:string)=>country==='KR'?dc.domestic:names.of(country)??country;
   const countryLabel=(country:string)=>{const src=countryFlag(country);return <span className="glance-country-name">{src&&<img src={src} width="18" height="18" alt="" loading="lazy" decoding="async"/>}<span>{countryName(country)}</span></span>;};
  const knownCountries=data?.countries.filter(row=>row.country!==null)??[],unknownCountry=data?.countries.find(row=>row.country===null);
  const countryLimit=knownCountries[5]?.flights??0,leadingCountries=knownCountries.filter((row,index)=>index<6||row.flights===countryLimit);
  const countryRow=(row:{country:string|null;flights:number})=><li key={row.country??'UNKNOWN'} data-country={row.country??'UNKNOWN'}><span>{row.country===null?dc.unknown:countryLabel(row.country)}</span><span>{fmt.format(row.flights)} {c.unit}</span><strong>{data&&data.total>0?`${fmt.format(row.flights/data.total*100)}%`:'—'}</strong></li>;
  const waitValue=(value:NonNullable<typeof wait>)=>`${value.minutes}${value.row.waitTimeRaw==='60+'?'+':''} ${ic.minute}`;
- return <main className="glance-preview" data-testid="airport-glance-preview">
-  <header className="glance-header"><a href={`/${lang}/airport`} className="glance-brand">KORETAIL<span>Retail Demand Signals for Korea</span></a><nav aria-label={ui.main}><a href={details}>{c.detail}</a><a href={`/${lang}/myeongdong`}>{ui.seoul}</a></nav></header>
-  <div className="glance-heading"><h1>{c.title}</h1><small>{c.preview}</small></div>
+ const Container=published?'section':'main';
+ return <Container className="glance-preview" data-testid="airport-glance-preview">
+  {!published&&<header className="glance-header"><a href={`/${lang}/airport`} className="glance-brand">KORETAIL<span>Retail Demand Signals for Korea</span></a><nav aria-label={ui.main}><a href={details}>{c.detail}</a><a href={`/${lang}/myeongdong`}>{ui.seoul}</a></nav></header>}
+  <div className="glance-heading"><h1>{c.title}</h1>{!published&&<small>{c.preview}</small>}</div>
   <div className="glance-controls"><div role="group" aria-label={ui.terminal}>{(['all','T1','CONCOURSE','T2'] as const).map(value=><button key={value} aria-label={value==='all'?c.all:value==='CONCOURSE'?c.concourse:value} aria-pressed={scope===value} onClick={()=>setScope(value)}>{value==='all'?c.all:value==='T1'?mainLabel:value==='CONCOURSE'?c.concourse:value}</button>)}</div><label>{c.date}<input type="date" value={day} onChange={event=>{if(event.target.value)setDate(event.target.value);}}/></label><button onClick={()=>setDate(null)}>{c.today}</button><span>KST</span></div>
   <p className="glance-shared-note" data-testid="glance-shared-processing">{sharedNote}</p>
   <section className="glance-insights" aria-label={ui.summary}>
@@ -126,5 +127,5 @@ export default function AirportGlancePreview({lang,artworkSrc=null}:{lang:Lang;a
    <details className="glance-context"><summary>{compactCopy.rules}</summary><p>{fc.basis}</p><p>{gc.records}</p><p>{fc.zoneBasis}</p></details>
   </section>
   <footer><span>{c.collected} · {stamp(payload?.retrievedAt)}</span><span>{c.monthTime} · {stamp(monthRequest.reply?.calculatedAt)}</span><a href="https://www.airport.kr/geomap/ap_ko/view.do" target="_blank" rel="noreferrer">{ui.map} ↗</a></footer>
- </main>;
+ </Container>;
 }
