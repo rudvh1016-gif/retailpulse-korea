@@ -2,6 +2,7 @@ import {useId,useState} from 'react';
 import type {Lang} from './retailpulse-data';
 import {ChangeRate} from './change-rate';
 import {destinationDailyChanges} from '../lib/airport-destination-daily-changes';
+import {destinationVolumeOrder} from '../lib/airport-destination-volume-order';
 import {previousFlightMonth,type AirportFlightMonth,type MonthScope} from '../lib/airport-monthly-flights';
 import {airportMonthLabel} from '../lib/airport-month-labels';
 const t=(lang:Lang,ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
@@ -15,13 +16,13 @@ function Flag({country}:{country:string}){
 /** Shared-scale horizontal bars with the month and exact displayed mean attached. */
 export function AirportDestinationDailyChanges({lang,current,previous,scope}:{lang:Lang;current:AirportFlightMonth;previous:AirportFlightMonth|undefined;scope:MonthScope}){
  const [expanded,setExpanded]=useState(false),listId=useId();
- const rows=destinationDailyChanges(current,previous,scope),names=new Intl.DisplayNames([lang],{type:'region'});
+ const rows=destinationVolumeOrder(destinationDailyChanges(current,previous,scope)),names=new Intl.DisplayNames([lang],{type:'region'});
  const fmt=new Intl.NumberFormat({ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'}[lang],{maximumFractionDigits:1});
  const unit=t(lang,'편/일','flights/day','班/日','便/日'),value=(number:number|null)=>number===null?'—':fmt.format(number);
  const previousLabel=airportMonthLabel(previous?.month??previousFlightMonth(current.month),lang),currentLabel=airportMonthLabel(current.month,lang);
  const max=Math.max(1,...rows.flatMap(row=>[row.current??0,row.previous??0]));
  return <section className="airport-country-changes" data-testid="destination-daily-changes">
-  <h4>{t(lang,'주요 목적지 국가별 증감','Main destination country changes','主要目的地国家变化','主な目的地の国別増減')}</h4>
+  <h4>{t(lang,'항공편 많은 국가 TOP8','Top 8 countries by flights','航班最多的8个国家','便数の多い国 TOP8')}</h4>
   <p>{t(lang,'일평균 편수 · 전월 대비 신장률','Daily mean flights · change from the previous month','日均航班 · 较上月增长率','1日平均の便数・前月比増減率')}</p>
   {rows.length===0?<p role="status">{t(lang,'확인된 목적지 국가가 없습니다. 미정 편수는 전체 표에서 확인할 수 있습니다.','No confirmed destination country. Unconfirmed flights remain in the full table.','没有已确认目的地国家。未确认航班仍列于完整表格。','確認済みの目的地の国がありません。未確認便は全体表で確認できます。')}</p>:<ul id={listId}>
    {(expanded?rows:rows.slice(0,8)).map(row=><li key={row.country} data-country={row.country}>
