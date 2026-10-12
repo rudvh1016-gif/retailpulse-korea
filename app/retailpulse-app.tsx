@@ -6,7 +6,10 @@ import { passengerCopy } from "../lib/passenger-copy";
 import dynamic from 'next/dynamic';
 // SSR remains enabled. These inactive screens do not belong to the airport's
 // first download; their initial content is still rendered on their own routes.
-const AirportGlance=dynamic(()=>import('./airport-glance-preview'));
+// Reaching for the airport glance tab starts its load the same way (see prepareAirportView).
+const loadAirportGlance=()=>import('./airport-glance-preview');
+const AirportGlance=dynamic(loadAirportGlance);
+const prepareAirportGlance=()=>{loadAirportGlance().catch(()=>{});};
 const MonthlyRecordsView=dynamic(()=>import('./monthly-records').then(module=>module.MonthlyRecordsView));
 const TourismDeskView=dynamic(()=>import('./tourism-desk').then(module=>module.TourismDeskView));
 const PredictionEvidence=dynamic(()=>import('./prediction-evidence').then(module=>module.PredictionEvidence));
@@ -441,7 +444,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         </button>
         <nav className="top-nav" aria-label="Primary">
           {(["airport-glance", "airport", "where-to", "today", "consumption", "business", "more"] as View[]).map((item) => (
-            <a key={item} href={routeFor(lang, item, selected)} className={view === item || (item === "more" && ["tourism-desk","forecast","about"].includes(view)) ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} onPointerEnter={item === "airport" ? prepareAirport : undefined} onFocus={item === "airport" ? prepareAirport : undefined} aria-current={view === item ? "page" : item === "more" && ["tourism-desk","forecast","about"].includes(view) ? "location" : undefined}>{navLabel(item)}</a>
+            <a key={item} href={routeFor(lang, item, selected)} className={view === item || (item === "more" && ["tourism-desk","forecast","about"].includes(view)) ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : undefined} onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : undefined} aria-current={view === item ? "page" : item === "more" && ["tourism-desk","forecast","about"].includes(view) ? "location" : undefined}>{navLabel(item)}</a>
           ))}
         </nav>
         <div className="header-meta">
@@ -538,8 +541,8 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             href={routeFor(lang, item, selected)}
             className={(view === item || (["business","tourism-desk","forecast","about"].includes(view) && item === "more")) ? "active" : ""}
             onClick={(event) => { event.preventDefault(); navigate(item); }}
-            onPointerEnter={item === "airport" ? prepareAirport : undefined}
-            onFocus={item === "airport" ? prepareAirport : undefined}
+            onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : undefined}
+            onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : undefined}
             aria-current={view === item ? "page" : ["business","tourism-desk","forecast","about"].includes(view) && item === "more" ? "location" : undefined}
             aria-label={navLabel(item)}
           >
