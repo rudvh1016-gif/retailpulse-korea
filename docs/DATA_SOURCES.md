@@ -327,9 +327,10 @@ another runner reached `openapi.seoul.go.kr` seconds later; the next chance was
 a week away. Its gate is narrower than A5's (`decideWeeklySeoulRetry` in
 `lib/congestion-retry.ts`): status `ERROR`, every failure
 `failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT`, **and exactly one
-provider request made**. Auth, HTTP 401/403/429, Seoul result codes (INFO-100,
-ERROR-337 …), a timeout after connecting, `PARTIAL`, and a connect failure after
-the runner had already been answered start nothing. A failed attempt writes no
+provider request made by that source**. Auth, HTTP 401/403/429, a missing key,
+Seoul result codes (INFO-100, ERROR-337 …), a timeout after connecting,
+`PARTIAL`, and a connect failure after that source had already been answered
+start nothing. A failed attempt writes no
 rows and leaves `source_health.last_retrieved_at` where it was. Each failed
 attempt that leads to another costs one request per source, so a week can never
 exceed the healthy maximum (30 + 17) by more than four requests. The retries

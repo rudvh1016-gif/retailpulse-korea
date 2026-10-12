@@ -205,6 +205,10 @@ test("auth, 403, quota, Seoul result codes and every other failure never earn a 
   for (const [name, result] of Object.entries(cases)) {
     const decision = decideWeeklySeoulRetry(log(result));
     assert.deepEqual(decision.sources, [], name);
+    const { source } = JSON.parse(result);
+    if (RETRYABLE_WEEKLY_SEOUL_SOURCES.includes(source)) {
+      assert.equal(verdictFor(decision, source), "FAILED_FOR_ANOTHER_REASON", `${name} is a failure, never "healthy"`);
+    }
   }
   // PARTIAL kept what it got and is not a connect failure; no line is never a guess.
   const partial = decideWeeklySeoulRetry(log(line({ source: "seoul_sales", status: "PARTIAL", changedRows: 3, providerRequests: 25 })));
