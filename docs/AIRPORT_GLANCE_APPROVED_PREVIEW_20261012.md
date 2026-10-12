@@ -160,3 +160,25 @@ Verified behavior and limitation:
 - The selected tab is underlined/bold. Image labels retain correct data-selected attributes (T1+concourse for T1, T2 for T2), but their text/background currently have no visible selected-building distinction because all labels remain black and fully opaque. Thus in-image selection emphasis is weak; this is explicitly reported rather than claimed fixed. No new highlight/outline or terminal-specific image was introduced without a design decision.
 
 The actual-source capture validation checks the new denominator text at 1440/390/360 and each of four terminal views, with separate building counts and matching filter states. Typecheck/scoped lint/diff pass (two existing img advisories). No additional broad test suite rerun. These terminal captures supplement the latest ALL full-page captures in airport-glance-zone-context-20261012. No merge/deployment.
+
+
+## Current correction: physical building scopes (supersedes previous T1-inclusive previews)
+
+The owner's latest instruction overrides the previous terminal-selection section: T1 now means **T1 main only**, with CONCOURSE as its own tab. The old terminal-selections captures showing T1=300/day and 10/window are historical, not the approved current scope. ALL / T1 main / CONCOURSE / T2 now consistently select daily totals, destination shares, hourly summaries, future zones/destination increases and monthly comparisons. Image labels explicitly name T1 main.
+
+Reuse, not a second implementation: `lib/airport-monthly-building.ts` is copied byte-for-byte from PR347 head `8f501c02bf473de66b968332addd646e0acf5e1c`; both blobs are `aad51252d98598bc3e61eba0aeacbe75832b6e05`. Its existing `mainBuildingMonth` projects stored T1-inclusive monthly aggregates to main-only on the same included dates, rejects absent/inconsistent splits and leaves source data unchanged. Daily flights use the existing departureMap physical-building filter. PR347 should land before public integration (or be coordinated in the same approved integration) so detailed monthly views and this preview share the correction. No full cherry-pick or protected-file changes were made.
+
+Official processing remains terminal-scoped: CONCOURSE uses the observed T1 queue, explicitly labelled T1. The visible note says “탑승동도 T1에서 출국수속 · 대기는 T1 공통 관측”. No concourse queue or passenger forecast split is invented; raw data and official forecast code are unchanged.
+
+Saved real-response evidence at 2026-10-12 15:43:09 KST:
+- Daily ALL563 = T1 main158 + CONCOURSE142 + T2 263.
+- First future window ALL27 = T1 main3 + CONCOURSE7 + T2 17.
+- T1 main east2/3 (66.7%); ALL T2 west9/27 (33.3%); T2 west9/17 (52.9%).
+- Previous-month means independently checked against source aggregates and their included-day denominator; T1 main155.3/day, with no concourse double-counting.
+These are capture evidence, not hardcoded application numbers.
+
+Validation for this correction only: four focused unit cases PASS; three new browser cases PASS (360/390/1440), checking each building's daily/country/month/window scope and shared T1 queue. Typecheck and native build PASS; scoped ESLint zero errors/two existing static-img advisories; diff check PASS. No broad suite rerun, raw collection, merge, deployment or CI bypass.
+
+Current screenshots: `docs/screenshots/airport-glance-building-scopes-20261012/airport-glance-{ALL,T1,CONCOURSE,T2}-{pc-1440,mobile-390}-{viewport,full}.png`, plus ALL mobile360 viewport/full. `verification.json` records nine capture states with no page errors/overflow, consistent counts, black labels and decoded image. PC concourse and mobile T1 full-page images visually reviewed. All 18 captures supersede prior terminal-scope images. Local Chrome/saved responses are not live-browser performance measurements or physical-device Safari verification.
+
+Selection remains clear in the tab but weak inside the full airport image: data-selected now identifies only the selected physical building, while approved black/opaque labels remain visually alike. No unapproved image highlight was added. Public integration and deployment remain pending separate approval.

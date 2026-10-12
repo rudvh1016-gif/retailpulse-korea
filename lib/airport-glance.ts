@@ -4,11 +4,11 @@ import {departureMap,type MapFlight,type MapFlightRow} from './airport-departure
 import {buildingZoneCounts} from './airport-zone-shares';
 import {destinationDailyChanges} from './airport-destination-daily-changes';
 import {monthlyMetric,previousFlightMonth,type AirportFlightMonth,type MonthScope} from './airport-monthly-flights';
-export type GlanceScope='all'|'T1'|'T2';
+export type GlanceScope='all'|'T1'|'CONCOURSE'|'T2';
 export function glanceFlights(date:string,rows:readonly MapFlightRow[],scope:GlanceScope){
  const base={date,nextDate:date,window:{startMin:0,endMin:1440},rows};
  const whole=departureMap({...base,terminal:'T1',buildingScope:'all'});
- const selected=scope==='all'?whole:departureMap({...base,terminal:scope});
+ const selected=scope==='all'?whole:departureMap({...base,terminal:scope==='T2'?'T2':'T1',buildingScope:scope});
  const hours=Array<number>(24).fill(0),start=Date.parse(`${date}T00:00:00+09:00`);
  for(const flight of selected.flights){const hour=Math.floor((Date.parse(flight.scheduledAt)-start)/3_600_000);if(hour>=0&&hour<24)hours[hour]++;}
  const countryCounts=new Map<string|null,number>();
