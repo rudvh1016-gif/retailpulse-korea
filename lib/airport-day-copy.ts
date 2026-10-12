@@ -1,3 +1,4 @@
+import {destinationComparison} from './airport-destination-comparison';
 import { holidayComparisonCopy } from './holiday-comparison-copy';
 import { localHolidayName } from './holiday-calendar';
 import { formatChangeRate } from './change-rate';
@@ -218,7 +219,7 @@ export function topGroups(day: TerminalDay, lang: Lang): string {
 }
 
 export { hourSpan as dayHourSpan, share as dayEastShare };
-/** At most three measured facts. Unknown destinations never prove a match. */
+/** Keep the existing flight/zone facts and show all three destination buckets. */
 export function similarHighlights(item:SimilarDay,current:TerminalDay,lang:Lang) {
  const has=(name:SimilarDay['components'][number]['name'])=>item.components.find(component=>component.name===name);
  const difference = row('차이','difference','差','差')[lang];
@@ -226,14 +227,18 @@ export function similarHighlights(item:SimilarDay,current:TerminalDay,lang:Lang)
  if(has('TOTAL'))facts.push({label:dayCopy.rows.total[lang],current:fl(current.total,lang),previous:fl(item.day.total,lang),difference:`${difference} ${fl(Math.abs(current.total-item.day.total),lang)}`});
  if(has('EAST_SHARE')&&item.day.sidesVersion===current.sidesVersion&&eastShare(current)!==null&&eastShare(item.day)!==null)
   facts.push({label:row('동편 비중','East share','东侧占比','東側割合')[lang],current:share(current),previous:share(item.day),difference:`${difference} ${formatChangeRate((eastShare(current)!-eastShare(item.day)!)*100,'%p')}`});
- const known=(day:TerminalDay)=>Object.entries(day.groups).filter(([key])=>key!=='UNKNOWN').reduce((sum,[,count])=>sum+(count??0),0);
- const representative = Object.keys(current.groups).filter(key=>key!=='UNKNOWN'&&(current.groups[key as DestinationGroup]??0)>0&&(item.day.groups[key as DestinationGroup]??0)>0)
-  .sort((a,b)=>((current.groups[b as DestinationGroup]??0)+(item.day.groups[b as DestinationGroup]??0))-((current.groups[a as DestinationGroup]??0)+(item.day.groups[a as DestinationGroup]??0))||a.localeCompare(b))[0] as DestinationGroup|undefined;
- if((has('DESTINATIONS')?.distance??1)<=.15&&representative&&known(current)>0&&known(item.day)>0) {
-  const currentShare=(current.groups[representative]??0)/known(current)*100;
-  const previousShare=(item.day.groups[representative]??0)/known(item.day)*100;
-  facts.push({label:`${GROUP[representative][lang]} · ${row('확인 지역 기준','known regions','已知地区','確認地域')[lang]}`,current:`${num(currentShare,lang)}%`,previous:`${num(previousShare,lang)}%`,difference:`${difference} ${formatChangeRate(currentShare-previousShare,'%p')}`});
+ const now=destinationComparison(current),past=destinationComparison(item.day);
+ for(const group of ['JP','CN','OTHER'] as const){
+  const a=now[group],b=past[group];
+  const label=group==='JP'?GROUP.JP[lang]:group==='CN'?GROUP.CN[lang]:row('기타국적행','To other countries','飞往其他国家','その他の国行き')[lang];
+  facts.push({label,current:a===null?'—':`${num(a,lang)}%`,previous:b===null?'—':`${num(b,lang)}%`,difference:`${difference} ${a===null||b===null?'—':formatChangeRate(a-b,'%p')}`});
  }
- else if((has('HOURS')?.distance??1)<=.15)facts.push({text:row('시간대별 출발편 분포도 비슷','Hourly departure mix is also similar','各小时出发航班分布也相近','時間帯別の出発便分布も似ています')[lang]});
- return facts.slice(0,3);
+ return facts;
+}
+
+export function similarDestinationNote(current:TerminalDay,previous:TerminalDay,lang:Lang,currentLabel:string){
+ const now=destinationComparison(current),past=destinationComparison(previous);
+ const basis=row('기타국적행: 일본행·중국행을 제외한 국가행. 목적지 국가가 확인된 항공편 기준이며 승객 국적이 아닙니다.','Other countries: destinations excluding Japan and mainland China. Shares use flights with known destinations, not passenger nationality.','其他国家：日本和中国大陆以外的目的地。占比以目的地已知航班为准，非旅客国籍。','その他の国行き：日本・中国本土以外の行き先。行き先が確認できた便が分母で、旅客国籍ではありません。')[lang];
+ const excluded=row('목적지 미확인·누락 제외','Unknown/missing destinations excluded','排除目的地未知或缺失航班','行き先不明・欠測を除外')[lang];
+ return `${basis} ${excluded}: ${currentLabel} ${now.unknown===null?'—':fl(now.unknown,lang)} · ${dayCopy.thatDay[lang]} ${past.unknown===null?'—':fl(past.unknown,lang)}.`;
 }

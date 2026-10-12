@@ -1,5 +1,7 @@
 'use client';
+import {AirportMonthlyFlights} from './airport-monthly-flights';
 import {useMemo} from 'react';
+import {usePresentationClock} from './area-demand-card';
 import type {Lang} from './retailpulse-data';
 import {LiveLoadMessage,useLiveSummary} from './live-signals';
 import {useFlights} from './flights-client';
@@ -18,6 +20,8 @@ const text={
 const unavailable={ko:'이 날짜의 출발편 자료를 확보하지 못했습니다. 확인된 0편이 아닙니다.',en:'Departure data for this date is unavailable. This is not a confirmed zero.',zh:'未获取该日期的出发航班资料，不是已确认的零班。',ja:'この日の出発便データは未取得です。確認済みの0便ではありません。'};
 export function AirportConcourse({lang,date}:{lang:Lang;date:string|null}) {
  const summary=useLiveSummary(date);const serviceDate=date??summary?.serviceDateKst??null;const loaded=useFlights(serviceDate,'CONCOURSE');
+ const now=usePresentationClock(summary?.generatedAt??new Date(0).toISOString());
+ const today=summary?.dayRelation==='TODAY'&&serviceDate===summary?.todayKst&&serviceDate===new Date(now+9*3_600_000).toISOString().slice(0,10);
  const map=useMemo(()=>serviceDate&&loaded?.status==='OK'?departureMap({date:serviceDate,nextDate:shiftKstDay(serviceDate,1),terminal:'T1',buildingScope:'CONCOURSE',window:{startMin:0,endMin:1440},rows:loaded.payload.flights}):null,[serviceDate,loaded]);
  const c=text[lang];
 
@@ -26,11 +30,13 @@ export function AirportConcourse({lang,date}:{lang:Lang;date:string|null}) {
   {!loaded?<LiveLoadMessage loading lang={lang}/>:loaded.status==='FAILED'?<p role="status">{c.failed}</p>:loaded.payload.truncated?<p role="status">{c.partial}</p>:!loaded.payload.retrievedAt&&loaded.payload.flights.length===0?<p role="status">{unavailable[lang]}</p>:map&&<>
    <p>{loaded.payload.basis==='OFFICIAL_DEPARTURE_SCHEDULE'?c.schedule:c.records}: <strong data-testid="concourse-flight-count">{map.flights.length}</strong> · {serviceDate} KST</p>
    <AirportConceptModel map={map} lang={lang}/>
-   <AirportZoneCountries map={map} lang={lang} basis={c.basis}/>
+   <AirportZoneCountries map={map} lang={lang} basis={c.basis} date={serviceDate!} isToday={today}/>
    {!map.flights.length&&<p>{c.empty}</p>}
    <AirportFlightBrowser flights={map.flights} lang={lang} testId="concourse-flight-list"/>
    <p className="prep-note">{loaded.payload.retrievedAt??'—'} · <a href="https://www.airport.kr" target="_blank" rel="noreferrer">Incheon Airport</a></p>
   </>}
+  {serviceDate&&<AirportMonthlyFlights lang={lang} terminal="CONCOURSE" date={serviceDate}/>}
+  <p className="prep-note" data-testid="concourse-transfer-note">{{ko:'탑승동 이용객도 T1에서 체크인·출국수속 후 이동합니다. 항공편은 탑승구 기준으로 본관과 분리하며, T1 대기·공식 여객 통계는 수속장·공식 터미널 기준입니다.',en:'Concourse passengers check in and complete departure formalities at T1 before moving to the concourse. Flights are split by boarding building; T1 waits and official passenger statistics retain their departure-hall and official terminal scope.',zh:'登机楼旅客也在T1办理值机和出境手续后前往登机楼。航班按登机建筑分开；T1等候和官方旅客统计保留出境大厅与官方航站楼口径。',ja:'搭乗棟の利用客もT1でチェックイン・出国手続き後に移動します。便は搭乗建物別に分け、T1の待ち時間・公式旅客統計は出国場・公式ターミナルの範囲を維持します。'}[lang]}</p>
   <p className="prep-note" data-testid="concourse-unsupported">{{ko:'탑승동 승객 예보·검색대 대기 미제공',en:'Concourse passenger forecast and security wait unavailable',zh:'登机楼旅客预测和安检等待未提供',ja:'搭乗棟の旅客予測・保安待ちは未提供'}[lang]}</p>
   <details className="prep-evidence"><summary>{{ko:'제공 범위',en:'Data coverage',zh:'提供范围',ja:'提供範囲'}[lang]}</summary><p className="prep-note">{c.unsupported}</p></details>
  </section>;

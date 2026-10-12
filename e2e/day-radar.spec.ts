@@ -79,10 +79,10 @@ test('days like today: numbers, not a similarity score, and the table opens', as
   await expect(section.getByTestId('similar-scope')).toContainText('2026-08-03~2026-08-25');
   await expect(section.getByTestId('similar-scope')).toContainText('같은 요일만 고른 것은 아닙니다');
   await expect(similar.first()).not.toContainText('두드러진 차이 없음');
-  await expect(similar.first().locator('.similar-highlights > li')).toHaveCount(3);
+  await expect(similar.first().locator('.similar-highlights > li')).toHaveCount(5);
   await expect(similar.first()).toContainText('차이 0편');
   await expect(similar.first()).toContainText('차이 0%p');
-  await expect(similar.first()).toContainText('일본행 · 확인 지역 기준: 오늘 83.3% · 그날 83.3%');
+  await expect(similar.first()).toContainText('일본행: 오늘 83.3% · 그날 83.3%');
   await similar.first().getByTestId('similar-open').click();
   await expect(similar.first()).toContainText('그날 기록에서 가장 많은 출발 시간대: 09–10시 20편');
   await expect(similar.first().getByTestId('similar-table')).toBeVisible();

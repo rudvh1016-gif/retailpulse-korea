@@ -1,0 +1,29 @@
+{
+  "scope": "Draft implementation only; no merge, deployment or remote database writes",
+  "base": "1c4adac2f9e6488b1dec667fa30fd05381c73370",
+  "ownerRequest": "공식 월별 여객 실적 8·9월 미갱신 원인 확인, 확실하면 수정. 공식 터미널 집계를 그대로 유지하고 탑승동별 추정 분할 금지.",
+  "protectedChange": {
+    "path": "app/retailpulse-data.ts",
+    "before": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
+    "after": "2a965cde02012978eb446a955b82bbcbfbec83f74f862e0e2846fae1ca348ecd",
+    "scope": "Append only two verified official monthly rows, August and September 2026. Preserve all existing statistics, calculations and typography."
+  },
+  "source": "https://www.airport.kr/co_ko/651/subview.do",
+  "query": {
+    "path": "/fsmFsn/co_ko/statisticCategoryOfTimeSeries.do",
+    "firstYn": "1",
+    "arplnSe": "Y",
+    "terminalId": [
+      "",
+      "P01",
+      "P03"
+    ],
+    "stYear": "2026",
+    "stMonth": "07",
+    "edYear": "2026",
+    "edMonth": "09",
+    "tmType": "TM_M"
+  },
+  "verification": "Existing July rows match all three official queries exactly. August and September T1+T2 reconcile with ALL for both arrival and departure. Latest public default is September. No scheduled collection was triggered.",
+  "exactUnifiedDiff": "diff --git a/app/retailpulse-data.ts b/app/retailpulse-data.ts\nindex 816b9e32..da60da2a 100644\n--- a/app/retailpulse-data.ts\n+++ b/app/retailpulse-data.ts\n@@ -24,6 +24,8 @@ export const airportMonthly: AirportMonth[] = [\n   { month: \"2026-05\", all: { arrival: 3167868, departure: 3147132 }, T1: { arrival: 1460170, departure: 1458602 }, T2: { arrival: 1707698, departure: 1688530 } },\n   { month: \"2026-06\", all: { arrival: 3024839, departure: 3011510 }, T1: { arrival: 1407985, departure: 1419626 }, T2: { arrival: 1616854, departure: 1591884 } },\n   { month: \"2026-07\", all: { arrival: 3199990, departure: 3364748 }, T1: { arrival: 1554721, departure: 1639145 }, T2: { arrival: 1645269, departure: 1725603 } },\n+  { month: \"2026-08\", all: { arrival: 3601429, departure: 3470815 }, T1: { arrival: 1798044, departure: 1719533 }, T2: { arrival: 1803385, departure: 1751282 } },\n+  { month: \"2026-09\", all: { arrival: 3167685, departure: 3144533 }, T1: { arrival: 1578144, departure: 1538638 }, T2: { arrival: 1589541, departure: 1605895 } },\n ];\n \n export const airportAnnual = [\n"
+}
