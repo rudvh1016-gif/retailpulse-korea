@@ -37,7 +37,7 @@ export function AirportSceneModel({scope,lang,className='',showBasis=true,childr
     '--airport-overview-wide-ratio':`${view.width}/${view.height}`,
     '--airport-overview-mobile-ratio':`${mobile.width}/${mobile.height}`} as CSSProperties;
   // eslint-disable-next-line @next/next/no-img-element
-  const image=<img src={src} srcSet={previewRoot?undefined:`${stem}-390.webp 390w, ${stem}-900.webp 900w, ${stem}.webp ${view.width}w`} sizes="(max-width: 732px) calc(100vw - 32px), 700px" width={view.width} height={view.height} alt="" loading="lazy" decoding="async"/>;
+  const image=<img src={src} srcSet={previewRoot?undefined:`${stem}-390.webp 390w, ${stem}-900.webp 900w, ${stem}.webp ${view.width}w`} sizes={responsive&&className.includes('airport-concept-picture')?'(max-width: 732px) calc(100vw - 32px), (min-width: 1024px) 1200px, 700px':'(max-width: 732px) calc(100vw - 32px), 700px'} width={view.width} height={view.height} alt="" loading="lazy" decoding="async"/>;
   return <>
     <div className={`airport-scene-picture ${className}${responsive?' airport-scene-overview-v14':''}`} style={reservedStyle} data-scene={scene} data-building={scope}>
       {/* Only the selected building and lighting image is requested. */}

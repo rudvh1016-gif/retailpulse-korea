@@ -11,7 +11,7 @@ async function open(page:import('@playwright/test').Page,lang='ko',rows=flights,
  await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',serviceDateKst:date,basis:'COLLECTED_FLIGHT_RECORDS',retrievedAt:stamp,truncated:false,flights:rows}}));
  await page.goto(`/${lang}/airport`);
 }
-for(const lang of ['ko','en','zh','ja'] as const)for(const width of[360,390,430,1280])test(`Blender pillars use current estimates, separate denominators and equal heights for ties ${lang} ${width}`,async({page},info)=>{
+for(const lang of ['ko','en','zh','ja'] as const)for(const width of[360,390,430,1280])test(`horizontal bars use current estimates, separate denominators and equal widths for ties ${lang} ${width}`,async({page},info)=>{
  await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await open(page,lang);
  const reference=page.getByTestId('airport-top-reference');await expect(reference).toHaveAttribute('data-state','READY');await expect(reference.getByTestId('airport-reference-pillars')).toHaveCount(2);
  const map=page.getByTestId('gate-pillar-model').locator('a[href="https://www.airport.kr/geomap/ap_ko/view.do"]');
@@ -20,8 +20,8 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of[360,390,430,
  await map.focus();await expect(map).toBeFocused();
  const t1=reference.getByTestId('top-reference-T1');const t2=reference.getByTestId('top-reference-T2');
  await expect(t1.locator('[data-zone=CONCOURSE]')).toContainText('2');
- const e=t1.locator('[data-zone=EAST]'),w=t1.locator('[data-zone=WEST]');expect(await e.getAttribute('data-raw-value')).toEqual(await w.getAttribute('data-raw-value'));expect(await e.getAttribute('data-height')).toEqual(await w.getAttribute('data-height'));
- const cells=await reference.locator('.reference-pillar-list>li').all();for(const cell of cells){const height=Number(await cell.getAttribute('data-height'));const bar=await cell.locator('.reference-pillar').boundingBox();expect(Math.abs(bar!.height-height)).toBeLessThan(1);}
+ const e=t1.locator('[data-zone=EAST]'),w=t1.locator('[data-zone=WEST]');expect(await e.getAttribute('data-raw-value')).toEqual(await w.getAttribute('data-raw-value'));expect(await e.getAttribute('data-width-percent')).toEqual(await w.getAttribute('data-width-percent'));
+ const cells=await reference.locator('.reference-pillar-list>li').all();for(const cell of cells){const raw=Number(await cell.getAttribute('data-raw-value'));const maximum=Number(await cell.locator('xpath=ancestor::figure[1]').getAttribute('data-scale-max'));const track=await cell.locator('.reference-pillar-space').boundingBox();const bar=await cell.locator('.reference-pillar').boundingBox();expect(Math.abs(bar!.width-track!.width*raw/maximum)).toBeLessThan(1);expect(bar!.height).toBeLessThanOrEqual(10);}
  expect(await t1.getByTestId('airport-reference-pillars').getAttribute('data-scale-max')).toEqual(await t2.getByTestId('airport-reference-pillars').getAttribute('data-scale-max'));
  await t1.locator('summary').focus();await page.keyboard.press('Enter');await expect(t1.locator('details')).toHaveAttribute('open');await expect(t1).toContainText('35,500');
  expect(await tofuCharacters(reference)).toEqual([]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);

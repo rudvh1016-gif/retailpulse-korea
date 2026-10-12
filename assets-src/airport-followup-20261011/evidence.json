@@ -1,0 +1,38 @@
+{
+  "source": "https://koretaildata.com/api/live/airport-months?month=2026-10",
+  "status": "READY",
+  "calculatedAt": "2026-10-11T00:15:39.806Z",
+  "asOf": "2026-10-11",
+  "cause": "Rendering truncated sorted country rows with slice(0,6); country classification and API retained US and European countries",
+  "months": [
+    {
+      "month": "2026-10",
+      "includedDays": 10,
+      "US": 357,
+      "DE": 35,
+      "FR": 32
+    },
+    {
+      "month": "2026-09",
+      "includedDays": 30,
+      "US": 1050,
+      "DE": 106,
+      "FR": 94
+    }
+  ],
+  "protectedCopyProposal": "docs/proposals/airport-history-copy-20261011.patch",
+  "protectedCopyApplied": false,
+  "claudeRemote": "19754ee141432a9aa8a35b89a58598d91c9bffa2",
+  "main": "bdfea81869b1687c2e40cc1c0ad979fee57a5c2b",
+  "mergeCheck": "git merge-tree --write-tree HEAD origin/claude/seoul-split-perf-20261011: no conflict; MTD sectionTitle remains in app/live-signals.tsx",
+  "validation": [
+    "14 related browser scenarios passed",
+    "8 related unit tests passed",
+    "Owner UI Lock passed",
+    "TypeScript passed",
+    "ESLint: no errors; one preexisting next/no-img-element warning",
+    "git diff --check passed"
+  ],
+  "mergeExecuted": false,
+  "deploymentExecuted": false
+}

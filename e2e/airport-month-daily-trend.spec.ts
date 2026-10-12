@@ -41,6 +41,10 @@ for (const width of [320, 390, 430]) {
     await page.route('**/api/live/summary**', routeSummary(fiveDays()));
     await page.goto('/ko/airport');
     const month = page.getByTestId('airport-mtd');
+    const heading = month.locator('xpath=preceding-sibling::h3[1]');
+    await expect(heading).toHaveText('월별 출국장 예상 승객');
+    await expect(month).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    expect((await heading.boundingBox())!.y + (await heading.boundingBox())!.height).toBeLessThanOrEqual((await month.boundingBox())!.y);
     const chart = month.locator('.airport-month-chart');
     await expect(month.locator('.airport-month-compare-wide')).not.toBeVisible();
     await expect(month.locator('.airport-month-compare-model')).toBeVisible();
@@ -52,6 +56,7 @@ for (const width of [320, 390, 430]) {
     await expect(chart.locator('polyline, .airport-month-run')).toHaveCount(0);
     expect(await month.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(true);
     await month.screenshot({ path: `test-results/month-daily-trend-${width}.png` });
+    if (width === 390) await month.locator('..').screenshot({ path: 'test-results/month-heading-390.png' });
     const buttons = chart.locator('.airport-month-picks button');
     await buttons.first().focus();
     await page.keyboard.press('Enter');

@@ -55,7 +55,7 @@ for (const clock of ["11:57", "21:03", "23:59"]) {
           visible: style.display !== "none" && style.visibility === "visible" && Number(style.opacity) === 1,
           // A real stroke, not a border on an empty box (the shape WebKit —
           // every browser on iOS — declined to paint on the owner's phone).
-          stroked: parseFloat(style.strokeWidth) >= 1 && style.stroke === "rgb(0, 0, 0)",
+          stroked: parseFloat(style.strokeWidth) >= 1 && style.stroke === "rgb(67, 97, 127)",
           inside: box.left >= frame.left && box.right <= frame.right,
           labelInside: label.left >= frame.left - 1 && label.right <= frame.right + 1,
         };
@@ -67,7 +67,15 @@ for (const clock of ["11:57", "21:03", "23:59"]) {
         return (Number(el.getAttribute("x1")) - left) / width;
       });
       expect(fraction).toBeCloseTo((hours + minutes / 60) / 24, 3);
+      const currentBar = page.locator('.airport-hourly-prisms > g[data-finish="now"]');
+      await expect(currentBar).toHaveCount(1);
+      await expect(currentBar).toHaveAttribute('data-start', bands[hours].targetStartAt);
     }
+    const figure = page.locator('.airport-hero .airport-flow');
+    await expect(figure.locator('.airport-hourly-prisms > g')).toHaveCount(24);
+    const heights = await figure.locator('.airport-hourly-prisms > g').evaluateAll(nodes => nodes.map(node => Number(node.getAttribute('data-height'))));
+    expect(heights[23] / heights[0]).toBeCloseTo(2 / 660, 5);
+    await figure.screenshot({ path: `test-results/ink-silver-24-hours-${clock.replace(':', '-')}-390.png` });
     await page.setViewportSize({ width: 1440, height: 900 });
     await expect.poll(() => page.locator(".airport-flow .airport-flow-now").evaluate(el => el.getBoundingClientRect().height)).toBeGreaterThan(120);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

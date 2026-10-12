@@ -2,6 +2,27 @@ import { test, expect } from '@playwright/test';
 import { SUMMARY_FIXTURE, routeSummary } from './summary-fixture';
 import { airportModelScope } from '../lib/airport-model-scope';
 import { routeGateFlights } from './gate-model-fixture';
+test('desktop overview uses available width while keeping building overlays attached',async({page})=>{
+  await page.setViewportSize({width:2048,height:1100});
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
+  await routeGateFlights(page);
+  await page.goto('/ko/airport');
+  const figure=page.getByTestId('airport-concept-model');
+  const picture=figure.locator('.airport-concept-picture');
+  await picture.scrollIntoViewIfNeeded();
+  const bounds=(await picture.boundingBox())!;
+  expect(bounds.width).toBeGreaterThan(1000);
+  expect(bounds.width).toBeLessThanOrEqual(1200);
+  const groups=await picture.locator('.airport-concept-building-counts').all();
+  expect(groups).toHaveLength(3);
+  for(const group of groups){const box=(await group.boundingBox())!;expect(box.x).toBeGreaterThanOrEqual(bounds.x);expect(box.x+box.width).toBeLessThanOrEqual(bounds.x+bounds.width+1);expect(box.y+box.height).toBeLessThan(bounds.y+bounds.height);}
+  await expect(figure.getByTestId('model-zone-note')).toHaveCSS('font-size','12px');
+  expect(await picture.locator('img').evaluate(image=>(image as HTMLImageElement).naturalWidth)).toBeGreaterThanOrEqual(1200);
+  await figure.screenshot({path:'test-results/airport-overview-desktop.png'});
+  await page.locator('.terminal-selector button').nth(1).click();
+  expect((await picture.boundingBox())!.width).toBeLessThanOrEqual(700);
+});
 for(const lang of ['ko','en','zh','ja'] as const) {
   test(`model title and hourly data follow repeated terminal switches ${lang}`,async({page})=>{
     await page.setViewportSize({width:390,height:844});

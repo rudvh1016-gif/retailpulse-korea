@@ -140,9 +140,9 @@ export function AirportView({
 
         <div className="history-kpis">
           <div><span>{localText(lang, { ko: "선택 기간 합계", en: "PERIOD TOTAL", zh: "所选期间合计", ja: "選択期間の合計" })}</span><strong>{formatCount(lang, rangeTotal)}</strong><small>{periodLabel} · {terminal === "all" ? "ALL" : terminal}</small></div>
-          <div><span>{localText(lang, { ko: "하루 평균", en: "DAILY AVERAGE", zh: "日均", ja: "1日平均" })}</span><strong>{formatCount(lang, rangeDailyAverage)}</strong><small>{rangeDays}{localText(lang, { ko: "일 기준", en: " days", zh: "天口径", ja: "日基準" })}</small></div>
-          <div><span>{localText(lang, { ko: "기간 처음 대비", en: "START-TO-END CHANGE", zh: "期初至期末变化", ja: "期間初比" })}</span><strong>{<ChangeRate value={rangeChange} lang={lang}/>}</strong><small>{rangeStartRow?.month ?? "—"} → {rangeEndRow?.month ?? "—"}</small></div>
-          <div><span>{localText(lang, { ko: "하루평균 최고 월", en: "PEAK MONTH BY DAILY AVG.", zh: "日均峰值月", ja: "日平均ピーク月" })}</span><strong>{peakRow?.month ?? "—"}</strong><small>{peakRow ? formatCount(lang, Math.round(airportValue(peakRow, terminal, direction) / monthDays(peakRow.month))) : "—"}</small></div>
+          <div><span>{localText(lang, { ko: "일평균", en: "DAILY AVERAGE", zh: "日均", ja: "1日平均" })}</span><strong>{formatCount(lang, rangeDailyAverage)}</strong><small>{rangeDays}{localText(lang, { ko: "일 기준", en: " days", zh: "天口径", ja: "日基準" })}</small></div>
+          <div><span>{localText(lang, { ko: "월 총합 · 첫 달 대비", en: "MONTHLY TOTAL · FIRST TO LAST", zh: "月总量 · 首末月对比", ja: "月合計・最初の月比" })}</span><strong>{<ChangeRate value={rangeChange} lang={lang}/>}</strong><small>{rangeStartRow?.month ?? "—"} → {rangeEndRow?.month ?? "—"}</small></div>
+          <div><span>{localText(lang, { ko: "일평균 최고 월", en: "PEAK MONTH BY DAILY AVG.", zh: "日均峰值月", ja: "日平均ピーク月" })}</span><strong>{peakRow?.month ?? "—"}</strong><small>{peakRow ? formatCount(lang, Math.round(airportValue(peakRow, terminal, direction) / monthDays(peakRow.month))) : "—"}</small></div>
         </div>
 
         <ol className="history-bars" aria-label={localText(lang, { ko: "월별 여객 추이", en: "Monthly passenger trend", zh: "月度旅客趋势", ja: "月次旅客推移" })}>

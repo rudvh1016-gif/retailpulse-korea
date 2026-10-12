@@ -15,6 +15,12 @@ import type { BriefLang } from "./current-brief";
  * something is.
  */
 export const mtdCopy = {
+  sectionTitle: {
+    ko: "월별 출국장 예상 승객",
+    en: "Monthly departure-hall passenger forecast",
+    zh: "每月出境大厅预计旅客",
+    ja: "月別出国場予想旅客",
+  },
   heading: {
     ko: "이번 달 누적 · 출국장 공식 예상 승객",
     en: "Month to date · official departure-hall passenger forecast",

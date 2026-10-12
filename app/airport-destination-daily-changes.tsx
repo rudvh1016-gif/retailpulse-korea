@@ -13,7 +13,7 @@ function Flag({country}:{country:string}){
 
 /** Shared-scale horizontal bars with the month and exact displayed mean attached. */
 export function AirportDestinationDailyChanges({lang,current,previous,scope}:{lang:Lang;current:AirportFlightMonth;previous:AirportFlightMonth|undefined;scope:MonthScope}){
- const rows=destinationDailyChanges(current,previous,scope).slice(0,6),names=new Intl.DisplayNames([lang],{type:'region'});
+ const rows=destinationDailyChanges(current,previous,scope),names=new Intl.DisplayNames([lang],{type:'region'});
  const fmt=new Intl.NumberFormat({ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'}[lang],{maximumFractionDigits:1});
  const unit=t(lang,'편/일','flights/day','班/日','便/日'),value=(number:number|null)=>number===null?'—':fmt.format(number);
  const previousLabel=airportMonthLabel(previous?.month??previousFlightMonth(current.month),lang),currentLabel=airportMonthLabel(current.month,lang);

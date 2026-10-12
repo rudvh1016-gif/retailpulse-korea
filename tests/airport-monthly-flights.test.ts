@@ -5,7 +5,18 @@ import {AIRPORT_SIDES_VERSION} from '../lib/airport-sides';
 import {dailyFlightProfile} from '../lib/airport-day-profile';
 import {similarDays,terminalDay} from '../lib/airport-day-compare';
 import {similarHighlights,shortDayLabel} from '../lib/airport-day-copy';
+import type {TerminalDay,SimilarDay} from '../lib/airport-day-compare';
 const row=(day:string,id:string,extra:Partial<MonthFlightRow>={}):MonthFlightRow=>({physicalFlightId:id,terminal:'T2',gate:'274',scheduledAt:day+'T10:00:00+09:00',operatingFlight:'KE703',retrievedAt:day+'T01:00:00Z',airportCode:'NRT',status:'scheduled',...extra});
+test('similar facts calculate flight differences and region shares without counting unknown destinations',()=>{
+ const current:TerminalDay={day:'2026-10-10',complete:true,sidesVersion:'same',total:307,hours:Array(24).fill(1),sides:[44,56,0,0],groups:{JP:80,UNKNOWN:20}};
+ const previous:TerminalDay={...current,day:'2026-10-03',total:295,groups:{JP:40,UNKNOWN:60}};
+ const item={day:previous,components:[{name:'TOTAL',distance:0},{name:'EAST_SHARE',distance:0},{name:'DESTINATIONS',distance:0}],missing:[]} as unknown as SimilarDay;
+ const facts=similarHighlights(item,current,'ko');
+ assert.equal(facts.length,3);
+ assert.ok('difference' in facts[0]&&facts[0].difference==='차이 12편');
+ assert.ok('difference' in facts[1]&&facts[1].difference==='차이 0%p');
+ assert.ok('current' in facts[2]&&facts[2].current==='100%'&&facts[2].previous==='100%');
+});
 test('retained early raw days, newest physical flight, cancellation and all unknown buckets survive one gate definition',()=>{
  const rows=[row('2026-09-01','a'),row('2026-09-01','a',{gate:'231',retrievedAt:'2026-09-02T00:00:00Z'}),row('2026-09-02','b',{terminal:'CONCOURSE',gate:'110'}),row('2026-09-02','c',{status:'cancelled'}),row('2026-09-03','d',{terminal:null,gate:null,airportCode:'not-known',operatingFlight:'VJ123'}),row('2026-09-04','e'),row('2026-10-10','today')];
  const month=buildAirportFlightMonth('2026-09','2026-10-10',rows,new Set(['2026-09-01','2026-09-02','2026-09-03']));

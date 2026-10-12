@@ -15,6 +15,7 @@ import { useFlights } from './flights-client';
 import { dailyFlightProfile, type ProfileRow } from '../lib/airport-day-profile';
 import { lastSeenOf, radar, similarDays, terminalDay, type LastSeen, type TerminalDay, type ViewTerminal } from '../lib/airport-day-compare';
 import { dayCopy as copy, dayEastShare, dayHourSpan, dayLabel, shortDayLabel, radarLine, similarLines, similarHighlights, topGroups } from '../lib/airport-day-copy';
+import { RateText } from './change-rate';
 import './airport-day-radar.css';
 
 const LAST_SEEN_KEY = 'koretail-airport-radar-v1';
@@ -148,7 +149,7 @@ export default function DayRadarBlock({ lang, date, dayRelation, terminal, nowIs
         const lines = similarLines(item, current, lang);
         const isOpen = open === item.day.day;
         return <li key={item.day.day} data-day={item.day.day}>
-          <svg className="similar-calendar" viewBox="0 0 56 70" width="28" height="35" aria-hidden="true">
+          <div className="similar-date"><svg className="similar-calendar" viewBox="0 0 56 70" width="28" height="35" aria-hidden="true">
             <path d="M4 12 L45 12 L51 6 L10 6 Z" fill="#e5f5fc"/>
             <path d="M45 12 L51 6 L51 58 L45 64 Z" fill="#81b3cd"/>
             <path d="M4 12 H45 V64 H4 Z" fill="#d5ecf8"/>
@@ -157,9 +158,9 @@ export default function DayRadarBlock({ lang, date, dayRelation, terminal, nowIs
             <text x="24" y="36" textAnchor="middle">{Number(item.day.day.slice(5,7))}</text>
             <text x="24" y="53" textAnchor="middle">{Number(item.day.day.slice(8,10))}</text>
           </svg>
-          <strong>{shortDayLabel(item.day.day,current.day,lang)}</strong>
-          <ul className="similar-highlights">{similarHighlights(item,current,lang).map((fact,index)=><li key={index}>{'text' in fact?fact.text:<>{fact.label}: {dayRelation==='TODAY'?copy.today[lang]:shortDayLabel(current.day,current.day,lang)} <strong>{fact.current}</strong> · {copy.thatDay[lang]} <strong>{fact.previous}</strong></>}</li>)}</ul>
-          <br/><button type="button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : item.day.day)} data-testid="similar-open"
+          <strong>{shortDayLabel(item.day.day,current.day,lang)}</strong></div>
+          <ul className="similar-highlights">{similarHighlights(item,current,lang).map((fact,index)=><li key={index}>{'text' in fact?fact.text:<>{fact.label}: {dayRelation==='TODAY'?copy.today[lang]:copy.selectedDay[lang]} <strong>{fact.current}</strong> · {copy.thatDay[lang]} <strong>{fact.previous}</strong> · <RateText text={fact.difference} lang={lang}/></>}</li>)}</ul>
+          <button type="button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : item.day.day)} data-testid="similar-open"
             style={{ border: 0, padding: '8px 0',minHeight:44, background: 'transparent', color: 'var(--blue)', cursor: 'pointer', font: 'inherit' }}>{copy.conciseCompare[lang]}</button>
           {isOpen && <div data-testid="similar-table">
             {lines.busiest && <p className="prep-note">{copy.busiest[lang]}: {lines.busiest}</p>}

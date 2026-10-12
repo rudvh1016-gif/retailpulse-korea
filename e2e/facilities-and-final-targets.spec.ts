@@ -29,7 +29,7 @@ for(const lang of ['ko','en','zh','ja'] as const) for(const width of [360,390,43
   await page.locator('#airport-data-flow button').nth(2).click();await expect(rows).toHaveCount(4);await page.locator('#airport-data-flow button').first().click();await expect(rows).toHaveCount(5);
   await page.locator('.flight-direction button').nth(1).click();await expect(rows).toHaveCount(0);await page.locator('.flight-direction button').first().click();await expect(rows).toHaveCount(5);
   if(lang==='ko'&&width===390)await page.locator('.flight-board').screenshot({path:info.outputPath('flight-zones-390.png')});
-  await page.locator('.airport-context-nav button').nth(3).click();const parking=page.getByTestId('airport-parking-guide');await parking.locator('summary').click();await expect(parking.getByRole('link')).toHaveAttribute('href','https://www.airport.kr/ap_ko/955/subview.do');
+  await page.locator('.airport-context-nav button').nth(3).click();await expect(page.getByTestId('airport-parking-guide')).toHaveCount(0);await expect(page.locator('a[href="https://www.airport.kr/ap_ko/955/subview.do"]')).toHaveCount(0);
   await page.goto(`/${lang}/myeongdong`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
   const guide=page.getByTestId('seoul-facility-guide'),toilets=guide.getByTestId('seoul-toilets');
   await expect(toilets).not.toHaveAttribute('open');await toilets.locator(':scope > summary').focus();await page.keyboard.press('Enter');await expect(toilets.locator('.facility-toilet-rows>li')).toHaveCount(10);

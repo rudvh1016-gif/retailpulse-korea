@@ -184,19 +184,20 @@ test('shared cache serves only the public stored read and cannot cross KST midni
  assert.equal(dutyFreeCacheControl(now,false),'no-store');
 });
 
-test('real local workerd D1: collector storage reaches the actual public GET handler without provider calls on reads',async t=>{
- const compiled=await build({stdin:{contents:'import { GET } from "./app/api/live/duty-free-exchange/route.ts"; export default {fetch:GET};',resolveDir:fileURLToPath(new URL('../',import.meta.url)),loader:'ts'},bundle:true,write:false,format:'esm',platform:'browser',external:['cloudflare:workers']});
+for(const [clock,expectedCache] of [[now,'public, max-age=60, s-maxage=300'],[Date.parse('2026-10-08T14:59:58Z'),'public, max-age=2, s-maxage=2']])test(`real local workerd D1: collector storage reaches the actual public GET handler without provider calls on reads at ${new Date(clock).toISOString()}`,async t=>{
+ // Freeze only the isolated worker's clock: the real handler must also obey the midnight boundary.
+ const compiled=await build({stdin:{contents:`import { GET } from "./app/api/live/duty-free-exchange/route.ts"; const clock=${clock}; globalThis.Date=class extends Date {constructor(...args){super(...(args.length?args:[clock]));} static now(){return clock;}}; export default {fetch:GET};`,resolveDir:fileURLToPath(new URL('../',import.meta.url)),loader:'ts'},bundle:true,write:false,format:'esm',platform:'browser',external:['cloudflare:workers']});
  const mf=new Miniflare({modules:true,script:compiled.outputFiles[0].text,compatibilityDate:'2026-05-22',d1Databases:['DB']});t.after(()=>mf.dispose());
  const db=await mf.getD1Database('DB');
  for(const sql of readFileSync(new URL('../drizzle/0022_duty_free_exchange.sql',import.meta.url),'utf8').split('--> statement-breakpoint'))if(sql.trim())await db.prepare(sql).run();
  for(const sql of readFileSync(new URL('../drizzle/0024_duty_free_exchange_daily.sql',import.meta.url),'utf8').split('--> statement-breakpoint'))if(sql.trim())await db.prepare(sql).run();
- const at=new Date();let calls=0;
+ const at=new Date(clock);let calls=0;
  const results=await collectDutyFreeExchange(db,{now:()=>at,fetchImpl:async url=>{calls++;return html(url===dutyFreeSources.shilla?shilla():ssg());}});
  assert.ok(results.every(result=>result.status==='SUCCESS'));assert.equal(calls,1);
  const response=await mf.dispatchFetch('http://localhost/api/live/duty-free-exchange');assert.equal(response.status,200);
  const snapshot=await response.json();assert.equal(snapshot.collectionMode,'AUTOMATED');assert.equal(snapshot.sources.length,1);
- assert.deepEqual(dutyFreePresentation(snapshot,Date.now()).map(row=>row.krwPerUnit),[1343.4]);
- assert.equal(response.headers.get('cache-control'),'public, max-age=60, s-maxage=300');
+ assert.deepEqual(dutyFreePresentation(snapshot,clock).map(row=>row.krwPerUnit),[1343.4]);
+ assert.equal(response.headers.get('cache-control'),expectedCache);
  await mf.dispatchFetch('http://localhost/api/live/duty-free-exchange?x=ignored');assert.equal(calls,1);
 });
 

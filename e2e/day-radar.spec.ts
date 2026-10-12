@@ -28,10 +28,10 @@ const HISTORY = [7, 14, 21, 28].map((back, index) => {
   HISTORY.push({ T1: terminalDay(profile, 'T1'), T2: terminalDay(profile, 'T2') });
 }
 
-async function open(page: Page, { lang = 'ko', width = 390, history = HISTORY as unknown[] | null, truncated = false } = {}) {
+async function open(page: Page, { lang = 'ko', width = 390, history = HISTORY as unknown[] | null, truncated = false, selected = false } = {}) {
   await page.setViewportSize({ width, height: 900 });
   await page.addInitScript((stored) => localStorage.setItem('koretail-business-v1', stored), JSON.stringify({ version: 1, place: 'airport', terminal: 'T2', side: null, hours: null }));
-  const summary = { ...SUMMARY_FIXTURE, airport: { ...SUMMARY_FIXTURE.airport, sides: airportSides(DATE, 'TODAY', [], TODAY_ROWS, [], false, false) } };
+  const summary = { ...SUMMARY_FIXTURE, dayRelation:selected?'PAST':'TODAY', airport: { ...SUMMARY_FIXTURE.airport, sides: airportSides(DATE, 'TODAY', [], TODAY_ROWS, [], false, false) } };
   await page.route('**/api/live/summary*', routeSummary(summary));
   await page.route('**/api/live/usual*', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
   const requests: string[] = [];
@@ -80,10 +80,25 @@ test('days like today: numbers, not a similarity score, and the table opens', as
   await expect(section.getByTestId('similar-scope')).toContainText('같은 요일만 고른 것은 아닙니다');
   await expect(similar.first()).not.toContainText('두드러진 차이 없음');
   await expect(similar.first().locator('.similar-highlights > li')).toHaveCount(3);
+  await expect(similar.first()).toContainText('차이 0편');
+  await expect(similar.first()).toContainText('차이 0%p');
+  await expect(similar.first()).toContainText('일본행 · 확인 지역 기준: 오늘 83.3% · 그날 83.3%');
   await similar.first().getByTestId('similar-open').click();
   await expect(similar.first()).toContainText('그날 기록에서 가장 많은 출발 시간대: 09–10시 20편');
   await expect(similar.first().getByTestId('similar-table')).toBeVisible();
   await expect(similar.first().getByTestId('similar-hours')).toBeVisible();
+});
+
+test('desktop similar calendar stays beside its date and selected-day facts remain explicit',async({page})=>{
+  const {section}=await open(page,{width:1440,selected:true});
+  const card=section.getByTestId('similar-days').locator(':scope > li').first();
+  await expect(card).toContainText('선택일 36편');
+  await expect(card.locator('.similar-highlights')).not.toContainText('오늘');
+  const icon=(await card.locator('.similar-calendar').boundingBox())!;
+  const date=(await card.locator('.similar-date > strong').boundingBox())!;
+  expect(icon.width).toBe(44);
+  expect(date.x-icon.x-icon.width).toBeLessThanOrEqual(9);
+  await card.screenshot({path:'test-results/similar-card-desktop.png'});
 });
 
 test('no stored history: says so, never "about usual"', async ({ page }) => {
