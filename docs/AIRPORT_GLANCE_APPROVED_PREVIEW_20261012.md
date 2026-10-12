@@ -81,3 +81,20 @@ Evidence is under docs/screenshots/airport-glance-compact-20261012: before-88598
 Scoped verification: 3 language cases and the synchronized future-window/detail disclosure case passed; the four viewport cases initially found an ambiguous keyboard test selector after adding the counting-basis disclosure. The selector now explicitly targets the existing airport concept disclosure, preserving the keyboard assertion, and those four viewport cases were rerun. No full manual suite, data changes or deployment.
 
 Final result: all 8 scoped browser cases pass (4 viewport cases after selector correction, 3 languages and future-window case). Typecheck/native build pass; scoped lint zero errors, two existing static-image advisories.
+
+
+## 2026-10-12 black overlay text and full PC/mobile completion captures
+
+User requested black text for every label inside the airport image, especially wait readings and observation time, on PC and mobile. Scoped CSS now sets airport-overlay text to #000. Inactive-terminal overlay opacity is also kept at 1 so text does not fade back to gray when selecting T1/T2. No size, font, position, airport asset, outside decoration/chart state color, calculation or global navigation change.
+
+Verification: 4 affected Playwright cases passed: 360/390/1440 layout and every overlay text node's computed black color, terminal-switch opacity/color, keyboard disclosure, plus synchronized future hours/terminal/past-date behavior. The initial attempt had connection-refused errors because the local dev server had ended; after starting it, all four passed. Scoped ESLint and diff checks passed. Existing calculation suites were not rerun; automatic mandatory CI remains intact.
+
+An additional actual-response browser capture verified all three widths, exact two Korean headings, visible decoded flags, day/previous-month comparison, matching start/end in both future cards at 1/3/6 hours, no horizontal overflow and no page errors. At 390 and 1440, each overlay's measured position/width/height/font sizes equals the prior ed4a8728 measurements. Both complete page images were visually reviewed.
+
+Deliverables (entire page, not a cropped section):
+- docs/screenshots/airport-glance-black-text-20261012/airport-glance-pc-1440.png
+- docs/screenshots/airport-glance-black-text-20261012/airport-glance-mobile-390.png
+- docs/screenshots/airport-glance-black-text-20261012/airport-glance-mobile-360.png
+- verification.json in that folder records source time, geometry, colors, periods, flags and errors.
+
+Limits: these are local Chrome responsive viewport checks using the saved actual response at 2026-10-12 15:43:09 KST, not a fresh live-data capture or physical-device Safari test. No new performance-score claim or full-suite manual rerun. No merge/deployment; conditional navigation checklist remains deferred, with PC store navigation preserved.

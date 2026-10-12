@@ -50,3 +50,6 @@ body:has(.glance-preview){background:#e9eef1}
 .glance-future-leaders{margin:6px 0}.glance-future-leaders>div{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:3px 0}.glance-future-leaders strong{font-size:14px;font-weight:600}.glance-future article>.glance-window-note{font-size:10px;color:#53616e}.glance-future .glance-future-cards{margin-top:4px}.glance-future>p{font-size:10px;color:#53616e;margin-top:6px}.glance-future details>small{display:block;color:#53616e;font-size:10px}
 
 .glance-future-leaders li>strong:first-child{text-align:left}
+
+/* All airport-image label text stays black, including waits and observation times. */
+.glance-preview .glance-building,.glance-preview .glance-building :is(h2,span,dt,dd,small){color:#000}.glance-preview .glance-building[data-selected=false]{opacity:1}
