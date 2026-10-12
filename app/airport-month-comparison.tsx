@@ -15,9 +15,7 @@ export function AirportMonthComparison({ current, previous, currentLabel, previo
       return <g key={index} data-value={value}>
         <text x="24" y={17+index*52} fill="#000" fontSize="12">{index ? currentLabel : previousLabel}</text>
         <text x="336" y={17+index*52} textAnchor="end" fill="#000" fontSize="14" fontWeight="700">{Math.round(value).toLocaleString(numberLocale)}{unit}</text>
-        {w > 0 && <><rect x="24" y={y+2} width={w} height="16" rx="8" fill="#a6c5ce"/>
-          <rect x="24" y={y} width={w} height="16" rx="8" fill={index ? '#b6d8d0' : '#b7ddea'}/>
-          {w >= 16 && <path d={`M32 ${y+3} H${24+w-8}`} stroke="#fff" strokeOpacity=".8" strokeWidth="2" strokeLinecap="round"/>}</>}
+        {w > 0 && <rect x="24" y={y} width={w} height="16" rx="2" fill={index ? '#7194b8' : '#43617f'}/>}
       </g>;
     })}
     <text x="24" y="112" fill="#000" fontSize="12">0</text>

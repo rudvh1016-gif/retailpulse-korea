@@ -39,7 +39,7 @@ for (const lang of ['ko', 'en', 'zh', 'ja']) for (const state of ['PARTIAL', 'UN
   });
 }
 
-test('hourly prisms use published values and the black keyboard tooltip', async ({ page }) => {
+test('hourly columns retain exact values, black tooltips and ink axes', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
   await page.goto('/en/airport');
@@ -51,7 +51,7 @@ test('hourly prisms use published values and the black keyboard tooltip', async 
   await figure.locator('.airport-flow-band').first().focus();
   await expect(figure.locator('.airport-flow-tip')).toBeVisible();
   expect(await figure.locator('.airport-flow-tip text').first().evaluate(el => getComputedStyle(el).fill)).toBe('rgb(0, 0, 0)');
-  expect(await figure.locator('.airport-flow-hours text').first().evaluate(el => getComputedStyle(el).fill)).toBe('rgb(0, 0, 0)');
+  expect(await figure.locator('.airport-flow-hours text').first().evaluate(el => getComputedStyle(el).fill)).toBe('rgb(36, 62, 85)');
   await page.setViewportSize({ width: 390, height: 844 });
   await figure.screenshot({ path: 'test-results/approved-A-390.png' });
 });
