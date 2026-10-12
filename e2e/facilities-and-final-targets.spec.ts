@@ -1,7 +1,6 @@
 import {test,expect} from '@playwright/test';
 import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
 import {mapCopy} from '../lib/airport-departure-map-copy';
-import {tofuCharacters} from './font-glyphs';
 
 const date='2026-08-31';
 const flights=[['WEST239','T2','239'],['CENTER250','T2','250'],['EAST274','T2','274'],['UNKNOWN','T2',null],['CONCOURSE110','CONCOURSE','110']].map(([id,terminal,gate])=>({physicalFlightId:id,flightNumber:id,terminal,gate,airportCode:'NRT',airlineCode:'KE',direction:'departure',checkinCounter:'A B C D',status:'SCHEDULED',scheduledAt:`${date}T14:30:00+09:00`,retrievedAt:SUMMARY_FIXTURE.generatedAt}));
@@ -31,22 +30,21 @@ for(const lang of ['ko','en','zh','ja'] as const) for(const width of [360,390,43
   if(lang==='ko'&&width===390)await page.locator('.flight-board').screenshot({path:info.outputPath('flight-zones-390.png')});
   await page.locator('.airport-context-nav button').nth(3).click();await expect(page.getByTestId('airport-parking-guide')).toHaveCount(0);await expect(page.locator('a[href="https://www.airport.kr/ap_ko/955/subview.do"]')).toHaveCount(0);
   await page.goto(`/${lang}/myeongdong`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
-  const guide=page.getByTestId('seoul-facility-guide'),toilets=guide.getByTestId('seoul-toilets');
-  await expect(toilets).not.toHaveAttribute('open');await toilets.locator(':scope > summary').focus();await page.keyboard.press('Enter');await expect(toilets.locator('.facility-toilet-rows>li')).toHaveCount(10);
-  await expect(toilets).toContainText('2026-10-09');await toilets.locator('.facility-search input').fill('중구문화원');await expect(toilets.locator('.facility-toilet-rows>li')).toHaveCount(1);
-  await toilets.locator('.facility-toilet-rows summary').click();await expect(toilets).toContainText('37.56752138, 126.98652685');
-  await toilets.locator('.facility-search input').fill('NO-MATCH');await expect(toilets.locator('.facility-toilet-rows>li')).toHaveCount(0);
-  await toilets.locator('.facility-search input').fill('');await toilets.getByRole('button').click();await expect(toilets.locator('.facility-toilet-rows>li')).toHaveCount(30);
-  const locker=guide.getByTestId('seoul-lockers');await locker.locator(':scope > summary').click();await expect(locker.getByRole('link')).toHaveAttribute('href',/OA-22731/);
+  await expect(page.getByTestId('seoul-facility-guide')).toHaveCount(0);
+  await expect(page.locator('#live-signals-title')).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
-  if(lang==='ko'&&width===390){expect(await tofuCharacters(guide)).toEqual([]);await guide.screenshot({path:info.outputPath('seoul-facilities-390.png')});}
   expect(errors).toEqual([]);
  });
 }
 
-test('toilet failure is explicit and the list request stays lazy',async({page})=>{
+test('Seoul facility removal preserves demand signals without requesting facility data',async({page})=>{
  let calls=0;await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));await page.route('**/data/seoul-toilets/*',route=>{calls++;return route.fulfill({status:503,json:{}});});
- await page.goto('/ko/myeongdong');const guide=page.getByTestId('seoul-toilets');await expect(guide).toBeVisible();expect(calls).toBe(0);await guide.locator(':scope>summary').click();await expect(guide).toContainText('목록을 불러오지 못했습니다');expect(calls).toBe(1);await expect(guide.locator('.facility-toilet-rows')).toHaveCount(0);await expect(guide.getByRole('link')).toBeVisible();
+ for(const area of ['myeongdong','hongdae','seongsu','itaewon']){
+  await page.goto(`/ko/${area}`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+  await expect(page.getByTestId('seoul-facility-guide')).toHaveCount(0);await expect(page.getByTestId('seoul-toilets')).toHaveCount(0);await expect(page.getByTestId('seoul-lockers')).toHaveCount(0);
+  await expect(page.locator('#live-signals-title')).toHaveText('오늘 수요를 움직이는 신호');
+ }
+ expect(calls).toBe(0);
 });
 
 test('business retains operational preparation and removes the NEXT promotion',async({page})=>{

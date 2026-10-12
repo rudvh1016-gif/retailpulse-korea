@@ -26,6 +26,8 @@
 .airport-month-airline-name {min-width:0;overflow-wrap:anywhere;font-weight:var(--weight-regular);}
 .airport-month-flights :is(button,select,summary,a):focus-visible {outline:2px solid #56766b;outline-offset:3px;}
 .airport-country-changes {margin-block:16px;}
+.airport-country-toggle {display:block;min-height:44px;padding:8px 0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer;}
+.airport-country-toggle:focus-visible {outline:2px solid currentColor;outline-offset:3px;}
 .airport-country-changes h4,.airport-country-changes h5 {font:inherit;font-weight:var(--weight-strong);margin:0;}
 .airport-country-changes>p {margin-block:6px;}
 .airport-country-changes ul {list-style:none;padding:0;margin:8px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:0 24px;}

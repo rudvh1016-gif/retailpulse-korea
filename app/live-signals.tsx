@@ -10,7 +10,6 @@ import { CountUpNumber } from "./count-up-number";
 import { passengerReferenceSum } from "../lib/passenger-reference-sum";
 import { usableComparison, validPopulationRange, kstStamp, kstDay, peopleRange, populationFlow } from "../lib/demand-presentation";
 import { pc } from '../lib/personal-copy';
-import { SeoulFacilityGuide } from "./facility-guide";
 
 import { SeoulContextCard, SeoulObservationScene, contextText } from "./operational-context";
 import type { SeoulContext } from "../lib/seoul-context";
@@ -2440,7 +2439,6 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     <section className="live-signals" aria-labelledby="live-signals-title">
       <AreaDemandCard summary={summary} area={area} lang={lang}/>
       <SeoulFlowModels summary={summary} area={area} lang={lang}/>
-      <SeoulFacilityGuide area={area} lang={lang}/>
       <div className="section-head">
         <div>
           <p className="eyebrow">{text.eyebrow}</p>
