@@ -3,6 +3,7 @@ import {useMemo, useState} from 'react';
 import type {MapFlight} from '../lib/airport-departure-map';
 import {flightLine, mapCopy, statusText} from '../lib/airport-departure-map-copy';
 import type {Lang} from './retailpulse-data';
+import {domesticDestinationLabel,domesticFlightKind,domesticTransitGuide,domesticTransitLabel} from '../lib/airport-domestic-labels';
 
 const copy = {
   ko: {open:'항공편 보기', search:'편명·목적지·게이트 검색', empty:'일치하는 항공편이 없습니다.', more:'더 보기', less:'접기', unknown:'미정'},
@@ -17,17 +18,18 @@ function HourFlights({flights, lang, testId}: {flights: readonly MapFlight[]; la
   const c = copy[lang];
   return <>
     <ul className="airport-flight-rows" data-testid={testId}>
-      {flights.slice(0, visible).map(flight => <li key={`${flight.day}:${flight.id}`} data-group={flight.group}>
+      {flights.slice(0, visible).map(flight => {const domestic=domesticFlightKind(flight);return <li key={`${flight.day}:${flight.id}`} data-group={flight.group}>
         <details className="airport-flight-row">
           <summary>
             <span className="airport-flight-time">{flight.scheduledAt.slice(11,16)} KST</span>
             <span>{flight.flightNumber}</span>
-            <span>{lang === 'ko' ? flight.destinationCode ?? c.unknown : flight.destination?.en ?? flight.destinationCode ?? c.unknown}</span>
+            <span>{lang === 'ko' ? (domestic?flight.destination?.name:flight.destinationCode) ?? flight.destinationCode ?? c.unknown : flight.destination?.en ?? flight.destinationCode ?? c.unknown}{domestic&&<small> · {domestic==='transit'?domesticTransitLabel(lang):domesticDestinationLabel(lang)}</small>}</span>
             <span>{flight.gate ?? c.unknown} · {mapCopy.side[flight.side][lang]}</span>
           </summary>
           <p className="prep-note">{flightLine(flight, lang)} · {statusText(flight.status, lang)} · {flight.building}</p>
+          {domestic==='transit'&&<p className="prep-note"><a href={domesticTransitGuide} target="_blank" rel="noopener noreferrer">{({ko:'국제선 연결 전용 · 국내 구간만 이용 불가 · 대한항공 안내',en:'International connections only · no standalone domestic travel · Korean Air guide',zh:'仅限国际航班中转 · 不可单独乘坐国内段 · 大韩航空说明',ja:'国際線乗り継ぎ専用・国内区間のみの利用不可・大韓航空案内'})[lang]}</a></p>}
         </details>
-      </li>)}
+      </li>;})}
     </ul>
     {visible < flights.length && <button type="button" className="airport-flight-more" onClick={() => setVisible(n => n + 20)}>{c.more} ({Math.min(20, flights.length-visible)})</button>}
     {visible > 20 && <button type="button" className="airport-flight-more" onClick={event => {
@@ -53,7 +55,7 @@ export function AirportFlightBrowser({flights, lang, testId}: {flights: readonly
     const needle = query.trim().toLocaleUpperCase();
     const hours = new Map<string, MapFlight[]>();
     for (const flight of flights) {
-      if (needle && !`${flight.flightNumber} ${flight.destinationCode ?? ''} ${flight.destination?.en ?? ''} ${flight.gate ?? ''} ${mapCopy.side[flight.side][lang]}`.toLocaleUpperCase().includes(needle)) continue;
+      if (needle && !`${flight.flightNumber} ${flight.destinationCode ?? ''} ${flight.destination?.name ?? ''} ${flight.destination?.iata ?? ''} ${flight.destination?.en ?? ''} ${flight.gate ?? ''} ${mapCopy.side[flight.side][lang]}`.toLocaleUpperCase().includes(needle)) continue;
       const hour = flight.scheduledAt.slice(0,13);
       hours.set(hour, [...(hours.get(hour) ?? []), flight]);
     }

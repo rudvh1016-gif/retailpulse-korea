@@ -31,7 +31,7 @@ test('the other tabs never load the airport screen',async({page})=>{
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
  await page.goto('/ko/myeongdong');
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
- for(const href of ['/ko/business','/ko/where-to']){
+ for(const href of ['/ko/where-to','/ko/consumption']){
   const tab=page.locator(`.bottom-nav a[href="${href}"]`);
   await tab.hover();await tab.click();await expect(page).toHaveURL(new RegExp(`${href}$`));
  }

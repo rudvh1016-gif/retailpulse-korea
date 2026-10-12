@@ -1,7 +1,7 @@
 {
   "base": "65907c971b5e279da48525875df6c972ab998c64",
   "protectedFiles": {
-    "app/[locale]/[slug]/page.tsx": "02bc92efc2116e7251b72ba1216acb3e00de244dbf4d15aecd2cc2c9cef86ab0",
+    "app/[locale]/[slug]/page.tsx": "667064f5cf0bbf2678960f6544db58a78f20e3fcf4de8fc3042f6465ef439654",
     "app/[locale]/not-found.tsx": "620e62c747a4a0d4b8af1558492c74e961f2a4f0d55caa2c960c508395a41ff0",
     "app/[locale]/page.tsx": "091f9054d32209a82b862d6497c7502f6d1e788f1fa09aab835f4cfd8062a535",
     "app/[locale]/tourism-desk/[area]/page.tsx": "b74c40a03d7ff4ec57a8314f4c11825467212d48634bebf057d078d3ae360b35",
@@ -16,20 +16,20 @@
     "app/api/live/summary/route.ts": "96727d7ade580d6a59fa3bcd438a242dae54316060ea259c7d74de40dfee1f3e",
     "app/area-demand-card.tsx": "8209a5fda381f6cf529b8635918e99ed158e6d7864280483083510ea16ba2be5",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
-    "app/globals.css": "5fa7a470a6dcce6cbc819951b4dea3da4305fac55db4bd424ce78c4121b1d62b",
+    "app/globals.css": "91bb08d182fadf62a71190527138522e5614b5a7cf4c12041466e2d76f93a8ae",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
     "app/layout.tsx": "c4c2506c841712a9b8a46c98f99fdea167df8f32e69cdb39f5a612874d600119",
-    "app/live-signals.tsx": "f0ddb03df122fd1dfc79113f891077b6860c2b664e8dc9194cf6df847b76ec4a",
+    "app/live-signals.tsx": "51ca13c3a277ebdc9785194debd98c15684db04c5e8900726d7b12b1a5faada2",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "267d35994bf3af162be5b06f531ae58271c6f084d0f82bfeb909874a575b3598",
-    "app/retailpulse-data.ts": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
+    "app/retailpulse-app.tsx": "cf6bc5216fc65c91677419cdccdd3147c46a2e7ee5571790068b593ae7a9e971",
+    "app/retailpulse-data.ts": "2a965cde02012978eb446a955b82bbcbfbec83f74f862e0e2846fae1ca348ecd",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
-    "app/seo-config.ts": "5b91fc95b4a6151e6cd53251cc4b34739b10256471759da01dc52c35b390779a",
+    "app/seo-config.ts": "a599d41c426c33c6b923f6386e4740516fd785d8308c3246293aefcfd9e73f68",
     "app/site-usage-guide.tsx": "4b49e1bd31a91e35f7d0b56b6d1670d94cf644bcc47bcb257508a2a0f6cc64f1",
     "app/sitemap.ts": "ab2329b032b269477ffad4b69258004b1b577b323735eccbf92518cbec258880",
     "app/source-status.tsx": "a4832ec2982ec76631341f8a8aea477d98dd45128234ca7f6ee1002ea16196dd",
@@ -1475,6 +1475,46 @@
     "protectedPathCount": 65,
     "approvalEvidenceFile": "docs/approvals/airport-split-perf-20261011.json"
   },
+  "officialMonthlyHistory20261012": {
+    "ownerRequest": "공식 월별 여객 실적 8·9월 미갱신 원인 확인, 확실하면 수정. 공식 터미널 집계를 그대로 유지하고 탑승동별 추정 분할 금지.",
+    "changed": [
+      {
+        "file": "app/retailpulse-data.ts",
+        "before": "e2430431292bacee6d8a63ce3f7307437add145b4495377125f6aac811f98ac5",
+        "approved": "2a965cde02012978eb446a955b82bbcbfbec83f74f862e0e2846fae1ca348ecd"
+      }
+    ],
+    "approvalEvidenceFile": "docs/approvals/daily-country-context-20261012.json",
+    "reason": "Owner explicitly requested correcting verified missing months. Only the two published data rows change. All protected paths, prior approvals and active lock checks remain."
+  },
+  "approvedReleaseNavigation20261012": {
+    "ownerRequest": "응응 병합해줘 반영해",
+    "scope": "Approved airport glance publication, final desktop/mobile navigation and necessary locale/SEO/shared-shell wiring. Desktop store retained, mobile store available in More. No font redesign, providers, collectors, permissions or cost changes.",
+    "changed": [
+      {
+        "file": "app/[locale]/[slug]/page.tsx",
+        "before": "02bc92efc2116e7251b72ba1216acb3e00de244dbf4d15aecd2cc2c9cef86ab0",
+        "approved": "667064f5cf0bbf2678960f6544db58a78f20e3fcf4de8fc3042f6465ef439654"
+      },
+      {
+        "file": "app/globals.css",
+        "before": "5fa7a470a6dcce6cbc819951b4dea3da4305fac55db4bd424ce78c4121b1d62b",
+        "approved": "91bb08d182fadf62a71190527138522e5614b5a7cf4c12041466e2d76f93a8ae"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "before": "c996907051a11a47a282a06b910cee756ccadb611edadce4eee1d83cde938d05",
+        "approved": "160166c6690eb5063bc265a89b53291211832fe30be9724546d9bb178d6f726b"
+      },
+      {
+        "file": "app/seo-config.ts",
+        "before": "5b91fc95b4a6151e6cd53251cc4b34739b10256471759da01dc52c35b390779a",
+        "approved": "a599d41c426c33c6b923f6386e4740516fd785d8308c3246293aefcfd9e73f68"
+      }
+    ],
+    "approvalEvidenceFile": "docs/approvals/approved-release-navigation-20261012.json",
+    "protectedPathCount": 65
+  },
   "ownerApprovedAirportIntentPreload20261012": {
     "recordedAt": "2026-10-12T02:39:03.723Z",
     "authorizationEvidence": {
@@ -1504,5 +1544,36 @@
     ],
     "protectedPathCount": 65,
     "approvalEvidenceFile": "docs/approvals/airport-intent-preload-20261012.json"
+  },
+  "ownerApprovedAirportIntentPreloadOnReleaseMain20261012": {
+    "recordedAt": "2026-10-12T21:47:38.002Z",
+    "authorizationEvidence": {
+      "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+      "ownerTaskRequest": "PR #346을 현재 main 기준으로 업데이트해. dot이 맡은 공항 한눈에·디자인·메뉴·배포 작업은 건드리지 마. 기존 미리 받기 기능이 새 메뉴에서도 동작하는지 확인하고 … 이번에는 병합·배포하지 마.",
+      "approvalQuestion": "PR #346 업데이트에 보호 파일 app/retailpulse-app.tsx 승인이 필요합니다.\n\n① 현재 main 기준 재적용(필수): 이미 승인된 공항 미리 받기를 새 메뉴의 '공항' 항목과 로고에 똑같이 다시 붙입니다(+21/−5, 이전과 같은 4곳). 메뉴 항목·순서·문구·디자인은 main 그대로이고, 잠금 해시를 다시 기록하고 승인 기록 1건을 남깁니다. 이 승인이 없으면 병합 충돌 해결분을 커밋할 수 없습니다.\n\n② 공항 한눈에 미리 받기(새 개선 1건): '공항 한눈에' 메뉴 항목에도 같은 방식으로 터치·마우스 올림·초점 때 화면 코드를 먼저 받기 시작합니다(+4/−1, 상단·하단 메뉴 항목의 이벤트만 추가). 메뉴 모양·문구·순서와 공항 한눈에 화면·그림은 바꾸지 않습니다.\n  · 측정(모바일 390px, CPU 4배 감속, 1.6Mbps, 0.1초 터치, 7회 중앙값): 서울→공항 한눈에 화면 표시 0.81 → 0.57초, 큰 그림 표시 2.74 → 2.54초. 전송량은 415KB로 같습니다.\n  · 추가 전송량: 손대지 않은 방문자는 0, 손만 대고 이동하지 않은 경우 약 40KB입니다.\n\n참고: 공항 한눈에의 남은 대기는 대부분 큰 그림 357KB(휴대폰에서 1448px 그림이 선택됨) 때문입니다. dot 담당이라 손대지 않고 제안만 하겠습니다.",
+      "ownerRequest": "①② 모두 승인 (권장)",
+      "approvedItem": "① 현재 main 기준 재적용",
+      "originalApproval": "ownerApprovedAirportIntentPreload20261012",
+      "scope": "Re-apply the already approved intent preload unchanged onto the released navigation: the on-demand loader and direct render, the KORETAIL logo button and the 'airport' item of the desktop and mobile menus. Main's menu items, order, labels, classes and aria attributes are kept exactly; no other line changes.",
+      "approvedProtectedFiles": [
+        "app/retailpulse-app.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": false
+    },
+    "reason": "PR #346 conflicted with the approved release navigation (#354). This records the same approved change on the new base; it does not relax or skip any test.",
+    "comparisonBase": "754ce4bda01de1589f275f1956dcac2b67162d40",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "160166c6690eb5063bc265a89b53291211832fe30be9724546d9bb178d6f726b",
+        "approved": "cf6bc5216fc65c91677419cdccdd3147c46a2e7ee5571790068b593ae7a9e971",
+        "addedLines": 21,
+        "deletedLines": 5,
+        "exactUnifiedDiff": "diff --git a/app/retailpulse-app.tsx b/app/retailpulse-app.tsx\nindex 80580d9..64a5918 100644\n--- a/app/retailpulse-app.tsx\n+++ b/app/retailpulse-app.tsx\n@@ -12,8 +12,20 @@ const TourismDeskView=dynamic(()=>import('./tourism-desk').then(module=>module.T\n const PredictionEvidence=dynamic(()=>import('./prediction-evidence').then(module=>module.PredictionEvidence));\n const BusinessPrep=dynamic(()=>import('./business-prep').then(module=>module.BusinessPrep));\n // The airport routes pass AirportView in from their server pages (see RetailPulseProps);\n-// this import is only reached when a Seoul route switches to the airport tab.\n-const LazyAirportView=dynamic(()=>import('./airport-view').then(module=>module.AirportView));\n+// on a Seoul route the airport code loads only when the airport is reached for.\n+let airportViewModule: typeof import('./airport-view') | undefined;\n+const loadAirportView=()=>import('./airport-view').then(module=>(airportViewModule=module));\n+const LazyAirportView=dynamic(()=>loadAirportView().then(module=>module.AirportView));\n+// Pointing at, touching or focusing a way to the airport starts that same load,\n+// so the tap does not wait for it. Visitors who never reach for it load nothing.\n+const prepareAirportView=()=>{loadAirportView().catch(()=>{});};\n+/** Once the airport code has arrived it renders directly: a component that\n+ * suspends first would hold the finished screen back by React's reveal delay.\n+ * The choice is fixed for the visit, so a mounted view never swaps components. */\n+function OnDemandAirportView(props: ComponentProps<typeof AirportViewComponent>) {\n+  const [Loaded] = useState(() => airportViewModule?.AirportView);\n+  return Loaded ? <Loaded {...props} /> : <LazyAirportView {...props} />;\n+}\n import { recordText } from './monthly-records-copy';\n import { activeSourceCatalog,sourceName,sourceUse,CollectionStatus } from \"./source-status\";\n \n@@ -257,8 +269,10 @@ function routeFor(lang: Lang, view: View, area: AreaId) {\n   return `${base}/${view}`;\n }\n \n-export default function Home({ initialLang = \"ko\", initialView = \"today\", initialArea = \"myeongdong\", initialRoute = false, initialScope = \"home\", todayAnswer = null, AirportView = LazyAirportView }: RetailPulseProps = {}) {\n+export default function Home({ initialLang = \"ko\", initialView = \"today\", initialArea = \"myeongdong\", initialRoute = false, initialScope = \"home\", todayAnswer = null, AirportView = OnDemandAirportView }: RetailPulseProps = {}) {\n   const bottomNavigationRef = useBottomNavigationViewport();\n+  // Airport routes already carry the airport code; only the on-demand copy needs preparing.\n+  const prepareAirport = AirportView === OnDemandAirportView ? prepareAirportView : undefined;\n   const [lang, setLang] = useState<Lang>(initialLang);\n   const [view, setView] = useState<View>(initialView);\n   const [homeVisible, setHomeVisible] = useState(initialScope === \"airport-home\" || (initialScope === \"home\" && initialView === \"today\"));\n@@ -422,12 +436,12 @@ export default function Home({ initialLang = \"ko\", initialView = \"today\", initia\n     <div className={\"app lang-\" + lang} data-hydrated={preferencesReady ? \"true\" : \"false\"}>\n       <div className=\"site-header\">\n       <header className=\"topbar\">\n-        <button className=\"brand brand-button\" onClick={() => goHome()} aria-label=\"KORETAIL home\">\n+        <button className=\"brand brand-button\" onClick={() => goHome()} onPointerEnter={prepareAirport} onFocus={prepareAirport} aria-label=\"KORETAIL home\">\n           <span>KORETAIL</span><span className=\"brand-descriptor\">Retail Demand Signals for Korea</span>\n         </button>\n         <nav className=\"top-nav\" aria-label=\"Primary\">\n           {([\"airport-glance\", \"airport\", \"where-to\", \"today\", \"consumption\", \"business\", \"more\"] as View[]).map((item) => (\n-            <a key={item} href={routeFor(lang, item, selected)} className={view === item || (item === \"more\" && [\"tourism-desk\",\"forecast\",\"about\"].includes(view)) ? \"active\" : \"\"} onClick={(event) => { event.preventDefault(); navigate(item); }} aria-current={view === item ? \"page\" : item === \"more\" && [\"tourism-desk\",\"forecast\",\"about\"].includes(view) ? \"location\" : undefined}>{navLabel(item)}</a>\n+            <a key={item} href={routeFor(lang, item, selected)} className={view === item || (item === \"more\" && [\"tourism-desk\",\"forecast\",\"about\"].includes(view)) ? \"active\" : \"\"} onClick={(event) => { event.preventDefault(); navigate(item); }} onPointerEnter={item === \"airport\" ? prepareAirport : undefined} onFocus={item === \"airport\" ? prepareAirport : undefined} aria-current={view === item ? \"page\" : item === \"more\" && [\"tourism-desk\",\"forecast\",\"about\"].includes(view) ? \"location\" : undefined}>{navLabel(item)}</a>\n           ))}\n         </nav>\n         <div className=\"header-meta\">\n@@ -524,6 +538,8 @@ export default function Home({ initialLang = \"ko\", initialView = \"today\", initia\n             href={routeFor(lang, item, selected)}\n             className={(view === item || ([\"business\",\"tourism-desk\",\"forecast\",\"about\"].includes(view) && item === \"more\")) ? \"active\" : \"\"}\n             onClick={(event) => { event.preventDefault(); navigate(item); }}\n+            onPointerEnter={item === \"airport\" ? prepareAirport : undefined}\n+            onFocus={item === \"airport\" ? prepareAirport : undefined}\n             aria-current={view === item ? \"page\" : [\"business\",\"tourism-desk\",\"forecast\",\"about\"].includes(view) && item === \"more\" ? \"location\" : undefined}\n             aria-label={navLabel(item)}\n           >\n"
+      }
+    ],
+    "protectedPathCount": 65,
+    "approvalEvidenceFile": "docs/approvals/airport-intent-preload-release-main-20261012.json"
   }
 }

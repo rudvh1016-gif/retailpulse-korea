@@ -1,7 +1,6 @@
 "use client";
-import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { FLOW_HOURS, flowLayout, type FlowBand } from "../lib/airport-flow-geometry";
-import { REVEAL_MS, reducedMotion, tween } from "../lib/motion";
 import type { Lang } from "./retailpulse-data";
 import { airportModelScope } from '../lib/airport-model-scope';
 import { AirportSceneModel } from './airport-scene-model';
@@ -9,29 +8,7 @@ import { AirportSceneModel } from './airport-scene-model';
 // app/airport-departure-overview.tsx (always in the app bundle). Importing it
 // here too would break the node tests that load live-signals.tsx.
 
-/**
- * The hour-by-hour shape of the day's official forecast, drawn as the sky a
- * reader would see from the departure hall at dusk (the owner's reference
- * frames): pale blue grading to peach at the horizon, and the day's
- * passengers as a bank of white cloud along that horizon — one smooth curve
- * through the hourly bands. Hours already behind the reader are dense cloud,
- * hours ahead are translucent so the sky shows through; the peak is one warm
- * point; the present minute is a soft column of light with its time and a
- * dot on the cloud's edge. On the whole-airport view T1 is a denser cloud
- * inside the whole, so the strip above it is T2 (the whole is T1 + T2, band
- * for band). Pointing or touching anywhere reads that hour; every band is
- * also a keyboard stop.
- *
- * What it does not do: it draws only the bands the airport published, so a
- * gap in coverage is a gap in the curve; the curve never rises above or
- * falls below the two values it joins (monotone cubic); and the rule exists
- * only when the caller found a band containing the present minute, which it
- * does for TODAY alone.
- *
- * Motion: when the data arrives the curve draws itself, the area fills, then
- * the markers settle in and the present-minute dot sends out one ring. Readers
- * who asked for less motion see the finished figure at once.
- */
+/** Published hourly values as flat columns; gaps, terminal layers and keyboard readings stay exact. */
 const copy = {
   past: { ko: "지난 시간대", en: "Elapsed hours", zh: "已过时段", ja: "経過した時間帯" },
   ahead: { ko: "남은 시간대", en: "Hours ahead", zh: "剩余时段", ja: "残りの時間帯" },
@@ -40,16 +17,7 @@ const copy = {
   concept: { ko: "공항 그림은 개념 모형이며 막대 높이는 공식 예상 승객 수입니다.", en: "The airport image is conceptual; bar heights show official forecast passengers.", zh: "机场图像是概念模型；柱高表示官方预测旅客数。", ja: "空港の図は概念模型です。柱の高さは公式予測旅客数です。" },
 } as const;
 
-const finishColors = {
- elapsed: {front:['#4B6987','#43617F','#405D79'],side:['#3D5974','#38516B'],cap:['#D7DDE3','#CBD2DA']},
- ahead: {front:['#D2D8DF','#CBD2DA','#C6CDD5'],side:['#BAC3CD','#B3BDC8'],cap:['#EDF0F3','#DFE4E9']},
- now: {front:['#8DBCB0','#80B2A4','#76A798'],side:['#6B9A8C','#618D80'],cap:['#CDE2DA','#B9D8CC']},
- peak: {front:['#4B6987','#43617F','#405D79'],side:['#3D5974','#38516B'],cap:['#D7DDE3','#CBD2DA']},
- layer: {front:['#D2D8DF','#CBD2DA','#C6CDD5'],side:['#BAC3CD','#B3BDC8'],cap:['#EDF0F3','#DFE4E9']}
-} as const;
-const REVEAL_TOTAL_MS = REVEAL_MS * 2;
 const kstClock = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false });
-const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 /** Rough text width at 11px: CJK glyphs are square, Latin digits are narrow. */
 const textWidth = (text: string) => [...text].reduce((sum, ch) => sum + (ch > "⺀" ? 11 : /[0-9]/.test(ch) ? 6.4 : /[ ·–:]/.test(ch) ? 3.4 : 6.2), 0);
 
@@ -66,7 +34,6 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
   numberLocale: string;
   label: string;
 }) {
-  const id = useId().replace(/:/g, "");
   const figureRef = useRef<HTMLElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [width, setWidth] = useState(720);
@@ -83,45 +50,12 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
   const layout = useMemo(() => flowLayout({ timeline, layers, width, height, peakStartAt, nowBandStart, nowBandProgress }),
     [timeline, layers, width, height, peakStartAt, nowBandStart, nowBandProgress]);
 
-  // The curve's exact y at an x, read off the drawn path so dots sit on the
-  // curve itself rather than on a straight line between band centres.
-  const lineRefs = useRef<Array<SVGPathElement | null>>([]);
-  const pointOnCurve = useCallback((x: number): number | null => {
-    const index = layout.segments.findIndex((segment) => x >= segment.x0 - 0.01 && x <= segment.x1 + 0.01);
-    const path = index >= 0 ? lineRefs.current[index] : null;
-    if (!path) return null;
-    let lo = 0, hi = path.getTotalLength();
-    for (let step = 0; step < 24; step += 1) {
-      const mid = (lo + hi) / 2;
-      if (path.getPointAtLength(mid).x < x) lo = mid; else hi = mid;
-    }
-    return path.getPointAtLength((lo + hi) / 2).y;
-  }, [layout.segments]);
-
-  // The present-minute dot is rendered at its band's value and then snapped
-  // onto the drawn curve by hand, so no state changes after layout.
-  const nowDotRefs = useRef<Array<SVGCircleElement | SVGTextElement | null>>([]);
-  useLayoutEffect(() => {
-    if (!layout.now) return;
-    const onCurve = pointOnCurve(layout.now.x);
-    if (onCurve === null) return;
-    for (const element of nowDotRefs.current) {
-      if (!element) continue;
-      if (element instanceof SVGCircleElement) element.setAttribute("cy", String(onCurve));
-      else {
-        const nearPeak = layout.peak && Math.abs(layout.peak.x - layout.now.x) < 80 && Math.abs(layout.peak.y - onCurve) < 24;
-        const labelY = nearPeak ? (onCurve + 22 <= layout.base - 10 ? onCurve + 22 : onCurve - 30) : onCurve - 9;
-        element.setAttribute("y", String(labelY));
-      }
-    }
-  }, [layout, pointOnCurve]);
-
   const [hover, setHover] = useState<{ index: number; x: number; y: number } | null>(null);
   const hoverBand = useCallback((index: number) => {
     const band = layout.bands[index];
     if (!band) { setHover(null); return; }
-    setHover({ index, x: band.mid, y: pointOnCurve(band.mid) ?? layout.base });
-  }, [layout, pointOnCurve]);
+    setHover({ index, x: band.mid, y: layout.base-band.value/layout.maxBand*(layout.base-layout.top) });
+  }, [layout]);
   const onPointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
     const svg = svgRef.current;
     if (!svg) return;
@@ -131,38 +65,6 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
     if (index < 0) setHover(null); else if (index !== hover?.index) hoverBand(index);
   };
 
-  // Reveal once per data set. Inline styles are set and cleared by hand so a
-  // re-render (a resize, the clock moving the rule) never leaves a half-drawn
-  // curve behind, and reduced motion skips all of it.
-  const ringRef = useRef<SVGCircleElement | null>(null);
-  const signature = timeline.map((band) => `${band.targetStartAt}:${band.expectedPassengers}`).join("|");
-  useLayoutEffect(() => {
-    const svg = svgRef.current;
-    if (!svg || reducedMotion() || layout.segments.length === 0) return;
-    const lines = Array.from(svg.querySelectorAll<SVGPathElement>(".airport-flow-line"));
-    const areas = Array.from(svg.querySelectorAll<SVGPathElement>(".airport-flow-area"));
-    const marks = Array.from(svg.querySelectorAll<SVGGElement>(".airport-flow-mark"));
-    const ring = ringRef.current;
-    const lengths = lines.map((line) => line.getTotalLength());
-    const paint = (progress: number) => {
-      const draw = clamp01(progress / 0.6);
-      lines.forEach((line, index) => { line.style.strokeDasharray = `${lengths[index]}`; line.style.strokeDashoffset = `${lengths[index] * (1 - draw)}`; });
-      areas.forEach((area) => { area.style.opacity = String(draw); area.style.transform = `scaleY(${0.35 + 0.65 * draw})`; });
-      const settleIn = clamp01((progress - 0.55) / 0.35);
-      marks.forEach((mark) => { mark.style.opacity = String(settleIn); mark.style.transform = `translateY(${(1 - settleIn) * 8}px)`; });
-      if (ring) { const ringOut = clamp01((progress - 0.6) / 0.4); ring.style.opacity = String(0.55 * (1 - ringOut)); ring.setAttribute("r", String(5 + 16 * ringOut)); }
-    };
-    const settle = () => {
-      lines.forEach((line) => { line.style.strokeDasharray = ""; line.style.strokeDashoffset = ""; });
-      areas.forEach((element) => { element.style.opacity = ""; element.style.transform = ""; });
-      marks.forEach((mark) => { mark.style.opacity = ""; mark.style.transform = ""; });
-      if (ring) { ring.style.opacity = ""; ring.setAttribute("r", "5"); }
-    };
-    paint(0);
-    const cancel = tween(REVEAL_TOTAL_MS, paint, settle);
-    return () => { cancel(); settle(); };
-  }, [signature, layout.segments.length]);
-
   const numberFormat = useMemo(() => new Intl.NumberFormat(numberLocale), [numberLocale]);
   const clock = (iso: string) => kstClock.format(new Date(iso));
   const people = (value: number) => numberFormat.format(Math.round(value));
@@ -170,12 +72,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
   const { left, right, top, base } = layout;
   const clampX = (x: number, half: number) => Math.min(right - half, Math.max(left + half, x));
 
-  // The present-minute pill is centred on the rule and pulled inside the
-  // figure near either edge, so 23:59 does not hang off the right-hand side.
-  const pillWidth = textWidth(nowLabel) + 18;
-  const pillX = layout.now ? clampX(layout.now.x, pillWidth / 2) : 0;
   const nowBand = layout.now ? layout.bands[layout.now.index] : null;
-  const nowY = nowBand ? top + (1 - Math.min(1, nowBand.value / layout.maxBand)) * (base - top) : null;
 
   const peakText = layout.peak ? `${copy.peak[lang]} ${people(layout.peak.value)}` : "";
   const peakAnchor = layout.peak ? (layout.peak.x > right - 60 ? "end" : layout.peak.x < left + 60 ? "start" : "middle") : "middle";
@@ -199,65 +96,16 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
     <svg ref={svgRef} width="100%" height={height} viewBox={`0 0 ${width} ${height}`}
       data-day-left={left} data-day-width={right - left}
       onPointerMove={onPointerMove} onPointerLeave={() => setHover(null)} onPointerCancel={() => setHover(null)}>
-      <defs>
- {Object.entries(finishColors).map(([key,color])=><g key={key}>
-  <linearGradient id={`${id}satin-${key}-front`} x1="0" y1="0" x2="1" y2=".22"><stop stopColor={color.front[0]}/><stop offset=".25" stopColor={color.front[1]}/><stop offset="1" stopColor={color.front[2]}/></linearGradient>
-  <linearGradient id={`${id}satin-${key}-side`} x1="0" y1="0" x2="1" y2="1"><stop stopColor={color.side[0]}/><stop offset="1" stopColor={color.side[1]}/></linearGradient>
-  <linearGradient id={`${id}satin-${key}-cap`} x1="0" y1="0" x2="1" y2="1"><stop stopColor={color.cap[0]}/><stop offset="1" stopColor={color.cap[1]}/></linearGradient>
- </g>)}
-
-        <linearGradient id={`${id}sky`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" style={{ stopColor: "var(--sky-500)", stopOpacity: 0.62 }} />
-          <stop offset="0.42" style={{ stopColor: "var(--sky-200)", stopOpacity: 1 }} />
-          <stop offset="0.78" style={{ stopColor: "var(--cloud-200)", stopOpacity: 1 }} />
-          <stop offset="1" style={{ stopColor: "var(--cloud-400)", stopOpacity: 0.9 }} />
-        </linearGradient>
-        {layout.now && <clipPath id={`${id}past`}><rect x={left} y={0} width={Math.max(0, layout.now.x - left)} height={height} /></clipPath>}
-      </defs>
-      <rect className="airport-flow-sky" x={0} y={0} width={width} height={height} rx={20} fill={`url(#${id}sky)`} />
-
-      {/* Value gridlines, labelled at the right so they never collide with the curve's start. */}
-      <g className="airport-flow-grid">
-        {layout.grid.map((row) => <g key={row.value}>
-          <line x1={left} x2={right} y1={row.y} y2={row.y} />
-          <text x={right} y={row.y - 4} textAnchor="end">{people(row.value)}</text>
-        </g>)}
-        {layout.ticks.filter((tick) => tick.hour !== 0 && tick.hour !== 24).map((tick) => <line key={tick.hour} x1={tick.x} x2={tick.x} y1={top} y2={base} />)}
-      </g>
-
-      {/* The whole day, pale when a present minute splits it … */}
-      <g className={layout.now ? "airport-flow-ahead" : undefined}>
-        {layout.segments.map((segment, index) => <path key={`area-${index}`} className="airport-flow-area" d={segment.area}  />)}
-        {layout.segments.map((segment, index) => <path key={`glow-${index}`} className="airport-flow-edge" d={segment.line} />)}
-        {layout.segments.map((segment, index) => <path key={`line-${index}`} className="airport-flow-line" d={segment.line}
-          ref={(element) => { lineRefs.current[index] = element; }} />)}
-      </g>
-      {/* … and the hours already behind the reader in full colour on top. */}
-      {layout.now && <g className="airport-flow-past" clipPath={`url(#${id}past)`}>
-        {layout.segments.map((segment, index) => <path key={`past-area-${index}`} className="airport-flow-area" d={segment.area}  />)}
-        {layout.segments.map((segment, index) => <path key={`past-glow-${index}`} className="airport-flow-edge" d={segment.line} />)}
-        {layout.segments.map((segment, index) => <path key={`past-line-${index}`} className="airport-flow-line" d={segment.line} />)}
-      </g>}
-      {/* T1 as a denser cloud inside the whole: the strip above it is T2, because the whole is T1 + T2. */}
-      {layout.stacked && <g className={layout.now ? "airport-flow-ahead" : undefined}>
-        {layout.layers[0].segments.map((segment, index) => <path key={`stack-${index}`} className="airport-flow-area airport-flow-stack" d={segment.area} />)}
-      </g>}
-      {layout.stacked && layout.now && <g className="airport-flow-past" clipPath={`url(#${id}past)`}>
-        {layout.layers[0].segments.map((segment, index) => <path key={`past-stack-${index}`} className="airport-flow-area airport-flow-stack" d={segment.area} />)}
-      </g>}
-
       <g className="airport-hourly-prisms" aria-hidden="true" pointerEvents="none">
         {layout.bands.map((band, index) => {
           const barHeight = band.value / layout.maxBand * (base - top);
-          const x = band.x + band.width * .21, w = band.width * .5, depth = Math.min(1.5, band.width * .08);
+          const w = band.width * .64, x = band.mid-w/2;
           const y = base - barHeight;
-          const finish = band.now ? "now" : band.peak ? "peak" : layout.now && band.x >= layout.now.x ? "ahead" : "elapsed";
+          const finish = band.now ? "now" : layout.now && band.x >= layout.now.x ? "ahead" : "elapsed";
           const lower = layout.stacked ? layout.layers[0].values[index] / layout.maxBand * (base - top) : 0;
           return barHeight > 0 && <g key={band.start} data-start={band.start} data-value={band.value} data-height={barHeight} data-finish={finish}>
-            <rect x={x} y={y} width={w} height={barHeight} style={{fill:`url(#${id}satin-${finish}-front)`}}/>
-            {lower > 0 && <rect x={x} y={base - lower} width={w} height={lower} style={{fill:`url(#${id}satin-${band.now ? 'now-cap' : 'layer-front'})`}}/>}
-            <path d={`M${x+w},${y} l${depth},${-depth} v${barHeight} l${-depth},${depth} Z`} style={{fill:`url(#${id}satin-${finish}-side)`}}/>
-            <path d={`M${x},${y} h${w} l${depth},${-depth} h${-w} Z`} style={{fill:`url(#${id}satin-${finish}-cap)`}}/>
+            <rect x={x} y={y} width={w} height={barHeight} rx={Math.min(1.5,barHeight/2)} style={{fill:finish==='now'?'#80b2a4':finish==='ahead'?'#aec5d8':'#43617f'}}/>
+            {lower>0&&<rect x={x} y={base-lower} width={w} height={lower} style={{fill:band.now?'#b8d6ca':'#7194b2'}}/>}
           </g>;
         })}
       </g>
@@ -271,24 +119,15 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
         <text x={clampX(layout.peak.x, 0)} y={Math.max(top - 6, layout.peak.y - 12)} textAnchor={peakAnchor}>{peakText}</text>
       </g>}
       {layout.now && <g className="airport-flow-mark airport-flow-now-group">
-        <rect className="airport-flow-now-light" x={layout.now.x - 9} y={top - 16} width={18} height={base - top + 16} rx={9} />
         <line className="av-now airport-flow-now" x1={layout.now.x} x2={layout.now.x} y1={top - 14} y2={base} data-now-label={nowLabel} />
-        {nowY !== null && <>
-          <circle ref={(element) => { ringRef.current = element; nowDotRefs.current[0] = element; }} className="airport-flow-now-ring" cx={layout.now.x} cy={nowY} r={5} />
-          <circle ref={(element) => { nowDotRefs.current[1] = element; }} className="airport-flow-now-dot" cx={layout.now.x} cy={nowY} r={2} style={{fill:'#fff',stroke:'#43617F',strokeWidth:1}} />
-          {nowBand && !hover && <text ref={(element) => { nowDotRefs.current[2] = element; }} className="airport-flow-now-value" x={layout.now.x > right - 70 ? layout.now.x - 10 : layout.now.x + 10} y={nowY - 9}
-            textAnchor={layout.now.x > right - 70 ? "end" : "start"}>{people(nowBand.value)}{unit}</text>}
-        </>}
-        <g className="airport-flow-now-pill">
-          <rect x={pillX - pillWidth / 2} y={top - 39} width={pillWidth} height={24} rx={2} />
-          <text className="airport-flow-now-label" x={pillX} y={top - 23} textAnchor="middle">{nowLabel}</text>
-        </g>
+        <text className="airport-flow-now-label" x={left} y={18} textAnchor="start">{nowLabel}</text>
+        {nowBand&&<text className="airport-flow-now-value" x={right} y={18} textAnchor="end">{people(nowBand.value)}{unit} · KST</text>}
       </g>}
 
       {hover && tip && <g className="airport-flow-tip" pointerEvents="none">
         <line x1={hover.x} x2={hover.x} y1={top} y2={base} />
         <circle cx={hover.x} cy={hover.y} r={4.5} />
-        <rect x={tip.x - tip.w / 2} y={tip.y} width={tip.w} height={tip.h} rx={8} />
+        <rect x={tip.x - tip.w / 2} y={tip.y} width={tip.w} height={tip.h} rx={3} />
         {tip.lines.map((line, index) => <text key={index} x={tip.x} y={tip.y + 17 + index * 15} textAnchor="middle" className={index === 1 ? "strong" : undefined}>{line}</text>)}
       </g>}
 

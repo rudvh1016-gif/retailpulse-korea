@@ -2,6 +2,7 @@ import {test,expect} from '@playwright/test';
 import {SUMMARY_FIXTURE} from './summary-fixture';
 import {tofuCharacters} from './font-glyphs';
 import observations from '../config/duty-free-exchange-observations.json' with {type:'json'};
+import {DUTY_FREE_CACHE_KEY} from '../lib/duty-free-exchange';
 
 const autoSnapshot={mode:'duty-free-exchange',collectionMode:'AUTOMATED',generatedAt:'2026-10-08T03:00:00Z',todayKst:'2026-10-08',
  sources:observations.observations.filter(observation=>observation.vendor==='shilla').map(observation=>({vendor:observation.vendor,observation,lastAttemptAt:observation.verifiedAt,lastAttemptStatus:'SUCCESS',errorCode:null,nextAttemptAt:null}))};
@@ -127,9 +128,16 @@ test('tomorrow is available only behind its button with an explicit source date,
 });
 test('midnight stored reads are bounded at twelve, and recover on an existing scheduled read',async({page})=>{
  await page.clock.install({time:new Date('2026-10-08T15:00:00Z')});await page.clock.pauseAt(new Date('2026-10-08T15:00:00Z'));await fixtures(page);
+ // A routed request begins before its JSON is consumed and the next timer is
+ // armed. Wait for the existing cache write, not just the request counter,
+ // before advancing the paused clock again. This leaves production untouched.
+ await page.addInitScript(key=>{
+  const original=Storage.prototype.setItem;
+  Storage.prototype.setItem=function(name,value){original.call(this,name,value);if(name===key)document.documentElement.dataset.rateReadsCompleted=String(Number(document.documentElement.dataset.rateReadsCompleted??0)+1);};
+ },DUTY_FREE_CACHE_KEY);
  let reads=0;await page.route('**/api/live/duty-free-exchange',r=>{reads++;return r.fulfill({json:autoSnapshot});});
- await page.goto('/ko/airport');const strip=page.getByTestId('airport-duty-free-exchange');await expect.poll(()=>reads).toBe(1);
- for(let i=0;i<11;i++){await page.clock.runFor(60_100);await expect.poll(()=>reads).toBe(i+2);}
+ await page.goto('/ko/airport');const strip=page.getByTestId('airport-duty-free-exchange');await expect.poll(()=>reads).toBe(1);await expect(page.locator('html')).toHaveAttribute('data-rate-reads-completed','1');
+ for(let i=0;i<11;i++){await page.clock.runFor(60_100);await expect.poll(()=>reads).toBe(i+2);await expect(page.locator('html')).toHaveAttribute('data-rate-reads-completed',String(i+2));}
  await page.clock.runFor(3*60_000);expect(reads).toBe(12);
  await strip.locator('summary').click();await strip.getByRole('button',{name:'내일 환율',exact:true}).click();await expect(strip.getByTestId('duty-free-selected-day')).toContainText('확인된 환율 없음');
  await page.route('**/api/live/duty-free-exchange',r=>{reads++;return r.fulfill({json:{...autoSnapshot,sources:autoSnapshot.sources.map(source=>({...source,observation:{...source.observation,serviceDateKst:'2026-10-09',verifiedAt:'2026-10-08T15:10:00Z'}}))}});});

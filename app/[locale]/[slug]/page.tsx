@@ -36,7 +36,7 @@ export default async function LocalePage({ params }: { params: Promise<{ locale:
   if(slug==='predictions')permanentRedirect(`/${locale}/where-to`);
   if (!standaloneSeoSlugs.includes(slug as typeof standaloneSeoSlugs[number])) notFound();
   const isArea = areaSlugs.includes(slug as typeof areaSlugs[number]);
-  const view = isArea ? "today" : slug as "where-to" | "consumption" | "forecast" | "airport" | "business" | "about" | "more";
+  const view = isArea ? "today" : slug as "airport-glance" | "where-to" | "consumption" | "forecast" | "airport" | "business" | "about" | "more";
   const area = isArea ? slug as typeof areaSlugs[number] : "myeongdong";
   preloadLiveSummary();
   // Only the pages whose question this answers pay for the read.

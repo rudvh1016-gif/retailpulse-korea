@@ -197,9 +197,10 @@ for (const width of viewports) {
     if (width > 820) {
       const topNav = page.locator("nav.top-nav");
       await expect(topNav).toBeVisible();
-      await topNav.getByRole("link", { name: "관광안내", exact: true }).click();
+      await topNav.getByRole("link", { name: "더보기", exact: true }).click();
+      await page.locator('.more-section-links a[href="/ko/tourism-desk/myeongdong"]').click();
       await expect(page).toHaveURL(/\/ko\/tourism-desk\/myeongdong$/);
-      await expect(topNav.getByRole("link", { name: "관광안내", exact: true })).toHaveAttribute("aria-current", "page");
+      await expect(topNav.getByRole("link", { name: "더보기", exact: true })).toHaveAttribute("aria-current", "location");
       await testInfo.attach(`tourism-desktop-nav-${width}.png`, {
         body: await page.locator(".topbar").screenshot({ animations: "disabled", caret: "hide" }),
         contentType: "image/png",
@@ -541,7 +542,7 @@ test("production airport composition is one compact tabbed module at every requi
       expect(marker.inside).toBe(true);
       expect(marker.height).toBeGreaterThan(100);
       expect(marker.strokeWidth).toBeGreaterThanOrEqual(1);
-      expect(marker.stroke).toBe("rgb(0, 0, 0)");
+      expect(marker.stroke).toBe("rgb(67, 97, 127)");
       console.log(`AIRPORT_CURRENT_MARKER ${JSON.stringify({ viewport: width, ...marker })}`);
       await testInfo.attach(`airport-marker-${width}.png`, { body: await page.locator(".airport-forecast").screenshot(), contentType: "image/png" });
     }

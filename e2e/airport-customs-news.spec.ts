@@ -4,7 +4,7 @@ import {routeSummary,SUMMARY_FIXTURE} from './summary-fixture';
 import {tofuCharacters} from './font-glyphs';
 const rights={commercialReuse:true,requiredPresentation:true,deepLink:true,evidenceUrl:'https://www.customs.go.kr/fixture-only',confirmedAt:'2026-10-11T00:00:00Z',attribution:'Developer fixture only — not real news or a rights grant'} as const;
 const record={source:'customs',sourceId:'fixture-test',sourceName:'Developer fixture source',title:'개발 검증용 면세 공고 — 실제 뉴스 아님',url:'https://www.customs.go.kr/fixture-only',publishedAt:'2026-10-01T00:00:00Z',modifiedAt:'2026-10-02T00:00:00Z',receivedAt:'2026-10-11T00:00:00Z',status:'announced',topic:'customs',relevantToRetail:false,clearance:rights,contentFingerprint:'fixture-only',facts:[{text:'개발용 검증 항목',verifiedBySource:true},{text:'미확인 내용은 표시하지 않음',verifiedBySource:false}],changes:[],audience:[],attachmentNeedsReview:true};
-for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430,1280])test(`airport news entry ${lang} ${width}: existing size, honest empty tabs and removed travel entry`,async({page})=>{
+for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430,1280])test(`airport news entry ${lang} ${width}: existing size, customs-only page and removed travel entry`,async({page})=>{
  await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',flights:[],truncated:false,retrievedAt:SUMMARY_FIXTURE.generatedAt}}));
  let newsRequests=0;await page.route('**/api/airport/news',route=>{newsRequests++;return route.fulfill({json:{status:'MISSING',today:'2026-10-11',items:[]}});});
@@ -13,8 +13,8 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
  const newsBox=(await entry.boundingBox())!,guideBox=(await guide.boundingBox())!;expect(newsBox.height).toBe(80);expect(Math.abs(newsBox.width-guideBox.width)).toBeLessThan(1);expect(Math.abs(newsBox.y-guideBox.y)).toBeLessThan(1);
  const textBox=(await entry.locator('strong').boundingBox())!;expect(textBox.y).toBeGreaterThanOrEqual(newsBox.y);expect(textBox.y+textBox.height).toBeLessThanOrEqual(newsBox.y+newsBox.height);
  expect(await tofuCharacters(entry)).toEqual([]);await entry.focus();await page.keyboard.press('Enter');await expect(page.getByRole('heading',{level:1})).toHaveText(airportNewsCopy[lang].title);await expect(page.getByRole('status')).toHaveText(airportNewsCopy[lang].empty);
- expect(newsRequests).toBe(1);const tabs=page.getByRole('tab');await tabs.nth(0).focus();await page.keyboard.press('ArrowRight');await expect(tabs.nth(1)).toHaveAttribute('aria-selected','true');await expect(page.getByRole('status')).toHaveText(airportNewsCopy[lang].empty);await expect(page.locator('.airport-news-row')).toHaveCount(0);
- expect(page.url()).toContain('#/customs');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(await tofuCharacters(page.locator('.airport-news'))).toEqual([]);await expect(page.locator('a[href*="/travel-records"]')).toHaveCount(0);expect(errors).toEqual([]);
+ expect(newsRequests).toBe(1);await expect(page.getByRole('tab')).toHaveCount(0);await expect(page.locator('.airport-news-tabs')).toHaveCount(0);await expect(page.getByRole('status')).toHaveText(airportNewsCopy[lang].empty);await expect(page.locator('.airport-news-row')).toHaveCount(0);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(await tofuCharacters(page.locator('.airport-news'))).toEqual([]);await expect(page.locator('a[href*="/travel-records"]')).toHaveCount(0);expect(errors).toEqual([]);
 });
 for(const lang of ['ko','en','zh','ja'] as const)test(`airport news ${lang}: fixture detail date roles, deep link, rights removal, retry and keyboard`,async({page})=>{
  await page.setViewportSize({width:390,height:900});const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));let unavailable=true,revoked=false;
@@ -43,4 +43,16 @@ for(const width of [320,360,390,430,1280])test(`airport news detail ${width}: ce
  const documents=detail.locator('.airport-news-documents');await expect(documents.getByRole('link',{name:'Long developer fixture attachment.pdf',exact:false})).toHaveAttribute('href',fixture.attachments[0].url);await expect(documents.locator('li').nth(0)).toContainText(airportNewsDetailCopy.ko.documentPending);await expect(documents.locator('li').nth(1)).toContainText(airportNewsCopy.ko.documentVerified);await expect(documents.getByRole('link',{name:'Unsafe fixture.pdf',exact:false})).toHaveCount(0);
  expect(await detail.evaluate(node=>({fits:node.scrollWidth<=node.clientWidth+1,scrolls:node.scrollHeight>node.clientHeight,innerScrollers:[...node.querySelectorAll('*')].filter(child=>{const style=getComputedStyle(child);return ['auto','scroll'].includes(style.overflowY)&&child.scrollHeight>child.clientHeight;}).length}))).toEqual({fits:true,scrolls:true,innerScrollers:0});
  await detail.locator('.airport-news-detail-top button').focus();await expect(detail.locator('.airport-news-detail-top button')).toBeFocused();expect(await detail.locator('.airport-news-detail-top button').evaluate(node=>getComputedStyle(node).outlineStyle)).not.toBe('none');await page.keyboard.press('Tab');await expect(primary).toBeFocused();await page.keyboard.press('Escape');await expect(page.locator('dialog[open]')).toHaveCount(0);await expect(row).toBeFocused();expect(errors).toEqual([]);
+});
+
+for(const width of [390,1280])test(`customs-only news preserves approved records and ignores old airport deep links ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:900});
+ const airport={...record,source:'airport',topic:'airport',sourceId:'airport-fixture',title:'Developer airport fixture — not real news',url:'https://www.airport.kr/fixture-only'};
+ await page.route('**/api/airport/news',route=>route.fulfill({json:{status:'STORED',items:[airport,record],today:'2026-10-11'}}));
+ await page.goto('/ko/airport-news#/airport/airport%7Cairport-fixture');
+ await expect(page.getByRole('heading',{level:1})).toHaveText('관세·면세 뉴스');await expect(page).toHaveTitle('관세·면세 뉴스 | KORETAIL');
+ await expect(page.getByRole('tab')).toHaveCount(0);await expect(page.locator('.airport-news-row')).toHaveCount(1);await expect(page.locator('.airport-news-row')).toContainText(record.title);await expect(page.getByText(airport.title,{exact:true})).toHaveCount(0);
+ await expect(page.locator('dialog[open]')).toHaveCount(0);await page.locator('.airport-news-row').click();
+ const dialog=page.locator('dialog[open]');await expect(dialog).toContainText(record.title);await expect(dialog.locator('.airport-news-source-links a')).toHaveAttribute('href',record.url);await expect(dialog.locator('time').first()).toHaveAttribute('datetime',record.publishedAt);
+ await page.keyboard.press('Escape');await expect(page.locator('.airport-news-row')).toBeFocused();
 });

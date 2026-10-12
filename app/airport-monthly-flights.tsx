@@ -1,4 +1,5 @@
 'use client';
+import {mainBuildingMonth} from '../lib/airport-monthly-building';
 import {useState} from 'react';
 import {usePreparedMonth} from './use-prepared-month';
 import type {Lang,Terminal} from './retailpulse-data';
@@ -6,6 +7,7 @@ import {ChangeRate} from './change-rate';
 import {AirportDestinationDailyChanges} from './airport-destination-daily-changes';
 import {MONTH_SCOPES,monthlyCategoryKeys,monthlyMetric,previousFlightMonth,type AirportFlightMonth,type AirportMonthlyRollups,type MonthCounts,type MonthScope} from '../lib/airport-monthly-flights';
 import {airportMonthComparisonBasis,airportMonthLabel} from '../lib/airport-month-labels';
+import {domesticDestinationLabel} from '../lib/airport-domestic-labels';
 import './airport-monthly-flights.css';
 const t=(lang:Lang,ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
 interface Reply {status:string;month:string;months:string[];calculatedAt:string|null;lastPreparedAt?:string|null;data:AirportMonthlyRollups|null}
@@ -24,12 +26,13 @@ export function AirportMonthlyFlights({lang,terminal,date,monthly}:{lang:Lang;te
  const own=useAirportMonthRequest(monthly?null:date);
  const {month,setChosen,request}=monthly??own;
  const scope:MonthScope=terminal==='all'?'ALL':terminal,response=request.reply;
- const current=response?.data?.months.find(value=>value.month===month),previous=response?.data?.months.find(value=>value.month===previousFlightMonth(month??''));
+ const storedCurrent=response?.data?.months.find(value=>value.month===month),storedPrevious=response?.data?.months.find(value=>value.month===previousFlightMonth(month??''));
+ const current=scope==='T1'?mainBuildingMonth(storedCurrent):storedCurrent,previous=scope==='T1'?mainBuildingMonth(storedPrevious):storedPrevious;
  const fmt=new Intl.NumberFormat({ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'}[lang],{maximumFractionDigits:1});
  const countryNames=new Intl.DisplayNames([lang],{type:'region'});
  const value=(number:number|null)=>number===null?'—':fmt.format(number);
  const percentage=(number:number|null)=>number===null?'—':fmt.format(number)+'%';
- const labels:Record<MonthScope,string>={ALL:t(lang,'전체','All','全部','全体'),T1:t(lang,'T1 · 본관+탑승동','T1 · main + concourse','T1 · 主楼+卫星厅','T1 · 本館＋搭乗棟'),T2:'T2',CONCOURSE:t(lang,'탑승동','Concourse','卫星厅','搭乗棟'),UNKNOWN:t(lang,'터미널 미정','Terminal unconfirmed','航站楼未确认','ターミナル未確認')};
+ const labels:Record<MonthScope,string>={ALL:t(lang,'전체','All','全部','全体'),T1:t(lang,'T1 · 본관','T1 · main building','T1 · 主楼','T1 · 本館'),T2:'T2',CONCOURSE:t(lang,'탑승동','Concourse','卫星厅','搭乗棟'),UNKNOWN:t(lang,'터미널 미정','Terminal unconfirmed','航站楼未确认','ターミナル未確認')};
  const selected:MonthScope=MONTH_SCOPES.includes(scope)?scope:'ALL';
  const metric=(key:(counts:MonthCounts)=>number)=>monthlyMetric(current,previous,selected,key);
  const total=metric(counts=>counts.total);
@@ -44,20 +47,21 @@ export function AirportMonthlyFlights({lang,terminal,date,monthly}:{lang:Lang;te
  const table=(rows:React.ReactNode,shares=false,showBasis=false)=><div className="airport-month-table"><table><caption>{showBasis&&<span className="airport-month-basis">{comparisonBasis}</span>}{shares?t(lang,'선택 범위의 전체 집계 편수 중 비중','Share of all counted flights in this scope','所选范围全部计入航班占比','選択範囲の集計便全体に対する割合'):t(lang,'일평균 편수 · 편/일','Daily mean · flights/day','日均航班 · 班/日','1日平均 · 便/日')}</caption><colgroup><col/><col className="airport-month-value-column"/><col className="airport-month-value-column"/><col className="airport-month-rate-column"/></colgroup><thead><tr><th scope="col">{t(lang,'구분','Category','类别','項目')}</th><th scope="col">{previousLabel}</th><th scope="col">{currentLabel}</th><th scope="col">{t(lang,'증감','Change','变化','変化')}</th></tr></thead><tbody>{rows}</tbody></table></div>;
  const breakdown=(kind:'airlines'|'registrationCountries'|'destinationCountries',title:string)=><details data-testid={`month-list-${kind}`}><summary>{title}</summary>{table(monthlyCategoryKeys(current,previous,selected,kind).map(key=>{
   const name=current?.airlineNames[key]??previous?.airlineNames[key];
-  return row(key==='UNKNOWN'?t(lang,'미정','Unconfirmed','未确认','未確認'):kind==='airlines'?<span className="airport-month-airline"><span className="airport-month-airline-code" translate="no">{key}</span>{name&&<span className="airport-month-airline-name">{name}</span>}</span>:countryNames.of(key)??key,counts=>counts[kind][key]??0,key);
+  return row(key==='UNKNOWN'?t(lang,'미정','Unconfirmed','未确认','未確認'):kind==='airlines'?<span className="airport-month-airline"><span className="airport-month-airline-code" translate="no">{key}</span>{name&&<span className="airport-month-airline-name">{name}</span>}</span>:kind==='destinationCountries'&&key==='KR'?domesticDestinationLabel(lang):countryNames.of(key)??key,counts=>counts[kind][key]??0,key);
  }),false,true)}</details>;
- return <section className="airport-month-flights" data-testid="airport-month-flights" aria-label={t(lang,'월별 출국 항공편 구성','Monthly departure mix','月度出境航班构成','月別出発便の構成')}>
+ return <section id="airport-monthly-flights" className="airport-month-flights" data-testid="airport-month-flights" aria-label={t(lang,'월별 출국 항공편 구성','Monthly departure mix','月度出境航班构成','月別出発便の構成')}>
   <h3>{t(lang,'국가별 항공편 · 전월 대비 일평균','Flights by country · daily mean vs previous month','各国航班 · 较上月日均','国別の便数・前月比の1日平均')} <small>{labels[selected]}</small></h3>
+  {(selected==='T1'||selected==='CONCOURSE')&&<p className="prep-note" data-testid="monthly-building-note">{{ko:'탑승동 이용객도 T1에서 체크인·출국수속 후 이동합니다. 항공편은 탑승구 기준으로 본관과 분리하며, T1 대기·공식 여객 통계는 수속장·공식 터미널 기준입니다.',en:'Concourse passengers check in and complete departure formalities at T1 before moving to the concourse. Flights are split by boarding building; T1 waits and official passenger statistics retain their departure-hall and official terminal scope.',zh:'登机楼旅客也在T1办理值机和出境手续后前往登机楼。航班按登机建筑分开；T1等候和官方旅客统计保留出境大厅与官方航站楼口径。',ja:'搭乗棟の利用客もT1でチェックイン・出国手続き後に移動します。便は搭乗建物別に分け、T1の待ち時間・公式旅客統計は出国場・公式ターミナルの範囲を維持します。'}[lang]}</p>}
   <label>{t(lang,'비교 월','Comparison month','比较月份','比較する月')} <select value={month??''} onChange={event=>setChosen(event.target.value)}>{[...new Set([...(month?[month]:[]),...(response?.months??[])])].sort().reverse().map(value=><option key={value}>{value}</option>)}</select></label>
   {!current?<div className="airport-month-state" role="status"><p>{emptyMessage}</p>{request.attempt<3?<small>{t(lang,'잠시 후 자동으로 다시 확인합니다.','A bounded automatic check follows shortly.','稍后自动再次检查。','まもなく自動で再確認します。')}</small>:<button type="button" onClick={request.retry}>{t(lang,'자료 다시 확인','Check data again','再次检查资料','資料を再確認')}</button>}{response?.lastPreparedAt&&<small>{t(lang,'이전 집계 시각','Previous calculation','之前汇总时间','前の集計時刻')}: {response.lastPreparedAt}</small>}<a href={`/${lang}/more#collection-status`}>{t(lang,'수집 상태 보기','Collection status','查看采集状态','収集状況')}</a></div>:<>
    {(request.pending||request.failed||request.retained)&&<p className="airport-month-state" role="status">{t(lang,'마지막 확인 집계를 표시합니다.','Showing the last confirmed count.','显示上次确认的汇总。','最後に確認した集計を表示しています。')} {response?.data?.asOf} KST · {response?.calculatedAt}</p>}
    <p className="airport-month-basis" data-testid="airport-month-basis">{comparisonBasis}</p>
    <p className="airport-month-total">{t(lang,'출국편','Departures','出境航班','出発便')}: <strong>{value(total.previous)} → {value(total.current)}</strong> {t(lang,'편/일','flights/day','班/日','便/日')} · <ChangeRate value={total.percent} lang={lang}/></p>
    <AirportDestinationDailyChanges lang={lang} current={current} previous={previous} scope={selected}/>
-   {table(([['EAST',t(lang,'동편','East','东侧','東側')],['WEST',t(lang,'서편','West','西侧','西側')],['CENTER',t(lang,'중앙','Centre','中央','中央')],['UNVERIFIED',selected==='T1'?t(lang,'미정·탑승동','Unconfirmed / concourse','未确认／卫星厅','未確認・搭乗棟'):t(lang,'구역 미정','Side unconfirmed','区域未确认','区画未確認')]] as const).map(([key,label])=>row(label,counts=>counts.sides[key])))}
+   {table(([['EAST',t(lang,'동편','East','东侧','東側')],['WEST',t(lang,'서편','West','西侧','西側')],['CENTER',t(lang,'중앙','Centre','中央','中央')],['UNVERIFIED',t(lang,'구역 미정','Side unconfirmed','区域未确认','区画未確認')]] as const).map(([key,label])=>row(label,counts=>counts.sides[key])))}
    <details><summary>{t(lang,'동편·서편·중앙 항공편 비율','East, west and centre flight shares','东侧、西侧及中央航班占比','東・西・中央の便数割合')}</summary>
-    <p>{t(lang,'아래 표: 선택 범위의 전체 항공편을 100%로 계산합니다. 중앙·위치 미확인·T1 탑승동도 포함합니다.','Table: all counted flights in the selected scope equal 100%, including centre, unverified and T1 concourse.','下表以所选范围全部航班为100%，包含中央、位置未确认及T1卫星厅。','下表は選択範囲の全便を100%とし、中央・位置未確認・T1搭乗棟も含みます。')}</p>
-    <p>{t(lang,'동편·서편만 비교: 동편+서편을 100%로 계산합니다. 중앙·위치 미확인·T1 탑승동은 제외합니다.','East/west-only comparison: east + west equal 100%; centre, unverified and T1 concourse are excluded.','仅比较东西侧：东＋西为100%，不含中央、位置未确认及T1卫星厅。','東西のみの比較は東＋西を100%とし、中央・位置未確認・T1搭乗棟を除きます。')}</p>
+    <p>{t(lang,'아래 표: 선택 범위의 전체 항공편을 100%로 계산하며 중앙·위치 미확인을 포함합니다. T1은 본관 항공편만 집계합니다.','Table: all counted flights in the selected scope equal 100%, including centre and unverified. T1 counts main-building flights only.','下表以所选范围全部航班为100%，包含中央及位置未确认。T1仅计主楼航班。','下表は選択範囲の全便を100%とし、中央・位置未確認を含みます。T1は本館の便のみです。')}</p>
+    <p>{t(lang,'동편·서편만 비교: 동편+서편을 100%로 계산합니다. 중앙·위치 미확인은 제외합니다.','East/west-only comparison: east + west equal 100%; centre and unverified are excluded.','仅比较东西侧：东＋西为100%，不含中央及位置未确认。','東西のみの比較は東＋西を100%とし、中央・位置未確認を除きます。')}</p>
     <p>{t(lang,'동편·서편 중 동편 비율 (계산에 포함된 항공편 수)','East share of east/west flights (flights included in this calculation)','东西侧航班中东侧占比（计算所含航班数）','東西便のうち東の割合（計算に含めた便数）')}: {previous?.month??'—'} {eastWest(previous)} → {month} {eastWest(current)}</p>
     {table((['EAST','WEST','CENTER','UNVERIFIED'] as const).map(key=>shareRow(({EAST:t(lang,'동편','East','东侧','東側'),WEST:t(lang,'서편','West','西侧','西側'),CENTER:t(lang,'중앙','Centre','中央','中央'),UNVERIFIED:t(lang,'위치 미확인','Location unconfirmed','位置未确认','位置未確認')})[key],counts=>counts.sides[key])),true)}
    </details>

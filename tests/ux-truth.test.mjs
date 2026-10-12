@@ -199,7 +199,7 @@ test("the current-time rule follows the exact minute inside its forecast band", 
    */
   assert.match(visual, /\.av-now \{[^}]*stroke: var\(--dusk\)[^}]*stroke-width: 1\.5/);
   assert.doesNotMatch(visual, /border-left/, "a border on an empty box is exactly what stopped rendering on iOS");
-  assert.match(figure, /const pillX = layout\.now \? clampX\(layout\.now\.x, pillWidth \/ 2\) : 0/, "the label is centred on the rule and only pulled in at the edges");
+  assert.match(figure, /className="airport-flow-now-label" x=\{left\}[^>]*textAnchor="start"/, "the compact current-time label is anchored inside the plot; the rule still follows the exact minute");
 });
 
 test("the custom month range is a compact grouped control on phone and desktop", () => {
