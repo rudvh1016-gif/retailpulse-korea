@@ -11,8 +11,20 @@ const TourismDeskView=dynamic(()=>import('./tourism-desk').then(module=>module.T
 const PredictionEvidence=dynamic(()=>import('./prediction-evidence').then(module=>module.PredictionEvidence));
 const BusinessPrep=dynamic(()=>import('./business-prep').then(module=>module.BusinessPrep));
 // The airport routes pass AirportView in from their server pages (see RetailPulseProps);
-// this import is only reached when a Seoul route switches to the airport tab.
-const LazyAirportView=dynamic(()=>import('./airport-view').then(module=>module.AirportView));
+// on a Seoul route the airport code loads only when the airport is reached for.
+let airportViewModule: typeof import('./airport-view') | undefined;
+const loadAirportView=()=>import('./airport-view').then(module=>(airportViewModule=module));
+const LazyAirportView=dynamic(()=>loadAirportView().then(module=>module.AirportView));
+// Pointing at, touching or focusing a way to the airport starts that same load,
+// so the tap does not wait for it. Visitors who never reach for it load nothing.
+const prepareAirportView=()=>{loadAirportView().catch(()=>{});};
+/** Once the airport code has arrived it renders directly: a component that
+ * suspends first would hold the finished screen back by React's reveal delay.
+ * The choice is fixed for the visit, so a mounted view never swaps components. */
+function OnDemandAirportView(props: ComponentProps<typeof AirportViewComponent>) {
+  const [Loaded] = useState(() => airportViewModule?.AirportView);
+  return Loaded ? <Loaded {...props} /> : <LazyAirportView {...props} />;
+}
 import { recordText } from './monthly-records-copy';
 import { activeSourceCatalog,sourceName,sourceUse,CollectionStatus } from "./source-status";
 
@@ -255,8 +267,10 @@ function routeFor(lang: Lang, view: View, area: AreaId) {
   return `${base}/${view}`;
 }
 
-export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false, initialScope = "home", todayAnswer = null, AirportView = LazyAirportView }: RetailPulseProps = {}) {
+export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false, initialScope = "home", todayAnswer = null, AirportView = OnDemandAirportView }: RetailPulseProps = {}) {
   const bottomNavigationRef = useBottomNavigationViewport();
+  // Airport routes already carry the airport code; only the on-demand copy needs preparing.
+  const prepareAirport = AirportView === OnDemandAirportView ? prepareAirportView : undefined;
   const [lang, setLang] = useState<Lang>(initialLang);
   const [view, setView] = useState<View>(initialView);
   const [homeVisible, setHomeVisible] = useState(initialScope === "airport-home" || (initialScope === "home" && initialView === "today"));
@@ -419,12 +433,12 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     <div className={"app lang-" + lang} data-hydrated={preferencesReady ? "true" : "false"}>
       <div className="site-header">
       <header className="topbar">
-        <button className="brand brand-button" onClick={() => goHome()} aria-label="KORETAIL home">
+        <button className="brand brand-button" onClick={() => goHome()} onPointerEnter={prepareAirport} onFocus={prepareAirport} aria-label="KORETAIL home">
           <span>KORETAIL</span><span className="brand-descriptor">Retail Demand Signals for Korea</span>
         </button>
         <nav className="top-nav" aria-label="Primary">
           {(["airport", "today", "business", "where-to", "consumption", "tourism-desk", "forecast", "about", "more"] as View[]).map((item) => (
-            <a key={item} href={routeFor(lang, item, selected)} className={view === item ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} aria-current={view === item ? "page" : undefined}>{t[item]}</a>
+            <a key={item} href={routeFor(lang, item, selected)} className={view === item ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} onPointerEnter={item === "airport" ? prepareAirport : undefined} onFocus={item === "airport" ? prepareAirport : undefined} aria-current={view === item ? "page" : undefined}>{t[item]}</a>
           ))}
         </nav>
         <div className="header-meta">
@@ -520,6 +534,8 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             href={routeFor(lang, item, selected)}
             className={(view === item || (view === "tourism-desk" && item === "more")) ? "active" : ""}
             onClick={(event) => { event.preventDefault(); navigate(item); }}
+            onPointerEnter={item === "airport" ? prepareAirport : undefined}
+            onFocus={item === "airport" ? prepareAirport : undefined}
             aria-current={view === item ? "page" : view === "tourism-desk" && item === "more" ? "location" : undefined}
             aria-label={t[item]}
           >
