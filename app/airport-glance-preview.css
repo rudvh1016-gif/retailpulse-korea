@@ -53,3 +53,6 @@ body:has(.glance-preview){background:#e9eef1}
 
 /* All airport-image label text stays black, including waits and observation times. */
 .glance-preview .glance-building,.glance-preview .glance-building :is(h2,span,dt,dd,small){color:#000}.glance-preview .glance-building[data-selected=false]{opacity:1}
+
+/* Consistent small type, spacing and controls below the unchanged airport image. */
+.glance-preview{--glance-heading:13px;--glance-body:12px;--glance-note:10px}.glance-brief-data h2,.glance-future h2,.glance-future-leaders strong,.glance-day-comparison>strong{font-size:var(--glance-heading);font-weight:600}.glance-brief-data,.glance-future-cards{column-gap:24px}.glance-future button{padding:6px 13px;font-size:var(--glance-body)}.glance-future article>small{font-size:var(--glance-note);line-height:1.5}.glance-future details summary{font-size:var(--glance-body)}.glance-destination-growth{margin:6px 0;font-size:var(--glance-body)}.glance-destination-growth>div{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:baseline;padding:5px 0;border-bottom:1px solid #dbe0e5}.glance-destination-growth strong{font-size:var(--glance-heading);font-weight:600}.glance-destination-growth b{font-weight:600;white-space:nowrap}.glance-destination-growth>div>span:nth-child(2){white-space:nowrap}

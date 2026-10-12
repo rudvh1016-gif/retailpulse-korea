@@ -44,7 +44,7 @@ export function glanceDayComparison(day:string,total:number|null,previous:Airpor
  return {mean,delta:total-mean,percent:(total/mean-1)*100,days:previous.includedDays.length};
 }
 
-/** Both worker summaries share the exact future window; next-day coverage is never invented. */
+/** Zone summary uses the first future window; next-day coverage is never invented. */
 export function glanceFutureWindow(day:string,flights:readonly MapFlight[],now:number,hours:1|3|6){
  if(!Number.isFinite(now)||new Date(now+9*3_600_000).toISOString().slice(0,10)!==day)return null;
  const midnight=Date.parse(`${day}T00:00:00+09:00`),end=Math.min(now+hours*3_600_000,midnight+86_400_000);
@@ -54,4 +54,19 @@ export function glanceFutureWindow(day:string,flights:readonly MapFlight[],now:n
  const zones=(['T1','CONCOURSE','T2'] as const).flatMap(building=>(['WEST','CENTER','EAST'] as const).map(side=>({building,side,flights:buildings[building][side]})));
  const maximum=Math.max(0,...zones.map(row=>row.flights));
  return {start:now,end,clipped:end<now+hours*3_600_000,total:selected.length,buildings,leaders:zones.filter(row=>row.flights===maximum&&maximum>0),unknownBuilding:selected.filter(row=>row.building==='UNKNOWN').length,countries:[...countries].map(([country,flights])=>({country,flights})).sort((a,b)=>b.flights-a.flights||(a.country??'').localeCompare(b.country??''))};
+}
+
+/** Adjacent equal-length windows in one verified day response; rank increases in flights, never percentages. */
+export function glanceDestinationIncrease(day:string,flights:readonly MapFlight[]|null,now:number,hours:1|3|6,recordsReady:boolean){
+ const midnight=Date.parse(`${day}T00:00:00+09:00`),middle=now+hours*3_600_000,end=now+2*hours*3_600_000;
+ if(!recordsReady||flights===null||![1,3,6].includes(hours)||!Number.isFinite(now)||!Number.isFinite(midnight)||now<midnight||now>=midnight+86_400_000)return {status:'UNAVAILABLE' as const};
+ if(end>midnight+86_400_000)return {status:'MIDNIGHT' as const};
+ const counts=new Map<string|null,{before:number;after:number}>();let beforeTotal=0,afterTotal=0;
+ for(const flight of flights){const at=Date.parse(flight.scheduledAt);if(!(at>=now&&at<end))continue;
+  const country=flight.destination?.country??null,row=counts.get(country)??{before:0,after:0};
+  if(at<middle){row.before++;beforeTotal++;}else{row.after++;afterTotal++;}counts.set(country,row);
+ }
+ const rows=[...counts].filter((entry):entry is [string,{before:number;after:number}]=>entry[0]!==null).map(([country,counts])=>({country,...counts,delta:counts.after-counts.before})).sort((a,b)=>b.delta-a.delta||b.after-a.after||a.country.localeCompare(b.country));
+ const maximum=Math.max(0,...rows.map(row=>row.delta)),unknown=counts.get(null)??{before:0,after:0};
+ return {status:'READY' as const,start:now,middle,end,beforeTotal,afterTotal,rows,leaders:rows.filter(row=>row.delta===maximum&&maximum>0),unknown};
 }

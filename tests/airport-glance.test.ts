@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {glanceFutureWindow,glanceDayComparison,glanceCountryRanking,glanceFlights,glanceLongestWait,glanceUpcoming} from '../lib/airport-glance';
+import {glanceDestinationIncrease,glanceFutureWindow,glanceDayComparison,glanceCountryRanking,glanceFlights,glanceLongestWait,glanceUpcoming} from '../lib/airport-glance';
 import {buildAirportFlightMonth,type MonthFlightRow} from '../lib/airport-monthly-flights';
 const row=(day:string,id:string,airportCode='NRT',terminal='T1',gate='45'):MonthFlightRow=>({physicalFlightId:id,operatingFlight:'TEST'+id,terminal,gate,airportCode,scheduledAt:day+'T10:00:00+09:00',retrievedAt:day+'T01:00:00Z',status:'scheduled'});
 test('glance reuses departure scope, collapses duplicates and includes concourse only with T1',()=>{
@@ -52,4 +52,25 @@ test('shared future window excludes elapsed/end-boundary flights, preserves unkn
  assert.equal(window.total,3);assert.equal(window.unknownBuilding,1);assert.equal(window.countries.find(row=>row.country===null)?.flights,1);assert.equal(window.leaders.length,2);assert.equal(window.leaders[0].flights,1);
  assert.equal(glanceFutureWindow(day,data.departures,now,3)?.total,4);assert.equal(glanceFutureWindow(day,[],now,1)?.total,0);assert.equal(glanceFutureWindow('2026-10-10',data.departures,now,1),null);assert.equal(glanceFutureWindow(day,data.departures,NaN,1),null);
  const late=glanceFutureWindow(day,data.departures,Date.parse(day+'T23:30:00+09:00'),6)!;assert.equal(late.total,1);assert.equal(late.clipped,true);assert.equal(late.end,Date.parse('2026-10-12T00:00:00+09:00'));
+});
+
+test('adjacent destination ranking favors absolute growth over a dominant country and preserves all ties',()=>{
+ const day='2026-10-11',now=Date.parse(day+'T10:15:00+09:00');let id=0;
+ const rows=(n:number,code:string,time:string)=>Array.from({length:n},()=>({...row(day,String(id++),code),scheduledAt:`${day}T${time}:00+09:00`}));
+ const flights=glanceFlights(day,[...rows(10,'NRT','10:30'),...rows(10,'NRT','11:30'),...rows(1,'PEK','10:30'),...rows(4,'PEK','11:30'),...rows(3,'LAX','11:30'),...rows(2,'XXX','10:30'),...rows(5,'XXX','11:30')],'all').departures;
+ const result=glanceDestinationIncrease(day,flights,now,1,true);assert.equal(result.status,'READY');if(result.status!=='READY')return;
+ assert.deepEqual(result.leaders.map(r=>[r.country,r.before,r.after,r.delta]),[['CN',1,4,3],['US',0,3,3]]);assert.deepEqual(result.unknown,{before:2,after:5});assert.equal(result.rows.find(r=>r.country==='JP')?.delta,0);assert.equal('percent' in result.leaders[1],false);
+});
+test('adjacent destination windows honor inclusive starts and exclusive ends for 1, 3 and 6 hours',()=>{
+ const day='2026-10-11',now=Date.parse(day+'T01:00:00+09:00'),base=glanceFlights(day,[row(day,'base')],'all').departures[0];
+ for(const hours of [1,3,6] as const){const middle=now+hours*3600000,end=now+hours*7200000;const flights=[now-1,now,middle-1,middle,end-1,end].map((at,i)=>({...base,id:String(i),scheduledAt:new Date(at).toISOString()}));const result=glanceDestinationIncrease(day,flights,now,hours,true);assert.equal(result.status,'READY');if(result.status==='READY'){assert.equal(result.beforeTotal,2);assert.equal(result.afterTotal,2);assert.equal(result.leaders.length,0);assert.equal(result.middle-result.start,result.end-result.middle);}}
+});
+test('adjacent destination comparison withholds incomplete records and unequal midnight coverage',()=>{
+ const day='2026-10-11',midnight=Date.parse('2026-10-12T00:00:00+09:00');
+ for(const hours of [1,3,6] as const){const start=midnight-2*hours*3600000;assert.equal(glanceDestinationIncrease(day,[],start,hours,true).status,'READY');assert.equal(glanceDestinationIncrease(day,[],start+1,hours,true).status,'MIDNIGHT');}
+ for(const [flights,now,ready] of [[[],midnight-7200000,false],[null,midnight-7200000,true],[[],NaN,true],[[],midnight,true]] as const)assert.equal(glanceDestinationIncrease(day,flights,now,1,ready).status,'UNAVAILABLE');
+});
+test('adjacent destination unknown-only and no-increase states never invent a growing country',()=>{
+ const day='2026-10-11',now=Date.parse(day+'T10:00:00+09:00'),flights=glanceFlights(day,[{...row(day,'unknown','XXX'),scheduledAt:day+'T11:30:00+09:00'}],'all').departures;
+ const result=glanceDestinationIncrease(day,flights,now,1,true);assert.equal(result.status,'READY');if(result.status==='READY'){assert.equal(result.leaders.length,0);assert.equal(result.rows.length,0);assert.deepEqual(result.unknown,{before:0,after:1});}
 });

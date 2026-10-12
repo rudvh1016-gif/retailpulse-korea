@@ -109,3 +109,24 @@ User questioned the usefulness of Japan repeatedly being the largest destination
 Minimum verification: PC1440/mobile390 browser cases both pass, including absence of news and preparation links. Actual-response full-page capture checks also passed at 1440/390/360, with unchanged overlay geometry/fonts/black text, matching 1/3/6-hour card periods, visible flags, no overflow or page errors. Scoped lint zero errors/two existing static-image advisories; diff check passed. No calculation-suite rerun.
 
 Latest complete pages: docs/screenshots/airport-glance-no-news-20261012/airport-glance-pc-1440.png and airport-glance-mobile-390.png; 360px full page and verification.json are in the same folder. These supersede earlier captures containing the news link. Source remains the saved real response at 2026-10-12 15:43 KST. Public merge/deployment and conditional global menu changes remain unapproved/not performed.
+
+
+## Approved completion: adjacent destination increases and consistent compact UI
+
+Latest owner approval supersedes the previous proposal-only note. The destination card is now **다음 시간대에 늘어나는 목적지**. With selected N=1/3/6 hours, it compares [current time, current time+N) against [current time+N, current time+2N), with equal duration and adjacent boundaries. Known countries rank by positive absolute change in departure count, not total volume or percentage. Every maximum-delta tie is shown; the rest remain in an expandable change list. 0→positive is a finite +flight count, with no growth percentage. No known increase displays no-increase; if unknown destinations could prevent that conclusion, it explicitly withholds a definite no-increase claim. Unknown counts are shown separately and excluded from country ranking.
+
+The zone card still describes the FIRST N-hour interval. It now says 앞 alongside its period. The destination card explicitly shows 앞 and 뒤 periods, so the two meanings are not represented as identical. Whole selected-day departures and monthly comparisons remain separate.
+
+Readiness: matching selected service date, today's verified summary/clock, non-truncated flight response explicitly marked truncated=false and a valid retrieval timestamp are required. Pending/failed/truncated/undated responses are unavailable. If both full intervals cannot fit within the available same-day response, comparison is held rather than clipping two unequal intervals. Exact end at midnight is allowed; a millisecond beyond it is held. No next-day request or external collection was added. These are available scheduled records, not guaranteed actual operations, passenger nationality, customer counts or shop congestion.
+
+UI polish uses the existing font family and ink/silver palette. Below the unchanged airport image, section/representative titles share 13px, body/control text 12px, notes 10px; consistent 24px column gaps and control padding preserve compactness. No enlarged white plates or fonts. The small mobile black image labels and PC image geometry remain identical. News/preparation entries remain absent; global navigation remains deferred.
+
+Actual saved-source evidence (2026-10-12 15:43:09 KST):
+- N=1: 15:43–16:43 versus 16:43–17:43, Thailand 0→4, +4 departures.
+- N=3: 15:43–18:43 versus 18:43–21:43, Vietnam 7→20, +13 departures.
+- N=6: first interval 15:43–21:43 remains visible for zones; the second interval crosses midnight, so destination comparison is held.
+These are derived screenshot evidence, never hardcoded application values.
+
+Verification: 4 new focused unit cases pass (dominant-country versus absolute increase, ties/zero baseline, 1/3/6 boundaries, midnight/readiness, unknown-only/no increase). 6 affected browser cases pass (three languages; first-versus-next periods, terminal/date changes; truncated and midnight withholding). The midnight fixture initially set browser time to 10:15 before returning a 23:00 response; it was corrected to a consistent pre-navigation 23:00 clock and that single case passed on rerun. No production clock/guard was weakened. Typecheck/native build pass; scoped lint zero errors/two existing img advisories; diff check passed. Previously successful calculation suites were not manually repeated.
+
+Full-page PC1440/mobile390/360 captures: docs/screenshots/airport-glance-increase-20261012/airport-glance-pc-1440.png, airport-glance-mobile-390.png, airport-glance-mobile-360.png. verification.json records actual-source rows for N=1/3/6, unchanged airport geometry/fonts, black labels, visible decoded flags and no overflow/page errors. Images were visually reviewed. Limits remain local Chrome/saved real-response verification, not physical-device Safari or live passenger measurement. Fresh CI and final visual approval remain before public merge/deployment.
