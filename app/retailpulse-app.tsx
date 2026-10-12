@@ -427,7 +427,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         </button>
         <nav className="top-nav" aria-label="Primary">
           {(["airport-glance", "airport", "where-to", "today", "consumption", "business", "more"] as View[]).map((item) => (
-            <a key={item} href={routeFor(lang, item, selected)} className={view === item ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} aria-current={view === item ? "page" : undefined}>{navLabel(item)}</a>
+            <a key={item} href={routeFor(lang, item, selected)} className={view === item || (item === "more" && ["tourism-desk","forecast","about"].includes(view)) ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} aria-current={view === item ? "page" : item === "more" && ["tourism-desk","forecast","about"].includes(view) ? "location" : undefined}>{navLabel(item)}</a>
           ))}
         </nav>
         <div className="header-meta">
@@ -522,9 +522,9 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           <a
             key={item}
             href={routeFor(lang, item, selected)}
-            className={(view === item || (view === "tourism-desk" && item === "more")) ? "active" : ""}
+            className={(view === item || (["business","tourism-desk","forecast","about"].includes(view) && item === "more")) ? "active" : ""}
             onClick={(event) => { event.preventDefault(); navigate(item); }}
-            aria-current={view === item ? "page" : view === "tourism-desk" && item === "more" ? "location" : undefined}
+            aria-current={view === item ? "page" : ["business","tourism-desk","forecast","about"].includes(view) && item === "more" ? "location" : undefined}
             aria-label={navLabel(item)}
           >
             <Icon name={item} />

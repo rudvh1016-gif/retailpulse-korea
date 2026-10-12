@@ -82,7 +82,7 @@ test("primary navigation, terminal filter, back and refresh work", async ({ page
   // is not drawn, so it cannot sit on top of content on a wide screen.
   await expect(page.locator("nav.top-nav")).toBeVisible();
   await expect(page.locator("nav.bottom-nav")).toBeHidden();
-  await page.locator("nav.top-nav a").filter({ hasText: "공항" }).click();
+  await page.locator('nav.top-nav a[href="/ko/airport"]').click();
   await expect(page).toHaveURL(/\/ko\/airport$/);
   await page.locator("#airport-data-flow").getByRole("tab", { name: "T2", exact: true }).click();
   await page.locator(".airport-context-nav").getByRole("button", { name: "항공편" }).click();
@@ -1295,25 +1295,22 @@ test("Tourism area links support keyboard, browser history and locale-preserving
   await expect(page.getByRole("heading", { level: 1, name: "홍대 관광안내" })).toBeVisible();
 });
 
-test("desktop navigation promotes Guide Desk in the exact localized order", async ({ page }) => {
+test("desktop navigation keeps stores and moves secondary pages under More", async ({ page }) => {
   await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 1280, height: 900 });
   const expected = {
-    ko: ["서울", "공항", "매장", "서울 한눈에", "요즘 뜨는 소비", "관광안내", "기록", "소개", "더보기"],
-    en: ["Seoul", "Airport", "Business", "Seoul at a glance", "Consumption", "Guide Desk", "Records", "About", "More"],
-    zh: ["首尔", "机场", "门店", "首尔一览", "近期消费", "旅游咨询", "记录", "关于", "更多"],
-    ja: ["ソウル", "空港", "店舗", "ソウルひと目で", "最近の消費", "観光案内", "記録", "紹介", "その他"],
+    ko: ['공항 한눈에','공항','서울 한눈에','서울','소비 흐름','매장','더보기'],
+    en: ['Airport glance','Airport','Seoul at a glance','Seoul','Spending','Business','More'],
+    zh: ['机场一览','机场','首尔一览','首尔','消费','门店','更多'],
+    ja: ['空港一覧','空港','ソウルひと目で','ソウル','消費','店舗','その他'],
   } as const;
-
   for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
     await page.goto(`/${locale}/tourism-desk/myeongdong`);
-    const nav = page.locator("nav.top-nav");
-    await expect(nav).toBeVisible();
-    expect(await nav.locator("a").allInnerTexts()).toEqual([expected[locale][1],expected[locale][0],...expected[locale].slice(2)]);
-    await expect(nav.locator("a[aria-current='page']")).toHaveText(expected[locale][5]);
+    const nav = page.locator("nav.top-nav");await expect(nav).toBeVisible();
+    await expect(nav.locator('a')).toHaveText([...expected[locale]]);
+    await expect(nav.locator("a[aria-current='location']")).toHaveText(expected[locale][6]);
     await expect(page.locator("nav.bottom-nav")).toBeHidden();
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    expect(overflow, `${locale} desktop header must not overflow`).toBeLessThanOrEqual(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   }
 });
 

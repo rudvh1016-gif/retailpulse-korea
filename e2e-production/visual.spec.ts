@@ -197,9 +197,10 @@ for (const width of viewports) {
     if (width > 820) {
       const topNav = page.locator("nav.top-nav");
       await expect(topNav).toBeVisible();
-      await topNav.getByRole("link", { name: "관광안내", exact: true }).click();
+      await topNav.getByRole("link", { name: "더보기", exact: true }).click();
+      await page.locator('.more-section-links a[href="/ko/tourism-desk/myeongdong"]').click();
       await expect(page).toHaveURL(/\/ko\/tourism-desk\/myeongdong$/);
-      await expect(topNav.getByRole("link", { name: "관광안내", exact: true })).toHaveAttribute("aria-current", "page");
+      await expect(topNav.getByRole("link", { name: "더보기", exact: true })).toHaveAttribute("aria-current", "location");
       await testInfo.attach(`tourism-desktop-nav-${width}.png`, {
         body: await page.locator(".topbar").screenshot({ animations: "disabled", caret: "hide" }),
         contentType: "image/png",

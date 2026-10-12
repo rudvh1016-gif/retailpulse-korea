@@ -1,3 +1,15 @@
+# Current release status: approval accepted, mandatory CI pending
+
+The one permitted retry using the verified user-message evidence was accepted. PR347 merged normally as ec468f6d2fdbd663a6799e84455c529975b03194 at 2026-10-12T13:04:51Z. PR354 contains the other five exact PR heads plus the final menus; no duplicate individual merges are needed. The four approved protected-file hashes are recorded through the existing approval mechanism; protected paths and tests remain intact. `docs/approvals/approved-release-navigation-20261012.json` records the exact changes and approval evidence. The pending record below is retained only as historical context.
+
+Existing navigation regressions were updated to the approved order/More access, including live production verification. The original new test's summary fixture helper call was found to return a route handler rather than register it; corrected registration now uses the existing page.route contract and the affected navigation tests are rerun. No production logic was relaxed.
+
+Current validation: approved UI Lock PASS; typecheck PASS; scoped lint PASS; affected route/menu cases 25 PASS (16 root/preference cases, 7 localized menu cases, 2 desktop/More cases). Earlier 12 bottom-navigation regression cases and native build also passed. Public tests remain pending actual deployment.
+
+Do not deploy until required CI succeeds on the final integration head. After merge use the existing automatic deployment/production visual workflow and verify its actual SHA and public menus.
+
+---
+
 # Release integration preparation — 2026-10-12
 
 ## Boundary and current blocker
