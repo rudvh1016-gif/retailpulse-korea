@@ -465,7 +465,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       </div>
 
       <main className="page-shell">
-        {view === "airport-glance" && <AirportGlance lang={lang} published artworkSrc="/images/airport-glance/approved-v1-1448.webp"/>}
+        {view === "airport-glance" && <AirportGlance lang={lang} published selectedDate={serviceDate} onDateChange={changeDate} artworkSrc="/images/airport-glance/approved-v1-1448.webp"/>}
         {view === "today" && (
           <>
             <section className="hero demand-hero" aria-labelledby="hero-title">
@@ -515,6 +515,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           terminal={terminal}
           industry={industry}
           onAbout={() => navigate("about")}
+          onNavigate={navigate}
         />}
 
         <footer className="site-footer">
@@ -945,10 +946,11 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
 }
 
 function MoreView({
-  lang, setLang, selected, terminal, industry, onAbout,
+  lang, setLang, selected, terminal, industry, onAbout, onNavigate,
 }: {
   lang: Lang; setLang: (value: Lang) => void; selected: AreaId; terminal: Terminal; industry: IndustryId;
   onAbout: () => void;
+  onNavigate: (view: View) => void;
 }) {
   const [sourcesOpen, setSourcesOpen] = useState(false);
   return (
@@ -961,7 +963,7 @@ function MoreView({
       </div>
 
       <nav className="more-section-links" aria-label={localText(lang,{ko:'서비스 메뉴',en:'Service sections',zh:'服务菜单',ja:'サービスメニュー'})}>
-        {(['business','tourism-desk','forecast','about'] as const).map(item=><a key={item} href={routeFor(lang,item,selected)}>{copy[lang][item]}</a>)}
+        {(['business','tourism-desk','forecast','about'] as const).map(item=><a key={item} href={routeFor(lang,item,selected)} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}
       </nav>
       <SiteUsageGuide lang={lang} />
       <CollectionStatus lang={lang} />

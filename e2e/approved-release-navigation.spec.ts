@@ -12,3 +12,17 @@ for(const [lang,width] of [['ko',360],['ko',390],['ko',430],['ko',1440],['en',39
  await nav.locator('a').last().click();await expect(page).toHaveURL(new RegExp(`/${lang}/more`));await expect(page.locator('.more-section-links a[href$="/business"]')).toBeVisible();await page.goBack();await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
 });
+
+for(const width of [390,1440])test(`airport glance keeps shared date URL and history ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:900});await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));await page.goto('/ko/airport-glance?date=2026-10-01');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ const input=page.locator('.glance-controls input[type=date]');await expect(input).toHaveValue('2026-10-01');await input.fill('2026-10-02');await expect(page).toHaveURL(/date=2026-10-02/);await expect(input).toHaveValue('2026-10-02');
+ await page.goBack();await expect(input).toHaveValue('2026-10-01');await page.goForward();await expect(input).toHaveValue('2026-10-02');
+ const nav=page.locator(width<1000?'.bottom-nav':'.top-nav');await nav.locator('a[href="/ko/airport"]').click();await expect(page).toHaveURL(/airport\?date=2026-10-02/);await nav.locator('a[href="/ko/airport-glance"]').click();await expect(input).toHaveValue('2026-10-02');
+ await page.getByLabel('Language',{exact:true}).selectOption('en');await expect(input).toHaveValue('2026-10-02');await expect(page).toHaveURL(/en\/airport-glance\?date=2026-10-02/);
+ await nav.locator('a').last().click();await page.locator('.more-section-links a[href="/en/business"]').click();await expect(page).toHaveURL(/en\/business\?date=2026-10-02/);await nav.locator('a[href="/en/airport-glance"]').click();await expect(input).toHaveValue('2026-10-02');
+ await page.locator('.glance-controls').getByRole('button',{name:'Today',exact:true}).click();await expect(page).not.toHaveURL(/date=/);await expect(input).toHaveValue(SUMMARY_FIXTURE.serviceDateKst);
+});
+
+test('mobile More keeps the chosen store area and date',async({page})=>{
+ await page.setViewportSize({width:390,height:900});await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));await page.goto('/ko/hongdae?date=2026-10-01');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');const nav=page.locator('.bottom-nav');await nav.locator('a').first().click();await nav.locator('a').last().click();await page.locator('.more-section-links a[href="/ko/business"]').click();await expect(page).toHaveURL(/business\?date=2026-10-01/);await expect(page.locator('.business-view .area-tabs button[aria-selected=true]')).toHaveText('홍대');
+});
