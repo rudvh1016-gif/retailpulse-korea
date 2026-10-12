@@ -4,35 +4,23 @@ The requested Library image `libfile_59815a4d20bc8191abc8b10d52ef2e49`, version1
 
 The isolated, noindex preview route now displays responsive WebP derivatives at 480/960/1448px. Original aspect ratio and image dimensions reserve space. The image has high fetch priority; below-image data continues to use the existing API/hooks. No 3D engine, new dependency, collector or storage write was added.
 
-## Actual screens
+## Current candidate: decision summary (supersedes earlier long layouts)
 
-- [Desktop 1440px](screenshots/airport-glance-approved-20261012/glance-approved-1440.png)
-- [Mobile 360px](screenshots/airport-glance-approved-20261012/glance-approved-360.png)
-- [Mobile 390px](screenshots/airport-glance-approved-20261012/glance-approved-390.png)
-- [Mobile 430px](screenshots/airport-glance-approved-20261012/glance-approved-430.png)
+The latest owner feedback asks for a 15-second decision summary, preserving the approved image and existing detailed page. The top three links now show (1) the longest fresh comparable departure-hall wait with hall/terminal/time and ties, (2) the upcoming scheduled departure slot with the most flights, excluding elapsed departures even inside the current partial hour, and (3) the largest positive previous-month daily-mean destination change. Missing/zero-baseline comparisons do not produce invented summaries. Shared queue selection retains freshness, duplicate-conflict and closed-reading rules; a zero reading is not recommended as quiet. A 60+ reading retains its plus sign.
 
-Captures use public API responses from 2026-10-12T06:43:09.299Z (15:43 KST), fixed to that source time. 563 scheduled physical departures and 33 at the selected current hour are actual API values, not hardcoded production data. The per-building totals, country means and source times remain HTML. Desktop retains the existing conceptual label arrangement; on mobile the three building readings move immediately below the full image so they cannot cover it. This is a conceptual layout, not official coordinates or a geometrically exact terminal map. The official map remains linked.
+T1/concourse/T2 counts and west/centre/east shares remain HTML inside the image on desktop and mobile. Only T1/T2 receive actual hall observations; no concourse waiting time is created. Image width is capped at800px on desktop without cropping. The concise country shares and daily-mean change Top5 sit directly below it. They are separate measures: selected-day destination flight share versus monthly daily-mean percentage change. Unknown destinations retain the selected-day denominator. Top country ties remain included; the complete list is a link to existing detail, not a duplicated list. The long hourly chart and time controls have been removed from this preview only. Date and terminal controls remain.
 
-## Verification and size comparison
+## Current actual screens
+- [PC1440](screenshots/airport-glance-overlay-20261012/glance-overlay-1440.png)
+- [Mobile360](screenshots/airport-glance-overlay-20261012/glance-overlay-360.png)
+- [Mobile390](screenshots/airport-glance-overlay-20261012/glance-overlay-390.png)
+- [Mobile430](screenshots/airport-glance-overlay-20261012/glance-overlay-430.png)
+- [Evidence](screenshots/airport-glance-overlay-20261012/capture-evidence.json)
 
-TypeScript, scoped ESLint (0 errors, the existing static-img advisory), two glance unit tests, two font-coverage tests, unchanged UI-lock, native vinext build and existing browser10 passed. Browser coverage includes 360/390/430/1440px, date/terminal/hour controls, unavailable and failed data, Chinese/Japanese, keyboard and reduced motion. All four fresh captures have no horizontal overflow or pageerror.
+These captures reuse the stored public API response and source clock 2026-10-12T06:43:09.299Z (15:43 KST), DPR1, reduced motion. Actual values: T2 hall1A24min at15:41 (tied); upcoming18:00–19:00 has36 scheduled flights; MP daily mean+50.0%, September30 versus October11 included days. Country shares show Japan165/563=29.3% and China133/563=23.6%. No screenshot numbers are hardcoded in production. Four captures have no horizontal overflow or page errors; pixels were inspected on PC/mobile.
 
-The same approved source image is 3,030,243 bytes before optimization. WebP files are 57,294 bytes at480px, 199,386 at960px and 364,242 at1448px. Cold browser contexts at DPR1 selected480px on all three mobile widths and1448px on desktop. This is an image-payload comparison; it is not a new whole-site PSI/LCP performance result.
+The same source image remains 3,030,243bytes; responsive derivatives480/960/1448 remain57,294/199,386/364,242bytes. The current desktop selects960, mobile480 at DPR1. No new API, image generation, 3D engine or dependency. No whole-site PSI/LCP claim.
 
-## Revised preview after owner feedback
+Targeted validation: typecheck PASS; scoped ESLint0 errors/one existing static-img advisory; glance decision/country5 + font2 PASS; unchanged UI-lock PASS; native build PASS; new decision-summary browser9 PASS (360/390/430/1440 overlay bounds/nonoverlap, terminal/date switching, no stale current waits on past dates, loading failure, four languages, keyboard details and destination links). The former long-layout tests were replaced to reflect the explicitly superseding design; UI-lock tests and approval hashes were not modified. Earlier full feature checks were not repeated.
 
-This is a revised preview, not final design approval. The approved artwork is unchanged. Only the unpublished glance route has a silver/blue-gray canvas; existing airport detail is unchanged. Mobile spacing is reduced, zero unverified-location notes are hidden, actual nonzero counts remain as small notes, and the conceptual-map disclaimer opens the unchanged denominator explanation with keyboard-accessible native details. The news entry matches the deployed Customs & Duty-Free News labels in all four languages and links to the existing page; no news tab is added.
-
-The ranking now states actual included-day counts above the table (30 previous / 11 selected in this snapshot) alongside the daily-mean and excluded-comparison basis. Calculation functions, API contracts, source timestamps and image bytes are unchanged.
-
-- [Revised desktop 1440px](screenshots/airport-glance-revised-20261012/glance-revised-1440.png)
-- [Revised mobile 360px](screenshots/airport-glance-revised-20261012/glance-revised-360.png)
-- [Revised mobile 390px](screenshots/airport-glance-revised-20261012/glance-revised-390.png)
-- [Revised mobile 430px](screenshots/airport-glance-revised-20261012/glance-revised-430.png)
-- [Capture evidence](screenshots/airport-glance-revised-20261012/capture-evidence.json)
-
-The revised captures reuse the same saved public responses and fixed clock, at DPR1/reduced motion. Screenshot heights before/after: 1440 viewport 1722/1643px; 360 viewport 1792/1638px; 390 viewport 1815/1661px; 430 viewport 1845/1691px. These are layout measurements, not latency, LCP or PSI. All captures have zero horizontal overflow and page errors. Actual PC and mobile pixels were inspected. The parent has delivered the previous screenshots through Library; no duplicate upload or image generation was attempted for this revision.
-
-Validation: `tsc --noEmit` PASS; scoped ESLint PASS with the same static-img advisory; `node --import tsx --test tests/airport-glance.test.ts tests/font-coverage.test.mjs` 4 PASS; `node --import tsx --test --test-name-pattern='UI|lock|protected' tests/operational-phase2.test.mjs` 3 PASS (including unchanged UI lock); native vinext build PASS; rendered HTML46 PASS; Playwright glance11 PASS. The first UI-lock invocation omitted the repository's tsx loader and failed before tests; rerunning with the required loader passed, without changing or disabling the lock. Git diff whitespace check PASS after LF normalization. Secret check and commit-specific CI are recorded on PR350.
-
-No public merge, deployment, collection, schedule changes, paid services or protected-file changes. The owner reviews these revised screens before any publication decision.
+Draft only: this is a revised candidate, not final approval. Existing detail is not shortened, and no merge/deployment was run. Library delivery is handled by the parent; no duplicate upload attempted. Earlier capture folders are retained as historical evidence, superseded by the links above.

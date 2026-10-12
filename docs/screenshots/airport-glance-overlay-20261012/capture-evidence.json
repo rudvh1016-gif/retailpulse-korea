@@ -1,0 +1,54 @@
+[
+  {
+    "width": 1440,
+    "sourceAt": "2026-10-12T06:43:09.299Z",
+    "height": 1427,
+    "includedDays": "포함일 · 전월 30 일 / 선택월 11 일",
+    "total": "선택일 출발편 · 전체 563 편\n공항 상세 ↗",
+    "image": {
+      "src": "http://127.0.0.1:4202/images/airport-glance/approved-v1-960.webp",
+      "naturalWidth": 800,
+      "rendered": 800
+    },
+    "errors": []
+  },
+  {
+    "width": 360,
+    "sourceAt": "2026-10-12T06:43:09.299Z",
+    "height": 1516,
+    "includedDays": "포함일 · 전월 30 일 / 선택월 11 일",
+    "total": "선택일 출발편 · 전체 563 편\n공항 상세 ↗",
+    "image": {
+      "src": "http://127.0.0.1:4202/images/airport-glance/approved-v1-480.webp",
+      "naturalWidth": 336,
+      "rendered": 336
+    },
+    "errors": []
+  },
+  {
+    "width": 390,
+    "sourceAt": "2026-10-12T06:43:09.299Z",
+    "height": 1538,
+    "includedDays": "포함일 · 전월 30 일 / 선택월 11 일",
+    "total": "선택일 출발편 · 전체 563 편\n공항 상세 ↗",
+    "image": {
+      "src": "http://127.0.0.1:4202/images/airport-glance/approved-v1-480.webp",
+      "naturalWidth": 366,
+      "rendered": 366
+    },
+    "errors": []
+  },
+  {
+    "width": 430,
+    "sourceAt": "2026-10-12T06:43:09.299Z",
+    "height": 1554,
+    "includedDays": "포함일 · 전월 30 일 / 선택월 11 일",
+    "total": "선택일 출발편 · 전체 563 편\n공항 상세 ↗",
+    "image": {
+      "src": "http://127.0.0.1:4202/images/airport-glance/approved-v1-480.webp",
+      "naturalWidth": 406,
+      "rendered": 406
+    },
+    "errors": []
+  }
+]
