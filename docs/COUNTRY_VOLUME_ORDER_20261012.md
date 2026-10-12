@@ -12,3 +12,5 @@ Only the compact component imports a new pure ordering helper; title labels name
 - [Browser evidence](screenshots/country-volume-order-20261012/evidence.json)
 
 Checks: new ordering2 + font2 PASS; existing monthly/country8 PASS; typecheck PASS; scoped lint0 errors/one existing static flag-img advisory; UI-lock unchanged PASS; native production build PASS; top-eight browser4 PASS at360/390/430/1280 including keyboard expand/collapse and unchanged share definitions. Actual-source PC/mobile captures verify all8, US26.5, entire expanded order, no horizontal overflow/page errors. Git diff and committed-file secret checks are recorded on the draft PR. No merge or deployment.
+
+Component captures hide only fixed/sticky application chrome so it cannot obscure the ranked cards; card layout, text and values are unchanged.
