@@ -17,7 +17,8 @@ for(const width of [360,390,430,1280])test(`monthly cards show top eight, expand
  await page.goto('/ko/airport');
  const section=page.getByTestId('airport-month-flights'),countries=section.getByTestId('destination-daily-changes');
  const cards=countries.locator(':scope > ul > li'),toggle=countries.getByRole('button',{name:'더 보기',exact:true});
- const order=['CN','DE','FR','PH','TH','TW','US','VN','JP'];
+ const order=['CN','DE','FR','JP','PH','TH','TW','US','VN'];
+ await expect(countries.getByRole('heading',{name:'항공편 많은 국가 TOP8'})).toBeVisible();
  await expect(cards).toHaveCount(8);expect(await cards.evaluateAll(rows=>rows.map(row=>row.getAttribute('data-country')))).toEqual(order.slice(0,8));
  await expect(toggle).toHaveAttribute('aria-expanded','false');await toggle.focus();await page.keyboard.press('Enter');
  await expect(cards).toHaveCount(9);expect(await cards.evaluateAll(rows=>rows.map(row=>row.getAttribute('data-country')))).toEqual(order);
