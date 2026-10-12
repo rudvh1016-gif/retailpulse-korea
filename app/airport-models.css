@@ -391,3 +391,16 @@ nav.bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 @media(min-width:1024px) {
   .airport-concept-picture.airport-scene-overview-v14[data-building="all"] {max-width:1200px;}
 }
+
+/* Revised candidate: one honest column layer, no duplicate curve or area. */
+.airport-today.airport-approved .airport-hero .airport-flow[data-chart-material="ink-silver"] .av-now,
+.airport-flow[data-chart-material="ink-silver"] .av-now{stroke:#80b2a4;stroke-width:1;stroke-opacity:.6;stroke-dasharray:none}
+.airport-today.airport-approved .airport-hero .airport-flow[data-chart-material="ink-silver"] :is(.airport-flow-now-label,.airport-flow-now-value,.airport-flow-peak text,.airport-flow-hours text),
+.airport-flow[data-chart-material="ink-silver"] :is(.airport-flow-now-label,.airport-flow-now-value,.airport-flow-peak text,.airport-flow-hours text){fill:#243e55;fill-opacity:1;font-size:11px;font-weight:500}
+.airport-flow[data-chart-material="ink-silver"] .airport-flow-now-label{fill:#325f52!important}
+.airport-today.airport-approved .airport-hero .airport-flow[data-chart-material="ink-silver"] .airport-flow-base{display:block;stroke:#dbe3e9;stroke-opacity:1}
+.airport-flow[data-chart-material="ink-silver"] .airport-flow-peak circle{display:none}
+.airport-flow[data-chart-material="ink-silver"] .airport-flow-tip text{fill:#243e55;fill-opacity:1;font-size:11px}
+.airport-flow[data-chart-material="ink-silver"] .airport-flow-tip rect{fill:#fff;stroke:#dbe3e9;fill-opacity:1}
+
+.airport-flow[data-chart-material="ink-silver"] .airport-flow-legend i.ahead{background:#aec5d8}

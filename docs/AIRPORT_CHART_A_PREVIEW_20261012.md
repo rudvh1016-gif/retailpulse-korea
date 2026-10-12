@@ -21,3 +21,14 @@ Library upload of the requested capture batch failed with the supported helper r
 Public merge/deployment requires the owner's review of these actual captures. The airport-glance artwork remains a separate blocked preview. PR343, PR344/345 and data follow-up PR347 are not part of this change.
 
 Local verification: TypeScript and scoped ESLint passed; the existing UI-lock test passed without hash changes; 11 relevant unit tests, 46 rendered HTML tests and 21 browser tests passed. Browser coverage includes four languages, 360/390/430/1280px, current-minute marker and terminal switches, equal ties, unknown gates and genuine zero estimates. Native vinext production build passed. The existing vendored frontend-design and web-design-guidelines skills were used; no duplicate installation. No new font, image, dependency, API call, scheduler or data write is introduced. No new controlled before/after performance benchmark was run, so this PR makes no speed-score claim.
+
+## Revised candidate after rejection of the first chart
+
+The earlier candidate was rejected and is not approved for publication. The current hourly chart uses flat, evenly spaced columns (64% of each band), ink-blue elapsed bars, pale-blue upcoming bars and mint only on the current band. Duplicate curved areas, strokes, decorative depth faces, gradients, moving curve dots and the rectangular time pill were removed from this component. Current time and its exact value are aligned at the top; a thin solid mint stroke retains the exact minute coordinate. Peak value and keyboard/pointer readings are preserved. Tooltip heights now follow the actual column value instead of a smoothed curve. No data calculation, forecast range, terminal sum, gap or timezone changed.
+
+- [Revised PC1440](screenshots/airport-chart-refined-20261012/chart-refined-1440.png)
+- [Revised mobile390](screenshots/airport-chart-refined-20261012/chart-refined-390.png)
+
+Same stored public response and clock as above (12:16 KST): peak5103 and current2385 passengers, T2. PC/mobile no overflow/page errors. Existing CSS initially overrode SVG fill attributes; the revision explicitly sets per-bar inline fill and the browser regression now asserts the real current mint fill. Only the expected old ink marker color and rectangular-label source assertion were updated for the requested visual change; exact-minute geometry, visible stroke, late-hour label containment and proportional values are still checked.
+
+New targeted checks: typecheck/scoped lint PASS; flow/UX truth43 PASS; model-scope browser5 PASS; revised minute-marker browser3 PASS; native build PASS; UI-lock unchanged PASS. Monthly and zone calculations/controls were not changed again or redundantly re-tested. This is one revised candidate; no merge/deployment and no new image generation. Parent handles Library delivery.
