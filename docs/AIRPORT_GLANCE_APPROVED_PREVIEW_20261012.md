@@ -19,4 +19,20 @@ TypeScript, scoped ESLint (0 errors, the existing static-img advisory), two glan
 
 The same approved source image is 3,030,243 bytes before optimization. WebP files are 57,294 bytes at480px, 199,386 at960px and 364,242 at1448px. Cold browser contexts at DPR1 selected480px on all three mobile widths and1448px on desktop. This is an image-payload comparison; it is not a new whole-site PSI/LCP performance result.
 
-The separate screenshot upload batch for chart A and Seoul failed through the current supported Library helper with `Library prepare_uploads is not available` after the network-permitted retry. No image Library IDs were produced. Those screenshots and this final preview remain available in their draft PRs. Public merge/deployment of PR348/349/350 still requires the owner's review of the actual screens.
+## Revised preview after owner feedback
+
+This is a revised preview, not final design approval. The approved artwork is unchanged. Only the unpublished glance route has a silver/blue-gray canvas; existing airport detail is unchanged. Mobile spacing is reduced, zero unverified-location notes are hidden, actual nonzero counts remain as small notes, and the conceptual-map disclaimer opens the unchanged denominator explanation with keyboard-accessible native details. The news entry matches the deployed Customs & Duty-Free News labels in all four languages and links to the existing page; no news tab is added.
+
+The ranking now states actual included-day counts above the table (30 previous / 11 selected in this snapshot) alongside the daily-mean and excluded-comparison basis. Calculation functions, API contracts, source timestamps and image bytes are unchanged.
+
+- [Revised desktop 1440px](screenshots/airport-glance-revised-20261012/glance-revised-1440.png)
+- [Revised mobile 360px](screenshots/airport-glance-revised-20261012/glance-revised-360.png)
+- [Revised mobile 390px](screenshots/airport-glance-revised-20261012/glance-revised-390.png)
+- [Revised mobile 430px](screenshots/airport-glance-revised-20261012/glance-revised-430.png)
+- [Capture evidence](screenshots/airport-glance-revised-20261012/capture-evidence.json)
+
+The revised captures reuse the same saved public responses and fixed clock, at DPR1/reduced motion. Screenshot heights before/after: 1440 viewport 1722/1643px; 360 viewport 1792/1638px; 390 viewport 1815/1661px; 430 viewport 1845/1691px. These are layout measurements, not latency, LCP or PSI. All captures have zero horizontal overflow and page errors. Actual PC and mobile pixels were inspected. The parent has delivered the previous screenshots through Library; no duplicate upload or image generation was attempted for this revision.
+
+Validation: `tsc --noEmit` PASS; scoped ESLint PASS with the same static-img advisory; `node --import tsx --test tests/airport-glance.test.ts tests/font-coverage.test.mjs` 4 PASS; `node --import tsx --test --test-name-pattern='UI|lock|protected' tests/operational-phase2.test.mjs` 3 PASS (including unchanged UI lock); native vinext build PASS; rendered HTML46 PASS; Playwright glance11 PASS. The first UI-lock invocation omitted the repository's tsx loader and failed before tests; rerunning with the required loader passed, without changing or disabling the lock. Git diff whitespace check PASS after LF normalization. Secret check and commit-specific CI are recorded on PR350.
+
+No public merge, deployment, collection, schedule changes, paid services or protected-file changes. The owner reviews these revised screens before any publication decision.

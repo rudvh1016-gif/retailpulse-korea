@@ -17,6 +17,10 @@ for(const width of [360,390,430,1440])test(`glance structure and controls ${widt
  await page.goto('/ko/airport-glance-preview');
  const app=page.getByTestId('airport-glance-preview');await expect(app.locator('.glance-kpis strong').first()).toContainText('300');
  await expect(app.locator('.glance-ranking tbody tr')).toHaveCount(5);await expect(app.locator('.glance-ranking tbody tr').first()).toHaveAttribute('data-country','TW');
+ await expect(app.locator('.glance-location-note')).toHaveCount(0);
+ await expect(app.locator('.glance-included-days')).toHaveText('포함일 · 전월 1 일 / 선택월 1 일');
+ await expect(app.getByRole('link',{name:'관세·면세 뉴스 공식 출처와 발표 시각 확인 ↗'})).toHaveAttribute('href','/ko/airport-news');
+ await expect(app.locator('.glance-context')).not.toHaveAttribute('open');
  await expect(app.locator('.glance-bars button[data-now=true]')).toHaveCount(1);
  const hour=app.getByRole('combobox',{name:'선택 시간'});await hour.selectOption('10');await expect(app.locator('.glance-hour-readout')).toContainText('11 편');
  expect((await hour.boundingBox())!.height).toBeGreaterThanOrEqual(44);
@@ -68,3 +72,15 @@ for(const [lang,title,terminal,country] of [['zh','机场一览','航站楼','�
  expect(await app.textContent()).not.toMatch(/Airport at a glance|No verified data available|Approved airport artwork pending/);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
+
+ test('only real unverified locations show a small note and denominator stays available',async({page})=>{
+ await page.route('**/api/live/summary*',routeSummary({...SUMMARY_FIXTURE,serviceDateKst:date,todayKst:date,airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:date}}));
+ await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',flights:[{...flight(date,'unknown',10,'NRT','T1',''),direction:'departure'}],retrievedAt:`${date}T00:00:00Z`,truncated:false}}));
+ await page.route('**/api/live/airport-months*',route=>route.fulfill({json:monthly}));
+ await page.goto('/ko/airport-glance-preview');
+ const app=page.getByTestId('airport-glance-preview');
+ await expect(app.locator('.glance-location-note')).toHaveText('위치 미확인 1 편');
+ const summary=app.locator('.glance-context summary');await summary.focus();await page.keyboard.press('Enter');
+ await expect(app.locator('.glance-context p')).toBeVisible();
+ await expect(app.locator('.glance-context p')).toContainText('위치 미확인도 포함');
+ });
