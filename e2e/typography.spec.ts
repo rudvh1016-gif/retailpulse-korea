@@ -925,8 +925,8 @@ for (const section of ["출국", "입국"] as const) {
 
     // A real stroke. A zero-width box is the exact shape WebKit refuses to paint.
     expect(marker!.strokeWidth, "the marker must have a real stroke width").toBeGreaterThanOrEqual(1);
-    // Owner-approved ink/silver chart: the position rule stays ink; only the current-hour bar is mint.
-    expect(marker!.stroke, "the rule uses the approved ink-blue stroke").toBe("rgb(67, 97, 127)");
+    // Unpublished revised candidate: the current-minute stroke and current-hour bar use restrained mint.
+    expect(marker!.stroke, "the rule uses the revised mint stroke").toBe("rgb(128, 178, 164)");
     expect(marker!.height, "the marker must span the plot").toBeGreaterThan(100);
     expect(marker!.borderLeftWidth, "a border is what stopped rendering on iOS; do not go back to it").toBe(0);
     expect(marker!.label).toBe("현재 시각 14:10");

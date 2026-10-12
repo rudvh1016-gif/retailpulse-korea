@@ -2944,3 +2944,7 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .airport-comparison-change { font-weight: var(--weight-strong); }
 .clarity-purpose-scenes { display: inline-flex; vertical-align: middle; gap: 2px; margin-right: 8px; }
 .clarity-purpose-scenes img,.tourism-background-item dt img { object-fit: contain; }
+
+/* Approved release: secondary destinations remain reachable through More. */
+.more-section-links{display:flex;flex-wrap:wrap;gap:8px 24px;margin-bottom:18px}
+.more-section-links a{display:inline-flex;align-items:center;min-height:44px;text-decoration:underline;text-underline-offset:3px}

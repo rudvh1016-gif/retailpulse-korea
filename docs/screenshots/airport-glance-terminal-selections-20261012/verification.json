@@ -1,0 +1,138 @@
+[
+  {
+    "width": 1440,
+    "scope": "T1",
+    "sourceAt": "2026-10-12T06:43:09.299Z",
+    "dayTotal": "선택일 출발편 · T1 300 편\n공항 상세 ↗",
+    "zone": "앞으로 출발편이 가장 많은 구역\n탑승동 서편\n4 편 · 40%\n이 구역 주요 목적지\n중국\n4 편\n같은 탑승동 · 동편 2 편 · 중앙 1 편\n앞 15:43–16:43 KST · 출발편 기준\nT1 · 선택 시간대 총 10편 중 4편\n구역별 보기",
+    "labels": [
+      {
+        "building": "T1",
+        "selected": "true",
+        "text": "T1 158 편서편50%중앙7%동편43%대기 12 분 · 5W · 15:40",
+        "opacity": "1",
+        "background": "rgba(233, 238, 241, 0.94)",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "building": "탑승동",
+        "selected": "true",
+        "text": "탑승동 142 편서편38.7%중앙19.7%동편41.5%",
+        "opacity": "1",
+        "background": "rgba(233, 238, 241, 0.94)",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "building": "T2",
+        "selected": "false",
+        "text": "T2 263 편서편47.5%중앙7.6%동편44.9%대기 24 분 · 1A · 15:41",
+        "opacity": "1",
+        "background": "rgba(233, 238, 241, 0.94)",
+        "color": "rgb(0, 0, 0)"
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "scope": "T2",
+    "sourceAt": "2026-10-12T06:43:09.299Z",
+    "dayTotal": "선택일 출발편 · T2 263 편\n공항 상세 ↗",
+    "zone": "앞으로 출발편이 가장 많은 구역\nT2 서편\n9 편 · 52.9%\n이 구역 주요 목적지\n일본\n4 편\n미국\n2 편\n같은 T2 · 동편 6 편 · 중앙 2 편\n앞 15:43–16:43 KST · 출발편 기준\nT2 · 선택 시간대 총 17편 중 9편\n구역별 보기",
+    "labels": [
+      {
+        "building": "T1",
+        "selected": "false",
+        "text": "T1 158 편서편50%중앙7%동편43%대기 12 분 · 5W · 15:40",
+        "opacity": "1",
+        "background": "rgba(233, 238, 241, 0.94)",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "building": "탑승동",
+        "selected": "false",
+        "text": "탑승동 142 편서편38.7%중앙19.7%동편41.5%",
+        "opacity": "1",
+        "background": "rgba(233, 238, 241, 0.94)",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "building": "T2",
+        "selected": "true",
+        "text": "T2 263 편서편47.5%중앙7.6%동편44.9%대기 24 분 · 1A · 15:41",
+        "opacity": "1",
+        "background": "rgba(233, 238, 241, 0.94)",
+        "color": "rgb(0, 0, 0)"
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 390,
+    "scope": "T1",
+    "sourceAt": "2026-10-12T06:43:09.299Z",
+    "dayTotal": "선택일 출발편 · T1 300 편\n공항 상세 ↗",
+    "zone": "앞으로 출발편이 가장 많은 구역\n탑승동 서편\n4 편 · 40%\n이 구역 주요 목적지\n중국\n4 편\n같은 탑승동 · 동편 2 편 · 중앙 1 편\n앞 15:43–16:43 KST · 출발편 기준\nT1 · 선택 시간대 총 10편 중 4편\n구역별 보기",
+    "labels": [
+      {
+        "building": "T1",
+        "selected": "true",
+        "text": "T1 158 편서편50%중앙7%동편43%대기 12 분 · 5W · 15:40",
+        "opacity": "1",
+        "background": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "building": "탑승동",
+        "selected": "true",
+        "text": "탑승동 142 편서편38.7%중앙19.7%동편41.5%",
+        "opacity": "1",
+        "background": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "building": "T2",
+        "selected": "false",
+        "text": "T2 263 편서편47.5%중앙7.6%동편44.9%대기 24 분 · 1A · 15:41",
+        "opacity": "1",
+        "background": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)"
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 390,
+    "scope": "T2",
+    "sourceAt": "2026-10-12T06:43:09.299Z",
+    "dayTotal": "선택일 출발편 · T2 263 편\n공항 상세 ↗",
+    "zone": "앞으로 출발편이 가장 많은 구역\nT2 서편\n9 편 · 52.9%\n이 구역 주요 목적지\n일본\n4 편\n미국\n2 편\n같은 T2 · 동편 6 편 · 중앙 2 편\n앞 15:43–16:43 KST · 출발편 기준\nT2 · 선택 시간대 총 17편 중 9편\n구역별 보기",
+    "labels": [
+      {
+        "building": "T1",
+        "selected": "false",
+        "text": "T1 158 편서편50%중앙7%동편43%대기 12 분 · 5W · 15:40",
+        "opacity": "1",
+        "background": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "building": "탑승동",
+        "selected": "false",
+        "text": "탑승동 142 편서편38.7%중앙19.7%동편41.5%",
+        "opacity": "1",
+        "background": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)"
+      },
+      {
+        "building": "T2",
+        "selected": "true",
+        "text": "T2 263 편서편47.5%중앙7.6%동편44.9%대기 24 분 · 1A · 15:41",
+        "opacity": "1",
+        "background": "rgba(0, 0, 0, 0)",
+        "color": "rgb(0, 0, 0)"
+      }
+    ],
+    "errors": []
+  }
+]

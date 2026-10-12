@@ -1,7 +1,7 @@
 {
   "base": "65907c971b5e279da48525875df6c972ab998c64",
   "protectedFiles": {
-    "app/[locale]/[slug]/page.tsx": "02bc92efc2116e7251b72ba1216acb3e00de244dbf4d15aecd2cc2c9cef86ab0",
+    "app/[locale]/[slug]/page.tsx": "667064f5cf0bbf2678960f6544db58a78f20e3fcf4de8fc3042f6465ef439654",
     "app/[locale]/not-found.tsx": "620e62c747a4a0d4b8af1558492c74e961f2a4f0d55caa2c960c508395a41ff0",
     "app/[locale]/page.tsx": "091f9054d32209a82b862d6497c7502f6d1e788f1fa09aab835f4cfd8062a535",
     "app/[locale]/tourism-desk/[area]/page.tsx": "b74c40a03d7ff4ec57a8314f4c11825467212d48634bebf057d078d3ae360b35",
@@ -16,7 +16,7 @@
     "app/api/live/summary/route.ts": "96727d7ade580d6a59fa3bcd438a242dae54316060ea259c7d74de40dfee1f3e",
     "app/area-demand-card.tsx": "8209a5fda381f6cf529b8635918e99ed158e6d7864280483083510ea16ba2be5",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
-    "app/globals.css": "5fa7a470a6dcce6cbc819951b4dea3da4305fac55db4bd424ce78c4121b1d62b",
+    "app/globals.css": "91bb08d182fadf62a71190527138522e5614b5a7cf4c12041466e2d76f93a8ae",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
     "app/layout.tsx": "c4c2506c841712a9b8a46c98f99fdea167df8f32e69cdb39f5a612874d600119",
     "app/live-signals.tsx": "51ca13c3a277ebdc9785194debd98c15684db04c5e8900726d7b12b1a5faada2",
@@ -26,10 +26,10 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "c996907051a11a47a282a06b910cee756ccadb611edadce4eee1d83cde938d05",
+    "app/retailpulse-app.tsx": "160166c6690eb5063bc265a89b53291211832fe30be9724546d9bb178d6f726b",
     "app/retailpulse-data.ts": "2a965cde02012978eb446a955b82bbcbfbec83f74f862e0e2846fae1ca348ecd",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
-    "app/seo-config.ts": "5b91fc95b4a6151e6cd53251cc4b34739b10256471759da01dc52c35b390779a",
+    "app/seo-config.ts": "a599d41c426c33c6b923f6386e4740516fd785d8308c3246293aefcfd9e73f68",
     "app/site-usage-guide.tsx": "4b49e1bd31a91e35f7d0b56b6d1670d94cf644bcc47bcb257508a2a0f6cc64f1",
     "app/sitemap.ts": "ab2329b032b269477ffad4b69258004b1b577b323735eccbf92518cbec258880",
     "app/source-status.tsx": "a4832ec2982ec76631341f8a8aea477d98dd45128234ca7f6ee1002ea16196dd",
@@ -1486,5 +1486,33 @@
     ],
     "approvalEvidenceFile": "docs/approvals/daily-country-context-20261012.json",
     "reason": "Owner explicitly requested correcting verified missing months. Only the two published data rows change. All protected paths, prior approvals and active lock checks remain."
+  },
+  "approvedReleaseNavigation20261012": {
+    "ownerRequest": "응응 병합해줘 반영해",
+    "scope": "Approved airport glance publication, final desktop/mobile navigation and necessary locale/SEO/shared-shell wiring. Desktop store retained, mobile store available in More. No font redesign, providers, collectors, permissions or cost changes.",
+    "changed": [
+      {
+        "file": "app/[locale]/[slug]/page.tsx",
+        "before": "02bc92efc2116e7251b72ba1216acb3e00de244dbf4d15aecd2cc2c9cef86ab0",
+        "approved": "667064f5cf0bbf2678960f6544db58a78f20e3fcf4de8fc3042f6465ef439654"
+      },
+      {
+        "file": "app/globals.css",
+        "before": "5fa7a470a6dcce6cbc819951b4dea3da4305fac55db4bd424ce78c4121b1d62b",
+        "approved": "91bb08d182fadf62a71190527138522e5614b5a7cf4c12041466e2d76f93a8ae"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "before": "c996907051a11a47a282a06b910cee756ccadb611edadce4eee1d83cde938d05",
+        "approved": "160166c6690eb5063bc265a89b53291211832fe30be9724546d9bb178d6f726b"
+      },
+      {
+        "file": "app/seo-config.ts",
+        "before": "5b91fc95b4a6151e6cd53251cc4b34739b10256471759da01dc52c35b390779a",
+        "approved": "a599d41c426c33c6b923f6386e4740516fd785d8308c3246293aefcfd9e73f68"
+      }
+    ],
+    "approvalEvidenceFile": "docs/approvals/approved-release-navigation-20261012.json",
+    "protectedPathCount": 65
   }
 }

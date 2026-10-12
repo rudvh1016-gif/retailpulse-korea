@@ -98,16 +98,17 @@ for(const width of [320,390,430,1280]) {
   const outlook=page.getByTestId('population-outlook'),plot=outlook.locator('svg');
   await outlook.scrollIntoViewIfNeeded();
   await expect(outlook).toBeVisible();
-  await expect.poll(()=>plot.evaluate(el=>el.getBoundingClientRect().height)).toBeGreaterThan(280);
+  // The revised preview is exactly220px; retain the separate history chart's larger contract below.
+  await expect.poll(()=>plot.evaluate(el=>el.getBoundingClientRect().height)).toBeCloseTo(220,0);
   const geometry=await plot.evaluate(el=>{
    const svg=el as SVGSVGElement,line=el.querySelector('[data-selected-range]')!;
    return {width:svg.viewBox.baseVal.width,height:svg.viewBox.baseVal.height,renderedWidth:el.getBoundingClientRect().width,ceiling:Number(el.getAttribute('data-ceiling')),y1:Number(line.getAttribute('y1')),y2:Number(line.getAttribute('y2'))};
   });
-  expect(geometry.height).toBe(292);expect(Math.abs(geometry.width-geometry.renderedWidth)).toBeLessThan(2);
-  expect(geometry.y1).toBeCloseTo(244-29_000/geometry.ceiling*212,3);
-  expect(geometry.y2).toBeCloseTo(244-27_000/geometry.ceiling*212,3);
+  expect(geometry.height).toBe(220);expect(Math.abs(geometry.width-geometry.renderedWidth)).toBeLessThan(2);
+  expect(geometry.y1).toBeCloseTo(184-29_000/geometry.ceiling*152,3);
+  expect(geometry.y2).toBeCloseTo(184-27_000/geometry.ceiling*152,3);
   await outlook.getByRole('button').nth(1).click();await expect(outlook.locator('.outlook-selection')).toContainText('29,000–31,000');
-  await outlook.screenshot({path:`../ui-headings-evidence-20261006/outlook-large-${width}.png`});
+  await outlook.screenshot({path:`../ui-headings-evidence-20261006/outlook-compact-${width}.png`});
   await page.locator('.population-history-disclosure > summary').click();
   const history=page.locator('.population-history-disclosure .population-chart');
   await expect.poll(()=>history.evaluate(el=>el.getBoundingClientRect().height)).toBeGreaterThan(280);

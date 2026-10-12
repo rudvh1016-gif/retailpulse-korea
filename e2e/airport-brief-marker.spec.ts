@@ -55,7 +55,7 @@ for (const clock of ["11:57", "21:03", "23:59"]) {
           visible: style.display !== "none" && style.visibility === "visible" && Number(style.opacity) === 1,
           // A real stroke, not a border on an empty box (the shape WebKit —
           // every browser on iOS — declined to paint on the owner's phone).
-          stroked: parseFloat(style.strokeWidth) >= 1 && style.stroke === "rgb(67, 97, 127)",
+          stroked: parseFloat(style.strokeWidth) >= 1 && style.stroke === "rgb(128, 178, 164)",
           inside: box.left >= frame.left && box.right <= frame.right,
           labelInside: label.left >= frame.left - 1 && label.right <= frame.right + 1,
         };
@@ -69,6 +69,8 @@ for (const clock of ["11:57", "21:03", "23:59"]) {
       expect(fraction).toBeCloseTo((hours + minutes / 60) / 24, 3);
       const currentBar = page.locator('.airport-hourly-prisms > g[data-finish="now"]');
       await expect(currentBar).toHaveCount(1);
+      await expect(currentBar.locator('rect').first()).toHaveCSS('fill','rgb(128, 178, 164)');
+      await expect(page.locator('.airport-flow-area,.airport-flow-line,.airport-flow-now-pill')).toHaveCount(0);
       await expect(currentBar).toHaveAttribute('data-start', bands[hours].targetStartAt);
     }
     const figure = page.locator('.airport-hero .airport-flow');
