@@ -542,7 +542,8 @@ test("production airport composition is one compact tabbed module at every requi
       expect(marker.inside).toBe(true);
       expect(marker.height).toBeGreaterThan(100);
       expect(marker.strokeWidth).toBeGreaterThanOrEqual(1);
-      expect(marker.stroke).toBe("rgb(67, 97, 127)");
+      // Approved flat chart uses the same mint current-time marker as the local E2E contract.
+      expect(marker.stroke).toBe("rgb(128, 178, 164)");
       console.log(`AIRPORT_CURRENT_MARKER ${JSON.stringify({ viewport: width, ...marker })}`);
       await testInfo.attach(`airport-marker-${width}.png`, { body: await page.locator(".airport-forecast").screenshot(), contentType: "image/png" });
     }
