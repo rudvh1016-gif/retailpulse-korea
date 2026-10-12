@@ -8,16 +8,23 @@ const summary={...SUMMARY_FIXTURE,todayKst:'2026-10-10',serviceDateKst:'2026-10-
 const reply=(month='2026-10')=>({status:'READY',month,months:['2026-10','2026-09'],calculatedAt:'2026-10-10T01:00:00Z',data:{version:AIRPORT_MONTH_VERSION,asOf:'2026-10-10',sidesVersion:AIRPORT_SIDES_VERSION,destinationsVersion:DESTINATIONS_VERSION,months:[
  buildAirportFlightMonth('2026-10','2026-10-10',[row('2026-10-01','a','T2','274'),row('2026-10-01','b','T2','274'),row('2026-10-01','c','CONCOURSE','110')],new Set(['2026-10-01'])),
  buildAirportFlightMonth('2026-09','2026-10-10',[row('2026-09-01','d','T2','231'),row('2026-09-02','e','T2','274')],new Set(['2026-09-01','2026-09-02']))]}});
-test('monthly cards retain countries beyond six and explain the two share bases',async({page})=>{
+for(const width of [360,390,430,1280])test(`monthly cards show top eight, expand in rank order and retain share bases ${width}`,async({page})=>{
  const payload=reply();
  payload.data.months[0]=buildAirportFlightMonth('2026-10','2026-10-10',['NRT','PEK','BKK','HAN','TPE','MNL','LAX','FRA','CDG'].map((airportCode,index)=>({...row('2026-10-01',String(index),'T2','274'),airportCode})),new Set(['2026-10-01']));
- await page.setViewportSize({width:390,height:900});
+ await page.setViewportSize({width,height:900});
  await page.route('**/api/live/summary*',routeSummary(summary));
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:payload}));
  await page.goto('/ko/airport');
  const section=page.getByTestId('airport-month-flights'),countries=section.getByTestId('destination-daily-changes');
- await expect(countries.locator(':scope > ul > li')).toHaveCount(9);
+ const cards=countries.locator(':scope > ul > li'),toggle=countries.getByRole('button',{name:'더 보기',exact:true});
+ const order=['CN','DE','FR','PH','TH','TW','US','VN','JP'];
+ await expect(cards).toHaveCount(8);expect(await cards.evaluateAll(rows=>rows.map(row=>row.getAttribute('data-country')))).toEqual(order.slice(0,8));
+ await expect(toggle).toHaveAttribute('aria-expanded','false');await toggle.focus();await page.keyboard.press('Enter');
+ await expect(cards).toHaveCount(9);expect(await cards.evaluateAll(rows=>rows.map(row=>row.getAttribute('data-country')))).toEqual(order);
+ await expect(countries.getByRole('button',{name:'접기',exact:true})).toHaveAttribute('aria-expanded','true');
  for(const country of ['US','DE','FR']){await expect(countries.locator(`li[data-country="${country}"]`)).toHaveCount(1);await expect(countries.locator(`li[data-country="${country}"] [data-period="current"] strong`)).toHaveText('1');}
+ await countries.getByRole('button',{name:'접기',exact:true}).click();await expect(cards).toHaveCount(8);
+ expect(await cards.evaluateAll(rows=>rows.map(row=>row.getAttribute('data-country')))).toEqual(order.slice(0,8));
  const basis=section.locator('details').filter({has:page.getByText('동편·서편·중앙 항공편 비율',{exact:true})});
  await basis.locator(':scope > summary').click();
  await expect(basis).toContainText('선택 범위의 전체 항공편을 100%');
@@ -74,8 +81,8 @@ for(const [label,monthDelay,flightDelay] of [['month first',100,700],['flights f
  const sent:string[]=[];page.on('request',request=>{if(request.url().includes('/api/live/airport-months'))sent.push(new URL(request.url()).search);});
  await page.route('**/api/live/flights*',async route=>{await new Promise(resolve=>setTimeout(resolve,flightDelay));await route.fulfill({json:{mode:'live-flights',generatedAt:summary.generatedAt,serviceDateKst:'2026-10-10',flights:[],truncated:false,retrievedAt:summary.generatedAt}});});
  await page.route('**/api/live/airport-months*',async route=>{await new Promise(resolve=>setTimeout(resolve,monthDelay));await route.fulfill({json:reply()});});
- await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();
- await expect(section).toContainText('+200.0%');await page.waitForTimeout(1000);
+ await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');
+ await expect(section).toContainText('+200.0%');await section.scrollIntoViewIfNeeded();await page.waitForTimeout(1000);
  expect(sent).toEqual(['?month=2026-10']);
 });
 

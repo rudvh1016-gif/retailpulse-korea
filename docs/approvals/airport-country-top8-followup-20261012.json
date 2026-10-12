@@ -1,0 +1,23 @@
+{
+  "scope": "One follow-up PR only; merge/deployment not authorized",
+  "base": "1c4adac2f9e6488b1dec667fa30fd05381c73370",
+  "ownerRequests": [
+    "상위 8개 기본 노출, 나머지 더 보기 / 접기",
+    "출국장 대기 글자 크기 축소 및 주변 폰트 통일",
+    "서울 화장실·물품보관함 섹션 제거"
+  ],
+  "parentClarification": "Both screenshots inspected by parent: monthly destination cards; T1/T2 checkpoint heading and eight reading labels; Seoul facility section only, preserve demand signals.",
+  "protectedChange": {
+    "path": "app/live-signals.tsx",
+    "scope": "Remove SeoulFacilityGuide import and one render call only",
+    "before": "f0ddb03df122fd1dfc79113f891077b6860c2b664e8dc9194cf6df847b76ec4a",
+    "after": "51ca13c3a277ebdc9785194debd98c15684db04c5e8900726d7b12b1a5faada2"
+  },
+  "preserved": [
+    "Country sorting and calculations, US/Europe and all remaining rows",
+    "Wait values, times, counts and gate locations",
+    "Raw facility datasets, airport facilities and departure preparation",
+    "All other protected hashes; PR343 and glance excluded"
+  ],
+  "testCorrection": "Production Visual38189462893 had obsolete black marker expectation. Existing approved ink-silver CSS is #43617f; update one expectation only."
+}
