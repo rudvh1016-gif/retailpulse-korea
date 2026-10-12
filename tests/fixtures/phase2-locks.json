@@ -1527,7 +1527,7 @@
     "reason": "Use the existing shared serviceDate/changeDate contract for the published route; standalone preview retains its local date. Preserve URL, menu navigation, browser history and locale changes. No new date source, API or collector. The new More links use the existing navigate callback so moving the mobile Store entry does not reset the selected date or district."
   },
   "airportGlanceDefaultStart20261013": {
-    "scope": "Explicit owner request for default airport glance entry and preserved direct links/history/date; reference-dependent background change remains blocked",
+    "scope": "Explicit owner request for default airport glance entry, preserved direct links/history/date, and white page canvas; images, overlays, typography and layout preserved",
     "userMessage": "Sentinel_8d8e09daf9948191bc8ee718505951fd",
     "baseMain": "a4132e487cfd2621549656035b4ef9695c0bdd9f",
     "changed": [
@@ -1545,6 +1545,17 @@
     "exactUnifiedDiff": "diff --git a/app/[locale]/page.tsx b/app/[locale]/page.tsx\nindex 6afe832d..82e94902 100644\n--- a/app/[locale]/page.tsx\n+++ b/app/[locale]/page.tsx\n@@ -2,8 +2,6 @@ import type { Metadata } from \"next\";\n import { preload } from \"react-dom\";\n import { notFound } from \"next/navigation\";\n import RetailPulseApp from \"../retailpulse-app\";\n-import { AirportView } from \"../airport-view\";\n-import { loadTodayAnswer } from \"../../lib/today-answer-server\";\n import { buildMetadata, pageStructuredData, seoLocales, type SeoLocale } from \"../seo-config\";\n import {preloadShellFont} from '../shell-font-preload';\n \n@@ -54,7 +52,7 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:\n   preloadLiveSummary();\n   preloadShellFont(locale as SeoLocale);\n   return <>\n-    <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialView=\"airport\" initialScope=\"airport-home\" todayAnswer={await loadTodayAnswer()} AirportView={AirportView} />\n+    <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialView=\"airport-glance\" initialScope=\"airport-home\" />\n     <script type=\"application/ld+json\" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale)) }} />\n   </>;\n }\ndiff --git a/app/retailpulse-app.tsx b/app/retailpulse-app.tsx\nindex b27a267a..6764f665 100644\n--- a/app/retailpulse-app.tsx\n+++ b/app/retailpulse-app.tsx\n@@ -219,7 +219,7 @@ type RetailPulseProps = {\n   initialArea?: AreaId;\n   initialRoute?: boolean;\n   /**\n-   * \"airport-home\" is `/{lang}`: airport first, with Seoul summaries below.\n+   * \"airport-home\" is `/{lang}`: the airport glance start page.\n    * \"home\" is a legacy component scope; explicit Seoul routes use \"area\".\n    * \"area\" is `/{lang}/{area}`: that area's own page, with its own H1 and\n    * without the overview list, so the two routes are no longer the same page\n@@ -351,7 +351,7 @@ export default function Home({ initialLang = \"ko\", initialView = \"today\", initia\n       setConcourse(query.get('building')==='CONCOURSE');\n       const [, locale, slug, routeArea] = window.location.pathname.split(\"/\");\n       setHomeVisible(!slug);\n-      if (!slug) { setView(\"airport\"); setAirportSection(\"now\"); }\n+      if (!slug) { setView(\"airport-glance\"); setAirportSection(\"now\"); }\n       if ([\"ko\", \"en\", \"zh\", \"ja\"].includes(locale)) setLang(locale as Lang);\n       if (slug && Object.hasOwn(areaInfo, slug)) { setSelected(slug as AreaId); setView(\"today\"); }\n       else if (slug === \"tourism-desk\" && routeArea && Object.hasOwn(areaInfo, routeArea)) {\n@@ -404,7 +404,7 @@ export default function Home({ initialLang = \"ko\", initialView = \"today\", initia\n \n   function goHome() {\n     setHomeVisible(true);\n-    setView('airport');\n+    setView('airport-glance');\n     setAirportSection('now');\n     setConcourse(false);\n     const homePath=`/${lang}${serviceDate ? `?date=${serviceDate}` : ''}`;\ndiff --git a/proxy.ts b/proxy.ts\nindex f1442c7c..c30e0047 100644\n--- a/proxy.ts\n+++ b/proxy.ts\n@@ -8,6 +8,11 @@ const documentLanguages: Record<string, string> = {\n };\n \n export function proxy(request: NextRequest) {\n+  if (request.nextUrl.pathname === \"/\") {\n+    const destination = request.nextUrl.clone();\n+    destination.pathname = \"/ko\";\n+    return NextResponse.redirect(destination, 308);\n+  }\n   const locale = request.nextUrl.pathname.split(\"/\")[1] ?? \"ko\";\n   const requestHeaders = new Headers(request.headers);\n   requestHeaders.set(\"x-rpk-document-language\", documentLanguages[locale] ?? \"ko\");\n",
     "protectedPathCount": 65,
     "checksPreserved": true,
-    "mergeDeployAuthorized": false
+    "mergeDeployAuthorized": false,
+    "backgroundFollowup": {
+      "authorization": "Parent confirmed reference pixels via supported cloud Library path and supplied exact CSS-only instruction; no local Library retry needed",
+      "file": "app/airport-glance-preview.css",
+      "before": "#e9eef1",
+      "after": "#fff",
+      "selectors": [
+        ".glance-preview",
+        "body:has(.glance-preview)"
+      ],
+      "imagesOverlaysTypographyLayoutUnchanged": true
+    }
   }
 }

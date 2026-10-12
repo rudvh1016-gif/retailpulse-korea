@@ -1,4 +1,4 @@
-.glance-preview{max-width:1120px;margin:auto;padding:18px 24px 24px;background:#e9eef1;color:#111;font-family:inherit;font-size:12px;line-height:1.5;font-weight:400;font-variant-numeric:tabular-nums}
+.glance-preview{max-width:1120px;margin:auto;padding:18px 24px 24px;background:#fff;color:#111;font-family:inherit;font-size:12px;line-height:1.5;font-weight:400;font-variant-numeric:tabular-nums}
 .glance-preview :is(h1,h2,p,dl,dd){margin:0}.glance-preview h1{font-size:19px;font-weight:600}.glance-preview h2{font-size:13px;font-weight:600}.glance-preview small{font-size:11px}.glance-preview a{color:inherit;text-decoration:none}.glance-preview a:hover{text-decoration:underline}.glance-preview :is(button,input){font:inherit;color:inherit}.glance-preview :is(a,button,input):focus-visible{outline:2px solid #43617f;outline-offset:3px}
 .glance-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #dbe0e5;padding-bottom:8px}.glance-brand{font-size:18px;font-weight:600;letter-spacing:-.04em}.glance-brand span{display:block;font-size:10px;font-weight:400;letter-spacing:0;color:#53616e}.glance-header nav{display:flex;gap:24px}.glance-header nav a{padding:10px 0}.glance-heading{display:flex;align-items:baseline;gap:16px;margin-top:12px}.glance-heading small{color:#626d78}
 .glance-controls{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:12px;border-bottom:1px solid #e1e5e9;padding-bottom:8px}.glance-controls>div{display:flex;margin-right:auto;gap:6px}.glance-controls button{background:none;border:0;min-height:44px;padding:6px 13px;cursor:pointer}.glance-controls button[aria-pressed=true]{box-shadow:inset 0 -2px #43617f;font-weight:600}.glance-controls label{display:flex;align-items:center;gap:8px}.glance-controls input{min-height:44px;max-width:160px;border:1px solid #d8dfe5;padding:5px 8px;background:#edf2f5}.glance-controls>span{color:#53616e}
@@ -12,8 +12,8 @@
 .glance-bars button>small{white-space:nowrap;width:max-content}.glance-art-pending{display:block;padding:10px;text-align:center;font-size:11px}
 .glance-art-frame[data-artwork=ready]{aspect-ratio:1448/1086;min-height:0}
 .glance-art-frame[data-artwork=ready]>img{display:block;height:auto;aspect-ratio:1448/1086}
-/* Only the unpublished glance route uses the silver airport canvas. */
-body:has(.glance-preview){background:#e9eef1}
+/* Keep the glance page canvas aligned with the white app shell. */
+body:has(.glance-preview){background:#fff}
 .glance-preview :is(select,summary):focus-visible{outline:2px solid #43617f;outline-offset:3px}
 .glance-context{color:#53616e;font-size:11px;margin-top:4px}
 .glance-context summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:5px}

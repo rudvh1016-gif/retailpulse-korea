@@ -16,6 +16,7 @@ for(const width of [390,1440])test(`default start preserves dated direct routes 
  await page.getByRole('button',{name:'KORETAIL home'}).click();await expect(page.getByTestId('airport-glance-preview')).toBeVisible();await expect(page.locator('.glance-controls input')).toHaveValue('2026-10-01');
  await page.goBack();await expect(page.getByRole('heading',{name:'인천공항',exact:true})).toBeVisible();await expect(page.getByRole('tab',{name:'T2',exact:true})).toHaveAttribute('aria-selected','true');await expect(page).toHaveURL(/terminal=T2/);
  await page.goto('/ko');await expect(page.getByTestId('airport-glance-preview')).toBeVisible();await expect.poll(()=>page.locator('.glance-art-frame>img').evaluate(e=>(e as HTMLImageElement).complete&&(e as HTMLImageElement).naturalWidth>0)).toBe(true);
- await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');await expect(page.locator('.glance-preview')).toHaveCSS('background-color','rgb(233, 238, 241)');
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');await expect(page.locator('.glance-preview')).toHaveCSS('background-color','rgb(255, 255, 255)');
+ await expect(page.locator('body')).toHaveCSS('background-color','rgb(255, 255, 255)');
  await page.screenshot({path:testInfo.outputPath(`default-start-${width}.png`)});expect(errors).toEqual([]);
 });
