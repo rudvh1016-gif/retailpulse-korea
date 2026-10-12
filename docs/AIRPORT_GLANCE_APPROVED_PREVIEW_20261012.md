@@ -145,3 +145,18 @@ The extra context uses existing 13/12/10px type and compact rows, with no enlarg
 Validation: one new focused unit test covers exact zone/window destination isolation, elapsed rows, unknown destinations/buildings, all-scope versus T2 denominators, same-building peers and tied leaders. Two new browser cases (390/1440) pass for ties, flag/counts, selected-denominator switching and overflow. Actual-source full-page captures/checks at 1440/390/360 pass, including the independently audited 9/27 and Japan4/US2 details, black overlay text, unchanged airport geometry/fonts, period behavior and no page errors. Typecheck/native build/diff pass; scoped lint zero errors/two existing static-img advisories. Previously passed test suites were not manually repeated.
 
 Newest complete images: docs/screenshots/airport-glance-zone-context-20261012/airport-glance-pc-1440.png, airport-glance-mobile-390.png and airport-glance-mobile-360.png. verification.json and source-zone-audit.json accompany them. Saved real-response/local Chrome limits still apply. Public merge/deployment remains unapproved and unperformed.
+
+
+## Selected-period wording and requested T1/T2 current-implementation previews
+
+The zone denominator now explicitly says, for example, **전체 · 선택 시간대 총 27편 중 9편**, next to the dynamic first-window start/end. This is the selected future interval, not the daily total. T2 selection correctly shows 17 window flights / 9 west flights (52.9%).
+
+Current-implementation terminal screenshots were captured without generating/replacing/cropping the approved airport asset or inventing a new map design. For each T1/T2 selection: PC1440×1000 and mobile390×844 viewport screenshots, plus corresponding complete-page screenshots. Files are in docs/screenshots/airport-glance-terminal-selections-20261012 with names airport-glance-{T1,T2}-{pc-1440,mobile-390}-{viewport,full}.png. verification.json records selected states, actual labels, daily/period totals and no page errors/overflow.
+
+Verified behavior and limitation:
+- The same complete airport picture stays visible for either selection. T1 main 158, concourse 142, T2 263 and their individual building percentages remain separate in-image labels; no label merges T1 main with concourse.
+- Existing T1 terminal-filter policy includes both its main building and concourse for the outside selected-scope total: 300/day, 10 in the first future window. The representative is concourse west 4/10 (40%), China 4. This pre-existing terminal aggregation policy was not changed by a screenshot request.
+- T2 selected total is 263/day, 17 in the window; T2 west 9/17 (52.9%), Japan4/US2. The ALL selection remains 9/27 (33.3%).
+- The selected tab is underlined/bold. Image labels retain correct data-selected attributes (T1+concourse for T1, T2 for T2), but their text/background currently have no visible selected-building distinction because all labels remain black and fully opaque. Thus in-image selection emphasis is weak; this is explicitly reported rather than claimed fixed. No new highlight/outline or terminal-specific image was introduced without a design decision.
+
+The actual-source capture validation checks the new denominator text at 1440/390/360 and each of four terminal views, with separate building counts and matching filter states. Typecheck/scoped lint/diff pass (two existing img advisories). No additional broad test suite rerun. These terminal captures supplement the latest ALL full-page captures in airport-glance-zone-context-20261012. No merge/deployment.
