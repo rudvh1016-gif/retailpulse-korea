@@ -25,11 +25,12 @@ for(const [label,width,nav,reach] of [['mobile hover',390,'.bottom-nav','hover']
 });
 
 // The airport glance tab works the same way.
+// Only the screen's script counts: a dev server may already link its stylesheet on Seoul pages.
 const isAirportGlance=(url:string)=>/\/airport-glance-preview[-.]/.test(new URL(url).pathname);
 for(const [label,width,nav] of [['mobile',390,'.bottom-nav'],['desktop',1280,'.top-nav']] as const)test(`the airport glance loads only when reached for (${label})`,async({page})=>{
  await page.setViewportSize({width,height:900});
  const requested:string[]=[],errors:string[]=[];
- page.on('request',request=>{if(isAirportGlance(request.url()))requested.push(request.url());});
+ page.on('request',request=>{if(request.resourceType()==='script'&&isAirportGlance(request.url()))requested.push(request.url());});
  page.on('pageerror',error=>errors.push(error.message));
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
  await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',serviceDateKst:SUMMARY_FIXTURE.serviceDateKst,flights:[],truncated:false}}));
@@ -50,7 +51,7 @@ for(const [label,width,nav] of [['mobile',390,'.bottom-nav'],['desktop',1280,'.t
 test('the other tabs never load the airport screens',async({page})=>{
  await page.setViewportSize({width:390,height:900});
  const requested:string[]=[];
- page.on('request',request=>{if(isAirportView(request.url())||isAirportGlance(request.url()))requested.push(request.url());});
+ page.on('request',request=>{if(request.resourceType()==='script'&&(isAirportView(request.url())||isAirportGlance(request.url())))requested.push(request.url());});
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
  await page.goto('/ko/myeongdong');
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
