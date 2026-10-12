@@ -42,10 +42,10 @@ const copy = {
 
 const finishColors = {
  elapsed: {front:['#4B6987','#43617F','#405D79'],side:['#3D5974','#38516B'],cap:['#D7DDE3','#CBD2DA']},
- ahead: {front:['#D2D8DF','#CBD2DA','#C6CDD5'],side:['#BAC3CD','#B3BDC8'],cap:['#EDF0F3','#DFE4E9']},
+ ahead: {front:['#A3CFF1','#91C2E9','#80B5DF'],side:['#79ABD3','#6C9DC7'],cap:['#D7EBFA','#C5E1F6']},
  now: {front:['#8DBCB0','#80B2A4','#76A798'],side:['#6B9A8C','#618D80'],cap:['#CDE2DA','#B9D8CC']},
  peak: {front:['#4B6987','#43617F','#405D79'],side:['#3D5974','#38516B'],cap:['#D7DDE3','#CBD2DA']},
- layer: {front:['#D2D8DF','#CBD2DA','#C6CDD5'],side:['#BAC3CD','#B3BDC8'],cap:['#EDF0F3','#DFE4E9']}
+ layer: {front:['#A3CFF1','#91C2E9','#80B5DF'],side:['#79ABD3','#6C9DC7'],cap:['#D7EBFA','#C5E1F6']}
 } as const;
 const REVEAL_TOTAL_MS = REVEAL_MS * 2;
 const kstClock = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false });
@@ -251,10 +251,10 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
           const barHeight = band.value / layout.maxBand * (base - top);
           const x = band.x + band.width * .21, w = band.width * .5, depth = Math.min(1.5, band.width * .08);
           const y = base - barHeight;
-          const finish = band.now ? "now" : band.peak ? "peak" : layout.now && band.x >= layout.now.x ? "ahead" : "elapsed";
+          const finish = band.now ? "now" : layout.now && band.x >= layout.now.x ? "ahead" : "elapsed";
           const lower = layout.stacked ? layout.layers[0].values[index] / layout.maxBand * (base - top) : 0;
           return barHeight > 0 && <g key={band.start} data-start={band.start} data-value={band.value} data-height={barHeight} data-finish={finish}>
-            <rect x={x} y={y} width={w} height={barHeight} style={{fill:`url(#${id}satin-${finish}-front)`}}/>
+            <rect x={x} y={y} width={w} height={barHeight} rx={Math.min(2,barHeight/2)} style={{fill:`url(#${id}satin-${finish}-front)`}}/>
             {lower > 0 && <rect x={x} y={base - lower} width={w} height={lower} style={{fill:`url(#${id}satin-${band.now ? 'now-cap' : 'layer-front'})`}}/>}
             <path d={`M${x+w},${y} l${depth},${-depth} v${barHeight} l${-depth},${depth} Z`} style={{fill:`url(#${id}satin-${finish}-side)`}}/>
             <path d={`M${x},${y} h${w} l${depth},${-depth} h${-w} Z`} style={{fill:`url(#${id}satin-${finish}-cap)`}}/>
