@@ -31,7 +31,8 @@ for(const {width,lang} of cases)test(`observed and selected forecast stay distin
  await expect(observedTime).toHaveAttribute('datetime',myeongdong.realtime.observedAt);
  await expect(observedTime).toHaveText('08-31 13:05 KST');
  await expect(observedTime).toHaveCSS('font-weight','600');await expect(observedTime).toHaveCSS('color','rgb(0, 0, 0)');
- await expect(range).toHaveCSS('font-size','26px');await expect(range).toHaveCSS('font-weight','600');await expect(range).toHaveCSS('color','rgb(0, 0, 0)');
+ // Owner requested the selected forecast use the existing compact body token.
+ await expect(range).toHaveCSS('font-size',width<=820?'13px':'14px');await expect(range).toHaveCSS('font-weight','600');await expect(range).toHaveCSS('color','rgb(0, 0, 0)');
  if(lang==='ko')await card.locator('.demand-reading').screenshot({path:`../ui-headings-evidence-20261006/observed-reading-${width}.png`});
  async function selected(button:Locator,point:Forecast) {
   await expect(button).toHaveAttribute('aria-pressed','true');
@@ -42,8 +43,8 @@ for(const {width,lang} of cases)test(`observed and selected forecast stay distin
   await expect(marker).toHaveAttribute('data-selected-at',point.targetAt);
   const geometry=await marker.evaluate(el=>{const svg=(el as SVGGraphicsElement).ownerSVGElement!;return {ceiling:Number(svg.getAttribute('data-ceiling')),start:Number(svg.getAttribute('data-domain-start')),end:Number(svg.getAttribute('data-domain-end')),width:svg.viewBox.baseVal.width,x:Number(el.getAttribute('x1')),y1:Number(el.getAttribute('y1')),y2:Number(el.getAttribute('y2'))};});
   expect(geometry.x).toBeCloseTo(46+(Date.parse(point.targetAt)-geometry.start)/(geometry.end-geometry.start)*(geometry.width-60),3);
-  expect(geometry.y1).toBeCloseTo(244-point.populationMax/geometry.ceiling*212,3);
-  expect(geometry.y2).toBeCloseTo(244-point.populationMin/geometry.ceiling*212,3);
+  expect(geometry.y1).toBeCloseTo(184-point.populationMax/geometry.ceiling*152,3);
+  expect(geometry.y2).toBeCloseTo(184-point.populationMin/geometry.ceiling*152,3);
  }
  const buttons=outlook.locator('.outlook-times button');
  await buttons.last().click();await selected(buttons.last(),myeongdong.realtimeForecast[2]);
