@@ -81,8 +81,8 @@ for(const [label,monthDelay,flightDelay] of [['month first',100,700],['flights f
  const sent:string[]=[];page.on('request',request=>{if(request.url().includes('/api/live/airport-months'))sent.push(new URL(request.url()).search);});
  await page.route('**/api/live/flights*',async route=>{await new Promise(resolve=>setTimeout(resolve,flightDelay));await route.fulfill({json:{mode:'live-flights',generatedAt:summary.generatedAt,serviceDateKst:'2026-10-10',flights:[],truncated:false,retrievedAt:summary.generatedAt}});});
  await page.route('**/api/live/airport-months*',async route=>{await new Promise(resolve=>setTimeout(resolve,monthDelay));await route.fulfill({json:reply()});});
- await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();
- await expect(section).toContainText('+200.0%');await page.waitForTimeout(1000);
+ await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');
+ await expect(section).toContainText('+200.0%');await section.scrollIntoViewIfNeeded();await page.waitForTimeout(1000);
  expect(sent).toEqual(['?month=2026-10']);
 });
 
