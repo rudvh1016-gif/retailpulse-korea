@@ -20,7 +20,7 @@ for(const lang of ['ko','en','zh','ja'])test(`airport body stays airport-only an
  await page.setViewportSize({width:390,height:900});
  for(const path of [`/${lang}`,`/${lang}/airport`]){
   await page.goto(path);
-  await expect(page.locator('.airport-view')).toBeVisible();
+  await expect(path === `/${lang}` ? page.getByTestId('airport-glance-preview') : page.locator('.airport-view')).toBeVisible();
   await expect(page.locator('.home-seoul-secondary')).toHaveCount(0);
   await expect(page.getByTestId('population-outlook')).toHaveCount(0);
   const seoul=page.locator(`.bottom-nav a[href="/${lang}/myeongdong"]`);

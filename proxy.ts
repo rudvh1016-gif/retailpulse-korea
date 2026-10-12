@@ -8,6 +8,11 @@ const documentLanguages: Record<string, string> = {
 };
 
 export function proxy(request: NextRequest) {
+  if (request.nextUrl.pathname === "/") {
+    const destination = request.nextUrl.clone();
+    destination.pathname = "/ko";
+    return NextResponse.redirect(destination, 308);
+  }
   const locale = request.nextUrl.pathname.split("/")[1] ?? "ko";
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-rpk-document-language", documentLanguages[locale] ?? "ko");
