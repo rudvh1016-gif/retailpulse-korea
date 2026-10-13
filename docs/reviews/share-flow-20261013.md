@@ -10,9 +10,21 @@
 - 390/1440px 게이트 표시, 중앙·미확인 막대 비율, 원래 텍스트와 분모, 가로 넘침 검증.
 - 범위 lint, TypeScript, production build, Owner UI Lock 통과. UI Lock 비활성화/기준 변경 없음.
 - 전체 working-tree secret pattern scan 통과. reachable-history scan 및 저장소 전체 검사는 원격 CI 결과를 확인해야 함.
-- 정적 SVG와 기존 문서 변환만 사용. 동일 조건 LCP/PSI 전후 측정을 새로 수행하지 않았으므로 속도 점수 개선은 주장하지 않음.
+- 정적 SVG와 기존 문서 변환만 사용. 아래 로컬 비교 결과를 기록했으며 공개 PSI 개선은 주장하지 않음.
 
 ## 범위·승인
 실제 base main: 9a1364227d1bdb3c86334f36150bd901ccce3063. Claude의 수집 안정성·로딩·이미지 작업 보존. PR360 제목/집계 시간, PR361 대기질/관광 수치 정정, 별도 모션 브랜치와 파일 범위를 분리했습니다.
 
 초안 검토용입니다. 이 PR의 공개 병합/배포는 실행하지 않았습니다. CI 결과와 최종 범위 검토 후 명시적으로 승인된 절차로만 반영합니다.
+
+## 로컬 동일 조건 성능 비교
+최신 main 9a13642와 a9f2bf0a production build를 390×844, CPU4x, 1.6Mbps, RTT150ms, cold browser cache, 동일 fixture로 각 3회 번갈아 측정했습니다. Windows vinext 정적 자산 경로 한계 때문에 두 빌드 모두 동일한 로컬 정적 파일 프록시를 사용했습니다. 공개 PSI가 아니며, clean base를 이용한 사후 비교입니다.
+
+- LCP 중앙값: 6,304ms → 6,308ms (사실상 동일)
+- 요청: 35 → 35. 첫 구현의 추가 CSS 요청 1개를 기존 공항 스타일에 합쳐 제거했습니다.
+- 전송량: 1,534,221 → 1,540,256 bytes (+6,035 bytes, 압축 없는 로컬 측정)
+- long-task 50ms 초과 합: 153 → 131ms (Lighthouse TBT 아님)
+- CLS 중앙값: 0.514 → 0.514. 변경본 첫 회 0.654도 기록됐으며 개선으로 주장하지 않습니다. 기존 초기 로딩 레이아웃 문제는 별도 Claude 범위와 통합 후 재확인해야 합니다.
+- 스타일 통합 후 production build와 390/1440px 게이트 E2E 2개 재통과.
+
+원시 결과: `docs/reviews/share-flow-performance-20261013.json`. 검토 이미지: `docs/screenshots/share-flow-20261013/`. Library 저장은 현재 실행 환경에서 prepared upload 기능을 사용할 수 없어 완료하지 못했습니다. Library ID는 발급되지 않았습니다.
