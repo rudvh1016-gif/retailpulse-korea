@@ -64,10 +64,10 @@ export default async function RootLayout({
           // WebSite only: WebApplication needs ratings or reviews Google can show, which this site does not have.
           "@type": "WebSite",
           name: "KORETAIL",
-          alternateName: "KORETAIL · Retail Demand Signals for Korea",
+          alternateName: ["코리테일", "KORETAIL · Retail Demand Signals for Korea"],
           url: siteOrigin,
           inLanguage: ["ko-KR", "en", "zh-CN", "ja-JP"],
-          description: "Retail demand signals for Korea, combining foreign-visitor, airport and store-operating context for Seoul.",
+          description: "인천공항 출국장 대기·항공편 흐름과 서울 주요 상권의 혼잡·소비 정보를 한눈에",
         }) }} />
       </body>
     </html>

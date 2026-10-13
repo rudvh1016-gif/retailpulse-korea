@@ -935,7 +935,7 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
         <div>
           <p className="eyebrow">ABOUT KORETAIL</p>
           <h1>{localText(lang, { ko: "공식 데이터만,\n있는 그대로", en: "Official data only,\nexactly as published", zh: "只用官方数据，\n如实呈现", ja: "公式データだけを、\nありのままに" })}</h1>
-          <p>{localText(lang, { ko: "KORETAIL은 Korea와 Retail을 합친 이름입니다.", en: "KORETAIL combines Korea and Retail.", zh: "KORETAIL 由 Korea 与 Retail 组合而成。", ja: "KORETAIL は Korea と Retail を組み合わせた名前です。" })}</p>
+          <p>{localText(lang, { ko: "인천공항 출국장 대기·항공편 흐름과 서울 주요 상권의 혼잡·소비 정보를 한눈에 제공하는 코리테일 KORETAIL은 Korea와 Retail을 합친 이름입니다", en: "KORETAIL combines Korea and Retail.", zh: "KORETAIL 由 Korea 与 Retail 组合而成。", ja: "KORETAIL は Korea と Retail を組み合わせた名前です。" })}</p>
         </div>
       </div>
 

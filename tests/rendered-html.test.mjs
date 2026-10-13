@@ -130,7 +130,7 @@ test("renders the KORETAIL production shell", async () => {
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   // The home is the airport glance (PR #357) and carries its approved title.
-  assert.match(html, /<title>공항 한눈에 \| KORETAIL<\/title>/i);
+  assert.match(html, /<title>코리테일 KORETAIL \| 인천공항 대기·항공편과 서울 상권 정보<\/title>/i);
   assert.doesNotMatch(html, /codex-preview/i);
   // "내 브리핑" used to pass only through the retired meta description; the page itself is the glance.
   assert.match(html, /<h1>인천공항 한눈에<\/h1>/);
@@ -1019,8 +1019,8 @@ for (const locale of ["ko", "en", "zh", "ja"]) {
     assert.ok(meta("description").length > 5);
     assert.equal(meta("og:title"), "KORETAIL");
     assert.equal(meta("twitter:title"), "KORETAIL");
-    assert.equal(meta("og:description").trim(), "");
-    assert.equal(meta("twitter:description").trim(), "");
+    assert.equal(meta("og:description"), "인천공항 출국장 대기·항공편 흐름과 서울 주요 상권의 혼잡·소비 정보를 한눈에");
+    assert.equal(meta("twitter:description"), meta("og:description"));
     for (const key of ["og:image", "twitter:image"]) {
       const url = new URL(meta(key));
       assert.equal(url.origin, process.env.NEXT_PUBLIC_SITE_ORIGIN ?? "http://localhost:3000");
