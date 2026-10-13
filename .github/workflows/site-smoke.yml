@@ -11,7 +11,7 @@ permissions:
 jobs:
   smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       # "Current build" means the commit the last successful production deploy
       # shipped, not copy remembered in this file: hardcoded markers went stale
@@ -446,3 +446,16 @@ jobs:
       - name: Record search evidence from the public site
         if: always()
         run: node search-evidence/scripts/seo-live-audit.mjs https://koretaildata.com | tee "$RUNNER_TEMP/search-evidence.jsonl"
+      # Back/forward cache evidence: whether a phone browser (Chromium, WebKit)
+      # restores each page instantly when the visitor returns from another site,
+      # what blocks it, and the cache-control of the HTML and /api/ requests.
+      # Also prints the public /api/live/* bodies so local speed tests can use
+      # production-shaped data. Read-only and secret-free; informational only.
+      - name: Record back/forward cache evidence
+        if: always()
+        continue-on-error: true
+        working-directory: search-evidence
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium webkit
+          node scripts/bfcache-probe.mjs https://koretaildata.com
