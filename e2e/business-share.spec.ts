@@ -106,3 +106,14 @@ for(const [place,label,terminal,width] of [['myeongdong','명동','T1',390],['ho
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  if(place==='myeongdong'||place==='airport')await share.screenshot({path:test.info().outputPath(`preview-${place}-${terminal}-${width}.png`)});
 });
+
+
+for(const [area,label] of [['myeongdong','명동'],['hongdae','홍대'],['seongsu','성수'],['itaewon','이태원'],['T1','T1'],['T2','T2']])test(`shared link opens exact place on another device ${area}`,async({page})=>{
+ await page.addInitScript(()=>localStorage.setItem('koretail-business-v1',JSON.stringify({version:1,place:'airport',terminal:'T1',side:'WEST',hours:null})));
+ await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
+ const params=new URLSearchParams({date:'2026-08-31',place:area.startsWith('T')?'airport':'area',...(area.startsWith('T')?{terminal:area,side:'EAST'}:{area})});
+ await page.goto(`/ko/business?${params}`);await expect(page.getByTestId('prep-place')).toContainText(label);
+ const share=page.getByTestId('prep-share');await share.locator('summary').click();await expect(share.getByTestId('share-preview')).toContainText(`/ko/business?${params}`);
+ expect(JSON.parse(await page.evaluate(()=>localStorage.getItem('koretail-business-v1'))??'{}').side).toBe('WEST');
+ if(area==='T2'){await page.locator('.prep-change').click();await page.getByRole('radio',{name:'T1',exact:true}).check();await page.locator('.prep-form button[type=submit]').click();await expect(page.getByTestId('prep-place')).toContainText('T1');}
+});

@@ -57,8 +57,18 @@ export function dateLabel(serviceDate: string, lang: PrepLang): string {
 }
 
 /** The page for the same place and date; the date is always explicit. */
-export function shareLink(origin: string, lang: PrepLang, serviceDate: string): string {
-  return `${origin.replace(/\/+$/, "")}/${lang}/business?date=${serviceDate}`;
+export function shareLink(origin: string, lang: PrepLang, serviceDate: string, place?: PrepPlace): string {
+  const params=new URLSearchParams({date:serviceDate});
+  if(place){params.set("place",place.kind);if(place.kind==="area")params.set("area",place.area);else{params.set("terminal",place.terminal);if(place.side)params.set("side",place.side);}}
+  return `${origin.replace(/\/+$/, "")}/${lang}/business?${params}`;
+}
+
+/** Explicit share scope takes precedence for this visit; never writes recipient preferences. */
+export function sharedPrepPlace(params: Pick<URLSearchParams, 'get'>): PrepPlace | null {
+ const kind=params.get('place'),area=params.get('area'),terminal=params.get('terminal'),side=params.get('side');
+ if(kind==='area'&&(area==='myeongdong'||area==='hongdae'||area==='seongsu'||area==='itaewon'))return {kind:'area',area};
+ if(kind==='airport'&&(terminal==='T1'||terminal==='T2'))return {kind:'airport',terminal,side:side==='EAST'||side==='WEST'?side:null};
+ return null;
 }
 
 export interface ShareInput {
