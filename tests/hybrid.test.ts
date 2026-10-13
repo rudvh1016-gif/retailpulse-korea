@@ -525,7 +525,7 @@ test("the CPU benchmark measures the real collectors and makes no provider or D1
  * The departures scan used to get one attempt at 06:07 KST and its next one
  * four hours later, so a single blocked runner cost the reader a whole morning
  * on the screen whose purpose is today's gate ranking. It now runs first at
- * 04:07 with two immediate fresh-runner retries, and 06:07 became the day's
+ * 00:07 with two immediate fresh-runner retries, and 06:07 became the day's
  * refresh.
  *
  * More windows are only safe if the arithmetic holds, so the arithmetic is
@@ -559,7 +559,7 @@ test("A1 runs early, and the later window refreshes rather than skipping", async
   const early = await readFile(new URL("../.github/workflows/collect-airport-recovery.yml", import.meta.url), "utf8");
   const daily = await readFile(new URL("../.github/workflows/collect-production.yml", import.meta.url), "utf8");
 
-  // 00:07 KST is 19:07 UTC the previous day. Off-minute per ENGINEERING_DIRECTION.
+  // 00:07 KST is 15:07 UTC the previous day. Off-minute per ENGINEERING_DIRECTION.
   assert.match(early, /- cron: "7 15 \* \* \*"/, "the early window must run at 00:07 KST");
   assert.match(daily, /- cron: "7 21 \* \* \*"/, "the daily group stays at 06:07 KST");
 

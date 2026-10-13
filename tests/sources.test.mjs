@@ -547,6 +547,30 @@ test("Seoul realtime collector uses one integrated request per area and isolates
   assert.doesNotMatch(commercialHealth.detail, /fixture/);
 });
 
+test("Seoul realtime collector reports every provider attempt, including an internal retry", async (context) => {
+  const { database, databasePath } = openDatabase("seoul-realtime-requests");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+  let calls = 0, hongdaeAttempts = 0;
+  globalThis.fetch = async (input) => {
+    calls += 1;
+    const poi = String(input).split("/").at(-1);
+    // retry-after: 0 keeps the one bounded retry immediate in this test.
+    if (poi === "POI007" && ++hongdaeAttempts === 1) return new Response("unavailable", { status: 503, headers: { "retry-after": "0" } });
+    const fixture = seoulIntegratedFixture();
+    fixture.CITYDATA.AREA_CD = poi;
+    fixture.CITYDATA.LIVE_PPLTN_STTS[0] = { ...fixture.CITYDATA.LIVE_PPLTN_STTS[0], AREA_CD: poi };
+    return Response.json(fixture);
+  };
+  const result = await collectSeoulRealtime({ DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: "fixture" });
+  assert.equal(result.status, "SUCCESS");
+  assert.equal(hongdaeAttempts, 2);
+  assert.equal(calls, 5);
+  assert.equal(result.providerRequests, 5, "4 areas + 1 retry, all reached the provider");
+  assert.match(result.detail, /; provider requests 5$/);
+  assert.equal((await collectSeoulRealtime({ DB: new LocalD1Database(database) })).providerRequests, 0);
+});
+
 test("Seoul population empty data and malformed schema stay distinct without repeating successful area requests", async (context) => {
   const { database, databasePath } = openDatabase("seoul-empty-schema");
   const originalFetch = globalThis.fetch;
