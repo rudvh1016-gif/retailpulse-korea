@@ -9,9 +9,12 @@ for(const width of [390,1440])test(`default start preserves dated direct routes 
  await page.goto('/?date=2026-10-01&area=hongdae');await expect(page).toHaveURL(/\/ko\?date=2026-10-01&area=hongdae/);
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
  await expect(page.locator('.glance-controls input')).toHaveValue('2026-10-01');
- const nav=page.locator(width<1000?'.bottom-nav':'.top-nav');await nav.locator('a[href="/ko/hongdae?date=2026-10-01"]').click();await expect(page).toHaveURL(/\/ko\/hongdae\?date=2026-10-01/);
+ const nav=page.locator(width<1000?'.bottom-nav':'.top-nav');
+ // Desktop keeps the approved legacy href; its click handler preserves the selected date.
+ const hongdaeLink=nav.locator(`a[href="${width<1000?'/ko/hongdae?date=2026-10-01':'/ko/hongdae'}"]`);
+ await hongdaeLink.click();await expect(page).toHaveURL(/\/ko\/hongdae\?date=2026-10-01/);
  await page.goBack();await expect(page.getByTestId('airport-glance-preview')).toBeVisible();await expect(page.locator('.glance-controls input')).toHaveValue('2026-10-01');
- await page.goForward();await expect(page).toHaveURL(/\/ko\/hongdae\?date=2026-10-01/);await expect(nav.locator('a[href="/ko/hongdae?date=2026-10-01"]')).toHaveAttribute('aria-current','page');await expect(page.getByTestId('airport-glance-preview')).toHaveCount(0);
+ await page.goForward();await expect(page).toHaveURL(/\/ko\/hongdae\?date=2026-10-01/);await expect(hongdaeLink).toHaveAttribute('aria-current','page');await expect(page.getByTestId('airport-glance-preview')).toHaveCount(0);
  await page.goto('/ko/airport?date=2026-10-01&terminal=T2');await expect(page.getByRole('heading',{name:'인천공항',exact:true})).toBeVisible();await expect(page.getByRole('tab',{name:'T2',exact:true})).toHaveAttribute('aria-selected','true');await expect(page).toHaveURL(/\/airport\?date=2026-10-01&terminal=T2/);await expect(page.getByTestId('airport-glance-preview')).toHaveCount(0);
  await page.getByRole('button',{name:'KORETAIL home'}).click();await expect(page.getByTestId('airport-glance-preview')).toBeVisible();await expect(page.locator('.glance-controls input')).toHaveValue('2026-10-01');
  await page.goBack();await expect(page.getByRole('heading',{name:'인천공항',exact:true})).toBeVisible();await expect(page.getByRole('tab',{name:'T2',exact:true})).toHaveAttribute('aria-selected','true');await expect(page).toHaveURL(/terminal=T2/);
