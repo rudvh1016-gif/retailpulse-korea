@@ -31,3 +31,6 @@ SIL OFL 1.1. 공식 파일을 수정하지 않고 라이선스/저작권을 함�
 - SUIT PC: `libfile_a52826c5e97c8191b38a7879549ecf8f`
 
 4개 Library 생성은 성공했습니다. 로컬 xattr 기록은 동일한 Windows API 제한으로 저장되지 않았으며, 위 ID와 파일 이름으로 연결을 보존합니다.
+
+## CI regression alignment — 2026-10-13
+The first full CI run 38402714570 failed only the 20 existing queue-model typography assertions: they still expected the superseded 13/14px size rather than the owner's approved 12px size. The exact size assertion is updated to 12px without removing observation, zero/missing/stale, layout, keyboard, terminal-switch or source checks. Both complete checkpoint suites now pass together: 31 tests covering KO/EN/ZH/JA and 320/360/390/430/1280px. Product code and UI Lock manifest are unchanged by this follow-up. Relevant ESLint passed. A fresh remote CI is required for the new commit.
