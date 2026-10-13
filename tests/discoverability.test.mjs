@@ -22,7 +22,7 @@ process.env.NEXT_PUBLIC_SITE_ORIGIN ??= "https://koretaildata.com";
 process.env.RPK_DEPLOYMENT_STAGE = "production";
 
 const { runDiscoverabilityChecks } = await import("../lib/discoverability.ts");
-const { seoLocales, seoPath, standaloneSeoSlugs, tourismDeskAreas, pageTitle, pageDescription, siteOrigin } =
+const { seoLocales, seoPath, standaloneSeoSlugs, tourismDeskAreas, pageTitle, pageDescription, siteOrigin, canonicalSlug } =
   await import("../app/seo-config.ts");
 
 // The fixture site serves whatever origin THIS build is configured for. CI
@@ -378,7 +378,11 @@ test("every sitemap entry declares all four locales plus x-default", () => {
   // Without this, an empty sitemap would pass by iterating nothing — which is
   // exactly how this test first passed under the staging flag while the two
   // beside it failed.
-  assert.equal(entries.length, seoLocales.length * (standaloneSeoSlugs.length + 1 + tourismDeskAreas.length));
+  // A slug that serves the home's page (airport-glance since PR #357) is listed once, as the home.
+  const listed = standaloneSeoSlugs.filter((slug) => canonicalSlug(slug) === slug);
+  assert.equal(entries.length, seoLocales.length * (listed.length + 1 + tourismDeskAreas.length));
+  assert.equal(entries.filter((entry) => entry.url.endsWith("/airport-glance")).length, 0,
+    "the glance URL names the home as canonical, so the sitemap lists only the home");
   for (const entry of entries) {
     const languages = entry.alternates?.languages ?? {};
     assert.deepEqual(
@@ -493,14 +497,15 @@ test("metadata is compared as a reader sees it, not as HTML spells it", () => {
   assert.equal(decodeHtmlText("&lt;b&gt; &quot;q&quot; &#39;a&#39;"), `<b> "q" 'a'`);
   assert.equal(decodeHtmlText("&amp;amp;"), "&amp;", "one pass only; a double-decode would corrupt real text");
   assert.equal(decodeHtmlText("nothing to decode"), "nothing to decode");
-  assert.ok(pageTitle("en").includes("&"), "if this stops being true the regression above stops being covered");
+  // The /en home title lost its ampersand when the home became the airport glance; /en/airport (also checked live) keeps one.
+  assert.ok(pageTitle("en", "airport").includes("&"), "if this stops being true the regression above stops being covered");
 });
 
 test("a real ampersand in served metadata is not mistaken for a stale build", async () => {
   const report = await run({});
   assert.equal(report.ok, true, `unexpected failures: ${failing(report).join(", ")}`);
-  const enTitle = report.notes.find((note) => note.page === "/en")?.title;
-  assert.equal(enTitle, pageTitle("en"));
+  const enTitle = report.notes.find((note) => note.page === "/en/airport")?.title;
+  assert.equal(enTitle, pageTitle("en", "airport"));
 });
 
 

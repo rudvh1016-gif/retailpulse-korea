@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { isStagingDeployment, seoLocales, seoPath, siteOrigin, standaloneSeoSlugs, tourismDeskAreas, type SeoSlug } from "./seo-config";
+import { canonicalSlug, isStagingDeployment, seoLocales, seoPath, siteOrigin, standaloneSeoSlugs, tourismDeskAreas, type SeoSlug } from "./seo-config";
 
 /**
  * Start of today in KST, as an instant.
@@ -59,7 +59,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
       alternates: { languages: localeAlternates() },
     },
-    ...standaloneSeoSlugs.map((slug) => ({
+    // Only canonical URLs: a slug that serves the home (canonicalSlug) is not listed again.
+    ...standaloneSeoSlugs.filter((slug) => canonicalSlug(slug) === slug).map((slug) => ({
       url: `${siteOrigin}${seoPath(locale, slug)}`,
       ...(UNDATEABLE_SLUGS.has(slug) ? {} : { lastModified: dailyRefresh }),
       changeFrequency: slug === "more" ? "weekly" as const : "daily" as const,

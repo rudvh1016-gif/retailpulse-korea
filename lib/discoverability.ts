@@ -35,6 +35,7 @@
  * Nothing here writes anything, sends anything, or needs a credential.
  */
 import {
+  canonicalSlug,
   seoLocales,
   seoPath,
   standaloneSeoSlugs,
@@ -218,7 +219,7 @@ async function get(context: Context, url: string, redirect: RequestRedirect = "f
 function expectedPaths(): string[] {
   return seoLocales.flatMap((locale) => [
     seoPath(locale),
-    ...standaloneSeoSlugs.map((slug) => seoPath(locale, slug as SeoSlug)),
+    ...standaloneSeoSlugs.filter((slug) => canonicalSlug(slug as SeoSlug) === slug).map((slug) => seoPath(locale, slug as SeoSlug)),
     ...tourismDeskAreas.map((area) => seoPath(locale, "tourism-desk", area)),
   ]);
 }
@@ -502,6 +503,9 @@ export async function runDiscoverabilityChecks(options: { origin: string; fetch?
   for (const slug of ["airport", "where-to", "business", "forecast"] as SeoSlug[]) {
     await checkPageIdentity(context, "ko", slug);
   }
+  // An English title with a real "&", served as &amp;: once /en itself carried
+  // one; since the home became the airport glance only sub-pages do.
+  await checkPageIdentity(context, "en", "airport");
   await checkSocialPreview(context);
   await checkEntryRedirect(context);
 

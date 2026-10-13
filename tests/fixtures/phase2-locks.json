@@ -18,7 +18,7 @@
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "91bb08d182fadf62a71190527138522e5614b5a7cf4c12041466e2d76f93a8ae",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
-    "app/layout.tsx": "c4c2506c841712a9b8a46c98f99fdea167df8f32e69cdb39f5a612874d600119",
+    "app/layout.tsx": "5751b05b09e86833897a9e9145672af9ae830c538b1f357f9963325d592e06a5",
     "app/live-signals.tsx": "51ca13c3a277ebdc9785194debd98c15684db04c5e8900726d7b12b1a5faada2",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6",
@@ -26,12 +26,12 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "9f2180ff16b9c879ca61068ef25516fc9c42942b22dd8818959dab022b0b612b",
+    "app/retailpulse-app.tsx": "ffb181196475ce26ae3ddfa4d758bdfaa6a8929a31a7ce9831e9e16f6711738a",
     "app/retailpulse-data.ts": "2a965cde02012978eb446a955b82bbcbfbec83f74f862e0e2846fae1ca348ecd",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
-    "app/seo-config.ts": "a599d41c426c33c6b923f6386e4740516fd785d8308c3246293aefcfd9e73f68",
+    "app/seo-config.ts": "ee3f5c36f600ff0d9b9c018543bb6ac596826475f02adbf2c21992c797f582c8",
     "app/site-usage-guide.tsx": "4b49e1bd31a91e35f7d0b56b6d1670d94cf644bcc47bcb257508a2a0f6cc64f1",
-    "app/sitemap.ts": "ab2329b032b269477ffad4b69258004b1b577b323735eccbf92518cbec258880",
+    "app/sitemap.ts": "feb12ed8a001d1524b1fece19c3ac3ee945d4ccdc91d2fa115d5cccc1eedf2cd",
     "app/source-status.tsx": "a4832ec2982ec76631341f8a8aea477d98dd45128234ca7f6ee1002ea16196dd",
     "app/tourism-desk.tsx": "4c0e583789484875dd7a32621035bfc918177234a49d118cf200a68c57a14b00",
     "app/tourism-visitor-show.tsx": "e30883e6efce51f33f839a38b78afe4a1127d87c9ba2cdb7bbac4de189179a10",
@@ -1723,5 +1723,62 @@
     ],
     "protectedPathCount": 65,
     "approvalEvidenceFile": "docs/approvals/preloads-glance-home-20261013.json"
+  },
+  "ownerApprovedHomeCanonicalSeo20261013": {
+    "recordedAt": "2026-10-13T02:23:25.196Z",
+    "authorizationEvidence": {
+      "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+      "ownerTaskRequest": "코리테일 속도 개선 마무리와 SEO·GEO를 진행해줘. 무료 범위에서 실제 효과가 있는 수정만 해. … 필요한 변경을 정리해서 검사 통과 후 정상 절차로 병합·배포하고 공개 사이트까지 확인해. 보호 검사를 우회하거나 기준을 낮추지 마.",
+      "approvalQuestion": "보호 파일 변경 승인 요청입니다. PR #346 하나로 처리하고, 화면 디자인·메뉴 구성·이미지·차트·수집 설정은 바꾸지 않습니다.\n\n① app/retailpulse-app.tsx\n  · 최신 main(PR357)을 병합합니다.\n  · 로고 미리 받기를 실제 이동할 화면(공항 한눈에)으로 바꿉니다.\n  · 화면을 옮길 때 브라우저가 고치는 대표 주소도 ②에 맞춥니다.\n② app/seo-config.ts\n  · 홈(4개 언어)의 제목·설명을 지금 화면에 맞게 바꿉니다. 새 문구는 쓰지 않고, 기존에 승인된 '공항 한눈에' 문구를 그대로 씁니다.\n  · 홈과 내용이 같은 /언어/airport-glance의 대표 주소·다국어 연결·구조화 데이터를 홈으로 지정합니다. 메뉴 링크 주소는 그대로입니다.\n  · 홈의 항목 1개짜리 경로 표시(BreadcrumbList)를 없앱니다.\n③ app/sitemap.ts: 중복 주소 4개를 사이트맵에서 뺍니다(68 → 64).\n④ app/layout.tsx: 평점이 없어 구글이 지원하지 않는 WebApplication 유형을 빼고, WebSite만 남깁니다.\n⑤ app/api/live/flights/route.ts · lib/crawl-policy.ts\n  · 검색로봇이 화면을 렌더링할 때 항공편·공항 월별·소비 월별·평소 비교 API를 읽도록 robots.txt에서 허용합니다.\n  · API 응답 자체는 noindex 헤더로 검색 결과에서 빠집니다.\n  · 지금은 막혀 있어서, 구글이 렌더링한 홈에 '자료 없음'이 남습니다. 9월에 Soft 404가 난 것과 같은 원인입니다.\n  · 늘어나는 사용량은 하루 D1 읽기 약 2만 행 이하(무료 한도의 0.4%)와 Worker 요청 수십 건으로 추정합니다.\n\n보호 파일은 아니지만 함께 반영할 것\n  · 공항 한눈에·서울 한눈에: 자료를 불러오기 전 서버 HTML에 찍히던 '자료 없음·0개·확인 불가'를 '자료 확인 중…'과 '—'로 바꿉니다. 공항 한눈에는 dot의 PR358과 겹치지 않는 줄만 고칩니다.\n  · 지역 페이지: '지금' 문구가 2시간 된 값에도 붙던 것을 사이트의 40분 기준에 맞추고, 기준 날짜를 붙입니다.",
+      "ownerRequest": "①~⑤ 모두 승인 (권장)",
+      "approvedItem": "②③④ + ① 대표 주소",
+      "scope": "The home (/{lang}) now shows the airport glance (PR #357), so /{lang}/airport-glance names the home as canonical, shares its hreflang cluster and structured data, and leaves the sitemap (68 -> 64). The home carries the existing approved glance title and description. The client head effect keeps the same canonical after hydration. layout.tsx structured data is WebSite only (no WebApplication without ratings). The home breadcrumb is unchanged (removing it has no effect). Menu links, screens and dates are unchanged.",
+      "approvedProtectedFiles": [
+        "app/retailpulse-app.tsx",
+        "app/seo-config.ts",
+        "app/sitemap.ts",
+        "app/layout.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": true
+    },
+    "reason": "Record the explicit owner approval for this protected-file change; no test is relaxed or skipped.",
+    "comparisonBase": "d11b6132ae569cef4964559ffc59c643b25e146a",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "9f2180ff16b9c879ca61068ef25516fc9c42942b22dd8818959dab022b0b612b",
+        "approved": "ffb181196475ce26ae3ddfa4d758bdfaa6a8929a31a7ce9831e9e16f6711738a",
+        "addedLines": 4,
+        "deletedLines": 2,
+        "exactUnifiedDiff": "diff --git a/app/retailpulse-app.tsx b/app/retailpulse-app.tsx\nindex 8f1bb12..1851537 100644\n--- a/app/retailpulse-app.tsx\n+++ b/app/retailpulse-app.tsx\n@@ -47,7 +47,7 @@ import {\n import { localText } from \"./local-text\";\n import { MonthRangePicker } from \"./month-range-picker\";\n import type { AirportView as AirportViewComponent } from \"./airport-view\";\n-import { pageDescription, pageTitle, seoLocales, seoSlugs, siteOrigin, type SeoSlug } from \"./seo-config\";\n+import { canonicalSlug, pageDescription, pageTitle, seoLocales, seoSlugs, siteOrigin, type SeoSlug } from \"./seo-config\";\n import LiveSignals, {\n   AreaCurrentBrief,\n   DateNavigator,\n@@ -337,7 +337,9 @@ export default function Home({ initialLang = \"ko\", initialView = \"today\", initia\n       : undefined;\n     const title = pageTitle(lang, slug, tourismArea);\n     const description = pageDescription(lang, slug, tourismArea);\n-    const suffix = slug ? `/${slug}${tourismArea ? `/${tourismArea}` : \"\"}` : \"\";\n+    // Same canonical as the server HTML: a home-equivalent slug names the home.\n+    const canonical = canonicalSlug(slug);\n+    const suffix = canonical ? `/${canonical}${tourismArea ? `/${tourismArea}` : \"\"}` : \"\";\n     const canonicalPath = `/${lang}${suffix}`;\n \n     document.title = title;\n"
+      },
+      {
+        "file": "app/seo-config.ts",
+        "previous": "a599d41c426c33c6b923f6386e4740516fd785d8308c3246293aefcfd9e73f68",
+        "approved": "ee3f5c36f600ff0d9b9c018543bb6ac596826475f02adbf2c21992c797f582c8",
+        "addedLines": 18,
+        "deletedLines": 14,
+        "exactUnifiedDiff": "diff --git a/app/seo-config.ts b/app/seo-config.ts\nindex 5bb002d..f9da8ff 100644\n--- a/app/seo-config.ts\n+++ b/app/seo-config.ts\n@@ -51,12 +51,8 @@ const names = {\n \n \n export function pageTitle(locale: SeoLocale, slug?: SeoSlug, tourismArea: TourismDeskArea = \"myeongdong\") {\n-  if (!slug) return {\n-    ko: \"인천공항·명동·홍대·성수·이태원 오늘·내일 브리핑 | KORETAIL\",\n-    en: \"Incheon Airport & Seoul Areas: Today and Tomorrow | KORETAIL\",\n-    zh: \"仁川机场·明洞·弘大·圣水·梨泰院 今日与明日简报 | KORETAIL\",\n-    ja: \"仁川空港・明洞・弘大・聖水・梨泰院 今日と明日のブリーフィング | KORETAIL\",\n-  }[locale];\n+  // The home is the airport glance (PR #357), so it carries the approved glance copy.\n+  if (!slug) return pageTitle(locale, \"airport-glance\");\n   if (slug === \"tourism-desk\") {\n     const name = names[tourismArea][locale];\n     return {\n@@ -90,12 +86,7 @@ export function pageTitle(locale: SeoLocale, slug?: SeoSlug, tourismArea: Touris\n }\n \n export function pageDescription(locale: SeoLocale, slug?: SeoSlug, tourismArea: TourismDeskArea = \"myeongdong\") {\n-  if (!slug) return {\n-    ko: \"오늘·내일 필요한 공항·관광·상권 정보를 한 번에 확인하세요. 역할과 관심지역을 선택하면 공식 자료가 제공되는 범위에서 출국장 예상 승객·혼잡·날씨·행사를 내 브리핑으로 봅니다.\",\n-    en: \"Choose your role and place for a personal briefing on Incheon Airport, Myeongdong, Hongdae, Seongsu or Itaewon. See departure-hall forecasts, crowds, weather and events where official data is available.\",\n-    zh: \"选择角色与关注地区，查看仁川机场、明洞、弘大、圣水或梨泰院的个人简报。根据已有官方资料，了解出境大厅预计旅客、拥挤、天气与活动。\",\n-    ja: \"役割と関心のある場所を選び、仁川空港・明洞・弘大・聖水・梨泰院の情報を自分のブリーフィングで確認。公式資料の提供範囲で出国場予想旅客・混雑・天気・イベントを表示します。\",\n-  }[locale];\n+  if (!slug) return pageDescription(locale, \"airport-glance\");\n   if (slug === \"tourism-desk\") {\n     const name = names[tourismArea][locale];\n     return {\n@@ -128,6 +119,17 @@ export function pageDescription(locale: SeoLocale, slug?: SeoSlug, tourismArea:\n   return descriptions[slug as Exclude<SeoSlug, keyof typeof names | \"tourism-desk\">][locale];\n }\n \n+/**\n+ * Slugs that serve the same page as the locale home. Since PR #357 the home\n+ * renders the airport glance, so /{lang}/airport-glance names /{lang} as its\n+ * canonical, shares the home's hreflang cluster and is left out of the\n+ * sitemap. The menu still links to it; only the search signals change.\n+ */\n+export const homeEquivalentSlugs: readonly SeoSlug[] = [\"airport-glance\"];\n+export function canonicalSlug(slug?: SeoSlug): SeoSlug | undefined {\n+  return slug && homeEquivalentSlugs.includes(slug) ? undefined : slug;\n+}\n+\n export function seoPath(locale: SeoLocale, slug?: SeoSlug, tourismArea: TourismDeskArea = \"myeongdong\") {\n   if (!slug) return `/${locale}`;\n   return slug === \"tourism-desk\"\n@@ -135,7 +137,8 @@ export function seoPath(locale: SeoLocale, slug?: SeoSlug, tourismArea: TourismD\n     : `/${locale}/${slug}`;\n }\n \n-export function buildMetadata(locale: SeoLocale, slug?: SeoSlug, tourismArea: TourismDeskArea = \"myeongdong\"): Metadata {\n+export function buildMetadata(locale: SeoLocale, requestedSlug?: SeoSlug, tourismArea: TourismDeskArea = \"myeongdong\"): Metadata {\n+  const slug = canonicalSlug(requestedSlug);\n   const path = seoPath(locale, slug, tourismArea);\n   const equivalents = Object.fromEntries(seoLocales.map((language) => [\n     language === \"zh\" ? \"zh-CN\" : language === \"ja\" ? \"ja-JP\" : language === \"ko\" ? \"ko-KR\" : \"en\",\n@@ -164,7 +167,8 @@ const breadcrumbHome = { ko: \"홈\", en: \"Home\", zh: \"首页\", ja: \"ホーム\" }\n  * `BreadcrumbList` gives crawlers the locale-home → page relationship the\n  * client-side navigation otherwise hides. Nothing here is fetched at runtime.\n  */\n-export function pageStructuredData(locale: SeoLocale, slug?: SeoSlug, tourismArea: TourismDeskArea = \"myeongdong\"): Record<string, unknown>[] {\n+export function pageStructuredData(locale: SeoLocale, requestedSlug?: SeoSlug, tourismArea: TourismDeskArea = \"myeongdong\"): Record<string, unknown>[] {\n+  const slug = canonicalSlug(requestedSlug);\n   const path = seoPath(locale, slug, tourismArea);\n   const url = `${siteOrigin}${path}`;\n   const inLanguage = locale === \"ko\" ? \"ko-KR\" : locale === \"zh\" ? \"zh-CN\" : locale === \"ja\" ? \"ja-JP\" : \"en\";\n"
+      },
+      {
+        "file": "app/sitemap.ts",
+        "previous": "ab2329b032b269477ffad4b69258004b1b577b323735eccbf92518cbec258880",
+        "approved": "feb12ed8a001d1524b1fece19c3ac3ee945d4ccdc91d2fa115d5cccc1eedf2cd",
+        "addedLines": 3,
+        "deletedLines": 2,
+        "exactUnifiedDiff": "diff --git a/app/sitemap.ts b/app/sitemap.ts\nindex fbe577c..390ff14 100644\n--- a/app/sitemap.ts\n+++ b/app/sitemap.ts\n@@ -1,5 +1,5 @@\n import type { MetadataRoute } from \"next\";\n-import { isStagingDeployment, seoLocales, seoPath, siteOrigin, standaloneSeoSlugs, tourismDeskAreas, type SeoSlug } from \"./seo-config\";\n+import { canonicalSlug, isStagingDeployment, seoLocales, seoPath, siteOrigin, standaloneSeoSlugs, tourismDeskAreas, type SeoSlug } from \"./seo-config\";\n \n /**\n  * Start of today in KST, as an instant.\n@@ -59,7 +59,8 @@ export default function sitemap(): MetadataRoute.Sitemap {\n       priority: 1,\n       alternates: { languages: localeAlternates() },\n     },\n-    ...standaloneSeoSlugs.map((slug) => ({\n+    // Only canonical URLs: a slug that serves the home (canonicalSlug) is not listed again.\n+    ...standaloneSeoSlugs.filter((slug) => canonicalSlug(slug) === slug).map((slug) => ({\n       url: `${siteOrigin}${seoPath(locale, slug)}`,\n       ...(UNDATEABLE_SLUGS.has(slug) ? {} : { lastModified: dailyRefresh }),\n       changeFrequency: slug === \"more\" ? \"weekly\" as const : \"daily\" as const,\n"
+      },
+      {
+        "file": "app/layout.tsx",
+        "previous": "c4c2506c841712a9b8a46c98f99fdea167df8f32e69cdb39f5a612874d600119",
+        "approved": "5751b05b09e86833897a9e9145672af9ae830c538b1f357f9963325d592e06a5",
+        "addedLines": 2,
+        "deletedLines": 3,
+        "exactUnifiedDiff": "diff --git a/app/layout.tsx b/app/layout.tsx\nindex a653aca..fd97177 100644\n--- a/app/layout.tsx\n+++ b/app/layout.tsx\n@@ -57,12 +57,11 @@ export default async function RootLayout({\n         {children}\n         <script type=\"application/ld+json\" dangerouslySetInnerHTML={{ __html: JSON.stringify({\n           \"@context\": \"https://schema.org\",\n-          \"@type\": [\"WebSite\", \"WebApplication\"],\n+          // WebSite only: WebApplication needs ratings or reviews Google can show, which this site does not have.\n+          \"@type\": \"WebSite\",\n           name: \"KORETAIL\",\n           alternateName: \"KORETAIL · Retail Demand Signals for Korea\",\n           url: siteOrigin,\n-          applicationCategory: \"TravelApplication\",\n-          operatingSystem: \"Web\",\n           inLanguage: [\"ko-KR\", \"en\", \"zh-CN\", \"ja-JP\"],\n           description: \"Retail demand signals for Korea, combining foreign-visitor, airport and store-operating context for Seoul.\",\n         }) }} />\n"
+      }
+    ],
+    "protectedPathCount": 65,
+    "approvalEvidenceFile": "docs/approvals/home-canonical-seo-20261013.json"
   }
 }

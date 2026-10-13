@@ -47,7 +47,7 @@ import {
 import { localText } from "./local-text";
 import { MonthRangePicker } from "./month-range-picker";
 import type { AirportView as AirportViewComponent } from "./airport-view";
-import { pageDescription, pageTitle, seoLocales, seoSlugs, siteOrigin, type SeoSlug } from "./seo-config";
+import { canonicalSlug, pageDescription, pageTitle, seoLocales, seoSlugs, siteOrigin, type SeoSlug } from "./seo-config";
 import LiveSignals, {
   AreaCurrentBrief,
   DateNavigator,
@@ -337,7 +337,9 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       : undefined;
     const title = pageTitle(lang, slug, tourismArea);
     const description = pageDescription(lang, slug, tourismArea);
-    const suffix = slug ? `/${slug}${tourismArea ? `/${tourismArea}` : ""}` : "";
+    // Same canonical as the server HTML: a home-equivalent slug names the home.
+    const canonical = canonicalSlug(slug);
+    const suffix = canonical ? `/${canonical}${tourismArea ? `/${tourismArea}` : ""}` : "";
     const canonicalPath = `/${lang}${suffix}`;
 
     document.title = title;
