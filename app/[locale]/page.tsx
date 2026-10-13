@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { preload } from "react-dom";
 import { notFound } from "next/navigation";
 import RetailPulseApp from "../retailpulse-app";
+import AirportGlancePreview from "../airport-glance-preview";
 import { buildMetadata, pageStructuredData, seoLocales, type SeoLocale } from "../seo-config";
 import {preloadShellFont} from '../shell-font-preload';
 
@@ -52,7 +53,7 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
   preloadLiveSummary();
   preloadShellFont(locale as SeoLocale);
   return <>
-    <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialView="airport-glance" initialScope="airport-home" />
+    <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialView="airport-glance" initialScope="airport-home" AirportGlance={AirportGlancePreview} />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale)) }} />
   </>;
 }
