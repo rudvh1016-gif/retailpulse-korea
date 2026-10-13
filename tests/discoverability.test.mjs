@@ -433,6 +433,7 @@ test("every response a crawler can get from a content API tells it not to index"
   const predictions = await import("../app/api/live/predictions/route.ts");
   const flights = await import("../app/api/live/flights/route.ts");
   const airportMonths = await import("../app/api/live/airport-months/route.ts");
+  const airportDays = await import("../app/api/live/airport-days/route.ts");
   const commercialMonths = await import("../app/api/live/commercial-months/route.ts");
   const usual = await import("../app/api/live/usual/route.ts");
   const responses = {
@@ -442,6 +443,7 @@ test("every response a crawler can get from a content API tells it not to index"
     // The pages these four render (home, airport, consumption, store) became crawlable on 2026-10-13.
     "flights (unavailable)": await flights.GET(new Request(`${ORIGIN}/api/live/flights`)),
     "airport-months (unavailable)": await airportMonths.GET(new Request(`${ORIGIN}/api/live/airport-months`)),
+    "airport-days (unavailable)": await airportDays.GET(new Request(`${ORIGIN}/api/live/airport-days`)),
     "commercial-months (unavailable)": await commercialMonths.GET(new Request(`${ORIGIN}/api/live/commercial-months?area=myeongdong`)),
     "usual (unavailable)": await usual.GET(new Request(`${ORIGIN}/api/live/usual?area=myeongdong`)),
   };

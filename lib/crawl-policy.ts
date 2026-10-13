@@ -35,15 +35,18 @@
  * the home and the airport pages also draw their departures, destinations and
  * monthly comparison from `/api/live/flights` and `/api/live/airport-months`,
  * the consumption pages from `/api/live/commercial-months`, and the store
- * pages from `/api/live/usual`. Blocked, Google's rendered home showed those
- * tiles as "no verified data". The header exchange-rate widget
+ * pages from `/api/live/usual`; the airport day comparison (rendered for a
+ * full-height viewport, as Google renders) reads `/api/live/airport-days`.
+ * Blocked, Google's rendered home showed those tiles as "no verified data"
+ * and the day comparison as a load failure. The header exchange-rate widget
  * (`/api/live/duty-free-exchange`) is not page content and stays blocked.
  * Cost: one uncached read per crawler render; flights reads at most 1,201
- * rows, the others under 100 (docs/SEO.md).
+ * rows, airport-days and airport-months at most 63, the others under 100
+ * (docs/SEO.md).
  */
 export const crawlableContentApis = [
   "/api/live/summary", "/api/live/predictions",
-  "/api/live/flights", "/api/live/airport-months", "/api/live/commercial-months", "/api/live/usual",
+  "/api/live/flights", "/api/live/airport-months", "/api/live/airport-days", "/api/live/commercial-months", "/api/live/usual",
 ] as const;
 
 // Anchor the endpoint and separately permit query strings. A bare prefix

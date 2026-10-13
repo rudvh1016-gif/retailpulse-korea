@@ -1036,12 +1036,22 @@ test("server HTML never claims missing data or zero events before data loads", a
     const response = await renderPath(path, language);
     assert.equal(response.status, 200, path);
     const html = await response.text();
-    return html.slice(html.indexOf("<body")).replace(/<script[\s\S]*?<\/script>/g, "");
+    return html.slice(html.indexOf("<body")).replace(/<script[\s\S]*?<\/script>/g, "").replace(/<!-- -->/g, "");
   };
   const home = await body("/ko");
-  assert.doesNotMatch(home, /확인 가능한 자료(가)? 없/, "the glance home must not tell crawlers it has no verified data");
+  // #358's passenger tile keeps its own pending copy; this checks the glance tiles around it.
+  for (const id of ["glance-key-wait", "glance-key-upcoming", "glance-key-growth", "glance-future-zones", "glance-future-countries"]) {
+    const tile = home.match(new RegExp(`data-testid="${id}"[\\s\\S]*?</(a|article)>`))?.[0] ?? "";
+    assert.ok(tile, id);
+    assert.doesNotMatch(tile, /확인 가능한 자료(가)? 없/, `${id} must not tell crawlers it has no verified data`);
+  }
   assert.match(home, /자료 확인 중/);
-  assert.doesNotMatch(await body("/en", "en"), /No verified data/);
+  assert.doesNotMatch(home, /국가 전체 보기 \(0\)/, "no false zero country count");
+  const comparison = home.match(/data-testid="glance-day-comparison"[\s\S]*?<\/div>/)?.[0] ?? "";
+  assert.ok(comparison);
+  assert.doesNotMatch(comparison, /비교 불가/, "no 'comparison unavailable' before the data is known");
+  const en = await body("/en", "en");
+  assert.doesNotMatch(en.match(/data-testid="glance-key-wait"[\s\S]*?<\/a>/)?.[0] ?? "", /No verified data/);
   const seoul = await body("/ko/where-to");
   assert.doesNotMatch(seoul, /확인 불가|비교 자료 부족/);
   assert.doesNotMatch(seoul, /<strong>0<\/strong>\s*개 · 공식 등록/, "no false zero for official events");

@@ -297,6 +297,7 @@ async function checkContentApisStayUnlisted(context: Context): Promise<void> {
     "/api/live/predictions": `/api/live/predictions?area=myeongdong&${probe}`,
     "/api/live/flights": `/api/live/flights?${probe}`,
     "/api/live/airport-months": `/api/live/airport-months?${probe}`,
+    "/api/live/airport-days": `/api/live/airport-days?${probe}`,
     "/api/live/commercial-months": `/api/live/commercial-months?area=myeongdong&${probe}`,
     "/api/live/usual": `/api/live/usual?area=myeongdong&${probe}`,
   };
