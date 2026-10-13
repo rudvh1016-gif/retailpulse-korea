@@ -26,6 +26,13 @@ function number(value: unknown, min = 0, max = 1e12): number | null {
   const parsed = Number(String(value).replaceAll(',',''));
   return Number.isFinite(parsed) && parsed >= min && parsed <= max ? parsed : null;
 }
+/** Non-measurement provider states must also mask concentrations in older stored snapshots. */
+export function seoulAirReading(value: unknown, publishedGrade: unknown) {
+  const grade=label(publishedGrade);
+  const maintenance=Boolean(grade&&/점검|정비|유지보수|maintenance|inspection/i.test(grade));
+  const unavailable=Boolean(grade&&/미제공|미수신|미측정|자료\s*없|정보\s*없|통신|장애|결측|확인\s*중|^[-—]$|unavailable|no\s*data/i.test(grade));
+  return {value:maintenance||unavailable?null:number(value,0,2000),grade,status:maintenance?'MAINTENANCE' as const:unavailable?'UNAVAILABLE' as const:'READING' as const};
+}
 export function seoulContextTime(value: unknown): string | null {
   const text = label(value)?.replace(/^(\d{4})(\d{2})(\d{2}) (\d{2})(\d{2})$/, "$1-$2-$3 $4:$5");
   if (!text || !/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/.test(text)) return null;
@@ -48,6 +55,6 @@ export function normalizeSeoulContext(city: Record<string,unknown>): SeoulContex
   const observedAt = seoulContextTime(raw.WEATHER_TIME);
   return { commercialAt: seoulContextTime(commercial.CMRCL_TIME), categories,
     weather: observedAt ? { observedAt, temperature:number(raw.TEMP,-80,65), humidity:number(raw.HUMIDITY,0,100),
-      wind:number(raw.WIND_SPD,0,150), pm10:number(raw.PM10,0,2000), pm25:number(raw.PM25,0,2000),
+      wind:number(raw.WIND_SPD,0,150), pm10:seoulAirReading(raw.PM10,raw.PM10_INDEX).value, pm25:seoulAirReading(raw.PM25,raw.PM25_INDEX).value,
       pm10Grade:label(raw.PM10_INDEX), pm25Grade:label(raw.PM25_INDEX) } : null };
 }

@@ -1,6 +1,8 @@
 'use client';
 
-import { useId, useRef, useState } from 'react';
+import { useLayoutEffect, useId, useRef, useState } from 'react';
+import {animateChoice} from './use-choice-motion';
+import styles from './copy-confirmation.module.css';
 import type { Lang } from './retailpulse-data';
 import { shareCopy, shareText, type ShareDocument } from '../lib/prep-share';
 import { wrapText } from '../lib/share-wrap';
@@ -61,18 +63,27 @@ export async function renderShareImage(doc: ShareDocument, fontFamily: string): 
 export function PrepShare({ lang, doc, fileName, analytics = {} }: { lang: Lang; doc: ShareDocument; fileName: string; analytics?: Record<string, string> }) {
   const id = useId();
   const section = useRef<HTMLDivElement>(null);
+  const text = shareText(doc);
+  const [documentText,setDocumentText]=useState(text);
   const [status, setStatus] = useState<ShareStatus>('idle');
   const [fallback, setFallback] = useState(false);
-  const text = shareText(doc);
+  const confirmation=useRef<SVGSVGElement>(null),stopConfirmation=useRef<()=>void>(()=>{}),copyAttempt=useRef(0);
+  // Invalidate pending copies before paint when their document is replaced.
+  useLayoutEffect(()=>()=>{copyAttempt.current++;stopConfirmation.current();},[text]);
+  if(documentText!==text){setDocumentText(text);setStatus('idle');setFallback(false);}
   const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
   const copy = async () => {
+    const attempt=++copyAttempt.current;stopConfirmation.current();setStatus('idle');
     try {
       if (!navigator.clipboard?.writeText) throw new Error('clipboard_unavailable');
       await navigator.clipboard.writeText(text);
+      if(attempt!==copyAttempt.current)return;
       setStatus('copied');
+      if(confirmation.current)stopConfirmation.current=animateChoice(confirmation.current,[{opacity:0,transform:'scale(.8)'},{opacity:1,transform:'scale(1)'}],180);
       trackPersonalEvent('business_prep_copied', analytics);
     } catch {
+      if(attempt!==copyAttempt.current)return;
       setStatus('copyFailed');
       setFallback(true);
     }
@@ -109,7 +120,7 @@ export function PrepShare({ lang, doc, fileName, analytics = {} }: { lang: Lang;
   return <div className="prep-block prep-share" ref={section} data-testid="prep-share" aria-labelledby={`${id}-title`}>
     <h3 id={`${id}-title`}>{shareCopy.title[lang]}</h3>
     <div className="prep-share-actions">
-      <button type="button" onClick={copy}>{shareCopy.copy[lang]}</button>
+      <button type="button" className={styles.button} onClick={copy}>{shareCopy.copy[lang]}<svg ref={confirmation} className={styles.check} data-copied={status==='copied'} viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="m3 8 3 3 7-7" fill="none" stroke="currentColor" strokeWidth="1.5"/></svg></button>
       <button type="button" onClick={image}>{shareCopy.image[lang]}</button>
       {canShare && <button type="button" onClick={share}>{shareCopy.share[lang]}</button>}
     </div>

@@ -1,4 +1,5 @@
 "use client";
+import {unverifiedPurposeText} from '../lib/purpose-display';
 import {ChangeRate,RateText} from './change-rate';
 import Image from 'next/image';
 
@@ -785,11 +786,11 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
             <dl className="tourism-background-values">
               {block.foreignPurposeMobility.shopping !== null && <div>
                 <dt><Image unoptimized src="/visuals/clarity/v1/shopping-bag-256.webp" width="48" height="48" alt="" aria-hidden="true" loading="lazy" decoding="async"/>{copy.shoppingPurpose}</dt>
-                <dd>{numberText(block.foreignPurposeMobility.shopping, lang)} {copy.movements}</dd>
+                <dd>{unverifiedPurposeText[lang]}</dd>
               </div>}
               {block.foreignPurposeMobility.tourism !== null && <div>
                 <dt><Image unoptimized src="/visuals/clarity/v1/tourism-camera-256.webp" width="48" height="48" alt="" aria-hidden="true" loading="lazy" decoding="async"/>{copy.tourismPurpose}</dt>
-                <dd>{numberText(block.foreignPurposeMobility.tourism, lang)} {copy.movements}</dd>
+                <dd>{unverifiedPurposeText[lang]}</dd>
               </div>}
             </dl>
             <p className="tourism-background-period">{block.foreignPurposeMobility.referenceDate}</p>{mobilityPeriod && <PeriodNote period={mobilityPeriod} />}

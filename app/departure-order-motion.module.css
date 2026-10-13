@@ -1,0 +1,8 @@
+.order{margin-block:6px 10px}
+.order>button{min-height:44px;padding:4px 0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:4px;cursor:pointer;touch-action:manipulation}
+.order>button:hover{text-decoration-thickness:2px}
+.order>button:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+.route{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin-block:4px}
+.step{position:relative;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;text-align:center;font:inherit;overflow-wrap:anywhere}
+.step>svg{position:relative;z-index:1;background:var(--surface,#fff);padding-inline:6px;box-sizing:content-box;flex-shrink:0}
+.link{position:absolute;top:12px;right:50%;width:100%;height:1px;background:currentColor;opacity:.45;transform-origin:left center;pointer-events:none}
