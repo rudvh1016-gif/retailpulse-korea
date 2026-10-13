@@ -25,7 +25,7 @@ instead of delegating the retry to the fetcher, so every provider request is
 counted exactly (`requestsIssued`). A scan aborts with
 `a1_today_request_budget_<n>_page_<p>` BEFORE issuing a request that would
 exceed its budget; stored rows are never touched by an aborted scan. The
-early window (`.github/workflows/collect-airport-recovery.yml`, 04:07 KST) runs
+early window (`.github/workflows/collect-airport-recovery.yml`, 00:07 KST) runs
 three attempts of `RPK_A1_MAX_REQUESTS=125`, one job apiece, and the 06:07 KST
 group runs one more at the same ceiling — 500 calls/day in the worst case,
 exactly the documented development quota and never above. On a healthy day that

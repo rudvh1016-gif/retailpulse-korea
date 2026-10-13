@@ -46,11 +46,16 @@ treated as zero stores.
 6. `retryExhausted=true` means the current natural run failed after the
    bounded recovery window. Do not rerun A1 by hand; keep last-good data and
    let the next authoritative schedule recover automatically. For the daily
-   A1 scan that schedule is the 10:07 KST recovery window
-   (`collect-airport-recovery.yml`), which costs nothing when the 06:07 run
-   already succeeded. A manual `Collect Production Data` run is a third scan
-   and can exceed A1's 500 calls/day quota together with the two scheduled
-   ones; use it only when both scheduled windows failed.
+   A1 scan the first window is 00:07 KST (`collect-airport-recovery.yml`, up
+   to 3 fresh-runner attempts × 125 requests), and the 06:07 KST daily group
+   rescans once (125). GitHub schedule times are nominal; runs can start
+   hours late. A 01:15–03:00 KST A1-only fallback (`collect-realtime.yml`
+   `airport_midnight_recovery`, ≤125 inside the shared rolling 500) runs only
+   when the `RPK_CENTRAL_RECOVERY_*` Variables allow it and A1 source health
+   is LIVE/STALE with no auth/429/schema veto; after an A1 ERROR it stays
+   blocked by design. A manual `Collect Production Data` run is a further
+   scan on top of a 500-call day; use it only when every scheduled window
+   failed.
 
 ## Site feels slow
 

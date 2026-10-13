@@ -16,16 +16,23 @@ name: Collect Realtime Signals
 #                                   deliberately lighter Phase-1 cadence, not
 #                                   an attempt to match that refresh rate.
 #   seoul_realtime (S1)      Integrated citydata population + Shinhan domestic-
-#                             consumer commercial activity from the SAME call:
-#                             1 call per target area (3 areas) = 3 calls/run,
-#                             up to 6 with one retry per area. 96 runs/day =
-#                             288 typical / 576 worst-case calls/day. Seoul
-#                             Open Data does not publish one official
-#                             cross-API quota number for this key; this cadence
-#                             is sized against the conservative ~1,000/day-class
-#                             assumption documented in docs/DATA_SOURCES.md
-#                             (INTERNAL_ESTIMATE, not OFFICIAL_USAGE). Source
-#                             data itself refreshes about every 5 minutes.
+#                             consumer commercial activity from ONE call per
+#                             target area. 4 areas (lib/areas.ts
+#                             publicAreaIds) = 4 calls/run, up to 8 with one
+#                             retry per failed area (fetchOfficialJson
+#                             retries:1); Seoul has no fresh-runner retry.
+#                             96 runs/day = 384 typical / 768 worst-case
+#                             calls/day. No official daily call limit for this
+#                             Seoul key is recorded in this repository: the
+#                             Open Data Plaza says gallery-approved services
+#                             can call without limit but gives no number for
+#                             other keys. Any budget is an INTERNAL_ESTIMATE,
+#                             not OFFICIAL_USAGE (see
+#                             docs/COLLECTION_GAP_RETRY_2026-10-06.md and
+#                             docs/ITAEWON_PREPARATION.md).
+#                             Against a hypothetical 1,000/day, 768 would be
+#                             76.8%, above the 70% NOTICE line. Source data
+#                             itself refreshes about every 5 minutes.
 # SCHEDULER OWNERSHIP — this workflow deliberately has no `schedule:` block.
 # The authoritative realtime scheduler is the Cloudflare Production Worker's
 # trigger-only Cron (`"7,22,37,52 * * * *"` in wrangler.production.jsonc),

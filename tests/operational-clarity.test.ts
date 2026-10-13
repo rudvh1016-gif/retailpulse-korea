@@ -46,7 +46,7 @@ test('combined context never moves backwards when a lagging commercial timestamp
  assert.equal(seoulContextObservedAt({commercialAt:null,weather:null,categories:[]}),null);
 });
 test('nominal source schedules roll over KST correctly and failure text never leaks raw details',()=>{
- assert.equal(nextSourceWindow('KASI_PUBLIC_HOLIDAYS','2026-09-05T00:00:00Z'),'2026-09-05T10:07:00+09:00');
+ assert.equal(nextSourceWindow('KASI_PUBLIC_HOLIDAYS','2026-09-05T00:00:00Z'),'2026-09-06T00:07:00+09:00');
  assert.equal(nextSourceWindow('KTO_TOURAPI_EVENT','2026-09-05T07:00:00Z'),'2026-09-06T06:07:00+09:00');
  assert.equal(nextSourceWindow('unknown','2026-09-05T07:00:00Z'),null);
  assert.equal(publicFailureReason('failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT'),'NETWORK');
