@@ -36,3 +36,5 @@ Parent PR360 (`fcf5b9ba`) is now a normally merged dependency of this draft. The
 ## Clipboard follow-up
 
 Parent review identified a pending-copy/document-change race. A browser regression reproduced it on the same mounted sharing component: change industry while the clipboard promise is pending, then resolve the old promise; the previous version incorrectly showed `copied`. The fix invalidates pending attempts in layout cleanup keyed by serialized document text, and resets status/fallback when that text changes. The new regression and existing copy pending/failure/success scenario both pass. No clipboard completion is attributed to a different document.
+
+After the normal PR360 dependency merge, 13 focused airport title/time/motion/midnight browser scenarios passed; TypeScript, scoped lint and production build also passed. The viewport captures and short video were refreshed against the integrated title/time presentation. Earlier full-page captures remain evidence of the original motion-only baseline. The new copy regression brings the motion suite to eight scenarios.
