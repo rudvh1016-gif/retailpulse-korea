@@ -40,9 +40,14 @@ function visibleText(html) {
     .replace(/\s+/g, " ").trim();
 }
 
-const SOURCE_RE = /인천국제공항공사|Incheon International Airport Corporation|서울 열린데이터|Seoul Open Data|공공데이터포털|data\.go\.kr|기상청|Korea Meteorological|한국관광공사|Korea Tourism|신한카드|Shinhan|국토교통부|한국천문연구원|출처|Source[s]?:/gi;
+// Provider names only: the generic 출처/Source[s]: also matched the header exchange widget
+// ("공식 출처 신라") on every page. The zh/ja provider names are future coverage; no
+// /zh or /ja server HTML carries them yet.
+const SOURCE_RE = /인천국제공항공사|Incheon International Airport Corporation|仁川国际机场公社|仁川国際空港公社|서울 열린데이터|Seoul Open Data|공공데이터포털|data\.go\.kr|기상청|Korea Meteorological|한국관광공사|Korea Tourism|신한카드|Shinhan|국토교통부|한국천문연구원/gi;
 const DATE_RE = /20\d\d[-.]\d\d[-.]\d\d|20\d\d년\s?\d{1,2}월\s?\d{1,2}일|\d{1,2}:\d\d\s?KST|KST/g;
-const KIND_RE = /관측|실측|예상|예측|추정|공식 예측|observed|forecast|estimated|official/gi;
+// "official forecast", like 공식 예측: the bare word also matched the header widget's "Official source Shilla"
+// and the footer's "Official figures are distinguished…" on every /en page.
+const KIND_RE = /관측|실측|예상|예측|추정|공식 예측|observed|forecast|estimated|official forecast|观测|预测|预计|観測|予測|予想/gi;
 
 async function page(path) {
   const started = Date.now();

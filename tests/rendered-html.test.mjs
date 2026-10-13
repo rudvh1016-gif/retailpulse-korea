@@ -1039,13 +1039,14 @@ test("server HTML never claims missing data or zero events before data loads", a
     return html.slice(html.indexOf("<body")).replace(/<script[\s\S]*?<\/script>/g, "").replace(/<!-- -->/g, "");
   };
   const home = await body("/ko");
-  // #358's passenger tile keeps its own pending copy; this checks the glance tiles around it.
-  for (const id of ["glance-key-wait", "glance-key-upcoming", "glance-key-growth", "glance-future-zones", "glance-future-countries"]) {
+  // Every glance tile, the passenger tile included, says "checking" until its own request settles.
+  for (const id of ["glance-key-passengers", "glance-key-wait", "glance-key-upcoming", "glance-key-growth", "glance-future-zones", "glance-future-countries"]) {
     const tile = home.match(new RegExp(`data-testid="${id}"[\\s\\S]*?</(a|article)>`))?.[0] ?? "";
     assert.ok(tile, id);
     assert.doesNotMatch(tile, /확인 가능한 자료(가)? 없/, `${id} must not tell crawlers it has no verified data`);
   }
   assert.match(home, /자료 확인 중/);
+  assert.doesNotMatch(home, /class="glance-status"/, "no separate status line while the glance is settling");
   assert.doesNotMatch(home, /국가 전체 보기 \(0\)/, "no false zero country count");
   const comparison = home.match(/data-testid="glance-day-comparison"[\s\S]*?<\/div>/)?.[0] ?? "";
   assert.ok(comparison);
@@ -1066,4 +1067,22 @@ test("the airport glance URL names the home as its canonical", async () => {
     assert.equal(canonical.length, 1, path);
     assert.equal(new URL(canonical[0]).pathname, `/${language}`, path);
   }
+});
+
+// The glance routes pass the glance in from their server pages, so their head carries its
+// stylesheet and script (styled from the first paint, nothing discarded at hydration).
+// Seoul pages, which never open on the glance, pay for neither.
+test("only the glance routes put the glance assets in the head", async () => {
+  const glanceAssets = async (path) => {
+    const response = await renderPath(path);
+    assert.equal(response.status, 200, path);
+    const head = (await response.text()).split("</head>")[0];
+    return [...head.matchAll(/<link\b[^>]*>/g)].map((match) => match[0]).filter((link) => /\/airport-glance-preview-[^"]*\.(css|js)"/.test(link));
+  };
+  for (const path of ["/ko", "/ko/airport-glance"]) {
+    const links = await glanceAssets(path);
+    assert.ok(links.some((link) => /rel="stylesheet"/.test(link) && /\.css"/.test(link)), `${path} links the glance stylesheet`);
+    assert.ok(links.some((link) => /rel="modulepreload"/.test(link) && /\.js"/.test(link)), `${path} preloads the glance script`);
+  }
+  for (const path of ["/ko/myeongdong", "/ko/hongdae"]) assert.deepEqual(await glanceAssets(path), [], path);
 });
