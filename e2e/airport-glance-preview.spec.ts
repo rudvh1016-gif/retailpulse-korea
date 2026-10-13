@@ -56,14 +56,20 @@ test('pending past-day summary stays unavailable until its matching response arr
  release();await expect(app.getByTestId('glance-key-upcoming')).toContainText('현재 이후 예정편 없음');
 });
 
-test('future cards share hours but label distinct first-window and adjacent-window meanings',async({page})=>{
- await routeData(page);await page.setViewportSize({width:390,height:1000});await page.goto('/ko/airport-glance-preview');const app=page.getByTestId('airport-glance-preview'),future=app.getByTestId('glance-future'),country=app.getByTestId('glance-future-countries'),zone=app.getByTestId('glance-future-zones');
+for(const width of [360,390,430,1440])test(`future cards show aggregation boundaries below headings ${width}`,async({page})=>{
+ await routeData(page);await page.setViewportSize({width,height:1000});await page.goto('/ko/airport-glance-preview');const app=page.getByTestId('airport-glance-preview'),future=app.getByTestId('glance-future'),country=app.getByTestId('glance-future-countries'),zone=app.getByTestId('glance-future-zones');
  await expect(future.getByRole('heading',{name:'앞으로 출발편이 가장 많은 구역',exact:true})).toBeVisible();await expect(country.getByRole('heading',{name:'다음 시간대에 늘어나는 목적지',exact:true})).toBeVisible();
- await expect(zone.locator('.glance-window-note')).toContainText('앞 10:15–11:15');await expect(country).toContainText('12 → 13 편');await expect(country).toContainText('+1 편');await expect(country.getByTestId('glance-comparison-periods')).toContainText('앞 10:15–11:15 · 뒤 11:15–12:15');
- await future.getByRole('button',{name:'향후 3 시간',exact:true}).click();await expect(zone.locator('.glance-window-note')).toContainText('앞 10:15–13:15');await expect(country).toContainText('39 → 48 편');await expect(country).toContainText('+9 편');await expect(app.getByTestId('glance-day-comparison')).toContainText('300 편');
- await future.getByRole('button',{name:'향후 6 시간',exact:true}).click();await expect(country).toContainText('87 → 123 편');await expect(country).toContainText('+36 편');
+ await expect(app.getByRole('heading',{level:1})).toHaveText('인천공항 한눈에');
+ await expect(zone.getByTestId('glance-zone-period')).toHaveText('집계 시간 10:15–11:15 (KST)');await expect(country).toContainText('12 → 13 편');await expect(country).toContainText('+1 편');await expect(country.getByTestId('glance-comparison-periods')).toContainText('비교 10:15–11:15 → 다음 11:15–12:15 (KST)');
+ for(const card of [zone,country]){
+  const heading=await card.locator('h2').boundingBox(),period=await card.locator('.glance-window-time').boundingBox();
+  expect(heading).not.toBeNull();expect(period).not.toBeNull();expect(period!.y).toBeGreaterThanOrEqual(heading!.y+heading!.height);expect(period!.y-heading!.y-heading!.height).toBeLessThanOrEqual(8);
+  const style=await card.locator('.glance-window-time').evaluate(el=>({size:getComputedStyle(el).fontSize,color:getComputedStyle(el).color}));expect(style).toEqual({size:'12px',color:'rgb(17, 17, 17)'});
+ }
+ await future.getByRole('button',{name:'향후 3 시간',exact:true}).click();await expect(zone.getByTestId('glance-zone-period')).toHaveText('집계 시간 10:15–13:15 (KST)');await expect(country.getByTestId('glance-comparison-periods')).toHaveText('비교 10:15–13:15 → 다음 13:15–16:15 (KST)');await expect(country).toContainText('39 → 48 편');await expect(country).toContainText('+9 편');await expect(app.getByTestId('glance-day-comparison')).toContainText('300 편');
+ await future.getByRole('button',{name:'향후 6 시간',exact:true}).click();await expect(zone.getByTestId('glance-zone-period')).toHaveText('집계 시간 10:15–16:15 (KST)');await expect(country.getByTestId('glance-comparison-periods')).toHaveText('비교 10:15–16:15 → 다음 16:15–22:15 (KST)');await expect(country).toContainText('87 → 123 편');await expect(country).toContainText('+36 편');
  await app.getByRole('button',{name:'T2',exact:true}).click();await expect(app.getByTestId('glance-day-comparison')).toContainText('144 편');await expect(country).toContainText('42 → 60 편');await expect(country).toContainText('+18 편');
- await app.locator('input[type=date]').fill('2026-10-10');await expect(zone).toContainText('확인 가능한 자료 없음');await expect(country).toContainText('확인 가능한 자료 없음');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await app.locator('input[type=date]').fill('2026-10-10');await expect(zone).toContainText('확인 가능한 자료 없음');await expect(country).toContainText('확인 가능한 자료 없음');await expect(app.locator('.glance-window-time')).toHaveCount(0);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
 for(const condition of ['midnight','truncated'] as const)test(`destination increase safely withholds ${condition} comparisons`,async({page})=>{
  await routeData(page);
@@ -86,4 +92,13 @@ for(const width of [360,390,1440])test(`physical building scopes align flights d
  await page.goto('/ko/airport-glance-preview');const app=page.getByTestId('airport-glance-preview');await expect(app.locator('.glance-map-heading')).toContainText('21 편');await expect(app.getByTestId('glance-shared-processing')).toContainText('탑승동도 T1에서 출국수속');
  for(const [button,building,total,country,delta,mean,percent,window] of [['T1','T1',5,'JP',4,1,200,2],['탑승동','CONCOURSE',7,'CN',5,2,100,3],['T2','T2',9,'US',6,3,100,4]] as const){await app.getByRole('button',{name:button,exact:true}).click();await expect(app.locator('.glance-map-heading')).toContainText(`${total} 편`);await expect(app.locator(`.glance-building-${building} h2`)).toContainText(`${total} 편`);await expect(app.locator('.glance-building[data-selected=true]')).toHaveCount(1);await expect(app.locator('.glance-destinations li')).toHaveCount(1);await expect(app.locator(`.glance-destinations li[data-country=${country}]`)).toContainText('100%');await expect(app.getByTestId('glance-day-comparison')).toContainText(`+${delta} 편`);await expect(app.getByTestId('glance-day-comparison')).toContainText(`전월 일평균 ${mean} 편`);await expect(app.locator(`.glance-ranking [data-country=${country}]`)).toContainText(`+${percent}.0%`);await expect(app.getByTestId('glance-future-zones').locator('.glance-window-note')).toContainText(`총 ${window}편`);if(building!=='T2')await expect(app.getByTestId('glance-key-wait')).toContainText('T1 출국장 2E · 12 분');}
  await expect(app.locator('.glance-building-CONCOURSE .glance-map-queue')).toHaveCount(0);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});
+
+for(const hour of [22,23])test(`midnight boundaries retain dates and existing comparison policy at ${hour}`,async({page})=>{
+ await routeData(page);await page.setViewportSize({width:360,height:1000});await page.clock.setFixedTime(new Date(`${date}T${hour}:00:00+09:00`));
+ await page.route('**/api/live/summary*',routeSummary({...SUMMARY_FIXTURE,dayRelation:'TODAY',todayKst:date,serviceDateKst:date,airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:date,congestion:[]},generatedAt:`${date}T${hour}:00:00+09:00`}));
+ await page.goto('/ko/airport-glance-preview');const app=page.getByTestId('airport-glance-preview');
+ if(hour===22)await expect(app.getByTestId('glance-comparison-periods')).toHaveText('비교 22:00–23:00 → 다음 2026-10-11 23:00–2026-10-12 00:00 (KST)');
+ else {await expect(app.getByTestId('glance-zone-period')).toHaveText('집계 시간 2026-10-11 23:00–2026-10-12 00:00 (KST)');await expect(app.getByTestId('glance-future-countries')).toContainText('비교 보류');await expect(app.getByTestId('glance-comparison-periods')).toHaveCount(0);}
+ await app.getByRole('button',{name:'향후 6 시간',exact:true}).click();await expect(app.getByTestId('glance-zone-period')).toHaveText(`집계 시간 2026-10-11 ${hour}:00–2026-10-12 00:00 (KST)`);await expect(app.getByTestId('glance-future-countries')).toContainText('비교 보류');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });

@@ -7,8 +7,9 @@ import dynamic from 'next/dynamic';
 // SSR remains enabled. These inactive screens do not belong to the airport's
 // first download; their initial content is still rendered on their own routes.
 // Reaching for the airport glance tab starts its load the same way (see prepareAirportView).
+// The glance routes pass the glance in from their server pages (see RetailPulseProps).
 const loadAirportGlance=()=>import('./airport-glance-preview');
-const AirportGlance=dynamic(loadAirportGlance);
+const LazyAirportGlance=dynamic(loadAirportGlance);
 const prepareAirportGlance=()=>{loadAirportGlance().catch(()=>{});};
 const MonthlyRecordsView=dynamic(()=>import('./monthly-records').then(module=>module.MonthlyRecordsView));
 const TourismDeskView=dynamic(()=>import('./tourism-desk').then(module=>module.TourismDeskView));
@@ -47,6 +48,7 @@ import {
 import { localText } from "./local-text";
 import { MonthRangePicker } from "./month-range-picker";
 import type { AirportView as AirportViewComponent } from "./airport-view";
+import type AirportGlanceComponent from "./airport-glance-preview";
 import { canonicalSlug, pageDescription, pageTitle, seoLocales, seoSlugs, siteOrigin, type SeoSlug } from "./seo-config";
 import LiveSignals, {
   AreaCurrentBrief,
@@ -248,6 +250,11 @@ type RetailPulseProps = {
    */
   AirportView?: ComponentType<ComponentProps<typeof AirportViewComponent>>;
   /**
+   * The airport glance, passed the same way by the glance routes' server pages
+   * so hydration does not wait on a lazy chunk and discard the server HTML.
+   */
+  AirportGlance?: ComponentType<ComponentProps<typeof AirportGlanceComponent>>;
+  /**
    * Today's answer, read on the server (lib/today-answer.ts) so the first HTML
    * already states it. Absent or null renders nothing.
    */
@@ -272,7 +279,7 @@ function routeFor(lang: Lang, view: View, area: AreaId) {
   return `${base}/${view}`;
 }
 
-export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false, initialScope = "home", todayAnswer = null, AirportView = OnDemandAirportView }: RetailPulseProps = {}) {
+export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false, initialScope = "home", todayAnswer = null, AirportView = OnDemandAirportView, AirportGlance = LazyAirportGlance }: RetailPulseProps = {}) {
   const bottomNavigationRef = useBottomNavigationViewport();
   // Airport routes already carry the airport code; only the on-demand copy needs preparing.
   const prepareAirport = AirportView === OnDemandAirportView ? prepareAirportView : undefined;
