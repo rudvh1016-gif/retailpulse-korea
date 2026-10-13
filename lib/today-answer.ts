@@ -15,6 +15,7 @@
  */
 import { summarizeTodayPassengerForecast, type AirportForecastAggregateRow, type ForecastBand } from "./airport-today-summary";
 import { kstDayOf } from "./kst";
+import { SEOUL_REALTIME_STALE_MINUTES } from "./seoul-freshness";
 
 export const TODAY_ANSWER_AREAS = ["myeongdong", "hongdae", "seongsu", "itaewon"] as const;
 export type TodayAnswerArea = typeof TODAY_ANSWER_AREAS[number];
@@ -52,8 +53,8 @@ const AREA_SQL = TODAY_ANSWER_AREAS.map(() => `SELECT * FROM (SELECT area, conge
     WHERE area = ? AND source_id = 'SEOUL_CITYDATA_PPLTN' AND quality_status = 'VALID'
     ORDER BY observed_at DESC LIMIT 1)`).join(" UNION ALL ");
 
-/** A congestion reading older than this is not "now" and is not shown. */
-const AREA_FRESH_MS = 2 * 60 * 60 * 1000;
+/** A congestion reading older than this is not "now" and is not shown: the same 40-minute rule as the live screens. */
+const AREA_FRESH_MS = SEOUL_REALTIME_STALE_MINUTES * 60 * 1000;
 const MEMO_MS = 60 * 1000;
 let memo: { at: number; value: TodayAnswer | null } | null = null;
 
@@ -121,13 +122,15 @@ export function areaAnswerText(answer: TodayAnswer | null | undefined, lang: Lan
     return now ? [{ area, now }] : [];
   });
   if (!list.length) return null;
-  const time = list.map(({ now }) => now.observedAt).sort().at(-1)!.slice(11, 16);
+  const latest = list.map(({ now }) => now.observedAt).sort().at(-1)!;
+  // The server HTML is kept by crawlers and quoted later, so the line names its own day as well as its time.
+  const time = latest.slice(11, 16), day = calendarDay(latest.slice(0, 10), lang);
   const body = list.map(({ area, now }) => `${areaName[area][lang]} ${levelText[lang][now.level]}`).join(" · ");
   return {
-    ko: `지금(${time} KST) 서울시 실시간 혼잡도: ${body}`,
-    en: `Now (${time} KST), Seoul city real-time congestion: ${body}`,
-    zh: `现在（${time} KST）首尔市实时拥挤度：${body}`,
-    ja: `いま（${time} KST）ソウル市リアルタイム混雑度：${body}`,
+    ko: `지금(${day} ${time} KST) 서울시 실시간 혼잡도: ${body}`,
+    en: `Now (${time} KST, ${day}), Seoul city real-time congestion: ${body}`,
+    zh: `现在（${day} ${time} KST）首尔市实时拥挤度：${body}`,
+    ja: `いま（${day} ${time} KST）ソウル市リアルタイム混雑度：${body}`,
   }[lang];
 }
 

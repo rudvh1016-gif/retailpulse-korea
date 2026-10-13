@@ -61,9 +61,17 @@ test("area congestion is shown only when fresh and valid", () => {
     { area: "seongsu", level: 9, observedAt: "2026-09-28T09:50:00+09:00" }, // not a level
   ], NOW);
   assert.deepEqual(Object.keys(answer.areas), ["myeongdong"]);
-  assert.equal(areaAnswerText(answer, "ko"), "지금(09:40 KST) 서울시 실시간 혼잡도: 명동 약간 붐빔");
+  assert.equal(areaAnswerText(answer, "ko"), "지금(9월 28일 09:40 KST) 서울시 실시간 혼잡도: 명동 약간 붐빔");
+  assert.equal(areaAnswerText(answer, "en"), "Now (09:40 KST, Sep 28), Seoul city real-time congestion: Myeongdong slightly busy");
   assert.equal(areaAnswerText(answer, "ko", "hongdae"), null);
   assert.match(areaAnswerText(answer, "en", "myeongdong"), /Myeongdong slightly busy/);
+});
+
+test("a reading past the site's 40-minute freshness rule is not called now", () => {
+  const nowMs = Date.parse("2026-09-28T10:00:00+09:00");
+  const at = (minutes) => new Date(nowMs - minutes * 60_000).toISOString();
+  assert.deepEqual(Object.keys(composeTodayAnswer([], [{ area: "myeongdong", level: 1, observedAt: at(40) }], nowMs).areas), ["myeongdong"]);
+  assert.deepEqual(Object.keys(composeTodayAnswer([], [{ area: "myeongdong", level: 1, observedAt: at(41) }], nowMs).areas), []);
 });
 
 /** A D1 double over node:sqlite with the real migrations. */

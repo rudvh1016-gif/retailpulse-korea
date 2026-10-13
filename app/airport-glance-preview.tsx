@@ -43,7 +43,7 @@ const insightCopy={
  ja:{wait:'現在最も長い出国場の待ち時間',waitBasis:'確認できる新しい観測の中で',upcoming:'今後の出発便が集中する時間帯',upcomingBasis:'出発予定便数 · 旅客の混雑ではありません',growth:'前月比で日平均が最も増えた目的地',noGrowth:'比較できる増加なし',noUpcoming:'現在以降の出発予定便なし',unavailable:'確認できる資料なし',minute:'分',observed:'観測',waitShort:'待ち',tie:'同順位',shared:'T1出国場を利用',growthTitle:'前月比の日平均増減 · 上位5件'},
 } as const;
 export default function AirportGlancePreview({lang,artworkSrc=null,published=false,selectedDate=null,onDateChange}:{lang:Lang;artworkSrc?:string|null;published?:boolean;selectedDate?:string|null;onDateChange?:(date:string|null)=>void}){
- const c=copy[lang],ui=interfaceCopy[lang],dc=destinationCopy[lang],ic=insightCopy[lang];
+ const baseCopy=copy[lang],ui=interfaceCopy[lang],dc=destinationCopy[lang],baseInsight=insightCopy[lang];
  const [futureHours,setFutureHours]=useState<1|3|6>(1);
  const [previewDate,setPreviewDate]=useState<string|null>(null),[scope,setScope]=useState<GlanceScope>('all');
  const date=published?selectedDate:previewDate;
@@ -52,6 +52,10 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
  const loaded=useFlights(day||null),clock=usePresentationClock(summary?.generatedAt??'1970-01-01T00:00:00Z');
  const month=day.slice(0,7),previousMonth=month?previousFlightMonth(month):'',monthRequest=usePreparedMonth<MonthReply>(month,`/api/live/airport-months?month=${encodeURIComponent(month)}`,month,day);
  const payload=loaded?.status==='OK'?loaded.payload:null;
+ // Until the first summary and flight requests settle (always, in the server HTML) nothing is known yet:
+ // the tiles say "checking", never "no verified data".
+ const settling=summary===undefined||(Boolean(day)&&loaded===undefined);
+ const c=settling?{...baseCopy,missing:baseCopy.loading}:baseCopy,ic=settling?{...baseInsight,unavailable:baseCopy.loading}:baseInsight;
  const ready=Boolean(payload&&!payload.truncated&&(payload.retrievedAt||payload.flights.length));
  const data=useMemo(()=>ready&&payload?glanceFlights(day,payload.flights,scope):null,[ready,payload,day,scope]);
  const storedCurrent=monthRequest.reply?.data?.months.find(row=>row.month===month),storedPrevious=monthRequest.reply?.data?.months.find(row=>row.month===previousMonth);

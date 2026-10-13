@@ -129,9 +129,11 @@ test("renders the KORETAIL production shell", async () => {
   const html = await response.text();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
-  assert.match(html, /<title>인천공항·명동·홍대·성수·이태원 오늘·내일 브리핑 \| KORETAIL<\/title>/i);
+  // The home is the airport glance (PR #357) and carries its approved title.
+  assert.match(html, /<title>공항 한눈에 \| KORETAIL<\/title>/i);
   assert.doesNotMatch(html, /codex-preview/i);
-  assert.match(html, /내 브리핑/);
+  // "내 브리핑" used to pass only through the retired meta description; the page itself is the glance.
+  assert.match(html, /<h1>공항 한눈에<\/h1>/);
   assert.doesNotMatch(html, /<section[^>]+class="demand-home"/);
   assert.match(html, /KORETAIL/);
 });
@@ -396,7 +398,7 @@ test("ships localized indexable routes and technical SEO files", async () => {
   assert.match(localizedRoute, /generateStaticParams/);
   assert.match(robots, /sitemap:/);
   assert.match(sitemap, /seoLocales\.flatMap/);
-  assert.match(sitemap, /standaloneSeoSlugs\.map/);
+  assert.match(sitemap, /standaloneSeoSlugs(\.filter\([^\n]*?\))?\.map/);
   assert.match(sitemap, /tourismDeskAreas\.map/);
   assert.match(page, /document\.title = title/);
   assert.match(page, /link\[rel="canonical"\]/);
@@ -1026,3 +1028,32 @@ for (const locale of ["ko", "en", "zh", "ja"]) {
     }
   });
 }
+
+// What a crawler that runs no JavaScript reads. Before the first data request
+// settles the server HTML must say "checking", never "no data" or "0".
+test("server HTML never claims missing data or zero events before data loads", async () => {
+  const body = async (path, language = "ko") => {
+    const response = await renderPath(path, language);
+    assert.equal(response.status, 200, path);
+    const html = await response.text();
+    return html.slice(html.indexOf("<body")).replace(/<script[\s\S]*?<\/script>/g, "");
+  };
+  const home = await body("/ko");
+  assert.doesNotMatch(home, /확인 가능한 자료(가)? 없/, "the glance home must not tell crawlers it has no verified data");
+  assert.match(home, /자료 확인 중/);
+  assert.doesNotMatch(await body("/en", "en"), /No verified data/);
+  const seoul = await body("/ko/where-to");
+  assert.doesNotMatch(seoul, /확인 불가|비교 자료 부족/);
+  assert.doesNotMatch(seoul, /<strong>0<\/strong>\s*개 · 공식 등록/, "no false zero for official events");
+});
+
+test("the airport glance URL names the home as its canonical", async () => {
+  for (const [path, language] of [["/ko/airport-glance", "ko"], ["/en/airport-glance", "en"]]) {
+    const response = await renderPath(path, language);
+    assert.equal(response.status, 200, path);
+    const head = (await response.text()).split("</head>")[0];
+    const canonical = [...head.matchAll(/<link[^>]+rel="canonical"[^>]*>/g)].map((match) => match[0].match(/href="([^"]+)"/)?.[1]);
+    assert.equal(canonical.length, 1, path);
+    assert.equal(new URL(canonical[0]).pathname, `/${language}`, path);
+  }
+});
