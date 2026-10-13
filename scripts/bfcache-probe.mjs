@@ -7,12 +7,15 @@
  * page from its back/forward cache (the page's own window state survived),
  * Chromium's reasons when it did not (CDP Page.backForwardCacheNotUsed), how
  * long the page took to show its main content again, the page's HTML cache
- * headers and the cache-control of each /api/ request it made. Chromium runs
- * with the back/forward cache Playwright normally disables; WebKit reports
- * through pageshow.persisted. The /api/live/* bodies of the first Chromium
- * /ko and /ko/myeongdong loads are printed gzip+base64 (public data) so local
- * speed tests can use production-shaped responses. It writes nothing and
- * prints no cookie values or secrets.
+ * headers and the cache-control and transfer size of each /api/ request it
+ * made. Chromium runs as the full browser (the headless shell's embedder
+ * refuses the cache outright: BackForwardCacheDisabledForDelegate) with the
+ * back/forward cache Playwright normally disables; WebKit reports through
+ * pageshow.persisted. Two controls show whether each engine restores at all:
+ * the site's own static preview page and example.com. The /api/live/* bodies
+ * of the first Chromium /ko and /ko/myeongdong loads are printed gzip+base64
+ * (public data) so local speed tests can use production-shaped responses. It
+ * writes nothing and prints no cookie values or secrets.
  *
  *   node scripts/bfcache-probe.mjs https://koretaildata.com [away-url]
  */
@@ -22,19 +25,25 @@ import { gzipSync } from "node:zlib";
 const origin = (process.argv[2] ?? "https://koretaildata.com").replace(/\/$/, "");
 const away = process.argv[3] ?? "https://example.com/";
 const PATHS = ["/ko", "/ko/airport", "/ko/where-to", "/ko/myeongdong", "/ko/consumption", "/en/about"];
+const TARGETS = [
+  ...PATHS.map((path) => ({ path, url: origin + path, away, app: true })),
+  { path: "control:static-preview", url: `${origin}/previews/seoul-flow/`, away, app: false },
+  { path: "control:example.com", url: away, away: `${origin}/robots.txt`, app: false },
+];
 const FIXTURE_PATHS = ["/ko", "/ko/myeongdong"];
 const RUNS = 2;
 const HEADERS = ["cache-control", "vary", "etag", "last-modified", "age", "cf-cache-status", "content-type"];
 const CHUNK = 16000;
 const HYDRATED = '.app[data-hydrated="true"]';
 const ENGINES = {
-  chromium: { type: chromium, launch: { ignoreDefaultArgs: ["--disable-back-forward-cache"], executablePath: process.env.CHROMIUM_PATH || undefined }, device: devices["Pixel 7"] },
+  chromium: { type: chromium, launch: { ignoreDefaultArgs: ["--disable-back-forward-cache"], ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : { channel: "chromium" }) }, device: devices["Pixel 7"] },
   webkit: { type: webkit, launch: {}, device: devices["iPhone 13"] },
 };
 
 const print = (line) => console.log(JSON.stringify(line));
 const pick = (headers) => Object.fromEntries(HEADERS.map((name) => [name, headers[name] ?? null]));
 const message = (error) => String(error?.message ?? error).split("\n")[0];
+const within = (promise, ms, fallback) => Promise.race([promise, new Promise((resolve) => setTimeout(resolve, ms, fallback))]);
 
 function printFixture(url, status, body) {
   const gzb64 = gzipSync(body).toString("base64");
@@ -55,11 +64,11 @@ function reasonsOf(event) {
   return out;
 }
 
-async function visit(browser, engine, path, run) {
+async function visit(browser, engine, target, run) {
   const { device } = ENGINES[engine];
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, screen: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, userAgent: device.userAgent, locale: "ko-KR", timezoneId: "Asia/Seoul" });
   const page = await context.newPage();
-  const result = { probe: "bfcache", engine, path, run };
+  const result = { probe: "bfcache", engine, path: target.path, run };
   const reasons = [];
   if (engine === "chromium") {
     const cdp = await context.newCDPSession(page);
@@ -69,18 +78,19 @@ async function visit(browser, engine, path, run) {
   const apis = [];
   const bodies = [];
   let phase = "load";
-  let capture = engine === "chromium" && run === 1 && FIXTURE_PATHS.includes(path);
+  let capture = engine === "chromium" && run === 1 && FIXTURE_PATHS.includes(target.path);
   page.on("response", (response) => {
     const url = new URL(response.url());
     if (url.origin !== origin || !url.pathname.startsWith("/api/")) return;
-    apis.push({ phase, api: url.pathname + url.search, status: response.status(), cacheControl: response.headers()["cache-control"] ?? null });
+    const entry = { phase, api: url.pathname + url.search, status: response.status(), cacheControl: response.headers()["cache-control"] ?? null };
+    apis.push(within(response.finished().then(() => response.request().sizes()).then((sizes) => ({ ...entry, transferBytes: sizes.responseBodySize }), () => entry), 10000, entry));
     if (capture && url.pathname.startsWith("/api/live/")) bodies.push(response.body().then((body) => ({ url: url.href, status: response.status(), body }), (error) => ({ url: url.href, status: response.status(), error: message(error) })));
   });
   try {
-    const response = await page.goto(origin + path, { waitUntil: "load", timeout: 45000 });
+    const response = await page.goto(target.url, { waitUntil: "load", timeout: 45000 });
     const headers = await response.allHeaders();
     result.html = { status: response.status(), ...pick(headers), setCookie: "set-cookie" in headers };
-    result.hydrated = await page.waitForSelector(HYDRATED, { timeout: 15000 }).then(() => true, () => false);
+    if (target.app) result.hydrated = await page.waitForSelector(HYDRATED, { timeout: 15000 }).then(() => true, () => false);
     await page.waitForTimeout(3000);
     await page.evaluate(() => { window.__probe = Date.now(); window.__pageshow = []; addEventListener("pageshow", (event) => window.__pageshow.push(event.persisted)); });
     capture = false;
@@ -88,26 +98,26 @@ async function visit(browser, engine, path, run) {
       if (item.error) print({ fixture: item.url, status: item.status, error: item.error });
       else printFixture(item.url, item.status, item.body);
     }
-    await page.goto(away, { waitUntil: "load", timeout: 30000 });
+    await page.goto(target.away, { waitUntil: "load", timeout: 30000 });
     await page.waitForTimeout(1000);
     phase = "back";
     const started = Date.now();
     await page.goBack({ waitUntil: "commit", timeout: 30000 });
     result.backCommitMs = Date.now() - started;
-    await page.locator("main").first().waitFor({ state: "visible", timeout: 30000 });
+    await page.locator(target.app ? "main" : "body").first().waitFor({ state: "visible", timeout: 30000 });
     result.backVisibleMs = Date.now() - started;
-    result.backHydratedMs = await page.waitForSelector(HYDRATED, { timeout: 15000 }).then(() => Date.now() - started, () => null);
+    if (target.app) result.backHydratedMs = await page.waitForSelector(HYDRATED, { timeout: 15000 }).then(() => Date.now() - started, () => null);
     await page.waitForTimeout(1500);
     Object.assign(result, await page.evaluate(() => {
       const nav = performance.getEntriesByType("navigation")[0];
       const fcp = performance.getEntriesByName("first-contentful-paint")[0];
-      return { url: location.pathname, restored: typeof window.__probe === "number", pageshowPersisted: window.__pageshow ?? null, navigationType: nav?.type ?? null, navTiming: nav ? { responseStart: Math.round(nav.responseStart), domContentLoaded: Math.round(nav.domContentLoadedEventEnd), load: Math.round(nav.loadEventEnd) } : null, fcp: fcp ? Math.round(fcp.startTime) : null };
+      return { url: location.href, restored: typeof window.__probe === "number", pageshowPersisted: window.__pageshow ?? null, navigationType: nav?.type ?? null, navTiming: nav ? { responseStart: Math.round(nav.responseStart), domContentLoaded: Math.round(nav.domContentLoadedEventEnd), load: Math.round(nav.loadEventEnd) } : null, fcp: fcp ? Math.round(fcp.startTime) : null };
     }));
   } catch (error) {
     result.error = message(error);
   }
   result.notRestoredReasons = reasons;
-  result.apis = apis;
+  result.apis = await Promise.all(apis);
   print(result);
   await context.close();
 }
@@ -127,7 +137,7 @@ for (const engine of (process.env.BFCACHE_ENGINES ?? "chromium,webkit").split(",
   try {
     browser = await ENGINES[engine].type.launch(ENGINES[engine].launch);
     print({ probe: "engine", engine, version: browser.version(), userAgent: ENGINES[engine].device.userAgent, away });
-    for (const path of PATHS) for (let run = 1; run <= RUNS; run += 1) await visit(browser, engine, path, run);
+    for (const target of TARGETS) for (let run = 1; run <= RUNS; run += 1) await visit(browser, engine, target, run);
   } catch (error) {
     print({ probe: "engine", engine, error: message(error) });
   } finally {
