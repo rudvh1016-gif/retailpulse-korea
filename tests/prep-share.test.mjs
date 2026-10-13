@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { buildBusinessPrep } from "../lib/business-prep.ts";
 import { factLine } from "../lib/business-prep-copy.ts";
-import { buildShareDocument, dateLabel, shareLink, shareText } from "../lib/prep-share.ts";
+import { buildShareDocument, dateLabel, shareLink, shareText, sharedPrepPlace } from "../lib/prep-share.ts";
 
 const day = "2026-09-28";
 const at = (hour, minute = 0) => `${day}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00+09:00`;
@@ -81,4 +81,14 @@ test("partial coverage stays explicit without separate repeated missing-source p
  for(const [lang,partial] of [['ko','일부 시간만 확인'],['en','partial hours only'],['zh','仅部分时段'],['ja','一部の時間のみ']]){
   const text=shareText(buildShareDocument(input(prepFor(),lang)));assert.ok(text.includes(partial));assert.ok(text.includes('12:00'));assert.ok(text.includes('18:00'));
  }
+});
+
+
+test('public links round-trip all districts and terminals without recipient preferences',()=>{
+ for(const place of [...['myeongdong','hongdae','seongsu','itaewon'].map(area=>({kind:'area',area})),...['T1','T2'].map(terminal=>({kind:'airport',terminal,side:'EAST'}))]){
+  const url=new URL(shareLink('https://koretaildata.com','ko',day,place));
+  assert.equal(url.origin,'https://koretaildata.com');assert.equal(url.pathname,'/ko/business');assert.equal(url.searchParams.get('date'),day);assert.deepEqual(sharedPrepPlace(url.searchParams),place);
+ }
+ assert.equal(sharedPrepPlace(new URLSearchParams('place=airport&terminal=T3')),null);
+ assert.equal(sharedPrepPlace(new URLSearchParams('place=area&area=unknown')),null);
 });

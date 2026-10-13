@@ -12,7 +12,8 @@ import { industryProfiles, type IndustryId } from '../lib/industry-guidance';
 import { snapshotOf } from '../lib/last-check';
 import { LastCheckBlock, UsualComparisonBlock } from './business-compare';
 import { PrepShare } from './prep-share';
-import { buildShareDocument, shareLink } from '../lib/prep-share';
+import { buildShareDocument, shareLink, sharedPrepPlace } from '../lib/prep-share';
+import { useSearchParams } from 'next/navigation';
 import { siteOrigin } from './seo-config';
 import { WeekAheadBlock } from './week-ahead';
 import { AirportSidesBlock } from './airport-sides';
@@ -81,9 +82,9 @@ export function prepPlaceOf(preferences: BusinessPreferences, area: PrepArea): P
   return preferences.place === 'airport' ? { kind: 'airport', terminal: preferences.terminal, side: preferences.side } : { kind: 'area', area };
 }
 
-function Conditions({ lang, place, preferences, saved, storageFailed, industry, onIndustryChange }: {
+function Conditions({ lang, place, preferences, saved, storageFailed, industry, onIndustryChange, onSaved }: {
   lang: Lang; place: PrepPlace; preferences: BusinessPreferences; saved: boolean; storageFailed: boolean;
-  industry: IndustryId; onIndustryChange: (value: IndustryId) => void;
+  industry: IndustryId; onIndustryChange: (value: IndustryId) => void; onSaved: () => void;
 }) {
   const id = useId();
   const [open, setOpen] = useState(false);
@@ -103,6 +104,7 @@ function Conditions({ lang, place, preferences, saved, storageFailed, industry, 
   const save = () => {
     const hours: BusinessHours | null = wholeDay ? null : { open: openAt, close: closeAt };
     saveBusinessPreferences({ version: 1, place: preferences.place, terminal, side, hours });
+    onSaved();
     trackPersonalEvent('business_hours_saved', { language: lang, location: place.kind === 'airport' ? 'airport' : place.area });
     setOpen(false);
   };
@@ -151,13 +153,17 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
 }) {
   const id = useId();
   const summary = useLiveSummary(date);
-  const { ready, saved, preferences, storageFailed } = useBusinessPreferences();
+  const { ready, saved, preferences: storedPreferences, storageFailed } = useBusinessPreferences();
+  const search=useSearchParams(),scopeKey=search.toString();
+  const [dismissedScope,setDismissedScope]=useState<string|null>(null);
+  const shared=scopeKey===dismissedScope?null:sharedPrepPlace(search);
+  const preferences=shared?{...storedPreferences,place:shared.kind,...(shared.kind==='airport'?{terminal:shared.terminal,side:shared.side??null}:{})}:storedPreferences;
   const clock = usePresentationClock(summary?.generatedAt ?? new Date(0).toISOString());
   // The service date is always the server's. The device clock only moves
   // "now" forward between refreshes; a device set hours off is ignored.
   const generated = summary ? Date.parse(summary.generatedAt) : NaN;
   const now = Number.isFinite(generated) && Math.abs(clock - generated) > 2 * 3_600_000 ? generated : clock;
-  const place = prepPlaceOf(preferences, area);
+  const place = shared ?? prepPlaceOf(preferences, area);
   const nowIso = new Date(now).toISOString();
   // China's and Japan's official holidays on the service date; Korea's come in the summary.
   const officialHolidays = summary ? officialHolidaysOn(summary.serviceDateKst) : [];
@@ -182,7 +188,7 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
       <h2 id={`${id}-title`}>{prepCopy.title[lang]}</h2>
     </div></div>
     <Conditions key={`${preferences.place}:${preferences.terminal}:${preferences.side ?? ''}:${preferences.hours?.open ?? ''}:${preferences.hours?.close ?? ''}`}
-      lang={lang} place={place} preferences={preferences} saved={saved} storageFailed={storageFailed} industry={industry} onIndustryChange={onIndustryChange}/>
+      lang={lang} place={place} preferences={preferences} saved={saved} storageFailed={storageFailed} industry={industry} onIndustryChange={onIndustryChange} onSaved={()=>setDismissedScope(scopeKey)}/>
     {!summary || !prep ? <LiveLoadMessage loading={summary === undefined || !ready} lang={lang}/> : <>
       <div className="prep-block">
         <h3>{prepCopy.factsTitle[lang]}</h3>
@@ -225,7 +231,7 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
       {prep.status !== 'PAST' && prep.status !== 'ENDED' && <PrepShare
         lang={lang}
         fileName={`koretail-${serviceDate}-${place.kind === 'airport' ? `airport-${place.terminal}` : place.area}.png`}
-        doc={buildShareDocument({ prep, serviceDate, place, industry, hours: preferences.hours, lang, link: shareLink(siteOrigin, lang, serviceDate), savedAt: nowIso })}
+        doc={buildShareDocument({ prep, serviceDate, place, industry, hours: preferences.hours, lang, link: shareLink(siteOrigin, lang, serviceDate, place), savedAt: nowIso })}
         analytics={prepAnalytics(lang, place, serviceDate, summary.todayKst)}
       />}
       {summary.dayRelation === 'TODAY' && <WeekAheadBlock lang={lang} summary={summary} place={place}/>}
