@@ -1,5 +1,5 @@
 import { desc, sql } from "drizzle-orm";
-import { check, index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const sourceHealth = sqliteTable("source_health", {
   sourceId: text("source_id").primaryKey(),
@@ -529,13 +529,6 @@ export const airportForecastVersions = sqliteTable('airport_forecast_versions', 
   terminal:text('terminal').notNull(),direction:text('direction').notNull(),targetAt:text('target_at').notNull(),
   expectedPassengers:integer('expected_passengers'),retrievedAt:text('retrieved_at').notNull(),archivedAt:text('archived_at').notNull(),
 },table=>[index('airport_forecast_versions_target_idx').on(table.targetAt)]);
-// Prepared observer schema; 0027 owns the mutation triggers and installation epoch.
-export const airportCompositionObserver = sqliteTable('airport_composition_observer', {
-  id:integer('id').primaryKey(),epoch:text('epoch').notNull(),
-},table=>[check('airport_composition_observer_singleton',sql`${table.id}=1`)]);
-export const airportCompositionGenerations = sqliteTable('airport_composition_generations', {
-  day:text('day').primaryKey().notNull(),token:text('token').notNull(),
-});
 export const airportDailyComposition = sqliteTable('airport_daily_composition', {
   day:text('day').primaryKey(),payload:text('payload').notNull(),sourceHash:text('source_hash').notNull(),calculatedAt:text('calculated_at').notNull(),
 });

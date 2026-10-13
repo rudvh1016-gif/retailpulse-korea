@@ -4,8 +4,6 @@ import { kstDayOf,shiftKstDay } from './kst';
 import { dailyFlightProfile } from './airport-day-profile';
 import { compositionHash, prepareAirportMonths } from './airport-monthly-store';
 import { previousFlightMonth } from './airport-monthly-flights';
-import { compositionClassification, compositionObserver, observerToken, reusableComposition } from './airport-composition-proof';
-import { sha256 } from './hash';
 export function compareComposition(current:AirlineRankingForScope,past:AirlineRankingForScope) {
   const changes=(kind:'airlines'|'countries')=>{
     const key=(row:{iata?:string|null;country?:string|null})=>kind==='airlines'?row.iata:row.country;
@@ -18,15 +16,15 @@ export function compareComposition(current:AirlineRankingForScope,past:AirlineRa
   return {airlines:changes('airlines'),countries:changes('countries')};
 }
 /**
- * Once after an existing A1 runner. Rebuild bounded days or reuse proven completed days.
- * Unchanged payloads cost no writes; changed reuse evidence is stored with the aggregate.
+ * Once after an existing A1 runner. Rebuild bounded days to detect historical corrections.
+ * Skip no-op UPSERT requests only after reading and recomputing the day's raw rows.
  *
  * The payload also carries the day's flight profile (lib/airport-day-profile.ts)
  * from the same rows: hours, gate sides and destinations per terminal. It is
  * read only by the airport-days route. A day is marked complete only when a
  * scan covering it ran after the day had ended.
  */
-export async function collectAirportComposition(db:D1Database,now=new Date(),options:{reuseCompleted?:boolean}={}) {
+export async function collectAirportComposition(db:D1Database,now=new Date()) {
   const today=kstDayOf(now.toISOString());
   const scanResult=await db.prepare("SELECT detail, started_at AS startedAt FROM collector_runs WHERE source_id='INCHEON_FLIGHT_DETAIL' AND status='SUCCESS' AND started_at>=? ORDER BY started_at DESC LIMIT 400")
     .bind(previousFlightMonth(today.slice(0,7))+'-01T00:00:00+09:00').all<{detail:string;startedAt:string}>();
@@ -39,9 +37,6 @@ export async function collectAirportComposition(db:D1Database,now=new Date(),opt
   if(retainedResult.success===false)throw new Error('Composition retained evidence read failed');
   const retained=retainedResult.results??[];
   const records=new Map(retained.map(record=>[record.day,record]));
-  // Repair/manual callers retain forced reads by default. Never infer freshness from calculated_at.
-  const observer=options.reuseCompleted?await compositionObserver(db,shiftKstDay(today,-28),today):null;
-  const classification=observer?await compositionClassification():'';
   let written=0;
   for(let days=0;days<=28;days++) {
     const day=shiftKstDay(today,-days);
@@ -49,11 +44,6 @@ export async function collectAirportComposition(db:D1Database,now=new Date(),opt
     if(!covering.length) continue;
     const dayEnd=Date.parse(`${shiftKstDay(day,1)}T00:00:00+09:00`);
     const complete=covering.some(scan=>Date.parse(scan.startedAt)>=dayEnd);
-    const proof=observer && complete && day<today?{epoch:observer.epoch,token:observerToken(observer,day),classification,scans:await sha256(covering)}:null;
-    if(proof && await reusableComposition(records.get(day),day,proof)) {
-      const current=await compositionObserver(db,day,day);
-      if(current?.epoch===proof.epoch && observerToken(current,day)===proof.token)continue;
-    }
     const selected=await db.prepare(`SELECT physical_flight_id AS physicalFlightId,terminal,flight_number AS operatingFlight,
       retrieved_at AS retrievedAt,gate,scheduled_at AS scheduledAt,status,airport_code AS airportCode
       FROM airport_flights WHERE direction='departure' AND scheduled_at>=? AND scheduled_at<?
@@ -73,11 +63,13 @@ export async function collectAirportComposition(db:D1Database,now=new Date(),opt
       damaged=!!prior && await compositionHash(parsed)!==prior.sourceHash;
       if(damaged)monthlyRollups=undefined;
     } catch { damaged=!!prior; /* daily recovery does not trust unreadable extensions */ }
-    // A concurrent raw change invalidates the proof, even if this SELECT already saw it.
-    const after=proof?await compositionObserver(db,day,day):null;
-    const stable=proof && after?.epoch===proof.epoch && observerToken(after,day)===proof.token;
-    const payload={...summary,profile,...(monthlyRollups?{monthlyRollups}:{}),...(stable?{compositionProof:proof}:{})};
+    const payload={...summary,profile,...(monthlyRollups?{monthlyRollups}:{})};
     const hash=await compositionHash(payload);
+    // Preserve fresh in-memory provenance for monthly preparation, even without a DB write.
+    if(prior?.sourceHash===hash && !damaged){
+      records.set(day,{day,payload:JSON.stringify(payload),sourceHash:hash});
+      continue;
+    }
     const result=await db.prepare(`INSERT INTO airport_daily_composition(day,payload,source_hash,calculated_at) VALUES(?,?,?,?)
       ON CONFLICT(day) DO UPDATE SET payload=excluded.payload,source_hash=excluded.source_hash,calculated_at=excluded.calculated_at
       WHERE airport_daily_composition.source_hash<>excluded.source_hash OR ?`).bind(day,JSON.stringify(payload),hash,now.toISOString(),Number(damaged)).run();
