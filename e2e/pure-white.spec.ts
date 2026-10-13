@@ -66,7 +66,33 @@ for (const locale of locales) {
 }
 
 test("no large tinted or translucent surface is declared in the stylesheet", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto("/ko");
+  await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
+  // Owner-approved glass-navigation preview: this is one small selection
+  // marker inside the bottom nav, not a translucent page/card surface
+  // docs/approvals/glass-navigation-preview-20261013.json
+  const nav = page.locator('nav.bottom-nav.glass-nav');
+  const indicator = nav.locator(':scope > .glass-nav-indicator');
+  await expect(nav).toBeVisible();
+  await expect(page.locator('.glass-nav-indicator')).toHaveCount(1);
+  await expect(indicator).toBeVisible();
+  await expect(indicator).toHaveCSS('height', '54px');
+  await expect(indicator).toHaveCSS('position', 'absolute');
+  await expect(indicator).toHaveCSS('background-color', 'rgba(255, 255, 255, 0.64)');
+  await expect(nav.locator('a')).toHaveCount(6);
+  const bounds = await nav.boundingBox();
+  const marker = await indicator.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(marker).not.toBeNull();
+  expect(marker!.width).toBeGreaterThan(0);
+  expect(marker!.width).toBeLessThanOrEqual((bounds!.width - 8) / 6 + 1);
+  expect(marker!.height).toBe(54);
+  expect(marker!.x).toBeGreaterThanOrEqual(bounds!.x);
+  expect(marker!.y).toBeGreaterThanOrEqual(bounds!.y);
+  expect(marker!.x + marker!.width).toBeLessThanOrEqual(bounds!.x + bounds!.width);
+  expect(marker!.y + marker!.height).toBeLessThanOrEqual(bounds!.y + bounds!.height);
   const offenders = await page.evaluate(() => {
     const bad: string[] = [];
     for (const sheet of Array.from(document.styleSheets)) {
@@ -79,6 +105,8 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
           const bg = rule.style.getPropertyValue("background-color") || rule.style.getPropertyValue("background");
           const filter = rule.style.getPropertyValue("backdrop-filter");
           const sel = rule.selectorText;
+          // Exact approved marker/value only, bounded in the browser above
+          if (sel === '.glass-nav-indicator' && bg === 'rgba(255, 255, 255, 0.64)' && !filter) continue;
           // Semantic exceptions: modal scrim, chart bars, tab underlines, accent lines.
           const semantic = /modal-backdrop|-bars i|::after|::before|\bi\b|button\.active|\.compare-bars|\.history-bars|\.av-|\.airport-flow|\.airport-hero/.test(sel);
           if (semantic) continue;

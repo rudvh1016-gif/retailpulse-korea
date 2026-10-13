@@ -131,13 +131,13 @@ test('selected dates and terminal scopes survive links, reload and back', async 
   await page.goto(`/ko/forecast?date=${selectedDate}`);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
   await expect(page.getByTestId('monthly-records-result')).toBeVisible();
-  await page.locator('.bottom-nav a[href="/ko/myeongdong"]').click();
+  await page.locator(`.bottom-nav a[href="/ko/myeongdong?date=${selectedDate}"]`).click();
   await expect(page).toHaveURL(`/ko/myeongdong?date=${selectedDate}`);
   await expect(page.getByTestId('area-demand-card').first()).toBeVisible();
   await page.goBack();
   await expect(page).toHaveURL(`/ko/forecast?date=${selectedDate}`);
   await expect(page.getByTestId('monthly-records-result')).toBeVisible();
-  await page.locator('.bottom-nav a[href="/ko/myeongdong"]').click();
+  await page.locator(`.bottom-nav a[href="/ko/myeongdong?date=${selectedDate}"]`).click();
   await page.reload();
   await expect(page).toHaveURL(`/ko/myeongdong?date=${selectedDate}`);
   await expect(page.getByTestId('area-demand-card').first()).toBeVisible();
