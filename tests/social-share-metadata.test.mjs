@@ -18,17 +18,17 @@ test("approved shared card is absolute, versioned and serves the committed JPEG"
   assert.equal(image.subarray(0, 3).toString("hex"), "ffd8ff");
 });
 
-test("all locale cards show only the brand while preserving page SEO", () => {
+test("all locale cards show the brand and owner-approved service description while preserving page SEO", () => {
   for (const locale of seoLocales) {
     for (const slug of [undefined, "airport", "myeongdong", "business", "tourism-desk"]) {
       const metadata = buildMetadata(locale, slug);
       assert.equal(metadata.title, pageTitle(locale, slug));
       assert.equal(metadata.description, pageDescription(locale, slug));
       assert.equal(metadata.openGraph.title, "KORETAIL");
-      assert.equal(metadata.openGraph.description.trim(), "");
+      assert.equal(metadata.openGraph.description, "인천공항 출국장 대기·항공편 흐름과 서울 주요 상권의 혼잡·소비 정보를 한눈에");
       assert.equal(metadata.openGraph.images[0].url, socialImage.url);
       assert.equal(metadata.twitter.title, "KORETAIL");
-      assert.equal(metadata.twitter.description.trim(), "");
+      assert.equal(metadata.twitter.description, metadata.openGraph.description);
       assert.equal(metadata.twitter.images[0], socialImage.url);
       assert.match(String(metadata.alternates.canonical), /^\//);
     }
