@@ -1,0 +1,4 @@
+/* Review-only: loaded explicitly by the comparison capture, never by app CSS. */
+@font-face {font-family:'SUIT';src:url('./SUIT-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face {font-family:'SUIT';src:url('./SUIT-Medium.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap;}
+.checkpoint-schematic[data-font-preview='suit'] {font-family:'SUIT',var(--font-ui),sans-serif;}

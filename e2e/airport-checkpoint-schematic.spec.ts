@@ -1,4 +1,6 @@
 import {test,expect} from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
 import type {AirportCongestionSummaryRow} from '../lib/airport-today-summary';
 import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
 
@@ -41,7 +43,9 @@ for(const [lang,width] of [['ko',360],['ko',390],['ko',430],['ko',1280],['en',32
   const text=label.firstChild!;let at=0;
   return (text.textContent??'').split(' ').every(word=>{const range=document.createRange();range.setStart(text,at);range.setEnd(text,at+word.length);at+=word.length+1;return word.length===0||range.getClientRects().length===1;});
  }))).toBe(true);
- const bodySize=await model.evaluate(el=>getComputedStyle(el).getPropertyValue('--type-body').trim());
+ const bodySize='12px';
+ await expect(model.locator('figcaption small')).toHaveCount(0);
+ await expect(model.locator('.checkpoint-schematic-people').first()).toHaveCSS('font-size','11px');
  await expect(model.locator('figcaption')).toHaveCSS('font-size',bodySize);
  await expect(model.locator('.checkpoint-schematic-reading strong').first()).toHaveCSS('font-size',bodySize);
  const family=await model.evaluate(el=>getComputedStyle(el.parentElement!).fontFamily);
@@ -56,6 +60,19 @@ for(const [lang,width] of [['ko',360],['ko',390],['ko',430],['ko',1280],['en',32
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  expect(await model.evaluate(el=>el.getAnimations({subtree:true}).length)).toBe(0);
  await model.screenshot({path:info.outputPath(`checkpoint-${lang}-${width}.png`)});
+ if(lang==='ko' && (width===390 || width===1280)) {
+  const folder=path.resolve('retailpulse-checkpoint-type-20261013/docs/screenshots/checkpoint-type-20261013');fs.mkdirSync(folder,{recursive:true});
+  await model.screenshot({path:path.join(folder,`pretendard-${width}.png`)});
+  await page.addStyleTag({url:'/previews/checkpoint-suit/font-comparison.css'});
+  await model.evaluate(el=>el.setAttribute('data-font-preview','suit'));
+  const loadedFaces=await page.evaluate(async()=>{const faces=[...await document.fonts.load('400 11px SUIT'),...await document.fonts.load('500 12px SUIT')];await document.fonts.ready;return faces.map(face=>({family:face.family,weight:face.weight,status:face.status}))});
+  expect(loadedFaces).toEqual([{family:'SUIT',weight:'400',status:'loaded'},{family:'SUIT',weight:'500',status:'loaded'}]);
+  await expect(model).toHaveCSS('font-family',/SUIT/);
+  expect(await model.locator('.checkpoint-schematic-people').evaluateAll(labels=>labels.every(label=>label.scrollWidth<=label.clientWidth+1))).toBe(true);
+  await model.screenshot({path:path.join(folder,`suit-${width}.png`)});
+  fs.writeFileSync(path.join(folder,`evidence-${width}.json`),JSON.stringify(await model.evaluate(el=>({kind:'controlled-test-fixture-not-live-data',font:getComputedStyle(el).fontFamily,numberSize:getComputedStyle(el.querySelector('strong span')!).fontSize,labelSize:getComputedStyle(el.querySelector('.checkpoint-schematic-people')!).fontSize,fontFaces:Array.from(document.fonts).filter(face=>face.family==='SUIT').map(face=>({family:face.family,weight:face.weight,status:face.status})),text:el.textContent})),null,2));
+ }
+
  const full=page.locator('.airport-checkpoints');await expect(full.locator('.airport-queue-cards')).toHaveCount(0);
  const toggle=model.locator('summary');await toggle.focus();await page.keyboard.press('Enter');await expect(model.locator('details')).toHaveAttribute('open','');
  await expect(model.locator('[data-observation]')).toHaveCount(8);await expect(model.locator('[data-observation]').first()).toBeVisible();
