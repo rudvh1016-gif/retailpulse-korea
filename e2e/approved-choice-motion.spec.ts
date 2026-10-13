@@ -71,6 +71,19 @@ test('preparation changes only affected items; copy acknowledgement follows succ
  await page.evaluate(()=>{window.copyResult='ok';});await copy.click();await expect(icon).toHaveAttribute('data-copied','true');await settled(page);await shot(page,'preparation-390');
 });
 
+test('a pending copy cannot acknowledge a different preparation document',async({page})=>{
+ await page.setViewportSize({width:390,height:950});await instrument(page);await page.goto('/ko/business');
+ const prep=page.getByTestId('business-prep'),share=prep.getByTestId('prep-share'),copy=share.locator('button').first(),icon=copy.locator('svg'),status=share.getByTestId('share-status');
+ await expect(copy).toBeVisible();const originalText=await share.getByTestId('share-preview').textContent();
+ await share.evaluate(node=>{node.setAttribute('data-race-identity','same-component');});
+ await page.evaluate(()=>{window.copyResult='pending';});await copy.click();
+ await prep.getByRole('button',{name:prepCopy.change.ko}).click();await prep.getByLabel(prepCopy.industry.ko).selectOption('food');
+ await expect(share.getByTestId('share-preview')).not.toHaveText(originalText!);await expect(share).toHaveAttribute('data-race-identity','same-component');
+ await page.evaluate(()=>window.resolveCopy());await expect(status).toHaveAttribute('data-status','idle');await expect(icon).toHaveAttribute('data-copied','false');
+ await page.evaluate(()=>{window.copyResult='ok';});await copy.click();await expect(status).toHaveAttribute('data-status','copied');await expect(icon).toHaveAttribute('data-copied','true');
+ await prep.getByLabel(prepCopy.industry.ko).selectOption('fashion');await expect(status).toHaveAttribute('data-status','idle');await expect(icon).toHaveAttribute('data-copied','false');
+});
+
 test('monthly paired bars transition on district and month; missing values and back navigation remain intact',async({page})=>{
  await page.setViewportSize({width:390,height:950});await instrument(page);
  const rows=(month:string,scale:number)=>[{observed_at:`${month}-01T10:10:00+09:00`,payload:JSON.stringify({commercialAt:`${month}-01T10:10:00+09:00`,categories:[{category:'한식',payments:20*scale,amountMin:100,amountMax:200},{category:'여행',payments:null,amountMin:null,amountMax:null}]})}];

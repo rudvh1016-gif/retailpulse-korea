@@ -32,3 +32,7 @@ Only protected `app/population-flow.tsx` is updated in the lock manifest, with p
 ## Consolidation
 
 Preserve the separate parent PR360 airport H1/time-label changes when integrating `app/airport-glance-preview.tsx`. This branch uses the fetched main baseline and intentionally does not include that PR. Parent share-document changes are in `lib/prep-share.ts`, separate from this branch’s `app/prep-share.tsx` success indicator. Claude collection/loading/image work is outside this branch. Required full CI must pass on the consolidated commit before any merge or deployment.
+
+## Clipboard follow-up
+
+Parent review identified a pending-copy/document-change race. A browser regression reproduced it on the same mounted sharing component: change industry while the clipboard promise is pending, then resolve the old promise; the previous version incorrectly showed `copied`. The fix invalidates pending attempts in layout cleanup keyed by serialized document text, and resets status/fallback when that text changes. The new regression and existing copy pending/failure/success scenario both pass. No clipboard completion is attributed to a different document.

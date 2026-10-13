@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useLayoutEffect, useId, useRef, useState } from 'react';
 import {animateChoice} from './use-choice-motion';
 import styles from './copy-confirmation.module.css';
 import type { Lang } from './retailpulse-data';
@@ -63,11 +63,14 @@ export async function renderShareImage(doc: ShareDocument, fontFamily: string): 
 export function PrepShare({ lang, doc, fileName, analytics = {} }: { lang: Lang; doc: ShareDocument; fileName: string; analytics?: Record<string, string> }) {
   const id = useId();
   const section = useRef<HTMLDivElement>(null);
+  const text = shareText(doc);
+  const [documentText,setDocumentText]=useState(text);
   const [status, setStatus] = useState<ShareStatus>('idle');
   const [fallback, setFallback] = useState(false);
   const confirmation=useRef<SVGSVGElement>(null),stopConfirmation=useRef<()=>void>(()=>{}),copyAttempt=useRef(0);
-  useEffect(()=>{const stop=()=>{copyAttempt.current++;stopConfirmation.current();};return stop;},[]);
-  const text = shareText(doc);
+  // Invalidate pending copies before paint when their document is replaced.
+  useLayoutEffect(()=>()=>{copyAttempt.current++;stopConfirmation.current();},[text]);
+  if(documentText!==text){setDocumentText(text);setStatus('idle');setFallback(false);}
   const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
   const copy = async () => {
