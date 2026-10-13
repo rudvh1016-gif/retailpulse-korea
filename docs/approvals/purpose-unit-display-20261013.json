@@ -1,0 +1,31 @@
+{
+  "recordedAt": "2026-10-13T11:40:32.403455+00:00",
+  "comparisonBase": "3bdcbab7f25d6eee2a8b26733764f81e52d07d2f",
+  "authorizationEvidence": {
+    "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+    "userMessageId": "Sentinel_7d1784360de88191a2b8aeda58399f7a",
+    "userMessageAt": "2026-10-13T11:25:00Z",
+    "assistantApprovalQuestion": "360.5는 단위가 확인되지 않아 큰 숫자 노출을 없앴어. 미세먼지 점검중0 표시를 수정했어. 직원 공유 문구·항공편 막대·6가지 효과도 정리했어. 나머지도 한 번에 병합·배포해도 될까?",
+    "userReply": "응 너가 말한 거 모두 허용할게.",
+    "delegatedVerification": "라이브최종360.5미노출/PM점검숫자숨김/공유실제주소/시간기준/제목/모션동작줄이기와모바일확인.",
+    "scopeApplication": "The same unverified dataset remained numeric in existing detail rows and Tourism Desk. Apply the approved numeric-withholding policy at these display boundaries; keep payload, source, dates, collection and calculations unchanged."
+  },
+  "reason": "Complete unit-unverified numeric withholding across existing public display paths; no protected rule is weakened.",
+  "changes": [
+    {
+      "file": "app/live-signals.tsx",
+      "previous": "7fac56c4be9627b60e3c618d729b4e0e37c0b9bbdc6abe8a046c3e2182b108a9",
+      "approved": "f4bbb100deeb017aa0f4c88220f187cc4928639a4c114f076b71f748d46d0d22",
+      "exactUnifiedDiff": "diff --git a/app/live-signals.tsx b/app/live-signals.tsx\nindex a2e9906..acdf924 100644\n--- a/app/live-signals.tsx\n+++ b/app/live-signals.tsx\n@@ -1,4 +1,5 @@\n \"use client\";\n+import {unverifiedPurposeText} from '../lib/purpose-display';\n import {RateText} from './change-rate';\n import Image from 'next/image';\n import { AirportDateCalendar } from './airport-date-calendar';\n@@ -2264,15 +2265,12 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a\n \n   if (block?.foreignPurposeMobility) {\n     const mobility = block.foreignPurposeMobility;\n-    const parts: string[] = [];\n-    if (mobility.shopping !== null) parts.push(`${text.shoppingPurpose[lang]} ${formatPeopleValue(lang, mobility.shopping)}`);\n-    if (mobility.tourism !== null) parts.push(`${text.tourismPurpose[lang]} ${formatPeopleValue(lang, mobility.tourism)}`);\n-    if (parts.length) rows.push({\n+    if (mobility.shopping != null || mobility.tourism != null) rows.push({\n       key: \"foreign_purpose_mobility\",\n       group: \"movement\",\n       timeState: signalStructureText.timeState.delayed[lang],\n       label: text.foreignPurpose[lang],\n-      value: `${parts.join(\" · \")} ${text.movementUnit[lang]}`,\n+      value: unverifiedPurposeText[lang],\n       note: `${mobility.referenceDate} · ${text.foreignPurposeNote[lang]} · ${mobility.datasetId}`,\n       detail: contextText(lang,'해당일 도착 행정동의 추정 이동량 · 중복 이동 포함 · 같은 조건의 과거 비교 자료 부족. 쇼핑 목적은 백화점·프리미엄 아울렛 기준입니다.','Estimated movements into the mapped districts that day; repeat movements included. Matching past comparison unavailable. Shopping covers department stores and premium outlets.','该日进入所选行政区的推算移动量，包含重复移动。相同条件历史比较资料不足。购物指百货商场与高端奥特莱斯。','当日の対象行政洞への推定移動量・重複移動を含みます。同条件の過去比較資料不足。買い物目的は百貨店・プレミアムアウトレット基準です。'),\n       period: describeSourcePeriod({\n"
+    },
+    {
+      "file": "app/tourism-desk.tsx",
+      "previous": "4c0e583789484875dd7a32621035bfc918177234a49d118cf200a68c57a14b00",
+      "approved": "0ac2336bf39e6b824983404c3e560790377d730e112f4d58a9b1eb5aaa5b94eb",
+      "exactUnifiedDiff": "diff --git a/app/tourism-desk.tsx b/app/tourism-desk.tsx\nindex 3d30d25..b23876b 100644\n--- a/app/tourism-desk.tsx\n+++ b/app/tourism-desk.tsx\n@@ -1,4 +1,5 @@\n \"use client\";\n+import {unverifiedPurposeText} from '../lib/purpose-display';\n import {ChangeRate,RateText} from './change-rate';\n import Image from 'next/image';\n \n@@ -785,11 +786,11 @@ export function TourismDeskView({ lang, area, onAreaChange }: {\n             <dl className=\"tourism-background-values\">\n               {block.foreignPurposeMobility.shopping !== null && <div>\n                 <dt><Image unoptimized src=\"/visuals/clarity/v1/shopping-bag-256.webp\" width=\"48\" height=\"48\" alt=\"\" aria-hidden=\"true\" loading=\"lazy\" decoding=\"async\"/>{copy.shoppingPurpose}</dt>\n-                <dd>{numberText(block.foreignPurposeMobility.shopping, lang)} {copy.movements}</dd>\n+                <dd>{unverifiedPurposeText[lang]}</dd>\n               </div>}\n               {block.foreignPurposeMobility.tourism !== null && <div>\n                 <dt><Image unoptimized src=\"/visuals/clarity/v1/tourism-camera-256.webp\" width=\"48\" height=\"48\" alt=\"\" aria-hidden=\"true\" loading=\"lazy\" decoding=\"async\"/>{copy.tourismPurpose}</dt>\n-                <dd>{numberText(block.foreignPurposeMobility.tourism, lang)} {copy.movements}</dd>\n+                <dd>{unverifiedPurposeText[lang]}</dd>\n               </div>}\n             </dl>\n             <p className=\"tourism-background-period\">{block.foreignPurposeMobility.referenceDate}</p>{mobilityPeriod && <PeriodNote period={mobilityPeriod} />}\n"
+    }
+  ],
+  "protectedPathCount": 65,
+  "checksPreserved": true,
+  "approvalEvidenceFile": "docs/approvals/purpose-unit-display-20261013.json"
+}
