@@ -35,6 +35,9 @@ import { activeSourceCatalog,sourceName,sourceUse,CollectionStatus } from "./sou
 
 import { useEffect, useState, type ComponentProps, type ComponentType } from "react";
 import {useBottomNavigationViewport} from "./use-bottom-navigation-viewport";
+import {NavigationIcon} from "./navigation-icon";
+import {useGlassNavigation} from "./use-glass-navigation";
+import "./glass-navigation.css";
 import { type IndustryId, industryProfiles } from "../lib/industry-guidance";
 import {
   airportMonthly,
@@ -128,22 +131,6 @@ const copy = {
   },
 } as const;
 
-
-function Icon({ name }: { name: View }) {
-  const paths: Record<View, string> = {
-    today: "M4 13h4v7H4zM10 8h4v12h-4zM16 4h4v16h-4z",
-    "airport-glance": "M3 4h18v16H3zM3 10h18M10 10v10",
-    airport: "M2 15l20-7-6 12-3-4-4 3z",
-    business: "M4 20V9l8-5 8 5v11H4zm6 0v-6h4v6",
-    forecast: "M3 17l5-6 4 4 4-7 5 5",
-    'where-to': "M12 21s7-7 7-12a7 7 0 10-14 0c0 5 7 12 7 12zm0-15v6m-3-3h6",
-    consumption: "M4 20V12h4v8M10 20V8h4v12M16 20V4h4v16",
-    about: "M12 3a9 9 0 100 18 9 9 0 000-18zm0 5v1m0 3v5",
-    "tourism-desk": "M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7z",
-    more: "M5 12h.01M12 12h.01M19 12h.01",
-  };
-  return <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={paths[name]} /></svg>;
-}
 
 /**
  * One metric, explained in the four things a first-time reader actually asks:
@@ -295,6 +282,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   // null means "whatever today is in KST, as the server reports it" — the
   // client never guesses a date from the device clock.
   const [serviceDate, setServiceDate] = useState<string | null>(null);
+  useGlassNavigation(bottomNavigationRef,view);
   const t = copy[lang];
   const navLabel=(item:View)=>item==='consumption'?localText(lang,{ko:'소비 흐름',en:'Spending',zh:'消费',ja:'消費'}):t[item];
 
@@ -401,6 +389,15 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     if (window.location.pathname + window.location.search !== nextPath) window.history.pushState({}, "", nextPath);
   }
 
+  function navigationHref(next:View){
+    const params=new URLSearchParams();
+    if(serviceDate&&next!=='where-to'&&next!=='consumption')params.set('date',serviceDate);
+    if(next==='consumption'||next==='forecast')params.set('area',selected);
+    if(next==='airport'&&concourse)params.set('building','CONCOURSE');
+    else if(next==='airport'&&terminal!=='all')params.set('terminal',terminal);
+    return routeFor(lang,next,selected)+(params.toString()?`?${params}`:'');
+  }
+
   function changeDate(next: string | null) {
     setServiceDate(next);
     const url = new URL(window.location.href);
@@ -453,7 +450,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         </button>
         <nav className="top-nav" aria-label="Primary">
           {(["airport-glance", "airport", "where-to", "today", "consumption", "business", "more"] as View[]).map((item) => (
-            <a key={item} href={routeFor(lang, item, selected)} className={view === item || (item === "more" && ["tourism-desk","forecast","about"].includes(view)) ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : undefined} onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : undefined} aria-current={view === item ? "page" : item === "more" && ["tourism-desk","forecast","about"].includes(view) ? "location" : undefined}>{navLabel(item)}</a>
+            <a key={item} href={navigationHref(item)} className={view === item || (item === "more" && ["tourism-desk","forecast","about"].includes(view)) ? "active" : ""} onClick={(event) => { if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;event.preventDefault();navigate(item); }} onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : undefined} onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : undefined} aria-current={view === item ? "page" : item === "more" && ["tourism-desk","forecast","about"].includes(view) ? "location" : undefined}><NavigationIcon name={item}/><span>{navLabel(item)}</span></a>
           ))}
         </nav>
         <div className="header-meta">
@@ -544,19 +541,20 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         </footer>
       </main>
 
-      <nav ref={bottomNavigationRef} className="bottom-nav" aria-label="Primary">
+      <nav ref={bottomNavigationRef} className="bottom-nav glass-nav" aria-label="Primary">
+        <span className="glass-nav-indicator" aria-hidden="true"/>
         {(["airport-glance", "airport", "where-to", "today", "consumption", "more"] as View[]).map((item) => (
           <a
             key={item}
-            href={routeFor(lang, item, selected)}
+            href={navigationHref(item)}
             className={(view === item || (["business","tourism-desk","forecast","about"].includes(view) && item === "more")) ? "active" : ""}
-            onClick={(event) => { event.preventDefault(); navigate(item); }}
+            onClick={(event) => { if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;event.preventDefault();navigate(item); }}
             onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : undefined}
             onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : undefined}
             aria-current={view === item ? "page" : ["business","tourism-desk","forecast","about"].includes(view) && item === "more" ? "location" : undefined}
             aria-label={navLabel(item)}
           >
-            <Icon name={item} />
+            <NavigationIcon name={item} />
             <span>{item==='where-to'?localText(lang,{ko:'서울 한눈에',en:'Seoul glance',zh:'首尔一览',ja:'ソウル一覧'}):item==='consumption'?localText(lang,{ko:'소비 흐름',en:'Spending',zh:'消费',ja:'消費'}):t[item].toUpperCase()}</span>
           </a>
         ))}

@@ -26,7 +26,7 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "12512780d57b4c8b1b9b2906074fe3ea15b3c71a4d8363b6ee4048f7e838b741",
+    "app/retailpulse-app.tsx": "1898ee6930131817eabd36fe629ee1d4b258b068446ee2d982b1958027725dda",
     "app/retailpulse-data.ts": "2a965cde02012978eb446a955b82bbcbfbec83f74f862e0e2846fae1ca348ecd",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "ee3f5c36f600ff0d9b9c018543bb6ac596826475f02adbf2c21992c797f582c8",
@@ -1963,5 +1963,10 @@
     ],
     "protectedPathCount": 65,
     "approvalEvidenceFile": "docs/approvals/seoul-area-loading-reserve-20261013.json"
+  },
+  "ownerApprovedGlassNavigationPreview20261013": {
+    "approvalEvidenceFile": "docs/approvals/glass-navigation-preview-20261013.json",
+    "scope": "Separate unpublished mobile/desktop navigation preview with original SVG icons, glass capsule, press/drag feedback; preserve all six mobile menus and desktop Business. Review screenshots before any public release. No data or collector changes.",
+    "protectedPathCount": 65
   }
 }

@@ -1,0 +1,35 @@
+{
+  "kind": "local-unpublished-preview-with-public-data",
+  "at": "2026-10-13T12:30:10.468Z",
+  "source": "https://koretaildata.com",
+  "screens": [
+    {
+      "width": 390,
+      "labels": [
+        "공항 한눈에",
+        "공항",
+        "서울 한눈에",
+        "서울",
+        "소비 흐름",
+        "더보기"
+      ],
+      "horizontalOverflow": false,
+      "file": "glass-nav-390.png"
+    },
+    {
+      "width": 1440,
+      "labels": [
+        "공항 한눈에",
+        "공항",
+        "서울 한눈에",
+        "서울",
+        "소비 흐름",
+        "매장",
+        "더보기"
+      ],
+      "horizontalOverflow": false,
+      "file": "glass-nav-1440.png"
+    }
+  ],
+  "errors": []
+}
