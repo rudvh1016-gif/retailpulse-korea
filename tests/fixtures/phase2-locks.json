@@ -19,7 +19,7 @@
     "app/globals.css": "fedcfc48b2d7b08dc3cae6cbb625afee413afd788aa7701df1b3d223a8dcf2b2",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
     "app/layout.tsx": "5751b05b09e86833897a9e9145672af9ae830c538b1f357f9963325d592e06a5",
-    "app/live-signals.tsx": "51ca13c3a277ebdc9785194debd98c15684db04c5e8900726d7b12b1a5faada2",
+    "app/live-signals.tsx": "de1b382dc14e2fdc39c34f206b61b7a1d11ded0fab93280a2dda336c08af26fa",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
@@ -62,7 +62,7 @@
     "public/icon-512-20261007.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
     "public/icon-maskable-512-20261007.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
     "public/manifest-20261007.webmanifest": "6bad81a6e70af19a2c27c1a321513406823d3cea3e78aecacdbc3607647e99be",
-    "app/airport-live-signals.tsx": "6c40204d0de60f7a393f2c1d01fde8b2d645d1a8a507757f17c0f481b92635d9",
+    "app/airport-live-signals.tsx": "83d217f18ab08caf185f7b7353197c30c65f0a577391d7c8afbc780b43041920",
     "app/airport-view.tsx": "f80206e8b5f38a38ddce0769d4df72e5665041417b7ee1fdc39862120a0fde7c",
     "app/local-text.ts": "82328cd1029e929b9a79cd1d58c325469ad829a262fa2e7935b65ca595dfb8d6",
     "app/month-range-picker.tsx": "c358abc4ad12749384e82427ec9c1f16099200a0fa40f84eb469e53dbd7d9665"
@@ -1888,5 +1888,65 @@
     ],
     "protectedPathCount": 65,
     "approvalEvidenceFile": "docs/approvals/seoul-area-loading-reserve-20261013.json"
+  },
+  "ownerApprovedFlightBoardTimeout20261013": {
+    "recordedAt": "2026-10-13T11:28:57.280Z",
+    "authorizationEvidence": {
+      "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+      "ownerTaskRequest": "남은문제 해결할수있는거는 너가 싹다해줘 속도개선은 할수있는거 다한거지?",
+      "approvalQuestion": "Q1 (속도 수정): 속도는 아직 다 한 게 아닙니다. 측정해 보니 남은 개선은 대부분 보호 파일 또는 dot 담당 영역에 있습니다. 어떤 수정을 승인할까요?\n ① 홈 다시그리기 제거 — 보호 파일 3개(retailpulse-app.tsx, [locale]/page.tsx, [slug]/page.tsx). 홈 첫 방문 때 '공항 한눈에'를 지웠다 다시 그리면서 화면이 크게 밀립니다. 밀림 점수(CLS)가 0.67(나쁨)에서 0.10(좋음)으로 줄고, 첫 화면부터 정상 모양으로 보입니다. 대신 조작 가능 시점이 0.35초 늦어집니다. 디자인 변화는 없습니다.\n ② 공항 그림 크기 단계 — dot 담당, 보호 아님. 1100·1200px 그림을 추가하고 sizes 값을 고칩니다. 휴대폰이 받는 그림이 32~45% 줄고(357KB → 199~278KB), 홈 LCP가 약 0.4~0.5초 빨라질 것으로 예상합니다. 화질 설정(q85)은 같고, 2배 확대에서 차이가 보이지 않습니다. 원본 PNG가 없어 지금 1448 그림에서 만듭니다.\n ③ 서울 지역 화면 밀림 제거 — 보호 파일 globals.css에 1줄 추가. 명동 등 지역 화면의 CLS가 0.29에서 0.01로 줄고, 실제 보이는 화면은 같습니다. 다만 측정 도구의 LCP 숫자는 1.5초에서 3.7초로 커져 보입니다. 기준 요소가 바닥글에서 실제 내용으로 바뀌기 때문입니다.\n ④ 업종 코드 분리 — 보호 파일 retailpulse-app.tsx 수정. 공항·매장 화면을 뺀 첫 방문에서 JS가 28KB(gzip) 줄어 약 0.12~0.15초 빨라집니다. 화면 변화는 없습니다.\nQ2 (추가 항목): 함께 처리할 항목을 골라주세요.\n ⑤ 공항 한눈에 대기 표시 — dot 담당. '오늘 예상 출국객' 칸도 로딩 중에는 '자료 확인 중…'으로 표시합니다. 지금은 검색로봇에게 '확인 가능한 자료 없음'으로 읽힙니다. 로딩 중 상태줄을 숨겨 밀림도 조금 줄입니다. dot의 e2e 기대값 1줄을 바꿉니다.\n ⑥ 병합된 원격 브랜치 4개 삭제 — claude/seo-geo-20261013 외 3개. 내용은 모두 main에 이미 있습니다(검증 완료).\n ⑦ 영어 홈 설명에 Incheon Airport — 보호 파일 seo-config.ts의 영어 설명에만 넣습니다.\n ⑧ 홈 글꼴 미리 받기 해제 — 보호 파일 [locale]/page.tsx 수정. 홈 첫 방문의 조작 가능 시점이 0.45~0.55초 빨라집니다. 대신 브랜드 글꼴이 약 0.3초 늦게 바뀝니다.\nQ3 (범위 밖): 이번 점검 범위 밖에서 실제 문제도 찾았습니다. 함께 고칠까요?\n A1 자정 대체수집 가드 — 보호 아님. 승인된 01:15~03:00 KST 대체수집이 정상 상태값 'LIVE'까지 막아서 지금까지 한 번도 작동하지 않았습니다. dot 초안 PR #343에서 이 가드 부분만 반영하고 나머지는 그대로 둡니다. 수집 횟수 설정은 바꾸지 않습니다.\n 항공편 보드 무한 로딩 #273 — 보호 파일 airport-live-signals.tsx에 15초 시간초과를 추가하고, 이 줄을 검사하는 테스트 2줄을 맞춥니다.\n 수집 시각 문구 04:07→00:07 — 보호 파일 live-signals.tsx의 4개 언어 문구, 그리고 RUNBOOK 등 문서를 고칩니다. 사용자 화면에 '첫 수집 04:07 KST'라고 나오지만, 실제 일정은 10월 10일부터 00:07 KST입니다.\n 이번엔 보고만 — 범위 밖 항목은 고치지 않고 보고에만 남깁니다.",
+      "ownerRequest": "Q1: ① 홈 다시그리기 제거 (권장), ② 공항 그림 크기 단계 (권장), ③ 서울 지역 화면 밀림 제거 (권장) | Q2: ⑤ 공항 한눈에 대기 표시 (권장), ⑥ 병합된 원격 브랜치 4개 삭제 (권장) | Q3: A1 자정 대체수집 가드, 항공편 보드 무한 로딩 #273, 수집 시각 문구 04:07→00:07",
+      "approvedItem": "항공편 보드 무한 로딩 #273",
+      "scope": "app/airport-live-signals.tsx FlightBoard: the /api/live/flights request gets signal: AbortSignal.timeout(15_000), mirroring app/flights-client.ts, so a hung request ends in the existing 'could not load' state instead of loading forever. The two rendered-html source assertions now require the timeout; e2e/flight-board-timeout.spec.ts is taken unchanged from PR #274. No markup, copy or design change.",
+      "approvedProtectedFiles": [
+        "app/airport-live-signals.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": true
+    },
+    "reason": "Record the explicit owner approval for this protected-file change; no test is relaxed or skipped.",
+    "comparisonBase": "9a1364227d1bdb3c86334f36150bd901ccce3063",
+    "changes": [
+      {
+        "file": "app/airport-live-signals.tsx",
+        "previous": "6c40204d0de60f7a393f2c1d01fde8b2d645d1a8a507757f17c0f481b92635d9",
+        "approved": "83d217f18ab08caf185f7b7353197c30c65f0a577391d7c8afbc780b43041920",
+        "addedLines": 1,
+        "deletedLines": 1,
+        "exactUnifiedDiff": "diff --git a/app/airport-live-signals.tsx b/app/airport-live-signals.tsx\nindex 2287999..ad59fbd 100644\n--- a/app/airport-live-signals.tsx\n+++ b/app/airport-live-signals.tsx\n@@ -1343,7 +1343,7 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi\n     if (!requestDate) return;\n     let active = true;\n     const url = `/api/live/flights?date=${encodeURIComponent(requestDate)}`;\n-    fetch(url, { headers: { accept: \"application/json\" } })\n+    fetch(url, { headers: { accept: \"application/json\" }, signal: AbortSignal.timeout(15_000) })\n       .then(async (response) => (response.ok ? await response.json() as { mode?: string; serviceDateKst?: string; flights?: LiveFlightRow[]; truncated?: boolean; basis?: string; retrievedAt?: string | null; terminalFallbacks?:Record<string,TerminalFlightFallback<LiveFlightRow>> } : null))\n       .catch(() => null)\n       .then((payload) => {\n"
+      }
+    ],
+    "protectedPathCount": 65,
+    "approvalEvidenceFile": "docs/approvals/flight-board-timeout-20261013.json"
+  },
+  "ownerApprovedEarlyWindowCopy20261013": {
+    "recordedAt": "2026-10-13T11:28:57.425Z",
+    "authorizationEvidence": {
+      "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+      "ownerTaskRequest": "남은문제 해결할수있는거는 너가 싹다해줘 속도개선은 할수있는거 다한거지?",
+      "approvalQuestion": "Q1 (속도 수정): 속도는 아직 다 한 게 아닙니다. 측정해 보니 남은 개선은 대부분 보호 파일 또는 dot 담당 영역에 있습니다. 어떤 수정을 승인할까요?\n ① 홈 다시그리기 제거 — 보호 파일 3개(retailpulse-app.tsx, [locale]/page.tsx, [slug]/page.tsx). 홈 첫 방문 때 '공항 한눈에'를 지웠다 다시 그리면서 화면이 크게 밀립니다. 밀림 점수(CLS)가 0.67(나쁨)에서 0.10(좋음)으로 줄고, 첫 화면부터 정상 모양으로 보입니다. 대신 조작 가능 시점이 0.35초 늦어집니다. 디자인 변화는 없습니다.\n ② 공항 그림 크기 단계 — dot 담당, 보호 아님. 1100·1200px 그림을 추가하고 sizes 값을 고칩니다. 휴대폰이 받는 그림이 32~45% 줄고(357KB → 199~278KB), 홈 LCP가 약 0.4~0.5초 빨라질 것으로 예상합니다. 화질 설정(q85)은 같고, 2배 확대에서 차이가 보이지 않습니다. 원본 PNG가 없어 지금 1448 그림에서 만듭니다.\n ③ 서울 지역 화면 밀림 제거 — 보호 파일 globals.css에 1줄 추가. 명동 등 지역 화면의 CLS가 0.29에서 0.01로 줄고, 실제 보이는 화면은 같습니다. 다만 측정 도구의 LCP 숫자는 1.5초에서 3.7초로 커져 보입니다. 기준 요소가 바닥글에서 실제 내용으로 바뀌기 때문입니다.\n ④ 업종 코드 분리 — 보호 파일 retailpulse-app.tsx 수정. 공항·매장 화면을 뺀 첫 방문에서 JS가 28KB(gzip) 줄어 약 0.12~0.15초 빨라집니다. 화면 변화는 없습니다.\nQ2 (추가 항목): 함께 처리할 항목을 골라주세요.\n ⑤ 공항 한눈에 대기 표시 — dot 담당. '오늘 예상 출국객' 칸도 로딩 중에는 '자료 확인 중…'으로 표시합니다. 지금은 검색로봇에게 '확인 가능한 자료 없음'으로 읽힙니다. 로딩 중 상태줄을 숨겨 밀림도 조금 줄입니다. dot의 e2e 기대값 1줄을 바꿉니다.\n ⑥ 병합된 원격 브랜치 4개 삭제 — claude/seo-geo-20261013 외 3개. 내용은 모두 main에 이미 있습니다(검증 완료).\n ⑦ 영어 홈 설명에 Incheon Airport — 보호 파일 seo-config.ts의 영어 설명에만 넣습니다.\n ⑧ 홈 글꼴 미리 받기 해제 — 보호 파일 [locale]/page.tsx 수정. 홈 첫 방문의 조작 가능 시점이 0.45~0.55초 빨라집니다. 대신 브랜드 글꼴이 약 0.3초 늦게 바뀝니다.\nQ3 (범위 밖): 이번 점검 범위 밖에서 실제 문제도 찾았습니다. 함께 고칠까요?\n A1 자정 대체수집 가드 — 보호 아님. 승인된 01:15~03:00 KST 대체수집이 정상 상태값 'LIVE'까지 막아서 지금까지 한 번도 작동하지 않았습니다. dot 초안 PR #343에서 이 가드 부분만 반영하고 나머지는 그대로 둡니다. 수집 횟수 설정은 바꾸지 않습니다.\n 항공편 보드 무한 로딩 #273 — 보호 파일 airport-live-signals.tsx에 15초 시간초과를 추가하고, 이 줄을 검사하는 테스트 2줄을 맞춥니다.\n 수집 시각 문구 04:07→00:07 — 보호 파일 live-signals.tsx의 4개 언어 문구, 그리고 RUNBOOK 등 문서를 고칩니다. 사용자 화면에 '첫 수집 04:07 KST'라고 나오지만, 실제 일정은 10월 10일부터 00:07 KST입니다.\n 이번엔 보고만 — 범위 밖 항목은 고치지 않고 보고에만 남깁니다.",
+      "ownerRequest": "Q1: ① 홈 다시그리기 제거 (권장), ② 공항 그림 크기 단계 (권장), ③ 서울 지역 화면 밀림 제거 (권장) | Q2: ⑤ 공항 한눈에 대기 표시 (권장), ⑥ 병합된 원격 브랜치 4개 삭제 (권장) | Q3: A1 자정 대체수집 가드, 항공편 보드 무한 로딩 #273, 수집 시각 문구 04:07→00:07",
+      "approvedItem": "수집 시각 문구 04:07→00:07",
+      "scope": "app/live-signals.tsx noFlightsToday in ko/en/zh/ja: the first scheduled A1 attempt is stated as 00:07 KST (the cron since 43694ab, 2026-10-10), using the wording recorded with dot's draft PR #343 (docs/approvals/a1-live-guard-copy-20261012.json on that branch), restyled to the neighbouring object-key style. Docs (RUNBOOK, DATA_SOURCES, A1_TODAY_COLLECTION, CLAUDE.md line 53), lib/source-status.ts KASI windows and lib/recovery-capability.ts text corrected to the same schedule fact.",
+      "approvedProtectedFiles": [
+        "app/live-signals.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": true
+    },
+    "reason": "Record the explicit owner approval for this protected-file change; no test is relaxed or skipped.",
+    "comparisonBase": "9a1364227d1bdb3c86334f36150bd901ccce3063",
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "51ca13c3a277ebdc9785194debd98c15684db04c5e8900726d7b12b1a5faada2",
+        "approved": "de1b382dc14e2fdc39c34f206b61b7a1d11ded0fab93280a2dda336c08af26fa",
+        "addedLines": 1,
+        "deletedLines": 1,
+        "exactUnifiedDiff": "diff --git a/app/live-signals.tsx b/app/live-signals.tsx\nindex 1b5aca6..35609a6 100644\n--- a/app/live-signals.tsx\n+++ b/app/live-signals.tsx\n@@ -736,7 +736,7 @@ export const airportTodayText = {\n   // Today's rows can be absent for a whole service day when the morning A1\n   // scan timed out at the provider. Say that plainly instead of the generic\n   // coverage line, which would blame gate data that was never collected.\n-  noFlightsToday: { ko: \"오늘 출발편 수집이 완료되지 않았습니다. 첫 수집은 04:07 KST이며 실패하면 몇 분 안에 곧바로 두 번 더 시도하고, 06:07 KST에 한 번 더 수집합니다. 실행 지연이나 공급자 장애가 있으면 늦어질 수 있습니다. 수집 성공 후 게이트·항공사·등록 국가가 함께 표시됩니다.\", en: \"Today's departures collection is incomplete. The first attempt is 04:07 KST, retried twice within minutes if it fails, and collected again at 06:07 KST. Execution delays or provider outages may postpone all three breakdowns.\", zh: \"今日出发航班尚未完成采集。首次采集为 04:07 KST，失败时数分钟内立即重试两次，并于 06:07 KST 再次采集；任务延迟或供应方故障可能推迟显示。\", ja: \"本日の出発便の収集は未完了です。最初の収集は 04:07 KST で、失敗すれば数分以内にさらに2回再試行し、06:07 KST にもう一度収集します。実行遅延や提供元の障害で表示が遅れる場合があります。\" },\n+  noFlightsToday: { ko: \"오늘 출발편 수집이 완료되지 않았습니다. 첫 정기 수집은 00:07 KST 예정이며, 재시도 조건에 해당하면 최대 두 번 더 시도합니다. 06:07 KST에도 정기 수집이 예정되어 있습니다. 실행 지연이나 공급자 장애로 늦어질 수 있습니다. 수집 성공 후 게이트·항공사·등록 국가가 함께 표시됩니다.\", en: \"Today's departures collection is incomplete. The first scheduled attempt is 00:07 KST, with up to two additional attempts for eligible failures. Another regular collection is scheduled for 06:07 KST. Execution delays or provider outages may postpone the gate, airline and registration-country breakdowns.\", zh: \"今日出发航班尚未完成采集。首次定时采集计划于 00:07 KST 执行，符合重试条件时最多再试两次，另于 06:07 KST 安排定时采集。任务延迟或供应方故障可能推迟登机口、航空公司及注册国统计的显示。\", ja: \"本日の出発便の収集は未完了です。最初の定期収集は 00:07 KST の予定で、再試行条件に該当する場合は最大2回追加で試行します。06:07 KST にも定期収集を予定しています。実行遅延や提供元の障害でゲート・航空会社・登録国の表示が遅れる場合があります。\" },\n   noFlightsForDate: { ko: \"이 날짜의 출발편 데이터가 없습니다.\", en: \"No departure data is stored for this date.\", zh: \"该日期没有出发航班数据。\", ja: \"この日付の出発便データはありません。\" },\n   airlinesTitle: { ko: \"항공사별 운항 순위\", en: \"Airlines by departures\", zh: \"航空公司出发航班排名\", ja: \"航空会社別運航ランキング\" },\n   airlinesNote: { ko: \"오늘 실제 출발편을 운항 항공사 기준으로 집계한 순위입니다. 공동운항편은 운항사 1편으로만 셉니다.\", en: \"Today's physical departures counted by operating airline. A codeshare counts once, for its operator.\", zh: \"按实际执飞航空公司统计的今日出发航班排名，共享航班仅按执飞方计 1 班。\", ja: \"本日の実運航出発便を運航会社ごとに集計した順位です。コードシェア便は運航会社の1便としてのみ数えます。\" },\n"
+      }
+    ],
+    "protectedPathCount": 65,
+    "approvalEvidenceFile": "docs/approvals/early-window-copy-20261013.json"
   }
 }

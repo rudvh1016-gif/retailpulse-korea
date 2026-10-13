@@ -609,13 +609,14 @@ the reference table with the official one. Until then, `countryBasis:
 after the 06:07 primary. A blocked runner at 06:07 therefore cost the reader an
 entire morning on a screen whose whole purpose is today's gate ranking.
 
-It now runs **first, at 04:07 KST**, and a failure is retried on a fresh runner
-within about a minute. Both halves matter. Early puts today's departures on
-screen before five in the morning; a fresh runner is the only thing that helps
-against the failure this collector actually suffers — a blocked egress address,
-measured 2026-09-06 at two of eight runners unable to open a connection while
-six reached the host in under four seconds. Retrying inside the job keeps the
-address that was refused.
+It now runs **first, at 00:07 KST** (moved from 04:07 on 2026-10-10, 43694ab),
+and a failure is retried on a fresh runner within about a minute. Both halves
+matter. Early puts today's departures on screen soon after the KST date changes
+(nominal; GitHub can start scheduled runs late); a fresh runner is the only
+thing that helps against the failure this collector actually suffers — a
+blocked egress address, measured 2026-09-06 at two of eight runners unable to
+open a connection while six reached the host in under four seconds. Retrying
+inside the job keeps the address that was refused.
 
 `airport_recent` still reads `collector_runs` first: a COMPLETE scan already
 recorded for today's KST date → `SKIPPED_ALREADY_COMPLETE_TODAY` with zero
@@ -623,13 +624,13 @@ provider requests.
 
 The 06:07 group is now the day's **refresh** rather than its first sight of the
 day, and asks to rescan (`RPK_A1_RESCAN_TODAY`) rather than skipping. Gate
-assignments firm up through the morning, so a 04:07 scan can record flights
+assignments firm up through the morning, so a 00:07 scan can record flights
 whose gate the airport has not published yet; without the refresh the day would
 keep that gate-poor picture until tomorrow.
 
 | window | attempts | ceiling each | worst case |
 | --- | --- | --- | --- |
-| 04:07 KST early | 3, one job apiece | 125 | 375 |
+| 00:07 KST early | 3, one job apiece | 125 | 375 |
 | 06:07 KST refresh | 1 | 125 | 125 |
 | | | **day total** | **500** |
 
