@@ -24,7 +24,11 @@
 2026-10-13 GitHub production 환경의 공개 변수 두 개만 읽어 ENABLED=true와 유효한 G- 측정 ID 존재 확인
 개별 공개 ID 원문은 문서에 중복 저장하지 않음
 배포 workflow는 두 변수를 빌드에 전달하도록 연결되어 있음
-운영 HTML의 수동 Python HTTP 조회는 403으로 끝나 실제 운영 번들 내용은 이 검사에서 확인하지 못함
+최초 Python HTTP 조회는 403이었으나 14:18:03 UTC 새 Chrome context의 읽기 전용 운영 조회는 HTTP 200
+동의하지 않고 모든 Google 분석 요청을 사전 차단한 상태에서 기존 운영 /assets/seo-config-BQJBx93d.js의 유효 측정 ID 1개·tag bootstrap·send_page_view:false·수동 page_view 부재 확인
+Google 요청은 실제 발생하지 않아 차단된 요청도 0개이며 계정 이벤트를 보내지 않음
+실제 CSP connect-src에는 *.google-analytics.com과 *.analytics.google.com 및 googletagmanager가 허용되어 있어 단일 www 호스트 문자열 부재를 수집 차단으로 오판하지 않음
+민감값을 담지 않은 관찰 기록은 [운영 번들 근거](ga4-public-passive-20261013.json)에 보존
 GA4 속성을 읽을 수 있는 연결 도구가 없어 실제 보고서·실시간 수신·필터·스트림 일치는 미확인
 
 ## 변경 동작
