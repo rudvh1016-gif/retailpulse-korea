@@ -83,6 +83,7 @@ jobs:
           --grep 'hydration keeps the server-rendered glance /ko 390|official daily passenger row scopes and date 390|partial full-day coverage|mismatched dates and failed data|valid-zero 390'
           --output critical-ui-results
         env:
+          PLAYWRIGHT_BROWSERS_PATH: .playwright-browsers
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
       - run: npm run test:e2e
         env:

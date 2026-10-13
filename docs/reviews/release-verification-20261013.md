@@ -53,3 +53,14 @@ Per existing visual run, revision checks add four lightweight API/HTML reads and
 Health reads existing canonical status; it does not refresh upstream data
 Existing source timestamp semantics, immutable predictions, zero-cost guardrails and A1 direct-only scope remain unchanged
 No claim of traffic capacity, public deployment verification or complete recovery is made from this draft's local tests
+
+## CI browser-path correction
+
+Run 38408699556 failed at the new critical browser step because its direct Playwright invocation did not inherit the existing installation directory
+The new step now explicitly sets PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers, identical to e2e:install and test:e2e
+No browser download workaround, test skip, retry change, product change or UI Lock manifest change
+Workflow YAML and installation/critical/full-suite path consistency were asserted locally
+Playwright resolves the expected executable inside this checkout's .playwright-browsers/chromium-1234 directory
+This Windows checkout has no installed Playwright Chromium there; existing system Chrome is used only for local fixture verification with the same environment variable
+Packaged Chromium execution remains subject to the restarted hosted CI, where the existing installation step supplies it
+Local selected five fixture cases passed 5/5 with the corrected environment and existing Chrome
