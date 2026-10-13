@@ -8,7 +8,7 @@ import { evaluateQuotaUsage } from "../lib/quota-guard";
 import { normalizeAirportFlight } from "../lib/source-adapters";
 import { readCloudflareConfig, validateCloudflareEnvironment } from "../scripts/validate-cloudflare-environment.mjs";
 import { PRODUCTION_CRONS, WORKERS_FREE_CRON_TRIGGER_LIMIT } from "../lib/realtime-dispatch";
-import { RETRYABLE_A4_SOURCES } from "../lib/congestion-retry";
+import { RETRYABLE_A4_SOURCES, RETRYABLE_WEEKLY_SEOUL_SOURCES } from "../lib/congestion-retry";
 import { expandRealtimeCadence } from './helpers/realtime-cycle.mjs';
 
 test("semantic flight hash ignores retrieval time and unknown volatile fields", async () => {
@@ -212,6 +212,8 @@ test("production collector remains gated and only production carries a Worker Cr
 function resolveSourceExpression(value: string): string[] {
   if (!value.includes("${{")) return [value];
   if (value.includes("needs.collect.outputs.retry_sources")) return [...RETRYABLE_A4_SOURCES];
+  // collect-sales.yml's fresh-runner retries name only the weekly Seoul sources that failed.
+  if (/needs\.(?:collect|retry_1)\.outputs\.retry_weekly_seoul/.test(value)) return [...RETRYABLE_WEEKLY_SEOUL_SOURCES];
   throw new Error(`unresolved workflow expression in a sources declaration: ${value}. Teach this resolver what it can produce, or a new source could be scheduled with nothing noticing.`);
 }
 

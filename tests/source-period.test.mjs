@@ -3,6 +3,8 @@ import test from "node:test";
 
 import {
   PERIOD_VOUCH_WINDOW_MS,
+  QUARTERLY_CHECK_GRACE_MS,
+  QUARTERLY_CHECK_SLOT_UTC,
   describeSourcePeriod,
   formatDayPeriod,
   formatMonthPeriod,
@@ -172,4 +174,78 @@ test("the contract documents which timestamp it wants, so a caller cannot pass t
     assert.doesNotMatch(call[0], /retrievedAt: (block|row|mobility)\./,
       "a changed-only row timestamp freezes when the numbers stop moving");
   }
+});
+
+/**
+ * The quarterly sources are checked once a week, not every day. Real times:
+ * the last good weekly check (run 37165145276) succeeded 2026-10-04 00:30:45Z;
+ * the next one (run 38099853388) failed 2026-10-11 00:52Z with a connect
+ * timeout, so last_retrieved_at stayed at 10-04.
+ */
+const WEEKLY_SUCCESS = "2026-10-04T00:30:45Z";
+const quarter = (retrievedAt, nowIso) => describeSourcePeriod({ cadence: "QUARTERLY", referencePeriod: "20262", retrievedAt, nowIso }, "ko");
+
+test("a weekly-checked quarterly source stays the provider's newest between healthy checks", () => {
+  // Tuesday, 48 hours on: the old rule already said "not collected recently".
+  for (const now of ["2026-10-06T00:36:45Z", "2026-10-09T12:00:00Z", "2026-10-10T22:08:00Z", "2026-10-11T04:06:00Z"]) {
+    const period = quarter(WEEKLY_SUCCESS, now);
+    assert.equal(period.standpoint, "PROVIDER_NEWEST", now);
+    assert.match(period.publicationNote, /다음 기간은 아직 공개되지 않았습니다/);
+  }
+});
+
+test("a failed weekly check stops the vouch at its slot plus the grace, not a week later", () => {
+  // Sunday 07:07 KST slot = 2026-10-10 22:07Z; plus 6 h = 2026-10-11 04:07Z.
+  const period = quarter(WEEKLY_SUCCESS, "2026-10-11T04:08:00Z");
+  assert.equal(period.standpoint, "COLLECTION_BEHIND");
+  assert.match(period.publicationNote, /KORETAIL 수집이 최근에 성공하지 않아/);
+  assert.equal(quarter(WEEKLY_SUCCESS, "2026-10-12T09:30:00Z").standpoint, "COLLECTION_BEHIND");
+});
+
+test("a check that succeeds late in its slot is vouched until the next slot plus the grace", () => {
+  const lateSuccess = "2026-10-11T00:52:00Z";
+  assert.equal(quarter(lateSuccess, "2026-10-18T04:06:00Z").standpoint, "PROVIDER_NEWEST");
+  assert.equal(quarter(lateSuccess, "2026-10-18T04:08:00Z").standpoint, "COLLECTION_BEHIND");
+});
+
+test("an off-schedule success does not stretch the vouch past the next weekly check", () => {
+  // A manual Thursday run (33717178362) followed by a Sunday check that never succeeds.
+  const thursday = "2026-09-03T05:02:08Z";
+  assert.equal(quarter(thursday, "2026-09-06T04:06:00Z").standpoint, "PROVIDER_NEWEST");
+  assert.equal(quarter(thursday, "2026-09-06T04:08:00Z").standpoint, "COLLECTION_BEHIND");
+});
+
+test("daily and monthly sources keep the 48-hour rule, and the airport keeps its base value", () => {
+  assert.equal(PERIOD_VOUCH_WINDOW_MS, 48 * 3_600_000, "the airport screens derive 12 h from this");
+  const now = Date.parse("2026-10-11T04:08:00Z");
+  const inside = new Date(now - PERIOD_VOUCH_WINDOW_MS + 1000).toISOString();
+  const outside = new Date(now - PERIOD_VOUCH_WINDOW_MS - 1000).toISOString();
+  for (const [cadence, referencePeriod] of [["DAILY", "2026-10-02"], ["MONTHLY", "2026-09"]]) {
+    assert.equal(describeSourcePeriod({ cadence, referencePeriod, retrievedAt: inside, nowIso: new Date(now).toISOString() }, "ko").standpoint, "PROVIDER_NEWEST", cadence);
+    assert.equal(describeSourcePeriod({ cadence, referencePeriod, retrievedAt: outside, nowIso: new Date(now).toISOString() }, "ko").standpoint, "COLLECTION_BEHIND", cadence);
+  }
+  // Without a cadence the helper is the 48-hour rule it always was.
+  assert.equal(publicationStandpoint(WEEKLY_SUCCESS, "2026-10-06T00:36:45Z"), "COLLECTION_BEHIND");
+});
+
+test("the weekly slot is the schedule that actually checks every quarterly source", async () => {
+  const { readFile, readdir } = await import("node:fs/promises");
+  const workflow = await readFile(new URL("../.github/workflows/collect-sales.yml", import.meta.url), "utf8");
+  const cron = workflow.match(/cron: "(\d+) (\d+) \* \* (\d)"/);
+  assert.ok(cron, "collect-sales.yml keeps one weekly cron");
+  assert.deepEqual({ minute: Number(cron[1]), hour: Number(cron[2]), weekday: Number(cron[3]) },
+    { minute: QUARTERLY_CHECK_SLOT_UTC.minute, hour: QUARTERLY_CHECK_SLOT_UTC.hour, weekday: QUARTERLY_CHECK_SLOT_UTC.weekday });
+  assert.match(workflow, /RPK_PRODUCTION_SOURCES: seoul_sales,store_dynamics/);
+  assert.ok(QUARTERLY_CHECK_GRACE_MS < 24 * 3_600_000, "the grace absorbs delay and retries, not a missed day");
+
+  // Every quarterly period on screen belongs to a source that weekly job checks.
+  const files = (await readdir(new URL("../app/", import.meta.url), { recursive: true })).filter((file) => file.endsWith(".tsx"));
+  const sources = new Set();
+  for (const file of files) {
+    const text = await readFile(new URL(`../app/${file}`, import.meta.url), "utf8");
+    for (const call of text.matchAll(/cadence: "QUARTERLY"[\s\S]{0,240}?retrievedAt: (lastCollected\("([A-Z_]+)"\)|lastCollectedAt)/g)) {
+      sources.add(call[2] ?? (/lastCollected\("SEOUL_STORE_DYNAMICS"\)/.test(text) ? "SEOUL_STORE_DYNAMICS" : "UNKNOWN"));
+    }
+  }
+  assert.deepEqual([...sources].sort(), ["SEOUL_ESTIMATED_SALES", "SEOUL_STORE_DYNAMICS"]);
 });

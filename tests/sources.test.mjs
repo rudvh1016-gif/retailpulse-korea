@@ -613,6 +613,7 @@ test("estimated sales collector probes quarters, sweeps pages and filters client
   const first = await collectEstimatedSales(env, now);
   assert.equal(first.status, "SUCCESS");
   assert.ok(first.records > 0);
+  assert.equal(first.providerRequests, requests.length, "every provider request is counted");
   // Probes 20263 → 20262 → 20261, then sweeps one short page and stops.
   assert.ok(requests.some((request) => request.quarter === "20263"));
   assert.equal(requests.filter((request) => request.quarter === "20261" && request.end - request.start > 0).length, 1);
@@ -636,15 +637,23 @@ test("a connect timeout in the weekly estimated-sales check is recorded as a str
   const { database, databasePath } = openDatabase("sales-network");
   const originalFetch = globalThis.fetch;
   context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+  // The last successful check, which a failed one must not move.
+  database.prepare(`INSERT INTO source_health (source_id, status, last_retrieved_at, consecutive_failures, schema_version, detail, updated_at)
+    VALUES ('SEOUL_ESTIMATED_SALES', 'OFFICIAL_HISTORICAL', '2026-10-04T00:31:02.000Z', 0, 'seoul-sales-v1', 'quarter 20262', '2026-10-04T00:31:02.000Z')`).run();
   let calls = 0;
   globalThis.fetch = async () => { calls += 1; throw connectTimeout(); };
   const env = { DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: "fixture" };
   const failed = await collectEstimatedSales(env, new Date("2026-08-27T15:00:00Z"));
   assert.equal(failed.status, "ERROR");
   assert.equal(calls, 1, "no in-process retry: the same runner keeps the refused egress address");
-  const health = database.prepare("SELECT status, detail FROM source_health WHERE source_id = 'SEOUL_ESTIMATED_SALES'").get();
+  // The fresh-runner retry (lib/congestion-retry.ts decideWeeklySeoulRetry)
+  // reads exactly these two fields from the result line.
+  assert.equal(failed.providerRequests, 1);
+  assert.match(failed.detail, /^failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT attempts=1 /);
+  const health = database.prepare("SELECT status, detail, last_retrieved_at FROM source_health WHERE source_id = 'SEOUL_ESTIMATED_SALES'").get();
   assert.equal(health.status, "ERROR");
-  assert.match(health.detail, /^failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT attempts=1 /);
+  assert.equal(health.detail, failed.detail);
+  assert.equal(health.last_retrieved_at, "2026-10-04T00:31:02.000Z", "a failed check never looks like a newer retrieval");
   assert.doesNotMatch(health.detail, /fixture/);
 });
 

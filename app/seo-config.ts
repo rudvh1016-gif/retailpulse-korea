@@ -51,12 +51,8 @@ const names = {
 
 
 export function pageTitle(locale: SeoLocale, slug?: SeoSlug, tourismArea: TourismDeskArea = "myeongdong") {
-  if (!slug) return {
-    ko: "인천공항·명동·홍대·성수·이태원 오늘·내일 브리핑 | KORETAIL",
-    en: "Incheon Airport & Seoul Areas: Today and Tomorrow | KORETAIL",
-    zh: "仁川机场·明洞·弘大·圣水·梨泰院 今日与明日简报 | KORETAIL",
-    ja: "仁川空港・明洞・弘大・聖水・梨泰院 今日と明日のブリーフィング | KORETAIL",
-  }[locale];
+  // The home is the airport glance (PR #357), so it carries the approved glance copy.
+  if (!slug) return pageTitle(locale, "airport-glance");
   if (slug === "tourism-desk") {
     const name = names[tourismArea][locale];
     return {
@@ -90,12 +86,7 @@ export function pageTitle(locale: SeoLocale, slug?: SeoSlug, tourismArea: Touris
 }
 
 export function pageDescription(locale: SeoLocale, slug?: SeoSlug, tourismArea: TourismDeskArea = "myeongdong") {
-  if (!slug) return {
-    ko: "오늘·내일 필요한 공항·관광·상권 정보를 한 번에 확인하세요. 역할과 관심지역을 선택하면 공식 자료가 제공되는 범위에서 출국장 예상 승객·혼잡·날씨·행사를 내 브리핑으로 봅니다.",
-    en: "Choose your role and place for a personal briefing on Incheon Airport, Myeongdong, Hongdae, Seongsu or Itaewon. See departure-hall forecasts, crowds, weather and events where official data is available.",
-    zh: "选择角色与关注地区，查看仁川机场、明洞、弘大、圣水或梨泰院的个人简报。根据已有官方资料，了解出境大厅预计旅客、拥挤、天气与活动。",
-    ja: "役割と関心のある場所を選び、仁川空港・明洞・弘大・聖水・梨泰院の情報を自分のブリーフィングで確認。公式資料の提供範囲で出国場予想旅客・混雑・天気・イベントを表示します。",
-  }[locale];
+  if (!slug) return pageDescription(locale, "airport-glance");
   if (slug === "tourism-desk") {
     const name = names[tourismArea][locale];
     return {
@@ -128,6 +119,17 @@ export function pageDescription(locale: SeoLocale, slug?: SeoSlug, tourismArea: 
   return descriptions[slug as Exclude<SeoSlug, keyof typeof names | "tourism-desk">][locale];
 }
 
+/**
+ * Slugs that serve the same page as the locale home. Since PR #357 the home
+ * renders the airport glance, so /{lang}/airport-glance names /{lang} as its
+ * canonical, shares the home's hreflang cluster and is left out of the
+ * sitemap. The menu still links to it; only the search signals change.
+ */
+export const homeEquivalentSlugs: readonly SeoSlug[] = ["airport-glance"];
+export function canonicalSlug(slug?: SeoSlug): SeoSlug | undefined {
+  return slug && homeEquivalentSlugs.includes(slug) ? undefined : slug;
+}
+
 export function seoPath(locale: SeoLocale, slug?: SeoSlug, tourismArea: TourismDeskArea = "myeongdong") {
   if (!slug) return `/${locale}`;
   return slug === "tourism-desk"
@@ -135,7 +137,8 @@ export function seoPath(locale: SeoLocale, slug?: SeoSlug, tourismArea: TourismD
     : `/${locale}/${slug}`;
 }
 
-export function buildMetadata(locale: SeoLocale, slug?: SeoSlug, tourismArea: TourismDeskArea = "myeongdong"): Metadata {
+export function buildMetadata(locale: SeoLocale, requestedSlug?: SeoSlug, tourismArea: TourismDeskArea = "myeongdong"): Metadata {
+  const slug = canonicalSlug(requestedSlug);
   const path = seoPath(locale, slug, tourismArea);
   const equivalents = Object.fromEntries(seoLocales.map((language) => [
     language === "zh" ? "zh-CN" : language === "ja" ? "ja-JP" : language === "ko" ? "ko-KR" : "en",
@@ -164,7 +167,8 @@ const breadcrumbHome = { ko: "홈", en: "Home", zh: "首页", ja: "ホーム" } 
  * `BreadcrumbList` gives crawlers the locale-home → page relationship the
  * client-side navigation otherwise hides. Nothing here is fetched at runtime.
  */
-export function pageStructuredData(locale: SeoLocale, slug?: SeoSlug, tourismArea: TourismDeskArea = "myeongdong"): Record<string, unknown>[] {
+export function pageStructuredData(locale: SeoLocale, requestedSlug?: SeoSlug, tourismArea: TourismDeskArea = "myeongdong"): Record<string, unknown>[] {
+  const slug = canonicalSlug(requestedSlug);
   const path = seoPath(locale, slug, tourismArea);
   const url = `${siteOrigin}${path}`;
   const inLanguage = locale === "ko" ? "ko-KR" : locale === "zh" ? "zh-CN" : locale === "ja" ? "ja-JP" : "en";

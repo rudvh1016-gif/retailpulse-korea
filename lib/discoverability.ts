@@ -35,6 +35,7 @@
  * Nothing here writes anything, sends anything, or needs a credential.
  */
 import {
+  canonicalSlug,
   seoLocales,
   seoPath,
   standaloneSeoSlugs,
@@ -218,7 +219,7 @@ async function get(context: Context, url: string, redirect: RequestRedirect = "f
 function expectedPaths(): string[] {
   return seoLocales.flatMap((locale) => [
     seoPath(locale),
-    ...standaloneSeoSlugs.map((slug) => seoPath(locale, slug as SeoSlug)),
+    ...standaloneSeoSlugs.filter((slug) => canonicalSlug(slug as SeoSlug) === slug).map((slug) => seoPath(locale, slug as SeoSlug)),
     ...tourismDeskAreas.map((area) => seoPath(locale, "tourism-desk", area)),
   ]);
 }
@@ -294,6 +295,11 @@ async function checkContentApisStayUnlisted(context: Context): Promise<void> {
   const probes: Record<string, string> = {
     "/api/live/summary": `/api/live/summary?month=${coldSummaryMonth(Date.now())}`,
     "/api/live/predictions": `/api/live/predictions?area=myeongdong&${probe}`,
+    "/api/live/flights": `/api/live/flights?${probe}`,
+    "/api/live/airport-months": `/api/live/airport-months?${probe}`,
+    "/api/live/airport-days": `/api/live/airport-days?${probe}`,
+    "/api/live/commercial-months": `/api/live/commercial-months?area=myeongdong&${probe}`,
+    "/api/live/usual": `/api/live/usual?area=myeongdong&${probe}`,
   };
   for (const path of crawlableContentApis) {
     const response = await context.fetch(`${origin}${probes[path] ?? path}`, { signal: AbortSignal.timeout(TIMEOUT_MS) });
@@ -502,6 +508,9 @@ export async function runDiscoverabilityChecks(options: { origin: string; fetch?
   for (const slug of ["airport", "where-to", "business", "forecast"] as SeoSlug[]) {
     await checkPageIdentity(context, "ko", slug);
   }
+  // An English title with a real "&", served as &amp;: once /en itself carried
+  // one; since the home became the airport glance only sub-pages do.
+  await checkPageIdentity(context, "en", "airport");
   await checkSocialPreview(context);
   await checkEntryRedirect(context);
 

@@ -319,6 +319,23 @@ the reusable `collect-attempt.yml`:
 | `collect-forecast.yml` | `airport_passenger_forecast` | 3 |
 | `collect-forecast-recovery.yml` | `airport_passenger_forecast_recovery` | 3 |
 | `collect-weather-recovery.yml` | `weather_recovery` | 3 |
+| `collect-sales.yml` (2026-10-12) | `seoul_sales`, `store_dynamics` — only the one that failed | 3, 60 s then 300 s apart |
+
+The weekly Seoul quarter check joined after run 38099853388 (2026-10-11) lost
+both sources to a ~10 s connect timeout on the very first request, while
+another runner reached `openapi.seoul.go.kr` seconds later; the next chance was
+a week away. Its gate is narrower than A5's (`decideWeeklySeoulRetry` in
+`lib/congestion-retry.ts`): status `ERROR`, every failure
+`failureClass=NETWORK causeCode=UND_ERR_CONNECT_TIMEOUT`, **and exactly one
+provider request made by that source**. Auth, HTTP 401/403/429, a missing key,
+Seoul result codes (INFO-100, ERROR-337 …), a timeout after connecting,
+`PARTIAL`, and a connect failure after that source had already been answered
+start nothing. A failed attempt writes no
+rows and leaves `source_health.last_retrieved_at` where it was. Each failed
+attempt that leads to another costs one request per source, so a week can never
+exceed the healthy maximum (30 + 17) by more than four requests. The retries
+run only from `main` and inside the run, so the `production-collector-sales`
+concurrency group still serializes them.
 
 Cost when healthy is **zero**: an attempt only starts after the previous one
 failed outright — for these collectors that means nothing was normalized and

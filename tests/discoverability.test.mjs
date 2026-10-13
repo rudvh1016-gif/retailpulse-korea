@@ -22,7 +22,7 @@ process.env.NEXT_PUBLIC_SITE_ORIGIN ??= "https://koretaildata.com";
 process.env.RPK_DEPLOYMENT_STAGE = "production";
 
 const { runDiscoverabilityChecks } = await import("../lib/discoverability.ts");
-const { seoLocales, seoPath, standaloneSeoSlugs, tourismDeskAreas, pageTitle, pageDescription, siteOrigin } =
+const { seoLocales, seoPath, standaloneSeoSlugs, tourismDeskAreas, pageTitle, pageDescription, siteOrigin, canonicalSlug } =
   await import("../app/seo-config.ts");
 
 // The fixture site serves whatever origin THIS build is configured for. CI
@@ -378,7 +378,11 @@ test("every sitemap entry declares all four locales plus x-default", () => {
   // Without this, an empty sitemap would pass by iterating nothing — which is
   // exactly how this test first passed under the staging flag while the two
   // beside it failed.
-  assert.equal(entries.length, seoLocales.length * (standaloneSeoSlugs.length + 1 + tourismDeskAreas.length));
+  // A slug that serves the home's page (airport-glance since PR #357) is listed once, as the home.
+  const listed = standaloneSeoSlugs.filter((slug) => canonicalSlug(slug) === slug);
+  assert.equal(entries.length, seoLocales.length * (listed.length + 1 + tourismDeskAreas.length));
+  assert.equal(entries.filter((entry) => entry.url.endsWith("/airport-glance")).length, 0,
+    "the glance URL names the home as canonical, so the sitemap lists only the home");
   for (const entry of entries) {
     const languages = entry.alternates?.languages ?? {};
     assert.deepEqual(
@@ -427,10 +431,21 @@ test("every response a crawler can get from a content API tells it not to index"
   // path is asserted in tests/summary-round-trips.test.mjs.
   const summary = await import("../app/api/live/summary/route.ts");
   const predictions = await import("../app/api/live/predictions/route.ts");
+  const flights = await import("../app/api/live/flights/route.ts");
+  const airportMonths = await import("../app/api/live/airport-months/route.ts");
+  const airportDays = await import("../app/api/live/airport-days/route.ts");
+  const commercialMonths = await import("../app/api/live/commercial-months/route.ts");
+  const usual = await import("../app/api/live/usual/route.ts");
   const responses = {
     "summary (degraded)": await summary.GET(new Request(`${ORIGIN}/api/live/summary`)),
     "predictions (unknown area)": await predictions.GET(new Request(`${ORIGIN}/api/live/predictions?area=nowhere`)),
     "predictions (unavailable)": await predictions.GET(new Request(`${ORIGIN}/api/live/predictions?area=hongdae`)),
+    // The pages these four render (home, airport, consumption, store) became crawlable on 2026-10-13.
+    "flights (unavailable)": await flights.GET(new Request(`${ORIGIN}/api/live/flights`)),
+    "airport-months (unavailable)": await airportMonths.GET(new Request(`${ORIGIN}/api/live/airport-months`)),
+    "airport-days (unavailable)": await airportDays.GET(new Request(`${ORIGIN}/api/live/airport-days`)),
+    "commercial-months (unavailable)": await commercialMonths.GET(new Request(`${ORIGIN}/api/live/commercial-months?area=myeongdong`)),
+    "usual (unavailable)": await usual.GET(new Request(`${ORIGIN}/api/live/usual?area=myeongdong`)),
   };
   assert.deepEqual(
     Object.fromEntries(Object.entries(responses).map(([name, response]) => [name, response.headers.get("x-robots-tag")])),
@@ -493,14 +508,15 @@ test("metadata is compared as a reader sees it, not as HTML spells it", () => {
   assert.equal(decodeHtmlText("&lt;b&gt; &quot;q&quot; &#39;a&#39;"), `<b> "q" 'a'`);
   assert.equal(decodeHtmlText("&amp;amp;"), "&amp;", "one pass only; a double-decode would corrupt real text");
   assert.equal(decodeHtmlText("nothing to decode"), "nothing to decode");
-  assert.ok(pageTitle("en").includes("&"), "if this stops being true the regression above stops being covered");
+  // The /en home title lost its ampersand when the home became the airport glance; /en/airport (also checked live) keeps one.
+  assert.ok(pageTitle("en", "airport").includes("&"), "if this stops being true the regression above stops being covered");
 });
 
 test("a real ampersand in served metadata is not mistaken for a stale build", async () => {
   const report = await run({});
   assert.equal(report.ok, true, `unexpected failures: ${failing(report).join(", ")}`);
-  const enTitle = report.notes.find((note) => note.page === "/en")?.title;
-  assert.equal(enTitle, pageTitle("en"));
+  const enTitle = report.notes.find((note) => note.page === "/en/airport")?.title;
+  assert.equal(enTitle, pageTitle("en", "airport"));
 });
 
 
@@ -509,14 +525,14 @@ test("content API exceptions do not expose sibling or nested internal paths", as
   const rules = robots().rules;
   const text = ["User-agent: *", ...[rules.allow].flat().map(path => `Allow: ${path}`),
     ...[rules.disallow].flat().map(path => `Disallow: ${path}`)].join("\n");
-  for (const path of ["/api/live/summary", "/api/live/predictions"]) {
+  for (const path of crawlableContentApis) {
     assert.equal(robotsAllows(text, path), true);
     assert.equal(robotsAllows(text, `${path}?date=2026-09-27&area=hongdae`), true);
     for (const suffix of ["-internal", "/debug", "Backup", "/"]) {
       assert.equal(robotsAllows(text, `${path}${suffix}`), false, `${path}${suffix}`);
     }
   }
-  for (const path of ["/api/health", "/api/live/flights", "/api/beta-signups"]) {
+  for (const path of ["/api/health", "/api/beta-signups", "/api/live/duty-free-exchange", "/api/live/events"]) {
     assert.equal(robotsAllows(text, path), false);
   }
 });

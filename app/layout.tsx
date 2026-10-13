@@ -57,12 +57,11 @@ export default async function RootLayout({
         {children}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           "@context": "https://schema.org",
-          "@type": ["WebSite", "WebApplication"],
+          // WebSite only: WebApplication needs ratings or reviews Google can show, which this site does not have.
+          "@type": "WebSite",
           name: "KORETAIL",
           alternateName: "KORETAIL · Retail Demand Signals for Korea",
           url: siteOrigin,
-          applicationCategory: "TravelApplication",
-          operatingSystem: "Web",
           inLanguage: ["ko-KR", "en", "zh-CN", "ja-JP"],
           description: "Retail demand signals for Korea, combining foreign-visitor, airport and store-operating context for Seoul.",
         }) }} />

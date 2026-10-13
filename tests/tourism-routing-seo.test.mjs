@@ -58,7 +58,7 @@ test("the former flat route redirects and only nested Tourism Desk URLs enter th
   assert.match(redirectPage, /permanentRedirect\(`\/\$\{locale\}\/tourism-desk\/myeongdong`\)/);
   assert.match(areaPage, /tourismDeskAreas\.map/);
   assert.match(areaPage, /initialView="tourism-desk"/);
-  assert.match(sitemap, /standaloneSeoSlugs\.map/);
+  assert.match(sitemap, /standaloneSeoSlugs(\.filter\([^\n]*?\))?\.map/);
   assert.match(sitemap, /tourismDeskAreas\.map/);
 
   // Asserting that the SOURCE TEXT contains `tourism-desk/${area}` only proved

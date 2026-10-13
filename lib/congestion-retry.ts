@@ -52,6 +52,7 @@ interface ResultLine {
   source: string;
   status: string;
   detail?: string;
+  providerRequests?: number;
 }
 
 /**
@@ -77,6 +78,7 @@ export function parseCollectorResults(log: string): ResultLine[] {
       source: record.source,
       status: record.status,
       detail: typeof record.detail === "string" ? record.detail : undefined,
+      providerRequests: typeof record.providerRequests === "number" ? record.providerRequests : undefined,
     });
   }
   return results;
@@ -183,5 +185,46 @@ export function decideCongestionRetry(log: string): RetryDecision {
     sources.push(source);
   }
 
+  return { sources, decisions };
+}
+
+/**
+ * The weekly Seoul quarter checks (collect-sales.yml) that may earn a fresh
+ * runner. On 2026-10-11 (run 38099853388) estimated sales and Store Dynamics
+ * both died on their FIRST request with a ~10 s TCP connect timeout from one
+ * runner, while another runner reached openapi.seoul.go.kr about 30 s later —
+ * the per-runner egress failure a new runner fixes and a retry inside the same
+ * job does not.
+ *
+ * Only that signature qualifies: status ERROR, every failure a NETWORK connect
+ * timeout, and exactly one provider request made by THIS source. Auth errors,
+ * HTTP 403/429, quota and every Seoul result code (reported as VALIDATION or
+ * HTTP), a timeout after the connection opened, and a connect timeout after
+ * this source had already been answered are not it, and earn nothing. The gate
+ * is per source: one source succeeding on the runner does not stop the other's
+ * first-request connect timeout from earning its bounded retry.
+ */
+export const RETRYABLE_WEEKLY_SEOUL_SOURCES = ["seoul_sales", "store_dynamics"] as const;
+export type RetryableWeeklySeoulSource = (typeof RETRYABLE_WEEKLY_SEOUL_SOURCES)[number];
+
+export function decideWeeklySeoulRetry(log: string): { sources: RetryableWeeklySeoulSource[]; decisions: SourceDecision[] } {
+  const latest = new Map<string, ResultLine>();
+  for (const result of parseCollectorResults(log)) latest.set(result.source, result);
+  const sources: RetryableWeeklySeoulSource[] = [];
+  const decisions: SourceDecision[] = [];
+  for (const source of RETRYABLE_WEEKLY_SEOUL_SOURCES) {
+    const result = latest.get(source);
+    if (!result) {
+      decisions.push({ source, verdict: "RESULT_UNKNOWN", detail: "no result line for this source in this attempt; a request is never spent on a guess" });
+    } else if (result.status === "SUCCESS" || result.status === "PARTIAL" || result.status.startsWith("SKIPPED_")) {
+      decisions.push({ source, verdict: "ALREADY_HEALTHY", detail: `status ${result.status}` });
+    } else if (result.status === "ERROR" && isFreshRunnerFailure(result.detail) && result.providerRequests === 1) {
+      sources.push(source);
+      decisions.push({ source, verdict: "RETRY_FRESH_RUNNER", detail: result.detail ?? "" });
+    } else {
+      // NEEDS_KEY lands here too: a missing key is a failure, never "healthy".
+      decisions.push({ source, verdict: "FAILED_FOR_ANOTHER_REASON", detail: `status ${result.status}; ${result.detail ?? "no detail"}; providerRequests ${result.providerRequests ?? "unknown"}` });
+    }
+  }
   return { sources, decisions };
 }
