@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { setAnalyticsConsent, trackPersonalEvent } from "../lib/personal-analytics";
-import { usePersonalPreferences } from './personal-preferences';
+import { trackPersonalEvent } from "../lib/personal-analytics";
 import {
   detectInstallPlatform,
   installGuide,
@@ -87,8 +86,6 @@ function subscribeToNothing() {
 }
 
 export function InstallAppButton({ lang }: { lang: InstallLang }) {
-  const {ready,preferences} = usePersonalPreferences();
-  useEffect(() => { if(ready) setAnalyticsConsent(preferences?.analytics ?? false); }, [ready,preferences?.analytics]);
   const guide = installGuide(lang);
   const compactLabel = { ko: '앱 설치', en: 'Install', zh: '安装', ja: '追加' }[lang];
   const [open, setOpen] = useState(false);
