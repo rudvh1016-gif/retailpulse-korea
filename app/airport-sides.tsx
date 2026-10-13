@@ -12,6 +12,7 @@ import { OFFICIAL_LINKS, count, hourSpan, sidesCopy as copy } from '../lib/airpo
 import { splitFromSummary } from '../lib/airport-flight-split';
 import { estimateBasisLine, estimateBody, estimateNote, flightsBody, hourBody, sharesBody, splitCopy } from '../lib/airport-flight-split-copy';
 import './airport-split-details.css';
+import {GateDistributionBar,GateDistributionLegend} from './gate-distribution-bar';
 
 type Side = AirportSide | null;
 
@@ -169,6 +170,7 @@ export function AirportSidesBlock({ lang, summary, terminal, side, hours, nowIso
     const result = splitFromSummary(summary, sides, terminal, nowIso);
     return result.status === 'OK' ? result.split.hours.map((row) => [row.hour, row] as const) : [];
   })();
+  const maximumHour=Math.max(1,...hourRows.map(hour=>hour.byArea[terminal].total));
   const upcomingHours = today ? hourRows.filter((row) => row.hour >= nowHour) : hourRows;
   const splitHours = new Map(flightSplitHours);
   const splitStatus = splitFromSummary(summary, sides, terminal, nowIso).status;
@@ -190,8 +192,8 @@ export function AirportSidesBlock({ lang, summary, terminal, side, hours, nowIso
       <p className="prep-note" data-testid="gates-stale">{splitCopy.unavailable.STALE[lang]}</p>
       {gates.retrievedAt && <p className="prep-note" data-testid="gates-basis">{sides.gateBasis === 'OFFICIAL_DEPARTURE_SCHEDULE' ? copy.schedule[lang] : copy.collected[lang]} {prepTime(gates.retrievedAt, serviceDate, lang)}</p>}
     </> : gates ? <>
-      <p data-testid="gates-areas">{(['T1', 'T2', 'CONCOURSE', 'UNKNOWN'] as const).map((area) => `${copy.area[area][lang]} ${gates.byArea[area].total}${copy.flights[lang]}`).join(' · ')}</p>
-      <p data-testid="gates-sides"><strong>{copy.area[terminal][lang]}</strong> {countsLine(gates.byArea[terminal], lang)}</p>
+      <div className="gate-building-totals" data-testid="gates-areas">{(['T1', 'T2', 'CONCOURSE', 'UNKNOWN'] as const).map(area=><div key={area}><strong>{copy.area[area][lang]}</strong>{' '}<span>{gates.byArea[area].total}{copy.flights[lang]}</span></div>)}</div><GateDistributionLegend lang={lang}/>
+      <div data-testid="gates-sides"><strong>{copy.area[terminal][lang]}</strong> {countsLine(gates.byArea[terminal], lang)}<GateDistributionBar counts={gates.byArea[terminal]}/></div>
       {(() => {
         const counts = gates.byArea[terminal];
         const reasons = gates.unverifiedByArea?.[terminal];
@@ -204,10 +206,10 @@ export function AirportSidesBlock({ lang, summary, terminal, side, hours, nowIso
         </>;
       })()}
       {gates.cancelled > 0 && <p className="prep-note">{copy.cancelled[lang]} ({gates.cancelled}{copy.flights[lang]})</p>}
-      <p className="prep-note">{splitCopy.perHour[lang]} · {copy.scheduledHour[lang]}</p>
-      <ul className="prep-side-hours" data-testid="gates-upcoming">{upcomingHours.slice(0, 6).map((row) => <li key={row.hour}>{hourLine(row)}</li>)}</ul>
+      <p className="prep-note">{splitCopy.perHour[lang]} · {copy.scheduledHour[lang]}</p><p className="prep-note" data-testid="gate-bar-basis">{({ko:'막대는 중앙·미확인 포함 전체 편수 · 시간대 막대 길이는 하루 최다 시간대 기준 · 동서 비중은 동편+서편 합계 기준',en:'Bars include centre and unknown flights · hourly length uses the busiest hour of the day · east/west percentages use east + west only',zh:'条形含中央与未确认航班 · 小时长度以全天最多时段为基准 · 东西比例仅以东加西为基数',ja:'棒は中央・未確認を含む全便数 · 時間別の長さは終日最多の時間が基準 · 東西比率は東＋西のみが分母'})[lang]}</p>
+      <ul className="prep-side-hours gate-hour-distribution" data-testid="gates-upcoming">{upcomingHours.slice(0, 6).map((row) => <li key={row.hour}><span>{hourLine(row)}</span><GateDistributionBar counts={row.byArea[terminal]} maximum={maximumHour}/></li>)}</ul>
       <details className="prep-evidence"><summary>{copy.showAll[lang]}</summary>
-        <ul className="prep-side-hours" data-testid="gates-all">{hourRows.map((row) => <li key={row.hour}>{hourLine(row)}</li>)}</ul>
+        <ul className="prep-side-hours gate-hour-distribution" data-testid="gates-all">{hourRows.map((row) => <li key={row.hour}><span>{hourLine(row)}</span><GateDistributionBar counts={row.byArea[terminal]} maximum={maximumHour}/></li>)}</ul>
       </details>
       {gates.retrievedAt && <p className="prep-note" data-testid="gates-basis">{sides.gateBasis === 'OFFICIAL_DEPARTURE_SCHEDULE' ? copy.schedule[lang] : copy.collected[lang]} {prepTime(gates.retrievedAt, serviceDate, lang)}</p>}
     </> : <p className="prep-note" data-testid="gates-unavailable">{sides.gatesUnavailable === 'CAPPED' ? copy.capped[lang] : copy.noFlights[lang]}</p>}

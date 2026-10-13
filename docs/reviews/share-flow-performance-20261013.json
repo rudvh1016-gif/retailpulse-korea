@@ -1,0 +1,89 @@
+{
+  "at": "2026-10-13T11:17:19.791Z",
+  "before": "9a1364227d1bdb3c86334f36150bd901ccce3063",
+  "after": "a9f2bf0a2fd9da25ce820a6e45c8392ad14141a3",
+  "conditions": "Local production builds via identical uncompressed static-asset proxy (Windows vinext start static asset routing limitation); same fixture /ko/business; Chrome390x844,DPR1,reduced motion,cold cache,CPU4x,1.6Mbps down,0.6Mbps up,150ms latency; alternating before/after,3 each; networkidle+2s observation. Retrospective clean-base comparison, not public PSI. Blocking is long-task excess over50ms, not Lighthouse TBT.",
+  "medians": {
+    "before": {
+      "lcp": 6304,
+      "cls": 0.5142260491159746,
+      "blocking": 153,
+      "bytes": 1534221,
+      "requests": 35
+    },
+    "after": {
+      "lcp": 6308,
+      "cls": 0.5142260491159746,
+      "blocking": 131,
+      "bytes": 1540256,
+      "requests": 35
+    }
+  },
+  "runs": [
+    {
+      "phase": "before",
+      "iteration": 1,
+      "lcp": 6324,
+      "cls": 0.5142260491159746,
+      "blocking": 162,
+      "overflow": false,
+      "bytes": 1534221,
+      "requests": 35
+    },
+    {
+      "phase": "after",
+      "iteration": 1,
+      "lcp": 6320,
+      "cls": 0.65409827665596,
+      "blocking": 122,
+      "overflow": false,
+      "bytes": 1541250,
+      "requests": 35
+    },
+    {
+      "phase": "before",
+      "iteration": 2,
+      "lcp": 6304,
+      "cls": 0.5142260491159746,
+      "blocking": 153,
+      "overflow": false,
+      "bytes": 1534221,
+      "requests": 35
+    },
+    {
+      "phase": "after",
+      "iteration": 2,
+      "lcp": 6308,
+      "cls": 0.5142260491159746,
+      "blocking": 135,
+      "overflow": false,
+      "bytes": 1540256,
+      "requests": 35
+    },
+    {
+      "phase": "before",
+      "iteration": 3,
+      "lcp": 6272,
+      "cls": 0.5142260491159746,
+      "blocking": 131,
+      "overflow": false,
+      "bytes": 1534221,
+      "requests": 35
+    },
+    {
+      "phase": "after",
+      "iteration": 3,
+      "lcp": 6284,
+      "cls": 0.5142260491159746,
+      "blocking": 131,
+      "overflow": false,
+      "bytes": 1540256,
+      "requests": 35
+    }
+  ],
+  "limitations": [
+    "Retrospective baseline, not a pre-edit production measurement.",
+    "CLS median remains high at 0.514 in both fixture-backed builds. First after sample is 0.654; no layout stability improvement is claimed.",
+    "No public Lighthouse/PSI result. Existing loading behavior is outside this PR and owned by separate Claude work."
+  ]
+}

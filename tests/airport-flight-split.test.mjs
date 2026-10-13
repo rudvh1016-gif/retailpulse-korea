@@ -234,11 +234,12 @@ test("the prep facts, the copied text and the image carry the same numbers as th
     const doc = buildShareDocument({ prep, serviceDate: DATE, place: { kind: "airport", terminal: "T2", side: null }, industry: "beauty", hours: null, lang, link: shareLink("https://koretaildata.com", lang, DATE), savedAt: "2026-09-29T01:00:00.000Z" });
     const text = shareText(doc);
     const lines = doc.lines.map((line) => line.text);
-    for (const fact of [flightsFact, estimateFact]) {
-      const line = factLine(fact, DATE, lang);
+    for (const fact of [flightsFact]) {
+      const line = flightSentence(fact.split, lang);
       assert.ok(text.includes(line), `${lang}: copy text`);
       assert.ok(lines.includes(line), `${lang}: image lines`);
     }
+    assert.ok(!text.includes(factLine(estimateFact, DATE, lang)), "withheld passenger allocation is not exported");
     assert.ok(factLine(flightsFact, DATE, lang).includes(flightSentence(split, lang)));
     assert.ok(factLine(estimateFact, DATE, lang).includes(estimateSentence({ terminal: "T2", ...split.expected }, lang)));
     assert.ok(factLine(estimateFact, DATE, lang).includes(splitCopy.estimateNote[lang]), `${lang}: the short warning travels with the number`);
@@ -308,11 +309,11 @@ test("the share lists the whole-day comparison apart from the store hours, with 
   const doc = buildShareDocument({ prep, serviceDate: DATE, place, industry: "beauty", hours: { open: "02:00", close: "03:00" }, lang: "ko", link: shareLink("https://koretaildata.com", "ko", DATE), savedAt: "2026-09-29T01:00:00.000Z" });
   const text = shareText(doc);
   const at = (needle) => text.indexOf(needle);
-  assert.ok(at("■ 영업시간 안에서 확인된 사실") < at("■ 하루 전체 참고 (영업시간과 무관)"));
+  assert.ok(at("■ 지금 핵심") < at("■ 하루 전체 참고 (영업시간과 무관)"));
   assert.ok(at("■ 하루 전체 참고 (영업시간과 무관)") < at("T2 출발편(하루 전체)"), "the flight line sits under the whole-day heading");
-  assert.ok(at("■ 하루 전체 참고 (영업시간과 무관)") < at("항공편 비율로 나눈 참고값(하루 전체)"));
+  assert.equal(at("항공편 비율로 나눈 참고값(하루 전체)"), -1);
   assert.ok(at("■ 하루 전체 참고 (영업시간과 무관)") < at("■ 준비할 일"));
-  assert.match(text, /자료 기준: .*인천공항 공식 출국 예상 .* · 인천공항 운항 정보/);
-  assert.match(text, /출처: .*인천공항 공식 출국 예상.*인천공항 운항 정보/);
+  assert.match(text, /출처 · 자료 기준: .*인천공항 운항 정보/);
+  assert.equal((text.match(/출처 · 자료 기준:/g)||[]).length, 1);
   assert.doesNotMatch(text, /자료 기준: 없음/);
 });

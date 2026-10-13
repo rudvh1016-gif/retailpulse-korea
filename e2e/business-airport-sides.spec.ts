@@ -56,7 +56,7 @@ test('until the notice condition is met, hall sides are withheld and point to th
   await expect(sides.getByTestId('halls-withheld')).toContainText('안내문구 협의');
   await expect(sides.getByTestId('halls-withheld').getByRole('link')).toHaveAttribute('href', 'https://www.airport.kr/ap_ko/883/subview.do');
   // Codeshares once, cancelled apart, the concourse and T2 kept separate.
-  await expect(sides.getByTestId('gates-areas')).toHaveText('T1 본관 5편 · T2 1편 · 탑승동 1편 · 터미널 미확인 0편');
+  await expect(sides.getByTestId('gates-areas').locator('>div')).toHaveText(['T1 본관 5편','T2 1편','탑승동 1편','터미널 미확인 0편']);await expect(sides.getByTestId('gates-sides').locator('svg rect[data-side=CENTER]')).toHaveAttribute('width','20');await expect(sides.getByTestId('gates-sides').locator('svg rect[data-side=UNVERIFIED]')).toHaveAttribute('width','20');
   await expect(sides.getByTestId('gates-sides')).toContainText('동편 2편 · 서편 1편 · 중앙 1편 · 위치 미확인 1편');
   await expect(sides).toContainText('결항편은 합계에서 제외했습니다 (1편)');
   // T1 has 4 of 5 flights at a gate with an evidenced side: the east count is partial.
@@ -235,13 +235,13 @@ test('screen, copied text and image carry the same lines, and the whole-day line
   const text = await page.evaluate(() => navigator.clipboard.readText());
   expect(text).toContain(flights);
   expect(text).toContain(shares);
-  expect(text).toContain(estimate);
-  expect(text).toContain(splitCopy.estimateNote.ko);
-  expect(text).toContain(splitCopy.concourseNote.ko);
-  expect(text).toContain('편당 승객 수가 같다는 가정의 참고값');
-  expect(text.indexOf('■ 하루 전체 참고 (영업시간과 무관)')).toBeGreaterThan(text.indexOf('■ 영업시간 안에서 확인된 사실'));
+  expect(text).not.toContain(estimate);
+  expect(text).not.toContain(splitCopy.estimateNote.ko);
+  expect(text).not.toContain(splitCopy.concourseNote.ko);
+  expect(text).not.toContain('편당 승객 수가 같다는 가정의 참고값');
+  expect(text.indexOf('■ 하루 전체 참고 (영업시간과 무관)')).toBeGreaterThan(text.indexOf('■ 지금 핵심'));
   expect(text.indexOf('■ 하루 전체 참고 (영업시간과 무관)')).toBeLessThan(text.indexOf('■ 준비할 일'));
-  expect(text).toMatch(/출처: .*인천공항 공식 출국 예상.*인천공항 운항 정보/);
+  expect(text).toMatch(/출처 · 자료 기준: .*인천공항 운항 정보/);
   const download = page.waitForEvent('download');
   await prep.getByTestId('prep-share').getByRole('button', { name: '이미지 저장' }).click();
   expect((await download).suggestedFilename()).toMatch(/\.png$/);
@@ -308,4 +308,11 @@ test('the basis panel names both the official text and the official map as evide
   await expect(basis).toContainText('공식 지도');
   await expect(basis).toContainText('예상 출국객 참고 추정');
   await expect(basis.getByRole('link', { name: '공항 공식 지도' })).toHaveAttribute('href', /airport\.kr\/geomap/);
+});
+
+for(const width of [390,1440])test(`gate bar visual review ${width}`,async({page})=>{
+ const prep=await open(page,{width,side:null}),sides=prep.getByTestId('airport-sides');await sides.getByTestId('gates-areas').scrollIntoViewIfNeeded();
+ await expect(sides.locator('.gate-distribution-legend')).toHaveText('서편중앙동편위치 미확인');await expect(sides.getByTestId('gate-bar-basis')).toContainText('중앙·미확인 포함 전체 편수');
+ const bar=sides.getByTestId('gates-sides').locator('svg');await expect(bar.locator('rect[data-side=WEST]')).toHaveAttribute('width','20');await expect(bar.locator('rect[data-side=CENTER]')).toHaveAttribute('width','20');await expect(bar.locator('rect[data-side=EAST]')).toHaveAttribute('width','40');await expect(bar.locator('rect[data-side=UNVERIFIED]')).toHaveAttribute('width','20');
+ await page.screenshot({path:test.info().outputPath(`gate-bars-${width}.png`)});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
