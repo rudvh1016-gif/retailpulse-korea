@@ -12,6 +12,7 @@ import {mainBuildingMonth} from '../lib/airport-monthly-building';
 import {previousFlightMonth,type AirportMonthlyRollups} from '../lib/airport-monthly-flights';
 import {selectedZoneShares} from '../lib/airport-zone-shares';
 import {kstDayOf} from '../lib/kst';
+import {transferForecastTotal} from '../lib/passenger-reference-sum';
 import {friendlyCheckpointName} from '../lib/airport-today-summary';
 import './airport-glance-preview.css';
 interface MonthReply{status:string;month:string;data:AirportMonthlyRollups|null;calculatedAt:string|null}
@@ -44,10 +45,10 @@ const insightCopy={
  ja:{wait:'現在最も長い出国場の待ち時間',waitBasis:'確認できる新しい観測の中で',upcoming:'今後の出発便が集中する時間帯',upcomingBasis:'出発予定便数 · 旅客の混雑ではありません',growth:'前月比で日平均が最も増えた目的地',noGrowth:'比較できる増加なし',noUpcoming:'現在以降の出発予定便なし',unavailable:'確認できる資料なし',minute:'分',observed:'観測',waitShort:'待ち',tie:'同順位',shared:'T1出国場を利用',growthTitle:'前月比の日平均増減 · 上位5件'},
 } as const;
 const passengerCopy={
- ko:{today:'오늘 예상 출국객',selected:'선택일 예상 출국객',people:'명',basis:'인천공항 공식 일 예보',shared:'T1 공통(탑승동 포함)',collected:'수집',partial:'일 합계 자료 불완전'},
- en:{today:'Today’s expected departures',selected:'Selected-day expected departures',people:' people',basis:'Incheon official daily forecast',shared:'Shared T1 (incl. concourse)',collected:'Collected',partial:'Incomplete daily forecast'},
- zh:{today:'今日预计出境旅客',selected:'所选日预计出境旅客',people:'人',basis:'仁川机场官方全天预测',shared:'T1共用（含登机楼）',collected:'采集',partial:'全天预测不完整'},
- ja:{today:'今日の予想出国者数',selected:'選択日の予想出国者数',people:'人',basis:'仁川空港公式の一日予測',shared:'T1共通（搭乗棟含む）',collected:'取得',partial:'一日予測が不完全'},
+ ko:{transfer:'예상 환승객',transferBasis:'환승 보안검색 기준 · 도착일',today:'오늘 예상 출국객',selected:'선택일 예상 출국객',people:'명',basis:'인천공항 공식 일 예보',shared:'T1 공통(탑승동 포함)',collected:'수집',partial:'일 합계 자료 불완전'},
+ en:{transfer:'Expected transfers',transferBasis:'Transfer security · arrival date',today:'Today’s expected departures',selected:'Selected-day expected departures',people:' people',basis:'Incheon official daily forecast',shared:'Shared T1 (incl. concourse)',collected:'Collected',partial:'Incomplete daily forecast'},
+ zh:{transfer:'预计中转旅客',transferBasis:'中转安检口径 · 到达日',today:'今日预计出境旅客',selected:'所选日预计出境旅客',people:'人',basis:'仁川机场官方全天预测',shared:'T1共用（含登机楼）',collected:'采集',partial:'全天预测不完整'},
+ ja:{transfer:'予想乗継客',transferBasis:'乗継保安検査基準・到着日',today:'今日の予想出国者数',selected:'選択日の予想出国者数',people:'人',basis:'仁川空港公式の一日予測',shared:'T1共通（搭乗棟含む）',collected:'取得',partial:'一日予測が不完全'},
 } as const;
 export default function AirportGlancePreview({lang,artworkSrc=null,published=false,selectedDate=null,onDateChange}:{lang:Lang;artworkSrc?:string|null;published?:boolean;selectedDate?:string|null;onDateChange?:(date:string|null)=>void}){
  const c=copy[lang],ui=interfaceCopy[lang],dc=destinationCopy[lang],ic=insightCopy[lang];
@@ -82,6 +83,7 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
  const forecastTotal=scope==='all'?forecastAirport?.todayExpectedPassengersTotal:forecastAirport?.todayExpectedPassengersByTerminal?.[forecastTerminal];
  const forecastPassengers=forecastCoverage==='COMPLETE'&&typeof forecastTotal==='number'&&Number.isFinite(forecastTotal)&&forecastTotal>=0?forecastTotal:null;
  const forecastAt=scope==='all'?forecastAirport?.passengerForecastRetrievedAt:forecastAirport?.passengerForecastRetrievedAtByTerminal?.[forecastTerminal];
+ const transferPassengers=forecastAirport?transferForecastTotal(day,scope==='all'?'all':forecastTerminal,forecastAirport.transferForecast):null;
  const queues=isToday?summary?.airport.congestion??[]:[],wait=glanceLongestWait(queues.filter(row=>scope==='all'||row.terminal===(scope==='CONCOURSE'?'T1':scope)),clock);
  const futureReady=Boolean(data&&summary&&Number.isFinite(clock)&&Number.isFinite(Date.parse(summary.generatedAt)));
  const upcoming=futureReady&&data?glanceUpcoming(day,data.departures,clock):null;
@@ -120,7 +122,10 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
   <div className="glance-controls"><div role="group" aria-label={ui.terminal}>{(['all','T1','CONCOURSE','T2'] as const).map(value=><button key={value} aria-label={value==='all'?c.all:value==='CONCOURSE'?c.concourse:value} aria-pressed={scope===value} onClick={()=>setScope(value)}>{value==='all'?c.all:value==='T1'?mainLabel:value==='CONCOURSE'?c.concourse:value}{scope===value&&<i className="glance-selection-rule" aria-hidden="true"/>}</button>)}</div><label>{c.date}<input type="date" value={day} onChange={event=>{if(event.target.value)setDate(event.target.value);}}/></label><button onClick={()=>setDate(null)}>{c.today}</button><span>KST</span></div>
   <p className="glance-shared-note" data-testid="glance-shared-processing">{sharedNote}</p>
   <section className="glance-insights" aria-label={ui.summary}>
+   <div className="glance-passenger-pair">
    <a className="glance-passengers" href={`/${lang}/airport?terminal=${scope==='all'?'all':forecastTerminal}&date=${day}#airport-forecast-title`} data-testid="glance-key-passengers"><span>{isToday?pc.today:pc.selected}</span><strong>{forecastPassengers!==null?`${fmt.format(forecastPassengers)}${pc.people}`:forecastCoverage==='PARTIAL'?pc.partial:summary===undefined?c.loading:ic.unavailable}</strong><small>{day||'—'} · {forecastScope} · {pc.basis} · {pc.collected} {stamp(forecastAt)}</small></a>
+   <a className="glance-transfers" href={`/${lang}/airport?terminal=${scope==='all'?'all':forecastTerminal}&date=${day}#airport-forecast-title`} data-testid="glance-key-transfers"><span>{pc.transfer}</span><strong>{transferPassengers!==null?`${fmt.format(transferPassengers)}${pc.people}`:summary===undefined?c.loading:ic.unavailable}</strong><small>{day||'—'} · {forecastScope} · {pc.transferBasis}</small></a>
+   </div>
    <a href={`${details}#airport-checkpoints-title`} data-testid="glance-key-wait"><span>{ic.wait}</span><strong>{wait?`${wait.row.terminal} ${friendlyCheckpointName(wait.row.zone,lang)} · ${waitValue(wait)}`:pendingText??ic.unavailable}</strong><small>{wait?`${shortTime(wait.row.observedAt)} KST · ${ic.waitBasis}${wait.tied?` · ${ic.tie}`:''}`:ic.waitBasis}</small></a>
    <a href={`${details}#airport-departure-model-slot`} data-testid="glance-key-upcoming"><span>{ic.upcoming}</span><strong>{upcoming?`${minuteText(upcoming.startMin)}–${minuteText(upcoming.endMin)} · ${upcoming.flights} ${c.unit}`:futureReady?ic.noUpcoming:pendingText??ic.unavailable}</strong><small>{day||'—'} KST · {ic.upcomingBasis}{upcoming?.tied?` · ${ic.tie}`:''}</small></a>
    <a href={`${details}#airport-monthly-flights`} data-testid="glance-key-growth"><span>{ic.growth}</span><strong>{growth?<>{countryLabel(growth.country)} <ChangeRate value={growth.percent} lang={lang}/>{ranking[1]?.percent===growth.percent?` · ${ic.tie}`:''}</>:ranking.length?ic.noGrowth:pendingText??ic.unavailable}</strong><small>{previousMonth||'—'} → {month||'—'} · {ui.days} {previous?.includedDays.length??'—'} / {current?.includedDays.length??'—'} {ui.dayUnit}</small></a>

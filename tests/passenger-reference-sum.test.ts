@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {passengerReferenceSum as sum} from '../lib/passenger-reference-sum';
+import {passengerReferenceSum as sum, transferForecastTotal} from '../lib/passenger-reference-sum';
 const date='2026-09-09';
 const rows=[{terminal:'T1',serviceDate:date,expectedTransferPassengers:559},{terminal:'T2',serviceDate:date,expectedTransferPassengers:10485}];
 test('reference arithmetic retains both components for T1, T2 and all',()=>{
@@ -24,4 +24,14 @@ test('an explicit source zero is distinct from missing and inputs stay unchanged
   assert.deepEqual(sum(39509,'COMPLETE',date,'T2',[{...rows[1],expectedTransferPassengers:0}]),{hall:39509,transfer:0,total:39509});
   sum(39509,'COMPLETE',date,'T2',rows);
   assert.deepEqual(rows,original);
+});
+
+test('standalone transfer forecast shares exact date and terminal rules without a hall value',()=>{
+ assert.equal(transferForecastTotal(date,'all',rows),11044);
+ assert.equal(transferForecastTotal(date,'T1',rows),559);
+ assert.equal(transferForecastTotal(date,'T2',rows),10485);
+ for(const input of [[],rows.slice(0,1),[rows[0],rows[0]],rows.map(r=>({...r,serviceDate:'2026-09-10'}))]) assert.equal(transferForecastTotal(date,'all',input),null);
+ assert.equal(transferForecastTotal(date,'T1',[{...rows[0],expectedTransferPassengers:0}]),0);
+ for(const value of [-1,NaN,Infinity,0.5]) assert.equal(transferForecastTotal(date,'T1',[{...rows[0],expectedTransferPassengers:value}]),null);
+ assert.equal(transferForecastTotal(date,'all',rows.map(r=>({...r,expectedTransferPassengers:Number.MAX_SAFE_INTEGER}))),null);
 });
