@@ -850,6 +850,10 @@ test("the area headline fits one line on a phone, at the owner's own numbers", a
  * faces totalling 3.3 MB, and preloading them all would push 3.3 MB at a
  * reader who needs 241 KB of it. Exactly one must be preloaded per locale, and
  * it must be the one `--font-ui` actually resolves to.
+ *
+ * The home preloads none (owner decision, 2026-10-13): there the preload
+ * competed with the scripts that hydrate the page. The pages that still
+ * preload are checked instead.
  */
 test("each locale preloads exactly one shell font, and it is its own", async ({ page }) => {
   const EXPECTED: Record<string, string> = {
@@ -860,11 +864,13 @@ test("each locale preloads exactly one shell font, and it is its own", async ({ 
   };
 
   for (const [locale, expected] of Object.entries(EXPECTED)) {
-    const response = await page.goto(`/${locale}`);
+    const home = await (await page.goto(`/${locale}`))!.text();
+    expect(home, `/${locale} does not preload a font`).not.toMatch(/<link[^>]*rel="preload"[^>]*as="font"/);
+    const response = await page.goto(`/${locale}/travel-records`);
     const html = await response!.text();
     const fontPreloads = [...html.matchAll(/<link[^>]*rel="preload"[^>]*as="font"[^>]*>/g)].map((match) => match[0]);
 
-    expect(fontPreloads.length, `/${locale} must preload exactly one face, got ${fontPreloads.length}`).toBe(1);
+    expect(fontPreloads.length, `/${locale}/travel-records must preload exactly one face, got ${fontPreloads.length}`).toBe(1);
     expect(fontPreloads[0]).toContain(`href="${expected}"`);
     // Fonts are always fetched in CORS mode; without crossorigin the preload
     // is not reused and the file is downloaded twice.
