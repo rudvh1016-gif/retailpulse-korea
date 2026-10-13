@@ -5,6 +5,7 @@ import { defineConfig, devices } from "@playwright/test";
  * fixtures, no writes: every request is an ordinary public page view.
  */
 export default defineConfig({
+  globalSetup: './scripts/production-revision-setup.mjs',
   testDir: "./e2e-production",
   timeout: 60_000,
   expect: { timeout: 15_000 },

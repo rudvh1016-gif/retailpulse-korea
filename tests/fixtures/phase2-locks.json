@@ -18,7 +18,7 @@
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "fedcfc48b2d7b08dc3cae6cbb625afee413afd788aa7701df1b3d223a8dcf2b2",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
-    "app/layout.tsx": "5751b05b09e86833897a9e9145672af9ae830c538b1f357f9963325d592e06a5",
+    "app/layout.tsx": "5337e23eef5734bf48ef8244b7ba4e93cc19176f870dfd0da2035ebc46e35284",
     "app/live-signals.tsx": "677ad3eb6192dd5bb94a82d5f55550771a65af5a0f436a6a292ac655083c9d00",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "a9ba61da5ef5c66017ae5660b9efd79d74272c2b31eb641ceca749d26548c75c",
@@ -2046,5 +2046,21 @@
     ],
     "protectedPathCount": 65,
     "approvalEvidenceFile": "docs/approvals/display-claude-integration-20261013.json"
+  },
+  "ownerApprovedReleaseVerification20261013": {
+    "status": "OWNER_APPROVED_RELEASE_VERIFICATION_CODE_ONLY",
+    "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+    "authorizationMessage": "Sentinel_bc1118daf27881919bfdc579622a8c7c",
+    "delegatedScope": "Prepare three approved stability follow-ups: exact latest-SHA CI/protection plan, small early existing UI tests, public build SHA tied to API and screen verification. Repository policy mutation needs a separate action-time confirmation; no policy changed here.",
+    "files": [
+      {
+        "path": "app/layout.tsx",
+        "previousSha256": "5751b05b09e86833897a9e9145672af9ae830c538b1f357f9963325d592e06a5",
+        "approvedSha256": "5337e23eef5734bf48ef8244b7ba4e93cc19176f870dfd0da2035ebc46e35284",
+        "exactUnifiedDiff": "diff --git a/app/layout.tsx b/app/layout.tsx\nindex fd97177..93230d0 100644\n--- a/app/layout.tsx\n+++ b/app/layout.tsx\n@@ -1,5 +1,6 @@\n import type { Metadata, Viewport } from \"next\";\n import { headers } from \"next/headers\";\n+import {buildRevision} from '../lib/build-revision';\n import \"./globals.css\";\n import \"./airport-date-calendar.css\";\n import './airport-models.css';\n@@ -8,6 +9,7 @@ import './commercial-scenes.css';\n import { isStagingDeployment, pageTitle, pageDescription, siteOrigin, socialImage, shareDescription } from \"./seo-config\";\n \n export const metadata: Metadata = {\n+  other: {'koretail-build-sha':buildRevision.sha??'unavailable','koretail-build-dirty':String(buildRevision.dirty)},\n   verification: {\n     ...(process.env.GOOGLE_SITE_VERIFICATION?.trim() ? { google: process.env.GOOGLE_SITE_VERIFICATION.trim() } : {}),\n     ...(process.env.NAVER_SITE_VERIFICATION?.trim() ? { other: { 'naver-site-verification': process.env.NAVER_SITE_VERIFICATION.trim() } } : {}),\n"
+      }
+    ],
+    "protectedPathCount": 65,
+    "approvalEvidenceFile": "docs/approvals/release-verification-20261013.json"
   }
 }
