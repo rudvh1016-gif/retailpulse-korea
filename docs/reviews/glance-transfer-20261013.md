@@ -9,3 +9,18 @@
 검증: 타입, lint(오류 0; 기존 img 경고 2), 단위 5개, 브라우저 18개(360/390/430/1440, 4개 언어, 날짜·터미널 변경, 키보드, 실제0/미제공), production vinext build, 서버 HTML 49개, Owner UI Lock 통과. 보호 파일은 변경하지 않았습니다.
 
 `docs/screenshots/glance-transfer-20261013/`의 390/1440 캡처는 로컬 코드에 현재 공개 API 응답을 읽기 전용으로 연결한 검토 화면입니다. 시각과 출처는 evidence.json에 기록했습니다. 캡처 수치는 코드에 고정하지 않았으며 공개 배포 완료를 의미하지 않습니다.
+
+## 2026-10-13 CI assertion repair
+
+CI 38403311944 failed four old four-card assertions after the explicitly separated transfer forecast introduced a fifth insight row
+Updated tests require exactly five rows plus the transfer label, security/arrival-date basis and explicit unavailable value in Korean, English, Chinese and Japanese
+Both HTTP 503 and flight/queue-only fixtures must keep transfers unavailable rather than invent a zero or derive passenger totals from flights
+Localized detail links retain the exact selected date
+
+The monthly comparison case had detached an SSR element during hydration before its initial scroll
+The test now waits for actual app hydration and its expected month value before scrolling, with no sleep, skipped assertion or added retry
+Product UI logic and all protected files are unchanged
+
+Validation: TypeScript and relevant ESLint PASS, all three complete glance/passenger/monthly browser suites 71/71 PASS, existing operational and UI Lock cases 44/44 PASS, formerly flaky monthly case 3/3 repeated executions PASS with retries disabled
+Previous build/render evidence remains applicable because this follow-up changes only tests and this review record
+Hosted full CI must be checked at the new head before declaring the Draft verified

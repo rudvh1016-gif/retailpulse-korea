@@ -38,10 +38,38 @@ test('rapid past-day changes clear present waits and upcoming departures',async(
  await app.locator('input[type=date]').fill('2026-10-09');await app.locator('input[type=date]').fill('2026-10-10');await expect(app.locator('.glance-map-heading')).toContainText('0 편');await expect(app.getByTestId('glance-key-wait')).toContainText('확인 가능한 자료 없음');await expect(app.getByTestId('glance-key-upcoming')).toContainText('현재 이후 예정편 없음');await expect(app.locator('.glance-map-queue')).toHaveCount(0);
  await app.getByRole('button',{name:'오늘',exact:true}).click();await expect(app.locator('.glance-map-heading')).toContainText('300 편');
 });
-test('failed data does not invent any decision or ratio',async({page})=>{
- for(const api of ['summary','flights','airport-months'])await page.route(`**/api/live/${api}*`,route=>route.fulfill({status:503,json:{error:'unavailable'}}));await page.goto('/en/airport-glance-preview');const app=page.getByTestId('airport-glance-preview');await expect(app.locator('.glance-insights strong')).toHaveText(['No verified data','No verified data','No verified data','No verified data']);await expect(app.locator('.glance-destinations li,.glance-ranking tbody tr,.glance-map-queue')).toHaveCount(0);
-});
-for(const lang of ['en','zh','ja'] as const)test(`localized decision summary ${lang}`,async({page})=>{await page.setViewportSize({width:360,height:900});await routeData(page);await page.goto(`/${lang}/airport-glance-preview`);const app=page.getByTestId('airport-glance-preview');await expect(app.locator('.glance-insights a')).toHaveCount(4);await expect(app.locator('.glance-ranking tbody tr')).toHaveCount(5);await expect(app.locator('.glance-map-queue')).toHaveCount(2);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);});
+const transferLocales = {
+ ko: {label:'예상 환승객',basis:'환승 보안검색 기준 · 도착일',missing:'확인 가능한 자료 없음'},
+ en: {label:'Expected transfers',basis:'Transfer security · arrival date',missing:'No verified data'},
+ zh: {label:'预计中转旅客',basis:'中转安检口径 · 到达日',missing:'暂无可核实资料'},
+ ja: {label:'予想乗継客',basis:'乗継保安検査基準・到着日',missing:'確認できる資料なし'},
+} as const;
+for(const lang of ['ko','en','zh','ja'] as const){
+ const copy=transferLocales[lang];
+ test(`failed data does not invent any decision or ratio ${lang}`,async({page})=>{
+  for(const api of ['summary','flights','airport-months'])await page.route(`**/api/live/${api}*`,route=>route.fulfill({status:503,json:{error:'unavailable'}}));
+  await page.goto(`/${lang}/airport-glance-preview`);const app=page.getByTestId('airport-glance-preview');
+  await expect(app.locator('.glance-insights strong')).toHaveText(Array(5).fill(copy.missing));
+  const transfer=app.getByTestId('glance-key-transfers');
+  await expect(transfer.locator('span')).toHaveText(copy.label);
+  await expect(transfer.locator('strong')).toHaveText(copy.missing);
+  await expect(transfer.locator('small')).toContainText(copy.basis);
+  await expect(app.locator('.glance-destinations li,.glance-ranking tbody tr,.glance-map-queue')).toHaveCount(0);
+ });
+ test(`localized decision summary ${lang}`,async({page})=>{
+  await page.setViewportSize({width:360,height:900});await routeData(page);await page.goto(`/${lang}/airport-glance-preview`);const app=page.getByTestId('airport-glance-preview');
+  await expect(app.locator('.glance-insights a')).toHaveCount(5);
+  const transfer=app.getByTestId('glance-key-transfers');
+  await expect(transfer.locator('span')).toHaveText(copy.label);
+  // Flight and queue fixtures do not contain a transfer forecast, so no zero or total may be invented
+  await expect(transfer.locator('strong')).toHaveText(copy.missing);
+  await expect(transfer.locator('small')).toContainText(copy.basis);
+  await expect(transfer.locator('small')).toContainText(date);
+  await expect(transfer).toHaveAttribute('href',new RegExp('date='+date+'#airport-forecast-title$'));
+  await expect(app.locator('.glance-ranking tbody tr')).toHaveCount(5);await expect(app.locator('.glance-map-queue')).toHaveCount(2);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ });
+}
 
 test('missing summary clock cannot turn available flight records into a no-upcoming claim',async({page})=>{
  await page.route('**/api/live/summary*',route=>route.fulfill({status:503,json:{error:'unavailable'}}));await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',serviceDateKst:date,flights,retrievedAt:`${date}T00:00:00Z`,truncated:false}}));await page.route('**/api/live/airport-months*',route=>route.fulfill({json:monthly}));await page.goto('/ko/airport-glance-preview');const app=page.getByTestId('airport-glance-preview');await expect(app.locator('.glance-status')).toHaveText('확인 가능한 자료가 없습니다.');await app.locator('input[type=date]').fill(date);await expect(app.locator('.glance-map-heading')).toContainText('300 편');await expect(app.getByTestId('glance-key-upcoming')).toContainText('확인 가능한 자료 없음');await expect(app.getByTestId('glance-key-upcoming')).not.toContainText('현재 이후 예정편 없음');

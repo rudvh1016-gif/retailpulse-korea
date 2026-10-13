@@ -94,7 +94,7 @@ test('a comparison month chosen for one date does not carry over to another date
  await page.route('**/api/live/summary*',async route=>{const date=new URL(route.request().url()).searchParams.get('date')??summary.todayKst;await route.fulfill({json:{...summary,serviceDateKst:date,airport:{...summary.airport,serviceDateKst:date}}});});
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:reply(new URL(route.request().url()).searchParams.get('month')??undefined)}));
  await page.route('**/api/live/flights*',route=>{const date=new URL(route.request().url()).searchParams.get('date')??summary.todayKst;return route.fulfill({json:{mode:'live-flights',generatedAt:summary.generatedAt,serviceDateKst:date,flights:[],truncated:false,retrievedAt:summary.generatedAt}});});
- await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();
+ await page.goto('/ko/airport');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');const section=page.getByTestId('airport-month-flights');await expect(section.locator('select')).toHaveValue('2026-10');await section.scrollIntoViewIfNeeded();
  const select=section.locator('select'),shortcuts=page.locator('.date-nav-shortcuts button');
  await expect(select).toHaveValue('2026-10');
  // Visit yesterday and come back, so both summaries are cached.
