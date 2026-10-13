@@ -1,4 +1,5 @@
 import {serviceDayCacheControl} from '../../../../lib/service-day-cache';
+import { CONTENT_API_ROBOTS_TAG } from "../../../../lib/crawl-policy";
 import { getDb } from "../../../../db";
 import { isValidKstDay, kstDayOf, relateKstDay, shiftKstDay } from "../../../../lib/kst";
 import { readDepartureSchedule } from "../../../../lib/departure-schedule";
@@ -82,7 +83,7 @@ export async function GET(request: Request) {
       serviceDateKst: serviceDate,
       todayKst: kstToday,
       ...result,
-    }, { headers: { "cache-control": serviceDayCacheControl("public, max-age=120, stale-while-revalidate=600",generatedAt) } });
+    }, { headers: { "cache-control": serviceDayCacheControl("public, max-age=120, stale-while-revalidate=600",generatedAt), "x-robots-tag": CONTENT_API_ROBOTS_TAG } });
   } catch {
     // A failure here must not read as "no flights operated" — the board says
     // the record is unavailable rather than rendering an empty day.
@@ -91,6 +92,6 @@ export async function GET(request: Request) {
       generatedAt,
       serviceDateKst: serviceDate,
       flights: [],
-    }, { status: 200, headers: { "cache-control": "no-store" } });
+    }, { status: 200, headers: { "cache-control": "no-store", "x-robots-tag": CONTENT_API_ROBOTS_TAG } });
   }
 }

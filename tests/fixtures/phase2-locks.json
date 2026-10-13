@@ -11,7 +11,7 @@
     "app/api/beta-signups/route.ts": "12fa56a8ad3c93968fb10744a1bf39781da6e1483772dce2c5b467586fb9c972",
     "app/api/health/route.ts": "06ad9419fed3d5824d78d4fbeee8b8ed7dc780d2e30af5d30ff79e33895906e2",
     "app/api/live/events/route.ts": "f85c532f05c89b1412fbd77a04ff88d5d3b9f8587ddbebad00dbe1c3df9ed7a4",
-    "app/api/live/flights/route.ts": "7263477a03181f96a3cf9a2109b2cb2ccb9d787c2ca6c9af6e8ff4e358288982",
+    "app/api/live/flights/route.ts": "b2646788ee99b61672672f97f3d6dc63876f0da3af938da9d0f83ede5196d0fe",
     "app/api/live/predictions/route.ts": "b82f003bd3d77c293a379c4dbd0bf5e2aa449b19e54a65119ef2e4f291cdfced",
     "app/api/live/summary/route.ts": "96727d7ade580d6a59fa3bcd438a242dae54316060ea259c7d74de40dfee1f3e",
     "app/area-demand-card.tsx": "8209a5fda381f6cf529b8635918e99ed158e6d7864280483083510ea16ba2be5",
@@ -1780,5 +1780,35 @@
     ],
     "protectedPathCount": 65,
     "approvalEvidenceFile": "docs/approvals/home-canonical-seo-20261013.json"
+  },
+  "ownerApprovedRenderApisCrawlable20261013": {
+    "recordedAt": "2026-10-13T02:24:50.874Z",
+    "authorizationEvidence": {
+      "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+      "ownerTaskRequest": "코리테일 속도 개선 마무리와 SEO·GEO를 진행해줘. 무료 범위에서 실제 효과가 있는 수정만 해. … 필요한 변경을 정리해서 검사 통과 후 정상 절차로 병합·배포하고 공개 사이트까지 확인해. 보호 검사를 우회하거나 기준을 낮추지 마.",
+      "approvalQuestion": "보호 파일 변경 승인 요청입니다. PR #346 하나로 처리하고, 화면 디자인·메뉴 구성·이미지·차트·수집 설정은 바꾸지 않습니다.\n\n① app/retailpulse-app.tsx\n  · 최신 main(PR357)을 병합합니다.\n  · 로고 미리 받기를 실제 이동할 화면(공항 한눈에)으로 바꿉니다.\n  · 화면을 옮길 때 브라우저가 고치는 대표 주소도 ②에 맞춥니다.\n② app/seo-config.ts\n  · 홈(4개 언어)의 제목·설명을 지금 화면에 맞게 바꿉니다. 새 문구는 쓰지 않고, 기존에 승인된 '공항 한눈에' 문구를 그대로 씁니다.\n  · 홈과 내용이 같은 /언어/airport-glance의 대표 주소·다국어 연결·구조화 데이터를 홈으로 지정합니다. 메뉴 링크 주소는 그대로입니다.\n  · 홈의 항목 1개짜리 경로 표시(BreadcrumbList)를 없앱니다.\n③ app/sitemap.ts: 중복 주소 4개를 사이트맵에서 뺍니다(68 → 64).\n④ app/layout.tsx: 평점이 없어 구글이 지원하지 않는 WebApplication 유형을 빼고, WebSite만 남깁니다.\n⑤ app/api/live/flights/route.ts · lib/crawl-policy.ts\n  · 검색로봇이 화면을 렌더링할 때 항공편·공항 월별·소비 월별·평소 비교 API를 읽도록 robots.txt에서 허용합니다.\n  · API 응답 자체는 noindex 헤더로 검색 결과에서 빠집니다.\n  · 지금은 막혀 있어서, 구글이 렌더링한 홈에 '자료 없음'이 남습니다. 9월에 Soft 404가 난 것과 같은 원인입니다.\n  · 늘어나는 사용량은 하루 D1 읽기 약 2만 행 이하(무료 한도의 0.4%)와 Worker 요청 수십 건으로 추정합니다.\n\n보호 파일은 아니지만 함께 반영할 것\n  · 공항 한눈에·서울 한눈에: 자료를 불러오기 전 서버 HTML에 찍히던 '자료 없음·0개·확인 불가'를 '자료 확인 중…'과 '—'로 바꿉니다. 공항 한눈에는 dot의 PR358과 겹치지 않는 줄만 고칩니다.\n  · 지역 페이지: '지금' 문구가 2시간 된 값에도 붙던 것을 사이트의 40분 기준에 맞추고, 기준 날짜를 붙입니다.",
+      "ownerRequest": "①~⑤ 모두 승인 (권장)",
+      "approvedItem": "⑤ 렌더링용 API 크롤링 허용",
+      "scope": "app/api/live/flights/route.ts sends X-Robots-Tag: noindex on both of its responses, and lib/crawl-policy.ts adds flights, airport-months, commercial-months and usual to the APIs robots.txt lets crawlers fetch for rendering. duty-free-exchange and every internal API stay blocked. No collection count, key or security setting changes.",
+      "approvedProtectedFiles": [
+        "app/api/live/flights/route.ts"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": true
+    },
+    "reason": "Record the explicit owner approval for this protected-file change; no test is relaxed or skipped.",
+    "comparisonBase": "2663ae909815a73f8824692509694d96979002bf",
+    "changes": [
+      {
+        "file": "app/api/live/flights/route.ts",
+        "previous": "7263477a03181f96a3cf9a2109b2cb2ccb9d787c2ca6c9af6e8ff4e358288982",
+        "approved": "b2646788ee99b61672672f97f3d6dc63876f0da3af938da9d0f83ede5196d0fe",
+        "addedLines": 3,
+        "deletedLines": 2,
+        "exactUnifiedDiff": "diff --git a/app/api/live/flights/route.ts b/app/api/live/flights/route.ts\nindex c1b09a6..d7bdab8 100644\n--- a/app/api/live/flights/route.ts\n+++ b/app/api/live/flights/route.ts\n@@ -1,4 +1,5 @@\n import {serviceDayCacheControl} from '../../../../lib/service-day-cache';\n+import { CONTENT_API_ROBOTS_TAG } from \"../../../../lib/crawl-policy\";\n import { getDb } from \"../../../../db\";\n import { isValidKstDay, kstDayOf, relateKstDay, shiftKstDay } from \"../../../../lib/kst\";\n import { readDepartureSchedule } from \"../../../../lib/departure-schedule\";\n@@ -82,7 +83,7 @@ export async function GET(request: Request) {\n       serviceDateKst: serviceDate,\n       todayKst: kstToday,\n       ...result,\n-    }, { headers: { \"cache-control\": serviceDayCacheControl(\"public, max-age=120, stale-while-revalidate=600\",generatedAt) } });\n+    }, { headers: { \"cache-control\": serviceDayCacheControl(\"public, max-age=120, stale-while-revalidate=600\",generatedAt), \"x-robots-tag\": CONTENT_API_ROBOTS_TAG } });\n   } catch {\n     // A failure here must not read as \"no flights operated\" — the board says\n     // the record is unavailable rather than rendering an empty day.\n@@ -91,6 +92,6 @@ export async function GET(request: Request) {\n       generatedAt,\n       serviceDateKst: serviceDate,\n       flights: [],\n-    }, { status: 200, headers: { \"cache-control\": \"no-store\" } });\n+    }, { status: 200, headers: { \"cache-control\": \"no-store\", \"x-robots-tag\": CONTENT_API_ROBOTS_TAG } });\n   }\n }\n"
+      }
+    ],
+    "protectedPathCount": 65,
+    "approvalEvidenceFile": "docs/approvals/render-apis-crawlable-20261013.json"
   }
 }

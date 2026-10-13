@@ -295,6 +295,10 @@ async function checkContentApisStayUnlisted(context: Context): Promise<void> {
   const probes: Record<string, string> = {
     "/api/live/summary": `/api/live/summary?month=${coldSummaryMonth(Date.now())}`,
     "/api/live/predictions": `/api/live/predictions?area=myeongdong&${probe}`,
+    "/api/live/flights": `/api/live/flights?${probe}`,
+    "/api/live/airport-months": `/api/live/airport-months?${probe}`,
+    "/api/live/commercial-months": `/api/live/commercial-months?area=myeongdong&${probe}`,
+    "/api/live/usual": `/api/live/usual?area=myeongdong&${probe}`,
   };
   for (const path of crawlableContentApis) {
     const response = await context.fetch(`${origin}${probes[path] ?? path}`, { signal: AbortSignal.timeout(TIMEOUT_MS) });

@@ -431,10 +431,19 @@ test("every response a crawler can get from a content API tells it not to index"
   // path is asserted in tests/summary-round-trips.test.mjs.
   const summary = await import("../app/api/live/summary/route.ts");
   const predictions = await import("../app/api/live/predictions/route.ts");
+  const flights = await import("../app/api/live/flights/route.ts");
+  const airportMonths = await import("../app/api/live/airport-months/route.ts");
+  const commercialMonths = await import("../app/api/live/commercial-months/route.ts");
+  const usual = await import("../app/api/live/usual/route.ts");
   const responses = {
     "summary (degraded)": await summary.GET(new Request(`${ORIGIN}/api/live/summary`)),
     "predictions (unknown area)": await predictions.GET(new Request(`${ORIGIN}/api/live/predictions?area=nowhere`)),
     "predictions (unavailable)": await predictions.GET(new Request(`${ORIGIN}/api/live/predictions?area=hongdae`)),
+    // The pages these four render (home, airport, consumption, store) became crawlable on 2026-10-13.
+    "flights (unavailable)": await flights.GET(new Request(`${ORIGIN}/api/live/flights`)),
+    "airport-months (unavailable)": await airportMonths.GET(new Request(`${ORIGIN}/api/live/airport-months`)),
+    "commercial-months (unavailable)": await commercialMonths.GET(new Request(`${ORIGIN}/api/live/commercial-months?area=myeongdong`)),
+    "usual (unavailable)": await usual.GET(new Request(`${ORIGIN}/api/live/usual?area=myeongdong`)),
   };
   assert.deepEqual(
     Object.fromEntries(Object.entries(responses).map(([name, response]) => [name, response.headers.get("x-robots-tag")])),
@@ -514,14 +523,14 @@ test("content API exceptions do not expose sibling or nested internal paths", as
   const rules = robots().rules;
   const text = ["User-agent: *", ...[rules.allow].flat().map(path => `Allow: ${path}`),
     ...[rules.disallow].flat().map(path => `Disallow: ${path}`)].join("\n");
-  for (const path of ["/api/live/summary", "/api/live/predictions"]) {
+  for (const path of crawlableContentApis) {
     assert.equal(robotsAllows(text, path), true);
     assert.equal(robotsAllows(text, `${path}?date=2026-09-27&area=hongdae`), true);
     for (const suffix of ["-internal", "/debug", "Backup", "/"]) {
       assert.equal(robotsAllows(text, `${path}${suffix}`), false, `${path}${suffix}`);
     }
   }
-  for (const path of ["/api/health", "/api/live/flights", "/api/beta-signups"]) {
+  for (const path of ["/api/health", "/api/beta-signups", "/api/live/duty-free-exchange", "/api/live/events"]) {
     assert.equal(robotsAllows(text, path), false);
   }
 });
