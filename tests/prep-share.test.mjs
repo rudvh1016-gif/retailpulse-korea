@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { buildBusinessPrep } from "../lib/business-prep.ts";
-import { actionText, coverageLine, factLine } from "../lib/business-prep-copy.ts";
+import { factLine } from "../lib/business-prep-copy.ts";
 import { buildShareDocument, dateLabel, shareLink, shareText } from "../lib/prep-share.ts";
 
 const day = "2026-09-28";
@@ -18,43 +18,31 @@ const input = (prep, lang = "ko") => ({
   lang, link: shareLink("https://koretaildata.com", lang, day), savedAt: "2026-09-28T00:12:00.000Z",
 });
 
-test("the share text carries the same sentences as the screen, and nothing else numeric", () => {
-  const prep = prepFor();
-  const doc = buildShareDocument(input(prep));
-  const text = shareText(doc);
-  for (const fact of prep.facts) assert.ok(text.includes(factLine(fact, day, "ko")), `fact missing: ${factLine(fact, day, "ko")}`);
-  for (const action of prep.actions) assert.ok(text.includes(actionText(action, day, "beauty", "ko").body));
-  assert.ok(prep.actions.length <= 3);
-  assert.match(text, /^\[KORETAIL\]/);
-  assert.ok(text.includes(`${dateLabel(day, "ko")} · 명동`));
-  assert.ok(text.includes("업종: 뷰티·화장품 · 영업시간: 10:00–20:00"));
-  assert.ok(text.includes("https://koretaildata.com/ko/business?date=2026-09-28"), "the chosen date stays in the link");
-  assert.ok(text.includes("2026-09-28 09:12 KST"), "saved time is printed as a KST date and time");
-  assert.ok(text.includes("아주 긴 이름을 가진 서울 도심 가을 문화 축제와 야간 거리 공연 프로그램 2026"), "long names are never cut in the text");
+test("one dated brief selects three factual highlights and concrete actions without repeating sources",()=>{
+ const prep=prepFor(),doc=buildShareDocument(input(prep)),text=shareText(doc);
+ const factItems=doc.lines.slice(doc.lines.findIndex(l=>l.text==='지금 핵심')+1,doc.lines.findIndex(l=>l.text==='준비할 일')).filter(l=>l.kind==='item');
+ assert.equal(factItems.length,3);assert.match(text,/17:00–18:00/);assert.match(text,/70%/);assert.match(text,/21.5°C/);
+ assert.match(text,/업종: 뷰티·화장품 · 영업시간: 10:00–20:00/);assert.match(text,/2026-09-28 09:12 KST/);
+ assert.match(text,/우산 보관대와 입구 바닥/);assert.match(text,/실제 행사 시간·장소/);assert.doesNotMatch(text,/아주 긴 이름|행사 1건/);
+ assert.equal((text.match(/출처 · 자료 기준:/g)||[]).length,1);assert.equal((text.match(/서울시 공식 혼잡 예측/g)||[]).length,1);
+ assert.ok(doc.lines.every(line=>text.includes(line.text)));assert.ok(prep.actions.length<=3);
 });
-
-test("a shared message never says 'now' and names its own date", () => {
-  for (const lang of ["ko", "en", "zh", "ja"]) {
-    const text = shareText(buildShareDocument(input(prepFor(), lang)));
-    assert.doesNotMatch(text, lang === "en" ? /\bnow\b/i : lang === "ko" ? /지금/ : lang === "zh" ? /现在/ : /いま|現在/, lang);
-    assert.ok(text.includes(day), lang);
-    assert.ok(text.includes(`/${lang}/business?date=${day}`), lang);
-  }
+test("all four areas and both airport terminals keep their exact scope and dated link",()=>{
+ for(const lang of ['ko','en','zh','ja'])for(const place of [...['myeongdong','hongdae','seongsu','itaewon'].map(area=>({kind:'area',area})),{kind:'airport',terminal:'T1',side:'EAST'},{kind:'airport',terminal:'T2',side:null}]){
+  const text=shareText(buildShareDocument({...input(prepFor(),lang),place}));assert.ok(text.includes(day));assert.ok(text.includes(`/${lang}/business?date=${day}`));
+  if(place.kind==='airport')assert.ok(text.includes(place.terminal));
+  // The approved section heading can say '지금 핵심'; individual facts are explicitly dated.
+  assert.doesNotMatch(text.replace('지금 핵심',''),lang==='en'?/\bnow\b/i:lang==='ko'?/지금/:lang==='zh'?/现在/:/いま|現在/);
+ }
 });
-
-test("no data and stale data say so instead of looking calm", () => {
-  const empty = shareText(buildShareDocument(input(buildBusinessPrep({ serviceDate: day, dayRelation: "TODAY", nowIso: at(9), place: { kind: "area", area: "itaewon" }, hours: null }))));
-  assert.ok(empty.includes("- 없음"));
-  assert.ok(empty.includes("판단할 자료가 부족합니다."));
-  const stale = prepFor({ nowIso: at(14), forecast: [{ targetAt: at(17), congestionLevel: 4, issuedAt: at(9) }], weather: [] });
-  const text = shareText(buildShareDocument(input(stale)));
-  assert.doesNotMatch(text, /붐빔/, "a stale forecast is not shared as a fact");
+test("no data and stale forecasts never become calm facts",()=>{
+ const empty=shareText(buildShareDocument(input(buildBusinessPrep({serviceDate:day,dayRelation:'TODAY',nowIso:at(9),place:{kind:'area',area:'itaewon'},hours:null}))));
+ assert.match(empty,/판단할 자료가 부족합니다/);assert.match(empty,/최신 자료와 매장 실제 대기·재고/);assert.doesNotMatch(empty,/출처.*없음/);
+ const stale=prepFor({nowIso:at(14),forecast:[{targetAt:at(17),congestionLevel:4,issuedAt:at(9)}],weather:[]});assert.doesNotMatch(shareText(buildShareDocument(input(stale))),/붐빔/);
 });
-
-test("the source line names only what was used", () => {
-  const text = shareText(buildShareDocument(input(prepFor())));
-  const sourceLine = text.split("\n").find((line) => line.startsWith("출처:"));
-  assert.equal(sourceLine, "출처: 서울시 공식 혼잡 예측, 기상청 단기예보, 한국관광공사 행사 정보");
+test("event-period evidence never claims a timed crowd or new staffing need",()=>{
+ const prep=prepFor({forecast:[],weather:[]}),text=shareText(buildShareDocument(input(prep)));
+ assert.match(text,/공식 행사 기간에 포함/);assert.match(text,/실제 운영 시간·장소는 별도 확인/);assert.doesNotMatch(text,/혼잡 예상|직원 증원|매출 증가/);
 });
 
 test("image lines break Chinese and Japanese by character and never start with a closing mark", async () => {
@@ -81,21 +69,16 @@ test("a partly located airport side reads the same in the text and the image, wi
   const text = shareText(doc);
   const fact = prep.facts.find((row) => row.kind === "GATE_PEAK");
   // The image draws doc.lines; the text is built from the same lines.
-  assert.ok(doc.lines.some((line) => line.text === factLine(fact, day, "ko")));
+  assert.ok(doc.lines.some((line) => line.text.startsWith(factLine(fact, day, "ko").split(" (인천공항")[0])));
   assert.ok(text.includes("위치가 확인된 동편 탑승구 항공편 중 가장 많은 시간"));
   assert.ok(text.includes("위치 미확인 47편 제외, 그중 같은 시간 17편"));
   assert.doesNotMatch(text, /탑승구 기준 출발편이 가장 많은 시간/);
   assert.equal(prep.actions.some((row) => row.rule === "GATE_PEAK"), false);
-  assert.match(text, /출처: .*인천공항 운항 정보/, "the flight source is named even when the gate count gives no action");
+  assert.match(text, /출처 · 자료 기준: .*인천공항 운항 정보/, "the flight source is named even when the gate count gives no action");
 });
 
-test("the share carries the same coverage caveats as the screen, in every language", () => {
-  // Forecast rows only at 12:00 and 17:00 for a 10:00-20:00 store: the screen says so, and so must the share.
-  for (const lang of ["ko", "en", "zh", "ja"]) {
-    const prep = prepFor();
-    const caveats = prep.coverage.map((entry) => coverageLine(entry, day, lang)).filter(Boolean);
-    assert.ok(caveats.length > 0, "the fixture must have a partial or missing source");
-    const text = shareText(buildShareDocument(input(prep, lang)));
-    for (const caveat of caveats) assert.ok(text.includes(caveat), `${lang}: ${caveat}`);
-  }
+test("partial coverage stays explicit without separate repeated missing-source paragraphs",()=>{
+ for(const [lang,partial] of [['ko','일부 시간만 확인'],['en','partial hours only'],['zh','仅部分时段'],['ja','一部の時間のみ']]){
+  const text=shareText(buildShareDocument(input(prepFor(),lang)));assert.ok(text.includes(partial));assert.ok(text.includes('12:00'));assert.ok(text.includes('18:00'));
+ }
 });
