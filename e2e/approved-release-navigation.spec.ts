@@ -17,9 +17,9 @@ for(const width of [390,1440])test(`airport glance keeps shared date URL and his
  await page.setViewportSize({width,height:900});await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));await page.goto('/ko/airport-glance?date=2026-10-01');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  const input=page.locator('.glance-controls input[type=date]');await expect(input).toHaveValue('2026-10-01');await input.fill('2026-10-02');await expect(page).toHaveURL(/date=2026-10-02/);await expect(input).toHaveValue('2026-10-02');
  await page.goBack();await expect(input).toHaveValue('2026-10-01');await page.goForward();await expect(input).toHaveValue('2026-10-02');
- const nav=page.locator(width<1000?'.bottom-nav':'.top-nav');await nav.locator('a[href="/ko/airport?date=2026-10-02"]').click();await expect(page).toHaveURL(/airport\?date=2026-10-02/);await nav.locator('a[href="/ko/airport-glance?date=2026-10-02"]').click();await expect(input).toHaveValue('2026-10-02');
+ const nav=page.locator(width<1000?'.bottom-nav':'.top-nav');await nav.locator(`a[href="/ko/airport${width<1000?'?date=2026-10-02':''}"]`).click();await expect(page).toHaveURL(/airport\?date=2026-10-02/);await nav.locator(`a[href="/ko/airport-glance${width<1000?'?date=2026-10-02':''}"]`).click();await expect(input).toHaveValue('2026-10-02');
  await page.getByLabel('Language',{exact:true}).selectOption('en');await expect(input).toHaveValue('2026-10-02');await expect(page).toHaveURL(/en\/airport-glance\?date=2026-10-02/);
- await nav.locator('a').last().click();await page.locator('.more-section-links a[href="/en/business"]').click();await expect(page).toHaveURL(/en\/business\?date=2026-10-02/);await nav.locator('a[href="/en/airport-glance?date=2026-10-02"]').click();await expect(input).toHaveValue('2026-10-02');
+ await nav.locator('a').last().click();await page.locator('.more-section-links a[href="/en/business"]').click();await expect(page).toHaveURL(/en\/business\?date=2026-10-02/);await nav.locator(`a[href="/en/airport-glance${width<1000?'?date=2026-10-02':''}"]`).click();await expect(input).toHaveValue('2026-10-02');
  await page.locator('.glance-controls').getByRole('button',{name:'Today',exact:true}).click();await expect(page).not.toHaveURL(/date=/);await expect(input).toHaveValue(SUMMARY_FIXTURE.serviceDateKst);
 });
 

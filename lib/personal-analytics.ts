@@ -24,6 +24,7 @@ const measurementId = process.env.NEXT_PUBLIC_GA4_ENABLED === 'true'
   ? validMeasurementId(process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID) : undefined;
 let consent: boolean | null = null;
 let initialized = false;
+let lastPage: string | null = null;
 const pending: Array<{name: EventName; params: Record<string,string>}> = [];
 function init() {
   if(!measurementId || !consent || typeof window === 'undefined') return false;
@@ -49,6 +50,7 @@ function init() {
   return true;
 }
 export function setAnalyticsConsent(enabled: boolean) {
+  if (!enabled) lastPage = null;
   consent = enabled;
   if(typeof window !== 'undefined' && measurementId) {
     const w = window as unknown as AnalyticsWindow;
@@ -66,4 +68,23 @@ export function trackPersonalEvent(name: EventName, params: Params = {}) {
   if(!consent) return;
   if(!init()) { if(pending.length < 20) pending.push({name,params:safe}); return; }
   (window as unknown as AnalyticsWindow).gtag?.('event',name,{...safe,send_to:measurementId,page_location:window.location.origin,page_referrer:'',page_title:'KORETAIL'});
+}
+
+// A closed route vocabulary: never copy arbitrary paths, queries, hashes or titles.
+const publicPage = /^\/(?:ko|en|zh|ja)(?:\/(?:myeongdong|hongdae|seongsu|itaewon|airport-glance|airport|forecast|where-to|consumption|business|about|more|airport-news|travel-records|tourism-desk(?:\/(?:myeongdong|hongdae|seongsu|itaewon))?))?\/?$/;
+export function safeAnalyticsPath(pathname: string): string | null {
+  if (pathname === '/') return '/';
+  return publicPage.test(pathname) ? pathname.replace(/\/$/, '') : null;
+}
+/** Called only for a rendered route, after preferences have been read */
+export function trackPageView(pathname: string) {
+  if (!consent || !measurementId || typeof window === 'undefined') return;
+  const path = safeAnalyticsPath(pathname);
+  if (!path) { lastPage = null; return; }
+  if (path === lastPage || !init()) return;
+  lastPage = path;
+  (window as unknown as AnalyticsWindow).gtag?.('event','page_view',{
+    send_to:measurementId,page_location:window.location.origin + path,
+    page_referrer:'',page_title:'KORETAIL',
+  });
 }

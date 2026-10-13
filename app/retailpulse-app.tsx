@@ -60,6 +60,7 @@ import LiveSignals, {
   HomeTodayBrief,
   KstTodayChip,
 } from "./live-signals";
+import AnalyticsConsent from './analytics-consent';
 import { InstallAppButton } from "./install-app";
 import {WhereToView,ConsumptionView} from './seoul-comparison';
 import { parsePreferences, PREFERENCE_KEY } from "../lib/personal-briefing";
@@ -450,7 +451,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         </button>
         <nav className="top-nav" aria-label="Primary">
           {(["airport-glance", "airport", "where-to", "today", "consumption", "business", "more"] as View[]).map((item) => (
-            <a key={item} href={navigationHref(item)} className={view === item || (item === "more" && ["tourism-desk","forecast","about"].includes(view)) ? "active" : ""} onClick={(event) => { if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;event.preventDefault();navigate(item); }} onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : undefined} onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : undefined} aria-current={view === item ? "page" : item === "more" && ["tourism-desk","forecast","about"].includes(view) ? "location" : undefined}><NavigationIcon name={item}/><span>{navLabel(item)}</span></a>
+            <a key={item} href={routeFor(lang, item, selected)} className={view === item || (item === "more" && ["tourism-desk","forecast","about"].includes(view)) ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : undefined} onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : undefined} aria-current={view === item ? "page" : item === "more" && ["tourism-desk","forecast","about"].includes(view) ? "location" : undefined}>{navLabel(item)}</a>
           ))}
         </nav>
         <div className="header-meta">
@@ -932,7 +933,7 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
         <div>
           <p className="eyebrow">ABOUT KORETAIL</p>
           <h1>{localText(lang, { ko: "공식 데이터만,\n있는 그대로", en: "Official data only,\nexactly as published", zh: "只用官方数据，\n如实呈现", ja: "公式データだけを、\nありのままに" })}</h1>
-          <p>{localText(lang, { ko: "KORETAIL은 Korea와 Retail을 합친 이름입니다.", en: "KORETAIL combines Korea and Retail.", zh: "KORETAIL 由 Korea 与 Retail 组合而成。", ja: "KORETAIL は Korea と Retail を組み合わせた名前です。" })}</p>
+          <p>{localText(lang, { ko: "인천공항 출국장 대기·항공편 흐름과 서울 주요 상권의 혼잡·소비 정보를 한눈에 제공하는 코리테일 KORETAIL은 Korea와 Retail을 합친 이름입니다", en: "KORETAIL combines Korea and Retail.", zh: "KORETAIL 由 Korea 与 Retail 组合而成。", ja: "KORETAIL は Korea と Retail を組み合わせた名前です。" })}</p>
         </div>
       </div>
 
@@ -972,6 +973,7 @@ function MoreView({
       <nav className="more-section-links" aria-label={localText(lang,{ko:'서비스 메뉴',en:'Service sections',zh:'服务菜单',ja:'サービスメニュー'})}>
         {(['business','tourism-desk','forecast','about'] as const).map(item=><a key={item} href={routeFor(lang,item,selected)} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}
       </nav>
+      <AnalyticsConsent lang={lang} />
       <SiteUsageGuide lang={lang} />
       <CollectionStatus lang={lang} />
 

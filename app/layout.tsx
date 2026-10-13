@@ -1,5 +1,7 @@
+import PageAnalytics from './page-analytics';
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
+import {buildRevision} from '../lib/build-revision';
 import "./globals.css";
 import "./airport-date-calendar.css";
 import './airport-models.css';
@@ -8,6 +10,7 @@ import './commercial-scenes.css';
 import { isStagingDeployment, pageTitle, pageDescription, siteOrigin, socialImage, shareDescription } from "./seo-config";
 
 export const metadata: Metadata = {
+  other: {'koretail-build-sha':buildRevision.sha??'unavailable','koretail-build-dirty':String(buildRevision.dirty)},
   verification: {
     ...(process.env.GOOGLE_SITE_VERIFICATION?.trim() ? { google: process.env.GOOGLE_SITE_VERIFICATION.trim() } : {}),
     ...(process.env.NAVER_SITE_VERIFICATION?.trim() ? { other: { 'naver-site-verification': process.env.NAVER_SITE_VERIFICATION.trim() } } : {}),
@@ -55,15 +58,16 @@ export default async function RootLayout({
     <html lang={documentLanguage} suppressHydrationWarning>
       <body>
         {children}
+        <PageAnalytics />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           "@context": "https://schema.org",
           // WebSite only: WebApplication needs ratings or reviews Google can show, which this site does not have.
           "@type": "WebSite",
           name: "KORETAIL",
-          alternateName: "KORETAIL · Retail Demand Signals for Korea",
+          alternateName: ["코리테일", "KORETAIL · Retail Demand Signals for Korea"],
           url: siteOrigin,
           inLanguage: ["ko-KR", "en", "zh-CN", "ja-JP"],
-          description: "Retail demand signals for Korea, combining foreign-visitor, airport and store-operating context for Seoul.",
+          description: "인천공항 출국장 대기·항공편 흐름과 서울 주요 상권의 혼잡·소비 정보를 한눈에",
         }) }} />
       </body>
     </html>

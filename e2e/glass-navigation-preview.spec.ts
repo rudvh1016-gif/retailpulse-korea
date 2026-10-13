@@ -28,3 +28,14 @@ for(const lang of ['en','zh','ja'])test(`glass navigation keeps readable localiz
  await page.setViewportSize({width:360,height:950});await setup(page);await page.goto(`/${lang}`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');await expect(page.locator('.bottom-nav a')).toHaveCount(6);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  for(const item of await page.locator('.bottom-nav a').all())expect(await item.evaluate(e=>e.scrollWidth<=e.clientWidth&&e.scrollHeight<=e.clientHeight)).toBe(true);
 });
+
+test('desktop preserves plain operating menu and cancels mobile feedback on resize',async({page})=>{
+ await page.setViewportSize({width:390,height:950});await setup(page);await page.goto('/ko');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await page.locator('.bottom-nav a').last().click();await page.setViewportSize({width:1440,height:950});
+ const nav=page.locator('.top-nav');await expect(nav).toBeVisible();await expect(nav.locator('a')).toHaveCount(7);await expect(nav.locator('svg,.navigation-icon')).toHaveCount(0);await expect(page.locator('.bottom-nav')).toBeHidden();
+ await expect.poll(()=>page.locator('main.page-shell').evaluate(e=>e.getAnimations().length)).toBe(0);
+ await nav.getByRole('link',{name:'매장',exact:true}).click();await expect(page).toHaveURL(/\/ko\/business$/);await expect(nav.getByRole('link',{name:'매장',exact:true})).toHaveAttribute('aria-current','page');
+ expect(await page.locator('main.page-shell').evaluate(e=>e.getAnimations().length)).toBe(0);
+ expect(await nav.locator('a').first().evaluate(e=>getComputedStyle(e).transform)).toBe('none');
+ await page.goBack();await expect(page).toHaveURL(/\/ko\/more$/);
+});

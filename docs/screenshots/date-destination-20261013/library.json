@@ -1,0 +1,86 @@
+{
+  "results": [
+    {
+      "operation": "create_library_file",
+      "status": "succeeded",
+      "path": "/date-390(1).png",
+      "file_id": "file_00000000ec008211b233e66df1fe7c3c",
+      "library_file_id": "libfile_189a831bf928819182966d9f4f34512a",
+      "file_name": "date-390(1).png",
+      "current_version_number": 0,
+      "restored_from_version_number": null,
+      "xattrs": [
+        {
+          "name": "user.library-file-version",
+          "value": "0"
+        }
+      ],
+      "directory_id": "libdir_bafb26ffeac48191bd4a61246b9346be",
+      "mime_type": "image/png",
+      "library_artifact_type": "image",
+      "file_size_bytes": 6872
+    },
+    {
+      "operation": "create_library_file",
+      "status": "succeeded",
+      "path": "/date-1440.png",
+      "file_id": "file_00000000c200820687f1785667769d99",
+      "library_file_id": "libfile_a104c21536208191ac52b1015fd0cec1",
+      "file_name": "date-1440.png",
+      "current_version_number": 0,
+      "restored_from_version_number": null,
+      "xattrs": [
+        {
+          "name": "user.library-file-version",
+          "value": "0"
+        }
+      ],
+      "directory_id": "libdir_bafb26ffeac48191bd4a61246b9346be",
+      "mime_type": "image/png",
+      "library_artifact_type": "image",
+      "file_size_bytes": 6764
+    },
+    {
+      "operation": "create_library_file",
+      "status": "succeeded",
+      "path": "/destination-390.png",
+      "file_id": "file_000000009c888206a280b06e496d79ec",
+      "library_file_id": "libfile_2b432330e7048191835fde2eaba3fc2b",
+      "file_name": "destination-390.png",
+      "current_version_number": 0,
+      "restored_from_version_number": null,
+      "xattrs": [
+        {
+          "name": "user.library-file-version",
+          "value": "0"
+        }
+      ],
+      "directory_id": "libdir_bafb26ffeac48191bd4a61246b9346be",
+      "mime_type": "image/png",
+      "library_artifact_type": "image",
+      "file_size_bytes": 35573
+    },
+    {
+      "operation": "create_library_file",
+      "status": "succeeded",
+      "path": "/destination-1440.png",
+      "file_id": "file_000000004300820689a46552dfb3b301",
+      "library_file_id": "libfile_a23db33313148191b5d8bb6e9483ca28",
+      "file_name": "destination-1440.png",
+      "current_version_number": 0,
+      "restored_from_version_number": null,
+      "xattrs": [
+        {
+          "name": "user.library-file-version",
+          "value": "0"
+        }
+      ],
+      "directory_id": "libdir_bafb26ffeac48191bd4a61246b9346be",
+      "mime_type": "image/png",
+      "library_artifact_type": "image",
+      "file_size_bytes": 37309
+    }
+  ],
+  "warnings": [],
+  "external_connectors_accessed": false
+}

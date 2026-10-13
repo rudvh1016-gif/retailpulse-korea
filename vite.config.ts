@@ -2,6 +2,7 @@ import vinext from "vinext";
 import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { sites } from "./build/sites-vite-plugin";
+import {readBuildRevision} from './scripts/build-revision.mjs';
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   "00000000-0000-4000-8000-000000000000";
@@ -47,6 +48,7 @@ export default defineConfig(async () => {
     // These verification tokens are intentionally public HTML metadata.
     // Bake only this allowlist into the Worker; arbitrary server secrets stay out.
     define: {
+      'process.env.KORETAIL_BUILD_REVISION': JSON.stringify(JSON.stringify(readBuildRevision())),
       'process.env.GOOGLE_SITE_VERIFICATION': JSON.stringify(process.env.GOOGLE_SITE_VERIFICATION?.trim() ?? ''),
       'process.env.NAVER_SITE_VERIFICATION': JSON.stringify(process.env.NAVER_SITE_VERIFICATION?.trim() ?? ''),
     },

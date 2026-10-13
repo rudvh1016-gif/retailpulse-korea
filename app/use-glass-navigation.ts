@@ -9,7 +9,8 @@ export function useGlassNavigation(ref:RefObject<HTMLElement|null>,choice:string
   const nav=ref.current,pill=nav?.querySelector<HTMLElement>('.glass-nav-indicator');if(!nav||!pill)return;
   const stop=()=>{animations.current.forEach(a=>a.cancel());animations.current=[];};
   const update=(animate:boolean)=>{
-   const active=nav.querySelector<HTMLElement>('a[aria-current]');if(!active||!nav.offsetWidth)return;
+   if(!window.matchMedia('(max-width: 820px)').matches||!nav.offsetWidth){stop();return;}
+   const active=nav.querySelector<HTMLElement>('a[aria-current]');if(!active)return;
    const from=getComputedStyle(pill).transform,x=active.offsetLeft,width=active.offsetWidth;
    stop();pill.style.width=`${width}px`;pill.style.transform=`translateX(${x}px)`;
    if(!animate||reducedMotion()||document.hidden||!pill.animate)return;
@@ -37,7 +38,7 @@ export function useGlassNavigation(ref:RefObject<HTMLElement|null>,choice:string
   const nativeDrag=(e:DragEvent)=>e.preventDefault();
   const click=(e:MouseEvent)=>{if(suppress&&e.detail>0){e.preventDefault();e.stopPropagation();suppress=false;}};
   const key=(e:KeyboardEvent)=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;const items=links(),i=items.indexOf(document.activeElement as HTMLAnchorElement);if(i<0)return;e.preventDefault();const index=e.key==='Home'?0:e.key==='End'?items.length-1:(i+(e.key==='ArrowRight'?1:-1)+items.length)%items.length;items[index].focus();};
-  const resize=()=>{reset();sync.current?.(false);};const observer=new ResizeObserver(resize);observer.observe(nav);
+  const resize=()=>{reset();stop();sync.current?.(false);};const observer=new ResizeObserver(resize);observer.observe(nav);
   const media=window.matchMedia('(prefers-reduced-motion: reduce)'),changed=()=>{if(media.matches){stop();sync.current?.(false);}},hidden=()=>{if(document.hidden){stop();cancel();}};
   nav.addEventListener('dragstart',nativeDrag);nav.addEventListener('pointerdown',start);nav.addEventListener('pointermove',move);nav.addEventListener('pointerup',end);nav.addEventListener('pointercancel',cancel);nav.addEventListener('click',click,true);nav.addEventListener('keydown',key);media.addEventListener('change',changed);document.addEventListener('visibilitychange',hidden);
   return()=>{reset();stop();observer.disconnect();nav.removeEventListener('dragstart',nativeDrag);nav.removeEventListener('pointerdown',start);nav.removeEventListener('pointermove',move);nav.removeEventListener('pointerup',end);nav.removeEventListener('pointercancel',cancel);nav.removeEventListener('click',click,true);nav.removeEventListener('keydown',key);media.removeEventListener('change',changed);document.removeEventListener('visibilitychange',hidden);};
