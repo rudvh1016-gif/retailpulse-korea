@@ -47,3 +47,7 @@ tests/.d1-plan-*.db
 # Production visual check outputs
 production-visual-report/
 production-visual-results/
+
+# Read-only release verification outputs
+/critical-ui-results/
+/deployment-revision.json

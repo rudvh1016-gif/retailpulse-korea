@@ -1,0 +1,15 @@
+{
+  "status": "OWNER_APPROVED_RELEASE_VERIFICATION_CODE_ONLY",
+  "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+  "authorizationMessage": "Sentinel_bc1118daf27881919bfdc579622a8c7c",
+  "delegatedScope": "Prepare three approved stability follow-ups: exact latest-SHA CI/protection plan, small early existing UI tests, public build SHA tied to API and screen verification. Repository policy mutation needs a separate action-time confirmation; no policy changed here.",
+  "files": [
+    {
+      "path": "app/layout.tsx",
+      "previousSha256": "5751b05b09e86833897a9e9145672af9ae830c538b1f357f9963325d592e06a5",
+      "approvedSha256": "5337e23eef5734bf48ef8244b7ba4e93cc19176f870dfd0da2035ebc46e35284",
+      "exactUnifiedDiff": "diff --git a/app/layout.tsx b/app/layout.tsx\nindex fd97177..93230d0 100644\n--- a/app/layout.tsx\n+++ b/app/layout.tsx\n@@ -1,5 +1,6 @@\n import type { Metadata, Viewport } from \"next\";\n import { headers } from \"next/headers\";\n+import {buildRevision} from '../lib/build-revision';\n import \"./globals.css\";\n import \"./airport-date-calendar.css\";\n import './airport-models.css';\n@@ -8,6 +9,7 @@ import './commercial-scenes.css';\n import { isStagingDeployment, pageTitle, pageDescription, siteOrigin, socialImage, shareDescription } from \"./seo-config\";\n \n export const metadata: Metadata = {\n+  other: {'koretail-build-sha':buildRevision.sha??'unavailable','koretail-build-dirty':String(buildRevision.dirty)},\n   verification: {\n     ...(process.env.GOOGLE_SITE_VERIFICATION?.trim() ? { google: process.env.GOOGLE_SITE_VERIFICATION.trim() } : {}),\n     ...(process.env.NAVER_SITE_VERIFICATION?.trim() ? { other: { 'naver-site-verification': process.env.NAVER_SITE_VERIFICATION.trim() } } : {}),\n"
+    }
+  ],
+  "protectedPathCount": 65
+}

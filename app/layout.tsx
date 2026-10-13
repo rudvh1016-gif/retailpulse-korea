@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
+import {buildRevision} from '../lib/build-revision';
 import "./globals.css";
 import "./airport-date-calendar.css";
 import './airport-models.css';
@@ -8,6 +9,7 @@ import './commercial-scenes.css';
 import { isStagingDeployment, pageTitle, pageDescription, siteOrigin, socialImage, shareDescription } from "./seo-config";
 
 export const metadata: Metadata = {
+  other: {'koretail-build-sha':buildRevision.sha??'unavailable','koretail-build-dirty':String(buildRevision.dirty)},
   verification: {
     ...(process.env.GOOGLE_SITE_VERIFICATION?.trim() ? { google: process.env.GOOGLE_SITE_VERIFICATION.trim() } : {}),
     ...(process.env.NAVER_SITE_VERIFICATION?.trim() ? { other: { 'naver-site-verification': process.env.NAVER_SITE_VERIFICATION.trim() } } : {}),
