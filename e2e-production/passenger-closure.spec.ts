@@ -16,6 +16,7 @@ for(const width of [390,1280]) test(`production Seoul and airport truth closure 
   await page.setViewportSize({width,height:900});
   await page.addInitScript(key=>localStorage.setItem(key,JSON.stringify({version:1,role:'manager',location:'myeongdong',selectedLocations:['myeongdong','hongdae','seongsu','itaewon','airport'],terminal:'all',selectedTerminals:['all'],interests:['passengers','weather','events','crowding'],day:'today',selectedDays:['today','tomorrow','yesterday'],analytics:false})),PREFERENCE_KEY);
   await page.goto('/ko');
+  await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
 
   await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
   for(const area of ['myeongdong','hongdae','seongsu','itaewon']){
@@ -24,7 +25,7 @@ for(const width of [390,1280]) test(`production Seoul and airport truth closure 
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     await page.screenshot({path:`production-visual-results/closure-${area}-${width}.png`,fullPage:false});
   }
-  await page.goto('/ko');
+  await page.goto('/ko/airport');
   await expectHeadline(page.locator('.airport-current-brief'));
   await page.screenshot({path:`production-visual-results/closure-airport-home-${width}.png`,fullPage:false});
   await page.goto('/ko/airport');
