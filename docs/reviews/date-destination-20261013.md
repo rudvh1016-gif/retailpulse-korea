@@ -38,3 +38,12 @@ Library upload succeeded for all 4 files; Windows xattr helper failed because os
 Additional state screenshot capture rerun: 4 passed
 
 Repository-equivalent batched secret scan passed over working tree and all 1235 reachable revisions with identical patterns/path exclusions
+
+CI correction after run 38410751560
+- The full CI passed 1338 E2E and failed 24 pure-white checks because the approved neutral date background was still expected to be white
+- Adjusted only the exact native date-control selector to assert RGB 241/243/246 plus radius 14px, minimum height 44px and width 148px
+- All other input, page and surface white checks remain unchanged and no test is skipped or disabled
+- Existing owner approval Sentinel_f30294521f9c8191ba81a4d739722130 authorizes this scoped neutral date surface
+- No runtime, style or protected-manifest change in this correction
+
+Correction validation: combined 57 E2E passed, then final exact-color-and-geometry pure-white suite 25/25 passed across 4 locales and 6 widths, TypeScript and targeted lint passed, Owner UI Lock passed, identical full-history secret patterns passed over 1250 revisions
