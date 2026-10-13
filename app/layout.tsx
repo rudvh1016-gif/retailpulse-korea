@@ -1,3 +1,4 @@
+import PageAnalytics from './page-analytics';
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
@@ -55,6 +56,7 @@ export default async function RootLayout({
     <html lang={documentLanguage} suppressHydrationWarning>
       <body>
         {children}
+        <PageAnalytics />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           "@context": "https://schema.org",
           // WebSite only: WebApplication needs ratings or reviews Google can show, which this site does not have.

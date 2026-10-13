@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-13",
+  "evidence": [
+    "Sentinel_0d25b8d32004819196865c7f721db2b9",
+    "Sentinel_e187a7e0bd708191a23d94b0f97bd844"
+  ],
+  "scope": "Delegated GA4 diagnosis, first page_view and SPA route fix, isolated validation and draft PR only",
+  "protectedChanges": {
+    "app/layout.tsx": {
+      "before": "5751b05b09e86833897a9e9145672af9ae830c538b1f357f9963325d592e06a5",
+      "after": "156451141752dec8e544d7ad7b87f96d23b1a31aab81c6762ec1887d55093a6a",
+      "change": "Import and mount nonvisual consent-gated PageAnalytics component"
+    },
+    "app/retailpulse-app.tsx": {
+      "before": "12512780d57b4c8b1b9b2906074fe3ea15b3c71a4d8363b6ee4048f7e838b741",
+      "after": "7e149e3aa7722f5c2dc55aeca0a95c8f31b54418ec04e31ff8e0322a4a0199c1",
+      "change": "Independent optional consent control on More and one root consent controller"
+    },
+    "app/install-app.tsx": {
+      "before": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
+      "after": "864a43ddc979f681743990876a12ee73f2f2120e2a04fbf47752ca7640cd38a8",
+      "change": "Independent optional consent control on More and one root consent controller"
+    }
+  },
+  "preserved": "All protected paths, other hashes, existing UI Lock assertions, consent defaults, ads denied and Enhanced Measurement disabled requirement"
+}

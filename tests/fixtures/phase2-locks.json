@@ -17,8 +17,8 @@
     "app/area-demand-card.tsx": "8209a5fda381f6cf529b8635918e99ed158e6d7864280483083510ea16ba2be5",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
     "app/globals.css": "fedcfc48b2d7b08dc3cae6cbb625afee413afd788aa7701df1b3d223a8dcf2b2",
-    "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
-    "app/layout.tsx": "5751b05b09e86833897a9e9145672af9ae830c538b1f357f9963325d592e06a5",
+    "app/install-app.tsx": "864a43ddc979f681743990876a12ee73f2f2120e2a04fbf47752ca7640cd38a8",
+    "app/layout.tsx": "156451141752dec8e544d7ad7b87f96d23b1a31aab81c6762ec1887d55093a6a",
     "app/live-signals.tsx": "de1b382dc14e2fdc39c34f206b61b7a1d11ded0fab93280a2dda336c08af26fa",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6",
@@ -26,7 +26,7 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "12512780d57b4c8b1b9b2906074fe3ea15b3c71a4d8363b6ee4048f7e838b741",
+    "app/retailpulse-app.tsx": "7e149e3aa7722f5c2dc55aeca0a95c8f31b54418ec04e31ff8e0322a4a0199c1",
     "app/retailpulse-data.ts": "2a965cde02012978eb446a955b82bbcbfbec83f74f862e0e2846fae1ca348ecd",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "ee3f5c36f600ff0d9b9c018543bb6ac596826475f02adbf2c21992c797f582c8",
@@ -1948,5 +1948,14 @@
     ],
     "protectedPathCount": 65,
     "approvalEvidenceFile": "docs/approvals/early-window-copy-20261013.json"
+  },
+  "ownerApprovedGa4PageViews20261013": {
+    "approvalRecord": "docs/approvals/ga4-pageviews-20261013.json",
+    "reason": "Owner explicitly authorized diagnosis and repair of missing GA4 page views while preserving opt-in, URL privacy, account settings, and active UI Lock enforcement",
+    "files": [
+      "app/layout.tsx",
+      "app/retailpulse-app.tsx",
+      "app/install-app.tsx"
+    ]
   }
 }

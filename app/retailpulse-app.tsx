@@ -57,6 +57,7 @@ import LiveSignals, {
   HomeTodayBrief,
   KstTodayChip,
 } from "./live-signals";
+import AnalyticsConsent from './analytics-consent';
 import { InstallAppButton } from "./install-app";
 import {WhereToView,ConsumptionView} from './seoul-comparison';
 import { parsePreferences, PREFERENCE_KEY } from "../lib/personal-briefing";
@@ -974,6 +975,7 @@ function MoreView({
       <nav className="more-section-links" aria-label={localText(lang,{ko:'서비스 메뉴',en:'Service sections',zh:'服务菜单',ja:'サービスメニュー'})}>
         {(['business','tourism-desk','forecast','about'] as const).map(item=><a key={item} href={routeFor(lang,item,selected)} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}
       </nav>
+      <AnalyticsConsent lang={lang} />
       <SiteUsageGuide lang={lang} />
       <CollectionStatus lang={lang} />
 
