@@ -61,7 +61,7 @@ for(const [lang,width] of [['ko',360],['ko',390],['ko',430],['ko',1280],['en',32
  expect(await model.evaluate(el=>el.getAnimations({subtree:true}).length)).toBe(0);
  await model.screenshot({path:info.outputPath(`checkpoint-${lang}-${width}.png`)});
  if(lang==='ko' && (width===390 || width===1280)) {
-  const folder=path.resolve('retailpulse-checkpoint-type-20261013/docs/screenshots/checkpoint-type-20261013');fs.mkdirSync(folder,{recursive:true});
+  const folder=info.outputPath('font-comparison');fs.mkdirSync(folder,{recursive:true});
   await model.screenshot({path:path.join(folder,`pretendard-${width}.png`)});
   await page.addStyleTag({url:'/previews/checkpoint-suit/font-comparison.css'});
   await model.evaluate(el=>el.setAttribute('data-font-preview','suit'));
