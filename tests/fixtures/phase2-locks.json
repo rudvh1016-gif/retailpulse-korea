@@ -19,9 +19,9 @@
     "app/globals.css": "fedcfc48b2d7b08dc3cae6cbb625afee413afd788aa7701df1b3d223a8dcf2b2",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
     "app/layout.tsx": "5186b746949a34a311001c7e93bdc90bd53d81db213b629a3fac66483129dfab",
-    "app/live-signals.tsx": "de1b382dc14e2fdc39c34f206b61b7a1d11ded0fab93280a2dda336c08af26fa",
+    "app/live-signals.tsx": "677ad3eb6192dd5bb94a82d5f55550771a65af5a0f436a6a292ac655083c9d00",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
-    "app/operational-context.tsx": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6",
+    "app/operational-context.tsx": "a9ba61da5ef5c66017ae5660b9efd79d74272c2b31eb641ceca749d26548c75c",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
@@ -33,7 +33,7 @@
     "app/site-usage-guide.tsx": "4b49e1bd31a91e35f7d0b56b6d1670d94cf644bcc47bcb257508a2a0f6cc64f1",
     "app/sitemap.ts": "feb12ed8a001d1524b1fece19c3ac3ee945d4ccdc91d2fa115d5cccc1eedf2cd",
     "app/source-status.tsx": "a4832ec2982ec76631341f8a8aea477d98dd45128234ca7f6ee1002ea16196dd",
-    "app/tourism-desk.tsx": "4c0e583789484875dd7a32621035bfc918177234a49d118cf200a68c57a14b00",
+    "app/tourism-desk.tsx": "0ac2336bf39e6b824983404c3e560790377d730e112f4d58a9b1eb5aaa5b94eb",
     "app/tourism-visitor-show.tsx": "e30883e6efce51f33f839a38b78afe4a1127d87c9ba2cdb7bbac4de189179a10",
     "lib/realtime-dispatch.ts": "dba7bb0e688ec073df674bd5e5cfbb62c3810d8ad5ec181ed06e8bbe449d0a35",
     "public/_headers": "a10cad25ce8bd0c0b7c92225180a71718fc3d2bf5329ac714bf7b2ac6e22676f",
@@ -53,7 +53,7 @@
     "public/og-image.png": "aa6fcb5fe90f7d167fe1e754e6735781c9126868dd2993694db936c8cc6705bb",
     "public/window.svg": "decf1cf7bb22b5c99c4857cfcd5718ce5465c4454166317589c83fc73df74b66",
     "wrangler.production.jsonc": "7e07dd03ac29221dabcb1cb0ae30b4920bd65714f15fc3e2d867ee83cb2956fe",
-    "app/population-flow.tsx": "629cb24104891ab96ba6726b8946b1b5f5db832f6f13e3017dd08be211adad51",
+    "app/population-flow.tsx": "7185fbf8e580f81b50fabae06186b73a71c8726327ccc4e9cd0fce2ff44819c0",
     "public/favicon.ico": "8d78d5708cdecec4ec251689c1887cb944936361ad03878d8344e7bcae058432",
     "public/apple-touch-icon-20261007.png": "b11d62bc23ef6522c8f7e5f74aa06a956555e0bae6beb7eb507e2672ebadacba",
     "public/favicon-20261007.svg": "68ff8a9e81edf6529b14e70291e8edaa5b236adb361930b3e1ab8c1c239c77e4",
@@ -1985,5 +1985,103 @@
     ],
     "protectedPathCount": 65,
     "approvalEvidenceFile": "docs/approvals/search-identity-20261013.json"
+  },
+  "ownerApprovedMotion20261013": {
+    "reason": "Six explicitly owner-approved finite selection effects; this protected-file change translates only the population selection line for keyboard/button choices. Pointer drag remains immediate; min/max, observed/forecast and missing intervals are unchanged.",
+    "approvalEvidenceFile": "docs/approvals/approved-motion-20261013.json",
+    "changes": [
+      {
+        "file": "app/population-flow.tsx",
+        "previous": "629cb24104891ab96ba6726b8946b1b5f5db832f6f13e3017dd08be211adad51",
+        "approved": "7185fbf8e580f81b50fabae06186b73a71c8726327ccc4e9cd0fce2ff44819c0"
+      }
+    ],
+    "protectedPathCount": 65,
+    "checksPreserved": true
+  },
+  "ownerApprovedSeoulAirStatusDisplay20261013": {
+    "recordedAt": "2026-10-13T10:39:19.155920+00:00",
+    "authorizationEvidence": {
+      "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "delegatedRequest": "현재정상수집을강제재수집할필요없이adapter+저장캐시를받는표시경계에서점검/미제공을숫자0으로보이지않게최소수정하세요. 정상유효0과구분테스트.",
+      "scope": "Mask unavailable PM concentrations in new and stored payloads, retain maintenance status after numeric values become null, and describe WEATHER_TIME as provider update time. No collection activation, scheduler changes, KMA changes or design changes.",
+      "approvedProtectedFiles": [
+        "app/live-signals.tsx",
+        "app/operational-context.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true
+    },
+    "comparisonBase": "9a1364227d1bdb3c86334f36150bd901ccce3063",
+    "reason": "Record the delegated owner-requested display correction with exact diff; retain all protected paths and enforcement.",
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "51ca13c3a277ebdc9785194debd98c15684db04c5e8900726d7b12b1a5faada2",
+        "approved": "7fac56c4be9627b60e3c618d729b4e0e37c0b9bbdc6abe8a046c3e2182b108a9",
+        "exactUnifiedDiff": "diff --git a/app/live-signals.tsx b/app/live-signals.tsx\nindex 1b5aca6..a2e9906 100644\n--- a/app/live-signals.tsx\n+++ b/app/live-signals.tsx\n@@ -2458,7 +2458,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a\n             const weatherRow = groupId === \"now\" ? groupRows.find((row) => row.key === \"weather\") : undefined;\n             const remainingNow = groupId === \"now\" ? groupRows.filter((row) => row.key !== \"realtime\" && row.key !== \"weather\") : [];\n             const observedWeather = block?.context?.weather;\n-            const hasObservation = [observedWeather?.pm10, observedWeather?.pm25].some(value => value !== null && value !== undefined);\n+            const hasObservation = [observedWeather?.pm10, observedWeather?.pm25].some(value => value !== null && value !== undefined) || [observedWeather?.pm10Grade, observedWeather?.pm25Grade].some(grade => Boolean(grade?.trim()));\n           return <section className={`signal-group signal-group-${groupId}`} key={groupId}>\n             <header className=\"signal-group-head\">\n               <h3 className=\"signal-group-title\">{groupCopy.title[lang]}</h3>\n"
+      },
+      {
+        "file": "app/operational-context.tsx",
+        "previous": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6",
+        "approved": "a9ba61da5ef5c66017ae5660b9efd79d74272c2b31eb641ceca749d26548c75c",
+        "exactUnifiedDiff": "diff --git a/app/operational-context.tsx b/app/operational-context.tsx\nindex 30c5f8c..dc6f8e8 100644\n--- a/app/operational-context.tsx\n+++ b/app/operational-context.tsx\n@@ -1,6 +1,6 @@\n 'use client';\n import type { Lang } from './retailpulse-data';\n-import type { SeoulContext } from '../lib/seoul-context';\n+import { seoulAirReading, type SeoulContext } from '../lib/seoul-context';\n import {CommercialComposition} from './commercial-composition';\n import { kstDay } from '../lib/demand-presentation';\n import { AIR_GRADE_TEXT, readAirGrade } from '../lib/weather-guide';\n@@ -59,13 +59,16 @@ export function SeoulObservationScene({context,lang,nowIso,metricScenes=false,ai\n       if(!airOnly&&weather.temperature!==null) entries.push({kind:'temperature',value:`${stamp} ${weather.temperature}°C`});\n       if(!airOnly&&weather.humidity!==null) entries.push({kind:'humidity',value:`${t('습도','Humidity','湿度','湿度')} ${weather.humidity}%`});\n       if(!airOnly&&weather.wind!==null) entries.push({kind:'wind',value:`${t('바람','Wind','风','風')} ${weather.wind}m/s`});\n-      if(weather.pm10!==null) entries.push({kind:'air',value:`${t('미세먼지','PM10','可吸入颗粒物 PM10','PM10')}${weather.pm10Grade?` ${airGradeWord(weather.pm10Grade,lang)}`:''} ${weather.pm10}μg/m³`});\n-      if(weather.pm25!==null) entries.push({kind:'air',value:`${t('초미세먼지','PM2.5','细颗粒物 PM2.5','PM2.5')}${weather.pm25Grade?` ${airGradeWord(weather.pm25Grade,lang)}`:''} ${weather.pm25}μg/m³`});\n+      for(const [name,rawValue,rawGrade] of [[t('미세먼지','PM10','可吸入颗粒物 PM10','PM10'),weather.pm10,weather.pm10Grade],[t('초미세먼지','PM2.5','细颗粒物 PM2.5','PM2.5'),weather.pm25,weather.pm25Grade]] as const){\n+        const reading=seoulAirReading(rawValue,rawGrade);\n+        if(reading.value!==null)entries.push({kind:'air',value:`${name}${reading.grade?` ${airGradeWord(reading.grade,lang)}`:''} ${reading.value}μg/m³`});\n+        else if(reading.grade)entries.push({kind:'air',value:`${name} ${reading.status==='MAINTENANCE'?t('점검 중 · 농도 미제공','Under inspection · concentration unavailable','检查中 · 暂无浓度','点検中 · 濃度提供なし'):t('농도 미제공','Concentration unavailable','暂无浓度','濃度提供なし')}`});\n+      }\n       if (!entries.length) return null;\n       return <div className=\"context-environment\"><WeatherScene lang={lang} forecast={null} source=\"\" metricScenes={metricScenes} observation={{\n         facts:entries.map(entry=>entry.value),kinds:entries.map(entry=>entry.kind), observedAt: weather.observedAt, explanation: gap,\n-        title: airOnly?t('대기질 관측','Air quality observation','空气质量观测','大気質の観測'):metricScenes?(age.isNow?t('현재 관측','Current observation','当前观测','現在の観測'):t('최근 관측','Latest observation','最近观测','直近の観測')):t('주변 환경 관측','Local environment observation','当前周边环境','現在の周辺環境'),\n-        source: t('서울시 실시간 도시데이터 · 관측','Seoul real-time city data · observed','首尔市实时城市数据 · 观测','ソウル市リアルタイム都市データ · 観測'),\n+        title: airOnly?t('서울시 대기질 제공 상태','Seoul air-quality status','首尔空气质量提供状态','ソウル市の大気質提供状況'):metricScenes?(age.isNow?t('현재 관측','Current observation','当前观测','現在の観測'):t('최근 관측','Latest observation','最近观测','直近の観測')):t('주변 환경 관측','Local environment observation','当前周边环境','現在の周辺環境'),\n+        source: airOnly?t('서울시 제공 상태 · 업데이트','Seoul published status · updated','首尔提供状态 · 更新','ソウル市提供状況 · 更新'):t('서울시 실시간 도시데이터 · 관측','Seoul real-time city data · observed','首尔市实时城市数据 · 观测','ソウル市リアルタイム都市データ · 観測'),\n       }}/></div>;\n }\n export function HolidayContext({months,date,lang}:{months?:Array<{month:string;days:Array<{date:string;name:string}>;retrievedAt:string}>;date:string;lang:Lang}) {\n"
+      }
+    ],
+    "protectedPathCount": 65,
+    "approvalEvidenceFile": "docs/approvals/seoul-air-status-display-20261013.json"
+  },
+  "ownerApprovedPurposeUnitDisplay20261013": {
+    "recordedAt": "2026-10-13T11:40:32.403455+00:00",
+    "comparisonBase": "3bdcbab7f25d6eee2a8b26733764f81e52d07d2f",
+    "authorizationEvidence": {
+      "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "userMessageId": "Sentinel_7d1784360de88191a2b8aeda58399f7a",
+      "userMessageAt": "2026-10-13T11:25:00Z",
+      "assistantApprovalQuestion": "360.5는 단위가 확인되지 않아 큰 숫자 노출을 없앴어. 미세먼지 점검중0 표시를 수정했어. 직원 공유 문구·항공편 막대·6가지 효과도 정리했어. 나머지도 한 번에 병합·배포해도 될까?",
+      "userReply": "응 너가 말한 거 모두 허용할게.",
+      "delegatedVerification": "라이브최종360.5미노출/PM점검숫자숨김/공유실제주소/시간기준/제목/모션동작줄이기와모바일확인.",
+      "scopeApplication": "The same unverified dataset remained numeric in existing detail rows and Tourism Desk. Apply the approved numeric-withholding policy at these display boundaries; keep payload, source, dates, collection and calculations unchanged."
+    },
+    "reason": "Complete unit-unverified numeric withholding across existing public display paths; no protected rule is weakened.",
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "7fac56c4be9627b60e3c618d729b4e0e37c0b9bbdc6abe8a046c3e2182b108a9",
+        "approved": "f4bbb100deeb017aa0f4c88220f187cc4928639a4c114f076b71f748d46d0d22",
+        "exactUnifiedDiff": "diff --git a/app/live-signals.tsx b/app/live-signals.tsx\nindex a2e9906..acdf924 100644\n--- a/app/live-signals.tsx\n+++ b/app/live-signals.tsx\n@@ -1,4 +1,5 @@\n \"use client\";\n+import {unverifiedPurposeText} from '../lib/purpose-display';\n import {RateText} from './change-rate';\n import Image from 'next/image';\n import { AirportDateCalendar } from './airport-date-calendar';\n@@ -2264,15 +2265,12 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a\n \n   if (block?.foreignPurposeMobility) {\n     const mobility = block.foreignPurposeMobility;\n-    const parts: string[] = [];\n-    if (mobility.shopping !== null) parts.push(`${text.shoppingPurpose[lang]} ${formatPeopleValue(lang, mobility.shopping)}`);\n-    if (mobility.tourism !== null) parts.push(`${text.tourismPurpose[lang]} ${formatPeopleValue(lang, mobility.tourism)}`);\n-    if (parts.length) rows.push({\n+    if (mobility.shopping != null || mobility.tourism != null) rows.push({\n       key: \"foreign_purpose_mobility\",\n       group: \"movement\",\n       timeState: signalStructureText.timeState.delayed[lang],\n       label: text.foreignPurpose[lang],\n-      value: `${parts.join(\" · \")} ${text.movementUnit[lang]}`,\n+      value: unverifiedPurposeText[lang],\n       note: `${mobility.referenceDate} · ${text.foreignPurposeNote[lang]} · ${mobility.datasetId}`,\n       detail: contextText(lang,'해당일 도착 행정동의 추정 이동량 · 중복 이동 포함 · 같은 조건의 과거 비교 자료 부족. 쇼핑 목적은 백화점·프리미엄 아울렛 기준입니다.','Estimated movements into the mapped districts that day; repeat movements included. Matching past comparison unavailable. Shopping covers department stores and premium outlets.','该日进入所选行政区的推算移动量，包含重复移动。相同条件历史比较资料不足。购物指百货商场与高端奥特莱斯。','当日の対象行政洞への推定移動量・重複移動を含みます。同条件の過去比較資料不足。買い物目的は百貨店・プレミアムアウトレット基準です。'),\n       period: describeSourcePeriod({\n"
+      },
+      {
+        "file": "app/tourism-desk.tsx",
+        "previous": "4c0e583789484875dd7a32621035bfc918177234a49d118cf200a68c57a14b00",
+        "approved": "0ac2336bf39e6b824983404c3e560790377d730e112f4d58a9b1eb5aaa5b94eb",
+        "exactUnifiedDiff": "diff --git a/app/tourism-desk.tsx b/app/tourism-desk.tsx\nindex 3d30d25..b23876b 100644\n--- a/app/tourism-desk.tsx\n+++ b/app/tourism-desk.tsx\n@@ -1,4 +1,5 @@\n \"use client\";\n+import {unverifiedPurposeText} from '../lib/purpose-display';\n import {ChangeRate,RateText} from './change-rate';\n import Image from 'next/image';\n \n@@ -785,11 +786,11 @@ export function TourismDeskView({ lang, area, onAreaChange }: {\n             <dl className=\"tourism-background-values\">\n               {block.foreignPurposeMobility.shopping !== null && <div>\n                 <dt><Image unoptimized src=\"/visuals/clarity/v1/shopping-bag-256.webp\" width=\"48\" height=\"48\" alt=\"\" aria-hidden=\"true\" loading=\"lazy\" decoding=\"async\"/>{copy.shoppingPurpose}</dt>\n-                <dd>{numberText(block.foreignPurposeMobility.shopping, lang)} {copy.movements}</dd>\n+                <dd>{unverifiedPurposeText[lang]}</dd>\n               </div>}\n               {block.foreignPurposeMobility.tourism !== null && <div>\n                 <dt><Image unoptimized src=\"/visuals/clarity/v1/tourism-camera-256.webp\" width=\"48\" height=\"48\" alt=\"\" aria-hidden=\"true\" loading=\"lazy\" decoding=\"async\"/>{copy.tourismPurpose}</dt>\n-                <dd>{numberText(block.foreignPurposeMobility.tourism, lang)} {copy.movements}</dd>\n+                <dd>{unverifiedPurposeText[lang]}</dd>\n               </div>}\n             </dl>\n             <p className=\"tourism-background-period\">{block.foreignPurposeMobility.referenceDate}</p>{mobilityPeriod && <PeriodNote period={mobilityPeriod} />}\n"
+      }
+    ],
+    "protectedPathCount": 65,
+    "checksPreserved": true,
+    "approvalEvidenceFile": "docs/approvals/purpose-unit-display-20261013.json"
+  },
+  "ownerApprovedDisplayClaudeIntegration20261013": {
+    "reason": "Normal composition of previously approved unit masking and Claude PR365 early-window copy. No additional behavior or weakened guard.",
+    "approvalEvidenceFiles": [
+      "docs/approvals/purpose-unit-display-20261013.json",
+      "docs/approvals/early-window-copy-20261013.json"
+    ],
+    "parents": {
+      "review": "e6d9492bbf0113a776adfa7b60ca8675d38c5c68",
+      "main": "fea8249c3bcef134077684cb5c92049ea83bb477"
+    },
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previousReview": "f4bbb100deeb017aa0f4c88220f187cc4928639a4c114f076b71f748d46d0d22",
+        "previousMain": "de1b382dc14e2fdc39c34f206b61b7a1d11ded0fab93280a2dda336c08af26fa",
+        "approved": "677ad3eb6192dd5bb94a82d5f55550771a65af5a0f436a6a292ac655083c9d00",
+        "diffFromReview": "diff --git a/app/live-signals.tsx b/app/live-signals.tsx\nindex acdf924..21e9300 100644\n--- a/app/live-signals.tsx\n+++ b/app/live-signals.tsx\n@@ -737,7 +737,7 @@ export const airportTodayText = {\n   // Today's rows can be absent for a whole service day when the morning A1\n   // scan timed out at the provider. Say that plainly instead of the generic\n   // coverage line, which would blame gate data that was never collected.\n-  noFlightsToday: { ko: \"오늘 출발편 수집이 완료되지 않았습니다. 첫 수집은 04:07 KST이며 실패하면 몇 분 안에 곧바로 두 번 더 시도하고, 06:07 KST에 한 번 더 수집합니다. 실행 지연이나 공급자 장애가 있으면 늦어질 수 있습니다. 수집 성공 후 게이트·항공사·등록 국가가 함께 표시됩니다.\", en: \"Today's departures collection is incomplete. The first attempt is 04:07 KST, retried twice within minutes if it fails, and collected again at 06:07 KST. Execution delays or provider outages may postpone all three breakdowns.\", zh: \"今日出发航班尚未完成采集。首次采集为 04:07 KST，失败时数分钟内立即重试两次，并于 06:07 KST 再次采集；任务延迟或供应方故障可能推迟显示。\", ja: \"本日の出発便の収集は未完了です。最初の収集は 04:07 KST で、失敗すれば数分以内にさらに2回再試行し、06:07 KST にもう一度収集します。実行遅延や提供元の障害で表示が遅れる場合があります。\" },\n+  noFlightsToday: { ko: \"오늘 출발편 수집이 완료되지 않았습니다. 첫 정기 수집은 00:07 KST 예정이며, 재시도 조건에 해당하면 최대 두 번 더 시도합니다. 06:07 KST에도 정기 수집이 예정되어 있습니다. 실행 지연이나 공급자 장애로 늦어질 수 있습니다. 수집 성공 후 게이트·항공사·등록 국가가 함께 표시됩니다.\", en: \"Today's departures collection is incomplete. The first scheduled attempt is 00:07 KST, with up to two additional attempts for eligible failures. Another regular collection is scheduled for 06:07 KST. Execution delays or provider outages may postpone the gate, airline and registration-country breakdowns.\", zh: \"今日出发航班尚未完成采集。首次定时采集计划于 00:07 KST 执行，符合重试条件时最多再试两次，另于 06:07 KST 安排定时采集。任务延迟或供应方故障可能推迟登机口、航空公司及注册国统计的显示。\", ja: \"本日の出発便の収集は未完了です。最初の定期収集は 00:07 KST の予定で、再試行条件に該当する場合は最大2回追加で試行します。06:07 KST にも定期収集を予定しています。実行遅延や提供元の障害でゲート・航空会社・登録国の表示が遅れる場合があります。\" },\n   noFlightsForDate: { ko: \"이 날짜의 출발편 데이터가 없습니다.\", en: \"No departure data is stored for this date.\", zh: \"该日期没有出发航班数据。\", ja: \"この日付の出発便データはありません。\" },\n   airlinesTitle: { ko: \"항공사별 운항 순위\", en: \"Airlines by departures\", zh: \"航空公司出发航班排名\", ja: \"航空会社別運航ランキング\" },\n   airlinesNote: { ko: \"오늘 실제 출발편을 운항 항공사 기준으로 집계한 순위입니다. 공동운항편은 운항사 1편으로만 셉니다.\", en: \"Today's physical departures counted by operating airline. A codeshare counts once, for its operator.\", zh: \"按实际执飞航空公司统计的今日出发航班排名，共享航班仅按执飞方计 1 班。\", ja: \"本日の実運航出発便を運航会社ごとに集計した順位です。コードシェア便は運航会社の1便としてのみ数えます。\" },\n",
+        "diffFromMain": "diff --git a/app/live-signals.tsx b/app/live-signals.tsx\nindex 35609a6..21e9300 100644\n--- a/app/live-signals.tsx\n+++ b/app/live-signals.tsx\n@@ -1,4 +1,5 @@\n \"use client\";\n+import {unverifiedPurposeText} from '../lib/purpose-display';\n import {RateText} from './change-rate';\n import Image from 'next/image';\n import { AirportDateCalendar } from './airport-date-calendar';\n@@ -2264,15 +2265,12 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a\n \n   if (block?.foreignPurposeMobility) {\n     const mobility = block.foreignPurposeMobility;\n-    const parts: string[] = [];\n-    if (mobility.shopping !== null) parts.push(`${text.shoppingPurpose[lang]} ${formatPeopleValue(lang, mobility.shopping)}`);\n-    if (mobility.tourism !== null) parts.push(`${text.tourismPurpose[lang]} ${formatPeopleValue(lang, mobility.tourism)}`);\n-    if (parts.length) rows.push({\n+    if (mobility.shopping != null || mobility.tourism != null) rows.push({\n       key: \"foreign_purpose_mobility\",\n       group: \"movement\",\n       timeState: signalStructureText.timeState.delayed[lang],\n       label: text.foreignPurpose[lang],\n-      value: `${parts.join(\" · \")} ${text.movementUnit[lang]}`,\n+      value: unverifiedPurposeText[lang],\n       note: `${mobility.referenceDate} · ${text.foreignPurposeNote[lang]} · ${mobility.datasetId}`,\n       detail: contextText(lang,'해당일 도착 행정동의 추정 이동량 · 중복 이동 포함 · 같은 조건의 과거 비교 자료 부족. 쇼핑 목적은 백화점·프리미엄 아울렛 기준입니다.','Estimated movements into the mapped districts that day; repeat movements included. Matching past comparison unavailable. Shopping covers department stores and premium outlets.','该日进入所选行政区的推算移动量，包含重复移动。相同条件历史比较资料不足。购物指百货商场与高端奥特莱斯。','当日の対象行政洞への推定移動量・重複移動を含みます。同条件の過去比較資料不足。買い物目的は百貨店・プレミアムアウトレット基準です。'),\n       period: describeSourcePeriod({\n@@ -2458,7 +2456,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a\n             const weatherRow = groupId === \"now\" ? groupRows.find((row) => row.key === \"weather\") : undefined;\n             const remainingNow = groupId === \"now\" ? groupRows.filter((row) => row.key !== \"realtime\" && row.key !== \"weather\") : [];\n             const observedWeather = block?.context?.weather;\n-            const hasObservation = [observedWeather?.pm10, observedWeather?.pm25].some(value => value !== null && value !== undefined);\n+            const hasObservation = [observedWeather?.pm10, observedWeather?.pm25].some(value => value !== null && value !== undefined) || [observedWeather?.pm10Grade, observedWeather?.pm25Grade].some(grade => Boolean(grade?.trim()));\n           return <section className={`signal-group signal-group-${groupId}`} key={groupId}>\n             <header className=\"signal-group-head\">\n               <h3 className=\"signal-group-title\">{groupCopy.title[lang]}</h3>\n"
+      }
+    ],
+    "protectedPathCount": 65,
+    "approvalEvidenceFile": "docs/approvals/display-claude-integration-20261013.json"
   }
 }

@@ -1,0 +1,14 @@
+{
+  "scope": "Composition-only normal merge of approved main release and SEO identity draft; no extra product behavior changes",
+  "seoHead": "4003015360a76e34966987f6bb2425bedf10098f",
+  "mainHead": "7e6d18dacfea5fc1347338d4a493d0b916091c4f",
+  "protectedPathCount": 65,
+  "allApprovalObjectsRetained": true,
+  "allFinalProtectedHashesMatchOneOfTheApprovedParentVersions": true,
+  "seoChangedFilesPreserved": [
+    "app/layout.tsx",
+    "app/seo-config.ts",
+    "app/retailpulse-app.tsx"
+  ],
+  "publicMergeOrDeploymentPerformed": false
+}

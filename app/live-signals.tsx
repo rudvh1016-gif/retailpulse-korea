@@ -1,4 +1,5 @@
 "use client";
+import {unverifiedPurposeText} from '../lib/purpose-display';
 import {RateText} from './change-rate';
 import Image from 'next/image';
 import { AirportDateCalendar } from './airport-date-calendar';
@@ -2264,15 +2265,12 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
 
   if (block?.foreignPurposeMobility) {
     const mobility = block.foreignPurposeMobility;
-    const parts: string[] = [];
-    if (mobility.shopping !== null) parts.push(`${text.shoppingPurpose[lang]} ${formatPeopleValue(lang, mobility.shopping)}`);
-    if (mobility.tourism !== null) parts.push(`${text.tourismPurpose[lang]} ${formatPeopleValue(lang, mobility.tourism)}`);
-    if (parts.length) rows.push({
+    if (mobility.shopping != null || mobility.tourism != null) rows.push({
       key: "foreign_purpose_mobility",
       group: "movement",
       timeState: signalStructureText.timeState.delayed[lang],
       label: text.foreignPurpose[lang],
-      value: `${parts.join(" · ")} ${text.movementUnit[lang]}`,
+      value: unverifiedPurposeText[lang],
       note: `${mobility.referenceDate} · ${text.foreignPurposeNote[lang]} · ${mobility.datasetId}`,
       detail: contextText(lang,'해당일 도착 행정동의 추정 이동량 · 중복 이동 포함 · 같은 조건의 과거 비교 자료 부족. 쇼핑 목적은 백화점·프리미엄 아울렛 기준입니다.','Estimated movements into the mapped districts that day; repeat movements included. Matching past comparison unavailable. Shopping covers department stores and premium outlets.','该日进入所选行政区的推算移动量，包含重复移动。相同条件历史比较资料不足。购物指百货商场与高端奥特莱斯。','当日の対象行政洞への推定移動量・重複移動を含みます。同条件の過去比較資料不足。買い物目的は百貨店・プレミアムアウトレット基準です。'),
       period: describeSourcePeriod({
@@ -2458,7 +2456,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
             const weatherRow = groupId === "now" ? groupRows.find((row) => row.key === "weather") : undefined;
             const remainingNow = groupId === "now" ? groupRows.filter((row) => row.key !== "realtime" && row.key !== "weather") : [];
             const observedWeather = block?.context?.weather;
-            const hasObservation = [observedWeather?.pm10, observedWeather?.pm25].some(value => value !== null && value !== undefined);
+            const hasObservation = [observedWeather?.pm10, observedWeather?.pm25].some(value => value !== null && value !== undefined) || [observedWeather?.pm10Grade, observedWeather?.pm25Grade].some(grade => Boolean(grade?.trim()));
           return <section className={`signal-group signal-group-${groupId}`} key={groupId}>
             <header className="signal-group-head">
               <h3 className="signal-group-title">{groupCopy.title[lang]}</h3>

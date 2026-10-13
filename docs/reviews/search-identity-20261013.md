@@ -2,6 +2,12 @@
 
 기준 main fea8249c3bcef134077684cb5c92049ea83bb477
 
+2026-10-13 통합 갱신: main 7e6d18dacfea5fc1347338d4a493d0b916091c4f를 정상 merge
+manifest 충돌만 해결하고 양쪽 65개 보호 경로와 모든 승인 객체를 보존
+모든 최종 보호 파일 hash가 양쪽 승인 버전 중 하나와 정확히 일치하며 추가 제품 변경 없음
+통합 증거는 `search-identity-main-integration-20261013.json`
+최신 main 모션·서울 표시 진실성·SEO E2E 23개, UI Lock·typecheck·SEO unit 8개·빌드 통과
+
 검색에 보인 일반적인 소개 문구를 서비스 핵심으로 바꾸고 기존 `/about` 방문이 404로 끝나는 문제를 수정
 
 - 홈 제목: 코리테일 KORETAIL | 인천공항 대기·항공편과 서울 상권 정보

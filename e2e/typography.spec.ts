@@ -348,7 +348,7 @@ test("the weather forecast keeps humidity and wind while air readings retain the
 
   // Independent air observations retain their clock; Seoul temperature comes from the forecast.
   const environment = page.locator(".context-environment");
-  await expect(environment).toContainText("대기질 관측");
+  await expect(environment).toContainText("서울시 대기질 제공 상태");await expect(environment).toContainText("서울시 제공 상태 · 업데이트");
   await expect(environment).toContainText(/08\.\s*31\.\s*14:05 KST/);
   await expect(environment).not.toContainText("29.4°C");
   await expect(environment).toContainText("미세먼지 좋음");

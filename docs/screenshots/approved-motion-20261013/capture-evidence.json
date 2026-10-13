@@ -1,0 +1,13 @@
+{
+  "fixture": true,
+  "liveSourceVerification": false,
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "effects": "finite choice feedback and explicitly triggered departure order",
+  "conditionalCustomsPreserved": true,
+  "planChangeCancelsSequence": true,
+  "sequenceLayoutStable": true,
+  "browserErrors": []
+}
