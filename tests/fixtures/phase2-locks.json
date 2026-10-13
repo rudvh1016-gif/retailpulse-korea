@@ -53,7 +53,7 @@
     "public/og-image.png": "aa6fcb5fe90f7d167fe1e754e6735781c9126868dd2993694db936c8cc6705bb",
     "public/window.svg": "decf1cf7bb22b5c99c4857cfcd5718ce5465c4454166317589c83fc73df74b66",
     "wrangler.production.jsonc": "7e07dd03ac29221dabcb1cb0ae30b4920bd65714f15fc3e2d867ee83cb2956fe",
-    "app/population-flow.tsx": "629cb24104891ab96ba6726b8946b1b5f5db832f6f13e3017dd08be211adad51",
+    "app/population-flow.tsx": "7185fbf8e580f81b50fabae06186b73a71c8726327ccc4e9cd0fce2ff44819c0",
     "public/favicon.ico": "8d78d5708cdecec4ec251689c1887cb944936361ad03878d8344e7bcae058432",
     "public/apple-touch-icon-20261007.png": "b11d62bc23ef6522c8f7e5f74aa06a956555e0bae6beb7eb507e2672ebadacba",
     "public/favicon-20261007.svg": "68ff8a9e81edf6529b14e70291e8edaa5b236adb361930b3e1ab8c1c239c77e4",
@@ -1810,5 +1810,18 @@
     ],
     "protectedPathCount": 65,
     "approvalEvidenceFile": "docs/approvals/render-apis-crawlable-20261013.json"
+  },
+  "ownerApprovedMotion20261013": {
+    "reason": "Six explicitly owner-approved finite selection effects; this protected-file change translates only the population selection line for keyboard/button choices. Pointer drag remains immediate; min/max, observed/forecast and missing intervals are unchanged.",
+    "approvalEvidenceFile": "docs/approvals/approved-motion-20261013.json",
+    "changes": [
+      {
+        "file": "app/population-flow.tsx",
+        "previous": "629cb24104891ab96ba6726b8946b1b5f5db832f6f13e3017dd08be211adad51",
+        "approved": "7185fbf8e580f81b50fabae06186b73a71c8726327ccc4e9cd0fce2ff44819c0"
+      }
+    ],
+    "protectedPathCount": 65,
+    "checksPreserved": true
   }
 }

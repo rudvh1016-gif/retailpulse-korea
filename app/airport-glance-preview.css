@@ -63,3 +63,9 @@ body:has(.glance-preview){background:#fff}
 @media(max-width:700px){.glance-controls>div{gap:2px}.glance-controls>div button{padding-inline:9px}}
 
 .glance-insights>.glance-passengers{grid-column:1/-1}.glance-insights>.glance-passengers>small{grid-column:1/-1}.glance-insights>.glance-passengers>span{grid-row:1}
+
+/* Approved finite choice feedback; artwork and building panels remain fixed. */
+.glance-controls>div button{position:relative}
+.glance-controls>div button[aria-pressed=true]{box-shadow:none}
+.glance-selection-rule{position:absolute;bottom:0;left:9px;right:9px;height:2px;background:currentColor;pointer-events:none}
+.glance-building h2 .glance-building-label{display:inline-block;font:inherit}

@@ -11,6 +11,7 @@ import { actionText, coverageLine, evidenceText, factLine, hoursLabel, isWholeDa
 import { industryProfiles, type IndustryId } from '../lib/industry-guidance';
 import { snapshotOf } from '../lib/last-check';
 import { LastCheckBlock, UsualComparisonBlock } from './business-compare';
+import {usePrepChangeMotion} from './use-choice-motion';
 import { PrepShare } from './prep-share';
 import { buildShareDocument, shareLink } from '../lib/prep-share';
 import { siteOrigin } from './seo-config';
@@ -165,6 +166,8 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
   const prep = input ? buildBusinessPrep(input) : null;
   const snapshot = input && prep && prep.status !== 'PAST' && prep.status !== 'ENDED' ? snapshotOf(input, prep, nowIso) : null;
   const serviceDate = summary?.serviceDateKst ?? '';
+  const motionRoot=useRef<HTMLElement>(null);
+  usePrepChangeMotion(motionRoot,`${placeKey(place)}|${industry}|${preferences.hours?.open??''}|${preferences.hours?.close??''}`);
   // One valid view per date, place, language and verdict: a view counts only
   // once the prep has data behind it, never while loading or on an error.
   const viewed = useRef<string | null>(null);
@@ -176,7 +179,7 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
     // viewKey already names everything this depends on.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewKey]);
-  return <section className="business-prep" data-testid="business-prep" data-place={place.kind} aria-labelledby={`${id}-title`}>
+  return <section ref={motionRoot} className="business-prep" data-testid="business-prep" data-place={place.kind} aria-labelledby={`${id}-title`}>
     <div className="section-head"><div>
       <p className="eyebrow">KORETAIL · {prepCopy.eyebrow[lang]}</p>
       <h2 id={`${id}-title`}>{prepCopy.title[lang]}</h2>
@@ -188,7 +191,7 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
         <h3>{prepCopy.factsTitle[lang]}</h3>
         {/* The whole-day east/west flight comparison is the card at the top of the airport block (same sentences as the shared text and image). */}
         {prep.facts.some((fact) => !isWholeDayFact(fact))
-          ? <ul className="prep-facts" data-testid="prep-facts" key={`${serviceDate}:${place.kind === 'area' ? place.area : place.terminal}:${preferences.hours?.open ?? ''}:${preferences.hours?.close ?? ''}`}>{prep.facts.filter((fact) => !isWholeDayFact(fact)).map((fact, index) => <li key={index} data-fact={fact.kind}>{place.kind === 'area'
+          ? <ul className="prep-facts" data-testid="prep-facts" key={`${serviceDate}:${place.kind === 'area' ? place.area : place.terminal}:${preferences.hours?.open ?? ''}:${preferences.hours?.close ?? ''}`}>{prep.facts.filter((fact) => !isWholeDayFact(fact)).map((fact, index) => <li key={index} data-prep-motion={`fact:${fact.kind}`} data-fact={fact.kind}>{place.kind === 'area'
             ? <AreaPrepFact fact={fact} serviceDate={serviceDate} lang={lang}/>
             : factLine(fact, serviceDate, lang)}</li>)}</ul>
           : prep.status === 'PAST' || prep.status === 'ENDED' ? null : <p className="prep-empty">{prepCopy.noFacts[lang]}</p>}
@@ -199,10 +202,10 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
       <LastCheckBlock lang={lang} snapshot={snapshot} serviceDate={serviceDate} nowIso={nowIso}/>
       <div className="prep-block">
         <h3>{prepCopy.actionsTitle[lang]}</h3>
-        {prep.actions.length ? <ol className="prep-actions" data-testid="prep-actions">{prep.actions.map((action, index) => {
+        {prep.actions.length ? <ol className="prep-actions" data-testid="prep-actions">{prep.actions.map((action) => {
           const text = actionText(action, serviceDate, industry, lang);
           const evidence = evidenceText(action, serviceDate, lang);
-          return <li key={index} data-rule={action.rule}>
+          return <li key={action.rule} data-prep-motion={`action:${action.rule}`} data-rule={action.rule}>
             <p className="prep-action-title">{text.title}</p>
             <p>{text.body}</p>
             {text.industryHint && <p className="prep-industry-hint"><strong>{prepCopy.industryCheck[lang]}</strong> {text.industryHint}</p>}

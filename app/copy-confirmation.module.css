@@ -1,0 +1,3 @@
+.button{display:inline-flex;align-items:center;gap:4px}
+.check{opacity:0;transform-origin:center}
+.check[data-copied=true]{opacity:1}

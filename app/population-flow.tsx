@@ -2,6 +2,7 @@
 
 import {useEffect,useId,useMemo,useRef,useState} from 'react';
 import type {Lang} from './retailpulse-data';
+import {useSelectionMotion} from './use-choice-motion';
 import {PopulationRangeMaterial} from './population-range-material';
 import {compactPeople,flowSegments,kstDay,kstStamp,peopleRange,populationTicks,type FlowPoint} from '../lib/demand-presentation';
 
@@ -23,7 +24,7 @@ const words={
 const key=(point:FlowPoint)=>`${point.kind}:${point.at}`;
 
 export function PopulationFlowChart({points,lang,now,copy}:{points:FlowPoint[];lang:Lang;now:number;copy:Copy}){
- const id=useId(),figure=useRef<HTMLElement>(null);
+ const id=useId(),figure=useRef<HTMLElement>(null),selectionLine=useRef<SVGGElement>(null),immediate=useRef(false);
  const [width,setWidth]=useState(640),[mode,setMode]=useState<'all'|'future'>('all'),[selected,setSelected]=useState<string|null>(null);
  useEffect(()=>{
   if(!figure.current)return;
@@ -42,6 +43,8 @@ export function PopulationFlowChart({points,lang,now,copy}:{points:FlowPoint[];l
  const domainEnd=max===domainStart?max+1_800_000:max;
  const left=46,right=width-14,plotWidth=right-left,top=32,bottom=244;
  const x=(time:number)=>left+Math.max(0,Math.min(1,(time-domainStart)/(domainEnd-domainStart)))*plotWidth;
+ useSelectionMotion(selectionLine,active?x(active.time):NaN,selected??'',`${domainStart}|${domainEnd}|${width}`,immediate);
+ const choose=(value:string)=>{immediate.current=false;setSelected(value);};
  const ceiling=Math.max(1,...visible.map(point=>point.populationMax))*1.1;
  const y=(value:number)=>bottom-value/ceiling*(bottom-top);
  const path=(segment:FlowPoint[],bound:'populationMin'|'populationMax')=>segment.map((point,index)=>`${index?'L':'M'}${x(point.time)},${y(point[bound])}`).join(' ');
@@ -54,7 +57,7 @@ export function PopulationFlowChart({points,lang,now,copy}:{points:FlowPoint[];l
   if(!visible.length)return;
   const time=domainStart+Math.max(0,Math.min(1,((clientX-rect.left)/rect.width*width-left)/plotWidth))*(domainEnd-domainStart);
   const nearest=visible.reduce((best,point)=>Math.abs(point.time-time)<Math.abs(best.time-time)?point:best);
-  setSelected(key(nearest));
+  immediate.current=true;selectionLine.current?.getAnimations().forEach(animation=>animation.cancel());setSelected(key(nearest));
  }
  return <figure ref={figure} className="population-flow population-flow-connected" aria-labelledby={`${id}-title`}>
   <div className="flow-head"><figcaption id={`${id}-title`}>{copy.flow[lang]}</figcaption><span className="flow-legend-unit">{unit.trim()} · KST</span></div>
@@ -79,14 +82,14 @@ export function PopulationFlowChart({points,lang,now,copy}:{points:FlowPoint[];l
      {segment.length>1?<><path className="flow-range" d={`${path(segment,'populationMax')} ${[...segment].reverse().map(point=>`L${x(point.time)},${y(point.populationMin)}`).join(' ')} Z`}/><path className="flow-bound" d={path(segment,'populationMax')}/><path className="flow-bound flow-lower-bound" d={path(segment,'populationMin')}/></>:<line className="flow-bound flow-interval" x1={x(segment[0].time)} x2={x(segment[0].time)} y1={y(segment[0].populationMin)} y2={y(segment[0].populationMax)}/>}
     </g>)}
     {now>=domainStart&&now<=domainEnd&&<g className="flow-now"><line x1={x(now)} x2={x(now)} y1={top-4} y2={bottom}/><text x={Math.max(left+22,Math.min(right-22,x(now)))} y="18" textAnchor="middle">{copy.now[lang]}</text></g>}
-    {selected&&<g className="flow-selection"><line x1={x(active.time)} x2={x(active.time)} y1={top-4} y2={bottom}/></g>}
+    {selected&&<g ref={selectionLine} className="flow-selection"><line x1={x(active.time)} x2={x(active.time)} y1={top-4} y2={bottom}/></g>}
     <g className={`flow-${active.kind} flow-marker`}><circle cx={x(active.time)} cy={y(active.populationMax)} r="2.6"/></g>
     {ticks.map(time=><text className="flow-tick" data-time={time} key={time} x={x(time)} y={bottom+18} textAnchor={time===domainStart?'start':time===domainEnd?'end':'middle'}><tspan x={x(time)}>{kstStamp(time).slice(6)}</tspan>{kstDay(time)!==kstDay(domainStart)&&kstStamp(time).slice(6)==='00:00'&&<tspan className="flow-tick-date" x={x(time)} dy="18">{Number(kstDay(time).slice(5,7))}/{Number(kstDay(time).slice(8))}</tspan>}</text>)}
    </svg>
    <div className="flow-time-control">
-    <button type="button" aria-label={words.previous[lang]} disabled={activeIndex===0} onClick={()=>setSelected(key(visible[activeIndex-1]))}>‹</button>
-    <div><label htmlFor={`${id}-time`}>{copy.timeSelect[lang]}</label><select id={`${id}-time`} value={key(active)} aria-describedby={`${id}-reading`} onChange={event=>setSelected(event.target.value)}>{visible.map(point=><option key={key(point)} value={key(point)}>{kstStamp(point.time)} · {copy[point.kind==='forecast'?'forecast':'observed'][lang]}</option>)}</select></div>
-    <button type="button" aria-label={words.next[lang]} disabled={activeIndex===visible.length-1} onClick={()=>setSelected(key(visible[activeIndex+1]))}>›</button>
+    <button type="button" aria-label={words.previous[lang]} disabled={activeIndex===0} onClick={()=>choose(key(visible[activeIndex-1]))}>‹</button>
+    <div><label htmlFor={`${id}-time`}>{copy.timeSelect[lang]}</label><select id={`${id}-time`} value={key(active)} aria-describedby={`${id}-reading`} onChange={event=>choose(event.target.value)}>{visible.map(point=><option key={key(point)} value={key(point)}>{kstStamp(point.time)} · {copy[point.kind==='forecast'?'forecast':'observed'][lang]}</option>)}</select></div>
+    <button type="button" aria-label={words.next[lang]} disabled={activeIndex===visible.length-1} onClick={()=>choose(key(visible[activeIndex+1]))}>›</button>
    </div>
    <span id={`${id}-reading`} className="sr-only">{valueText}</span>
    <div className="flow-time-extent"><span>{kstStamp(min)} KST</span><span>{kstStamp(max)} KST</span></div>

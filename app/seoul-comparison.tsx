@@ -1,6 +1,7 @@
 'use client';
 /* eslint-disable @next/next/no-img-element -- Precomputed responsive WebPs; no on-demand image transforms. */
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
+import {useChoiceMotion} from './use-choice-motion';
 import type {Lang} from './retailpulse-data';
 import {useLiveSummary} from './live-signals';
 import type {AreaId} from '../lib/areas';
@@ -79,6 +80,8 @@ export function ConsumptionView({lang,area,onArea}:{lang:Lang;area:AreaId;onArea
  useEffect(()=>{const read=()=>{const query=new URLSearchParams(window.location.search).get('month');setMonth(query&&/^\d{4}-(0[1-9]|1[0-2])$/.test(query)?query:null);};const timer=setTimeout(read,0);window.addEventListener('popstate',read);return()=>{clearTimeout(timer);window.removeEventListener('popstate',read);};},[]);
  const request=usePreparedMonth<MonthResponse>(key,`/api/live/commercial-months?area=${area}&month=${selectedMonth}`,selectedMonth??'',''),response=request.reply;
  const data=response?.data,number=new Intl.NumberFormat(locales[lang],{maximumFractionDigits:1}),won=new Intl.NumberFormat(locales[lang],{style:'currency',currency:'KRW',maximumFractionDigits:0});
+ const motionRoot=useRef<HTMLDivElement>(null);
+ useChoiceMotion(motionRoot,key,'.consumption-pair > g',200,!!data&&!request.pending&&!request.retained);
  const max=Math.max(1,...(data?.categories.flatMap(row=>[row.comparison.currentMean??0,row.comparison.previousMean??0])??[]));
  const monthLabel=(month:string)=>new Intl.DateTimeFormat(locales[lang],{month:'short',timeZone:'UTC'}).format(new Date(month+'-01T00:00:00Z'));
  const changeMonth=(value:string)=>{setMonth(value);const url=new URL(window.location.href);url.searchParams.set('area',area);url.searchParams.set('month',value);window.history.replaceState({},'',url.pathname+url.search);};
@@ -87,7 +90,7 @@ export function ConsumptionView({lang,area,onArea}:{lang:Lang;area:AreaId;onArea
   <div className="area-tabs" role="tablist" aria-label={t(lang,'지역 선택','Select district','选择地区','エリア選択')}>{areas.map(value=><button key={value} type="button" role="tab" className={area===value?'active':''} aria-selected={area===value} onClick={()=>onArea(value)}>{names[value][lang]}</button>)}</div>
   <div className="comparison-date"><label>{t(lang,'비교월','Month','比较月份','比較月')} <select name="commercialMonth" aria-label={t(lang,'비교월','Comparison month','比较月份','比較月')} value={selectedMonth??''} onChange={event=>changeMonth(event.target.value)}>{[...new Set([...(selectedMonth?[selectedMonth]:[]),...(response?.months??[])])].sort().reverse().map(value=><option key={value} value={value}>{value}</option>)}</select></label></div>
   <p className="comparison-basis">{t(lang,'서울시·신한카드 내국인 결제 · 10분 관측 평균','Seoul / Shinhan domestic-card payments · observed 10-minute means','首尔市／新韩卡本国人支付 · 10分钟观测均值','ソウル市・新韓カードの韓国人決済 · 10分観測の平均')}<small className="consumption-scope">{t(lang,'전수 매출·외국인 소비 아님','Not total sales or foreign spending','非全部销售额或外国人消费','全体売上・外国人消費ではありません')}</small></p>
-  <div className="consumption-results" aria-busy={request.pending}>
+  <div ref={motionRoot} className="consumption-results" aria-busy={request.pending}>
   {!data?<div role="status" className="comparison-empty"><p>{request.pending&&!response?t(lang,'월별 자료 불러오는 중…','Loading monthly data…','正在读取月度资料…','月次資料を読み込み中…'):request.failed?t(lang,'월 요약 연결이 일시적으로 지연됐습니다.','Monthly summaries are temporarily unavailable.','月度汇总连接暂时延迟。','月次要約の接続が一時的に遅延しています。'):t(lang,'이 월의 요약 자료를 아직 확인할 수 없습니다. 다른 월도 선택할 수 있습니다.','This month’s summary is unconfirmed. You can select another month.','暂无法确认本月汇总，可选择其他月份。','この月の要約は未確認です。別の月も選択できます。')}</p>{request.attempt<3||request.pending?<small>{t(lang,'잠시 후 자동으로 다시 확인합니다.','A bounded automatic check follows shortly.','稍后自动再次检查。','まもなく自動で再確認します。')}</small>:<button className="comparison-retry" type="button" onClick={request.retry}>{t(lang,'자료 다시 확인','Check data again','再次检查资料','資料を再確認')}</button>}<a href={`/${lang}/more#collection-status`}>{t(lang,'수집 상태 보기','Collection status','查看采集状态','収集状況')}</a></div>:<>
    {(request.pending||request.failed||request.retained)&&<p className="comparison-basis" role="status">{t(lang,'마지막 확인 요약을 표시합니다.','Showing the last confirmed summary.','显示上次确认的汇总。','最後に確認した要約を表示しています。')} {data.month} · {stamp(response?.calculatedAt,lang)}</p>}
    <div className="consumption-legend"><span><i className="previous"/>{data.previousMonth}</span><span><i className="current"/>{data.month}</span><span>{t(lang,'공통 축 · 이번 달 평균 결제건수 큰 순 · 미제공은 마지막','Shared scale · current mean payment count, descending; missing last','共同坐标 · 本月平均支付笔数降序 · 缺失在末尾','共通目盛り・今月平均決済件数の降順・欠損は最後')}</span></div>
