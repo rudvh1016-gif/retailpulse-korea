@@ -19,9 +19,9 @@
     "app/globals.css": "91bb08d182fadf62a71190527138522e5614b5a7cf4c12041466e2d76f93a8ae",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
     "app/layout.tsx": "5751b05b09e86833897a9e9145672af9ae830c538b1f357f9963325d592e06a5",
-    "app/live-signals.tsx": "51ca13c3a277ebdc9785194debd98c15684db04c5e8900726d7b12b1a5faada2",
+    "app/live-signals.tsx": "7fac56c4be9627b60e3c618d729b4e0e37c0b9bbdc6abe8a046c3e2182b108a9",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
-    "app/operational-context.tsx": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6",
+    "app/operational-context.tsx": "a9ba61da5ef5c66017ae5660b9efd79d74272c2b31eb641ceca749d26548c75c",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
@@ -1810,5 +1810,36 @@
     ],
     "protectedPathCount": 65,
     "approvalEvidenceFile": "docs/approvals/render-apis-crawlable-20261013.json"
+  },
+  "ownerApprovedSeoulAirStatusDisplay20261013": {
+    "recordedAt": "2026-10-13T10:39:19.155920+00:00",
+    "authorizationEvidence": {
+      "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+      "delegatedRequest": "현재정상수집을강제재수집할필요없이adapter+저장캐시를받는표시경계에서점검/미제공을숫자0으로보이지않게최소수정하세요. 정상유효0과구분테스트.",
+      "scope": "Mask unavailable PM concentrations in new and stored payloads, retain maintenance status after numeric values become null, and describe WEATHER_TIME as provider update time. No collection activation, scheduler changes, KMA changes or design changes.",
+      "approvedProtectedFiles": [
+        "app/live-signals.tsx",
+        "app/operational-context.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true
+    },
+    "comparisonBase": "9a1364227d1bdb3c86334f36150bd901ccce3063",
+    "reason": "Record the delegated owner-requested display correction with exact diff; retain all protected paths and enforcement.",
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "51ca13c3a277ebdc9785194debd98c15684db04c5e8900726d7b12b1a5faada2",
+        "approved": "7fac56c4be9627b60e3c618d729b4e0e37c0b9bbdc6abe8a046c3e2182b108a9",
+        "exactUnifiedDiff": "diff --git a/app/live-signals.tsx b/app/live-signals.tsx\nindex 1b5aca6..a2e9906 100644\n--- a/app/live-signals.tsx\n+++ b/app/live-signals.tsx\n@@ -2458,7 +2458,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a\n             const weatherRow = groupId === \"now\" ? groupRows.find((row) => row.key === \"weather\") : undefined;\n             const remainingNow = groupId === \"now\" ? groupRows.filter((row) => row.key !== \"realtime\" && row.key !== \"weather\") : [];\n             const observedWeather = block?.context?.weather;\n-            const hasObservation = [observedWeather?.pm10, observedWeather?.pm25].some(value => value !== null && value !== undefined);\n+            const hasObservation = [observedWeather?.pm10, observedWeather?.pm25].some(value => value !== null && value !== undefined) || [observedWeather?.pm10Grade, observedWeather?.pm25Grade].some(grade => Boolean(grade?.trim()));\n           return <section className={`signal-group signal-group-${groupId}`} key={groupId}>\n             <header className=\"signal-group-head\">\n               <h3 className=\"signal-group-title\">{groupCopy.title[lang]}</h3>\n"
+      },
+      {
+        "file": "app/operational-context.tsx",
+        "previous": "f1c332276250e78533015ace620cb02eeacb1df3094bb17bc6a6e16e0817a0a6",
+        "approved": "a9ba61da5ef5c66017ae5660b9efd79d74272c2b31eb641ceca749d26548c75c",
+        "exactUnifiedDiff": "diff --git a/app/operational-context.tsx b/app/operational-context.tsx\nindex 30c5f8c..dc6f8e8 100644\n--- a/app/operational-context.tsx\n+++ b/app/operational-context.tsx\n@@ -1,6 +1,6 @@\n 'use client';\n import type { Lang } from './retailpulse-data';\n-import type { SeoulContext } from '../lib/seoul-context';\n+import { seoulAirReading, type SeoulContext } from '../lib/seoul-context';\n import {CommercialComposition} from './commercial-composition';\n import { kstDay } from '../lib/demand-presentation';\n import { AIR_GRADE_TEXT, readAirGrade } from '../lib/weather-guide';\n@@ -59,13 +59,16 @@ export function SeoulObservationScene({context,lang,nowIso,metricScenes=false,ai\n       if(!airOnly&&weather.temperature!==null) entries.push({kind:'temperature',value:`${stamp} ${weather.temperature}°C`});\n       if(!airOnly&&weather.humidity!==null) entries.push({kind:'humidity',value:`${t('습도','Humidity','湿度','湿度')} ${weather.humidity}%`});\n       if(!airOnly&&weather.wind!==null) entries.push({kind:'wind',value:`${t('바람','Wind','风','風')} ${weather.wind}m/s`});\n-      if(weather.pm10!==null) entries.push({kind:'air',value:`${t('미세먼지','PM10','可吸入颗粒物 PM10','PM10')}${weather.pm10Grade?` ${airGradeWord(weather.pm10Grade,lang)}`:''} ${weather.pm10}μg/m³`});\n-      if(weather.pm25!==null) entries.push({kind:'air',value:`${t('초미세먼지','PM2.5','细颗粒物 PM2.5','PM2.5')}${weather.pm25Grade?` ${airGradeWord(weather.pm25Grade,lang)}`:''} ${weather.pm25}μg/m³`});\n+      for(const [name,rawValue,rawGrade] of [[t('미세먼지','PM10','可吸入颗粒物 PM10','PM10'),weather.pm10,weather.pm10Grade],[t('초미세먼지','PM2.5','细颗粒物 PM2.5','PM2.5'),weather.pm25,weather.pm25Grade]] as const){\n+        const reading=seoulAirReading(rawValue,rawGrade);\n+        if(reading.value!==null)entries.push({kind:'air',value:`${name}${reading.grade?` ${airGradeWord(reading.grade,lang)}`:''} ${reading.value}μg/m³`});\n+        else if(reading.grade)entries.push({kind:'air',value:`${name} ${reading.status==='MAINTENANCE'?t('점검 중 · 농도 미제공','Under inspection · concentration unavailable','检查中 · 暂无浓度','点検中 · 濃度提供なし'):t('농도 미제공','Concentration unavailable','暂无浓度','濃度提供なし')}`});\n+      }\n       if (!entries.length) return null;\n       return <div className=\"context-environment\"><WeatherScene lang={lang} forecast={null} source=\"\" metricScenes={metricScenes} observation={{\n         facts:entries.map(entry=>entry.value),kinds:entries.map(entry=>entry.kind), observedAt: weather.observedAt, explanation: gap,\n-        title: airOnly?t('대기질 관측','Air quality observation','空气质量观测','大気質の観測'):metricScenes?(age.isNow?t('현재 관측','Current observation','当前观测','現在の観測'):t('최근 관측','Latest observation','最近观测','直近の観測')):t('주변 환경 관측','Local environment observation','当前周边环境','現在の周辺環境'),\n-        source: t('서울시 실시간 도시데이터 · 관측','Seoul real-time city data · observed','首尔市实时城市数据 · 观测','ソウル市リアルタイム都市データ · 観測'),\n+        title: airOnly?t('서울시 대기질 제공 상태','Seoul air-quality status','首尔空气质量提供状态','ソウル市の大気質提供状況'):metricScenes?(age.isNow?t('현재 관측','Current observation','当前观测','現在の観測'):t('최근 관측','Latest observation','最近观测','直近の観測')):t('주변 환경 관측','Local environment observation','当前周边环境','現在の周辺環境'),\n+        source: airOnly?t('서울시 제공 상태 · 업데이트','Seoul published status · updated','首尔提供状态 · 更新','ソウル市提供状況 · 更新'):t('서울시 실시간 도시데이터 · 관측','Seoul real-time city data · observed','首尔市实时城市数据 · 观测','ソウル市リアルタイム都市データ · 観測'),\n       }}/></div>;\n }\n export function HolidayContext({months,date,lang}:{months?:Array<{month:string;days:Array<{date:string;name:string}>;retrievedAt:string}>;date:string;lang:Lang}) {\n"
+      }
+    ],
+    "protectedPathCount": 65,
+    "approvalEvidenceFile": "docs/approvals/seoul-air-status-display-20261013.json"
   }
 }

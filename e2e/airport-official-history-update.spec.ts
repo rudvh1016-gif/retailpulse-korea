@@ -7,6 +7,6 @@ for(const width of [390,1280])test(`official history September and readable Seou
  await expect(history).toContainText('2026-04');await expect(history).toContainText('2026-08');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.goto('/ko/myeongdong');const flow=page.locator('[data-flow="tourism"]');await expect(flow).toBeVisible();
- await expect(flow).toContainText('310.3');await expect(flow).toContainText('서울 열린데이터광장');await expect(flow).not.toContainText('OA-22378');
+ await expect(flow).not.toContainText('310.3');await expect(flow.locator('dd')).toHaveCount(0);await expect(flow).toContainText('수치는 표시하지 않습니다');await expect(flow).toContainText('서울 열린데이터광장');await expect(flow).not.toContainText('OA-22378');
  await expect(page.locator('[data-flow="living"]')).not.toContainText('OA-23018');
 });
