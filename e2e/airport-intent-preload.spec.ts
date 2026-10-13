@@ -48,6 +48,27 @@ for(const [label,width,nav] of [['mobile',390,'.bottom-nav'],['desktop',1280,'.t
  expect(errors).toEqual([]);
 });
 
+// The logo opens the airport glance home (PR #357), so it prepares that screen.
+test('the logo prepares the airport glance home it opens',async({page})=>{
+ await page.setViewportSize({width:1280,height:900});
+ const glance:string[]=[],airport:string[]=[];
+ page.on('request',request=>{if(request.resourceType()!=='script')return;if(isAirportGlance(request.url()))glance.push(request.url());if(isAirportView(request.url()))airport.push(request.url());});
+ await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
+ await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',serviceDateKst:SUMMARY_FIXTURE.serviceDateKst,flights:[],truncated:false}}));
+ await page.route('**/api/live/airport-months*',route=>route.fulfill({json:{status:'MISSING',month:null,months:[],calculatedAt:null,data:null}}));
+ await page.goto('/ko/myeongdong');
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await page.waitForTimeout(1000);
+ expect(glance).toEqual([]);
+ const logo=page.locator('.brand-button');
+ await logo.hover();
+ await expect.poll(()=>glance.length,{message:'pointing at the logo starts the glance load'}).toBeGreaterThan(0);
+ expect(airport,'the logo no longer leads to the airport screen').toEqual([]);
+ await logo.click();
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page).toHaveURL(/\/ko(\?|$)/);
+});
+
 test('the other tabs never load the airport screens',async({page})=>{
  await page.setViewportSize({width:390,height:900});
  const requested:string[]=[];

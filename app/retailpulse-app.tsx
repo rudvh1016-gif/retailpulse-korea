@@ -234,7 +234,7 @@ type RetailPulseProps = {
   initialArea?: AreaId;
   initialRoute?: boolean;
   /**
-   * "airport-home" is `/{lang}`: airport first, with Seoul summaries below.
+   * "airport-home" is `/{lang}`: the airport glance start page.
    * "home" is a legacy component scope; explicit Seoul routes use "area".
    * "area" is `/{lang}/{area}`: that area's own page, with its own H1 and
    * without the overview list, so the two routes are no longer the same page
@@ -368,7 +368,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       setConcourse(query.get('building')==='CONCOURSE');
       const [, locale, slug, routeArea] = window.location.pathname.split("/");
       setHomeVisible(!slug);
-      if (!slug) { setView("airport"); setAirportSection("now"); }
+      if (!slug) { setView("airport-glance"); setAirportSection("now"); }
       if (["ko", "en", "zh", "ja"].includes(locale)) setLang(locale as Lang);
       if (slug && Object.hasOwn(areaInfo, slug)) { setSelected(slug as AreaId); setView("today"); }
       else if (slug === "tourism-desk" && routeArea && Object.hasOwn(areaInfo, routeArea)) {
@@ -421,7 +421,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
   function goHome() {
     setHomeVisible(true);
-    setView('airport');
+    setView('airport-glance');
     setAirportSection('now');
     setConcourse(false);
     const homePath=`/${lang}${serviceDate ? `?date=${serviceDate}` : ''}`;
@@ -439,7 +439,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     <div className={"app lang-" + lang} data-hydrated={preferencesReady ? "true" : "false"}>
       <div className="site-header">
       <header className="topbar">
-        <button className="brand brand-button" onClick={() => goHome()} onPointerEnter={prepareAirport} onFocus={prepareAirport} aria-label="KORETAIL home">
+        <button className="brand brand-button" onClick={() => goHome()} onPointerEnter={prepareAirportGlance} onFocus={prepareAirportGlance} aria-label="KORETAIL home">
           <span>KORETAIL</span><span className="brand-descriptor">Retail Demand Signals for Korea</span>
         </button>
         <nav className="top-nav" aria-label="Primary">

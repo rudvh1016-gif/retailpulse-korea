@@ -24,13 +24,19 @@ async function fixture(page: Page, payload: unknown = SUMMARY_FIXTURE) {
   });
 }
 
-test('airport-first home shows public information with briefing setup hidden', async ({ page }) => {
+async function enterAirportDetail(page: Page) {
+  await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+  await page.locator(':is(.top-nav,.bottom-nav) a[href$="/airport"]:visible').click();
+  await expect(page.locator('.airport-today')).toBeVisible();
+}
+
+test('airport-glance-first home shows public information with briefing setup hidden', async ({ page }) => {
     // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
     await fixture(page);
     await page.goto('/ko');
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-    await expect(page.locator('.airport-today')).toBeVisible();
+    await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
     await expect(page.locator('.demand-home')).toHaveCount(0);
     await expect(page.locator('.top-nav a[href="/ko/myeongdong"]')).toBeVisible();
     await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
@@ -44,7 +50,7 @@ test('saved Myeongdong weather preferences survive hidden briefing entry', async
     await page.goto('/ko');
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-    await expect(page.locator('.airport-today')).toBeVisible();
+    await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
     expect(await page.evaluate(key => localStorage.getItem(key), PREFERENCE_KEY)).toBe(JSON.stringify(preferences));
     await page.goto('/ko/myeongdong');
     await expect(page.locator('.area-current-brief')).toBeVisible();
@@ -61,7 +67,7 @@ test('saved Hongdae airport preferences survive explicit terminal and date switc
     await page.goto('/ko');
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-    await expect(page.locator('.airport-today')).toBeVisible();
+    await enterAirportDetail(page);
     await page.getByRole('tab', { name: 'T2', exact: true }).click();
     await expect(page.locator('.airport-glance-strip')).toHaveCount(0);
     await expect(page.getByRole('tab', { name: 'T2', exact: true })).toHaveAttribute('aria-selected', 'true');
@@ -82,7 +88,7 @@ test('hidden passenger preferences remain stored without inventing missing trans
     await page.goto('/ko');
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-    await expect(page.locator('.airport-today')).toBeVisible();
+    await enterAirportDetail(page);
     await expect(page.locator('.airport-brief-total')).toBeVisible();
     await expect(page.locator('.passenger-transfer-limitation')).toBeVisible();
     await expect(page.locator('[data-basis="ARITHMETIC_ONLY"]')).toHaveCount(0);
@@ -162,6 +168,7 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
     await expectDateSelection(page, '2026-08-31');
     await page.evaluate(({ key, p }) => localStorage.setItem(key, JSON.stringify(p)), { key: PREFERENCE_KEY, p: allDayPreferences });
     await page.goto(`/${lang}`);
+    await enterAirportDetail(page);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
     expect(await page.evaluate(key=>localStorage.getItem(key),PREFERENCE_KEY)).toBe(JSON.stringify(allDayPreferences));
     await expect(page.locator('.date-nav-shortcuts button')).toHaveCount(3);
@@ -171,20 +178,20 @@ for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as c
   });
 }
 
-for (const width of [390, 1440]) test(`airport-first home screenshots ${width}`, async ({ page }, info) => {
+for (const width of [390, 1440]) test(`airport-glance home screenshots ${width}`, async ({ page }, info) => {
     // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
     await page.setViewportSize({ width, height: 900 });
     await fixture(page);
     await page.goto('/ko');
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-    await expect(page.locator('.airport-today')).toBeVisible();
+    await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
     await page.screenshot({ path: info.outputPath(`airport-first-${width}.png`) });
     await page.evaluate(({ key, p }) => localStorage.setItem(key, JSON.stringify(p)), { key: PREFERENCE_KEY, p: preferences });
     await page.reload();
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-    await expect(page.locator('.airport-today')).toBeVisible();
+    await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
     expect(await page.evaluate(key => localStorage.getItem(key), PREFERENCE_KEY)).toBe(JSON.stringify(preferences));
     await page.screenshot({ path: info.outputPath(`preserved-settings-${width}.png`) });
 });
@@ -207,17 +214,28 @@ for (const width of [360, 390]) test(`owner UI lock across main screens ${width}
       expect((await page.locator('.brand').boundingBox())!.y).toBeGreaterThanOrEqual(59);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    if (!route || route === '/airport') {
+    if (!route) {
+      // Approved glance root retains its existing compact type and flat tabs.
+      await expect(page.getByTestId('airport-glance-preview')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+      await expect(page.locator('.glance-preview')).toHaveCSS('font-size', '12px');
+      await expect(page.locator('.glance-heading h1')).toHaveCSS('font-size', '19px');
+      for (const tab of await page.locator('.glance-controls>div button').all()) {
+        await expect(tab).toHaveCSS('border-top-width', '0px');
+        await expect(tab).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+        expect((await tab.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      }
+    }
+    if (route === '/airport') {
       await expect(page.locator('.airport-metric-value')).toBeVisible();
-      // The airport page leads with the day's one big number (2026-10-02 visual
-      // rules); the personal home keeps the plain 16px figure.
-      // Root now renders the same approved airport view as its deep link.
+      // The airport detail page keeps its approved large daily value.
       expect(await page.locator('.airport-metric-value').evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(34);
     }
+    // Reference controls are inside a closed disclosure; inspect them expanded.
+    if (route === '/forecast') await page.locator('.records-reference>summary').click();
     const controls = page.locator('.personal-switches .personal-inline button, .area-tabs button, .terminal-selector button, .airport-context-nav button, .prediction-view .segmented button');
-    for (const style of await controls.evaluateAll(els => els.map(el => { const s = getComputedStyle(el); return { top:s.borderTopWidth, left:s.borderLeftWidth, right:s.borderRightWidth, bottom:s.borderBottomWidth, background:s.backgroundColor, height:el.getBoundingClientRect().height }; }))) {
+    for (const style of await controls.evaluateAll(els => els.map(el => { const s = getComputedStyle(el); return { label:el.textContent, top:s.borderTopWidth, left:s.borderLeftWidth, right:s.borderRightWidth, bottom:s.borderBottomWidth, background:s.backgroundColor, height:el.getBoundingClientRect().height }; }))) {
       expect(style.top).toBe('0px'); expect(style.left).toBe('0px'); expect(style.right).toBe('0px');
-      expect(style.bottom).toBe('1px'); expect(style.background).toBe('rgb(255, 255, 255)'); expect(style.height).toBeGreaterThanOrEqual(44);
+      expect(style.bottom).toBe('1px'); expect(style.background).toBe('rgb(255, 255, 255)'); expect(style.height, `${route}: ${style.label}`).toBeGreaterThanOrEqual(44);
     }
     for (const control of await page.locator('.date-nav-shortcuts button').all()) {
       await expect(control).toHaveCSS('border-top-width', '0px');

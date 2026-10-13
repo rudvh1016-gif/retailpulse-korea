@@ -3,7 +3,7 @@ import { SUMMARY_FIXTURE } from './summary-fixture';
 import { PREFERENCE_KEY } from '../lib/personal-briefing';
 import { passengerCopy } from '../lib/passenger-copy';
 for (const lang of ['ko','en','zh','ja'] as const) {
-  for (const tomorrow of [false,true]) test(`${lang} ${tomorrow?'tomorrow':'today'} passenger meaning agrees across root/deep-link and terminals`, async ({page}) => {
+  for (const tomorrow of [false,true]) test(`${lang} ${tomorrow?'tomorrow':'today'} passenger meaning agrees via glance navigation/deep-link and terminals`, async ({page}) => {
     await page.setViewportSize({width:390,height:844});
     // Without a fixed clock the fixture's 08-31 bands are months behind the
     // wall clock, so "this hour" is always 확인 불가 and the current-hour cell
@@ -16,6 +16,8 @@ for (const lang of ['ko','en','zh','ja'] as const) {
       await route.fulfill({json:{...SUMMARY_FIXTURE,serviceDateKst:date,dayRelation:date>'2026-08-31'?'FUTURE':'TODAY',airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:date,transferForecast:[{terminal:'T1',serviceDate:date,expectedTransferPassengers:559,retrievedAt:'2026-08-30T08:10:00Z'},{terminal:'T2',serviceDate:date,expectedTransferPassengers:10485,retrievedAt:'2026-08-30T08:10:00Z'}]}}});
     });
     await page.goto(`/${lang}`);
+    await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+    await page.locator(`.bottom-nav a[href="/${lang}/airport"]`).click();
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
     if (tomorrow) await page.locator('.date-nav-shortcuts button').last().click();
     const personal=page.locator('.airport-current-brief');
