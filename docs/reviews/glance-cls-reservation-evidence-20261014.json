@@ -1,0 +1,743 @@
+{
+  "base": "fcf529e0ec8405d10d3ba724a469eeab67fc3e71",
+  "productionChanged": false,
+  "measurements": [
+    {
+      "width": 360,
+      "lang": "ko",
+      "beforeHeights": {
+        "pending-fallback": 84.5,
+        "ready-fallback": 99,
+        "T1-fallback": 99,
+        "T1-font": 99,
+        "missing-font": 84.5,
+        "ready-font": 99,
+        "partial-past-font": 99,
+        "ready-past-font": 99
+      },
+      "afterHeights": {
+        "pending-fallback": 99,
+        "ready-fallback": 99,
+        "T1-fallback": 99,
+        "T1-font": 99,
+        "missing-font": 99,
+        "ready-font": 99,
+        "partial-past-font": 99,
+        "ready-past-font": 99
+      },
+      "beforeRange": 14.5,
+      "afterRange": 0
+    },
+    {
+      "width": 360,
+      "lang": "en",
+      "beforeHeights": {
+        "pending-fallback": 101,
+        "ready-fallback": 99,
+        "T1-fallback": 113.5,
+        "T1-font": 113.5,
+        "missing-font": 115.5,
+        "ready-font": 113.5,
+        "partial-past-font": 130,
+        "ready-past-font": 130
+      },
+      "afterHeights": {
+        "pending-fallback": 130,
+        "ready-fallback": 130,
+        "T1-fallback": 130,
+        "T1-font": 130,
+        "missing-font": 130,
+        "ready-font": 130,
+        "partial-past-font": 130,
+        "ready-past-font": 130
+      },
+      "beforeRange": 31,
+      "afterRange": 0
+    },
+    {
+      "width": 360,
+      "lang": "zh",
+      "beforeHeights": {
+        "pending-fallback": 84.5,
+        "ready-fallback": 99,
+        "T1-fallback": 113.5,
+        "T1-font": 113.5,
+        "missing-font": 99,
+        "ready-font": 113.5,
+        "partial-past-font": 113.5,
+        "ready-past-font": 113.5
+      },
+      "afterHeights": {
+        "pending-fallback": 113.5,
+        "ready-fallback": 113.5,
+        "T1-fallback": 113.5,
+        "T1-font": 113.5,
+        "missing-font": 113.5,
+        "ready-font": 113.5,
+        "partial-past-font": 113.5,
+        "ready-past-font": 113.5
+      },
+      "beforeRange": 29.0,
+      "afterRange": 0.0
+    },
+    {
+      "width": 360,
+      "lang": "ja",
+      "beforeHeights": {
+        "pending-fallback": 99,
+        "ready-fallback": 99,
+        "T1-fallback": 113.5,
+        "T1-font": 113.5,
+        "missing-font": 113.5,
+        "ready-font": 113.5,
+        "partial-past-font": 113.5,
+        "ready-past-font": 113.5
+      },
+      "afterHeights": {
+        "pending-fallback": 113.5,
+        "ready-fallback": 113.5,
+        "T1-fallback": 113.5,
+        "T1-font": 113.5,
+        "missing-font": 113.5,
+        "ready-font": 113.5,
+        "partial-past-font": 113.5,
+        "ready-past-font": 113.5
+      },
+      "beforeRange": 14.5,
+      "afterRange": 0.0
+    },
+    {
+      "width": 390,
+      "lang": "ko",
+      "beforeHeights": {
+        "pending-fallback": 84.5,
+        "ready-fallback": 99,
+        "T1-fallback": 99,
+        "T1-font": 99,
+        "missing-font": 84.5,
+        "ready-font": 99,
+        "partial-past-font": 99,
+        "ready-past-font": 99
+      },
+      "afterHeights": {
+        "pending-fallback": 99,
+        "ready-fallback": 99,
+        "T1-fallback": 99,
+        "T1-font": 99,
+        "missing-font": 99,
+        "ready-font": 99,
+        "partial-past-font": 99,
+        "ready-past-font": 99
+      },
+      "beforeRange": 14.5,
+      "afterRange": 0
+    },
+    {
+      "width": 390,
+      "lang": "en",
+      "beforeHeights": {
+        "pending-fallback": 101,
+        "ready-fallback": 99,
+        "T1-fallback": 113.5,
+        "T1-font": 113.5,
+        "missing-font": 115.5,
+        "ready-font": 113.5,
+        "partial-past-font": 130,
+        "ready-past-font": 130
+      },
+      "afterHeights": {
+        "pending-fallback": 130,
+        "ready-fallback": 130,
+        "T1-fallback": 130,
+        "T1-font": 130,
+        "missing-font": 130,
+        "ready-font": 130,
+        "partial-past-font": 130,
+        "ready-past-font": 130
+      },
+      "beforeRange": 31,
+      "afterRange": 0
+    },
+    {
+      "width": 390,
+      "lang": "zh",
+      "beforeHeights": {
+        "pending-fallback": 84.5,
+        "ready-fallback": 99,
+        "T1-fallback": 99,
+        "T1-font": 99,
+        "missing-font": 84.5,
+        "ready-font": 99,
+        "partial-past-font": 99,
+        "ready-past-font": 99
+      },
+      "afterHeights": {
+        "pending-fallback": 99,
+        "ready-fallback": 99,
+        "T1-fallback": 99,
+        "T1-font": 99,
+        "missing-font": 99,
+        "ready-font": 99,
+        "partial-past-font": 99,
+        "ready-past-font": 99
+      },
+      "beforeRange": 14.5,
+      "afterRange": 0
+    },
+    {
+      "width": 390,
+      "lang": "ja",
+      "beforeHeights": {
+        "pending-fallback": 84.5,
+        "ready-fallback": 99,
+        "T1-fallback": 99,
+        "T1-font": 113.5,
+        "missing-font": 99,
+        "ready-font": 113.5,
+        "partial-past-font": 113.5,
+        "ready-past-font": 113.5
+      },
+      "afterHeights": {
+        "pending-fallback": 113.5,
+        "ready-fallback": 113.5,
+        "T1-fallback": 113.5,
+        "T1-font": 113.5,
+        "missing-font": 113.5,
+        "ready-font": 113.5,
+        "partial-past-font": 113.5,
+        "ready-past-font": 113.5
+      },
+      "beforeRange": 29.0,
+      "afterRange": 0.0
+    },
+    {
+      "width": 430,
+      "lang": "ko",
+      "beforeHeights": {
+        "pending-fallback": 84.5,
+        "ready-fallback": 84.5,
+        "T1-fallback": 99,
+        "T1-font": 99,
+        "missing-font": 84.5,
+        "ready-font": 99,
+        "partial-past-font": 99,
+        "ready-past-font": 99
+      },
+      "afterHeights": {
+        "pending-fallback": 99,
+        "ready-fallback": 99,
+        "T1-fallback": 99,
+        "T1-font": 99,
+        "missing-font": 99,
+        "ready-font": 99,
+        "partial-past-font": 99,
+        "ready-past-font": 99
+      },
+      "beforeRange": 14.5,
+      "afterRange": 0
+    },
+    {
+      "width": 430,
+      "lang": "en",
+      "beforeHeights": {
+        "pending-fallback": 84.5,
+        "ready-fallback": 99,
+        "T1-fallback": 99,
+        "T1-font": 99,
+        "missing-font": 99,
+        "ready-font": 99,
+        "partial-past-font": 99,
+        "ready-past-font": 99
+      },
+      "afterHeights": {
+        "pending-fallback": 99,
+        "ready-fallback": 99,
+        "T1-fallback": 99,
+        "T1-font": 99,
+        "missing-font": 99,
+        "ready-font": 99,
+        "partial-past-font": 99,
+        "ready-past-font": 99
+      },
+      "beforeRange": 14.5,
+      "afterRange": 0
+    },
+    {
+      "width": 430,
+      "lang": "zh",
+      "beforeHeights": {
+        "pending-fallback": 84.5,
+        "ready-fallback": 99,
+        "T1-fallback": 99,
+        "T1-font": 99,
+        "missing-font": 84.5,
+        "ready-font": 99,
+        "partial-past-font": 99,
+        "ready-past-font": 99
+      },
+      "afterHeights": {
+        "pending-fallback": 99,
+        "ready-fallback": 99,
+        "T1-fallback": 99,
+        "T1-font": 99,
+        "missing-font": 99,
+        "ready-font": 99,
+        "partial-past-font": 99,
+        "ready-past-font": 99
+      },
+      "beforeRange": 14.5,
+      "afterRange": 0
+    },
+    {
+      "width": 430,
+      "lang": "ja",
+      "beforeHeights": {
+        "pending-fallback": 84.5,
+        "ready-fallback": 99,
+        "T1-fallback": 99,
+        "T1-font": 99,
+        "missing-font": 84.5,
+        "ready-font": 99,
+        "partial-past-font": 99,
+        "ready-past-font": 99
+      },
+      "afterHeights": {
+        "pending-fallback": 99,
+        "ready-fallback": 99,
+        "T1-fallback": 99,
+        "T1-font": 99,
+        "missing-font": 99,
+        "ready-font": 99,
+        "partial-past-font": 99,
+        "ready-past-font": 99
+      },
+      "beforeRange": 14.5,
+      "afterRange": 0
+    },
+    {
+      "width": 1440,
+      "lang": "ko",
+      "beforeHeights": {
+        "pending-fallback": 68.5,
+        "ready-fallback": 68.5,
+        "T1-fallback": 68.5,
+        "T1-font": 68.5,
+        "missing-font": 68.5,
+        "ready-font": 68.5,
+        "partial-past-font": 68.5,
+        "ready-past-font": 68.5
+      },
+      "afterHeights": {
+        "pending-fallback": 68.5,
+        "ready-fallback": 68.5,
+        "T1-fallback": 68.5,
+        "T1-font": 68.5,
+        "missing-font": 68.5,
+        "ready-font": 68.5,
+        "partial-past-font": 68.5,
+        "ready-past-font": 68.5
+      },
+      "beforeRange": 0.0,
+      "afterRange": 0.0
+    },
+    {
+      "width": 1440,
+      "lang": "en",
+      "beforeHeights": {
+        "pending-fallback": 68.5,
+        "ready-fallback": 68.5,
+        "T1-fallback": 68.5,
+        "T1-font": 68.5,
+        "missing-font": 68.5,
+        "ready-font": 68.5,
+        "partial-past-font": 68.5,
+        "ready-past-font": 68.5
+      },
+      "afterHeights": {
+        "pending-fallback": 68.5,
+        "ready-fallback": 68.5,
+        "T1-fallback": 68.5,
+        "T1-font": 68.5,
+        "missing-font": 68.5,
+        "ready-font": 68.5,
+        "partial-past-font": 68.5,
+        "ready-past-font": 68.5
+      },
+      "beforeRange": 0.0,
+      "afterRange": 0.0
+    },
+    {
+      "width": 1440,
+      "lang": "zh",
+      "beforeHeights": {
+        "pending-fallback": 68.5,
+        "ready-fallback": 68.5,
+        "T1-fallback": 68.5,
+        "T1-font": 68.5,
+        "missing-font": 68.5,
+        "ready-font": 68.5,
+        "partial-past-font": 68.5,
+        "ready-past-font": 68.5
+      },
+      "afterHeights": {
+        "pending-fallback": 68.5,
+        "ready-fallback": 68.5,
+        "T1-fallback": 68.5,
+        "T1-font": 68.5,
+        "missing-font": 68.5,
+        "ready-font": 68.5,
+        "partial-past-font": 68.5,
+        "ready-past-font": 68.5
+      },
+      "beforeRange": 0.0,
+      "afterRange": 0.0
+    },
+    {
+      "width": 1440,
+      "lang": "ja",
+      "beforeHeights": {
+        "pending-fallback": 68.5,
+        "ready-fallback": 68.5,
+        "T1-fallback": 68.5,
+        "T1-font": 68.5,
+        "missing-font": 68.5,
+        "ready-font": 68.5,
+        "partial-past-font": 68.5,
+        "ready-past-font": 68.5
+      },
+      "afterHeights": {
+        "pending-fallback": 68.5,
+        "ready-fallback": 68.5,
+        "T1-fallback": 68.5,
+        "T1-font": 68.5,
+        "missing-font": 68.5,
+        "ready-font": 68.5,
+        "partial-past-font": 68.5,
+        "ready-past-font": 68.5
+      },
+      "beforeRange": 0.0,
+      "afterRange": 0.0
+    }
+  ],
+  "performance": {
+    "conditions": "Local production builds via identical gzip local worker SSR+asset fixture server; all other API requests return503, external HTTPS blocked; same fixture /ko; Chrome390x844,DPR1,reduced motion,cold cache,CPU4x,1.6Mbps down,0.6Mbps up,150ms latency; alternating before/after,3 each; 8s after hydration observation. Retrospective clean-base comparison, not public PSI. Blocking is long-task excess over50ms, not Lighthouse TBT.",
+    "medians": {
+      "before": {
+        "lcp": 1864,
+        "fcp": 1864,
+        "cls": 0.07075069555371162,
+        "blocking": 372,
+        "bytes": 712310,
+        "requests": 40
+      },
+      "after": {
+        "lcp": 1840,
+        "fcp": 1840,
+        "cls": 0.023093824853036796,
+        "blocking": 431,
+        "bytes": 712359,
+        "requests": 40
+      }
+    },
+    "runs": [
+      {
+        "phase": "before",
+        "iteration": 1,
+        "lcp": 1892,
+        "cls": 0.05542228203925949,
+        "blocking": 372,
+        "fcp": 1892,
+        "fontStatus": [
+          {
+            "family": "KORETAIL Sans Variable",
+            "status": "loaded"
+          }
+        ],
+        "fontWidths": [
+          {
+            "text": "KORETAILRetail Demand Signals for Korea",
+            "font": "",
+            "fontFamily": "\"KORETAIL Sans Variable\", system-ui, sans-serif",
+            "width": 98
+          },
+          {
+            "text": "인천공항 한눈에",
+            "font": "",
+            "fontFamily": "\"KORETAIL Sans Variable\", system-ui, sans-serif",
+            "width": 118.21875
+          }
+        ],
+        "overflow": false,
+        "bytes": 712310,
+        "requests": 40,
+        "errors": []
+      },
+      {
+        "phase": "after",
+        "iteration": 1,
+        "lcp": 1848,
+        "cls": 0.02300668603738714,
+        "blocking": 521,
+        "fcp": 1848,
+        "fontStatus": [
+          {
+            "family": "KORETAIL Sans Variable",
+            "status": "loaded"
+          }
+        ],
+        "fontWidths": [
+          {
+            "text": "KORETAILRetail Demand Signals for Korea",
+            "font": "",
+            "fontFamily": "\"KORETAIL Sans Variable\", system-ui, sans-serif",
+            "width": 98
+          },
+          {
+            "text": "인천공항 한눈에",
+            "font": "",
+            "fontFamily": "\"KORETAIL Sans Variable\", system-ui, sans-serif",
+            "width": 118.21875
+          }
+        ],
+        "overflow": false,
+        "bytes": 712359,
+        "requests": 40,
+        "errors": []
+      },
+      {
+        "phase": "before",
+        "iteration": 2,
+        "lcp": 1864,
+        "cls": 0.07075069555371162,
+        "blocking": 318,
+        "fcp": 1864,
+        "fontStatus": [
+          {
+            "family": "KORETAIL Sans Variable",
+            "status": "loaded"
+          }
+        ],
+        "fontWidths": [
+          {
+            "text": "KORETAILRetail Demand Signals for Korea",
+            "font": "",
+            "fontFamily": "\"KORETAIL Sans Variable\", system-ui, sans-serif",
+            "width": 98
+          },
+          {
+            "text": "인천공항 한눈에",
+            "font": "",
+            "fontFamily": "\"KORETAIL Sans Variable\", system-ui, sans-serif",
+            "width": 118.21875
+          }
+        ],
+        "overflow": false,
+        "bytes": 712310,
+        "requests": 40,
+        "errors": []
+      },
+      {
+        "phase": "after",
+        "iteration": 2,
+        "lcp": 1840,
+        "cls": 0.023093824853036796,
+        "blocking": 305,
+        "fcp": 1840,
+        "fontStatus": [
+          {
+            "family": "KORETAIL Sans Variable",
+            "status": "loaded"
+          }
+        ],
+        "fontWidths": [
+          {
+            "text": "KORETAILRetail Demand Signals for Korea",
+            "font": "",
+            "fontFamily": "\"KORETAIL Sans Variable\", system-ui, sans-serif",
+            "width": 98
+          },
+          {
+            "text": "인천공항 한눈에",
+            "font": "",
+            "fontFamily": "\"KORETAIL Sans Variable\", system-ui, sans-serif",
+            "width": 118.21875
+          }
+        ],
+        "overflow": false,
+        "bytes": 712359,
+        "requests": 40,
+        "errors": []
+      },
+      {
+        "phase": "before",
+        "iteration": 3,
+        "lcp": 1832,
+        "cls": 0.07075069555371162,
+        "blocking": 404,
+        "fcp": 1832,
+        "fontStatus": [
+          {
+            "family": "KORETAIL Sans Variable",
+            "status": "loaded"
+          }
+        ],
+        "fontWidths": [
+          {
+            "text": "KORETAILRetail Demand Signals for Korea",
+            "font": "",
+            "fontFamily": "\"KORETAIL Sans Variable\", system-ui, sans-serif",
+            "width": 98
+          },
+          {
+            "text": "인천공항 한눈에",
+            "font": "",
+            "fontFamily": "\"KORETAIL Sans Variable\", system-ui, sans-serif",
+            "width": 118.21875
+          }
+        ],
+        "overflow": false,
+        "bytes": 712310,
+        "requests": 40,
+        "errors": []
+      },
+      {
+        "phase": "after",
+        "iteration": 3,
+        "lcp": 1840,
+        "cls": 0.023093824853036796,
+        "blocking": 431,
+        "fcp": 1840,
+        "fontStatus": [
+          {
+            "family": "KORETAIL Sans Variable",
+            "status": "loaded"
+          }
+        ],
+        "fontWidths": [
+          {
+            "text": "KORETAILRetail Demand Signals for Korea",
+            "font": "",
+            "fontFamily": "\"KORETAIL Sans Variable\", system-ui, sans-serif",
+            "width": 98
+          },
+          {
+            "text": "인천공항 한눈에",
+            "font": "",
+            "fontFamily": "\"KORETAIL Sans Variable\", system-ui, sans-serif",
+            "width": 118.21875
+          }
+        ],
+        "overflow": false,
+        "bytes": 712359,
+        "requests": 40,
+        "errors": []
+      }
+    ]
+  },
+  "limits": [
+    "Local fixture gzip worker server, not production Cloudflare; never compare absolute local LCP with public LCP",
+    "Long-task blocking is not Lighthouse TBT; LCP difference24ms does not establish speed improvement",
+    "Minimum height preserves text overflow growth, does not clip arbitrary future content",
+    "Fonts and all65protected files plus approval records unchanged",
+    "Screenshots show controlled fixture values, not current airport observations"
+  ],
+  "breakpointVerification": [
+    {
+      "width": 380,
+      "lang": "ko",
+      "range": 0
+    },
+    {
+      "width": 380,
+      "lang": "en",
+      "range": 0
+    },
+    {
+      "width": 380,
+      "lang": "zh",
+      "range": 0.0
+    },
+    {
+      "width": 380,
+      "lang": "ja",
+      "range": 0.0
+    },
+    {
+      "width": 381,
+      "lang": "ko",
+      "range": 0
+    },
+    {
+      "width": 381,
+      "lang": "en",
+      "range": 0
+    },
+    {
+      "width": 381,
+      "lang": "zh",
+      "range": 0
+    },
+    {
+      "width": 381,
+      "lang": "ja",
+      "range": 0.0
+    },
+    {
+      "width": 420,
+      "lang": "ko",
+      "range": 0
+    },
+    {
+      "width": 420,
+      "lang": "en",
+      "range": 0
+    },
+    {
+      "width": 420,
+      "lang": "zh",
+      "range": 0
+    },
+    {
+      "width": 420,
+      "lang": "ja",
+      "range": 0.0
+    },
+    {
+      "width": 421,
+      "lang": "ko",
+      "range": 0
+    },
+    {
+      "width": 421,
+      "lang": "en",
+      "range": 0
+    },
+    {
+      "width": 421,
+      "lang": "zh",
+      "range": 0
+    },
+    {
+      "width": 421,
+      "lang": "ja",
+      "range": 0
+    }
+  ],
+  "checks": {
+    "e2e": {
+      "passed": 34,
+      "new": 16,
+      "existing": 18
+    },
+    "relatedUnit": 19,
+    "renderedHtml": 49,
+    "fullLint": {
+      "errors": 0,
+      "existingWarnings": 12
+    },
+    "typecheck": "PASS",
+    "protectedHashMismatches": 0,
+    "protectedPaths": 65
+  },
+  "libraryStatus": "Image upload helper unavailable; no image Library IDs created. Internal report upload was rejected by automatic approval review and not attempted again"
+}

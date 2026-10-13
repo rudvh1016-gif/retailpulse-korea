@@ -1,0 +1,11 @@
+{
+  "scope": "User-requested bug and mobile speed review, delegated minimum CSS CLS repair; draftPR only",
+  "authorization": "Original user: 일단만든것들 사이트전체반영까지마치고 버그점검 속도개선까지시키자; root follow-up explicitly authorizes local minimum CSS reservation, tests, commit and draftPR, no merge/deploy",
+  "changedProductFiles": [
+    "app/airport-glance-preview.css"
+  ],
+  "protectedPathCount": 65,
+  "protectedFilesChanged": [],
+  "existingApprovalManifestChanged": false,
+  "reason": "Measured14.5px source-note line wrapping moves the full airport section during summary/font completion; reserve measured locale/width envelope without changing typography/data/copy or clipping"
+}

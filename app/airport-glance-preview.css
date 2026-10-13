@@ -64,6 +64,13 @@ body:has(.glance-preview){background:#fff}
 
 .glance-passenger-pair{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.glance-passenger-pair>a{display:grid;align-content:start;gap:3px;min-width:0;min-height:44px;padding:6px 0}.glance-passenger-pair>a>span{font-size:11px;color:#53616e}.glance-passenger-pair small{overflow-wrap:anywhere}@media(max-width:700px){.glance-passenger-pair{gap:12px;border-bottom:1px solid #dbe0e5}.glance-passenger-pair>a{padding:7px 0}}
 
+/* Reserve the measured pending/dated/source-note envelope, not a fixed height.
+   360/390/430px fixtures include fallback and loaded fonts, T1 shared scope,
+   missing/partial values and the full collection timestamp. Longer text grows. */
+@media(max-width:700px){.glance-passenger-pair{min-block-size:99px}}
+@media(max-width:420px){.lang-en .glance-passenger-pair{min-block-size:130px}.lang-ja .glance-passenger-pair{min-block-size:113.5px}}
+@media(max-width:380px){.lang-zh .glance-passenger-pair{min-block-size:113.5px}}
+
 /* Approved finite choice feedback; artwork and building panels remain fixed. */
 .glance-controls>div button{position:relative}
 .glance-controls>div button[aria-pressed=true]{box-shadow:none}
