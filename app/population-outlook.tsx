@@ -1,5 +1,6 @@
 'use client';
 import {useEffect,useId,useRef,useState} from 'react';
+import {useSelectionMotion} from './use-choice-motion';
 import type {Lang} from './retailpulse-data';
 import {compactPeople,flowSegments,kstDay,kstStamp,peopleRange,populationTicks,type FlowPoint,type PopulationRange} from '../lib/demand-presentation';
 
@@ -20,6 +21,8 @@ export function PopulationOutlook({points,current,lang,now}:{points:FlowPoint[];
  const left=46,right=width-14,top=32,bottom=184,plotWidth=right-left;
  const x=(time:number)=>left+(end===start ? 0.5 : (time-start)/(end-start))*plotWidth;
  const y=(value:number)=>bottom-value/ceiling*(bottom-top);
+ const selectionLine=useRef<SVGGElement>(null),immediate=useRef(false);
+ useSelectionMotion(selectionLine,active?x(active.time):NaN,selected??'',`${start}|${end}|${width}`,immediate);
  const ticks=populationTicks(start,end,plotWidth);
  const groups=flowSegments(forecasts);
  const comparison=!current||!active?'':active.populationMax<current.populationMin?t('현재 확인된 인원 범위보다 감소 예상','Expected below the observed range','预计低于观测人数范围','観測人数の範囲より減少予想'):active.populationMin>current.populationMax?t('현재 확인된 인원 범위보다 증가 예상','Expected above the observed range','预计高于观测人数范围','観測人数の範囲より増加予想'):t('관측과 예상 범위가 겹칩니다.','Observed and forecast ranges overlap.','观测与预测范围重叠。','観測と予想の範囲が重なります。');
@@ -35,7 +38,7 @@ export function PopulationOutlook({points,current,lang,now}:{points:FlowPoint[];
     </g>;})}
     {ticks.map(time=><text key={time} x={x(time)} y={bottom+18} textAnchor={time===start?'start':time===end?'end':'middle'}>{kstStamp(time).slice(6)}</text>)}
     {forecasts.filter(p=>kstStamp(p.at).slice(6)==='00:00').map(p=><g key={p.at}><text x={Math.min(right-34,x(p.time)+4)} y="18">{kstStamp(p.at).slice(0,5)}</text></g>)}
-    {active&&<g className="outlook-active-range"><line data-selected-range data-selected-at={active.at} x1={x(active.time)} x2={x(active.time)} y1={y(active.populationMax)} y2={y(active.populationMin)} stroke="#487e6e" strokeWidth="2"/><line x1={x(active.time)-4} x2={x(active.time)+4} y1={y(active.populationMax)} y2={y(active.populationMax)} stroke="#487e6e" strokeWidth="1.5"/><line x1={x(active.time)-4} x2={x(active.time)+4} y1={y(active.populationMin)} y2={y(active.populationMin)} stroke="#487e6e" strokeWidth="1.5"/></g>}
+    {active&&<g ref={selectionLine} className="outlook-active-range"><line data-selected-range data-selected-at={active.at} x1={x(active.time)} x2={x(active.time)} y1={y(active.populationMax)} y2={y(active.populationMin)} stroke="#487e6e" strokeWidth="2"/><line x1={x(active.time)-4} x2={x(active.time)+4} y1={y(active.populationMax)} y2={y(active.populationMax)} stroke="#487e6e" strokeWidth="1.5"/><line x1={x(active.time)-4} x2={x(active.time)+4} y1={y(active.populationMin)} y2={y(active.populationMin)} stroke="#487e6e" strokeWidth="1.5"/></g>}
    </svg>
    <div className="outlook-selection" aria-live="polite">
     <span className="outlook-selection-label">{t('선택 시간의 예상 인구','Forecast population at selected time','所选时间的预测人口','選択時刻の予想人口')}</span>

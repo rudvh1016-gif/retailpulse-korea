@@ -2,7 +2,8 @@
 
 ## 범위와 근거
 
-- 기준 main fea8249c3bcef134077684cb5c92049ea83bb477
+- 최초 기준 main fea8249c3bcef134077684cb5c92049ea83bb477
+- 승인된 PR363 병합 후 main 7e6d18dacfea5fc1347338d4a493d0b916091c4f를 정상 통합하고 모든 기존 보호 파일과 승인 기록 보존
 - 사용자 승인 Sentinel_0d25b8d32004819196865c7f721db2b9 및 Sentinel_e187a7e0bd708191a23d94b0f97bd844
 - 독립 브랜치 codex/ga4-pageviews-20261013에서 최소 수정과 격리 검증 및 Draft PR만 수행
 - 실제 GA 계정 설정·보안·OAuth·키·필터·향상된 측정 설정·배포를 변경하지 않음

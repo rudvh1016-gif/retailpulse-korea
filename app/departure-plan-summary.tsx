@@ -1,3 +1,4 @@
+import {DepartureOrderMotion} from './departure-order-motion';
 import type {Lang} from './retailpulse-data';
 import {departurePreparationCopy} from './airport-departure-preparation-copy';
 import {departureChoiceCopy} from './departure-choice-copy';
@@ -15,6 +16,7 @@ export function DeparturePlanSummary({input,plan,lang}:{input:DeparturePreparati
  const c=departurePreparationCopy[lang],short=departureChoiceCopy(lang);
  return <section className={styles.summary} data-testid="prep-live-summary" aria-live="polite" aria-atomic="true">
   <h3>{title[lang]}</h3>
+  <DepartureOrderMotion plan={plan} lang={lang} choice={`${input.route}|${input.checkedBaggage}|${input.taxRefund}|${input.dutyFreePickup}`}/>
   {!plan.supported?<p>{c.confirm}</p>:<>
    <p className={styles.route}>{({T1:c.t1,T2:c.t2,T1_CONCOURSE:c.concourse,UNKNOWN:c.unknown})[input.route]}</p>
    <ol className={styles.phases}>{(['BEFORE_SECURITY','SECURITY','AFTER_SECURITY'] as const).map(phase=><li key={phase}>

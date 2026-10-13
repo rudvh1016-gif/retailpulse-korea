@@ -1,15 +1,14 @@
 /**
  * The staff share text and the lines of the one-page image.
  *
- * Built from the same prep result and the same sentence functions as the
- * screen, so a shared message can never carry a number the screen did not
- * show. It names its own date and time instead of "now", keeps the chosen
+ * Built from the same prep result and fact sentences as the screen, with
+ * a compact selection of facts and concrete preparation instructions. It names its own date and time instead of "now", keeps the chosen
  * date in its link, and says that the link shows the latest data while the
  * saved text or image stays as it was when saved. Nothing personal goes in.
  */
 import { sidesCopy } from "./airport-sides-copy";
-import type { BusinessHours, BusinessPrep, PrepPlace, PrepSource } from "./business-prep";
-import { actionText, coverageLine, factLine, hoursLabel, isWholeDayFact, placeName, prepTime, sourceName, statusLine, type PrepLang } from "./business-prep-copy";
+import type { BusinessHours, BusinessPrep, PrepAction, PrepFact, PrepPlace, PrepSource } from "./business-prep";
+import { factLine, hoursLabel, isWholeDayFact, placeName, prepSpan, prepTime, sourceName, statusLine, type PrepLang } from "./business-prep-copy";
 import { industryProfiles, type IndustryId } from "./industry-guidance";
 
 type Row = Record<PrepLang, string>;
@@ -35,7 +34,7 @@ const labels = {
   place: row("장소", "Place", "地点", "場所"),
   industry: row("업종", "Business", "业态", "業種"),
   hours: row("영업시간", "Hours", "营业时间", "営業時間"),
-  facts: row("영업시간 안에서 확인된 사실", "Official facts inside the hours", "营业时间内确认的事实", "営業時間内で確認できた事実"),
+  facts: row("지금 핵심", "Key points", "重点", "要点"),
   reference: row("하루 전체 참고 (영업시간과 무관)", "Whole-day reference (not limited to the hours)", "全天参考（不限于营业时间）", "終日の参考（営業時間とは別）"),
   actions: row("준비할 일", "What to prepare", "需要准备的事", "準備すること"),
   basis: row("자료 기준", "Data as of", "资料基准", "資料の基準"),
@@ -58,8 +57,18 @@ export function dateLabel(serviceDate: string, lang: PrepLang): string {
 }
 
 /** The page for the same place and date; the date is always explicit. */
-export function shareLink(origin: string, lang: PrepLang, serviceDate: string): string {
-  return `${origin.replace(/\/+$/, "")}/${lang}/business?date=${serviceDate}`;
+export function shareLink(origin: string, lang: PrepLang, serviceDate: string, place?: PrepPlace): string {
+  const params=new URLSearchParams({date:serviceDate});
+  if(place){params.set("place",place.kind);if(place.kind==="area")params.set("area",place.area);else{params.set("terminal",place.terminal);if(place.side)params.set("side",place.side);}}
+  return `${origin.replace(/\/+$/, "")}/${lang}/business?${params}`;
+}
+
+/** Explicit share scope takes precedence for this visit; never writes recipient preferences. */
+export function sharedPrepPlace(params: Pick<URLSearchParams, 'get'>): PrepPlace | null {
+ const kind=params.get('place'),area=params.get('area'),terminal=params.get('terminal'),side=params.get('side');
+ if(kind==='area'&&(area==='myeongdong'||area==='hongdae'||area==='seongsu'||area==='itaewon'))return {kind:'area',area};
+ if(kind==='airport'&&(terminal==='T1'||terminal==='T2'))return {kind:'airport',terminal,side:side==='EAST'||side==='WEST'?side:null};
+ return null;
 }
 
 export interface ShareInput {
@@ -79,58 +88,60 @@ export interface ShareDocument {
   lines: Array<{ kind: "heading" | "text" | "item" | "note"; text: string }>;
 }
 
-function sourcesUsed(prep: BusinessPrep): PrepSource[] {
-  const used = new Set<PrepSource>();
-  for (const entry of prep.coverage) if (entry.status === "COVERED" || entry.status === "PARTIAL") used.add(entry.source);
-  for (const action of prep.actions) used.add(action.source);
-  if (prep.facts.some((fact) => fact.kind === "EVENTS")) used.add("TOURAPI_EVENTS");
-  if (prep.facts.some((fact) => fact.kind === "HOLIDAY")) used.add("HOLIDAY_CALENDAR");
-  if (prep.facts.some((fact) => fact.kind === "GATE_PEAK" || fact.kind === "FLIGHT_SPLIT" || fact.kind === "FLIGHT_SPLIT_ESTIMATE")) used.add("A1_FLIGHTS");
-  if (prep.facts.some((fact) => fact.kind === "FLIGHT_SPLIT_ESTIMATE")) used.add("A5_FORECAST");
-  return [...used];
+const factSource=(fact:PrepFact):PrepSource=>fact.kind==='CROWD_MAX'?'SEOUL_FORECAST':fact.kind==='RAIN_MAX'||fact.kind==='TEMPERATURE_RANGE'?'KMA_FORECAST':fact.kind==='EVENTS'?'TOURAPI_EVENTS':fact.kind==='HOLIDAY'?'HOLIDAY_CALENDAR':fact.kind==='AIRPORT_PEAK'||fact.kind==='AIRPORT_TOTAL'?'A5_FORECAST':'A1_FLIGHTS';
+const priority:PrepFact['kind'][]=['CROWD_MAX','AIRPORT_PEAK','FLIGHT_SPLIT','GATE_PEAK','RAIN_MAX','TEMPERATURE_RANGE','AIRPORT_TOTAL','HOLIDAY','EVENTS'];
+function briefFact(fact:PrepFact,day:string,lang:PrepLang){
+  if(fact.kind==='EVENTS')return row('공식 행사 기간에 포함 · 실제 운영 시간·장소는 별도 확인','Within an official event period · verify operating times and location','在官方活动期间 · 请另行确认实际时间与地点','公式イベントの期間内 · 実際の時間と場所は別途確認')[lang];
+  const text=factLine(fact,day,lang),sourceSuffix=text.lastIndexOf(` (${sourceName(factSource(fact),lang)}`);
+  return sourceSuffix<0?text:text.slice(0,sourceSuffix);
+}
+function briefAction(action:PrepAction,day:string,industry:IndustryId,lang:PrepLang){
+ const span=action.startAt&&action.endAt?prepSpan(action.startAt,action.endAt,day,lang):'';
+ const peak=industryProfiles[industry].checklist[lang].find(entry=>entry[0]==='peak')?.[2];
+ const instruction:Record<PrepAction['rule'],Row>={
+  CROWD:row('계산대·진열·통로를 정리하세요.','Clear the counter, displays and walkways.','整理收银台、陈列与通道。','レジ・陳列・通路を整えてください。'),
+  AIRPORT_PEAK:row('계산대와 재고를 확인하고 매장 실제 대기 줄을 살피세요.','Check the counter, stock and actual store queue.','检查收银台、库存与店前实际排队。','レジ・在庫と店前の実際の待ちを確認してください。'),
+  GATE_PEAK:row('출발 시간표를 확인하고 매장 실제 대기 줄을 살피세요.','Check the departure board and actual store queue.','核对出发时刻表与店前实际排队。','出発時刻表と店前の実際の待ちを確認してください。'),
+  RAIN:row('우산 보관대와 입구 바닥을 점검하세요.','Check the umbrella stand and entrance floor.','检查伞架与入口地面。','傘立てと入口の床を点検してください。'),
+  HEAT:row('냉방과 대기 공간을 점검하세요.','Check cooling and the waiting area.','检查冷气与等候区。','冷房と待機スペースを点検してください。'),
+  COLD:row('난방과 출입문을 점검하세요.','Check heating and the entrance.','检查暖气与出入口。','暖房と出入口を点検してください。'),
+  EVENT:row('주최 측의 실제 행사 시간·장소부터 확인하세요.','Verify actual event times and location with the organizer.','先向主办方确认实际活动时间与地点。','主催者の実際の開催時間と場所を確認してください。'),
+  HOLIDAY:row('공휴일 영업시간과 다국어 안내를 확인하세요.','Check holiday opening hours and multilingual signs.','检查假日营业时间与多语言指引。','祝日の営業時間と多言語案内を確認してください。'),
+ };
+ return `${span?`${span} · `:''}${action.rule==='CROWD'&&peak?peak:instruction[action.rule][lang]}`;
 }
 
-/** One structure for both the copied text and the image, in reading order. */
+/** One brief for preview, clipboard, native share and image. Numerical evidence is never re-estimated. */
 export function buildShareDocument(input: ShareInput): ShareDocument {
-  const { prep, serviceDate, lang } = input;
-  const lines: ShareDocument["lines"] = [];
-  lines.push({ kind: "text", text: `${dateLabel(serviceDate, lang)} · ${placeName(input.place, lang)}` });
-  lines.push({ kind: "text", text: `${labels.industry[lang]}: ${industryProfiles[input.industry].label[lang]} · ${labels.hours[lang]}: ${hoursLabel(input.hours, lang)}` });
-  lines.push({ kind: "heading", text: labels.facts[lang] });
-  const inHours = prep.facts.filter((fact) => !isWholeDayFact(fact));
-  const wholeDay = prep.facts.filter(isWholeDayFact);
-  if (inHours.length) for (const fact of inHours) lines.push({ kind: "item", text: factLine(fact, serviceDate, lang) });
-  else lines.push({ kind: "item", text: labels.none[lang] });
-  if (wholeDay.length) {
-    lines.push({ kind: "heading", text: labels.reference[lang] });
-    for (const fact of wholeDay) lines.push({ kind: "item", text: factLine(fact, serviceDate, lang) });
-  }
-  lines.push({ kind: "heading", text: labels.actions[lang] });
-  prep.actions.forEach((action, index) => {
-    const text = actionText(action, serviceDate, input.industry, lang);
-    lines.push({ kind: "item", text: `${index + 1}. ${text.body}` });
-  });
-  if (!prep.actions.length || prep.hourlyStatus !== "ACTIONS") lines.push({ kind: "item", text: statusLine(prep.actions.length ? prep.hourlyStatus : prep.status, lang) });
-  // The same coverage caveats the screen prints under the facts: a partial,
-  // missing or old source must not read as the whole shift in the shared copy.
-  for (const entry of prep.coverage) {
-    const line = coverageLine(entry, serviceDate, lang);
-    if (line) lines.push({ kind: "note", text: line });
-  }
-  const issued = prep.coverage.filter((entry) => entry.issuedAt && (entry.status === "COVERED" || entry.status === "PARTIAL"))
-    .map((entry) => `${sourceName(entry.source, lang)} ${prepTime(entry.issuedAt as string, serviceDate, lang)}`);
-  // Gate departures are a flight count with their own collection time.
-  for (const fact of prep.facts) if ((fact.kind === "GATE_PEAK" || fact.kind === "FLIGHT_SPLIT") && fact.issuedAt) issued.push(`${sourceName("A1_FLIGHTS", lang)} ${prepTime(fact.issuedAt, serviceDate, lang)}`);
-  for (const fact of prep.facts) if (fact.kind === "FLIGHT_SPLIT_ESTIMATE" && fact.forecastIssuedAt) issued.push(`${sourceName("A5_FORECAST", lang)} ${prepTime(fact.forecastIssuedAt, serviceDate, lang)}`);
-  if (input.place.kind === "airport") lines.push({ kind: "note", text: sidesCopy.notice[lang] });
-  lines.push({ kind: "note", text: `${labels.basis[lang]}: ${issued.length ? [...new Set(issued)].join(" · ") : labels.none[lang]} (KST)` });
-  lines.push({ kind: "note", text: `${labels.source[lang]}: ${sourcesUsed(prep).map((source) => sourceName(source, lang)).join(", ") || labels.none[lang]}` });
-  const savedMs = Date.parse(input.savedAt);
-  const savedDay = Number.isFinite(savedMs) ? new Date(savedMs + 9 * 3_600_000).toISOString().slice(0, 10) : serviceDate;
-  const saved = `${savedDay} ${prepTime(input.savedAt, savedDay, lang)} KST`;
-  lines.push({ kind: "note", text: `${saved} · ${labels.savedAt[lang]}` });
-  lines.push({ kind: "note", text: `${labels.latest[lang]}: ${input.link}` });
-  return { title: "KORETAIL", lines };
+ const {prep,serviceDate,lang}=input,lines:ShareDocument['lines']=[];
+ lines.push({kind:'text',text:`${dateLabel(serviceDate,lang)} · ${placeName(input.place,lang)}`});
+ lines.push({kind:'text',text:`${labels.industry[lang]}: ${industryProfiles[input.industry].label[lang]} · ${labels.hours[lang]}: ${hoursLabel(input.hours,lang)}`});
+ // The withheld flight-share passenger estimate is not reintroduced by a share export.
+ const facts=prep.facts.filter(fact=>fact.kind!=='FLIGHT_SPLIT_ESTIMATE').sort((a,b)=>priority.indexOf(a.kind)-priority.indexOf(b.kind)).slice(0,3);
+ const actions=prep.actions.slice(0,3);
+ lines.push({kind:'heading',text:labels.facts[lang]});
+ const inHours=facts.filter(fact=>!isWholeDayFact(fact)),wholeDay=facts.filter(isWholeDayFact);
+ for(const fact of inHours)lines.push({kind:'item',text:briefFact(fact,serviceDate,lang)});
+ if(!facts.length)lines.push({kind:'item',text:statusLine(prep.status,lang)});
+ if(wholeDay.length){lines.push({kind:'heading',text:labels.reference[lang]});for(const fact of wholeDay)lines.push({kind:'item',text:briefFact(fact,serviceDate,lang)});}
+ lines.push({kind:'heading',text:labels.actions[lang]});
+ const instructions=[...new Set(actions.map(action=>briefAction(action,serviceDate,input.industry,lang)))];
+ if(!instructions.length)instructions.push(row('최신 자료와 매장 실제 대기·재고를 확인하세요.','Check the latest data, actual store queue and stock.','核对最新资料、店内实际排队与库存。','最新資料と店の実際の待ち・在庫を確認してください。')[lang]);
+ instructions.forEach((text,index)=>lines.push({kind:'item',text:`${index+1}. ${text}`}));
+ const used=new Set<PrepSource>([...facts.map(factSource),...actions.map(action=>action.source)]);
+ const sources=[...used].map(source=>{
+  const coverage=prep.coverage.find(entry=>entry.source===source);
+  const times=[...new Set([...facts.filter(fact=>factSource(fact)===source).map(fact=>'issuedAt' in fact?fact.issuedAt:null),...actions.filter(action=>action.source===source).map(action=>action.issuedAt),coverage?.issuedAt].filter((at):at is string=>Boolean(at)))];
+  const partial=coverage?.status==='PARTIAL'?` · ${row('일부 시간만 확인','partial hours only','仅部分时段','一部の時間のみ')[lang]}${coverage.coveredStartAt&&coverage.coveredEndAt?` ${prepSpan(coverage.coveredStartAt,coverage.coveredEndAt,serviceDate,lang)}`:''}`:'';
+  return `${sourceName(source,lang)}${times.length?` ${times.map(at=>prepTime(at,serviceDate,lang)).join('/')}`:''}${partial}`;
+ });
+ if(input.place.kind==='airport')lines.push({kind:'note',text:sidesCopy.notice[lang]});
+ if(prep.hourlyStatus!=='ACTIONS'&&prep.hourlyStatus!=='NO_CHANGE'&&facts.length)lines.push({kind:'note',text:statusLine(prep.hourlyStatus,lang)});
+ if(sources.length)lines.push({kind:'note',text:`${labels.source[lang]} · ${labels.basis[lang]}: ${sources.join(' / ')} (KST)`});
+ const savedMs=Date.parse(input.savedAt),savedDay=Number.isFinite(savedMs)?new Date(savedMs+9*3_600_000).toISOString().slice(0,10):serviceDate;
+ lines.push({kind:'note',text:`${savedDay} ${prepTime(input.savedAt,savedDay,lang)} KST · ${row('저장본 · 링크에서 최신 자료 확인','Saved copy · link opens latest data','保存版本 · 链接查看最新资料','保存版 · リンクで最新資料を確認')[lang]}`});
+ lines.push({kind:'note',text:`${labels.latest[lang]}: ${input.link}`});
+ return {title:'KORETAIL',lines};
 }
 
 export function shareText(document: ShareDocument): string {
