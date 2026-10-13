@@ -133,7 +133,7 @@ test("renders the KORETAIL production shell", async () => {
   assert.match(html, /<title>공항 한눈에 \| KORETAIL<\/title>/i);
   assert.doesNotMatch(html, /codex-preview/i);
   // "내 브리핑" used to pass only through the retired meta description; the page itself is the glance.
-  assert.match(html, /<h1>공항 한눈에<\/h1>/);
+  assert.match(html, /<h1>인천공항 한눈에<\/h1>/);
   assert.doesNotMatch(html, /<section[^>]+class="demand-home"/);
   assert.match(html, /KORETAIL/);
 });
