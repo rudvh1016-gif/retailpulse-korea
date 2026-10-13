@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KORETAIL 공항 실제 여객 · 검토 시안</title><link rel="stylesheet" href="preview.css"></head>
+<body><main>
+ <header><a href="/ko">KORETAIL</a><span>미공개 비교 시안</span></header>
+ <section class="intro"><div><p class="eyebrow">인천공항 전체 · 월간 공식 통계</p><h1>항공편과 실제 여객을<br>구분해서 봅니다</h1><p>노선 국가별 출발 규모와 시간대별 여객 분포.<br>터미널별 수치나 승객 국적을 뜻하지 않습니다.</p></div><img src="airport.svg" width="360" height="220" alt="하늘색 공항과 비행 경로를 표현한 장식 그림"></section>
+ <aside id="connection"><strong>실제 자료 연결 확인 필요</strong><p>세 API가 기존 연결에 HTTP 403 · 코드 30으로 응답했습니다. 조회 결과를 확보하지 못했으며, 미확인을 0으로 표시하지 않습니다.</p><label><input id="example" type="checkbox"> 표시 예시 보기 <span>— 실제 데이터 아님</span></label></aside>
+ <section aria-labelledby="monthly-title"><div class="section-head"><h2 id="monthly-title">국가별 출발 규모</h2><label>기준 월 <select id="month"><option value="202609">2026년 9월</option><option value="202608">2026년 8월</option></select></label></div>
+  <div class="metric-tabs" role="group" aria-label="비교 지표"><button data-metric="passengers" aria-pressed="true">실제 여객</button><button data-metric="flights" aria-pressed="false">편수</button></div>
+  <p id="basis" class="note"></p><div id="month-summary" class="total" aria-live="polite"></div>
+  <div class="table-wrap"><table><caption class="sr-only">국가별 월간 출발 규모와 일평균, 전월 대비 및 비중</caption><thead><tr><th>국가 구분</th><th>월 합계</th><th>일평균</th><th>일평균 전월비</th><th>비중</th></tr></thead><tbody id="countries"></tbody></table></div>
+  <p class="note">일평균은 월 합계 ÷ 해당 달 전체 일수입니다. 동일한 공항 전체 출발 기준으로 계산하며, 국가 통계는 승객 국적이 아닙니다.</p>
+  <a class="source" href="https://www.data.go.kr/data/15095071/openapi.do">공식 국가별 통계 안내 ↗</a>
+ </section>
+ <section aria-labelledby="hours-title"><div class="section-head"><h2 id="hours-title">시간대별 실제 여객</h2><span>별도 통계</span></div><p class="note">국가별 표와 교차 결합하지 않습니다. 시간대 통계에도 터미널별 범위를 임의로 붙이지 않습니다.</p><div id="hours" class="hours" aria-live="polite"></div><a class="source" href="https://www.data.go.kr/data/15095070/openapi.do">공식 시간대별 통계 안내 ↗</a></section>
+ <section aria-labelledby="schedule-title"><div class="section-head"><h2 id="schedule-title">정기편 운항 계획</h2><span>실제 운항과 구분</span></div><p class="note">운항 요일·예정 시각·적용 기간을 함께 봅니다. 전체 노선 조회 성공은 아직 확인하지 못했습니다.</p><div id="schedules" aria-live="polite"></div><a class="source" href="https://www.data.go.kr/data/15114085/openapi.do">공식 정기 여객편 안내 ↗</a></section>
+ <footer>표시 예시는 화면·계산 검토용입니다. 실제 API 연결·수집 일정·저장·공개 반영은 하지 않았습니다.</footer>
+</main><script src="preview.js"></script></body></html>

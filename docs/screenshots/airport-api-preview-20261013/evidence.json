@@ -1,0 +1,33 @@
+{
+  "at": "2026-10-13T13:17:34.193Z",
+  "records": [
+    {
+      "width": 360,
+      "overflow": false,
+      "pageErrors": [],
+      "status": "PASS",
+      "data": "explicit synthetic examples; providers AUTH_BLOCKED"
+    },
+    {
+      "width": 390,
+      "overflow": false,
+      "pageErrors": [],
+      "status": "PASS",
+      "data": "explicit synthetic examples; providers AUTH_BLOCKED"
+    },
+    {
+      "width": 430,
+      "overflow": false,
+      "pageErrors": [],
+      "status": "PASS",
+      "data": "explicit synthetic examples; providers AUTH_BLOCKED"
+    },
+    {
+      "width": 1440,
+      "overflow": false,
+      "pageErrors": [],
+      "status": "PASS",
+      "data": "explicit synthetic examples; providers AUTH_BLOCKED"
+    }
+  ]
+}

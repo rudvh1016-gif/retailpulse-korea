@@ -1,0 +1,73 @@
+{
+  "workflow": "https://github.com/rudvh1016-gif/retailpulse-korea/actions/runs/38402837925",
+  "results": [
+    {
+      "id": "country-passengers-202609",
+      "at": "2026-10-13T13:10:31.637Z",
+      "params": {
+        "from_month": "202609",
+        "to_month": "202609",
+        "type": "json"
+      },
+      "httpStatus": 403,
+      "format": "json",
+      "officialResultCode": "30",
+      "recordCount": 0,
+      "totalCount": null,
+      "firstRecordFieldNames": [],
+      "authStatus": "AUTH_BLOCKED",
+      "nonJsonSnippet": null
+    },
+    {
+      "id": "country-flights-202609",
+      "status": "SKIPPED_AFTER_DENIAL_OR_QUOTA"
+    },
+    {
+      "id": "timeline-passengers-202609",
+      "at": "2026-10-13T13:10:32.290Z",
+      "params": {
+        "from_month": "202609",
+        "to_month": "202609",
+        "type": "json"
+      },
+      "httpStatus": 403,
+      "format": "json",
+      "officialResultCode": "30",
+      "recordCount": 0,
+      "totalCount": null,
+      "firstRecordFieldNames": [],
+      "authStatus": "AUTH_BLOCKED",
+      "nonJsonSnippet": null
+    },
+    {
+      "id": "regular-all-page-1",
+      "at": "2026-10-13T13:10:32.841Z",
+      "params": {
+        "pageNo": "1",
+        "numOfRows": "1000",
+        "type": "json",
+        "airport": "",
+        "lang": "K"
+      },
+      "httpStatus": 403,
+      "format": "json",
+      "officialResultCode": "30",
+      "recordCount": 0,
+      "totalCount": null,
+      "firstRecordFieldNames": [],
+      "authStatus": "AUTH_BLOCKED",
+      "nonJsonSnippet": null
+    },
+    {
+      "summary": true,
+      "requestCount": 3,
+      "maximumRequests": 9,
+      "regularAllRoutesComplete": false,
+      "regularRecords": 0,
+      "regularReportedTotal": null,
+      "persistence": false,
+      "newAccessSettings": false
+    }
+  ],
+  "note": "Job success only means the bounded probe completed. All three provider contracts returned AUTH_BLOCKED; no source activation, database write, retry or access setting change."
+}
