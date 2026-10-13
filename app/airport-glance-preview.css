@@ -69,3 +69,4 @@ body:has(.glance-preview){background:#fff}
 .glance-controls>div button[aria-pressed=true]{box-shadow:none}
 .glance-selection-rule{position:absolute;bottom:0;left:9px;right:9px;height:2px;background:currentColor;pointer-events:none}
 .glance-building h2 .glance-building-label{display:inline-block;font:inherit}
+.glance-future .glance-window-time{margin:4px 0 6px;font-size:var(--glance-body);font-weight:600;color:#111;overflow-wrap:anywhere}.glance-window-time>span{display:inline-block;max-width:100%}

@@ -32,7 +32,7 @@ for(const width of [320,390,1280])test(`airport finite choice feedback and final
  await expect(app.locator('.glance-map-heading')).toContainText('9 편');await settled(page);expect(await art.boundingBox()).toEqual(before);
  expect(await art.evaluate(el=>getComputedStyle(el).transform)).toBe('none');
  const future=app.getByTestId('glance-future');await future.scrollIntoViewIfNeeded();await clear(page);
- await future.getByRole('button',{name:'향후 3 시간',exact:true}).click();await expect(future.locator('.glance-window-note').first()).toContainText('17:10');
+ await future.getByRole('button',{name:'향후 3 시간',exact:true}).click();await expect(future.getByTestId('glance-zone-period')).toContainText('17:10');
  await expect.poll(()=>page.evaluate(()=>window.motionEvents.some(e=>e.duration===220&&e.target==='glance-zone-leaders'))).toBe(true);
  await future.getByRole('button',{name:'향후 6 시간',exact:true}).click();await future.getByRole('button',{name:'향후 1 시간',exact:true}).click();await settled(page);
  await shot(page,`airport-${width}`);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);

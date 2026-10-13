@@ -31,7 +31,7 @@ Only protected `app/population-flow.tsx` is updated in the lock manifest, with p
 
 ## Consolidation
 
-Preserve the separate parent PR360 airport H1/time-label changes when integrating `app/airport-glance-preview.tsx`. This branch uses the fetched main baseline and intentionally does not include that PR. Parent share-document changes are in `lib/prep-share.ts`, separate from this branch’s `app/prep-share.tsx` success indicator. Claude collection/loading/image work is outside this branch. Required full CI must pass on the consolidated commit before any merge or deployment.
+Parent PR360 (`fcf5b9ba`) is now a normally merged dependency of this draft. The CSS tail conflict was resolved by preserving both the time-label rule and all four motion rules. The TSX merged automatically; the focused motion test reads the new dedicated time label. Parent share-document changes are in `lib/prep-share.ts`, separate from this branch’s `app/prep-share.tsx` success indicator. Claude collection/loading/image work is outside this branch. Required full CI must pass on the consolidated commit before any merge or deployment.
 
 ## Clipboard follow-up
 
