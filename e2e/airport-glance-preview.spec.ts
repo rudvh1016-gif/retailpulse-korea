@@ -52,7 +52,7 @@ test('pending past-day summary stays unavailable until its matching response arr
  await routeData(page);await page.goto('/ko/airport-glance-preview');const app=page.getByTestId('airport-glance-preview');await expect(app.getByTestId('glance-key-wait')).toContainText('24 분');
  let release!:()=>void;const pending=new Promise<void>(resolve=>{release=resolve;});
  await page.route('**/api/live/summary*',async route=>{await pending;return routeSummary({...SUMMARY_FIXTURE,dayRelation:'PAST',todayKst:date,serviceDateKst:'2026-10-10',airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:'2026-10-10',congestion:[]},generatedAt:`${date}T10:15:00+09:00`})(route);});
- await app.locator('input[type=date]').fill('2026-10-10');await expect(app.locator('.glance-map-heading')).toContainText('0 편');await expect(app.getByTestId('glance-key-upcoming')).toContainText('확인 가능한 자료 없음');await expect(app.locator('.glance-map-queue')).toHaveCount(0);
+ await app.locator('input[type=date]').fill('2026-10-10');await expect(app.locator('.glance-map-heading')).toContainText('0 편');await expect(app.getByTestId('glance-key-upcoming')).toContainText('자료 확인 중');await expect(app.getByTestId('glance-key-upcoming')).not.toContainText('현재 이후 예정편 없음');await expect(app.locator('.glance-map-queue')).toHaveCount(0);
  release();await expect(app.getByTestId('glance-key-upcoming')).toContainText('현재 이후 예정편 없음');
 });
 
