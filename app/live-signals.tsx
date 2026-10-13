@@ -2458,7 +2458,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
             const weatherRow = groupId === "now" ? groupRows.find((row) => row.key === "weather") : undefined;
             const remainingNow = groupId === "now" ? groupRows.filter((row) => row.key !== "realtime" && row.key !== "weather") : [];
             const observedWeather = block?.context?.weather;
-            const hasObservation = [observedWeather?.pm10, observedWeather?.pm25].some(value => value !== null && value !== undefined);
+            const hasObservation = [observedWeather?.pm10, observedWeather?.pm25].some(value => value !== null && value !== undefined) || [observedWeather?.pm10Grade, observedWeather?.pm25Grade].some(grade => Boolean(grade?.trim()));
           return <section className={`signal-group signal-group-${groupId}`} key={groupId}>
             <header className="signal-group-head">
               <h3 className="signal-group-title">{groupCopy.title[lang]}</h3>

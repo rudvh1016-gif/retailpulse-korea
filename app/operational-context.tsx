@@ -1,6 +1,6 @@
 'use client';
 import type { Lang } from './retailpulse-data';
-import type { SeoulContext } from '../lib/seoul-context';
+import { seoulAirReading, type SeoulContext } from '../lib/seoul-context';
 import {CommercialComposition} from './commercial-composition';
 import { kstDay } from '../lib/demand-presentation';
 import { AIR_GRADE_TEXT, readAirGrade } from '../lib/weather-guide';
@@ -59,13 +59,16 @@ export function SeoulObservationScene({context,lang,nowIso,metricScenes=false,ai
       if(!airOnly&&weather.temperature!==null) entries.push({kind:'temperature',value:`${stamp} ${weather.temperature}°C`});
       if(!airOnly&&weather.humidity!==null) entries.push({kind:'humidity',value:`${t('습도','Humidity','湿度','湿度')} ${weather.humidity}%`});
       if(!airOnly&&weather.wind!==null) entries.push({kind:'wind',value:`${t('바람','Wind','风','風')} ${weather.wind}m/s`});
-      if(weather.pm10!==null) entries.push({kind:'air',value:`${t('미세먼지','PM10','可吸入颗粒物 PM10','PM10')}${weather.pm10Grade?` ${airGradeWord(weather.pm10Grade,lang)}`:''} ${weather.pm10}μg/m³`});
-      if(weather.pm25!==null) entries.push({kind:'air',value:`${t('초미세먼지','PM2.5','细颗粒物 PM2.5','PM2.5')}${weather.pm25Grade?` ${airGradeWord(weather.pm25Grade,lang)}`:''} ${weather.pm25}μg/m³`});
+      for(const [name,rawValue,rawGrade] of [[t('미세먼지','PM10','可吸入颗粒物 PM10','PM10'),weather.pm10,weather.pm10Grade],[t('초미세먼지','PM2.5','细颗粒物 PM2.5','PM2.5'),weather.pm25,weather.pm25Grade]] as const){
+        const reading=seoulAirReading(rawValue,rawGrade);
+        if(reading.value!==null)entries.push({kind:'air',value:`${name}${reading.grade?` ${airGradeWord(reading.grade,lang)}`:''} ${reading.value}μg/m³`});
+        else if(reading.grade)entries.push({kind:'air',value:`${name} ${reading.status==='MAINTENANCE'?t('점검 중 · 농도 미제공','Under inspection · concentration unavailable','检查中 · 暂无浓度','点検中 · 濃度提供なし'):t('농도 미제공','Concentration unavailable','暂无浓度','濃度提供なし')}`});
+      }
       if (!entries.length) return null;
       return <div className="context-environment"><WeatherScene lang={lang} forecast={null} source="" metricScenes={metricScenes} observation={{
         facts:entries.map(entry=>entry.value),kinds:entries.map(entry=>entry.kind), observedAt: weather.observedAt, explanation: gap,
-        title: airOnly?t('대기질 관측','Air quality observation','空气质量观测','大気質の観測'):metricScenes?(age.isNow?t('현재 관측','Current observation','当前观测','現在の観測'):t('최근 관측','Latest observation','最近观测','直近の観測')):t('주변 환경 관측','Local environment observation','当前周边环境','現在の周辺環境'),
-        source: t('서울시 실시간 도시데이터 · 관측','Seoul real-time city data · observed','首尔市实时城市数据 · 观测','ソウル市リアルタイム都市データ · 観測'),
+        title: airOnly?t('서울시 대기질 제공 상태','Seoul air-quality status','首尔空气质量提供状态','ソウル市の大気質提供状況'):metricScenes?(age.isNow?t('현재 관측','Current observation','当前观测','現在の観測'):t('최근 관측','Latest observation','最近观测','直近の観測')):t('주변 환경 관측','Local environment observation','当前周边环境','現在の周辺環境'),
+        source: airOnly?t('서울시 제공 상태 · 업데이트','Seoul published status · updated','首尔提供状态 · 更新','ソウル市提供状況 · 更新'):t('서울시 실시간 도시데이터 · 관측','Seoul real-time city data · observed','首尔市实时城市数据 · 观测','ソウル市リアルタイム都市データ · 観測'),
       }}/></div>;
 }
 export function HolidayContext({months,date,lang}:{months?:Array<{month:string;days:Array<{date:string;name:string}>;retrievedAt:string}>;date:string;lang:Lang}) {
