@@ -4,7 +4,8 @@ import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
 // The business screen's code (its briefing and industry guide) loads with that
 // screen. A phone reaches it through More, so More starts that load once it is
 // idle, and the screen then opens whole in its first frame instead of showing
-// an empty slot while its code arrives.
+// an empty slot while its code arrives. (The shell itself fetches only the
+// industry guide once a loaded screen is idle; the briefing waits for More.)
 // The screen components only (app/business-prep.tsx, not lib/business-prep.ts), in dev or built form.
 const businessCode=(url:string)=>/\/(?:app|assets)\/(business-prep|industry-guide)(?:\.tsx|-[\w-]+\.js)$/.exec(new URL(url).pathname)?.[1];
 test('More prepares the business screen, which then opens without a gap',async({page})=>{
@@ -16,7 +17,8 @@ test('More prepares the business screen, which then opens without a gap',async({
  await page.goto('/ko/myeongdong');
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await page.waitForTimeout(1000);
- expect([...requested],'a Seoul page does not load the business screen').toEqual([]);
+ // The shell may fetch the industry guide once idle (the airport screen needs it too); the briefing itself stays with 매장.
+ expect([...requested].filter(code=>code!=='industry-guide'),'a Seoul page does not load the business briefing').toEqual([]);
  await page.locator('.bottom-nav a[href="/ko/more"]').click();
  await expect(page).toHaveURL(/\/ko\/more$/);
  await expect.poll(()=>[...requested].sort(),{message:'More starts loading the business screen'}).toEqual(['business-prep','industry-guide']);

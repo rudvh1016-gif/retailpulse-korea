@@ -369,6 +369,18 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     }
   }, [lang, selected, terminal, industry, preferencesReady]);
 
+  // The industry guide left the shell's first download (lib/industry-ids.ts
+  // carries the names), but the airport and business screens still need it.
+  // Once this screen has loaded and sits idle the shell fetches it quietly, so
+  // a later tap on those tabs finds it cached, as it did before the split.
+  useEffect(() => {
+    if (!preferencesReady) return;
+    let live = true, idle = 0, timer: ReturnType<typeof setTimeout> | undefined;
+    const start = () => { if (!live) return; if ("requestIdleCallback" in window) idle = requestIdleCallback(() => { loadIndustryGuide().catch(() => {}); }, { timeout: 4000 }); else timer = setTimeout(() => { loadIndustryGuide().catch(() => {}); }, 1500); };
+    if (document.readyState === "complete") start(); else window.addEventListener("load", start, { once: true });
+    return () => { live = false; window.removeEventListener("load", start); if (idle) cancelIdleCallback(idle); clearTimeout(timer); };
+  }, [preferencesReady]);
+
   useEffect(() => {
     const [, , pathSlug, pathArea] = window.location.pathname.split("/");
     const slug = seoSlugs.includes(pathSlug as SeoSlug) ? pathSlug as SeoSlug : undefined;
