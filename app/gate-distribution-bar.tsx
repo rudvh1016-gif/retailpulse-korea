@@ -1,7 +1,6 @@
 import type {SideCounts} from '../lib/airport-sides';
 import type {Lang} from './retailpulse-data';
 import {sidesCopy} from '../lib/airport-sides-copy';
-import './gate-distribution-bar.css';
 const order=['WEST','CENTER','EAST','UNVERIFIED'] as const;
 /** Decorative geometry uses the same raw flight counts as the adjacent DOM labels. */
 export function GateDistributionBar({counts,maximum=counts.total}:{counts:SideCounts;maximum?:number}){
