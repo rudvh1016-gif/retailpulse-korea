@@ -3,7 +3,7 @@ import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
 for(const width of [390,1440])for(const state of ['stored-maintenance','normalized-maintenance','mixed','valid-zero'] as const)test(`air status and unverified tourism ${state} ${width}`,async({page})=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.setViewportSize({width,height:1000});
  const weather={observedAt:'2026-10-13T19:20:00+09:00',temperature:18,humidity:50,wind:2,pm10:state==='normalized-maintenance'?null:state==='stored-maintenance'?35:0,pm25:state==='normalized-maintenance'?null:0,pm10Grade:state==='valid-zero'?'좋음':'점검중',pm25Grade:state==='mixed'||state==='valid-zero'?'좋음':'미제공'};
- const areas=Object.fromEntries(Object.entries(SUMMARY_FIXTURE.areas).map(([key,area])=>[key,{...area,context:{commercialAt:null,categories:[],weather},foreignPurposeMobility:{tourism:360.5,referenceDate:'2026-09-30'}}]));
+ const areas=Object.fromEntries(Object.entries(SUMMARY_FIXTURE.areas).map(([key,area])=>[key,{...area,context:{commercialAt:null,categories:[],weather},foreignPurposeMobility:{tourism:360.5,shopping:null,referenceDate:'2026-09-30'}}]));
  await page.route('**/api/live/summary*',routeSummary({...SUMMARY_FIXTURE,areas}));await page.goto('/ko/myeongdong');
  const air=page.getByRole('region',{name:'서울시 대기질 제공 상태'});await expect(air).toBeVisible();await expect(air).toContainText('서울시 제공 상태 · 업데이트');await expect(air).not.toContainText('관측');
  if(state==='valid-zero'){await expect(air).toContainText('미세먼지 좋음 0μg/m³');await expect(air).toContainText('초미세먼지 좋음 0μg/m³');}
