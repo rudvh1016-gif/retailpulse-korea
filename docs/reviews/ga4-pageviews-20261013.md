@@ -66,3 +66,16 @@ GA4 속성을 읽을 수 있는 연결 도구가 없어 실제 보고서·실시
 
 - [Google 수동 페이지 조회 및 중복 방지](https://developers.google.com/analytics/devguides/collection/ga4/views)
 - [Google SPA 페이지 조회](https://developers.google.com/analytics/devguides/collection/ga4/single-page-applications)
+
+
+## 읽기 전용 진단 문구 정정
+
+scripts/check-analytics.ts는 초기 HTML에 tag 참조가 없으면 아무도 방문자를 측정하지 않는다고, 참조가 있으면 이미 측정 중이라고 단정하던 문구를 제거
+이 검사는 초기 HTML 참조와 응답 헤더만 관찰하며 동의 후 hydration·브라우저 실제 실행·GA4 계정 수신은 UNKNOWN으로 표시
+CSP 문자열에 호스트가 있다는 이유만으로 실행 가능하다고 하거나 새 분석기를 설치하라고 권하지 않음
+모의 fetch를 사용한 독립 테스트로 참조 유무 양쪽에서 위 경계를 유지하고 Google 이벤트 전송이 없음을 확인
+
+실제 수신 확인은 먼저 소유자의 KORETAIL 속성·웹 스트림이 운영 빌드의 공개 측정 ID와 일치하는지 읽기 전용으로 확인한 뒤 진행
+현재 계정의 Enhanced Measurement 상태는 UNKNOWN이며 기존 승인 정책대로 전체 비활성인지 확인해야 함
+향상된 측정이 켜져 있으면 send_page_view:false만으로 SPA 자동 page_view와 검색어 등 자동 전송을 막지 못하므로 중복 조회·개인 쿼리 수집 위험을 별도로 확인
+이 작업에서는 계정 설정을 변경하지 않으며 자동 수집이 활성화되어 있다면 이를 해결됐다고 선언하거나 테스트 트래픽을 반복 전송하지 않음
