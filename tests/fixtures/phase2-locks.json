@@ -1,9 +1,9 @@
 {
   "base": "65907c971b5e279da48525875df6c972ab998c64",
   "protectedFiles": {
-    "app/[locale]/[slug]/page.tsx": "667064f5cf0bbf2678960f6544db58a78f20e3fcf4de8fc3042f6465ef439654",
+    "app/[locale]/[slug]/page.tsx": "732728d587350290e6998977272c0e2ad3f94a3dc2367ee0d5be7dd01be8d2b3",
     "app/[locale]/not-found.tsx": "620e62c747a4a0d4b8af1558492c74e961f2a4f0d55caa2c960c508395a41ff0",
-    "app/[locale]/page.tsx": "3b6b86043a41f93185c10121a57005bb165e4940edb7363bd2d461188c6213b1",
+    "app/[locale]/page.tsx": "7bd9ab910933b1d77e5a4306251ff7af0c7ae45cf4114bd9b98759726667ded0",
     "app/[locale]/tourism-desk/[area]/page.tsx": "b74c40a03d7ff4ec57a8314f4c11825467212d48634bebf057d078d3ae360b35",
     "app/[locale]/tourism-desk/page.tsx": "2738ee0e7cfb960016184b8dd9a99112312719819cd3b8d05e96a89e83320b37",
     "app/api/airport/facilities/route.ts": "ebc9dea6df03d842ee8fbb1e640158276a506658cc364190a32fd99cf712639d",
@@ -16,7 +16,7 @@
     "app/api/live/summary/route.ts": "96727d7ade580d6a59fa3bcd438a242dae54316060ea259c7d74de40dfee1f3e",
     "app/area-demand-card.tsx": "8209a5fda381f6cf529b8635918e99ed158e6d7864280483083510ea16ba2be5",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
-    "app/globals.css": "91bb08d182fadf62a71190527138522e5614b5a7cf4c12041466e2d76f93a8ae",
+    "app/globals.css": "fedcfc48b2d7b08dc3cae6cbb625afee413afd788aa7701df1b3d223a8dcf2b2",
     "app/install-app.tsx": "36a7e0aa0266c9e47583fb6c9466210c01b5221a002674d015266e3fde945b22",
     "app/layout.tsx": "5751b05b09e86833897a9e9145672af9ae830c538b1f357f9963325d592e06a5",
     "app/live-signals.tsx": "51ca13c3a277ebdc9785194debd98c15684db04c5e8900726d7b12b1a5faada2",
@@ -26,7 +26,7 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "ffb181196475ce26ae3ddfa4d758bdfaa6a8929a31a7ce9831e9e16f6711738a",
+    "app/retailpulse-app.tsx": "12512780d57b4c8b1b9b2906074fe3ea15b3c71a4d8363b6ee4048f7e838b741",
     "app/retailpulse-data.ts": "2a965cde02012978eb446a955b82bbcbfbec83f74f862e0e2846fae1ca348ecd",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "ee3f5c36f600ff0d9b9c018543bb6ac596826475f02adbf2c21992c797f582c8",
@@ -1810,5 +1810,83 @@
     ],
     "protectedPathCount": 65,
     "approvalEvidenceFile": "docs/approvals/render-apis-crawlable-20261013.json"
+  },
+  "ownerApprovedGlanceHydrationRoute20261013": {
+    "recordedAt": "2026-10-13T11:21:49.478Z",
+    "authorizationEvidence": {
+      "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+      "ownerTaskRequest": "남은문제 해결할수있는거는 너가 싹다해줘 속도개선은 할수있는거 다한거지?",
+      "approvalQuestion": "Q1 (속도 수정): 속도는 아직 다 한 게 아닙니다. 측정해 보니 남은 개선은 대부분 보호 파일 또는 dot 담당 영역에 있습니다. 어떤 수정을 승인할까요?\n ① 홈 다시그리기 제거 — 보호 파일 3개(retailpulse-app.tsx, [locale]/page.tsx, [slug]/page.tsx). 홈 첫 방문 때 '공항 한눈에'를 지웠다 다시 그리면서 화면이 크게 밀립니다. 밀림 점수(CLS)가 0.67(나쁨)에서 0.10(좋음)으로 줄고, 첫 화면부터 정상 모양으로 보입니다. 대신 조작 가능 시점이 0.35초 늦어집니다. 디자인 변화는 없습니다.\n ② 공항 그림 크기 단계 — dot 담당, 보호 아님. 1100·1200px 그림을 추가하고 sizes 값을 고칩니다. 휴대폰이 받는 그림이 32~45% 줄고(357KB → 199~278KB), 홈 LCP가 약 0.4~0.5초 빨라질 것으로 예상합니다. 화질 설정(q85)은 같고, 2배 확대에서 차이가 보이지 않습니다. 원본 PNG가 없어 지금 1448 그림에서 만듭니다.\n ③ 서울 지역 화면 밀림 제거 — 보호 파일 globals.css에 1줄 추가. 명동 등 지역 화면의 CLS가 0.29에서 0.01로 줄고, 실제 보이는 화면은 같습니다. 다만 측정 도구의 LCP 숫자는 1.5초에서 3.7초로 커져 보입니다. 기준 요소가 바닥글에서 실제 내용으로 바뀌기 때문입니다.\n ④ 업종 코드 분리 — 보호 파일 retailpulse-app.tsx 수정. 공항·매장 화면을 뺀 첫 방문에서 JS가 28KB(gzip) 줄어 약 0.12~0.15초 빨라집니다. 화면 변화는 없습니다.\nQ2 (추가 항목): 함께 처리할 항목을 골라주세요.\n ⑤ 공항 한눈에 대기 표시 — dot 담당. '오늘 예상 출국객' 칸도 로딩 중에는 '자료 확인 중…'으로 표시합니다. 지금은 검색로봇에게 '확인 가능한 자료 없음'으로 읽힙니다. 로딩 중 상태줄을 숨겨 밀림도 조금 줄입니다. dot의 e2e 기대값 1줄을 바꿉니다.\n ⑥ 병합된 원격 브랜치 4개 삭제 — claude/seo-geo-20261013 외 3개. 내용은 모두 main에 이미 있습니다(검증 완료).\n ⑦ 영어 홈 설명에 Incheon Airport — 보호 파일 seo-config.ts의 영어 설명에만 넣습니다.\n ⑧ 홈 글꼴 미리 받기 해제 — 보호 파일 [locale]/page.tsx 수정. 홈 첫 방문의 조작 가능 시점이 0.45~0.55초 빨라집니다. 대신 브랜드 글꼴이 약 0.3초 늦게 바뀝니다.\nQ3 (범위 밖): 이번 점검 범위 밖에서 실제 문제도 찾았습니다. 함께 고칠까요?\n A1 자정 대체수집 가드 — 보호 아님. 승인된 01:15~03:00 KST 대체수집이 정상 상태값 'LIVE'까지 막아서 지금까지 한 번도 작동하지 않았습니다. dot 초안 PR #343에서 이 가드 부분만 반영하고 나머지는 그대로 둡니다. 수집 횟수 설정은 바꾸지 않습니다.\n 항공편 보드 무한 로딩 #273 — 보호 파일 airport-live-signals.tsx에 15초 시간초과를 추가하고, 이 줄을 검사하는 테스트 2줄을 맞춥니다.\n 수집 시각 문구 04:07→00:07 — 보호 파일 live-signals.tsx의 4개 언어 문구, 그리고 RUNBOOK 등 문서를 고칩니다. 사용자 화면에 '첫 수집 04:07 KST'라고 나오지만, 실제 일정은 10월 10일부터 00:07 KST입니다.\n 이번엔 보고만 — 범위 밖 항목은 고치지 않고 보고에만 남깁니다.",
+      "ownerRequest": "Q1: ① 홈 다시그리기 제거 (권장), ② 공항 그림 크기 단계 (권장), ③ 서울 지역 화면 밀림 제거 (권장) | Q2: ⑤ 공항 한눈에 대기 표시 (권장), ⑥ 병합된 원격 브랜치 4개 삭제 (권장) | Q3: A1 자정 대체수집 가드, 항공편 보드 무한 로딩 #273, 수집 시각 문구 04:07→00:07",
+      "approvedItem": "① 홈 다시그리기 제거 (권장)",
+      "scope": "The home and /{lang}/airport-glance server pages pass the statically imported airport glance to RetailPulseApp (new optional AirportGlance prop, defaulting to the existing dynamic() glance), so hydration no longer suspends on a lazy chunk and discards the server-rendered glance. Seoul and other routes are unchanged (no glance CSS/JS in their heads). No markup, copy or design change. Disclosed trade-off: /ko hydration about 0.35 s later because the already-downloaded glance chunk now loads before hydration.",
+      "approvedProtectedFiles": [
+        "app/retailpulse-app.tsx",
+        "app/[locale]/page.tsx",
+        "app/[locale]/[slug]/page.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": true
+    },
+    "reason": "Record the explicit owner approval for this protected-file change; no test is relaxed or skipped.",
+    "comparisonBase": "9a1364227d1bdb3c86334f36150bd901ccce3063",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "ffb181196475ce26ae3ddfa4d758bdfaa6a8929a31a7ce9831e9e16f6711738a",
+        "approved": "12512780d57b4c8b1b9b2906074fe3ea15b3c71a4d8363b6ee4048f7e838b741",
+        "addedLines": 9,
+        "deletedLines": 2,
+        "exactUnifiedDiff": "diff --git a/app/retailpulse-app.tsx b/app/retailpulse-app.tsx\nindex 1851537..1040513 100644\n--- a/app/retailpulse-app.tsx\n+++ b/app/retailpulse-app.tsx\n@@ -7,8 +7,9 @@ import dynamic from 'next/dynamic';\n // SSR remains enabled. These inactive screens do not belong to the airport's\n // first download; their initial content is still rendered on their own routes.\n // Reaching for the airport glance tab starts its load the same way (see prepareAirportView).\n+// The glance routes pass the glance in from their server pages (see RetailPulseProps).\n const loadAirportGlance=()=>import('./airport-glance-preview');\n-const AirportGlance=dynamic(loadAirportGlance);\n+const LazyAirportGlance=dynamic(loadAirportGlance);\n const prepareAirportGlance=()=>{loadAirportGlance().catch(()=>{});};\n const MonthlyRecordsView=dynamic(()=>import('./monthly-records').then(module=>module.MonthlyRecordsView));\n const TourismDeskView=dynamic(()=>import('./tourism-desk').then(module=>module.TourismDeskView));\n@@ -47,6 +48,7 @@ import {\n import { localText } from \"./local-text\";\n import { MonthRangePicker } from \"./month-range-picker\";\n import type { AirportView as AirportViewComponent } from \"./airport-view\";\n+import type AirportGlanceComponent from \"./airport-glance-preview\";\n import { canonicalSlug, pageDescription, pageTitle, seoLocales, seoSlugs, siteOrigin, type SeoSlug } from \"./seo-config\";\n import LiveSignals, {\n   AreaCurrentBrief,\n@@ -247,6 +249,11 @@ type RetailPulseProps = {\n    * the shell loads it on demand when the reader switches to the airport tab.\n    */\n   AirportView?: ComponentType<ComponentProps<typeof AirportViewComponent>>;\n+  /**\n+   * The airport glance, passed the same way by the glance routes' server pages\n+   * so hydration does not wait on a lazy chunk and discard the server HTML.\n+   */\n+  AirportGlance?: ComponentType<ComponentProps<typeof AirportGlanceComponent>>;\n   /**\n    * Today's answer, read on the server (lib/today-answer.ts) so the first HTML\n    * already states it. Absent or null renders nothing.\n@@ -272,7 +279,7 @@ function routeFor(lang: Lang, view: View, area: AreaId) {\n   return `${base}/${view}`;\n }\n \n-export default function Home({ initialLang = \"ko\", initialView = \"today\", initialArea = \"myeongdong\", initialRoute = false, initialScope = \"home\", todayAnswer = null, AirportView = OnDemandAirportView }: RetailPulseProps = {}) {\n+export default function Home({ initialLang = \"ko\", initialView = \"today\", initialArea = \"myeongdong\", initialRoute = false, initialScope = \"home\", todayAnswer = null, AirportView = OnDemandAirportView, AirportGlance = LazyAirportGlance }: RetailPulseProps = {}) {\n   const bottomNavigationRef = useBottomNavigationViewport();\n   // Airport routes already carry the airport code; only the on-demand copy needs preparing.\n   const prepareAirport = AirportView === OnDemandAirportView ? prepareAirportView : undefined;\n"
+      },
+      {
+        "file": "app/[locale]/page.tsx",
+        "previous": "3b6b86043a41f93185c10121a57005bb165e4940edb7363bd2d461188c6213b1",
+        "approved": "7bd9ab910933b1d77e5a4306251ff7af0c7ae45cf4114bd9b98759726667ded0",
+        "addedLines": 2,
+        "deletedLines": 1,
+        "exactUnifiedDiff": "diff --git a/app/[locale]/page.tsx b/app/[locale]/page.tsx\nindex 82e9490..b8a7018 100644\n--- a/app/[locale]/page.tsx\n+++ b/app/[locale]/page.tsx\n@@ -2,6 +2,7 @@ import type { Metadata } from \"next\";\n import { preload } from \"react-dom\";\n import { notFound } from \"next/navigation\";\n import RetailPulseApp from \"../retailpulse-app\";\n+import AirportGlancePreview from \"../airport-glance-preview\";\n import { buildMetadata, pageStructuredData, seoLocales, type SeoLocale } from \"../seo-config\";\n import {preloadShellFont} from '../shell-font-preload';\n \n@@ -52,7 +53,7 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:\n   preloadLiveSummary();\n   preloadShellFont(locale as SeoLocale);\n   return <>\n-    <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialView=\"airport-glance\" initialScope=\"airport-home\" />\n+    <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialView=\"airport-glance\" initialScope=\"airport-home\" AirportGlance={AirportGlancePreview} />\n     <script type=\"application/ld+json\" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale)) }} />\n   </>;\n }\n"
+      },
+      {
+        "file": "app/[locale]/[slug]/page.tsx",
+        "previous": "667064f5cf0bbf2678960f6544db58a78f20e3fcf4de8fc3042f6465ef439654",
+        "approved": "732728d587350290e6998977272c0e2ad3f94a3dc2367ee0d5be7dd01be8d2b3",
+        "addedLines": 2,
+        "deletedLines": 1,
+        "exactUnifiedDiff": "diff --git a/app/[locale]/[slug]/page.tsx b/app/[locale]/[slug]/page.tsx\nindex 03f9ec0..0797293 100644\n--- a/app/[locale]/[slug]/page.tsx\n+++ b/app/[locale]/[slug]/page.tsx\n@@ -3,6 +3,7 @@ import { preload } from \"react-dom\";\n import { notFound,permanentRedirect } from \"next/navigation\";\n import RetailPulseApp from \"../../retailpulse-app\";\n import { AirportView } from \"../../airport-view\";\n+import AirportGlancePreview from \"../../airport-glance-preview\";\n import { loadTodayAnswer } from \"../../../lib/today-answer-server\";\n import { buildMetadata, pageStructuredData, seoLocales, standaloneSeoSlugs, type SeoLocale, type SeoSlug } from \"../../seo-config\";\n \n@@ -42,7 +43,7 @@ export default async function LocalePage({ params }: { params: Promise<{ locale:\n   // Only the pages whose question this answers pay for the read.\n   const todayAnswer = isArea || slug === \"airport\" ? await loadTodayAnswer() : null;\n   return <>\n-    <RetailPulseApp initialLang={locale as SeoLocale} initialView={view} initialArea={area} initialRoute initialScope={isArea ? \"area\" : \"home\"} todayAnswer={todayAnswer} AirportView={slug === \"airport\" ? AirportView : undefined} />\n+    <RetailPulseApp initialLang={locale as SeoLocale} initialView={view} initialArea={area} initialRoute initialScope={isArea ? \"area\" : \"home\"} todayAnswer={todayAnswer} AirportView={slug === \"airport\" ? AirportView : undefined} AirportGlance={slug === \"airport-glance\" ? AirportGlancePreview : undefined} />\n     <script type=\"application/ld+json\" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale, slug as SeoSlug)) }} />\n   </>;\n }\n"
+      }
+    ],
+    "protectedPathCount": 65,
+    "approvalEvidenceFile": "docs/approvals/glance-hydration-route-20261013.json"
+  },
+  "ownerApprovedSeoulAreaLoadingReserve20261013": {
+    "recordedAt": "2026-10-13T11:21:49.612Z",
+    "authorizationEvidence": {
+      "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+      "ownerTaskRequest": "남은문제 해결할수있는거는 너가 싹다해줘 속도개선은 할수있는거 다한거지?",
+      "approvalQuestion": "Q1 (속도 수정): 속도는 아직 다 한 게 아닙니다. 측정해 보니 남은 개선은 대부분 보호 파일 또는 dot 담당 영역에 있습니다. 어떤 수정을 승인할까요?\n ① 홈 다시그리기 제거 — 보호 파일 3개(retailpulse-app.tsx, [locale]/page.tsx, [slug]/page.tsx). 홈 첫 방문 때 '공항 한눈에'를 지웠다 다시 그리면서 화면이 크게 밀립니다. 밀림 점수(CLS)가 0.67(나쁨)에서 0.10(좋음)으로 줄고, 첫 화면부터 정상 모양으로 보입니다. 대신 조작 가능 시점이 0.35초 늦어집니다. 디자인 변화는 없습니다.\n ② 공항 그림 크기 단계 — dot 담당, 보호 아님. 1100·1200px 그림을 추가하고 sizes 값을 고칩니다. 휴대폰이 받는 그림이 32~45% 줄고(357KB → 199~278KB), 홈 LCP가 약 0.4~0.5초 빨라질 것으로 예상합니다. 화질 설정(q85)은 같고, 2배 확대에서 차이가 보이지 않습니다. 원본 PNG가 없어 지금 1448 그림에서 만듭니다.\n ③ 서울 지역 화면 밀림 제거 — 보호 파일 globals.css에 1줄 추가. 명동 등 지역 화면의 CLS가 0.29에서 0.01로 줄고, 실제 보이는 화면은 같습니다. 다만 측정 도구의 LCP 숫자는 1.5초에서 3.7초로 커져 보입니다. 기준 요소가 바닥글에서 실제 내용으로 바뀌기 때문입니다.\n ④ 업종 코드 분리 — 보호 파일 retailpulse-app.tsx 수정. 공항·매장 화면을 뺀 첫 방문에서 JS가 28KB(gzip) 줄어 약 0.12~0.15초 빨라집니다. 화면 변화는 없습니다.\nQ2 (추가 항목): 함께 처리할 항목을 골라주세요.\n ⑤ 공항 한눈에 대기 표시 — dot 담당. '오늘 예상 출국객' 칸도 로딩 중에는 '자료 확인 중…'으로 표시합니다. 지금은 검색로봇에게 '확인 가능한 자료 없음'으로 읽힙니다. 로딩 중 상태줄을 숨겨 밀림도 조금 줄입니다. dot의 e2e 기대값 1줄을 바꿉니다.\n ⑥ 병합된 원격 브랜치 4개 삭제 — claude/seo-geo-20261013 외 3개. 내용은 모두 main에 이미 있습니다(검증 완료).\n ⑦ 영어 홈 설명에 Incheon Airport — 보호 파일 seo-config.ts의 영어 설명에만 넣습니다.\n ⑧ 홈 글꼴 미리 받기 해제 — 보호 파일 [locale]/page.tsx 수정. 홈 첫 방문의 조작 가능 시점이 0.45~0.55초 빨라집니다. 대신 브랜드 글꼴이 약 0.3초 늦게 바뀝니다.\nQ3 (범위 밖): 이번 점검 범위 밖에서 실제 문제도 찾았습니다. 함께 고칠까요?\n A1 자정 대체수집 가드 — 보호 아님. 승인된 01:15~03:00 KST 대체수집이 정상 상태값 'LIVE'까지 막아서 지금까지 한 번도 작동하지 않았습니다. dot 초안 PR #343에서 이 가드 부분만 반영하고 나머지는 그대로 둡니다. 수집 횟수 설정은 바꾸지 않습니다.\n 항공편 보드 무한 로딩 #273 — 보호 파일 airport-live-signals.tsx에 15초 시간초과를 추가하고, 이 줄을 검사하는 테스트 2줄을 맞춥니다.\n 수집 시각 문구 04:07→00:07 — 보호 파일 live-signals.tsx의 4개 언어 문구, 그리고 RUNBOOK 등 문서를 고칩니다. 사용자 화면에 '첫 수집 04:07 KST'라고 나오지만, 실제 일정은 10월 10일부터 00:07 KST입니다.\n 이번엔 보고만 — 범위 밖 항목은 고치지 않고 보고에만 남깁니다.",
+      "ownerRequest": "Q1: ① 홈 다시그리기 제거 (권장), ② 공항 그림 크기 단계 (권장), ③ 서울 지역 화면 밀림 제거 (권장) | Q2: ⑤ 공항 한눈에 대기 표시 (권장), ⑥ 병합된 원격 브랜치 4개 삭제 (권장) | Q3: A1 자정 대체수집 가드, 항공편 보드 무한 로딩 #273, 수집 시각 문구 04:07→00:07",
+      "approvedItem": "③ 서울 지역 화면 밀림 제거 (권장)",
+      "scope": "One CSS rule in app/globals.css: on Seoul area pages the LiveSignals loading line (aria-busy=true) reserves 100svh so the footer stays below the fold until data arrives. Disclosed in the approval: final layout unchanged; lab LCP element moves from the footer line to the real content (about 1.5 s to 3.7 s in the throttled lab profile, content paints at the same time). Found after approval and disclosed in the PR and owner report: when the summary request fails, the reservation collapses to the short error line, adding one footer shift on that failure path only (lab CLS about 0.04 to 0.22).",
+      "approvedProtectedFiles": [
+        "app/globals.css"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": true
+    },
+    "reason": "Record the explicit owner approval for this protected-file change; no test is relaxed or skipped.",
+    "comparisonBase": "9a1364227d1bdb3c86334f36150bd901ccce3063",
+    "changes": [
+      {
+        "file": "app/globals.css",
+        "previous": "91bb08d182fadf62a71190527138522e5614b5a7cf4c12041466e2d76f93a8ae",
+        "approved": "fedcfc48b2d7b08dc3cae6cbb625afee413afd788aa7701df1b3d223a8dcf2b2",
+        "addedLines": 2,
+        "deletedLines": 0,
+        "exactUnifiedDiff": "diff --git a/app/globals.css b/app/globals.css\nindex 30337d3..e602bf3 100644\n--- a/app/globals.css\n+++ b/app/globals.css\n@@ -1338,6 +1338,8 @@ nav.bottom-nav { display: none; }\n .airport-today-grid small.metric-freshness { margin-top: 6px; font-size: 10px; letter-spacing: .01em; opacity: .68; }\n .airport-section-freshness { margin: 10px 0 0; color: var(--muted); font-size: 10px; text-align: right; }\n .airport-empty-line { margin: 0; padding: 25px; color: var(--muted); }\n+/* Seoul area pages: keep the footer below the fold until LiveSignals has data (CLS) */\n+.page-shell > .area-tabs ~ .airport-empty-line[aria-busy=\"true\"] { min-height: 100vh; min-height: 100svh; }\n .airport-detail-section { margin-top: 48px; border-top: 1px solid var(--ink); }\n .airport-detail-head { min-height: 96px; display: grid; grid-template-columns: minmax(220px, .8fr) minmax(280px, 1fr); gap: 32px; align-items: center; border-bottom: 1px solid var(--line); }\n .airport-detail-head h3 { margin: 5px 0 0; font-size: 18px; letter-spacing: -.025em; }\n"
+      }
+    ],
+    "protectedPathCount": 65,
+    "approvalEvidenceFile": "docs/approvals/seoul-area-loading-reserve-20261013.json"
   }
 }

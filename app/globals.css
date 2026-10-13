@@ -1338,6 +1338,8 @@ nav.bottom-nav { display: none; }
 .airport-today-grid small.metric-freshness { margin-top: 6px; font-size: 10px; letter-spacing: .01em; opacity: .68; }
 .airport-section-freshness { margin: 10px 0 0; color: var(--muted); font-size: 10px; text-align: right; }
 .airport-empty-line { margin: 0; padding: 25px; color: var(--muted); }
+/* Seoul area pages: keep the footer below the fold until LiveSignals has data (CLS) */
+.page-shell > .area-tabs ~ .airport-empty-line[aria-busy="true"] { min-height: 100vh; min-height: 100svh; }
 .airport-detail-section { margin-top: 48px; border-top: 1px solid var(--ink); }
 .airport-detail-head { min-height: 96px; display: grid; grid-template-columns: minmax(220px, .8fr) minmax(280px, 1fr); gap: 32px; align-items: center; border-bottom: 1px solid var(--line); }
 .airport-detail-head h3 { margin: 5px 0 0; font-size: 18px; letter-spacing: -.025em; }
