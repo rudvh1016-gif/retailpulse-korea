@@ -68,6 +68,11 @@ const AREAS = ["myeongdong", "hongdae", "seongsu", "itaewon"] as const;
 const BY_AREA = { column: "area", values: AREAS } as const;
 
 export const STORAGE_TABLES: readonly TableInventory[] = [
+  { table: "airport_composition_observer", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
+    readers: "One installation epoch for completed-day composition proof; migration prerequisite" },
+  { table: "airport_composition_generations", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: 29,
+    readers: "Latest raw mutation token per departure date; bounded proof checks, no raw snapshots",
+    daily: { column: "day", kind: "day" } },
   // Prepared official news: hard caps 200 current / 400 meaningful revisions;
   // never prune travel records, predictions or old rights evidence for space.
   { table: "official_news_current", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
