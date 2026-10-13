@@ -62,7 +62,7 @@ body:has(.glance-preview){background:#fff}
 .glance-shared-note{font-size:10px;color:#53616e;padding-top:5px}.glance-controls>div{min-width:0}
 @media(max-width:700px){.glance-controls>div{gap:2px}.glance-controls>div button{padding-inline:9px}}
 
-.glance-insights>.glance-passengers{grid-column:1/-1}.glance-insights>.glance-passengers>small{grid-column:1/-1}.glance-insights>.glance-passengers>span{grid-row:1}
+.glance-passenger-pair{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.glance-passenger-pair>a{display:grid;align-content:start;gap:3px;min-width:0;min-height:44px;padding:6px 0}.glance-passenger-pair>a>span{font-size:11px;color:#53616e}.glance-passenger-pair small{overflow-wrap:anywhere}@media(max-width:700px){.glance-passenger-pair{gap:12px;border-bottom:1px solid #dbe0e5}.glance-passenger-pair>a{padding:7px 0}}
 
 /* Approved finite choice feedback; artwork and building panels remain fixed. */
 .glance-controls>div button{position:relative}
@@ -70,3 +70,11 @@ body:has(.glance-preview){background:#fff}
 .glance-selection-rule{position:absolute;bottom:0;left:9px;right:9px;height:2px;background:currentColor;pointer-events:none}
 .glance-building h2 .glance-building-label{display:inline-block;font:inherit}
 .glance-future .glance-window-time{margin:4px 0 6px;font-size:var(--glance-body);font-weight:600;color:#111;overflow-wrap:anywhere}.glance-window-time>span{display:inline-block;max-width:100%}
+
+/* Owner-approved compact date surface; preserve native editing and 44px hit targets */
+.glance-controls .glance-date-control{gap:9px;color:#53616e}
+.glance-controls .glance-date-control input{box-sizing:border-box;min-width:0;width:148px;max-width:100%;min-height:44px;border:1px solid transparent;border-radius:14px;background:#f1f3f6;color:#24394f;padding:7px 10px;box-shadow:inset 0 1px 1px rgb(33 51 71 / 4%);font-weight:500;color-scheme:light;touch-action:manipulation}
+.glance-controls .glance-date-control input:focus-visible{outline:2px solid #43617f;outline-offset:2px;background:#eaf0f5}
+.glance-controls .glance-today{border-radius:14px;min-width:44px;padding:7px 12px;background:#f5f6f8;color:#344b61;touch-action:manipulation}
+.glance-controls .glance-today[data-current=true]{background:#e8eef4;box-shadow:inset 0 0 0 1px rgb(52 75 97 / 8%);font-weight:500}
+@media(hover:hover){.glance-controls .glance-today:hover,.glance-controls .glance-date-control input:hover{background:#e8edf2}}

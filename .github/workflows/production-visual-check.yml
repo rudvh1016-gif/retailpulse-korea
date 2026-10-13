@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   visual:
@@ -25,11 +26,32 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Read the successful deployment's exact revision
+        if: github.event_name == 'workflow_run'
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-revision
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validate the deployment artifact revision
+        if: github.event_name == 'workflow_run'
+        id: deployed
+        run: |
+          node -e "const fs=require('node:fs');const {sha}=JSON.parse(fs.readFileSync('deployment-revision.json','utf8'));if(!/^[a-f0-9]{40}$/.test(sha))throw Error('Invalid deployment revision');fs.appendFileSync(process.env.GITHUB_OUTPUT,'sha='+sha+'\n')"
+      - name: Check out the specs of the actual deployed revision
+        if: github.event_name == 'workflow_run'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.deployed.outputs.sha }}
+          clean: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22.13.1
           cache: npm
       - run: npm ci --ignore-scripts
+      - name: Use the selected revision for a manual verification
+        if: github.event_name == 'workflow_dispatch'
+        run: node -e "const fs=require('node:fs'),cp=require('node:child_process');fs.writeFileSync('deployment-revision.json',JSON.stringify({sha:cp.execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim()}))"
       - run: PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers npx playwright install --with-deps chromium
       - run: PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers npx playwright test --config playwright.production.config.ts
         env:

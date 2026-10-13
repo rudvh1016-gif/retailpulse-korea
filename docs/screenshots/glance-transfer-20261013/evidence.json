@@ -1,0 +1,17 @@
+{
+  "kind": "local-code-with-read-only-public-api-responses",
+  "at": "2026-10-13T12:20:51.194Z",
+  "source": "https://koretaildata.com",
+  "screens": [
+    {
+      "width": 390,
+      "text": "오늘 예상 출국객\n90,558명\n2026-10-13 · T1 + T2 · 인천공항 공식 일 예보 · 수집 10. 13. 07:43 KST\n예상 환승객\n8,706명\n2026-10-13 · T1 + T2 · 환승 보안검색 기준 · 도착일",
+      "file": "transfer-390.png"
+    },
+    {
+      "width": 1440,
+      "text": "오늘 예상 출국객\n90,558명\n2026-10-13 · T1 + T2 · 인천공항 공식 일 예보 · 수집 10. 13. 07:43 KST\n예상 환승객\n8,706명\n2026-10-13 · T1 + T2 · 환승 보안검색 기준 · 도착일",
+      "file": "transfer-1440.png"
+    }
+  ]
+}

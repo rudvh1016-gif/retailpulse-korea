@@ -38,10 +38,38 @@ test('rapid past-day changes clear present waits and upcoming departures',async(
  await app.locator('input[type=date]').fill('2026-10-09');await app.locator('input[type=date]').fill('2026-10-10');await expect(app.locator('.glance-map-heading')).toContainText('0 편');await expect(app.getByTestId('glance-key-wait')).toContainText('확인 가능한 자료 없음');await expect(app.getByTestId('glance-key-upcoming')).toContainText('현재 이후 예정편 없음');await expect(app.locator('.glance-map-queue')).toHaveCount(0);
  await app.getByRole('button',{name:'오늘',exact:true}).click();await expect(app.locator('.glance-map-heading')).toContainText('300 편');
 });
-test('failed data does not invent any decision or ratio',async({page})=>{
- for(const api of ['summary','flights','airport-months'])await page.route(`**/api/live/${api}*`,route=>route.fulfill({status:503,json:{error:'unavailable'}}));await page.goto('/en/airport-glance-preview');const app=page.getByTestId('airport-glance-preview');await expect(app.locator('.glance-insights strong')).toHaveText(['No verified data','No verified data','No verified data','No verified data']);await expect(app.locator('.glance-destinations li,.glance-ranking tbody tr,.glance-map-queue')).toHaveCount(0);
-});
-for(const lang of ['en','zh','ja'] as const)test(`localized decision summary ${lang}`,async({page})=>{await page.setViewportSize({width:360,height:900});await routeData(page);await page.goto(`/${lang}/airport-glance-preview`);const app=page.getByTestId('airport-glance-preview');await expect(app.locator('.glance-insights a')).toHaveCount(4);await expect(app.locator('.glance-ranking tbody tr')).toHaveCount(5);await expect(app.locator('.glance-map-queue')).toHaveCount(2);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);});
+const transferLocales = {
+ ko: {label:'예상 환승객',basis:'환승 보안검색 기준 · 도착일',missing:'확인 가능한 자료 없음'},
+ en: {label:'Expected transfers',basis:'Transfer security · arrival date',missing:'No verified data'},
+ zh: {label:'预计中转旅客',basis:'中转安检口径 · 到达日',missing:'暂无可核实资料'},
+ ja: {label:'予想乗継客',basis:'乗継保安検査基準・到着日',missing:'確認できる資料なし'},
+} as const;
+for(const lang of ['ko','en','zh','ja'] as const){
+ const copy=transferLocales[lang];
+ test(`failed data does not invent any decision or ratio ${lang}`,async({page})=>{
+  for(const api of ['summary','flights','airport-months'])await page.route(`**/api/live/${api}*`,route=>route.fulfill({status:503,json:{error:'unavailable'}}));
+  await page.goto(`/${lang}/airport-glance-preview`);const app=page.getByTestId('airport-glance-preview');
+  await expect(app.locator('.glance-insights strong')).toHaveText(Array(5).fill(copy.missing));
+  const transfer=app.getByTestId('glance-key-transfers');
+  await expect(transfer.locator('span')).toHaveText(copy.label);
+  await expect(transfer.locator('strong')).toHaveText(copy.missing);
+  await expect(transfer.locator('small')).toContainText(copy.basis);
+  await expect(app.locator('.glance-destinations li,.glance-ranking tbody tr,.glance-map-queue')).toHaveCount(0);
+ });
+ test(`localized decision summary ${lang}`,async({page})=>{
+  await page.setViewportSize({width:360,height:900});await routeData(page);await page.goto(`/${lang}/airport-glance-preview`);const app=page.getByTestId('airport-glance-preview');
+  await expect(app.locator('.glance-insights a')).toHaveCount(5);
+  const transfer=app.getByTestId('glance-key-transfers');
+  await expect(transfer.locator('span')).toHaveText(copy.label);
+  // Flight and queue fixtures do not contain a transfer forecast, so no zero or total may be invented
+  await expect(transfer.locator('strong')).toHaveText(copy.missing);
+  await expect(transfer.locator('small')).toContainText(copy.basis);
+  await expect(transfer.locator('small')).toContainText(date);
+  await expect(transfer).toHaveAttribute('href',new RegExp('date='+date+'#airport-forecast-title$'));
+  await expect(app.locator('.glance-ranking tbody tr')).toHaveCount(5);await expect(app.locator('.glance-map-queue')).toHaveCount(2);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ });
+}
 
 test('missing summary clock cannot turn available flight records into a no-upcoming claim',async({page})=>{
  await page.route('**/api/live/summary*',route=>route.fulfill({status:503,json:{error:'unavailable'}}));await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',serviceDateKst:date,flights,retrievedAt:`${date}T00:00:00Z`,truncated:false}}));await page.route('**/api/live/airport-months*',route=>route.fulfill({json:monthly}));await page.goto('/ko/airport-glance-preview');const app=page.getByTestId('airport-glance-preview');await expect(app.locator('.glance-status')).toHaveText('확인 가능한 자료가 없습니다.');await app.locator('input[type=date]').fill(date);await expect(app.locator('.glance-map-heading')).toContainText('300 편');await expect(app.getByTestId('glance-key-upcoming')).toContainText('확인 가능한 자료 없음');await expect(app.getByTestId('glance-key-upcoming')).not.toContainText('현재 이후 예정편 없음');
@@ -69,13 +97,13 @@ for(const width of [360,390,430,1440])test(`future cards show aggregation bounda
  await future.getByRole('button',{name:'향후 3 시간',exact:true}).click();await expect(zone.getByTestId('glance-zone-period')).toHaveText('집계 시간 10:15–13:15 (KST)');await expect(country.getByTestId('glance-comparison-periods')).toHaveText('비교 10:15–13:15 → 다음 13:15–16:15 (KST)');await expect(country).toContainText('39 → 48 편');await expect(country).toContainText('+9 편');await expect(app.getByTestId('glance-day-comparison')).toContainText('300 편');
  await future.getByRole('button',{name:'향후 6 시간',exact:true}).click();await expect(zone.getByTestId('glance-zone-period')).toHaveText('집계 시간 10:15–16:15 (KST)');await expect(country.getByTestId('glance-comparison-periods')).toHaveText('비교 10:15–16:15 → 다음 16:15–22:15 (KST)');await expect(country).toContainText('87 → 123 편');await expect(country).toContainText('+36 편');
  await app.getByRole('button',{name:'T2',exact:true}).click();await expect(app.getByTestId('glance-day-comparison')).toContainText('144 편');await expect(country).toContainText('42 → 60 편');await expect(country).toContainText('+18 편');
- await app.locator('input[type=date]').fill('2026-10-10');await expect(zone).toContainText('확인 가능한 자료 없음');await expect(country).toContainText('확인 가능한 자료 없음');await expect(app.locator('.glance-window-time')).toHaveCount(0);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await app.locator('input[type=date]').fill('2026-10-10');await expect(zone).toContainText('확인 가능한 자료 없음');await expect(country).toContainText('비교 자료 없음');await expect(app.locator('.glance-window-time')).toHaveCount(0);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
 for(const condition of ['midnight','truncated'] as const)test(`destination increase safely withholds ${condition} comparisons`,async({page})=>{
  await routeData(page);
  if(condition==='midnight'){await page.clock.setFixedTime(new Date(`${date}T23:00:00+09:00`));await page.route('**/api/live/summary*',routeSummary({...SUMMARY_FIXTURE,dayRelation:'TODAY',todayKst:date,serviceDateKst:date,airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:date,congestion:[]},generatedAt:`${date}T23:00:00+09:00`}));}
  else await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',serviceDateKst:date,flights,retrievedAt:`${date}T00:00:00Z`,truncated:true}}));
- await page.goto('/ko/airport-glance-preview');const country=page.getByTestId('glance-future-countries');await expect(country).toContainText(condition==='midnight'?'비교 보류':'확인 가능한 자료 없음');await expect(country.locator('.glance-destination-growth')).toHaveCount(0);
+ await page.goto('/ko/airport-glance-preview');const country=page.getByTestId('glance-future-countries');await expect(country).toContainText(condition==='midnight'?'자정 이후 비교 자료 없음':'일부 자료만 확인 · 비교 불가');await expect(country.locator('.glance-destination-growth')).toHaveCount(0);
 });
 
 for(const width of [390,1440])test(`zone explanation preserves tied areas, local destinations and selected denominator ${width}`,async({page})=>{
@@ -99,6 +127,18 @@ for(const hour of [22,23])test(`midnight boundaries retain dates and existing co
  await page.route('**/api/live/summary*',routeSummary({...SUMMARY_FIXTURE,dayRelation:'TODAY',todayKst:date,serviceDateKst:date,airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:date,congestion:[]},generatedAt:`${date}T${hour}:00:00+09:00`}));
  await page.goto('/ko/airport-glance-preview');const app=page.getByTestId('airport-glance-preview');
  if(hour===22)await expect(app.getByTestId('glance-comparison-periods')).toHaveText('비교 22:00–23:00 → 다음 2026-10-11 23:00–2026-10-12 00:00 (KST)');
- else {await expect(app.getByTestId('glance-zone-period')).toHaveText('집계 시간 2026-10-11 23:00–2026-10-12 00:00 (KST)');await expect(app.getByTestId('glance-future-countries')).toContainText('비교 보류');await expect(app.getByTestId('glance-comparison-periods')).toHaveCount(0);}
- await app.getByRole('button',{name:'향후 6 시간',exact:true}).click();await expect(app.getByTestId('glance-zone-period')).toHaveText(`집계 시간 2026-10-11 ${hour}:00–2026-10-12 00:00 (KST)`);await expect(app.getByTestId('glance-future-countries')).toContainText('비교 보류');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ else {await expect(app.getByTestId('glance-zone-period')).toHaveText('집계 시간 2026-10-11 23:00–2026-10-12 00:00 (KST)');await expect(app.getByTestId('glance-future-countries')).toContainText('자정 이후 비교 자료 없음');await expect(app.getByTestId('glance-comparison-periods')).toHaveCount(0);}
+ await app.getByRole('button',{name:'향후 6 시간',exact:true}).click();await expect(app.getByTestId('glance-zone-period')).toHaveText(`집계 시간 2026-10-11 ${hour}:00–2026-10-12 00:00 (KST)`);await expect(app.getByTestId('glance-future-countries')).toContainText('자정 이후 비교 자료 없음');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});
+
+for(const width of [360,390,430,1440])test(`compact date retains native editing today and keyboard ${width}`,async({page})=>{
+ await routeData(page);await page.setViewportSize({width,height:1000});await page.goto('/ko/airport-glance-preview');const app=page.getByTestId('airport-glance-preview'),input=app.getByLabel('날짜',{exact:true}),today=app.getByRole('button',{name:'오늘',exact:true});
+ await expect(input).toHaveValue(date);await expect(input).toHaveAttribute('type','date');await expect(input).toHaveCSS('border-radius','14px');expect((await input.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ for(const day of ['2026-10-10','2026-10-09','2026-10-10'])await input.fill(day);await expect(input).toHaveValue('2026-10-10');await expect(today).toHaveAttribute('data-current','false');await today.focus();await page.keyboard.press('Enter');await expect(input).toHaveValue(date);await expect(today).toHaveAttribute('data-current','true');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ if(width===390||width===1440){await app.locator('.glance-controls').screenshot({path:`docs/screenshots/date-destination-20261013/date-${width}.png`});await app.getByTestId('glance-future').screenshot({path:`docs/screenshots/date-destination-20261013/destination-${width}.png`});}
+});
+for(const state of ['failed','missing','partial','zero'] as const)test(`destination availability distinguishes ${state}`,async({page})=>{
+ await routeData(page);await page.route('**/api/live/flights*',route=>state==='failed'?route.fulfill({status:503,json:{error:'unavailable'}}):route.fulfill({json:{mode:'live-flights',serviceDateKst:date,flights:[],retrievedAt:state==='missing'?null:`${date}T00:00:00Z`,truncated:state==='partial'}}));
+ await page.goto('/ko/airport-glance-preview');const card=page.getByTestId('glance-future-countries');await expect(card).toContainText({failed:'항공편 조회 실패',missing:'해당 시간대 정보 없음',partial:'일부 자료만 확인 · 비교 불가',zero:'비교 구간 출발편 0편'}[state]);
+ if(state!=='zero')await expect(card).not.toContainText('0편');await card.screenshot({path:"docs/screenshots/date-destination-20261013/state-"+state+".png"});
 });

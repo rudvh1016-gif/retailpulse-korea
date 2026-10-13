@@ -1,30 +1,10 @@
 /**
- * Is KORETAIL ready to count its visitors, and is anything already counting?
+ * Read-only public response inspection, not proof of analytics collection
  *
- * Read-only and credential-free: GET requests to public URLs only. It answers
- * the three questions that decide the work, none of which can be answered
- * from a checkout:
- *
- *   1. Is a visitor-measurement beacon ALREADY on the page? Installing a
- *      second one would double every page view and make the first number the
- *      owner ever sees a wrong one.
- *   2. Does the live response actually carry the Content-Security-Policy that
- *      `next.config.ts` declares? The string is compiled into the Worker, but
- *      compiled-in is not the same as applied, and only the live header
- *      settles it. If it IS applied, its `script-src` allows exactly
- *      googletagmanager — so Cloudflare Web Analytics, enabled from the
- *      dashboard, would be silently blocked by the browser and the owner
- *      would see an empty dashboard with no error to point at.
- *   3. Are the Google and Naver verification meta tags being served? Each is
- *      driven by a GitHub Actions Variable that a checkout cannot read, so the
- *      served HTML is the only evidence available here that someone has
- *      already registered the site with that search tool.
- *
- * What it deliberately does NOT do: conclude anything about an account it
- * cannot see. An absent meta tag means the meta METHOD is not in use — Google
- * also verifies by DNS, and a site can rank without Search Console at all.
- * That distinction is the whole point of this probe, so it reports what it
- * observed and marks the rest UNKNOWN.
+ * Initial HTML can omit a tag loaded after hydration and explicit consent
+ * A tag reference can also exist while blocked, disabled or configured for
+ * another stream Neither presence nor absence establishes account receipt
+ * This script does not execute page scripts, send events or access accounts
  */
 
 const TIMEOUT_MS = 20_000;
@@ -67,33 +47,32 @@ async function main(): Promise<void> {
   const html = await response.text();
   console.log(`GET /ko -> ${response.status}, ${html.length} bytes\n`);
 
-  // 1. Anything already counting?
-  console.log("EXISTING MEASUREMENT");
+  // 1. References in this initial HTML response only
+  console.log("INITIAL HTML ANALYTICS REFERENCES");
   let anyBeacon = false;
   for (const beacon of ANALYTICS_BEACONS) {
     const hits = html.match(new RegExp(beacon.pattern, "gi"))?.length ?? 0;
     if (hits > 0) anyBeacon = true;
     console.log(`  ${beacon.name}: ${hits === 0 ? "absent" : `${hits} reference(s)`}`);
   }
-  console.log(`  VERDICT: ${anyBeacon ? "something is already measuring — do not install a second" : "nothing is measuring visitors"}\n`);
+  console.log(`  INITIAL_HTML: ${anyBeacon ? "REFERENCES_PRESENT" : "NO_REFERENCES_FOUND"}`);
+  console.log("  HYDRATED_OR_CONSENT_GATED_COLLECTION: UNKNOWN (scripts were not executed)");
+  console.log("  GA4_ACCOUNT_RECEIPT: UNKNOWN (no account access)");
+  console.log("  References alone do not prove collection or its absence and do not justify installing another tracker\n");
 
-  // 2. Would a Cloudflare beacon be allowed to run?
+  // 2. Header evidence only, not a browser execution or complete CSP evaluation
   console.log("CONTENT-SECURITY-POLICY (live header, not the source file)");
   const csp = response.headers.get("content-security-policy");
   if (!csp) {
-    console.log("  not served — no CSP can block a beacon, so enabling Web Analytics needs no code change here");
+    console.log("  No CSP response header observed Browser policy and collection remain UNKNOWN");
   } else {
     const scriptSrc = directiveOf(csp, "script-src") ?? "(no script-src; default-src applies)";
     const connectSrc = directiveOf(csp, "connect-src") ?? "(no connect-src; default-src applies)";
     console.log(`  script-src : ${scriptSrc}`);
     console.log(`  connect-src: ${connectSrc}`);
-    const allowed = CLOUDFLARE_ANALYTICS_HOSTS.some((host) => csp.includes(host));
-    console.log(`  Cloudflare Web Analytics host allowed: ${allowed ? "YES" : "NO"}`);
-    if (!allowed) {
-      console.log("  => Enabling Web Analytics in the Cloudflare dashboard alone would NOT work:");
-      console.log("     the browser would refuse the beacon and the dashboard would stay empty,");
-      console.log("     with nothing on the page to explain why.");
-    }
+    const references = CLOUDFLARE_ANALYTICS_HOSTS.filter((host) => csp.includes(host));
+    console.log(`  Cloudflare host text references: ${references.length}/${CLOUDFLARE_ANALYTICS_HOSTS.length}`);
+    console.log("  Text references do not establish effective script/connect permission or successful collection");
   }
   console.log("");
 
@@ -103,7 +82,7 @@ async function main(): Promise<void> {
   const naver = metaContent(html, "naver-site-verification");
   console.log(`  google-site-verification: ${redact(google)}`);
   console.log(`  naver-site-verification : ${redact(naver)}`);
-  console.log("  NOTE: an absent tag means the META METHOD is not in use. Google also");
+  console.log("  NOTE: an absent tag means no verification tag was observed in this response Google also");
   console.log("  verifies by DNS TXT, so absence here is NOT proof the site is unregistered,");
   console.log("  and presence is NOT proof a sitemap was ever submitted. Account state is UNKNOWN");
   console.log("  from outside and only the owner can confirm it.\n");

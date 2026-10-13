@@ -77,6 +77,14 @@ jobs:
       # with the same non-zero exit. See the script for what it does instead.
       - run: bash scripts/audit-production-deps.sh
       - run: npm run e2e:install
+      - name: Critical UI checks before the full suite
+        run: >-
+          npx playwright test e2e/airport-glance-hydration.spec.ts e2e/glance-passenger-forecast.spec.ts e2e/seoul-display-truth.spec.ts
+          --grep 'hydration keeps the server-rendered glance /ko 390|official daily passenger row scopes and date 390|partial full-day coverage|mismatched dates and failed data|valid-zero 390'
+          --output critical-ui-results
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: .playwright-browsers
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
       - run: npm run test:e2e
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
@@ -85,6 +93,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: browser-verification
-          path: test-results/
+          path: |
+            test-results/
+            critical-ui-results/
           retention-days: 7
           if-no-files-found: ignore

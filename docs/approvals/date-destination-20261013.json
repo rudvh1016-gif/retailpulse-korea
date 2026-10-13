@@ -1,0 +1,11 @@
+{
+  "protectedPathChanges": [],
+  "protectedPathCount": 65,
+  "base": "dbf900ffb8ac5911e2b7c279c3f314de63c67764",
+  "mergeOrDeploy": false,
+  "approvals": [
+    "Sentinel_f30294521f9c8191ba81a4d739722130",
+    "Sentinel_f4df5971256481918f139f2b502b6502"
+  ],
+  "scope": "Compact rounded home date input and short truthful destination states"
+}

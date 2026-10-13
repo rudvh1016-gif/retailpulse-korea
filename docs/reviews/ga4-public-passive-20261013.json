@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-13T14:18:03.048Z",
+  "origin": "https://koretaildata.com",
+  "status": 200,
+  "freshContext": true,
+  "consentNotGranted": true,
+  "googleRequestsBlocked": [],
+  "findings": [
+    {
+      "asset": "/assets/seo-config-BQJBx93d.js",
+      "validMeasurementIds": 1,
+      "containsTagBootstrap": true,
+      "automaticPageViewExplicitFalse": true,
+      "containsManualPageView": false
+    }
+  ],
+  "cspAllowsTag": true,
+  "cspConnectDirective": " connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://cloudflareinsights.com",
+  "actualGaReportReceipt": "UNKNOWN_NO_ACCOUNT_ACCESS"
+}

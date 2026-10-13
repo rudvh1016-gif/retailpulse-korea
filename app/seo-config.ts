@@ -25,9 +25,8 @@ export const siteOrigin = normalizeOrigin(configuredOrigin);
  * crawlers can fetch the new card without reusing the previous image cache.
  */
 export const socialImage = { url: `${siteOrigin}/og-airport-b-20261004.jpg`, width: 1200, height: 630, type: "image/jpeg", alt: "KORETAIL" } as const;
-// An empty string makes vinext copy the long SEO description into share tags.
-// One space renders an intentionally blank card description while SEO stays intact.
-export const shareDescription = " ";
+// Owner-approved service description for search and shared links
+export const shareDescription = "인천공항 출국장 대기·항공편 흐름과 서울 주요 상권의 혼잡·소비 정보를 한눈에";
 export const seoLocales = ["ko", "en", "zh", "ja"] as const;
 export type SeoLocale = typeof seoLocales[number];
 /**
@@ -74,12 +73,12 @@ export function pageTitle(locale: SeoLocale, slug?: SeoSlug, tourismArea: Touris
   const titles: Record<Exclude<SeoSlug, keyof typeof names | "tourism-desk">, Record<SeoLocale, string>> = {
     'where-to':{ko:'서울 한눈에 · 서울 4개 지역 비교 | KORETAIL',en:'Seoul at a Glance · Four Seoul Districts | KORETAIL',zh:'首尔一览 · 首尔四区比较 | KORETAIL',ja:'ソウルひと目で・ソウル4エリア比較 | KORETAIL'},
     consumption:{ko:'요즘 뜨는 소비 · 업종별 관측 변화 | KORETAIL',en:'Observed Consumption Changes by Industry | KORETAIL',zh:'近期消费 · 各行业观测变化 | KORETAIL',ja:'最近の消費・業種別観測の変化 | KORETAIL'},
-    'airport-glance': {ko:'공항 한눈에 | KORETAIL',en:'Airport at a Glance | KORETAIL',zh:'机场一览 | KORETAIL',ja:'空港一覧 | KORETAIL'},
+    'airport-glance': {ko:'코리테일 KORETAIL | 인천공항 대기·항공편과 서울 상권 정보',en:'Airport at a Glance | KORETAIL',zh:'机场一览 | KORETAIL',ja:'空港一覧 | KORETAIL'},
     airport: { ko: "인천공항 T1·T2 출국장 예고·항공편·혼잡도 | KORETAIL", en: "Incheon Airport T1·T2 Departure-Hall Forecasts & Flights | KORETAIL", zh: "仁川机场T1·T2出境大厅预报与航班 | KORETAIL", ja: "仁川空港T1・T2 出国場予告・フライト・混雑 | KORETAIL" },
     predictions: { ko: "지역 인구 예측·기록 관리 | KORETAIL", en: "Population Outlook & Records | KORETAIL", zh: "区域人口预测与记录 | KORETAIL", ja: "地域人口の予測と記録 | KORETAIL" },
     forecast: { ko: "서울·인천공항 공식 기록과 숫자 설명 | KORETAIL", en: "Seoul & Incheon Official Records Explained | KORETAIL", zh: "首尔与仁川机场官方记录与数据说明 | KORETAIL", ja: "ソウル・仁川空港の公式記録と数値の説明 | KORETAIL" },
     business: { ko: "서울 매장 운영 브리핑과 점검 목록 | KORETAIL", en: "Seoul Store Briefing & Checklist | KORETAIL", zh: "首尔门店运营简报与检查清单 | KORETAIL", ja: "ソウル店舗の運営ブリーフとチェックリスト | KORETAIL" },
-    about: { ko: "KORETAIL 소개 — 무엇을 어떻게 보여주나요", en: "About KORETAIL — What It Shows and How", zh: "关于 KORETAIL — 展示什么、如何呈现", ja: "KORETAIL について — 何をどう表示するか" },
+    about: { ko: "코리테일 소개 | 인천공항·서울 상권 데이터 서비스 KORETAIL", en: "About KORETAIL — What It Shows and How", zh: "关于 KORETAIL — 展示什么、如何呈现", ja: "KORETAIL について — 何をどう表示するか" },
     more: { ko: "KORETAIL 데이터 출처·방법론", en: "KORETAIL Data Sources & Methodology", zh: "KORETAIL 数据来源与方法", ja: "KORETAIL データ出典・方法論" },
   };
   return titles[slug as Exclude<SeoSlug, keyof typeof names | "tourism-desk">][locale];
@@ -108,12 +107,12 @@ export function pageDescription(locale: SeoLocale, slug?: SeoSlug, tourismArea: 
   const descriptions: Record<Exclude<SeoSlug, keyof typeof names | "tourism-desk">, Record<SeoLocale, string>> = {
     'where-to':{ko:'명동·성수·홍대·이태원의 현재 공식 혼잡과 실제 제공되는 날씨를 기준시각과 함께 비교하고 지역 상세로 이동하세요.',en:'Compare official crowd conditions and available weather in Myeongdong, Seongsu, Hongdae and Itaewon, with source times and links to area details.',zh:'比较明洞、圣水、弘大、梨泰院官方拥挤情况与已有天气资料，查看基准时间及地区详情。',ja:'明洞・聖水・弘大・梨泰院の公式混雑と提供されている天気を基準時刻とともに比較し、エリア詳細へ。'},
     consumption:{ko:'지역별 모든 보유 업종의 월간 카드 결제 관측을 같은 날짜·시간에 맞춰 비교합니다. 결측·보유 기간·금액 범위를 구분하며 전체 매출로 해석하지 않습니다.',en:'Compare retained industry card-payment observations by month at matching days and hours. Missing data, coverage and amount ranges remain explicit; these are not total sales.',zh:'将地区各已收录行业的月度银行卡支付观测按相同日期与小时比较，区分缺失、期间与金额范围，非全量销售额。',ja:'地域別の全保有業種の月次カード決済観測を同じ日付・時間で比較。欠損・保有期間・金額範囲を明示し、売上全数とは解釈しません。'},
-    'airport-glance': {ko:'인천공항 T1 본관·탑승동·T2의 출발편과 목적지, 공식 출국장 대기를 한눈에 확인하세요. 선택 날짜의 국가별 항공편 비율, 전월 일평균 비교와 앞으로 출발편이 집중되는 구역을 구분해 보여줍니다.',en:'Departures and destinations by T1 main, concourse and T2, with official departure processing queues.',zh:'一览仁川机场T1主楼、卫星厅和T2的出发航班、目的地及官方出境区等候。按所选日期查看各国航班比例、上月日均比较和未来时段航班集中的区域，并区分航班数量与旅客人数。',ja:'仁川空港のT1本館・搭乗棟・T2の出発便、目的地と公式出国場の待ち時間を一覧で確認できます。選択日の国別便数の割合、前月の日平均との比較、今後の出発便が集中するエリアを、旅客数と区別して表示します。'},
+    'airport-glance': {ko:'인천공항 출국장 대기·항공편 흐름과 서울 주요 상권의 혼잡·소비 정보를 한눈에 확인하세요 공식 관측·예상·과거 기록과 기준시각을 구분해 보여줍니다',en:'Departures and destinations by T1 main, concourse and T2, with official departure processing queues.',zh:'一览仁川机场T1主楼、卫星厅和T2的出发航班、目的地及官方出境区等候。按所选日期查看各国航班比例、上月日均比较和未来时段航班集中的区域，并区分航班数量与旅客人数。',ja:'仁川空港のT1本館・搭乗棟・T2の出発便、目的地と公式出国場の待ち時間を一覧で確認できます。選択日の国別便数の割合、前月の日平均との比較、今後の出発便が集中するエリアを、旅客数と区別して表示します。'},
     airport: { ko: "인천공항 전체·T1·T2의 출국장 공식 예상 승객과 피크, 실제 출발 운항과 집중 게이트, 현재 출국장 대기, 월별 공식 실적을 확인하세요.", en: "Official departure-hall passenger forecast and peak, physical departing flights and busiest gates, current departure-hall waits and official monthly history for all terminals, T1 and T2.", zh: "查看仁川机场整体、T1、T2的出境大厅官方预计人数与高峰、实际出发航班与集中登机口、当前出境区等候，以及月度官方实绩。", ja: "仁川空港全体・T1・T2の出国場公式予想旅客とピーク、実出発便と集中ゲート、現在の出国場待ち、月次公式実績を確認できます。" },
     predictions: { ko: "서울시 공식 예측으로 앞으로 가장 붐빌 시간을 확인하고, 명동·홍대·성수·이태원의 내일 인구 흐름 참고 예상과 최근 28일 관측 기록이 얼마나 쌓였는지 함께 보세요.", en: "See the busiest hour ahead in Seoul's official forecast, KORETAIL's reference outlook for tomorrow in Myeongdong, Hongdae, Seongsu and Itaewon, and how much of the last 28 days is actually on record.", zh: "通过首尔市官方预测查看未来最拥挤的时段，并了解明洞、弘大、圣水、梨泰院明日人口趋势的参考预测，以及最近28天观测记录的累积情况。", ja: "ソウル市公式予測で今後最も混雑する時間を確認し、明洞・弘大・聖水・梨泰院の明日の人口の流れの参考予測と、直近28日の観測記録の蓄積状況を合わせて確認できます。" },
     forecast: { ko: "각 지표가 무엇을 뜻하는지, 높으면 어떤 상황인지, 어떤 공식 자료에서 왔는지를 설명과 함께 확인하세요. T1·T2 비중과 지역 외국인 생활인구 흐름을 포함합니다.", en: "Every figure with what it means, what a high value indicates and which official record it came from — including T1/T2 share and area foreign-population history.", zh: "每个指标都附含义、数值偏高时的情况与官方出处说明，包含T1/T2占比与各地区外国人生活人口趋势。", ja: "各指標の意味・高いときの状況・出典を説明付きで確認できます。T1・T2の比率とエリア別外国人生活人口の推移を含みます。" },
     business: { ko: "지금의 공식 혼잡·예측·날씨를 매장 준비 관점으로 읽고, 뷰티·패션·식음료 등 6개 업종별 점검 목록을 확인하세요.", en: "Read the current official crowding, forecast and weather for store preparation, with checklists for six retail business types.", zh: "以门店准备视角解读当前官方拥挤、预测与天气，并查看美妆、时尚、餐饮等6个业态的检查清单。", ja: "現在の公式混雑・予測・天気を店舗準備の視点で読み、ビューティー・ファッション・飲食など6業種のチェックリストを確認できます。" },
-    about: { ko: "KORETAIL이 무엇인지, 누구를 위한 서비스인지, 어떤 공식 데이터를 쓰는지, 실시간·예상·과거 데이터가 어떻게 다른지 설명합니다.", en: "What KORETAIL is, who it is for, which official data it uses, and how live, forecast and past data differ.", zh: "介绍 KORETAIL 是什么、面向哪些人、使用哪些官方数据，以及实时、预测与历史数据的区别。", ja: "KORETAIL とは何か、誰のためのサービスか、どの公式データを使うか、リアルタイム・予測・過去データの違いを説明します。" },
+    about: { ko: "인천공항 출국장 대기·항공편 흐름과 서울 주요 상권의 혼잡·소비 정보를 한눈에 제공하는 코리테일 소개 공식 데이터 출처와 관측·예상·과거 기록의 차이를 안내합니다", en: "What KORETAIL is, who it is for, which official data it uses, and how live, forecast and past data differ.", zh: "介绍 KORETAIL 是什么、面向哪些人、使用哪些官方数据，以及实时、预测与历史数据的区别。", ja: "KORETAIL とは何か、誰のためのサービスか、どの公式データを使うか、リアルタイム・予測・過去データの違いを説明します。" },
     more: { ko: "KORETAIL의 데이터 출처, 무료·키 필요 여부, Demo·공식 이력 구분, 예측 방법론과 데이터 상태를 확인하세요.", en: "Review KORETAIL data sources, access conditions, Demo/official-history labels, methodology and data health.", zh: "查看 KORETAIL 使用的数据来源、各来源是否免费或需要密钥、演示数据与官方历史记录的区分方式，以及预测方法论与当前数据状态。", ja: "KORETAILのデータ出典、接続条件、デモ・公式履歴の区別、方法論、データ状況を確認できます。" },
   };
   return descriptions[slug as Exclude<SeoSlug, keyof typeof names | "tourism-desk">][locale];
