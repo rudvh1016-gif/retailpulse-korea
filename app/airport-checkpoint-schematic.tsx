@@ -27,7 +27,7 @@ export function AirportCheckpointSchematic({terminal,rows,now,lang}:{terminal:'T
   return {heat,value,shown};
  };
  return <figure className="checkpoint-schematic" data-testid="checkpoint-schematic" data-terminal={terminal}>
-  <figcaption><strong>{terminal}</strong> {t(lang,'출국장 대기','Departure-hall waits','出境厅等候','出国場の待ち時間')}<small>{t(lang,'개념 모형 · 인물은 장식','Concept model · decorative people','概念模型 · 人物为装饰','模式図・人物は装飾')}</small></figcaption>
+  <figcaption><strong>{terminal}</strong> {t(lang,'출국장 대기','Departure-hall waits','出境厅等候','出国場の待ち時間')}</figcaption>
   <div className="checkpoint-schematic-stage">
    <div className="checkpoint-schematic-drawing">
     {/* eslint-disable-next-line @next/next/no-img-element -- Original responsive Blender render; dimensions reserve space. */}
