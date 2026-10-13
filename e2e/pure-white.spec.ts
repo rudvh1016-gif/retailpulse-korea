@@ -26,7 +26,7 @@ const surfaces = [
 
 /** Walks up from the element until a painted background is found; returns that colour. */
 const paintedBackground = async (page: import("@playwright/test").Page, selector: string) => page.evaluate((sel) => {
-  const results: string[] = [];
+  const results: { colour: string; compactDate: boolean }[] = [];
   for (const start of Array.from(document.querySelectorAll(sel)).slice(0, 6)) {
     // The airport sky panel (owner decision 2026-10-02) is a figure, not a page surface.
     if (start.closest(".airport-hero")) continue;
@@ -36,12 +36,12 @@ const paintedBackground = async (page: import("@playwright/test").Page, selector
       const bg = style.backgroundColor;
       const transparent = bg === "rgba(0, 0, 0, 0)" || bg === "transparent";
       if (!transparent || style.backgroundImage !== "none") {
-        results.push(style.backgroundImage !== "none" ? `image:${style.backgroundImage.slice(0, 40)}` : bg);
+        results.push({ colour: style.backgroundImage !== "none" ? `image:${style.backgroundImage.slice(0, 40)}` : bg, compactDate: start.matches('.glance-controls > .glance-date-control > input[type="date"][name="airport-date"]') });
         break;
       }
       node = node.parentElement;
     }
-    if (!node) results.push("unpainted");
+    if (!node) results.push({ colour: "unpainted", compactDate: false });
   }
   return results;
 }, selector);
@@ -56,8 +56,15 @@ for (const locale of locales) {
         await expect(page.locator("main.page-shell")).toBeVisible();
         for (const selector of surfaces) {
           const found = await paintedBackground(page, selector);
-          for (const colour of found) {
-            expect(colour, `${locale}${route} @${width}px ${selector}`).toBe(WHITE);
+          for (const { colour, compactDate } of found) {
+            // Owner approval Sentinel_f30294521f9c8191ba81a4d739722130: only the compact native date surface is neutral
+            expect(colour, `${locale}${route} @${width}px ${selector}`).toBe(compactDate ? "rgb(241, 243, 246)" : WHITE);
+            if (compactDate) {
+              const dateInput = page.locator('.glance-controls > .glance-date-control > input[type="date"][name="airport-date"]');
+              await expect(dateInput).toHaveCSS("border-radius", "14px");
+              await expect(dateInput).toHaveCSS("min-height", "44px");
+              await expect(dateInput).toHaveCSS("width", "148px");
+            }
           }
         }
       }
