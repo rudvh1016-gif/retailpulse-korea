@@ -519,9 +519,15 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
       await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "SEOUL_OPEN_DATA_KEY is not configured");
       await writeSourceHealth(env.DB, sourceId, "MISSING", "SEOUL_OPEN_DATA_KEY is not configured");
     }
-    return { status: "NEEDS_KEY", records: 0 };
+    return { status: "NEEDS_KEY", records: 0, providerRequests: 0 };
   }
 
+  // Counts every HTTP attempt, including fetchOfficialJson's internal retry.
+  let providerRequests = 0;
+  const countedFetch: typeof fetch = (input, init) => {
+    providerRequests += 1;
+    return fetch(input, init);
+  };
   const populationStatements: D1PreparedStatement[] = [];
   const commercialStatements: D1PreparedStatement[] = [];
   const populationFailures: string[] = [];
@@ -536,7 +542,7 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
     let citydata: Record<string, unknown>;
     const requestedAt = nowIso();
     try {
-      const payload = await fetchOfficialJson(url, { timeoutMs: 8_000, retries: 1, retryDelaysMs: [2_000], jitterMs: 500 });
+      const payload = await fetchOfficialJson(url, { timeoutMs: 8_000, retries: 1, retryDelaysMs: [2_000], jitterMs: 500, fetchImpl: countedFetch });
       citydata = seoulIntegratedCitydata(payload);
     } catch (error) {
       const detail = `${failureDetail(areaId, error)} requestedAt=${requestedAt}`;
@@ -662,7 +668,8 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
   const status = populationStatus === "SUCCESS" && commercialStatus === "SUCCESS"
     ? "SUCCESS"
     : populationStatus === "ERROR" && commercialStatus === "ERROR" ? "ERROR" : "PARTIAL";
-  return { status, records: populationWritten.changedRows + commercialWritten.changedRows, detail: sourceDetails.join(" | ") };
+  return { status, records: populationWritten.changedRows + commercialWritten.changedRows,
+    detail: `${sourceDetails.join(" | ")}; provider requests ${providerRequests}`, providerRequests };
 }
 
 const SEOUL_FOREIGN_PERIOD_LOOKBACK_DAYS = 62;
@@ -745,18 +752,25 @@ export async function collectSeoulForeignPresence(env: CollectorEnv, now: Date =
   if (!env.SEOUL_OPEN_DATA_KEY) {
     await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "SEOUL_OPEN_DATA_KEY is not configured");
     await writeSourceHealth(env.DB, sourceId, "MISSING", "SEOUL_OPEN_DATA_KEY is not configured");
-    return { status: "NEEDS_KEY", records: 0 };
+    return { status: "NEEDS_KEY", records: 0, providerRequests: 0 };
   }
+  // Counts every HTTP attempt, including fetchOfficialJson's internal retry.
+  let providerRequests = 0, candidatesTried = 0;
+  const countedFetch: typeof fetch = (input, init) => {
+    providerRequests += 1;
+    return fetch(input, init);
+  };
   try {
     const base = `http://openapi.seoul.go.kr:8088/${env.SEOUL_OPEN_DATA_KEY}/json/Spop250mFornTempDong`;
     const configuredCodes = [...new Set(publicAreaIds.flatMap((area) => areaMappings[area].seoulAdministrativeDongCodes))];
     let selectedPeriod: SeoulForeignPeriod | undefined;
     let rawRows: Record<string, unknown>[] = [];
     for (const candidate of seoulForeignPeriodCandidates(now)) {
+      candidatesTried += 1;
       const candidateRows: Record<string, unknown>[] = [];
       let complete = true;
       for (const code of configuredCodes) {
-        const payload = await fetchOfficialJson(new URL(`${base}/1/1000/${candidate.ymd}/${candidate.tt}/${code}`), { timeoutMs: 8_000, retries: 1 });
+        const payload = await fetchOfficialJson(new URL(`${base}/1/1000/${candidate.ymd}/${candidate.tt}/${code}`), { timeoutMs: 8_000, retries: 1, fetchImpl: countedFetch });
         let rows: Record<string, unknown>[];
         try {
           rows = seoulEnvelopeRows(payload, "Spop250mFornTempDong")
@@ -790,7 +804,7 @@ export async function collectSeoulForeignPresence(env: CollectorEnv, now: Date =
     const areaRows = await aggregateSeoulForeignByArea(dongRows, mapping);
     const written = await persistSeoulForeignPresence(env.DB, dongRows, areaRows);
     const lastRecord = areaRows.at(-1);
-    const detail = `period ${ymd}/${tt}; dongs ${dongRows.length}/${configuredCodes.length}; areas ${areaRows.length}/${publicAreaIds.length}; ${describeWrites(written)}`;
+    const detail = `period ${ymd}/${tt}; dongs ${dongRows.length}/${configuredCodes.length}; areas ${areaRows.length}/${publicAreaIds.length}; candidates tried ${candidatesTried}; provider requests ${providerRequests}; ${describeWrites(written)}`;
     await writeCollectorStatus(env.DB, sourceId, "SUCCESS", detail, rawRows.length, written.changedRows);
     await writeSourceHealth(env.DB, sourceId, "OFFICIAL_HISTORICAL", detail, lastRecord ? {
       eventAt: lastRecord.referenceAt,
@@ -798,12 +812,12 @@ export async function collectSeoulForeignPresence(env: CollectorEnv, now: Date =
       retrievedAt: lastRecord.retrievedAt,
       schemaVersion: lastRecord.schemaVersion,
     } : undefined);
-    return { status: "SUCCESS", records: written.changedRows };
+    return { status: "SUCCESS", records: written.changedRows, detail, providerRequests };
   } catch (error) {
     const detail = error instanceof Error ? redactSeoulUrl(error.message) : "collector_error";
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
-    return { status: "ERROR", records: 0 };
+    return { status: "ERROR", records: 0, detail, providerRequests };
   }
 }
 

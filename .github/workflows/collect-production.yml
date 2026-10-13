@@ -50,7 +50,7 @@ jobs:
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
           SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
           RPK_RETAIN_FLIGHT_CHANGE_HISTORY: ${{ vars.RPK_RETAIN_FLIGHT_CHANGE_HISTORY }}
-          # A1 now runs first at 04:07 KST (collect-airport-recovery.yml). This
+          # A1 now runs first at 00:07 KST (collect-airport-recovery.yml). This
           # run is the day's refresh, not its first sight of the day: gate
           # assignments firm up through the morning and the busiest-gate
           # ranking is what the departures screen is for, so it rescans instead

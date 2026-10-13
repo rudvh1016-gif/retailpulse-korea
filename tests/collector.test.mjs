@@ -135,9 +135,13 @@ test("S2 collector persists one raw and area row per mapping idempotently", asyn
   const first = await collectSeoulForeignPresence(env, testNow);
   const second = await collectSeoulForeignPresence(env, testNow);
 
-  assert.deepEqual(first, { status: "SUCCESS", records: 9 });
-  assert.deepEqual(second, { status: "SUCCESS", records: 0 });
+  const { detail: firstDetail, ...firstResult } = first, { detail: secondDetail, ...secondResult } = second;
+  assert.deepEqual(firstResult, { status: "SUCCESS", records: 9, providerRequests: 5 });
+  assert.deepEqual(secondResult, { status: "SUCCESS", records: 0, providerRequests: 5 });
+  assert.match(firstDetail, new RegExp(`^period ${ymd}/${tt}; dongs 5/5; areas 4/4; candidates tried 1; provider requests 5; `));
+  assert.match(secondDetail, /; candidates tried 1; provider requests 5; /);
   assert.equal(requests.length, 10);
+  assert.equal(first.providerRequests + second.providerRequests, requests.length);
   assert.equal(requests.some((url) => url.endsWith("/1/1/")), false);
   assert.equal(requests.every((url) => url.includes(`/${ymd}/${tt}/`)), true);
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_dong").get().count, 5);
@@ -183,10 +187,52 @@ test("S2 collector skips an incomplete newest period and imports the next comple
 
   const result = await collectSeoulForeignPresence({ DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: "fixture" }, testNow);
 
-  assert.deepEqual(result, { status: "SUCCESS", records: 9 });
+  const { detail, ...counted } = result;
+  assert.deepEqual(counted, { status: "SUCCESS", records: 9, providerRequests: 7 });
+  assert.match(detail, /; candidates tried 2; provider requests 7; /);
   // Newest period stops at its first missing dong (2 requests); the previous one reads all five.
   assert.equal(requests.length, 7);
+  assert.equal(result.providerRequests, requests.length);
   assert.equal(database.prepare("SELECT MIN(reference_at) AS referenceAt FROM seoul_foreign_presence_area").get().referenceAt.startsWith(`${previous.ymd.slice(0, 4)}-${previous.ymd.slice(4, 6)}-${previous.ymd.slice(6, 8)}`), true);
+});
+
+test("S2 collector counts fetchOfficialJson's internal retry as a provider request", async (context) => {
+  const databasePath = join(tmpdir(), `rpk-s2-retry-${process.pid}.db`);
+  const database = new DatabaseSync(databasePath);
+  const originalFetch = globalThis.fetch;
+  context.after(() => {
+    globalThis.fetch = originalFetch;
+    database.close();
+    unlinkSync(databasePath);
+  });
+  applyMigrations(database);
+
+  const testNow = new Date("2026-08-30T03:00:00Z");
+  const [{ ymd, tt }] = seoulForeignPeriodCandidates(testNow);
+  const requests = [];
+  globalThis.fetch = async (input) => {
+    const url = String(input), code = url.split("/").at(-1);
+    requests.push(url);
+    // retry-after: 0 keeps the one bounded retry immediate in this test.
+    if (code === "11440660" && requests.filter((seen) => seen.endsWith(`/${code}`)).length === 1) {
+      return new Response("unavailable", { status: 503, headers: { "retry-after": "0" } });
+    }
+    return Response.json({
+      Spop250mFornTempDong: {
+        list_total_count: 1,
+        RESULT: { CODE: "INFO-000", MESSAGE: "정상 처리되었습니다" },
+        row: [s2Row(code, 100, { YMD: ymd, TT: tt })],
+      },
+    });
+  };
+
+  const result = await collectSeoulForeignPresence({ DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: "fixture" }, testNow);
+
+  assert.equal(result.status, "SUCCESS");
+  // Five logical dong calls; the 503 makes one of them two HTTP attempts.
+  assert.equal(requests.length, 6);
+  assert.equal(result.providerRequests, requests.length);
+  assert.match(result.detail, /; candidates tried 1; provider requests 6; /);
 });
 
 test("S2 collector rejects duplicate provider rows instead of double counting", async (context) => {
@@ -217,8 +263,9 @@ test("S2 collector rejects duplicate provider rows instead of double counting", 
 
   const result = await collectSeoulForeignPresence({ DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: "fixture" }, testNow);
 
-  assert.deepEqual(result, { status: "ERROR", records: 0 });
+  assert.deepEqual(result, { status: "ERROR", records: 0, detail: "seoul_foreign_duplicate_dong_11140550", providerRequests: 1 });
   assert.equal(requests, 1);
+  assert.equal(result.providerRequests, requests);
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_area").get().count, 0);
 });
 
@@ -250,8 +297,9 @@ test("S2 collector stops at the official recent-two-month bound without writing"
     new Date("2026-08-30T03:00:00Z"),
   );
 
-  assert.deepEqual(result, { status: "ERROR", records: 0 });
+  assert.deepEqual(result, { status: "ERROR", records: 0, detail: "seoul_foreign_no_complete_period", providerRequests: 62 });
   assert.equal(requests, 62);
+  assert.equal(result.providerRequests, requests);
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_dong").get().count, 0);
   assert.equal(database.prepare("SELECT COUNT(*) AS count FROM seoul_foreign_presence_area").get().count, 0);
 });

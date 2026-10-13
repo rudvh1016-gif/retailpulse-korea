@@ -314,7 +314,7 @@ export const SOURCE_RECOVERY_CAPABILITIES: readonly SourceRecoveryCapability[] =
     adapter: null,
     publicVerification: "STORAGE_ONLY",
     providerBudgetPolicy: "UNMEASURED",
-    nextScheduledSlotBehavior: "daily group windows at 06:07 and 10:07 KST",
+    nextScheduledSlotBehavior: "with airport_recent: early A1 window at 00:07 and daily group at 06:07 KST",
     controlledRecoveryEligible: false,
     reason: "a published holiday calendar that changes a few times a year; no adapter, no measured re-request cost, and two scheduled windows a day already repair a missed one",
   },

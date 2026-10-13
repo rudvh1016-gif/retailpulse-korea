@@ -36,6 +36,23 @@ function setup(overrides = {}) {
 }
 const execute = deps => executeAirportMidnightDirect(deps, { activation: OPEN });
 
+// Success counts that happen to equal 401/403/406/429 must not veto; only httpStatus=NNN does.
+for(const detail of ['recent 2026-10-08..2026-10-10; requests 121; storage writes 164','recent 2026-10-08..2026-10-10; requests 119; changed rows 403; storage writes 429','recent 2026-10-08..2026-10-10; requests 401; range rows 406','httpStatus=401','httpStatus=403','httpStatus=406','httpStatus=429','failureClass=HTTP httpStatus=403 attempts=1 elapsedMs=403 retryExhausted=false','QUOTA exhausted','THROTTLED','BLOCKED','AUTH failure','SCHEMA mismatch'])test(`stored LIVE health candidate preserves error-detail veto: ${detail}`,async()=>{
+ const {db,deps,calls,memory}=setup({env:{...ENV,RPK_CENTRAL_RECOVERY_OWNER_APPROVED:'true',RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED:'true'}});
+ try{
+  db.raw.prepare("INSERT INTO source_health(source_id,status,detail,schema_version) VALUES(?,'LIVE',?,'airport-v1')").run(A1_SOURCE,detail);
+  deps.sourceBlocked=()=>airportMidnightSourceBlocked(db);
+  const healthy=detail.startsWith('recent '),candidate=await airportMidnightCandidate(deps,NOW);
+  assert.equal(candidate.eligible,healthy);assert.equal(candidate.reason,healthy?'EARLY_RUN_NOT_OBSERVED':'SOURCE_BLOCKED');
+  assert.equal(calls.collectors,0);assert.equal((await memory.attempts(A1_SOURCE,DAY)).length,0);
+  if(healthy){
+   assert.equal((await airportMidnightCandidate({...deps,readCoverage:async()=>CURRENT},NOW)).reason,'ALREADY_CURRENT');
+   assert.equal((await airportMidnightCandidate({...deps,budgetAvailable:async()=>false},NOW)).reason,'REQUEST_BUDGET_UNAVAILABLE');
+   assert.equal((await airportMidnightCandidate(deps,'2026-10-10T18:00:00Z')).reason,'OUTSIDE_FALLBACK_WINDOW');
+  }
+ }finally{db.raw.close();}
+});
+
 test('missing either owner or runtime condition stops before every read/write/provider', async () => {
   for(const flags of [{},{RPK_CENTRAL_RECOVERY_OWNER_APPROVED:'true'},{RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED:'true'}]){
     const { db, deps, calls } = setup({ env: { ...ENV,...flags } });
