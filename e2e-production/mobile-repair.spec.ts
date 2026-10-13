@@ -6,6 +6,9 @@ import type {LiveSummary} from '../app/live-signals';
 for (const width of [360, 390]) test(`personalization and chart repair on Production ${width}`, async ({ page }, info) => {
   await page.setViewportSize({ width, height: 844 });
   await page.goto('/ko');
+  await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+  // Detail/date/chart contracts belong to the explicit airport route.
+  await page.goto('/ko/airport');
   await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
   await expect(page.locator('.airport-today')).toBeVisible();
   await expect(page.getByTestId('area-demand-card')).toHaveCount(0);
