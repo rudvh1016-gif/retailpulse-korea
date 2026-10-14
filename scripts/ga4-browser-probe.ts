@@ -249,7 +249,9 @@ async function runFlow(browser: Browser, profile: Profile, options: ProbeOptions
     record.verdict = evaluateStep(record);
   };
   const menu = async (path: string) => {
-    await activate(page.locator(`nav[aria-label="Primary"] a[href="${path}"]:visible`).first());
+    // The bottom menu may carry the selected date or terminal as a query (PR #378).
+    const scope = 'nav[aria-label="Primary"]';
+    await activate(page.locator(`${scope} a[href="${path}"]:visible, ${scope} a[href^="${path}?"]:visible`).first());
     await page.waitForURL((url) => url.pathname === path, { timeout: 20_000 });
   };
   const choice = () => page.getByRole('checkbox', { name: CONSENT_LABEL });
