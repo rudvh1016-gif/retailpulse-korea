@@ -14,8 +14,10 @@
  *   UNAVAILABLE           not readable from here; the reason is given
  *
  * Safety properties, all load-bearing:
- *   - D1 sees exactly one bounded primary-key range SELECT. Nothing writes,
- *     and no data provider is called.
+ *   - D1 sees one bounded primary-key range SELECT on the collectors' ledger
+ *     and one uncached replay of each airport read API (the routes' own
+ *     exported readers, SELECT only). Nothing writes, and no data provider is
+ *     called.
  *   - Analytics calls read Cloudflare's own counters; they do not touch D1.
  *   - No secret is printed. Tokens are named only by their variable names,
  *     errors are reduced to safe characters, and statement text is the SQL
@@ -23,6 +25,10 @@
  *   - Manual dispatch only (measure-read-budget.yml, scope "usage").
  */
 import { CloudflareD1RestDatabase } from "../lib/d1-rest";
+import { kstDayOf, shiftKstDay } from "../lib/kst";
+import { readFlightsForDate } from "../app/api/live/flights/route";
+import { readAirportDays } from "../app/api/live/airport-days/route";
+import { readAirportMonths } from "../app/api/live/airport-months/route";
 import { resolveProductionDatabaseConfig } from "./production-database";
 
 const API = "https://api.cloudflare.com/client/v4";
@@ -254,5 +260,48 @@ try {
   report.collectors = { basis: "UNAVAILABLE", reason: safeError(error) };
   console.log(`\nUNAVAILABLE collector usage: ${safeError(error)}`);
 }
+
+// 6 — what ONE uncached call of each airport read API costs, measured by the
+// meta Cloudflare attaches to each statement (OFFICIAL_QUERY_META). The routes'
+// own exported readers run, so this measures exactly what a visitor triggers.
+function countingClient(source: CloudflareD1RestDatabase) {
+  const totals = { statements: 0, rowsRead: 0, rowsWritten: 0, unmeasured: 0 };
+  const wrap = (statement: ReturnType<CloudflareD1RestDatabase["prepare"]>) => {
+    const wrapped = {
+      bind(...values: unknown[]) { statement.bind(...values); return wrapped; },
+      async all<T = Record<string, unknown>>() {
+        const result = await statement.all<T>();
+        totals.statements++;
+        const read = num(result.meta?.rows_read);
+        if (read === null) totals.unmeasured++;
+        totals.rowsRead += read ?? 0;
+        totals.rowsWritten += num(result.meta?.rows_written) ?? 0;
+        return result;
+      },
+      async first<T = Record<string, unknown>>() { const { results } = await wrapped.all<T>(); return results[0] ?? null; },
+    };
+    return wrapped;
+  };
+  return { totals, client: { prepare: (sql: string) => wrap(source.prepare(sql)) } as unknown as Pick<D1Database, "prepare"> };
+}
+const todayKst = kstDayOf(now.toISOString());
+const routeCosts: Array<Record<string, unknown>> = [];
+for (const [name, run] of [
+  ["/api/live/flights?date=today", (client: Pick<D1Database, "prepare">) => readFlightsForDate(client, todayKst, todayKst).then((r) => ({ flights: r.flights.length, basis: r.basis }))],
+  ["/api/live/flights?date=yesterday", (client: Pick<D1Database, "prepare">) => readFlightsForDate(client, shiftKstDay(todayKst, -1), todayKst).then((r) => ({ flights: r.flights.length, basis: r.basis }))],
+  ["/api/live/airport-days?date=today", (client: Pick<D1Database, "prepare">) => readAirportDays(client, todayKst).then((r) => ({ rowsReturned: r.rowsRead }))],
+  ["/api/live/airport-months?month=this", (client: Pick<D1Database, "prepare">) => readAirportMonths(client, todayKst.slice(0, 7), todayKst).then((r) => ({ status: r.status, rowsReturned: r.rowsRead }))],
+] as const) {
+  const { totals, client } = countingClient(database);
+  try {
+    const shape = await run(client);
+    routeCosts.push({ route: name, basis: "OFFICIAL_QUERY_META", ...totals, ...shape });
+  } catch (error) {
+    routeCosts.push({ route: name, basis: "UNAVAILABLE", reason: safeError(error), ...totals });
+  }
+}
+report.routeCosts = routeCosts;
+console.log("\nOFFICIAL_QUERY_META cost of one uncached call (the route's own reader)");
+for (const row of routeCosts) console.log(`  ${String(row.route).padEnd(40)} statements ${row.statements} rowsRead ${row.rowsRead} rowsWritten ${row.rowsWritten} ${JSON.stringify(Object.fromEntries(Object.entries(row).filter(([key]) => !["route", "basis", "statements", "rowsRead", "rowsWritten", "unmeasured"].includes(key))))}`);
 
 print("\nD1_USAGE_REPORT", report);

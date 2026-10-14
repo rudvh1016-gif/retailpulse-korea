@@ -235,8 +235,12 @@ test("the usage diagnostic reads Cloudflare's counters and one bounded collector
   const workflow = readFileSync(".github/workflows/measure-read-budget.yml", "utf8");
   assert.doesNotMatch(script, /\b(INSERT\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM|DROP\s+TABLE|ALTER\s+TABLE|CREATE\s+(TABLE|INDEX))\b/i);
   const d1Statements = script.match(/database\.prepare\(/g) ?? [];
-  assert.equal(d1Statements.length, 1, "exactly one D1 statement");
+  assert.equal(d1Statements.length, 1, "one statement of its own; the rest are the routes' own readers");
   assert.match(script, /FROM operational_usage_daily WHERE day >= \? ORDER BY day, source_id/, "a primary-key range read");
+  for (const route of ["flights", "airport-days", "airport-months"]) {
+    const source = readFileSync(`app/api/live/${route}/route.ts`, "utf8");
+    assert.doesNotMatch(source, /\b(INSERT\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM)\b/i, `${route} reader stays read-only`);
+  }
   assert.doesNotMatch(script, /console\.log\([^)]*\.value/, "token values are never printed");
   assert.match(script, /tokens\.map\(\(t\) => t\.name\)/, "tokens are reported by variable name only");
   assert.match(workflow, /if: inputs\.scope == 'usage'\n\s+run: npx tsx scripts\/measure-d1-usage\.ts/);
