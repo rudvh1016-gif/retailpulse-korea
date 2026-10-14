@@ -199,7 +199,7 @@ test('mobile back navigation returns to airport-glance root with one active item
     await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
     await expect(nav.locator('a')).toHaveCount(6);
     await expect(nav.locator('a[href="/ko/where-to"]')).toHaveCount(1);
-    await expect(nav.locator('a[href="/ko/consumption"]')).toHaveCount(1);
+    await expect(nav.locator('a[href="/ko/consumption?area=myeongdong"]')).toHaveCount(1);
     await nav.locator('a[href="/ko/myeongdong"]').click();
     await expect(page.locator('.area-current-brief')).toBeVisible();
     await page.goBack();

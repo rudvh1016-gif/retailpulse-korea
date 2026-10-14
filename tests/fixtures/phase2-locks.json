@@ -26,7 +26,7 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "a6a78c3bf28ebf52c57a9f6c2258ff8af151bf3a486b1695073d2b8ae4ee6494",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "a338d6fbaf212d336eacf5d9a2c5474782d717e1373b9ba8120e6c3771c7def7",
+    "app/retailpulse-app.tsx": "a5b2a26dfd073cfa62ab53a4ef6320aeae2436fe71c37563f914bfb5f224acfe",
     "app/retailpulse-data.ts": "2a965cde02012978eb446a955b82bbcbfbec83f74f862e0e2846fae1ca348ecd",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "978f7916e739eb49f0e0dcc03f74750cac8fedfb5a4b85c57112dbcf27cfcf73",
@@ -2402,5 +2402,67 @@
     ],
     "protectedPathCount": 65,
     "approvalEvidenceFile": "docs/approvals/remaining-speed-20261013.json"
+  },
+  "ownerApprovedGlassNavigationPreview20261013": {
+    "approvalEvidenceFile": "docs/approvals/glass-navigation-preview-20261013.json",
+    "scope": "Separate unpublished mobile/desktop navigation preview with original SVG icons, glass capsule, press/drag feedback; preserve all six mobile menus and desktop Business. Review screenshots before any public release. No data or collector changes.",
+    "protectedPathCount": 65
+  },
+  "ownerApprovedMobileOnlyNavigation20261014": {
+    "status": "OWNER_APPROVED_MOBILE_ONLY_DRAFT_NOT_PUBLIC_RELEASE",
+    "sourceThread": "01a0fd0d-cf77-70ee-b6c3-0d341a4930ec",
+    "authorizationEvidence": [
+      {
+        "message": "Sentinel_94fc9be8c4d481918fc5cb435181585c",
+        "quote": "피씨아이콘은 바꾸지말고 모바일만바꿔저 아이콘!!!!"
+      }
+    ],
+    "scope": "PR367 mobile bottom navigation only; desktop top navigation exactly matches current main. No merge/deployment, new API or data changes.",
+    "base": "fcf529e0ec8405d10d3ba724a469eeab67fc3e71",
+    "files": [
+      {
+        "path": "app/retailpulse-app.tsx",
+        "beforeSha256": "73e2b4aa176ebb7a21c9d671e8f7025b42e8de912eabc076377864b0802f88ea",
+        "afterSha256": "4c9cb157e7baf5de4e2e53e95789098af959ab83dc98410c56a8fc0e7923284e",
+        "exactUnifiedDiff": "diff --git a/app/retailpulse-app.tsx b/app/retailpulse-app.tsx\nindex a60542ba..b21f17f4 100644\n--- a/app/retailpulse-app.tsx\n+++ b/app/retailpulse-app.tsx\n@@ -35,6 +35,9 @@ import { activeSourceCatalog,sourceName,sourceUse,CollectionStatus } from \"./sou\n \n import { useEffect, useState, type ComponentProps, type ComponentType } from \"react\";\n import {useBottomNavigationViewport} from \"./use-bottom-navigation-viewport\";\n+import {NavigationIcon} from \"./navigation-icon\";\n+import {useGlassNavigation} from \"./use-glass-navigation\";\n+import \"./glass-navigation.css\";\n import { type IndustryId, industryProfiles } from \"../lib/industry-guidance\";\n import {\n   airportMonthly,\n@@ -130,22 +133,6 @@ const copy = {\n } as const;\n \n \n-function Icon({ name }: { name: View }) {\n-  const paths: Record<View, string> = {\n-    today: \"M4 13h4v7H4zM10 8h4v12h-4zM16 4h4v16h-4z\",\n-    \"airport-glance\": \"M3 4h18v16H3zM3 10h18M10 10v10\",\n-    airport: \"M2 15l20-7-6 12-3-4-4 3z\",\n-    business: \"M4 20V9l8-5 8 5v11H4zm6 0v-6h4v6\",\n-    forecast: \"M3 17l5-6 4 4 4-7 5 5\",\n-    'where-to': \"M12 21s7-7 7-12a7 7 0 10-14 0c0 5 7 12 7 12zm0-15v6m-3-3h6\",\n-    consumption: \"M4 20V12h4v8M10 20V8h4v12M16 20V4h4v16\",\n-    about: \"M12 3a9 9 0 100 18 9 9 0 000-18zm0 5v1m0 3v5\",\n-    \"tourism-desk\": \"M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7z\",\n-    more: \"M5 12h.01M12 12h.01M19 12h.01\",\n-  };\n-  return <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d={paths[name]} /></svg>;\n-}\n-\n /**\n  * One metric, explained in the four things a first-time reader actually asks:\n  * what it is, what a high value means, where the number came from, and why it\n@@ -296,6 +283,7 @@ export default function Home({ initialLang = \"ko\", initialView = \"today\", initia\n   // null means \"whatever today is in KST, as the server reports it\" — the\n   // client never guesses a date from the device clock.\n   const [serviceDate, setServiceDate] = useState<string | null>(null);\n+  useGlassNavigation(bottomNavigationRef,view);\n   const t = copy[lang];\n   const navLabel=(item:View)=>item==='consumption'?localText(lang,{ko:'소비 흐름',en:'Spending',zh:'消费',ja:'消費'}):t[item];\n \n@@ -402,6 +390,15 @@ export default function Home({ initialLang = \"ko\", initialView = \"today\", initia\n     if (window.location.pathname + window.location.search !== nextPath) window.history.pushState({}, \"\", nextPath);\n   }\n \n+  function navigationHref(next:View){\n+    const params=new URLSearchParams();\n+    if(serviceDate&&next!=='where-to'&&next!=='consumption')params.set('date',serviceDate);\n+    if(next==='consumption'||next==='forecast')params.set('area',selected);\n+    if(next==='airport'&&concourse)params.set('building','CONCOURSE');\n+    else if(next==='airport'&&terminal!=='all')params.set('terminal',terminal);\n+    return routeFor(lang,next,selected)+(params.toString()?`?${params}`:'');\n+  }\n+\n   function changeDate(next: string | null) {\n     setServiceDate(next);\n     const url = new URL(window.location.href);\n@@ -545,19 +542,20 @@ export default function Home({ initialLang = \"ko\", initialView = \"today\", initia\n         </footer>\n       </main>\n \n-      <nav ref={bottomNavigationRef} className=\"bottom-nav\" aria-label=\"Primary\">\n+      <nav ref={bottomNavigationRef} className=\"bottom-nav glass-nav\" aria-label=\"Primary\">\n+        <span className=\"glass-nav-indicator\" aria-hidden=\"true\"/>\n         {([\"airport-glance\", \"airport\", \"where-to\", \"today\", \"consumption\", \"more\"] as View[]).map((item) => (\n           <a\n             key={item}\n-            href={routeFor(lang, item, selected)}\n+            href={navigationHref(item)}\n             className={(view === item || ([\"business\",\"tourism-desk\",\"forecast\",\"about\"].includes(view) && item === \"more\")) ? \"active\" : \"\"}\n-            onClick={(event) => { event.preventDefault(); navigate(item); }}\n+            onClick={(event) => { if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;event.preventDefault();navigate(item); }}\n             onPointerEnter={item === \"airport\" ? prepareAirport : item === \"airport-glance\" ? prepareAirportGlance : undefined}\n             onFocus={item === \"airport\" ? prepareAirport : item === \"airport-glance\" ? prepareAirportGlance : undefined}\n             aria-current={view === item ? \"page\" : [\"business\",\"tourism-desk\",\"forecast\",\"about\"].includes(view) && item === \"more\" ? \"location\" : undefined}\n             aria-label={navLabel(item)}\n           >\n-            <Icon name={item} />\n+            <NavigationIcon name={item} />\n             <span>{item==='where-to'?localText(lang,{ko:'서울 한눈에',en:'Seoul glance',zh:'首尔一览',ja:'ソウル一覧'}):item==='consumption'?localText(lang,{ko:'소비 흐름',en:'Spending',zh:'消费',ja:'消費'}):t[item].toUpperCase()}</span>\n           </a>\n         ))}\n"
+      }
+    ],
+    "approvalEvidenceFile": "docs/approvals/mobile-only-navigation-20261014.json"
+  },
+  "ownerApprovedMobileNavigationRelease20261014": {
+    "recordedAt": "2026-10-14T05:41:57.637Z",
+    "authorizationEvidence": {
+      "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+      "ownerTaskRequest": "PR367의 모바일 전용 아이콘과 터치 효과를 이어받아 마무리해",
+      "status": "OWNER_APPROVED_PUBLIC_RELEASE",
+      "supersedesStatusOf": [
+        "ownerApprovedGlassNavigationPreview20261013",
+        "ownerApprovedMobileOnlyNavigation20261014"
+      ],
+      "ownerInstruction": "코리테일의 남은 작업을 이어받아 실제 수정·병합·배포·배포 확인까지 진행해줘\n1  모바일 하단 아이콘 반영\nPR367의 모바일 전용 아이콘과 터치 효과를 이어받아 마무리해\n마지막 확인 커밋 b4bf8db는 CI 통과 상태였고 미병합이었어\nPC 아이콘·메뉴·매장 버튼은 절대 변경하지 마\n모바일 메뉴 순서와 기능은 유지하고, 작은 화면 잘림·하단 안전 여백·스크롤과 터치 충돌·동작 줄이기 설정만 확인해\n새로 디자인하지 말고 준비된 수정본을 활용해\n해결된 작업은 필요한 검사 후 직접 병합·배포하고, 실제 배포된 커밋까지 확인해\n보호 파일은 정식 승인 절차를 지키고 검사 무력화나 승인 기록 위조는 하지 마",
+      "preparedRevisionReleased": "PR367 head b4bf8dbd (codex/glass-nav-preview-20261013) merged with origin/main; the protected diff below is exactly PR367 mobile-only change on top of current main",
+      "ownerRequest": "PR367의 모바일 전용 아이콘과 터치 효과를 이어받아 마무리해 / PC 아이콘·메뉴·매장 버튼은 절대 변경하지 마 / 해결된 작업은 필요한 검사 후 직접 병합·배포하고",
+      "approvedItem": "PR367 모바일 하단 전용 아이콘·유리 바·누름/가로 끌기 효과 공개 반영 (PC 상단 메뉴·아이콘·매장 버튼 불변)",
+      "scope": "app/retailpulse-app.tsx: imports NavigationIcon, useGlassNavigation and glass-navigation.css; the bottom (mobile) nav gets the glass bar, the original icons, navigationHref links that keep date/area/terminal, and modifier-click passthrough. The top (PC) nav JSX is identical to main. No data, API, collector, SEO or analytics change.",
+      "approvedProtectedFiles": [
+        "app/retailpulse-app.tsx"
+      ],
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": true
+    },
+    "reason": "Record the explicit owner approval for this protected-file change; no test is relaxed or skipped.",
+    "comparisonBase": "404bb3e5512858af92eced29abd3685096bc4c9c",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "a338d6fbaf212d336eacf5d9a2c5474782d717e1373b9ba8120e6c3771c7def7",
+        "approved": "a5b2a26dfd073cfa62ab53a4ef6320aeae2436fe71c37563f914bfb5f224acfe",
+        "addedLines": 18,
+        "deletedLines": 20,
+        "exactUnifiedDiff": "diff --git a/app/retailpulse-app.tsx b/app/retailpulse-app.tsx\nindex 2275fd7..6476108 100644\n--- a/app/retailpulse-app.tsx\n+++ b/app/retailpulse-app.tsx\n@@ -56,6 +56,9 @@ import { activeSourceCatalog,sourceName,sourceUse,CollectionStatus } from \"./sou\n \n import { useEffect, useState, type ComponentProps, type ComponentType } from \"react\";\n import {useBottomNavigationViewport} from \"./use-bottom-navigation-viewport\";\n+import {NavigationIcon} from \"./navigation-icon\";\n+import {useGlassNavigation} from \"./use-glass-navigation\";\n+import \"./glass-navigation.css\";\n import { industryLabels, type IndustryId } from \"../lib/industry-ids\";\n import {\n   airportMonthly,\n@@ -155,22 +158,6 @@ const copy = {\n } as const;\n \n \n-function Icon({ name }: { name: View }) {\n-  const paths: Record<View, string> = {\n-    today: \"M4 13h4v7H4zM10 8h4v12h-4zM16 4h4v16h-4z\",\n-    \"airport-glance\": \"M3 4h18v16H3zM3 10h18M10 10v10\",\n-    airport: \"M2 15l20-7-6 12-3-4-4 3z\",\n-    business: \"M4 20V9l8-5 8 5v11H4zm6 0v-6h4v6\",\n-    forecast: \"M3 17l5-6 4 4 4-7 5 5\",\n-    'where-to': \"M12 21s7-7 7-12a7 7 0 10-14 0c0 5 7 12 7 12zm0-15v6m-3-3h6\",\n-    consumption: \"M4 20V12h4v8M10 20V8h4v12M16 20V4h4v16\",\n-    about: \"M12 3a9 9 0 100 18 9 9 0 000-18zm0 5v1m0 3v5\",\n-    \"tourism-desk\": \"M12 3l7 4v6c0 4-3 7-7 8-4-1-7-4-7-8V7z\",\n-    more: \"M5 12h.01M12 12h.01M19 12h.01\",\n-  };\n-  return <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d={paths[name]} /></svg>;\n-}\n-\n /**\n  * One metric, explained in the four things a first-time reader actually asks:\n  * what it is, what a high value means, where the number came from, and why it\n@@ -328,6 +315,7 @@ export default function Home({ initialLang = \"ko\", initialView = \"today\", initia\n   // null means \"whatever today is in KST, as the server reports it\" — the\n   // client never guesses a date from the device clock.\n   const [serviceDate, setServiceDate] = useState<string | null>(null);\n+  useGlassNavigation(bottomNavigationRef,view);\n   const t = copy[lang];\n   const navLabel=(item:View)=>item==='consumption'?localText(lang,{ko:'소비 흐름',en:'Spending',zh:'消费',ja:'消費'}):t[item];\n \n@@ -446,6 +434,15 @@ export default function Home({ initialLang = \"ko\", initialView = \"today\", initia\n     if (window.location.pathname + window.location.search !== nextPath) window.history.pushState({}, \"\", nextPath);\n   }\n \n+  function navigationHref(next:View){\n+    const params=new URLSearchParams();\n+    if(serviceDate&&next!=='where-to'&&next!=='consumption')params.set('date',serviceDate);\n+    if(next==='consumption'||next==='forecast')params.set('area',selected);\n+    if(next==='airport'&&concourse)params.set('building','CONCOURSE');\n+    else if(next==='airport'&&terminal!=='all')params.set('terminal',terminal);\n+    return routeFor(lang,next,selected)+(params.toString()?`?${params}`:'');\n+  }\n+\n   function changeDate(next: string | null) {\n     setServiceDate(next);\n     const url = new URL(window.location.href);\n@@ -589,19 +586,20 @@ export default function Home({ initialLang = \"ko\", initialView = \"today\", initia\n         </footer>\n       </main>\n \n-      <nav ref={bottomNavigationRef} className=\"bottom-nav\" aria-label=\"Primary\">\n+      <nav ref={bottomNavigationRef} className=\"bottom-nav glass-nav\" aria-label=\"Primary\">\n+        <span className=\"glass-nav-indicator\" aria-hidden=\"true\"/>\n         {([\"airport-glance\", \"airport\", \"where-to\", \"today\", \"consumption\", \"more\"] as View[]).map((item) => (\n           <a\n             key={item}\n-            href={routeFor(lang, item, selected)}\n+            href={navigationHref(item)}\n             className={(view === item || ([\"business\",\"tourism-desk\",\"forecast\",\"about\"].includes(view) && item === \"more\")) ? \"active\" : \"\"}\n-            onClick={(event) => { event.preventDefault(); navigate(item); }}\n+            onClick={(event) => { if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;event.preventDefault();navigate(item); }}\n             onPointerEnter={item === \"airport\" ? prepareAirport : item === \"airport-glance\" ? prepareAirportGlance : undefined}\n             onFocus={item === \"airport\" ? prepareAirport : item === \"airport-glance\" ? prepareAirportGlance : undefined}\n             aria-current={view === item ? \"page\" : [\"business\",\"tourism-desk\",\"forecast\",\"about\"].includes(view) && item === \"more\" ? \"location\" : undefined}\n             aria-label={navLabel(item)}\n           >\n-            <Icon name={item} />\n+            <NavigationIcon name={item} />\n             <span>{item==='where-to'?localText(lang,{ko:'서울 한눈에',en:'Seoul glance',zh:'首尔一览',ja:'ソウル一覧'}):item==='consumption'?localText(lang,{ko:'소비 흐름',en:'Spending',zh:'消费',ja:'消費'}):t[item].toUpperCase()}</span>\n           </a>\n         ))}\n"
+      }
+    ],
+    "protectedPathCount": 65,
+    "approvalEvidenceFile": "docs/approvals/mobile-navigation-release-20261014.json"
   }
 }
