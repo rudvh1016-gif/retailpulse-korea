@@ -31,13 +31,15 @@ for(const width of [360,390,430,1440])test(`decision summary with image overlays
  await expect(app.getByRole('link',{name:'국가 전체 보기 (1) ↗'})).toHaveAttribute('href',new RegExp('#airport-zone-countries$'));
  // Owner, 2026-10-14: Top 5 by the change in daily-mean flights, shown as a count, not a rate;
  // every detail link names the section that holds the same information.
- const increase=app.getByTestId('glance-ranking-increase');await expect(increase.locator('h2')).toHaveText('전월비 일평균 증가 Top 5');await expect(increase.locator('th').nth(3)).toHaveText('증감');
+ const increase=app.getByTestId('glance-ranking-increase');await expect(app.locator('.glance-ranking>.glance-section-head h2')).toHaveText('전월비 일평균 증가 Top 5');await expect(increase.locator('th').nth(3)).toHaveText('증감');
  const ranked=await increase.locator('tbody tr').evaluateAll(rows=>rows.map(row=>{const [previous,current,change]=[...row.querySelectorAll('td')].map(cell=>cell.textContent??'');return {country:row.getAttribute('data-country'),previous:Number(previous),current:Number(current),change};}));
  expect(ranked.map(row=>row.country)).toEqual(['TW','TH','FR','DE','US']);
  for(const [index,row] of ranked.entries()){expect(row.change).toContain(`+${row.current-row.previous}`);expect(row.change).not.toContain('%');if(index)expect(row.current-row.previous).toBeLessThanOrEqual(ranked[index-1].current-ranked[index-1].previous);}
  await expect(app.getByTestId('glance-key-growth')).toContainText('+7편/일');
  await expect(app.getByTestId('glance-key-growth')).toHaveAttribute('href',/\/ko\/airport\?terminal=all&date=2026-10-11#airport-month-destinations$/);
- for(const link of await app.locator('.glance-ranking .glance-detail-link').all())await expect(link).toHaveAttribute('href',/#airport-month-destinations$/);
+ await expect(app.locator('.glance-ranking .glance-detail-link')).toHaveCount(1);await expect(app.locator('.glance-ranking .glance-detail-link')).toHaveAttribute('href',/#airport-month-destinations$/);
+ // The decrease list sits right under the increase table: nothing between the two lists.
+ expect(await app.locator('.glance-ranking').evaluate(section=>{const up=section.querySelector('[data-testid=glance-ranking-increase]')!,down=section.querySelector('[data-testid=glance-ranking-decrease]')!;return up.nextElementSibling===down&&down.getBoundingClientRect().top-up.getBoundingClientRect().bottom<=24;})).toBe(true);
  // Every destination in the fixture grew, so the decrease list says so instead of inventing rows.
  await expect(app.getByTestId('glance-ranking-decrease').locator('h2')).toHaveText('전월비 일평균 감소 Top 5');await expect(app.getByTestId('glance-ranking-decrease').locator('tbody tr')).toHaveCount(0);await expect(app.getByTestId('glance-ranking-decrease')).toContainText('비교 가능한 감소 없음');
  await expect(app.getByTestId('glance-key-wait')).toHaveAttribute('href',/#airport-checkpoints-title$/);
@@ -171,7 +173,7 @@ test(`airport detail link lands on #${hash} below the sticky bars`,async({page})
 test('glance Top 5 detail link opens the full destination list on the airport page',async({page})=>{
  await page.setViewportSize({width:390,height:844});await routeData(page);await page.goto('/ko/airport-glance-preview');
  const app=page.getByTestId('airport-glance-preview');await expect(app.getByTestId('glance-ranking-increase').locator('tbody tr')).toHaveCount(5);
- await app.getByTestId('glance-ranking-increase').locator('.glance-detail-link').click();await expect(page).toHaveURL(/\/ko\/airport\?terminal=all&date=2026-10-11#airport-month-destinations$/);
+ await app.locator('.glance-ranking .glance-detail-link').click();await expect(page).toHaveURL(/\/ko\/airport\?terminal=all&date=2026-10-11#airport-month-destinations$/);
  const list=page.locator('details#airport-month-destinations');await expect(list).toHaveJSProperty('open',true);await expect(list).toBeInViewport();
  await expect(list).toContainText('대만');
 });
@@ -187,5 +189,5 @@ test('decrease Top 5 lists the largest falls in daily-mean flights with △, lik
  expect(rows.map(row=>row.country)).toEqual(['TH','FR','DE','US','CN']);
  for(const [index,row] of rows.entries()){expect(row.change).toContain(`△${row.previous-row.current}`);expect(row.change).toContain('감소');expect(row.change).not.toContain('%');if(index)expect(row.previous-row.current).toBeLessThanOrEqual(rows[index-1].previous-rows[index-1].current);}
  await expect(app.getByTestId('glance-ranking-increase').locator('tbody tr')).toHaveCount(1);await expect(app.getByTestId('glance-ranking-increase').locator('[data-country=TW]')).toContainText('+1');
- await expect(decrease.locator('.glance-detail-link')).toHaveAttribute('href',/#airport-month-destinations$/);
+ await expect(app.locator('.glance-ranking .glance-detail-link')).toHaveAttribute('href',/#airport-month-destinations$/);
 });
