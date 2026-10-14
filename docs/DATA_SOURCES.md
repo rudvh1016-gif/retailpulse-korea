@@ -231,6 +231,58 @@ attribution remain visually separate in all four locales.
 
 Both contracts, their idempotency/history/double-count/redaction behavior, and the T1/T2-cannot-collide guarantee are locked in by `tests/airport-t2-forecast.test.mjs` (29 cases) and `tests/migrations.test.mjs`.
 
+## Prepared, not active: 15095071 국가별 여객 · 15095070 시간대별 여객 · 15114085 정기편 운항 일정 (2026-10-14)
+
+**Status: PREPARED FOR A PROBE, NOT ACTIVE.** No collector, schedule, D1 table, API route or page uses these services, and `tests/incheon-airport-stats.test.ts` fails if any file under `app/`, `lib/`, `worker/`, `scripts/`, `db/`, `drizzle/`, `config/` or `.github/workflows/` other than the three modules below references them. The shared data.go.kr key is not registered for them yet: run `38402837925` (PR #369, 2026-10-13) returned HTTP 403 with resultCode `30` (`등록되지 않은 서비스키`) for all three. Code 30 also covers an approved application that the gateway has not picked up yet (see "Authentication notes"), so one more 30 right after approval is not proof of a wrong key.
+
+Endpoints and request parameters are exactly the ones PR #369 sent. The response fields are the ones PR #369 took from the official `openapi.do` pages; **none has been observed in an authenticated response**. The parsers treat them as a hypothesis: they report the field names actually received and fail closed or mark the contract `DRIFT` rather than guess.
+
+| Dataset | Operation | Request | Documented response fields (not yet observed) | Truth boundary |
+|---|---|---|---|---|
+| 15095071 국가별 여객 | `apis.data.go.kr/B551177/AviationStatsByCountry/getTotalNumberOfPassenger` (flights: `getTotalNumberOfFlight`) | `from_month`, `to_month` (YYYYMM), `type=json` | `region`, `country`, `arrPassenger`, `depPassenger`, `passenger` (flights: `arrFlight`, `depFlight`, `flights`) | Counts grouped by the country of each flight's route as the provider defines it. It never describes who travelled. Airport-wide: no T1/T2/concourse split unless the provider returns one |
+| 15095070 시간대별 여객 | `apis.data.go.kr/B551177/AviationStatsByTimeline/getTotalNumberOfPassenger` | same | `time`, `arrPassenger`, `depPassenger`, `passenger` | Month-range counts per provider time band. Not one day's flow, not a forecast, airport-wide |
+| 15114085 정기편 운항 일정 | `apis.data.go.kr/B551177/StatusOfPaxFltSched/getPaxFltSchedDeparturesDeOdp` | `pageNo`, `numOfRows`, `type=json`, `airport` (blank = every route, unverified), `lang=K` | `airline`, `airport`, `airportcode`, `flightid`, `masterflightid`, `codeshare`, `season`, `firstdate`, `lastdate`, `st`, `monday`…`sunday` | Planned, not operated. Codeshare rows can repeat one physical flight. No terminal is inferred |
+
+Code: `lib/incheon-airport-stats.mjs` (catalog, truth labels, request builders, classification, parsers; pure), `lib/incheon-airport-stats-client.mjs` (transport), `scripts/probe-incheon-airport-stats.mjs` (probe), tests in `tests/incheon-airport-stats.test.ts` with synthetic fixtures only. The modules are `// @ts-check` plain ESM, because the probe runs in a workflow that does not install dependencies.
+
+- **Requests.** Statistics ask only for complete KST months (the running month is refused) and at most 12 months per request. Schedule pages are 1,000 rows, at most 3 pages; the pager refuses a larger total after page 1 instead of collecting part of it. The key is read only from `DATA_GO_KR_SERVICE_KEY` and exists only inside the URL handed to `fetch`; redirects are reported, never followed. No result, issue code or log line carries the URL, the key or a body.
+- **Classification.** Codes `30` NOT_REGISTERED, `31` EXPIRED, `22` LIMIT_EXCEEDED, `23` and HTTP 429 RATE_LIMITED, and `20`/`21`/`32`/`33` or a bare HTTP 401/403 AUTH_REJECTED decide the outcome whatever the HTTP status, and never retry. `03`, or `00` with no items and a zero or absent `totalCount`, is NO_DATA: a valid empty answer that is never a zero. `10`/`11`/`12`, other 4xx and redirects are REQUEST_REJECTED. `01`/`02`/`04`/`05`/`99` and unknown codes are PROVIDER_ERROR. HTML at any status is GATEWAY_HTML. Only a client timeout, a connection failure, HTTP 5xx and a 5xx HTML page retry: default 2 attempts, hard ceiling 3. HTTP 429 deliberately does not retry here, unlike the shared policy, so these services never spend quota on retries. A malformed or unknown envelope, an XML success body, an empty body or an invalid row is SCHEMA_ERROR, and the whole response fails closed with no partial rows.
+- **Parsing.** A missing count is null and never 0; an explicit `"0"` is 0. Counts must be non-negative integers (`"1,234"` and `"706.0"` are accepted). The provider's total and subtotal rows (`합계`, `총계`, `소계`, `계`, `전체`, `Total`) are marked `isProviderAggregate`, so consumers use the total row or its parts, never both. The provider's `passenger` total is kept as published, and a difference from arrivals + departures is reported as DRIFT. Undocumented fields are kept out of the rows and listed by name. A terminal-like name is flagged `PROVIDER_TERMINAL_FIELD_UNREVIEWED`. Missing documented fields, duplicate keys, `totalCount` ≠ items, an unreadable time band and a capped page size all make the contract `DRIFT`. Statistics carry the requested month range as their basis, because no response field is known to echo it. Schedules keep `firstdate`/`lastdate` as KST calendar dates and `st` as HH:MM. Weekday flags accept only Y/N/1/0, so any other form fails the page and names the field.
+
+### Read-only probe (no new workflow)
+
+The existing manually dispatched **Smoke Public APIs** workflow (`smoke-public-apis.yml`, environment `production`) runs `node scripts/smoke-public-apis.mjs`. Branch `claude/airport-api-probe-20261014` is this code plus one commit that replaces that entry with a two-line call to `runIncheonStatsProbeCli()`, the same route PR #369 used. It is at `50be7da`, which is `fbf1d79` plus the swap; if the modules here change, rebuild that branch from them before probing again. The swap is never merged; `main`'s smoke is unchanged. Dispatch the workflow from that branch, either from the Actions tab (Run workflow → branch `claude/airport-api-probe-20261014`) or with `gh workflow run smoke-public-apis.yml --ref claude/airport-api-probe-20261014`. The credential-free gateway check runs first, then exactly one request per service: three in total, no retry, nothing written.
+
+Each service prints one `AIRPORT_STATS_PROBE {…}` line, and the run page shows a Korean summary table. The lines hold the verdict, kind, HTTP status, resultCode, sanitized resultMsg, item and total counts, field names (observed, unknown, missing), contract and schema issue codes, and basis dates. Statistics ask for the month before last (KST), which is certainly published. The schedule asks for page 1 with a blank `airport`. Verdicts:
+
+- `READY`: HTTP 200, code `00`, rows that match the documented fields, and (schedule) a total that fits 3 pages.
+- `REVIEW`: the key was accepted (`00`/`03`), but something still needs a person: no rows, DRIFT, or invalid rows.
+- `WAITING_FOR_APPROVAL` (code 30), `BLOCKED` (expired, quota, auth, request, provider), `UNREACHABLE` (timeout, network, 5xx).
+
+The job exits 0 only when all three are `READY`. A green run therefore means connected, and a red run lists what is missing.
+
+Run history:
+
+| Run | When | Result |
+|---|---|---|
+| `38402837925` | 2026-10-13, PR #369's probe | HTTP 403, code `30`, `등록되지 않은 서비스키` for all three |
+| `38521193341` | 2026-10-14 06:16 UTC, probe branch at `50be7da` | Same answer for all three (`WAITING_FOR_APPROVAL`). Exactly 3 requests, no retry, nothing written. Gateway check passed: DNS 271 ms, TLS 555 ms, TTFB 782 ms. The job is red by design. |
+
+### Before any activation
+
+Each item stays open until it has evidence:
+
+1. Usage terms for automated/commercial reuse on all three dataset pages.
+2. A `READY` probe for each service after the owner's approval.
+3. Any DRIFT resolved in the field lists, with a test.
+4. Publication lag of the latest month and its timestamp semantics.
+5. The per-service daily quota, with cadence derived from it (expected: about one statistics request a day per operation until a new month appears, and at most 3 schedule pages a day).
+6. Whether a blank `airport` returns every route, and how `masterflightid`/`codeshare` collapse codeshares into physical flights.
+7. A changed-only D1 design and migration.
+8. Stale/error/no-data UI labels that keep the truth boundaries above.
+9. Staging observation.
+10. Adding the services to one existing scheduler group, never a second scheduler.
+
 ## Authentication notes
 
 - data.go.kr issues one 일반 인증키 per account; utilization applications are per-API. Do not tell the owner a second "Decoding key" exists when the account screen shows one key.
