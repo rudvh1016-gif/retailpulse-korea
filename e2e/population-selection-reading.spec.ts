@@ -42,7 +42,8 @@ for(const {width,lang} of cases)test(`observed and selected forecast stay distin
   const marker=outlook.locator('[data-selected-range]');
   await expect(marker).toHaveAttribute('data-selected-at',point.targetAt);
   const geometry=await marker.evaluate(el=>{const svg=(el as SVGGraphicsElement).ownerSVGElement!;return {ceiling:Number(svg.getAttribute('data-ceiling')),start:Number(svg.getAttribute('data-domain-start')),end:Number(svg.getAttribute('data-domain-end')),width:svg.viewBox.baseVal.width,x:Number(el.getAttribute('x1')),y1:Number(el.getAttribute('y1')),y2:Number(el.getAttribute('y2'))};});
-  expect(geometry.x).toBeCloseTo(46+(Date.parse(point.targetAt)-geometry.start)/(geometry.end-geometry.start)*(geometry.width-60),3);
+  // 2026-10-14 owner chart request: values read on the trailing edge, so the plot runs from 10 to width-40.
+  expect(geometry.x).toBeCloseTo(10+(Date.parse(point.targetAt)-geometry.start)/(geometry.end-geometry.start)*(geometry.width-50),3);
   expect(geometry.y1).toBeCloseTo(184-point.populationMax/geometry.ceiling*152,3);
   expect(geometry.y2).toBeCloseTo(184-point.populationMin/geometry.ceiling*152,3);
  }
