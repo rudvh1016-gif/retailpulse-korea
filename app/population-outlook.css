@@ -2,28 +2,30 @@
 .demand-card.area-current-brief .demand-reading{margin:12px 0 24px}
 .demand-card.area-current-brief .demand-number strong{font-size:38px;line-height:1.25;letter-spacing:-1px;font-variant-numeric:tabular-nums}
 .population-outlook{border-top:1px solid var(--line);padding-top:12px;width:100%;min-width:0}
-.outlook-heading{display:flex;align-items:center;gap:9px}.outlook-heading h3{font-size:13px;margin:0;font-weight:var(--weight-strong)}.outlook-heading>span{font-size:10px;color:#4e7a95;padding:0;border:0}
-.outlook-trend{display:block;width:100%;height:220px;margin:10px 0 0;overflow:visible;touch-action:pan-y;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;cursor:pointer}.outlook-trend text{font-size:11px;fill:#5d6f7f;font-variant-numeric:tabular-nums}
+.outlook-heading{display:flex;align-items:center;gap:9px}.outlook-heading h3{font-size:13px;margin:0;font-weight:var(--weight-strong)}.outlook-heading>span{font-size:10px;color:#6e6e73;padding:0;border:0}
+.outlook-trend{display:block;width:100%;height:220px;margin:10px 0 0;overflow:visible;touch-action:pan-y;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;cursor:pointer}.outlook-trend text{font-size:11px;fill:#6e6e73;font-variant-numeric:tabular-nums}
 .outlook-selection{font-size:14px;margin:12px 0 10px;display:grid;grid-template-columns:1fr auto;gap:3px 8px;font-variant-numeric:tabular-nums}.outlook-selection-label{font-size:11px;grid-column:1/-1}.outlook-selection .outlook-selection-range{font-size:var(--type-body);line-height:1.35;font-weight:var(--weight-strong);color:#000;overflow-wrap:anywhere}.outlook-selection-range small{font-size:12px;margin-left:4px}.outlook-selection-time{font-size:12px;font-weight:var(--weight-strong);color:#000}.outlook-selection>p{grid-column:1/-1;font-size:11px;color:var(--muted);margin:0}
-.outlook-times{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}.outlook-times button{min-height:45px;border:0;border-bottom:1px solid var(--line);background:none;border-radius:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink);font-family:inherit;gap:2px;cursor:pointer;touch-action:manipulation}.outlook-times button[aria-pressed=true]{border-bottom:2px solid #487e6e;background:none}.outlook-times strong{font-size:11px;font-weight:var(--weight-medium);font-variant-numeric:tabular-nums}.outlook-times small{font-size:10px;color:var(--muted)}.outlook-times button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.outlook-times{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}.outlook-times button{min-height:45px;border:0;border-bottom:1px solid var(--line);background:none;border-radius:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink);font-family:inherit;gap:2px;cursor:pointer;touch-action:manipulation}.outlook-times button[aria-pressed=true]{border-bottom:2px solid var(--ink);background:none}.outlook-times strong{font-size:11px;font-weight:var(--weight-medium);font-variant-numeric:tabular-nums}.outlook-times small{font-size:10px;color:var(--muted)}.outlook-times button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .outlook-source{font-size:10px;color:var(--muted);line-height:1.6;margin:8px 0 10px}
 .demand-freshness{font-size:11px;color:var(--muted);line-height:1.6;margin:7px 0 0}
 .area-current-brief .demand-time strong{font-weight:var(--weight-strong);color:#000}
 .population-history-disclosure{margin:16px 0}.population-history-disclosure>summary{cursor:pointer;font-size:13px;min-height:44px;display:flex;align-items:center}
 @media(max-width:600px){.demand-card.area-current-brief .demand-number strong{font-size:29px}.outlook-selection{font-size:13px}.outlook-selection>p{font-size:10px}.area-current-brief .demand-comparison{font-size:12px}}
 
-.outlook-selection-time{align-self:center}.outlook-times button[aria-pressed=true]{color:#325f52}
+.outlook-selection-time{align-self:center}.outlook-times button[aria-pressed=true]{color:var(--ink)}.outlook-times button[aria-pressed=true] strong{font-weight:var(--weight-strong)}
 
-/* Owner request 2026-10-14: an Apple-like hourly range with an unmistakable selected hour.
-   Hairline grid and quiet labels; the published min-max band in ink blue with a soft fade under it;
-   the selected hour as a full-height mint guide, a min-max capsule, end dots and a time pill. */
-.outlook-grid line{stroke:#edf1f4;stroke-width:1;shape-rendering:crispEdges}.outlook-grid [data-edge=zero] line{stroke:#dbe3e9}
+/* Owner requests 2026-10-14: an Apple-like hourly range with an unmistakable selected hour, then
+   "remove the green, lighter lines, Apple feel". Neutral greys and one blue: hairline grid, grey labels,
+   the published min-max band in a light azure (a narrow range is one solid ribbon between the exact
+   edges, 3:1 against white), a soft fade under it; the selected hour as a hairline grey guide, a light
+   grey time pill with dark text and an Apple-blue capsule/knob on a white halo. No green anywhere. */
+.outlook-grid line{stroke:#efeff2;stroke-width:1;shape-rendering:crispEdges}.outlook-grid [data-edge=zero] line{stroke:#dcdce1}
 .outlook-axis .outlook-date{font-size:10px}
-.outlook-range{fill:#43617f;fill-opacity:.5}.is-narrow .outlook-range{fill-opacity:1}
-.outlook-edge{fill:none;stroke:#43617f;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}.outlook-lone{stroke-width:3}
-.outlook-guide{stroke:#487e6e;stroke-width:1.25}
+.outlook-range{fill:#5296ec;fill-opacity:.16}.is-narrow .outlook-range{fill-opacity:1}
+.outlook-edge{fill:none;stroke:#5296ec;stroke-width:1;stroke-linecap:round;stroke-linejoin:round}.outlook-lone{stroke-width:3}
+.outlook-guide{stroke:#d1d1d6;stroke-width:1}
 .outlook-halo line{stroke:#fff;stroke-width:12;stroke-linecap:round}.outlook-halo circle{fill:#fff}
-.outlook-capsule{stroke:#487e6e;stroke-width:8;stroke-linecap:round}.outlook-capsule.is-knob{stroke:#2f6b5a;stroke-width:12}.outlook-halo .is-knob{stroke-width:16}
-.outlook-end{fill:#2f6b5a}.outlook-end-core{fill:#fff}
-.outlook-pill rect{fill:#2f6b5a}.outlook-trend .outlook-pill text{fill:#fff;font-weight:var(--weight-strong)}
-@media(hover:hover){.outlook-times button:hover{border-bottom-color:#487e6e}}
+.outlook-capsule{stroke:#007aff;stroke-width:8;stroke-linecap:round}.outlook-capsule.is-knob{stroke-width:12}.outlook-halo .is-knob{stroke-width:16}
+.outlook-end{fill:#007aff}.outlook-end-core{fill:#fff}
+.outlook-pill rect{fill:#f2f2f7}.outlook-trend .outlook-pill text{fill:#1d1d1f;font-weight:var(--weight-strong)}
+@media(hover:hover){.outlook-times button:hover{border-bottom-color:#aeaeb2}.outlook-times button[aria-pressed=true]:hover{border-bottom-color:var(--ink)}}

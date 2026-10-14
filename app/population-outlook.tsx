@@ -63,7 +63,7 @@ export function PopulationOutlook({points,current,lang,now}:{points:FlowPoint[];
     onPointerMove={event=>{const held=press.current;if(!held||held.pointer!==event.pointerId)return;const dx=Math.abs(event.clientX-held.x),dy=Math.abs(event.clientY-held.y);if(!held.moved&&(dx<6||dx<=dy))return;held.moved=true;pick(event,true);}}
     onPointerUp={event=>{const held=press.current;release(event);if(held?.pointer===event.pointerId&&!held.moved)pick(event,false);}}
     onPointerCancel={release} onLostPointerCapture={release}>
-    <defs><linearGradient id={`${id}-fade`} gradientUnits="userSpaceOnUse" x1="0" x2="0" y1={top} y2={bottom}><stop offset="0" stopColor="#43617f" stopOpacity=".16"/><stop offset="1" stopColor="#43617f" stopOpacity="0"/></linearGradient></defs>
+    <defs><linearGradient id={`${id}-fade`} gradientUnits="userSpaceOnUse" x1="0" x2="0" y1={top} y2={bottom}><stop offset="0" stopColor="#5296ec" stopOpacity=".14"/><stop offset="1" stopColor="#5296ec" stopOpacity="0"/></linearGradient></defs>
     <g className="outlook-grid">{outlookGrid(ceiling,y).map(line=><g key={line.edge+line.value} data-edge={line.edge}><line x1={left} x2={right} y1={line.y} y2={line.y}/><text x={width-2} y={line.y+4} textAnchor="end">{line.value?compactPeople(line.value,lang):'0'}</text></g>)}</g>
     <g className={narrow?'outlook-band is-narrow':'outlook-band'}>{groups.map((group,index)=>{
      const band=outlookBand(group.map(p=>({x:x(p.time),upper:y(p.populationMax),lower:y(p.populationMin)})),bottom);
