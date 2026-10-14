@@ -1,0 +1,37 @@
+{
+  "recordedAt": "2026-10-14T09:21:36.406Z",
+  "authorizationEvidence": {
+    "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+    "status": "OWNER_REQUESTED_PUBLIC_CHANGE",
+    "ownerInstruction": "지금 차트이미지가 너무안예뻐 제일적합하고 애플느낌으로 어울리는 차트이미지를 넣고 해당시간대를 누르면 그 시간대의 선에 딱 보이게해야해\n\n지금은 초록점이ㅜ너무작아서 안보여",
+    "attachment": "Owner phone screenshot of the Seoul area page \"앞으로 · 예상\" outlook (18:00→05:00, a thin double-line band, a tiny green range marker at the selected 22:00, hour buttons below).",
+    "followUpInstruction": "이거 차트이미지는 좋은데 초록색글자나 선 이런느낌이 너무클로드ai같아 싹빼고 선을 연하게하고 애플감성느껴나게해줘",
+    "followUpAttachment": "Owner image comparing production (Before) and this PR's first version (After): the After chart with a dark green time pill, green guide and knob, a dark ink-blue line and the green selected hour (22:00) in the hour buttons."
+  },
+  "scope": "app/population-outlook.tsx and app/population-outlook.css (not Owner UI Lock files); new pure geometry lib/outlook-geometry.ts reusing lib/airport-flow-geometry.ts monotonePath/niceSteps; comment in lib/demand-presentation.ts; dated note in docs/SEOUL_OUTLOOK_INK_PREVIEW_20261012.md.",
+  "truthKept": [
+    "exact published hourly min and max on both edges; no midpoint or central curve",
+    "monotone cubic never above/below the two values it joins; straight edges where the two curves would cross",
+    "missing intervals stay gaps (flowSegments)",
+    "0 baseline and the existing ceiling unchanged",
+    "every value, timestamp and comparison sentence unchanged; hour buttons, aria-pressed and test hooks kept"
+  ],
+  "visual": [
+    "hairline grid (#efeff2, zero line #dcdce1), grey value and time labels (#6e6e73, 5.1:1 on white) on the trailing edge (0 / round step / existing ceiling)",
+    "light azure band (#5296ec, 3.0:1 against white so the line still meets the 3:1 graphic contrast) with a soft vertical fade (14% to 0) only under the data; a narrow range (median < 7px) is one solid ribbon between the exact edges, 1px edges, so it reads as a single light line; a wide range is a 16% fill between two 1px edges",
+    "selected hour: full-height hairline grey guide (#d1d1d6, 1px), a light grey time pill (#f2f2f7) with dark text (#1d1d1f), and an Apple system blue (#007aff) min-max capsule 8px on a white halo with 12px end dots; a narrow range is one 12px knob",
+    "hour buttons: the selected hour is ink (var(--ink)) and semibold over a 2px ink underline; hover shows a grey (#aeaeb2) underline; the '예상' label is grey (#6e6e73)",
+    "no green anywhere in the outlook (owner follow-up): previously #487e6e guide/underline, #2f6b5a pill/knob/dots, #325f52 selected hour text",
+    "tap or horizontal drag on the chart selects the nearest hour (touch-action: pan-y keeps vertical scroll); buttons stay the keyboard path; the existing 160ms move, none under reduced motion",
+    "midnight date label moved under the 00:00 tick (now shown for every midnight tick in range)",
+    "svg height fixed at 220px (was auto) to avoid a jump before measurement"
+  ],
+  "openForOwner": [
+    "A narrow range drawn as one ribbon no longer shows min and max as two separate lines; the exact numbers stay in the selection text below the chart."
+  ],
+  "notUsed": [
+    "--blue (#214cff): its violet cast clashes with the azure line; the selection uses Apple's system blue (#007aff) as the owner asked for an Apple feel",
+    "green or slate tones in the outlook",
+    "page/card gradients or shadows"
+  ]
+}

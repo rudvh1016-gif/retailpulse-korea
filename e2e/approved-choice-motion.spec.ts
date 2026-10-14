@@ -44,9 +44,10 @@ test('population selection moves only marker, immediately commits ranges and sur
  const summary=structuredClone(SUMMARY_FIXTURE) as LiveSummary;summary.areas.myeongdong!.realtimeForecast=[17,18,20].map((hour,i)=>({targetAt:`2026-08-31T${hour}:00:00+09:00`,issuedAt:'2026-08-31T14:00:00+09:00',populationMin:10000+i*1000,populationMax:11000+i*1000,congestionLevel:2,congestionLabel:'fixture'}));
  await page.route('**/api/live/summary*',routeSummary(summary));await page.goto('/ko/myeongdong');
  const outlook=page.getByTestId('population-outlook').first(),buttons=outlook.locator('.outlook-times button');await buttons.last().scrollIntoViewIfNeeded();
- const bounds=await outlook.locator('polygon,polyline').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('points')));await clear(page);
+ // 2026-10-14: the band edges are smooth paths (monotone, through each published bound) rather than polylines.
+ const bounds=await outlook.locator('.outlook-band path').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('d')));expect(bounds.length).toBeGreaterThan(0);await clear(page);
  await buttons.last().focus();await page.keyboard.press('Enter');await expect(outlook.locator('time')).toHaveAttribute('datetime','2026-08-31T20:00:00+09:00');
- await expect(outlook.locator('.outlook-selection-range')).toContainText('12,000');expect(await outlook.locator('polygon,polyline').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('points')))).toEqual(bounds);
+ await expect(outlook.locator('.outlook-selection-range')).toContainText('12,000');expect(await outlook.locator('.outlook-band path').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('d')))).toEqual(bounds);
  await expect.poll(()=>page.evaluate(()=>window.motionEvents.some(e=>e.duration===160&&e.target==='outlook-active-range'))).toBe(true);
  await buttons.first().click();await buttons.nth(1).click();await settled(page);await shot(page,'population-390');
  await page.locator('.population-history-disclosure>summary').click();
