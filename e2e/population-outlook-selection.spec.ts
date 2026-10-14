@@ -20,11 +20,20 @@ async function open(page:Page,rows=forecast){
  await page.clock.setFixedTime(new Date(generatedAt));
  await page.route('**/api/live/summary*',routeSummary(data));
  await page.goto('/ko/myeongdong');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ // The page's smooth scrolling is not what this file tests, and under load a click's scroll-into-view still
+ // glides while Playwright aims (a click on 01:00 missed its button in a 6-worker run). Scroll instantly here.
+ await page.addStyleTag({content:'html{scroll-behavior:auto!important}'});
  const outlook=page.getByTestId('population-outlook').first();
  await expect(outlook.locator('.outlook-times button')).toHaveCount(rows.length);await outlook.scrollIntoViewIfNeeded();
  return outlook;
 }
-const settled=(outlook:Locator)=>expect.poll(()=>outlook.evaluate(el=>el.getAnimations({subtree:true}).filter(a=>a.playState==='running').length)).toBe(0);
+// html{scroll-behavior:smooth} turns each scroll-into-view into a glide, and a busy runner stretches it: CI run
+// 38594329120 read the drawing's box mid-glide, so the drag landed on the hour buttons. Pointer coordinates are
+// read only once the outlook has stopped animating AND the page has stopped scrolling.
+const settled=async(outlook:Locator)=>{
+ await expect.poll(()=>outlook.evaluate(el=>el.getAnimations({subtree:true}).filter(a=>a.playState==='running').length)).toBe(0);
+ await expect.poll(()=>outlook.page().evaluate(()=>new Promise<number>(done=>{const y=scrollY;requestAnimationFrame(()=>requestAnimationFrame(()=>done(scrollY-y)));}))).toBe(0);
+};
 function selection(outlook:Locator){
  return outlook.locator('svg.outlook-trend').evaluate(el=>{
   const svg=el as SVGSVGElement,box=svg.getBoundingClientRect(),scale=box.width/svg.viewBox.baseVal.width;
@@ -93,8 +102,9 @@ for(const width of [320,1280])test(`selected hour is unmistakable and moves with
  await page.mouse.click(box.x+(xOf(at01,forecast[2].targetAt)+6)*at01.scale,box.y+100*at01.scale);await settled(outlook);
  await pinned(outlook,2);await expect(outlook.locator('.outlook-selection-range')).toContainText('56,000–66,000');
  // A sideways drag follows the pointer hour by hour without a glide, and ends on the hour under it.
- await page.mouse.move(box.x+xOf(at01,forecast[2].targetAt)*at01.scale,box.y+100*at01.scale);await page.mouse.down();
- await page.mouse.move(box.x+xOf(at01,forecast[6].targetAt)*at01.scale,box.y+104*at01.scale,{steps:10});await page.mouse.up();
+ await settled(outlook);const drag=(await svg.boundingBox())!;
+ await page.mouse.move(drag.x+xOf(at01,forecast[2].targetAt)*at01.scale,drag.y+100*at01.scale);await page.mouse.down();
+ await page.mouse.move(drag.x+xOf(at01,forecast[6].targetAt)*at01.scale,drag.y+104*at01.scale,{steps:10});await page.mouse.up();
  await pinned(outlook,6);expect(await outlook.locator('.outlook-active-range').evaluate(el=>el.getAnimations().length)).toBe(0);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  // Reduced motion: the selection jumps, nothing animates.
