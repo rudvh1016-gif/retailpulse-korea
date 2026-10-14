@@ -2,6 +2,7 @@
 import { useSyncExternalStore } from 'react';
 import { usePersonalPreferences } from './personal-preferences';
 import { setAnalyticsConsent } from '../lib/personal-analytics';
+import { browserAnalyticsDefault } from '../lib/analytics-default';
 const KEY = 'koretail-analytics-consent-v1';
 const CHANGE = 'koretail-analytics-consent-changed';
 let fallback: string | null = null;
@@ -18,10 +19,16 @@ function subscribe(callback: () => void) {
   window.addEventListener('storage', storage);
   return () => { window.removeEventListener(CHANGE, callback); window.removeEventListener('storage', storage); };
 }
+/**
+ * On by default since 2026-10-14 (owner decision, docs/approvals/ga4-default-on-20261014.json):
+ * a choice made on 더보기 wins, then the older personal-briefing answer, then this browser's
+ * default (lib/analytics-default.ts: off in EU/EEA/UK/Swiss time zones and under GPC or DNT).
+ */
 export function useAnalyticsConsent() {
   const { ready, preferences } = usePersonalPreferences();
   const raw = useSyncExternalStore(subscribe, snapshot, () => undefined);
-  return { ready: ready && raw !== undefined, enabled: raw === 'true' || (raw === null && preferences?.analytics === true), storageFailed };
+  const fallback = typeof preferences?.analytics === 'boolean' ? preferences.analytics : browserAnalyticsDefault();
+  return { ready: ready && raw !== undefined, enabled: raw === 'true' || (raw === null && fallback), storageFailed };
 }
 function save(enabled: boolean) {
   fallback = String(enabled);
@@ -30,10 +37,10 @@ function save(enabled: boolean) {
   window.dispatchEvent(new Event(CHANGE));
 }
 const copy = {
-  ko: ['선택적 이용 통계', 'Google Analytics로 페이지 조회와 이용 기능을 기록해 서비스 개선에 사용합니다 검색어·개인 입력·광고 추적은 제외하며 언제든 끌 수 있습니다', '기기 저장이 차단되어 이번 탭에서만 적용됩니다'],
-  en: ['Optional usage analytics', 'Allow Google Analytics to record page views and feature use to improve the service No search terms, personal input or advertising tracking You can turn this off at any time', 'Storage is blocked This choice applies only in this tab'],
-  zh: ['可选使用统计', '允许 Google Analytics 记录页面浏览和功能使用以改进服务 不包含搜索词、个人输入或广告跟踪 可随时关闭', '存储被阻止 此选择仅适用于当前标签页'],
-  ja: ['任意の利用統計', 'Google Analytics でページ閲覧と機能の利用を記録しサービス改善に使用します 検索語・個人入力・広告追跡は含まずいつでも無効にできます', '保存がブロックされています このタブのみ有効です'],
+  ko: ['선택적 이용 통계', 'Google Analytics로 방문과 페이지 조회·이용 기능을 기록해 서비스 개선에 사용합니다 기본으로 사용하고 유럽에서는 직접 선택해야 합니다 검색어·개인 입력·광고 추적은 제외하며 언제든 끌 수 있습니다', '기기 저장이 차단되어 이번 탭에서만 적용됩니다'],
+  en: ['Optional usage analytics', 'Google Analytics records visits, page views and feature use to improve the service It is on by default; in Europe it starts only when you turn it on No search terms, personal input or advertising tracking You can turn this off at any time', 'Storage is blocked This choice applies only in this tab'],
+  zh: ['可选使用统计', 'Google Analytics 记录访问、页面浏览和功能使用以改进服务 默认开启，欧洲需手动开启 不包含搜索词、个人输入或广告跟踪 可随时关闭', '存储被阻止 此选择仅适用于当前标签页'],
+  ja: ['任意の利用統計', 'Google Analytics で訪問・ページ閲覧と機能の利用を記録しサービス改善に使用します 初期設定はオンで、欧州では自分でオンにした場合のみ記録します 検索語・個人入力・広告追跡は含まずいつでも無効にできます', '保存がブロックされています このタブのみ有効です'],
 } as const;
 export default function AnalyticsConsent({ lang }: { lang: keyof typeof copy }) {
   const { ready, enabled, storageFailed: failed } = useAnalyticsConsent();
