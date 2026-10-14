@@ -59,6 +59,12 @@ name: Collect Weather Forecasts (Recovery)
 # case belongs to the recovery window, which reads Production D1 first and
 # asks only for what is still missing.
 #
+# And only a TRANSIENT failure earns the next job (retry_weather, the same
+# rule as A5): connect/timeout or HTTP 5xx. KMA resultCode 03 is reported as
+# NO_DATA (not ERROR) and an AUTH/SCHEMA answer is permanent; a fresh runner
+# changes neither. On 2026-10-14 14:25 KST a 03 answer alone used to spend
+# two more jobs and fifteen more KMA requests.
+#
 # Every attempt names the same single source this workflow owns. A retry is
 # not a second scheduler and must never smuggle in another source.
 
@@ -86,7 +92,7 @@ jobs:
 
   retry_1:
     needs: collect
-    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.collect.result == 'failure' }}
+    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.collect.result == 'failure' && needs.collect.outputs.retry_weather == 'true' }}
     uses: ./.github/workflows/collect-attempt.yml
     with:
       sources: weather_recovery
@@ -96,7 +102,7 @@ jobs:
 
   retry_2:
     needs: [collect, retry_1]
-    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.retry_1.result == 'failure' }}
+    if: ${{ always() && vars.ENABLE_PRODUCTION_COLLECTOR == 'true' && needs.retry_1.result == 'failure' && needs.retry_1.outputs.retry_weather == 'true' }}
     uses: ./.github/workflows/collect-attempt.yml
     with:
       sources: weather_recovery

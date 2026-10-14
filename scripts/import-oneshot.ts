@@ -1,7 +1,6 @@
-import { collectHolidays } from "../lib/holidays";
+import { collectHolidays, holidayHealthUpdate } from "../lib/holidays";
 import { collectAirportComposition } from "../lib/airport-composition-history";
 import { runPopulationPredictions } from "../lib/population-predictions";
-import { safeSourceFailureDetail } from "../lib/source-adapters";
 /**
  * Manual, bounded, one-shot import of verified sources into D1.
  *
@@ -138,15 +137,11 @@ const collectors: Record<string, () => Promise<OneShotResult>> = {
   airport_composition: () => collectAirportComposition(database),
   population_predictions: async () => { const result=await runPopulationPredictions(database);return {status:result.status,records:result.predictions}; },
   holidays: async () => {
-    try {
-      const result=await collectHolidays(database,env.DATA_GO_KR_SERVICE_KEY);
-      await writeSourceHealth(database,'KASI_PUBLIC_HOLIDAYS',result.status==='SUCCESS'?'LIVE':'MISSING',result.status,
-        result.status==='SUCCESS'?{retrievedAt:new Date().toISOString(),schemaVersion:'kasi-holidays-v1'}:undefined);
-      return result;
-    } catch(error) {
-      await writeSourceHealth(database,'KASI_PUBLIC_HOLIDAYS','ERROR',safeSourceFailureDetail(error));
-      throw error;
-    }
+    // A one-shot import is person-started, so it always checks KASI once.
+    const result=await collectHolidays(database,env.DATA_GO_KR_SERVICE_KEY,new Date(),{ignoreAuthCooldown:true});
+    const update=holidayHealthUpdate(result);
+    if(update) await writeSourceHealth(database,'KASI_PUBLIC_HOLIDAYS',update.status,update.detail,update.record);
+    return result;
   },
   seoul_realtime: () => collectSeoulRealtime(env),
   seoul_foreign: () => collectSeoulForeignPresence(env),
@@ -213,7 +208,9 @@ for (const name of requested) {
         futureFlightsDelta: a1After.futureFlights - a1Before.futureFlights,
       }));
     }
-    if (result.status === "ERROR" || result.status === "NEEDS_KEY") failures += 1;
+    // AUTH_BLOCKED (KASI refused this key for the service) is an explicitly
+    // selected source that did not import: the person who asked must see red.
+    if (result.status === "ERROR" || result.status === "NEEDS_KEY" || result.status === "AUTH_BLOCKED") failures += 1;
   } catch (error) {
     // One failing source (for example a D1 auth problem surfacing on write)
     // must not abort the remaining selected sources.

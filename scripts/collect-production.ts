@@ -1,5 +1,5 @@
 import { safeSourceFailureDetail } from "../lib/source-adapters";
-import { collectHolidays } from "../lib/holidays";
+import { collectHolidays, holidayHealthUpdate } from "../lib/holidays";
 import { collectAirportComposition } from "../lib/airport-composition-history";
 import { runPopulationPredictions } from "../lib/population-predictions";
 import { refreshCommercialMonths } from '../lib/commercial-monthly-store';
@@ -23,6 +23,7 @@ import { refreshCommercialMonths } from '../lib/commercial-monthly-store';
 import { pruneOperationalHistory, writeSourceHealth } from "../lib/collector";
 import { CloudflareD1RestDatabase } from "../lib/d1-rest";
 import {
+  attentionNotices,
   hasProductionSourceFailure,
   PRODUCTION_SOURCE_NAMES,
   runSelectedProductionSources,
@@ -34,6 +35,16 @@ import { recordExistingCompletion } from '../lib/operational-bookkeeping';
 
 if (process.env.ENABLE_PRODUCTION_COLLECTOR !== "true") {
   throw new Error("production_collector_not_enabled");
+}
+
+/**
+ * One GitHub Actions annotation. Messages are built only from secret-free
+ * status fields; the workflow-command escaping keeps them on one line.
+ */
+function annotate(level: "warning" | "error", title: string, message: string): void {
+  const data = (value: string) => value.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+  const property = (value: string) => data(value).replace(/:/g, "%3A").replace(/,/g, "%2C");
+  console.log(`::${level} title=${property(title)}::${data(message)}`);
 }
 
 // The account/database are always the pinned wrangler config values, never a
@@ -119,6 +130,8 @@ for (const result of results) {
 // collection above, so failing the job here preserves source isolation while
 // making any partial outage visible to GitHub Actions monitoring.
 if (hasProductionSourceFailure(results)) process.exitCode = 1;
+// PARTIAL / NO_DATA stay green but are announced: a green run is not "all fine".
+for (const notice of attentionNotices(results)) annotate(notice.level, notice.title, notice.message);
 
 // Bounded maintenance, decoupled from which sources ran this invocation.
 // This only prunes the optional flight change-history log (empty unless
@@ -134,22 +147,33 @@ if ((now.getUTCHours() + 9) % 24 === 3) {
 if (requested.includes("airport_recent")) {
   try { console.log(JSON.stringify({context:'commercial_months',...await refreshCommercialMonths(env.DB)})); }
   catch { console.error(JSON.stringify({context:'commercial_months',status:'ERROR',lastGoodPreserved:true})); process.exitCode=1; }
-  for (const [name,run] of [
-    ["airport_composition",()=>collectAirportComposition(env.DB)],
-    ["holidays",()=>collectHolidays(env.DB,env.DATA_GO_KR_SERVICE_KEY)],
-  ] as const) {
-    try {
-      const result=await run();
-      console.log(JSON.stringify({context:name,...result}));
-      if(name==='holidays') await writeSourceHealth(env.DB,'KASI_PUBLIC_HOLIDAYS',result.status==='SUCCESS'?'LIVE':'MISSING',result.status,
-        result.status==='SUCCESS'?{retrievedAt:new Date().toISOString(),schemaVersion:'kasi-holidays-v1'}:undefined);
-    }
-    catch (error) {
-      const detail=safeSourceFailureDetail(error);
-      console.error(JSON.stringify({context:name,status:"ERROR",lastGoodPreserved:true,detail}));
-      if(name==='holidays') await writeSourceHealth(env.DB,'KASI_PUBLIC_HOLIDAYS','ERROR',detail);
-      process.exitCode=1;
-    }
+  try { console.log(JSON.stringify({context:'airport_composition',...await collectAirportComposition(env.DB)})); }
+  catch (error) {
+    console.error(JSON.stringify({context:'airport_composition',status:"ERROR",lastGoodPreserved:true,detail:safeSourceFailureDetail(error)}));
+    process.exitCode=1;
+  }
+  // KASI holidays: auxiliary context on the A1 runs. Its states are kept apart:
+  //   AUTH_BLOCKED / SKIPPED_AUTH_COOLDOWN — data.go.kr refused this key for
+  //     특일 정보 (15012690). Only the account owner can change that, so it is
+  //     source_health ERROR(AUTH) plus a warning, not a red airport run: since
+  //     2026-09-05 that refusal alone turned every 00:07 and 06:07 run red and
+  //     hid real A1 failures behind a permanently failing badge.
+  //   ERROR — timeout/network after its bounded retry, schema, storage: red.
+  // A person-started run (workflow_dispatch) always checks once, so the owner
+  // can confirm a fix immediately instead of waiting out the cooldown.
+  try {
+    const holidays=await collectHolidays(env.DB,env.DATA_GO_KR_SERVICE_KEY,new Date(),
+      {ignoreAuthCooldown:process.env.GITHUB_EVENT_NAME==='workflow_dispatch'});
+    const update=holidayHealthUpdate(holidays);
+    if(update) await writeSourceHealth(env.DB,'KASI_PUBLIC_HOLIDAYS',update.status,update.detail,update.record);
+    console.log(JSON.stringify({context:'holidays',...holidays,sourceHealth:update?.status??'UNCHANGED'}));
+    if(holidays.status==='ERROR') process.exitCode=1;
+    if(holidays.status==='AUTH_BLOCKED'||holidays.status==='SKIPPED_AUTH_COOLDOWN') annotate('warning',`KASI holidays ${holidays.status}`,
+      `data.go.kr refused this key for 한국천문연구원_특일 정보 (15012690): ${holidays.detail??''}. Owner: check 활용신청 status/period on data.go.kr. Korean holidays stay unconfirmed; no rows changed.`);
+  }
+  catch (error) {
+    console.error(JSON.stringify({context:'holidays',status:"ERROR",detail:safeSourceFailureDetail(error)}));
+    process.exitCode=1;
   }
 }
 if (requested.includes("seoul_realtime")) {

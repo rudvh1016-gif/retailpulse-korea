@@ -41,7 +41,7 @@ test('a verified publication wait earns a same-date early check, separately from
 test('A1 collector returns its own sanitized fetch-stage verdict for the workflow',async()=>{
  let calls=0;
  const r=await collectAirportFlightsToday({DATA_GO_KR_SERVICE_KEY:'fixture-only'},new Date(nowIso),async()=>{calls++;throw new SourceFetchError('HTTP',403);});
- assert.equal(calls,1);assert.equal(r.status,'ERROR');assert.match(r.detail,/failureStage=FETCH failureClass=HTTP httpStatus=403/);assert.doesNotMatch(r.detail,/fixture-only/);
+ assert.equal(calls,1);assert.equal(r.status,'ERROR');assert.match(r.detail,/failureStage=FETCH failureClass=AUTH httpStatus=403/);assert.doesNotMatch(r.detail,/fixture-only/);
 });
 test('actual Oct9 missing run and old Oct8 stamp cannot read as current',()=>{
  const missing=airportTodayCoverage({...healthy,hasTodayRows:false,completeScan:false,retrievedAt:'2026-10-08T00:55:47.356Z'});
