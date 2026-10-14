@@ -25,7 +25,7 @@ export function AirportConcourse({lang,date}:{lang:Lang;date:string|null}) {
  const map=useMemo(()=>serviceDate&&loaded?.status==='OK'?departureMap({date:serviceDate,nextDate:shiftKstDay(serviceDate,1),terminal:'T1',buildingScope:'CONCOURSE',window:{startMin:0,endMin:1440},rows:loaded.payload.flights}):null,[serviceDate,loaded]);
  const c=text[lang];
 
- return <section data-testid="airport-concourse" className="airport-concourse">
+ return <section id="airport-concourse" data-testid="airport-concourse" className="airport-concourse">
   <h2 className="airport-model-scope" data-testid="airport-model-scope" data-terminal="CONCOURSE">{airportModelScope('CONCOURSE',lang)}</h2>
   {!loaded?<LiveLoadMessage loading lang={lang}/>:loaded.status==='FAILED'?<p role="status">{c.failed}</p>:loaded.payload.truncated?<p role="status">{c.partial}</p>:!loaded.payload.retrievedAt&&loaded.payload.flights.length===0?<p role="status">{unavailable[lang]}</p>:map&&<>
    <p>{loaded.payload.basis==='OFFICIAL_DEPARTURE_SCHEDULE'?c.schedule:c.records}: <strong data-testid="concourse-flight-count">{map.flights.length}</strong> · {serviceDate} KST</p>

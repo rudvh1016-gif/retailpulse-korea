@@ -1,5 +1,6 @@
 'use client';
 import {DeparturePlanSummary} from './departure-plan-summary';
+import {useAirportHashReveal} from './use-airport-hash-reveal';
 import {useCallback,useState} from 'react';
 import {departureGuideEntryCopy} from './departure-guide-entry-copy';
 import styles from './departure-guide-entry.module.css';
@@ -17,6 +18,8 @@ import {AirportNewsMark} from './airport-news-mark';
 
 export function AirportDeparturePreparation({lang}:{lang:Lang}) {
  const [open,setOpen]=useState(false),[input,setInput]=useState<DeparturePreparationInput>({route:'UNKNOWN',checkedBaggage:'UNKNOWN',taxRefund:'UNKNOWN',dutyFreePickup:'UNKNOWN'});
+ // Mounted on every airport-page state (normal and concourse), so glance links land on their section.
+ useAirportHashReveal();
  // Native details can be opened before hydration on a slow device. Read that
  // state when attaching, so an early tap cannot leave an empty open guide.
  const attachGuide=useCallback((node:HTMLDetailsElement|null)=>{if(node?.open)setOpen(true);},[]);

@@ -16,10 +16,44 @@ export function glanceFlights(date:string,rows:readonly MapFlightRow[],scope:Gla
  const countries=[...countryCounts].map(([country,flights])=>({country,flights})).sort((a,b)=>b.flights-a.flights||(a.country??'').localeCompare(b.country??''));
  return {departures:selected.flights,countries,total:selected.flights.length,hours,buildings:buildingZoneCounts(whole),unverifiedBuilding:whole.unknownBuilding};
 }
-export function glanceCountryRanking(current:AirportFlightMonth|undefined,previous:AirportFlightMonth|undefined,scope:MonthScope){
+/** Destinations whose included-day daily means can be compared month to month (an absent month cannot). */
+function comparableDailyChanges(current:AirportFlightMonth|undefined,previous:AirportFlightMonth|undefined,scope:MonthScope){
  return destinationDailyChanges(current,previous,scope)
-  .filter(row=>row.percent!==null&&Number.isFinite(row.percent)&&row.previous!==null&&row.previous>0&&row.current!==null)
-  .sort((a,b)=>b.percent!-a.percent!||(b.current??0)-(a.current??0)||a.country.localeCompare(b.country)).slice(0,5);
+  .filter((row):row is typeof row&{delta:number;previous:number;current:number}=>row.delta!==null&&Number.isFinite(row.delta)&&row.previous!==null&&row.current!==null);
+}
+/**
+ * Top 5 increases and Top 5 decreases in included-day DAILY MEAN departures (flights/day).
+ * Owner, 2026-10-14: show and rank the change as a flight count, not a rate, then add the matching
+ * decrease list (verbatim requests: docs/approvals/glance-count-ranking-links-20261014.json).
+ * Means, not month totals: the selected month is usually partial (e.g. 13 vs 30 included days), so
+ * raw totals would compare different spans. A destination absent last month (mean 0) is a real
+ * increase, one absent this month a real decrease; an incomparable month yields nothing. Each list
+ * holds only its own direction, so no destination can appear in both.
+ */
+export function glanceCountryRanking(current:AirportFlightMonth|undefined,previous:AirportFlightMonth|undefined,scope:MonthScope){
+ return comparableDailyChanges(current,previous,scope).filter(row=>row.delta>0)
+  .sort((a,b)=>b.delta-a.delta||b.current-a.current||a.country.localeCompare(b.country)).slice(0,5);
+}
+export function glanceCountryDeclines(current:AirportFlightMonth|undefined,previous:AirportFlightMonth|undefined,scope:MonthScope){
+ return comparableDailyChanges(current,previous,scope).filter(row=>row.delta<0)
+  .sort((a,b)=>a.delta-b.delta||b.previous-a.previous||a.country.localeCompare(b.country)).slice(0,5);
+}
+/** Whether any destination could be compared at all (distinguishes "no increase" from "no data"). */
+export function glanceComparableCountries(current:AirportFlightMonth|undefined,previous:AirportFlightMonth|undefined,scope:MonthScope){
+ return comparableDailyChanges(current,previous,scope).length;
+}
+
+/** Same rounding as the displayed one-decimal mean, so equal printed changes read as a tie. */
+export function sameDailyChange(a:number,b:number){return Math.round(a*10)===Math.round(b*10);}
+
+/**
+ * Signed change in flights per day, in the page's existing change convention for flight counts
+ * (+ increase, △ decrease, 0 none). A nonzero change below the printed 0.1 keeps its direction.
+ */
+export function dailyChangeText(delta:number,format:(value:number)=>string){
+ if(delta===0)return '0';
+ const sign=delta>0?'+':'△',size=Math.abs(delta);
+ return size<0.05?`${sign}<${format(0.1)}`:`${sign}${format(size)}`;
 }
 
 /** Same freshness, duplicate and closed-reading contract as the detailed checkpoint view. */

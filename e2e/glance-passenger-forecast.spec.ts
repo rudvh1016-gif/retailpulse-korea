@@ -34,6 +34,21 @@ for(const width of [360,390,430,1440])test(`transfer forecast stays separate, al
  await transfer.focus();await expect(transfer).toBeFocused();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await app.locator('input[type=date]').fill('2026-08-30');await expect(transfer.locator('strong')).toHaveText('확인 가능한 자료 없음');await expect(transfer).toContainText('2026-08-30');
 });
+// Owner, 2026-10-14 (PC screenshot): the tiles were not aligned on PC. From 701px the passenger pair uses the
+// three columns of the row under it; phones keep the pair as two halves over the stacked rows.
+for(const width of [701,1024,1440])test(`PC key tiles share one column grid ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:1000});await setup(page);await page.goto('/ko/airport-glance');
+ const app=page.getByTestId('airport-glance-preview'),x=async(id:string)=>(await app.getByTestId(id).boundingBox())!.x;
+ await expect(app.getByTestId('glance-key-transfers').locator('strong')).toHaveText('확인 가능한 자료 없음');
+ expect(Math.abs(await x('glance-key-transfers')-await x('glance-key-upcoming'))).toBeLessThan(1);
+ expect(Math.abs(await x('glance-key-passengers')-await x('glance-key-wait'))).toBeLessThan(1);
+ expect(await x('glance-key-growth')).toBeGreaterThan(await x('glance-key-upcoming'));
+});
+for(const width of [390,700])test(`phones keep the passenger pair as two halves ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:1000});await setup(page);await page.goto('/ko/airport-glance');
+ const pair=page.locator('.glance-passenger-pair');await expect(pair).toBeVisible();
+ expect(await pair.evaluate(element=>{const style=getComputedStyle(element);return [style.gridTemplateColumns.split(' ').length,style.columnGap,style.borderBottomWidth];})).toEqual([2,'12px','1px']);
+});
 test('transfer missing and duplicate records remain unavailable while complete zero is preserved',async({page})=>{
  await setup(page,{transferForecast:[{serviceDate:day,terminal:'T1',expectedTransferPassengers:0,retrievedAt:`${day}T00:00:00Z`}]});await page.goto('/ko/airport-glance');const row=page.getByTestId('glance-key-transfers');await expect(row.locator('strong')).toHaveText('확인 가능한 자료 없음');await page.getByRole('button',{name:'T1',exact:true}).click();await expect(row.locator('strong')).toHaveText('0명');await page.getByRole('button',{name:'T2',exact:true}).click();await expect(row.locator('strong')).toHaveText('확인 가능한 자료 없음');
 });
