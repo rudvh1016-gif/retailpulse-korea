@@ -33,5 +33,18 @@
   "ownerActions": [
     "GA4 Admin → Data streams → web stream → Enhanced measurement must stay OFF (automatic events bypass the site's event allowlist)",
     "Standard reports lag 24–48 h; GA Realtime shows visits within about a minute"
-  ]
+  ],
+  "automatedVisitsExcluded": {
+    "recordedAt": "2026-10-14T16:10:00Z",
+    "found": "The first Production Visual Check after this change was deployed (run 38590080344, f3ff81b, 15:31-15:40 UTC) failed 8 of 62 checks: its headless Chromium, in the GitHub runner's UTC time zone, now loaded the Google tag by default and sent real page_view hits to the owner's GA4 property (visual.spec 'Tourism guide workflow' at 6 widths caught the collection POSTs; mobile-repair at 360/390 caught the tag). So every automated check of the live site would have been counted as a visitor.",
+    "affectedData": "Visits from automated checks in that one run (GitHub runner locations, HeadlessChrome) can appear in GA for 2026-10-15 00:31-00:40 KST. The CI run of the next merge (38590933227) was cancelled before deploying so that no further check run with the old specs.",
+    "change": [
+      "scripts/analytics-opt-out.mjs: automated visits go in as a reader who switched usage analytics off on 더보기 (the site's own stored choice, so the tag is never requested), and on Chromium the Google tag hosts are unresolvable",
+      "playwright.production.config.ts uses both for every production check; perf.spec, bfcache-probe (site smoke), capture-typography and measure-mobile state them for their own contexts",
+      "the existing 'no Google tag' assertions in visual.spec and mobile-repair now check that the 더보기 switch holds on the live site",
+      "e2e-production/analytics-default.spec.ts: after every deploy, a new reader in Seoul time gets the tag with a valid measurement ID and the checkbox on, and one in Berlin time gets neither; its Google requests are aborted",
+      "tests/analytics-opt-out.test.mjs keeps the stored key equal to the site's, the blocked hosts covering every Google host in the CSP's script-src and connect-src, and every automated browser using the opt-out"
+    ],
+    "unchanged": "What visitors get: on by default except EU/EEA, UK and Swiss time zones, GPC or Do Not Track; the 더보기 switch; the GA4 configuration. scripts/ga4-browser-probe.ts still checks the default itself and aborts every collection request unless one marked test visit is asked for."
+  }
 }

@@ -13,11 +13,13 @@
  * back/forward cache Playwright normally disables; WebKit reports through
  * pageshow.persisted. Two controls show whether each engine restores at all:
  * the site's own static preview page and example.com. It writes nothing and
- * prints no cookie values or secrets.
+ * prints no cookie values or secrets. It visits with usage analytics switched
+ * off, so it never counts as a reader in GA (scripts/analytics-opt-out.mjs).
  *
  *   node scripts/bfcache-probe.mjs https://koretaildata.com [away-url]
  */
 import { chromium, webkit, devices } from "@playwright/test";
+import { analyticsOptOutState, GOOGLE_TAG_BLOCK_ARGS } from "./analytics-opt-out.mjs";
 
 const origin = (process.argv[2] ?? "https://koretaildata.com").replace(/\/$/, "");
 const away = process.argv[3] ?? "https://example.com/";
@@ -31,7 +33,7 @@ const RUNS = 2;
 const HEADERS = ["cache-control", "vary", "etag", "last-modified", "age", "cf-cache-status", "content-type"];
 const HYDRATED = '.app[data-hydrated="true"]';
 const ENGINES = {
-  chromium: { type: chromium, launch: { ignoreDefaultArgs: ["--disable-back-forward-cache"], ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : { channel: "chromium" }) }, device: devices["Pixel 7"] },
+  chromium: { type: chromium, launch: { args: GOOGLE_TAG_BLOCK_ARGS, ignoreDefaultArgs: ["--disable-back-forward-cache"], ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : { channel: "chromium" }) }, device: devices["Pixel 7"] },
   webkit: { type: webkit, launch: {}, device: devices["iPhone 13"] },
 };
 
@@ -55,7 +57,7 @@ function reasonsOf(event) {
 
 async function visit(browser, engine, target, run) {
   const { device } = ENGINES[engine];
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, screen: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, userAgent: device.userAgent, locale: "ko-KR", timezoneId: "Asia/Seoul" });
+  const context = await browser.newContext({ storageState: analyticsOptOutState(origin), viewport: { width: 390, height: 844 }, screen: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, userAgent: device.userAgent, locale: "ko-KR", timezoneId: "Asia/Seoul" });
   const page = await context.newPage();
   const result = { probe: "bfcache", engine, path: target.path, run };
   const reasons = [];

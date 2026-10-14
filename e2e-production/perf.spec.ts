@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { coldSummaryMonth } from "../lib/summary-cold-month";
+import { analyticsOptOutState } from "../scripts/analytics-opt-out.mjs";
 
 /**
  * Read-only timing of the live airport page on a phone profile.
@@ -12,8 +13,10 @@ import { coldSummaryMonth } from "../lib/summary-cold-month";
  * the uncached path), and how long the airport page shows "확인 불가" before
  * its data-driven content appears.
  */
-test("production airport page: mobile timing to data", async ({ browser }) => {
+test("production airport page: mobile timing to data", async ({ browser, baseURL }) => {
   const context = await browser.newContext({
+    // Its own context, so it states the analytics opt-out every check visits with.
+    storageState: analyticsOptOutState(baseURL ?? "https://koretaildata.com"),
     viewport: { width: 412, height: 915 }, deviceScaleFactor: 2.6, isMobile: true, hasTouch: true, locale: "ko-KR",
     userAgent: "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36",
   });

@@ -320,8 +320,11 @@ for (const width of viewports) {
     expect(writes, "visual acceptance must not issue provider or application writes").toEqual([]);
 
     // Whatever telemetry did fire must be Cloudflare's own same-origin
-    // endpoint and nothing else: a third-party analytics host appearing here
-    // would mean reader data leaving for somewhere nobody approved.
+    // endpoint and nothing else. This check visits with usage analytics
+    // switched off (playwright.production.config.ts), so a GA4 hit here would
+    // mean the 더보기 switch is not holding on the live site, and any other
+    // third-party host would mean reader data leaving for somewhere nobody
+    // approved. A run before that switch (38590080344) failed exactly here.
     for (const beacon of analyticsBeacons) {
       const target = new URL(beacon.slice(beacon.indexOf(" ") + 1));
       expect(
