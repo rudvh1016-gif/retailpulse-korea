@@ -128,6 +128,15 @@ Every UI occurrence carries the reference date and calls the values monthly
 statistical estimates, never live activity, visitor counts, purchases or
 sales. The source uses no secret and adds no Worker Cron.
 
+Update 2026-10-14 (owner request, docs/approvals/seoul-tourism-movement-20261014.json):
+`total_cnt` is the official 이동인구 of the Seoul/KT living-mobility products —
+people counted per arrival, an expansion-weighted estimate (hence decimals),
+with cells of 3 or fewer masked by the provider for privacy. The Seoul area
+page now shows the tourism value rounded, labelled "명 · 추정", with a plain
+note that one person arriving twice counts twice and that masked cells are
+left out (so the sum can be slightly low). It is still never called visitors,
+purchases, sales or live activity. The tourism desk (protected) still hides it.
+
 ## S5 station mapping and daily-history contract (2026-09-02)
 
 OA-22723 exposes only the recent seven-day window. KORETAIL therefore performs

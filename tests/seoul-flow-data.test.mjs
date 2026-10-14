@@ -5,7 +5,7 @@ const block=(n)=>({subwayRidership:{referenceDate:'2026-10-07',boardingCount:n,a
 test('switching districts selects their own values and keeps independent reporting periods',()=>{
  const keys=['myeongdong','hongdae','seongsu','itaewon'];
  const summary={generatedAt:'2026-10-09T00:34:00Z',areas:Object.fromEntries(keys.map((k,i)=>[k,block(i)]))};
- keys.forEach((area,i)=>{const d=fromSummary(summary,area);assert.equal(d.station.boardingCount,i);assert.equal(d.station.alightingCount,0);assert.equal(d.foreignLivingPopulation.value,i);assert.equal(d.station.referenceDate,'2026-10-07');assert.equal(d.foreignLivingPopulation.referenceAt,'2026-08-26T23:00:00+09:00');assert.equal(d.tourismPurposeMovement.referenceDate,'2026-09-30');assert.equal(d.tourismPurposeMovement.releaseMonth,null);assert.equal(d.tourismPurposeMovement.originalUnit,null);assert.equal(d.tourismPurposeMovement.unitVerified,false)});
+ keys.forEach((area,i)=>{const d=fromSummary(summary,area);assert.equal(d.station.boardingCount,i);assert.equal(d.station.alightingCount,0);assert.equal(d.foreignLivingPopulation.value,i);assert.equal(d.station.referenceDate,'2026-10-07');assert.equal(d.foreignLivingPopulation.referenceAt,'2026-08-26T23:00:00+09:00');assert.equal(d.tourismPurposeMovement.referenceDate,'2026-09-30');assert.equal(d.tourismPurposeMovement.releaseMonth,null);assert.equal(d.tourismPurposeMovement.originalUnit,'people_per_movement_estimate');assert.equal(d.tourismPurposeMovement.unitVerified,true);assert.equal(d.tourismPurposeMovement.value,i)});
  assert.equal(fromSummary(null,'seongsu').station,null);
 });
 test('invalid values or source quality remain missing and publication month is separate metadata',()=>{
