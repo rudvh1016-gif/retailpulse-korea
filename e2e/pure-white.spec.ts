@@ -79,7 +79,9 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   // Owner-approved glass-navigation preview: this is one small selection
   // marker inside the bottom nav, not a translucent page/card surface
-  // docs/approvals/glass-navigation-preview-20261013.json
+  // docs/approvals/glass-navigation-preview-20261013.json; its grey glass
+  // value follows the owner's reference tab bar since 2026-10-14
+  // (docs/approvals/mobile-tabbar-reference-20261014.json).
   const nav = page.locator('nav.bottom-nav.glass-nav');
   const indicator = nav.locator(':scope > .glass-nav-indicator');
   await expect(nav).toBeVisible();
@@ -87,7 +89,7 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
   await expect(indicator).toBeVisible();
   await expect(indicator).toHaveCSS('height', '54px');
   await expect(indicator).toHaveCSS('position', 'absolute');
-  await expect(indicator).toHaveCSS('background-color', 'rgba(255, 255, 255, 0.64)');
+  await expect(indicator).toHaveCSS('background-color', 'rgba(187, 187, 188, 0.36)');
   await expect(nav.locator('a')).toHaveCount(6);
   const bounds = await nav.boundingBox();
   const marker = await indicator.boundingBox();
@@ -113,7 +115,7 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
           const filter = rule.style.getPropertyValue("backdrop-filter");
           const sel = rule.selectorText;
           // Exact approved marker/value only, bounded in the browser above
-          if (sel === '.glass-nav-indicator' && bg === 'rgba(255, 255, 255, 0.64)' && !filter) continue;
+          if (sel === '.glass-nav-indicator' && bg === 'rgba(187, 187, 188, 0.36)' && !filter) continue;
           // Semantic exceptions: modal scrim, chart bars, tab underlines, accent lines.
           const semantic = /modal-backdrop|-bars i|::after|::before|\bi\b|button\.active|\.compare-bars|\.history-bars|\.av-|\.airport-flow|\.airport-hero/.test(sel);
           if (semantic) continue;
