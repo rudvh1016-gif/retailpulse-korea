@@ -226,6 +226,19 @@ test("the storage diagnostic is read-only, manual, and prints no secret", () => 
   assert.doesNotMatch(workflow, /schedule:/, "the owner asked for no new standing diagnostic schedule");
   assert.match(workflow, /- storage/);
   assert.match(workflow, /if: inputs\.scope == 'storage'\n\s+run: npx tsx scripts\/measure-production-storage\.ts/);
-  assert.match(workflow, /if: inputs\.scope != 'storage' && inputs\.scope != 'airport_sides' && inputs\.scope != 'commercial_months' && inputs\.scope != 'airport_months'\n\s+run: npx tsx scripts\/measure-production-read-budget\.ts/);
+  assert.match(workflow, /if: inputs\.scope != 'storage' && inputs\.scope != 'airport_sides' && inputs\.scope != 'commercial_months' && inputs\.scope != 'airport_months' && inputs\.scope != 'usage'\n\s+run: npx tsx scripts\/measure-production-read-budget\.ts/);
   assert.deepEqual([...new Set(workflow.match(/secrets\.[A-Z0-9_]+/g))], ["secrets.CLOUDFLARE_D1_WRITE_TOKEN"]);
+});
+
+test("the usage diagnostic reads Cloudflare's counters and one bounded collector ledger, and prints no secret", () => {
+  const script = readFileSync("scripts/measure-d1-usage.ts", "utf8");
+  const workflow = readFileSync(".github/workflows/measure-read-budget.yml", "utf8");
+  assert.doesNotMatch(script, /\b(INSERT\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM|DROP\s+TABLE|ALTER\s+TABLE|CREATE\s+(TABLE|INDEX))\b/i);
+  const d1Statements = script.match(/database\.prepare\(/g) ?? [];
+  assert.equal(d1Statements.length, 1, "exactly one D1 statement");
+  assert.match(script, /FROM operational_usage_daily WHERE day >= \? ORDER BY day, source_id/, "a primary-key range read");
+  assert.doesNotMatch(script, /console\.log\([^)]*\.value/, "token values are never printed");
+  assert.match(script, /tokens\.map\(\(t\) => t\.name\)/, "tokens are reported by variable name only");
+  assert.match(workflow, /if: inputs\.scope == 'usage'\n\s+run: npx tsx scripts\/measure-d1-usage\.ts/);
+  assert.doesNotMatch(workflow, /schedule:/);
 });
