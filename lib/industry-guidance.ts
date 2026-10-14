@@ -1,6 +1,7 @@
 import type { Lang } from "../app/retailpulse-data";
+import { industryLabels, type IndustryId } from "./industry-ids";
 
-export type IndustryId = "beauty" | "fashion" | "food" | "convenience" | "popup" | "tourism" | "liquor" | "luxury";
+export type { IndustryId };
 
 /**
  * Operating guidance per business type.
@@ -33,7 +34,7 @@ export const industryProfiles: Record<IndustryId, {
   checklist: Record<Lang, ChecklistRow[]>;
 }> = {
   beauty: {
-    label: { ko: "뷰티·화장품", en: "Beauty & cosmetics", zh: "美妆·化妆品", ja: "ビューティー・化粧品" }, short: "BEAUTY",
+    label: industryLabels.beauty, short: "BEAUTY",
     watch: {
       ko: "지역 활동과 자료 기준시각을 확인하세요. 언어·상품 구성은 실제 상담과 판매 기록으로 판단하며, 외국인 생활인구를 구매 고객으로 환산하지 마세요.",
       en: "Check local activity and timestamps. Choose language support and products from actual enquiries and sales; foreign living population is not a buyer count.",
@@ -76,7 +77,7 @@ export const industryProfiles: Record<IndustryId, {
     },
   },
   fashion: {
-    label: { ko: "패션·잡화", en: "Fashion & goods", zh: "时尚·杂货", ja: "ファッション・雑貨" }, short: "FASHION",
+    label: industryLabels.fashion, short: "FASHION",
     watch: {
       ko: "지역 활동과 날씨를 확인하고, 실제 피팅·결제 대기를 보고 동선과 인력을 조정하세요. 비 예보만으로 체류나 판매 증가를 단정하지 마세요.",
       en: "Check local activity and weather, then adjust flow and staffing from real fitting and checkout queues. Rain alone does not establish longer stays or higher sales.",
@@ -119,7 +120,7 @@ export const industryProfiles: Record<IndustryId, {
     },
   },
   food: {
-    label: { ko: "식음료·카페", en: "Food & café", zh: "餐饮·咖啡", ja: "飲食・カフェ" }, short: "F&B",
+    label: industryLabels.food, short: "F&B",
     watch: {
       ko: "날씨와 행사 날짜를 확인한 뒤 실제 주문·좌석·폐기 기록으로 준비량을 정하세요. 주변 행사 유무는 주문량이 아닙니다.",
       en: "Check weather and event dates, then plan from real orders, seating and waste records. A nearby event is not an order forecast.",
@@ -162,7 +163,7 @@ export const industryProfiles: Record<IndustryId, {
     },
   },
   convenience: {
-    label: { ko: "편의·약국", en: "Convenience & pharmacy", zh: "便利店·药店", ja: "コンビニ・薬局" }, short: "ESSENTIALS",
+    label: industryLabels.convenience, short: "ESSENTIALS",
     watch: {
       ko: "지역 활동과 날씨로 사전 점검 항목을 정하고 실제 판매·잔량을 확인하세요. 의약품 문의는 약사에게 연결하며 날씨로 약품 수요를 추정하지 마세요.",
       en: "Use local activity and weather to plan checks, then review actual sales and stock. Refer medicine questions to a pharmacist; do not infer medicine demand from weather.",
@@ -205,7 +206,7 @@ export const industryProfiles: Record<IndustryId, {
     },
   },
   popup: {
-    label: { ko: "팝업·체험", en: "Pop-up & experience", zh: "快闪·体验", ja: "ポップアップ・体験" }, short: "POP-UP",
+    label: industryLabels.popup, short: "POP-UP",
     watch: {
       ko: "위의 주변 행사와 실시간 활동을 함께 보세요. 근처에 다른 행사가 겹치면 대기 줄과 입장 안내 방식을 미리 바꿔야 합니다.",
       en: "Read nearby events with live activity above: another event on the same block changes how you queue and how you word entry guidance.",
@@ -248,7 +249,7 @@ export const industryProfiles: Record<IndustryId, {
     },
   },
   tourism: {
-    label: { ko: "관광·숙박", en: "Tourism & stay", zh: "旅游·住宿", ja: "観光・宿泊" }, short: "TOURISM",
+    label: industryLabels.tourism, short: "TOURISM",
     watch: {
       ko: "공항 화면의 출국장 공식 예상 승객 흐름과 이 지역의 실시간 활동을 함께 보세요. 체크인·체크아웃이 공항 혼잡과 겹치는지가 핵심입니다.",
       en: "Read the official expected-departure flow on the Airport screen together with live activity here: the question is whether check-in and check-out overlap the airport's busy band.",
@@ -291,7 +292,7 @@ export const industryProfiles: Record<IndustryId, {
     },
   },
   liquor: {
-    label: { ko: "주류·담배", en: "Liquor & tobacco", zh: "酒类·烟草", ja: "酒類・たばこ" }, short: "LIQUOR",
+    label: industryLabels.liquor, short: "LIQUOR",
     watch: {
       ko: "출국장 예고와 탑승구 기준 출발편을 따로 확인하세요. 구매 한도와 반입 조건은 공식 안내로 확인하고, 항공편 목적지를 고객 국적으로 보지 마세요.",
       en: "Read the departure-hall notice and departures by gate separately. Check purchase limits and carriage rules with official guidance; a flight's destination is not a customer's nationality.",
@@ -334,7 +335,7 @@ export const industryProfiles: Record<IndustryId, {
     },
   },
   luxury: {
-    label: { ko: "명품", en: "Luxury", zh: "奢侈品", ja: "ラグジュアリー" }, short: "LUXURY",
+    label: industryLabels.luxury, short: "LUXURY",
     watch: {
       ko: "상담 예약과 실제 대기 고객을 기준으로 인력을 정하세요. 출국 예상 인원이나 출발편 수를 구매 고객 수로 보지 마세요.",
       en: "Staff from consultation bookings and customers actually waiting. Expected departures and flight counts are not buyers.",

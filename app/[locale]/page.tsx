@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import RetailPulseApp from "../retailpulse-app";
 import AirportGlancePreview from "../airport-glance-preview";
 import { buildMetadata, pageStructuredData, seoLocales, type SeoLocale } from "../seo-config";
-import {preloadShellFont} from '../shell-font-preload';
 
 /**
  * Starts the summary request from the HTML head, so it overlaps the JS
@@ -19,25 +18,11 @@ function preloadLiveSummary() {
 }
 
 /**
- * The shell font, requested from the head instead of after the stylesheet.
- *
- * A font referenced only by an @font-face `src` is not discoverable until the
- * browser has downloaded and parsed globals.css AND laid out an element that
- * uses it — three serialized steps before the request even starts. On the LTE
- * connection this product is read over that is the difference between text
- * appearing in the brand face and text appearing in the fallback and then
- * shifting. `font-display: swap` is already set, so this shortens the swap
- * rather than introducing one.
- *
- * ONE face per locale, deliberately. Preloading all six would push 3.3 MB at
- * a reader who needs 241 KB of it, which is slower, not faster. Each entry is
- * the face that `--font-ui` actually resolves to for that locale in
- * app/globals.css (`.app.lang-ja`, `.app.lang-zh`, and the `:root` default
- * that ko and en both use), and only the regular weight: the bold face is for
- * headings, which can swap a moment later without moving body text.
- *
- * `crossOrigin: "anonymous"` is required, not optional — fonts are always
- * fetched in CORS mode, and a preload without it is fetched a second time.
+ * No shell-font preload on the home, unlike travel-records and airport-news.
+ * On a throttled phone it competed with the scripts that hydrate the page;
+ * without it the page is interactive about 0.5 s sooner and the brand face,
+ * still requested by the stylesheet with `font-display: swap`, arrives about
+ * 0.3 s later (owner decision, 2026-10-13).
  */
 export function generateStaticParams() { return seoLocales.map((locale) => ({ locale })); }
 
@@ -51,7 +36,6 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
   const { locale } = await params;
   if (!seoLocales.includes(locale as SeoLocale)) notFound();
   preloadLiveSummary();
-  preloadShellFont(locale as SeoLocale);
   return <>
     <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialView="airport-glance" initialScope="airport-home" AirportGlance={AirportGlancePreview} />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale)) }} />

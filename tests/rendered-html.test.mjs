@@ -326,7 +326,8 @@ test("ships every product surface in four languages without a runtime LLM depend
   const data = await read("../app/retailpulse-data.ts");
   // Business-type copy lives beside the other domain data rather than in the
   // client components, so the four-language surface spans all of these files.
-  const guidance = await read("../lib/industry-guidance.ts");
+  // The business-type names live in lib/industry-ids.ts, which the guidance reads.
+  const guidance = `${await read("../lib/industry-guidance.ts")}\n${await read("../lib/industry-ids.ts")}`;
   const product = `${shell}\n${data}\n${guidance}`;
   for (const required of [
     "InsightsView", "AirportView", "BusinessView", "BusinessHistoryView",

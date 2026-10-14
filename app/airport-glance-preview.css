@@ -78,3 +78,6 @@ body:has(.glance-preview){background:#fff}
 .glance-controls .glance-today{border-radius:14px;min-width:44px;padding:7px 12px;background:#f5f6f8;color:#344b61;touch-action:manipulation}
 .glance-controls .glance-today[data-current=true]{background:#e8eef4;box-shadow:inset 0 0 0 1px rgb(52 75 97 / 8%);font-weight:500}
 @media(hover:hover){.glance-controls .glance-today:hover,.glance-controls .glance-date-control input:hover{background:#e8edf2}}
+
+/* Loading placeholder: an invisible pseudo-element of the loaded shape keeps the box (crawlers and readers never see it); the visible dash is laid over its start, so data landing moves nothing. */
+.glance-hold{position:relative;font-style:inherit}.glance-hold::before{content:attr(data-shape);visibility:hidden}.glance-hold:empty{visibility:hidden}.glance-hold>b{position:absolute;left:0;font-weight:inherit}
