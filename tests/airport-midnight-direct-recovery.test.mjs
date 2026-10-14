@@ -146,12 +146,82 @@ test('a changed valid parent/attempt identity cannot collect or finish a previou
   }
 });
 
-test('receipt persistence failure never starts the collector or opens the admission', async () => {
+test('receipt persistence failure never starts the collector and does not spend the day', async () => {
   const { deps, memory, calls } = setup();
   const original = memory.recordEvent.bind(memory);
   memory.recordEvent = async event => { if (event.runId.endsWith('-receipt')) throw Error('unavailable'); return original(event); };
-  assert.equal((await execute(deps)).state, 'HUMAN_REVIEW_READ_OR_WRITE_UNAVAILABLE');
-  assert.equal(calls.collectors, 0); assert.equal((await memory.inFlightControlled()).length, 1);
+  const failed = await execute(deps);
+  assert.equal(failed.state, 'RETRYABLE_BEFORE_COLLECTION'); assert.equal(failed.stage, 'receipt'); assert.equal(failed.error, 'unavailable');
+  assert.equal(calls.collectors, 0); assert.equal((await memory.inFlightControlled()).length, 0);
+  memory.recordEvent = original;
+  assert.equal((await execute({ ...deps, env: { ...ENV, GITHUB_RUN_ID: '124' } })).state, 'RECOVERED');
+  assert.equal(calls.collectors, 1);
+});
+
+// 2026-10-15 01:22 KST: the run list read after admission failed (unauthenticated
+// GitHub limit), the log said only READ_OR_WRITE_UNAVAILABLE, and that spent the
+// day's only attempt with no collection, so 01:37 reported DAILY_ATTEMPT_ALREADY_SPENT.
+test('a read failing after admission names its step, spends nothing and the next check collects', async () => {
+  let reads = 0;
+  const { deps, memory, calls } = setup({ readSnapshot: async () => {
+    if (++reads === 2) throw Error('workflow_read_unavailable: HTTP 403 rate limit exhausted');
+    return { complete: true, early: [], active: [] }; } });
+  const failed = await execute(deps);
+  assert.deepEqual([failed.state, failed.stage, failed.error, failed.providerRequests],
+    ['RETRYABLE_BEFORE_COLLECTION', 'recheck_before_collection', 'workflow_read_unavailable: HTTP 403 rate limit exhausted', 0]);
+  assert.equal(calls.collectors, 0); assert.equal((await memory.inFlightControlled()).length, 0);
+  const [aborted] = await memory.attempts(A1_SOURCE, DAY);
+  assert.equal(aborted.outcome, 'ABORTED_BEFORE_COLLECTION'); assert.equal(aborted.providerRequests, 0);
+  assert.equal((await airportMidnightCandidate(deps, NOW, { activation: OPEN })).eligible, true);
+  assert.equal((await execute({ ...deps, env: { ...ENV, GITHUB_RUN_ID: '124' } })).state, 'RECOVERED');
+  assert.equal(calls.collectors, 1);
+  assert.equal((await execute({ ...deps, env: { ...ENV, GITHUB_RUN_ID: '125' } })).state, 'DAILY_ATTEMPT_ALREADY_SPENT');
+});
+
+test('attempts that never reach the collector are bounded per day', async () => {
+  const { deps, memory, calls } = setup({ budgetAvailable: async () => { throw Error('budget read unavailable'); } });
+  // The candidate's own budget read fails before admission: nothing is written.
+  assert.equal((await execute(deps)).state, 'READ_UNAVAILABLE');
+  assert.equal((await memory.attempts(A1_SOURCE, DAY)).length, 0);
+  let reads = 0;
+  deps.budgetAvailable = async () => { if (++reads % 2 === 0) throw Error('budget read unavailable'); return true; };
+  for (let run = 1; run <= 4; run++)
+    assert.equal((await execute({ ...deps, env: { ...ENV, GITHUB_RUN_ID: String(200 + run) } })).state, 'RETRYABLE_BEFORE_COLLECTION');
+  assert.equal((await execute({ ...deps, env: { ...ENV, GITHUB_RUN_ID: '299' } })).state, 'DAILY_RETRY_LIMIT_REACHED');
+  assert.equal(calls.collectors, 0); assert.equal((await memory.attempts(A1_SOURCE, DAY)).length, 4);
+});
+
+test('an admission left open without a collector receipt is released after its job, one with a receipt is not', async () => {
+  for (const receipt of [false, true]) {
+    const { deps, memory, calls } = setup();
+    let snapshots = 0;
+    const lost = receipt
+      // The real code writes the receipt, then the collector dies: provider use is unknown.
+      ? await execute({ ...deps, collectA1: async () => { throw Error('runner lost'); } })
+      // A read fails after admission and the release write fails too: open, but provably never collected.
+      : await (async () => {
+        const release = memory.abortBeforeCollection;
+        memory.abortBeforeCollection = async () => { throw Error('ledger unavailable'); };
+        const result = await execute({ ...deps, readSnapshot: async () => {
+          if (++snapshots === 2) throw Error('process lost'); return { complete: true, early: [], active: [] }; } });
+        memory.abortBeforeCollection = release;
+        return result;
+      })();
+    assert.equal(lost.state, receipt ? 'HUMAN_REVIEW_UNCERTAIN_CHILD' : 'HUMAN_REVIEW_READ_OR_WRITE_UNAVAILABLE');
+    if (!receipt) assert.equal(lost.releaseError, 'ledger unavailable');
+    assert.equal((await memory.inFlightControlled()).length, 1);
+    // Still inside the 30-minute job window: nothing is released.
+    assert.equal((await execute({ ...deps, now: () => '2026-10-10T16:40:00Z', env: { ...ENV, GITHUB_RUN_ID: '129' } })).state,
+      'DAILY_ATTEMPT_ALREADY_SPENT');
+    const next = await execute({ ...deps, now: () => '2026-10-10T17:00:00Z', env: { ...ENV, GITHUB_RUN_ID: '130' } });
+    if (receipt) {
+      assert.equal(next.state, 'DAILY_ATTEMPT_ALREADY_SPENT'); assert.equal((await memory.inFlightControlled()).length, 1);
+    } else {
+      assert.equal(next.state, 'RECOVERED'); assert.equal(calls.collectors, 1);
+      assert.equal((await memory.inFlightControlled()).length, 0);
+      assert.equal((await memory.attempts(A1_SOURCE, DAY))[0].outcome, 'ABORTED_BEFORE_COLLECTION');
+    }
+  }
 });
 
 for (const publicValid of [true, false, null]) test(`own A1 result requires verified DB and public evidence (${publicValid})`, async () => {

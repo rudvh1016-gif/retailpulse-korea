@@ -1,6 +1,6 @@
 /** Direct reusable-job transport. No HTTP dispatch, scheduler or permission grant. */
 import type { CentralRecoveryActivation } from './central-recovery-gate';
-import type { OperationalMemory, AttemptRequest } from './operational-memory';
+import { ABORTED_BEFORE_COLLECTION, MAX_ABORTED_BEFORE_COLLECTION_PER_DAY, type OperationalMemory, type AttemptRequest } from './operational-memory';
 import type { ProductionSourceResult } from './production-runner';
 import type { RecoveryVerification } from './recovery-orchestration';
 import type { airportTodayCoverage } from './airport-today-coverage';
@@ -19,6 +19,19 @@ export interface AirportMidnightCandidateDependencies {
   budgetAvailable: (nowIso: string) => Promise<boolean>;
 }
 type TestOptions = { activation?: CentralRecoveryActivation };
+/** Longer than the 20-minute collector job, so a live child is never mistaken for an abandoned one. */
+const ABANDONED_AFTER_MS = 30 * 60_000;
+/** A failure's own words, bounded and without credentials, so logs name what broke. */
+export function failureText(error: unknown): string {
+  const text = error instanceof Error ? error.message : String(error);
+  return text.replace(/(Bearer|token|key)[=:\s]+\S+/gi, '$1 ***').replace(/\s+/g, ' ').slice(0, 200) || 'unknown';
+}
+/** Open A1 direct attempts that never wrote their pre-collector receipt and are long past their job. */
+async function abandonedWithoutCollection(memory: OperationalMemory, nowIso: string): Promise<string[]> {
+  const before = new Date(Date.parse(nowIso) - ABANDONED_AFTER_MS).toISOString();
+  return (await memory.openAttemptsWithoutReceipt(A1_SOURCE, A1_RECOVERY_WORKFLOW, before))
+    .filter(id => id.includes('|a1-direct-'));
+}
 
 /** Read-only candidate, never an admission or authority to run the collector. */
 export async function airportMidnightCandidate(deps: AirportMidnightCandidateDependencies, nowIso: string,
@@ -28,18 +41,23 @@ export async function airportMidnightCandidate(deps: AirportMidnightCandidateDep
   if (!gate.allowed) return closed('CENTRAL_RECOVERY_DORMANT');
   try {
     const day = kstDayOf(nowIso);
-    const spent = (await deps.memory.attempts(A1_SOURCE, day)).some(attempt =>
+    // An attempt that provably never reached the collector is released, not spent.
+    const abandoned = await abandonedWithoutCollection(deps.memory, nowIso);
+    const today = (await deps.memory.attempts(A1_SOURCE, day)).filter(attempt =>
       attempt.mode === 'CONTROLLED' && attempt.logicalJob === A1_RECOVERY_WORKFLOW && attempt.targetDate === day);
-    if (spent) return closed('DAILY_ATTEMPT_ALREADY_SPENT');
-    if ((await deps.memory.inFlightControlled()).some(attempt =>
-      attempt.sourceId === A1_SOURCE && attempt.logicalJob === A1_RECOVERY_WORKFLOW)) return closed('INFLIGHT_LOCK');
+    if (today.some(attempt => attempt.outcome !== ABORTED_BEFORE_COLLECTION && !abandoned.includes(attempt.attemptId)))
+      return closed('DAILY_ATTEMPT_ALREADY_SPENT');
+    if (today.filter(attempt => attempt.outcome === ABORTED_BEFORE_COLLECTION || abandoned.includes(attempt.attemptId)).length
+      >= MAX_ABORTED_BEFORE_COLLECTION_PER_DAY) return closed('DAILY_RETRY_LIMIT_REACHED');
+    if ((await deps.memory.inFlightControlled()).filter(attempt =>
+      attempt.sourceId === A1_SOURCE && attempt.logicalJob === A1_RECOVERY_WORKFLOW).length > abandoned.length) return closed('INFLIGHT_LOCK');
     const coverage = await deps.readCoverage(nowIso);
     if (coverage.state === 'CURRENT') return closed('ALREADY_CURRENT');
     const plan = planAirportMidnightRecovery(nowIso, coverage, await deps.readSnapshot(nowIso), await deps.sourceBlocked());
     if (!plan.eligible || !plan.targetDate) return closed(plan.reason);
     if (!await deps.budgetAvailable(nowIso)) return closed('REQUEST_BUDGET_UNAVAILABLE');
     return { eligible: true, targetDate: plan.targetDate, reason: plan.reason };
-  } catch { return closed('READ_UNAVAILABLE'); }
+  } catch (error) { return { ...closed('READ_UNAVAILABLE'), error: failureText(error) }; }
 }
 
 /** Fixed caller/source/date/budget tuple; typed inputs alone never open the gate. */
@@ -79,16 +97,25 @@ export async function executeAirportMidnightDirect(deps: AirportMidnightDirectDe
   if (!gate.allowed) return { state: 'CENTRAL_RECOVERY_DORMANT', providerRequests: 0, writes: 0 };
   const context = airportDirectContext(deps.env, startedAt);
   if (!context) return { state: 'DIRECT_CONTEXT_UNVERIFIED', providerRequests: 0, writes: 0 };
+  // Which step failed, and whether this process ever handed control to the collector.
+  let stage = 'candidate', admittedId: string | null = null, collectorInvoked = false;
   try {
     const candidate = await airportMidnightCandidate(deps, startedAt, options);
     if (!candidate.eligible || candidate.targetDate !== context.targetDate)
-      return { state: candidate.reason, providerRequests: 0, writes: 0 };
+      return { state: candidate.reason, providerRequests: 0, writes: 0,
+        ...('error' in candidate ? { error: candidate.error } : {}) };
+    stage = 'release_abandoned';
+    for (const attemptId of await abandonedWithoutCollection(deps.memory, startedAt))
+      await deps.memory.abortBeforeCollection(attemptId, startedAt, 'no collector receipt; job long finished');
+    stage = 'admit';
     // Same identity as the prepared HTTP transport, never a new quota/lock namespace.
     const request: AttemptRequest = { parts: { sourceId: A1_SOURCE, failureClass: 'MISSED_RUN',
       contractVersion: 'airport-v1', logicalJob: A1_RECOVERY_WORKFLOW }, targetDate: context.targetDate,
       scheduledSlot: '00:07', operation: 'REDISPATCH_SAME_WORKFLOW', runId: context.runId, at: startedAt };
     const admission = await deps.memory.admit(request, { maxAttempts: 1 });
     if (!admission.admitted) return { state: 'DAILY_OR_INFLIGHT_LOCK', providerRequests: 0 };
+    admittedId = admission.attemptId;
+    stage = 'recheck_before_collection';
     const readAt = deps.now();
     const coverageBefore = await deps.readCoverage(readAt), snapshotBefore = await deps.readSnapshot(readAt);
     const blocked = await deps.sourceBlocked(), budget = await deps.budgetAvailable(readAt);
@@ -98,14 +125,18 @@ export async function executeAirportMidnightDirect(deps: AirportMidnightDirectDe
     const plan = planAirportMidnightRecovery(checkedAt, coverageBefore, snapshotBefore, blocked);
     if (!checkedGate.allowed || checkedContext?.runId !== context.runId ||
         checkedContext.targetDate !== context.targetDate || !plan.eligible || !budget) {
-      // Proven no collector/provider was invoked. Today's admission stays spent.
-      await deps.memory.finish(admission.attemptId, checkedAt, { dataValid: false, storageValid: null, publicValid: null });
+      // Proven no collector/provider was invoked, so this does not spend today's attempt.
+      stage = 'abort_before_collection';
+      await deps.memory.abortBeforeCollection(admission.attemptId, checkedAt, 'recheck no longer eligible');
       return { state: 'ABORTED_BEFORE_COLLECTION', providerRequests: 0 };
     }
+    stage = 'receipt';
     await deps.memory.recordEvent({ parts: request.parts, kind: 'RECOVERY_STARTED',
       runId: context.runId + '-receipt', at: checkedAt,
       evidence: `attemptId=${admission.attemptId}; directChild=${context.runId}; targetDate=${context.targetDate}` });
     let result: ProductionSourceResult;
+    stage = 'collector';
+    collectorInvoked = true;
     try { result = await deps.collectA1(); }
     catch { return { state: 'HUMAN_REVIEW_UNCERTAIN_CHILD', child: context.runId }; }
     // This in-process result belongs to this exact A1 child, never the parent badge.
@@ -130,6 +161,7 @@ export async function executeAirportMidnightDirect(deps: AirportMidnightDirectDe
         { dataValid: false, storageValid: null, publicValid: null }, { providerRequests });
       return { state: 'HUMAN_REVIEW_RECOVERY_UNVERIFIED', child: context.runId, providerRequests };
     }
+    stage = 'verify';
     const coverage = await deps.readCoverage(completedAt);
     const stored = coverage.today === context.targetDate && coverage.state === 'CURRENT';
     const evidence = await deps.verifyToday(context.targetDate, completedAt);
@@ -139,8 +171,19 @@ export async function executeAirportMidnightDirect(deps: AirportMidnightDirectDe
     const recovered = verification.dataValid && verification.storageValid && verification.publicValid === true;
     return { state: recovered ? (result.status === 'SUCCESS' ? 'RECOVERED' : 'CURRENT_WITHOUT_PROVIDER_CALL')
       : 'HUMAN_REVIEW_RECOVERY_UNVERIFIED', child: context.runId, providerRequests };
-  } catch {
-    // Receipt, crash or verification uncertainty never releases an admission by time.
-    return { state: 'HUMAN_REVIEW_READ_OR_WRITE_UNAVAILABLE' };
+  } catch (error) {
+    const failure = { stage, error: failureText(error) };
+    if (admittedId && !collectorInvoked) {
+      // This process never called the collector, so no provider call happened:
+      // release the admission instead of spending today's only attempt on a read.
+      try {
+        await deps.memory.abortBeforeCollection(admittedId, deps.now(), `${failure.stage}: ${failure.error}`);
+        return { state: 'RETRYABLE_BEFORE_COLLECTION', ...failure, providerRequests: 0 };
+      } catch (abortError) {
+        return { state: 'HUMAN_REVIEW_READ_OR_WRITE_UNAVAILABLE', ...failure, releaseError: failureText(abortError) };
+      }
+    }
+    // After the collector was invoked, uncertainty never releases an admission by time.
+    return { state: 'HUMAN_REVIEW_READ_OR_WRITE_UNAVAILABLE', ...failure };
   }
 }

@@ -1,4 +1,5 @@
 /** Existing realtime trigger, bounded SELECTs only. No provider, writes or recovery. */
+import { failureText } from '../lib/airport-midnight-direct-recovery';
 import { CloudflareD1RestDatabase } from '../lib/d1-rest';
 import { readAirportTodayCoverage } from '../lib/airport-today-coverage';
 import { resolveProductionDatabaseConfig } from './production-database';
@@ -19,8 +20,8 @@ try {
     console.error('Today airport coverage is late; inspect the early/daily runs and guarded fallback disposition.');
     process.exitCode = 1;
   }
-} catch {
-  // Do not infer zero flights from a failed read or print authenticated errors.
-  console.error('airportTodayCoverage=READ_UNAVAILABLE; no missing coverage inferred; providerRequests=0 writes=0');
+} catch (error) {
+  // Do not infer zero flights from a failed read. failureText names the failure without credentials.
+  console.error(`airportTodayCoverage=READ_UNAVAILABLE; error=${failureText(error)}; no missing coverage inferred; providerRequests=0 writes=0`);
   process.exitCode = 1;
 }

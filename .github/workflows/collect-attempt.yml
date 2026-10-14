@@ -155,6 +155,8 @@ jobs:
           RPK_A1_EXPECTED_TARGET_DATE: ${{ inputs.a1_expected_target_date }}
           RPK_A1_MIDNIGHT_RECOVERY: ${{ inputs.a1_midnight_recovery }}
           RPK_A1_MIDNIGHT_CALLER: ${{ inputs.a1_midnight_caller }}
+          # Midnight recovery only: authenticates its run-list reads; falls back to public reads on 401/403.
+          GITHUB_TOKEN: ${{ inputs.a1_midnight_recovery == true && github.token || '' }}
           RPK_CENTRAL_RECOVERY_OWNER_APPROVED: ${{ vars.RPK_CENTRAL_RECOVERY_OWNER_APPROVED }}
           RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED: ${{ vars.RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED }}
           RPK_A4_MAX_ATTEMPTS_PER_REQUEST: ${{ inputs.a4_max_attempts_per_request }}

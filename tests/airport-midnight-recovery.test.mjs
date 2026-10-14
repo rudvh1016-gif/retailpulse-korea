@@ -216,3 +216,19 @@ test('production integration keeps permission and review locks; no activation ov
   assert.match(early, /group: production-collector/); assert.match(early, /cancel-in-progress: false/);
   assert.equal((early.match(/a1_expected_target_date:/g) ?? []).length, 3);
 });
+
+test('run-list reads use the job token, fall back to the public read once, and name the HTTP failure', async () => {
+  const empty = () => new Response(JSON.stringify({ total_count: 0, workflow_runs: [] }), { status: 200 });
+  const seen = [];
+  await readAirportRunSnapshot(NOW, async (url, init) => { seen.push(init.headers); return empty(); }, 'job-token');
+  assert.equal(seen.length, 6);
+  assert.ok(seen.every(headers => headers.Authorization === 'Bearer job-token' && headers['User-Agent']));
+  // A token without Actions read gets 403; the same URL is then read without it.
+  const auths = [];
+  await readAirportRunSnapshot(NOW, async (url, init) => { auths.push(init.headers.Authorization ?? 'public');
+    return init.headers.Authorization ? new Response('{}', { status: 403 }) : empty(); }, 'job-token');
+  assert.deepEqual(auths.slice(0, 2), ['Bearer job-token', 'public']); assert.equal(auths.length, 12);
+  // The 2026-10-15 failure, now with its cause in the message.
+  await assert.rejects(readAirportRunSnapshot(NOW, async () => new Response('{"message":"API rate limit exceeded"}',
+    { status: 403, headers: { 'x-ratelimit-remaining': '0' } })), /workflow_read_unavailable: HTTP 403 rate limit exhausted/);
+});
