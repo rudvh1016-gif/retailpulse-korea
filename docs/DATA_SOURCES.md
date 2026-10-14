@@ -251,7 +251,7 @@ Code: `lib/incheon-airport-stats.mjs` (catalog, truth labels, request builders, 
 
 ### Read-only probe (no new workflow)
 
-The existing manually dispatched **Smoke Public APIs** workflow (`smoke-public-apis.yml`, environment `production`) runs `node scripts/smoke-public-apis.mjs`. Branch `claude/airport-api-probe-20261014` is this code plus one commit that replaces that entry with a two-line call to `runIncheonStatsProbeCli()`, the same route PR #369 used. The swap is never merged; `main`'s smoke is unchanged. Dispatch the workflow from that branch, either from the Actions tab (Run workflow → branch `claude/airport-api-probe-20261014`) or with `gh workflow run smoke-public-apis.yml --ref claude/airport-api-probe-20261014`. The credential-free gateway check runs first, then exactly one request per service: three in total, no retry, nothing written.
+The existing manually dispatched **Smoke Public APIs** workflow (`smoke-public-apis.yml`, environment `production`) runs `node scripts/smoke-public-apis.mjs`. Branch `claude/airport-api-probe-20261014` is this code plus one commit that replaces that entry with a two-line call to `runIncheonStatsProbeCli()`, the same route PR #369 used. It is at `50be7da`, which is `fbf1d79` plus the swap; if the modules here change, rebuild that branch from them before probing again. The swap is never merged; `main`'s smoke is unchanged. Dispatch the workflow from that branch, either from the Actions tab (Run workflow → branch `claude/airport-api-probe-20261014`) or with `gh workflow run smoke-public-apis.yml --ref claude/airport-api-probe-20261014`. The credential-free gateway check runs first, then exactly one request per service: three in total, no retry, nothing written.
 
 Each service prints one `AIRPORT_STATS_PROBE {…}` line, and the run page shows a Korean summary table. The lines hold the verdict, kind, HTTP status, resultCode, sanitized resultMsg, item and total counts, field names (observed, unknown, missing), contract and schema issue codes, and basis dates. Statistics ask for the month before last (KST), which is certainly published. The schedule asks for page 1 with a blank `airport`. Verdicts:
 
@@ -260,6 +260,13 @@ Each service prints one `AIRPORT_STATS_PROBE {…}` line, and the run page shows
 - `WAITING_FOR_APPROVAL` (code 30), `BLOCKED` (expired, quota, auth, request, provider), `UNREACHABLE` (timeout, network, 5xx).
 
 The job exits 0 only when all three are `READY`. A green run therefore means connected, and a red run lists what is missing.
+
+Run history:
+
+| Run | When | Result |
+|---|---|---|
+| `38402837925` | 2026-10-13, PR #369's probe | HTTP 403, code `30`, `등록되지 않은 서비스키` for all three |
+| `38521193341` | 2026-10-14 06:16 UTC, probe branch at `50be7da` | Same answer for all three (`WAITING_FOR_APPROVAL`). Exactly 3 requests, no retry, nothing written. Gateway check passed: DNS 271 ms, TLS 555 ms, TTFB 782 ms. The job is red by design. |
 
 ### Before any activation
 
