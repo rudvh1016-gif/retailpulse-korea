@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { shouldRouteToSummaryCache, SUMMARY_CACHE_PATH } from "../worker/summary-cache-routing.ts";
+import { shouldRouteToSummaryCache, SUMMARY_CACHE_PATH, FLIGHTS_CACHE_PATH } from "../worker/summary-cache-routing.ts";
 import { canonicalSummaryRequest } from "../worker/summary-cache-key.ts";
 import {
   isCacheableSummary,
@@ -77,11 +77,28 @@ test("only safe methods on the exact summary path reach the cached entrypoint", 
   }
 });
 
+test("the one-day flight record reaches the cached entrypoint on safe methods only", () => {
+  // 2026-10-14: one uncached call read 1,111 D1 rows (run 38517413513) and every
+  // open glance/airport screen asked for it every two minutes.
+  assert.equal(FLIGHTS_CACHE_PATH, "/api/live/flights");
+  for (const method of ["GET", "HEAD", "get"]) assert.equal(shouldRouteToSummaryCache(method, FLIGHTS_CACHE_PATH), true, method);
+  for (const method of ["POST", "PUT", "PATCH", "DELETE", "OPTIONS"]) {
+    assert.equal(shouldRouteToSummaryCache(method, FLIGHTS_CACHE_PATH), false, `${method} must never be served from a shared cache`);
+  }
+  const route = readFileSync("app/api/live/flights/route.ts", "utf8");
+  assert.match(route, /serviceDayCacheControl\("public, max-age=120, stale-while-revalidate=600",generatedAt\)/,
+    "a stored copy is fresh for two minutes and never outlives the KST day");
+  assert.match(route, /status: 200, headers: \{ "cache-control": "no-store"/, "the degraded answer is never stored");
+});
+
 test("no other route is ever handed to the cached entrypoint", () => {
   for (const path of [
     "/api/health",
     "/api/beta-signups",
-    "/api/live/flights",
+    "/api/live/flights/",
+    "/api/live/flightsx",
+    "/api/live/airport-days",
+    "/api/live/airport-months",
     "/api/live/summary/",
     "/api/live/summary/extra",
     "/api/live/summaryx",

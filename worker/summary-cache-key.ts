@@ -44,6 +44,13 @@ function validMonth(value: string | null): string | null {
 export function canonicalSummaryUrl(url: URL): string {
   // FX is a single current stored snapshot; the client applies its selected date.
   if (url.pathname === '/api/live/duty-free-exchange') return `${url.origin}${url.pathname}`;
+  // The flight record reads `date` only (a real KST day; anything else means
+  // today). The client's `_day` clock marker exists for the browser's own
+  // cache; the route caps freshness at KST midnight, so the edge needs no copy.
+  if (url.pathname === '/api/live/flights') {
+    const date = url.searchParams.get('date');
+    return `${url.origin}${url.pathname}${isValidKstDay(date) ? `?${new URLSearchParams({ date })}` : ''}`;
+  }
   if (url.searchParams.get('view') === 'records') {
     const query = new URLSearchParams({ view: 'records' });
     const area = url.searchParams.get('area') ?? '';
@@ -76,8 +83,13 @@ export function canonicalSummaryUrl(url: URL): string {
  */
 export function canonicalSummaryRequest(request: Request, url: URL): Request {
   const canonical = canonicalSummaryUrl(url);
-  if (canonical === url.href && !request.headers.has("authorization")) return request;
+  // The flight board fetches with `cache: "no-cache"` so the browser never
+  // reuses its own copy past the two-minute poll. That adds a request
+  // `Cache-Control`/`Pragma`, which must not turn the shared copy into a full
+  // D1 read either: the route's own response header is the freshness contract.
+  const dropped = url.pathname === '/api/live/flights' ? ["authorization", "cache-control", "pragma"] : ["authorization"];
+  if (canonical === url.href && !dropped.some((name) => request.headers.has(name))) return request;
   const headers = new Headers(request.headers);
-  headers.delete("authorization");
+  for (const name of dropped) headers.delete(name);
   return new Request(canonical, { method: request.method, headers });
 }
