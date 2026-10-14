@@ -1,13 +1,15 @@
 import { chromium } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { analyticsOptOutState, GOOGLE_TAG_BLOCK_ARGS } from './analytics-opt-out.mjs';
 
 const root = process.argv[2] ?? 'https://koretaildata.com';
 const name = process.argv[3] ?? 'public-before';
-const browser = await chromium.launch();
+// Not a reader: usage analytics off, Google tag hosts unresolvable.
+const browser = await chromium.launch({ args: GOOGLE_TAG_BLOCK_ARGS });
 await mkdir('outputs/evidence', { recursive: true });
 const records = [];
 for (const width of [390, 1280]) {
-  const page = await browser.newPage({ viewport: { width, height: 900 } });
+  const page = await browser.newPage({ storageState: analyticsOptOutState(root), viewport: { width, height: 900 } });
   await page.goto(`${root}/ko/airport`, { waitUntil: 'networkidle', timeout: 120000 });
   await page.screenshot({ path: `outputs/evidence/${name}-${width}.png`, fullPage: true });
   records.push({ width, styles: await page.evaluate(() => {

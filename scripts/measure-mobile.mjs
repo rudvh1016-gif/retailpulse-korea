@@ -1,12 +1,14 @@
 import { chromium } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { analyticsOptOutState, GOOGLE_TAG_BLOCK_ARGS } from './analytics-opt-out.mjs';
 
 const url = process.argv[2] ?? 'http://127.0.0.1:4173/ko/airport';
 const output = process.argv[3] ?? 'outputs/evidence/mobile-baseline.json';
-const browser = await chromium.launch();
+// Not a reader: usage analytics off, Google tag hosts unresolvable.
+const browser = await chromium.launch({ args: GOOGLE_TAG_BLOCK_ARGS });
 const results = [];
 for (let run = 0; run < 3; run++) {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  const context = await browser.newContext({ storageState: analyticsOptOutState(url), viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
   const page = await context.newPage();
   const cdp = await context.newCDPSession(page);
   await cdp.send('Network.enable');

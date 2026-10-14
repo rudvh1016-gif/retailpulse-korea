@@ -55,6 +55,8 @@ interface RecordedRequest {
   scriptId: string | null;
   events: EventSummary[];
   status: number | string | null;
+  /** What the GA collector itself answered to a delivered hit; null when it never answered. */
+  collectorStatus?: number | string | null;
 }
 interface StepRecord extends StepEvidence { startedAt: string; requests: RecordedRequest[]; verdict?: StepVerdict; snapshot?: Snapshot }
 interface Snapshot {
@@ -181,7 +183,20 @@ async function runFlow(browser: Browser, profile: Profile, options: ProbeOptions
     if (kind === 'collect' && marker) {
       const marked = withMarker(request.url(), request.postData(), marker);
       record.action = 'delivered';
-      await route.continue({ url: marked.url, ...(marked.body !== null ? { postData: marked.body } : {}) });
+      // The tag sends with fetch(no-cors). Chromium reports such a request to
+      // the page as net::ERR_ABORTED even after the collector has answered it
+      // (reproduced against a local collector: received, 204, still "failed"),
+      // so run 38590934318 read 7 delivered hits as failures. The marked hit
+      // therefore goes out through route.fetch, and D1 reads the collector's
+      // own status; the page then gets that same response.
+      try {
+        const response = await route.fetch({ url: marked.url, ...(marked.body !== null ? { postData: marked.body } : {}) });
+        record.collectorStatus = response.status();
+        await route.fulfill({ response });
+      } catch (error) {
+        record.collectorStatus = error instanceof Error ? error.message.split('\n')[0] : String(error);
+        await route.abort('failed').catch(() => undefined);
+      }
       return;
     }
     await route.abort('blockedbyclient');
@@ -434,10 +449,10 @@ function requirements(flows: FlowResult[], shared: Shared, container: ContainerA
         `Google tag user-provided data capabilities (__ogt_1p_data_v2): ${container?.userProvidedData ? JSON.stringify(container.userProvidedData) : 'absent'}`] },
     ...flows.filter((flow) => flow.delivered).map((flow): Requirement => {
       const sent = flow.steps.flatMap((step) => step.requests.filter((request) => request.action === 'delivered'));
-      const rejected = sent.filter((request) => typeof request.status !== 'number' || request.status < 200 || request.status >= 300);
+      const rejected = sent.filter((request) => typeof request.collectorStatus !== 'number' || request.collectorStatus < 200 || request.collectorStatus >= 300);
       const times = sent.map((request) => request.at);
       return { id: 'D1', title: `Marked test visit ${flow.marker} handed to the GA collector (transport only, not receipt)`, status: !sent.length || rejected.length ? 'FAIL' : 'PASS',
-        evidence: [`${sent.length} delivered request(s); HTTP ${[...new Set(sent.map((request) => String(request.status)))].join(', ') || 'none'}`,
+        evidence: [`${sent.length} delivered request(s); collector HTTP ${[...new Set(sent.map((request) => String(request.collectorStatus ?? 'no answer')))].join(', ') || 'none'} (as the page saw it: ${[...new Set(sent.map((request) => String(request.status)))].join(', ') || 'none'})`,
           times.length ? `first ${times[0]} (${kst(times[0])}), last ${times[times.length - 1]} (${kst(times[times.length - 1])})` : 'nothing delivered',
           `GA should show for this visit: views ${flow.traffic.views}; event count about ${flow.traffic.expectedGaEventCount} = sent ${JSON.stringify(flow.traffic.eventsByName)} + first_visit ${flow.traffic.derivedFirstVisit} + session_start ${flow.traffic.derivedSessionStart} (GA derives these two); users ${flow.traffic.users}`,
           `marker: event parameter ${MARKER_PARAM}=${flow.marker} on every delivered event (page_location carries no query by design)`] };

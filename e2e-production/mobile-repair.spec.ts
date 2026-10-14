@@ -12,6 +12,8 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
   await expect(page.locator('.airport-today')).toBeVisible();
   await expect(page.getByTestId('area-demand-card')).toHaveCount(0);
+  // This check visits with usage analytics switched off (playwright.production.config.ts),
+  // so the Google tag staying out is the live 더보기 switch holding.
   await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
   await page.screenshot({ path: info.outputPath(`public-${width}.png`) });
   await expect(page.getByRole('button',{name:'내 브리핑 설정',exact:true})).toHaveCount(0);
