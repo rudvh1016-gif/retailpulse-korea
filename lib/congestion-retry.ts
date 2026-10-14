@@ -97,11 +97,12 @@ export function shouldRetryForecast(log: string): boolean {
 
 /**
  * The W1 recovery ladder (collect-weather-recovery.yml) used to start a fresh
- * runner after ANY failed attempt. On 2026-10-14 14:25 KST that meant two more
- * jobs and fifteen more KMA requests after a resultCode 03 (NO_DATA) — a
- * provider answer a new egress address cannot change. Only this attempt's own
- * classified transient failure (connect/timeout, HTTP 5xx) earns the next job;
- * NO_DATA, AUTH, QUOTA, SCHEMA, 429 cooldowns and unknown logs do not.
+ * runner after ANY failed attempt. On 2026-10-14 14:25 KST (run 38516560664)
+ * that meant two more jobs and twelve more KMA requests after a resultCode 03
+ * (NO_DATA) — a provider answer a new egress address cannot change. Only this
+ * attempt's own classified transient failure (connect/timeout, HTTP 5xx) earns
+ * the next job; NO_DATA, AUTH, QUOTA, SCHEMA, 429 cooldowns and unknown logs
+ * do not.
  */
 export function shouldRetryWeather(log: string): boolean {
   const result = parseCollectorResults(log).filter((item) =>

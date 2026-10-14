@@ -13,11 +13,12 @@ export const KASI_HOLIDAY_SCHEMA_VERSION = 'kasi-holidays-v1';
  * A classified AUTH refusal is not asked again inside this window.
  *
  * KASI rides on the A1 runs, so it is attempted in the 00:07 early window and
- * again in the 06:07 daily group. From 2026-09-05 every one of those attempts
- * answered HTTP 403 within ~1.5 s while A1/A2/A3 succeeded with the same key
- * in the same run — the refusal is about this one service on the account, and
- * asking again cannot change it. With the cooldown a blocked service costs one
- * request a day, which is also the check that notices the owner's fix.
+ * again in the 06:07 daily group. Every inspected attempt since 2026-09-06 KST
+ * (e.g. runs 33996957467, 38464257754, 38489053016) answered HTTP 403 within
+ * ~1.5 s while A1/A2/A3 succeeded with the same key in the same run — the
+ * refusal is about this one service on the account, and asking again cannot
+ * change it. With the cooldown a blocked service costs one request a day,
+ * which is also the check that notices the owner's fix.
  */
 export const HOLIDAY_AUTH_COOLDOWN_MS = 20 * 3_600_000;
 

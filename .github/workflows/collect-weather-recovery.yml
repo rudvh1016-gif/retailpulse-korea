@@ -62,8 +62,8 @@ name: Collect Weather Forecasts (Recovery)
 # And only a TRANSIENT failure earns the next job (retry_weather, the same
 # rule as A5): connect/timeout or HTTP 5xx. KMA resultCode 03 is reported as
 # NO_DATA (not ERROR) and an AUTH/SCHEMA answer is permanent; a fresh runner
-# changes neither. On 2026-10-14 14:25 KST a 03 answer alone used to spend
-# two more jobs and fifteen more KMA requests.
+# changes neither. On 2026-10-14 14:25 KST (run 38516560664) a 03 answer alone
+# spent two more jobs and twelve more KMA requests (15 in all).
 #
 # Every attempt names the same single source this workflow owns. A retry is
 # not a second scheduler and must never smuggle in another source.

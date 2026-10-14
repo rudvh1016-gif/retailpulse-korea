@@ -155,9 +155,9 @@ if (requested.includes("airport_recent")) {
   // KASI holidays: auxiliary context on the A1 runs. Its states are kept apart:
   //   AUTH_BLOCKED / SKIPPED_AUTH_COOLDOWN — data.go.kr refused this key for
   //     특일 정보 (15012690). Only the account owner can change that, so it is
-  //     source_health ERROR(AUTH) plus a warning, not a red airport run: since
-  //     2026-09-05 that refusal alone turned every 00:07 and 06:07 run red and
-  //     hid real A1 failures behind a permanently failing badge.
+  //     source_health ERROR(AUTH) plus a warning, not a red airport run: from
+  //     September 2026 that refusal alone kept the 00:07 and 06:07 runs red,
+  //     hiding real A1 failures behind a permanently failing badge.
   //   ERROR — timeout/network after its bounded retry, schema, storage: red.
   // A person-started run (workflow_dispatch) always checks once, so the owner
   // can confirm a fix immediately instead of waiting out the cooldown.

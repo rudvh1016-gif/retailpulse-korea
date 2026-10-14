@@ -2,10 +2,11 @@
  * Two Production collection failures, kept apart (2026-10-14).
  *
  * 1. KASI 특일 정보 (data.go.kr 15012690, SpcdeInfoService/getRestDeInfo)
- *    answered HTTP 403 within ~1.5 s to every attempt since 2026-09-05 (runs
- *    33996957467 … 38464257754, 38489053016) while A1/A2/A3 succeeded with the
- *    same DATA_GO_KR_SERVICE_KEY in the same job. The refusal turned every
- *    00:07 and 06:07 airport run red and was repeated in both windows daily.
+ *    answered HTTP 403 within ~1.5 s to every inspected attempt since
+ *    2026-09-06 KST (runs 33996957467, 38464257754, 38489053016) while
+ *    A1/A2/A3 succeeded with the same DATA_GO_KR_SERVICE_KEY in the same job.
+ *    The refusal kept the 00:07 and 06:07 airport runs red and was repeated
+ *    in both windows daily.
  * 2. KMA getVilageFcst answered resultCode 03 (NODATA_ERROR) for most requests
  *    from 2026-10-13 ~20:30 KST (runs 38391976274 … 38516560664), for current
  *    and previous issuances alike; the same base/grid answered 00 45 seconds
