@@ -757,11 +757,14 @@ exist, ERROR when none do; a failed attempt never supplies a new
 
 ### KASI 특일 정보 — HTTP 403 since 2026-09-05
 
-- Evidence: every scheduled holiday attempt from run 33996957467
-  (2026-09-05) through 38464257754 (00:07 window, 2026-10-14) and 38489053016
-  (06:07 group, 2026-10-14) logged `failureClass=HTTP httpStatus=403
-  attempts=1` within 0.6–1.5 s, while A1/A2/A3 on the same gateway succeeded
-  with the same `DATA_GO_KR_SERVICE_KEY` in the same job. The request uses the
+- Evidence: the inspected holiday attempts — runs 33996957467 (2026-09-05),
+  38464257754 (00:07 window, 2026-10-14) and 38489053016 (06:07 group,
+  2026-10-14), plus 36359785443, 37957282527 and 38079017406 recorded in
+  earlier docs — logged `failureClass=HTTP httpStatus=403 attempts=1` within
+  0.6–1.5 s, while A1/A2/A3 on the same gateway succeeded with the same
+  `DATA_GO_KR_SERVICE_KEY` in the same job. Every scheduled
+  `collect-production.yml` run from #28 (2026-09-04) to #67 (2026-10-14)
+  concluded failure; the inspected ones failed only on this 403. The request uses the
   shared `buildDataGoKrUrl` (one decode, one URLSearchParams encode — the A1
   path), https on `apis.data.go.kr`, and the documented parameters
   (`solYear`, `solMonth`, `numOfRows`, `pageNo`, `_type=json`).
