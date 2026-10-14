@@ -66,7 +66,7 @@
     "app/airport-view.tsx": "f80206e8b5f38a38ddce0769d4df72e5665041417b7ee1fdc39862120a0fde7c",
     "app/local-text.ts": "82328cd1029e929b9a79cd1d58c325469ad829a262fa2e7935b65ca595dfb8d6",
     "app/month-range-picker.tsx": "c358abc4ad12749384e82427ec9c1f16099200a0fa40f84eb469e53dbd7d9665",
-    "app/live-summary.tsx": "87ef4fc4b7e5674b0167e70fba3b0ddca2563a34dd59066b6e8e145dbc52a08c",
+    "app/live-summary.tsx": "654e7b2f0d4a81e3ae26c7869ea3e53a8b7eb6e69459eeeaf305ce60ea0e9c75",
     "app/presentation-clock.ts": "b123c88f7f666af69fd155028ff65f888dbacfe15e4456d2ab22e72c61bf032c"
   },
   "crons": {
@@ -2556,6 +2556,34 @@
         "file": "app/presentation-clock.ts",
         "approved": "b123c88f7f666af69fd155028ff65f888dbacfe15e4456d2ab22e72c61bf032c",
         "why": "usePresentationClock moved verbatim from app/area-demand-card.tsx"
+      }
+    ]
+  },
+  "ownerApprovedSummaryRecheck20261014": {
+    "recordedAt": "2026-10-14",
+    "authorizationEvidence": {
+      "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+      "ownerTaskRequest": "D1 read reduction from the 2026-10-14 handoff: 큰 소비원부터 줄여줘 … 반환 행 수나 요청 횟수만 줄었다고 절약이라고 하지 말고 실제 rows_read·rows_written을 비교해",
+      "approvalQuestion": "D1 읽기 절감 PR #384도 승인하시겠어요? 하루 1번 이하 수집하는 자료(공휴일 403, 서울 추정매출)만 오류일 때는, 열려 있는 화면이 요약을 2분이 아니라 5분마다 다시 확인합니다. 화면 하나당 요약 재조회가 시간당 30→12회로 줄고(계산치, 1회당 약 5,900행), 실시간 자료에 문제가 있을 때는 지금처럼 2분입니다. 보호 파일 live-signals 한 줄이 바뀝니다.",
+      "approvalOptionShown": "승인 (권장) — 승인 기록과 해시를 갱신하고 #384를 병합·배포한 뒤, 실제 요약 실행 횟수를 배포 전후로 비교합니다.",
+      "ownerAnswer": "승인 (권장)",
+      "approvedProtectedFiles": [
+        "app/live-summary.tsx"
+      ],
+      "note": "The question named live-signals; the first-load split approved the same day moved summaryRecheckDelay verbatim into app/live-summary.tsx (now protected), so the same one-line change lands there.",
+      "keepProtectedListAndEnforcement": true,
+      "agentMergeOrDeploymentApproved": true
+    },
+    "reason": "Record the explicit owner approval for this protected-file change; no test is relaxed or skipped.",
+    "comparisonBase": "cdd42c1c6915326703fac854e260d12648491059",
+    "changes": [
+      {
+        "file": "app/live-summary.tsx",
+        "previous": "87ef4fc4b7e5674b0167e70fba3b0ddca2563a34dd59066b6e8e145dbc52a08c",
+        "approved": "654e7b2f0d4a81e3ae26c7869ea3e53a8b7eb6e69459eeeaf305ce60ea0e9c75",
+        "addedLines": 4,
+        "deletedLines": 1,
+        "exactUnifiedDiff": "diff --git a/app/live-summary.tsx b/app/live-summary.tsx\nindex d326c77..c357230 100644\n--- a/app/live-summary.tsx\n+++ b/app/live-summary.tsx\n@@ -7,6 +7,7 @@ import { useEffect, useState } from \"react\";\n import type { Lang } from \"./retailpulse-data\";\n import type { LiveSummary } from \"./live-signals\";\n import { kstDay } from \"../lib/demand-presentation\";\n+import { shortensSummaryRecheck } from \"../lib/summary-recheck\";\n \n // Rechecks use only the existing summary read API. Each date/month shares one\n // request; an unsuccessful refresh keeps the previous payload and source times.\n@@ -41,7 +42,9 @@ function summaryRecheckDelay(value: LiveSummary | null): number {\n   if (!hasAirportData && !hasAreaData) return SUMMARY_RECHECK_MS.empty;\n   if (airport.forecastCoverage?.all !== \"COMPLETE\"\n     || airport.arrivalForecast?.forecastCoverage?.all !== \"COMPLETE\"\n-    || value.sources?.some(source => [\"ERROR\", \"DEGRADED\", \"MISSING\"].includes(source.status))) {\n+    // Only a source collected within the hour can recover before the next normal\n+    // re-check; a daily or weekly source in error keeps the normal 5 minutes.\n+    || value.sources?.some(shortensSummaryRecheck)) {\n     return SUMMARY_RECHECK_MS.partial;\n   }\n   return SUMMARY_RECHECK_MS.normal;\n"
       }
     ]
   }

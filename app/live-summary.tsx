@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import type { Lang } from "./retailpulse-data";
 import type { LiveSummary } from "./live-signals";
 import { kstDay } from "../lib/demand-presentation";
+import { shortensSummaryRecheck } from "../lib/summary-recheck";
 
 // Rechecks use only the existing summary read API. Each date/month shares one
 // request; an unsuccessful refresh keeps the previous payload and source times.
@@ -41,7 +42,9 @@ function summaryRecheckDelay(value: LiveSummary | null): number {
   if (!hasAirportData && !hasAreaData) return SUMMARY_RECHECK_MS.empty;
   if (airport.forecastCoverage?.all !== "COMPLETE"
     || airport.arrivalForecast?.forecastCoverage?.all !== "COMPLETE"
-    || value.sources?.some(source => ["ERROR", "DEGRADED", "MISSING"].includes(source.status))) {
+    // Only a source collected within the hour can recover before the next normal
+    // re-check; a daily or weekly source in error keeps the normal 5 minutes.
+    || value.sources?.some(shortensSummaryRecheck)) {
     return SUMMARY_RECHECK_MS.partial;
   }
   return SUMMARY_RECHECK_MS.normal;
