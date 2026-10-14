@@ -19,31 +19,14 @@ import { collectionStamp, splitFromSummary, type FlightSplit } from "./airport-f
 import type { SplitCore, SplitEstimate } from "./airport-flight-split-copy";
 import type { LiveSummary } from "../app/live-signals";
 import { WEATHER_THRESHOLDS } from "./current-brief";
+import { minutesOf, type AirportSide, type BusinessHours, type PrepTerminal } from "./business-hours";
+
+// The saved place and hours live in ./business-hours (see there); re-exported for this file's readers.
+export { minutesOf, parseBusinessHours, type AirportSide, type BusinessHours, type PrepTerminal } from "./business-hours";
 
 export type PrepArea = "myeongdong" | "hongdae" | "seongsu" | "itaewon";
-export type PrepTerminal = "T1" | "T2";
-export type AirportSide = "EAST" | "WEST";
 /** An airport store may name its side of the terminal; null means the whole terminal. */
 export type PrepPlace = { kind: "area"; area: PrepArea } | { kind: "airport"; terminal: PrepTerminal; side?: AirportSide | null };
-
-/** Store hours in KST, "HH:MM". Equal open and close mean open all day. */
-export interface BusinessHours { open: string; close: string }
-
-const TIME = /^([01]\d|2[0-3]):([0-5]\d)$/;
-
-export function minutesOf(value: unknown): number | null {
-  if (typeof value !== "string") return null;
-  const match = TIME.exec(value);
-  return match ? Number(match[1]) * 60 + Number(match[2]) : null;
-}
-
-/** Stored or typed hours, or null when anything about them is invalid. */
-export function parseBusinessHours(value: unknown): BusinessHours | null {
-  if (!value || typeof value !== "object") return null;
-  const { open, close } = value as Record<string, unknown>;
-  if (minutesOf(open) === null || minutesOf(close) === null) return null;
-  return { open: open as string, close: close as string };
-}
 
 const HOUR_MS = 3_600_000;
 const KST_MS = 9 * HOUR_MS;
