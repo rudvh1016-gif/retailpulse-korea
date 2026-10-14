@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useState } from 'react';
+import { useId } from 'react';
 import type { Lang } from './retailpulse-data';
 import type { LiveSummary } from './live-signals';
 import { buildAreaCurrentBrief } from '../lib/current-brief';
@@ -9,6 +9,7 @@ import { comparisonText } from '../lib/period-comparison';
 import { describeObservationAge } from '../lib/observation-freshness';
 import {PopulationFlowChart} from './population-flow';
 import {PopulationOutlook} from './population-outlook';
+import { usePresentationClock } from './presentation-clock';
 import { kstDay, kstStamp, peopleRange, populationFlow, usableComparison, validPopulationRange, type FlowPoint } from '../lib/demand-presentation';
 
 export const demandCopy = {
@@ -49,17 +50,9 @@ export function demandLevel(level: number, lang: Lang) {
   return ({ ko: ['자료 없음', '여유', '보통', '약간 붐빔', '붐빔'], en: ['Unavailable', 'Quiet', 'Moderate', 'Slightly busy', 'Busy'], zh: ['无资料', '空闲', '一般', '略拥挤', '拥挤'], ja: ['資料なし', '余裕', '普通', 'やや混雑', '混雑'] })[lang][level] ?? '—';
 }
 
-/** A presentation clock only. It never triggers a fetch or changes source times. */
-export function usePresentationClock(reference: string): number {
-  const [time, setTime] = useState<number | null>(null);
-  useEffect(() => {
-    const update = () => setTime(Date.now());
-    const start = window.setTimeout(update, 0);
-    const interval = window.setInterval(update, 60_000);
-    return () => { window.clearTimeout(start); window.clearInterval(interval); };
-  }, []);
-  return time ?? Date.parse(reference);
-}
+// The presentation clock lives in ./presentation-clock so the airport glance can use it without
+// this card and its charts; it is re-exported here for the screens that import it from this file.
+export { usePresentationClock };
 
 export function PopulationFlow({points,lang,now}:{points:FlowPoint[];lang:Lang;now:number}) {
   return <PopulationFlowChart points={points} lang={lang} now={now} copy={demandCopy}/>;

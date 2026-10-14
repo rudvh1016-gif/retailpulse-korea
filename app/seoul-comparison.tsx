@@ -3,7 +3,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {useChoiceMotion} from './use-choice-motion';
 import type {Lang} from './retailpulse-data';
-import {useLiveSummary} from './live-signals';
+import {useLiveSummary} from './live-summary';
 import type {AreaId} from '../lib/areas';
 import type {publicCommercialMonth} from '../lib/commercial-monthly';
 import {commercialComparisonPeriod} from '../lib/commercial-monthly';
