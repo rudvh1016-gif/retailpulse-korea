@@ -1,16 +1,24 @@
 name: Analytics Readiness Check
 
-# Read-only, secret-free: GET requests to public URLs only.
+# Read-only, secret-free, manual only.
 #
-# Answers the three questions that decide whether visitor measurement can be
-# switched on, none of which a checkout can answer:
-#   · is a beacon already on the page (installing a second would double-count)
-#   · does the LIVE response carry the CSP that next.config.ts declares, and
-#     does that CSP permit Cloudflare Web Analytics
-#   · are the Google / Naver verification meta tags actually being served
+# 1. Readiness (scripts/check-analytics.ts): GET requests to public URLs. What
+#    the initial HTML references, the LIVE CSP header, and the verification
+#    meta tags. It does not execute page scripts.
+# 2. GA4 browser probe (scripts/ga4-browser-probe.ts): opens /ko in Chromium
+#    (phone and desktop) and records every Google tag/analytics request while
+#    walking the real UI — before any choice, consent on 더보기, menu moves,
+#    history back, withdrawal on the same checkbox, moves after withdrawal. By
+#    default every collection request is ABORTED inside the browser after it
+#    is recorded, so nothing reaches the GA property.
 #
-# Manual only. This is a diagnostic the owner runs when deciding or verifying
-# a measurement change, not something that needs to run on a schedule.
+#    deliver_test_hit=true adds ONE marked test visit whose collection
+#    requests are let through, for the owner to watch in GA Realtime while it
+#    runs. The marker (koretail_ga_check=<UTC timestamp>) is printed in the
+#    log and the run summary. That visit is development test traffic.
+#
+# Neither part can see the GA account: receipt in the property stays
+# unverified until the owner looks at it.
 on:
   workflow_dispatch:
     inputs:
@@ -18,14 +26,23 @@ on:
         description: Origin to check
         required: false
         default: https://koretaildata.com
+      deliver_test_hit:
+        description: Send ONE marked test visit to GA (watch GA Realtime while it runs)
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
 
+concurrency:
+  group: analytics-check
+  cancel-in-progress: false
+
 jobs:
   analytics:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -37,3 +54,17 @@ jobs:
         env:
           NEXT_PUBLIC_SITE_ORIGIN: ${{ inputs.origin || 'https://koretaildata.com' }}
         run: npx tsx scripts/check-analytics.ts
+      - run: PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers npx playwright install --with-deps chromium
+      - name: GA4 consent, page_view and withdrawal in a real browser
+        env:
+          KORETAIL_PROBE_ORIGIN: ${{ inputs.origin || 'https://koretaildata.com' }}
+          DELIVER_TEST_HIT: ${{ inputs.deliver_test_hit }}
+          PLAYWRIGHT_BROWSERS_PATH: .playwright-browsers
+        run: npx tsx scripts/ga4-browser-probe.ts --out=ga4-probe-evidence.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ga4-probe-evidence
+          path: ga4-probe-evidence.json
+          retention-days: 14
+          if-no-files-found: ignore
