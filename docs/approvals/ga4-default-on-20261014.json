@@ -1,0 +1,37 @@
+{
+  "recordedAt": "2026-10-14",
+  "authorizationEvidence": {
+    "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+    "status": "OWNER_DECIDED_PUBLIC_CHANGE",
+    "ownerInstruction": "내 코리테일 사이트가 구글 애널리틱스랑 제대로 연동이되어서 내 사이트들어온사람 조회 제대로 할수있는거같지가않아. 연결하고해결해줘.",
+    "attachment": "Owner screenshot of GA4 (account GAEO › property KORETAIL), 사용자 참여 발생 시간 및 유지율 보기 개요, 9월 16일–10월 13일: 활성 사용자 3, 새 사용자 1, channel Direct only, 페이지 제목 및 화면 클래스별 조회수 \"사용 가능한 데이터가 없습니다\", platform WEB 100%.",
+    "questionAsked": "GA에 방문자가 거의 안 잡히는 원인은 연결 오류가 아닙니다. 사이트가 '더보기 → 선택적 이용 통계'를 직접 켠 방문자만 GA에 보내도록 만들어져 있습니다(옵트인, 10/13 승인 기록 기준). 그래서 28일 동안 3명만 잡혔습니다. 방문자 집계 방식을 어떻게 바꿀까요?",
+    "ownerChoice": "기본 켜기 + 끌 수 있게 (권장)",
+    "choiceDescriptionShownToOwner": "모든 방문자를 GA로 집계합니다(광고 차단기 사용자 제외). 더보기에서 언제든 끌 수 있고, 개인정보처리방침에 GA 사용 고지를 추가합니다. 유럽 시간대 방문자는 GDPR 때문에 지금처럼 직접 켜야 집계합니다. 검색어·개인 입력·광고 추적 제외는 그대로입니다.",
+    "otherOptionsNotChosen": [
+      "첫 방문 동의 배너",
+      "GA는 그대로 + Cloudflare 방문자 통계"
+    ]
+  },
+  "supersedes": "The consent default recorded as preserved in docs/approvals/ga4-pageviews-20261013.json (\"consent defaults\": off until the visitor opts in on 더보기). Everything else there (manual page_view, safe route vocabulary, ads denied, Enhanced Measurement disabled requirement) stays.",
+  "cause": "lib/personal-analytics.ts loads the Google tag only after setAnalyticsConsent(true); before this change app/analytics-consent.tsx returned enabled only for a stored 'true' or a legacy personal-briefing true, so a visitor who never opened 더보기 sent nothing. The 2026-10-13 passive review (docs/reviews/ga4-public-passive-20261013.json) already showed consentNotGranted on a fresh visit.",
+  "change": {
+    "lib/analytics-default.ts": "new: on by default; off until chosen for EU/EEA, UK and Swiss time zones (Europe/*, Atlantic EU islands, Cyprus, Ceuta, French overseas departments), an unreadable time zone, Global Privacy Control or Do Not Track",
+    "app/analytics-consent.tsx": "useAnalyticsConsent: a stored choice on 더보기 wins, then the legacy personal-briefing answer, then the browser default; the notice under the checkbox now says it is on by default and that Europe must turn it on (4 languages; the Korean text avoids a syllable outside the bundled font subset)",
+    "app/page-analytics.tsx": "comment only",
+    "scripts/ga4-browser-probe.ts": "the manual production probe now visits as two Seoul-time profiles (on by default: first page, 더보기 with the box ticked, moves, reload, withdrawal, reload after withdrawal) and one Berlin-time profile (nothing before a choice, then the checkbox, moves, reload, withdrawal); requirements R2a/R2/R3/R4/R5 follow",
+    ".github/workflows/analytics-check.yml": "header comment describes the two kinds of visit"
+  },
+  "unchanged": [
+    "the tag is still loaded only through setAnalyticsConsent(true) in lib/personal-analytics.ts",
+    "send_page_view false, manual page_view for the closed public route vocabulary only, page_title KORETAIL, empty referrer, no query or fragment",
+    "ad_storage, ad_user_data and ad_personalization denied; Google signals and ad personalization signals off",
+    "the 더보기 checkbox, its label and its withdrawal behaviour; a stored 'false' stops everything at once and after reload",
+    "no protected file changed"
+  ],
+  "privacyNotice": "The site has no separate privacy-policy page; the notice that describes Google Analytics (what is sent, what is not, on by default, how to turn it off, Europe) is the text under the 선택적 이용 통계 checkbox on 더보기 in all four languages.",
+  "ownerActions": [
+    "GA4 Admin → Data streams → web stream → Enhanced measurement must stay OFF (automatic events bypass the site's event allowlist)",
+    "Standard reports lag 24–48 h; GA Realtime shows visits within about a minute"
+  ]
+}

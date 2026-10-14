@@ -3,11 +3,17 @@
  *
  *   npx tsx scripts/ga4-browser-probe.ts --origin=https://koretaildata.com
  *
- * Opens /ko in Chromium (phone and desktop), records every request to a
- * Google tag or analytics host, and walks the real UI: the menu to 더보기,
- * the 선택적 이용 통계 checkbox, two menu moves, history back, withdrawal on
- * the same checkbox, then more moves. By default every collection request is
- * ABORTED after it is recorded, so nothing reaches the GA property.
+ * Opens /ko in Chromium, records every request to a Google tag or analytics
+ * host, and walks the real UI. Usage analytics is on by default since
+ * 2026-10-14 (docs/approvals/ga4-default-on-20261014.json), except in EU/EEA,
+ * UK and Swiss time zones, so there are two kinds of visit:
+ * - phone and desktop in Seoul time: the first page counts without any
+ *   choice, then menu moves, history back, a reload, withdrawal on the
+ *   선택적 이용 통계 checkbox on 더보기, more moves and a reload after it;
+ * - desktop in Berlin time: nothing before a choice, then the checkbox turns
+ *   it on, the same moves, a reload with the choice stored, and withdrawal.
+ * By default every collection request is ABORTED after it is recorded, so
+ * nothing reaches the GA property.
  *
  * DELIVER_TEST_HIT=true adds ONE marked visit whose collection requests are
  * let through, so the owner can watch GA Realtime receive them. Its marker
@@ -29,10 +35,12 @@ import {
 
 const CONSENT_LABEL = '선택적 이용 통계';
 
-interface Profile { id: string; descriptor: (typeof devices)[string]; touch: boolean }
+/** startsOn: whether usage analytics is on before any choice in this time zone (lib/analytics-default.ts). */
+interface Profile { id: string; descriptor: (typeof devices)[string]; touch: boolean; timeZone: string; startsOn: boolean }
 const PROFILES: Profile[] = [
-  { id: 'mobile', descriptor: devices['Pixel 7'], touch: true },
-  { id: 'desktop', descriptor: devices['Desktop Chrome'], touch: false },
+  { id: 'mobile', descriptor: devices['Pixel 7'], touch: true, timeZone: 'Asia/Seoul', startsOn: true },
+  { id: 'desktop', descriptor: devices['Desktop Chrome'], touch: false, timeZone: 'Asia/Seoul', startsOn: true },
+  { id: 'desktop-europe', descriptor: devices['Desktop Chrome'], touch: false, timeZone: 'Europe/Berlin', startsOn: false },
 ];
 
 interface RecordedRequest {
@@ -64,6 +72,7 @@ interface Snapshot {
 interface CspViolation { directive: string; blocked: string; params: string | null; en: string | null; count: number }
 export interface FlowResult {
   profile: string;
+  startsOn: boolean;
   delivered: boolean;
   marker: string | null;
   startUrl: string;
@@ -107,8 +116,8 @@ interface Shared {
 async function runFlow(browser: Browser, profile: Profile, options: ProbeOptions, shared: Shared, marker: string | null): Promise<FlowResult> {
   const t0 = Date.now();
   const startUrl = `${options.origin}/ko${marker ? `?${MARKER_PARAM}=${marker}` : ''}`;
-  const result: FlowResult = { profile: profile.id, delivered: Boolean(marker), marker, startUrl, browser: null, buildSha: null, steps: [], cspViolations: [], traffic: trafficSummary([]), error: null };
-  const context: BrowserContext = await browser.newContext({ ...profile.descriptor, locale: 'ko-KR', timezoneId: 'Asia/Seoul', serviceWorkers: 'block' });
+  const result: FlowResult = { profile: profile.id, startsOn: profile.startsOn, delivered: Boolean(marker), marker, startUrl, browser: null, buildSha: null, steps: [], cspViolations: [], traffic: trafficSummary([]), error: null };
+  const context: BrowserContext = await browser.newContext({ ...profile.descriptor, locale: 'ko-KR', timezoneId: profile.timeZone, serviceWorkers: 'block' });
   const byRequest = new WeakMap<Request, RecordedRequest>();
   const seen = new Set<string>();
   let current: StepRecord | null = null;
@@ -270,25 +279,44 @@ async function runFlow(browser: Browser, profile: Profile, options: ProbeOptions
     }
   };
 
-  try {
-    await step('pre_consent_load', `open ${new URL(startUrl).pathname}${marker ? ' (marked)' : ''}, no choice made`, 'before', 0, undefined, async () => {
-      const response = await page.goto(startUrl, { waitUntil: 'domcontentloaded', timeout: 45_000 });
-      shared.documentCsp ??= response?.headers()['content-security-policy'] ?? null;
-      await page.locator('.app[data-hydrated="true"]').waitFor({ timeout: 45_000 });
-    }, { minMs: 5000, maxMs: 12_000, quietMs: 3000 });
+  const loaded = async (response: Awaited<ReturnType<Page['goto']>>) => {
+    shared.documentCsp ??= response?.headers()['content-security-policy'] ?? null;
+    await page.locator('.app[data-hydrated="true"]').waitFor({ timeout: 45_000 });
+  };
+  const readBuild = async () => {
     result.buildSha = await page.locator('meta[name="koretail-build-sha"]').getAttribute('content', { timeout: 5000 }).catch(() => null);
     result.browser = await page.evaluate(() => {
       const data = (navigator as Navigator & { userAgentData?: { brands?: { brand: string; version: string }[] } }).userAgentData;
       return { userAgent: navigator.userAgent, brands: data?.brands?.map((brand) => `${brand.brand}/${brand.version}`) ?? null, webdriver: navigator.webdriver };
     });
-    await step('pre_consent_menu_more', 'menu → 더보기 before any choice', 'before', 0, undefined, async () => {
-      await menu('/ko/more');
-      await poll(() => choice().isEnabled(), (value) => value === true, 20_000, 'the consent checkbox');
-    }, { minMs: 3000, maxMs: 10_000, quietMs: 2500 });
-    await step('consent_granted', `check ${CONSENT_LABEL} on 더보기`, 'granted', 1, '/ko/more', async () => {
-      await activate(choice());
-      await poll(() => choice().isChecked(), (value) => value === true, 10_000, 'the checkbox to be checked');
-    }, { minMs: 5000, maxMs: 25_000, quietMs: 3000 });
+  };
+
+  try {
+    if (profile.startsOn) {
+      // On by default: the first page counts without any choice, and the box on 더보기 is already ticked.
+      await step('default_on_load', `open ${new URL(startUrl).pathname}${marker ? ' (marked)' : ''}, no choice made (${profile.timeZone})`, 'granted', 1, '/ko', async () => {
+        await loaded(await page.goto(startUrl, { waitUntil: 'domcontentloaded', timeout: 45_000 }));
+      }, { minMs: 5000, maxMs: 25_000, quietMs: 3000 });
+      await readBuild();
+      await step('default_on_menu_more', 'menu → 더보기 without any choice', 'granted', 1, '/ko/more', async () => {
+        await menu('/ko/more');
+        await poll(() => choice().isEnabled(), (value) => value === true, 20_000, 'the consent checkbox');
+        await poll(() => choice().isChecked(), (value) => value === true, 10_000, 'the checkbox to start ticked');
+      });
+    } else {
+      await step('pre_consent_load', `open ${new URL(startUrl).pathname}${marker ? ' (marked)' : ''}, no choice made (${profile.timeZone})`, 'before', 0, undefined, async () => {
+        await loaded(await page.goto(startUrl, { waitUntil: 'domcontentloaded', timeout: 45_000 }));
+      }, { minMs: 5000, maxMs: 12_000, quietMs: 3000 });
+      await readBuild();
+      await step('pre_consent_menu_more', 'menu → 더보기 before any choice', 'before', 0, undefined, async () => {
+        await menu('/ko/more');
+        await poll(() => choice().isEnabled(), (value) => value === true, 20_000, 'the consent checkbox');
+      }, { minMs: 3000, maxMs: 10_000, quietMs: 2500 });
+      await step('consent_granted', `check ${CONSENT_LABEL} on 더보기`, 'granted', 1, '/ko/more', async () => {
+        await activate(choice());
+        await poll(() => choice().isChecked(), (value) => value === true, 10_000, 'the checkbox to be checked');
+      }, { minMs: 5000, maxMs: 25_000, quietMs: 3000 });
+    }
     await step('nav_airport', 'menu → 공항', 'granted', 1, '/ko/airport', () => menu('/ko/airport'));
     await step('nav_where_to', 'menu → 서울 한눈에', 'granted', 1, '/ko/where-to', () => menu('/ko/where-to'));
     await step('scroll_to_end', 'scroll to the end of the page (Enhanced Measurement scroll check)', 'granted', 0, undefined, async () => {
@@ -300,7 +328,7 @@ async function runFlow(browser: Browser, profile: Profile, options: ProbeOptions
       await page.goBack({ waitUntil: 'commit' });
       await page.waitForURL((url) => url.pathname === '/ko/airport', { timeout: 20_000 });
     });
-    await step('reload_with_consent', 'reload with consent stored (returning visitor)', 'granted', 1, '/ko/airport', async () => {
+    await step(profile.startsOn ? 'reload_with_default' : 'reload_with_consent', profile.startsOn ? 'reload without any choice (returning visitor)' : 'reload with consent stored (returning visitor)', 'granted', 1, '/ko/airport', async () => {
       await collectCsp();
       await page.reload({ waitUntil: 'domcontentloaded', timeout: 45_000 });
       await page.locator('.app[data-hydrated="true"]').waitFor({ timeout: 45_000 });
@@ -322,6 +350,13 @@ async function runFlow(browser: Browser, profile: Profile, options: ProbeOptions
         document.dispatchEvent(new Event('visibilitychange'));
         window.dispatchEvent(new Event('pagehide'));`);
     }, { minMs: 4000, maxMs: 10_000, quietMs: 3000 });
+    await collectCsp();
+    await step('after_withdrawal_reload', 'reload after withdrawal (the choice is stored)', 'withdrawn', 0, undefined, async () => {
+      await page.reload({ waitUntil: 'domcontentloaded', timeout: 45_000 });
+      await page.locator('.app[data-hydrated="true"]').waitFor({ timeout: 45_000 });
+      await poll(() => choice().isEnabled(), (value) => value === true, 20_000, 'the consent checkbox');
+      await poll(() => choice().isChecked(), (value) => value === false, 10_000, 'the checkbox to stay unticked');
+    }, { minMs: 5000, maxMs: 15_000, quietMs: 3000 });
     await collectCsp();
     await step('after_withdrawal_close', 'close the tab after withdrawal', 'withdrawn', 0, undefined, async () => {
       await page.close({ runBeforeUnload: true });
@@ -345,7 +380,10 @@ function requirements(flows: FlowResult[], shared: Shared, container: ContainerA
   const all = flows.flatMap((flow) => flow.steps.map((step) => ({ flow, step })));
   const failures = (filter: (step: StepRecord) => boolean) => all.filter(({ step }) => filter(step) && step.verdict?.status === 'FAIL').map(({ flow, step }) => `${flow.profile}${flow.delivered ? '(delivered)' : ''}/${step.id}: ${step.verdict!.reasons.join('; ')}`);
   const errors = flows.filter((flow) => flow.error).map((flow) => `${flow.profile}: probe stopped — ${flow.error}`);
-  const ran = (id: string) => flows.every((flow) => flow.steps.some((step) => step.id === id));
+  const ran = (id: string, among: FlowResult[] = flows) => among.length > 0 && among.every((flow) => flow.steps.some((step) => step.id === id));
+  const defaultOn = flows.filter((flow) => flow.startsOn);
+  const optIn = flows.filter((flow) => !flow.startsOn);
+  const defaultIds = ['default_on_load', 'default_on_menu_more', 'reload_with_default'];
   const verdict = (problems: string[], complete: boolean): Status => (problems.length ? 'FAIL' : complete ? 'PASS' : 'UNKNOWN');
 
   const bundle = [...shared.bundleIds.keys()];
@@ -376,14 +414,16 @@ function requirements(flows: FlowResult[], shared: Shared, container: ContainerA
         `bundle contains manual page_view code: ${shared.manualPageViewAssets.size ? [...shared.manualPageViewAssets].join(', ') : 'NOT FOUND'}`,
         `gtag/js HTTP ${shared.container.status ?? 'not loaded'}, container references the ID: ${container ? container.referencesMeasurementId : 'n/a'}`, ...idProblems] },
     { id: 'E0', title: 'The probe completed every step of every visit', status: errors.length ? 'FAIL' : 'PASS', evidence: errors.length ? errors : [`${flows.length} visit(s), ${all.length} step(s)`] },
-    { id: 'R2', title: 'No Google tag or analytics request before consent (load + menu move)', status: verdict(preProblems, ran('pre_consent_menu_more')),
+    { id: 'R2a', title: 'Seoul time, no choice made: the first page, the move to 더보기 (box already ticked) and a reload each send exactly one page_view', status: verdict(failures((step) => defaultIds.includes(step.id)), defaultIds.every((id) => ran(id, defaultOn))),
+      evidence: all.filter(({ step }) => defaultIds.includes(step.id)).map(({ flow, step }) => `${flow.profile}${flow.delivered ? '(delivered)' : ''}/${step.id}: ${describe(step)}`) },
+    { id: 'R2', title: 'Berlin time: no Google tag or analytics request before a choice (load + menu move)', status: verdict(preProblems, ran('pre_consent_menu_more', optIn)),
       evidence: [...pre.map(({ flow, step }) => `${flow.profile}${flow.delivered ? '(delivered)' : ''}/${step.id}: ${step.googleRequests} Google request(s), tag elements ${step.snapshot?.tagElements ?? '?'}, dataLayer ${step.snapshot?.dataLayerLength ?? 'absent'}, GA cookies ${step.snapshot?.gaCookieNames.length ?? '?'}`), ...preProblems] },
-    { id: 'R3', title: 'Consent on the 더보기 checkbox, and a reload with consent stored, each send exactly one page_view', status: verdict(failures((step) => step.id === 'consent_granted' || step.id === 'reload_with_consent'), ran('consent_granted') && ran('reload_with_consent')),
+    { id: 'R3', title: 'Berlin time: turning it on with the 더보기 checkbox, and a reload with that choice stored, each send exactly one page_view', status: verdict(failures((step) => step.id === 'consent_granted' || step.id === 'reload_with_consent'), ran('consent_granted', optIn) && ran('reload_with_consent', optIn)),
       evidence: all.filter(({ step }) => step.id === 'consent_granted' || step.id === 'reload_with_consent').map(({ flow, step }) => `${flow.profile}${flow.delivered ? '(delivered)' : ''}/${step.id}: ${describe(step)}`) },
-    { id: 'R4', title: 'Withdrawal through the same checkbox stops all sending', status: verdict(failures((step) => step.consent === 'withdrawn'), ran('after_withdrawal_close')),
+    { id: 'R4', title: 'Withdrawal through the same checkbox stops all sending, also after a reload', status: verdict(failures((step) => step.consent === 'withdrawn'), ran('after_withdrawal_reload') && ran('after_withdrawal_close')),
       evidence: [...withdrawn.map(({ flow, step }) => `${flow.profile}${flow.delivered ? '(delivered)' : ''}/${step.id}: ${step.events.length} new event(s), ${step.googleRequests} Google request(s)${step.snapshot ? `, ga-disable=${String(step.snapshot.disableFlag)}` : ''}`),
         lateRetries ? `${lateRetries} retransmission(s) of hits created BEFORE withdrawal (abort-induced transport retry, not new events)` : 'no retransmissions after withdrawal'] },
-    { id: 'R5', title: 'Each in-app menu move or back sends exactly one page_view (no gtag automatic duplicate)', status: verdict(failures((step) => navIds.includes(step.id)), navIds.every(ran)),
+    { id: 'R5', title: 'Each in-app menu move or back sends exactly one page_view (no gtag automatic duplicate)', status: verdict(failures((step) => navIds.includes(step.id)), navIds.every((id) => ran(id))),
       evidence: all.filter(({ step }) => navIds.includes(step.id)).map(({ flow, step }) => `${flow.profile}${flow.delivered ? '(delivered)' : ''}/${step.id}: ${describe(step)}`) },
     { id: 'P1', title: 'No automatic GA4 event observed (history moves, back, reload, scroll to end) and no GA4 Enhanced Measurement template served',
       status: emEvents.length || (container && (container.enhancedMeasurement.length > 0)) ? 'FAIL' : container?.format === 'RECOGNISED' && scrollProved ? 'PASS' : 'UNKNOWN',

@@ -6,11 +6,16 @@ name: Analytics Readiness Check
 #    the initial HTML references, the LIVE CSP header, and the verification
 #    meta tags. It does not execute page scripts.
 # 2. GA4 browser probe (scripts/ga4-browser-probe.ts): opens /ko in Chromium
-#    (phone and desktop) and records every Google tag/analytics request while
-#    walking the real UI — before any choice, consent on 더보기, menu moves,
-#    history back, withdrawal on the same checkbox, moves after withdrawal. By
-#    default every collection request is ABORTED inside the browser after it
-#    is recorded, so nothing reaches the GA property.
+#    and records every Google tag/analytics request while walking the real UI.
+#    Usage analytics is on by default since 2026-10-14
+#    (docs/approvals/ga4-default-on-20261014.json) except in EU/EEA, UK and
+#    Swiss time zones, so it visits as phone and desktop in Seoul time (first
+#    page counted without a choice, menu moves, history back, reload,
+#    withdrawal on the 더보기 checkbox, moves and a reload after it) and as
+#    desktop in Berlin time (nothing before a choice, then the checkbox, the
+#    same moves, a reload with the choice stored, withdrawal). By default every
+#    collection request is ABORTED inside the browser after it is recorded, so
+#    nothing reaches the GA property.
 #
 #    deliver_test_hit=true adds ONE marked test visit whose collection
 #    requests are let through, for the owner to watch in GA Realtime while it
