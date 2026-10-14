@@ -7,7 +7,9 @@
     "attachment": "Owner phone screenshot of /ko airport glance: \"전월비 일평균 증감 Top 5\" ranked by rate (투르크메니스탄 +38.5% … 태국 +12.5%), \"공항 상세 ↗\" below it, \"국가 전체 보기 (45) ↗\" above.",
     "followUpInstruction": "이것처럼 전월비 일평균 감소 탑5도 넣자 증감했던것처럼 해주면돼",
     "followUpAttachment": "Owner screenshot of this branch's increase table (대만 +7 … 미국 +3) as the model for the decrease table.",
-    "layoutInstruction": "증감바로 밑에붙여"
+    "layoutInstruction": "증감바로 밑에붙여",
+    "pcAlignmentInstruction": "이 부분 피씨로보니까 너무 정렬이 제대로 안되어있어 뭔말인지 알지? 피씨에서 정렬시켜줘 모바일에 뭐 하란거절대아님!",
+    "pcAlignmentAttachment": "Owner PC screenshot of the glance key tiles: 오늘 예상 출국객 and 예상 환승객 on one row, 예상 환승객 starting mid-page; 지금 가장 긴 출국장 대기, 앞으로 출발편 집중 시간 and 전월비 일평균 가장 늘어난 목적지 on the row below, on three different columns."
   },
   "decisions": {
     "ranking": "Two lists, same table shape: \"전월비 일평균 증가 Top 5\" (largest increase in included-day daily-mean departures first; ties: higher current mean, then country) and \"전월비 일평균 감소 Top 5\" (largest decrease first; ties: higher previous mean, then country). Each list holds only its own direction; an unchanged destination is in neither; an empty list says \"비교 가능한 증가/감소 없음\" once comparisons exist.",
@@ -23,7 +25,29 @@
     },
     "landing": "The airport page reveals these ids after its client data mounts (app/use-airport-hash-reveal.ts): waits for the id, aligns it below the sticky header and airport menu, opens a closed <details>, keeps it aligned while content above settles, stops at the first scroll/tap/key or after 8 s. Root cause: full page loads whose target sections are not in the server HTML and mount 0.7–1.4 s after load, so the browser fragment scroll had already given up (scrollY stayed 0).",
     "headingRenamed": "The first table's heading moves from \"증감 Top 5\" to \"증가 Top 5\" because a separate decrease list now sits under it.",
-    "layout": "One section: increase heading, basis and included days, the increase table, then the decrease heading and table directly under it; the daily-mean note and the single \"공항 상세\" link follow both."
+    "layout": "One section: increase heading, basis and included days, the increase table, then the decrease heading and table directly under it; the daily-mean note and the single \"공항 상세\" link follow both.",
+    "pcAlignment": {
+      "cause": "The passenger pair spanned the full row as its own two-column grid (gap 16px) while the row under it is three columns (gap 18px), so 예상 환승객 started at 50% (x=728 at 1440px) and 앞으로 출발편 집중 시간 at 33% (x=547.3).",
+      "change": "From 701px (the page's non-phone layout) the pair uses the same three columns and 18px gap, so 예상 환승객 starts where 앞으로 출발편 집중 시간 starts and 오늘 예상 출국객 where the queue tile starts; the third column of the first row stays empty. The pair's label-number-note spacing matches the row below (4px).",
+      "phones": "Untouched, as the owner required: at 700px and below the pair keeps its two halves, 12px gap and divider, and the rows under it stay stacked. Local screenshots at 390px and 700px are byte-identical before and after; e2e pins the two-track pair, 12px gap and 1px divider at 390 and 700.",
+      "measuredTransfersX": {
+        "1440": {
+          "before": 728,
+          "after": 547.3,
+          "upcomingTile": 547.3
+        },
+        "1024": {
+          "before": 520,
+          "after": 366.7,
+          "upcomingTile": 366.7
+        },
+        "701": {
+          "before": 358.5,
+          "after": 253.7,
+          "upcomingTile": 253.7
+        }
+      }
+    }
   },
   "files": [
     "lib/airport-glance.ts",
@@ -34,7 +58,9 @@
     "app/airport-zone-countries.tsx (id)",
     "app/airport-concourse.tsx (id)",
     "tests/airport-glance.test.ts",
-    "e2e/airport-glance-preview.spec.ts"
+    "e2e/airport-glance-preview.spec.ts",
+    "app/airport-glance-preview.css (PC pair columns)",
+    "e2e/glance-passenger-forecast.spec.ts (PC alignment, phone pair unchanged)"
   ],
   "protectedFilesChanged": []
 }
