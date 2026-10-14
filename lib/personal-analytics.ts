@@ -1,4 +1,4 @@
-import { interests, locations, roles, terminals } from './personal-briefing';
+import { interests, locations, roles, terminals } from './personal-choices';
 const names = ['onboarding_started','role_selected','location_selected','interests_selected','briefing_preference_selected','onboarding_completed','briefing_viewed','briefing_helpful_yes','briefing_helpful_no','briefing_used_for_work_yes','briefing_used_for_work_no','pwa_install_prompt_seen','pwa_installed',
   // Business screen (docs/REVISIT_WORKFLOW_2026-09-28.md §3). Each fires on an outcome, not
   // on a click: a view with data, a copy that succeeded, an image that was

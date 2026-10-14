@@ -1,6 +1,6 @@
 'use client';
 import { useSyncExternalStore } from 'react';
-import { parsePreferences, PREFERENCE_KEY, type PersonalPreferences } from '../lib/personal-briefing';
+import { parsePreferences, PREFERENCE_KEY, type PersonalPreferences } from '../lib/personal-choices';
 const CHANGE = 'koretail-preferences-changed';
 let fallback: string | null = null;
 let failed = false;
