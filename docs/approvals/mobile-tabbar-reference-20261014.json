@@ -1,0 +1,73 @@
+{
+  "recordedAt": "2026-10-14T08:13:11.472Z",
+  "authorizationEvidence": {
+    "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+    "status": "OWNER_REQUESTED_PUBLIC_CHANGE",
+    "ownerInstruction": "앞에작업다하고해. 하단 아이콘 처럼 만들어야하는데 지금 사이트 아이콘도 잘만들었는데 첨부파일 이미지의 하단 아이콘을 거의 더 유사하기배껴봐\n\nhttps://gitlab.com/noah03161/wedding-invitation\n\n설명법은 여기있어",
+    "attachment": "Owner screenshot of the reference mobile tab bar: four tabs 홈 · 사진 · 예식 · 마음, 마음 current (blue icon and label on a lighter glass pill), grey glass bar floating above the browser toolbar.",
+    "standingConstraintsKept": [
+      "PC 아이콘·메뉴·매장 버튼은 절대 변경하지 마",
+      "모바일 메뉴 순서와 기능은 유지하고"
+    ],
+    "standingConstraintsSource": "owner handoff 2026-10-14 (docs/approvals/mobile-navigation-release-20261014.json)"
+  },
+  "reference": {
+    "repository": "https://gitlab.com/noah03161/wedding-invitation",
+    "license": "MIT, Copyright (c) 2026 noah0316 — docs/licenses/wedding-invitation-MIT.txt",
+    "followed": [
+      "Public/appstore.css .tabbar .glass (grey glass 40%, blur 24px saturate 180%, inset highlight stack, drop shadow), 14px sides, 12px above the safe area, 62px tall, radius 33px",
+      "Public/appstore.css .tab-ind (grey glass pill 36%, top 4px, 54px tall, radius 27px, inset highlight stack)",
+      "Public/appstore.css .tab (24px filled icons, 10px/600 labels, 2px gap, ink idle, accent current, press scale .92)",
+      "Sources/WeddingViews/Sections.swift: filled famicons glyphs"
+    ]
+  },
+  "icons": {
+    "source": "famicons 7.2.3 (npm, MIT, Copyright (c) 2022-present Family; fork of Ionicons, MIT, Copyright (c) 2015-present Ionic) — docs/licenses/famicons-MIT.txt, docs/licenses/ionicons-MIT.txt",
+    "mapping": {
+      "공항 한눈에 (airport-glance)": "grid — the reference 사진 glyph",
+      "공항 (airport)": "airplane",
+      "서울 한눈에 (where-to)": "location — same pin metaphor as before",
+      "서울 (today)": "business — same buildings metaphor as before",
+      "소비 흐름 (consumption)": "stats-chart — same bar metaphor as before",
+      "더보기 (more)": "ellipsis-horizontal",
+      "매장 (business, not in the bottom bar)": "storefront"
+    }
+  },
+  "deliberateDifferences": [
+    "Current colour is the site --blue (#214cff), not the reference #007aff: one site blue.",
+    "The pill has no backdrop blur of its own and no SVG displacement (glassWarp) filter: it sits on the bar's blurred glass, and e2e/pure-white.spec.ts admits one backdrop filter, the bar's.",
+    "Six menus instead of four, so labels may wrap to two lines at 320px; every label stays inside its 44px+ target (e2e/glass-navigation-preview.spec.ts, ko/en/zh/ja)."
+  ],
+  "files": [
+    {
+      "path": "app/navigation-icon.tsx",
+      "afterSha256": "6bb8550e68bae6d74490ac9b25d493d887faf0cd6649495e1b4fc66a73d77ee6",
+      "protected": false
+    },
+    {
+      "path": "app/glass-navigation.css",
+      "afterSha256": "8134b579d28865141d0cb6cb6335863cf25f0a85a24cbeb304fcf5e0984f8915",
+      "protected": false
+    },
+    {
+      "path": "e2e/glass-navigation-preview.spec.ts",
+      "note": "safe-area expectation follows the new 12px float (glass bottom 46px with a 34px inset); new test pins the reference look"
+    },
+    {
+      "path": "e2e/pure-white.spec.ts",
+      "note": "the single approved marker value changes from rgba(255,255,255,0.64) to rgba(187,187,188,0.36); still no backdrop filter on it"
+    },
+    {
+      "path": "docs/licenses/famicons-MIT.txt"
+    },
+    {
+      "path": "docs/licenses/ionicons-MIT.txt"
+    }
+  ],
+  "unchanged": [
+    "app/retailpulse-app.tsx and every other Owner UI Lock file (tests/fixtures/phase2-locks.json)",
+    "top (PC) navigation: 7 menus including 매장, no icons",
+    "bottom menu order, links, drag/keyboard/press behaviour, reduced-motion handling",
+    "page bottom padding (calc(112px + safe area) > 74px + safe area bar footprint)"
+  ]
+}

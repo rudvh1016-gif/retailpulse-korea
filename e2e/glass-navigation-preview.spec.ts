@@ -61,6 +61,20 @@ test('bottom safe area keeps the glass bar and its targets above the home indica
  const cdp=await page.context().newCDPSession(page);await cdp.send('Emulation.setSafeAreaInsetsOverride' as never,{insets:{top:47,bottom:34,left:0,right:0}} as never);
  await page.goto('/ko/hongdae');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  const bar=await page.locator('.bottom-nav').evaluate(n=>({bottom:n.getBoundingClientRect().bottom,links:[...n.querySelectorAll('a')].map(a=>a.getBoundingClientRect().bottom),glass:getComputedStyle(n,'::before').bottom}));
- expect(Math.abs(bar.bottom-844)).toBeLessThanOrEqual(1);expect(bar.glass).toBe('34px');
- for(const bottom of bar.links)expect(bottom).toBeLessThanOrEqual(844-34);
+ // The glass floats 12px above the 34px inset, as the owner's reference bar does (2026-10-14).
+ expect(Math.abs(bar.bottom-844)).toBeLessThanOrEqual(1);expect(bar.glass).toBe('46px');
+ for(const bottom of bar.links)expect(bottom).toBeLessThanOrEqual(844-46);
+});
+// Owner, 2026-10-14: "첨부파일 이미지의 하단 아이콘을 거의 더 유사하기배껴봐" — the reference tab bar
+// (noah0316 wedding-invitation, MIT): grey glass 14px from the sides and 62px tall, a glass pill
+// behind the current menu, 24px filled icons over 10px labels, ink when idle, blue when current.
+test('mobile tab bar follows the owner reference look',async({page})=>{
+ await page.setViewportSize({width:390,height:844});await setup(page);await page.goto('/ko/airport');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ const look=await page.locator('.bottom-nav').evaluate(n=>{const css=(e:Element,p:string,pseudo?:string)=>getComputedStyle(e,pseudo).getPropertyValue(p),root=getComputedStyle(document.documentElement),links=[...n.querySelectorAll('a')],current=n.querySelector('a[aria-current]')!,idle=links.find(a=>a!==current)!,pill=n.querySelector('.glass-nav-indicator')!,box=n.getBoundingClientRect(),pillBox=pill.getBoundingClientRect(),currentBox=current.getBoundingClientRect();
+  return {left:box.left,right:innerWidth-box.right,glassRadius:css(n,'border-top-left-radius','::before'),glassHeight:box.height-parseFloat(css(n,'bottom','::before')),pillRadius:css(pill,'border-top-left-radius'),pillOverCurrent:Math.abs(pillBox.left-currentBox.left)<=1&&Math.abs(pillBox.width-currentBox.width)<=1,
+   icon:[...n.querySelectorAll('svg')].map(s=>s.getBoundingClientRect().width),label:css(idle.querySelector('span')!,'font-size'),idle:css(idle,'color'),current:css(current,'color'),ink:root.getPropertyValue('--ink').trim(),blue:root.getPropertyValue('--blue').trim()};});
+ expect(look.left).toBe(14);expect(look.right).toBe(14);expect(look.glassRadius).toBe('33px');expect(look.glassHeight).toBe(62);expect(look.pillRadius).toBe('27px');expect(look.pillOverCurrent).toBe(true);
+ expect(look.icon).toEqual([24,24,24,24,24,24]);expect(look.label).toBe('10px');
+ const rgb=(hex:string)=>`rgb(${parseInt(hex.slice(1,3),16)}, ${parseInt(hex.slice(3,5),16)}, ${parseInt(hex.slice(5,7),16)})`;
+ expect(look.idle).toBe(rgb(look.ink));expect(look.current).toBe(rgb(look.blue));
 });
