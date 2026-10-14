@@ -1,0 +1,33 @@
+{
+  "recordedAt": "2026-10-14",
+  "authorizationEvidence": {
+    "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+    "status": "OWNER_REQUESTED_PUBLIC_CHANGE",
+    "ownerInstruction": "이거정보가안들어오네 해결하고 쉽게알아보게풀어서적어줘 뭔지",
+    "attachment": "Owner phone screenshot of /ko Seoul area page, '이동과 외국인 흐름': the 관광 목적 이동 row with 기준일 2026. 09. 30., 공식 파일 발표 월 —, 수집 2026. 10. 06. 10:43 KST and '단위와 집계 범위를 확인 중이라 수치는 표시하지 않습니다.'; above it the 단기외국인 생활인구 row with 수집 2026. 09. 01. 09:38 KST."
+  },
+  "findings": {
+    "tourismPurposeMovement": "Collected normally: the daily run reads the official OA-22378 page and reports SKIPPED_NO_NEW_PUBLICATION for publication 202609 (runs 38489053016, 38337292739); the stored value (reference date 2026-09-30) was hidden only because the unit had not been confirmed.",
+    "unitEvidence": [
+      "Seoul Open Data living-mobility description (data.seoul.go.kr/dataVisual/seoul/seoulLivingMigration.do, via search): the count is 이동인구(합); values of 3 people or fewer are masked with * for privacy; the data is a statistical estimate from KT LTE/5G signals and can differ from reality.",
+      "Press coverage of the Seoul/KT 수도권 생활이동 release (etnews 2024-05-28): 이동인구 = how many people moved between origin and destination, aggregated from mobile signals.",
+      "The OA-22378 CSV values are decimals (e.g. 360.5), consistent with expansion-weighted people estimates; masked cells are the non-numeric rows the parser already excludes."
+    ],
+    "shortStayForeignLivingPopulation": "Not a display bug: every daily run (e.g. 38489053016) tries the 62 latest days at 23:00 and gets no rows for any date after 2026-08-26 (49 candidates, 53 requests), so the newest complete period is 2026-08-26 23:00. Seoul's living-population pages announce the move to the national 250 m grid (old products ended after 2026-07-31); whether OA-23018 resumes or is replaced is not confirmed from this environment (data.seoul.go.kr is unreachable here)."
+  },
+  "change": {
+    "lib/seoul-flow-data.mjs": "tourismPurposeMovement.originalUnit 'people_per_movement_estimate', unitVerified true",
+    "app/seoul-flow-models.tsx": "the tourism row shows the value rounded with 명 · 추정 under '관광하러 도착', a plain explanation (what it is, one person twice counts twice, masked cells left out), and 'Seoul publishes last month's data once a month' instead of a '—' release month; the living row explains in plain words what it is and, when its reference is 10+ days older than the summary, says Seoul has not published newer data since that day and that it is checked again daily (4 languages, Korean inside the bundled font subset)"
+  },
+  "unchanged": [
+    "no collection, schedule, D1 read or API change; the summary payload is the same",
+    "the tourism desk (app/tourism-desk.tsx, protected) still hides the raw figures",
+    "values are never called visitors, purchases, sales or live activity"
+  ],
+  "sources": [
+    "https://data.seoul.go.kr/dataVisual/seoul/seoulLivingMigration.do",
+    "https://data.seoul.go.kr/dataVisual/seoul/capitalRegionLivingMigration.do",
+    "https://www.etnews.com/20240528000070",
+    "https://data.seoul.go.kr/dataList/OA-14993/A/1/datasetView.do"
+  ]
+}
