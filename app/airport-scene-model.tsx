@@ -36,12 +36,15 @@ export function AirportSceneModel({scope,lang,className='',showBasis=true,childr
   const reservedStyle={aspectRatio:responsive?'var(--airport-overview-ratio)':`${view.width}/${view.height}`,
     '--airport-overview-wide-ratio':`${view.width}/${view.height}`,
     '--airport-overview-mobile-ratio':`${mobile.width}/${mobile.height}`} as CSSProperties;
+  // A 360–440px phone at 3x needs 984–1224 px, so terminal and concourse scenes carry a 1300w step
+  // below their 1575–1784w full size. The desktop landscape overview keeps its existing candidates.
+  const steps=scope==='all'?[390,900]:[390,900,1300];
   // eslint-disable-next-line @next/next/no-img-element
-  const image=<img src={src} srcSet={previewRoot?undefined:`${stem}-390.webp 390w, ${stem}-900.webp 900w, ${stem}.webp ${view.width}w`} sizes={responsive&&className.includes('airport-concept-picture')?'(max-width: 732px) calc(100vw - 32px), (min-width: 1024px) 1200px, 700px':'(max-width: 732px) calc(100vw - 32px), 700px'} width={view.width} height={view.height} alt="" loading="lazy" decoding="async"/>;
+  const image=<img src={src} srcSet={previewRoot?undefined:`${steps.map(w=>`${stem}-${w}.webp ${w}w`).join(', ')}, ${stem}.webp ${view.width}w`} sizes={responsive&&className.includes('airport-concept-picture')?'(max-width: 732px) calc(100vw - 32px), (min-width: 1024px) 1200px, 700px':'(max-width: 732px) calc(100vw - 32px), 700px'} width={view.width} height={view.height} alt="" loading="lazy" decoding="async"/>;
   return <>
     <div className={`airport-scene-picture ${className}${responsive?' airport-scene-overview-v14':''}`} style={reservedStyle} data-scene={scene} data-building={scope}>
       {/* Only the selected building and lighting image is requested. */}
-      {responsive?<picture><source media="(max-width: 600px)" srcSet={`${mobileStem}-390.webp 390w, ${mobileStem}-900.webp 900w, ${mobileStem}.webp ${mobile.width}w`} sizes="calc(100vw - 32px)" width={mobile.width} height={mobile.height}/>{image}</picture>:image}
+      {responsive?<picture><source media="(max-width: 600px)" srcSet={`${mobileStem}-390.webp 390w, ${mobileStem}-900.webp 900w, ${mobileStem}-1100.webp 1100w, ${mobileStem}.webp ${mobile.width}w`} sizes="calc(100vw - 32px)" width={mobile.width} height={mobile.height}/>{image}</picture>:image}
       {scope==='all'&&Object.entries(view.labels).map(([name,point])=>{
         const narrow=mobile.labels[name as keyof typeof mobile.labels];
         const style=responsive?{left:'var(--airport-anchor-x)',top:'var(--airport-anchor-y)',

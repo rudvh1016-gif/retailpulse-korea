@@ -3,6 +3,14 @@
   "same_geometry_camera_crop_between_day_night": true,
   "assets": [
     {
+      "file": "CONCOURSE_day-1300.webp",
+      "bytes": 35464,
+      "sha256": "b3750f23ea4bee278bcb551e1495a5de33d8c7262340a711db48b5a212da9e3a",
+      "derivedFrom": "CONCOURSE_day.webp",
+      "derivedFromSha256": "157078091b8200c1f48e6ed31be4d7d97e29c74aabf263a0d30dd931ffb2acd1",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q90 effort 6 smartSubsample"
+    },
+    {
       "file": "CONCOURSE_day-390.webp",
       "bytes": 6772,
       "sha256": "4ae284a0a30bb71db0706a020b082a3c91f6680b274d93376ee9bb9091590edc"
@@ -16,6 +24,14 @@
       "file": "CONCOURSE_day.webp",
       "bytes": 57468,
       "sha256": "157078091b8200c1f48e6ed31be4d7d97e29c74aabf263a0d30dd931ffb2acd1"
+    },
+    {
+      "file": "CONCOURSE_night-1300.webp",
+      "bytes": 32346,
+      "sha256": "5659f9c418a984e52985c6e768fd5d66ec3cd29ddf3d308d48b37a3402602959",
+      "derivedFrom": "CONCOURSE_night.webp",
+      "derivedFromSha256": "c42d40269c7e799482799e8893d366c002430a7e7ad3036f352433ed8c9a8979",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q90 effort 6 smartSubsample"
     },
     {
       "file": "CONCOURSE_night-390.webp",
@@ -63,6 +79,14 @@
       "sha256": "09923913ab42093dc8b8581a82a28139c28b2e716a75995b8ffa675f3753ba3b"
     },
     {
+      "file": "OVERVIEW_MOBILE_day-1100.webp",
+      "bytes": 67196,
+      "sha256": "87923bd309a10e05d28201bcc3dcda1de340b0043d27f47070b214cddbe7e758",
+      "derivedFrom": "OVERVIEW_MOBILE_day.webp",
+      "derivedFromSha256": "2f52b539bc97f0f910636f6a8bf0175040f4864fba8f5650284e1b01ed79e421",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q90 effort 6 smartSubsample"
+    },
+    {
       "file": "OVERVIEW_MOBILE_day-390.webp",
       "bytes": 15246,
       "sha256": "ccf5b04e4918d0567bbf6f1ebb97eb1b1ebe46225d71aaeb130c314b37d91fff"
@@ -76,6 +100,14 @@
       "file": "OVERVIEW_MOBILE_day.webp",
       "bytes": 82924,
       "sha256": "2f52b539bc97f0f910636f6a8bf0175040f4864fba8f5650284e1b01ed79e421"
+    },
+    {
+      "file": "OVERVIEW_MOBILE_night-1100.webp",
+      "bytes": 58122,
+      "sha256": "955a146f0bf0ce7b07bc7deabee686fa0cd522c06e9683a2538cc4276d1bb827",
+      "derivedFrom": "OVERVIEW_MOBILE_night.webp",
+      "derivedFromSha256": "4f3c2b5f9b9f369eab0035aefac0ad19b4ba5925d22ab42d942665683bb01ce6",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q90 effort 6 smartSubsample"
     },
     {
       "file": "OVERVIEW_MOBILE_night-390.webp",
@@ -93,6 +125,14 @@
       "sha256": "4f3c2b5f9b9f369eab0035aefac0ad19b4ba5925d22ab42d942665683bb01ce6"
     },
     {
+      "file": "T1_day-1300.webp",
+      "bytes": 47662,
+      "sha256": "1c9d7d3a1fe17d7ee6449b06ddbebaaa445b86fbace9f86c4718a70d3ae43c16",
+      "derivedFrom": "T1_day.webp",
+      "derivedFromSha256": "81c42c67e5778e9399f3386ec08bf334710286915a451ca08919f4a8cb91574f",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q90 effort 6 smartSubsample"
+    },
+    {
       "file": "T1_day-390.webp",
       "bytes": 8884,
       "sha256": "815e555ac725f81a8e340b427f86e96393cabcb4deabb18fa972b15bfed42340"
@@ -106,6 +146,14 @@
       "file": "T1_day.webp",
       "bytes": 69214,
       "sha256": "81c42c67e5778e9399f3386ec08bf334710286915a451ca08919f4a8cb91574f"
+    },
+    {
+      "file": "T1_night-1300.webp",
+      "bytes": 43626,
+      "sha256": "f6700c973bd676c78cd8f287f953f68b60d547cd73bf509ea0e71e6b65e9c03d",
+      "derivedFrom": "T1_night.webp",
+      "derivedFromSha256": "36570d037135b3df4248d7212d51db3f6968a1266017e00f65987b9216ced573",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q90 effort 6 smartSubsample"
     },
     {
       "file": "T1_night-390.webp",
@@ -123,6 +171,14 @@
       "sha256": "36570d037135b3df4248d7212d51db3f6968a1266017e00f65987b9216ced573"
     },
     {
+      "file": "T2_day-1300.webp",
+      "bytes": 53842,
+      "sha256": "1621d27edda345ae236c5de9b2ce1d231f555503d31164fa6082836d15134315",
+      "derivedFrom": "T2_day.webp",
+      "derivedFromSha256": "e06ec8b9e7ba49df7edfde70cdd7cf6ac26c70448af14fe43320aa06b0f741f5",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q90 effort 6 smartSubsample"
+    },
+    {
       "file": "T2_day-390.webp",
       "bytes": 9440,
       "sha256": "ae6afc721ef9c62ff45dc407422788a219cef3ae98f82852f110065bdb707967"
@@ -136,6 +192,14 @@
       "file": "T2_day.webp",
       "bytes": 89888,
       "sha256": "e06ec8b9e7ba49df7edfde70cdd7cf6ac26c70448af14fe43320aa06b0f741f5"
+    },
+    {
+      "file": "T2_night-1300.webp",
+      "bytes": 42698,
+      "sha256": "c3ed2f430f0fb603aa7d23638eab23cc38b963381e03fd05fd719edd5089aac4",
+      "derivedFrom": "T2_night.webp",
+      "derivedFromSha256": "6cf8866232436910fd3b557e23a2e7f14470c6716fa5f46fc7876924307f2251",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q90 effort 6 smartSubsample"
     },
     {
       "file": "T2_night-390.webp",
