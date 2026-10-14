@@ -8,18 +8,23 @@ import {
   parseSkyCode,
 } from "./kma-categories";
 
+/** A provider signal is always one of the fixed tokens below, never provider text. */
+const PROVIDER_SIGNAL = /^(?:RESULT_\d{1,4}|FORBIDDEN|UNAUTHORIZED|API_NOT_FOUND|QUOTA_EXCEEDED|HTML_PAGE|EMPTY_BODY|UNRECOGNIZED_BODY)$/;
+
 export class SourceFetchError extends Error {
   public readonly attempts: number;
   public readonly elapsedMs: number;
   public readonly retryExhausted: boolean;
   public readonly retryDeferred: boolean;
+  /** What the provider's error body said, as one token from `classifyProviderBody`. */
+  public readonly providerSignal?: string;
 
   constructor(
     public readonly code: "TIMEOUT" | "HTTP" | "MALFORMED_JSON" | "SCHEMA" | "NETWORK",
     public readonly status?: number,
     /** Connection-layer cause (ENOTFOUND, ECONNRESET, ...) when the platform reports one. */
     public readonly causeCode?: string,
-    context: { attempts?: number; elapsedMs?: number; retryExhausted?: boolean; retryDeferred?: boolean } = {},
+    context: { attempts?: number; elapsedMs?: number; retryExhausted?: boolean; retryDeferred?: boolean; providerSignal?: string } = {},
   ) {
     super(causeCode ? `${code}_${causeCode}` : code);
     this.name = "SourceFetchError";
@@ -27,7 +32,65 @@ export class SourceFetchError extends Error {
     this.elapsedMs = Math.max(0, Math.trunc(context.elapsedMs ?? 0));
     this.retryExhausted = context.retryExhausted === true;
     this.retryDeferred = context.retryDeferred === true;
+    if (context.providerSignal && PROVIDER_SIGNAL.test(context.providerSignal)) this.providerSignal = context.providerSignal;
   }
+}
+
+/**
+ * Reduces a provider error body to one fixed token, so a failure can say WHY
+ * the provider refused without ever echoing what it sent.
+ *
+ * A data.go.kr refusal can arrive as an HTTP 401/403 from the shared gateway,
+ * as the legacy `OpenAPI_ServiceResponse` XML (`returnReasonCode` 30 = key not
+ * registered for this service, 31 = expired, 20 = access denied, 22 = daily
+ * quota), or as the provider's own `resultCode`. Telling those apart is what
+ * separates "the owner must apply for this API" from "the key expired" from
+ * "the gateway is down". Only numeric codes and a few fixed phrases are read;
+ * the body itself — which can echo the request URL and so the service key —
+ * is never returned, logged or stored.
+ */
+export function classifyProviderBody(text: string): string {
+  const sample = text.slice(0, 4_096);
+  const code = /<returnReasonCode>\s*(\d{1,4})\s*<\/returnReasonCode>/i.exec(sample)?.[1]
+    ?? /<resultCode>\s*(\d{1,4})\s*<\/resultCode>/i.exec(sample)?.[1]
+    ?? /"resultCode"\s*:\s*"?(\d{1,4})"?/.exec(sample)?.[1];
+  if (code) return `RESULT_${code}`;
+  if (/<html|<!doctype\s+html/i.test(sample)) return "HTML_PAGE";
+  const trimmed = sample.trim();
+  if (!trimmed) return "EMPTY_BODY";
+  if (trimmed.length <= 120) {
+    if (/^forbidden\.?$/i.test(trimmed)) return "FORBIDDEN";
+    if (/^unauthori[sz]ed\.?$/i.test(trimmed)) return "UNAUTHORIZED";
+    if (/^api not found\.?$/i.test(trimmed)) return "API_NOT_FOUND";
+    if (/quota/i.test(trimmed)) return "QUOTA_EXCEEDED";
+  }
+  return "UNRECOGNIZED_BODY";
+}
+
+/**
+ * data.go.kr common result codes, shared by KMA, KASI and the airport APIs.
+ * 20 access denied · 21 key temporarily disabled · 30 key not registered for
+ * this service · 31 key expired · 32 unregistered IP · 33 unsigned call.
+ * None of these is fixed by asking again; each needs the account owner.
+ */
+const AUTH_RESULT_CODES = new Set(["20", "21", "30", "31", "32", "33"]);
+/** 22: the daily request limit is used up. Asking again only repeats the refusal. */
+const QUOTA_RESULT_CODES = new Set(["22"]);
+/** 03: NODATA_ERROR — the provider answered, and had no rows for the request. */
+const NO_DATA_RESULT_CODES = new Set(["03"]);
+
+function resultCodeClass(code: string | undefined): "AUTH" | "QUOTA" | "NO_DATA" | null {
+  if (!code) return null;
+  if (AUTH_RESULT_CODES.has(code)) return "AUTH";
+  if (QUOTA_RESULT_CODES.has(code)) return "QUOTA";
+  if (NO_DATA_RESULT_CODES.has(code)) return "NO_DATA";
+  return null;
+}
+
+function providerSignalClass(signal: string | undefined): "AUTH" | "QUOTA" | "NO_DATA" | null {
+  if (!signal) return null;
+  if (signal === "QUOTA_EXCEEDED") return "QUOTA";
+  return resultCodeClass(/^RESULT_(\d{1,4})$/.exec(signal)?.[1]);
 }
 
 /** Platform error codes are uppercase identifiers; anything else is not echoed. */
@@ -121,6 +184,10 @@ const MAX_RETRY_DELAY_MS = 60_000;
 
 export function isTransientSourceFailure(error: SourceFetchError): boolean {
   if (error.code === "NETWORK" || error.code === "TIMEOUT") return true;
+  // A body that names an auth or quota refusal is never transient, whatever
+  // HTTP status carried it: asking again repeats the same refusal.
+  const signalled = providerSignalClass(error.providerSignal);
+  if (signalled === "AUTH" || signalled === "QUOTA") return false;
   return error.code === "HTTP" && (error.status === 429 || (error.status !== undefined && error.status >= 500));
 }
 
@@ -152,7 +219,17 @@ function withFetchContext(
   elapsedMs: number,
   retryExhausted: boolean,
 ): SourceFetchError {
-  return new SourceFetchError(error.code, error.status, error.causeCode, { attempts, elapsedMs, retryExhausted });
+  return new SourceFetchError(error.code, error.status, error.causeCode, {
+    attempts, elapsedMs, retryExhausted, providerSignal: error.providerSignal,
+  });
+}
+
+async function readProviderSignal(response: Response): Promise<string | undefined> {
+  try {
+    return classifyProviderBody(await response.text());
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -180,17 +257,30 @@ export async function fetchOfficialJson(url: URL, options: FetchOfficialJsonOpti
       const response = await fetchImpl(url, { signal: controller.signal, headers: { accept: "application/json" } });
       if (!response.ok) {
         retryAfter = response.headers.get("retry-after");
-        throw new SourceFetchError("HTTP", response.status);
+        // The body is read only to name the refusal (classifyProviderBody); it
+        // is never kept, so a body that echoes the request URL cannot leak.
+        throw new SourceFetchError("HTTP", response.status, undefined, {
+          providerSignal: await readProviderSignal(response),
+        });
       }
+      let text: string;
       try {
-        return await response.json();
+        text = await response.text();
       } catch (error) {
         // Headers can arrive before the body times out or the connection drops.
-        // Only a JSON syntax error is permanent; transport failures still use
-        // the same bounded retry policy as a failure before headers arrive.
+        // Transport failures still use the same bounded retry policy as a
+        // failure before headers arrive.
         if (controller.signal.aborted) throw new SourceFetchError("TIMEOUT");
-        if (error instanceof SyntaxError) throw new SourceFetchError("MALFORMED_JSON");
         throw error;
+      }
+      try {
+        return JSON.parse(text);
+      } catch {
+        // Only a JSON syntax error is permanent. A data.go.kr refusal sent as
+        // XML with HTTP 200 is named by its code instead of just "malformed".
+        throw new SourceFetchError("MALFORMED_JSON", undefined, undefined, {
+          providerSignal: classifyProviderBody(text),
+        });
       }
     } catch (error) {
       failure = classifySourceFetchFailure(error);
@@ -212,6 +302,7 @@ export async function fetchOfficialJson(url: URL, options: FetchOfficialJsonOpti
     if (providerWait !== null && providerWait > maxWait) {
       throw new SourceFetchError(failure!.code, failure!.status, failure!.causeCode, {
         attempts: attempt + 1, elapsedMs: nowMs() - startedAt, retryDeferred: true,
+        providerSignal: failure!.providerSignal,
       });
     }
     const delay = boundedRetryDelayMs(baseDelay, {
@@ -228,25 +319,31 @@ export async function fetchOfficialJson(url: URL, options: FetchOfficialJsonOpti
 
 const SAFE_INTERNAL_CAUSE_CODE = /^[A-Za-z][A-Za-z0-9_.:-]{0,79}$/;
 
-/** Converts an exception to bounded operational detail without echoing URLs or secrets. */
-export function safeSourceFailureDetail(error: unknown): string {
+/**
+ * The one failure vocabulary every collector reports in `failureClass=`.
+ *
+ * Three answers must never collapse into one, because each needs a different
+ * response: AUTH (the key may not use this service — an owner action, never a
+ * retry), NO_DATA (the provider answered and had no rows — keep last-good, look
+ * again at the next scheduled window), and TIMEOUT/NETWORK (the request never
+ * completed — the only class, with HTTP 5xx and 429, that is retried). QUOTA is
+ * the daily limit (code 22), which a retry cannot lift either.
+ *
+ * HTTP 401/403 stay visible as `httpStatus=` beside AUTH, so every existing
+ * reader of `httpStatus=403` keeps working.
+ */
+export function sourceFailureClass(error: unknown): string {
   if (error instanceof SourceFetchError) {
-    const parts = [
-      `failureClass=${error.code}`,
-      ...(error.causeCode ? [`causeCode=${error.causeCode}`] : []),
-      ...(error.status === undefined ? [] : [`httpStatus=${error.status}`]),
-      `attempts=${error.attempts}`,
-      `elapsedMs=${Math.min(error.elapsedMs, 3_600_000)}`,
-      `retryExhausted=${error.retryExhausted}`,
-      ...(error.retryDeferred ? ["retryDeferred=true"] : []),
-    ];
-    return parts.join(" ");
+    if (error.code === "HTTP" && (error.status === 401 || error.status === 403)) return "AUTH";
+    const signalled = providerSignalClass(error.providerSignal);
+    if (signalled === "AUTH" || signalled === "QUOTA") return signalled;
+    if (signalled === "NO_DATA" && error.code === "MALFORMED_JSON") return "NO_DATA";
+    return error.code;
   }
-  const raw = error instanceof Error ? error.message : "collector_error";
-  const causeCode = SAFE_INTERNAL_CAUSE_CODE.test(raw)
-    ? raw.toUpperCase().replace(/[.:-]/g, "_")
-    : "COLLECTOR_ERROR";
-  const failureClass = /(?:^|_)RESULT_30$|SERVICE_KEY/.test(causeCode)
+  const causeCode = internalCauseCode(error);
+  const resultClass = resultCodeClass(/(?:^|_)RESULT_(\d{1,4})(?:_PAGE_\d+)?$/.exec(causeCode)?.[1]);
+  if (resultClass) return resultClass;
+  return /SERVICE_KEY/.test(causeCode)
     ? "AUTH"
     : causeCode.includes("NO_DATA") || causeCode.endsWith("_EMPTY")
       ? "NO_DATA"
@@ -255,7 +352,31 @@ export function safeSourceFailureDetail(error: unknown): string {
       : causeCode.includes("SCHEMA") || causeCode.includes("CONTRACT")
       ? "SCHEMA"
       : "VALIDATION";
-  return `failureClass=${failureClass} causeCode=${causeCode} attempts=1 elapsedMs=0 retryExhausted=false`;
+}
+
+function internalCauseCode(error: unknown): string {
+  const raw = error instanceof Error ? error.message : "collector_error";
+  return SAFE_INTERNAL_CAUSE_CODE.test(raw)
+    ? raw.toUpperCase().replace(/[.:-]/g, "_")
+    : "COLLECTOR_ERROR";
+}
+
+/** Converts an exception to bounded operational detail without echoing URLs or secrets. */
+export function safeSourceFailureDetail(error: unknown): string {
+  if (error instanceof SourceFetchError) {
+    const parts = [
+      `failureClass=${sourceFailureClass(error)}`,
+      ...(error.causeCode ? [`causeCode=${error.causeCode}`] : []),
+      ...(error.status === undefined ? [] : [`httpStatus=${error.status}`]),
+      `attempts=${error.attempts}`,
+      `elapsedMs=${Math.min(error.elapsedMs, 3_600_000)}`,
+      `retryExhausted=${error.retryExhausted}`,
+      ...(error.retryDeferred ? ["retryDeferred=true"] : []),
+      ...(error.providerSignal ? [`providerSignal=${error.providerSignal}`] : []),
+    ];
+    return parts.join(" ");
+  }
+  return `failureClass=${sourceFailureClass(error)} causeCode=${internalCauseCode(error)} attempts=1 elapsedMs=0 retryExhausted=false`;
 }
 
 function requiredString(record: Record<string, unknown>, keys: string[]): string {

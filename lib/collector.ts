@@ -18,6 +18,7 @@ import {
   normalizeWeatherForecast,
   redactSeoulUrl,
   safeSourceFailureDetail,
+  sourceFailureClass,
   SourceFetchError,
   type CanonicalAirportCongestion,
   type CanonicalAirportFlight,
@@ -1520,6 +1521,8 @@ export async function collectWeatherForecasts(
   const horizon = new Date(now.getTime() + 48 * 3_600_000).toISOString();
   const statements: D1PreparedStatement[] = [];
   const failures: string[] = [];
+  /** One failure class per failed grid, from the shared vocabulary. */
+  const failureClasses: string[] = [];
   let lastForecast: CanonicalWeatherForecast | undefined;
   let written: D1WriteCounts = NO_D1_WRITES;
   let requestCount = 0;
@@ -1570,6 +1573,7 @@ export async function collectWeatherForecasts(
         }
       }
     } catch (error) {
+      failureClasses.push(sourceFailureClass(error));
       failures.push(`grid ${grid.nx},${grid.ny}: ${safeSourceFailureDetail(error)}`);
     }
   }
@@ -1583,9 +1587,17 @@ export async function collectWeatherForecasts(
     const lastGood = options.hasUsableLastGood
       ?? await hasStoredRow(env.DB, `SELECT 1 AS present FROM weather_forecast LIMIT 1`);
     const health: SourceHealthStatus = lastGood ? "STALE" : "ERROR";
-    await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
+    // KMA resultCode 03 (NODATA_ERROR) is the provider answering "no rows",
+    // not a failed request: it is recorded as NO_DATA, never as a run ERROR,
+    // so it neither fails the workflow nor earns a fresh-runner retry. The
+    // next scheduled window (:25/:40, then the next issuance) looks again.
+    // Production 2026-10-13..14: the same base/grid answered 03 and then 00
+    // 45 seconds later, so a 03 is not proof the issuance does not exist.
+    // Health still falls to STALE/ERROR exactly as for any other failure.
+    const status = failureClasses.length > 0 && failureClasses.every((kind) => kind === "NO_DATA") ? "NO_DATA" : "ERROR";
+    await writeCollectorStatus(env.DB, sourceId, status, detail);
     await writeSourceHealth(env.DB, sourceId, health, detail);
-    return { status: "ERROR", records: 0, detail, providerRequests: requestCount, sourceHealth: health };
+    return { status, records: 0, detail, providerRequests: requestCount, sourceHealth: health, lastGoodPreserved: lastGood };
   }
   // A grid that was requested and failed leaves one product area without this
   // issuance, so the source is not LIVE even though other grids succeeded.

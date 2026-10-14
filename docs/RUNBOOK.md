@@ -41,8 +41,20 @@ treated as zero stores.
 3. Check that the source key exists in Worker Settings → Variables and Secrets.
 4. Confirm official quota/maintenance. Keep the UI STALE or MISSING; never type in replacement numbers.
 5. For collector failures, read only the bounded fields `failureClass`,
-   `causeCode`, `httpStatus`, `attempts`, `elapsedMs`, and `retryExhausted`.
-   Never copy an authenticated URL into an issue or chat.
+   `causeCode`, `httpStatus`, `attempts`, `elapsedMs`, `retryExhausted` and
+   `providerSignal`. Never copy an authenticated URL into an issue or chat.
+   The three answers that need different actions:
+   - `failureClass=AUTH` (HTTP 401/403, data.go.kr 20/21/30–33): the key may
+     not use that service. Nothing is retried; the owner checks the service's
+     활용신청 (status 승인, 활용기간) on data.go.kr. Do not re-run to "fix" it.
+   - `failureClass=NO_DATA` (resultCode 03): the provider answered with no
+     rows. Last-good rows stay with their own times; the next scheduled window
+     looks again. A W1 run that is entirely NO_DATA is green with a warning.
+   - `failureClass=TIMEOUT|NETWORK` or `httpStatus=5xx`: transient, already
+     retried within its bound; the next window or fresh runner repairs it.
+   A green run is not "all data fine": read its warning annotations and
+   `/api/health` source statuses (see docs/DATA_SOURCES.md, "Collection
+   failure classes").
 6. `retryExhausted=true` means the current natural run failed after the
    bounded recovery window. Do not rerun A1 by hand; keep last-good data and
    let the next authoritative schedule recover automatically. For the daily
@@ -120,6 +132,12 @@ this procedure.
   Comparisons describe collected flight records, not a whole-day operational census.
 - Holiday source: KASI getRestDeInfo, current+next month, one daily successful
   refresh. Source Health shows failed/unauthorized access; preserve previous rows.
+  An AUTH refusal (`AUTH_BLOCKED`, e.g. HTTP 403) is a warning on the airport
+  runs, not a red run, and is asked at most once per 20 h by schedule. After
+  the owner fixes the 한국천문연구원_특일 정보 (15012690) application, a manual
+  **One-shot Data Import** with sources `holidays` and confirmation `IMPORT`
+  checks once immediately (1–2 KASI requests, no airport calls); otherwise the
+  next scheduled window does.
 - Context snapshots90days (max400pruned/day); forecast/input/outcome/aggregate
   history preserved. A5 aggregate revision archive is immutable and starts at
   migration; old historical source-issued versions cannot be reconstructed.

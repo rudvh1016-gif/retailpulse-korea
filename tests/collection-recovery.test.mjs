@@ -696,25 +696,29 @@ test("weather recovery with every grid missing stays bounded to one grid per cel
   assert.equal(result.providerRequests, uniqueKmaGrids().length);
 });
 
-test("A failed weather repair preserves stored rows and reports STALE", async (context) => {
-  const { database, databasePath } = freshDatabase("w1-preserve");
-  const originalFetch = globalThis.fetch;
-  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+// resultCode 03 is the provider saying "no rows" (NO_DATA, never a run ERROR);
+// 99 is an unknown provider failure and stays ERROR. Both keep stored rows.
+for (const [code, expectedStatus] of [["03", "NO_DATA"], ["99", "ERROR"]]) {
+  test(`A failed weather repair (resultCode ${code}) preserves stored rows and reports STALE`, async (context) => {
+    const { database, databasePath } = freshDatabase(`w1-preserve-${code}`);
+    const originalFetch = globalThis.fetch;
+    context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
 
-  // Rows exist, but from the PREVIOUS issuance, so a repair is attempted.
-  seedWeatherIssuance(database, uniqueKmaGrids().flatMap((grid) => grid.areas), `${TODAY}T11:00:00+09:00`, `${TODAY}T11:11:00+09:00`);
-  const before = database.prepare("SELECT id, precipitation_probability AS pop, temperature_tenth_c AS temp FROM weather_forecast ORDER BY id").all();
+    // Rows exist, but from the PREVIOUS issuance, so a repair is attempted.
+    seedWeatherIssuance(database, uniqueKmaGrids().flatMap((grid) => grid.areas), `${TODAY}T11:00:00+09:00`, `${TODAY}T11:11:00+09:00`);
+    const before = database.prepare("SELECT id, issued_at, retrieved_at, precipitation_probability AS pop, temperature_tenth_c AS temp FROM weather_forecast ORDER BY id").all();
 
-  globalThis.fetch = async () => kmaFailure();
-  const [result] = await runRecovery(database, "weather_recovery");
+    globalThis.fetch = async () => Response.json({ response: { header: { resultCode: code, resultMsg: "fixture" } } });
+    const [result] = await runRecovery(database, "weather_recovery");
 
-  assert.equal(result.status, "ERROR");
-  assert.equal(result.sourceHealth, "STALE");
-  assert.equal(health(database).get("KMA_VILAGE_FCST").status, "STALE");
-  const after = database.prepare("SELECT id, precipitation_probability AS pop, temperature_tenth_c AS temp FROM weather_forecast ORDER BY id").all();
-  assert.deepEqual(after, before, "a KMA timeout must never null or zero a stored forecast");
-  assert.equal(weatherRowCount(database), before.length);
-});
+    assert.equal(result.status, expectedStatus);
+    assert.equal(result.sourceHealth, "STALE");
+    assert.equal(health(database).get("KMA_VILAGE_FCST").status, "STALE");
+    const after = database.prepare("SELECT id, issued_at, retrieved_at, precipitation_probability AS pop, temperature_tenth_c AS temp FROM weather_forecast ORDER BY id").all();
+    assert.deepEqual(after, before, "a failed KMA request must never null, zero or re-date a stored forecast");
+    assert.equal(weatherRowCount(database), before.length);
+  });
+}
 
 test("weather reports ERROR when every grid fails and nothing is stored", async (context) => {
   const { database, databasePath } = freshDatabase("w1-empty");

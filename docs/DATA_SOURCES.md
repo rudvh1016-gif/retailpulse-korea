@@ -434,7 +434,7 @@ Recomputed for the second window, from `KMA_GRID_RETRY_POLICY` (`maxAttempts:
 | --- | --- |
 | KMA issuances/day | 8 (`2,5,8,11,14,17,20,23` UTC) |
 | Grids per issuance | 3 |
-| Healthy provider requests/day | **24** — the :10 primary only; both recovery windows return `SKIPPED_ALREADY_HEALTHY` with `providerRequests=0` |
+| Healthy provider requests/day | **24** — the :10 primary only; both recovery windows return `SKIPPED_ALREADY_HEALTHY` with `providerRequests=0` (**corrected 2026-10-14**: not what the code does — with 4 grids it is 64; see § "Collection failure classes", W1 timing) |
 | Recovery dispatches/day | 16 (8 issuances × 2 minutes), all GitHub, none reaching KMA when healthy |
 | Worst-case provider requests/day | **216** — 3 grids × 3 attempts × 3 windows × 8 issuances, every attempt failing |
 | Share of the documented 10,000/day quota | 0.24 % healthy, 2.16 % worst case |
@@ -780,3 +780,94 @@ Existing data.go.kr key still needs this service entitlement; key existence alon
 is not LIVE. Source activation requires actual contract outcome. AirKorea was not
 added: available Seoul PM values satisfy this scope without another provider/key;
 never reuse a Seoul station as airport air quality.
+
+## Collection failure classes: KASI 403 and KMA resultCode 03 (2026-10-14)
+
+Two different failures were being reported as one kind of red run. They are
+now separate classes in `lib/source-adapters.ts` (`sourceFailureClass`,
+`safeSourceFailureDetail`), which every collector already uses:
+
+| `failureClass=` | Meaning | Retried? | Run status |
+|---|---|---|---|
+| `AUTH` | HTTP 401/403, or data.go.kr code 20/21/30/31/32/33 in a JSON/XML body | never | `ERROR` (KASI: `AUTH_BLOCKED`, see below) |
+| `QUOTA` | data.go.kr code 22 / "quota" body | never | `ERROR` |
+| `NO_DATA` | provider resultCode 03 (NODATA_ERROR) | never | `NO_DATA` (W1) / `PARTIAL` |
+| `TIMEOUT`, `NETWORK` | client abort; connect/DNS/TLS/reset | bounded, in-process and fresh-runner | `ERROR` |
+| `HTTP` + `httpStatus=5xx` / `429` | gateway/provider unavailable; 429 honours ≤60 s Retry-After (a body naming an auth/quota code is never retried) | bounded | `ERROR` |
+
+HTTP 401/403 keep `httpStatus=` beside `AUTH`, so existing readers of
+`httpStatus=403` are unchanged. A non-2xx (or non-JSON 200) body is reduced to
+one fixed token, `providerSignal=` (`RESULT_30`, `RESULT_31`, `FORBIDDEN`,
+`UNAUTHORIZED`, `API_NOT_FOUND`, `QUOTA_EXCEEDED`, `HTML_PAGE`, `EMPTY_BODY`,
+`UNRECOGNIZED_BODY`); the body itself, which can echo the keyed URL, is never
+logged or stored. A green run may still carry `PARTIAL`/`NO_DATA`/KASI
+`AUTH_BLOCKED`; `scripts/collect-production.ts` announces each as a GitHub
+Actions warning (ERROR/NEEDS_KEY as an error) so green never reads as "all
+data fine". Source health is unchanged in meaning: STALE while last-good rows
+exist, ERROR when none do; a failed attempt never supplies a new
+`last_retrieved_at`.
+
+### KASI 특일 정보 — HTTP 403 since September 2026
+
+- Evidence (KST): the inspected holiday attempts — runs 33996957467
+  (2026-09-06 07:53), 38464257754 (00:07 window, ran 2026-10-14 05:38) and
+  38489053016 (06:07 group, ran 2026-10-14 09:19), plus 36359785443,
+  37957282527 and 38079017406 recorded in earlier docs — logged
+  `failureClass=HTTP httpStatus=403 attempts=1` within 0.6–1.5 s, while
+  A1/A2/A3 on the same gateway succeeded with the same
+  `DATA_GO_KR_SERVICE_KEY` in the same job. Every scheduled
+  `collect-production.yml` run from #28 (2026-09-05) to #67 (2026-10-14)
+  concluded failure; the inspected ones failed only on this 403. The request
+  uses the shared `buildDataGoKrUrl` (one decode, one URLSearchParams encode —
+  the A1 path), https on `apis.data.go.kr`, and the documented parameters
+  (`solYear`, `solMonth`, `numOfRows`, `pageNo`, `_type=json`).
+- Best-supported cause: the account behind the key is not (or no longer)
+  entitled to **한국천문연구원_특일 정보 (data.go.kr 15012690,
+  `B090041/openapi/service/SpcdeInfoService`)** — not applied, not approved,
+  or its 활용기간 expired. Not verified: the 403 body was discarded before
+  this change; the next run records it as `providerSignal=`.
+- Handling: `AUTH_BLOCKED`, one request (no retry, and the next month is not
+  requested). `source_health` = ERROR with the AUTH detail; `holiday_months`
+  is never touched and `lastGoodPreserved` is reported truthfully (false while
+  nothing was ever stored). A scheduled window within 20 h of a recorded AUTH
+  refusal makes no request (`SKIPPED_AUTH_COOLDOWN`); a person-started run
+  (`workflow_dispatch`; cheapest: One-shot Data Import with `holidays`)
+  always checks once. KASI is an
+  auxiliary context on the A1 runs, so `AUTH_BLOCKED` is a warning, not a red
+  airport run; timeouts, schema and storage failures still fail the run.
+  Korean holidays stay "unconfirmed" in the UI until a real success.
+- A cache hit reports the months' real `retrieved_at`, never the run time.
+
+### KMA 단기예보 (W1) — resultCode 03 since 2026-10-13 ~20:30 KST
+
+- Evidence: the recovery window was green from 2026-10-12 08:40 to
+  2026-10-13 20:26 KST, then 03 on most requests: 38391976274 (20:41, current
+  issuance 2000, 0/4), 38411262029, 38436664575, 38482598651, 38515221329
+  (14:11, base 1100, 0/4), 38516560664, 38517897060 (14:41, current issuance
+  1400, 0/4). Identical requests flipped to 00 seconds later: base 0800 grid
+  59,126 was 03 at 11:26:05 and 00 at 11:26:50 KST (38500936988); base 1400
+  grid 60,126 was 03 at 14:41:06 and 00 at 14:41:48 (38517897060). Code
+  between the last green (9a13642) and first failing (e8b16db) run changed
+  only UI files.
+- Not the cause: authentication (some grids answer 00 with the same key),
+  URL/parameters, grids (60,127 / 59,126 / 61,126 / 60,126), KST handling
+  (`latestKmaIssuance` adds +9 h and rolls 00:00–02:29 KST to the previous
+  day's 2300), or publication timing (03 also for the current issuance 31 min
+  after its documented 10-minute availability). Best-supported cause: an
+  intermittent provider-side condition; not verified from KMA.
+- Handling: a grid answering 03 is `failureClass=NO_DATA`; when every failed
+  grid is NO_DATA the run is `NO_DATA` (not `ERROR`), stored forecasts keep
+  their own `issued_at`/`retrieved_at`, health is STALE (ERROR if nothing is
+  stored), and nothing becomes 0. The recovery ladder now starts a fresh
+  runner only for a classified transient failure (`retry_weather`, the A5
+  rule); before, one 03 cost up to two more jobs (38516560664: 3 jobs, 15
+  requests). The :25/:40 windows and the next issuance still look again.
+- W1 timing (documented, not changed here): `latestKmaIssuance` waits 30 min
+  after a base time, but the Cloudflare trigger fires at :10. The :10 primary
+  therefore requests the PREVIOUS issuance, the :25 window re-checks it, and
+  the :40 window is where a new issuance is first requested (verified:
+  38369241631 17:26 SKIPPED for 1400; 38370997364 17:42 requested 1700 with
+  4 requests). Healthy W1 load is 8 × (4 + 4) = 64 requests/day, not 24.
+  Moving the buffer to ~10 min would make the :10 run collect the new issuance
+  and the recovery windows free when healthy, but KMA's real readiness at
+  HH:10–HH:11 is unmeasured, so it is left as an owner decision.

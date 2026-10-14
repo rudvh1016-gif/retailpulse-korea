@@ -233,6 +233,41 @@ export function hasProductionSourceFailure(results: readonly ProductionSourceRes
   return results.some((result) => result.status === "ERROR" || result.status === "NEEDS_KEY");
 }
 
+export interface AttentionNotice {
+  level: "warning" | "error";
+  title: string;
+  /** Secret-free: status, health, preserved flag and failure-class counts only. */
+  message: string;
+}
+
+/**
+ * What a run must announce even when its badge is green.
+ *
+ * PARTIAL and NO_DATA do not fail the job — a provider answering "no rows"
+ * (KMA resultCode 03) or one grid of four missing is not a broken collector,
+ * and failing the job would only start a fresh-runner retry that cannot change
+ * the provider's answer. But a green run is not "all data is fine": each such
+ * source is named here with what it did to source_health, so the partial
+ * failure stays visible in the Actions UI instead of only in D1.
+ */
+export function attentionNotices(results: readonly ProductionSourceResult[]): AttentionNotice[] {
+  return results.flatMap((result): AttentionNotice[] => {
+    const failing = result.status === "ERROR" || result.status === "NEEDS_KEY";
+    if (!failing && result.status !== "PARTIAL" && result.status !== "NO_DATA") return [];
+    const counts = new Map<string, number>();
+    for (const match of (result.detail ?? "").matchAll(/failureClass=([A-Z_]+)/g)) {
+      counts.set(match[1], (counts.get(match[1]) ?? 0) + 1);
+    }
+    const classes = [...counts].map(([name, count]) => `${name}x${count}`).join(" ") || "unclassified";
+    return [{
+      level: failing ? "error" : "warning",
+      title: `${result.source} ${result.status}`,
+      message: `${result.source}: ${result.status}; sourceHealth=${result.sourceHealth ?? "unreported"}; `
+        + `lastGoodPreserved=${result.lastGoodPreserved ?? "unreported"}; failures ${classes}`,
+    }];
+  });
+}
+
 /**
  * Runs exactly the selected sources, once each, in the given order.
  *

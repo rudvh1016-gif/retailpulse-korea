@@ -9,7 +9,7 @@
  * `retry_sources`, which spends nothing — the safe direction.
  */
 import { appendFileSync, readFileSync } from "node:fs";
-import { decideCongestionRetry, decideWeeklySeoulRetry, RETRYABLE_A4_SOURCES, RETRYABLE_WEEKLY_SEOUL_SOURCES, shouldRetryForecast, shouldRetryAirport, shouldRecheckAirportPublication } from "../lib/congestion-retry";
+import { decideCongestionRetry, decideWeeklySeoulRetry, RETRYABLE_A4_SOURCES, RETRYABLE_WEEKLY_SEOUL_SOURCES, shouldRetryForecast, shouldRetryAirport, shouldRetryWeather, shouldRecheckAirportPublication } from "../lib/congestion-retry";
 
 const path = process.argv[2];
 let log = "";
@@ -36,6 +36,10 @@ if (process.argv[3] === "--airport") {
   const retry = shouldRetryForecast(log);
   console.log(`retry_forecast=${retry}`);
   if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `retry_forecast=${retry}\n`);
+} else if (process.argv[3] === "--weather") {
+  const retry = shouldRetryWeather(log);
+  console.log(`retry_weather=${retry}`);
+  if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `retry_weather=${retry}\n`);
 } else {
 
   const decision = decideCongestionRetry(log);

@@ -25,6 +25,8 @@ name: Collection Attempt
 # A5 callers additionally require this attempt's classified transient failure;
 # auth/schema/empty data, throttling, unknown logs and deferred cooldowns stop
 # the ladder. The two existing extra jobs wait at least 10 seconds each.
+# The weather recovery caller applies the same rule (retry_weather): a KMA
+# NO_DATA (resultCode 03), AUTH or SCHEMA answer never earns a fresh runner.
 # The weekly Seoul caller (collect-sales.yml) retries only a source that died
 # on its first request with a connect timeout, 60 s and then 300 s apart, and
 # only its attempts receive SEOUL_OPEN_DATA_KEY.
@@ -41,6 +43,9 @@ on:
       retry_forecast:
         description: This attempt's A5 failure is transient and permits the next existing job
         value: ${{ jobs.collect.outputs.retry_forecast }}
+      retry_weather:
+        description: This attempt's W1 failure is transient and permits the next existing job
+        value: ${{ jobs.collect.outputs.retry_weather }}
       retry_weekly_seoul:
         description: Weekly Seoul sources whose own failure this attempt was the per-runner connect timeout
         value: ${{ jobs.collect.outputs.retry_weekly_seoul }}
@@ -109,6 +114,7 @@ jobs:
       retry_airport: ${{ steps.airport_retry_decision.outputs.retry_airport }}
       recheck_airport_publication: ${{ steps.airport_retry_decision.outputs.recheck_airport_publication }}
       retry_forecast: ${{ steps.retry_decision.outputs.retry_forecast }}
+      retry_weather: ${{ steps.weather_retry_decision.outputs.retry_weather }}
       retry_weekly_seoul: ${{ steps.weekly_seoul_retry_decision.outputs.retry_weekly_seoul }}
     steps:
       - uses: actions/checkout@v4
@@ -160,6 +166,10 @@ jobs:
         id: retry_decision
         if: ${{ always() && startsWith(inputs.sources, 'airport_passenger_forecast') }}
         run: npx tsx scripts/decide-congestion-retry.ts "$RUNNER_TEMP/collector.log" --forecast
+      - name: Classify this weather attempt before spending a fresh runner
+        id: weather_retry_decision
+        if: ${{ always() && startsWith(inputs.sources, 'weather') }}
+        run: npx tsx scripts/decide-congestion-retry.ts "$RUNNER_TEMP/collector.log" --weather
       - name: Classify this weekly Seoul attempt before spending a fresh runner
         id: weekly_seoul_retry_decision
         if: ${{ always() && (contains(inputs.sources, 'seoul_sales') || contains(inputs.sources, 'store_dynamics')) }}
