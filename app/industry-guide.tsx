@@ -4,7 +4,11 @@ import { useId, useState } from 'react';
 import type { Lang, Terminal } from './retailpulse-data';
 import { checklistPhaseLabels, checklistPhaseOrder, industryProfiles, type IndustryId } from '../lib/industry-guidance';
 import { airportStoreAreas, industryPlaybooks, type AirportStoreArea } from '../lib/industry-playbooks';
-import './industry-scenes.css';
+// The guide's stylesheet (./industry-scenes.css) ships with the shell, which
+// imports it and is the only place the guide renders. Importing it here as
+// well made the bundler give that CSS-only module a chunk of its own: an empty
+// script that is never written to dist/ yet was modulepreloaded on every page,
+// so each visit paid one failed request for it.
 
 const text = (lang: Lang, ko: string, en: string, zh: string, ja: string) => ({ ko, en, zh, ja })[lang];
 

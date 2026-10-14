@@ -1087,3 +1087,20 @@ test("only the glance routes put the glance assets in the head", async () => {
   }
   for (const path of ["/ko/myeongdong", "/ko/hongdae"]) assert.deepEqual(await glanceAssets(path), [], path);
 });
+
+// Every script and stylesheet the head asks for must exist in the build. A CSS-only module
+// imported from two places once became an empty chunk that the bundler never wrote to
+// dist/ while every page still modulepreloaded it: one failed request on each visit.
+test("every asset the rendered head links exists in the client build", async () => {
+  for (const path of ["/ko", "/en", "/ko/airport", "/ko/airport-glance", "/ko/myeongdong", "/ko/business", "/ko/where-to", "/ko/consumption", "/ko/more", "/ko/about", "/ko/forecast", "/ko/travel-records", "/ko/airport-news"]) {
+    const response = await renderPath(path);
+    assert.equal(response.status, 200, path);
+    const head = (await response.text()).split("</head>")[0];
+    const assets = [...head.matchAll(/<link\b[^>]*\bhref="(\/assets\/[^"]+)"/g)].map((match) => match[1]);
+    assert.ok(assets.length > 0, `${path} links its built assets`);
+    for (const asset of new Set(assets)) {
+      const file = await stat(new URL(`../dist/client${asset}`, import.meta.url)).catch(() => null);
+      assert.ok(file?.isFile() && file.size > 0, `${path} links ${asset}, which the build did not write`);
+    }
+  }
+});
