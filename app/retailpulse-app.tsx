@@ -39,6 +39,21 @@ function OnDemandAreaCurrentBrief(props: ComponentProps<typeof AreaCurrentBriefC
   const [Loaded] = useState(() => typeof window === 'undefined' ? undefined : liveSignalsModule?.AreaCurrentBrief);
   return Loaded ? <Loaded {...props} /> : <LazyAreaCurrentBrief {...props} />;
 }
+// The Seoul glance and spending screens (./seoul-comparison) load the same way:
+// their routes pass them in, elsewhere they load when reached for or once idle.
+let seoulComparisonModule: typeof import('./seoul-comparison') | undefined;
+const loadSeoulComparison=()=>import('./seoul-comparison').then(module=>(seoulComparisonModule=module));
+const LazyWhereToView=dynamic(()=>loadSeoulComparison().then(module=>module.WhereToView));
+const LazyConsumptionView=dynamic(()=>loadSeoulComparison().then(module=>module.ConsumptionView));
+const prepareSeoulComparison=()=>{loadSeoulComparison().catch(()=>{});};
+function OnDemandWhereToView(props: ComponentProps<typeof WhereToViewComponent>) {
+  const [Loaded] = useState(() => typeof window === 'undefined' ? undefined : seoulComparisonModule?.WhereToView);
+  return Loaded ? <Loaded {...props} /> : <LazyWhereToView {...props} />;
+}
+function OnDemandConsumptionView(props: ComponentProps<typeof ConsumptionViewComponent>) {
+  const [Loaded] = useState(() => typeof window === 'undefined' ? undefined : seoulComparisonModule?.ConsumptionView);
+  return Loaded ? <Loaded {...props} /> : <LazyConsumptionView {...props} />;
+}
 // The business screen's briefing and industry guide load with that screen, as do
 // its date navigator and area brief (./live-signals). The More screen, the way
 // to it on a phone, starts that load once it is idle, and reaching for the
@@ -106,8 +121,11 @@ import { KstTodayChip } from "./live-summary";
 import type { AreaCurrentBrief as AreaCurrentBriefComponent, DateNavigator as DateNavigatorComponent, TodaySignals as TodaySignalsComponent } from "./live-signals";
 import AnalyticsConsent from './analytics-consent';
 import { InstallAppButton } from "./install-app";
-import {WhereToView,ConsumptionView} from './seoul-comparison';
-import { parsePreferences, PREFERENCE_KEY } from "../lib/personal-briefing";
+import type {WhereToView as WhereToViewComponent,ConsumptionView as ConsumptionViewComponent} from './seoul-comparison';
+// Their stylesheet ships with the shell, at the place the screens' import held,
+// so the cascade on every page is unchanged (it also styles the bottom bar).
+import './seoul-comparison.css';
+import { parsePreferences, PREFERENCE_KEY } from "../lib/personal-choices";
 import { SiteUsageGuide } from "./site-usage-guide";
 // The industry guide's stylesheet still ships with the shell, as it did before
 // the guide's code was split out, so no route's styles change.
@@ -124,7 +142,7 @@ import './departure-guide-entry.module.css';
 import { AirportDutyFreeExchange } from './airport-duty-free-exchange';
 import './airport-tax-refund-guide.css';
 import { saveBusinessPreferences, useBusinessPreferences } from "./business-preferences";
-import { areaAnswerText, type TodayAnswer, type TodayAnswerArea } from "../lib/today-answer";
+import { areaAnswerText, type TodayAnswer, type TodayAnswerArea } from "../lib/today-answer-text";
 
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
 
@@ -300,6 +318,9 @@ type RetailPulseProps = {
   /** The business screen's date navigator and area brief, passed the same way by the business route's server page. */
   DateNavigator?: ComponentType<ComponentProps<typeof DateNavigatorComponent>>;
   AreaCurrentBrief?: ComponentType<ComponentProps<typeof AreaCurrentBriefComponent>>;
+  /** The Seoul glance and spending screens, passed the same way by their routes' server pages. */
+  WhereToView?: ComponentType<ComponentProps<typeof WhereToViewComponent>>;
+  ConsumptionView?: ComponentType<ComponentProps<typeof ConsumptionViewComponent>>;
   /**
    * Today's answer, read on the server (lib/today-answer.ts) so the first HTML
    * already states it. Absent or null renders nothing.
@@ -325,7 +346,7 @@ function routeFor(lang: Lang, view: View, area: AreaId) {
   return `${base}/${view}`;
 }
 
-export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false, initialScope = "home", todayAnswer = null, AirportView = OnDemandAirportView, AirportGlance = LazyAirportGlance, IndustryGuide = OnDemandIndustryGuide, BusinessPrep = OnDemandBusinessPrep, TodaySignals = OnDemandTodaySignals, DateNavigator = OnDemandDateNavigator, AreaCurrentBrief = OnDemandAreaCurrentBrief }: RetailPulseProps = {}) {
+export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false, initialScope = "home", todayAnswer = null, AirportView = OnDemandAirportView, AirportGlance = LazyAirportGlance, IndustryGuide = OnDemandIndustryGuide, BusinessPrep = OnDemandBusinessPrep, TodaySignals = OnDemandTodaySignals, DateNavigator = OnDemandDateNavigator, AreaCurrentBrief = OnDemandAreaCurrentBrief, WhereToView = OnDemandWhereToView, ConsumptionView = OnDemandConsumptionView }: RetailPulseProps = {}) {
   const bottomNavigationRef = useBottomNavigationViewport();
   // Airport routes already carry the airport code; only the on-demand copy needs preparing.
   const prepareAirport = AirportView === OnDemandAirportView ? prepareAirportView : undefined;
@@ -390,7 +411,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   useEffect(() => {
     if (!preferencesReady) return;
     let live = true, idle = 0, timer: ReturnType<typeof setTimeout> | undefined;
-    const start = () => { if (!live) return; if ("requestIdleCallback" in window) idle = requestIdleCallback(() => { loadIndustryGuide().catch(() => {}); prepareTodaySignals(); }, { timeout: 4000 }); else timer = setTimeout(() => { loadIndustryGuide().catch(() => {}); prepareTodaySignals(); }, 1500); };
+    const start = () => { if (!live) return; if ("requestIdleCallback" in window) idle = requestIdleCallback(() => { loadIndustryGuide().catch(() => {}); prepareTodaySignals(); prepareSeoulComparison(); }, { timeout: 4000 }); else timer = setTimeout(() => { loadIndustryGuide().catch(() => {}); prepareTodaySignals(); prepareSeoulComparison(); }, 1500); };
     if (document.readyState === "complete") start(); else window.addEventListener("load", start, { once: true });
     return () => { live = false; window.removeEventListener("load", start); if (idle) cancelIdleCallback(idle); clearTimeout(timer); };
   }, [preferencesReady]);
@@ -521,7 +542,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         </button>
         <nav className="top-nav" aria-label="Primary">
           {(["airport-glance", "airport", "where-to", "today", "consumption", "business", "more"] as View[]).map((item) => (
-            <a key={item} href={routeFor(lang, item, selected)} className={view === item || (item === "more" && ["tourism-desk","forecast","about"].includes(view)) ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "business" ? prepareBusinessView : item === "today" ? prepareTodaySignals : undefined} onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "business" ? prepareBusinessView : item === "today" ? prepareTodaySignals : undefined} aria-current={view === item ? "page" : item === "more" && ["tourism-desk","forecast","about"].includes(view) ? "location" : undefined}>{navLabel(item)}</a>
+            <a key={item} href={routeFor(lang, item, selected)} className={view === item || (item === "more" && ["tourism-desk","forecast","about"].includes(view)) ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "business" ? prepareBusinessView : item === "today" ? prepareTodaySignals : item === "where-to" || item === "consumption" ? prepareSeoulComparison : undefined} onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "business" ? prepareBusinessView : item === "today" ? prepareTodaySignals : item === "where-to" || item === "consumption" ? prepareSeoulComparison : undefined} aria-current={view === item ? "page" : item === "more" && ["tourism-desk","forecast","about"].includes(view) ? "location" : undefined}>{navLabel(item)}</a>
           ))}
         </nav>
         <div className="header-meta">
@@ -618,8 +639,8 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             href={navigationHref(item)}
             className={(view === item || (["business","tourism-desk","forecast","about"].includes(view) && item === "more")) ? "active" : ""}
             onClick={(event) => { if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;event.preventDefault();navigate(item); }}
-            onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "today" ? prepareTodaySignals : undefined}
-            onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "today" ? prepareTodaySignals : undefined}
+            onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "today" ? prepareTodaySignals : item === "where-to" || item === "consumption" ? prepareSeoulComparison : undefined}
+            onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "today" ? prepareTodaySignals : item === "where-to" || item === "consumption" ? prepareSeoulComparison : undefined}
             aria-current={view === item ? "page" : ["business","tourism-desk","forecast","about"].includes(view) && item === "more" ? "location" : undefined}
             aria-label={navLabel(item)}
           >
