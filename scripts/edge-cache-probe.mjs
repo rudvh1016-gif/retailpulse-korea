@@ -34,6 +34,13 @@ for (const target of targets) {
       generations.set(generatedAt, (generations.get(generatedAt) ?? 0) + 1);
       row = { status: response.status, cfCacheStatus: response.headers.get("cf-cache-status"), age: response.headers.get("age"),
         cacheControl: response.headers.get("cache-control"), mode: body?.mode ?? null, generatedAt };
+      // What decides an open page's summary re-check (app/live-summary.tsx summaryRecheckDelay):
+      // A5 coverage for both directions and the sources in ERROR/DEGRADED/MISSING.
+      if (target.name === "summary" && index === 0) console.log(JSON.stringify({ probe: "summary-recheck-inputs",
+        forecastCoverage: body?.airport?.forecastCoverage?.all ?? null,
+        arrivalForecastCoverage: body?.airport?.arrivalForecast?.forecastCoverage?.all ?? null,
+        problemSources: (body?.sources ?? []).filter((source) => ["ERROR", "DEGRADED", "MISSING"].includes(source?.status))
+          .map((source) => `${source.sourceId}:${source.status}`) }));
     } catch (error) {
       row = { error: String(error?.message ?? error).replace(/[^\w .:-]+/g, "_").slice(0, 120) };
     }
