@@ -287,8 +287,8 @@ function countingClient(source: CloudflareD1RestDatabase) {
 const todayKst = kstDayOf(now.toISOString());
 const routeCosts: Array<Record<string, unknown>> = [];
 for (const [name, run] of [
-  ["/api/live/flights?date=today", (client: Pick<D1Database, "prepare">) => readFlightsForDate(client, todayKst, todayKst).then((r) => ({ flights: r.flights.length, basis: r.basis }))],
-  ["/api/live/flights?date=yesterday", (client: Pick<D1Database, "prepare">) => readFlightsForDate(client, shiftKstDay(todayKst, -1), todayKst).then((r) => ({ flights: r.flights.length, basis: r.basis }))],
+  ["/api/live/flights?date=today", (client: Pick<D1Database, "prepare">) => readFlightsForDate(client, todayKst, todayKst).then((r) => ({ flights: r.flights.length, dataBasis: r.basis }))],
+  ["/api/live/flights?date=yesterday", (client: Pick<D1Database, "prepare">) => readFlightsForDate(client, shiftKstDay(todayKst, -1), todayKst).then((r) => ({ flights: r.flights.length, dataBasis: r.basis }))],
   ["/api/live/airport-days?date=today", (client: Pick<D1Database, "prepare">) => readAirportDays(client, todayKst).then((r) => ({ rowsReturned: r.rowsRead }))],
   ["/api/live/airport-months?month=this", (client: Pick<D1Database, "prepare">) => readAirportMonths(client, todayKst.slice(0, 7), todayKst).then((r) => ({ status: r.status, rowsReturned: r.rowsRead }))],
 ] as const) {

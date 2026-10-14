@@ -446,6 +446,14 @@ jobs:
       - name: Record search evidence from the public site
         if: always()
         run: node search-evidence/scripts/seo-live-audit.mjs https://koretaildata.com | tee "$RUNNER_TEMP/search-evidence.jsonl"
+      # Shared-cache evidence for the D1-backed reads: in a short burst of the
+      # client's own requests, each distinct generatedAt is one route execution
+      # (one D1 read); repeats were served from the edge copy. Read-only,
+      # secret-free, informational (scripts/edge-cache-probe.mjs).
+      - name: Record edge-cache evidence for D1-backed reads
+        if: always()
+        continue-on-error: true
+        run: node search-evidence/scripts/edge-cache-probe.mjs https://koretaildata.com
       # Back/forward cache evidence: whether a phone browser (Chromium, WebKit)
       # restores each page instantly when the visitor returns from another site,
       # what blocks it, and the cache-control of the HTML and /api/ requests.

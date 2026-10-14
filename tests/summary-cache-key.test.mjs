@@ -4,6 +4,7 @@ import test from "node:test";
 
 import { canonicalSummaryRequest, canonicalSummaryUrl } from "../worker/summary-cache-key.ts";
 import { GET, availabilityPeriod } from "../app/api/live/summary/route.ts";
+import { GET as flightsGET } from "../app/api/live/flights/route.ts";
 import { coldSummaryMonth } from "../lib/summary-cold-month.ts";
 
 /**
@@ -205,4 +206,54 @@ test("a cold probe key is a real month, so it is kept in the key and reads a cac
   assert.equal(seen.size, 1200, "every seed maps into the same 1,200 months, 2000-01 to 2099-12");
   assert.equal(coldSummaryMonth(Number.MAX_SAFE_INTEGER) > "1999", true);
   assert.match(coldSummaryMonth(-5), /^20\d{2}-\d{2}$/);
+});
+
+test("the flight record key keeps only a real date; the client's _day marker and junk share one entry", () => {
+  const today = `${ORIGIN}/api/live/flights`;
+  for (const path of ["/api/live/flights", "/api/live/flights?", "/api/live/flights?_day=2026-10-14", "/api/live/flights?x=1",
+    "/api/live/flights?date=garbage&_day=2026-10-14", "/api/live/flights?date=2026-02-30", "/api/live/flights?DATE=2026-10-14"]) {
+    assert.equal(canonical(path), today, `${path} means today`);
+  }
+  assert.equal(canonical("/api/live/flights?date=2026-10-14&_day=2026-10-14"), `${ORIGIN}/api/live/flights?date=2026-10-14`);
+  assert.equal(canonical("/api/live/flights?_day=2026-10-15&date=2026-10-14"), `${ORIGIN}/api/live/flights?date=2026-10-14`);
+  assert.equal(canonical("/api/live/flights?date=2026%2D10%2D14"), `${ORIGIN}/api/live/flights?date=2026-10-14`);
+  assert.notEqual(canonical("/api/live/flights?date=2026-10-14"), canonical("/api/live/flights?date=2026-10-13"),
+    "two service days never share an entry");
+});
+
+test("the real flights route interprets the reduced URL exactly as the original", async () => {
+  // No database is bound, so the route answers with its degraded body, which
+  // still carries the service date it resolved from the query.
+  const read = async (url) => (await (await flightsGET(new Request(url))).json()).serviceDateKst;
+  for (const query of ["", "?_day=2026-10-14", "?date=2026-10-14&_day=2026-10-14", "?date=garbage", "?date=2026-02-30&_day=2026-10-14",
+    "?date=2026-10-13", "?date=garbage&date=2026-10-13", "?date=2026-10-13&date=garbage", "?DATE=2026-10-13", "?date=2026%2D10%2D13", "?date=+2026-10-13"]) {
+    const original = new URL(`${ORIGIN}/api/live/flights${query}`);
+    assert.equal(await read(canonicalSummaryUrl(original)), await read(original.href), `route answer differs for ${query || "(none)"}`);
+  }
+});
+
+test("the flight board's no-cache request headers cannot turn the shared copy into a D1 read", () => {
+  const url = new URL(`${ORIGIN}/api/live/flights?date=2026-10-14&_day=2026-10-14`);
+  const request = new Request(url, { headers: { "cache-control": "max-age=0", pragma: "no-cache", accept: "application/json", authorization: "Bearer x" } });
+  const forwarded = canonicalSummaryRequest(request, url);
+  assert.equal(forwarded.url, `${ORIGIN}/api/live/flights?date=2026-10-14`);
+  for (const name of ["cache-control", "pragma", "authorization"]) assert.equal(forwarded.headers.has(name), false, `${name} is dropped`);
+  assert.equal(forwarded.headers.get("accept"), "application/json");
+  assert.equal(request.headers.get("cache-control"), "max-age=0", "the original request is not modified");
+  const plain = new Request(`${ORIGIN}/api/live/flights?date=2026-10-14`);
+  assert.equal(canonicalSummaryRequest(plain, new URL(plain.url)), plain, "canonical, header-free traffic passes untouched");
+  // The summary keeps its existing rule: only Authorization is dropped.
+  const summaryUrl = new URL(`${ORIGIN}/api/live/summary?date=2026-09-29`);
+  const summary = new Request(summaryUrl, { headers: { "cache-control": "max-age=0" } });
+  assert.equal(canonicalSummaryRequest(summary, summaryUrl), summary);
+});
+
+test("the flights route reads only `date`, and nothing from headers, so one entry per day is safe to share", () => {
+  const source = readFileSync("app/api/live/flights/route.ts", "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "").replace(/^[ \t]*\/\/.*$/gm, "");
+  const keys = [...source.matchAll(/(?:searchParams|params)\.get\(\s*["']([^"']+)["']\s*\)/g)].map((match) => match[1]);
+  assert.deepEqual(keys, ["date"], "update worker/summary-cache-key.ts together with any new parameter");
+  assert.doesNotMatch(source, /searchParams\.(getAll|entries|keys|values|forEach|has)\b|\.search\b/, "no other way of reading the query string");
+  assert.doesNotMatch(source, /request\.headers|request\.cf\b|headers\.get\(|cookies?\b/i,
+    "an answer that depends on a header or a cookie could not share a cache entry");
 });
