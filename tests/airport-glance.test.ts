@@ -1,16 +1,33 @@
 import {mainBuildingMonth} from '../lib/airport-monthly-building';
 import test from 'node:test';import assert from 'node:assert/strict';
-import {glanceDestinationIncrease,glanceFutureWindow,glanceDayComparison,glanceCountryRanking,glanceFlights,glanceLongestWait,glanceUpcoming} from '../lib/airport-glance';
+import {dailyChangeText,glanceDestinationIncrease,glanceFutureWindow,glanceDayComparison,glanceCountryRanking,glanceFlights,glanceLongestWait,glanceUpcoming,sameDailyChange} from '../lib/airport-glance';
 import {buildAirportFlightMonth,type MonthFlightRow} from '../lib/airport-monthly-flights';
 const row=(day:string,id:string,airportCode='NRT',terminal='T1',gate='45'):MonthFlightRow=>({physicalFlightId:id,operatingFlight:'TEST'+id,terminal,gate,airportCode,scheduledAt:day+'T10:00:00+09:00',retrievedAt:day+'T01:00:00Z',status:'scheduled'});
 test('glance reuses physical building scope and keeps T1 main separate from concourse',()=>{
  const date='2026-10-11',rows=[row(date,'main'),row(date,'main'),row(date,'concourse','NRT','CONCOURSE','110'),row(date,'t2','NRT','T2','274'),{...row(date,'arrival'),direction:'arrival'}];
  const data=glanceFlights(date,rows,'T1');assert.equal(data.total,1);assert.equal(data.hours[10],1);assert.equal(glanceFlights(date,rows,'CONCOURSE').total,1);assert.equal(data.buildings.T2.total,1);assert.equal(glanceFlights(date,rows,'all').total,3);
 });
-test('ranking excludes absent and zero baselines rather than inventing percentage growth',()=>{
+// Owner, 2026-10-14: "전월비일편균증감률말고 증감건수로 표기하고 순위도 증감건수로하자" — rank by the change
+// in daily-mean flights. A destination new this month (mean 0 last month) is a real +N, not an
+// undefined percentage; a month that cannot be compared still yields nothing.
+test('ranking orders by daily-mean change in flights, keeps a new destination, excludes an incomparable month',()=>{
  const current=buildAirportFlightMonth('2026-10','2026-10-11',[row('2026-10-01','a'),row('2026-10-01','b','LAX')],new Set(['2026-10-01']));
  const previous=buildAirportFlightMonth('2026-09','2026-10-11',[row('2026-09-01','a')],new Set(['2026-09-01']));
- assert.deepEqual(glanceCountryRanking(current,previous,'ALL').map(row=>row.country),['JP']);assert.equal(glanceCountryRanking(current,undefined,'ALL').length,0);
+ assert.deepEqual(glanceCountryRanking(current,previous,'ALL').map(row=>[row.country,row.previous,row.current,row.delta]),[['US',0,1,1],['JP',1,1,0]]);
+ assert.equal(glanceCountryRanking(current,undefined,'ALL').length,0);
+});
+test('a larger flight-count increase outranks a larger percentage on a small base',()=>{
+ // JP 1 → 2 per day is +100% but +1; US 10 → 13 per day is +30% but +3.
+ const flights=(month:string,code:string,n:number)=>Array.from({length:n},(_,i)=>row(month+'-01',code+month+i,code));
+ const current=buildAirportFlightMonth('2026-10','2026-10-11',[...flights('2026-10','NRT',2),...flights('2026-10','LAX',13)],new Set(['2026-10-01']));
+ const previous=buildAirportFlightMonth('2026-09','2026-10-11',[...flights('2026-09','NRT',1),...flights('2026-09','LAX',10)],new Set(['2026-09-01']));
+ assert.deepEqual(glanceCountryRanking(current,previous,'ALL').map(row=>[row.country,row.delta]),[['US',3],['JP',1]]);
+});
+test('daily change text keeps the page convention and a direction below the printed precision',()=>{
+ const format=new Intl.NumberFormat('ko',{maximumFractionDigits:1}).format;
+ assert.equal(dailyChangeText(2.1,format),'+2.1');assert.equal(dailyChangeText(-0.3,format),'△0.3');assert.equal(dailyChangeText(0,format),'0');
+ assert.equal(dailyChangeText(0.04,format),'+<0.1');assert.equal(dailyChangeText(-0.04,format),'△<0.1');assert.equal(dailyChangeText(12,format),'+12');
+ assert.equal(sameDailyChange(2.14,2.06),true);assert.equal(sameDailyChange(2.14,2.26),false);
 });
 
 test('daily country shares match detailed departure grouping including unknown, duplicates and terminal scope',async()=>{
@@ -89,7 +106,7 @@ test('glance building month reuses PR347 projection for day means and country ra
  const make=(month:string,main:number,concourse:number)=>buildAirportFlightMonth(month,'2026-10-11',[...Array.from({length:main},(_,i)=>row(month+'-01','main'+i,'NRT')),...Array.from({length:concourse},(_,i)=>row(month+'-01','con'+i,'PEK','CONCOURSE','110'))],new Set([month+'-01']));
  const current=make('2026-10',3,4),previous=make('2026-09',1,2),original=JSON.stringify([current,previous]),main=mainBuildingMonth(current)!,before=mainBuildingMonth(previous)!;
  assert.equal(main.scopes.T1.total,3);assert.equal(current.scopes.T1.total,7);assert.equal(current.scopes.CONCOURSE.total,4);
- assert.deepEqual(glanceCountryRanking(main,before,'T1').map(r=>[r.country,r.current,r.previous,r.percent]),[['JP',3,1,200]]);assert.deepEqual(glanceCountryRanking(current,previous,'CONCOURSE').map(r=>[r.country,r.current,r.previous,r.percent]),[['CN',4,2,100]]);
+ assert.deepEqual(glanceCountryRanking(main,before,'T1').map(r=>[r.country,r.current,r.previous,r.delta]),[['JP',3,1,2]]);assert.deepEqual(glanceCountryRanking(current,previous,'CONCOURSE').map(r=>[r.country,r.current,r.previous,r.delta]),[['CN',4,2,2]]);
  assert.deepEqual(glanceDayComparison('2026-10-11',5,before,'T1'),{mean:1,delta:4,percent:400,days:1});assert.deepEqual(glanceDayComparison('2026-10-11',7,previous,'CONCOURSE'),{mean:2,delta:5,percent:250,days:1});assert.equal(JSON.stringify([current,previous]),original);
 });
 test('glance building month rejects absent or inconsistent concourse projection rather than inventing zero',()=>{

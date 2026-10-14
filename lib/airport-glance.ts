@@ -16,10 +16,30 @@ export function glanceFlights(date:string,rows:readonly MapFlightRow[],scope:Gla
  const countries=[...countryCounts].map(([country,flights])=>({country,flights})).sort((a,b)=>b.flights-a.flights||(a.country??'').localeCompare(b.country??''));
  return {departures:selected.flights,countries,total:selected.flights.length,hours,buildings:buildingZoneCounts(whole),unverifiedBuilding:whole.unknownBuilding};
 }
+/**
+ * Top 5 destinations by the change in included-day DAILY MEAN departures (flights/day), largest
+ * increase first. Owner, 2026-10-14: "전월비일편균증감률말고 증감건수로 표기하고 순위도 증감건수로하자".
+ * Means, not month totals: the selected month is usually partial (e.g. 13 vs 30 included days), so
+ * raw totals would compare different spans. A destination absent last month (mean 0) is a real
+ * increase and is kept; a month that cannot be compared (no data) is excluded.
+ */
 export function glanceCountryRanking(current:AirportFlightMonth|undefined,previous:AirportFlightMonth|undefined,scope:MonthScope){
  return destinationDailyChanges(current,previous,scope)
-  .filter(row=>row.percent!==null&&Number.isFinite(row.percent)&&row.previous!==null&&row.previous>0&&row.current!==null)
-  .sort((a,b)=>b.percent!-a.percent!||(b.current??0)-(a.current??0)||a.country.localeCompare(b.country)).slice(0,5);
+  .filter((row):row is typeof row&{delta:number;previous:number;current:number}=>row.delta!==null&&Number.isFinite(row.delta)&&row.previous!==null&&row.current!==null)
+  .sort((a,b)=>b.delta-a.delta||b.current-a.current||a.country.localeCompare(b.country)).slice(0,5);
+}
+
+/** Same rounding as the displayed one-decimal mean, so equal printed changes read as a tie. */
+export function sameDailyChange(a:number,b:number){return Math.round(a*10)===Math.round(b*10);}
+
+/**
+ * Signed change in flights per day, in the page's existing change convention for flight counts
+ * (+ increase, △ decrease, 0 none). A nonzero change below the printed 0.1 keeps its direction.
+ */
+export function dailyChangeText(delta:number,format:(value:number)=>string){
+ if(delta===0)return '0';
+ const sign=delta>0?'+':'△',size=Math.abs(delta);
+ return size<0.05?`${sign}<${format(0.1)}`:`${sign}${format(size)}`;
 }
 
 /** Same freshness, duplicate and closed-reading contract as the detailed checkpoint view. */

@@ -1,0 +1,35 @@
+{
+  "recordedAt": "2026-10-14T08:53:23.985Z",
+  "authorizationEvidence": {
+    "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+    "status": "OWNER_REQUESTED_PUBLIC_CHANGE",
+    "ownerInstruction": "앞에작업다하고해\n전월비일편균증감률말고 증감건수로 표기하고 순위도 증감건수로하자\n\n그리고 공항상세누르면 해당정보에 적합한 페이지로 이동시켜줘 지금은 그냥 공항페이지 젤상단으로만이동돼\n\n다른 눌러보면 이동되는것들도 적합한거 매칭해줘",
+    "attachment": "Owner phone screenshot of /ko airport glance: \"전월비 일평균 증감 Top 5\" ranked by rate (투르크메니스탄 +38.5% … 태국 +12.5%), \"공항 상세 ↗\" below it, \"국가 전체 보기 (45) ↗\" above."
+  },
+  "decisions": {
+    "ranking": "Top 5 and the growth tile rank by the change in included-day DAILY MEAN departures (flights/day), largest increase first; ties: higher current mean, then country name.",
+    "whyDailyMean": "The selected month is usually partial (the screenshot: previous 30 included days / selected 13), so month totals would compare different spans; the table already shows daily means (일평균 · 편/일).",
+    "newDestinations": "A destination with mean 0 last month is a real increase (+N) and is kept; an incomparable month (no data) still yields nothing.",
+    "display": "Change column \"증감\" shows the signed count (+2.1; △ for a decrease, the page's existing flight-count convention; 0 for none; a nonzero change below 0.1 keeps its direction as <0.1) with spoken 증가/감소 words for screen readers; the growth tile shows +N편/일.",
+    "links": {
+      "Top 5 공항 상세 / growth tile": "#airport-month-destinations — the monthly \"목적지 국가·지역 전체\" list, opened (only the full list is guaranteed to contain every Top 5 country)",
+      "국가 전체 보기 (N)": "#airport-zone-countries — \"오늘의 국가별 출발편\" by zone",
+      "예상 출국객 / 예상 환승객": "#airport-forecast-title (no empty date= any more)",
+      "출국장 대기": "#airport-checkpoints-title; for 탑승동 the T1 checkpoints (the tile already shows T1 queues; the concourse page has no checkpoint section)",
+      "앞으로 출발편 집중 시간 / 지도 공항 상세": "#airport-departure-model-slot; for 탑승동 #airport-concourse (the concourse page has no departure map)"
+    },
+    "landing": "The airport page reveals these ids after its client data mounts (app/use-airport-hash-reveal.ts): waits for the id, aligns it below the sticky header and airport menu, opens a closed <details>, keeps it aligned while content above settles, stops at the first scroll/tap/key or after 8 s. Root cause: full page loads whose target sections are not in the server HTML and mount 0.7–1.4 s after load, so the browser fragment scroll had already given up (scrollY stayed 0)."
+  },
+  "files": [
+    "lib/airport-glance.ts",
+    "app/airport-glance-preview.tsx",
+    "app/use-airport-hash-reveal.ts",
+    "app/airport-departure-preparation.tsx (mounts the hook)",
+    "app/airport-monthly-flights.tsx (id)",
+    "app/airport-zone-countries.tsx (id)",
+    "app/airport-concourse.tsx (id)",
+    "tests/airport-glance.test.ts",
+    "e2e/airport-glance-preview.spec.ts"
+  ],
+  "protectedFilesChanged": []
+}
