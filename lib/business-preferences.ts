@@ -8,7 +8,7 @@
  * means "whole day, no hours set" — a default is never written back as if
  * the reader had chosen it.
  */
-import { parseBusinessHours, type AirportSide, type BusinessHours, type PrepTerminal } from "./business-prep";
+import { parseBusinessHours, type AirportSide, type BusinessHours, type PrepTerminal } from "./business-hours";
 
 export const BUSINESS_KEY = "koretail-business-v1";
 

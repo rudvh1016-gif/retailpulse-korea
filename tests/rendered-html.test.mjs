@@ -322,7 +322,13 @@ test("ships every product surface in four languages without a runtime LLM depend
   // The airport screen is its own client component since 2026-10-11, mounted by
   // the shell: the shell and that view together are the client surface.
   const airportView = await read("../app/airport-view.tsx");
-  const shell = `${page}\n${airportView}`;
+  // The today screen's signals (date navigator, scope note, home brief or the
+  // area's signals) are one component in live-signals.tsx since 2026-10-14, so
+  // the shell can load them with that screen: it is part of the shell surface.
+  const live = await read("../app/live-signals.tsx");
+  assert.match(live, /export function TodaySignals\(/);
+  const todaySignals = live.slice(live.indexOf("export function TodaySignals("));
+  const shell = `${page}\n${airportView}\n${todaySignals}`;
   const data = await read("../app/retailpulse-data.ts");
   // Business-type copy lives beside the other domain data rather than in the
   // client components, so the four-language surface spans all of these files.
@@ -554,7 +560,9 @@ test("the Seoul brief states which day a forecast peak falls on", async () => {
 });
 
 test("the header date comes from the data on screen and long status text never uses the number size", async () => {
-  const signals = await read("../app/live-signals.tsx");
+  // The header chip lives with the summary reader in live-summary.tsx since 2026-10-14
+  // (every screen shows it; the Seoul signals load only with the screens that show them).
+  const signals = await read("../app/live-summary.tsx");
   // The departure summary grid lives in airport-live-signals.tsx since 2026-10-11.
   const airportSignals = await read("../app/airport-live-signals.tsx");
   const css = await read("../app/globals.css");
@@ -1086,4 +1094,21 @@ test("only the glance routes put the glance assets in the head", async () => {
     assert.ok(links.some((link) => /rel="modulepreload"/.test(link) && /\.js"/.test(link)), `${path} preloads the glance script`);
   }
   for (const path of ["/ko/myeongdong", "/ko/hongdae"]) assert.deepEqual(await glanceAssets(path), [], path);
+});
+
+// Every script and stylesheet the head asks for must exist in the build. A CSS-only module
+// imported from two places once became an empty chunk that the bundler never wrote to
+// dist/ while every page still modulepreloaded it: one failed request on each visit.
+test("every asset the rendered head links exists in the client build", async () => {
+  for (const path of ["/ko", "/en", "/ko/airport", "/ko/airport-glance", "/ko/myeongdong", "/ko/business", "/ko/where-to", "/ko/consumption", "/ko/more", "/ko/about", "/ko/forecast", "/ko/travel-records", "/ko/airport-news"]) {
+    const response = await renderPath(path);
+    assert.equal(response.status, 200, path);
+    const head = (await response.text()).split("</head>")[0];
+    const assets = [...head.matchAll(/<link\b[^>]*\bhref="(\/assets\/[^"]+)"/g)].map((match) => match[1]);
+    assert.ok(assets.length > 0, `${path} links its built assets`);
+    for (const asset of new Set(assets)) {
+      const file = await stat(new URL(`../dist/client${asset}`, import.meta.url)).catch(() => null);
+      assert.ok(file?.isFile() && file.size > 0, `${path} links ${asset}, which the build did not write`);
+    }
+  }
 });

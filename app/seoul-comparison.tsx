@@ -3,14 +3,17 @@
 import {useEffect,useRef,useState} from 'react';
 import {useChoiceMotion} from './use-choice-motion';
 import type {Lang} from './retailpulse-data';
-import {useLiveSummary} from './live-signals';
+import {useLiveSummary} from './live-summary';
 import type {AreaId} from '../lib/areas';
 import type {publicCommercialMonth} from '../lib/commercial-monthly';
 import {commercialComparisonPeriod} from '../lib/commercial-monthly';
 import {CommercialMonthCoverage} from './commercial-month-coverage';
 import {usePreparedMonth} from './use-prepared-month';
 import {commercialCategoryIcons,commercialCategoryFallback,commercialIconSrcSet} from './commercial-category-icons';
-import './seoul-comparison.css';
+// ./seoul-comparison.css ships with the shell (app/retailpulse-app.tsx), which
+// renders these screens and imports it where it imported them before they
+// loaded on demand: the cascade stays as it was on every page, and a CSS-only
+// module shared by two chunks would otherwise become an empty preloaded script.
 import {ChangeRate} from './change-rate';
 import {SEOUL_REALTIME_STALE_MINUTES} from '../lib/seoul-freshness';
 import {rankPublishedMetric} from '../lib/commercial-ranking';

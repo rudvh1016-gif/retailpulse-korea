@@ -1,8 +1,11 @@
 'use client';
 import type {Lang} from './retailpulse-data';
-import {useLiveSummary,LiveLoadMessage} from './live-signals';
-import {contextText as t} from './operational-context';
+import {useLiveSummary,LiveLoadMessage} from './live-summary';
 import {nextSourceWindow,publicFailureReason} from '../lib/source-status';
+// The same one-line language pick as contextText in ./operational-context, kept here so the shell,
+// which imports this file on every page, does not download that module's Seoul weather and
+// spending cards with it.
+const t=(lang:Lang,ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
 type Words=[string,string,string,string];
 const word=(lang:Lang,words:Words)=>t(lang,...words);
 export const activeSourceCatalog:Array<{id:string;names:Words;uses:Words}>=[

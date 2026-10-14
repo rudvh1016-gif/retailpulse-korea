@@ -2,10 +2,10 @@
 import {useMemo,useRef,useState} from 'react';
 import {useChoiceMotion} from './use-choice-motion';
 import type {Lang} from './retailpulse-data';
-import {useLiveSummary} from './live-signals';
-import {useFlights} from './flights-client';
-import {usePreparedMonth} from './use-prepared-month';
-import {usePresentationClock} from './area-demand-card';
+import {useLiveSummary} from './live-summary';
+import {loadFlights,useFlights} from './flights-client';
+import {primePreparedMonth,usePreparedMonth} from './use-prepared-month';
+import {usePresentationClock} from './presentation-clock';
 import {ChangeRate} from './change-rate';
 import {dailyChangeText,glanceComparableCountries,glanceCountryDeclines,glanceDestinationIncrease,glanceFutureWindow,glanceFlights,glanceDayComparison,glanceCountryRanking,glanceLongestWait,glanceUpcoming,sameDailyChange,type GlanceScope} from '../lib/airport-glance';
 import {mainBuildingMonth} from '../lib/airport-monthly-building';
@@ -16,6 +16,21 @@ import {transferForecastTotal} from '../lib/passenger-reference-sum';
 import {friendlyCheckpointName} from '../lib/airport-today-summary';
 import './airport-glance-preview.css';
 interface MonthReply{status:string;month:string;data:AirportMonthlyRollups|null;calculatedAt:string|null}
+/** On a page that opens on the glance, the two reads the glance makes once the summary names the day
+ * (that day's flights and its month records) start while the page's scripts are still arriving,
+ * instead of after hydration. The day is the page's ?date= or else the device's KST day, which is
+ * the day the undated summary names; if the summary names another day the hooks simply ask for that
+ * one as before. Both reads go through the hooks' own loaders, so nothing from them is shown unless
+ * the summary names the same day, and the API calls are the ones the hooks would have made. */
+function startGlanceReads(){
+ const [,locale,slug,...rest]=window.location.pathname.split('/');
+ if(!['ko','en','zh','ja'].includes(locale)||rest.length>0||(slug&&slug!=='airport-glance'))return;
+ const requested=new URLSearchParams(window.location.search).get('date');
+ const day=requested&&/^\d{4}-\d{2}-\d{2}$/.test(requested)?requested:kstDayOf(new Date(Date.now()).toISOString());
+ void loadFlights(day);
+ primePreparedMonth(`/api/live/airport-months?month=${encodeURIComponent(day.slice(0,7))}`);
+}
+if(typeof window!=='undefined')startGlanceReads();
 const copy={
  ko:{title:'인천공항 한눈에',detail:'공항 상세',preview:'공개 반영 전 미리보기',all:'전체',today:'오늘',date:'날짜',total:'선택일 출발편',now:'현재 시간대',unit:'편',hourly:'시간대별 출발편',country:'목적지 국가별 출발편 신장률',basis:'실제 포함일 일평균 기준 · 하루 평균 증감 편수 순 · 비교 불가 제외',previous:'전월',current:'선택월',change:'증감',ready:'출국 준비',readyNote:'수속·수하물·보안검색 안내',news:'관세·면세 뉴스',newsNote:'공식 출처와 발표 시각 확인',loading:'자료 확인 중…',missing:'확인 가능한 자료가 없습니다.',partial:'일부 기록입니다. 전체 합계로 표시하지 않습니다.',art:'승인된 공항 그림 연결 대기',concept:'개념도 · 공식 좌표 아님',west:'서편',center:'중앙',east:'동편',unknown:'위치 미확인',concourse:'탑승동',selected:'선택 시간',collected:'항공편 자료 수집',monthTime:'월별 집계 시각',scope:'구역 비율은 각 건물 전체 출발편 기준이며 위치 미확인도 포함합니다.',rank:'신장률 상위 5개',wait:'대기 관측은 출국장별 상세에서 확인',scheduled:'출발 예정시각 기준 · 편수는 승객 수·실제 운항 실적이 아닙니다.'},
  en:{title:'Airport at a glance',detail:'Airport details',preview:'Preview before publication',all:'All',today:'Today',date:'Date',total:'Selected-day departures',now:'Current hour',unit:'flights',hourly:'Departures by hour',country:'Departure growth by destination country',basis:'Included-day daily means · ranked by change in flights per day · not comparable excluded',previous:'Previous',current:'Selected',change:'Change',ready:'Prepare for departure',readyNote:'Check-in, baggage and security',news:'Customs & Duty-Free News',newsNote:'Official sources and publication times',loading:'Checking data…',missing:'No verified data available.',partial:'Partial records; no complete total shown.',art:'Approved airport artwork pending',concept:'Concept layout · not official coordinates',west:'West',center:'Centre',east:'East',unknown:'Unverified',concourse:'Concourse',selected:'Selected hour',collected:'Flights collected',monthTime:'Monthly calculation',scope:'Zone shares use each building’s total departures, including unverified locations.',rank:'Top 5 change rates',wait:'See queue observations by checkpoint in details',scheduled:'Scheduled departure times · flights are not people or certified actual operations.'},
