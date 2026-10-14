@@ -322,7 +322,13 @@ test("ships every product surface in four languages without a runtime LLM depend
   // The airport screen is its own client component since 2026-10-11, mounted by
   // the shell: the shell and that view together are the client surface.
   const airportView = await read("../app/airport-view.tsx");
-  const shell = `${page}\n${airportView}`;
+  // The today screen's signals (date navigator, scope note, home brief or the
+  // area's signals) are one component in live-signals.tsx since 2026-10-14, so
+  // the shell can load them with that screen: it is part of the shell surface.
+  const live = await read("../app/live-signals.tsx");
+  assert.match(live, /export function TodaySignals\(/);
+  const todaySignals = live.slice(live.indexOf("export function TodaySignals("));
+  const shell = `${page}\n${airportView}\n${todaySignals}`;
   const data = await read("../app/retailpulse-data.ts");
   // Business-type copy lives beside the other domain data rather than in the
   // client components, so the four-language surface spans all of these files.
@@ -554,7 +560,9 @@ test("the Seoul brief states which day a forecast peak falls on", async () => {
 });
 
 test("the header date comes from the data on screen and long status text never uses the number size", async () => {
-  const signals = await read("../app/live-signals.tsx");
+  // The header chip lives with the summary reader in live-summary.tsx since 2026-10-14
+  // (every screen shows it; the Seoul signals load only with the screens that show them).
+  const signals = await read("../app/live-summary.tsx");
   // The departure summary grid lives in airport-live-signals.tsx since 2026-10-11.
   const airportSignals = await read("../app/airport-live-signals.tsx");
   const css = await read("../app/globals.css");

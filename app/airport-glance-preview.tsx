@@ -2,10 +2,10 @@
 import {useMemo,useRef,useState} from 'react';
 import {useChoiceMotion} from './use-choice-motion';
 import type {Lang} from './retailpulse-data';
-import {useLiveSummary} from './live-signals';
+import {useLiveSummary} from './live-summary';
 import {loadFlights,useFlights} from './flights-client';
 import {primePreparedMonth,usePreparedMonth} from './use-prepared-month';
-import {usePresentationClock} from './area-demand-card';
+import {usePresentationClock} from './presentation-clock';
 import {ChangeRate} from './change-rate';
 import {dailyChangeText,glanceComparableCountries,glanceCountryDeclines,glanceDestinationIncrease,glanceFutureWindow,glanceFlights,glanceDayComparison,glanceCountryRanking,glanceLongestWait,glanceUpcoming,sameDailyChange,type GlanceScope} from '../lib/airport-glance';
 import {mainBuildingMonth} from '../lib/airport-monthly-building';
