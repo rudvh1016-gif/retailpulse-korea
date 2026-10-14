@@ -1,0 +1,20 @@
+{
+  "recordedAt": "2026-10-13T23:04:43Z",
+  "authorizationEvidence": {
+    "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+    "ownerTaskRequest": "남은속도후보 모두 다 끝까지해결해줘",
+    "approvalQuestion": "최종 보고(2026-10-13, PR #364·#365 배포 후)의 '남은 속도 후보' 목록:\n  · ④ 업종 코드 분리: −0.12~0.15초\n  · ⑧ 홈 글꼴 미리 받기 해제: −0.45~0.55초, 대신 브랜드 글꼴이 0.3초 늦게 바뀝니다\n  · 공항 한눈에 칸 높이 고정: 남은 CLS 0.145, dot 디자인 영역\n  · 뒤로가기 캐시: 0.9초 → 0.15초 가능성이 있지만, 운영 측정이 먼저 필요하고 HTML 캐시 정책을 바꾸는 위험이 있습니다\n  · 매장 탭 미리 받기: 0.08초 효과뿐이라 권하지 않습니다\n소유자 답: \"남은속도후보 모두 다 끝까지해결해줘\"",
+    "ownerRequest": "남은속도후보 모두 다 끝까지해결해줘",
+    "approvedItems": [
+      "공항 한눈에 칸 높이 고정 (dot-owned design area, not protected: app/airport-glance-preview.tsx, app/airport-glance-preview.css)",
+      "뒤로가기 캐시 (resolved by production evidence, no code change: run 38410887300)"
+    ]
+  },
+  "glanceTiles": {
+    "change": "While a value is unknown, an invisible CSS placeholder of the loaded shape (.glance-hold::before, content from a data-shape attribute, visibility:hidden) keeps each tile, the day comparison, the picture labels and the footer stamps at their loaded size; the visible dash is laid over its start. Shapes are attributes, not DOM text, so crawlers and screen readers never see them. With no date chosen the pending passenger/day labels use the existing today strings.",
+    "measured": "Production-shaped data, cold load, data-arrival CLS at 360/390/430 px: ko 0.126/0.061/0.081 -> 0.00002; en 0.065/0.071/0.087 -> 0.00002; zh 0.088/0.087/0.066 -> 0.00001; ja 0.060/0.090/0.077 -> 0.0078/0.00001/0.00001. Loaded rendering pixel-identical before vs after in 14 screenshot pairs (ko/en/zh/ja at 390 and 1280, ko 360/430, e2e fixture ko/en).",
+    "residual": "Below-the-fold blocks (destination list, ranking table, future cards) still grow when their rows arrive; ja 360 wait tile keeps a one-line shift; fixture shapes without a tie or with 1-digit day counts can still shift by one small line."
+  },
+  "backForwardCache": "Production Chromium 151 (mobile) restored all 6 probed pages from the back/forward cache, 12/12 visits, zero blocker reasons, with the HTML still cache-control: no-store (run 38410887300). The HTML cache-policy change was therefore not made. iOS Safari could not be verified with Playwright WebKit (it restored no page, not even example.com). A read-only probe step is added to the manual Production Site Smoke so this can be re-measured after deploys.",
+  "reason": "Record the explicit owner approval for the dot-owned glance change and the evidence-based decision on the back/forward cache; no test is relaxed or skipped."
+}

@@ -39,3 +39,28 @@ test('desktop preserves plain operating menu and cancels mobile feedback on resi
  expect(await nav.locator('a').first().evaluate(e=>getComputedStyle(e).transform)).toBe('none');
  await page.goBack();await expect(page).toHaveURL(/\/ko\/more$/);
 });
+
+// Release checks (owner, 2026-10-14): small-screen clipping, bottom safe area,
+// content never hidden behind the bar. Order and functions are covered above.
+for(const lang of ['ko','en','zh','ja'])test(`320px phone keeps every label inside its target and the page above the bar ${lang}`,async({page})=>{
+ await page.setViewportSize({width:320,height:568});await setup(page);await page.goto(`/${lang}/hongdae`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.locator('.bottom-nav a')).toHaveCount(6);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ const nav=await page.locator('.bottom-nav').evaluate(n=>{const b=n.getBoundingClientRect();return {left:b.left,right:b.right,bottom:b.bottom,top:b.top};});
+ expect(nav.left).toBeGreaterThanOrEqual(0);expect(nav.right).toBeLessThanOrEqual(320);expect(Math.abs(nav.bottom-568)).toBeLessThanOrEqual(1);
+ for(const item of await page.locator('.bottom-nav a').all()){
+  const fit=await item.evaluate(a=>{const b=a.getBoundingClientRect(),s=a.querySelector('span')!.getBoundingClientRect();return {w:b.width,h:b.height,inside:s.top>=b.top-.5&&s.bottom<=b.bottom+.5&&s.left>=b.left-.5&&s.right<=b.right+.5,scroll:a.scrollWidth<=a.clientWidth&&a.scrollHeight<=a.clientHeight};});
+  expect(fit.w).toBeGreaterThanOrEqual(44);expect(fit.h).toBeGreaterThanOrEqual(44);expect(fit.inside).toBe(true);expect(fit.scroll).toBe(true);
+ }
+ await page.evaluate(()=>scrollTo({top:document.documentElement.scrollHeight,behavior:'instant'}));
+ await expect.poll(()=>page.evaluate(()=>{const top=document.querySelector('.bottom-nav')!.getBoundingClientRect().top,footer=document.querySelector('main footer, footer')!.getBoundingClientRect().bottom;return footer<=top;})).toBe(true);
+});
+test('bottom safe area keeps the glass bar and its targets above the home indicator',async({page})=>{
+ await page.setViewportSize({width:390,height:844});await setup(page);
+ // Chromium's env(safe-area-inset-*) override; an emulation, not an iOS device.
+ const cdp=await page.context().newCDPSession(page);await cdp.send('Emulation.setSafeAreaInsetsOverride' as never,{insets:{top:47,bottom:34,left:0,right:0}} as never);
+ await page.goto('/ko/hongdae');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ const bar=await page.locator('.bottom-nav').evaluate(n=>({bottom:n.getBoundingClientRect().bottom,links:[...n.querySelectorAll('a')].map(a=>a.getBoundingClientRect().bottom),glass:getComputedStyle(n,'::before').bottom}));
+ expect(Math.abs(bar.bottom-844)).toBeLessThanOrEqual(1);expect(bar.glass).toBe('34px');
+ for(const bottom of bar.links)expect(bottom).toBeLessThanOrEqual(844-34);
+});

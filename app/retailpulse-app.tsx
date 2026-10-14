@@ -14,7 +14,28 @@ const prepareAirportGlance=()=>{loadAirportGlance().catch(()=>{});};
 const MonthlyRecordsView=dynamic(()=>import('./monthly-records').then(module=>module.MonthlyRecordsView));
 const TourismDeskView=dynamic(()=>import('./tourism-desk').then(module=>module.TourismDeskView));
 const PredictionEvidence=dynamic(()=>import('./prediction-evidence').then(module=>module.PredictionEvidence));
-const BusinessPrep=dynamic(()=>import('./business-prep').then(module=>module.BusinessPrep));
+// The business screen's briefing and industry guide load with that screen. The
+// More screen, the way to it on a phone, starts that load once it is idle, and
+// reaching for the desktop link does the same (see prepareBusinessView).
+let businessPrepModule: typeof import('./business-prep') | undefined;
+let industryGuideModule: typeof import('./industry-guide') | undefined;
+const loadBusinessPrep=()=>import('./business-prep').then(module=>(businessPrepModule=module));
+const loadIndustryGuide=()=>import('./industry-guide').then(module=>(industryGuideModule=module));
+const LazyBusinessPrep=dynamic(()=>loadBusinessPrep().then(module=>module.BusinessPrep));
+const LazyIndustryGuide=dynamic(()=>loadIndustryGuide().then(module=>module.IndustryGuide));
+const prepareBusinessView=()=>{loadBusinessPrep().catch(()=>{});loadIndustryGuide().catch(()=>{});};
+/** Like OnDemandAirportView, for in-app navigation. The business route's server
+ * page passes both components in instead (see RetailPulseProps), so hydration
+ * there keeps the server HTML; elsewhere the server never renders them, and the
+ * `typeof window` guard keeps the server and hydration on the same lazy path. */
+function OnDemandBusinessPrep(props: ComponentProps<typeof LazyBusinessPrep>) {
+  const [Loaded] = useState(() => typeof window === 'undefined' ? undefined : businessPrepModule?.BusinessPrep);
+  return Loaded ? <Loaded {...props} /> : <LazyBusinessPrep {...props} />;
+}
+function OnDemandIndustryGuide(props: ComponentProps<typeof LazyIndustryGuide>) {
+  const [Loaded] = useState(() => typeof window === 'undefined' ? undefined : industryGuideModule?.IndustryGuide);
+  return Loaded ? <Loaded {...props} /> : <LazyIndustryGuide {...props} />;
+}
 // The airport routes pass AirportView in from their server pages (see RetailPulseProps);
 // on a Seoul route the airport code loads only when the airport is reached for.
 let airportViewModule: typeof import('./airport-view') | undefined;
@@ -38,7 +59,7 @@ import {useBottomNavigationViewport} from "./use-bottom-navigation-viewport";
 import {NavigationIcon} from "./navigation-icon";
 import {useGlassNavigation} from "./use-glass-navigation";
 import "./glass-navigation.css";
-import { type IndustryId, industryProfiles } from "../lib/industry-guidance";
+import { industryLabels, type IndustryId } from "../lib/industry-ids";
 import {
   airportMonthly,
   airportValue,
@@ -52,6 +73,8 @@ import { localText } from "./local-text";
 import { MonthRangePicker } from "./month-range-picker";
 import type { AirportView as AirportViewComponent } from "./airport-view";
 import type AirportGlanceComponent from "./airport-glance-preview";
+import type { IndustryGuide as IndustryGuideComponent } from "./industry-guide";
+import type { BusinessPrep as BusinessPrepComponent } from "./business-prep";
 import { canonicalSlug, pageDescription, pageTitle, seoLocales, seoSlugs, siteOrigin, type SeoSlug } from "./seo-config";
 import LiveSignals, {
   AreaCurrentBrief,
@@ -65,7 +88,9 @@ import { InstallAppButton } from "./install-app";
 import {WhereToView,ConsumptionView} from './seoul-comparison';
 import { parsePreferences, PREFERENCE_KEY } from "../lib/personal-briefing";
 import { SiteUsageGuide } from "./site-usage-guide";
-import { IndustryGuide } from "./industry-guide";
+// The industry guide's stylesheet still ships with the shell, as it did before
+// the guide's code was split out, so no route's styles change.
+import './industry-scenes.css';
 // The airport screens' stylesheets stay in the shared stylesheet, in the order
 // the shell imported them before the airport view was split out, so the
 // global cascade is byte-for-byte unchanged on every route.
@@ -243,6 +268,13 @@ type RetailPulseProps = {
    */
   AirportGlance?: ComponentType<ComponentProps<typeof AirportGlanceComponent>>;
   /**
+   * The industry guide, passed the same way by the business route's server
+   * page; elsewhere the business screen loads it with its other code.
+   */
+  IndustryGuide?: ComponentType<ComponentProps<typeof IndustryGuideComponent>>;
+  /** The business briefing, passed the same way by the business route's server page. */
+  BusinessPrep?: ComponentType<ComponentProps<typeof BusinessPrepComponent>>;
+  /**
    * Today's answer, read on the server (lib/today-answer.ts) so the first HTML
    * already states it. Absent or null renders nothing.
    */
@@ -267,7 +299,7 @@ function routeFor(lang: Lang, view: View, area: AreaId) {
   return `${base}/${view}`;
 }
 
-export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false, initialScope = "home", todayAnswer = null, AirportView = OnDemandAirportView, AirportGlance = LazyAirportGlance }: RetailPulseProps = {}) {
+export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false, initialScope = "home", todayAnswer = null, AirportView = OnDemandAirportView, AirportGlance = LazyAirportGlance, IndustryGuide = OnDemandIndustryGuide, BusinessPrep = OnDemandBusinessPrep }: RetailPulseProps = {}) {
   const bottomNavigationRef = useBottomNavigationViewport();
   // Airport routes already carry the airport code; only the on-demand copy needs preparing.
   const prepareAirport = AirportView === OnDemandAirportView ? prepareAirportView : undefined;
@@ -296,7 +328,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           if (!initialRoute && value.lang && ["ko", "en", "zh", "ja"].includes(value.lang)) setLang(value.lang);
           if ((!initialRoute || ((initialScope === "home" && initialView === "today") || initialScope === "airport-home")) && value.area && Object.hasOwn(areaInfo, value.area)) setSelected(value.area);
           if (value.terminal && ["all", "T1", "T2"].includes(value.terminal)) setTerminal(value.terminal);
-          if (value.industry && Object.hasOwn(industryProfiles, value.industry)) setIndustry(value.industry);
+          if (value.industry && Object.hasOwn(industryLabels, value.industry)) setIndustry(value.industry);
         }
         const personal = parsePreferences(window.localStorage.getItem(PREFERENCE_KEY));
         if ((initialScope === "home" || initialScope === "airport-home") && personal && Object.hasOwn(areaInfo, personal.location)) setSelected(personal.location as AreaId);
@@ -324,6 +356,18 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       // Storage is a convenience only.
     }
   }, [lang, selected, terminal, industry, preferencesReady]);
+
+  // The industry guide left the shell's first download (lib/industry-ids.ts
+  // carries the names), but the airport and business screens still need it.
+  // Once this screen has loaded and sits idle the shell fetches it quietly, so
+  // a later tap on those tabs finds it cached, as it did before the split.
+  useEffect(() => {
+    if (!preferencesReady) return;
+    let live = true, idle = 0, timer: ReturnType<typeof setTimeout> | undefined;
+    const start = () => { if (!live) return; if ("requestIdleCallback" in window) idle = requestIdleCallback(() => { loadIndustryGuide().catch(() => {}); }, { timeout: 4000 }); else timer = setTimeout(() => { loadIndustryGuide().catch(() => {}); }, 1500); };
+    if (document.readyState === "complete") start(); else window.addEventListener("load", start, { once: true });
+    return () => { live = false; window.removeEventListener("load", start); if (idle) cancelIdleCallback(idle); clearTimeout(timer); };
+  }, [preferencesReady]);
 
   useEffect(() => {
     const [, , pathSlug, pathArea] = window.location.pathname.split("/");
@@ -451,7 +495,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         </button>
         <nav className="top-nav" aria-label="Primary">
           {(["airport-glance", "airport", "where-to", "today", "consumption", "business", "more"] as View[]).map((item) => (
-            <a key={item} href={routeFor(lang, item, selected)} className={view === item || (item === "more" && ["tourism-desk","forecast","about"].includes(view)) ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : undefined} onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : undefined} aria-current={view === item ? "page" : item === "more" && ["tourism-desk","forecast","about"].includes(view) ? "location" : undefined}>{navLabel(item)}</a>
+            <a key={item} href={routeFor(lang, item, selected)} className={view === item || (item === "more" && ["tourism-desk","forecast","about"].includes(view)) ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "business" ? prepareBusinessView : undefined} onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "business" ? prepareBusinessView : undefined} aria-current={view === item ? "page" : item === "more" && ["tourism-desk","forecast","about"].includes(view) ? "location" : undefined}>{navLabel(item)}</a>
           ))}
         </nav>
         <div className="header-meta">
@@ -509,7 +553,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             setDate={changeDate}
           />
         )}
-        {view === "business" && <BusinessView lang={lang} selected={selected} setSelected={selectArea} industry={industry} setIndustry={setIndustry} date={serviceDate} setDate={changeDate} />}
+        {view === "business" && <BusinessView lang={lang} selected={selected} setSelected={selectArea} industry={industry} setIndustry={setIndustry} date={serviceDate} setDate={changeDate} IndustryGuide={IndustryGuide} BusinessPrep={BusinessPrep} />}
         {view === 'where-to' && <WhereToView lang={lang}/>}
         {view === 'consumption' && <ConsumptionView lang={lang} area={selected} onArea={selectArea}/>}
         {view === "forecast" && <InsightsView lang={lang} selected={selected} setSelected={selectArea} />}
@@ -566,11 +610,13 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 }
 
 function BusinessView({
-  lang, selected, setSelected, industry, setIndustry, date, setDate,
+  lang, selected, setSelected, industry, setIndustry, date, setDate, IndustryGuide, BusinessPrep,
 }: {
   lang: Lang; selected: AreaId; setSelected: (id: AreaId) => void;
   industry: IndustryId; setIndustry: (id: IndustryId) => void;
   date: string | null; setDate: (value: string | null) => void;
+  IndustryGuide: ComponentType<ComponentProps<typeof IndustryGuideComponent>>;
+  BusinessPrep: ComponentType<ComponentProps<typeof BusinessPrepComponent>>;
 }) {
   const [mode, setMode] = useState<"briefing" | "history">("briefing");
   // The airport is a place for the briefing only; the area tab keeps its own
@@ -961,6 +1007,17 @@ function MoreView({
   onNavigate: (view: View) => void;
 }) {
   const [sourcesOpen, setSourcesOpen] = useState(false);
+  // On a phone this screen is the way to 매장, so its code loads once the
+  // screen's own fonts have arrived and the screen is idle.
+  useEffect(() => {
+    let live = true, idle = 0, timer: ReturnType<typeof setTimeout> | undefined;
+    void document.fonts.ready.then(() => {
+      if (!live) return;
+      if ("requestIdleCallback" in window) idle = requestIdleCallback(prepareBusinessView, { timeout: 1000 });
+      else timer = setTimeout(prepareBusinessView, 200);
+    });
+    return () => { live = false; if (idle) cancelIdleCallback(idle); clearTimeout(timer); };
+  }, []);
   return (
     <section className="view-section more-view">
       <div className="view-intro">
@@ -971,7 +1028,7 @@ function MoreView({
       </div>
 
       <nav className="more-section-links" aria-label={localText(lang,{ko:'서비스 메뉴',en:'Service sections',zh:'服务菜单',ja:'サービスメニュー'})}>
-        {(['business','tourism-desk','forecast','about'] as const).map(item=><a key={item} href={routeFor(lang,item,selected)} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}
+        {(['business','tourism-desk','forecast','about'] as const).map(item=><a key={item} href={routeFor(lang,item,selected)} onPointerEnter={item==='business'?prepareBusinessView:undefined} onFocus={item==='business'?prepareBusinessView:undefined} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}
       </nav>
       <AnalyticsConsent lang={lang} />
       <SiteUsageGuide lang={lang} />
@@ -983,7 +1040,7 @@ function MoreView({
           <li><span>{localText(lang, { ko: "언어", en: "Language", zh: "语言", ja: "言語" })}</span><b>{lang === "ko" ? "한국어" : lang === "en" ? "English" : lang === "zh" ? "简体中文" : "日本語"}</b></li>
           <li><span>{localText(lang, { ko: "지역", en: "Area", zh: "地区", ja: "エリア" })}</span><b>{areaLocalName(selected, lang)}</b></li>
           <li><span>{localText(lang, { ko: "터미널", en: "Terminal", zh: "航站楼", ja: "ターミナル" })}</span><b>{terminal === "all" ? localText(lang, { ko: "전체", en: "All", zh: "全部", ja: "全体" }) : terminal}</b></li>
-          <li><span>{localText(lang, { ko: "업종", en: "Business type", zh: "业态", ja: "業種" })}</span><b>{industryProfiles[industry].label[lang]}</b></li>
+          <li><span>{localText(lang, { ko: "업종", en: "Business type", zh: "业态", ja: "業種" })}</span><b>{industryLabels[industry][lang]}</b></li>
         </ul>
         <div className="language-choices" role="group" aria-label="Language">
           {(["ko", "en", "zh", "ja"] as Lang[]).map((item) => <button key={item} className={lang === item ? "active" : ""} onClick={() => setLang(item)}>{item === "ko" ? "한국어" : item === "en" ? "English" : item === "zh" ? "简体中文" : "日本語"}</button>)}
