@@ -87,7 +87,10 @@ export function populationFlow(input: {
   return [...points.values()].sort((a, b) => a.time - b.time || a.kind.localeCompare(b.kind));
 }
 
-/** Straight source min/max boundaries, never a midpoint or resampled values.
+/** Source min/max boundaries, never a midpoint or resampled values. Charts draw
+ * them straight, except the forecast outlook (app/population-outlook.tsx), which
+ * since 2026-10-14 draws each edge as the airport figure's monotone cubic through
+ * the same published points (lib/outlook-geometry.ts).
  * The collector runs every 15 minutes; the provider updates on its own clock.
  * Adjacent observations up to 30 minutes apart describe sampled boundaries,
  * not continuous measurement. Longer gaps, explicit gaps/invalid rows and
