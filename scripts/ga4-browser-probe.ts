@@ -22,7 +22,7 @@ import { appendFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { chromium, devices, type Browser, type BrowserContext, type Locator, type Page, type Request } from '@playwright/test';
 import {
-  analyzeTagContainer, compactUtc, cspFindings, ENHANCED_MEASUREMENT_EVENTS, evaluateStep, eventKey, isGoogleMeasurementHost,
+  analyzeTagContainer, compactUtc, cspFindings, ENHANCED_MEASUREMENT_EVENTS, evaluateStep, eventKey, isGa4Transport, isGoogleMeasurementHost,
   MARKER_PARAM, measurementIdsIn, parseCollect, requestKind, summarizeEvent, trafficSummary, withMarker,
   type ConsentPhase, type ContainerAnalysis, type EventSummary, type RequestKind, type StepEvidence, type StepVerdict,
 } from './ga4-probe-lib';
@@ -56,8 +56,12 @@ interface Snapshot {
   dataLayerLength: number | null;
   disableFlag: unknown;
   storedChoice: string | null;
+  scrollY: number;
+  scrollHeight: number;
+  viewportHeight: number;
   gaCookieNames: string[];
 }
+interface CspViolation { directive: string; blocked: string; params: string | null; en: string | null; count: number }
 export interface FlowResult {
   profile: string;
   delivered: boolean;
@@ -66,7 +70,7 @@ export interface FlowResult {
   browser: { userAgent: string; brands: string[] | null; webdriver: boolean } | null;
   buildSha: string | null;
   steps: StepRecord[];
-  cspViolations: { directive: string; blocked: string; count: number }[];
+  cspViolations: CspViolation[];
   traffic: ReturnType<typeof trafficSummary>;
   error: string | null;
 }
@@ -111,12 +115,19 @@ async function runFlow(browser: Browser, profile: Profile, options: ProbeOptions
   let lastGoogleAt = 0;
 
   await context.addInitScript(() => {
-    const store = window as unknown as { __koretailProbeCsp?: { directive: string; blocked: string }[] };
+    const store = window as unknown as { __koretailProbeCsp?: Omit<CspViolation, 'count'>[] };
     store.__koretailProbeCsp = [];
     document.addEventListener('securitypolicyviolation', (event) => {
       let blocked = event.blockedURI;
-      try { const url = new URL(blocked); blocked = url.origin + url.pathname; } catch { /* keyword such as 'inline' */ }
-      store.__koretailProbeCsp!.push({ directive: event.effectiveDirective || event.violatedDirective, blocked });
+      let params: string | null = null;
+      let en: string | null = null;
+      try {
+        const url = new URL(blocked);
+        blocked = url.origin + url.pathname;
+        // Parameter NAMES and the event name only; never a value that could identify anyone.
+        if (/google|doubleclick/.test(url.hostname)) { params = [...new Set(url.searchParams.keys())].sort().join(','); en = url.searchParams.get('en'); }
+      } catch { /* keyword such as 'inline' or 'eval' */ }
+      store.__koretailProbeCsp!.push({ directive: event.effectiveDirective || event.violatedDirective, blocked, params, en });
     });
   });
 
@@ -210,6 +221,9 @@ async function runFlow(browser: Browser, profile: Profile, options: ProbeOptions
         dataLayerLength: Array.isArray(w.dataLayer) ? (w.dataLayer as unknown[]).length : null,
         disableFlag: id ? w[`ga-disable-${id}`] ?? null : null,
         storedChoice,
+        scrollY: Math.round(window.scrollY),
+        scrollHeight: document.documentElement.scrollHeight,
+        viewportHeight: window.innerHeight,
       };
     }, measurementId());
     const gaCookieNames = (await context.cookies()).map((cookie) => cookie.name).filter((name) => /^_ga/.test(name)).sort();
@@ -240,16 +254,16 @@ async function runFlow(browser: Browser, profile: Profile, options: ProbeOptions
   };
   const choice = () => page.getByRole('checkbox', { name: CONSENT_LABEL });
   // Read and clear the page's CSP log; a reload starts a new document and a new log.
-  const cspCounts = new Map<string, { directive: string; blocked: string; count: number }>();
+  const cspCounts = new Map<string, CspViolation>();
   const collectCsp = async () => {
     const violations = await page.evaluate(() => {
-      const store = window as unknown as { __koretailProbeCsp?: { directive: string; blocked: string }[] };
+      const store = window as unknown as { __koretailProbeCsp?: Omit<CspViolation, 'count'>[] };
       const list = store.__koretailProbeCsp ?? [];
       store.__koretailProbeCsp = [];
       return list;
-    }).catch(() => []);
+    }).catch(() => [] as Omit<CspViolation, 'count'>[]);
     for (const violation of violations) {
-      const key = `${violation.directive} ${violation.blocked}`;
+      const key = `${violation.directive} ${violation.blocked} ${violation.params} ${violation.en}`;
       cspCounts.set(key, { ...violation, count: (cspCounts.get(key)?.count ?? 0) + 1 });
     }
   };
@@ -346,8 +360,13 @@ function requirements(flows: FlowResult[], shared: Shared, container: ContainerA
   const lateRetries = withdrawn.reduce((sum, { step }) => sum + step.retransmissions, 0);
   const emEvents = all.flatMap(({ step }) => step.events).filter((event) => event.en && ENHANCED_MEASUREMENT_EVENTS.includes(event.en)).map((event) => event.en);
   const navIds = ['nav_airport', 'nav_where_to', 'history_back', 'nav_more_again'];
-  const cspGoogle = flows.flatMap((flow) => flow.cspViolations.filter((violation) => /google|doubleclick/.test(violation.blocked)).map((violation) => `${flow.profile}: ${violation.directive} blocked ${violation.blocked}`));
+  const googleBlocked = flows.flatMap((flow) => flow.cspViolations.filter((violation) => /google|doubleclick/.test(violation.blocked)).map((violation) => ({ flow, violation })));
+  const describeBlocked = ({ flow, violation }: (typeof googleBlocked)[number]) => `${flow.profile}${flow.delivered ? '(delivered)' : ''}: ${violation.directive} blocked ${violation.blocked} ×${violation.count} (param names: ${violation.params || 'none'}${violation.en ? `; en=${violation.en}` : ''})`;
+  const ga4Blocked = googleBlocked.filter(({ violation }) => isGa4Transport(violation.blocked));
+  const otherBlocked = googleBlocked.filter(({ violation }) => !isGa4Transport(violation.blocked));
   const csp = cspFindings(shared.documentCsp);
+  const scrolled = all.filter(({ step }) => step.id === 'scroll_to_end').map(({ flow, step }) => ({ flow, snapshot: step.snapshot }));
+  const scrollProved = scrolled.length > 0 && scrolled.every(({ snapshot }) => snapshot && snapshot.scrollHeight > snapshot.viewportHeight && snapshot.scrollY + snapshot.viewportHeight >= snapshot.scrollHeight * 0.9);
 
   return [
     { id: 'R1', title: 'Production serves one measurement ID, and the tag and every hit use it', status: verdict(idProblems, bundle.length === 1 && scriptIds.length > 0 && tids.length > 0),
@@ -364,9 +383,13 @@ function requirements(flows: FlowResult[], shared: Shared, container: ContainerA
         lateRetries ? `${lateRetries} retransmission(s) of hits created BEFORE withdrawal (abort-induced transport retry, not new events)` : 'no retransmissions after withdrawal'] },
     { id: 'R5', title: 'Each in-app menu move or back sends exactly one page_view (no gtag automatic duplicate)', status: verdict(failures((step) => navIds.includes(step.id)), navIds.every(ran)),
       evidence: all.filter(({ step }) => navIds.includes(step.id)).map(({ flow, step }) => `${flow.profile}${flow.delivered ? '(delivered)' : ''}/${step.id}: ${describe(step)}`) },
-    { id: 'P1', title: 'Enhanced Measurement off for the stream (policy: no automatic events outside the allowlist)',
-      status: emEvents.length || (container && (container.enhancedMeasurement.length > 0)) ? 'FAIL' : container?.format === 'RECOGNISED' && ran('scroll_to_end') ? 'PASS' : 'UNKNOWN',
-      evidence: [`observed automatic events: ${emEvents.join(', ') || 'none'}`, container ? `gtag/js format ${container.format}; __ccd_em_* templates: ${container.enhancedMeasurement.map((tag) => `${tag.name} ${JSON.stringify(tag.flags)}`).join(' | ') || 'none'}; history page views ${container.historyPageViews}; google signals ${container.googleSignals ?? 'not stated'}` : 'gtag/js not captured'] },
+    { id: 'P1', title: 'No automatic GA4 event observed (history moves, back, reload, scroll to end) and no GA4 Enhanced Measurement template served',
+      status: emEvents.length || (container && (container.enhancedMeasurement.length > 0)) ? 'FAIL' : container?.format === 'RECOGNISED' && scrollProved ? 'PASS' : 'UNKNOWN',
+      evidence: [`automatic GA4 events observed across history moves, back, reload and scroll-to-end: ${emEvents.join(', ') || 'none'}`,
+        `scroll-to-end reached the bottom: ${scrolled.map(({ flow, snapshot }) => `${flow.profile}${flow.delivered ? '(delivered)' : ''} scrollY ${snapshot?.scrollY ?? '?'} + viewport ${snapshot?.viewportHeight ?? '?'} of ${snapshot?.scrollHeight ?? '?'}`).join(' | ') || 'not run'}`,
+        container ? `gtag/js format ${container.format}; GA4 Enhanced Measurement templates (__ccd_em_*): ${container.enhancedMeasurement.map((tag) => `${tag.name} ${JSON.stringify(tag.flags)}`).join(' | ') || 'none'}; google signals ${container.googleSignals ?? 'not stated'}` : 'gtag/js not captured',
+        `Google tag automatic event detection (__ogt_auto_events; tag-level, its effect on GA4 is not documented — check the account): ${container?.autoEventDetection ? JSON.stringify(container.autoEventDetection) : 'absent'}`,
+        `Google tag user-provided data capabilities (__ogt_1p_data_v2): ${container?.userProvidedData ? JSON.stringify(container.userProvidedData) : 'absent'}`] },
     ...flows.filter((flow) => flow.delivered).map((flow): Requirement => {
       const sent = flow.steps.flatMap((step) => step.requests.filter((request) => request.action === 'delivered'));
       const rejected = sent.filter((request) => typeof request.status !== 'number' || request.status < 200 || request.status >= 300);
@@ -377,8 +400,10 @@ function requirements(flows: FlowResult[], shared: Shared, container: ContainerA
           `GA should show for this visit: views ${flow.traffic.views}; event count about ${flow.traffic.expectedGaEventCount} = sent ${JSON.stringify(flow.traffic.eventsByName)} + first_visit ${flow.traffic.derivedFirstVisit} + session_start ${flow.traffic.derivedSessionStart} (GA derives these two); users ${flow.traffic.users}`,
           `marker: event parameter ${MARKER_PARAM}=${flow.marker} on every delivered event (page_location carries no query by design)`] };
     }),
-    { id: 'P2', title: 'Served CSP lets the tag load and report; no Google request blocked by CSP', status: cspGoogle.length || !csp.tagScriptAllowed || csp.collectAllowed.some((row) => !row.allowed) ? 'FAIL' : csp.present ? 'PASS' : 'UNKNOWN',
-      evidence: [`script-src allows www.googletagmanager.com: ${csp.tagScriptAllowed}`, `connect-src: ${csp.collectAllowed.map((row) => `${row.host}=${row.allowed}`).join(', ')}`, `img-src allows GA pixel: ${csp.imagePixelAllowed} (only a fallback transport)`, `CSP violations on Google hosts: ${cspGoogle.join(' | ') || 'none'}`] },
+    { id: 'P2', title: 'Served CSP lets the tag load and the GA4 hits leave (no tag or GA4 collection request blocked)', status: ga4Blocked.length || !csp.tagScriptAllowed || csp.collectAllowed.some((row) => !row.allowed) ? 'FAIL' : csp.present ? 'PASS' : 'UNKNOWN',
+      evidence: [`script-src allows www.googletagmanager.com: ${csp.tagScriptAllowed}`, `connect-src: ${csp.collectAllowed.map((row) => `${row.host}=${row.allowed}`).join(', ')}`, `img-src allows GA pixel: ${csp.imagePixelAllowed} (only a fallback transport)`,
+        `tag or GA4 collection blocked by CSP: ${ga4Blocked.map(describeBlocked).join(' | ') || 'none'}`,
+        `other Google endpoints the tag tried and the served CSP refused (never sent by any browser; not GA4 collection): ${otherBlocked.map(describeBlocked).join(' | ') || 'none'}`] },
   ];
 }
 
@@ -470,7 +495,7 @@ function printReport(evidence: Awaited<ReturnType<typeof runProbe>>['evidence'])
         }
       }
     }
-    if (flow.cspViolations.length) out(`CSP violations: ${flow.cspViolations.map((violation) => `${violation.directive} ${violation.blocked} ×${violation.count}`).join(' | ')}`);
+    if (flow.cspViolations.length) out(`CSP violations: ${flow.cspViolations.map((violation) => `${violation.directive} ${violation.blocked} ×${violation.count}${violation.params !== null ? ` (param names: ${violation.params || 'none'}${violation.en ? `; en=${violation.en}` : ''})` : ''}`).join(' | ')}`);
     const t = flow.traffic;
     out(`traffic: views ${t.views} | network events ${t.networkEvents} ${JSON.stringify(t.eventsByName)} | derived first_visit ${t.derivedFirstVisit}, session_start ${t.derivedSessionStart} | expected GA event count ${t.expectedGaEventCount} | users ${t.users}${flow.delivered ? ' — DEVELOPMENT TEST TRAFFIC' : ' — not delivered'}`);
     if (flow.error) out(`PROBE STOPPED: ${flow.error}`);
@@ -480,7 +505,7 @@ function printReport(evidence: Awaited<ReturnType<typeof runProbe>>['evidence'])
     out(`gtag/js container: HTTP ${evidence.container.httpStatus}, format ${evidence.container.format}, references ID ${evidence.container.referencesMeasurementId}`);
     out(`  templates: ${evidence.container.templates.join(', ')}`);
     out(`  enhanced measurement templates: ${evidence.container.enhancedMeasurement.map((tag) => `${tag.name} (${tag.feature}) ${JSON.stringify(tag.flags)}`).join(' | ') || 'none'}`);
-    out(`  stream settings: ${evidence.container.settings.map((tag) => `${tag.name} ${JSON.stringify(tag.flags)}`).join(' | ') || 'none'}`);
+    out(`  Google tag settings (__ogt_*): ${evidence.container.settings.map((tag) => `${tag.name} ${JSON.stringify(tag.flags)}`).join(' | ') || 'none'}`);
   } else out('gtag/js container: not captured');
   out(`CSP: script-src ${evidence.csp.scriptSrc ?? 'absent'}`);
   out(`     connect-src ${evidence.csp.connectSrc ?? 'absent'}`);

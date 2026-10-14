@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  analyzeTagContainer, compactUtc, cspFindings, evaluateStep, eventKey, isGoogleMeasurementHost, measurementIdsIn,
+  analyzeTagContainer, compactUtc, cspFindings, evaluateStep, eventKey, isGa4Transport, isGoogleMeasurementHost, measurementIdsIn,
   parseCollect, requestKind, summarizeEvent, trafficSummary, withMarker, type StepEvidence,
 } from '../scripts/ga4-probe-lib';
 
@@ -78,6 +78,27 @@ test('gtag/js stream settings: EM templates are reported, absence is OFF, an unk
   assert.equal(onResult.referencesMeasurementId, false);
   assert.equal(analyzeTagContainer('!function(){}()', 'G-TEST1234').format, 'UNKNOWN');
   assert.equal(analyzeTagContainer('!function(){}()', 'G-TEST1234').historyPageViews, 'UNKNOWN');
+});
+
+test('tag-level automatic event detection and user-provided data settings are reported apart from GA4 Enhanced Measurement', () => {
+  // The template set production served on 2026-10-14 (run 38521485610), values abbreviated.
+  const served = '{"tags":[{"function":"__ogt_1p_data_v2","priority":12,"vtp_isAutoEnabled":true,"vtp_isManualEnabled":false,"vtp_autoEmailEnabled":true,"vtp_autoCollectExclusionSelectors":["list",["map","exclusionSelector",""]],"vtp_isEnabled":true,"tag_id":5},'
+    + '{"function":"__ogt_auto_events","vtp_enableHistoryEvents":true,"vtp_enableScroll":true,"vtp_enablePageView":true,"vtp_enableInPageEventsHidden":false,"tag_id":6},'
+    + '{"function":"__ccd_ga_first","vtp_instanceDestinationId":"G-TEST1234","tag_id":7},{"function":"__dest_ga","tag_id":8},{"function":"__gct","vtp_trackingId":"G-TEST1234","tag_id":1}]}';
+  const result = analyzeTagContainer(served, 'G-TEST1234');
+  assert.equal(result.format, 'RECOGNISED');
+  assert.deepEqual(result.enhancedMeasurement, []);
+  assert.deepEqual(result.autoEventDetection, { vtp_enableHistoryEvents: true, vtp_enableScroll: true, vtp_enablePageView: true, vtp_enableInPageEventsHidden: false });
+  assert.deepEqual(result.userProvidedData, { vtp_isAutoEnabled: true, vtp_isManualEnabled: false, vtp_autoEmailEnabled: true, vtp_autoCollectExclusionSelectors: '[list]', vtp_isEnabled: true });
+  assert.equal(analyzeTagContainer('{"tags":[{"function":"__gct","tag_id":1}]}', null).autoEventDetection, null);
+});
+
+test('only the tag script and GA4 collection count as GA4 transport when the CSP blocks a request', () => {
+  assert.equal(isGa4Transport('https://www.google-analytics.com/g/collect'), true);
+  assert.equal(isGa4Transport('https://region1.analytics.google.com/g/collect'), true);
+  assert.equal(isGa4Transport('https://www.googletagmanager.com/gtag/js'), true);
+  assert.equal(isGa4Transport('https://www.google.com/g/collect'), false);
+  assert.equal(isGa4Transport('eval'), false);
 });
 
 function step(overrides: Partial<StepEvidence>): StepEvidence {

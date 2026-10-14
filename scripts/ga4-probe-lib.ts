@@ -155,10 +155,16 @@ export interface ContainerAnalysis {
   format: 'RECOGNISED' | 'UNKNOWN';
   templates: string[];
   referencesMeasurementId: boolean;
+  /** GA4 Enhanced Measurement templates (`__ccd_em_*`) */
   enhancedMeasurement: (TagTemplate & { feature: string })[];
   historyPageViews: 'ON' | 'OFF' | 'UNKNOWN';
   googleSignals: string | null;
+  /** Google tag settings (`__ogt_*`): tag-level, separate from the GA4 stream's Enhanced Measurement */
   settings: TagTemplate[];
+  /** `__ogt_auto_events`: the Google tag's automatic event detection listeners */
+  autoEventDetection: Record<string, Flag> | null;
+  /** `__ogt_1p_data_v2`: user-provided data capabilities of the Google tag */
+  userProvidedData: Record<string, Flag> | null;
 }
 
 function objectAt(source: string, start: number): string | null {
@@ -228,7 +234,19 @@ export function analyzeTagContainer(source: string, measurementId: string | null
     historyPageViews: !recognised ? 'UNKNOWN' : !pageView ? 'OFF' : pageView.flags.vtp_historyEvents === false ? 'OFF' : pageView.flags.vtp_historyEvents === true ? 'ON' : 'UNKNOWN',
     googleSignals: typeof signals === 'string' ? signals : null,
     settings,
+    autoEventDetection: settings.find((tag) => tag.name === '__ogt_auto_events')?.flags ?? null,
+    userProvidedData: settings.find((tag) => tag.name === '__ogt_1p_data_v2')?.flags ?? null,
   };
+}
+
+/** The GA4 collection endpoint or the tag itself; blocking either loses measurement. */
+export function isGa4Transport(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return requestKind(parsed) === 'collect' || requestKind(parsed) === 'tag-script';
+  } catch {
+    return false;
+  }
 }
 
 /** Only the directives that decide whether the tag can load and report. */
