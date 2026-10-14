@@ -7,6 +7,7 @@ import { collectAirportComposition } from '../lib/airport-composition-history';
 import { measureSource, readPublicEvidence, verifyPublicMeasurement } from '../lib/operational-evidence';
 import { resolveProductionDatabaseConfig } from './production-database';
 import { airportMidnightReaders } from './airport-midnight-recovery';
+import { failureText } from '../lib/airport-midnight-direct-recovery';
 
 const nowIso = new Date().toISOString();
 // Check owner/runtime and the exact reviewed context before config, credentials,
@@ -44,9 +45,9 @@ if (!gate.allowed) {
       },
     });
     console.log(JSON.stringify({ airportMidnightRecovery: result }));
-    if (result.state.startsWith('HUMAN_REVIEW')) process.exitCode = 1;
-  } catch {
-    console.error('airportMidnightRecovery=READ_OR_EXECUTION_UNAVAILABLE; human review required; no automatic retry');
+    if (result.state.startsWith('HUMAN_REVIEW') || result.state === 'RETRYABLE_BEFORE_COLLECTION') process.exitCode = 1;
+  } catch (error) {
+    console.error(`airportMidnightRecovery=READ_OR_EXECUTION_UNAVAILABLE; error=${failureText(error)}; human review required; no automatic retry`);
     process.exitCode = 1;
   }
 }

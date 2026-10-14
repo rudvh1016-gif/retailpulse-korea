@@ -64,10 +64,18 @@ function validRun(run: AirportWorkflowRun, workflowId?: number): boolean {
 }
 
 /** Bounded public GitHub reads, including old active runs; never infer absence from truncated lists. */
-export async function readAirportRunSnapshot(nowIso: string, fetcher: typeof fetch = fetch): Promise<AirportRunSnapshot> {
+export async function readAirportRunSnapshot(nowIso: string, fetcher: typeof fetch = fetch, token?: string): Promise<AirportRunSnapshot> {
+  // Unauthenticated reads share 60 requests an hour per runner IP; on 2026-10-15
+  // one ran out right after A1's admission (workflow_read_unavailable). The job
+  // token, when given, reads with the repository's own allowance instead.
+  const get = (url: string, auth?: string) => fetcher(url, { headers: { Accept: 'application/vnd.github+json',
+    'User-Agent': 'koretail-a1-recovery', ...(auth ? { Authorization: `Bearer ${auth}` } : {}) }, signal: AbortSignal.timeout(10_000) });
   const read = async (url: string) => {
-    const response = await fetcher(url, { headers: { Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(10_000) });
-    if (!response.ok) throw new Error('workflow_read_unavailable');
+    let response = await get(url, token?.trim() || undefined);
+    // A token without Actions read falls back to the public read once.
+    if (token?.trim() && (response.status === 401 || response.status === 403)) response = await get(url);
+    if (!response.ok) throw new Error(`workflow_read_unavailable: HTTP ${response.status}${
+      response.headers.get('x-ratelimit-remaining') === '0' ? ' rate limit exhausted' : ''}`);
     const body = await response.json() as { total_count?: number; workflow_runs?: AirportWorkflowRun[] };
     if (!Number.isSafeInteger(body.total_count) || !Array.isArray(body.workflow_runs)) throw new Error('workflow_read_unverified');
     return body;

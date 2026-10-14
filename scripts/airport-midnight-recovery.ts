@@ -15,7 +15,7 @@ export function airportMidnightReaders(db: CloudflareD1RestDatabase) {
   return {
     memory: new OperationalMemory(database),
     readCoverage: (nowIso: string) => readAirportTodayCoverage(db, nowIso),
-    readSnapshot: (nowIso: string) => readAirportRunSnapshot(nowIso),
+    readSnapshot: (nowIso: string) => readAirportRunSnapshot(nowIso, fetch, process.env.GITHUB_TOKEN),
     sourceBlocked: () => airportMidnightSourceBlocked(database),
     budgetAvailable: (nowIso: string) => airportRequestBudgetAvailable(database, nowIso),
   };

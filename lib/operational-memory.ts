@@ -45,6 +45,10 @@ export interface AttemptRequest {
   parts: IncidentFingerprintParts; targetDate: string; scheduledSlot: string;
   operation: string; runId: string; at: string;
 }
+/** Outcome of a controlled attempt that provably stopped before its collector. */
+export const ABORTED_BEFORE_COLLECTION = 'ABORTED_BEFORE_COLLECTION';
+/** Bounds retries after attempts that never reached their collector. */
+export const MAX_ABORTED_BEFORE_COLLECTION_PER_DAY = 4;
 export class OperationalMemory {
   constructor(readonly db: D1Database) {}
 
@@ -170,8 +174,10 @@ export class OperationalMemory {
     // is not a repair. Counting them together meant that once activation
     // happened, controlled recovery would have been permanently refused for the
     // exact two sources it was built for — failing closed, and silently.
+    // An attempt proven to have stopped before its collector (ABORTED_BEFORE_COLLECTION)
+    // made no provider call, so it does not spend the day's budget; see abortBeforeCollection.
     const used=await this.db.prepare(`SELECT COUNT(*) AS n FROM operational_recovery_attempts
-      WHERE source_id=? AND logical_job=? AND target_date=? AND mode='CONTROLLED'`).bind(parts.sourceId,parts.logicalJob,request.targetDate).first<{n:number}>();
+      WHERE source_id=? AND logical_job=? AND target_date=? AND mode='CONTROLLED' AND outcome<>'${ABORTED_BEFORE_COLLECTION}'`).bind(parts.sourceId,parts.logicalJob,request.targetDate).first<{n:number}>();
     const decision=decideRecovery(parts.failureClass,used?.n??0);
     // A source-specific adapter may narrow the closed rule, never expand it.
     if(limits.maxAttempts!==undefined&&(!Number.isSafeInteger(limits.maxAttempts)||limits.maxAttempts<1))
@@ -187,12 +193,14 @@ export class OperationalMemory {
       (attempt_id,execution_id,fingerprint,source_id,failure_class,contract_version,logical_job,target_date,scheduled_slot,operation,attempt_number,started_at,mode)
       SELECT ?,?,?,?,?,?,?,?,?,?,
        (SELECT COUNT(*)+1 FROM operational_recovery_attempts WHERE source_id=? AND logical_job=? AND target_date=? AND mode='CONTROLLED'),?,'CONTROLLED'
-      WHERE (SELECT COUNT(*) FROM operational_recovery_attempts WHERE source_id=? AND logical_job=? AND target_date=? AND mode='CONTROLLED')<?
+      WHERE (SELECT COUNT(*) FROM operational_recovery_attempts WHERE source_id=? AND logical_job=? AND target_date=? AND mode='CONTROLLED' AND outcome<>'${ABORTED_BEFORE_COLLECTION}')<?
+       AND (SELECT COUNT(*) FROM operational_recovery_attempts WHERE source_id=? AND logical_job=? AND target_date=? AND mode='CONTROLLED' AND outcome='${ABORTED_BEFORE_COLLECTION}')<${MAX_ABORTED_BEFORE_COLLECTION_PER_DAY}
        AND NOT EXISTS(SELECT 1 FROM operational_recovery_attempts WHERE source_id=? AND logical_job=? AND completed_at IS NULL AND mode='CONTROLLED')
        AND NOT EXISTS(SELECT 1 FROM operational_recovery_attempts WHERE execution_id=? AND outcome IN ('RECOVERED','RECOVERY_PENDING'))
       ON CONFLICT(attempt_id) DO NOTHING`).bind(attemptId,executionId,incidentFingerprint(parts),parts.sourceId,parts.failureClass,parts.contractVersion,
         parts.logicalJob,request.targetDate,request.scheduledSlot,request.operation,parts.sourceId,parts.logicalJob,request.targetDate,at,
-        parts.sourceId,parts.logicalJob,request.targetDate,maxAttempts,parts.sourceId,parts.logicalJob,executionId);
+        parts.sourceId,parts.logicalJob,request.targetDate,maxAttempts,parts.sourceId,parts.logicalJob,request.targetDate,
+        parts.sourceId,parts.logicalJob,executionId);
     const result=await insert.run();
     if(!result.meta?.changes) return reject('persistent duplicate, in-flight lock or daily budget; elapsed time never unlocks');
     // If recording this event fails, the durable lock stays held. No provider call is admitted.
@@ -216,5 +224,47 @@ export class OperationalMemory {
           Date.parse(completed)-Date.parse(String(row.started_at)),Number(!outcome.verified),attemptId),
       this.eventStatement({parts,kind:'RECOVERY_RESULT',runId:await sha256(String(row.attempt_id)),at:completed,evidence:outcome.reason,verification}),
     ]);
+  }
+
+  /**
+   * Completes a controlled attempt that provably never invoked its collector:
+   * the process that holds it never called it. No provider call was made, so
+   * the attempt does not spend the day's budget (admit) and the next scheduled
+   * check may try again, at most MAX_ABORTED_BEFORE_COLLECTION_PER_DAY times.
+   * 2026-10-15: a GitHub read failing after admission spent A1's only daily
+   * attempt and held its lock with no collection at all.
+   */
+  async abortBeforeCollection(attemptId: string, at: string, reason: string): Promise<void> {
+    const row=await this.db.prepare('SELECT * FROM operational_recovery_attempts WHERE attempt_id=?').bind(attemptId).first<Row>();
+    if(!row) throw new Error('unknown_recovery_attempt');
+    if(row.completed_at!==null) return;
+    const completed=iso(at);
+    const parts={sourceId:String(row.source_id),failureClass:row.failure_class as Incident['failureClass'],contractVersion:String(row.contract_version),logicalJob:String(row.logical_job)};
+    await this.db.batch([
+      this.db.prepare(`UPDATE operational_recovery_attempts SET completed_at=?,outcome='${ABORTED_BEFORE_COLLECTION}',verified=0,
+        provider_requests=0,duration_ms=?,escalation_required=0 WHERE attempt_id=? AND completed_at IS NULL`)
+        .bind(completed,Math.max(0,Date.parse(completed)-Date.parse(String(row.started_at))),attemptId),
+      this.eventStatement({parts,kind:'RECOVERY_RESULT',runId:await sha256(String(row.attempt_id)),at:completed,
+        evidence:`${ABORTED_BEFORE_COLLECTION}: ${reason}`}),
+    ]);
+  }
+
+  /**
+   * Open controlled attempts of this source/job that started before `before`
+   * and never recorded the receipt written immediately before their collector
+   * (`<runId>-receipt`), so they cannot have reached it. Read-only; the caller
+   * releases them with abortBeforeCollection. An attempt with a receipt keeps
+   * its lock: whether its provider call happened is unknown.
+   */
+  async openAttemptsWithoutReceipt(sourceId: string, logicalJob: string, before: string): Promise<string[]> {
+    const rows=(await this.db.prepare(`SELECT attempt_id FROM operational_recovery_attempts a
+      WHERE a.source_id=? AND a.logical_job=? AND a.mode='CONTROLLED' AND a.completed_at IS NULL AND a.started_at<?
+      AND NOT EXISTS(SELECT 1 FROM operational_incident_events e WHERE e.kind='RECOVERY_STARTED' AND e.run_id LIKE '%-receipt'
+        AND length(a.attempt_id)>length(e.run_id)-8
+        AND substr(a.attempt_id,length(a.attempt_id)-(length(e.run_id)-8))='|'||substr(e.run_id,1,length(e.run_id)-8))
+      ORDER BY a.started_at LIMIT 11`).bind(identity(sourceId),identity(logicalJob),iso(before)).all<Row>()).results;
+    if(!rows) throw new Error('operational_attempts_unmeasured');
+    if(rows.length>10) throw new Error('operational_open_attempt_limit_requires_review');
+    return rows.map(row=>String(row.attempt_id));
   }
 }

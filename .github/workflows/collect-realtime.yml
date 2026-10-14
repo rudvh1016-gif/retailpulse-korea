@@ -111,6 +111,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     environment: production
+    # Reads this repository's run list with the job token rather than the
+    # shared unauthenticated allowance (2026-10-15 A1 recovery failure).
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -123,5 +128,6 @@ jobs:
         run: npx tsx scripts/check-airport-today-coverage.ts
         env:
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           RPK_CENTRAL_RECOVERY_OWNER_APPROVED: ${{ vars.RPK_CENTRAL_RECOVERY_OWNER_APPROVED }}
           RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED: ${{ vars.RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED }}
