@@ -116,5 +116,148 @@
       "sha256": "a5998af601d291dc84561db236ff855d9cd696d6bea3a79218d11cca20b813da",
       "reviewed512PngSha256": "7f5bc6807855009451c4ae97c9056d214e42c54e46ce02bb786a3f1d9e374c30"
     }
-  ]
+  ],
+  "derived192": [
+    {
+      "key": "accessories",
+      "width": 192,
+      "height": 192,
+      "bytes": 2858,
+      "sha256": "0a3e783af578aa095998af8c43ef77d0f32cbf661b4743c641dd8f5192163311",
+      "derivedFrom": "accessories-256.webp",
+      "derivedFromSha256": "7e4bb58a9aeaf9415bf13c50086892739c79b963cf6e871bbd348ef03f81301d",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q92 effort 6 smartSubsample"
+    },
+    {
+      "key": "beauty_service",
+      "width": 192,
+      "height": 192,
+      "bytes": 2622,
+      "sha256": "a4287bc4955812af62b70b55a62f91fbb7de9d81d0eaf5ac699928ad7b515e1a",
+      "derivedFrom": "beauty_service-256.webp",
+      "derivedFromSha256": "805b6622792b5ab2ef025ec12300c37afd64614ca2f1e68d62cff6631e934bcf",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q92 effort 6 smartSubsample"
+    },
+    {
+      "key": "cafe_bakery",
+      "width": 192,
+      "height": 192,
+      "bytes": 2992,
+      "sha256": "20a8e6356fde9ab30bf5a6bfa8783b0bf7ee85fdab9956495f03637db993bc56",
+      "derivedFrom": "cafe_bakery-256.webp",
+      "derivedFromSha256": "41abbe80d4943caa4aa5814f0cf091d10609e41ea6bc55b886f44f0e1a72bedb",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q92 effort 6 smartSubsample"
+    },
+    {
+      "key": "clothing",
+      "width": 192,
+      "height": 192,
+      "bytes": 3252,
+      "sha256": "237c35f88ce4029e84f6aa0a2c9fc3fab6f43f6880a217c2af96f7edfa728914",
+      "derivedFrom": "clothing-256.webp",
+      "derivedFromSha256": "fba3f6b885eb4cba5301e3c311df1c6d4346b70b3e36bd4eb644f5fe0e9beb6a",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q92 effort 6 smartSubsample"
+    },
+    {
+      "key": "convenience",
+      "width": 192,
+      "height": 192,
+      "bytes": 3298,
+      "sha256": "0b611a23f94e7616489b75b4673e341369ca48b8de88e6be42373ddf05ade0a1",
+      "derivedFrom": "convenience-256.webp",
+      "derivedFromSha256": "892c23368514f536fafc6f6fc37db17c46ddf20b1482d4a69bf649b7d1b02717",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q92 effort 6 smartSubsample"
+    },
+    {
+      "key": "cosmetics",
+      "width": 192,
+      "height": 192,
+      "bytes": 3326,
+      "sha256": "9ca908c8c795f5d9984d735072b8b9a9b8e887ea3f24556897548a3a23210770",
+      "derivedFrom": "cosmetics-256.webp",
+      "derivedFromSha256": "d90651b4017a4a22e2e8cd9f2caf64f8460d990562d31df5b02155b92884427e",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q92 effort 6 smartSubsample"
+    },
+    {
+      "key": "fallback",
+      "width": 192,
+      "height": 192,
+      "bytes": 2648,
+      "sha256": "14b9899a63ca3db052576554c1de0b052fe3b356bceead20d6520c22e9dd9991",
+      "derivedFrom": "fallback-256.webp",
+      "derivedFromSha256": "a1327f8670e7e3433a3c9f50c3f97e1c93107cc861aadcf8c4f9b9610f881dea",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q92 effort 6 smartSubsample"
+    },
+    {
+      "key": "grocery",
+      "width": 192,
+      "height": 192,
+      "bytes": 5412,
+      "sha256": "4120b0dc6db792fa490494ee6a1869a9103d9082b612f23ddcc4d40a658b4d5c",
+      "derivedFrom": "grocery-256.webp",
+      "derivedFromSha256": "57d2141a97f0b08c5e68713ac854098b33134667860f6288dddcbc1f6dfaaab6",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q92 effort 6 smartSubsample"
+    },
+    {
+      "key": "korean_food",
+      "width": 192,
+      "height": 192,
+      "bytes": 3340,
+      "sha256": "64e7be789544852c9502992b8fad42fa519dd93328ce0b6051cc0c9733087284",
+      "derivedFrom": "korean_food-256.webp",
+      "derivedFromSha256": "afaaeb392c431a650fd5569cadbd357d38bdb4a24de4b31e07707ddca0d3728e",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q92 effort 6 smartSubsample"
+    },
+    {
+      "key": "nightlife",
+      "width": 192,
+      "height": 192,
+      "bytes": 2822,
+      "sha256": "7d367db9523a3324cd64367e8e609d185906428471c551f714aa7c9d8caef499",
+      "derivedFrom": "nightlife-256.webp",
+      "derivedFromSha256": "87d5b7cd68a42f2dab6aa0fada3ac5ecce8c92d04796ad0801adc53aa6ae2618",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q92 effort 6 smartSubsample"
+    },
+    {
+      "key": "other_dining",
+      "width": 192,
+      "height": 192,
+      "bytes": 2012,
+      "sha256": "9c31a804d86219a51a0504d5e0f2d3444b96406e02a713d6c6ad3a3044e480a5",
+      "derivedFrom": "other_dining-256.webp",
+      "derivedFromSha256": "282cfe2057e1c6919f0b1be4de146f2265d71c977da13d5e385149540a315494",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q92 effort 6 smartSubsample"
+    },
+    {
+      "key": "pharmacy",
+      "width": 192,
+      "height": 192,
+      "bytes": 2582,
+      "sha256": "54bbf97fae091cf777eb1495cc34dcd989bfe1ec98da48eb7ee2dd8c2106b46a",
+      "derivedFrom": "pharmacy-256.webp",
+      "derivedFromSha256": "ee1ea2256ebd9d6e42f534bdaa89b3833debfbeb1276261c92d202bd80d054fc",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q92 effort 6 smartSubsample"
+    },
+    {
+      "key": "recreation",
+      "width": 192,
+      "height": 192,
+      "bytes": 3038,
+      "sha256": "daeef2f31432abb13135f426a01b47c04fb7a67992e6fdae468a921f494c40c5",
+      "derivedFrom": "recreation-256.webp",
+      "derivedFromSha256": "107f1777aeb480ecc798efdfa89bf47f41f233901842f9fee7335a4c23b8d1a8",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q92 effort 6 smartSubsample"
+    },
+    {
+      "key": "world_food",
+      "width": 192,
+      "height": 192,
+      "bytes": 1988,
+      "sha256": "45f3d575901a0e9e6b1d209313a3e4310e39bfda9c566b71e3f4083de3479808",
+      "derivedFrom": "world_food-256.webp",
+      "derivedFromSha256": "a5998af601d291dc84561db236ff855d9cd696d6bea3a79218d11cca20b813da",
+      "encoder": "sharp 0.34.5 / libvips 8.17.3 / libwebp 1.6.0: lanczos3 resize (no shrink-on-load), WebP q92 effort 6 smartSubsample"
+    }
+  ],
+  "derived192Note": "Second generation from the reviewed 256px files (the 512px review renders are not in the repository); for 48-64 CSS px at 3x. Re-export from the 512px renders when available."
 }

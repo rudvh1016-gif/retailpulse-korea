@@ -21,8 +21,9 @@ function reference(value:string|null,lang:Lang,withTime=false) {
 }
 function ModelImage({name}:{name:string}) {
  // The imagery is decorative: values, periods and units remain ordinary HTML.
+ // 1200w covers 390–440px phones at 3x, which otherwise jump from 960 to 1440.
  // eslint-disable-next-line @next/next/no-img-element
- return <img className={styles.image} src={`/seoul-flow-models/${name}-640.webp`} srcSet={[640,960,1440].map(w=>`/seoul-flow-models/${name}-${w}.webp ${w}w`).join(', ')} sizes="(max-width:600px) calc(100vw - 40px), 320px" width={1440} height={900} alt="" loading="lazy" decoding="async"/>;
+ return <img className={styles.image} src={`/seoul-flow-models/${name}-640.webp`} srcSet={[640,960,1200,1440].map(w=>`/seoul-flow-models/${name}-${w}.webp ${w}w`).join(', ')} sizes="(max-width:600px) calc(100vw - 40px), 320px" width={1440} height={900} alt="" loading="lazy" decoding="async"/>;
 }
 /** Receives the caller's existing summary. No additional request or provider collection. */
 export function SeoulFlowModels({summary,area,lang,publication}:{summary:LiveSummary|null;area:SeoulFlowArea;lang:Lang;publication?:{releaseMonth?:string}}) {

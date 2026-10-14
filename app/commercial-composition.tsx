@@ -27,7 +27,7 @@ function CategoryMiniature({src}:{src:string}) {
  // The category name and fixed image box survive a failed asset request.
  const key=(failed?'fallback-128.webp':src.split('/').at(-1)!).replace('-128.webp','');
  // eslint-disable-next-line @next/next/no-img-element -- Precomputed responsive WebPs need no runtime transform.
- return <img srcSet={failed?undefined:`${src} 128w, /commercial-icons/sharp-v1/${key}-256.webp 256w`} sizes="(max-width:600px) 48px, 52px" src={failed?'/commercial-icons/miniatures/fallback-128.webp':src} onError={()=>setFailed(true)} width="48" height="48" alt="" loading="lazy" decoding="async"/>;
+ return <img srcSet={failed?undefined:`${src} 128w, /commercial-icons/sharp-v1/${key}-192.webp 192w, /commercial-icons/sharp-v1/${key}-256.webp 256w`} sizes="(max-width:600px) 48px, 52px" src={failed?'/commercial-icons/miniatures/fallback-128.webp':src} onError={()=>setFailed(true)} width="48" height="48" alt="" loading="lazy" decoding="async"/>;
 }
 export function CommercialComposition({context,lang}:{context:SeoulContext;lang:Lang}) {
  const id=useId(),[selected,setSelected]=useState<string|null>(null),[metric,setMetric]=useState<CommercialChartMetric>('payments');
