@@ -79,6 +79,8 @@ import { kstDayOf, shiftKstDay } from "./kst";
 
 export interface CollectorEnv {
   DB?: D1Database;
+  /** Test seam only: overrides KMA_NO_DATA_RECHECK_MS. Production never sets it. */
+  KMA_NO_DATA_RECHECK_MS?: number;
   DATA_GO_KR_SERVICE_KEY?: string;
   SEOUL_OPEN_DATA_KEY?: string;
   KMA_SERVICE_KEY?: string;
@@ -1501,7 +1503,18 @@ export function latestKmaIssuance(now = new Date()): { baseDate: string; baseTim
 export interface WeatherCollectionOptions extends TargetedCollectionOptions {
   /** Restricts the run to these grid cells. Defaults to all three. */
   grids?: ReadonlyArray<{ nx: number; ny: number; areas: readonly string[] }>;
+  /** Wait before the one same-run recheck of grids that answered NO_DATA (tests pass 0). */
+  noDataRecheckMs?: number;
 }
+
+/**
+ * KMA answered resultCode 03 (NO_DATA) for issuances already 40 minutes to 3
+ * hours old, and the same base/grid answered 00 about 40 seconds later
+ * (2026-10-13..15: 23 area-issuances lost, 5 recovered only by a second
+ * attempt). A 03 grid is therefore asked once more in the same run after this
+ * wait. Bounded: one recheck per grid per run, no fresh runner.
+ */
+export const KMA_NO_DATA_RECHECK_MS = 45_000;
 
 export async function collectWeatherForecasts(
   env: CollectorEnv,
@@ -1530,13 +1543,13 @@ export async function collectWeatherForecasts(
     requestCount += 1;
     return fetch(input, init);
   };
-  for (const grid of grids) {
+  const collectGrid = async (grid: (typeof grids)[number]) => {
     const url = buildDataGoKrUrl(
       "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst",
       serviceKey,
       { pageNo: "1", numOfRows: "1000", dataType: "JSON", base_date: baseDate, base_time: baseTime, nx: String(grid.nx), ny: String(grid.ny) },
     );
-    try {
+    {
       const payload = await fetchOfficialJson(url, { ...KMA_GRID_RETRY_POLICY, fetchImpl: countedFetch });
       const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] } } } };
       const resultCode = root?.response?.header?.resultCode;
@@ -1572,9 +1585,26 @@ export async function collectWeatherForecasts(
             ));
         }
       }
-    } catch (error) {
-      failureClasses.push(sourceFailureClass(error));
-      failures.push(`grid ${grid.nx},${grid.ny}: ${safeSourceFailureDetail(error)}`);
+    }
+  };
+  const recordFailure = (grid: (typeof grids)[number], error: unknown, note = "") => {
+    failureClasses.push(sourceFailureClass(error));
+    failures.push(`grid ${grid.nx},${grid.ny}: ${safeSourceFailureDetail(error)}${note}`);
+  };
+  const noDataGrids: Array<(typeof grids)[number]> = [];
+  for (const grid of grids) {
+    try { await collectGrid(grid); }
+    catch (error) {
+      if (sourceFailureClass(error) === "NO_DATA") noDataGrids.push(grid);
+      else recordFailure(grid, error);
+    }
+  }
+  if (noDataGrids.length) {
+    const wait = options.noDataRecheckMs ?? env.KMA_NO_DATA_RECHECK_MS ?? KMA_NO_DATA_RECHECK_MS;
+    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+    for (const grid of noDataGrids) {
+      try { await collectGrid(grid); }
+      catch (error) { recordFailure(grid, error, " recheck=1"); }
     }
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
