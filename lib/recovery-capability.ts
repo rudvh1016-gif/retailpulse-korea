@@ -247,6 +247,30 @@ export const SOURCE_RECOVERY_CAPABILITIES: readonly SourceRecoveryCapability[] =
     reason: "a monthly-published statistic collected daily; no adapter, and re-requesting within the same publication period cannot produce newer data",
   },
   {
+    sourceId: "INCHEON_ROUTE_COUNTRY_PASSENGERS",
+    logicalJob: "collect-production.yml",
+    recoveryClass: "OBSERVE_ONLY",
+    supportedActions: [],
+    adapter: null,
+    publicVerification: "STORAGE_ONLY",
+    providerBudgetPolicy: "BOUNDED_BY_MISSING_COVERAGE",
+    nextScheduledSlotBehavior: "daily group at 06:07 KST",
+    controlledRecoveryEligible: false,
+    reason: "official monthly statistics (15095071): the daily run already re-asks the latest month and at most three missing ones, so a repair window could only repeat the same answer",
+  },
+  {
+    sourceId: "INCHEON_TIME_BAND_PASSENGERS",
+    logicalJob: "collect-production.yml",
+    recoveryClass: "OBSERVE_ONLY",
+    supportedActions: [],
+    adapter: null,
+    publicVerification: "STORAGE_ONLY",
+    providerBudgetPolicy: "BOUNDED_BY_MISSING_COVERAGE",
+    nextScheduledSlotBehavior: "daily group at 06:07 KST",
+    controlledRecoveryEligible: false,
+    reason: "official monthly statistics (15095070) written by the same daily run as 15095071, with the same bounded month plan",
+  },
+  {
     sourceId: "SEOUL_FOREIGN_PURPOSE_MOBILITY",
     logicalJob: "collect-production.yml",
     recoveryClass: "OBSERVE_ONLY",
@@ -361,6 +385,7 @@ export const ADDITIONAL_LIVE_SOURCE_IDS: readonly string[] = ["KASI_PUBLIC_HOLID
 export const PRODUCTION_SOURCE_IDS: readonly string[] = [
   ...Object.values(DIAGNOSTIC_SOURCE_IDS),
   "SEOUL_CITYDATA_CMRCL",
+  "INCHEON_TIME_BAND_PASSENGERS",
   ...ADDITIONAL_LIVE_SOURCE_IDS,
 ];
 

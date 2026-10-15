@@ -52,3 +52,5 @@
 .airport-month-state p {margin:0 0 6px;}
 .airport-month-state small {display:block;color:var(--muted);font-size:var(--type-secondary);}
 .airport-month-state a {display:inline-flex;align-items:center;min-height:44px;}
+.airport-route-passengers {margin-block-start:20px;padding-block-start:12px;border-top:1px solid #eee;}
+.airport-route-passengers h4 {margin:0 0 4px;font-size:var(--type-body);}

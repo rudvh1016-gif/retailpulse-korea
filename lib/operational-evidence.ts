@@ -114,6 +114,8 @@ export async function measureSource(db:D1Database,sourceId:string,nowIso:string)
         SEOUL_STORE_DYNAMICS:[`SELECT quarter_code,schema_version,quality_status,mapping_version FROM seoul_store_dynamics WHERE area='hongdae' AND source_id=? AND mapping_version=? ORDER BY quarter_code DESC LIMIT 1`,[sourceId,STORE_DYNAMICS_MAPPING_VERSION]],
         SEOUL_SHORT_STAY_FOREIGN_LIVING_POPULATION:[`SELECT reference_at,schema_version,quality_status FROM seoul_foreign_presence_area WHERE source_id=? AND mapping_version=? LIMIT 1`,[sourceId,SEOUL_FOREIGN_MAPPING_VERSION]],
         SEOUL_FOREIGN_PURPOSE_MOBILITY:[`SELECT reference_date,schema_version,quality_status FROM seoul_foreign_purpose_mobility WHERE source_id=? AND mapping_version=? AND area='hongdae' ORDER BY reference_date DESC LIMIT 1`,[sourceId,FOREIGN_PURPOSE_MAPPING_VERSION]],
+        INCHEON_ROUTE_COUNTRY_PASSENGERS:[`SELECT month,retrieved_at FROM airport_monthly_stats WHERE month>=? AND operation_id='ROUTE_COUNTRY_PASSENGERS' ORDER BY month DESC LIMIT 1`,[context.kstToday.slice(0,4)+'-01']],
+        INCHEON_TIME_BAND_PASSENGERS:[`SELECT month,retrieved_at FROM airport_monthly_stats WHERE month>=? AND operation_id='TIME_BAND_PASSENGERS' ORDER BY month DESC LIMIT 1`,[context.kstToday.slice(0,4)+'-01']],
         SEOUL_SUBWAY_RIDERSHIP:[`SELECT reference_date,schema_version,quality_status FROM seoul_subway_ridership WHERE area='hongdae' AND mapping_version=? ORDER BY reference_date DESC LIMIT 1`,[SEOUL_SUBWAY_MAPPING_VERSION]],
       };
       const probe=probes[sourceId];

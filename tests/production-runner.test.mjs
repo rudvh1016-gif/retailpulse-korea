@@ -164,7 +164,7 @@ test("selectable runner isolates a throwing source and reports unknown sources w
   assert.equal(results[2].records, 3);
 });
 
-test("all seventeen production source runners are named exactly", () => {
+test("all eighteen production source runners are named exactly", () => {
   // The two `_recovery` entries are repair windows for an existing source,
   // not new data: each reads D1 first and re-requests only what is missing.
   assert.deepEqual([...PRODUCTION_SOURCE_NAMES].sort(), [
@@ -172,6 +172,7 @@ test("all seventeen production source runners are named exactly", () => {
     "airport_congestion_t2",
     "airport_enrichment",
     "airport_facilities",
+    "airport_monthly_stats",
     "airport_passenger_forecast",
     "airport_passenger_forecast_recovery",
     "airport_recent",
@@ -226,10 +227,12 @@ test("diagnostic source ids are the literal ids collector code writes", () => {
     "lib/foreign-purpose-mobility.ts",
     "lib/subway-ridership.ts",
     "lib/store-dynamics.ts",
+    // A6: the collector takes each operation's literal sourceId from the statistics catalog.
+    "lib/incheon-airport-stats.mjs",
   ].map((file) => readFileSync(new URL(`../${file}`, import.meta.url), "utf8")).join("\n");
 
   const names = Object.keys(DIAGNOSTIC_SOURCE_IDS);
-  assert.equal(names.length, 15, "every KORETAIL source needs a diagnostic id");
+  assert.equal(names.length, 16, "every KORETAIL source needs a diagnostic id");
   for (const name of names) {
     assert.ok(
       collectorSource.includes(`"${DIAGNOSTIC_SOURCE_IDS[name]}"`),
@@ -272,8 +275,8 @@ test("store dynamics is independently selectable for source diagnostics", () => 
 });
 
 test("diagnostic selection defaults to every source and rejects typos", () => {
-  assert.equal(resolveDiagnosticSourceIds(undefined).length, 16);
-  assert.equal(resolveDiagnosticSourceIds("   ").length, 16);
+  assert.equal(resolveDiagnosticSourceIds(undefined).length, 18);
+  assert.equal(resolveDiagnosticSourceIds("   ").length, 18);
   // Deduplicates rather than binding the same id twice.
   assert.deepEqual(resolveDiagnosticSourceIds("seoul_realtime,SEOUL_CITYDATA_PPLTN,SEOUL_CITYDATA_CMRCL"), [
     "SEOUL_CITYDATA_PPLTN",

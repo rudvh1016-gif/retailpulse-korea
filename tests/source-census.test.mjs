@@ -64,7 +64,7 @@ test('every direct collector names a file that really writes it', () => {
   for (const id of ['KASI_PUBLIC_HOLIDAYS', 'INCHEON_TRANSFER_FORECAST']) {
     assert.ok(CENSUSED_SOURCE_IDS.includes(id), `${id} was invisible once and must stay censused`);
   }
-  assert.deepEqual([...COMPANION_SOURCE_IDS], ['SEOUL_CITYDATA_CMRCL']);
+  assert.deepEqual([...COMPANION_SOURCE_IDS], ['SEOUL_CITYDATA_CMRCL', 'INCHEON_TIME_BAND_PASSENGERS']);
 });
 
 test('a source Production has and the census does not is SOURCE_COVERAGE_GAP', () => {

@@ -35,6 +35,7 @@ export const DIAGNOSTIC_SOURCE_IDS = {
   store_dynamics: "SEOUL_STORE_DYNAMICS",
   weather: "KMA_VILAGE_FCST",
   events: "KTO_TOURAPI_EVENT",
+  airport_monthly_stats: "INCHEON_ROUTE_COUNTRY_PASSENGERS",
 } as const satisfies Record<string, string>;
 
 // One integrated `seoul_realtime` request writes two independently healthy
@@ -42,6 +43,8 @@ export const DIAGNOSTIC_SOURCE_IDS = {
 // though the production runner correctly keeps one selectable request name.
 const DIAGNOSTIC_COMPANION_SOURCE_IDS: Partial<Record<keyof typeof DIAGNOSTIC_SOURCE_IDS, readonly string[]>> = {
   seoul_realtime: ["SEOUL_CITYDATA_CMRCL"],
+  // One daily run asks for both monthly statistics operations and writes each one's health.
+  airport_monthly_stats: ["INCHEON_TIME_BAND_PASSENGERS"],
 };
 
 export type DiagnosticSourceName = keyof typeof DIAGNOSTIC_SOURCE_IDS;
