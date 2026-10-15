@@ -227,7 +227,13 @@ test("the storage diagnostic is read-only, manual, and prints no secret", () => 
   assert.match(workflow, /- storage/);
   assert.match(workflow, /if: inputs\.scope == 'storage'\n\s+run: npx tsx scripts\/measure-production-storage\.ts/);
   assert.match(workflow, /if: inputs\.scope != 'storage' && inputs\.scope != 'airport_sides' && inputs\.scope != 'commercial_months' && inputs\.scope != 'airport_months' && inputs\.scope != 'usage'\n\s+run: npx tsx scripts\/measure-production-read-budget\.ts/);
-  assert.deepEqual([...new Set(workflow.match(/secrets\.[A-Z0-9_]+/g))], ["secrets.CLOUDFLARE_D1_WRITE_TOKEN"]);
+  // Every step uses the D1 token; the deploy token is allowed in the read-only usage step only
+  // (owner-approved 2026-10-15, docs/approvals/d1-usage-deploy-token-20261015.json).
+  assert.deepEqual([...new Set(workflow.match(/secrets\.[A-Z0-9_]+/g))].sort(), ["secrets.CLOUDFLARE_API_TOKEN", "secrets.CLOUDFLARE_D1_WRITE_TOKEN"]);
+  const steps = workflow.split(/\n      - /);
+  const withDeployToken = steps.filter((step) => step.includes("secrets.CLOUDFLARE_API_TOKEN"));
+  assert.equal(withDeployToken.length, 1);
+  assert.match(withDeployToken[0], /if: inputs\.scope == 'usage'\n\s+run: npx tsx scripts\/measure-d1-usage\.ts/);
 });
 
 test("the usage diagnostic reads Cloudflare's counters and one bounded collector ledger, and prints no secret", () => {

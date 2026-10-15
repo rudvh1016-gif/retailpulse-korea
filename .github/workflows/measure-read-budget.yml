@@ -58,10 +58,15 @@ jobs:
         if: inputs.scope == 'usage'
         run: npx tsx scripts/measure-d1-usage.ts
         env:
-          # The same least-privilege D1 token as every other scope. Cloudflare's
-          # analytics answer only if that token carries Account Analytics Read;
-          # otherwise the report says UNAVAILABLE with the reason.
+          # The least-privilege D1 token is tried first. Cloudflare's analytics
+          # answer only if a token carries Account Analytics Read, and the D1
+          # token does not (run 38667293760: graphql_not_authorized_for_that_account).
+          # Owner-approved 2026-10-15 (docs/approvals/d1-usage-deploy-token-20261015.json):
+          # the existing deploy token is tried second, in this read-only step
+          # only. No token is created or widened; if neither answers, the report
+          # says UNAVAILABLE with each token's reason.
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       - name: Read stored airport departure-hall and gate shapes (read-only)
         if: inputs.scope == 'airport_sides'
         run: npx tsx scripts/measure-airport-sides.ts
