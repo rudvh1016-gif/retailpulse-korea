@@ -150,6 +150,64 @@ if (daily.ok) {
   console.log(`\nUNAVAILABLE daily D1 usage: ${daily.reasons.join(" | ")}`);
 }
 
+// 2b — the same hours on consecutive UTC days, so a deploy is compared with
+// the hours before it at equal length, not a partial day with a whole one.
+const HOURLY_DAYS = 3;
+const hourlyStart = `${utcDaysAgo(HOURLY_DAYS)}T00:00:00Z`;
+const hourlyEnd = now.toISOString();
+const d1Hours = await graphql(`query ($accountTag: string!, $start: Time!, $end: Time!, $databaseId: string!) {
+  viewer { accounts(filter: { accountTag: $accountTag }) {
+    d1AnalyticsAdaptiveGroups(limit: 200, filter: { datetimeHour_geq: $start, datetimeHour_leq: $end, databaseId: $databaseId }, orderBy: [datetimeHour_ASC]) {
+      sum { rowsRead rowsWritten readQueries writeQueries }
+      dimensions { datetimeHour }
+    }
+  } }
+}`, { accountTag: accountId, start: hourlyStart, end: hourlyEnd, databaseId });
+const workerHours = await graphql(`query ($accountTag: string!, $start: Time!, $end: Time!) {
+  viewer { accounts(filter: { accountTag: $accountTag }) {
+    workersInvocationsAdaptive(limit: 1000, filter: { datetimeHour_geq: $start, datetimeHour_leq: $end }, orderBy: [datetimeHour_ASC]) {
+      sum { requests }
+      dimensions { datetimeHour scriptName }
+    }
+  } }
+}`, { accountTag: accountId, start: hourlyStart, end: hourlyEnd });
+if (d1Hours.ok) {
+  const hours = new Map<string, { rowsRead: number; rowsWritten: number; readQueries: number; requests: number | null }>();
+  for (const group of d1Hours.groups) {
+    const hour = String(at(group, "dimensions", "datetimeHour") ?? "").slice(0, 13);
+    hours.set(hour, { rowsRead: num(at(group, "sum", "rowsRead")) ?? 0, rowsWritten: num(at(group, "sum", "rowsWritten")) ?? 0,
+      readQueries: num(at(group, "sum", "readQueries")) ?? 0, requests: null });
+  }
+  if (workerHours.ok) for (const group of workerHours.groups) {
+    const hour = String(at(group, "dimensions", "datetimeHour") ?? "").slice(0, 13);
+    const entry = hours.get(hour) ?? { rowsRead: 0, rowsWritten: 0, readQueries: 0, requests: null };
+    entry.requests = (entry.requests ?? 0) + (num(at(group, "sum", "requests")) ?? 0);
+    hours.set(hour, entry);
+  }
+  // Only whole hours: the running hour is still filling.
+  const lastWholeHour = now.getUTCHours();
+  const sameWindow = Array.from({ length: HOURLY_DAYS + 1 }, (_, back) => {
+    const day = utcDaysAgo(back);
+    const totals = { day, hours: `00-${String(lastWholeHour).padStart(2, "0")} UTC`, rowsRead: 0, rowsWritten: 0, readQueries: 0, requests: 0, hoursSeen: 0 };
+    for (let hour = 0; hour < lastWholeHour; hour += 1) {
+      const entry = hours.get(`${day}T${String(hour).padStart(2, "0")}`);
+      if (!entry) continue;
+      totals.hoursSeen += 1; totals.rowsRead += entry.rowsRead; totals.rowsWritten += entry.rowsWritten;
+      totals.readQueries += entry.readQueries; totals.requests += entry.requests ?? 0;
+    }
+    return totals;
+  });
+  report.hourly = { basis: "OFFICIAL_ANALYTICS", token: d1Hours.token, workerToken: workerHours.ok ? workerHours.token : null,
+    hours: [...hours].map(([hour, entry]) => ({ hour, ...entry })), sameWindow };
+  console.log(`\nOFFICIAL_ANALYTICS same UTC hours on each day (whole hours only; token ${d1Hours.token})`);
+  for (const row of sameWindow) console.log(`  ${row.day} ${row.hours} rowsRead ${row.rowsRead} readQueries ${row.readQueries} rowsWritten ${row.rowsWritten} workerRequests ${workerHours.ok ? row.requests : "UNAVAILABLE"} hoursSeen ${row.hoursSeen}`);
+  console.log("  hourly (UTC):");
+  for (const [hour, entry] of hours) console.log(`    ${hour} rowsRead ${entry.rowsRead} readQueries ${entry.readQueries} workerRequests ${entry.requests ?? "n/a"}`);
+} else {
+  report.hourly = { basis: "UNAVAILABLE", reasons: d1Hours.reasons };
+  console.log(`\nUNAVAILABLE hourly D1 usage: ${d1Hours.reasons.join(" | ")}`);
+}
+
 // 3 — official per-statement totals for the production database.
 async function topStatements(order: "sum_rowsRead_DESC" | "sum_rowsWritten_DESC", startDay: string, endDay: string) {
   const hourly = await graphql(`query ($accountTag: string!, $start: Time!, $end: Time!, $databaseId: string!) {
