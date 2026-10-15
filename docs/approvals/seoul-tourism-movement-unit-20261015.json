@@ -1,0 +1,20 @@
+{
+  "recordedAt": "2026-10-15",
+  "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+  "follows": "docs/approvals/seoul-tourism-movement-20261014.json",
+  "approvalQuestion": "'관광하러 도착 361명 · 추정'의 단위를 바꿀까요? 서울시 공식 설명상 이 값은 '이동(건)' 기준이라 한 사람이 두 번 오면 2로 셉니다. 또 날짜 열 이름이 etl_ymd라 '그날'이 실제 이동일인지 적재일인지 공식 확인이 안 됐습니다.",
+  "approvalOptionShown": "'회'로 변경 (권장) — '관광하러 도착 361회 · 추정(이동 횟수)'로 바꾸고, 날짜는 확인 전까지 '그날' 대신 '자료 기준일'로 표시합니다. 4개 언어 함께 수정합니다.",
+  "ownerAnswer": "'회'로 변경 (권장)",
+  "comparisonBase": "9033dc6",
+  "change": {
+    "app/seoul-flow-models.tsx": "tourism value unit 명 → 회 · 추정(이동 수) / movements · est. / 人次 · 估算（移动次数） / 回 · 推定（移動回数）; its date label 기준일 → 자료 기준일 (4 languages); the note says 자료 기준일에 … 추정한 이동 수 instead of 그날 … 인원",
+    "e2e": "seoul-display-truth and airport-official-history-update expect the new unit"
+  },
+  "deviationFromShownWording": "'이동 횟수' was shown; '횟' is not in the bundled KORETAIL Sans subset (tests/font-coverage.test.mjs), and regenerating that font touches protected public/fonts/koretail-sans-variable.woff2, so the Korean reads '이동 수' with the same meaning. The other three languages follow the shown wording.",
+  "unchanged": [
+    "no collection, D1 read, API or stored value change; the number shown is the same",
+    "the short-stay living-population row and its '그날' wording are a different source and unchanged",
+    "tourism desk (protected) still hides raw figures"
+  ],
+  "stillUnconfirmed": "whether etl_ymd is the day people moved or the day the file was loaded; daily vs monthly aggregation of the published file"
+}
