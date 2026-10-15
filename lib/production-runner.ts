@@ -23,6 +23,7 @@
  *   store_dynamics                B1   collectStoreDynamics
  *   weather                       W1   collectWeatherForecasts
  *   events                        T1   collectTourismEvents
+ *   airport_monthly_stats         A6   collectAirportMonthlyStats (15095071 route-country and 15095070 time-band passengers, monthly)
  *
  * Two sources are RECOVERY variants of an existing source rather than new
  * sources: `airport_passenger_forecast_recovery` and `weather_recovery`. They
@@ -34,6 +35,7 @@
 import { collectAirportFacilities } from "./airport-facilities";
 import { collectAirportFlightsToday, hasCompleteA1RecentHistoryToday, kstDate } from "./airport-today";
 import { airportMidnightSourceBlocked } from './airport-recovery-protection';
+import { collectAirportMonthlyStats } from "./airport-monthly-stats";
 import {
   collectAirportCongestion,
   collectAirportCongestionT2,
@@ -214,6 +216,7 @@ const DEFAULT_RUNNERS = {
     };
   },
   events: (env: CollectorEnv, now: Date) => collectTourismEvents(env, now),
+  airport_monthly_stats: (env: CollectorEnv, now: Date) => collectAirportMonthlyStats(env, now),
 } as const satisfies Record<string, ProductionRunner>;
 
 export type ProductionSourceName = keyof typeof DEFAULT_RUNNERS;

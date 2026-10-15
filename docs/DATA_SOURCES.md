@@ -240,7 +240,34 @@ attribution remain visually separate in all four locales.
 
 Both contracts, their idempotency/history/double-count/redaction behavior, and the T1/T2-cannot-collide guarantee are locked in by `tests/airport-t2-forecast.test.mjs` (29 cases) and `tests/migrations.test.mjs`.
 
-## Prepared, not active: 15095071 국가별 여객 · 15095070 시간대별 여객 · 15114085 정기편 운항 일정 (2026-10-14)
+## A6 active since 2026-10-15: 15095071 국가별 여객 · 15095070 시간대별 여객 (15114085 정기편 운항 일정 still prepared)
+
+**Status 2026-10-15.** The owner applied for both statistics services on data.go.kr. The read-only probe (Smoke Public APIs run `38671372057`, 2026-10-15 02:30 UTC) answered **READY** for both: 2026-08 returned 58 route-country rows and 24 time bands. The field lists matched the documented contract exactly (`region,country,arrPassenger,depPassenger,passenger` / `time,arrPassenger,depPassenger,passenger`), with no provider total rows and no `totalCount`. 15114085 still answered code 30, because it was not applied for, so it stays prepared.
+
+What is active:
+
+- **Collector.** `lib/airport-monthly-stats.ts` (`airport_monthly_stats` in the daily group, `collect-production.yml`, 06:07 KST).
+  - It asks for one month per request, because a range would come back summed with no month field.
+  - Each run asks for the latest complete KST month, plus at most 3 missing older months per operation, inside a 13-month window. That is 2 requests a day in steady state.
+  - Key, quota and rate answers stop the run's remaining requests and are never retried.
+  - A drifted field list is reported by name and not stored. NO_DATA (not yet published) stores nothing.
+  - Writes are changed-only, by source hash.
+- **Storage.** `airport_monthly_stats` (drizzle `0027`): one compact JSON row per operation and month. The primary key is (month, operation). A missing count stays null.
+- **Health.** `INCHEON_ROUTE_COUNTRY_PASSENGERS` / `INCHEON_TIME_BAND_PASSENGERS` are written to `source_health` (`OFFICIAL_HISTORICAL` when stored months exist) and are censused.
+- **Read.** `/api/live/airport-passenger-stats?month=YYYY-MM` reads at most 4 rows on a key range (`lib/airport-monthly-stats-read.ts`). The page never imports the provider client.
+- **Page.** The airport monthly section shows a route-country departures table: the newest published month and its calendar predecessor, top 10 with the rest folded.
+  - It is labelled airport-wide, grouped by where flights go (not who travels), and never divided by the flight daily means.
+- **Hourly figure.** The hourly departure-hall forecast figure carries 15095070 as a grey reference line on the whole-airport view only.
+  - It shows the newest published month's departures per hour divided by that month's days.
+  - It is never shown for T1/T2 and never turned into an error figure, because the scopes may differ.
+  - Owner-approved protected change in `app/airport-live-signals.tsx` (`ownerApprovedTimeBandReference20261015`).
+
+Still open from the checklist below:
+
+- Usage terms (이용허락범위) were not readable from this environment (data.go.kr is unreachable here). Sibling 인천국제공항공사 statistics services list them as 제한 없음, which is still to be confirmed on the two dataset pages.
+- The publication lag of a new month is unknown. The daily latest-month request finds it.
+
+### Earlier status (2026-10-14): prepared, not active
 
 **Status: PREPARED FOR A PROBE, NOT ACTIVE.** No collector, schedule, D1 table, API route or page uses these services, and `tests/incheon-airport-stats.test.ts` fails if any file under `app/`, `lib/`, `worker/`, `scripts/`, `db/`, `drizzle/`, `config/` or `.github/workflows/` other than the three modules below references them. The shared data.go.kr key is not registered for them yet: run `38402837925` (PR #369, 2026-10-13) returned HTTP 403 with resultCode `30` (`등록되지 않은 서비스키`) for all three. Code 30 also covers an approved application that the gateway has not picked up yet (see "Authentication notes"), so one more 30 right after approval is not proof of a wrong key.
 
@@ -276,6 +303,7 @@ Run history:
 |---|---|---|
 | `38402837925` | 2026-10-13, PR #369's probe | HTTP 403, code `30`, `등록되지 않은 서비스키` for all three |
 | `38521193341` | 2026-10-14 06:16 UTC, probe branch at `50be7da` | Same answer for all three (`WAITING_FOR_APPROVAL`). Exactly 3 requests, no retry, nothing written. Gateway check passed: DNS 271 ms, TLS 555 ms, TTFB 782 ms. The job is red by design. |
+| `38671372057` | 2026-10-15 02:30 UTC, after the owner applied for 15095071 and 15095070 | 15095071 `READY` (58 rows, MATCH), 15095070 `READY` (24 rows, MATCH), 15114085 `WAITING_FOR_APPROVAL` (not applied for). Exactly 3 requests, nothing written. |
 
 ### Before any activation
 

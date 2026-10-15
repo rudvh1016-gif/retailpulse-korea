@@ -70,9 +70,10 @@ export const DIRECT_COLLECTORS: readonly DirectCollector[] = [
  *
  * `seoul_realtime` is a single provider call that lands two independently
  * healthy sources, so the companion has to be censused even though no runner
- * key names it.
+ * key names it. `airport_monthly_stats` likewise writes the 15095070 time-band
+ * statistics beside the 15095071 route-country ones.
  */
-export const COMPANION_SOURCE_IDS: readonly string[] = ["SEOUL_CITYDATA_CMRCL"];
+export const COMPANION_SOURCE_IDS: readonly string[] = ["SEOUL_CITYDATA_CMRCL", "INCHEON_TIME_BAND_PASSENGERS"];
 
 export interface CensusEntry {
   sourceId: string;

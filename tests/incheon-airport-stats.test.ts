@@ -694,13 +694,21 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-test("prepared, not active: no collector, workflow, schema, Worker or page references these modules", () => {
+/**
+ * Activated 2026-10-15 for the two statistics operations only, after Smoke
+ * Public APIs run 38671372057 answered READY for 15095071 and 15095070 (15114085
+ * is still unregistered and stays prepared). The one collector below is the
+ * only file allowed to import these modules; a page or a Worker never does.
+ */
+const ACTIVATED_CONSUMERS = ["lib/airport-monthly-stats.ts"];
+
+test("activated through one daily collector only: no other collector, workflow, schema, Worker or page references these modules", () => {
   const files = [
     ...["app", "lib", "worker", "scripts", "db", "drizzle", "config"].flatMap((dir) => walk(dir)),
     ...walk(".github/workflows"),
     "wrangler.production.jsonc",
     "package.json",
   ];
-  const offenders = files.filter((file) => !NEW_FILES.includes(file) && /incheon-airport-stats/.test(readFileSync(file, "utf8")));
+  const offenders = files.filter((file) => !NEW_FILES.includes(file) && !ACTIVATED_CONSUMERS.includes(file) && /incheon-airport-stats/.test(readFileSync(file, "utf8")));
   assert.deepEqual(offenders, []);
 });

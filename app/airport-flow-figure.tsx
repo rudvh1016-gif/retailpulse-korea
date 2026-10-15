@@ -2,6 +2,7 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { FLOW_HOURS, flowLayout, type FlowBand } from "../lib/airport-flow-geometry";
 import type { Lang } from "./retailpulse-data";
+import type { FlowReference } from "./airport-passenger-stats-client";
 import { airportModelScope } from '../lib/airport-model-scope';
 import { AirportSceneModel } from './airport-scene-model';
 // Styles live in app/airport-visual.css, imported once by
@@ -21,7 +22,7 @@ const kstClock = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour
 /** Rough text width at 11px: CJK glyphs are square, Latin digits are narrow. */
 const textWidth = (text: string) => [...text].reduce((sum, ch) => sum + (ch > "⺀" ? 11 : /[0-9]/.test(ch) ? 6.4 : /[ ·–:]/.test(ch) ? 3.4 : 6.2), 0);
 
-export function AirportFlowFigure({ timeline, layers = null, lang = "ko", terminal = 'all', showModel = true, peakStartAt, nowBandStart, nowBandProgress, nowLabel, numberLocale, label }: {
+export function AirportFlowFigure({ timeline, layers = null, lang = "ko", terminal = 'all', showModel = true, peakStartAt, nowBandStart, nowBandProgress, nowLabel, numberLocale, label, reference = null }: {
   timeline: ReadonlyArray<FlowBand>;
   layers?: Record<string, ReadonlyArray<FlowBand> | undefined> | null;
   lang?: Lang;
@@ -33,6 +34,8 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
   nowLabel: string;
   numberLocale: string;
   label: string;
+  /** Past official actuals per hour (whole airport), drawn as a grey reference line; never a forecast error. */
+  reference?: FlowReference | null;
 }) {
   const figureRef = useRef<HTMLElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -47,8 +50,11 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
     return () => observer.disconnect();
   }, []);
   const height = width < 560 ? 184 : 224;
-  const layout = useMemo(() => flowLayout({ timeline, layers, width, height, peakStartAt, nowBandStart, nowBandProgress }),
-    [timeline, layers, width, height, peakStartAt, nowBandStart, nowBandProgress]);
+  const referenceMax = reference ? Math.max(0, ...reference.hours.map((hour) => hour.value)) : 0;
+  const layout = useMemo(() => flowLayout({ timeline, layers, width, height, peakStartAt, nowBandStart, nowBandProgress, scaleFloor: referenceMax }),
+    [timeline, layers, width, height, peakStartAt, nowBandStart, nowBandProgress, referenceMax]);
+  const hourOf = (iso: string) => Math.round((Date.parse(iso) - layout.dayStart) / 3_600_000);
+  const referenceAt = (iso: string) => reference?.hours.find((hour) => hour.startHour === hourOf(iso)) ?? null;
 
   const [hover, setHover] = useState<{ index: number; x: number; y: number } | null>(null);
   const hoverBand = useCallback((index: number) => {
@@ -81,6 +87,8 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
     const band = layout.bands[hover.index];
     const lines = [`${clock(band.start)}–${clock(band.end)} KST`, `${people(band.value)}${unit}`];
     if (layout.stacked) lines.push(layout.layers.map((layer) => `${layer.key} ${people(layer.values[hover.index])}`).join(" · "));
+    const past = referenceAt(band.start);
+    if (past && reference) lines.push(`${reference.short} ${people(past.value)}${unit}`);
     const w = Math.max(...lines.map(textWidth)) + 20, h = 12 + lines.length * 15;
     const x = clampX(hover.x, w / 2);
     const above = hover.y - 16 - h >= top - 30;
@@ -109,6 +117,13 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
           </g>;
         })}
       </g>
+      {reference && <g className="airport-flow-reference" aria-hidden="true" pointerEvents="none" data-month={reference.month}>
+        {reference.hours.map((hour) => {
+          const x0 = left + hour.startHour / 24 * (right - left), x1 = left + hour.endHour / 24 * (right - left);
+          const y = base - hour.value / layout.maxBand * (base - top);
+          return <line key={hour.startHour} x1={x0 + 2} x2={x1 - 2} y1={y} y2={y} data-hour={hour.startHour} data-value={Math.round(hour.value)} style={{ stroke: "#7d858c", strokeWidth: 2, strokeLinecap: "round" }} />;
+        })}
+      </g>}
       <line className="av-rule airport-flow-base" x1={left} x2={right} y1={base} y2={base} />
       <g className="airport-flow-hours">
         {layout.ticks.map((tick) => <text key={tick.hour} x={tick.x} y={base + 17} textAnchor={tick.hour === FLOW_HOURS[0] ? "start" : tick.hour === FLOW_HOURS.at(-1) ? "end" : "middle"}>{String(tick.hour).padStart(2, "0")}</text>)}
@@ -135,15 +150,17 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
       {layout.bands.map((band, index) => <rect key={band.start} className={["airport-flow-band", band.now ? "now" : "", band.peak ? "peak" : ""].filter(Boolean).join(" ")}
         x={band.x} y={top} width={band.width} height={base - top} tabIndex={0} pointerEvents="none"
         onFocus={() => hoverBand(index)} onBlur={() => setHover(null)}
-        data-start={band.start} aria-label={`${clock(band.start)}–${clock(band.end)} KST · ${people(band.value)}`}>
-        <title>{`${clock(band.start)}–${clock(band.end)} KST · ${people(band.value)}`}</title>
+        data-start={band.start} aria-label={`${clock(band.start)}–${clock(band.end)} KST · ${people(band.value)}${referenceAt(band.start) && reference ? ` · ${reference.short} ${people(referenceAt(band.start)!.value)}` : ""}`}>
+        <title>{`${clock(band.start)}–${clock(band.end)} KST · ${people(band.value)}${referenceAt(band.start) && reference ? ` · ${reference.short} ${people(referenceAt(band.start)!.value)}` : ""}`}</title>
       </rect>)}
     </svg>
     <ul className="av-legend airport-flow-legend">
       {layout.now && <li><i className="past" />{copy.past[lang]}</li>}
       {layout.now && <li><i className="ahead" />{copy.ahead[lang]}</li>}
       {layout.stacked && layout.layers.map((layer, index) => <li key={layer.key}><i className={index === 0 ? "stack-lower" : "stack-upper"} />{layer.key}</li>)}
+      {reference && <li data-testid="airport-flow-reference-legend"><i className="reference" style={{ background: "#7d858c", blockSize: 2, alignSelf: "center" }} />{reference.label}</li>}
     </ul>
+    {reference && <p className="prep-note airport-flow-reference-note">{reference.note}</p>}
     {showModel && <p className="prep-note airport-hourly-model-note">{copy.concept[lang]}</p>}
   </figure>;
 }

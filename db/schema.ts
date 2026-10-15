@@ -545,6 +545,12 @@ export const seoulCommercialMonths = sqliteTable('seoul_commercial_months', {
  sourceHash:text('source_hash').notNull(),calculatedAt:text('calculated_at').notNull(),
 },table=>[primaryKey({columns:[table.area,table.month]})]);
 
+// 15095071 / 15095070 official monthly passenger statistics (0027), one compact row per operation and month.
+export const airportMonthlyStats = sqliteTable('airport_monthly_stats', {
+ operationId:text('operation_id').notNull(),month:text('month').notNull(),payload:text('payload').notNull(),
+ sourceHash:text('source_hash').notNull(),retrievedAt:text('retrieved_at').notNull(),
+},table=>[primaryKey({columns:[table.month,table.operationId]})]);
+
 // Prepared news only. 0026 enforces byte/capacity limits; not applied remotely.
 export const officialNewsCurrent = sqliteTable('official_news_current', {
  source:text('source').notNull(),sourceId:text('source_id').notNull(),topic:text('topic').notNull(),

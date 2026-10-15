@@ -125,6 +125,8 @@ export const STORAGE_TABLES: readonly TableInventory[] = [
   { table: "tourism_events", recordClass: "B_OBSERVATION_DETAIL", retentionDays: null, prunedBy: null, readWindowDays: null,
     readers: "오늘부터 30일 안의 행사 (행사별 1행, 변경 시 갱신)", insertedAt: "retrieved_at" },
   // C — official periodic aggregates and compact daily facts.
+  { table: "airport_monthly_stats", recordClass: "C_AGGREGATE", retentionDays: null, prunedBy: null, readWindowDays: null,
+    readers: "인천공항 월별 공식 여객 통계 (노선 국가별·시간대별, 작업·월별 1행, 변경 시에만 갱신)", insertedAt: "retrieved_at" },
   { table: "seoul_commercial_months", recordClass: "C_AGGREGATE", retentionDays: null, prunedBy: null, readWindowDays: null,
     readers: "지역·월별 소비 관측 평균 비교, 과거 요약 보존 (최신 2개월 내부 시간 배열만 유지)", insertedAt: "calculated_at" },
   { table: "seoul_subway_ridership", recordClass: "C_AGGREGATE", retentionDays: null, prunedBy: null, readWindowDays: 35,
