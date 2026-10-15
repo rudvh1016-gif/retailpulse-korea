@@ -6,9 +6,10 @@ import { measureSource, verifyPublicMeasurement, readPublicEvidence } from '../l
 import { saveMeasurement } from '../lib/operational-bookkeeping';
 import { recoveryActivation, centralRecoveryActivation } from '../lib/operational-recovery-runner';
 import { buildOrchestrationPlan } from '../lib/orchestration-plan';
+import { releaseAbandonedA1Attempts } from '../lib/airport-midnight-direct-recovery';
 
 const mode=process.env.RPK_OPERATIONAL_MODE??'inspect';
-if(!['inspect','record','recover','plan'].includes(mode))throw new Error('unknown_operational_mode');
+if(!['inspect','record','recover','plan','release_abandoned'].includes(mode))throw new Error('unknown_operational_mode');
 if(mode==='recover') {
   console.log(JSON.stringify({centralRecovery:recoveryActivation(new Date().toISOString()),providerCalls:0}));
 } else {
@@ -33,6 +34,14 @@ if(mode==='recover') {
     const after=database.usageSnapshot();
     console.log(JSON.stringify({recordedSources:sources.length,providerCalls:0,observedD1RowsRead:after.rowsRead-before.rowsRead,
       observedD1RowsWritten:after.rowsWritten-before.rowsWritten,usageBasis:'OBSERVED_QUERY_METADATA'}));
+  }
+  if(mode==='release_abandoned') {
+    // Only A1 direct attempts with no collector receipt, older than 30 minutes; no provider call.
+    const nowIso=new Date().toISOString(),before=database.usageSnapshot();
+    const released=await releaseAbandonedA1Attempts(memory,nowIso);
+    const after=database.usageSnapshot();
+    console.log(JSON.stringify({released,providerCalls:0,stuckAfter:await memory.stuckControlledAttempts(new Date().toISOString()),
+      observedD1RowsRead:after.rowsRead-before.rowsRead,observedD1RowsWritten:after.rowsWritten-before.rowsWritten}));
   }
   const incidents=await memory.incidents();
   if(mode==='plan') {

@@ -1,0 +1,15 @@
+{
+  "recordedAt": "2026-10-15",
+  "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+  "ownerRequest": "음 막힌것들 스스로 해결할 수 있는건 해결싹다해",
+  "approvalQuestion": "D1 실제 사용량(rows_read·요청 수)을 보려면 Cloudflare 분석 권한이 있는 토큰이 필요합니다. 지금 진단에 쓰는 D1 토큰은 권한이 없습니다(run 38667293760). 이미 있는 배포 토큰(CLOUDFLARE_API_TOKEN)을 '읽기 전용 사용량 진단'에서만 두 번째로 시도하게 할까요? 새 토큰 발급이나 권한 변경은 없지만, 진단 워크플로가 D1 토큰만 쓰도록 묶어 둔 보안 검사를 함께 바꿔야 합니다. 배포 토큰에도 분석 권한이 없으면 '확인 불가'로 끝납니다.",
+  "approvalOptionShown": "허용 (권장) — 사용량 진단 단계에만 배포 토큰을 넘기고 보안 검사를 그 한 단계만 허용하도록 고친 뒤, 진단을 1회 실행해 배포 전후 같은 시간대 rows_read를 비교합니다.",
+  "ownerAnswer": "허용 (권장)",
+  "change": ".github/workflows/measure-read-budget.yml usage step also receives secrets.CLOUDFLARE_API_TOKEN; scripts/measure-d1-usage.ts already tries CLOUDFLARE_D1_WRITE_TOKEN first and CLOUDFLARE_API_TOKEN second for read-only GraphQL analytics.",
+  "guard": "tests/storage-inventory.test.mjs still pins every other step to the D1 token and allows the deploy token in exactly one step, the usage step.",
+  "unchanged": [
+    "no token created, rotated or widened",
+    "no new schedule; manual dispatch only",
+    "the script prints no secret (existing test)"
+  ]
+}

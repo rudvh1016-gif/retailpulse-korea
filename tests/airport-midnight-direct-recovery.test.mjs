@@ -7,7 +7,7 @@ import { expandRealtimeCadence } from './helpers/realtime-cycle.mjs';
 import { OperationalMemory } from '../lib/operational-memory.ts';
 import { resolveCentralRecoveryActivation } from '../lib/central-recovery-gate.ts';
 import { A1_SOURCE, A1_RECOVERY_WORKFLOW } from '../lib/airport-midnight-recovery.ts';
-import { airportMidnightCandidate, airportDirectContext, executeAirportMidnightDirect } from '../lib/airport-midnight-direct-recovery.ts';
+import { airportMidnightCandidate, airportDirectContext, executeAirportMidnightDirect, releaseAbandonedA1Attempts } from '../lib/airport-midnight-direct-recovery.ts';
 import { airportMidnightSourceBlocked } from '../lib/airport-recovery-protection.ts';
 import { airportRequestBudgetAvailable } from '../lib/airport-request-budget.ts';
 
@@ -220,6 +220,30 @@ test('an admission left open without a collector receipt is released after its j
       assert.equal(next.state, 'RECOVERED'); assert.equal(calls.collectors, 1);
       assert.equal((await memory.inFlightControlled()).length, 0);
       assert.equal((await memory.attempts(A1_SOURCE, DAY))[0].outcome, 'ABORTED_BEFORE_COLLECTION');
+    }
+  }
+});
+
+test('on-demand release closes only an abandoned attempt without a receipt, by the same 30-minute rule', async () => {
+  for (const receipt of [false, true]) {
+    const { deps, memory } = setup();
+    if (receipt) await execute({ ...deps, collectA1: async () => { throw Error('runner lost'); } });
+    else {
+      let snapshots = 0;
+      const release = memory.abortBeforeCollection;
+      memory.abortBeforeCollection = async () => { throw Error('ledger unavailable'); };
+      await execute({ ...deps, readSnapshot: async () => { if (++snapshots === 2) throw Error('process lost'); return { complete: true, early: [], active: [] }; } });
+      memory.abortBeforeCollection = release;
+    }
+    assert.deepEqual(await releaseAbandonedA1Attempts(memory, '2026-10-10T16:40:00Z'), [], 'inside the job window nothing is released');
+    const released = await releaseAbandonedA1Attempts(memory, '2026-10-10T17:00:00Z');
+    assert.equal(released.length, receipt ? 0 : 1);
+    assert.equal((await memory.inFlightControlled()).length, receipt ? 1 : 0, 'an attempt with a receipt keeps its lock');
+    if (!receipt) {
+      const [attempt] = await memory.attempts(A1_SOURCE, DAY);
+      assert.equal(attempt.outcome, 'ABORTED_BEFORE_COLLECTION');
+      assert.equal(attempt.providerRequests, 0);
+      assert.deepEqual(await releaseAbandonedA1Attempts(memory, '2026-10-10T17:05:00Z'), [], 'a second call changes nothing');
     }
   }
 });

@@ -31,6 +31,7 @@ import {
   collectWeatherForecasts,
 } from "../lib/collector";
 import { CloudflareD1RestDatabase } from "../lib/d1-rest";
+import { collectAirportMonthlyStats } from "../lib/airport-monthly-stats";
 import { resolveProductionDatabaseConfig } from "./production-database";
 
 if (process.env.RPK_ONESHOT_CONFIRM !== "IMPORT") {
@@ -157,6 +158,9 @@ const collectors: Record<string, () => Promise<OneShotResult>> = {
   airport_flights_today: () => collectAirportFlightsToday(env),
   airport_flight_enrichment: () => collectAirportFlightEnrichment(env),
   airport_scheduled: () => collectScheduledAirportFlights(env),
+  // A6 15095071/15095070: the same bounded month plan as the daily run (latest
+  // complete month plus at most 3 missing older months per operation).
+  airport_monthly_stats: () => collectAirportMonthlyStats(env),
   // A2 facility directory. The collector is self-bounding: it skips without a
   // provider request when a SUCCESS run is inside its refresh window, so a
   // repeated dispatch cannot burn the daily development quota.
