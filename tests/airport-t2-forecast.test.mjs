@@ -682,3 +682,26 @@ test("the bound lowers a ladder, never widens one, and is inert when unset", asy
     }
   }
 });
+
+// 2026-10-14/15 03:37-03:52 KST: T1 answered 12 rows and one refused row made
+// the whole terminal an ERROR ("failureClass=SCHEMA") without saying which field.
+test("A4-T1 skips a refused row by name, keeps the other gates and never stores a missing count as 0", async (context) => {
+  const { database, databasePath } = freshDatabase("t1-refused-row");
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+  const gate = (gateId, waitLength) => ({ terminalId: "P01", gateId, waitTime: "5", waitLength, occurtime: "20261015033500" });
+  const respond = (items) => { globalThis.fetch = async () => Response.json({ response: { header: { resultCode: "00" }, body: { items } } }); };
+
+  respond([gate("DG1_E", "12"), gate("DG2_E", ""), gate("DG3_E", "0")]);
+  const partial = await collectAirportCongestion({ DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture" });
+  assert.equal(partial.status, "PARTIAL");
+  assert.match(partial.detail, /P01 skipped 1\/3: failureClass=SCHEMA .*schemaField=waitLength:empty/);
+  const rows = database.prepare("SELECT zone, waiting_count FROM airport_congestion WHERE terminal='T1' ORDER BY zone").all();
+  assert.deepEqual(rows.map((row) => [row.zone, row.waiting_count]), [["DG1_E", 12], ["DG3_E", 0]], "a real 0 is kept; the unreported gate is absent, not 0");
+
+  respond([gate("DG1_E", ""), { ...gate("DG2_E", "3"), occurtime: "2026-10-15 03" }]);
+  const refused = await collectAirportCongestion({ DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture" });
+  assert.equal(refused.status, "ERROR");
+  assert.match(refused.detail, /failed P01: 2\/2: .*schemaField=waitLength:empty.*schemaField=occurtime:text13/);
+  assert.equal(database.prepare("SELECT COUNT(*) AS n FROM airport_congestion WHERE terminal='T1'").get().n, 2, "last good rows stay");
+});

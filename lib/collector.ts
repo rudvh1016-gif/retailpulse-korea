@@ -1875,6 +1875,7 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
   const statements: D1PreparedStatement[] = [];
   const failures: string[] = [];
   const terminalCounts: string[] = [];
+  const rowSkips: string[] = [];
   let lastRow: CanonicalAirportCongestion | undefined;
   let written: D1WriteCounts = NO_D1_WRITES;
   for (const terminalId of ["P01"]) {
@@ -1893,8 +1894,14 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
       if (items.length === 0) throw new Error("congestion_no_data");
       terminalCounts.push(`${terminalId}:${items.length}`);
       const retrievedAt = nowIso();
+      // As in A4-T2, one refused row (a gate whose count is not reported) is
+      // skipped and named instead of discarding every other gate; the skipped
+      // gate stays "not reported", never 0. Only all rows refused is an ERROR.
+      const rowFailures: string[] = [];
       for (const item of items) {
-        const canonical = await normalizeAirportCongestion(item, retrievedAt);
+        let canonical: CanonicalAirportCongestion;
+        try { canonical = await normalizeAirportCongestion(item, retrievedAt); }
+        catch (error) { rowFailures.push(safeSourceFailureDetail(error)); continue; }
         lastRow = canonical;
         if (!env.DB) continue;
         statements.push(env.DB.prepare(`INSERT INTO airport_congestion (
@@ -1909,20 +1916,24 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
             canonical.schemaVersion, canonical.qualityStatus, canonical.sourceHash,
           ));
       }
+      if (rowFailures.length === items.length) throw new Error(`congestion_rows_refused ${rowFailures.length}/${items.length}: ${[...new Set(rowFailures)].join(" | ")}`);
+      if (rowFailures.length) rowSkips.push(`${terminalId} skipped ${rowFailures.length}/${items.length}: ${[...new Set(rowFailures)].join(" | ")}`);
     } catch (error) {
-      failures.push(`${terminalId}: ${safeSourceFailureDetail(error)}`);
+      const refused = error instanceof Error && error.message.startsWith("congestion_rows_refused ");
+      failures.push(`${terminalId}: ${refused ? error.message.slice("congestion_rows_refused ".length) : safeSourceFailureDetail(error)}`);
     }
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
-  const detail = `requestedAt=${requestedAt}; terminals ${terminalCounts.join(", ") || "none"}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
+  const detail = `requestedAt=${requestedAt}; terminals ${terminalCounts.join(", ") || "none"}; ${describeWrites(written)}${rowSkips.length ? `; ${rowSkips.join(" | ")}` : ""}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
   if (failures.length === 1) {
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
     return { status: "ERROR", records: 0, detail };
   }
-  await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, terminalCounts.length, written.changedRows);
+  const partial = failures.length > 0 || rowSkips.length > 0;
+  await writeCollectorStatus(env.DB, sourceId, partial ? "PARTIAL" : "SUCCESS", detail, terminalCounts.length, written.changedRows);
   await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastRow ? { eventAt: lastRow.observedAt, retrievedAt: lastRow.retrievedAt, schemaVersion: lastRow.schemaVersion } : undefined);
-  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows, detail };
+  return { status: partial ? "PARTIAL" : "SUCCESS", records: written.changedRows, detail };
 }
 
 const A4_T2_PAGE_SIZE = 20;
