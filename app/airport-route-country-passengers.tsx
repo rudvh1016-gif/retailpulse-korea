@@ -1,10 +1,10 @@
 'use client';
-import {useEffect,useMemo,useState} from 'react';
+import {useMemo} from 'react';
 import type {Lang} from './retailpulse-data';
 import {ChangeRate} from './change-rate';
-import type {AirportStatsMonth,AirportStatsRow} from '../lib/airport-monthly-stats-read';
+import type {AirportStatsRow} from '../lib/airport-monthly-stats-read';
+import {useAirportPassengerStats} from './airport-passenger-stats-client';
 const t=(lang:Lang,ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
-interface Reply {status:string;month:string|null;previousMonth:string|null;current:{ROUTE_COUNTRY_PASSENGERS?:AirportStatsMonth};previous:{ROUTE_COUNTRY_PASSENGERS?:AirportStatsMonth}}
 const VISIBLE=10;
 /** Provider country names (as published) to ISO region codes, so other languages can name them.
  * A name no locale reads back stays exactly as the provider wrote it. */
@@ -20,20 +20,8 @@ function regionCodes():Map<string,string>{
 /** 15095071: official monthly departures by the country of each flight's route.
  * Airport-wide and published monthly, so it sits beside the flight counts as its own table, never as a ratio of them. */
 export function AirportRouteCountryPassengers({lang,month,terminal}:{lang:Lang;month:string;terminal:string}){
- const [state,setState]=useState<{month:string;reply:Reply|null;failed:boolean}|null>(null);
- useEffect(()=>{
-  if(!month)return;
-  let active=true;
-  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15_000);
-  fetch(`/api/live/airport-passenger-stats?month=${encodeURIComponent(month)}`,{signal:controller.signal})
-   .then(response=>response.ok?response.json() as Promise<Reply>:Promise.reject(new Error(String(response.status))))
-   .then(reply=>{if(active)setState({month,reply,failed:false});})
-   .catch(()=>{if(active)setState(previous=>({month,reply:previous?.month===month?previous.reply:null,failed:true}));})
-   .finally(()=>clearTimeout(timeout));
-  return()=>{active=false;clearTimeout(timeout);controller.abort();};
- },[month]);
+ const {reply,failed}=useAirportPassengerStats(month);
  const codes=useMemo(()=>lang==='ko'?null:regionCodes(),[lang]);
- const reply=state?.month===month?state.reply:null;
  const current=reply?.current.ROUTE_COUNTRY_PASSENGERS,previous=reply?.previous.ROUTE_COUNTRY_PASSENGERS;
  const fmt=new Intl.NumberFormat({ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'}[lang]);
  const names=new Intl.DisplayNames([lang],{type:'region'});
@@ -44,7 +32,7 @@ export function AirportRouteCountryPassengers({lang,month,terminal}:{lang:Lang;m
  const table=(body:React.ReactNode)=><div className="airport-month-table"><table><caption>{t(lang,'출발 여객 · 명/월','Departing passengers · people/month','出发旅客 · 人/月','出発旅客 · 人/月')}</caption><colgroup><col/><col className="airport-month-value-column"/><col className="airport-month-value-column"/><col className="airport-month-rate-column"/></colgroup><thead><tr><th scope="col">{t(lang,'노선 국가','Route country','航线国家','路線の国')}</th><th scope="col">{reply?.previousMonth??'—'}</th><th scope="col">{reply?.month}</th><th scope="col">{t(lang,'증감','Change','变化','変化')}</th></tr></thead><tbody>{body}</tbody></table></div>;
  return <section className="airport-route-passengers" data-testid="airport-route-passengers" aria-label={t(lang,'노선 국가별 출발 여객','Departing passengers by route country','各航线国家出发旅客','路線の国別の出発旅客')}>
   <h4>{t(lang,'노선 국가별 출발 여객 · 공식 월 실적','Departing passengers by route country · official monthly results','各航线国家出发旅客 · 官方月度实绩','路線の国別の出発旅客・公式月次実績')}</h4>
-  {!reply?<p className="airport-month-state" role="status">{state?.failed?t(lang,'공식 여객 통계 연결이 일시적으로 지연됐습니다.','Official passenger statistics are temporarily unavailable.','官方旅客统计连接暂时延迟。','公式旅客統計の接続が一時的に遅延しています。'):t(lang,'공식 여객 통계를 불러오는 중…','Loading official passenger statistics…','正在读取官方旅客统计…','公式旅客統計を読み込み中…')}</p>
+  {!reply?<p className="airport-month-state" role="status">{failed?t(lang,'공식 여객 통계 연결이 일시적으로 지연됐습니다.','Official passenger statistics are temporarily unavailable.','官方旅客统计连接暂时延迟。','公式旅客統計の接続が一時的に遅延しています。'):t(lang,'공식 여객 통계를 불러오는 중…','Loading official passenger statistics…','正在读取官方旅客统计…','公式旅客統計を読み込み中…')}</p>
   :!current||!rows.length?<p className="airport-month-state" role="status">{t(lang,'이 월까지 공개된 공식 여객 통계가 아직 없습니다. 없는 값은 0으로 표시하지 않습니다.','No official passenger statistics are published up to this month yet. Missing values are never shown as zero.','截至本月尚无公开的官方旅客统计，缺失值不显示为0。','この月までに公表された公式旅客統計はまだありません。欠測値は0と表示しません。')}</p>
   :<>
    {reply.month!==month&&<p className="airport-month-basis">{t(lang,`인천공항이 공개한 가장 최근 월인 ${reply.month} 실적입니다.`,`The latest month Incheon Airport has published: ${reply.month}.`,`仁川机场已公开的最近月份：${reply.month}。`,`仁川空港が公表した最新の月：${reply.month}。`)}</p>}

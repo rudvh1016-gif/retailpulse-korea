@@ -14,6 +14,7 @@ import { formatChangeRate } from "../lib/change-rate";
 import { airportCompositionCopy } from "../lib/airport-composition-copy";
 import { usePresentationClock } from "./area-demand-card";
 import { AirportFlowFigure } from "./airport-flow-figure";
+import { useTimeBandReference } from "./airport-passenger-stats-client";
 import { FlightCountPrism } from "./flight-count-prism";
 import { kstStamp } from "../lib/demand-presentation";
 import { flightBoardingLocation } from "../lib/flight-scope";
@@ -375,6 +376,8 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
   const [compositionView, setCompositionView] = useState<"gates" | "airlines" | "countries">("gates");
   const summary = useLiveSummary(date);
   const presentationNow = usePresentationClock(summary?.generatedAt ?? "");
+  // Owner-approved 2026-10-15: the newest published month's actual departures per hour, whole airport only.
+  const timeBandReference = useTimeBandReference(summary?.serviceDateKst ?? null, lang);
   const airport = summary?.airport;
   if (!summary) return <div className={summary === undefined ? "airport-summary-reserved" : undefined}><LiveLoadMessage loading={summary === undefined} lang={lang} /></div>;
   if (!airport) return <div className="airport-unavailable" role="status"><strong>{airportTodayText.unavailable[lang]}</strong></div>;
@@ -454,6 +457,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
           numberLocale={numberLocale}
           label={`${airportTodayText.forecastTitle[lang]}. ${airportTodayText.forecastOnly[lang]}${nowBandStart ? `. ${nowLabel}` : ""}`}
           showModel={false}
+          reference={isAll ? timeBandReference : null}
         />
         : <div className={`airport-forecast-state ${isForecastPartial ? "partial" : "unavailable"}`}>
           <strong>{isForecastPartial ? airportTodayText.forecastPartial[lang] : airportTodayText.unavailable[lang]}</strong>

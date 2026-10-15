@@ -13,10 +13,8 @@
     "collector": "lib/airport-monthly-stats.ts, daily group airport_monthly_stats",
     "storage": "drizzle/0027_airport_monthly_stats.sql",
     "read": "app/api/live/airport-passenger-stats/route.ts",
-    "page": "app/airport-route-country-passengers.tsx inside app/airport-monthly-flights.tsx (not protected)"
-  },
-  "notConnectedYet": {
-    "timeBandOverlay": "Drawing 15095070 on the hourly forecast figure changes the protected app/airport-live-signals.tsx call site; owner approval is requested separately."
+    "page": "app/airport-route-country-passengers.tsx inside app/airport-monthly-flights.tsx (not protected)",
+    "hourlyReference": "15095070 grey reference line on the whole-airport hourly forecast figure (app/airport-flow-figure.tsx; protected call site app/airport-live-signals.tsx approved as ownerApprovedTimeBandReference20261015)"
   },
   "unchanged": [
     "no paid service, new key, secret, permission or scheduler; the daily group gains one source",

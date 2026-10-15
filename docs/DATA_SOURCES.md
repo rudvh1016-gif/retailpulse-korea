@@ -257,7 +257,10 @@ What is active:
 - **Read.** `/api/live/airport-passenger-stats?month=YYYY-MM` reads at most 4 rows on a key range (`lib/airport-monthly-stats-read.ts`). The page never imports the provider client.
 - **Page.** The airport monthly section shows a route-country departures table: the newest published month and its calendar predecessor, top 10 with the rest folded.
   - It is labelled airport-wide, grouped by where flights go (not who travels), and never divided by the flight daily means.
-- **Not yet.** The 15095070 time-band comparison on the hourly departure-hall forecast figure is stored but not drawn: that call site is the protected `app/airport-live-signals.tsx` and needs the owner's approval.
+- **Hourly figure.** The hourly departure-hall forecast figure carries 15095070 as a grey reference line on the whole-airport view only.
+  - It shows the newest published month's departures per hour divided by that month's days.
+  - It is never shown for T1/T2 and never turned into an error figure, because the scopes may differ.
+  - Owner-approved protected change in `app/airport-live-signals.tsx` (`ownerApprovedTimeBandReference20261015`).
 
 Still open from the checklist below:
 

@@ -98,3 +98,14 @@ test("the figure is drawn with strokes and fills, never a CSS border on an empty
   assert.doesNotMatch(visual, /border-left/, "no bordered zero-width marker: WebKit did not paint that");
   assert.doesNotMatch(figure, /from ["']gsap["']/);
 });
+
+test("a reference series raises the scale so it is never clipped, and leaves the bands' times alone", async () => {
+  const { flowLayout } = await import("../lib/airport-flow-geometry.ts");
+  const timeline = [{ targetStartAt: "2026-08-31T14:00:00+09:00", targetEndAt: "2026-08-31T15:00:00+09:00", expectedPassengers: 500 }];
+  const plain = flowLayout({ timeline, width: 720, height: 224, peakStartAt: null, nowBandStart: null, nowBandProgress: null });
+  const raised = flowLayout({ timeline, width: 720, height: 224, peakStartAt: null, nowBandStart: null, nowBandProgress: null, scaleFloor: 1000 });
+  assert.equal(plain.maxBand, 500);
+  assert.equal(raised.maxBand, 1000);
+  assert.deepEqual(raised.bands.map((band) => [band.x, band.width]), plain.bands.map((band) => [band.x, band.width]));
+  assert.equal(flowLayout({ timeline, width: 720, height: 224, peakStartAt: null, nowBandStart: null, nowBandProgress: null, scaleFloor: Number.NaN }).maxBand, 500);
+});

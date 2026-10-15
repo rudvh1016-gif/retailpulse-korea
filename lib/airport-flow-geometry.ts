@@ -99,14 +99,16 @@ function sortBands(timeline: ReadonlyArray<FlowBand>): FlowBand[] {
     .sort((a, b) => a.targetStartAt.localeCompare(b.targetStartAt));
 }
 
-export function flowLayout({ timeline, layers = null, width, height, peakStartAt, nowBandStart, nowBandProgress }: {
+export function flowLayout({ timeline, layers = null, width, height, peakStartAt, nowBandStart, nowBandProgress, scaleFloor = 0 }: {
   timeline: ReadonlyArray<FlowBand>; layers?: Record<string, ReadonlyArray<FlowBand> | undefined> | null; width: number; height: number;
   peakStartAt: string | null; nowBandStart: string | null; nowBandProgress: number | null;
+  /** A reference series drawn on the same axis (past actuals) raises the scale so it is never clipped. */
+  scaleFloor?: number;
 }): FlowLayout {
   const sorted = sortBands(timeline);
   const left = FLOW_PAD.left, right = width - FLOW_PAD.right, top = FLOW_PAD.top, base = height - FLOW_PAD.bottom;
   const dayStart = sorted.length ? kstDayStart(sorted[0].targetStartAt) : 0;
-  const maxBand = Math.max(1, ...sorted.map((band) => band.expectedPassengers));
+  const maxBand = Math.max(1, Number.isFinite(scaleFloor) ? scaleFloor : 0, ...sorted.map((band) => band.expectedPassengers));
   const x = (ms: number) => round(left + Math.min(1, Math.max(0, (ms - dayStart) / DAY)) * (right - left));
   const y = (value: number) => round(top + (1 - Math.min(maxBand, Math.max(0, value)) / maxBand) * (base - top));
 
