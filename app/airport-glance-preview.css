@@ -63,6 +63,7 @@ body:has(.glance-preview){background:#fff}
 @media(max-width:700px){.glance-controls>div{gap:2px}.glance-controls>div button{padding-inline:9px}}
 
 .glance-passenger-pair{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.glance-passenger-pair>a{display:grid;align-content:start;gap:3px;min-width:0;min-height:44px;padding:6px 0}.glance-passenger-pair>a>span{font-size:11px;color:#53616e}.glance-passenger-pair small{overflow-wrap:anywhere}@media(max-width:700px){.glance-passenger-pair{gap:12px;border-bottom:1px solid #dbe0e5}.glance-passenger-pair>a{padding:7px 0}}
+@media(max-width:700px){.glance-passenger-pair{min-block-size:99px}}
 /* PC only (owner, 2026-10-14): the passenger pair sits on the same three columns as the row under it, so 예상 환승객 starts where 앞으로 출발편 집중 시간 does instead of mid-page. Phones (≤700px) keep their own pair. */
 @media(min-width:701px){.glance-passenger-pair{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.glance-passenger-pair>a{gap:4px}}
 

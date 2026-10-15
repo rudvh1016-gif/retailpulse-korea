@@ -1,0 +1,17 @@
+{
+  "recordedAt": "2026-10-15",
+  "sourceThread": "session_01XyGKP2e8578qyaNZehDSM1",
+  "supersedesDraft": "PR #375 (closed after this lands; only one of its seven CSS lines is kept)",
+  "approvalQuestion": "#375(app/airport-glance-preview.css) 재측정 결과, 효과는 /ko 390px에서만 있습니다(CLS 0.1023→0.0749, LCP 변화 없음). 360·430px은 변화가 없고, 영어 390px은 31px 빈 공간만 늘어납니다. 어떻게 할까요?",
+  "approvalOptionShown": "1줄만 적용 (권장) — 700px 이하 승객 칸 최소 높이 99px 한 줄만 승인 절차와 함께 적용하고, 언어별 추가 높이(영·일·중)는 빼고, 나머지는 #375를 닫습니다.",
+  "ownerAnswer": "1줄만 적용 (권장)",
+  "comparisonBase": "9033dc6",
+  "changedProductFiles": ["app/airport-glance-preview.css"],
+  "exactAddedLine": "@media(max-width:700px){.glance-passenger-pair{min-block-size:99px}}",
+  "notApplied": [
+    "@media(max-width:420px){.lang-en .glance-passenger-pair{min-block-size:130px}.lang-ja .glance-passenger-pair{min-block-size:113.5px}}",
+    "@media(max-width:380px){.lang-zh .glance-passenger-pair{min-block-size:113.5px}}"
+  ],
+  "hashLocked": false,
+  "note": "app/airport-glance-preview.css is not in tests/fixtures/phase2-locks.json protectedFiles; the owner was still asked because it is airport-screen UI. A minimum, not a fixed height: longer text still grows. The measurement is a lab re-measurement, not a public field result."
+}

@@ -141,8 +141,10 @@ test("provider result codes in collector messages map to AUTH, QUOTA and NO_DATA
   assert.match(detail("tourapi_result_0000"), /^failureClass=VALIDATION /);
   assert.match(detail("kma_result_missing"), /^failureClass=VALIDATION /);
   assert.match(detail("kma_result_99"), /^failureClass=VALIDATION /);
-  // A provider's "no rows" is not a data-format problem on the public page.
-  assert.equal(publicFailureReason("failureClass=NO_DATA causeCode=KMA_RESULT_03"), "OTHER");
+  // A provider's "no rows" is not a data-format problem on the public page; since
+  // 2026-10-15 (owner-approved wording) it is shown as "not released yet", apart from
+  // a connection failure.
+  assert.equal(publicFailureReason("failureClass=NO_DATA causeCode=KMA_RESULT_03"), "NO_DATA");
   assert.equal(publicFailureReason("failureClass=AUTH httpStatus=403"), "AUTH");
 });
 

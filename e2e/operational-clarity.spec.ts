@@ -30,6 +30,22 @@ test('source page excludes unconnected candidates and shows a truthful nominal r
  await expect(page.locator('.source-rows')).not.toContainText('NAVER DATALAB');
 });
 
+test('a stale weather source says whether KMA had no data or the connection failed',async({page})=>{
+ const noData='mode=scheduled; grids ok 0/4; failed grid 60,127: failureClass=NO_DATA causeCode=KMA_RESULT_03 attempts=1 | grid 61,126: failureClass=NO_DATA causeCode=KMA_RESULT_03 attempts=1';
+ const timeout='mode=scheduled; grids ok 3/4; failed grid 60,127: failureClass=TIMEOUT causeCode=UND_ERR_HEADERS_TIMEOUT attempts=2';
+ for(const [detail,reason,other] of [[noData,'기상청이 이번 발표 자료를 아직 주지 않음(자료 없음)','응답 대기시간 초과'],[timeout,'응답 대기시간 초과','자료 없음']]){
+  await page.unrouteAll();
+  await page.route('**/api/live/summary*',routeSummary({...SUMMARY_FIXTURE,sources:[{sourceId:'KMA_VILAGE_FCST',status:'STALE',retrievedAt:'2026-08-31T02:10:00Z',detail}]}));
+  await page.goto('/ko/more');
+  await page.locator('#collection-status summary').click();
+  const status=page.locator('#collection-status');
+  await expect(status).toContainText(`최신 자료 미확보 · ${reason}`);
+  await expect(status).not.toContainText(other);
+  await expect(status).toContainText('마지막 성공 · 2026-08-31 11:10 KST');
+  await expect(status).not.toContainText('KMA_RESULT');
+ }
+});
+
 test('records show the preserved limited scorecard and exact missing weekday inputs',async({page})=>{
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
  await page.route('**/api/live/predictions*',routeSummary({targetDate:'2026-09-06',run:null,
