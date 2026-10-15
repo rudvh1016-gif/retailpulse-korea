@@ -164,7 +164,7 @@ const forecastRowCount = (database) => database.prepare("SELECT COUNT(*) AS coun
 const weatherRowCount = (database) => database.prepare("SELECT COUNT(*) AS count FROM weather_forecast").get().count;
 
 const runRecovery = (database, source, now = NOW) => runSelectedProductionSources(
-  { DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture-key" },
+  { DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture-key", KMA_NO_DATA_RECHECK_MS: 0 },
   [source],
   now,
 );
@@ -744,7 +744,7 @@ for (const recover of [false, true]) {
       return recover && calls > 1 ? Response.json(kmaPage())
         : new Response("unavailable", { status: 503, headers: { "retry-after": "0" } });
     };
-    const result = await collectWeatherForecasts({ DATA_GO_KR_SERVICE_KEY: "fixture-key" }, NOW);
+    const result = await collectWeatherForecasts({ DATA_GO_KR_SERVICE_KEY: "fixture-key", KMA_NO_DATA_RECHECK_MS: 0 }, NOW);
     const actualRequests = [...callsByGrid.values()].reduce((sum, count) => sum + count, 0);
     assert.equal(actualRequests, uniqueKmaGrids().length * (recover ? 2 : 3));
     assert.equal(result.providerRequests, actualRequests);
@@ -806,7 +806,7 @@ test("a recovery failure detail never carries the service key", async (context) 
     throw new Error(`connect timeout for ${url}`);
   };
   const results = await runSelectedProductionSources(
-    { DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: secret },
+    { DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: secret, KMA_NO_DATA_RECHECK_MS: 0 },
     ["airport_passenger_forecast_recovery", "weather_recovery"],
     NOW,
   );

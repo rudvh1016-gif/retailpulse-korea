@@ -79,6 +79,8 @@ import { kstDayOf, shiftKstDay } from "./kst";
 
 export interface CollectorEnv {
   DB?: D1Database;
+  /** Test seam only: overrides KMA_NO_DATA_RECHECK_MS. Production never sets it. */
+  KMA_NO_DATA_RECHECK_MS?: number;
   DATA_GO_KR_SERVICE_KEY?: string;
   SEOUL_OPEN_DATA_KEY?: string;
   KMA_SERVICE_KEY?: string;
@@ -1501,7 +1503,18 @@ export function latestKmaIssuance(now = new Date()): { baseDate: string; baseTim
 export interface WeatherCollectionOptions extends TargetedCollectionOptions {
   /** Restricts the run to these grid cells. Defaults to all three. */
   grids?: ReadonlyArray<{ nx: number; ny: number; areas: readonly string[] }>;
+  /** Wait before the one same-run recheck of grids that answered NO_DATA (tests pass 0). */
+  noDataRecheckMs?: number;
 }
+
+/**
+ * KMA answered resultCode 03 (NO_DATA) for issuances already 40 minutes to 3
+ * hours old, and the same base/grid answered 00 about 40 seconds later
+ * (2026-10-13..15: 23 area-issuances lost, 5 recovered only by a second
+ * attempt). A 03 grid is therefore asked once more in the same run after this
+ * wait. Bounded: one recheck per grid per run, no fresh runner.
+ */
+export const KMA_NO_DATA_RECHECK_MS = 45_000;
 
 export async function collectWeatherForecasts(
   env: CollectorEnv,
@@ -1530,13 +1543,13 @@ export async function collectWeatherForecasts(
     requestCount += 1;
     return fetch(input, init);
   };
-  for (const grid of grids) {
+  const collectGrid = async (grid: (typeof grids)[number]) => {
     const url = buildDataGoKrUrl(
       "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst",
       serviceKey,
       { pageNo: "1", numOfRows: "1000", dataType: "JSON", base_date: baseDate, base_time: baseTime, nx: String(grid.nx), ny: String(grid.ny) },
     );
-    try {
+    {
       const payload = await fetchOfficialJson(url, { ...KMA_GRID_RETRY_POLICY, fetchImpl: countedFetch });
       const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: { item?: unknown[] } } } };
       const resultCode = root?.response?.header?.resultCode;
@@ -1572,9 +1585,26 @@ export async function collectWeatherForecasts(
             ));
         }
       }
-    } catch (error) {
-      failureClasses.push(sourceFailureClass(error));
-      failures.push(`grid ${grid.nx},${grid.ny}: ${safeSourceFailureDetail(error)}`);
+    }
+  };
+  const recordFailure = (grid: (typeof grids)[number], error: unknown, note = "") => {
+    failureClasses.push(sourceFailureClass(error));
+    failures.push(`grid ${grid.nx},${grid.ny}: ${safeSourceFailureDetail(error)}${note}`);
+  };
+  const noDataGrids: Array<(typeof grids)[number]> = [];
+  for (const grid of grids) {
+    try { await collectGrid(grid); }
+    catch (error) {
+      if (sourceFailureClass(error) === "NO_DATA") noDataGrids.push(grid);
+      else recordFailure(grid, error);
+    }
+  }
+  if (noDataGrids.length) {
+    const wait = options.noDataRecheckMs ?? env.KMA_NO_DATA_RECHECK_MS ?? KMA_NO_DATA_RECHECK_MS;
+    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+    for (const grid of noDataGrids) {
+      try { await collectGrid(grid); }
+      catch (error) { recordFailure(grid, error, " recheck=1"); }
     }
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
@@ -1875,6 +1905,7 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
   const statements: D1PreparedStatement[] = [];
   const failures: string[] = [];
   const terminalCounts: string[] = [];
+  const rowSkips: string[] = [];
   let lastRow: CanonicalAirportCongestion | undefined;
   let written: D1WriteCounts = NO_D1_WRITES;
   for (const terminalId of ["P01"]) {
@@ -1893,8 +1924,14 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
       if (items.length === 0) throw new Error("congestion_no_data");
       terminalCounts.push(`${terminalId}:${items.length}`);
       const retrievedAt = nowIso();
+      // As in A4-T2, one refused row (a gate whose count is not reported) is
+      // skipped and named instead of discarding every other gate; the skipped
+      // gate stays "not reported", never 0. Only all rows refused is an ERROR.
+      const rowFailures: string[] = [];
       for (const item of items) {
-        const canonical = await normalizeAirportCongestion(item, retrievedAt);
+        let canonical: CanonicalAirportCongestion;
+        try { canonical = await normalizeAirportCongestion(item, retrievedAt); }
+        catch (error) { rowFailures.push(safeSourceFailureDetail(error)); continue; }
         lastRow = canonical;
         if (!env.DB) continue;
         statements.push(env.DB.prepare(`INSERT INTO airport_congestion (
@@ -1909,20 +1946,24 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
             canonical.schemaVersion, canonical.qualityStatus, canonical.sourceHash,
           ));
       }
+      if (rowFailures.length === items.length) throw new Error(`congestion_rows_refused ${rowFailures.length}/${items.length}: ${[...new Set(rowFailures)].join(" | ")}`);
+      if (rowFailures.length) rowSkips.push(`${terminalId} skipped ${rowFailures.length}/${items.length}: ${[...new Set(rowFailures)].join(" | ")}`);
     } catch (error) {
-      failures.push(`${terminalId}: ${safeSourceFailureDetail(error)}`);
+      const refused = error instanceof Error && error.message.startsWith("congestion_rows_refused ");
+      failures.push(`${terminalId}: ${refused ? error.message.slice("congestion_rows_refused ".length) : safeSourceFailureDetail(error)}`);
     }
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
-  const detail = `requestedAt=${requestedAt}; terminals ${terminalCounts.join(", ") || "none"}; ${describeWrites(written)}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
+  const detail = `requestedAt=${requestedAt}; terminals ${terminalCounts.join(", ") || "none"}; ${describeWrites(written)}${rowSkips.length ? `; ${rowSkips.join(" | ")}` : ""}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
   if (failures.length === 1) {
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
     return { status: "ERROR", records: 0, detail };
   }
-  await writeCollectorStatus(env.DB, sourceId, failures.length ? "PARTIAL" : "SUCCESS", detail, terminalCounts.length, written.changedRows);
+  const partial = failures.length > 0 || rowSkips.length > 0;
+  await writeCollectorStatus(env.DB, sourceId, partial ? "PARTIAL" : "SUCCESS", detail, terminalCounts.length, written.changedRows);
   await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastRow ? { eventAt: lastRow.observedAt, retrievedAt: lastRow.retrievedAt, schemaVersion: lastRow.schemaVersion } : undefined);
-  return { status: failures.length ? "PARTIAL" : "SUCCESS", records: written.changedRows, detail };
+  return { status: partial ? "PARTIAL" : "SUCCESS", records: written.changedRows, detail };
 }
 
 const A4_T2_PAGE_SIZE = 20;

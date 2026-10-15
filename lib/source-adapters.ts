@@ -9,6 +9,8 @@ import {
 } from "./kma-categories";
 
 /** A provider signal is always one of the fixed tokens below, never provider text. */
+/** A refused field as `name:shape`, never its value (see describeFieldShape). */
+const SCHEMA_FIELD = /^[A-Za-z]{1,32}:(?:missing|empty|digits|text\d{1,3}|number|boolean|object)$/;
 const PROVIDER_SIGNAL = /^(?:RESULT_\d{1,4}|FORBIDDEN|UNAUTHORIZED|API_NOT_FOUND|QUOTA_EXCEEDED|HTML_PAGE|EMPTY_BODY|UNRECOGNIZED_BODY)$/;
 
 export class SourceFetchError extends Error {
@@ -18,13 +20,15 @@ export class SourceFetchError extends Error {
   public readonly retryDeferred: boolean;
   /** What the provider's error body said, as one token from `classifyProviderBody`. */
   public readonly providerSignal?: string;
+  /** Which field a SCHEMA refusal was about, and its shape (never the value). */
+  public readonly schemaField?: string;
 
   constructor(
     public readonly code: "TIMEOUT" | "HTTP" | "MALFORMED_JSON" | "SCHEMA" | "NETWORK",
     public readonly status?: number,
     /** Connection-layer cause (ENOTFOUND, ECONNRESET, ...) when the platform reports one. */
     public readonly causeCode?: string,
-    context: { attempts?: number; elapsedMs?: number; retryExhausted?: boolean; retryDeferred?: boolean; providerSignal?: string } = {},
+    context: { attempts?: number; elapsedMs?: number; retryExhausted?: boolean; retryDeferred?: boolean; providerSignal?: string; schemaField?: string } = {},
   ) {
     super(causeCode ? `${code}_${causeCode}` : code);
     this.name = "SourceFetchError";
@@ -33,6 +37,7 @@ export class SourceFetchError extends Error {
     this.retryExhausted = context.retryExhausted === true;
     this.retryDeferred = context.retryDeferred === true;
     if (context.providerSignal && PROVIDER_SIGNAL.test(context.providerSignal)) this.providerSignal = context.providerSignal;
+    if (context.schemaField && SCHEMA_FIELD.test(context.schemaField)) this.schemaField = context.schemaField;
   }
 }
 
@@ -373,6 +378,7 @@ export function safeSourceFailureDetail(error: unknown): string {
       `retryExhausted=${error.retryExhausted}`,
       ...(error.retryDeferred ? ["retryDeferred=true"] : []),
       ...(error.providerSignal ? [`providerSignal=${error.providerSignal}`] : []),
+      ...(error.schemaField ? [`schemaField=${error.schemaField}`] : []),
     ];
     return parts.join(" ");
   }
@@ -1108,6 +1114,29 @@ function parseWaitTime(rawWait: string | null): { minutes: number | null; raw: s
   return { minutes, raw: rawWait };
 }
 
+/** The shape of a field as received, never its value: what a SCHEMA refusal can safely report. */
+export function describeFieldShape(record: Record<string, unknown>, keys: string[]): string {
+  const value = keys.map((key) => record[key]).find((candidate) => candidate !== undefined);
+  if (value === undefined || value === null) return "missing";
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return "empty";
+    return /^\d[\d,]*$/.test(trimmed) ? "digits" : `text${Math.min(trimmed.length, 999)}`;
+  }
+  return typeof value === "number" || typeof value === "boolean" ? typeof value : "object";
+}
+
+/** Reads one A4-T1 field; a SCHEMA refusal names the field and its shape. */
+function t1Field<T>(record: Record<string, unknown>, keys: string[], read: () => T): T {
+  try {
+    return read();
+  } catch (error) {
+    if (error instanceof SourceFetchError && error.code === "SCHEMA" && !error.schemaField)
+      throw new SourceFetchError("SCHEMA", undefined, undefined, { schemaField: `${keys[0]}:${describeFieldShape(record, keys)}` });
+    throw error;
+  }
+}
+
 /**
  * A4-T1 — departure-hall checkpoint congestion (제1여객터미널, `15148225`).
  * Checkpoint waiting counts are a demand-flow proxy only; they are never
@@ -1116,18 +1145,21 @@ function parseWaitTime(rawWait: string | null): { minutes: number | null; raw: s
 export async function normalizeAirportCongestion(raw: unknown, retrievedAt: string): Promise<CanonicalAirportCongestion> {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new SourceFetchError("SCHEMA");
   const record = raw as Record<string, unknown>;
-  const rawTerminal = requiredString(record, ["terminalId", "terminalid"]);
+  const terminalKeys = ["terminalId", "terminalid"];
+  const rawTerminal = t1Field(record, terminalKeys, () => requiredString(record, terminalKeys));
   const terminal = rawTerminal === "P01" || rawTerminal === "T1" ? "T1" : null;
-  if (!terminal) throw new SourceFetchError("SCHEMA");
+  if (!terminal) throw new SourceFetchError("SCHEMA", undefined, undefined, { schemaField: `terminalId:${describeFieldShape(record, terminalKeys)}` });
   const { minutes: waitTimeMinutes, raw: waitTimeRaw } = parseWaitTime(optionalString(record, ["waitTime", "waittime"]));
+  const gateKeys = ["gateId", "gateid"], lengthKeys = ["waitLength", "waitlength"], timeKeys = ["occurtime", "occurTime"];
   const semanticRecord = {
     sourceId: "INCHEON_DEPARTURE_CONGESTION",
     terminal,
-    zone: requiredString(record, ["gateId", "gateid"]),
+    zone: t1Field(record, gateKeys, () => requiredString(record, gateKeys)),
     waitTimeMinutes,
     waitTimeRaw,
-    waitingCount: requiredNumericString(record, ["waitLength", "waitlength"]),
-    observedAt: normalizeKstTimestamp(requiredString(record, ["occurtime", "occurTime"])),
+    // An empty or missing count is "not reported", never 0: the row is refused, not stored as zero.
+    waitingCount: t1Field(record, lengthKeys, () => requiredNumericString(record, lengthKeys)),
+    observedAt: t1Field(record, timeKeys, () => normalizeKstTimestamp(requiredString(record, timeKeys))),
   } as const;
   return {
     ...semanticRecord,
