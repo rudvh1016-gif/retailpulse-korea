@@ -33,6 +33,21 @@ async function abandonedWithoutCollection(memory: OperationalMemory, nowIso: str
     .filter(id => id.includes('|a1-direct-'));
 }
 
+/**
+ * Completes, as ABORTED_BEFORE_COLLECTION, every A1 direct attempt that has no
+ * collector receipt and started more than 30 minutes ago: exactly the attempts
+ * the next direct window would release before admitting. Run on demand
+ * (operational-memory mode release_abandoned) so a lock the evidence shows was
+ * never used does not sit as HUMAN_REVIEW_REQUIRED until the next missing slot.
+ * An attempt with a receipt is never touched; nothing is deleted.
+ */
+export async function releaseAbandonedA1Attempts(memory: OperationalMemory, nowIso: string): Promise<string[]> {
+  const released = await abandonedWithoutCollection(memory, nowIso);
+  for (const attemptId of released)
+    await memory.abortBeforeCollection(attemptId, nowIso, 'no collector receipt; released on demand after the job had long finished');
+  return released;
+}
+
 /** Read-only candidate, never an admission or authority to run the collector. */
 export async function airportMidnightCandidate(deps: AirportMidnightCandidateDependencies, nowIso: string,
   options: TestOptions = {}) {
