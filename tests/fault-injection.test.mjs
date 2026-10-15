@@ -54,6 +54,10 @@ test('A/B: a transient network or 5xx failure is classified as repairable, bound
   assert.equal(publicFailureReason('just some prose about a timeout'), 'OTHER',
     'an unmarked message must not be guessed into a class');
   assert.equal(publicFailureReason(null), 'OTHER');
+  // KMA 03 on every failed grid is "not released yet", not a connection failure;
+  // one timed-out grid among them keeps the connection reason.
+  assert.equal(publicFailureReason('failed grid 60,127: failureClass=NO_DATA causeCode=KMA_RESULT_03 | grid 61,126: failureClass=NO_DATA causeCode=KMA_RESULT_03'), 'NO_DATA');
+  assert.equal(publicFailureReason('failed grid 60,127: failureClass=NO_DATA causeCode=KMA_RESULT_03 | grid 61,126: failureClass=TIMEOUT causeCode=UND_ERR_HEADERS_TIMEOUT'), 'TIMEOUT');
   // EXECUTION_ERROR is in the closed rule table, with a ceiling that stops a
   // real defect from looping forever.
   const decision = decideRecovery('EXECUTION_ERROR', 0);
