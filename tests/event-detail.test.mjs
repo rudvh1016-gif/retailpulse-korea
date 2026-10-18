@@ -228,7 +228,13 @@ test("TourAPI is called only by the collector, never by the page or the summary 
   const route = readFileSync("app/api/live/summary/route.ts", "utf8");
   assert.doesNotMatch(route, /KorService2|detailCommon2|fetchOfficialJson|data\.go\.kr/);
   for (const file of readdirSync("app").filter((name) => name.endsWith(".tsx"))) {
-    assert.doesNotMatch(readFileSync(join("app", file), "utf8"), /KorService2|detailCommon2|data\.go\.kr/, `${file} must not reach the provider`);
+    // Customer-facing attribution links do not call an API. Allow only these
+    // exact published dataset-page hrefs; keep all other code/attributes in the scan.
+    const code = readFileSync(join("app", file), "utf8").replace(
+      /(<a\b[^>]*\bhref=)(["'])https:\/\/www\.data\.go\.kr\/data\/(?:15095064|15095070|15095071)\/openapi\.do\2/g,
+      '$1"official-attribution-link"',
+    );
+    assert.doesNotMatch(code, /KorService2|detailCommon2|data\.go\.kr/, `${file} must not reach the provider`);
   }
   const collector = readFileSync("lib/collector.ts", "utf8");
   assert.match(collector, /WHERE detail_retrieved_at IS NULL/, "only never-fetched contentIds are asked about");
