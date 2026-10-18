@@ -1,4 +1,5 @@
 'use client';
+import {AirportRouteCountryPassengers} from './airport-route-country-passengers';
 import './airport-reading.css';
 import { contextText } from './operational-context';
 
@@ -148,7 +149,8 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
 
   // The architectural illustration is data-free. Keep it available while counts
   // are withheld; do not show zone counts, shares or official coordinates here.
-  const unavailableModel=modelTarget?createPortal(<><AirportSceneModel scope={buildingScope??terminal} lang={lang} className="airport-concept-picture"/><AirportMonthlyFlights lang={lang} terminal={buildingScope??terminal} date={date} monthly={monthly}/></>,modelTarget):null;
+  const routePassengers=referenceSummary&&<AirportRouteCountryPassengers lang={lang} month={referenceSummary.serviceDateKst.slice(0,7)} terminal={terminal}/>;
+  const unavailableModel=modelTarget?createPortal(<><AirportSceneModel scope={buildingScope??terminal} lang={lang} className="airport-concept-picture"/>{routePassengers}<AirportMonthlyFlights lang={lang} terminal={buildingScope??terminal} date={date} monthly={monthly}/></>,modelTarget):null;
   if (current === undefined) return <>{unavailableModel}<p className="prep-note" data-testid="map-loading">{copy.loading[lang]}</p></>;
   if (current.status === 'FAILED' || !map) return <>{unavailableModel}<p className="prep-note" data-testid="map-failed">{copy.failed[lang]}</p></>;
   if (current.payload.truncated || (span.endMin > 1440 && next?.status === 'OK' && next.payload.truncated)) return <>{unavailableModel}
@@ -177,9 +179,9 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
   };
   const hours = Array.from({ length: 25 }, (_, hour) => hour);
   const presets: WindowPreset[] = today ? ['DAY', 'NEXT1', 'NEXT3', 'NEXT6', 'CUSTOM'] : ['DAY', 'CUSTOM'];
-  const topReference = referenceSummary && <AirportTopReference lang={lang} date={date} scope={buildingScope ?? terminal} wholeDay={wholeDaySelected} entries={reference}
+  const topReference = referenceSummary && <>{routePassengers}<AirportTopReference lang={lang} date={date} scope={buildingScope ?? terminal} wholeDay={wholeDaySelected} entries={reference}
     onWholeDay={() => { setPreset('DAY'); setSelected(null); }}
-    onT1Day={() => { setPreset('DAY'); setBuildingSelection({ context: scopeContext, scope: 'T1' }); setSelected(null); setFilter(null); }}/>
+    onT1Day={() => { setPreset('DAY'); setBuildingSelection({ context: scopeContext, scope: 'T1' }); setSelected(null); setFilter(null); }}/></>
 
   // One visible owner of the model's time window. The old lower section no
   // longer contains another terminal selector or a hidden copy of these controls.
