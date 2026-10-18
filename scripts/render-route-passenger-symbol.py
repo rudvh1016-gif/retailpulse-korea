@@ -37,5 +37,5 @@ scene.render.filepath=str(OUT/'aircraft-320.webp')
 bpy.ops.render.render(write_still=True)
 p=OUT/'aircraft-320.webp'
 manifest={'blender':bpy.app.version_string,'source':str(SOURCE.relative_to(ROOT)),'sourceSha256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),'output':str(p.relative_to(ROOT)),'bytes':p.stat().st_size,'width':320,'height':240,'dataBaked':False,'conceptual':True}
-(OUT/'provenance.json').write_text(json.dumps(manifest,indent=2),encoding='utf8')
+(OUT/'provenance.json').write_text(json.dumps(manifest,indent=2),encoding='utf8',newline='\n')
 print(json.dumps(manifest))
