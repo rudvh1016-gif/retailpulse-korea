@@ -9,7 +9,7 @@ test('legacy introduction redirects to its localized canonical without changing 
     expect(new URL(response.headers().location, response.url()).pathname).toBe(target);
   }
   const html = await (await request.get('/ko')).text();
-  expect(html).toContain('코리테일 KORETAIL | 인천공항 대기·항공편과 서울 상권 정보');
+  expect(html).toContain('코리테일 KORETAIL | 인천공항 출국장 대기·예상 출국객·서울 상권');
   expect(html).toContain(core);
   const sitemap = await (await request.get('/sitemap.xml')).text();
   expect(sitemap).toContain('/ko/about');

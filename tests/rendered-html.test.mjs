@@ -130,7 +130,7 @@ test("renders the KORETAIL production shell", async () => {
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   // The home is the airport glance (PR #357) and carries its approved title.
-  assert.match(html, /<title>코리테일 KORETAIL \| 인천공항 대기·항공편과 서울 상권 정보<\/title>/i);
+  assert.match(html, /<title>코리테일 KORETAIL \| 인천공항 출국장 대기·예상 출국객·서울 상권<\/title>/i);
   assert.doesNotMatch(html, /codex-preview/i);
   // "내 브리핑" used to pass only through the retired meta description; the page itself is the glance.
   assert.match(html, /<h1>인천공항 한눈에<\/h1>/);
