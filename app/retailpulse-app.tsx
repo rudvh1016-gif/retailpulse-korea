@@ -1,5 +1,6 @@
 "use client";
 import './airport-history-polish.css';
+import {deviceAirportScope,saveAirportScope} from '../lib/airport-scope-preference';
 import {ChangeRate} from './change-rate';
 import './facility-guide.css';
 import { passengerCopy } from "../lib/passenger-copy";
@@ -385,8 +386,9 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         const query = new URLSearchParams(window.location.search);
         if (/^\d{4}-\d{2}-\d{2}$/.test(query.get('date') ?? '')) setServiceDate(query.get('date'));
         if (query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
-        if (['all','T1','T2'].includes(query.get('terminal') ?? '')) setTerminal(query.get('terminal') as Terminal);
-        setConcourse(query.get('building')==='CONCOURSE');
+        const airportScope=deviceAirportScope();
+        setTerminal(airportScope==='CONCOURSE'?'T1':airportScope);
+        setConcourse(airportScope==='CONCOURSE');
         if (query.get('section') === 'mystore' || window.location.hash === '#mystore') setAirportSection('stores');
         setPreferencesReady(true);
       }
@@ -453,8 +455,9 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       const query = new URLSearchParams(window.location.search);
       setServiceDate(/^\d{4}-\d{2}-\d{2}$/.test(query.get('date') ?? '') ? query.get('date') : null);
       if (query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
-      setTerminal(['T1','T2'].includes(query.get('terminal') ?? '') ? query.get('terminal') as Terminal : 'all');
-      setConcourse(query.get('building')==='CONCOURSE');
+      const airportScope=deviceAirportScope();
+      setTerminal(airportScope==='CONCOURSE'?'T1':airportScope);
+      setConcourse(airportScope==='CONCOURSE');
       const [, locale, slug, routeArea] = window.location.pathname.split("/");
       setHomeVisible(!slug);
       if (!slug) { setView("airport-glance"); setAirportSection("now"); }
@@ -589,9 +592,9 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             setIndustry={setIndustry}
             lang={lang}
             terminal={terminal}
-            setTerminal={next => { setConcourse(false);setTerminal(next); updateUrl(lang, "airport", selected, next, homeVisible,false); }}
+            setTerminal={next => { saveAirportScope(next);setConcourse(false);setTerminal(next); updateUrl(lang, "airport", selected, next, homeVisible,false); }}
             concourse={concourse}
-            setConcourse={next=>{setConcourse(next);updateUrl(lang,'airport',selected,terminal,homeVisible,next);}}
+            setConcourse={next=>{saveAirportScope(next?'CONCOURSE':terminal);setConcourse(next);updateUrl(lang,'airport',selected,terminal,homeVisible,next);}}
             section={airportSection}
             setSection={setAirportSection}
             date={serviceDate}
@@ -781,7 +784,7 @@ function BusinessHistoryBody({ lang, selected, setSelected }: { lang: Lang; sele
       lang={lang}
       what={localText(lang, { ko: "서울시가 집계한 월별·시간당 평균 단기체류 외국인 수입니다.", en: "Seoul's monthly average hourly count of short-stay foreign residents.", zh: "首尔市统计的月度每小时平均短期停留外国人数。", ja: "ソウル市が集計した月別・時間当たり平均の短期滞在外国人数です。" })}
       high={localText(lang, { ko: "그 지역에 머무는 외국인이 평소보다 많았다는 뜻입니다.", en: "More foreign visitors were present in that area than usual.", zh: "表示该地区停留的外国人多于平常。", ja: "その地域に滞在した外国人が普段より多かったことを意味します。" })}
-      source={localText(lang, { ko: "서울 열린데이터광장 단기체류 외국인 생활인구 (OA-23018)", en: "Seoul Open Data — short-stay foreign living population (OA-23018)", zh: "首尔开放数据广场 短期停留外国人生活人口 (OA-23018)", ja: "ソウル オープンデータ広場 短期滞在外国人生活人口 (OA-23018)" })}
+      source={localText(lang, { ko: "서울 열린데이터광장 단기체류 외국인 생활인구", en: "Seoul Open Data — short-stay foreign living population", zh: "首尔开放数据广场 短期停留外国人生活人口", ja: "ソウル オープンデータ広場 短期滞在外国人生活人口" })}
       why={localText(lang, { ko: "방문자 수나 매출이 아니라 '얼마나 머물렀는가'를 보여주므로, 계절 흐름을 비교할 때 유용합니다.", en: "It shows presence rather than visits or sales, which makes it useful for comparing seasonal patterns.", zh: "它显示的是停留情况而非访问量或销售额，适合比较季节性趋势。", ja: "訪問数や売上ではなく滞在の度合いを示すため、季節の流れを比較するのに役立ちます。" })}
     />
     <div className="history-controls">
@@ -905,7 +908,7 @@ function InsightsView({ lang, selected, setSelected }: { lang: Lang; selected: A
           lang={lang}
           what={localText(lang, { ko: "해당 지역에 머문 단기체류 외국인의 시간당 평균 인원입니다.", en: "The average hourly number of short-stay foreign visitors present in the area.", zh: "该地区停留的短期外国访客的每小时平均人数。", ja: "その地域に滞在した短期滞在外国人の時間当たり平均人数です。" })}
           high={localText(lang, { ko: "평소보다 많은 외국인이 그 지역에 머물렀다는 뜻입니다.", en: "More foreign visitors than usual were present in that area.", zh: "表示该地区停留的外国人多于平常。", ja: "普段より多くの外国人がその地域に滞在したことを意味します。" })}
-          source={localText(lang, { ko: "서울 열린데이터광장 (OA-23018) · 매월 지연 공개", en: "Seoul Open Data (OA-23018) · published monthly with a delay", zh: "首尔开放数据广场 (OA-23018) · 每月延迟发布", ja: "ソウル オープンデータ広場 (OA-23018) · 毎月遅れて公開" })}
+          source={localText(lang, { ko: "서울 열린데이터광장 · 매월 지연 공개", en: "Seoul Open Data · published monthly with a delay", zh: "首尔开放数据广场 · 每月延迟发布", ja: "ソウル オープンデータ広場 · 毎月遅れて公開" })}
           why={localText(lang, { ko: "실시간 값이 아니라 이미 확정된 기록이므로, 계절과 추세를 비교하는 기준으로 삼을 수 있습니다.", en: "It is a settled record rather than a live value, so it works as a baseline for seasonal comparison.", zh: "它是已确定的记录而非实时值，可作为季节性比较的基准。", ja: "リアルタイム値ではなく確定した記録のため、季節や傾向を比較する基準になります。" })}
         />
         {hasForeignHistory(selected) ? <ForeignHistoryStats lang={lang} selected={selected} /> : <ForeignHistoryPending lang={lang} id={selected} />}
@@ -982,10 +985,10 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
       eyebrow: "05 · DATA",
       title: localText(lang, { ko: "어떤 데이터를 쓰나요?", en: "Which data do you use?", zh: "使用哪些数据？", ja: "どのデータを使う？" }),
       body: localText(lang, {
-        ko: "서울시 실시간 도시데이터, 서울시 단기체류 외국인 생활인구, 서울시 상권분석 추정매출, 기상청 단기예보, 한국관광공사 TourAPI, 인천국제공항공사의 운항·출국장 혼잡도·승객 예고 자료를 사용합니다. 모두 공개된 공식 자료입니다.",
-        en: "Seoul real-time city data, Seoul's short-stay foreign living population, Seoul's commercial-district sales estimates, KMA short-term weather forecasts, KTO TourAPI events, and Incheon Airport's flight, departure-hall congestion and passenger forecast datasets. All are public official sources.",
-        zh: "首尔实时城市数据、首尔短期停留外国人生活人口、首尔商圈分析推算销售额、气象厅短期预报、韩国观光公社 TourAPI 活动，以及仁川机场的航班、出境区拥挤度与旅客预告数据。全部为公开的官方资料。",
-        ja: "ソウルリアルタイム都市データ、ソウル短期滞在外国人生活人口、ソウル商圏分析の推定売上、気象庁短期予報、韓国観光公社 TourAPI、仁川空港の運航・出国場混雑度・旅客予告データを使用します。すべて公開された公式資料です。",
+        ko: "서울시 실시간 도시데이터, 서울시 단기체류 외국인 생활인구, 서울시 상권분석 추정매출, 기상청 단기예보, 한국관광공사, 인천국제공항공사의 운항·출국장 혼잡도·승객 예고 자료를 사용합니다. 모두 공개된 공식 자료입니다.",
+        en: "Seoul real-time city data, Seoul's short-stay foreign living population, Seoul's commercial-district sales estimates, KMA short-term weather forecasts, KTO events, and Incheon Airport's flight, departure-hall congestion and passenger forecast datasets. All are public official sources.",
+        zh: "首尔实时城市数据、首尔短期停留外国人生活人口、首尔商圈分析推算销售额、气象厅短期预报、韩国观光公社 活动，以及仁川机场的航班、出境区拥挤度与旅客预告数据。全部为公开的官方资料。",
+        ja: "ソウルリアルタイム都市データ、ソウル短期滞在外国人生活人口、ソウル商圏分析の推定売上、気象庁短期予報、韓国観光公社、仁川空港の運航・出国場混雑度・旅客予告データを使用します。すべて公開された公式資料です。",
       }),
     },
     {

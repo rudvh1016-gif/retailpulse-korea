@@ -16,7 +16,7 @@ const copy = {
   search: { ko: '게이트·터미널 검색', en: 'Search gate or terminal', zh: '搜索登机口或航站楼', ja: 'ゲート・ターミナル検索' },
   leaders: { ko: '공동 최다', en: 'Joint highest', zh: '并列最多', ja: '同率最多' },
   note: { ko: '그림은 설명용입니다. 편수는 선택한 날짜의 출발편 기록입니다.', en: 'Illustrations are explanatory. Flight counts come from departures on the selected date.', zh: '插图仅供说明。航班数来自所选日期的出发记录。', ja: '画像は説明用です。便数は選択した日の出発記録です。' },
-  partial: { ko: 'API가 일부 항공편만 반환했습니다. 전체 순위와 동률을 확정할 수 없습니다.', en: 'The API returned partial flight records. Complete rankings and ties cannot be established.', zh: 'API仅返回部分航班，无法确认完整排名或并列情况。', ja: 'APIが一部の便のみ返しました。全順位・同率を確定できません。' },
+  partial: { ko: '일부 항공편 자료만 확인됩니다. 전체 순위와 동률을 확정할 수 없습니다.', en: 'Only some flight records are available. Complete rankings and ties cannot be established.', zh: '仅有部分航班资料，无法确认完整排名或并列情况。', ja: '一部の便の資料のみ確認できます。全順位・同率を確定できません。' },
   unknown: { ko: '게이트 미정', en: 'Gate unassigned', zh: '登机口未定', ja: 'ゲート未定' },
   unknownBuilding: { ko: '건물 미정 (터미널 비교 제외)', en: 'Building unknown (outside terminal comparison)', zh: '建筑未定（不计入航站楼比较）', ja: '建物未定（ターミナル比較対象外）' },
   zone: { ko: '구역', en: 'Zone', zh: '区域', ja: '区域' },

@@ -14,6 +14,7 @@ import { formatChangeRate } from "../lib/change-rate";
 import { airportCompositionCopy } from "../lib/airport-composition-copy";
 import { usePresentationClock } from "./area-demand-card";
 import { AirportFlowFigure } from "./airport-flow-figure";
+import {AirportRouteCountryPassengers} from './airport-route-country-passengers';
 import { useTimeBandReference } from "./airport-passenger-stats-client";
 import { FlightCountPrism } from "./flight-count-prism";
 import { kstStamp } from "../lib/demand-presentation";
@@ -464,6 +465,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
           <p>{isForecastPartial ? airportTodayText.partialBody[lang] : airportTodayText.unavailableBody[lang]}</p>
           {passengerCollected && <small>{passengerCollected}</small>}
         </div>}
+      <AirportRouteCountryPassengers lang={lang} month={summary.serviceDateKst.slice(0,7)} terminal={terminal}/>
       <div id="airport-departure-model-slot" data-testid="airport-departure-model-slot"/>
     </section>
     }/>
@@ -739,10 +741,10 @@ const facilityText = {
     ja: "ゲート・出国場は公式の位置表記に直接記載されている場合のみ表示します",
   },
   source: {
-    ko: "출처: 인천국제공항공사 여객터미널 시설정보 현황 (공공데이터포털 15095064)",
-    en: "Source: Incheon International Airport Corporation passenger-terminal facility information (Public Data Portal 15095064)",
-    zh: "来源：仁川国际机场公社 旅客航站楼设施信息现况（公共数据门户 15095064）",
-    ja: "出典: 仁川国際空港公社 旅客ターミナル施設情報現況 (公共データポータル 15095064)",
+    ko: "출처: 인천국제공항공사 여객터미널 시설정보 현황",
+    en: "Source: Incheon International Airport Corporation passenger-terminal facility information",
+    zh: "来源：仁川国际机场公社 旅客航站楼设施信息现况",
+    ja: "出典: 仁川国際空港公社 旅客ターミナル施設情報現況",
   },
 } as const;
 
@@ -1012,7 +1014,7 @@ export function FacilityDirectory({ lang, terminal }: { lang: Lang; terminal: "a
 
     {state?.hasMore && <button type="button" className="event-list-toggle" onClick={() => setLimit((value) => Math.min(120, value + 60))}>{facilityText.more[lang]}</button>}
     <p className="airport-detail-foot">{facilityText.mappingBasis[lang]}</p>
-    <p className="airport-detail-foot">{facilityText.source[lang]}</p>
+    <p className="airport-detail-foot"><a href="https://www.data.go.kr/data/15095064/openapi.do" target="_blank" rel="noreferrer">{facilityText.source[lang]} ↗</a></p>
   </section>;
 }
 
@@ -1305,7 +1307,7 @@ function MyStoreSnapshot({ lang, operations }: { lang: Lang; operations: Operati
         </p>
       </>}
 
-    <p className="airport-detail-foot">{facilityText.source[lang]}</p>
+    <p className="airport-detail-foot"><a href="https://www.data.go.kr/data/15095064/openapi.do" target="_blank" rel="noreferrer">{facilityText.source[lang]} ↗</a></p>
     <button type="button" className="event-list-toggle no-print" onClick={() => window.print()}>{myStoreText.print[lang]}</button>
   </article>;
 }

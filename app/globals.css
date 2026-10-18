@@ -913,7 +913,7 @@
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --surface: #ffffff;
-  --blue: #214cff;
+  --blue: #294864;
   --green: #087a55;
   /*
    * No warm token. The page reads as neutral white only if nothing warm sits

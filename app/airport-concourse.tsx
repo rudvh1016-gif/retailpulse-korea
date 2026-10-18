@@ -1,5 +1,6 @@
 'use client';
 import {AirportMonthlyFlights} from './airport-monthly-flights';
+import {AirportRouteCountryPassengers} from './airport-route-country-passengers';
 import {useMemo} from 'react';
 import {usePresentationClock} from './area-demand-card';
 import type {Lang} from './retailpulse-data';
@@ -27,6 +28,7 @@ export function AirportConcourse({lang,date}:{lang:Lang;date:string|null}) {
 
  return <section id="airport-concourse" data-testid="airport-concourse" className="airport-concourse">
   <h2 className="airport-model-scope" data-testid="airport-model-scope" data-terminal="CONCOURSE">{airportModelScope('CONCOURSE',lang)}</h2>
+  {serviceDate&&<AirportRouteCountryPassengers lang={lang} month={serviceDate.slice(0,7)} terminal="CONCOURSE"/>}
   {!loaded?<LiveLoadMessage loading lang={lang}/>:loaded.status==='FAILED'?<p role="status">{c.failed}</p>:loaded.payload.truncated?<p role="status">{c.partial}</p>:!loaded.payload.retrievedAt&&loaded.payload.flights.length===0?<p role="status">{unavailable[lang]}</p>:map&&<>
    <p>{loaded.payload.basis==='OFFICIAL_DEPARTURE_SCHEDULE'?c.schedule:c.records}: <strong data-testid="concourse-flight-count">{map.flights.length}</strong> · {serviceDate} KST</p>
    <AirportConceptModel map={map} lang={lang}/>

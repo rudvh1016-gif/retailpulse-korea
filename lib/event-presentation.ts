@@ -108,7 +108,7 @@ const COPY_TEXT: Record<EventPresentationLang, {
     address: "주소",
     homepage: "공식 안내",
     source: "출처",
-    sourceValue: "한국관광공사 TourAPI",
+    sourceValue: "한국관광공사",
     caveat: "공식 행사기간은 실제 운영 여부나 운영시간을 뜻하지 않습니다. 공식 안내를 확인하세요.",
   },
   en: {
@@ -117,7 +117,7 @@ const COPY_TEXT: Record<EventPresentationLang, {
     address: "Address",
     homepage: "Official page",
     source: "Source",
-    sourceValue: "Korea Tourism Organization (KTO) TourAPI",
+    sourceValue: "Korea Tourism Organization (KTO)",
     caveat: "The official event period does not confirm actual operation or opening hours. Check the official notice.",
   },
   zh: {
@@ -126,7 +126,7 @@ const COPY_TEXT: Record<EventPresentationLang, {
     address: "地址",
     homepage: "官方页面",
     source: "来源",
-    sourceValue: "韩国观光公社 TourAPI",
+    sourceValue: "韩国观光公社",
     caveat: "官方活动期间并不代表实际运营状态或开放时间。请查看官方公告。",
   },
   ja: {
@@ -135,7 +135,7 @@ const COPY_TEXT: Record<EventPresentationLang, {
     address: "住所",
     homepage: "公式案内",
     source: "出典",
-    sourceValue: "韓国観光公社 TourAPI",
+    sourceValue: "韓国観光公社",
     caveat: "公式イベント期間は実際の運営状況や開催時間を示すものではありません。公式案内をご確認ください。",
   },
 };

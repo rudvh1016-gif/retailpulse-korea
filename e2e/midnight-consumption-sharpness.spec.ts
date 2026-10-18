@@ -42,7 +42,9 @@ test('consumption means name the observed window unit, common bins and retained 
  for(const date of ['2026-07-01','2026-07-30','2026-08-01','2026-08-30'])await expect(page.getByTestId('consumption-period')).toContainText(date);
  await periodDetails.locator(':scope > summary').click();
  const card=page.locator('.consumption-category[data-category="한식"]');
- await expect(card.locator('.consumption-mean-label')).toHaveText('10분 결제 평균 · 일평균 아님');
+ await expect(card.locator('.consumption-mean-label').first()).toHaveText('10분 관측값 평균 · 일평균 아님');
+ await expect(card.locator('.consumption-mean-label').nth(1)).toContainText('최근 관측시각');
+ await expect(card.locator('.consumption-mean-label').nth(1)).toContainText('단일 10분 구간 아님');
  await expect(card.locator('.consumption-mean')).toHaveText('7월 0건 → 8월 0건');
  const details=card.locator('details');await expect(details).toHaveCount(1);await expect(details).not.toHaveAttribute('open','');
  await card.getByText('날짜·시간대와 계산 기준',{exact:true}).click();await expect(details).toHaveAttribute('open','');

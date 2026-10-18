@@ -301,7 +301,8 @@ test("Store Dynamics presents stored official counts only, never an area-wide ra
     const rendered = JSON.stringify(presentation);
     for (const fragment of expected[lang]) assert.ok(rendered.includes(fragment), `${lang}: ${fragment}`);
     assert.match(rendered, /명동 남대문 북창동 다동 무교동 관광특구/);
-    assert.match(rendered, /OA-15577/);
+    assert.doesNotMatch(rendered, /OA-15577/);
+    assert.equal(presentation.meta[0], {ko:'서울시 상권분석서비스',en:'Seoul Commercial District Analysis Service',zh:'首尔市商圈分析服务',ja:'ソウル市商圏分析サービス'}[lang]);
     assert.match(rendered, /2026-09-03 10:00 KST/);
     // The provider's per-industry rates cannot be reconstructed from the row
     // fields for every real row, so no area-wide 개업률/폐업률 is invented.

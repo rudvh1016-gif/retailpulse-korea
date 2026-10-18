@@ -62,10 +62,10 @@ body:has(.glance-preview){background:#fff}
 .glance-shared-note{font-size:10px;color:#53616e;padding-top:5px}.glance-controls>div{min-width:0}
 @media(max-width:700px){.glance-controls>div{gap:2px}.glance-controls>div button{padding-inline:9px}}
 
-.glance-passenger-pair{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.glance-passenger-pair>a{display:grid;align-content:start;gap:3px;min-width:0;min-height:44px;padding:6px 0}.glance-passenger-pair>a>span{font-size:11px;color:#53616e}.glance-passenger-pair small{overflow-wrap:anywhere}@media(max-width:700px){.glance-passenger-pair{gap:12px;border-bottom:1px solid #dbe0e5}.glance-passenger-pair>a{padding:7px 0}}
-@media(max-width:700px){.glance-passenger-pair{min-block-size:99px}}
+.glance-passenger-pair{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.glance-passenger-pair>a,.glance-passenger-pair>div{display:grid;align-content:start;gap:3px;min-width:0;min-height:44px;padding:6px 0}.glance-passenger-pair>a>span,.glance-passenger-pair>div>span{font-size:11px;color:#53616e}.glance-passenger-pair small{overflow-wrap:anywhere}@media(max-width:700px){.glance-passenger-pair{gap:12px;border-bottom:1px solid #dbe0e5}.glance-passenger-pair>a,.glance-passenger-pair>div{padding:7px 0}}
+@media(max-width:700px){.glance-passenger-pair{min-block-size:114px}.glance-insights>a{min-block-size:64px}}
 /* PC only (owner, 2026-10-14): the passenger pair sits on the same three columns as the row under it, so 예상 환승객 starts where 앞으로 출발편 집중 시간 does instead of mid-page. Phones (≤700px) keep their own pair. */
-@media(min-width:701px){.glance-passenger-pair{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.glance-passenger-pair>a{gap:4px}}
+@media(min-width:701px){.glance-passenger-pair{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.glance-passenger-pair>a,.glance-passenger-pair>div{gap:4px}}
 
 /* Approved finite choice feedback; artwork and building panels remain fixed. */
 .glance-controls>div button{position:relative}
@@ -86,3 +86,6 @@ body:has(.glance-preview){background:#fff}
 .glance-hold{position:relative;font-style:inherit}.glance-hold::before{content:attr(data-shape);visibility:hidden}.glance-hold:empty{visibility:hidden}.glance-hold>b{position:absolute;left:0;font-weight:inherit}
 /* Decrease Top 5 directly under the increase Top 5 (owner, 2026-10-14); the empty-list line keeps the note style. */
 .glance-ranking-list>p{font-size:10px;color:#53616e}.glance-ranking-decline{margin-top:14px}
+
+/* Mobile: keep the map unobstructed and read the same terminal figures below it. */
+@media(max-width:700px){.glance-art-frame[data-artwork=ready]{display:flex;flex-direction:column;gap:8px;min-height:0;aspect-ratio:auto}.glance-art-frame[data-artwork=ready]>img{height:auto;max-height:300px;object-fit:contain}.glance-art-frame[data-artwork=ready] .glance-building{position:static;transform:none;width:100%;box-sizing:border-box;padding:10px 12px;background:#f3f5f7;border-bottom:1px solid #dbe0e5}.glance-building h2{font-size:13px;line-height:1.5;background:none;padding:0}.glance-building h2 span{font-size:13px}.glance-building dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:6px 0;line-height:1.5}.glance-building dl>div{display:flex;justify-content:space-between;gap:6px;background:none;padding:0}.glance-building dt{font-size:12px}.glance-building dd{font-size:13px}.glance-building .glance-map-queue,.glance-building .glance-location-note{font-size:11px!important;line-height:1.5;width:auto;background:none;padding:0;margin-top:4px;white-space:normal}}

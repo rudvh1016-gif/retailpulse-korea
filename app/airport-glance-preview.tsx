@@ -1,5 +1,6 @@
 'use client';
-import {useMemo,useRef,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
+import {deviceAirportScope,saveAirportScope} from '../lib/airport-scope-preference';
 import {useChoiceMotion} from './use-choice-motion';
 import type {Lang} from './retailpulse-data';
 import {useLiveSummary} from './live-summary';
@@ -12,7 +13,8 @@ import {mainBuildingMonth} from '../lib/airport-monthly-building';
 import {previousFlightMonth,type AirportMonthlyRollups} from '../lib/airport-monthly-flights';
 import {selectedZoneShares} from '../lib/airport-zone-shares';
 import {kstDayOf} from '../lib/kst';
-import {transferForecastTotal} from '../lib/passenger-reference-sum';
+import {passengerReferenceSum,transferForecastTotal} from '../lib/passenger-reference-sum';
+import {passengerCopy as passengerReferenceCopy} from '../lib/passenger-copy';
 import {friendlyCheckpointName} from '../lib/airport-today-summary';
 import './airport-glance-preview.css';
 interface MonthReply{status:string;month:string;data:AirportMonthlyRollups|null;calculatedAt:string|null}
@@ -69,6 +71,12 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
  const c=copy[lang],ui=interfaceCopy[lang],dc=destinationCopy[lang],ic=insightCopy[lang];
  const [futureHours,setFutureHours]=useState<1|3|6>(1);
  const [previewDate,setPreviewDate]=useState<string|null>(null),[scope,setScope]=useState<GlanceScope>('all');
+ useEffect(()=>{
+  const restore=()=>setScope(deviceAirportScope());
+  restore();window.addEventListener('popstate',restore);
+  return ()=>window.removeEventListener('popstate',restore);
+ },[]);
+ const chooseScope=(next:GlanceScope)=>{setScope(next);saveAirportScope(next);};
  const motionRoot=useRef<HTMLElement>(null);
  useChoiceMotion(motionRoot,scope,'.glance-controls button[aria-pressed=true] .glance-selection-rule, .glance-building[data-selected=true] .glance-building-label',180);
  useChoiceMotion(motionRoot,String(futureHours),'.glance-zone-leaders, .glance-destination-growth',220);
@@ -99,6 +107,8 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
  const forecastPassengers=forecastCoverage==='COMPLETE'&&typeof forecastTotal==='number'&&Number.isFinite(forecastTotal)&&forecastTotal>=0?forecastTotal:null;
  const forecastAt=scope==='all'?forecastAirport?.passengerForecastRetrievedAt:forecastAirport?.passengerForecastRetrievedAtByTerminal?.[forecastTerminal];
  const transferPassengers=forecastAirport?transferForecastTotal(day,scope==='all'?'all':forecastTerminal,forecastAirport.transferForecast):null;
+ const referenceSum=forecastAirport?passengerReferenceSum(forecastPassengers,forecastCoverage,day,scope==='all'?'all':forecastTerminal,forecastAirport.transferForecast):null;
+ const sumLabel=({ko:'단순 합계',en:'Arithmetic sum',zh:'简单合计',ja:'単純合計'})[lang];
  const queues=isToday?summary?.airport.congestion??[]:[],wait=glanceLongestWait(queues.filter(row=>scope==='all'||row.terminal===(scope==='CONCOURSE'?'T1':scope)),clock);
  const futureReady=Boolean(data&&summary&&Number.isFinite(clock)&&Number.isFinite(Date.parse(summary.generatedAt)));
  const upcoming=futureReady&&data?glanceUpcoming(day,data.departures,clock):null;
@@ -160,12 +170,13 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
  return <Container ref={motionRoot} className="glance-preview" data-testid="airport-glance-preview">
   {!published&&<header className="glance-header"><a href={`/${lang}/airport`} className="glance-brand">KORETAIL<span>Retail Demand Signals for Korea</span></a><nav aria-label={ui.main}><a href={details}>{c.detail}</a><a href={`/${lang}/myeongdong`}>{ui.seoul}</a></nav></header>}
   <div className="glance-heading"><h1>{c.title}</h1>{!published&&<small>{c.preview}</small>}</div>
-  <div className="glance-controls"><div role="group" aria-label={ui.terminal}>{(['all','T1','CONCOURSE','T2'] as const).map(value=><button key={value} aria-label={value==='all'?c.all:value==='CONCOURSE'?c.concourse:value} aria-pressed={scope===value} onClick={()=>setScope(value)}>{value==='all'?c.all:value==='T1'?mainLabel:value==='CONCOURSE'?c.concourse:value}{scope===value&&<i className="glance-selection-rule" aria-hidden="true"/>}</button>)}</div><label className="glance-date-control">{c.date}<input name="airport-date" autoComplete="off" type="date" value={day} onChange={event=>{if(event.target.value)setDate(event.target.value);}}/></label><button className="glance-today" data-current={date===null} onClick={()=>setDate(null)}>{c.today}</button><span>KST</span></div>
+  <div className="glance-controls"><div role="group" aria-label={ui.terminal}>{(['all','T1','CONCOURSE','T2'] as const).map(value=><button key={value} aria-label={value==='all'?c.all:value==='CONCOURSE'?c.concourse:value} aria-pressed={scope===value} onClick={()=>chooseScope(value)}>{value==='all'?c.all:value==='T1'?mainLabel:value==='CONCOURSE'?c.concourse:value}{scope===value&&<i className="glance-selection-rule" aria-hidden="true"/>}</button>)}</div><label className="glance-date-control">{c.date}<input name="airport-date" autoComplete="off" type="date" value={day} onChange={event=>{if(event.target.value)setDate(event.target.value);}}/></label><button className="glance-today" data-current={date===null} onClick={()=>setDate(null)}>{c.today}</button><span>KST</span></div>
   <p className="glance-shared-note" data-testid="glance-shared-processing">{sharedNote}</p>
   <section className="glance-insights" aria-label={ui.summary}>
    <div className="glance-passenger-pair">
    <a className="glance-passengers" href={targets.forecast} data-testid="glance-key-passengers"><span>{todayLabel?pc.today:pc.selected}</span><strong>{forecastPassengers!==null?`${fmt.format(forecastPassengers)}${pc.people}`:forecastCoverage==='PARTIAL'?pc.partial:summary===undefined?c.loading:ic.unavailable}</strong><small>{dayText} · {forecastScope} · {pc.basis} · {pc.collected} {summary===undefined?stampHold:stamp(forecastAt)}</small></a>
    <a className="glance-transfers" href={targets.forecast} data-testid="glance-key-transfers"><span>{pc.transfer}</span><strong>{transferPassengers!==null?`${fmt.format(transferPassengers)}${pc.people}`:summary===undefined?c.loading:ic.unavailable}</strong><small>{dayText} · {forecastScope} · {pc.transferBasis}</small></a>
+   <div className="glance-passenger-sum" data-testid="glance-key-sum"><span>{sumLabel}</span><strong>{referenceSum?`${fmt.format(referenceSum.total)}${pc.people}`:'—'}</strong><small>{passengerReferenceCopy.arithmeticNote[lang]}</small></div>
    </div>
    <a href={targets.wait} data-testid="glance-key-wait"><span>{ic.wait}</span><strong>{wait?`${wait.row.terminal} ${friendlyCheckpointName(wait.row.zone,lang)} · ${waitValue(wait)}`:pendingText??ic.unavailable}</strong><small>{wait?`${shortTime(wait.row.observedAt)} KST · ${ic.waitBasis}${wait.tied?` · ${ic.tie}`:''}`:<>{ic.waitBasis}{liveHold&&hold(` · 00:00 KST · ${ic.tie}`,'')}</>}</small></a>
    <a href={targets.map} data-testid="glance-key-upcoming"><span>{ic.upcoming}</span><strong>{upcoming?`${minuteText(upcoming.startMin)}–${minuteText(upcoming.endMin)} · ${upcoming.flights} ${c.unit}`:futureReady?ic.noUpcoming:pendingText??ic.unavailable}</strong><small>{dayText} KST · {ic.upcomingBasis}{upcoming?.tied?` · ${ic.tie}`:''}</small></a>

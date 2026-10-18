@@ -1,0 +1,27 @@
+KORETAIL final review — 2026-10-18
+
+Release gate: NOT DEPLOYED. Do not merge PR #400 or this preview branch until the owner approves the current images.
+Base main: 2e7f9dbf6faaf26e260810f87489795747bfbe91. This preview builds on PR #400 head 86e7a7b (terminal persistence and qualified arithmetic sum).
+
+Implemented: country monthly results after the forecast figure, reviewed flags, top 8 / expandable rest, data-driven silver/ink paired bars, 4.3 KB lazy WebP rendered from existing Blender aircraft geometry; explicit forecast / official monthly daily-mean legend and stronger reference; ink/silver palette; latest source observation timestamp distinct from the multi-window commercial average; no retry for 429 or permanent provider signals (including 03/22/23/30), and no same-run KMA NO_DATA recheck. Transport/network/5xx bounded recovery and last-good preservation remain.
+
+Truth limitations: the commercial aggregate stores shared day/hour bins, not exact 10-minute start/end clocks. Do not invent a single bucket for the existing multi-window average. Example captured card: latest observation 2026-10-17 23:40 KST, 214 shared date/hour bins. Current checkpoint IDs are eight per terminal (T1 5W..2E, T2 2D..1A); no verified A–F mapping was supplied or invented.
+
+Verification: scoped browser E2E 57 passed, protected/monthly unit 50 passed, retry/recovery 70 passed, final contracts/retry 45 passed, font coverage 2 passed. Full-unit run 1697/1699 initially: contracts expected old 429 retry behavior, fixed and rechecked in the final 45; remaining incheon-airport-stats failure is the baseline Windows path-separator allowlist failure. Never report full-suite green.
+Screens: 360/390/430/1440 widths x five routes, 20 render checks, zero JS errors or horizontal overflow. Required 6 Library images refreshed from actual production local build; country title explicitly 700 weight. No synthetic statistics or labels are baked into the Blender WebP.
+
+Performance: same production build toolchain and pinned public API fixtures, 3 cold contexts per view/width. Mobile 390 CPU 4x + 1.6 Mbps / 150ms. Local static proxy is identical for both sides (vinext Windows static resolver returned 404 despite files existing); transfer sizes are harness bytes, not production CDN telemetry. Home mobile LCP 5860 -> 5768ms, CLS .0056 -> .0100, JS 1010419 -> 1012188 bytes. Initial 3-column CLS .0497 was reduced by reserving measured tile height. Desktop home LCP 180 -> 140ms; consumption mobile 4860 -> 4724ms, desktop 148 -> 120ms. Small timing differences do not prove a production speed improvement. No duplicate API requests observed. Existing image/font optimizations were not rebuilt.
+
+Collection-run evidence was independently checked by the parent: A5 39128404514 recovered today/tomorrow on fresh runner attempt2, normalized48, unchanged writes0, LIVE; overall workflow remains failure from its first attempt. A4 39120982238 recovered T1/T2 12/8 changed rows after timeout. Weather recovery39124214390 collected only four missing grids (156 changed rows/780 storage writes). A1 has 00:07/06:07 and 01:15..03:00 fallback, not a newly added post-noon schedule. No new collector schedule, credential or permission was added.
+
+Required Library IDs (download latest version):
+01 PC glance: libfile_f40144bbbf5c8191b54821b94081244d
+02 mobile glance: libfile_6bd75dc498cc8191804faca7f293d7d3
+03 country monthly PC: libfile_5117a1d3a6f4819196d3e107f7844d78
+04 hourly comparison: libfile_3e7a36e7da888191b17cdabee9aee5af
+05 consumption PC: libfile_3b4caffa6e288191bf6fcaa40d2388c4
+06 consumption mobile: libfile_75c1a31b8a18819188dd5dd318746f01
+Extra country mobile: libfile_3c011b3ffbf081919aa0e6b6817ff706
+Extra hourly PC: libfile_4b72ff6e1a9881919a64e75f1d693ecd
+
+Source keys and private credentials were not read, printed or changed. No issue/comment created for this final review.

@@ -23,10 +23,10 @@ for(const width of [360,390,430,1440])test(`decision summary with image overlays
  await expect(app.locator('.glance-destinations li[data-country=JP]')).toContainText('100%');await expect(app.locator('.glance-destinations li[data-country=JP] img')).toHaveAttribute('src','/images/airport-flags/JP.webp');await expect(app.getByTestId('glance-key-growth').locator('img')).toHaveAttribute('src','/images/airport-flags/fallback/tw.svg');await expect(app.locator('.glance-ranking [data-country=TW] img')).toHaveAttribute('src','/images/airport-flags/fallback/tw.svg');await expect(app.locator('.glance-ranking tbody tr')).toHaveCount(5);
  await expect(app.getByTestId('glance-day-comparison')).toContainText('오늘 출발편 300 편');await expect(app.getByTestId('glance-day-comparison')).toContainText('+293 편');await expect(app.getByTestId('glance-day-comparison')).toContainText('+4185.7%');await expect(app.locator('a[href*=airport-departure-preparation],a[href*=airport-news]')).toHaveCount(0);
  await expect(app.locator('.glance-map-queue')).toHaveCount(2);for(const label of await app.locator('.glance-building :is(h2,span,dt,dd,small)').all())await expect(label).toHaveCSS('color','rgb(0, 0, 0)');await expect(app.locator('.glance-building-CONCOURSE .glance-map-queue')).toHaveCount(0);await expect(app.locator('.glance-location-note')).toHaveCount(0);
- await expect(app.locator('.glance-building').first()).toHaveCSS('width',width<=700?'140px':'225px');await expect(app.locator('.glance-building dl').first()).toHaveCSS('display',width<=700?'grid':'flex');
- if(width<=700){await expect(app.locator('.glance-building').first()).toHaveCSS('background-color','rgba(0, 0, 0, 0)');await expect(app.locator('.glance-building dd').first()).toHaveCSS('font-size','9px');}
+ if(width>700)await expect(app.locator('.glance-building').first()).toHaveCSS('width','225px');await expect(app.locator('.glance-building dl').first()).toHaveCSS('display',width<=700?'grid':'flex');
+ if(width<=700){await expect(app.locator('.glance-building').first()).toHaveCSS('position','static');await expect(app.locator('.glance-building dd').first()).toHaveCSS('font-size','13px');await expect(app.locator('.glance-building dt').first()).toHaveCSS('font-size','12px');}
  const imageBox=await app.locator('.glance-art-frame>img').boundingBox(),labels=await app.locator('.glance-building').evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,bottom:b.bottom};}));
- for(const box of labels){expect(box.x).toBeGreaterThanOrEqual(imageBox!.x);expect(box.right).toBeLessThanOrEqual(imageBox!.x+imageBox!.width+1);expect(box.y).toBeGreaterThanOrEqual(imageBox!.y);expect(box.bottom).toBeLessThanOrEqual(imageBox!.y+imageBox!.height+1);}expect(labels[0].bottom).toBeLessThan(labels[1].y);expect(labels[1].bottom).toBeLessThan(labels[2].y);
+ for(const box of labels){expect(box.x).toBeGreaterThanOrEqual(imageBox!.x);expect(box.right).toBeLessThanOrEqual(imageBox!.x+imageBox!.width+1);expect(box.y).toBeGreaterThanOrEqual(width<=700?imageBox!.y+imageBox!.height:imageBox!.y);if(width>700)expect(box.bottom).toBeLessThanOrEqual(imageBox!.y+imageBox!.height+1);}expect(labels[0].bottom).toBeLessThan(labels[1].y);expect(labels[1].bottom).toBeLessThan(labels[2].y);
  await expect(app.locator('.glance-bars,.glance-hour-picker,.glance-destinations details')).toHaveCount(0);await expect(app.locator('.glance-included-days')).toHaveText('포함일 · 전월 1 일 / 선택월 1 일');
  await expect(app.getByRole('link',{name:'국가 전체 보기 (1) ↗'})).toHaveAttribute('href',new RegExp('#airport-zone-countries$'));
  // Owner, 2026-10-14: Top 5 by the change in daily-mean flights, shown as a count, not a rate;
@@ -65,7 +65,8 @@ for(const lang of ['ko','en','zh','ja'] as const){
  test(`failed data does not invent any decision or ratio ${lang}`,async({page})=>{
   for(const api of ['summary','flights','airport-months'])await page.route(`**/api/live/${api}*`,route=>route.fulfill({status:503,json:{error:'unavailable'}}));
   await page.goto(`/${lang}/airport-glance-preview`);const app=page.getByTestId('airport-glance-preview');
-  await expect(app.locator('.glance-insights strong')).toHaveText(Array(5).fill(copy.missing));
+  await expect(app.locator('.glance-insights strong')).toHaveText([copy.missing,copy.missing,'—',copy.missing,copy.missing,copy.missing]);
+  await expect(app.getByTestId('glance-key-sum').locator('strong')).toHaveText('—');
   const transfer=app.getByTestId('glance-key-transfers');
   await expect(transfer.locator('span')).toHaveText(copy.label);
   await expect(transfer.locator('strong')).toHaveText(copy.missing);

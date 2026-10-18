@@ -28,9 +28,9 @@ for(const [lang,japan,heading] of [['ko','일본','노선 국가별 출발 여�
   // A provider name no locale reads back is kept as published, and a missing count is left out, never shown as 0.
   await expect(block).toContainText('Synthetic Country Z');
   await expect(block.locator('tbody th',{hasText:/^(미국|United States)$/})).toHaveCount(0);
-  await expect(block.locator('table').first().locator('tbody tr')).toHaveCount(10);
+  await expect(block.locator('table').first().locator('tbody tr')).toHaveCount(8);
   await block.locator('details > summary').click();
-  await expect(block.locator('table').nth(1).locator('tbody tr')).toHaveCount(2);
+  await expect(block.locator('table').nth(1).locator('tbody tr')).toHaveCount(4);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  });
 test('no published month says so instead of showing zeros',async({page})=>{

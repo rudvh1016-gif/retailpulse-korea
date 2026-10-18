@@ -52,25 +52,25 @@ export const COPY_DISCLAIMER: Record<Lang, { record: string; basis: string; stal
     record: "공항공사 공식 등록 자료이며 실시간 입점 현황이 아닙니다",
     basis: "공식 등록 영업시간 기준이며, 지금 문을 열었는지 확인한 것이 아닙니다",
     staleness: "공식 자료가 갱신되기 전에는 이미 퇴점한 매장이 표시될 수 있습니다",
-    source: "출처: 인천국제공항공사 여객터미널 시설정보 현황 (공공데이터포털 15095064)",
+    source: "출처: 인천국제공항공사 여객터미널 시설정보 현황",
   },
   en: {
     record: "An official airport-authority registration record, not live tenancy",
     basis: "Official published hours, not a check of whether it is open right now",
     staleness: "Until the operator republishes, a store that has already left may still be listed",
-    source: "Source: Incheon International Airport Corporation passenger-terminal facility information (Public Data Portal 15095064)",
+    source: "Source: Incheon International Airport Corporation passenger-terminal facility information",
   },
   zh: {
     record: "为机场公社官方登记资料，并非实时入驻状况",
     basis: "以官方公布营业时间为准，并非当前是否营业的实时确认",
     staleness: "官方资料更新前，已撤店的店铺可能仍会显示",
-    source: "来源：仁川国际机场公社 旅客航站楼设施信息现况（公共数据门户 15095064）",
+    source: "来源：仁川国际机场公社 旅客航站楼设施信息现况",
   },
   ja: {
     record: "空港公社の公式登録資料であり、リアルタイムの入居状況ではありません",
     basis: "公式登録の営業時間基準であり、今営業中かを確認したものではありません",
     staleness: "公式資料が更新されるまで、すでに退店した店舗が表示される場合があります",
-    source: "出典: 仁川国際空港公社 旅客ターミナル施設情報現況 (公共データポータル 15095064)",
+    source: "出典: 仁川国際空港公社 旅客ターミナル施設情報現況",
   },
 };
 
@@ -89,6 +89,6 @@ export function buildFacilityCopyText(facility: CopyableFacility, lang: Lang, la
   if (facility.goodsBrands?.trim()) lines.push(`${labels.brands}: ${facility.goodsBrands.trim()}`);
   if (facility.phone?.trim()) lines.push(`${labels.phone}: ${facility.phone.trim()}`);
   const disclaimer = COPY_DISCLAIMER[lang];
-  lines.push("", `※ ${disclaimer.record}`, `※ ${disclaimer.basis}`, `※ ${disclaimer.staleness}`, disclaimer.source);
+  lines.push("", `※ ${disclaimer.record}`, `※ ${disclaimer.basis}`, `※ ${disclaimer.staleness}`, disclaimer.source, "https://www.data.go.kr/data/15095064/openapi.do");
   return lines.join("\n");
 }

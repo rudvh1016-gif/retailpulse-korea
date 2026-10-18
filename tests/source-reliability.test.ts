@@ -109,17 +109,18 @@ for (const status of [500, 503]) {
   });
 }
 
-test("HTTP 429 honors bounded Retry-After", async () => {
+test("HTTP 429 never retries even when Retry-After would fit the wait window", async () => {
   const sequence = sequenceFetch([
     new Response("limited", { status: 429, headers: { "retry-after": "12" } }),
     Response.json({ ok: true }),
   ]);
   const { options, delays } = testPolicy({ fetchImpl: sequence.fetchImpl });
-  assert.deepEqual(await fetchOfficialJson(URL_FIXTURE, options), { ok: true });
-  assert.deepEqual(delays, [12_000]);
+  await assert.rejects(fetchOfficialJson(URL_FIXTURE, options), (error:unknown)=>error instanceof SourceFetchError&&error.status===429&&error.attempts===1&&!error.retryExhausted);
+  assert.equal(sequence.calls(),1);
+  assert.deepEqual(delays, []);
 });
 
-for (const status of [429, 503]) {
+for (const status of [503]) {
   for (const retryAfter of ["120", "Thu, 01 Jan 1970 00:02:00 GMT"]) {
     test(`HTTP ${status} defers Retry-After outside the wait window (${retryAfter})`, async () => {
       const sequence = sequenceFetch([new Response("wait", { status, headers: { "retry-after": retryAfter } })]);
@@ -165,7 +166,7 @@ test("jitter and Retry-After are both capped", () => {
   assert.equal(boundedRetryDelayMs(2_000, { retryAfter: "120", jitterMs: 500, random: () => 1 }), 60_000);
 });
 
-for (const status of [400, 401, 403, 404, 422]) {
+for (const status of [400, 401, 403, 404, 422, 429]) {
   test(`HTTP ${status} is permanent and never retried`, async () => {
     const sequence = sequenceFetch([new Response("permanent", { status })]);
     const { options, delays } = testPolicy({ fetchImpl: sequence.fetchImpl });
@@ -189,6 +190,13 @@ test("a provider auth result payload is returned once for deterministic validati
   assert.deepEqual(payload, { response: { header: { resultCode: "30" } } });
   assert.equal(sequence.calls(), 1);
   assert.deepEqual(delays, []);
+});
+
+for(const code of ['03','22','23','30'])test(`HTTP 503 carrying permanent provider result ${code} is not retried`,async()=>{
+ const sequence=sequenceFetch([Response.json({response:{header:{resultCode:code}}},{status:503}),Response.json({ok:true})]);
+ const {options,delays}=testPolicy({fetchImpl:sequence.fetchImpl});
+ await assert.rejects(fetchOfficialJson(URL_FIXTURE,options));
+ assert.equal(sequence.calls(),1);assert.deepEqual(delays,[]);
 });
 
 test("provider key failure diagnostics are classified as permanent AUTH", () => {
