@@ -1,5 +1,6 @@
 'use client';
-import {useMemo,useRef,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
+import {deviceAirportScope,saveAirportScope} from '../lib/airport-scope-preference';
 import {useChoiceMotion} from './use-choice-motion';
 import type {Lang} from './retailpulse-data';
 import {useLiveSummary} from './live-summary';
@@ -69,6 +70,12 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
  const c=copy[lang],ui=interfaceCopy[lang],dc=destinationCopy[lang],ic=insightCopy[lang];
  const [futureHours,setFutureHours]=useState<1|3|6>(1);
  const [previewDate,setPreviewDate]=useState<string|null>(null),[scope,setScope]=useState<GlanceScope>('all');
+ useEffect(()=>{
+  const restore=()=>setScope(deviceAirportScope());
+  restore();window.addEventListener('popstate',restore);
+  return ()=>window.removeEventListener('popstate',restore);
+ },[]);
+ const chooseScope=(next:GlanceScope)=>{setScope(next);saveAirportScope(next);};
  const motionRoot=useRef<HTMLElement>(null);
  useChoiceMotion(motionRoot,scope,'.glance-controls button[aria-pressed=true] .glance-selection-rule, .glance-building[data-selected=true] .glance-building-label',180);
  useChoiceMotion(motionRoot,String(futureHours),'.glance-zone-leaders, .glance-destination-growth',220);
@@ -160,7 +167,7 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
  return <Container ref={motionRoot} className="glance-preview" data-testid="airport-glance-preview">
   {!published&&<header className="glance-header"><a href={`/${lang}/airport`} className="glance-brand">KORETAIL<span>Retail Demand Signals for Korea</span></a><nav aria-label={ui.main}><a href={details}>{c.detail}</a><a href={`/${lang}/myeongdong`}>{ui.seoul}</a></nav></header>}
   <div className="glance-heading"><h1>{c.title}</h1>{!published&&<small>{c.preview}</small>}</div>
-  <div className="glance-controls"><div role="group" aria-label={ui.terminal}>{(['all','T1','CONCOURSE','T2'] as const).map(value=><button key={value} aria-label={value==='all'?c.all:value==='CONCOURSE'?c.concourse:value} aria-pressed={scope===value} onClick={()=>setScope(value)}>{value==='all'?c.all:value==='T1'?mainLabel:value==='CONCOURSE'?c.concourse:value}{scope===value&&<i className="glance-selection-rule" aria-hidden="true"/>}</button>)}</div><label className="glance-date-control">{c.date}<input name="airport-date" autoComplete="off" type="date" value={day} onChange={event=>{if(event.target.value)setDate(event.target.value);}}/></label><button className="glance-today" data-current={date===null} onClick={()=>setDate(null)}>{c.today}</button><span>KST</span></div>
+  <div className="glance-controls"><div role="group" aria-label={ui.terminal}>{(['all','T1','CONCOURSE','T2'] as const).map(value=><button key={value} aria-label={value==='all'?c.all:value==='CONCOURSE'?c.concourse:value} aria-pressed={scope===value} onClick={()=>chooseScope(value)}>{value==='all'?c.all:value==='T1'?mainLabel:value==='CONCOURSE'?c.concourse:value}{scope===value&&<i className="glance-selection-rule" aria-hidden="true"/>}</button>)}</div><label className="glance-date-control">{c.date}<input name="airport-date" autoComplete="off" type="date" value={day} onChange={event=>{if(event.target.value)setDate(event.target.value);}}/></label><button className="glance-today" data-current={date===null} onClick={()=>setDate(null)}>{c.today}</button><span>KST</span></div>
   <p className="glance-shared-note" data-testid="glance-shared-processing">{sharedNote}</p>
   <section className="glance-insights" aria-label={ui.summary}>
    <div className="glance-passenger-pair">

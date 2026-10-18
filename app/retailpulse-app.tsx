@@ -1,5 +1,6 @@
 "use client";
 import './airport-history-polish.css';
+import {deviceAirportScope,saveAirportScope} from '../lib/airport-scope-preference';
 import {ChangeRate} from './change-rate';
 import './facility-guide.css';
 import { passengerCopy } from "../lib/passenger-copy";
@@ -385,8 +386,9 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         const query = new URLSearchParams(window.location.search);
         if (/^\d{4}-\d{2}-\d{2}$/.test(query.get('date') ?? '')) setServiceDate(query.get('date'));
         if (query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
-        if (['all','T1','T2'].includes(query.get('terminal') ?? '')) setTerminal(query.get('terminal') as Terminal);
-        setConcourse(query.get('building')==='CONCOURSE');
+        const airportScope=deviceAirportScope();
+        setTerminal(airportScope==='CONCOURSE'?'T1':airportScope);
+        setConcourse(airportScope==='CONCOURSE');
         if (query.get('section') === 'mystore' || window.location.hash === '#mystore') setAirportSection('stores');
         setPreferencesReady(true);
       }
@@ -453,8 +455,9 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       const query = new URLSearchParams(window.location.search);
       setServiceDate(/^\d{4}-\d{2}-\d{2}$/.test(query.get('date') ?? '') ? query.get('date') : null);
       if (query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
-      setTerminal(['T1','T2'].includes(query.get('terminal') ?? '') ? query.get('terminal') as Terminal : 'all');
-      setConcourse(query.get('building')==='CONCOURSE');
+      const airportScope=deviceAirportScope();
+      setTerminal(airportScope==='CONCOURSE'?'T1':airportScope);
+      setConcourse(airportScope==='CONCOURSE');
       const [, locale, slug, routeArea] = window.location.pathname.split("/");
       setHomeVisible(!slug);
       if (!slug) { setView("airport-glance"); setAirportSection("now"); }
@@ -589,9 +592,9 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             setIndustry={setIndustry}
             lang={lang}
             terminal={terminal}
-            setTerminal={next => { setConcourse(false);setTerminal(next); updateUrl(lang, "airport", selected, next, homeVisible,false); }}
+            setTerminal={next => { saveAirportScope(next);setConcourse(false);setTerminal(next); updateUrl(lang, "airport", selected, next, homeVisible,false); }}
             concourse={concourse}
-            setConcourse={next=>{setConcourse(next);updateUrl(lang,'airport',selected,terminal,homeVisible,next);}}
+            setConcourse={next=>{saveAirportScope(next?'CONCOURSE':terminal);setConcourse(next);updateUrl(lang,'airport',selected,terminal,homeVisible,next);}}
             section={airportSection}
             setSection={setAirportSection}
             date={serviceDate}
