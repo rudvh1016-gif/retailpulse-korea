@@ -112,7 +112,7 @@ test("Store Dynamics ships as a stored, compact, four-language historical block"
     "a public page request must read D1 only, never the official provider");
   for (const wording of [
     "점포 현황", "Store openings and closures", "店铺开业与歇业", "店舗の開業・廃業",
-    "서울시 상권분석서비스 OA-15577", "Official quarterly historical data",
+    "서울시 상권분석서비스", "Official quarterly historical data",
   ]) assert.ok(live.includes(wording), wording);
   assert.match(live, /data-signal-key="store-dynamics"/);
   // Phase B v1 publishes counts only. The stored *_rate_tenths_percent columns

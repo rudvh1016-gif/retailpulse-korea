@@ -53,7 +53,7 @@ function ToiletDirectory({area,lang}: {area:SeoulFacilityArea;lang:Lang}) {
     {open && <>
       <Symbol name="toilets" lang={lang}/><p>{copy.boundary[lang]}</p><p>{copy.posted[lang]}</p>
       {loaded?.area!==area ? <p role="status">{copy.loading[lang]}</p> : !data ? <p role="status">{copy.failed[lang]}</p> : <>
-        <p className="facility-source">{data.district} · {copy.snapshot[lang]} {data.snapshotDate} · {data.rows.length.toLocaleString(lang)} / {data.sourceRows.toLocaleString(lang)} · OA-22586</p>
+        <p className="facility-source">{data.district} · {copy.snapshot[lang]} {data.snapshotDate} · {data.rows.length.toLocaleString(lang)} / {data.sourceRows.toLocaleString(lang)}</p>
         <label className="facility-search">{copy.search[lang]}<input type="search" value={query} onChange={event=>{setQuery(event.target.value);setLimit(10);}} /></label>
         <p className="facility-result-count" aria-live="polite">{Math.min(limit,rows.length)} / {rows.length}</p>
         {!rows.length && <p role="status">{copy.empty[lang]}</p>}

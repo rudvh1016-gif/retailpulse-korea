@@ -136,7 +136,7 @@ test("Store Dynamics is truthful and localized in all four languages", async ({ 
     await expect(card).toBeVisible();
     for (const phrase of expected[locale]) await expect(card).toContainText(phrase);
     await expect(card).toContainText("명동 남대문 북창동 다동 무교동 관광특구");
-    await expect(card).toContainText("OA-15577");
+    await expect(card).not.toContainText("OA-15577");
     // Phase B v1 is counts only: no area-wide 개업률/폐업률 may be invented
     // from the summed counts and shown as if it were the official rate.
     await expect(card).not.toContainText("%");
@@ -167,7 +167,7 @@ test("Store Dynamics stays grouped, ordered after sales, and unclipped at every 
     expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width + 1);
     await expect(card.locator(".store-dynamics-meta")).toBeVisible();
     await expect(card.locator(".store-dynamics-meta")).toContainText("현재 영업 중인 점포의 실시간 수가 아닙니다.");
-    await expect(card.locator(".store-dynamics-meta")).toContainText("OA-15577");
+    await expect(card.locator(".store-dynamics-meta")).not.toContainText("OA-15577");
     for (const selector of [
       ".store-dynamics-content",
       ".store-dynamics-scope",
@@ -1041,7 +1041,7 @@ test("the facility directory browses official stores and never claims a store is
   // Published hours, never a real-time "open now" claim.
   await expect(directory).toContainText("공식 영업시간 기준");
   await expect(directory).not.toContainText(/지금 영업|영업 중|OPEN NOW/i);
-  await expect(directory).toContainText("15095064");
+  await expect(directory).not.toContainText("15095064");
   // Switching category re-queries and a facility with no published hours says so.
   await directory.locator(".facility-filter-row button").filter({ hasText: "약국" }).click();
   await expect(directory.locator(".facility-card")).toHaveCount(1);
@@ -1233,7 +1233,7 @@ test("Tourism event cards retain official facts and safe links after copy remova
   await expect(first.locator(".tourism-event-status")).toHaveText("공식 행사기간에 오늘 포함");
   await expect(first).toContainText("2026-08-20 – 2026-09-10");
   await expect(first).toContainText("서울특별시 중구 명동길 14 · 1층");
-  await expect(first).toContainText("한국관광공사 TourAPI");
+  await expect(first).toContainText("한국관광공사");
   await expect(page.locator(".tourism-event-caveat")).toContainText("실제 운영 중인지");
   await expect(page.locator(".tourism-events")).not.toContainText("진행 중");
 

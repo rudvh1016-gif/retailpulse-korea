@@ -16,8 +16,13 @@ test('the hourly forecast figure carries the published month as a grey whole-air
  await expect(figure.locator('.airport-flow-reference line')).toHaveCount(0);
  expect((await lines.getAttribute('d'))?.match(/L/g)).toHaveLength(23);
  await expect(lines).toHaveAttribute('stroke-dasharray','5 3');
- await expect(figure.getByTestId('airport-flow-reference-legend')).toContainText('2026-07 공식 월 실적 기준 · 최근 공개 월 시간대별 하루 평균');
- await expect(figure.locator('.airport-flow-reference-note')).toContainText('차이를 오차로 보지 않습니다');
+ await expect(figure.getByTestId('airport-flow-reference-legend')).toContainText('2026년 7월 공식 실적 · 시간대별 하루 평균');
+ const note=figure.locator('.airport-flow-reference-note');
+ await expect(note).toContainText('2026년 7월의 시간대별 하루 평균 출발 여객');
+ await expect(note).toContainText('31일로 나눈 값');
+ await expect(note).toContainText('집계 기준이 달라');
+ await expect(note).not.toContainText('15095070');
+ await expect(note.getByRole('link',{name:'출처: 인천국제공항공사'})).toHaveAttribute('href','https://www.data.go.kr/data/15095070/openapi.do');
  // The scale makes room for the reference: no line sits above the plot.
  const tops=await lines.evaluateAll(items=>items.flatMap(item=>(item.getAttribute('d')??'').match(/[ML][^ML]+/g)?.map(point=>Number(point.split(',')[1]))??[]));
  expect(Math.min(...tops)).toBeGreaterThan(0);

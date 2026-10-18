@@ -467,7 +467,7 @@ const text = {
   // Named only when the sentence actually quotes an air-quality grade, so
   // the row never credits a source it did not use.
   sourceAirQuality: { ko: "미세먼지는 서울시 실시간 도시데이터 관측", en: "air quality observed by Seoul real-time city data", zh: "空气质量来自首尔市实时城市数据观测", ja: "大気質はソウル市リアルタイム都市データの観測" },
-  sourceKto: { ko: "한국관광공사 TourAPI", en: "KTO TourAPI", zh: "韩国观光公社 TourAPI", ja: "韓国観光公社 TourAPI" },
+  sourceKto: { ko: "한국관광공사", en: "KTO", zh: "韩国观光公社", ja: "韓国観光公社" },
   sourceSales: { ko: "서울시 상권분석서비스", en: "Seoul commercial-district analysis", zh: "首尔商圈分析服务", ja: "ソウル商圏分析サービス" },
 } as const;
 
@@ -1678,10 +1678,10 @@ const storeDynamicsText = {
   basis: { ko: "공식 과거자료", en: "official historical record", zh: "官方历史资料", ja: "公式過去資料" },
   retrieval: { ko: "KORETAIL 수집", en: "KORETAIL retrieval", zh: "KORETAIL采集", ja: "KORETAIL取得" },
   source: {
-    ko: "서울시 상권분석서비스 OA-15577",
-    en: "Seoul Commercial District Analysis Service OA-15577",
-    zh: "首尔市商圈分析服务 OA-15577",
-    ja: "ソウル市商圏分析サービス OA-15577",
+    ko: "서울시 상권분석서비스",
+    en: "Seoul Commercial District Analysis Service",
+    zh: "首尔市商圈分析服务",
+    ja: "ソウル市商圏分析サービス",
   },
   limitation: {
     ko: "분기 기준 공식 과거 자료이며, 현재 영업 중인 점포의 실시간 수가 아닙니다.",
@@ -2077,19 +2077,18 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       detail: withStation(text.subwayBoarding[lang], subway.boardingCount),
       // The limitation stays: a daily station count is not unique people and
       // not visitors to the commercial area around it.
-      note: `${subway.referenceDate} · ${text.subwayNote[lang]} · ${subway.datasetId}`,
+      note: `${subway.referenceDate} · ${text.subwayNote[lang]}`,
     });
   }
 
   if (block?.foreignPresence) {
-    const productId = block.foreignPresence.productVersion.split(":", 1)[0] || "OA-23018";
     rows.push({
       key: "foreign_presence",
       group: "movement",
       timeState: signalStructureText.timeState.delayed[lang],
       label: text.foreignPresence[lang],
       value: `${formatPeopleValue(lang, block.foreignPresence.value)} ${text.foreignPeople[lang]}`,
-      note: `${kstStamp(block.foreignPresence.referenceAt)} KST · ${text.foreignNote[lang]} · ${productId}`,
+      note: `${kstStamp(block.foreignPresence.referenceAt)} KST · ${text.foreignNote[lang]}`,
       detail: contextText(lang,'해당 시각에 머문 단기체류 외국인 추정 인구 · 같은 시각의 과거 비교 자료 부족','Estimated short-stay foreign people present at that hour · matching historical comparison unavailable','该时刻短期停留外国人在场人口推算 · 同时刻历史比较资料不足','その時刻に滞在した短期滞在外国人の推定人口・同時刻の過去比較資料不足'),
       period: describeSourcePeriod({
         cadence: "DAILY",
@@ -2108,7 +2107,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       timeState: signalStructureText.timeState.delayed[lang],
       label: text.foreignPurpose[lang],
       value: unverifiedPurposeText[lang],
-      note: `${mobility.referenceDate} · ${text.foreignPurposeNote[lang]} · ${mobility.datasetId}`,
+      note: `${mobility.referenceDate} · ${text.foreignPurposeNote[lang]}`,
       detail: contextText(lang,'해당일 도착 행정동의 추정 이동량 · 중복 이동 포함 · 같은 조건의 과거 비교 자료 부족. 쇼핑 목적은 백화점·프리미엄 아울렛 기준입니다.','Estimated movements into the mapped districts that day; repeat movements included. Matching past comparison unavailable. Shopping covers department stores and premium outlets.','该日进入所选行政区的推算移动量，包含重复移动。相同条件历史比较资料不足。购物指百货商场与高端奥特莱斯。','当日の対象行政洞への推定移動量・重複移動を含みます。同条件の過去比較資料不足。買い物目的は百貨店・プレミアムアウトレット基準です。'),
       period: describeSourcePeriod({
         cadence: "MONTHLY",

@@ -44,7 +44,8 @@ test("both caveats and the source travel inside the copied text, in every langua
     assert.ok(text.includes(COPY_DISCLAIMER[lang].basis), `${lang}: published-hours basis must travel`);
     assert.ok(text.includes(COPY_DISCLAIMER[lang].staleness), `${lang}: the freshness caveat must travel`);
     assert.ok(text.includes(COPY_DISCLAIMER[lang].source), `${lang}: the source must travel`);
-    assert.ok(text.includes("15095064"), `${lang}: the dataset id must travel`);
+    assert.ok(text.includes("https://www.data.go.kr/data/15095064/openapi.do"), `${lang}: the source link must travel`);
+    assert.doesNotMatch(COPY_DISCLAIMER[lang].source, /15095064|Public Data Portal|공공데이터포털/);
   }
 });
 

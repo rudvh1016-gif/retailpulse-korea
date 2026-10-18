@@ -119,7 +119,7 @@ test("event copy uses only official allowlisted facts and always carries the ope
     "공식 행사기간: 2026-09-01 – 2026-09-07",
     "주소: 서울특별시 중구 명동길 1 · 광장 2층",
     "공식 안내: https://example.org/official-event",
-    "출처: 한국관광공사 TourAPI",
+    "출처: 한국관광공사",
     "공식 행사기간은 실제 운영 여부나 운영시간을 뜻하지 않습니다. 공식 안내를 확인하세요.",
   ]);
   assert.doesNotMatch(copy, /복사 범위|지금 가세요|임의 출처|진행 중|현재 영업|운영 중/u);
@@ -139,7 +139,7 @@ test("event copy omits missing addresses and unsafe URLs without inventing repla
   assert.match(copy, /^Event: 공식 원문 행사명$/m,
     "changing the interface language must not fabricate a translated proper name");
   assert.match(copy, /^Official event period: 2026-09-04$/m);
-  assert.match(copy, /^Source: Korea Tourism Organization \(KTO\) TourAPI$/m);
+  assert.match(copy, /^Source: Korea Tourism Organization \(KTO\)$/m);
   assert.match(copy, /does not confirm actual operation or opening hours/);
   assert.doesNotMatch(copy, /^Address:|^Official page:|javascript:|\bopen now\b|\bRunning\b/im);
 });

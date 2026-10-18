@@ -165,7 +165,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
       {layout.stacked && layout.layers.map((layer, index) => <li key={layer.key}><i className={index === 0 ? "stack-lower" : "stack-upper"} />{layer.key}</li>)}
       {reference && <li data-testid="airport-flow-reference-legend"><i className="reference" style={{ background: "#7d858c", blockSize: 2, alignSelf: "center" }} />{reference.label}</li>}
     </ul>
-    {reference && <p className="prep-note airport-flow-reference-note">{reference.note}</p>}
+    {reference && <p className="prep-note airport-flow-reference-note">{reference.note} <a href="https://www.data.go.kr/data/15095070/openapi.do" target="_blank" rel="noreferrer">{({ko:'출처: 인천국제공항공사',en:'Source: Incheon International Airport Corporation',zh:'来源：仁川国际机场公社',ja:'出典: 仁川国際空港公社'})[lang]} ↗</a></p>}
     {showModel && <p className="prep-note airport-hourly-model-note">{copy.concept[lang]}</p>}
   </figure>;
 }
