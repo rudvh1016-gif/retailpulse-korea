@@ -37,9 +37,9 @@ export function timeBandReference(stats:AirportStatsMonth|undefined,lang:Lang):F
   .map(row=>({startHour:row.startHour!,endHour:row.endHour!,value:row.departures!/days}));
  if(!hours.length)return null;
  return {month:stats.month,hours,
-  label:t(lang,`${stats.month} 같은 시간 하루 평균 실제 출발 여객 · 공항 전체`,`${stats.month} actual departing passengers, daily mean for the same hour · whole airport`,`${stats.month} 同一时段日均实际出发旅客 · 机场整体`,`${stats.month} 同じ時間帯の1日平均実際の出発旅客・空港全体`),
+  label:t(lang,`${stats.month} 공식 월 실적 기준 · 최근 공개 월 시간대별 하루 평균`,`${stats.month} actual departing passengers, daily mean for the same hour · whole airport`,`${stats.month} 同一时段日均实际出发旅客 · 机场整体`,`${stats.month} 同じ時間帯の1日平均実際の出発旅客・空港全体`),
   short:t(lang,`${stats.month} 실적 평균`,`${stats.month} actual mean`,`${stats.month} 实绩平均`,`${stats.month} 実績平均`),
-  note:t(lang,`회색 선은 인천국제공항공사 시간대별 항공 통계(공공데이터포털 15095070)의 ${stats.month} 월 출발 여객을 그달 ${days}일로 나눈 하루 평균입니다. 출국장 예상과 집계 범위가 다를 수 있어 둘의 차이를 오차로 보지 않습니다.`,`The grey line is ${stats.month} departing passengers from Incheon Airport hourly statistics (Public Data Portal 15095070) divided by that month's ${days} days. Its scope can differ from the departure-hall forecast, so the gap is not a forecast error.`,`灰线为仁川国际机场公社分时段航空统计（公共数据门户15095070）${stats.month}月出发旅客除以当月${days}天的日均值。与出境大厅预测的统计范围可能不同，两者差异不视为误差。`,`灰色の線は仁川国際空港公社の時間帯別航空統計（公共データポータル15095070）の${stats.month}月の出発旅客をその月の${days}日で割った1日平均です。出国場の予測と集計範囲が異なる場合があるため、差を誤差とはみなしません。`)};
+  note:t(lang,`공식 월간 시간대별 출발 여객을 해당 월의 일수로 나눈 하루 평균입니다. 회색 선은 인천국제공항공사 시간대별 항공 통계(15095070)의 ${stats.month} 월 출발 여객을 그달 ${days}일로 나눈 하루 평균입니다. 출국장 예상과 집계 범위가 다를 수 있어 둘의 차이를 오차로 보지 않습니다.`,`The grey line is ${stats.month} departing passengers from Incheon Airport hourly statistics (Public Data Portal 15095070) divided by that month's ${days} days. Its scope can differ from the departure-hall forecast, so the gap is not a forecast error.`,`灰线为仁川国际机场公社分时段航空统计（公共数据门户15095070）${stats.month}月出发旅客除以当月${days}天的日均值。与出境大厅预测的统计范围可能不同，两者差异不视为误差。`,`灰色の線は仁川国際空港公社の時間帯別航空統計（公共データポータル15095070）の${stats.month}月の出発旅客をその月の${days}日で割った1日平均です。出国場の予測と集計範囲が異なる場合があるため、差を誤差とはみなしません。`)};
 }
 export function useTimeBandReference(serviceDate:string|null,lang:Lang):FlowReference|null{
  const {reply}=useAirportPassengerStats(serviceDate?serviceDate.slice(0,7):null);

@@ -54,6 +54,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
   const layout = useMemo(() => flowLayout({ timeline, layers, width, height, peakStartAt, nowBandStart, nowBandProgress, scaleFloor: referenceMax }),
     [timeline, layers, width, height, peakStartAt, nowBandStart, nowBandProgress, referenceMax]);
   const hourOf = (iso: string) => Math.round((Date.parse(iso) - layout.dayStart) / 3_600_000);
+  const forecastLine=layout.bands.map((band,index)=>`${index>0&&layout.bands[index-1].end===band.start?'L':'M'}${band.mid},${layout.base-band.value/layout.maxBand*(layout.base-layout.top)}`).join(' ');
   const referenceAt = (iso: string) => reference?.hours.find((hour) => hour.startHour === hourOf(iso)) ?? null;
 
   const [hover, setHover] = useState<{ index: number; x: number; y: number } | null>(null);
@@ -117,11 +118,12 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
           </g>;
         })}
       </g>
+      {reference&&<path className="airport-flow-forecast-line" d={forecastLine} fill="none" stroke="#294864" strokeWidth="2" pointerEvents="none" aria-hidden="true"/>}
       {reference && <g className="airport-flow-reference" aria-hidden="true" pointerEvents="none" data-month={reference.month}>
         {reference.hours.map((hour) => {
           const x0 = left + hour.startHour / 24 * (right - left), x1 = left + hour.endHour / 24 * (right - left);
           const y = base - hour.value / layout.maxBand * (base - top);
-          return <line key={hour.startHour} x1={x0 + 2} x2={x1 - 2} y1={y} y2={y} data-hour={hour.startHour} data-value={Math.round(hour.value)} style={{ stroke: "#7d858c", strokeWidth: 2, strokeLinecap: "round" }} />;
+          return <line key={hour.startHour} x1={x0} x2={x1} y1={y} y2={y} data-hour={hour.startHour} data-value={Math.round(hour.value)} style={{ stroke: "#7d858c", strokeWidth: 3, strokeLinecap: "round" }} />;
         })}
       </g>}
       <line className="av-rule airport-flow-base" x1={left} x2={right} y1={base} y2={base} />
@@ -155,6 +157,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
       </rect>)}
     </svg>
     <ul className="av-legend airport-flow-legend">
+      {reference&&<li data-testid="airport-flow-forecast-legend"><i style={{background:'#294864',blockSize:2,alignSelf:'center'}}/>{({ko:'선택일 공식 예상',en:'Official forecast for selected day',zh:'所选日官方预测',ja:'選択日の公式予測'})[lang]}</li>}
       {layout.now && <li><i className="past" />{copy.past[lang]}</li>}
       {layout.now && <li><i className="ahead" />{copy.ahead[lang]}</li>}
       {layout.stacked && layout.layers.map((layer, index) => <li key={layer.key}><i className={index === 0 ? "stack-lower" : "stack-upper"} />{layer.key}</li>)}

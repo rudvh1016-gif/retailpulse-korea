@@ -8,7 +8,6 @@ import {AirportDestinationDailyChanges} from './airport-destination-daily-change
 import {MONTH_SCOPES,monthlyCategoryKeys,monthlyMetric,previousFlightMonth,type AirportFlightMonth,type AirportMonthlyRollups,type MonthCounts,type MonthScope} from '../lib/airport-monthly-flights';
 import {airportMonthComparisonBasis,airportMonthLabel} from '../lib/airport-month-labels';
 import {domesticDestinationLabel} from '../lib/airport-domestic-labels';
-import {AirportRouteCountryPassengers} from './airport-route-country-passengers';
 import './airport-monthly-flights.css';
 const t=(lang:Lang,ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
 interface Reply {status:string;month:string;months:string[];calculatedAt:string|null;lastPreparedAt?:string|null;data:AirportMonthlyRollups|null}
@@ -78,6 +77,5 @@ export function AirportMonthlyFlights({lang,terminal,date,monthly}:{lang:Lang;te
     <a href={`/${lang}/more#collection-status`}>{t(lang,'출처·수집 상태','Sources and collection status','来源与采集状态','出典・収集状況')}</a>
    </details>
   </>}
-  {month&&<AirportRouteCountryPassengers lang={lang} month={month} terminal={terminal}/>}
  </section>;
 }

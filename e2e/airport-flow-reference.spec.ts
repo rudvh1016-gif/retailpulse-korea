@@ -14,7 +14,7 @@ test('the hourly forecast figure carries the published month as a grey whole-air
  const lines=figure.locator('.airport-flow-reference line');
  await expect(lines).toHaveCount(24);
  await expect(lines.first()).toHaveAttribute('data-value','1000');
- await expect(figure.getByTestId('airport-flow-reference-legend')).toContainText('2026-07 같은 시간 하루 평균 실제 출발 여객 · 공항 전체');
+ await expect(figure.getByTestId('airport-flow-reference-legend')).toContainText('2026-07 공식 월 실적 기준 · 최근 공개 월 시간대별 하루 평균');
  await expect(figure.locator('.airport-flow-reference-note')).toContainText('차이를 오차로 보지 않습니다');
  // The scale makes room for the reference: no line sits above the plot.
  const tops=await lines.evaluateAll(items=>items.map(item=>Number(item.getAttribute('y1'))));

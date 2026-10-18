@@ -80,7 +80,7 @@ export function classifyProviderBody(text: string): string {
  */
 const AUTH_RESULT_CODES = new Set(["20", "21", "30", "31", "32", "33"]);
 /** 22: the daily request limit is used up. Asking again only repeats the refusal. */
-const QUOTA_RESULT_CODES = new Set(["22"]);
+const QUOTA_RESULT_CODES = new Set(["22", "23"]);
 /** 03: NODATA_ERROR — the provider answered, and had no rows for the request. */
 const NO_DATA_RESULT_CODES = new Set(["03"]);
 
@@ -188,12 +188,12 @@ const MAX_SOURCE_ATTEMPTS = 4;
 const MAX_RETRY_DELAY_MS = 60_000;
 
 export function isTransientSourceFailure(error: SourceFetchError): boolean {
-  if (error.code === "NETWORK" || error.code === "TIMEOUT") return true;
   // A body that names an auth or quota refusal is never transient, whatever
   // HTTP status carried it: asking again repeats the same refusal.
   const signalled = providerSignalClass(error.providerSignal);
-  if (signalled === "AUTH" || signalled === "QUOTA") return false;
-  return error.code === "HTTP" && (error.status === 429 || (error.status !== undefined && error.status >= 500));
+  if (signalled !== null) return false;
+  if (error.code === "NETWORK" || error.code === "TIMEOUT") return true;
+  return error.code === "HTTP" && error.status !== undefined && error.status >= 500 && error.status < 600;
 }
 
 function retryAfterDelayMs(value: string | null, nowMs: number): number | null {

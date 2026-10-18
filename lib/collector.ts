@@ -79,8 +79,6 @@ import { kstDayOf, shiftKstDay } from "./kst";
 
 export interface CollectorEnv {
   DB?: D1Database;
-  /** Test seam only: overrides KMA_NO_DATA_RECHECK_MS. Production never sets it. */
-  KMA_NO_DATA_RECHECK_MS?: number;
   DATA_GO_KR_SERVICE_KEY?: string;
   SEOUL_OPEN_DATA_KEY?: string;
   KMA_SERVICE_KEY?: string;
@@ -1503,18 +1501,7 @@ export function latestKmaIssuance(now = new Date()): { baseDate: string; baseTim
 export interface WeatherCollectionOptions extends TargetedCollectionOptions {
   /** Restricts the run to these grid cells. Defaults to all three. */
   grids?: ReadonlyArray<{ nx: number; ny: number; areas: readonly string[] }>;
-  /** Wait before the one same-run recheck of grids that answered NO_DATA (tests pass 0). */
-  noDataRecheckMs?: number;
 }
-
-/**
- * KMA answered resultCode 03 (NO_DATA) for issuances already 40 minutes to 3
- * hours old, and the same base/grid answered 00 about 40 seconds later
- * (2026-10-13..15: 23 area-issuances lost, 5 recovered only by a second
- * attempt). A 03 grid is therefore asked once more in the same run after this
- * wait. Bounded: one recheck per grid per run, no fresh runner.
- */
-export const KMA_NO_DATA_RECHECK_MS = 45_000;
 
 export async function collectWeatherForecasts(
   env: CollectorEnv,
@@ -1591,21 +1578,9 @@ export async function collectWeatherForecasts(
     failureClasses.push(sourceFailureClass(error));
     failures.push(`grid ${grid.nx},${grid.ny}: ${safeSourceFailureDetail(error)}${note}`);
   };
-  const noDataGrids: Array<(typeof grids)[number]> = [];
   for (const grid of grids) {
     try { await collectGrid(grid); }
-    catch (error) {
-      if (sourceFailureClass(error) === "NO_DATA") noDataGrids.push(grid);
-      else recordFailure(grid, error);
-    }
-  }
-  if (noDataGrids.length) {
-    const wait = options.noDataRecheckMs ?? env.KMA_NO_DATA_RECHECK_MS ?? KMA_NO_DATA_RECHECK_MS;
-    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
-    for (const grid of noDataGrids) {
-      try { await collectGrid(grid); }
-      catch (error) { recordFailure(grid, error, " recheck=1"); }
-    }
+    catch (error) { recordFailure(grid, error); }
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
   const gridCount = grids.length;

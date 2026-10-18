@@ -192,13 +192,13 @@ test("KMA 03 on every grid is NO_DATA: not a run ERROR, STALE health, last-good 
   const before = weatherRows(db);
   let calls = 0;
   const result = await withFetch((async () => { calls += 1; return kmaNoData(); }) as typeof fetch,
-    () => collectWeatherForecasts({ DB: db as unknown as D1Database, DATA_GO_KR_SERVICE_KEY: SECRET }, KMA_NOW, { noDataRecheckMs: 0 }));
+    () => collectWeatherForecasts({ DB: db as unknown as D1Database, DATA_GO_KR_SERVICE_KEY: SECRET }, KMA_NOW));
 
   assert.equal(result.status, "NO_DATA");
   assert.equal(result.sourceHealth, "STALE");
   assert.equal(result.lastGoodPreserved, true);
-  assert.equal(calls, 2 * uniqueKmaGrids().length, "a 03 grid is asked exactly once more in the same run, never more");
-  assert.equal((result.detail ?? "").match(/recheck=1/g)?.length, uniqueKmaGrids().length);
+  assert.equal(calls, uniqueKmaGrids().length, "NO_DATA is never retried in the same run");
+  assert.doesNotMatch(result.detail ?? "", /recheck=1/);
   assert.equal(result.providerRequests, calls);
   assert.match(result.detail ?? "", /base 202610141100/);
   assert.equal((result.detail ?? "").match(/failureClass=NO_DATA causeCode=KMA_RESULT_03/g)?.length, uniqueKmaGrids().length);
@@ -218,7 +218,7 @@ test("KMA 03 on some grids is PARTIAL with the issuance that did arrive", async 
   seedWeather(db);
   let calls = 0;
   const result = await withFetch((async () => { calls += 1; return calls === 1 ? kmaPage() : kmaNoData(); }) as typeof fetch,
-    () => collectWeatherForecasts({ DB: db as unknown as D1Database, DATA_GO_KR_SERVICE_KEY: SECRET }, KMA_NOW, { noDataRecheckMs: 0 }));
+    () => collectWeatherForecasts({ DB: db as unknown as D1Database, DATA_GO_KR_SERVICE_KEY: SECRET }, KMA_NOW));
   assert.equal(result.status, "PARTIAL");
   assert.equal(result.sourceHealth, "STALE");
   const issued = db.raw.prepare("SELECT DISTINCT issued_at FROM weather_forecast WHERE area = 'myeongdong' ORDER BY issued_at").all()
@@ -228,7 +228,7 @@ test("KMA 03 on some grids is PARTIAL with the issuance that did arrive", async 
 });
 
 // 2026-10-13..15: the same base/grid answered 03 and then 00 about 40 s later.
-test("a KMA 03 grid that answers on the same-run recheck is stored; nothing else is re-asked", async () => {
+test("a KMA 03 grid stays missing without an automatic same-run recheck", async () => {
   const db = new SqliteD1();
   seedWeather(db);
   const asked: string[] = [];
@@ -237,10 +237,10 @@ test("a KMA 03 grid that answers on the same-run recheck is stored; nothing else
     const url = new URL(String(input)); asked.push(`${url.searchParams.get("nx")},${url.searchParams.get("ny")}`);
     if (first) { first = false; return kmaNoData(); }
     return kmaPage();
-  }) as typeof fetch, () => collectWeatherForecasts({ DB: db as unknown as D1Database, DATA_GO_KR_SERVICE_KEY: SECRET }, KMA_NOW, { noDataRecheckMs: 0 }));
-  assert.equal(result.status, "SUCCESS");
-  assert.equal(asked.length, uniqueKmaGrids().length + 1, "only the 03 grid is asked again");
-  assert.equal(asked.at(-1), asked[0]);
+  }) as typeof fetch, () => collectWeatherForecasts({ DB: db as unknown as D1Database, DATA_GO_KR_SERVICE_KEY: SECRET }, KMA_NOW));
+  assert.equal(result.status, "PARTIAL");
+  assert.equal(asked.length, uniqueKmaGrids().length, "each grid is asked once only");
+  assert.equal(asked.filter(grid=>grid===asked[0]).length,1);
 });
 
 test("a KMA auth refusal is ERROR/AUTH, asked once per grid, and never earns a fresh runner", async () => {

@@ -1,0 +1,11 @@
+{
+  "blender": "5.2.1 LTS",
+  "source": "assets-src\\app-icons-20261007\\model\\source-flight-B.blend",
+  "sourceSha256": "7fbbc69ddc8b02f2e560fe98ae916ae07b56f1f49e104e8932ca537f90130c2a",
+  "output": "public\\visuals\\route-passengers\\aircraft-320.webp",
+  "bytes": 4300,
+  "width": 320,
+  "height": 240,
+  "dataBaked": false,
+  "conceptual": true
+}

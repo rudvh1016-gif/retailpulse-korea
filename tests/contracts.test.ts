@@ -125,7 +125,7 @@ test("handles the production source error matrix with bounded retries", async (c
   const originalFetch = globalThis.fetch;
   context.after(() => { globalThis.fetch = originalFetch; });
 
-  for (const status of [400, 401, 403]) {
+  for (const status of [400, 401, 403, 429]) {
     let calls = 0;
     globalThis.fetch = async () => { calls += 1; return new Response("denied", { status }); };
     await assert.rejects(fetchOfficialJson(new URL("https://example.invalid"), { retries: 2, retryDelayMs: 0 }), (error: unknown) => error instanceof SourceFetchError && error.status === status);
@@ -135,7 +135,7 @@ test("handles the production source error matrix with bounded retries", async (c
   globalThis.fetch = async () => new Response(null, { status: 204 });
   await assert.rejects(fetchOfficialJson(new URL("https://example.invalid"), { retries: 0 }), (error: unknown) => error instanceof SourceFetchError && error.code === "MALFORMED_JSON");
 
-  for (const retryStatus of [429, 500]) {
+  for (const retryStatus of [500]) {
     let calls = 0;
     globalThis.fetch = async () => {
       calls += 1;
