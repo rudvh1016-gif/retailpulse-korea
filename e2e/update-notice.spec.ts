@@ -12,7 +12,7 @@ test.beforeEach(async({page})=>{
 });
 for(const [width,height]of [[1440,1000],[360,568],[390,844],[430,700],[390,500]])test(`first entry is immediate, compact and keyboard safe ${width}x${height}`,async({page})=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.setViewportSize({width,height});await page.goto('/ko');
- const dialog=page.getByRole('dialog',{name:'공항 정보가 더 보기 쉬워졌어요'});await expect(dialog).toBeVisible();
+ const dialog=page.getByRole('dialog',{name:'새로운 정보가 추가되었어요'});await expect(dialog).toBeVisible();
  await expect(dialog.getByRole('button',{name:'공지 닫기'})).toBeFocused();await expect(dialog.locator('section')).toHaveCount(2);
  await expect(dialog.locator('img,svg,canvas')).toHaveCount(0);await expect(dialog.getByRole('link')).toHaveCount(2);
  expect(await page.evaluate(()=>getComputedStyle(document.documentElement).overflow)).toBe('hidden');
