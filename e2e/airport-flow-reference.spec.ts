@@ -11,13 +11,15 @@ test('the hourly forecast figure carries the published month as a grey whole-air
  await page.goto('/ko/airport');
  const figure=page.locator('.airport-hero .airport-flow');
  await figure.scrollIntoViewIfNeeded();
- const lines=figure.locator('.airport-flow-reference line');
- await expect(lines).toHaveCount(24);
- await expect(lines.first()).toHaveAttribute('data-value','1000');
+ const lines=figure.locator('.airport-flow-reference path');
+ await expect(lines).toHaveCount(1);
+ await expect(figure.locator('.airport-flow-reference line')).toHaveCount(0);
+ expect((await lines.getAttribute('d'))?.match(/L/g)).toHaveLength(23);
+ await expect(lines).toHaveAttribute('stroke-dasharray','5 3');
  await expect(figure.getByTestId('airport-flow-reference-legend')).toContainText('2026-07 공식 월 실적 기준 · 최근 공개 월 시간대별 하루 평균');
  await expect(figure.locator('.airport-flow-reference-note')).toContainText('차이를 오차로 보지 않습니다');
  // The scale makes room for the reference: no line sits above the plot.
- const tops=await lines.evaluateAll(items=>items.map(item=>Number(item.getAttribute('y1'))));
+ const tops=await lines.evaluateAll(items=>items.flatMap(item=>(item.getAttribute('d')??'').match(/[ML][^ML]+/g)?.map(point=>Number(point.split(',')[1]))??[]));
  expect(Math.min(...tops)).toBeGreaterThan(0);
  const band=figure.locator('.airport-flow-band').first();
  await expect(band).toHaveAttribute('aria-label',/2026-07 실적 평균 1,000/);
@@ -34,4 +36,15 @@ test('no stored month draws no reference and keeps the figure as before',async({
  await expect(figure.locator('.airport-flow-band').first()).toBeAttached();
  await expect(figure.locator('.airport-flow-reference')).toHaveCount(0);
  await expect(figure.locator('.airport-flow-reference-note')).toHaveCount(0);
+});
+
+test('the monthly reference leaves a missing hour disconnected',async({page})=>{
+ await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
+ await page.route('**/api/live/airport-passenger-stats*',route=>route.fulfill({json:{...stats,current:{TIME_BAND_PASSENGERS:{...stats.current.TIME_BAND_PASSENGERS,rows:bands.filter(row=>row.startHour!==12)}}}}));
+ await page.goto('/ko/airport');
+ const reference=page.locator('.airport-hero .airport-flow-reference path');
+ await expect(reference).toHaveCount(1);
+ const d=await reference.getAttribute('d');
+ expect(d?.match(/M/g)).toHaveLength(2);
+ expect(d?.match(/L/g)).toHaveLength(21);
 });

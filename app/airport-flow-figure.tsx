@@ -55,6 +55,12 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
     [timeline, layers, width, height, peakStartAt, nowBandStart, nowBandProgress, referenceMax]);
   const hourOf = (iso: string) => Math.round((Date.parse(iso) - layout.dayStart) / 3_600_000);
   const forecastLine=layout.bands.map((band,index)=>`${index>0&&layout.bands[index-1].end===band.start?'L':'M'}${band.mid},${layout.base-band.value/layout.maxBand*(layout.base-layout.top)}`).join(' ');
+  const referenceHours = reference ? [...reference.hours].sort((a, b) => a.startHour - b.startHour) : [];
+  const referenceLine = referenceHours.map((hour, index) => {
+    const x = layout.left + (hour.startHour + hour.endHour) / 2 / 24 * (layout.right - layout.left);
+    const y = layout.base - hour.value / layout.maxBand * (layout.base - layout.top);
+    return `${index > 0 && referenceHours[index - 1].endHour === hour.startHour ? 'L' : 'M'}${x},${y}`;
+  }).join(' ');
   const referenceAt = (iso: string) => reference?.hours.find((hour) => hour.startHour === hourOf(iso)) ?? null;
 
   const [hover, setHover] = useState<{ index: number; x: number; y: number } | null>(null);
@@ -120,11 +126,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
       </g>
       {reference&&<path className="airport-flow-forecast-line" d={forecastLine} fill="none" stroke="#294864" strokeWidth="2" pointerEvents="none" aria-hidden="true"/>}
       {reference && <g className="airport-flow-reference" aria-hidden="true" pointerEvents="none" data-month={reference.month}>
-        {reference.hours.map((hour) => {
-          const x0 = left + hour.startHour / 24 * (right - left), x1 = left + hour.endHour / 24 * (right - left);
-          const y = base - hour.value / layout.maxBand * (base - top);
-          return <line key={hour.startHour} x1={x0} x2={x1} y1={y} y2={y} data-hour={hour.startHour} data-value={Math.round(hour.value)} style={{ stroke: "#7d858c", strokeWidth: 3, strokeLinecap: "round" }} />;
-        })}
+        <path d={referenceLine} fill="none" stroke="#7d858c" strokeWidth="2" strokeDasharray="5 3" strokeLinejoin="round" strokeLinecap="round" />
       </g>}
       <line className="av-rule airport-flow-base" x1={left} x2={right} y1={base} y2={base} />
       <g className="airport-flow-hours">
