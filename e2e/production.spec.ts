@@ -1,3 +1,4 @@
+import {noticeDismissedState} from '../scripts/update-notice-test-state.mjs';
 import { routeGateFlights } from './gate-model-fixture';
 import { expect, test } from "@playwright/test";
 
@@ -1540,7 +1541,7 @@ test("the guide leads with the reader's own device and still lists the others", 
     ["Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1", "아이폰 · 사파리"],
     ["Mozilla/5.0 (Linux; Android 14; SM-S928N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36", "갤럭시 · 크롬"],
   ] as const) {
-    const context = await browser.newContext({ userAgent });
+    const context = await browser.newContext({storageState:noticeDismissedState(test.info().project.use.baseURL), userAgent });
     const page = await context.newPage();
     await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
     await page.goto("/ko");

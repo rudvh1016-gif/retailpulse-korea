@@ -1,7 +1,8 @@
+import {noticeDismissedState} from '../scripts/update-notice-test-state.mjs';
 import {test,expect} from '@playwright/test';
 import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
 for(const lang of ['ko','en','zh','ja'])for(const width of [360,390,430,1280])test(`compact departure choices retain guide behavior ${lang} ${width}`,async({browser})=>{
- const context=await browser.newContext({viewport:{width,height:900},deviceScaleFactor:3,reducedMotion:'reduce'}),page=await context.newPage();const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
+ const context=await browser.newContext({storageState:noticeDismissedState(test.info().project.use.baseURL),viewport:{width,height:900},deviceScaleFactor:3,reducedMotion:'reduce'}),page=await context.newPage();const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
  await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',flights:[],truncated:false}}));await page.goto(`/${lang}/airport`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  const prep=page.getByTestId('departure-preparation');await prep.getByTestId('departure-guide-entry').click();
  await expect(prep.locator('select')).toHaveCount(0);await expect(prep.locator('fieldset[data-testid^="prep-"]')).toHaveCount(4);

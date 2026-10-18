@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { coldSummaryMonth } from "../lib/summary-cold-month";
 import { analyticsOptOutState } from "../scripts/analytics-opt-out.mjs";
+import { noticeDismissedState } from '../scripts/update-notice-test-state.mjs';
 
 /**
  * Read-only timing of the live airport page on a phone profile.
@@ -16,7 +17,7 @@ import { analyticsOptOutState } from "../scripts/analytics-opt-out.mjs";
 test("production airport page: mobile timing to data", async ({ browser, baseURL }) => {
   const context = await browser.newContext({
     // Its own context, so it states the analytics opt-out every check visits with.
-    storageState: analyticsOptOutState(baseURL ?? "https://koretaildata.com"),
+    storageState: noticeDismissedState(baseURL ?? "https://koretaildata.com",analyticsOptOutState(baseURL ?? "https://koretaildata.com")),
     viewport: { width: 412, height: 915 }, deviceScaleFactor: 2.6, isMobile: true, hasTouch: true, locale: "ko-KR",
     userAgent: "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36",
   });

@@ -1,3 +1,4 @@
+import {noticeDismissedState} from '../scripts/update-notice-test-state.mjs';
 import {test,expect,type Browser,type Locator,type Page} from '@playwright/test';
 import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
 import type {LiveSummary} from '../app/live-signals';
@@ -113,7 +114,7 @@ for(const width of [320,1280])test(`selected hour is unmistakable and moves with
 });
 
 async function phone(browser:Browser){
- const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:3,isMobile:true,hasTouch:true});
+ const context=await browser.newContext({storageState:noticeDismissedState(test.info().project.use.baseURL),viewport:{width:390,height:844},deviceScaleFactor:3,isMobile:true,hasTouch:true});
  return {context,page:await context.newPage()};
 }
 test('phone: a tap on the line selects that hour, a narrow range keeps visible end dots, gaps stay open',async({browser})=>{

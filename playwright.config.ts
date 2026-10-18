@@ -1,4 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
+import { noticeDismissedState } from './scripts/update-notice-test-state.mjs';
+import { GOOGLE_TAG_BLOCK_ARGS } from './scripts/analytics-opt-out.mjs';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:4173";
 
@@ -12,6 +14,8 @@ export default defineConfig({
   reporter: process.env.CI ? "github" : "list",
   use: {
     baseURL,
+    storageState: noticeDismissedState(baseURL),
+    launchOptions: { args: GOOGLE_TAG_BLOCK_ARGS },
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },

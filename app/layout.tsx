@@ -1,4 +1,5 @@
 import PageAnalytics from './page-analytics';
+import UpdateNotice from './update-notice';
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import {buildRevision} from '../lib/build-revision';
@@ -58,6 +59,7 @@ export default async function RootLayout({
     <html lang={documentLanguage} suppressHydrationWarning>
       <body>
         {children}
+        <UpdateNotice lang={documentLanguage} />
         <PageAnalytics />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           "@context": "https://schema.org",

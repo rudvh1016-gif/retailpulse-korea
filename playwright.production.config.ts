@@ -1,5 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import { analyticsOptOutState, GOOGLE_TAG_BLOCK_ARGS } from "./scripts/analytics-opt-out.mjs";
+import { noticeDismissedState } from './scripts/update-notice-test-state.mjs';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "https://koretaildata.com";
 
@@ -23,7 +24,7 @@ export default defineConfig({
   reporter: [["list"], ["html", { open: "never", outputFolder: "production-visual-report" }]],
   use: {
     baseURL,
-    storageState: analyticsOptOutState(baseURL),
+    storageState: noticeDismissedState(baseURL, analyticsOptOutState(baseURL)),
     launchOptions: { args: GOOGLE_TAG_BLOCK_ARGS },
     trace: "retain-on-failure",
     screenshot: "on",
