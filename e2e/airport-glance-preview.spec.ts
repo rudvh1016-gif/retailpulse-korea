@@ -65,7 +65,8 @@ for(const lang of ['ko','en','zh','ja'] as const){
  test(`failed data does not invent any decision or ratio ${lang}`,async({page})=>{
   for(const api of ['summary','flights','airport-months'])await page.route(`**/api/live/${api}*`,route=>route.fulfill({status:503,json:{error:'unavailable'}}));
   await page.goto(`/${lang}/airport-glance-preview`);const app=page.getByTestId('airport-glance-preview');
-  await expect(app.locator('.glance-insights strong')).toHaveText(Array(5).fill(copy.missing));
+  await expect(app.locator('.glance-insights strong')).toHaveText([copy.missing,copy.missing,'—',copy.missing,copy.missing,copy.missing]);
+  await expect(app.getByTestId('glance-key-sum').locator('strong')).toHaveText('—');
   const transfer=app.getByTestId('glance-key-transfers');
   await expect(transfer.locator('span')).toHaveText(copy.label);
   await expect(transfer.locator('strong')).toHaveText(copy.missing);
