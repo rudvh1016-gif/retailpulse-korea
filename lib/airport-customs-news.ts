@@ -8,6 +8,9 @@ export interface NewsClearance {evidenceUrl:string;confirmedAt:string;commercial
 export interface NewsFact {text:string;verifiedBySource:boolean}
 export interface NewsAttachment {url:string;name:string;review:'pending'|'verified';sha256?:string;reviewedAt?:string}
 export interface OfficialNews {
+ /** RSS index only. This is not article reuse clearance or a KOGL claim. */
+ presentation?:'official-rss-link';
+ rssLinkEvidence?:{directoryUrl:string;feedUrl:string;verifiedAt:string};
  source:'airport'|'customs'|'law';sourceId:string;sourceName:string;title:string;url:string;
  publishedAt:string|null;receivedAt:string;status:NewsStatus;topic:NewsTopic;
  relevantToRetail:boolean;clearance?:NewsClearance;contentFingerprint:string;
@@ -37,8 +40,25 @@ export function hasNewsClearance(item:OfficialNews):boolean {
 }
 /** Rights review permits document preparation; it does not approve publication. */
 export function mayPublishNews(item:OfficialNews&{collectionReview?:{hold:boolean}}):boolean {
- return ['announced','proposed','corrected'].includes(item.status)&&hasNewsClearance(item)
+ return ['announced','proposed','corrected'].includes(item.status)&&(item.presentation==='official-rss-link'?validRssLinkNews(item):hasNewsClearance(item))
   &&(item.collectionReview===undefined||item.collectionReview?.hold===false);
+}
+export function validRssLinkNews(item:OfficialNews):boolean {
+ if(item.presentation!=='official-rss-link'||item.source!=='customs'||item.sourceName!=='관세청'||item.topic!=='customs'||!item.relevantToRetail
+  ||item.status!=='announced'||!/^\d{1,12}$/.test(item.sourceId)||!item.title?.trim()||item.title.length>500
+  ||!item.publishedAt||!Number.isFinite(Date.parse(item.publishedAt))||!officialNewsUrl(item)
+  ||item.clearance!==undefined||item.effectiveDate!==undefined||item.deadline!==undefined||item.modifiedAt!==undefined
+  ||item.attachments!==undefined||item.attachmentListComplete!==undefined||item.attachmentNeedsReview!==false
+  ||![item.facts,item.changes,item.audience].every(value=>Array.isArray(value)&&value.length===0))return false;
+ const evidence=item.rssLinkEvidence;
+ if(evidence?.directoryUrl!=='https://www.customs.go.kr/kcs/selectBoardRssList.do?mi=7424'||!Number.isFinite(Date.parse(evidence.verifiedAt)))return false;
+ try{
+  const article=new URL(item.url),feed=new URL(evidence.feedUrl);
+  return article.origin==='https://www.customs.go.kr'&&article.pathname==='/kcs/na/ntt/selectNttInfo.do'
+   &&article.searchParams.get('nttSn')===item.sourceId&&/^[a-f0-9]{32}$/.test(article.searchParams.get('nttSnUrl')??'')
+   &&feed.origin==='https://www.customs.go.kr'&&feed.pathname==='/kcs/selectBoardRss.do'&&!feed.username&&!feed.password&&!feed.port
+   &&({1362:'15265',1364:'2895',1365:'3762',1366:'2897'} as Record<string,string>)[feed.searchParams.get('bbsId')??'']===feed.searchParams.get('mi');
+ }catch{return false;}
 }
 function pick<T extends object,K extends keyof T>(value:T,keys:readonly K[]):Pick<T,K>{
  return Object.fromEntries(keys.filter(key=>Object.prototype.hasOwnProperty.call(value,key)).map(key=>[key,value[key]])) as Pick<T,K>;
@@ -46,7 +66,8 @@ function pick<T extends object,K extends keyof T>(value:T,keys:readonly K[]):Pic
 /** Explicit public fields only, including nested values. Private collection
  * candidates and future storage metadata must never enter an API response. */
 export function publicNewsProjection(item:OfficialNews):OfficialNews {
- const result=pick(item,['source','sourceId','sourceName','title','url','publishedAt','receivedAt','status','topic','relevantToRetail','clearance','contentFingerprint','effectiveDate','deadline','facts','changes','audience','attachmentNeedsReview','modifiedAt','attachments','attachmentListComplete']);
+ const result=pick(item,['source','sourceId','sourceName','title','url','publishedAt','receivedAt','status','topic','relevantToRetail','clearance','contentFingerprint','effectiveDate','deadline','facts','changes','audience','attachmentNeedsReview','modifiedAt','attachments','attachmentListComplete','presentation','rssLinkEvidence']);
+ if(result.rssLinkEvidence)result.rssLinkEvidence=pick(result.rssLinkEvidence,['directoryUrl','feedUrl','verifiedAt']);
  if(result.clearance)result.clearance=pick(result.clearance,['evidenceUrl','confirmedAt','commercialReuse','requiredPresentation','deepLink','attribution']);
  for(const key of ['effectiveDate','deadline'] as const)if(result[key])result[key]=pick(result[key],['date','evidence','verified']);
  for(const key of ['facts','changes','audience'] as const)result[key]=result[key].map(value=>pick(value,['text','verifiedBySource']));
@@ -71,3 +92,4 @@ export function sortNews(items:readonly OfficialNews[],today:string):OfficialNew
  const timestamp=(at:string|null)=>at&&Number.isFinite(Date.parse(at))?Date.parse(at):Number.NEGATIVE_INFINITY;
  return [...items].sort((a,b)=>Number(!!important(b))-Number(!!important(a))||(timestamp(b.publishedAt)-timestamp(a.publishedAt)||0)||a.source.localeCompare(b.source)||a.sourceId.localeCompare(b.sourceId));
 }
+

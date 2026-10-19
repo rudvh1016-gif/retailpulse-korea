@@ -1,9 +1,12 @@
 import {parseCustomsRss,prepareCustomsNews,customsArticleIdentity,customsPublishedAt,type CustomsFeedItem} from './customs-news-adapter';
-import {storeCollectedNews,blockStoredOfficialNews} from './airport-customs-news-store';
+import {storeCollectedNews,blockStoredOfficialNews,storeCustomsRssLink,storedOfficialNews} from './airport-customs-news-store';
 import {applyCustomsDocumentReview,observeCustomsDocumentVersion,type CustomsDocumentReview} from './customs-news-document-review';
 import {type OfficialNews,type NewsAttachment} from './airport-customs-news';
+import {sha256} from './hash';
 const ORIGIN='https://www.customs.go.kr';
 export const CUSTOMS_NEWS_COLLECTION_REVIEWED=false;
+/** Separate OFF gate: preparing this path does not authorize production publication. */
+export const CUSTOMS_RSS_LINK_PUBLICATION_REVIEWED=false;
 const BOARDS=[{id:1362,mi:2891,rssMi:15265},{id:1364,mi:2895,rssMi:2895},{id:1365,mi:2896,rssMi:3762},{id:1366,mi:2897,rssMi:2897}] as const;
 const decode=(value:string)=>value.replace(/&#(\d+);/g,(_,n)=>String.fromCodePoint(Number(n))).replace(/&(?:amp|quot|apos|lt|gt|nbsp);/g,e=>({'&amp;':'&','&quot;':'"','&apos;':"'",'&lt;':'<','&gt;':'>','&nbsp;':' '})[e]??e);
 const plain=(value:string)=>decode(value.replace(/<!--[\s\S]*?-->/g,'').replace(/<[^>]*>/g,'')).replace(/\s+/g,' ').trim();
@@ -113,18 +116,19 @@ async function reviewedWithdrawal(item:CustomsFeedItem,html:string,reviews:reado
 }
 /** Prepared Node collector, never scheduled or called by visitor requests.
  * activation is for offline fixture tests; the production entrypoint does not override review. */
-export async function collectCustomsNews(db:Pick<D1Database,'prepare'|'batch'>,options:{fetchImpl?:typeof fetch;now?:()=>Date;activation?:boolean;documentReviews?:readonly {review:CustomsDocumentReview;bytes:Uint8Array}[];withdrawalReviews?:readonly CustomsWithdrawalReview[]}={}){
+export async function collectCustomsNews(db:Pick<D1Database,'prepare'|'batch'>,options:{fetchImpl?:typeof fetch;now?:()=>Date;activation?:boolean;metadataLinks?:boolean;documentReviews?:readonly {review:CustomsDocumentReview;bytes:Uint8Array}[];withdrawalReviews?:readonly CustomsWithdrawalReview[]}={}){
  if(!(options.activation??CUSTOMS_NEWS_COLLECTION_REVIEWED))return {state:'DORMANT',requests:0,currentChanges:0,revisionChanges:0,reviewChanges:0,blockedChanges:0};
  const fetchImpl=options.fetchImpl??fetch,now=options.now??(()=>new Date());let requests=0;
  const read=async(url:string)=>{if(++requests>28)throw Error('NEWS_REQUEST_LIMIT');return boundedText(await fetchImpl(url,{redirect:'error',signal:AbortSignal.timeout(15000),headers:{accept:'application/xml,text/html'}}));};
- const queues:CustomsFeedItem[][]=[];
+ const queues:CustomsFeedItem[][]=[],feedUrls=new Map<string,string>();
  // Reserve the eight index reads before sharing the twenty article reads fairly.
  for(const board of BOARDS){
-  const feed=parseCustomsRss(await read(`${ORIGIN}/kcs/selectBoardRss.do?mi=${board.rssMi}&bbsId=${board.id}`));
+  const feedUrl=`${ORIGIN}/kcs/selectBoardRss.do?mi=${board.rssMi}&bbsId=${board.id}`;
+  const feed=parseCustomsRss(await read(feedUrl));
   const links=officialCustomsLinks(await read(`${ORIGIN}/kcs/na/ntt/selectNttList.do?bbsId=${board.id}&mi=${board.mi}`));
   queues.push(feed.flatMap(item=>{
    const key=links.get(item.id);if(!key)return [];
-   const url=new URL(item.url);url.searchParams.set('nttSnUrl',key);return [{...item,url:url.href}];
+   const url=new URL(item.url);url.searchParams.set('nttSnUrl',key);if(!feedUrls.has(item.id))feedUrls.set(item.id,feedUrl);return [{...item,url:url.href}];
   }));
  }
  const seen=new Set<string>();let articleReads=0,currentChanges=0,revisionChanges=0,reviewChanges=0,blockedChanges=0;
@@ -143,6 +147,21 @@ export async function collectCustomsNews(db:Pick<D1Database,'prepare'|'batch'>,o
    const prepared=await prepareCustomsNews(item,html,now().toISOString(),{deepLinkVerified:true,namedAuthor:metadata.namedAuthor});
    let reviewed:OfficialNews={...prepared,topic:airportCustomsScope(item.title),modifiedAt:metadata.modifiedAt,attachments:metadata.attachments,attachmentListComplete:metadata.attachmentsComplete,attachmentNeedsReview:metadata.attachments.length>0||!metadata.attachmentsComplete};
    if(withdrawn)reviewed={...reviewed,status:'withdrawn'};
+   if(options.metadataLinks??CUSTOMS_RSS_LINK_PUBLICATION_REVIEWED){
+    const previous=await storedOfficialNews(db,'customs',item.id);
+    if(!withdrawn&&reviewed.topic==='customs'&&item.publishedAt){
+     const link:OfficialNews={source:'customs',sourceId:item.id,sourceName:'관세청',title:item.title,url:item.url,publishedAt:item.publishedAt,
+      receivedAt:reviewed.receivedAt,status:'announced',topic:'customs',relevantToRetail:true,presentation:'official-rss-link',
+      rssLinkEvidence:{directoryUrl:ORIGIN+'/kcs/selectBoardRssList.do?mi=7424',feedUrl:feedUrls.get(item.id)!,verifiedAt:reviewed.receivedAt},
+      contentFingerprint:await sha256({id:item.id,title:item.title,url:item.url,publishedAt:item.publishedAt}),facts:[],changes:[],audience:[],attachmentNeedsReview:false};
+     const saved=await storeCustomsRssLink(db,link);
+     if(saved){currentChanges+=saved.currentChanges;revisionChanges+=saved.revisionChanges;if(articleReads>=20)break;continue;}
+    }else if(previous?.presentation==='official-rss-link'){
+     // An observed loss of relevance/date is not a transport outage. Do not
+     // keep presenting the old link as if the current source still matched.
+     blockedChanges+=await blockStoredOfficialNews(db,'customs',item.id);
+    }
+   }
    const documents=(options.documentReviews??[]).filter(document=>document.review.articleId===item.id);
    let versionError:unknown;
    for(const document of documents){
@@ -163,3 +182,4 @@ export async function collectCustomsNews(db:Pick<D1Database,'prepare'|'batch'>,o
  }
  return {state:'PREPARED_COLLECTION',requests,currentChanges,revisionChanges,reviewChanges,blockedChanges};
 }
+

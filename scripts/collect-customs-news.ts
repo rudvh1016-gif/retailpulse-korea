@@ -1,4 +1,4 @@
-import {CUSTOMS_NEWS_COLLECTION_REVIEWED,collectCustomsNews} from '../lib/customs-news-collector';
+import {CUSTOMS_NEWS_COLLECTION_REVIEWED,CUSTOMS_RSS_LINK_PUBLICATION_REVIEWED,collectCustomsNews} from '../lib/customs-news-collector';
 import {CloudflareD1RestDatabase} from '../lib/d1-rest';
 import {resolveProductionDatabaseConfig} from './production-database';
 /** Prepared only, no workflow or schedule. Review gate is closed before config,
@@ -10,5 +10,6 @@ if(!CUSTOMS_NEWS_COLLECTION_REVIEWED||process.env.RPK_CUSTOMS_NEWS_COLLECTION_EN
  if(!process.env.CLOUDFLARE_D1_WRITE_TOKEN?.trim())throw Error('missing_dedicated_d1_write_token');
  const {accountId,databaseId,apiToken}=resolveProductionDatabaseConfig('production');
  const db=new CloudflareD1RestDatabase(accountId,databaseId,apiToken);
- console.log(JSON.stringify(await collectCustomsNews(db as unknown as D1Database)));
+ console.log(JSON.stringify(await collectCustomsNews(db as unknown as D1Database,{metadataLinks:CUSTOMS_RSS_LINK_PUBLICATION_REVIEWED&&process.env.RPK_CUSTOMS_RSS_LINKS_ENABLED==='true'})));
 }
+
