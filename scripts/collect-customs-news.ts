@@ -10,6 +10,11 @@ if(!CUSTOMS_NEWS_COLLECTION_REVIEWED||process.env.RPK_CUSTOMS_NEWS_COLLECTION_EN
  if(!process.env.CLOUDFLARE_D1_WRITE_TOKEN?.trim())throw Error('missing_dedicated_d1_write_token');
  const {accountId,databaseId,apiToken}=resolveProductionDatabaseConfig('production');
  const db=new CloudflareD1RestDatabase(accountId,databaseId,apiToken);
- console.log(JSON.stringify(await collectCustomsNews(db as unknown as D1Database,{activation:CUSTOMS_NEWS_COLLECTION_REVIEWED,metadataLinks:CUSTOMS_RSS_LINK_PUBLICATION_REVIEWED&&process.env.RPK_CUSTOMS_RSS_LINKS_ENABLED==='true'})));
+ try{
+  console.log(JSON.stringify(await collectCustomsNews(db as unknown as D1Database,{activation:CUSTOMS_NEWS_COLLECTION_REVIEWED,metadataLinks:CUSTOMS_RSS_LINK_PUBLICATION_REVIEWED&&process.env.RPK_CUSTOMS_RSS_LINKS_ENABLED==='true'})));
+ }finally{
+  // Measured statement metadata, not a claim about account-wide free-tier headroom.
+  console.log(JSON.stringify({source:'CUSTOMS_NEWS',d1Usage:db.usageSnapshot()}));
+ }
 }
 
