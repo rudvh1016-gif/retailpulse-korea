@@ -12,7 +12,7 @@ import {useEffect} from 'react';
  * A closed <details> target (or ancestor) is opened, since the link promises its contents.
  * Only the ids the glance links use; any other hash keeps the browser's behaviour.
  */
-const TARGETS=new Set(['airport-forecast-title','airport-checkpoints-title','airport-departure-model-slot','airport-monthly-flights','airport-month-destinations','airport-zone-countries','airport-concourse']);
+const TARGETS=new Set(['airport-forecast-title','airport-checkpoints-title','airport-departure-model-slot','airport-monthly-flights','airport-month-destinations','airport-route-passengers','airport-zone-countries','airport-concourse']);
 const SETTLE_MS=8000;
 const STOP_EVENTS=['wheel','touchstart','keydown','pointerdown'] as const;
 

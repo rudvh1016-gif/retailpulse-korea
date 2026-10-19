@@ -1,3 +1,4 @@
+import {noticeDismissedState} from '../scripts/update-notice-test-state.mjs';
 import {test,expect,type Page} from '@playwright/test';
 import {SUMMARY_FIXTURE,FLIGHT_ROWS,routeSummary} from './summary-fixture';
 import {buildCommercialMonth,compareCommercialMonths,publicCommercialMonth} from '../lib/commercial-monthly';
@@ -25,7 +26,7 @@ const cases=[
  {name:'district card',path:'/ko/where-to',image:'.district-choice-model',width:360,height:800,scale:2,file:'/visuals/seoul-comparison/myeongdong-320.webp'},
 ] as const;
 for(const c of cases)test(`${c.name} picks ${c.file.split('/').pop()} at ${c.width}x${c.height}@${c.scale}`,async({browser})=>{
- const context=await browser.newContext({viewport:{width:c.width,height:c.height},deviceScaleFactor:c.scale,isMobile:true,hasTouch:true});const page=await context.newPage();
+ const context=await browser.newContext({storageState:noticeDismissedState(test.info().project.use.baseURL),viewport:{width:c.width,height:c.height},deviceScaleFactor:c.scale,isMobile:true,hasTouch:true});const page=await context.newPage();
  await open(page,c.path);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  // The model re-mounts while its data settles, so each attempt looks the image up again and only
  // measures one that has loaded. naturalWidth of a srcset image is density-corrected, so the file's

@@ -33,12 +33,12 @@ test('every Google host the site may load from or send to is unresolvable for au
 
 test('every automated browser that opens the live site visits with analytics off', () => {
   const config = read('playwright.production.config.ts');
-  assert.match(config, /storageState: analyticsOptOutState\(baseURL\)/);
+  assert.match(config, /storageState: noticeDismissedState\(baseURL, analyticsOptOutState\(baseURL\)\)/);
   assert.match(config, /launchOptions: \{ args: GOOGLE_TAG_BLOCK_ARGS \}/);
   // A spec that builds its own context does not get the config's storage state for certain: it states the opt-out itself.
   for (const file of readdirSync(new URL('../e2e-production', import.meta.url))) {
     const source = read(`e2e-production/${file}`);
-    if (/browser\.new(?:Context|Page)\(/.test(source)) assert.match(source, /storageState: analyticsOptOutState\(/, file);
+    if (/browser\.new(?:Context|Page)\(/.test(source)) assert.match(source, /storageState: (?:noticeDismissedState\([^,]+,\s*)?analyticsOptOutState\(/, file);
   }
   for (const script of ['scripts/bfcache-probe.mjs', 'scripts/capture-typography.mjs', 'scripts/measure-mobile.mjs']) {
     const source = read(script);

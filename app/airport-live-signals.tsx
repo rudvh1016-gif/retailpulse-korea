@@ -14,7 +14,6 @@ import { formatChangeRate } from "../lib/change-rate";
 import { airportCompositionCopy } from "../lib/airport-composition-copy";
 import { usePresentationClock } from "./area-demand-card";
 import { AirportFlowFigure } from "./airport-flow-figure";
-import {AirportRouteCountryPassengers} from './airport-route-country-passengers';
 import { useTimeBandReference } from "./airport-passenger-stats-client";
 import { FlightCountPrism } from "./flight-count-prism";
 import { kstStamp } from "../lib/demand-presentation";
@@ -465,7 +464,6 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
           <p>{isForecastPartial ? airportTodayText.partialBody[lang] : airportTodayText.unavailableBody[lang]}</p>
           {passengerCollected && <small>{passengerCollected}</small>}
         </div>}
-      <AirportRouteCountryPassengers lang={lang} month={summary.serviceDateKst.slice(0,7)} terminal={terminal}/>
       <div id="airport-departure-model-slot" data-testid="airport-departure-model-slot"/>
     </section>
     }/>

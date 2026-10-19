@@ -1,3 +1,4 @@
+import {noticeDismissedState} from '../scripts/update-notice-test-state.mjs';
 import {test,expect} from '@playwright/test';
 import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
 import type {LiveSummary} from '../app/live-signals';
@@ -6,7 +7,7 @@ const categories=['여행','한식','화장품','편의점','약국'];
 const rows=(month:string)=>[{observed_at:`${month}-01T10:10:00+09:00`,payload:JSON.stringify({commercialAt:`${month}-01T10:10:00+09:00`,categories:categories.map((category,i)=>({category,group:'fixture',payments:i===0?null:i===1?0:i===4?20:30,amountMin:100,amountMax:200}))})}];
 const month=publicCommercialMonth(compareCommercialMonths(buildCommercialMonth(rows('2026-08'),'2026-08','2026-08-30'),buildCommercialMonth(rows('2026-07'),'2026-07','2026-07-31')));
 for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430,1280])test(`sharp icons and equal airport entries ${lang} ${width}`,async({browser})=>{
- const context=await browser.newContext({viewport:{width,height:900},deviceScaleFactor:3,reducedMotion:'reduce'}),page=await context.newPage();const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ const context=await browser.newContext({storageState:noticeDismissedState(test.info().project.use.baseURL),viewport:{width,height:900},deviceScaleFactor:3,reducedMotion:'reduce'}),page=await context.newPage();const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
  await page.route('**/api/live/commercial-months*',route=>{const url=new URL(route.request().url());return route.fulfill({json:{status:'READY',area:url.searchParams.get('area'),month:url.searchParams.get('month'),months:['2026-08','2026-07'],data:month}});});
  await page.goto('/'+lang+'/consumption');

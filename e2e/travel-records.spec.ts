@@ -1,3 +1,4 @@
+import {noticeDismissedState} from '../scripts/update-notice-test-state.mjs';
 import {test,expect,type Page} from '@playwright/test';
 import {readFile} from 'node:fs/promises';
 import {travelRecordsCopy} from '../app/travel-records-copy';
@@ -67,7 +68,7 @@ test('backup export, preview cancel, duplicate skip and tamper rejection preserv
  const value=JSON.parse(bytes.toString('utf8'));value.version=999;await page.locator('#import-file').setInputFiles({name:'version.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(value))});await expect(page.locator('#backup-error')).not.toBeEmpty();expect(await recordCount(page)).toBe(before);
 });
 test('backup restores into a fresh device context only after confirmation',async({page,browser})=>{
- await add(page);const bytes=await backupFile(page),context=await browser.newContext({baseURL:test.info().project.use.baseURL});const fresh=await context.newPage();
+ await add(page);const bytes=await backupFile(page),context=await browser.newContext({storageState:noticeDismissedState(test.info().project.use.baseURL),baseURL:test.info().project.use.baseURL});const fresh=await context.newPage();
  try{await fresh.goto('/ko/travel-records#/backup');await expect(fresh.locator('#import-file')).toBeVisible();await fresh.locator('#import-file').setInputFiles({name:'backup.json',mimeType:'application/json',buffer:bytes});await expect(fresh.locator('#import-dialog')).toBeVisible();expect(await recordCount(fresh)).toBe(0);await fresh.locator('#confirm-import').click();await expect(fresh.getByTestId('travel-card')).toHaveCount(1);expect(await recordCount(fresh)).toBe(1);}finally{await context.close();}
 });
 test('cancel during backup validation and Escape after validation leave no pending import',async({page})=>{
