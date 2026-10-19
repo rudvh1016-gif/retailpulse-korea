@@ -176,3 +176,6 @@
   .airport-today .airport-hero { margin: -21px -14px 0; padding: 30px 14px 0; }
   .airport-today .airport-hero .av-figure.airport-flow { margin: 0 -14px 6px; }
 }
+
+/* Owner-requested secondary monthly-reference explanation size only. */
+.airport-flow .airport-flow-reference-note{font-size:12px}
