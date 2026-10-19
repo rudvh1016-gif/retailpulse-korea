@@ -1,0 +1,63 @@
+name: Hold unrelated customs recruitment 10179803 once
+on:
+  push:
+    branches: [ops/customs-hold-10179803]
+    paths: [.github/workflows/customs-hold-10179803.yml]
+permissions:
+  contents: read
+concurrency:
+  group: production-collector
+  cancel-in-progress: false
+jobs:
+  hold-once:
+    if: github.run_number == 1 && github.run_attempt == 1 && vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 7c9aef7e7f7d79a143957c777e70f1ee9ac30d72
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Hide exactly the unrelated metadata record without deletion
+        env:
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+        run: |
+          cat > scripts/.hold-customs-recruitment.ts <<'TS'
+          import assert from 'node:assert/strict';
+          import {CloudflareD1RestDatabase} from '../lib/d1-rest';
+          import {resolveProductionDatabaseConfig} from './production-database';
+          import {blockStoredOfficialNews,officialNewsSemanticHash,readOfficialNews} from '../lib/airport-customs-news-store';
+          async function main(){
+            if(!process.env.CLOUDFLARE_D1_WRITE_TOKEN?.trim())throw Error('missing_dedicated_d1_write_token');
+            const cfg=resolveProductionDatabaseConfig('production');
+            const db=new CloudflareD1RestDatabase(cfg.accountId,cfg.databaseId,cfg.apiToken);
+            const store=db as unknown as D1Database;
+            const before=await readOfficialNews(store,'2026-10-20');
+            const row=await db.prepare('SELECT payload,semantic_hash,may_publish FROM official_news_current WHERE source=? AND source_id=?').bind('customs','10179803').first<{payload:string;semantic_hash:string;may_publish:number}>();
+            assert.ok(row,'target_missing');
+            const item=JSON.parse(row.payload);
+            assert.equal(item.sourceId,'10179803');
+            assert.equal(item.presentation,'official-rss-link');
+            assert.equal(item.title,'2026년도 제3회 인천공항세관 공무직근로자(청소원) 채용 서류전형 합격자 공고 및 면접시험 안내');
+            assert.equal(await officialNewsSemanticHash(item),row.semantic_hash);
+            const changes=await blockStoredOfficialNews(store,'customs','10179803',{hash:row.semantic_hash,payload:row.payload});
+            const after=await db.prepare('SELECT payload,semantic_hash,may_publish FROM official_news_current WHERE source=? AND source_id=?').bind('customs','10179803').first<{payload:string;semantic_hash:string;may_publish:number}>();
+            assert.ok(after);assert.equal(after.payload,row.payload);assert.equal(after.semantic_hash,row.semantic_hash);assert.equal(after.may_publish,0);
+            const repeated=await blockStoredOfficialNews(store,'customs','10179803',{hash:row.semantic_hash,payload:row.payload});
+            assert.equal(repeated,0);
+            const remaining=await readOfficialNews(store,'2026-10-20');
+            assert.deepEqual(remaining,before.filter(x=>x.sourceId!=='10179803'));
+            const response=await fetch('https://koretaildata.com/api/airport/news',{signal:AbortSignal.timeout(20000)});
+            assert.equal(response.status,200);const publicData=await response.json();
+            assert.equal(publicData.status,'STORED');
+            assert.deepEqual(publicData.items,remaining);
+            console.log(JSON.stringify({target:'10179803',mayPublish:0,changes,repeatedChanges:repeated,payloadPreserved:true,otherRecordsPreserved:true,publicCount:remaining.length,providerRequests:0,d1Usage:db.usageSnapshot()}));
+          }
+          main().catch(error=>{console.error(error);process.exitCode=1;});
+          TS
+          npx tsx scripts/.hold-customs-recruitment.ts
