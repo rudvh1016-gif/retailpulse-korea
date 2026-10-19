@@ -1,8 +1,8 @@
 import {test,expect} from '@playwright/test';
-import summary from './fixtures/airport-focus/summary.json';
-import flights from './fixtures/airport-focus/flights.json';
-import months from './fixtures/airport-focus/months.json';
-import passengerStats from './fixtures/airport-focus/passenger-stats.json';
+import summary from './fixtures/airport-focus/summary.json' with {type:'json'};
+import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
+import months from './fixtures/airport-focus/months.json' with {type:'json'};
+import passengerStats from './fixtures/airport-focus/passenger-stats.json' with {type:'json'};
 /** These are captured public API responses, not simulated passenger/flight counts.
  * Snapshot date is visibly disclosed by the implementation. No Production writes. */
 for(const width of [360,390,430,1440])test(`airport focus approval rendering ${width}`,async({page},testInfo)=>{
