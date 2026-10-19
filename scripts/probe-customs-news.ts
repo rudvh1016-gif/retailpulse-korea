@@ -17,9 +17,9 @@ const read=async(url:string)=>{
  const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
  return new TextDecoder('utf-8',{fatal:true}).decode(bytes);
 };
-const results:Array<{board:number;rssItems:number;matchedLinks:number;verifiedArticles:number;relevantTypeOneArticles:number;error?:string}>=[];
+const results:Array<{board:number;rssItems:number;matchedLinks:number;verifiedArticles:number;relevantTypeOneArticles:number;relatedArticles:number;typeOneArticles:number;articleChecks:Array<{id:string;related:boolean;typeOneImage:boolean;typeOneLink:boolean;rightsBlock:boolean;cleared:boolean}>;error?:string}>=[];
 for(const board of boards){
- const result={board:board.id,rssItems:0,matchedLinks:0,verifiedArticles:0,relevantTypeOneArticles:0,error:undefined as string|undefined};
+ const result={board:board.id,rssItems:0,matchedLinks:0,verifiedArticles:0,relevantTypeOneArticles:0,relatedArticles:0,typeOneArticles:0,articleChecks:[] as {id:string;related:boolean;typeOneImage:boolean;typeOneLink:boolean;rightsBlock:boolean;cleared:boolean}[],error:undefined as string|undefined};
  try{
   const feed=parseCustomsRss(await read(`${origin}/kcs/selectBoardRss.do?mi=${board.rssMi}&bbsId=${board.id}`));result.rssItems=feed.length;
   const links=officialCustomsLinks(await read(`${origin}/kcs/na/ntt/selectNttList.do?bbsId=${board.id}&mi=${board.mi}`));
@@ -30,7 +30,11 @@ for(const board of boards){
    const html=await read(linked.url);if(!customsArticleIdentity(linked,html))throw Error('ARTICLE_IDENTITY_CONTRACT');
    result.verifiedArticles++;
    const prepared=await prepareCustomsNews(linked,html,new Date().toISOString(),{deepLinkVerified:true});
-   if(prepared.clearance&&airportCustomsScope(item.title)==='customs')result.relevantTypeOneArticles++;
+   const related=airportCustomsScope(item.title)==='customs';
+   if(related)result.relatedArticles++;
+   if(prepared.clearance)result.typeOneArticles++;
+   if(prepared.clearance&&related)result.relevantTypeOneArticles++;
+   result.articleChecks.push({id:item.id,related,typeOneImage:/new_img_opentype01\.png/.test(html),typeOneLink:/licenseType1\.do/.test(html),rightsBlock:/codeView01/.test(html),cleared:!!prepared.clearance});
   }
  }catch(error){result.error=error instanceof Error?error.message.slice(0,120):'UNKNOWN_FAILURE';}
  results.push(result);
