@@ -24,6 +24,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('#focus-country-trends article')).toHaveCount(3);
  await expect(page.locator('.glance-art-frame > img')).toBeVisible();
  await page.evaluate(()=>document.fonts.ready);
+ expect(errors).toEqual([]);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:testInfo.outputPath(`home-${width}.png`),fullPage:true});
  await page.screenshot({path:testInfo.outputPath(`home-first-screen-${width}.png`)});
