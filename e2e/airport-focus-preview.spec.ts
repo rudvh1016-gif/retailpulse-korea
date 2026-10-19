@@ -34,6 +34,8 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await page.screenshot({path:testInfo.outputPath(`home-first-screen-${width}.png`)});
  await page.getByRole('button',{name:'국가별 흐름',exact:true}).click();
  await expect(page.locator('#focus-country-trends article')).toHaveCount(6);
+ await expect(page.locator('.focus-country-brief')).toContainText('일본');
+ await expect(page.getByTestId('airport-route-passengers')).toBeVisible();
  await page.screenshot({path:testInfo.outputPath(`countries-${width}.png`),fullPage:true});
  await page.getByRole('button',{name:'미리 준비',exact:true}).click();
  await expect(page.locator('#focus-holidays')).toContainText('연방공무원 기준');
