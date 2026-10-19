@@ -1,0 +1,66 @@
+name: One-time approved customs collection 20261020
+# Owner explicitly requested immediate collection. Never merge into main.
+on:
+  push:
+    branches: [ops/customs-first-collection-20261020]
+    paths: [.github/workflows/customs-first-collection-20261020.yml]
+permissions:
+  contents: read
+concurrency:
+  group: production-collector
+  cancel-in-progress: false
+jobs:
+  collect-once:
+    if: github.run_number == 1 && github.run_attempt == 1 && vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 7c9aef7e7f7d79a143957c777e70f1ee9ac30d72
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Snapshot existing public records
+        run: |
+          node --input-type=module <<'JS'
+          import {writeFileSync} from 'node:fs';
+          const r=await fetch('https://koretaildata.com/api/airport/news',{signal:AbortSignal.timeout(20000)});
+          if(!r.ok)throw Error('public_before_http_'+r.status);
+          const data=await r.json();
+          if(data.status!=='STORED')throw Error('public_before_not_stored');
+          for(const id of ['10174903','10168489'])if(!data.items.some(x=>x.sourceId===id))throw Error('existing_article_missing_'+id);
+          writeFileSync('/tmp/customs-before.json',JSON.stringify(data));
+          console.log(JSON.stringify({stage:'before',count:data.items.length,ids:data.items.map(x=>x.sourceId)}));
+          JS
+      - name: Run approved deployed collector once
+        timeout-minutes: 8
+        run: npx tsx scripts/collect-customs-news.ts
+        env:
+          ENABLE_PRODUCTION_COLLECTOR: "true"
+          RPK_CUSTOMS_NEWS_COLLECTION_ENABLED: "true"
+          RPK_CUSTOMS_RSS_LINKS_ENABLED: "true"
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+      - name: Verify public storage and preserve approved articles
+        if: ${{ !cancelled() }}
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          const before=JSON.parse(readFileSync('/tmp/customs-before.json','utf8'));
+          const r=await fetch('https://koretaildata.com/api/airport/news',{signal:AbortSignal.timeout(20000)});
+          if(!r.ok)throw Error('public_after_http_'+r.status);
+          const after=await r.json();
+          if(after.status!=='STORED')throw Error('public_after_not_stored');
+          for(const id of ['10174903','10168489']){
+            const old=before.items.find(x=>x.sourceId===id),current=after.items.find(x=>x.sourceId===id);
+            if(JSON.stringify(old)!==JSON.stringify(current))throw Error('approved_article_changed_'+id);
+          }
+          const added=after.items.filter(x=>!before.items.some(b=>b.sourceId===x.sourceId));
+          for(const item of added){
+            if(item.presentation!=='official-rss-link'||item.facts.length||item.changes.length||item.audience.length||item.clearance||item.attachments||item.effectiveDate||item.deadline)throw Error('unexpected_rich_content');
+          }
+          console.log(JSON.stringify({stage:'after',count:after.items.length,existingApprovedUnchanged:true,newMetadataCount:added.length,metadata:added.map(x=>({id:x.sourceId,title:x.title,publishedAt:x.publishedAt,url:x.url}))}));
+          JS
