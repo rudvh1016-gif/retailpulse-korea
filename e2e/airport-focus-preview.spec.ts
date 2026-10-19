@@ -16,7 +16,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await page.goto('/ko/airport-focus-preview');
  await expect(page.getByTestId('glance-key-passengers')).toContainText('103,124');
  await expect(page.getByTestId('glance-key-sum')).toContainText('112,403');
- await expect(page.locator('.focus-report')).toContainText('9,546.3명');
+ await expect(page.locator('.focus-report')).toContainText('약 9,546명');
  await expect(page.locator('.focus-report')).toContainText('567편');
  await expect(page.locator('.focus-report')).toContainText('552.9편');
  expect(await page.locator('#focus-holidays li').count()).toBeGreaterThan(0);
@@ -33,6 +33,11 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await page.screenshot({path:testInfo.outputPath(`countries-${width}.png`),fullPage:true});
  await page.getByRole('button',{name:'미리 준비',exact:true}).click();
  await expect(page.locator('#focus-holidays')).toContainText('연방공무원 기준');
+ await expect(page.locator('.focus-country-filter option')).toHaveCount(61);
+ await page.locator('.focus-country-filter select').selectOption('괌');
+ await expect(page.locator('#focus-holidays li')).toContainText(['괌','괌']);
+ await expect(page.locator('#focus-holidays li').first()).toContainText('괌 세무국');
+ await page.locator('.focus-country-filter select').selectOption('all');
  await page.screenshot({path:testInfo.outputPath(`preparation-${width}.png`),fullPage:false});
  await page.getByRole('button',{name:'더보기',exact:true}).click();
  await expect(page.getByRole('link',{name:'소비 흐름 ↗'})).toHaveAttribute('href','/ko/consumption');

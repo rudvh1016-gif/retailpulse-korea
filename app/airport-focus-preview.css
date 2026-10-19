@@ -4,3 +4,5 @@
 .focus-country-filter{display:flex;gap:10px;align-items:center;font-size:12px;margin-bottom:16px}.focus-country-filter select{font:inherit;background:white;border:1px solid #dce2e7;min-height:44px;padding:0 12px}.focus-country-code{font-size:11px;display:inline-grid;place-items:center;width:24px;height:24px;flex-shrink:0;color:#65707c}
 
 @media(max-width:700px){.airport-focus-shell .glance-passenger-pair strong{font-size:clamp(18px,5.1vw,21px);white-space:nowrap}}
+
+.glance-overview-extras{grid-column:1/-1;min-width:0}.glance-overview-extras .focus-forward{margin-bottom:8px}
