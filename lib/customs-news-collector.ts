@@ -13,6 +13,9 @@ const plain=(value:string)=>decode(value.replace(/<!--[\s\S]*?-->/g,'').replace(
 /** This airport news surface is not a general customs press-release feed.
  * Preserve unrelated cleared material privately, never use it to fill an empty tab. */
 export function airportCustomsScope(title:string):OfficialNews['topic']{
+ // Agency location alone does not make staff recruitment or routine procurement useful airport news.
+ if(/채용|공무직|서류전형|면접시험|합격자/i.test(title))return 'unclassified';
+ if(/입찰|견적|용역|물품.*구매|장비.*구매/i.test(title)&&!/면세|보세판매장/i.test(title))return 'unclassified';
  return /면세|보세판매장|휴대품|여행자|인천.*공항|공항.*세관|입국장|출국장|해외직구|전자상거래.*통관/i.test(title)?'customs':'unclassified';
 }
 export function officialCustomsLinks(html:string){
