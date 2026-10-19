@@ -1,0 +1,638 @@
+{
+  "checkedAt": "2026-10-19T16:33:00Z",
+  "monthlySource": "/api/live/airport-passenger-stats",
+  "trends": [
+    {
+      "label": "일본",
+      "code": "JP",
+      "points": [
+        {
+          "month": "2026-04",
+          "departures": 823633
+        },
+        {
+          "month": "2026-05",
+          "departures": 902230
+        },
+        {
+          "month": "2026-06",
+          "departures": 791585
+        },
+        {
+          "month": "2026-07",
+          "departures": 861812
+        },
+        {
+          "month": "2026-08",
+          "departures": 886924
+        },
+        {
+          "month": "2026-09",
+          "departures": 911297
+        }
+      ]
+    },
+    {
+      "label": "중국",
+      "code": "CN",
+      "points": [
+        {
+          "month": "2026-04",
+          "departures": 619686
+        },
+        {
+          "month": "2026-05",
+          "departures": 609778
+        },
+        {
+          "month": "2026-06",
+          "departures": 632833
+        },
+        {
+          "month": "2026-07",
+          "departures": 703156
+        },
+        {
+          "month": "2026-08",
+          "departures": 761678
+        },
+        {
+          "month": "2026-09",
+          "departures": 601273
+        }
+      ]
+    },
+    {
+      "label": "베트남",
+      "code": "VN",
+      "points": [
+        {
+          "month": "2026-04",
+          "departures": 294866
+        },
+        {
+          "month": "2026-05",
+          "departures": 255327
+        },
+        {
+          "month": "2026-06",
+          "departures": 241468
+        },
+        {
+          "month": "2026-07",
+          "departures": 310033
+        },
+        {
+          "month": "2026-08",
+          "departures": 311508
+        },
+        {
+          "month": "2026-09",
+          "departures": 275406
+        }
+      ]
+    },
+    {
+      "label": "미국",
+      "code": "US",
+      "points": [
+        {
+          "month": "2026-04",
+          "departures": 278684
+        },
+        {
+          "month": "2026-05",
+          "departures": 265241
+        },
+        {
+          "month": "2026-06",
+          "departures": 262877
+        },
+        {
+          "month": "2026-07",
+          "departures": 290569
+        },
+        {
+          "month": "2026-08",
+          "departures": 295731
+        },
+        {
+          "month": "2026-09",
+          "departures": 263371
+        }
+      ]
+    },
+    {
+      "label": "대만",
+      "code": "TW",
+      "points": [
+        {
+          "month": "2026-04",
+          "departures": 139510
+        },
+        {
+          "month": "2026-05",
+          "departures": 127313
+        },
+        {
+          "month": "2026-06",
+          "departures": 119181
+        },
+        {
+          "month": "2026-07",
+          "departures": 127995
+        },
+        {
+          "month": "2026-08",
+          "departures": 130636
+        },
+        {
+          "month": "2026-09",
+          "departures": 121778
+        }
+      ]
+    },
+    {
+      "label": "태국",
+      "code": "TH",
+      "points": [
+        {
+          "month": "2026-04",
+          "departures": 121214
+        },
+        {
+          "month": "2026-05",
+          "departures": 93142
+        },
+        {
+          "month": "2026-06",
+          "departures": 84456
+        },
+        {
+          "month": "2026-07",
+          "departures": 114352
+        },
+        {
+          "month": "2026-08",
+          "departures": 110499
+        },
+        {
+          "month": "2026-09",
+          "departures": 95743
+        }
+      ]
+    }
+  ],
+  "forecastBaseline": {
+    "all": {
+      "current": {
+        "start": "2026-09-01",
+        "end": "2026-09-30",
+        "total": 2807331,
+        "expectedDays": 30,
+        "completeDays": 30,
+        "status": "COMPLETE",
+        "missingDates": [],
+        "days": [
+          {
+            "date": "2026-09-01",
+            "total": 83845
+          },
+          {
+            "date": "2026-09-02",
+            "total": 86634
+          },
+          {
+            "date": "2026-09-03",
+            "total": 87261
+          },
+          {
+            "date": "2026-09-04",
+            "total": 95893
+          },
+          {
+            "date": "2026-09-05",
+            "total": 93481
+          },
+          {
+            "date": "2026-09-06",
+            "total": 98149
+          },
+          {
+            "date": "2026-09-07",
+            "total": 96220
+          },
+          {
+            "date": "2026-09-08",
+            "total": 82974
+          },
+          {
+            "date": "2026-09-09",
+            "total": 87075
+          },
+          {
+            "date": "2026-09-10",
+            "total": 90365
+          },
+          {
+            "date": "2026-09-11",
+            "total": 96223
+          },
+          {
+            "date": "2026-09-12",
+            "total": 92809
+          },
+          {
+            "date": "2026-09-13",
+            "total": 98565
+          },
+          {
+            "date": "2026-09-14",
+            "total": 96967
+          },
+          {
+            "date": "2026-09-15",
+            "total": 81857
+          },
+          {
+            "date": "2026-09-16",
+            "total": 88345
+          },
+          {
+            "date": "2026-09-17",
+            "total": 89568
+          },
+          {
+            "date": "2026-09-18",
+            "total": 101748
+          },
+          {
+            "date": "2026-09-19",
+            "total": 100919
+          },
+          {
+            "date": "2026-09-20",
+            "total": 98856
+          },
+          {
+            "date": "2026-09-21",
+            "total": 92676
+          },
+          {
+            "date": "2026-09-22",
+            "total": 99448
+          },
+          {
+            "date": "2026-09-23",
+            "total": 114967
+          },
+          {
+            "date": "2026-09-24",
+            "total": 110502
+          },
+          {
+            "date": "2026-09-25",
+            "total": 94133
+          },
+          {
+            "date": "2026-09-26",
+            "total": 86581
+          },
+          {
+            "date": "2026-09-27",
+            "total": 95426
+          },
+          {
+            "date": "2026-09-28",
+            "total": 90103
+          },
+          {
+            "date": "2026-09-29",
+            "total": 80821
+          },
+          {
+            "date": "2026-09-30",
+            "total": 94920
+          }
+        ]
+      },
+      "previous": {
+        "start": "2026-08-01",
+        "end": "2026-08-30",
+        "total": null,
+        "expectedDays": 30,
+        "completeDays": 0,
+        "status": "UNAVAILABLE",
+        "missingDates": [
+          "2026-08-01",
+          "2026-08-02",
+          "2026-08-03",
+          "2026-08-04",
+          "2026-08-05"
+        ]
+      },
+      "previousAbsentReason": null,
+      "change": null
+    },
+    "T1": {
+      "current": {
+        "start": "2026-09-01",
+        "end": "2026-09-30",
+        "total": 1532245,
+        "expectedDays": 30,
+        "completeDays": 30,
+        "status": "COMPLETE",
+        "missingDates": [],
+        "days": [
+          {
+            "date": "2026-09-01",
+            "total": 44993
+          },
+          {
+            "date": "2026-09-02",
+            "total": 46705
+          },
+          {
+            "date": "2026-09-03",
+            "total": 47022
+          },
+          {
+            "date": "2026-09-04",
+            "total": 51330
+          },
+          {
+            "date": "2026-09-05",
+            "total": 51639
+          },
+          {
+            "date": "2026-09-06",
+            "total": 53659
+          },
+          {
+            "date": "2026-09-07",
+            "total": 50331
+          },
+          {
+            "date": "2026-09-08",
+            "total": 44852
+          },
+          {
+            "date": "2026-09-09",
+            "total": 47264
+          },
+          {
+            "date": "2026-09-10",
+            "total": 49288
+          },
+          {
+            "date": "2026-09-11",
+            "total": 51924
+          },
+          {
+            "date": "2026-09-12",
+            "total": 51043
+          },
+          {
+            "date": "2026-09-13",
+            "total": 53665
+          },
+          {
+            "date": "2026-09-14",
+            "total": 52629
+          },
+          {
+            "date": "2026-09-15",
+            "total": 46091
+          },
+          {
+            "date": "2026-09-16",
+            "total": 49176
+          },
+          {
+            "date": "2026-09-17",
+            "total": 49536
+          },
+          {
+            "date": "2026-09-18",
+            "total": 56134
+          },
+          {
+            "date": "2026-09-19",
+            "total": 55639
+          },
+          {
+            "date": "2026-09-20",
+            "total": 55455
+          },
+          {
+            "date": "2026-09-21",
+            "total": 51655
+          },
+          {
+            "date": "2026-09-22",
+            "total": 53565
+          },
+          {
+            "date": "2026-09-23",
+            "total": 62735
+          },
+          {
+            "date": "2026-09-24",
+            "total": 59919
+          },
+          {
+            "date": "2026-09-25",
+            "total": 52059
+          },
+          {
+            "date": "2026-09-26",
+            "total": 48776
+          },
+          {
+            "date": "2026-09-27",
+            "total": 51620
+          },
+          {
+            "date": "2026-09-28",
+            "total": 47881
+          },
+          {
+            "date": "2026-09-29",
+            "total": 43556
+          },
+          {
+            "date": "2026-09-30",
+            "total": 52104
+          }
+        ]
+      },
+      "previous": {
+        "start": "2026-08-01",
+        "end": "2026-08-30",
+        "total": null,
+        "expectedDays": 30,
+        "completeDays": 0,
+        "status": "UNAVAILABLE",
+        "missingDates": [
+          "2026-08-01",
+          "2026-08-02",
+          "2026-08-03",
+          "2026-08-04",
+          "2026-08-05"
+        ]
+      },
+      "previousAbsentReason": null,
+      "change": null
+    },
+    "T2": {
+      "current": {
+        "start": "2026-09-01",
+        "end": "2026-09-30",
+        "total": 1275086,
+        "expectedDays": 30,
+        "completeDays": 30,
+        "status": "COMPLETE",
+        "missingDates": [],
+        "days": [
+          {
+            "date": "2026-09-01",
+            "total": 38852
+          },
+          {
+            "date": "2026-09-02",
+            "total": 39929
+          },
+          {
+            "date": "2026-09-03",
+            "total": 40239
+          },
+          {
+            "date": "2026-09-04",
+            "total": 44563
+          },
+          {
+            "date": "2026-09-05",
+            "total": 41842
+          },
+          {
+            "date": "2026-09-06",
+            "total": 44490
+          },
+          {
+            "date": "2026-09-07",
+            "total": 45889
+          },
+          {
+            "date": "2026-09-08",
+            "total": 38122
+          },
+          {
+            "date": "2026-09-09",
+            "total": 39811
+          },
+          {
+            "date": "2026-09-10",
+            "total": 41077
+          },
+          {
+            "date": "2026-09-11",
+            "total": 44299
+          },
+          {
+            "date": "2026-09-12",
+            "total": 41766
+          },
+          {
+            "date": "2026-09-13",
+            "total": 44900
+          },
+          {
+            "date": "2026-09-14",
+            "total": 44338
+          },
+          {
+            "date": "2026-09-15",
+            "total": 35766
+          },
+          {
+            "date": "2026-09-16",
+            "total": 39169
+          },
+          {
+            "date": "2026-09-17",
+            "total": 40032
+          },
+          {
+            "date": "2026-09-18",
+            "total": 45614
+          },
+          {
+            "date": "2026-09-19",
+            "total": 45280
+          },
+          {
+            "date": "2026-09-20",
+            "total": 43401
+          },
+          {
+            "date": "2026-09-21",
+            "total": 41021
+          },
+          {
+            "date": "2026-09-22",
+            "total": 45883
+          },
+          {
+            "date": "2026-09-23",
+            "total": 52232
+          },
+          {
+            "date": "2026-09-24",
+            "total": 50583
+          },
+          {
+            "date": "2026-09-25",
+            "total": 42074
+          },
+          {
+            "date": "2026-09-26",
+            "total": 37805
+          },
+          {
+            "date": "2026-09-27",
+            "total": 43806
+          },
+          {
+            "date": "2026-09-28",
+            "total": 42222
+          },
+          {
+            "date": "2026-09-29",
+            "total": 37265
+          },
+          {
+            "date": "2026-09-30",
+            "total": 42816
+          }
+        ]
+      },
+      "previous": {
+        "start": "2026-08-01",
+        "end": "2026-08-30",
+        "total": null,
+        "expectedDays": 30,
+        "completeDays": 0,
+        "status": "UNAVAILABLE",
+        "missingDates": [
+          "2026-08-01",
+          "2026-08-02",
+          "2026-08-03",
+          "2026-08-04",
+          "2026-08-05"
+        ]
+      },
+      "previousAbsentReason": null,
+      "change": null
+    }
+  }
+}

@@ -98,3 +98,33 @@ jobs:
             critical-ui-results/
           retention-days: 7
           if-no-files-found: ignore
+
+
+  airport-focus-preview:
+    if: github.head_ref == 'preview/airport-focus-review' || github.ref_name == 'preview/airport-focus-review'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      NEXT_PUBLIC_SITE_ORIGIN: http://127.0.0.1:4173
+      RPK_DEPLOYMENT_STAGE: staging
+      NEXT_PUBLIC_ENABLE_BETA_SIGNUP: "false"
+      PLAYWRIGHT_BROWSERS_PATH: .playwright-browsers
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck
+      - run: npm run e2e:install
+      - run: npx playwright test e2e/airport-focus-preview.spec.ts --output airport-focus-results --workers=2
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: airport-focus-approval-images
+          path: airport-focus-results/
+          retention-days: 7
+          if-no-files-found: warn
