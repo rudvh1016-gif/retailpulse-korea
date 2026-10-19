@@ -38,9 +38,10 @@ test('public API is stored-only, honest for missing storage, read failure and in
  const unprepared=new SqliteD1(':memory:',false);const result=await (await airportNewsResponse(unprepared,new Date(at))).json();assert.equal(result.status,'UNAVAILABLE');unprepared.raw.close();
  const db=new SqliteD1();await storeOfficialNews(db,[item()]);db.calls=[];const response=await airportNewsResponse(db,new Date(at));assert.equal(response.headers.get('cache-control'),'private, no-store');assert.equal((await response.json()).items.length,1);assert.ok(db.calls.every(sql=>/^SELECT/.test(sql)));db.raw.close();
 });
-test('closed collector and production entry use zero fetch/config/DB work',async()=>{
+test('unactivated collector stays dormant and production entry requires its dedicated token',async()=>{
  const result=await collectCustomsNews({prepare(){throw Error('Unexpected DB');}}, {fetchImpl:()=>{throw Error('Unexpected provider');}});assert.equal(result.state,'DORMANT');assert.equal(result.requests,0);
- const run=spawnSync(process.execPath,['--import','tsx','scripts/collect-customs-news.ts'],{encoding:'utf8',env:{...process.env,RPK_CUSTOMS_NEWS_COLLECTION_ENABLED:'true',ENABLE_PRODUCTION_COLLECTOR:'true'}});assert.equal(run.status,0,run.stderr);assert.match(run.stdout,/DORMANT/);assert.match(run.stdout,/"writes":0/);
+ const run=spawnSync(process.execPath,['--import','tsx','scripts/collect-customs-news.ts'],{encoding:'utf8',env:{...process.env,RPK_CUSTOMS_NEWS_COLLECTION_ENABLED:'false',ENABLE_PRODUCTION_COLLECTOR:'true',CLOUDFLARE_D1_WRITE_TOKEN:'',CLOUDFLARE_API_TOKEN:''}});assert.equal(run.status,0,run.stderr);assert.match(run.stdout,/DORMANT/);assert.match(run.stdout,/"writes":0/);
+ const blocked=spawnSync(process.execPath,['--import','tsx','scripts/collect-customs-news.ts'],{encoding:'utf8',env:{...process.env,RPK_CUSTOMS_NEWS_COLLECTION_ENABLED:'true',ENABLE_PRODUCTION_COLLECTOR:'true',CLOUDFLARE_D1_WRITE_TOKEN:'',CLOUDFLARE_API_TOKEN:''}});assert.notEqual(blocked.status,0);assert.match(blocked.stderr,/missing_dedicated_d1_write_token/);
 });
 test('normal official links create private review candidates; duplicate feeds do not duplicate writes',async()=>{
  const db=new SqliteD1();let licence=true,requests=0;
@@ -73,3 +74,4 @@ test('metadata preserves named author, excludes photos/external links and never 
  const overflow=customsArticleMetadata(Array.from({length:8},(_,i)=>'<a href="/common/nttFileDownload.do?fileKey='+i.toString(16).padStart(32,'0')+'" title="Fixture'+i+'.hwp 다운로드"></a>').join(''));assert.equal(overflow.attachments.length,6);assert.equal(overflow.attachmentsComplete,false);
  assert.equal(airportCustomsScope('원유 수입선 다변화 관세행정 지원대책 확대'),'unclassified');assert.equal(airportCustomsScope('2026년 9월 수출입 현황 [잠정치]'),'unclassified');assert.equal(airportCustomsScope('출국장 면세점 특허 공고'),'customs');
 });
+
