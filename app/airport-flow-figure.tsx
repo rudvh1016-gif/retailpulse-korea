@@ -22,7 +22,8 @@ const kstClock = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour
 /** Rough text width at 11px: CJK glyphs are square, Latin digits are narrow. */
 const textWidth = (text: string) => [...text].reduce((sum, ch) => sum + (ch > "⺀" ? 11 : /[0-9]/.test(ch) ? 6.4 : /[ ·–:]/.test(ch) ? 3.4 : 6.2), 0);
 
-export function AirportFlowFigure({ timeline, layers = null, lang = "ko", terminal = 'all', showModel = true, peakStartAt, nowBandStart, nowBandProgress, nowLabel, numberLocale, label, reference = null }: {
+export function AirportFlowFigure({ chartId, timeline, layers = null, lang = "ko", terminal = 'all', showModel = true, peakStartAt, nowBandStart, nowBandProgress, nowLabel, numberLocale, label, reference = null }: {
+  chartId?: string;
   timeline: ReadonlyArray<FlowBand>;
   layers?: Record<string, ReadonlyArray<FlowBand> | undefined> | null;
   lang?: Lang;
@@ -108,7 +109,7 @@ export function AirportFlowFigure({ timeline, layers = null, lang = "ko", termin
     {showModel && <AirportSceneModel scope={terminal} lang={lang} className="airport-hourly-concept"/>}
     {/* No role="img" here: the figure itself is the labelled group, and the band
         rects inside are real keyboard stops that an image role would hide. */}
-    <svg ref={svgRef} width="100%" height={height} viewBox={`0 0 ${width} ${height}`}
+    <svg id={chartId} ref={svgRef} width="100%" height={height} viewBox={`0 0 ${width} ${height}`}
       data-day-left={left} data-day-width={right - left}
       onPointerMove={onPointerMove} onPointerLeave={() => setHover(null)} onPointerCancel={() => setHover(null)}>
       <g className="airport-hourly-prisms" aria-hidden="true" pointerEvents="none">

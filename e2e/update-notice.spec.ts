@@ -31,7 +31,7 @@ test('week hiding lasts exactly seven days across reload and another tab',async(
  const other=await context.newPage();await other.goto('/ko');await expect(other.getByRole('dialog')).not.toBeVisible();await other.close();
  await page.clock.fastForward(NOTICE_WEEK_MS-1);await expect(page.getByRole('dialog')).not.toBeVisible();await page.clock.fastForward(1);await expect(page.getByRole('dialog')).toBeVisible();
 });
-for(const [link,id]of [['시간대별 비교 보기','airport-forecast-title'],['국가별 여객 보기','airport-route-passengers']])test(`shortcut closes and lands on the real section: ${id}`,async({page})=>{
+for(const [link,id]of [['시간대별 비교 보기','airport-hourly-comparison'],['국가별 여객 보기','airport-route-passengers']])test(`shortcut closes and lands on the real section: ${id}`,async({page})=>{
  await page.goto('/ko');await page.getByRole('dialog').getByRole('link',{name:link}).click();await expect(page).toHaveURL(new RegExp('#'+id+'$'));await expect(page.getByRole('dialog')).not.toBeVisible();
  const target=page.locator('#'+id);await expect(target).toBeInViewport();await expect.poll(async()=>target.evaluate(e=>{const y=e.getBoundingClientRect().top;return y>=0&&y<innerHeight;})).toBe(true);
 });
@@ -49,9 +49,10 @@ for(const width of [390,1440])for(const start of ['/ko','/ko/airport?terminal=T1
  const dialog=page.getByRole('dialog');
  await expect(dialog.getByText('시간대별 여객 비교는 전체 공항에서만 볼 수 있어요.')).toBeVisible();
  await dialog.getByRole('link',{name:'시간대별 비교 보기'}).click();
- await expect(page).toHaveURL(/\/ko\/airport\?terminal=all#airport-forecast-title$/);
+ await expect(page).toHaveURL(/\/ko\/airport\?terminal=all#airport-hourly-comparison$/);
  await expect(page.locator('.terminal-selector [role="tab"][aria-selected="true"]')).toContainText('전체');
- const target=page.locator('#airport-forecast-title');
+ const target=page.locator('svg#airport-hourly-comparison');
+ await expect(target.locator('.airport-flow-reference path')).toBeVisible();
  await expect.poll(()=>target.evaluate(e=>{
   let bottom=0;
   for(const bar of document.querySelectorAll<HTMLElement>('.site-header,.airport-context-nav')){
@@ -59,19 +60,22 @@ for(const width of [390,1440])for(const start of ['/ko','/ko/airport?terminal=T1
    if(style.position==='sticky'||style.position==='fixed')bottom=Math.max(bottom,(parseFloat(style.top)||0)+bar.offsetHeight);
   }
   const top=e.getBoundingClientRect().top;
-  return top>=bottom&&top<bottom+24;
+  return top>=bottom&&top<bottom+24&&e.getBoundingClientRect().bottom<innerHeight-80;
  })).toBe(true);
  expect(await page.evaluate(()=>localStorage.getItem('koretail-airport-scope'))).toBe('T2');
  await page.screenshot({path:testInfo.outputPath('hourly-comparison-landing.png')});
  await page.goBack();await expect(page).toHaveURL(new RegExp(start.replace(/[?]/g,'\\?')+'$'));
 });
 test('same fragment click realigns and user scrolling cancels subsequent alignment',async({page})=>{
- await page.goto('/ko/airport?terminal=all#airport-forecast-title');
+ await page.goto('/ko/airport?terminal=all#airport-hourly-comparison');
  const dialog=page.getByRole('dialog');
  await dialog.getByRole('link',{name:'시간대별 비교 보기'}).click();
- const target=page.locator('#airport-forecast-title');await expect(target).toBeInViewport();
+ const target=page.locator('#airport-hourly-comparison');await expect(target).toBeInViewport();
  await page.mouse.wheel(0,500);await page.waitForTimeout(250);
- const before=await page.evaluate(()=>scrollY);
+ await page.evaluate(()=>{
+  const state=window as Window & {comparisonScrollCalls:number};state.comparisonScrollCalls=0;
+  window.scrollTo=new Proxy(window.scrollTo,{apply(target,thisArg,args){state.comparisonScrollCalls++;return Reflect.apply(target,thisArg,args);}});
+ });
  await page.evaluate(()=>{const node=document.createElement('div');node.textContent='test mutation';document.body.append(node);node.remove();});
- await page.waitForTimeout(100);expect(await page.evaluate(()=>scrollY)).toBe(before);
+ await page.waitForTimeout(100);expect(await page.evaluate(()=>(window as Window & {comparisonScrollCalls:number}).comparisonScrollCalls)).toBe(0);
 });
