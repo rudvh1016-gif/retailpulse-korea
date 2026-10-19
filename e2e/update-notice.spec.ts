@@ -10,14 +10,15 @@ test.beforeEach(async({page})=>{
  const base={operationId:'',month:'2026-07',retrievedAt:SUMMARY_FIXTURE.generatedAt};
  await page.route('**/api/live/airport-passenger-stats*',r=>r.fulfill({json:{status:'READY',month:'2026-07',previousMonth:null,current:{ROUTE_COUNTRY_PASSENGERS:{...base,operationId:'ROUTE_COUNTRY_PASSENGERS',rows:[{label:'일본',region:'일본',departures:31000,arrivals:0,total:null,aggregate:false,startHour:null,endHour:null}]},TIME_BAND_PASSENGERS:{...base,operationId:'TIME_BAND_PASSENGERS',rows:Array.from({length:24},(_,h)=>({label:String(h),region:null,departures:31000,arrivals:0,total:null,aggregate:false,startHour:h,endHour:h+1}))}},previous:{}}}));
 });
-for(const [width,height]of [[1440,1000],[360,568],[390,844],[430,700],[390,500]])test(`first entry is immediate, compact and keyboard safe ${width}x${height}`,async({page})=>{
+for(const [width,height]of [[1440,1000],[360,568],[390,844],[430,700],[390,500]])test(`first entry is immediate, compact and keyboard safe ${width}x${height}`,async({page},testInfo)=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.setViewportSize({width,height});await page.goto('/ko');
  const dialog=page.getByRole('dialog',{name:'새로운 정보가 추가되었어요'});await expect(dialog).toBeVisible();
- await expect(dialog.getByRole('button',{name:'공지 닫기'})).toBeFocused();await expect(dialog.locator('section')).toHaveCount(2);
+ await expect(dialog.getByRole('heading',{level:2})).toBeFocused();await expect(dialog.locator('section')).toHaveCount(2);
  await expect(dialog.locator('img,svg,canvas')).toHaveCount(0);await expect(dialog.getByRole('link')).toHaveCount(2);
  expect(await page.evaluate(()=>getComputedStyle(document.documentElement).overflow)).toBe('hidden');
  const box=await dialog.boundingBox();expect(box!.x).toBeGreaterThanOrEqual(0);expect(box!.y).toBeGreaterThanOrEqual(0);expect(box!.width).toBeLessThanOrEqual(width);expect(box!.height).toBeLessThanOrEqual(height);
  expect(await dialog.evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);
+ await page.screenshot({path:testInfo.outputPath('update-notice-preview.png')});
  await page.keyboard.press('Shift+Tab');await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeFocused();await page.keyboard.press('Tab');await expect(dialog.getByRole('button',{name:'공지 닫기'})).toBeFocused();
  await page.keyboard.press('Escape');await expect(dialog).not.toBeVisible();expect(await page.evaluate(()=>document.documentElement.style.overflow)).not.toBe('hidden');
  await page.reload();await expect(dialog).not.toBeVisible();expect(await page.evaluate(key=>sessionStorage.getItem(key),UPDATE_NOTICE_SESSION_KEY)).toBe('1');expect(errors).toEqual([]);
