@@ -77,9 +77,9 @@ test('same fragment click realigns and user scrolling cancels subsequent alignme
  const target=page.locator('#airport-hourly-comparison');await expect(target).toBeInViewport();
  await page.mouse.wheel(0,500);await page.waitForTimeout(250);
  await page.evaluate(()=>{
-  const state=window as Window & {comparisonScrollCalls:number};state.comparisonScrollCalls=0;
+  const state=window as unknown as Window & {comparisonScrollCalls:number};state.comparisonScrollCalls=0;
   window.scrollTo=new Proxy(window.scrollTo,{apply(target,thisArg,args){state.comparisonScrollCalls++;return Reflect.apply(target,thisArg,args);}});
  });
  await page.evaluate(()=>{const node=document.createElement('div');node.textContent='test mutation';document.body.append(node);node.remove();});
- await page.waitForTimeout(100);expect(await page.evaluate(()=>(window as Window & {comparisonScrollCalls:number}).comparisonScrollCalls)).toBe(0);
+ await page.waitForTimeout(100);expect(await page.evaluate(()=>(window as unknown as Window & {comparisonScrollCalls:number}).comparisonScrollCalls)).toBe(0);
 });
