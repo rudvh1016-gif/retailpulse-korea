@@ -12,6 +12,7 @@ const copy={
 
 export default function UpdateNotice({lang}:{lang:string}){
  const locale=lang.startsWith('zh')?'zh':lang==='en'?'en':lang==='ja'?'ja':'ko',c=copy[locale];
+ const heading=useRef<HTMLHeadingElement>(null);
  const dialog=useRef<HTMLDialogElement>(null),dismiss=useRef<(week:boolean)=>void>(()=>{});
  useLayoutEffect(()=>{
   const node=dialog.current;if(!node)return;
@@ -29,6 +30,7 @@ export default function UpdateNotice({lang}:{lang:string}){
    root.style.overflow='hidden';body.style.overflow='hidden';
    restore=()=>{root.style.overflow=oldRoot;body.style.overflow=oldBody;};
    node.showModal();
+   heading.current?.focus({preventScroll:true});
   };
   dismiss.current=(week)=>{
    if(week){untilFallback=String(Date.now()+NOTICE_WEEK_MS);try{localStorage.setItem(UPDATE_NOTICE_UNTIL_KEY,untilFallback);sessionStorage.removeItem(UPDATE_NOTICE_SESSION_KEY);}catch{}close();reconcile();}
@@ -43,11 +45,11 @@ export default function UpdateNotice({lang}:{lang:string}){
  return <dialog ref={dialog} className="update-notice" aria-labelledby="update-notice-title" aria-modal="true" onCancel={event=>{event.preventDefault();dismiss.current(false);}} onKeyDown={event=>{
   if(event.key!=='Tab')return;
   const items=event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled),a[href]'),first=items[0],last=items[items.length-1];
-  if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+  if(event.shiftKey&&(document.activeElement===first||document.activeElement===heading.current)){event.preventDefault();last?.focus();}
   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
  }}>
-  <div className="update-notice-top"><span className="update-notice-new">NEW</span><button type="button" className="update-notice-x" aria-label={c.closeLabel} autoFocus onClick={()=>dismiss.current(false)}>×</button></div>
-  <h2 id="update-notice-title">{c.title}</h2>
+  <div className="update-notice-top"><span className="update-notice-new">NEW</span><button type="button" className="update-notice-x" aria-label={c.closeLabel} onClick={()=>dismiss.current(false)}>×</button></div>
+  <h2 ref={heading} tabIndex={-1} id="update-notice-title">{c.title}</h2>
   <div className="update-notice-items">
    <section><div><h3>{c.hour}</h3><p>{c.hourBody}</p><small>{c.hourPath}</small><p className="update-notice-note">{c.hourNote}</p></div><a href={`/${locale}/airport?terminal=all#airport-forecast-title`} onClick={()=>dismiss.current(false)}>{c.hourLink} →</a></section>
    <section><div><h3>{c.country} <span aria-hidden="true">*</span></h3><p>{c.countryBody}</p><small>{c.countryPath}</small><p className="update-notice-note">{c.countryNote}</p></div><a href={`/${locale}/airport?terminal=all#airport-route-passengers`} onClick={()=>dismiss.current(false)}>{c.countryLink} →</a></section>
