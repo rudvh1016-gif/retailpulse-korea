@@ -180,3 +180,30 @@ names and the week-ahead, weekly check and feeling-log copy.
   JP 219,848 / 222,052 bytes, inside the 320 KB per-face budget.
 
 Owner UI Lock: only these four font hashes are re-approved.
+
+## 2026-10-20 airport-focus preview copy
+
+The isolated airport-focus preview and its checked-in holiday snapshot introduce
+nine Hangul syllables: `괌둠딘웅윤쥣칭킵힌` (U+AD0C, U+B460, U+B518,
+U+C6C5, U+C724, U+C963, U+CE6D, U+D0B5, U+D78C). Regenerated KORETAIL Sans
+from the same Pretendard 1.3.9 TTF, after re-verifying SHA-256
+`3090ccde0442bb347aa7685d9ba8b17436a60682df6e8f92a9a670de14056e22`, using
+FontTools 4.66.0 and Brotli 1.2.0.
+
+The corpus is the union of all 1,509 previously shipped codepoints and the
+Hangul printed by current app/lib copy and the airport-focus preview JSON,
+including the reviewed holiday descriptions. No previous codepoint is removed.
+The same pipeline with the old cmap first reproduced the existing WOFF2
+byte-for-byte. Existing name, fvar and STAT tables, KORETAIL family/instance
+names, weight range, layout feature set, copyright, attribution and OFL records
+are preserved. Every previous encoded glyph retains identical outlines and
+advance widths at weights 100, 400, 500, 700 and 900.
+
+The asset grows from 227,508 to 229,012 bytes (+1,504 bytes), with 1,518
+codepoints and 852 Hangul syllables, within the existing 300,000-byte budget.
+Its SHA-256 is
+`0b27b815fb7a1a2aea744595b2fb20555137a368b22b6929814634de6a29c866`.
+The coverage fixture was regenerated from this actual cmap and file hash.
+No full-font replacement, CSS family/weight/loading change or external font
+request is introduced. The existing license files remain unchanged.
+

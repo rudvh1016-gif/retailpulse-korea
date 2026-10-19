@@ -49,6 +49,7 @@ async function productCopy() {
   };
   await walk(new URL("../app/", import.meta.url));
   await walk(new URL("../lib/", import.meta.url));
+  await walk(new URL("../data/airport-focus-preview/", import.meta.url));
   return files;
 }
 
@@ -81,3 +82,4 @@ test("the coverage fixture still describes the font that ships", async () => {
     "koretail-sans-variable.woff2 changed; regenerate tests/fixtures/koretail-sans-hangul.json with the command in its _regenerate field");
   assert.ok(carried.size > 800, `the fixture carries only ${carried.size} syllables, which cannot be the real subset`);
 });
+

@@ -27,6 +27,8 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  expect(await page.locator('#focus-holidays li').count()).toBeLessThanOrEqual(3);
  await expect(page.locator('#focus-country-trends article')).toHaveCount(3);
  await expect(page.locator('.glance-art-frame > img')).toBeVisible();
+ await expect.poll(()=>page.locator('.glance-art-frame > img').evaluate((img:HTMLImageElement)=>img.currentSrc)).toContain('approval-v2-');
+ expect(await page.locator('.glance-art-frame > img').evaluate((img:HTMLImageElement)=>img.naturalWidth)).toBeGreaterThan(0);
  await page.evaluate(()=>document.fonts.ready);
  expect(errors).toEqual([]);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
@@ -36,6 +38,8 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('#focus-country-trends article')).toHaveCount(6);
  await expect(page.locator('.focus-country-brief')).toContainText('일본');
  await expect(page.getByTestId('airport-route-passengers')).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await expect(page.locator('.focus-trend-summary').first()).toContainText('3개월 연속 증가');
  await page.screenshot({path:testInfo.outputPath(`countries-${width}.png`),fullPage:true});
  await page.getByRole('button',{name:'미리 준비',exact:true}).click();
  await expect(page.locator('#focus-holidays')).toContainText('연방공무원 기준');
@@ -50,7 +54,26 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  if(width===390||width===1440){
   await page.getByRole('button',{name:'공항 현황',exact:true}).click();
   await expect(page.locator('.airport-view')).toBeVisible();
+  await expect(page.getByTestId('airport-route-passengers')).toHaveCount(0);
+  await expect(page.locator('.focus-country-jump')).toBeVisible();
   await page.screenshot({path:testInfo.outputPath(`airport-status-${width}.png`),fullPage:true});
+  await page.locator('.focus-country-jump').click();
+  await expect(page.getByTestId('airport-route-passengers')).toBeVisible();
+  await expect(page.locator('.focus-country-brief')).toBeInViewport();
  }
  expect(errors).toEqual([]);
+});
+
+for(const width of [390,1440])test(`approved notice has only bottom close ${width}`,async({page},testInfo)=>{
+ await page.setViewportSize({width,height:1000});await page.clock.setFixedTime(new Date(summary.generatedAt));
+ await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));
+ await page.route('**/api/live/flights*',r=>r.fulfill({json:flights}));
+ await page.route('**/api/live/airport-months*',r=>r.fulfill({json:months}));
+ await page.route('**/api/live/airport-passenger-stats*',r=>r.fulfill({json:passengerStats}));
+ await page.goto('/ko');const dialog=page.getByRole('dialog',{name:'새로운 정보가 추가되었어요'});
+ await expect(dialog).toBeVisible();await expect(dialog.locator('.update-notice-x')).toHaveCount(0);
+ await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeVisible();
+ await expect(dialog.getByRole('button',{name:'일주일 동안 안 보기',exact:true})).toBeVisible();
+ await page.screenshot({path:testInfo.outputPath(`notice-${width}.png`)});
+ await dialog.getByRole('button',{name:'닫기',exact:true}).click();await expect(dialog).not.toBeVisible();
 });

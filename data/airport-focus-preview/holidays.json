@@ -35,7 +35,13 @@
       "calendarWeekendDates": [
         "2026-10-25"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "10/25(일)~10/27(화)",
+      "description_ko": "띠딘쥣을 맞아 미얀마 외교부 달력에 연속 지정된 공휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "KZ-all-2026-10-25-major",
@@ -62,7 +68,13 @@
       "calendarWeekendDates": [
         "2026-10-25"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "10/25(일)~10/26(월)",
+      "description_ko": "공화국의 날과 공식 대체휴일을 함께 표시한 일정입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "NZ-all-2026-10-26-major",
@@ -87,7 +99,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "10/26(월)",
+      "description_ko": "노동을 기념하는 전국 공휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "AT-all-2026-10-26-major",
@@ -112,7 +130,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "10/26(월)",
+      "description_ko": "국가의 중요한 기념일로 지정된 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "KH-all-2026-10-29-major",
@@ -137,7 +161,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "10/29(목)",
+      "description_ko": "국왕의 즉위를 기념하는 전국 공휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "TR-all-2026-10-29-major",
@@ -162,7 +192,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "10/29(목)",
+      "description_ko": "공화국 수립을 기념하는 휴일입니다. 전날 10/28(수) 13시부터인 반일 휴일은 별도 확인해야 합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "PH-all-2026-11-01-major",
@@ -189,7 +225,16 @@
       "calendarWeekendDates": [
         "2026-11-01"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/1(일)~11/2(월)",
+      "description_ko": "성인을 기리고 고인을 추모하는 휴일입니다. 11/2는 가족의 전통 기념활동을 위해 추가 지정한 특별 비근무일이며, 11/1의 대체휴일이 아닙니다.",
+      "cardSummary_ko": "11/1(일)~2(월) 특별 비근무일. 토요일도 쉬는 근무자는 10/31부터 3일 연결 가능.",
+      "connectionNote_ko": "11/1(일)과 11/2(월)은 특별 비근무일입니다. 11/2는 별도 추가 지정일입니다. 10/31(토)은 이 연간 공고의 공휴일로 추가하지 않았습니다.",
+      "connectionStatus_ko": "공식 2일 · 토요일 연결은 조건부",
+      "restConditions_ko": [
+        "10/31(토)이 본인의 정기휴무일일 것",
+        "11/1~2 특별 비근무일에 실제 근무하지 않을 것"
+      ]
     },
     {
       "id": "JP-all-2026-11-03-1",
@@ -214,7 +259,17 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/3(화)",
+      "description_ko": "자유와 평화를 사랑하고 문화를 진흥하는 날입니다. 2026년에는 화요일 하루가 공휴일입니다.",
+      "cardSummary_ko": "11/3(화) 공휴일. 10/31~11/3 4일 연결에는 토·일 휴무와 11/2(월) 개인휴가가 필요.",
+      "connectionNote_ko": "내각부 2026 공휴일표상 11/2(월)는 공휴일이 아닙니다. 토·일 휴무자라도 10/31~11/3을 연속 쉬려면 11/2 별도 휴가가 필요합니다.",
+      "connectionStatus_ko": "화요일 하루 · 월요일 휴가 필요",
+      "restConditions_ko": [
+        "토요일·일요일이 본인의 휴무일일 것",
+        "11/2(월) 개인휴가가 승인될 것",
+        "11/3 공휴일에 실제 근무하지 않을 것"
+      ]
     },
     {
       "id": "NP-all-2026-11-08-major",
@@ -242,7 +297,13 @@
         "2026-11-08"
       ],
       "wholePeriodIsOfficialHoliday": true,
-      "dateConversionSourceURL": "https://kathmandu.gov.np/en/calendar"
+      "dateConversionSourceURL": "https://kathmandu.gov.np/en/calendar",
+      "dateLabel_ko": "11/8(일)~11/12(목)",
+      "description_ko": "락슈미 푸자부터 바이티카 다음 날까지 이어지는 티하르 휴가입니다. 정부 사무소·공공기관 적용이 확인됐으며 민간 전체 휴무는 미확인입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "LK-all-2026-11-08-major",
@@ -269,7 +330,13 @@
       "calendarWeekendDates": [
         "2026-11-08"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/8(일)",
+      "description_ko": "빛이 어둠을 이기는 것을 기념하는 힌두교 축제입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "SG-all-2026-11-08-23",
@@ -296,7 +363,17 @@
       "calendarWeekendDates": [
         "2026-11-08"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/8(일)",
+      "description_ko": "빛이 어둠을 이기는 것을 기념하는 힌두교 축제입니다.",
+      "cardSummary_ko": "11/8(일) 디파발리. 이날이 본인 휴무일이면 11/9(월)도 공휴일. 토요일 휴무 여부는 별도.",
+      "connectionNote_ko": "11/8(일)이 본인의 휴무일일 때만 11/9(월)이 공휴일입니다. 전 국민에게 동일한 3일 연휴로 표시하지 않습니다.",
+      "connectionStatus_ko": "일요일 본휴일 · 월요일 조건부 적용",
+      "restConditions_ko": [
+        "11/7(토)이 본인의 휴무일일 것",
+        "11/8(일)이 본인의 휴무일이어서 11/9 공휴일이 적용될 것",
+        "해당 날짜에 실제 근무하지 않을 것"
+      ]
     },
     {
       "id": "AZ-all-2026-11-08-major",
@@ -323,7 +400,13 @@
       "calendarWeekendDates": [
         "2026-11-08"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/8(일)~11/10(화)",
+      "description_ko": "승전일과 국기일에 공식 대체휴일을 연결한 일정입니다. 11/10은 5일제와 6일제 모두 대체휴일로 확인됐습니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "SG-all-2026-11-09-26",
@@ -348,7 +431,17 @@
       "notes": "일요일이라는 이유만으로 전 국민 11월9일 휴무로 표시하지 않습니다.",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/9(월)",
+      "description_ko": "디파발리 당일인 11/8(일)이 본인의 휴무일인 경우 적용되는 다음 날 공휴일입니다.",
+      "cardSummary_ko": "11/8(일) 디파발리. 이날이 본인 휴무일이면 11/9(월)도 공휴일. 토요일 휴무 여부는 별도.",
+      "connectionNote_ko": "11/8(일)이 본인의 휴무일일 때만 11/9(월)이 공휴일입니다. 전 국민에게 동일한 3일 연휴로 표시하지 않습니다.",
+      "connectionStatus_ko": "일요일 본휴일 · 월요일 조건부 적용",
+      "restConditions_ko": [
+        "11/7(토)이 본인의 휴무일일 것",
+        "11/8(일)이 본인의 휴무일이어서 11/9 공휴일이 적용될 것",
+        "해당 날짜에 실제 근무하지 않을 것"
+      ]
     },
     {
       "id": "KH-all-2026-11-09-major",
@@ -373,7 +466,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/9(월)",
+      "description_ko": "국가의 독립을 기념하는 전국 공휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "US-all-2026-11-11-19",
@@ -398,7 +497,13 @@
       "notes": "공식 HTML 2026·2027 표 대조. 직접 ICS GET은403이며 수집 성공으로 처리하지 않았습니다.",
       "isRepresentative": false,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/11(수)",
+      "description_ko": "군 복무자를 기리는 연방 휴일입니다. 이 일정의 확인 범위는 미국 연방공무원입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "MM-all-2026-11-23-major",
@@ -423,7 +528,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/23(월)~11/24(화)",
+      "description_ko": "따자웅다잉을 맞아 미얀마 외교부 달력에 연속 지정된 공휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "JP-all-2026-11-23-2",
@@ -448,7 +559,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/23(월)",
+      "description_ko": "일의 가치를 존중하고 생산에 감사하며 서로 고마움을 나누는 날입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "공표된 해당 공휴일 달력을 대조했습니다. 회사 휴가·학교 방학·교대근무와 이후 추가 공고는 별도입니다.",
+      "connectionStatus_ko": "공표 공휴일표 대조 · 직장 휴무별 확인",
+      "restConditions_ko": []
     },
     {
       "id": "KH-all-2026-11-23-major",
@@ -473,7 +590,13 @@
       "notes": "휴일 지정이며 축제 행사 개최 및 여행 수요 확정을 뜻하지 않음.",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/23(월)~11/25(수)",
+      "description_ko": "물 축제를 맞아 지정한 3일의 전국 공휴일입니다. 공휴일 지정과 실제 축제 행사 개최 여부는 구분합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "US-GU-2026-11-26-major",
@@ -498,7 +621,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/26(목)",
+      "description_ko": "추수감사절 휴일입니다. 연방정부·주정부·자치지역 기관별 적용 범위를 각각 확인해야 합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "MN-all-2026-11-26-major",
@@ -523,7 +652,13 @@
       "notes": "현행 법률 공식 색인 원문과 교육부 안내를 대조. 연간 대체휴일 미포함.",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/26(목)",
+      "description_ko": "공화국 선포를 기념하는 법정 공휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "US-all-2026-11-26-20",
@@ -548,7 +683,13 @@
       "notes": "공식 HTML 2026·2027 표 대조. 직접 ICS GET은403이며 수집 성공으로 처리하지 않았습니다.",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/26(목)",
+      "description_ko": "추수감사절 휴일입니다. 연방정부·주정부·자치지역 기관별 적용 범위를 각각 확인해야 합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "US-MP-2026-11-26-major",
@@ -573,7 +714,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/26(목)",
+      "description_ko": "추수감사절 휴일입니다. 연방정부·주정부·자치지역 기관별 적용 범위를 각각 확인해야 합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "US-HI-2026-11-26-major",
@@ -598,7 +745,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/26(목)",
+      "description_ko": "추수감사절 휴일입니다. 연방정부·주정부·자치지역 기관별 적용 범위를 각각 확인해야 합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "GB-scotland-2026-11-30-11",
@@ -623,7 +776,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/30(월)",
+      "description_ko": "성 앤드루의 날을 기념하는 스코틀랜드 은행휴일입니다. 영국 전역의 휴일로 확대하지 않습니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "공표된 해당 공휴일 달력을 대조했습니다. 회사 휴가·학교 방학·교대근무와 이후 추가 공고는 별도입니다.",
+      "connectionStatus_ko": "공표 공휴일표 대조 · 직장 휴무별 확인",
+      "restConditions_ko": []
     },
     {
       "id": "LA-all-2026-12-02-major",
@@ -648,7 +807,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/2(수)",
+      "description_ko": "국가의 중요한 기념일로 지정된 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "AE-all-2026-12-02-major",
@@ -673,7 +838,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/2(수)~12/3(목)",
+      "description_ko": "국가의 중요한 기념일로 지정된 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "법정일 확인 · 별도 이동 공고 확인 필요",
+      "restConditions_ko": []
     },
     {
       "id": "UZ-all-2026-12-08-major",
@@ -698,7 +869,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/8(화)",
+      "description_ko": "헌법을 기념하는 전국 공휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "TM-all-2026-12-12-major",
@@ -725,7 +902,13 @@
       "calendarWeekendDates": [
         "2026-12-12"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/12(토)",
+      "description_ko": "국제 중립의 날을 기념하는 비근무 공휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "KZ-all-2026-12-16-major",
@@ -750,7 +933,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/16(수)",
+      "description_ko": "국가의 독립을 기념하는 전국 공휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "QA-all-2026-12-18-major",
@@ -775,7 +964,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/18(금)",
+      "description_ko": "국가의 중요한 기념일로 지정된 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "MO-all-2026-12-20-major",
@@ -802,7 +997,13 @@
       "calendarWeekendDates": [
         "2026-12-20"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/20(일)",
+      "description_ko": "마카오 특별행정구 수립을 기념하는 의무 공휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "CZ-all-2026-12-24-major",
@@ -829,7 +1030,13 @@
       "calendarWeekendDates": [
         "2026-12-26"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/24(목)~12/26(토)",
+      "description_ko": "성탄 전야와 성탄절, 다음 날을 포함해 연속 지정된 법정 공휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "PH-all-2026-12-24-major",
@@ -854,7 +1061,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/24(목)",
+      "description_ko": "성탄절 전날에 추가로 지정된 특별 비근무일입니다. 다음 날 성탄절과 휴일 유형이 다릅니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "US-GU-2026-12-25-major",
@@ -879,7 +1092,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "NL-all-2026-12-25-major",
@@ -906,7 +1125,13 @@
       "calendarWeekendDates": [
         "2026-12-26"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)~12/26(토)",
+      "description_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다. 주말에 겹친 날의 대체휴일은 별도 확인이 필요합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "NO-all-2026-12-25-major",
@@ -933,7 +1158,13 @@
       "calendarWeekendDates": [
         "2026-12-26"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)~12/26(토)",
+      "description_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다. 주말에 겹친 날의 대체휴일은 별도 확인이 필요합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "NZ-all-2026-12-25-major",
@@ -958,7 +1189,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "DK-all-2026-12-25-major",
@@ -985,7 +1222,13 @@
       "calendarWeekendDates": [
         "2026-12-26"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)~12/26(토)",
+      "description_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다. 주말에 겹친 날의 대체휴일은 별도 확인이 필요합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "DE-all-2026-12-25-major",
@@ -1012,7 +1255,13 @@
       "calendarWeekendDates": [
         "2026-12-26"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)~12/26(토)",
+      "description_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다. 주말에 겹친 날의 대체휴일은 별도 확인이 필요합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "LB-all-2026-12-25-major",
@@ -1037,7 +1286,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "LU-all-2026-12-25-major",
@@ -1064,7 +1319,13 @@
       "calendarWeekendDates": [
         "2026-12-26"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)~12/26(토)",
+      "description_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다. 주말에 겹친 날의 대체휴일은 별도 확인이 필요합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "MY-all-2026-12-25-major",
@@ -1089,7 +1350,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "MX-all-2026-12-25-major",
@@ -1114,7 +1381,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "US-all-2026-12-25-21",
@@ -1139,7 +1412,13 @@
       "notes": "공식 HTML 2026·2027 표 대조. 직접 ICS GET은403이며 수집 성공으로 처리하지 않았습니다.",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "MM-all-2026-12-25-major",
@@ -1164,7 +1443,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "BE-all-2026-12-25-major",
@@ -1189,7 +1474,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "BR-all-2026-12-25-major",
@@ -1214,7 +1505,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "US-MP-2026-12-25-major",
@@ -1239,7 +1536,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "LK-all-2026-12-25-major",
@@ -1264,7 +1567,13 @@
       "notes": "공식 PDF 검색 추출문 확인; 직접 다운로드 timeout. 변동은 정부 관보로 공고.",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "SE-all-2026-12-25-major",
@@ -1291,7 +1600,13 @@
       "calendarWeekendDates": [
         "2026-12-26"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)~12/26(토)",
+      "description_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다. 주말에 겹친 날의 대체휴일은 별도 확인이 필요합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "CH-ZH-2026-12-25-major",
@@ -1316,7 +1631,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "ES-all-2026-12-25-major",
@@ -1341,7 +1662,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "SG-all-2026-12-25-24",
@@ -1366,7 +1693,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "GB-england-and-wales-2026-12-25-8",
@@ -1391,7 +1724,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "공표된 해당 공휴일 달력을 대조했습니다. 회사 휴가·학교 방학·교대근무와 이후 추가 공고는 별도입니다.",
+      "connectionStatus_ko": "공표 공휴일표 대조 · 직장 휴무별 확인",
+      "restConditions_ko": []
     },
     {
       "id": "GB-northern-ireland-2026-12-25-16",
@@ -1416,7 +1755,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "공표된 해당 공휴일 달력을 대조했습니다. 회사 휴가·학교 방학·교대근무와 이후 추가 공고는 별도입니다.",
+      "connectionStatus_ko": "공표 공휴일표 대조 · 직장 휴무별 확인",
+      "restConditions_ko": []
     },
     {
       "id": "GB-scotland-2026-12-25-12",
@@ -1441,7 +1786,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "공표된 해당 공휴일 달력을 대조했습니다. 회사 휴가·학교 방학·교대근무와 이후 추가 공고는 별도입니다.",
+      "connectionStatus_ko": "공표 공휴일표 대조 · 직장 휴무별 확인",
+      "restConditions_ko": []
     },
     {
       "id": "AT-all-2026-12-25-major",
@@ -1468,7 +1819,13 @@
       "calendarWeekendDates": [
         "2026-12-26"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)~12/26(토)",
+      "description_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다. 주말에 겹친 날의 대체휴일은 별도 확인이 필요합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "IT-all-2026-12-25-major",
@@ -1495,7 +1852,13 @@
       "calendarWeekendDates": [
         "2026-12-26"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)~12/26(토)",
+      "description_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다. 주말에 겹친 날의 대체휴일은 별도 확인이 필요합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "IN-all-2026-12-25-major",
@@ -1520,7 +1883,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "ID-all-2026-12-25-major",
@@ -1545,7 +1914,13 @@
       "notes": "공동휴가일은 별도로 합산하지 않았습니다.",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "CL-all-2026-12-25-major",
@@ -1570,7 +1945,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "CA-all-2026-12-25-major",
@@ -1597,7 +1978,13 @@
       "calendarWeekendDates": [
         "2026-12-26"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)~12/26(토)",
+      "description_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다. 주말에 겹친 날의 대체휴일은 별도 확인이 필요합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "HR-all-2026-12-25-major",
@@ -1624,7 +2011,13 @@
       "calendarWeekendDates": [
         "2026-12-26"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)~12/26(토)",
+      "description_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다. 주말에 겹친 날의 대체휴일은 별도 확인이 필요합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "PE-all-2026-12-25-major",
@@ -1649,7 +2042,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "PT-all-2026-12-25-major",
@@ -1674,7 +2073,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "PL-all-2026-12-25-major",
@@ -1701,7 +2106,13 @@
       "calendarWeekendDates": [
         "2026-12-26"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)~12/26(토)",
+      "description_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다. 주말에 겹친 날의 대체휴일은 별도 확인이 필요합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "FR-all-2026-12-25-major",
@@ -1726,7 +2137,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "FI-all-2026-12-25-major",
@@ -1753,7 +2170,13 @@
       "calendarWeekendDates": [
         "2026-12-26"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)~12/26(토)",
+      "description_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다. 주말에 겹친 날의 대체휴일은 별도 확인이 필요합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "PH-all-2026-12-25-major",
@@ -1778,7 +2201,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "US-HI-2026-12-25-major",
@@ -1803,7 +2232,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "KR-all-2026-12-25-major",
@@ -1828,7 +2263,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "HU-all-2026-12-25-major",
@@ -1855,7 +2296,13 @@
       "calendarWeekendDates": [
         "2026-12-26"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)~12/26(토)",
+      "description_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다. 주말에 겹친 날의 대체휴일은 별도 확인이 필요합니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "고정 공휴일 확인 · 근무일 이동 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "AU-all-2026-12-25-major",
@@ -1880,7 +2327,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "HK-all-2026-12-25-5",
@@ -1905,7 +2358,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/25(금)",
+      "description_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "공표된 해당 공휴일 달력을 대조했습니다. 회사 휴가·학교 방학·교대근무와 이후 추가 공고는 별도입니다.",
+      "connectionStatus_ko": "공표 공휴일표 대조 · 직장 휴무별 확인",
+      "restConditions_ko": []
     },
     {
       "id": "BN-all-2026-12-26-major",
@@ -1932,7 +2391,13 @@
       "calendarWeekendDates": [
         "2026-12-26"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/26(토)",
+      "description_ko": "브루나이 공공부문은 12/25(금) 성탄절 대신 12/26(토)을 휴일로 지정했습니다. 민간·은행 일정과 혼합하지 않습니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "공공부문 대체일 확인 · 민간 적용 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "HK-all-2026-12-26-6",
@@ -1959,7 +2424,13 @@
       "calendarWeekendDates": [
         "2026-12-26"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/26(토)",
+      "description_ko": "홍콩 공중휴일 달력의 성탄절 다음 첫 평일입니다. 2026년에는 12/26(토)이며, 이 명칭의 평일에 토요일이 포함됩니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "공표된 해당 공휴일 달력을 대조했습니다. 회사 휴가·학교 방학·교대근무와 이후 추가 공고는 별도입니다.",
+      "connectionStatus_ko": "공표 공휴일표 대조 · 직장 휴무별 확인",
+      "restConditions_ko": []
     },
     {
       "id": "GB-england-and-wales-2026-12-28-9",
@@ -1984,7 +2455,13 @@
       "notes": "대체휴일",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/28(월)",
+      "description_ko": "성탄절 다음 날의 은행휴일을 토요일 대신 월요일에 지키는 대체휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "공표된 해당 공휴일 달력을 대조했습니다. 회사 휴가·학교 방학·교대근무와 이후 추가 공고는 별도입니다.",
+      "connectionStatus_ko": "공표 공휴일표 대조 · 직장 휴무별 확인",
+      "restConditions_ko": []
     },
     {
       "id": "GB-northern-ireland-2026-12-28-17",
@@ -2009,7 +2486,13 @@
       "notes": "대체휴일",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/28(월)",
+      "description_ko": "성탄절 다음 날의 은행휴일을 토요일 대신 월요일에 지키는 대체휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "공표된 해당 공휴일 달력을 대조했습니다. 회사 휴가·학교 방학·교대근무와 이후 추가 공고는 별도입니다.",
+      "connectionStatus_ko": "공표 공휴일표 대조 · 직장 휴무별 확인",
+      "restConditions_ko": []
     },
     {
       "id": "GB-scotland-2026-12-28-13",
@@ -2034,7 +2517,13 @@
       "notes": "대체휴일",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/28(월)",
+      "description_ko": "성탄절 다음 날의 은행휴일을 토요일 대신 월요일에 지키는 대체휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "공표된 해당 공휴일 달력을 대조했습니다. 회사 휴가·학교 방학·교대근무와 이후 추가 공고는 별도입니다.",
+      "connectionStatus_ko": "공표 공휴일표 대조 · 직장 휴무별 확인",
+      "restConditions_ko": []
     },
     {
       "id": "MN-all-2026-12-29-major",
@@ -2059,7 +2548,13 @@
       "notes": "칭기즈칸 탄신일의 음력 날짜는 그레고리력으로 임의 변환하지 않아 제외.",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/29(화)",
+      "description_ko": "민족의 자유와 독립 회복을 기념하는 법정 공휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "AZ-all-2026-12-31-major",
@@ -2084,7 +2579,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/31(목)",
+      "description_ko": "세계 아제르바이잔인의 연대를 기념하는 법정 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "TH-all-2026-12-31-major",
@@ -2109,7 +2610,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/31(목)",
+      "description_ko": "한 해의 마지막 날에 지정된 금융기관 휴일입니다. 민간 사업장 전체의 휴무를 뜻하지 않습니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "NL-all-2027-01-01-major",
@@ -2134,7 +2641,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "NO-all-2027-01-01-major",
@@ -2159,7 +2672,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "NZ-all-2027-01-01-major",
@@ -2184,7 +2703,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "TW-all-2027-01-01-major",
@@ -2209,7 +2734,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "DK-all-2027-01-01-major",
@@ -2234,7 +2765,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "LU-all-2027-01-01-major",
@@ -2259,7 +2796,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "US-all-2027-01-01-22",
@@ -2284,7 +2827,13 @@
       "notes": "공식 HTML 2026·2027 표 대조. 직접 ICS GET은403이며 수집 성공으로 처리하지 않았습니다.",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "VN-all-2027-01-01-major",
@@ -2309,7 +2858,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "BE-all-2027-01-01-major",
@@ -2334,7 +2889,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "SG-all-2027-01-01-25",
@@ -2359,7 +2920,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "AE-all-2027-01-01-major",
@@ -2384,7 +2951,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "법정일 확인 · 별도 이동 공고 확인 필요",
+      "restConditions_ko": []
     },
     {
       "id": "GB-england-and-wales-2027-01-01-10",
@@ -2409,7 +2982,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "공표된 해당 공휴일 달력을 대조했습니다. 회사 휴가·학교 방학·교대근무와 이후 추가 공고는 별도입니다.",
+      "connectionStatus_ko": "공표 공휴일표 대조 · 직장 휴무별 확인",
+      "restConditions_ko": []
     },
     {
       "id": "GB-northern-ireland-2027-01-01-18",
@@ -2434,7 +3013,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "공표된 해당 공휴일 달력을 대조했습니다. 회사 휴가·학교 방학·교대근무와 이후 추가 공고는 별도입니다.",
+      "connectionStatus_ko": "공표 공휴일표 대조 · 직장 휴무별 확인",
+      "restConditions_ko": []
     },
     {
       "id": "GB-scotland-2027-01-01-14",
@@ -2459,7 +3044,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "공표된 해당 공휴일 달력을 대조했습니다. 회사 휴가·학교 방학·교대근무와 이후 추가 공고는 별도입니다.",
+      "connectionStatus_ko": "공표 공휴일표 대조 · 직장 휴무별 확인",
+      "restConditions_ko": []
     },
     {
       "id": "AT-all-2027-01-01-major",
@@ -2484,7 +3075,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "JP-all-2027-01-01-3",
@@ -2509,7 +3106,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "공표된 해당 공휴일 달력을 대조했습니다. 회사 휴가·학교 방학·교대근무와 이후 추가 공고는 별도입니다.",
+      "connectionStatus_ko": "공표 공휴일표 대조 · 직장 휴무별 확인",
+      "restConditions_ko": []
     },
     {
       "id": "GE-all-2027-01-01-major",
@@ -2536,7 +3139,13 @@
       "calendarWeekendDates": [
         "2027-01-02"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)~1/2(토)",
+      "description_ko": "새해 첫날과 다음 날이 노동법상 공휴일인 일정입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "CN-all-2027-01-01-major",
@@ -2561,7 +3170,13 @@
       "notes": "2025-01-01 시행 국무원령 795호 제2조의 고정일만 표시. 연간 연휴 기간 확정 아님.",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "1/1 법정일 하루만 확인했습니다. 주말 연결이나 대체근무 배치를 임의 적용하지 않습니다.",
+      "connectionStatus_ko": "2027 연휴 배치·보충근무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "CZ-all-2027-01-01-major",
@@ -2586,7 +3201,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "KG-all-2027-01-01-major",
@@ -2614,7 +3235,13 @@
         "2027-01-02",
         "2027-01-03"
       ],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)~1/7(목)",
+      "description_ko": "현행 노동법에 따른 새해 휴일 1/1~6과 정교회 성탄절 1/7을 연결한 일정입니다. 2027년 추가 대체휴일을 뜻하지 않습니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "TM-all-2027-01-01-major",
@@ -2639,7 +3266,13 @@
       "notes": "현행 반복 법정일만 적용. 2027 연간 달력 확인 아님.",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "PT-all-2027-01-01-major",
@@ -2664,7 +3297,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "PL-all-2027-01-01-major",
@@ -2689,7 +3328,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "FR-all-2027-01-01-major",
@@ -2714,7 +3359,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "US-HI-2027-01-01-major",
@@ -2739,7 +3390,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "KR-all-2027-01-01-major",
@@ -2764,7 +3421,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "HU-all-2027-01-01-major",
@@ -2789,7 +3452,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "고정 공휴일 확인 · 근무일 이동 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "HK-all-2027-01-01-7",
@@ -2814,7 +3483,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/1(금)",
+      "description_ko": "새해의 시작을 기념하는 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "공표된 해당 공휴일 달력을 대조했습니다. 회사 휴가·학교 방학·교대근무와 이후 추가 공고는 별도입니다.",
+      "connectionStatus_ko": "공표 공휴일표 대조 · 직장 휴무별 확인",
+      "restConditions_ko": []
     },
     {
       "id": "GB-scotland-2027-01-04-15",
@@ -2839,7 +3514,13 @@
       "notes": "대체휴일",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/4(월)",
+      "description_ko": "스코틀랜드의 새해 두 번째 날 은행휴일을 토요일 대신 월요일에 지킵니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "공표된 해당 공휴일 달력을 대조했습니다. 회사 휴가·학교 방학·교대근무와 이후 추가 공고는 별도입니다.",
+      "connectionStatus_ko": "공표 공휴일표 대조 · 직장 휴무별 확인",
+      "restConditions_ko": []
     },
     {
       "id": "GE-all-2027-01-07-major",
@@ -2864,7 +3545,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/7(목)",
+      "description_ko": "정교회 성탄절을 기념하는 법정 공휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": []
     },
     {
       "id": "JP-all-2027-01-11-4",
@@ -2889,7 +3576,13 @@
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
-      "wholePeriodIsOfficialHoliday": true
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "1/11(월)",
+      "description_ko": "어른이 된 청년을 축하하고 격려하는 날로, 1월 두 번째 월요일에 지킵니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "공표된 해당 공휴일 달력을 대조했습니다. 회사 휴가·학교 방학·교대근무와 이후 추가 공고는 별도입니다.",
+      "connectionStatus_ko": "공표 공휴일표 대조 · 직장 휴무별 확인",
+      "restConditions_ko": []
     }
   ],
   "homeNext30Max3Ids": [

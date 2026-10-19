@@ -14,3 +14,5 @@
 .focus-trend-grid article>.focus-trend-summary{font-size:12px;line-height:1.7;color:#354554;margin-top:12px!important}.focus-trend-summary b{font-weight:700;color:#172b40}
 
 .focus-country-brief{border-left:2px solid #28445f;padding-left:16px;margin-bottom:28px}.focus-country-brief h2{font-size:17px;font-weight:750}.focus-country-brief small{font-size:11px;color:#65707c}.focus-country-brief ul{list-style:none;padding:0;margin:12px 0 0}.focus-country-brief li{font-size:13px;line-height:1.8;margin:6px 0}.focus-country-brief b{font-weight:700}.focus-country-jump{font:inherit;font-size:13px;color:#28445f;border:1px solid #dce2e7;background:white;padding:14px 18px;margin:18px 0}.focus-detail>.airport-route-passengers{margin-bottom:36px}
+
+.focus-calendar li .focus-holiday-meaning{font-size:12px;line-height:1.7;color:#354554;margin:6px 0!important}.focus-holiday-conditions{font-size:11px;line-height:1.7;color:#65707c}.focus-holiday-conditions summary{cursor:pointer;min-height:32px;padding:6px 0}.focus-calendar .focus-travel-note{font-size:11px;line-height:1.7;color:#65707c;margin:10px 0}
