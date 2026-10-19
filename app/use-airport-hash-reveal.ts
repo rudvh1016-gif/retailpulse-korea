@@ -31,7 +31,7 @@ export function useAirportHashReveal(){
   let finish=()=>{},clickTimer:number|undefined;
   const reveal=()=>{
    finish();
-   const id=decodeURIComponent(location.hash.slice(1));
+   const id=location.hash.slice(1);
    if(!TARGETS.has(id))return;
    let done=false,frame=0;
    const align=()=>{
