@@ -4,9 +4,9 @@ import {applyCustomsDocumentReview,observeCustomsDocumentVersion,type CustomsDoc
 import {type OfficialNews,type NewsAttachment} from './airport-customs-news';
 import {sha256} from './hash';
 const ORIGIN='https://www.customs.go.kr';
-export const CUSTOMS_NEWS_COLLECTION_REVIEWED=false;
-/** Separate OFF gate: preparing this path does not authorize production publication. */
-export const CUSTOMS_RSS_LINK_PUBLICATION_REVIEWED=false;
+export const CUSTOMS_NEWS_COLLECTION_REVIEWED=true;
+/** Owner approved metadata-only daily publication on 2026-10-19. No article reuse clearance. */
+export const CUSTOMS_RSS_LINK_PUBLICATION_REVIEWED=true;
 const BOARDS=[{id:1362,mi:2891,rssMi:15265},{id:1364,mi:2895,rssMi:2895},{id:1365,mi:2896,rssMi:3762},{id:1366,mi:2897,rssMi:2897}] as const;
 const decode=(value:string)=>value.replace(/&#(\d+);/g,(_,n)=>String.fromCodePoint(Number(n))).replace(/&(?:amp|quot|apos|lt|gt|nbsp);/g,e=>({'&amp;':'&','&quot;':'"','&apos;':"'",'&lt;':'<','&gt;':'>','&nbsp;':' '})[e]??e);
 const plain=(value:string)=>decode(value.replace(/<!--[\s\S]*?-->/g,'').replace(/<[^>]*>/g,'')).replace(/\s+/g,' ').trim();
@@ -114,10 +114,10 @@ async function reviewedWithdrawal(item:CustomsFeedItem,html:string,reviews:reado
   ||review.sourceFingerprint!==await customsWithdrawalFingerprint(html))throw Error('NEWS_WITHDRAWAL_REVIEW_UNBOUND');
  return true;
 }
-/** Prepared Node collector, never scheduled or called by visitor requests.
- * activation is for offline fixture tests; the production entrypoint does not override review. */
+/** Node-only collector. Explicit activation is mandatory, even after scope review.
+ * The production CLI checks reviewed scope and runtime switches. Never called by visitors. */
 export async function collectCustomsNews(db:Pick<D1Database,'prepare'|'batch'>,options:{fetchImpl?:typeof fetch;now?:()=>Date;activation?:boolean;metadataLinks?:boolean;documentReviews?:readonly {review:CustomsDocumentReview;bytes:Uint8Array}[];withdrawalReviews?:readonly CustomsWithdrawalReview[]}={}){
- if(!(options.activation??CUSTOMS_NEWS_COLLECTION_REVIEWED))return {state:'DORMANT',requests:0,currentChanges:0,revisionChanges:0,reviewChanges:0,blockedChanges:0};
+ if(!(options.activation??false))return {state:'DORMANT',requests:0,currentChanges:0,revisionChanges:0,reviewChanges:0,blockedChanges:0};
  const fetchImpl=options.fetchImpl??fetch,now=options.now??(()=>new Date());let requests=0;
  const read=async(url:string)=>{if(++requests>28)throw Error('NEWS_REQUEST_LIMIT');return boundedText(await fetchImpl(url,{redirect:'error',signal:AbortSignal.timeout(15000),headers:{accept:'application/xml,text/html'}}));};
  const queues:CustomsFeedItem[][]=[],feedUrls=new Map<string,string>();
@@ -147,7 +147,7 @@ export async function collectCustomsNews(db:Pick<D1Database,'prepare'|'batch'>,o
    const prepared=await prepareCustomsNews(item,html,now().toISOString(),{deepLinkVerified:true,namedAuthor:metadata.namedAuthor});
    let reviewed:OfficialNews={...prepared,topic:airportCustomsScope(item.title),modifiedAt:metadata.modifiedAt,attachments:metadata.attachments,attachmentListComplete:metadata.attachmentsComplete,attachmentNeedsReview:metadata.attachments.length>0||!metadata.attachmentsComplete};
    if(withdrawn)reviewed={...reviewed,status:'withdrawn'};
-   if(options.metadataLinks??CUSTOMS_RSS_LINK_PUBLICATION_REVIEWED){
+   if(options.metadataLinks??false){
     const previous=await storedOfficialNews(db,'customs',item.id);
     if(!withdrawn&&reviewed.topic==='customs'&&item.publishedAt){
      const link:OfficialNews={source:'customs',sourceId:item.id,sourceName:'관세청',title:item.title,url:item.url,publishedAt:item.publishedAt,

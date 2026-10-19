@@ -30,3 +30,12 @@ Local Node 24 syntax checks and 43 focused existing/new source, rights, SQLite, 
 Proposed cadence after explicit activation approval: one customs step per existing daily production workflow (06:07 KST), sharing its existing concurrency lock; no additional cron. Keep new links disabled until the user approves this exact metadata-only scope. Use the already configured dedicated D1 write-token reference, never a new credential.
 
 Before declaring automatic reflection complete: run one authorized production collection, verify source IDs against D1 and `/api/airport/news`, repeat unchanged input and measure zero semantic writes, verify the old two articles unchanged, and verify later provider failure leaves published data intact. Record measured rows_read/rows_written and capacity before scheduling. Current source success does not prove D1 write, budget safety or automatic publication success.
+
+
+## Owner-approved activation, 2026-10-19
+
+The owner approved deployment of exactly title/publication date/original-link daily updates. Review gates are now open; the collector itself remains dormant without explicit activation and the CLI requires runtime switches and the existing production write-token reference. One bounded step is added to the existing daily workflow and concurrency group. No independent schedule, credentials, AI calls or paid API are introduced. Existing 200/400 storage ceilings fail closed, without eviction or paid expansion.
+
+06:07 KST is the cron reservation, not guaranteed start time. Recent daily runs started 08:00–08:28 KST. Production D1/public API verification is still pending and must be recorded after the first authorized execution. Source verification and fixture success are not an automatic-reflection completion claim.
+
+The prepared commit passed full CI: 1,712 unit, 50 rendered HTML, 5 critical UI and 1,441 Playwright tests. Activation changes require fresh checks before merge.

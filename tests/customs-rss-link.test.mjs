@@ -11,7 +11,7 @@ const database=t=>{const db=new SqliteD1();t.after(()=>db.raw.close());return db
 test('metadata is separate from article reuse clearance and cannot carry content',()=>{
  const item=link();assert.equal(hasNewsClearance(item),false);assert.equal(validRssLinkNews(item),true);assert.equal(mayPublishNews(item),true);
  for(const change of [{facts:[{text:'body',verifiedBySource:true}]},{attachments:[]},{effectiveDate:{date:'2026-10-19',evidence:'x',verified:true}},{clearance:{}},{presentation:'other'},{source:'airport'},{publishedAt:null},{url:url('999')},{rssLinkEvidence:{...item.rssLinkEvidence,feedUrl:'https://example.invalid/rss'}}])assert.equal(validRssLinkNews({...item,...change}),false);
- assert.equal(CUSTOMS_RSS_LINK_PUBLICATION_REVIEWED,false);
+ assert.equal(CUSTOMS_RSS_LINK_PUBLICATION_REVIEWED,true);
 });
 test('repeat observation writes zero; changed metadata revisions once; held links never reopen',async t=>{
  const db=database(t),item=link();assert.deepEqual(await storeCustomsRssLink(db,item),{currentChanges:1,revisionChanges:0});
