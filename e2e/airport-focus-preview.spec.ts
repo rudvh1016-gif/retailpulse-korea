@@ -1,4 +1,5 @@
 import {test,expect} from '@playwright/test';
+test.use({storageState:{cookies:[],origins:[]}});
 import summary from './fixtures/airport-focus/summary.json' with {type:'json'};
 import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
 import months from './fixtures/airport-focus/months.json' with {type:'json'};
@@ -70,7 +71,8 @@ for(const width of [390,1440])test(`approved notice has only bottom close ${widt
  await page.route('**/api/live/flights*',r=>r.fulfill({json:flights}));
  await page.route('**/api/live/airport-months*',r=>r.fulfill({json:months}));
  await page.route('**/api/live/airport-passenger-stats*',r=>r.fulfill({json:passengerStats}));
- await page.goto('/ko');const dialog=page.getByRole('dialog',{name:'새로운 정보가 추가되었어요'});
+ await page.route(/google-analytics\.com|googletagmanager\.com|analytics\.google\.com/,r=>r.abort());
+ await page.goto('/ko',{waitUntil:'domcontentloaded'});const dialog=page.getByRole('dialog',{name:'새로운 정보가 추가되었어요'});
  await expect(dialog).toBeVisible();await expect(dialog.locator('.update-notice-x')).toHaveCount(0);
  await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeVisible();
  await expect(dialog.getByRole('button',{name:'일주일 동안 안 보기',exact:true})).toBeVisible();
