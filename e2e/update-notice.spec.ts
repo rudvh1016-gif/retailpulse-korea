@@ -52,7 +52,10 @@ for(const width of [390,1440])for(const start of ['/ko','/ko/airport?terminal=T1
  await expect(page).toHaveURL(/\/ko\/airport\?terminal=all#airport-hourly-comparison$/);
  await expect(page.locator('.terminal-selector [role="tab"][aria-selected="true"]')).toContainText('전체');
  const target=page.locator('svg#airport-hourly-comparison');
- await expect(target.locator('.airport-flow-reference path')).toBeVisible();
+ await expect(target).toBeVisible();
+ const reference=target.locator('.airport-flow-reference path');
+ await expect(reference).toHaveAttribute('d',/M.+L/);
+ expect(await reference.evaluate(e=>getComputedStyle(e).stroke)).not.toBe('none');
  await expect.poll(()=>target.evaluate(e=>{
   let bottom=0;
   for(const bar of document.querySelectorAll<HTMLElement>('.site-header,.airport-context-nav')){
