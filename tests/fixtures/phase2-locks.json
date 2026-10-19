@@ -62,8 +62,8 @@
     "public/icon-512-20261007.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
     "public/icon-maskable-512-20261007.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
     "public/manifest-20261007.webmanifest": "6bad81a6e70af19a2c27c1a321513406823d3cea3e78aecacdbc3607647e99be",
-    "app/airport-live-signals.tsx": "d871cc4961f07deffc575e9b0f85f6edbc82d02b5fe62e8d85a3ba6603c60a95",
-    "app/airport-view.tsx": "f80206e8b5f38a38ddce0769d4df72e5665041417b7ee1fdc39862120a0fde7c",
+    "app/airport-live-signals.tsx": "c9be6a4b1994e2ada3fb439db9e68379c42e35544d7f6137029cdd48e95cac78",
+    "app/airport-view.tsx": "5dfe6713fa979ba9503bc2c895eb9cd7e3f50d51d20ec600986f4883cf29ee91",
     "app/local-text.ts": "82328cd1029e929b9a79cd1d58c325469ad829a262fa2e7935b65ca595dfb8d6",
     "app/month-range-picker.tsx": "c358abc4ad12749384e82427ec9c1f16099200a0fa40f84eb469e53dbd7d9665",
     "app/live-summary.tsx": "654e7b2f0d4a81e3ae26c7869ea3e53a8b7eb6e69459eeeaf305ce60ea0e9c75",
@@ -2828,6 +2828,29 @@
         "previous": "3f139819b6819db1869d6dd7f7f8ab48a15253eebc318093a8afaff7d408ec05",
         "approved": "d871cc4961f07deffc575e9b0f85f6edbc82d02b5fe62e8d85a3ba6603c60a95",
         "exactUnifiedDiff": "diff --git a/app/airport-live-signals.tsx b/app/airport-live-signals.tsx\nindex f45fe44..1e80853 100644\n--- a/app/airport-live-signals.tsx\n+++ b/app/airport-live-signals.tsx\n@@ -14,7 +14,6 @@ import { formatChangeRate } from \"../lib/change-rate\";\n import { airportCompositionCopy } from \"../lib/airport-composition-copy\";\n import { usePresentationClock } from \"./area-demand-card\";\n import { AirportFlowFigure } from \"./airport-flow-figure\";\n-import {AirportRouteCountryPassengers} from './airport-route-country-passengers';\n import { useTimeBandReference } from \"./airport-passenger-stats-client\";\n import { FlightCountPrism } from \"./flight-count-prism\";\n import { kstStamp } from \"../lib/demand-presentation\";\n@@ -465,7 +464,6 @@ export function AirportTodaySummary({ lang, terminal = \"all\", date = null }: { l\n           <p>{isForecastPartial ? airportTodayText.partialBody[lang] : airportTodayText.unavailableBody[lang]}</p>\n           {passengerCollected && <small>{passengerCollected}</small>}\n         </div>}\n-      <AirportRouteCountryPassengers lang={lang} month={summary.serviceDateKst.slice(0,7)} terminal={terminal}/>\n       <div id=\"airport-departure-model-slot\" data-testid=\"airport-departure-model-slot\"/>\n     </section>\n     }/>\n"
+      }
+    ]
+  },
+  "ownerRequestedNoticeComparisonLanding20261019": {
+    "request": "시간대병여객은 전체에서만볼수있다는 안내를 넣어 그리고 비교보기누르면 정확한 지점에이동이안되네 다시확인해서설정해",
+    "scope": "Mount the existing airport hash reveal hook for the requested comparison-link landing fix. No visual layout or data changes; preview approval and deployment remain separate.",
+    "files": [
+      {
+        "path": "app/airport-view.tsx",
+        "previous": "f80206e8b5f38a38ddce0769d4df72e5665041417b7ee1fdc39862120a0fde7c",
+        "requested": "5dfe6713fa979ba9503bc2c895eb9cd7e3f50d51d20ec600986f4883cf29ee91",
+        "changes": [
+          "Import useAirportHashReveal from ./use-airport-hash-reveal.",
+          "Call useAirportHashReveal at the start of AirportView."
+        ]
+      },
+      {
+        "path": "app/airport-live-signals.tsx",
+        "previous": "d871cc4961f07deffc575e9b0f85f6edbc82d02b5fe62e8d85a3ba6603c60a95",
+        "requested": "c9be6a4b1994e2ada3fb439db9e68379c42e35544d7f6137029cdd48e95cac78",
+        "changes": [
+          "Pass chartId=\"airport-hourly-comparison\" to the departure chart so navigation targets the actual SVG rather than the visually reordered heading."
+        ]
       }
     ]
   }

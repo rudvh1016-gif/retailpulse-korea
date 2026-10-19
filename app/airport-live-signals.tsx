@@ -457,6 +457,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
           numberLocale={numberLocale}
           label={`${airportTodayText.forecastTitle[lang]}. ${airportTodayText.forecastOnly[lang]}${nowBandStart ? `. ${nowLabel}` : ""}`}
           showModel={false}
+          chartId="airport-hourly-comparison"
           reference={isAll ? timeBandReference : null}
         />
         : <div className={`airport-forecast-state ${isForecastPartial ? "partial" : "unavailable"}`}>
