@@ -175,8 +175,8 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
   <section className="glance-insights" aria-label={ui.summary}>
    <div className="glance-passenger-pair">
    <a className="glance-passengers" href={targets.forecast} data-testid="glance-key-passengers"><span>{todayLabel?pc.today:pc.selected}</span><strong>{forecastPassengers!==null?`${fmt.format(forecastPassengers)}${pc.people}`:forecastCoverage==='PARTIAL'?pc.partial:summary===undefined?c.loading:ic.unavailable}</strong><small>{dayText} · {forecastScope} · {pc.basis} · {pc.collected} {summary===undefined?stampHold:stamp(forecastAt)}</small></a>
-   <a className="glance-transfers" href={targets.forecast} data-testid="glance-key-transfers"><span>{pc.transfer}</span><strong>{transferPassengers!==null?`${fmt.format(transferPassengers)}${pc.people}`:summary===undefined?c.loading:ic.unavailable}</strong><small>{dayText} · {forecastScope} · {pc.transferBasis}</small></a>
-   <div className="glance-passenger-sum" data-testid="glance-key-sum"><span>{sumLabel}</span><strong>{referenceSum?`${fmt.format(referenceSum.total)}${pc.people}`:'—'}</strong><small>{passengerReferenceCopy.arithmeticNote[lang]}</small></div>
+   <a className="glance-transfers" href={targets.forecast} data-testid="glance-key-transfers"><span>{pc.transfer}</span><strong>{referenceSum&&<span className="glance-sum-operator">+ </span>}{transferPassengers!==null?`${fmt.format(transferPassengers)}${pc.people}`:summary===undefined?c.loading:ic.unavailable}</strong><small>{dayText} · {forecastScope} · {pc.transferBasis}</small></a>
+   <div className="glance-passenger-sum" data-testid="glance-key-sum"><span>{sumLabel}</span><strong>{referenceSum&&<span className="glance-sum-operator">= </span>}{referenceSum?`${fmt.format(referenceSum.total)}${pc.people}`:'—'}</strong><small>{passengerReferenceCopy.arithmeticNote[lang]}</small></div>
    </div>
    <a href={targets.wait} data-testid="glance-key-wait"><span>{ic.wait}</span><strong>{wait?`${wait.row.terminal} ${friendlyCheckpointName(wait.row.zone,lang)} · ${waitValue(wait)}`:pendingText??ic.unavailable}</strong><small>{wait?`${shortTime(wait.row.observedAt)} KST · ${ic.waitBasis}${wait.tied?` · ${ic.tie}`:''}`:<>{ic.waitBasis}{liveHold&&hold(` · 00:00 KST · ${ic.tie}`,'')}</>}</small></a>
    <a href={targets.map} data-testid="glance-key-upcoming"><span>{ic.upcoming}</span><strong>{upcoming?`${minuteText(upcoming.startMin)}–${minuteText(upcoming.endMin)} · ${upcoming.flights} ${c.unit}`:futureReady?ic.noUpcoming:pendingText??ic.unavailable}</strong><small>{dayText} KST · {ic.upcomingBasis}{upcoming?.tied?` · ${ic.tie}`:''}</small></a>
@@ -224,3 +224,4 @@ function CountChange({delta,format,lang,unit=''}:{delta:number;format:(value:num
  const [up,down]=countChangeWords[lang];
  return <span className="glance-count-change" data-delta={delta>0?'up':'down'}><span aria-hidden="true">{text}{unit}</span><span className="sr-only">{delta>0?up:down} {text.slice(1)}{unit}</span></span>;
 }
+
