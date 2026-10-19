@@ -1,11 +1,11 @@
-import {mayPublishNews,publicNewsProjection,sortNews,type OfficialNews} from './airport-customs-news';
+import {mayPublishNews,publicNewsProjection,sortNews,validRssLinkNews,type OfficialNews} from './airport-customs-news';
 import {createCollectionReview,validCollectionReview,type StoredOfficialNews} from './customs-news-review';
 import {sha256} from './hash';
 type Store=Pick<D1Database,'prepare'|'batch'>;
 const MAX_PAYLOAD=8192;
 export function officialNewsSemanticHash(item:OfficialNews){
  const projected=publicNewsProjection(item);
- return sha256({...projected,receivedAt:null,clearance:projected.clearance?{...projected.clearance,confirmedAt:null}:null,attachments:projected.attachments?.map(a=>({...a,reviewedAt:null}))});
+ return sha256({...projected,receivedAt:null,...(projected.rssLinkEvidence?{rssLinkEvidence:{...projected.rssLinkEvidence,verifiedAt:null}}:{}),clearance:projected.clearance?{...projected.clearance,confirmedAt:null}:null,attachments:projected.attachments?.map(a=>({...a,reviewedAt:null}))});
 }
 export function validStoredNews(value:unknown):value is StoredOfficialNews{
  if(!value||typeof value!=='object')return false;
@@ -20,7 +20,37 @@ export function validStoredNews(value:unknown):value is StoredOfficialNews{
   &&(item.attachmentListComplete==null||typeof item.attachmentListComplete==='boolean')
   &&(!item.attachments||Array.isArray(item.attachments)&&item.attachments.length<=6&&item.attachments.every(a=>a&&typeof a.name==='string'&&a.name.length<=500&&['pending','verified'].includes(a.review)&&typeof a.url==='string'&&a.url.startsWith('https://www.customs.go.kr/common/nttFileDownload.do?fileKey=')))
   &&[item.facts,item.changes,item.audience].every(list=>Array.isArray(list)&&list.length<=12&&list.every(fact=>fact&&typeof fact.text==='string'&&fact.text.length<=1200&&typeof fact.verifiedBySource==='boolean'))
+  &&(item.presentation===undefined?item.rssLinkEvidence===undefined:validRssLinkNews(item))
   &&(item.collectionReview===undefined||validCollectionReview(item.collectionReview));
+}
+
+/** Bounded metadata-only insert/update. Never promotes a private candidate,
+ * overwrites a manually approved article, or reopens a held/withdrawn row. */
+export async function storeCustomsRssLink(db:Store,item:OfficialNews):Promise<{currentChanges:number;revisionChanges:number}|null>{
+ if(!validStoredNews(item)||!validRssLinkNews(item))throw Error('NEWS_INVALID_RSS_LINK');
+ const row=await db.prepare('SELECT payload,semantic_hash,may_publish FROM official_news_current WHERE source=? AND source_id=?').bind(item.source,item.sourceId).first<{payload:string;semantic_hash:string;may_publish:number}>();
+ const previous:StoredOfficialNews|null=row?JSON.parse(row.payload):null;
+ if(previous&&(!validStoredNews(previous)||await officialNewsSemanticHash(previous)!==row!.semantic_hash))throw Error('NEWS_EXISTING_CONTENT_CONFLICT');
+ if(previous?.presentation!=='official-rss-link'&&previous)return null;
+ if(previous&&(row!.may_publish!==1||previous.collectionReview?.hold||!mayPublishNews(previous)))return {currentChanges:0,revisionChanges:0};
+ const payload=JSON.stringify(publicNewsProjection(item)),hash=await officialNewsSemanticHash(item);
+ if(new TextEncoder().encode(payload).length>MAX_PAYLOAD)throw Error('NEWS_PAYLOAD_LIMIT');
+ if(row?.semantic_hash===hash)return {currentChanges:0,revisionChanges:0};
+ if(!row){
+  const results=await db.batch([db.prepare(`INSERT INTO official_news_current(source,source_id,topic,published_at,may_publish,semantic_hash,payload,received_at)
+   VALUES (?,?,?,?,1,?,?,?) ON CONFLICT(source,source_id) DO NOTHING`).bind(item.source,item.sourceId,item.topic,item.publishedAt,hash,payload,item.receivedAt)]);
+  if(measuredChanges(results,1)!==1)throw Error('NEWS_REVIEW_CONFLICT');
+  return {currentChanges:1,revisionChanges:0};
+ }
+ const results=await db.batch([
+  db.prepare(`INSERT INTO official_news_revision(source,source_id,semantic_hash,payload,received_at)
+   SELECT source,source_id,semantic_hash,json_remove(payload,'$.collectionReview'),received_at FROM official_news_current
+   WHERE source=? AND source_id=? AND semantic_hash=? AND payload=? AND may_publish=1`).bind(item.source,item.sourceId,row.semantic_hash,row.payload),
+  db.prepare(`UPDATE official_news_current SET topic=?,published_at=?,semantic_hash=?,payload=?,received_at=?
+   WHERE source=? AND source_id=? AND semantic_hash=? AND payload=? AND may_publish=1`).bind(item.topic,item.publishedAt,hash,payload,item.receivedAt,item.source,item.sourceId,row.semantic_hash,row.payload)
+ ]);
+ if(measuredChanges(results,2)!==2)throw Error('NEWS_REVIEW_CONFLICT');
+ return {currentChanges:1,revisionChanges:1};
 }
 export async function storedOfficialNews(db:Pick<D1Database,'prepare'>,source:OfficialNews['source'],id:string){
  const row=await db.prepare('SELECT payload FROM official_news_current WHERE source=? AND source_id=?').bind(source,id).first<{payload:string}>();
@@ -113,3 +143,4 @@ export async function storeCollectedNews(db:Store,incoming:OfficialNews) {
  if(measuredChanges(results,1)!==1)throw Error('NEWS_REVIEW_CONFLICT');
  return {currentChanges:0,revisionChanges:0,reviewChanges:1,blockedChanges};
 }
+

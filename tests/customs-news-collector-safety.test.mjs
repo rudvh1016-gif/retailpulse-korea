@@ -166,10 +166,11 @@ test('wrong article IDs are ignored and every malformed matching withdrawal bind
  assert.equal(result.blockedChanges,0);assert.deepEqual(await readOfficialNews(db,'2026-10-11'),[original]);
 });
 
-test('checked-in OFF gate performs zero HTTP requests and zero database operations',async()=>{
- assert.equal(CUSTOMS_NEWS_COLLECTION_REVIEWED,false);
+test('reviewed collector stays dormant without explicit activation',async()=>{
+ assert.equal(CUSTOMS_NEWS_COLLECTION_REVIEWED,true);
  const unexpected=()=>{throw Error('OFF gate performed external work');};
  const result=await collectCustomsNews({prepare:unexpected,batch:unexpected},{fetchImpl:unexpected});
  assert.equal(result.state,'DORMANT');
  for(const field of ['requests','currentChanges','revisionChanges','reviewChanges','blockedChanges'])assert.equal(result[field],0,field);
 });
+

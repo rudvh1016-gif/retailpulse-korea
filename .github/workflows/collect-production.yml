@@ -62,3 +62,14 @@ jobs:
           # documented 500 calls -- 3 x 125 early + 1 x 125 here.
           RPK_A1_MAX_REQUESTS: "125"
           RPK_A1_RESCAN_TODAY: "true"
+      - name: Collect official customs RSS links
+        # Same daily run and concurrency lock. No new cron, AI or paid API.
+        # Isolate provider failures from the existing production collectors.
+        if: ${{ !cancelled() }}
+        timeout-minutes: 8
+        run: npx tsx scripts/collect-customs-news.ts
+        env:
+          ENABLE_PRODUCTION_COLLECTOR: "true"
+          RPK_CUSTOMS_NEWS_COLLECTION_ENABLED: "true"
+          RPK_CUSTOMS_RSS_LINKS_ENABLED: "true"
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
