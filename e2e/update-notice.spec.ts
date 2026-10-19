@@ -40,3 +40,38 @@ test('blocked storage still permits close without errors or new permissions',asy
  await page.addInitScript(()=>{for(const key of ['localStorage','sessionStorage'])Object.defineProperty(window,key,{get(){throw new DOMException('blocked','SecurityError');}});});
  await page.goto('/ko');await expect(page.getByRole('dialog')).toBeVisible();await page.getByRole('button',{name:'닫기',exact:true}).click();await expect(page.getByRole('dialog')).not.toBeVisible();expect(await page.evaluate(()=>document.documentElement.style.overflow)).not.toBe('hidden');expect(errors).toEqual([]);
 });
+
+for(const width of [390,1440])for(const start of ['/ko','/ko/airport?terminal=T1','/ko/airport?terminal=T2','/ko/airport?building=CONCOURSE'])test(`hourly notice lands below sticky bars after delayed data from ${start} at ${width}`,async({page},testInfo)=>{
+ await page.setViewportSize({width,height:900});
+ await page.addInitScript(()=>{localStorage.setItem('koretail-airport-scope','T2');});
+ await page.route('**/api/live/summary*',async r=>{await new Promise(resolve=>setTimeout(resolve,1600));await r.fulfill({json:SUMMARY_FIXTURE});});
+ await page.goto(start);
+ const dialog=page.getByRole('dialog');
+ await expect(dialog.getByText('시간대별 여객 비교는 전체 공항에서만 볼 수 있어요.')).toBeVisible();
+ await dialog.getByRole('link',{name:'시간대별 비교 보기'}).click();
+ await expect(page).toHaveURL(/\/ko\/airport\?terminal=all#airport-forecast-title$/);
+ await expect(page.locator('.terminal-selector [role="tab"][aria-selected="true"]')).toContainText('전체');
+ const target=page.locator('#airport-forecast-title');
+ await expect.poll(()=>target.evaluate(e=>{
+  let bottom=0;
+  for(const bar of document.querySelectorAll<HTMLElement>('.site-header,.airport-context-nav')){
+   const style=getComputedStyle(bar);
+   if(style.position==='sticky'||style.position==='fixed')bottom=Math.max(bottom,(parseFloat(style.top)||0)+bar.offsetHeight);
+  }
+  const top=e.getBoundingClientRect().top;
+  return top>=bottom&&top<bottom+24;
+ })).toBe(true);
+ expect(await page.evaluate(()=>localStorage.getItem('koretail-airport-scope'))).toBe('T2');
+ await page.screenshot({path:testInfo.outputPath('hourly-comparison-landing.png')});
+ await page.goBack();await expect(page).toHaveURL(new RegExp(start.replace(/[?]/g,'\\?')+'$'));
+});
+test('same fragment click realigns and user scrolling cancels subsequent alignment',async({page})=>{
+ await page.goto('/ko/airport?terminal=all#airport-forecast-title');
+ const dialog=page.getByRole('dialog');
+ await dialog.getByRole('link',{name:'시간대별 비교 보기'}).click();
+ const target=page.locator('#airport-forecast-title');await expect(target).toBeInViewport();
+ await page.mouse.wheel(0,500);await page.waitForTimeout(250);
+ const before=await page.evaluate(()=>scrollY);
+ await page.evaluate(()=>{const node=document.createElement('div');node.textContent='test mutation';document.body.append(node);node.remove();});
+ await page.waitForTimeout(100);expect(await page.evaluate(()=>scrollY)).toBe(before);
+});

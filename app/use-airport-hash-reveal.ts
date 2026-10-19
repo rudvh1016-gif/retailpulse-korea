@@ -28,7 +28,7 @@ function stickyOffset(){
 
 export function useAirportHashReveal(){
  useEffect(()=>{
-  let finish=()=>{};
+  let finish=()=>{},clickTimer:number|undefined;
   const reveal=()=>{
    finish();
    const id=decodeURIComponent(location.hash.slice(1));
@@ -53,8 +53,20 @@ export function useAirportHashReveal(){
    };
    schedule();
   };
+  // Clicking an already-selected fragment does not emit hashchange.
+  const onClick=(event:MouseEvent)=>{
+   if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+   const link=event.target instanceof Element?event.target.closest('a[href]'):null;
+   if(!(link instanceof HTMLAnchorElement)||link.target||link.hasAttribute('download'))return;
+   const url=new URL(link.href);
+   if(url.origin!==location.origin||url.pathname!==location.pathname||url.search!==location.search||!TARGETS.has(url.hash.slice(1)))return;
+   window.clearTimeout(clickTimer);
+   clickTimer=window.setTimeout(reveal,0);
+  };
   reveal();
+  window.addEventListener('click',onClick);
+  window.addEventListener('popstate',reveal);
   window.addEventListener('hashchange',reveal);
-  return()=>{finish();window.removeEventListener('hashchange',reveal);};
+  return()=>{finish();window.clearTimeout(clickTimer);window.removeEventListener('click',onClick);window.removeEventListener('popstate',reveal);window.removeEventListener('hashchange',reveal);};
  },[]);
 }

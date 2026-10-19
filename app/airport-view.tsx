@@ -7,6 +7,7 @@
  * reaches it through the shell's dynamic() import on first use.
  */
 import { useState } from "react";
+import { useAirportHashReveal } from "./use-airport-hash-reveal";
 import { ChangeRate } from "./change-rate";
 import { AirportParkingGuide } from "./facility-guide";
 import { airportAnnual, airportMonthly, airportValue, formatCount, monthDays, type AirportDirection, type Lang, type Terminal } from "./retailpulse-data";
@@ -32,6 +33,7 @@ export function AirportView({
   section: AirportSection; setSection: (value: AirportSection) => void;
   date: string | null; setDate: (value: string | null) => void;
 }) {
+  useAirportHashReveal();
   const [direction, setDirection] = useState<AirportDirection>("departure");
   const [historyPeriod, setHistoryPeriod] = useState<"6m" | "12m" | "all" | "custom">("6m");
   const [historyRangeOpen, setHistoryRangeOpen] = useState(false);
