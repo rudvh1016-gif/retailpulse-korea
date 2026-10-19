@@ -146,6 +146,7 @@ test('midnight stored reads are bounded at twelve, and recover on an existing sc
 test('blocked browser storage still reads today and retains it in memory after failure',async({page})=>{
  await page.addInitScript(()=>{Object.defineProperty(window,'localStorage',{get(){throw new Error('unavailable');}});});
  await page.clock.install({time:new Date('2026-10-08T03:00:00Z')});await fixtures(page);await page.goto('/ko/airport');
+  const notice=page.getByRole('dialog',{name:'새로운 정보가 추가되었어요'});await expect(notice).toBeVisible();await notice.getByRole('button',{name:'닫기',exact:true}).click();await expect(notice).not.toBeVisible();
  const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');
  await page.route('**/api/live/duty-free-exchange',r=>r.abort());await page.clock.runFor(15*60_000+100);
  await strip.locator('summary').click();await expect(strip.locator('[role=status]')).toBeVisible();await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');
