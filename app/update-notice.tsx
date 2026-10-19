@@ -51,7 +51,7 @@ export default function UpdateNotice({lang}:{lang:string}){
   <div className="update-notice-top"><span className="update-notice-new">NEW</span><button type="button" className="update-notice-x" aria-label={c.closeLabel} onClick={()=>dismiss.current(false)}>×</button></div>
   <h2 ref={heading} tabIndex={-1} id="update-notice-title">{c.title}</h2>
   <div className="update-notice-items">
-   <section><div><h3>{c.hour}</h3><p>{c.hourBody}</p><small>{c.hourPath}</small><p className="update-notice-note">{c.hourNote}</p></div><a href={`/${locale}/airport?terminal=all#airport-forecast-title`} onClick={()=>dismiss.current(false)}>{c.hourLink} →</a></section>
+   <section><div><h3>{c.hour}</h3><p>{c.hourBody}</p><small>{c.hourPath}</small><p className="update-notice-note">{c.hourNote}</p></div><a href={`/${locale}/airport?terminal=all#airport-hourly-comparison`} onClick={()=>dismiss.current(false)}>{c.hourLink} →</a></section>
    <section><div><h3>{c.country} <span aria-hidden="true">*</span></h3><p>{c.countryBody}</p><small>{c.countryPath}</small><p className="update-notice-note">{c.countryNote}</p></div><a href={`/${locale}/airport?terminal=all#airport-route-passengers`} onClick={()=>dismiss.current(false)}>{c.countryLink} →</a></section>
   </div>
   <footer><button type="button" className="update-notice-week" onClick={()=>dismiss.current(true)}>{c.week}</button><button type="button" className="update-notice-close" onClick={()=>dismiss.current(false)}>{c.close}</button></footer>
