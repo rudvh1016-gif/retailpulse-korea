@@ -343,7 +343,6 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
       <p className="flow-note">{flowCoverageSentence(lang, summary.serviceDateKst, scopeLabel, timeline)}{isPartial ? ` ${airportTodayText.partialBody[lang]}` : ""}</p>
       {timeline.length > 0
         ? <AirportFlowFigure
-            chartId="airport-hourly-comparison"
           timeline={timeline}
           terminal={terminal}
           layers={isAll ? arrival?.passengerForecastTimelineByTerminal ?? null : null}
@@ -458,6 +457,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
           numberLocale={numberLocale}
           label={`${airportTodayText.forecastTitle[lang]}. ${airportTodayText.forecastOnly[lang]}${nowBandStart ? `. ${nowLabel}` : ""}`}
           showModel={false}
+          chartId="airport-hourly-comparison"
           reference={isAll ? timeBandReference : null}
         />
         : <div className={`airport-forecast-state ${isForecastPartial ? "partial" : "unavailable"}`}>
