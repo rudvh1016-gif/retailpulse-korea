@@ -15,6 +15,8 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:months}));
  await page.route('**/api/live/airport-passenger-stats*',route=>route.fulfill({json:passengerStats}));
  await page.goto('/ko/airport-focus-preview');
+ await page.getByRole('dialog').getByRole('button',{name:'닫기',exact:true}).click();
+ await expect(page.getByRole('dialog')).not.toBeVisible();
  await expect(page.getByTestId('glance-key-passengers')).toContainText('103,124');
  await expect(page.getByTestId('glance-key-sum')).toContainText('112,403');
  await expect(page.locator('.focus-report')).toContainText('예상 출국객은 103,124명으로, 전월 일평균보다 약 9,546명 많습니다');
