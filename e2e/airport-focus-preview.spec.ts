@@ -16,7 +16,11 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await page.goto('/ko/airport-focus-preview');
  await expect(page.getByTestId('glance-key-passengers')).toContainText('103,124');
  await expect(page.getByTestId('glance-key-sum')).toContainText('112,403');
- await expect(page.locator('.focus-report')).toContainText('약 9,546명');
+ await expect(page.locator('.focus-report')).toContainText('예상 출국객은 103,124명으로, 전월 일평균보다 약 9,546명 많습니다');
+ await expect(page.getByTestId('glance-day-comparison')).toHaveCount(0);
+ await expect(page.locator('.focus-line-chart')).toHaveCount(3);
+ await expect(page.locator('.focus-line-chart').first()).toContainText('4월');
+ await expect(page.locator('.focus-line-chart').first()).toContainText('9월');
  await expect(page.locator('.focus-report')).toContainText('567편');
  await expect(page.locator('.focus-report')).toContainText('552.9편');
  expect(await page.locator('#focus-holidays li').count()).toBeGreaterThan(0);

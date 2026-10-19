@@ -6,3 +6,9 @@
 @media(max-width:700px){.airport-focus-shell .glance-passenger-pair strong{font-size:clamp(18px,5.1vw,21px);white-space:nowrap}}
 
 .glance-overview-extras{grid-column:1/-1;min-width:0}.glance-overview-extras .focus-forward{margin-bottom:8px}
+
+/* Requested readable six-month line charts, scoped to the approval preview. */
+.focus-line-chart{margin:12px 0 0}.focus-trend-grid .focus-line-chart svg{height:auto;width:100%;margin:0;overflow:visible}.focus-chart-tick{font-size:10px;fill:#65707c;font-family:inherit}.focus-line-chart figcaption{font-size:10px;line-height:1.6;color:#65707c;margin-top:3px}.focus-trend-grid article{padding-bottom:10px}
+@media(max-width:700px){.focus-trend-grid,.focus-detail .focus-trend-grid{grid-template-columns:1fr;gap:22px}.focus-trend-value{font-size:25px}.focus-trend-value small{font-size:11px!important}.focus-trend-top h3{font-size:13px}.focus-trend-top>span{display:block}.focus-trend-grid article>p{font-size:11px}.focus-trend-grid .focus-line-chart svg{height:auto}.focus-trend-grid .focus-line-chart{max-width:430px}.focus-chart-tick{font-size:11px}}
+
+.focus-trend-grid article>.focus-trend-summary{font-size:12px;line-height:1.7;color:#354554;margin-top:12px!important}.focus-trend-summary b{font-weight:700;color:#172b40}
