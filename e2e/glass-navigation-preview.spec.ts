@@ -77,5 +77,5 @@ test('mobile tab bar follows the owner reference look',async({page})=>{
  expect(look.icon).toEqual([24,24,24,24,24]);expect(look.label).toBe('10px');
  const rgb=(hex:string)=>{const full=hex.length===4?`#${[...hex.slice(1)].map(c=>c+c).join('')}`:hex;return `rgb(${parseInt(full.slice(1,3),16)}, ${parseInt(full.slice(3,5),16)}, ${parseInt(full.slice(5,7),16)})`;};
  expect(look.idle).toBe(rgb(look.ink));expect(look.current).toBe('rgb(255, 255, 255)');
- await expect(page.locator('.glass-nav-indicator')).toHaveCSS('background-color','rgb(32, 50, 73)');
+ await expect(page.locator('.glass-nav-indicator')).toHaveCSS('background-color','rgb(36, 39, 44)');
 });

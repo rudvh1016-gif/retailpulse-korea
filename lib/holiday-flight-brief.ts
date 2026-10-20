@@ -5,7 +5,7 @@ import type {CalendarEvent} from './calendar-context.mjs';
 export interface BriefHoliday {
  id:string;country:string;countryLabel:string;name:string;start:string;end:string;
  type:string;scope:string;conditional?:boolean;isRepresentative?:boolean;
- sourceURL?:string;verifiedAt?:string;reviewValidUntil?:string;
+ sourceURL?:string;meaning_ko?:string;meaningSourceURL?:string;verifiedAt?:string;reviewValidUntil?:string;
  calendarScope?:string;region?:string|null;
 }
 export interface CountryFlightChange {
@@ -19,7 +19,7 @@ export function mergeBriefHolidays(seed:readonly BriefHoliday[],events:readonly 
   if(event.status!=='verified'||event.kind!=='public_holiday')continue;
   if(kept.some(row=>row.country===event.country&&row.start===event.start&&row.end===event.end&&row.calendarScope===event.scope&&(!event.region||row.region===event.region)))continue;
   kept.push({id:event.id,country:event.country,countryLabel:names.of(event.country)??event.country,
-   name:event.name,start:event.start,end:event.end,type:event.kind,scope:event.scope==='national'?'전국 공휴일':event.region??'적용 대상 확인 필요',
+   meaning_ko:seed.find(row=>row.country===event.country&&row.name===event.name)?.meaning_ko,name:event.name,start:event.start,end:event.end,type:event.kind,scope:event.scope==='national'?'전국 공휴일':event.region??'적용 대상 확인 필요',
    calendarScope:event.scope,region:event.region,isRepresentative:true,conditional:false,
    sourceURL:event.sourceURL,verifiedAt:event.verifiedAt,reviewValidUntil:event.reviewValidUntil});
  }

@@ -16,7 +16,7 @@
     "app/api/live/summary/route.ts": "96727d7ade580d6a59fa3bcd438a242dae54316060ea259c7d74de40dfee1f3e",
     "app/area-demand-card.tsx": "5d23c5df9e326e250170cc6874702c2bd6d8d4c128edcc3a13ffdc454d93181d",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
-    "app/globals.css": "7a7d22c9f0a5ad892500372e690b025b11fea69eabb88edf48e819bf0b624956",
+    "app/globals.css": "0f3a9126af25993f671a13487d001c3a63a0d4c0f4c795fd541043266ac51684",
     "app/install-app.tsx": "864a43ddc979f681743990876a12ee73f2f2120e2a04fbf47752ca7640cd38a8",
     "app/layout.tsx": "64999616e2304074b644db660fc75890e95cc3867c313a7a71640d905fa32af4",
     "app/live-signals.tsx": "46aa9f1c0ad87c40d8044c5d48e3b611f04a60179c400f031a8be03fafbaed3a",
@@ -2999,5 +2999,33 @@
       }
     ],
     "protectedPathCount": 67
+  },
+  "ownerRequestedNavy20261020": {
+    "recordedAt": "2026-10-20",
+    "authorizationEvidence": {
+      "scope": "Owner explicitly requested luxurious muted navy across the interface including selected menu color. Only shared navy/silver tokens and active top-nav color changed; layout, typography and semantic decrease/status colors preserved.",
+      "agentMergeOrDeploymentApproved": true
+    },
+    "changes": [
+      {
+        "file": "app/globals.css",
+        "previous": "7a7d22c9f0a5ad892500372e690b025b11fea69eabb88edf48e819bf0b624956",
+        "approved": "f1d530cd89aba5ca6e19fea4941fbb9554ad31cf3a52fcd5660b2d03c45ce4c3"
+      }
+    ],
+    "protectedPathCount": 67
+  },
+  "ownerRequestedNeutralPalette20261021": {
+    "recordedAt": "2026-10-21",
+    "authorizationEvidence": {
+      "scope": "Owner rejected the navy appearance and explicitly requested a more neutral, restrained Apple-like interface. Shared selection charcoal, cooler neutral silver, separate limited blue accent; no data, permission or schedule change."
+    },
+    "changes": [
+      {
+        "file": "app/globals.css",
+        "previous": "f1d530cd89aba5ca6e19fea4941fbb9554ad31cf3a52fcd5660b2d03c45ce4c3",
+        "approved": "0f3a9126af25993f671a13487d001c3a63a0d4c0f4c795fd541043266ac51684"
+      }
+    ]
   }
 }

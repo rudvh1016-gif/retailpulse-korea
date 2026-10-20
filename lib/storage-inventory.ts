@@ -68,6 +68,13 @@ const AREAS = ["myeongdong", "hongdae", "seongsu", "itaewon"] as const;
 const BY_AREA = { column: "area", values: AREAS } as const;
 
 export const STORAGE_TABLES: readonly TableInventory[] = [
+  // Bounded current reference data: maximum 24 source checks, one JP numeric row and two calendars.
+  { table: "customs_allowance_observations", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
+    readers: "Latest source-check status and last verified hash; hard cap 24, no raw pages/history", insertedAt: "checked_at" },
+  { table: "customs_allowance_numeric_current", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
+    readers: "Reviewed Japan scalar template projection and single previous value for notice; maximum one row", insertedAt: "updated_at" },
+  { table: "official_calendar_current", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
+    readers: "Latest verified JP/US official calendar payload and attempt status; maximum two rows", insertedAt: "checked_at" },
   // Prepared official news: hard caps 200 current / 400 meaningful revisions;
   // never prune travel records, predictions or old rights evidence for space.
   { table: "official_news_current", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,

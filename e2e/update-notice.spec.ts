@@ -16,10 +16,10 @@ for(const [width,height]of [[1440,1000],[360,568],[390,844],[430,700],[390,500]]
  await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeInViewport({ratio:1});
  await expect(dialog.locator('#update-notice-title')).toBeFocused();await expect(dialog.locator('.update-notice-x')).toHaveCount(0);await expect(dialog.locator('section')).toHaveCount(4);
  await expect(dialog.locator('img,svg,canvas')).toHaveCount(0);await expect(dialog.getByRole('link')).toHaveCount(4);
- await expect(dialog).toContainText('판매사원 근무 브리핑');
+ await expect(dialog).toContainText('주목할 공항 흐름');
  await expect(dialog).toContainText('일본·미국 공휴일은 자동 확인 대상');
  await expect(dialog).toContainText('자동 수치 갱신 대상은 일본 일부 항목');
- await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toHaveCSS('background-color','rgb(32, 50, 73)');
+ await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toHaveCSS('background-color','rgb(36, 39, 44)');
  expect(await page.evaluate(()=>getComputedStyle(document.documentElement).overflow)).toBe('hidden');
  const box=await dialog.boundingBox();expect(box!.x).toBeGreaterThanOrEqual(0);expect(box!.y).toBeGreaterThanOrEqual(0);expect(box!.width).toBeLessThanOrEqual(width);expect(box!.height).toBeLessThanOrEqual(height);
  expect(await dialog.evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);

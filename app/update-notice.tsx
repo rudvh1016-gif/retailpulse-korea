@@ -13,7 +13,7 @@ const copy={
 
 export default function UpdateNotice({lang}:{lang:string}){
  const preview=usePathname()?.endsWith('/airport-focus-preview')??false;
- const previewItems=[{title:'공항 한눈에',body:'기존 한눈에 아래에 판매사원 근무 브리핑을 더했어요. 시간·터미널, 노선·휴일 준비, 고객 안내를 함께 확인하세요.',path:'공항 한눈에 → 오늘 수치·준비 일정',view:'home',link:'공항 한눈에 보기'},{title:'국가별 흐름',body:'국가별 전월 비교와 최근 6개월 추이를 한곳에서 확인하세요.',path:'국가별 흐름 → 월 비교·6개월 추이',view:'countries',link:'국가별 흐름 보기'},{title:'미리 준비',body:'오늘·다음 주·다음 달의 주요 휴일과 휴일 종료 후 출발편 확인 시점을 안내해요. 일본·미국 공휴일은 자동 확인 대상이며, 그 외 일정은 검토 자료입니다.',path:'미리 준비 → 국가별 주요 휴일',view:'prepare',link:'주요 휴일 보기'},{title:'도착국 면세 안내',body:'주요 도착지의 여행자별 기준·공식 출처·확인 상태를 확인하세요. 자동 수치 갱신 대상은 일본 일부 항목이며, 나머지는 검토가 필요해요.',path:'미리 준비 → 도착국 반입 면세한도',view:'prepare&section=arrival#arrival-allowances',link:'반입 면세한도 보기'}];
+ const previewItems=[{title:'공항 한눈에',body:'기존 한눈에 아래에 주목할 공항 흐름을 더했어요. 시간·터미널, 노선·휴일 준비, 품목별 기준를 함께 확인하세요.',path:'공항 한눈에 → 오늘 수치·준비 일정',view:'home',link:'공항 한눈에 보기'},{title:'국가별 흐름',body:'국가별 전월 비교와 최근 6개월 추이를 한곳에서 확인하세요.',path:'국가별 흐름 → 월 비교·6개월 추이',view:'countries',link:'국가별 흐름 보기'},{title:'미리 준비',body:'오늘·다음 주·다음 달의 주요 휴일과 휴일 종료 후 출발편 확인 시점을 안내해요. 일본·미국 공휴일은 자동 확인 대상이며, 그 외 일정은 검토 자료입니다.',path:'미리 준비 → 국가별 주요 휴일',view:'prepare',link:'주요 휴일 보기'},{title:'도착국 면세 안내',body:'패션·명품, 화장품·향수, 주류·담배 기준을 구분해 확인하세요. 공식 출처와 확인 상태를 함께 표시해요. 자동 수치 갱신 대상은 일본 일부 항목이며, 나머지는 검토가 필요해요.',path:'미리 준비 → 도착국 반입 면세한도',view:'prepare&section=arrival#arrival-allowances',link:'반입 면세한도 보기'}];
  const locale=lang.startsWith('zh')?'zh':lang==='en'?'en':lang==='ja'?'ja':'ko',c=copy[locale];
  const focusNotice=preview||locale==='ko';
  const focusHref=(view:string)=>preview?`/${locale}/airport-focus-preview?view=${view}`:view==='home'?`/${locale}`:view==='countries'?`/${locale}/airport-countries`:view.includes('section=arrival')?`/${locale}/airport-prepare#arrival-allowances`:`/${locale}/airport-prepare`;
@@ -53,7 +53,7 @@ export default function UpdateNotice({lang}:{lang:string}){
   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
  }}>
   <div className="update-notice-top"><span className="update-notice-new">NEW</span></div>
-  <h2 id="update-notice-title" tabIndex={-1}>{c.title}</h2>
+  <h2 id="update-notice-title" tabIndex={-1}>{c.title}</h2>{focusNotice&&<small className="update-notice-date">업데이트 기준 <time dateTime="2026-10-21T00:00:00+09:00">2026년 10월 21일 00:00 KST</time></small>}
   <div className="update-notice-items">
    {focusNotice?previewItems.map(item=><section key={item.view}><div><h3>{item.title}</h3><p>{item.body}</p><small>{item.path}</small></div><a href={focusHref(item.view)} onClick={()=>dismiss.current(false)}>{item.link} →</a></section>):<>
    <section><div><h3>{c.hour}</h3><p>{c.hourBody}</p><small>{c.hourPath}</small><p className="update-notice-note">{c.hourNote}</p></div><a href={`/${locale}/airport?terminal=all#airport-hourly-comparison`} onClick={()=>dismiss.current(false)}>{c.hourLink} →</a></section>

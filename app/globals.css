@@ -913,9 +913,9 @@
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --surface: #ffffff;
-  --navy: #203249;
-  --silver: #dce1e7;
-  --blue: var(--navy);
+  --navy: #24272c;
+  --silver: #e5e5e7;
+  --blue: #46627f;
   --green: #087a55;
   /*
    * No warm token. The page reads as neutral white only if nothing warm sits

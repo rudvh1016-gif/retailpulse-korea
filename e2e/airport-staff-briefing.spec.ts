@@ -11,7 +11,7 @@ for(const width of [390,1440])test(`additional staff briefing below unchanged gl
  await page.goto('/ko?date=2026-10-19',{waitUntil:'domcontentloaded'});
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await expect(page.locator('.focus-report')).toContainText('단순합계 112,403명');
- const briefing=page.locator('.airport-staff-briefing');await expect(briefing).toContainText('판매사원 근무 브리핑');await expect(briefing).toContainText('출발 예정편');
+ const briefing=page.locator('.airport-staff-briefing');await expect(briefing).toContainText('주목할 공항 흐름');await expect(briefing).toContainText('출발 예정편');
  await expect(briefing.locator('.staff-brief-grid>section')).toHaveCount(3);
  await expect(briefing).toContainText('고객 수나 매장 혼잡 예측은 아닙니다');
  await expect(briefing.locator('a[href*="airport-prepare"]')).toHaveAttribute('href',/date=2026-10-19#arrival-allowances$/);

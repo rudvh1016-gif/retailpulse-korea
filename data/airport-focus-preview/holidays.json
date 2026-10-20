@@ -37,11 +37,12 @@
       ],
       "wholePeriodIsOfficialHoliday": true,
       "dateLabel_ko": "10/25(일)~10/27(화)",
-      "description_ko": "띠딘쥣을 맞아 미얀마 외교부 달력에 연속 지정된 공휴일입니다.",
+      "description_ko": "불교 우안거의 끝을 기념하는 미얀마 등불 축제입니다.",
       "cardSummary_ko": "",
       "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
       "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
-      "restConditions_ko": []
+      "restConditions_ko": [],
+      "meaningSourceURL": "https://tourism.gov.mm/en/festivals/tha-din-gyut-festival"
     },
     {
       "id": "KZ-all-2026-10-25-major",

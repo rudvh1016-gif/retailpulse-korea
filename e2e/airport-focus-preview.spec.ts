@@ -36,7 +36,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('.focus-report-lines')).toContainText('단순합계 112,403명');
  await expect(page.locator('.focus-passenger-parts')).toBeVisible();
  await expect(page.locator('.focus-passenger-parts')).toContainText('예상 출국객 103,124명 + 예상 환승객 9,279명');
- await expect(page.locator('.focus-report-basis')).toContainText('합산 비교자료 부족');
+ await expect(page.locator('.focus-report-basis')).toContainText('누락일을 0으로 계산하지 않습니다');
  await expect(page.locator('.focus-report-lines')).not.toContainText('9,546');
  await expect(page.locator('.focus-passenger-total')).toHaveCSS('white-space','nowrap');
  await expect(page.locator('.focus-passenger-comparison')).toHaveText('(전월 일평균 대비: 비교자료 확인 필요)');

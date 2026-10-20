@@ -1,11 +1,13 @@
 /* Additional staff context only: existing glance structure remains untouched. */
 .airport-staff-briefing{margin-top:28px;padding-top:20px;border-top:1px solid var(--silver,#dce1e7);color:var(--ink);font-family:var(--font-ui)}
 .staff-brief-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.airport-staff-briefing h2{font-size:16px;font-weight:600;color:var(--navy,#203249)}
+.airport-staff-briefing h2{font-size:16px;font-weight:600;color:var(--navy,#24272c)}
 .staff-brief-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
-.staff-brief-grid section{min-width:0}.staff-brief-grid h3{font-size:14px;font-weight:600;color:var(--navy,#203249);margin:0 0 10px}
+.staff-brief-grid section{min-width:0}.staff-brief-grid h3{font-size:14px;font-weight:600;color:var(--navy,#24272c);margin:0 0 10px}
 .airport-staff-briefing p{font-size:13px;line-height:1.7;margin:0 0 8px;overflow-wrap:anywhere}
 .airport-staff-briefing small{display:block;font-size:11px;line-height:1.7;color:#536172}
-.staff-brief-grid>section>a{display:block;min-height:36px;padding:8px 0;font-size:12px;color:var(--navy,#203249)}
-.airport-staff-briefing a:focus-visible{outline:2px solid var(--navy,#203249);outline-offset:3px}
+.staff-brief-grid>section>a{display:block;min-height:36px;padding:8px 0;font-size:12px;color:var(--navy,#24272c)}
+.airport-staff-briefing a:focus-visible{outline:2px solid var(--navy,#24272c);outline-offset:3px}
 @media(max-width:700px){.staff-brief-grid{grid-template-columns:1fr;gap:18px}.staff-brief-grid section+section{border-top:1px solid var(--silver,#dce1e7);padding-top:16px}.staff-brief-heading{gap:6px}.airport-staff-briefing{margin-top:22px}}
+
+.airport-staff-briefing details{margin:8px 0}.airport-staff-briefing summary{cursor:pointer;font-size:12px;line-height:1.7;font-weight:600}.airport-staff-briefing details p{margin:5px 0;font-size:12px}

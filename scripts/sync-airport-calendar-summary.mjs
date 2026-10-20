@@ -2,8 +2,8 @@
 import {readFileSync,writeFileSync} from 'node:fs';
 const source=JSON.parse(readFileSync('data/airport-focus-preview/holidays.json','utf8'));
 const history=JSON.parse(readFileSync('data/airport-focus-preview/calendar-context.json','utf8'));
-const keys=['id','country','countryLabel','name','start','end','dateLabel_ko','type','isRepresentative','conditional','scope','sourceURL','verifiedAt','reviewValidUntil','calendarScope','region'];
-const current=source.events.map(event=>({...event,calendarScope:event.region?'regional':event.country==='US'?'institutional':'national',verifiedAt:event.status==='OFFICIAL_DATE_CONFIRMED'?event.checkedAt?.slice(0,10):undefined}));
+const keys=['id','country','countryLabel','name','start','end','dateLabel_ko','type','isRepresentative','conditional','scope','sourceURL','meaning_ko','meaningSourceURL','verifiedAt','reviewValidUntil','calendarScope','region'];
+const current=source.events.map(event=>({...event,meaning_ko:event.description_ko?.split(/[.!?]/)[0].slice(0,90),calendarScope:event.region?'regional':event.country==='US'?'institutional':'national',verifiedAt:event.status==='OFFICIAL_DATE_CONFIRMED'?event.checkedAt?.slice(0,10):undefined}));
 const names=new Intl.DisplayNames(['ko'],{type:'region'});
 // Preserve reviewed historical holidays for selected-day context; do not pull
 // school/local dates into a country-wide holiday or imply annual completeness.

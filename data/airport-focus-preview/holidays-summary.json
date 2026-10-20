@@ -14,6 +14,8 @@
       "conditional": false,
       "scope": "외교부 공표 공휴일",
       "sourceURL": "https://www.mofa.gov.mm/about-myanmar/public-holidays/",
+      "meaning_ko": "불교 우안거의 끝을 기념하는 미얀마 등불 축제입니다",
+      "meaningSourceURL": "https://tourism.gov.mm/en/festivals/tha-din-gyut-festival",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -31,6 +33,7 @@
       "conditional": false,
       "scope": "전국 공휴일 및 공식 대체휴일",
       "sourceURL": "https://www.gov.kz/article/33969?lang=kk",
+      "meaning_ko": "공화국의 날과 공식 대체휴일을 함께 표시한 일정입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -48,6 +51,7 @@
       "conditional": false,
       "scope": "전국 공휴일. 대체휴일은 근무일 조건에 따라 다릅니다.",
       "sourceURL": "https://www.employment.govt.nz/leave-and-holidays/public-holidays/public-holidays-and-anniversary-dates",
+      "meaning_ko": "노동을 기념하는 전국 공휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -65,6 +69,7 @@
       "conditional": false,
       "scope": "오스트리아 공휴일",
       "sourceURL": "https://www.bmeia.gv.at/fileadmin/user_upload/Vertretungen/Kopenhagen/Aktuelles/Feiertage_2025-2027.pdf",
+      "meaning_ko": "국가의 중요한 기념일로 지정된 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -82,6 +87,7 @@
       "conditional": false,
       "scope": "전국 공휴일",
       "sourceURL": "https://lrc.gov.kh/en/annual-holiday-calendar-2026/",
+      "meaning_ko": "국왕의 즉위를 기념하는 전국 공휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -99,6 +105,7 @@
       "conditional": false,
       "scope": "공화국 기념일. 전날 10월 28일 오후 1시부터 휴일이나 이 카드에는 온종일인 29일만 표시합니다.",
       "sourceURL": "https://www.celikhan.gov.tr/onemli-gun-ve-haftalar",
+      "meaning_ko": "공화국 수립을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -116,6 +123,7 @@
       "conditional": false,
       "scope": "전국 특별 비근무일",
       "sourceURL": "https://omcrs.nia.gov.ph/?q=system%2Ffiles%2Fmc%2F2025_089.pdf",
+      "meaning_ko": "성인을 기리고 고인을 추모하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -133,6 +141,7 @@
       "conditional": false,
       "scope": "일본 국경일·휴일",
       "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+      "meaning_ko": "자유와 평화를 사랑하고 문화를 진흥하는 날입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -150,6 +159,7 @@
       "conditional": false,
       "scope": "내무부 관보의 전국 공휴일; 정부 사무소·공공기관 적용 확인, 민간 전체 휴무는 별도 미확인",
       "sourceURL": "https://moha.gov.np/upload/e66443e81e8cc9c4fa5c099a1fb1bb87/files/२०८३_सालको_सार्वजनिक_विदा_(67_11_18).pdf",
+      "meaning_ko": "락슈미 푸자부터 바이티카 다음 날까지 이어지는 티하르 휴가입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -167,6 +177,7 @@
       "conditional": false,
       "scope": "공공·은행 휴일; 민간 상업 부문 적용은 이 기록에서 확정하지 않음",
       "sourceURL": "https://www.documents.gov.lk/view/calander/2026/2026_E.pdf",
+      "meaning_ko": "빛이 어둠을 이기는 것을 기념하는 힌두교 축제입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -184,6 +195,7 @@
       "conditional": false,
       "scope": "싱가포르 공휴일",
       "sourceURL": "https://www.mom.gov.sg/employment-practices/public-holidays",
+      "meaning_ko": "빛이 어둠을 이기는 것을 기념하는 힌두교 축제입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -201,6 +213,7 @@
       "conditional": false,
       "scope": "전국 법정 휴일; 11/10은 5일제·6일제 모두 대체휴일",
       "sourceURL": "https://www.sosial.gov.az/az/faydali/istehsalat-teqvimi/2026-ci-ilin-istehsalat-teqvimi",
+      "meaning_ko": "승전일과 국기일에 공식 대체휴일을 연결한 일정입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -218,6 +231,7 @@
       "conditional": true,
       "scope": "11월8일이 본인의 휴무일인 경우에만 적용",
       "sourceURL": "https://www.mom.gov.sg/employment-practices/public-holidays",
+      "meaning_ko": "디파발리 당일인 11/8(일)이 본인의 휴무일인 경우 적용되는 다음 날 공휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -235,6 +249,7 @@
       "conditional": false,
       "scope": "전국 공휴일",
       "sourceURL": "https://lrc.gov.kh/en/annual-holiday-calendar-2026/",
+      "meaning_ko": "국가의 독립을 기념하는 전국 공휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -252,6 +267,7 @@
       "conditional": false,
       "scope": "미국 연방공무원 기준. 주·민간 사업장 휴무는 다를 수 있습니다.",
       "sourceURL": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+      "meaning_ko": "군 복무자를 기리는 연방 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "institutional",
       "region": null
@@ -269,6 +285,7 @@
       "conditional": false,
       "scope": "외교부 공표 공휴일",
       "sourceURL": "https://www.mofa.gov.mm/about-myanmar/public-holidays/",
+      "meaning_ko": "따자웅다잉을 맞아 미얀마 외교부 달력에 연속 지정된 공휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -286,6 +303,7 @@
       "conditional": false,
       "scope": "일본 국경일·휴일",
       "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+      "meaning_ko": "일의 가치를 존중하고 생산에 감사하며 서로 고마움을 나누는 날입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -303,6 +321,7 @@
       "conditional": false,
       "scope": "전국 공휴일",
       "sourceURL": "https://lrc.gov.kh/en/annual-holiday-calendar-2026/",
+      "meaning_ko": "물 축제를 맞아 지정한 3일의 전국 공휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -320,6 +339,7 @@
       "conditional": false,
       "scope": "괌 세무국 공표 휴무일. 모든 민간 직장 휴무를 뜻하지 않습니다.",
       "sourceURL": "https://www.guamtax.com/help/holidays.html",
+      "meaning_ko": "추수감사절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "GU"
@@ -337,6 +357,7 @@
       "conditional": false,
       "scope": "노동법 97.1.8 전국 공휴일",
       "sourceURL": "https://legalinfo.mn/mn/detail?lawId=16230709635751&showType=1",
+      "meaning_ko": "공화국 선포를 기념하는 법정 공휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -354,6 +375,7 @@
       "conditional": false,
       "scope": "미국 연방공무원 기준. 주·민간 사업장 휴무는 다를 수 있습니다.",
       "sourceURL": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+      "meaning_ko": "추수감사절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "institutional",
       "region": null
@@ -371,6 +393,7 @@
       "conditional": false,
       "scope": "북마리아나제도 상무부 달력. 민간 전체에 적용하지 않습니다.",
       "sourceURL": "https://registrar.cnmi.gov/events/",
+      "meaning_ko": "추수감사절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "MP"
@@ -388,6 +411,7 @@
       "conditional": false,
       "scope": "하와이 주정부 기관 직원용. 연방·은행 일정은 다를 수 있습니다.",
       "sourceURL": "https://dhrd.hawaii.gov/wp-content/uploads/2026/06/State-Holidays-2026-2027.pdf",
+      "meaning_ko": "추수감사절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "HI"
@@ -405,6 +429,7 @@
       "conditional": false,
       "scope": "스코틀랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
       "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "meaning_ko": "성 앤드루의 날을 기념하는 스코틀랜드 은행휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "scotland"
@@ -422,6 +447,7 @@
       "conditional": false,
       "scope": "외교부 영사국 휴무 일정. 민간 전체 휴무로 해석하지 않습니다.",
       "sourceURL": "https://www.laoevisa.gov.la/info",
+      "meaning_ko": "국가의 중요한 기념일로 지정된 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -439,6 +465,7 @@
       "conditional": false,
       "scope": "공공·민간 법정 휴일. 별도 휴일 이동 공고는 확인이 필요합니다.",
       "sourceURL": "https://www.uaelegislation.gov.ae/en/legislations/2595/download",
+      "meaning_ko": "국가의 중요한 기념일로 지정된 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -456,6 +483,7 @@
       "conditional": false,
       "scope": "전국 공휴일",
       "sourceURL": "https://gov.uz/en/izboskan/news/view/191235",
+      "meaning_ko": "헌법을 기념하는 전국 공휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -473,6 +501,7 @@
       "conditional": false,
       "scope": "노동법 81조 전국 비근무 공휴일",
       "sourceURL": "https://mejlis.gov.tm/single-code/12?lang=tm",
+      "meaning_ko": "국제 중립의 날을 기념하는 비근무 공휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -490,6 +519,7 @@
       "conditional": false,
       "scope": "전국 공휴일",
       "sourceURL": "https://www.gov.kz/article/33969?lang=kk",
+      "meaning_ko": "국가의 독립을 기념하는 전국 공휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -507,6 +537,7 @@
       "conditional": false,
       "scope": "법정 국경일",
       "sourceURL": "https://www.almeezan.qa/PrintArticle_section.aspx?LawTreeSectionID=8022&language=en&lawId=2479",
+      "meaning_ko": "국가의 중요한 기념일로 지정된 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -524,6 +555,7 @@
       "conditional": false,
       "scope": "마카오 의무 공휴일",
       "sourceURL": "https://www.gov.mo/pt/public-holidays/year-2026/?noredirect=pt_PT",
+      "meaning_ko": "마카오 특별행정구 수립을 기념하는 의무 공휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -541,6 +573,7 @@
       "conditional": false,
       "scope": "법정 공휴일",
       "sourceURL": "https://e-sbirka.gov.cz/eli/cz/sb/2000/245/2026-05-13",
+      "meaning_ko": "성탄 전야와 성탄절, 다음 날을 포함해 연속 지정된 법정 공휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -558,6 +591,7 @@
       "conditional": false,
       "scope": "전국 특별 비근무일",
       "sourceURL": "https://omcrs.nia.gov.ph/?q=system%2Ffiles%2Fmc%2F2025_089.pdf",
+      "meaning_ko": "성탄절 전날에 추가로 지정된 특별 비근무일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -575,6 +609,7 @@
       "conditional": false,
       "scope": "괌 세무국 공표 휴무일. 모든 민간 직장 휴무를 뜻하지 않습니다.",
       "sourceURL": "https://www.guamtax.com/help/holidays.html",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "GU"
@@ -592,6 +627,7 @@
       "conditional": false,
       "scope": "전국 공휴일. 유급휴무 여부는 계약에 따릅니다.",
       "sourceURL": "https://www.government.nl/themes/work/working-hours/question-and-answer/work/public-holidays-in-the-netherlands",
+      "meaning_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -609,6 +645,7 @@
       "conditional": false,
       "scope": "법정 공휴일",
       "sourceURL": "https://lovdata.no/dokument/NL/lov/1995-02-24-12/%C2%A76",
+      "meaning_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -626,6 +663,7 @@
       "conditional": false,
       "scope": "전국 공휴일. 대체휴일은 근무일 조건에 따라 다릅니다.",
       "sourceURL": "https://www.employment.govt.nz/leave-and-holidays/public-holidays/public-holidays-and-anniversary-dates",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -643,6 +681,7 @@
       "conditional": false,
       "scope": "은행 휴일. 전 국민의 직장 휴무를 뜻하지 않습니다.",
       "sourceURL": "https://www.nationalbanken.dk/en/what-we-do/stable-prices-monetary-policy-and-the-danish-economy/bank-holidays",
+      "meaning_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -660,6 +699,7 @@
       "conditional": false,
       "scope": "문서의 독일 전역 공휴일 항목 기준. 주별 휴일은 제외합니다.",
       "sourceURL": "https://www.bundesbank.de/resource/blob/764518/36164b50ec05e7fceb1df9ed3374b012/mL/feiertage-in-deutschland-1-data.pdf",
+      "meaning_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -677,6 +717,7 @@
       "conditional": false,
       "scope": "산업부 공표 휴무 일정. 민간 전체로 확장하지 않습니다.",
       "sourceURL": "https://www.industry.gov.lb/Ministry/WorkingHoursAndHolidays?lang=en-us",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -694,6 +735,7 @@
       "conditional": false,
       "scope": "법정 공휴일",
       "sourceURL": "https://luxembourg.public.lu/fr/vivre/qualite-de-vie/jours-feries-legaux-luxembourg.html",
+      "meaning_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -711,6 +753,7 @@
       "conditional": false,
       "scope": "공식 달력의 모든 주·연방직할구 공통 공휴일",
       "sourceURL": "https://www.kabinet.gov.my/storage/2025/08/HKA-2026.pdf",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -728,6 +771,7 @@
       "conditional": false,
       "scope": "노동법상 의무 휴일",
       "sourceURL": "https://www.gob.mx/profedet/articulos/sabes-cuales-son-los-dias-de-descanso-obligatorio-para-este-2026?facet=app&mode=light",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -745,6 +789,7 @@
       "conditional": false,
       "scope": "미국 연방공무원 기준. 주·민간 사업장 휴무는 다를 수 있습니다.",
       "sourceURL": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "institutional",
       "region": null
@@ -762,6 +807,7 @@
       "conditional": false,
       "scope": "외교부 공표 공휴일",
       "sourceURL": "https://www.mofa.gov.mm/about-myanmar/public-holidays/",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -779,6 +825,7 @@
       "conditional": false,
       "scope": "법정 공휴일. 대체일은 업종·직장에 따라 다릅니다.",
       "sourceURL": "https://www.belgium.be/fr/emploi/conges_et_interruption_de_carriere/jours_feries",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -796,6 +843,7 @@
       "conditional": false,
       "scope": "전국 공휴일. 선택휴무는 제외합니다.",
       "sourceURL": "https://agenciagov.ebc.com.br/noticias/202512/confira-o-calendario-oficial-de-feriados-nacionais-e-pontos-facultativos-em-2026",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -813,6 +861,7 @@
       "conditional": false,
       "scope": "북마리아나제도 상무부 달력. 민간 전체에 적용하지 않습니다.",
       "sourceURL": "https://registrar.cnmi.gov/events/",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "MP"
@@ -830,6 +879,7 @@
       "conditional": false,
       "scope": "공공·은행·상업 휴일",
       "sourceURL": "https://www.documents.gov.lk/view/calander/2026/2026_E.pdf",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -847,6 +897,7 @@
       "conditional": false,
       "scope": "외교부 공표 공휴일 및 공휴일에 준하는 날 중 성탄절·다음 날",
       "sourceURL": "https://www.government.se/contentassets/71dfa63dd47749ea96e0cb7c3dedb18c/circular-note-2_2025---public-holidays-2026.pdf",
+      "meaning_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -864,6 +915,7 @@
       "conditional": false,
       "scope": "취리히주 법정 공휴일. 스위스 전국 휴일로 일반화하지 않습니다.",
       "sourceURL": "https://www.zh.ch/de/wirtschaft-arbeit/arbeitsbedingungen/arbeitsssicherheit-gesundheitsschutz/arbeits-ruhezeiten/feiertage.html",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "ZH"
@@ -881,6 +933,7 @@
       "conditional": false,
       "scope": "전국 대체 불가 법정 공휴일",
       "sourceURL": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-21667",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -898,6 +951,7 @@
       "conditional": false,
       "scope": "싱가포르 공휴일",
       "sourceURL": "https://www.mom.gov.sg/employment-practices/public-holidays",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -915,6 +969,7 @@
       "conditional": false,
       "scope": "잉글랜드·웨일스 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
       "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "england-and-wales"
@@ -932,6 +987,7 @@
       "conditional": false,
       "scope": "북아일랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
       "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "northern-ireland"
@@ -949,6 +1005,7 @@
       "conditional": false,
       "scope": "스코틀랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
       "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "scotland"
@@ -966,6 +1023,7 @@
       "conditional": false,
       "scope": "오스트리아 공휴일",
       "sourceURL": "https://www.bmeia.gv.at/fileadmin/user_upload/Vertretungen/Kopenhagen/Aktuelles/Feiertage_2025-2027.pdf",
+      "meaning_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -983,6 +1041,7 @@
       "conditional": false,
       "scope": "전국 공휴일",
       "sourceURL": "https://www.italia.it/it/italia/informazioni-per-viaggiare/orari-e-festivita-in-italia",
+      "meaning_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1000,6 +1059,7 @@
       "conditional": false,
       "scope": "인도 우정청 전국 휴무 목록. 민간·주별 휴무와 다릅니다.",
       "sourceURL": "https://www.indiapost.gov.in/holidays-list",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1017,6 +1077,7 @@
       "conditional": false,
       "scope": "정부 합동결정 전국 공휴일",
       "sourceURL": "https://www.setneg.go.id/baca/index/inilah_skb_3_menteri_libur_nasional_dan_cuti_bersama_2026",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1034,6 +1095,7 @@
       "conditional": false,
       "scope": "전국 공휴일",
       "sourceURL": "https://www.gob.cl/noticias/feriados-2026-revisa-cuantos-habra-y-cuales-son-irrenunciables/",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1051,6 +1113,7 @@
       "conditional": false,
       "scope": "캐나다 국세청 인정 공휴일. 주·직장별 휴무와 다를 수 있습니다.",
       "sourceURL": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+      "meaning_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1068,6 +1131,7 @@
       "conditional": false,
       "scope": "법정 공휴일",
       "sourceURL": "https://narodne-novine.nn.hr/clanci/sluzbeni/2019_11_110_2212.html",
+      "meaning_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1085,6 +1149,7 @@
       "conditional": false,
       "scope": "전국 공휴일",
       "sourceURL": "https://www.gob.pe/feriados",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1102,6 +1167,7 @@
       "conditional": false,
       "scope": "노동법상 의무 공휴일",
       "sourceURL": "https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2009-34546475-46746675",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1119,6 +1185,7 @@
       "conditional": false,
       "scope": "법정 비근무일",
       "sourceURL": "https://www.gov.pl/web/rodzina/ustalanie-i-rozliczanie-czasu-pracy",
+      "meaning_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1136,6 +1203,7 @@
       "conditional": false,
       "scope": "전국 법정 공휴일. 알자스·모젤 추가 휴일은 제외합니다.",
       "sourceURL": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2405",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1153,6 +1221,7 @@
       "conditional": false,
       "scope": "은행 휴일. 전 국민의 직장 휴무를 뜻하지 않습니다.",
       "sourceURL": "https://www.suomenpankki.fi/fi/raha-ja-maksaminen/pankkivapaapaivat/",
+      "meaning_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1170,6 +1239,7 @@
       "conditional": false,
       "scope": "전국 정규 공휴일",
       "sourceURL": "https://omcrs.nia.gov.ph/?q=system%2Ffiles%2Fmc%2F2025_089.pdf",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1187,6 +1257,7 @@
       "conditional": false,
       "scope": "하와이 주정부 기관 직원용. 연방·은행 일정은 다를 수 있습니다.",
       "sourceURL": "https://dhrd.hawaii.gov/wp-content/uploads/2026/06/State-Holidays-2026-2027.pdf",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "HI"
@@ -1204,6 +1275,7 @@
       "conditional": false,
       "scope": "공휴일법상 공휴일. 사업장별 실제 근무 여부는 별도입니다.",
       "sourceURL": "https://www.law.go.kr/lsLinkCommonInfo.do?chrClsCd=010202&lsJoLnkSeq=1033065007",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1221,6 +1293,7 @@
       "conditional": false,
       "scope": "노동법상 고정 공휴일. 별도 근무일 이동 일정은 포함하지 않습니다.",
       "sourceURL": "https://njt.jog.gov.hu/jogszabaly/2012-1-00-00.14",
+      "meaning_ko": "성탄절과 그 다음 날을 함께 지정한 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1238,6 +1311,7 @@
       "conditional": false,
       "scope": "8개 주·준주 공통 공휴일. 나머지 주별 휴일은 합치지 않습니다.",
       "sourceURL": "https://www.fairwork.gov.au/employment-conditions/public-holidays/2026-public-holidays",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1255,6 +1329,7 @@
       "conditional": false,
       "scope": "홍콩 공중휴일. 고용법상 법정휴일 목록과 다를 수 있습니다.",
       "sourceURL": "https://www.1823.gov.hk/common/ical/en.ics",
+      "meaning_ko": "예수의 탄생을 기념하는 성탄절 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1272,6 +1347,7 @@
       "conditional": false,
       "scope": "총리실 공문상 공공부문 휴일; 민간·은행 동일 적용은 미확인",
       "sourceURL": "https://www.jpm.gov.bn/Circulars%20PDF%20Library/jpmsk04-2025.pdf",
+      "meaning_ko": "브루나이 공공부문은 12/25(금) 성탄절 대신 12/26(토)을 휴일로 지정했습니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1289,6 +1365,7 @@
       "conditional": false,
       "scope": "홍콩 공중휴일. 고용법상 법정휴일 목록과 다를 수 있습니다.",
       "sourceURL": "https://www.1823.gov.hk/common/ical/en.ics",
+      "meaning_ko": "홍콩 공중휴일 달력의 성탄절 다음 첫 평일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1306,6 +1383,7 @@
       "conditional": false,
       "scope": "잉글랜드·웨일스 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
       "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "meaning_ko": "성탄절 다음 날의 은행휴일을 토요일 대신 월요일에 지키는 대체휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "england-and-wales"
@@ -1323,6 +1401,7 @@
       "conditional": false,
       "scope": "북아일랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
       "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "meaning_ko": "성탄절 다음 날의 은행휴일을 토요일 대신 월요일에 지키는 대체휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "northern-ireland"
@@ -1340,6 +1419,7 @@
       "conditional": false,
       "scope": "스코틀랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
       "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "meaning_ko": "성탄절 다음 날의 은행휴일을 토요일 대신 월요일에 지키는 대체휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "scotland"
@@ -1357,6 +1437,7 @@
       "conditional": false,
       "scope": "노동법 97.1.9 전국 공휴일",
       "sourceURL": "https://legalinfo.mn/mn/detail?lawId=16230709635751&showType=1",
+      "meaning_ko": "민족의 자유와 독립 회복을 기념하는 법정 공휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1374,6 +1455,7 @@
       "conditional": false,
       "scope": "전국 법정 휴일",
       "sourceURL": "https://www.sosial.gov.az/az/faydali/istehsalat-teqvimi/2026-ci-ilin-istehsalat-teqvimi",
+      "meaning_ko": "세계 아제르바이잔인의 연대를 기념하는 법정 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1391,6 +1473,7 @@
       "conditional": false,
       "scope": "금융기관 휴일. 민간 전체 휴무가 아닙니다.",
       "sourceURL": "https://www.bot.or.th/en/financial-institutions-holiday.html",
+      "meaning_ko": "한 해의 마지막 날에 지정된 금융기관 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1408,6 +1491,7 @@
       "conditional": false,
       "scope": "전국 공휴일. 유급휴무 여부는 계약에 따릅니다.",
       "sourceURL": "https://www.government.nl/themes/work/working-hours/question-and-answer/work/public-holidays-in-the-netherlands",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1425,6 +1509,7 @@
       "conditional": false,
       "scope": "법정 공휴일",
       "sourceURL": "https://lovdata.no/dokument/NL/lov/1995-02-24-12/%C2%A76",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1442,6 +1527,7 @@
       "conditional": false,
       "scope": "전국 공휴일. 대체휴일은 근무일 조건에 따라 다릅니다.",
       "sourceURL": "https://www.employment.govt.nz/leave-and-holidays/public-holidays/public-holidays-and-anniversary-dates",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1459,6 +1545,7 @@
       "conditional": false,
       "scope": "정부 행정기관 일정. 1월 2~3일은 주말이므로 이 공휴일 날짜에 합치지 않습니다.",
       "sourceURL": "https://www.dgpa.gov.tw/FileConversion?filename=dgpa%2Ffiles%2F202605%2Fb3f2c62b-8de9-4e29-b8ea-64069be0cc2b.pdf&name=%E9%99%84%E8%A1%A81.pdf&nfix=",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1476,6 +1563,7 @@
       "conditional": false,
       "scope": "은행 휴일. 전 국민의 직장 휴무를 뜻하지 않습니다.",
       "sourceURL": "https://www.nationalbanken.dk/en/what-we-do/stable-prices-monetary-policy-and-the-danish-economy/bank-holidays",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1493,6 +1581,7 @@
       "conditional": false,
       "scope": "법정 공휴일",
       "sourceURL": "https://luxembourg.public.lu/fr/vivre/qualite-de-vie/jours-feries-legaux-luxembourg.html",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1510,6 +1599,7 @@
       "conditional": false,
       "scope": "미국 연방공무원 기준. 주·민간 사업장 휴무는 다를 수 있습니다.",
       "sourceURL": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "institutional",
       "region": null
@@ -1527,6 +1617,7 @@
       "conditional": false,
       "scope": "노동법 제112조 유급휴일. 주말을 연휴로 임의 확장하지 않습니다.",
       "sourceURL": "https://congbao.cdnchinhphu.vn/CongBaoCP/CongBao/2025/9/46083/58726-1-1309-1310.pdf",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1544,6 +1635,7 @@
       "conditional": false,
       "scope": "법정 공휴일. 대체일은 업종·직장에 따라 다릅니다.",
       "sourceURL": "https://www.belgium.be/fr/emploi/conges_et_interruption_de_carriere/jours_feries",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1561,6 +1653,7 @@
       "conditional": false,
       "scope": "싱가포르 공휴일",
       "sourceURL": "https://www.mom.gov.sg/employment-practices/public-holidays",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1578,6 +1671,7 @@
       "conditional": false,
       "scope": "공공·민간 법정 휴일. 별도 휴일 이동 공고는 확인이 필요합니다.",
       "sourceURL": "https://www.uaelegislation.gov.ae/en/legislations/2595/download",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1595,6 +1689,7 @@
       "conditional": false,
       "scope": "잉글랜드·웨일스 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
       "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "england-and-wales"
@@ -1612,6 +1707,7 @@
       "conditional": false,
       "scope": "북아일랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
       "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "northern-ireland"
@@ -1629,6 +1725,7 @@
       "conditional": false,
       "scope": "스코틀랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
       "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "scotland"
@@ -1646,6 +1743,7 @@
       "conditional": false,
       "scope": "오스트리아 공휴일",
       "sourceURL": "https://www.bmeia.gv.at/fileadmin/user_upload/Vertretungen/Kopenhagen/Aktuelles/Feiertage_2025-2027.pdf",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1663,6 +1761,7 @@
       "conditional": false,
       "scope": "일본 국경일·휴일",
       "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1680,6 +1779,7 @@
       "conditional": false,
       "scope": "노동법상 공휴일",
       "sourceURL": "https://matsne.gov.ge/en/document/view/1155567",
+      "meaning_ko": "새해 첫날과 다음 날이 노동법상 공휴일인 일정입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1697,6 +1797,7 @@
       "conditional": false,
       "scope": "전국 법정 공휴일 1일. 2027년 연결 연휴·대체근무 배치는 미확인입니다.",
       "sourceURL": "https://www.gov.cn/zhengce/content/202411/content_6986380.htm?ddtab=true",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1714,6 +1815,7 @@
       "conditional": false,
       "scope": "법정 공휴일",
       "sourceURL": "https://e-sbirka.gov.cz/eli/cz/sb/2000/245/2026-05-13",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1731,6 +1833,7 @@
       "conditional": false,
       "scope": "노동법상 비근무일: 새해 1/1~6, 정교회 성탄 1/7",
       "sourceURL": "https://mlsp.gov.kg/ru/2025/01/27/sadyr-zhaparov-podpisal-novyj-trudovoj-kodeks/",
+      "meaning_ko": "현행 노동법에 따른 새해 휴일 1/1~6과 정교회 성탄절 1/7을 연결한 일정입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1748,6 +1851,7 @@
       "conditional": false,
       "scope": "노동법 81조 전국 비근무 공휴일",
       "sourceURL": "https://mejlis.gov.tm/single-code/12?lang=tm",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1765,6 +1869,7 @@
       "conditional": false,
       "scope": "노동법상 의무 공휴일",
       "sourceURL": "https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2009-34546475-46746675",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1782,6 +1887,7 @@
       "conditional": false,
       "scope": "법정 비근무일",
       "sourceURL": "https://www.gov.pl/web/rodzina/ustalanie-i-rozliczanie-czasu-pracy",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1799,6 +1905,7 @@
       "conditional": false,
       "scope": "전국 법정 공휴일. 알자스·모젤 추가 휴일은 제외합니다.",
       "sourceURL": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2405",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1816,6 +1923,7 @@
       "conditional": false,
       "scope": "하와이 주정부 기관 직원용. 연방·은행 일정은 다를 수 있습니다.",
       "sourceURL": "https://dhrd.hawaii.gov/wp-content/uploads/2026/06/State-Holidays-2026-2027.pdf",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "HI"
@@ -1833,6 +1941,7 @@
       "conditional": false,
       "scope": "공휴일법상 공휴일. 사업장별 실제 근무 여부는 별도입니다.",
       "sourceURL": "https://www.law.go.kr/lsLinkCommonInfo.do?chrClsCd=010202&lsJoLnkSeq=1033065007",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1850,6 +1959,7 @@
       "conditional": false,
       "scope": "노동법상 고정 공휴일. 별도 근무일 이동 일정은 포함하지 않습니다.",
       "sourceURL": "https://njt.jog.gov.hu/jogszabaly/2012-1-00-00.14",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1867,6 +1977,7 @@
       "conditional": false,
       "scope": "홍콩 공중휴일. 고용법상 법정휴일 목록과 다를 수 있습니다.",
       "sourceURL": "https://www.1823.gov.hk/common/ical/en.ics",
+      "meaning_ko": "새해의 시작을 기념하는 휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1884,6 +1995,7 @@
       "conditional": false,
       "scope": "스코틀랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
       "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "meaning_ko": "스코틀랜드의 새해 두 번째 날 은행휴일을 토요일 대신 월요일에 지킵니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "regional",
       "region": "scotland"
@@ -1901,6 +2013,7 @@
       "conditional": false,
       "scope": "노동법상 공휴일",
       "sourceURL": "https://matsne.gov.ge/en/document/view/1155567",
+      "meaning_ko": "정교회 성탄절을 기념하는 법정 공휴일입니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
@@ -1918,6 +2031,7 @@
       "conditional": false,
       "scope": "일본 국경일·휴일",
       "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+      "meaning_ko": "어른이 된 청년을 축하하고 격려하는 날로, 1월 두 번째 월요일에 지킵니다",
       "verifiedAt": "2026-10-19",
       "calendarScope": "national",
       "region": null
