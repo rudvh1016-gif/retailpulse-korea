@@ -34,6 +34,8 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.getByTestId('glance-key-passengers')).toHaveCount(0);
  await expect(page.getByTestId('glance-key-sum')).toHaveCount(0);
  await expect(page.locator('.focus-report-lines')).toContainText('단순합계 112,403명');
+ await expect(page.locator('.focus-passenger-parts')).toBeVisible();
+ await expect(page.locator('.focus-passenger-parts')).toContainText('예상 출국객 103,124명 + 예상 환승객 9,279명');
  await expect(page.locator('.focus-report-basis')).toContainText('합산 비교자료 부족');
  await expect(page.locator('.focus-report-lines')).not.toContainText('9,546');
  await expect(page.locator('.focus-passenger-total')).toHaveCSS('white-space','nowrap');
@@ -44,6 +46,8 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('.focus-line-chart').first()).toContainText('4월');
  await expect(page.locator('.focus-line-chart').first()).toContainText('9월');
  await expect(page.locator('.focus-report')).toContainText('567편');
+ await expect(page.locator('.focus-selected-country-changes')).toContainText('일본행 161편');
+ await expect(page.locator('.focus-selected-country-changes')).toContainText('▲ +2.5%');
  await expect(page.locator('.focus-report')).toContainText('출근 후 30초 확인');
  await expect(page.locator('.focus-staff-links a')).toHaveAttribute('href','/ko/airport-news');
  await expect(page.locator('.focus-report')).toContainText('552.9편');
@@ -75,10 +79,15 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.getByTestId('airport-route-passengers')).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await expect(page.locator('.focus-trend-summary').first()).toContainText('3개월 연속 증가');
- await expect(page.locator('.focus-china-context')).toContainText('6–8월 3개월 연속 증가');
- await expect(page.locator('.focus-china-context')).toContainText('21.1%');
- await expect(page.locator('.focus-china-context')).toContainText('감소 원인으로 확인된 것은 아닙니다.');
- if(width===390){const china=page.locator('#focus-country-trends article').filter({has:page.locator('.focus-china-context')});await china.evaluate(node=>window.scrollTo({top:window.scrollY+node.getBoundingClientRect().top-18,behavior:'instant'}));await page.screenshot({path:testInfo.outputPath('countries-china-viewport-390.png')});await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));}
+ await expect(page.locator('.focus-trend-context[data-country="CN"]')).toContainText('6–8월 3개월 연속 증가');
+ await expect(page.locator('.focus-trend-context[data-country="CN"]')).toContainText('▽ −21.1%');
+ await expect(page.locator('.focus-trend-context[data-country="CN"]')).toContainText('160,405명');
+ await expect(page.locator('.focus-month-values').first().locator('thead')).toContainText('전월비');
+ await expect(page.locator('.focus-month-values').first().locator('tbody tr').first()).toContainText('비교자료 없음');
+ await expect(page.locator('.focus-trend-context[data-country="CN"] .change-rate[data-direction=down]')).toHaveCSS('color','rgb(161, 45, 63)');
+ await expect(page.locator('.focus-trend-context[data-country="CN"]')).toContainText('국경절');
+ await expect(page.locator('.focus-trend-context[data-country="CN"]')).toContainText('여객 증감의 원인으로 확인된 것은 아닙니다.');
+ if(width===390){const china=page.locator('#focus-country-trends article').filter({has:page.locator('.focus-trend-context[data-country="CN"]')});await china.evaluate(node=>window.scrollTo({top:window.scrollY+node.getBoundingClientRect().top-18,behavior:'instant'}));await page.screenshot({path:testInfo.outputPath('countries-china-viewport-390.png')});const monthlyTable=china.locator('.focus-month-values');await monthlyTable.evaluate(node=>window.scrollTo({top:window.scrollY+node.getBoundingClientRect().top-90,behavior:'instant'}));await page.screenshot({path:testInfo.outputPath('countries-monthly-table-390.png')});await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));}
  await page.screenshot({path:testInfo.outputPath(`countries-${width}.png`),fullPage:true});
  await captureMobileViewports(page,testInfo,'countries',width);
  await page.getByRole(width<=820?'link':'button',{name:'미리 준비',exact:true}).click();
@@ -94,6 +103,8 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.getByRole('link',{name:'소비 흐름 ↗'})).toHaveAttribute('href','/ko/consumption');
  if([360,390,430,1440].includes(width)){
   await page.getByRole(width<=820?'link':'button',{name:'공항 현황',exact:true}).click();
+ await expect(page.locator('.focus-staff-calendar')).toHaveCount(1);
+ await expect(page.locator('.focus-staff-calendar')).toContainText('2026-10-19–2026-10-25');
   await expect(page.locator('.airport-view')).toBeVisible();
   await expect(page.getByTestId('airport-route-passengers')).toHaveCount(0);
   await expect(page.locator('.focus-country-jump')).toBeVisible();
@@ -136,6 +147,10 @@ for(const width of [390,1440])test(`approved notice has only bottom close ${widt
  await page.route(/google-analytics\.com|googletagmanager\.com|analytics\.google\.com/,r=>r.abort());
  await page.goto('/ko/airport-focus-preview',{waitUntil:'domcontentloaded'});const dialog=page.getByRole('dialog',{name:'새로운 정보가 추가되었어요'});
  await expect(dialog).toBeVisible();await expect(dialog.locator('.update-notice-x')).toHaveCount(0);
+ await expect(dialog).toHaveCSS('background-color','rgba(255, 255, 255, 0.72)');
+ await expect(dialog).toHaveCSS('backdrop-filter','blur(28px) saturate(1.1)');
+ const noticeContrast=await dialog.locator('p').first().evaluate(node=>{const rgb=getComputedStyle(node).color.match(/[\d.]+/g)!.slice(0,3).map(Number);const luminance=(v:number[])=>v.map(n=>{const x=n/255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4;}).reduce((sum,n,i)=>sum+n*[.2126,.7152,.0722][i],0);return (luminance([255*.72,255*.72,255*.72])+.05)/(luminance(rgb)+.05);});
+ expect(noticeContrast).toBeGreaterThanOrEqual(4.5);
  await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeVisible();
  await expect(dialog.getByRole('button',{name:'일주일 동안 안 보기',exact:true})).toBeVisible();
  await expect(dialog.locator('section')).toHaveCount(4);
@@ -151,6 +166,8 @@ for(const width of [390,1440])test(`approved notice has only bottom close ${widt
  await page.evaluate(()=>sessionStorage.clear());await page.reload({waitUntil:'domcontentloaded'});
  await dialog.getByRole('link',{name:'공항 한눈에 보기 →'}).click();
  await expect(page.locator('.focus-report-lines')).toContainText('단순합계 112,403명');
+ await expect(page.locator('.focus-passenger-parts')).toBeVisible();
+ await expect(page.locator('.focus-passenger-parts')).toContainText('예상 출국객 103,124명 + 예상 환승객 9,279명');
  await page.evaluate(()=>sessionStorage.clear());await page.reload({waitUntil:'domcontentloaded'});
  await expect(dialog).toBeVisible();
  await dialog.getByRole('link',{name:'반입 면세한도 보기 →'}).click();

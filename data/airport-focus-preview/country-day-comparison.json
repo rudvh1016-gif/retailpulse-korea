@@ -1,0 +1,374 @@
+{
+  "date": "2026-10-19",
+  "baselineStartEnd": {
+    "start": "2026-09-01",
+    "end": "2026-09-30"
+  },
+  "completeDays": 30,
+  "scope": "ALL",
+  "countries": [
+    {
+      "country": "JP",
+      "countryLabelKo": "일본",
+      "count": 161,
+      "previousMonthTotal": 4714
+    },
+    {
+      "country": "CN",
+      "countryLabelKo": "중국",
+      "count": 137,
+      "previousMonthTotal": 4013
+    },
+    {
+      "country": "VN",
+      "countryLabelKo": "베트남",
+      "count": 49,
+      "previousMonthTotal": 1519
+    },
+    {
+      "country": "US",
+      "countryLabelKo": "미국",
+      "count": 37,
+      "previousMonthTotal": 1050
+    },
+    {
+      "country": "HK",
+      "countryLabelKo": "홍콩",
+      "count": 21,
+      "previousMonthTotal": 578
+    },
+    {
+      "country": "TW",
+      "countryLabelKo": "대만",
+      "count": 18,
+      "previousMonthTotal": 554
+    },
+    {
+      "country": "PH",
+      "countryLabelKo": "필리핀",
+      "count": 18,
+      "previousMonthTotal": 516
+    },
+    {
+      "country": "TH",
+      "countryLabelKo": "태국",
+      "count": 17,
+      "previousMonthTotal": 515
+    },
+    {
+      "country": "SG",
+      "countryLabelKo": "싱가포르",
+      "count": 13,
+      "previousMonthTotal": 350
+    },
+    {
+      "country": "ID",
+      "countryLabelKo": "인도네시아",
+      "count": 8,
+      "previousMonthTotal": 228
+    },
+    {
+      "country": "CA",
+      "countryLabelKo": "캐나다",
+      "count": 6,
+      "previousMonthTotal": 201
+    },
+    {
+      "country": "KR",
+      "countryLabelKo": "한국 국내선",
+      "count": 7,
+      "previousMonthTotal": 192
+    },
+    {
+      "country": "MN",
+      "countryLabelKo": "몽골",
+      "count": 5,
+      "previousMonthTotal": 188
+    },
+    {
+      "country": "MY",
+      "countryLabelKo": "말레이시아",
+      "count": 5,
+      "previousMonthTotal": 181
+    },
+    {
+      "country": "GU",
+      "countryLabelKo": "괌",
+      "count": 5,
+      "previousMonthTotal": 150
+    },
+    {
+      "country": "AU",
+      "countryLabelKo": "호주",
+      "count": 6,
+      "previousMonthTotal": 127
+    },
+    {
+      "country": "DE",
+      "countryLabelKo": "독일",
+      "count": 4,
+      "previousMonthTotal": 106
+    },
+    {
+      "country": "AE",
+      "countryLabelKo": "아랍에미리트",
+      "count": 5,
+      "previousMonthTotal": 103
+    },
+    {
+      "country": "MO",
+      "countryLabelKo": "마카오",
+      "count": 4,
+      "previousMonthTotal": 100
+    },
+    {
+      "country": "FR",
+      "countryLabelKo": "프랑스",
+      "count": 4,
+      "previousMonthTotal": 94
+    },
+    {
+      "country": "KZ",
+      "countryLabelKo": "카자흐스탄",
+      "count": 3,
+      "previousMonthTotal": 91
+    },
+    {
+      "country": "TR",
+      "countryLabelKo": "튀르키예",
+      "count": 3,
+      "previousMonthTotal": 89
+    },
+    {
+      "country": "GB",
+      "countryLabelKo": "영국",
+      "count": 3,
+      "previousMonthTotal": 87
+    },
+    {
+      "country": "IT",
+      "countryLabelKo": "이탈리아",
+      "count": 2,
+      "previousMonthTotal": 83
+    },
+    {
+      "country": "KH",
+      "countryLabelKo": "캄보디아",
+      "count": 2,
+      "previousMonthTotal": 69
+    },
+    {
+      "country": "UZ",
+      "countryLabelKo": "우즈베키스탄",
+      "count": 3,
+      "previousMonthTotal": 68
+    },
+    {
+      "country": "ES",
+      "countryLabelKo": "스페인",
+      "count": 2,
+      "previousMonthTotal": 60
+    },
+    {
+      "country": "NL",
+      "countryLabelKo": "네덜란드",
+      "count": 2,
+      "previousMonthTotal": 53
+    },
+    {
+      "country": "LA",
+      "countryLabelKo": "라오스",
+      "count": 2,
+      "previousMonthTotal": 49
+    },
+    {
+      "country": "IN",
+      "countryLabelKo": "인도",
+      "count": 1,
+      "previousMonthTotal": 42
+    },
+    {
+      "country": "QA",
+      "countryLabelKo": "카타르",
+      "count": 1,
+      "previousMonthTotal": 34
+    },
+    {
+      "country": "PL",
+      "countryLabelKo": "폴란드",
+      "count": 1,
+      "previousMonthTotal": 32
+    },
+    {
+      "country": "FI",
+      "countryLabelKo": "핀란드",
+      "count": 1,
+      "previousMonthTotal": 31
+    },
+    {
+      "country": "CZ",
+      "countryLabelKo": "체코",
+      "count": 1,
+      "previousMonthTotal": 30
+    },
+    {
+      "country": "HU",
+      "countryLabelKo": "헝가리",
+      "count": 1,
+      "previousMonthTotal": 30
+    },
+    {
+      "country": "MX",
+      "countryLabelKo": "멕시코",
+      "count": 1,
+      "previousMonthTotal": 30
+    },
+    {
+      "country": "DK",
+      "countryLabelKo": "덴마크",
+      "count": 1,
+      "previousMonthTotal": 29
+    },
+    {
+      "country": "CH",
+      "countryLabelKo": "스위스",
+      "count": 1,
+      "previousMonthTotal": 26
+    },
+    {
+      "country": "ET",
+      "countryLabelKo": "에티오피아",
+      "count": 1,
+      "previousMonthTotal": 25
+    },
+    {
+      "country": "MM",
+      "countryLabelKo": "미얀마",
+      "count": 0,
+      "previousMonthTotal": 20
+    },
+    {
+      "country": "MP",
+      "countryLabelKo": "북마리아나 제도",
+      "count": 1,
+      "previousMonthTotal": 20
+    },
+    {
+      "country": "AT",
+      "countryLabelKo": "오스트리아",
+      "count": 1,
+      "previousMonthTotal": 17
+    },
+    {
+      "country": "NZ",
+      "countryLabelKo": "뉴질랜드",
+      "count": 1,
+      "previousMonthTotal": 17
+    },
+    {
+      "country": "BN",
+      "countryLabelKo": "브루나이",
+      "count": 0,
+      "previousMonthTotal": 15
+    },
+    {
+      "country": "PT",
+      "countryLabelKo": "포르투갈",
+      "count": 1,
+      "previousMonthTotal": 15
+    },
+    {
+      "country": "KG",
+      "countryLabelKo": "키르기스스탄",
+      "count": 0,
+      "previousMonthTotal": 13
+    },
+    {
+      "country": "LK",
+      "countryLabelKo": "스리랑카",
+      "count": 0,
+      "previousMonthTotal": 9
+    },
+    {
+      "country": "NP",
+      "countryLabelKo": "네팔",
+      "count": 0,
+      "previousMonthTotal": 9
+    },
+    {
+      "country": "TM",
+      "countryLabelKo": "투르크메니스탄",
+      "count": 1,
+      "previousMonthTotal": 5
+    },
+    {
+      "country": "GE",
+      "countryLabelKo": "조지아",
+      "count": 0,
+      "previousMonthTotal": 1
+    }
+  ],
+  "coverage": {
+    "selectedRawRows": 567,
+    "selectedUniquePhysicalIds": 567,
+    "selectedDuplicateRowsRemoved": 0,
+    "selectedCancelledExcluded": 0,
+    "selectedKeptDepartures": 567,
+    "selectedTruncated": false,
+    "selectedDirectionAndDateFilteredOut": 0,
+    "selectedStatusCounts": {
+      "scheduled": 561,
+      "unknown": 6
+    },
+    "selectedByBuilding": {
+      "T1": 163,
+      "T2": 266,
+      "CONCOURSE": 138
+    },
+    "selectedUnknownDestination": 0,
+    "baselineUnknownDestination": 9,
+    "baselineUnknownBuilding": 2,
+    "baselineUnknownBuildingDestinationCounts": {
+      "US": 1,
+      "UNKNOWN": 1
+    },
+    "baselineIncludedDays": [
+      "2026-09-01",
+      "2026-09-02",
+      "2026-09-03",
+      "2026-09-04",
+      "2026-09-05",
+      "2026-09-06",
+      "2026-09-07",
+      "2026-09-08",
+      "2026-09-09",
+      "2026-09-10",
+      "2026-09-11",
+      "2026-09-12",
+      "2026-09-13",
+      "2026-09-14",
+      "2026-09-15",
+      "2026-09-16",
+      "2026-09-17",
+      "2026-09-18",
+      "2026-09-19",
+      "2026-09-20",
+      "2026-09-21",
+      "2026-09-22",
+      "2026-09-23",
+      "2026-09-24",
+      "2026-09-25",
+      "2026-09-26",
+      "2026-09-27",
+      "2026-09-28",
+      "2026-09-29",
+      "2026-09-30"
+    ],
+    "baselineExcludedDays": [],
+    "baselineEligibleDays": 30,
+    "baselineKeptDepartures": 16587,
+    "baselineCancelledExcluded": 32,
+    "selectedDayInPreparedMonthlyCompletedDays": true,
+    "completenessMeaning": "A successful stored covering post-day scan/profile witness, not independently certified actual operated-flight completeness."
+  }
+}

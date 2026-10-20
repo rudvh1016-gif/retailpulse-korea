@@ -48,11 +48,11 @@ export function sameDailyChange(a:number,b:number){return Math.round(a*10)===Mat
 
 /**
  * Signed change in flights per day, in the page's existing change convention for flight counts
- * (+ increase, △ decrease, 0 none). A nonzero change below the printed 0.1 keeps its direction.
+ * (▲ + increase, ▽ − decrease, 0 none). A nonzero change below the printed 0.1 keeps its direction.
  */
 export function dailyChangeText(delta:number,format:(value:number)=>string){
  if(delta===0)return '0';
- const sign=delta>0?'+':'△',size=Math.abs(delta);
+ const sign=delta>0?'▲ +':'▽ −',size=Math.abs(delta);
  return size<0.05?`${sign}<${format(0.1)}`:`${sign}${format(size)}`;
 }
 
@@ -107,3 +107,4 @@ export function glanceDestinationIncrease(day:string,flights:readonly MapFlight[
  const maximum=Math.max(0,...rows.map(row=>row.delta)),unknown=counts.get(null)??{before:0,after:0};
  return {status:'READY' as const,start:now,middle,end,beforeTotal,afterTotal,rows,leaders:rows.filter(row=>row.delta===maximum&&maximum>0),unknown};
 }
+
