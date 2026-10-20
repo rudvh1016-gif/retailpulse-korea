@@ -60,3 +60,11 @@
 .focus-report :is(.focus-planning-basis,.focus-report-basis){font-size:10px;color:#65707c;margin-top:8px;line-height:1.6}.focus-report :is(.focus-planning-basis,.focus-report-basis) summary{cursor:pointer;padding-block:3px}.focus-report-basis small{display:block;font-size:10px;line-height:1.6;margin-top:5px}
 .focus-report .focus-planning-link{display:inline;padding:0;min-height:0;font-size:11px}.focus-report .focus-preparation-brief>div>small{font-size:11px;line-height:1.6}
 @media(max-width:700px){.focus-report{padding:15px 14px;margin-top:16px}.focus-report-lines{gap:5px}.focus-report-title h2{font-size:16px!important}}
+
+/* Owner correction: only lighten the existing box, use operating type tokens, and separate each country. */
+.focus-report{background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(248,249,250,.82));border-color:rgba(222,226,230,.85);font-family:var(--font-ui);letter-spacing:-.012em}
+.focus-report .focus-report-lines p,.focus-report .focus-preparation-brief p{font-size:var(--type-body);font-weight:var(--weight-regular);line-height:1.6;letter-spacing:inherit}
+.focus-report .focus-event-row{display:block}.focus-report .focus-event-row+.focus-event-row{margin-top:5px}
+.focus-report :is(.focus-event-row b,.focus-report-lines b){font-weight:var(--weight-strong)}
+.focus-report .focus-preparation-brief>div>small,.focus-report .focus-planning-link{font-size:12px;line-height:1.6;letter-spacing:inherit}
+.focus-report :is(.focus-today-title,.focus-preparation-brief h3){font-size:15px}
