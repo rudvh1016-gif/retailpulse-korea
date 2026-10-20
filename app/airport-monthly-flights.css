@@ -16,7 +16,7 @@
 .airport-month-table table {width:100%;table-layout:fixed;border-collapse:collapse;font:inherit;font-size:var(--type-secondary);}
 .airport-month-value-column {width:19%;}
 /* Reserve space for a long signed rate before the airline name takes the remainder. */
-.airport-month-rate-column {width:max(25%,12ch);}
+.airport-month-rate-column {width:max(25%,14ch);}
 .airport-month-table caption {text-align:start;line-height:1.6;padding-block:8px;}
 .airport-month-table th,.airport-month-table td {text-align:end;padding:8px 3px;border-bottom:1px solid #eee;vertical-align:top;}
 .airport-month-table th:first-child {text-align:start;overflow-wrap:anywhere;}
@@ -44,8 +44,8 @@
 .airport-country-bar-track {height:8px;min-width:0;}
 .airport-country-bar-track>span {display:block;height:100%;background:#d7e3e3;}
 .airport-country-bar-row[data-period="current"] .airport-country-bar-track>span {background:#afcfe3;}
-.airport-country-side-rates {display:flex;gap:4px 10px;flex-wrap:wrap;}
-.airport-country-side-rates>span {white-space:nowrap;}
+.airport-country-side-rates {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:start;gap:4px 8px;}
+.airport-country-side-rates>span {min-width:0;white-space:normal;}
 .airport-country-changes li details {border:0;padding-block:0;}
 .airport-country-changes li summary {font-size:var(--type-secondary);line-height:1.4;}
 .airport-month-state {padding-block:12px;font-size:var(--type-body);line-height:1.6;}
