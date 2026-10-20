@@ -148,6 +148,8 @@ for(const width of [390,1440])test(`arrival allowances preserve traveller condit
  await section.getByLabel('여행·물품 구분',{exact:true}).selectOption('ordinary');await section.getByLabel('나이',{exact:true}).selectOption('adult');
  await expect(section.locator('.arrival-result')).toContainText('JPY 200,000');
  await section.screenshot({path:testInfo.outputPath(`arrival-japan-${width}.png`)});
+ await section.locator('.arrival-result').evaluate(node=>window.scrollTo({top:window.scrollY+node.getBoundingClientRect().top-24,behavior:'instant'}));
+ await page.screenshot({path:testInfo.outputPath(`arrival-japan-viewport-${width}.png`)});
  await destination.selectOption('CN');await expect(section.locator('.arrival-result')).toHaveCount(0);
  await section.getByLabel('여행·물품 구분',{exact:true}).selectOption('ordinary');await section.getByLabel('나이',{exact:true}).selectOption('adult');
  await section.getByLabel('통상 거주지 (국적과 다름)',{exact:true}).selectOption('visitor');
@@ -155,12 +157,16 @@ for(const width of [390,1440])test(`arrival allowances preserve traveller condit
  await section.getByLabel('이번 입국 전 15일 내 중국 입국',{exact:true}).selectOption('normal');
  await expect(section.locator('.arrival-result')).toContainText('CNY 2,000');
  await section.screenshot({path:testInfo.outputPath(`arrival-china-${width}.png`)});
+ await section.locator('.arrival-result').evaluate(node=>window.scrollTo({top:window.scrollY+node.getBoundingClientRect().top-24,behavior:'instant'}));
+ await page.screenshot({path:testInfo.outputPath(`arrival-china-viewport-${width}.png`)});
  await section.getByLabel('이번 입국 전 15일 내 중국 입국',{exact:true}).selectOption('frequent');await expect(section.locator('.arrival-result')).toHaveCount(0);
  await destination.selectOption('US');await section.getByLabel('여행·물품 구분',{exact:true}).selectOption('ordinary');
  await section.getByLabel('거주 상태 (국적과 다름)',{exact:true}).selectOption('visitor');await section.getByLabel('나이',{exact:true}).selectOption('adult');
  await expect(section.locator('.arrival-result')).toHaveCount(0);await section.getByLabel('방문객 선물 면세 조건',{exact:true}).selectOption('met');
  await expect(section.locator('.arrival-result')).toContainText('개인 선물 USD 100');await expect(section.locator('.arrival-result')).not.toContainText('USD 800');
  await section.screenshot({path:testInfo.outputPath(`arrival-us-visitor-${width}.png`)});
+ await section.locator('.arrival-result').evaluate(node=>window.scrollTo({top:window.scrollY+node.getBoundingClientRect().top-24,behavior:'instant'}));
+ await page.screenshot({path:testInfo.outputPath(`arrival-us-visitor-viewport-${width}.png`)});
  await section.getByLabel('거주 상태 (국적과 다름)',{exact:true}).selectOption('resident');await expect(section.locator('.arrival-result')).toHaveCount(0);
  await section.getByLabel('귀국 거주자 기본 면세 조건',{exact:true}).selectOption('met');await expect(section.locator('.arrival-result')).toContainText('USD 800');
  await section.getByLabel('나이',{exact:true}).selectOption('young');await expect(section.locator('.arrival-result')).toContainText('21세 미만은 주류 반입 불가');
@@ -168,5 +174,7 @@ for(const width of [390,1440])test(`arrival allowances preserve traveller condit
  await expect(section.locator('.arrival-result')).toContainText('PHP 10,000');
  await expect(section.locator('.arrival-result')).toContainText('공식');
  await section.screenshot({path:testInfo.outputPath(`arrival-philippines-${width}.png`)});
+ await section.locator('.arrival-result').evaluate(node=>window.scrollTo({top:window.scrollY+node.getBoundingClientRect().top-24,behavior:'instant'}));
+ await page.screenshot({path:testInfo.outputPath(`arrival-philippines-viewport-${width}.png`)});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+1);
 });
