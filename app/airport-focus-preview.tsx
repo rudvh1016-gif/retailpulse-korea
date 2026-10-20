@@ -47,6 +47,10 @@ function TrendSummary({row}:{row:typeof metrics.trends[number]}){
  for(let i=row.points.length-1;i>0;i--){const a=row.points[i].departures,b=row.points[i-1].departures;if(a===null||b===null||Math.sign(a-b)!==direction)break;streak++;}
  const verb=direction>0?'증가':direction<0?'감소':'동일',start=row.points[row.points.length-1-streak];
  const rate=prev.departures>0?Math.abs(difference/prev.departures*100):null;
+ let earlierRises=0;
+ for(let i=row.points.length-2;i>0;i--){const a=row.points[i],b=row.points[i-1];if(a.departures===null||b.departures===null||a.departures<=b.departures)break;earlierRises++;}
+ if(row.code==='CN'&&last.month==='2026-09'&&direction<0&&earlierRises>1)return <div className="focus-china-context"><p className="focus-trend-summary"><b>{Number(row.points[row.points.length-1-earlierRises].month.slice(5))}–{Number(prev.month.slice(5))}월 {earlierRises}개월 연속 증가</b>한 뒤, {Number(last.month.slice(5))}월은 전월보다 <b>{rate===null?`${number.format(Math.abs(difference))}명`:`${number.format(rate)}%`}</b> 줄었습니다.</p><p className="focus-source">베이징·상하이의 여름방학이 끝난 시기와 겹칩니다. 감소 원인으로 확인된 것은 아닙니다.</p><p className="focus-source">중추절 9/25–27 · 국경절 10/1–7. 10월 변화는 다음 공개 실적에서 확인합니다.</p><details className="focus-source"><summary>관련 일정의 공식 근거</summary><a href="https://www.beijing.gov.cn/cs/gncs/zcwj/202603/t20260327_4568275.html" target="_blank" rel="noreferrer">중국 공휴일 일정 ↗</a><br/><a href="https://edu.sh.gov.cn/xxgk2_zdgz_jcjy_05/20250418/13e7f8c39763419cb70972d1d409b721.html" target="_blank" rel="noreferrer">상하이 학교 일정 ↗</a><br/><a href="https://jw.beijing.gov.cn/xxgk/2024zcwj/2024qtwj/202507/t20250704_4141331.html" target="_blank" rel="noreferrer">베이징 학교 일정 ↗</a></details></div>;
+
  return <p className="focus-trend-summary">{streak>1?<>{Number(start.month.slice(5))}월 이후 <b>{streak}개월 연속 {verb}</b>했습니다. </>:null}{Number(last.month.slice(5))}월은 전월보다 {direction===0?<b>여객 수가 같습니다.</b>:rate===null?<b>{number.format(Math.abs(difference))}명 {direction>0?'늘었습니다':'줄었습니다'}.</b>:<><b>{number.format(rate)}%</b> {direction>0?'늘었습니다':'줄었습니다'}.</>}</p>;
 }
 function CountryTrends({full=false,onMore}:{full?:boolean;onMore?:()=>void}){

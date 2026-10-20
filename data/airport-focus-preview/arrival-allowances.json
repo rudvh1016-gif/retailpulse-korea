@@ -905,7 +905,7 @@
           "options": [
             {
               "id": "ordinary",
-              "label": "일반 여행 · 개인 사용/개인 선물"
+              "label": "일반 여행 · 자가사용·가정용"
             },
             {
               "id": "special",
@@ -941,7 +941,7 @@
         },
         {
           "id": "frequency",
-          "label": "빈번 출입국과 위반기록",
+          "label": "빈번 출입국(30일 내 2회 이상 또는 반년 내 6회 이상)과 위반기록",
           "options": [
             {
               "id": "normal",
@@ -1115,7 +1115,7 @@
           "options": [
             {
               "id": "ordinary",
-              "label": "일반 여행 · 개인 사용/개인 선물"
+              "label": "일반 여행 · 본인 사용"
             },
             {
               "id": "special",
