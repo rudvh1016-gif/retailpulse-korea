@@ -8,11 +8,16 @@ import './arrival-allowances-preview.css';
 /** Official-source review snapshot. No automatic legal interpretation or live AI calls. */
 export default function ArrivalAllowancesPreview({scrollOnMount=false}:{scrollOnMount?:boolean}){
  useEffect(()=>{
-  let active=true,frame=0;
-  const scroll=()=>{if(active&&(scrollOnMount||window.location.hash==='#arrival-allowances')){cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>document.getElementById('arrival-allowances')?.scrollIntoView({block:'start',behavior:'instant'}));}};
-  scroll();void document.fonts.ready.then(scroll);
-  window.addEventListener('hashchange',scroll);window.addEventListener('popstate',scroll);
-  return()=>{active=false;cancelAnimationFrame(frame);window.removeEventListener('hashchange',scroll);window.removeEventListener('popstate',scroll);};
+  let active=true,armed=false,frame=0,timer:ReturnType<typeof setTimeout>|undefined;
+  const targeted=()=>scrollOnMount||window.location.hash==='#arrival-allowances';
+  const align=()=>{if(!active||!armed||!targeted())return;cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>{if(armed)document.getElementById('arrival-allowances')?.scrollIntoView({block:'start',behavior:'instant'});});};
+  const observer=new ResizeObserver(align);
+  const stop=()=>{armed=false;cancelAnimationFrame(frame);clearTimeout(timer);observer.disconnect();};
+  const arm=()=>{stop();if(!targeted())return;armed=true;observer.observe(document.body);align();timer=setTimeout(stop,10000);};
+  arm();void document.fonts.ready.then(align);
+  window.addEventListener('hashchange',arm);window.addEventListener('popstate',arm);window.addEventListener('pageshow',arm);
+  for(const event of ['wheel','touchstart','pointerdown','keydown'])window.addEventListener(event,stop,{passive:true});
+  return()=>{active=false;stop();window.removeEventListener('hashchange',arm);window.removeEventListener('popstate',arm);window.removeEventListener('pageshow',arm);for(const event of ['wheel','touchstart','pointerdown','keydown'])window.removeEventListener(event,stop);};
  },[scrollOnMount]);
  const [countryId,setCountryId]=useState(''),[answers,setAnswers]=useState<Record<string,string>>({});
  const country=data.countries.find(item=>item.id===countryId);
