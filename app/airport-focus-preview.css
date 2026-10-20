@@ -70,4 +70,4 @@
 .focus-report :is(.focus-today-title,.focus-preparation-brief h3){font-size:15px}
 
 /* Mobile-only owner adjustment; desktop and supporting copy stay unchanged. */
-@media(max-width:700px){.focus-report .focus-report-lines p,.focus-report .focus-preparation-brief p{font-size:13px}}
+@media(max-width:700px){.focus-report .focus-report-lines p,.focus-report .focus-preparation-brief p{font-size:12px}}
