@@ -14,21 +14,16 @@ import {useLiveSummary} from './live-summary';
 import type {Lang} from './retailpulse-data';
 const ArrivalAllowances=dynamic(()=>import('./arrival-allowances-preview'));
 const majorRoutes=[['JP','일본'],['CN','중국'],['VN','베트남'],['US','미국'],['TW','대만'],['TH','태국']] as const;
-function monthsBefore(month:string|null,count:number):string|null{
- let cursor=month;for(let i=0;i<count&&cursor;i++)cursor=previousMonth(cursor);return cursor;
-}
 function FocusLiveData({date,children}:{date?:string|null;children:ReactNode}){
  const summary=useLiveSummary(null),asOf=summary?.todayKst??'',requested=date?.slice(0,7)||asOf.slice(0,7)||null;
  const latest=useAirportPassengerStats(requested);
  const newest=latest.reply?.current.ROUTE_COUNTRY_PASSENGERS?.month??null;
- const middle=useAirportPassengerStats(monthsBefore(newest,2));
- const oldest=useAirportPassengerStats(monthsBefore(newest,4));
- const months=[latest,middle,oldest].flatMap(item=>[item.reply?.current.ROUTE_COUNTRY_PASSENGERS,item.reply?.previous.ROUTE_COUNTRY_PASSENGERS]).filter(item=>item!==undefined);
+ const months=[latest].flatMap(item=>[item.reply?.current.ROUTE_COUNTRY_PASSENGERS,item.reply?.previous.ROUTE_COUNTRY_PASSENGERS]).filter(item=>item!==undefined);
  const byMonth=new Map(months.map(item=>[item.month,item]));
  const expected:string[]=[];if(newest){let cursor:string|null=newest;for(let i=0;i<6&&cursor;i++){expected.unshift(cursor);cursor=previousMonth(cursor);}}
  const trends:FocusTrend[]=newest?majorRoutes.map(([code,label])=>({code,label,points:expected.map(month=>({month,departures:byMonth.get(month)?.rows.find(row=>!row.aggregate&&row.label===label)?.departures??null}))})):[];
  const checkedAt=months.map(item=>item.retrievedAt).sort().at(-1)??null;
- return <AirportFocusData.Provider value={{asOf,trends,checkedAt,preview:false,failed:summary===null||latest.failed||middle.failed||oldest.failed}}>{children}</AirportFocusData.Provider>;
+ return <AirportFocusData.Provider value={{asOf,trends,checkedAt,preview:false,failed:summary===null||latest.failed}}>{children}</AirportFocusData.Provider>;
 }
 function go(lang:Lang,slug:string,date?:string|null){window.location.assign(`/${lang}/${slug}${date?`?date=${encodeURIComponent(date)}`:''}`);}
 export function AirportFocusGlance(props:ComponentProps<typeof AirportGlance>){

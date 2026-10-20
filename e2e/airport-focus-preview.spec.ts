@@ -64,6 +64,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('#focus-holidays li').first()).toBeVisible();
  expect(await page.locator('#focus-holidays li').count()).toBeGreaterThan(0);
  expect(await page.locator('#focus-holidays li').count()).toBeLessThanOrEqual(3);
+ await page.locator('#focus-country-trends').scrollIntoViewIfNeeded();
  await expect(page.locator('#focus-country-trends article')).toHaveCount(3);
  await expect(page.locator('.glance-art-frame > img')).toBeVisible();
  await expect.poll(()=>page.locator('.glance-art-frame > img').evaluate((img:HTMLImageElement)=>img.currentSrc)).toContain('approval-v2-');

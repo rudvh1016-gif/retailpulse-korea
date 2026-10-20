@@ -1,7 +1,6 @@
 'use client';
 /** Approval-only composition. No production menu, collector or API behavior changes. */
 import {useState,useEffect,useRef} from 'react';
-import {CountryFlag} from './airport-country-flag';
 import {useBottomNavigationViewport} from './use-bottom-navigation-viewport';
 import {useGlassNavigation} from './use-glass-navigation';
 import {NavigationIcon} from './navigation-icon';
@@ -18,9 +17,7 @@ import type {AirportSection} from './airport-view';
 import type {IndustryId} from '../lib/industry-guidance';
 import holidays from '../data/airport-focus-preview/holidays-summary.json';
 import {AirportFocusData,useAirportFocusData,type FocusTrend} from './airport-focus-data';
-import calendar from '../data/airport-focus-preview/calendar-context.json';
-import {compareHolidayPeriod,describeHolidayPeriod} from '../lib/holiday-period-comparison.mjs';
-import {matchCalendarContext,previousMonth,type CalendarEvent} from '../lib/calendar-context.mjs';
+import {describeHolidayPeriod} from '../lib/holiday-period-comparison.mjs';
 import './airport-focus-preview.css';
 const ArrivalAllowancesPreview=dynamic(()=>import('./arrival-allowances-preview'));
 const AirportView=dynamic(()=>import('./airport-view').then(module=>module.AirportView));
@@ -41,45 +38,6 @@ export function HolidayList(props:{full?:boolean;onMore?:()=>void}){
  },[props.full,ready]);
  return <div ref={host} className="focus-calendar-deferred">{props.full||ready?<DetailedHolidayList {...props}/>:<CalendarPlaceholder/>}</div>;
 }
-function MonthlyLineChart({row}:{row:FocusTrend}){
- const values=row.points.flatMap(point=>point.departures===null?[]:[point.departures]);
- if(!values.length)return <p>월별 자료 확인 중</p>;
- const low=Math.max(0,Math.floor(Math.min(...values)*0.9/10000)*10000),high=Math.max(low+10000,Math.ceil(Math.max(...values)*1.1/10000)*10000);
- const y=(value:number)=>130-(value-low)/(high-low)*104;
- const ticks=[low,(low+high)/2,high];
- return <figure className="focus-line-chart"><svg viewBox="0 0 320 166" role="img" aria-label={`${row.label} 4월부터 9월까지 월 출발 여객. 세로축 ${number.format(low)}명부터 ${number.format(high)}명.`}>
- {ticks.map(tick=><g key={tick}><line x1="48" x2="304" y1={y(tick)} y2={y(tick)} stroke="#e3e8ed" strokeWidth="1"/><text x="40" y={y(tick)+3} textAnchor="end" className="focus-chart-tick">{`${number.format(tick/10000)}만`}</text></g>)}
- {row.points.map((point,i)=>{const x=48+i*51.2,previous=row.points[i-1];return <g key={point.month}><text x={x} y="154" textAnchor="middle" className="focus-chart-tick">{`${Number(point.month.slice(5))}월`}</text>{point.departures!==null&&<>{previous?.departures!==null&&previous?.departures!==undefined&&<line x1={48+(i-1)*51.2} y1={y(previous.departures)} x2={x} y2={y(point.departures)} stroke="#28445f" strokeWidth="2" strokeLinecap="round"/>}<circle cx={x} cy={y(point.departures)} r="3.5" fill="white" stroke="#28445f" strokeWidth="2"><title>{`${point.month} ${number.format(point.departures)}명`}</title></circle></>}</g>;})}</svg><figcaption>세로축 {number.format(low)}–{number.format(high)}명 · 국가별 범위 다름</figcaption></figure>;
-}
-function TrendSummary({row}:{row:FocusTrend}){
- const last=row.points.at(-1),prev=row.points.at(-2);
- if(last?.departures===null||last?.departures===undefined||prev?.departures===null||prev?.departures===undefined||previousMonth(last.month)!==prev.month)return <p className="focus-trend-summary">최근 월 비교 자료가 일부 없어 연속 변화를 판단하지 않습니다.</p>;
- const difference=last.departures-prev.departures,direction=Math.sign(difference);let streak=0,priorStreak=0;
- for(let i=row.points.length-1;i>0;i--){const a=row.points[i],b=row.points[i-1];if(a.departures===null||b.departures===null||previousMonth(a.month)!==b.month||Math.sign(a.departures-b.departures)!==direction)break;streak++;}
- if(direction!==0&&streak===1)for(let i=row.points.length-2;i>0;i--){const a=row.points[i],b=row.points[i-1];if(a.departures===null||b.departures===null||previousMonth(a.month)!==b.month||Math.sign(a.departures-b.departures)!==-direction)break;priorStreak++;}
- const rate=prev.departures>0?Math.abs(difference/prev.departures*100):null;
- const verb=direction>0?'증가':'감소';
- return <div className="focus-trend-context" data-country={row.code}><p className="focus-trend-summary">{priorStreak>1?<><b>{Number(row.points[row.points.length-1-priorStreak].month.slice(5))}–{Number(prev.month.slice(5))}월 {priorStreak}개월 연속 {direction>0?'감소':'증가'}</b>한 뒤, </>:streak>1&&direction!==0?<><b>{streak}개월 연속 {verb}</b>했습니다. </>:null}{Number(last.month.slice(5))}월은 전월보다 {direction===0?<b>여객 수가 같습니다.</b>:<><b>{number.format(Math.abs(difference))}명{rate!==null?<>(<ChangeRate value={direction*rate} lang="ko"/>)</>:null}</b> {direction>0?'늘었습니다':'줄었습니다'}.</>}</p><CalendarContext row={row}/></div>;
-}
-function CalendarContext({row}:{row:FocusTrend}){
- const {asOf}=useAirportFocusData();
- if(!asOf)return null;
- const last=row.points.at(-1);if(!last||last.departures===null)return null;
- const matched=matchCalendarContext(calendar.events.map(event=>({...event,region:event.region??undefined})) as CalendarEvent[],{country:row.code,selectedMonth:last.month,actualDataMonths:row.points.filter(point=>point.departures!==null).map(point=>point.month),asOf:asOf,includePreviousMonth:true});
- if(!matched.details.length)return <RecentCalendarContext country={row.code}/>;
- const current=matched.details.find(item=>item.relation==='selected'),school=matched.details.find(item=>item.relation==='previous'&&item.kind==='school_break');
- const summary=[...new Map([current,school,...matched.summary].filter(item=>item!==undefined).map(item=>[item.eventId,item])).values()].slice(0,2);
- const text=(item:typeof matched.details[number])=>`${Number(item.month.slice(5))}월${item.relation==='previous'?'(직전 월)':''}: ${item.scope==='national'?'':`${item.region} · `}${calendar.events.find(event=>event.id===item.eventId)?.name} ${item.start.slice(5).replace('-','/')}~${item.end.slice(5).replace('-','/')}`;
- return <div className="focus-calendar-context">{summary.map(item=><p className="focus-source" key={item.eventId}>{text(item)}</p>)}<p className="focus-source">같은 시기의 일정입니다. 여객 증감의 원인으로 확인된 것은 아닙니다.</p><details className="focus-source"><summary>관련 일정과 공식 근거</summary>{matched.details.map(item=><p key={`${item.eventId}-${item.month}`}>{text(item)} · <a href={item.sourceURL} target="_blank" rel="noreferrer">공식 원문 ↗</a><br/>확인일 {item.verifiedAt}</p>)}</details><RecentCalendarContext country={row.code}/></div>;
-}
-function RecentCalendarContext({country}:{country:string}){
- const {asOf}=useAirportFocusData();
- const event=calendar.events.filter(item=>item.country===country&&item.kind==='public_holiday'&&item.status==='verified'&&item.start.slice(0,7)===asOf.slice(0,7)&&item.verifiedAt<=asOf).sort((a,b)=>b.end.localeCompare(a.end))[0];
- if(!event||country==='KR'||country==='OTHER')return null;
- const phase=describeHolidayPeriod(event,asOf);
- const comparison=Number(asOf.slice(8))===1?null:compareHolidayPeriod([],{country,metric:'departure_flights',scope:'ALL',month:asOf.slice(0,7),start:`${asOf.slice(0,7)}-01`,end:new Date(Date.parse(`${asOf}T00:00:00Z`)-86400000).toISOString().slice(0,10),asOf:asOf,holiday:event});
- return <details className="focus-source focus-recent-calendar"><summary>최근 일정 · {asOf} 기준</summary><p>{event.name} · {event.scope==='national'?'전국 공휴일':event.region}<br/>{phase.text}</p>{phase.phase==='ended'&&comparison?.status==='unavailable'&&<p>해당 휴일과 같은 달의 다른 완료일 출발편 비교는 일별 자료 확인 후 표시합니다.</p>}<a href={event.sourceURL} target="_blank" rel="noreferrer">공식 일정 ↗</a><p>휴일 종료일은 인천공항 출국 집중일을 뜻하지 않습니다.</p></details>;
-}
 export function StaffCalendarContext({onMore}:{onMore:()=>void}){
  const {asOf}=useAirportFocusData();if(!asOf)return null;
  const day=new Date(`${asOf}T00:00:00Z`),weekday=(day.getUTCDay()+6)%7;
@@ -88,18 +46,17 @@ export function StaffCalendarContext({onMore}:{onMore:()=>void}){
  if(!events.length)return null;
  return <section className="focus-staff-calendar"><h3>이번 주 공식 일정</h3><small>{start}–{end} · {holidays.asOfKST} 확인본</small>{events.map(event=><p key={event.id}><b>{event.countryLabel}: {event.name}</b> {event.dateLabel_ko}<br/><small>{event.scope} · {describeHolidayPeriod(event,asOf).text}</small></p>)}<button onClick={onMore}>국가별 일정과 적용 대상 보기 ↗</button><small>일정만으로 고객 국적·매출·출국 집중 시점을 판단하지 않습니다.</small></section>;
 }
-function OriginCalendarContext(){
- const {trends,asOf}=useAirportFocusData();
- if(!asOf)return null;
- const month=trends[0]?.points.at(-1)?.month;if(!month)return null;
- const events=matchCalendarContext(calendar.events.map(event=>({...event,region:event.region??undefined})) as CalendarEvent[],{country:'KR',selectedMonth:month,actualDataMonths:[month],asOf:asOf,includeOriginContext:true}).details;
- if(!events.length)return null;
- return <details className="focus-source"><summary>한국 출발지 일정 · {month}</summary>{events.map(item=><p key={item.eventId}>{calendar.events.find(event=>event.id===item.eventId)?.name} {item.start} · <a href={item.sourceURL} target="_blank" rel="noreferrer">공식 원문 ↗</a></p>)}<p>출발지 달력 참고이며 한국인 여객 수나 증감 원인을 뜻하지 않습니다.</p></details>;
-}
-export function CountryTrends({full=false,onMore}:{full?:boolean;onMore?:()=>void}){
- const {trends,checkedAt,failed}=useAirportFocusData();
- const rows=full?trends:trends.slice(0,3);const start=rows[0]?.points[0]?.month,end=rows[0]?.points.at(-1)?.month;
- return <section className="focus-trends" id="focus-country-trends"><div className="focus-section-heading"><div><h2>{full?'노선 국가별 월 여객':'한 달의 변화일까, 이어지는 흐름일까'}</h2><p>최근 6개월 출발 여객 · {start&&end?`${start}–${end}`:failed?'불러오기 실패':'자료 확인 중'}</p></div>{onMore&&<button onClick={onMore}>국가별 흐름 보기 ↗</button>}</div><div className="focus-trend-grid">{rows.map(row=>{const last=row.points.at(-1),prev=row.points.at(-2);const rate=last?.departures!==null&&last?.departures!==undefined&&prev?.departures? (last.departures/prev.departures-1)*100:null;return <article key={row.code}><div className="focus-trend-top"><CountryFlag code={row.code}/><h3>{row.label}</h3><span>{last?`${Number(last.month.slice(5))}월`:''}</span></div><strong className="focus-trend-value">{last?.departures===null||last?.departures===undefined?'자료 없음':number.format(last.departures)}<small>명</small></strong><p>전월 대비 <ChangeRate value={rate} lang="ko"/></p><MonthlyLineChart row={row}/><TrendSummary row={row}/>{full&&<table className="focus-month-values"><caption className="sr-only">{row.label} 월별 출발 여객과 전월비</caption><thead><tr><th>월</th><th>출발 여객</th><th>전월비</th></tr></thead><tbody>{row.points.map((point,index)=>{const previous=row.points[index-1];const change=point.departures!==null&&previous?.departures!==null&&previous?.departures!==undefined&&previous.departures>0&&previousMonth(point.month)===previous.month?(point.departures/previous.departures-1)*100:null;return <tr key={point.month}><th scope="row">{point.month}</th><td>{point.departures===null?'자료 없음':`${number.format(point.departures)}명`}</td><td>{change===null?<small>비교자료 없음</small>:<ChangeRate value={change} lang="ko"/>}</td></tr>;})}</tbody></table>}</article>;})}</div><OriginCalendarContext/><small className="focus-source">인천국제공항공사 공식 월 실적 · {checkedAt?`${checkedAt.slice(0,10)} 수집본`:'자료 확인 중'}<br/>국가별 독립 축 · 노선 국가 기준이며 승객 국적이 아닙니다. 과거 실적은 향후 증가를 보장하지 않습니다.</small></section>;
+function TrendsPlaceholder(){return <section className="focus-trends" id="focus-country-trends" aria-busy="true"><div className="focus-section-heading"><div><h2>한 달의 변화일까, 이어지는 흐름일까</h2><p>월별 공식 여객 자료를 준비하고 있습니다.</p></div></div></section>;}
+const DetailedCountryTrends=dynamic(()=>import('./airport-focus-trends'),{ssr:false,loading:TrendsPlaceholder});
+export function CountryTrends(props:{full?:boolean;onMore?:()=>void}){
+ const [ready,setReady]=useState(Boolean(props.full)),host=useRef<HTMLDivElement>(null);
+ useEffect(()=>{
+  if(props.full||ready||!host.current)return;
+  if(!('IntersectionObserver' in window)){const frame=requestAnimationFrame(()=>setReady(true));return()=>cancelAnimationFrame(frame);}
+  const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){setReady(true);observer.disconnect();}},{rootMargin:'240px'});
+  observer.observe(host.current);return()=>observer.disconnect();
+ },[props.full,ready]);
+ return <div ref={host}>{props.full||ready?<DetailedCountryTrends {...props}/>:<TrendsPlaceholder/>}</div>;
 }
 export function CountryBriefing({month}:{month:string}){
  const {reply}=useAirportPassengerStats(month);
