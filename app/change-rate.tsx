@@ -1,5 +1,4 @@
 import {formatChangeRate,spokenRateText,type RateLang} from '../lib/change-rate';
-import './change-rate.css';
 export function RateText({text,lang}:{text:string;lang:RateLang}) {
   if(text==='—')return <span className="change-rate" data-direction="neutral" role="img" aria-label={spokenRateText(text,lang)}>{text}</span>;
   const parts=text.split(/((?:▲ \+|▽ −)<?[\d,.]+(?:%p|%)?|(?<![\d.])0(?:%p|%|(?=[편班便]|\s+(?:flights|편|班|便))))/g);
