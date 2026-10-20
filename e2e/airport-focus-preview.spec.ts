@@ -78,6 +78,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('.focus-china-context')).toContainText('6–8월 3개월 연속 증가');
  await expect(page.locator('.focus-china-context')).toContainText('21.1%');
  await expect(page.locator('.focus-china-context')).toContainText('감소 원인으로 확인된 것은 아닙니다.');
+ if(width===390){const china=page.locator('#focus-country-trends article').filter({has:page.locator('.focus-china-context')});await china.evaluate(node=>window.scrollTo({top:window.scrollY+node.getBoundingClientRect().top-18,behavior:'instant'}));await page.screenshot({path:testInfo.outputPath('countries-china-viewport-390.png')});await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));}
  await page.screenshot({path:testInfo.outputPath(`countries-${width}.png`),fullPage:true});
  await captureMobileViewports(page,testInfo,'countries',width);
  await page.getByRole(width<=820?'link':'button',{name:'미리 준비',exact:true}).click();
