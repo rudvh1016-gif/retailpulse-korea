@@ -1,0 +1,3 @@
+'use client';
+const flag=(code:string)=>['JP','CN','US','VN'].includes(code)?`/images/airport-flags/${code}.webp`:`/images/airport-flags/fallback/${code.toLowerCase()}.svg`;
+export function CountryFlag({code}:{code:string}){if(!'CN JP US VN AE AT AU BN CA CH CZ DE DK ES ET FI FR GB GE GU HK HU ID IN IT KG KH KZ LA LK MM MN MO MP MX MY NL NP NZ PH PL PT QA SG TH TM TR TW UZ'.split(' ').includes(code))return <span className="focus-country-code" aria-hidden="true">{code}</span>;return <img src={flag(code)} width="24" height="24" alt="" decoding="async"/>;}

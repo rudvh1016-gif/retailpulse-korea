@@ -77,8 +77,8 @@ test('the other tabs never load the airport screens',async({page})=>{
  await page.goto('/ko/myeongdong');
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  for(const [pathname,query] of [['/ko/where-to',''],['/ko/consumption','?area=myeongdong']]){
-  const href=pathname+query;
-  const tab=page.locator(`.bottom-nav a[href="${href}"]`);
+  await page.locator('.bottom-nav a[href="/ko/more"]').click();
+  const tab=page.locator(`.more-section-links a[href="${pathname}"]`);
   await tab.hover();await tab.click();await expect(page).toHaveURL(url=>url.pathname===pathname&&url.search===query);
  }
  await page.waitForTimeout(500);

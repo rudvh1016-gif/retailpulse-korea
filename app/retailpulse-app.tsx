@@ -83,7 +83,7 @@ function OnDemandIndustryGuide(props: ComponentProps<typeof LazyIndustryGuide>) 
 // The airport routes pass AirportView in from their server pages (see RetailPulseProps);
 // on a Seoul route the airport code loads only when the airport is reached for.
 let airportViewModule: {AirportView:typeof AirportViewComponent} | undefined;
-const loadAirportView=()=>import('./airport-focus-production').then(module=>(airportViewModule={AirportView:module.AirportFocusStatus}));
+const loadAirportView=()=>Promise.all([import('./airport-focus-production'),import('./airport-view')]).then(([module])=>(airportViewModule={AirportView:module.AirportFocusStatus}));
 const LazyAirportView=dynamic(()=>loadAirportView().then(module=>module.AirportView));
 // Pointing at, touching or focusing a way to the airport starts that same load,
 // so the tap does not wait for it. Visitors who never reach for it load nothing.
@@ -410,15 +410,15 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
   // The industry guide left the shell's first download (lib/industry-ids.ts
   // carries the names), but the airport and business screens still need it.
-  // Once this screen has loaded and sits idle the shell fetches it quietly, so
-  // a later tap on those tabs finds it cached, as it did before the split.
+  // Seoul views prepare their adjacent screens while idle. Airport visits do
+  // not download inactive Seoul/store code; intent and More still prepare it.
   useEffect(() => {
-    if (!preferencesReady) return;
+    if (!preferencesReady || ["airport-glance","airport","airport-countries","airport-prepare"].includes(view)) return;
     let live = true, idle = 0, timer: ReturnType<typeof setTimeout> | undefined;
     const start = () => { if (!live) return; if ("requestIdleCallback" in window) idle = requestIdleCallback(() => { loadIndustryGuide().catch(() => {}); prepareTodaySignals(); prepareSeoulComparison(); }, { timeout: 4000 }); else timer = setTimeout(() => { loadIndustryGuide().catch(() => {}); prepareTodaySignals(); prepareSeoulComparison(); }, 1500); };
     if (document.readyState === "complete") start(); else window.addEventListener("load", start, { once: true });
     return () => { live = false; window.removeEventListener("load", start); if (idle) cancelIdleCallback(idle); clearTimeout(timer); };
-  }, [preferencesReady]);
+  }, [preferencesReady,view]);
 
   useEffect(() => {
     const [, , pathSlug, pathArea] = window.location.pathname.split("/");

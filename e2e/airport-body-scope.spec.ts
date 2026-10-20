@@ -23,7 +23,8 @@ for(const lang of ['ko','en','zh','ja'])test(`airport body stays airport-only an
   await expect(path === `/${lang}` ? page.getByTestId('airport-glance-preview') : page.locator('.airport-view')).toBeVisible();
   await expect(page.locator('.home-seoul-secondary')).toHaveCount(0);
   await expect(page.getByTestId('population-outlook')).toHaveCount(0);
-  const seoul=page.locator(`.bottom-nav a[href="/${lang}/myeongdong"]`);
+  await page.locator(`.bottom-nav a[href="/${lang}/more"]`).click();
+  const seoul=page.locator(`.more-section-links a[href="/${lang}/myeongdong"]`);
   await expect(seoul).toBeVisible();
   await seoul.click();
   await expect(page).toHaveURL(new RegExp(`/${lang}/myeongdong$`));

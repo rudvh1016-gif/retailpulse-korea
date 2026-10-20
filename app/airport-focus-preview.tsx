@@ -1,6 +1,7 @@
 'use client';
 /** Approval-only composition. No production menu, collector or API behavior changes. */
-import {useState} from 'react';
+import {useState,useEffect,useRef} from 'react';
+import {CountryFlag} from './airport-country-flag';
 import {useBottomNavigationViewport} from './use-bottom-navigation-viewport';
 import {useGlassNavigation} from './use-glass-navigation';
 import {NavigationIcon} from './navigation-icon';
@@ -15,7 +16,7 @@ import {ChangeRate} from './change-rate';
 import type {Lang,Terminal} from './retailpulse-data';
 import type {AirportSection} from './airport-view';
 import type {IndustryId} from '../lib/industry-guidance';
-import holidays from '../data/airport-focus-preview/holidays.json';
+import holidays from '../data/airport-focus-preview/holidays-summary.json';
 import {AirportFocusData,useAirportFocusData,type FocusTrend} from './airport-focus-data';
 import calendar from '../data/airport-focus-preview/calendar-context.json';
 import {compareHolidayPeriod,describeHolidayPeriod} from '../lib/holiday-period-comparison.mjs';
@@ -24,16 +25,21 @@ import './airport-focus-preview.css';
 const ArrivalAllowancesPreview=dynamic(()=>import('./arrival-allowances-preview'));
 const AirportView=dynamic(()=>import('./airport-view').then(module=>module.AirportView));
 const number=new Intl.NumberFormat('ko-KR',{maximumFractionDigits:1});
-const flag=(code:string)=>['JP','CN','US','VN'].includes(code)?`/images/airport-flags/${code}.webp`:`/images/airport-flags/fallback/${code.toLowerCase()}.svg`;
+
 type Tab='home'|'status'|'countries'|'prepare'|'more';
 const tabs:Array<[Tab,string]>=[['home','한눈에'],['status','공항 현황'],['countries','국가별 흐름'],['prepare','미리 준비'],['more','더보기']];
-function CountryFlag({code}:{code:string}){if(!'CN JP US VN AE AT AU BN CA CH CZ DE DK ES ET FI FR GB GE GU HK HU ID IN IT KG KH KZ LA LK MM MN MO MP MX MY NL NP NZ PH PL PT QA SG TH TM TR TW UZ'.split(' ').includes(code))return <span className="focus-country-code" aria-hidden="true">{code}</span>;return <img src={flag(code)} width="24" height="24" alt="" decoding="async"/>;}
-export function HolidayList({full=false,onMore}:{full?:boolean;onMore?:()=>void}){
- const {asOf}=useAirportFocusData();
- const [country,setCountry]=useState('all');
- if(!asOf)return <p role="status">공식 기준 날짜를 확인하지 못해 휴일 목록을 표시하지 않았습니다.</p>;
- const selected=holidays.events.filter(event=>event.isRepresentative!==false&&event.end>=asOf&&Date.parse(event.start)-Date.parse(asOf)<(full?90:30)*86400000&&(country==='all'||event.countryLabel===country)).sort((a,b)=>a.start.localeCompare(b.start)).slice(0,full?undefined:3);
- return <section className="focus-calendar" id="focus-holidays"><div className="focus-section-heading"><div><h2>{full?'국가별 공식 휴일':'다가오는 국가별 휴일'}</h2><p>{full?'확인한 날짜와 적용 대상을 함께 봅니다.':'앞으로 30일, 먼저 확인할 일정'}</p></div>{onMore&&<button onClick={onMore}>90일 일정 보기 ↗</button>}</div>{full&&<label className="focus-country-filter">국가·지역 <select value={country} onChange={event=>setCountry(event.target.value)}><option value="all">전체</option>{[...new Set(holidays.events.map(event=>event.countryLabel))].sort((a,b)=>a.localeCompare(b,'ko')).map(label=><option key={label} value={label}>{label}</option>)}</select></label>}<ol>{selected.map(event=>{const days=Math.round((Date.parse(event.start)-Date.parse(asOf))/86400000);return <li key={event.id}><CountryFlag code={event.countryLabel==='괌'?'GU':event.countryLabel==='사이판'?'MP':event.country}/><div><strong>{event.countryLabel} <span>{event.name}</span></strong><p>{event.dateLabel_ko} · {event.scope}</p><p className="focus-holiday-meaning">{event.description_ko}</p>{!full&&event.cardSummary_ko&&<small>{event.cardSummary_ko}</small>}{full&&<details className="focus-holiday-conditions"><summary>{event.connectionStatus_ko}</summary><p>{event.connectionNote_ko}</p>{event.restConditions_ko.map(condition=><small key={condition}>{condition}</small>)}</details>}{full&&<small>{event.verificationMethod.toLowerCase().includes('rule')?'법정 고정일 기준':event.verificationMethod.toLowerCase().includes('index')?'공식 안내 대조':'공식 연간 일정 확인'}</small>}{full&&event.notes&&<small>{event.notes}</small>}<a href={event.sourceURL} target="_blank" rel="noreferrer">공식 날짜 확인 ↗</a></div><span className="focus-day-count">{days<0?'진행 중':days===0?'오늘':`D−${days}`}</span></li>;})}</ol><p className="focus-travel-note">입출국 집중 시점은 휴일만으로 확인할 수 없습니다.</p><small className="focus-source">일정 기준 {asOf} · 공식 자료 확인 {holidays.asOfKST} · 현지 달력 날짜 · 60개 국가·지역의 대표 공휴일 확인<br/>에티오피아 일정은 확인 중입니다. 국가별 모든 휴일을 확인한 목록은 아닙니다.</small></section>;
+
+function CalendarPlaceholder(){return <section id="focus-holidays" className="focus-calendar" aria-busy="true"><div className="focus-section-heading"><div><h2>다가오는 국가별 휴일</h2><p>공식 일정 자료를 준비하고 있습니다.</p></div></div></section>;}
+const DetailedHolidayList=dynamic(()=>import('./airport-focus-holidays'),{ssr:false,loading:CalendarPlaceholder});
+export function HolidayList(props:{full?:boolean;onMore?:()=>void}){
+ const [ready,setReady]=useState(Boolean(props.full)),host=useRef<HTMLDivElement>(null);
+ useEffect(()=>{
+  if(props.full||ready||!host.current)return;
+  if(!('IntersectionObserver' in window)){const frame=requestAnimationFrame(()=>setReady(true));return()=>cancelAnimationFrame(frame);}
+  const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){setReady(true);observer.disconnect();}},{rootMargin:'240px'});
+  observer.observe(host.current);return()=>observer.disconnect();
+ },[props.full,ready]);
+ return <div ref={host} className="focus-calendar-deferred">{props.full||ready?<DetailedHolidayList {...props}/>:<CalendarPlaceholder/>}</div>;
 }
 function MonthlyLineChart({row}:{row:FocusTrend}){
  const values=row.points.flatMap(point=>point.departures===null?[]:[point.departures]);
@@ -105,7 +111,7 @@ export function CountryBriefing({month}:{month:string}){
 function PreparationBrief({onMore,onCountries}:{onMore:()=>void;onCountries:()=>void}){
  const {asOf}=useAirportFocusData();
  const {reply}=useAirportPassengerStats(asOf?asOf.slice(0,7):null);
- if(!asOf)return <p role="status">공식 기준 날짜를 확인하고 있습니다.</p>;
+ if(!asOf)return <section className="focus-preparation-brief" aria-label="다음 주와 다음 달 준비" aria-busy="true">{['다음 주','다음 달'].map((label,index)=><div key={label}><h3>{label} <small>기준일 확인 중</small></h3><p><span className="focus-event-row">공식 일정 확인 중</span><span className="focus-event-row" aria-hidden="true">&nbsp;</span></p><small>{index===0?'행사·입고 일정과 겹치는 날짜를 대조하세요.':'비교할 월별 실적을 확인하고 있습니다.'}</small></div>)}<details className="focus-planning-basis"><summary>일정 기준 · 자세히 보기</summary><small>공식 기준 날짜 확인 중</small></details></section>;
  const anchor=new Date(`${asOf}T00:00:00Z`),weekday=(anchor.getUTCDay()+6)%7;
  const weekStart=new Date(anchor);weekStart.setUTCDate(anchor.getUTCDate()+7-weekday);
  const weekEnd=new Date(weekStart);weekEnd.setUTCDate(weekStart.getUTCDate()+6);
@@ -123,13 +129,15 @@ function PreparationBrief({onMore,onCountries}:{onMore:()=>void;onCountries:()=>
  const before=lead?reply?.previous.ROUTE_COUNTRY_PASSENGERS?.rows.find(row=>!row.aggregate&&row.label===lead.countryLabel)?.departures:null;
  const difference=current!==undefined&&before!==undefined&&before!==null?current-before:null;
  const trend=lead&&current!==undefined?`${reply?.month} ${lead.countryLabel} 노선 출발 여객 ${number.format(current)}명${difference!==null?difference===0?', 전월과 같습니다.':`, 전월보다 ${number.format(Math.abs(difference))}명 ${difference>0?'늘었습니다':'줄었습니다'}.`:'.'}`:'비교할 월별 실적을 확인하고 있습니다.';
- const describe=(events:typeof weeks)=>events.length?events.map(event=><span className="focus-event-row" key={event.id}><b>{event.countryLabel}:</b> {event.name} {event.dateLabel_ko}</span>):'확인된 대표 일정을 대조하고 있습니다.';
+ const describe=(events:typeof weeks)=>events.length?events.map(event=><span className="focus-event-row" key={event.id}><b>{event.countryLabel}:</b> {event.name} {event.dateLabel_ko}</span>):<><span className="focus-event-row">확인된 대표 일정을 대조하고 있습니다.</span><span className="focus-event-row" aria-hidden="true">&nbsp;</span></>;
  return <section className="focus-preparation-brief" aria-label="다음 주와 다음 달 준비"><div><h3>다음 주 <small>{short(weekStart)}–{short(weekEnd)}</small></h3><p>{describe(weeks)}</p><small>행사·입고 일정과 겹치는 날짜를 대조하세요.</small></div><div><h3>다음 달 <small>{short(monthStart)}–{short(monthEnd)}</small></h3><p>{describe(months)}</p><small>{lead&&difference!==null&&before?<>{Number(reply?.month?.slice(5))}월 {lead.countryLabel} 노선 출발 여객, 전월비 <ChangeRate value={difference/before*100} lang="ko"/>.</>:trend} <button className="focus-planning-link" onClick={onCountries}>월간계획 검토 ↗</button></small></div><details className="focus-planning-basis"><summary>일정 기준 · 자세히 보기</summary><small className="focus-source">준비 기준 {asOf} KST · 휴일은 현지 날짜 · {reply?.month??'최근 공개 월'} 노선 출발 여객 규모순 대표 일정 · 미래 여객 예측 아님</small><button className="focus-planning-link" onClick={onMore}>전체 일정 보기 ↗</button></details></section>;
 }
 function SelectedCountryChanges({context}:{context:GlanceOverviewContext}){
+ const {asOf}=useAirportFocusData();
+ const title=context.day&&asOf&&context.day!==asOf?'선택일 주목할 변화':'오늘 주목할 변화';
  const rows=context.selectedCountryChanges??[];
- if(!rows.length)return null;
- return <div className="focus-selected-country-changes"><h3>오늘 주목할 변화</h3>{rows.map(row=><p key={row.country}>{row.label}행 <b>{row.count}편</b>, {Number(row.month.slice(5))}월 일평균보다 약 {Math.round(Math.abs(row.delta))}편 {row.delta>0?'많음':'적음'} (<ChangeRate value={row.percent} lang="ko"/>).</p>)}<small>{context.day} · {context.scope==='all'?'공항 전체':context.scope} · {rows[0].month} 포함 {rows[0].days}일 일평균 대비</small></div>;
+ if(!rows.length)return <div className="focus-selected-country-changes" aria-busy={context.flights===null}><h3>{title}</h3><p>{context.flights===null?'노선별 비교 자료 확인 중':'표시할 비교 항목이 없습니다.'}</p><p aria-hidden="true">&nbsp;</p><small>{context.day||'기준일 확인 중'} · 선택한 공항 범위 기준</small></div>;
+ return <div className="focus-selected-country-changes"><h3>{title}</h3>{rows.map(row=><p key={row.country}>{row.label}행 <b>{row.count}편</b>, {Number(row.month.slice(5))}월 일평균보다 약 {Math.round(Math.abs(row.delta))}편 {row.delta>0?'많음':'적음'} (<ChangeRate value={row.percent} lang="ko"/>).</p>)}<small>{context.day} · {context.scope==='all'?'공항 전체':context.scope} · {rows[0].month} 포함 {rows[0].days}일 일평균 대비</small></div>;
 }
 export function OverviewHeadline({context,onCountries,onPrepare}:{context:GlanceOverviewContext;onCountries:()=>void;onPrepare:()=>void}){
  const {asOf}=useAirportFocusData();

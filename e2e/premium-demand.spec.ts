@@ -65,7 +65,8 @@ for (const lang of ['ko', 'en', 'zh', 'ja']) {
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('monthly-records-result')).toBeVisible();
     await expect(page.getByTestId('record-month-2026-10')).toContainText('27,000–29,000');
-    await page.locator(`.bottom-nav a[href="/${lang}/myeongdong"]`).click();
+    await page.locator(`.bottom-nav a[href="/${lang}/more"]`).click();
+    await page.locator(`.more-section-links a[href="/${lang}/myeongdong"]`).click();
     const card = page.getByTestId('area-demand-card').first();
     await expect(card).toBeVisible();
 
@@ -131,13 +132,16 @@ test('selected dates and terminal scopes survive links, reload and back', async 
   await page.goto(`/ko/forecast?date=${selectedDate}`);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
   await expect(page.getByTestId('monthly-records-result')).toBeVisible();
-  await page.locator(`.bottom-nav a[href="/ko/myeongdong?date=${selectedDate}"]`).click();
+  await page.locator(`.bottom-nav a[href="/ko/more?date=${selectedDate}"]`).click();
+  await page.locator('.more-section-links a[href="/ko/myeongdong"]').click();
   await expect(page).toHaveURL(`/ko/myeongdong?date=${selectedDate}`);
   await expect(page.getByTestId('area-demand-card').first()).toBeVisible();
+  await page.goBack();await expect(page).toHaveURL(`/ko/more?date=${selectedDate}`);
   await page.goBack();
   await expect(page).toHaveURL(`/ko/forecast?date=${selectedDate}`);
   await expect(page.getByTestId('monthly-records-result')).toBeVisible();
-  await page.locator(`.bottom-nav a[href="/ko/myeongdong?date=${selectedDate}"]`).click();
+  await page.locator(`.bottom-nav a[href="/ko/more?date=${selectedDate}"]`).click();
+  await page.locator('.more-section-links a[href="/ko/myeongdong"]').click();
   await page.reload();
   await expect(page).toHaveURL(`/ko/myeongdong?date=${selectedDate}`);
   await expect(page.getByTestId('area-demand-card').first()).toBeVisible();

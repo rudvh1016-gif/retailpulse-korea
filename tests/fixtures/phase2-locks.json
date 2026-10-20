@@ -26,7 +26,7 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "526e91e52ae33cd9c58a38f2cca5727580b0ab27668c5a8df3bf95ddecd155e9",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "a27b95fb190fc673077d38ead166780ce07eb0d9a63777b6029d5f4e3b744b62",
+    "app/retailpulse-app.tsx": "bb142ef311024e9d04488cca51e3ebeeb2090327e658af561641621252ebdf96",
     "app/retailpulse-data.ts": "2a965cde02012978eb446a955b82bbcbfbec83f74f862e0e2846fae1ca348ecd",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "2208d14daf3cf078a6626ebca6ad90ef8e8dc0770c93f4fd6a295bd812d0e1f8",
@@ -2981,6 +2981,21 @@
         "file": "app/seo-config.ts",
         "previous": "0dbd3bb92c057aa8466fdddfa9e8b0772f866301049bbfe9551f1df10222328c",
         "approved": "2208d14daf3cf078a6626ebca6ad90ef8e8dc0770c93f4fd6a295bd812d0e1f8"
+      }
+    ],
+    "protectedPathCount": 67
+  },
+  "ownerRequestedAirportLoading20261020": {
+    "recordedAt": "2026-10-20",
+    "authorizationEvidence": {
+      "scope": "Requested first-screen speed verification: avoid idle prefetch of inactive Seoul and store screens while viewing airport pages. Hover, focus, navigation, stored preferences and all Seoul routes remain available. No source calculation, font, permissions or schedule changes.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "a27b95fb190fc673077d38ead166780ce07eb0d9a63777b6029d5f4e3b744b62",
+        "approved": "bb142ef311024e9d04488cca51e3ebeeb2090327e658af561641621252ebdf96"
       }
     ],
     "protectedPathCount": 67

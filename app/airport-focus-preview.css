@@ -98,3 +98,7 @@
  .focus-preparation-brief{grid-column:2;grid-row:2/6;margin-top:0}
  .focus-preparation-brief>div:first-child{margin-top:0;padding-top:0;border-top:0}
 }
+/* Keep the briefing's loading shape stable without invented figures or bars. */
+.focus-selected-country-changes{min-height:98px}
+.focus-report-lines>p:last-child{min-height:3.2em}
+.focus-preparation-brief>div:last-of-type>small{display:block;min-height:3.2em}
