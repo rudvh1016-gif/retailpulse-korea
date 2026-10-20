@@ -97,7 +97,7 @@ test('monthly paired bars transition on district and month; missing values and b
 });
 
 test('departure order is opt-in finite, conditional-plan-safe and stops offscreen',async({page})=>{
- await page.setViewportSize({width:320,height:950});await instrument(page);await page.goto('/ko/airport');await page.getByTestId('departure-guide-entry').click();
+ await page.setViewportSize({width:320,height:950});await instrument(page);await page.goto('/ko/airport');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');await page.getByTestId('departure-guide-entry').click();await expect(page.getByTestId('departure-preparation')).toHaveAttribute('open','');
  await page.getByTestId('prep-route').getByRole('button',{name:'T1 본관 탑승',exact:true}).click();
  const order=page.getByTestId('departure-order-motion');await order.scrollIntoViewIfNeeded();await expect(order.locator('[data-order-step]')).toHaveCount(4);
  const summary=page.getByTestId('prep-live-summary'),before=await summary.innerText();await order.getByRole('button',{name:'순서 보기'}).focus();await page.keyboard.press('Enter');

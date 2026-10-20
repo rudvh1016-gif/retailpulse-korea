@@ -26,7 +26,7 @@ const surfaces = [
 
 /** Walks up from the element until a painted background is found; returns that colour. */
 const paintedBackground = async (page: import("@playwright/test").Page, selector: string) => page.evaluate((sel) => {
-  const results: { colour: string; compactDate: boolean }[] = [];
+  const results: { colour: string; compactDate: boolean; focusCanvas?: boolean }[] = [];
   for (const start of Array.from(document.querySelectorAll(sel)).slice(0, 6)) {
     // The airport sky panel (owner decision 2026-10-02) is a figure, not a page surface.
     if (start.closest(".airport-hero")) continue;
@@ -38,7 +38,7 @@ const paintedBackground = async (page: import("@playwright/test").Page, selector
       const bg = style.backgroundColor;
       const transparent = bg === "rgba(0, 0, 0, 0)" || bg === "transparent";
       if (!transparent || style.backgroundImage !== "none") {
-        results.push({ colour: style.backgroundImage !== "none" ? `image:${style.backgroundImage.slice(0, 40)}` : bg, compactDate: start.matches('.glance-controls > .glance-date-control > input[type="date"][name="airport-date"]') });
+        results.push({ focusCanvas: node.matches(".airport-focus-shell"), colour: style.backgroundImage !== "none" ? `image:${style.backgroundImage.slice(0, 40)}` : bg, compactDate: start.matches('.glance-controls > .glance-date-control > input[type="date"][name="airport-date"]') });
         break;
       }
       node = node.parentElement;
@@ -58,9 +58,11 @@ for (const locale of locales) {
         await expect(page.locator("main.page-shell")).toBeVisible();
         for (const selector of surfaces) {
           const found = await paintedBackground(page, selector);
-          for (const { colour, compactDate } of found) {
+          for (const { colour, compactDate, focusCanvas } of found) {
             // Owner approval Sentinel_f30294521f9c8191ba81a4d739722130: only the compact native date surface is neutral
-            expect(colour, `${locale}${route} @${width}px ${selector}`).toBe(compactDate ? "rgb(241, 243, 246)" : WHITE);
+            // The requested liquid airport canvas is scoped, not a blanket exception for ordinary surfaces.
+            if(focusCanvas && colour.startsWith("image:")) expect(colour).toBe("image:linear-gradient(145deg, rgb(250, 251, 25");
+            else expect(colour, `${locale}${route} @${width}px ${selector}`).toBe(compactDate ? "rgb(241, 243, 246)" : WHITE);
             if (compactDate) {
               const dateInput = page.locator('.glance-controls > .glance-date-control > input[type="date"][name="airport-date"]');
               await expect(dateInput).toHaveCSS("border-radius", "14px");

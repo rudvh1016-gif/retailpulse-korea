@@ -79,6 +79,8 @@ for (const lang of ['ko', 'en', 'zh', 'ja']) {
     await page.goBack();
     await expect(card.locator('h2')).toHaveText({ko:'명동',en:'Myeongdong',zh:'明洞',ja:'明洞'}[lang]!);
     await page.goBack();
+    await expect(page).toHaveURL(new RegExp(`/${lang}/more`));
+    await page.goBack();
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect(page.getByTestId('monthly-records-result')).toBeVisible();

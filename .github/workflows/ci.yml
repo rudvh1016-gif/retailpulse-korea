@@ -103,7 +103,7 @@ jobs:
   airport-focus-preview:
     if: github.head_ref == 'preview/airport-focus-review' || github.ref_name == 'preview/airport-focus-review'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions:
       contents: read
     env:
@@ -121,11 +121,21 @@ jobs:
       - run: npm run typecheck
       - run: npm run e2e:install
       - run: npx playwright test e2e/airport-focus-preview.spec.ts e2e/airport-focus-production.spec.ts e2e/month-comparison-compact.spec.ts e2e/glance-artwork-srcset.spec.ts --output airport-focus-results --workers=2
+      - name: Verify final integration regressions
+        run: >-
+          npx playwright test e2e/airport-date-navigation.spec.ts e2e/airport-default-start.spec.ts
+          e2e/airport-v14-scenes.spec.ts e2e/airport-v5-scopes.spec.ts e2e/approved-airport-models.spec.ts
+          e2e/approved-choice-motion.spec.ts e2e/mobile-briefing-repair.spec.ts e2e/mobile-image-ladders.spec.ts
+          e2e/premium-demand.spec.ts e2e/pure-white.spec.ts
+          --grep 'KST midnight refresh|default start|v14 overview|distinct compact|all-building country|approved live models|departure order is opt-in|owner UI lock|T2 scene picks|mobile overview picks|monthly records and compact|pure white · en · 390px'
+          --output airport-final-regression-results --workers=2
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: airport-focus-approval-images
-          path: airport-focus-results/
+          path: |
+            airport-focus-results/
+            airport-final-regression-results/
           retention-days: 7
           if-no-files-found: warn
 

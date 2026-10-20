@@ -15,7 +15,7 @@ import type {Lang} from './retailpulse-data';
 const ArrivalAllowances=dynamic(()=>import('./arrival-allowances-preview'));
 const majorRoutes=[['JP','일본'],['CN','중국'],['VN','베트남'],['US','미국'],['TW','대만'],['TH','태국']] as const;
 function FocusLiveData({date,children}:{date?:string|null;children:ReactNode}){
- const summary=useLiveSummary(null),asOf=summary?.todayKst??'',requested=date?.slice(0,7)||asOf.slice(0,7)||null;
+ const summary=useLiveSummary(date??null),asOf=summary?.todayKst??'',requested=date?.slice(0,7)||asOf.slice(0,7)||null;
  const latest=useAirportPassengerStats(requested);
  const newest=latest.reply?.current.ROUTE_COUNTRY_PASSENGERS?.month??null;
  const months=[latest].flatMap(item=>[item.reply?.current.ROUTE_COUNTRY_PASSENGERS,item.reply?.previous.ROUTE_COUNTRY_PASSENGERS]).filter(item=>item!==undefined);
@@ -34,7 +34,7 @@ export function AirportFocusStatus(props:ComponentProps<typeof AirportViewCompon
  return <FocusLiveData date={props.date}><div className="airport-focus-shell airport-focus-operating"><AirportSceneArtwork.Provider value="/airport-models/approval-v3"><RoutePassengerPlacement.Provider value={<a className="focus-country-jump" href={`/${props.lang}/airport-countries${props.date?`?date=${props.date}`:''}`}>국가별 월 여객 비교는 국가별 흐름에서 보기 ↗</a>}><AirportView {...props} industryContext={<StaffCalendarContext onMore={()=>go(props.lang,'airport-prepare')}/>}/></RoutePassengerPlacement.Provider></AirportSceneArtwork.Provider></div></FocusLiveData>;
 }
 function CountryContents({lang,date}:{lang:Lang;date:string|null}){
- const today=useLiveSummary(null)?.todayKst??'',month=(date||today).slice(0,7);
+ const today=useLiveSummary(date)?.todayKst??'',month=(date||today).slice(0,7);
  return <div className="airport-focus-shell airport-focus-operating"><div className="focus-detail"><h1>국가별 흐름</h1><p className="focus-lead">어느 노선의 흐름이 달라졌는지, 월별 실적으로 확인합니다.</p>{month&&<><CountryBriefing month={month}/><AirportRouteCountryPassengers lang={lang} month={month} terminal="all"/></>}<CountryTrends full/></div></div>;
 }
 export function AirportCountryFlow({lang,date}:{lang:Lang;date:string|null}){return <FocusLiveData date={date}><CountryContents lang={lang} date={date}/></FocusLiveData>;}

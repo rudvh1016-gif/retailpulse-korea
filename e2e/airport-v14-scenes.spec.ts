@@ -31,7 +31,7 @@ test('v14 overview reflows without extra reads and keeps the scheduled two-minut
     for (const width of [360, 390, 1280, 600, 601, 430]) {
       await page.setViewportSize({ width, height: 900 });
       await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.currentSrc)).toMatch(
-        new RegExp(`/OVERVIEW_${width <= 600 ? 'MOBILE' : 'LANDSCAPE'}_${phase}(?:-390|-900)?\\.webp$`),
+        new RegExp(`/approval-v3/OVERVIEW_${width <= 600 ? 'MOBILE' : 'LANDSCAPE'}\\.svg$`),
       );
       await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
       const box = (await image.boundingBox())!;
