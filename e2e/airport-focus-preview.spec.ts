@@ -18,9 +18,11 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await page.goto('/ko/airport-focus-preview',{waitUntil:'domcontentloaded'});
  await page.getByRole('dialog').getByRole('button',{name:'닫기',exact:true}).click();
  await expect(page.getByRole('dialog')).not.toBeVisible();
- await expect(page.getByTestId('glance-key-passengers')).toContainText('103,124');
- await expect(page.getByTestId('glance-key-sum')).toContainText('112,403');
- await expect(page.locator('.focus-report')).toContainText('예상 출국객은 103,124명으로, 전월 일평균보다 약 9,546명 많습니다');
+ await expect(page.getByTestId('glance-key-passengers')).toHaveCount(0);
+ await expect(page.getByTestId('glance-key-sum')).toHaveCount(0);
+ await expect(page.locator('.focus-report-lines')).toContainText('예상 출국객 103,124명 + 예상 환승객 9,279명 = 단순합계 112,403명');
+ await expect(page.locator('.focus-report-basis')).toContainText('합산 비교자료 부족');
+ await expect(page.locator('.focus-report-lines')).not.toContainText('9,546');
  await expect(page.getByTestId('glance-day-comparison')).toHaveCount(0);
  await expect(page.locator('.focus-line-chart')).toHaveCount(3);
  await expect(page.locator('.focus-line-chart').first()).toContainText('4월');
@@ -101,6 +103,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
 });
 
 for(const width of [390,1440])test(`approved notice has only bottom close ${width}`,async({page},testInfo)=>{
+ test.setTimeout(60000);
  await page.setViewportSize({width,height:1000});await page.clock.setFixedTime(new Date(summary.generatedAt));
  await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));
  await page.route('**/api/live/flights*',r=>r.fulfill({json:flights}));
@@ -111,7 +114,7 @@ for(const width of [390,1440])test(`approved notice has only bottom close ${widt
  await expect(dialog).toBeVisible();await expect(dialog.locator('.update-notice-x')).toHaveCount(0);
  await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeVisible();
  await expect(dialog.getByRole('button',{name:'일주일 동안 안 보기',exact:true})).toBeVisible();
- await expect(dialog.locator('section')).toHaveCount(3);
+ await expect(dialog.locator('section')).toHaveCount(4);
  await page.screenshot({path:testInfo.outputPath(`notice-${width}.png`)});
  await dialog.getByRole('link',{name:'국가별 흐름 보기 →'}).click();
  await expect(page.locator('.focus-country-brief')).toBeVisible();
@@ -126,5 +129,39 @@ for(const width of [390,1440])test(`approved notice has only bottom close ${widt
  await expect(page.getByTestId('glance-key-passengers')).toBeVisible();
  await page.evaluate(()=>sessionStorage.clear());await page.reload({waitUntil:'domcontentloaded'});
  await expect(dialog).toBeVisible();
+ await dialog.getByRole('link',{name:'반입 면세한도 보기 →'}).click();
+ await expect(page.locator('#arrival-allowances')).toBeInViewport();
+ await page.evaluate(()=>sessionStorage.clear());await page.reload({waitUntil:'domcontentloaded'});
  await dialog.getByRole('button',{name:'닫기',exact:true}).click();await expect(dialog).not.toBeVisible();
+});
+
+for(const width of [390,1440])test(`arrival allowances preserve traveller conditions ${width}`,async({page},testInfo)=>{
+ test.setTimeout(60000);await page.setViewportSize({width,height:1000});
+ await page.route(/google-analytics\.com|googletagmanager\.com|analytics\.google\.com/,r=>r.abort());
+ await page.goto('/ko/airport-focus-preview?view=prepare&section=arrival',{waitUntil:'domcontentloaded'});
+ await page.getByRole('dialog').getByRole('button',{name:'닫기',exact:true}).click();
+ const section=page.locator('#arrival-allowances');await expect(section).toBeInViewport();
+ const destination=section.getByLabel('도착 국가·지역',{exact:true});await expect(destination).toHaveValue('');
+ await expect(section.locator('.arrival-result')).toHaveCount(0);
+ await section.screenshot({path:testInfo.outputPath(`arrival-start-${width}.png`)});
+ await destination.selectOption('JP');await expect(section.locator('.arrival-result')).toHaveCount(0);
+ await section.getByLabel('여행·물품 구분',{exact:true}).selectOption('ordinary');await section.getByLabel('나이',{exact:true}).selectOption('adult');
+ await expect(section.locator('.arrival-result')).toContainText('JPY 200,000');
+ await section.screenshot({path:testInfo.outputPath(`arrival-japan-${width}.png`)});
+ await destination.selectOption('CN');await expect(section.locator('.arrival-result')).toHaveCount(0);
+ await section.getByLabel('여행·물품 구분',{exact:true}).selectOption('ordinary');await section.getByLabel('나이',{exact:true}).selectOption('adult');
+ await section.getByLabel('통상 거주지 (국적과 다름)',{exact:true}).selectOption('visitor');
+ await section.getByLabel('중국 본토 직전 출발지',{exact:true}).selectOption('korea');
+ await section.getByLabel('이번 입국 전 15일 내 중국 입국',{exact:true}).selectOption('normal');
+ await expect(section.locator('.arrival-result')).toContainText('CNY 2,000');
+ await section.getByLabel('이번 입국 전 15일 내 중국 입국',{exact:true}).selectOption('frequent');await expect(section.locator('.arrival-result')).toHaveCount(0);
+ await destination.selectOption('US');await section.getByLabel('여행·물품 구분',{exact:true}).selectOption('ordinary');
+ await section.getByLabel('거주 상태 (국적과 다름)',{exact:true}).selectOption('visitor');await section.getByLabel('나이',{exact:true}).selectOption('adult');
+ await expect(section.locator('.arrival-result')).toHaveCount(0);await section.getByLabel('방문객 선물 면세 조건',{exact:true}).selectOption('met');
+ await expect(section.locator('.arrival-result')).toContainText('개인 선물 USD 100');await expect(section.locator('.arrival-result')).not.toContainText('USD 800');
+ await section.screenshot({path:testInfo.outputPath(`arrival-us-visitor-${width}.png`)});
+ await section.getByLabel('거주 상태 (국적과 다름)',{exact:true}).selectOption('resident');await expect(section.locator('.arrival-result')).toHaveCount(0);
+ await section.getByLabel('귀국 거주자 기본 면세 조건',{exact:true}).selectOption('met');await expect(section.locator('.arrival-result')).toContainText('USD 800');
+ await section.getByLabel('나이',{exact:true}).selectOption('young');await expect(section.locator('.arrival-result')).toContainText('21세 미만은 주류 반입 불가');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+1);
 });

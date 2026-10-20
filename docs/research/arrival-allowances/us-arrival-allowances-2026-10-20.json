@@ -1,0 +1,205 @@
+{
+  "schema_version": "1.0",
+  "country_code": "US",
+  "country_name_ko": "미국",
+  "title_ko": "미국 도착 여행자 면세 안내: 방문객과 거주자 귀국 구분",
+  "checked_at": "2026-10-20T04:18:00Z",
+  "checked_date": "2026-10-20",
+  "effective_date": null,
+  "effective_date_note_ko": "각 여행자 면세규정의 최초 시행일은 이번 검증에서 확정하지 않았습니다. 확인일을 시행일로 표시하지 마세요.",
+  "source_current_through": "2026-10-16",
+  "source_current_through_note_ko": "eCFR 파트 단위 화면은 2026-10-16 현재, 일부 개별 조문 화면은 2026-10-15 현재로 표시됩니다. 확인일과 법령 반영 기준일은 다릅니다.",
+  "verification_status": "official_sources_checked_with_scope_limits",
+  "publication_status": "reviewed_research_for_preview_not_legal_clearance",
+  "scope": {
+    "customs_territory": ["미국 50개 주(하와이·알래스카 포함)", "워싱턴 DC", "푸에르토리코"],
+    "excluded_arrival_destinations": ["괌", "북마리아나제도(사이판 포함)", "미국령 버진아일랜드", "아메리칸사모아", "그 밖의 미국 세관영역 밖 영토"],
+    "excluded_destination_allowances": null,
+    "excluded_destination_note_ko": "괌·사이판 도착에 이 카드의 $800/$100 또는 주류·담배 수량을 적용하지 않습니다. 해당 관할 세관 자료를 별도로 검증해야 합니다.",
+    "traveler_type": "일반 여행객의 동반 휴대물품",
+    "not_covered": ["우편·택배·전자상거래 수입", "이민·이사화물", "승무원 특별규정", "상업용·재판매 물품", "단순 통과 여행자의 별도 특례", "주별 상세 주류 허용량", "제재·금지·검역 품목 전체 목록"],
+    "source_ids": ["ecfr_101_1", "ecfr_148_2"]
+  },
+  "must_ask_before_using": [
+    "도착지가 미국 50개 주/워싱턴 DC/푸에르토리코인가요, 괌·사이판 등인가요?",
+    "미국 거주자가 여행 후 돌아가는 경우인가요, 미국 밖에 거주하는 방문객인가요? 국적만으로 구분하지 마세요.",
+    "본인 여행 중 사용할 물품, 개인 선물, 부탁받아 대신 사온 물품 또는 판매용 중 무엇인가요?",
+    "주류·담배가 있으면 연령, 본인 사용 여부, 수량, 도착 주를 확인하세요.",
+    "거주자 귀국은 해외 체류기간과 직전 30일 면세 사용 이력, 방문객 선물은 체류예정시간과 직전 6개월 선물면세 사용 이력을 확인하세요."
+  ],
+  "branches": [
+    {
+      "id": "nonresident_visitor",
+      "label_ko": "비거주 방문객",
+      "default_selected": false,
+      "general_merchandise_allowance_usd": null,
+      "personal_effects": {
+        "monetary_cap_usd": null,
+        "cap_explanation_ko": "여행 중 본인 사용에 적합한 의류·장신구·세면도구 등은 별도 면세규정입니다. 무제한 쇼핑 허용액을 의미하지 않습니다.",
+        "conditions_ko": ["미국으로 출발할 때 또는 그 전에 해외에서 본인이 소유·점유한 물품", "본인의 여행 중 사용에 적합", "타인 선물·판매 목적 제외"],
+        "source_ids": ["ecfr_148_42"]
+      },
+      "gifts": {
+        "amount": 100,
+        "currency": "USD",
+        "minimum_intended_stay_hours": 72,
+        "no_prior_claim_within_months": 6,
+        "accompanied_required": true,
+        "bona_fide_personal_gifts_only": true,
+        "excluded": ["주류", "궐련(일반 담배)"],
+        "cigars_max_within_value_cap": 100,
+        "family_pooling_allowed": null,
+        "family_pooling_note_ko": "거주자 귀국용 $800/$1,600 가족합산 규칙을 이 선물면세에 적용하지 마세요. 비거주자 선물합산 허용은 이번 자료에서 확인하지 못했습니다.",
+        "failed_conditions_route": "special_exemption_review",
+        "source_ids": ["ecfr_148_44", "ecfr_148_43"]
+      },
+      "alcohol": {
+        "liters": 1,
+        "minimum_age_years": 21,
+        "purpose": "본인 사용만",
+        "gifts_qualify_under_personal_use_exemption": false,
+        "state_law_check_required": true,
+        "note_ko": "술 종류를 합해 1L입니다. 방문객이 선물할 술은 이 본인사용 면세나 $100 선물면세 대상이 아닙니다. 초과분은 주법 및 세금 확인이 필요합니다.",
+        "source_ids": ["ecfr_148_43", "cbp_alcohol"]
+      },
+      "tobacco": {
+        "selection_mode": "alternatives_or_proportional_mix",
+        "cigarettes": 200,
+        "cigars": 50,
+        "smoking_tobacco_kg": 2,
+        "minimum_age_years_customer_guidance": 21,
+        "statutory_minimum_age_in_148_43": null,
+        "age_note_ko": "19 CFR 148.43은 adult라고 규정합니다. CBP 공개 안내는 담배 면세를 21세 이상 성인에게 안내하므로 고객 안내에 21세 미만 면세 가능으로 표시하지 마세요.",
+        "purpose": "본인 사용만",
+        "gifts_qualify_under_personal_use_exemption": false,
+        "note_ko": "200개비 또는 시가 50개 또는 잎담배 2kg 중 한 종류, 또는 비례 혼합입니다. 각각을 전량 동시에 허용하는 AND 조건이 아닙니다.",
+        "source_ids": ["ecfr_148_43", "cbp_tobacco"]
+      },
+      "short_customer_copy_ko": "미국 밖에 거주하는 방문객은 거주자 귀국용 $800 기준이 아닙니다. 본인 여행용 휴대품은 별도 기준이며, 개인 선물은 $100까지 조건부 면세입니다(72시간 이상 체류 예정·직전 6개월 미사용). 본인사용 주류 1L, 담배 200개비 또는 시가 50개 등의 별도 수량·연령 조건도 확인하세요."
+    },
+    {
+      "id": "returning_resident_standard",
+      "label_ko": "미국 거주자 귀국: 기본",
+      "default_selected": false,
+      "general_merchandise_allowance": {"amount": 800, "currency": "USD"},
+      "includes_ko": ["여행 중 취득한 개인·가정용 물품", "진정한 개인 선물", "허용량 이내 주류·담배의 가격"],
+      "excludes_ko": ["판매용", "타인을 위해 대리 구입한 물품(보수 유무 무관)", "별도 발송 물품(일반 $800 규칙; 지정지역 특례 제외)"],
+      "conditions": {
+        "accompanied_required": true,
+        "minimum_time_outside_us_hours": 48,
+        "minimum_time_exceptions": ["멕시코에서 직접 귀국", "미국령 버진아일랜드에서 직접·간접 귀국의 $1,600 특례"],
+        "no_prior_claim_within_days": 30,
+        "unused_balance_carries_forward": false,
+        "declare_required": true
+      },
+      "family_pooling": {
+        "allowed": true,
+        "conditions_ko": ["동일 가구에 살던 가족이 함께 귀국하고 입국 후에도 동일 가구에 거주 예정", "각 가족 구성원에게 해당 면세 자격이 있어야 함", "단순 동거인·룸메이트는 자동 가족으로 보지 않음", "21세 미만 구성원의 한도를 주류에 전용 불가"],
+        "source_ids": ["ecfr_148_34"]
+      },
+      "alcohol": {"liters": 1, "minimum_age_years": 21, "included_in_value_allowance": true, "state_law_check_required": true, "source_ids": ["ecfr_148_33", "cbp_alcohol"]},
+      "tobacco": {"selection_mode": "combined_caps", "cigarettes": 200, "cigars": 100, "smoking_tobacco_kg": null, "minimum_age_years_customer_guidance": 21, "included_in_value_allowance": true, "excess_note_ko": "담배는 초과해도 세금만 내면 반입 가능하다고 보장하지 마세요. CBP는 개인면세 허용량 밖 제품에 압류·폐기 등의 위험을 안내합니다.", "source_ids": ["ecfr_148_33", "cbp_tobacco"]},
+      "source_ids": ["ecfr_148_33", "ecfr_148_35", "ecfr_148_36", "cbp_exemption"],
+      "short_customer_copy_ko": "미국 거주자가 해외여행 후 귀국할 때는 보통 동반 개인·가정용 물품과 선물을 합해 $800까지 조건부 면세입니다. 해외 48시간 이상 체류·직전 30일 면세 미사용이 기본이며 예외가 있습니다. 주류 1L와 담배 200개비·시가 100개도 가격을 한도에 포함하고 연령·주법을 확인해야 합니다."
+    }
+  ],
+  "special_cases": [
+    {
+      "id": "special_exemption_review",
+      "display_ko": "기본조건 미충족: $200 특별면세 직원 확인",
+      "applicability_ko": "$800/$1,600 면세 자격 없는 귀국 거주자 또는 $100 선물면세 자격 없는 비거주자",
+      "amount": 200,
+      "currency": "USD",
+      "calculation_basis_ko": "다른 면세에 해당하지 않는 동반 물품의 총 해외 소매가",
+      "over_limit_loses_this_exemption": true,
+      "family_pooling_allowed": false,
+      "commercial_use_allowed": false,
+      "internal_revenue_tax_items_caps": {"cigarettes": 50, "cigars": 10, "alcohol_ml": 150, "alcoholic_perfumery_ml": 150},
+      "note_ko": "한도 내 과세물품 전부가 조건을 충족해야 합니다. $200 초과 시 초과분만 과세하는 공제라고 표시하지 마세요. $100 선물면세에 $200를 더하는 규칙도 아닙니다. 자동 면세 판정 대신 직원 확인으로 안내하세요.",
+      "source_ids": ["ecfr_148_51"]
+    },
+    {
+      "id": "returning_from_insular_possessions",
+      "display_ko": "미국령 방문 후 미국 세관영역으로 귀국하는 별도 특례",
+      "not_a_rule_for_arrival_into_guam_or_saipan": true,
+      "origins": ["아메리칸사모아", "괌", "북마리아나제도", "미국령 버진아일랜드"],
+      "amount": 1600,
+      "currency": "USD",
+      "maximum_acquired_elsewhere_usd": 800,
+      "alcohol_liters_max": 5,
+      "alcohol_acquired_elsewhere_liters_max": 1,
+      "alcohol_produced_elsewhere_liters_max": 4,
+      "cigarettes_max": 1000,
+      "cigarettes_acquired_elsewhere_max": 200,
+      "note_ko": "일반 귀국 조건과 취득지·생산지 조건 확인이 필요합니다. 한국에서 산 물품이 괌 경유만으로 $1,600까지 면세되는 뜻이 아닙니다.",
+      "source_ids": ["ecfr_148_33", "ecfr_148_35", "ecfr_148_36"]
+    },
+    {
+      "id": "returning_direct_from_beneficiary_country",
+      "display_ko": "지정 수혜국 직접 귀국 특례",
+      "amount": 800,
+      "currency": "USD",
+      "alcohol_liters_max": 2,
+      "alcohol_minimum_beneficiary_product_liters": 1,
+      "eligible_country_list": null,
+      "note_ko": "HTSUS Chapter 98 U.S. Note 4 지정국 및 원산지 조건을 별도 확인해야 합니다. 한국 출발 일반 안내에는 자동 적용하지 마세요.",
+      "source_ids": ["ecfr_148_33"]
+    }
+  ],
+  "commercial_goods": {
+    "traveler_personal_allowance_applies": false,
+    "duty_rate": null,
+    "note_ko": "재판매·영업·대리구매 물품은 일반 개인여행 면세로 처리하지 않습니다. 실제 품목·원산지·신고방식에 따른 별도 절차와 세율을 확인해야 합니다.",
+    "source_ids": ["ecfr_148_33", "ecfr_148_42", "ecfr_148_43", "ecfr_148_51"]
+  },
+  "tariff_change_check": {
+    "do_not_confuse_with_ecommerce_800_de_minimis": true,
+    "traveler_rules_present_in_current_ecfr": true,
+    "all_excess_duty_rates_verified": false,
+    "excess_duty_rate": null,
+    "note_ko": "배송 수입의 $800 de minimis 중단과 여행자 휴대품 면세는 별개입니다. 2026-06-24 CBP 관보 규정은 우편 소액면세 중단을 규정하면서 여행자 동반 $200 특별면세 등은 변경하지 않는다고 명시합니다. 여행자 기본 $800 및 방문객 규정은 확인한 현행 eCFR에 존속합니다. 초과분 세율을 일괄 3% 등으로 고정하지 마세요.",
+    "postal_rule_publication_date": "2026-06-24",
+    "postal_suspension_rule_effective_date": "2026-06-24",
+    "postal_new_process_effective_date": "2026-07-24",
+    "traveler_allowance_effective_date_from_postal_rule": null,
+    "source_ids": ["ecfr_148_33", "ecfr_148_44", "ecfr_148_51", "fr_2026_12669"]
+  },
+  "staff_warnings_ko": [
+    "면세점에서 구매했다고 도착국 면세가 자동으로 보장되지 않습니다.",
+    "미국 방문객 모두 $800, 방문객 모든 물품 $100, 담배 200개비+시가50개+잎담배2kg 동시 허용이라는 표시는 금지합니다.",
+    "방문객 선물용 술은 본인사용 주류 1L 면세와 $100 선물면세에 포함되지 않습니다.",
+    "주류는 도착 주법이 연방 기준보다 엄격할 수 있습니다. 금지·검역·제재 규정은 금액·수량 안이어도 별도로 적용됩니다.",
+    "초과·예외·목적 불명확 시 세관 확인을 안내하고 무조건 반입 가능 또는 무조건 과세 없음으로 판정하지 마세요.",
+    "확인일, 출처 반영 기준일, 규정 시행일을 분리 표시하세요. 시행일 불명은 null로 유지하세요."
+  ],
+  "suggested_notice": {
+    "title_ko": "[공지] 미국 도착 면세 안내: 방문객·거주자 귀국 구분",
+    "body_ko": "2026-10-20 공식 자료 확인. 미국은 방문객과 거주자 귀국의 면세 기준이 다릅니다. 방문객 선물 $100(체류·사용이력 조건), 거주자 귀국 기본 $800(체류·사용이력 조건)으로 나누어 확인하세요. 괌·사이판 도착은 별도 규정입니다.",
+    "claims_new_legal_change": false,
+    "note_ko": "이 공지는 확인·안내 정리 공지이며 오늘 법령이 개정되었다는 의미가 아닙니다. 기존 데이터와 실제 비교가 없으면 ‘한도 변경’이라고 표시하지 마세요."
+  },
+  "sources": [
+    {"id":"ecfr_101_1","publisher":"eCFR / Office of the Federal Register","title":"19 CFR 101.1 Definitions","url":"https://www.ecfr.gov/current/title-19/chapter-I/part-101/section-101.1","access":"direct_read","current_through":"2026-10-16","effective_date":null,"evidence_ko":"미국 세관영역은 주, DC, 푸에르토리코로 정의합니다."},
+    {"id":"ecfr_148_2","publisher":"eCFR / Office of the Federal Register","title":"19 CFR 148.2 Residence status of arriving persons","url":"https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-A/section-148.2","access":"direct_read","effective_date":null,"evidence_ko":"귀국 거주자와 기타 비거주자를 구분하며 해외에 정착한 경우 등 예외가 있습니다. 국적만으로 판단할 수 없습니다."},
+    {"id":"ecfr_148_33","publisher":"eCFR / Office of the Federal Register","title":"19 CFR 148.33 Articles acquired abroad","url":"https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-D/section-148.33","access":"direct_read","current_through":"2026-10-15","effective_date":null,"evidence_ko":"거주자 $800/$1,600, 개인 선물, 주류·담배 수량, 판매·대리구매 제외를 명시합니다."},
+    {"id":"ecfr_148_34","publisher":"eCFR / Office of the Federal Register","title":"19 CFR 148.34 Family grouping","url":"https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-D/section-148.34","access":"direct_read","current_through":"2026-10-16","effective_date":null,"evidence_ko":"동일 가구의 자격 있는 가족이 함께 귀국할 때 $800/$1,600 합산이 가능합니다."},
+    {"id":"ecfr_148_35","publisher":"eCFR / Office of the Federal Register","title":"19 CFR 148.35 Length of stay","url":"https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-D/section-148.35","access":"direct_read","current_through":"2026-10-16","effective_date":null,"evidence_ko":"48시간 요건과 멕시코 직접 귀국·미국령 버진아일랜드 예외를 명시합니다."},
+    {"id":"ecfr_148_36","publisher":"eCFR / Office of the Federal Register","title":"19 CFR 148.36 Frequency of allowance","url":"https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-D/section-148.36","access":"direct_read","current_through":"2026-10-15","effective_date":null,"evidence_ko":"귀국 직전 30일 내 면세를 사용하면 $800/$1,600 면세를 다시 받을 수 없습니다."},
+    {"id":"ecfr_148_42","publisher":"eCFR / Office of the Federal Register","title":"19 CFR 148.42 Personal effects","url":"https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-E/section-148.42","access":"direct_read","current_through":"2026-10-15","effective_date":null,"evidence_ko":"비거주자가 출발 전 해외에서 소유·점유하고 본인 여행에 사용할 적정 휴대품에 별도 면세를 인정합니다."},
+    {"id":"ecfr_148_43","publisher":"eCFR / Office of the Federal Register","title":"19 CFR 148.43 Tobacco products and alcoholic beverages","url":"https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-E/section-148.43","access":"direct_read","current_through":"2026-10-15","effective_date":null,"evidence_ko":"비거주 성인 본인사용에 담배200개비 또는 시가50개 또는 잎담배2kg, 주류1L. 비례 혼합과 선물용 시가 특례를 규정합니다."},
+    {"id":"ecfr_148_44","publisher":"eCFR / Office of the Federal Register","title":"19 CFR 148.44 Gifts (read within Subpart E)","url":"https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-E#p-148.44","access":"direct_read_parent_subpart","current_through":"2026-10-16","effective_date":null,"evidence_ko":"비거주 선물 $100: 72시간 이상 체류 예정, 직전6개월 미사용. 주류·궐련 제외, 시가100개까지 포함 가능합니다."},
+    {"id":"ecfr_148_51","publisher":"eCFR / Office of the Federal Register","title":"19 CFR 148.51 Special exemption (read within Subpart F)","url":"https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-F#p-148.51","access":"direct_read_parent_subpart","current_through":"2026-10-16","effective_date":null,"evidence_ko":"기본 면세 자격이 없는 일부 여행자의 $200 특별면세, 전체가액 조건, 소량 주류·담배 제한, 가족합산 금지를 규정합니다."},
+    {"id":"cbp_exemption","publisher":"U.S. Customs and Border Protection","title":"Duty-free exemption, Article 1402","url":"https://www.help.cbp.gov/s/article/Article-1402?language=en_US","access":"official_page_search_extraction; direct page JavaScript shell","publication_date":"2026-02-27","effective_date":null,"evidence_ko":"개인·가정용·선물, 동반·신고, 48시간 및 직전30일 조건을 설명합니다."},
+    {"id":"cbp_alcohol","publisher":"U.S. Customs and Border Protection","title":"Bringing alcohol into the United States for personal use, Article 1395","url":"https://www.help.cbp.gov/s/article/Article-1395?language=en_US","access":"official_page_search_extraction; direct page JavaScript shell","publication_date":null,"effective_date":null,"evidence_ko":"보통 21세 이상 1L, 21세 미만은 선물용도 반입 불가, 주별 더 엄격한 규정과 초과분 관세·연방소비세를 안내합니다."},
+    {"id":"cbp_tobacco","publisher":"U.S. Customs and Border Protection","title":"Carrying Tobacco Products to the United States for Personal Use, Article 1376","url":"https://www.help.cbp.gov/s/article/Article-1376?language=en_US","access":"official_page_search_extraction; direct page JavaScript shell","publication_date":null,"effective_date":null,"evidence_ko":"담배 면세는 21세 이상 성인 안내이며, 귀국 거주자의 일반 수량과 초과 제품 압류·폐기 위험을 설명합니다."},
+    {"id":"fr_2026_12669","publisher":"CBP / Federal Register / U.S. Government Publishing Office","title":"Indefinite Suspension of the De Minimis Exemption for Mail Shipments and New Postal Informal Entry Process","url":"https://www.govinfo.gov/content/pkg/FR-2026-06-24/html/2026-12669.htm","access":"direct_read","publication_date":"2026-06-24","effective_date":"2026-06-24","additional_process_effective_date":"2026-07-24","evidence_ko":"우편 소액면세 중단과 별개로 여행자 동반 $200 등 19 USC 1321(a)(2)(A),(B) 면세를 변경하지 않는다고 명시합니다."}
+  ],
+  "unresolved": [
+    {"field":"effective_date","value":null,"reason_ko":"개별 여행자 면세조항의 최초 시행일을 확정하지 않음"},
+    {"field":"territories_arrival_allowances","value":null,"reason_ko":"괌·사이판 등 도착 자체의 지역규정은 이 미국 세관영역 카드 범위에서 제외"},
+    {"field":"state_specific_alcohol_limits","value":null,"reason_ko":"도착 주별 별도검증 필요"},
+    {"field":"excess_duty_rate","value":null,"reason_ko":"품목·원산지·적용 관세별 계산은 하지 않음"},
+    {"field":"nonresident_gift_family_pooling","value":null,"reason_ko":"거주자용 합산규정의 비거주 선물 적용을 확인하지 못함"},
+    {"field":"nonresident_tobacco_statutory_minimum_age","value":null,"reason_ko":"148.43의 adult 문언과 CBP21세 안내를 구분; 21세 미만 반입·면세 보장 금지"}
+  ]
+}

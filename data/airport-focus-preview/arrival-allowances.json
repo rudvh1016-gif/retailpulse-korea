@@ -1,0 +1,4219 @@
+{
+  "checkedAt": "2026-10-20",
+  "status": "official-source-review-preview",
+  "countries": [
+    {
+      "id": "CN",
+      "name": "중국 본토",
+      "scope": "한국에서 중국 본토로 직접 입국하는 일반 여행자. 홍콩·마카오발·빈번 입국은 별도 확인합니다.",
+      "checkedAt": "2026-10-20",
+      "effectiveLabel": "핵심 한도 시행 2024-12-01",
+      "conditions": [
+        {
+          "id": "purpose",
+          "label": "여행·물품 구분",
+          "options": [
+            {
+              "id": "ordinary",
+              "label": "일반 여행 · 개인 사용/개인 선물"
+            },
+            {
+              "id": "special",
+              "label": "판매·대리구매·승무원·이주 등"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "residence",
+          "label": "통상 거주지 (국적과 다름)",
+          "options": [
+            {
+              "id": "resident",
+              "label": "중국 거주자 귀국"
+            },
+            {
+              "id": "visitor",
+              "label": "중국 밖 거주자 방문"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "origin",
+          "label": "중국 본토 직전 출발지",
+          "options": [
+            {
+              "id": "korea",
+              "label": "한국에서 직접 입국"
+            },
+            {
+              "id": "hkmacao",
+              "label": "홍콩·마카오발 또는 경유"
+            },
+            {
+              "id": "other",
+              "label": "그 밖의 출발지·확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "age",
+          "label": "나이",
+          "options": [
+            {
+              "id": "adult",
+              "label": "만 18세 이상"
+            },
+            {
+              "id": "minor",
+              "label": "만 18세 미만"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "frequency",
+          "label": "이번 입국 전 15일 내 중국 입국",
+          "options": [
+            {
+              "id": "normal",
+              "label": "없음"
+            },
+            {
+              "id": "frequent",
+              "label": "있음"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        }
+      ],
+      "results": [
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "origin": [
+              "korea"
+            ],
+            "age": [
+              "adult"
+            ],
+            "frequency": [
+              "normal"
+            ]
+          },
+          "label": "한국발 일반 성인 기준",
+          "facts": [
+            {
+              "label": "일반물품",
+              "value": "해외 취득 자가사용 물품 합계 CNY 5,000"
+            },
+            {
+              "label": "주류",
+              "value": "알코올 12도 이상 합계 1.5L"
+            },
+            {
+              "label": "담배",
+              "value": "궐련·가열담배 400개비 또는 시가 20개 또는 잎담배 500g"
+            }
+          ],
+          "notes": [
+            "술·담배는 각 수량과 물품 총액 기준을 함께 충족해야 합니다. 각 대안을 모두 더하지 않습니다.",
+            "재반출 개인물품은 신규 취득품과 구분합니다.",
+            "12도 미만 술을 무제한 면세로 보지 않습니다. 전자담배는 별도 기기·액상 규정입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "visitor"
+            ],
+            "origin": [
+              "korea"
+            ],
+            "age": [
+              "adult"
+            ],
+            "frequency": [
+              "normal"
+            ]
+          },
+          "label": "한국발 일반 성인 기준",
+          "facts": [
+            {
+              "label": "일반물품",
+              "value": "중국에 남겨둘 자가사용 물품 합계 CNY 2,000"
+            },
+            {
+              "label": "주류",
+              "value": "알코올 12도 이상 합계 1.5L"
+            },
+            {
+              "label": "담배",
+              "value": "궐련·가열담배 400개비 또는 시가 20개 또는 잎담배 500g"
+            }
+          ],
+          "notes": [
+            "술·담배는 각 수량과 물품 총액 기준을 함께 충족해야 합니다. 각 대안을 모두 더하지 않습니다.",
+            "방문자가 다시 가지고 출국할 개인물품은 중국에 남길 물품과 구분합니다.",
+            "12도 미만 술을 무제한 면세로 보지 않습니다. 전자담배는 별도 기기·액상 규정입니다."
+          ]
+        }
+      ],
+      "notes": [
+        "거주자는 중국 내 통상 정착지로 귀국하는 사람입니다. 국적만으로 판단하지 않습니다.",
+        "18세 미만·15일 내 반복 입국자는 여행 필수품 등 별도 기준입니다. 기본 금액을 그대로 적용하지 않습니다.",
+        "홍콩·마카오발 특례는 한국발 일반 한도가 아닙니다. 경유만으로 적용하지 않습니다.",
+        "한도 초과 불가분 단일물품은 전액 과세 대상입니다. 별송품 합산 여부도 확인하세요."
+      ],
+      "sources": [
+        {
+          "label": "중국 국무원 관세세칙위원회·재정부 원문",
+          "url": "https://gss.mof.gov.cn/gzdt/zhengcefabu/202411/P020241129682518318359.pdf"
+        },
+        {
+          "label": "중국 재정부·해관총서·세무총국, 중국정부망 게재 원문",
+          "url": "https://app.www.gov.cn/govdata/gov/202406/28/516692/article.html"
+        },
+        {
+          "label": "중국 해관총서, 상무부 공식 재게재 원문",
+          "url": "https://www.mofcom.gov.cn/zcfb/zgdwjjmywg/art/2025/art_2412b6f8868b4034bf55a1261158e544.html"
+        }
+      ],
+      "reviewStatus": "official_sources_checked_pending_release_review",
+      "effectiveDate": null,
+      "changeAnnouncement": null,
+      "verifiedAt": "2026-10-20"
+    },
+    {
+      "id": "JP",
+      "name": "일본",
+      "scope": "개인 사용 일반 여행자 · 1인 기준 · 거주자/비거주자 공통.",
+      "checkedAt": "2026-10-20",
+      "effectiveLabel": "기본 한도 최초 시행일 미확인 · 현행 담배 수량 2021-10-01 시행",
+      "conditions": [
+        {
+          "id": "purpose",
+          "label": "여행·물품 구분",
+          "options": [
+            {
+              "id": "ordinary",
+              "label": "일반 여행 · 개인 사용/개인 선물"
+            },
+            {
+              "id": "special",
+              "label": "판매·대리구매·승무원·이주 등"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "age",
+          "label": "나이",
+          "options": [
+            {
+              "id": "adult",
+              "label": "만 20세 이상"
+            },
+            {
+              "id": "young",
+              "label": "만 6–19세"
+            },
+            {
+              "id": "child",
+              "label": "만 6세 미만"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        }
+      ],
+      "results": [
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "age": [
+              "adult"
+            ]
+          },
+          "label": "일본 일반 여행자 기준",
+          "facts": [
+            {
+              "label": "일반물품",
+              "value": "합계 JPY 200,000. 술·담배·향수는 별도 한도."
+            },
+            {
+              "label": "주류",
+              "value": "760mL 기준 3병"
+            },
+            {
+              "label": "담배",
+              "value": "궐련만 200개비. 다른 종류·혼합은 별도 환산."
+            },
+            {
+              "label": "향수",
+              "value": "2온스, 약 56mL. 오드콜로뉴·오드투알레트 제외."
+            }
+          ],
+          "notes": [
+            "1개·1세트가 20만 엔을 넘으면 그 물품 전액 과세 대상입니다.",
+            "품목별 해외시가 합계 1만 엔 이하 물품은 원칙적으로 20만 엔 합산에서 제외합니다. 낱개 가격 기준이 아닙니다.",
+            "술은 병 크기와 무관하게 3병이라는 뜻이 아닙니다. 휴대품·별송품은 합산합니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "age": [
+              "young"
+            ]
+          },
+          "label": "일본 일반 여행자 기준",
+          "facts": [
+            {
+              "label": "일반물품",
+              "value": "합계 JPY 200,000. 술·담배·향수는 별도 한도."
+            },
+            {
+              "label": "주류",
+              "value": "20세 미만은 주류 면세가 없습니다."
+            },
+            {
+              "label": "담배",
+              "value": "20세 미만은 담배 면세가 없습니다."
+            },
+            {
+              "label": "향수",
+              "value": "2온스, 약 56mL. 오드콜로뉴·오드투알레트 제외."
+            }
+          ],
+          "notes": [
+            "1개·1세트가 20만 엔을 넘으면 그 물품 전액 과세 대상입니다.",
+            "품목별 해외시가 합계 1만 엔 이하 물품은 원칙적으로 20만 엔 합산에서 제외합니다. 낱개 가격 기준이 아닙니다.",
+            "술은 병 크기와 무관하게 3병이라는 뜻이 아닙니다. 휴대품·별송품은 합산합니다."
+          ]
+        }
+      ],
+      "notes": [
+        "6세 미만은 본인이 사용할 것이 분명한 물품 외에는 면세가 없습니다.",
+        "20세 이상: 시가만 50개, 기타·혼합 담배는 250g 상당량 등 제품별 환산을 확인하세요.",
+        "담배 종류별 한도를 전부 더하지 않습니다. 가열담배는 제품별 환산이 필요합니다."
+      ],
+      "sources": [
+        {
+          "label": "일본 재무성 세관 원문",
+          "url": "https://www.customs.go.jp/kaigairyoko/menzei.htm"
+        },
+        {
+          "label": "Japan Customs 원문",
+          "url": "https://www.customs.go.jp/english/c-answer_e/keitaibetsuso/7105_e.htm"
+        },
+        {
+          "label": "일본 재무성 세관 원문",
+          "url": "https://www.customs.go.jp/kaigairyoko/cigarette_leaflet_j.pdf"
+        }
+      ],
+      "reviewStatus": "official_sources_checked_pending_release_review",
+      "effectiveDate": null,
+      "changeAnnouncement": null,
+      "verifiedAt": "2026-10-20"
+    },
+    {
+      "id": "VN",
+      "name": "베트남",
+      "scope": "베트남·외국 여권의 일반 항공여행자. 일반 방문·귀국 여부별 금액 차등은 없습니다.",
+      "checkedAt": "2026-10-20",
+      "effectiveLabel": "기본 한도 시행 2016-09-01 · 가족 합산 관련 절차 2025-08-15 시행",
+      "conditions": [
+        {
+          "id": "purpose",
+          "label": "여행·물품 구분",
+          "options": [
+            {
+              "id": "ordinary",
+              "label": "일반 여행 · 개인 사용/개인 선물"
+            },
+            {
+              "id": "special",
+              "label": "판매·대리구매·승무원·이주 등"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "age",
+          "label": "나이",
+          "options": [
+            {
+              "id": "adult",
+              "label": "만 18세 이상"
+            },
+            {
+              "id": "minor",
+              "label": "만 18세 미만"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        }
+      ],
+      "results": [
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "age": [
+              "adult"
+            ]
+          },
+          "label": "베트남 일반 여행자 기준",
+          "facts": [
+            {
+              "label": "기타물품",
+              "value": "합계 VND 10,000,000. 여행 목적에 맞는 개인용품은 별도."
+            },
+            {
+              "label": "주류",
+              "value": "20% 이상 1.5L 또는 20% 미만 2L 또는 맥주 등 3L"
+            },
+            {
+              "label": "담배",
+              "value": "궐련 200개비 또는 잎담배 250g 또는 시가 20개"
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·가열담배. 일반 담배 면세수량과 별도입니다."
+            }
+          ],
+          "notes": [
+            "술과 담배는 각각 선택형 한도이며 대안을 모두 더하지 않습니다.",
+            "특정 승무원·국경 근로자 등은 90일당 1회 규칙을 별도로 확인해야 합니다.",
+            "원래 주류 용기 1개가 한도를 넘는 경우의 예외는 별도 조건입니다. 모든 구매에 1L가 더해지지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "age": [
+              "minor"
+            ]
+          },
+          "label": "베트남 일반 여행자 기준",
+          "facts": [
+            {
+              "label": "기타물품",
+              "value": "합계 VND 10,000,000. 여행 목적에 맞는 개인용품은 별도."
+            },
+            {
+              "label": "주류",
+              "value": "18세 미만은 주류 면세에서 제외됩니다."
+            },
+            {
+              "label": "담배",
+              "value": "18세 미만은 담배 면세에서 제외됩니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·가열담배. 일반 담배 면세수량과 별도입니다."
+            }
+          ],
+          "notes": [
+            "술과 담배는 각각 선택형 한도이며 대안을 모두 더하지 않습니다.",
+            "특정 승무원·국경 근로자 등은 90일당 1회 규칙을 별도로 확인해야 합니다.",
+            "원래 주류 용기 1개가 한도를 넘는 경우의 예외는 별도 조건입니다. 모든 구매에 1L가 더해지지 않습니다."
+          ]
+        }
+      ],
+      "notes": [
+        "가족 합산은 동일 여행 등 별도 조건이 있습니다. 미성년자에게 술·담배 면세권이 생긴다는 뜻이 아닙니다.",
+        "초과물품은 신고 대상입니다. 단일 고가품 세액·혼합 술담배 환산은 자동 계산하지 않습니다."
+      ],
+      "sources": [
+        {
+          "label": "베트남 정부·재무부 공식 관보 원문",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/CongBao/2023/6/39609/45447-1-787-788.pdf"
+        },
+        {
+          "label": "베트남 정부 법령포털 원문",
+          "url": "https://vanban.chinhphu.vn/?docid=186707&pageid=27160"
+        },
+        {
+          "label": "베트남 정부 공식 관보 원문",
+          "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2025/6/45351/57292-1-2025883-884167-2025-nd-cp.pdf"
+        },
+        {
+          "label": "베트남 정부 정책법률 포털 원문",
+          "url": "https://xaydungchinhsach.chinhphu.vn/cam-san-xuat-kinh-doanh-nhap-khau-chua-chap-van-chuyen-su-dung-thuoc-la-dien-tu-thuoc-la-nung-nong-tu-nam-2025-119241214164955394.htm"
+        }
+      ],
+      "reviewStatus": "official_sources_checked_pending_release_review",
+      "effectiveDate": null,
+      "changeAnnouncement": null,
+      "verifiedAt": "2026-10-20"
+    },
+    {
+      "id": "TH",
+      "name": "태국",
+      "scope": "공항 입국 일반 여행자의 본인 휴대 개인용품. 내국인·외국인 공통 안내입니다.",
+      "checkedAt": "2026-10-20",
+      "effectiveLabel": "시행일 미확인",
+      "conditions": [
+        {
+          "id": "purpose",
+          "label": "여행·물품 구분",
+          "options": [
+            {
+              "id": "ordinary",
+              "label": "일반 여행 · 본인용 개인물품"
+            },
+            {
+              "id": "special",
+              "label": "판매·대리구매·승무원·이주 등"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        }
+      ],
+      "results": [
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ]
+          },
+          "label": "태국 공항 입국 기본 안내",
+          "facts": [
+            {
+              "label": "개인용품",
+              "value": "본인용 합계 THB 20,000"
+            },
+            {
+              "label": "주류",
+              "value": "종류·도수 구분 없이 전체 합계 1L 이하"
+            },
+            {
+              "label": "담배",
+              "value": "궐련 200개비 또는 담배류 250g. 혼합 총 250g, 궐련 200개비 이내."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·기기·액상. 가열담배 제품은 별도 확인."
+            }
+          ],
+          "notes": [
+            "술·담배 면세 적용 연령은 확인한 공식 안내에 명시되지 않았습니다. 미성년자 안내는 추가 확인하세요.",
+            "초과 술·담배는 세관 지정함 반납 안내가 있습니다. 세금만 내면 항상 반입된다고 안내하지 않습니다."
+          ]
+        }
+      ],
+      "notes": [
+        "상업용은 2만 바트 미만도 과세 대상입니다. 식품·금지·제한품은 일반 개인용품 면세안내와 별도입니다.",
+        "동행자·가족 합산, 반복입국 간격, 단일 고가품 세액은 추가 확인 대상입니다."
+      ],
+      "sources": [
+        {
+          "label": "태국 관세청 원문",
+          "url": "https://www.customs.go.th/list_strc_simple_neted.php?ini_content=individual_160503_03_160905_01&lang=en&left_menu=menu_individual_submenu_01_160421_01"
+        },
+        {
+          "label": "태국 관세청 원문",
+          "url": "https://www.customs.go.th/list_strc_simple_neted.php?ini_content=individual_160503_03_160905_01&lang=th&left_menu=menu_individual_submenu_01_160421_01&root_left_menu=menu_individual_submenu_01"
+        },
+        {
+          "label": "태국 관세청 FAQ 원문",
+          "url": "https://apps.customs.go.th/cont_strc_faq.php?current_id=142328324146505f47&ini_menu=menu_pbc&lang=en&left_menu=menu_pbc_03&top_menu=menu_homepage"
+        },
+        {
+          "label": "태국 관세청 브뤼셀 사무소 원문",
+          "url": "https://brussels.customs.go.th/data_files/d18e9419dbac9d72347ecd281d76550b.pdf"
+        },
+        {
+          "label": "태국 관세청 2025 연차보고서 원문",
+          "url": "https://www.customs.go.th/data_files/e8805f7710fe5246124b46cc868d3b98/files/basic-html/page230.html"
+        }
+      ],
+      "reviewStatus": "official_sources_checked_pending_release_review",
+      "effectiveDate": null,
+      "changeAnnouncement": null,
+      "verifiedAt": "2026-10-20"
+    },
+    {
+      "id": "US",
+      "name": "미국",
+      "scope": "미국 50개 주·워싱턴 DC·푸에르토리코. 괌·사이판 등은 이 안내에서 제외합니다.",
+      "checkedAt": "2026-10-20",
+      "effectiveLabel": "최초 시행일 미확인 · eCFR 반영 기준 2026-10-15/16",
+      "conditions": [
+        {
+          "id": "purpose",
+          "label": "여행·물품 구분",
+          "options": [
+            {
+              "id": "ordinary",
+              "label": "일반 여행 · 개인 사용/개인 선물"
+            },
+            {
+              "id": "special",
+              "label": "판매·대리구매·승무원·이주 등"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "residence",
+          "label": "거주 상태 (국적과 다름)",
+          "options": [
+            {
+              "id": "visitor",
+              "label": "미국 밖 거주자 방문"
+            },
+            {
+              "id": "resident",
+              "label": "미국 거주자 귀국"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "age",
+          "label": "나이",
+          "options": [
+            {
+              "id": "adult",
+              "label": "만 21세 이상"
+            },
+            {
+              "id": "young",
+              "label": "만 21세 미만"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "visitorEligibility",
+          "label": "방문객 선물 면세 조건",
+          "when": {
+            "residence": [
+              "visitor"
+            ]
+          },
+          "options": [
+            {
+              "id": "met",
+              "label": "72시간 이상 체류 예정 · 직전 6개월 미사용"
+            },
+            {
+              "id": "other",
+              "label": "충족하지 않음 · 예외 · 확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "residentEligibility",
+          "label": "귀국 거주자 기본 면세 조건",
+          "when": {
+            "residence": [
+              "resident"
+            ]
+          },
+          "options": [
+            {
+              "id": "met",
+              "label": "해외 48시간 이상 체류 · 직전 30일 미사용"
+            },
+            {
+              "id": "other",
+              "label": "충족하지 않음 · 예외 · 확인 필요"
+            }
+          ]
+        }
+      ],
+      "results": [
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "visitor"
+            ],
+            "age": [
+              "adult"
+            ],
+            "visitorEligibility": [
+              "met"
+            ]
+          },
+          "label": "미국 비거주 방문객",
+          "facts": [
+            {
+              "label": "선물한도",
+              "value": "개인 선물 USD 100. 술·궐련 제외."
+            },
+            {
+              "label": "개인휴대품",
+              "value": "미국 출발 전 해외에서 본인이 소유·점유한 적정 여행용 휴대품은 별도 기준입니다. 무제한 쇼핑 한도가 아닙니다."
+            },
+            {
+              "label": "주류",
+              "value": "본인 사용 전체 1L. 선물용 술에는 이 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "본인 사용 궐련 200개비 또는 시가 50개 또는 잎담배 2kg. 비례혼합 가능."
+            }
+          ],
+          "notes": [
+            "도착 주의 주류 규정이 더 엄격할 수 있습니다.",
+            "기본조건 미충족 시 별도 특별면세가 적용될 수 있으므로 면세 0으로 보지 않습니다. 단순 추가공제나 초과분 과세 계산을 하지 않습니다.",
+            "방문객 선물 한도에 거주자 가족합산 규칙을 적용하지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "visitor"
+            ],
+            "age": [
+              "young"
+            ],
+            "visitorEligibility": [
+              "met"
+            ]
+          },
+          "label": "미국 비거주 방문객",
+          "facts": [
+            {
+              "label": "선물한도",
+              "value": "개인 선물 USD 100. 술·궐련 제외."
+            },
+            {
+              "label": "개인휴대품",
+              "value": "미국 출발 전 해외에서 본인이 소유·점유한 적정 여행용 휴대품은 별도 기준입니다. 무제한 쇼핑 한도가 아닙니다."
+            },
+            {
+              "label": "주류",
+              "value": "21세 미만은 주류 반입 불가입니다. 선물도 포함합니다."
+            },
+            {
+              "label": "담배",
+              "value": "21세 미만에 담배 면세 가능으로 안내하지 않습니다. 세관 확인 필요."
+            }
+          ],
+          "notes": [
+            "도착 주의 주류 규정이 더 엄격할 수 있습니다.",
+            "기본조건 미충족 시 별도 특별면세가 적용될 수 있으므로 면세 0으로 보지 않습니다. 단순 추가공제나 초과분 과세 계산을 하지 않습니다.",
+            "방문객 선물 한도에 거주자 가족합산 규칙을 적용하지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "adult"
+            ],
+            "residentEligibility": [
+              "met"
+            ]
+          },
+          "label": "미국 거주자 일반 귀국",
+          "facts": [
+            {
+              "label": "물품 합계",
+              "value": "개인·가정용 물품과 선물 합계 USD 800. 허용 술·담배 가격도 포함."
+            },
+            {
+              "label": "개인휴대품",
+              "value": "여행 중 취득한 본인 동반물품 기준. 대리구매·판매용 제외."
+            },
+            {
+              "label": "주류",
+              "value": "전체 1L. 금액도 USD 800에 포함."
+            },
+            {
+              "label": "담배",
+              "value": "궐련 200개비 및 시가 100개. 금액도 USD 800에 포함."
+            }
+          ],
+          "notes": [
+            "도착 주의 주류 규정이 더 엄격할 수 있습니다.",
+            "기본조건 미충족 시 별도 특별면세가 적용될 수 있으므로 면세 0으로 보지 않습니다. 단순 추가공제나 초과분 과세 계산을 하지 않습니다.",
+            "가족 합산은 같은 가구·동반귀국·개별 자격 등 조건을 확인해야 합니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "young"
+            ],
+            "residentEligibility": [
+              "met"
+            ]
+          },
+          "label": "미국 거주자 일반 귀국",
+          "facts": [
+            {
+              "label": "물품 합계",
+              "value": "개인·가정용 물품과 선물 합계 USD 800. 허용 술·담배 가격도 포함."
+            },
+            {
+              "label": "개인휴대품",
+              "value": "여행 중 취득한 본인 동반물품 기준. 대리구매·판매용 제외."
+            },
+            {
+              "label": "주류",
+              "value": "21세 미만은 주류 반입 불가입니다. 선물도 포함합니다."
+            },
+            {
+              "label": "담배",
+              "value": "21세 미만에 담배 면세 가능으로 안내하지 않습니다. 세관 확인 필요."
+            }
+          ],
+          "notes": [
+            "도착 주의 주류 규정이 더 엄격할 수 있습니다.",
+            "기본조건 미충족 시 별도 특별면세가 적용될 수 있으므로 면세 0으로 보지 않습니다. 단순 추가공제나 초과분 과세 계산을 하지 않습니다.",
+            "가족 합산은 같은 가구·동반귀국·개별 자격 등 조건을 확인해야 합니다."
+          ]
+        }
+      ],
+      "notes": [
+        "거주자 귀국과 비거주 방문객을 국적만으로 판단하지 않습니다.",
+        "방문객은 72시간 이상 체류 예정·직전6개월 선물면세 미사용, 귀국 거주자는 해외48시간 이상·직전30일 면세 미사용이 기본입니다. 예외는 세관 확인 대상입니다.",
+        "미국 배송 수입의 소액면세와 여행자 동반 휴대품 면세는 별개입니다.",
+        "판매·대리구매·이주·특수지역·다른 조건은 원문 확인이 필요합니다."
+      ],
+      "sources": [
+        {
+          "label": "eCFR / Office of the Federal Register 원문",
+          "url": "https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-D/section-148.33"
+        },
+        {
+          "label": "eCFR / Office of the Federal Register 원문",
+          "url": "https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-E/section-148.42"
+        },
+        {
+          "label": "eCFR / Office of the Federal Register 원문",
+          "url": "https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-E/section-148.43"
+        },
+        {
+          "label": "eCFR / Office of the Federal Register 원문",
+          "url": "https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-E#p-148.44"
+        },
+        {
+          "label": "eCFR / Office of the Federal Register 원문",
+          "url": "https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-F#p-148.51"
+        },
+        {
+          "label": "U.S. Customs and Border Protection 원문",
+          "url": "https://www.help.cbp.gov/s/article/Article-1395?language=en_US"
+        },
+        {
+          "label": "U.S. Customs and Border Protection 원문",
+          "url": "https://www.help.cbp.gov/s/article/Article-1376?language=en_US"
+        },
+        {
+          "label": "eCFR / Office of the Federal Register 원문",
+          "url": "https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-D/section-148.34"
+        },
+        {
+          "label": "eCFR / Office of the Federal Register 원문",
+          "url": "https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-D/section-148.35"
+        },
+        {
+          "label": "eCFR / Office of the Federal Register 원문",
+          "url": "https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-D/section-148.36"
+        }
+      ],
+      "reviewStatus": "official_sources_checked_pending_release_review",
+      "effectiveDate": null,
+      "changeAnnouncement": null,
+      "verifiedAt": "2026-10-20"
+    },
+    {
+      "id": "TW",
+      "name": "대만",
+      "scope": "자가사용·가정용 일반 여행자 · 새 구매물품 기준. 기존 사용품은 별도입니다.",
+      "checkedAt": "2026-10-20",
+      "effectiveLabel": "일반금액 2024-06-26 · 주류 2025-01-25 · 현행 법령 개정 2026-02-01",
+      "conditions": [
+        {
+          "id": "purpose",
+          "label": "여행·물품 구분",
+          "options": [
+            {
+              "id": "ordinary",
+              "label": "일반 여행 · 개인 사용/개인 선물"
+            },
+            {
+              "id": "special",
+              "label": "판매·대리구매·승무원·이주 등"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "age",
+          "label": "나이",
+          "options": [
+            {
+              "id": "adult",
+              "label": "만 20세 이상"
+            },
+            {
+              "id": "young",
+              "label": "만 18–19세"
+            },
+            {
+              "id": "minor",
+              "label": "만 18세 미만"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "frequency",
+          "label": "빈번 출입국과 위반기록",
+          "options": [
+            {
+              "id": "normal",
+              "label": "두 조건이 함께 해당하지 않음"
+            },
+            {
+              "id": "special",
+              "label": "두 조건 모두 해당 · 확인 필요"
+            }
+          ]
+        }
+      ],
+      "results": [
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "age": [
+              "adult"
+            ],
+            "frequency": [
+              "normal"
+            ]
+          },
+          "label": "대만 일반 여행자 기준",
+          "facts": [
+            {
+              "label": "일반물품",
+              "value": "자가사용·가정용 합계 TWD 35,000. 술·담배·통제품 제외."
+            },
+            {
+              "label": "주류",
+              "value": "합계 1.5L. 병 수 아닌 총 용량 기준."
+            },
+            {
+              "label": "담배",
+              "value": "궐련 200개비 또는 시가 25개 또는 잎담배 1파운드."
+            },
+            {
+              "label": "반입 주의",
+              "value": "전자담배 반입 금지. 한국 등 해외 구매 가열담배에 200개비 한도를 적용하지 않습니다."
+            }
+          ],
+          "notes": [
+            "술은 18세, 담배는 20세로 연령 기준이 다릅니다.",
+            "가열담배는 대만 내 면세점 구매·승인 제품 제한이 있습니다.",
+            "주류 1.5L 면세와 신고 반입상한은 다릅니다. 중국 본토산 일부 주류는 별도 1L 제한을 확인하세요."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "age": [
+              "young"
+            ],
+            "frequency": [
+              "normal"
+            ]
+          },
+          "label": "대만 일반 여행자 기준",
+          "facts": [
+            {
+              "label": "일반물품",
+              "value": "자가사용·가정용 합계 TWD 35,000. 술·담배·통제품 제외."
+            },
+            {
+              "label": "주류",
+              "value": "합계 1.5L. 병 수 아닌 총 용량 기준."
+            },
+            {
+              "label": "담배",
+              "value": "20세 미만은 담배 면세 대상이 아닙니다."
+            },
+            {
+              "label": "반입 주의",
+              "value": "전자담배 반입 금지. 한국 등 해외 구매 가열담배에 200개비 한도를 적용하지 않습니다."
+            }
+          ],
+          "notes": [
+            "술은 18세, 담배는 20세로 연령 기준이 다릅니다.",
+            "가열담배는 대만 내 면세점 구매·승인 제품 제한이 있습니다.",
+            "주류 1.5L 면세와 신고 반입상한은 다릅니다. 중국 본토산 일부 주류는 별도 1L 제한을 확인하세요."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "age": [
+              "minor"
+            ],
+            "frequency": [
+              "normal"
+            ]
+          },
+          "label": "대만 일반 여행자 기준",
+          "facts": [
+            {
+              "label": "일반물품",
+              "value": "자가사용·가정용 합계 TWD 35,000. 술·담배·통제품 제외."
+            },
+            {
+              "label": "주류",
+              "value": "18세 미만은 주류 면세 대상이 아닙니다."
+            },
+            {
+              "label": "담배",
+              "value": "20세 미만은 담배 면세 대상이 아닙니다."
+            },
+            {
+              "label": "반입 주의",
+              "value": "전자담배 반입 금지. 한국 등 해외 구매 가열담배에 200개비 한도를 적용하지 않습니다."
+            }
+          ],
+          "notes": [
+            "술은 18세, 담배는 20세로 연령 기준이 다릅니다.",
+            "가열담배는 대만 내 면세점 구매·승인 제품 제한이 있습니다.",
+            "주류 1.5L 면세와 신고 반입상한은 다릅니다. 중국 본토산 일부 주류는 별도 1L 제한을 확인하세요."
+          ]
+        }
+      ],
+      "notes": [
+        "휴대품·별송품을 합산하며 기존 사용품은 별도 세관 인정 기준이 있습니다.",
+        "상업용·승무원·장기체류 특례는 기본 안내 범위 밖입니다."
+      ],
+      "sources": [
+        {
+          "label": "대만 전국 법규자료고·재정부 소관 법령 원문",
+          "url": "https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=G0350003"
+        },
+        {
+          "label": "대만 재정부 관무서 원문",
+          "url": "https://web.customs.gov.tw/en/singlehtml/1867?cntId=8a071deb438f4fa0b3a72f3f45ea138b"
+        },
+        {
+          "label": "대만 재정부 관무서 원문",
+          "url": "https://web.customs.gov.tw/singlehtml/2222?cntId=b8f47b6346924fc3a5a85b89a6d3434d"
+        },
+        {
+          "label": "대만 타이베이 세관 원문",
+          "url": "https://web.customs.gov.tw/taipei/singlehtml/3392?cntId=cus2_3392_3392_1344&zh-cn="
+        },
+        {
+          "label": "대만 타이베이 세관 원문",
+          "url": "https://web.customs.gov.tw/taipei/singlehtml/83?cntId=e864a2ab2aac44199bbf436a930b95e2"
+        },
+        {
+          "label": "대만 타이베이 세관 원문",
+          "url": "https://web.customs.gov.tw/etaipei/singlehtml/3396?cntId=5e14053a391049858903b4c6c8a2a65e"
+        }
+      ],
+      "reviewStatus": "official_sources_checked_pending_release_review",
+      "effectiveDate": null,
+      "changeAnnouncement": null,
+      "verifiedAt": "2026-10-20"
+    },
+    {
+      "id": "HK",
+      "name": "홍콩",
+      "scope": "홍콩에 실제 입국하는 여행자. 중국 본토와 별도 관할입니다.",
+      "checkedAt": "2026-10-20",
+      "effectiveLabel": "주류·담배 수량 면세 2010-08-01 시행",
+      "conditions": [
+        {
+          "id": "purpose",
+          "label": "여행·물품 구분",
+          "options": [
+            {
+              "id": "ordinary",
+              "label": "일반 여행 · 개인 사용/개인 선물"
+            },
+            {
+              "id": "special",
+              "label": "판매·대리구매·승무원·이주 등"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "age",
+          "label": "나이",
+          "options": [
+            {
+              "id": "adult",
+              "label": "만 18세 이상"
+            },
+            {
+              "id": "minor",
+              "label": "만 18세 미만"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "hkid",
+          "label": "홍콩 신분증·홍콩 밖 체류",
+          "options": [
+            {
+              "id": "notheld",
+              "label": "홍콩 신분증 미소지"
+            },
+            {
+              "id": "over24",
+              "label": "소지 · 홍콩 밖 24시간 이상"
+            },
+            {
+              "id": "under24",
+              "label": "소지 · 홍콩 밖 24시간 미만"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        }
+      ],
+      "results": [
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "age": [
+              "adult"
+            ],
+            "hkid": [
+              "notheld"
+            ]
+          },
+          "label": "홍콩 실제 입국 기준",
+          "facts": [
+            {
+              "label": "일반물품",
+              "value": "일반 수입 관세 없음. 모든 물품의 무제한 반입 허용은 아닙니다."
+            },
+            {
+              "label": "주류",
+              "value": "알코올 30% 초과 주류 1L, 본인 사용."
+            },
+            {
+              "label": "담배",
+              "value": "궐련 19개비 또는 시가 1개(여러 개면 합계25g 이내) 또는 기타 제조담배25g."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·가열담배와 관련 기기·액상 등. 개인용·소량도 입국 반입 금지."
+            }
+          ],
+          "notes": [
+            "홍콩 신분증 소지자는 주류 면세에 홍콩 밖 24시간 이상 체류 조건이 있습니다.",
+            "입국심사 없는 공항 환승은 별도 예외입니다. 입국 후 환승과 혼동하지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "age": [
+              "adult"
+            ],
+            "hkid": [
+              "over24"
+            ]
+          },
+          "label": "홍콩 실제 입국 기준",
+          "facts": [
+            {
+              "label": "일반물품",
+              "value": "일반 수입 관세 없음. 모든 물품의 무제한 반입 허용은 아닙니다."
+            },
+            {
+              "label": "주류",
+              "value": "알코올 30% 초과 주류 1L, 본인 사용."
+            },
+            {
+              "label": "담배",
+              "value": "궐련 19개비 또는 시가 1개(여러 개면 합계25g 이내) 또는 기타 제조담배25g."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·가열담배와 관련 기기·액상 등. 개인용·소량도 입국 반입 금지."
+            }
+          ],
+          "notes": [
+            "홍콩 신분증 소지자는 주류 면세에 홍콩 밖 24시간 이상 체류 조건이 있습니다.",
+            "입국심사 없는 공항 환승은 별도 예외입니다. 입국 후 환승과 혼동하지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "age": [
+              "adult"
+            ],
+            "hkid": [
+              "under24"
+            ]
+          },
+          "label": "홍콩 실제 입국 기준",
+          "facts": [
+            {
+              "label": "일반물품",
+              "value": "일반 수입 관세 없음. 모든 물품의 무제한 반입 허용은 아닙니다."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 연령·홍콩 밖 체류 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "궐련 19개비 또는 시가 1개(여러 개면 합계25g 이내) 또는 기타 제조담배25g."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·가열담배와 관련 기기·액상 등. 개인용·소량도 입국 반입 금지."
+            }
+          ],
+          "notes": [
+            "홍콩 신분증 소지자는 주류 면세에 홍콩 밖 24시간 이상 체류 조건이 있습니다.",
+            "입국심사 없는 공항 환승은 별도 예외입니다. 입국 후 환승과 혼동하지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "age": [
+              "minor"
+            ],
+            "hkid": [
+              "notheld"
+            ]
+          },
+          "label": "홍콩 실제 입국 기준",
+          "facts": [
+            {
+              "label": "일반물품",
+              "value": "일반 수입 관세 없음. 모든 물품의 무제한 반입 허용은 아닙니다."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 연령·홍콩 밖 체류 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "18세 미만은 담배 면세 대상이 아닙니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·가열담배와 관련 기기·액상 등. 개인용·소량도 입국 반입 금지."
+            }
+          ],
+          "notes": [
+            "홍콩 신분증 소지자는 주류 면세에 홍콩 밖 24시간 이상 체류 조건이 있습니다.",
+            "입국심사 없는 공항 환승은 별도 예외입니다. 입국 후 환승과 혼동하지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "age": [
+              "minor"
+            ],
+            "hkid": [
+              "over24"
+            ]
+          },
+          "label": "홍콩 실제 입국 기준",
+          "facts": [
+            {
+              "label": "일반물품",
+              "value": "일반 수입 관세 없음. 모든 물품의 무제한 반입 허용은 아닙니다."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 연령·홍콩 밖 체류 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "18세 미만은 담배 면세 대상이 아닙니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·가열담배와 관련 기기·액상 등. 개인용·소량도 입국 반입 금지."
+            }
+          ],
+          "notes": [
+            "홍콩 신분증 소지자는 주류 면세에 홍콩 밖 24시간 이상 체류 조건이 있습니다.",
+            "입국심사 없는 공항 환승은 별도 예외입니다. 입국 후 환승과 혼동하지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "age": [
+              "minor"
+            ],
+            "hkid": [
+              "under24"
+            ]
+          },
+          "label": "홍콩 실제 입국 기준",
+          "facts": [
+            {
+              "label": "일반물품",
+              "value": "일반 수입 관세 없음. 모든 물품의 무제한 반입 허용은 아닙니다."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 연령·홍콩 밖 체류 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "18세 미만은 담배 면세 대상이 아닙니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·가열담배와 관련 기기·액상 등. 개인용·소량도 입국 반입 금지."
+            }
+          ],
+          "notes": [
+            "홍콩 신분증 소지자는 주류 면세에 홍콩 밖 24시간 이상 체류 조건이 있습니다.",
+            "입국심사 없는 공항 환승은 별도 예외입니다. 입국 후 환승과 혼동하지 않습니다."
+          ]
+        }
+      ],
+      "notes": [
+        "주류·담배 등 별도 과세품과 금지·제한품을 일반 자유항 안내와 구분합니다.",
+        "본인 자가사용 수량 기준이며 상업용·국경 통과 운전자 특례는 제외합니다."
+      ],
+      "sources": [
+        {
+          "label": "홍콩 세관 원문",
+          "url": "https://www.customs.gov.hk/en/service-enforcement-information/passenger-clearance/duty-free-concessions/index.html"
+        },
+        {
+          "label": "홍콩 세관 원문",
+          "url": "https://www.customs.gov.hk/sc/service-enforcement-information/passenger-clearance/duty-free-concessions/index.html"
+        },
+        {
+          "label": "홍콩 세관 원문",
+          "url": "https://www.customs.gov.hk/en/service-enforcement-information/trade-facilitation/ASP/index.html"
+        },
+        {
+          "label": "홍콩정부 1823 원문",
+          "url": "https://www.1823.gov.hk/en/faq/can-i-bring-a-small-amount-of-alternative-smoking-products-e-g-e-cigarette-heatstick-and-herbal-cigarette-into-hong-kong"
+        }
+      ],
+      "reviewStatus": "official_sources_checked_pending_release_review",
+      "effectiveDate": null,
+      "changeAnnouncement": null,
+      "verifiedAt": "2026-10-20"
+    },
+    {
+      "id": "SG",
+      "name": "싱가포르",
+      "scope": "GST 수입면제와 주류 관세면세를 구분합니다. 개인소지품 재반입은 별도입니다.",
+      "checkedAt": "2026-10-20",
+      "effectiveLabel": "GST 금액 2019-02-19 · 주류 조합 2019-04-01 시행",
+      "conditions": [
+        {
+          "id": "purpose",
+          "label": "물품 용도",
+          "options": [
+            {
+              "id": "own",
+              "label": "일반 여행 · 본인 소비"
+            },
+            {
+              "id": "other",
+              "label": "선물·대리 운반·판매·승무원 등"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "age",
+          "label": "나이",
+          "options": [
+            {
+              "id": "adult",
+              "label": "만 18세 이상"
+            },
+            {
+              "id": "minor",
+              "label": "만 18세 미만"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "hours",
+          "label": "싱가포르 밖 체류",
+          "options": [
+            {
+              "id": "over48",
+              "label": "48시간 이상"
+            },
+            {
+              "id": "under48",
+              "label": "48시간 미만"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "passStatus",
+          "label": "싱가포르 패스 보유",
+          "options": [
+            {
+              "id": "ordinary",
+              "label": "아래 제외 패스에 해당하지 않음"
+            },
+            {
+              "id": "excluded",
+              "label": "취업·학생·부양가족·장기체류 패스"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "origin",
+          "label": "말레이시아 입국심사 여부",
+          "options": [
+            {
+              "id": "korea",
+              "label": "말레이시아 입국심사를 거치지 않음"
+            },
+            {
+              "id": "malaysia",
+              "label": "말레이시아 입국심사를 거침"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        }
+      ],
+      "results": [
+        {
+          "when": {
+            "purpose": [
+              "own"
+            ],
+            "age": [
+              "adult"
+            ],
+            "hours": [
+              "over48"
+            ],
+            "passStatus": [
+              "ordinary"
+            ],
+            "origin": [
+              "korea"
+            ]
+          },
+          "label": "싱가포르 본인 소비 기준",
+          "facts": [
+            {
+              "label": "GST 수입면제",
+              "value": "SGD 500 · 일반 관세한도가 아닌 GST 수입면제입니다."
+            },
+            {
+              "label": "주류",
+              "value": "증류주1L+와인1L / 증류주1L+맥주1L / 와인1L+맥주1L / 와인만2L / 맥주만2L 중 하나."
+            },
+            {
+              "label": "담배",
+              "value": "담배 면세 없음. 모든 담배는 세금 대상이며 표준포장·연령·반입조건을 따로 확인합니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·베이퍼 등 금지품은 세금을 내도 반입할 수 없습니다."
+            }
+          ],
+          "notes": [
+            "주류는 본인 소비만 해당하며 선물·다른 사람 대신 운반하는 용도는 제외합니다.",
+            "주류 조합을 모두 더하지 않습니다. 증류주만 2L는 허용 조합이 아닙니다.",
+            "담배는 21세 이상·표준포장 등 요건을 별도로 충족해야 합니다. 개인용 총400g을 면세량으로 보지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "own"
+            ],
+            "age": [
+              "adult"
+            ],
+            "hours": [
+              "over48"
+            ],
+            "passStatus": [
+              "ordinary"
+            ],
+            "origin": [
+              "malaysia"
+            ]
+          },
+          "label": "싱가포르 본인 소비 기준",
+          "facts": [
+            {
+              "label": "GST 수입면제",
+              "value": "SGD 500 · 일반 관세한도가 아닌 GST 수입면제입니다."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 연령·국외 체류·출발지 조건에서는 주류 면세가 없습니다."
+            },
+            {
+              "label": "담배",
+              "value": "담배 면세 없음. 모든 담배는 세금 대상이며 표준포장·연령·반입조건을 따로 확인합니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·베이퍼 등 금지품은 세금을 내도 반입할 수 없습니다."
+            }
+          ],
+          "notes": [
+            "주류는 본인 소비만 해당하며 선물·다른 사람 대신 운반하는 용도는 제외합니다.",
+            "주류 조합을 모두 더하지 않습니다. 증류주만 2L는 허용 조합이 아닙니다.",
+            "담배는 21세 이상·표준포장 등 요건을 별도로 충족해야 합니다. 개인용 총400g을 면세량으로 보지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "own"
+            ],
+            "age": [
+              "adult"
+            ],
+            "hours": [
+              "over48"
+            ],
+            "passStatus": [
+              "excluded"
+            ],
+            "origin": [
+              "korea"
+            ]
+          },
+          "label": "싱가포르 본인 소비 기준",
+          "facts": [
+            {
+              "label": "GST 수입면제",
+              "value": "신규 취득품 GST 수입면제 대상에서 제외됩니다."
+            },
+            {
+              "label": "주류",
+              "value": "증류주1L+와인1L / 증류주1L+맥주1L / 와인1L+맥주1L / 와인만2L / 맥주만2L 중 하나."
+            },
+            {
+              "label": "담배",
+              "value": "담배 면세 없음. 모든 담배는 세금 대상이며 표준포장·연령·반입조건을 따로 확인합니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·베이퍼 등 금지품은 세금을 내도 반입할 수 없습니다."
+            }
+          ],
+          "notes": [
+            "주류는 본인 소비만 해당하며 선물·다른 사람 대신 운반하는 용도는 제외합니다.",
+            "주류 조합을 모두 더하지 않습니다. 증류주만 2L는 허용 조합이 아닙니다.",
+            "담배는 21세 이상·표준포장 등 요건을 별도로 충족해야 합니다. 개인용 총400g을 면세량으로 보지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "own"
+            ],
+            "age": [
+              "adult"
+            ],
+            "hours": [
+              "over48"
+            ],
+            "passStatus": [
+              "excluded"
+            ],
+            "origin": [
+              "malaysia"
+            ]
+          },
+          "label": "싱가포르 본인 소비 기준",
+          "facts": [
+            {
+              "label": "GST 수입면제",
+              "value": "신규 취득품 GST 수입면제 대상에서 제외됩니다."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 연령·국외 체류·출발지 조건에서는 주류 면세가 없습니다."
+            },
+            {
+              "label": "담배",
+              "value": "담배 면세 없음. 모든 담배는 세금 대상이며 표준포장·연령·반입조건을 따로 확인합니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·베이퍼 등 금지품은 세금을 내도 반입할 수 없습니다."
+            }
+          ],
+          "notes": [
+            "주류는 본인 소비만 해당하며 선물·다른 사람 대신 운반하는 용도는 제외합니다.",
+            "주류 조합을 모두 더하지 않습니다. 증류주만 2L는 허용 조합이 아닙니다.",
+            "담배는 21세 이상·표준포장 등 요건을 별도로 충족해야 합니다. 개인용 총400g을 면세량으로 보지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "own"
+            ],
+            "age": [
+              "adult"
+            ],
+            "hours": [
+              "under48"
+            ],
+            "passStatus": [
+              "ordinary"
+            ],
+            "origin": [
+              "korea"
+            ]
+          },
+          "label": "싱가포르 본인 소비 기준",
+          "facts": [
+            {
+              "label": "GST 수입면제",
+              "value": "SGD 100 · 일반 관세한도가 아닌 GST 수입면제입니다."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 연령·국외 체류·출발지 조건에서는 주류 면세가 없습니다."
+            },
+            {
+              "label": "담배",
+              "value": "담배 면세 없음. 모든 담배는 세금 대상이며 표준포장·연령·반입조건을 따로 확인합니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·베이퍼 등 금지품은 세금을 내도 반입할 수 없습니다."
+            }
+          ],
+          "notes": [
+            "주류는 본인 소비만 해당하며 선물·다른 사람 대신 운반하는 용도는 제외합니다.",
+            "주류 조합을 모두 더하지 않습니다. 증류주만 2L는 허용 조합이 아닙니다.",
+            "담배는 21세 이상·표준포장 등 요건을 별도로 충족해야 합니다. 개인용 총400g을 면세량으로 보지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "own"
+            ],
+            "age": [
+              "adult"
+            ],
+            "hours": [
+              "under48"
+            ],
+            "passStatus": [
+              "ordinary"
+            ],
+            "origin": [
+              "malaysia"
+            ]
+          },
+          "label": "싱가포르 본인 소비 기준",
+          "facts": [
+            {
+              "label": "GST 수입면제",
+              "value": "SGD 100 · 일반 관세한도가 아닌 GST 수입면제입니다."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 연령·국외 체류·출발지 조건에서는 주류 면세가 없습니다."
+            },
+            {
+              "label": "담배",
+              "value": "담배 면세 없음. 모든 담배는 세금 대상이며 표준포장·연령·반입조건을 따로 확인합니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·베이퍼 등 금지품은 세금을 내도 반입할 수 없습니다."
+            }
+          ],
+          "notes": [
+            "주류는 본인 소비만 해당하며 선물·다른 사람 대신 운반하는 용도는 제외합니다.",
+            "주류 조합을 모두 더하지 않습니다. 증류주만 2L는 허용 조합이 아닙니다.",
+            "담배는 21세 이상·표준포장 등 요건을 별도로 충족해야 합니다. 개인용 총400g을 면세량으로 보지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "own"
+            ],
+            "age": [
+              "adult"
+            ],
+            "hours": [
+              "under48"
+            ],
+            "passStatus": [
+              "excluded"
+            ],
+            "origin": [
+              "korea"
+            ]
+          },
+          "label": "싱가포르 본인 소비 기준",
+          "facts": [
+            {
+              "label": "GST 수입면제",
+              "value": "신규 취득품 GST 수입면제 대상에서 제외됩니다."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 연령·국외 체류·출발지 조건에서는 주류 면세가 없습니다."
+            },
+            {
+              "label": "담배",
+              "value": "담배 면세 없음. 모든 담배는 세금 대상이며 표준포장·연령·반입조건을 따로 확인합니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·베이퍼 등 금지품은 세금을 내도 반입할 수 없습니다."
+            }
+          ],
+          "notes": [
+            "주류는 본인 소비만 해당하며 선물·다른 사람 대신 운반하는 용도는 제외합니다.",
+            "주류 조합을 모두 더하지 않습니다. 증류주만 2L는 허용 조합이 아닙니다.",
+            "담배는 21세 이상·표준포장 등 요건을 별도로 충족해야 합니다. 개인용 총400g을 면세량으로 보지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "own"
+            ],
+            "age": [
+              "adult"
+            ],
+            "hours": [
+              "under48"
+            ],
+            "passStatus": [
+              "excluded"
+            ],
+            "origin": [
+              "malaysia"
+            ]
+          },
+          "label": "싱가포르 본인 소비 기준",
+          "facts": [
+            {
+              "label": "GST 수입면제",
+              "value": "신규 취득품 GST 수입면제 대상에서 제외됩니다."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 연령·국외 체류·출발지 조건에서는 주류 면세가 없습니다."
+            },
+            {
+              "label": "담배",
+              "value": "담배 면세 없음. 모든 담배는 세금 대상이며 표준포장·연령·반입조건을 따로 확인합니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·베이퍼 등 금지품은 세금을 내도 반입할 수 없습니다."
+            }
+          ],
+          "notes": [
+            "주류는 본인 소비만 해당하며 선물·다른 사람 대신 운반하는 용도는 제외합니다.",
+            "주류 조합을 모두 더하지 않습니다. 증류주만 2L는 허용 조합이 아닙니다.",
+            "담배는 21세 이상·표준포장 등 요건을 별도로 충족해야 합니다. 개인용 총400g을 면세량으로 보지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "own"
+            ],
+            "age": [
+              "minor"
+            ],
+            "hours": [
+              "over48"
+            ],
+            "passStatus": [
+              "ordinary"
+            ],
+            "origin": [
+              "korea"
+            ]
+          },
+          "label": "싱가포르 본인 소비 기준",
+          "facts": [
+            {
+              "label": "GST 수입면제",
+              "value": "SGD 500 · 일반 관세한도가 아닌 GST 수입면제입니다."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 연령·국외 체류·출발지 조건에서는 주류 면세가 없습니다."
+            },
+            {
+              "label": "담배",
+              "value": "담배 면세 없음. 모든 담배는 세금 대상이며 표준포장·연령·반입조건을 따로 확인합니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·베이퍼 등 금지품은 세금을 내도 반입할 수 없습니다."
+            }
+          ],
+          "notes": [
+            "주류는 본인 소비만 해당하며 선물·다른 사람 대신 운반하는 용도는 제외합니다.",
+            "주류 조합을 모두 더하지 않습니다. 증류주만 2L는 허용 조합이 아닙니다.",
+            "담배는 21세 이상·표준포장 등 요건을 별도로 충족해야 합니다. 개인용 총400g을 면세량으로 보지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "own"
+            ],
+            "age": [
+              "minor"
+            ],
+            "hours": [
+              "over48"
+            ],
+            "passStatus": [
+              "ordinary"
+            ],
+            "origin": [
+              "malaysia"
+            ]
+          },
+          "label": "싱가포르 본인 소비 기준",
+          "facts": [
+            {
+              "label": "GST 수입면제",
+              "value": "SGD 500 · 일반 관세한도가 아닌 GST 수입면제입니다."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 연령·국외 체류·출발지 조건에서는 주류 면세가 없습니다."
+            },
+            {
+              "label": "담배",
+              "value": "담배 면세 없음. 모든 담배는 세금 대상이며 표준포장·연령·반입조건을 따로 확인합니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·베이퍼 등 금지품은 세금을 내도 반입할 수 없습니다."
+            }
+          ],
+          "notes": [
+            "주류는 본인 소비만 해당하며 선물·다른 사람 대신 운반하는 용도는 제외합니다.",
+            "주류 조합을 모두 더하지 않습니다. 증류주만 2L는 허용 조합이 아닙니다.",
+            "담배는 21세 이상·표준포장 등 요건을 별도로 충족해야 합니다. 개인용 총400g을 면세량으로 보지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "own"
+            ],
+            "age": [
+              "minor"
+            ],
+            "hours": [
+              "over48"
+            ],
+            "passStatus": [
+              "excluded"
+            ],
+            "origin": [
+              "korea"
+            ]
+          },
+          "label": "싱가포르 본인 소비 기준",
+          "facts": [
+            {
+              "label": "GST 수입면제",
+              "value": "신규 취득품 GST 수입면제 대상에서 제외됩니다."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 연령·국외 체류·출발지 조건에서는 주류 면세가 없습니다."
+            },
+            {
+              "label": "담배",
+              "value": "담배 면세 없음. 모든 담배는 세금 대상이며 표준포장·연령·반입조건을 따로 확인합니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·베이퍼 등 금지품은 세금을 내도 반입할 수 없습니다."
+            }
+          ],
+          "notes": [
+            "주류는 본인 소비만 해당하며 선물·다른 사람 대신 운반하는 용도는 제외합니다.",
+            "주류 조합을 모두 더하지 않습니다. 증류주만 2L는 허용 조합이 아닙니다.",
+            "담배는 21세 이상·표준포장 등 요건을 별도로 충족해야 합니다. 개인용 총400g을 면세량으로 보지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "own"
+            ],
+            "age": [
+              "minor"
+            ],
+            "hours": [
+              "over48"
+            ],
+            "passStatus": [
+              "excluded"
+            ],
+            "origin": [
+              "malaysia"
+            ]
+          },
+          "label": "싱가포르 본인 소비 기준",
+          "facts": [
+            {
+              "label": "GST 수입면제",
+              "value": "신규 취득품 GST 수입면제 대상에서 제외됩니다."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 연령·국외 체류·출발지 조건에서는 주류 면세가 없습니다."
+            },
+            {
+              "label": "담배",
+              "value": "담배 면세 없음. 모든 담배는 세금 대상이며 표준포장·연령·반입조건을 따로 확인합니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·베이퍼 등 금지품은 세금을 내도 반입할 수 없습니다."
+            }
+          ],
+          "notes": [
+            "주류는 본인 소비만 해당하며 선물·다른 사람 대신 운반하는 용도는 제외합니다.",
+            "주류 조합을 모두 더하지 않습니다. 증류주만 2L는 허용 조합이 아닙니다.",
+            "담배는 21세 이상·표준포장 등 요건을 별도로 충족해야 합니다. 개인용 총400g을 면세량으로 보지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "own"
+            ],
+            "age": [
+              "minor"
+            ],
+            "hours": [
+              "under48"
+            ],
+            "passStatus": [
+              "ordinary"
+            ],
+            "origin": [
+              "korea"
+            ]
+          },
+          "label": "싱가포르 본인 소비 기준",
+          "facts": [
+            {
+              "label": "GST 수입면제",
+              "value": "SGD 100 · 일반 관세한도가 아닌 GST 수입면제입니다."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 연령·국외 체류·출발지 조건에서는 주류 면세가 없습니다."
+            },
+            {
+              "label": "담배",
+              "value": "담배 면세 없음. 모든 담배는 세금 대상이며 표준포장·연령·반입조건을 따로 확인합니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·베이퍼 등 금지품은 세금을 내도 반입할 수 없습니다."
+            }
+          ],
+          "notes": [
+            "주류는 본인 소비만 해당하며 선물·다른 사람 대신 운반하는 용도는 제외합니다.",
+            "주류 조합을 모두 더하지 않습니다. 증류주만 2L는 허용 조합이 아닙니다.",
+            "담배는 21세 이상·표준포장 등 요건을 별도로 충족해야 합니다. 개인용 총400g을 면세량으로 보지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "own"
+            ],
+            "age": [
+              "minor"
+            ],
+            "hours": [
+              "under48"
+            ],
+            "passStatus": [
+              "ordinary"
+            ],
+            "origin": [
+              "malaysia"
+            ]
+          },
+          "label": "싱가포르 본인 소비 기준",
+          "facts": [
+            {
+              "label": "GST 수입면제",
+              "value": "SGD 100 · 일반 관세한도가 아닌 GST 수입면제입니다."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 연령·국외 체류·출발지 조건에서는 주류 면세가 없습니다."
+            },
+            {
+              "label": "담배",
+              "value": "담배 면세 없음. 모든 담배는 세금 대상이며 표준포장·연령·반입조건을 따로 확인합니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·베이퍼 등 금지품은 세금을 내도 반입할 수 없습니다."
+            }
+          ],
+          "notes": [
+            "주류는 본인 소비만 해당하며 선물·다른 사람 대신 운반하는 용도는 제외합니다.",
+            "주류 조합을 모두 더하지 않습니다. 증류주만 2L는 허용 조합이 아닙니다.",
+            "담배는 21세 이상·표준포장 등 요건을 별도로 충족해야 합니다. 개인용 총400g을 면세량으로 보지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "own"
+            ],
+            "age": [
+              "minor"
+            ],
+            "hours": [
+              "under48"
+            ],
+            "passStatus": [
+              "excluded"
+            ],
+            "origin": [
+              "korea"
+            ]
+          },
+          "label": "싱가포르 본인 소비 기준",
+          "facts": [
+            {
+              "label": "GST 수입면제",
+              "value": "신규 취득품 GST 수입면제 대상에서 제외됩니다."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 연령·국외 체류·출발지 조건에서는 주류 면세가 없습니다."
+            },
+            {
+              "label": "담배",
+              "value": "담배 면세 없음. 모든 담배는 세금 대상이며 표준포장·연령·반입조건을 따로 확인합니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·베이퍼 등 금지품은 세금을 내도 반입할 수 없습니다."
+            }
+          ],
+          "notes": [
+            "주류는 본인 소비만 해당하며 선물·다른 사람 대신 운반하는 용도는 제외합니다.",
+            "주류 조합을 모두 더하지 않습니다. 증류주만 2L는 허용 조합이 아닙니다.",
+            "담배는 21세 이상·표준포장 등 요건을 별도로 충족해야 합니다. 개인용 총400g을 면세량으로 보지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "own"
+            ],
+            "age": [
+              "minor"
+            ],
+            "hours": [
+              "under48"
+            ],
+            "passStatus": [
+              "excluded"
+            ],
+            "origin": [
+              "malaysia"
+            ]
+          },
+          "label": "싱가포르 본인 소비 기준",
+          "facts": [
+            {
+              "label": "GST 수입면제",
+              "value": "신규 취득품 GST 수입면제 대상에서 제외됩니다."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 연령·국외 체류·출발지 조건에서는 주류 면세가 없습니다."
+            },
+            {
+              "label": "담배",
+              "value": "담배 면세 없음. 모든 담배는 세금 대상이며 표준포장·연령·반입조건을 따로 확인합니다."
+            },
+            {
+              "label": "반입금지",
+              "value": "전자담배·베이퍼 등 금지품은 세금을 내도 반입할 수 없습니다."
+            }
+          ],
+          "notes": [
+            "주류는 본인 소비만 해당하며 선물·다른 사람 대신 운반하는 용도는 제외합니다.",
+            "주류 조합을 모두 더하지 않습니다. 증류주만 2L는 허용 조합이 아닙니다.",
+            "담배는 21세 이상·표준포장 등 요건을 별도로 충족해야 합니다. 개인용 총400g을 면세량으로 보지 않습니다."
+          ]
+        }
+      ],
+      "notes": [
+        "신규 취득품에는 해외에서 산 뒤 사용하거나 가격표를 뗀 물건도 포함됩니다.",
+        "기존 사용 개인소지품은 소유시점·재반출 등 별도 GST 면제 조건이 있습니다.",
+        "면세점에서 구입한 술도 총량에 포함하며 말레이시아발 주류 면세는 없습니다."
+      ],
+      "sources": [
+        {
+          "label": "Singapore Customs 원문",
+          "url": "https://www.customs.gov.sg/at-customs/arriving-in-singapore/duty-free-concession-gst-relief/"
+        },
+        {
+          "label": "IRAS·Singapore Customs 원문",
+          "url": "https://www.iras.gov.sg/news-events/newsroom/revision-in-gst-import-relief-for-travellers-with-effect-from-19-february-2019"
+        },
+        {
+          "label": "Singapore Customs 원문",
+          "url": "https://www.customs.gov.sg/news-and-media/publications/2019-01-01-Issue52.pdf"
+        },
+        {
+          "label": "싱가포르 보건과학청 HSA 원문",
+          "url": "https://www.hsa.gov.sg/tobacco-regulation/overview/"
+        },
+        {
+          "label": "Singapore Customs 원문",
+          "url": "https://www.customs.gov.sg/doing-business/import-operations/import-procedures/controlled-and-prohibited-goods-for-imports/"
+        }
+      ],
+      "reviewStatus": "official_sources_checked_pending_release_review",
+      "effectiveDate": null,
+      "changeAnnouncement": null,
+      "verifiedAt": "2026-10-20"
+    },
+    {
+      "id": "AU",
+      "name": "호주",
+      "scope": "일반 항공여행자의 본인 동반 휴대품. 외부 영토·별송품·승무원 특례는 제외합니다.",
+      "checkedAt": "2026-10-20",
+      "effectiveLabel": "현행 근거문서 2018-02-01 적용 · 담배25개비 기준 2017-07-01 시행",
+      "conditions": [
+        {
+          "id": "purpose",
+          "label": "여행·물품 구분",
+          "options": [
+            {
+              "id": "ordinary",
+              "label": "일반 여행 · 개인 사용/개인 선물"
+            },
+            {
+              "id": "special",
+              "label": "판매·대리구매·승무원·이주 등"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "residence",
+          "label": "거주 상태 (국적과 다름)",
+          "options": [
+            {
+              "id": "visitor",
+              "label": "해외 거주 방문객"
+            },
+            {
+              "id": "resident",
+              "label": "도착국 거주자 귀국"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "age",
+          "label": "나이",
+          "options": [
+            {
+              "id": "adult",
+              "label": "만 18세 이상"
+            },
+            {
+              "id": "minor",
+              "label": "만 18세 미만"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        }
+      ],
+      "results": [
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "age": [
+              "adult"
+            ],
+            "residence": [
+              "visitor"
+            ]
+          },
+          "label": "호주 일반 여행자 기준",
+          "facts": [
+            {
+              "label": "일반물품",
+              "value": "합계 AUD 900 · 술·담배는 별도 품목군."
+            },
+            {
+              "label": "주류",
+              "value": "종류 합계 2.25L"
+            },
+            {
+              "label": "담배",
+              "value": "미개봉 25개비 이하 1갑 또는 기타담배25g + 개봉1갑(25개비 이하)."
+            },
+            {
+              "label": "개인용품",
+              "value": "출국할 때 다시 반출할 본인 소유·사용 개인물품은 별도 기준입니다."
+            }
+          ],
+          "notes": [
+            "한도를 넘으면 초과분만이 아니라 해당 품목군 전체가 과세 대상입니다.",
+            "가족 합산은 관계·같은 편 도착·함께 세관 통과 조건을 확인합니다. 미성년자 술·담배 한도를 성인에게 더하지 않습니다.",
+            "전자담배는 일반 담배면세와 별개인 반입 제한품입니다. 치료 목적 여행자 예외만 별도 확인하세요."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "age": [
+              "adult"
+            ],
+            "residence": [
+              "resident"
+            ]
+          },
+          "label": "호주 일반 여행자 기준",
+          "facts": [
+            {
+              "label": "일반물품",
+              "value": "합계 AUD 900 · 술·담배는 별도 품목군."
+            },
+            {
+              "label": "주류",
+              "value": "종류 합계 2.25L"
+            },
+            {
+              "label": "담배",
+              "value": "미개봉 25개비 이하 1갑 또는 기타담배25g + 개봉1갑(25개비 이하)."
+            },
+            {
+              "label": "개인용품",
+              "value": "재반입 개인물품은 별도지만 호주 면세구매·TRS 환급품은 자동 제외되지 않습니다. 환급품 재반입은 신고하세요."
+            }
+          ],
+          "notes": [
+            "한도를 넘으면 초과분만이 아니라 해당 품목군 전체가 과세 대상입니다.",
+            "가족 합산은 관계·같은 편 도착·함께 세관 통과 조건을 확인합니다. 미성년자 술·담배 한도를 성인에게 더하지 않습니다.",
+            "전자담배는 일반 담배면세와 별개인 반입 제한품입니다. 치료 목적 여행자 예외만 별도 확인하세요."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "age": [
+              "minor"
+            ],
+            "residence": [
+              "visitor"
+            ]
+          },
+          "label": "호주 일반 여행자 기준",
+          "facts": [
+            {
+              "label": "일반물품",
+              "value": "합계 AUD 450 · 술·담배는 별도 품목군."
+            },
+            {
+              "label": "주류",
+              "value": "18세 미만은 주류 면세가 없습니다."
+            },
+            {
+              "label": "담배",
+              "value": "18세 미만은 담배 반입이 허용되지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "출국할 때 다시 반출할 본인 소유·사용 개인물품은 별도 기준입니다."
+            }
+          ],
+          "notes": [
+            "한도를 넘으면 초과분만이 아니라 해당 품목군 전체가 과세 대상입니다.",
+            "가족 합산은 관계·같은 편 도착·함께 세관 통과 조건을 확인합니다. 미성년자 술·담배 한도를 성인에게 더하지 않습니다.",
+            "전자담배는 일반 담배면세와 별개인 반입 제한품입니다. 치료 목적 여행자 예외만 별도 확인하세요."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "age": [
+              "minor"
+            ],
+            "residence": [
+              "resident"
+            ]
+          },
+          "label": "호주 일반 여행자 기준",
+          "facts": [
+            {
+              "label": "일반물품",
+              "value": "합계 AUD 450 · 술·담배는 별도 품목군."
+            },
+            {
+              "label": "주류",
+              "value": "18세 미만은 주류 면세가 없습니다."
+            },
+            {
+              "label": "담배",
+              "value": "18세 미만은 담배 반입이 허용되지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "재반입 개인물품은 별도지만 호주 면세구매·TRS 환급품은 자동 제외되지 않습니다. 환급품 재반입은 신고하세요."
+            }
+          ],
+          "notes": [
+            "한도를 넘으면 초과분만이 아니라 해당 품목군 전체가 과세 대상입니다.",
+            "가족 합산은 관계·같은 편 도착·함께 세관 통과 조건을 확인합니다. 미성년자 술·담배 한도를 성인에게 더하지 않습니다.",
+            "전자담배는 일반 담배면세와 별개인 반입 제한품입니다. 치료 목적 여행자 예외만 별도 확인하세요."
+          ]
+        }
+      ],
+      "notes": [
+        "해외 취득품과 출입국 면세점 구매품을 포함합니다.",
+        "개인 의류·위생용품 및 해외에서 12개월 이상 사용한 물품도 별도 조건을 확인하며 무조건 면세로 판단하지 않습니다."
+      ],
+      "sources": [
+        {
+          "label": "Australian Border Force 원문",
+          "url": "https://www.abf.gov.au/entering-and-leaving-australia/duty-free"
+        },
+        {
+          "label": "Australian Border Force 원문",
+          "url": "https://www.abf.gov.au/importing-exporting-and-manufacturing/prohibited-goods/tobacco"
+        },
+        {
+          "label": "Australian Government Federal Register of Legislation; ABF current tariff 원문",
+          "url": "https://www.legislation.gov.au/F2018L00072/asmade/2018-01-31/text/original/epub/OEBPS/document_1/document_1.html"
+        },
+        {
+          "label": "Therapeutic Goods Administration 원문",
+          "url": "https://www.tga.gov.au/products/unapproved-therapeutic-goods/therapeutic-vaping-goods/vaping-hub/vapes-information-individuals-and-patients"
+        }
+      ],
+      "reviewStatus": "official_sources_checked_pending_release_review",
+      "effectiveDate": null,
+      "changeAnnouncement": null,
+      "verifiedAt": "2026-10-20"
+    },
+    {
+      "id": "CA",
+      "name": "캐나다",
+      "scope": "일반 여행자의 동반 휴대품. 관광객과 거주자 귀국을 구분합니다.",
+      "checkedAt": "2026-10-20",
+      "effectiveLabel": "귀국 금액한도 2012-06-01 · 베이핑 관련 관세표 개정 2022-10-01",
+      "conditions": [
+        {
+          "id": "purpose",
+          "label": "여행·물품 구분",
+          "options": [
+            {
+              "id": "ordinary",
+              "label": "일반 여행 · 개인 사용/개인 선물"
+            },
+            {
+              "id": "special",
+              "label": "판매·대리구매·승무원·이주 등"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "residence",
+          "label": "거주 상태 (국적과 다름)",
+          "options": [
+            {
+              "id": "visitor",
+              "label": "해외 거주 방문객"
+            },
+            {
+              "id": "resident",
+              "label": "도착국 거주자 귀국"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "age",
+          "label": "나이",
+          "options": [
+            {
+              "id": "adult",
+              "label": "만 19세 이상"
+            },
+            {
+              "id": "age18",
+              "label": "만 18세"
+            },
+            {
+              "id": "minor",
+              "label": "만 18세 미만"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "province",
+          "label": "캐나다 입국 주·준주",
+          "options": [
+            {
+              "id": "age18",
+              "label": "앨버타·매니토바·퀘벡"
+            },
+            {
+              "id": "age19",
+              "label": "그 밖의 주·준주"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "hours",
+          "label": "해외 체류기간",
+          "options": [
+            {
+              "id": "under24",
+              "label": "24시간 미만"
+            },
+            {
+              "id": "24to48",
+              "label": "24시간 이상 48시간 미만"
+            },
+            {
+              "id": "48plus",
+              "label": "48시간 이상 7일 미만"
+            },
+            {
+              "id": "7days",
+              "label": "7일 이상"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ],
+          "when": {
+            "residence": [
+              "resident"
+            ]
+          }
+        }
+      ],
+      "results": [
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "visitor"
+            ],
+            "age": [
+              "adult"
+            ],
+            "province": [
+              "age18"
+            ]
+          },
+          "label": "캐나다 방문객 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "선물 1개당 CAD60. 세트는 한 선물이며 술·담배·베이핑은 제외."
+            },
+            {
+              "label": "주류",
+              "value": "와인1.5L 또는 기타 술 합계1.14L 또는 맥주8.5L 중 하나. 주별 반입 조건 별도."
+            },
+            {
+              "label": "담배",
+              "value": "궐련200개비 및 시가50개 및 제조담배200g 및 담배스틱200개. 인세표시·세금 확인 필요."
+            },
+            {
+              "label": "개인용품",
+              "value": "여행 후 반출할 본인용 물품은 신고 후 조건부 임시면세. 무제한 새 구매품 면세가 아닙니다."
+            }
+          ],
+          "notes": [
+            "방문객의 술·담배는 방문 목적·기간에 따라 허용 수량이 줄어들 수 있습니다. 수량만으로 무조건 면세를 보장하지 않습니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "visitor"
+            ],
+            "age": [
+              "adult"
+            ],
+            "province": [
+              "age19"
+            ]
+          },
+          "label": "캐나다 방문객 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "선물 1개당 CAD60. 세트는 한 선물이며 술·담배·베이핑은 제외."
+            },
+            {
+              "label": "주류",
+              "value": "와인1.5L 또는 기타 술 합계1.14L 또는 맥주8.5L 중 하나. 주별 반입 조건 별도."
+            },
+            {
+              "label": "담배",
+              "value": "궐련200개비 및 시가50개 및 제조담배200g 및 담배스틱200개. 인세표시·세금 확인 필요."
+            },
+            {
+              "label": "개인용품",
+              "value": "여행 후 반출할 본인용 물품은 신고 후 조건부 임시면세. 무제한 새 구매품 면세가 아닙니다."
+            }
+          ],
+          "notes": [
+            "방문객의 술·담배는 방문 목적·기간에 따라 허용 수량이 줄어들 수 있습니다. 수량만으로 무조건 면세를 보장하지 않습니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "visitor"
+            ],
+            "age": [
+              "age18"
+            ],
+            "province": [
+              "age18"
+            ]
+          },
+          "label": "캐나다 방문객 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "선물 1개당 CAD60. 세트는 한 선물이며 술·담배·베이핑은 제외."
+            },
+            {
+              "label": "주류",
+              "value": "와인1.5L 또는 기타 술 합계1.14L 또는 맥주8.5L 중 하나. 주별 반입 조건 별도."
+            },
+            {
+              "label": "담배",
+              "value": "궐련200개비 및 시가50개 및 제조담배200g 및 담배스틱200개. 인세표시·세금 확인 필요."
+            },
+            {
+              "label": "개인용품",
+              "value": "여행 후 반출할 본인용 물품은 신고 후 조건부 임시면세. 무제한 새 구매품 면세가 아닙니다."
+            }
+          ],
+          "notes": [
+            "방문객의 술·담배는 방문 목적·기간에 따라 허용 수량이 줄어들 수 있습니다. 수량만으로 무조건 면세를 보장하지 않습니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "visitor"
+            ],
+            "age": [
+              "age18"
+            ],
+            "province": [
+              "age19"
+            ]
+          },
+          "label": "캐나다 방문객 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "선물 1개당 CAD60. 세트는 한 선물이며 술·담배·베이핑은 제외."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "궐련200개비 및 시가50개 및 제조담배200g 및 담배스틱200개. 인세표시·세금 확인 필요."
+            },
+            {
+              "label": "개인용품",
+              "value": "여행 후 반출할 본인용 물품은 신고 후 조건부 임시면세. 무제한 새 구매품 면세가 아닙니다."
+            }
+          ],
+          "notes": [
+            "방문객의 술·담배는 방문 목적·기간에 따라 허용 수량이 줄어들 수 있습니다. 수량만으로 무조건 면세를 보장하지 않습니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "visitor"
+            ],
+            "age": [
+              "minor"
+            ],
+            "province": [
+              "age18"
+            ]
+          },
+          "label": "캐나다 방문객 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "선물 1개당 CAD60. 세트는 한 선물이며 술·담배·베이핑은 제외."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "선택한 연령·귀국 체류시간 조건에서는 기본 담배 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "여행 후 반출할 본인용 물품은 신고 후 조건부 임시면세. 무제한 새 구매품 면세가 아닙니다."
+            }
+          ],
+          "notes": [
+            "방문객의 술·담배는 방문 목적·기간에 따라 허용 수량이 줄어들 수 있습니다. 수량만으로 무조건 면세를 보장하지 않습니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "visitor"
+            ],
+            "age": [
+              "minor"
+            ],
+            "province": [
+              "age19"
+            ]
+          },
+          "label": "캐나다 방문객 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "선물 1개당 CAD60. 세트는 한 선물이며 술·담배·베이핑은 제외."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "선택한 연령·귀국 체류시간 조건에서는 기본 담배 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "여행 후 반출할 본인용 물품은 신고 후 조건부 임시면세. 무제한 새 구매품 면세가 아닙니다."
+            }
+          ],
+          "notes": [
+            "방문객의 술·담배는 방문 목적·기간에 따라 허용 수량이 줄어들 수 있습니다. 수량만으로 무조건 면세를 보장하지 않습니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "adult"
+            ],
+            "province": [
+              "age18"
+            ],
+            "hours": [
+              "under24"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "24시간 미만 귀국에는 일반 개인면세 없음."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "선택한 연령·귀국 체류시간 조건에서는 기본 담배 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "adult"
+            ],
+            "province": [
+              "age18"
+            ],
+            "hours": [
+              "24to48"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "합계 CAD200. 총액을 넘으면 이 공제 없이 전액 과세."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "선택한 연령·귀국 체류시간 조건에서는 기본 담배 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "adult"
+            ],
+            "province": [
+              "age18"
+            ],
+            "hours": [
+              "48plus"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "합계 CAD800. 초과분 과세. 허용 술·담배 등 가격 포함."
+            },
+            {
+              "label": "주류",
+              "value": "와인1.5L 또는 기타 술 합계1.14L 또는 맥주8.5L 중 하나. 주별 반입 조건 별도."
+            },
+            {
+              "label": "담배",
+              "value": "궐련200개비 및 시가50개 및 제조담배200g 및 담배스틱200개. 인세표시·세금 확인 필요."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "adult"
+            ],
+            "province": [
+              "age18"
+            ],
+            "hours": [
+              "7days"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "합계 CAD800. 초과분 과세. 7일도 한도 증액 없음."
+            },
+            {
+              "label": "주류",
+              "value": "와인1.5L 또는 기타 술 합계1.14L 또는 맥주8.5L 중 하나. 주별 반입 조건 별도."
+            },
+            {
+              "label": "담배",
+              "value": "궐련200개비 및 시가50개 및 제조담배200g 및 담배스틱200개. 인세표시·세금 확인 필요."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "adult"
+            ],
+            "province": [
+              "age19"
+            ],
+            "hours": [
+              "under24"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "24시간 미만 귀국에는 일반 개인면세 없음."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "선택한 연령·귀국 체류시간 조건에서는 기본 담배 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "adult"
+            ],
+            "province": [
+              "age19"
+            ],
+            "hours": [
+              "24to48"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "합계 CAD200. 총액을 넘으면 이 공제 없이 전액 과세."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "선택한 연령·귀국 체류시간 조건에서는 기본 담배 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "adult"
+            ],
+            "province": [
+              "age19"
+            ],
+            "hours": [
+              "48plus"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "합계 CAD800. 초과분 과세. 허용 술·담배 등 가격 포함."
+            },
+            {
+              "label": "주류",
+              "value": "와인1.5L 또는 기타 술 합계1.14L 또는 맥주8.5L 중 하나. 주별 반입 조건 별도."
+            },
+            {
+              "label": "담배",
+              "value": "궐련200개비 및 시가50개 및 제조담배200g 및 담배스틱200개. 인세표시·세금 확인 필요."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "adult"
+            ],
+            "province": [
+              "age19"
+            ],
+            "hours": [
+              "7days"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "합계 CAD800. 초과분 과세. 7일도 한도 증액 없음."
+            },
+            {
+              "label": "주류",
+              "value": "와인1.5L 또는 기타 술 합계1.14L 또는 맥주8.5L 중 하나. 주별 반입 조건 별도."
+            },
+            {
+              "label": "담배",
+              "value": "궐련200개비 및 시가50개 및 제조담배200g 및 담배스틱200개. 인세표시·세금 확인 필요."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "age18"
+            ],
+            "province": [
+              "age18"
+            ],
+            "hours": [
+              "under24"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "24시간 미만 귀국에는 일반 개인면세 없음."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "선택한 연령·귀국 체류시간 조건에서는 기본 담배 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "age18"
+            ],
+            "province": [
+              "age18"
+            ],
+            "hours": [
+              "24to48"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "합계 CAD200. 총액을 넘으면 이 공제 없이 전액 과세."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "선택한 연령·귀국 체류시간 조건에서는 기본 담배 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "age18"
+            ],
+            "province": [
+              "age18"
+            ],
+            "hours": [
+              "48plus"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "합계 CAD800. 초과분 과세. 허용 술·담배 등 가격 포함."
+            },
+            {
+              "label": "주류",
+              "value": "와인1.5L 또는 기타 술 합계1.14L 또는 맥주8.5L 중 하나. 주별 반입 조건 별도."
+            },
+            {
+              "label": "담배",
+              "value": "궐련200개비 및 시가50개 및 제조담배200g 및 담배스틱200개. 인세표시·세금 확인 필요."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "age18"
+            ],
+            "province": [
+              "age18"
+            ],
+            "hours": [
+              "7days"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "합계 CAD800. 초과분 과세. 7일도 한도 증액 없음."
+            },
+            {
+              "label": "주류",
+              "value": "와인1.5L 또는 기타 술 합계1.14L 또는 맥주8.5L 중 하나. 주별 반입 조건 별도."
+            },
+            {
+              "label": "담배",
+              "value": "궐련200개비 및 시가50개 및 제조담배200g 및 담배스틱200개. 인세표시·세금 확인 필요."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "age18"
+            ],
+            "province": [
+              "age19"
+            ],
+            "hours": [
+              "under24"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "24시간 미만 귀국에는 일반 개인면세 없음."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "선택한 연령·귀국 체류시간 조건에서는 기본 담배 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "age18"
+            ],
+            "province": [
+              "age19"
+            ],
+            "hours": [
+              "24to48"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "합계 CAD200. 총액을 넘으면 이 공제 없이 전액 과세."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "선택한 연령·귀국 체류시간 조건에서는 기본 담배 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "age18"
+            ],
+            "province": [
+              "age19"
+            ],
+            "hours": [
+              "48plus"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "합계 CAD800. 초과분 과세. 허용 술·담배 등 가격 포함."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "궐련200개비 및 시가50개 및 제조담배200g 및 담배스틱200개. 인세표시·세금 확인 필요."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "age18"
+            ],
+            "province": [
+              "age19"
+            ],
+            "hours": [
+              "7days"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "합계 CAD800. 초과분 과세. 7일도 한도 증액 없음."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "궐련200개비 및 시가50개 및 제조담배200g 및 담배스틱200개. 인세표시·세금 확인 필요."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "minor"
+            ],
+            "province": [
+              "age18"
+            ],
+            "hours": [
+              "under24"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "24시간 미만 귀국에는 일반 개인면세 없음."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "선택한 연령·귀국 체류시간 조건에서는 기본 담배 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "minor"
+            ],
+            "province": [
+              "age18"
+            ],
+            "hours": [
+              "24to48"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "합계 CAD200. 총액을 넘으면 이 공제 없이 전액 과세."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "선택한 연령·귀국 체류시간 조건에서는 기본 담배 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "minor"
+            ],
+            "province": [
+              "age18"
+            ],
+            "hours": [
+              "48plus"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "합계 CAD800. 초과분 과세. 허용 술·담배 등 가격 포함."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "선택한 연령·귀국 체류시간 조건에서는 기본 담배 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "minor"
+            ],
+            "province": [
+              "age18"
+            ],
+            "hours": [
+              "7days"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "합계 CAD800. 초과분 과세. 7일도 한도 증액 없음."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "선택한 연령·귀국 체류시간 조건에서는 기본 담배 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "minor"
+            ],
+            "province": [
+              "age19"
+            ],
+            "hours": [
+              "under24"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "24시간 미만 귀국에는 일반 개인면세 없음."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "선택한 연령·귀국 체류시간 조건에서는 기본 담배 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "minor"
+            ],
+            "province": [
+              "age19"
+            ],
+            "hours": [
+              "24to48"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "합계 CAD200. 총액을 넘으면 이 공제 없이 전액 과세."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "선택한 연령·귀국 체류시간 조건에서는 기본 담배 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "minor"
+            ],
+            "province": [
+              "age19"
+            ],
+            "hours": [
+              "48plus"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "합계 CAD800. 초과분 과세. 허용 술·담배 등 가격 포함."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "선택한 연령·귀국 체류시간 조건에서는 기본 담배 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "age": [
+              "minor"
+            ],
+            "province": [
+              "age19"
+            ],
+            "hours": [
+              "7days"
+            ]
+          },
+          "label": "캐나다 거주자 귀국 기준",
+          "facts": [
+            {
+              "label": "선물/물품",
+              "value": "합계 CAD800. 초과분 과세. 7일도 한도 증액 없음."
+            },
+            {
+              "label": "주류",
+              "value": "선택한 나이·입국 주·귀국 체류시간 조건에서는 기본 주류 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "선택한 연령·귀국 체류시간 조건에서는 기본 담배 면세를 적용하지 않습니다."
+            },
+            {
+              "label": "개인용품",
+              "value": "개인한도는 가족과 합산·이전할 수 없습니다. 선물도 일반 한도에 포함합니다."
+            }
+          ],
+          "notes": [
+            "주류·담배·베이핑은 48시간 이상 및 별도 연령·수량 조건이 필요합니다. 7일 체류도 직접 동반해야 합니다.",
+            "인세 없는 일부 담배에는 특별세가 적용됩니다. 표시한 수량이 무세금 보장은 아닙니다.",
+            "베이핑은 18세 이상, 용기·기기 합계12개와 액체120mL 또는 고체120g 조건을 함께 확인합니다. 주별 제품 규정은 별도입니다."
+          ]
+        }
+      ],
+      "notes": [
+        "24·48시간은 실제 시간, 7일은 출국일 제외·귀국일 포함입니다.",
+        "방문객 선물60달러는 귀국 거주자에게 추가되는 면세가 아닙니다.",
+        "주류는 도착 주별18세/19세, 담배 국경면세는18세 기준이며 주별 판매·소지 연령은 별도입니다.",
+        "북서준주·누나부트의 반입허가 등 상세 조건은 별도 확인하세요."
+      ],
+      "sources": [
+        {
+          "label": "공식 세관 원문",
+          "url": "https://www.cbsa-asfc.gc.ca/travel-voyage/bring-apporter-eng.html"
+        },
+        {
+          "label": "공식 세관 원문",
+          "url": "https://www.cbsa-asfc.gc.ca/travel-voyage/declare-eng.html"
+        },
+        {
+          "label": "공식 세관 원문",
+          "url": "https://cbsa-asfc.gc.ca/publications/dm-md/d2/d2-1-1-eng.html"
+        },
+        {
+          "label": "공식 세관 원문",
+          "url": "https://www.cbsa-asfc.gc.ca/publications/dm-md/d2/d2-1-4-eng.html"
+        },
+        {
+          "label": "공식 세관 원문",
+          "url": "https://www.cbsa-asfc.gc.ca/trade-commerce/tariff-tarif/2026/html/02/ch98-eng.html"
+        },
+        {
+          "label": "공식 세관 원문",
+          "url": "https://www.cbsa-asfc.gc.ca/travel-voyage/pdt-pdt-eng.html"
+        }
+      ],
+      "reviewStatus": "official_sources_checked_pending_release_review",
+      "effectiveDate": null,
+      "changeAnnouncement": null,
+      "verifiedAt": "2026-10-20"
+    },
+    {
+      "id": "PH",
+      "name": "필리핀",
+      "scope": "일반 항공여행자의 개인용·비상업적 동반물품. 귀국주민·해외근로자 등 추가 특례는 별도입니다.",
+      "checkedAt": "2026-10-20",
+      "effectiveLabel": "시행일 미확인",
+      "conditions": [
+        {
+          "id": "purpose",
+          "label": "여행·물품 구분",
+          "options": [
+            {
+              "id": "ordinary",
+              "label": "일반 여행 · 개인 사용/개인 선물"
+            },
+            {
+              "id": "special",
+              "label": "판매·대리구매·승무원·이주·특례"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        }
+      ],
+      "results": [
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ]
+          },
+          "label": "필리핀 일반물품 기준",
+          "facts": [
+            {
+              "label": "일반물품",
+              "value": "FOB/FCA 합계 PHP 10,000 이하. 술·담배·규제품에 일괄 적용하지 않습니다."
+            },
+            {
+              "label": "주류",
+              "value": "공식 안내 상충으로 면세 수량 확인 필요. 확정 숫자를 표시하지 않습니다."
+            },
+            {
+              "label": "담배",
+              "value": "공식 안내 상충으로 면세 수량 확인 필요. 확정 숫자를 표시하지 않습니다."
+            }
+          ],
+          "notes": [
+            "사전허가 면제 수량과 관세·소비세 면세수량은 다릅니다.",
+            "기준을 넘으면 PHP10,000을 빼고 차액만 과세한다고 안내하지 않습니다.",
+            "필리핀 도착 후 현지 면세점 구매 특례를 한국 면세점 구매에 적용하지 않습니다."
+          ]
+        }
+      ],
+      "notes": [
+        "체류 중 필요한 개인용품은 별도 취급 가능하며 모든 새 구매품이 무제한 면세라는 뜻이 아닙니다.",
+        "귀국주민·해외근로자·이주 등 특례는 자격·기간·횟수를 별도 확인합니다.",
+        "가족 합산과 술·담배 연령 조건은 추가 확인 대상입니다."
+      ],
+      "sources": [
+        {
+          "label": "Philippines Bureau of Customs 원문",
+          "url": "https://customs.gov.ph/wp-content/uploads/2026/01/ESSENTIAL-GUIDE-FOR-TRAVELERS.pdf"
+        },
+        {
+          "label": "Philippines Bureau of Customs 원문",
+          "url": "https://customs.gov.ph/guidelines-on-arriving-travelers/"
+        },
+        {
+          "label": "Philippines Bureau of Customs 원문",
+          "url": "https://customs.gov.ph/wp-content/uploads/2023/01/CAO-01-2017-1.pdf"
+        },
+        {
+          "label": "Philippines Bureau of Customs 원문",
+          "url": "https://customs.gov.ph/wp-content/uploads/2023/01/cmo-28-2016-Guidelines-for-the-Implementation-of-Customs-Administrative-Order-CAO-No.-02-2016-1.pdf"
+        },
+        {
+          "label": "Philippines Bureau of Customs 원문",
+          "url": "https://customs.gov.ph/duty-and-tax-free-privileges/"
+        },
+        {
+          "label": "Philippines Department of Finance 원문",
+          "url": "https://www.dof.gov.ph/boc-bares-new-rules-on-small-value-tobacco-alcohol-imports/"
+        }
+      ],
+      "reviewStatus": "partial_verified_alcohol_tobacco_withheld",
+      "changeAnnouncement": null
+    },
+    {
+      "id": "MY",
+      "name": "말레이시아",
+      "scope": "지정 공항 항공입국 기준. 라부안·랑카위·티오만·팡코르 등 특별지역과 육로·해로는 제외합니다.",
+      "checkedAt": "2026-10-20",
+      "effectiveLabel": "담배 면세 제외 2021-07-01 시행 · 기본 한도 전체 시행일 미확인",
+      "conditions": [
+        {
+          "id": "purpose",
+          "label": "여행·물품 구분",
+          "options": [
+            {
+              "id": "ordinary",
+              "label": "일반 여행 · 개인 사용/개인 선물"
+            },
+            {
+              "id": "special",
+              "label": "판매·대리구매·승무원·이주·특례"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "residence",
+          "label": "통상 거주지 (국적과 다름)",
+          "options": [
+            {
+              "id": "visitor",
+              "label": "말레이시아 밖 거주 방문객"
+            },
+            {
+              "id": "resident",
+              "label": "말레이시아 거주자 귀국"
+            },
+            {
+              "id": "unknown",
+              "label": "확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "airport",
+          "label": "말레이시아 입국 공항",
+          "options": [
+            {
+              "id": "kl",
+              "label": "쿠알라룸푸르 KLIA·KLIA2"
+            },
+            {
+              "id": "penang",
+              "label": "페낭"
+            },
+            {
+              "id": "senai",
+              "label": "세나이"
+            },
+            {
+              "id": "kk",
+              "label": "코타키나발루"
+            },
+            {
+              "id": "kuching",
+              "label": "쿠칭"
+            },
+            {
+              "id": "other",
+              "label": "그 밖의 공항·특별지역·확인 필요"
+            }
+          ]
+        },
+        {
+          "id": "visitorTime",
+          "label": "말레이시아 방문 예정기간",
+          "options": [
+            {
+              "id": "met",
+              "label": "48시간 이상"
+            },
+            {
+              "id": "other",
+              "label": "48시간 미만·확인 필요"
+            }
+          ],
+          "when": {
+            "residence": [
+              "visitor"
+            ]
+          }
+        },
+        {
+          "id": "residentTime",
+          "label": "해외 체류기간",
+          "options": [
+            {
+              "id": "met",
+              "label": "48시간 이상"
+            },
+            {
+              "id": "other",
+              "label": "48시간 미만·확인 필요"
+            }
+          ],
+          "when": {
+            "residence": [
+              "resident"
+            ]
+          }
+        }
+      ],
+      "results": [
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "visitor"
+            ],
+            "airport": [
+              "kl",
+              "penang",
+              "senai",
+              "kk",
+              "kuching"
+            ],
+            "visitorTime": [
+              "met"
+            ]
+          },
+          "label": "말레이시아 지정 공항·48시간 조건 기준",
+          "facts": [
+            {
+              "label": "기타물품",
+              "value": "합계 RM 1,000. 의류·신발·식품 등 별도 품목 제외."
+            },
+            {
+              "label": "주류",
+              "value": "와인·증류주·맥주 등 전체 합계 1L. 면세 적용 연령은 추가 확인이 필요합니다."
+            },
+            {
+              "label": "담배",
+              "value": "여행자 면세 없음. 신고·과세 대상. 면세 없음이 곧 반입금지는 아닙니다."
+            },
+            {
+              "label": "별도 품목",
+              "value": "새 의류3점 · 새 신발1켤레 · 식품 RM150 · 휴대용 개인위생 전기기기 종류별1개."
+            }
+          ],
+          "notes": [
+            "해외 구매와 도착 면세점 구매를 중복 한도로 계산하지 않습니다.",
+            "전자담배·흡연기기·액상도 일반 면세품목에서 제외됩니다. 반입 허가·현지 사용제한은 별도 확인하세요.",
+            "현지 판매연령을 반입면세 연령으로 대신 적용하지 않습니다."
+          ]
+        },
+        {
+          "when": {
+            "purpose": [
+              "ordinary"
+            ],
+            "residence": [
+              "resident"
+            ],
+            "airport": [
+              "kl",
+              "penang",
+              "senai",
+              "kk",
+              "kuching"
+            ],
+            "residentTime": [
+              "met"
+            ]
+          },
+          "label": "말레이시아 지정 공항·48시간 조건 기준",
+          "facts": [
+            {
+              "label": "기타물품",
+              "value": "합계 RM 1,000. 의류·신발·식품 등 별도 품목 제외."
+            },
+            {
+              "label": "주류",
+              "value": "와인·증류주·맥주 등 전체 합계 1L. 면세 적용 연령은 추가 확인이 필요합니다."
+            },
+            {
+              "label": "담배",
+              "value": "여행자 면세 없음. 신고·과세 대상. 면세 없음이 곧 반입금지는 아닙니다."
+            },
+            {
+              "label": "별도 품목",
+              "value": "새 의류3점 · 새 신발1켤레 · 식품 RM150 · 휴대용 개인위생 전기기기 종류별1개."
+            }
+          ],
+          "notes": [
+            "해외 구매와 도착 면세점 구매를 중복 한도로 계산하지 않습니다.",
+            "전자담배·흡연기기·액상도 일반 면세품목에서 제외됩니다. 반입 허가·현지 사용제한은 별도 확인하세요.",
+            "현지 판매연령을 반입면세 연령으로 대신 적용하지 않습니다."
+          ]
+        }
+      ],
+      "notes": [
+        "방문객은48시간 이상 체류 예정, 거주자 귀국은 해외48시간 이상 체류가 기본입니다.",
+        "미성년자 주류 안내, 가족합산, 단일 고가품 세액은 별도 확인 대상입니다.",
+        "다른 공항에 임의 적용하지 않습니다. 세관 원문에서 입국공항 조건을 확인하세요."
+      ],
+      "sources": [
+        {
+          "label": "Royal Malaysian Customs Department 원문",
+          "url": "https://www.customs.gov.my/en/individu/pengembara/travelers-guide?highlight=WyJuZXciLCJpbXBvcnQiLCJpbXBvcnRhbnQiXQ%3D%3D"
+        },
+        {
+          "label": "Royal Malaysian Customs Department 원문",
+          "url": "https://www.customs.gov.my/images/07-arkib/pengumuman/kedai-bebas-cukai-lapangan-terbang-BM-latest-24102024.pdf"
+        },
+        {
+          "label": "Malaysia Attorney General’s Chambers / RMCD 원문",
+          "url": "https://www.customs.gov.my/images/06-prosedur/perintah-kastam/pengecualian/P.U.A208-perintah_duti_kastampengecualian_2017_pindaan_2021.pdf"
+        },
+        {
+          "label": "Malaysia Attorney General’s Chambers / RMCD 원문",
+          "url": "https://mysst.customs.gov.my/assets/document/SST%20Orders/order/Sales%20Tax%20%28Person%20Exempted%20From%20Payment%20Of%20Tax%29%20%28Amendment%20No.%202%29%20Order%202021_PUA%20281.pdf"
+        }
+      ],
+      "reviewStatus": "official_sources_checked_pending_release_review",
+      "changeAnnouncement": null
+    }
+  ]
+}

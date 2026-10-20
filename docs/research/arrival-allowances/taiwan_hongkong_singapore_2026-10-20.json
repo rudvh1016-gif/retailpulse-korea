@@ -1,0 +1,629 @@
+{
+  "schemaVersion": "1.0",
+  "datasetId": "koretail-destination-customs-tw-hk-sg-2026-10-20",
+  "language": "ko",
+  "checkedAt": "2026-10-20",
+  "reviewStatus": "official_sources_checked_pending_release_review",
+  "publicationPerformed": false,
+  "scope": "추가 3개 국가·지역 시안용 자료. 인천 출발 일반 여행자 기준이며 반입 가능 확정·세액 계산은 제공하지 않음.",
+  "countries": [
+    {
+      "id": "TW",
+      "name": "대만",
+      "scopeLabel": "일반 여행자 자가사용·가정용 물품 · 1인 기준",
+      "checkedAt": "2026-10-20",
+      "effectiveFrom": null,
+      "currentRegulationVersionEffectiveFrom": "2026-02-01",
+      "effectiveDateNote": "35,000TWD는 2024-06-26, 주류 1.5L는 2025-01-25 시행. 현행 법령의 최근 개정은 2026-02-01 시행. 모든 규정이 같은 날 바뀐 것이 아님.",
+      "cards": {
+        "general": "일반 자가사용·가정용 물품 합계 35,000 대만달러. 술·담배·통제품목 제외.",
+        "alcohol": "18세 이상: 1.5L, 병 수 제한 없이 총 용량 기준.",
+        "tobacco": "20세 이상: 궐련 200개비 또는 시가 25개 또는 담뱃잎 1파운드.",
+        "specialWarning": "한국 등 해외에서 구매한 가열담배를 ‘200개비 반입 가능’으로 안내하지 마세요. 전자담배는 반입 금지이며, 가열담배는 대만 승인·구매처 제한을 확인해야 합니다.",
+        "ageWarning": "술은 18세, 담배는 20세로 연령 기준이 다릅니다."
+      },
+      "requiredFilters": [
+        "연령",
+        "품목·담배 종류",
+        "가열담배 구매처·승인 여부",
+        "신규 구매품/기존 사용품",
+        "상업용·빈번 출입국 및 위반기록 여부"
+      ],
+      "rules": [
+        {
+          "id": "tw-general",
+          "category": "general_goods",
+          "amount": 35000,
+          "currency": "TWD",
+          "inclusive": true,
+          "effectiveFrom": "2024-06-26",
+          "sourceIds": [
+            "tw-law",
+            "tw-central-changes"
+          ],
+          "notes": [
+            "통제품·술·담배는 이 일반금액 한도에서 제외.",
+            "명백한 판매·영리 목적 또는 빈번 출입국과 위반기록이 함께 있는 경우 일반면세를 적용하지 않음."
+          ]
+        },
+        {
+          "id": "tw-used-articles",
+          "category": "used_personal_articles",
+          "amountPerPieceOrSet": 10000,
+          "currency": "TWD",
+          "inclusive": true,
+          "effectiveFrom": null,
+          "sourceIds": [
+            "tw-law"
+          ],
+          "notes": [
+            "해외에서 이미 본인 소유로 사용한 적정량 물품. 품목당/세트당 세관가액 10,000TWD 이내, 세관 인정 필요. 통제품·술·담배 제외."
+          ]
+        },
+        {
+          "id": "tw-alcohol",
+          "category": "alcohol",
+          "volumeMl": 1500,
+          "minimumAge": 18,
+          "bottleCountLimit": null,
+          "effectiveFrom": "2025-01-25",
+          "sourceIds": [
+            "tw-law",
+            "tw-alcohol-change"
+          ],
+          "notes": [
+            "1.5L 면세와 일반 신고·과세 반입상한 5L는 서로 다름.",
+            "수입이 개방되지 않은 중국 본토산 주류는 별도 1L 반입상한. 한국에서 샀더라도 원산지 확인 필요."
+          ]
+        },
+        {
+          "id": "tw-tobacco",
+          "category": "ordinary_tobacco",
+          "minimumAge": 20,
+          "alternatives": [
+            {
+              "type": "cigarettes",
+              "quantity": 200,
+              "unit": "개비"
+            },
+            {
+              "type": "cigars",
+              "quantity": 25,
+              "unit": "개"
+            },
+            {
+              "type": "cut_tobacco",
+              "quantity": 1,
+              "unit": "파운드"
+            }
+          ],
+          "effectiveFrom": null,
+          "sourceIds": [
+            "tw-law",
+            "tw-taipei-tobacco"
+          ]
+        },
+        {
+          "id": "tw-heated-tobacco-restriction",
+          "category": "heated_tobacco",
+          "displayMode": "warning_not_generic_allowance",
+          "minimumAge": 20,
+          "generalOverseasPurchaseAllowed": false,
+          "effectiveFrom": null,
+          "approvedDomesticDutyFreeAllowance": 200,
+          "allowanceUnit": "개비",
+          "allowanceProvisionEffectiveFrom": "2026-02-01",
+          "sourceIds": [
+            "tw-law",
+            "tw-heated-warning-2026"
+          ],
+          "notes": [
+            "2026-05-20 타이베이 세관은 대만 내 면세점에서 구매한 보건복지부 심사 승인 가열담배만 여행자 반입 가능하다고 안내.",
+            "법령의 승인 지정담배 200개비 조항을 한국 면세점의 모든 가열담배에 적용하면 안 됨."
+          ]
+        },
+        {
+          "id": "tw-vapes",
+          "category": "e_cigarettes_and_e_liquid",
+          "prohibited": true,
+          "effectiveFrom": null,
+          "sourceIds": [
+            "tw-taipei-exemptions-en"
+          ]
+        },
+        {
+          "id": "tw-baggage",
+          "category": "baggage_scope",
+          "effectiveFrom": null,
+          "sourceIds": [
+            "tw-law",
+            "tw-taipei-tobacco"
+          ],
+          "notes": [
+            "휴대·별송품을 합산. 별송품은 입국시 신고 등 별도 절차.",
+            "비거주자의 임시반입 과세물품은 등록·재반출 등 별도 제도. 상업용·승무원·장기체류·환승 입국 특례는 기본 카드 범위 밖."
+          ]
+        }
+      ],
+      "qualityNotes": [
+        "영문 일반 FAQ의 주류 20세 표기는 사용하지 않음. 현행 중앙 법령 제11조, 중앙 관무서 발표, 중국어 세관 안내가 주류 18세·담배 20세로 일치해 충돌을 해소함.",
+        "가열담배는 중앙 법령의 수량만 보지 않고 2026-05-20 세관의 구매처 제한 경고를 함께 적용."
+      ],
+      "sourceIds": [
+        "tw-law",
+        "tw-central-changes",
+        "tw-alcohol-change",
+        "tw-taipei-tobacco",
+        "tw-heated-warning-2026",
+        "tw-taipei-exemptions-en"
+      ]
+    },
+    {
+      "id": "HK",
+      "name": "홍콩",
+      "scopeLabel": "홍콩 입국 일반 여행자 · 중국 본토와 별도 규정",
+      "checkedAt": "2026-10-20",
+      "effectiveFrom": null,
+      "effectiveDateNote": "주류·담배 여행자 수량 면세는 공식 페이지에서 2010-08-01 시행으로 명시. 다른 반입 제한의 시행일과 동일시하지 않음.",
+      "cards": {
+        "general": "일반 수입 관세가 없는 자유항입니다. 이를 모든 물품의 무제한 반입 허용으로 안내하지 않습니다.",
+        "alcohol": "18세 이상: 알코올 30% 초과 주류 1L. 홍콩 신분증 소지자는 홍콩 밖 체류가 24시간 이상이어야 합니다.",
+        "tobacco": "18세 이상: 궐련 19개비 또는 시가 1개(여러 개면 합계 25g 이내) 또는 기타 제조담배 25g.",
+        "specialWarning": "전자담배·가열담배 등 대체흡연제품은 개인사용·소량도 홍콩 입국 반입 금지. 일반담배의 19개비 면세와 구분하세요."
+      },
+      "requiredFilters": [
+        "연령",
+        "품목·주류 도수·담배 종류",
+        "홍콩 신분증 소지 여부 및 홍콩 밖 24시간 이상 체류",
+        "실제 입국인지 공항에서 입국심사 없이 환승만 하는지"
+      ],
+      "rules": [
+        {
+          "id": "hk-general",
+          "category": "general_goods",
+          "amount": null,
+          "currency": "HKD",
+          "displayInsteadOfAmount": "일반 수입 관세 없음",
+          "effectiveFrom": null,
+          "sourceIds": [
+            "hk-concessions"
+          ],
+          "notes": [
+            "주류·담배·탄화수소유·메틸알코올은 별도 과세 품목. 금지·제한품목은 별도."
+          ]
+        },
+        {
+          "id": "hk-alcohol",
+          "category": "alcohol",
+          "volumeMl": 1000,
+          "strengthAbvMinimum": 30,
+          "strengthMinimumInclusive": false,
+          "minimumAge": 18,
+          "effectiveFrom": "2010-08-01",
+          "sourceIds": [
+            "hk-concessions"
+          ],
+          "notes": [
+            "20°C에서 측정한 알코올 30% 초과 주류에 대한 수량 면세.",
+            "홍콩 신분증 소지자는 홍콩 밖 체류가 24시간 이상이어야 함.",
+            "본인 자가사용에 한함. 상업용과 국경 통과 운전자는 제외."
+          ]
+        },
+        {
+          "id": "hk-tobacco",
+          "category": "ordinary_tobacco",
+          "minimumAge": 18,
+          "alternatives": [
+            {
+              "type": "cigarettes",
+              "quantity": 19,
+              "unit": "개비"
+            },
+            {
+              "type": "cigars",
+              "quantity": 1,
+              "unit": "개",
+              "multipleCigarTotalWeightMaxG": 25
+            },
+            {
+              "type": "other_manufactured_tobacco",
+              "quantity": 25,
+              "unit": "g"
+            }
+          ],
+          "effectiveFrom": "2010-08-01",
+          "sourceIds": [
+            "hk-concessions",
+            "hk-concessions-zh"
+          ]
+        },
+        {
+          "id": "hk-alternative-smoking-products",
+          "category": "e_cigarettes_heated_tobacco_and_related_products",
+          "prohibited": true,
+          "effectiveFrom": null,
+          "sourceIds": [
+            "hk-asp",
+            "hk-asp-faq"
+          ],
+          "notes": [
+            "입국하는 여행자의 개인용·소량도 금지. 기기·부품·관련 액상·가열담배 스틱 등이 포함됨.",
+            "홍콩국제공항 도착 후 입국심사를 통과하지 않는 환승은 별도 법정 예외가 있으므로 입국 여부 확인. 입국 환승을 이 예외로 처리하지 않음."
+          ]
+        }
+      ],
+      "sourceIds": [
+        "hk-concessions",
+        "hk-concessions-zh",
+        "hk-asp",
+        "hk-asp-faq"
+      ]
+    },
+    {
+      "id": "SG",
+      "name": "싱가포르",
+      "scopeLabel": "일반 여행자 · 금액은 일반 관세한도가 아니라 GST 수입면제 한도",
+      "checkedAt": "2026-10-20",
+      "effectiveFrom": null,
+      "effectiveDateNote": "일반품 GST 금액은 2019-02-19, 주류 총량 축소는 2019-04-01 시행. 현재 안내 페이지 수정일 2026-03-25는 시행일이 아님.",
+      "cards": {
+        "general": "GST 수입면제: 싱가포르 밖 48시간 이상이면 S$500, 미만이면 S$100. 취업·학생·부양가족·장기체류 패스 소지자 및 승무원 제외.",
+        "alcohol": "18세 이상·국외 48시간 이상·말레이시아발 아님·본인 소비 조건을 모두 충족해야 합니다. 증류주 1L+와인 1L 등 허용 조합 중 하나, 증류주만 2L는 불가.",
+        "tobacco": "담배 면세 없음. 모든 담배에 세금이 부과되며, 표준포장 미준수 제품은 세금을 내도 반입할 수 없습니다.",
+        "specialWarning": "전자담배·베이퍼 등 금지품은 과세로 해결되지 않습니다. 술 면세는 선물용·다른 사람 대신 운반하는 용도에 적용되지 않습니다."
+      },
+      "requiredFilters": [
+        "연령",
+        "국외 48시간 이상 여부",
+        "취업·학생·부양가족·장기체류 패스 여부",
+        "말레이시아 입국심사를 거쳤는지",
+        "본인 소비/선물·타인대리 용도",
+        "주류 종류별 용량",
+        "담배 포장·제품 적합성"
+      ],
+      "rules": [
+        {
+          "id": "sg-gst-48h",
+          "category": "general_goods_gst_relief",
+          "conditions": {
+            "outsideSingaporeAtLeast48Hours": true,
+            "excludedPassHolder": false,
+            "crew": false
+          },
+          "amount": 500,
+          "currency": "SGD",
+          "inclusive": true,
+          "effectiveFrom": "2019-02-19",
+          "sourceIds": [
+            "sg-concessions",
+            "sg-gst-change"
+          ],
+          "notes": [
+            "일반 관세와 구분하여 GST 수입면제로 표기.",
+            "자가사용·소비 목적의 해외 신규 취득품·기념품·선물·식품 등. 술·담배·상업용 물품 제외."
+          ]
+        },
+        {
+          "id": "sg-gst-under48h",
+          "category": "general_goods_gst_relief",
+          "conditions": {
+            "outsideSingaporeAtLeast48Hours": false,
+            "excludedPassHolder": false,
+            "crew": false
+          },
+          "amount": 100,
+          "currency": "SGD",
+          "inclusive": true,
+          "effectiveFrom": "2019-02-19",
+          "sourceIds": [
+            "sg-concessions",
+            "sg-gst-change"
+          ]
+        },
+        {
+          "id": "sg-passholder-exclusion",
+          "category": "general_goods_gst_relief",
+          "conditions": {
+            "excludedPassHolder": true
+          },
+          "amount": 0,
+          "currency": "SGD",
+          "effectiveFrom": null,
+          "sourceIds": [
+            "sg-concessions"
+          ],
+          "notes": [
+            "Work permit, employment pass, student pass, dependant pass, long-term pass 소지자 및 승무원은 신규 취득품 GST 수입면제 대상이 아님.",
+            "이 예외를 기존 사용 개인소지품의 별도 면제까지 자동 확대하지 않음."
+          ]
+        },
+        {
+          "id": "sg-alcohol-combinations",
+          "category": "alcohol",
+          "minimumAge": 18,
+          "conditionsAll": [
+            "outsideSingaporeAtLeast48Hours",
+            "notArrivingFromMalaysia",
+            "ownConsumption",
+            "notProhibitedProduct",
+            "notCrew"
+          ],
+          "alternativesMl": [
+            {
+              "spirits": 1000,
+              "wine": 1000,
+              "beer": 0
+            },
+            {
+              "spirits": 1000,
+              "wine": 0,
+              "beer": 1000
+            },
+            {
+              "spirits": 0,
+              "wine": 1000,
+              "beer": 1000
+            },
+            {
+              "spirits": 0,
+              "wine": 2000,
+              "beer": 0
+            },
+            {
+              "spirits": 0,
+              "wine": 0,
+              "beer": 2000
+            }
+          ],
+          "effectiveFrom": "2019-04-01",
+          "sourceIds": [
+            "sg-concessions",
+            "sg-liquor-change"
+          ],
+          "notes": [
+            "말레이시아에서 입국심사를 거쳤으면 말레이시아발로 판단해 주류 면세 없음.",
+            "증류주만 2L는 불가. 소주는 증류주로 분류된다는 세관 예시가 있음.",
+            "해외 및 싱가포르 면세점 구매품 모두 포함. 선물·판매·타인대리 운반은 본인 소비 면세 대상이 아님."
+          ]
+        },
+        {
+          "id": "sg-tobacco",
+          "category": "tobacco",
+          "dutyFreeQuantity": 0,
+          "gstReliefAmount": 0,
+          "effectiveFrom": null,
+          "sourceIds": [
+            "sg-concessions",
+            "sg-hsa-tobacco"
+          ],
+          "notes": [
+            "싱가포르에서 세금 낸 담배라도 재반입하면 세금 대상.",
+            "표준포장 요건과 금지품 여부는 면세·세액과 별도. 부적합 담배는 세금 납부 여부와 무관하게 반입 불가.",
+            "구매·사용·소지 법정 최소연령은 21세(2021-01-01부터). 18세 주류 기준과 혼동하지 않음."
+          ]
+        },
+        {
+          "id": "sg-tobacco-packaging",
+          "category": "tobacco_import_conditions",
+          "personalUseWeightMaxG": 400,
+          "minimumAge": 21,
+          "effectiveFrom": "2020-07-01",
+          "minimumAgeEffectiveFrom": "2021-01-01",
+          "sourceIds": [
+            "sg-hsa-tobacco"
+          ],
+          "notes": [
+            "개인소비용 일반담배는 총 400g 이하이며 소매포장은 담배 관련 로고·브랜드표시 없음, 그림 건강경고, 짙은 갈색 요건. 판매·공급용 제외.",
+            "이 400g을 면세량으로 표시하지 않음."
+          ]
+        },
+        {
+          "id": "sg-prohibited-vapes",
+          "category": "e_cigarettes_vaporisers",
+          "prohibited": true,
+          "effectiveFrom": null,
+          "sourceIds": [
+            "sg-hsa-tobacco",
+            "sg-prohibited"
+          ]
+        },
+        {
+          "id": "sg-used-articles",
+          "category": "used_personal_articles",
+          "amount": null,
+          "effectiveFrom": null,
+          "sourceIds": [
+            "sg-concessions"
+          ],
+          "notes": [
+            "적정량 기존 개인소지품은 별도 GST 면제이며 가액상한 없음. 술·담배·상업품 제외.",
+            "거주자: 싱가포르 출발 전부터 소유하여 가져나갔던 물품. 비거주자: 도착 전 소유했고 떠날 때 재반출할 물품.",
+            "해외에서 새로 산 물건은 여행 중 사용하거나 가격표를 떼어도 신규 취득품으로 처리."
+          ]
+        }
+      ],
+      "sourceIds": [
+        "sg-concessions",
+        "sg-gst-change",
+        "sg-liquor-change",
+        "sg-hsa-tobacco",
+        "sg-prohibited"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "tw-law",
+      "authority": "대만 전국 법규자료고·재정부 소관 법령",
+      "title": "入境旅客攜帶行李物品報驗稅放辦法, 제11·18조 등",
+      "url": "https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=G0350003",
+      "language": "zh-TW",
+      "updatedAt": "2026-01-30",
+      "effectiveFrom": "2026-02-01",
+      "checkedAt": "2026-10-20",
+      "access": "current_full_law_read"
+    },
+    {
+      "id": "tw-central-changes",
+      "authority": "대만 재정부 관무서",
+      "title": "MOF Raises Duty-Free Allowance for Personal Effects and Increases Duty-Free Liquor Limit",
+      "url": "https://web.customs.gov.tw/en/singlehtml/1867?cntId=8a071deb438f4fa0b3a72f3f45ea138b",
+      "language": "en",
+      "publishedAt": "2025-12-05",
+      "effectiveFrom": null,
+      "checkedAt": "2026-10-20",
+      "access": "full_text_read"
+    },
+    {
+      "id": "tw-alcohol-change",
+      "authority": "대만 재정부 관무서",
+      "title": "財政部提高入境旅客攜帶自用酒類免稅上限至1.5公升",
+      "url": "https://web.customs.gov.tw/singlehtml/2222?cntId=b8f47b6346924fc3a5a85b89a6d3434d",
+      "language": "zh-TW",
+      "publishedAt": "2025-01-23",
+      "effectiveFrom": "2025-01-25",
+      "checkedAt": "2026-10-20",
+      "access": "full_text_read"
+    },
+    {
+      "id": "tw-taipei-tobacco",
+      "authority": "대만 타이베이 세관",
+      "title": "菸酒",
+      "url": "https://web.customs.gov.tw/taipei/singlehtml/3392?cntId=cus2_3392_3392_1344&zh-cn=",
+      "language": "zh-TW",
+      "publishedAt": "2026-02-01",
+      "effectiveFrom": null,
+      "checkedAt": "2026-10-20",
+      "access": "full_text_read"
+    },
+    {
+      "id": "tw-heated-warning-2026",
+      "authority": "대만 타이베이 세관",
+      "title": "臺北關籲請旅客勿自國外購買加熱菸入境，以免違規受罰",
+      "url": "https://web.customs.gov.tw/taipei/singlehtml/83?cntId=e864a2ab2aac44199bbf436a930b95e2",
+      "language": "zh-TW",
+      "publishedAt": "2026-05-20",
+      "effectiveFrom": null,
+      "checkedAt": "2026-10-20",
+      "access": "full_text_read"
+    },
+    {
+      "id": "tw-taipei-exemptions-en",
+      "authority": "대만 타이베이 세관",
+      "title": "Duty Free Exemptions and Payment of Taxes",
+      "url": "https://web.customs.gov.tw/etaipei/singlehtml/3396?cntId=5e14053a391049858903b4c6c8a2a65e",
+      "language": "en",
+      "publishedAt": "2026-02-01",
+      "effectiveFrom": null,
+      "checkedAt": "2026-10-20",
+      "access": "full_text_read"
+    },
+    {
+      "id": "hk-concessions",
+      "authority": "홍콩 세관",
+      "title": "Duty-free Concessions",
+      "url": "https://www.customs.gov.hk/en/service-enforcement-information/passenger-clearance/duty-free-concessions/index.html",
+      "language": "en",
+      "publishedAt": null,
+      "effectiveFrom": "2010-08-01",
+      "checkedAt": "2026-10-20",
+      "access": "full_text_read"
+    },
+    {
+      "id": "hk-concessions-zh",
+      "authority": "홍콩 세관",
+      "title": "免税优惠",
+      "url": "https://www.customs.gov.hk/sc/service-enforcement-information/passenger-clearance/duty-free-concessions/index.html",
+      "language": "zh-CN",
+      "publishedAt": null,
+      "effectiveFrom": "2010-08-01",
+      "checkedAt": "2026-10-20",
+      "access": "official_search_relevant_passage"
+    },
+    {
+      "id": "hk-asp",
+      "authority": "홍콩 세관",
+      "title": "Alternative Smoking Products",
+      "url": "https://www.customs.gov.hk/en/service-enforcement-information/trade-facilitation/ASP/index.html",
+      "language": "en",
+      "updatedAt": "2023-06-30",
+      "effectiveFrom": null,
+      "checkedAt": "2026-10-20",
+      "access": "full_text_read"
+    },
+    {
+      "id": "hk-asp-faq",
+      "authority": "홍콩정부 1823",
+      "title": "Can I bring a small amount of alternative smoking products into Hong Kong?",
+      "url": "https://www.1823.gov.hk/en/faq/can-i-bring-a-small-amount-of-alternative-smoking-products-e-g-e-cigarette-heatstick-and-herbal-cigarette-into-hong-kong",
+      "language": "en",
+      "publishedAt": null,
+      "effectiveFrom": null,
+      "checkedAt": "2026-10-20",
+      "access": "official_search_relevant_passage"
+    },
+    {
+      "id": "sg-concessions",
+      "authority": "Singapore Customs",
+      "title": "Duty-Free Concession and GST Import Relief",
+      "url": "https://www.customs.gov.sg/at-customs/arriving-in-singapore/duty-free-concession-gst-relief/",
+      "language": "en",
+      "updatedAt": "2026-03-25",
+      "effectiveFrom": null,
+      "checkedAt": "2026-10-20",
+      "access": "full_text_read"
+    },
+    {
+      "id": "sg-gst-change",
+      "authority": "IRAS·Singapore Customs",
+      "title": "Revision in GST Import Relief for Travellers with effect from 19 February 2019",
+      "url": "https://www.iras.gov.sg/news-events/newsroom/revision-in-gst-import-relief-for-travellers-with-effect-from-19-february-2019",
+      "language": "en",
+      "publishedAt": "2019-02-18",
+      "effectiveFrom": "2019-02-19",
+      "checkedAt": "2026-10-20",
+      "access": "full_text_read"
+    },
+    {
+      "id": "sg-liquor-change",
+      "authority": "Singapore Customs",
+      "title": "inSYNC Issue 52, Four Legislative Changes, p.12",
+      "url": "https://www.customs.gov.sg/news-and-media/publications/2019-01-01-Issue52.pdf",
+      "language": "en",
+      "publishedAt": null,
+      "effectiveFrom": "2019-04-01",
+      "checkedAt": "2026-10-20",
+      "access": "pdf_text_read",
+      "publicationPeriod": "2019년 1~3월호"
+    },
+    {
+      "id": "sg-hsa-tobacco",
+      "authority": "싱가포르 보건과학청 HSA",
+      "title": "Overview of tobacco control",
+      "url": "https://www.hsa.gov.sg/tobacco-regulation/overview/",
+      "language": "en",
+      "updatedAt": "2026-10-20",
+      "effectiveFrom": null,
+      "checkedAt": "2026-10-20",
+      "access": "full_text_read"
+    },
+    {
+      "id": "sg-prohibited",
+      "authority": "Singapore Customs",
+      "title": "Controlled and Prohibited Goods for Imports",
+      "url": "https://www.customs.gov.sg/doing-business/import-operations/import-procedures/controlled-and-prohibited-goods-for-imports/",
+      "language": "en",
+      "updatedAt": "2026-02-24",
+      "effectiveFrom": null,
+      "checkedAt": "2026-10-20",
+      "access": "full_text_read"
+    }
+  ],
+  "releaseRules": [
+    "국가·지역 구분을 사용. 홍콩을 중국 본토 규칙에 합치지 않음.",
+    "조건 미선택 시 조건부 범위를 표시하고 확정된 허용량처럼 안내하지 않음.",
+    "확인일과 페이지 수정일·법 시행일을 각각 저장. 근거 없는 시행일은 null로 유지.",
+    "대만 가열담배와 홍콩·싱가포르 전자담배 경고는 일반담배 숫자보다 우선 노출.",
+    "운영 배포 전에 자료 출처와 한국어 요약을 검토. 최초 등록은 [신규 안내]이며 새 법 개정으로 허위 공지하지 않음."
+  ]
+}

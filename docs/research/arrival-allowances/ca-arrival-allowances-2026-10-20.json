@@ -1,0 +1,519 @@
+{
+  "schema_version": "1.0",
+  "country_code": "CA",
+  "country_name_ko": "캐나다",
+  "title_ko": "캐나다 도착 여행자 면세: 관광객과 거주자 귀국 구분",
+  "checked_at": "2026-10-20T04:23:00Z",
+  "checked_date": "2026-10-20",
+  "effective_date": null,
+  "effective_date_note_ko": "단일 시행일은 없습니다. 귀국 금액한도는 2012-06-01, 베이핑 관련 관세표 개정은 2022-10-01. 확인일·문서 수정일·법령 반영기준일을 시행일로 바꾸지 마세요.",
+  "source_current_through": "2026-09-21",
+  "source_current_through_note_ko": "이 날짜는 Justice 비거주자 규정의 법령 통합기준일이며, 모든 출처의 공통 최신일이 아닙니다. CBSA 현행 안내·2026-2 관세표도 2026-10-20에 확인했습니다.",
+  "verification_status": "official_sources_checked_with_scope_limits",
+  "publication_status": "reviewed_research_for_preview_not_legal_clearance",
+  "scope": {
+    "arrival_country": "Canada",
+    "traveler_type": "일반 여행자의 동반 휴대품",
+    "not_covered": [
+      "상업수입",
+      "이민·이사·승무원 특례",
+      "국제우편·택배의 별도 면세",
+      "모든 주·준주의 상세 허가·제품·소지 규정",
+      "식품·동식물·의약품·대마 등 개별 금지·검역규정",
+      "항공사 위험물 및 기내 액체 규정"
+    ]
+  },
+  "must_ask_before_using": [
+    "캐나다 밖에 거주하는 관광객인가요, 캐나다 거주자가 여행 후 귀국하나요? 국적만으로 구분하지 마세요.",
+    "거주자라면 해외에 얼마나 있었나요? 24/48시간은 실제 시간이며 7일은 날짜 계산입니다.",
+    "본인 사용·진정한 선물인가요, 대리구매·판매·상업용인가요?",
+    "술·담배·베이핑이 있으면 연령·도착 주/준주·수량·인세표시를 확인하세요."
+  ],
+  "branches": [
+    {
+      "id": "nonresident_visitor",
+      "label_ko": "캐나다 비거주 관광객",
+      "default_selected": false,
+      "general_merchandise_allowance_cad": null,
+      "personal_effects": {
+        "monetary_cap_cad": null,
+        "conditions_ko": [
+          "방문 목적·성격·기간에 적합한 본인사용 물품",
+          "입국 시 신고하고 여행 후 재반출",
+          "캐나다에 남길 새 구매품·판매용에 적용하는 무제한 금액면세가 아님"
+        ],
+        "source_ids": [
+          "cbsa_visitor",
+          "justice_nonresident_reg4"
+        ],
+        "evidence_ko": "개인 여행 수하물의 조건부 임시면세이며 거주자용 CAD800 한도가 아님."
+      },
+      "gifts": {
+        "amount_per_gift": 60,
+        "currency": "CAD",
+        "threshold_inclusive": true,
+        "excess_tax_basis": "value_above_60_per_gift",
+        "sets_count_as_single_gift": true,
+        "joint_recipient_pooling_allowed": false,
+        "excluded_categories": [
+          "alcohol",
+          "tobacco",
+          "vaping_products",
+          "advertising_matter"
+        ],
+        "declaration_required": true,
+        "effective_date": null,
+        "source_ids": [
+          "cbsa_gifts_memo",
+          "cbsa_visitor"
+        ],
+        "evidence_ko": "각 선물 기준. 세트·공동수령인 수로 한도를 늘릴 수 없고 초과분만 과세. 최신 여행자 안내는 베이핑도 제외."
+      },
+      "alcohol_rule_id": "alcohol_shared",
+      "tobacco_rule_id": "tobacco_shared",
+      "vaping_rule_id": "vaping_shared",
+      "special_product_conditions_ko": [
+        "주류·담배·베이핑은 모두 신고하고 본인이 동반해야 합니다.",
+        "특히 짧은 방문은 목적·기간에 맞춰 허용 수량이 줄어들 수 있어, 표의 수량만으로 무조건 면세를 보장하지 않습니다.",
+        "거주자 귀국용 48시간 부재 조건을 일반 비거주 관광객에게 기계적으로 적용하지 않습니다."
+      ],
+      "source_ids": [
+        "cbsa_visitor",
+        "cbsa_visitor_memo",
+        "justice_nonresident_reg4"
+      ],
+      "short_customer_copy_ko": "캐나다 비거주 관광객은 귀국 거주자용 CAD800 기준이 아닙니다. 여행 후 가져갈 개인용품은 조건부 임시면세, 캐나다에 줄 선물은 개별 CAD60까지 면세입니다. 술·담배·전자담배는 수량·연령·방문기간과 입국 주/준주 조건을 확인하고 신고하세요."
+    },
+    {
+      "id": "returning_resident",
+      "label_ko": "캐나다 거주자 귀국",
+      "default_selected": false,
+      "eligible_ko": [
+        "해외여행 후 귀국하는 캐나다 거주자",
+        "해외여행 후 돌아오는 임시거주자",
+        "캐나다에 다시 거주하러 돌아오는 전 거주자(이사 특례는 별도)"
+      ],
+      "bands": [
+        {
+          "id": "under_24h",
+          "minimum_absence_hours": 0,
+          "maximum_absence_hours_exclusive": 24,
+          "amount": 0,
+          "currency": "CAD",
+          "personal_exemption_available": false,
+          "effective_date": null,
+          "source_ids": [
+            "cbsa_returning"
+          ],
+          "evidence_ko": "24시간 미만에는 일반 여행자 개인면세 없음."
+        },
+        {
+          "id": "24h",
+          "minimum_absence_hours": 24,
+          "maximum_absence_hours_exclusive": 48,
+          "amount": 200,
+          "currency": "CAD",
+          "accompanied_required": true,
+          "excess_loses_entire_exemption": true,
+          "tax_basis_if_exceeded": "entire_imported_value",
+          "excluded_categories": [
+            "alcohol",
+            "tobacco",
+            "vaping_products"
+          ],
+          "effective_date": "2012-06-01",
+          "effective_date_source_ids": [
+            "canada_limits_effective"
+          ],
+          "source_ids": [
+            "cbsa_returning",
+            "cbsa_tariff_2026_2"
+          ],
+          "evidence_ko": "CAD200까지. 총액을 넘으면 이 공제 자체를 쓸 수 없으며 전액에 해당 관세·세금 적용. 베이핑도 제외."
+        },
+        {
+          "id": "48h",
+          "minimum_absence_hours": 48,
+          "maximum_absence_days_exclusive": 7,
+          "amount": 800,
+          "currency": "CAD",
+          "accompanied_required": true,
+          "tax_basis_if_exceeded": "value_above_800",
+          "includes_special_products_within_caps": true,
+          "effective_date": "2012-06-01",
+          "effective_date_source_ids": [
+            "canada_limits_effective"
+          ],
+          "source_ids": [
+            "cbsa_returning",
+            "cbsa_tariff_2026_2"
+          ],
+          "evidence_ko": "CAD800까지, 초과분에만 해당 관세·세금 적용. 수량 조건을 충족하는 술·담배·베이핑 가격도 금액한도에 포함."
+        },
+        {
+          "id": "7d",
+          "minimum_absence_days": 7,
+          "amount": 800,
+          "currency": "CAD",
+          "general_goods_may_follow": true,
+          "declare_following_goods_on_arrival": true,
+          "special_products_must_accompany": true,
+          "day_count_method_ko": "출국일 제외, 귀국일 포함",
+          "tax_basis_if_exceeded": "value_above_800",
+          "effective_date": "2012-06-01",
+          "effective_date_source_ids": [
+            "canada_limits_effective"
+          ],
+          "source_ids": [
+            "cbsa_returning",
+            "cbsa_tariff_2026_2"
+          ],
+          "evidence_ko": "7일도 CAD800으로 증액되지 않음. 일반물품 별송 가능하나 술·담배·베이핑은 동반. 입국 시 모두 신고."
+        }
+      ],
+      "family_pooling": {
+        "allowed": false,
+        "transfer_allowed": false,
+        "multiple_bands_combined_allowed": false,
+        "source_ids": [
+          "cbsa_returning"
+        ],
+        "evidence_ko": "가족·다른 사람의 개인한도를 합산·이전할 수 없고 같은 여행의 시간대별 한도도 합산 불가."
+      },
+      "children": {
+        "general_exemption_eligible": true,
+        "goods_must_be_for_child": true,
+        "source_ids": [
+          "cbsa_returning"
+        ],
+        "evidence_ko": "아이도 자신이 사용할 물품에 대한 개인면세 가능. 성인 한도를 대신 늘리는 용도가 아님."
+      },
+      "gifts": {
+        "separate_60_cad_exemption_for_accompanied_gifts": false,
+        "included_in_resident_value_allowance": true,
+        "source_ids": [
+          "cbsa_gifts_memo",
+          "cbsa_returning"
+        ],
+        "evidence_ko": "귀국할 때 직접 가져오는 선물은 받는 선물·주는 선물 모두 개인면세 금액한도에 포함."
+      },
+      "alcohol_rule_id": "alcohol_shared",
+      "tobacco_rule_id": "tobacco_shared",
+      "vaping_rule_id": "vaping_shared",
+      "stamps": {
+        "duty_free_stamp_required_for": [
+          "cigarettes",
+          "manufactured_tobacco",
+          "tobacco_sticks",
+          "vaping_products"
+        ],
+        "stamp_label": "duty paid Canada droit acquitté",
+        "unstamped_tobacco_special_duty_applies_to": [
+          "cigarettes",
+          "manufactured_tobacco",
+          "tobacco_sticks"
+        ],
+        "unstamped_vaping_duty_rate": null,
+        "source_ids": [
+          "cbsa_duties"
+        ],
+        "evidence_ko": "귀국자 일반 면세량과 완전 무세금 여부는 다름. 해당 품목은 인세표시 조건, 일부 무인세 담배에는 특별세 적용."
+      },
+      "short_customer_copy_ko": "캐나다 거주자 귀국은 해외 24시간 이상이면 CAD200, 48시간 이상이면 CAD800입니다. 24시간 한도는 넘으면 전액 과세, 48시간 이상은 초과분만 과세합니다. 가족합산은 불가하며 술·담배·전자담배는 48시간 이상 및 별도 수량·연령 조건을 충족해야 합니다."
+    }
+  ],
+  "shared_product_rules": {
+    "alcohol_shared": {
+      "selection_mode": "one_alternative_only",
+      "alternatives": [
+        {
+          "category": "wine",
+          "liters": 1.5
+        },
+        {
+          "category": "spirits_or_wine_and_spirits_total",
+          "liters": 1.14
+        },
+        {
+          "category": "beer_or_ale",
+          "liters": 8.5
+        }
+      ],
+      "minimum_age_by_arrival_jurisdiction": [
+        {
+          "years": 18,
+          "provinces_or_territories": [
+            "Alberta",
+            "Manitoba",
+            "Quebec"
+          ]
+        },
+        {
+          "years": 19,
+          "provinces_or_territories": [
+            "British Columbia",
+            "Saskatchewan",
+            "Ontario",
+            "New Brunswick",
+            "Nova Scotia",
+            "Prince Edward Island",
+            "Newfoundland and Labrador",
+            "Yukon",
+            "Northwest Territories",
+            "Nunavut"
+          ]
+        }
+      ],
+      "accompanied_required": true,
+      "provincial_import_limit_check_required": true,
+      "provincial_import_limits_liters": null,
+      "excess_note_ko": "초과분은 관세·세금·주/준주 부과금과 반입허가 확인 대상입니다. 세금만 내면 모든 수량 반입 가능하다고 보장하지 않습니다.",
+      "effective_date": null,
+      "source_ids": [
+        "justice_nonresident_reg4",
+        "cbsa_returning",
+        "cbsa_visitor_memo"
+      ],
+      "evidence_ko": "주류는 세 가지 대안 중 하나. 최소연령은 입국하는 주·준주 기준. 귀국자는 48시간 이상일 때 허용액 내 포함."
+    },
+    "tobacco_shared": {
+      "selection_mode": "all_listed_caps_may_be_combined",
+      "cigarettes_count": 200,
+      "cigars_count": 50,
+      "manufactured_tobacco_grams": 200,
+      "tobacco_sticks_count": 200,
+      "minimum_import_age_years": 18,
+      "age_scope": "federal_border_personal_exemption; not a statement of provincial purchase/possession age",
+      "provincial_retail_or_possession_age": null,
+      "accompanied_required": true,
+      "effective_date": null,
+      "source_ids": [
+        "justice_nonresident_reg4",
+        "cbsa_duties",
+        "cbsa_visitor"
+      ],
+      "evidence_ko": "담배 네 품목은 각각 허용되어 AND 조건. 국경 개인면세 기준 최소 18세. 주별 판매·소지 연령과는 구분."
+    },
+    "vaping_shared": {
+      "maximum_combined_devices_and_immediate_containers": 12,
+      "liquid_milliliters": 120,
+      "solid_grams": 120,
+      "selection_mode": "container_cap_AND_substance_cap",
+      "mixed_liquid_solid_note_ko": "액체와 고체를 함께 반입할 때 두 한도를 각각 전량 사용하는 것으로 안내하지 않습니다. CBSA 비거주자 지침은 mL·g 수치를 합해 120 이하라고 설명합니다.",
+      "minimum_import_age_years": 18,
+      "accompanied_required": true,
+      "effective_date": "2022-10-01",
+      "effective_date_source_ids": [
+        "cbsa_vape_effective"
+      ],
+      "nicotine_concentration_limit": null,
+      "provincial_flavour_or_product_restrictions": null,
+      "source_ids": [
+        "justice_nonresident_reg4",
+        "cbsa_visitor_memo",
+        "cbsa_duties",
+        "cbsa_visitor"
+      ],
+      "evidence_ko": "기기·직접 용기 합계 최대 12개와 액상 120mL 또는 고형 120g을 동시에 충족. 수량면세가 제품별 합법성·항공운송 허가를 뜻하지 않음."
+    }
+  },
+  "unstamped_import_caps": {
+    "tobacco_units_max": 5,
+    "vaping_units_max": 5,
+    "is_duty_free_allowance": false,
+    "unit_definitions_reference": [
+      "tobacco_shared",
+      "vaping_shared"
+    ],
+    "tobacco_unit_note_ko": "담배 1단위는 궐련200개비 또는 시가50개 또는 제조담배200g 또는 담배스틱200개. 5단위는 품목마다 각 5단위 면세라는 뜻이 아님.",
+    "vaping_unit_note_ko": "베이핑 1단위는 기기·직접용기 합계12개 이내의 액체120mL 또는 고체120g. 무인세 제품 반입상한과 면세량을 혼동하지 마세요.",
+    "source_ids": [
+      "cbsa_duties",
+      "cbsa_visitor_memo"
+    ],
+    "evidence_ko": "인세 없는 담배·베이핑에는 각각 별도 5단위 개인반입상한. 세금과 지방 제한은 별도."
+  },
+  "commercial_goods": {
+    "personal_exemption_applies": false,
+    "duty_rate": null,
+    "note_ko": "재판매·사업용·대리구매는 개인휴대품 면세로 자동 처리하지 않습니다. 진정한 개인 선물과 부탁받아 사오는 대리구매를 구분하세요.",
+    "source_ids": [
+      "cbsa_resident_memo",
+      "cbsa_tariff_2026_2"
+    ],
+    "evidence_ko": "개인·가정용 및 기념품·선물 범주이며 판매·수탁·대리구매 제외."
+  },
+  "tariff_change_check": {
+    "all_excess_duty_rates_verified": false,
+    "excess_duty_rate": null,
+    "note_ko": "미국산 특정 물품의 추가관세는 개인면세 대상 여부와 별도 판정합니다. 미면세·초과분에 추가관세가 붙을 수 있으므로 일률적인 초과 세율을 표시하지 않습니다.",
+    "source_ids": [
+      "cbsa_surtax_2026"
+    ],
+    "evidence_ko": "2026-09-08 시행 공지 문단22–23이 임시수하물 및 개인면세와 미면세·초과분을 구분."
+  },
+  "staff_warnings_ko": [
+    "CAD800을 모든 캐나다 도착 관광객에게 적용하지 마세요.",
+    "개별 선물 CAD60은 귀국 거주자에 추가되는 면세가 아닙니다.",
+    "24시간 CAD200 초과를 초과분 과세로 안내하지 마세요.",
+    "술은 OR, 담배 네 품목은 AND, 베이핑 용기수와 총량은 AND입니다.",
+    "면세한도는 반입합법성·검역·항공안전 보장이 아닙니다.",
+    "인세·체류기간·방문성격·입국 주에 따라 달라지는 세금은 확정 면세로 표시하지 마세요."
+  ],
+  "unresolved": [
+    {
+      "field": "provincial_import_limits_liters",
+      "value": null,
+      "reason_ko": "모든 주·준주의 현재 초과반입 허가상한을 개별 정부 자료로 검증하지 않았습니다. CBSA는 Northwest Territories·Nunavut의 다른 처리를 지적하므로 이 도착지는 반드시 별도 확인하세요."
+    },
+    {
+      "field": "provincial_retail_or_possession_age",
+      "value": null,
+      "reason_ko": "연방 국경 반입 최소연령과 다른 주별 판매·소지법은 범위 밖입니다."
+    },
+    {
+      "field": "nicotine_concentration_limit_and_local_flavour_rules",
+      "value": null,
+      "reason_ko": "면세 수량과 별도의 제품성분·주별 제한은 미검증입니다."
+    },
+    {
+      "field": "visitor_allowance_first_effective_dates",
+      "value": null,
+      "reason_ko": "선물·주류·담배 최초 시행일은 확정하지 않았습니다."
+    },
+    {
+      "field": "source_text_alignment",
+      "value": null,
+      "reason_ko": "여행자 개요·구형 지침은 베이핑 제외 문구가 빠진 곳이 있습니다. 24시간·7일 적용은 2026-2 관세표를, 관광객 선물 베이핑 제외는 최신 방문객 안내를 우선했습니다. 2026-2 관세표의 9816 행은 베이핑을 명시하지 않아 베이핑 선물을 면세 가능으로 표시하지 않습니다."
+    }
+  ],
+  "sources": [
+    {
+      "id": "cbsa_visitor",
+      "title": "What visitors can bring into Canada",
+      "url": "https://www.cbsa-asfc.gc.ca/travel-voyage/bring-apporter-eng.html",
+      "date_modified": "2025-04-02",
+      "effective_date": null,
+      "evidence_ko": "비거주 여행자의 개인용품 재반출, 선물, 최소연령 및 주류·담배·베이핑 신고 조건. 수량 이내여도 체류 목적·기간에 따라 과세 가능.",
+      "access_method": "web_open",
+      "checked_date": "2026-10-20",
+      "source_type": "official_primary"
+    },
+    {
+      "id": "cbsa_returning",
+      "title": "I Declare: A guide for residents returning to Canada",
+      "url": "https://www.cbsa-asfc.gc.ca/travel-voyage/declare-eng.html",
+      "date_modified": "2025-11-25",
+      "effective_date": null,
+      "evidence_ko": "24시간 CAD200 및 48시간 CAD800의 서로 다른 초과 처리, 가족합산 금지, 선물·동반 조건 및 주별 주류 연령.",
+      "access_method": "web_open",
+      "checked_date": "2026-10-20",
+      "source_type": "official_primary"
+    },
+    {
+      "id": "cbsa_resident_memo",
+      "title": "D2-3-1: Personal Exemptions for Residents Returning to Canada",
+      "url": "https://www.cbsa-asfc.gc.ca/publications/dm-md/d2/d2-3-1-eng.html",
+      "date_modified": "2013-04-30",
+      "effective_date": null,
+      "evidence_ko": "개인·가정용 및 진정한 선물과 판매·대리구매의 구분, 한도 초과 및 동반물품 조건. 오래된 지침이므로 베이핑에는 최신 관세표를 우선.",
+      "access_method": "web_open",
+      "checked_date": "2026-10-20",
+      "source_type": "official_primary"
+    },
+    {
+      "id": "justice_nonresident_reg4",
+      "title": "Non-residents’ Temporary Importation of Baggage and Conveyances Regulations, section 4",
+      "url": "https://laws-lois.justice.gc.ca/eng/regulations/SOR-87-720/section-4.html",
+      "date_modified": "2026-09-28",
+      "consolidation_current_to": "2026-09-21",
+      "last_amended": "2022-10-01",
+      "effective_date": null,
+      "evidence_ko": "비거주자의 방문 목적·기간에 맞는 개인용 수하물과 주류 택일 한도, 담배 동시 한도, 베이핑 용기 수·총량을 규정.",
+      "access_method": "web_open",
+      "checked_date": "2026-10-20",
+      "source_type": "official_primary"
+    },
+    {
+      "id": "cbsa_visitor_memo",
+      "title": "D2-1-1: Temporary Importation of Baggage and Conveyances by Non-Residents",
+      "url": "https://cbsa-asfc.gc.ca/publications/dm-md/d2/d2-1-1-eng.html",
+      "date_modified": null,
+      "document_date": "2026-04-28",
+      "effective_date": null,
+      "evidence_ko": "문단 12–22: 동반 주류·담배·베이핑, 단기 체류 시 수량 축소 가능, 주·준주 초과반입 허가, 무인세 제품의 별도 반입상한.",
+      "access_method": "official_search_index_full_sections; direct_open_timeout",
+      "date_evidence_url": "https://www.cbsa-asfc.gc.ca/publications/dm-md/d2/d2-1-1-fra.html",
+      "checked_date": "2026-10-20",
+      "source_type": "official_primary"
+    },
+    {
+      "id": "cbsa_gifts_memo",
+      "title": "D2-1-4: Casual Donations – Tariff Item No. 9816.00.00",
+      "url": "https://www.cbsa-asfc.gc.ca/publications/dm-md/d2/d2-1-4-eng.html",
+      "date_modified": "2018-11-26",
+      "effective_date": null,
+      "evidence_ko": "문단 3–6: 귀국 거주자는 이 선물면세 불가, 각 선물 CAD60, 세트는 하나, 공동 수령인 수로 증액 불가, 초과분만 과세.",
+      "access_method": "official_search_index_full_sections; direct_open_timeout",
+      "checked_date": "2026-10-20",
+      "source_type": "official_primary"
+    },
+    {
+      "id": "cbsa_tariff_2026_2",
+      "title": "Customs Tariff 2026-2, Chapter 98",
+      "url": "https://www.cbsa-asfc.gc.ca/trade-commerce/tariff-tarif/2026/html/02/ch98-eng.html",
+      "date_modified": null,
+      "effective_date": null,
+      "evidence_ko": "9804.10/.20은 CAD800 및 베이핑 수량을 규정. 9804.40은 24시간 CAD200에서 술·담배·베이핑 제외. 9804.20은 7일 후 일반물품만 별송 허용.",
+      "access_method": "official_search_index_full_tariff_rows; direct_open_timeout",
+      "checked_date": "2026-10-20",
+      "source_type": "official_primary"
+    },
+    {
+      "id": "cbsa_duties",
+      "title": "Travellers: Paying duty and taxes",
+      "url": "https://www.cbsa-asfc.gc.ca/travel-voyage/pdt-pdt-eng.html",
+      "date_modified": null,
+      "effective_date": null,
+      "evidence_ko": "48시간 이상 귀국자의 담배·베이핑 수량, 인세표시 조건, 일부 무인세 담배 특별세 및 별도의 5단위 반입상한.",
+      "access_method": "official_search_index_full_sections; direct_open_error",
+      "checked_date": "2026-10-20",
+      "source_type": "official_primary"
+    },
+    {
+      "id": "canada_limits_effective",
+      "title": "The Harper Government Announced New Measures to Benefit Canadian Consumers",
+      "url": "https://www.canada.ca/en/news/archive/2012/06/harper-government-announced-new-measures-benefit-canadian-consumers.html",
+      "date_modified": null,
+      "document_date": "2012-06-01",
+      "effective_date": "2012-06-01",
+      "evidence_ko": "당일부터 24시간 귀국 한도를 CAD200, 48시간 이상 한도를 CAD800으로 인상했다고 발표. 현재 적용은 최신 CBSA 안내로 별도 확인.",
+      "access_method": "official_search_index",
+      "checked_date": "2026-10-20",
+      "source_type": "official_primary"
+    },
+    {
+      "id": "cbsa_vape_effective",
+      "title": "Customs Notice 23-02: Version of the Departmental Consolidation of the Customs Tariff: Description changes",
+      "url": "https://www.cbsa-asfc.gc.ca/publications/cn-ad/cn23-02-eng.html",
+      "date_modified": null,
+      "effective_date": "2022-10-01",
+      "evidence_ko": "문단 4: 98·99류의 베이핑 품목 관련 개정은 2022-10-01 시행으로 명시.",
+      "access_method": "official_search_index_full_sections; direct_open_timeout",
+      "checked_date": "2026-10-20",
+      "source_type": "official_primary"
+    },
+    {
+      "id": "cbsa_surtax_2026",
+      "title": "Customs Notice 26-23: United States Surtax Order (2026)",
+      "url": "https://cbsa-asfc.gc.ca/publications/cn-ad/cn26-23-eng.html",
+      "date_modified": null,
+      "document_date": "2026-09-07",
+      "effective_date": "2026-09-08",
+      "evidence_ko": "문단 22–23: 비거주자 임시 수하물과 자격 있는 귀국자의 개인면세는 구별하며, 면세 밖 미국산 물품에는 해당 추가관세가 적용될 수 있음.",
+      "access_method": "official_search_index_full_sections",
+      "checked_date": "2026-10-20",
+      "source_type": "official_primary"
+    }
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "schema_version": "1.0",
+  "country_code": "AU",
+  "country_name_ko": "호주",
+  "title_ko": "호주 도착 여행자 면세 안내",
+  "checked_at": "2026-10-20T04:22:45Z",
+  "checked_date": "2026-10-20",
+  "effective_date": "2018-02-01",
+  "effective_date_scope_ko": "현재 ABF Schedule 4에 수록된 동반휴대품 Customs By-law No.1700571 자체의 적용 시작일입니다. 모든 한도가 이 날 신설되었다는 뜻은 아닙니다.",
+  "general_allowance_first_introduced_date": null,
+  "tobacco_25g_limit_change_effective_date": "2017-07-01",
+  "source_current_through": null,
+  "verification_status": "official_sources_checked_with_scope_limits",
+  "publication_status": "reviewed_research_for_preview_not_legal_clearance",
+  "scope": {
+    "traveler_type": "해외에서 항공기·선박으로 도착하는 일반 여행객의 동반 휴대물품",
+    "residency_classes": ["비거주 방문객", "호주 거주자 귀국"],
+    "general_allowance_same_for_visitors_and_returning_residents": true,
+    "not_covered": ["상용·판매·대여용 물품", "우편·화물·별송품", "승무원 별도 일반물품 한도", "차량·차량부품", "외부영토 특례", "국내항 간 국제크루즈만 이용하는 승객", "식품·동식물·약품 등 검역·금지·허가품 전체 목록"],
+    "source_ids": ["au_abf_duty_free", "au_bylaw_1700571"]
+  },
+  "must_ask_before_using": ["만18세 이상인가요?", "일반 여행자의 동반휴대 개인용·선물 물품인가요?", "호주 밖 거주 방문객인지 호주 거주자 귀국인지 확인하세요.", "가족 합산이라면 관계, 같은 항공편·선박편, 함께 세관 통과 여부를 확인하세요.", "일반물품·술·담배를 각각 합계하고, 면세점 구매 및 호주 TRS 환급물품 재반입 여부를 확인하세요."],
+  "branches": [
+    {
+      "id": "adult_ordinary_traveler",
+      "label_ko": "일반 여행객: 만18세 이상",
+      "minimum_age_years": 18,
+      "general_goods": {
+        "amount": 900,
+        "currency": "AUD",
+        "includes_ko": ["일반 선물·기념품·향수농축액·보석·시계·전자제품 등", "해외 취득 및 출입국 면세점 구매 일반물품"],
+        "excludes_ko": ["별도 면세요건을 충족하는 개인용품", "별도 수량군인 주류·담배", "상용·판매용"],
+        "source_ids": ["au_abf_duty_free", "au_bylaw_1700571"]
+      },
+      "alcohol": {"liters": 2.25, "minimum_age_years": 18, "selection_mode": "all_beverages_total", "separate_from_general_value_allowance": true, "all_purchase_locations_count": true, "source_ids": ["au_abf_duty_free", "au_bylaw_1700571"]},
+      "tobacco": {
+        "minimum_age_years": 18,
+        "base_selection_mode": "cigarettes_or_other_tobacco_equivalent",
+        "unopened_packet_max_cigarettes": 25,
+        "other_tobacco_grams_equivalent": 25,
+        "additional_open_packet_max_count": 1,
+        "additional_open_packet_max_cigarettes": 25,
+        "separate_from_general_value_allowance": true,
+        "source_ids": ["au_abf_tobacco", "au_bylaw_1700571"],
+        "note_ko": "미개봉 1갑(25개비 이하) 또는 기타 담배25g에 개봉된 담뱃갑1개(25개비 이하)를 별도 허용합니다. 담배200개비를 기본면세로 표시하지 마세요."
+      },
+      "short_customer_copy_ko": "호주 입국 일반 여행객은 만18세 이상 기준 일반물품 AUD900, 별도로 주류 총2.25L와 담배25개비 또는25g 및 개봉1갑이 면세 기준입니다. 한도를 넘으면 초과분만이 아니라 해당 품목군 전체에 관세·세금이 적용될 수 있습니다."
+    },
+    {
+      "id": "minor_ordinary_traveler",
+      "label_ko": "일반 여행객: 만18세 미만",
+      "maximum_age_exclusive": 18,
+      "general_goods": {"amount": 450, "currency": "AUD", "source_ids": ["au_abf_duty_free"]},
+      "alcohol": {"duty_free_allowance": 0, "import_prohibited_all_cases": null, "note_ko": "18세 미만에게 주류 면세가 없습니다. 이 자료만으로 모든 주에서의 반입·소지 허용을 판단하지 않습니다.", "source_ids": ["au_abf_duty_free"]},
+      "tobacco": {"duty_free_allowance": 0, "import_prohibited": true, "source_ids": ["au_abf_tobacco"]},
+      "short_customer_copy_ko": "만18세 미만은 일반물품 AUD450 기준이며 술·담배 면세가 없습니다. 담배 제품 반입은 허용되지 않습니다."
+    }
+  ],
+  "residency_personal_effects": [
+    {"id":"nonresident_visitor","label_ko":"호주 밖 거주 방문객","general_goods_rule":"adult_or_minor_ordinary_traveler","personal_effects_ko":"본인 소유·사용에 적합하며 출국할 때 다시 반출할 개인물품에 별도 규정이 적용됩니다. 임시반입에는 담보를 요구할 수 있습니다.","source_ids":["au_bylaw_1700571","au_abf_duty_free"]},
+    {"id":"returning_resident","label_ko":"호주 거주자 귀국","general_goods_rule":"adult_or_minor_ordinary_traveler","personal_effects_ko":"출국할 때 반출한 개인물품의 재반입에는 별도 규정이 있지만, 호주 면세구매·TRS 환급품은 자동으로 제외하지 않습니다. TRS 환급품을 다시 가져오면 신고해야 합니다.","source_ids":["au_bylaw_1700571","au_abf_duty_free"]}
+  ],
+  "personal_effects_common": {
+    "note_ko": "개인의 의류·신발·위생·치장용품과 12개월 이상 해외에서 소유·사용한 물품 등은 각각 별도 조건을 검토합니다. 모피·향수농축액·주류·담배 예외가 있어 모든 개인물품을 무제한으로 표시하지 마세요.",
+    "source_ids": ["au_bylaw_1700571", "au_abf_duty_free"]
+  },
+  "family_pooling": {
+    "allowed": true,
+    "conditions_ko": ["혼인 또는 사실혼 관계의 두 사람과 18세 미만 자녀 등 ABF 가족 정의 충족", "같은 항공편 또는 선박편으로 도착", "세관 통과 시 가족이 함께 있어야 함"],
+    "general_formula": "AUD900 * eligible_adults + AUD450 * eligible_children",
+    "example": {"adults":2,"children_under_18":2,"general_goods_aud":2700},
+    "alcohol_tobacco_minor_allowance_transfer_allowed": false,
+    "non_family_or_adult_sibling_pooling": null,
+    "note_ko": "단순 동행인·성인 형제자매를 가족으로 자동 합산하지 마세요. 공동소유의 별도 안내는 오래된 공식자료에 있으나 이 시안에서는 자동적용하지 않습니다.",
+    "source_ids": ["au_abf_duty_free", "au_bylaw_1700571", "au_abf_korean_flyer"]
+  },
+  "length_and_repeat_visits": {
+    "minimum_absence_hours": null,
+    "repeat_exemption_interval_days": null,
+    "note_ko": "확인한 일반 여행객 면세 안내에 미국·캐나다식 체류시간/최근사용 간격 조건은 제시되어 있지 않습니다. 반복 상용·판매용 반입에는 일반면세를 적용하지 않습니다.",
+    "source_ids": ["au_abf_duty_free", "au_bylaw_1700571"]
+  },
+  "over_limit": {
+    "tax_only_on_excess": false,
+    "tax_basis": "all_goods_in_exceeded_category",
+    "categories": ["일반물품", "주류", "담배"],
+    "mandatory_declaration": true,
+    "purchase_proof_required_for_assessment": true,
+    "fixed_duty_rate": null,
+    "note_ko": "일반물품 한도를 넘으면 그 일반물품군 전체, 술 한도를 넘으면 술 전체, 담배 한도를 넘으면 담배 전체가 과세 대상입니다. 다른 품목군까지 자동 과세된다는 뜻은 아닙니다. 신고 후 반입하지 않을 물품 처리는 세관 확인 사항입니다.",
+    "source_ids": ["au_abf_duty_free", "au_abf_categories", "au_bylaw_1700571"]
+  },
+  "commercial_goods": {"personal_duty_free_concession_applies":false,"note_ko":"판매·대여·교환 목적 또는 상업적 수량은 제외합니다. 견본 등은 금액과 별개로 허가·신고 검토가 필요합니다.","source_ids":["au_abf_duty_free","au_bylaw_1700571"]},
+  "vaping_goods_separate_import_restriction": {
+    "is_duty_free_allowance": false,
+    "status": "restricted_traveller_exemption_for_treatment",
+    "devices_max": 2,
+    "cartridges_capsules_pods_max": 20,
+    "liquid_ml_max": 200,
+    "minimum_age_years": null,
+    "conditions_ko": ["선박·항공기로 본인이 동반 반입", "본인 또는 같은 편으로 입국하며 본인이 돌보는 사람의 치료 목적", "선물·재판매의 일반 반입허용량이 아님", "대마 등 통제약물 포함 제품은 별도 규정"],
+    "effective_dates": {"disposable_vapes":"2024-01-01","other_vapes":"2024-03-01"},
+    "source_ids": ["au_tga_vapes", "au_tga_reform_overview"],
+    "display_ko": "전자담배는 일반 담배면세와 별개인 반입제한품입니다. 치료 목적 여행자 예외만 별도 확인하세요."
+  },
+  "suggested_notice": {
+    "title_ko": "[공지] 호주 도착 면세 안내 추가",
+    "body_ko": "2026-10-20 공식 자료 확인. 성인 일반물품 AUD900·주류2.25L·담배25개비 또는25g 기준과 가족합산 조건을 추가했습니다. 한도를 넘으면 해당 품목군 전체 과세 대상이므로 초과분만 과세로 안내하지 마세요.",
+    "claims_new_legal_change": false
+  },
+  "sources": [
+    {"id":"au_abf_duty_free","publisher":"Australian Border Force","title":"Duty free","url":"https://www.abf.gov.au/entering-and-leaving-australia/duty-free","access":"direct_read","checked_date":"2026-10-20","publication_date":null,"effective_date":null,"evidence_ko":"AUD900/450, 만18세, 주류2.25L, 가족합산·품목군 전체과세·상용제외·개인용품·TRS 조건을 안내합니다."},
+    {"id":"au_abf_categories","publisher":"Australian Border Force","title":"What duty free can you bring in?","url":"https://www.abf.gov.au/entering-and-leaving-australia/can-you-bring-it-in/categories/duty-free","access":"direct_read","checked_date":"2026-10-20","publication_date":null,"effective_date":null,"evidence_ko":"일반물품·술·담배 각각의 한도와 해당 품목군 전체과세를 확인합니다."},
+    {"id":"au_abf_tobacco","publisher":"Australian Border Force","title":"Prohibited goods - Tobacco","url":"https://www.abf.gov.au/importing-exporting-and-manufacturing/prohibited-goods/tobacco","access":"official_page_search_extraction; direct page shell","checked_date":"2026-10-20","publication_date":null,"effective_date":null,"evidence_ko":"만18세 이상 미개봉25개비 또는25g 및 개봉1갑, 18세 미만 반입금지, 방문객·거주자 적용과 초과 신고·과세를 안내합니다."},
+    {"id":"au_bylaw_1700571","publisher":"Australian Government Federal Register of Legislation; ABF current tariff","title":"Customs By-law No.1700571, Accompanied personal effects","url":"https://www.legislation.gov.au/F2018L00072/asmade/2018-01-31/text/original/epub/OEBPS/document_1/document_1.html","current_tariff_url":"https://www.abf.gov.au/importing-exporting-and-manufacturing/tariff-classification/current-tariff/schedule-4-by-law","access":"direct_read_both","checked_date":"2026-10-20","publication_date":"2018-01-31","effective_date":"2018-02-01","evidence_ko":"동반수하물·비상용 조건, 성인18세, 개봉갑25개비까지, 일반900/450 및 가족 합산과 방문객 반출용품/거주자 재반입 예외를 규정합니다."},
+    {"id":"au_tobacco_change_2017","publisher":"Australian Border Force","title":"ACN2017/18 Statistical Code, Duty Rate and Other Changes for 1 July 2017","url":"https://www.abf.gov.au/help-and-support-subsite/CustomsNotices/2017-18.pdf","access":"direct_read","checked_date":"2026-10-20","publication_date":"2017-06-21","effective_date":"2017-07-01","evidence_ko":"담배 기본면세를50개비/50g에서25개비/25g으로 줄인 역사적 변경일입니다. 당시1700053은 후속1700571로 대체되었습니다."},
+    {"id":"au_abf_korean_flyer","publisher":"Australian Border Force","title":"여행자 - 면세 혜택","url":"https://www.abf.gov.au/entering-leaving-australia/files/fact-sheets/korean-duty-free-concessions.pdf","access":"direct_read","checked_date":"2026-10-20","publication_date":"2017-06","effective_date":null,"evidence_ko":"공식 한국어 자료로 가족의 술·담배·일반품 합산 예시를 보조 확인합니다. 오래된 자료여서 현행 영어 안내·법령을 우선합니다."},
+    {"id":"au_tga_vapes","publisher":"Therapeutic Goods Administration","title":"Vapes: information for individuals and patients","url":"https://www.tga.gov.au/products/unapproved-therapeutic-goods/therapeutic-vaping-goods/vaping-hub/vapes-information-individuals-and-patients","access":"direct_read","checked_date":"2026-10-20","last_updated_display":"2024-10-01","effective_date":null,"evidence_ko":"치료용 여행자 예외의 기기2개·관련카트리지20개·액상200mL 및 사용목적 조건을 안내합니다."},
+    {"id":"au_tga_reform_overview","publisher":"Therapeutic Goods Administration","title":"Vaping reforms: overview of regulatory changes","url":"https://www.tga.gov.au/sites/default/files/2024-02/vaping-reforms-webinar-overview-regulatory-changes.pdf","access":"official_page_search_extraction","checked_date":"2026-10-20","publication_date":"2024-02","effective_date":null,"evidence_ko":"새 여행자 수량제한은 일회용2024-01-01, 기타2024-03-01부터 적용된다고 설명합니다."}
+  ],
+  "unresolved": [
+    {"field":"general_allowance_first_introduced_date","value":null,"reason_ko":"현행 근거문서 시행일2018-02-01과 금액 최초도입일은 별개"},
+    {"field":"non_family_joint_ownership_pooling","value":null,"reason_ko":"오래된 공식자료에는 공동소유 합산 예시가 있으나 현행 일반 안내에서 상세조건 추가 확인 필요"},
+    {"field":"repeat_exemption_interval","value":null,"reason_ko":"인용한 일반 여행자 안내에는 별도 간격 수치 없음"},
+    {"field":"excess_tax_rate","value":null,"reason_ko":"품목별 실제 세율 계산 범위 제외"},
+    {"field":"external_territory_rules","value":null,"reason_ko":"일반 국제공항 도착 외 별도 관할·노선 검증하지 않음"}
+  ]
+}

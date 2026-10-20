@@ -207,3 +207,29 @@ The coverage fixture was regenerated from this actual cmap and file hash.
 No full-font replacement, CSS family/weight/loading change or external font
 request is introduced. The existing license files remain unchanged.
 
+
+## 2026-10-20 airport-focus arrival allowance coverage
+
+The 12-country arrival-allowance preview introduces eleven Hangul syllables:
+`괄낭낱닌뗀뤼벡빼잎켤횟` (U+AD04, U+B0AD, U+B0B1, U+B2CC, U+B5C0,
+U+B93C, U+BCA1, U+BE7C, U+C78E, U+CF24, U+D69F). The corpus covers current
+app/lib product copy and the normalized airport-focus preview JSON. Research
+notes that are not rendered by the UI are not included.
+
+KORETAIL Sans was regenerated from the same Pretendard 1.3.9 TTF, with its
+pinned SHA-256 `3090ccde0442bb347aa7685d9ba8b17436a60682df6e8f92a9a670de14056e22`
+verified, using FontTools 4.66.0 and Brotli 1.2.0. Regenerating with the previous
+1,518 codepoints first reproduced the shipped font byte-for-byte. The extension
+retains every previous codepoint, exactly preserves name/fvar/STAT tables and
+layout feature tags, and preserves outlines and advance widths for all previous
+encoded characters at weights 100, 400, 500, 700 and 900. The existing renamed
+KORETAIL family/instances, attribution and OFL records remain unchanged.
+
+The asset grows from 229,012 to 230,536 bytes (+1,524 bytes), with 1,529 total
+codepoints and 863 Hangul syllables, within the existing 300,000-byte limit.
+New SHA-256: `c664500f0bcb70795a85c08b07fbdc99ffd2e138ae6475dad97b4273d3e0a479`.
+The coverage fixture is regenerated from this exact font, and both existing
+font-coverage tests pass against the current app/lib and preview data corpus.
+No font family, CSS size/weight/loading policy, full-font asset or external font
+request changes. Synchronize only the existing font lock hash and scoped record;
+preserve all protected paths, earlier approval records and enforcement tests.
