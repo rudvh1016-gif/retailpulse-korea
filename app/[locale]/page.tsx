@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { preload } from "react-dom";
 import { notFound } from "next/navigation";
 import RetailPulseApp from "../retailpulse-app";
-import AirportGlancePreview from "../airport-glance-preview";
+import {AirportFocusGlance as AirportGlancePreview} from "../airport-focus-production";
 import { buildMetadata, pageStructuredData, seoLocales, type SeoLocale } from "../seo-config";
 
 /**

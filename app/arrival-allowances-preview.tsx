@@ -7,7 +7,13 @@ const data=snapshot as {countries:Country[]};
 import './arrival-allowances-preview.css';
 /** Official-source review snapshot. No automatic legal interpretation or live AI calls. */
 export default function ArrivalAllowancesPreview({scrollOnMount=false}:{scrollOnMount?:boolean}){
- useEffect(()=>{if(scrollOnMount)document.getElementById('arrival-allowances')?.scrollIntoView({block:'start',behavior:'instant'});},[scrollOnMount]);
+ useEffect(()=>{
+  let active=true,frame=0;
+  const scroll=()=>{if(active&&(scrollOnMount||window.location.hash==='#arrival-allowances')){cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>document.getElementById('arrival-allowances')?.scrollIntoView({block:'start',behavior:'instant'}));}};
+  scroll();void document.fonts.ready.then(scroll);
+  window.addEventListener('hashchange',scroll);window.addEventListener('popstate',scroll);
+  return()=>{active=false;cancelAnimationFrame(frame);window.removeEventListener('hashchange',scroll);window.removeEventListener('popstate',scroll);};
+ },[scrollOnMount]);
  const [countryId,setCountryId]=useState(''),[answers,setAnswers]=useState<Record<string,string>>({});
  const country=data.countries.find(item=>item.id===countryId);
  const matches=(when:Conditions)=>Object.entries(when).every(([key,values])=>values.includes(answers[key]));

@@ -13,13 +13,13 @@ test.beforeEach(async({page})=>{
 for(const [width,height]of [[1440,1000],[360,568],[390,844],[430,700],[390,500]])test(`first entry is immediate, compact and keyboard safe ${width}x${height}`,async({page},testInfo)=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.setViewportSize({width,height});await page.goto('/ko');
  const dialog=page.getByRole('dialog',{name:'새로운 정보가 추가되었어요'});await expect(dialog).toBeVisible();
- await expect(dialog.locator('#update-notice-title')).toBeFocused();await expect(dialog.locator('.update-notice-x')).toHaveCount(0);await expect(dialog.locator('section')).toHaveCount(2);
- await expect(dialog.locator('img,svg,canvas')).toHaveCount(0);await expect(dialog.getByRole('link')).toHaveCount(2);
+ await expect(dialog.locator('#update-notice-title')).toBeFocused();await expect(dialog.locator('.update-notice-x')).toHaveCount(0);await expect(dialog.locator('section')).toHaveCount(4);
+ await expect(dialog.locator('img,svg,canvas')).toHaveCount(0);await expect(dialog.getByRole('link')).toHaveCount(4);
  expect(await page.evaluate(()=>getComputedStyle(document.documentElement).overflow)).toBe('hidden');
  const box=await dialog.boundingBox();expect(box!.x).toBeGreaterThanOrEqual(0);expect(box!.y).toBeGreaterThanOrEqual(0);expect(box!.width).toBeLessThanOrEqual(width);expect(box!.height).toBeLessThanOrEqual(height);
  expect(await dialog.evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);
  await page.screenshot({path:testInfo.outputPath('notice-no-top-close.png')});
- await page.keyboard.press('Shift+Tab');await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeFocused();await page.keyboard.press('Tab');await expect(dialog.getByRole('link',{name:'시간대별 비교 보기'})).toBeFocused();
+ await page.keyboard.press('Shift+Tab');await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeFocused();await page.keyboard.press('Tab');await expect(dialog.getByRole('link',{name:'공항 한눈에 보기'})).toBeFocused();
  await page.keyboard.press('Escape');await expect(dialog).not.toBeVisible();expect(await page.evaluate(()=>document.documentElement.style.overflow)).not.toBe('hidden');
  await page.reload();await expect(dialog).not.toBeVisible();expect(await page.evaluate(key=>sessionStorage.getItem(key),UPDATE_NOTICE_SESSION_KEY)).toBe('1');expect(errors).toEqual([]);
 });
@@ -32,7 +32,7 @@ test('week hiding lasts exactly seven days across reload and another tab',async(
  const other=await context.newPage();await other.goto('/ko');await expect(other.getByRole('dialog')).not.toBeVisible();await other.close();
  await page.clock.fastForward(NOTICE_WEEK_MS-1);await expect(page.getByRole('dialog')).not.toBeVisible();await page.clock.fastForward(1);await expect(page.getByRole('dialog')).toBeVisible();
 });
-for(const [link,id]of [['시간대별 비교 보기','airport-hourly-comparison'],['국가별 여객 보기','airport-route-passengers']])test(`shortcut closes and lands on the real section: ${id}`,async({page})=>{
+for(const [link,id]of [['반입 면세한도 보기','arrival-allowances']])test(`shortcut closes and lands on the real section: ${id}`,async({page})=>{
  await page.goto('/ko');await page.getByRole('dialog').getByRole('link',{name:link}).click();await expect(page).toHaveURL(new RegExp('#'+id+'$'));await expect(page.getByRole('dialog')).not.toBeVisible();
  const target=page.locator('#'+id);await expect(target).toBeInViewport();await expect.poll(async()=>target.evaluate(e=>{const y=e.getBoundingClientRect().top;return y>=0&&y<innerHeight;})).toBe(true);
 });
@@ -42,14 +42,14 @@ test('blocked storage still permits close without errors or new permissions',asy
  await page.goto('/ko');await expect(page.getByRole('dialog')).toBeVisible();await page.getByRole('button',{name:'닫기',exact:true}).click();await expect(page.getByRole('dialog')).not.toBeVisible();expect(await page.evaluate(()=>document.documentElement.style.overflow)).not.toBe('hidden');expect(errors).toEqual([]);
 });
 
-for(const width of [390,1440])for(const start of ['/ko','/ko/airport?terminal=T1','/ko/airport?terminal=T2','/ko/airport?building=CONCOURSE'])test(`hourly notice lands below sticky bars after delayed data from ${start} at ${width}`,async({page},testInfo)=>{
+for(const width of [390,1440])for(const start of ['/ko','/ko/airport?terminal=T1','/ko/airport?terminal=T2','/ko/airport?building=CONCOURSE'])test(`hourly deep link lands below sticky bars after delayed data from ${start} at ${width}`,async({page},testInfo)=>{
  await page.setViewportSize({width,height:900});
  await page.addInitScript(()=>{localStorage.setItem('koretail-airport-scope','T2');});
  await page.route('**/api/live/summary*',async r=>{await new Promise(resolve=>setTimeout(resolve,1600));await r.fulfill({json:SUMMARY_FIXTURE});});
  await page.goto(start);
  const dialog=page.getByRole('dialog');
- await expect(dialog.getByText('시간대별 여객 비교는 전체 공항에서만 볼 수 있어요.')).toBeVisible();
- await dialog.getByRole('link',{name:'시간대별 비교 보기'}).click();
+ await dialog.getByRole('button',{name:'닫기',exact:true}).click();
+ await page.goto('/ko/airport?terminal=all#airport-hourly-comparison');
  await expect(page).toHaveURL(/\/ko\/airport\?terminal=all#airport-hourly-comparison$/);
  await expect(page.locator('.terminal-selector [role="tab"][aria-selected="true"]')).toContainText('전체');
  const target=page.locator('svg#airport-hourly-comparison');
@@ -75,7 +75,8 @@ for(const width of [390,1440])for(const start of ['/ko','/ko/airport?terminal=T1
 test('same fragment click realigns and user scrolling cancels subsequent alignment',async({page})=>{
  await page.goto('/ko/airport?terminal=all#airport-hourly-comparison');
  const dialog=page.getByRole('dialog');
- await dialog.getByRole('link',{name:'시간대별 비교 보기'}).click();
+ await dialog.getByRole('button',{name:'닫기',exact:true}).click();
+ await page.evaluate(()=>{const link=document.createElement('a');link.href='#airport-hourly-comparison';document.body.append(link);link.click();link.remove();});
  const target=page.locator('#airport-hourly-comparison');await expect(target).toBeInViewport();
  await page.mouse.wheel(0,500);await page.waitForTimeout(250);
  await page.evaluate(()=>{

@@ -14,7 +14,7 @@ for(const [width,height,scale,file] of [[360,800,3,960],[390,844,3,1100],[430,93
  const img=page.locator('.glance-art-frame>img');
  await expect.poll(()=>img.evaluate(e=>(e as HTMLImageElement).complete&&(e as HTMLImageElement).naturalWidth>0)).toBe(true);
  const {src,rendered}=await img.evaluate(e=>{const image=e as HTMLImageElement;return {src:new URL(image.currentSrc).pathname,rendered:image.getBoundingClientRect().width};});
- expect(src).toBe(`/images/airport-glance/approved-v1-${file}.webp`);
+ expect(src).toBe(`/images/airport-glance/approval-v2-${file}.webp`);
  expect(file,'the chosen file covers the rendered width at this density').toBeGreaterThanOrEqual(Math.ceil(rendered*scale));
  await context.close();
 });

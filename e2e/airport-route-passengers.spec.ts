@@ -12,13 +12,13 @@ for(const [lang,japan,heading] of [['ko','일본','노선 국가별 출발 여�
   await page.setViewportSize({width:390,height:900});
   await page.route('**/api/live/summary*',routeSummary(summary));
   await page.route('**/api/live/airport-months*',route=>route.fulfill({json:{status:'MISSING',month:'2026-10',months:[],calculatedAt:null,data:null}}));
-  let asked='';
-  await page.route('**/api/live/airport-passenger-stats*',route=>{asked=new URL(route.request().url()).searchParams.get('month')??'';return route.fulfill({json:stats});});
-  await page.goto(`/${lang}/airport`);
+  const asked=new Set<string>();
+  await page.route('**/api/live/airport-passenger-stats*',route=>{asked.add(new URL(route.request().url()).searchParams.get('month')??'');return route.fulfill({json:stats});});
+  await page.goto(`/${lang}/airport-countries`);
   const block=page.getByTestId('airport-route-passengers');
   await block.scrollIntoViewIfNeeded();
   await expect(block.getByRole('heading',{level:4})).toContainText(heading);
-  expect(asked).toBe('2026-10');
+  expect(asked.has('2026-10')).toBe(true);
   await expect(block).toContainText('2026-08');
   const first=block.locator('tbody tr').first();
   await expect(first.locator('th')).toHaveText(japan);
@@ -37,7 +37,7 @@ test('no published month says so instead of showing zeros',async({page})=>{
  await page.route('**/api/live/summary*',routeSummary(summary));
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:{status:'MISSING',month:'2026-10',months:[],calculatedAt:null,data:null}}));
  await page.route('**/api/live/airport-passenger-stats*',route=>route.fulfill({json:{status:'MISSING',requestedMonth:'2026-10',month:null,previousMonth:null,current:{},previous:{}}}));
- await page.goto('/ko/airport');
+ await page.goto('/ko/airport-countries');
  const block=page.getByTestId('airport-route-passengers');
  await expect(block).toContainText('공개된 공식 여객 통계가 아직 없습니다');
  await expect(block.locator('table')).toHaveCount(0);

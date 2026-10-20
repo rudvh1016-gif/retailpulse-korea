@@ -41,7 +41,7 @@ async function openMonthly(page:Page,lang:Lang,width:number,payload=reply()){
  await page.emulateMedia({reducedMotion:'reduce'});
  await page.route('**/api/live/summary*',routeSummary(summary));
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:payload}));
- await page.goto(`/${lang}/airport`);
+ await page.goto(`/${lang}/airport`,{waitUntil:'domcontentloaded'});
  const section=page.getByTestId('airport-month-flights');
  await section.scrollIntoViewIfNeeded();
  await expect(section.getByTestId('airport-month-basis')).toContainText('2026');

@@ -120,7 +120,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run typecheck
       - run: npm run e2e:install
-      - run: npx playwright test e2e/airport-focus-preview.spec.ts e2e/month-comparison-compact.spec.ts --output airport-focus-results --workers=2
+      - run: npx playwright test e2e/airport-focus-preview.spec.ts e2e/airport-focus-production.spec.ts e2e/month-comparison-compact.spec.ts --output airport-focus-results --workers=2
       - uses: actions/upload-artifact@v4
         if: always()
         with:

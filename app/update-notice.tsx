@@ -15,6 +15,8 @@ export default function UpdateNotice({lang}:{lang:string}){
  const preview=usePathname()?.endsWith('/airport-focus-preview')??false;
  const previewItems=[{title:'공항 한눈에',body:'출근 후 30초, 출국객·항공편 변화와 준비할 휴일을 확인하세요. 근무 중 안내도 바로 찾을 수 있어요.',path:'공항 한눈에 → 오늘 수치·준비 일정',view:'home',link:'공항 한눈에 보기'},{title:'국가별 흐름',body:'국가별 전월 비교와 최근 6개월 추이를 한곳에서 확인하세요.',path:'국가별 흐름 → 월 비교·6개월 추이',view:'countries',link:'국가별 흐름 보기'},{title:'미리 준비',body:'주요 휴일의 날짜·요일·적용 대상과 연속휴무 조건을 확인하세요.',path:'미리 준비 → 국가별 주요 휴일',view:'prepare',link:'주요 휴일 보기'},{title:'도착국 면세 안내',body:'중국·일본 등 주요 도착지의 금액·술·담배 기준을 여행자 조건별로 확인하세요.',path:'미리 준비 → 도착국 반입 면세한도',view:'prepare&section=arrival#arrival-allowances',link:'반입 면세한도 보기'}];
  const locale=lang.startsWith('zh')?'zh':lang==='en'?'en':lang==='ja'?'ja':'ko',c=copy[locale];
+ const focusNotice=preview||locale==='ko';
+ const focusHref=(view:string)=>preview?`/${locale}/airport-focus-preview?view=${view}`:view==='home'?`/${locale}`:view==='countries'?`/${locale}/airport-countries`:view.includes('section=arrival')?`/${locale}/airport-prepare#arrival-allowances`:`/${locale}/airport-prepare`;
  const dialog=useRef<HTMLDialogElement>(null),dismiss=useRef<(week:boolean)=>void>(()=>{});
  useLayoutEffect(()=>{
   const node=dialog.current;if(!node)return;
@@ -44,7 +46,7 @@ export default function UpdateNotice({lang}:{lang:string}){
   reconcile(); // First hydration: no display-delay timer, network call or analytics event.
   return()=>{window.clearTimeout(timer);window.removeEventListener('storage',storage);window.removeEventListener('focus',focus);close();dismiss.current=()=>{};};
  },[]);
- return <dialog ref={dialog} className="update-notice" data-airport-focus={preview?'true':undefined} aria-labelledby="update-notice-title" aria-modal="true" onCancel={event=>{event.preventDefault();dismiss.current(false);}} onKeyDown={event=>{
+ return <dialog ref={dialog} className="update-notice" data-airport-focus={focusNotice?'true':undefined} aria-labelledby="update-notice-title" aria-modal="true" onCancel={event=>{event.preventDefault();dismiss.current(false);}} onKeyDown={event=>{
   if(event.key!=='Tab')return;
   const items=event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled),a[href]'),first=items[0],last=items[items.length-1];
   if(event.shiftKey&&(document.activeElement===first||document.activeElement?.id==='update-notice-title')){event.preventDefault();last?.focus();}
@@ -53,9 +55,9 @@ export default function UpdateNotice({lang}:{lang:string}){
   <div className="update-notice-top"><span className="update-notice-new">NEW</span></div>
   <h2 id="update-notice-title" tabIndex={-1}>{c.title}</h2>
   <div className="update-notice-items">
-   {preview?previewItems.map(item=><section key={item.view}><div><h3>{item.title}</h3><p>{item.body}</p><small>{item.path}</small></div><a href={`/${locale}/airport-focus-preview?view=${item.view}`} onClick={()=>dismiss.current(false)}>{item.link} →</a></section>):<>
+   {focusNotice?previewItems.map(item=><section key={item.view}><div><h3>{item.title}</h3><p>{item.body}</p><small>{item.path}</small></div><a href={focusHref(item.view)} onClick={()=>dismiss.current(false)}>{item.link} →</a></section>):<>
    <section><div><h3>{c.hour}</h3><p>{c.hourBody}</p><small>{c.hourPath}</small><p className="update-notice-note">{c.hourNote}</p></div><a href={`/${locale}/airport?terminal=all#airport-hourly-comparison`} onClick={()=>dismiss.current(false)}>{c.hourLink} →</a></section>
-   <section><div><h3>{c.country} <span aria-hidden="true">*</span></h3><p>{c.countryBody}</p><small>{c.countryPath}</small><p className="update-notice-note">{c.countryNote}</p></div><a href={`/${locale}/airport?terminal=all#airport-route-passengers`} onClick={()=>dismiss.current(false)}>{c.countryLink} →</a></section>
+   <section><div><h3>{c.country} <span aria-hidden="true">*</span></h3><p>{c.countryBody}</p><small>{c.countryPath}</small><p className="update-notice-note">{c.countryNote}</p></div><a href={`/${locale}/airport-countries#airport-route-passengers`} onClick={()=>dismiss.current(false)}>{c.countryLink} →</a></section>
   </>}
   </div>
   <footer><button type="button" className="update-notice-week" onClick={()=>dismiss.current(true)}>{c.week}</button><button type="button" className="update-notice-close" onClick={()=>dismiss.current(false)}>{c.close}</button></footer>

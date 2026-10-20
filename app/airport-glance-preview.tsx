@@ -67,7 +67,7 @@ const passengerCopy={
  zh:{transfer:'预计中转旅客',transferBasis:'中转安检口径 · 到达日',today:'今日预计出境旅客',selected:'所选日预计出境旅客',people:'人',basis:'仁川机场官方全天预测',shared:'T1共用（含登机楼）',collected:'采集',partial:'全天预测不完整'},
  ja:{transfer:'予想乗継客',transferBasis:'乗継保安検査基準・到着日',today:'今日の予想出国者数',selected:'選択日の予想出国者数',people:'人',basis:'仁川空港公式の一日予測',shared:'T1共通（搭乗棟含む）',collected:'取得',partial:'一日予測が不完全'},
 } as const;
-export interface GlanceOverviewContext {day:string;scope:GlanceScope;flights:number|null;passengers:number|null;transferPassengers:number|null;referenceSum:number|null;flightComparison:{mean:number;delta:number;percent:number}|null;flightBaseline:{mean:number;delta:number;percent:number|null;days:number;start:string;end:string;previous:boolean}|null}
+export interface GlanceOverviewContext {selectedCountryChanges?:Array<{country:string;label:string;count:number;mean:number;delta:number;percent:number|null;month:string;days:number}>;day:string;scope:GlanceScope;flights:number|null;passengers:number|null;transferPassengers:number|null;referenceSum:number|null;flightComparison:{mean:number;delta:number;percent:number}|null;flightBaseline:{mean:number;delta:number;percent:number|null;days:number;start:string;end:string;previous:boolean}|null}
 export default function AirportGlancePreview({lang,artworkSrc=null,published=false,selectedDate=null,onDateChange,overviewHeading,overviewExtras,hideRepeatedFlightSummary=false,hideRepeatedPassengerSummary=false,artworkSrcSet,artworkNote}:{lang:Lang;artworkSrc?:string|null;published?:boolean;selectedDate?:string|null;onDateChange?:(date:string|null)=>void;overviewHeading?:(context:GlanceOverviewContext)=>ReactNode;overviewExtras?:ReactNode;hideRepeatedFlightSummary?:boolean;hideRepeatedPassengerSummary?:boolean;artworkSrcSet?:string;artworkNote?:string}){
  const c=copy[lang],ui=interfaceCopy[lang],dc=destinationCopy[lang],ic=insightCopy[lang];
  const [futureHours,setFutureHours]=useState<1|3|6>(1);
@@ -169,6 +169,14 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
   const countryLabel=(country:string)=>{const src=countryFlag(country);return <span className="glance-country-name">{src&&<img src={src} width="18" height="18" alt="" loading="lazy" decoding="async"/>}<span>{countryName(country)}</span></span>;};
  const knownCountries=data?.countries.filter(row=>row.country!==null)??[],unknownCountry=data?.countries.find(row=>row.country===null);
  const countryLimit=knownCountries[5]?.flights??0,leadingCountries=knownCountries.filter((row,index)=>index<6||row.flights===countryLimit);
+ const countryDays=previous?.includedDays??[];
+ const selectedCountryChanges=data&&previous&&countryDays.length&&countryDays.every(value=>value<day)?data.countries.flatMap(row=>{
+  if(!row.country||row.country==='KR')return [];
+  const total=previous.scopes[monthScope].destinationCountries[row.country];
+  if(total===undefined)return [];
+  const mean=total/countryDays.length,delta=row.flights-mean;
+  return mean>=10&&Math.abs(delta)>=2?[{country:row.country,label:names.of(row.country)??row.country,count:row.flights,mean,delta,percent:mean>0?delta/mean*100:null,month:previous.month,days:countryDays.length}]:[];
+ }).sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta)).slice(0,2):[];
  const countryRow=(row:{country:string|null;flights:number})=><li key={row.country??'UNKNOWN'} data-country={row.country??'UNKNOWN'}><span>{row.country===null?dc.unknown:countryLabel(row.country)}</span><span>{fmt.format(row.flights)} {c.unit}</span><strong>{data&&data.total>0?`${fmt.format(row.flights/data.total*100)}%`:'—'}</strong></li>;
  const waitValue=(value:NonNullable<typeof wait>)=>`${value.minutes}${value.row.waitTimeRaw==='60+'?'+':''} ${ic.minute}`;
  const Container=published?'section':'main';
@@ -177,7 +185,7 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
   <div className="glance-heading"><h1>{c.title}</h1>{!published&&<small>{c.preview}</small>}</div>
   <div className="glance-controls"><div role="group" aria-label={ui.terminal}>{(['all','T1','CONCOURSE','T2'] as const).map(value=><button key={value} aria-label={value==='all'?c.all:value==='CONCOURSE'?c.concourse:value} aria-pressed={scope===value} onClick={()=>chooseScope(value)}>{value==='all'?c.all:value==='T1'?mainLabel:value==='CONCOURSE'?c.concourse:value}{scope===value&&<i className="glance-selection-rule" aria-hidden="true"/>}</button>)}</div><label className="glance-date-control">{c.date}<input name="airport-date" autoComplete="off" type="date" value={day} onChange={event=>{if(event.target.value)setDate(event.target.value);}}/></label><button className="glance-today" data-current={date===null} onClick={()=>setDate(null)}>{c.today}</button><span>KST</span></div>
   <p className="glance-shared-note" data-testid="glance-shared-processing">{sharedNote}</p>
-  {overviewHeading?.({day,scope,flights:data?.total??null,passengers:forecastPassengers,transferPassengers,referenceSum:referenceSum?.total??null,flightComparison:dailyComparison,flightBaseline})}
+  {overviewHeading?.({selectedCountryChanges,day,scope,flights:data?.total??null,passengers:forecastPassengers,transferPassengers,referenceSum:referenceSum?.total??null,flightComparison:dailyComparison,flightBaseline})}
   <section className="glance-insights" aria-label={ui.summary}>
    {!hideRepeatedPassengerSummary&&<div className="glance-passenger-pair">
    <a className="glance-passengers" href={targets.forecast} data-testid="glance-key-passengers"><span>{todayLabel?pc.today:pc.selected}</span><strong>{forecastPassengers!==null?`${fmt.format(forecastPassengers)}${pc.people}`:forecastCoverage==='PARTIAL'?pc.partial:summary===undefined?c.loading:ic.unavailable}</strong><small>{dayText} · {forecastScope} · {pc.basis} · {pc.collected} {summary===undefined?stampHold:stamp(forecastAt)}</small></a>

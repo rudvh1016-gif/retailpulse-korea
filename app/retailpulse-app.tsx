@@ -9,7 +9,9 @@ import dynamic from 'next/dynamic';
 // first download; their initial content is still rendered on their own routes.
 // Reaching for the airport glance tab starts its load the same way (see prepareAirportView).
 // The glance routes pass the glance in from their server pages (see RetailPulseProps).
-const loadAirportGlance=()=>import('./airport-glance-preview');
+const loadAirportGlance=()=>import('./airport-focus-production').then(module=>({default:module.AirportFocusGlance}));
+const AirportCountryFlow=dynamic(()=>import('./airport-focus-production').then(module=>module.AirportCountryFlow));
+const AirportPreparation=dynamic(()=>import('./airport-focus-production').then(module=>module.AirportPreparation));
 const LazyAirportGlance=dynamic(loadAirportGlance);
 const prepareAirportGlance=()=>{loadAirportGlance().catch(()=>{});};
 const MonthlyRecordsView=dynamic(()=>import('./monthly-records').then(module=>module.MonthlyRecordsView));
@@ -80,8 +82,8 @@ function OnDemandIndustryGuide(props: ComponentProps<typeof LazyIndustryGuide>) 
 }
 // The airport routes pass AirportView in from their server pages (see RetailPulseProps);
 // on a Seoul route the airport code loads only when the airport is reached for.
-let airportViewModule: typeof import('./airport-view') | undefined;
-const loadAirportView=()=>import('./airport-view').then(module=>(airportViewModule=module));
+let airportViewModule: {AirportView:typeof AirportViewComponent} | undefined;
+const loadAirportView=()=>import('./airport-focus-production').then(module=>(airportViewModule={AirportView:module.AirportFocusStatus}));
 const LazyAirportView=dynamic(()=>loadAirportView().then(module=>module.AirportView));
 // Pointing at, touching or focusing a way to the airport starts that same load,
 // so the tap does not wait for it. Visitors who never reach for it load nothing.
@@ -148,7 +150,7 @@ import { areaAnswerText, type TodayAnswer, type TodayAnswerArea } from "../lib/t
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
 
 
-type View = "airport-glance" | "today" | "airport" | "business" | "forecast" | "where-to" | "consumption" | "tourism-desk" | "about" | "more";
+type View = "airport-countries" | "airport-prepare" | "airport-glance" | "today" | "airport" | "business" | "forecast" | "where-to" | "consumption" | "tourism-desk" | "about" | "more";
 type AirportSection = "now" | "arrivals" | "flights" | "stores" | "history";
 type AreaId = "myeongdong" | "hongdae" | "seongsu" | "itaewon";
 
@@ -170,28 +172,28 @@ const copy = {
   ko: {
     hero: "지금 서울은\n어떻게 움직이고 있나요?",
     sub: "공식 데이터만 모아 명동·홍대·성수·이태원와 인천공항의 지금과 다음을 보여줍니다.",
-    'airport-glance': '공항 한눈에', today: "서울", airport: "공항", business: "매장", forecast: "기록", 'where-to': "서울 한눈에", consumption:"요즘 뜨는 소비", "tourism-desk": "관광안내", about: "소개", more: "더보기",
+    'airport-countries':'국가별 흐름', 'airport-prepare':'미리 준비', 'airport-glance': '한눈에', today: "서울", airport: "공항현황", business: "매장", forecast: "기록", 'where-to': "서울 한눈에", consumption:"요즘 뜨는 소비", "tourism-desk": "관광안내", about: "소개", more: "더보기",
     kst: "모든 시간은 한국 표준시(KST)입니다.",
     truth: "공식 발표값과 KORETAIL의 비교·참고 예상을 구분하며, 확인되지 않은 값은 만들어 채우지 않습니다.",
   },
   en: {
     hero: "How is Seoul\nmoving right now?",
     sub: "Official data only, showing what Myeongdong, Hongdae, Seongsu, Itaewon and Incheon Airport look like now and next.",
-    'airport-glance': 'Airport glance', today: "Seoul", airport: "Airport", business: "Business", forecast: "Records", 'where-to': "Seoul at a glance", consumption:"Consumption", "tourism-desk": "Guide Desk", about: "About", more: "More",
+    'airport-countries':'Country trends', 'airport-prepare':'Prepare ahead', 'airport-glance': 'Airport glance', today: "Seoul", airport: "Airport", business: "Business", forecast: "Records", 'where-to': "Seoul at a glance", consumption:"Consumption", "tourism-desk": "Guide Desk", about: "About", more: "More",
     kst: "All times are Korea Standard Time (KST).",
     truth: "Official figures are distinguished from KORETAIL comparisons and reference estimates. Nothing unverified is filled in.",
   },
   zh: {
     hero: "此刻的首尔\n正在如何流动？",
     sub: "仅汇总官方数据，呈现明洞、弘大、圣水、梨泰院与仁川机场的当前与接下来。",
-    'airport-glance': '机场一览', today: "首尔", airport: "机场", business: "门店", forecast: "记录", 'where-to': "首尔一览", consumption:"近期消费", "tourism-desk": "旅游咨询", about: "关于", more: "更多",
+    'airport-countries':'国家趋势', 'airport-prepare':'提前准备', 'airport-glance': '机场一览', today: "首尔", airport: "机场", business: "门店", forecast: "记录", 'where-to': "首尔一览", consumption:"近期消费", "tourism-desk": "旅游咨询", about: "关于", more: "更多",
     kst: "所有时间均为韩国标准时间（KST）。",
     truth: "官方发布值与KORETAIL的比较及参考预测分别标明，不填补未经确认的数值。",
   },
   ja: {
     hero: "いまソウルは\nどう動いていますか？",
     sub: "公式データだけを集め、明洞・弘大・聖水・梨泰院と仁川空港の現在とこれからを表示します。",
-    'airport-glance': '空港一覧', today: "ソウル", airport: "空港", business: "店舗", forecast: "記録", 'where-to': "ソウルひと目で", consumption:"最近の消費", "tourism-desk": "観光案内", about: "紹介", more: "その他",
+    'airport-countries':'国別の動向', 'airport-prepare':'事前準備', 'airport-glance': '空港一覧', today: "ソウル", airport: "空港", business: "店舗", forecast: "記録", 'where-to': "ソウルひと目で", consumption:"最近の消費", "tourism-desk": "観光案内", about: "紹介", more: "その他",
     kst: "すべての時刻は韓国標準時（KST）です。",
     truth: "公式発表値とKORETAILの比較・参考予測を区別し、確認できない値は作って埋めません。",
   },
@@ -467,7 +469,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         setSelected(routeArea as AreaId);
         setView("tourism-desk");
       } else if (slug==='predictions') setView('where-to');
-      else if (["airport-glance", "today", "forecast", "where-to", "consumption", "airport", "business", "about", "more"].includes(slug)) setView(slug as View);
+      else if (["airport-countries", "airport-prepare", "airport-glance", "today", "forecast", "where-to", "consumption", "airport", "business", "about", "more"].includes(slug)) setView(slug as View);
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
@@ -544,8 +546,8 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           <span>KORETAIL</span><span className="brand-descriptor">Retail Demand Signals for Korea</span>
         </button>
         <nav className="top-nav" aria-label="Primary">
-          {(["airport-glance", "airport", "where-to", "today", "consumption", "business", "more"] as View[]).map((item) => (
-            <a key={item} href={routeFor(lang, item, selected)} className={view === item || (item === "more" && ["tourism-desk","forecast","about"].includes(view)) ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "business" ? prepareBusinessView : item === "today" ? prepareTodaySignals : item === "where-to" || item === "consumption" ? prepareSeoulComparison : undefined} onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "business" ? prepareBusinessView : item === "today" ? prepareTodaySignals : item === "where-to" || item === "consumption" ? prepareSeoulComparison : undefined} aria-current={view === item ? "page" : item === "more" && ["tourism-desk","forecast","about"].includes(view) ? "location" : undefined}>{navLabel(item)}</a>
+          {(["airport-glance", "airport", "airport-countries", "airport-prepare", "more"] as View[]).map((item) => (
+            <a key={item} href={routeFor(lang, item, selected)} className={view === item || (item === "more" && ["today","where-to","consumption","business","tourism-desk","forecast","about"].includes(view)) ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "business" ? prepareBusinessView : item === "today" ? prepareTodaySignals : item === "where-to" || item === "consumption" ? prepareSeoulComparison : undefined} onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "business" ? prepareBusinessView : item === "today" ? prepareTodaySignals : item === "where-to" || item === "consumption" ? prepareSeoulComparison : undefined} aria-current={view === item ? "page" : item === "more" && ["today","where-to","consumption","business","tourism-desk","forecast","about"].includes(view) ? "location" : undefined}>{navLabel(item)}</a>
           ))}
         </nav>
         <div className="header-meta">
@@ -601,6 +603,8 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             setDate={changeDate}
           />
         )}
+        {view === "airport-countries" && <AirportCountryFlow lang={lang} date={serviceDate}/>}
+        {view === "airport-prepare" && <AirportPreparation lang={lang}/>}
         {view === "business" && <BusinessView lang={lang} selected={selected} setSelected={selectArea} industry={industry} setIndustry={setIndustry} date={serviceDate} setDate={changeDate} IndustryGuide={IndustryGuide} BusinessPrep={BusinessPrep} DateNavigator={DateNavigator} AreaCurrentBrief={AreaCurrentBrief} />}
         {view === 'where-to' && <WhereToView lang={lang}/>}
         {view === 'consumption' && <ConsumptionView lang={lang} area={selected} onArea={selectArea}/>}
@@ -634,20 +638,20 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         </footer>
       </main>
 
-      <nav ref={bottomNavigationRef} className="bottom-nav glass-nav" aria-label="Primary">
-        <span className="glass-nav-indicator" aria-hidden="true"/>
-        {(["airport-glance", "airport", "where-to", "today", "consumption", "more"] as View[]).map((item) => (
+      <nav ref={bottomNavigationRef} className="bottom-nav glass-nav" aria-label="Primary" style={{gridTemplateColumns:"repeat(5,minmax(0,1fr))"}}>
+        <span className="glass-nav-indicator" aria-hidden="true" style={{width:"calc((100% - 14px)/5)"}}/>
+        {(["airport-glance", "airport", "airport-countries", "airport-prepare", "more"] as View[]).map((item) => (
           <a
             key={item}
             href={navigationHref(item)}
-            className={(view === item || (["business","tourism-desk","forecast","about"].includes(view) && item === "more")) ? "active" : ""}
+            className={(view === item || (["today","where-to","consumption","business","tourism-desk","forecast","about"].includes(view) && item === "more")) ? "active" : ""}
             onClick={(event) => { if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;event.preventDefault();navigate(item); }}
             onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "today" ? prepareTodaySignals : item === "where-to" || item === "consumption" ? prepareSeoulComparison : undefined}
             onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "today" ? prepareTodaySignals : item === "where-to" || item === "consumption" ? prepareSeoulComparison : undefined}
-            aria-current={view === item ? "page" : ["business","tourism-desk","forecast","about"].includes(view) && item === "more" ? "location" : undefined}
+            aria-current={view === item ? "page" : ["today","where-to","consumption","business","tourism-desk","forecast","about"].includes(view) && item === "more" ? "location" : undefined}
             aria-label={navLabel(item)}
           >
-            <NavigationIcon name={item} />
+            <NavigationIcon name={item==='airport-countries'?'where-to':item==='airport-prepare'?'today':item} />
             <span>{item==='where-to'?localText(lang,{ko:'서울 한눈에',en:'Seoul glance',zh:'首尔一览',ja:'ソウル一覧'}):item==='consumption'?localText(lang,{ko:'소비 흐름',en:'Spending',zh:'消费',ja:'消費'}):t[item].toUpperCase()}</span>
           </a>
         ))}
@@ -1078,7 +1082,7 @@ function MoreView({
       </div>
 
       <nav className="more-section-links" aria-label={localText(lang,{ko:'서비스 메뉴',en:'Service sections',zh:'服务菜单',ja:'サービスメニュー'})}>
-        {(['business','tourism-desk','forecast','about'] as const).map(item=><a key={item} href={routeFor(lang,item,selected)} onPointerEnter={item==='business'?prepareBusinessView:undefined} onFocus={item==='business'?prepareBusinessView:undefined} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}
+        {(['where-to','today','consumption','business','tourism-desk','forecast','about'] as const).map(item=><a key={item} href={routeFor(lang,item,selected)} onPointerEnter={item==='business'?prepareBusinessView:undefined} onFocus={item==='business'?prepareBusinessView:undefined} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}
       </nav>
       <AnalyticsConsent lang={lang} />
       <SiteUsageGuide lang={lang} />

@@ -30,6 +30,8 @@ const paintedBackground = async (page: import("@playwright/test").Page, selector
   for (const start of Array.from(document.querySelectorAll(sel)).slice(0, 6)) {
     // The airport sky panel (owner decision 2026-10-02) is a figure, not a page surface.
     if (start.closest(".airport-hero")) continue;
+    // The owner requested a liquid briefing; other normal surfaces stay white.
+    if (start.closest(".focus-report")) continue;
     let node: Element | null = start;
     while (node) {
       const style = getComputedStyle(node);
@@ -90,13 +92,13 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
   await expect(indicator).toHaveCSS('height', '54px');
   await expect(indicator).toHaveCSS('position', 'absolute');
   await expect(indicator).toHaveCSS('background-color', 'rgba(187, 187, 188, 0.36)');
-  await expect(nav.locator('a')).toHaveCount(6);
+  await expect(nav.locator('a')).toHaveCount(5);
   const bounds = await nav.boundingBox();
   const marker = await indicator.boundingBox();
   expect(bounds).not.toBeNull();
   expect(marker).not.toBeNull();
   expect(marker!.width).toBeGreaterThan(0);
-  expect(marker!.width).toBeLessThanOrEqual((bounds!.width - 8) / 6 + 1);
+  expect(marker!.width).toBeLessThanOrEqual((bounds!.width - 8) / 5 + 1);
   expect(marker!.height).toBe(54);
   expect(marker!.x).toBeGreaterThanOrEqual(bounds!.x);
   expect(marker!.y).toBeGreaterThanOrEqual(bounds!.y);
@@ -116,6 +118,8 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
           const sel = rule.selectorText;
           // Exact approved marker/value only, bounded in the browser above
           if (sel === '.glass-nav-indicator' && bg === 'rgba(187, 187, 188, 0.36)' && !filter) continue;
+          // Exact owner-requested liquid surfaces only.
+          if (['.update-notice[data-airport-focus="true"]','.update-notice[data-airport-focus=true]','.focus-header','.focus-report'].includes(sel)) continue;
           // Semantic exceptions: modal scrim, chart bars, tab underlines, accent lines.
           const semantic = /modal-backdrop|-bars i|::after|::before|\bi\b|button\.active|\.compare-bars|\.history-bars|\.av-|\.airport-flow|\.airport-hero/.test(sel);
           if (semantic) continue;

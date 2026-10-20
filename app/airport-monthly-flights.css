@@ -16,7 +16,7 @@
 .airport-month-table table {width:100%;table-layout:fixed;border-collapse:collapse;font:inherit;font-size:var(--type-secondary);}
 .airport-month-value-column {width:19%;}
 /* Reserve space for a long signed rate before the airline name takes the remainder. */
-.airport-month-rate-column {width:max(25%,14ch);}
+.airport-month-rate-column {width:14ch;}
 .airport-month-table caption {text-align:start;line-height:1.6;padding-block:8px;}
 .airport-month-table th,.airport-month-table td {text-align:end;padding:8px 3px;border-bottom:1px solid #eee;vertical-align:top;}
 .airport-month-table th:first-child {text-align:start;overflow-wrap:anywhere;}
