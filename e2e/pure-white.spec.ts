@@ -84,7 +84,7 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
   // Owner-approved glass-navigation preview: this is one small selection
   // marker inside the bottom nav, not a translucent page/card surface
   // docs/approvals/glass-navigation-preview-20261013.json; its grey glass
-  // value follows the owner's reference tab bar since 2026-10-14
+  // base value follows the owner's reference tab bar since 2026-10-14
   // (docs/approvals/mobile-tabbar-reference-20261014.json).
   const nav = page.locator('nav.bottom-nav.glass-nav');
   const indicator = nav.locator(':scope > .glass-nav-indicator');
@@ -93,7 +93,8 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
   await expect(indicator).toBeVisible();
   await expect(indicator).toHaveCSS('height', '54px');
   await expect(indicator).toHaveCSS('position', 'absolute');
-  await expect(indicator).toHaveCSS('background-color', 'rgba(187, 187, 188, 0.36)');
+  // The owner's 2026-10-20 neutral-palette revision makes the selected marker charcoal.
+  await expect(indicator).toHaveCSS('background-color', 'rgb(36, 39, 44)');
   await expect(nav.locator('a')).toHaveCount(5);
   const bounds = await nav.boundingBox();
   const marker = await indicator.boundingBox();

@@ -16,6 +16,7 @@ for(const width of [360,390,430,1440])test(`airport production composition ${wid
  await page.goto('/ko?date=2026-10-19',{waitUntil:'domcontentloaded'});
  for(const text of ['단순합계 112,403명','103,124명','9,279명'])await expect(page.locator('.focus-report-lines')).toContainText(text);
  await expect(page.locator('.focus-selected-country-changes')).toContainText('일본행');
+ await expect(page.getByRole('link',{name:'터미널·시간대 확인 ↗',exact:true})).toHaveAttribute('href','/ko/airport?date=2026-10-19');
  for(const rate of await page.locator('.focus-report-lines .change-rate').all())await expect(rate).toHaveCSS('white-space','nowrap');
  await expect(page.locator('.airport-focus-operating')).toHaveCSS('padding-left','0px');
  const today=await page.locator('.focus-report-lines').boundingBox(),future=await page.locator('.focus-preparation-brief').boundingBox();
