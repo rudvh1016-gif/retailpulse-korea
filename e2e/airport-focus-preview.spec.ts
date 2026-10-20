@@ -67,11 +67,21 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
    await model.scrollIntoViewIfNeeded();
    await expect.poll(()=>model.evaluate((img:HTMLImageElement)=>img.complete&&img.naturalWidth>0)).toBe(true);
    await expect(model).toBeVisible();
+   expect(await model.evaluate((img:HTMLImageElement)=>img.currentSrc)).toContain('/airport-models/approval-v3/');
    await expect(model).toHaveCSS('opacity','1');
   }
   await page.locator('.airport-scene-picture').first().screenshot({path:testInfo.outputPath(`airport-model-${width}.png`)});
   await page.evaluate(()=>scrollTo(0,0));
   await page.screenshot({path:testInfo.outputPath(`airport-status-${width}.png`),fullPage:true});
+  for(const [name,asset] of [['T1','T1'],['T2','T2'],['탑승동','CONCOURSE']]){
+   await page.getByRole('tab',{name,exact:true}).click();
+   const model=page.locator('.airport-scene-picture img').first();
+   await model.scrollIntoViewIfNeeded();
+   await expect.poll(()=>model.evaluate((img:HTMLImageElement)=>img.complete&&img.naturalWidth>0)).toBe(true);
+   expect(await model.evaluate((img:HTMLImageElement)=>img.currentSrc)).toContain(`/approval-v3/${asset}.svg`);
+   await page.locator('.airport-scene-picture').first().screenshot({path:testInfo.outputPath(`airport-model-${asset}-${width}.png`)});
+  }
+  await page.getByRole('tab',{name:/^전체/ }).click();
   await page.locator('.focus-country-jump').click();
   await expect(page.getByTestId('airport-route-passengers')).toBeVisible();
   await expect(page.locator('.focus-country-brief')).toBeInViewport();
