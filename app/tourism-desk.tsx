@@ -816,16 +816,16 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
         </div> : <p className="tourism-empty">{copy.unavailable}</p>}
       </section>
 
-      <section className="tourism-guide-section" aria-labelledby="tourism-limits-title">
-        <header className="tourism-section-head">
-          <h2 id="tourism-limits-title">{copy.sectionLimits}</h2>
-          <p>{copy.limitsIntro}</p>
-        </header>
-        <ul className="tourism-limits">
-          {limitLines(lang, areaName).map((line) => <li key={line}>{line}</li>)}
-        </ul>
-      </section>
     </>}
 
+    <section className="tourism-guide-section" aria-labelledby="tourism-limits-title">
+      <header className="tourism-section-head">
+        <h2 id="tourism-limits-title">{copy.sectionLimits}</h2>
+        <p>{copy.limitsIntro}</p>
+      </header>
+      <ul className="tourism-limits">
+        {limitLines(lang, areaName).map((line) => <li key={line}>{line}</li>)}
+      </ul>
+    </section>
   </section>;
 }

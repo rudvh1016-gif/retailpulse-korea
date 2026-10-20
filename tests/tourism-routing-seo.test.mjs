@@ -83,3 +83,11 @@ test("the former flat route redirects and only nested Tourism Desk URLs enter th
       "the flat /tourism-desk URL is a permanent redirect, so it must never be offered for indexing");
   }
 });
+
+test("explicit Tourism Desk destinations do not inherit a saved home location", async () => {
+  const areaPage = await readFile(new URL("../app/[locale]/tourism-desk/[area]/page.tsx", import.meta.url), "utf8");
+  assert.match(areaPage, /initialArea=\{area as TourismDeskArea\}/);
+  assert.match(areaPage, /initialScope="area"/,
+    "home scope restores personal.location during hydration, replacing the URL's explicit destination");
+  assert.match(areaPage, /\binitialRoute\b/);
+});
