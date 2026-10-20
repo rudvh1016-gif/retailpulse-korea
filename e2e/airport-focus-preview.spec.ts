@@ -14,7 +14,8 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await page.route('**/api/live/flights*',route=>route.fulfill({json:flights}));
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:months}));
  await page.route('**/api/live/airport-passenger-stats*',route=>route.fulfill({json:passengerStats}));
- await page.goto('/ko/airport-focus-preview');
+ await page.route(/google-analytics\.com|googletagmanager\.com|analytics\.google\.com/,r=>r.abort());
+ await page.goto('/ko/airport-focus-preview',{waitUntil:'domcontentloaded'});
  await page.getByRole('dialog').getByRole('button',{name:'닫기',exact:true}).click();
  await expect(page.getByRole('dialog')).not.toBeVisible();
  await expect(page.getByTestId('glance-key-passengers')).toContainText('103,124');
