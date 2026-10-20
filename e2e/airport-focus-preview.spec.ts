@@ -20,9 +20,12 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.getByRole('dialog')).not.toBeVisible();
  await expect(page.getByTestId('glance-key-passengers')).toHaveCount(0);
  await expect(page.getByTestId('glance-key-sum')).toHaveCount(0);
- await expect(page.locator('.focus-report-lines')).toContainText('예상 출국객 103,124명 + 예상 환승객 9,279명 = 단순합계 112,403명');
+ await expect(page.locator('.focus-report-lines')).toContainText('단순합계 112,403명');
  await expect(page.locator('.focus-report-basis')).toContainText('합산 비교자료 부족');
  await expect(page.locator('.focus-report-lines')).not.toContainText('9,546');
+ await expect(page.locator('.focus-passenger-total')).toHaveCSS('white-space','nowrap');
+ await expect(page.locator('.focus-passenger-comparison')).toHaveText('(전월 일평균 대비: 비교자료 확인 필요)');
+ expect(await page.locator('.focus-passenger-total').evaluate(node=>node.getBoundingClientRect().height<32)).toBe(true);
  await expect(page.getByTestId('glance-day-comparison')).toHaveCount(0);
  await expect(page.locator('.focus-line-chart')).toHaveCount(3);
  await expect(page.locator('.focus-line-chart').first()).toContainText('4월');

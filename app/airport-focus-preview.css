@@ -71,3 +71,7 @@
 
 /* Mobile-only owner adjustment; desktop and supporting copy stay unchanged. */
 @media(max-width:700px){.focus-report .focus-report-lines p,.focus-report .focus-preparation-brief p{font-size:12px}}
+
+/* Keep the requested arithmetic label and value together on every mobile width. */
+.focus-report .focus-passenger-total{display:inline-block;white-space:nowrap}
+.focus-report-lines .focus-passenger-comparison{margin-top:2px;font-size:12px;line-height:1.5;color:var(--text-muted,#667484)}
