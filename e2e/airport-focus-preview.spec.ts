@@ -54,10 +54,10 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('.focus-report')).toContainText('552.9편');
  await expect(page.locator('.focus-preparation-brief')).toContainText('10/26–11/1');
  await expect(page.locator('.focus-preparation-brief')).toContainText('11/1–11/30');
- await expect(page.locator('.focus-event-row')).toHaveCount(4);
+ await expect(page.locator('.focus-preparation-brief > div > p > .focus-event-row')).toHaveCount(4);
  await expect(page.locator('.focus-report-lines p').first()).toHaveCSS('font-size',width<=700?'12px':'14px');
  await expect(page.locator('.focus-preparation-brief p').first()).toHaveCSS('font-size',width<=700?'12px':'14px');
- await expect(page.locator('.focus-event-row').first()).toContainText('필리핀:');
+ await expect(page.locator('.focus-preparation-brief > div > p > .focus-event-row').first()).toContainText('필리핀:');
  await expect(page.locator('.focus-report-title h2')).toHaveCSS('font-size',width<=700?'16px':'15px');
  await expect(page.locator('.focus-preparation-brief>div>small').first()).toHaveCSS('font-size','12px');
  expect(await page.getByTestId('glance-key-growth').evaluate(node=>Boolean(node.compareDocumentPosition(document.querySelector('#focus-holidays')!)&Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
