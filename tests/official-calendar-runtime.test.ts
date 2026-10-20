@@ -29,3 +29,63 @@ test('full holiday UI consumes changed official dates, retains regional calendar
  const html=renderToStaticMarkup(React.createElement(AirportFocusData.Provider,{value:{asOf:'2026-10-20',trends:[],checkedAt:null,preview:false,failed:false,calendarEvents:[event],calendarReplacementScopes:[{country:'JP',year:2026,scope:'national'}]}},React.createElement(HolidayList,{full:true})));
  assert.match(html,/새 공식 휴일/);assert.match(html,/2026-11-04/);assert.doesNotMatch(html,/문화의 날/);assert.match(html,/괌/);assert.match(html,/자동 신규 반영 전/);
 });
+
+test('general notice baseline is quiet; real calendar change is atomic and unchanged polls keep its identity/time',async()=>{
+ const {db,sql}=database();await refreshOfficialCalendars(db,now,provider());
+ assert.deepEqual(projectOfficialCalendars(await readOfficialCalendars(db),[],now).changes,[]);
+ const changed=new Date(now.getTime()+86400000),body=ics().replace('20260101','20260102');
+ await refreshOfficialCalendars(db,changed,provider(body));
+ const first=projectOfficialCalendars(await readOfficialCalendars(db),[],changed).changes;
+ assert.equal(first.length,1);assert.equal(first[0].country,'US');assert.equal(first[0].changedAt,changed.toISOString());assert.match(first[0].id,/^[a-f0-9]{64}$/);
+ const stored=sql.prepare("SELECT payload FROM official_calendar_current WHERE country='US'").get()!.payload;
+ const next=new Date(changed.getTime()+86400000);await refreshOfficialCalendars(db,next,provider(body));
+ assert.deepEqual(projectOfficialCalendars(await readOfficialCalendars(db),[],next).changes,first);
+ assert.equal(sql.prepare("SELECT payload FROM official_calendar_current WHERE country='US'").get()!.payload,stored);
+});
+test('row order and verification clocks do not become calendar change notices or payload rewrites',async()=>{
+ const {db,sql}=database();await refreshOfficialCalendars(db,now,provider());
+ const stored=sql.prepare("SELECT payload FROM official_calendar_current WHERE country='US'").get()!.payload;
+ const blocks=ics().match(/BEGIN:VEVENT[\s\S]*?END:VEVENT\r\n/g)!;
+ const reversed=`BEGIN:VCALENDAR\r\nVERSION:2.0\r\n${blocks.reverse().join('')}END:VCALENDAR\r\n`;
+ const next=new Date(now.getTime()+86400000);await refreshOfficialCalendars(db,next,provider(reversed));
+ assert.deepEqual(projectOfficialCalendars(await readOfficialCalendars(db),[],next).changes,[]);
+ assert.equal(sql.prepare("SELECT payload FROM official_calendar_current WHERE country='US'").get()!.payload,stored);
+});
+test('automatic past-year retention is not announced as a changed holiday schedule',async()=>{
+ const {db}=database();const body=ics().replace('END:VCALENDAR','').replace('BEGIN:VCALENDAR\r\nVERSION:2.0\r\n','');
+ const source=`BEGIN:VCALENDAR\r\nVERSION:2.0\r\n${[2025,2026,2027].map(year=>body.replaceAll('2026',String(year))).join('')}END:VCALENDAR\r\n`;
+ await refreshOfficialCalendars(db,now,provider(source));
+ const next=new Date('2027-01-01T13:00:00Z');await refreshOfficialCalendars(db,next,provider(source));
+ assert.deepEqual(projectOfficialCalendars(await readOfficialCalendars(db),[],next).changes,[]);
+});
+test('calendar cancellation remains review only; stale, failed and invalid notice metadata are not published',async()=>{
+ const {db,sql}=database();await refreshOfficialCalendars(db,now,provider());
+ const changed=new Date(now.getTime()+86400000);await refreshOfficialCalendars(db,changed,provider(ics().replace('20260101','20260102')));
+ const before=(await readOfficialCalendars(db)).find(row=>row.country==='US')!;
+ const next=new Date(changed.getTime()+86400000);await refreshOfficialCalendars(db,next,provider(ics('Synthetic Holiday','STATUS:CANCELLED\r\n')));
+ const projected=projectOfficialCalendars(await readOfficialCalendars(db),[],next);
+ assert.deepEqual(projected.changes,[]);assert.equal(projected.sources.find(source=>source.country==='US')!.status,'REVIEW_REQUIRED');
+ assert.equal((await readOfficialCalendars(db)).find(row=>row.country==='US')!.payload,before.payload);
+ assert.deepEqual(projectOfficialCalendars([before],[],new Date(changed.getTime()+CALENDAR_STALE_MS+1)).changes,[]);
+ const payload=JSON.parse(before.payload!);payload.lastChange={id:'not-a-hash',changedAt:changed.toISOString()};
+ sql.prepare("UPDATE official_calendar_current SET payload=?,status='VERIFIED' WHERE country='US'").run(JSON.stringify(payload));
+ assert.deepEqual(projectOfficialCalendars(await readOfficialCalendars(db),[],next).changes,[]);
+});
+test('a concurrent semantic write cannot be overwritten using a stale before-image or lose its notice',async()=>{
+ const {db}=database();await refreshOfficialCalendars(db,now,provider());
+ const earlier=new Date(now.getTime()+86400000),later=new Date(earlier.getTime()+1000);let race=false;
+ const concurrent=(async(input:RequestInfo|URL,init?:RequestInit)=>{
+  if(String(input).includes('opm.gov')&&!race){race=true;await refreshOfficialCalendars(db,earlier,provider(ics().replace('20260101','20260102')));}
+  return provider()(input,init);
+ }) as typeof fetch;
+ const result=await refreshOfficialCalendars(db,later,concurrent);
+ assert.equal(result.results.find(row=>row.country==='US')!.status,'SKIPPED_CONCURRENT_CHANGE');
+ const projected=projectOfficialCalendars(await readOfficialCalendars(db),[],later);
+ assert.ok(projected.events.some(event=>event.start==='2026-01-02'));assert.equal(projected.changes[0].changedAt,earlier.toISOString());
+});
+test('normalizing a legacy order-sensitive hash does not fabricate the first change notice',async()=>{
+ const {db,sql}=database();await refreshOfficialCalendars(db,now,provider());
+ sql.prepare("UPDATE official_calendar_current SET semantic_hash=? WHERE country='US'").run('f'.repeat(64));
+ const next=new Date(now.getTime()+86400000);await refreshOfficialCalendars(db,next,provider());
+ assert.deepEqual(projectOfficialCalendars(await readOfficialCalendars(db),[],next).changes,[]);
+});

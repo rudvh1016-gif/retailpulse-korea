@@ -3,6 +3,7 @@ import {useLayoutEffect,useRef} from 'react';
 import {usePathname} from 'next/navigation';
 import {NOTICE_WEEK_MS,noticeDeadline,UPDATE_NOTICE_SESSION_KEY,UPDATE_NOTICE_UNTIL_KEY} from '../lib/update-notice-preference';
 import './update-notice.css';
+import ReferenceChangeNotices from './reference-change-notices';
 
 const copy={
  ko:{hourNote:"시간대별 여객 비교는 전체 공항에서만 볼 수 있어요.",countryNote:"* 최근 공개된 월의 공식 노선 국가별 출발 여객수입니다.",title:'새로운 정보가 추가되었어요',hour:'시간대별 여객 비교',hourBody:'오늘 예상과 최근 월평균을 비교해 붐비는 시간대를 쉽게 확인해요.',hourPath:'공항 → 시간대별 비교',hourLink:'시간대별 비교 보기',country:'노선 국가별 출발 여객',countryBody:'국가별 여객의 전월 대비 변화를 국기와 함께 확인해요.',countryPath:'공항 → 노선 국가별 출발 여객',countryLink:'국가별 여객 보기',close:'닫기',closeLabel:'공지 닫기',week:'일주일 동안 안 보기'},
@@ -55,6 +56,7 @@ export default function UpdateNotice({lang}:{lang:string}){
   <div className="update-notice-top"><span className="update-notice-new">NEW</span></div>
   <h2 id="update-notice-title" tabIndex={-1}>{c.title}</h2>{focusNotice&&<small className="update-notice-date">업데이트 기준 <time dateTime="2026-10-21T00:00:00+09:00">2026년 10월 21일 00:00 KST</time></small>}
   <div className="update-notice-items">
+   {focusNotice&&<ReferenceChangeNotices dialog={dialog} calendarHref={focusHref('prepare')} allowanceHref={focusHref('prepare&section=arrival#arrival-allowances')} onNavigate={()=>dismiss.current(false)}/>}
    {focusNotice?previewItems.map(item=><section key={item.view}><div><h3>{item.title}</h3><p>{item.body}</p><small>{item.path}</small></div><a href={focusHref(item.view)} onClick={()=>dismiss.current(false)}>{item.link} →</a></section>):<>
    <section><div><h3>{c.hour}</h3><p>{c.hourBody}</p><small>{c.hourPath}</small><p className="update-notice-note">{c.hourNote}</p></div><a href={`/${locale}/airport?terminal=all#airport-hourly-comparison`} onClick={()=>dismiss.current(false)}>{c.hourLink} →</a></section>
    <section><div><h3>{c.country} <span aria-hidden="true">*</span></h3><p>{c.countryBody}</p><small>{c.countryPath}</small><p className="update-notice-note">{c.countryNote}</p></div><a href={`/${locale}/airport-countries#airport-route-passengers`} onClick={()=>dismiss.current(false)}>{c.countryLink} →</a></section>
