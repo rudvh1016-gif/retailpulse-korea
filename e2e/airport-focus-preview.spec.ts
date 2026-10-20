@@ -42,6 +42,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('.focus-passenger-comparison')).toHaveText('(전월 일평균 대비: 비교자료 확인 필요)');
  expect(await page.locator('.focus-passenger-total').evaluate(node=>node.getBoundingClientRect().height<32)).toBe(true);
  await expect(page.getByTestId('glance-day-comparison')).toHaveCount(0);
+ await page.locator('#focus-country-trends').scrollIntoViewIfNeeded();
  await expect(page.locator('.focus-line-chart')).toHaveCount(3);
  await expect(page.locator('.focus-line-chart').first()).toContainText('4월');
  await expect(page.locator('.focus-line-chart').first()).toContainText('9월');
