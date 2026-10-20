@@ -7,11 +7,11 @@ async function setup(page:Page){
 }
 for(const width of [360,390,430,1440])test(`glass navigation preserves menus, dates, area and history ${width}`,async({page})=>{
  await page.setViewportSize({width,height:950});await setup(page);await page.goto('/ko/hongdae?date=2026-08-31');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
- const nav=page.locator(width<821?'.bottom-nav':'.top-nav'),links=nav.locator('a');await expect(nav).toBeVisible();await expect(links).toHaveCount(width<821?6:7);
- if(width>=821)await expect(nav.getByRole('link',{name:'매장',exact:true})).toBeVisible();
+ const nav=page.locator(width<821?'.bottom-nav':'.top-nav'),links=nav.locator('a');await expect(nav).toBeVisible();await expect(links).toHaveCount(5);
+ await expect(nav.getByRole('link',{name:'미리 준비',exact:true})).toBeVisible();
  for(const link of await links.all()){const box=await link.boundingBox();expect(box!.width).toBeGreaterThanOrEqual(44);expect(box!.height).toBeGreaterThanOrEqual(44);}
- await nav.getByRole('link',{name:'공항',exact:true}).click();await expect(page).toHaveURL(/\/ko\/airport\?date=2026-08-31/);await expect(nav.getByRole('link',{name:'공항',exact:true})).toHaveAttribute('aria-current','page');
- await nav.getByRole('link',{name:'서울',exact:true}).click();await expect(page).toHaveURL(/\/ko\/hongdae\?date=2026-08-31/);await page.goBack();await expect(page).toHaveURL(/\/ko\/airport\?date=2026-08-31/);await page.goBack();await expect(page).toHaveURL(/\/ko\/hongdae\?date=2026-08-31/);
+ await nav.getByRole('link',{name:'공항현황',exact:true}).click();await expect(page).toHaveURL(/\/ko\/airport\?date=2026-08-31/);await expect(nav.getByRole('link',{name:'공항현황',exact:true})).toHaveAttribute('aria-current','page');
+ await nav.getByRole('link',{name:'더보기',exact:true}).click();await page.locator('.more-section-links').getByRole('link',{name:'서울',exact:true}).click();await expect(page).toHaveURL(/\/ko\/hongdae\?date=2026-08-31/);await page.goBack();await expect(page).toHaveURL(/\/ko\/more/);await page.goBack();await expect(page).toHaveURL(/\/ko\/airport\?date=2026-08-31/);await page.goBack();await expect(page).toHaveURL(/\/ko\/hongdae\?date=2026-08-31/);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
 test('horizontal drag snaps once; vertical movement leaves navigation unchanged',async({page})=>{
@@ -25,16 +25,16 @@ test('keyboard focus and finite navigation animation respect reduced motion',asy
  await page.emulateMedia({reducedMotion:'reduce'});await links.last().click();expect(await nav.locator('.glass-nav-indicator').evaluate(e=>e.getAnimations().length)).toBe(0);expect(await page.locator('main.page-shell').evaluate(e=>e.getAnimations().length)).toBe(0);
 });
 for(const lang of ['en','zh','ja'])test(`glass navigation keeps readable localized labels ${lang}`,async({page})=>{
- await page.setViewportSize({width:360,height:950});await setup(page);await page.goto(`/${lang}`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');await expect(page.locator('.bottom-nav a')).toHaveCount(6);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.setViewportSize({width:360,height:950});await setup(page);await page.goto(`/${lang}`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');await expect(page.locator('.bottom-nav a')).toHaveCount(5);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  for(const item of await page.locator('.bottom-nav a').all())expect(await item.evaluate(e=>e.scrollWidth<=e.clientWidth&&e.scrollHeight<=e.clientHeight)).toBe(true);
 });
 
 test('desktop preserves plain operating menu and cancels mobile feedback on resize',async({page})=>{
  await page.setViewportSize({width:390,height:950});await setup(page);await page.goto('/ko');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await page.locator('.bottom-nav a').last().click();await page.setViewportSize({width:1440,height:950});
- const nav=page.locator('.top-nav');await expect(nav).toBeVisible();await expect(nav.locator('a')).toHaveCount(7);await expect(nav.locator('svg,.navigation-icon')).toHaveCount(0);await expect(page.locator('.bottom-nav')).toBeHidden();
+ const nav=page.locator('.top-nav');await expect(nav).toBeVisible();await expect(nav.locator('a')).toHaveCount(5);await expect(nav.locator('svg,.navigation-icon')).toHaveCount(0);await expect(page.locator('.bottom-nav')).toBeHidden();
  await expect.poll(()=>page.locator('main.page-shell').evaluate(e=>e.getAnimations().length)).toBe(0);
- await nav.getByRole('link',{name:'매장',exact:true}).click();await expect(page).toHaveURL(/\/ko\/business$/);await expect(nav.getByRole('link',{name:'매장',exact:true})).toHaveAttribute('aria-current','page');
+ await page.locator('.more-section-links').getByRole('link',{name:'매장',exact:true}).click();await expect(page).toHaveURL(/\/ko\/business$/);await expect(nav.getByRole('link',{name:'더보기',exact:true})).toHaveAttribute('aria-current','location');
  expect(await page.locator('main.page-shell').evaluate(e=>e.getAnimations().length)).toBe(0);
  expect(await nav.locator('a').first().evaluate(e=>getComputedStyle(e).transform)).toBe('none');
  await page.goBack();await expect(page).toHaveURL(/\/ko\/more$/);
@@ -44,7 +44,7 @@ test('desktop preserves plain operating menu and cancels mobile feedback on resi
 // content never hidden behind the bar. Order and functions are covered above.
 for(const lang of ['ko','en','zh','ja'])test(`320px phone keeps every label inside its target and the page above the bar ${lang}`,async({page})=>{
  await page.setViewportSize({width:320,height:568});await setup(page);await page.goto(`/${lang}/hongdae`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
- await expect(page.locator('.bottom-nav a')).toHaveCount(6);
+ await expect(page.locator('.bottom-nav a')).toHaveCount(5);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  const nav=await page.locator('.bottom-nav').evaluate(n=>{const b=n.getBoundingClientRect();return {left:b.left,right:b.right,bottom:b.bottom,top:b.top};});
  expect(nav.left).toBeGreaterThanOrEqual(0);expect(nav.right).toBeLessThanOrEqual(320);expect(Math.abs(nav.bottom-568)).toBeLessThanOrEqual(1);
@@ -74,7 +74,8 @@ test('mobile tab bar follows the owner reference look',async({page})=>{
   return {left:box.left,right:innerWidth-box.right,glassRadius:css(n,'border-top-left-radius','::before'),glassHeight:box.height-parseFloat(css(n,'bottom','::before')),pillRadius:css(pill,'border-top-left-radius'),pillOverCurrent:Math.abs(pillBox.left-currentBox.left)<=1&&Math.abs(pillBox.width-currentBox.width)<=1,
    icon:[...n.querySelectorAll('svg')].map(s=>s.getBoundingClientRect().width),label:css(idle.querySelector('span')!,'font-size'),idle:css(idle,'color'),current:css(current,'color'),ink:root.getPropertyValue('--ink').trim(),blue:root.getPropertyValue('--blue').trim()};});
  expect(look.left).toBe(14);expect(look.right).toBe(14);expect(look.glassRadius).toBe('33px');expect(look.glassHeight).toBe(62);expect(look.pillRadius).toBe('27px');expect(look.pillOverCurrent).toBe(true);
- expect(look.icon).toEqual([24,24,24,24,24,24]);expect(look.label).toBe('10px');
- const rgb=(hex:string)=>`rgb(${parseInt(hex.slice(1,3),16)}, ${parseInt(hex.slice(3,5),16)}, ${parseInt(hex.slice(5,7),16)})`;
- expect(look.idle).toBe(rgb(look.ink));expect(look.current).toBe(rgb(look.blue));
+ expect(look.icon).toEqual([24,24,24,24,24]);expect(look.label).toBe('10px');
+ const rgb=(hex:string)=>{const full=hex.length===4?`#${[...hex.slice(1)].map(c=>c+c).join('')}`:hex;return `rgb(${parseInt(full.slice(1,3),16)}, ${parseInt(full.slice(3,5),16)}, ${parseInt(full.slice(5,7),16)})`;};
+ expect(look.idle).toBe(rgb(look.ink));expect(look.current).toBe('rgb(255, 255, 255)');
+ await expect(page.locator('.glass-nav-indicator')).toHaveCSS('background-color','rgb(36, 39, 44)');
 });

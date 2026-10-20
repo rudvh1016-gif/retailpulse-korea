@@ -1,5 +1,7 @@
 'use client';
-import {useMemo} from 'react';
+import {createContext,useContext,useMemo,type ReactNode} from 'react';
+/** Optional approval-preview relocation; default preserves the production table. */
+export const RoutePassengerPlacement=createContext<ReactNode>(null);
 import type {Lang} from './retailpulse-data';
 import {ChangeRate} from './change-rate';
 import type {AirportStatsRow} from '../lib/airport-monthly-stats-read';
@@ -25,6 +27,8 @@ function regionCodes():Map<string,string>{
 export function AirportRouteCountryPassengers({lang,month,terminal}:{lang:Lang;month:string;terminal:string}){
  const {reply,failed}=useAirportPassengerStats(month);
  const codes=useMemo(()=>regionCodes(),[]);
+ const replacement=useContext(RoutePassengerPlacement);
+ if(replacement)return <>{replacement}</>;
  const current=reply?.current.ROUTE_COUNTRY_PASSENGERS,previous=reply?.previous.ROUTE_COUNTRY_PASSENGERS;
  const fmt=new Intl.NumberFormat({ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'}[lang]);
  const names=new Intl.DisplayNames([lang],{type:'region'});
@@ -48,3 +52,4 @@ export function AirportRouteCountryPassengers({lang,month,terminal}:{lang:Lang;m
   <p className="prep-note"><a href="https://www.data.go.kr/data/15095071/openapi.do" target="_blank" rel="noreferrer">{t(lang,'출처: 인천국제공항공사','Source: Incheon International Airport Corporation','来源：仁川国际机场公社','出典: 仁川国際空港公社')} ↗</a></p>
  </section>;
 }
+

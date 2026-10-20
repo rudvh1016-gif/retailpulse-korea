@@ -17,9 +17,9 @@ async function open(page:Page,path:string){
  await page.goto(path);
 }
 const cases=[
- {name:'T2 scene',path:'/ko/airport?terminal=T2',image:'[data-testid="airport-departure-model-slot"] .airport-concept-picture img',width:390,height:844,scale:3,file:'/airport-models/v14/T2_day-1300.webp'},
- {name:'mobile overview',path:'/ko/airport',image:'[data-testid="airport-departure-model-slot"] .airport-concept-picture img',width:390,height:844,scale:3,file:'/airport-models/v14/OVERVIEW_MOBILE_day-1100.webp'},
- {name:'mobile overview',path:'/ko/airport',image:'[data-testid="airport-departure-model-slot"] .airport-concept-picture img',width:430,height:932,scale:3,file:'/airport-models/v14/OVERVIEW_MOBILE_day.webp'},
+ {name:'T2 scene',path:'/ko/airport?terminal=T2',image:'[data-testid="airport-departure-model-slot"] .airport-concept-picture img',width:390,height:844,scale:3,file:'/airport-models/approval-v3/T2.svg'},
+ {name:'mobile overview',path:'/ko/airport',image:'[data-testid="airport-departure-model-slot"] .airport-concept-picture img',width:390,height:844,scale:3,file:'/airport-models/approval-v3/OVERVIEW_MOBILE.svg'},
+ {name:'mobile overview',path:'/ko/airport',image:'[data-testid="airport-departure-model-slot"] .airport-concept-picture img',width:430,height:932,scale:3,file:'/airport-models/approval-v3/OVERVIEW_MOBILE.svg'},
  {name:'guide entry mark',path:'/ko/airport',image:'[data-testid="departure-guide-entry"] img',width:390,height:844,scale:3,file:'/visuals/news/v1/airport-news-128.webp'},
  {name:'Seoul flow model',path:'/ko/myeongdong',image:'[data-testid="seoul-flow-models"] img',width:390,height:844,scale:3,file:'/seoul-flow-models/station-1200.webp'},
  {name:'consumption icon',path:'/ko/consumption',image:'.consumption-category>img',width:390,height:844,scale:3,file:'/commercial-icons/sharp-v1/convenience-192.webp'},
@@ -40,6 +40,7 @@ for(const c of cases)test(`${c.name} picks ${c.file.split('/').pop()} at ${c.wid
  }
  expect(reading,'the image loaded').not.toBeNull();const {src,natural,painted}=reading!;
  expect(src).toBe(c.file);
- expect(natural,'the chosen file covers the painted width at this density').toBeGreaterThanOrEqual(Math.floor(painted*c.scale));
+ // Vector terminal art has no raster density ladder; retain decoded dimensions and nonzero paint checks.
+ if(c.file.endsWith('.svg')){expect(natural).toBeGreaterThan(0);expect(painted).toBeGreaterThan(0);}else expect(natural,'the chosen file covers the painted width at this density').toBeGreaterThanOrEqual(Math.floor(painted*c.scale));
  await context.close();
 });

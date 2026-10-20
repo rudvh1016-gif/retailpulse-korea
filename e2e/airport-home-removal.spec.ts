@@ -12,7 +12,7 @@ for (const lang of ['ko','en','zh','ja']) for (const width of [360,390,430,1280]
     await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-    await expect(page.locator('nav.bottom-nav a')).toHaveCount(6);
+    await expect(page.locator('nav.bottom-nav a')).toHaveCount(5);
     await expect(page.locator('nav.top-nav a').first()).toHaveAttribute('href',`/${lang}/airport-glance`);
     await expect(page.locator(`nav.bottom-nav a[href="/${lang}/airport-glance"]`)).toHaveAttribute('aria-current','page');
     await expect(page.locator('.demand-home')).toHaveCount(0);
@@ -20,11 +20,12 @@ for (const lang of ['ko','en','zh','ja']) for (const width of [360,390,430,1280]
     expect(await page.evaluate(key=>localStorage.getItem(key),PREFERENCE_KEY)).toBe(stored);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
     const seoulNavigation = width > 820 ? 'nav.top-nav' : 'nav.bottom-nav';
-    await page.locator(`${seoulNavigation} a[href="/${lang}/hongdae"]`).click();
+    await page.locator(`${seoulNavigation} a[href="/${lang}/more"]`).click();
+    await page.locator(`.more-section-links a[href="/${lang}/hongdae"]`).click();
     await expect(page).toHaveURL(new RegExp(`/${lang}/hongdae$`));
     await expect(page.locator('.area-current-brief')).toBeVisible();
     await expect(page.getByTestId('area-demand-card')).toBeVisible();
-    await page.goBack(); await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+    await page.goBack(); await page.goBack(); await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
     await page.getByRole('button',{name:'KORETAIL home'}).click();
     await expect(page).toHaveURL(new RegExp(`/${lang}$`));
     await page.getByLabel('Language',{exact:true}).selectOption(lang==='en'?'ko':'en');

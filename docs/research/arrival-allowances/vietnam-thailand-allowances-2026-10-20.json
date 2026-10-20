@@ -1,0 +1,468 @@
+{
+  "schema_version": "1.0",
+  "research_date": "2026-10-20",
+  "purpose_ko": "KORETAIL 인천공항 판매사원용 도착국 반입면세한도 검증 자료",
+  "publication_note_ko": "일반 여행자 참고 안내. 숫자를 판매 가능/반입 허가 보장으로 쓰지 말 것. null은 0 또는 제한 없음이 아닌 미확인. 갱신일과 법령 시행일을 분리하고, 변경 발견 시 원문·변경 전후·영향을 사람이 검토한 다음 공지.",
+  "countries": [
+    {
+      "country_code": "VN",
+      "country_ko": "베트남",
+      "checked_on": "2026-10-20",
+      "effective_on": "2016-09-01",
+      "verification_status": "core_limits_verified_open_conditions_flagged",
+      "scope": "정상 여권 또는 대체여행증명서로 항공 입국하는 일반 여행자의 휴대품. 국경통행증·이주물품·승무원·상업화물은 별도.",
+      "eligibility": {
+        "traveller_types": [
+          "ordinary_visitor",
+          "returning_resident"
+        ],
+        "residency_rule_ko": "제6조는 베트남 또는 외국 발급 여권 입국자를 대상으로 하며 일반 여행자 거주 여부별 금액 차등을 두지 않음.",
+        "general_minimum_age": null,
+        "alcohol_minimum_age": 18,
+        "tobacco_minimum_age": 18,
+        "under_18_rule_ko": "18세 미만은 주류·담배 면세 제외. 기타물품 천만 동까지 제외된다고 안내하면 안 됨.",
+        "frequency": "per_entry",
+        "special_frequency_days": 90,
+        "special_frequency_applies_to": [
+          "국제선 조종사·승무원",
+          "국제열차 운전·서비스 승무원",
+          "선박 장교·승무원",
+          "인접 육로국가에서 근무하는 베트남인 노동자·운전자"
+        ],
+        "special_frequency_note_ko": "특정 직업군의 술·담배·기타물품에 90일당 1회. 단순 반복 여행객 전체에 적용한다고 확대하지 말 것."
+      },
+      "general_goods": {
+        "amount": 10000000,
+        "currency": "VND",
+        "valuation": "customs_value",
+        "includes_ko": "주류·담배·여행 목적에 맞는 개인용품을 제외한 기타물품 합계",
+        "personal_effects_note_ko": "여행 목적에 맞는 종류·수량의 개인용품은 별도 인정. 금지·수입중단·조건부 수입품은 이 기타물품 면세범위 대상 아님.",
+        "minimum_age": null,
+        "source_ids": [
+          "VN-1"
+        ]
+      },
+      "alcohol": {
+        "minimum_age": 18,
+        "selection": "OR",
+        "options": [
+          {
+            "type": "liquor_abv_20_or_more",
+            "abv_min_inclusive": 20,
+            "litres": 1.5
+          },
+          {
+            "type": "liquor_abv_below_20",
+            "abv_max_exclusive": 20,
+            "litres": 2
+          },
+          {
+            "type": "alcoholic_beverages_or_beer",
+            "litres": 3
+          }
+        ],
+        "mixed_category_ratio": null,
+        "whole_container_exception": {
+          "maximum_excess_litres": 1,
+          "excess_comparator": "less_than_or_equal",
+          "description_ko": "주류의 원래 용기 1개 용량이 해당 한도보다 크되 초과분이 1L 이하인 경우 그 용기 전체 면세. 모든 구매에 일괄 +1L를 주는 규정이 아님. 초과분이 1L를 넘으면 한도초과분 과세."
+        },
+        "source_ids": [
+          "VN-1"
+        ]
+      },
+      "tobacco": {
+        "minimum_age": 18,
+        "selection": "OR",
+        "options": [
+          {
+            "type": "cigarettes",
+            "quantity": 200,
+            "unit": "sticks"
+          },
+          {
+            "type": "shredded_tobacco",
+            "quantity": 250,
+            "unit": "grams"
+          },
+          {
+            "type": "cigars",
+            "quantity": 20,
+            "unit": "sticks"
+          }
+        ],
+        "mixed_category_ratio": null,
+        "heated_tobacco_allowance": null,
+        "source_ids": [
+          "VN-1"
+        ]
+      },
+      "pooling": {
+        "multiple_entries_allowed": false,
+        "multiple_travellers_allowed": false,
+        "same_trip_family_exception": true,
+        "family_exception_scope_ko": "동일 여행에 동행한 가족의 수하물은 합산 금지의 예외. 미성년자의 술·담배 권리 발생으로 확대 해석하지 말 것. 주류·담배 가족 합산 계산기를 자동 적용하지 않음.",
+        "source_ids": [
+          "VN-3"
+        ]
+      },
+      "over_limit": {
+        "choose_exempt_items_when_multiple": true,
+        "single_item_tax_base": null,
+        "single_item_note_ko": "여러 물품이면 면세받을 물품 선택 가능. 단일 고가품의 전액/차액 과세 방식은 이번 공식자료로 명시 확인하지 못했으므로 자동 계산 금지.",
+        "declaration_required": true,
+        "source_ids": [
+          "VN-1",
+          "VN-3"
+        ]
+      },
+      "prohibitions_separate": [
+        {
+          "items_ko": "전자담배·가열담배",
+          "status": "prohibited",
+          "effective_on": null,
+          "effective_period": "2025년부터",
+          "source_ids": [
+            "VN-4"
+          ]
+        }
+      ],
+      "aviation_security_separate": {
+        "status": "not_verified_in_this_customs_review",
+        "note_ko": "액체류·배터리·위탁수하물·환승 보안 규정은 별도 확인. 이 면세한도로 기내 반입 허용을 판단하지 않음."
+      },
+      "card_ko": {
+        "title": "베트남 도착 | 일반 항공여행자",
+        "amount": "기타물품 합계 VND 10,000,000",
+        "alcohol": "만 18세 이상: 20% 이상 1.5L 또는 20% 미만 2L 또는 맥주 등 3L",
+        "tobacco": "만 18세 이상: 궐련 200개비 또는 잎담배 250g 또는 시가 20개",
+        "caution": "술·담배는 각각 선택형 한도. 특정 직업군은 90일당 1회. 초과품은 신고. 전자담배·가열담배 반입금지는 별도 규정.",
+        "details": "원용기 주류 예외·동일 여행 가족 합산 예외는 상세 조건 확인.",
+        "as_of": "공식자료 확인 2026-10-20 | 기본 한도 시행 2016-09-01"
+      },
+      "open_questions": [
+        "주류·담배 혼합종류 비례환산 공식 근거 미확인",
+        "단일 고가품 전액/차액 과세 계산 방식 미확인",
+        "태그만으로 가족의 주류·담배 수량을 자동 합산하지 않을 것"
+      ],
+      "conflicts_resolved": [
+        {
+          "issue": "공식 영문 제6조 번역의 more than 20% 및 미성년자 a,b,d 제외 표현",
+          "decision": "베트남어 중앙정부 원문 우선: 20% 이상, 미성년자는 a,b(술·담배)만 제외",
+          "superseded_or_rejected_source": "https://vbpl.moj.gov.vn/boyte/Pages/vbpqen-toanvan.aspx?ItemID=11113"
+        },
+        {
+          "issue": "옛 31/2015 안내의 22%, 시가100개, 잎담배500g",
+          "decision": "현행 기본법령 134/2016 제6조의 20%, 시가20개, 잎담배250g 적용"
+        }
+      ],
+      "source_ids": [
+        "VN-1",
+        "VN-2",
+        "VN-3",
+        "VN-4",
+        "VN-5",
+        "VN-6"
+      ]
+    },
+    {
+      "country_code": "TH",
+      "country_ko": "태국",
+      "checked_on": "2026-10-20",
+      "effective_on": null,
+      "verification_status": "core_limits_verified_open_conditions_flagged",
+      "scope": "태국 공항으로 입국하는 일반 여행자의 본인 휴대 개인용품. 이주 가재도구·상업용 물품은 별도.",
+      "eligibility": {
+        "traveller_types": [
+          "ordinary_visitor",
+          "returning_resident"
+        ],
+        "residency_rule_ko": "공항 안내는 태국인·외국인 모두 대상. 일반 여행자 안내에 거주 여부별 한도 차등 없음. 이주 가재도구 면세를 이 카드에 섞지 않음.",
+        "general_minimum_age": null,
+        "alcohol_minimum_age": null,
+        "tobacco_minimum_age": null,
+        "age_verification_status": "not_stated_in_reviewed_official_customs_guidance",
+        "age_warning_ko": "판매연령을 입국 면세연령으로 대신 쓰지 말 것. 미성년자 상담은 추가 확인.",
+        "frequency": "per_arrival_in_passenger_guidance",
+        "special_frequency_days": null,
+        "frequent_arrival_rule_ko": "일반 여행자의 반복입국 간격·횟수 제한은 검토 공식안내에서 확인하지 못함."
+      },
+      "general_goods": {
+        "amount": 20000,
+        "currency": "THB",
+        "valuation": "total_value",
+        "includes_ko": "합리적 수량의 본인용 개인용품 합계",
+        "excludes_ko": "금지·제한품 및 식품은 이 일반 개인용품 면세안내에서 제외. 상업용은 2만 바트 미만도 과세.",
+        "source_ids": [
+          "TH-1",
+          "TH-2",
+          "TH-3"
+        ]
+      },
+      "alcohol": {
+        "minimum_age": null,
+        "total_litres": 1,
+        "category_specific_limits": false,
+        "description_ko": "종류·도수별로 나누지 않고 주류 전체 합계 1L 이하. 맥주·와인·증류주 각각 1L가 아님.",
+        "source_ids": [
+          "TH-1",
+          "TH-2"
+        ]
+      },
+      "tobacco": {
+        "minimum_age": null,
+        "selection": "OR_OR_COMBINED_WEIGHT",
+        "options": [
+          {
+            "type": "cigarettes",
+            "quantity": 200,
+            "unit": "sticks"
+          },
+          {
+            "type": "cigars_or_tobacco",
+            "quantity": 250,
+            "unit": "grams"
+          },
+          {
+            "type": "combined_tobacco_types",
+            "quantity": 250,
+            "unit": "grams",
+            "cigarette_max_sticks": 200
+          }
+        ],
+        "source_ids": [
+          "TH-1",
+          "TH-4"
+        ]
+      },
+      "pooling": {
+        "multiple_travellers_allowed": null,
+        "family_exception": null,
+        "safe_guidance_ko": "1인 휴대 한도를 안내하며, 다른 사람 한도를 합쳐 한 명이 운반해도 된다고 보장하지 않음. 가족 합산 특례 공식 근거 미확인.",
+        "source_ids": [
+          "TH-4"
+        ]
+      },
+      "over_limit": {
+        "declaration_required_general_goods": true,
+        "single_item_tax_base": null,
+        "single_item_note_ko": "2만 바트는 1개당이 아닌 총액. 고가품 과세 전액/차액 계산 근거 미확인.",
+        "alcohol_tobacco_note_ko": "관세청은 초과 술·담배를 지정함에 반납하도록 안내. 단순히 초과분 세금 납부로 항상 통관 가능하다고 안내하면 안 됨.",
+        "source_ids": [
+          "TH-1",
+          "TH-2"
+        ]
+      },
+      "prohibitions_separate": [
+        {
+          "items_ko": "전자담배·기기·액상",
+          "status": "prohibited",
+          "effective_on": null,
+          "source_ids": [
+            "TH-4",
+            "TH-6"
+          ]
+        },
+        {
+          "items_ko": "가열담배 브랜드별 제품/스틱",
+          "status": "not_verified_product_specific",
+          "note_ko": "일반 궐련200개비를 가열담배 허용량으로 전용하지 말 것. 별도 확인 필요.",
+          "source_ids": []
+        }
+      ],
+      "aviation_security_separate": {
+        "status": "not_verified_in_this_customs_review",
+        "note_ko": "항공 보안상 운송 허용과 태국 반입 허용은 별개. 기내 배터리 규정이 전자담배 수입 허가를 의미하지 않음."
+      },
+      "card_ko": {
+        "title": "태국 도착 | 일반 항공여행자",
+        "amount": "본인용 개인용품 합계 THB 20,000",
+        "alcohol": "주류 전체 합계 1L 이하",
+        "tobacco": "궐련 200개비 또는 담배류 250g. 혼합은 총 250g, 궐련 200개비 이내",
+        "caution": "상업용은 금액 한도 안이어도 과세. 초과 술·담배는 지정함 반납 안내. 전자담배·기기·액상은 반입금지.",
+        "details": "연령·반복입국·가족 합산·단일 고가품 세액은 추가 확인 대상.",
+        "as_of": "공식자료 확인 2026-10-20 | 시행일 미확인"
+      },
+      "open_questions": [
+        "면세 적용 최소연령 공식 근거 미확인",
+        "일반 반복입국의 횟수·간격 제한 공식 근거 미확인",
+        "가족·일행 한도 합산 허용 공식 근거 미확인",
+        "단일 고가품 전액/차액 과세 방식 미확인",
+        "가열담배 특정 브랜드의 스틱만 반입하는 경우 공식 해석 미확인"
+      ],
+      "conflicts_resolved": [
+        {
+          "issue": "일부 오래된 대사관 자료는 10,000 THB를 안내",
+          "decision": "현행 태국 관세청 중앙 항공여행자 안내 20,000 THB 적용"
+        },
+        {
+          "issue": "정부 영문 홍보페이지 under 1 liter 표현",
+          "decision": "세관 현지어·영문 원문은 no more than/ไม่เกิน: 1L 이하 적용"
+        },
+        {
+          "issue": "초과 술·담배를 세금만 내면 된다는 비공식 안내",
+          "decision": "관세청 중앙 안내의 지정함 반납 경고를 우선하여 보수적으로 안내"
+        }
+      ],
+      "source_ids": [
+        "TH-1",
+        "TH-2",
+        "TH-3",
+        "TH-4",
+        "TH-5",
+        "TH-6"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "VN-1",
+      "authority": "베트남 정부·재무부 공식 관보",
+      "title": "11/VBHN-BTC (2023), Decree 134/2016/NĐ-CP 제6조 통합본문",
+      "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/CongBao/2023/6/39609/45447-1-787-788.pdf",
+      "language": "vi",
+      "published_on": "2023-06-29",
+      "effective_on": "2016-09-01",
+      "section": "인쇄 53–54쪽, PDF 53–54쪽, 제6조",
+      "checked_on": "2026-10-20",
+      "evidence_quote": "Rượu từ 20 độ trở lên: 1,5 lít",
+      "evidence_summary_ko": "20도 이상 기준, 주류·담배 선택형 수량, 개인물품과 기타물품 구분, 기타물품 천만 동, 술·담배만 18세 이상, 특정 직업군 90일 주기를 확인."
+    },
+    {
+      "id": "VN-2",
+      "authority": "베트남 정부 법령포털",
+      "title": "Decree 134/2016/NĐ-CP 메타데이터 및 서명 원문",
+      "url": "https://vanban.chinhphu.vn/?docid=186707&pageid=27160",
+      "language": "vi",
+      "published_on": "2016-09-01",
+      "effective_on": "2016-09-01",
+      "checked_on": "2026-10-20",
+      "evidence_quote": "Ngày có hiệu lực 01-09-2016",
+      "evidence_summary_ko": "기본 법령의 시행일 확인."
+    },
+    {
+      "id": "VN-3",
+      "authority": "베트남 정부 공식 관보",
+      "title": "Decree 167/2025/NĐ-CP 제1조 제29·30항, 제4조",
+      "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2025/6/45351/57292-1-2025883-884167-2025-nd-cp.pdf",
+      "language": "vi",
+      "published_on": "2025-06-30",
+      "effective_on": "2025-08-15",
+      "section": "인쇄 45–46쪽, PDF 44–45쪽; 시행일 인쇄 86쪽",
+      "checked_on": "2026-10-20",
+      "evidence_quote": "trừ hành lý của các cá nhân trong một gia đình mang theo trong cùng chuyến đi",
+      "evidence_summary_ko": "여러 사람 한도 합산 원칙적 금지에 동일 여행 가족 예외 유지. 입국 회차별 적용. 초과품 신고 의무 및 입국 직후 통관."
+    },
+    {
+      "id": "VN-4",
+      "authority": "베트남 정부 정책법률 포털",
+      "title": "전자담배·가열담배 2025년부터 금지 안내 (결의 173/2024/QH15)",
+      "url": "https://xaydungchinhsach.chinhphu.vn/cam-san-xuat-kinh-doanh-nhap-khau-chua-chap-van-chuyen-su-dung-thuoc-la-dien-tu-thuoc-la-nung-nong-tu-nam-2025-119241214164955394.htm",
+      "language": "vi",
+      "published_on": "2024-12-17",
+      "effective_on": null,
+      "effective_period": "2025년부터",
+      "checked_on": "2026-10-20",
+      "evidence_quote": "nhập khẩu, chứa chấp, vận chuyển, sử dụng thuốc lá điện tử, thuốc lá nung nóng",
+      "evidence_summary_ko": "전자담배·가열담배 수입·운반·사용 등을 금지. 일반 담배 면세수량과 별도."
+    },
+    {
+      "id": "VN-5",
+      "authority": "베트남 정부 공식 관보",
+      "title": "Decree 182/2025/NĐ-CP, 134/2016 개정 공고",
+      "url": "https://congbao.chinhphu.vn/van-ban/nghi-dinh-so-182-2025-nd-cp-45370/57327.htm",
+      "language": "vi",
+      "published_on": "2025-07-01",
+      "effective_on": "2025-07-01",
+      "checked_on": "2026-10-20",
+      "evidence_quote": null,
+      "evidence_summary_ko": "2025년 개정 존재 확인. 정부 설명은 과학기술·혁신 목적 수입면세 변경이며 여행자 제6조 수량 개정은 검색에서 발견되지 않음. 첨부 다운로드 오류로 이 자료만으로 전 조문 검증했다고 주장하지 않음."
+    },
+    {
+      "id": "VN-6",
+      "authority": "베트남 정부 전자신문",
+      "title": "182/2025 개정 설명",
+      "url": "https://baochinhphu.vn/mien-thue-hang-hoa-nhap-khau-de-phat-trien-khoa-hoc-cong-nghe-doi-moi-sang-tao-102250702161028441.htm",
+      "language": "vi",
+      "published_on": "2025-07-02",
+      "effective_on": null,
+      "checked_on": "2026-10-20",
+      "evidence_quote": "sửa đổi, bổ sung Điều 24",
+      "evidence_summary_ko": "2025년 개정의 과학기술·혁신 목적 면세 제24조 변경 설명."
+    },
+    {
+      "id": "TH-1",
+      "authority": "태국 관세청",
+      "title": "Importing or buying from overseas / arriving air passengers",
+      "url": "https://www.customs.go.th/list_strc_simple_neted.php?ini_content=individual_160503_03_160905_01&lang=en&left_menu=menu_individual_submenu_01_160421_01",
+      "language": "en",
+      "published_on": null,
+      "effective_on": null,
+      "checked_on": "2026-10-20",
+      "evidence_quote": "No more than 200 cigarettes or 250g of tobacco or 250g of all types combined",
+      "evidence_summary_ko": "개인용품 2만 바트, 담배 선택·혼합 수량, 술 1L, 술·담배 초과품 지정함 반납, 신고통로 지침."
+    },
+    {
+      "id": "TH-2",
+      "authority": "태국 관세청",
+      "title": "공항 입국여행자 안내 (태국어)",
+      "url": "https://www.customs.go.th/list_strc_simple_neted.php?ini_content=individual_160503_03_160905_01&lang=th&left_menu=menu_individual_submenu_01_160421_01&root_left_menu=menu_individual_submenu_01",
+      "language": "th",
+      "published_on": null,
+      "effective_on": null,
+      "checked_on": "2026-10-20",
+      "evidence_quote": "เครื่องดื่มแอลกอฮอล์ ปริมาตร ไม่เกิน 1 ลิตร",
+      "evidence_summary_ko": "현지어도 술 1리터 이하. 일반품 총액 2만 바트. 수입허가 없는 제한품과 금지품은 신고만으로 허용되지 않음."
+    },
+    {
+      "id": "TH-3",
+      "authority": "태국 관세청 FAQ",
+      "title": "What are the requirements of duty free allowance?",
+      "url": "https://apps.customs.go.th/cont_strc_faq.php?current_id=142328324146505f47&ini_menu=menu_pbc&lang=en&left_menu=menu_pbc_03&top_menu=menu_homepage",
+      "language": "en",
+      "published_on": "2018-02-08",
+      "updated_on": "2018-05-28",
+      "effective_on": null,
+      "checked_on": "2026-10-20",
+      "evidence_quote": "The items of which value is less than 20,000 baht intended for commercial use are subject to applicable taxes and duties.",
+      "evidence_summary_ko": "개인/직업상 사용, 합리적 수량. 상업용은 2만 바트 미만도 과세. 이주 가재도구는 별도 규정."
+    },
+    {
+      "id": "TH-4",
+      "authority": "태국 관세청 브뤼셀 사무소",
+      "title": "Customs Procedures for Inbound Air Passengers to Thailand",
+      "url": "https://brussels.customs.go.th/data_files/d18e9419dbac9d72347ecd281d76550b.pdf",
+      "language": "en",
+      "published_on": null,
+      "effective_on": null,
+      "checked_on": "2026-10-20",
+      "evidence_quote": "Each passenger is allowed the maximum of 200 cigarettes in any cases",
+      "evidence_summary_ko": "혼합 담배도 궐련 최대200개비 제한. 전자담배는 반입금지 품목. 일반품 한도와 금지·제한품 분리."
+    },
+    {
+      "id": "TH-5",
+      "authority": "태국 정부 홍보청",
+      "title": "Things to know about personal belongings for travelers entering Thailand through an airport",
+      "url": "https://thailand.go.th/public/issue-focus-detail/002_016",
+      "language": "en",
+      "published_on": "2023-03-09",
+      "updated_on": "2023-07-11",
+      "effective_on": null,
+      "checked_on": "2026-10-20",
+      "evidence_quote": "Both Thai and foreign passengers",
+      "evidence_summary_ko": "내국인·외국인 항공입국자 대상임을 확인. 이 페이지의 under 1 liter 표현보다 관세청 원문 이하 기준 우선."
+    },
+    {
+      "id": "TH-6",
+      "authority": "태국 관세청 2025 연차보고서",
+      "title": "Prevention and Suppression of Cigarettes and Electronic Cigarettes",
+      "url": "https://www.customs.go.th/data_files/e8805f7710fe5246124b46cc868d3b98/files/basic-html/page230.html",
+      "language": "en",
+      "published_on": null,
+      "effective_on": null,
+      "checked_on": "2026-10-20",
+      "evidence_quote": "electronic cigarette devices, and electronic cigarette liquids, these items are classified as prohibited imports",
+      "evidence_summary_ko": "전자담배 기기·액상 수입금지, 2014-12-12 상무부 고시를 근거로 명시."
+    }
+  ]
+}

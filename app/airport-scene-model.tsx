@@ -1,10 +1,11 @@
 'use client';
-import { useEffect, useState, type CSSProperties } from 'react';
+import { createContext, useContext, useEffect, useState, type CSSProperties } from 'react';
 import views from '../config/airport-concept-v14.json';
 import previewViews from '../config/airport-concept-v6c.preview.json';
 import { airportScene } from '../lib/airport-scene';
 import type { Lang } from './retailpulse-data';
 
+export const AirportSceneArtwork = createContext<string | null>(null);
 export type AirportSceneScope = 'all' | 'T1' | 'T2' | 'CONCOURSE';
 const previewRoot = import.meta.env?.DEV ? (import.meta.env as { VITE_AIRPORT_MODEL_PREVIEW_ROOT?: string }).VITE_AIRPORT_MODEL_PREVIEW_ROOT : '';
 export function airportSceneView(scope: AirportSceneScope): {width:number; height:number; labels:Record<string,number[]>} {
@@ -25,14 +26,15 @@ const lighting = {
 };
 export function airportLightingBasis(lang:Lang) { return lighting[lang]; }
 export function AirportSceneModel({scope,lang,className='',showBasis=true,children}:{scope:AirportSceneScope;lang:Lang;className?:string;showBasis?:boolean;children?:React.ReactNode}) {
+  const artworkRoot=useContext(AirportSceneArtwork);
   const [scene,setScene]=useState(()=>airportScene(Date.now()));
-  useEffect(()=>{const update=()=>setScene(airportScene(Date.now()));update();const timer=setInterval(update,60_000);return()=>clearInterval(timer);},[]);
+  useEffect(()=>{if(artworkRoot)return;const update=()=>setScene(airportScene(Date.now()));update();const timer=setInterval(update,60_000);return()=>clearInterval(timer);},[artworkRoot]);
   const view=airportSceneView(scope);
   const responsive=scope==='all'&&!previewRoot;
   const mobile=views.mobileOverview;
   const stem=`/airport-models/v14/${scope === 'all' ? 'OVERVIEW_LANDSCAPE' : scope}_${scene}`;
   const mobileStem=`/airport-models/v14/OVERVIEW_MOBILE_${scene}`;
-  const src=previewRoot ? `/@fs/${previewRoot}/${scope === 'all' ? 'OVERVIEW' : scope}_${scene}.webp` : `${stem}.webp`;
+  const src=artworkRoot ? `${artworkRoot}/${scope==='all'?'OVERVIEW_LANDSCAPE':scope}.svg` : previewRoot ? `/@fs/${previewRoot}/${scope === 'all' ? 'OVERVIEW' : scope}_${scene}.webp` : `${stem}.webp`;
   const reservedStyle={aspectRatio:responsive?'var(--airport-overview-ratio)':`${view.width}/${view.height}`,
     '--airport-overview-wide-ratio':`${view.width}/${view.height}`,
     '--airport-overview-mobile-ratio':`${mobile.width}/${mobile.height}`} as CSSProperties;
@@ -40,11 +42,11 @@ export function AirportSceneModel({scope,lang,className='',showBasis=true,childr
   // below their 1575–1784w full size. The desktop landscape overview keeps its existing candidates.
   const steps=scope==='all'?[390,900]:[390,900,1300];
   // eslint-disable-next-line @next/next/no-img-element
-  const image=<img src={src} srcSet={previewRoot?undefined:`${steps.map(w=>`${stem}-${w}.webp ${w}w`).join(', ')}, ${stem}.webp ${view.width}w`} sizes={responsive&&className.includes('airport-concept-picture')?'(max-width: 732px) calc(100vw - 32px), (min-width: 1024px) 1200px, 700px':'(max-width: 732px) calc(100vw - 32px), 700px'} width={view.width} height={view.height} alt="" loading="lazy" decoding="async"/>;
+  const image=<img src={src} srcSet={artworkRoot||previewRoot?undefined:`${steps.map(w=>`${stem}-${w}.webp ${w}w`).join(', ')}, ${stem}.webp ${view.width}w`} sizes={responsive&&className.includes('airport-concept-picture')?'(max-width: 732px) calc(100vw - 32px), (min-width: 1024px) 1200px, 700px':'(max-width: 732px) calc(100vw - 32px), 700px'} width={view.width} height={view.height} alt="" loading="lazy" decoding="async"/>;
   return <>
-    <div className={`airport-scene-picture ${className}${responsive?' airport-scene-overview-v14':''}`} style={reservedStyle} data-scene={scene} data-building={scope}>
+    <div className={`airport-scene-picture ${className}${responsive?' airport-scene-overview-v14':''}`} style={reservedStyle} data-scene={artworkRoot?'static':scene} data-building={scope}>
       {/* Only the selected building and lighting image is requested. */}
-      {responsive?<picture><source media="(max-width: 600px)" srcSet={`${mobileStem}-390.webp 390w, ${mobileStem}-900.webp 900w, ${mobileStem}-1100.webp 1100w, ${mobileStem}.webp ${mobile.width}w`} sizes="calc(100vw - 32px)" width={mobile.width} height={mobile.height}/>{image}</picture>:image}
+      {responsive?<picture><source media="(max-width: 600px)" srcSet={artworkRoot?`${artworkRoot}/OVERVIEW_MOBILE.svg`:`${mobileStem}-390.webp 390w, ${mobileStem}-900.webp 900w, ${mobileStem}-1100.webp 1100w, ${mobileStem}.webp ${mobile.width}w`} sizes="calc(100vw - 32px)" width={mobile.width} height={mobile.height}/>{image}</picture>:image}
       {scope==='all'&&Object.entries(view.labels).map(([name,point])=>{
         const narrow=mobile.labels[name as keyof typeof mobile.labels];
         const style=responsive?{left:'var(--airport-anchor-x)',top:'var(--airport-anchor-y)',
@@ -55,6 +57,7 @@ export function AirportSceneModel({scope,lang,className='',showBasis=true,childr
       })}
       {children}
     </div>
-    {showBasis && <details className="prep-evidence airport-scene-note"><summary>{{ko:'집계 기준 · 모형과 조명',en:'Counting basis · model and lighting',zh:'统计口径 · 模型与光照',ja:'集計基準 · 模型と照明'}[lang]}</summary><p className="prep-note">{concept[lang]} {lighting[lang]}</p></details>}
+    {showBasis && <details className="prep-evidence airport-scene-note"><summary>{{ko:'집계 기준 · 모형과 조명',en:'Counting basis · model and lighting',zh:'统计口径 · 模型与光照',ja:'集計基準 · 模型と照明'}[lang]}</summary><p className="prep-note">{concept[lang]} {!artworkRoot&&lighting[lang]}</p></details>}
   </>;
 }
+

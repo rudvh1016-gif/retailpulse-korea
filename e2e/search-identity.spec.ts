@@ -12,7 +12,12 @@ test('legacy introduction redirects to its localized canonical without changing 
   expect(html).toContain('코리테일 KORETAIL | 인천공항 출국장 대기·예상 출국객·서울 상권');
   expect(html).toContain(core);
   const sitemap = await (await request.get('/sitemap.xml')).text();
-  expect(sitemap).toContain('/ko/about');
+  if (process.env.RPK_DEPLOYMENT_STAGE === 'staging') {
+    // Staging must stay out of search indexes; production coverage is tested separately.
+    expect(sitemap).not.toContain('<loc>');
+  } else {
+    expect(sitemap).toContain('/ko/about');
+  }
   expect(sitemap).not.toContain('/ko/airport-glance</loc>');
 });
 

@@ -1,16 +1,19 @@
+'use client';
+import { useContext } from 'react';
 import type { Lang } from './retailpulse-data';
 import type { DepartureMap } from '../lib/airport-departure-map';
 import { mapCopy as copy, windowText } from '../lib/airport-departure-map-copy';
 import { buildingZoneCounts, selectedZoneShares } from '../lib/airport-zone-shares';
 import { zoneShareCopy } from '../lib/airport-zone-share-copy';
 import { airportModelScope } from '../lib/airport-model-scope';
-import { AirportSceneModel, airportLightingBasis } from './airport-scene-model';
+import { AirportSceneModel, AirportSceneArtwork, airportLightingBasis } from './airport-scene-model';
 import { gateIntervals, registeredGateRegions, type RegisteredBuilding } from '../lib/airport-gate-regions';
 import { AirportGateRegionRegister } from './airport-gate-region-register';
 
 
 
 export function AirportConceptModel({ map, lang, evidence }: { map: DepartureMap; lang: Lang; evidence?: string }) {
+  const artworkRoot=useContext(AirportSceneArtwork);
   const scope=map.buildingScope??map.terminal;
   const buildings: RegisteredBuilding[] = scope === 'all' ? ['T1','T2','CONCOURSE'] : [scope];
   const ranges = (side: 'WEST' | 'CENTER' | 'EAST') => buildings.map(building => {
@@ -45,8 +48,9 @@ export function AirportConceptModel({ map, lang, evidence }: { map: DepartureMap
       <p className="prep-note" data-testid="model-share-basis">{text.concept} {text.basis} ({denominator}{unit}) {text.rounding}</p>
       {perBuilding && <p className="prep-note" data-testid="model-building-share-basis">{{ko:'각 그림의 비율은 해당 건물의 전체 출발편 기준이며 위치 미확인 편을 포함합니다. 건물 미정은 어느 그림에도 배정하지 않습니다.',en:'Each picture uses its own building’s total departures, including unverified zones. Unknown buildings are not assigned to a picture.',zh:'每幅图的比例以该建筑的全部出发航班为分母，包含位置未确认航班。建筑未定航班不分配到任何图中。',ja:'各図の割合はその建物の全出発便が分母で、位置未確認便も含みます。建物未定の便は各図に割り当てません。'}[lang]} {buildings.map(building => `${copy.building[building][lang]} ${perBuilding[building].total}${unit}`).join(' · ')}</p>}
       {map.flights.some(f=>f.side==='UNVERIFIED'&&f.gate) && <p className="prep-note" data-testid="model-unverified-gate-numbers">{{ko:'선택한 시간의 위치 미확인 운항 게이트',en:'Unverified active gates in the selected window',zh:'所选时段位置未确认的运行登机口',ja:'選択時間の位置未確認運航搭乗口'}[lang]}: {[...new Set(map.flights.filter(f=>f.side==='UNVERIFIED'&&f.gate).map(f=>`${f.building} ${f.gate}`))].join(', ')}</p>}
-      <p className="prep-note">{airportLightingBasis(lang)}</p>
+      <p className="prep-note">{artworkRoot ? {ko:'구조 이해를 위한 모형 · 항공기 위치는 실제 운항 현황이 아닙니다',en:'Illustrative model · aircraft positions do not show actual operations',zh:'结构示意图 · 飞机位置不代表实际运行状态',ja:'構造理解用の模型 · 航空機の位置は実際の運航状況ではありません'}[lang] : airportLightingBasis(lang)}</p>
     </AirportGateRegionRegister>
     <p className="prep-note" data-testid="model-unverified-share">{copy.side.UNVERIFIED[lang]} {map.sides.UNVERIFIED}{unit} · {share('UNVERIFIED')}{map.concourse !== null ? ` · ${copy.concourse[lang]} ${map.concourse}${unit}` : ''}</p>
   </figure>;
 }
+

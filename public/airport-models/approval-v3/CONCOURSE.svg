@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1742" height="704" viewBox="0 0 1742 704" fill="none">
+<g data-building="CONCOURSE" transform="translate(71 -12) scale(1.6 0.95)"><g id="terminal-CONCOURSE">
+ <path d="M91 132 H909 M91 258 H909" fill="none" stroke="#E4E9EE" stroke-width="2"/>
+ <rect x="76" y="164" width="848" height="69" rx="23" fill="#DCE3E9" stroke="#9DAFBE" stroke-width="2"/>
+ <rect x="76" y="154" width="848" height="69" rx="23" fill="#EFF2F5" stroke="#9DAFBE" stroke-width="3.2"/>
+ <path d="M91 217 H909" fill="none" stroke="#7C96AC" stroke-width="6"/>
+ <path d="M436 154 V141 Q436 132 445 132 H555 Q564 132 564 141 V154 M436 223 V237 Q436 246 445 246 H555 Q564 246 564 237 V223" fill="#FAFBFC" stroke="#9DAFBE" stroke-width="3.2"/>
+ <path d="M436 155 V222 M564 155 V222 M113 176 H416 M584 176 H887" fill="none" stroke="#9DAFBE" stroke-width="2"/>
+ <g transform="translate(265 103) rotate(180) scale(0.68)"><path d="M 0,-39 C -3,-39 -5,-34 -5,-29 L -6,-10 -32,8 -32,14 -6,5 -5,25 -15,33 -15,38 -1,33 1,33 15,38 15,33 5,25 6,5 32,14 32,8 6,-10 5,-29 C 5,-34 3,-39 0,-39 Z" fill="#405E78"/><path d="M0 -25V24" fill="none" stroke="#A3B5C3" stroke-width="1.5" stroke-linecap="round"/></g><g transform="translate(735 103) rotate(180) scale(0.68)"><path d="M 0,-39 C -3,-39 -5,-34 -5,-29 L -6,-10 -32,8 -32,14 -6,5 -5,25 -15,33 -15,38 -1,33 1,33 15,38 15,33 5,25 6,5 32,14 32,8 6,-10 5,-29 C 5,-34 3,-39 0,-39 Z" fill="#405E78"/><path d="M0 -25V24" fill="none" stroke="#A3B5C3" stroke-width="1.5" stroke-linecap="round"/></g>
+ </g></g>
+</svg>

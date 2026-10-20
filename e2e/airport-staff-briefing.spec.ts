@@ -1,0 +1,22 @@
+import {test,expect} from '@playwright/test';
+import summary from './fixtures/airport-focus/summary.json' with {type:'json'};
+import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
+import months from './fixtures/airport-focus/months.json' with {type:'json'};
+import passengerStats from './fixtures/airport-focus/passenger-stats.json' with {type:'json'};
+for(const width of [390,1440])test(`additional staff briefing below unchanged glance ${width}`,async({page},info)=>{
+ test.setTimeout(120000);await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});
+ await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));
+ for(const [path,json] of [['flights',flights],['airport-months',months],['airport-passenger-stats',passengerStats]] as const)await page.route(`**/api/live/${path}*`,r=>r.fulfill({json}));
+ await page.route('**/api/live/passenger-reference*',r=>r.fulfill({json:{status:'UNAVAILABLE',data:null}}));
+ await page.goto('/ko?date=2026-10-19',{waitUntil:'domcontentloaded'});
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.locator('.focus-report')).toContainText('단순합계 112,403명');
+ const briefing=page.locator('.airport-staff-briefing');await expect(briefing).toContainText('주목할 공항 흐름');await expect(briefing).toContainText('출발 예정편');
+ await expect(briefing.locator('.staff-brief-grid>section')).toHaveCount(3);
+ await expect(briefing).toContainText('고객 수나 매장 혼잡 예측은 아닙니다');
+ await expect(briefing.locator('a[href*="airport-prepare"]')).toHaveAttribute('href',/date=2026-10-19#arrival-allowances$/);
+ expect(await briefing.evaluate(e=>Boolean(e.compareDocumentPosition(document.querySelector('.glance-overview-extras')!)&Node.DOCUMENT_POSITION_PRECEDING))).toBe(true);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.screenshot({path:info.outputPath(`navy-home-${width}.png`)});
+ await briefing.scrollIntoViewIfNeeded();await briefing.screenshot({path:info.outputPath(`navy-staff-${width}.png`)});
+});

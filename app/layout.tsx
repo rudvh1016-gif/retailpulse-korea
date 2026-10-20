@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import {buildRevision} from '../lib/build-revision';
 import "./globals.css";
+import "./change-rate.css";
 import "./airport-date-calendar.css";
 import './airport-models.css';
 import './seoul-weather-scenes.css';
@@ -75,3 +76,4 @@ export default async function RootLayout({
     </html>
   );
 }
+

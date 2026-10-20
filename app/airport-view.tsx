@@ -6,7 +6,7 @@
  * (so it is server-rendered and preloaded with the route); every other route
  * reaches it through the shell's dynamic() import on first use.
  */
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useAirportHashReveal } from "./use-airport-hash-reveal";
 import { ChangeRate } from "./change-rate";
 import { AirportParkingGuide } from "./facility-guide";
@@ -25,8 +25,9 @@ import { localText } from "./local-text";
 export type AirportSection = "now" | "arrivals" | "flights" | "stores" | "history";
 
 export function AirportView({
-  lang, terminal, setTerminal, concourse, setConcourse, section, setSection, date, setDate, industry, setIndustry,
+  lang, terminal, setTerminal, concourse, setConcourse, section, setSection, date, setDate, industry, setIndustry, industryContext,
 }: {
+  industryContext?: ReactNode;
   industry: IndustryId; setIndustry: (value: IndustryId) => void;
   lang: Lang; terminal: Terminal; setTerminal: (value: Terminal) => void;
   concourse:boolean;setConcourse:(value:boolean)=>void;
@@ -115,7 +116,7 @@ export function AirportView({
       {!concourse&&section === "stores" && <><AirportParkingGuide lang={lang} /><FacilityDirectory lang={lang} terminal={terminal} /></>}
       {!concourse&&section === "stores"&&<AirportTaxRefundGuide lang={lang} terminal={terminal}/>}
 
-      {!concourse&&(section === "now" || section === "arrivals") && <IndustryGuide key={section} lang={lang} industry={industry} onIndustryChange={setIndustry} airport={{ terminal, direction: section === "arrivals" ? "arrival" : "departure" }} />}
+      {!concourse&&(section === "now" || section === "arrivals") && <>{industryContext}<IndustryGuide key={section} lang={lang} industry={industry} onIndustryChange={setIndustry} airport={{ terminal, direction: section === "arrivals" ? "arrival" : "departure" }} /></>}
 
       {!concourse&&section === "history" && <section className="airport-history" aria-labelledby="airport-history-title">
         <div className="section-head">
@@ -167,3 +168,4 @@ export function AirportView({
     </section>
   );
 }
+

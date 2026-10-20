@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { preload } from "react-dom";
 import { notFound,permanentRedirect } from "next/navigation";
 import RetailPulseApp from "../../retailpulse-app";
-import { AirportView } from "../../airport-view";
-import AirportGlancePreview from "../../airport-glance-preview";
+import { AirportFocusStatus as AirportView } from "../../airport-focus-production";
+import {AirportFocusGlance as AirportGlancePreview} from "../../airport-focus-production";
 import { IndustryGuide } from "../../industry-guide";
 import { BusinessPrep } from "../../business-prep";
 import { AreaCurrentBrief, DateNavigator, TodaySignals } from "../../live-signals";
@@ -41,7 +41,7 @@ export default async function LocalePage({ params }: { params: Promise<{ locale:
   if(slug==='predictions')permanentRedirect(`/${locale}/where-to`);
   if (!standaloneSeoSlugs.includes(slug as typeof standaloneSeoSlugs[number])) notFound();
   const isArea = areaSlugs.includes(slug as typeof areaSlugs[number]);
-  const view = isArea ? "today" : slug as "airport-glance" | "where-to" | "consumption" | "forecast" | "airport" | "business" | "about" | "more";
+  const view = isArea ? "today" : slug as "airport-countries" | "airport-prepare" | "airport-glance" | "where-to" | "consumption" | "forecast" | "airport" | "business" | "about" | "more";
   const area = isArea ? slug as typeof areaSlugs[number] : "myeongdong";
   preloadLiveSummary();
   // Only the pages whose question this answers pay for the read.

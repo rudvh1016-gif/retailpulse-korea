@@ -27,6 +27,7 @@ jobs:
       # Match the Playwright server so built metadata/icons remain same-origin.
       # This verification build is never used for a production deployment.
       NEXT_PUBLIC_SITE_ORIGIN: http://127.0.0.1:4173
+      PLAYWRIGHT_PRODUCTION_SERVER: "true"
       RPK_DEPLOYMENT_STAGE: staging
       NEXT_PUBLIC_ENABLE_BETA_SIGNUP: "false"
     steps:
@@ -98,3 +99,102 @@ jobs:
             critical-ui-results/
           retention-days: 7
           if-no-files-found: ignore
+
+
+  airport-focus-preview:
+    if: github.head_ref == 'preview/airport-focus-review' || github.ref_name == 'preview/airport-focus-review'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      NEXT_PUBLIC_SITE_ORIGIN: http://127.0.0.1:4173
+      PLAYWRIGHT_PRODUCTION_SERVER: "true"
+      RPK_DEPLOYMENT_STAGE: staging
+      NEXT_PUBLIC_ENABLE_BETA_SIGNUP: "false"
+      PLAYWRIGHT_BROWSERS_PATH: .playwright-browsers
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm run e2e:install
+      - run: npx playwright test e2e/airport-focus-preview.spec.ts e2e/airport-focus-production.spec.ts e2e/airport-staff-briefing.spec.ts e2e/airport-reference-comparisons.spec.ts e2e/arrival-allowance-refresh.spec.ts e2e/month-comparison-compact.spec.ts e2e/glance-artwork-srcset.spec.ts e2e/airport-country-glyphs.spec.ts e2e/pure-white.spec.ts --output airport-focus-results --workers=2
+      - name: Verify final integration regressions
+        run: >-
+          npx playwright test e2e/airport-date-navigation.spec.ts e2e/airport-default-start.spec.ts
+          e2e/airport-v14-scenes.spec.ts e2e/airport-v5-scopes.spec.ts e2e/approved-airport-models.spec.ts
+          e2e/approved-choice-motion.spec.ts e2e/mobile-briefing-repair.spec.ts e2e/mobile-image-ladders.spec.ts
+          e2e/premium-demand.spec.ts e2e/pure-white.spec.ts
+          --grep 'KST midnight refresh|default start|v14 overview|distinct compact|all-building country|approved live models|departure order is opt-in|owner UI lock|T2 scene picks|mobile overview picks|monthly records and compact|pure white · en · 390px'
+          --output airport-final-regression-results --workers=2
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: airport-focus-approval-images
+          path: |
+            airport-focus-results/
+            airport-final-regression-results/
+          retention-days: 7
+          if-no-files-found: warn
+
+  airport-focus-performance:
+    if: github.head_ref == 'preview/airport-focus-review' || github.ref_name == 'preview/airport-focus-review'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      NEXT_PUBLIC_ENABLE_BETA_SIGNUP: "false"
+      PLAYWRIGHT_PRODUCTION_SERVER: "true"
+      RPK_DEPLOYMENT_STAGE: staging
+      PLAYWRIGHT_BROWSERS_PATH: .playwright-browsers
+      CLOUDFLARE_CF_FETCH_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run e2e:install
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha || 'main' }}
+          path: .benchmark-main
+      - name: Compare unchanged dependency inputs
+        run: |
+          cmp package-lock.json .benchmark-main/package-lock.json
+          ln -s ../node_modules .benchmark-main/node_modules
+          mkdir -p airport-performance
+          git rev-parse HEAD > airport-performance/after-revision.txt
+          git -C .benchmark-main rev-parse HEAD > airport-performance/before-revision.txt
+      - name: Build and measure main under the same browser conditions
+        run: |
+          (cd .benchmark-main && NEXT_PUBLIC_SITE_ORIGIN=http://127.0.0.1:4174 npm run build)
+          setsid bash -c 'cd .benchmark-main && exec npm run start -- --hostname 127.0.0.1 --port 4174' > "$RUNNER_TEMP/before-server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill -- -"$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 60); do curl -fsS http://127.0.0.1:4174/ko -o /dev/null && break || sleep 1; done
+          node scripts/measure-airport-focus-lab.mjs http://127.0.0.1:4174/ko "$PWD/airport-performance/before.json" BEFORE
+      - name: Build and measure candidate without deployment
+        run: |
+          NEXT_PUBLIC_SITE_ORIGIN=http://127.0.0.1:4173 npm run build
+          setsid bash -c 'exec npm run start -- --hostname 127.0.0.1 --port 4173' > "$RUNNER_TEMP/after-server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill -- -"$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 60); do curl -fsS http://127.0.0.1:4173/ko -o /dev/null && break || sleep 1; done
+          node scripts/measure-airport-focus-lab.mjs http://127.0.0.1:4173/ko "$PWD/airport-performance/after.json" AFTER
+      - name: Enforce matched frontend regression budgets
+        run: node scripts/compare-airport-focus-lab.mjs airport-performance/before.json airport-performance/after.json airport-performance/comparison.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: airport-focus-performance
+          path: airport-performance/
+          retention-days: 7
+          if-no-files-found: warn

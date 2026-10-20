@@ -1,0 +1,471 @@
+{
+  "schema_version": "1.1",
+  "research_date": "2026-10-20",
+  "purpose_ko": "KORETAIL 인천공항 판매사원용 도착국 반입면세 안내 시안의 추가국가 공식 검증",
+  "publication_note_ko": "검증된 필드만 조건 충족 시 공개. null은 0이 아닌 미확인. 필리핀 술·담배는 공식자료 충돌로 확정 숫자 비공개. 허가면제·판매제한·금지·항공보안을 면세한도와 분리.",
+  "countries": [
+    {
+      "country_code": "PH",
+      "country_ko": "필리핀",
+      "checked_on": "2026-10-20",
+      "effective_on": null,
+      "verification_status": "partial_verified_alcohol_tobacco_withheld_due_to_official_conflict",
+      "scope": "일반 항공여행자의 개인용·비상업적 동반물품. 귀국주민·OFW·Balikbayan·이주·승무원 특례는 별도.",
+      "eligibility": {
+        "traveller_types": [
+          "ordinary_visitor",
+          "ordinary_returning_traveller"
+        ],
+        "residency_rule_ko": "PHP10,000 소액 기준은 모든 여행자에 대한 BOC 안내. 필리핀 귀국주민·OFW 등의 추가 특례는 별도이며 국적만으로 자동 적용하지 않음.",
+        "general_minimum_age": null,
+        "alcohol_minimum_age": null,
+        "tobacco_minimum_age": null,
+        "frequency": null,
+        "special_privileges_ko": "귀국주민(필리핀 국민·해외체류 6개월 이상 등), OFW 및 이주 특례는 자격·기간·이용횟수 별도 확인.",
+        "source_ids": [
+          "PH-1",
+          "PH-3",
+          "PH-5"
+        ]
+      },
+      "general_goods": {
+        "amount": 10000,
+        "currency": "PHP",
+        "valuation": "FOB_or_FCA",
+        "status": "verified",
+        "includes_ko": "일반물품 소액 기준. 술·담배 및 규제물품에는 일괄 적용하지 않음.",
+        "personal_effects_note_ko": "체류 중 필요한 비상업적 개인용품은 CMTA800(h) 별도 취급 가능. 신품 쇼핑 전체가 무제한이라는 뜻이 아님.",
+        "source_ids": [
+          "PH-1",
+          "PH-2"
+        ]
+      },
+      "alcohol": {
+        "minimum_age": null,
+        "selection": null,
+        "options": null,
+        "litres": null,
+        "bottles": null,
+        "status": "withheld",
+        "note_ko": "면세 수량·소비세 적용에 관한 공식 문서 간 차이가 해결되지 않아 확정 면세 숫자 비공개. 허가 면제 수량과도 구분.",
+        "source_ids": [
+          "PH-2",
+          "PH-3",
+          "PH-4",
+          "PH-6"
+        ]
+      },
+      "tobacco": {
+        "minimum_age": null,
+        "selection": null,
+        "options": null,
+        "status": "withheld",
+        "note_ko": "최신 BOC 웹 안내와 CMO/CAO 원문의 수량·소비세 조건이 상충하여 확정 면세 숫자 비공개.",
+        "source_ids": [
+          "PH-2",
+          "PH-3",
+          "PH-4",
+          "PH-6"
+        ]
+      },
+      "pooling": {
+        "multiple_travellers_allowed": null,
+        "same_trip_family_exception": null,
+        "note_ko": "가족합산 권리를 확인하지 않았으므로 자동 합산 금지."
+      },
+      "over_limit": {
+        "single_item_tax_base": "full_dutiable_amount_if_relying_on_de_minimis_only",
+        "note_ko": "소액면세 기준을 넘으면 단순히 PHP10,000을 빼고 차액만 과세한다고 안내하지 않음. 다른 조건부 면세 특례는 별도.",
+        "declaration_required": true,
+        "source_ids": [
+          "PH-1",
+          "PH-4"
+        ]
+      },
+      "import_restrictions_separate": {
+        "status": "permit_free_personal_use_quantities_NOT_duty_free_allowances",
+        "wines_liquor": {
+          "maximum_bottles": 2,
+          "maximum_total_litres": 1.5
+        },
+        "cigarettes": {
+          "maximum_reams": 5,
+          "maximum_packs": 50
+        },
+        "cigars": {
+          "maximum_sticks": 20
+        },
+        "note_ko": "2026 세관 안내의 규제물품 사전허가 면제 수량. 이는 면세수량이 아니며, 초과는 해당 허가·인가 확인 대상. 이 수치를 면세카드로 이동 금지.",
+        "source_ids": [
+          "PH-1"
+        ]
+      },
+      "prohibitions_separate": {
+        "note_ko": "금지품·허가품은 소액이라도 별도 규정. 모든 반입 가능 품목을 검토한 자료는 아님.",
+        "source_ids": [
+          "PH-1",
+          "PH-2"
+        ]
+      },
+      "aviation_security_separate": {
+        "status": "not_verified_in_this_customs_review",
+        "note_ko": "면세 한도는 기내 반입 허용량이 아님. 액체·배터리·위탁수하물·환승 보안 규정은 별도 확인."
+      },
+      "card_ko": {
+        "title": "필리핀 도착 | 일반 항공여행자",
+        "amount": "일반물품 FOB/FCA 합계 PHP 10,000 이하",
+        "alcohol": "면세 수량은 공식 안내 상충으로 확인 필요",
+        "tobacco": "면세 수량은 공식 안내 상충으로 확인 필요",
+        "caution": "술·담배를 일반물품 소액면세에 일괄 포함하지 마세요. 사전허가 면제 수량은 면세수량이 아닙니다. eTravel 세관신고·규제물품 확인은 별도.",
+        "details": "귀국주민·OFW·Balikbayan·이주는 별도 자격 심사. 한도 초과 시 차액만 과세된다고 안내하지 않음.",
+        "as_of": "공식자료 확인 2026-10-20 | 시행일 미확인"
+      },
+      "conflicts_unresolved": [
+        {
+          "issue": "BOC 웹 안내는 담배2reams 또는 시가50개 또는 파이프담배250g 및 술2병과 PHP10,000 조건을 면세로 안내. CAO01-2017§4.7은 동반 술·담배에 NIRC 소비세 적용을 명시. CMO28-2016§3.3 승객 예외는 궐련200개/시가50개 및 와인2L 또는 증류주1L로 달라짐.",
+          "decision": "최종 면세 수량·연령·소비세 면제를 확정하지 않고 alcohol/tobacco 숫자를 null. 현지 도착 면세점 구매 특례와 한국 구매품을 동일시하지 않음.",
+          "publish_observed_quantities": false
+        }
+      ],
+      "open_questions": [
+        "술·담배 면세 수량 및 소비세의 현행 통합해석",
+        "주류·담배 여행자 면세의 연령조건",
+        "가족합산·일반여행자 반복입국 조건",
+        "귀국주민·OFW 특례 자동계산은 별도 조사 필요"
+      ],
+      "source_ids": [
+        "PH-1",
+        "PH-2",
+        "PH-3",
+        "PH-4",
+        "PH-5",
+        "PH-6"
+      ]
+    },
+    {
+      "country_code": "MY",
+      "country_ko": "말레이시아",
+      "checked_on": "2026-10-20",
+      "effective_on": null,
+      "effective_components": [
+        {
+          "rule": "tobacco_exemption_removal_and_updated_exclusions",
+          "effective_on": "2021-07-01",
+          "source_ids": [
+            "MY-2",
+            "MY-3"
+          ]
+        }
+      ],
+      "verification_status": "core_limits_verified_scope_gated_open_age_conditions_flagged",
+      "scope": "일반 항공입국, 법령상 지정 공항과 통상거주/48시간 조건을 충족한 본인 동반물품. Labuan·Langkawi·Tioman·Pangkor 등 특별지역, 육로·해로, 이주·상업화물 제외.",
+      "eligibility": {
+        "traveller_types": [
+          "ordinary_visitor",
+          "returning_resident"
+        ],
+        "residency_rule_ko": "통상 말레이시아 비거주자: 48시간 이상 방문 예정. 통상 거주자: 해외에서 48시간 이상 체류 후 귀국. 국적 기준 아님.",
+        "non_resident_minimum_planned_stay_hours": 48,
+        "resident_minimum_absence_hours": 48,
+        "time_comparator": "greater_than_or_equal",
+        "general_minimum_age": null,
+        "alcohol_minimum_age": null,
+        "tobacco_minimum_age": null,
+        "frequency": null,
+        "confirmed_preview_airports": [
+          "Kuala Lumpur International Airport (KLIA / KLIA2), Sepang",
+          "Penang International Airport",
+          "Senai International Airport, Johor",
+          "Kota Kinabalu International Airport",
+          "Kuching International Airport"
+        ],
+        "excluded_special_areas": [
+          "Labuan",
+          "Langkawi",
+          "Tioman",
+          "Pangkor"
+        ],
+        "airport_note_ko": "법령 공항목록에는 Langkawi도 있으나 특별지역 제외문구가 함께 있어 이 시안에서 별도 확인으로 분리. Subang·Malacca는 구매장소조항에 추가되어 있으나 입국공항 적용을 임의 확대하지 않음.",
+        "source_ids": [
+          "MY-2",
+          "MY-4"
+        ]
+      },
+      "general_goods": {
+        "amount": 1000,
+        "currency": "MYR",
+        "currency_display": "RM",
+        "valuation": null,
+        "includes_ko": "아래 별도 품목을 제외한 기타물품 합계. 새 의류·새 신발·식품·개인위생 전기기기는 각 별도 한도.",
+        "excludes": [
+          "tyres_and_tubes",
+          "cigarettes",
+          "tobacco_products",
+          "smoking_pipes",
+          "e_cigarettes_and_vaporising_devices",
+          "vaping_liquid_or_gel_with_or_without_nicotine"
+        ],
+        "separate_categories": [
+          {
+            "type": "new_apparel",
+            "quantity": 3,
+            "unit": "pieces"
+          },
+          {
+            "type": "new_footwear",
+            "quantity": 1,
+            "unit": "pair"
+          },
+          {
+            "type": "food_preparations",
+            "amount": 150,
+            "currency": "MYR"
+          },
+          {
+            "type": "new_portable_personal_care_hygiene_appliances",
+            "quantity": 1,
+            "unit": "each_type"
+          }
+        ],
+        "source_ids": [
+          "MY-1",
+          "MY-2",
+          "MY-3",
+          "MY-4"
+        ]
+      },
+      "alcohol": {
+        "minimum_age": null,
+        "selection": "combined_total",
+        "options": [
+          {
+            "type": "wine_spirits_beer_malt_liquor_combined",
+            "litres": 1
+          }
+        ],
+        "abv_threshold": null,
+        "note_ko": "종류별로 각각1L가 아니라 전체 합계1L. 면세 적용연령은 확인된 법령표에 명시 없어 null. 현지 판매금지 연령과 종교조건을 반입면세 규칙으로 대체하지 않음.",
+        "source_ids": [
+          "MY-1",
+          "MY-2"
+        ]
+      },
+      "tobacco": {
+        "minimum_age": null,
+        "selection": "none",
+        "options": [
+          {
+            "type": "cigarettes",
+            "quantity": 0,
+            "unit": "sticks"
+          },
+          {
+            "type": "cigars",
+            "quantity": 0,
+            "unit": "sticks"
+          },
+          {
+            "type": "tobacco_products",
+            "quantity": 0,
+            "unit": "grams"
+          }
+        ],
+        "status": "no_traveller_duty_tax_exemption",
+        "note_ko": "담배류는 여행자 면세 제외. 0은 반입금지가 아니라 면세 없음이며 신고·과세 대상.",
+        "source_ids": [
+          "MY-1",
+          "MY-2",
+          "MY-3"
+        ]
+      },
+      "pooling": {
+        "multiple_travellers_allowed": null,
+        "same_trip_family_exception": null,
+        "note_ko": "개인별 한도를 가족합산할 수 있다는 근거는 미확인. 자동 합산 금지."
+      },
+      "over_limit": {
+        "general_rule": "tax_on_excess_subject_to_applicable_category_and_rate",
+        "single_item_tax_base": null,
+        "declaration_required": true,
+        "note_ko": "부속 면제표는 수량·가액 초과분에 대한 관세/판매세를 규정. 현재 세율·단일 불가분 고가품 세액은 자동계산하지 않음.",
+        "source_ids": [
+          "MY-1",
+          "MY-2",
+          "MY-4"
+        ]
+      },
+      "prohibitions_separate": {
+        "note_ko": "담배·전자담배가 면세 제외라는 사실만으로 반입금지 또는 무조건 반입허용이라고 단정하지 않음. 규제품·허가 및 현지 사용제한은 별도 확인.",
+        "source_ids": [
+          "MY-1"
+        ]
+      },
+      "sales_restrictions_separate": {
+        "airport_duty_free_sales_tobacco_minimum_age": 18,
+        "airport_duty_free_sales_alcohol_minimum_age": 21,
+        "airport_duty_free_sales_alcohol_muslim_restriction": true,
+        "note_ko": "말레이시아 공항 면세점 판매 제한. 한국 출국 구매품의 도착국 면세연령 값으로 사용하지 말 것.",
+        "source_ids": [
+          "MY-2"
+        ]
+      },
+      "aviation_security_separate": {
+        "status": "not_verified_in_this_customs_review",
+        "note_ko": "면세 한도는 기내 반입 허용량이 아님. 액체·배터리·위탁수하물·환승 보안 규정은 별도 확인."
+      },
+      "card_ko": {
+        "title": "말레이시아 도착 | 지정 공항·48시간 조건 확인",
+        "amount": "기타물품 합계 RM 1,000. 의류·신발·식품 등은 별도 한도.",
+        "alcohol": "와인·증류주·맥주 등 전체 합계 1L",
+        "tobacco": "면세 없음. 신고·과세 대상.",
+        "caution": "비거주 방문객은 48시간 이상 체류 예정, 거주자 귀국은 해외48시간 이상. 특별지역·다른 공항은 별도 확인. 주류 면세연령 미확인.",
+        "details": "새 의류3점·새 신발1켤레·식품 RM150·휴대용 개인위생 전기기기 종류별1개. 도착장 면세점 구매와 해외 구매를 중복 한도로 계산하지 않음.",
+        "as_of": "공식자료 확인 2026-10-20 | 담배 면세 제외 시행 2021-07-01"
+      },
+      "conflicts_resolved": [
+        {
+          "issue": "공항 안내 첫 페이지는 말레이시아 시민 및 해외48시간 초과로 요약",
+          "decision": "같은 공식자료 부속10A·36A·16A의 통상거주 및 48시간 이상 문구 우선. 국적만으로 분기하지 않음."
+        },
+        {
+          "issue": "옛 관광안내의 담배200개비·72시간 항공여행 규정",
+          "decision": "2021 개정과 현행 세관 여행안내의 담배면세 제외·항공48시간 기준 사용."
+        }
+      ],
+      "open_questions": [
+        "여행자 반입면세 자체의 주류 최소연령",
+        "단일 고가품 세액·가족합산",
+        "지정 외 공항 및 특별지역 이동의 세부조건",
+        "일반여행자 추가 반복입국 간격 조건"
+      ],
+      "source_ids": [
+        "MY-1",
+        "MY-2",
+        "MY-3",
+        "MY-4"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "PH-1",
+      "title": "The Essential Guide for Travelers (2026 upload)",
+      "url": "https://customs.gov.ph/wp-content/uploads/2026/01/ESSENTIAL-GUIDE-FOR-TRAVELERS.pdf",
+      "issuer": "Philippines Bureau of Customs",
+      "checked_on": "2026-10-20",
+      "published_on": null,
+      "effective_on": null,
+      "locator": "pp.1–2",
+      "original_excerpt": "Goods with a value of ₱10,000.00 or below have no duties and taxes.",
+      "notes_ko": "2026/01 업로드 경로. 본문에 별도 발행일·시행일은 없음. 규제물품 표는 사전허가 면제 수량이며 면세표가 아님."
+    },
+    {
+      "id": "PH-2",
+      "title": "Guidelines on Arriving Travelers",
+      "url": "https://customs.gov.ph/guidelines-on-arriving-travelers/",
+      "issuer": "Philippines Bureau of Customs",
+      "checked_on": "2026-10-20",
+      "published_on": "2023-04-03",
+      "effective_on": null,
+      "locator": "What is the treatment of excisable goods?",
+      "original_excerpt": "Each Traveler is entitled to duty and tax (VAT and excise) free importation",
+      "notes_ko": "술·담배 수량/소비세 설명을 CAO 01-2017 및 CMO 28-2016과 대조했으나 충돌 해소 불가. 일반물품 금액은 2026 안내와 일치."
+    },
+    {
+      "id": "PH-3",
+      "title": "CAO No.01-2017: Customs Clearance of Accompanied and Unaccompanied Baggage",
+      "url": "https://customs.gov.ph/wp-content/uploads/2023/01/CAO-01-2017-1.pdf",
+      "issuer": "Philippines Bureau of Customs",
+      "checked_on": "2026-10-20",
+      "published_on": null,
+      "effective_on": null,
+      "locator": "§4.7, printed p.9; §3.32 p.7",
+      "original_excerpt": "even if within the De Minimis value",
+      "notes_ko": "공식 스캔 PDF 원문 다운로드·OCR 및 공식 검색 색인으로 확인. 술·담배는 소비세에 관해 NIRC 적용. 필리핀 도착 후 현지 면세점 구매를 별도 취급."
+    },
+    {
+      "id": "PH-4",
+      "title": "CMO No.28-2016: Implementation of CAO No.02-2016",
+      "url": "https://customs.gov.ph/wp-content/uploads/2023/01/cmo-28-2016-Guidelines-for-the-Implementation-of-Customs-Administrative-Order-CAO-No.-02-2016-1.pdf",
+      "issuer": "Philippines Bureau of Customs",
+      "checked_on": "2026-10-20",
+      "published_on": "2016-11-14",
+      "effective_on": null,
+      "locator": "§3.1–3.4, pp.1–2",
+      "original_excerpt": "Any imported goods which exceeds the De Minimis value shall be dutiable and subject to tax for the full dutiable amount.",
+      "notes_ko": "§3.3의 승객 예외 수량과 최신 BOC 안내의 수량이 다름. 한국 면세점 구매를 필리핀 도착장 면세점 구매와 혼동 금지."
+    },
+    {
+      "id": "PH-5",
+      "title": "Duty and tax free privileges",
+      "url": "https://customs.gov.ph/duty-and-tax-free-privileges/",
+      "issuer": "Philippines Bureau of Customs",
+      "checked_on": "2026-10-20",
+      "published_on": null,
+      "effective_on": null,
+      "locator": "Returning Residents",
+      "original_excerpt": "at least six (6) months",
+      "notes_ko": "필리핀 귀국주민·OFW·이주·Balikbayan 특례는 일반관광객 기준과 별도. 상세 한도 자동 적용은 이번 시안 범위에서 제외."
+    },
+    {
+      "id": "PH-6",
+      "title": "BOC bares new rules on small-value tobacco, alcohol imports",
+      "url": "https://www.dof.gov.ph/boc-bares-new-rules-on-small-value-tobacco-alcohol-imports/",
+      "issuer": "Philippines Department of Finance",
+      "checked_on": "2026-10-20",
+      "published_on": "2016-11-16",
+      "effective_on": null,
+      "locator": "opening paragraphs",
+      "original_excerpt": "Small value importations of tobacco goods as well as wines and spirits are still subject to excise taxes",
+      "notes_ko": "소액 일반물품 기준을 술·담배 전체 면세로 적용하지 말아야 한다는 확인 자료. 현행 수량의 최종확정 자료로 사용하지 않음."
+    },
+    {
+      "id": "MY-1",
+      "title": "Traveler’s Guide",
+      "url": "https://www.customs.gov.my/en/individu/pengembara/travelers-guide?highlight=WyJuZXciLCJpbXBvcnQiLCJpbXBvcnRhbnQiXQ%3D%3D",
+      "issuer": "Royal Malaysian Customs Department",
+      "checked_on": "2026-10-20",
+      "published_on": null,
+      "effective_on": null,
+      "locator": "Goods exempt from customs duty/tax payment: air transport",
+      "original_excerpt": "Total value not exceeding RM1,000.00",
+      "notes_ko": "페이지 최종 갱신 2026-01-05, 본문 정보갱신 표기는 2023-05-25. 금액·술·의류·신발·식품·개인위생 전기기기와 담배류 제외를 확인."
+    },
+    {
+      "id": "MY-2",
+      "title": "Kedai Bebas Cukai Kategori Lapangan Terbang, with exemption schedules",
+      "url": "https://www.customs.gov.my/images/07-arkib/pengumuman/kedai-bebas-cukai-lapangan-terbang-BM-latest-24102024.pdf",
+      "issuer": "Royal Malaysian Customs Department",
+      "checked_on": "2026-10-20",
+      "published_on": null,
+      "effective_on": null,
+      "locator": "p.1; appended Customs item10A pp.2–4, Excise item36A pp.5–6, Sales Tax item16A pp.7–8",
+      "original_excerpt": "not less than 48 hours",
+      "notes_ko": "2024-10-24 파일명. 공식 PDF 다운로드 후 부속 영문 법령표 OCR 및 p.4 화면 확인. 요약의 말레이시아 시민/48시간 초과 대신 법령표의 통상거주/48시간 이상을 우선. 판매제한 연령을 반입면세 연령으로 바꾸지 않음."
+    },
+    {
+      "id": "MY-3",
+      "title": "Customs Duties (Exemption) 2017 (Amendment) Order 2021, P.U.(A)280",
+      "url": "https://www.customs.gov.my/images/06-prosedur/perintah-kastam/pengecualian/P.U.A208-perintah_duti_kastampengecualian_2017_pindaan_2021.pdf",
+      "issuer": "Malaysia Attorney General’s Chambers / RMCD",
+      "checked_on": "2026-10-20",
+      "published_on": "2021-06-28",
+      "effective_on": "2021-07-01",
+      "locator": "§1(2), §2(b), printed pp.7–9",
+      "original_excerpt": "This Order comes into operation on 1 July 2021.",
+      "notes_ko": "URL 파일명은208이나 문서내 표제는280. 담배 수량항 삭제 및 RM1,000 기타물품에서 담배·흡연기기 제외 확인."
+    },
+    {
+      "id": "MY-4",
+      "title": "Sales Tax (Persons Exempted From Payment of Tax) (Amendment) (No.2) Order 2021, P.U.(A)281",
+      "url": "https://mysst.customs.gov.my/assets/document/SST%20Orders/order/Sales%20Tax%20%28Person%20Exempted%20From%20Payment%20Of%20Tax%29%20%28Amendment%20No.%202%29%20Order%202021_PUA%20281.pdf",
+      "issuer": "Malaysia Attorney General’s Chambers / RMCD",
+      "checked_on": "2026-10-20",
+      "published_on": "2021-06-28",
+      "effective_on": "2021-07-01",
+      "locator": "Item16A, printed pp.10–12",
+      "original_excerpt": "Any person entering Malaysia (other than designated area) through air mode",
+      "notes_ko": "직접 가져오기는 간헐적404/503. 공식 검색 색인의 관련 전체 문단 및 MY-2에 첨부된 동일16A 원문으로 교차 확인. 기타공항·특별지역에는 자동 적용 금지."
+    }
+  ]
+}

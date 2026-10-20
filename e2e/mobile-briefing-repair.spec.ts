@@ -38,7 +38,8 @@ test('airport-glance-first home shows public information with briefing setup hid
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
     await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
     await expect(page.locator('.demand-home')).toHaveCount(0);
-    await expect(page.locator('.top-nav a[href="/ko/myeongdong"]')).toBeVisible();
+    await expect(page.locator('.top-nav a[href="/ko/more"]')).toBeVisible();
+    await expect(page.locator('.footer-links a[href="/ko/myeongdong"]')).toHaveCount(1);
     await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
     await expect(page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true })).toHaveCount(0);
 });

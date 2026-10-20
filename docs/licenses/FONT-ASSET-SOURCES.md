@@ -180,3 +180,118 @@ names and the week-ahead, weekly check and feeling-log copy.
   JP 219,848 / 222,052 bytes, inside the 320 KB per-face budget.
 
 Owner UI Lock: only these four font hashes are re-approved.
+
+## 2026-10-20 airport-focus preview copy
+
+The isolated airport-focus preview and its checked-in holiday snapshot introduce
+nine Hangul syllables: `괌둠딘웅윤쥣칭킵힌` (U+AD0C, U+B460, U+B518,
+U+C6C5, U+C724, U+C963, U+CE6D, U+D0B5, U+D78C). Regenerated KORETAIL Sans
+from the same Pretendard 1.3.9 TTF, after re-verifying SHA-256
+`3090ccde0442bb347aa7685d9ba8b17436a60682df6e8f92a9a670de14056e22`, using
+FontTools 4.66.0 and Brotli 1.2.0.
+
+The corpus is the union of all 1,509 previously shipped codepoints and the
+Hangul printed by current app/lib copy and the airport-focus preview JSON,
+including the reviewed holiday descriptions. No previous codepoint is removed.
+The same pipeline with the old cmap first reproduced the existing WOFF2
+byte-for-byte. Existing name, fvar and STAT tables, KORETAIL family/instance
+names, weight range, layout feature set, copyright, attribution and OFL records
+are preserved. Every previous encoded glyph retains identical outlines and
+advance widths at weights 100, 400, 500, 700 and 900.
+
+The asset grows from 227,508 to 229,012 bytes (+1,504 bytes), with 1,518
+codepoints and 852 Hangul syllables, within the existing 300,000-byte budget.
+Its SHA-256 is
+`0b27b815fb7a1a2aea744595b2fb20555137a368b22b6929814634de6a29c866`.
+The coverage fixture was regenerated from this actual cmap and file hash.
+No full-font replacement, CSS family/weight/loading change or external font
+request is introduced. The existing license files remain unchanged.
+
+
+## 2026-10-20 airport-focus arrival allowance coverage
+
+The 12-country arrival-allowance preview introduces eleven Hangul syllables:
+`괄낭낱닌뗀뤼벡빼잎켤횟` (U+AD04, U+B0AD, U+B0B1, U+B2CC, U+B5C0,
+U+B93C, U+BCA1, U+BE7C, U+C78E, U+CF24, U+D69F). The corpus covers current
+app/lib product copy and the normalized airport-focus preview JSON. Research
+notes that are not rendered by the UI are not included.
+
+KORETAIL Sans was regenerated from the same Pretendard 1.3.9 TTF, with its
+pinned SHA-256 `3090ccde0442bb347aa7685d9ba8b17436a60682df6e8f92a9a670de14056e22`
+verified, using FontTools 4.66.0 and Brotli 1.2.0. Regenerating with the previous
+1,518 codepoints first reproduced the shipped font byte-for-byte. The extension
+retains every previous codepoint, exactly preserves name/fvar/STAT tables and
+layout feature tags, and preserves outlines and advance widths for all previous
+encoded characters at weights 100, 400, 500, 700 and 900. The existing renamed
+KORETAIL family/instances, attribution and OFL records remain unchanged.
+
+The asset grows from 229,012 to 230,536 bytes (+1,524 bytes), with 1,529 total
+codepoints and 863 Hangul syllables, within the existing 300,000-byte limit.
+New SHA-256: `c664500f0bcb70795a85c08b07fbdc99ffd2e138ae6475dad97b4273d3e0a479`.
+The coverage fixture is regenerated from this exact font, and both existing
+font-coverage tests pass against the current app/lib and preview data corpus.
+No font family, CSS size/weight/loading policy, full-font asset or external font
+request changes. Synchronize only the existing font lock hash and scoped record;
+preserve all protected paths, earlier approval records and enforcement tests.
+
+### Final reviewed copy, 2026-10-20
+
+The same verified build adds only 썬 and 튜 (1,529 to 1,531 codepoints).
+The previous 1,681 glyphs retain identical outlines, widths and static left-side
+bearings at all nine named weights; name/fvar/STAT remain identical.
+Asset: 230,672 bytes (+136 bytes); SHA-256
+`cc9ef25f82a074a62dbeff9313f1479c58e14bcf17b30a813504f2cd4dc9e55f`.
+The previous font was reproduced byte-for-byte and both coverage tests pass.
+
+## 2026-10-20 official calendar copy coverage
+
+The final official-calendar and holiday-period comparison copy introduces only
+Hangul `봄` (U+BD04, spring-break wording) and `욕` (U+C695, New York wording).
+The preservation baseline is the existing 1,531-codepoint KORETAIL Sans font
+(SHA-256 `cc9ef25f82a074a62dbeff9313f1479c58e14bcf17b30a813504f2cd4dc9e55f`).
+The same pinned Pretendard 1.3.9 TTF SHA-256 and FontTools 4.66.0/Brotli 1.2.0
+pipeline are reused. Baseline regeneration reproduces the old font byte-for-byte.
+
+All previous codepoints and the exact name/fvar/STAT tables remain intact.
+The same layout features, renamed KORETAIL families/instances, attribution and
+OFL records are retained. All 1,683 previous glyphs, encoded and unencoded,
+retain identical outlines and advance widths at every named weight (100–900),
+with unchanged static advance/left-sidebearing metrics. No glyph is removed.
+
+The font grows from 230,672 to 231,228 bytes (+556 bytes), with 1,533 total
+codepoints, 867 Hangul syllables and 1,685 glyphs, within the existing
+300,000-byte budget. New SHA-256:
+`17a22146a9f23cc2a6d8252db3204a021346b5947e7c57cd5b8be5fb6e2e39f8`.
+The coverage fixture is regenerated from this exact cmap/hash, and both
+existing font-coverage tests pass on the frozen app/lib and normalized preview
+JSON corpus. No family, CSS size/weight/loading policy, full-font replacement
+or external font request changes. Preserve all protected paths and enforcement
+when synchronizing the existing font hash and scoped approval record.
+
+## 2026-10-20 approved change-rate symbol coverage
+
+The explicitly requested increase/decrease convention requires ▲ U+25B2 and
+▽ U+25BD. Both glyphs are present in the same pinned Pretendard 1.3.9 source,
+but were absent from the prior 1,533-codepoint subset (SHA-256
+`17a22146a9f23cc2a6d8252db3204a021346b5947e7c57cd5b8be5fb6e2e39f8`).
+This extension adds only those two codepoints. The existing + U+002B and
+− U+2212 glyphs, as well as all 867 Hangul syllables including 봄/욕, remain.
+
+The same verified source TTF, FontTools 4.66.0 and Brotli 1.2.0 pipeline are
+reused. Regeneration with the previous cmap reproduces the old WOFF2
+byte-for-byte. Exact name/fvar/STAT tables, KORETAIL names, layout features,
+attribution and OFL records are preserved. Every one of the previous 1,685
+glyphs, encoded and unencoded, retains identical outlines and advance widths
+at all nine named weights (100–900), with unchanged static left-sidebearings.
+The two added glyphs also match the pinned source at every named weight.
+
+The new font has 1,535 codepoints and 1,687 glyphs. WOFF2 recompression yields
+231,104 bytes, 124 bytes smaller than the 231,228-byte preservation baseline;
+no codepoint or glyph was removed. It remains within the 300,000-byte budget.
+New SHA-256:
+`f5d6b4d1fc0c946e4c531de335749e681d75cc3399f40c89313bd8588d544a83`.
+The actual font cmap contains all four ▲/▽/−/+ symbols. The regenerated
+Hangul fixture carries the updated file hash, and both existing coverage
+tests pass. No font family, size, weight or loading-policy change is made.
+Preserve all earlier approval records and protected paths when synchronizing
+the existing font lock hash and scoped approval record.

@@ -1,0 +1,689 @@
+{
+  "version": 1,
+  "automaticCollectionEnabled": false,
+  "publicationEnabled": false,
+  "sourceDataset": "data/airport-focus-preview/arrival-allowances.json",
+  "policy": {
+    "maxRequests": 24,
+    "maxBytes": 1048576,
+    "timeoutMs": 15000,
+    "minIntervalHours": 24
+  },
+  "allowedHosts": [
+    "app.www.gov.cn",
+    "apps.customs.go.th",
+    "brussels.customs.go.th",
+    "cbsa-asfc.gc.ca",
+    "congbaocdn.chinhphu.vn",
+    "customs.gov.ph",
+    "gss.mof.gov.cn",
+    "law.moj.gov.tw",
+    "mysst.customs.gov.my",
+    "vanban.chinhphu.vn",
+    "web.customs.gov.tw",
+    "www.1823.gov.hk",
+    "www.abf.gov.au",
+    "www.cbsa-asfc.gc.ca",
+    "www.customs.go.jp",
+    "www.customs.go.th",
+    "www.customs.gov.hk",
+    "www.customs.gov.my",
+    "www.customs.gov.sg",
+    "www.dof.gov.ph",
+    "www.ecfr.gov",
+    "www.help.cbp.gov",
+    "www.hsa.gov.sg",
+    "www.iras.gov.sg",
+    "www.legislation.gov.au",
+    "www.mofcom.gov.cn",
+    "www.tga.gov.au",
+    "xaydungchinhsach.chinhphu.vn"
+  ],
+  "sources": [
+    {
+      "id": "CN-01",
+      "jurisdiction": "CN",
+      "label": "중국 국무원 관세세칙위원회·재정부 원문",
+      "url": "https://gss.mof.gov.cn/gzdt/zhengcefabu/202411/P020241129682518318359.pdf",
+      "format": "pdf",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "priority_candidate"
+    },
+    {
+      "id": "CN-02",
+      "jurisdiction": "CN",
+      "label": "중국 재정부·해관총서·세무총국, 중국정부망 게재 원문",
+      "url": "https://app.www.gov.cn/govdata/gov/202406/28/516692/article.html",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "CN-03",
+      "jurisdiction": "CN",
+      "label": "중국 해관총서, 상무부 공식 재게재 원문",
+      "url": "https://www.mofcom.gov.cn/zcfb/zgdwjjmywg/art/2025/art_2412b6f8868b4034bf55a1261158e544.html",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "JP-01",
+      "jurisdiction": "JP",
+      "label": "일본 재무성 세관 원문",
+      "url": "https://www.customs.go.jp/kaigairyoko/menzei.htm",
+      "format": "html",
+      "accessReview": {
+        "url": "https://www.customs.go.jp/kaigairyoko/menzei.htm",
+        "automatedReadAllowed": true,
+        "evidenceUrl": "https://www.customs.go.jp/robots.txt",
+        "reviewedAt": "2026-10-20T13:47:00Z",
+        "minIntervalHours": 24,
+        "scope": "One daily bounded source-byte comparison only. No source-page reproduction, legal interpretation or automated numeric publication."
+      },
+      "baseline": {
+        "url": "https://www.customs.go.jp/kaigairyoko/menzei.htm",
+        "sha256": "09f135aae54d8591cdd3af6df62caa5db97cf69eedb8080053f9a2f5249e6213",
+        "reviewedAt": "2026-10-20T13:47:00Z",
+        "numericTemplateSha256": "7dcf7938a5edba7b97fb983b7cbaf8b064fcced0475edcb4735bbba551bfedc9",
+        "numericValues": {
+          "liquorBottles": 3,
+          "liquorBottleMl": 760,
+          "cigarettes": 200,
+          "perfumeOunces": 2
+        },
+        "datasetSemanticHash": "0b00b89b1ba4b7ca1b5ea0465f01e60851ee233bd6817398fc95cf5f1e3d4f75"
+      },
+      "monitoringRole": "priority_candidate",
+      "encoding": "shift_jis",
+      "numericParser": "jp-allowance-v1"
+    },
+    {
+      "id": "JP-02",
+      "jurisdiction": "JP",
+      "label": "Japan Customs 원문",
+      "url": "https://www.customs.go.jp/english/c-answer_e/keitaibetsuso/7105_e.htm",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "JP-03",
+      "jurisdiction": "JP",
+      "label": "일본 재무성 세관 원문",
+      "url": "https://www.customs.go.jp/kaigairyoko/cigarette_leaflet_j.pdf",
+      "format": "pdf",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "VN-01",
+      "jurisdiction": "VN",
+      "label": "베트남 정부·재무부 공식 관보 원문",
+      "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/CongBao/2023/6/39609/45447-1-787-788.pdf",
+      "format": "pdf",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "priority_candidate"
+    },
+    {
+      "id": "VN-02",
+      "jurisdiction": "VN",
+      "label": "베트남 정부 법령포털 원문",
+      "url": "https://vanban.chinhphu.vn/?docid=186707&pageid=27160",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "VN-03",
+      "jurisdiction": "VN",
+      "label": "베트남 정부 공식 관보 원문",
+      "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/VanBan/2025/6/45351/57292-1-2025883-884167-2025-nd-cp.pdf",
+      "format": "pdf",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "VN-04",
+      "jurisdiction": "VN",
+      "label": "베트남 정부 정책법률 포털 원문",
+      "url": "https://xaydungchinhsach.chinhphu.vn/cam-san-xuat-kinh-doanh-nhap-khau-chua-chap-van-chuyen-su-dung-thuoc-la-dien-tu-thuoc-la-nung-nong-tu-nam-2025-119241214164955394.htm",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "TH-01",
+      "jurisdiction": "TH",
+      "label": "태국 관세청 원문",
+      "url": "https://www.customs.go.th/list_strc_simple_neted.php?ini_content=individual_160503_03_160905_01&lang=en&left_menu=menu_individual_submenu_01_160421_01",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "priority_candidate"
+    },
+    {
+      "id": "TH-02",
+      "jurisdiction": "TH",
+      "label": "태국 관세청 원문",
+      "url": "https://www.customs.go.th/list_strc_simple_neted.php?ini_content=individual_160503_03_160905_01&lang=th&left_menu=menu_individual_submenu_01_160421_01&root_left_menu=menu_individual_submenu_01",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "TH-03",
+      "jurisdiction": "TH",
+      "label": "태국 관세청 FAQ 원문",
+      "url": "https://apps.customs.go.th/cont_strc_faq.php?current_id=142328324146505f47&ini_menu=menu_pbc&lang=en&left_menu=menu_pbc_03&top_menu=menu_homepage",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "TH-04",
+      "jurisdiction": "TH",
+      "label": "태국 관세청 브뤼셀 사무소 원문",
+      "url": "https://brussels.customs.go.th/data_files/d18e9419dbac9d72347ecd281d76550b.pdf",
+      "format": "pdf",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "TH-05",
+      "jurisdiction": "TH",
+      "label": "태국 관세청 2025 연차보고서 원문",
+      "url": "https://www.customs.go.th/data_files/e8805f7710fe5246124b46cc868d3b98/files/basic-html/page230.html",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "US-01",
+      "jurisdiction": "US",
+      "label": "eCFR / Office of the Federal Register 원문",
+      "url": "https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-D/section-148.33",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "priority_candidate"
+    },
+    {
+      "id": "US-02",
+      "jurisdiction": "US",
+      "label": "eCFR / Office of the Federal Register 원문",
+      "url": "https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-E/section-148.42",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "US-03",
+      "jurisdiction": "US",
+      "label": "eCFR / Office of the Federal Register 원문",
+      "url": "https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-E/section-148.43",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "US-04",
+      "jurisdiction": "US",
+      "label": "eCFR / Office of the Federal Register 원문",
+      "url": "https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-E#p-148.44",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "US-05",
+      "jurisdiction": "US",
+      "label": "eCFR / Office of the Federal Register 원문",
+      "url": "https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-F#p-148.51",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "US-06",
+      "jurisdiction": "US",
+      "label": "U.S. Customs and Border Protection 원문",
+      "url": "https://www.help.cbp.gov/s/article/Article-1395?language=en_US",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "US-07",
+      "jurisdiction": "US",
+      "label": "U.S. Customs and Border Protection 원문",
+      "url": "https://www.help.cbp.gov/s/article/Article-1376?language=en_US",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "US-08",
+      "jurisdiction": "US",
+      "label": "eCFR / Office of the Federal Register 원문",
+      "url": "https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-D/section-148.34",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "US-09",
+      "jurisdiction": "US",
+      "label": "eCFR / Office of the Federal Register 원문",
+      "url": "https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-D/section-148.35",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "US-10",
+      "jurisdiction": "US",
+      "label": "eCFR / Office of the Federal Register 원문",
+      "url": "https://www.ecfr.gov/current/title-19/chapter-I/part-148/subpart-D/section-148.36",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "TW-01",
+      "jurisdiction": "TW",
+      "label": "대만 전국 법규자료고·재정부 소관 법령 원문",
+      "url": "https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=G0350003",
+      "format": "html",
+      "accessReview": {
+        "url": "https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=G0350003",
+        "automatedReadAllowed": true,
+        "evidenceUrl": "https://law.moj.gov.tw/robots.txt",
+        "reviewedAt": "2026-10-20T13:47:00Z",
+        "minIntervalHours": 24,
+        "scope": "One daily bounded source-byte comparison only. No source-page reproduction, legal interpretation or automated numeric publication."
+      },
+      "baseline": {
+        "url": "https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=G0350003",
+        "sha256": "8e4dad1a6104e5c9fa81ed8446d4ca9b655917a2b28300ec8f74631b4d0f5d7c",
+        "reviewedAt": "2026-10-20T13:47:00Z",
+        "contentSha256": "4681a47fdbf6d8e87b9f739f4f9e71e1daede65307c76099a7e831cd4537f92b"
+      },
+      "monitoringRole": "priority_candidate",
+      "extractor": "tw-law-block-v1"
+    },
+    {
+      "id": "TW-02",
+      "jurisdiction": "TW",
+      "label": "대만 재정부 관무서 원문",
+      "url": "https://web.customs.gov.tw/en/singlehtml/1867?cntId=8a071deb438f4fa0b3a72f3f45ea138b",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "TW-03",
+      "jurisdiction": "TW",
+      "label": "대만 재정부 관무서 원문",
+      "url": "https://web.customs.gov.tw/singlehtml/2222?cntId=b8f47b6346924fc3a5a85b89a6d3434d",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "TW-04",
+      "jurisdiction": "TW",
+      "label": "대만 타이베이 세관 원문",
+      "url": "https://web.customs.gov.tw/taipei/singlehtml/3392?cntId=cus2_3392_3392_1344&zh-cn=",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "TW-05",
+      "jurisdiction": "TW",
+      "label": "대만 타이베이 세관 원문",
+      "url": "https://web.customs.gov.tw/taipei/singlehtml/83?cntId=e864a2ab2aac44199bbf436a930b95e2",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "TW-06",
+      "jurisdiction": "TW",
+      "label": "대만 타이베이 세관 원문",
+      "url": "https://web.customs.gov.tw/etaipei/singlehtml/3396?cntId=5e14053a391049858903b4c6c8a2a65e",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "HK-01",
+      "jurisdiction": "HK",
+      "label": "홍콩 세관 원문",
+      "url": "https://www.customs.gov.hk/en/service-enforcement-information/passenger-clearance/duty-free-concessions/index.html",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "priority_candidate"
+    },
+    {
+      "id": "HK-02",
+      "jurisdiction": "HK",
+      "label": "홍콩 세관 원문",
+      "url": "https://www.customs.gov.hk/sc/service-enforcement-information/passenger-clearance/duty-free-concessions/index.html",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "HK-03",
+      "jurisdiction": "HK",
+      "label": "홍콩 세관 원문",
+      "url": "https://www.customs.gov.hk/en/service-enforcement-information/trade-facilitation/ASP/index.html",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "HK-04",
+      "jurisdiction": "HK",
+      "label": "홍콩정부 1823 원문",
+      "url": "https://www.1823.gov.hk/en/faq/can-i-bring-a-small-amount-of-alternative-smoking-products-e-g-e-cigarette-heatstick-and-herbal-cigarette-into-hong-kong",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "SG-01",
+      "jurisdiction": "SG",
+      "label": "Singapore Customs 원문",
+      "url": "https://www.customs.gov.sg/at-customs/arriving-in-singapore/duty-free-concession-gst-relief/",
+      "format": "html",
+      "accessReview": {
+        "url": "https://www.customs.gov.sg/at-customs/arriving-in-singapore/duty-free-concession-gst-relief/",
+        "automatedReadAllowed": true,
+        "evidenceUrl": "https://www.customs.gov.sg/robots.txt",
+        "reviewedAt": "2026-10-20T13:47:00Z",
+        "minIntervalHours": 24,
+        "scope": "One daily bounded source-byte comparison only. No source-page reproduction, legal interpretation or automated numeric publication."
+      },
+      "baseline": {
+        "url": "https://www.customs.gov.sg/at-customs/arriving-in-singapore/duty-free-concession-gst-relief/",
+        "sha256": "200bbbf64d09f5c918978fc8812674d18257a1d736ad7837a9f0542340d57f81",
+        "reviewedAt": "2026-10-20T13:47:00Z"
+      },
+      "monitoringRole": "priority_candidate"
+    },
+    {
+      "id": "SG-02",
+      "jurisdiction": "SG",
+      "label": "IRAS·Singapore Customs 원문",
+      "url": "https://www.iras.gov.sg/news-events/newsroom/revision-in-gst-import-relief-for-travellers-with-effect-from-19-february-2019",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "SG-03",
+      "jurisdiction": "SG",
+      "label": "Singapore Customs 원문",
+      "url": "https://www.customs.gov.sg/news-and-media/publications/2019-01-01-Issue52.pdf",
+      "format": "pdf",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "SG-04",
+      "jurisdiction": "SG",
+      "label": "싱가포르 보건과학청 HSA 원문",
+      "url": "https://www.hsa.gov.sg/tobacco-regulation/overview/",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "SG-05",
+      "jurisdiction": "SG",
+      "label": "Singapore Customs 원문",
+      "url": "https://www.customs.gov.sg/doing-business/import-operations/import-procedures/controlled-and-prohibited-goods-for-imports/",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "AU-01",
+      "jurisdiction": "AU",
+      "label": "Australian Border Force 원문",
+      "url": "https://www.abf.gov.au/entering-and-leaving-australia/duty-free",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "priority_candidate"
+    },
+    {
+      "id": "AU-02",
+      "jurisdiction": "AU",
+      "label": "Australian Border Force 원문",
+      "url": "https://www.abf.gov.au/importing-exporting-and-manufacturing/prohibited-goods/tobacco",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "AU-03",
+      "jurisdiction": "AU",
+      "label": "Australian Government Federal Register of Legislation; ABF current tariff 원문",
+      "url": "https://www.legislation.gov.au/F2018L00072/asmade/2018-01-31/text/original/epub/OEBPS/document_1/document_1.html",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "AU-04",
+      "jurisdiction": "AU",
+      "label": "Therapeutic Goods Administration 원문",
+      "url": "https://www.tga.gov.au/products/unapproved-therapeutic-goods/therapeutic-vaping-goods/vaping-hub/vapes-information-individuals-and-patients",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "CA-01",
+      "jurisdiction": "CA",
+      "label": "공식 세관 원문",
+      "url": "https://www.cbsa-asfc.gc.ca/travel-voyage/bring-apporter-eng.html",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "priority_candidate"
+    },
+    {
+      "id": "CA-02",
+      "jurisdiction": "CA",
+      "label": "공식 세관 원문",
+      "url": "https://www.cbsa-asfc.gc.ca/travel-voyage/declare-eng.html",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "CA-03",
+      "jurisdiction": "CA",
+      "label": "공식 세관 원문",
+      "url": "https://cbsa-asfc.gc.ca/publications/dm-md/d2/d2-1-1-eng.html",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "CA-04",
+      "jurisdiction": "CA",
+      "label": "공식 세관 원문",
+      "url": "https://www.cbsa-asfc.gc.ca/publications/dm-md/d2/d2-1-4-eng.html",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "CA-05",
+      "jurisdiction": "CA",
+      "label": "공식 세관 원문",
+      "url": "https://www.cbsa-asfc.gc.ca/trade-commerce/tariff-tarif/2026/html/02/ch98-eng.html",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "CA-06",
+      "jurisdiction": "CA",
+      "label": "공식 세관 원문",
+      "url": "https://www.cbsa-asfc.gc.ca/travel-voyage/pdt-pdt-eng.html",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "PH-01",
+      "jurisdiction": "PH",
+      "label": "Philippines Bureau of Customs 원문",
+      "url": "https://customs.gov.ph/wp-content/uploads/2026/01/ESSENTIAL-GUIDE-FOR-TRAVELERS.pdf",
+      "format": "pdf",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "priority_candidate"
+    },
+    {
+      "id": "PH-02",
+      "jurisdiction": "PH",
+      "label": "Philippines Bureau of Customs 원문",
+      "url": "https://customs.gov.ph/guidelines-on-arriving-travelers/",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "PH-03",
+      "jurisdiction": "PH",
+      "label": "Philippines Bureau of Customs 원문",
+      "url": "https://customs.gov.ph/wp-content/uploads/2023/01/CAO-01-2017-1.pdf",
+      "format": "pdf",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "PH-04",
+      "jurisdiction": "PH",
+      "label": "Philippines Bureau of Customs 원문",
+      "url": "https://customs.gov.ph/wp-content/uploads/2023/01/cmo-28-2016-Guidelines-for-the-Implementation-of-Customs-Administrative-Order-CAO-No.-02-2016-1.pdf",
+      "format": "pdf",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "PH-05",
+      "jurisdiction": "PH",
+      "label": "Philippines Bureau of Customs 원문",
+      "url": "https://customs.gov.ph/duty-and-tax-free-privileges/",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "PH-06",
+      "jurisdiction": "PH",
+      "label": "Philippines Department of Finance 원문",
+      "url": "https://www.dof.gov.ph/boc-bares-new-rules-on-small-value-tobacco-alcohol-imports/",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "MY-01",
+      "jurisdiction": "MY",
+      "label": "Royal Malaysian Customs Department 원문",
+      "url": "https://www.customs.gov.my/en/individu/pengembara/travelers-guide?highlight=WyJuZXciLCJpbXBvcnQiLCJpbXBvcnRhbnQiXQ%3D%3D",
+      "format": "html",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "priority_candidate"
+    },
+    {
+      "id": "MY-02",
+      "jurisdiction": "MY",
+      "label": "Royal Malaysian Customs Department 원문",
+      "url": "https://www.customs.gov.my/images/07-arkib/pengumuman/kedai-bebas-cukai-lapangan-terbang-BM-latest-24102024.pdf",
+      "format": "pdf",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "MY-03",
+      "jurisdiction": "MY",
+      "label": "Malaysia Attorney General’s Chambers / RMCD 원문",
+      "url": "https://www.customs.gov.my/images/06-prosedur/perintah-kastam/pengecualian/P.U.A208-perintah_duti_kastampengecualian_2017_pindaan_2021.pdf",
+      "format": "pdf",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    },
+    {
+      "id": "MY-04",
+      "jurisdiction": "MY",
+      "label": "Malaysia Attorney General’s Chambers / RMCD 원문",
+      "url": "https://mysst.customs.gov.my/assets/document/SST%20Orders/order/Sales%20Tax%20%28Person%20Exempted%20From%20Payment%20Of%20Tax%29%20%28Amendment%20No.%202%29%20Order%202021_PUA%20281.pdf",
+      "format": "pdf",
+      "accessReview": null,
+      "baseline": null,
+      "monitoringRole": "reference_only"
+    }
+  ]
+}

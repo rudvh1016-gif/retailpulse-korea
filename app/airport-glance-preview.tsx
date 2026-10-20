@@ -1,5 +1,5 @@
 'use client';
-import {useEffect,useMemo,useRef,useState} from 'react';
+import {useEffect,useMemo,useRef,useState,type ReactNode} from 'react';
 import {deviceAirportScope,saveAirportScope} from '../lib/airport-scope-preference';
 import {useChoiceMotion} from './use-choice-motion';
 import type {Lang} from './retailpulse-data';
@@ -14,8 +14,11 @@ import {previousFlightMonth,type AirportMonthlyRollups} from '../lib/airport-mon
 import {selectedZoneShares} from '../lib/airport-zone-shares';
 import {kstDayOf} from '../lib/kst';
 import {passengerReferenceSum,transferForecastTotal} from '../lib/passenger-reference-sum';
+import type {PassengerReferenceMonth,ReferenceScope} from '../lib/passenger-reference-month';
 import {passengerCopy as passengerReferenceCopy} from '../lib/passenger-copy';
 import {friendlyCheckpointName} from '../lib/airport-today-summary';
+import {staffDeparturePeak} from '../lib/airport-staff-peak';
+import AirportStaffBriefing from './airport-staff-briefing';
 import './airport-glance-preview.css';
 interface MonthReply{status:string;month:string;data:AirportMonthlyRollups|null;calculatedAt:string|null}
 /** On a page that opens on the glance, the two reads the glance makes once the summary names the day
@@ -67,7 +70,8 @@ const passengerCopy={
  zh:{transfer:'预计中转旅客',transferBasis:'中转安检口径 · 到达日',today:'今日预计出境旅客',selected:'所选日预计出境旅客',people:'人',basis:'仁川机场官方全天预测',shared:'T1共用（含登机楼）',collected:'采集',partial:'全天预测不完整'},
  ja:{transfer:'予想乗継客',transferBasis:'乗継保安検査基準・到着日',today:'今日の予想出国者数',selected:'選択日の予想出国者数',people:'人',basis:'仁川空港公式の一日予測',shared:'T1共通（搭乗棟含む）',collected:'取得',partial:'一日予測が不完全'},
 } as const;
-export default function AirportGlancePreview({lang,artworkSrc=null,published=false,selectedDate=null,onDateChange}:{lang:Lang;artworkSrc?:string|null;published?:boolean;selectedDate?:string|null;onDateChange?:(date:string|null)=>void}){
+export interface GlanceOverviewContext {passengerBaseline?:PassengerReferenceMonth|null;selectedCountryChanges?:Array<{country:string;label:string;count:number;mean:number;delta:number;percent:number|null;month:string;days:number}>;day:string;scope:GlanceScope;flights:number|null;passengers:number|null;transferPassengers:number|null;referenceSum:number|null;flightComparison:{mean:number;delta:number;percent:number}|null;flightBaseline:{mean:number;delta:number;percent:number|null;days:number;start:string;end:string;previous:boolean}|null}
+export default function AirportGlancePreview({lang,artworkSrc=null,published=false,selectedDate=null,onDateChange,overviewHeading,overviewExtras,hideRepeatedFlightSummary=false,hideRepeatedPassengerSummary=false,artworkSrcSet,artworkSizes,artworkNote}:{lang:Lang;artworkSrc?:string|null;published?:boolean;selectedDate?:string|null;onDateChange?:(date:string|null)=>void;overviewHeading?:(context:GlanceOverviewContext)=>ReactNode;overviewExtras?:ReactNode;hideRepeatedFlightSummary?:boolean;hideRepeatedPassengerSummary?:boolean;artworkSrcSet?:string;artworkSizes?:string;artworkNote?:string}){
  const c=copy[lang],ui=interfaceCopy[lang],dc=destinationCopy[lang],ic=insightCopy[lang];
  const [futureHours,setFutureHours]=useState<1|3|6>(1);
  const [previewDate,setPreviewDate]=useState<string|null>(null),[scope,setScope]=useState<GlanceScope>('all');
@@ -85,6 +89,7 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
  const summary=useLiveSummary(date),day=date??summary?.serviceDateKst??'';
  const loaded=useFlights(day||null),clock=usePresentationClock(summary?.generatedAt??'1970-01-01T00:00:00Z');
  const month=day.slice(0,7),previousMonth=month?previousFlightMonth(month):'',monthRequest=usePreparedMonth<MonthReply>(month,`/api/live/airport-months?month=${encodeURIComponent(month)}`,month,day);
+ const referenceMonth=usePreparedMonth<{status:string;month:string;data:Record<ReferenceScope,PassengerReferenceMonth>|null}>(previousMonth,`/api/live/passenger-reference?month=${encodeURIComponent(previousMonth)}`,overviewHeading?previousMonth:'',month);
  const payload=loaded?.status==='OK'?loaded.payload:null;
  // Until the first summary and flight requests settle (always, in the server HTML) nothing is known yet:
  // the glance tiles below say "checking", never "no verified data" or a zero. The passenger tile waits on the summary alone.
@@ -96,6 +101,10 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
  const current=scope==='T1'?mainBuildingMonth(storedCurrent):storedCurrent,previous=scope==='T1'?mainBuildingMonth(storedPrevious):storedPrevious;
  const monthScope=scope==='all'?'ALL':scope,ranking=glanceCountryRanking(current,previous,monthScope),declines=glanceCountryDeclines(current,previous,monthScope),comparable=glanceComparableCountries(current,previous,monthScope)>0,growth=ranking[0]??null;
  const dailyComparison=glanceDayComparison(day,data?.total??null,previous,scope==='all'?'ALL':scope);
+ const overviewMonth=previous?.includedDays.length?previous:current;
+ const overviewDays=overviewMonth?.includedDays??[];
+ const overviewMean=overviewDays.length&&overviewDays.every(value=>value<day)?overviewMonth!.scopes[scope==='all'?'ALL':scope].total/overviewDays.length:null;
+ const flightBaseline=data&&overviewMean!==null?{mean:overviewMean,delta:data.total-overviewMean,percent:overviewMean>0?(data.total/overviewMean-1)*100:null,days:overviewDays.length,start:[...overviewDays].sort()[0],end:[...overviewDays].sort().at(-1)!,previous:overviewMonth===previous}:null;
  const dailyCopy={ko:{today:'오늘 출발편',selected:'선택일 출발편',versus:'전월 일평균 대비',missing:'비교 불가',basis:'하루 전체 출발 예정편 · 전월 포함일 기준',mean:'전월 일평균'},en:{today:'Today’s departures',selected:'Selected-day departures',versus:'vs previous-month daily mean',missing:'Comparison unavailable',basis:'Whole-day scheduled departures · included dates of previous month',mean:'Previous-month daily mean'},zh:{today:'今日出发航班',selected:'所选日出发航班',versus:'较上月日均',missing:'无法比较',basis:'全天计划出发航班 · 按上月计入日期',mean:'上月日均'},ja:{today:'今日の出発便',selected:'選択日の出発便',versus:'前月の日平均比',missing:'比較不可',basis:'終日の出発予定便 · 前月の集計対象日基準',mean:'前月の日平均'}}[lang];
  const names=new Intl.DisplayNames([lang],{type:'region'}),fmt=new Intl.NumberFormat(lang,{maximumFractionDigits:1});
  const isToday=Number.isFinite(clock)&&kstDayOf(new Date(clock).toISOString())===day&&summary?.dayRelation==='TODAY';
@@ -164,6 +173,15 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
   const countryLabel=(country:string)=>{const src=countryFlag(country);return <span className="glance-country-name">{src&&<img src={src} width="18" height="18" alt="" loading="lazy" decoding="async"/>}<span>{countryName(country)}</span></span>;};
  const knownCountries=data?.countries.filter(row=>row.country!==null)??[],unknownCountry=data?.countries.find(row=>row.country===null);
  const countryLimit=knownCountries[5]?.flights??0,leadingCountries=knownCountries.filter((row,index)=>index<6||row.flights===countryLimit);
+ const countryDays=previous?.includedDays??[];
+ const staffCountryChanges=data&&previous&&countryDays.length&&countryDays.every(value=>value<day)?data.countries.flatMap(row=>{
+  if(!row.country||row.country==='KR')return [];
+  const total=previous.scopes[monthScope].destinationCountries[row.country];
+  if(total===undefined)return [];
+  const mean=total/countryDays.length,delta=row.flights-mean;
+  return mean>=10&&Math.abs(delta)>=2?[{country:row.country,label:names.of(row.country)??row.country,count:row.flights,mean,delta,percent:mean>0?delta/mean*100:null,month:previous.month,days:countryDays.length}]:[];
+ }).sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta)):[];
+ const selectedCountryChanges=staffCountryChanges.slice(0,2);
  const countryRow=(row:{country:string|null;flights:number})=><li key={row.country??'UNKNOWN'} data-country={row.country??'UNKNOWN'}><span>{row.country===null?dc.unknown:countryLabel(row.country)}</span><span>{fmt.format(row.flights)} {c.unit}</span><strong>{data&&data.total>0?`${fmt.format(row.flights/data.total*100)}%`:'—'}</strong></li>;
  const waitValue=(value:NonNullable<typeof wait>)=>`${value.minutes}${value.row.waitTimeRaw==='60+'?'+':''} ${ic.minute}`;
  const Container=published?'section':'main';
@@ -172,22 +190,25 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
   <div className="glance-heading"><h1>{c.title}</h1>{!published&&<small>{c.preview}</small>}</div>
   <div className="glance-controls"><div role="group" aria-label={ui.terminal}>{(['all','T1','CONCOURSE','T2'] as const).map(value=><button key={value} aria-label={value==='all'?c.all:value==='CONCOURSE'?c.concourse:value} aria-pressed={scope===value} onClick={()=>chooseScope(value)}>{value==='all'?c.all:value==='T1'?mainLabel:value==='CONCOURSE'?c.concourse:value}{scope===value&&<i className="glance-selection-rule" aria-hidden="true"/>}</button>)}</div><label className="glance-date-control">{c.date}<input name="airport-date" autoComplete="off" type="date" value={day} onChange={event=>{if(event.target.value)setDate(event.target.value);}}/></label><button className="glance-today" data-current={date===null} onClick={()=>setDate(null)}>{c.today}</button><span>KST</span></div>
   <p className="glance-shared-note" data-testid="glance-shared-processing">{sharedNote}</p>
+  {overviewHeading?.({passengerBaseline:referenceMonth.reply?.data?.[scope==='all'?'all':forecastTerminal]??null,selectedCountryChanges,day,scope,flights:data?.total??null,passengers:forecastPassengers,transferPassengers,referenceSum:referenceSum?.total??null,flightComparison:dailyComparison,flightBaseline})}
   <section className="glance-insights" aria-label={ui.summary}>
-   <div className="glance-passenger-pair">
+   {!hideRepeatedPassengerSummary&&<div className="glance-passenger-pair">
    <a className="glance-passengers" href={targets.forecast} data-testid="glance-key-passengers"><span>{todayLabel?pc.today:pc.selected}</span><strong>{forecastPassengers!==null?`${fmt.format(forecastPassengers)}${pc.people}`:forecastCoverage==='PARTIAL'?pc.partial:summary===undefined?c.loading:ic.unavailable}</strong><small>{dayText} · {forecastScope} · {pc.basis} · {pc.collected} {summary===undefined?stampHold:stamp(forecastAt)}</small></a>
    <a className="glance-transfers" href={targets.forecast} data-testid="glance-key-transfers"><span>{pc.transfer}</span><strong>{referenceSum&&<span className="glance-sum-operator">+ </span>}{transferPassengers!==null?`${fmt.format(transferPassengers)}${pc.people}`:summary===undefined?c.loading:ic.unavailable}</strong><small>{dayText} · {forecastScope} · {pc.transferBasis}</small></a>
    <div className="glance-passenger-sum" data-testid="glance-key-sum"><span>{sumLabel}</span><strong>{referenceSum&&<span className="glance-sum-operator">= </span>}{referenceSum?`${fmt.format(referenceSum.total)}${pc.people}`:'—'}</strong><small>{passengerReferenceCopy.arithmeticNote[lang]}</small></div>
-   </div>
-   <a href={targets.wait} data-testid="glance-key-wait"><span>{ic.wait}</span><strong>{wait?`${wait.row.terminal} ${friendlyCheckpointName(wait.row.zone,lang)} · ${waitValue(wait)}`:pendingText??ic.unavailable}</strong><small>{wait?`${shortTime(wait.row.observedAt)} KST · ${ic.waitBasis}${wait.tied?` · ${ic.tie}`:''}`:<>{ic.waitBasis}{liveHold&&hold(` · 00:00 KST · ${ic.tie}`,'')}</>}</small></a>
-   <a href={targets.map} data-testid="glance-key-upcoming"><span>{ic.upcoming}</span><strong>{upcoming?`${minuteText(upcoming.startMin)}–${minuteText(upcoming.endMin)} · ${upcoming.flights} ${c.unit}`:futureReady?ic.noUpcoming:pendingText??ic.unavailable}</strong><small>{dayText} KST · {ic.upcomingBasis}{upcoming?.tied?` · ${ic.tie}`:''}</small></a>
+   </div>}
+   {overviewHeading&&<h2 className="glance-workday-heading">{isToday?'오늘 업무에서 먼저 확인':'선택일 업무 지표'}</h2>}
+   <a href={targets.wait} data-testid="glance-key-wait"><span>{overviewHeading&&!isToday?'출국장 대기':ic.wait}</span><strong>{wait?`${wait.row.terminal} ${friendlyCheckpointName(wait.row.zone,lang)} · ${waitValue(wait)}`:overviewHeading&&!isToday?'오늘 자료에서 확인':pendingText??ic.unavailable}</strong><small>{wait?`${shortTime(wait.row.observedAt)} KST · ${ic.waitBasis}${wait.tied?` · ${ic.tie}`:''}`:<>{ic.waitBasis}{liveHold&&hold(` · 00:00 KST · ${ic.tie}`,'')}</>}</small></a>
+   <a href={targets.map} data-testid="glance-key-upcoming"><span>{overviewHeading&&!isToday?'출발편 집중 시간':ic.upcoming}</span><strong>{overviewHeading&&!isToday?'오늘 자료에서 확인':upcoming?`${minuteText(upcoming.startMin)}–${minuteText(upcoming.endMin)} · ${upcoming.flights} ${c.unit}`:futureReady?ic.noUpcoming:pendingText??ic.unavailable}</strong><small>{dayText} KST · {ic.upcomingBasis}{upcoming?.tied?` · ${ic.tie}`:''}</small></a>
    <a href={targets.monthCountries} data-testid="glance-key-growth"><span>{ic.growth}</span><strong>{growth?<>{countryLabel(growth.country)} <CountChange delta={growth.delta} format={fmt.format} lang={lang} unit={ui.perDay}/>{ranking[1]&&sameDailyChange(ranking[1].delta,growth.delta)?` · ${ic.tie}`:''}</>:comparable?ic.noGrowth:pendingText??ic.unavailable}</strong><small>{previousMonthText} → {monthText} · {ui.days} {daysText(previous)} / {daysText(current)} {ui.dayUnit}</small></a>
+   {overviewExtras&&<div className="glance-overview-extras">{overviewExtras}</div>}
   </section>
   {!ready&&!settling&&<p role="status" className="glance-status">{summary===null?c.missing:payload?.truncated?c.partial:c.missing}</p>}
   <section className="glance-airport" aria-label={ui.layout}><div className="glance-map-heading"><span>{c.total} · {scopeName} <strong>{totalText} {c.unit}</strong></span><a href={targets.map}>{c.detail} ↗</a></div><div className="glance-art-frame" data-artwork={artworkSrc?'ready':'pending'}>
-   {artworkSrc?<img src={artworkSrc} srcSet="/images/airport-glance/approved-v1-480.webp 480w, /images/airport-glance/approved-v1-960.webp 960w, /images/airport-glance/approved-v1-1100.webp 1100w, /images/airport-glance/approved-v1-1200.webp 1200w, /images/airport-glance/approved-v1-1448.webp 1448w" sizes={published?'(max-width:365px) calc(100vw - 52px), (max-width:700px) calc(100vw - 60px), (max-width:820px) calc(100vw - 84px), (max-width:895px) calc(100vw - 96px), 800px':'(max-width:700px) calc(100vw - 24px), (max-width:848px) calc(100vw - 48px), 800px'} width="1448" height="1086" alt="" decoding="async" fetchPriority="high"/>:<div className="glance-art-pending">{c.art}</div>}
+   {artworkSrc?<img src={artworkSrc} srcSet={artworkSrcSet??"/images/airport-glance/approved-v1-480.webp 480w, /images/airport-glance/approved-v1-960.webp 960w, /images/airport-glance/approved-v1-1100.webp 1100w, /images/airport-glance/approved-v1-1200.webp 1200w, /images/airport-glance/approved-v1-1448.webp 1448w"} sizes={artworkSizes??(published?'(max-width:365px) calc(100vw - 52px), (max-width:700px) calc(100vw - 60px), (max-width:820px) calc(100vw - 84px), (max-width:895px) calc(100vw - 96px), 800px':'(max-width:700px) calc(100vw - 24px), (max-width:848px) calc(100vw - 48px), 800px')} width="1448" height="1086" alt="" decoding="async" fetchPriority="high"/>:<div className="glance-art-pending">{c.art}</div>}
    {(['T1','CONCOURSE','T2'] as const).map(building=>{const counts=data?.buildings[building],shares=counts?selectedZoneShares(counts):null,queue=building==='CONCOURSE'?null:glanceLongestWait(queues.filter(row=>row.terminal===building),clock);return <section key={building} className={`glance-building glance-building-${building}`} aria-label={buildingNames[building]} data-selected={scope==='all'||scope===building}><h2><span className="glance-building-label">{buildingNames[building]}</span> <span>{counts?`${counts.total} ${c.unit}`:pendingText?hold(`000 ${c.unit}`):'—'}</span></h2><dl>{(['WEST','CENTER','EAST'] as const).map(side=><div key={side}><dt>{({WEST:c.west,CENTER:c.center,EAST:c.east})[side]}</dt><dd>{shares?.[side]!==null&&shares?.[side]!==undefined?`${fmt.format(shares[side]!)}%`:pendingText?hold('00.0%'):'—'}</dd></div>)}</dl>{queue?<small className="glance-map-queue" data-queue-terminal={building}>{ic.waitShort} {waitValue(queue)} · {queue.row.zone.replace(/^DG(\d+)_/,'$1')} · {shortTime(queue.row.observedAt)}</small>:building!=='CONCOURSE'&&liveHold&&<small className="glance-map-queue glance-hold" data-shape={`${ic.waitShort} 00 ${ic.minute} · 0A · 00:00`}/>}{counts&&counts.UNVERIFIED>0&&<small className="glance-location-note">{c.unknown} {counts.UNVERIFIED} {c.unit}</small>}</section>;})}
-  </div><details className="glance-context"><summary>{c.concept}</summary><p>{c.scope}</p><p>{c.scheduled}</p></details>{data&&data.unverifiedBuilding>0&&<p>{ui.building} {data.unverifiedBuilding} {c.unit}</p>}</section>
-  <div className="glance-brief-data"><section className="glance-destinations" aria-label={dc.title}><div className="glance-day-comparison" data-testid="glance-day-comparison"><strong>{todayLabel?dailyCopy.today:dailyCopy.selected} {totalText} {c.unit}</strong><p>{dailyCopy.versus} {dailyComparison?<><b>{dailyComparison.delta>0?'+':dailyComparison.delta<0?'△':''}{fmt.format(Math.abs(dailyComparison.delta))} {c.unit}</b> (<ChangeRate value={dailyComparison.percent} lang={lang}/>)</>:pendingText??dailyCopy.missing}</p><small>{dayText} KST · {scopeName} · {dailyCopy.basis}<br/>{previousMonthText} · {ui.days} {daysText(previous)} {ui.dayUnit}{dailyComparison?` · ${dailyCopy.mean} ${fmt.format(dailyComparison.mean)} ${c.unit}`:pendingText?hold(` · ${dailyCopy.mean} 000.0 ${c.unit}`,''):''}</small></div><div className="glance-section-head"><h2>{dc.title}</h2><span>{dayText}</span></div><p>{dc.basis}</p>{data?<><ul>{leadingCountries.map(countryRow)}{unknownCountry&&countryRow(unknownCountry)}</ul>{data.total===0&&<p>0 {c.unit}</p>}</>:<p role="status">{pendingText??c.missing}</p>}<a className="glance-detail-link" href={targets.countries}>{dc.more}{data?` (${knownCountries.length})`:''} ↗</a></section>
+  </div><details className="glance-context"><summary>{artworkNote??c.concept}</summary><p>{c.scope}</p><p>{c.scheduled}</p></details>{data&&data.unverifiedBuilding>0&&<p>{ui.building} {data.unverifiedBuilding} {c.unit}</p>}</section>
+  <div className="glance-brief-data"><section className="glance-destinations" aria-label={dc.title}>{!hideRepeatedFlightSummary&&<div className="glance-day-comparison" data-testid="glance-day-comparison"><strong>{todayLabel?dailyCopy.today:dailyCopy.selected} {totalText} {c.unit}</strong><p>{dailyCopy.versus} {dailyComparison?<><b><CountChange delta={dailyComparison.delta} format={fmt.format} lang={lang} unit={` ${c.unit}`}/></b> (<ChangeRate value={dailyComparison.percent} lang={lang}/>)</>:pendingText??dailyCopy.missing}</p><small>{dayText} KST · {scopeName} · {dailyCopy.basis}<br/>{previousMonthText} · {ui.days} {daysText(previous)} {ui.dayUnit}{dailyComparison?` · ${dailyCopy.mean} ${fmt.format(dailyComparison.mean)} ${c.unit}`:pendingText?hold(` · ${dailyCopy.mean} 000.0 ${c.unit}`,''):''}</small></div>}<div className="glance-section-head"><h2>{dc.title}</h2><span>{dayText}</span></div><p>{dc.basis}</p>{data?<><ul>{leadingCountries.map(countryRow)}{unknownCountry&&countryRow(unknownCountry)}</ul>{data.total===0&&<p>0 {c.unit}</p>}</>:<p role="status">{pendingText??c.missing}</p>}<a className="glance-detail-link" href={targets.countries}>{dc.more}{data?` (${knownCountries.length})`:''} ↗</a></section>
   <section className="glance-ranking"><div className="glance-section-head"><h2>{ic.growthTitle}</h2></div><p>{c.basis}</p><p className="glance-included-days">{ui.days} · {c.previous} {daysUnit(previous)} / {c.current} {daysUnit(current)}</p><div className="glance-ranking-list" data-testid="glance-ranking-increase">{rankingTable(ranking,ic.noGrowth)}</div>{/* Owner: the decrease list sits right under the increase list, one note and one link below both. */}<div className="glance-ranking-list glance-ranking-decline" data-testid="glance-ranking-decrease"><div className="glance-section-head"><h2>{ic.declineTitle}</h2></div>{rankingTable(declines,ic.noDecline)}</div><small>{ui.mean}</small><a className="glance-detail-link" href={targets.monthCountries}>{c.detail} ↗</a></section></div>
   <section className="glance-future" data-testid="glance-future">
    <div className="glance-future-heading"><div role="group" aria-label={fc.title}>{([1,3,6] as const).map(hours=><button key={hours} aria-pressed={futureHours===hours} onClick={()=>setFutureHours(hours)}>{fc.ahead} {hours} {fc.hours}</button>)}</div></div>
@@ -202,16 +223,17 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
      <details><summary>{compactCopy.zones}</summary><table><thead><tr><th>{ui.terminal}</th>{[c.west,c.center,c.east].map(side=><th key={side}>{side}</th>)}</tr></thead><tbody>{(['T1','CONCOURSE','T2'] as const).filter(building=>scope==='all'||scope===building).map(building=>{const counts=future.buildings[building];return <tr key={building}><th>{buildingNames[building]}<small>{counts.total} {c.unit}{counts.UNVERIFIED>0?` · ${c.unknown} ${counts.UNVERIFIED}`:''}</small></th>{(['WEST','CENTER','EAST'] as const).map(side=><td key={side}>{counts[side]} {c.unit}<small>{counts.total>0?`${fmt.format(counts[side]/counts.total*100)}%`:'—'}</small></td>)}</tr>;})}</tbody></table><small>{fc.zoneBasis}</small></details>{future.unknownBuilding>0&&<p>{fc.unplaced} {future.unknownBuilding} {c.unit}</p>}
     </>}</article>
     <article data-testid="glance-future-countries"><h2>{gc.title}</h2>{increase.status==='READY'&&<p className="glance-window-time" data-testid="glance-comparison-periods"><span>{gc.before} {windowTime(increase.start,increase.middle)}</span>{' → '}<span>{gc.after} {windowTime(increase.middle,increase.end)} (KST)</span></p>}{increase.status==='UNAVAILABLE'?<p role="status">{unavailableIncrease}</p>:increase.status==='MIDNIGHT'?<p role="status">{gc.midnight}</p>:<>
-     <div className="glance-destination-growth">{increase.leaders.length?increase.leaders.map(row=><div key={row.country} data-country={row.country}><strong>{countryLabel(row.country)}</strong><span>{row.before} → {row.after} {c.unit}</span><b>+{row.delta} {c.unit}</b></div>):<p>{increase.beforeTotal+increase.afterTotal===0?availabilityCopy.zero:increase.unknown.before+increase.unknown.after>0?gc.uncertain:gc.none}</p>}</div>
+     <div className="glance-destination-growth">{increase.leaders.length?increase.leaders.map(row=><div key={row.country} data-country={row.country}><strong>{countryLabel(row.country)}</strong><span>{row.before} → {row.after} {c.unit}</span><b><CountChange delta={row.delta} format={fmt.format} lang={lang} unit={` ${c.unit}`}/></b></div>):<p>{increase.beforeTotal+increase.afterTotal===0?availabilityCopy.zero:increase.unknown.before+increase.unknown.after>0?gc.uncertain:gc.none}</p>}</div>
      <small className="glance-window-note">{gc.basis}{increase.leaders.length>1?` · ${ic.tie}`:''}</small>
      {increase.unknown.before+increase.unknown.after>0&&<small>{gc.unknown} {increase.unknown.before} → {increase.unknown.after} {c.unit} · {gc.excluded}</small>}
-     {increaseRest.length>0&&<details><summary>{gc.more} ({increase.rows.length})</summary><div className="glance-destination-growth">{increaseRest.map(row=><div key={row.country}><span>{countryLabel(row.country)}</span><span>{row.before} → {row.after} {c.unit}</span><b>{row.delta>0?'+':row.delta<0?'△':''}{Math.abs(row.delta)} {c.unit}</b></div>)}</div><small>{gc.known}</small></details>}
+     {increaseRest.length>0&&<details><summary>{gc.more} ({increase.rows.length})</summary><div className="glance-destination-growth">{increaseRest.map(row=><div key={row.country}><span>{countryLabel(row.country)}</span><span>{row.before} → {row.after} {c.unit}</span><b><CountChange delta={row.delta} format={fmt.format} lang={lang} unit={` ${c.unit}`}/></b></div>)}</div><small>{gc.known}</small></details>}
     </>}</article>
    </div>
    <p>{future?`${day} · ${scopeName} · ${compactCopy.basis}`:fc.closed}</p>
    {future?.clipped&&<small>{fc.midnight}</small>}
    <details className="glance-context"><summary>{compactCopy.rules}</summary><p>{fc.basis}</p><p>{gc.records}</p><p>{fc.zoneBasis}</p></details>
   </section>
+  {overviewHeading&&<AirportStaffBriefing lang={lang} day={day} peak={staffDeparturePeak(day,data?.departures??null)} changes={staffCountryChanges} retrievedAt={payload?.retrievedAt??null}/>}
   <footer><span>{c.collected} · {settling?stampHold:stamp(payload?.retrievedAt)}</span><span>{c.monthTime} · {monthPending?stampHold:stamp(monthRequest.reply?.calculatedAt)}</span><a href="https://www.airport.kr/geomap/ap_ko/view.do" target="_blank" rel="noreferrer">{ui.map} ↗</a></footer>
  </Container>;
 }
@@ -220,8 +242,9 @@ const countChangeWords={ko:['증가','감소'],en:['up','down'],zh:['增加','�
 /** A daily-mean flight-count change: the printed sign is visual, the words carry the direction. */
 function CountChange({delta,format,lang,unit=''}:{delta:number;format:(value:number)=>string;lang:Lang;unit?:string}){
  const text=dailyChangeText(delta,format);
- if(delta===0)return <>{text}{unit}</>;
+ if(delta===0)return <span className="change-rate" data-direction="neutral">{text}{unit}</span>;
  const [up,down]=countChangeWords[lang];
- return <span className="glance-count-change" data-delta={delta>0?'up':'down'}><span aria-hidden="true">{text}{unit}</span><span className="sr-only">{delta>0?up:down} {text.slice(1)}{unit}</span></span>;
+ return <span className="glance-count-change change-rate" data-direction={delta>0?'up':'down'} data-delta={delta>0?'up':'down'}><span aria-hidden="true">{text}{unit}</span><span className="sr-only">{delta>0?up:down} {text.replace(/^[▲▽] [＋+−]/,'')}{unit}</span></span>;
 }
+
 

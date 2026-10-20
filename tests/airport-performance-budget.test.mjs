@@ -1,0 +1,7 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {compareLabReports} from '../scripts/compare-airport-focus-lab.mjs';
+const report=label=>({label,method:'same conditions',sourceDate:'2026-10-19',summaries:[390,1440].map(width=>({width,valid:true,lcpMs:500,fcpMs:400,cls:0.02,observedBlockingMs:0,initialTransferBytes:1000,imageTransferBytes:100,lcpElements:['IMG']}))});
+test('matched data compares actual values without calling it production evidence',()=>{const a=report('BEFORE'),b=report('AFTER');b.summaries[0].imageTransferBytes=50;const result=compareLabReports(a,b);assert.equal(result.passed,true);assert.equal(result.liveBackendMeasured,false);assert.equal(result.rows[0].differences.imageTransferBytes.percent,-50);});
+test('worse layout, paint and transfer fail the release budget',()=>{const a=report('BEFORE'),b=report('AFTER');Object.assign(b.summaries[0],{cls:.55,fcpMs:1000,initialTransferBytes:1200});const result=compareLabReports(a,b);assert.equal(result.passed,false);assert.deepEqual(result.rows[0].failures,['LAYOUT_SHIFT_BUDGET','FIRST_PAINT_REGRESSION','INITIAL_TRANSFER_REGRESSION']);});
+test('incomplete and unmatched measurements never report success',()=>{const a=report('BEFORE'),b=report('AFTER');b.summaries[0].fcpMs=null;assert.throws(()=>compareLabReports(a,b),/INVALID/);b.method='different';assert.throws(()=>compareLabReports(a,b),/UNMATCHED/);});

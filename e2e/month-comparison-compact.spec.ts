@@ -41,7 +41,7 @@ async function openMonthly(page:Page,lang:Lang,width:number,payload=reply()){
  await page.emulateMedia({reducedMotion:'reduce'});
  await page.route('**/api/live/summary*',routeSummary(summary));
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:payload}));
- await page.goto(`/${lang}/airport`);
+ await page.goto(`/${lang}/airport`,{waitUntil:'domcontentloaded'});
  const section=page.getByTestId('airport-month-flights');
  await section.scrollIntoViewIfNeeded();
  await expect(section.getByTestId('airport-month-basis')).toContainText('2026');
@@ -153,7 +153,8 @@ test('a small previous daily mean keeps the full large growth rate inside the 32
  await airlines.locator('summary').click();
  const table=airlines.locator('table');
  const rareRow=table.locator('tbody tr').filter({has:page.locator('.airport-month-airline-code',{hasText:/^LX$/})});
- await expect(rareRow.locator('td').last()).toHaveText('+299900.0%');
+ await expect(rareRow.locator('td').last()).toHaveText('▲ +299900.0%');
  await expectContainedNumbers(table);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
+

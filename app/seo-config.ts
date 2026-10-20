@@ -34,7 +34,7 @@ export type SeoLocale = typeof seoLocales[number];
  * out of this list because its indexable pages have an additional area
  * segment; the old flat URL is a permanent redirect, not duplicate content.
  */
-export const standaloneSeoSlugs = ["myeongdong", "hongdae", "seongsu", "itaewon", "airport-glance", "airport", "forecast", "where-to", "consumption", "business", "about", "more"] as const;
+export const standaloneSeoSlugs = ["myeongdong", "hongdae", "seongsu", "itaewon", "airport-glance", "airport", "airport-countries", "airport-prepare", "forecast", "where-to", "consumption", "business", "about", "more"] as const;
 export const tourismDeskAreas = ["myeongdong", "hongdae", "seongsu", "itaewon"] as const;
 export type TourismDeskArea = typeof tourismDeskAreas[number];
 // The old predictions URL remains a locale-preserving redirect; advertise only canonical pages.
@@ -71,6 +71,8 @@ export function pageTitle(locale: SeoLocale, slug?: SeoSlug, tourismArea: Touris
     }[locale];
   }
   const titles: Record<Exclude<SeoSlug, keyof typeof names | "tourism-desk">, Record<SeoLocale, string>> = {
+    'airport-countries':{ko:'노선 국가별 여객 흐름 | KORETAIL',en:'Route Country Passenger Trends | KORETAIL',zh:'航线国家旅客趋势 | KORETAIL',ja:'路線国別の旅客動向 | KORETAIL'},
+    'airport-prepare':{ko:'국가별 주요 휴일·도착국 면세한도 | KORETAIL',en:'Major Holidays and Arrival Allowances | KORETAIL',zh:'主要节假日与入境免税额度 | KORETAIL',ja:'主な祝日と入国時免税枠 | KORETAIL'},
     'where-to':{ko:'서울 한눈에 · 서울 4개 지역 비교 | KORETAIL',en:'Seoul at a Glance · Four Seoul Districts | KORETAIL',zh:'首尔一览 · 首尔四区比较 | KORETAIL',ja:'ソウルひと目で・ソウル4エリア比較 | KORETAIL'},
     consumption:{ko:'요즘 뜨는 소비 · 업종별 관측 변화 | KORETAIL',en:'Observed Consumption Changes by Industry | KORETAIL',zh:'近期消费 · 各行业观测变化 | KORETAIL',ja:'最近の消費・業種別観測の変化 | KORETAIL'},
     'airport-glance': {ko:'코리테일 KORETAIL | 인천공항 출국장 대기·예상 출국객·서울 상권',en:'Airport at a Glance | KORETAIL',zh:'机场一览 | KORETAIL',ja:'空港一覧 | KORETAIL'},
@@ -105,6 +107,8 @@ export function pageDescription(locale: SeoLocale, slug?: SeoSlug, tourismArea: 
     }[locale];
   }
   const descriptions: Record<Exclude<SeoSlug, keyof typeof names | "tourism-desk">, Record<SeoLocale, string>> = {
+    'airport-countries':{ko:'운항 노선 국가 기준 월별 출발 여객과 증감을 비교하고 관련 공식 일정을 확인합니다. 승객 국적 통계가 아닙니다.',en:'Compare monthly departures by route country and related official calendar dates. These are not passenger nationality statistics.',zh:'比较按航线国家划分的月度出发旅客及相关官方日程，不代表旅客国籍。区分历史实绩与未来日程，并提供相关数据的基准月份。',ja:'路線国別の月間出発旅客と公式日程を比較。旅客の国籍統計ではありません。過去の実績と今後の日程を区別して確認できます。'},
+    'airport-prepare':{ko:'주요 국가의 대표 공휴일과 적용 조건별 도착국 반입 면세한도를 공식 출처와 확인일과 함께 살펴봅니다.',en:'Review major holidays and destination arrival allowances with applicable conditions, official sources and review dates.',zh:'查看主要节假日及按适用条件区分的入境免税额度，附官方来源和核查日期。请确认居民身份、年龄和停留时间等适用条件。',ja:'主な祝日と条件別の入国時免税枠を、公式出典と確認日とともに確認できます。居住者区分や年齢、滞在期間などの適用条件も確認してください。'},
     'where-to':{ko:'명동·성수·홍대·이태원의 현재 공식 혼잡과 실제 제공되는 날씨를 기준시각과 함께 비교하고 지역 상세로 이동하세요.',en:'Compare official crowd conditions and available weather in Myeongdong, Seongsu, Hongdae and Itaewon, with source times and links to area details.',zh:'比较明洞、圣水、弘大、梨泰院官方拥挤情况与已有天气资料，查看基准时间及地区详情。',ja:'明洞・聖水・弘大・梨泰院の公式混雑と提供されている天気を基準時刻とともに比較し、エリア詳細へ。'},
     consumption:{ko:'지역별 모든 보유 업종의 월간 카드 결제 관측을 같은 날짜·시간에 맞춰 비교합니다. 결측·보유 기간·금액 범위를 구분하며 전체 매출로 해석하지 않습니다.',en:'Compare retained industry card-payment observations by month at matching days and hours. Missing data, coverage and amount ranges remain explicit; these are not total sales.',zh:'将地区各已收录行业的月度银行卡支付观测按相同日期与小时比较，区分缺失、期间与金额范围，非全量销售额。',ja:'地域別の全保有業種の月次カード決済観測を同じ日付・時間で比較。欠損・保有期間・金額範囲を明示し、売上全数とは解釈しません。'},
     'airport-glance': {ko:'인천공항 T1·T2 출국장 대기와 공식 예상 출국객, 항공편 흐름을 확인하고 서울 주요 상권의 혼잡·소비 정보를 함께 살펴보세요. 관측·예상·과거 실적과 기준시각을 구분합니다.',en:'Departures and destinations by T1 main, concourse and T2, with official departure processing queues.',zh:'一览仁川机场T1主楼、卫星厅和T2的出发航班、目的地及官方出境区等候。按所选日期查看各国航班比例、上月日均比较和未来时段航班集中的区域，并区分航班数量与旅客人数。',ja:'仁川空港のT1本館・搭乗棟・T2の出発便、目的地と公式出国場の待ち時間を一覧で確認できます。選択日の国別便数の割合、前月の日平均との比較、今後の出発便が集中するエリアを、旅客数と区別して表示します。'},

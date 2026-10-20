@@ -122,6 +122,8 @@ for (const fixedDate of [false, true]) test(`KST midnight renews shortcuts and $
   await page.goto('/ko/airport');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   const nav = page.locator('.date-nav');
+  // This tests a failed refresh, not failure before the lazy date navigator first receives data.
+  await expectDateSelection(page, today);
   if (fixedDate) {
     await nav.getByRole('button', { name: '내일', exact: true }).click();
     await expectDateSelection(page, '2026-09-22');
@@ -151,6 +153,8 @@ for (const fixedDate of [false, true]) test(`KST midnight refresh failure still 
   await page.goto('/ko/airport');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   const nav = page.locator('.date-nav');
+  // This tests a failed refresh, not failure before the lazy date navigator first receives data.
+  await expectDateSelection(page, today);
   if (fixedDate) {
     await nav.getByRole('button', { name: '내일', exact: true }).click();
     await expectDateSelection(page, '2026-09-22');

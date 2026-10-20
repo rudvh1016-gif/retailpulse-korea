@@ -36,8 +36,8 @@ test('a larger flight-count increase outranks a larger percentage on a small bas
 });
 test('daily change text keeps the page convention and a direction below the printed precision',()=>{
  const format=new Intl.NumberFormat('ko',{maximumFractionDigits:1}).format;
- assert.equal(dailyChangeText(2.1,format),'+2.1');assert.equal(dailyChangeText(-0.3,format),'△0.3');assert.equal(dailyChangeText(0,format),'0');
- assert.equal(dailyChangeText(0.04,format),'+<0.1');assert.equal(dailyChangeText(-0.04,format),'△<0.1');assert.equal(dailyChangeText(12,format),'+12');
+ assert.equal(dailyChangeText(2.1,format),'▲ +2.1');assert.equal(dailyChangeText(-0.3,format),'▽ −0.3');assert.equal(dailyChangeText(0,format),'0');
+ assert.equal(dailyChangeText(0.04,format),'▲ +<0.1');assert.equal(dailyChangeText(-0.04,format),'▽ −<0.1');assert.equal(dailyChangeText(12,format),'▲ +12');
  assert.equal(sameDailyChange(2.14,2.06),true);assert.equal(sameDailyChange(2.14,2.26),false);
 });
 
@@ -124,3 +124,4 @@ test('glance building month rejects absent or inconsistent concourse projection 
  const previous=buildAirportFlightMonth('2026-09','2026-10-11',[row('2026-09-01','a')],new Set(['2026-09-01']));const broken=structuredClone(previous);broken.scopes.CONCOURSE.total=2;assert.equal(mainBuildingMonth(broken),undefined);assert.equal(glanceDayComparison('2026-10-11',5,mainBuildingMonth(broken),'T1'),null);
  const missing=structuredClone(previous);delete (missing.scopes as Partial<typeof missing.scopes>).CONCOURSE;assert.equal(mainBuildingMonth(missing),undefined);assert.equal(mainBuildingMonth(undefined),undefined);
 });
+

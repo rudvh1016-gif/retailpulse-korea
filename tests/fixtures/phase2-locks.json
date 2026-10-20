@@ -1,9 +1,9 @@
 {
   "base": "65907c971b5e279da48525875df6c972ab998c64",
   "protectedFiles": {
-    "app/[locale]/[slug]/page.tsx": "bac0c7473f104bdcbc8cf2eeb49100582a793f16bc465bf178fe062eefc2d400",
+    "app/[locale]/[slug]/page.tsx": "74d14e76bde7c0efc1859d4ae2aaba3ae1d04cfe377a38293eeb9e8adde79417",
     "app/[locale]/not-found.tsx": "620e62c747a4a0d4b8af1558492c74e961f2a4f0d55caa2c960c508395a41ff0",
-    "app/[locale]/page.tsx": "be45bb9ac4f06a73c86391d71ca36872bccddbdbdb56269b5201667ed87b458d",
+    "app/[locale]/page.tsx": "0fee43451d696341924bc6481b1c40f992162f4a0c16521ae2f2df997414f792",
     "app/[locale]/tourism-desk/[area]/page.tsx": "b74c40a03d7ff4ec57a8314f4c11825467212d48634bebf057d078d3ae360b35",
     "app/[locale]/tourism-desk/page.tsx": "2738ee0e7cfb960016184b8dd9a99112312719819cd3b8d05e96a89e83320b37",
     "app/api/airport/facilities/route.ts": "ebc9dea6df03d842ee8fbb1e640158276a506658cc364190a32fd99cf712639d",
@@ -16,9 +16,9 @@
     "app/api/live/summary/route.ts": "96727d7ade580d6a59fa3bcd438a242dae54316060ea259c7d74de40dfee1f3e",
     "app/area-demand-card.tsx": "5d23c5df9e326e250170cc6874702c2bd6d8d4c128edcc3a13ffdc454d93181d",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
-    "app/globals.css": "7a7d22c9f0a5ad892500372e690b025b11fea69eabb88edf48e819bf0b624956",
+    "app/globals.css": "0f3a9126af25993f671a13487d001c3a63a0d4c0f4c795fd541043266ac51684",
     "app/install-app.tsx": "864a43ddc979f681743990876a12ee73f2f2120e2a04fbf47752ca7640cd38a8",
-    "app/layout.tsx": "5f36f27acf8ddfdc2849f4c68198e103c958801580a126b4c727cea740408036",
+    "app/layout.tsx": "64999616e2304074b644db660fc75890e95cc3867c313a7a71640d905fa32af4",
     "app/live-signals.tsx": "46aa9f1c0ad87c40d8044c5d48e3b611f04a60179c400f031a8be03fafbaed3a",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "a9ba61da5ef5c66017ae5660b9efd79d74272c2b31eb641ceca749d26548c75c",
@@ -26,10 +26,10 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "526e91e52ae33cd9c58a38f2cca5727580b0ab27668c5a8df3bf95ddecd155e9",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "fbebb6a379318b3142f4eb711ddd6df9adfeed1b7a9c1b1cdd5239dca03d9a71",
+    "app/retailpulse-app.tsx": "bb142ef311024e9d04488cca51e3ebeeb2090327e658af561641621252ebdf96",
     "app/retailpulse-data.ts": "2a965cde02012978eb446a955b82bbcbfbec83f74f862e0e2846fae1ca348ecd",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
-    "app/seo-config.ts": "0dbd3bb92c057aa8466fdddfa9e8b0772f866301049bbfe9551f1df10222328c",
+    "app/seo-config.ts": "2208d14daf3cf078a6626ebca6ad90ef8e8dc0770c93f4fd6a295bd812d0e1f8",
     "app/site-usage-guide.tsx": "4b49e1bd31a91e35f7d0b56b6d1670d94cf644bcc47bcb257508a2a0f6cc64f1",
     "app/sitemap.ts": "feb12ed8a001d1524b1fece19c3ac3ee945d4ccdc91d2fa115d5cccc1eedf2cd",
     "app/source-status.tsx": "2432bc8bad500b8c45bba8d08781b8d6a189854d3c8a8a33b538bc9491580e46",
@@ -40,7 +40,7 @@
     "public/apple-touch-icon.png": "b11d62bc23ef6522c8f7e5f74aa06a956555e0bae6beb7eb507e2672ebadacba",
     "public/favicon.svg": "68ff8a9e81edf6529b14e70291e8edaa5b236adb361930b3e1ab8c1c239c77e4",
     "public/file.svg": "1e0ae4d1a1ddfa36752988647b731e4abf150c414d069ec83c96fb0aaeff0307",
-    "public/fonts/koretail-sans-variable.woff2": "a2286324764cf65841506a0a776e50fd4c3423da01cdd5f8f95c2c299ad0e911",
+    "public/fonts/koretail-sans-variable.woff2": "f5d6b4d1fc0c946e4c531de335749e681d75cc3399f40c89313bd8588d544a83",
     "public/fonts/noto-sans-jp-400.woff2": "837c91258289bf5d11da9a77ca497dfbd8d31295067978aa4bfcfc21e8044108",
     "public/fonts/noto-sans-jp-600.woff2": "66d5ae131bf6996886537af8633608453b6583d4236e04938697314e93daca29",
     "public/fonts/noto-sans-sc-400.woff2": "72208fa263ebab0d3a2dd59e7a0570b0024825e36e690cb55ec75ff99283bc2d",
@@ -62,8 +62,8 @@
     "public/icon-512-20261007.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
     "public/icon-maskable-512-20261007.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
     "public/manifest-20261007.webmanifest": "6bad81a6e70af19a2c27c1a321513406823d3cea3e78aecacdbc3607647e99be",
-    "app/airport-live-signals.tsx": "c9be6a4b1994e2ada3fb439db9e68379c42e35544d7f6137029cdd48e95cac78",
-    "app/airport-view.tsx": "5dfe6713fa979ba9503bc2c895eb9cd7e3f50d51d20ec600986f4883cf29ee91",
+    "app/airport-live-signals.tsx": "901141965ead1ae371bb307b9188c1a224ed3cb71c2ba69947908a4e0e0d6b5d",
+    "app/airport-view.tsx": "f8c82e75db21a709be9a5eba047616d9088500a3d740a503740d5e7e75339a11",
     "app/local-text.ts": "82328cd1029e929b9a79cd1d58c325469ad829a262fa2e7935b65ca595dfb8d6",
     "app/month-range-picker.tsx": "c358abc4ad12749384e82427ec9c1f16099200a0fa40f84eb469e53dbd7d9665",
     "app/live-summary.tsx": "654e7b2f0d4a81e3ae26c7869ea3e53a8b7eb6e69459eeeaf305ce60ea0e9c75",
@@ -2851,6 +2851,180 @@
         "changes": [
           "Pass chartId=\"airport-hourly-comparison\" to the departure chart so navigation targets the actual SVG rather than the visually reordered heading."
         ]
+      }
+    ]
+  },
+  "ownerRequestedAirportPreviewFontCoverage20261020": {
+    "recordedAt": "2026-10-20",
+    "authorizationEvidence": {
+      "ownerRequest": "내가시킨모든거 다해서 최종시안보고해",
+      "scope": "Extend existing KORETAIL Sans subset by nine required Hangul syllables for the requested airport preview and verified holiday descriptions. Preserve all existing glyphs, metrics, family, weights and layout features. No merge or deploy.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "changes": [
+      {
+        "file": "public/fonts/koretail-sans-variable.woff2",
+        "previous": "a2286324764cf65841506a0a776e50fd4c3423da01cdd5f8f95c2c299ad0e911",
+        "approved": "0b27b815fb7a1a2aea744595b2fb20555137a368b22b6929814634de6a29c866"
+      }
+    ],
+    "protectedPathCount": 67
+  },
+  "ownerRequestedArrivalPreviewFontCoverage20261020": {
+    "recordedAt": "2026-10-20",
+    "authorizationEvidence": {
+      "ownerRequest": "중국일본베트남 태국 미국 주요국가들의 도착국가 반입면세한도도 파악한걸 적용하고",
+      "scope": "Extend existing subset by eleven Hangul syllables required for the reviewed 12-country arrival allowance preview; preserve existing glyphs, metrics, font family and all protected paths.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "changes": [
+      {
+        "file": "public/fonts/koretail-sans-variable.woff2",
+        "previous": "0b27b815fb7a1a2aea744595b2fb20555137a368b22b6929814634de6a29c866",
+        "approved": "c664500f0bcb70795a85c08b07fbdc99ffd2e138ae6475dad97b4273d3e0a479"
+      }
+    ],
+    "protectedPathCount": 67
+  },
+  "ownerRequestedArrivalPreviewReviewedCopy20261020": {
+    "recordedAt": "2026-10-20",
+    "authorizationEvidence": {
+      "ownerRequest": "최종다해서 시안보여줘",
+      "scope": "Extend the same font by two syllables required by final reviewed customs guidance; preserve prior outlines and metrics.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "changes": [
+      {
+        "file": "public/fonts/koretail-sans-variable.woff2",
+        "previous": "c664500f0bcb70795a85c08b07fbdc99ffd2e138ae6475dad97b4273d3e0a479",
+        "approved": "cc9ef25f82a074a62dbeff9313f1479c58e14bcf17b30a813504f2cd4dc9e55f"
+      }
+    ],
+    "protectedPathCount": 67
+  },
+  "ownerRequestedCalendarAndGrowthSymbols20261020": {
+    "recordedAt": "2026-10-20",
+    "authorizationEvidence": {
+      "ownerRequest": "각국가별 연휴를 파악하고 / 앞으로 모든거에 동일하게반영해 기호 및 신장역신장별색상말야",
+      "scope": "Same font: two calendar syllables and two explicitly requested direction glyphs; old outlines and metrics preserved. No deployment.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "changes": [
+      {
+        "file": "public/fonts/koretail-sans-variable.woff2",
+        "previous": "cc9ef25f82a074a62dbeff9313f1479c58e14bcf17b30a813504f2cd4dc9e55f",
+        "approved": "f5d6b4d1fc0c946e4c531de335749e681d75cc3399f40c89313bd8588d544a83"
+      }
+    ],
+    "protectedPathCount": 67
+  },
+  "ownerRequestedGrowthPresentation20261020": {
+    "recordedAt": "2026-10-20",
+    "authorizationEvidence": {
+      "ownerRequest": "응응 앞으로 모든거에 동일하게반영해 기호 및 신장역신장별색상말야",
+      "scope": "Direction string formatting only; shared growth CSS imported through layout instead of the Node-tested component. Numerical calculations and congestion colors unchanged.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "changes": [
+      {
+        "file": "app/airport-live-signals.tsx",
+        "previous": "c9be6a4b1994e2ada3fb439db9e68379c42e35544d7f6137029cdd48e95cac78",
+        "approved": "901141965ead1ae371bb307b9188c1a224ed3cb71c2ba69947908a4e0e0d6b5d"
+      },
+      {
+        "file": "app/layout.tsx",
+        "previous": "5f36f27acf8ddfdc2849f4c68198e103c958801580a126b4c727cea740408036",
+        "approved": "64999616e2304074b644db660fc75890e95cc3867c313a7a71640d905fa32af4"
+      }
+    ],
+    "protectedPathCount": 67
+  },
+  "ownerRequestedStaffCalendar20261020": {
+    "recordedAt": "2026-10-20",
+    "authorizationEvidence": {
+      "ownerRequest": "해당 멘트도 각국가별 일정등 넣을 수 있는 내용을 여기에도 추가해줘야해",
+      "scope": "Optional industryContext before the existing IndustryGuide. Default absent preserves operating content; preview adds verified calendar context only.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "changes": [
+      {
+        "file": "app/airport-view.tsx",
+        "previous": "5dfe6713fa979ba9503bc2c895eb9cd7e3f50d51d20ec600986f4883cf29ee91",
+        "approved": "f8c82e75db21a709be9a5eba047616d9088500a3d740a503740d5e7e75339a11"
+      }
+    ],
+    "protectedPathCount": 67
+  },
+  "ownerRequestedAirportNavigation20261020": {
+    "recordedAt": "2026-10-20",
+    "authorizationEvidence": {
+      "scope": "Requested airport navigation and briefing integration candidate. Preserve existing mobile glass behavior, fonts, Seoul routes, collectors, protected path count and active checks. Final visual approval and deployment remain separate gates.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "changes": [
+      {
+        "file": "app/[locale]/[slug]/page.tsx",
+        "previous": "bac0c7473f104bdcbc8cf2eeb49100582a793f16bc465bf178fe062eefc2d400",
+        "approved": "74d14e76bde7c0efc1859d4ae2aaba3ae1d04cfe377a38293eeb9e8adde79417"
+      },
+      {
+        "file": "app/[locale]/page.tsx",
+        "previous": "be45bb9ac4f06a73c86391d71ca36872bccddbdbdb56269b5201667ed87b458d",
+        "approved": "0fee43451d696341924bc6481b1c40f992162f4a0c16521ae2f2df997414f792"
+      },
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "fbebb6a379318b3142f4eb711ddd6df9adfeed1b7a9c1b1cdd5239dca03d9a71",
+        "approved": "a27b95fb190fc673077d38ead166780ce07eb0d9a63777b6029d5f4e3b744b62"
+      },
+      {
+        "file": "app/seo-config.ts",
+        "previous": "0dbd3bb92c057aa8466fdddfa9e8b0772f866301049bbfe9551f1df10222328c",
+        "approved": "2208d14daf3cf078a6626ebca6ad90ef8e8dc0770c93f4fd6a295bd812d0e1f8"
+      }
+    ],
+    "protectedPathCount": 67
+  },
+  "ownerRequestedAirportLoading20261020": {
+    "recordedAt": "2026-10-20",
+    "authorizationEvidence": {
+      "scope": "Requested first-screen speed verification: avoid idle prefetch of inactive Seoul and store screens while viewing airport pages. Hover, focus, navigation, stored preferences and all Seoul routes remain available. No source calculation, font, permissions or schedule changes.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "a27b95fb190fc673077d38ead166780ce07eb0d9a63777b6029d5f4e3b744b62",
+        "approved": "bb142ef311024e9d04488cca51e3ebeeb2090327e658af561641621252ebdf96"
+      }
+    ],
+    "protectedPathCount": 67
+  },
+  "ownerRequestedNavy20261020": {
+    "recordedAt": "2026-10-20",
+    "authorizationEvidence": {
+      "scope": "Owner explicitly requested luxurious muted navy across the interface including selected menu color. Only shared navy/silver tokens and active top-nav color changed; layout, typography and semantic decrease/status colors preserved.",
+      "agentMergeOrDeploymentApproved": true
+    },
+    "changes": [
+      {
+        "file": "app/globals.css",
+        "previous": "7a7d22c9f0a5ad892500372e690b025b11fea69eabb88edf48e819bf0b624956",
+        "approved": "f1d530cd89aba5ca6e19fea4941fbb9554ad31cf3a52fcd5660b2d03c45ce4c3"
+      }
+    ],
+    "protectedPathCount": 67
+  },
+  "ownerRequestedNeutralPalette20261021": {
+    "recordedAt": "2026-10-21",
+    "authorizationEvidence": {
+      "scope": "Owner rejected the navy appearance and explicitly requested a more neutral, restrained Apple-like interface. Shared selection charcoal, cooler neutral silver, separate limited blue accent; no data, permission or schedule change."
+    },
+    "changes": [
+      {
+        "file": "app/globals.css",
+        "previous": "f1d530cd89aba5ca6e19fea4941fbb9554ad31cf3a52fcd5660b2d03c45ce4c3",
+        "approved": "0f3a9126af25993f671a13487d001c3a63a0d4c0f4c795fd541043266ac51684"
       }
     ]
   }

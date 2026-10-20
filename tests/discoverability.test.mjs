@@ -536,3 +536,12 @@ test("content API exceptions do not expose sibling or nested internal paths", as
     assert.equal(robotsAllows(text, path), false);
   }
 });
+
+test("verified allowance content is crawlable, not sibling or internal endpoints", () => {
+ const served = robotsTxt();
+ assert.equal(robotsAllows(served, "/api/airport/allowance-status"), true);
+ assert.equal(robotsAllows(served, "/api/airport/allowance-status?probe=1"), true);
+ for (const path of ["/api/airport/allowance-status-internal", "/api/airport/allowance-status/debug", "/api/airport/allowance-update"]) {
+  assert.equal(robotsAllows(served, path), false);
+ }
+});

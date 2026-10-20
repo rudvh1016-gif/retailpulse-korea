@@ -90,7 +90,9 @@ test("primary navigation, terminal filter, back and refresh work", async ({ page
   await expect(page.getByRole("heading", { name: /항공편·도시 검색/ })).toBeVisible();
   await page.goBack();
   await page.reload();
-  await expect(page.locator("h1")).toBeVisible();
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+  await expect(page.locator("h1:visible")).toHaveCount(1);
+  await expect(page.locator("h1:visible")).toBeVisible();
 });
 
 /**
@@ -1179,7 +1181,7 @@ test("Tourism Desk retains six guide sections and evidence-backed subway compari
   const briefLines = desk.locator(".tourism-shift-brief .tourism-brief-line");
   await expect(briefLines).toHaveCount(5);
   await expect(briefLines.nth(0)).toContainText("현재 명동");
-  await expect(briefLines.nth(4)).toContainText("지난주 같은 요일 대비 +12.4%");
+  await expect(briefLines.nth(4)).toContainText("지난주 같은 요일 대비 ▲ +12.4%");
 
   const comparisons = desk.locator(".tourism-subway-comparisons li");
   await expect(comparisons).toHaveCount(4);
@@ -1300,16 +1302,16 @@ test("desktop navigation keeps stores and moves secondary pages under More", asy
   await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 1280, height: 900 });
   const expected = {
-    ko: ['공항 한눈에','공항','서울 한눈에','서울','소비 흐름','매장','더보기'],
-    en: ['Airport glance','Airport','Seoul at a glance','Seoul','Spending','Business','More'],
-    zh: ['机场一览','机场','首尔一览','首尔','消费','门店','更多'],
-    ja: ['空港一覧','空港','ソウルひと目で','ソウル','消費','店舗','その他'],
+    ko: ['한눈에','공항현황','국가별 흐름','미리 준비','더보기'],
+    en: ['Airport glance','Airport','Country trends','Prepare ahead','More'],
+    zh: ['机场一览','机场','国家趋势','提前准备','更多'],
+    ja: ['空港一覧','空港','国別の動向','事前準備','その他'],
   } as const;
   for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
     await page.goto(`/${locale}/tourism-desk/myeongdong`);
     const nav = page.locator("nav.top-nav");await expect(nav).toBeVisible();
     await expect(nav.locator('a')).toHaveText([...expected[locale]]);
-    await expect(nav.locator("a[aria-current='location']")).toHaveText(expected[locale][6]);
+    await expect(nav.locator("a[aria-current='location']")).toHaveText(expected[locale][4]);
     await expect(page.locator("nav.bottom-nav")).toBeHidden();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   }
@@ -1322,7 +1324,7 @@ test("mobile More explains usage without the removed promotion and retains its T
 
   const bottom = page.locator("nav.bottom-nav");
   await expect(bottom).toBeVisible();
-  await expect(bottom.locator("a")).toHaveCount(6);
+  await expect(bottom.locator("a")).toHaveCount(5);
   await expect(bottom).not.toContainText("관광안내");
   await bottom.locator("a").filter({ hasText: "더보기" }).click();
   await expect(page).toHaveURL(/\/ko\/more$/);
@@ -1566,3 +1568,4 @@ test("the manifest and its install icons are served", async ({ page }) => {
   }
   expect((await page.request.get("/apple-touch-icon.png")).status()).toBe(200);
 });
+

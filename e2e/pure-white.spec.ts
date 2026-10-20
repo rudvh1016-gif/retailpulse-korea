@@ -26,17 +26,19 @@ const surfaces = [
 
 /** Walks up from the element until a painted background is found; returns that colour. */
 const paintedBackground = async (page: import("@playwright/test").Page, selector: string) => page.evaluate((sel) => {
-  const results: { colour: string; compactDate: boolean }[] = [];
+  const results: { colour: string; compactDate: boolean; focusCanvas?: boolean }[] = [];
   for (const start of Array.from(document.querySelectorAll(sel)).slice(0, 6)) {
     // The airport sky panel (owner decision 2026-10-02) is a figure, not a page surface.
     if (start.closest(".airport-hero")) continue;
+    // The owner requested a liquid briefing; other normal surfaces stay white.
+    if (start.closest(".focus-report")) continue;
     let node: Element | null = start;
     while (node) {
       const style = getComputedStyle(node);
       const bg = style.backgroundColor;
       const transparent = bg === "rgba(0, 0, 0, 0)" || bg === "transparent";
       if (!transparent || style.backgroundImage !== "none") {
-        results.push({ colour: style.backgroundImage !== "none" ? `image:${style.backgroundImage.slice(0, 40)}` : bg, compactDate: start.matches('.glance-controls > .glance-date-control > input[type="date"][name="airport-date"]') });
+        results.push({ focusCanvas: node.matches(".airport-focus-shell"), colour: style.backgroundImage !== "none" ? `image:${style.backgroundImage.slice(0, 40)}` : bg, compactDate: start.matches('.glance-controls > .glance-date-control > input[type="date"][name="airport-date"]') });
         break;
       }
       node = node.parentElement;
@@ -56,9 +58,11 @@ for (const locale of locales) {
         await expect(page.locator("main.page-shell")).toBeVisible();
         for (const selector of surfaces) {
           const found = await paintedBackground(page, selector);
-          for (const { colour, compactDate } of found) {
+          for (const { colour, compactDate, focusCanvas } of found) {
             // Owner approval Sentinel_f30294521f9c8191ba81a4d739722130: only the compact native date surface is neutral
-            expect(colour, `${locale}${route} @${width}px ${selector}`).toBe(compactDate ? "rgb(241, 243, 246)" : WHITE);
+            // The requested liquid airport canvas is scoped, not a blanket exception for ordinary surfaces.
+            if(focusCanvas && colour.startsWith("image:")) expect(colour).toBe("image:linear-gradient(145deg, rgb(250, 251, 25");
+            else expect(colour, `${locale}${route} @${width}px ${selector}`).toBe(compactDate ? "rgb(241, 243, 246)" : WHITE);
             if (compactDate) {
               const dateInput = page.locator('.glance-controls > .glance-date-control > input[type="date"][name="airport-date"]');
               await expect(dateInput).toHaveCSS("border-radius", "14px");
@@ -80,7 +84,7 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
   // Owner-approved glass-navigation preview: this is one small selection
   // marker inside the bottom nav, not a translucent page/card surface
   // docs/approvals/glass-navigation-preview-20261013.json; its grey glass
-  // value follows the owner's reference tab bar since 2026-10-14
+  // base value follows the owner's reference tab bar since 2026-10-14
   // (docs/approvals/mobile-tabbar-reference-20261014.json).
   const nav = page.locator('nav.bottom-nav.glass-nav');
   const indicator = nav.locator(':scope > .glass-nav-indicator');
@@ -89,14 +93,15 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
   await expect(indicator).toBeVisible();
   await expect(indicator).toHaveCSS('height', '54px');
   await expect(indicator).toHaveCSS('position', 'absolute');
-  await expect(indicator).toHaveCSS('background-color', 'rgba(187, 187, 188, 0.36)');
-  await expect(nav.locator('a')).toHaveCount(6);
+  // The owner's 2026-10-20 neutral-palette revision makes the selected marker charcoal.
+  await expect(indicator).toHaveCSS('background-color', 'rgb(36, 39, 44)');
+  await expect(nav.locator('a')).toHaveCount(5);
   const bounds = await nav.boundingBox();
   const marker = await indicator.boundingBox();
   expect(bounds).not.toBeNull();
   expect(marker).not.toBeNull();
   expect(marker!.width).toBeGreaterThan(0);
-  expect(marker!.width).toBeLessThanOrEqual((bounds!.width - 8) / 6 + 1);
+  expect(marker!.width).toBeLessThanOrEqual((bounds!.width - 8) / 5 + 1);
   expect(marker!.height).toBe(54);
   expect(marker!.x).toBeGreaterThanOrEqual(bounds!.x);
   expect(marker!.y).toBeGreaterThanOrEqual(bounds!.y);
@@ -116,6 +121,8 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
           const sel = rule.selectorText;
           // Exact approved marker/value only, bounded in the browser above
           if (sel === '.glass-nav-indicator' && bg === 'rgba(187, 187, 188, 0.36)' && !filter) continue;
+          // Exact owner-requested liquid surfaces only.
+          if (['.update-notice[data-airport-focus="true"]','.update-notice[data-airport-focus=true]','.focus-header','.focus-report'].includes(sel)) continue;
           // Semantic exceptions: modal scrim, chart bars, tab underlines, accent lines.
           const semantic = /modal-backdrop|-bars i|::after|::before|\bi\b|button\.active|\.compare-bars|\.history-bars|\.av-|\.airport-flow|\.airport-hero/.test(sel);
           if (semantic) continue;

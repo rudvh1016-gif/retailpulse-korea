@@ -46,6 +46,8 @@
  */
 export const crawlableContentApis = [
   "/api/live/summary", "/api/live/predictions",
+  // Preparation renders stored verified allowance values and source-check dates.
+  "/api/airport/allowance-status",
   "/api/live/flights", "/api/live/airport-months", "/api/live/airport-days", "/api/live/commercial-months", "/api/live/usual",
 ] as const;
 

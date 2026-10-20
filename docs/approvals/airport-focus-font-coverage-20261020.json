@@ -1,0 +1,17 @@
+{
+  "recordedAt": "2026-10-20",
+  "authorizationEvidence": {
+    "ownerRequest": "내가시킨모든거 다해서 최종시안보고해",
+    "scope": "Extend existing KORETAIL Sans subset by nine required Hangul syllables for the requested airport preview and verified holiday descriptions. Preserve all existing glyphs, metrics, family, weights and layout features. No merge or deploy.",
+    "agentMergeOrDeploymentApproved": false
+  },
+  "changes": [
+    {
+      "file": "public/fonts/koretail-sans-variable.woff2",
+      "previous": "a2286324764cf65841506a0a776e50fd4c3423da01cdd5f8f95c2c299ad0e911",
+      "approved": "0b27b815fb7a1a2aea744595b2fb20555137a368b22b6929814634de6a29c866"
+    }
+  ],
+  "protectedPathCount": 67
+}
+
