@@ -68,3 +68,6 @@
 .focus-report :is(.focus-event-row b,.focus-report-lines b){font-weight:var(--weight-strong)}
 .focus-report .focus-preparation-brief>div>small,.focus-report .focus-planning-link{font-size:12px;line-height:1.6;letter-spacing:inherit}
 .focus-report :is(.focus-today-title,.focus-preparation-brief h3){font-size:15px}
+
+/* Mobile-only owner adjustment; desktop and supporting copy stay unchanged. */
+@media(max-width:700px){.focus-report .focus-report-lines p,.focus-report .focus-preparation-brief p{font-size:13px}}
