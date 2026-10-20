@@ -25,6 +25,8 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('.focus-line-chart').first()).toContainText('4월');
  await expect(page.locator('.focus-line-chart').first()).toContainText('9월');
  await expect(page.locator('.focus-report')).toContainText('567편');
+ await expect(page.locator('.focus-report')).toContainText('출근 후 30초 확인');
+ await expect(page.locator('.focus-staff-links a')).toHaveAttribute('href','/ko/airport-news');
  await expect(page.locator('.focus-report')).toContainText('552.9편');
  expect(await page.locator('#focus-holidays li').count()).toBeGreaterThan(0);
  expect(await page.locator('#focus-holidays li').count()).toBeLessThanOrEqual(3);
@@ -95,6 +97,13 @@ for(const width of [390,1440])test(`approved notice has only bottom close ${widt
  await expect(page.getByTestId('airport-route-passengers')).toBeVisible();
  await page.evaluate(()=>sessionStorage.clear());
  await page.reload();
+ await expect(dialog).toBeVisible();
+ await dialog.getByRole('link',{name:'주요 휴일 보기 →'}).click();
+ await expect(page.locator('.focus-country-filter')).toBeVisible();
+ await page.evaluate(()=>sessionStorage.clear());await page.reload();
+ await dialog.getByRole('link',{name:'공항 한눈에 보기 →'}).click();
+ await expect(page.getByTestId('glance-key-passengers')).toBeVisible();
+ await page.evaluate(()=>sessionStorage.clear());await page.reload();
  await expect(dialog).toBeVisible();
  await dialog.getByRole('button',{name:'닫기',exact:true}).click();await expect(dialog).not.toBeVisible();
 });
