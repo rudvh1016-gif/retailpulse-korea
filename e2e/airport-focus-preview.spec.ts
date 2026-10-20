@@ -59,6 +59,16 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
   await expect(page.locator('.airport-view')).toBeVisible();
   await expect(page.getByTestId('airport-route-passengers')).toHaveCount(0);
   await expect(page.locator('.focus-country-jump')).toBeVisible();
+  const models=page.locator('.airport-scene-picture img');
+  expect(await models.count()).toBeGreaterThan(0);
+  for(const model of await models.all()){
+   await model.scrollIntoViewIfNeeded();
+   await expect.poll(()=>model.evaluate((img:HTMLImageElement)=>img.complete&&img.naturalWidth>0)).toBe(true);
+   await expect(model).toBeVisible();
+   await expect(model).toHaveCSS('opacity','1');
+  }
+  await page.locator('.airport-scene-picture').first().screenshot({path:testInfo.outputPath(`airport-model-${width}.png`)});
+  await page.evaluate(()=>scrollTo(0,0));
   await page.screenshot({path:testInfo.outputPath(`airport-status-${width}.png`),fullPage:true});
   await page.locator('.focus-country-jump').click();
   await expect(page.getByTestId('airport-route-passengers')).toBeVisible();
@@ -74,10 +84,17 @@ for(const width of [390,1440])test(`approved notice has only bottom close ${widt
  await page.route('**/api/live/airport-months*',r=>r.fulfill({json:months}));
  await page.route('**/api/live/airport-passenger-stats*',r=>r.fulfill({json:passengerStats}));
  await page.route(/google-analytics\.com|googletagmanager\.com|analytics\.google\.com/,r=>r.abort());
- await page.goto('/ko',{waitUntil:'domcontentloaded'});const dialog=page.getByRole('dialog',{name:'새로운 정보가 추가되었어요'});
+ await page.goto('/ko/airport-focus-preview',{waitUntil:'domcontentloaded'});const dialog=page.getByRole('dialog',{name:'새로운 정보가 추가되었어요'});
  await expect(dialog).toBeVisible();await expect(dialog.locator('.update-notice-x')).toHaveCount(0);
  await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeVisible();
  await expect(dialog.getByRole('button',{name:'일주일 동안 안 보기',exact:true})).toBeVisible();
+ await expect(dialog.locator('section')).toHaveCount(3);
  await page.screenshot({path:testInfo.outputPath(`notice-${width}.png`)});
+ await dialog.getByRole('link',{name:'국가별 흐름 보기 →'}).click();
+ await expect(page.locator('.focus-country-brief')).toBeVisible();
+ await expect(page.getByTestId('airport-route-passengers')).toBeVisible();
+ await page.evaluate(()=>sessionStorage.clear());
+ await page.reload();
+ await expect(dialog).toBeVisible();
  await dialog.getByRole('button',{name:'닫기',exact:true}).click();await expect(dialog).not.toBeVisible();
 });
