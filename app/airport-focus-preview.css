@@ -84,3 +84,17 @@
 .airport-focus-shell .focus-trend-value{font-size:22px}.focus-detail .focus-month-values{width:100%;max-width:330px;border-collapse:collapse;table-layout:fixed;font-size:12px}.focus-month-values th,.focus-month-values td{padding:8px 5px;border-bottom:1px solid #edf0f3;text-align:right;font-weight:400}.focus-month-values th:first-child{width:72px;text-align:left}.focus-month-values thead th{font-size:11px;font-weight:600;color:#536172}.focus-month-values small{font-size:11px;white-space:nowrap;color:#65707c}@media(max-width:700px){.airport-focus-shell .focus-trend-value{font-size:21px}}
 
 .focus-selected-country-changes{margin-top:10px}.focus-selected-country-changes h3{font-size:13px;font-weight:700;margin-bottom:4px}.focus-report .focus-selected-country-changes p{font-size:14px;line-height:1.6;margin:3px 0}.focus-selected-country-changes small{font-size:12px;color:#536172}@media(max-width:700px){.focus-report .focus-selected-country-changes p{font-size:12px}}
+/* The operating shell already supplies its horizontal page gutter. */
+.airport-focus-shell.airport-focus-operating{padding-inline:0}
+/* Desktop reads today's figures beside the next-week / next-month preparation;
+   phones retain the approved single reading column and unchanged glass menu. */
+@media(min-width:1000px){
+ .focus-report{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);column-gap:36px;align-items:start}
+ .focus-report-title{grid-column:1/-1;grid-row:1}
+ .focus-today-title{grid-column:1;grid-row:2}
+ .focus-report-lines{grid-column:1;grid-row:3;display:block}
+ .focus-selected-country-changes{grid-column:1;grid-row:4}
+ .focus-report-basis{grid-column:1;grid-row:5}
+ .focus-preparation-brief{grid-column:2;grid-row:2/6;margin-top:0}
+ .focus-preparation-brief>div:first-child{margin-top:0;padding-top:0;border-top:0}
+}

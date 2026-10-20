@@ -16,6 +16,10 @@ for(const width of [360,390,430,1440])test(`airport production composition ${wid
  await page.goto('/ko?date=2026-10-19',{waitUntil:'domcontentloaded'});
  for(const text of ['단순합계 112,403명','103,124명','9,279명'])await expect(page.locator('.focus-report-lines')).toContainText(text);
  await expect(page.locator('.focus-selected-country-changes')).toContainText('일본행');
+ for(const rate of await page.locator('.focus-report-lines .change-rate').all())await expect(rate).toHaveCSS('white-space','nowrap');
+ await expect(page.locator('.airport-focus-operating')).toHaveCSS('padding-left','0px');
+ const today=await page.locator('.focus-report-lines').boundingBox(),future=await page.locator('.focus-preparation-brief').boundingBox();
+ if(width>=1000)expect(future!.x).toBeGreaterThan(today!.x+today!.width);else expect(future!.y).toBeGreaterThan(today!.y+today!.height);
  const nav=page.locator(width<=820?'.bottom-nav':'.top-nav');await expect(nav.locator('a')).toHaveCount(5);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:info.outputPath(`production-home-${width}.png`)});

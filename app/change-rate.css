@@ -4,3 +4,5 @@
 .change-rate[data-direction=neutral]{color:#59636e}
 
 .glance-count-change.change-rate[data-direction=up]{color:#245579}.glance-count-change.change-rate[data-direction=down]{color:#a12d3f}
+/* Keep the direction symbol, sign and percentage together on narrow screens. */
+.change-rate{white-space:nowrap}
