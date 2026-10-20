@@ -233,3 +233,12 @@ font-coverage tests pass against the current app/lib and preview data corpus.
 No font family, CSS size/weight/loading policy, full-font asset or external font
 request changes. Synchronize only the existing font lock hash and scoped record;
 preserve all protected paths, earlier approval records and enforcement tests.
+
+### Final reviewed copy, 2026-10-20
+
+The same verified build adds only 썬 and 튜 (1,529 to 1,531 codepoints).
+The previous 1,681 glyphs retain identical outlines, widths and static left-side
+bearings at all nine named weights; name/fvar/STAT remain identical.
+Asset: 230,672 bytes (+136 bytes); SHA-256
+`cc9ef25f82a074a62dbeff9313f1479c58e14bcf17b30a813504f2cd4dc9e55f`.
+The previous font was reproduced byte-for-byte and both coverage tests pass.
