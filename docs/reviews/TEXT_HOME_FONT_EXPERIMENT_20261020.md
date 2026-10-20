@@ -1,4 +1,4 @@
-# Korean text-led home: same-font preload experiment
+# Korean text-led home: rejected same-font preload experiment
 
 ## Evidence
 
@@ -39,3 +39,22 @@ No local browser was launched after the prior IPC denial. The strengthened
 browser typography test checks one correct Korean-home font hint, none for
 other home locales, and unchanged travel-records hints. Final matched CI and
 live verification remain required. No improvement or deployment claim is made.
+
+## Rejected after matched measurement — 2026-10-20 19:08 UTC
+
+CI `39479787913`, artifact `12290282540`, measured deployed `26474d0` against
+PR merge `2aa5c159` (tree equal to candidate `d970edf19`). Mobile median LCP
+was **7,032 → 8,080ms (+14.9%)** and FCP **6,236 → 6,840ms (+9.69%)**.
+The LCP element stayed `SMALL.focus-event-row`. Shift sum improved from
+.094324 to .001157, but this paint/stability tradeoff is not a speed win.
+Desktop LCP was 852 → 840ms, FCP 620 → 632ms, shift .080338 → .073304.
+Existing budgets passed; they do not gate LCP. No budget was relaxed.
+
+Following the agreed rejection criterion, root rejected the preload candidate.
+The home, helper comment and typography expectation return exactly to their
+pre-experiment state; the experiment-only unit test is removed. The prior
+approved home hash is restored, with the experiment and its rejection both
+retained in audit history. Independent SEO, analytics, notices, diagnostics,
+health, live-test and Tourism fixes remain. The original first-release mobile
+paint regression remains unresolved and must not be reported as improved.
+A new final-head matched CI/browser run is required before any release decision.

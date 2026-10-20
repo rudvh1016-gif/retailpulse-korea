@@ -3,7 +3,6 @@ import { preload } from "react-dom";
 import { notFound } from "next/navigation";
 import RetailPulseApp from "../retailpulse-app";
 import {AirportFocusGlance as AirportGlancePreview} from "../airport-focus-production";
-import {preloadShellFont} from '../shell-font-preload';
 import { buildMetadata, pageStructuredData, seoLocales, type SeoLocale } from "../seo-config";
 
 /**
@@ -19,12 +18,11 @@ function preloadLiveSummary() {
 }
 
 /**
- * Experimental Korean text-led home only: matched October 20 attribution puts
- * .093245 of .094324 mobile layout shift just after the late shell-font swap.
- * Reuse the existing face/hint; unchanged CI budgets must establish whether
- * earlier stable text outweighs script contention. The former image-led home
- * intentionally omitted this hint (October 13); other routes/locales keep
- * their existing policy. This is not yet a speed-improvement claim.
+ * No shell-font preload on the home, unlike travel-records and airport-news.
+ * On a throttled phone it competed with the scripts that hydrate the page;
+ * without it the page is interactive about 0.5 s sooner and the brand face,
+ * still requested by the stylesheet with `font-display: swap`, arrives about
+ * 0.3 s later (owner decision, 2026-10-13).
  */
 export function generateStaticParams() { return seoLocales.map((locale) => ({ locale })); }
 
@@ -38,7 +36,6 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:
   const { locale } = await params;
   if (!seoLocales.includes(locale as SeoLocale)) notFound();
   preloadLiveSummary();
-  if (locale === 'ko') preloadShellFont('ko');
   return <>
     <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialView="airport-glance" initialScope="airport-home" AirportGlance={AirportGlancePreview} />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale)) }} />
