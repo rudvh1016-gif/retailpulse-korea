@@ -913,7 +913,9 @@
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --surface: #ffffff;
-  --blue: #294864;
+  --navy: #203249;
+  --silver: #dce1e7;
+  --blue: var(--navy);
   --green: #087a55;
   /*
    * No warm token. The page reads as neutral white only if nothing warm sits
@@ -1182,7 +1184,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .top-nav { display: flex; align-items: center; gap: 4px; margin-right: auto; }
 .top-nav a { position: relative; min-height: 44px; padding: 0 12px; display: inline-flex; align-items: center; color: var(--muted); font-size: 13px; font-weight: var(--weight-strong); letter-spacing: -.005em; text-decoration: none; }
 .top-nav a:hover { color: var(--ink); }
-.top-nav a.active { color: var(--ink); }
+.top-nav a.active { color: var(--navy); }
 .top-nav a.active::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 6px; height: 2px; background: var(--blue); }
 /* `nav.bottom-nav` outranks the base `.bottom-nav { display: grid }` that is
    declared later in this file; a bare class here would be overridden. */

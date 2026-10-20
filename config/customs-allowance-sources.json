@@ -7,7 +7,7 @@
     "maxRequests": 24,
     "maxBytes": 1048576,
     "timeoutMs": 15000,
-    "minIntervalHours": 168
+    "minIntervalHours": 24
   },
   "allowedHosts": [
     "app.www.gov.cn",
@@ -76,9 +76,30 @@
       "label": "일본 재무성 세관 원문",
       "url": "https://www.customs.go.jp/kaigairyoko/menzei.htm",
       "format": "html",
-      "accessReview": null,
-      "baseline": null,
-      "monitoringRole": "priority_candidate"
+      "accessReview": {
+        "url": "https://www.customs.go.jp/kaigairyoko/menzei.htm",
+        "automatedReadAllowed": true,
+        "evidenceUrl": "https://www.customs.go.jp/robots.txt",
+        "reviewedAt": "2026-10-20T13:47:00Z",
+        "minIntervalHours": 24,
+        "scope": "One daily bounded source-byte comparison only. No source-page reproduction, legal interpretation or automated numeric publication."
+      },
+      "baseline": {
+        "url": "https://www.customs.go.jp/kaigairyoko/menzei.htm",
+        "sha256": "09f135aae54d8591cdd3af6df62caa5db97cf69eedb8080053f9a2f5249e6213",
+        "reviewedAt": "2026-10-20T13:47:00Z",
+        "numericTemplateSha256": "7dcf7938a5edba7b97fb983b7cbaf8b064fcced0475edcb4735bbba551bfedc9",
+        "numericValues": {
+          "liquorBottles": 3,
+          "liquorBottleMl": 760,
+          "cigarettes": 200,
+          "perfumeOunces": 2
+        },
+        "datasetSemanticHash": "0b00b89b1ba4b7ca1b5ea0465f01e60851ee233bd6817398fc95cf5f1e3d4f75"
+      },
+      "monitoringRole": "priority_candidate",
+      "encoding": "shift_jis",
+      "numericParser": "jp-allowance-v1"
     },
     {
       "id": "JP-02",
@@ -296,9 +317,22 @@
       "label": "대만 전국 법규자료고·재정부 소관 법령 원문",
       "url": "https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=G0350003",
       "format": "html",
-      "accessReview": null,
-      "baseline": null,
-      "monitoringRole": "priority_candidate"
+      "accessReview": {
+        "url": "https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=G0350003",
+        "automatedReadAllowed": true,
+        "evidenceUrl": "https://law.moj.gov.tw/robots.txt",
+        "reviewedAt": "2026-10-20T13:47:00Z",
+        "minIntervalHours": 24,
+        "scope": "One daily bounded source-byte comparison only. No source-page reproduction, legal interpretation or automated numeric publication."
+      },
+      "baseline": {
+        "url": "https://law.moj.gov.tw/LawClass/LawAll.aspx?pcode=G0350003",
+        "sha256": "8e4dad1a6104e5c9fa81ed8446d4ca9b655917a2b28300ec8f74631b4d0f5d7c",
+        "reviewedAt": "2026-10-20T13:47:00Z",
+        "contentSha256": "4681a47fdbf6d8e87b9f739f4f9e71e1daede65307c76099a7e831cd4537f92b"
+      },
+      "monitoringRole": "priority_candidate",
+      "extractor": "tw-law-block-v1"
     },
     {
       "id": "TW-02",
@@ -396,8 +430,19 @@
       "label": "Singapore Customs 원문",
       "url": "https://www.customs.gov.sg/at-customs/arriving-in-singapore/duty-free-concession-gst-relief/",
       "format": "html",
-      "accessReview": null,
-      "baseline": null,
+      "accessReview": {
+        "url": "https://www.customs.gov.sg/at-customs/arriving-in-singapore/duty-free-concession-gst-relief/",
+        "automatedReadAllowed": true,
+        "evidenceUrl": "https://www.customs.gov.sg/robots.txt",
+        "reviewedAt": "2026-10-20T13:47:00Z",
+        "minIntervalHours": 24,
+        "scope": "One daily bounded source-byte comparison only. No source-page reproduction, legal interpretation or automated numeric publication."
+      },
+      "baseline": {
+        "url": "https://www.customs.gov.sg/at-customs/arriving-in-singapore/duty-free-concession-gst-relief/",
+        "sha256": "200bbbf64d09f5c918978fc8812674d18257a1d736ad7837a9f0542340d57f81",
+        "reviewedAt": "2026-10-20T13:47:00Z"
+      },
       "monitoringRole": "priority_candidate"
     },
     {

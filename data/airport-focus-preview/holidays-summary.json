@@ -12,7 +12,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "외교부 공표 공휴일"
+      "scope": "외교부 공표 공휴일",
+      "sourceURL": "https://www.mofa.gov.mm/about-myanmar/public-holidays/",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "KZ-all-2026-10-25-major",
@@ -25,7 +29,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 공휴일 및 공식 대체휴일"
+      "scope": "전국 공휴일 및 공식 대체휴일",
+      "sourceURL": "https://www.gov.kz/article/33969?lang=kk",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "NZ-all-2026-10-26-major",
@@ -38,7 +46,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 공휴일. 대체휴일은 근무일 조건에 따라 다릅니다."
+      "scope": "전국 공휴일. 대체휴일은 근무일 조건에 따라 다릅니다.",
+      "sourceURL": "https://www.employment.govt.nz/leave-and-holidays/public-holidays/public-holidays-and-anniversary-dates",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "AT-all-2026-10-26-major",
@@ -51,7 +63,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "오스트리아 공휴일"
+      "scope": "오스트리아 공휴일",
+      "sourceURL": "https://www.bmeia.gv.at/fileadmin/user_upload/Vertretungen/Kopenhagen/Aktuelles/Feiertage_2025-2027.pdf",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "KH-all-2026-10-29-major",
@@ -64,7 +80,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 공휴일"
+      "scope": "전국 공휴일",
+      "sourceURL": "https://lrc.gov.kh/en/annual-holiday-calendar-2026/",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "TR-all-2026-10-29-major",
@@ -77,7 +97,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "공화국 기념일. 전날 10월 28일 오후 1시부터 휴일이나 이 카드에는 온종일인 29일만 표시합니다."
+      "scope": "공화국 기념일. 전날 10월 28일 오후 1시부터 휴일이나 이 카드에는 온종일인 29일만 표시합니다.",
+      "sourceURL": "https://www.celikhan.gov.tr/onemli-gun-ve-haftalar",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "PH-all-2026-11-01-major",
@@ -90,7 +114,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 특별 비근무일"
+      "scope": "전국 특별 비근무일",
+      "sourceURL": "https://omcrs.nia.gov.ph/?q=system%2Ffiles%2Fmc%2F2025_089.pdf",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "JP-all-2026-11-03-1",
@@ -103,7 +131,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "일본 국경일·휴일"
+      "scope": "일본 국경일·휴일",
+      "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "NP-all-2026-11-08-major",
@@ -116,7 +148,11 @@
       "type": "government_or_agency_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "내무부 관보의 전국 공휴일; 정부 사무소·공공기관 적용 확인, 민간 전체 휴무는 별도 미확인"
+      "scope": "내무부 관보의 전국 공휴일; 정부 사무소·공공기관 적용 확인, 민간 전체 휴무는 별도 미확인",
+      "sourceURL": "https://moha.gov.np/upload/e66443e81e8cc9c4fa5c099a1fb1bb87/files/२०८३_सालको_सार्वजनिक_विदा_(67_11_18).pdf",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "LK-all-2026-11-08-major",
@@ -129,7 +165,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "공공·은행 휴일; 민간 상업 부문 적용은 이 기록에서 확정하지 않음"
+      "scope": "공공·은행 휴일; 민간 상업 부문 적용은 이 기록에서 확정하지 않음",
+      "sourceURL": "https://www.documents.gov.lk/view/calander/2026/2026_E.pdf",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "SG-all-2026-11-08-23",
@@ -142,7 +182,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "싱가포르 공휴일"
+      "scope": "싱가포르 공휴일",
+      "sourceURL": "https://www.mom.gov.sg/employment-practices/public-holidays",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "AZ-all-2026-11-08-major",
@@ -155,7 +199,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 법정 휴일; 11/10은 5일제·6일제 모두 대체휴일"
+      "scope": "전국 법정 휴일; 11/10은 5일제·6일제 모두 대체휴일",
+      "sourceURL": "https://www.sosial.gov.az/az/faydali/istehsalat-teqvimi/2026-ci-ilin-istehsalat-teqvimi",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "SG-all-2026-11-09-26",
@@ -168,7 +216,11 @@
       "type": "conditional_substitute_holiday",
       "isRepresentative": true,
       "conditional": true,
-      "scope": "11월8일이 본인의 휴무일인 경우에만 적용"
+      "scope": "11월8일이 본인의 휴무일인 경우에만 적용",
+      "sourceURL": "https://www.mom.gov.sg/employment-practices/public-holidays",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "KH-all-2026-11-09-major",
@@ -181,7 +233,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 공휴일"
+      "scope": "전국 공휴일",
+      "sourceURL": "https://lrc.gov.kh/en/annual-holiday-calendar-2026/",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "US-all-2026-11-11-19",
@@ -194,7 +250,11 @@
       "type": "federal_employee_holiday",
       "isRepresentative": false,
       "conditional": false,
-      "scope": "미국 연방공무원 기준. 주·민간 사업장 휴무는 다를 수 있습니다."
+      "scope": "미국 연방공무원 기준. 주·민간 사업장 휴무는 다를 수 있습니다.",
+      "sourceURL": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "institutional",
+      "region": null
     },
     {
       "id": "MM-all-2026-11-23-major",
@@ -207,7 +267,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "외교부 공표 공휴일"
+      "scope": "외교부 공표 공휴일",
+      "sourceURL": "https://www.mofa.gov.mm/about-myanmar/public-holidays/",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "JP-all-2026-11-23-2",
@@ -220,7 +284,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "일본 국경일·휴일"
+      "scope": "일본 국경일·휴일",
+      "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "KH-all-2026-11-23-major",
@@ -233,7 +301,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 공휴일"
+      "scope": "전국 공휴일",
+      "sourceURL": "https://lrc.gov.kh/en/annual-holiday-calendar-2026/",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "US-GU-2026-11-26-major",
@@ -246,7 +318,11 @@
       "type": "government_or_agency_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "괌 세무국 공표 휴무일. 모든 민간 직장 휴무를 뜻하지 않습니다."
+      "scope": "괌 세무국 공표 휴무일. 모든 민간 직장 휴무를 뜻하지 않습니다.",
+      "sourceURL": "https://www.guamtax.com/help/holidays.html",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "GU"
     },
     {
       "id": "MN-all-2026-11-26-major",
@@ -259,7 +335,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "노동법 97.1.8 전국 공휴일"
+      "scope": "노동법 97.1.8 전국 공휴일",
+      "sourceURL": "https://legalinfo.mn/mn/detail?lawId=16230709635751&showType=1",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "US-all-2026-11-26-20",
@@ -272,7 +352,11 @@
       "type": "federal_employee_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "미국 연방공무원 기준. 주·민간 사업장 휴무는 다를 수 있습니다."
+      "scope": "미국 연방공무원 기준. 주·민간 사업장 휴무는 다를 수 있습니다.",
+      "sourceURL": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "institutional",
+      "region": null
     },
     {
       "id": "US-MP-2026-11-26-major",
@@ -285,7 +369,11 @@
       "type": "government_or_agency_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "북마리아나제도 상무부 달력. 민간 전체에 적용하지 않습니다."
+      "scope": "북마리아나제도 상무부 달력. 민간 전체에 적용하지 않습니다.",
+      "sourceURL": "https://registrar.cnmi.gov/events/",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "MP"
     },
     {
       "id": "US-HI-2026-11-26-major",
@@ -298,7 +386,11 @@
       "type": "government_or_agency_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "하와이 주정부 기관 직원용. 연방·은행 일정은 다를 수 있습니다."
+      "scope": "하와이 주정부 기관 직원용. 연방·은행 일정은 다를 수 있습니다.",
+      "sourceURL": "https://dhrd.hawaii.gov/wp-content/uploads/2026/06/State-Holidays-2026-2027.pdf",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "HI"
     },
     {
       "id": "GB-scotland-2026-11-30-11",
@@ -311,7 +403,11 @@
       "type": "bank_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "스코틀랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다."
+      "scope": "스코틀랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
+      "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "scotland"
     },
     {
       "id": "LA-all-2026-12-02-major",
@@ -324,7 +420,11 @@
       "type": "government_or_agency_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "외교부 영사국 휴무 일정. 민간 전체 휴무로 해석하지 않습니다."
+      "scope": "외교부 영사국 휴무 일정. 민간 전체 휴무로 해석하지 않습니다.",
+      "sourceURL": "https://www.laoevisa.gov.la/info",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "AE-all-2026-12-02-major",
@@ -337,7 +437,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "공공·민간 법정 휴일. 별도 휴일 이동 공고는 확인이 필요합니다."
+      "scope": "공공·민간 법정 휴일. 별도 휴일 이동 공고는 확인이 필요합니다.",
+      "sourceURL": "https://www.uaelegislation.gov.ae/en/legislations/2595/download",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "UZ-all-2026-12-08-major",
@@ -350,7 +454,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 공휴일"
+      "scope": "전국 공휴일",
+      "sourceURL": "https://gov.uz/en/izboskan/news/view/191235",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "TM-all-2026-12-12-major",
@@ -363,7 +471,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "노동법 81조 전국 비근무 공휴일"
+      "scope": "노동법 81조 전국 비근무 공휴일",
+      "sourceURL": "https://mejlis.gov.tm/single-code/12?lang=tm",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "KZ-all-2026-12-16-major",
@@ -376,7 +488,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 공휴일"
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.gov.kz/article/33969?lang=kk",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "QA-all-2026-12-18-major",
@@ -389,7 +505,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "법정 국경일"
+      "scope": "법정 국경일",
+      "sourceURL": "https://www.almeezan.qa/PrintArticle_section.aspx?LawTreeSectionID=8022&language=en&lawId=2479",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "MO-all-2026-12-20-major",
@@ -402,7 +522,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "마카오 의무 공휴일"
+      "scope": "마카오 의무 공휴일",
+      "sourceURL": "https://www.gov.mo/pt/public-holidays/year-2026/?noredirect=pt_PT",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "CZ-all-2026-12-24-major",
@@ -415,7 +539,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "법정 공휴일"
+      "scope": "법정 공휴일",
+      "sourceURL": "https://e-sbirka.gov.cz/eli/cz/sb/2000/245/2026-05-13",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "PH-all-2026-12-24-major",
@@ -428,7 +556,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 특별 비근무일"
+      "scope": "전국 특별 비근무일",
+      "sourceURL": "https://omcrs.nia.gov.ph/?q=system%2Ffiles%2Fmc%2F2025_089.pdf",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "US-GU-2026-12-25-major",
@@ -441,7 +573,11 @@
       "type": "government_or_agency_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "괌 세무국 공표 휴무일. 모든 민간 직장 휴무를 뜻하지 않습니다."
+      "scope": "괌 세무국 공표 휴무일. 모든 민간 직장 휴무를 뜻하지 않습니다.",
+      "sourceURL": "https://www.guamtax.com/help/holidays.html",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "GU"
     },
     {
       "id": "NL-all-2026-12-25-major",
@@ -454,7 +590,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 공휴일. 유급휴무 여부는 계약에 따릅니다."
+      "scope": "전국 공휴일. 유급휴무 여부는 계약에 따릅니다.",
+      "sourceURL": "https://www.government.nl/themes/work/working-hours/question-and-answer/work/public-holidays-in-the-netherlands",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "NO-all-2026-12-25-major",
@@ -467,7 +607,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "법정 공휴일"
+      "scope": "법정 공휴일",
+      "sourceURL": "https://lovdata.no/dokument/NL/lov/1995-02-24-12/%C2%A76",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "NZ-all-2026-12-25-major",
@@ -480,7 +624,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 공휴일. 대체휴일은 근무일 조건에 따라 다릅니다."
+      "scope": "전국 공휴일. 대체휴일은 근무일 조건에 따라 다릅니다.",
+      "sourceURL": "https://www.employment.govt.nz/leave-and-holidays/public-holidays/public-holidays-and-anniversary-dates",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "DK-all-2026-12-25-major",
@@ -493,7 +641,11 @@
       "type": "bank_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "은행 휴일. 전 국민의 직장 휴무를 뜻하지 않습니다."
+      "scope": "은행 휴일. 전 국민의 직장 휴무를 뜻하지 않습니다.",
+      "sourceURL": "https://www.nationalbanken.dk/en/what-we-do/stable-prices-monetary-policy-and-the-danish-economy/bank-holidays",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "DE-all-2026-12-25-major",
@@ -506,7 +658,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "문서의 독일 전역 공휴일 항목 기준. 주별 휴일은 제외합니다."
+      "scope": "문서의 독일 전역 공휴일 항목 기준. 주별 휴일은 제외합니다.",
+      "sourceURL": "https://www.bundesbank.de/resource/blob/764518/36164b50ec05e7fceb1df9ed3374b012/mL/feiertage-in-deutschland-1-data.pdf",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "LB-all-2026-12-25-major",
@@ -519,7 +675,11 @@
       "type": "government_or_agency_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "산업부 공표 휴무 일정. 민간 전체로 확장하지 않습니다."
+      "scope": "산업부 공표 휴무 일정. 민간 전체로 확장하지 않습니다.",
+      "sourceURL": "https://www.industry.gov.lb/Ministry/WorkingHoursAndHolidays?lang=en-us",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "LU-all-2026-12-25-major",
@@ -532,7 +692,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "법정 공휴일"
+      "scope": "법정 공휴일",
+      "sourceURL": "https://luxembourg.public.lu/fr/vivre/qualite-de-vie/jours-feries-legaux-luxembourg.html",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "MY-all-2026-12-25-major",
@@ -545,7 +709,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "공식 달력의 모든 주·연방직할구 공통 공휴일"
+      "scope": "공식 달력의 모든 주·연방직할구 공통 공휴일",
+      "sourceURL": "https://www.kabinet.gov.my/storage/2025/08/HKA-2026.pdf",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "MX-all-2026-12-25-major",
@@ -558,7 +726,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "노동법상 의무 휴일"
+      "scope": "노동법상 의무 휴일",
+      "sourceURL": "https://www.gob.mx/profedet/articulos/sabes-cuales-son-los-dias-de-descanso-obligatorio-para-este-2026?facet=app&mode=light",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "US-all-2026-12-25-21",
@@ -571,7 +743,11 @@
       "type": "federal_employee_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "미국 연방공무원 기준. 주·민간 사업장 휴무는 다를 수 있습니다."
+      "scope": "미국 연방공무원 기준. 주·민간 사업장 휴무는 다를 수 있습니다.",
+      "sourceURL": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "institutional",
+      "region": null
     },
     {
       "id": "MM-all-2026-12-25-major",
@@ -584,7 +760,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "외교부 공표 공휴일"
+      "scope": "외교부 공표 공휴일",
+      "sourceURL": "https://www.mofa.gov.mm/about-myanmar/public-holidays/",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "BE-all-2026-12-25-major",
@@ -597,7 +777,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "법정 공휴일. 대체일은 업종·직장에 따라 다릅니다."
+      "scope": "법정 공휴일. 대체일은 업종·직장에 따라 다릅니다.",
+      "sourceURL": "https://www.belgium.be/fr/emploi/conges_et_interruption_de_carriere/jours_feries",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "BR-all-2026-12-25-major",
@@ -610,7 +794,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 공휴일. 선택휴무는 제외합니다."
+      "scope": "전국 공휴일. 선택휴무는 제외합니다.",
+      "sourceURL": "https://agenciagov.ebc.com.br/noticias/202512/confira-o-calendario-oficial-de-feriados-nacionais-e-pontos-facultativos-em-2026",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "US-MP-2026-12-25-major",
@@ -623,7 +811,11 @@
       "type": "government_or_agency_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "북마리아나제도 상무부 달력. 민간 전체에 적용하지 않습니다."
+      "scope": "북마리아나제도 상무부 달력. 민간 전체에 적용하지 않습니다.",
+      "sourceURL": "https://registrar.cnmi.gov/events/",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "MP"
     },
     {
       "id": "LK-all-2026-12-25-major",
@@ -636,7 +828,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "공공·은행·상업 휴일"
+      "scope": "공공·은행·상업 휴일",
+      "sourceURL": "https://www.documents.gov.lk/view/calander/2026/2026_E.pdf",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "SE-all-2026-12-25-major",
@@ -649,7 +845,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "외교부 공표 공휴일 및 공휴일에 준하는 날 중 성탄절·다음 날"
+      "scope": "외교부 공표 공휴일 및 공휴일에 준하는 날 중 성탄절·다음 날",
+      "sourceURL": "https://www.government.se/contentassets/71dfa63dd47749ea96e0cb7c3dedb18c/circular-note-2_2025---public-holidays-2026.pdf",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "CH-ZH-2026-12-25-major",
@@ -662,7 +862,11 @@
       "type": "regional_public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "취리히주 법정 공휴일. 스위스 전국 휴일로 일반화하지 않습니다."
+      "scope": "취리히주 법정 공휴일. 스위스 전국 휴일로 일반화하지 않습니다.",
+      "sourceURL": "https://www.zh.ch/de/wirtschaft-arbeit/arbeitsbedingungen/arbeitsssicherheit-gesundheitsschutz/arbeits-ruhezeiten/feiertage.html",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "ZH"
     },
     {
       "id": "ES-all-2026-12-25-major",
@@ -675,7 +879,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 대체 불가 법정 공휴일"
+      "scope": "전국 대체 불가 법정 공휴일",
+      "sourceURL": "https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-21667",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "SG-all-2026-12-25-24",
@@ -688,7 +896,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "싱가포르 공휴일"
+      "scope": "싱가포르 공휴일",
+      "sourceURL": "https://www.mom.gov.sg/employment-practices/public-holidays",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "GB-england-and-wales-2026-12-25-8",
@@ -701,7 +913,11 @@
       "type": "bank_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "잉글랜드·웨일스 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다."
+      "scope": "잉글랜드·웨일스 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
+      "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "england-and-wales"
     },
     {
       "id": "GB-northern-ireland-2026-12-25-16",
@@ -714,7 +930,11 @@
       "type": "bank_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "북아일랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다."
+      "scope": "북아일랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
+      "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "northern-ireland"
     },
     {
       "id": "GB-scotland-2026-12-25-12",
@@ -727,7 +947,11 @@
       "type": "bank_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "스코틀랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다."
+      "scope": "스코틀랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
+      "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "scotland"
     },
     {
       "id": "AT-all-2026-12-25-major",
@@ -740,7 +964,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "오스트리아 공휴일"
+      "scope": "오스트리아 공휴일",
+      "sourceURL": "https://www.bmeia.gv.at/fileadmin/user_upload/Vertretungen/Kopenhagen/Aktuelles/Feiertage_2025-2027.pdf",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "IT-all-2026-12-25-major",
@@ -753,7 +981,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 공휴일"
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.italia.it/it/italia/informazioni-per-viaggiare/orari-e-festivita-in-italia",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "IN-all-2026-12-25-major",
@@ -766,7 +998,11 @@
       "type": "government_or_agency_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "인도 우정청 전국 휴무 목록. 민간·주별 휴무와 다릅니다."
+      "scope": "인도 우정청 전국 휴무 목록. 민간·주별 휴무와 다릅니다.",
+      "sourceURL": "https://www.indiapost.gov.in/holidays-list",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "ID-all-2026-12-25-major",
@@ -779,7 +1015,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "정부 합동결정 전국 공휴일"
+      "scope": "정부 합동결정 전국 공휴일",
+      "sourceURL": "https://www.setneg.go.id/baca/index/inilah_skb_3_menteri_libur_nasional_dan_cuti_bersama_2026",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "CL-all-2026-12-25-major",
@@ -792,7 +1032,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 공휴일"
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.gob.cl/noticias/feriados-2026-revisa-cuantos-habra-y-cuales-son-irrenunciables/",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "CA-all-2026-12-25-major",
@@ -805,7 +1049,11 @@
       "type": "tax_authority_recognized_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "캐나다 국세청 인정 공휴일. 주·직장별 휴무와 다를 수 있습니다."
+      "scope": "캐나다 국세청 인정 공휴일. 주·직장별 휴무와 다를 수 있습니다.",
+      "sourceURL": "https://www.canada.ca/en/revenue-agency/services/tax/public-holidays.html",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "HR-all-2026-12-25-major",
@@ -818,7 +1066,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "법정 공휴일"
+      "scope": "법정 공휴일",
+      "sourceURL": "https://narodne-novine.nn.hr/clanci/sluzbeni/2019_11_110_2212.html",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "PE-all-2026-12-25-major",
@@ -831,7 +1083,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 공휴일"
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.gob.pe/feriados",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "PT-all-2026-12-25-major",
@@ -844,7 +1100,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "노동법상 의무 공휴일"
+      "scope": "노동법상 의무 공휴일",
+      "sourceURL": "https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2009-34546475-46746675",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "PL-all-2026-12-25-major",
@@ -857,7 +1117,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "법정 비근무일"
+      "scope": "법정 비근무일",
+      "sourceURL": "https://www.gov.pl/web/rodzina/ustalanie-i-rozliczanie-czasu-pracy",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "FR-all-2026-12-25-major",
@@ -870,7 +1134,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 법정 공휴일. 알자스·모젤 추가 휴일은 제외합니다."
+      "scope": "전국 법정 공휴일. 알자스·모젤 추가 휴일은 제외합니다.",
+      "sourceURL": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2405",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "FI-all-2026-12-25-major",
@@ -883,7 +1151,11 @@
       "type": "bank_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "은행 휴일. 전 국민의 직장 휴무를 뜻하지 않습니다."
+      "scope": "은행 휴일. 전 국민의 직장 휴무를 뜻하지 않습니다.",
+      "sourceURL": "https://www.suomenpankki.fi/fi/raha-ja-maksaminen/pankkivapaapaivat/",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "PH-all-2026-12-25-major",
@@ -896,7 +1168,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 정규 공휴일"
+      "scope": "전국 정규 공휴일",
+      "sourceURL": "https://omcrs.nia.gov.ph/?q=system%2Ffiles%2Fmc%2F2025_089.pdf",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "US-HI-2026-12-25-major",
@@ -909,7 +1185,11 @@
       "type": "government_or_agency_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "하와이 주정부 기관 직원용. 연방·은행 일정은 다를 수 있습니다."
+      "scope": "하와이 주정부 기관 직원용. 연방·은행 일정은 다를 수 있습니다.",
+      "sourceURL": "https://dhrd.hawaii.gov/wp-content/uploads/2026/06/State-Holidays-2026-2027.pdf",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "HI"
     },
     {
       "id": "KR-all-2026-12-25-major",
@@ -922,7 +1202,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "공휴일법상 공휴일. 사업장별 실제 근무 여부는 별도입니다."
+      "scope": "공휴일법상 공휴일. 사업장별 실제 근무 여부는 별도입니다.",
+      "sourceURL": "https://www.law.go.kr/lsLinkCommonInfo.do?chrClsCd=010202&lsJoLnkSeq=1033065007",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "HU-all-2026-12-25-major",
@@ -935,7 +1219,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "노동법상 고정 공휴일. 별도 근무일 이동 일정은 포함하지 않습니다."
+      "scope": "노동법상 고정 공휴일. 별도 근무일 이동 일정은 포함하지 않습니다.",
+      "sourceURL": "https://njt.jog.gov.hu/jogszabaly/2012-1-00-00.14",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "AU-all-2026-12-25-major",
@@ -948,7 +1236,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "8개 주·준주 공통 공휴일. 나머지 주별 휴일은 합치지 않습니다."
+      "scope": "8개 주·준주 공통 공휴일. 나머지 주별 휴일은 합치지 않습니다.",
+      "sourceURL": "https://www.fairwork.gov.au/employment-conditions/public-holidays/2026-public-holidays",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "HK-all-2026-12-25-5",
@@ -961,7 +1253,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "홍콩 공중휴일. 고용법상 법정휴일 목록과 다를 수 있습니다."
+      "scope": "홍콩 공중휴일. 고용법상 법정휴일 목록과 다를 수 있습니다.",
+      "sourceURL": "https://www.1823.gov.hk/common/ical/en.ics",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "BN-all-2026-12-26-major",
@@ -974,7 +1270,11 @@
       "type": "government_or_agency_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "총리실 공문상 공공부문 휴일; 민간·은행 동일 적용은 미확인"
+      "scope": "총리실 공문상 공공부문 휴일; 민간·은행 동일 적용은 미확인",
+      "sourceURL": "https://www.jpm.gov.bn/Circulars%20PDF%20Library/jpmsk04-2025.pdf",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "HK-all-2026-12-26-6",
@@ -987,7 +1287,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "홍콩 공중휴일. 고용법상 법정휴일 목록과 다를 수 있습니다."
+      "scope": "홍콩 공중휴일. 고용법상 법정휴일 목록과 다를 수 있습니다.",
+      "sourceURL": "https://www.1823.gov.hk/common/ical/en.ics",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "GB-england-and-wales-2026-12-28-9",
@@ -1000,7 +1304,11 @@
       "type": "bank_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "잉글랜드·웨일스 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다."
+      "scope": "잉글랜드·웨일스 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
+      "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "england-and-wales"
     },
     {
       "id": "GB-northern-ireland-2026-12-28-17",
@@ -1013,7 +1321,11 @@
       "type": "bank_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "북아일랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다."
+      "scope": "북아일랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
+      "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "northern-ireland"
     },
     {
       "id": "GB-scotland-2026-12-28-13",
@@ -1026,7 +1338,11 @@
       "type": "bank_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "스코틀랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다."
+      "scope": "스코틀랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
+      "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "scotland"
     },
     {
       "id": "MN-all-2026-12-29-major",
@@ -1039,7 +1355,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "노동법 97.1.9 전국 공휴일"
+      "scope": "노동법 97.1.9 전국 공휴일",
+      "sourceURL": "https://legalinfo.mn/mn/detail?lawId=16230709635751&showType=1",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "AZ-all-2026-12-31-major",
@@ -1052,7 +1372,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 법정 휴일"
+      "scope": "전국 법정 휴일",
+      "sourceURL": "https://www.sosial.gov.az/az/faydali/istehsalat-teqvimi/2026-ci-ilin-istehsalat-teqvimi",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "TH-all-2026-12-31-major",
@@ -1065,7 +1389,11 @@
       "type": "bank_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "금융기관 휴일. 민간 전체 휴무가 아닙니다."
+      "scope": "금융기관 휴일. 민간 전체 휴무가 아닙니다.",
+      "sourceURL": "https://www.bot.or.th/en/financial-institutions-holiday.html",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "NL-all-2027-01-01-major",
@@ -1078,7 +1406,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 공휴일. 유급휴무 여부는 계약에 따릅니다."
+      "scope": "전국 공휴일. 유급휴무 여부는 계약에 따릅니다.",
+      "sourceURL": "https://www.government.nl/themes/work/working-hours/question-and-answer/work/public-holidays-in-the-netherlands",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "NO-all-2027-01-01-major",
@@ -1091,7 +1423,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "법정 공휴일"
+      "scope": "법정 공휴일",
+      "sourceURL": "https://lovdata.no/dokument/NL/lov/1995-02-24-12/%C2%A76",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "NZ-all-2027-01-01-major",
@@ -1104,7 +1440,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 공휴일. 대체휴일은 근무일 조건에 따라 다릅니다."
+      "scope": "전국 공휴일. 대체휴일은 근무일 조건에 따라 다릅니다.",
+      "sourceURL": "https://www.employment.govt.nz/leave-and-holidays/public-holidays/public-holidays-and-anniversary-dates",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "TW-all-2027-01-01-major",
@@ -1117,7 +1457,11 @@
       "type": "government_or_agency_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "정부 행정기관 일정. 1월 2~3일은 주말이므로 이 공휴일 날짜에 합치지 않습니다."
+      "scope": "정부 행정기관 일정. 1월 2~3일은 주말이므로 이 공휴일 날짜에 합치지 않습니다.",
+      "sourceURL": "https://www.dgpa.gov.tw/FileConversion?filename=dgpa%2Ffiles%2F202605%2Fb3f2c62b-8de9-4e29-b8ea-64069be0cc2b.pdf&name=%E9%99%84%E8%A1%A81.pdf&nfix=",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "DK-all-2027-01-01-major",
@@ -1130,7 +1474,11 @@
       "type": "bank_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "은행 휴일. 전 국민의 직장 휴무를 뜻하지 않습니다."
+      "scope": "은행 휴일. 전 국민의 직장 휴무를 뜻하지 않습니다.",
+      "sourceURL": "https://www.nationalbanken.dk/en/what-we-do/stable-prices-monetary-policy-and-the-danish-economy/bank-holidays",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "LU-all-2027-01-01-major",
@@ -1143,7 +1491,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "법정 공휴일"
+      "scope": "법정 공휴일",
+      "sourceURL": "https://luxembourg.public.lu/fr/vivre/qualite-de-vie/jours-feries-legaux-luxembourg.html",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "US-all-2027-01-01-22",
@@ -1156,7 +1508,11 @@
       "type": "federal_employee_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "미국 연방공무원 기준. 주·민간 사업장 휴무는 다를 수 있습니다."
+      "scope": "미국 연방공무원 기준. 주·민간 사업장 휴무는 다를 수 있습니다.",
+      "sourceURL": "https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "institutional",
+      "region": null
     },
     {
       "id": "VN-all-2027-01-01-major",
@@ -1169,7 +1525,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "노동법 제112조 유급휴일. 주말을 연휴로 임의 확장하지 않습니다."
+      "scope": "노동법 제112조 유급휴일. 주말을 연휴로 임의 확장하지 않습니다.",
+      "sourceURL": "https://congbao.cdnchinhphu.vn/CongBaoCP/CongBao/2025/9/46083/58726-1-1309-1310.pdf",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "BE-all-2027-01-01-major",
@@ -1182,7 +1542,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "법정 공휴일. 대체일은 업종·직장에 따라 다릅니다."
+      "scope": "법정 공휴일. 대체일은 업종·직장에 따라 다릅니다.",
+      "sourceURL": "https://www.belgium.be/fr/emploi/conges_et_interruption_de_carriere/jours_feries",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "SG-all-2027-01-01-25",
@@ -1195,7 +1559,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "싱가포르 공휴일"
+      "scope": "싱가포르 공휴일",
+      "sourceURL": "https://www.mom.gov.sg/employment-practices/public-holidays",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "AE-all-2027-01-01-major",
@@ -1208,7 +1576,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "공공·민간 법정 휴일. 별도 휴일 이동 공고는 확인이 필요합니다."
+      "scope": "공공·민간 법정 휴일. 별도 휴일 이동 공고는 확인이 필요합니다.",
+      "sourceURL": "https://www.uaelegislation.gov.ae/en/legislations/2595/download",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "GB-england-and-wales-2027-01-01-10",
@@ -1221,7 +1593,11 @@
       "type": "bank_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "잉글랜드·웨일스 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다."
+      "scope": "잉글랜드·웨일스 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
+      "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "england-and-wales"
     },
     {
       "id": "GB-northern-ireland-2027-01-01-18",
@@ -1234,7 +1610,11 @@
       "type": "bank_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "북아일랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다."
+      "scope": "북아일랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
+      "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "northern-ireland"
     },
     {
       "id": "GB-scotland-2027-01-01-14",
@@ -1247,7 +1627,11 @@
       "type": "bank_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "스코틀랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다."
+      "scope": "스코틀랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
+      "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "scotland"
     },
     {
       "id": "AT-all-2027-01-01-major",
@@ -1260,7 +1644,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "오스트리아 공휴일"
+      "scope": "오스트리아 공휴일",
+      "sourceURL": "https://www.bmeia.gv.at/fileadmin/user_upload/Vertretungen/Kopenhagen/Aktuelles/Feiertage_2025-2027.pdf",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "JP-all-2027-01-01-3",
@@ -1273,7 +1661,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "일본 국경일·휴일"
+      "scope": "일본 국경일·휴일",
+      "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "GE-all-2027-01-01-major",
@@ -1286,7 +1678,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "노동법상 공휴일"
+      "scope": "노동법상 공휴일",
+      "sourceURL": "https://matsne.gov.ge/en/document/view/1155567",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "CN-all-2027-01-01-major",
@@ -1299,7 +1695,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 법정 공휴일 1일. 2027년 연결 연휴·대체근무 배치는 미확인입니다."
+      "scope": "전국 법정 공휴일 1일. 2027년 연결 연휴·대체근무 배치는 미확인입니다.",
+      "sourceURL": "https://www.gov.cn/zhengce/content/202411/content_6986380.htm?ddtab=true",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "CZ-all-2027-01-01-major",
@@ -1312,7 +1712,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "법정 공휴일"
+      "scope": "법정 공휴일",
+      "sourceURL": "https://e-sbirka.gov.cz/eli/cz/sb/2000/245/2026-05-13",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "KG-all-2027-01-01-major",
@@ -1325,7 +1729,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "노동법상 비근무일: 새해 1/1~6, 정교회 성탄 1/7"
+      "scope": "노동법상 비근무일: 새해 1/1~6, 정교회 성탄 1/7",
+      "sourceURL": "https://mlsp.gov.kg/ru/2025/01/27/sadyr-zhaparov-podpisal-novyj-trudovoj-kodeks/",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "TM-all-2027-01-01-major",
@@ -1338,7 +1746,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "노동법 81조 전국 비근무 공휴일"
+      "scope": "노동법 81조 전국 비근무 공휴일",
+      "sourceURL": "https://mejlis.gov.tm/single-code/12?lang=tm",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "PT-all-2027-01-01-major",
@@ -1351,7 +1763,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "노동법상 의무 공휴일"
+      "scope": "노동법상 의무 공휴일",
+      "sourceURL": "https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2009-34546475-46746675",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "PL-all-2027-01-01-major",
@@ -1364,7 +1780,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "법정 비근무일"
+      "scope": "법정 비근무일",
+      "sourceURL": "https://www.gov.pl/web/rodzina/ustalanie-i-rozliczanie-czasu-pracy",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "FR-all-2027-01-01-major",
@@ -1377,7 +1797,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "전국 법정 공휴일. 알자스·모젤 추가 휴일은 제외합니다."
+      "scope": "전국 법정 공휴일. 알자스·모젤 추가 휴일은 제외합니다.",
+      "sourceURL": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2405",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "US-HI-2027-01-01-major",
@@ -1390,7 +1814,11 @@
       "type": "government_or_agency_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "하와이 주정부 기관 직원용. 연방·은행 일정은 다를 수 있습니다."
+      "scope": "하와이 주정부 기관 직원용. 연방·은행 일정은 다를 수 있습니다.",
+      "sourceURL": "https://dhrd.hawaii.gov/wp-content/uploads/2026/06/State-Holidays-2026-2027.pdf",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "HI"
     },
     {
       "id": "KR-all-2027-01-01-major",
@@ -1403,7 +1831,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "공휴일법상 공휴일. 사업장별 실제 근무 여부는 별도입니다."
+      "scope": "공휴일법상 공휴일. 사업장별 실제 근무 여부는 별도입니다.",
+      "sourceURL": "https://www.law.go.kr/lsLinkCommonInfo.do?chrClsCd=010202&lsJoLnkSeq=1033065007",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "HU-all-2027-01-01-major",
@@ -1416,7 +1848,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "노동법상 고정 공휴일. 별도 근무일 이동 일정은 포함하지 않습니다."
+      "scope": "노동법상 고정 공휴일. 별도 근무일 이동 일정은 포함하지 않습니다.",
+      "sourceURL": "https://njt.jog.gov.hu/jogszabaly/2012-1-00-00.14",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "HK-all-2027-01-01-7",
@@ -1429,7 +1865,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "홍콩 공중휴일. 고용법상 법정휴일 목록과 다를 수 있습니다."
+      "scope": "홍콩 공중휴일. 고용법상 법정휴일 목록과 다를 수 있습니다.",
+      "sourceURL": "https://www.1823.gov.hk/common/ical/en.ics",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "GB-scotland-2027-01-04-15",
@@ -1442,7 +1882,11 @@
       "type": "bank_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "스코틀랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다."
+      "scope": "스코틀랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.",
+      "sourceURL": "https://www.gov.uk/bank-holidays.json",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "regional",
+      "region": "scotland"
     },
     {
       "id": "GE-all-2027-01-07-major",
@@ -1455,7 +1899,11 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "노동법상 공휴일"
+      "scope": "노동법상 공휴일",
+      "sourceURL": "https://matsne.gov.ge/en/document/view/1155567",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
     },
     {
       "id": "JP-all-2027-01-11-4",
@@ -1468,7 +1916,555 @@
       "type": "public_holiday",
       "isRepresentative": true,
       "conditional": false,
-      "scope": "일본 국경일·휴일"
+      "scope": "일본 국경일·휴일",
+      "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/syukujitsu.csv",
+      "verifiedAt": "2026-10-19",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "JP-2026-04-29-0",
+      "country": "JP",
+      "countryLabel": "일본",
+      "name": "쇼와의 날",
+      "start": "2026-04-29",
+      "end": "2026-04-29",
+      "dateLabel_ko": "2026-04-29",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/gaiyou.html",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "JP-2026-05-03-1",
+      "country": "JP",
+      "countryLabel": "일본",
+      "name": "헌법기념일",
+      "start": "2026-05-03",
+      "end": "2026-05-03",
+      "dateLabel_ko": "2026-05-03",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/gaiyou.html",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "JP-2026-05-04-2",
+      "country": "JP",
+      "countryLabel": "일본",
+      "name": "녹색의 날",
+      "start": "2026-05-04",
+      "end": "2026-05-04",
+      "dateLabel_ko": "2026-05-04",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/gaiyou.html",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "JP-2026-05-05-3",
+      "country": "JP",
+      "countryLabel": "일본",
+      "name": "어린이날",
+      "start": "2026-05-05",
+      "end": "2026-05-05",
+      "dateLabel_ko": "2026-05-05",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/gaiyou.html",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "JP-2026-05-06-4",
+      "country": "JP",
+      "countryLabel": "일본",
+      "name": "대체휴일",
+      "start": "2026-05-06",
+      "end": "2026-05-06",
+      "dateLabel_ko": "2026-05-06",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/gaiyou.html",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "JP-2026-07-20-5",
+      "country": "JP",
+      "countryLabel": "일본",
+      "name": "바다의 날",
+      "start": "2026-07-20",
+      "end": "2026-07-20",
+      "dateLabel_ko": "2026-07-20",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/gaiyou.html",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "JP-2026-08-11-7",
+      "country": "JP",
+      "countryLabel": "일본",
+      "name": "산의 날",
+      "start": "2026-08-11",
+      "end": "2026-08-11",
+      "dateLabel_ko": "2026-08-11",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/gaiyou.html",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "JP-2026-09-21-8",
+      "country": "JP",
+      "countryLabel": "일본",
+      "name": "경로의 날",
+      "start": "2026-09-21",
+      "end": "2026-09-21",
+      "dateLabel_ko": "2026-09-21",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/gaiyou.html",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "JP-2026-09-22-9",
+      "country": "JP",
+      "countryLabel": "일본",
+      "name": "공휴일 사이 휴일",
+      "start": "2026-09-22",
+      "end": "2026-09-22",
+      "dateLabel_ko": "2026-09-22",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/gaiyou.html",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "JP-2026-09-23-10",
+      "country": "JP",
+      "countryLabel": "일본",
+      "name": "추분의 날",
+      "start": "2026-09-23",
+      "end": "2026-09-23",
+      "dateLabel_ko": "2026-09-23",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/gaiyou.html",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "JP-2026-10-12-11",
+      "country": "JP",
+      "countryLabel": "일본",
+      "name": "스포츠의 날",
+      "start": "2026-10-12",
+      "end": "2026-10-12",
+      "dateLabel_ko": "2026-10-12",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www8.cao.go.jp/chosei/shukujitsu/gaiyou.html",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "KR-2026-05-01-12",
+      "country": "KR",
+      "countryLabel": "대한민국",
+      "name": "노동절",
+      "start": "2026-05-01",
+      "end": "2026-05-01",
+      "dateLabel_ko": "2026-05-01",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.law.go.kr/lsInfoP.do?lsiSeq=285779&viewCls=lsRvsDocInfoR",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "KR-2026-05-05-13",
+      "country": "KR",
+      "countryLabel": "대한민국",
+      "name": "어린이날",
+      "start": "2026-05-05",
+      "end": "2026-05-05",
+      "dateLabel_ko": "2026-05-05",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.kasa.go.kr/bbs/BBSMSTR_000000000010/view.do?nttId=B000000001860Pe2zT3",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "KR-2026-05-24-14",
+      "country": "KR",
+      "countryLabel": "대한민국",
+      "name": "부처님오신날",
+      "start": "2026-05-24",
+      "end": "2026-05-24",
+      "dateLabel_ko": "2026-05-24",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.kasa.go.kr/bbs/BBSMSTR_000000000010/view.do?nttId=B000000001860Pe2zT3",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "KR-2026-05-25-15",
+      "country": "KR",
+      "countryLabel": "대한민국",
+      "name": "부처님오신날 대체공휴일",
+      "start": "2026-05-25",
+      "end": "2026-05-25",
+      "dateLabel_ko": "2026-05-25",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.kasa.go.kr/bbs/BBSMSTR_000000000010/view.do?nttId=B000000001860Pe2zT3",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "KR-2026-06-03-16",
+      "country": "KR",
+      "countryLabel": "대한민국",
+      "name": "제9회 전국동시지방선거일",
+      "start": "2026-06-03",
+      "end": "2026-06-03",
+      "dateLabel_ko": "2026-06-03",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.mois.go.kr/video/bbs/type019/commonSelectBoardArticle.do?bbsId=BBSMSTR_000000000255&nttId=126006&searchCode1=A03",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "KR-2026-06-06-17",
+      "country": "KR",
+      "countryLabel": "대한민국",
+      "name": "현충일",
+      "start": "2026-06-06",
+      "end": "2026-06-06",
+      "dateLabel_ko": "2026-06-06",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.kasa.go.kr/bbs/BBSMSTR_000000000010/view.do?nttId=B000000001860Pe2zT3",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "KR-2026-07-17-18",
+      "country": "KR",
+      "countryLabel": "대한민국",
+      "name": "제헌절",
+      "start": "2026-07-17",
+      "end": "2026-07-17",
+      "dateLabel_ko": "2026-07-17",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.law.go.kr/lsInfoP.do?lsiSeq=285779&viewCls=lsRvsDocInfoR",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "KR-2026-08-15-19",
+      "country": "KR",
+      "countryLabel": "대한민국",
+      "name": "광복절",
+      "start": "2026-08-15",
+      "end": "2026-08-15",
+      "dateLabel_ko": "2026-08-15",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.kasa.go.kr/bbs/BBSMSTR_000000000010/view.do?nttId=B000000001860Pe2zT3",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "KR-2026-08-17-20",
+      "country": "KR",
+      "countryLabel": "대한민국",
+      "name": "광복절 대체공휴일",
+      "start": "2026-08-17",
+      "end": "2026-08-17",
+      "dateLabel_ko": "2026-08-17",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.kasa.go.kr/bbs/BBSMSTR_000000000010/view.do?nttId=B000000001860Pe2zT3",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "KR-2026-09-24-21",
+      "country": "KR",
+      "countryLabel": "대한민국",
+      "name": "추석 연휴",
+      "start": "2026-09-24",
+      "end": "2026-09-24",
+      "dateLabel_ko": "2026-09-24",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.kasa.go.kr/bbs/BBSMSTR_000000000010/view.do?nttId=B000000001860Pe2zT3",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "KR-2026-09-25-22",
+      "country": "KR",
+      "countryLabel": "대한민국",
+      "name": "추석",
+      "start": "2026-09-25",
+      "end": "2026-09-25",
+      "dateLabel_ko": "2026-09-25",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.kasa.go.kr/bbs/BBSMSTR_000000000010/view.do?nttId=B000000001860Pe2zT3",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "KR-2026-09-26-23",
+      "country": "KR",
+      "countryLabel": "대한민국",
+      "name": "추석 연휴",
+      "start": "2026-09-26",
+      "end": "2026-09-26",
+      "dateLabel_ko": "2026-09-26",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.kasa.go.kr/bbs/BBSMSTR_000000000010/view.do?nttId=B000000001860Pe2zT3",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "KR-2026-10-03-24",
+      "country": "KR",
+      "countryLabel": "대한민국",
+      "name": "개천절",
+      "start": "2026-10-03",
+      "end": "2026-10-03",
+      "dateLabel_ko": "2026-10-03",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.kasa.go.kr/bbs/BBSMSTR_000000000010/view.do?nttId=B000000001860Pe2zT3",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "KR-2026-10-05-25",
+      "country": "KR",
+      "countryLabel": "대한민국",
+      "name": "개천절 대체공휴일",
+      "start": "2026-10-05",
+      "end": "2026-10-05",
+      "dateLabel_ko": "2026-10-05",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.kasa.go.kr/bbs/BBSMSTR_000000000010/view.do?nttId=B000000001860Pe2zT3",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "KR-2026-10-09-26",
+      "country": "KR",
+      "countryLabel": "대한민국",
+      "name": "한글날",
+      "start": "2026-10-09",
+      "end": "2026-10-09",
+      "dateLabel_ko": "2026-10-09",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.kasa.go.kr/bbs/BBSMSTR_000000000010/view.do?nttId=B000000001860Pe2zT3",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "VN-2026-04-26-33",
+      "country": "VN",
+      "countryLabel": "베트남",
+      "name": "흥왕 기념일",
+      "start": "2026-04-26",
+      "end": "2026-04-26",
+      "dateLabel_ko": "2026-04-26",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://xaydungchinhsach.chinhphu.vn/lich-nghi-le-gio-to-hung-vuong-30-4-1-5-quoc-khanh-2-9-nam-2026-119260222115822151.htm",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "VN-2026-04-30-35",
+      "country": "VN",
+      "countryLabel": "베트남",
+      "name": "통일기념일",
+      "start": "2026-04-30",
+      "end": "2026-04-30",
+      "dateLabel_ko": "2026-04-30",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://xaydungchinhsach.chinhphu.vn/lich-nghi-le-gio-to-hung-vuong-30-4-1-5-quoc-khanh-2-9-nam-2026-119260222115822151.htm",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "VN-2026-05-01-36",
+      "country": "VN",
+      "countryLabel": "베트남",
+      "name": "노동절",
+      "start": "2026-05-01",
+      "end": "2026-05-01",
+      "dateLabel_ko": "2026-05-01",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://xaydungchinhsach.chinhphu.vn/lich-nghi-le-gio-to-hung-vuong-30-4-1-5-quoc-khanh-2-9-nam-2026-119260222115822151.htm",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "VN-2026-09-02-40",
+      "country": "VN",
+      "countryLabel": "베트남",
+      "name": "국경일",
+      "start": "2026-09-02",
+      "end": "2026-09-02",
+      "dateLabel_ko": "2026-09-02",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://xaydungchinhsach.chinhphu.vn/lich-nghi-le-gio-to-hung-vuong-30-4-1-5-quoc-khanh-2-9-nam-2026-119260222115822151.htm",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "CN-2026-09-25-0",
+      "country": "CN",
+      "countryLabel": "중국",
+      "name": "중추절",
+      "start": "2026-09-25",
+      "end": "2026-09-27",
+      "dateLabel_ko": "2026-09-25~2026-09-27",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.beijing.gov.cn/cs/gncs/zcwj/202603/t20260327_4568275.html",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
+    },
+    {
+      "id": "CN-2026-10-01-1",
+      "country": "CN",
+      "countryLabel": "중국",
+      "name": "국경절",
+      "start": "2026-10-01",
+      "end": "2026-10-07",
+      "dateLabel_ko": "2026-10-01~2026-10-07",
+      "type": "public_holiday",
+      "isRepresentative": true,
+      "conditional": false,
+      "scope": "전국 공휴일",
+      "sourceURL": "https://www.beijing.gov.cn/cs/gncs/zcwj/202603/t20260327_4568275.html",
+      "verifiedAt": "2026-10-20",
+      "calendarScope": "national",
+      "region": null
     }
   ]
 }

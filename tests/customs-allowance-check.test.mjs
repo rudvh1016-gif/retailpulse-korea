@@ -196,11 +196,12 @@ test('provider failure details are reduced to safe codes and preserve zero/null'
   assert.equal(result.lastGood.facts.goods, null);
 });
 
-test('real manifest has 12 source jurisdictions but zero access approvals/baselines', async () => {
+test('real manifest has 12 jurisdictions and only explicitly reviewed source baselines', async () => {
   const manifest = JSON.parse(await readFile(new URL('../config/customs-allowance-sources.json', import.meta.url), 'utf8'));
   validateManifest(manifest);
   assert.deepEqual([...new Set(manifest.sources.map(source => source.jurisdiction))].sort(),
     ['AU', 'CA', 'CN', 'HK', 'JP', 'MY', 'PH', 'SG', 'TH', 'TW', 'US', 'VN']);
   assert.equal(manifest.sources.length, 60);
-  assert.ok(manifest.sources.every(source => source.accessReview === null && source.baseline === null));
+  assert.deepEqual(manifest.sources.filter(source=>source.accessReview).map(source=>source.id), ['JP-01','TW-01','SG-01']);
+  assert.ok(manifest.sources.every(source => source.accessReview === null ? source.baseline === null : source.baseline && source.accessReview.minIntervalHours === 24));
 });

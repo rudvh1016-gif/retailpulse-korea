@@ -67,7 +67,10 @@ test('next-day partial records cannot establish cross-midnight comparisons', asy
     return route.fulfill({ json: { mode: 'live-flights', basis: 'OFFICIAL_DEPARTURE_SCHEDULE', flights: next ? [row] : [], truncated: next, retrievedAt: `${date}T22:50:00+09:00` } });
   });
   await page.goto('/en/airport?terminal=T2');
-  await page.getByTestId('airport-departure-overview').scrollIntoViewIfNeeded();
+  await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
+  await expect(async () => {
+    await page.getByTestId('airport-departure-overview').scrollIntoViewIfNeeded();
+  }).toPass({ timeout: 10000 });
   await expect(page.getByTestId('airport-concept-model')).toBeVisible();
   await page.getByTestId('departure-map').locator('[data-preset="NEXT3"]').click();
   await expect(page.getByTestId('map-partial')).toBeVisible();

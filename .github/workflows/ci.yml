@@ -123,7 +123,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm run e2e:install
-      - run: npx playwright test e2e/airport-focus-preview.spec.ts e2e/airport-focus-production.spec.ts e2e/month-comparison-compact.spec.ts e2e/glance-artwork-srcset.spec.ts --output airport-focus-results --workers=2
+      - run: npx playwright test e2e/airport-focus-preview.spec.ts e2e/airport-focus-production.spec.ts e2e/airport-staff-briefing.spec.ts e2e/airport-reference-comparisons.spec.ts e2e/arrival-allowance-refresh.spec.ts e2e/month-comparison-compact.spec.ts e2e/glance-artwork-srcset.spec.ts --output airport-focus-results --workers=2
       - name: Verify final integration regressions
         run: >-
           npx playwright test e2e/airport-date-navigation.spec.ts e2e/airport-default-start.spec.ts

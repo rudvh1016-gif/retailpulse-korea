@@ -34,7 +34,7 @@ test('all-building country totals reconcile; physical building switches and time
  const summary={...SUMMARY_FIXTURE,airport:{...SUMMARY_FIXTURE.airport,sides:airportSides(date,'TODAY',[],flights,[],false,false)}};
  await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));let reads=0;
  await page.route('**/api/live/flights*',r=>{reads++;return r.fulfill({json:{mode:'live-flights',basis:'OFFICIAL_DEPARTURE_SCHEDULE',flights,truncated:false,retrievedAt:base.retrievedAt}});});
- await page.goto('/ko/airport');const overview=page.getByTestId('airport-departure-overview');await overview.scrollIntoViewIfNeeded();const map=page.getByTestId('departure-map');await expect(map).toBeVisible();
+ await page.goto('/ko/airport');const overview=page.getByTestId('airport-departure-overview');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');await expect(async()=>{await overview.scrollIntoViewIfNeeded();}).toPass({timeout:10000});const map=page.getByTestId('departure-map');await expect(map).toBeVisible();
  const zones=page.getByTestId('map-zone-countries');
  const total=()=>zones.locator('[data-side][data-total]').evaluateAll(nodes=>nodes.reduce((s,n)=>s+Number(n.getAttribute('data-total')),0));
  await expect.poll(total).toBe(4);await expect(page.getByTestId('airport-departure-model-slot').locator('[data-building="all"] img')).toHaveAttribute('src',/OVERVIEW_LANDSCAPE\.svg$/);

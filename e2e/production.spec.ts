@@ -90,7 +90,9 @@ test("primary navigation, terminal filter, back and refresh work", async ({ page
   await expect(page.getByRole("heading", { name: /항공편·도시 검색/ })).toBeVisible();
   await page.goBack();
   await page.reload();
-  await expect(page.locator("h1")).toBeVisible();
+  await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+  await expect(page.locator("h1:visible")).toHaveCount(1);
+  await expect(page.locator("h1:visible")).toBeVisible();
 });
 
 /**

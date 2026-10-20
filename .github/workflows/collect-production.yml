@@ -73,3 +73,43 @@ jobs:
           RPK_CUSTOMS_NEWS_COLLECTION_ENABLED: "true"
           RPK_CUSTOMS_RSS_LINKS_ENABLED: "true"
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+
+  customs-allowance-check:
+    # Shares the existing daily event, but another collector's failure cannot skip it.
+    # No new cron, credentials, paid APIs, LLM, raw-page retention or legal auto-publication.
+    if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Check due official allowance references
+        run: npx tsx scripts/collect-customs-allowances.ts
+        env:
+          ENABLE_PRODUCTION_COLLECTOR: "true"
+          RPK_CUSTOMS_ALLOWANCE_CHECK_ENABLED: "true"
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+
+  official-calendar-refresh:
+    # Independent bounded reference refresh on the same daily event, not a new scheduler.
+    if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Refresh verified official calendar data
+        run: npx tsx scripts/refresh-official-calendars.ts
+        env:
+          ENABLE_PRODUCTION_COLLECTOR: "true"
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}

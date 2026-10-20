@@ -11,10 +11,12 @@ import {AirportFocusData,type FocusTrend} from './airport-focus-data';
 import {CountryBriefing,CountryTrends,HolidayList,OverviewHeadline,StaffCalendarContext} from './airport-focus-preview';
 import {previousMonth} from '../lib/calendar-context.mjs';
 import {useLiveSummary} from './live-summary';
+import {useOfficialCalendar} from './official-calendar-client';
 import type {Lang} from './retailpulse-data';
 const ArrivalAllowances=dynamic(()=>import('./arrival-allowances-preview'));
 const majorRoutes=[['JP','일본'],['CN','중국'],['VN','베트남'],['US','미국'],['TW','대만'],['TH','태국']] as const;
 function FocusLiveData({date,children}:{date?:string|null;children:ReactNode}){
+ const officialCalendar=useOfficialCalendar();
  const summary=useLiveSummary(date??null),asOf=summary?.todayKst??'',requested=date?.slice(0,7)||asOf.slice(0,7)||null;
  const latest=useAirportPassengerStats(requested);
  const newest=latest.reply?.current.ROUTE_COUNTRY_PASSENGERS?.month??null;
@@ -23,7 +25,7 @@ function FocusLiveData({date,children}:{date?:string|null;children:ReactNode}){
  const expected:string[]=[];if(newest){let cursor:string|null=newest;for(let i=0;i<6&&cursor;i++){expected.unshift(cursor);cursor=previousMonth(cursor);}}
  const trends:FocusTrend[]=newest?majorRoutes.map(([code,label])=>({code,label,points:expected.map(month=>({month,departures:byMonth.get(month)?.rows.find(row=>!row.aggregate&&row.label===label)?.departures??null}))})):[];
  const checkedAt=months.map(item=>item.retrievedAt).sort().at(-1)??null;
- return <AirportFocusData.Provider value={{asOf,trends,checkedAt,preview:false,failed:summary===null||latest.failed}}>{children}</AirportFocusData.Provider>;
+ return <AirportFocusData.Provider value={{...officialCalendar,asOf,trends,checkedAt,preview:false,failed:summary===null||latest.failed}}>{children}</AirportFocusData.Provider>;
 }
 function go(lang:Lang,slug:string,date?:string|null){window.location.assign(`/${lang}/${slug}${date?`?date=${encodeURIComponent(date)}`:''}`);}
 export function AirportFocusGlance(props:ComponentProps<typeof AirportGlance>){

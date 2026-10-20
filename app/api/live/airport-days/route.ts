@@ -2,6 +2,7 @@ import { getDb } from "../../../../db";
 import { CONTENT_API_ROBOTS_TAG } from "../../../../lib/crawl-policy";
 import { isValidKstDay, kstDayOf, shiftKstDay } from "../../../../lib/kst";
 import { profileOf } from "../../../../lib/airport-day-profile";
+import {storedCountryDayObservations} from "../../../../lib/airport-country-day-history";
 import { terminalDay } from "../../../../lib/airport-day-compare";
 
 export const dynamic = "force-dynamic";
@@ -17,9 +18,11 @@ export const HISTORY_DAYS = 63;
  * /api/live/flights (shared with the departure map).
  */
 export async function readAirportDays(client: Pick<D1Database, "prepare">, date: string) {
-  const rows = (await client.prepare(
+  const result = await client.prepare(
     "SELECT day, payload FROM airport_daily_composition WHERE day >= ? AND day < ? ORDER BY day DESC LIMIT 63",
-  ).bind(shiftKstDay(date, -HISTORY_DAYS), date).all<{ day: string; payload: string }>()).results ?? [];
+  ).bind(shiftKstDay(date, -HISTORY_DAYS), date).all<{ day: string; payload: string }>();
+  if(result.success===false)throw new Error("AIRPORT_DAY_HISTORY_READ_FAILED");
+  const rows=result.results??[];
   const history = [];
   let withoutProfile = 0;
   for (const row of rows) {
@@ -29,7 +32,7 @@ export async function readAirportDays(client: Pick<D1Database, "prepare">, date:
     if (!profile || profile.day !== row.day) { withoutProfile++; continue; }
     history.push({ T1: terminalDay(profile, "T1"), T2: terminalDay(profile, "T2") });
   }
-  return { rowsRead: rows.length, withoutProfile, history };
+  return { rowsRead: rows.length, withoutProfile, history, countryDays:storedCountryDayObservations(rows) };
 }
 
 export async function GET(request: Request) {

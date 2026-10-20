@@ -23,3 +23,27 @@ Evidence comes from `scripts/seo-live-audit.mjs`, run by the manual Production S
 The two content API exceptions are anchored to the exact endpoint or its query string; similarly prefixed and nested endpoints remain blocked. No page metadata, sitemap, API query, cache policy or visible UI changes. Staging still blocks the entire site.
 
 Official guidance reviewed: [JavaScript rendering](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics), [resource blocking](https://developers.google.com/search/docs/crawling-indexing/robots/intro), and [noindex response headers](https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag). Browser regression tests replay all four reported URLs with robots-aware fixture responses. This proves the rendering boundary locally, not recovery of Google's live index. After an individually approved release, inspect all four URLs in Search Console and request validation.
+
+### 2026-10-20 Preparation data rendering / AI search boundary
+
+The new preparation screen reads verified Japanese numeric allowance updates and
+source-check status from `/api/airport/allowance-status`. Blocking that request
+left a rendering crawler with the static snapshot instead of the same stored
+values shown to a visitor. Only this exact read-only endpoint (and query strings)
+is now crawlable; all success, missing-storage and failure responses carry
+`X-Robots-Tag: noindex`. Sibling/internal APIs stay blocked. The bounded read is
+at most 24 stored observations plus one keyed Japanese numeric row, with no
+provider requests or writes. Staging still disallows all crawling and returns
+an empty sitemap.
+
+This removes a rendering obstacle, not a promise of indexing or AI citations.
+The existing source links, review dates, applicable traveller conditions,
+canonical URLs and WebPage structured data remain the evidence boundary; no
+fabricated freshness, rating or special AI-ranking markup was added. Google
+states that its existing SEO fundamentals also apply to AI features and that
+no special AI schema is required. Recheck the deployed preparation page in
+Search Console; live indexing and third-party answer inclusion are unverified.
+
+Official references checked 2026-10-20:
+- https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics
+- https://developers.google.com/search/docs/appearance/ai-features
