@@ -63,7 +63,7 @@
     "public/icon-maskable-512-20261007.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
     "public/manifest-20261007.webmanifest": "6bad81a6e70af19a2c27c1a321513406823d3cea3e78aecacdbc3607647e99be",
     "app/airport-live-signals.tsx": "901141965ead1ae371bb307b9188c1a224ed3cb71c2ba69947908a4e0e0d6b5d",
-    "app/airport-view.tsx": "5dfe6713fa979ba9503bc2c895eb9cd7e3f50d51d20ec600986f4883cf29ee91",
+    "app/airport-view.tsx": "f8c82e75db21a709be9a5eba047616d9088500a3d740a503740d5e7e75339a11",
     "app/local-text.ts": "82328cd1029e929b9a79cd1d58c325469ad829a262fa2e7935b65ca595dfb8d6",
     "app/month-range-picker.tsx": "c358abc4ad12749384e82427ec9c1f16099200a0fa40f84eb469e53dbd7d9665",
     "app/live-summary.tsx": "654e7b2f0d4a81e3ae26c7869ea3e53a8b7eb6e69459eeeaf305ce60ea0e9c75",
@@ -2935,6 +2935,22 @@
         "file": "app/layout.tsx",
         "previous": "5f36f27acf8ddfdc2849f4c68198e103c958801580a126b4c727cea740408036",
         "approved": "64999616e2304074b644db660fc75890e95cc3867c313a7a71640d905fa32af4"
+      }
+    ],
+    "protectedPathCount": 67
+  },
+  "ownerRequestedStaffCalendar20261020": {
+    "recordedAt": "2026-10-20",
+    "authorizationEvidence": {
+      "ownerRequest": "해당 멘트도 각국가별 일정등 넣을 수 있는 내용을 여기에도 추가해줘야해",
+      "scope": "Optional industryContext before the existing IndustryGuide. Default absent preserves operating content; preview adds verified calendar context only.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "changes": [
+      {
+        "file": "app/airport-view.tsx",
+        "previous": "5dfe6713fa979ba9503bc2c895eb9cd7e3f50d51d20ec600986f4883cf29ee91",
+        "approved": "f8c82e75db21a709be9a5eba047616d9088500a3d740a503740d5e7e75339a11"
       }
     ],
     "protectedPathCount": 67
