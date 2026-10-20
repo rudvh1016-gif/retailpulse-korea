@@ -1,4 +1,17 @@
-import {test,expect} from '@playwright/test';
+import {test,expect,type Page,type TestInfo} from '@playwright/test';
+async function captureMobileViewports(page:Page,info:TestInfo,name:string,width:number){
+ if(width>820)return;
+ for(const [index,fraction] of [0,0.33,0.66,1].entries()){
+  await page.evaluate(value=>window.scrollTo({top:(document.documentElement.scrollHeight-innerHeight)*value,behavior:'instant'}),fraction);
+  await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+  const rect=await page.locator('.bottom-nav.glass-nav').evaluate(node=>{const r=node.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:window.visualViewport?.height??innerHeight};});
+  expect(rect.bottom).toBeLessThanOrEqual(rect.height+1);expect(rect.bottom).toBeGreaterThan(rect.height-40);
+  await page.screenshot({path:info.outputPath(`${name}-viewport-${index+1}-${width}.png`)});
+ }
+ const last=page.locator('#focus-main a:visible,#focus-main button:visible').last();
+ if(await last.count()){const rect=await last.boundingBox();const bar=await page.locator('.bottom-nav').boundingBox();if(rect&&bar)expect(rect.y+rect.height).toBeLessThanOrEqual(bar.y+1);}
+ await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));
+}
 test.use({storageState:{cookies:[],origins:[]}});
 import summary from './fixtures/airport-focus/summary.json' with {type:'json'};
 import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
@@ -7,7 +20,7 @@ import passengerStats from './fixtures/airport-focus/passenger-stats.json' with 
 /** These are captured public API responses, not simulated passenger/flight counts.
  * Snapshot date is visibly disclosed by the implementation. No Production writes. */
 for(const width of [360,390,430,1440])test(`airport focus approval rendering ${width}`,async({page},testInfo)=>{
- const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+ test.setTimeout(120000);const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
  await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});
  await page.clock.setFixedTime(new Date(summary.generatedAt));
  await page.route('**/api/live/summary*',route=>route.fulfill({json:summary}));
@@ -53,6 +66,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  expect(errors).toEqual([]);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:testInfo.outputPath(`home-${width}.png`),fullPage:true});
+ await captureMobileViewports(page,testInfo,'home',width);
  await page.screenshot({path:testInfo.outputPath(`home-first-screen-${width}.png`)});
  if(width<=820){await expect(page.locator('.bottom-nav.glass-nav')).toBeVisible();await expect(page.locator('.bottom-nav .navigation-icon')).toHaveCount(5);await expect(page.locator('.bottom-nav .glass-nav-indicator')).toBeVisible();const links=page.locator('.bottom-nav a');await links.first().focus();await page.keyboard.press('ArrowRight');await expect(links.nth(1)).toBeFocused();await page.keyboard.press('Home');await expect(links.first()).toBeFocused();await page.locator('.bottom-nav').screenshot({path:testInfo.outputPath(`bottom-navigation-${width}.png`)});}
  await page.getByRole(width<=820?'link':'button',{name:'국가별 흐름',exact:true}).click();
@@ -62,6 +76,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await expect(page.locator('.focus-trend-summary').first()).toContainText('3개월 연속 증가');
  await page.screenshot({path:testInfo.outputPath(`countries-${width}.png`),fullPage:true});
+ await captureMobileViewports(page,testInfo,'countries',width);
  await page.getByRole(width<=820?'link':'button',{name:'미리 준비',exact:true}).click();
  await expect(page.locator('#focus-holidays')).toContainText('연방공무원 기준');
  await expect(page.locator('.focus-country-filter option')).toHaveCount(61);
@@ -70,9 +85,10 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('#focus-holidays li').first()).toContainText('괌 세무국');
  await page.locator('.focus-country-filter select').selectOption('all');
  await page.screenshot({path:testInfo.outputPath(`preparation-${width}.png`),fullPage:false});
+ await captureMobileViewports(page,testInfo,'preparation',width);
  await page.getByRole(width<=820?'link':'button',{name:'더보기',exact:true}).click();
  await expect(page.getByRole('link',{name:'소비 흐름 ↗'})).toHaveAttribute('href','/ko/consumption');
- if(width===390||width===1440){
+ if([360,390,430,1440].includes(width)){
   await page.getByRole(width<=820?'link':'button',{name:'공항 현황',exact:true}).click();
   await expect(page.locator('.airport-view')).toBeVisible();
   await expect(page.getByTestId('airport-route-passengers')).toHaveCount(0);
@@ -89,6 +105,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
   await page.locator('.airport-scene-picture').first().screenshot({path:testInfo.outputPath(`airport-model-${width}.png`)});
   await page.evaluate(()=>scrollTo(0,0));
   await page.screenshot({path:testInfo.outputPath(`airport-status-${width}.png`),fullPage:true});
+ await captureMobileViewports(page,testInfo,'airport-status',width);
   for(const [name,asset] of [['T1','T1'],['T2','T2'],['탑승동','CONCOURSE']]){
    await page.getByRole('tab',{name,exact:true}).click();
    const model=page.locator('.airport-scene-picture img').first();
