@@ -13,7 +13,7 @@ const copy={
 
 export default function UpdateNotice({lang}:{lang:string}){
  const preview=usePathname()?.endsWith('/airport-focus-preview')??false;
- const previewItems=[{title:'공항 한눈에',body:'출근 후 30초, 출국객·항공편 변화와 준비할 휴일을 확인하세요. 근무 중 안내도 바로 찾을 수 있어요.',path:'공항 한눈에 → 오늘 수치·준비 일정',view:'home',link:'공항 한눈에 보기'},{title:'국가별 흐름',body:'국가별 전월 비교와 최근 6개월 추이를 한곳에서 확인하세요.',path:'국가별 흐름 → 월 비교·6개월 추이',view:'countries',link:'국가별 흐름 보기'},{title:'미리 준비',body:'주요 휴일의 날짜·요일·적용 대상과 연속휴무 조건을 확인하세요.',path:'미리 준비 → 국가별 주요 휴일',view:'prepare',link:'주요 휴일 보기'},{title:'도착국 면세 안내',body:'중국·일본 등 주요 도착지의 금액·술·담배 기준을 여행자 조건별로 확인하세요.',path:'미리 준비 → 도착국 반입 면세한도',view:'prepare&section=arrival',link:'반입 면세한도 보기'}];
+ const previewItems=[{title:'공항 한눈에',body:'출근 후 30초, 출국객·항공편 변화와 준비할 휴일을 확인하세요. 근무 중 안내도 바로 찾을 수 있어요.',path:'공항 한눈에 → 오늘 수치·준비 일정',view:'home',link:'공항 한눈에 보기'},{title:'국가별 흐름',body:'국가별 전월 비교와 최근 6개월 추이를 한곳에서 확인하세요.',path:'국가별 흐름 → 월 비교·6개월 추이',view:'countries',link:'국가별 흐름 보기'},{title:'미리 준비',body:'주요 휴일의 날짜·요일·적용 대상과 연속휴무 조건을 확인하세요.',path:'미리 준비 → 국가별 주요 휴일',view:'prepare',link:'주요 휴일 보기'},{title:'도착국 면세 안내',body:'중국·일본 등 주요 도착지의 금액·술·담배 기준을 여행자 조건별로 확인하세요.',path:'미리 준비 → 도착국 반입 면세한도',view:'prepare&section=arrival#arrival-allowances',link:'반입 면세한도 보기'}];
  const locale=lang.startsWith('zh')?'zh':lang==='en'?'en':lang==='ja'?'ja':'ko',c=copy[locale];
  const dialog=useRef<HTMLDialogElement>(null),dismiss=useRef<(week:boolean)=>void>(()=>{});
  useLayoutEffect(()=>{

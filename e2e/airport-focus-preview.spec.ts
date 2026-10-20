@@ -219,3 +219,37 @@ for(const width of [390,1440])test(`arrival allowances preserve traveller condit
  await page.screenshot({path:testInfo.outputPath(`arrival-philippines-viewport-${width}.png`)});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+1);
 });
+
+// Real document anchors must survive first-load hydration and browser scroll restoration.
+for(const attempt of [1,2,3])test(`notice destinations cold load 390 attempt ${attempt}`,async({browser})=>{
+ test.setTimeout(120000);
+ const destinations=[['공항 한눈에 보기 →','.focus-report'],['국가별 흐름 보기 →','.focus-country-brief'],['주요 휴일 보기 →','.focus-country-filter'],['반입 면세한도 보기 →','#arrival-allowances']] as const;
+ for(const [name,target] of destinations){
+  const context=await browser.newContext({viewport:{width:390,height:1000}});
+  const page=await context.newPage();
+  await page.clock.setFixedTime(new Date(summary.generatedAt));
+  await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));
+  await page.route('**/api/live/flights*',r=>r.fulfill({json:flights}));
+  await page.route('**/api/live/airport-months*',r=>r.fulfill({json:months}));
+  await page.route('**/api/live/airport-passenger-stats*',r=>r.fulfill({json:passengerStats}));
+  await page.route(/google-analytics\.com|googletagmanager\.com|analytics\.google\.com/,r=>r.abort());
+  await page.goto('/ko/airport-focus-preview',{waitUntil:'domcontentloaded'});
+  const dialog=page.getByRole('dialog',{name:'새로운 정보가 추가되었어요'});
+  await expect(dialog).toBeVisible();
+  if(target==='#arrival-allowances')await expect(dialog.getByRole('link',{name})).toHaveAttribute('href',/section=arrival#arrival-allowances$/);
+  await dialog.getByRole('link',{name}).click();
+  await expect(page.locator(target)).toBeInViewport();
+  if(target==='#arrival-allowances'){
+   await expect(page).toHaveURL(/#arrival-allowances$/);
+   await page.evaluate(()=>document.fonts.ready);
+   const bounds=await page.locator(target).boundingBox();
+   expect(bounds!.y).toBeGreaterThanOrEqual(-2);expect(bounds!.y).toBeLessThan(100);
+   await page.reload({waitUntil:'domcontentloaded'});
+   await expect(page.locator(target)).toBeInViewport();
+   await page.goBack({waitUntil:'domcontentloaded'});
+   await page.goForward({waitUntil:'domcontentloaded'});
+   await expect(page.locator(target)).toBeInViewport();
+  }
+  await context.close();
+ }
+});
