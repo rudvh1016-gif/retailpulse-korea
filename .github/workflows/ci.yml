@@ -27,6 +27,7 @@ jobs:
       # Match the Playwright server so built metadata/icons remain same-origin.
       # This verification build is never used for a production deployment.
       NEXT_PUBLIC_SITE_ORIGIN: http://127.0.0.1:4173
+      PLAYWRIGHT_PRODUCTION_SERVER: "true"
       RPK_DEPLOYMENT_STAGE: staging
       NEXT_PUBLIC_ENABLE_BETA_SIGNUP: "false"
     steps:
@@ -108,6 +109,7 @@ jobs:
       contents: read
     env:
       NEXT_PUBLIC_SITE_ORIGIN: http://127.0.0.1:4173
+      PLAYWRIGHT_PRODUCTION_SERVER: "true"
       RPK_DEPLOYMENT_STAGE: staging
       NEXT_PUBLIC_ENABLE_BETA_SIGNUP: "false"
       PLAYWRIGHT_BROWSERS_PATH: .playwright-browsers
@@ -119,6 +121,7 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run typecheck
+      - run: npm run build
       - run: npm run e2e:install
       - run: npx playwright test e2e/airport-focus-preview.spec.ts e2e/airport-focus-production.spec.ts e2e/month-comparison-compact.spec.ts e2e/glance-artwork-srcset.spec.ts --output airport-focus-results --workers=2
       - name: Verify final integration regressions
@@ -147,6 +150,7 @@ jobs:
       contents: read
     env:
       NEXT_PUBLIC_ENABLE_BETA_SIGNUP: "false"
+      PLAYWRIGHT_PRODUCTION_SERVER: "true"
       RPK_DEPLOYMENT_STAGE: staging
       PLAYWRIGHT_BROWSERS_PATH: .playwright-browsers
       CLOUDFLARE_CF_FETCH_ENABLED: "false"

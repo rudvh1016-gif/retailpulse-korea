@@ -256,6 +256,8 @@ for(const attempt of [1,2,3])test(`notice destinations cold load 390 attempt ${a
    await page.reload({waitUntil:'domcontentloaded'});
    await expect(page.locator(target)).toBeInViewport();await assertAnchor();
    await page.goBack({waitUntil:'domcontentloaded'});
+   await expect(page).toHaveURL(/\/ko\/airport-focus-preview$/);
+   await expect(page.locator('.focus-report')).toBeVisible();
    await page.goForward({waitUntil:'domcontentloaded'});
    await expect(page.locator(target)).toBeInViewport();await assertAnchor();
   }
