@@ -126,7 +126,7 @@ for(const width of [390,1440])test(`approved notice has only bottom close ${widt
  await expect(page.locator('.focus-country-filter')).toBeVisible();
  await page.evaluate(()=>sessionStorage.clear());await page.reload({waitUntil:'domcontentloaded'});
  await dialog.getByRole('link',{name:'공항 한눈에 보기 →'}).click();
- await expect(page.getByTestId('glance-key-passengers')).toBeVisible();
+ await expect(page.locator('.focus-report-lines')).toContainText('단순합계 112,403명');
  await page.evaluate(()=>sessionStorage.clear());await page.reload({waitUntil:'domcontentloaded'});
  await expect(dialog).toBeVisible();
  await dialog.getByRole('link',{name:'반입 면세한도 보기 →'}).click();
