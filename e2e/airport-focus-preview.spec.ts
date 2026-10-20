@@ -39,14 +39,15 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:testInfo.outputPath(`home-${width}.png`),fullPage:true});
  await page.screenshot({path:testInfo.outputPath(`home-first-screen-${width}.png`)});
- await page.getByRole('button',{name:'국가별 흐름',exact:true}).click();
+ if(width<=820){await expect(page.locator('.bottom-nav.glass-nav')).toBeVisible();await expect(page.locator('.bottom-nav .navigation-icon')).toHaveCount(5);await expect(page.locator('.bottom-nav .glass-nav-indicator')).toBeVisible();await page.locator('.bottom-nav').screenshot({path:testInfo.outputPath(`bottom-navigation-${width}.png`)});}
+ await page.getByRole(width<=820?'link':'button',{name:'국가별 흐름',exact:true}).click();
  await expect(page.locator('#focus-country-trends article')).toHaveCount(6);
  await expect(page.locator('.focus-country-brief')).toContainText('일본');
  await expect(page.getByTestId('airport-route-passengers')).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await expect(page.locator('.focus-trend-summary').first()).toContainText('3개월 연속 증가');
  await page.screenshot({path:testInfo.outputPath(`countries-${width}.png`),fullPage:true});
- await page.getByRole('button',{name:'미리 준비',exact:true}).click();
+ await page.getByRole(width<=820?'link':'button',{name:'미리 준비',exact:true}).click();
  await expect(page.locator('#focus-holidays')).toContainText('연방공무원 기준');
  await expect(page.locator('.focus-country-filter option')).toHaveCount(61);
  await page.locator('.focus-country-filter select').selectOption('괌');
@@ -54,10 +55,10 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('#focus-holidays li').first()).toContainText('괌 세무국');
  await page.locator('.focus-country-filter select').selectOption('all');
  await page.screenshot({path:testInfo.outputPath(`preparation-${width}.png`),fullPage:false});
- await page.getByRole('button',{name:'더보기',exact:true}).click();
+ await page.getByRole(width<=820?'link':'button',{name:'더보기',exact:true}).click();
  await expect(page.getByRole('link',{name:'소비 흐름 ↗'})).toHaveAttribute('href','/ko/consumption');
  if(width===390||width===1440){
-  await page.getByRole('button',{name:'공항 현황',exact:true}).click();
+  await page.getByRole(width<=820?'link':'button',{name:'공항 현황',exact:true}).click();
   await expect(page.locator('.airport-view')).toBeVisible();
   await expect(page.getByTestId('airport-route-passengers')).toHaveCount(0);
   await expect(page.locator('.focus-country-jump')).toBeVisible();
