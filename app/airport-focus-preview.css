@@ -35,7 +35,7 @@
 .focus-trend-value{font-weight:600}.focus-calendar li strong{font-weight:600}
 
 
-.update-notice[data-airport-focus=true]{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.82);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 14px 40px rgba(23,43,64,.1);backdrop-filter:blur(28px) saturate(110%);-webkit-backdrop-filter:blur(28px) saturate(110%)}
+.update-notice[data-airport-focus=true]{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.82);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 14px 40px rgba(23,43,64,.1);-webkit-backdrop-filter:blur(28px) saturate(110%);backdrop-filter:blur(28px) saturate(110%)}
 .update-notice[data-airport-focus=true] :is(h2,h3){font-weight:700}
 .update-notice[data-airport-focus=true] p{font-weight:400;line-height:1.75}
 .update-notice[data-airport-focus=true] .update-notice-items section{border-color:#e7ecf1}
