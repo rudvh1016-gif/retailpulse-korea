@@ -139,7 +139,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
 
 for(const width of [390,1440])test(`approved notice has only bottom close ${width}`,async({page},testInfo)=>{
  test.setTimeout(60000);
- await page.setViewportSize({width,height:1000});await page.clock.setFixedTime(new Date(summary.generatedAt));
+ await page.setViewportSize({width,height:width===390?844:1000});await page.clock.setFixedTime(new Date(summary.generatedAt));
  await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));
  await page.route('**/api/live/flights*',r=>r.fulfill({json:flights}));
  await page.route('**/api/live/airport-months*',r=>r.fulfill({json:months}));
@@ -151,8 +151,8 @@ for(const width of [390,1440])test(`approved notice has only bottom close ${widt
  await expect(dialog).toHaveCSS('backdrop-filter','blur(28px) saturate(1.1)');
  const noticeContrast=await dialog.locator('p').first().evaluate(node=>{const rgb=getComputedStyle(node).color.match(/[\d.]+/g)!.slice(0,3).map(Number);const luminance=(v:number[])=>v.map(n=>{const x=n/255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4;}).reduce((sum,n,i)=>sum+n*[.2126,.7152,.0722][i],0);return (luminance([255*.72,255*.72,255*.72])+.05)/(luminance(rgb)+.05);});
  expect(noticeContrast).toBeGreaterThanOrEqual(4.5);
- await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeVisible();
- await expect(dialog.getByRole('button',{name:'일주일 동안 안 보기',exact:true})).toBeVisible();
+ await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeInViewport({ratio:1});
+ await expect(dialog.getByRole('button',{name:'일주일 동안 안 보기',exact:true})).toBeInViewport({ratio:1});
  await expect(dialog.locator('section')).toHaveCount(4);
  await page.screenshot({path:testInfo.outputPath(`notice-${width}.png`)});
  await dialog.getByRole('link',{name:'국가별 흐름 보기 →'}).click();

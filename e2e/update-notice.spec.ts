@@ -13,6 +13,7 @@ test.beforeEach(async({page})=>{
 for(const [width,height]of [[1440,1000],[360,568],[390,844],[430,700],[390,500]])test(`first entry is immediate, compact and keyboard safe ${width}x${height}`,async({page},testInfo)=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.setViewportSize({width,height});await page.goto('/ko');
  const dialog=page.getByRole('dialog',{name:'새로운 정보가 추가되었어요'});await expect(dialog).toBeVisible();
+ await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeInViewport({ratio:1});
  await expect(dialog.locator('#update-notice-title')).toBeFocused();await expect(dialog.locator('.update-notice-x')).toHaveCount(0);await expect(dialog.locator('section')).toHaveCount(4);
  await expect(dialog.locator('img,svg,canvas')).toHaveCount(0);await expect(dialog.getByRole('link')).toHaveCount(4);
  expect(await page.evaluate(()=>getComputedStyle(document.documentElement).overflow)).toBe('hidden');

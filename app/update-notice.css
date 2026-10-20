@@ -4,3 +4,8 @@
 .update-notice .update-notice-note{font-size:12px;line-height:1.6;margin:9px 0 0;color:#687480}
 
 .update-notice #update-notice-title:focus{outline:none}
+
+/* Keep the existing bottom controls reachable on short phones, without a top X. */
+.update-notice[open]{display:flex;flex-direction:column;overflow:hidden}
+.update-notice-top,.update-notice>h2,.update-notice footer{flex:none}
+.update-notice-items{min-height:0;overflow-y:auto;overscroll-behavior:contain;flex:1 1 auto}
