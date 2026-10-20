@@ -10,6 +10,9 @@ import { tofuCharacters } from "../e2e/font-glyphs";
  * six viewports. Screenshots are kept as artifacts for the report.
  */
 const WHITE = "rgb(255, 255, 255)";
+// Exact owner-approved airport canvas from the first release. Ordinary page,
+// card and header surfaces remain white; this is not a general image exemption.
+const FOCUS_CANVAS = "linear-gradient(145deg, rgb(250, 251, 253) 0%, rgb(240, 243, 246) 52%, rgb(248, 250, 251) 100%)";
 const locales = ["ko", "en", "zh", "ja"] as const;
 const viewports = [390, 430, 768, 1280, 1440, 1920] as const;
 const routes = [
@@ -29,7 +32,7 @@ const registeredCountryCodes = [...new Set(Object.values(AIRLINE_REGISTRY)
   .map((entry) => entry.country))].sort();
 
 const paintedBackground = async (page: import("@playwright/test").Page, selector: string) => page.evaluate((sel) => {
-  const out: string[] = [];
+  const out: { colour: string; focusCanvas: boolean }[] = [];
   for (const start of Array.from(document.querySelectorAll(sel)).slice(0, 4)) {
     // The airport dusk poster band (owner decision 2026-10-02, PR #246) is a figure, not a page surface.
     if (start.closest(".airport-hero")) continue;
@@ -37,7 +40,13 @@ const paintedBackground = async (page: import("@playwright/test").Page, selector
     while (node) {
       const style = getComputedStyle(node);
       const bg = style.backgroundColor;
-      if (!(bg === "rgba(0, 0, 0, 0)" || bg === "transparent") || style.backgroundImage !== "none") { out.push(style.backgroundImage !== "none" ? `image` : bg); break; }
+      if (!(bg === "rgba(0, 0, 0, 0)" || bg === "transparent") || style.backgroundImage !== "none") {
+        out.push({
+          colour: style.backgroundImage !== "none" ? `image:${style.backgroundImage}` : bg,
+          focusCanvas: node.matches(".airport-focus-shell.airport-focus-operating"),
+        });
+        break;
+      }
       node = node.parentElement;
     }
   }
@@ -94,8 +103,10 @@ for (const locale of locales) {
       for (const route of routes) {
         await openRoute(page, `/${locale}${route}`);
         for (const selector of surfaces) {
-          for (const colour of await paintedBackground(page, selector)) {
-            expect(colour, `${locale}${route} @${width}px ${selector}`).toBe(WHITE);
+          for (const { colour, focusCanvas } of await paintedBackground(page, selector)) {
+            expect(colour, `${locale}${route} @${width}px ${selector}`).toBe(
+              focusCanvas && colour.startsWith("image:") ? `image:${FOCUS_CANVAS}` : WHITE,
+            );
           }
         }
         // Pixel samples at safe empty positions: page gutter (left edge, mid
@@ -208,7 +219,7 @@ for (const width of viewports) {
     } else {
       const bottomNav = page.locator("nav.bottom-nav");
       await expect(bottomNav).toBeVisible();
-      await expect(bottomNav.locator("a")).toHaveCount(6);
+      await expect(bottomNav.locator("a")).toHaveCount(5);
       await expect(bottomNav.getByRole("link", { name: /내\s*브리핑/ })).toHaveCount(0);
       await bottomNav.getByRole("link", { name: /더보기/ }).click();
       await expect(page).toHaveURL(/\/ko\/more$/);

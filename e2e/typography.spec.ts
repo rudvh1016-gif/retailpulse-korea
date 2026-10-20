@@ -851,9 +851,10 @@ test("the area headline fits one line on a phone, at the owner's own numbers", a
  * reader who needs 241 KB of it. Exactly one must be preloaded per locale, and
  * it must be the one `--font-ui` actually resolves to.
  *
- * The home preloads none (owner decision, 2026-10-13): there the preload
- * competed with the scripts that hydrate the page. The pages that still
- * preload are checked instead.
+ * The October 20 Korean text-led home experiment preloads its same shell
+ * face after attribution implicated a late font-swap shift. Other home
+ * locales keep the October 13 no-preload policy. Matched performance CI,
+ * not the existence of this hint, decides whether the experiment helps.
  */
 test("each locale preloads exactly one shell font, and it is its own", async ({ page }) => {
   const EXPECTED: Record<string, string> = {
@@ -865,7 +866,13 @@ test("each locale preloads exactly one shell font, and it is its own", async ({ 
 
   for (const [locale, expected] of Object.entries(EXPECTED)) {
     const home = await (await page.goto(`/${locale}`))!.text();
-    expect(home, `/${locale} does not preload a font`).not.toMatch(/<link[^>]*rel="preload"[^>]*as="font"/);
+    const homeFonts = [...home.matchAll(/<link[^>]*rel="preload"[^>]*as="font"[^>]*>/g)].map(match => match[0]);
+    expect(homeFonts.length, `/${locale} preserves its scoped home font policy`).toBe(locale === 'ko' ? 1 : 0);
+    if (locale === 'ko') {
+      expect(homeFonts[0]).toContain(`href="${expected}"`);
+      expect(homeFonts[0]).toContain('crossorigin');
+      expect(homeFonts[0]).toContain('type="font/woff2"');
+    }
     const response = await page.goto(`/${locale}/travel-records`);
     const html = await response!.text();
     const fontPreloads = [...html.matchAll(/<link[^>]*rel="preload"[^>]*as="font"[^>]*>/g)].map((match) => match[0]);
