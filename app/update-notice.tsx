@@ -44,7 +44,7 @@ export default function UpdateNotice({lang}:{lang:string}){
   reconcile(); // First hydration: no display-delay timer, network call or analytics event.
   return()=>{window.clearTimeout(timer);window.removeEventListener('storage',storage);window.removeEventListener('focus',focus);close();dismiss.current=()=>{};};
  },[]);
- return <dialog ref={dialog} className="update-notice" aria-labelledby="update-notice-title" aria-modal="true" onCancel={event=>{event.preventDefault();dismiss.current(false);}} onKeyDown={event=>{
+ return <dialog ref={dialog} className="update-notice" data-airport-focus={preview?'true':undefined} aria-labelledby="update-notice-title" aria-modal="true" onCancel={event=>{event.preventDefault();dismiss.current(false);}} onKeyDown={event=>{
   if(event.key!=='Tab')return;
   const items=event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled),a[href]'),first=items[0],last=items[items.length-1];
   if(event.shiftKey&&(document.activeElement===first||document.activeElement?.id==='update-notice-title')){event.preventDefault();last?.focus();}

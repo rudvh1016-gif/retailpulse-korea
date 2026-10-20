@@ -28,6 +28,9 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('.focus-report')).toContainText('출근 후 30초 확인');
  await expect(page.locator('.focus-staff-links a')).toHaveAttribute('href','/ko/airport-news');
  await expect(page.locator('.focus-report')).toContainText('552.9편');
+ await expect(page.locator('.focus-preparation-brief')).toContainText('10/26–11/1');
+ await expect(page.locator('.focus-preparation-brief')).toContainText('11/1–11/30');
+ expect(await page.getByTestId('glance-key-growth').evaluate(node=>Boolean(node.compareDocumentPosition(document.querySelector('#focus-holidays')!)&Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
  expect(await page.locator('#focus-holidays li').count()).toBeGreaterThan(0);
  expect(await page.locator('#focus-holidays li').count()).toBeLessThanOrEqual(3);
  await expect(page.locator('#focus-country-trends article')).toHaveCount(3);
@@ -39,7 +42,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:testInfo.outputPath(`home-${width}.png`),fullPage:true});
  await page.screenshot({path:testInfo.outputPath(`home-first-screen-${width}.png`)});
- if(width<=820){await expect(page.locator('.bottom-nav.glass-nav')).toBeVisible();await expect(page.locator('.bottom-nav .navigation-icon')).toHaveCount(5);await expect(page.locator('.bottom-nav .glass-nav-indicator')).toBeVisible();await page.locator('.bottom-nav').screenshot({path:testInfo.outputPath(`bottom-navigation-${width}.png`)});}
+ if(width<=820){await expect(page.locator('.bottom-nav.glass-nav')).toBeVisible();await expect(page.locator('.bottom-nav .navigation-icon')).toHaveCount(5);await expect(page.locator('.bottom-nav .glass-nav-indicator')).toBeVisible();const links=page.locator('.bottom-nav a');await links.first().focus();await page.keyboard.press('ArrowRight');await expect(links.nth(1)).toBeFocused();await page.keyboard.press('Home');await expect(links.first()).toBeFocused();await page.locator('.bottom-nav').screenshot({path:testInfo.outputPath(`bottom-navigation-${width}.png`)});}
  await page.getByRole(width<=820?'link':'button',{name:'국가별 흐름',exact:true}).click();
  await expect(page.locator('#focus-country-trends article')).toHaveCount(6);
  await expect(page.locator('.focus-country-brief')).toContainText('일본');
