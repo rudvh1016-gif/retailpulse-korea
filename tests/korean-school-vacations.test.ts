@@ -42,8 +42,9 @@ test('missing, invalid, expired, superseded and national-scope school evidence s
 });
 test('visible context labels the school example, dates, scope, source and non-causal boundary',()=>{
  const html=renderToStaticMarkup(createElement(KoreanVacationContext,query));
- for(const value of ['한국 학교 방학 일정 예시','경기 화성 내리숲초등학교','2026-07-28','2026-08-19','직전 월','해당 학교에만 적용',KOREAN_VACATION_CAUTION])assert.ok(html.includes(value),value);
+ for(const value of ['초등학교 방학기간 참고','개별 학교 예시','2026-07-28','2026-08-19','직전 월','학교별 일정 상이',KOREAN_VACATION_CAUTION])assert.ok(html.includes(value),value);
  assert.ok(html.includes(schools[0].sourceURL));
+ assert.ok(!html.includes('내리숲초등학교'));
  assert.equal(renderToStaticMarkup(createElement(KoreanVacationContext,{day:'2026-10-20',asOf})), '');
  const winter=renderToStaticMarkup(createElement(KoreanVacationContext,{day:'2027-01-01',asOf}));
  assert.ok(winter.includes('겨울방학 2027-01-01–2027-02-28'));
