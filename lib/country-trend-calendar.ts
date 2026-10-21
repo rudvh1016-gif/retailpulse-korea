@@ -25,7 +25,7 @@ export function countryTrendCalendar(events:readonly CalendarEvent[],query:Omit<
   const existing=details.find(other=>other.eventId===item.eventId&&other.country===item.country);
   if(existing){existing.months.push(item);continue;}
   const event=sourceEvents.find(event=>event.id===item.eventId&&event.country===item.country&&event.start===item.start&&event.end===item.end&&event.sourceURL===item.sourceURL&&event.verifiedAt===item.verifiedAt)!;
-  details.push({...item,name:event.name,title:calendarEventTitle(event),scopeLabel:item.scope==='national'?'전국':`${item.region} · ${item.scope==='institutional'?'해당 학교에만 적용':'해당 지역·대상에만 적용'}`,months:[item]});
+  details.push({...item,name:event.name,title:calendarEventTitle(event),scopeLabel:item.scope==='national'?'전국':`${item.region} · ${item.scope==='institutional'?(item.kind==='school_break'?'해당 학교에만 적용':'해당 기관·대상에만 적용'):'해당 지역·대상에만 적용'}`,months:[item]});
  }
  const summary:TrendCalendarItem[]=[];
  for(const role of ['route','origin'] as const){

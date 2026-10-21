@@ -5,7 +5,7 @@ test('brief calendar preserves every approved date, scope and verification witho
  const full=JSON.parse(readFileSync('data/airport-focus-preview/holidays.json','utf8'));
  const brief=JSON.parse(readFileSync('data/airport-focus-preview/holidays-summary.json','utf8'));
  const keys=['id','country','countryLabel','name','start','end','dateLabel_ko','type','isRepresentative','conditional','scope','sourceURL','meaning_ko','meaningSourceURL','verifiedAt','reviewValidUntil','calendarScope','region'];
- const expected=full.events.map(event=>({...event,meaning_ko:event.description_ko?.split(/[.!?]/)[0].slice(0,90),calendarScope:event.region?'regional':event.country==='US'?'institutional':'national',verifiedAt:event.status==='OFFICIAL_DATE_CONFIRMED'?event.checkedAt?.slice(0,10):undefined})).map(event=>Object.fromEntries(keys.filter(key=>Object.hasOwn(event,key)&&event[key]!==undefined).map(key=>[key,event[key]])));
+ const expected=full.events.map(event=>({...event,meaning_ko:event.description_ko?.split(/[.!?]/)[0].slice(0,90),calendarScope:event.calendarScope??(event.region?'regional':event.country==='US'?'institutional':'national'),verifiedAt:event.status==='OFFICIAL_DATE_CONFIRMED'?event.checkedAt?.slice(0,10):undefined})).map(event=>Object.fromEntries(keys.filter(key=>Object.hasOwn(event,key)&&event[key]!==undefined).map(key=>[key,event[key]])));
  assert.deepEqual(brief.events.slice(0,full.events.length),expected);
  assert.equal(brief.asOfKST,full.asOfKST);
  for(const event of brief.events){assert.ok(!Object.hasOwn(event,'description_ko'));assert.ok(!event.meaning_ko||event.meaning_ko.length<=90);}

@@ -464,5 +464,26 @@
       "evidence_quote": "electronic cigarette devices, and electronic cigarette liquids, these items are classified as prohibited imports",
       "evidence_summary_ko": "전자담배 기기·액상 수입금지, 2014-12-12 상무부 고시를 근거로 명시."
     }
+  ],
+  "supplementalReviews": [
+    {
+      "checked_on": "2026-10-21",
+      "source_id": "VN-5",
+      "url": "https://congbaocdn.chinhphu.vn/CongBaoCP/CongBao/2025/7/45364/57316-1-893-894.pdf",
+      "access": "official_full_decree_text_read_pages_85_88",
+      "effective_on": "2025-07-01",
+      "finding_ko": "182/2025 제1·2조는 제24·30조 수정, 제19·31·40조 관련 정비이며 여행자 제6조 수량·연령을 수정하지 않음. 이전 첨부 접근 오류 해소. 모든 이후 개정 부재의 증명은 아님."
+    },
+    {
+      "checked_on": "2026-10-21",
+      "source_id": "VN-2026-import-ban",
+      "url": "https://xaydungchinhsach.chinhphu.vn/quy-dinh-moi-ve-danh-muc-hang-hoa-cam-xuat-khau-cam-nhap-khau-119260723173548584.htm",
+      "metadata_url": "https://congbao.chinhphu.vn/van-ban/nghi-dinh-so-292-2026-nd-cp-470149/67320.htm",
+      "published_on": "2026-07-22",
+      "effective_on": "2026-09-05",
+      "access": "official_annex_republication_and_metadata_read",
+      "finding_ko": "292/2026 부록I 수입금지 목록5번 전자담배·가열담배 확인. 2026-09-05는 추가 법령 시행일이며 기존 2025년 금지 시작을 변경하지 않음.",
+      "limitations_ko": "원본 관보 첨부 timeout 및 정부 서명 PDF 크기 제한(34,798,002바이트). 전체 원본 검증으로 표현하지 않음; 우회 없음."
+    }
   ]
 }

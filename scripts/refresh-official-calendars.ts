@@ -1,4 +1,4 @@
-/** Owner-authorized daily calendar task. Existing workflow, no new scheduler. */
+/** Owner-authorized monthly calendar task. Existing workflow, no new scheduler. */
 import {CloudflareD1RestDatabase} from '../lib/d1-rest';
 import {resolveProductionDatabaseConfig} from './production-database';
 import {refreshOfficialCalendars} from '../lib/official-calendar-runtime';

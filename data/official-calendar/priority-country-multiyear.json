@@ -1,0 +1,1918 @@
+{
+  "schemaVersion": 1,
+  "checkedOn": "2026-10-21",
+  "automaticCollectionEnabled": false,
+  "purpose": "bounded_manual_server_calendar_not_client_bundle",
+  "coverage": [
+    {
+      "country": "CN",
+      "years": [
+        2025,
+        2026
+      ],
+      "scope": "national_adjusted_rest_intervals",
+      "completeFor": "listed national general-citizen annual arrangements, not all population/regional holidays",
+      "unverified": [
+        "2027 annual adjusted rest and makeup workdays"
+      ]
+    },
+    {
+      "country": "VN",
+      "years": [
+        2025,
+        2026,
+        2027
+      ],
+      "scope": "statutory_fixed_dates_and_restricted_approved_intervals",
+      "completeFor": null,
+      "unverified": [
+        "2027 Hung Kings Gregorian date",
+        "universal private-employer rest intervals",
+        "unpublished future changes",
+        "2027 fixed-date projections from existing law are deliberately not expanded here without year-specific approval"
+      ]
+    },
+    {
+      "country": "TH",
+      "years": [
+        2025,
+        2026,
+        2027
+      ],
+      "scope": "financial_institutions_only",
+      "completeFor": "main published financial calendar, including labeled Bangkok-only 2026 special day",
+      "unverified": [
+        "private-sector universal closure",
+        "conditional southern-province and Islamic-bank extra dates",
+        "issue/effective dates of the two 2025 special additions"
+      ]
+    }
+  ],
+  "sources": {
+    "cn2025": {
+      "url": "https://www.haishu.gov.cn/art/2024/12/2/art_1229825334_4569555.html",
+      "title": "2025年各个节假日具体放假时间",
+      "publisher": "宁波市海曙区人民政府; 区气象局",
+      "publishedOn": "2024-12-02",
+      "documentIssuedOn": null,
+      "documentNumber": null,
+      "effectiveFrom": null,
+      "checkedOn": "2026-10-21",
+      "access": "official_public_page_read",
+      "notes": "Independent official republication of the complete national 2025 arrangement. Original notice date/document number not needed to establish this republication.",
+      "publicationDateMeaning": "Date displayed by the official page when read; a living page may have been updated since its original publication."
+    },
+    "cn2026": {
+      "url": "https://www.beijing.gov.cn/zhengce/zhengcefagui/202511/t20251104_4258873.html?COLLCC=4100365600",
+      "title": "国务院办公厅关于2026年部分节假日安排的通知",
+      "publisher": "北京市人民政府门户网站; national notice republication",
+      "publishedOn": "2025-11-04",
+      "documentIssuedOn": "2025-11-04",
+      "documentNumber": "国办发明电〔2025〕7号",
+      "effectiveFrom": null,
+      "checkedOn": "2026-10-21",
+      "access": "official_public_page_read",
+      "notes": "Annual 2026 arrangement; no separate commencement date stated.",
+      "publicationDateMeaning": "Date displayed by the official page when read; a living page may have been updated since its original publication."
+    },
+    "vn-labour-code": {
+      "url": "https://datafiles.chinhphu.vn/cpp/files/vbpq/2025/9/125-vbhn-vpqh.pdf",
+      "title": "Bộ luật Lao động — văn bản hợp nhất 125/VBHN-VPQH",
+      "publisher": "Cổng Thông tin điện tử Chính phủ",
+      "publishedOn": null,
+      "documentIssuedOn": null,
+      "documentNumber": "125/VBHN-VPQH",
+      "effectiveFrom": null,
+      "checkedOn": "2026-10-21",
+      "access": "official_public_page_read",
+      "notes": "Articles 111–112, PDF page 43. Base Labour Code 45/2019/QH14 enacted 2019-11-20, effective 2021-01-01. Consolidation issue/publication date not independently transcribed here. Does not itself include later Culture Day resolution.",
+      "publicationDateMeaning": "Not transcribed/verified."
+    },
+    "vn2025": {
+      "url": "https://xaydungchinhsach.chinhphu.vn/chinh-thuc-bo-ldtbxh-thong-bao-lich-nghi-tet-nguyen-dan-at-ty-va-nghi-le-nam-2025-119241203175029893.htm",
+      "title": "Bộ LĐTBXH thông báo lịch nghỉ Tết Nguyên đán Ất Tỵ và nghỉ Lễ năm 2025",
+      "publisher": "Cổng Thông tin điện tử Chính phủ",
+      "publishedOn": "2024-12-05",
+      "documentIssuedOn": "2024-12-03",
+      "documentNumber": "6150/TB-BLĐTBXH",
+      "effectiveFrom": null,
+      "checkedOn": "2026-10-21",
+      "access": "official_public_page_read",
+      "notes": null,
+      "publicationDateMeaning": "Date displayed by the official page when read; a living page may have been updated since its original publication."
+    },
+    "vn2025-hung": {
+      "url": "https://tphcm.chinhphu.vn/tphcm-to-chuc-le-gio-to-hung-vuong-nam-2025-101250407133715752.htm",
+      "title": "TPHCM tổ chức Lễ Giỗ Tổ Hùng Vương năm 2025",
+      "publisher": "Cổng Thông tin điện tử Chính phủ",
+      "publishedOn": "2025-04-07",
+      "documentIssuedOn": null,
+      "documentNumber": null,
+      "effectiveFrom": null,
+      "checkedOn": "2026-10-21",
+      "access": "official_public_page_read",
+      "notes": "Confirms 2025-04-07 equals lunar third month, day 10; used only for Gregorian holiday date, not to infer an extended break.",
+      "publicationDateMeaning": "Date displayed by the official page when read; a living page may have been updated since its original publication."
+    },
+    "vn2026-tet": {
+      "url": "https://xaydungchinhsach.chinhphu.vn/de-xuat-phuong-an-nghi-tet-am-lich-nghi-le-quoc-khanh-nam-2026-119251002130522291.htm",
+      "title": "LỊCH NGHỈ TẾT NGUYÊN ĐÁN BÍNH NGỌ 2026",
+      "publisher": "Cổng Thông tin điện tử Chính phủ",
+      "publishedOn": "2026-02-24",
+      "documentIssuedOn": "2025-10-16",
+      "documentNumber": "9441/TB-BNV",
+      "effectiveFrom": null,
+      "checkedOn": "2026-10-21",
+      "access": "official_public_page_read",
+      "notes": "Living page URL contains earlier proposal wording; read approved notice section. Government approval 9859/VPCP-KGVX dated 2025-10-13.",
+      "publicationDateMeaning": "Date displayed by the official page when read; a living page may have been updated since its original publication."
+    },
+    "vn2026-national": {
+      "url": "https://xaydungchinhsach.chinhphu.vn/thong-bao-lich-nghi-le-quoc-khanh-2026-119260729092042494.htm",
+      "title": "THÔNG BÁO: Lịch nghỉ lễ Quốc khánh 2026",
+      "publisher": "Cổng Thông tin điện tử Chính phủ",
+      "publishedOn": "2026-09-01",
+      "documentIssuedOn": "2025-10-16",
+      "documentNumber": "9441/TB-BNV",
+      "effectiveFrom": null,
+      "checkedOn": "2026-10-21",
+      "access": "official_public_page_read",
+      "notes": null,
+      "publicationDateMeaning": "Date displayed by the official page when read; a living page may have been updated since its original publication."
+    },
+    "vn2026-newyear": {
+      "url": "https://xaydungchinhsach.chinhphu.vn/cong-chuc-vien-chuc-nghi-tet-duong-lich-2026-lien-tuc-4-ngay-119251225092146478.htm",
+      "title": "Công chức, viên chức nghỉ Tết Dương lịch 2026 liên tục 4 ngày",
+      "publisher": "Cổng Thông tin điện tử Chính phủ",
+      "publishedOn": "2025-12-29",
+      "documentIssuedOn": "2025-12-25",
+      "documentNumber": "12729/VPCP-KGVX",
+      "effectiveFrom": null,
+      "checkedOn": "2026-10-21",
+      "access": "official_public_page_read",
+      "notes": "Read approved top section, not older conditional proposal text further down. Public Jan 2 workday exchanged with Jan 10.",
+      "publicationDateMeaning": "Date displayed by the official page when read; a living page may have been updated since its original publication."
+    },
+    "vn2026-hung-labour": {
+      "url": "https://xaydungchinhsach.chinhphu.vn/lich-nghi-le-gio-to-hung-vuong-30-4-1-5-quoc-khanh-2-9-nam-2026-119260222115822151.htm",
+      "title": "LỊCH NGHỈ LỄ 30/4-1/5, NGHỈ LỄ QUỐC KHÁNH 2026",
+      "publisher": "Cổng Thông tin điện tử Chính phủ",
+      "publishedOn": "2026-05-02",
+      "documentIssuedOn": null,
+      "documentNumber": "3383/BNV-CVL",
+      "effectiveFrom": null,
+      "checkedOn": "2026-10-21",
+      "access": "official_public_page_read",
+      "notes": "Confirms Hung Kings day Apr 26, conditional weekly-rest compensation Apr 27, and Apr 30–May 3 for workers with Saturday off. No joined nine-day break.",
+      "publicationDateMeaning": "Date displayed by the official page when read; a living page may have been updated since its original publication."
+    },
+    "vn-culture": {
+      "url": "https://xaydungchinhsach.chinhphu.vn/toan-van-nghi-quyet-so-28-2026-qh16-ve-phat-trien-van-hoa-viet-nam-119260508142130402.htm",
+      "title": "TOÀN VĂN: Nghị quyết số 28/2026/QH16 về phát triển văn hóa Việt Nam",
+      "publisher": "Cổng Thông tin điện tử Chính phủ",
+      "publishedOn": "2026-05-13",
+      "documentIssuedOn": "2026-04-24",
+      "documentNumber": "28/2026/QH16",
+      "effectiveFrom": "2026-07-01",
+      "checkedOn": "2026-10-21",
+      "access": "official_public_page_read",
+      "notes": "Article 2 makes November 24 annually a paid workers’ day off. No extra adjacent day inferred.",
+      "publicationDateMeaning": "Date displayed by the official page when read; a living page may have been updated since its original publication."
+    },
+    "vn2027": {
+      "url": "https://xaydungchinhsach.chinhphu.vn/de-xuat-2-phuong-an-nghi-tet-nguyen-dan-2027-tet-dinh-mui-11926080513033257.htm",
+      "title": "LỊCH NGHỈ TẾT NGUYÊN ĐÁN ĐINH MÙI, NGHỈ LỄ QUỐC KHÁNH 2027",
+      "publisher": "Cổng Thông tin điện tử Chính phủ",
+      "publishedOn": "2026-10-20",
+      "documentIssuedOn": "2026-10-09",
+      "documentNumber": "11483/TB-BNV",
+      "effectiveFrom": null,
+      "checkedOn": "2026-10-21",
+      "access": "official_public_page_read",
+      "notes": "Living page URL contains proposal wording; read approved notice. Government approval 10065/VPCP-KGVX dated 2026-10-02. Public Sat/Sun schedule, not a universal private-employer holiday interval. Latest direct read displayed 2026-10-20 09:55, superseding earlier displayed update date.",
+      "displayedPublicationTimeLocal": "09:55",
+      "publicationDateMeaning": "Date displayed by the official page when read; a living page may have been updated since its original publication."
+    },
+    "th2025": {
+      "url": "https://www.bot.or.th/content/dam/bot/content-fragments/holiday-calendar/th/bot-notification-holiday/BOT-Notification-Holiday-Calendar-2025-TH.pdf",
+      "title": "Bank of Thailand financial-institution holidays 2025",
+      "publisher": "Bank of Thailand",
+      "documentNumber": "สนส.5/2567",
+      "documentIssuedOn": "2024-08-13",
+      "publishedOn": "2024-09-05",
+      "effectiveFrom": "2024-09-06",
+      "checkedOn": "2026-10-21",
+      "access": "official_public_calendar_and_annual_pdf_read",
+      "calendarPageURL": "https://www.bot.or.th/th/financial-institutions-holiday.html",
+      "calendarDataURL": "https://www.bot.or.th/content/bot/th/financial-institutions-holiday/jcr:content/root/container/holidaycalendar_copy.model.2568.json",
+      "calendarDataSHA256": "e0536e25d9b06181a6ea5e337326a34596e1e588d00f0e4222eddd2bbba3e20c",
+      "notes": "Financial and specialized financial institutions only. Islamic Bank and five southern provinces have conditional additional holidays not assigned dates here. Current calendar includes separately labeled special additions; the base annual PDF does not prove those additions.",
+      "documentSHA256": "2af0f9ffc7b304f9e0ac9dfc3a3ca2d6208078196e77cf00b0584cbc6da08d07"
+    },
+    "th2026": {
+      "url": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "title": "Bank of Thailand financial-institution holidays 2026",
+      "publisher": "Bank of Thailand",
+      "documentNumber": "31/2568",
+      "documentIssuedOn": "2025-08-05",
+      "publishedOn": "2025-08-15",
+      "effectiveFrom": "2025-08-16",
+      "checkedOn": "2026-10-21",
+      "access": "official_public_calendar_and_annual_pdf_read",
+      "calendarPageURL": "https://www.bot.or.th/th/financial-institutions-holiday.html",
+      "calendarDataURL": "https://www.bot.or.th/content/bot/th/financial-institutions-holiday/jcr:content/root/container/holidaycalendar_copy.model.2569.json",
+      "calendarDataSHA256": "f022ebd7b06d2e60ccac06d4642aa468963adcd93d182ce9ccdca99c2192bacf",
+      "notes": "Financial and specialized financial institutions only. Islamic Bank and five southern provinces have conditional additional holidays not assigned dates here. Current calendar includes separately labeled special additions; the base annual PDF does not prove those additions.",
+      "documentSHA256": "a1b21a26303115e5fb05aecf91fb73be2377e1dfbb6160f81aeacf29c50dc5a5"
+    },
+    "th2027": {
+      "url": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "title": "Bank of Thailand financial-institution holidays 2027",
+      "publisher": "Bank of Thailand",
+      "documentNumber": "37/2569",
+      "documentIssuedOn": "2026-08-17",
+      "publishedOn": "2026-08-25",
+      "effectiveFrom": "2026-08-26",
+      "checkedOn": "2026-10-21",
+      "access": "official_public_calendar_and_annual_pdf_read",
+      "calendarPageURL": "https://www.bot.or.th/th/financial-institutions-holiday.html",
+      "calendarDataURL": "https://www.bot.or.th/content/bot/th/financial-institutions-holiday/jcr:content/root/container/holidaycalendar_copy.model.2570.json",
+      "calendarDataSHA256": "099adfaa3cdc1c2b06cae4e457dd4a5a7c9f8c525b935952d804ac86d328f6dc",
+      "notes": "Financial and specialized financial institutions only. Islamic Bank and five southern provinces have conditional additional holidays not assigned dates here. Current calendar includes separately labeled special additions; the base annual PDF does not prove those additions.",
+      "documentSHA256": "19b5c93fe48dc3611ed5c186df2725f216ac6a372cf64185c21e212e3bfac400"
+    },
+    "th2025-current": {
+      "url": "https://www.bot.or.th/content/bot/th/financial-institutions-holiday/jcr:content/root/container/holidaycalendar_copy.model.2568.json",
+      "title": "Current official 2025 financial calendar including special dates",
+      "publisher": "Bank of Thailand",
+      "publishedOn": null,
+      "documentIssuedOn": null,
+      "effectiveFrom": null,
+      "checkedOn": "2026-10-21",
+      "access": "public_web_calendar_component_response",
+      "notes": "June 2 and August 11 are explicitly listed. Separate amendment issue/effective dates not verified; do not attribute them to the 17-date base annual notice."
+    },
+    "th2026-bangkok": {
+      "url": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690116.pdf",
+      "title": "Bangkok financial-institution special holiday October 16, 2026",
+      "publisher": "Bank of Thailand",
+      "documentNumber": "26/2569",
+      "documentIssuedOn": "2026-06-04",
+      "publishedOn": "2026-06-08",
+      "effectiveFrom": "2026-06-09",
+      "checkedOn": "2026-10-21",
+      "access": "official_public_pdf_read",
+      "notes": "Bangkok only; October 12/14/15 WFH recommendation is not a holiday. Necessary-service qualification preserved.",
+      "documentSHA256": "5a00f40111ae2378536052305b0ac8fdd4492bd589b882750738663759c33cef"
+    }
+  },
+  "events": [
+    {
+      "id": "CN-2025-01-01-manual-0",
+      "country": "CN",
+      "scope": "national",
+      "name": "새해 조정 휴일",
+      "kind": "public_holiday",
+      "start": "2025-01-01",
+      "end": "2025-01-01",
+      "status": "verified",
+      "sourceURL": "https://www.haishu.gov.cn/art/2024/12/2/art_1229825334_4569555.html",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 조정 휴일 구간에는 법정일·주휴일·조정 휴무가 섞여 있습니다. 모든 날짜를 법정일 또는 모든 사업장 휴무로 뜻하지 않습니다.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "cn2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "CN-2025-01-28-manual-1",
+      "country": "CN",
+      "scope": "national",
+      "name": "춘절 조정 연휴",
+      "kind": "public_holiday",
+      "start": "2025-01-28",
+      "end": "2025-02-04",
+      "status": "verified",
+      "sourceURL": "https://www.haishu.gov.cn/art/2024/12/2/art_1229825334_4569555.html",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 조정 휴일 구간에는 법정일·주휴일·조정 휴무가 섞여 있습니다. 모든 날짜를 법정일 또는 모든 사업장 휴무로 뜻하지 않습니다. 보충근무일 2025-01-26, 2025-02-08.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "cn2025"
+      ],
+      "makeupWorkdays": [
+        "2025-01-26",
+        "2025-02-08"
+      ]
+    },
+    {
+      "id": "CN-2025-04-04-manual-2",
+      "country": "CN",
+      "scope": "national",
+      "name": "청명절 연휴",
+      "kind": "public_holiday",
+      "start": "2025-04-04",
+      "end": "2025-04-06",
+      "status": "verified",
+      "sourceURL": "https://www.haishu.gov.cn/art/2024/12/2/art_1229825334_4569555.html",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 조정 휴일 구간에는 법정일·주휴일·조정 휴무가 섞여 있습니다. 모든 날짜를 법정일 또는 모든 사업장 휴무로 뜻하지 않습니다.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "cn2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "CN-2025-05-01-manual-3",
+      "country": "CN",
+      "scope": "national",
+      "name": "노동절 조정 연휴",
+      "kind": "public_holiday",
+      "start": "2025-05-01",
+      "end": "2025-05-05",
+      "status": "verified",
+      "sourceURL": "https://www.haishu.gov.cn/art/2024/12/2/art_1229825334_4569555.html",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 조정 휴일 구간에는 법정일·주휴일·조정 휴무가 섞여 있습니다. 모든 날짜를 법정일 또는 모든 사업장 휴무로 뜻하지 않습니다. 보충근무일 2025-04-27.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "cn2025"
+      ],
+      "makeupWorkdays": [
+        "2025-04-27"
+      ]
+    },
+    {
+      "id": "CN-2025-05-31-manual-4",
+      "country": "CN",
+      "scope": "national",
+      "name": "단오절 연휴",
+      "kind": "public_holiday",
+      "start": "2025-05-31",
+      "end": "2025-06-02",
+      "status": "verified",
+      "sourceURL": "https://www.haishu.gov.cn/art/2024/12/2/art_1229825334_4569555.html",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 조정 휴일 구간에는 법정일·주휴일·조정 휴무가 섞여 있습니다. 모든 날짜를 법정일 또는 모든 사업장 휴무로 뜻하지 않습니다.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "cn2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "CN-2025-10-01-manual-5",
+      "country": "CN",
+      "scope": "national",
+      "name": "국경절·중추절 조정 연휴",
+      "kind": "public_holiday",
+      "start": "2025-10-01",
+      "end": "2025-10-08",
+      "status": "verified",
+      "sourceURL": "https://www.haishu.gov.cn/art/2024/12/2/art_1229825334_4569555.html",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 조정 휴일 구간에는 법정일·주휴일·조정 휴무가 섞여 있습니다. 모든 날짜를 법정일 또는 모든 사업장 휴무로 뜻하지 않습니다. 보충근무일 2025-09-28, 2025-10-11.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "cn2025"
+      ],
+      "makeupWorkdays": [
+        "2025-09-28",
+        "2025-10-11"
+      ]
+    },
+    {
+      "id": "CN-2026-01-01-manual-6",
+      "country": "CN",
+      "scope": "national",
+      "name": "새해 조정 휴일",
+      "kind": "public_holiday",
+      "start": "2026-01-01",
+      "end": "2026-01-03",
+      "status": "verified",
+      "sourceURL": "https://www.beijing.gov.cn/zhengce/zhengcefagui/202511/t20251104_4258873.html?COLLCC=4100365600",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 조정 휴일 구간에는 법정일·주휴일·조정 휴무가 섞여 있습니다. 모든 날짜를 법정일 또는 모든 사업장 휴무로 뜻하지 않습니다. 보충근무일 2026-01-04.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "cn2026"
+      ],
+      "makeupWorkdays": [
+        "2026-01-04"
+      ]
+    },
+    {
+      "id": "CN-2026-02-15-manual-7",
+      "country": "CN",
+      "scope": "national",
+      "name": "춘절 조정 연휴",
+      "kind": "public_holiday",
+      "start": "2026-02-15",
+      "end": "2026-02-23",
+      "status": "verified",
+      "sourceURL": "https://www.beijing.gov.cn/zhengce/zhengcefagui/202511/t20251104_4258873.html?COLLCC=4100365600",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 조정 휴일 구간에는 법정일·주휴일·조정 휴무가 섞여 있습니다. 모든 날짜를 법정일 또는 모든 사업장 휴무로 뜻하지 않습니다. 보충근무일 2026-02-14, 2026-02-28.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "cn2026"
+      ],
+      "makeupWorkdays": [
+        "2026-02-14",
+        "2026-02-28"
+      ]
+    },
+    {
+      "id": "CN-2026-04-04-manual-8",
+      "country": "CN",
+      "scope": "national",
+      "name": "청명절 연휴",
+      "kind": "public_holiday",
+      "start": "2026-04-04",
+      "end": "2026-04-06",
+      "status": "verified",
+      "sourceURL": "https://www.beijing.gov.cn/zhengce/zhengcefagui/202511/t20251104_4258873.html?COLLCC=4100365600",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 조정 휴일 구간에는 법정일·주휴일·조정 휴무가 섞여 있습니다. 모든 날짜를 법정일 또는 모든 사업장 휴무로 뜻하지 않습니다.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "cn2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "CN-2026-05-01-manual-9",
+      "country": "CN",
+      "scope": "national",
+      "name": "노동절 조정 연휴",
+      "kind": "public_holiday",
+      "start": "2026-05-01",
+      "end": "2026-05-05",
+      "status": "verified",
+      "sourceURL": "https://www.beijing.gov.cn/zhengce/zhengcefagui/202511/t20251104_4258873.html?COLLCC=4100365600",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 조정 휴일 구간에는 법정일·주휴일·조정 휴무가 섞여 있습니다. 모든 날짜를 법정일 또는 모든 사업장 휴무로 뜻하지 않습니다. 보충근무일 2026-05-09.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "cn2026"
+      ],
+      "makeupWorkdays": [
+        "2026-05-09"
+      ]
+    },
+    {
+      "id": "CN-2026-06-19-manual-10",
+      "country": "CN",
+      "scope": "national",
+      "name": "단오절 연휴",
+      "kind": "public_holiday",
+      "start": "2026-06-19",
+      "end": "2026-06-21",
+      "status": "verified",
+      "sourceURL": "https://www.beijing.gov.cn/zhengce/zhengcefagui/202511/t20251104_4258873.html?COLLCC=4100365600",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 조정 휴일 구간에는 법정일·주휴일·조정 휴무가 섞여 있습니다. 모든 날짜를 법정일 또는 모든 사업장 휴무로 뜻하지 않습니다.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "cn2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "CN-2026-09-25-manual-11",
+      "country": "CN",
+      "scope": "national",
+      "name": "중추절 연휴",
+      "kind": "public_holiday",
+      "start": "2026-09-25",
+      "end": "2026-09-27",
+      "status": "verified",
+      "sourceURL": "https://www.beijing.gov.cn/zhengce/zhengcefagui/202511/t20251104_4258873.html?COLLCC=4100365600",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 조정 휴일 구간에는 법정일·주휴일·조정 휴무가 섞여 있습니다. 모든 날짜를 법정일 또는 모든 사업장 휴무로 뜻하지 않습니다.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "cn2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "CN-2026-10-01-manual-12",
+      "country": "CN",
+      "scope": "national",
+      "name": "국경절 조정 연휴",
+      "kind": "public_holiday",
+      "start": "2026-10-01",
+      "end": "2026-10-07",
+      "status": "verified",
+      "sourceURL": "https://www.beijing.gov.cn/zhengce/zhengcefagui/202511/t20251104_4258873.html?COLLCC=4100365600",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 조정 휴일 구간에는 법정일·주휴일·조정 휴무가 섞여 있습니다. 모든 날짜를 법정일 또는 모든 사업장 휴무로 뜻하지 않습니다. 보충근무일 2026-09-20, 2026-10-10.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "cn2026"
+      ],
+      "makeupWorkdays": [
+        "2026-09-20",
+        "2026-10-10"
+      ]
+    },
+    {
+      "id": "TH-2025-01-01-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "새해 첫날 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-01-01",
+      "end": "2025-01-01",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/content-fragments/holiday-calendar/th/bot-notification-holiday/BOT-Notification-Holiday-Calendar-2025-TH.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2025-02-12-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "마카부차 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-02-12",
+      "end": "2025-02-12",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/content-fragments/holiday-calendar/th/bot-notification-holiday/BOT-Notification-Holiday-Calendar-2025-TH.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2025-04-07-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "차크리 왕조 기념일 대체휴일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-04-07",
+      "end": "2025-04-07",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/content-fragments/holiday-calendar/th/bot-notification-holiday/BOT-Notification-Holiday-Calendar-2025-TH.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2025-04-14-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "송끄란 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-04-14",
+      "end": "2025-04-14",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/content-fragments/holiday-calendar/th/bot-notification-holiday/BOT-Notification-Holiday-Calendar-2025-TH.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2025-04-15-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "송끄란 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-04-15",
+      "end": "2025-04-15",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/content-fragments/holiday-calendar/th/bot-notification-holiday/BOT-Notification-Holiday-Calendar-2025-TH.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2025-05-01-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "노동절 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-05-01",
+      "end": "2025-05-01",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/content-fragments/holiday-calendar/th/bot-notification-holiday/BOT-Notification-Holiday-Calendar-2025-TH.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2025-05-05-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "대관식 기념일 대체휴일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-05-05",
+      "end": "2025-05-05",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/content-fragments/holiday-calendar/th/bot-notification-holiday/BOT-Notification-Holiday-Calendar-2025-TH.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2025-05-12-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "위사카부차 대체휴일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-05-12",
+      "end": "2025-05-12",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/content-fragments/holiday-calendar/th/bot-notification-holiday/BOT-Notification-Holiday-Calendar-2025-TH.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2025-06-02-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "특별 휴일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-06-02",
+      "end": "2025-06-02",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/bot/th/financial-institutions-holiday/jcr:content/root/container/holidaycalendar_copy.model.2568.json",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다. 현행 공식 달력에 특별 휴일로 명시되며 2024년 기본 연간 공고의 17일에 포함되지 않습니다. 추가 공고 시행일은 이번 검토에서 확인하지 못했습니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025-current"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2025-06-03-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "수티다 왕비 탄생일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-06-03",
+      "end": "2025-06-03",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/content-fragments/holiday-calendar/th/bot-notification-holiday/BOT-Notification-Holiday-Calendar-2025-TH.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2025-07-10-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "아산하부차 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-07-10",
+      "end": "2025-07-10",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/content-fragments/holiday-calendar/th/bot-notification-holiday/BOT-Notification-Holiday-Calendar-2025-TH.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2025-07-28-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "국왕 탄생일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-07-28",
+      "end": "2025-07-28",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/content-fragments/holiday-calendar/th/bot-notification-holiday/BOT-Notification-Holiday-Calendar-2025-TH.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2025-08-11-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "특별 휴일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-08-11",
+      "end": "2025-08-11",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/bot/th/financial-institutions-holiday/jcr:content/root/container/holidaycalendar_copy.model.2568.json",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다. 현행 공식 달력에 특별 휴일로 명시되며 2024년 기본 연간 공고의 17일에 포함되지 않습니다. 추가 공고 시행일은 이번 검토에서 확인하지 못했습니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025-current"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2025-08-12-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "시리킷 왕대비 탄생일·어머니의 날 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-08-12",
+      "end": "2025-08-12",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/content-fragments/holiday-calendar/th/bot-notification-holiday/BOT-Notification-Holiday-Calendar-2025-TH.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2025-10-13-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "푸미폰 국왕 추모일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-10-13",
+      "end": "2025-10-13",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/content-fragments/holiday-calendar/th/bot-notification-holiday/BOT-Notification-Holiday-Calendar-2025-TH.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2025-10-23-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "Chulalongkorn 국왕 추모일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-10-23",
+      "end": "2025-10-23",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/content-fragments/holiday-calendar/th/bot-notification-holiday/BOT-Notification-Holiday-Calendar-2025-TH.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2025-12-05-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "푸미폰 국왕 탄생일·국경일·아버지의 날 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-12-05",
+      "end": "2025-12-05",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/content-fragments/holiday-calendar/th/bot-notification-holiday/BOT-Notification-Holiday-Calendar-2025-TH.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2025-12-10-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "헌법기념일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-12-10",
+      "end": "2025-12-10",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/content-fragments/holiday-calendar/th/bot-notification-holiday/BOT-Notification-Holiday-Calendar-2025-TH.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2025-12-31-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "연말 휴일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2025-12-31",
+      "end": "2025-12-31",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/content-fragments/holiday-calendar/th/bot-notification-holiday/BOT-Notification-Holiday-Calendar-2025-TH.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2025"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-01-01-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "새해 첫날 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-01-01",
+      "end": "2026-01-01",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-01-02-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "특별 휴일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-01-02",
+      "end": "2026-01-02",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-03-03-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "마카부차 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-03-03",
+      "end": "2026-03-03",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-04-06-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "차크리 왕조 기념일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-04-06",
+      "end": "2026-04-06",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-04-13-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "송끄란 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-04-13",
+      "end": "2026-04-13",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-04-14-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "송끄란 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-04-14",
+      "end": "2026-04-14",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-04-15-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "송끄란 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-04-15",
+      "end": "2026-04-15",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-05-01-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "노동절 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-05-01",
+      "end": "2026-05-01",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-05-04-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "대관식 기념일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-05-04",
+      "end": "2026-05-04",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-06-01-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "위사카부차 대체휴일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-06-01",
+      "end": "2026-06-01",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-06-03-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "수티다 왕비 탄생일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-06-03",
+      "end": "2026-06-03",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-07-28-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "국왕 탄생일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-07-28",
+      "end": "2026-07-28",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-07-29-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "아산하부차 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-07-29",
+      "end": "2026-07-29",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-08-12-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "시리킷 왕대비 탄생일·어머니의 날 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-08-12",
+      "end": "2026-08-12",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-10-13-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "푸미폰 국왕 추모일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-10-13",
+      "end": "2026-10-13",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-10-16-bank",
+      "country": "TH",
+      "region": "방콕 소재 금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "특별 휴일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-10-16",
+      "end": "2026-10-16",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690116.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "방콕 소재 금융기관만의 특별 휴일입니다. 필요한 서비스는 기관이 적절히 운영할 수 있습니다. 10/12·14·15 재택근무 권고를 휴일로 넣지 않았습니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026-bangkok"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-10-23-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "Chulalongkorn 국왕 추모일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-10-23",
+      "end": "2026-10-23",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-12-07-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "푸미폰 국왕 탄생일·국경일·아버지의 날 대체휴일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-12-07",
+      "end": "2026-12-07",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-12-10-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "헌법기념일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-12-10",
+      "end": "2026-12-10",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2026-12-31-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "연말 휴일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2026-12-31",
+      "end": "2026-12-31",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2026"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2027-01-01-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "새해 첫날 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2027-01-01",
+      "end": "2027-01-01",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2027"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2027-02-22-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "마카부차 대체휴일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2027-02-22",
+      "end": "2027-02-22",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2027"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2027-04-06-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "차크리 왕조 기념일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2027-04-06",
+      "end": "2027-04-06",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2027"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2027-04-13-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "송끄란 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2027-04-13",
+      "end": "2027-04-13",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2027"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2027-04-14-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "송끄란 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2027-04-14",
+      "end": "2027-04-14",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2027"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2027-04-15-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "송끄란 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2027-04-15",
+      "end": "2027-04-15",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2027"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2027-05-03-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "노동절 대체휴일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2027-05-03",
+      "end": "2027-05-03",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2027"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2027-05-04-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "대관식 기념일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2027-05-04",
+      "end": "2027-05-04",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2027"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2027-05-20-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "위사카부차 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2027-05-20",
+      "end": "2027-05-20",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2027"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2027-06-03-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "수티다 왕비 탄생일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2027-06-03",
+      "end": "2027-06-03",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2027"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2027-07-19-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "아산하부차 대체휴일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2027-07-19",
+      "end": "2027-07-19",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2027"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2027-07-28-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "국왕 탄생일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2027-07-28",
+      "end": "2027-07-28",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2027"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2027-08-12-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "시리킷 왕대비 탄생일·어머니의 날 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2027-08-12",
+      "end": "2027-08-12",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2027"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2027-10-13-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "푸미폰 국왕 추모일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2027-10-13",
+      "end": "2027-10-13",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2027"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2027-10-25-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "Chulalongkorn 국왕 추모일 대체휴일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2027-10-25",
+      "end": "2027-10-25",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2027"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2027-12-06-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "푸미폰 국왕 탄생일·국경일·아버지의 날 대체휴일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2027-12-06",
+      "end": "2027-12-06",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2027"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2027-12-10-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "헌법기념일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2027-12-10",
+      "end": "2027-12-10",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2027"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "TH-2027-12-31-bank",
+      "country": "TH",
+      "region": "금융기관·특수금융기관",
+      "scope": "institutional",
+      "name": "연말 휴일 (금융기관)",
+      "kind": "public_holiday",
+      "start": "2027-12-31",
+      "end": "2027-12-31",
+      "status": "verified",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2569/ThaiPDF/25690175.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "태국 중앙은행 금융기관 휴일입니다. 전국 민간 사업장의 휴무를 뜻하지 않습니다. 남부 5개 주와 이슬람은행의 조건부 추가 휴일은 별도입니다.",
+      "dateKind": "official_bank_observed_date",
+      "sourceIds": [
+        "th2027"
+      ],
+      "makeupWorkdays": []
+    },
+    {
+      "id": "VN-2025-01-01-manual-13",
+      "country": "VN",
+      "scope": "national",
+      "name": "새해 첫날",
+      "kind": "public_holiday",
+      "start": "2025-01-01",
+      "end": "2025-01-01",
+      "status": "verified",
+      "sourceURL": "https://datafiles.chinhphu.vn/cpp/files/vbpq/2025/9/125-vbhn-vpqh.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "노동법 적용 근로자의 법정일입니다. 사업장별 주휴일과 추가 연결 휴무는 별도입니다. 법정 휴일 1일.",
+      "dateKind": "statutory_fixed_date",
+      "sourceIds": [
+        "vn-labour-code"
+      ],
+      "makeupWorkdays": [],
+      "statutoryDays": 1
+    },
+    {
+      "id": "VN-2025-01-25-manual-14",
+      "country": "VN",
+      "scope": "institutional",
+      "name": "뗏 연휴 (적용 기관 한정)",
+      "kind": "public_holiday",
+      "start": "2025-01-25",
+      "end": "2025-02-02",
+      "status": "verified",
+      "sourceURL": "https://xaydungchinhsach.chinhphu.vn/chinh-thuc-bo-ldtbxh-thong-bao-lich-nghi-tet-nguyen-dan-at-ty-va-nghi-le-nam-2025-119241203175029893.htm",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 안내에 명시된 주휴·근무형태의 연휴입니다. 민간 전체의 동일한 연휴가 아니며 사용자별 선택·주휴 조건을 확인해야 합니다. 법정 휴일 5일. 주휴일 4일 포함.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "vn2025"
+      ],
+      "makeupWorkdays": [],
+      "statutoryDays": 5,
+      "weeklyRestDays": 4,
+      "region": "토·일 주휴인 행정·공공기관 및 정치·사회정치 조직 근무자"
+    },
+    {
+      "id": "VN-2025-04-07-manual-15",
+      "country": "VN",
+      "scope": "national",
+      "name": "흥왕 기념일",
+      "kind": "public_holiday",
+      "start": "2025-04-07",
+      "end": "2025-04-07",
+      "status": "verified",
+      "sourceURL": "https://tphcm.chinhphu.vn/tphcm-to-chuc-le-gio-to-hung-vuong-nam-2025-101250407133715752.htm",
+      "verifiedAt": "2026-10-21",
+      "notes": "노동법 적용 근로자의 법정일입니다. 사업장별 주휴일과 추가 연결 휴무는 별도입니다. 법정 휴일 1일.",
+      "dateKind": "statutory_lunar_date_officially_converted",
+      "sourceIds": [
+        "vn2025-hung",
+        "vn-labour-code"
+      ],
+      "makeupWorkdays": [],
+      "statutoryDays": 1
+    },
+    {
+      "id": "VN-2025-04-30-manual-16",
+      "country": "VN",
+      "scope": "institutional",
+      "name": "통일기념일·노동절 연휴 (적용 기관 한정)",
+      "kind": "public_holiday",
+      "start": "2025-04-30",
+      "end": "2025-05-04",
+      "status": "verified",
+      "sourceURL": "https://xaydungchinhsach.chinhphu.vn/chinh-thuc-bo-ldtbxh-thong-bao-lich-nghi-tet-nguyen-dan-at-ty-va-nghi-le-nam-2025-119241203175029893.htm",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 안내에 명시된 주휴·근무형태의 연휴입니다. 민간 전체의 동일한 연휴가 아니며 사용자별 선택·주휴 조건을 확인해야 합니다. 주휴일 2일 포함. 보충근무일 2025-04-26.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "vn2025"
+      ],
+      "makeupWorkdays": [
+        "2025-04-26"
+      ],
+      "weeklyRestDays": 2,
+      "statutoryDates": [
+        "2025-04-30",
+        "2025-05-01"
+      ],
+      "swappedRestDates": [
+        "2025-05-02"
+      ],
+      "region": "토·일 주휴인 행정·공공기관 및 정치·사회정치 조직 근무자"
+    },
+    {
+      "id": "VN-2025-08-30-manual-17",
+      "country": "VN",
+      "scope": "institutional",
+      "name": "국경일 연휴 (적용 기관 한정)",
+      "kind": "public_holiday",
+      "start": "2025-08-30",
+      "end": "2025-09-02",
+      "status": "verified",
+      "sourceURL": "https://xaydungchinhsach.chinhphu.vn/chinh-thuc-bo-ldtbxh-thong-bao-lich-nghi-tet-nguyen-dan-at-ty-va-nghi-le-nam-2025-119241203175029893.htm",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 안내에 명시된 주휴·근무형태의 연휴입니다. 민간 전체의 동일한 연휴가 아니며 사용자별 선택·주휴 조건을 확인해야 합니다. 주휴일 2일 포함.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "vn2025"
+      ],
+      "makeupWorkdays": [],
+      "weeklyRestDays": 2,
+      "statutoryDates": [
+        "2025-09-01",
+        "2025-09-02"
+      ],
+      "region": "토·일 주휴인 행정·공공기관 및 정치·사회정치 조직 근무자"
+    },
+    {
+      "id": "VN-2026-01-01-manual-18",
+      "country": "VN",
+      "scope": "institutional",
+      "name": "새해 첫날 (적용 기관 한정)",
+      "kind": "public_holiday",
+      "start": "2026-01-01",
+      "end": "2026-01-04",
+      "status": "verified",
+      "sourceURL": "https://xaydungchinhsach.chinhphu.vn/cong-chuc-vien-chuc-nghi-tet-duong-lich-2026-lien-tuc-4-ngay-119251225092146478.htm",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 안내에 명시된 주휴·근무형태의 연휴입니다. 민간 전체의 동일한 연휴가 아니며 사용자별 선택·주휴 조건을 확인해야 합니다. 주휴일 2일 포함. 보충근무일 2026-01-10.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "vn2026-newyear"
+      ],
+      "makeupWorkdays": [
+        "2026-01-10"
+      ],
+      "weeklyRestDays": 2,
+      "statutoryDates": [
+        "2026-01-01"
+      ],
+      "swappedRestDates": [
+        "2026-01-02"
+      ],
+      "region": "토·일 주휴인 행정·공공기관 및 정치·사회정치 조직 근무자"
+    },
+    {
+      "id": "VN-2026-02-14-manual-19",
+      "country": "VN",
+      "scope": "institutional",
+      "name": "뗏 연휴 (적용 기관 한정)",
+      "kind": "public_holiday",
+      "start": "2026-02-14",
+      "end": "2026-02-22",
+      "status": "verified",
+      "sourceURL": "https://xaydungchinhsach.chinhphu.vn/de-xuat-phuong-an-nghi-tet-am-lich-nghi-le-quoc-khanh-nam-2026-119251002130522291.htm",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 안내에 명시된 주휴·근무형태의 연휴입니다. 민간 전체의 동일한 연휴가 아니며 사용자별 선택·주휴 조건을 확인해야 합니다. 법정 휴일 5일. 주휴일 4일 포함.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "vn2026-tet"
+      ],
+      "makeupWorkdays": [],
+      "statutoryDays": 5,
+      "weeklyRestDays": 4,
+      "statutoryLunarPattern": {
+        "lastYearDays": 1,
+        "newYearDays": 4
+      },
+      "region": "토·일 주휴인 행정·공공기관 및 정치·사회정치 조직 근무자"
+    },
+    {
+      "id": "VN-2026-04-26-manual-20",
+      "country": "VN",
+      "scope": "national",
+      "name": "흥왕 기념일",
+      "kind": "public_holiday",
+      "start": "2026-04-26",
+      "end": "2026-04-26",
+      "status": "verified",
+      "sourceURL": "https://xaydungchinhsach.chinhphu.vn/lich-nghi-le-gio-to-hung-vuong-30-4-1-5-quoc-khanh-2-9-nam-2026-119260222115822151.htm",
+      "verifiedAt": "2026-10-21",
+      "notes": "노동법 적용 근로자의 법정일입니다. 사업장별 주휴일과 추가 연결 휴무는 별도입니다. 법정 휴일 1일.",
+      "dateKind": "statutory_lunar_date_officially_converted",
+      "sourceIds": [
+        "vn2026-hung-labour",
+        "vn-labour-code"
+      ],
+      "makeupWorkdays": [],
+      "statutoryDays": 1
+    },
+    {
+      "id": "VN-2026-04-30-manual-21",
+      "country": "VN",
+      "scope": "institutional",
+      "name": "통일기념일·노동절 연휴 (적용 기관 한정)",
+      "kind": "public_holiday",
+      "start": "2026-04-30",
+      "end": "2026-05-03",
+      "status": "verified",
+      "sourceURL": "https://xaydungchinhsach.chinhphu.vn/lich-nghi-le-gio-to-hung-vuong-30-4-1-5-quoc-khanh-2-9-nam-2026-119260222115822151.htm",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 안내에 명시된 주휴·근무형태의 연휴입니다. 민간 전체의 동일한 연휴가 아니며 사용자별 선택·주휴 조건을 확인해야 합니다. 주휴일 2일 포함.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "vn2026-hung-labour"
+      ],
+      "makeupWorkdays": [],
+      "weeklyRestDays": 2,
+      "statutoryDates": [
+        "2026-04-30",
+        "2026-05-01"
+      ],
+      "region": "토·일 주휴인 근로자"
+    },
+    {
+      "id": "VN-2026-08-29-manual-22",
+      "country": "VN",
+      "scope": "institutional",
+      "name": "국경일 연휴 (적용 기관 한정)",
+      "kind": "public_holiday",
+      "start": "2026-08-29",
+      "end": "2026-09-02",
+      "status": "verified",
+      "sourceURL": "https://xaydungchinhsach.chinhphu.vn/thong-bao-lich-nghi-le-quoc-khanh-2026-119260729092042494.htm",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 안내에 명시된 주휴·근무형태의 연휴입니다. 민간 전체의 동일한 연휴가 아니며 사용자별 선택·주휴 조건을 확인해야 합니다. 주휴일 2일 포함. 보충근무일 2026-08-22.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "vn2026-national"
+      ],
+      "makeupWorkdays": [
+        "2026-08-22"
+      ],
+      "weeklyRestDays": 2,
+      "statutoryDates": [
+        "2026-09-01",
+        "2026-09-02"
+      ],
+      "swappedRestDates": [
+        "2026-08-31"
+      ],
+      "region": "토·일 주휴인 행정·공공기관 및 정치·사회정치 조직 근무자"
+    },
+    {
+      "id": "VN-2026-11-24-manual-23",
+      "country": "VN",
+      "scope": "national",
+      "name": "베트남 문화의 날",
+      "kind": "public_holiday",
+      "start": "2026-11-24",
+      "end": "2026-11-24",
+      "status": "verified",
+      "sourceURL": "https://xdcs.cdnchinhphu.vn/446259493575335936/2026/5/8/nq28-phat-trien-van-hoa-17782247316352069707813.pdf",
+      "verifiedAt": "2026-10-21",
+      "notes": "노동법 적용 근로자의 법정일입니다. 사업장별 주휴일과 추가 연결 휴무는 별도입니다. 법정 휴일 1일.",
+      "dateKind": "statutory_fixed_date",
+      "sourceIds": [
+        "vn-culture",
+        "vn2027"
+      ],
+      "makeupWorkdays": [],
+      "statutoryDays": 1,
+      "effectiveFrom": "2026-07-01"
+    },
+    {
+      "id": "VN-2027-02-04-manual-25",
+      "country": "VN",
+      "scope": "institutional",
+      "name": "뗏 연휴 (적용 기관 한정)",
+      "kind": "public_holiday",
+      "start": "2027-02-04",
+      "end": "2027-02-10",
+      "status": "verified",
+      "sourceURL": "https://xaydungchinhsach.chinhphu.vn/de-xuat-2-phuong-an-nghi-tet-nguyen-dan-2027-tet-dinh-mui-11926080513033257.htm",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 안내에 명시된 주휴·근무형태의 연휴입니다. 민간 전체의 동일한 연휴가 아니며 사용자별 선택·주휴 조건을 확인해야 합니다. 법정 휴일 5일. 중복 주휴일의 보충휴무 2일 포함.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "vn2027"
+      ],
+      "makeupWorkdays": [],
+      "statutoryDays": 5,
+      "compensatoryWeeklyRestDays": 2,
+      "statutoryLunarPattern": {
+        "lastYearDays": 2,
+        "newYearDays": 3
+      },
+      "region": "토·일 주휴인 행정·공공기관 및 정치·사회정치 조직 근무자"
+    },
+    {
+      "id": "VN-2027-09-02-manual-28",
+      "country": "VN",
+      "scope": "institutional",
+      "name": "국경일 연휴 (적용 기관 한정)",
+      "kind": "public_holiday",
+      "start": "2027-09-02",
+      "end": "2027-09-05",
+      "status": "verified",
+      "sourceURL": "https://xaydungchinhsach.chinhphu.vn/de-xuat-2-phuong-an-nghi-tet-nguyen-dan-2027-tet-dinh-mui-11926080513033257.htm",
+      "verifiedAt": "2026-10-21",
+      "notes": "공식 안내에 명시된 주휴·근무형태의 연휴입니다. 민간 전체의 동일한 연휴가 아니며 사용자별 선택·주휴 조건을 확인해야 합니다.",
+      "dateKind": "announced_rest_interval",
+      "sourceIds": [
+        "vn2027"
+      ],
+      "makeupWorkdays": [],
+      "statutoryDates": [
+        "2027-09-02",
+        "2027-09-03"
+      ],
+      "weeklyRestDates": [
+        "2027-09-04",
+        "2027-09-05"
+      ],
+      "region": "토·일 주휴인 행정·공공기관 및 정치·사회정치 조직 근무자"
+    }
+  ]
+}

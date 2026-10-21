@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "purpose": "preview_verified_date_seed_not_live_collector",
-  "asOfKST": "2026-10-20",
+  "asOfKST": "2026-10-21",
   "checkedAt": "2026-10-19T16:54:51.946617+00:00",
   "window": {
     "startInclusive": "2026-10-20",
@@ -10,6 +10,38 @@
   },
   "dateConvention": "start/end inclusive YYYY-MM-DD civil dates at destination. Do not parse as UTC instants for display.",
   "events": [
+    {
+      "id": "TH-all-2026-10-23-bank",
+      "country": "TH",
+      "countryLabel": "태국",
+      "region": null,
+      "name": "Chulalongkorn 국왕 추모일",
+      "originalName": "วันปิยมหาราช",
+      "start": "2026-10-23",
+      "end": "2026-10-23",
+      "endInclusive": true,
+      "dateBasis": "local_civil_date",
+      "type": "bank_holiday",
+      "isCalendarWeekend": false,
+      "weekendMeaning": "토·일 여부이며 해당 국가·직장의 휴무 여부를 뜻하지 않습니다.",
+      "scope": "금융기관 휴일. 민간 전체 휴무가 아닙니다.",
+      "status": "OFFICIAL_DATE_CONFIRMED",
+      "conditional": false,
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "checkedAt": "2026-10-21T00:10:00Z",
+      "verificationMethod": "VERIFIED_OFFICIAL_ANNUAL_PDF_RENDER_CROSSCHECK",
+      "notes": "태국 중앙은행 공고 31/2568 제4항. 2026년 금융기관·특수금융기관 대상이며 전국 민간 공휴일로 확장하지 않습니다.",
+      "isRepresentative": true,
+      "calendarWeekendDates": [],
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "10/23(금)",
+      "description_ko": "Chulalongkorn 국왕을 추모하는 금융기관 휴일입니다. 민간 사업장 전체의 휴무를 뜻하지 않습니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": [],
+      "calendarScope": "institutional"
+    },
     {
       "id": "MM-all-2026-10-25-major",
       "country": "MM",
@@ -600,6 +632,38 @@
       "restConditions_ko": []
     },
     {
+      "id": "VN-all-2026-11-24-culture",
+      "country": "VN",
+      "countryLabel": "베트남",
+      "region": null,
+      "name": "베트남 문화의 날",
+      "originalName": "Ngày Văn hóa Việt Nam",
+      "start": "2026-11-24",
+      "end": "2026-11-24",
+      "endInclusive": true,
+      "dateBasis": "local_civil_date",
+      "type": "public_holiday",
+      "isCalendarWeekend": false,
+      "weekendMeaning": "토·일 여부이며 해당 국가·직장의 휴무 여부를 뜻하지 않습니다.",
+      "scope": "결의 28/2026/QH16 제2조에 따른 근로자 유급휴일. 2026년은 11월 24일 하루이며 주변 날짜를 연결하지 않습니다.",
+      "status": "OFFICIAL_DATE_CONFIRMED",
+      "conditional": false,
+      "sourceURL": "https://xdcs.cdnchinhphu.vn/446259493575335936/2026/5/8/nq28-phat-trien-van-hoa-17782247316352069707813.pdf",
+      "checkedAt": "2026-10-21T00:10:00Z",
+      "verificationMethod": "VERIFIED_OFFICIAL_LAW_PDF_TEXT_AND_RENDER",
+      "notes": "2026-04-24 의결, 2026-07-01 시행. 정부문서 10065/VPCP-KGVX(2026-10-02)는 2026년 문화의 날 휴무 1일을 승인합니다.",
+      "isRepresentative": true,
+      "calendarWeekendDates": [],
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/24(화)",
+      "description_ko": "베트남 문화 발전을 기념하는 법정 유급휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "11월 24일 하루만 표시합니다. 주말 연결·11월 23일 휴무를 임의로 추가하지 않습니다.",
+      "connectionStatus_ko": "공식 법정일 및 2026년 1일 휴무 확인",
+      "restConditions_ko": [],
+      "meaningSourceURL": "https://xaydungchinhsach.chinhphu.vn/toan-van-nghi-quyet-so-28-2026-qh16-ve-phat-trien-van-hoa-viet-nam-119260508142130402.htm"
+    },
+    {
       "id": "US-GU-2026-11-26-major",
       "country": "US",
       "countryLabel": "괌",
@@ -848,6 +912,38 @@
       "restConditions_ko": []
     },
     {
+      "id": "TH-all-2026-12-07-bank",
+      "country": "TH",
+      "countryLabel": "태국",
+      "region": null,
+      "name": "국왕 탄생일·국경일·아버지의 날 대체휴일",
+      "originalName": "ชดเชยวันคล้ายวันพระบรมราชสมภพ พระบาทสมเด็จพระบรมชนกาธิเบศร มหาภูมิพลอดุลยเดชมหาราช บรมนาถบพิตร วันชาติ และวันพ่อแห่งชาติ",
+      "start": "2026-12-07",
+      "end": "2026-12-07",
+      "endInclusive": true,
+      "dateBasis": "local_civil_date",
+      "type": "bank_holiday",
+      "isCalendarWeekend": false,
+      "weekendMeaning": "토·일 여부이며 해당 국가·직장의 휴무 여부를 뜻하지 않습니다.",
+      "scope": "금융기관 휴일. 민간 전체 휴무가 아닙니다.",
+      "status": "OFFICIAL_DATE_CONFIRMED",
+      "conditional": false,
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "checkedAt": "2026-10-21T00:10:00Z",
+      "verificationMethod": "VERIFIED_OFFICIAL_ANNUAL_PDF_RENDER_CROSSCHECK",
+      "notes": "태국 중앙은행 공고 31/2568 제4항. 2026년 금융기관·특수금융기관 대상이며 전국 민간 공휴일로 확장하지 않습니다.",
+      "isRepresentative": true,
+      "calendarWeekendDates": [],
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/7(월)",
+      "description_ko": "12월 5일 기념일을 대신해 지정된 금융기관 휴일입니다. 민간 사업장 전체의 휴무를 뜻하지 않습니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": [],
+      "calendarScope": "institutional"
+    },
+    {
       "id": "UZ-all-2026-12-08-major",
       "country": "UZ",
       "countryLabel": "우즈베키스탄",
@@ -877,6 +973,38 @@
       "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
       "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
       "restConditions_ko": []
+    },
+    {
+      "id": "TH-all-2026-12-10-bank",
+      "country": "TH",
+      "countryLabel": "태국",
+      "region": null,
+      "name": "헌법의 날",
+      "originalName": "วันรัฐธรรมนูญ",
+      "start": "2026-12-10",
+      "end": "2026-12-10",
+      "endInclusive": true,
+      "dateBasis": "local_civil_date",
+      "type": "bank_holiday",
+      "isCalendarWeekend": false,
+      "weekendMeaning": "토·일 여부이며 해당 국가·직장의 휴무 여부를 뜻하지 않습니다.",
+      "scope": "금융기관 휴일. 민간 전체 휴무가 아닙니다.",
+      "status": "OFFICIAL_DATE_CONFIRMED",
+      "conditional": false,
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "checkedAt": "2026-10-21T00:10:00Z",
+      "verificationMethod": "VERIFIED_OFFICIAL_ANNUAL_PDF_RENDER_CROSSCHECK",
+      "notes": "태국 중앙은행 공고 31/2568 제4항. 2026년 금융기관·특수금융기관 대상이며 전국 민간 공휴일로 확장하지 않습니다.",
+      "isRepresentative": true,
+      "calendarWeekendDates": [],
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "12/10(목)",
+      "description_ko": "헌법의 날에 지정된 금융기관 휴일입니다. 민간 사업장 전체의 휴무를 뜻하지 않습니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": [],
+      "calendarScope": "institutional"
     },
     {
       "id": "TM-all-2026-12-12-major",
@@ -2605,9 +2733,9 @@
       "scope": "금융기관 휴일. 민간 전체 휴무가 아닙니다.",
       "status": "OFFICIAL_DATE_CONFIRMED",
       "conditional": false,
-      "sourceURL": "https://www.bot.or.th/en/financial-institutions-holiday.html",
-      "checkedAt": "2026-10-19T16:48:00Z",
-      "verificationMethod": "official_annual_HTML_or_PDF_date_crosscheck",
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "checkedAt": "2026-10-21T00:10:00Z",
+      "verificationMethod": "VERIFIED_OFFICIAL_ANNUAL_PDF_RENDER_CROSSCHECK",
       "notes": "",
       "isRepresentative": true,
       "calendarWeekendDates": [],
@@ -2617,7 +2745,8 @@
       "cardSummary_ko": "",
       "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
       "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
-      "restConditions_ko": []
+      "restConditions_ko": [],
+      "calendarScope": "institutional"
     },
     {
       "id": "NL-all-2027-01-01-major",
@@ -3594,7 +3723,7 @@
   "coverage": {
     "investigatedCountryRegionCount": 61,
     "verifiedDateCountryRegionCount": 60,
-    "dateRecords": 113,
+    "dateRecords": 117,
     "machineParsedSourceCount": 3,
     "remainingLabelsWithoutValidatedDates": [
       "에티오피아"
@@ -3605,19 +3734,20 @@
     "fullAnnualCalendarMachineParsedSourceCount": 3,
     "verifiedNoRelevantHolidayInEntire90DayWindowCount": 0,
     "methodCounts": {
-      "official_annual_HTML_or_PDF_date_crosscheck": 39,
+      "VERIFIED_OFFICIAL_ANNUAL_PDF_RENDER_CROSSCHECK": 5,
       "VERIFIED_OFFICIAL_ANNUAL": 8,
+      "official_annual_HTML_or_PDF_date_crosscheck": 38,
       "official_fixed_date_rule_crosscheck": 17,
       "OFFICIAL_CSV_GET_PARSED": 4,
-      "VERIFIED_OFFICIAL_ANNUAL_PDF_RENDER_CROSSCHECK": 1,
       "VERIFIED_OFFICIAL_INDEXED_TEXT": 3,
       "OFFICIAL_HTML_DATE_CROSSCHECKED": 8,
+      "VERIFIED_OFFICIAL_LAW_PDF_TEXT_AND_RENDER": 1,
       "VERIFIED_OFFICIAL_RECURRING_RULE": 5,
       "OFFICIAL_JSON_GET_PARSED": 11,
       "official_fixed_date_rule_search_index_crosscheck": 8,
       "official_annual_search_index_date_crosscheck": 5,
-      "official_search_index_date_crosscheck": 1,
-      "OFFICIAL_ICS_GET_PARSED": 3
+      "OFFICIAL_ICS_GET_PARSED": 3,
+      "official_search_index_date_crosscheck": 1
     }
   },
   "guardrails": [
@@ -3684,10 +3814,10 @@
     {
       "label": "베트남",
       "status": "VERIFIED_REPRESENTATIVE_DATES",
-      "validatedEventCount": 1,
+      "validatedEventCount": 2,
       "fullWindowCompletenessVerified": false,
       "sourceURL": "https://congbao.cdnchinhphu.vn/CongBaoCP/CongBao/2025/9/46083/58726-1-1309-1310.pdf",
-      "notes": "대표 휴일만 확인; 모든 사소한 기념일을 수집하지 않음."
+      "notes": "2026-11-24 문화의 날 추가 확인(2026-07-01 시행). 2027 신정 기존 근거 보존. 전국 사업장 연속휴무나 전체 연간 일정 완전성은 미검증."
     },
     {
       "label": "미국",
@@ -3716,10 +3846,10 @@
     {
       "label": "태국",
       "status": "VERIFIED_REPRESENTATIVE_DATES",
-      "validatedEventCount": 1,
+      "validatedEventCount": 4,
       "fullWindowCompletenessVerified": false,
-      "sourceURL": "https://www.bot.or.th/en/financial-institutions-holiday.html",
-      "notes": "대표 휴일만 확인; 모든 사소한 기념일을 수집하지 않음."
+      "sourceURL": "https://www.bot.or.th/content/dam/bot/fipcs/documents/FPG/2568/ThaiPDF/25680162.pdf",
+      "notes": "2026년 금융기관 휴일 10/23·12/7·12/10·12/31만 재확인. 민간 전체 휴무 및 2027년 일정 완전성 미검증."
     },
     {
       "label": "필리핀",
@@ -4153,5 +4283,15 @@
       "sourceURL": "https://www.sosial.gov.az/az/faydali/istehsalat-teqvimi/2026-ci-ilin-istehsalat-teqvimi",
       "notes": "대표 휴일만 확인; 모든 사소한 기념일을 수집하지 않음."
     }
-  ]
+  ],
+  "priorityReview": {
+    "checkedAt": "2026-10-21T00:10:00Z",
+    "countries": [
+      "CN",
+      "VN",
+      "TH"
+    ],
+    "scope": "중국 고정일 경계·베트남 문화의 날·태국 2026 금융기관 대표일정 수동 재검토. 다른 국가 확인일은 갱신하지 않음.",
+    "automaticCollectionEnabled": false
+  }
 }

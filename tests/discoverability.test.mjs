@@ -244,6 +244,51 @@ test("lastmod that changes on every read is caught", async () => {
   assert.ok(failing(report).includes("lastmod is stable between two reads"));
 });
 
+test("optional lastmod can be omitted from both sitemap reads", async () => {
+  const report = await run({ sitemapOptions: { lastmod: null } });
+  assert.equal(report.ok, true, `unexpected failures: ${failing(report).join(", ")}`);
+});
+
+async function runSitemapReads(first, second, secondStatus = 200, secondType = "application/xml") {
+  const fetch = healthySite({});
+  let reads = 0;
+  return runDiscoverabilityChecks({ origin: ORIGIN, fetch: (url, init) => {
+    if (new URL(url).pathname !== "/sitemap.xml") return fetch(url, init);
+    const isFirst = reads++ === 0;
+    return Promise.resolve(new Response(isFirst ? first : second, {
+      status: isFirst ? 200 : secondStatus,
+      headers: { "content-type": isFirst ? "application/xml" : secondType },
+    }));
+  } });
+}
+
+test("lastmod appearing or disappearing between reads is caught", async () => {
+  const omitted = sitemapXml(indexablePaths(), { lastmod: null });
+  const dated = sitemapXml(indexablePaths());
+  for (const [first, second] of [[omitted, dated], [dated, omitted]]) {
+    const report = await runSitemapReads(first, second);
+    assert.ok(failing(report).includes("lastmod is stable between two reads"));
+  }
+});
+
+test("omitted lastmod does not hide a failed, non-XML or empty second sitemap", async () => {
+  const omitted = sitemapXml(indexablePaths(), { lastmod: null });
+  for (const [body, status, type] of [[omitted, 503, "application/xml"], [omitted, 200, "text/html"], [sitemapXml([], { lastmod: null }), 200, "application/xml"]]) {
+    const report = await runSitemapReads(omitted, body, status, type);
+    assert.ok(failing(report).includes("lastmod is stable between two reads"));
+  }
+});
+
+test("lastmod stability follows each URL rather than sitemap order", async () => {
+  const paths = indexablePaths();
+  const first = sitemapXml(paths);
+  const reordered = await runSitemapReads(first, sitemapXml([...paths].reverse()));
+  assert.equal(reordered.ok, true);
+  const reassigned = await runSitemapReads(first,
+    sitemapXml(paths).replace("<lastmod>2026-09-15T00:00:00.000Z</lastmod>", "<lastmod>2026-09-16T00:00:00.000Z</lastmod>"));
+  assert.ok(failing(reassigned).includes("lastmod is stable between two reads"));
+});
+
 test("a sitemap with no locale alternates is caught", async () => {
   const report = await run({ sitemapOptions: { withAlternates: false } });
   assert.equal(report.ok, false);

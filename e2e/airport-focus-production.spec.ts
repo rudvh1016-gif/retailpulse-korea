@@ -28,7 +28,7 @@ for(const width of [360,390,430,1440])test(`airport production composition ${wid
  await expect(page.getByRole('heading',{name:'국가별 흐름',exact:true})).toBeVisible();await expect(page.getByTestId('airport-route-passengers')).toBeVisible();
  await expect(page.locator('.focus-month-values')).toHaveCount(6);await page.screenshot({path:info.outputPath(`production-countries-${width}.png`)});
  await nav.getByRole('link',{name:'미리 준비',exact:true}).click();await expect(page).toHaveURL(/airport-prepare/);
- await page.getByRole('link',{name:'도착국 반입 면세한도 보기',exact:false}).first().click();await expect(page.locator('#arrival-allowances')).toBeInViewport();await page.screenshot({path:info.outputPath(`production-preparation-${width}.png`)});
+ await page.getByRole('link',{name:'도착국 반입 면세한도 확인하기',exact:false}).first().click();await expect(page.locator('#arrival-allowances')).toBeInViewport();await page.screenshot({path:info.outputPath(`production-preparation-${width}.png`)});
  await nav.getByRole('link',{name:'더보기',exact:true}).click();await expect(page.locator('.more-section-links')).toContainText('서울 한눈에');await expect(page.locator('.more-section-links a[href$="/consumption"]')).toBeVisible();expect(errors).toEqual([]);
 });
 test('unavailable server date keeps the guide accessible without fabricating today',async({page})=>{
