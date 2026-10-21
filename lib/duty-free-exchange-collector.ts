@@ -1,10 +1,10 @@
-import { activeDutyFreeVendors, dutyFreeSources, kstExchangeDate, shiftExchangeDate, type DutyFreeVendor } from './duty-free-exchange';
+import { activeDutyFreeVendors, dutyFreeSources, dutyFreeRetryAfter, kstExchangeDate, shiftExchangeDate, type DutyFreeVendor } from './duty-free-exchange';
 import { claimDutyFreeAttempt, saveDutyFreeFailure, saveDutyFreeSuccess } from './duty-free-exchange-store';
 
 export const DUTY_FREE_HTML_MAX_BYTES = 2 * 1024 * 1024;
 export const DUTY_FREE_FETCH_TIMEOUT_MS = 12_000;
 class RateFailure extends Error {
-  constructor(readonly code: string, readonly blocked: boolean) { super(code); }
+  constructor(readonly code: string, readonly blocked: boolean, readonly retryAfterAt: string | null = null) { super(code); }
 }
 function entities(text: string) {
   return text.replace(/&#(x[\da-f]+|\d+);/gi, (_, value:string) => {
@@ -101,17 +101,24 @@ export async function collectDutyFreeExchange(db: Pick<D1Database,'prepare'|'bat
       const ready=await db.prepare('SELECT vendor FROM duty_free_exchange_daily WHERE vendor=? LIMIT 1').bind(vendor).all();
       if(!ready.success)throw new Error('D1_READ_FAILED');
       if(!await claimDutyFreeAttempt(db,vendor,clock(),lease)){outcomes.push({vendor,status:'SKIPPED_NOT_DUE',providerRequests:0,changedRows:0});continue;}
+      const requestDay=kstExchangeDate(clock().getTime())!;
       providerRequests=1;
       const response=await fetchImpl(dutyFreeSources[vendor],{headers:{accept:'text/html'},redirect:'manual',signal:AbortSignal.timeout(DUTY_FREE_FETCH_TIMEOUT_MS)});
-      if(response.status!==200){await response.body?.cancel();throw new RateFailure(`HTTP_${response.status}`,response.status!==429&&response.status<500);}
+      if(response.status!==200){
+        const retryAfterAt=dutyFreeRetryAfter(response.headers.get('retry-after'),clock().getTime());
+        try{await response.body?.cancel();}catch{/* Preserve the HTTP failure and cooldown even if body cancellation fails. */}
+        throw new RateFailure(`HTTP_${response.status}`,response.status!==429&&response.status<500,retryAfterAt);
+      }
       const html=await readHtml(response),verifiedAt=clock().toISOString(),serviceDateKst=kstExchangeDate(Date.parse(verifiedAt))!;
-      const parsed=parseDutyFreeDatedHtml(vendor,html,serviceDateKst);
+      const parsed=parseDutyFreeDatedHtml(vendor,html,requestDay);
+      // A page requested yesterday is not proof of today's undated widget after midnight.
+      if(requestDay!==serviceDateKst&&parsed.some(row=>row.dateEvidence==='CURRENT_WIDGET'))throw new RateFailure('SOURCE_DATE_ROLLOVER',false);
       const rows=parsed.map(row=>({...row,vendor,currency:'USD' as const,verifiedAt,sourceUrl:dutyFreeSources[vendor],verified:true as const,scope:'INTERNET_SHOP' as const}));
       const saved=await saveDutyFreeSuccess(db,rows[0],lease,rows.slice(1));
       outcomes.push({vendor,status:saved.leaseOwned?'SUCCESS':'SUPERSEDED',providerRequests,changedRows:saved.changedRows});
     }catch(error){
       const failure=error instanceof RateFailure?error:new RateFailure(providerRequests?'NETWORK_OR_STORAGE_ERROR':'STORAGE_UNAVAILABLE',false);
-      let recorded=false;try{recorded=await saveDutyFreeFailure(db,vendor,lease,clock(),failure.code,failure.blocked);}catch{/* No extra provider call and no rate mutation. */}
+      let recorded=false;try{recorded=await saveDutyFreeFailure(db,vendor,lease,clock(),failure.code,failure.blocked,failure.retryAfterAt);}catch{/* No extra provider call and no rate mutation. */}
       outcomes.push({vendor,status:recorded?(failure.blocked?'BLOCKED':'ERROR'):'ERROR',providerRequests,changedRows:0,errorCode:failure.code});
     }
   }

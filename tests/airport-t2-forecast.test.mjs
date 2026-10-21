@@ -705,3 +705,54 @@ test("A4-T1 skips a refused row by name, keeps the other gates and never stores 
   assert.match(refused.detail, /failed P01: 2\/2: .*schemaField=waitLength:empty.*schemaField=occurtime:text13/);
   assert.equal(database.prepare("SELECT COUNT(*) AS n FROM airport_congestion WHERE terminal='T1'").get().n, 2, "last good rows stay");
 });
+
+// 2026-10-21: all 12 T1 rows lacked waitLength. Recheck only within the
+// existing transport budget; repeated invalid answers cannot write a zero.
+test("T1 bounded missing-count recheck preserves last-good and stores only a later real observation", async (context) => {
+  const { database, databasePath } = freshDatabase("t1-all-counts-missing");
+  const originalFetch = globalThis.fetch;
+  const originalSetTimeout = globalThis.setTimeout;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+  // Keep the real 30s abort timer; accelerate only the documented retry sleeps.
+  context.mock.method(globalThis, "setTimeout", (callback, delay, ...args) =>
+    originalSetTimeout(callback, [2_000, 10_000, 45_000].some((base) => delay >= base && delay <= base + 500) ? 0 : delay, ...args));
+  const env = { DB: new LocalD1Database(database), DATA_GO_KR_SERVICE_KEY: "fixture" };
+  const old = { terminalId: "P01", gateId: "DG1_E", waitTime: "5", waitLength: "12", occurtime: "20261021070200" };
+  const missing = Array.from({ length: 12 }, (_, i) => ({ terminalId: "P01", gateId: `gate${i}`, occurtime: "20261021072300" }));
+  globalThis.fetch = async () => Response.json(t2Page([old], 1));
+  assert.equal((await collectAirportCongestion(env)).providerRequests, 1);
+  const before = database.prepare("SELECT * FROM airport_congestion WHERE terminal='T1'").all();
+  const prior = database.prepare("SELECT last_event_at, last_retrieved_at FROM source_health WHERE source_id='INCHEON_DEPARTURE_CONGESTION'").get();
+
+  let calls = 0;
+  globalThis.fetch = async () => { calls += 1; return Response.json(t2Page(missing, 12)); };
+  const failed = await collectAirportCongestion(env);
+  assert.equal(failed.status, "ERROR");
+  assert.equal(failed.records, 0);
+  assert.equal(failed.providerRequests, 4);
+  assert.equal(calls, 4);
+  assert.match(failed.detail, /failureClass=SCHEMA causeCode=T1_WAIT_LENGTH_UNREPORTED attempts=4/);
+  assert.match(failed.detail, /retryExhausted=true schemaField=waitLength:missing/);
+  assert.deepEqual(database.prepare("SELECT * FROM airport_congestion WHERE terminal='T1'").all(), before);
+  assert.deepEqual(database.prepare("SELECT last_event_at, last_retrieved_at FROM source_health WHERE source_id='INCHEON_DEPARTURE_CONGESTION'").get(), prior);
+  assert.equal(database.prepare("SELECT status FROM source_health WHERE source_id='INCHEON_DEPARTURE_CONGESTION'").get().status, "ERROR");
+
+  // The later zero is a real provider value at a real later time, never a
+  // synthetic replacement/backfill for the missing 07:23 observation.
+  calls = 0;
+  const later = { ...old, waitLength: "0", occurtime: "20261021072400" };
+  globalThis.fetch = async () => Response.json(t2Page(++calls < 4 ? missing : [later], calls < 4 ? 12 : 1));
+  const recovered = await collectAirportCongestion(env);
+  assert.equal(recovered.status, "SUCCESS");
+  assert.equal(recovered.providerRequests, 4);
+  assert.equal(recovered.records, 1);
+  assert.deepEqual(database.prepare("SELECT waiting_count, observed_at FROM airport_congestion WHERE terminal='T1' ORDER BY observed_at").all().map((row) => [row.waiting_count, row.observed_at]), [[12, "2026-10-21T07:02:00+09:00"], [0, "2026-10-21T07:24:00+09:00"]]);
+  assert.equal((await collectAirportCongestion(env)).records, 0, "duplicate successful observation stays idempotent");
+
+  calls = 0;
+  globalThis.fetch = async () => { calls += 1; return Response.json(t2Page(missing, 12)); };
+  const fresh = await collectAirportCongestion({ ...env, A4_MAX_ATTEMPTS_PER_REQUEST: 1 });
+  assert.equal(fresh.providerRequests, 1);
+  assert.equal(calls, 1, "a fresh runner cannot start its own missing-data ladder");
+  assert.equal(fresh.status, "ERROR");
+});

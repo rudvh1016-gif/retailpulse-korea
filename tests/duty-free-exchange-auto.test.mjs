@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {DatabaseSync} from 'node:sqlite';
 import {collectDutyFreeExchange,parseDutyFreeHtml,parseDutyFreeDatedHtml} from '../lib/duty-free-exchange-collector.ts';
 import {claimDutyFreeAttempt,saveDutyFreeSuccess,saveDutyFreeFailure,readDutyFreeSnapshot,DUTY_FREE_BLOCK_INTERVAL_MS} from '../lib/duty-free-exchange-store.ts';
-import {dutyFreePresentation,dutyFreeDatedPresentation,dutyFreeSources,kstExchangeDate,mergeDutyFreeSnapshot,dutyFreeReadDelay} from '../lib/duty-free-exchange.ts';
+import {dutyFreeCoverage,dutyFreeRunStatus,dutyFreeRetryAfter,dutyFreePresentation,dutyFreeDatedPresentation,dutyFreeSources,kstExchangeDate,mergeDutyFreeSnapshot,dutyFreeReadDelay} from '../lib/duty-free-exchange.ts';
 import {dutyFreeCacheControl} from '../app/api/live/duty-free-exchange/route.ts';
 import {shouldRouteToSummaryCache} from '../worker/summary-cache-routing.ts';
 import {canonicalSummaryUrl} from '../worker/summary-cache-key.ts';
@@ -254,4 +254,98 @@ test('validated local retention keeps original dates/clocks, drops stale rows, a
  assert.equal(dutyFreeReadDelay(now,true,2,0),90_000);
  assert.equal(dutyFreeReadDelay(now,true,3,0),900_000);
  assert.equal(dutyFreeCacheControl(midnight,true,false),'public, max-age=5, s-maxage=15');
+});
+
+test('incident witness distinguishes current, retained previous day, and missing even when a cooldown skips',async t=>{
+ const {db}=localDb(t);let at=now;
+ assert.equal(dutyFreeCoverage(await readDutyFreeSnapshot(db,new Date(at)),at)[0].state,'MISSING');
+ await collectDutyFreeExchange(db,{now:()=>new Date(at),fetchImpl:async()=>html(shilla())});
+ assert.equal(dutyFreeCoverage(await readDutyFreeSnapshot(db,new Date(at)),at)[0].state,'CURRENT');
+ at+=3_600_001;
+ const [failure]=await collectDutyFreeExchange(db,{now:()=>new Date(at),fetchImpl:async()=>html('<html>no verified widget</html>')});
+ assert.equal(failure.errorCode,'SELECTOR_UNVERIFIED');
+ at=Date.parse('2026-10-08T15:07:00Z');let calls=0;
+ const [skip]=await collectDutyFreeExchange(db,{now:()=>new Date(at),fetchImpl:async()=>{calls++;return html(shilla());}});
+ assert.equal(skip.status,'SKIPPED_NOT_DUE');assert.equal(calls,0);
+ const witness=dutyFreeCoverage(await readDutyFreeSnapshot(db,new Date(at)),at)[0];
+ assert.equal(witness.state,'LAST_GOOD');assert.equal(witness.serviceDateKst,'2026-10-08');
+ assert.equal(witness.lastAttemptStatus,'BLOCKED');assert.equal(witness.errorCode,'SELECTOR_UNVERIFIED');
+ assert.equal(witness.nextAttemptAt,new Date(now+3_600_001+86_400_000).toISOString());
+ const run=dutyFreeRunStatus([skip],[witness]);
+ assert.equal(run.exitCode,0,'a durable zero-request skip must not repeat the original failed workflow');
+ assert.match(run.warnings[0],/coverage=LAST_GOOD/);
+ assert.ok(run.warnings[0].includes(`nextEligible=${witness.nextAttemptAt}`));
+ assert.match(run.warnings[0],/execution success is not data freshness/);
+});
+
+test('only exact zero-request cooldown skips suppress a stale-only failure; actual failures remain red',()=>{
+ const nextAttemptAt='2026-10-09T02:08:00.000Z';
+ const missing=[{vendor:'shilla',state:'MISSING',serviceDateKst:null,nextAttemptAt}];
+ const current=[{...missing[0],state:'CURRENT',serviceDateKst:'2026-10-09'}];
+ const skip={status:'SKIPPED_NOT_DUE',providerRequests:0};
+ assert.equal(dutyFreeRunStatus([skip],missing).exitCode,0);
+ assert.match(dutyFreeRunStatus([skip],missing).warnings[0],/coverage=MISSING; serviceDateKst=NONE; nextEligible=2026-10-09T02:08:00.000Z/);
+ assert.deepEqual(dutyFreeRunStatus([skip],current),{exitCode:0,warnings:[]});
+ assert.equal(dutyFreeRunStatus([],missing).exitCode,1,'absence of execution proof is not an eligible skip');
+ for(const outcome of [{status:'SKIPPED_NOT_DUE',providerRequests:1},{status:'SUCCESS',providerRequests:1},{status:'SUPERSEDED',providerRequests:0}]) {
+  assert.equal(dutyFreeRunStatus([outcome],missing).exitCode,1);
+ }
+ for(const status of ['ERROR','BLOCKED'])for(const providerRequests of [0,1])for(const coverage of [missing,current]) {
+  assert.equal(dutyFreeRunStatus([{status,providerRequests}],coverage).exitCode,1);
+  assert.equal(dutyFreeRunStatus([skip,{status,providerRequests}],coverage).exitCode,1);
+ }
+ assert.deepEqual(dutyFreeRunStatus([{status:'SUCCESS',providerRequests:1}],current),{exitCode:0,warnings:[]});
+ assert.deepEqual(missing,[{vendor:'shilla',state:'MISSING',serviceDateKst:null,nextAttemptAt}],'warnings never fabricate fresh data');
+ const runner=readFileSync('scripts/collect-duty-free-exchange.ts','utf8');
+ assert.match(runner,/dutyFreeRunStatus\(outcomes,coverage\)/);
+ assert.match(runner,/console\.warn\(`::warning title=Duty-free data not current::/);
+ assert.match(runner,/process\.exitCode=runStatus\.exitCode/);
+});
+
+test('provider Retry-After extends but never shortens the shared durable cooldown without immediate retries',async t=>{
+ for(const [status,header,delay] of [[429,'10800',10_800_000],[503,'10800',10_800_000],[403,'172800',172_800_000],[429,'1',3_600_000],[403,'1',86_400_000]]) {
+  const {db}=localDb(t);let calls=0;
+  const options={now:()=>new Date(now),fetchImpl:async()=>{calls++;return new Response('unavailable',{status,headers:{'retry-after':header}});}};
+  const [first]=await collectDutyFreeExchange(db,options);assert.equal(first.providerRequests,1);
+  assert.equal(first.errorCode,`HTTP_${status}`);assert.equal(calls,1);
+  const snapshot=await readDutyFreeSnapshot(db,new Date(now));assert.equal(snapshot.sources[0].observation,null);
+  assert.equal(snapshot.sources[0].nextAttemptAt,new Date(now+delay).toISOString());
+  assert.equal((await collectDutyFreeExchange(db,{...options,now:()=>new Date(now+delay-1)}))[0].status,'SKIPPED_NOT_DUE');
+  assert.equal(calls,1);
+ }
+});
+
+test('network failure is one bounded request and preserves last-good day and original verification time',async t=>{
+ const {db}=localDb(t);await collectDutyFreeExchange(db,{now:()=>new Date(now),fetchImpl:async()=>html(shilla())});
+ let calls=0;const at=now+3_600_001;
+ const options={now:()=>new Date(at),fetchImpl:async()=>{calls++;throw new TypeError('network failure secret-like detail');}};
+ const [failure]=await collectDutyFreeExchange(db,options);assert.equal(failure.status,'ERROR');assert.equal(failure.errorCode,'NETWORK_OR_STORAGE_ERROR');
+ assert.equal(calls,1);await collectDutyFreeExchange(db,options);assert.equal(calls,1);
+ const snapshot=await readDutyFreeSnapshot(db,new Date(at));assert.equal(snapshot.sources[0].observation.verifiedAt,new Date(now).toISOString());
+ assert.equal(snapshot.sources[0].observation.serviceDateKst,'2026-10-08');assert.ok(!JSON.stringify(failure).includes('secret-like'));
+});
+
+test('an undated response crossing KST midnight cannot be mislabeled as the new day',async t=>{
+ const {db}=localDb(t);let at=Date.parse('2026-10-08T14:59:59Z');
+ const [result]=await collectDutyFreeExchange(db,{now:()=>new Date(at),fetchImpl:async()=>{at=Date.parse('2026-10-08T15:00:01Z');return html(shilla());}});
+ assert.equal(result.errorCode,'SOURCE_DATE_ROLLOVER');assert.equal(result.providerRequests,1);
+ assert.equal((await readDutyFreeSnapshot(db,new Date(at))).sources[0].observation,null);
+ const explicit=localDb(t);at=Date.parse('2026-10-08T14:59:59Z');
+ const [verified]=await collectDutyFreeExchange(explicit.db,{now:()=>new Date(at),fetchImpl:async()=>{at=Date.parse('2026-10-08T15:00:01Z');return html(shilla().replace('오늘의 환율','2026-10-09 익일 환율'));}});
+ assert.equal(verified.status,'SUCCESS');assert.equal(dutyFreeCoverage(await readDutyFreeSnapshot(explicit.db,new Date(at)),at)[0].state,'CURRENT');
+});
+
+test('all short stored-read recovery paths share the same cap and known blocks do not fast-poll',()=>{
+ assert.deepEqual([1,2,3,4].map(n=>dutyFreeReadDelay(now,false,0,n,n)),[30_000,60_000,120_000,900_000]);
+ for(const at of [now,Date.parse('2026-10-08T15:00:00Z')])for(const failures of [0,1,2]) {
+  assert.equal(dutyFreeReadDelay(at,false,failures,12,1),900_000);
+  assert.equal(dutyFreeReadDelay(at,false,failures,1,1,false),900_000);
+ }
+ assert.equal(dutyFreeReadDelay(now,true,0,0,0),900_000);
+});
+
+test('Retry-After parsing accepts delay seconds and HTTP dates but not malformed or past hints',()=>{
+ assert.equal(dutyFreeRetryAfter('120',now),new Date(now+120_000).toISOString());
+ assert.equal(dutyFreeRetryAfter('Thu, 08 Oct 2026 06:00:00 GMT',now),'2026-10-08T06:00:00.000Z');
+ for(const value of [null,'-1','1.5','bad','0','Wed, 07 Oct 2026 06:00:00 GMT','9'.repeat(129)])assert.equal(dutyFreeRetryAfter(value,now),null);
 });

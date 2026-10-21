@@ -137,9 +137,13 @@ collector engine. Each trigger-only workflow must have no competing GitHub
 `schedule:` block.
 
 Official-source transient recovery is centralized and bounded. Network/
-connect/TLS/DNS, real client timeout, HTTP 429 and HTTP 5xx may retry with a
-source-specific spaced window. Authentication, permanent 4xx, schema and
-validation failures stay visible and are never converted to success. Failed
+connect/TLS/DNS, real client timeout and HTTP 5xx may retry with a
+source-specific spaced window. HTTP 429, authentication and permanent 4xx stop
+without retry. Schema and validation failures stay visible and are never
+converted to success. One narrow T1 exception rechecks a successful envelope
+whose otherwise-valid gate/time rows all omit `waitLength`, within the SAME
+four-request budget (not a nested retry ladder); exhausted responses remain
+SCHEMA/ERROR. See `docs/AIRPORT_T1_BOUNDED_RECHECK_2026-10-21.md`. Failed
 refreshes preserve last-good canonical rows and their original timestamps.
 
 ## 4. Runtime rule: collect first, serve second

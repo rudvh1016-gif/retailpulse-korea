@@ -225,7 +225,7 @@ function withFetchContext(
   retryExhausted: boolean,
 ): SourceFetchError {
   return new SourceFetchError(error.code, error.status, error.causeCode, {
-    attempts, elapsedMs, retryExhausted, providerSignal: error.providerSignal,
+    attempts, elapsedMs, retryExhausted, providerSignal: error.providerSignal, schemaField: error.schemaField,
   });
 }
 
@@ -239,10 +239,20 @@ async function readProviderSignal(response: Response): Promise<string | undefine
 
 /**
  * Secret-safe bounded JSON request policy shared by official providers.
- * Only connection/timeout, HTTP 429 and HTTP 5xx are retryable. Successful
+ * Only connection/timeout and HTTP 5xx are retryable. HTTP 429 stops the run's
+ * request (no early retry or fresh runner). Successful
  * malformed JSON and deterministic schema/auth failures never retry.
  */
 export async function fetchOfficialJson(url: URL, options: FetchOfficialJsonOptions = {}): Promise<unknown> {
+  return fetchOfficialJsonWithRecheck(url, options);
+}
+
+/** Private hook: only the T1 wrapper below may recheck a known incomplete payload. */
+async function fetchOfficialJsonWithRecheck(
+  url: URL,
+  options: FetchOfficialJsonOptions,
+  incompletePayload?: (payload: unknown) => SourceFetchError | null,
+): Promise<unknown> {
   const timeoutMs = Math.max(1, Math.min(options.timeoutMs ?? 8_000, 60_000));
   const requestedAttempts = options.maxAttempts ?? ((options.retries ?? 1) + 1);
   const maxAttempts = Math.max(1, Math.min(Math.trunc(requestedAttempts), MAX_SOURCE_ATTEMPTS));
@@ -257,6 +267,7 @@ export async function fetchOfficialJson(url: URL, options: FetchOfficialJsonOpti
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     let failure: SourceFetchError | null = null;
+    let payloadRecheck = false;
     let retryAfter: string | null = null;
     try {
       const response = await fetchImpl(url, { signal: controller.signal, headers: { accept: "application/json" } });
@@ -278,8 +289,9 @@ export async function fetchOfficialJson(url: URL, options: FetchOfficialJsonOpti
         if (controller.signal.aborted) throw new SourceFetchError("TIMEOUT");
         throw error;
       }
+      let payload: unknown;
       try {
-        return JSON.parse(text);
+        payload = JSON.parse(text);
       } catch {
         // Only a JSON syntax error is permanent. A data.go.kr refusal sent as
         // XML with HTTP 200 is named by its code instead of just "malformed".
@@ -287,13 +299,19 @@ export async function fetchOfficialJson(url: URL, options: FetchOfficialJsonOpti
           providerSignal: classifyProviderBody(text),
         });
       }
+      const incomplete = incompletePayload?.(payload);
+      if (!incomplete) return payload;
+      // This consumes the SAME request ladder as transport retries, not a
+      // second nested ladder. No invalid payload ever reaches canonical writes.
+      payloadRecheck = true;
+      throw incomplete;
     } catch (error) {
       failure = classifySourceFetchFailure(error);
     } finally {
       clearTimeout(timer);
     }
 
-    const retryable = isTransientSourceFailure(failure!);
+    const retryable = payloadRecheck || isTransientSourceFailure(failure!);
     const exhausted = retryable && attempt === maxAttempts - 1;
     if (!retryable || exhausted) {
       throw withFetchContext(failure!, attempt + 1, nowMs() - startedAt, exhausted);
@@ -322,6 +340,38 @@ export async function fetchOfficialJson(url: URL, options: FetchOfficialJsonOpti
   throw new SourceFetchError("HTTP", undefined, undefined, { attempts: maxAttempts, elapsedMs: nowMs() - startedAt, retryExhausted: true });
 }
 
+/**
+ * T1 has returned every gate without its waiting-person count. Recheck
+ * only that exact shape: success envelope, 1..50 T1 rows, valid gate/time,
+ * and every count absent/null. Partial, empty, malformed, auth and quota
+ * answers retain their existing behavior. The strict normalizer is unchanged.
+ */
+function t1UnreportedWaitLength(payload: unknown): SourceFetchError | null {
+  const root = payload as { response?: { header?: { resultCode?: unknown }; body?: { items?: unknown } } } | null;
+  if (root?.response?.header?.resultCode !== "00") return null;
+  const container = root.response.body?.items;
+  const value = Array.isArray(container) ? container
+    : container && typeof container === "object" ? (container as { item?: unknown }).item : undefined;
+  const items = Array.isArray(value) ? value : value && typeof value === "object" ? [value] : [];
+  if (items.length === 0 || items.length > 50) return null;
+  for (const item of items) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+    const record = item as Record<string, unknown>;
+    if (record.waitLength != null || record.waitlength != null) return null;
+    try {
+      if (requiredString(record, ["terminalId", "terminalid"]) !== "P01") return null;
+      requiredString(record, ["gateId", "gateid"]);
+      normalizeKstTimestamp(requiredString(record, ["occurtime", "occurTime"]));
+    } catch { return null; }
+  }
+  return new SourceFetchError("SCHEMA", undefined, "T1_WAIT_LENGTH_UNREPORTED", { schemaField: "waitLength:missing" });
+}
+
+/** Same four-attempt budget; a one-attempt fresh runner cannot grow another ladder. */
+export async function fetchAirportCongestionJson(url: URL, options: FetchOfficialJsonOptions = {}): Promise<unknown> {
+  return fetchOfficialJsonWithRecheck(url, options, t1UnreportedWaitLength);
+}
+
 const SAFE_INTERNAL_CAUSE_CODE = /^[A-Za-z][A-Za-z0-9_.:-]{0,79}$/;
 
 /**
@@ -331,7 +381,8 @@ const SAFE_INTERNAL_CAUSE_CODE = /^[A-Za-z][A-Za-z0-9_.:-]{0,79}$/;
  * response: AUTH (the key may not use this service — an owner action, never a
  * retry), NO_DATA (the provider answered and had no rows — keep last-good, look
  * again at the next scheduled window), and TIMEOUT/NETWORK (the request never
- * completed — the only class, with HTTP 5xx and 429, that is retried). QUOTA is
+ * completed — the only class, with HTTP 5xx, that is normally retried). HTTP
+ * 429 stops without retry. The T1 all-counts-missing exception is separate. QUOTA is
  * the daily limit (code 22), which a retry cannot lift either.
  *
  * HTTP 401/403 stay visible as `httpStatus=` beside AUTH, so every existing
