@@ -37,11 +37,16 @@ export function comparisonValue(change: RangeChange): string {
     ? signed(change.minPercent) : `${signed(change.minPercent)} ~ ${signed(change.maxPercent)}`;
 }
 
-export function comparisonText(change: RangeChange, lang: "ko" | "en" | "zh" | "ja", days: 7 | 28): string {
+export function comparisonTextParts(change: RangeChange, lang: "ko" | "en" | "zh" | "ja", days: 7 | 28): { summary: string; baseline: string } {
   const labels = days === 7
     ? { ko: "전주 동요일", en: "Same weekday last week", zh: "上周同星期", ja: "先週同曜日" }
     : { ko: "4주 전 같은 요일", en: "Same weekday 4 weeks ago", zh: "4周前同星期", ja: "4週前同曜日" };
-  return `${labels[lang]} ${comparisonValue(change)} (${change.baselineAt.replace("T", " ").replace("+09:00", " KST")})`;
+  return { summary: `${labels[lang]} ${comparisonValue(change)}`, baseline: `(${change.baselineAt.replace("T", " ").replace("+09:00", " KST")})` };
+}
+
+export function comparisonText(change: RangeChange, lang: "ko" | "en" | "zh" | "ja", days: 7 | 28): string {
+  const parts = comparisonTextParts(change, lang, days);
+  return `${parts.summary} ${parts.baseline}`;
 }
 
 /** Two exact-time index seeks per area; no history scan or extra D1 round trip. */
