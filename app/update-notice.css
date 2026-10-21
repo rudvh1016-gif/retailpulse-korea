@@ -12,3 +12,5 @@
 
 .update-notice .update-notice-date{font-size:11px;color:#62666c;margin:-12px 0 12px}
 .update-notice-trigger{display:inline-flex;align-items:center;min-height:44px;padding:0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:3px}
+
+.update-notice-items .reference-change-notices:not(:empty){border-bottom:1px solid #e1e5e9}

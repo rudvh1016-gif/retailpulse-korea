@@ -3,6 +3,7 @@ import {chromium} from '@playwright/test';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {analyticsOptOutState,GOOGLE_TAG_BLOCK_ARGS} from './analytics-opt-out.mjs';
 import {noticeDismissedState} from './update-notice-test-state.mjs';
+import {installAirportLabObservers,collectAirportLabMeasurement} from './airport-lab-observers.mjs';
 const [url,output,label]=process.argv.slice(2);
 if(!url||!output||!['BEFORE','AFTER'].includes(label))throw Error('Usage: URL OUTPUT BEFORE|AFTER');
 const fixture=async name=>JSON.parse(await readFile(new URL(`../e2e/fixtures/airport-focus/${name}.json`,import.meta.url),'utf8'));
@@ -19,15 +20,10 @@ for(const width of [390,1440])for(let run=1;run<=3;run++){
  for(const [path,json]of [['flights',flights],['airport-months',months],['airport-passenger-stats',stats]])await page.route(`**/api/live/${path}*`,r=>r.fulfill({json}));
  await page.route('**/api/live/summary*',r=>r.fulfill({json:new URL(r.request().url()).searchParams.get('date')?summary:clock}));
  page.on('pageerror',e=>errors.push(e.message));
- await page.addInitScript(()=>{
-  window.__lab={lcp:null,lcpElement:null,cls:0,blockingMs:0};
-  new PerformanceObserver(list=>{for(const e of list.getEntries()){window.__lab.lcp=e.startTime;window.__lab.lcpElement=e.element?.tagName+(e.element?.className?'.'+String(e.element.className).replaceAll(' ','.'):'');}}).observe({type:'largest-contentful-paint',buffered:true});
-  new PerformanceObserver(list=>{for(const e of list.getEntries())if(!e.hadRecentInput)window.__lab.cls+=e.value;}).observe({type:'layout-shift',buffered:true});
-  new PerformanceObserver(list=>{for(const e of list.getEntries())window.__lab.blockingMs+=Math.max(0,e.duration-50);}).observe({type:'longtask',buffered:true});
- });
+ await page.addInitScript(installAirportLabObservers);
  await page.goto(`${url}?date=2026-10-19`,{waitUntil:'domcontentloaded',timeout:120000});
  await page.waitForTimeout(10000);
- const measured=await page.evaluate(()=>({ ...window.__lab,fcp:performance.getEntriesByName('first-contentful-paint')[0]?.startTime??null,resources:performance.getEntriesByType('resource').map(e=>({url:e.name.replace(location.origin,''),initiator:e.initiatorType,bytes:e.transferSize,encoded:e.encodedBodySize})),navigation:performance.getEntriesByType('navigation')[0]?.transferSize??null,overflow:document.documentElement.scrollWidth>innerWidth,hydrated:document.querySelector('.app')?.getAttribute('data-hydrated')==='true'}));
+ const measured=await page.evaluate(collectAirportLabMeasurement);
  results.push({width,run,...measured,errors});await context.close();
 }
 await browser.close();await mkdir(new URL('.',`file://${output}`).pathname,{recursive:true});

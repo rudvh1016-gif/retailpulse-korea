@@ -26,5 +26,7 @@ export function allowanceStatusProjection(rows:Row[],now=new Date()){
   const state=entries.some(row=>Date.parse(row.next_check_at)+86400000<now.getTime())?'STALE':entries.some(row=>row.state==='SOURCE_CHANGED_REVIEW_REQUIRED')?'REVIEW_REQUIRED':entries.some(row=>row.state==='COLLECTION_FAILED'||row.state==='COLLECTION_BLOCKED')?'CHECK_UNAVAILABLE':entries.some(row=>row.state==='BASELINE_REVIEW_REQUIRED')?'BASELINE_REQUIRED':entries.some(row=>row.state==='NUMERIC_TEMPLATE_VERIFIED')?'NUMERIC_VERIFIED':'SOURCE_UNCHANGED';
   return {id,state,lastCheckedAt:entries.map(row=>row.checked_at).sort()[0],nextCheckAt:entries.map(row=>row.next_check_at).sort()[0],sourceCount:entries.length,regulationChangeConfirmed:false};
  });
- return {status:rows.length?'STORED':'MISSING',cadenceHours:24,automaticLegalInterpretation:false,countries};
+ // A changed source hash is review evidence, never confirmation of a legal change.
+ const reviewNotices=rows.filter(row=>row.state==='SOURCE_CHANGED_REVIEW_REQUIRED'&&hash(row.source_sha256)&&hash(row.last_good_hash)&&date(row.checked_at)&&Date.parse(row.checked_at)<=now.getTime()&&Date.parse(row.next_check_at)+86400000>=now.getTime()).map(row=>({sourceId:row.source_id,country:row.jurisdiction,sourceHash:row.source_sha256,baselineHash:row.last_good_hash,checkedAt:row.checked_at}));
+ return {status:rows.length?'STORED':'MISSING',cadenceHours:24,automaticLegalInterpretation:false,countries,reviewNotices};
 }

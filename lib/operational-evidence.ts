@@ -9,6 +9,7 @@ import { STORE_DYNAMICS_MAPPING_VERSION } from './store-dynamics';
 import { SEOUL_SUBWAY_MAPPING_VERSION } from './subway-ridership';
 import { FOREIGN_PURPOSE_MAPPING_VERSION } from './foreign-purpose-mobility';
 import { SEOUL_FOREIGN_MAPPING_VERSION } from './seoul-foreign';
+import { SEOUL_REALTIME_STALE_MINUTES } from './seoul-freshness';
 import { verifyRecovery, type RecoveryVerification } from './recovery-orchestration';
 import type { SourceObservation } from './source-lifecycle';
 import type { FailureState } from './operational-states';
@@ -52,6 +53,25 @@ async function rows(db:D1Database,sql:string,params:unknown[]=[]):Promise<Eviden
 const validTime=(value:unknown)=>typeof value==='string'&&Number.isFinite(Date.parse(value));
 const safeNumber=(value:unknown)=>typeof value==='number'&&Number.isFinite(value)&&value>=0;
 
+/**
+ * Report-only Seoul clocks from the already-read bounded sample. No extra read,
+ * raw payload, provider URL, or persisted incident/collector field is exposed.
+ * Missing/invalid clocks remain null, never inspection time or a zero age.
+ */
+export function sourceFreshnessEvidence(measurement:Pick<SourceMeasurement,'sourceId'|'observedAt'|'sample'>) {
+  if(!['SEOUL_CITYDATA_PPLTN','SEOUL_CITYDATA_CMRCL'].includes(measurement.sourceId))return null;
+  const checkedAt=Date.parse(measurement.observedAt);
+  return {
+    staleAfterMinutes:SEOUL_REALTIME_STALE_MINUTES,
+    areas:publicAreaIds.map(area=>{
+      const row=measurement.sample.find(sample=>sample.area===area);
+      const observed=validTime(row?.observed_at)?Date.parse(String(row!.observed_at)):null;
+      return {area,observedAt:observed===null?null:new Date(observed).toISOString(),
+        ageMinutes:observed===null||!Number.isFinite(checkedAt)?null:(checkedAt-observed)/60_000};
+    }),
+  };
+}
+
 export async function measureSource(db:D1Database,sourceId:string,nowIso:string):Promise<SourceMeasurement> {
   const [run,health]=await Promise.all([
     db.prepare('SELECT run_id,status,started_at,finished_at,records_read,records_written,detail FROM collector_runs WHERE source_id=? ORDER BY started_at DESC LIMIT 1').bind(sourceId).first<EvidenceRow>(),
@@ -69,7 +89,7 @@ export async function measureSource(db:D1Database,sourceId:string,nowIso:string)
         WHERE source_id=? AND area=? AND observed_at<=? ORDER BY observed_at DESC LIMIT 1`,[sourceId,area,context.kstNowIso])))).flat();
       const valid=output.sample.every(row=>row.quality_status==='VALID'&&validTime(row.observed_at)&&
         (population?safeNumber(row.population_min)&&safeNumber(row.population_max)&&Number(row.population_max)>=Number(row.population_min):true));
-      const current=output.sample.every(row=>now-Date.parse(String(row.observed_at))<=35*60_000);
+      const current=output.sample.every(row=>now-Date.parse(String(row.observed_at))<=SEOUL_REALTIME_STALE_MINUTES*60_000);
       output.storedRows=output.sample.length; output.storageValid=output.sample.length===publicAreaIds.length;
       output.coverage=output.storageValid?'COMPLETE':'PARTIAL';output.dataValid=valid&&current&&output.storageValid;
       output.failureClass=!valid?'INVALID_PAYLOAD':!current?'STALE':!output.storageValid?'PARTIAL_DATA':null;

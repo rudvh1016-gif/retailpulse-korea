@@ -120,6 +120,10 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
           const sel = rule.selectorText;
           // Exact approved marker/value only, bounded in the browser above
           if (sel === '.glass-nav-indicator' && bg === 'rgba(187, 187, 188, 0.36)' && !filter) continue;
+          // Sentinel_0281f83f4d088191a1eb747bbe647c48: only the complete
+          // today/week/month report wrapper. Its bounds and white surroundings
+          // are checked in airport-brief-glass.spec.ts.
+          if (sel === '.airport-focus-shell .focus-report' && bg === 'rgba(255, 255, 255, 0.4)' && filter === 'blur(14px)') continue;
           // Exact owner-requested liquid surfaces only.
           if (['.update-notice[data-airport-focus="true"]','.update-notice[data-airport-focus=true]','.focus-header','.focus-report'].includes(sel)) continue;
           // Owner approval Sentinel_105e48cea9648191a7e7c29e86006ec9: the two guide

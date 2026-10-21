@@ -47,3 +47,37 @@ Search Console; live indexing and third-party answer inclusion are unverified.
 Official references checked 2026-10-20:
 - https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics
 - https://developers.google.com/search/docs/appearance/ai-features
+
+### 2026-10-20 Naver / sitemap truth follow-up (separate release)
+
+Read-only production inspection at 15:05 UTC (2026-10-21 00:05 KST), build
+`7c9aef7e7f7d79a143957c777e70f1ee9ac30d72`, confirmed `/ko` has a Naver
+verification meta tag, index/follow, an absolute canonical and all four locale
+alternates. `robots.txt` permits public pages and declares the production sitemap;
+the sitemap contained 64 canonical URLs. This proves technical presence, **not**
+completed Search Advisor ownership verification, submission, indexing or ranking.
+The available Search Advisor browser was signed out. Its account reports and
+submission results remain unverified until authenticated owner access is available.
+
+The sitemap previously labelled dynamic pages with the current KST day even when
+a collection was unchanged, stale or failed. Omit optional `lastModified` until a
+persisted, page-specific significant-content-change timestamp is available. Do not
+substitute build/request time or a collection schedule. Canonical URL coverage,
+locale alternates and staging's empty sitemap/noindex remain unchanged. No new
+crawler, scheduler, paid service, IndexNow submissions or content API reads added.
+
+Validation: 36 discoverability/home-canonical/tourism-routing tests passed locally.
+Production submission/index recovery requires post-deployment account evidence.
+
+Official guidance reviewed 2026-10-20:
+- https://searchadvisor.naver.com/guide/seo-basic-robots
+- https://searchadvisor.naver.com/guide/markup-structure
+- https://searchadvisor.naver.com/guide/seo-advanced-javascript
+- https://searchadvisor.naver.com/guide/faq-start-register
+- https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap
+
+After this separate change is approved and deployed: confirm `/sitemap.xml` omits
+unsupported lastmod values; use Search Advisor's verified `koretaildata.com`
+property to inspect collection/index reports and existing sitemap submission
+before making another submission. Keep staging blocked. Never report guaranteed
+Naver positions or AI-answer citations.

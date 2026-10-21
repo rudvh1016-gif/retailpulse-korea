@@ -167,6 +167,34 @@ test("the three Tourism Desk pages render unique area SEO and headings", async (
   }
 });
 
+test("Tourism Desk methodology renders in every locale and area without a live summary", async () => {
+  const locales = {
+    ko: { heading: "자료 기준과 한계", first: "생활인구는 현재 지역에 머무는 인구의 공식 추정 범위이며 관광객 수가 아닙니다.", names: ["명동", "홍대", "성수", "이태원"] },
+    en: { heading: "Sources and limits", first: "Living population is an official estimate of people present in the area now, not a tourist count.", names: ["Myeongdong", "Hongdae", "Seongsu", "Itaewon"] },
+    zh: { heading: "资料依据与限制", first: "生活人口是当前停留在该地区的人口官方估算区间，并非游客人数。", names: ["明洞", "弘大", "圣水", "梨泰院"] },
+    ja: { heading: "データの基準と限界", first: "生活人口は現在エリアに滞在する人口の公式推定レンジであり、観光客数ではありません。", names: ["明洞", "弘大", "聖水", "梨泰院"] },
+  };
+  const areas = ["myeongdong", "hongdae", "seongsu", "itaewon"];
+  for (const [locale, copy] of Object.entries(locales)) {
+    for (const [index, area] of areas.entries()) {
+      const path = `/${locale}/tourism-desk/${area}`;
+      // renderPath has no D1 binding and no browser effects: these are the
+      // real initial HTML bytes, not a fulfilled client summary fixture.
+      const response = await renderPath(path, locale === "zh" ? "zh-CN" : locale);
+      assert.equal(response.status, 200, path);
+      const html = await response.text();
+      assert.ok(html.includes(`<h2 id="tourism-limits-title">${copy.heading}</h2>`), path);
+      const limits = html.match(/<ul class="tourism-limits">([\s\S]*?)<\/ul>/)?.[1];
+      assert.ok(limits, `${path}: methodology must not wait for live data`);
+      assert.equal((limits.match(/<li>/g) ?? []).length, 7, path);
+      assert.ok(limits.includes(copy.first), path);
+      assert.ok(limits.includes(copy.names[index]), `${path}: area-specific caveat`);
+      assert.doesNotMatch(html, /class="tourism-guide-section tourism-shift-brief"/,
+        `${path}: do not invent a live briefing when the summary is absent`);
+    }
+  }
+});
+
 /**
  * The product must not ship placeholder values dressed as data.
  *

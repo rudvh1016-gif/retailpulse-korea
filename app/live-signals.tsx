@@ -1243,7 +1243,8 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
   // Each calendar date receives equal space; missing values remain gaps.
   const slots = days.length;
   const slot = width / slots;
-  const barWidth = Math.min(7, slot * 0.3);
+  // Slim marks keep their full calendar-day hit targets below.
+  const barWidth = Math.min(3, slot * 0.22);
   const maxDay = days.reduce((best, day) => Math.max(best, day.total ?? 0), 0);
   const showEachValue = days.length <= 5;
 

@@ -7,8 +7,8 @@ import {useLiveSummary} from './live-summary';
 import {loadFlights,useFlights} from './flights-client';
 import {primePreparedMonth,usePreparedMonth} from './use-prepared-month';
 import {usePresentationClock} from './presentation-clock';
-import {ChangeRate} from './change-rate';
-import {dailyChangeText,glanceComparableCountries,glanceCountryDeclines,glanceDestinationIncrease,glanceFutureWindow,glanceFlights,glanceDayComparison,glanceCountryRanking,glanceLongestWait,glanceUpcoming,sameDailyChange,type GlanceScope} from '../lib/airport-glance';
+import {ChangeRate,CountChange} from './change-rate';
+import {glanceComparableCountries,glanceCountryDeclines,glanceDestinationIncrease,glanceFutureWindow,glanceFlights,glanceDayComparison,glanceCountryRanking,glanceLongestWait,glanceUpcoming,sameDailyChange,type GlanceScope} from '../lib/airport-glance';
 import {mainBuildingMonth} from '../lib/airport-monthly-building';
 import {previousFlightMonth,type AirportMonthlyRollups} from '../lib/airport-monthly-flights';
 import {selectedZoneShares} from '../lib/airport-zone-shares';
@@ -237,14 +237,3 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
   <footer><span>{c.collected} · {settling?stampHold:stamp(payload?.retrievedAt)}</span><span>{c.monthTime} · {monthPending?stampHold:stamp(monthRequest.reply?.calculatedAt)}</span><a href="https://www.airport.kr/geomap/ap_ko/view.do" target="_blank" rel="noreferrer">{ui.map} ↗</a></footer>
  </Container>;
 }
-
-const countChangeWords={ko:['증가','감소'],en:['up','down'],zh:['增加','减少'],ja:['増加','減少']} as const;
-/** A daily-mean flight-count change: the printed sign is visual, the words carry the direction. */
-function CountChange({delta,format,lang,unit=''}:{delta:number;format:(value:number)=>string;lang:Lang;unit?:string}){
- const text=dailyChangeText(delta,format);
- if(delta===0)return <span className="change-rate" data-direction="neutral">{text}{unit}</span>;
- const [up,down]=countChangeWords[lang];
- return <span className="glance-count-change change-rate" data-direction={delta>0?'up':'down'} data-delta={delta>0?'up':'down'}><span aria-hidden="true">{text}{unit}</span><span className="sr-only">{delta>0?up:down} {text.replace(/^[▲▽] [＋+−]/,'')}{unit}</span></span>;
-}
-
-

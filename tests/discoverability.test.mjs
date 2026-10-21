@@ -352,25 +352,13 @@ test("snippet width counts CJK as wide, so the four locales are judged on the sa
     "a raw character count would under-measure a mixed CJK/Latin snippet");
 });
 
-test("the sitemap dates only the pages a checkout can honestly date", () => {
+test("the sitemap does not invent modification dates without content-change evidence", () => {
   const entries = sitemapModule.default();
   assert.ok(entries.length > 0);
-  const undated = entries.filter((entry) => !entry.lastModified).map((entry) => entry.url);
-  // about and more are explainer copy; nothing in a checkout knows when they
-  // last changed, and a lastmod Google decides is unreliable is discarded for
-  // the whole site, not just for the URL that lied.
-  assert.equal(undated.length, seoLocales.length * 2, `undated: ${undated.join(", ")}`);
-  assert.ok(undated.every((url) => /\/(about|more)$/.test(url)), undated.join(", "));
-});
-
-test("sitemap lastmod is stable within a day, not a fresh timestamp per request", () => {
-  const first = sitemapModule.default();
-  const second = sitemapModule.default();
-  const stamp = (entries) => entries.map((entry) => entry.lastModified?.toISOString() ?? "").join("|");
-  assert.equal(stamp(first), stamp(second));
-  const dated = first.find((entry) => entry.lastModified);
-  assert.ok(dated.lastModified.toISOString().endsWith("T15:00:00.000Z"),
-    `expected the start of a KST day, got ${dated.lastModified.toISOString()}`);
+  for (const entry of entries) {
+    assert.equal(entry.lastModified, undefined,
+      `${entry.url}: request time or a collection schedule is not a verified content modification`);
+  }
 });
 
 test("every sitemap entry declares all four locales plus x-default", () => {

@@ -284,17 +284,20 @@ nav.bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .airport-month-dot { display: none; }
 
 .airport-month-compare-model { height: 120px; max-height: 120px; }
-.airport-month-bar { fill: #43617f; stroke: none; rx: 2px; ry: 2px; }
-.airport-month-bar[data-selected] { fill: #80b2a4; }
+.airport-month-bar { fill: #747c86; stroke: none; rx: .4px; ry: 1px; }
+.airport-month-bar[data-selected] { fill: #43617f; }
 .airport-month-soft-depth,.airport-month-soft-highlight { display: none; }
 .airport-month-compare-track span { border-radius: 2px; background: #43617f; box-shadow: none; }
 .airport-month-compare-track span[data-period=current] { background: #7194b8; }
 .gate-leader-zones > section[data-side=UNVERIFIED] { flex-direction: row; justify-content: center; gap: 12px; padding: 0; border: 0; background: transparent; }
 .gate-leader-zones > section[data-side=UNVERIFIED] > p { min-height: 0; margin: 0; }
 
-.airport-month-plot { height: 70px; }
-.airport-month-chart[data-short-series="true"] .airport-month-plot { height: 108px; }
-.airport-month-baseline { stroke: #cbd9df; stroke-width: .7; vector-effect: non-scaling-stroke; }
+/* Compact daily forecast strip; comparison totals and type remain unchanged. */
+.airport-month-chart { margin-top: 8px; }
+.airport-month-plot { height: 64px; margin-top: 6px; }
+.airport-month-chart[data-short-series="true"] .airport-month-plot { height: 96px; }
+.airport-month-readout { margin-top: 4px; }
+.airport-month-baseline { stroke: #d9dde2; stroke-width: .7; vector-effect: non-scaling-stroke; }
 .airport-month-value-labels { position: absolute; inset: 0; pointer-events: none; }
 .airport-month-value-labels span { position: absolute; transform: translate(-50%, -100%); font-size: 11px; line-height: 1.25; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .airport-month-value-labels span[data-missing] { color: var(--muted); }

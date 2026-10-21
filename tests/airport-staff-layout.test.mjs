@@ -38,3 +38,12 @@ test('merged details span the summary grid while retaining readable source-note 
  assert.match(styles,/@media\(max-width:700px\)\{\.staff-brief-grid\{grid-template-columns:1fr;/);
  assert.doesNotMatch(styles,/\.airport-staff-briefing\{[^}]*border-top:/,'no extra standalone divider above the moved detail body');
 });
+
+test('peak briefing reuses the existing departures and renders actual gate text without a new request',()=>{
+ assert.match(glance,/peak=\{staffDeparturePeak\(day,data\?\.departures\?\?null\)\}/);
+ assert.match(briefing,/staffDepartureGateLines\(peak\)\.map\(line=><p key=\{line\}>\{line\}<\/p>\)/);
+ assert.doesNotMatch(briefing,/peak\.leaders|터미널 순위를 확정|이 시간에는/);
+ assert.doesNotMatch(read('../lib/airport-staff-peak.ts'),/\bfetch\s*\(|useEffect|useFlights|useLiveSummary/);
+ assert.match(briefing,/선택일 전체 예정편·확인된 게이트 기준/);
+ assert.match(briefing,/peak\.tiedHours>1/);
+});

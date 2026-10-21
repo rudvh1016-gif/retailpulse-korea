@@ -10,7 +10,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import type { Lang } from "./retailpulse-data";
 import { type TerminalFlightFallback } from "../lib/airport-flight-scope";
 import { RateText } from "./change-rate";
-import { formatChangeRate } from "../lib/change-rate";
+import { formatChangeRate, formatCountChange } from "../lib/change-rate";
 import { airportCompositionCopy } from "../lib/airport-composition-copy";
 import { usePresentationClock } from "./area-demand-card";
 import { AirportFlowFigure } from "./airport-flow-figure";
@@ -1399,7 +1399,7 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
       {countryLine && <p>{({ ko: "항공사 등록 국가 순위", en: "Airline registration-country ranking", zh: "航空公司注册国家排名", ja: "航空会社登録国ランキング" })[lang]} · {countryLine}</p>}
       {composition && <details className="composition-changes"><summary>{contextText(lang,'전주 동요일 대비 항공사·국가별 변화','Airline/country changes vs. last weekday','较上周同日航空公司及国家变化','前週同曜日比の航空会社・国別変化')}</summary>
         <p>{composition.baselineDate} → {date || summary?.serviceDateKst}</p>
-        {(['airlines','countries'] as const).map(kind=><p key={kind}><RateText lang={lang} text={composition[kind].slice(0,5).map(row=>`${kind==='countries'?regionName(row.id,lang):row.id} ${row.previous} → ${row.current}${unit} (${row.delta===0?'0':`${row.delta>0?'▲ +':'▽ −'}${Math.abs(row.delta)}`}${unit}${row.percent===null?'':`, ${formatChangeRate(row.percent)}`})`).join(' · ')}/></p>)}
+        {(['airlines','countries'] as const).map(kind=><p key={kind}><RateText lang={lang} text={composition[kind].slice(0,5).map(row=>`${kind==='countries'?regionName(row.id,lang):row.id} ${row.previous} → ${row.current}${unit} (${formatCountChange(row.delta,String)}${unit}${row.percent===null?'':`, ${formatChangeRate(row.percent)}`})`).join(' · ')}/></p>)}
       </details>}
       <small>{contextText(lang,'수집된 출발 운항 기록 비교 · 공동운항 중복 제외. 등록 국가는 승객 국적이 아닙니다.','Comparison of collected departure records, excluding codeshare duplicates. Registration country is not passenger nationality.','比较已收集的出发记录，排除代码共享重复。注册国家并非乘客国籍。','収集済み出発記録の比較・共同運航重複除外。登録国は旅客国籍ではありません。')}{!composition&&` · ${contextText(lang,'국가별 비교 기록 수집 중','Collecting country comparison history','收集各国比较记录中','国別比較記録を収集中')}`}</small>
     </div>}

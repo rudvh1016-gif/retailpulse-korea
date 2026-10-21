@@ -4,7 +4,7 @@
     "app/[locale]/[slug]/page.tsx": "74d14e76bde7c0efc1859d4ae2aaba3ae1d04cfe377a38293eeb9e8adde79417",
     "app/[locale]/not-found.tsx": "620e62c747a4a0d4b8af1558492c74e961f2a4f0d55caa2c960c508395a41ff0",
     "app/[locale]/page.tsx": "0fee43451d696341924bc6481b1c40f992162f4a0c16521ae2f2df997414f792",
-    "app/[locale]/tourism-desk/[area]/page.tsx": "b74c40a03d7ff4ec57a8314f4c11825467212d48634bebf057d078d3ae360b35",
+    "app/[locale]/tourism-desk/[area]/page.tsx": "bc0d21662ab6bd24537521bb2874273ad47d4d16dadaf92afdf776f68e302bfe",
     "app/[locale]/tourism-desk/page.tsx": "2738ee0e7cfb960016184b8dd9a99112312719819cd3b8d05e96a89e83320b37",
     "app/api/airport/facilities/route.ts": "ebc9dea6df03d842ee8fbb1e640158276a506658cc364190a32fd99cf712639d",
     "app/api/airport/facility-operations/route.ts": "a7a7aa2a7955d2726136701a92f8bac81d0a26c40eac33049cfb3d1f5d6d909b",
@@ -16,24 +16,24 @@
     "app/api/live/summary/route.ts": "96727d7ade580d6a59fa3bcd438a242dae54316060ea259c7d74de40dfee1f3e",
     "app/area-demand-card.tsx": "5d23c5df9e326e250170cc6874702c2bd6d8d4c128edcc3a13ffdc454d93181d",
     "app/event-pagination.tsx": "d084f3533dd5e149a273cf3a91dd5796cb144c0b6ba9f794fc1e3c95428226e8",
-    "app/globals.css": "0f3a9126af25993f671a13487d001c3a63a0d4c0f4c795fd541043266ac51684",
+    "app/globals.css": "75e0ef5f489d979cae0c7bcc4b40bb73ac5dbc13f104a6784f82c05f58979826",
     "app/install-app.tsx": "864a43ddc979f681743990876a12ee73f2f2120e2a04fbf47752ca7640cd38a8",
     "app/layout.tsx": "64999616e2304074b644db660fc75890e95cc3867c313a7a71640d905fa32af4",
-    "app/live-signals.tsx": "46aa9f1c0ad87c40d8044c5d48e3b611f04a60179c400f031a8be03fafbaed3a",
+    "app/live-signals.tsx": "f36efe4e3f214c7d437c9b10a472b623969bb3b69766b6166821253f51e68d74",
     "app/not-found.tsx": "dc64d21f5066af4e81110075bfe4df1d79237d6a6285a840d28063cf4e832dbe",
     "app/operational-context.tsx": "a9ba61da5ef5c66017ae5660b9efd79d74272c2b31eb641ceca749d26548c75c",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "526e91e52ae33cd9c58a38f2cca5727580b0ab27668c5a8df3bf95ddecd155e9",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "bb142ef311024e9d04488cca51e3ebeeb2090327e658af561641621252ebdf96",
+    "app/retailpulse-app.tsx": "076fd30269484052e5eb72617bd21c765782a0d7f94851db980276a01723ba0a",
     "app/retailpulse-data.ts": "2a965cde02012978eb446a955b82bbcbfbec83f74f862e0e2846fae1ca348ecd",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "2208d14daf3cf078a6626ebca6ad90ef8e8dc0770c93f4fd6a295bd812d0e1f8",
     "app/site-usage-guide.tsx": "4b49e1bd31a91e35f7d0b56b6d1670d94cf644bcc47bcb257508a2a0f6cc64f1",
-    "app/sitemap.ts": "feb12ed8a001d1524b1fece19c3ac3ee945d4ccdc91d2fa115d5cccc1eedf2cd",
+    "app/sitemap.ts": "31ccb4d7cad836a09c3973f14c35ef638d8570413e6198a031c0ce2cd978063f",
     "app/source-status.tsx": "2432bc8bad500b8c45bba8d08781b8d6a189854d3c8a8a33b538bc9491580e46",
-    "app/tourism-desk.tsx": "90eb979789ea8c74b9ff04db767d845ff58bcf6c5ae2f9dc73a0a4a2975efa13",
+    "app/tourism-desk.tsx": "e938803682318aa1e44c7e9e72bc6f9056dcf850032e272c8f47efed261bdf4e",
     "app/tourism-visitor-show.tsx": "e30883e6efce51f33f839a38b78afe4a1127d87c9ba2cdb7bbac4de189179a10",
     "lib/realtime-dispatch.ts": "dba7bb0e688ec073df674bd5e5cfbb62c3810d8ad5ec181ed06e8bbe449d0a35",
     "public/_headers": "a10cad25ce8bd0c0b7c92225180a71718fc3d2bf5329ac714bf7b2ac6e22676f",
@@ -62,8 +62,8 @@
     "public/icon-512-20261007.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
     "public/icon-maskable-512-20261007.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
     "public/manifest-20261007.webmanifest": "6bad81a6e70af19a2c27c1a321513406823d3cea3e78aecacdbc3607647e99be",
-    "app/airport-live-signals.tsx": "901141965ead1ae371bb307b9188c1a224ed3cb71c2ba69947908a4e0e0d6b5d",
-    "app/airport-view.tsx": "f8c82e75db21a709be9a5eba047616d9088500a3d740a503740d5e7e75339a11",
+    "app/airport-live-signals.tsx": "9ee6ec11bb1f50fb7b618bbf34a945c3aa5528b486a00c1dfe3135dd3821f2f1",
+    "app/airport-view.tsx": "588230daf563c3d37aad769f6e0b7212fa18487ac4f0da30fd159fc3020b9f07",
     "app/local-text.ts": "82328cd1029e929b9a79cd1d58c325469ad829a262fa2e7935b65ca595dfb8d6",
     "app/month-range-picker.tsx": "c358abc4ad12749384e82427ec9c1f16099200a0fa40f84eb469e53dbd7d9665",
     "app/live-summary.tsx": "654e7b2f0d4a81e3ae26c7869ea3e53a8b7eb6e69459eeeaf305ce60ea0e9c75",
@@ -3027,5 +3027,173 @@
         "approved": "0f3a9126af25993f671a13487d001c3a63a0d4c0f4c795fd541043266ac51684"
       }
     ]
+  },
+  "ownerRequestedSitemapTruth20261020": {
+    "recordedAt": "2026-10-20",
+    "reason": "Owner-requested completion of outstanding Naver/Google SEO fixes. PR #412 removes unsupported current-day sitemap lastModified values because scheduled collection does not prove significant page-content changes. Only the reviewed sitemap hash is refreshed; every protected path, prior approval record, Cron baseline and the original Owner UI Lock assertion remain enforced. No visible UI, canonical URLs, locale alternates, staging policy, data reads, scheduler, paid service, merge or deployment changes.",
+    "comparisonBase": "7c9aef7e7f7d79a143957c777e70f1ee9ac30d72",
+    "reviewedCommit": "ad5223720835d68e6c00186f230dae894529235b",
+    "changes": [
+      {
+        "file": "app/sitemap.ts",
+        "previous": "feb12ed8a001d1524b1fece19c3ac3ee945d4ccdc91d2fa115d5cccc1eedf2cd",
+        "approved": "31ccb4d7cad836a09c3973f14c35ef638d8570413e6198a031c0ce2cd978063f",
+        "exactUnifiedDiff": "diff --git a/app/sitemap.ts b/app/sitemap.ts\nindex 390ff14..9546d5e 100644\n--- a/app/sitemap.ts\n+++ b/app/sitemap.ts\n@@ -1,17 +1,6 @@\n import type { MetadataRoute } from \"next\";\n import { canonicalSlug, isStagingDeployment, seoLocales, seoPath, siteOrigin, standaloneSeoSlugs, tourismDeskAreas, type SeoSlug } from \"./seo-config\";\n \n-/**\n- * Start of today in KST, as an instant.\n- *\n- * Korea has no daylight saving, so UTC+9 is a constant offset and this needs\n- * no timezone database.\n- */\n-function kstDayStart(now: Date): Date {\n-  const kstOffsetMs = 9 * 60 * 60 * 1000;\n-  return new Date(Math.floor((now.getTime() + kstOffsetMs) / 86_400_000) * 86_400_000 - kstOffsetMs);\n-}\n-\n /**\n  * `hreflang` for one page across every locale, as absolute URLs.\n  *\n@@ -29,32 +18,16 @@ function localeAlternates(slug?: SeoSlug, area?: (typeof tourismDeskAreas)[numbe\n }\n \n /**\n- * Whether we can honestly date a page.\n- *\n- * Every entry used to carry `lastModified: new Date()` — evaluated per\n- * request, so the whole site claimed to have changed at the moment of every\n- * crawl, `/about` included. Google's sitemap documentation is explicit that\n- * demonstrably unreliable `lastmod` values are ignored, and it does not ignore\n- * them per URL: one page that always claims \"just now\" devalues the signal for\n- * every page beside it.\n- *\n- * So a date is declared only where the repository can justify it. The area,\n- * airport, forecast, outlook, business and guide-desk screens are rebuilt from\n- * collections that land every day, so the start of the current KST day is\n- * true and — unlike `new Date()` — stable for the whole day. `/about` and\n- * `/more` are explainer copy that changes only when someone edits it, and a\n- * checkout cannot tell when that was, so they carry no date at all. An absent\n- * `lastmod` reads as \"unknown\", which is what it is.\n+ * lastModified is intentionally omitted. A scheduled collection or the current\n+ * KST date does not prove that a page changed: sources can be stale, unchanged\n+ * or unavailable. Restore this optional field only with a persisted timestamp\n+ * for a significant change to that page's actual content, not request/build time.\n  */\n-const UNDATEABLE_SLUGS = new Set<SeoSlug>([\"about\", \"more\"]);\n-\n export default function sitemap(): MetadataRoute.Sitemap {\n   if (isStagingDeployment) return [];\n-  const dailyRefresh = kstDayStart(new Date());\n   return seoLocales.flatMap((locale) => [\n     {\n       url: `${siteOrigin}${seoPath(locale)}`,\n-      lastModified: dailyRefresh,\n       changeFrequency: \"daily\" as const,\n       priority: 1,\n       alternates: { languages: localeAlternates() },\n@@ -62,14 +35,12 @@ export default function sitemap(): MetadataRoute.Sitemap {\n     // Only canonical URLs: a slug that serves the home (canonicalSlug) is not listed again.\n     ...standaloneSeoSlugs.filter((slug) => canonicalSlug(slug) === slug).map((slug) => ({\n       url: `${siteOrigin}${seoPath(locale, slug)}`,\n-      ...(UNDATEABLE_SLUGS.has(slug) ? {} : { lastModified: dailyRefresh }),\n       changeFrequency: slug === \"more\" ? \"weekly\" as const : \"daily\" as const,\n       priority: slug === \"more\" ? 0.5 : slug === \"forecast\" || slug === \"business\" ? 0.8 : 0.9,\n       alternates: { languages: localeAlternates(slug) },\n     })),\n     ...tourismDeskAreas.map((area) => ({\n       url: `${siteOrigin}${seoPath(locale, \"tourism-desk\", area)}`,\n-      lastModified: dailyRefresh,\n       changeFrequency: \"daily\" as const,\n       priority: 0.9,\n       alternates: { languages: localeAlternates(\"tourism-desk\", area) },\n"
+      }
+    ]
+  },
+  "ownerRequestedTextHomePerformanceExperiment20261020": {
+    "recordedAt": "2026-10-20",
+    "authorizationEvidence": {
+      "ownerRequest": "코리테일 배포도 하고 속도 개선 점검도 하고 코드 버그 점검도 해 배포하고 나서",
+      "scope": "Evidence-gated same-font preload experiment on the Korean text-led home only. This is a candidate under the owner-requested speed investigation, not a claim that the owner specifically selected preloading or that a speed gain is established. Preserve all fonts, UI, data, other routes/locales, exact budgets and lock enforcement. Root owns any merge/deployment after matched CI."
+    },
+    "comparisonBase": "15ed3e92fe33c1ceca167c00f4899b200b455e36",
+    "evidence": "CI 39473347408: deployed26474d0 vs synthetic merge f87ce5ae, tree equal to15ed3e9; dominant mobile shift .093245 occurs124-129ms after shell-font responseEnd. The October13 image-led no-preload decision remains recorded; this text-led experiment must pass unchanged budgets before promotion.",
+    "changes": [
+      {
+        "file": "app/[locale]/page.tsx",
+        "previous": "0fee43451d696341924bc6481b1c40f992162f4a0c16521ae2f2df997414f792",
+        "approved": "7d4dfb4eddd1eb9c188de39e1fe57b3f92c79acea896bc1b0b167cb5e00f764f",
+        "exactUnifiedDiff": "diff --git a/app/[locale]/page.tsx b/app/[locale]/page.tsx\nindex a6e4009..fae3917 100644\n--- a/app/[locale]/page.tsx\n+++ b/app/[locale]/page.tsx\n@@ -3,6 +3,7 @@ import { preload } from \"react-dom\";\n import { notFound } from \"next/navigation\";\n import RetailPulseApp from \"../retailpulse-app\";\n import {AirportFocusGlance as AirportGlancePreview} from \"../airport-focus-production\";\n+import {preloadShellFont} from '../shell-font-preload';\n import { buildMetadata, pageStructuredData, seoLocales, type SeoLocale } from \"../seo-config\";\n \n /**\n@@ -18,11 +19,12 @@ function preloadLiveSummary() {\n }\n \n /**\n- * No shell-font preload on the home, unlike travel-records and airport-news.\n- * On a throttled phone it competed with the scripts that hydrate the page;\n- * without it the page is interactive about 0.5 s sooner and the brand face,\n- * still requested by the stylesheet with `font-display: swap`, arrives about\n- * 0.3 s later (owner decision, 2026-10-13).\n+ * Experimental Korean text-led home only: matched October 20 attribution puts\n+ * .093245 of .094324 mobile layout shift just after the late shell-font swap.\n+ * Reuse the existing face/hint; unchanged CI budgets must establish whether\n+ * earlier stable text outweighs script contention. The former image-led home\n+ * intentionally omitted this hint (October 13); other routes/locales keep\n+ * their existing policy. This is not yet a speed-improvement claim.\n  */\n export function generateStaticParams() { return seoLocales.map((locale) => ({ locale })); }\n \n@@ -36,6 +38,7 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:\n   const { locale } = await params;\n   if (!seoLocales.includes(locale as SeoLocale)) notFound();\n   preloadLiveSummary();\n+  if (locale === 'ko') preloadShellFont('ko');\n   return <>\n     <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialView=\"airport-glance\" initialScope=\"airport-home\" AirportGlance={AirportGlancePreview} />\n     <script type=\"application/ld+json\" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale)) }} />\n"
+      }
+    ],
+    "experimental": true,
+    "keepProtectedListAndEnforcement": true
+  },
+  "ownerRequestedTourismDestinationResilience20261020": {
+    "recordedAt": "2026-10-20",
+    "authorizationEvidence": {
+      "scope": "Owner-requested site bug checks and destination matching. Preserve the explicit Tourism Desk URL area instead of restoring a saved personal home location. Move only the existing static methodology outside the live-summary gate so it remains available during loading or failure. No new copy, source, data, D1/API read, scheduler, dependency, paid service or redesign. Root approved this isolated local candidate; integration review and CI remain required.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "comparisonBase": "e50c72c93c3b32240abec1a6eba21bd73050472b",
+    "changes": [
+      {
+        "file": "app/[locale]/tourism-desk/[area]/page.tsx",
+        "previous": "b74c40a03d7ff4ec57a8314f4c11825467212d48634bebf057d078d3ae360b35",
+        "approved": "bc0d21662ab6bd24537521bb2874273ad47d4d16dadaf92afdf776f68e302bfe",
+        "exactUnifiedDiff": "diff --git a/app/[locale]/tourism-desk/[area]/page.tsx b/app/[locale]/tourism-desk/[area]/page.tsx\nindex dba61cd..5581611 100644\n--- a/app/[locale]/tourism-desk/[area]/page.tsx\n+++ b/app/[locale]/tourism-desk/[area]/page.tsx\n@@ -34,6 +34,7 @@ export default async function TourismDeskAreaPage({ params }: { params: Promise<\n       initialLang={locale as SeoLocale}\n       initialView=\"tourism-desk\"\n       initialArea={area as TourismDeskArea}\n+      initialScope=\"area\"\n       initialRoute\n     />\n     <script\n"
+      },
+      {
+        "file": "app/tourism-desk.tsx",
+        "previous": "90eb979789ea8c74b9ff04db767d845ff58bcf6c5ae2f9dc73a0a4a2975efa13",
+        "approved": "e938803682318aa1e44c7e9e72bc6f9056dcf850032e272c8f47efed261bdf4e",
+        "exactUnifiedDiff": "diff --git a/app/tourism-desk.tsx b/app/tourism-desk.tsx\nindex d72d10b..40589a1 100644\n--- a/app/tourism-desk.tsx\n+++ b/app/tourism-desk.tsx\n@@ -816,16 +816,16 @@ export function TourismDeskView({ lang, area, onAreaChange }: {\n         </div> : <p className=\"tourism-empty\">{copy.unavailable}</p>}\n       </section>\n \n-      <section className=\"tourism-guide-section\" aria-labelledby=\"tourism-limits-title\">\n-        <header className=\"tourism-section-head\">\n-          <h2 id=\"tourism-limits-title\">{copy.sectionLimits}</h2>\n-          <p>{copy.limitsIntro}</p>\n-        </header>\n-        <ul className=\"tourism-limits\">\n-          {limitLines(lang, areaName).map((line) => <li key={line}>{line}</li>)}\n-        </ul>\n-      </section>\n     </>}\n \n+    <section className=\"tourism-guide-section\" aria-labelledby=\"tourism-limits-title\">\n+      <header className=\"tourism-section-head\">\n+        <h2 id=\"tourism-limits-title\">{copy.sectionLimits}</h2>\n+        <p>{copy.limitsIntro}</p>\n+      </header>\n+      <ul className=\"tourism-limits\">\n+        {limitLines(lang, areaName).map((line) => <li key={line}>{line}</li>)}\n+      </ul>\n+    </section>\n   </section>;\n }\n"
+      }
+    ],
+    "protectedPathCount": 67,
+    "keepProtectedListAndEnforcement": true,
+    "searchIndexingClaim": "This fixes a routing/resilience bug; it does not establish search-engine indexing or resolve historical Soft 404 reports."
+  },
+  "rejectedTextHomePerformanceExperiment20261020": {
+    "recordedAt": "2026-10-20",
+    "decision": "Reject the evidence-gated preload experiment: matched mobile paint worsened despite improved stability. Restore the prior approved home source/hash; retain every historical record and all unrelated fixes. Root authorized removal; no merge/deployment.",
+    "comparison": {
+      "run": 39479787913,
+      "artifact": 12290282540,
+      "before": "26474d048885a642550d1196a55586b1b5f9fe60",
+      "candidate": "d970edf19d6c0e402552cdcd35c261f0e8f1b495",
+      "mobileLcpMs": [
+        7032,
+        8080
+      ],
+      "mobileFcpMs": [
+        6236,
+        6840
+      ],
+      "mobileShiftSum": [
+        0.09432448614623092,
+        0.0011570760470858178
+      ],
+      "sameLcpElement": true,
+      "existingBudgetPassed": true,
+      "lcpIsBudgetGated": false
+    },
+    "changes": [
+      {
+        "file": "app/[locale]/page.tsx",
+        "previousExperimental": "7d4dfb4eddd1eb9c188de39e1fe57b3f92c79acea896bc1b0b167cb5e00f764f",
+        "restoredApproved": "0fee43451d696341924bc6481b1c40f992162f4a0c16521ae2f2df997414f792",
+        "exactUnifiedDiff": "diff --git a/app/[locale]/page.tsx b/app/[locale]/page.tsx\nindex fae3917..a6e4009 100644\n--- a/app/[locale]/page.tsx\n+++ b/app/[locale]/page.tsx\n@@ -3,7 +3,6 @@ import { preload } from \"react-dom\";\n import { notFound } from \"next/navigation\";\n import RetailPulseApp from \"../retailpulse-app\";\n import {AirportFocusGlance as AirportGlancePreview} from \"../airport-focus-production\";\n-import {preloadShellFont} from '../shell-font-preload';\n import { buildMetadata, pageStructuredData, seoLocales, type SeoLocale } from \"../seo-config\";\n \n /**\n@@ -19,12 +18,11 @@ function preloadLiveSummary() {\n }\n \n /**\n- * Experimental Korean text-led home only: matched October 20 attribution puts\n- * .093245 of .094324 mobile layout shift just after the late shell-font swap.\n- * Reuse the existing face/hint; unchanged CI budgets must establish whether\n- * earlier stable text outweighs script contention. The former image-led home\n- * intentionally omitted this hint (October 13); other routes/locales keep\n- * their existing policy. This is not yet a speed-improvement claim.\n+ * No shell-font preload on the home, unlike travel-records and airport-news.\n+ * On a throttled phone it competed with the scripts that hydrate the page;\n+ * without it the page is interactive about 0.5 s sooner and the brand face,\n+ * still requested by the stylesheet with `font-display: swap`, arrives about\n+ * 0.3 s later (owner decision, 2026-10-13).\n  */\n export function generateStaticParams() { return seoLocales.map((locale) => ({ locale })); }\n \n@@ -38,7 +36,6 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:\n   const { locale } = await params;\n   if (!seoLocales.includes(locale as SeoLocale)) notFound();\n   preloadLiveSummary();\n-  if (locale === 'ko') preloadShellFont('ko');\n   return <>\n     <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialView=\"airport-glance\" initialScope=\"airport-home\" AirportGlance={AirportGlancePreview} />\n     <script type=\"application/ld+json\" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale)) }} />\n"
+      }
+    ],
+    "experimentRetainedForAudit": "ownerRequestedTextHomePerformanceExperiment20261020",
+    "keepProtectedListAndEnforcement": true
+  },
+  "ownerRequestedWhiteInterface20261021": {
+    "recordedAt": "2026-10-21",
+    "scope": "Owner requested plain white airport/arrival/flights/facilities/history surfaces, transparent terminal tabs, compact historical date access, notice reopening and aligned More destinations. No scheduler/provider/data formula change.",
+    "protectedPathCount": 67,
+    "files": {
+      "app/globals.css": {
+        "previous": "0f3a9126af25993f671a13487d001c3a63a0d4c0f4c795fd541043266ac51684",
+        "approved": "75e0ef5f489d979cae0c7bcc4b40bb73ac5dbc13f104a6784f82c05f58979826"
+      },
+      "app/live-signals.tsx": {
+        "previous": "46aa9f1c0ad87c40d8044c5d48e3b611f04a60179c400f031a8be03fafbaed3a",
+        "approved": "b15dbaac5a505a593770b00d10ef31f459f6d7aa120648395b8470c2424162ae"
+      },
+      "app/retailpulse-app.tsx": {
+        "previous": "bb142ef311024e9d04488cca51e3ebeeb2090327e658af561641621252ebdf96",
+        "approved": "7b7b411ebeaf3487cb21b12828b5209983334a06bad0f8d0dce33eaeb22d20bc"
+      },
+      "app/airport-view.tsx": {
+        "previous": "f8c82e75db21a709be9a5eba047616d9088500a3d740a503740d5e7e75339a11",
+        "approved": "588230daf563c3d37aad769f6e0b7212fa18487ac4f0da30fd159fc3020b9f07"
+      }
+    }
+  },
+  "ownerRequestedMonthlyChart20261021": {
+    "recordedAt": "2026-10-21",
+    "scope": "Owner requested thinner, more compact daily forecast bars. Only histogram geometry and presentation changed; MTD arithmetic and accessible controls preserved.",
+    "file": "app/live-signals.tsx",
+    "previous": "b15dbaac5a505a593770b00d10ef31f459f6d7aa120648395b8470c2424162ae",
+    "approved": "f36efe4e3f214c7d437c9b10a472b623969bb3b69766b6166821253f51e68d74"
+  },
+  "ownerRequestedChangeNotation20261021": {
+    "recordedAt": "2026-10-21",
+    "comparisonBase": "6a502845185ca8de33aa9c2b34764d33f335cd40",
+    "authorizationEvidence": {
+      "ownerRequests": [
+        "따로라도 사이트얼른 고쳐서반영해",
+        "늘어난거는 +로 해",
+        "구리로 감소(역신장은) ▲  로표시해",
+        "ㅇㅇㅇㅇㅇ더보기 상단에 설명서에적어두자 간략히"
+      ],
+      "confirmedConvention": "Increase +2.7% in restrained blue; decrease ▲ 2.7% in dark red; zero neutral; preserve signed math and units. Supersedes October 20 signs.",
+      "scope": "Display-only independent hotfix. Insert one concise localized reading paragraph at the top of More and replace the existing airport composition count expression with the shared approved formatter. No layout redesign, temperature/congestion recolor, data/API/collector/runtime change.",
+      "workerPushMergeOrDeploymentApproved": false
+    },
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "bb142ef311024e9d04488cca51e3ebeeb2090327e658af561641621252ebdf96",
+        "approved": "cae668ef7bffabae385be4e239290c8cdcd54840f1c3540db02f186d46a05491",
+        "exactUnifiedDiff": "diff --git a/app/retailpulse-app.tsx b/app/retailpulse-app.tsx\nindex 95a3c3f..7cf9b31 100644\n--- a/app/retailpulse-app.tsx\n+++ b/app/retailpulse-app.tsx\n@@ -1081,6 +1081,8 @@ function MoreView({\n         </div>\n       </div>\n \n+      <p className=\"truth-note\" data-testid=\"change-reading-guide\">{localText(lang, { ko: \"수치 읽는 법: 파란색 +는 증가, 빨간색 ▲는 감소입니다. 비교 기간과 단위를 함께 확인하세요.\", en: \"Reading changes: blue + means increase; red ▲ means decrease. Check the comparison period and unit together.\", zh: \"数值读法：蓝色 + 表示增加，红色 ▲ 表示减少。请同时确认比较时段和单位。\", ja: \"数値の読み方：青の + は増加、赤の ▲ は減少です。比較期間と単位も確認してください。\" })}</p>\n+\n       <nav className=\"more-section-links\" aria-label={localText(lang,{ko:'서비스 메뉴',en:'Service sections',zh:'服务菜单',ja:'サービスメニュー'})}>\n         {(['where-to','today','consumption','business','tourism-desk','forecast','about'] as const).map(item=><a key={item} href={routeFor(lang,item,selected)} onPointerEnter={item==='business'?prepareBusinessView:undefined} onFocus={item==='business'?prepareBusinessView:undefined} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}\n       </nav>\n"
+      },
+      {
+        "file": "app/airport-live-signals.tsx",
+        "previous": "901141965ead1ae371bb307b9188c1a224ed3cb71c2ba69947908a4e0e0d6b5d",
+        "approved": "9ee6ec11bb1f50fb7b618bbf34a945c3aa5528b486a00c1dfe3135dd3821f2f1",
+        "exactUnifiedDiff": "diff --git a/app/airport-live-signals.tsx b/app/airport-live-signals.tsx\nindex b7ee5b9..57d9fbb 100644\n--- a/app/airport-live-signals.tsx\n+++ b/app/airport-live-signals.tsx\n@@ -10,7 +10,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from \"react\";\n import type { Lang } from \"./retailpulse-data\";\n import { type TerminalFlightFallback } from \"../lib/airport-flight-scope\";\n import { RateText } from \"./change-rate\";\n-import { formatChangeRate } from \"../lib/change-rate\";\n+import { formatChangeRate, formatCountChange } from \"../lib/change-rate\";\n import { airportCompositionCopy } from \"../lib/airport-composition-copy\";\n import { usePresentationClock } from \"./area-demand-card\";\n import { AirportFlowFigure } from \"./airport-flow-figure\";\n@@ -1399,7 +1399,7 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi\n       {countryLine && <p>{({ ko: \"항공사 등록 국가 순위\", en: \"Airline registration-country ranking\", zh: \"航空公司注册国家排名\", ja: \"航空会社登録国ランキング\" })[lang]} · {countryLine}</p>}\n       {composition && <details className=\"composition-changes\"><summary>{contextText(lang,'전주 동요일 대비 항공사·국가별 변화','Airline/country changes vs. last weekday','较上周同日航空公司及国家变化','前週同曜日比の航空会社・国別変化')}</summary>\n         <p>{composition.baselineDate} → {date || summary?.serviceDateKst}</p>\n-        {(['airlines','countries'] as const).map(kind=><p key={kind}><RateText lang={lang} text={composition[kind].slice(0,5).map(row=>`${kind==='countries'?regionName(row.id,lang):row.id} ${row.previous} → ${row.current}${unit} (${row.delta===0?'0':`${row.delta>0?'▲ +':'▽ −'}${Math.abs(row.delta)}`}${unit}${row.percent===null?'':`, ${formatChangeRate(row.percent)}`})`).join(' · ')}/></p>)}\n+        {(['airlines','countries'] as const).map(kind=><p key={kind}><RateText lang={lang} text={composition[kind].slice(0,5).map(row=>`${kind==='countries'?regionName(row.id,lang):row.id} ${row.previous} → ${row.current}${unit} (${formatCountChange(row.delta,String)}${unit}${row.percent===null?'':`, ${formatChangeRate(row.percent)}`})`).join(' · ')}/></p>)}\n       </details>}\n       <small>{contextText(lang,'수집된 출발 운항 기록 비교 · 공동운항 중복 제외. 등록 국가는 승객 국적이 아닙니다.','Comparison of collected departure records, excluding codeshare duplicates. Registration country is not passenger nationality.','比较已收集的出发记录，排除代码共享重复。注册国家并非乘客国籍。','収集済み出発記録の比較・共同運航重複除外。登録国は旅客国籍ではありません。')}{!composition&&` · ${contextText(lang,'국가별 비교 기록 수집 중','Collecting country comparison history','收集各国比较记录中','国別比較記録を収集中')}`}</small>\n     </div>}\n"
+      }
+    ],
+    "protectedPathCount": 67,
+    "keepProtectedListAndEnforcement": true
+  },
+  "ownerRequestedNotationInterfaceIntegration20261021": {
+    "recordedAt": "2026-10-21",
+    "scope": "Integrate separately approved urgent notation and top More explanation with requested notice reopening and white interface. Preserve all 67 paths and existing provenance.",
+    "files": {
+      "app/retailpulse-app.tsx": {
+        "previous": "7b7b411ebeaf3487cb21b12828b5209983334a06bad0f8d0dce33eaeb22d20bc",
+        "approved": "076fd30269484052e5eb72617bd21c765782a0d7f94851db980276a01723ba0a"
+      },
+      "app/airport-live-signals.tsx": {
+        "previous": "901141965ead1ae371bb307b9188c1a224ed3cb71c2ba69947908a4e0e0d6b5d",
+        "approved": "9ee6ec11bb1f50fb7b618bbf34a945c3aa5528b486a00c1dfe3135dd3821f2f1"
+      }
+    }
   }
 }
