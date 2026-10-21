@@ -6,14 +6,14 @@ import {canonicalCalendar,refreshOfficialCalendars,readOfficialCalendars,project
 import type {CalendarEvent} from '../lib/calendar-context.mjs';
 const now=new Date('2026-10-01T00:00:00Z');
 const ics=(name='Synthetic Holiday',extra='')=>`BEGIN:VCALENDAR\r\nVERSION:2.0\r\n${Array.from({length:11},(_,i)=>`BEGIN:VEVENT\r\nUID:synthetic-${i}\r\nDTSTART;VALUE=DATE:2026${String(i+1).padStart(2,'0')}01\r\nSUMMARY:${name}\r\n${extra}END:VEVENT\r\n`).join('')}END:VCALENDAR\r\n`;
-function database(){const sql=new DatabaseSync(':memory:');sql.exec(readFileSync('drizzle/0029_official_calendar_current.sql','utf8'));const prepare=(query:string)=>{let params:unknown[]=[];const statement={bind(...args:unknown[]){params=args;return statement;},async all(){return{success:true,results:sql.prepare(query).all(...params as never[])};},async run(){const result=sql.prepare(query).run(...params as never[]);return{success:true,meta:{changes:Number(result.changes)}};}};return statement;};return{sql,db:{prepare} as unknown as D1Database};}
+function database(){const sql=new DatabaseSync(':memory:');sql.exec(readFileSync('drizzle/0029_official_calendar_current.sql','utf8'));sql.exec(readFileSync('drizzle/0031_singapore_official_calendar.sql','utf8'));const prepare=(query:string)=>{let params:unknown[]=[];const statement={bind(...args:unknown[]){params=args;return statement;},async all(){return{success:true,results:sql.prepare(query).all(...params as never[])};},async run(){const result=sql.prepare(query).run(...params as never[]);return{success:true,meta:{changes:Number(result.changes)}};}};return statement;};return{sql,db:{prepare} as unknown as D1Database};}
 const provider=(body=ics())=>(async (url:RequestInfo|URL,options?:RequestInit)=>{assert.equal(options?.redirect,'manual');return String(url).includes('opm.gov')?new Response(body):new Response('Denied',{status:403});}) as typeof fetch;
 test('structured official calendar retains institutional scope and bounded years',()=>{const result=canonicalCalendar('US',Buffer.from(ics()),now);assert.equal(result.events.length,11);assert.equal(result.events[0].scope,'institutional');assert.match(result.events[0].region!,/연방공무원/);assert.equal(result.events[0].status,'verified');assert.deepEqual(result.coverage,[{country:'US',year:2026,scope:'institutional'}]);});
 test('empty/partial years, cancelled events and block pages fail closed',()=>{for(const source of [ics().replaceAll('2026','2025'),ics().replace('END:VCALENDAR',''),ics('Synthetic Holiday','STATUS:CANCELLED\r\n'),'<html>captcha</html>'])assert.throws(()=>canonicalCalendar('US',Buffer.from(source),now));});
-test('monthly max2 provider requests, zero repeat-month calls, semantic payload preserved unchanged',async()=>{const {db,sql}=database();let calls=0;const fetcher=(async (...args:Parameters<typeof fetch>)=>{calls++;return provider()(...args);}) as typeof fetch;
- const result=await refreshOfficialCalendars(db,now,fetcher);assert.equal(calls,2);assert.equal(result.results.find(r=>r.country==='US')?.status,'VERIFIED');assert.equal(result.results.find(r=>r.country==='JP')?.status,'ERROR');
+test('monthly max3 provider requests, zero repeat-month calls, semantic payload preserved unchanged',async()=>{const {db,sql}=database();let calls=0;const fetcher=(async (...args:Parameters<typeof fetch>)=>{calls++;return provider()(...args);}) as typeof fetch;
+ const result=await refreshOfficialCalendars(db,now,fetcher);assert.equal(calls,3);assert.equal(result.results.find(r=>r.country==='US')?.status,'VERIFIED');assert.equal(result.results.find(r=>r.country==='JP')?.status,'ERROR');
  const before=sql.prepare("SELECT payload,last_verified_at FROM official_calendar_current WHERE country='US'").get();
- const skipped=await refreshOfficialCalendars(db,now,fetcher);assert.equal(calls,2);assert.equal(skipped.results.find(r=>r.country==='US')?.status,'SKIPPED_MONTHLY_GUARD');assert.equal(skipped.results.find(r=>r.country==='JP')?.status,'SKIPPED_RETRY_COOLDOWN');
+ const skipped=await refreshOfficialCalendars(db,now,fetcher);assert.equal(calls,3);assert.equal(skipped.results.find(r=>r.country==='US')?.status,'SKIPPED_MONTHLY_GUARD');assert.equal(skipped.results.find(r=>r.country==='JP')?.status,'SKIPPED_RETRY_COOLDOWN');
  const later=new Date('2026-11-01T00:00:00Z');const again=await refreshOfficialCalendars(db,later,fetcher);assert.equal(again.results.find(r=>r.country==='US')?.changedRows,0);const after=sql.prepare("SELECT payload,last_verified_at FROM official_calendar_current WHERE country='US'").get();assert.equal(after!.payload,before!.payload);assert.equal(after!.last_verified_at,later.toISOString());
  const rows=await readOfficialCalendars(db);assert.equal(projectOfficialCalendars(rows,[],later).events[0].verifiedAt,'2026-11-01');});
 test('failed refresh preserves payload and real verification time, recovery from null succeeds',async()=>{const {db,sql}=database();await refreshOfficialCalendars(db,now,(async()=>new Response('',{status:403})) as typeof fetch);
@@ -32,18 +32,18 @@ test('full holiday UI consumes changed official dates, retains regional calendar
 
 test('missed first-day workflow catches up later; successful source stays quiet for the month',async()=>{
  const {db}=database();let calls=0;const fetcher=(async (...args:Parameters<typeof fetch>)=>{calls++;return provider()(...args);}) as typeof fetch;
- const late=new Date('2026-10-03T00:00:00Z');await refreshOfficialCalendars(db,late,fetcher);assert.equal(calls,2);
+ const late=new Date('2026-10-03T00:00:00Z');await refreshOfficialCalendars(db,late,fetcher);assert.equal(calls,3);
  const next=await refreshOfficialCalendars(db,new Date('2026-10-04T00:00:00Z'),fetcher);
- assert.equal(calls,2);assert.equal(next.results.find(r=>r.country==='US')?.status,'SKIPPED_MONTHLY_GUARD');
+ assert.equal(calls,3);assert.equal(next.results.find(r=>r.country==='US')?.status,'SKIPPED_MONTHLY_GUARD');
  assert.equal(next.results.find(r=>r.country==='JP')?.status,'SKIPPED_RETRY_COOLDOWN');
 });
 test('failure retries only after seven days, then success suppresses the rest of the month',async()=>{
  const {db}=database();let calls=0;
  await refreshOfficialCalendars(db,now,(async()=>{calls++;return new Response('',{status:403});}) as typeof fetch);
  const fetcher=(async (...args:Parameters<typeof fetch>)=>{calls++;return provider()(...args);}) as typeof fetch;
- await refreshOfficialCalendars(db,new Date(now.getTime()+7*86400_000-1),fetcher);assert.equal(calls,2);
- const recovered=await refreshOfficialCalendars(db,new Date(now.getTime()+7*86400_000),fetcher);assert.equal(calls,4);assert.equal(recovered.results.find(r=>r.country==='US')?.status,'VERIFIED');
- const later=await refreshOfficialCalendars(db,new Date('2026-10-15T00:00:00Z'),fetcher);assert.equal(calls,5);assert.equal(later.results.find(r=>r.country==='US')?.status,'SKIPPED_MONTHLY_GUARD');
+ await refreshOfficialCalendars(db,new Date(now.getTime()+7*86400_000-1),fetcher);assert.equal(calls,3);
+ const recovered=await refreshOfficialCalendars(db,new Date(now.getTime()+7*86400_000),fetcher);assert.equal(calls,6);assert.equal(recovered.results.find(r=>r.country==='US')?.status,'VERIFIED');
+ const later=await refreshOfficialCalendars(db,new Date('2026-10-15T00:00:00Z'),fetcher);assert.equal(calls,8);assert.equal(later.results.find(r=>r.country==='US')?.status,'SKIPPED_MONTHLY_GUARD');
 });
 test('successful calendar remains usable past 14 days under monthly cadence',async()=>{
  const {db}=database();await refreshOfficialCalendars(db,now,provider());
@@ -117,4 +117,47 @@ test('normalizing a legacy order-sensitive hash does not fabricate the first cha
  sql.prepare("UPDATE official_calendar_current SET semantic_hash=? WHERE country='US'").run('f'.repeat(64));
  const next=new Date('2026-11-01T00:00:00Z');const normalized=await refreshOfficialCalendars(db,next,provider());assert.equal(normalized.results.find(row=>row.country==='US')!.status,'VERIFIED');
  assert.deepEqual(projectOfficialCalendars(await readOfficialCalendars(db),[],next).changes,[]);
+});
+
+test('SG verified public feed joins existing scheduler, renews metadata and preserves last-good on unknown facts',async()=>{
+ const {db,sql}=database();const bytes=readFileSync('tests/fixtures/official-calendar/sg-20261021.json');
+ let calls=0;const fetcher=(async(url:RequestInfo|URL)=>{calls++;return String(url).includes('data.gov.sg')?new Response(bytes,{headers:{'content-type':'application/json'}}):new Response('',{status:403});}) as typeof fetch;
+ const first=await refreshOfficialCalendars(db,now,fetcher);assert.equal(first.maximumProviderRequests,3);assert.equal(calls,3);assert.equal(first.results.find(r=>r.country==='SG')?.status,'VERIFIED');
+ const initial=sql.prepare("SELECT * FROM official_calendar_current WHERE country='SG'").get()!;
+ const projection=projectOfficialCalendars(await readOfficialCalendars(db),[],now);assert.equal(projection.events.filter(e=>e.country==='SG').length,38);assert.equal(projection.events.find(e=>e.country==='SG'&&e.start==='2026-11-09')?.scope,'institutional');assert.match(projection.events.find(e=>e.country==='SG'&&e.start==='2026-11-09')!.region!,/본인의 휴무일/);
+ assert.match(JSON.parse(initial.payload as string).licenceURL,/open-data-licence/);
+ await refreshOfficialCalendars(db,new Date('2026-10-02T00:00:00Z'),fetcher);assert.equal(calls,3);
+ const later=new Date('2026-11-01T00:00:00Z');await refreshOfficialCalendars(db,later,fetcher);
+ const renewed=sql.prepare("SELECT * FROM official_calendar_current WHERE country='SG'").get()!;assert.equal(renewed.payload,initial.payload);assert.equal(renewed.last_verified_at,later.toISOString());
+ const corrupt=JSON.parse(bytes.toString());corrupt.result.records[0].holiday='Unreviewed new holiday';
+ await refreshOfficialCalendars(db,new Date('2026-12-01T00:00:00Z'),(async()=>new Response(JSON.stringify(corrupt))) as typeof fetch);
+ const failed=sql.prepare("SELECT * FROM official_calendar_current WHERE country='SG'").get()!;assert.equal(failed.status,'REVIEW_REQUIRED');assert.equal(failed.payload,renewed.payload);assert.equal(failed.last_verified_at,renewed.last_verified_at);
+});
+
+test('SG migration preserves JP/US rows and rejects unapproved fourth country',()=>{
+ const sql=new DatabaseSync(':memory:');sql.exec(readFileSync('drizzle/0029_official_calendar_current.sql','utf8'));sql.exec("INSERT INTO official_calendar_current(country,checked_at,status) VALUES('JP','2026-10-01','ERROR')");sql.exec(readFileSync('drizzle/0031_singapore_official_calendar.sql','utf8'));
+ assert.equal(sql.prepare('SELECT country FROM official_calendar_current').get()!.country,'JP');assert.throws(()=>sql.exec("INSERT INTO official_calendar_current(country,checked_at,status) VALUES('TH','2026-10-01','ERROR')"));
+});
+
+test('SG UI replacement does not duplicate seed or broaden conditional observed dates',async()=>{
+ const {preparationEvents}=await import('../lib/preparation-calendar');
+ const value=canonicalCalendar('SG',readFileSync('tests/fixtures/official-calendar/sg-20261021.json'),now);
+ const events=preparationEvents('2026-10-21',value.events,value.coverage);
+ assert.equal(events.filter(e=>e.country==='SG'&&e.start==='2026-11-08').length,1);
+ const observed=events.filter(e=>e.country==='SG'&&e.start==='2026-11-09');assert.equal(observed.length,1);assert.match(observed[0].scope,/본인의 휴무일/);assert.match(observed[0].notes,/전 국민 공통 휴무일을 뜻하지 않습니다/);
+});
+
+test('SG migration preserves all original constraints and rolls back mid-migration faults',()=>{
+ const migration=readFileSync('drizzle/0031_singapore_official_calendar.sql','utf8');
+ for(const fault of ['INSERT INTO official_calendar_current_expanded','DROP TABLE official_calendar_current','ALTER TABLE official_calendar_current_expanded']){
+  const sql=new DatabaseSync(':memory:');sql.exec(readFileSync('drizzle/0029_official_calendar_current.sql','utf8'));
+  sql.exec("INSERT INTO official_calendar_current(country,payload,semantic_hash,source_hash,last_verified_at,checked_at,status,reason) VALUES('JP','jp-data',NULL,NULL,'2026-10-01','2026-10-01','VERIFIED',NULL),('US','us-data',NULL,NULL,'2026-10-01','2026-10-02','ERROR','HTTP_403')");
+  const before=sql.prepare('SELECT * FROM official_calendar_current ORDER BY country').all();
+  assert.deepEqual(sql.prepare("SELECT type FROM sqlite_master WHERE tbl_name='official_calendar_current' ORDER BY type").all().map(r=>r.type),['index','table']);
+  sql.exec('BEGIN');assert.throws(()=>sql.exec(migration.replace(fault,'SELECT * FROM deliberately_missing_table;\n'+fault)));sql.exec('ROLLBACK');
+  assert.deepEqual(sql.prepare('SELECT * FROM official_calendar_current ORDER BY country').all(),before);
+  assert.equal(sql.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name='official_calendar_current_expanded'").get()!.n,0);
+  sql.exec('BEGIN');sql.exec(migration);sql.exec('COMMIT');assert.deepEqual(sql.prepare('SELECT * FROM official_calendar_current ORDER BY country').all(),before);
+  for(const statement of ["INSERT INTO official_calendar_current(country,checked_at,status) VALUES('SG','now','INVALID')","INSERT INTO official_calendar_current(country,checked_at,status,payload) VALUES('SG','now','ERROR',replace(hex(zeroblob(125001)),'0','a'))","INSERT INTO official_calendar_current(country,checked_at,status,semantic_hash) VALUES('SG','now','ERROR','short')","INSERT INTO official_calendar_current(country,checked_at,status,source_hash) VALUES('SG','now','ERROR','short')","INSERT INTO official_calendar_current(country,checked_at,status) VALUES('SG',NULL,'ERROR')"])assert.throws(()=>sql.exec(statement));
+ }
 });
