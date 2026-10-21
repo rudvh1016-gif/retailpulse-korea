@@ -14,7 +14,7 @@ import {useLiveSummary} from './live-summary';
 import {useOfficialCalendar} from './official-calendar-client';
 import type {Lang} from './retailpulse-data';
 const ArrivalAllowances=dynamic(()=>import('./arrival-allowances-preview'));
-const majorRoutes=[['JP','일본'],['CN','중국'],['VN','베트남'],['US','미국'],['TW','대만'],['TH','태국']] as const;
+const majorRoutes=[['JP','일본'],['CN','중국'],['VN','베트남'],['US','미국'],['TW','대만'],['TH','태국'],['HK','홍콩'],['SG','싱가포르'],['PH','필리핀'],['MY','말레이시아'],['AU','호주'],['CA','캐나다']] as const;
 function FocusLiveData({date,children}:{date?:string|null;children:ReactNode}){
  const officialCalendar=useOfficialCalendar();
  const summary=useLiveSummary(date??null),asOf=summary?.todayKst??'',requested=date?.slice(0,7)||asOf.slice(0,7)||null;
@@ -23,7 +23,8 @@ function FocusLiveData({date,children}:{date?:string|null;children:ReactNode}){
  const months=[latest].flatMap(item=>[item.reply?.current.ROUTE_COUNTRY_PASSENGERS,item.reply?.previous.ROUTE_COUNTRY_PASSENGERS]).filter(item=>item!==undefined);
  const byMonth=new Map(months.map(item=>[item.month,item]));
  const expected:string[]=[];if(newest){let cursor:string|null=newest;for(let i=0;i<6&&cursor;i++){expected.unshift(cursor);cursor=previousMonth(cursor);}}
- const trends:FocusTrend[]=newest?majorRoutes.map(([code,label])=>({code,label,points:expected.map(month=>({month,departures:byMonth.get(month)?.rows.find(row=>!row.aggregate&&row.label===label)?.departures??null}))})):[];
+ const availableRoutes=majorRoutes.filter(([,label],index)=>index<6||months.some(item=>item.rows.some(row=>!row.aggregate&&row.label===label&&row.departures!==null)));
+ const trends:FocusTrend[]=newest?availableRoutes.map(([code,label])=>({code,label,points:expected.map(month=>({month,departures:byMonth.get(month)?.rows.find(row=>!row.aggregate&&row.label===label)?.departures??null}))})):[];
  const checkedAt=months.map(item=>item.retrievedAt).sort().at(-1)??null;
  return <AirportFocusData.Provider value={{...officialCalendar,asOf,trends,checkedAt,preview:false,failed:summary===null||latest.failed}}>{children}</AirportFocusData.Provider>;
 }

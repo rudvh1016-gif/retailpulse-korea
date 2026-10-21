@@ -10,6 +10,47 @@ test.beforeEach(async({page})=>{
  const base={operationId:'',month:'2026-07',retrievedAt:SUMMARY_FIXTURE.generatedAt};
  await page.route('**/api/live/airport-passenger-stats*',r=>r.fulfill({json:{status:'READY',month:'2026-07',previousMonth:null,current:{ROUTE_COUNTRY_PASSENGERS:{...base,operationId:'ROUTE_COUNTRY_PASSENGERS',rows:[{label:'일본',region:'일본',departures:31000,arrivals:0,total:null,aggregate:false,startHour:null,endHour:null}]},TIME_BAND_PASSENGERS:{...base,operationId:'TIME_BAND_PASSENGERS',rows:Array.from({length:24},(_,h)=>({label:String(h),region:null,departures:31000,arrivals:0,total:null,aggregate:false,startHour:h,endHour:h+1}))}},previous:{}}}));
 });
+test('the October 21 notice is visible despite dismissing or snoozing the October 19 notice',async({page})=>{
+ await page.addInitScript(()=>{
+  sessionStorage.setItem('koretail-notice:airport-comparison-20261019-v1:closed','1');
+  localStorage.setItem('koretail-notice:airport-comparison-20261019-v1:until',String(Date.UTC(2099,0,1)));
+ });
+ await page.goto('/ko');
+ const dialog=page.getByRole('dialog');
+ await expect(dialog).toBeVisible();
+ await expect(dialog.locator('time')).toHaveAttribute('datetime','2026-10-21T00:00:00+09:00');
+ await expect(dialog).toContainText('주목할 공항 흐름');
+ await expect(dialog).not.toContainText('판매사원');
+ expect(await page.evaluate(()=>localStorage.getItem('koretail-notice:airport-comparison-20261019-v1:until'))).toBe(String(Date.UTC(2099,0,1)));
+});
+test('More explicitly reopens a hidden notice without clearing the snooze or unrelated preferences',async({page})=>{
+ const until=String(Date.UTC(2099,0,1));
+ await page.addInitScript(({key,until})=>{
+  localStorage.setItem(key,until);
+  localStorage.setItem('koretail-airport-scope','T2');
+ },{key:UPDATE_NOTICE_UNTIL_KEY,until});
+ await page.goto('/ko/more');
+ const dialog=page.getByRole('dialog'),reopen=page.locator('.more-section-links').getByRole('button',{name:'공지사항 보기 ›',exact:true});
+ await expect(dialog).not.toBeVisible();
+ await reopen.click();
+ await expect(dialog).toBeVisible();
+ await expect(dialog.locator('#update-notice-title')).toBeFocused();
+ expect(await page.evaluate(key=>localStorage.getItem(key),UPDATE_NOTICE_UNTIL_KEY)).toBe(until);
+ expect(await page.evaluate(()=>localStorage.getItem('koretail-airport-scope'))).toBe('T2');
+ expect(await page.evaluate(()=>localStorage.getItem('koretail-analytics-consent-v1'))).toBe('false');
+ await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+ await expect(dialog).toBeVisible();
+ await page.keyboard.press('Escape');
+ await expect(dialog).not.toBeVisible();
+ await expect(reopen).toBeFocused();
+ expect(await page.evaluate(()=>document.documentElement.style.overflow)).not.toBe('hidden');
+ await reopen.click();
+ await expect(dialog).toBeVisible();
+ await dialog.getByRole('button',{name:'닫기',exact:true}).click();
+ await page.reload();
+ await expect(dialog).not.toBeVisible();
+ expect(await page.evaluate(key=>localStorage.getItem(key),UPDATE_NOTICE_UNTIL_KEY)).toBe(until);
+});
 for(const [width,height]of [[1440,1000],[360,568],[390,844],[430,700],[390,500]])test(`first entry is immediate, compact and keyboard safe ${width}x${height}`,async({page},testInfo)=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.setViewportSize({width,height});await page.goto('/ko');
  const dialog=page.getByRole('dialog',{name:'새로운 정보가 추가되었어요'});await expect(dialog).toBeVisible();

@@ -16,7 +16,7 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
  if(width<821){
   const gap=()=>page.locator('.bottom-nav').evaluate(n=>Math.abs(visualViewport!.offsetTop+visualViewport!.height-n.getBoundingClientRect().bottom));
   for(const height of [840,900,840]){
-   await page.getByTestId('date-calendar-trigger').click();await expect(page.getByTestId('date-calendar-dialog')).toBeVisible();await page.setViewportSize({width,height});await page.locator('.date-calendar-month input').focus();await page.keyboard.press('Escape');await expect(page.getByTestId('date-calendar-dialog')).toHaveCount(0);await expect(page.getByTestId('date-calendar-trigger')).toBeFocused();await expect.poll(gap).toBeLessThanOrEqual(1);
+   await page.setViewportSize({width,height});await page.locator('.stored-date-picker input[type=date]').focus();await page.keyboard.press('Escape');await page.locator('.stored-date-picker input[type=date]').blur();await expect(page.getByTestId('date-calendar-trigger')).toHaveCount(0);await expect.poll(gap).toBeLessThanOrEqual(1);
   }
   await page.locator('.airport-context-nav button').nth(2).click();const search=page.locator('.flight-search-field input');await expect(search).toBeVisible();
   for(const height of [420,840,420,900]){await page.setViewportSize({width,height});await search.scrollIntoViewIfNeeded();await search.focus();await search.fill('TEST');await expect.poll(gap).toBeLessThanOrEqual(1);const input=(await search.boundingBox())!,nav=(await page.locator('.bottom-nav').boundingBox())!;expect(input.y+input.height).toBeLessThanOrEqual(nav.y);await search.blur();}

@@ -143,7 +143,8 @@ jobs:
           if-no-files-found: warn
 
   airport-focus-performance:
-    if: github.head_ref == 'preview/airport-focus-review' || github.ref_name == 'preview/airport-focus-review' || github.head_ref == 'followup/post-release-quality-20261020' || github.ref_name == 'followup/post-release-quality-20261020'
+    if: github.head_ref == 'preview/airport-focus-review' || github.ref_name == 'preview/airport-focus-review' || github.head_ref == 'fix/morning-interface-20261021' || github.ref_name == 'fix/morning-interface-20261021' || github.head_ref == 'followup/post-release-quality-20261020' || github.ref_name == 'followup/post-release-quality-20261020'
+
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -180,7 +181,7 @@ jobs:
           server_pid=$!
           trap 'kill -- -"$server_pid" 2>/dev/null || true' EXIT
           for i in $(seq 1 60); do curl -fsS http://127.0.0.1:4174/ko -o /dev/null && break || sleep 1; done
-          node scripts/measure-airport-focus-lab.mjs http://127.0.0.1:4174/ko "$PWD/airport-performance/before.json" BEFORE
+          node scripts/measure-airport-focus-lab.mjs http://127.0.0.1:4174/ko "$PWD/airport-performance/before.json" BEFORE "$PWD/.benchmark-main/scripts/update-notice-test-state.mjs"
       - name: Build and measure candidate without deployment
         run: |
           NEXT_PUBLIC_SITE_ORIGIN=http://127.0.0.1:4173 npm run build

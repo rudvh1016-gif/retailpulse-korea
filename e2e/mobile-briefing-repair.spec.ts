@@ -233,10 +233,13 @@ for (const width of [360, 390]) test(`owner UI lock across main screens ${width}
     }
     // Reference controls are inside a closed disclosure; inspect them expanded.
     if (route === '/forecast') await page.locator('.records-reference>summary').click();
+    // Owner-approved terminal text controls are transparent, not white tiles.
+    // All other controls retain their white fill, hairline, and touch-target locks.
+    if (route === '/airport') await expect(page.locator('.airport-view .terminal-selector button')).toHaveCount(4);
     const controls = page.locator('.personal-switches .personal-inline button, .area-tabs button, .terminal-selector button, .airport-context-nav button, .prediction-view .segmented button');
-    for (const style of await controls.evaluateAll(els => els.map(el => { const s = getComputedStyle(el); return { label:el.textContent, top:s.borderTopWidth, left:s.borderLeftWidth, right:s.borderRightWidth, bottom:s.borderBottomWidth, background:s.backgroundColor, height:el.getBoundingClientRect().height }; }))) {
+    for (const style of await controls.evaluateAll(els => els.map(el => { const s = getComputedStyle(el); return { label:el.textContent, terminal:el.matches('.airport-view .terminal-selector button'), top:s.borderTopWidth, left:s.borderLeftWidth, right:s.borderRightWidth, bottom:s.borderBottomWidth, background:s.backgroundColor, height:el.getBoundingClientRect().height }; }))) {
       expect(style.top).toBe('0px'); expect(style.left).toBe('0px'); expect(style.right).toBe('0px');
-      expect(style.bottom).toBe('1px'); expect(style.background).toBe('rgb(255, 255, 255)'); expect(style.height, `${route}: ${style.label}`).toBeGreaterThanOrEqual(44);
+      expect(style.bottom).toBe('1px'); expect(style.background, `${route}: ${style.label}`).toBe(style.terminal ? 'rgba(0, 0, 0, 0)' : 'rgb(255, 255, 255)'); expect(style.height, `${route}: ${style.label}`).toBeGreaterThanOrEqual(44);
     }
     for (const control of await page.locator('.date-nav-shortcuts button').all()) {
       await expect(control).toHaveCSS('border-top-width', '0px');

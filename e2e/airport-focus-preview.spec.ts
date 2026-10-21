@@ -27,6 +27,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await page.route('**/api/live/flights*',route=>route.fulfill({json:flights}));
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:months}));
  await page.route('**/api/live/airport-passenger-stats*',route=>route.fulfill({json:passengerStats}));
+ await page.route('**/api/live/passenger-reference*',route=>route.fulfill({json:{status:'UNAVAILABLE',data:null}}));
  await page.route(/google-analytics\.com|googletagmanager\.com|analytics\.google\.com/,r=>r.abort());
  await page.goto('/ko/airport-focus-preview',{waitUntil:'domcontentloaded'});
  await page.getByRole('dialog').getByRole('button',{name:'닫기',exact:true}).click();
@@ -39,7 +40,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('.focus-report-basis')).toContainText('누락일을 0으로 계산하지 않습니다');
  await expect(page.locator('.focus-report-lines')).not.toContainText('9,546');
  await expect(page.locator('.focus-passenger-total')).toHaveCSS('white-space','nowrap');
- await expect(page.locator('.focus-passenger-comparison')).toHaveText('(전월 일평균 대비: 비교자료 확인 필요)');
+ await expect(page.locator('.focus-passenger-comparison')).toHaveText('전월 일평균 대비: 같은 기준의 비교자료 확인 중');
  expect(await page.locator('.focus-passenger-total').evaluate(node=>node.getBoundingClientRect().height<32)).toBe(true);
  await expect(page.getByTestId('glance-day-comparison')).toHaveCount(0);
  await page.locator('#focus-country-trends').scrollIntoViewIfNeeded();

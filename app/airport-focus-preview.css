@@ -40,7 +40,7 @@
 .update-notice[data-airport-focus=true] p{font-weight:400;line-height:1.75}
 .update-notice[data-airport-focus=true] .update-notice-items section{border-color:#e7ecf1}
 @media(max-width:700px){.focus-report{margin-block:20px 16px;padding-left:0}.focus-report-lines{gap:14px}.focus-report-lines p{font-size:13px}.focus-report-lines small{font-size:11px!important}.focus-source{font-size:11px!important}}
-/* A static, low-contrast silver canvas; no moving effect and no blur behind data. */
+/* Owner correction: page, arrivals, flights, facilities and history remain plain white. */
 .airport-focus-shell{background:#fff}
 .airport-focus-shell .glance-preview,.airport-focus-shell .focus-detail{background:#fff}
 .focus-header{background:rgba(255,255,255,.66);border-bottom-color:rgba(211,220,229,.65)}
@@ -106,11 +106,20 @@
 
 /* Owner palette refinement, 2026-10-20: ink navy, white data surfaces and quiet silver. */
 .airport-focus-shell :is(.glance-heading h1,.focus-detail h1,.focus-report-title h2,.focus-section-heading h2,.focus-today-title,.focus-preparation-brief h3,.focus-trend-top h3,.focus-trend-value){color:var(--navy, #24272c)}
-.airport-focus-shell .focus-report{border-color:var(--silver, #dce1e7);background:#fafafa}
 .focus-line-chart line[stroke="#28445f"],.focus-line-chart circle[stroke="#28445f"]{stroke:var(--navy, #24272c)}
 
 /* Requested neutral refinement: restrained hierarchy, not a navy-tinted card. */
 .airport-focus-shell .focus-report-title h2{font-weight:650}
-.airport-focus-shell .focus-report{border-color:#e5e5e7;box-shadow:none}
+/* One glass surface wraps today, next week and next month; the page stays white. */
+.airport-focus-shell .focus-report{background:rgb(255 255 255 / 40%);border-color:rgb(180 184 190 / 38%);box-shadow:inset 0 1px 0 rgb(255 255 255 / 90%),0 2px 9px rgb(24 28 34 / 5%);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more){.airport-focus-shell .focus-report{background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none}}
+@media(forced-colors:active){.airport-focus-shell .focus-report{background:Canvas;border-color:CanvasText;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}}
+.focus-event-country{display:inline-flex;align-items:center;gap:5px;vertical-align:middle}
+.focus-event-country img{width:24px;height:24px;object-fit:contain;flex:none}
+.focus-country-month-trend{display:block;color:var(--text-muted,#667484);font-size:12px;line-height:1.6}
 
 .airport-focus-shell .focus-holiday-gloss{display:block;font-size:11px!important;font-weight:400;line-height:1.6;color:#62666c;margin:3px 0 5px}
+
+/* Owner-requested published-month label, bound to the returned data month. */
+.focus-country-brief .focus-country-reference-month{margin:8px 0;font-size:17px;line-height:1.5;color:var(--ink,#24272c)}
+.focus-country-brief .focus-country-reference-month strong{font-weight:700}

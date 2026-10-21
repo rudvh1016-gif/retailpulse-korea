@@ -837,7 +837,12 @@ test("date navigation keeps KST shortcuts and offers month-bounded stored dates"
   assert.match(signals, /type="date"/);
   const navigator = signals.slice(signals.indexOf('export function DateNavigator'), signals.indexOf('const storedDateText'));
   assert.doesNotMatch(navigator, /\b(?:min|max)=\{/);
-  assert.match(navigator, /airportDates && <StoredAirportDates/);
+  assert.match(navigator, /\(airportDates \|\| compactDatePicker\) && <StoredAirportDates/);
+  assert.match(navigator, /<StoredAirportDates[^>]*showStored=\{airportDates\}/);
+  assert.match(navigator, /\{compactDatePicker \? datePicker : null\}<\/StoredAirportDates>/);
+  const storedDates = signals.slice(signals.indexOf('function StoredAirportDates'), signals.indexOf('function StoredAirportMonth'));
+  assert.match(storedDates, /showStored = true/);
+  assert.match(storedDates, /\{open && <>\{children\}\{showStored && <StoredAirportMonth/);
   assert.match(signals, /type="month"/);
   assert.match(signals, /useLiveSummary\(date, pickedMonth\)/);
   assert.match(route, /availabilityPeriod/);
