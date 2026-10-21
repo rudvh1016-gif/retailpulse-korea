@@ -108,7 +108,7 @@ test('blocked storage keeps the chosen hours for the visit and says so', async (
     Object.defineProperty(window, 'localStorage', { configurable: true, get: () => ({ getItem: deny, setItem: deny, removeItem: deny, key: deny, clear: deny, length: 0 }) });
   });
   const prep = await open(page);
-  const notice=page.getByRole('dialog',{name:'새로운 정보가 추가되었어요'});await expect(notice).toBeVisible();await notice.getByRole('button',{name:'닫기',exact:true}).click();await expect(notice).not.toBeVisible();
+  const notice=page.getByRole('dialog',{name:'new update!'});await expect(notice).toBeVisible();await notice.getByRole('button',{name:'닫기',exact:true}).click();await expect(notice).not.toBeVisible();
   await prep.getByRole('button', { name: prepCopy.change.ko }).click();
   await prep.getByLabel(prepCopy.wholeDayOption.ko).uncheck();
   await prep.getByLabel(prepCopy.open.ko).selectOption('09:00');
