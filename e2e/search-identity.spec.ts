@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-const core = '인천공항 출국장 대기·항공편 흐름과 서울 주요 상권의 혼잡·소비 정보를 한눈에';
+const shareDescription = '인천공항 출발·도착 항공편, 시간대별 예상 여객과 국가별 여객 추이, 환율·입국 면세 정보를 확인하세요. 자료별 기준일과 출처를 함께 제공합니다.';
+const aboutIntro = '인천공항 항공편·여객 흐름과 여행 준비 정보를 중심으로 제공하는 코리테일 KORETAIL은 Korea와 Retail을 합친 이름입니다. 자료별 기준일과 출처를 함께 안내합니다.';
+const aboutDescription = '인천공항 항공편·여객 흐름과 여행 준비 정보를 제공하는 코리테일을 소개합니다. 자료의 출처와 기준일, 관측·예상·과거 기록의 차이를 안내합니다.';
 
 test('legacy introduction redirects to its localized canonical without changing home discovery', async ({ request }) => {
   for (const [path, target] of [['/', '/ko'], ['/about', '/ko/about']]) {
@@ -9,8 +11,8 @@ test('legacy introduction redirects to its localized canonical without changing 
     expect(new URL(response.headers().location, response.url()).pathname).toBe(target);
   }
   const html = await (await request.get('/ko')).text();
-  expect(html).toContain('코리테일 KORETAIL | 인천공항 출국장 대기·예상 출국객·서울 상권');
-  expect(html).toContain(core);
+  expect(html).toContain('코리테일 KORETAIL | 인천공항 항공편·여객 흐름·여행 준비 정보');
+  expect(html).toContain(shareDescription);
   const sitemap = await (await request.get('/sitemap.xml')).text();
   if (process.env.RPK_DEPLOYMENT_STAGE === 'staging') {
     // Staging must stay out of search indexes; production coverage is tested separately.
@@ -28,11 +30,11 @@ for (const width of [390, 1440]) {
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/ko/about');
     await expect(page.locator('.about-view')).toBeVisible();
-    await expect(page).toHaveTitle('코리테일 소개 | 인천공항·서울 상권 데이터 서비스 KORETAIL');
-    await expect(page.locator('.about-view .view-intro')).toContainText(core);
-    await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', new RegExp(core));
+    await expect(page).toHaveTitle('코리테일 소개 | 인천공항 중심 데이터 서비스 KORETAIL');
+    await expect(page.locator('.about-view .view-intro')).toContainText(aboutIntro);
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', aboutDescription);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/ko\/about$/);
-    await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', core);
+    await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', shareDescription);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     expect(errors).toEqual([]);
   });

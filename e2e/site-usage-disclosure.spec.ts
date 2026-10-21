@@ -1,4 +1,5 @@
 import {test,expect} from '@playwright/test';
+import calendar from '../data/airport-focus-preview/calendar-context.json' with {type:'json'};
 import summary from './fixtures/airport-focus/summary.json' with {type:'json'};
 import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
 import months from './fixtures/airport-focus/months.json' with {type:'json'};
@@ -30,6 +31,11 @@ for(const lang of ['ko','en','zh','ja'])test(`${lang}: More optional explanation
 for(const lang of ['ko','en','zh','ja'])test(`${lang}: monthly retrospective calendar is optional, with the qualification always visible`,async({page})=>{
  await page.setViewportSize({width:320,height:844});
  await page.clock.setFixedTime(new Date(summary.generatedAt));
+ const calendarEvents=calendar.events.filter(event=>event.verifiedAt<=summary.todayKst);
+ expect(new Date(Date.parse(summary.generatedAt)+9*60*60*1000).toISOString().slice(0,10)).toBe(summary.todayKst);
+ expect(calendarEvents.every(event=>event.verifiedAt<=summary.todayKst)).toBe(true);
+ expect(calendarEvents.find(event=>event.country==='CN'&&event.start==='2026-09-25')?.end).toBe('2026-09-27');
+ await page.route('**/api/airport/calendar',route=>route.fulfill({json:{status:'PARTIAL',events:calendarEvents,calendarReplacementScopes:[],sources:[],checkedAt:null}}));
  await page.route('**/api/live/summary*',route=>route.fulfill({json:summary}));
  await page.route('**/api/live/flights*',route=>route.fulfill({json:flights}));
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:months}));
