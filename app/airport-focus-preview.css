@@ -123,3 +123,7 @@
 /* Owner-requested published-month label, bound to the returned data month. */
 .focus-country-brief .focus-country-reference-month{margin:8px 0;font-size:17px;line-height:1.5;color:var(--ink,#24272c)}
 .focus-country-brief .focus-country-reference-month strong{font-weight:700}
+
+/* Native disclosure for the existing calendar source/update footer only. */
+.focus-calendar-source-notes>summary{font-size:12px;min-height:44px;box-sizing:border-box;padding:10px 0;cursor:pointer;color:var(--focus-muted)}
+.focus-calendar-source-notes>summary:focus-visible{outline:2px solid var(--navy, #24272c);outline-offset:4px}
