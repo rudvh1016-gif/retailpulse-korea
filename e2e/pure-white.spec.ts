@@ -183,11 +183,24 @@ for (const width of [390, 1440]) {
     expect(box!.width).toBeLessThanOrEqual(Math.min(480, parent!.width));
     expect(box!.x).toBeGreaterThanOrEqual(parent!.x);
     expect(box!.x + box!.width).toBeLessThanOrEqual(parent!.x + parent!.width + 1);
-    for (const selector of ["body", ".airport-focus-shell", ".airport-view", ".airport-top-reference"]) {
+    for (const selector of ["body", ".airport-focus-shell", ".airport-view"]) {
       const backgrounds = await paintedBackground(page, selector);
       expect(backgrounds.length).toBeGreaterThan(0);
       for (const { colour } of backgrounds) expect(colour, selector).toBe(WHITE);
     }
+    // The shared page-wide helper deliberately skips legacy hero descendants.
+    // This approved-white model slot needs a direct, non-exempted paint check.
+    const adjacent = page.locator(".focus-country-jump + .airport-top-reference");
+    await expect(adjacent).toHaveCount(1);
+    const surroundingPaint = await jump.evaluate(node => [node.parentElement, node.nextElementSibling].map(start => {
+      for (let current = start; current; current = current.parentElement) {
+        const style = getComputedStyle(current);
+        if (style.backgroundImage !== "none") return `image:${style.backgroundImage}`;
+        if (!["transparent", "rgba(0, 0, 0, 0)"].includes(style.backgroundColor)) return style.backgroundColor;
+      }
+      return "unpainted";
+    }));
+    expect(surroundingPaint).toEqual([WHITE, WHITE]);
     await jump.focus();
     await expect(jump).toBeFocused();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
