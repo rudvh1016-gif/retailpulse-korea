@@ -81,3 +81,31 @@ unsupported lastmod values; use Search Advisor's verified `koretaildata.com`
 property to inspect collection/index reports and existing sitemap submission
 before making another submission. Keep staging blocked. Never report guaranteed
 Naver positions or AI-answer citations.
+
+### 2026-10-21 Public airport rendering dependencies
+
+The airport home, country-flow and preparation screens also read stored public
+data from `/api/airport/calendar` and `/api/live/airport-passenger-stats`. Both
+were outside the rendering allowlist even though their consumers were public
+sitemap pages. The crawl contract now permits only each exact endpoint and its
+query form, using the existing anchored rules. Calendar responses and every
+passenger-statistics response, including invalid selection, carry
+`X-Robots-Tag: noindex`; response status, payload and cache behavior are unchanged.
+Sibling, nested, private, administrative and all other unlisted API paths remain
+blocked. Staging still blocks all crawling.
+
+These are existing read-only routes: calendar reads at most two stored rows and
+monthly passenger statistics at most four. Neither invokes a provider or writes
+storage. This is a bound on each read, not measured traffic or a free-tier
+capacity guarantee. No WAF, CSP, authentication, paid service, scheduler or UI
+change is part of this correction. Deployment and actual crawler retrieval must
+be verified separately; this does not promise indexing, ranking or AI citations.
+
+Official guidance checked 2026-10-21:
+- https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics
+- https://searchadvisor.naver.com/guide/seo-basic-robots
+- https://developers.openai.com/api/docs/bots
+
+`OAI-SearchBot` is for ChatGPT search; `GPTBot` training permission is independent.
+The existing wildcard policy already permits public pages. No extra bot-specific
+permission or special AI markup is needed for this rendering correction.

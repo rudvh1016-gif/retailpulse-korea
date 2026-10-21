@@ -341,16 +341,22 @@ async function checkSitemap(context: Context): Promise<string[]> {
   const foreign = urls.filter((url) => !url.startsWith(`${origin}/`));
   check(context, "no sitemap URL points off the canonical origin", foreign.length === 0, foreign.slice(0, 3).join(", ") || "all on-origin");
 
-  // A lastmod that is always "now" is the reason Google discards lastmod for a
-  // whole site, so a stable date is the point. Two reads seconds apart must
-  // agree; a per-request timestamp would not.
+  // lastmod is optional: omit it when no significant page-change timestamp is
+  // proven. When present, two successful XML reads must agree per URL; never
+  // require invented dates or accept a failed second read as stable omission.
   const lastmods = [...body.matchAll(/<lastmod>([^<]+)<\/lastmod>/g)].map((match) => match[1].trim());
   const second = await get(context, `${origin}/sitemap.xml`);
-  const lastmodsAgain = [...second.body.matchAll(/<lastmod>([^<]+)<\/lastmod>/g)].map((match) => match[1].trim());
+  const datesByUrl = (xml: string) => [...xml.matchAll(/<url>([\s\S]*?)<\/url>/g)]
+    .map((match) => [
+      match[1].match(/<loc>([^<]+)<\/loc>/)?.[1].trim() ?? null,
+      match[1].match(/<lastmod>([^<]*)<\/lastmod>/)?.[1].trim() ?? null,
+    ])
+    .sort(([a], [b]) => (a ?? "").localeCompare(b ?? ""));
   check(context,
     "lastmod is stable between two reads",
-    lastmods.length > 0 && lastmods.join("|") === lastmodsAgain.join("|"),
-    `${lastmods.length} dated entries; first ${lastmods[0] ?? "none"}`,
+    second.response.status === 200 && (second.response.headers.get("content-type") ?? "").includes("xml") &&
+      JSON.stringify(datesByUrl(body)) === JSON.stringify(datesByUrl(second.body)),
+    `${lastmods.length} dated entries; first ${lastmods[0] ?? "omitted (optional)"}; second read status ${second.response.status}`,
   );
   check(context,
     "the sitemap declares its locale alternates",

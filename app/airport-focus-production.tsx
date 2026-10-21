@@ -9,6 +9,8 @@ import {AirportRouteCountryPassengers,RoutePassengerPlacement} from './airport-r
 import {useAirportPassengerStats} from './airport-passenger-stats-client';
 import {AirportFocusData,type FocusTrend} from './airport-focus-data';
 import {CountryBriefing,CountryTrends,HolidayList,OverviewHeadline,StaffCalendarContext} from './airport-focus-preview';
+import './preparation-calendar.css';
+import {PreparationArrivalLink} from './preparation-arrival-link';
 import {previousMonth} from '../lib/calendar-context.mjs';
 import {useLiveSummary} from './live-summary';
 import {useOfficialCalendar} from './official-calendar-client';
@@ -41,4 +43,4 @@ function CountryContents({lang,date}:{lang:Lang;date:string|null}){
  return <div className="airport-focus-shell airport-focus-operating"><div className="focus-detail"><h1>국가별 흐름</h1><p className="focus-lead">어느 노선의 흐름이 달라졌는지, 월별 실적으로 확인합니다.</p>{month&&<><CountryBriefing month={month}/><AirportRouteCountryPassengers lang={lang} month={month} terminal="all"/></>}<CountryTrends full/></div></div>;
 }
 export function AirportCountryFlow({lang,date}:{lang:Lang;date:string|null}){return <FocusLiveData date={date}><CountryContents lang={lang} date={date}/></FocusLiveData>;}
-export function AirportPreparation({lang}:{lang:Lang}){return <FocusLiveData><div className="airport-focus-shell airport-focus-operating"><div className="focus-detail"><h1>미리 준비</h1><p className="focus-lead">다가오는 휴일과 공식 안내를 미리 확인하세요.</p><a className="focus-related" href="#arrival-allowances">도착국 반입 면세한도 보기 ↗</a><HolidayList full/><ArrivalAllowances/><a className="focus-related" href={`/${lang}/airport-news`}>관세·면세 공식 소식 확인 ↗</a></div></div></FocusLiveData>;}
+export function AirportPreparation({lang}:{lang:Lang}){return <FocusLiveData><div className="airport-focus-shell airport-focus-operating"><div className="focus-detail"><h1>미리 준비</h1><p className="focus-lead">다가오는 휴일과 공식 안내를 미리 확인하세요.</p><PreparationArrivalLink/><HolidayList full/><ArrivalAllowances/><a className="focus-related" href={`/${lang}/airport-news`}>관세·면세 공식 소식 확인 ↗</a></div></div></FocusLiveData>;}

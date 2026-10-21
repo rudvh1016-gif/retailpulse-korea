@@ -16,9 +16,13 @@ test('official route-country passenger section live 1440', async ({ page }, test
   await expect(table.locator('tbody tr')).toHaveCount(8);
   await expect(section.locator('a[href="https://www.data.go.kr/data/15095071/openapi.do"]')).toBeVisible();
   await section.scrollIntoViewIfNeeded();
-  await expect.poll(() => section.locator('.route-passenger-heading img, table:first-of-type .route-country-name img')
-    .evaluateAll(images => images.filter(image => image.getClientRects().length > 0)
-      .every(image => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
+  // Each table is first-of-type in its own wrapper, including the collapsed
+  // remainder. Check only the displayed eight routes plus the heading artwork;
+  // unopened details must not be forced to fetch their lazy images.
+  const images = section.locator('.route-passenger-heading img').or(table.locator('.route-country-name img'));
+  await expect(images).toHaveCount(9);
+  await expect.poll(() => images.evaluateAll(items => items.every(image =>
+    (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth > 0))).toBe(true);
   await testInfo.attach('official-route-country-passengers-1440.png', {
     body: await section.screenshot(), contentType: 'image/png',
   });

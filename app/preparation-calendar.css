@@ -1,0 +1,51 @@
+/* The page stays paper-white; glass is confined to the requested small control. */
+.focus-country-filter .preparation-country-glass{display:inline-flex;align-items:center;max-width:calc(100% - 72px);border:1px solid rgba(36,39,44,.17);border-radius:999px;background:rgba(255,255,255,.76);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 2px 8px rgba(36,39,44,.04);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+@media(prefers-reduced-transparency:reduce),(prefers-contrast:more){.focus-country-filter .preparation-country-glass{background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none}}
+@media(forced-colors:active){.focus-country-filter .preparation-country-glass{background:Canvas;border-color:CanvasText;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}}
+.focus-country-filter .preparation-country-glass select{width:auto;max-width:100%;min-width:112px;min-height:44px;padding:0 14px;border:0;border-radius:999px;background:transparent;color:var(--focus-ink);font:inherit;cursor:pointer}
+.preparation-country-glass:focus-within{outline:2px solid var(--focus-ink);outline-offset:3px}
+.preparation-month{margin:4px 0 24px;background:#fff}
+.preparation-month-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.preparation-month-toolbar h3{margin:0;font-size:18px;font-weight:650;letter-spacing:-.035em}
+.preparation-month-navigation{display:flex;gap:2px;align-items:center}
+.preparation-month-navigation button{display:inline-grid;place-items:center;min-width:44px;min-height:44px;padding:0 8px;border:0;border-radius:999px;background:transparent;color:var(--focus-ink);font:inherit;font-size:12px;cursor:pointer;touch-action:manipulation}
+.preparation-month-navigation button:first-child,.preparation-month-navigation button:last-child{font-size:25px;font-weight:400}
+.preparation-month-grid{width:100%;table-layout:fixed;border-collapse:collapse;border-spacing:0}
+.preparation-month-grid th{height:26px;padding:0 2px 6px;font-size:11px;font-weight:500;text-align:center;color:var(--focus-ink)}
+.preparation-month-grid th:first-child,.preparation-month-grid th:last-child{color:var(--focus-muted)}
+.preparation-month-grid td{height:92px;border-top:1px solid #e5e5e5;padding:0;vertical-align:top}
+.preparation-day{display:flex;flex-direction:column;align-items:stretch;gap:4px;width:100%;min-height:92px;padding:6px 3px;border:0;border-radius:0;background:transparent;font:inherit;color:var(--focus-ink);text-align:left;cursor:pointer;touch-action:manipulation}
+.preparation-day time{display:grid;place-items:center;align-self:center;width:26px;height:26px;font-size:15px;font-weight:600;line-height:1}
+.preparation-month-grid td:first-child time,.preparation-month-grid td:last-child time{color:var(--focus-muted)}
+.preparation-day[aria-current=date] time{border-radius:50%;background:#c83e3b;color:#fff}
+.preparation-day[data-selected] time{outline:1px solid var(--focus-ink);outline-offset:2px}
+.preparation-day-events{display:flex;flex-direction:column;gap:3px;min-width:0}
+.preparation-event-chip{display:flex;align-items:center;gap:3px;min-width:0;border-radius:3px;background:#f1f4f7;padding:2px 3px;color:#354554;font-size:10px;line-height:1.25}
+.preparation-event-chip[data-country=KR]{background:#fff0df;color:#795120}
+.preparation-event-chip img,.preparation-event-chip .focus-country-code{flex-shrink:0;width:12px;height:10px;object-fit:contain;font-size:8px}
+.preparation-event-chip>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.preparation-event-more{font-size:10px;font-weight:600;line-height:1.2;color:var(--focus-muted);padding:0 3px}
+.focus-calendar .preparation-month-note{font-size:10px;line-height:1.6;color:var(--focus-muted);margin:10px 0 0}
+.preparation-day-details{border-block:1px solid #e5e5e5;margin-top:12px;padding:12px 0;background:#fff}
+.preparation-day-details h4{font-size:12px;font-weight:600;margin:0 0 6px}
+.preparation-day-details>div{display:flex;gap:8px;align-items:flex-start;min-width:0}
+.preparation-day-details>div>img{margin-top:12px;width:18px;height:18px;flex-shrink:0;object-fit:contain}
+.preparation-day-details a{display:flex;flex-direction:column;justify-content:center;min-height:44px;min-width:0;color:var(--focus-ink);font-size:12px;text-decoration:none;overflow-wrap:anywhere}
+.preparation-day-details a strong{font-weight:600}.preparation-day-details a span,.preparation-day-details p{font-size:11px;color:var(--focus-muted);line-height:1.6}
+.preparation-list-title{font-size:13px;font-weight:600;margin:0 0 12px}
+.focus-holiday-list li{scroll-margin-top:90px;content-visibility:auto;contain-intrinsic-size:auto 220px}
+.focus-calendar .preparation-empty{font-size:12px;line-height:1.7;margin:12px 0;color:var(--focus-muted)}
+.preparation-arrival-link{display:flex;align-items:center;gap:14px;min-height:84px;padding:16px 18px;margin:0 0 26px;border:1px solid #dce2e7;border-radius:14px;background:#fff;color:var(--focus-ink);text-decoration:none;touch-action:manipulation}
+.preparation-arrival-icon{display:grid;place-items:center;width:44px;height:44px;flex-shrink:0;color:#354554}
+.preparation-arrival-icon .navigation-icon{display:block;width:32px;height:32px}
+.preparation-arrival-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
+.preparation-arrival-copy strong{font-size:15px;font-weight:650;line-height:1.4}
+.preparation-arrival-copy small{font-size:11px;color:var(--focus-muted);line-height:1.6}
+.preparation-arrival-arrow{font-size:20px;margin-left:auto;flex-shrink:0;transition:transform 180ms ease-out}
+.preparation-arrival-link:is(:hover,:focus-visible) .preparation-arrival-icon{animation:preparation-arrival-cue 560ms ease-out 1}
+.preparation-arrival-link:is(:hover,:focus-visible) .preparation-arrival-arrow{transform:translate(2px,-2px)}
+@keyframes preparation-arrival-cue{0%,100%{transform:translate(0,0)}45%{transform:translate(3px,-3px)}}
+.preparation-month :is(button,a):focus-visible{outline:2px solid var(--focus-ink);outline-offset:-2px}
+@media(max-width:700px){.preparation-month-toolbar h3{font-size:17px}.preparation-month-grid td,.preparation-day{min-height:90px;height:90px}.preparation-day{padding:6px 1px}.preparation-event-chip{padding:2px;gap:2px}.preparation-arrival-link{padding:14px 12px;gap:10px}.preparation-arrival-copy strong{font-size:14px}}
+@media(prefers-reduced-motion:reduce){.preparation-arrival-link .preparation-arrival-icon{animation:none!important}.preparation-arrival-arrow{transition:none;transform:none!important}}
+.preparation-day-description{min-width:0;padding:8px 0}.preparation-day-description>strong{font-size:12px;font-weight:600}.preparation-day-description>p{margin:4px 0!important;font-size:11px;line-height:1.65;color:var(--focus-muted)}

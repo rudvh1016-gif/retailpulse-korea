@@ -5,12 +5,13 @@ import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import seed from '../data/airport-focus-preview/calendar-context.json';
 import schools from '../data/korean-school-vacations.json';
+import annual from '../data/official-calendar/priority-country-multiyear.json';
 import type {CalendarEvent} from '../lib/calendar-context.mjs';
 import {calendarEventTitle,countryTrendCalendar,trendCalendarText} from '../lib/country-trend-calendar';
 import {CountryTrendCalendarContext} from '../app/country-trend-calendar-context';
 
 const events=seed.events.map(event=>({...event,region:event.region??undefined})) as CalendarEvent[];
-const query={country:'JP',selectedMonth:'2026-09',actualDataMonths:['2026-08','2026-09'],asOf:'2026-10-20'};
+const query={country:'JP',selectedMonth:'2026-09',actualDataMonths:['2026-08','2026-09'],asOf:'2026-10-21'};
 const row={code:'JP',label:'일본',points:[{month:'2026-08',departures:100},{month:'2026-09',departures:110}]};
 const html=(changes:Partial<Parameters<typeof CountryTrendCalendarContext>[0]>={})=>renderToStaticMarkup(createElement(CountryTrendCalendarContext,{row,events,asOf:query.asOf,...changes}));
 
@@ -73,15 +74,40 @@ test('missing adjacent data never supplies a previous-month reason and missing c
  assert.equal(html({asOf:''}),'');
 });
 
-test('unknown, unreviewed, expired, OTHER and next-year evidence stays absent',()=>{
+test('unknown, unreviewed, expired and OTHER evidence stays absent',()=>{
  for(const country of ['OTHER','unknown'])assert.deepEqual(countryTrendCalendar(events,{...query,country}),{summary:[],details:[]});
  assert.deepEqual(countryTrendCalendar([],query,[]),{summary:[],details:[]});
  assert.deepEqual(countryTrendCalendar(events,{...query,asOf:'2026-10-19'}),{summary:[],details:[]});
- assert.deepEqual(countryTrendCalendar(events,{...query,selectedMonth:'2027-09',actualDataMonths:['2027-08','2027-09']}),{summary:[],details:[]});
  const school=schools.events[0] as CalendarEvent;
  for(const changes of [{status:'unverified'},{status:'expired'},{status:'superseded'},{scope:'national'},{reviewValidUntil:'2026-10-19'}]){
   assert.deepEqual(countryTrendCalendar([],query,[{...school,...changes} as CalendarEvent]),{summary:[],details:[]});
  }
+});
+
+test('Thai financial holidays retain institutional scope rather than school or universal closure',()=>{
+ const reviewed=annual.events as unknown as CalendarEvent[];
+ const result=countryTrendCalendar(reviewed,{...query,country:'TH',selectedMonth:'2026-10',actualDataMonths:['2026-10']},[]);
+ assert.equal(result.details.length,3);
+ for(const item of result.details){
+  assert.equal(item.scope,'institutional');
+  assert.match(trendCalendarText(item),/금융기관/);
+  assert.match(trendCalendarText(item),/해당 기관·대상에만 적용/);
+  assert.doesNotMatch(trendCalendarText(item),/해당 학교에만 적용|전국/);
+ }
+ assert.match(trendCalendarText(result.details.find(item=>item.start==='2026-10-16')!),/방콕/);
+ const federal={...reviewed.find(item=>item.country==='TH')!,id:'US-institutional-fixture',country:'US',region:'미국 연방공무원',start:'2026-10-12',end:'2026-10-12',sourceURL:'https://www.opm.gov/'};
+ const us=countryTrendCalendar([federal],{...query,country:'US',selectedMonth:'2026-10',actualDataMonths:['2026-10']},[]);
+ assert.match(trendCalendarText(us.details[0]),/미국 연방공무원.*해당 기관·대상에만 적용/);
+ assert.doesNotMatch(trendCalendarText(us.details[0]),/해당 학교에만 적용/);
+});
+
+test('annual KR reviews are withheld from frozen previews and never extrapolate school breaks',()=>{
+ const frozen=countryTrendCalendar(events,{...query,asOf:'2026-10-20'});
+ assert.ok(frozen.details.every(item=>item.country!=='KR'||item.kind!=='public_holiday'));
+ assert.ok(frozen.details.some(item=>item.country==='KR'&&item.kind==='school_break'));
+ const nextYear=countryTrendCalendar(events,{...query,selectedMonth:'2027-09',actualDataMonths:['2027-08','2027-09']});
+ assert.ok(nextYear.details.some(item=>item.country==='KR'&&item.kind==='public_holiday'));
+ assert.ok(nextYear.details.every(item=>item.country==='KR'&&item.kind==='public_holiday'&&item.verifiedAt==='2026-10-21'));
 });
 
 test('source details retain official URLs and dates without repeating full visible event summaries',()=>{

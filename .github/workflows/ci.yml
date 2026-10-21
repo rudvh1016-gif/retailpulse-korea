@@ -143,7 +143,7 @@ jobs:
           if-no-files-found: warn
 
   airport-focus-performance:
-    if: github.head_ref == 'preview/airport-focus-review' || github.ref_name == 'preview/airport-focus-review' || github.head_ref == 'fix/morning-interface-20261021' || github.ref_name == 'fix/morning-interface-20261021' || github.head_ref == 'followup/post-release-quality-20261020' || github.ref_name == 'followup/post-release-quality-20261020'
+    if: github.head_ref == 'preview/airport-focus-review' || github.ref_name == 'preview/airport-focus-review' || github.head_ref == 'fix/morning-interface-20261021' || github.ref_name == 'fix/morning-interface-20261021' || github.head_ref == 'followup/post-release-quality-20261020' || github.ref_name == 'followup/post-release-quality-20261020' || github.head_ref == 'fix/preparation-calendar-data-20261021' || github.ref_name == 'fix/preparation-calendar-data-20261021'
 
     runs-on: ubuntu-latest
     timeout-minutes: 20
