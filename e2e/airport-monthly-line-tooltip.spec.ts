@@ -39,8 +39,15 @@ test('hover and keyboard show the actual value for every month, including May',a
   for(let index=0;index<row.points.length-1;index++){
    const a=(await chart.locator(`g[data-month="${row.points[index].month}"] .focus-month-point`).boundingBox())!;
    const b=(await chart.locator(`g[data-month="${row.points[index+1].month}"] .focus-month-point`).boundingBox())!;
+   const next=(await chart.locator(`button[data-month="${row.points[index+1].month}"]`).boundingBox())!;
+   // Avoid a subpixel hit-test tie at the native button boundary while still
+   // proving this is outside the old 44px target, on the connecting line.
+   const x=next.x-2,offset=x-(a.x+a.width/2),fraction=offset/(b.x-a.x);
+   expect(offset).toBeGreaterThan(22);expect(fraction).toBeLessThan(.5);
+   const position={x,y:a.y+a.height/2+(b.y-a.y)*fraction};
+   expect(await chart.locator(`button[data-month="${row.points[index].month}"]`).evaluate((node,point)=>node.contains(document.elementFromPoint(point.x,point.y)),position)).toBe(true);
    await page.mouse.move(0,0);await page.keyboard.press('Escape');
-   await page.mouse.move(a.x+a.width/2+(b.x-a.x)*.49,a.y+a.height/2+(b.y-a.y)*.49);
+   await page.mouse.move(position.x,position.y);
    await expect(chart.getByRole('tooltip')).toHaveText(`${Number(row.points[index].month.slice(5))}월 · ${row.points[index].departures.toLocaleString('ko-KR')}명`);
   }
  }
