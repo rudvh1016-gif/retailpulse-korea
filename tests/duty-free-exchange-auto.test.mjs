@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {DatabaseSync} from 'node:sqlite';
 import {collectDutyFreeExchange,parseDutyFreeHtml,parseDutyFreeDatedHtml} from '../lib/duty-free-exchange-collector.ts';
 import {claimDutyFreeAttempt,saveDutyFreeSuccess,saveDutyFreeFailure,readDutyFreeSnapshot,DUTY_FREE_BLOCK_INTERVAL_MS} from '../lib/duty-free-exchange-store.ts';
-import {dutyFreeCoverage,dutyFreeRetryAfter,dutyFreePresentation,dutyFreeDatedPresentation,dutyFreeSources,kstExchangeDate,mergeDutyFreeSnapshot,dutyFreeReadDelay} from '../lib/duty-free-exchange.ts';
+import {dutyFreeCoverage,dutyFreeRunStatus,dutyFreeRetryAfter,dutyFreePresentation,dutyFreeDatedPresentation,dutyFreeSources,kstExchangeDate,mergeDutyFreeSnapshot,dutyFreeReadDelay} from '../lib/duty-free-exchange.ts';
 import {dutyFreeCacheControl} from '../app/api/live/duty-free-exchange/route.ts';
 import {shouldRouteToSummaryCache} from '../worker/summary-cache-routing.ts';
 import {canonicalSummaryUrl} from '../worker/summary-cache-key.ts';
@@ -271,6 +271,35 @@ test('incident witness distinguishes current, retained previous day, and missing
  assert.equal(witness.state,'LAST_GOOD');assert.equal(witness.serviceDateKst,'2026-10-08');
  assert.equal(witness.lastAttemptStatus,'BLOCKED');assert.equal(witness.errorCode,'SELECTOR_UNVERIFIED');
  assert.equal(witness.nextAttemptAt,new Date(now+3_600_001+86_400_000).toISOString());
+ const run=dutyFreeRunStatus([skip],[witness]);
+ assert.equal(run.exitCode,0,'a durable zero-request skip must not repeat the original failed workflow');
+ assert.match(run.warnings[0],/coverage=LAST_GOOD/);
+ assert.ok(run.warnings[0].includes(`nextEligible=${witness.nextAttemptAt}`));
+ assert.match(run.warnings[0],/execution success is not data freshness/);
+});
+
+test('only exact zero-request cooldown skips suppress a stale-only failure; actual failures remain red',()=>{
+ const nextAttemptAt='2026-10-09T02:08:00.000Z';
+ const missing=[{vendor:'shilla',state:'MISSING',serviceDateKst:null,nextAttemptAt}];
+ const current=[{...missing[0],state:'CURRENT',serviceDateKst:'2026-10-09'}];
+ const skip={status:'SKIPPED_NOT_DUE',providerRequests:0};
+ assert.equal(dutyFreeRunStatus([skip],missing).exitCode,0);
+ assert.match(dutyFreeRunStatus([skip],missing).warnings[0],/coverage=MISSING; serviceDateKst=NONE; nextEligible=2026-10-09T02:08:00.000Z/);
+ assert.deepEqual(dutyFreeRunStatus([skip],current),{exitCode:0,warnings:[]});
+ assert.equal(dutyFreeRunStatus([],missing).exitCode,1,'absence of execution proof is not an eligible skip');
+ for(const outcome of [{status:'SKIPPED_NOT_DUE',providerRequests:1},{status:'SUCCESS',providerRequests:1},{status:'SUPERSEDED',providerRequests:0}]) {
+  assert.equal(dutyFreeRunStatus([outcome],missing).exitCode,1);
+ }
+ for(const status of ['ERROR','BLOCKED'])for(const providerRequests of [0,1])for(const coverage of [missing,current]) {
+  assert.equal(dutyFreeRunStatus([{status,providerRequests}],coverage).exitCode,1);
+  assert.equal(dutyFreeRunStatus([skip,{status,providerRequests}],coverage).exitCode,1);
+ }
+ assert.deepEqual(dutyFreeRunStatus([{status:'SUCCESS',providerRequests:1}],current),{exitCode:0,warnings:[]});
+ assert.deepEqual(missing,[{vendor:'shilla',state:'MISSING',serviceDateKst:null,nextAttemptAt}],'warnings never fabricate fresh data');
+ const runner=readFileSync('scripts/collect-duty-free-exchange.ts','utf8');
+ assert.match(runner,/dutyFreeRunStatus\(outcomes,coverage\)/);
+ assert.match(runner,/console\.warn\(`::warning title=Duty-free data not current::/);
+ assert.match(runner,/process\.exitCode=runStatus\.exitCode/);
 });
 
 test('provider Retry-After extends but never shortens the shared durable cooldown without immediate retries',async t=>{

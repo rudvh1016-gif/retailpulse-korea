@@ -12,7 +12,7 @@
 
 ## 구현한 부분 / 구현하지 않은 부분
 
-1. **실행 상태와 자료 상태 분리**: 수집 실행 뒤 기존 D1 저장 API와 같은 read 함수로 CURRENT / LAST_GOOD / MISSING을 기록한다. 적용일·확인 시각·마지막 상태·오류 코드·다음 가능 시각을 로그에 남긴다. 오늘 값 없는 cooldown skip을 초록 성공으로 숨기지 않으며 script exitCode=1이다. 새 provider 호출 없음.
+1. **실행 상태와 자료 상태 분리**: 수집 실행 뒤 기존 D1 저장 API와 같은 read 함수로 CURRENT / LAST_GOOD / MISSING을 기록한다. 적용일·확인 시각·마지막 상태·오류 코드·다음 가능 시각을 로그에 남긴다. 오늘 값 없는 경우 명시적 warning을 남기며 실행 성공이 자료 최신성을 뜻하지 않는다고 표시한다. 정확히 SKIPPED_NOT_DUE/providerRequests=0인 guard 준수만 반복 실패에서 제외한다. 실제 ERROR/BLOCKED 및 실제 실행 후 오늘 값 누락은 exitCode=1을 유지한다. 새 provider 호출 없음.
 2. **짧은 내부 조회 harness**: 오늘 저장값이 없는 낮 시간도 30/60/120초 재조회 후 15분으로 복귀한다. 자정/네트워크 재조회와 하루 마운트당 총 12회의 빠른 조회 cap을 공유하며 정상 빈 응답이 이 예산을 초기화하지 않는다. 실제 BLOCKED 상태는 빠르게 조회하지 않는다. 숨긴 탭 정지·focus 5분 guard·동시 1요청·12초 timeout 유지. 방문자는 계속 KORETAIL 저장 API만 읽는다.
 3. **Retry-After**: provider 오류의 표준 초/HTTP-date 값을 기존 D1 cooldown보다 늦을 때만 반영한다. 403/406의 최소 24시간, 429의 최소 1시간 guard를 줄이지 않는다. 내부 API도 Retry-After와 403/429 최소 15분 대기를 존중한다. 원천 즉시 재시도 추가 없음.
 4. **자정 진실성**: 전날 시작한 요청이 자정을 넘어 도착한 경우 명시 적용일 없는 CURRENT_WIDGET을 새 날짜의 환율로 저장하지 않는다. 실제 명시된 익일 값만 정상 승계한다.

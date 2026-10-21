@@ -142,6 +142,18 @@ export function dutyFreeCoverage(snapshot: DutyFreeExchangeSnapshot, nowMs: numb
   });
 }
 
+/** Execution status is not freshness: an enforced zero-request cooldown warns without failing again. */
+export function dutyFreeRunStatus(
+  outcomes: readonly {status:string;providerRequests:number}[],
+  coverage: ReturnType<typeof dutyFreeCoverage>,
+) {
+  const missing=coverage.filter(row=>row.state!=='CURRENT');
+  const guardedSkip=outcomes.length>0&&outcomes.every(row=>row.status==='SKIPPED_NOT_DUE'&&row.providerRequests===0);
+  const failed=outcomes.some(row=>row.status==='ERROR'||row.status==='BLOCKED')||(missing.length>0&&!guardedSkip);
+  return {exitCode:failed?1:0,warnings:missing.map(row=>
+    `${row.vendor}: coverage=${row.state}; serviceDateKst=${row.serviceDateKst??'NONE'}; nextEligible=${row.nextAttemptAt??'UNKNOWN'}; today's verified rate is unavailable; execution success is not data freshness.`)};
+}
+
 /** A server cooldown can only postpone the durable guard; it never authorizes an extra call. */
 export function dutyFreeRetryAfter(value: string | null, nowMs: number): string | null {
   if (!value || value.length > 128 || !Number.isFinite(nowMs)) return null;
