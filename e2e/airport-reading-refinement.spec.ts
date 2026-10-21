@@ -12,14 +12,14 @@ const flights = Array.from({length: 67}, (_, index) => ({
 }));
 
 for (const lang of ['ko','en','zh','ja'] as const) for (const width of [360,390,430,1280]) {
-  test(`connected dates and complete grouped flight reading ${lang} ${width}`, async ({page}) => {
+  test(`spaced airport dates and complete grouped flight reading ${lang} ${width}`, async ({page}) => {
     const errors: string[]=[]; page.on('pageerror', error => errors.push(error.message));
     await page.setViewportSize({width,height:900});
     await page.emulateMedia({reducedMotion:'reduce'});
     await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
     await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',basis:'COLLECTED_FLIGHT_RECORDS',flights,truncated:false,retrievedAt:`${date}T03:00:00Z`}}));
     await page.goto(`/${lang}/airport`);
-    const dates=page.locator('.date-nav-shortcuts').first();
+    const dates=page.locator('.airport-view .airport-date-reserved .date-nav > .date-nav-shortcuts');
     await expect(dates.locator('button')).toHaveCount(3);
     for(const button of await dates.locator('button').all()) {
       const box=(await button.boundingBox())!;
@@ -27,7 +27,13 @@ for (const lang of ['ko','en','zh','ja'] as const) for (const width of [360,390,
       await expect(button.locator('time')).toHaveAttribute('datetime',/\d{4}-\d{2}-\d{2}/);
     }
     const boxes=await dates.locator('button').evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().toJSON()));
-    expect(Math.abs(boxes[0].right-boxes[1].left)).toBeLessThan(2);
+    // Owner-approved airport-only pills: 6px gaps, no surrounding rectangle.
+    await expect(dates).toHaveCSS('gap','6px');
+    await expect(dates).toHaveCSS('border-top-width','0px');
+    for(let i=1;i<boxes.length;i++) {
+      expect(boxes[i].left-boxes[i-1].right).toBeCloseTo(6,0);
+      expect(boxes[i].top).toBeCloseTo(boxes[0].top,0);
+    }
     await dates.locator('button').nth(2).focus(); await page.keyboard.press('Enter');
     await expect(dates.locator('button').nth(2)).toHaveAttribute('aria-pressed','true');
     await dates.locator('button').nth(1).click();
