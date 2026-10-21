@@ -128,6 +128,10 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
           // today/week/month report wrapper. Its bounds and white surroundings
           // are checked in airport-brief-glass.spec.ts.
           if (sel === '.airport-focus-shell .focus-report' && bg === 'rgba(255, 255, 255, 0.4)' && filter === 'blur(14px)') continue;
+          // Sentinel_7ae84329dea48191ade277d460d7cd14: only the bounded
+          // monthly passenger readout; tooltip/white-body bounds are tested in
+          // airport-monthly-line-tooltip.spec.ts, never a chart/card exception.
+          if (sel === '.focus-month-tooltip' && bg === 'rgba(255, 255, 255, 0.68)' && filter === 'blur(14px)') continue;
           // Exact owner-requested liquid surfaces only.
           if (['.update-notice[data-airport-focus="true"]','.update-notice[data-airport-focus=true]','.focus-header','.focus-report'].includes(sel)) continue;
           // Owner approval Sentinel_105e48cea9648191a7e7c29e86006ec9: the two guide

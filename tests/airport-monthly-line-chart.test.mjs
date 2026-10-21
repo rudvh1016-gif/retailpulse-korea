@@ -43,12 +43,35 @@ test('thin strokes are non-scaling and touch targets and motion stay independent
  assert.equal((html.match(/stroke-width="1.25" vector-effect="non-scaling-stroke"/g)??[]).length,11);
  const css=readFileSync(new URL('../app/airport-monthly-line-chart.css',import.meta.url),'utf8');
  assert.match(css,/min-width:24px;min-height:44px/);
- const targetPercent=Number(html.match(/width:clamp\(24px, ([\d.]+)%, 44px\)/)?.[1]);
- assert.ok(Math.abs(targetPercent-256/332/5*100)<1e-12,'hit area cannot exceed the adjacent month-center spacing');
+ assert.doesNotMatch(css,/transform:translateX\(-50%\)/,'left positions now describe contiguous region edges');
  assert.match(css,/prefers-reduced-motion:reduce/);
  assert.match(css,/:focus-visible/);
  const source=readFileSync(new URL('../app/airport-monthly-line-chart.tsx',import.meta.url),'utf8');
  assert.doesNotMatch(source,/\bfetch\s*\(|gsap|lottie/i);
+});
+
+test('nearest-month targets cover the full chart with no capped-width gaps or out-of-bounds edges',()=>{
+ for(const count of [1,2,6]){
+  const row={...captured.trends[0],points:captured.trends[0].points.slice(0,count)},html=render(row);
+  const boxes=[...html.matchAll(/class="focus-month-target" style="left:([\d.]+)%;width:([\d.]+)%"/g)].map(match=>({left:Number(match[1]),width:Number(match[2])}));
+  assert.equal(boxes.length,count);assert.equal(boxes[0].left,0);
+  for(const [index,box] of boxes.entries()){
+   const center=(48+index*256/Math.max(1,count-1))/332*100;
+   assert.ok(box.left<=center&&center<=box.left+box.width);
+   assert.ok(box.width>0&&box.left+box.width<=100+1e-12);
+   if(index)assert.ok(Math.abs(boxes[index-1].left+boxes[index-1].width-box.left)<1e-12);
+  }
+  assert.ok(Math.abs(boxes.at(-1).left+boxes.at(-1).width-100)<1e-12);
+ }
+});
+
+test('only the bounded readout is neutral liquid glass, with opaque accessibility fallbacks',()=>{
+ const css=readFileSync(new URL('../app/airport-monthly-line-chart.css',import.meta.url),'utf8');
+ const tooltip=css.match(/\.focus-month-tooltip\{([^}]+)\}/)[1];
+ assert.match(tooltip,/background:rgba\(255,255,255,\.68\)/);assert.match(tooltip,/backdrop-filter:blur\(14px\)/);
+ assert.match(tooltip,/border-radius:12px/);assert.match(tooltip,/width:152px;max-width:calc\(100% - 16px\)/);
+ assert.match(css,/@supports not/);assert.match(css,/@media\(prefers-reduced-transparency:reduce\)/);
+ assert.equal((css.match(/backdrop-filter:blur\(14px\)/g)??[]).length,2);
 });
 
 // CI trace: the floating readout intercepted the next month target. Removing it

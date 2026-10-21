@@ -4,8 +4,8 @@ export function KoreanVacationContext(query:KoreanVacationQuery){
  const items=koreanSchoolVacations(query);
  if(!items.length)return null;
  return <div className="focus-source focus-korean-vacation">
-  <p><b>한국 학교 방학 일정 예시</b></p>
-  {items.map(item=><p key={`${item.eventId}-${item.month}`}>{query.day?`${query.day} 해당`:`${item.month}${item.relation==='previous'?'(직전 월)':''} 겹침`} · {item.region}<br/>한국 {item.name} {item.start}–{item.end} · <a href={item.sourceURL} target="_blank" rel="noreferrer">학교 공식 일정 ↗</a><br/>확인 {item.verifiedAt} · 해당 학교에만 적용</p>)}
+  <p><b>초등학교 방학기간 참고</b></p>
+  {items.map(item=><p key={`${item.eventId}-${item.month}`}>{query.day?`${query.day} 해당`:`${item.month}${item.relation==='previous'?'(직전 월)':''} 겹침`} · 개별 학교 예시<br/>한국 {item.name} {item.start}–{item.end} · <a href={item.sourceURL} target="_blank" rel="noreferrer">학교 공식 일정 ↗</a><br/>확인 {item.verifiedAt} · 학교별 일정 상이</p>)}
   <p>{KOREAN_VACATION_CAUTION}</p>
  </div>;
 }

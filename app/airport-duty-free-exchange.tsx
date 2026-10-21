@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import type { Lang } from './retailpulse-data';
 import { activeDutyFreeVendors, DUTY_FREE_CACHE_KEY, dutyFreeDatedPresentation, dutyFreeReadDelay, dutyFreeRetryAfter, dutyFreeSources, kstExchangeDate, mergeDutyFreeSnapshot, nextKstExchangeMidnight, shiftExchangeDate, validDutyFreeSnapshot, type DutyFreeExchangeSnapshot } from '../lib/duty-free-exchange';
 import './airport-duty-free-exchange.css';
+import { DutyFreeMonthlyTrend } from './duty-free-monthly-trend';
 
 const copy = {
   ko: {title:'면세환율',today:'오늘',pending:'오늘 환율 확인 중',previous:'어제 환율',next:'내일 환율',checked:'확인',source:'공식 출처',shilla:'신라',internet:'인터넷점 참고',missing:'확인된 환율 없음',nextMissing:'공식 출처에서 내일 적용일이 명시된 환율만 표시합니다.',failed:'최근 수집 실패',attempt:'수집 시도',nextAttempt:'다음 수집 가능',readUnavailable:'환율 조회 실패',readFailed:'새 자료 조회 실패. 확인된 환율과 확인 시각을 유지합니다.',caution:'인터넷점 표시 환율입니다. 공항 현장 매장의 동일 적용 여부는 확인되지 않았으며, 최종 결제 금액은 달라질 수 있습니다.'},
@@ -104,6 +105,7 @@ export function AirportDutyFreeExchange({lang}:{lang:Lang;date:string|null}) {
           {selected?<><p className="duty-free-rate">{rate(selected.krwPerUnit)}</p><p className="prep-note">{words.checked} <time dateTime={selected.verifiedAt}>{clock.format(new Date(selected.verifiedAt))} KST</time></p></>:<p className="prep-note">{words.missing}</p>}
           {expanded==='next'&&<p className="prep-note">{words.nextMissing}</p>}
         </div>}
+        <DutyFreeMonthlyTrend lang={lang}/>
         <p className="prep-note">{words.caution}</p>
       </div>
     </details>

@@ -29,8 +29,9 @@ export default function MonthlyLineChart({row}:{row:FocusTrend}){
  const low=Math.max(0,Math.floor(Math.min(...values)*0.9/10000)*10000);
  const high=Math.max(low+10000,Math.ceil(Math.max(...values)*1.1/10000)*10000);
  const x=(index:number)=>48+index*256/Math.max(1,row.points.length-1);
- // Stay within adjacent month centers without changing the existing chart grid.
- const targetWidth=`clamp(24px, ${256/(width*Math.max(1,row.points.length-1))*100}%, 44px)`;
+ // Nearest-month regions meet at their midpoint and cover the whole plot.
+ // A 44px cap left untouchable gaps along the visible line on wider charts.
+ const boundary=(index:number)=>index===0?0:index===row.points.length?width:(x(index-1)+x(index))/2;
  const y=(value:number)=>130-(value-low)/(high-low)*104;
  const monthLabel=(month:string)=>`${Number(month.slice(5))}월`;
  const readout=(point:FocusTrend['points'][number])=>`${monthLabel(point.month)} · ${point.departures===null?'자료 없음':`${number.format(point.departures)}명`}`;
@@ -62,7 +63,7 @@ export default function MonthlyLineChart({row}:{row:FocusTrend}){
     })}
    </svg>
    {row.points.map((point,index)=><button key={point.month} ref={node=>{targets.current[index]=node;}} type="button"
-    className="focus-month-target" style={{left:`${x(index)/width*100}%`,width:targetWidth}} data-month={point.month}
+    className="focus-month-target" style={{left:`${boundary(index)/width*100}%`,width:`${(boundary(index+1)-boundary(index))/width*100}%`}} data-month={point.month}
     aria-label={`${row.label} ${point.month.slice(0,4)}년 ${readout(point)}`} aria-pressed={activeMonth===point.month}
     aria-describedby={activeMonth===point.month?tooltipId:undefined}
     onPointerEnter={event=>{if(event.pointerType!=='touch')setActiveMonth(point.month);}}

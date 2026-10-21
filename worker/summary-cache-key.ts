@@ -43,7 +43,7 @@ function validMonth(value: string | null): string | null {
  */
 export function canonicalSummaryUrl(url: URL): string {
   // FX is a single current stored snapshot; the client applies its selected date.
-  if (url.pathname === '/api/live/duty-free-exchange') return `${url.origin}${url.pathname}`;
+  if ((url.pathname === '/api/live/duty-free-exchange' || url.pathname === '/api/live/duty-free-exchange/monthly')) return `${url.origin}${url.pathname}`;
   // The flight record reads `date` only (a real KST day; anything else means
   // today). The client's `_day` clock marker exists for the browser's own
   // cache; the route caps freshness at KST midnight, so the edge needs no copy.
