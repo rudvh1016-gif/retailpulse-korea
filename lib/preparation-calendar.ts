@@ -17,8 +17,16 @@ export function preparationEvents(asOf:string,calendarEvents?:CalendarEvent[],sc
  const preserved:PreparationEvent[]=holidays.events.filter(event=>event.status==='OFFICIAL_DATE_CONFIRMED'&&event.checkedAt.slice(0,10)<=asOf&&!scopes.some(scope=>scope.country===event.country&&scope.year===Number(event.start.slice(0,4))&&(scope.country==='JP'?event.type==='public_holiday'&&!event.region:event.type==='federal_employee_holiday'&&event.countryLabel==='미국'))).map(event=>({...event,kind:'public_holiday',verifiedAt:event.checkedAt.slice(0,10)}));
  const names=new Intl.DisplayNames(['ko'],{type:'region'});
  const reviewed=calendarEvents??snapshot.events.map(event=>({...event,region:event.region??undefined})) as CalendarEvent[];
+ // The reviewed BOT bank list uses TH-date-bank; the richer card snapshot
+ // uses TH-all-date-bank (or the older major suffix). Reconcile only proven same-source/same-scope aliases,
+ // never all holidays sharing a date (national or regional entries stay distinct).
+ const displayId=(event:CalendarEvent)=>{
+  if(event.country!=='TH'||event.kind!=='public_holiday'||event.scope!=='institutional'||event.region!=='금융기관·특수금융기관'||event.id!==`TH-${event.start}-bank`)return event.id;
+  const original=holidays.events.find(row=>[ `TH-all-${event.start}-bank`, `TH-all-${event.start}-major` ].includes(row.id)&&row.country==='TH'&&row.type==='bank_holiday'&&row.calendarScope==='institutional'&&row.start===event.start&&row.end===event.end&&row.sourceURL===event.sourceURL&&row.name===event.name.replace(/ \(금융기관\)$/,''));
+  return original&&preserved.some(row=>row.id===original.id)?original.id:event.id;
+ };
  const additional=reviewed.filter(event=>event.status==='verified'&&isExactDate(event.start)&&isExactDate(event.end)&&event.start<=event.end&&isExactDate(event.verifiedAt)&&event.verifiedAt<=asOf&&(!event.reviewValidUntil||event.reviewValidUntil>=asOf)&&(event.scope==='national'||Boolean(event.region))).map(event=>({
-  id:event.id,country:event.country,countryLabel:event.country==='KR'?'한국':names.of(event.country)??event.country,name:event.name,start:event.start,end:event.end,
+  id:displayId(event),country:event.country,countryLabel:event.country==='KR'?'한국':names.of(event.country)??event.country,name:event.name,start:event.start,end:event.end,
   dateLabel_ko:event.start===event.end?event.start:`${event.start}~${event.end}`,scope:event.scope==='national'?'전국 법정 공휴일':event.region??'적용 대상 확인 필요',
   description_ko:event.kind==='school_break'?`${event.region}에 한정된 방학입니다. 전국 공통 방학이 아닙니다.`:event.scope==='national'?'공식 자료에서 확인한 공휴일입니다.':'표시된 지역·기관에 적용되는 일정이며 전국 또는 모든 사업장의 휴무를 뜻하지 않습니다.',
   cardSummary_ko:'',connectionStatus_ko:'적용 조건과 확인일',connectionNote_ko:'휴일은 출입국 인원이나 혼잡을 보장하지 않습니다.',restConditions_ko:[`공식 자료 확인일 ${event.verifiedAt}`],
