@@ -26,7 +26,7 @@
     "app/personal-home.tsx": "9b49e886950d681b1e0dda15f0b4d08d417c72aecd4c21e7a792f27f75947eb3",
     "app/personal-preferences.ts": "526e91e52ae33cd9c58a38f2cca5727580b0ab27668c5a8df3bf95ddecd155e9",
     "app/prediction-view.tsx": "3b9c8ce57f0efb18fbc7e0b8e0e9b1e43baf5b0944ff2ef3bf078c57e1183042",
-    "app/retailpulse-app.tsx": "bb142ef311024e9d04488cca51e3ebeeb2090327e658af561641621252ebdf96",
+    "app/retailpulse-app.tsx": "cae668ef7bffabae385be4e239290c8cdcd54840f1c3540db02f186d46a05491",
     "app/retailpulse-data.ts": "2a965cde02012978eb446a955b82bbcbfbec83f74f862e0e2846fae1ca348ecd",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "2208d14daf3cf078a6626ebca6ad90ef8e8dc0770c93f4fd6a295bd812d0e1f8",
@@ -62,7 +62,7 @@
     "public/icon-512-20261007.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
     "public/icon-maskable-512-20261007.png": "259c6ce55d5e21838746556dd2ddc7b86f07c20189abc11fab7f9ffe7d446bdc",
     "public/manifest-20261007.webmanifest": "6bad81a6e70af19a2c27c1a321513406823d3cea3e78aecacdbc3607647e99be",
-    "app/airport-live-signals.tsx": "901141965ead1ae371bb307b9188c1a224ed3cb71c2ba69947908a4e0e0d6b5d",
+    "app/airport-live-signals.tsx": "9ee6ec11bb1f50fb7b618bbf34a945c3aa5528b486a00c1dfe3135dd3821f2f1",
     "app/airport-view.tsx": "f8c82e75db21a709be9a5eba047616d9088500a3d740a503740d5e7e75339a11",
     "app/local-text.ts": "82328cd1029e929b9a79cd1d58c325469ad829a262fa2e7935b65ca595dfb8d6",
     "app/month-range-picker.tsx": "c358abc4ad12749384e82427ec9c1f16099200a0fa40f84eb469e53dbd7d9665",
@@ -3119,6 +3119,37 @@
       }
     ],
     "experimentRetainedForAudit": "ownerRequestedTextHomePerformanceExperiment20261020",
+    "keepProtectedListAndEnforcement": true
+  },
+  "ownerRequestedChangeNotation20261021": {
+    "recordedAt": "2026-10-21",
+    "comparisonBase": "6a502845185ca8de33aa9c2b34764d33f335cd40",
+    "authorizationEvidence": {
+      "ownerRequests": [
+        "따로라도 사이트얼른 고쳐서반영해",
+        "늘어난거는 +로 해",
+        "구리로 감소(역신장은) ▲  로표시해",
+        "ㅇㅇㅇㅇㅇ더보기 상단에 설명서에적어두자 간략히"
+      ],
+      "confirmedConvention": "Increase +2.7% in restrained blue; decrease ▲ 2.7% in dark red; zero neutral; preserve signed math and units. Supersedes October 20 signs.",
+      "scope": "Display-only independent hotfix. Insert one concise localized reading paragraph at the top of More and replace the existing airport composition count expression with the shared approved formatter. No layout redesign, temperature/congestion recolor, data/API/collector/runtime change.",
+      "workerPushMergeOrDeploymentApproved": false
+    },
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "bb142ef311024e9d04488cca51e3ebeeb2090327e658af561641621252ebdf96",
+        "approved": "cae668ef7bffabae385be4e239290c8cdcd54840f1c3540db02f186d46a05491",
+        "exactUnifiedDiff": "diff --git a/app/retailpulse-app.tsx b/app/retailpulse-app.tsx\nindex 95a3c3f..7cf9b31 100644\n--- a/app/retailpulse-app.tsx\n+++ b/app/retailpulse-app.tsx\n@@ -1081,6 +1081,8 @@ function MoreView({\n         </div>\n       </div>\n \n+      <p className=\"truth-note\" data-testid=\"change-reading-guide\">{localText(lang, { ko: \"수치 읽는 법: 파란색 +는 증가, 빨간색 ▲는 감소입니다. 비교 기간과 단위를 함께 확인하세요.\", en: \"Reading changes: blue + means increase; red ▲ means decrease. Check the comparison period and unit together.\", zh: \"数值读法：蓝色 + 表示增加，红色 ▲ 表示减少。请同时确认比较时段和单位。\", ja: \"数値の読み方：青の + は増加、赤の ▲ は減少です。比較期間と単位も確認してください。\" })}</p>\n+\n       <nav className=\"more-section-links\" aria-label={localText(lang,{ko:'서비스 메뉴',en:'Service sections',zh:'服务菜单',ja:'サービスメニュー'})}>\n         {(['where-to','today','consumption','business','tourism-desk','forecast','about'] as const).map(item=><a key={item} href={routeFor(lang,item,selected)} onPointerEnter={item==='business'?prepareBusinessView:undefined} onFocus={item==='business'?prepareBusinessView:undefined} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}\n       </nav>\n"
+      },
+      {
+        "file": "app/airport-live-signals.tsx",
+        "previous": "901141965ead1ae371bb307b9188c1a224ed3cb71c2ba69947908a4e0e0d6b5d",
+        "approved": "9ee6ec11bb1f50fb7b618bbf34a945c3aa5528b486a00c1dfe3135dd3821f2f1",
+        "exactUnifiedDiff": "diff --git a/app/airport-live-signals.tsx b/app/airport-live-signals.tsx\nindex b7ee5b9..57d9fbb 100644\n--- a/app/airport-live-signals.tsx\n+++ b/app/airport-live-signals.tsx\n@@ -10,7 +10,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from \"react\";\n import type { Lang } from \"./retailpulse-data\";\n import { type TerminalFlightFallback } from \"../lib/airport-flight-scope\";\n import { RateText } from \"./change-rate\";\n-import { formatChangeRate } from \"../lib/change-rate\";\n+import { formatChangeRate, formatCountChange } from \"../lib/change-rate\";\n import { airportCompositionCopy } from \"../lib/airport-composition-copy\";\n import { usePresentationClock } from \"./area-demand-card\";\n import { AirportFlowFigure } from \"./airport-flow-figure\";\n@@ -1399,7 +1399,7 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi\n       {countryLine && <p>{({ ko: \"항공사 등록 국가 순위\", en: \"Airline registration-country ranking\", zh: \"航空公司注册国家排名\", ja: \"航空会社登録国ランキング\" })[lang]} · {countryLine}</p>}\n       {composition && <details className=\"composition-changes\"><summary>{contextText(lang,'전주 동요일 대비 항공사·국가별 변화','Airline/country changes vs. last weekday','较上周同日航空公司及国家变化','前週同曜日比の航空会社・国別変化')}</summary>\n         <p>{composition.baselineDate} → {date || summary?.serviceDateKst}</p>\n-        {(['airlines','countries'] as const).map(kind=><p key={kind}><RateText lang={lang} text={composition[kind].slice(0,5).map(row=>`${kind==='countries'?regionName(row.id,lang):row.id} ${row.previous} → ${row.current}${unit} (${row.delta===0?'0':`${row.delta>0?'▲ +':'▽ −'}${Math.abs(row.delta)}`}${unit}${row.percent===null?'':`, ${formatChangeRate(row.percent)}`})`).join(' · ')}/></p>)}\n+        {(['airlines','countries'] as const).map(kind=><p key={kind}><RateText lang={lang} text={composition[kind].slice(0,5).map(row=>`${kind==='countries'?regionName(row.id,lang):row.id} ${row.previous} → ${row.current}${unit} (${formatCountChange(row.delta,String)}${unit}${row.percent===null?'':`, ${formatChangeRate(row.percent)}`})`).join(' · ')}/></p>)}\n       </details>}\n       <small>{contextText(lang,'수집된 출발 운항 기록 비교 · 공동운항 중복 제외. 등록 국가는 승객 국적이 아닙니다.','Comparison of collected departure records, excluding codeshare duplicates. Registration country is not passenger nationality.','比较已收集的出发记录，排除代码共享重复。注册国家并非乘客国籍。','収集済み出発記録の比較・共同運航重複除外。登録国は旅客国籍ではありません。')}{!composition&&` · ${contextText(lang,'국가별 비교 기록 수집 중','Collecting country comparison history','收集各国比较记录中','国別比較記録を収集中')}`}</small>\n     </div>}\n"
+      }
+    ],
+    "protectedPathCount": 67,
     "keepProtectedListAndEnforcement": true
   }
 }

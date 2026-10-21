@@ -1,3 +1,4 @@
+import {formatCountChange} from './change-rate';
 import {selectQueueRepresentatives} from './airport-queue-representatives';
 import type {QueueHeatReading} from './airport-queue-heat';
 import {departureMap,type MapFlight,type MapFlightRow} from './airport-departure-map';
@@ -48,12 +49,10 @@ export function sameDailyChange(a:number,b:number){return Math.round(a*10)===Mat
 
 /**
  * Signed change in flights per day, in the page's existing change convention for flight counts
- * (▲ + increase, ▽ − decrease, 0 none). A nonzero change below the printed 0.1 keeps its direction.
+ * (+ increase, ▲ decrease, 0 none). A nonzero change below the printed 0.1 keeps its direction.
  */
-export function dailyChangeText(delta:number,format:(value:number)=>string){
- if(delta===0)return '0';
- const sign=delta>0?'▲ +':'▽ −',size=Math.abs(delta);
- return size<0.05?`${sign}<${format(0.1)}`:`${sign}${format(size)}`;
+export function dailyChangeText(delta:number|null,format:(value:number)=>string){
+ return formatCountChange(delta,format);
 }
 
 /** Same freshness, duplicate and closed-reading contract as the detailed checkpoint view. */
