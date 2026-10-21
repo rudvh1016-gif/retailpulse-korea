@@ -21,3 +21,11 @@ test('material-only change preserves layout, day selection and safe fallbacks',(
  assert.match(read('app/live-signals.tsx'),/aria-current=\{selected === value \? "date" : undefined\}/);
  assert.match(read('app/live-signals.tsx'),/onClick=\{\(\) => onChange\(value === today \? null : value\)\}/);
 });
+
+test('only airport shortcut wrapper loses its rectangle and gains a small gap',()=>{
+ const tree=postcss.parse(css);const selector=':global(.app .airport-view .airport-date-reserved .date-nav > .date-nav-shortcuts)';
+ const matches=[];tree.walkRules(rule=>{if(rule.selector===selector)matches.push(rule);});
+ assert.equal(matches.length,1);
+ assert.deepEqual(matches[0].nodes.map(node=>[node.prop,node.value]),[['gap','6px'],['border','0'],['background','transparent']]);
+ assert.match(read('app/live-signals.tsx'),/<div className="date-nav-shortcuts" role="group">/);
+});
